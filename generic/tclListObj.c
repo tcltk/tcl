@@ -9,9 +9,9 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include "tclAbstractList.h"
 #include <assert.h>
 #include "tclInt.h"
-#include "tclArithSeries.h"
 
 /*
  * TODO - memmove is fast. Measure at what size we should prefer memmove
@@ -1369,8 +1369,8 @@ TclListObjCopy(
     Tcl_Obj *copyObj;
 
     if (!TclHasInternalRep(listObj, &tclListType)) {
-	if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
-	    return TclArithSeriesObjCopy(interp, listObj);
+	if (TclHasInternalRep(listObj,&tclAbstractListType)) {
+	    return TclAbstractListObjCopy(interp, listObj);
 	}
 	if (SetListFromAny(interp, listObj) != TCL_OK) {
 	    return NULL;
@@ -1667,12 +1667,21 @@ Tcl_ListObjGetElements(
 {
     ListRep listRep;
 
-    if (TclHasInternalRep(objPtr,&tclArithSeriesType)) {
-	return TclArithSeriesGetElements(interp, objPtr, objcPtr, objvPtr);
-    }
-
-    if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK)
+    if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
+	if (TclHasInternalRep(objPtr,&tclAbstractListType)) {
+	    // ? TODO: ?need error message here?
+	    return (Tcl_AbstractListObjGetElements(interp, objPtr, objcPtr, objvPtr));
+	} else {
+	    int length;
+	    (void) Tcl_GetStringFromObj(objPtr, &length);
+	    if (length == 0) {
+		*objcPtr = 0;
+		*objvPtr = NULL;
+		return TCL_OK;
+	    }
+	}
 	return TCL_ERROR;
+    }
     ListRepElements(&listRep, *objcPtr, *objvPtr);
     return TCL_OK;
 }
@@ -1997,8 +2006,10 @@ Tcl_ListObjLength(
 {
     ListRep listRep;
 
-    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
-	*lenPtr = TclArithSeriesObjLength(listObj);
+    /* Handle AbstractList before attempting SetListFromAny */
+    if (!TclHasInternalRep(listObj, &tclListType) &&
+	TclHasInternalRep(listObj, &tclAbstractListType)) {
+	*lenPtr = Tcl_AbstractListObjLength(listObj);
 	return TCL_OK;
     }
 
@@ -2629,9 +2640,9 @@ TclLindexFlat(
 {
     ListSizeT i;
 
-    /* Handle ArithSeries as special case */
-    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
-	Tcl_WideInt listLen = TclArithSeriesObjLength(listObj);
+    /* Handle AbstractList as special case */
+    if (TclHasInternalRep(listObj,&tclAbstractListType)) {
+	Tcl_WideInt listLen = Tcl_AbstractListObjLength(listObj);
 	ListSizeT index;
 	Tcl_Obj *elemObj = NULL;
 	for (i=0 ; i<indexCount && listObj ; i++) {
@@ -2639,9 +2650,10 @@ TclLindexFlat(
 				   &index) == TCL_OK) {
 	    }
 	    if (i==0) {
-		TclArithSeriesObjIndex(listObj, index, &elemObj);
+		Tcl_AbstractListObjIndex(listObj, index, &elemObj);
 	    } else if (index > 0) {
-		/* ArithSeries cannot be a list of lists */
+		// TODO: support nested lists
+		// For now, only support 1 index, which is all an ArithSeries has
 		Tcl_DecrRefCount(elemObj);
 		TclNewObj(elemObj);
 		Tcl_IncrRefCount(elemObj);
@@ -3278,32 +3290,31 @@ SetListFromAny(
 	    Tcl_IncrRefCount(valuePtr);
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
-    } else if (TclHasInternalRep(objPtr,&tclArithSeriesType)) {
-	/*
-	 * Convertion from Arithmetic Series is a special case
-	 * because it can be done an order of magnitude faster
-	 * and may occur frequently.
-	 */
-        ListSizeT j, size = TclArithSeriesObjLength(objPtr);
+    } else if (TclHasInternalRep(objPtr,&tclAbstractListType)) {
+	ListSizeT elemCount, i;
 
-	/* TODO - leave space in front and/or back? */
-	if (ListRepInitAttempt(
-		interp, size > 0 ? size : 1, NULL, &listRep)
-	    != TCL_OK) {
+	elemCount = Tcl_AbstractListObjLength(objPtr);
+
+	if (ListRepInitAttempt(interp, elemCount, NULL, &listRep) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
 	LIST_ASSERT(listRep.spanPtr == NULL); /* Guard against future changes */
 	LIST_ASSERT(listRep.storePtr->firstUsed == 0);
-	LIST_ASSERT((listRep.storePtr->flags & LISTSTORE_CANONICAL) == 0);
 
-	listRep.storePtr->numUsed = size;
 	elemPtrs = listRep.storePtr->slots;
-	for (j = 0; j < size; j++) {
-	    if (TclArithSeriesObjIndex(objPtr, j, &elemPtrs[j]) != TCL_OK) {
-		return TCL_ERROR;
-	    }
+
+	/* Each iteration, store a list element */
+        for (i = 0; i < elemCount; i++) {
+	    if (Tcl_AbstractListObjIndex(objPtr, i, elemPtrs) != TCL_OK) {
+                return TCL_ERROR;
+            }
+	    Tcl_IncrRefCount(*elemPtrs++);/* Since list now holds ref to it. */
 	}
+
+	LIST_ASSERT((elemPtrs - listRep.storePtr->slots) == elemCount);
+
+	listRep.storePtr->numUsed = elemCount;
 
     } else {
 	ListSizeT estCount, length;

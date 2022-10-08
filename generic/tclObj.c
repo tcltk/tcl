@@ -16,6 +16,7 @@
 
 #include "tclInt.h"
 #include "tclTomMath.h"
+#include "tclAbstractList.h"
 #include <math.h>
 #include <assert.h>
 
@@ -405,6 +406,8 @@ TclInitObjSubsystem(void)
 #endif
     Tcl_RegisterObjType(&oldBooleanType);
 #endif
+
+    Tcl_RegisterObjType(&tclAbstractListType);
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
@@ -4821,12 +4824,19 @@ Tcl_RepresentationCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *descObj;
-
+    const char *typeName;
+    
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
 
+    typeName = (TclHasInternalRep(objv[1],&tclAbstractListType)
+                ? Tcl_AbstractListTypeName(objv[1])
+                : (objv[1]->typePtr 
+                   ? objv[1]->typePtr->name 
+                   : "pure string"));
+    
     /*
      * Value is a bignum with a refcount of 14, object pointer at 0x12345678,
      * internal representation 0x45671234:0x98765432, string representation
@@ -4835,7 +4845,7 @@ Tcl_RepresentationCmd(
 
     descObj = Tcl_ObjPrintf("value is a %s with a refcount of %d,"
 	    " object pointer at %p",
-	    objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
+	    objv[1]->typePtr ? typeName : "pure string",
 	    objv[1]->refCount, objv[1]);
 
     if (objv[1]->typePtr) {

@@ -2048,6 +2048,11 @@ const TclStubs tclStubs = {
     0, /* 680 */
     0, /* 681 */
     Tcl_RemoveChannelMode, /* 682 */
+    Tcl_AbstractListObjLength, /* 683 */
+    Tcl_AbstractListObjIndex, /* 684 */
+    Tcl_AbstractListObjRange, /* 685 */
+    Tcl_AbstractListObjReverse, /* 686 */
+    Tcl_NewAbstractListObj, /* 687 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -269,7 +269,7 @@ test lseq-3.10 {lsearch lseq must shimmer?} arithSeriesShimmer {
     set r [lseq 15 0]
     set a [lsearch $r 9]
     list [lindex [tcl::unsupported::representation $r] 3] $a
-} {arithseries 6}
+} {list 6}
 
 test lseq-3.11 {lreverse lseq} {
     set r [lseq 15 0]

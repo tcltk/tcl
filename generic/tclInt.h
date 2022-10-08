@@ -2643,6 +2643,45 @@ typedef struct ListRep {
 #define TclListObjIsCanonical(listObj_) \
     (((listObj_)->typePtr == &tclListType) ? ListObjIsCanonical((listObj_)) : 0)
 
+
+#define AbstractListGetType(abstractListObjPtr) \
+    (Tcl_AbstractListType *) ((abstractListObjPtr)->internalRep.twoPtrValue.ptr1)
+
+static inline Tcl_WideInt
+AbstractListObjLength(Tcl_Obj* abstractListObjPtr)
+{
+    Tcl_AbstractListType *typePtr =
+	(Tcl_AbstractListType *) abstractListObjPtr->internalRep.twoPtrValue.ptr1;
+    return typePtr->lengthProc(abstractListObjPtr);
+}
+
+static inline int
+TclAbstractListHasProc(Tcl_Obj* abstractListObjPtr, Tcl_AbstractListProcType ptype)
+{
+    Tcl_AbstractListType *typePtr = AbstractListGetType(abstractListObjPtr);
+    switch (ptype) {
+    case TCL_ABSL_NEW:
+	return (typePtr->newObjProc != NULL);
+    case TCL_ABSL_DUPREP:
+	return (typePtr->dupRepProc != NULL);
+    case TCL_ABSL_LENGTH:
+	return (typePtr->lengthProc != NULL);
+    case TCL_ABSL_INDEX:
+	return (typePtr->indexProc != NULL);
+    case TCL_ABSL_SLICE:
+	return (typePtr->sliceProc != NULL);
+    case TCL_ABSL_REVERSE:
+	return (typePtr->reverseProc != NULL);
+    case TCL_ABSL_GETELEMENTS:
+        return (typePtr->getElementsProc != NULL);
+    case TCL_ABSL_FREEREP:
+	return (typePtr->freeRepProc != NULL);
+    case TCL_ABSL_TOSTRING:
+	return (typePtr->toStringProc != NULL);
+    }
+    return 0;
+}
+
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
  * TclNRLmapCmd and their compilations.
@@ -2924,6 +2963,7 @@ MODULE_SCOPE const Tcl_ObjType tclIntType;
 MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclArithSeriesType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
+MODULE_SCOPE const Tcl_ObjType tclAbstractListType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
 MODULE_SCOPE const Tcl_ObjType tclUniCharStringType;
@@ -3066,6 +3106,8 @@ struct Tcl_LoadHandle_ {
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE Tcl_Obj *  TclAbstractListObjCopy(Tcl_Interp *interp,
+			    Tcl_Obj *abstractListObjPtr);
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, int len);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -3758,6 +3800,9 @@ MODULE_SCOPE int	Tcl_PutsObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_PwdObjCmd(void *clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_RangeObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_ReadObjCmd(void *clientData,

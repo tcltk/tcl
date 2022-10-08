@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include "tclAbstractList.h"
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
@@ -2864,24 +2865,23 @@ EachloopCmd(
 	}
 
 	/* Values */
-	if (TclHasInternalRep(objv[2+i*2],&tclArithSeriesType)) {
-	    /* Special case for Arith Series */
-	    statePtr->aCopyList[i] = TclArithSeriesObjCopy(interp, objv[2+i*2]);
+	if (TclHasInternalRep(objv[2+i*2],&tclAbstractListType)) {
+	    /* Special case for Abstract List */
+	    statePtr->aCopyList[i] = TclAbstractListObjCopy(interp, objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;
 	    }
 	    /* Don't compute values here, wait until the last momement */
-	    statePtr->argcList[i] = TclArithSeriesObjLength(statePtr->aCopyList[i]);
+	    statePtr->argcList[i] = Tcl_AbstractListObjLength(statePtr->aCopyList[i]);
 	} else {
-	    /* List values */
 	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;
 	    }
 	    TclListObjGetElementsM(NULL, statePtr->aCopyList[i],
-		&statePtr->argcList[i], &statePtr->argvList[i]);
+		    &statePtr->argcList[i], &statePtr->argvList[i]);
 	}
 	/* account for variable <> value mismatch */
 	j = statePtr->argcList[i] / statePtr->varcList[i];
@@ -3005,16 +3005,19 @@ ForeachAssignments(
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
-	int isarithseries = TclHasInternalRep(statePtr->aCopyList[i],&tclArithSeriesType);
+	int isAbstractList =
+	    TclHasInternalRep(statePtr->aCopyList[i],&tclAbstractListType);
+
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
-		if (isarithseries) {
-		    if (TclArithSeriesObjIndex(statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
+		if (isAbstractList) {
+		    if (Tcl_AbstractListObjIndex(statePtr->aCopyList[i], k, &valuePtr)
+                        != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (setting %s loop variable \"%s\")",
-			(statePtr->resultList != NULL ? "lmap" : "foreach"),
-			TclGetString(statePtr->varvList[i][v])));
+			    "\n    (setting %s loop variable \"%s\")",
+			    (statePtr->resultList != NULL ? "lmap" : "foreach"),
+			    TclGetString(statePtr->varvList[i][v])));
 			return TCL_ERROR;
 		    }
 		} else {

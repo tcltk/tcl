@@ -19,7 +19,8 @@
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tclTomMath.h"
-#include "tclArithSeries.h"
+//#include "tclArithSeries.h"
+#include "tclAbstractList.h"
 #include <math.h>
 #include <assert.h>
 
@@ -4869,20 +4870,17 @@ TEBCresume(
 	valuePtr = OBJ_UNDER_TOS;
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
-
-	/* special case for ArithSeries */
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
-	    length = TclArithSeriesObjLength(valuePtr);
+	/* special case for AbstractList */
+	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
+	    Tcl_AbstractListType *typePtr;
+	    typePtr = Tcl_AbstractListGetType(valuePtr);
+	    length = typePtr->lengthProc(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    if (TclArithSeriesObjIndex(valuePtr, index, &objResultPtr) != TCL_OK) {
-		CACHE_STACK_INFO();
-		TRACE_ERROR(interp);
-		goto gotError;
-	    }
+	    typePtr->indexProc(valuePtr, index, &objResultPtr);
 	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
 	}
@@ -4933,9 +4931,16 @@ TEBCresume(
 	opnd = TclGetInt4AtPtr(pc+1);
 	TRACE(("\"%.30s\" %d => ", O2S(valuePtr), opnd));
 
-	/* special case for ArithSeries */
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
-	    length = TclArithSeriesObjLength(valuePtr);
+	/*
+	 * Get the contents of the list, making sure that it really is a list
+	 * in the process.
+	 */
+
+	/* special case for AbstractList */
+	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
+	    Tcl_AbstractListType *typePtr;
+	    typePtr = Tcl_AbstractListGetType(valuePtr);
+	    length = typePtr->lengthProc(valuePtr);
 
 	    /* Decode end-offset index values. */
 
@@ -4943,11 +4948,7 @@ TEBCresume(
 
 	    /* Compute value @ index */
 	    if (index >= 0 && index < length) {
-		if (TclArithSeriesObjIndex(valuePtr, index, &objResultPtr) != TCL_OK) {
-		    CACHE_STACK_INFO();
-		    TRACE_ERROR(interp);
-		    goto gotError;
-		}
+		typePtr->indexProc(valuePtr, index, &objResultPtr);
 	    } else {
 		TclNewObj(objResultPtr);
 	    }
@@ -4955,11 +4956,7 @@ TEBCresume(
 	    goto lindexFastPath2;
 	}
 
-	/*
-	 * Get the contents of the list, making sure that it really is a list
-	 * in the process.
-	 */
-
+	/* List case */
 	if (TclListObjGetElementsM(interp, valuePtr, &objc, &objv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -5154,15 +5151,17 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
-	    objResultPtr = TclArithSeriesObjRange(interp, valuePtr, fromIdx, toIdx);
-	    if (objResultPtr == NULL) {
-		TRACE_ERROR(interp);
-		goto gotError;
+	{
+	    Tcl_AbstractListType *typePtr;
+	    typePtr = Tcl_AbstractListGetType(valuePtr);
+
+	    if (typePtr && TclAbstractListHasProc(valuePtr, TCL_ABSL_SLICE)) {
+		objResultPtr = typePtr->sliceProc(valuePtr, fromIdx, toIdx);
+	    } else {
+		objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
 	    }
-	} else {
-	    objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
 	}
+
 
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
@@ -5182,14 +5181,15 @@ TEBCresume(
 	if (length > 0) {
 	    int i = 0;
 	    Tcl_Obj *o;
-	    int isArithSeries = TclHasInternalRep(value2Ptr,&tclArithSeriesType);
+	    int isAbstractList = TclHasInternalRep(value2Ptr,&tclAbstractListType);
+
 	    /*
 	     * An empty list doesn't match anything.
 	     */
 
 	    do {
-		if (isArithSeries) {
-		    TclArithSeriesObjIndex(value2Ptr, i, &o);
+		if (isAbstractList) {
+		    Tcl_AbstractListObjIndex(value2Ptr, i, &o);
 		} else {
 		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		}
@@ -5202,7 +5202,7 @@ TEBCresume(
 		if (s1len == s2len) {
 		    match = (memcmp(s1, s2, s1len) == 0);
 		}
-		if (isArithSeries) {
+		if (isAbstractList) {
 		    TclDecrRefCount(o);
 		}
 		i++;

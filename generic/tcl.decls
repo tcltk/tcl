@@ -2539,6 +2539,23 @@ declare 682 {
     int Tcl_RemoveChannelMode(Tcl_Interp *interp, Tcl_Channel chan, int mode)
 }
 
+# TIP #636
+declare 683 {
+    Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr)
+}
+declare 684 {
+    int Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr)
+}
+declare 685 {
+    Tcl_Obj *Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx)
+}
+declare 686 {
+    Tcl_Obj *Tcl_AbstractListObjReverse(Tcl_Obj *abstractListPtr)
+}
+declare 687 {
+    Tcl_Obj *Tcl_NewAbstractListObj(Tcl_Interp *interp, const Tcl_AbstractListType* vTablePtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################

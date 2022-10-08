@@ -298,8 +298,9 @@ TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o
 
-GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
-	tclArithSeries.o tclAssembly.o tclAsync.o tclBasic.o tclBinary.o \
+GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o \
+	tclAbstractList.o tclArithSeries.o tclAlloc.o \
+	tclAssembly.o tclAsync.o tclBasic.o tclBinary.o \
 	tclCkalloc.o tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
 	tclCompCmds.o tclCompCmdsGR.o tclCompCmdsSZ.o tclCompExpr.o \
 	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclDisassemble.o \
@@ -380,6 +381,8 @@ TCL_DECLS = \
 
 GENERIC_HDRS = \
 	$(GENERIC_DIR)/tcl.h \
+	$(GENERIC_DIR)/tclAbstractList.h \
+	$(GENERIC_DIR)/tclArithSeries.h \
 	$(GENERIC_DIR)/tclDecls.h \
 	$(GENERIC_DIR)/tclInt.h \
 	$(GENERIC_DIR)/tclIntDecls.h \
@@ -393,16 +396,16 @@ GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclPatch.h \
 	$(GENERIC_DIR)/tclPlatDecls.h \
 	$(GENERIC_DIR)/tclPort.h \
-	$(GENERIC_DIR)/tclRegexp.h \
-	$(GENERIC_DIR)/tclArithSeries.h
+	$(GENERIC_DIR)/tclRegexp.h
 
 GENERIC_SRCS = \
 	$(GENERIC_DIR)/regcomp.c \
 	$(GENERIC_DIR)/regexec.c \
 	$(GENERIC_DIR)/regfree.c \
 	$(GENERIC_DIR)/regerror.c \
-	$(GENERIC_DIR)/tclAlloc.c \
+	$(GENERIC_DIR)/tclAbstractList.c \
 	$(GENERIC_DIR)/tclArithSeries.c \
+	$(GENERIC_DIR)/tclAlloc.c \
 	$(GENERIC_DIR)/tclAssembly.c \
 	$(GENERIC_DIR)/tclAsync.c \
 	$(GENERIC_DIR)/tclBasic.c \
@@ -1246,14 +1249,17 @@ regfree.o: $(REGHDRS) $(GENERIC_DIR)/regfree.c
 regerror.o: $(REGHDRS) $(GENERIC_DIR)/regerrs.h $(GENERIC_DIR)/regerror.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regerror.c
 
+tclAbstractList.o: $(GENERIC_DIR)/tclAbstractList.c $(COMPILEHDR)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAbstractList.c
+
+tclArithSeries.o: $(GENERIC_DIR)/tclArithSeries.c $(COMPILEHDR)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclArithSeries.c
+
 tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
 	$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c
 
 tclAlloc.o: $(GENERIC_DIR)/tclAlloc.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAlloc.c
-
-tclArithSeries.o: $(GENERIC_DIR)/tclArithSeries.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclArithSeries.c
 
 tclAssembly.o: $(GENERIC_DIR)/tclAssembly.c $(COMPILEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAssembly.c

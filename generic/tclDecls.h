@@ -2013,6 +2013,19 @@ EXTERN int		Tcl_NRCallObjProc2(Tcl_Interp *interp,
 /* 682 */
 EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
 				Tcl_Channel chan, int mode);
+/* 683 */
+EXTERN Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr);
+/* 684 */
+EXTERN int		Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr,
+				Tcl_WideInt index, Tcl_Obj **elemObjPtr);
+/* 685 */
+EXTERN Tcl_Obj *	Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr,
+				Tcl_WideInt fromIdx, Tcl_WideInt toIdx);
+/* 686 */
+EXTERN Tcl_Obj *	Tcl_AbstractListObjReverse(Tcl_Obj *abstractListPtr);
+/* 687 */
+EXTERN Tcl_Obj *	Tcl_NewAbstractListObj(Tcl_Interp *interp,
+				const Tcl_AbstractListType*vTablePtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2731,6 +2744,11 @@ typedef struct TclStubs {
     void (*reserved680)(void);
     void (*reserved681)(void);
     int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
+    Tcl_WideInt (*tcl_AbstractListObjLength) (Tcl_Obj *abstractListPtr); /* 683 */
+    int (*tcl_AbstractListObjIndex) (Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr); /* 684 */
+    Tcl_Obj * (*tcl_AbstractListObjRange) (Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx); /* 685 */
+    Tcl_Obj * (*tcl_AbstractListObjReverse) (Tcl_Obj *abstractListPtr); /* 686 */
+    Tcl_Obj * (*tcl_NewAbstractListObj) (Tcl_Interp *interp, const Tcl_AbstractListType*vTablePtr); /* 687 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4125,6 +4143,16 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 681 is reserved */
 #define Tcl_RemoveChannelMode \
 	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
+#define Tcl_AbstractListObjLength \
+	(tclStubsPtr->tcl_AbstractListObjLength) /* 683 */
+#define Tcl_AbstractListObjIndex \
+	(tclStubsPtr->tcl_AbstractListObjIndex) /* 684 */
+#define Tcl_AbstractListObjRange \
+	(tclStubsPtr->tcl_AbstractListObjRange) /* 685 */
+#define Tcl_AbstractListObjReverse \
+	(tclStubsPtr->tcl_AbstractListObjReverse) /* 686 */
+#define Tcl_NewAbstractListObj \
+	(tclStubsPtr->tcl_NewAbstractListObj) /* 687 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
