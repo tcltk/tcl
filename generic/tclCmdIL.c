@@ -2891,8 +2891,8 @@ Tcl_LrepeatObjCmd(
     Tcl_Obj *const objv[])
 				/* The argument objects. */
 {
-    int elementCount, i, totalElems;
-    Tcl_Obj *listPtr, **dataArray = NULL;
+    int elementCount;
+    Tcl_Obj *listPtr, *elementsObj;
 
     /*
      * Check arguments for legality:
@@ -2914,69 +2914,16 @@ Tcl_LrepeatObjCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * Skip forward to the interesting arguments now we've finished parsing.
-     */
-
-    objc -= 2;
-    objv += 2;
-
-    /* Final sanity check. Do not exceed limits on max list length. */
-
-    if (elementCount && objc > LIST_MAX/elementCount) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"max length of a Tcl list (%d elements) exceeded", LIST_MAX));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    elementsObj = Tcl_NewListObj(objc - 2, objv + 2);
+    Tcl_IncrRefCount(elementsObj);
+    listPtr = TclNewRepeatedListObj(interp, elementCount, elementsObj);
+    Tcl_DecrRefCount(elementsObj);
+    if (listPtr) {
+	Tcl_SetObjResult(interp, listPtr);
+	return TCL_OK;
+    } else {
 	return TCL_ERROR;
     }
-    totalElems = objc * elementCount;
-
-    /*
-     * Get an empty list object that is allocated large enough to hold each
-     * init value elementCount times.
-     */
-
-    listPtr = Tcl_NewListObj(totalElems, NULL);
-    if (totalElems) {
-	ListRep listRep;
-	ListObjGetRep(listPtr, &listRep);
-	dataArray = ListRepElementsBase(&listRep);
-	listRep.storePtr->numUsed = totalElems;
-	if (listRep.spanPtr) {
-	    /* Future proofing in case Tcl_NewListObj returns a span */
-	    listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
-	    listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
-	}
-    }
-
-    /*
-     * Set the elements. Note that we handle the common degenerate case of a
-     * single value being repeated separately to permit the compiler as much
-     * room as possible to optimize a loop that might be run a very large
-     * number of times.
-     */
-
-    CLANG_ASSERT(dataArray || totalElems == 0 );
-    if (objc == 1) {
-	Tcl_Obj *tmpPtr = objv[0];
-
-	tmpPtr->refCount += elementCount;
-	for (i=0 ; i<elementCount ; i++) {
-	    dataArray[i] = tmpPtr;
-	}
-    } else {
-	int j, k = 0;
-
-	for (i=0 ; i<elementCount ; i++) {
-	    for (j=0 ; j<objc ; j++) {
-		Tcl_IncrRefCount(objv[j]);
-		dataArray[k++] = objv[j];
-	    }
-	}
-    }
-
-    Tcl_SetObjResult(interp, listPtr);
-    return TCL_OK;
 }
 
 /*

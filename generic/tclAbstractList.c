@@ -266,7 +266,6 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
 	typePtr->indexProc(abstractListObjPtr, i, &eleObj);
 	Tcl_GetStringFromObj(eleObj, &slen);
 	length += slen + 1; /* one more for the space char */
-	Tcl_DecrRefCount(eleObj);
     }
 
     /*
