@@ -38,7 +38,7 @@ typedef struct {
 				 * is used to determine the source string
 				 * length when the srcLen argument is
 				 * negative. This number can be 1, 2, or 4. */
-    ClientData clientData;	/* Arbitrary value associated with encoding
+    void *clientData;	/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
     LengthProc *lengthProc;	/* Function to compute length of
 				 * null-terminated strings in this encoding.
@@ -2222,9 +2222,11 @@ BinaryProc(
  *-------------------------------------------------------------------------
  */
 
+#define STOPONERROR ((flags & TCL_ENCODING_STRICT) != TCL_ENCODING_NOCOMPLAIN)
+
 static int
 UtfToUtfProc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_MODIFIED */
+    void *clientData,	/* additional flags, e.g. TCL_ENCODING_MODIFIED */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2288,11 +2290,18 @@ UtfToUtfProc(
 
 	    *dst++ = *src++;
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
-		&& (UCHAR(src[1]) == 0x80) && !(flags & TCL_ENCODING_MODIFIED)) {
+		&& (UCHAR(src[1]) == 0x80) && (!(flags & TCL_ENCODING_MODIFIED) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
 	    /*
-	     * Convert 0xC080 to real nulls when we are in output mode.
+	     * If in input mode, and -strict is specified: This is an error.
 	     */
+	    if (flags & TCL_ENCODING_MODIFIED) {
+		result = TCL_CONVERT_UNKNOWN;
+		break;
+	    }
 
+	    /*
+	     * Convert 0xC080 to real nulls when we are in output mode, with or without '-strict'.
+	     */
 	    *dst++ = 0;
 	    src += 2;
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
@@ -2304,7 +2313,7 @@ UtfToUtfProc(
 	     */
 
 	    if (flags & TCL_ENCODING_MODIFIED) {
-		if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
+		if ((STOPONERROR) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
@@ -2318,7 +2327,7 @@ UtfToUtfProc(
 	} else {
 	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
-	    if ((len < 2) && (ch != 0) && !(flags & TCL_ENCODING_NOCOMPLAIN)
+	    if ((len < 2) && (ch != 0) && STOPONERROR
 		    && (flags & TCL_ENCODING_MODIFIED)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
@@ -2351,7 +2360,7 @@ UtfToUtfProc(
 
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
 
-		    if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
+		    if (STOPONERROR) {
 			result = TCL_CONVERT_UNKNOWN;
 			src = saveSrc;
 			break;
@@ -2363,7 +2372,7 @@ UtfToUtfProc(
 		ch = low;
 #endif
 	    } else if (!Tcl_UniCharIsUnicode(ch)) {
-		if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
+		if (STOPONERROR) {
 		    result = TCL_CONVERT_UNKNOWN;
 		    src = saveSrc;
 		    break;
@@ -2400,7 +2409,7 @@ UtfToUtfProc(
 
 static int
 Utf32ToUtfProc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in Unicode. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2496,7 +2505,7 @@ Utf32ToUtfProc(
 
 static int
 UtfToUtf32Proc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2549,7 +2558,7 @@ UtfToUtf32Proc(
 	}
 	len = TclUtfToUCS4(src, &ch);
 	if (!Tcl_UniCharIsUnicode(ch)) {
-	    if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
+	    if (STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -2593,7 +2602,7 @@ UtfToUtf32Proc(
 
 static int
 Utf16ToUtfProc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in Unicode. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2699,7 +2708,7 @@ Utf16ToUtfProc(
 
 static int
 UtfToUtf16Proc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2752,7 +2761,7 @@ UtfToUtf16Proc(
 	}
 	len = TclUtfToUCS4(src, &ch);
 	if (!Tcl_UniCharIsUnicode(ch)) {
-	    if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
+	    if (STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -2805,7 +2814,7 @@ UtfToUtf16Proc(
 
 static int
 UtfToUcs2Proc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2910,7 +2919,7 @@ UtfToUcs2Proc(
 
 static int
 TableToUtfProc(
-    ClientData clientData,	/* TableEncodingData that specifies
+    void *clientData,	/* TableEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in specified encoding. */
     int srcLen,			/* Source string length in bytes. */
@@ -2972,7 +2981,7 @@ TableToUtfProc(
 	    ch = pageZero[byte];
 	}
 	if ((ch == 0) && (byte != 0)) {
-	    if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
+	    if (STOPONERROR) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
@@ -3019,7 +3028,7 @@ TableToUtfProc(
 
 static int
 TableFromUtfProc(
-    ClientData clientData,	/* TableEncodingData that specifies
+    void *clientData,	/* TableEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
@@ -3088,7 +3097,7 @@ TableFromUtfProc(
 	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
-	    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
+	    if ((STOPONERROR) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -3276,7 +3285,7 @@ Iso88591FromUtfProc(
 		|| ((ch >= 0xD800) && (len < 3))
 #endif
 		) {
-	    if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
+	    if (STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -3325,7 +3334,7 @@ Iso88591FromUtfProc(
 
 static void
 TableFreeProc(
-    ClientData clientData)	/* TableEncodingData that specifies
+    void *clientData)	/* TableEncodingData that specifies
 				 * encoding. */
 {
     TableEncodingData *dataPtr = (TableEncodingData *)clientData;
@@ -3360,7 +3369,7 @@ TableFreeProc(
 
 static int
 EscapeToUtfProc(
-    ClientData clientData,	/* EscapeEncodingData that specifies
+    void *clientData,	/* EscapeEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in specified encoding. */
     int srcLen,			/* Source string length in bytes. */
@@ -3503,7 +3512,7 @@ EscapeToUtfProc(
 
 	    if ((checked == dataPtr->numSubTables + 2)
 		    || (flags & TCL_ENCODING_END)) {
-		if (!!(flags & TCL_ENCODING_NOCOMPLAIN)) {
+		if (!STOPONERROR) {
 		    /*
 		     * Skip the unknown escape sequence.
 		     */
@@ -3574,7 +3583,7 @@ EscapeToUtfProc(
 
 static int
 EscapeFromUtfProc(
-    ClientData clientData,	/* EscapeEncodingData that specifies
+    void *clientData,	/* EscapeEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
@@ -3678,7 +3687,7 @@ EscapeFromUtfProc(
 
 	    if (word == 0) {
 		state = oldState;
-		if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
+		if (STOPONERROR) {
 		    result = TCL_CONVERT_UNKNOWN;
 		    break;
 		}
@@ -3785,7 +3794,7 @@ EscapeFromUtfProc(
 
 static void
 EscapeFreeProc(
-    ClientData clientData)	/* EscapeEncodingData that specifies
+    void *clientData)	/* EscapeEncodingData that specifies
 				 * encoding. */
 {
     EscapeEncodingData *dataPtr = (EscapeEncodingData *)clientData;
