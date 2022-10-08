@@ -4365,6 +4365,8 @@ Write(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->outputEncodingFlags |= TCL_ENCODING_STRICT;
+    } else {
+	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
 
     /*
@@ -4690,6 +4692,8 @@ Tcl_GetsObj(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
+    } else {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
 
     /*
@@ -5456,6 +5460,8 @@ FilterInputBytes(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
+    } else {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
 
     result = Tcl_ExternalToUtf(NULL, gsPtr->encoding, raw, rawLen,
@@ -6237,6 +6243,8 @@ ReadChars(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
+    } else {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
 
     /*
@@ -8250,6 +8258,8 @@ Tcl_SetChannelOption(
 	}
 	if (newMode) {
 	    SetFlag(statePtr, CHANNEL_ENCODING_STRICT);
+	} else {
+	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
 	}
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {
