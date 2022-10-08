@@ -28,7 +28,7 @@ typedef struct ChannelHandler {
     int mask;			/* Mask of desired events. */
     Tcl_ChannelProc *proc;	/* Procedure to call in the type of
 				 * Tcl_CreateChannelHandler. */
-    ClientData clientData;	/* Argument to pass to procedure. */
+    void *clientData;	/* Argument to pass to procedure. */
     struct ChannelHandler *nextPtr;
 				/* Next one in list of registered handlers. */
 } ChannelHandler;
@@ -142,7 +142,7 @@ static Tcl_ThreadDataKey dataKey;
 
 typedef struct CloseCallback {
     Tcl_CloseProc *proc;		/* The procedure to call. */
-    ClientData clientData;		/* Arbitrary one-word data to pass
+    void *clientData;		/* Arbitrary one-word data to pass
 					 * to the callback. */
     struct CloseCallback *nextPtr;	/* For chaining close callbacks. */
 } CloseCallback;
@@ -156,7 +156,7 @@ static void		PreserveChannelBuffer(ChannelBuffer *bufPtr);
 static void		ReleaseChannelBuffer(ChannelBuffer *bufPtr);
 static int		IsShared(ChannelBuffer *bufPtr);
 static void		ChannelFree(Channel *chanPtr);
-static void		ChannelTimerProc(ClientData clientData);
+static void		ChannelTimerProc(void *clientData);
 static int		ChanRead(Channel *chanPtr, char *dst, int dstSize);
 static int		CheckChannelErrors(ChannelState *statePtr,
 			    int direction);
@@ -178,12 +178,12 @@ static void		MBCallback(CopyState *csPtr, Tcl_Obj *errObj);
 static void		MBError(CopyState *csPtr, int mask, int errorCode);
 static int		MBRead(CopyState *csPtr);
 static int		MBWrite(CopyState *csPtr);
-static void		MBEvent(ClientData clientData, int mask);
+static void		MBEvent(void *clientData, int mask);
 
-static void		CopyEventProc(ClientData clientData, int mask);
+static void		CopyEventProc(void *clientData, int mask);
 static void		CreateScriptRecord(Tcl_Interp *interp,
 			    Channel *chanPtr, int mask, Tcl_Obj *scriptPtr);
-static void		DeleteChannelTable(ClientData clientData,
+static void		DeleteChannelTable(void *clientData,
 			    Tcl_Interp *interp);
 static void		DeleteScriptRecord(Tcl_Interp *interp,
 			    Channel *chanPtr, int mask);
@@ -847,7 +847,7 @@ Tcl_CreateCloseHandler(
 				 * callback. */
     Tcl_CloseProc *proc,	/* The callback routine to call when the
 				 * channel will be closed. */
-    ClientData clientData)	/* Arbitrary data to pass to the close
+    void *clientData)	/* Arbitrary data to pass to the close
 				 * callback. */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
@@ -885,7 +885,7 @@ Tcl_DeleteCloseHandler(
 				 * callback. */
     Tcl_CloseProc *proc,	/* The procedure for the callback to
 				 * remove. */
-    ClientData clientData)	/* The callback data for the callback to
+    void *clientData)	/* The callback data for the callback to
 				 * remove. */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
@@ -984,7 +984,7 @@ GetChannelTable(
 
 static void
 DeleteChannelTable(
-    ClientData clientData,	/* The per-interpreter data structure. */
+    void *clientData,	/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     Tcl_HashTable *hTblPtr;	/* The hash table. */
@@ -1556,7 +1556,7 @@ TclGetChannelFromObj(
          * Re-use the ResolvedCmdName struct.
          */
 
-	Tcl_Release((ClientData) resPtr->statePtr);
+	Tcl_Release((void *) resPtr->statePtr);
     } else {
 	resPtr = (ResolvedChanName *) ckalloc(sizeof(ResolvedChanName));
 	resPtr->refCount = 0;
@@ -1564,7 +1564,7 @@ TclGetChannelFromObj(
     }
     statePtr = ((Channel *)chan)->state;
     resPtr->statePtr = statePtr;
-    Tcl_Preserve((ClientData) statePtr);
+    Tcl_Preserve((void *) statePtr);
     resPtr->interp = interp;
     resPtr->epoch = statePtr->epoch;
 
@@ -1598,7 +1598,7 @@ Tcl_Channel
 Tcl_CreateChannel(
     const Tcl_ChannelType *typePtr, /* The channel type record. */
     const char *chanName,	/* Name of channel to record. */
-    ClientData instanceData,	/* Instance specific data. */
+    void *instanceData,	/* Instance specific data. */
     int mask)			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
 {
@@ -1831,7 +1831,7 @@ Tcl_StackChannel(
     const Tcl_ChannelType *typePtr,
 				/* The channel type record for the new
 				 * channel. */
-    ClientData instanceData,	/* Instance specific data for the new
+    void *instanceData,	/* Instance specific data for the new
 				 * channel. */
     int mask,			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
@@ -2290,7 +2290,7 @@ Tcl_GetTopChannel(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 Tcl_GetChannelInstanceData(
     Tcl_Channel chan)		/* Channel for which to return client data. */
 {
@@ -2429,10 +2429,10 @@ int
 Tcl_GetChannelHandle(
     Tcl_Channel chan,		/* The channel to get file from. */
     int direction,		/* TCL_WRITABLE or TCL_READABLE. */
-    ClientData *handlePtr)	/* Where to store handle */
+    void **handlePtr)	/* Where to store handle */
 {
     Channel *chanPtr;		/* The actual channel. */
-    ClientData handle;
+    void *handle;
     int result;
 
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
@@ -4394,6 +4394,14 @@ Write(
     }
 
     /*
+     * Transfer encoding strict option to the encoding flags
+     */
+
+    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	statePtr->outputEncodingFlags |= TCL_ENCODING_STRICT;
+    }
+
+    /*
      * Write the terminated escape sequence even if srcLen is 0.
      */
 
@@ -4706,6 +4714,14 @@ Tcl_GetsObj(
 
     if (encoding == NULL) {
 	encoding = GetBinaryEncoding();
+    }
+
+    /*
+     * Transfer encoding strict option to the encoding flags
+     */
+
+    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
     }
 
     /*
@@ -5309,7 +5325,7 @@ TclGetsObjBinary(
 
 static void
 FreeBinaryEncoding(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -5464,6 +5480,15 @@ FilterInputBytes(
 	*gsPtr->dstPtr = dst;
     }
     gsPtr->state = statePtr->inputEncodingState;
+
+    /*
+     * Transfer encoding strict option to the encoding flags
+     */
+
+    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
+    }
+
     result = Tcl_ExternalToUtf(NULL, gsPtr->encoding, raw, rawLen,
 	    statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE,
 	    &statePtr->inputEncodingState, dst, spaceLeft, &gsPtr->rawRead,
@@ -6234,6 +6259,14 @@ ReadChars(
 	dstLimit = size - numBytes;
     } else {
 	dst = TclGetString(objPtr) + numBytes;
+    }
+
+    /*
+     * Transfer encoding strict option to the encoding flags
+     */
+
+    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
     }
 
     /*
@@ -7972,6 +8005,16 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
+    if (len == 0 || HaveOpt(1, "-strictencoding")) {
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-strictencoding");
+	}
+	Tcl_DStringAppendElement(dsPtr,
+		(flags & CHANNEL_ENCODING_STRICT) ? "1" : "0");
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
     if (len == 0 || HaveOpt(1, "-translation")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-translation");
@@ -8224,6 +8267,16 @@ Tcl_SetChannelOption(
 	}
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
+	return TCL_OK;
+    } else if (HaveOpt(1, "-strictencoding")) {
+	int newMode;
+
+	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (newMode) {
+	    SetFlag(statePtr, CHANNEL_ENCODING_STRICT);
+	}
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {
 	const char *readMode, *writeMode;
@@ -8682,7 +8735,7 @@ UpdateInterest(
 
 static void
 ChannelTimerProc(
-    ClientData clientData)
+    void *clientData)
 {
     Channel *chanPtr = (Channel *)clientData;
 
@@ -8760,7 +8813,7 @@ Tcl_CreateChannelHandler(
 				 * handler. */
     Tcl_ChannelProc *proc,	/* Procedure to call for each selected
 				 * event. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)	/* Arbitrary data to pass to proc. */
 {
     ChannelHandler *chPtr;
     Channel *chanPtr = (Channel *) chan;
@@ -8832,7 +8885,7 @@ Tcl_DeleteChannelHandler(
     Tcl_Channel chan,		/* The channel for which to remove the
 				 * callback. */
     Tcl_ChannelProc *proc,	/* The procedure in the callback to delete. */
-    ClientData clientData)	/* The client data in the callback to
+    void *clientData)	/* The client data in the callback to
 				 * delete. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -9038,7 +9091,7 @@ CreateScriptRecord(
 
 void
 TclChannelEventScriptInvoker(
-    ClientData clientData,	/* The script+interp record. */
+    void *clientData,	/* The script+interp record. */
     TCL_UNUSED(int) /*mask*/)
 {
     EventScriptRecord *esPtr = (EventScriptRecord *)clientData;
@@ -9106,7 +9159,7 @@ TclChannelEventScriptInvoker(
 
 int
 Tcl_FileEventObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which the channel for which
 				 * to create the handler is found. */
     int objc,			/* Number of arguments. */
@@ -9200,7 +9253,7 @@ Tcl_FileEventObjCmd(
 
 static void
 ZeroTransferTimerProc(
-    ClientData clientData)
+    void *clientData)
 {
     /* calling CopyData with mask==0 still implies immediate invocation of the
      *  -command callback, and completion of the fcopy.
@@ -9436,7 +9489,7 @@ MBError(
 
 static void
 MBEvent(
-    ClientData clientData,
+    void *clientData,
     int mask)
 {
     CopyState *csPtr = (CopyState *) clientData;
@@ -10180,7 +10233,7 @@ DoRead(
 
 static void
 CopyEventProc(
-    ClientData clientData,
+    void *clientData,
     int mask)
 {
     (void) CopyData((CopyState *)clientData, mask);
