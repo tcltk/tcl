@@ -163,7 +163,7 @@ TclNewRepeatedListObj(Tcl_Interp *interp,
 	if (Tcl_ListObjLength(interp, elementsObj, &subLen) != TCL_OK) {
 	    return NULL;
 	}
-	if (repetitions > (LIST_MAX / subLen)) {
+	if (subLen && repetitions > (LIST_MAX / subLen)) {
 	    if (interp) {
 		Tcl_SetResult(
 		    interp, "Maximum list length exceeded.", TCL_STATIC);
