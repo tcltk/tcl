@@ -16,7 +16,6 @@
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
-#include "tclArithSeries.h"
 
 /*
  * The state structure used by [foreach]. Note that the actual structure has
@@ -2867,7 +2866,7 @@ EachloopCmd(
 	/* Values */
 	if (TclHasInternalRep(objv[2+i*2],&tclAbstractListType)) {
 	    /* Special case for Abstract List */
-	    statePtr->aCopyList[i] = TclAbstractListObjCopy(interp, objv[2+i*2]);
+	    statePtr->aCopyList[i] = Tcl_AbstractListObjCopy(interp, objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;

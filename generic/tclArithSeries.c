@@ -43,9 +43,30 @@
  * are valid and will be equivalent to the empty list.
  */
 
+#define ArithSeriesIndexM(arithSeriesRepPtr, index) \
+    ((arithSeriesRepPtr)->isDouble ?					\
+     (((ArithSeriesDbl*)(arithSeriesRepPtr))->start+((index) * ((ArithSeriesDbl*)(arithSeriesRepPtr))->step)) \
+     :									\
+     ((arithSeriesRepPtr)->start+((index) * arithSeriesRepPtr->step)))
+
+static int TclArithSeriesObjStep(Tcl_Obj *arithSeriesPtr, Tcl_Obj **stepObj);
+static int TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr,
+                            Tcl_WideInt index, Tcl_Obj **elemObj);
+static Tcl_WideInt TclArithSeriesObjLength(Tcl_Obj *arithSeriesObj);
+static Tcl_Obj *TclArithSeriesObjRange(Tcl_Obj *arithSeriesPtr,
+			    Tcl_WideInt fromIdx, Tcl_WideInt toIdx);
+static Tcl_Obj *TclArithSeriesObjReverse(Tcl_Obj *arithSeriesPtr);
+static int TclArithSeriesGetElements(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, int *objcPtr, Tcl_Obj ***objvPtr);
+static Tcl_Obj *TclNewArithSeriesInt(Tcl_WideInt start,
+			    Tcl_WideInt end, Tcl_WideInt step,
+			    Tcl_WideInt len);
+static Tcl_Obj *TclNewArithSeriesDbl(double start, double end,
+			    double step, Tcl_WideInt len);
 static void DupArithSeriesRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void FreeArithSeriesRep(Tcl_Obj *arithSeriesObjPtr);
 static void UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr);
+static Tcl_Obj *Tcl_NewArithSeriesObj(int objc, Tcl_Obj *objv[]);
 
 static Tcl_AbstractListType arithSeriesType = {
 	TCL_ABSTRACTLIST_VERSION_1,

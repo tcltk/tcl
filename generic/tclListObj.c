@@ -1370,7 +1370,7 @@ TclListObjCopy(
 
     if (!TclHasInternalRep(listObj, &tclListType)) {
 	if (TclHasInternalRep(listObj,&tclAbstractListType)) {
-	    return TclAbstractListObjCopy(interp, listObj);
+	    return Tcl_AbstractListObjCopy(interp, listObj);
 	}
 	if (SetListFromAny(interp, listObj) != TCL_OK) {
 	    return NULL;

@@ -326,7 +326,7 @@ SetAbstractListFromAny(
 /*
  *----------------------------------------------------------------------
  *
- * TclAbstractListObjCopy --
+ * Tcl_AbstractListObjCopy --
  *
  *	Makes a "pure AbstractList" copy of an AbstractList value. This
  *	provides for the C level a counterpart of the [lrange $list 0 end]
@@ -347,7 +347,7 @@ SetAbstractListFromAny(
  */
 
 Tcl_Obj *
-TclAbstractListObjCopy(
+Tcl_AbstractListObjCopy(
     Tcl_Interp *interp,		 /* Used to report errors if not NULL. */
     Tcl_Obj *abstractListObjPtr) /* List object for which an element array is
 				  * to be returned. */

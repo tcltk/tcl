@@ -3113,8 +3113,8 @@ Tcl_LreverseObjCmd(
 	return TCL_ERROR;
     }
     /*
-     *  Handle ArithSeries special case - don't shimmer a series into a list
-     *  just to reverse it.
+     *  Handle AbstractList special case - don't shimmer a into a list if it
+     *  supports a private Reverse function just to reverse it.
      */
     if (TclHasInternalRep(objv[1],&tclAbstractListType) &&
 	TclAbstractListHasProc(objv[1], TCL_ABSL_REVERSE)) {
