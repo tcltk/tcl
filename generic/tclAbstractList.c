@@ -237,11 +237,22 @@ DupAbstractListInternalRep(
 static void
 UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
 {
+#   define LOCAL_SIZE 64
+    char localFlags[LOCAL_SIZE], *flagPtr = NULL;
     Tcl_AbstractListType *typePtr;
-    char *p, *str;
-    Tcl_Obj *eleObj;
-    Tcl_WideInt length = 0;
-    int llen, slen, i;
+    char *p;
+    int bytesNeeded = 0;
+    int llen, i;
+
+    /*
+     * TODO - this function essentially adapts the UpdateStringOfList function
+     * for native lists. Both functions allocate temporary storage for
+     * localFlags. I'm not sure if that is the best strategy for performance
+     * as well as memory for large list sizes. Revisit to see if growing
+     * the allocation on the fly would be better. Essentially combine the
+     * TclScanElement and TclConvertElement into one loop, growing the
+     * destination allocation if necessary.
+     */
 
     typePtr = AbstractListGetType(abstractListObjPtr);
 
@@ -255,35 +266,74 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
     }
 
     /*
-     * Pass 1: estimate space.
+     * TODO - do we need a AbstractList method to mark the list as canonical?
+     * Or perhaps are abstract lists always canonical?
+     * Mark the list as being canonical; although it will now have a string
+     * rep, it is one we derived through proper "canonical" quoting and so
+     * it's known to be free from nasties relating to [concat] and [eval].
+     *   listRepPtr->canonicalFlag = 1;
+     */
+
+
+    /*
+     * Handle empty list case first, so rest of the routine is simpler.
      */
     llen = typePtr->lengthProc(abstractListObjPtr);
     if (llen <= 0) {
 	Tcl_InitStringRep(abstractListObjPtr, NULL, 0);
 	return;
     }
-    for (i = 0; i < llen; i++) {
-	typePtr->indexProc(abstractListObjPtr, i, &eleObj);
-	Tcl_GetStringFromObj(eleObj, &slen);
-	length += slen + 1; /* one more for the space char */
-	Tcl_DecrRefCount(eleObj);
+
+    /*
+     * Pass 1: estimate space.
+     */
+    if (llen <= LOCAL_SIZE) {
+	flagPtr = localFlags;
+    } else {
+	/* We know numElems <= LIST_MAX, so this is safe. */
+	flagPtr = (char *) ckalloc(llen);
     }
+    for (bytesNeeded = 0, i = 0; i < llen; i++) {
+        Tcl_Obj *elemObj;
+        const char *elemStr;
+        int elemLen;
+	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
+	typePtr->indexProc(abstractListObjPtr, i, &elemObj);
+	elemStr = TclGetStringFromObj(elemObj, &elemLen);
+        /* Note TclScanElement updates flagPtr[i] */
+	bytesNeeded += TclScanElement(elemStr, elemLen, flagPtr+i);
+	if (bytesNeeded < 0) {
+	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+	}
+    }
+    if (bytesNeeded > INT_MAX - llen + 1) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+    }
+    bytesNeeded += llen; /* Separating spaces and terminating nul */
 
     /*
      * Pass 2: generate the string repr.
      */
-
-    p = Tcl_InitStringRep(abstractListObjPtr, NULL, length);
+    abstractListObjPtr->bytes = (char *) ckalloc(bytesNeeded);
+    p = abstractListObjPtr->bytes;
     for (i = 0; i < llen; i++) {
-	typePtr->indexProc(abstractListObjPtr, i, &eleObj);
-	str = Tcl_GetStringFromObj(eleObj, &slen);
-	strcpy(p, str);
-	p[slen] = ' ';
-	p += slen+1;
-	Tcl_DecrRefCount(eleObj);
+        Tcl_Obj *elemObj;
+        const char *elemStr;
+        int elemLen;
+	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
+	typePtr->indexProc(abstractListObjPtr, i, &elemObj);
+	elemStr = TclGetStringFromObj(elemObj, &elemLen);
+	p += TclConvertElement(elemStr, elemLen, p, flagPtr[i]);
+	*p++ = ' ';
     }
-    if (length > 0) abstractListObjPtr->bytes[length-1] = '\0';
-    abstractListObjPtr->length = length-1;
+    p[-1] = '\0'; /* Overwrite last space added */
+
+    /* Length of generated string */
+    abstractListObjPtr->length = p - 1 - abstractListObjPtr->bytes;
+
+    if (flagPtr != localFlags) {
+	ckfree(flagPtr);
+    }
 }
 
 /*
