@@ -33,6 +33,7 @@
 #endif
 #include "tclOO.h"
 #include <math.h>
+#include <stdbool.h>
 
 /*
  * Required for Testregexp*Cmd
@@ -2332,7 +2333,7 @@ TesteventProc(
     Tcl_Obj *command = ev->command;
     int result = Tcl_EvalObjEx(interp, command,
 	    TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
-    int retval;
+    bool retval;
 
     if (result != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
@@ -2904,7 +2905,8 @@ TestlinkCmd(
     static Tcl_WideUInt uwideVar = 123;
     static int created = 0;
     char buffer[2*TCL_DOUBLE_SPACE];
-    int writable, flag;
+    bool writable;
+    int flag;
     Tcl_Obj *tmp;
 
     if (argc < 2) {
@@ -2941,7 +2943,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[2], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "int", &intVar,
 		TCL_LINK_INT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2949,7 +2951,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[3], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "real", &realVar,
 		TCL_LINK_DOUBLE | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2957,7 +2959,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[4], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "bool", &boolVar,
 		TCL_LINK_BOOLEAN | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2965,7 +2967,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[5], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "string", &stringVar,
 		TCL_LINK_STRING | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2973,7 +2975,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[6], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "wide", &wideVar,
 			TCL_LINK_WIDE_INT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2981,7 +2983,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[7], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "char", &charVar,
 		TCL_LINK_CHAR | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2989,7 +2991,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[8], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "uchar", &ucharVar,
 		TCL_LINK_UCHAR | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2997,7 +2999,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[9], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "short", &shortVar,
 		TCL_LINK_SHORT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3005,7 +3007,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[10], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "ushort", &ushortVar,
 		TCL_LINK_USHORT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3013,7 +3015,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[11], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "uint", &uintVar,
 		TCL_LINK_UINT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3021,7 +3023,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[12], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "long", &longVar,
 		TCL_LINK_LONG | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3029,7 +3031,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[13], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "ulong", &ulongVar,
 		TCL_LINK_ULONG | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3037,7 +3039,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[14], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "float", &floatVar,
 		TCL_LINK_FLOAT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3045,7 +3047,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[15], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "uwide", &uwideVar,
 		TCL_LINK_WIDE_UINT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -5537,7 +5539,8 @@ TestsaveresultCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Interp* iPtr = (Interp*) interp;
-    int discard, result, index;
+    int result, index;
+    bool discard;
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
     static const char *const optionStrings[] = {
@@ -6522,7 +6525,7 @@ TestSocketCmd(
     if ((cmdName[0] == 't') && (strncmp(cmdName, "testflags", len) == 0)) {
         Tcl_Channel hChannel;
         int modePtr;
-        int testMode;
+        bool testMode;
         TcpState *statePtr;
         /* Set test value in the socket driver
          */
@@ -6746,7 +6749,8 @@ TestFilesystemObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int res, boolVal;
+    int res;
+    bool boolVal;
     const char *msg;
 
     if (objc != 2) {
@@ -7117,7 +7121,8 @@ TestSimpleFilesystemObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int res, boolVal;
+    int res;
+    bool boolVal;
     const char *msg;
 
     if (objc != 2) {
