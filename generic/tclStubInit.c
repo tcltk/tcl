@@ -2048,6 +2048,7 @@ const TclStubs tclStubs = {
     0, /* 680 */
     0, /* 681 */
     Tcl_RemoveChannelMode, /* 682 */
+    Tcl_GetEncodingNulLength, /* 683 */
 };
 
 /* !END!: Do not edit above this line. */

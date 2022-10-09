@@ -1996,11 +1996,16 @@ TestencodingObjCmd(
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
-	"create",	"delete",	NULL
+	"create", "delete", "nullength", NULL
     };
     enum options {
-	ENC_CREATE,	ENC_DELETE
+	ENC_CREATE, ENC_DELETE, ENC_NULLENGTH
     };
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 2, objv, "?encoding?");
+	return TCL_ERROR;
+    }
 
     if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
 	    &index) != TCL_OK) {
@@ -2012,6 +2017,7 @@ TestencodingObjCmd(
 	Tcl_EncodingType type;
 
 	if (objc != 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "name toutfcmd fromutfcmd");
 	    return TCL_ERROR;
 	}
 	encodingPtr = (TclEncoding*)ckalloc(sizeof(TclEncoding));
@@ -2048,6 +2054,20 @@ TestencodingObjCmd(
 	Tcl_FreeEncoding(encoding);	/* Free to match CREATE */
 	TclFreeInternalRep(objv[2]);		/* Free the cached ref */
 	break;
+
+    case ENC_NULLENGTH:
+	if (objc > 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "?encoding?");
+	    return TCL_ERROR;
+	}
+	encoding =
+	    Tcl_GetEncoding(interp, objc == 2 ? NULL : Tcl_GetString(objv[2]));
+	if (encoding == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp,
+			 Tcl_NewIntObj(Tcl_GetEncodingNulLength(encoding)));
+	Tcl_FreeEncoding(encoding);
     }
     return TCL_OK;
 }

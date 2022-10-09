@@ -2541,6 +2541,11 @@ declare 682 {
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
+# TIP 643
+declare 683 {
+   int Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
+}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only

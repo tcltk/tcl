@@ -2013,6 +2013,8 @@ EXTERN int		Tcl_NRCallObjProc2(Tcl_Interp *interp,
 /* 682 */
 EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
 				Tcl_Channel chan, int mode);
+/* 683 */
+EXTERN int		Tcl_GetEncodingNulLength(Tcl_Encoding encoding);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2731,6 +2733,7 @@ typedef struct TclStubs {
     void (*reserved680)(void);
     void (*reserved681)(void);
     int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
+    int (*tcl_GetEncodingNulLength) (Tcl_Encoding encoding); /* 683 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4125,6 +4128,8 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 681 is reserved */
 #define Tcl_RemoveChannelMode \
 	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
+#define Tcl_GetEncodingNulLength \
+	(tclStubsPtr->tcl_GetEncodingNulLength) /* 683 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
