@@ -33,7 +33,6 @@
 
 static void DupRepeatedListRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void FreeRepeatedListRep(Tcl_Obj *repeatedListObj);
-static void UpdateStringOfRepeatedList(Tcl_Obj *repeatedListObj);
 static Tcl_WideInt RepeatedListLength(Tcl_Obj *repeatedListObj);
 static int RepeatedListIndex(Tcl_Obj *repeatedListObj, Tcl_WideInt index, Tcl_Obj **elemObj);
 
@@ -155,7 +154,8 @@ TclNewRepeatedListObj(Tcl_Interp *interp,
 
     if (repetitions < 0) {
 	if (interp) {
-	    Tcl_SetResult(interp, "Negative repetitions specfied.", TCL_STATIC);
+	    Tcl_SetObjResult(
+		interp, Tcl_NewStringObj("Negative repetitions specified.", -1));
 	}
 	return NULL;
     }
@@ -165,8 +165,9 @@ TclNewRepeatedListObj(Tcl_Interp *interp,
 	}
 	if (subLen && repetitions > (LIST_MAX / subLen)) {
 	    if (interp) {
-		Tcl_SetResult(
-		    interp, "Maximum list length exceeded.", TCL_STATIC);
+		Tcl_SetObjResult(
+		    interp,
+		    Tcl_NewStringObj("Maximum list length exceeded.", -1));
 	    }
 	    return NULL;
 	}
