@@ -275,9 +275,9 @@ static int              WillRead(Channel *chanPtr);
  * --------------------------------------------------------------------------
  */
 
-#define BytesLeft(bufPtr)	(((bufPtr)->nextAdded - (bufPtr)->nextRemoved))
+#define BytesLeft(bufPtr)	((bufPtr)->nextAdded - (bufPtr)->nextRemoved)
 
-#define SpaceLeft(bufPtr)	(((bufPtr)->bufLength - (bufPtr)->nextAdded))
+#define SpaceLeft(bufPtr)	((bufPtr)->bufLength - (bufPtr)->nextAdded)
 
 #define IsBufferReady(bufPtr)	((bufPtr)->nextAdded > (bufPtr)->nextRemoved)
 
@@ -4047,8 +4047,8 @@ Tcl_ClearChannelHandlers(
  *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
- *	The number of bytes written or TCL_IO_FAILURE in case of error. If
- *	TCL_IO_FAILURE, Tcl_GetErrno will return the error code.
+ *	The number of bytes written or TCL_INDEX_NONE in case of error. If
+ *	TCL_INDEX_NONE, Tcl_GetErrno will return the error code.
  *
  * Side effects:
  *	May buffer up output and may cause output to be produced on the
@@ -4075,14 +4075,14 @@ Tcl_Write(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return TCL_IO_FAILURE;
+	return TCL_INDEX_NONE;
     }
 
     if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
     if (WriteBytes(chanPtr, src, srcLen) == -1) {
-	return TCL_IO_FAILURE;
+	return TCL_INDEX_NONE;
     }
     return srcLen;
 }
@@ -4101,8 +4101,8 @@ Tcl_Write(
  *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
- *	The number of bytes written or TCL_IO_FAILURE in case of error. If
- *	TCL_IO_FAILURE, Tcl_GetErrno will return the error code.
+ *	The number of bytes written or TCL_INDEX_NONE in case of error. If
+ *	TCL_INDEX_NONE, Tcl_GetErrno will return the error code.
  *
  * Side effects:
  *	May buffer up output and may cause output to be produced on the
@@ -4125,7 +4125,7 @@ Tcl_WriteRaw(
     size_t written;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | CHANNEL_RAW_MODE) != 0) {
-	return TCL_IO_FAILURE;
+	return TCL_INDEX_NONE;
     }
 
     if (srcLen == TCL_INDEX_NONE) {
@@ -4138,7 +4138,7 @@ Tcl_WriteRaw(
      */
 
     written = ChanWrite(chanPtr, src, srcLen, &errorCode);
-    if (written == TCL_IO_FAILURE) {
+    if (written == TCL_INDEX_NONE) {
 	Tcl_SetErrno(errorCode);
     }
 
@@ -4158,8 +4158,8 @@ Tcl_WriteRaw(
  *	specified channel to the topmost channel in a stack.
  *
  * Results:
- *	The number of bytes written or TCL_IO_FAILURE in case of error. If
- *	TCL_IO_FAILURE, Tcl_GetErrno will return the error code.
+ *	The number of bytes written or TCL_INDEX_NONE in case of error. If
+ *	TCL_INDEX_NONE, Tcl_GetErrno will return the error code.
  *
  * Side effects:
  *	May buffer up output and may cause output to be produced on the
@@ -4182,7 +4182,7 @@ Tcl_WriteChars(
     Tcl_Obj *objPtr, *copy;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return TCL_IO_FAILURE;
+	return TCL_INDEX_NONE;
     }
 
     chanPtr = statePtr->topChanPtr;
@@ -4257,7 +4257,7 @@ Tcl_WriteObj(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return TCL_IO_FAILURE;
+	return TCL_INDEX_NONE;
     }
     if (statePtr->encoding == NULL) {
 	int result;
@@ -4360,11 +4360,15 @@ Write(
     }
 
     /*
-     * Transfer encoding strict option to the encoding flags
+     * Transfer encoding strict/nocomplain option to the encoding flags
      */
+
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->outputEncodingFlags |= TCL_ENCODING_STRICT;
+    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->outputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
     } else {
 	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
@@ -4623,7 +4627,7 @@ Tcl_GetsObj(
     Tcl_EncodingState oldState;
 
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	return TCL_IO_FAILURE;
+	return TCL_INDEX_NONE;
     }
 
     /*
@@ -4638,7 +4642,7 @@ Tcl_GetsObj(
 
 	/* TODO: Do we need this? */
 	UpdateInterest(chanPtr);
-	return TCL_IO_FAILURE;
+	return TCL_INDEX_NONE;
     }
 
     /*
@@ -4687,11 +4691,14 @@ Tcl_GetsObj(
     }
 
     /*
-     * Transfer encoding strict option to the encoding flags
+     * Transfer encoding nocomplain/strict option to the encoding flags
      */
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
+    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
     } else {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
@@ -5455,11 +5462,14 @@ FilterInputBytes(
     gsPtr->state = statePtr->inputEncodingState;
 
     /*
-     * Transfer encoding strict option to the encoding flags
+     * Transfer encoding nocomplain/strict option to the encoding flags
      */
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
+    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
     } else {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
@@ -5714,7 +5724,7 @@ Tcl_Read(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	return TCL_IO_FAILURE;
+	return TCL_INDEX_NONE;
     }
 
     return DoRead(chanPtr, dst, bytesToRead, 0);
@@ -5755,7 +5765,7 @@ Tcl_ReadRaw(
 
     assert(bytesToRead > 0);
     if (CheckChannelErrors(statePtr, TCL_READABLE | CHANNEL_RAW_MODE) != 0) {
-	return TCL_IO_FAILURE;
+	return TCL_INDEX_NONE;
     }
 
     /*
@@ -6238,11 +6248,14 @@ ReadChars(
     }
 
     /*
-     * Transfer encoding strict option to the encoding flags
+     * Transfer encoding nocomplain/strict option to the encoding flags
      */
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
+    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
     } else {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
@@ -6745,7 +6758,7 @@ TranslateInputEOL(
  *	channel, at either the head or tail of the queue.
  *
  * Results:
- *	The number of bytes stored in the channel, or TCL_IO_FAILURE on error.
+ *	The number of bytes stored in the channel, or TCL_INDEX_NONE on error.
  *
  * Side effects:
  *	Adds input to the input queue of a channel.
@@ -6781,7 +6794,7 @@ Tcl_Ungets(
 
     flags = statePtr->flags;
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	len = TCL_IO_FAILURE;
+	len = TCL_INDEX_NONE;
 	goto done;
     }
     statePtr->flags = flags;
@@ -7977,6 +7990,16 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
+    if (len == 0 || HaveOpt(1, "-nocomplainencoding")) {
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-nocomplainencoding");
+	}
+	Tcl_DStringAppendElement(dsPtr,
+		(flags & CHANNEL_ENCODING_NOCOMPLAIN) ? "1" : "0");
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
     if (len == 0 || HaveOpt(1, "-strictencoding")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-strictencoding");
@@ -8250,6 +8273,26 @@ Tcl_SetChannelOption(
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	return TCL_OK;
+    } else if (HaveOpt(1, "-nocomplainencoding")) {
+	int newMode;
+
+	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (newMode) {
+	    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "-nocomplainencoding cannot be used with -strictencoding",
+			    -1));
+		}
+		return TCL_ERROR;
+	    }
+	    SetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
+	} else {
+	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
+	}
+	return TCL_OK;
     } else if (HaveOpt(1, "-strictencoding")) {
 	int newMode;
 
@@ -8257,6 +8300,14 @@ Tcl_SetChannelOption(
 	    return TCL_ERROR;
 	}
 	if (newMode) {
+	    if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "-strictencoding cannot be used with -nocomplainencoding",
+			    -1));
+		}
+		return TCL_ERROR;
+	    }
 	    SetFlag(statePtr, CHANNEL_ENCODING_STRICT);
 	} else {
 	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);

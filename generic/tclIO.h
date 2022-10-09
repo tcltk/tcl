@@ -273,6 +273,8 @@ typedef struct ChannelState {
 					 * changes. */
 #define CHANNEL_RAW_MODE	(1<<16)	/* When set, notes that the Raw API is
 					 * being used. */
+#define CHANNEL_ENCODING_NOCOMPLAIN	(1<<17)	/* set if option
+					 * -nocomplainencoding is set to 1 */
 #define CHANNEL_ENCODING_STRICT	(1<<18)	/* set if option
 					 * -strictencoding is set to 1 */
 #define CHANNEL_INCLOSE		(1<<19)	/* Channel is currently being closed.
