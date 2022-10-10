@@ -1260,6 +1260,7 @@ proc http::CreateToken {url args} {
 			   [GetFieldValue $state(-headers) Upgrade]]
     set state(upgradeRequest) [expr {    "upgrade" in $connectionValues
 				      && [llength $upgradeValues] >= 1}]
+    set state(connectionValues) $connectionValues
 
     if {$isQuery || $isQueryChannel} {
 	# It's a POST.
@@ -2104,24 +2105,25 @@ proc http::Connected {token proto phost srvurl} {
 	if {($state(-protocol) > 1.0) && $state(-keepalive)} {
 	    # Send this header, because a 1.1 server is not compelled to treat
 	    # this as the default.
-	    SendHeader $token Connection keep-alive
-	}
-	if {($state(-protocol) > 1.0) && !$state(-keepalive)} {
-	    SendHeader $token Connection close ;# RFC2616 sec 8.1.2.1
-	}
-	if {($state(-protocol) < 1.1)} {
+	    set ConnVal keep-alive
+	} elseif {($state(-protocol) > 1.0)} {
+	    # RFC2616 sec 8.1.2.1
+	    set ConnVal close
+	} else {
+	    # ($state(-protocol) <= 1.0)
 	    # RFC7230 A.1
 	    # Some server implementations of HTTP/1.0 have a faulty
 	    # implementation of RFC 2068 Keep-Alive.
 	    # Don't leave this to chance.
 	    # For HTTP/1.0 we have already "set state(connection) close"
 	    # and "state(-keepalive) 0".
-	    SendHeader $token Connection close
+	    set ConnVal close
 	}
 	# RFC7230 A.1 - "clients are encouraged not to send the
 	# Proxy-Connection header field in any requests"
 	set accept_encoding_seen 0
 	set content_type_seen 0
+	set connection_seen 0
 	foreach {key value} $state(-headers) {
 	    set value [string map [list \n "" \r ""] $value]
 	    set key [string map {" " -} [string trim $key]]
@@ -2141,6 +2143,24 @@ proc http::Connected {token proto phost srvurl} {
 		set contDone 1
 		set state(querylength) $value
 	    }
+	    if {[string equal -nocase $key "connection"]} {
+		# Remove "close" or "keep-alive" and use our own value.
+		# In an upgrade request, the upgrade is not guaranteed.
+		# Value "close" or "keep-alive" tells the server what to do
+		# if it refuses the upgrade.  We send a single "Connection"
+		# header because some websocket servers, e.g. civetweb, reject
+		# multiple headers. Bug [d01de3281f] of tcllib/websocket.
+		set connection_seen 1
+		set listVal $state(connectionValues)
+		if {[set pos [lsearch $listVal close]] != -1} {
+		    set listVal [lreplace $listVal $pos $pos]
+		}
+		if {[set pos [lsearch $listVal keep-alive]] != -1} {
+		    set listVal [lreplace $listVal $pos $pos]
+		}
+		lappend listVal $ConnVal
+		set value [join $listVal {, }]
+	    }
 	    if {[string length $key]} {
 		SendHeader $token $key $value
 	    }
@@ -2158,6 +2178,9 @@ proc http::Connected {token proto phost srvurl} {
 	} elseif {!$accept_encoding_seen} {
 	    SendHeader $token Accept-Encoding identity
 	} else {
+	}
+	if {!$connection_seen} {
+	    SendHeader $token Connection $ConnVal
 	}
 	if {$isQueryChannel && ($state(querylength) == 0)} {
 	    # Try to determine size of data in channel. If we cannot seek, the
