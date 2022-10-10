@@ -160,39 +160,19 @@ static void		GetJulianDayFromEraYearWeekDay(TclDateFields *, int);
 static void		GetJulianDayFromEraYearMonthDay(TclDateFields *, int);
 static int		IsGregorianLeapYear(TclDateFields *);
 static int		WeekdayOnOrBefore(int, int);
-static int		ClockClicksObjCmd(
-			    void *clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockConvertlocaltoutcObjCmd(
-			    void *clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockGetdatefieldsObjCmd(
-			    void *clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockGetjuliandayfromerayearmonthdayObjCmd(
-			    void *clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockGetjuliandayfromerayearweekdayObjCmd(
-			    void *clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockGetenvObjCmd(
-			    void *clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockMicrosecondsObjCmd(
-			    void *clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockMillisecondsObjCmd(
-			    void *clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockParseformatargsObjCmd(
-			    void *clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockSecondsObjCmd(
-			    void *clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ClockClicksObjCmd;
+static Tcl_ObjCmdProc ClockConvertlocaltoutcObjCmd;
+static Tcl_ObjCmdProc ClockGetdatefieldsObjCmd;
+static Tcl_ObjCmdProc ClockGetjuliandayfromerayearmonthdayObjCmd;
+static Tcl_ObjCmdProc ClockGetjuliandayfromerayearweekdayObjCmd;
+static Tcl_ObjCmdProc ClockGetenvObjCmd;
+static Tcl_ObjCmdProc ClockMicrosecondsObjCmd;
+static Tcl_ObjCmdProc ClockMillisecondsObjCmd;
+static Tcl_ObjCmdProc ClockParseformatargsObjCmd;
+static Tcl_ObjCmdProc ClockSecondsObjCmd;
 static struct tm *	ThreadSafeLocalTime(const time_t *);
 static void		TzsetIfNecessary(void);
-static void		ClockDeleteCmdProc(ClientData);
+static void		ClockDeleteCmdProc(void *);
 
 /*
  * Structure containing description of "native" clock commands to create.
