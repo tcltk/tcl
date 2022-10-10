@@ -2003,7 +2003,7 @@ TestencodingObjCmd(
     };
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?encoding?");
+	Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
 	return TCL_ERROR;
     }
 
