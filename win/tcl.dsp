@@ -760,7 +760,7 @@ SOURCE=..\doc\safe.n
 # End Source File
 # Begin Source File
 
-SOURCE=..\doc\SaveResult.3
+SOURCE=..\doc\SaveInterpState.3
 # End Source File
 # Begin Source File
 

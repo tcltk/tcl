@@ -51,18 +51,10 @@ static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, size_t resolvedPid,
 			    int options, int *codePtr, Tcl_Obj **msgPtr,
 			    Tcl_Obj **errorObjPtr);
 static Tcl_Obj *	BuildProcessStatusObj(ProcessInfo *info);
-static int		ProcessListObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		ProcessStatusObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		ProcessPurgeObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		ProcessAutopurgeObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ProcessListObjCmd;
+static Tcl_ObjCmdProc ProcessStatusObjCmd;
+static Tcl_ObjCmdProc ProcessPurgeObjCmd;
+static Tcl_ObjCmdProc ProcessAutopurgeObjCmd;
 
 /*
  *----------------------------------------------------------------------

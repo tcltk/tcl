@@ -368,10 +368,10 @@ static const Tcl_ObjType endOffsetType = {
  *
  *	Given 'bytes' pointing to 'numBytes' bytes, scan through them and
  *	count the number of whitespace runs that could be list element
- *	separators. If 'numBytes' is -1, scan to the terminating '\0'. Not a
- *	full list parser. Typically used to get a quick and dirty overestimate
- *	of length size in order to allocate space for an actual list parser to
- *	operate with.
+ *	separators. If 'numBytes' is TCL_INDEX_NONE, scan to the terminating
+ *	'\0'. Not a full list parser. Typically used to get a quick and dirty
+ *	overestimate of length size in order to allocate space for an actual
+ *	list parser to operate with.
  *
  * Results:
  *	Returns the largest number of list elements that could possibly be in
@@ -868,7 +868,7 @@ Tcl_SplitList(
      * string gets re-purposed to hold '\0' characters in the argv array.
      */
 
-    size = TclMaxListLength(list, -1, &end) + 1;
+    size = TclMaxListLength(list, TCL_INDEX_NONE, &end) + 1;
     length = end - list;
     argv = (const char **)Tcl_Alloc((size * sizeof(char *)) + length + 1);
 
@@ -891,7 +891,7 @@ Tcl_SplitList(
 	    Tcl_Free((void *)argv);
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"internal error in Tcl_SplitList", -1));
+			"internal error in Tcl_SplitList", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList",
 			NULL);
 	    }
@@ -941,7 +941,7 @@ Tcl_ScanElement(
     int *flagPtr)	/* Where to store information to guide
 			 * Tcl_ConvertCountedElement. */
 {
-    return Tcl_ScanCountedElement(src, -1, flagPtr);
+    return Tcl_ScanCountedElement(src, TCL_INDEX_NONE, flagPtr);
 }
 
 /*
@@ -952,8 +952,8 @@ Tcl_ScanElement(
  *	This function is a companion function to Tcl_ConvertCountedElement. It
  *	scans a string to see what needs to be done to it (e.g. add
  *	backslashes or enclosing braces) to make the string into a valid Tcl
- *	list element. If length is -1, then the string is scanned from src up
- *	to the first null byte.
+ *	list element. If length is TCL_INDEX_NONE, then the string is scanned
+ *	from src up to the first null byte.
  *
  * Results:
  *	The return value is an overestimate of the number of bytes that will
@@ -970,7 +970,7 @@ Tcl_ScanElement(
 size_t
 Tcl_ScanCountedElement(
     const char *src,		/* String to convert to Tcl list element. */
-    size_t length,		/* Number of bytes in src, or -1. */
+    size_t length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
     int *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
@@ -989,7 +989,7 @@ Tcl_ScanCountedElement(
  *	This function is a companion function to TclConvertElement. It scans a
  *	string to see what needs to be done to it (e.g. add backslashes or
  *	enclosing braces) to make the string into a valid Tcl list element. If
- *	length is -1, then the string is scanned from src up to the first null
+ *	length is TCL_INDEX_NONE, then the string is scanned from src up to the first null
  *	byte. A NULL value for src is treated as an empty string. The incoming
  *	value of *flagPtr is a report from the caller what additional flags it
  *	will pass to TclConvertElement().
@@ -1011,10 +1011,10 @@ Tcl_ScanCountedElement(
  *----------------------------------------------------------------------
  */
 
-size_t
+TCL_HASH_TYPE
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
-    size_t length,		/* Number of bytes in src, or -1. */
+    size_t length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
     char *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
@@ -1027,7 +1027,7 @@ TclScanElement(
     int extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    size_t bytesNeeded;		/* Buffer length computed to complete the
+    TCL_HASH_TYPE bytesNeeded;		/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
@@ -1318,7 +1318,7 @@ Tcl_ConvertElement(
     char *dst,		/* Place to put list-ified element. */
     int flags)		/* Flags produced by Tcl_ScanElement. */
 {
-    return Tcl_ConvertCountedElement(src, -1, dst, flags);
+    return Tcl_ConvertCountedElement(src, TCL_INDEX_NONE, dst, flags);
 }
 
 /*
@@ -1345,7 +1345,7 @@ Tcl_ConvertElement(
 size_t
 Tcl_ConvertCountedElement(
     const char *src,	/* Source information for list element. */
-    size_t length,		/* Number of bytes in src, or -1. */
+    size_t length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
@@ -1378,7 +1378,7 @@ Tcl_ConvertCountedElement(
 size_t
 TclConvertElement(
     const char *src,	/* Source information for list element. */
-    size_t length,		/* Number of bytes in src, or -1. */
+    size_t length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
@@ -1588,7 +1588,7 @@ Tcl_Merge(
     }
     for (i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
-	bytesNeeded += TclScanElement(argv[i], -1, &flagPtr[i]);
+	bytesNeeded += TclScanElement(argv[i], TCL_INDEX_NONE, &flagPtr[i]);
     }
     bytesNeeded += argc;
 
@@ -1600,7 +1600,7 @@ Tcl_Merge(
     dst = result;
     for (i = 0; i < argc; i++) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
-	dst += TclConvertElement(argv[i], -1, dst, flagPtr[i]);
+	dst += TclConvertElement(argv[i], TCL_INDEX_NONE, dst, flagPtr[i]);
 	*dst = ' ';
 	dst++;
     }
@@ -2704,7 +2704,7 @@ Tcl_DStringAppendElement(
     if (!quoteHash) {
 	flags |= TCL_DONT_QUOTE_HASH;
     }
-    newSize = dsPtr->length + needSpace + TclScanElement(element, -1, &flags);
+    newSize = dsPtr->length + needSpace + TclScanElement(element, TCL_INDEX_NONE, &flags);
     if (!quoteHash) {
 	flags |= TCL_DONT_QUOTE_HASH;
     }
@@ -2753,7 +2753,7 @@ Tcl_DStringAppendElement(
 	dsPtr->length++;
     }
 
-    dsPtr->length += TclConvertElement(element, -1, dst, flags);
+    dsPtr->length += TclConvertElement(element, TCL_INDEX_NONE, dst, flags);
     dsPtr->string[dsPtr->length] = '\0';
     return dsPtr->string;
 }
@@ -3395,12 +3395,10 @@ Tcl_GetIntForIndex(
     size_t endValue,		/* The value to be stored at "indexPtr" if
 				 * "objPtr" holds "end". */
     size_t *indexPtr)		/* Location filled in with an integer
-				 * representing an index. */
+				 * representing an index. May be NULL.*/
 {
     Tcl_WideInt wide;
 
-    /* Use platform-related size_t to wide-int to consider negative value
-     * TCL_INDEX_NONE if wide-int and size_t have different dimensions. */
     if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
@@ -3465,7 +3463,6 @@ GetEndOffsetFromObj(
 	    int numType;
 	    const char *opPtr;
 	    int t1 = 0, t2 = 0;
-	    size_t len;
 
 	    /* Value doesn't start with "e" */
 
@@ -3482,16 +3479,16 @@ GetEndOffsetFromObj(
 	     * Quick scan to see if multi-value list is even possible.
 	     * This relies on TclGetString() returning a NUL-terminated string.
 	     */
-	    if ((TclMaxListLength(bytes, -1, NULL) > 1)
+	    if ((TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1)
 
 		    /* If it's possible, do the full list parse. */
-	            && (TCL_OK == TclListObjLengthM(NULL, objPtr, &len))
-	            && (len > 1)) {
+	            && (TCL_OK == TclListObjLengthM(NULL, objPtr, &length))
+	            && (length > 1)) {
 	        goto parseError;
 	    }
 
 	    /* Passed the list screen, so parse for index arithmetic expression */
-	    if (TCL_OK == TclParseNumber(NULL, objPtr, NULL, NULL, -1, &opPtr,
+	    if (TCL_OK == TclParseNumber(NULL, objPtr, NULL, NULL, TCL_INDEX_NONE, &opPtr,
 	            TCL_PARSE_INTEGER_ONLY)) {
 		Tcl_WideInt w1=0, w2=0;
 
@@ -3507,7 +3504,7 @@ GetEndOffsetFromObj(
 		    }
 
 		    if (TCL_OK == TclParseNumber(NULL, objPtr, NULL, opPtr + 1,
-			    -1, NULL, TCL_PARSE_INTEGER_ONLY)) {
+			    TCL_INDEX_NONE, NULL, TCL_PARSE_INTEGER_ONLY)) {
 			/* ... value concludes with second valid integer */
 
 			/* Save second integer as wide if possible */
@@ -4392,7 +4389,7 @@ TclReToGlob(
 
   invalidGlob:
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, NULL);
     }
     Tcl_DStringFree(dsPtr);

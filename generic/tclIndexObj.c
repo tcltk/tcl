@@ -25,15 +25,9 @@ static int		GetIndexFromObjList(Tcl_Interp *interp,
 static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
 static void		DupIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		FreeIndex(Tcl_Obj *objPtr);
-static int		PrefixAllObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		PrefixLongestObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		PrefixMatchObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc PrefixAllObjCmd;
+static Tcl_ObjCmdProc PrefixLongestObjCmd;
+static Tcl_ObjCmdProc PrefixMatchObjCmd;
 static void		PrintUsage(Tcl_Interp *interp,
 			    const Tcl_ArgvInfo *argTable);
 
@@ -195,7 +189,7 @@ Tcl_GetIndexFromObjStruct(
     size_t offset,			/* The number of bytes between entries */
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
-    int flags,			/* 0, TCL_EXACT, TCL_INDEX_TEMP_TABLE or TCL_INDEX_NULL_OK */
+    int flags,			/* 0, TCL_EXACT, TCL_NULL_OK or TCL_INDEX_TEMP_TABLE */
     void *indexPtr)		/* Place to store resulting index. */
 {
     size_t index, idx, numAbbrev;
@@ -236,7 +230,7 @@ Tcl_GetIndexFromObjStruct(
     index = TCL_INDEX_NONE;
     numAbbrev = 0;
 
-    if (!*key && (flags & TCL_INDEX_NULL_OK)) {
+    if (!*key && (flags & TCL_NULL_OK)) {
 	goto uncachedDone;
     }
     /*
@@ -344,7 +338,7 @@ Tcl_GetIndexFromObjStruct(
 		    *entryPtr, NULL);
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    while (*entryPtr != NULL) {
-		if ((*NEXT_ENTRY(entryPtr, offset) == NULL) && !(flags & TCL_INDEX_NULL_OK)) {
+		if ((*NEXT_ENTRY(entryPtr, offset) == NULL) && !(flags & TCL_NULL_OK)) {
 		    Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : ""),
 			    " or ", *entryPtr, NULL);
 		} else if (**entryPtr) {
@@ -353,7 +347,7 @@ Tcl_GetIndexFromObjStruct(
 		}
 		entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    }
-	    if ((flags & TCL_INDEX_NULL_OK)) {
+	    if ((flags & TCL_NULL_OK)) {
 		Tcl_AppendStringsToObj(resultPtr, ", or \"\"", NULL);
 	    }
 	}

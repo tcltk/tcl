@@ -43,7 +43,6 @@ set StructList {
     Tcl_Pid \
     Tcl_QueuePosition \
     Tcl_ResolvedVarInfo \
-    Tcl_SavedResult \
     Tcl_ThreadDataKey \
     Tcl_ThreadId \
     Tcl_Time \
