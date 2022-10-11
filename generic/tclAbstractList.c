@@ -9,6 +9,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include "tcl.h"
 #include "tclAbstractList.h"
 
 
@@ -116,7 +117,11 @@ Tcl_NewAbstractListObj(Tcl_Interp *interp, const Tcl_AbstractListType* vTablePtr
  */
 
 int
-Tcl_AbstractListObjIndex(Tcl_Obj *abstractListObjPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr)
+Tcl_AbstractListObjIndex(
+    Tcl_Interp *interp,		 /* Used for error reporting if not NULL. */
+    Tcl_Obj *abstractListObjPtr, /* List obj */
+    Tcl_WideInt index,		 /* index to element of interest */
+    Tcl_Obj **elemObjPtr)	 /* Return value */
 {
     Tcl_AbstractListType *typePtr;
 
@@ -130,9 +135,15 @@ Tcl_AbstractListObjIndex(Tcl_Obj *abstractListObjPtr, Tcl_WideInt index, Tcl_Obj
      * from user code, then user has made a mistake.
      */
     if (typePtr == NULL) {
-	Tcl_Panic("Tcl_AbstractListObjIndex called without and AbstractList Obj.");
+	if (interp) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_NewStringObj("Tcl_AbstractListObjIndex called without and AbstractList Obj.", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", NULL);
+	    return TCL_ERROR;
+	}
     }
-    return typePtr->indexProc(abstractListObjPtr, index, elemObjPtr);
+    return typePtr->indexProc(interp, abstractListObjPtr, index, elemObjPtr);
 }
 
 /*
@@ -298,13 +309,15 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
         const char *elemStr;
         int elemLen;
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
-	typePtr->indexProc(abstractListObjPtr, i, &elemObj);
+	typePtr->indexProc(NULL, abstractListObjPtr, i, &elemObj);
+	Tcl_IncrRefCount(elemObj);
 	elemStr = TclGetStringFromObj(elemObj, &elemLen);
         /* Note TclScanElement updates flagPtr[i] */
 	bytesNeeded += TclScanElement(elemStr, elemLen, flagPtr+i);
 	if (bytesNeeded < 0) {
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
+	Tcl_DecrRefCount(elemObj);
     }
     if (bytesNeeded > INT_MAX - llen + 1) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
@@ -321,10 +334,12 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
         const char *elemStr;
         int elemLen;
 	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
-	typePtr->indexProc(abstractListObjPtr, i, &elemObj);
+	typePtr->indexProc(NULL, abstractListObjPtr, i, &elemObj);
+	Tcl_IncrRefCount(elemObj);
 	elemStr = TclGetStringFromObj(elemObj, &elemLen);
 	p += TclConvertElement(elemStr, elemLen, p, flagPtr[i]);
 	*p++ = ' ';
+	Tcl_DecrRefCount(elemObj);
     }
     p[-1] = '\0'; /* Overwrite last space added */
 
@@ -437,18 +452,23 @@ Tcl_AbstractListObjCopy(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
+int
 Tcl_AbstractListObjRange(
+    Tcl_Interp *interp,          /* For error messages. */
     Tcl_Obj *abstractListObjPtr, /* List object to take a range from. */
     Tcl_WideInt fromIdx,	 /* Index of first element to include. */
-    Tcl_WideInt toIdx)		 /* Index of last element to include. */
+    Tcl_WideInt toIdx,		 /* Index of last element to include. */
+    Tcl_Obj **newObjPtr)         /* return value */
 {
     Tcl_AbstractListType *typePtr;
     if (!TclHasInternalRep(abstractListObjPtr, &tclAbstractListType)) {
-	if (SetAbstractListFromAny(NULL, abstractListObjPtr) != TCL_OK) {
-	    /* We know this is going to panic, but it's the message we want */
-	    return NULL;
+	if (interp) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_NewStringObj("Not an AbstractList.", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", NULL);
 	}
+	return TCL_ERROR;
     }
     typePtr = Tcl_AbstractListGetType(abstractListObjPtr);
     /*
@@ -456,11 +476,12 @@ Tcl_AbstractListObjRange(
      * command also checks for NULL sliceProc, and won't call AbstractList
      */
     if (typePtr->sliceProc) {
-	return typePtr->sliceProc(abstractListObjPtr, fromIdx, toIdx);
+	return typePtr->sliceProc(interp, abstractListObjPtr, fromIdx, toIdx, newObjPtr);
     } else {
 	/* TODO ?shimmer avoided? */
 	Tcl_Obj *newObj = TclListObjCopy(NULL, abstractListObjPtr);
-	return newObj ? TclListObjRange(newObj, (ListSizeT)fromIdx, (ListSizeT)toIdx) : NULL;
+	*newObjPtr = (newObj ? TclListObjRange(newObj, (ListSizeT)fromIdx, (ListSizeT)toIdx) : NULL);
+	return (newObj ? TCL_OK : TCL_ERROR);
     }
 }
 
@@ -484,20 +505,34 @@ Tcl_AbstractListObjRange(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
+int
 Tcl_AbstractListObjReverse(
-    Tcl_Obj *abstractListObjPtr) /* List object to take a range from. */
+    Tcl_Interp *interp,          /* for reporting errors. */
+    Tcl_Obj *abstractListObjPtr, /* List object to take a range from. */
+    Tcl_Obj **newObjPtr)         /* New AbstractListObj */
 {
     Tcl_AbstractListType *typePtr;
-    if (!TclHasInternalRep(abstractListObjPtr, &tclAbstractListType) ||
-	!TclAbstractListHasProc(abstractListObjPtr, TCL_ABSL_REVERSE)) {
-	if (SetAbstractListFromAny(NULL, abstractListObjPtr) != TCL_OK) {
-	    /* We know this is going to panic, but it's the message we want */
-	    return NULL;
+
+    if (!TclHasInternalRep(abstractListObjPtr, &tclAbstractListType)) {
+	if (interp) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_NewStringObj("Not an AbstractList.", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", NULL);
 	}
+	return TCL_ERROR;
+    }
+    if (!TclAbstractListHasProc(abstractListObjPtr, TCL_ABSL_REVERSE)) {
+	if (interp) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_NewStringObj("lreverse not supported!", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREVERSE", NULL);
+	}
+	return TCL_ERROR;
     }
     typePtr = Tcl_AbstractListGetType(abstractListObjPtr);
-    return typePtr->reverseProc(abstractListObjPtr);
+    return typePtr->reverseProc(interp, abstractListObjPtr, newObjPtr);
 }
 
 
@@ -567,6 +602,31 @@ Tcl_AbstractListObjGetElements(
 	return TCL_ERROR;
     }
     return TCL_OK;
+}
+
+/*
+ * Returns pointer to the concrete type or NULL if not AbstractList or
+ * not abstract list of the same type as concrete type
+ */
+Tcl_AbstractListType *
+Tcl_AbstractListGetType(
+    Tcl_Obj *objPtr)         /* Object of type AbstractList */
+{
+    if (objPtr->typePtr != &tclAbstractListType) {
+	return NULL;
+    }
+    return (Tcl_AbstractListType *) objPtr->internalRep.twoPtrValue.ptr1;
+}
+
+/* Returns the storage used by the concrete abstract list type */
+void* Tcl_AbstractListGetConcreteRep(
+    Tcl_Obj *objPtr)         /* Object of type AbstractList */
+{
+    /* Public function, must check for NULL */
+    if (objPtr == NULL || objPtr->typePtr != &tclAbstractListType) {
+	return NULL;
+    }
+    return objPtr->internalRep.twoPtrValue.ptr2;
 }
 
 /*

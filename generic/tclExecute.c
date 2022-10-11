@@ -4871,15 +4871,17 @@ TEBCresume(
 
 	/* special case for AbstractList */
 	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
-	    Tcl_AbstractListType *typePtr;
-	    typePtr = Tcl_AbstractListGetType(valuePtr);
-	    length = typePtr->lengthProc(valuePtr);
+	    length = Tcl_AbstractListObjLength(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    typePtr->indexProc(valuePtr, index, &objResultPtr);
+	    if (Tcl_AbstractListObjIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
 	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
 	}
@@ -4937,20 +4939,18 @@ TEBCresume(
 
 	/* special case for AbstractList */
 	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
-	    Tcl_AbstractListType *typePtr;
-	    typePtr = Tcl_AbstractListGetType(valuePtr);
-	    length = typePtr->lengthProc(valuePtr);
+	    length = Tcl_AbstractListObjLength(valuePtr);
 
 	    /* Decode end-offset index values. */
-
 	    index = TclIndexDecode(opnd, length-1);
 
 	    /* Compute value @ index */
-	    if (index >= 0 && index < length) {
-		typePtr->indexProc(valuePtr, index, &objResultPtr);
-	    } else {
-		TclNewObj(objResultPtr);
+	    if (Tcl_AbstractListObjIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
 	    }
+
 	    pcAdjustment = 5;
 	    goto lindexFastPath2;
 	}
@@ -5150,17 +5150,14 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	{
-	    Tcl_AbstractListType *typePtr;
-	    typePtr = Tcl_AbstractListGetType(valuePtr);
-
-	    if (typePtr && TclAbstractListHasProc(valuePtr, TCL_ABSL_SLICE)) {
-		objResultPtr = typePtr->sliceProc(valuePtr, fromIdx, toIdx);
-	    } else {
-		objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
+	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
+	    if (Tcl_AbstractListObjRange(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
 	    }
+	} else {
+	    objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
 	}
-
 
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
@@ -5188,7 +5185,10 @@ TEBCresume(
 
 	    do {
 		if (isAbstractList) {
-		    Tcl_AbstractListObjIndex(value2Ptr, i, &o);
+		    if (Tcl_AbstractListObjIndex(interp, value2Ptr, i, &o) != TCL_OK) {
+			TRACE_ERROR(interp);
+			goto gotError;
+		    }
 		} else {
 		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		}

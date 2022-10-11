@@ -2547,19 +2547,22 @@ declare 684 {
     Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr)
 }
 declare 685 {
-    int Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr)
+    int Tcl_AbstractListObjIndex(Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr)
 }
 declare 686 {
-    Tcl_Obj *Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx)
+    int Tcl_AbstractListObjRange(Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx, Tcl_Obj **newObjPtr)
 }
 declare 687 {
-    Tcl_Obj *Tcl_AbstractListObjReverse(Tcl_Obj *abstractListPtr)
+    int Tcl_AbstractListObjReverse(Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_Obj **newObjPtr)
 }
 declare 688 {
     int Tcl_AbstractListObjGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr, int *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 689 {
     Tcl_Obj *Tcl_AbstractListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr)
+}
+declare 690 {
+    void *Tcl_AbstractListGetConcreteRep(Tcl_Obj *objPtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

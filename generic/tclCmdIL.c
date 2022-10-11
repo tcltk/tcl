@@ -2237,7 +2237,7 @@ Tcl_JoinObjCmd(
 	    Tcl_SetObjResult(interp, elemPtrs[0]);
 	} else {
             Tcl_Obj *elemObj;
-            if (Tcl_AbstractListObjIndex(objv[1], 0, &elemObj) != TCL_OK) {
+            if (Tcl_AbstractListObjIndex(interp, objv[1], 0, &elemObj) != TCL_OK) {
                 return TCL_ERROR;
             }
 	    Tcl_SetObjResult(interp, elemObj);
@@ -2725,7 +2725,12 @@ Tcl_LrangeObjCmd(
 
     if (TclHasInternalRep(objv[1],&tclAbstractListType) &&
 	TclAbstractListHasProc(objv[1], TCL_ABSL_SLICE)) {
-	Tcl_SetObjResult(interp, Tcl_AbstractListObjRange(objv[1], first, last));
+	Tcl_Obj *resultObj;
+	int status = Tcl_AbstractListObjRange(interp, objv[1], first, last, &resultObj);
+	if (status == TCL_OK) {
+	    Tcl_SetObjResult(interp, resultObj);
+	}
+	return status;
     } else {
 	Tcl_SetObjResult(interp, TclListObjRange(objv[1], first, last));
     }
@@ -3119,13 +3124,15 @@ Tcl_LreverseObjCmd(
     if (TclHasInternalRep(objv[1],&tclAbstractListType) &&
 	TclAbstractListHasProc(objv[1], TCL_ABSL_REVERSE)) {
 	Tcl_Obj *resultObj;
+	int status;
 
-	resultObj = Tcl_AbstractListObjReverse(objv[1]);
+	status = Tcl_AbstractListObjReverse(interp, objv[1], &resultObj);
 
-	if (resultObj) {
+	if (status == TCL_OK) {
 	    Tcl_SetObjResult(interp, resultObj);
-	    return TCL_OK;
 	}
+
+	return status;
 
     } /* end Abstract List */
 

@@ -3011,7 +3011,7 @@ ForeachAssignments(
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
 		if (isAbstractList) {
-		    if (Tcl_AbstractListObjIndex(statePtr->aCopyList[i], k, &valuePtr)
+		    if (Tcl_AbstractListObjIndex(interp, statePtr->aCopyList[i], k, &valuePtr)
                         != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (setting %s loop variable \"%s\")",

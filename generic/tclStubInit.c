@@ -2055,6 +2055,7 @@ const TclStubs tclStubs = {
     Tcl_AbstractListObjReverse, /* 687 */
     Tcl_AbstractListObjGetElements, /* 688 */
     Tcl_AbstractListObjCopy, /* 689 */
+    Tcl_AbstractListGetConcreteRep, /* 690 */
 };
 
 /* !END!: Do not edit above this line. */

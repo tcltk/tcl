@@ -729,17 +729,20 @@ typedef void (Tcl_FinalizeNotifierProc) (ClientData clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
 /* Abstract List functions */
-typedef struct Tcl_Obj* (Tcl_ALNewObjProc) (int objc, struct Tcl_Obj *objv[]);
-typedef           void  (Tcl_ALDupRepProc) (struct Tcl_Obj *srcPtr, struct Tcl_Obj *copyPtr);
-typedef     Tcl_WideInt (Tcl_ALLengthProc) (struct Tcl_Obj *listPtr);
-typedef             int (Tcl_ALIndexProc) (struct Tcl_Obj *listPtr, Tcl_WideInt index, struct Tcl_Obj** elemObj);
-typedef struct Tcl_Obj* (Tcl_ALSliceProc) (struct Tcl_Obj *listPtr, Tcl_WideInt fromIdx,
-                                           Tcl_WideInt toIdx);
-typedef struct Tcl_Obj* (Tcl_ALReverseProc) (struct Tcl_Obj *listPtr);
-typedef            int  (Tcl_ALGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-                                             int *objcptr, struct Tcl_Obj ***objvptr);
-typedef           void  (Tcl_ALFreeConcreteRep) (struct Tcl_Obj *listPtr);
-typedef           void  (Tcl_ALToStringRep) (struct Tcl_Obj *listPtr);
+typedef struct Tcl_Obj* (Tcl_ALNewObjProc) (int objc, struct Tcl_Obj * const objv[]);
+typedef		  void	(Tcl_ALDupRepProc) (struct Tcl_Obj *srcPtr, struct Tcl_Obj *copyPtr);
+typedef	   Tcl_WideInt	(Tcl_ALLengthProc) (struct Tcl_Obj *listPtr);
+typedef		   int	(Tcl_ALIndexProc)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					    Tcl_WideInt index, struct Tcl_Obj** elemObj);
+typedef		   int	(Tcl_ALSliceProc)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					    Tcl_WideInt fromIdx, Tcl_WideInt toIdx,
+					    struct Tcl_Obj **newObjPtr);
+typedef		   int	(Tcl_ALReverseProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					     struct Tcl_Obj **newObjPtr);
+typedef		   int	(Tcl_ALGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					     int *objcptr, struct Tcl_Obj ***objvptr);
+typedef		  void	(Tcl_ALFreeConcreteRep) (struct Tcl_Obj *listPtr);
+typedef		  void	(Tcl_ALToStringRep) (struct Tcl_Obj *listPtr);
 
 typedef enum {
     TCL_ABSL_NEW, TCL_ABSL_DUPREP, TCL_ABSL_LENGTH, TCL_ABSL_INDEX,
@@ -866,32 +869,6 @@ typedef struct Tcl_AbstractListType {
     Tcl_ALToStringRep *toStringProc;	/* Optimized "to-string" conversion
                                         ** for updating the string rep */
 } Tcl_AbstractListType;
-
-extern const Tcl_ObjType tclAbstractListType;
-
-/*
- * Returns pointer to the concrete type or NULL if not AbstractList or
- * not abstract list of the same type as concrete type
- */
-static inline Tcl_AbstractListType *Tcl_AbstractListGetType(
-	Tcl_Obj *objPtr)
-{
-    if (objPtr->typePtr != &tclAbstractListType) {
-	return NULL;
-    }
-    return (Tcl_AbstractListType *) objPtr->internalRep.twoPtrValue.ptr1;
-}
-
-/* Returns the storage used by the concrete abstract list type */
-static inline void* Tcl_AbstractListGetConcreteRep(
-    Tcl_Obj *objPtr)         /* Object of type AbstractList */
-{
-    /* Public function, must check for NULL */
-    if (objPtr == NULL || objPtr->typePtr != &tclAbstractListType) {
-	return NULL;
-    }
-    return objPtr->internalRep.twoPtrValue.ptr2;
-}
 
 /*
  * Sets the storage used by the concrete abstract list type

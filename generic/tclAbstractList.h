@@ -14,6 +14,8 @@
 
 #include "tclInt.h"
 
+Tcl_AbstractListType * Tcl_AbstractListGetType(Tcl_Obj *objPtr);
+
 static inline const char*
 Tcl_AbstractListTypeName(
     Tcl_Obj *objPtr) /* Should be of type AbstractList */
@@ -29,11 +31,17 @@ Tcl_AbstractListTypeName(
 
 Tcl_Obj *   Tcl_NewAbstractListObj(Tcl_Interp *interp, const Tcl_AbstractListType *);
 Tcl_WideInt Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr);
-int         Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObj);
-Tcl_Obj *   Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx);
-Tcl_Obj *   Tcl_AbstractListObjReverse(Tcl_Obj *abstractListPtr);
-int         Tcl_AbstractListObjGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr, int *objcPtr, Tcl_Obj ***objvPtr);
+int	    Tcl_AbstractListObjIndex(Tcl_Interp *interp, Tcl_Obj *abstractListPtr,
+		Tcl_WideInt index, Tcl_Obj **elemObj);
+int	    Tcl_AbstractListObjRange(Tcl_Interp *interp, Tcl_Obj *abstractListPtr,
+		Tcl_WideInt fromIdx, Tcl_WideInt toIdx, Tcl_Obj **newObjPtr);
+int	    Tcl_AbstractListObjReverse(Tcl_Interp *interp, Tcl_Obj *abstractListPtr,
+		Tcl_Obj **newObjPtr);
+int	    Tcl_AbstractListObjGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr, int *objcPtr,
+		Tcl_Obj ***objvPtr);
 Tcl_Obj *   Tcl_AbstractListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
+void	*   Tcl_AbstractListGetConcreteRep(Tcl_Obj *objPtr);
+
 
 #endif
 
