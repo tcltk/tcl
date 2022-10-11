@@ -5839,6 +5839,102 @@ ObjFindNamespaceVar(
 /*
  *----------------------------------------------------------------------
  *
+ * InfoUpvarCmd --
+ *
+ *	Called to implement the "info upvar" command that returns the target
+ *      of an upvar command given the alias. The return value is a list.
+ *      If the argument is not an alias, the list is empty. Otherwise the
+ *      list consists of 2 or 3 elements: level name ?subscript?
+ *      The subscript element is only present if name is an array.
+ *
+ *	    info upvar name
+ *
+ *      If the argument is not a variable, an error is raised.
+ *
+ * Results:
+ *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
+ *
+ * Side effects:
+ *	Returns a result in the interpreter's result object. If there is an
+ *	error, the result is an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclInfoUpvarCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Var *varPtr;
+    Tcl_Obj *listPtr, *varObjPtr, *elemObjPtr = NULL;
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *framePtr;
+    const char *errMsg = NULL;
+    int index, level = 0;
+
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "name");
+        return TCL_ERROR;
+    }
+    varPtr = TclLookupSimpleVar(interp, objv[1], 
+      TCL_LEAVE_ERR_MSG, 0, &errMsg, &index);
+    if (varPtr == NULL) {
+        TclObjVarErrMsg(interp, objv[1], NULL, "stat", errMsg, -1);
+        return TCL_ERROR;
+    }
+    if (TclIsVarLink(varPtr)) {
+        Tcl_HashTable *tablePtr;
+        varPtr = varPtr->value.linkPtr;
+        if (TclIsVarArrayElement(varPtr)) {
+            ArrayVarHashTable *avhtPtr = (ArrayVarHashTable *)
+              ((VarInHash *) varPtr)->entry.tablePtr;
+            elemObjPtr = VarHashGetKey(varPtr);
+            varPtr = avhtPtr->table.arrayPtr;
+        }
+
+        /*
+         * Walk up the call frames and compare the local variable hash table
+         * against the hash table that contains the alias we're looking for
+         */
+
+        tablePtr = ((VarInHash *) varPtr)->entry.tablePtr;
+        for (framePtr = iPtr->varFramePtr; framePtr != NULL;
+          framePtr = framePtr->callerVarPtr) {
+            if ((Tcl_HashTable *)framePtr->varTablePtr == tablePtr) {
+                level = (int)framePtr->level;
+                break;
+            }
+        }
+
+        if (level == 0 && TclGetVarNsPtr(varPtr) != iPtr->globalNsPtr) {
+            /*
+             * The reference variable must be a namespace variable.
+             * In that case thefull name must be reported.
+             */
+            TclNewObj(varObjPtr);
+            Tcl_GetVariableFullName(interp, (Tcl_Var)varPtr, varObjPtr);
+        } else {
+            varObjPtr = VarHashGetKey(varPtr);
+        }
+
+        listPtr = Tcl_NewListObj(2, NULL);
+        Tcl_ListObjAppendElement(interp, listPtr, Tcl_NewWideIntObj(level));
+        Tcl_ListObjAppendElement(interp, listPtr, varObjPtr);
+        if (elemObjPtr) {
+            Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
+        }
+        Tcl_SetObjResult(interp, listPtr);
+    }
+    
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * InfoVarsCmd -- (moved over from tclCmdIL.c)
  *
  *	Called to implement the "info vars" command that returns the list of
