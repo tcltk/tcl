@@ -12,7 +12,7 @@
 vwait \- Process events until a variable is written
 .SH SYNOPSIS
 \fBvwait\fR \fIvarName\fR
-.PP
+.sp
 \fBvwait\fR ?\fIoptions\fR? ?\fIvarName ...\fR?
 .BE
 .SH DESCRIPTION
