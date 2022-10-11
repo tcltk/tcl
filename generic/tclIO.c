@@ -4466,7 +4466,7 @@ Write(
 	 * current output encoding and strict encoding is active.
 	 */
 
-	if (result == TCL_CONVERT_UNKNOWN) {
+	if (result == TCL_CONVERT_UNKNOWN || result == TCL_CONVERT_SYNTAX) {
 	    encodingError = 1;
 	    result = TCL_OK;
 	}
@@ -5516,6 +5516,11 @@ FilterInputBytes(
 	    &statePtr->inputEncodingState, dst, spaceLeft, &gsPtr->rawRead,
 	    &gsPtr->bytesWrote, &gsPtr->charsWrote);
 
+	if (result == TCL_CONVERT_UNKNOWN || result == TCL_CONVERT_SYNTAX) {
+		SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+		result = TCL_OK;
+	}
+
     /*
      * Make sure that if we go through 'gets', that we reset the
      * TCL_ENCODING_START flag still. [Bug #523988]
@@ -6343,6 +6348,11 @@ ReadChars(
 	code = Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		flags, &statePtr->inputEncodingState,
 		dst, dstLimit, &srcRead, &dstDecoded, &numChars);
+
+	if (code == TCL_CONVERT_UNKNOWN || code == TCL_CONVERT_SYNTAX) {
+		SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+	    code = TCL_OK;
+	}
 
 	/*
 	 * Perform the translation transformation in place.  Read no more than

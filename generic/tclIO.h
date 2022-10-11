@@ -271,6 +271,8 @@ typedef struct ChannelState {
 					 * delivered for buffered data until
 					 * the state of the channel
 					 * changes. */
+#define CHANNEL_ENCODING_ERROR	(1<<15)	/* set if channel
+					 * encountered an encoding error */
 #define CHANNEL_RAW_MODE	(1<<16)	/* When set, notes that the Raw API is
 					 * being used. */
 #define CHANNEL_ENCODING_NOCOMPLAIN	(1<<17)	/* set if option
