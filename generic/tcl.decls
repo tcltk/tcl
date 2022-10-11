@@ -2502,8 +2502,14 @@ declare 673 {
     int TclGetUniChar(Tcl_Obj *objPtr, int index)
 }
 
-# slot 674 and 675 are reserved for TIP #618
-
+declare 674 {
+    int Tcl_GetBool(Tcl_Interp *interp, const char *src, int flags,
+	    char *charPtr)
+}
+declare 675 {
+    int Tcl_GetBoolFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int flags, char *charPtr)
+}
 declare 676 {
     Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
 	    const char *cmdName,

@@ -14,6 +14,10 @@
 
 #include <stddef.h> /* for size_t */
 
+#ifdef TCL_NO_DEPRECATED
+#   define Tcl_SavedResult void
+#endif /* TCL_NO_DEPRECATED */
+
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
 #   define TCL_STORAGE_CLASS DLLEXPORT
@@ -1979,8 +1983,12 @@ EXTERN const char *	TclUtfAtIndex(const char *src, int index);
 EXTERN Tcl_Obj *	TclGetRange(Tcl_Obj *objPtr, int first, int last);
 /* 673 */
 EXTERN int		TclGetUniChar(Tcl_Obj *objPtr, int index);
-/* Slot 674 is reserved */
-/* Slot 675 is reserved */
+/* 674 */
+EXTERN int		Tcl_GetBool(Tcl_Interp *interp, const char *src,
+				int flags, char *charPtr);
+/* 675 */
+EXTERN int		Tcl_GetBoolFromObj(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, int flags, char *charPtr);
 /* 676 */
 EXTERN Tcl_Command	Tcl_CreateObjCommand2(Tcl_Interp *interp,
 				const char *cmdName, Tcl_ObjCmdProc2 *proc2,
@@ -2720,8 +2728,8 @@ typedef struct TclStubs {
     const char * (*tclUtfAtIndex) (const char *src, int index); /* 671 */
     Tcl_Obj * (*tclGetRange) (Tcl_Obj *objPtr, int first, int last); /* 672 */
     int (*tclGetUniChar) (Tcl_Obj *objPtr, int index); /* 673 */
-    void (*reserved674)(void);
-    void (*reserved675)(void);
+    int (*tcl_GetBool) (Tcl_Interp *interp, const char *src, int flags, char *charPtr); /* 674 */
+    int (*tcl_GetBoolFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, char *charPtr); /* 675 */
     Tcl_Command (*tcl_CreateObjCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 676 */
     Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
     Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 678 */
@@ -4107,8 +4115,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclGetRange) /* 672 */
 #define TclGetUniChar \
 	(tclStubsPtr->tclGetUniChar) /* 673 */
-/* Slot 674 is reserved */
-/* Slot 675 is reserved */
+#define Tcl_GetBool \
+	(tclStubsPtr->tcl_GetBool) /* 674 */
+#define Tcl_GetBoolFromObj \
+	(tclStubsPtr->tcl_GetBoolFromObj) /* 675 */
 #define Tcl_CreateObjCommand2 \
 	(tclStubsPtr->tcl_CreateObjCommand2) /* 676 */
 #define Tcl_CreateObjTrace2 \
@@ -4239,30 +4249,8 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
 #undef Tcl_SaveResult
-static TCL_DEPRECATED_API("Use Tcl_SaveInterpState") void Tcl_SaveResult_(void) {}
-#define Tcl_SaveResult(interp, statePtr) \
-	do { \
-	    Tcl_SaveResult_(); \
-	    (statePtr)->objResultPtr = Tcl_GetObjResult(interp); \
-	    Tcl_IncrRefCount((statePtr)->objResultPtr); \
-	    Tcl_SetObjResult(interp, Tcl_NewObj()); \
-	} while(0)
 #undef Tcl_RestoreResult
-static TCL_DEPRECATED_API("Use Tcl_RestoreInterpState") void Tcl_RestoreResult_(void) {}
-#define Tcl_RestoreResult(interp, statePtr) \
-	do { \
-	    Tcl_RestoreResult_(); \
-	    Tcl_ResetResult(interp); \
-   	    Tcl_SetObjResult(interp, (statePtr)->objResultPtr); \
-   	    Tcl_DecrRefCount((statePtr)->objResultPtr); \
-	} while(0)
 #undef Tcl_DiscardResult
-static TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void Tcl_DiscardResult_(void) {}
-#define Tcl_DiscardResult(statePtr) \
-	do { \
-	    Tcl_DiscardResult_(); \
-	    Tcl_DecrRefCount((statePtr)->objResultPtr); \
-	} while(0)
 #undef Tcl_SetResult
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
@@ -4500,6 +4488,9 @@ static TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void Tcl_DiscardResult_(
  * Deprecated Tcl procedures:
  */
 
+#ifdef TCL_NO_DEPRECATED
+#   undef Tcl_SavedResult
+#endif /* TCL_NO_DEPRECATED */
 #undef Tcl_EvalObj
 #define Tcl_EvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, 0)

@@ -145,7 +145,9 @@ typedef struct {
  * was called for a result.
  */
 
+#ifndef TCL_NO_DEPRECATED
 static int freeCount;
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
@@ -297,8 +299,10 @@ static Tcl_ObjCmdProc	TestregexpObjCmd;
 static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
 			    int length, int *cflagsPtr, int *eflagsPtr);
+#ifndef TCL_NO_DEPRECATED
 static Tcl_ObjCmdProc	TestsaveresultCmd;
 static void		TestsaveresultFree(char *blockPtr);
+#endif /* TCL_NO_DEPRECATED */
 static Tcl_CmdProc	TestsetassocdataCmd;
 static Tcl_CmdProc	TestsetCmd;
 static Tcl_CmdProc	Testset2Cmd;
@@ -690,8 +694,10 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
 	    NULL, NULL);
+#ifndef TCL_NO_DEPRECATED
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
 	    NULL, NULL);
+#endif
     Tcl_CreateCommand(interp, "testservicemode", TestServiceModeCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetassocdata", TestsetassocdataCmd,
@@ -2935,7 +2941,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[2], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "int", &intVar,
 		TCL_LINK_INT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2943,7 +2949,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[3], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "real", &realVar,
 		TCL_LINK_DOUBLE | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2951,7 +2957,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[4], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "bool", &boolVar,
 		TCL_LINK_BOOLEAN | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2959,7 +2965,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[5], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "string", &stringVar,
 		TCL_LINK_STRING | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2967,7 +2973,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[6], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "wide", &wideVar,
 			TCL_LINK_WIDE_INT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2975,7 +2981,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[7], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "char", &charVar,
 		TCL_LINK_CHAR | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2983,7 +2989,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[8], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "uchar", &ucharVar,
 		TCL_LINK_UCHAR | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2991,7 +2997,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[9], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "short", &shortVar,
 		TCL_LINK_SHORT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2999,7 +3005,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[10], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "ushort", &ushortVar,
 		TCL_LINK_USHORT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3007,7 +3013,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[11], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "uint", &uintVar,
 		TCL_LINK_UINT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3015,7 +3021,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[12], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "long", &longVar,
 		TCL_LINK_LONG | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3023,7 +3029,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[13], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "ulong", &ulongVar,
 		TCL_LINK_ULONG | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3031,7 +3037,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[14], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "float", &floatVar,
 		TCL_LINK_FLOAT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3039,7 +3045,7 @@ TestlinkCmd(
 	if (Tcl_GetBoolean(interp, argv[15], &writable) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	flag = writable ? 0 : TCL_LINK_READ_ONLY;
 	if (Tcl_LinkVar(interp, "uwide", &uwideVar,
 		TCL_LINK_WIDE_UINT | flag) != TCL_OK) {
 	    return TCL_ERROR;
@@ -5522,6 +5528,7 @@ Testset2Cmd(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static int
 TestsaveresultCmd(
     TCL_UNUSED(void *),
@@ -5635,6 +5642,7 @@ TestsaveresultFree(
 {
     freeCount++;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

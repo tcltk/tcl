@@ -817,6 +817,7 @@ typedef struct Tcl_Obj {
  * typically allocated on the stack.
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct Tcl_SavedResult {
     char *result;
     Tcl_FreeProc *freeProc;
@@ -826,6 +827,7 @@ typedef struct Tcl_SavedResult {
     int appendUsed;
     char resultSpace[200+1];
 } Tcl_SavedResult;
+#endif
 
 /*
  *----------------------------------------------------------------------------
@@ -1003,14 +1005,14 @@ typedef struct Tcl_DString {
 /*
  * Flags that may be passed to Tcl_GetIndexFromObj.
  * TCL_EXACT disallows abbreviated strings.
- * TCL_INDEX_NULL_OK allows the empty string or NULL to return TCL_OK.
+ * TCL_NULL_OK allows the empty string or NULL to return TCL_OK.
  *      The returned value will be -1;
  * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
  *      a table that will not live long enough to make it worthwhile.
  */
 
 #define TCL_EXACT		1
-#define TCL_INDEX_NULL_OK	32
+#define TCL_NULL_OK		32
 #define TCL_INDEX_TEMP_TABLE	64
 
 /*
@@ -2132,6 +2134,7 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_CHAR_LIMIT		0x10
 #define TCL_ENCODING_MODIFIED		0x20
 #define TCL_ENCODING_NOCOMPLAIN		0x40
+#define TCL_ENCODING_STRICT			0x44
 
 /*
  * The following definitions are the error codes returned by the conversion
