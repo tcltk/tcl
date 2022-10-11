@@ -9146,7 +9146,7 @@ test io-75.10 {incomplete shiftjis encoding read is ignored} -setup {
 
 
 
-test io-75.0 {channel modes} -setup {
+test io-76.0 {channel modes} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r]
 } -constraints testchannel -body {
@@ -9156,7 +9156,7 @@ test io-75.0 {channel modes} -setup {
     removeFile dummy
 } -result {read {}}
 
-test io-75.1 {channel modes} -setup {
+test io-76.1 {channel modes} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile w]
 } -constraints testchannel -body {
@@ -9166,7 +9166,7 @@ test io-75.1 {channel modes} -setup {
     removeFile dummy
 } -result {{} write}
 
-test io-75.2 {channel modes} -setup {
+test io-76.2 {channel modes} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r+]
 } -constraints testchannel -body {
@@ -9176,7 +9176,7 @@ test io-75.2 {channel modes} -setup {
     removeFile dummy
 } -result {read write}
 
-test io-75.3 {channel mode dropping} -setup {
+test io-76.3 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r]
 } -constraints testchannel -body {
@@ -9187,7 +9187,7 @@ test io-75.3 {channel mode dropping} -setup {
     removeFile dummy
 } -result {{read {}} {read {}}}
 
-test io-75.4 {channel mode dropping} -setup {
+test io-76.4 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r]
 } -constraints testchannel -body {
@@ -9197,7 +9197,7 @@ test io-75.4 {channel mode dropping} -setup {
     removeFile dummy
 } -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
 
-test io-75.5 {channel mode dropping} -setup {
+test io-76.5 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile w]
 } -constraints testchannel -body {
@@ -9208,7 +9208,7 @@ test io-75.5 {channel mode dropping} -setup {
     removeFile dummy
 } -result {{{} write} {{} write}}
 
-test io-75.6 {channel mode dropping} -setup {
+test io-76.6 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile w]
 } -constraints testchannel -body {
@@ -9218,7 +9218,7 @@ test io-75.6 {channel mode dropping} -setup {
     removeFile dummy
 } -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
 
-test io-75.7 {channel mode dropping} -setup {
+test io-76.7 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r+]
 } -constraints testchannel -body {
@@ -9229,7 +9229,7 @@ test io-75.7 {channel mode dropping} -setup {
     removeFile dummy
 } -result {{{} write} {read write}}
 
-test io-75.8 {channel mode dropping} -setup {
+test io-76.8 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r+]
 } -constraints testchannel -body {
@@ -9240,7 +9240,7 @@ test io-75.8 {channel mode dropping} -setup {
     removeFile dummy
 } -result {{read {}} {read write}}
 
-test io-75.9 {channel mode dropping} -setup {
+test io-76.9 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r+]
 } -constraints testchannel -body {
@@ -9251,7 +9251,7 @@ test io-75.9 {channel mode dropping} -setup {
     removeFile dummy
 } -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
 
-test io-75.10 {channel mode dropping} -setup {
+test io-76.10 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r+]
 } -constraints testchannel -body {

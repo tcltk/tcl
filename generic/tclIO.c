@@ -4361,14 +4361,16 @@ Write(
     }
 
     /*
-     * Transfer encoding strict/nocomplain option to the encoding flags
+     * Transfer encoding nocomplain/strict option to the encoding flags
      */
 
+    if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+	statePtr->outputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
+    } else {
+	statePtr->outputEncodingFlags &= ~TCL_ENCODING_NOCOMPLAIN;
+    }
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->outputEncodingFlags |= TCL_ENCODING_STRICT;
-    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
-	statePtr->outputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
     } else {
 	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
@@ -4694,11 +4696,13 @@ Tcl_GetsObj(
      * Transfer encoding nocomplain/strict option to the encoding flags
      */
 
+    if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
+    } else {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_NOCOMPLAIN;
+    }
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
-    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
-	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
     } else {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
@@ -5465,11 +5469,13 @@ FilterInputBytes(
      * Transfer encoding nocomplain/strict option to the encoding flags
      */
 
+    if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
+    } else {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_NOCOMPLAIN;
+    }
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
-    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
-	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
     } else {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
@@ -6251,11 +6257,13 @@ ReadChars(
      * Transfer encoding nocomplain/strict option to the encoding flags
      */
 
+    if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
+    } else {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_NOCOMPLAIN;
+    }
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
-    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
-	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
     } else {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }

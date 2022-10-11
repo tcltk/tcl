@@ -1895,6 +1895,8 @@ typedef struct Tcl_EncodingType {
  *				reset to an initial state. If the source
  *				buffer contains the entire input stream to be
  *				converted, this flag should be set.
+ * TCL_ENCODING_STRICT -	Be more strict in accepting what
+ *				is considered a 'invalid byte sequence'.
  * TCL_ENCODING_STOPONERROR -	Not used any more.
  * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf does not append a
  *				terminating NUL byte.  Since it does not need
@@ -1926,12 +1928,12 @@ typedef struct Tcl_EncodingType {
 
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
+#define TCL_ENCODING_STRICT			0x04
 #define TCL_ENCODING_STOPONERROR	0x0 /* Not used any more */
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
 #define TCL_ENCODING_MODIFIED		0x20
 #define TCL_ENCODING_NOCOMPLAIN		0x40
-#define TCL_ENCODING_STRICT			0x44
 
 /*
  * The following definitions are the error codes returned by the conversion

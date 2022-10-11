@@ -2228,7 +2228,7 @@ BinaryProc(
  *-------------------------------------------------------------------------
  */
 
-#define STOPONERROR ((flags & TCL_ENCODING_STRICT) != TCL_ENCODING_NOCOMPLAIN)
+#define STOPONERROR (!(flags & TCL_ENCODING_NOCOMPLAIN))
 
 static int
 UtfToUtfProc(
