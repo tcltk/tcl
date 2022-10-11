@@ -2650,16 +2650,18 @@ TclLindexFlat(
 				   &index) == TCL_OK) {
 	    }
 	    if (i==0) {
-		Tcl_AbstractListObjIndex(listObj, index, &elemObj);
+		if (Tcl_AbstractListObjIndex(interp, listObj, index, &elemObj) != TCL_OK) {
+		    return NULL;
+		}
 	    } else if (index > 0) {
 		// TODO: support nested lists
 		// For now, only support 1 index, which is all an ArithSeries has
 		Tcl_DecrRefCount(elemObj);
 		TclNewObj(elemObj);
-		Tcl_IncrRefCount(elemObj);
 		break;
 	    }
 	}
+	Tcl_IncrRefCount(elemObj);
 	return elemObj;
     }
 
@@ -3306,7 +3308,7 @@ SetListFromAny(
 
 	/* Each iteration, store a list element */
         for (i = 0; i < elemCount; i++) {
-	    if (Tcl_AbstractListObjIndex(objPtr, i, elemPtrs) != TCL_OK) {
+	    if (Tcl_AbstractListObjIndex(interp, objPtr, i, elemPtrs) != TCL_OK) {
                 return TCL_ERROR;
             }
 	    Tcl_IncrRefCount(*elemPtrs++);/* Since list now holds ref to it. */

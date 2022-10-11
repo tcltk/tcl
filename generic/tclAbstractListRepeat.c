@@ -17,6 +17,7 @@
 #include <assert.h>
 #include "tcl.h"
 #include "tclInt.h"
+#include "tclAbstractList.h"
 
 /*
  * The structure below defines the arithmetic series Tcl Obj Type by means of
@@ -34,7 +35,8 @@
 static void DupRepeatedListRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void FreeRepeatedListRep(Tcl_Obj *repeatedListObj);
 static Tcl_WideInt RepeatedListLength(Tcl_Obj *repeatedListObj);
-static int RepeatedListIndex(Tcl_Obj *repeatedListObj, Tcl_WideInt index, Tcl_Obj **elemObj);
+static int RepeatedListIndex(Tcl_Interp *interp, Tcl_Obj *repeatedListObj, Tcl_WideInt index, Tcl_Obj **elemObj);
+static int RepeatedGetElements(Tcl_Interp *interp, Tcl_Obj *repeatetListObj, int *objcPtr, Tcl_Obj ***objvPtr);
 
 static Tcl_AbstractListType repeatedListType = {
 	TCL_ABSTRACTLIST_VERSION_1,
@@ -45,7 +47,7 @@ static Tcl_AbstractListType repeatedListType = {
 	RepeatedListIndex,
 	NULL, /* TODO - slice - needed? */
 	NULL, /* TODO - reverse - needed? */
-	NULL, /* TBD - GetElements - not needed assuming we add toListProc to abstract list */
+	RepeatedGetElements, /* GetElements */
 	FreeRepeatedListRep,
 	NULL /* TBD - UpdateString - needed? */
 };
@@ -54,6 +56,7 @@ typedef struct RepeatedListRep {
     Tcl_Obj *elements; /* List of repeated elements. May be an abstract list */
     Tcl_WideInt nElements; /* Cached size of elements. */
     Tcl_WideInt nTotal; /* Total number of elements in abstract list */
+    Tcl_Obj **elemList; /* traditional element list to support 'GetElements' */
 } RepeatedListRep;
 
 
@@ -84,6 +87,7 @@ DupRepeatedListRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
 
     *copyRepPtr = *srcRepPtr;
     Tcl_IncrRefCount(copyRepPtr->elements);
+    copyRepPtr->elemList = NULL; /* let copy regenrate list if needed */
 
     /* Note: we do not have to be worry about existing internal rep because
        copyPtr is supposed to be freshly initialized */
@@ -112,6 +116,13 @@ FreeRepeatedListRep(Tcl_Obj *repeatedListObj)  /* Free any allocated memory */
     RepeatedListRep *repPtr =
 	(RepeatedListRep *)Tcl_AbstractListGetConcreteRep(repeatedListObj);
     if (repPtr) {
+	if (repPtr->elemList) {
+	    int i;
+	    for (i = 0; i < repPtr->nTotal; i++) {
+		Tcl_DecrRefCount(repPtr->elemList[i]);
+	    }
+	    ckfree((char*)repPtr->elemList);
+	}
 	if (repPtr->elements) {
 	    Tcl_DecrRefCount(repPtr->elements);
 	}
@@ -183,6 +194,7 @@ TclNewRepeatedListObj(Tcl_Interp *interp,
     repPtr->elements = elementsObj;
     repPtr->nElements = numElements;
     repPtr->nTotal = numElements * repetitions;
+    repPtr->elemList = NULL;
 
     resultObj = Tcl_NewAbstractListObj(interp, &repeatedListType);
     Tcl_AbstractListSetConcreteRep(resultObj, repPtr);
@@ -233,29 +245,88 @@ Tcl_WideInt RepeatedListLength(Tcl_Obj *repeatedListObj)
  *----------------------------------------------------------------------
  */
 int
-RepeatedListIndex(Tcl_Obj *repeatedListObj, Tcl_WideInt index, Tcl_Obj **elemObjPtr)
+RepeatedListIndex(Tcl_Interp *interp, Tcl_Obj *repeatedListObj, Tcl_WideInt index, Tcl_Obj **elemObjPtr)
 {
     RepeatedListRep *repPtr;
     Tcl_WideInt offset;
     Tcl_Obj *elemObj;
 
-    if (repeatedListObj->typePtr != &tclAbstractListType) {
-	Tcl_Panic("RepeatedListIndex called with a not AbstractList Obj.");
-    }
     repPtr = (RepeatedListRep *)Tcl_AbstractListGetConcreteRep(repeatedListObj);
+
     if (index < 0 || index >= repPtr->nTotal) {
-	return TCL_ERROR; /* TODO - error message? */
+	/* Traditionally, index out of bounds results in empty string */
+	TclNewObj(*elemObjPtr);
+	return TCL_OK;
     }
 
     offset = index % repPtr->nElements;
     if (Tcl_ListObjIndex(NULL, repPtr->elements, offset, &elemObj) != TCL_OK) {
-	return TCL_ERROR; /* TODO - error message */
+	(void)interp; /* TODO - error message */
+	return TCL_ERROR;
     } else {
         *elemObjPtr = elemObj;
 	return TCL_OK;
     }
 }
 
+/*
+** Handle GetElements call
+*/
+
+int
+RepeatedGetElements(
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
+    Tcl_Obj *repeatedListObj,	/* List object for which an element
+				 * array is to be returned. */
+    int *objcPtr,		/* Where to store the count of objects
+				 * referenced by objv. */
+    Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
+				 * pointers to the list's objects. */
+{
+    RepeatedListRep *repPtr =
+	(RepeatedListRep*)Tcl_AbstractListGetConcreteRep(repeatedListObj);
+    Tcl_Obj **objv;
+    int i, objc;
+
+    objc = repPtr->nTotal;
+
+    if (objvPtr == NULL) {
+	if (objcPtr) {
+	    *objcPtr = objc;
+	    return TCL_OK;
+	}
+	return TCL_ERROR;
+    }
+
+    if (objc && objvPtr && repPtr->elemList) {
+	objv = repPtr->elemList;
+    } else if (objc > 0) {
+	objv = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj*) * objc);
+	if (objv == NULL) {
+	    if (interp) {
+		Tcl_SetObjResult(
+		    interp,
+		    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	for (i = 0; i < objc; i++) {
+	    if (RepeatedListIndex(interp, repeatedListObj, i, &objv[i]) == TCL_OK) {
+		Tcl_IncrRefCount(objv[i]);
+	    } else {
+		// TODO: some cleanup needed here
+		return TCL_ERROR;
+	    }
+	}
+    } else {
+	objv = NULL;
+    }
+    repPtr->elemList = objv;
+    *objvPtr = objv;
+    *objcPtr = objc;
+    return TCL_OK;
+}
 
 
 

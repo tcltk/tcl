@@ -78,6 +78,9 @@ test lrepeat-2.3 {normal cases} {
 test lrepeat-2.4 {normal cases} {
     lrepeat 3 [lrepeat 2 a] b c
 } {{a a} b c {a a} b c {a a} b c}
+test lrepeat-2.5 {normal cases} {
+    lrepeat 4 [lseq 0 3] [lseq 3 0] [lrepeat 2 End]
+} {{0 1 2 3} {3 2 1 0} {End End} {0 1 2 3} {3 2 1 0} {End End} {0 1 2 3} {3 2 1 0} {End End} {0 1 2 3} {3 2 1 0} {End End}}
 
 # cleanup
 ::tcltest::cleanupTests

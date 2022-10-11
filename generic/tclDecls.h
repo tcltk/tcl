@@ -2019,13 +2019,18 @@ EXTERN Tcl_Obj *	Tcl_NewAbstractListObj(Tcl_Interp *interp,
 /* 684 */
 EXTERN Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr);
 /* 685 */
-EXTERN int		Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr,
-				Tcl_WideInt index, Tcl_Obj **elemObjPtr);
+EXTERN int		Tcl_AbstractListObjIndex(Tcl_Interp *interp,
+				Tcl_Obj *abstractListPtr, Tcl_WideInt index,
+				Tcl_Obj **elemObjPtr);
 /* 686 */
-EXTERN Tcl_Obj *	Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr,
-				Tcl_WideInt fromIdx, Tcl_WideInt toIdx);
+EXTERN int		Tcl_AbstractListObjRange(Tcl_Interp *interp,
+				Tcl_Obj *abstractListPtr,
+				Tcl_WideInt fromIdx, Tcl_WideInt toIdx,
+				Tcl_Obj **newObjPtr);
 /* 687 */
-EXTERN Tcl_Obj *	Tcl_AbstractListObjReverse(Tcl_Obj *abstractListPtr);
+EXTERN int		Tcl_AbstractListObjReverse(Tcl_Interp *interp,
+				Tcl_Obj *abstractListPtr,
+				Tcl_Obj **newObjPtr);
 /* 688 */
 EXTERN int		Tcl_AbstractListObjGetElements(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, int *objcPtr,
@@ -2033,6 +2038,8 @@ EXTERN int		Tcl_AbstractListObjGetElements(Tcl_Interp *interp,
 /* 689 */
 EXTERN Tcl_Obj *	Tcl_AbstractListObjCopy(Tcl_Interp *interp,
 				Tcl_Obj *listPtr);
+/* 690 */
+EXTERN void *		Tcl_AbstractListGetConcreteRep(Tcl_Obj *objPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2753,11 +2760,12 @@ typedef struct TclStubs {
     int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
     Tcl_Obj * (*tcl_NewAbstractListObj) (Tcl_Interp *interp, const Tcl_AbstractListType*vTablePtr); /* 683 */
     Tcl_WideInt (*tcl_AbstractListObjLength) (Tcl_Obj *abstractListPtr); /* 684 */
-    int (*tcl_AbstractListObjIndex) (Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr); /* 685 */
-    Tcl_Obj * (*tcl_AbstractListObjRange) (Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx); /* 686 */
-    Tcl_Obj * (*tcl_AbstractListObjReverse) (Tcl_Obj *abstractListPtr); /* 687 */
+    int (*tcl_AbstractListObjIndex) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr); /* 685 */
+    int (*tcl_AbstractListObjRange) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx, Tcl_Obj **newObjPtr); /* 686 */
+    int (*tcl_AbstractListObjReverse) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_Obj **newObjPtr); /* 687 */
     int (*tcl_AbstractListObjGetElements) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *objcPtr, Tcl_Obj ***objvPtr); /* 688 */
     Tcl_Obj * (*tcl_AbstractListObjCopy) (Tcl_Interp *interp, Tcl_Obj *listPtr); /* 689 */
+    void * (*tcl_AbstractListGetConcreteRep) (Tcl_Obj *objPtr); /* 690 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4166,6 +4174,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_AbstractListObjGetElements) /* 688 */
 #define Tcl_AbstractListObjCopy \
 	(tclStubsPtr->tcl_AbstractListObjCopy) /* 689 */
+#define Tcl_AbstractListGetConcreteRep \
+	(tclStubsPtr->tcl_AbstractListGetConcreteRep) /* 690 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
