@@ -13,7 +13,7 @@ vwait \- Process events until a variable is written
 .SH SYNOPSIS
 \fBvwait\fR \fIvarName\fR
 .PP
-\fBvwait\fR ?\Ioptions\fR? ?\fIvarName ...\fR?
+\fBvwait\fR ?\fIoptions\fR? ?\fIvarName ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -66,7 +66,7 @@ Events of the windowing system are not handled during the wait operation.
 \fIChannel\fR must name a Tcl channel open for reading. If \fIchannel\fR
 is or becomes readable the wait operation completes.
 .TP
-\fB\-timeout\fR milliseconds\fR
+\fB\-timeout\fR \fImilliseconds\fR
 .
 The wait operation is constrained to \fImilliseconds\fR.
 .TP
