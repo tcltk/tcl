@@ -613,13 +613,11 @@ The "request line" is the first line of a HTTP client request, and has three
 elements separated by spaces: the HTTP method, the URL relative to the server,
 and the HTTP version. Examples:
 .PP
-.DS
 .RS
 GET / HTTP/1.1
 GET /introduction.html?subject=plumbing HTTP/1.1
 POST /forms/order.html HTTP/1.1
 .RE
-.DE
 .TP
 \fB::http::requestHeaders\fR \fItoken\fR ?\fIheaderName\fR?
 .
@@ -650,12 +648,10 @@ elements separated by spaces: the HTTP version, a three-digit numerical
 "status code", and a "reason phrase".  Only the reason phrase may contain
 spaces.  Examples:
 .PP
-.DS
 .RS
 HTTP/1.1 200 OK
 HTTP/1.0 404 Not Found
 .RE
-.DE
 .RS
 The "status code" is a three-digit number in the range 100 to 599.
 A value of 200 is the normal return from a GET request, and its matching
@@ -1589,7 +1585,7 @@ that \fB::tls::socketCmd\fR has this value, it replaces it with the value
 i.e. if the script or the Tcl installation has replaced the value "::socket"
 with the name of a different command, then http does not change the value.
 The script or installation that modified \fB::tls::socketCmd\fR is responsible
-for integrating \fR::http::socket\fR into its own replacement command.
+for integrating \fB::http::socket\fR into its own replacement command.
 .PP
 .SS "WITH A CHILD INTERPRETER"
 .PP
