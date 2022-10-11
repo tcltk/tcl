@@ -2825,9 +2825,13 @@ TclInitByteCode(
 
     /*
      * Compute the total number of bytes needed for this bytecode.
+     *
+     * Note that code bytes need not be aligned but since later elements are we
+     * need to pad anyway, either directly after ByteCode or after codeBytes,
+     * and it's easier and more consistent to do the former.
      */
 
-    structureSize = sizeof(ByteCode);
+    structureSize = TCL_ALIGN(sizeof(ByteCode));  /* align code bytes */
     structureSize += TCL_ALIGN(codeBytes);	  /* align object array */
     structureSize += TCL_ALIGN(objArrayBytes);	  /* align exc range arr */
     structureSize += TCL_ALIGN(exceptArrayBytes); /* align AuxData array */
@@ -2866,7 +2870,7 @@ TclInitByteCode(
     codePtr->maxExceptDepth = envPtr->maxExceptDepth;
     codePtr->maxStackDepth = envPtr->maxStackDepth;
 
-    p += sizeof(ByteCode);
+    p += TCL_ALIGN(sizeof(ByteCode));	/* align code bytes */
     codePtr->codeStart = p;
     memcpy(p, envPtr->codeStart, codeBytes);
 

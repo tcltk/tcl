@@ -921,7 +921,7 @@ int
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
-    TCL_UNUSED(ClientData),	/* Notifier data. */
+    TCL_UNUSED(void *),	/* Notifier data. */
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
 {
@@ -986,7 +986,7 @@ TclAsyncNotifier(
 #if TCL_THREADS
 static TCL_NORETURN void
 NotifierThreadProc(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr;
     fd_set readableMask;

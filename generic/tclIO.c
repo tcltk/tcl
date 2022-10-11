@@ -1655,6 +1655,7 @@ Tcl_CreateChannel(
     }
     statePtr->channelName = tmp;
     statePtr->flags = mask;
+    statePtr->maxPerms = mask; /* Save max privileges for close callback */
 
     /*
      * Set the channel to system default encoding.
@@ -2140,8 +2141,11 @@ Tcl_UnstackChannel(
 
 	/*
 	 * Close and free the channel driver state.
+	 * TIP #220: This is done with maximum privileges (as created).
 	 */
 
+	statePtr->flags &= ~(TCL_READABLE|TCL_WRITABLE);
+	statePtr->flags |= statePtr->maxPerms;
 	result = ChanClose(chanPtr, interp);
 	ChannelFree(chanPtr);
 
@@ -2418,6 +2422,54 @@ Tcl_GetChannelHandle(
 	*handlePtr = handle;
     }
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_RemoveChannelMode --
+ *
+ *	Remove either read or write privileges from the channel.
+ *
+ * Results:
+ *	A standard Tcl result code.
+ *
+ * Side effects:
+ *	May change the access mode of the channel.
+ *	May leave an error message in the interp.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_RemoveChannelMode(
+     Tcl_Interp* interp,        /* The interp for an error message. Allowed to be NULL. */
+     Tcl_Channel chan,		/* The channel which is modified. */
+     int         mode)          /* The access mode to drop from the channel */
+{
+    const char* emsg;
+    ChannelState *statePtr = ((Channel *) chan)->state;
+					/* State of actual channel. */
+
+    if ((mode != TCL_READABLE) && (mode != TCL_WRITABLE)) {
+        emsg = "Illegal mode value.";
+	goto error;
+    }
+    if (0 == (statePtr->flags & (TCL_READABLE | TCL_WRITABLE) & ~mode)) {
+        emsg = "Bad mode, would make channel inacessible";
+	goto error;
+    }
+
+    statePtr->flags &= ~mode;
+    return TCL_OK;
+
+ error:
+    if (interp != NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"Tcl_RemoveChannelMode error: %s. Channel: \"%s\"",
+		emsg, Tcl_GetChannelName((Tcl_Channel) chan)));
+    }
+    return TCL_ERROR;
 }
 
 /*
@@ -4301,6 +4353,7 @@ Write(
     char *nextNewLine = NULL;
     int endEncoding, saved = 0, total = 0, flushed = 0, needNlFlush = 0;
     char safe[BUFFER_PADDING];
+    int encodingError = 0;
 
     if (srcLen) {
         WillWrite(chanPtr);
@@ -4317,7 +4370,7 @@ Write(
 	nextNewLine = (char *)memchr(src, '\n', srcLen);
     }
 
-    while (srcLen + saved + endEncoding > 0) {
+    while (srcLen + saved + endEncoding > 0 && !encodingError) {
 	ChannelBuffer *bufPtr;
 	char *dst;
 	int result, srcRead, dstLen, dstWrote, srcLimit = srcLen;
@@ -4356,16 +4409,26 @@ Write(
 
 	statePtr->outputEncodingFlags &= ~TCL_ENCODING_START;
 
+	/*
+	 * See io-75.2, TCL bug 6978c01b65.
+	 * Check, if an encoding error occured and should be reported to the
+	 * script level.
+	 * This happens, if a written character may not be represented by the
+	 * current output encoding and strict encoding is active.
+	 */
+
+	if (result == TCL_CONVERT_UNKNOWN) {
+	    encodingError = 1;
+	    result = TCL_OK;
+	}
+
 	if ((result != TCL_OK) && (srcRead + dstWrote == 0)) {
 	    /*
 	     * We're reading from invalid/incomplete UTF-8.
 	     */
 
-	    if (total == 0) {
-		Tcl_SetErrno(EILSEQ);
-		return -1;
-	    }
-	    break;
+	    encodingError = 1;
+	    result = TCL_OK;
 	}
 
 	bufPtr->nextAdded += dstWrote;
@@ -4463,6 +4526,10 @@ Write(
 
     UpdateInterest(chanPtr);
 
+    if (encodingError) {
+	Tcl_SetErrno(EILSEQ);
+	return -1;
+    }
     return total;
 }
 

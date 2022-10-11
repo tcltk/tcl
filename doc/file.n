@@ -16,12 +16,10 @@ file \- Manipulate file names and attributes
 .BE
 .SH DESCRIPTION
 .PP
-This command provides several operations on a file's name or attributes.
-\fIName\fR is the name of a file; if it starts with a tilde, then tilde
-substitution is done before executing the command (see the manual entry for
-\fBfilename\fR for details).  \fIOption\fR indicates what to do with the
-file name.  Any unique abbreviation for \fIoption\fR is acceptable.  The
-valid options are:
+This command provides several operations on a file's name or attributes.  The
+\fIname\fR argument is the name of a file in most cases. The \fIoption\fR
+argument indicates what to do with the file name.  Any unique abbreviation for
+\fIoption\fR is acceptable.  The valid options are:
 .TP
 \fBfile atime \fIname\fR ?\fItime\fR?
 .
@@ -145,21 +143,6 @@ returned.  For example,
 .CE
 .PP
 returns \fBc:/\fR.
-.PP
-Note that tilde substitution will only be
-performed if it is necessary to complete the command. For example,
-.PP
-.CS
-\fBfile dirname\fR ~/src/foo.c
-.CE
-.PP
-returns \fB~/src\fR, whereas
-.PP
-.CS
-\fBfile dirname\fR ~
-.CE
-.PP
-returns \fB/home\fR (or something similar).
 .RE
 .TP
 \fBfile executable \fIname\fR
@@ -179,6 +162,24 @@ search privileges for the directories leading to it, \fB0\fR otherwise.
 Returns all of the characters in \fIname\fR after and including the last
 dot in the last element of \fIname\fR.  If there is no dot in the last
 element of \fIname\fR then returns the empty string.
+.TP
+\fBfile home ?\fIusername\fR?
+.VS "8.7, TIP 602"
+If no argument is specified, the command returns the home directory
+of the current user. This is generally the value of the \fB$HOME\fR
+environment variable except that on Windows platforms backslashes
+in the path are replaced by forward slashes. An error is raised if
+the \fB$HOME\fR environment variable is not set.
+.RS
+.PP
+If \fIusername\fR is specified, the command returns the home directory
+configured in the system for the specified user. Note this may be
+different than the value of the \fB$HOME\fR environment variable
+even when \fIusername\fR corresponds to the current user. An error is
+raised if the \fIusername\fR does not correspond to a user account
+on the system.
+.RE
+.VE "8.7, TIP 602"
 .TP
 \fBfile isdirectory \fIname\fR
 .
@@ -251,14 +252,14 @@ symbolic and hard links (the latter for files only). Windows
 supports symbolic directory links and hard file links on NTFS drives.
 .RE
 .TP
-\fBfile lstat \fIname varName\fR
+\fBfile lstat \fIname ?varName?\fR
 .
 Same as \fBstat\fR option (see below) except uses the \fIlstat\fR
 kernel call instead of \fIstat\fR.  This means that if \fIname\fR
-refers to a symbolic link the information returned in \fIvarName\fR
-is for the link rather than the file it refers to.  On systems that
-do not support symbolic links this option behaves exactly the same
-as the \fBstat\fR option.
+refers to a symbolic link the information returned is for the link
+rather than the file it refers to.  On systems that do not support
+symbolic links this option behaves exactly the same as the
+\fBstat\fR option.
 .TP
 \fBfile mkdir\fR ?\fIdir\fR ...?
 .
@@ -379,33 +380,21 @@ Returns a list whose elements are the path components in \fIname\fR.  The
 first element of the list will have the same path type as \fIname\fR.
 All other elements will be relative.  Path separators will be discarded
 unless they are needed to ensure that an element is unambiguously relative.
-For example, under Unix
-.RS
-.PP
-.CS
-\fBfile split\fR /foo/~bar/baz
-.CE
-.PP
-returns
-.QW \fB/\0\0foo\0\0./~bar\0\0baz\fR
-to ensure that later commands
-that use the third component do not attempt to perform tilde
-substitution.
-.RE
 .TP
-\fBfile stat \fIname varName\fR
+\fBfile stat \fIname ?varName?\fR
 .
-Invokes the \fBstat\fR kernel call on \fIname\fR, and uses the variable
-given by \fIvarName\fR to hold information returned from the kernel call.
-\fIVarName\fR is treated as an array variable, and the following elements
-of that variable are set: \fBatime\fR, \fBctime\fR, \fBdev\fR, \fBgid\fR,
-\fBino\fR, \fBmode\fR, \fBmtime\fR, \fBnlink\fR, \fBsize\fR, \fBtype\fR,
-\fBuid\fR.  Each element except \fBtype\fR is a decimal string with the
-value of the corresponding field from the \fBstat\fR return structure;
-see the manual entry for \fBstat\fR for details on the meanings of the
-values.  The \fBtype\fR element gives the type of the file in the same
-form returned by the command \fBfile type\fR.  This command returns an
-empty string.
+Invokes the \fBstat\fR kernel call on \fIname\fR, and returns a
+dictionary with the information returned from the kernel call. If
+\fIvarName\fR is given, it uses the variable to hold the information.
+\fIVarName\fR is treated as an array variable, and in such case the
+command returns the empty string. The following elements are set:
+\fBatime\fR, \fBctime\fR, \fBdev\fR, \fBgid\fR, \fBino\fR, \fBmode\fR,
+\fBmtime\fR, \fBnlink\fR, \fBsize\fR, \fBtype\fR, \fBuid\fR.  Each element
+except \fBtype\fR is a decimal string with the value of the corresponding
+field from the \fBstat\fR return structure; see the manual entry for
+\fBstat\fR for details on the meanings of the values.  The \fBtype\fR
+element gives the type of the file in the same form returned by the
+command \fBfile type\fR.
 .TP
 \fBfile system \fIname\fR
 .
@@ -482,6 +471,22 @@ Note that temporary files are \fIonly\fR ever created on the native
 filesystem. As such, they can be relied upon to be used with operating-system
 native APIs and external programs that require a filename.
 .RE
+.TP
+\fBfile tildeexpand \fIname\fR
+.VS "8.7, TIP 602"
+Returns the result of performing tilde substitution on \fIname\fR. If the name
+begins with a tilde, then the file name will be interpreted as if the first
+element is replaced with the location of the home directory for the given user.
+If the tilde is followed immediately by a path separator, the \fB$HOME\fR
+environment variable is substituted.  Otherwise the characters between the
+tilde and the next separator are taken as a user name, which is used to
+retrieve the user's home directory for substitution.  An error is raised if the
+\fB$HOME\fR environment variable or user does not exist.
+.RS
+.PP
+If the file name does not begin with a tilde, it is returned unmodified.
+.RE
+.VE "8.7, TIP 602"
 .TP
 \fBfile type \fIname\fR
 .

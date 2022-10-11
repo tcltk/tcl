@@ -5965,7 +5965,7 @@ test io-40.17 {tilde substitution in open} {
     set x [list [catch {open ~/foo} msg] $msg]
     set ::env(HOME) $home
     set x
-} {1 {couldn't find HOME environment variable to expand path}}
+} {1 {couldn't open "~/foo": no such file or directory}}
 
 test io-41.1 {Tcl_FileeventCmd: errors} {fileevent} {
     list [catch {fileevent foo} msg] $msg
@@ -8566,7 +8566,7 @@ test io-60.1 {writing illegal utf sequences} {fileevent testbytestring} {
     set out [open $path(script) w]
     puts $out "catch {load $::tcltestlib Tcltest}"
     puts $out {
-	puts [testbytestring \xE2]
+	puts ABC[testbytestring \xE2]
 	exit 1
     }
     proc readit {pipe} {
@@ -8590,7 +8590,7 @@ test io-60.1 {writing illegal utf sequences} {fileevent testbytestring} {
     # cut of the remainder of the error stack, especially the filename
     set result [lreplace $result 3 3 [lindex [split [lindex $result 3] \n] 0]]
     list $x $result
-} {1 {gets {} catch {error writing "stdout": illegal byte sequence}}}
+} {1 {gets ABC catch {error writing "stdout": illegal byte sequence}}}
 
 test io-61.1 {Reset eof state after changing the eof char} -setup {
     set datafile [makeFile {} eofchar]
@@ -8952,7 +8952,228 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
 
+# The following tests 75.1 to 75.5 exercise strict or tolerant channel
+# encoding.
+# They are left as a place-holder here. If TIP633 is voted, they will
+# come back.
+# Exercise strct channel encoding
+test io-75.6 {multibyte encoding error read results in raw bytes} -setup {
+    set fn [makeFile {} io-75.6]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # In UTF-8, a byte 0xCx starts a multibyte sequence and must be followed
+    # by a byte > 0x7F. This is violated to get an invalid sequence.
+    puts -nonewline $f "A\xC0\x40"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none
+} -constraints knownBug -body {
+    set d [read $f]
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    close $f
+    removeFile io-75.6
+} -result "41"
+# The current result cuts at the invalid sequence. IMHO, there should be an
+# error thrown or the whole sequence should be returned as byte (compat mode).
+
+test io-75.7 {unrepresentable character write passes and is replaced by ?} -setup {
+    set fn [makeFile {} io-75.7]
+    set f [open $fn w+]
+    fconfigure $f -encoding iso8859-1
+} -body {
+    catch {puts -nonewline $f "A\u2022"} msg
+    flush $f
+    seek $f 0
+    list [read $f] $msg
+} -cleanup {
+    close $f
+    removeFile io-75.7
+} -match glob -result [list {A} {error writing "*": illegal byte sequence}]
+
+# Incomplete sequence test.
+# This error may IMHO only be detected with the close.
+# But the read already returns the incomplete sequence.
+test io-75.8 {incomplete multibyte encoding read is ignored} -setup {
+    set fn [makeFile {} io-75.8]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    puts -nonewline $f "A\xC0"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none
+} -body {
+    set d [read $f]
+    close $f
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    removeFile io-75.8
+} -result "41c0"
+# The current result returns the orphan byte as byte.
+# This may be expected due to special utf-8 handling.
+
+# As utf-8 has a special treatment in multi-byte decoding, also test another
+# one.
+test io-75.9 {shiftjis encoding error read results in raw bytes} -setup {
+    set fn [makeFile {} io-75.9]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # In shiftjis, \x81 starts a two-byte sequence.
+    # But 2nd byte \xFF is not allowed
+    puts -nonewline $f "A\x81\xFFA"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf
+} -constraints knownBug -body {
+    set d [read $f]
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    close $f
+    removeFile io-75.9
+} -result "41"
+# The current result cuts at the invalid sequence. IMHO, there should be an
+# error thrown or the whole sequence should be returned as byte (compat mode).
+
+test io-75.10 {incomplete shiftjis encoding read is ignored} -setup {
+    set fn [makeFile {} io-75.10]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 announces a two byte sequence.
+    puts -nonewline $f "A\x81"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf
+} -body {
+    set d [read $f]
+    close $f
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    removeFile io-75.10
+} -result "4181"
+
 # ### ### ### ######### ######### #########
+
+
+
+test io-75.0 {channel modes} -setup {
+    set datafile [makeFile {some characters} dummy]
+    set f [open $datafile r]
+} -constraints testchannel -body {
+    testchannel mode $f
+} -cleanup {
+    close $f
+    removeFile dummy
+} -result {read {}}
+
+test io-75.1 {channel modes} -setup {
+    set datafile [makeFile {some characters} dummy]
+    set f [open $datafile w]
+} -constraints testchannel -body {
+    testchannel mode $f
+} -cleanup {
+    close $f
+    removeFile dummy
+} -result {{} write}
+
+test io-75.2 {channel modes} -setup {
+    set datafile [makeFile {some characters} dummy]
+    set f [open $datafile r+]
+} -constraints testchannel -body {
+    testchannel mode $f
+} -cleanup {
+    close $f
+    removeFile dummy
+} -result {read write}
+
+test io-75.3 {channel mode dropping} -setup {
+    set datafile [makeFile {some characters} dummy]
+    set f [open $datafile r]
+} -constraints testchannel -body {
+    testchannel mremove-wr $f
+    list [testchannel mode $f] [testchannel maxmode $f]
+} -cleanup {
+    close $f
+    removeFile dummy
+} -result {{read {}} {read {}}}
+
+test io-75.4 {channel mode dropping} -setup {
+    set datafile [makeFile {some characters} dummy]
+    set f [open $datafile r]
+} -constraints testchannel -body {
+    testchannel mremove-rd $f
+} -returnCodes error -cleanup {
+    close $f
+    removeFile dummy
+} -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
+
+test io-75.5 {channel mode dropping} -setup {
+    set datafile [makeFile {some characters} dummy]
+    set f [open $datafile w]
+} -constraints testchannel -body {
+    testchannel mremove-rd $f
+    list [testchannel mode $f] [testchannel maxmode $f]
+} -cleanup {
+    close $f
+    removeFile dummy
+} -result {{{} write} {{} write}}
+
+test io-75.6 {channel mode dropping} -setup {
+    set datafile [makeFile {some characters} dummy]
+    set f [open $datafile w]
+} -constraints testchannel -body {
+    testchannel mremove-wr $f
+} -returnCodes error -cleanup {
+    close $f
+    removeFile dummy
+} -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
+
+test io-75.7 {channel mode dropping} -setup {
+    set datafile [makeFile {some characters} dummy]
+    set f [open $datafile r+]
+} -constraints testchannel -body {
+    testchannel mremove-rd $f
+    list [testchannel mode $f] [testchannel maxmode $f]
+} -cleanup {
+    close $f
+    removeFile dummy
+} -result {{{} write} {read write}}
+
+test io-75.8 {channel mode dropping} -setup {
+    set datafile [makeFile {some characters} dummy]
+    set f [open $datafile r+]
+} -constraints testchannel -body {
+    testchannel mremove-wr $f
+    list [testchannel mode $f] [testchannel maxmode $f]
+} -cleanup {
+    close $f
+    removeFile dummy
+} -result {{read {}} {read write}}
+
+test io-75.9 {channel mode dropping} -setup {
+    set datafile [makeFile {some characters} dummy]
+    set f [open $datafile r+]
+} -constraints testchannel -body {
+    testchannel mremove-wr $f
+    testchannel mremove-rd $f
+} -returnCodes error -cleanup {
+    close $f
+    removeFile dummy
+} -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
+
+test io-75.10 {channel mode dropping} -setup {
+    set datafile [makeFile {some characters} dummy]
+    set f [open $datafile r+]
+} -constraints testchannel -body {
+    testchannel mremove-rd $f
+    testchannel mremove-wr $f
+} -returnCodes error -cleanup {
+    close $f
+    removeFile dummy
+} -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
 
 # cleanup
 foreach file [list fooBar longfile script script2 output test1 pipe my_script \

@@ -1829,7 +1829,7 @@ AliasNRCmd(
     int prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *listPtr;
-    List *listRep;
+    ListRep listRep;
     int flags = TCL_EVAL_INVOKE;
 
     /*
@@ -1841,14 +1841,19 @@ AliasNRCmd(
     prefv = &aliasPtr->objPtr;
     cmdc = prefc + objc - 1;
 
+    /* TODO - encapsulate this into tclListObj.c */
     listPtr = Tcl_NewListObj(cmdc, NULL);
-    listRep = ListRepPtr(listPtr);
-    listRep->elemCount = cmdc;
-    cmdv = listRep->elements;
+    ListObjGetRep(listPtr, &listRep);
+    cmdv = ListRepElementsBase(&listRep);
+    listRep.storePtr->numUsed = cmdc;
+    if (listRep.spanPtr) {
+	listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
+	listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
+    }
 
     prefv = &aliasPtr->objPtr;
-    memcpy(cmdv, prefv, (prefc * sizeof(Tcl_Obj *)));
-    memcpy(cmdv+prefc, objv+1, ((objc-1) * sizeof(Tcl_Obj *)));
+    memcpy(cmdv, prefv, prefc * sizeof(Tcl_Obj *));
+    memcpy(cmdv+prefc, objv+1, (objc-1) * sizeof(Tcl_Obj *));
 
     for (i=0; i<cmdc; i++) {
 	Tcl_IncrRefCount(cmdv[i]);
@@ -2476,7 +2481,7 @@ ChildCreate(
 	    ((Interp *) parentInterp)->maxNestingDepth;
 
     if (safe) {
-	if (Tcl_MakeSafe(childInterp) == TCL_ERROR) {
+	if (TclMakeSafe(childInterp) == TCL_ERROR) {
 	    goto error;
 	}
     } else {
@@ -3259,7 +3264,7 @@ Tcl_IsSafe(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_MakeSafe --
+ * TclMakeSafe --
  *
  *	Makes its argument interpreter contain only functionality that is
  *	defined to be part of Safe Tcl. Unsafe commands are hidden, the env
@@ -3276,7 +3281,7 @@ Tcl_IsSafe(
  */
 
 int
-Tcl_MakeSafe(
+TclMakeSafe(
     Tcl_Interp *interp)		/* Interpreter to be made safe. */
 {
     Tcl_Channel chan;		/* Channel to remove from safe interpreter. */

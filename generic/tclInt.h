@@ -274,7 +274,11 @@ typedef struct Namespace {
 				 * strings; values have type (Namespace *). If
 				 * NULL, there are no children. */
 #endif
+#if TCL_MAJOR_VERSION > 8
     size_t nsId;		/* Unique id for the namespace. */
+#else
+    unsigned long nsId;
+#endif
     Tcl_Interp *interp;	/* The interpreter containing this
 				 * namespace. */
     int flags;			/* OR-ed combination of the namespace status
@@ -1860,7 +1864,18 @@ typedef struct Interp {
     void *interpInfo;	/* Information used by tclInterp.c to keep
 				 * track of parent/child interps on a
 				 * per-interp basis. */
+#if TCL_MAJOR_VERSION > 8
     void (*optimizer)(void *envPtr);
+#else
+    union {
+	void (*optimizer)(void *envPtr);
+	Tcl_HashTable unused2;	/* No longer used (was mathFuncTable). The
+				 * unused space in interp was repurposed for
+				 * pluggable bytecode optimizers. The core
+				 * contains one optimizer, which can be
+				 * selectively overridden by extensions. */
+    } extra;
+#endif
     /*
      * Information related to procedures and variables. See tclProc.c and
      * tclVar.c for usage.
@@ -2335,22 +2350,34 @@ typedef struct Interp {
 #endif
 
 /*
- * This macro is used to determine the offset needed to safely allocate any
+ * TCL_ALIGN is used to determine the offset needed to safely allocate any
  * data structure in memory. Given a starting offset or size, it "rounds up"
- * or "aligns" the offset to the next 8-byte boundary so that any data
- * structure can be placed at the resulting offset without fear of an
- * alignment error.
+ * or "aligns" the offset to the next aligned (typically 8-byte) boundary so
+ * that any data structure can be placed at the resulting offset without fear
+ * of an alignment error. Note this is clamped to a minimum of 8 for API
+ * compatibility.
  *
  * WARNING!! DO NOT USE THIS MACRO TO ALIGN POINTERS: it will produce the
- * wrong result on platforms that allocate addresses that are divisible by 4
- * or 2. Only use it for offsets or sizes.
+ * wrong result on platforms that allocate addresses that are divisible by a
+ * non-trivial factor of this alignment. Only use it for offsets or sizes.
  *
  * This macro is only used by tclCompile.c in the core (Bug 926445). It
  * however not be made file static, as extensions that touch bytecodes
  * (notably tbcload) require it.
  */
 
-#define TCL_ALIGN(x) (((int)(x) + 7) & ~7)
+struct TclMaxAlignment {
+    char unalign[8];
+    union {
+	long long maxAlignLongLong;
+	double maxAlignDouble;
+	void *maxAlignPointer;
+    } aligned;
+};
+#define TCL_ALIGN_BYTES \
+	offsetof(struct TclMaxAlignment, aligned)
+#define TCL_ALIGN(x) \
+	(((x) + (TCL_ALIGN_BYTES - 1)) & ~(TCL_ALIGN_BYTES - 1))
 
 /*
  * A common panic alert when memory allocation fails.
@@ -2402,59 +2429,211 @@ typedef enum TclEolTranslation {
 #define TCL_INVOKE_NO_TRACEBACK	(1<<2)
 
 /*
- * The structure used as the internal representation of Tcl list objects. This
- * struct is grown (reallocated and copied) as necessary to hold all the
- * list's element pointers. The struct might contain more slots than currently
- * used to hold all element pointers. This is done to make append operations
- * faster.
+ * ListSizeT is the type for holding list element counts. It's defined
+ * simplify sharing source between Tcl8 and Tcl9.
  */
+#if TCL_MAJOR_VERSION > 8
 
-typedef struct List {
-    size_t refCount;
-    size_t maxElemCount;		/* Total number of element array slots. */
-    size_t elemCount;		/* Current number of list elements. */
-    int canonicalFlag;		/* Set if the string representation was
-				 * derived from the list representation. May
-				 * be ignored if there is no string rep at
-				 * all.*/
-    Tcl_Obj *elements[TCLFLEXARRAY];		/* First list element; the struct is grown to
-				 * accommodate all elements. */
-} List;
-
-#define LIST_MAX \
-	((int)(((size_t)UINT_MAX - offsetof(List, elements))/sizeof(Tcl_Obj *)))
-#define LIST_SIZE(numElems) \
-	(TCL_HASH_TYPE)(offsetof(List, elements) + ((numElems) * sizeof(Tcl_Obj *)))
+typedef size_t ListSizeT;
 
 /*
- * Macro used to get the elements of a list object.
+ * SSIZE_MAX, NOT SIZE_MAX as negative differences need to be expressed
+ * between values of the ListSizeT type so limit the range to signed
+ */
+#define ListSizeT_MAX ((ListSizeT)PTRDIFF_MAX)
+
+#else
+
+typedef int ListSizeT;
+#define ListSizeT_MAX INT_MAX
+
+#endif
+
+/*
+ * ListStore --
+ *
+ * A Tcl list's internal representation is defined through three structures.
+ *
+ * A ListStore struct is a structure that includes a variable size array that
+ * serves as storage for a Tcl list. A contiguous sequence of slots in the
+ * array, the "in-use" area, holds valid pointers to Tcl_Obj values that
+ * belong to one or more Tcl lists. The unused slots before and after these
+ * are free slots that may be used to prepend and append without having to
+ * reallocate the struct. The ListStore may be shared amongst multiple lists
+ * and reference counted.
+ *
+ * A ListSpan struct defines a sequence of slots within a ListStore. This sequence
+ * always lies within the "in-use" area of the ListStore. Like ListStore, the
+ * structure may be shared among multiple lists and is reference counted.
+ *
+ * A ListRep struct holds the internal representation of a Tcl list as stored
+ * in a Tcl_Obj. It is composed of a ListStore and a ListSpan that together
+ * define the content of the list. The ListSpan specifies the range of slots
+ * within the ListStore that hold elements for this list. The ListSpan is
+ * optional in which case the list includes all the "in-use" slots of the
+ * ListStore.
+ *
+ */
+typedef struct ListStore {
+    ListSizeT firstUsed;    /* Index of first slot in use within slots[] */
+    ListSizeT numUsed;      /* Number of slots in use (starting firstUsed) */
+    ListSizeT numAllocated; /* Total number of slots[] array slots. */
+    size_t refCount;           /* Number of references to this instance */
+    int flags;              /* LISTSTORE_* flags */
+    Tcl_Obj *slots[TCLFLEXARRAY];      /* Variable size array. Grown as needed */
+} ListStore;
+
+#define LISTSTORE_CANONICAL 0x1 /* All Tcl_Obj's referencing this
+                                   store have their string representation
+                                   derived from the list representation */
+
+/* Max number of elements that can be contained in a list */
+#define LIST_MAX                                               \
+    ((ListSizeT_MAX - offsetof(ListStore, slots)) \
+		   / sizeof(Tcl_Obj *))
+/* Memory size needed for a ListStore to hold numSlots_ elements */
+#define LIST_SIZE(numSlots_) \
+	(offsetof(ListStore, slots) + ((numSlots_) * sizeof(Tcl_Obj *)))
+
+/*
+ * ListSpan --
+ * See comments above for ListStore
+ */
+typedef struct ListSpan {
+    ListSizeT spanStart;    /* Starting index of the span */
+    ListSizeT spanLength;   /* Number of elements in the span */
+    size_t refCount;     /* Count of references to this span record */
+} ListSpan;
+#ifndef LIST_SPAN_THRESHOLD /* May be set on build line */
+#define LIST_SPAN_THRESHOLD 101
+#endif
+
+/*
+ * ListRep --
+ * See comments above for ListStore
+ */
+typedef struct ListRep {
+    ListStore *storePtr;/* element array shared amongst different lists */
+    ListSpan *spanPtr;  /* If not NULL, the span holds the range of slots
+                           within *storePtr that contain this list elements. */
+} ListRep;
+
+/*
+ * Macros used to get access list internal representations.
+ *
+ * Naming conventions:
+ * ListRep* - expect a pointer to a valid ListRep
+ * ListObj* - expect a pointer to a Tcl_Obj whose internal type is known to
+ *            be a list (tclListType). Will crash otherwise.
+ * TclListObj* - expect a pointer to a Tcl_Obj whose internal type may or may not
+ *            be tclListType. These will convert as needed and return error if
+ *            conversion not possible.
  */
 
-#define ListRepPtr(listPtr) \
-    ((List *) (listPtr)->internalRep.twoPtrValue.ptr1)
+/* Returns the starting slot for this listRep in the contained ListStore */
+#define ListRepStart(listRepPtr_)                               \
+    ((listRepPtr_)->spanPtr ? (listRepPtr_)->spanPtr->spanStart \
+			    : (listRepPtr_)->storePtr->firstUsed)
 
-#define ListObjGetElements(listPtr, objc, objv) \
-    ((objv) = ListRepPtr(listPtr)->elements, \
-     (objc) = ListRepPtr(listPtr)->elemCount)
+/* Returns the number of elements in this listRep */
+#define ListRepLength(listRepPtr_)                               \
+    ((listRepPtr_)->spanPtr ? (listRepPtr_)->spanPtr->spanLength \
+			    : (listRepPtr_)->storePtr->numUsed)
 
-#define ListObjLength(listPtr, len) \
-    ((len) = ListRepPtr(listPtr)->elemCount)
+/* Returns a pointer to the first slot containing this ListRep elements */
+#define ListRepElementsBase(listRepPtr_) \
+    (&(listRepPtr_)->storePtr->slots[ListRepStart(listRepPtr_)])
 
-#define ListObjIsCanonical(listPtr) \
-    (((listPtr)->bytes == NULL) || ListRepPtr(listPtr)->canonicalFlag)
+/* Stores the number of elements and base address of the element array */
+#define ListRepElements(listRepPtr_, objc_, objv_) \
+    (((objv_) = ListRepElementsBase(listRepPtr_)), \
+     ((objc_) = ListRepLength(listRepPtr_)))
 
-#define TclListObjGetElementsM(interp, listPtr, objcPtr, objvPtr) \
-    (((listPtr)->typePtr == &tclListType) \
-	    ? ((ListObjGetElements((listPtr), *(objcPtr), *(objvPtr))), TCL_OK)\
-	    : Tcl_ListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)))
+/* Returns 1/0 whether the ListRep's ListStore is shared. */
+#define ListRepIsShared(listRepPtr_) ((listRepPtr_)->storePtr->refCount > 1)
 
-#define TclListObjLengthM(interp, listPtr, lenPtr) \
-    (((listPtr)->typePtr == &tclListType) \
-	    ? ((ListObjLength((listPtr), *(lenPtr))), TCL_OK)\
-	    : Tcl_ListObjLength((interp), (listPtr), (lenPtr)))
+/* Returns a pointer to the ListStore component */
+#define ListObjStorePtr(listObj_) \
+    ((ListStore *)((listObj_)->internalRep.twoPtrValue.ptr1))
 
-#define TclListObjIsCanonical(listPtr) \
-    (((listPtr)->typePtr == &tclListType) ? ListObjIsCanonical((listPtr)) : 0)
+/* Returns a pointer to the ListSpan component */
+#define ListObjSpanPtr(listObj_) \
+    ((ListSpan *)((listObj_)->internalRep.twoPtrValue.ptr2))
+
+/* Returns the ListRep internal representaton in a Tcl_Obj */
+#define ListObjGetRep(listObj_, listRepPtr_)                 \
+    do {                                                     \
+	(listRepPtr_)->storePtr = ListObjStorePtr(listObj_); \
+	(listRepPtr_)->spanPtr = ListObjSpanPtr(listObj_);   \
+    } while (0)
+
+/* Returns the length of the list */
+#define ListObjLength(listObj_, len_)                                         \
+    ((len_) = ListObjSpanPtr(listObj_) ? ListObjSpanPtr(listObj_)->spanLength \
+				       : ListObjStorePtr(listObj_)->numUsed)
+
+/* Returns the starting slot index of this list's elements in the ListStore */
+#define ListObjStart(listObj_)                                      \
+    (ListObjSpanPtr(listObj_) ? ListObjSpanPtr(listObj_)->spanStart \
+			      : ListObjStorePtr(listObj_)->firstUsed)
+
+/* Stores the element count and base address of this list's elements */
+#define ListObjGetElements(listObj_, objc_, objv_) \
+    (((objv_) = &ListObjStorePtr(listObj_)->slots[ListObjStart(listObj_)]), \
+     (ListObjLength(listObj_, (objc_))))
+
+/*
+ * Returns 1/0 whether the internal representation (not the Tcl_Obj itself)
+ * is shared.  Note by intent this only checks for sharing of ListStore,
+ * not spans.
+ */
+#define ListObjRepIsShared(listObj_) (ListObjStorePtr(listObj_)->refCount > 1)
+
+/*
+ * Certain commands like concat are optimized if an existing string
+ * representation of a list object is known to be in canonical format (i.e.
+ * generated from the list representation). There are three conditions when
+ * this will be the case:
+ * (1) No string representation exists which means it will obviously have
+ * to be generated from the list representation when needed
+ * (2) The ListStore flags is marked canonical. This is done at the time
+ * the string representation is generated from the list IF the list
+ * representation does not have a span (see comments in UpdateStringOfList).
+ * (3) The list representation does not have a span component. This is
+ * because list Tcl_Obj's with spans are always created from existing lists
+ * and never from strings (see SetListFromAny) and thus their string
+ * representation will always be canonical.
+ */
+#define ListObjIsCanonical(listObj_)                             \
+    (((listObj_)->bytes == NULL)                                 \
+     || (ListObjStorePtr(listObj_)->flags & LISTSTORE_CANONICAL) \
+     || ListObjSpanPtr(listObj_) != NULL)
+
+/*
+ * Converts the Tcl_Obj to a list if it isn't one and stores the element
+ * count and base address of this list's elements in objcPtr_ and objvPtr_.
+ * Return TCL_OK on success or TCL_ERROR if the Tcl_Obj cannot be
+ * converted to a list.
+ */
+#define TclListObjGetElementsM(interp_, listObj_, objcPtr_, objvPtr_)    \
+    (((listObj_)->typePtr == &tclListType)                              \
+	 ? ((ListObjGetElements((listObj_), *(objcPtr_), *(objvPtr_))), \
+	    TCL_OK)                                                     \
+	 : Tcl_ListObjGetElements(                                      \
+	     (interp_), (listObj_), (objcPtr_), (objvPtr_)))
+
+/*
+ * Converts the Tcl_Obj to a list if it isn't one and stores the element
+ * count in lenPtr_.  Returns TCL_OK on success or TCL_ERROR if the
+ * Tcl_Obj cannot be converted to a list.
+ */
+#define TclListObjLengthM(interp_, listObj_, lenPtr_)         \
+    (((listObj_)->typePtr == &tclListType)                   \
+	 ? ((ListObjLength((listObj_), *(lenPtr_))), TCL_OK) \
+	 : Tcl_ListObjLength((interp_), (listObj_), (lenPtr_)))
+
+#define TclListObjIsCanonical(listObj_) \
+    (((listObj_)->typePtr == &tclListType) ? ListObjIsCanonical((listObj_)) : 0)
 
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
@@ -2718,6 +2897,7 @@ MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
 MODULE_SCOPE const Tcl_ObjType tclListType;
+MODULE_SCOPE const Tcl_ObjType tclArithSeriesType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
@@ -2933,6 +3113,8 @@ MODULE_SCOPE Tcl_ObjCmdProc TclFileReadLinkCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileRenameCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileTempDirCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileTemporaryCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileHomeCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileTildeExpandCmd;
 MODULE_SCOPE void	TclCreateLateExitHandler(Tcl_ExitProc *proc,
 			    void *clientData);
 MODULE_SCOPE void	TclDeleteLateExitHandler(Tcl_ExitProc *proc,
@@ -2976,8 +3158,7 @@ MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
 			    Tcl_ObjCmdProc *proc, Tcl_ObjCmdProc *nreProc,
-			    void *clientData,
-			    Tcl_CmdDeleteProc *deleteProc);
+			    void *clientData, Tcl_CmdDeleteProc *deleteProc);
 MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    const char *encodingName);
 MODULE_SCOPE void	TclFSUnloadTempFile(Tcl_LoadHandle loadHandle);
@@ -3041,6 +3222,12 @@ MODULE_SCOPE int	TclIsDigitProc(int byte);
 MODULE_SCOPE int	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(size_t elements, Tcl_Obj * const objv[],
 			    int forceRelative);
+MODULE_SCOPE int	MakeTildeRelativePath(Tcl_Interp *interp, const char *user,
+			    const char *subPath, Tcl_DString *dsPtr);
+MODULE_SCOPE Tcl_Obj *	TclGetHomeDirObj(Tcl_Interp *interp, const char *user);
+MODULE_SCOPE Tcl_Obj *	TclResolveTildePath(Tcl_Interp *interp,
+			    Tcl_Obj *pathObj);
+MODULE_SCOPE Tcl_Obj *	TclResolveTildePathList(Tcl_Obj *pathsObj);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
@@ -3051,6 +3238,9 @@ MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, size_t line, int n,
 			    int *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
+MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
+			    Tcl_Obj *toObj, size_t elemCount,
+			    Tcl_Obj *const elemObjv[]);
 MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, size_t fromIdx,
 			    size_t toIdx);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
@@ -3060,6 +3250,7 @@ MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
+MODULE_SCOPE int TclMakeSafe(Tcl_Interp *interp);
 MODULE_SCOPE int	TclMaxListLength(const char *bytes, size_t numBytes,
 			    const char **endPtr);
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
@@ -3097,7 +3288,7 @@ MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    size_t len);
 MODULE_SCOPE void	TclpAlertNotifier(void *clientData);
-MODULE_SCOPE ClientData	TclpNotifierData(void);
+MODULE_SCOPE void *TclpNotifierData(void);
 MODULE_SCOPE void	TclpServiceModeHook(int mode);
 MODULE_SCOPE void	TclpSetTimer(const Tcl_Time *timePtr);
 MODULE_SCOPE int	TclpWaitForEvent(const Tcl_Time *timePtr);
@@ -3121,7 +3312,7 @@ MODULE_SCOPE size_t	TclpFindVariable(const char *name, size_t *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    TCL_HASH_TYPE *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
-MODULE_SCOPE ClientData	TclpInitNotifier(void);
+MODULE_SCOPE void *TclpInitNotifier(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
 MODULE_SCOPE void	TclpInitUnlock(void);
 MODULE_SCOPE Tcl_Obj *	TclpObjListVolumes(void);
@@ -3140,7 +3331,7 @@ MODULE_SCOPE int	TclCrossFilesystemCopy(Tcl_Interp *interp,
 MODULE_SCOPE int	TclpMatchInDirectory(Tcl_Interp *interp,
 			    Tcl_Obj *resultPtr, Tcl_Obj *pathPtr,
 			    const char *pattern, Tcl_GlobTypeData *types);
-MODULE_SCOPE void	*TclpGetNativeCwd(void *clientData);
+MODULE_SCOPE void *TclpGetNativeCwd(void *clientData);
 MODULE_SCOPE Tcl_FSDupInternalRepProc TclNativeDupInternalRep;
 MODULE_SCOPE Tcl_Obj *	TclpObjLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
 			    int linkType);
@@ -3427,6 +3618,9 @@ MODULE_SCOPE int	Tcl_LappendObjCmd(void *clientData,
 MODULE_SCOPE int	Tcl_LassignObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LeditObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LindexObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3464,6 +3658,9 @@ MODULE_SCOPE int	Tcl_LreverseObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LsearchObjCmd(void *clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LseqObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LsetObjCmd(void *clientData,
@@ -4661,8 +4858,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	    : Tcl_UtfToUniChar(str, chPtr))
 #else
 #define TclUtfToUniChar(str, chPtr) \
-	((((unsigned char) *(str)) < 0x80) ?		\
-	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
+	(((UCHAR(*(str))) < 0x80) ?		\
+	    ((*(chPtr) = UCHAR(*(str))), 1)	\
 	    : Tcl_UtfToChar16(str, chPtr))
 #endif
 

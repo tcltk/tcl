@@ -944,7 +944,7 @@ Tcl_WrongNumArgs(
 	 * (either another element from objv, or the message string).
 	 */
 
-	if (i<objc-1 || message!=NULL) {
+	if (i + 1 < objc || message!=NULL) {
 	    Tcl_AppendStringsToObj(objPtr, " ", NULL);
 	}
     }

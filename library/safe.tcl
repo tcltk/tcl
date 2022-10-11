@@ -524,8 +524,6 @@ proc ::safe::InterpInit {
     ::interp alias $child ::tcl::info::nameofexecutable {} \
 	::safe::AliasExeName $child
 
-    # The allowed child variables already have been set by Tcl_MakeSafe(3)
-
     # Source init.tcl and tm.tcl into the child, to get auto_load and
     # other procedures defined:
 
@@ -733,9 +731,6 @@ proc ::safe::CheckFileName {child file} {
 # prevent discovery of what home directories exist.
 
 proc ::safe::AliasFileSubcommand {child subcommand name} {
-    if {[string match ~* $name]} {
-	set name ./$name
-    }
     tailcall ::interp invokehidden $child tcl:file:$subcommand $name
 }
 

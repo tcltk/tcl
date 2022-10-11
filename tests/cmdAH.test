@@ -100,7 +100,7 @@ test cmdAH-2.3 {Tcl_CdObjCmd} -setup {
     set env(HOME) $oldpwd
     file mkdir $foodir
     cd $foodir
-    cd ~
+    cd [file home]
     string equal [pwd] $oldpwd
 } -cleanup {
     cd $oldpwd
@@ -124,8 +124,21 @@ test cmdAH-2.4 {Tcl_CdObjCmd} -setup {
     set env(HOME) $temp
 } -result 1
 test cmdAH-2.5 {Tcl_CdObjCmd} -returnCodes error -body {
-    cd ~~
-} -result {user "~" doesn't exist}
+    cd ~
+} -result {couldn't change working directory to "~": no such file or directory}
+test cmdAH-2.5.1 {Tcl_CdObjCmd} -setup {
+    set oldpwd [pwd]
+    cd [temporaryDirectory]
+    file delete ./~
+    file mkdir ~
+} -body {
+    cd ~
+    pwd
+} -cleanup {
+    cd [temporaryDirectory]
+    file delete ./~
+    cd $oldpwd
+} -result [file join [temporaryDirectory] ~]
 test cmdAH-2.6 {Tcl_CdObjCmd} -returnCodes error -body {
     cd _foobar
 } -result {couldn't change working directory to "_foobar": no such file or directory}
@@ -349,7 +362,7 @@ test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
 } -result {wrong # args: should be "file subcommand ?arg ...?"}
 test cmdAH-5.2 {Tcl_FileObjCmd} -returnCodes error -body {
     file x
-} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, home, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, tildeexpand, type, volumes, or writable}
 test cmdAH-5.3 {Tcl_FileObjCmd} -returnCodes error -body {
     file exists
 } -result {wrong # args: should be "file exists name"}
@@ -496,7 +509,7 @@ test cmdAH-8.43 {Tcl_FileObjCmd: dirname} -setup {
 } -constraints testsetplatform -body {
     set env(HOME) "/homewontexist/test"
     testsetplatform unix
-    file dirname ~
+    file dirname [file home]
 } -cleanup {
     set env(HOME) $temp
 } -result /homewontexist
@@ -506,19 +519,13 @@ test cmdAH-8.44 {Tcl_FileObjCmd: dirname} -setup {
 } -constraints testsetplatform -body {
     set env(HOME) "~"
     testsetplatform unix
-    file dirname ~
+    file dirname [file home]
 } -cleanup {
     set env(HOME) $temp
-} -result ~
-test cmdAH-8.45 {Tcl_FileObjCmd: dirname} -setup {
-    set temp $::env(HOME)
-} -constraints {win testsetplatform} -match regexp -body {
-    set ::env(HOME) "/homewontexist/test"
-    testsetplatform windows
+} -result .
+test cmdAH-8.45 {Tcl_FileObjCmd: dirname ~} -body {
     file dirname ~
-} -cleanup {
-    set ::env(HOME) $temp
-} -result {([a-zA-Z]:?)/homewontexist}
+} -result .
 test cmdAH-8.46 {Tcl_FileObjCmd: dirname} {
     set f [file normalize [info nameof]]
     file exists $f
@@ -626,36 +633,19 @@ test cmdAH-9.26 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform windows
     file tail {//foo/bar}
 } {}
-test cmdAH-9.42 {Tcl_FileObjCmd: tail} -constraints testsetplatform -setup {
-    global env
-    set temp $env(HOME)
-} -body {
-    set env(HOME) "/home/test"
-    testsetplatform unix
+test cmdAH-9.42 {Tcl_FileObjCmd: tail ~} -body {
     file tail ~
-} -cleanup {
-    set env(HOME) $temp
-} -result test
+} -result ~
 test cmdAH-9.43 {Tcl_FileObjCmd: tail} -constraints testsetplatform -setup {
     global env
     set temp $env(HOME)
 } -body {
     set env(HOME) "~"
     testsetplatform unix
-    file tail ~
+    file tail [file home]
 } -cleanup {
     set env(HOME) $temp
-} -result {}
-test cmdAH-9.44 {Tcl_FileObjCmd: tail} -constraints testsetplatform -setup {
-    global env
-    set temp $env(HOME)
-} -body {
-    set env(HOME) "/home/test"
-    testsetplatform windows
-    file tail ~
-} -cleanup {
-    set env(HOME) $temp
-} -result test
+} -result ~
 test cmdAH-9.46 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail {f.oo\bar/baz.bat}
@@ -686,7 +676,7 @@ test cmdAH-9.52 {Tcl_FileObjCmd: tail / normalize, bug 7a9dc52b29} {
 	[file tail {~/test/~foo}] \
 	[file tail [file normalize {~/~foo}]] \
 	[file tail [file normalize {~/test/~foo}]]
-} [lrepeat 4 ./~foo]
+} [lrepeat 4 ~foo]
 
 # rootname
 test cmdAH-10.1 {Tcl_FileObjCmd: rootname} -returnCodes error -body {
@@ -940,7 +930,7 @@ test cmdAH-14.3 {Tcl_FileObjCmd: join} testsetplatform {
 test cmdAH-15.1 {Tcl_FileObjCmd} -constraints testsetplatform -body {
     testsetplatform unix
     file atime ~_bad_user
-} -returnCodes error -result {user "_bad_user" doesn't exist}
+} -returnCodes error -result {could not read "~_bad_user": no such file or directory}
 
 catch {testsetplatform $platform}
 
@@ -1063,9 +1053,8 @@ test cmdAH-19.9 {Tcl_FileObjCmd: ~ : exists} {
     file exists ~nOsUcHuSeR
 } 0
 test cmdAH-19.10 {Tcl_FileObjCmd: ~ : nativename} -body {
-    # should probably be a non-error in fact...
     file nativename ~nOsUcHuSeR
-} -returnCodes error -match glob -result *
+} -result ~nOsUcHuSeR
 # The test below has to be done in /tmp rather than the current directory in
 # order to guarantee (?) a local file system: some NFS file systems won't do
 # the stuff below correctly.
@@ -1188,10 +1177,10 @@ test cmdAH-22.3 {Tcl_FileObjCmd: isfile} {file isfile $dirfile} 0
 catch {file link -symbolic $linkfile $gorpfile}
 test cmdAH-23.1 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a
-} -result {wrong # args: should be "file lstat name varName"}
+} -result {could not read "a": no such file or directory}
 test cmdAH-23.2 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a b c
-} -result {wrong # args: should be "file lstat name varName"}
+} -result {wrong # args: should be "file lstat name ?varName?"}
 test cmdAH-23.3 {Tcl_FileObjCmd: lstat} -setup {
     unset -nocomplain stat
 } -constraints {unix nonPortable} -body {
@@ -1521,14 +1510,14 @@ catch {file attributes $gorpfile -permissions 0o765}
 
 # stat
 test cmdAH-28.1 {Tcl_FileObjCmd: stat} -returnCodes error -body {
-    file stat _bogus_
-} -result {wrong # args: should be "file stat name varName"}
+    file stat
+} -result {wrong # args: should be "file stat name ?varName?"}
 test cmdAH-28.2 {Tcl_FileObjCmd: stat} -returnCodes error -body {
     file stat _bogus_ a b
-} -result {wrong # args: should be "file stat name varName"}
+} -result {wrong # args: should be "file stat name ?varName?"}
 test cmdAH-28.3 {Tcl_FileObjCmd: stat} -setup {
     unset -nocomplain stat
-    set stat(blocks) [set stat(blksize) {}]
+    array set stat {blocks {} blksize {}}
 } -body {
     file stat $gorpfile stat
     unset stat(blocks) stat(blksize); # Ignore these fields; not always set
@@ -1621,6 +1610,16 @@ test cmdAH-28.13.1 {Tcl_FileObjCmd: stat (built-in Windows names)} -constraints 
     }
     set res
 } -result {0 0 -1 0 0 8630 0 0 0 characterSpecial 0}
+test cmdAH-28.14 {Tcl_FileObjCmd: stat} -setup {
+    unset -nocomplain stat
+} -body {
+    file stat $gorpfile stat
+    expr {
+		[lsort -stride 2 [array get stat]]
+		eq
+		[lsort -stride 2 [file stat $gorpfile]]
+	}
+} -result {1}
 unset -nocomplain stat
 
 # type
@@ -1680,7 +1679,7 @@ test cmdAH-29.6.1 {
 # Error conditions
 test cmdAH-30.1 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file gorp x
-} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, home, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, tildeexpand, type, volumes, or writable}
 test cmdAH-30.2 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file ex x
 } -match glob -result {unknown or ambiguous subcommand "ex": must be *}
@@ -1699,9 +1698,6 @@ test cmdAH-30.6 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
 test cmdAH-30.7 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file t x
 } -match glob -result {unknown or ambiguous subcommand "t": must be *}
-test cmdAH-30.8 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
-    file dirname ~woohgy
-} -result {user "woohgy" doesn't exist}
 
 # channels
 # In testing 'file channels', we need to make sure that a channel created in
