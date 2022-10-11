@@ -137,9 +137,11 @@ trace was created.
 \fIclientData\fR typically points to an application-specific
 data structure that describes what to do when \fIproc\fR
 is invoked.
-\fIName1\fR and \fIname2\fR give the name of the traced variable
-in the normal two-part form (see the description of \fBTcl_TraceVar2\fR
-below for details).
+\fIName1\fR and \fIname2\fR give the name of the variable that
+triggered the callback in the normal two-part form (see the description
+of \fBTcl_TraceVar2\fR below for details).  In case \fIname1\fR is an
+alias to an array element (created through facilities such as \fBupvar\fR),
+\fIname2\fR holds the index of the array element, rather than NULL.
 \fIFlags\fR is an OR-ed combination of bits providing several
 pieces of information.
 One of the bits \fBTCL_TRACE_READS\fR, \fBTCL_TRACE_WRITES\fR,
