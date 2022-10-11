@@ -209,9 +209,7 @@ static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
  * TIP #508: [array default]
  */
 
-static int		ArrayDefaultCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ArrayDefaultCmd;
 static void		DeleteArrayVar(Var *arrayPtr);
 static void		SetArrayDefault(Var *arrayPtr, Tcl_Obj *defaultObj);
 

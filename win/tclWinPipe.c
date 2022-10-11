@@ -174,25 +174,25 @@ static int		ApplicationType(Tcl_Interp *interp,
 static void		BuildCommandLine(const char *executable, size_t argc,
 			    const char **argv, Tcl_DString *linePtr);
 static BOOL		HasConsole(void);
-static int		PipeBlockModeProc(ClientData instanceData, int mode);
-static void		PipeCheckProc(ClientData clientData, int flags);
-static int		PipeClose2Proc(ClientData instanceData,
+static int		PipeBlockModeProc(void *instanceData, int mode);
+static void		PipeCheckProc(void *clientData, int flags);
+static int		PipeClose2Proc(void *instanceData,
 			    Tcl_Interp *interp, int flags);
 static int		PipeEventProc(Tcl_Event *evPtr, int flags);
-static int		PipeGetHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
+static int		PipeGetHandleProc(void *instanceData,
+			    int direction, void **handlePtr);
 static void		PipeInit(void);
-static int		PipeInputProc(ClientData instanceData, char *buf,
+static int		PipeInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCode);
-static int		PipeOutputProc(ClientData instanceData,
+static int		PipeOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCode);
 static DWORD WINAPI	PipeReaderThread(LPVOID arg);
-static void		PipeSetupProc(ClientData clientData, int flags);
-static void		PipeWatchProc(ClientData instanceData, int mask);
+static void		PipeSetupProc(void *clientData, int flags);
+static void		PipeWatchProc(void *instanceData, int mask);
 static DWORD WINAPI	PipeWriterThread(LPVOID arg);
 static int		TempFileName(WCHAR name[MAX_PATH]);
 static int		WaitForRead(PipeInfo *infoPtr, int blocking);
-static void		PipeThreadActionProc(ClientData instanceData,
+static void		PipeThreadActionProc(void *instanceData,
 			    int action);
 
 /*
@@ -310,7 +310,7 @@ TclpFinalizePipes(void)
 
 void
 PipeSetupProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
@@ -363,7 +363,7 @@ PipeSetupProc(
 
 static void
 PipeCheckProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
@@ -500,7 +500,7 @@ TclpMakeFile(
     HANDLE handle;
 
     if (Tcl_GetChannelHandle(channel, direction,
-	    (ClientData *) &handle) == TCL_OK) {
+	    (void **) &handle) == TCL_OK) {
 	return TclWinMakeFile(handle);
     } else {
 	return (TclFile) NULL;
@@ -1873,10 +1873,10 @@ Tcl_CreatePipe(
 	return TCL_ERROR;
     }
 
-    *rchan = Tcl_MakeFileChannel((ClientData) readHandle, TCL_READABLE);
+    *rchan = Tcl_MakeFileChannel((void *) readHandle, TCL_READABLE);
     Tcl_RegisterChannel(interp, *rchan);
 
-    *wchan = Tcl_MakeFileChannel((ClientData) writeHandle, TCL_WRITABLE);
+    *wchan = Tcl_MakeFileChannel((void *) writeHandle, TCL_WRITABLE);
     Tcl_RegisterChannel(interp, *wchan);
 
     return TCL_OK;
@@ -1951,7 +1951,7 @@ TclGetAndDetachPids(
 
 static int
 PipeBlockModeProc(
-    ClientData instanceData,	/* Instance data for channel. */
+    void *instanceData,	/* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -1990,7 +1990,7 @@ PipeBlockModeProc(
 
 static int
 PipeClose2Proc(
-    ClientData instanceData,	/* Pointer to PipeInfo structure. */
+    void *instanceData,	/* Pointer to PipeInfo structure. */
     Tcl_Interp *interp,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
@@ -2113,7 +2113,7 @@ PipeClose2Proc(
 	if (pipePtr->errorFile) {
 	    WinFile *filePtr = (WinFile *) pipePtr->errorFile;
 
-	    errChan = Tcl_MakeFileChannel((ClientData) filePtr->handle,
+	    errChan = Tcl_MakeFileChannel((void *) filePtr->handle,
 		    TCL_READABLE);
 	    Tcl_Free(filePtr);
 	} else {
@@ -2160,7 +2160,7 @@ PipeClose2Proc(
 
 static int
 PipeInputProc(
-    ClientData instanceData,	/* Pipe state. */
+    void *instanceData,	/* Pipe state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* How much space is available in the
 				 * buffer? */
@@ -2254,7 +2254,7 @@ PipeInputProc(
 
 static int
 PipeOutputProc(
-    ClientData instanceData,	/* Pipe state. */
+    void *instanceData,	/* Pipe state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -2436,7 +2436,7 @@ PipeEventProc(
 
 static void
 PipeWatchProc(
-    ClientData instanceData,	/* Pipe state. */
+    void *instanceData,	/* Pipe state. */
     int mask)			/* What events to watch for, OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -2498,21 +2498,21 @@ PipeWatchProc(
 
 static int
 PipeGetHandleProc(
-    ClientData instanceData,	/* The pipe state. */
+    void *instanceData,	/* The pipe state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    ClientData *handlePtr)	/* Where to store the handle.  */
+    void **handlePtr)	/* Where to store the handle.  */
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
     WinFile *filePtr;
 
     if (direction == TCL_READABLE && infoPtr->readFile) {
 	filePtr = (WinFile*) infoPtr->readFile;
-	*handlePtr = (ClientData) filePtr->handle;
+	*handlePtr = (void *) filePtr->handle;
 	return TCL_OK;
     }
     if (direction == TCL_WRITABLE && infoPtr->writeFile) {
 	filePtr = (WinFile*) infoPtr->writeFile;
-	*handlePtr = (ClientData) filePtr->handle;
+	*handlePtr = (void *) filePtr->handle;
 	return TCL_OK;
     }
     return TCL_ERROR;
@@ -2743,7 +2743,7 @@ TclWinAddProcess(
 
 int
 Tcl_PidObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -3137,7 +3137,7 @@ PipeWriterThread(
 
 static void
 PipeThreadActionProc(
-    ClientData instanceData,
+    void *instanceData,
     int action)
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
@@ -3258,7 +3258,7 @@ TclpOpenTemporaryFile(
 	TclDecrRefCount(tmpObj);
     }
 
-    return Tcl_MakeFileChannel((ClientData) handle,
+    return Tcl_MakeFileChannel((void *) handle,
 	    TCL_READABLE|TCL_WRITABLE);
 
   gotError:
@@ -3282,7 +3282,7 @@ TclpOpenTemporaryFile(
 TclPipeThreadInfo *
 TclPipeThreadCreateTI(
     TclPipeThreadInfo **pipeTIPtr,
-    ClientData clientData,
+    void *clientData,
     HANDLE wakeEvent)
 {
     TclPipeThreadInfo *pipeTI;

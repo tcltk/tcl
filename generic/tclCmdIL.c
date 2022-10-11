@@ -4186,7 +4186,7 @@ SequenceIdentifyArgument(
 
 int
 Tcl_LseqObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,	   /* Current interpreter. */
     int objc,		   /* Number of arguments. */
     Tcl_Obj *const objv[]) /* The argument objects. */
@@ -4996,7 +4996,7 @@ Tcl_LsortObjCmd(
 
 int
 Tcl_LeditObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */

@@ -408,10 +408,10 @@ test http-3.27 {http::geturl: -headers override -type} -body {
     http::cleanup $token
 } -match regexp -result {(?n)Host .*
 User-Agent .*
-Connection close
 Content-Type {text/plain;charset=utf-8}
 Accept \*/\*
 Accept-Encoding .*
+Connection close
 Content-Length 5}
 test http-3.28 {http::geturl: -headers override -type default} -body {
     set token [http::geturl $url/headers -query dummy \
@@ -421,10 +421,10 @@ test http-3.28 {http::geturl: -headers override -type default} -body {
     http::cleanup $token
 } -match regexp -result {(?n)Host .*
 User-Agent .*
-Connection close
 Content-Type {text/plain;charset=utf-8}
 Accept \*/\*
 Accept-Encoding .*
+Connection close
 Content-Length 5}
 test http-3.29 {http::geturl IPv6 address} -body {
     # We only want to see if the URL gets parsed correctly. This is
@@ -461,9 +461,9 @@ test http-3.32 {http::geturl: -headers override -accept default} -body {
     http::cleanup $token
 } -match regexp -result {(?n)Host .*
 User-Agent .*
-Connection close
 Accept text/plain,application/tcl-test-value
 Accept-Encoding .*
+Connection close
 Content-Type application/x-www-form-urlencoded
 Content-Length 5}
 # Bug 838e99a76d

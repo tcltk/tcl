@@ -637,14 +637,6 @@ typedef struct Tcl_Obj {
 
 /*
  *----------------------------------------------------------------------------
- * The following type contains the state needed by Tcl_SaveResult. It
- * is typically allocated on the stack.
- */
-
-typedef Tcl_Obj *Tcl_SavedResult;
-
-/*
- *----------------------------------------------------------------------------
  * The following definitions support Tcl's namespace facility. Note: the first
  * five fields must match exactly the fields in a Namespace structure (see
  * tclInt.h).
@@ -802,14 +794,14 @@ typedef struct Tcl_DString {
 /*
  * Flags that may be passed to Tcl_GetIndexFromObj.
  * TCL_EXACT disallows abbreviated strings.
- * TCL_INDEX_NULL_OK allows the empty string or NULL to return TCL_OK.
+ * TCL_NULL_OK allows the empty string or NULL to return TCL_OK.
  *      The returned value will be -1;
  * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
  *      a table that will not live long enough to make it worthwhile.
  */
 
 #define TCL_EXACT		1
-#define TCL_INDEX_NULL_OK	32
+#define TCL_NULL_OK		32
 #define TCL_INDEX_TEMP_TABLE	64
 
 /*
@@ -1863,6 +1855,8 @@ typedef struct Tcl_EncodingType {
  *				reset to an initial state. If the source
  *				buffer contains the entire input stream to be
  *				converted, this flag should be set.
+ * TCL_ENCODING_STRICT -	Be more strict in accepting what
+ *				is considered a 'invalid byte sequence'.
  * TCL_ENCODING_STOPONERROR -	Not used any more.
  * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf does not append a
  *				terminating NUL byte.  Since it does not need
@@ -1894,6 +1888,7 @@ typedef struct Tcl_EncodingType {
 
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
+#define TCL_ENCODING_STRICT			0x04
 #define TCL_ENCODING_STOPONERROR	0x0 /* Not used any more */
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
