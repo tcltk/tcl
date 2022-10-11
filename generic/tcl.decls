@@ -1086,7 +1086,7 @@ declare 288 {
 declare 289 {
     void Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc, void *clientData)
 }
-# Removed in 9.0, replaced by macro.
+# Removed in 9.0
 #declare 290 {
 #    void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
 #}
@@ -1170,11 +1170,11 @@ declare 313 {
     size_t Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
 	    size_t charsToRead, int appendFlag)
 }
-# Removed in 9.0, replaced by macro.
+# Removed in 9.0
 #declare 314 {
 #    void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 #}
-# Removed in 9.0, replaced by macro.
+# Removed in 9.0
 #declare 315 {
 #    void Tcl_SaveResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 #}
@@ -2561,8 +2561,14 @@ declare 673 {
     int Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index)
 }
 
-# slot 674 and 675 are reserved for TIP #618
-
+declare 674 {
+    int Tcl_GetBool(Tcl_Interp *interp, const char *src, int flags,
+	    char *charPtr)
+}
+declare 675 {
+    int Tcl_GetBoolFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int flags, char *charPtr)
+}
 declare 676 {
     Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
 	    const char *cmdName,

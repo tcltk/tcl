@@ -8952,11 +8952,98 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
 
-# The following tests 75.1 to 75.5 exercise strict or tolerant channel
-# encoding.
-# They are left as a place-holder here. If TIP633 is voted, they will
-# come back.
-# Exercise strct channel encoding
+test io-75.1 {multibyte encoding error read results in raw bytes (-nocomplainencoding 1)} -setup {
+    set fn [makeFile {} io-75.1]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # In UTF-8, a byte 0xCx starts a multibyte sequence and must be followed
+    # by a byte > 0x7F. This is violated to get an invalid sequence.
+    puts -nonewline $f "A\xC0\x40"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -nocomplainencoding 1 -buffering none
+} -body {
+    set d [read $f]
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    close $f
+    removeFile io-75.1
+} -result "41c040"
+
+test io-75.2 {unrepresentable character write passes and is replaced by ? (-nocomplainencoding 1)} -setup {
+    set fn [makeFile {} io-75.2]
+    set f [open $fn w+]
+    fconfigure $f -encoding iso8859-1 -nocomplainencoding 1
+} -body {
+    puts -nonewline $f "A\u2022"
+    flush $f
+    seek $f 0
+    read $f
+} -cleanup {
+    close $f
+    removeFile io-75.2
+} -result "A?"
+
+# Incomplete sequence test.
+# This error may IMHO only be detected with the close.
+# But the read already returns the incomplete sequence.
+test io-75.3 {incomplete multibyte encoding read is ignored (-nocomplainencoding 1)} -setup {
+    set fn [makeFile {} io-75.3]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    puts -nonewline $f "A\xC0"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -nocomplainencoding 1
+} -body {
+    set d [read $f]
+    close $f
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    removeFile io-75.3
+} -result "41c0"
+
+# As utf-8 has a special treatment in multi-byte decoding, also test another
+# one.
+test io-75.4 {shiftjis encoding error read results in raw bytes (-nocomplainencoding 1)} -setup {
+    set fn [makeFile {} io-75.4]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # In shiftjis, \x81 starts a two-byte sequence.
+    # But 2nd byte \xFF is not allowed
+    puts -nonewline $f "A\x81\xFFA"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -nocomplainencoding 1
+} -body {
+    set d [read $f]
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    close $f
+    removeFile io-75.4
+} -result "4181ff41"
+
+test io-75.5 {incomplete shiftjis encoding read is ignored (-nocomplainencoding 1)} -setup {
+    set fn [makeFile {} io-75.5]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 announces a two byte sequence.
+    puts -nonewline $f "A\x81"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -nocomplainencoding 1
+} -body {
+    set d [read $f]
+    close $f
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    removeFile io-75.5
+} -result "4181"
+
 test io-75.6 {multibyte encoding error read results in raw bytes} -setup {
     set fn [makeFile {} io-75.6]
     set f [open $fn w+]
@@ -9059,7 +9146,7 @@ test io-75.10 {incomplete shiftjis encoding read is ignored} -setup {
 
 
 
-test io-75.0 {channel modes} -setup {
+test io-76.0 {channel modes} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r]
 } -constraints testchannel -body {
@@ -9069,7 +9156,7 @@ test io-75.0 {channel modes} -setup {
     removeFile dummy
 } -result {read {}}
 
-test io-75.1 {channel modes} -setup {
+test io-76.1 {channel modes} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile w]
 } -constraints testchannel -body {
@@ -9079,7 +9166,7 @@ test io-75.1 {channel modes} -setup {
     removeFile dummy
 } -result {{} write}
 
-test io-75.2 {channel modes} -setup {
+test io-76.2 {channel modes} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r+]
 } -constraints testchannel -body {
@@ -9089,7 +9176,7 @@ test io-75.2 {channel modes} -setup {
     removeFile dummy
 } -result {read write}
 
-test io-75.3 {channel mode dropping} -setup {
+test io-76.3 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r]
 } -constraints testchannel -body {
@@ -9100,7 +9187,7 @@ test io-75.3 {channel mode dropping} -setup {
     removeFile dummy
 } -result {{read {}} {read {}}}
 
-test io-75.4 {channel mode dropping} -setup {
+test io-76.4 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r]
 } -constraints testchannel -body {
@@ -9110,7 +9197,7 @@ test io-75.4 {channel mode dropping} -setup {
     removeFile dummy
 } -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
 
-test io-75.5 {channel mode dropping} -setup {
+test io-76.5 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile w]
 } -constraints testchannel -body {
@@ -9121,7 +9208,7 @@ test io-75.5 {channel mode dropping} -setup {
     removeFile dummy
 } -result {{{} write} {{} write}}
 
-test io-75.6 {channel mode dropping} -setup {
+test io-76.6 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile w]
 } -constraints testchannel -body {
@@ -9131,7 +9218,7 @@ test io-75.6 {channel mode dropping} -setup {
     removeFile dummy
 } -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
 
-test io-75.7 {channel mode dropping} -setup {
+test io-76.7 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r+]
 } -constraints testchannel -body {
@@ -9142,7 +9229,7 @@ test io-75.7 {channel mode dropping} -setup {
     removeFile dummy
 } -result {{{} write} {read write}}
 
-test io-75.8 {channel mode dropping} -setup {
+test io-76.8 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r+]
 } -constraints testchannel -body {
@@ -9153,7 +9240,7 @@ test io-75.8 {channel mode dropping} -setup {
     removeFile dummy
 } -result {{read {}} {read write}}
 
-test io-75.9 {channel mode dropping} -setup {
+test io-76.9 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r+]
 } -constraints testchannel -body {
@@ -9164,7 +9251,7 @@ test io-75.9 {channel mode dropping} -setup {
     removeFile dummy
 } -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
 
-test io-75.10 {channel mode dropping} -setup {
+test io-76.10 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
     set f [open $datafile r+]
 } -constraints testchannel -body {

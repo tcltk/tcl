@@ -45,10 +45,8 @@ typedef struct {
  * Declarations for functions defined in this file.
  */
 
-static int	ProcBodyTestProcObjCmd(void *dummy,
-			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int	ProcBodyTestCheckObjCmd(void *dummy,
-			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ProcBodyTestProcObjCmd;
+static Tcl_ObjCmdProc ProcBodyTestCheckObjCmd;
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
 			const char *namesp, const CmdTable *cmdTablePtr);
@@ -340,7 +338,7 @@ ProcBodyTestCheckObjCmd(
     }
 
     version = Tcl_PkgPresentEx(interp, packageName, packageVersion, 1, NULL);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
 	    strcmp(version, packageVersion) == 0));
     return TCL_OK;
 }

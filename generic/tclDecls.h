@@ -1806,8 +1806,12 @@ EXTERN Tcl_Obj *	Tcl_GetRange(Tcl_Obj *objPtr, size_t first,
 				size_t last);
 /* 673 */
 EXTERN int		Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index);
-/* Slot 674 is reserved */
-/* Slot 675 is reserved */
+/* 674 */
+EXTERN int		Tcl_GetBool(Tcl_Interp *interp, const char *src,
+				int flags, char *charPtr);
+/* 675 */
+EXTERN int		Tcl_GetBoolFromObj(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, int flags, char *charPtr);
 /* 676 */
 EXTERN Tcl_Command	Tcl_CreateObjCommand2(Tcl_Interp *interp,
 				const char *cmdName, Tcl_ObjCmdProc2 *proc2,
@@ -2517,8 +2521,8 @@ typedef struct TclStubs {
     const char * (*tcl_UtfAtIndex) (const char *src, size_t index); /* 671 */
     Tcl_Obj * (*tcl_GetRange) (Tcl_Obj *objPtr, size_t first, size_t last); /* 672 */
     int (*tcl_GetUniChar) (Tcl_Obj *objPtr, size_t index); /* 673 */
-    void (*reserved674)(void);
-    void (*reserved675)(void);
+    int (*tcl_GetBool) (Tcl_Interp *interp, const char *src, int flags, char *charPtr); /* 674 */
+    int (*tcl_GetBoolFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, char *charPtr); /* 675 */
     Tcl_Command (*tcl_CreateObjCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 676 */
     Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
     Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 678 */
@@ -3826,8 +3830,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetRange) /* 672 */
 #define Tcl_GetUniChar \
 	(tclStubsPtr->tcl_GetUniChar) /* 673 */
-/* Slot 674 is reserved */
-/* Slot 675 is reserved */
+#define Tcl_GetBool \
+	(tclStubsPtr->tcl_GetBool) /* 674 */
+#define Tcl_GetBoolFromObj \
+	(tclStubsPtr->tcl_GetBoolFromObj) /* 675 */
 #define Tcl_CreateObjCommand2 \
 	(tclStubsPtr->tcl_CreateObjCommand2) /* 676 */
 #define Tcl_CreateObjTrace2 \
@@ -3892,20 +3898,6 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
 #define Tcl_GetStringResult(interp) Tcl_GetString(Tcl_GetObjResult(interp))
-#define Tcl_SaveResult(interp, statePtr) \
-	do { \
-	    *(statePtr) = Tcl_GetObjResult(interp); \
-	    Tcl_IncrRefCount(*(statePtr)); \
-	    Tcl_SetObjResult(interp, Tcl_NewObj()); \
-	} while(0)
-#define Tcl_RestoreResult(interp, statePtr) \
-	do { \
-	    Tcl_ResetResult(interp); \
-   	    Tcl_SetObjResult(interp, *(statePtr)); \
-   	    Tcl_DecrRefCount(*(statePtr)); \
-	} while(0)
-#define Tcl_DiscardResult(statePtr) \
-	Tcl_DecrRefCount(*(statePtr))
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
 	    const char *__result = result; \
