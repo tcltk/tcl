@@ -292,9 +292,9 @@ TestbignumobjCmd(
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetWideIntObj(varPtr[varIndex], mp_iszero(&bignumValue));
+	    Tcl_SetBooleanObj(varPtr[varIndex], mp_iszero(&bignumValue));
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(mp_iszero(&bignumValue)));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewBooleanObj(mp_iszero(&bignumValue)));
 	}
 	mp_clear(&bignumValue);
 	break;
@@ -387,9 +387,9 @@ TestbooleanobjCmd(
 	 */
 
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetWideIntObj(varPtr[varIndex], boolValue != 0);
+	    Tcl_SetBooleanObj(varPtr[varIndex], boolValue);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(boolValue != 0));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewBooleanObj(boolValue));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else if (strcmp(subCmd, "get") == 0) {
@@ -412,9 +412,9 @@ TestbooleanobjCmd(
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetWideIntObj(varPtr[varIndex], boolValue == 0);
+	    Tcl_SetBooleanObj(varPtr[varIndex], !boolValue);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(boolValue == 0));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewBooleanObj(!boolValue));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {

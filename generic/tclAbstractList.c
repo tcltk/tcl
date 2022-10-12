@@ -581,7 +581,6 @@ Tcl_AbstractListObjGetElements(
 
         if (TclAbstractListHasProc(objPtr, TCL_ABSL_GETELEMENTS)) {
             int status = typePtr->getElementsProc(interp, objPtr, objcPtr, objvPtr);
-            /* TODO -- Add error message here, or propagate interp down */
             return status;
         } else {
             if (interp) {

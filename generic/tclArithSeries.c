@@ -767,10 +767,11 @@ TclArithSeriesObjReverse(
 
     return TCL_OK;
 }
+
 /*
 ** Handle ArithSeries GetElements call
 */
-
+
 int
 TclArithSeriesGetElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
