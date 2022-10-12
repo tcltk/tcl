@@ -9,8 +9,8 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <netinet/tcp.h>
 #include "tclInt.h"
+#include <netinet/tcp.h>
 
 /*
  * Helper macros to make parts of this file clearer. The macros do exactly
