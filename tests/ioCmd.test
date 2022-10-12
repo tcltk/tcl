@@ -294,7 +294,7 @@ removeFile fconfigure.dummy
 test iocmd-8.14 {fconfigure command} {
     fconfigure stdin -buffers
 } 4096
-test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOrWin} -setup {
+test iocmd-8.15 {fconfigure command / tcp channel} -constraints {socket unixOrWin} -setup {
     set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]
     proc iocmdSRV {sock ip port} {close $sock}
@@ -306,7 +306,7 @@ test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOr
     close $srv
     unset cli srv port
     rename iocmdSRV {}
-} -returnCodes error -result [expectedOpts "-blah" {-connecting -peername -sockname}]
+} -returnCodes error -result [expectedOpts "-blah" {-connecting -keepalive -nodelay -peername -sockname}]
 test iocmd-8.16 {fconfigure command / tcp channel} -constraints socket -setup {
     set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]
