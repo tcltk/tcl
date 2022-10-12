@@ -28,7 +28,7 @@ testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 test winFile-1.1 {TclpGetUserHome} -constraints {win} -body {
     glob ~nosuchuser
-} -returnCodes error -result {no files matched glob pattern "~nosuchuser"}
+} -result {}
 test winFile-1.2 {TclpGetUserHome} -constraints {win nonPortable} -body {
     # The administrator account should always exist.
     glob ~administrator

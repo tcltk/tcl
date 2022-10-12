@@ -35,6 +35,14 @@ static Tcl_Obj *	SplitUnixPath(const char *path);
 static int		DoGlob(Tcl_Interp *interp, Tcl_Obj *resultPtr,
 			    const char *separators, Tcl_Obj *pathPtr, int flags,
 			    char *pattern, Tcl_GlobTypeData *types);
+static int		TclGlob(Tcl_Interp *interp, char *pattern,
+			    Tcl_Obj *pathPrefix, int globFlags,
+			    Tcl_GlobTypeData *types);
+
+/* Flag values used by TclGlob() */
+
+#define TCL_GLOBMODE_DIR	4
+#define TCL_GLOBMODE_TAILS	8
 
 /*
  * When there is no support for getting the block size of a file in a stat()
@@ -1132,8 +1140,8 @@ Tcl_GlobObjCmd(
     dir = PATH_NONE;
     typePtr = NULL;
     for (i = 1; i < objc; i++) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], options,
+		"option", 0, &index) != TCL_OK) {
 	    string = TclGetString(objv[i]);
 	    if (string[0] == '-') {
 		/*
@@ -1155,7 +1163,10 @@ Tcl_GlobObjCmd(
 
 	switch (index) {
 	case GLOB_NOCOMPLAIN:			/* -nocomplain */
-	    globFlags |= TCL_GLOBMODE_NO_COMPLAIN;
+	    /*
+	     * Do nothing; This is normal operations in Tcl 9.
+	     * Keep accepting as a no-op option to accommodate old scripts.
+	     */
 	    break;
 	case GLOB_DIR:				/* -dir */
 	    if (i == (objc-1)) {
@@ -1513,41 +1524,6 @@ Tcl_GlobObjCmd(
 	}
     }
 
-    if ((globFlags & TCL_GLOBMODE_NO_COMPLAIN) == 0) {
-	if (TclListObjLengthM(interp, Tcl_GetObjResult(interp),
-		&length) != TCL_OK) {
-	    /*
-	     * This should never happen. Maybe we should be more dramatic.
-	     */
-
-	    result = TCL_ERROR;
-	    goto endOfGlob;
-	}
-
-	if (length == 0) {
-	    Tcl_Obj *errorMsg =
-		    Tcl_ObjPrintf("no files matched glob pattern%s \"",
-			    (join || (objc == 1)) ? "" : "s");
-
-	    if (join) {
-		Tcl_AppendToObj(errorMsg, Tcl_DStringValue(&prefix), -1);
-	    } else {
-		const char *sep = "";
-
-		for (i = 0; i < objc; i++) {
-		    Tcl_AppendPrintfToObj(errorMsg, "%s%s",
-			    sep, TclGetString(objv[i]));
-		    sep = " ";
-		}
-	    }
-	    Tcl_AppendToObj(errorMsg, "\"", -1);
-	    Tcl_SetObjResult(interp, errorMsg);
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "NOMATCH",
-		    NULL);
-	    result = TCL_ERROR;
-	}
-    }
-
   endOfGlob:
     if (join || (dir == PATH_GENERAL)) {
 	Tcl_DStringFree(&prefix);
@@ -1595,7 +1571,7 @@ Tcl_GlobObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 TclGlob(
     Tcl_Interp *interp,		/* Interpreter for returning error message or
 				 * appending list of matching file names. */
