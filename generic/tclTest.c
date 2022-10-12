@@ -3508,7 +3508,7 @@ TestlistrepCmd(
 	    return TCL_ERROR;
 	} else {
 	    Tcl_Obj **objs;
-	    ListSizeT nobjs;
+	    Tcl_Size nobjs;
 	    ListRep listRep;
 	    Tcl_Obj *listRepObjs[4];
 

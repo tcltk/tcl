@@ -707,15 +707,15 @@ Tcl_Obj *
 TclArithSeriesObjRange(
     Tcl_Interp *interp,         /* For error message(s) */
     Tcl_Obj *arithSeriesPtr,	/* List object to take a range from. */
-    int fromIdx,		/* Index of first element to include. */
-    int toIdx)			/* Index of last element to include. */
+    Tcl_Size fromIdx,		/* Index of first element to include. */
+    Tcl_Size toIdx)			/* Index of last element to include. */
 {
     ArithSeries *arithSeriesRepPtr;
     Tcl_Obj *startObj, *endObj, *stepObj;
 
     ArithSeriesGetInternalRep(arithSeriesPtr, arithSeriesRepPtr);
 
-    if (fromIdx < 0) {
+    if (fromIdx == TCL_INDEX_NONE) {
 	fromIdx = 0;
     }
     if (fromIdx > toIdx) {
@@ -821,7 +821,7 @@ TclArithSeriesGetElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *objPtr,		/* AbstractList object for which an element
 				 * array is to be returned. */
-    ListSizeT *objcPtr,		/* Where to store the count of objects
+    Tcl_Size *objcPtr,		/* Where to store the count of objects
 				 * referenced by objv. */
     Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
 				 * pointers to the list's objects. */
