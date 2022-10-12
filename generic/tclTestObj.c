@@ -24,6 +24,7 @@
 #   include "tclTomMath.h"
 #endif
 #include "tclStringRep.h"
+#include <stdbool.h>
 
 #ifdef __GNUC__
 /*
@@ -353,7 +354,7 @@ TestbooleanobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     size_t varIndex;
-    int boolValue;
+    bool boolValue;
     const char *subCmd;
     Tcl_Obj **varPtr;
 

@@ -33,6 +33,7 @@
 #endif
 #include "tclOO.h"
 #include <math.h>
+#include <stdbool.h>
 
 /*
  * Required for Testregexp*Cmd
@@ -2332,7 +2333,7 @@ TesteventProc(
     Tcl_Obj *command = ev->command;
     int result = Tcl_EvalObjEx(interp, command,
 	    TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
-    int retval;
+    bool retval;
 
     if (result != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
@@ -2904,7 +2905,8 @@ TestlinkCmd(
     static Tcl_WideUInt uwideVar = 123;
     static int created = 0;
     char buffer[2*TCL_DOUBLE_SPACE];
-    int writable, flag;
+    bool writable;
+    int flag;
     Tcl_Obj *tmp;
 
     if (argc < 2) {
@@ -5537,7 +5539,8 @@ TestsaveresultCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Interp* iPtr = (Interp*) interp;
-    int discard, result, index;
+    int result, index;
+    bool discard;
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
     static const char *const optionStrings[] = {
@@ -6522,7 +6525,7 @@ TestSocketCmd(
     if ((cmdName[0] == 't') && (strncmp(cmdName, "testflags", len) == 0)) {
         Tcl_Channel hChannel;
         int modePtr;
-        int testMode;
+        bool testMode;
         TcpState *statePtr;
         /* Set test value in the socket driver
          */
@@ -6746,7 +6749,8 @@ TestFilesystemObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int res, boolVal;
+    int res;
+    bool boolVal;
     const char *msg;
 
     if (objc != 2) {
@@ -7117,7 +7121,8 @@ TestSimpleFilesystemObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int res, boolVal;
+    int res;
+    bool boolVal;
     const char *msg;
 
     if (objc != 2) {
