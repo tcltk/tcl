@@ -2769,16 +2769,6 @@ typedef struct TclFileAttrProcs {
 
 typedef struct TclFile_ *TclFile;
 
-/*
- * The "globParameters" argument of the function TclGlob is an or'ed
- * combination of the following values:
- */
-
-#define TCL_GLOBMODE_NO_COMPLAIN	1
-#define TCL_GLOBMODE_JOIN		2
-#define TCL_GLOBMODE_DIR		4
-#define TCL_GLOBMODE_TAILS		8
-
 typedef enum Tcl_PathPart {
     TCL_PATH_DIRNAME,
     TCL_PATH_TAIL,
@@ -3190,9 +3180,6 @@ MODULE_SCOPE int	TclGetLoadedLibraries(Tcl_Interp *interp,
 				const char *packageName);
 MODULE_SCOPE int	TclGetWideBitsFromObj(Tcl_Interp *, Tcl_Obj *,
 				Tcl_WideInt *);
-MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
-			    Tcl_Obj *unquotedPrefix, int globFlags,
-			    Tcl_GlobTypeData *types);
 MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 			    Tcl_Obj *incrPtr);
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
