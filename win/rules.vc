@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 10
+RULES_VERSION_MINOR = 11
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -880,6 +880,7 @@ USE_THREAD_ALLOC= 0
 !if [nmakehlp -f $(OPTS) "tcl8"]
 !message *** Build for Tcl8
 TCL_MAJOR_VERSION = 8
+TCL_BUILD_FOR = 8
 !endif
 
 !if $(TCL_MAJOR_VERSION) == 8
@@ -1171,7 +1172,7 @@ TCLSH		= $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX:t=).exe
 TCLSH           = $(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
 
-!if $(TCL_MAJOR_VERSION) == 8
+!if $(TCL_MAJOR_VERSION) == 8 && "$(TCL_BUILD_FOR)" != "8"
 TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib
 !else
 TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub.lib
@@ -1195,7 +1196,7 @@ TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX:t=).exe
 !if !exist($(TCLSH))
 TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
-!if $(TCL_MAJOR_VERSION) == 8
+!if $(TCL_MAJOR_VERSION) == 8 && "$(TCL_BUILD_FOR)" != "8"
 TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib
 !else
 TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub.lib
@@ -1215,7 +1216,11 @@ TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
 
 !endif # TCLINSTALL
 
+!if !$(STATIC_BUILD)
+tcllibs = "$(TCLSTUBLIB)"
+!else
 tcllibs = "$(TCLSTUBLIB)" "$(TCLIMPLIB)"
+!endif
 
 !endif # $(DOING_TCL)
 
