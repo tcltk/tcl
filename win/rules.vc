@@ -879,7 +879,6 @@ USE_THREAD_ALLOC= 0
 
 !if [nmakehlp -f $(OPTS) "tcl8"]
 !message *** Build for Tcl8
-TCL_MAJOR_VERSION = 8
 TCL_BUILD_FOR = 8
 !endif
 
@@ -1172,7 +1171,7 @@ TCLSH		= $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX:t=).exe
 TCLSH           = $(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
 
-!if $(TCL_MAJOR_VERSION) == 8 && "$(TCL_BUILD_FOR)" != "8"
+!if $(TCL_MAJOR_VERSION) == 8
 TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib
 !else
 TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub.lib
@@ -1196,7 +1195,7 @@ TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX:t=).exe
 !if !exist($(TCLSH))
 TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
-!if $(TCL_MAJOR_VERSION) == 8 && "$(TCL_BUILD_FOR)" != "8"
+!if $(TCL_MAJOR_VERSION) == 8
 TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib
 !else
 TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub.lib
@@ -1216,7 +1215,7 @@ TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
 
 !endif # TCLINSTALL
 
-!if !$(STATIC_BUILD)
+!if !$(STATIC_BUILD) && "$(TCL_BUILD_FOR)" == "8"
 tcllibs = "$(TCLSTUBLIB)"
 !else
 tcllibs = "$(TCLSTUBLIB)" "$(TCLIMPLIB)"
@@ -1240,7 +1239,7 @@ WISHNAMEPREFIX = wish
 WISHNAME = $(WISHNAMEPREFIX)$(TK_VERSION)$(SUFX).exe
 TKLIBNAME8	= tk$(TK_VERSION)$(SUFX).$(EXT)
 TKLIBNAME9	= tcl9tk$(TK_VERSION)$(SUFX).$(EXT)
-!if $(TCL_MAJOR_VERSION) == 8
+!if $(TCL_MAJOR_VERSION) == 8 || "$(TCL_BUILD_FOR)" == "8"
 TKLIBNAME	= tk$(TK_VERSION)$(SUFX).$(EXT)
 TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX).lib
 !else
@@ -1297,7 +1296,7 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 PRJLIBNAME8	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
 PRJLIBNAME9	= tcl9$(PROJECT)$(VERSION)$(SUFX).$(EXT)
-!if $(TCL_MAJOR_VERSION) == 8
+!if $(TCL_MAJOR_VERSION) == 8 || "$(TCL_BUILD_FOR)" == "8"
 PRJLIBNAME	= $(PRJLIBNAME8)
 !else
 PRJLIBNAME	= $(PRJLIBNAME9)
@@ -1455,7 +1454,7 @@ COMPILERFLAGS  = /D_ATL_XP_TARGETING
 !if "$(TCL_UTF_MAX)" == "3"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_UTF_MAX=3
 !endif
-!if $(TCL_MAJOR_VERSION) == 8
+!if "$(TCL_BUILD_FOR)" == "8"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8
 !endif
 
