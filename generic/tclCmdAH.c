@@ -975,20 +975,15 @@ TclNRExprObjCmd(
 {
     Tcl_Obj *resultPtr, *objPtr;
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "expression");
 	return TCL_ERROR;
     }
 
     TclNewObj(resultPtr);
     Tcl_IncrRefCount(resultPtr);
-    if (objc == 2) {
-	objPtr = objv[1];
-	TclNRAddCallback(interp, ExprCallback, resultPtr, NULL, NULL, NULL);
-    } else {
-	objPtr = Tcl_ConcatObj(objc-1, objv+1);
-	TclNRAddCallback(interp, ExprCallback, resultPtr, objPtr, NULL, NULL);
-    }
+    objPtr = objv[1];
+    TclNRAddCallback(interp, ExprCallback, resultPtr, NULL, NULL, NULL);
 
     return Tcl_NRExprObj(interp, objPtr, resultPtr);
 }
@@ -1000,11 +995,6 @@ ExprCallback(
     int result)
 {
     Tcl_Obj *resultPtr = (Tcl_Obj *)data[0];
-    Tcl_Obj *objPtr = (Tcl_Obj *)data[1];
-
-    if (objPtr != NULL) {
-	Tcl_DecrRefCount(objPtr);
-    }
 
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultPtr);

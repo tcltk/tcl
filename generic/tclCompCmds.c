@@ -2427,7 +2427,7 @@ TclCompileExprCmd(
 {
     Tcl_Token *firstWordPtr;
 
-    if (parsePtr->numWords == 1) {
+    if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
     }
 
