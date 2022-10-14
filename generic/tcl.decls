@@ -2541,7 +2541,7 @@ declare 682 {
 
 # TIP #636
 declare 683 {
-    Tcl_Obj *Tcl_NewAbstractListObj(Tcl_Interp *interp, const Tcl_AbstractListType* vTablePtr)
+    Tcl_Obj *Tcl_AbstractListObjNew(Tcl_Interp *interp, const Tcl_AbstractListType* vTablePtr)
 }
 declare 684 {
     Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr)

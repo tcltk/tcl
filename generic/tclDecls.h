@@ -2014,7 +2014,7 @@ EXTERN int		Tcl_NRCallObjProc2(Tcl_Interp *interp,
 EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
 				Tcl_Channel chan, int mode);
 /* 683 */
-EXTERN Tcl_Obj *	Tcl_NewAbstractListObj(Tcl_Interp *interp,
+EXTERN Tcl_Obj *	Tcl_AbstractListObjNew(Tcl_Interp *interp,
 				const Tcl_AbstractListType*vTablePtr);
 /* 684 */
 EXTERN Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr);
@@ -2758,7 +2758,7 @@ typedef struct TclStubs {
     void (*reserved680)(void);
     void (*reserved681)(void);
     int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
-    Tcl_Obj * (*tcl_NewAbstractListObj) (Tcl_Interp *interp, const Tcl_AbstractListType*vTablePtr); /* 683 */
+    Tcl_Obj * (*tcl_AbstractListObjNew) (Tcl_Interp *interp, const Tcl_AbstractListType*vTablePtr); /* 683 */
     Tcl_WideInt (*tcl_AbstractListObjLength) (Tcl_Obj *abstractListPtr); /* 684 */
     int (*tcl_AbstractListObjIndex) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr); /* 685 */
     int (*tcl_AbstractListObjRange) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx, Tcl_Obj **newObjPtr); /* 686 */
@@ -4160,8 +4160,8 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 681 is reserved */
 #define Tcl_RemoveChannelMode \
 	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
-#define Tcl_NewAbstractListObj \
-	(tclStubsPtr->tcl_NewAbstractListObj) /* 683 */
+#define Tcl_AbstractListObjNew \
+	(tclStubsPtr->tcl_AbstractListObjNew) /* 683 */
 #define Tcl_AbstractListObjLength \
 	(tclStubsPtr->tcl_AbstractListObjLength) /* 684 */
 #define Tcl_AbstractListObjIndex \

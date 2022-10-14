@@ -217,7 +217,7 @@ TclNewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_W
     arithSeriesRepPtr->len = length;
     arithSeriesRepPtr->elements = NULL;
 
-    arithSeriesObj = Tcl_NewAbstractListObj(NULL, &arithSeriesType);
+    arithSeriesObj = Tcl_AbstractListObjNew(NULL, &arithSeriesType);
     Tcl_AbstractListSetConcreteRep(arithSeriesObj, arithSeriesRepPtr);
 
     if (length > 0)
@@ -264,7 +264,7 @@ TclNewArithSeriesDbl(double start, double end, double step, Tcl_WideInt len)
     arithSeriesRepPtr->len = length;
     arithSeriesRepPtr->elements = NULL;
 
-    arithSeriesObj = Tcl_NewAbstractListObj(NULL, &arithSeriesType);
+    arithSeriesObj = Tcl_AbstractListObjNew(NULL, &arithSeriesType);
     Tcl_AbstractListSetConcreteRep(arithSeriesObj, arithSeriesRepPtr);
 
     if (length > 0)

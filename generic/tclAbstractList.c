@@ -68,7 +68,7 @@ Tcl_AbstractListObjLength(Tcl_Obj *abstractListObjPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_NewAbstractListObj()
+ * Tcl_AbstractListObjNew()
  *
  *	Creates a new AbstractList object. The returned object has
  *	refcount = 0.
@@ -85,7 +85,7 @@ Tcl_AbstractListObjLength(Tcl_Obj *abstractListObjPtr)
  */
 
 Tcl_Obj*
-Tcl_NewAbstractListObj(Tcl_Interp *interp, const Tcl_AbstractListType* vTablePtr)
+Tcl_AbstractListObjNew(Tcl_Interp *interp, const Tcl_AbstractListType* vTablePtr)
 {
     Tcl_Obj *objPtr;
     Tcl_ObjInternalRep itr;
