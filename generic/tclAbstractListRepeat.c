@@ -196,7 +196,7 @@ TclNewRepeatedListObj(Tcl_Interp *interp,
     repPtr->nTotal = numElements * repetitions;
     repPtr->elemList = NULL;
 
-    resultObj = Tcl_NewAbstractListObj(interp, &repeatedListType);
+    resultObj = Tcl_AbstractListObjNew(interp, &repeatedListType);
     Tcl_AbstractListSetConcreteRep(resultObj, repPtr);
     return resultObj;
 }

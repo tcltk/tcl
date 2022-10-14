@@ -29,7 +29,7 @@ Tcl_AbstractListTypeName(
     }
 }
 
-Tcl_Obj *   Tcl_NewAbstractListObj(Tcl_Interp *interp, const Tcl_AbstractListType *);
+Tcl_Obj *   Tcl_AbstractListObjNew(Tcl_Interp *interp, const Tcl_AbstractListType *);
 Tcl_WideInt Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr);
 int	    Tcl_AbstractListObjIndex(Tcl_Interp *interp, Tcl_Obj *abstractListPtr,
 		Tcl_WideInt index, Tcl_Obj **elemObj);
