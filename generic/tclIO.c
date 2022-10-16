@@ -1688,7 +1688,6 @@ Tcl_CreateChannel(
     statePtr->inputTranslation	= TCL_TRANSLATE_AUTO;
     statePtr->outputTranslation	= TCL_PLATFORM_TRANSLATION;
     statePtr->inEofChar		= 0;
-    statePtr->outEofChar	= 0;
 
     statePtr->unreportedError	= 0;
     statePtr->refCount		= 0;
@@ -3077,18 +3076,6 @@ CloseChannel(
     }
 
     /*
-     * If the EOF character is set in the channel, append that to the output
-     * device.
-     */
-
-    if ((statePtr->outEofChar != 0) && GotFlag(statePtr, TCL_WRITABLE)) {
-	int dummy;
-	char c = (char) statePtr->outEofChar;
-
-	(void) ChanWrite(chanPtr, &c, 1, &dummy);
-    }
-
-    /*
      * TIP #219, Tcl Channel Reflection API.
      * Move a leftover error message in the channel bypass into the
      * interpreter bypass. Just clear it if there is no interpreter.
@@ -3850,18 +3837,6 @@ CloseChannelPart(
 	if (statePtr->outQueueHead != NULL) {
 	    Tcl_Panic("ClosechanHalf, closed write-side of channel: "
 		    "queued output left");
-	}
-
-	/*
-	 * If the EOF character is set in the channel, append that to the
-	 * output device.
-	 */
-
-	if ((statePtr->outEofChar != 0) && GotFlag(statePtr, TCL_WRITABLE)) {
-	    int dummy;
-	    char c = (char) statePtr->outEofChar;
-
-	    (void) ChanWrite(chanPtr, &c, 1, &dummy);
 	}
 
 	/*
@@ -7958,40 +7933,13 @@ Tcl_GetChannelOption(
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-eofchar");
 	}
-	if (((flags & (TCL_READABLE|TCL_WRITABLE)) ==
-		(TCL_READABLE|TCL_WRITABLE)) && (len == 0)) {
-	    Tcl_DStringStartSublist(dsPtr);
-	}
-	if (flags & TCL_READABLE) {
-	    if (statePtr->inEofChar == 0) {
-		Tcl_DStringAppendElement(dsPtr, "");
-	    } else {
-		char buf[4];
-
-		sprintf(buf, "%c", statePtr->inEofChar);
-		Tcl_DStringAppendElement(dsPtr, buf);
-	    }
-	}
-	if (flags & TCL_WRITABLE) {
-	    if (statePtr->outEofChar == 0) {
-		Tcl_DStringAppendElement(dsPtr, "");
-	    } else {
-		char buf[4];
-
-		sprintf(buf, "%c", statePtr->outEofChar);
-		Tcl_DStringAppendElement(dsPtr, buf);
-	    }
-	}
-	if (!(flags & (TCL_READABLE|TCL_WRITABLE))) {
-	    /*
-	     * Not readable or writable (e.g. server socket)
-	     */
-
+	if (!(flags & TCL_READABLE) || (statePtr->inEofChar == 0)) {
 	    Tcl_DStringAppendElement(dsPtr, "");
-	}
-	if (((flags & (TCL_READABLE|TCL_WRITABLE)) ==
-		(TCL_READABLE|TCL_WRITABLE)) && (len == 0)) {
-	    Tcl_DStringEndSublist(dsPtr);
+	} else {
+	    char buf[4];
+
+	    sprintf(buf, "%c", statePtr->inEofChar);
+	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	if (len > 0) {
 	    return TCL_OK;
@@ -8234,13 +8182,11 @@ Tcl_SetChannelOption(
 	}
 	if (argc == 0) {
 	    statePtr->inEofChar = 0;
-	    statePtr->outEofChar = 0;
 	} else if (argc == 1 || argc == 2) {
-	    int outIndex = (argc - 1);
 	    int inValue = (int) argv[0][0];
-	    int outValue = (int) argv[outIndex][0];
+	    int outValue = (argc == 2) ? (int) argv[1][0] : 0;
 
-	    if (inValue & 0x80 || outValue & 0x80) {
+	    if (inValue & 0x80 || outValue) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                             "bad value for -eofchar: must be non-NUL ASCII"
@@ -8251,9 +8197,6 @@ Tcl_SetChannelOption(
 	    }
 	    if (GotFlag(statePtr, TCL_READABLE)) {
 		statePtr->inEofChar = inValue;
-	    }
-	    if (GotFlag(statePtr, TCL_WRITABLE)) {
-		statePtr->outEofChar = outValue;
 	    }
 	} else {
 	    if (interp) {
@@ -8387,7 +8330,6 @@ Tcl_SetChannelOption(
 		    statePtr->outputTranslation = TCL_PLATFORM_TRANSLATION;
 		}
 	    } else if (strcmp(writeMode, "binary") == 0) {
-		statePtr->outEofChar = 0;
 		statePtr->outputTranslation = TCL_TRANSLATE_LF;
 		Tcl_FreeEncoding(statePtr->encoding);
 		statePtr->encoding = NULL;
