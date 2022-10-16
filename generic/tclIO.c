@@ -8269,9 +8269,8 @@ Tcl_SetChannelOption(
 	    statePtr->inEofChar = 0;
 	    statePtr->outEofChar = 0;
 	} else if (argc == 1 || argc == 2) {
-	    int outIndex = (argc - 1);
 	    int inValue = (int) argv[0][0];
-	    int outValue = (int) argv[outIndex][0];
+	    int outValue = (argc == 2) ? (int) argv[1][0] : 0;
 
 	    if (inValue & 0x80 || outValue & 0x80) {
 		if (interp) {

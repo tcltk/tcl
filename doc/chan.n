@@ -142,17 +142,16 @@ which returns the platform- and locale-dependent system encoding used to
 interface with the operating system,
 .RE
 .TP
-\fB\-eofchar\fR \fIchar\fR
+\fB\-eofchar\fR \fIinChar\fR
 .TP
 \fB\-eofchar\fR \fB{\fIinChar outChar\fB}\fR
 .
-\fIchar\fR signals the end of the data when it is encountered in the input.
-For output, the character is added when the channel is closed.  If \fIchar\fR
+\fIinChar\fR signals the end of the data when it is encountered in the input.
+For output, the character is added when the channel is closed.  If \fIinChar\fR
 is the empty string, there is no special character that marks the end of the
 data.  For read-write channels, one end-of-file character for input and another
 for output may be given.  When only one end-of-file character is given it is
-applied to both input and output.  For a read-write channel two values are
-returned even if they are are identical.
+applied to input only.
 
 The default value is the empty string, except that under Windows the default
 value for reading is Control-z (\ex1A).  The acceptable range is \ex01 -
