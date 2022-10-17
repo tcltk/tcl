@@ -1013,8 +1013,8 @@ TcpGetOptionProc(
     if ((len == 0) || ((len > 1) && (optionName[1] == 's') &&
 	    (strncmp(optionName, "-sockname", len) == 0))) {
 	TcpFdList *fds;
-        address sockname;
-        socklen_t size;
+	address sockname;
+	socklen_t size;
 	int found = 0;
 
 	WaitForConnect(statePtr, NULL);
@@ -1053,7 +1053,9 @@ TcpGetOptionProc(
 
     if ((len == 0) || ((len > 1) && (optionName[1] == 'k') &&
 	    (strncmp(optionName, "-keepalive", len) == 0))) {
-        socklen_t size;
+#if defined(SO_KEEPALIVE)
+	socklen_t size;
+#endif
 	int opt = 0;
 
 	if (len == 0) {
@@ -1071,7 +1073,9 @@ TcpGetOptionProc(
 
     if ((len == 0) || ((len > 1) && (optionName[1] == 'n') &&
 	    (strncmp(optionName, "-nodelay", len) == 0))) {
-        socklen_t size;
+#if defined(SOL_TCP) && defined(TCP_NODELAY)
+	socklen_t size;
+#endif
 	int opt = 0;
 
 	if (len == 0) {

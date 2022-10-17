@@ -3336,7 +3336,7 @@ GetWideForIndex(
 {
     int numType;
     void *cd;
-    int code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
+    int code = Tcl_GetNumberFromObj(NULL, objPtr, &cd, &numType);
 
     if (code == TCL_OK) {
 	if (numType == TCL_NUMBER_INT) {
@@ -3498,7 +3498,7 @@ GetEndOffsetFromObj(
 		    /* ... value continues with [-+] ... */
 
 		    /* Save first integer as wide if possible */
-		    TclGetNumberFromObj(NULL, objPtr, &cd, &t1);
+		    Tcl_GetNumberFromObj(NULL, objPtr, &cd, &t1);
 		    if (t1 == TCL_NUMBER_INT) {
 			w1 = (*(Tcl_WideInt *)cd);
 		    }
@@ -3508,7 +3508,7 @@ GetEndOffsetFromObj(
 			/* ... value concludes with second valid integer */
 
 			/* Save second integer as wide if possible */
-			TclGetNumberFromObj(NULL, objPtr, &cd, &t2);
+			Tcl_GetNumberFromObj(NULL, objPtr, &cd, &t2);
 			if (t2 == TCL_NUMBER_INT) {
 			    w2 = (*(Tcl_WideInt *)cd);
 			}
@@ -3561,7 +3561,7 @@ GetEndOffsetFromObj(
 			    Tcl_ExprObj(compute, objPtr, &sum);
 			    Tcl_DeleteInterp(compute);
 			}
-			TclGetNumberFromObj(NULL, sum, &cd, &numType);
+			Tcl_GetNumberFromObj(NULL, sum, &cd, &numType);
 
 			if (numType == TCL_NUMBER_INT) {
 			    /* sum holds an integer in the signed wide range */
@@ -3612,7 +3612,7 @@ GetEndOffsetFromObj(
 	    }
 
 	    /* Got an integer offset; pull it from where parser left it. */
-	    TclGetNumberFromObj(NULL, objPtr, &cd, &t);
+	    Tcl_GetNumberFromObj(NULL, objPtr, &cd, &t);
 
 	    if (t == TCL_NUMBER_BIG) {
 		/* Truncate to the signed wide range. */

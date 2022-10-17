@@ -522,7 +522,7 @@ GetUWide(
     void *clientData;
     int type, intValue;
 
-    if (TclGetNumberFromObj(NULL, objPtr, &clientData, &type) == TCL_OK) {
+    if (Tcl_GetNumberFromObj(NULL, objPtr, &clientData, &type) == TCL_OK) {
 	if (type == TCL_NUMBER_INT) {
 	    *widePtr = *((const Tcl_WideInt *) clientData);
 	    return (*widePtr < 0);
