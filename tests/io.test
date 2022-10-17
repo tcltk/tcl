@@ -5761,7 +5761,7 @@ test io-39.22 {Tcl_SetChannelOption, invariance} {unix} {
     set f1 [open $path(test1) w+]
     set l ""
     lappend l [fconfigure $f1 -eofchar]
-    fconfigure $f1 -eofchar {ON {}}
+    fconfigure $f1 -eofchar {O {}}
     lappend l [fconfigure $f1 -eofchar]
     fconfigure $f1 -eofchar D
     lappend l [fconfigure $f1 -eofchar]
@@ -5772,7 +5772,7 @@ test io-39.22a {Tcl_SetChannelOption, invariance} {
     file delete $path(test1)
     set f1 [open $path(test1) w+]
     set l [list]
-    fconfigure $f1 -eofchar {ON {}}
+    fconfigure $f1 -eofchar {O {}}
     lappend l [fconfigure $f1 -eofchar]
     fconfigure $f1 -eofchar D
     lappend l [fconfigure $f1 -eofchar]

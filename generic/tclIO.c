@@ -8186,7 +8186,7 @@ Tcl_SetChannelOption(
 	    int inValue = (int) argv[0][0];
 	    int outValue = (argc == 2) ? (int) argv[1][0] : 0;
 
-	    if (inValue & 0x80 || outValue) {
+	    if (inValue & 0x80 || (inValue && argv[0][1]) || outValue) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                             "bad value for -eofchar: must be non-NUL ASCII"

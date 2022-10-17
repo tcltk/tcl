@@ -5288,7 +5288,7 @@ test chan-io-39.22 {Tcl_SetChannelOption, invariance} -setup {
 } -constraints {unix} -body {
     set f1 [open $path(test1) w+]
     lappend l [chan configure $f1 -eofchar]
-    chan configure $f1 -eofchar {ON {}}
+    chan configure $f1 -eofchar {O {}}
     lappend l [chan configure $f1 -eofchar]
     chan configure $f1 -eofchar D
     lappend l [chan configure $f1 -eofchar]
@@ -5300,7 +5300,7 @@ test chan-io-39.22a {Tcl_SetChannelOption, invariance} -setup {
     set l [list]
 } -body {
     set f1 [open $path(test1) w+]
-    chan configure $f1 -eofchar {ON {}}
+    chan configure $f1 -eofchar {O {}}
     lappend l [chan configure $f1 -eofchar]
     chan configure $f1 -eofchar D
     lappend l [chan configure $f1 -eofchar]
