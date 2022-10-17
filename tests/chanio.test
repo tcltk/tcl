@@ -1889,7 +1889,7 @@ test chan-io-20.2 {Tcl_CreateChannel: initial settings} -constraints {win} -body
     list [chan configure $f -eofchar] [chan configure $f -translation]
 } -cleanup {
     chan close $f
-} -result [list [list \x1A ""] {auto crlf}]
+} -result {{{}} {auto crlf}}
 test chan-io-20.3 {Tcl_CreateChannel: initial settings} -constraints {unix} -body {
     set f [open $path(test1) w+]
     list [chan configure $f -eofchar] [chan configure $f -translation]

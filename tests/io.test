@@ -2093,7 +2093,7 @@ test io-20.2 {Tcl_CreateChannel: initial settings} {win} {
     set x [list [fconfigure $f -eofchar] [fconfigure $f -translation]]
     close $f
     set x
-} [list [list \x1A ""] {auto crlf}]
+} {{{}} {auto crlf}}
 test io-20.3 {Tcl_CreateChannel: initial settings} {unix} {
     set f [open $path(test1) w+]
     set x [list [fconfigure $f -eofchar] [fconfigure $f -translation]]
