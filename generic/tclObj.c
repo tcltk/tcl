@@ -785,7 +785,7 @@ TclContinuationsGet(
 
 static void
 TclThreadFinalizeContLines(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     /*
      * Release the hashtable tracking invisible continuation lines.
@@ -3956,7 +3956,7 @@ Tcl_GetNumber(
     Tcl_Interp *interp,
     const char *bytes,
     size_t numBytes,
-    ClientData *clientDataPtr,
+    void **clientDataPtr,
     int *typePtr)
 {
     static Tcl_ThreadDataKey numberCacheKey;
@@ -4851,7 +4851,7 @@ SetCmdNameFromAny(
 
 int
 Tcl_RepresentationCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])

@@ -50,7 +50,7 @@ Tcl recognizes many values as numbers.  Several examples include:
 \fB"1_000_000"\fR, \fB"4.0"\fR, \fB"1e-7"\fR, \fB"NaN"\fR, or \fB"Inf"\fR.
 When built-in Tcl commands act on these values as numbers, they are converted
 to a numeric representation for efficient handling in C code.  Tcl makes
-use of three C types to store these representations: \fBdouble\fR, 
+use of three C types to store these representations: \fBdouble\fR,
 \fBTcl_WideInt\fR, and \fBmp_int\fR.  The \fBdouble\fR type is provided by the
 C language standard.  The \fBTcl_WideInt\fR type is declared in the Tcl
 header file, \fBtcl.h\fR, and is equivalent to the C standard type
@@ -76,7 +76,7 @@ If Tcl does recognize the examined value as a number, both routines return
 and \fItypePtr\fR (which may not be NULL) to report information the
 caller can use to retrieve the numeric representation.  Both routines
 write to *\fIclientDataPtr\fR a pointer to the internal storage location
-where Tcl holds the converted numeric value.  
+where Tcl holds the converted numeric value.
 .PP
 When the converted numeric value is stored as a \fBdouble\fR,
 a call to math library routine \fBisnan\fR determines whether that
@@ -91,13 +91,13 @@ the \fBdouble\fR numeric value may be read through it.
 .PP
 When the converted numeric value is stored as a \fBTcl_WideInt\fR,
 both \fBTcl_GetNumber\fR and \fBTcl_GetNumberFromObj\fR write the
-value \fBTCL_NUMBER_INT\fR to *\fItypePtr\fR. 
+value \fBTCL_NUMBER_INT\fR to *\fItypePtr\fR.
 The storage pointer may be cast to type \fBconst Tcl_WideInt *\fR and
 the \fBTcl_WideInt\fR numeric value may be read through it.
 .PP
 When the converted numeric value is stored as an \fBmp_int\fR,
 both \fBTcl_GetNumber\fR and \fBTcl_GetNumberFromObj\fR write the
-value \fBTCL_NUMBER_BIG\fR to *\fItypePtr\fR. 
+value \fBTCL_NUMBER_BIG\fR to *\fItypePtr\fR.
 The storage pointer may be cast to type \fBconst mp_int *\fR and
 the \fBmp_int\fR numeric value may be read through it.
 .PP
