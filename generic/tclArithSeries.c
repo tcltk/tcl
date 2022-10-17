@@ -232,7 +232,7 @@ assignNumber(int useDoubles, Tcl_WideInt *intNumberPtr, double *dblNumberPtr, Tc
     void *clientData;
     int tcl_number_type;
 
-    if (TclGetNumberFromObj(NULL, numberObj, &clientData, &tcl_number_type) != TCL_OK
+    if (Tcl_GetNumberFromObj(NULL, numberObj, &clientData, &tcl_number_type) != TCL_OK
 	    || tcl_number_type == TCL_NUMBER_BIG) {
 	return;
     }
