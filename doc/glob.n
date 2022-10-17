@@ -44,6 +44,11 @@ The remaining pattern arguments, after option processing, are treated
 as a single pattern obtained by joining the arguments with directory
 separators.
 .TP
+\fB\-nocomplain\fR
+.
+Allows an empty list to be returned without error; This is the
+default behavior in Tcl 9.0, so this switch has no effect any more.
+.TP
 \fB\-path\fR \fIpathPrefix\fR
 .
 Search for files with the given \fIpathPrefix\fR where the rest of the name

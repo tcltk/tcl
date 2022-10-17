@@ -41,7 +41,6 @@ static int		TclGlob(Tcl_Interp *interp, char *pattern,
 
 /* Flag values used by TclGlob() */
 
-#define TCL_GLOBMODE_NO_COMPLAIN	1
 #define TCL_GLOBMODE_JOIN	2
 #define TCL_GLOBMODE_DIR	4
 #define TCL_GLOBMODE_TAILS	8
