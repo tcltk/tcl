@@ -3510,7 +3510,7 @@ Tcl_GetNumber(
     Tcl_Interp *interp,
     const char *bytes,
     size_t numBytes,
-    ClientData *clientDataPtr,
+    void **clientDataPtr,
     int *typePtr)
 {
     static Tcl_ThreadDataKey numberCacheKey;
