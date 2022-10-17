@@ -38,15 +38,11 @@ read Tcl commands from the named file;  \fBtclsh\fR will exit
 when it reaches the end of the file.
 The end of the file may be marked either by the physical end of
 the medium, or by the character,
-.QW \e032
-.PQ \eu001a ", control-Z" .
+.PQ \ex1A ", control-Z" .
 If this character is present in the file, the \fBtclsh\fR application
 will read text up to but not including the character.  An application
 that requires this character in the file may safely encode it as
-.QW \e032 ,
-.QW \ex1A ,
-or
-.QW \eu001a ;
+.QW \ex1A ;
 or may generate it by use of commands such as \fBformat\fR or \fBbinary\fR.
 There is no automatic evaluation of \fB.tclshrc\fR when the name
 of a script file is presented on the \fBtclsh\fR command
