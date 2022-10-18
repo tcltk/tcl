@@ -1419,7 +1419,7 @@ namespace eval ::safe {
     # Set to 1 for "traditional" behavior: a child's entire access path and
     # module path are copied to its ::auto_path, which is updated whenever
     # the user calls ::safe::interpAddToAccessPath to add to the access path.
-    variable AutoPathSync 1
+    variable AutoPathSync 0
 
     # Log command, set via 'setLogCmd'. Logging is disabled when empty.
     variable Log {}
