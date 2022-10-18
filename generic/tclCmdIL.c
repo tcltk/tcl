@@ -2216,11 +2216,14 @@ Tcl_JoinObjCmd(
      * pointer to its array of element pointers.
      */
 
-    if (TclHasInternalRep(objv[1],&tclAbstractListType)) {
+    if (TclHasInternalRep(objv[1],&tclAbstractListType) &&
+	TclAbstractListHasProc(objv[1], TCL_ABSL_GETELEMENTS)) {
 	listLen = Tcl_AbstractListObjLength(objv[1]);
 	isAbstractList = (listLen ? 1 : 0);
-	if (listLen > 1) {
-	    Tcl_AbstractListObjGetElements(interp, objv[1], &listLen, &elemPtrs);
+	if (listLen > 1 &&
+	    Tcl_AbstractListObjGetElements(interp, objv[1], &listLen, &elemPtrs)
+	    != TCL_OK) {
+	    return TCL_ERROR;
 	}
     } else if (TclListObjGetElementsM(interp, objv[1], &listLen,
 	    &elemPtrs) != TCL_OK) {
@@ -2237,7 +2240,8 @@ Tcl_JoinObjCmd(
 	    Tcl_SetObjResult(interp, elemPtrs[0]);
 	} else {
             Tcl_Obj *elemObj;
-            if (Tcl_AbstractListObjIndex(interp, objv[1], 0, &elemObj) != TCL_OK) {
+            if (Tcl_AbstractListObjIndex(interp, objv[1], 0, &elemObj)
+		!= TCL_OK) {
                 return TCL_ERROR;
             }
 	    Tcl_SetObjResult(interp, elemObj);
@@ -3118,22 +3122,17 @@ Tcl_LreverseObjCmd(
 	return TCL_ERROR;
     }
     /*
-     *  Handle AbstractList special case - don't shimmer a into a list if it
-     *  supports a private Reverse function just to reverse it.
+     *  Handle AbstractList special case - do not shimmer into a list, if it
+     *  supports a private Reverse function, just to reverse it.
      */
     if (TclHasInternalRep(objv[1],&tclAbstractListType) &&
 	TclAbstractListHasProc(objv[1], TCL_ABSL_REVERSE)) {
 	Tcl_Obj *resultObj;
-	int status;
 
-	status = Tcl_AbstractListObjReverse(interp, objv[1], &resultObj);
-
-	if (status == TCL_OK) {
+	if (Tcl_AbstractListObjReverse(interp, objv[1], &resultObj) == TCL_OK) {
 	    Tcl_SetObjResult(interp, resultObj);
+	    return TCL_OK;
 	}
-
-	return status;
-
     } /* end Abstract List */
 
     if (TclListObjGetElementsM(interp, objv[1], &elemc, &elemv) != TCL_OK) {
@@ -4693,8 +4692,10 @@ Tcl_LsortObjCmd(
 	sortInfo.compareCmdPtr = newCommandPtr;
     }
 
-    if (TclHasInternalRep(listObj,&tclAbstractListType)) {
-	sortInfo.resultCode = Tcl_AbstractListObjGetElements(interp, listObj, &length, &listObjPtrs);
+    if (TclHasInternalRep(listObj,&tclAbstractListType) &&
+	TclAbstractListHasProc(objv[1], TCL_ABSL_GETELEMENTS)) {
+	sortInfo.resultCode =
+	    Tcl_AbstractListObjGetElements(interp, listObj, &length, &listObjPtrs);
     } else {
 	sortInfo.resultCode = TclListObjGetElementsM(interp, listObj,
 	    &length, &listObjPtrs);

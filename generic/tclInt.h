@@ -2678,6 +2678,8 @@ TclAbstractListHasProc(Tcl_Obj* abstractListObjPtr, Tcl_AbstractListProcType pty
 	return (typePtr->freeRepProc != NULL);
     case TCL_ABSL_TOSTRING:
 	return (typePtr->toStringProc != NULL);
+    case TCL_ABSL_SETELEMENT:
+	return (typePtr->setElementProc != NULL);
     }
     return 0;
 }

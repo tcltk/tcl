@@ -79,7 +79,8 @@ static Tcl_AbstractListType arithSeriesType = {
 	TclArithSeriesObjReverse,
         TclArithSeriesGetElements,
         FreeArithSeriesRep,
-	UpdateStringOfArithSeries
+	UpdateStringOfArithSeries,
+	NULL
 };
 
 /*

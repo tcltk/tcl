@@ -1667,20 +1667,19 @@ Tcl_ListObjGetElements(
 {
     ListRep listRep;
 
-    if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
-	if (TclHasInternalRep(objPtr,&tclAbstractListType)) {
-	    // ? TODO: ?need error message here?
-	    return (Tcl_AbstractListObjGetElements(interp, objPtr, objcPtr, objvPtr));
-	} else {
-	    int length;
-	    (void) Tcl_GetStringFromObj(objPtr, &length);
-	    if (length == 0) {
-		*objcPtr = 0;
-		*objvPtr = NULL;
-		return TCL_OK;
-	    }
+    if (TclHasInternalRep(objPtr,&tclAbstractListType) &&
+	TclAbstractListHasProc(objPtr, TCL_ABSL_GETELEMENTS) &&
+	Tcl_AbstractListObjGetElements(interp, objPtr, objcPtr, objvPtr) == TCL_OK) {
+	return TCL_OK;
+    } else if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
+	int length;
+	(void) Tcl_GetStringFromObj(objPtr, &length);
+	if (length == 0) {
+	    *objcPtr = 0;
+	    *objvPtr = NULL;
+	    return TCL_OK;
 	}
-	return TCL_ERROR;
+    	return TCL_ERROR;
     }
     ListRepElements(&listRep, *objcPtr, *objvPtr);
     return TCL_OK;
