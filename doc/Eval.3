@@ -93,13 +93,11 @@ its contents as a Tcl script.  It returns the same information as
 If the file could not be read then a Tcl error is returned to describe
 why the file could not be read.
 The eofchar for files is
-.QW \e32
+.QW \ex1A
 (^Z) for all platforms. If you require a
 .QW ^Z
 in code for string comparison, you can use
-.QW \e032
-or
-.QW \eu001a ,
+.QW \ex1A ,
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 .PP
