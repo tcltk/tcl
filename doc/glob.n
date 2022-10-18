@@ -46,8 +46,8 @@ separators.
 .TP
 \fB\-nocomplain\fR
 .
-Allows an empty list to be returned without error; without this
-switch an error is returned if the result list would be empty.
+Allows an empty list to be returned without error; This is the
+default behavior in Tcl 9.0, so this switch has no effect any more.
 .TP
 \fB\-path\fR \fIpathPrefix\fR
 .

@@ -137,9 +137,9 @@ proc do_twelve_days {} {
 
 catch {unset a b i x}
 
-test expr-1.1 {TclCompileExprCmd: no expression} {
-    list [catch {expr  } msg] $msg
-} {1 {wrong # args: should be "expr arg ?arg ...?"}}
+test expr-1.1 {TclCompileExprCmd: no expression} -body {
+    expr
+} -returnCodes error -result {wrong # args: should be "expr arg ?arg ...?"}
 test expr-1.2 {TclCompileExprCmd: one expression word} {
     expr -25
 } -25
@@ -186,12 +186,12 @@ test expr-1.13 {TclCompileExprCmd: second level of substitutions in expr not in 
 } foo
 test expr-1.14 {TclCompileExprCmd: second level of substitutions in expr with comparison as top-level operator} {
     set a xxx
-    set x 2;  set b {$x};  set a [expr $b == 2]
+    set x 2;  set b {$x};  set a [expr $b==2]
     set a
 } 1
 test expr-1.15 {TclCompileExprCmd: second level of substitutions in expr with comparison as top-level operator} {
     set a xxx
-    set x 2;  set b {$x};  set a [expr $b eq 2]
+    set x 2;  set b {$x};  set a [expr "$b eq 2"]
     set a
 } 1
 

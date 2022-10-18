@@ -837,6 +837,20 @@ typedef struct Tcl_DString {
 #define TCL_INTEGER_SPACE	(3*(int)sizeof(Tcl_WideInt))
 
 /*
+ *----------------------------------------------------------------------------
+ * Type values returned by Tcl_GetNumberFromObj
+ *	TCL_NUMBER_INT		Representation is a Tcl_WideInt
+ *	TCL_NUMBER_BIG		Representation is an mp_int
+ *	TCL_NUMBER_DOUBLE	Representation is a double
+ *	TCL_NUMBER_NAN		Value is NaN.
+ */
+
+#define TCL_NUMBER_INT          2
+#define TCL_NUMBER_BIG          3
+#define TCL_NUMBER_DOUBLE       4
+#define TCL_NUMBER_NAN          5
+
+/*
  * Flag values passed to Tcl_ConvertElement.
  * TCL_DONT_USE_BRACES forces it not to enclose the element in braces, but to
  *	use backslash quoting instead.
