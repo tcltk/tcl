@@ -8061,7 +8061,7 @@ Tcl_SetChannelOption(
 				/* State info for channel */
     size_t len;			/* Length of optionName string. */
     size_t argc;
-    const char **argv;
+    const char **argv = NULL;
 
     /*
      * If the channel is in the middle of a background copy, fail.
@@ -8177,10 +8177,13 @@ Tcl_SetChannelOption(
 	UpdateInterest(chanPtr);
 	return TCL_OK;
     } else if (HaveOpt(2, "-eofchar")) {
-	if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
+	if (!newValue[0] || (!(newValue[0] & 0x80) && !newValue[1])) {
+	    if (GotFlag(statePtr, TCL_READABLE)) {
+		statePtr->inEofChar = newValue[0];
+	    }
+	} else if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
-	}
-	if (argc == 0) {
+	} else if (argc == 0) {
 	    statePtr->inEofChar = 0;
 	} else if (argc == 1 || argc == 2) {
 	    int inValue = (int) argv[0][0];
