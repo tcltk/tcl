@@ -3979,9 +3979,9 @@ SequenceIdentifyArgument(
     union {
 	Tcl_WideInt i;
 	double d;
-    } nvalue;
+    } *nvalue;
 
-    status = TclGetNumberFromObj(NULL, argPtr, (ClientData*)&nvalue, keywordIndexPtr);
+    status = Tcl_GetNumberFromObj(NULL, argPtr, (void**)&nvalue, keywordIndexPtr);
     if (status == TCL_OK) {
 	if (numValuePtr) {
 	    *numValuePtr = argPtr;

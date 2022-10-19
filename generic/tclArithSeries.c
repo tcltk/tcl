@@ -306,7 +306,8 @@ assignNumber(
     } *number;
     int tcl_number_type;
 
-    if (TclGetNumberFromObj(NULL, numberObj, (ClientData*)&number, &tcl_number_type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(NULL, numberObj, (void**)&number, &tcl_number_type) != TCL_OK
+	    || tcl_number_type == TCL_NUMBER_BIG) {
 	return;
     }
     if (useDoubles) {

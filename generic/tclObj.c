@@ -788,7 +788,7 @@ TclContinuationsGet(
 
 static void
 TclThreadFinalizeContLines(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     /*
      * Release the hashtable tracking invisible continuation lines.
@@ -3900,7 +3900,7 @@ TclSetBignumInternalRep(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetNumberFromObj --
+ * Tcl_GetNumberFromObj --
  *
  *      Extracts a number (of any possible numeric type) from an object.
  *
@@ -3918,7 +3918,7 @@ TclSetBignumInternalRep(
  */
 
 int
-TclGetNumberFromObj(
+Tcl_GetNumberFromObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     void **clientDataPtr,
@@ -3952,6 +3952,42 @@ TclGetNumberFromObj(
     } while (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
     return TCL_ERROR;
+}
+
+int
+Tcl_GetNumber(
+    Tcl_Interp *interp,
+    const char *bytes,
+    size_t numBytes,
+    void **clientDataPtr,
+    int *typePtr)
+{
+    static Tcl_ThreadDataKey numberCacheKey;
+    Tcl_Obj *objPtr = (Tcl_Obj *)Tcl_GetThreadData(&numberCacheKey,
+	    sizeof(Tcl_Obj));
+
+    Tcl_FreeInternalRep(objPtr);
+
+    if (bytes == NULL) {
+	bytes = &tclEmptyString;
+	numBytes = 0;
+    }
+    if (numBytes == (size_t)TCL_INDEX_NONE) {
+	numBytes = strlen(bytes);
+    }
+    if (numBytes > INT_MAX) {
+	if (interp) {
+            Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    objPtr->bytes = (char *) bytes;
+    objPtr->length = numBytes;
+
+    return Tcl_GetNumberFromObj(interp, objPtr, clientDataPtr, typePtr);
 }
 
 /*
@@ -4818,7 +4854,7 @@ SetCmdNameFromAny(
 
 int
 Tcl_RepresentationCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
