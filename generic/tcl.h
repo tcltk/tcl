@@ -743,7 +743,7 @@ typedef		   int	(Tcl_ALGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr
 					     int *objcptr, struct Tcl_Obj ***objvptr);
 typedef		  void	(Tcl_ALFreeConcreteRep) (struct Tcl_Obj *listPtr);
 typedef		  void	(Tcl_ALToStringRep) (struct Tcl_Obj *listPtr);
-typedef		   int	(Tcl_ALSetElement) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+typedef	struct Tcl_Obj*	(Tcl_ALSetElement) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
 					    struct Tcl_Obj *indicies,
 					    struct Tcl_Obj *valueObj);
 

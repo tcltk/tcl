@@ -4390,11 +4390,16 @@ Tcl_LsetObjCmd(
      * unshared copy of it.
      */
 
-    if (objc == 4) {
+    if (TclHasInternalRep(listPtr,&tclAbstractListType) &&
+        TclAbstractListHasProc(listPtr, TCL_ABSL_SETELEMENT) &&
+	objc == 4) {
+	finalValuePtr = Tcl_AbstractListSetElement(interp, listPtr, objv[2], objv[3]);
+	if (finalValuePtr) Tcl_IncrRefCount(finalValuePtr);
+    } else if (objc == 4) {
 	finalValuePtr = TclLsetList(interp, listPtr, objv[2], objv[3]);
     } else {
 	finalValuePtr = TclLsetFlat(interp, listPtr, objc-3, objv+2,
-		objv[objc-1]);
+				    objv[objc-1]);
     }
 
     /*

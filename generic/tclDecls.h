@@ -2040,6 +2040,10 @@ EXTERN Tcl_Obj *	Tcl_AbstractListObjCopy(Tcl_Interp *interp,
 				Tcl_Obj *listPtr);
 /* 690 */
 EXTERN void *		Tcl_AbstractListGetConcreteRep(Tcl_Obj *objPtr);
+/* 691 */
+EXTERN Tcl_Obj *	Tcl_AbstractListSetElement(Tcl_Interp *interp,
+				Tcl_Obj *listPtr, Tcl_Obj *indicies,
+				Tcl_Obj *valueObj);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2766,6 +2770,7 @@ typedef struct TclStubs {
     int (*tcl_AbstractListObjGetElements) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *objcPtr, Tcl_Obj ***objvPtr); /* 688 */
     Tcl_Obj * (*tcl_AbstractListObjCopy) (Tcl_Interp *interp, Tcl_Obj *listPtr); /* 689 */
     void * (*tcl_AbstractListGetConcreteRep) (Tcl_Obj *objPtr); /* 690 */
+    Tcl_Obj * (*tcl_AbstractListSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Obj *indicies, Tcl_Obj *valueObj); /* 691 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4176,6 +4181,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_AbstractListObjCopy) /* 689 */
 #define Tcl_AbstractListGetConcreteRep \
 	(tclStubsPtr->tcl_AbstractListGetConcreteRep) /* 690 */
+#define Tcl_AbstractListSetElement \
+	(tclStubsPtr->tcl_AbstractListSetElement) /* 691 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

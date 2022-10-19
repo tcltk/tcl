@@ -2564,6 +2564,9 @@ declare 689 {
 declare 690 {
     void *Tcl_AbstractListGetConcreteRep(Tcl_Obj *objPtr)
 }
+declare 691 {
+    Tcl_Obj *Tcl_AbstractListSetElement(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Obj *indicies, Tcl_Obj *valueObj)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 

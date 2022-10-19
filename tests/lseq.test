@@ -510,6 +510,12 @@ test lseq-4.5 {lindex off by one} -body {
     unset res
 } -result {4 3}
 
+test lseq-4.6 {lset shimmer} -body {
+    set l [lseq 15]
+    lappend res $l [lindex [tcl::unsupported::representation $l] 3]
+    lset l 3 25
+    lappend res $l [lindex [tcl::unsupported::representation $l] 3]
+} -result {{0 1 2 3 4 5 6 7 8 9 10 11 12 13 14} arithseries {0 1 2 25 4 5 6 7 8 9 10 11 12 13 14} list}
 
 # cleanup
 ::tcltest::cleanupTests

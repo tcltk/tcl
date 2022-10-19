@@ -2761,12 +2761,22 @@ TclLsetList(
      * shimmering; see TIP #22 and #23 for details.
      */
 
-    if (!TclHasInternalRep(indexArgObj, &tclListType)
-	&& TclGetIntForIndexM(NULL, indexArgObj, ListSizeT_MAX - 1, &index)
-	       == TCL_OK) {
+    if (!TclHasInternalRep(indexArgObj, &tclListType) &&
+	TclGetIntForIndexM(NULL, indexArgObj, ListSizeT_MAX - 1, &index)
+	== TCL_OK) {
+
+	if (TclHasInternalRep(listObj,&tclAbstractListType) &&
+	    TclAbstractListHasProc(listObj, TCL_ABSL_SETELEMENT)) {
+	    Tcl_Obj *returnValue =
+		Tcl_AbstractListSetElement(interp, listObj, indexArgObj, valueObj);
+	    if (returnValue) Tcl_IncrRefCount(returnValue);
+	    return returnValue;
+	}
+
 	/* indexArgPtr designates a single index. */
-        /* T:listrep-1.{2.1,12.1,15.1,19.1},2.{2.3,9.3,10.1,13.1,16.1}, 3.{4,5,6}.3 */
+	/* T:listrep-1.{2.1,12.1,15.1,19.1},2.{2.3,9.3,10.1,13.1,16.1}, 3.{4,5,6}.3 */
 	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
+
     }
 
     indexListCopy = TclListObjCopy(NULL, indexArgObj);

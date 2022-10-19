@@ -628,6 +628,42 @@ void* Tcl_AbstractListGetConcreteRep(
     return objPtr->internalRep.twoPtrValue.ptr2;
 }
 
+/* Replace or add the element in the list @indicies with the given new value
+ */
+Tcl_Obj *
+Tcl_AbstractListSetElement(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Obj *indicies,
+    Tcl_Obj *valueObj)
+{
+    Tcl_Obj *returnObj = NULL;
+
+    if (TclHasInternalRep(objPtr,&tclAbstractListType)) {
+	Tcl_AbstractListType *typePtr  = Tcl_AbstractListGetType(objPtr);
+        if (TclAbstractListHasProc(objPtr, TCL_ABSL_SETELEMENT)) {
+            returnObj = typePtr->setElementProc(interp, objPtr, indicies, valueObj);
+        } else {
+            if (interp) {
+                Tcl_SetObjResult(
+		    interp,
+                    Tcl_NewStringObj("SetElement not supported!", -1));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+            }
+	    returnObj = NULL;
+        }
+    } else {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_ObjPrintf("value is not an abstract list"));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", NULL);
+	}
+	returnObj = NULL;
+    }
+    return returnObj;
+}
+
 /*
  * Local Variables:
  * mode: c
