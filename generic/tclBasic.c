@@ -322,8 +322,10 @@ static const CmdInfo builtInCmds[] = {
     {"lreplace",	Tcl_LreplaceObjCmd,	TclCompileLreplaceCmd,	NULL,	CMD_IS_SAFE},
     {"lreverse",	Tcl_LreverseObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lsearch",		Tcl_LsearchObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"lseq",            Tcl_LseqObjCmd,         NULL,                   NULL,   CMD_IS_SAFE},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"ledit",		Tcl_LeditObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"package",		Tcl_PackageObjCmd,	NULL,			TclNRPackageObjCmd,	CMD_IS_SAFE},
     {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
@@ -4133,7 +4135,7 @@ OldMathFuncProc(
 
     args = (Tcl_Value *)ckalloc(dataPtr->numArgs * sizeof(Tcl_Value));
     for (j = 1, k = 0; j < objc; ++j, ++k) {
-	/* TODO: Convert to TclGetNumberFromObj? */
+	/* TODO: Convert to Tcl_GetNumberFromObj? */
 	valuePtr = objv[j];
 	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
 #ifdef ACCEPT_NAN
@@ -7041,7 +7043,7 @@ Tcl_ExprLongObj(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type)!=TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, resultPtr, &internalPtr, &type)!=TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -7087,7 +7089,7 @@ Tcl_ExprDoubleObj(
 	return TCL_ERROR;
     }
 
-    result = TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type);
+    result = Tcl_GetNumberFromObj(interp, resultPtr, &internalPtr, &type);
     if (result == TCL_OK) {
 	switch (type) {
 	case TCL_NUMBER_NAN:
@@ -7808,7 +7810,7 @@ ExprIsqrtFunc(
      * Make sure that the arg is a number.
      */
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8071,7 +8073,7 @@ ExprAbsFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8226,7 +8228,7 @@ ExprIntFunc(
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8307,7 +8309,7 @@ ExprMaxMinFunc(
     }
     res = objv[1];
     for (i = 1; i < objc; i++) {
-        if (TclGetNumberFromObj(interp, objv[i], &ptr, &type) != TCL_OK) {
+        if (Tcl_GetNumberFromObj(interp, objv[i], &ptr, &type) != TCL_OK) {
             return TCL_ERROR;
         }
         if (type == TCL_NUMBER_NAN) {
@@ -8459,7 +8461,7 @@ ExprRoundFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8727,7 +8729,7 @@ ExprIsFiniteFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type != TCL_NUMBER_NAN) {
@@ -8758,7 +8760,7 @@ ExprIsInfinityFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type != TCL_NUMBER_NAN) {
@@ -8788,7 +8790,7 @@ ExprIsNaNFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type != TCL_NUMBER_NAN) {
@@ -8818,7 +8820,7 @@ ExprIsNormalFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type != TCL_NUMBER_NAN) {
@@ -8848,7 +8850,7 @@ ExprIsSubnormalFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type != TCL_NUMBER_NAN) {
@@ -8878,7 +8880,7 @@ ExprIsUnorderedFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type == TCL_NUMBER_NAN) {
@@ -8888,7 +8890,7 @@ ExprIsUnorderedFunc(
         result = (ClassifyDouble(d) == FP_NAN);
     }
 
-    if (TclGetNumberFromObj(interp, objv[2], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[2], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type == TCL_NUMBER_NAN) {
@@ -8920,7 +8922,7 @@ FloatClassifyObjCmd(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type == TCL_NUMBER_NAN) {

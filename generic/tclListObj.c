@@ -9,8 +9,9 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclInt.h"
 #include <assert.h>
+#include "tclInt.h"
+#include "tclArithSeries.h"
 
 /*
  * TODO - memmove is fast. Measure at what size we should prefer memmove
@@ -1368,6 +1369,9 @@ TclListObjCopy(
     Tcl_Obj *copyObj;
 
     if (!TclHasInternalRep(listObj, &tclListType)) {
+	if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+	    return TclArithSeriesObjCopy(interp, listObj);
+	}
 	if (SetListFromAny(interp, listObj) != TCL_OK) {
 	    return NULL;
 	}
@@ -1662,6 +1666,10 @@ Tcl_ListObjGetElements(
 				 * pointers to the list's objects. */
 {
     ListRep listRep;
+
+    if (TclHasInternalRep(objPtr,&tclArithSeriesType)) {
+	return TclArithSeriesGetElements(interp, objPtr, objcPtr, objvPtr);
+    }
 
     if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK)
 	return TCL_ERROR;
@@ -1968,7 +1976,7 @@ Tcl_ListObjIndex(
  *	convert it to one.
  *
  * Results:
- *	The return value is normally TCL_OK; in this case *intPtr will be set
+ *	The return value is normally TCL_OK; in this case *lenPtr will be set
  *	to the integer count of list elements. If listPtr does not refer to a
  *	list object and the object can not be converted to one, TCL_ERROR is
  *	returned and an error message will be left in the interpreter's result
@@ -1988,6 +1996,11 @@ Tcl_ListObjLength(
     ListSizeT *lenPtr)	/* The resulting int is stored here. */
 {
     ListRep listRep;
+
+    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+	*lenPtr = TclArithSeriesObjLength(listObj);
+	return TCL_OK;
+    }
 
     /*
      * TODO
@@ -2616,6 +2629,28 @@ TclLindexFlat(
 {
     ListSizeT i;
 
+    /* Handle ArithSeries as special case */
+    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+	Tcl_WideInt listLen = TclArithSeriesObjLength(listObj);
+	ListSizeT index;
+	Tcl_Obj *elemObj = NULL;
+	for (i=0 ; i<indexCount && listObj ; i++) {
+	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
+				   &index) == TCL_OK) {
+	    }
+	    if (i==0) {
+		TclArithSeriesObjIndex(listObj, index, &elemObj);
+	    } else if (index > 0) {
+		/* ArithSeries cannot be a list of lists */
+		Tcl_DecrRefCount(elemObj);
+		TclNewObj(elemObj);
+		Tcl_IncrRefCount(elemObj);
+		break;
+	    }
+	}
+	return elemObj;
+    }
+
     Tcl_IncrRefCount(listObj);
 
     for (i=0 ; i<indexCount && listObj ; i++) {
@@ -3243,6 +3278,33 @@ SetListFromAny(
 	    Tcl_IncrRefCount(valuePtr);
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
+    } else if (TclHasInternalRep(objPtr,&tclArithSeriesType)) {
+	/*
+	 * Convertion from Arithmetic Series is a special case
+	 * because it can be done an order of magnitude faster
+	 * and may occur frequently.
+	 */
+        ListSizeT j, size = TclArithSeriesObjLength(objPtr);
+
+	/* TODO - leave space in front and/or back? */
+	if (ListRepInitAttempt(
+		interp, size > 0 ? size : 1, NULL, &listRep)
+	    != TCL_OK) {
+	    return TCL_ERROR;
+	}
+
+	LIST_ASSERT(listRep.spanPtr == NULL); /* Guard against future changes */
+	LIST_ASSERT(listRep.storePtr->firstUsed == 0);
+	LIST_ASSERT((listRep.storePtr->flags & LISTSTORE_CANONICAL) == 0);
+
+	listRep.storePtr->numUsed = size;
+	elemPtrs = listRep.storePtr->slots;
+	for (j = 0; j < size; j++) {
+	    if (TclArithSeriesObjIndex(objPtr, j, &elemPtrs[j]) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+
     } else {
 	ListSizeT estCount, length;
 	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
@@ -3355,7 +3417,8 @@ UpdateStringOfList(
 {
 #   define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    ListSizeT numElems, i, length, bytesNeeded = 0;
+    ListSizeT numElems, i, length;
+    TCL_HASH_TYPE bytesNeeded = 0;
     const char *elem, *start;
     char *dst;
     Tcl_Obj **elemPtrs;
@@ -3403,11 +3466,11 @@ UpdateStringOfList(
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
-	if (bytesNeeded < 0) {
+	if (bytesNeeded > INT_MAX) {
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
     }
-    if (bytesNeeded > INT_MAX - numElems + 1) {
+    if (bytesNeeded + numElems > INT_MAX + 1U) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
     bytesNeeded += numElems - 1;
@@ -3432,6 +3495,7 @@ UpdateStringOfList(
 	ckfree(flagPtr);
     }
 }
+
 
 /*
  *------------------------------------------------------------------------

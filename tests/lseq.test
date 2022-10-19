@@ -1,0 +1,521 @@
+# Commands covered:  lseq
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright © 2003 Simon Geard.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+testConstraint arithSeriesDouble 1
+testConstraint arithSeriesShimmer 1
+testConstraint arithSeriesShimmerOk 1
+
+## Arg errors
+test lseq-1.1 {error cases} -body {
+    lseq
+} \
+    -returnCodes 1 \
+    -result {wrong # args: should be "lseq n ??op? n ??by? n??"}
+
+
+test lseq-1.2 {step magnitude} {
+    lseq 10 .. 1 by -2 ;# or this could be an error - or not
+} {10 8 6 4 2}
+
+test lseq-1.3 {synergy between int and double} {
+    set rl [lseq 25. to 5. by -5]
+    set il [lseq 25  to 5  by -5]
+    lmap r $rl i $il { if {$r ne "" && $i ne ""} {expr {int($r) == $i}} else {list $r $i} }
+} {1 1 1 1 1}
+
+test lseq-1.4 {integer decreasing} {
+    lseq 10 .. 1
+} {10 9 8 7 6 5 4 3 2 1}
+
+test lseq-1.5 {integer increasing} {
+    lseq 1 .. 10
+} {1 2 3 4 5 6 7 8 9 10}
+
+test lseq-1.6 {integer decreasing with step} {
+    lseq 10 .. 1 by -2
+} {10 8 6 4 2}
+
+test lseq-1.7 {real increasing lseq} arithSeriesDouble {
+    lseq 5.0 to 15.
+} {5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0}
+
+test lseq-1.8 {real increasing lseq with step} arithSeriesDouble {
+    lseq 5.0 to 25. by 5
+} {5.0 10.0 15.0 20.0 25.0}
+
+test lseq-1.9 {real decreasing with step} arithSeriesDouble {
+    lseq 25. to 5. by -5
+} {25.0 20.0 15.0 10.0 5.0}
+
+# note, 10 cannot be in such a list, but allowed
+test lseq-1.10 {integer lseq with step} {
+    lseq 1 to 10 by 2
+} {1 3 5 7 9}
+
+test lseq-1.11 {error case: increasing wrong step direction} {
+    lseq 1 to 10 by -2
+} {}
+
+test lseq-1.12 {decreasing lseq with step} arithSeriesDouble {
+    lseq 25. to -25. by -5
+} {25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0}
+
+test lseq-1.13 {count operation} {
+    -body {
+	lseq 5 count 5
+    }
+    -result {5 6 7 8 9}
+}
+
+test lseq-1.14 {count with step} {
+    -body {
+	lseq 5 count 5 by 2
+    }
+    -result {5 7 9 11 13}
+}
+
+test lseq-1.15 {count with decreasing step} {
+    -body {
+	lseq 5 count 5 by -2
+    }
+    -result {5 3 1 -1 -3}
+}
+
+test lseq-1.16 {large numbers} {
+    -body {
+	lseq [expr {int(1e6)}] [expr {int(2e6)}] [expr {int(1e5)}]
+    }
+    -result {1000000 1100000 1200000 1300000 1400000 1500000 1600000 1700000 1800000 1900000 2000000}
+}
+
+test lseq-1.17 {too many arguments} -body {
+    lseq 12 to 24 by 2 with feeling
+} -returnCodes 1 -result {wrong # args: should be "lseq n ??op? n ??by? n??"}
+
+test lseq-1.18 {too many arguments extra valid keyword} -body {
+    lseq 12 to 24 by 2 count
+} -returnCodes 1 -result {wrong # args: should be "lseq n ??op? n ??by? n??"}
+
+test lseq-1.19 {too many arguments extra numeric value} -body {
+    lseq 12 to 24 by 2 7
+} -returnCodes 1 -result {wrong # args: should be "lseq n ??op? n ??by? n??"}
+
+test lseq-1.20 {bug: wrong length computed} {
+    lseq 1 to 10 -1
+} {}
+
+test lseq-1.21 {n n by n} {
+    lseq 66 84 by 3
+} {66 69 72 75 78 81 84}
+
+test lseq-1.22 {n n by -n} {
+    lseq 84 66 by -3
+} {84 81 78 75 72 69 66}
+
+#
+# Short-hand use cases
+#
+test lseq-2.2 {step magnitude} {
+    lseq 10 1 2 ;# this is an empty case since step has wrong sign
+} {}
+
+test lseq-2.3 {step wrong sign} arithSeriesDouble {
+    lseq 25. 5. 5 ;# ditto - empty list
+} {}
+
+test lseq-2.4 {integer decreasing} {
+    lseq 10 1
+} {10 9 8 7 6 5 4 3 2 1}
+
+test lseq-2.5 {integer increasing} {
+    lseq 1 10
+} {1 2 3 4 5 6 7 8 9 10}
+
+test lseq-2.6 {integer decreasing with step} {
+    lseq 10 1 by -2
+} {10 8 6 4 2}
+
+test lseq-2.7 {real increasing lseq} arithSeriesDouble {
+    lseq 5.0 15.
+} {5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0}
+
+
+test lseq-2.8 {real increasing lseq with step} arithSeriesDouble {
+    lseq 5.0 25. 5
+} {5.0 10.0 15.0 20.0 25.0}
+
+
+test lseq-2.9 {real decreasing with step} arithSeriesDouble {
+    lseq 25. 5. -5
+} {25.0 20.0 15.0 10.0 5.0}
+
+test lseq-2.10 {integer lseq with step} {
+    lseq 1 10 2
+} {1 3 5 7 9}
+
+test lseq-2.11 {error case: increasing wrong step direction} {
+    lseq 1 10 -2
+} {}
+
+test lseq-2.12 {decreasing lseq with step} arithSeriesDouble {
+    lseq 25. -25. -5
+} {25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0}
+
+test lseq-2.13 {count only operation} {
+    lseq 5
+} {0 1 2 3 4}
+
+test lseq-2.14 {count with step} {
+    lseq 5 count 5 2
+} {5 7 9 11 13}
+
+test lseq-2.15 {count with decreasing step} {
+    lseq 5 count 5 -2
+} {5 3 1 -1 -3}
+
+test lseq-2.16 {large numbers} {
+    lseq 1e6 2e6 1e5
+} {1000000.0 1100000.0 1200000.0 1300000.0 1400000.0 1500000.0 1600000.0 1700000.0 1800000.0 1900000.0 2000000.0}
+
+test lseq-2.17 {large numbers} arithSeriesDouble {
+    lseq 1e6 2e6 1e5
+} {1000000.0 1100000.0 1200000.0 1300000.0 1400000.0 1500000.0 1600000.0 1700000.0 1800000.0 1900000.0 2000000.0}
+
+# Covered: {10 1 2 } {1 10 2} {1 10 -2} {1 1 1} {1 1 1} {-5 17 3}
+# Missing: {- - +} {- - -} {- + -} {+ - -} {- - +} {+ + -}
+test lseq-2.18 {signs} {
+    list [lseq -10 -1 2] \
+	[lseq -10 -1 -1] \
+	[lseq -10 1 -3] \
+	[lseq 10 -1 -4] \
+	[lseq -10 -1 3] \
+	[lseq 10 1 -5]
+
+} {{-10 -8 -6 -4 -2} {} {} {10 6 2} {-10 -7 -4 -1} {10 5}}
+
+test lseq-3.1 {experiement} {
+    set ans {}
+    foreach factor [lseq 2.0 10.0] {
+	set start 1
+	set end 10
+	for {set step 1} {$step < 1e8} {} {
+	    set l [lseq $start to $end by $step]
+	    if {[llength $l] != 10} {
+		lappend ans $factor $step [llength $l] $l
+	    }
+	    set step [expr {$step * $factor}]
+	    set end [expr {$end * $factor}]
+	}
+    }
+    if {$ans eq {}} {
+	set ans OK
+    }
+    unset factor
+    unset l
+    set ans
+} {OK}
+
+test lseq-3.2 {error case} -body {
+    lseq foo
+} -returnCodes 1 -result {bad operation "foo": must be .., to, count, or by}
+
+test lseq-3.3 {error case} -body {
+    lseq 10 foo
+} -returnCodes 1 -result {bad operation "foo": must be .., to, count, or by}
+
+test lseq-3.4 {error case} -body {
+    lseq 25 or 6
+} -returnCodes 1 -result {bad operation "or": must be .., to, count, or by}
+
+test lseq-3.5 {simple count and step arguments} {
+    set s [lseq 25 by 6]
+    list $s length=[llength $s]
+} {{0 6 12 18 24 30 36 42 48 54 60 66 72 78 84 90 96 102 108 114 120 126 132 138 144} length=25}
+
+test lseq-3.6 {error case} -body {
+    lseq 1 7 or 3
+} -returnCodes 1  -result {bad operation "or": must be .., to, count, or by}
+
+test lseq-3.7 {lmap lseq} {
+    lmap x [lseq 5] { expr {$x * $x} }
+} {0 1 4 9 16}
+
+test lseq-3.8 {lrange lseq} {
+    set r [lrange [lseq 1 100] 10 20]
+    lindex [tcl::unsupported::representation $r] 3
+} {arithseries}
+
+test lseq-3.9 {lassign lseq} arithSeriesShimmer {
+    set r [lseq 15]
+    set r2 [lassign $r a b]
+    list [lindex [tcl::unsupported::representation $r] 3] $a $b \
+	[lindex [tcl::unsupported::representation $r2] 3]
+} {arithseries 0 1 arithseries}
+
+test lseq-3.10 {lsearch lseq must shimmer?} arithSeriesShimmer {
+    set r [lseq 15 0]
+    set a [lsearch $r 9]
+    list [lindex [tcl::unsupported::representation $r] 3] $a
+} {arithseries 6}
+
+test lseq-3.11 {lreverse lseq} {
+    set r [lseq 15 0]
+    set a [lreverse $r]
+    join [list \
+	      [lindex [tcl::unsupported::representation $r] 3] \
+	      $r \
+	      [lindex [tcl::unsupported::representation $a] 3] \
+	      $a] \n
+} {arithseries
+15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
+arithseries
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15}
+
+test lseq-3.12 {in operator} {
+    set r [lseq 9]
+    set i [expr {7 in $r}]
+    set j [expr {10 ni $r}]
+    set k [expr {-1 in $r}]
+    set l [expr {4 ni $r}]
+    list $i $j $k $l [lindex [tcl::unsupported::representation $r] 3]
+} {1 1 0 0 arithseries}
+
+test lseq-3.13 {lmap lseq shimmer} arithSeriesShimmer {
+    set r [lseq 15]
+    set rep-before [lindex [tcl::unsupported::representation $r] 3]
+    set m [lmap i $r { expr {$i * 7} }]
+    set rep-after [lindex [tcl::unsupported::representation $r] 3]
+    set rep-m [lindex [tcl::unsupported::representation $m] 3]
+    list $r ${rep-before} ${rep-after} ${rep-m} $m
+} {{0 1 2 3 4 5 6 7 8 9 10 11 12 13 14} arithseries arithseries list {0 7 14 21 28 35 42 49 56 63 70 77 84 91 98}}
+
+test lseq-3.14 {array for shimmer} arithSeriesShimmerOk {
+    array set testarray {a Test for This great Function}
+    set vars [lseq 2]
+    set vars-rep [lindex [tcl::unsupported::representation $vars] 3]
+    array for $vars testarray {
+	lappend keys $0
+	lappend vals $1
+    }
+    # Since hash order is not guaranteed, have to validate content ignoring order
+    set valk [lmap k $keys {expr {$k in {a for great}}}]
+    set valv [lmap v $vals {expr {$v in {Test This Function}}}]
+    set vars-after [lindex [tcl::unsupported::representation $vars] 3]
+    list ${vars-rep} $valk $valv ${vars-after}
+} {arithseries {1 1 1} {1 1 1} arithseries}
+
+test lseq-3.15 {join for shimmer} arithSeriesShimmer {
+    set r [lseq 3]
+    set rep-before [lindex [tcl::unsupported::representation $r] 3]
+    set str [join $r :]
+    set rep-after [lindex [tcl::unsupported::representation $r] 3]
+    list ${rep-before} $str ${rep-after}
+} {arithseries 0:1:2 arithseries}
+
+test lseq-3.16 {error case} -body {
+    lseq 16 to
+} -returnCodes 1 -result {missing "to" value.}
+
+test lseq-3.17 {error case} -body {
+    lseq 17 to 13 by
+} -returnCodes 1 -result {missing "by" value.}
+
+test lseq-3.18 {error case} -body {
+    lseq 18 count
+} -returnCodes 1 -result {missing "count" value.}
+
+test lseq-3.19 {edge case} -body {
+    lseq 1 count 5 by 0
+} -result {}
+# 1 1 1 1 1
+
+# My thought is that this is likely a user error, since they can always use lrepeat for this.
+
+test lseq-3.20 {edge case} -body {
+    lseq 1 to 1 by 0
+} -result {}
+
+# hmmm, I guess this is right, in a way, so...
+
+test lseq-3.21 {edge case} {
+    lseq 1 to 1 by 1
+} {1}
+
+test lseq-3.22 {edge case} {
+    lseq 1 1 1
+} {1}
+
+test lseq-3.23 {edge case} {
+    llength [lseq 1 1 1]
+} {1}
+
+test lseq-3.24 {edge case} {
+    llength [lseq 1 to 1 1]
+} {1}
+
+test lseq-3.25 {edge case} {
+    llength [lseq 1 to 1 by 1]
+} {1}
+
+test lseq-3.26 {lsort shimmer} arithSeriesShimmer {
+    set r [lseq 15 0]
+    set rep-before [lindex [tcl::unsupported::representation $r] 3]
+    set lexical_sort [lsort $r]
+    set rep-after [lindex [tcl::unsupported::representation $r] 3]
+    list ${rep-before} $lexical_sort ${rep-after}
+} {arithseries {0 1 10 11 12 13 14 15 2 3 4 5 6 7 8 9} arithseries}
+
+test lseq-3.27 {lreplace shimmer} -constraints arithSeriesShimmer -body {
+    set r [lseq 15 0]
+    set rep-before [lindex [tcl::unsupported::representation $r] 3]
+    set lexical_sort [lreplace $r 3 5 A B C]
+    set rep-after [lindex [tcl::unsupported::representation $r] 3]
+    list ${rep-before} $lexical_sort ${rep-after}
+} -cleanup {
+    unset r
+    unset rep-before
+    unset lexical_sort
+    unset rep-after
+} -result {arithseries {15 14 13 A B C 9 8 7 6 5 4 3 2 1 0} arithseries}
+
+test lseq-3.28 {lreverse bug in ArithSeries} {} {
+    set r [lseq -5 17 3]
+    set rr [lreverse $r]
+    list $r $rr [string equal $r [lreverse $rr]]
+} {{-5 -2 1 4 7 10 13 16} {16 13 10 7 4 1 -2 -5} 1}
+
+test lseq-3.29 {edge case: negative count} {
+    lseq -15
+} {}
+
+test lseq-3.30 {lreverse with double values} arithSeriesDouble {
+    set r [lseq 3.5 18.5 1.5]
+    set a [lreverse $r]
+    join [list \
+	      [lindex [tcl::unsupported::representation $r] 3] \
+	      $r \
+	      [lindex [tcl::unsupported::representation $a] 3] \
+	      $a] \n
+} {arithseries
+3.5 5.0 6.5 8.0 9.5 11.0 12.5 14.0 15.5 17.0 18.5
+arithseries
+18.5 17.0 15.5 14.0 12.5 11.0 9.5 8.0 6.5 5.0 3.5}
+
+test lseq-3.31 {lreverse inplace with doubles} arithSeriesDouble {
+    lreverse [lseq 1.1 29.9 0.3]
+} {29.9 29.599999999999998 29.299999999999997 29.0 28.7 28.4 28.099999999999998 27.799999999999997 27.5 27.2 26.9 26.599999999999998 26.299999999999997 26.0 25.7 25.4 25.099999999999998 24.799999999999997 24.5 24.2 23.9 23.599999999999998 23.299999999999997 23.0 22.7 22.4 22.099999999999998 21.799999999999997 21.5 21.2 20.9 20.6 20.299999999999997 20.0 19.7 19.4 19.1 18.799999999999997 18.5 18.2 17.9 17.6 17.299999999999997 17.0 16.7 16.4 16.1 15.799999999999999 15.5 15.2 14.899999999999999 14.6 14.299999999999999 14.0 13.7 13.399999999999999 13.099999999999998 12.8 12.5 12.2 11.899999999999999 11.599999999999998 11.3 11.0 10.7 10.399999999999999 10.099999999999998 9.8 9.5 9.2 8.899999999999999 8.599999999999998 8.3 8.0 7.699999999999999 7.399999999999999 7.099999999999998 6.800000000000001 6.5 6.199999999999999 5.899999999999999 5.599999999999998 5.300000000000001 5.0 4.699999999999999 4.399999999999999 4.099999999999998 3.8000000000000007 3.5 3.1999999999999993 2.8999999999999986 2.599999999999998 2.3000000000000007 2.0 1.6999999999999993 1.3999999999999986 1.1000000000000014}
+
+test lseq-4.1 {end expressions} {
+    set start 7
+    lseq $start $start+11
+} {7 8 9 10 11 12 13 14 15 16 17 18}
+
+test lseq-4.2 {start expressions} {
+    set base [clock seconds]
+    set tl [lseq $base-60 $base 10]
+    lmap t $tl {expr {$t - $base + 60}}
+} {0 10 20 30 40 50 60}
+
+##	lseq 1 to 10 by -2
+##	# -> lseq: invalid step = -2 with a = 1 and b = 10
+
+test lseq-4.3 {TIP examples} {
+    set examples {# Examples from TIP-629
+	# --- Begin ---
+	lseq 10 .. 1
+	# -> 10 9 8 7 6 5 4 3 2 1
+	lseq 1 .. 10
+	# -> 1 2 3 4 5 6 7 8 9 10
+	lseq 10 .. 1 by 2
+	# ->
+	lseq 10 .. 1 by -2
+	# -> 10 8 6 4 2
+	lseq 5.0 to 15.
+	# -> 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0
+	lseq 5.0 to 25. by 5
+	# -> 5.0 10.0 15.0 20.0 25.0
+	lseq 25. to 5. by 5
+	# ->
+	lseq 25. to 5. by -5
+	# -> 25.0 20.0 15.0 10.0 5.0
+	lseq 1 to 10 by 2
+	# -> 1 3 5 7 9
+	lseq 25. to -25. by -5
+	# -> 25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0
+	lseq 5 5
+	# -> 5
+	lseq 5 5 2
+	# -> 5
+	lseq 5 5 -2
+	# -> 5
+    }
+
+    foreach {cmd expect} [split $examples \n] {
+	if {[string trim $cmd] ne ""} {
+	    set cmd [string trimleft $cmd]
+	    if {[string match {\#*} $cmd]} continue
+	    set status [catch $cmd ans]
+	    lappend res $ans
+	    if {[regexp {\# -> (.*)$} $expect -> expected]} {
+		if {$expected ne $ans} {
+		    lappend res [list Mismatch: $cmd -> $ans ne $expected]
+		}
+	    }
+	}
+    }
+    set res
+} {{10 9 8 7 6 5 4 3 2 1} {1 2 3 4 5 6 7 8 9 10} {} {10 8 6 4 2} {5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0} {5.0 10.0 15.0 20.0 25.0} {} {25.0 20.0 15.0 10.0 5.0} {1 3 5 7 9} {25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0} 5 5 5}
+
+#
+# Ticket 9933cc4d88697f05976accebd31c1e3ba6efe9c6 - lseq corner case
+test lseq-4.4 {lseq corner case} -body {
+    set tcmd {
+	set res {}
+	set s [catch {lindex [lseq 10 100] 0} e]
+	lappend res $s $e
+	set s [catch {lindex [lseq 10 9223372036854775000] 0} e]
+	lappend res $s $e
+	set s [catch {llength [lseq 10 9223372036854775000]} e]
+	lappend res $s $e
+	set s [catch {lindex [lseq 10 2147483647] 0} e]
+	lappend res $s $e
+	set s [catch {llength [lseq 10 2147483647]} e]
+	lappend res $s $e
+    }
+    eval $tcmd
+} -cleanup {
+    unset res
+} -result {0 10 1 {max length of a Tcl list exceeded} 1 {max length of a Tcl list exceeded} 0 10 0 2147483638}
+
+
+# Ticket 99e834bf33 - lseq, lindex end off by one
+
+test lseq-4.5 {lindex off by one} -body {
+    lappend res [eval {lindex [lseq 1 4] end}]
+    lappend res [eval {lindex [lseq 1 4] end-1}]
+} -cleanup {
+    unset res
+} -result {4 3}
+
+
+# cleanup
+::tcltest::cleanupTests
+
+return
+
+# Local Variables:
+# mode: tcl
+# End:

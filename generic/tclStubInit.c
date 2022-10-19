@@ -793,6 +793,7 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclBN_s_mp_sqr 0
 #   undef TclBN_s_mp_sub
 #   define TclBN_s_mp_sub 0
+#   define Tcl_MakeSafe 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
@@ -814,6 +815,7 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclGetCommandFullName Tcl_GetCommandFullName
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
+#   define Tcl_MakeSafe TclMakeSafe
 
 static int
 seekOld(
@@ -903,7 +905,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetOpenMode, /* 40 */
     TclGetOriginalCommand, /* 41 */
     TclpGetUserHome, /* 42 */
-    0, /* 43 */
+    TclGetObjInterpProc2, /* 43 */
     TclGuessPackageName, /* 44 */
     TclHideUnsafeCommands, /* 45 */
     TclInExit, /* 46 */
@@ -2037,12 +2039,15 @@ const TclStubs tclStubs = {
     TclUtfAtIndex, /* 671 */
     TclGetRange, /* 672 */
     TclGetUniChar, /* 673 */
-    0, /* 674 */
-    0, /* 675 */
+    Tcl_GetBool, /* 674 */
+    Tcl_GetBoolFromObj, /* 675 */
     Tcl_CreateObjCommand2, /* 676 */
     Tcl_CreateObjTrace2, /* 677 */
     Tcl_NRCreateCommand2, /* 678 */
     Tcl_NRCallObjProc2, /* 679 */
+    Tcl_GetNumberFromObj, /* 680 */
+    Tcl_GetNumber, /* 681 */
+    Tcl_RemoveChannelMode, /* 682 */
 };
 
 /* !END!: Do not edit above this line. */

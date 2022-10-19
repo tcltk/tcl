@@ -412,6 +412,13 @@ test proc-7.5 {[631b4c45df] Crash in argument processing} {
     unset -nocomplain val
 } {}
 
+test proc-7.6 {[51d5f22997] Crash in argument processing} -cleanup {
+    rename foo {}
+} -body {
+    proc foo {{x {}} {y {}} args} {}
+    foo
+} -result {}
+
 
 # cleanup
 catch {rename p ""}

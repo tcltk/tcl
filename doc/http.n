@@ -423,7 +423,7 @@ multiple interfaces are available.
 .TP
 \fB\-progress\fR \fIcallback\fR
 .
-If the \fB\-progress\fR option is present, 
+If the \fB\-progress\fR option is present,
 then the \fIcallback\fR is made after each transfer of data from the URL.
 The value of \fIcallback\fR is expanded, an additional three arguments are
 added, and the resulting command is evaluated.
@@ -493,7 +493,7 @@ unable to determine the size, it returns an error.
 .TP
 \fB\-queryprogress\fR \fIcallback\fR
 .
-If the \fB\-queryprogress\fR option is present, 
+If the \fB\-queryprogress\fR option is present,
 then the \fIcallback\fR is made after each transfer of data to the URL
 in a POST request (i.e. a call to \fB::http::geturl\fR with
 option \fB\-query\fR or \fB\-querychannel\fR) and acts exactly like
@@ -613,13 +613,11 @@ The "request line" is the first line of a HTTP client request, and has three
 elements separated by spaces: the HTTP method, the URL relative to the server,
 and the HTTP version. Examples:
 .PP
-.DS
 .RS
 GET / HTTP/1.1
 GET /introduction.html?subject=plumbing HTTP/1.1
 POST /forms/order.html HTTP/1.1
 .RE
-.DE
 .TP
 \fB::http::requestHeaders\fR \fItoken\fR ?\fIheaderName\fR?
 .
@@ -650,12 +648,10 @@ elements separated by spaces: the HTTP version, a three-digit numerical
 "status code", and a "reason phrase".  Only the reason phrase may contain
 spaces.  Examples:
 .PP
-.DS
 .RS
 HTTP/1.1 200 OK
 HTTP/1.0 404 Not Found
 .RE
-.DE
 .RS
 The "status code" is a three-digit number in the range 100 to 599.
 A value of 200 is the normal return from a GET request, and its matching
@@ -1589,11 +1585,11 @@ that \fB::tls::socketCmd\fR has this value, it replaces it with the value
 i.e. if the script or the Tcl installation has replaced the value "::socket"
 with the name of a different command, then http does not change the value.
 The script or installation that modified \fB::tls::socketCmd\fR is responsible
-for integrating \fR::http::socket\fR into its own replacement command.
+for integrating \fB::http::socket\fR into its own replacement command.
 .PP
 .SS "WITH A CHILD INTERPRETER"
 .PP
-The peer thread can transfer the socket only to the main interpreter of the 
+The peer thread can transfer the socket only to the main interpreter of the
 script's thread.  Therefore the thread-based \fB::http::socket\fR works with
 non-zero \fI\-threadlevel\fR values only if the script runs in the main
 interpreter.  A child interpreter must use \fI\-threadlevel 0\fR unless the
