@@ -9160,7 +9160,7 @@ See RFC 2045
 
 2022-10-14 tzdata updated to Olson's tzdata2022e (nijtmans)
 
-Update bundled zlib to 1.2.12
+Update bundled zlib to 1.2.13
 
 Update bundled libtommath
 
