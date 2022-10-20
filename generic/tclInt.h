@@ -2781,10 +2781,12 @@ typedef struct TclFile_ *TclFile;
  * combination of the following values:
  */
 
-#define TCL_GLOBMODE_NO_COMPLAIN	1
-#define TCL_GLOBMODE_JOIN		2
-#define TCL_GLOBMODE_DIR		4
-#define TCL_GLOBMODE_TAILS		8
+#ifndef TCL_NO_DEPRECATED
+#   define TCL_GLOBMODE_NO_COMPLAIN	1
+#   define TCL_GLOBMODE_JOIN		2
+#   define TCL_GLOBMODE_DIR		4
+#   define TCL_GLOBMODE_TAILS		8
+#endif
 
 typedef enum Tcl_PathPart {
     TCL_PATH_DIRNAME,
@@ -2873,21 +2875,6 @@ typedef struct ProcessGlobalValue {
 				/* Parse binary even without prefix. */
 #define TCL_PARSE_NO_UNDERSCORE	128
 				/* Reject underscore digit separator */
-
-/*
- *----------------------------------------------------------------------
- * Type values TclGetNumberFromObj
- *----------------------------------------------------------------------
- */
-
-#define TCL_NUMBER_INT		2
-#if !defined(TCL_NO_DEPRECATED)
-#   define TCL_NUMBER_LONG		1 /* deprecated, not used any more */
-#   define TCL_NUMBER_WIDE		TCL_NUMBER_INT /* deprecated */
-#endif
-#define TCL_NUMBER_BIG		3
-#define TCL_NUMBER_DOUBLE	4
-#define TCL_NUMBER_NAN		5
 
 /*
  *----------------------------------------------------------------
@@ -3200,9 +3187,6 @@ MODULE_SCOPE int	TclGetCompletionCodeFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *value, int *code);
 MODULE_SCOPE Proc *	TclGetLambdaFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Obj **nsObjPtrPtr);
-MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, void **clientDataPtr,
-			    int *typePtr);
 MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
 			    const char *modeString, int *seekFlagPtr,
 			    int *binaryPtr);
@@ -3216,9 +3200,6 @@ MODULE_SCOPE int	TclGetLoadedLibraries(Tcl_Interp *interp,
 				const char *packageName);
 MODULE_SCOPE int	TclGetWideBitsFromObj(Tcl_Interp *, Tcl_Obj *,
 				Tcl_WideInt *);
-MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
-			    Tcl_Obj *unquotedPrefix, int globFlags,
-			    Tcl_GlobTypeData *types);
 MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 			    Tcl_Obj *incrPtr);
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,

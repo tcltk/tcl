@@ -302,7 +302,7 @@ proc auto_mkindex_old {dir args} {
 	set f ""
 	set error [catch {
 	    set f [open $file]
-	    fconfigure $f -encoding utf-8 -eofchar "\032 {}"
+	    fconfigure $f -encoding utf-8 -eofchar "\x1A {}"
 	    while {[gets $f line] >= 0} {
 		if {[regexp {^proc[ 	]+([^ 	]*)} $line match procName]} {
 		    set procName [lindex [auto_qualify $procName "::"] 0]
@@ -414,7 +414,7 @@ proc auto_mkindex_parser::mkindex {file} {
     set scriptFile $file
 
     set fid [open $file]
-    fconfigure $fid -encoding utf-8 -eofchar "\032 {}"
+    fconfigure $fid -encoding utf-8 -eofchar "\x1A {}"
     set contents [read $fid]
     close $fid
 

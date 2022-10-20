@@ -37,9 +37,7 @@ allowing for files containing code and data segments (scripted documents).
 If you require a
 .QW ^Z
 in code for string comparison, you can use
-.QW \e032
-or
-.QW \eu001a ,
+.QW \ex1A ,
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 .PP
