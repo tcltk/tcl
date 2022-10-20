@@ -50,7 +50,7 @@ the end of the expression, whichever comes first.
 .PP
 An expression consists of a combination of operands, operators, parentheses and
 commas, possibly with whitespace between any of these elements, which is
-ignored.  Each operand is intepreted as a numeric value if at all possible.
+ignored.  Each operand is interpreted as a numeric value if at all possible.
 .PP
 Each operand has one of the following forms:
 .RS

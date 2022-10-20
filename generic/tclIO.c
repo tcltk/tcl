@@ -8320,25 +8320,20 @@ Tcl_SetChannelOption(
 	    return TCL_ERROR;
 	}
 	if (newMode) {
-	    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
-		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "-nocomplainencoding cannot be used with -strictencoding",
-			    -1));
-		}
-		return TCL_ERROR;
-	    }
+	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
 	    SetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
 	} else {
 #ifdef TCL_NO_DEPRECATED
 	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
 #else
-	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"bad value for -nocomplainencoding: only true allowed",
-			-1));
+	    if (SetFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "bad value for -nocomplainencoding: only true allowed",
+			    TCL_INDEX_NONE));
+		}
+		return TCL_ERROR;
 	    }
-	    return TCL_ERROR;
 #endif
 	}
 	return TCL_OK;
@@ -8349,14 +8344,7 @@ Tcl_SetChannelOption(
 	    return TCL_ERROR;
 	}
 	if (newMode) {
-	    if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "-strictencoding cannot be used with -nocomplainencoding",
-			    -1));
-		}
-		return TCL_ERROR;
-	    }
+	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
 	    SetFlag(statePtr, CHANNEL_ENCODING_STRICT);
 	} else {
 	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);

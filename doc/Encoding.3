@@ -117,7 +117,9 @@ byte is converted and then to reset to an initial state.
 \fBTCL_ENCODING_STOPONERROR\fR signifies that the conversion routine should
 return immediately upon reading a source character that does not exist in
 the target encoding; otherwise a default fallback character will
-automatically be substituted. The flag \fBTCL_ENCODING_NOCOMPLAIN\fR has
+automatically be substituted. The flag \fBTCL_ENCODING_STRICT\fR makes the
+encoder/decoder more strict in what it considers to be an invalid byte
+sequence. The flag \fBTCL_ENCODING_NOCOMPLAIN\fR has
 no effect, it is reserved for Tcl 9.0. The flag \fBTCL_ENCODING_MODIFIED\fR makes
 \fBTcl_UtfToExternalDStringEx\fR and \fBTcl_UtfToExternal\fR produce the
 byte sequence \exC0\ex80 in stead of \ex00, for the utf-8/cesu-8 encoders.
