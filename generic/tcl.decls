@@ -2532,7 +2532,15 @@ declare 679 {
 	    void *clientData, size_t objc, Tcl_Obj *const objv[])
 }
 
-# slot 680 and 681 are reserved for TIP #638
+# TIP #638.
+declare 680 {
+    int Tcl_GetNumberFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    void **clientDataPtr, int *typePtr)
+}
+declare 681 {
+    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, size_t numBytes,
+	    void **clientDataPtr, int *typePtr)
+}
 
 # TIP #220.
 declare 682 {

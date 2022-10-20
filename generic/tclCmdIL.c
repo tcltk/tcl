@@ -4079,7 +4079,7 @@ SequenceIdentifyArgument(
     SequenceByMode bymode;
     void *clientData;
 
-    status = TclGetNumberFromObj(NULL, argPtr, &clientData, keywordIndexPtr);
+    status = Tcl_GetNumberFromObj(NULL, argPtr, &clientData, keywordIndexPtr);
     if (status == TCL_OK) {
 	if (numValuePtr) {
 	    *numValuePtr = argPtr;
