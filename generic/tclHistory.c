@@ -203,7 +203,7 @@ Tcl_RecordAndEvalObj(
 
 static void
 DeleteHistoryObjs(
-    ClientData clientData,
+    void *clientData,
     TCL_UNUSED(Tcl_Interp *))
 {
     HistoryObjs *histObjsPtr = (HistoryObjs *)clientData;

@@ -34,7 +34,7 @@
  */
 
 typedef struct FilesystemRecord {
-    ClientData clientData;	/* Client-specific data for the filesystem
+    void *clientData;	/* Client-specific data for the filesystem
 				 * (can be NULL) */
     const Tcl_Filesystem *fsPtr;/* Pointer to filesystem dispatch table. */
     struct FilesystemRecord *nextPtr;
@@ -58,7 +58,7 @@ typedef struct {
 				 * the value is accessed  and cwdPathEpoch has
 				 * changed.
 				 */
-    ClientData cwdClientData;
+    void *cwdClientData;
     FilesystemRecord *filesystemList;
     size_t claims;
 } ThreadSpecificData;
@@ -69,12 +69,12 @@ typedef struct {
 
 static Tcl_NRPostProc	EvalFileCallback;
 static FilesystemRecord*FsGetFirstFilesystem(void);
-static void		FsThrExitProc(ClientData cd);
+static void		FsThrExitProc(void *cd);
 static Tcl_Obj *	FsListMounts(Tcl_Obj *pathPtr, const char *pattern);
 static void		FsAddMountsToGlobResult(Tcl_Obj *resultPtr,
 			    Tcl_Obj *pathPtr, const char *pattern,
 			    Tcl_GlobTypeData *types);
-static void		FsUpdateCwd(Tcl_Obj *cwdObj, ClientData clientData);
+static void		FsUpdateCwd(Tcl_Obj *cwdObj, void *clientData);
 static void		FsRecacheFilesystemList(void);
 static void		Claim(void);
 static void		Disclaim(void);
@@ -212,7 +212,7 @@ TCL_DECLARE_MUTEX(filesystemMutex)
 
 static Tcl_Obj *cwdPathPtr = NULL;
 static size_t cwdPathEpoch = 0;	    /* The pathname of the current directory */
-static ClientData cwdClientData = NULL;
+static void *cwdClientData = NULL;
 TCL_DECLARE_MUTEX(cwdMutex)
 
 static Tcl_ThreadDataKey fsDataKey;
@@ -230,7 +230,7 @@ typedef struct {
     Tcl_FSUnloadFileProc *unloadProcPtr;
     Tcl_Obj *divertedFile;
     const Tcl_Filesystem *divertedFilesystem;
-    ClientData divertedFileNativeRep;
+    void *divertedFileNativeRep;
 } FsDivertLoad;
 
 /*
@@ -414,7 +414,7 @@ Tcl_EvalFile(
 
 static void
 FsThrExitProc(
-    ClientData cd)
+    void *cd)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)cd;
     FilesystemRecord *fsRecPtr = NULL, *tmpFsRecPtr = NULL;
@@ -661,7 +661,7 @@ TclFSEpoch(void)
 static void
 FsUpdateCwd(
     Tcl_Obj *cwdObj,
-    ClientData clientData)
+    void *clientData)
 {
     size_t len = 0;
     const char *str = NULL;
@@ -843,7 +843,7 @@ TclResetFilesystem(void)
 
 int
 Tcl_FSRegister(
-    ClientData clientData,	/* Client-specific data for this filesystem. */
+    void *clientData,	/* Client-specific data for this filesystem. */
     const Tcl_Filesystem *fsPtr)/* The filesystem record for the new fs. */
 {
     FilesystemRecord *newFilesystemPtr;
@@ -1262,12 +1262,12 @@ Tcl_FSMountsChanged(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 Tcl_FSData(
     const Tcl_Filesystem *fsPtr) /* The filesystem to find in the list of
 				  *  registered filesystems. */
 {
-    ClientData retVal = NULL;
+    void *retVal = NULL;
     FilesystemRecord *fsRecPtr = FsGetFirstFilesystem();
 
     /*
@@ -1925,7 +1925,7 @@ TclNREvalFile(
 
 static int
 EvalFileCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -2621,7 +2621,7 @@ Tcl_FSGetCwd(
 	Claim();
 	for (; (retVal == NULL) && (fsRecPtr != NULL);
 		fsRecPtr = fsRecPtr->nextPtr) {
-	    ClientData retCd;
+	    void *retCd;
 	    TclFSGetCwdProc2 *proc2;
 
 	    if (fsRecPtr->fsPtr->getCwdProc == NULL) {
@@ -2722,7 +2722,7 @@ Tcl_FSGetCwd(
 
 	const Tcl_Filesystem *fsPtr =
 		Tcl_FSGetFileSystemForPath(tsdPtr->cwdPathPtr);
-	ClientData retCd = NULL;
+	void *retCd = NULL;
 	Tcl_Obj *retVal, *norm;
 
 	if (fsPtr == NULL || fsPtr->getCwdProc == NULL) {
@@ -2924,8 +2924,8 @@ Tcl_FSChdir(
 	}
 
 	if (fsPtr == &tclNativeFilesystem) {
-	    ClientData cd;
-	    ClientData oldcd = tsdPtr->cwdClientData;
+	    void *cd;
+	    void *oldcd = tsdPtr->cwdClientData;
 
 	    /*
 	     * Assume that the native filesystem has a getCwdProc and that it
@@ -4518,7 +4518,7 @@ Tcl_FSGetFileSystemForPath(
      * corresponding filesystem is found.
      */
     for (; fsRecPtr!=NULL ; fsRecPtr=fsRecPtr->nextPtr) {
-	ClientData clientData = NULL;
+	void *clientData = NULL;
 
 	if (fsRecPtr->fsPtr->pathInFilesystemProc == NULL) {
 	    continue;
@@ -4575,7 +4575,7 @@ Tcl_FSGetNativePath(
 
 static void
 NativeFreeInternalRep(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_Free(clientData);
 }
