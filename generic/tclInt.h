@@ -2428,23 +2428,14 @@ typedef enum TclEolTranslation {
 #define TCL_INVOKE_NO_UNKNOWN	(1<<1)
 #define TCL_INVOKE_NO_TRACEBACK	(1<<2)
 
-/*
- * ListSizeT is the type for holding list element counts. It's defined
- * simplify sharing source between Tcl8 and Tcl9.
- */
 #if TCL_MAJOR_VERSION > 8
-
-typedef size_t ListSizeT;
-
 /*
  * SSIZE_MAX, NOT SIZE_MAX as negative differences need to be expressed
  * between values of the ListSizeT type so limit the range to signed
  */
-#define ListSizeT_MAX ((ListSizeT)PTRDIFF_MAX)
+#define ListSizeT_MAX ((Tcl_Size)PTRDIFF_MAX)
 
 #else
-
-typedef int ListSizeT;
 #define ListSizeT_MAX INT_MAX
 
 #endif
@@ -2475,9 +2466,9 @@ typedef int ListSizeT;
  *
  */
 typedef struct ListStore {
-    ListSizeT firstUsed;    /* Index of first slot in use within slots[] */
-    ListSizeT numUsed;      /* Number of slots in use (starting firstUsed) */
-    ListSizeT numAllocated; /* Total number of slots[] array slots. */
+    Tcl_Size firstUsed;    /* Index of first slot in use within slots[] */
+    Tcl_Size numUsed;      /* Number of slots in use (starting firstUsed) */
+    Tcl_Size numAllocated; /* Total number of slots[] array slots. */
     size_t refCount;           /* Number of references to this instance */
     int flags;              /* LISTSTORE_* flags */
     Tcl_Obj *slots[TCLFLEXARRAY];      /* Variable size array. Grown as needed */
@@ -2500,8 +2491,8 @@ typedef struct ListStore {
  * See comments above for ListStore
  */
 typedef struct ListSpan {
-    ListSizeT spanStart;    /* Starting index of the span */
-    ListSizeT spanLength;   /* Number of elements in the span */
+    Tcl_Size spanStart;    /* Starting index of the span */
+    Tcl_Size spanLength;   /* Number of elements in the span */
     size_t refCount;     /* Count of references to this span record */
 } ListSpan;
 #ifndef LIST_SPAN_THRESHOLD /* May be set on build line */

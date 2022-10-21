@@ -117,7 +117,7 @@ extern "C" {
 #   define TCL_NORETURN1 __attribute__ ((noreturn))
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
-#   if defined(_MSC_VER) && (_MSC_VER >= 1310)
+#   if defined(_MSC_VER)
 #	define TCL_NORETURN _declspec(noreturn)
 #	define TCL_NOINLINE __declspec(noinline)
 #   else
@@ -317,7 +317,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	typedef struct __stat64 Tcl_StatBuf;
 #   elif defined(_WIN64) || defined(_USE_64BIT_TIME_T)
 	typedef struct __stat64 Tcl_StatBuf;
-#   elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
+#   elif defined(_USE_32BIT_TIME_T)
 	typedef struct _stati64	Tcl_StatBuf;
 #   else
 	typedef struct _stat32i64 Tcl_StatBuf;
@@ -646,6 +646,8 @@ typedef union Tcl_ObjInternalRep {	/* The internal representation: */
  * An object stores a value as either a string, some internal representation,
  * or both.
  */
+#define Tcl_Size size_t
+
 
 typedef struct Tcl_Obj {
     size_t refCount;		/* When 0 the object will be freed. */

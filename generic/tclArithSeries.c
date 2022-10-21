@@ -821,7 +821,7 @@ TclArithSeriesGetElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *objPtr,		/* AbstractList object for which an element
 				 * array is to be returned. */
-    ListSizeT *objcPtr,		/* Where to store the count of objects
+    Tcl_Size *objcPtr,		/* Where to store the count of objects
 				 * referenced by objv. */
     Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
 				 * pointers to the list's objects. */
