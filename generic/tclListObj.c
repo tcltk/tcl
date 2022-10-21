@@ -155,7 +155,8 @@ const Tcl_ObjType tclListType = {
     FreeListInternalRep,	/* freeIntRepProc */
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
-    SetListFromAny		/* setFromAnyProc */
+    SetListFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 /* Macros to manipulate the List internal rep */
