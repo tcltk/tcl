@@ -2429,17 +2429,13 @@ typedef enum TclEolTranslation {
 #define TCL_INVOKE_NO_TRACEBACK	(1<<2)
 
 #if TCL_MAJOR_VERSION > 8
-
 /*
  * SSIZE_MAX, NOT SIZE_MAX as negative differences need to be expressed
  * between values of the Tcl_Size type so limit the range to signed
  */
-#define ListSizeT_MAX ((size_t)PTRDIFF_MAX)
-
+#   define ListSizeT_MAX ((Tcl_Size)PTRDIFF_MAX)
 #else
-
-#define ListSizeT_MAX INT_MAX
-
+#   define ListSizeT_MAX INT_MAX
 #endif
 
 /*
