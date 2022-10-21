@@ -24,6 +24,13 @@
 
 #include "tclInt.h"
 
+#ifdef USE_LINENOISE
+#include "linenoise.h"
+static void linenoiseExit() {
+    exit(0);
+}
+#endif
+
 /*
  * The default prompt used when the user has not overridden it.
  */
@@ -363,6 +370,67 @@ Tcl_MainEx(
     Tcl_SetVar2Ex(interp, "tcl_interactive", NULL,
 	    Tcl_NewIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
 
+#ifdef USE_LINENOISE
+
+    /*
+     * If we are running interactively, enable command-line editing and
+     * history via linenoise.  We fork this Tcl interpreter to create a child
+     * process running a linenoise loop and reset the stdin of this Tcl
+     * interpreter to be the read end of the pipe.  The two processes share
+     * stdout and stderr.  When the child receives a line from linenoise it
+     * simply writes that line to the write end of the pipe.
+     */
+
+    #define READ_END pipeEnds[0]
+    #define WRITE_END pipeEnds[1]
+    if (is.tty) {
+	int pipeEnds[2];
+	pid_t pid;
+	if (pipe(pipeEnds)) {
+	    perror("pipe:");
+	    exit(1);
+	}
+	pid = fork();
+	if (pid == -1) {
+	    perror("fork");
+	    exit(1);
+	}
+	if (pid == 0) {
+	    char historyPath[1024];
+	    char *line;
+	    char *home = getenv("HOME");
+	    if (home) {
+		strlcpy(historyPath, home, 1024);
+		strlcat(historyPath, "/.tcl_history", 1024);
+	    }
+	    if (home) {
+		linenoiseHistoryLoad(historyPath);
+	    }
+	    while(1) {
+		line = linenoise(NULL);
+		if (line == NULL) {
+		    break;
+		}
+		if (line[0] != '\0') {
+		    write(WRITE_END, line, strlen(line));
+		    if (home) {
+			linenoiseHistoryAdd(line);
+			linenoiseHistorySave(historyPath);
+		    }
+		}
+		write(WRITE_END, "\n", 1);
+		free(line);
+	    }
+	    exit(0);
+	} else {
+	    dup2(READ_END, 0);
+	    close(READ_END);
+	    signal(SIGCHLD, linenoiseExit); 
+	}
+    }
+
+#endif
+    
     /*
      * Invoke application-specific initialization.
      */
