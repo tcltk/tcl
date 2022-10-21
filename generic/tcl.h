@@ -360,6 +360,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
 typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
+typedef struct Tcl_ObjTypeVersion_ *Tcl_ObjTypeVersion;
 typedef struct Tcl_Command_ *Tcl_Command;
 typedef struct Tcl_Condition_ *Tcl_Condition;
 typedef struct Tcl_Dict_ *Tcl_Dict;
@@ -616,11 +617,11 @@ typedef struct Tcl_ObjType {
 				/* Called to convert the object's internal rep
 				 * to this type. Frees the internal rep of the
 				 * old type. Returns TCL_ERROR on failure. */
-    unsigned char version;
+    Tcl_ObjTypeVersion version;
 } Tcl_ObjType;
-#define TCL_OBJTYPE_V0 0 /* Pre-Tcl 9. Set to 0 so compiler will auto-init 
-			  * when existing code that does not init this field
-			  * is compiled with Tcl9 headers */
+#define TCL_OBJTYPE_V0 ((Tcl_ObjTypeVersion)0) /* Pre-Tcl 9. Set to 0 so
+			  * compiler will auto-init  when existing code that does
+			  * not init this field is compiled with Tcl9 headers */
 #define TCL_OBJTYPE_CURRENT TCL_OBJTYPE_V0
 
 /*
