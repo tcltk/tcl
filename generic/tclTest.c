@@ -552,7 +552,7 @@ Tcltest_Init(
 {
     Tcl_CmdInfo info;
     Tcl_Obj **objv, *objPtr;
-    size_t objc;
+    Tcl_Size objc;
     int index;
     static const char *const specialOptions[] = {
 	"-appinitprocerror", "-appinitprocdeleteinterp",
@@ -3539,7 +3539,7 @@ TestlistrepCmd(
 	    return TCL_ERROR;
 	} else {
 	    Tcl_Obj **objs;
-	    ListSizeT nobjs;
+	    Tcl_Size nobjs;
 	    ListRep listRep;
 	    Tcl_Obj *listRepObjs[4];
 

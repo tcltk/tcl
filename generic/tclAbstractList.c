@@ -480,7 +480,7 @@ Tcl_AbstractListObjRange(
     } else {
 	/* TODO ?shimmer avoided? */
 	Tcl_Obj *newObj = TclListObjCopy(NULL, abstractListObjPtr);
-	*newObjPtr = (newObj ? TclListObjRange(newObj, (ListSizeT)fromIdx, (ListSizeT)toIdx) : NULL);
+	*newObjPtr = (newObj ? TclListObjRange(newObj, (Tcl_Size)fromIdx, (Tcl_Size)toIdx) : NULL);
 	return (newObj ? TCL_OK : TCL_ERROR);
     }
 }
@@ -706,9 +706,9 @@ Tcl_AbstractListSetElement(
 int Tcl_AbstractListObjReplace(
     Tcl_Interp *interp,		  /* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		  /* List object whose elements to replace. */
-    ListSizeT first,		  /* Index of first element to replace. */
-    ListSizeT numToDelete,	  /* Number of elements to replace. */
-    ListSizeT numToInsert,	  /* Number of objects to insert. */
+    Tcl_Size first,		  /* Index of first element to replace. */
+    Tcl_Size numToDelete,	  /* Number of elements to replace. */
+    Tcl_Size numToInsert,	  /* Number of objects to insert. */
     Tcl_Obj *const insertObjs[]) /* Tcl objects to insert */
 {
     int status;
