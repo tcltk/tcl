@@ -52,6 +52,9 @@ const char *
 \fBTcl_GetEncodingName\fR(\fIencoding\fR)
 .sp
 int
+\fBTcl_GetEncodingNulLength\fR(\fIencoding\fR)
+.sp
+int
 \fBTcl_SetSystemEncoding\fR(\fIinterp, name\fR)
 .sp
 const char *
@@ -293,6 +296,9 @@ Given an \fIencoding\fR, the return value is the \fIname\fR argument that
 was used to create the encoding.  The string returned by
 \fBTcl_GetEncodingName\fR is only guaranteed to persist until the
 \fIencoding\fR is deleted.  The caller must not modify this string.
+.PP
+\fBTcl_GetEncodingNulLength\fR returns the length of the terminating
+nul byte sequence for strings in the specified encoding.
 .PP
 \fBTcl_SetSystemEncoding\fR sets the default encoding that should be used
 whenever the user passes a NULL value for the \fIencoding\fR argument to
