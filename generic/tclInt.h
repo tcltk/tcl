@@ -2655,35 +2655,6 @@ AbstractListObjLength(Tcl_Obj* abstractListObjPtr)
     return typePtr->lengthProc(abstractListObjPtr);
 }
 
-static inline int
-TclAbstractListHasProc(Tcl_Obj* abstractListObjPtr, Tcl_AbstractListProcType ptype)
-{
-    Tcl_AbstractListType *typePtr = AbstractListGetType(abstractListObjPtr);
-    switch (ptype) {
-    case TCL_ABSL_NEW:
-	return (typePtr->newObjProc != NULL);
-    case TCL_ABSL_DUPREP:
-	return (typePtr->dupRepProc != NULL);
-    case TCL_ABSL_LENGTH:
-	return (typePtr->lengthProc != NULL);
-    case TCL_ABSL_INDEX:
-	return (typePtr->indexProc != NULL);
-    case TCL_ABSL_SLICE:
-	return (typePtr->sliceProc != NULL);
-    case TCL_ABSL_REVERSE:
-	return (typePtr->reverseProc != NULL);
-    case TCL_ABSL_GETELEMENTS:
-        return (typePtr->getElementsProc != NULL);
-    case TCL_ABSL_FREEREP:
-	return (typePtr->freeRepProc != NULL);
-    case TCL_ABSL_TOSTRING:
-	return (typePtr->toStringProc != NULL);
-    case TCL_ABSL_SETELEMENT:
-	return (typePtr->setElementProc != NULL);
-    }
-    return 0;
-}
-
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
  * TclNRLmapCmd and their compilations.
@@ -4788,6 +4759,42 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 	((objPtr)->typePtr == (type))
 #define TclFetchInternalRep(objPtr, type) \
 	(TclHasInternalRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
+
+static inline int
+TclAbstractListHasProc(Tcl_Obj* abstractListObjPtr, Tcl_AbstractListProcType ptype)
+{
+    Tcl_AbstractListType *typePtr;
+    if ( ! TclHasInternalRep(abstractListObjPtr,&tclAbstractListType)) {
+	return 0;
+    }
+    typePtr = AbstractListGetType(abstractListObjPtr);
+    switch (ptype) {
+    case TCL_ABSL_NEW:
+	return (typePtr->newObjProc != NULL);
+    case TCL_ABSL_DUPREP:
+	return (typePtr->dupRepProc != NULL);
+    case TCL_ABSL_LENGTH:
+	return (typePtr->lengthProc != NULL);
+    case TCL_ABSL_INDEX:
+	return (typePtr->indexProc != NULL);
+    case TCL_ABSL_SLICE:
+	return (typePtr->sliceProc != NULL);
+    case TCL_ABSL_REVERSE:
+	return (typePtr->reverseProc != NULL);
+    case TCL_ABSL_GETELEMENTS:
+        return (typePtr->getElementsProc != NULL);
+    case TCL_ABSL_FREEREP:
+	return (typePtr->freeRepProc != NULL);
+    case TCL_ABSL_TOSTRING:
+	return (typePtr->toStringProc != NULL);
+    case TCL_ABSL_SETELEMENT:
+	return (typePtr->setElementProc != NULL);
+    case TCL_ABSL_REPLACE:
+	return (typePtr->replaceProc != NULL);
+    }
+    return 0;
+}
+
 
 
 /*

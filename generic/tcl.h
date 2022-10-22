@@ -746,11 +746,15 @@ typedef		  void	(Tcl_ALToStringRep) (struct Tcl_Obj *listPtr);
 typedef	struct Tcl_Obj*	(Tcl_ALSetElement) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
 					    struct Tcl_Obj *indicies,
 					    struct Tcl_Obj *valueObj);
+typedef            int  (Tcl_ALReplaceProc) (Tcl_Interp *interp, struct Tcl_Obj *listObj,
+					    Tcl_WideInt first, Tcl_WideInt numToDelete,
+					    Tcl_WideInt numToInsert,
+					    struct Tcl_Obj *const insertObjs[]);
 
 typedef enum {
     TCL_ABSL_NEW, TCL_ABSL_DUPREP, TCL_ABSL_LENGTH, TCL_ABSL_INDEX,
     TCL_ABSL_SLICE, TCL_ABSL_REVERSE, TCL_ABSL_GETELEMENTS, TCL_ABSL_FREEREP,
-    TCL_ABSL_TOSTRING, TCL_ABSL_SETELEMENT
+    TCL_ABSL_TOSTRING, TCL_ABSL_SETELEMENT, TCL_ABSL_REPLACE
 } Tcl_AbstractListProcType;
 
 typedef struct Tcl_AbstractListVersion_ *Tcl_AbstractListVersion;
@@ -873,6 +877,8 @@ typedef struct Tcl_AbstractListType {
                                         ** for updating the string rep */
     Tcl_ALSetElement *setElementProc;   /* Replace the element at the indicie
 					** with the given valueObj. */
+    Tcl_ALReplaceProc *replaceProc;     /* Replace subset with subset */
+
 } Tcl_AbstractListType;
 
 /*

@@ -663,6 +663,79 @@ Tcl_AbstractListSetElement(
     }
     return returnObj;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AbstractListObjReplace --
+ *
+ *      This function mimics the Tcl_ListObjReplace operation, iff the
+ *      concrete abstract list type supports the Replace operation, and if
+ *      not, it will return with an error.
+ *
+ *	This function replaces zero or more elements of the abstract list
+ *	referenced by listObj with the objects from an (objc,objv) array. The
+ *	objc elements of the array referenced by objv replace the count
+ *	elements in listPtr starting at first.
+ *
+ *	If the argument first is zero or negative, it refers to the first
+ *	element. If first is greater than or equal to the number of elements
+ *	in the list, then no elements are deleted; the new elements are
+ *	appended to the list. Count gives the number of elements to replace.
+ *	If count is zero or negative then no elements are deleted; the new
+ *	elements are simply inserted before first.
+ *
+ *	The argument objv refers to an array of objc pointers to the new
+ *	elements to be added to listPtr in place of those that were deleted.
+ *	If objv is NULL, no new elements are added.
+ *
+ * Results:
+ *	The return value is normally TCL_OK. If listPtr does not support the
+ *	Replace opration then TCL_ERROR is returned and an error message will
+ *	be left in the interpreter's result if interp is not NULL.
+ *
+ * Side effects:
+ *	The ref counts of the objc elements in objv maybe incremented iff the
+ *	concrete type retains a reference to the element(s), otherwise there
+ *	will be no change to the ref counts.  Similarly, the ref counts for
+ *	replaced objects are decremented. listObj's old string representation,
+ *	if any, is freed.
+ *
+ *----------------------------------------------------------------------
+ */
+int Tcl_AbstractListObjReplace(
+    Tcl_Interp *interp,		  /* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr,		  /* List object whose elements to replace. */
+    ListSizeT first,		  /* Index of first element to replace. */
+    ListSizeT numToDelete,	  /* Number of elements to replace. */
+    ListSizeT numToInsert,	  /* Number of objects to insert. */
+    Tcl_Obj *const insertObjs[]) /* Tcl objects to insert */
+{
+    int status;
+    if (TclHasInternalRep(objPtr,&tclAbstractListType)) {
+	Tcl_AbstractListType *typePtr  = Tcl_AbstractListGetType(objPtr);
+        if (TclAbstractListHasProc(objPtr, TCL_ABSL_REPLACE)) {
+            status = typePtr->replaceProc(interp, objPtr, first, numToDelete, numToInsert, insertObjs);
+        } else {
+            if (interp) {
+                Tcl_SetObjResult(
+		    interp,
+                    Tcl_NewStringObj("Replace not supported!", -1));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+            }
+	    status = TCL_ERROR;
+        }
+    } else {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_ObjPrintf("value is not an abstract list"));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", NULL);
+	}
+	status = TCL_ERROR;
+    }
+    return status;
+}
 
 /*
  * Local Variables:

@@ -43,6 +43,13 @@ Tcl_Obj *   Tcl_AbstractListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 void	*   Tcl_AbstractListGetConcreteRep(Tcl_Obj *objPtr);
 Tcl_Obj *   Tcl_AbstractListSetElement(Tcl_Interp *interp, Tcl_Obj *listPtr,
 				       Tcl_Obj *indicies, Tcl_Obj *valueObj);
+int Tcl_AbstractListObjReplace(
+    Tcl_Interp *interp,		  /* Used for error reporting if not NULL. */
+    Tcl_Obj *listObj,		  /* List object whose elements to replace. */
+    ListSizeT first,		  /* Index of first element to replace. */
+    ListSizeT numToDelete,	  /* Number of elements to replace. */
+    ListSizeT numToInsert,	  /* Number of objects to insert. */
+    Tcl_Obj *const insertObjs[]); /* Tcl objects to insert */
 
 #endif
 

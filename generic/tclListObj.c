@@ -2087,6 +2087,11 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
 
+    if (TclAbstractListHasProc(listObj, TCL_ABSL_REPLACE)) {
+	return Tcl_AbstractListObjReplace(interp, listObj, first,
+					  numToDelete, numToInsert, insertObjs);
+    }
+
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK)
 	return TCL_ERROR; /* Cannot be converted to a list */
 

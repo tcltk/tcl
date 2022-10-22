@@ -80,7 +80,8 @@ static Tcl_AbstractListType arithSeriesType = {
         TclArithSeriesGetElements,
         FreeArithSeriesRep,
 	UpdateStringOfArithSeries,
-	NULL
+	NULL, // SetElement
+	NULL  // Replace
 };
 
 /*
