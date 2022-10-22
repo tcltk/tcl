@@ -399,9 +399,10 @@ Tcl_MainEx(
 	    char historyPath[1024];
 	    char *line;
 	    char *home = getenv("HOME");
+	    size_t written;
 	    if (home) {
-		strlcpy(historyPath, home, 1024);
-		strlcat(historyPath, "/.tcl_history", 1024);
+		strncpy(historyPath, home, 1000);
+		strncat(historyPath, "/.tcl_history", 13);
 	    }
 	    if (home) {
 		linenoiseHistoryLoad(historyPath);
@@ -412,13 +413,20 @@ Tcl_MainEx(
 		    break;
 		}
 		if (line[0] != '\0') {
-		    write(WRITE_END, line, strlen(line));
+		    size_t numBytes = strlen(line);
+		    written = write(WRITE_END, line, numBytes);
+		    if (written != numBytes) {
+			Tcl_Panic("Write failed!");
+		    }
 		    if (home) {
 			linenoiseHistoryAdd(line);
 			linenoiseHistorySave(historyPath);
 		    }
 		}
-		write(WRITE_END, "\n", 1);
+		written = write(WRITE_END, "\n", 1);
+		if (written != 1) {
+		    Tcl_Panic("Write failed!");
+		}
 		free(line);
 	    }
 	    exit(0);
