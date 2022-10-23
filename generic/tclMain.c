@@ -404,8 +404,6 @@ Tcl_MainEx(
 	    if (home) {
 		strncpy(historyPath, home, 1000);
 		strncat(historyPath, "/.tcl_history", 13);
-	    }
-	    if (home) {
 		linenoiseHistoryLoad(historyPath);
 	    }
 	    while(1) {
