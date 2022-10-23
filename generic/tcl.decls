@@ -2597,13 +2597,18 @@ declare 680 {
 	    void **clientDataPtr, int *typePtr)
 }
 declare 681 {
-    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, Tcl_Size numBytes,
+    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, size_t numBytes,
 	    void **clientDataPtr, int *typePtr)
 }
 
 # TIP #220.
 declare 682 {
     int Tcl_RemoveChannelMode(Tcl_Interp *interp, Tcl_Channel chan, int mode)
+}
+
+# TIP 643
+declare 683 {
+   int Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

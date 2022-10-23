@@ -1843,11 +1843,13 @@ EXTERN int		Tcl_GetNumberFromObj(Tcl_Interp *interp,
 				int *typePtr);
 /* 681 */
 EXTERN int		Tcl_GetNumber(Tcl_Interp *interp, const char *bytes,
-				Tcl_Size numBytes, void **clientDataPtr,
+				size_t numBytes, void **clientDataPtr,
 				int *typePtr);
 /* 682 */
 EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
 				Tcl_Channel chan, int mode);
+/* 683 */
+EXTERN int		Tcl_GetEncodingNulLength(Tcl_Encoding encoding);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2540,8 +2542,9 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 678 */
     int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 679 */
     int (*tcl_GetNumberFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, void **clientDataPtr, int *typePtr); /* 680 */
-    int (*tcl_GetNumber) (Tcl_Interp *interp, const char *bytes, Tcl_Size numBytes, void **clientDataPtr, int *typePtr); /* 681 */
+    int (*tcl_GetNumber) (Tcl_Interp *interp, const char *bytes, size_t numBytes, void **clientDataPtr, int *typePtr); /* 681 */
     int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
+    int (*tcl_GetEncodingNulLength) (Tcl_Encoding encoding); /* 683 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3860,6 +3863,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetNumber) /* 681 */
 #define Tcl_RemoveChannelMode \
 	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
+#define Tcl_GetEncodingNulLength \
+	(tclStubsPtr->tcl_GetEncodingNulLength) /* 683 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

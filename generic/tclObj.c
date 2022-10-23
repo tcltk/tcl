@@ -3509,7 +3509,7 @@ int
 Tcl_GetNumber(
     Tcl_Interp *interp,
     const char *bytes,
-    Tcl_Size numBytes,
+    size_t numBytes,
     void **clientDataPtr,
     int *typePtr)
 {
