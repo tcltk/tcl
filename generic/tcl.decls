@@ -2606,6 +2606,11 @@ declare 682 {
     int Tcl_RemoveChannelMode(Tcl_Interp *interp, Tcl_Channel chan, int mode)
 }
 
+# TIP 643
+declare 683 {
+   int Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
