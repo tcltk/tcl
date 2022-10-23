@@ -734,10 +734,10 @@ test safe-9.6 {interpConfigure widget like behaviour} -body {
 	 safe::interpConfigure $i]
 } -cleanup {
     safe::interpDelete $i
-} -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar}}\
-        {-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}}\
-        {-accessPath * -statics 1 -nested 1 -deleteHook {foo bar}}\
-        {-accessPath * -statics 0 -nested 0 -deleteHook toto}}
+} -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar} -autoPath *}\
+	{-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}}\
+	{-accessPath * -statics 1 -nested 1 -deleteHook {foo bar} -autoPath *}\
+	{-accessPath * -statics 0 -nested 0 -deleteHook toto -autoPath *}}
 test safe-9.7 {interpConfigure widget like behaviour (demystified)} -body {
    # this test shall work, believed equivalent to 9.6
     set i [safe::interpCreate \
@@ -759,10 +759,10 @@ test safe-9.7 {interpConfigure widget like behaviour (demystified)} -body {
 } -cleanup {
     safe::interpDelete $i
     unset -nocomplain a b c d e f g i
-} -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar}}\
-        {-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}}\
-        {-accessPath * -statics 1 -nested 1 -deleteHook {foo bar}}\
-        {-accessPath * -statics 0 -nested 0 -deleteHook toto}}
+} -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar} -autoPath *}\
+	{-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}}\
+	{-accessPath * -statics 1 -nested 1 -deleteHook {foo bar} -autoPath *}\
+	{-accessPath * -statics 0 -nested 0 -deleteHook toto -autoPath *}}
 test safe-9.8 {autoloading commands indexed in tclIndex files, Sync Mode on} -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
