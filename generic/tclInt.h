@@ -224,7 +224,9 @@ typedef struct NamespacePathEntry NamespacePathEntry;
 typedef struct TclVarHashTable {
     Tcl_HashTable table;
     struct Namespace *nsPtr;
+#if TCL_MAJOR_VERSION > 9
     struct Var *arrayPtr;
+#endif /* TCL_MAJOR_VERSION > 9 */
 } TclVarHashTable;
 
 /*
