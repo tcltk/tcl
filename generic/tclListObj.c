@@ -3279,7 +3279,7 @@ SetListFromAny(
 	 * because it can be done an order of magnitude faster
 	 * and may occur frequently.
 	 */
-        Tcl_Size j, size = TclArithSeriesObjLength(objPtr);
+	Tcl_Size j, size = TclArithSeriesObjLength(objPtr);
 
 	/* TODO - leave space in front and/or back? */
 	if (ListRepInitAttempt(

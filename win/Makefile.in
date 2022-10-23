@@ -150,8 +150,10 @@ TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 TCL_DLL_FILE		= @TCL_DLL_FILE@
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 DDE_DLL_FILE		= tcl9dde$(DDEVER)${DLLSUFFIX}
+DDE_DLL_FILE8		= dde$(DDEVER)${DLLSUFFIX}
 DDE_LIB_FILE		= @LIBPREFIX@tcldde$(DDEVER)${DLLSUFFIX}${LIBSUFFIX}
 REG_DLL_FILE		= tcl9registry$(REGVER)${DLLSUFFIX}
+REG_DLL_FILE8		= registry$(REGVER)${DLLSUFFIX}
 REG_LIB_FILE		= @LIBPREFIX@tclregistry$(REGVER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
@@ -515,7 +517,7 @@ tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
 
-winextensions: ${DDE_DLL_FILE} ${REG_DLL_FILE}
+winextensions: ${DDE_DLL_FILE} ${REG_DLL_FILE} ${DDE_DLL_FILE8} ${REG_DLL_FILE8}
 
 libraries:
 
@@ -588,6 +590,14 @@ ${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
 ${REG_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${REG_OBJS}
 	@MAKE_DLL@ ${REG_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 	$(COPY) tclsh.exe.manifest ${REG_DLL_FILE}.manifest
+
+${DDE_DLL_FILE8}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
+	@MAKE_DLL@ -DTCL_MAJOR_VERSION=8 ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
+	$(COPY) tclsh.exe.manifest ${DDE_DLL_FILE8}.manifest
+
+${REG_DLL_FILE8}: ${TCL_STUB_LIB_FILE} ${REG_OBJS}
+	@MAKE_DLL@ -DTCL_MAJOR_VERSION=8 ${REG_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
+	$(COPY) tclsh.exe.manifest ${REG_DLL_FILE8}.manifest
 
 ${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 	@$(RM) ${TEST_DLL_FILE} ${TEST_LIB_FILE}
@@ -840,6 +850,10 @@ install-binaries: binaries
 	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl \
 		"$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
 	    fi
+	@if [ -f $(DDE_DLL_FILE8) ]; then \
+	    echo Installing $(DDE_DLL_FILE8); \
+	    $(COPY) $(DDE_DLL_FILE8) "$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
+	    fi
 	@if [ -f $(DDE_LIB_FILE) ]; then \
 	    echo Installing $(DDE_LIB_FILE); \
 	    $(COPY) $(DDE_LIB_FILE) "$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
@@ -849,6 +863,10 @@ install-binaries: binaries
 	    $(COPY) $(REG_DLL_FILE) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
 	    $(COPY) $(ROOT_DIR)/library/registry/pkgIndex.tcl \
 		"$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
+	    fi
+	@if [ -f $(REG_DLL_FILE8) ]; then \
+	    echo Installing $(REG_DLL_FILE8); \
+	    $(COPY) $(REG_DLL_FILE8) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
 	    echo Installing $(REG_LIB_FILE); \
