@@ -110,8 +110,8 @@ typedef struct {
 
 MODULE_SCOPE Tcl_MainLoopProc *TclGetMainLoop(void);
 static void		Prompt(Tcl_Interp *interp, InteractiveState *isPtr);
-static void		StdinProc(ClientData clientData, int mask);
-static void		FreeMainInterp(ClientData clientData);
+static void		StdinProc(void *clientData, int mask);
+static void		FreeMainInterp(void *clientData);
 
 #if !defined(_WIN32) || defined(UNICODE) && !defined(TCL_ASCII_MAIN)
 static Tcl_ThreadDataKey dataKey;
@@ -736,7 +736,7 @@ TclFullFinalizationRequested(void)
 
 static void
 StdinProc(
-    ClientData clientData,	/* The state of interactive cmd line */
+    void *clientData,	/* The state of interactive cmd line */
     TCL_UNUSED(int) /*mask*/)
 {
     int code;
@@ -912,7 +912,7 @@ Prompt(
 
 static void
 FreeMainInterp(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_Interp *interp = (Tcl_Interp *)clientData;
 

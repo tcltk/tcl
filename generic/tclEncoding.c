@@ -919,6 +919,33 @@ Tcl_GetEncodingNames(
 }
 
 /*
+ *-------------------------------------------------------------------------
+ *
+ * Tcl_GetEncodingNulLength --
+ *
+ *	Given an encoding, return the number of nul bytes used for the
+ *      string termination.
+ *
+ * Results:
+ *	The name of the encoding.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+int
+Tcl_GetEncodingNulLength(
+    Tcl_Encoding encoding)
+{
+    if (encoding == NULL) {
+	encoding = systemEncoding;
+    }
+
+    return ((Encoding *) encoding)->nullSize;
+}
+
+/*
  *------------------------------------------------------------------------
  *
  * Tcl_SetSystemEncoding --
