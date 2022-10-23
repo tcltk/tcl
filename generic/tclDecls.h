@@ -3988,6 +3988,8 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetUnicode(objPtr) \
 	Tcl_GetUnicodeFromObj(objPtr, (size_t *)NULL)
 #undef Tcl_GetIndexFromObjStruct
+#undef Tcl_GetBooleanFromObj
+#undef Tcl_GetBoolean
 #undef Tcl_GetStringFromObj
 #undef Tcl_GetUnicodeFromObj
 #undef TclGetByteArrayFromObj
@@ -4013,6 +4015,12 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), \
 		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
+	(sizeof(*(boolPtr)) == sizeof(int) ? tclStubsPtr->tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : \
+	Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
+#define Tcl_GetBoolean(interp, src, boolPtr) \
+	(sizeof(*(boolPtr)) == sizeof(int) ? tclStubsPtr->tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
+	Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
 #else
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	((sizeof(*(sizePtr)) == sizeof(int) && sizeof(int) != sizeof(size_t)) ? \
@@ -4033,6 +4041,12 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), \
 		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
+	(sizeof(*(boolPtr)) == sizeof(int) ? Tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : \
+	Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
+#define Tcl_GetBoolean(interp, src, boolPtr) \
+	(sizeof(*(boolPtr)) == sizeof(int) ? Tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
+	Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
 #endif
 
 #ifdef TCL_MEM_DEBUG
