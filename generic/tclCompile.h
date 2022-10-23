@@ -1062,6 +1062,7 @@ typedef struct {
  *----------------------------------------------------------------
  */
 
+#if TCL_MAJOR_VERSION > 8
 MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
 
 /*
@@ -1081,38 +1082,38 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  */
 
 MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, Tcl_Size depth, Command *cmdPtr,
+			    Tcl_Parse *parsePtr, size_t depth, Command *cmdPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, Tcl_Size count,
+			    Tcl_Token *tokenPtr, size_t count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
-			    Tcl_Size numBytes, CompileEnv *envPtr, int optimize);
+			    size_t numBytes, CompileEnv *envPtr, int optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, Tcl_Size numWords,
+			    Tcl_Token *tokenPtr, size_t numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileInvocation(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, Tcl_Size numWords,
+			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, size_t numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
-			    const char *script, Tcl_Size numBytes,
+			    const char *script, size_t numBytes,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, Tcl_Size count,
+			    Tcl_Token *tokenPtr, size_t count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
-MODULE_SCOPE Tcl_Size	TclCreateAuxData(void *clientData,
+MODULE_SCOPE size_t	TclCreateAuxData(void *clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
-MODULE_SCOPE Tcl_Size	TclCreateExceptRange(ExceptionRangeType type,
+MODULE_SCOPE size_t	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
-MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, Tcl_Size size);
+MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, size_t size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
-			    Tcl_Size length, TCL_HASH_TYPE hash, int *newPtr,
+			    size_t length, TCL_HASH_TYPE hash, int *newPtr,
 			    Namespace *nsPtr, int flags,
 			    LiteralEntry **globalPtrPtr);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
@@ -1127,7 +1128,7 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, TCL_HASH_TYPE index);
-MODULE_SCOPE Tcl_Size	TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
+MODULE_SCOPE size_t	TclFindCompiledLocal(const char *name, size_t nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
@@ -1135,13 +1136,13 @@ MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr,
-			    Tcl_Size before, Tcl_Size after, int *indexPtr);
+			    size_t before, size_t after, int *indexPtr);
 MODULE_SCOPE ByteCode *	TclInitByteCode(CompileEnv *envPtr);
 MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
-			    Tcl_Size numBytes, const CmdFrame *invoker, int word);
+			    size_t numBytes, const CmdFrame *invoker, int word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
@@ -1156,9 +1157,9 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
-MODULE_SCOPE Tcl_Size	TclLocalScalar(const char *bytes, Tcl_Size numBytes,
+MODULE_SCOPE size_t	TclLocalScalar(const char *bytes, size_t numBytes,
 			    CompileEnv *envPtr);
-MODULE_SCOPE Tcl_Size	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
+MODULE_SCOPE size_t	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG
@@ -1168,9 +1169,9 @@ MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
 MODULE_SCOPE int	TclPrintInstruction(ByteCode *codePtr,
 			    const unsigned char *pc);
 MODULE_SCOPE void	TclPrintObject(FILE *outFile,
-			    Tcl_Obj *objPtr, Tcl_Size maxChars);
+			    Tcl_Obj *objPtr, size_t maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
-			    const char *string, Tcl_Size maxChars);
+			    const char *string, size_t maxChars);
 MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
@@ -1192,14 +1193,15 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 			    const char *script, const char *command,
-			    Tcl_Size length, const unsigned char *pc,
+			    size_t length, const unsigned char *pc,
 			    Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
-			    Tcl_Interp *interp, Tcl_Size objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[], int isLambda);
+#endif /* TCL_MAJOR_VERSION > 8 */
 
 
 /*

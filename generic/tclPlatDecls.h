@@ -140,7 +140,7 @@ extern "C" {
 TCLAPI int		Tcl_MacOSXOpenVersionedBundleResources(
 				Tcl_Interp *interp, const char *bundleName,
 				const char *bundleVersion,
-				int hasResourceFile, Tcl_Size maxPathLen,
+				int hasResourceFile, size_t maxPathLen,
 				char *libraryPath);
 /* 2 */
 TCLAPI void		Tcl_MacOSXNotifierAddRunLoopMode(
@@ -153,7 +153,7 @@ typedef struct TclPlatStubs {
     void *hooks;
 
     void (*reserved0)(void);
-    int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, Tcl_Size maxPathLen, char *libraryPath); /* 1 */
+    int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, size_t maxPathLen, char *libraryPath); /* 1 */
     void (*tcl_MacOSXNotifierAddRunLoopMode) (const void *runLoopMode); /* 2 */
     void (*tcl_WinConvertError) (unsigned errCode); /* 3 */
 } TclPlatStubs;
