@@ -2630,7 +2630,7 @@ interface tclPlat
 declare 1 {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
-	    int hasResourceFile, Tcl_Size maxPathLen, char *libraryPath)
+	    int hasResourceFile, size_t maxPathLen, char *libraryPath)
 }
 declare 2 {
     void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
