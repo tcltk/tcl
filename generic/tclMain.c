@@ -397,10 +397,10 @@ Tcl_MainEx(
 	    exit(1);
 	}
 	if (pid == 0) {
-	    char historyPath[1024];
 	    char *line;
-	    char *home = getenv("HOME");
 	    size_t written;
+	    char *home = getenv("HOME");
+	    char historyPath[1024];
 	    if (home) {
 		strncpy(historyPath, home, 1000);
 		strncat(historyPath, "/.tcl_history", 13);
