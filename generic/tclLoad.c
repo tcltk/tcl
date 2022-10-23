@@ -90,7 +90,7 @@ typedef struct InterpLibrary {
  * Prototypes for functions that are private to this file:
  */
 
-static void	LoadCleanupProc(ClientData clientData,
+static void	LoadCleanupProc(void *clientData,
 		    Tcl_Interp *interp);
 static int	IsStatic (LoadedLibrary *libraryPtr);
 static int	UnloadLibrary(Tcl_Interp *interp, Tcl_Interp *target,

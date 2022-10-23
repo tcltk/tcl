@@ -48,17 +48,16 @@ extern "C" {
  */
 
 #if !defined(TCL_MAJOR_VERSION)
-#define TCL_MAJOR_VERSION   9
+#   define TCL_MAJOR_VERSION   9
 #endif
-#if TCL_MAJOR_VERSION != 9
-#error "This header-file is for Tcl 9 only"
-#endif
-#define TCL_MINOR_VERSION   0
-#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  4
+#if TCL_MAJOR_VERSION == 9
+#   define TCL_MINOR_VERSION   0
+#   define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
+#   define TCL_RELEASE_SERIAL  4
 
-#define TCL_VERSION	    "9.0"
-#define TCL_PATCH_LEVEL	    "9.0a4"
+#   define TCL_VERSION	    "9.0"
+#   define TCL_PATCH_LEVEL	    "9.0a4"
+#endif /* TCL_MAJOR_VERSION */
 
 /*
  * A special definition used to allow this header file to be included from
@@ -101,7 +100,7 @@ extern "C" {
 #   define TCL_NORETURN1 __attribute__ ((noreturn))
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
-#   if defined(_MSC_VER) && (_MSC_VER >= 1310)
+#   if defined(_MSC_VER)
 #	define TCL_NORETURN _declspec(noreturn)
 #	define TCL_NOINLINE __declspec(noinline)
 #   else
@@ -282,7 +281,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	typedef struct __stat64 Tcl_StatBuf;
 #   elif defined(_WIN64) || defined(_USE_64BIT_TIME_T)
 	typedef struct __stat64 Tcl_StatBuf;
-#   elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
+#   elif defined(_USE_32BIT_TIME_T)
 	typedef struct _stati64	Tcl_StatBuf;
 #   else
 	typedef struct _stat32i64 Tcl_StatBuf;
@@ -419,6 +418,7 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  * string.
  */
 
+#if TCL_MAJOR_VERSION > 8
 typedef struct Tcl_RegExpIndices {
     size_t start;			/* Character offset of first character in
 				 * match. */
@@ -433,6 +433,23 @@ typedef struct Tcl_RegExpInfo {
     size_t extendStart;		/* The offset at which a subsequent match
 				 * might begin. */
 } Tcl_RegExpInfo;
+#else
+typedef struct Tcl_RegExpIndices {
+    long start;			/* Character offset of first character in
+				 * match. */
+    long end;			/* Character offset of first character after
+				 * the match. */
+} Tcl_RegExpIndices;
+
+typedef struct Tcl_RegExpInfo {
+    int nsubs;			/* Number of subexpressions in the compiled
+				 * expression. */
+    Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
+    long extendStart;		/* The offset at which a subsequent match
+				 * might begin. */
+    long reserved;		/* Reserved for later use. */
+} Tcl_RegExpInfo;
+#endif
 
 /*
  * Picky compilers complain if this typdef doesn't appear before the struct's
@@ -611,9 +628,15 @@ typedef union Tcl_ObjInternalRep {	/* The internal representation: */
  * An object stores a value as either a string, some internal representation,
  * or both.
  */
+#if TCL_MAJOR_VERSION > 8
+#   define Tcl_Size size_t
+#else
+#   define Tcl_Size int
+#endif
+
 
 typedef struct Tcl_Obj {
-    size_t refCount;		/* When 0 the object will be freed. */
+    Tcl_Size refCount;		/* When 0 the object will be freed. */
     char *bytes;		/* This points to the first byte of the
 				 * object's string representation. The array
 				 * must be followed by a null byte (i.e., at
@@ -625,7 +648,7 @@ typedef struct Tcl_Obj {
 				 * should use Tcl_GetStringFromObj or
 				 * Tcl_GetString to get a pointer to the byte
 				 * array as a readonly value. */
-    size_t length;		/* The number of bytes at *bytes, not
+    Tcl_Size length;			/* The number of bytes at *bytes, not
 				 * including the terminating null. */
     const Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
 				 * corresponds to the type of the object's
@@ -686,14 +709,14 @@ typedef struct Tcl_Namespace {
 typedef struct Tcl_CallFrame {
     Tcl_Namespace *nsPtr;
     int dummy1;
-    size_t dummy2;
+    Tcl_Size dummy2;
     void *dummy3;
     void *dummy4;
     void *dummy5;
-    size_t dummy6;
+    Tcl_Size dummy6;
     void *dummy7;
     void *dummy8;
-    size_t dummy9;
+    Tcl_Size dummy9;
     void *dummy10;
     void *dummy11;
     void *dummy12;
@@ -749,9 +772,9 @@ typedef struct Tcl_CmdInfo {
 typedef struct Tcl_DString {
     char *string;		/* Points to beginning of string: either
 				 * staticSpace below or a malloced array. */
-    size_t length;		/* Number of non-NULL characters in the
+    Tcl_Size length;		/* Number of non-NULL characters in the
 				 * string. */
-    size_t spaceAvl;		/* Total number of bytes available for the
+    Tcl_Size spaceAvl;		/* Total number of bytes available for the
 				 * string and its terminating NULL char. */
     char staticSpace[TCL_DSTRING_STATIC_SIZE];
 				/* Space to use in common case where string is
@@ -967,8 +990,8 @@ struct Tcl_HashEntry {
     Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this hash bucket,
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
-    TCL_HASH_TYPE hash;		/* Hash value. */
-    void *clientData;		/* Application stores something here with
+    size_t hash;		/* Hash value. */
+    void *clientData;	/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
 	char *oneWordValue;	/* One-word value for key. */
@@ -1056,11 +1079,11 @@ struct Tcl_HashTable {
     Tcl_HashEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables (to
 				 * avoid mallocs and frees). */
-    size_t numBuckets;		/* Total number of buckets allocated at
+    Tcl_Size numBuckets;		/* Total number of buckets allocated at
 				 * **bucketPtr. */
-    size_t numEntries;		/* Total number of entries present in
+    Tcl_Size numEntries;		/* Total number of entries present in
 				 * table. */
-    size_t rebuildSize;		/* Enlarge table when numEntries gets to be
+    Tcl_Size rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
 #if TCL_MAJOR_VERSION > 8
     size_t mask;		/* Mask value used in hashing function. */
@@ -1091,7 +1114,7 @@ struct Tcl_HashTable {
 
 typedef struct Tcl_HashSearch {
     Tcl_HashTable *tablePtr;	/* Table being searched. */
-    size_t nextIndex;		/* Index of next bucket to be enumerated after
+    Tcl_Size nextIndex;		/* Index of next bucket to be enumerated after
 				 * present one. */
     Tcl_HashEntry *nextEntryPtr;/* Next entry to be enumerated in the current
 				 * bucket. */
@@ -1487,7 +1510,7 @@ typedef struct Tcl_FSVersion_ *Tcl_FSVersion;
 
 typedef struct Tcl_Filesystem {
     const char *typeName;	/* The name of the filesystem. */
-    size_t structureLength;	/* Length of this structure, so future binary
+    Tcl_Size structureLength;	/* Length of this structure, so future binary
 				 * compatibility can be assured. */
     Tcl_FSVersion version;	/* Version of the filesystem type. */
     Tcl_FSPathInFilesystemProc *pathInFilesystemProc;
@@ -1649,8 +1672,8 @@ typedef struct Tcl_Token {
     int type;			/* Type of token, such as TCL_TOKEN_WORD; see
 				 * below for valid types. */
     const char *start;		/* First character in token. */
-    size_t size;			/* Number of bytes in token. */
-    size_t numComponents;		/* If this token is composed of other tokens,
+    Tcl_Size size;			/* Number of bytes in token. */
+    Tcl_Size numComponents;		/* If this token is composed of other tokens,
 				 * this field tells how many of them there are
 				 * (including components of components, etc.).
 				 * The component tokens immediately follow
@@ -1764,25 +1787,25 @@ typedef struct Tcl_Token {
 typedef struct Tcl_Parse {
     const char *commentStart;	/* Pointer to # that begins the first of one
 				 * or more comments preceding the command. */
-    size_t commentSize;		/* Number of bytes in comments (up through
+    Tcl_Size commentSize;		/* Number of bytes in comments (up through
 				 * newline character that terminates the last
 				 * comment). If there were no comments, this
 				 * field is 0. */
     const char *commandStart;	/* First character in first word of
 				 * command. */
-    size_t commandSize;		/* Number of bytes in command, including first
+    Tcl_Size commandSize;		/* Number of bytes in command, including first
 				 * character of first word, up through the
 				 * terminating newline, close bracket, or
 				 * semicolon. */
-    size_t numWords;		/* Total number of words in command. May be
+    Tcl_Size numWords;		/* Total number of words in command. May be
 				 * 0. */
     Tcl_Token *tokenPtr;	/* Pointer to first token representing the
 				 * words of the command. Initially points to
 				 * staticTokens, but may change to point to
 				 * malloc-ed space if command exceeds space in
 				 * staticTokens. */
-    size_t numTokens;		/* Total number of tokens in command. */
-    size_t tokensAvailable;	/* Total number of tokens available at
+    Tcl_Size numTokens;		/* Total number of tokens in command. */
+    Tcl_Size tokensAvailable;	/* Total number of tokens available at
 				 * *tokenPtr. */
     int errorType;		/* One of the parsing error types defined
 				 * above. */
@@ -2139,12 +2162,12 @@ typedef int (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
 #define TCL_TCPSERVER_REUSEPORT (1<<1)
 
 /*
- * Constants for special size_t-typed values, see TIP #494
+ * Constants for special Tcl_Size-typed values, see TIP #494
  */
 
-#define TCL_IO_FAILURE	((size_t)-1)
-#define TCL_AUTO_LENGTH	((size_t)-1)
-#define TCL_INDEX_NONE  ((size_t)-1)
+#define TCL_IO_FAILURE	((Tcl_Size)-1)
+#define TCL_AUTO_LENGTH	((Tcl_Size)-1)
+#define TCL_INDEX_NONE  ((Tcl_Size)-1)
 
 /*
  *----------------------------------------------------------------------------
@@ -2186,7 +2209,12 @@ void *			TclStubCall(void *arg);
 #endif
 
 #ifdef USE_TCL_STUBS
-#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#if TCL_MAJOR_VERSION < 9
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)(interp, version, \
+	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
+	    TCL_STUB_MAGIC)
+#elif TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)(interp, version, \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
@@ -2198,7 +2226,9 @@ void *			TclStubCall(void *arg);
 	    TCL_STUB_MAGIC)
 #endif
 #else
-#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#if TCL_MAJOR_VERSION < 9
+#   error "Please define -DUSE_TCL_STUBS"
+#elif TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
 	Tcl_PkgInitStubsCheck(interp, version, \
 		(exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
@@ -2216,7 +2246,7 @@ void *			TclStubCall(void *arg);
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp())))
-TCLAPI TCL_NORETURN void Tcl_MainEx(size_t argc, char **argv,
+TCLAPI TCL_NORETURN void Tcl_MainEx(Tcl_Size argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
