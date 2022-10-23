@@ -2591,7 +2591,7 @@ declare 0 macosx {
 declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
-	    int hasResourceFile, Tcl_Size maxPathLen, char *libraryPath)
+	    int hasResourceFile, int maxPathLen, char *libraryPath)
 }
 declare 2 macosx {
     void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
@@ -2602,7 +2602,7 @@ declare 2 macosx {
 # Public functions that are not accessible via the stubs table.
 
 export {
-    void Tcl_Main(int argc, char **argv, Tcl_AppInitProc *appInitProc)
+    void Tcl_Main(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc)
 }
 export {
     void Tcl_MainEx(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc,
