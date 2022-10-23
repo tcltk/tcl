@@ -373,17 +373,18 @@ Tcl_MainEx(
 #ifdef USE_LINENOISE
 
     /*
-     * If we are running interactively, enable command-line editing and
-     * history via linenoise.  We fork this Tcl interpreter to create a child
-     * process running a linenoise loop and reset the stdin of this Tcl
-     * interpreter to be the read end of the pipe.  The two processes share
-     * stdout and stderr.  When the child receives a line from linenoise it
-     * simply writes that line to the write end of the pipe.
+     * If we are running interactively with no startup script, enable
+     * command-line editing and history via linenoise.  We fork this Tcl
+     * interpreter to create a child process running a linenoise loop and
+     * reset the stdin of this Tcl interpreter to be the read end of the pipe.
+     * The two processes share stdout and stderr.  When the child receives a
+     * line from linenoise it simply writes that line to the write end of the
+     * pipe.
      */
 
     #define READ_END pipeEnds[0]
     #define WRITE_END pipeEnds[1]
-    if (is.tty) {
+    if (is.tty && path == NULL) {
 	int pipeEnds[2];
 	pid_t pid;
 	if (pipe(pipeEnds)) {
