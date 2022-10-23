@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 10
+RULES_VERSION_MINOR = 11
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -877,6 +877,11 @@ TCL_THREADS = 0
 USE_THREAD_ALLOC= 0
 !endif
 
+!if [nmakehlp -f $(OPTS) "tcl8"]
+!message *** Build for Tcl8
+TCL_BUILD_FOR = 8
+!endif
+
 !if $(TCL_MAJOR_VERSION) == 8
 !if [nmakehlp -f $(OPTS) "time64bit"]
 !message *** Force 64-bit time_t
@@ -1146,7 +1151,11 @@ TCLLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
 TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
 TCLSCRIPTZIP    = $(OUT_DIR)\$(TCLSCRIPTZIPNAME)
 
+!if $(TCL_MAJOR_VERSION) == 8
 TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
+!else
+TCLSTUBLIBNAME	= $(STUBPREFIX).lib
+!endif
 TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
 TCL_INCLUDES    = -I"$(WIN_DIR)" -I"$(GENERICDIR)"
 
@@ -1162,7 +1171,11 @@ TCLSH		= $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX:t=).exe
 TCLSH           = $(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
 
+!if $(TCL_MAJOR_VERSION) == 8
 TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib
+!else
+TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub.lib
+!endif
 TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX:t=).lib
 # When building extensions, may be linking against Tcl that does not add
 # "t" suffix (e.g. 8.5 or 8.7). If lib not found check for that possibility.
@@ -1182,7 +1195,11 @@ TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX:t=).exe
 !if !exist($(TCLSH))
 TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
+!if $(TCL_MAJOR_VERSION) == 8
 TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib
+!else
+TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub.lib
+!endif
 TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX:t=).lib
 # When building extensions, may be linking against Tcl that does not add
 # "t" suffix (e.g. 8.5 or 8.7). If lib not found check for that possibility.
@@ -1198,7 +1215,11 @@ TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
 
 !endif # TCLINSTALL
 
+!if !$(STATIC_BUILD) && "$(TCL_BUILD_FOR)" == "8"
+tcllibs = "$(TCLSTUBLIB)"
+!else
 tcllibs = "$(TCLSTUBLIB)" "$(TCLIMPLIB)"
+!endif
 
 !endif # $(DOING_TCL)
 
@@ -1218,7 +1239,7 @@ WISHNAMEPREFIX = wish
 WISHNAME = $(WISHNAMEPREFIX)$(TK_VERSION)$(SUFX).exe
 TKLIBNAME8	= tk$(TK_VERSION)$(SUFX).$(EXT)
 TKLIBNAME9	= tcl9tk$(TK_VERSION)$(SUFX).$(EXT)
-!if $(TCL_MAJOR_VERSION) == 8
+!if $(TCL_MAJOR_VERSION) == 8 || "$(TCL_BUILD_FOR)" == "8"
 TKLIBNAME	= tk$(TK_VERSION)$(SUFX).$(EXT)
 TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX).lib
 !else
@@ -1275,14 +1296,18 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 PRJLIBNAME8	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
 PRJLIBNAME9	= tcl9$(PROJECT)$(VERSION)$(SUFX).$(EXT)
-!if $(TCL_MAJOR_VERSION) == 8
+!if $(TCL_MAJOR_VERSION) == 8 || "$(TCL_BUILD_FOR)" == "8"
 PRJLIBNAME	= $(PRJLIBNAME8)
 !else
 PRJLIBNAME	= $(PRJLIBNAME9)
 !endif
 PRJLIB		= $(OUT_DIR)\$(PRJLIBNAME)
 
+!if $(TCL_MAJOR_VERSION) == 8
 PRJSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
+!else
+PRJSTUBLIBNAME	= $(STUBPREFIX).lib
+!endif
 PRJSTUBLIB	= $(OUT_DIR)\$(PRJSTUBLIBNAME)
 
 # If extension parent makefile has not defined a resource definition file,
@@ -1428,6 +1453,9 @@ COMPILERFLAGS  = /D_ATL_XP_TARGETING
 !endif
 !if "$(TCL_UTF_MAX)" == "3"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_UTF_MAX=3
+!endif
+!if "$(TCL_BUILD_FOR)" == "8"
+OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8
 !endif
 
 # Like the TEA system only set this non empty for non-Tk extensions
