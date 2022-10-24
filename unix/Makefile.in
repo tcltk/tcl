@@ -1161,6 +1161,7 @@ tclBasic.o: $(GENERIC_DIR)/tclBasic.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR)
 tclUuid.h: $(TOP_DIR)/manifest.uuid
 	echo "#define TCL_VERSION_UUID \\" >$@
 	cat $(TOP_DIR)/manifest.uuid >>$@
+	echo "" >>$@
 
 tclBinary.o: $(GENERIC_DIR)/tclBinary.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBinary.c
@@ -1372,7 +1373,6 @@ tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
 		-DCFG_RUNTIME_INCDIR="\"$(includedir)\"" \
 		-DCFG_RUNTIME_DOCDIR="\"$(mandir)\"" \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
-		-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 		$(GENERIC_DIR)/tclPkgConfig.c
 
 tclPosixStr.o: $(GENERIC_DIR)/tclPosixStr.c
@@ -1977,8 +1977,9 @@ checkstubs: $(TCL_LIB_FILE)
 
 checkdoc: $(TCL_LIB_FILE)
 	-@for i in `nm -p $(TCL_LIB_FILE) | awk '$$3 ~ /Tcl_/ { print $$3 }' \
-		| grep -v 'Cmd$$' | sort -n`; do \
+		| grep -Fv . | grep -v 'Cmd$$' | sort -n`; do \
 	    match=0; \
+	    i=`echo $$i | sed 's/^_//'`; \
 	    for j in $(TOP_DIR)/doc/*.3; do \
 		if [ `grep '\-' $$j | grep -c $$i` -gt 0 ]; then \
 		    match=1; \
@@ -2037,6 +2038,8 @@ DISTROOT = /tmp/dist
 DISTNAME = tcl${VERSION}${PATCH_LEVEL}
 ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
+BUILTIN_PACKAGE_LIST = http1.0 http opt msgcat reg dde tcltest platform
+
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in $(UNIX_DIR)/tcl.m4 \
 		$(UNIX_DIR)/aclocal.m4
 	cd $(UNIX_DIR); autoconf
@@ -2047,7 +2050,7 @@ $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
 
 $(TOP_DIR)/manifest.uuid:
 	printf "git-" >$(TOP_DIR)/manifest.uuid
-	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid)
+	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || printf "unknown" >$(TOP_DIR)/manifest.uuid)
 
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(MAC_OSX_DIR)/configure $(TOP_DIR)/manifest.uuid genstubs dist-packages ${NATIVE_TCLSH}
 	rm -rf $(DISTDIR)
@@ -2076,7 +2079,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	@mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	@for i in http1.0 http opt msgcat reg dde tcltest platform; do \
+	@for i in $(BUILTIN_PACKAGE_LIST); do \
 	    mkdir $(DISTDIR)/library/$$i;\
 	    cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
 	done
