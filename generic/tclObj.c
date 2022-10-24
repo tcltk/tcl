@@ -231,7 +231,7 @@ const Tcl_ObjType tclBooleanType = {
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
     TclSetBooleanFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TCL_OBJTYPE_SIZE
 };
 const Tcl_ObjType tclDoubleType = {
     "double",			/* name */
@@ -239,7 +239,7 @@ const Tcl_ObjType tclDoubleType = {
     NULL,			/* dupIntRepProc */
     UpdateStringOfDouble,	/* updateStringProc */
     SetDoubleFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TCL_OBJTYPE_SIZE
 };
 const Tcl_ObjType tclIntType = {
     "int",			/* name */
@@ -247,7 +247,7 @@ const Tcl_ObjType tclIntType = {
     NULL,			/* dupIntRepProc */
     UpdateStringOfInt,		/* updateStringProc */
     SetIntFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TCL_OBJTYPE_SIZE
 };
 const Tcl_ObjType tclBignumType = {
     "bignum",			/* name */
@@ -255,7 +255,7 @@ const Tcl_ObjType tclBignumType = {
     DupBignum,			/* dupIntRepProc */
     UpdateStringOfBignum,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TCL_OBJTYPE_SIZE
 };
 
 /*
@@ -300,7 +300,7 @@ Tcl_ObjType tclCmdNameType = {
     DupCmdNameInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
     SetCmdNameFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TCL_OBJTYPE_SIZE
 };
 
 /*
