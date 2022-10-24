@@ -207,18 +207,18 @@ SHELL		= @SHELL@
 RM		= rm -f
 COPY		= cp
 
-CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I"${ZLIB_DIR_NATIVE}" -I"${GENERIC_DIR_NATIVE}" -DTCL_TOMMATH \
--DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
+CC_SWITCHES = -I"${GENERIC_DIR_NATIVE}" -I"${TOMMATH_DIR_NATIVE}" \
+-I"${ZLIB_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" -DTCL_TOMMATH \
+${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} -DMP_PREC=4 \
 ${AC_FLAGS} ${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
 
 CC_OBJNAME = @CC_OBJNAME@
 CC_EXENAME = @CC_EXENAME@
 
-STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I"${GENERIC_DIR_NATIVE}" -DTCL_TOMMATH -DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" \
--I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
-${COMPILE_DEBUG_FLAGS}
+STUB_CC_SWITCHES = -I"${GENERIC_DIR_NATIVE}" -I"${TOMMATH_DIR_NATIVE}" \
+-I"${ZLIB_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" -DTCL_TOMMATH \
+${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} -DMP_PREC=4 \
+${AC_FLAGS} ${COMPILE_DEBUG_FLAGS}
 
 TCLTEST_OBJS = \
 	tclTest.$(OBJEXT) \
@@ -581,7 +581,10 @@ tclEvent.${OBJEXT}: tclEvent.c tclUuid.h
 
 $(TOP_DIR)/manifest.uuid:
 	printf "git-" >$(TOP_DIR)/manifest.uuid
-	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || printf "unknown" >$(TOP_DIR)/manifest.uuid)
+	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || \
+	    (printf "svn-r" >$(TOP_DIR)/manifest.uuid ; \
+	    svn info --show-item last-changed-revision >>$(TOP_DIR)/manifest.uuid) || \
+	    printf "unknown" >$(TOP_DIR)/manifest.uuid)
 
 tclUuid.h:	$(TOP_DIR)/manifest.uuid
 	echo "#define TCL_VERSION_UUID \\" >$@
@@ -737,8 +740,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.6.1 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl "$(MODULE_INSTALL_DIR)/8.5/msgcat-1.6.1.tm";
-	@echo "Installing package tcltest 2.5.3 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.3.tm";
+	@echo "Installing package tcltest 2.5.4 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.4.tm";
 	@echo "Installing package platform 1.0.18 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/8.4/platform-1.0.18.tm";
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";

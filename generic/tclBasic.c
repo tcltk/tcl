@@ -3656,7 +3656,9 @@ Tcl_CreateMathFunc(
     data->proc = proc;
     data->numArgs = numArgs;
     data->argTypes = (Tcl_ValueType *)ckalloc(numArgs * sizeof(Tcl_ValueType));
-    memcpy(data->argTypes, argTypes, numArgs * sizeof(Tcl_ValueType));
+    if ((numArgs > 0) && (argTypes != NULL)) {
+	memcpy(data->argTypes, argTypes, numArgs * sizeof(Tcl_ValueType));
+    }
     data->clientData = clientData;
 
     Tcl_DStringInit(&bigName);
@@ -7886,15 +7888,15 @@ ExprRandFunc(
 	 * take into consideration the thread this interp is running in.
 	 */
 
-	iPtr->randSeed = TclpGetClicks() + (PTR2INT(Tcl_GetCurrentThread())<<12);
+	iPtr->randSeed = TclpGetClicks() + PTR2UINT(Tcl_GetCurrentThread())*4093U;
 
 	/*
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
 	 */
 
-	iPtr->randSeed &= (unsigned long) 0x7FFFFFFF;
-	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFF)) {
-	    iPtr->randSeed ^= 123459876;
+	iPtr->randSeed &= 0x7FFFFFFFL;
+	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFFL)) {
+	    iPtr->randSeed ^= 123459876L;
 	}
     }
 

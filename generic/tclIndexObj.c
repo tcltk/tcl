@@ -105,7 +105,7 @@ int
 Tcl_GetIndexFromObj(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
-    const char *const*tablePtr,	/* Array of strings to compare against the
+    const char *const *tablePtr,	/* Array of strings to compare against the
 				 * value of objPtr; last entry must be NULL
 				 * and there must not be duplicate entries. */
     const char *msg,		/* Identifying word to use in error
@@ -128,7 +128,7 @@ Tcl_GetIndexFromObj(
 	 * on odd platforms like a Cray PVP...
 	 */
 
-	if (indexRep->tablePtr == (void *) tablePtr
+	if (indexRep->tablePtr == (void *)tablePtr
 		&& indexRep->offset == sizeof(char *)) {
 	    *indexPtr = indexRep->index;
 	    return TCL_OK;
@@ -193,7 +193,7 @@ GetIndexFromObjList(
      * Build a string table from the list.
      */
 
-    tablePtr = ckalloc((objc + 1) * sizeof(char *));
+    tablePtr = (const char **)ckalloc((objc + 1) * sizeof(char *));
     for (t = 0; t < objc; t++) {
 	if (objv[t] == objPtr) {
 	    /*
@@ -278,7 +278,7 @@ Tcl_GetIndexFromObjStruct(
      * See if there is a valid cached result from a previous lookup.
      */
 
-    if (objPtr->typePtr == &indexType) {
+    if (objPtr && (objPtr->typePtr == &indexType)) {
 	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
 	    *indexPtr = indexRep->index;
@@ -291,7 +291,7 @@ Tcl_GetIndexFromObjStruct(
      * abbreviations unless TCL_EXACT is set in flags.
      */
 
-    key = TclGetString(objPtr);
+    key = objPtr ? TclGetString(objPtr) : "";
     index = -1;
     numAbbrev = 0;
 
@@ -302,7 +302,7 @@ Tcl_GetIndexFromObjStruct(
      *  - Several abbreviations (never allowed, but overridden by exact match)
      */
 
-    for (entryPtr = tablePtr, idx = 0; *entryPtr != NULL;
+    for (entryPtr = (const char *const *)tablePtr, idx = 0; *entryPtr != NULL;
 	    entryPtr = NEXT_ENTRY(entryPtr, offset), idx++) {
 	for (p1 = key, p2 = *entryPtr; *p1 == *p2; p1++, p2++) {
 	    if (*p1 == '\0') {
@@ -339,17 +339,19 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (objPtr->typePtr == &indexType) {
-	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
-    } else {
-	TclFreeIntRep(objPtr);
-	indexRep = ckalloc(sizeof(IndexRep));
-	objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
-	objPtr->typePtr = &indexType;
+    if (objPtr) {
+	if (objPtr->typePtr == &indexType) {
+	    indexRep = objPtr->internalRep.twoPtrValue.ptr1;
+	} else {
+	    TclFreeIntRep(objPtr);
+	    indexRep = ckalloc(sizeof(IndexRep));
+	    objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
+	    objPtr->typePtr = &indexType;
+	}
+	indexRep->tablePtr = (void *) tablePtr;
+	indexRep->offset = offset;
+	indexRep->index = index;
     }
-    indexRep->tablePtr = (void *) tablePtr;
-    indexRep->offset = offset;
-    indexRep->index = index;
 
     *indexPtr = index;
     return TCL_OK;
@@ -363,7 +365,7 @@ Tcl_GetIndexFromObjStruct(
 	int count = 0;
 
 	TclNewObj(resultPtr);
-	entryPtr = tablePtr;
+	entryPtr = (const char *const *)tablePtr;
 	while ((*entryPtr != NULL) && !**entryPtr) {
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	}
@@ -414,7 +416,7 @@ static void
 UpdateStringOfIndex(
     Tcl_Obj *objPtr)
 {
-    IndexRep *indexRep = objPtr->internalRep.twoPtrValue.ptr1;
+    IndexRep *indexRep = (IndexRep *)objPtr->internalRep.twoPtrValue.ptr1;
     char *buf;
     unsigned len;
     const char *indexStr = EXPAND_OF(indexRep);
@@ -449,8 +451,8 @@ DupIndex(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    IndexRep *srcIndexRep = srcPtr->internalRep.twoPtrValue.ptr1;
-    IndexRep *dupIndexRep = ckalloc(sizeof(IndexRep));
+    IndexRep *srcIndexRep = (IndexRep *)srcPtr->internalRep.twoPtrValue.ptr1;
+    IndexRep *dupIndexRep = (IndexRep *)ckalloc(sizeof(IndexRep));
 
     memcpy(dupIndexRep, srcIndexRep, sizeof(IndexRep));
     dupPtr->internalRep.twoPtrValue.ptr1 = dupIndexRep;
@@ -548,7 +550,7 @@ PrefixMatchObjCmd(
     static const char *const matchOptions[] = {
 	"-error", "-exact", "-message", NULL
     };
-    enum matchOptions {
+    enum matchOptionsEnum {
 	PRFMATCH_ERROR, PRFMATCH_EXACT, PRFMATCH_MESSAGE
     };
 
@@ -562,7 +564,7 @@ PrefixMatchObjCmd(
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum matchOptions) index) {
+	switch ((enum matchOptionsEnum) index) {
 	case PRFMATCH_EXACT:
 	    flags |= TCL_EXACT;
 	    break;
@@ -931,8 +933,7 @@ Tcl_WrongNumArgs(
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
-		char *quotedElementStr = TclStackAlloc(interp,
-			(unsigned)len + 1);
+		char *quotedElementStr = (char *)TclStackAlloc(interp, len + 1);
 
 		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
@@ -982,8 +983,7 @@ Tcl_WrongNumArgs(
 	    len = TclScanElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
-		char *quotedElementStr = TclStackAlloc(interp,
-			(unsigned) len + 1);
+		char *quotedElementStr = (char *)TclStackAlloc(interp, len + 1);
 
 		len = TclConvertElement(elementStr, elemLen,
 			quotedElementStr, flags);
@@ -1089,7 +1089,7 @@ Tcl_ParseArgsObjv(
 	 */
 
 	nrem = 1;
-	leftovers = ckalloc((1 + *objcPtr) * sizeof(Tcl_Obj *));
+	leftovers = (Tcl_Obj **)ckalloc((1 + *objcPtr) * sizeof(Tcl_Obj *));
 	leftovers[0] = objv[0];
     } else {
 	nrem = 0;
@@ -1273,7 +1273,7 @@ Tcl_ParseArgsObjv(
     }
     leftovers[nrem] = NULL;
     *objcPtr = nrem++;
-    *remObjv = ckrealloc(leftovers, nrem * sizeof(Tcl_Obj *));
+    *remObjv = (Tcl_Obj **)ckrealloc(leftovers, nrem * sizeof(Tcl_Obj *));
     return TCL_OK;
 
     /*

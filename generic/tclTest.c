@@ -1622,7 +1622,7 @@ TestdoubledigitsObjCmd(ClientData unused,
 		       Tcl_Obj* const objv[])
 				/* Parameter vector */
 {
-    static const char* options[] = {
+    static const char *options[] = {
 	"shortest",
 	"Steele",
 	"e",
@@ -1643,8 +1643,8 @@ TestdoubledigitsObjCmd(ClientData unused,
     int type;
     int decpt;
     int signum;
-    char* str;
-    char* endPtr;
+    char * str;
+    char *endPtr;
     Tcl_Obj* strObj;
     Tcl_Obj* retval;
 
@@ -1759,7 +1759,7 @@ TestdstringCmd(
 	    strcpy(s, "This is a malloc-ed string");
 	    Tcl_SetResult(interp, s, TCL_DYNAMIC);
 	} else if (strcmp(argv[2], "special") == 0) {
-	    char *s = (char*)ckalloc(100) + 16;
+	    char *s = (char *)ckalloc(100) + 16;
 	    strcpy(s, "This is a specially-allocated string");
 	    Tcl_SetResult(interp, s, SpecialFree);
 	} else {
@@ -6176,19 +6176,22 @@ TestGetIndexFromObjStructObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *const ary[] = {
-	"a", "b", "c", "d", "e", "f", NULL, NULL
+	"a", "b", "c", "d", "ee", "ff", NULL, NULL
     };
-    int idx,target;
+    int idx,target, flags = 0;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "argument targetvalue");
-	return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObjStruct(interp, objv[1], ary, 2*sizeof(char *),
-	    "dummy", 0, &idx) != TCL_OK) {
+    if (objc != 3 && objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "argument targetvalue ?flags?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, objv[2], &target) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if ((objc > 3) && (Tcl_GetIntFromObj(interp, objv[3], &flags) != TCL_OK)) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObjStruct(interp, (Tcl_GetString(objv[1])[0] ? objv[1] : NULL), ary, 2*sizeof(char *),
+	    "dummy", flags, &idx) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (idx != target) {
@@ -6200,7 +6203,7 @@ TestGetIndexFromObjStructObjCmd(
 	Tcl_AppendResult(interp, " when ", buffer, " expected", NULL);
 	return TCL_ERROR;
     }
-    Tcl_WrongNumArgs(interp, 3, objv, NULL);
+    Tcl_WrongNumArgs(interp, objc, objv, NULL);
     return TCL_OK;
 }
 
