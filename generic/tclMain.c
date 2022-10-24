@@ -28,9 +28,6 @@
 #include <termios.h>
 #include "linenoise.h"
 static char historyPath[1024];
-static void linenoiseExit() {
-    exit(0);
-}
 #endif
 
 /*
@@ -371,92 +368,6 @@ Tcl_MainEx(
     is.tty = isatty(0);
     Tcl_SetVar2Ex(interp, "tcl_interactive", NULL,
 	    Tcl_NewIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
-
-#ifdef USE_LINENOISE
-
-    /*
-     * If we are running interactively with no startup script, enable
-     * command-line editing and history via linenoise.  We fork this Tcl
-     * interpreter to create a child process running a linenoise loop and
-     * reset the stdin of this Tcl interpreter to be the read end of the pipe.
-     * The two processes share stdout and stderr.  When the child receives a
-     * line from linenoise it simply writes that line to the write end of the
-     * pipe.
-     */
-    static struct termios saved_termios;
-    #define READ_END pipeEnds[0]
-    #define WRITE_END pipeEnds[1]
-    if (is.tty && path == NULL) {
-	int pipeEnds[2];
-	pid_t pid;
-	if (pipe(pipeEnds)) {
-	    perror("pipe:");
-	    exit(1);
-	}
-	pid = fork();
-	if (pid == -1) {
-	    perror("fork");
-	    exit(1);
-	}
-	if (pid == 0) {
-	    char *line;
-	    size_t written;
-	    char *home = getenv("HOME");
-	    if (tcgetattr(fileno(stdin), &saved_termios) == -1) {
-		perror("tcgetattr:");
-		Tcl_Panic("Cannot get terminal state!");
-	    }
-	    if (home) {
-		strncpy(historyPath, home, 1000);
-		strncat(historyPath, "/.tcl_history", sizeof("/.tcl_history"));
-		linenoiseHistoryLoad(historyPath);
-	    }
-	    while(1) {
-		/*
-		 * Call linenoise to get the next input line.
-		 */
-		line = linenoise(NULL);
-		if (line == NULL) {
-		    break;
-		}
-		if (line[0] != '\0') {
-		    size_t numBytes = strlen(line);
-		    written = write(WRITE_END, line, numBytes);
-		    if (written != numBytes) {
-			Tcl_Panic("Write failed!");
-		    }
-		    if (home) {
-			linenoiseHistoryAdd(line);
-			linenoiseHistorySave(historyPath);
-		    }
-		}
-		written = write(WRITE_END, "\n", 1);
-		if (written != 1) {
-		    Tcl_Panic("Write failed!");
-		}
-		free(line);
-		/*
-		 * Hack until I can figure out how to synchronize the writes.
-		 * We have sent a line to Tcl and we want to wait for Tcl to
-		 * finish displaying the result, if there is one, and the prompt
-		 * before we ask linenoise for the next input line.  I tried
-		 * using a named semaphore but that did not work.
-		 */
-		struct timespec waitTime;
-		waitTime.tv_sec = 0;
-		waitTime.tv_nsec = 100000; // 100 microseconds
-		nanosleep(&waitTime, NULL);
-	    }
-	    tcsetattr(fileno(stdin), TCSADRAIN, &saved_termios);
-	    exit(0);
-	} else {
-	    dup2(READ_END, 0);
-	    close(READ_END);
-	    signal(SIGCHLD, linenoiseExit);
-	}
-    }
-
-#endif
     
     /*
      * Invoke application-specific initialization.
@@ -542,6 +453,22 @@ Tcl_MainEx(
 
     Tcl_LinkVar(interp, "tcl_interactive", (char *) &is.tty, TCL_LINK_BOOLEAN);
     is.input = Tcl_GetStdChannel(TCL_STDIN);
+
+#ifdef USE_LINENOISE
+    char *line;
+    char *home = getenv("HOME");
+    struct termios initial_termios;
+    if (tcgetattr(fileno(stdin), &initial_termios) == -1) {
+	perror("tcgetattr:");
+	Tcl_Panic("Cannot read terminal state!");
+    }
+    if (home) {
+	strncpy(historyPath, home, 1000);
+	strncat(historyPath, "/.tcl_history", sizeof("/.tcl_history"));
+	linenoiseHistoryLoad(historyPath);
+    }
+#endif
+
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
 	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
@@ -565,7 +492,24 @@ Tcl_MainEx(
 		is.commandPtr = Tcl_DuplicateObj(is.commandPtr);
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
+#ifdef USE_LINENOISE
+	    line = linenoise(stdin, stdout, NULL);
+	    if (home && line) {
+		linenoiseHistoryAdd(line);
+		linenoiseHistorySave(historyPath);
+	    }
+	    if (line) {
+		length = strlen(line);
+		is.commandPtr = Tcl_NewStringObj(line, length);
+		Tcl_IncrRefCount(is.commandPtr);
+		free(line);
+	    } else {
+		tcsetattr(fileno(stdin), TCSADRAIN, &initial_termios);
+		length = -1;
+	    }
+#else
 	    length = Tcl_GetsObj(is.input, is.commandPtr);
+#endif
 	    if (length < 0) {
 		if (Tcl_InputBlocked(is.input)) {
 		    /*
@@ -575,7 +519,6 @@ Tcl_MainEx(
 		     * event loop running). If this causes bad CPU hogging, we
 		     * might try toggling the blocking on stdin instead.
 		     */
-
 		    continue;
 		}
 

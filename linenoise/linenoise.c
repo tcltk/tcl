@@ -127,7 +127,6 @@ static struct termios orig_termios; /* In order to restore at exit.*/
 static int maskmode = 0; /* Show "***" instead of input. For passwords. */
 static int rawmode = 0; /* For atexit() function to check if restore is needed*/
 static int mlmode = 0;  /* Multi line mode. Default is single line. */
-static int atexit_registered = 0; /* Register atexit just 1 time. */
 static int history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN;
 static int history_len = 0;
 static char **history = NULL;
@@ -174,6 +173,7 @@ enum KEY_ACTION{
 
 int linenoiseHistoryAdd(const char *line);
 static void refreshLine(struct linenoiseState *l);
+static void linenoiseClearScreen(struct linenoiseState *l);
 static void linenoiseAtExit(void);
 
 /* Debugging macro. */
@@ -232,7 +232,7 @@ static int enableRawMode(int fd) {
     struct termios raw;
     static int initialized = 0;
 
-    if (!isatty(STDIN_FILENO)) goto fatal;
+    if (!isatty(fd)) goto fatal;
     if (!initialized) {
       if (tcgetattr(fd,&orig_termios) == -1) goto fatal;
       atexit(linenoiseAtExit);
@@ -333,8 +333,8 @@ failed:
 }
 
 /* Clear the screen. Used to handle ctrl+l */
-void linenoiseClearScreen(void) {
-    if (write(STDOUT_FILENO,"\x1b[H\x1b[2J",7) <= 0) {
+void linenoiseClearScreen(struct linenoiseState *l) {
+  if (write(l->ofd,"\x1b[H\x1b[2J",7) <= 0) {
         /* nothing to do, just to avoid warning. */
     }
 }
@@ -791,14 +791,14 @@ void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
  * when ctrl+d is typed.
  *
  * The function returns the length of the current buffer. */
-static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, const char *prompt)
+static int linenoiseEdit(FILE *input, FILE *output, char *buf, size_t buflen, const char *prompt)
 {
     struct linenoiseState l;
 
     /* Populate the linenoise state that we pass to functions implementing
      * specific editing functionalities. */
-    l.ifd = stdin_fd;
-    l.ofd = stdout_fd;
+    l.ifd = fileno(input);
+    l.ofd = fileno(output);
     l.buf = buf;
     l.buflen = buflen;
     l.prompt = prompt;
@@ -811,7 +811,7 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
     l.plen = prompt ? strlen(prompt) : 2;
     l.oldpos = l.pos = 0;
     l.len = 0;
-    l.cols = getColumns(stdin_fd, stdout_fd);
+    l.cols = getColumns(l.ifd, l.ofd);
     l.maxrows = 0;
     l.history_index = 0;
 
@@ -849,7 +849,6 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
 
         switch(c) {
         case ENTER:    /* enter */
-	    tcdrain(fileno(stdout));
             history_len--;
             free(history[history_len]);
             if (mlmode) linenoiseEditMoveEnd(&l);
@@ -975,7 +974,7 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
             linenoiseEditMoveEnd(&l);
             break;
         case CTRL_L: /* ctrl+l, clear screen */
-            linenoiseClearScreen();
+            linenoiseClearScreen(&l);
             refreshLine(&l);
             break;
         case CTRL_W: /* ctrl+w, delete previous word */
@@ -1015,8 +1014,9 @@ void linenoisePrintKeyCodes(void) {
 }
 
 /* This function calls the line editing function linenoiseEdit() using
- * the STDIN file descriptor set in raw mode. */
-static int linenoiseRaw(char *buf, size_t buflen, const char *prompt) {
+ * the input file descriptor set in raw mode. */
+static int linenoiseRaw(char *buf, size_t buflen, const char *prompt,
+			FILE *input, FILE *output) {
     int count;
 
     if (buflen == 0) {
@@ -1024,9 +1024,9 @@ static int linenoiseRaw(char *buf, size_t buflen, const char *prompt) {
         return -1;
     }
 
-    if (enableRawMode(STDIN_FILENO) == -1) return -1;
-    count = linenoiseEdit(STDIN_FILENO, STDOUT_FILENO, buf, buflen, prompt);
-    disableRawMode(STDIN_FILENO);
+    if (enableRawMode(fileno(input)) == -1) return -1;
+    count = linenoiseEdit(input, output, buf, buflen, prompt);
+    disableRawMode(fileno(input));
     printf("\n");
     return count;
 }
@@ -1072,10 +1072,10 @@ static char *linenoiseNoTTY(void) {
  * for a blacklist of stupid terminals, and later either calls the line
  * editing function or uses dummy fgets() so that you will be able to type
  * something even in the most desperate of the conditions. */
-char *linenoise(const char *prompt) {
+char *linenoise(FILE *input, FILE *output, const char *prompt) {
     char buf[LINENOISE_MAX_LINE];
     int count;
-    if (!isatty(STDIN_FILENO)) {
+    if (!isatty(fileno(input))) {
         /* Not a tty: read from file / pipe. In this mode we don't want any
          * limit to the line size, so we call a function to handle that. */
         return linenoiseNoTTY();
@@ -1084,7 +1084,7 @@ char *linenoise(const char *prompt) {
 
         printf("%s",prompt);
         fflush(stdout);
-        if (fgets(buf,LINENOISE_MAX_LINE,stdin) == NULL) return NULL;
+        if (fgets(buf,LINENOISE_MAX_LINE,input) == NULL) return NULL;
         len = strlen(buf);
         while(len && (buf[len-1] == '\n' || buf[len-1] == '\r')) {
             len--;
@@ -1092,7 +1092,7 @@ char *linenoise(const char *prompt) {
         }
         return strdup(buf);
     } else {
-        count = linenoiseRaw(buf,LINENOISE_MAX_LINE,prompt);
+      count = linenoiseRaw(buf,LINENOISE_MAX_LINE,prompt, input, output);
         if (count == -1) return NULL;
         return strdup(buf);
     }
@@ -1108,8 +1108,8 @@ void linenoiseFree(void *ptr) {
 
 /* ================================ History ================================= */
 
-/* Free the history, but does not reset it. Only used when we have to
- * exit() to avoid memory leaks are reported by valgrind & co. */
+/* Frees the history, but does not reset it. Only used when we have to
+ * exit() to avoid memory leaks being reported by valgrind & co. */
 static void linenoiseAtExit(void) {
     if (history) {
         int j;
