@@ -1,8 +1,10 @@
 name: Linux
 on: [push]
+permissions:
+  contents: read
 jobs:
   gcc:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         cfgopt:
@@ -10,6 +12,7 @@ jobs:
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
+          - "--enable-symbols=all"
           - "CFLAGS=-DTCL_UTF_MAX=4"
           - "CFLAGS=-DTCL_UTF_MAX=6"
     defaults:
@@ -18,7 +21,7 @@ jobs:
         working-directory: unix
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c

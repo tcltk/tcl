@@ -947,9 +947,9 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done
-	@echo "Installing package http 2.9.5 as a Tcl Module";
+	@echo "Installing package http 2.9.8 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
-		"$(MODULE_INSTALL_DIR)/8.6/http-2.9.5.tm"
+		"$(MODULE_INSTALL_DIR)/8.6/http-2.9.8.tm"
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/"
 	@for i in $(TOP_DIR)/library/opt/*.tcl; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
@@ -957,12 +957,12 @@ install-libraries: libraries
 	@echo "Installing package msgcat 1.6.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
 		"$(MODULE_INSTALL_DIR)/8.5/msgcat-1.6.1.tm"
-	@echo "Installing package tcltest 2.5.4 as a Tcl Module"
+	@echo "Installing package tcltest 2.5.5 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.4.tm"
-	@echo "Installing package platform 1.0.18 as a Tcl Module"
+		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.5.tm"
+	@echo "Installing package platform 1.0.19 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
-		"$(MODULE_INSTALL_DIR)/8.4/platform-1.0.18.tm"
+		"$(MODULE_INSTALL_DIR)/8.4/platform-1.0.19.tm"
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
 		"$(MODULE_INSTALL_DIR)/8.4/platform/shell-1.1.4.tm"
@@ -2138,7 +2138,8 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(TOP_DIR)/win/tcl.m4 $(TOP_DIR)/win/aclocal.m4 \
 		$(TOP_DIR)/win/tclsh.exe.manifest.in $(TOP_DIR)/win/tclUuid.h.in \
 		$(TOP_DIR)/win/gitmanifest.in $(TOP_DIR)/win/svnmanifest.in \
-		$(DISTDIR)/win
+		$(TOP_DIR)/win/x86_64-w64-mingw32-nmakehlp.exe $(DISTDIR)/win
+	chmod 775 $(DISTDIR)/win/x86_64-w64-mingw32-nmakehlp.exe
 	cp -p $(TOP_DIR)/win/*.[ch] $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win

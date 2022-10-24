@@ -517,10 +517,14 @@ ${TEST_EXE_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS} tclTestMain.${OBJEXT}
 
 # use pre-built zlib1.dll
 ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
-	@if test "@ZLIB_LIBS@set" != "${ZLIB_DIR_NATIVE}/win32/zdll.libset" ; then \
-		$(COPY) $(ZLIB_DIR)/win64/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
-	else \
+	@if test "@ZLIB_LIBS@set" = "${ZLIB_DIR_NATIVE}/win64-arm/zdll.libset" ; then \
+		$(COPY) $(ZLIB_DIR)/win64-arm/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
+	elif test "@ZLIB_LIBS@set" = "${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.aset" ; then \
+		$(COPY) $(ZLIB_DIR)/win64-arm/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
+	elif test "@ZLIB_LIBS@set" = "${ZLIB_DIR_NATIVE}/win32/zdll.libset" ; then \
 		$(COPY) $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
+	else \
+		$(COPY) $(ZLIB_DIR)/win64/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
 	fi;
 
 # Add the object extension to the implicit rules. By default .obj is not
@@ -731,8 +735,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done;
-	@echo "Installing package http 2.9.5 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/8.6/http-2.9.5.tm";
+	@echo "Installing package http 2.9.8 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/8.6/http-2.9.8.tm";
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
@@ -740,10 +744,10 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.6.1 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl "$(MODULE_INSTALL_DIR)/8.5/msgcat-1.6.1.tm";
-	@echo "Installing package tcltest 2.5.4 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.4.tm";
-	@echo "Installing package platform 1.0.18 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/8.4/platform-1.0.18.tm";
+	@echo "Installing package tcltest 2.5.5 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.5.tm";
+	@echo "Installing package platform 1.0.19 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/8.4/platform-1.0.19.tm";
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl "$(MODULE_INSTALL_DIR)/8.4/platform/shell-1.1.4.tm";
 	@echo "Installing encodings";

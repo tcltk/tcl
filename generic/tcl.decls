@@ -105,7 +105,7 @@ declare 21 {
     int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
 declare 22 {
-    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
+    Tcl_Obj *Tcl_DbNewBooleanObj(int intValue, const char *file, int line)
 }
 declare 23 {
     Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int length,
@@ -136,11 +136,11 @@ declare 30 {
     void TclFreeObj(Tcl_Obj *objPtr)
 }
 declare 31 {
-    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *boolPtr)
+    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *intPtr)
 }
 declare 32 {
     int Tcl_GetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *boolPtr)
+	    int *intPtr)
 }
 declare 33 {
     unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
@@ -199,7 +199,7 @@ declare 48 {
 	    int count, int objc, Tcl_Obj *const objv[])
 }
 declare 49 {
-    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
+    Tcl_Obj *Tcl_NewBooleanObj(int intValue)
 }
 declare 50 {
     Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int length)
@@ -223,7 +223,7 @@ declare 56 {
     Tcl_Obj *Tcl_NewStringObj(const char *bytes, int length)
 }
 declare 57 {
-    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
+    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int intValue)
 }
 declare 58 {
     unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int length)
@@ -2325,7 +2325,7 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
-declare 660 {
+declare 682 {
     void TclUnusedStubEntry(void)
 }
 

@@ -52,7 +52,7 @@
 # turn on the 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,time64bit,unchecked,utfmax,none
+#	OPTS=msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,time64bit,unchecked,utf16,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -77,7 +77,7 @@
 #		unchecked = Allows a symbols build to not use the debug
 #			    enabled runtime (msvcrt.dll not msvcrtd.dll
 #			    or libcmt.lib not libcmtd.lib).
-#		utfmax    = Forces a build using UTF-32 representation internally.
+#		utf16     = Forces a build using UTF-16 representation internally.
 #
 #	STATS=compdbg,memdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
@@ -97,7 +97,7 @@
 #		nodep	 = Turns off compatibility macros to ensure the core
 #			    isn't being built with deprecated functions.
 #
-#	MACHINE=(ALPHA|AMD64|IA64|IX86)
+#	MACHINE=(ALPHA|AMD64|ARM64|IA64|IX86)
 #		Set the machine type used for the compiler, linker, and
 #		resource compiler.  This hook is needed to tell the tools
 #		when alternate platforms are requested.  IX86 is the default
@@ -515,16 +515,21 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 
-!if "$(MACHINE)" == "AMD64"
-$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64\zlib1.dll
-	$(COPY) $(COMPATDIR)\zlib\win64\zlib1.dll $(OUT_DIR)\zlib1.dll
-$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64\zdll.lib
-	$(COPY) $(COMPATDIR)\zlib\win64\zdll.lib $(OUT_DIR)\zdll.lib
-!else
+!if "$(MACHINE)" == "ARM64"
+$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64-arm\zlib1.dll
+	$(COPY) $(COMPATDIR)\zlib\win64-arm\zlib1.dll $(OUT_DIR)\zlib1.dll
+$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64-arm\zdll.lib
+	$(COPY) $(COMPATDIR)\zlib\win64-arm\zdll.lib $(OUT_DIR)\zdll.lib
+!elseif "$(MACHINE)" == "IX86"
 $(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win32\zlib1.dll
 	$(COPY) $(COMPATDIR)\zlib\win32\zlib1.dll $(OUT_DIR)\zlib1.dll
 $(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win32\zdll.lib
 	$(COPY) $(COMPATDIR)\zlib\win32\zdll.lib $(OUT_DIR)\zdll.lib
+!else
+$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64\zlib1.dll
+	$(COPY) $(COMPATDIR)\zlib\win64\zlib1.dll $(OUT_DIR)\zlib1.dll
+$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64\zdll.lib
+	$(COPY) $(COMPATDIR)\zlib\win64\zdll.lib $(OUT_DIR)\zdll.lib
 !endif
 
 pkgs:
@@ -940,6 +945,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(WIN_DIR)\rules.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
+	@$(CPY) "$(WIN_DIR)\x86_64-w64-mingw32-nmakehlp.exe" "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
 	@echo Installing package http 1.0 (obsolete)
 	@$(CPY) "$(ROOT)\library\http1.0\*.tcl" \

@@ -4,6 +4,7 @@ branches:
   - master
   - develop
   - /^release/
+  - /^support/
   - /^travis/
 image:
 - Visual Studio 2019

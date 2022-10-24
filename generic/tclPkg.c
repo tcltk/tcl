@@ -1014,7 +1014,7 @@ TclNRPackageObjCmd(
 	} else {
 	    Tcl_Obj *resultObj;
 
-	    resultObj = Tcl_NewObj();
+	    TclNewObj(resultObj);
 	    tablePtr = &iPtr->packageTable;
 	    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
 		    hPtr = Tcl_NextHashEntry(&search)) {
@@ -1132,7 +1132,7 @@ TclNRPackageObjCmd(
 	    objvListPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_IncrRefCount(objvListPtr);
 	    Tcl_ListObjAppendElement(interp, objvListPtr, ov);
-	    Tcl_ListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
+	    TclListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
 
 	    Tcl_NRAddCallback(interp, TclNRPackageObjCmdCleanup, objv[3], objvListPtr, NULL, NULL);
 	    Tcl_NRAddCallback(interp, PkgRequireCore, (void *)argv3, INT2PTR(newobjc), newObjvPtr, NULL);
@@ -1156,7 +1156,7 @@ TclNRPackageObjCmd(
 
 		Tcl_ListObjAppendElement(interp, objvListPtr, Tcl_DuplicateObj(newobjv[i]));
 	    }
-	    Tcl_ListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
+	    TclListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
 	    Tcl_NRAddCallback(interp, TclNRPackageObjCmdCleanup, objv[2], objvListPtr, NULL, NULL);
 	    Tcl_NRAddCallback(interp, PkgRequireCore, (void *)argv2, INT2PTR(newobjc), newObjvPtr, NULL);
 	    return TCL_OK;
@@ -1257,8 +1257,9 @@ TclNRPackageObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "package");
 	    return TCL_ERROR;
 	} else {
-	    Tcl_Obj *resultObj = Tcl_NewObj();
+	    Tcl_Obj *resultObj;
 
+	    TclNewObj(resultObj);
 	    argv2 = TclGetString(objv[2]);
 	    hPtr = Tcl_FindHashEntry(&iPtr->packageTable, argv2);
 	    if (hPtr != NULL) {
@@ -1454,7 +1455,7 @@ CheckVersionAndConvert(
 
     *ip++ = *p;
 
-    for (prevChar = *p, p++; *p != 0; p++) {
+    for (prevChar = *p, p++; (*p != 0) && (*p != '+'); p++) {
 	if (!isdigit(UCHAR(*p)) &&			/* INTL: digit */
 		((*p!='.' && *p!='a' && *p!='b') ||
 		((hasunstable && (*p=='a' || *p=='b')) ||
@@ -1758,10 +1759,10 @@ CheckRequirement(
 
     char *dash = NULL, *buf;
 
-    dash = strchr(string, '-');
+    dash = strchr(string, '+') ? NULL : (char *)strchr(string, '-');
     if (dash == NULL) {
 	/*
-	 * No dash found, has to be a simple version.
+	 * '+' found or no dash found: has to be a simple version.
 	 */
 
 	return CheckVersionAndConvert(interp, string, NULL, NULL);
@@ -2042,7 +2043,7 @@ Tcl_PkgInitStubsCheck(
 {
     const char *actualVersion = Tcl_PkgPresent(interp, "Tcl", version, 0);
 
-    if (exact && actualVersion) {
+    if ((exact&1) && actualVersion) {
 	const char *p = version;
 	int count = 0;
 

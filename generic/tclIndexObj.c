@@ -73,7 +73,7 @@ typedef struct {
 #define NEXT_ENTRY(table, offset) \
 	(&(STRING_AT(table, offset)))
 #define EXPAND_OF(indexRep) \
-	STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index)
+	(((indexRep)->index >= 0) ? STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : "")
 
 /*
  *----------------------------------------------------------------------
@@ -184,7 +184,7 @@ GetIndexFromObjList(
      * of the code there. This is a bit ineffiecient but simpler.
      */
 
-    result = Tcl_ListObjGetElements(interp, tableObjPtr, &objc, &objv);
+    result = TclListObjGetElements(interp, tableObjPtr, &objc, &objv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -280,7 +280,9 @@ Tcl_GetIndexFromObjStruct(
 
     if (objPtr && (objPtr->typePtr == &indexType)) {
 	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
-	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
+	if ((indexRep->tablePtr == tablePtr)
+		&& (indexRep->offset == offset)
+		&& (indexRep->index >= 0)) {
 	    *indexPtr = indexRep->index;
 	    return TCL_OK;
 	}
@@ -339,7 +341,7 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (objPtr) {
+    if (objPtr && (index >= 0)) {
 	if (objPtr->typePtr == &indexType) {
 	    indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 	} else {
@@ -586,7 +588,7 @@ PrefixMatchObjCmd(
 		return TCL_ERROR;
 	    }
 	    i++;
-	    result = Tcl_ListObjLength(interp, objv[i], &errorLength);
+	    result = TclListObjLength(interp, objv[i], &errorLength);
 	    if (result != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -610,7 +612,7 @@ PrefixMatchObjCmd(
      * error case regardless of level.
      */
 
-    result = Tcl_ListObjLength(interp, tablePtr, &dummyLength);
+    result = TclListObjLength(interp, tablePtr, &dummyLength);
     if (result != TCL_OK) {
 	return result;
     }
@@ -675,7 +677,7 @@ PrefixAllObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_ListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
+    result = TclListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -732,7 +734,7 @@ PrefixLongestObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_ListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
+    result = TclListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }
