@@ -25,7 +25,9 @@
 #include "tclInt.h"
 
 #ifdef USE_LINENOISE
+#include <termios.h>
 #include "linenoise.h"
+static char historyPath[1024];
 static void linenoiseExit() {
     exit(0);
 }
@@ -381,7 +383,7 @@ Tcl_MainEx(
      * line from linenoise it simply writes that line to the write end of the
      * pipe.
      */
-
+    static struct termios saved_termios;
     #define READ_END pipeEnds[0]
     #define WRITE_END pipeEnds[1]
     if (is.tty && path == NULL) {
@@ -400,13 +402,19 @@ Tcl_MainEx(
 	    char *line;
 	    size_t written;
 	    char *home = getenv("HOME");
-	    char historyPath[1024];
+	    if (tcgetattr(fileno(stdin), &saved_termios) == -1) {
+		perror("tcgetattr:");
+		Tcl_Panic("Cannot get terminal state!");
+	    }
 	    if (home) {
 		strncpy(historyPath, home, 1000);
-		strncat(historyPath, "/.tcl_history", 13);
+		strncat(historyPath, "/.tcl_history", sizeof("/.tcl_history"));
 		linenoiseHistoryLoad(historyPath);
 	    }
 	    while(1) {
+		/*
+		 * Call linenoise to get the next input line.
+		 */
 		line = linenoise(NULL);
 		if (line == NULL) {
 		    break;
@@ -427,12 +435,24 @@ Tcl_MainEx(
 		    Tcl_Panic("Write failed!");
 		}
 		free(line);
+		/*
+		 * Hack until I can figure out how to synchronize the writes.
+		 * We have sent a line to Tcl and we want to wait for Tcl to
+		 * finish displaying the result, if there is one, and the prompt
+		 * before we ask linenoise for the next input line.  I tried
+		 * using a named semaphore but that did not work.
+		 */
+		struct timespec waitTime;
+		waitTime.tv_sec = 0;
+		waitTime.tv_nsec = 100000; // 100 microseconds
+		nanosleep(&waitTime, NULL);
 	    }
+	    tcsetattr(fileno(stdin), TCSADRAIN, &saved_termios);
 	    exit(0);
 	} else {
 	    dup2(READ_END, 0);
 	    close(READ_END);
-	    signal(SIGCHLD, linenoiseExit); 
+	    signal(SIGCHLD, linenoiseExit);
 	}
     }
 
@@ -603,6 +623,7 @@ Tcl_MainEx(
 		if (chan) {
 		    Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
 		    Tcl_WriteChars(chan, "\n", 1);
+		    Tcl_Flush(chan);
 		}
 	    } else if (is.tty) {
 		resultPtr = Tcl_GetObjResult(interp);
@@ -612,6 +633,7 @@ Tcl_MainEx(
 		if ((length > 0) && chan) {
 		    Tcl_WriteObj(chan, resultPtr);
 		    Tcl_WriteChars(chan, "\n", 1);
+		    Tcl_Flush(chan);
 		}
 		Tcl_DecrRefCount(resultPtr);
 	    }
@@ -948,7 +970,6 @@ Prompt(
     if (isPtr->prompt == PROMPT_NONE) {
 	return;
     }
-
     promptCmdPtr = Tcl_GetVar2Ex(interp,
 	    (isPtr->prompt==PROMPT_CONTINUE ? "tcl_prompt2" : "tcl_prompt1"),
 	    NULL, TCL_GLOBAL_ONLY);
@@ -963,6 +984,7 @@ Prompt(
 	    if (chan != NULL) {
 		Tcl_WriteChars(chan, DEFAULT_PRIMARY_PROMPT,
 			sizeof(DEFAULT_PRIMARY_PROMPT) - 1);
+		Tcl_Flush(chan);
 	    }
 	}
     } else {
@@ -974,6 +996,7 @@ Prompt(
 	    if (chan != NULL) {
 		Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
 		Tcl_WriteChars(chan, "\n", 1);
+		Tcl_Flush(chan);
 	    }
 	    goto defaultPrompt;
 	}

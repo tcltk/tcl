@@ -123,7 +123,6 @@ static char *unsupported_term[] = {"dumb","cons25","emacs",NULL};
 static linenoiseCompletionCallback *completionCallback = NULL;
 static linenoiseHintsCallback *hintsCallback = NULL;
 static linenoiseFreeHintsCallback *freeHintsCallback = NULL;
-
 static struct termios orig_termios; /* In order to restore at exit.*/
 static int maskmode = 0; /* Show "***" instead of input. For passwords. */
 static int rawmode = 0; /* For atexit() function to check if restore is needed*/
@@ -173,9 +172,9 @@ enum KEY_ACTION{
 	BACKSPACE =  127    /* Backspace */
 };
 
-static void linenoiseAtExit(void);
 int linenoiseHistoryAdd(const char *line);
 static void refreshLine(struct linenoiseState *l);
+static void linenoiseAtExit(void);
 
 /* Debugging macro. */
 #if 0
@@ -231,13 +230,14 @@ static int isUnsupportedTerm(void) {
 /* Raw mode: 1960 magic shit. */
 static int enableRawMode(int fd) {
     struct termios raw;
+    static int initialized = 0;
 
     if (!isatty(STDIN_FILENO)) goto fatal;
-    if (!atexit_registered) {
-        atexit(linenoiseAtExit);
-        atexit_registered = 1;
+    if (!initialized) {
+      if (tcgetattr(fd,&orig_termios) == -1) goto fatal;
+      atexit(linenoiseAtExit);
+      initialized = 1;
     }
-    if (tcgetattr(fd,&orig_termios) == -1) goto fatal;
 
     raw = orig_termios;  /* modify the original mode */
     /* input modes: no break, no CR to NL, no parity check, no strip char,
@@ -272,7 +272,9 @@ static void disableRawMode(int fd) {
 
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
- * cursor. */
+ * cursor. This assumes that the input buffer is empty, so it only makes
+ * sense to call it at startup time. */
+
 static int getCursorPosition(int ifd, int ofd) {
     char buf[32];
     int cols, rows;
@@ -524,9 +526,6 @@ static void refreshSingleLine(struct linenoiseState *l) {
     size_t pos = l->pos;
     struct abuf ab;
 
-    if (plen != l->plen) {
-      abort();
-    }
     while((plen+pos) >= l->cols) {
         buf++;
         len--;
@@ -535,7 +534,6 @@ static void refreshSingleLine(struct linenoiseState *l) {
     while (plen+len > l->cols) {
         len--;
     }
-
     abInit(&ab);
     /* Move the cursor to left edge then move right to skip over the prompt.*/
     snprintf(seq,64,"\r\x1b[%dC",(int)plen);
@@ -555,6 +553,7 @@ static void refreshSingleLine(struct linenoiseState *l) {
     abAppend(&ab,seq,strlen(seq));
     if (write(fd,ab.b,ab.len) == -1) {} /* Can't recover from write error. */
     abFree(&ab);
+    tcdrain(fd);
 }
 
 /* Multi line low level line refresh.
@@ -803,9 +802,13 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
     l.buf = buf;
     l.buflen = buflen;
     l.prompt = prompt;
-    /* If the prompt is a NULL pointer, assume that the prompt has already been printed
-     * and deduce its length from the cursor position. */
-    l.plen = prompt ? strlen(prompt) : getCursorPosition(l.ifd, l.ofd) + 1;
+
+    /* If the prompt is a NULL pointer it means that the prompt has already been printed.
+     * Until I can figure out how to find the prompt length dynamically use the
+     * default size of 2.
+     */
+
+    l.plen = prompt ? strlen(prompt) : 2;
     l.oldpos = l.pos = 0;
     l.len = 0;
     l.cols = getColumns(stdin_fd, stdout_fd);
@@ -846,6 +849,7 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
 
         switch(c) {
         case ENTER:    /* enter */
+	    tcdrain(fileno(stdout));
             history_len--;
             free(history[history_len]);
             if (mlmode) linenoiseEditMoveEnd(&l);
@@ -1088,7 +1092,7 @@ char *linenoise(const char *prompt) {
         }
         return strdup(buf);
     } else {
-      count = linenoiseRaw(buf,LINENOISE_MAX_LINE,prompt);
+        count = linenoiseRaw(buf,LINENOISE_MAX_LINE,prompt);
         if (count == -1) return NULL;
         return strdup(buf);
     }
@@ -1106,7 +1110,7 @@ void linenoiseFree(void *ptr) {
 
 /* Free the history, but does not reset it. Only used when we have to
  * exit() to avoid memory leaks are reported by valgrind & co. */
-static void freeHistory(void) {
+static void linenoiseAtExit(void) {
     if (history) {
         int j;
 
@@ -1114,12 +1118,6 @@ static void freeHistory(void) {
             free(history[j]);
         free(history);
     }
-}
-
-/* At exit we'll try to fix the terminal to the initial conditions. */
-static void linenoiseAtExit(void) {
-    disableRawMode(STDIN_FILENO);
-    freeHistory();
 }
 
 /* This is the API call to add a new entry in the linenoise history.
