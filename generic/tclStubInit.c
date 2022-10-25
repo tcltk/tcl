@@ -2048,15 +2048,16 @@ const TclStubs tclStubs = {
     Tcl_GetNumberFromObj, /* 680 */
     Tcl_GetNumber, /* 681 */
     Tcl_RemoveChannelMode, /* 682 */
-    Tcl_AbstractListObjNew, /* 683 */
-    Tcl_AbstractListObjLength, /* 684 */
-    Tcl_AbstractListObjIndex, /* 685 */
-    Tcl_AbstractListObjRange, /* 686 */
-    Tcl_AbstractListObjReverse, /* 687 */
-    Tcl_AbstractListObjGetElements, /* 688 */
-    Tcl_AbstractListObjCopy, /* 689 */
-    Tcl_AbstractListGetConcreteRep, /* 690 */
-    Tcl_AbstractListSetElement, /* 691 */
+    Tcl_GetEncodingNulLength, /* 683 */
+    Tcl_AbstractListObjNew, /* 684 */
+    Tcl_AbstractListObjLength, /* 685 */
+    Tcl_AbstractListObjIndex, /* 686 */
+    Tcl_AbstractListObjRange, /* 687 */
+    Tcl_AbstractListObjReverse, /* 688 */
+    Tcl_AbstractListObjGetElements, /* 689 */
+    Tcl_AbstractListObjCopy, /* 690 */
+    Tcl_AbstractListGetConcreteRep, /* 691 */
+    Tcl_AbstractListSetElement, /* 692 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -2220,6 +2220,8 @@ Tcl_GetBoolFromObj(
 		    } else if (flags == (int)sizeof(short)) {
 			*(short *)charPtr = result;
 			return TCL_OK;
+		    } else {
+			Tcl_Panic("Wrong bool var for %s", "Tcl_GetBoolFromObj");
 		    }
 		}
 		*charPtr = result;

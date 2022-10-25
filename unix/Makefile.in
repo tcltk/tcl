@@ -1059,9 +1059,9 @@ install-libraries: libraries
 	@echo "Installing package tcltest 2.5.5 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
 		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.5.tm"
-	@echo "Installing package platform 1.0.18 as a Tcl Module"
+	@echo "Installing package platform 1.0.19 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
-		"$(MODULE_INSTALL_DIR)/8.4/platform-1.0.18.tm"
+		"$(MODULE_INSTALL_DIR)/8.4/platform-1.0.19.tm"
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
 		"$(MODULE_INSTALL_DIR)/8.4/platform/shell-1.1.4.tm"

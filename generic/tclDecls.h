@@ -2037,33 +2037,35 @@ EXTERN int		Tcl_GetNumber(Tcl_Interp *interp, const char *bytes,
 EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
 				Tcl_Channel chan, int mode);
 /* 683 */
+EXTERN int		Tcl_GetEncodingNulLength(Tcl_Encoding encoding);
+/* 684 */
 EXTERN Tcl_Obj *	Tcl_AbstractListObjNew(Tcl_Interp *interp,
 				const Tcl_AbstractListType*vTablePtr);
-/* 684 */
-EXTERN Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr);
 /* 685 */
+EXTERN Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr);
+/* 686 */
 EXTERN int		Tcl_AbstractListObjIndex(Tcl_Interp *interp,
 				Tcl_Obj *abstractListPtr, Tcl_WideInt index,
 				Tcl_Obj **elemObjPtr);
-/* 686 */
+/* 687 */
 EXTERN int		Tcl_AbstractListObjRange(Tcl_Interp *interp,
 				Tcl_Obj *abstractListPtr,
 				Tcl_WideInt fromIdx, Tcl_WideInt toIdx,
 				Tcl_Obj **newObjPtr);
-/* 687 */
+/* 688 */
 EXTERN int		Tcl_AbstractListObjReverse(Tcl_Interp *interp,
 				Tcl_Obj *abstractListPtr,
 				Tcl_Obj **newObjPtr);
-/* 688 */
+/* 689 */
 EXTERN int		Tcl_AbstractListObjGetElements(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, int *objcPtr,
 				Tcl_Obj ***objvPtr);
-/* 689 */
+/* 690 */
 EXTERN Tcl_Obj *	Tcl_AbstractListObjCopy(Tcl_Interp *interp,
 				Tcl_Obj *listPtr);
-/* 690 */
-EXTERN void *		Tcl_AbstractListGetConcreteRep(Tcl_Obj *objPtr);
 /* 691 */
+EXTERN void *		Tcl_AbstractListGetConcreteRep(Tcl_Obj *objPtr);
+/* 692 */
 EXTERN Tcl_Obj *	Tcl_AbstractListSetElement(Tcl_Interp *interp,
 				Tcl_Obj *listPtr, Tcl_Obj *indicies,
 				Tcl_Obj *valueObj);
@@ -2785,15 +2787,16 @@ typedef struct TclStubs {
     int (*tcl_GetNumberFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, void **clientDataPtr, int *typePtr); /* 680 */
     int (*tcl_GetNumber) (Tcl_Interp *interp, const char *bytes, size_t numBytes, void **clientDataPtr, int *typePtr); /* 681 */
     int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
-    Tcl_Obj * (*tcl_AbstractListObjNew) (Tcl_Interp *interp, const Tcl_AbstractListType*vTablePtr); /* 683 */
-    Tcl_WideInt (*tcl_AbstractListObjLength) (Tcl_Obj *abstractListPtr); /* 684 */
-    int (*tcl_AbstractListObjIndex) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr); /* 685 */
-    int (*tcl_AbstractListObjRange) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx, Tcl_Obj **newObjPtr); /* 686 */
-    int (*tcl_AbstractListObjReverse) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_Obj **newObjPtr); /* 687 */
-    int (*tcl_AbstractListObjGetElements) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *objcPtr, Tcl_Obj ***objvPtr); /* 688 */
-    Tcl_Obj * (*tcl_AbstractListObjCopy) (Tcl_Interp *interp, Tcl_Obj *listPtr); /* 689 */
-    void * (*tcl_AbstractListGetConcreteRep) (Tcl_Obj *objPtr); /* 690 */
-    Tcl_Obj * (*tcl_AbstractListSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Obj *indicies, Tcl_Obj *valueObj); /* 691 */
+    int (*tcl_GetEncodingNulLength) (Tcl_Encoding encoding); /* 683 */
+    Tcl_Obj * (*tcl_AbstractListObjNew) (Tcl_Interp *interp, const Tcl_AbstractListType*vTablePtr); /* 684 */
+    Tcl_WideInt (*tcl_AbstractListObjLength) (Tcl_Obj *abstractListPtr); /* 685 */
+    int (*tcl_AbstractListObjIndex) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr); /* 686 */
+    int (*tcl_AbstractListObjRange) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx, Tcl_Obj **newObjPtr); /* 687 */
+    int (*tcl_AbstractListObjReverse) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_Obj **newObjPtr); /* 688 */
+    int (*tcl_AbstractListObjGetElements) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *objcPtr, Tcl_Obj ***objvPtr); /* 689 */
+    Tcl_Obj * (*tcl_AbstractListObjCopy) (Tcl_Interp *interp, Tcl_Obj *listPtr); /* 690 */
+    void * (*tcl_AbstractListGetConcreteRep) (Tcl_Obj *objPtr); /* 691 */
+    Tcl_Obj * (*tcl_AbstractListSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Obj *indicies, Tcl_Obj *valueObj); /* 692 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4190,24 +4193,26 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetNumber) /* 681 */
 #define Tcl_RemoveChannelMode \
 	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
+#define Tcl_GetEncodingNulLength \
+	(tclStubsPtr->tcl_GetEncodingNulLength) /* 683 */
 #define Tcl_AbstractListObjNew \
-	(tclStubsPtr->tcl_AbstractListObjNew) /* 683 */
+	(tclStubsPtr->tcl_AbstractListObjNew) /* 684 */
 #define Tcl_AbstractListObjLength \
-	(tclStubsPtr->tcl_AbstractListObjLength) /* 684 */
+	(tclStubsPtr->tcl_AbstractListObjLength) /* 685 */
 #define Tcl_AbstractListObjIndex \
-	(tclStubsPtr->tcl_AbstractListObjIndex) /* 685 */
+	(tclStubsPtr->tcl_AbstractListObjIndex) /* 686 */
 #define Tcl_AbstractListObjRange \
-	(tclStubsPtr->tcl_AbstractListObjRange) /* 686 */
+	(tclStubsPtr->tcl_AbstractListObjRange) /* 687 */
 #define Tcl_AbstractListObjReverse \
-	(tclStubsPtr->tcl_AbstractListObjReverse) /* 687 */
+	(tclStubsPtr->tcl_AbstractListObjReverse) /* 688 */
 #define Tcl_AbstractListObjGetElements \
-	(tclStubsPtr->tcl_AbstractListObjGetElements) /* 688 */
+	(tclStubsPtr->tcl_AbstractListObjGetElements) /* 689 */
 #define Tcl_AbstractListObjCopy \
-	(tclStubsPtr->tcl_AbstractListObjCopy) /* 689 */
+	(tclStubsPtr->tcl_AbstractListObjCopy) /* 690 */
 #define Tcl_AbstractListGetConcreteRep \
-	(tclStubsPtr->tcl_AbstractListGetConcreteRep) /* 690 */
+	(tclStubsPtr->tcl_AbstractListGetConcreteRep) /* 691 */
 #define Tcl_AbstractListSetElement \
-	(tclStubsPtr->tcl_AbstractListSetElement) /* 691 */
+	(tclStubsPtr->tcl_AbstractListSetElement) /* 692 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4409,6 +4414,8 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_GetUnicodeFromObj(objPtr, (int *)NULL)
 #undef Tcl_GetBytesFromObj
 #undef Tcl_GetIndexFromObjStruct
+#undef Tcl_GetBooleanFromObj
+#undef Tcl_GetBoolean
 #ifdef TCL_NO_DEPRECATED
 #undef Tcl_GetStringFromObj
 #undef Tcl_GetUnicodeFromObj
@@ -4419,6 +4426,12 @@ extern const TclStubs *tclStubsPtr;
 	(sizeof(*(sizePtr)) <= sizeof(int) ? tclStubsPtr->tclGetBytesFromObj(interp, objPtr, (int *)(sizePtr)) : tclStubsPtr->tcl_GetBytesFromObj(interp, objPtr, (size_t *)(sizePtr)))
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
+	(sizeof(*(boolPtr)) == sizeof(int) ? tclStubsPtr->tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : \
+	Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
+#define Tcl_GetBoolean(interp, src, boolPtr) \
+	(sizeof(*(boolPtr)) == sizeof(int) ? tclStubsPtr->tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
+	Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
 #ifdef TCL_NO_DEPRECATED
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? tclStubsPtr->tcl_GetStringFromObj(objPtr, (int *)(sizePtr)) : tclStubsPtr->tclGetStringFromObj(objPtr, (size_t *)(sizePtr)))
@@ -4432,6 +4445,12 @@ extern const TclStubs *tclStubsPtr;
 	(sizeof(*(sizePtr)) <= sizeof(int) ? (TclGetBytesFromObj)(interp, objPtr, (int *)(sizePtr)) : (Tcl_GetBytesFromObj)(interp, objPtr, (size_t *)(sizePtr)))
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
+	(sizeof(*(boolPtr)) == sizeof(int) ? Tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : \
+	Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
+#define Tcl_GetBoolean(interp, src, boolPtr) \
+	(sizeof(*(boolPtr)) == sizeof(int) ? Tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
+	Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
 #ifdef TCL_NO_DEPRECATED
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? (Tcl_GetStringFromObj)(objPtr, (int *)(sizePtr)) : (TclGetStringFromObj)(objPtr, (size_t *)(sizePtr)))

@@ -2547,32 +2547,37 @@ declare 682 {
     int Tcl_RemoveChannelMode(Tcl_Interp *interp, Tcl_Channel chan, int mode)
 }
 
-# TIP #636
+# TIP 643
 declare 683 {
+   int Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
+}
+
+# TIP #636
+declare 684 {
     Tcl_Obj *Tcl_AbstractListObjNew(Tcl_Interp *interp, const Tcl_AbstractListType* vTablePtr)
 }
-declare 684 {
+declare 685 {
     Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr)
 }
-declare 685 {
+declare 686 {
     int Tcl_AbstractListObjIndex(Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr)
 }
-declare 686 {
+declare 687 {
     int Tcl_AbstractListObjRange(Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx, Tcl_Obj **newObjPtr)
 }
-declare 687 {
+declare 688 {
     int Tcl_AbstractListObjReverse(Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_Obj **newObjPtr)
 }
-declare 688 {
+declare 689 {
     int Tcl_AbstractListObjGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr, int *objcPtr, Tcl_Obj ***objvPtr)
 }
-declare 689 {
+declare 690 {
     Tcl_Obj *Tcl_AbstractListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr)
 }
-declare 690 {
+declare 691 {
     void *Tcl_AbstractListGetConcreteRep(Tcl_Obj *objPtr)
 }
-declare 691 {
+declare 692 {
     Tcl_Obj *Tcl_AbstractListSetElement(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Obj *indicies, Tcl_Obj *valueObj)
 }
 
@@ -2615,7 +2620,7 @@ declare 0 macosx {
 declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
-	    int hasResourceFile, Tcl_Size maxPathLen, char *libraryPath)
+	    int hasResourceFile, int maxPathLen, char *libraryPath)
 }
 declare 2 macosx {
     void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
@@ -2626,7 +2631,7 @@ declare 2 macosx {
 # Public functions that are not accessible via the stubs table.
 
 export {
-    void Tcl_Main(int argc, char **argv, Tcl_AppInitProc *appInitProc)
+    void Tcl_Main(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc)
 }
 export {
     void Tcl_MainEx(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc,
