@@ -4351,9 +4351,9 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GetString
 #undef Tcl_GetUnicode
 #define Tcl_GetString(objPtr) \
-	Tcl_GetStringFromObj(objPtr, (int *)NULL)
+	Tcl_GetStringFromObj(objPtr, (Tcl_Size *)NULL)
 #define Tcl_GetUnicode(objPtr) \
-	Tcl_GetUnicodeFromObj(objPtr, (int *)NULL)
+	Tcl_GetUnicodeFromObj(objPtr, (Tcl_Size *)NULL)
 #undef Tcl_GetBytesFromObj
 #undef Tcl_GetIndexFromObjStruct
 #undef Tcl_GetBooleanFromObj
@@ -4441,17 +4441,17 @@ extern const TclStubs *tclStubsPtr;
 #endif
 #if defined(USE_TCL_STUBS)
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
-		? (char *(*)(const wchar_t *, int, Tcl_DString *))tclStubsPtr->tcl_UniCharToUtfDString \
-		: (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_Char16ToUtfDString)
+		? (char *(*)(const wchar_t *, Tcl_Size, Tcl_DString *))tclStubsPtr->tcl_UniCharToUtfDString \
+		: (char *(*)(const wchar_t *, Tcl_Size, Tcl_DString *))Tcl_Char16ToUtfDString)
 #   define Tcl_UtfToWCharDString (sizeof(wchar_t) != sizeof(short) \
-		? (wchar_t *(*)(const char *, int, Tcl_DString *))tclStubsPtr->tcl_UtfToUniCharDString \
-		: (wchar_t *(*)(const char *, int, Tcl_DString *))Tcl_UtfToChar16DString)
+		? (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))tclStubsPtr->tcl_UtfToUniCharDString \
+		: (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToChar16DString)
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
 		? (int (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToUniChar \
 		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
-		? (int (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
-		: (int (*)(wchar_t *))Tcl_Char16Len)
+		? (Tcl_Size (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
+		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
 #ifdef TCL_NO_DEPRECATED
 #   undef Tcl_ListObjGetElements
 #   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) == sizeof(int) \
@@ -4484,17 +4484,17 @@ extern const TclStubs *tclStubsPtr;
 #endif /* TCL_NO_DEPRECATED */
 #else
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
-		? (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_UniCharToUtfDString \
-		: (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_Char16ToUtfDString)
+		? (char *(*)(const wchar_t *, Tcl_Size, Tcl_DString *))Tcl_UniCharToUtfDString \
+		: (char *(*)(const wchar_t *, Tcl_Size, Tcl_DString *))Tcl_Char16ToUtfDString)
 #   define Tcl_UtfToWCharDString (sizeof(wchar_t) != sizeof(short) \
-		? (wchar_t *(*)(const char *, int, Tcl_DString *))Tcl_UtfToUniCharDString \
-		: (wchar_t *(*)(const char *, int, Tcl_DString *))Tcl_UtfToChar16DString)
+		? (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToUniCharDString \
+		: (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToChar16DString)
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
 		? (int (*)(const char *, wchar_t *))Tcl_UtfToUniChar \
 		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
-		? (int (*)(wchar_t *))Tcl_UniCharLen \
-		: (int (*)(wchar_t *))Tcl_Char16Len)
+		? (Tcl_Size (*)(wchar_t *))Tcl_UniCharLen \
+		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
 #ifdef TCL_NO_DEPRECATED
 #   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) == sizeof(int) \
 		? (Tcl_ListObjGetElements)((interp), (listPtr), (int *)(void *)(objcPtr), (objvPtr)) \

@@ -4190,8 +4190,8 @@ MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
 
 /* Constants used in index value encoding routines. */
-#define TCL_INDEX_END           (-2)
-#define TCL_INDEX_START         (0)
+#define TCL_INDEX_END           ((Tcl_Size)-2)
+#define TCL_INDEX_START         ((Tcl_Size)0)
 
 /*
  *----------------------------------------------------------------------
@@ -4697,7 +4697,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  * of counting along a string of all one-byte characters.  The ANSI C
  * "prototype" for this macro is:
  *
- * MODULE_SCOPE void	TclNumUtfChars(int numChars, const char *bytes,
+ * MODULE_SCOPE void	TclNumUtfCharsM(int numChars, const char *bytes,
  *				int numBytes);
  *----------------------------------------------------------------
  */
