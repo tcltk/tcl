@@ -373,7 +373,7 @@ proc ::platform::patterns {id} {
 			    }
 			}
 			set major 12
-			set minor 6
+			set minor 5
 		    }
 		    if {$major eq 12} {
 			# Add 12.0 to 12.minor to patterns.
