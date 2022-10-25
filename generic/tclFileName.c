@@ -421,18 +421,10 @@ TclpGetNativePathType(
 		    while (*path && *path != '/') {
 			++path;
 		    }
-		    /* UNC paths need to be followed by a share name */
-		    if (*path++ && (*path && *path != '/')) {
-			++path;
-			while (*path && *path != '/') {
-			    ++path;
-			}
-		    } else {
-			path = origPath + 1;
-		    }		}
+		}
 		if (driveNameLengthPtr != NULL) {
 		    /*
-		     * We need this addition in case the QNX or Cygwin code was used.
+		     * We need this addition in case the "//" code was used.
 		     */
 
 		    *driveNameLengthPtr = (path - origPath);
@@ -657,15 +649,6 @@ SplitUnixPath(
 	    path += 2;
 	    while (*path && *path != '/') {
 		++path;
-	    }
-	    /* UNC paths need to be followed by a share name */
-	    if (*path++ && (*path && *path != '/')) {
-		++path;
-		while (*path && *path != '/') {
-		    ++path;
-		}
-	    } else {
-		path = origPath + 1;
 	    }
 	}
 	rootElt = Tcl_NewStringObj(origPath, path - origPath);
@@ -1880,7 +1863,7 @@ TclGlob(
 	separators = "/\\";
 
     } else if (tclPlatform == TCL_PLATFORM_UNIX) {
-	if (pathPrefix == NULL && tail[0] == '/') {
+	if (pathPrefix == NULL && tail[0] == '/' && tail[1] != '/') {
 	    pathPrefix = Tcl_NewStringObj(tail, 1);
 	    tail++;
 	    Tcl_IncrRefCount(pathPrefix);
