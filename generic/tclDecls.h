@@ -1815,8 +1815,11 @@ EXTERN int		Tcl_FSUnloadFile(Tcl_Interp *interp,
 EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 				Tcl_ZlibStream zhandle,
 				Tcl_Obj *compressionDictionaryObj);
-/* Slot 631 is reserved */
-/* Slot 632 is reserved */
+/* 631 */
+EXTERN int		Tcl_GetLine(char *historyPath,
+				Tcl_DString *lineString);
+/* 632 */
+EXTERN int		Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj);
 /* Slot 633 is reserved */
 /* Slot 634 is reserved */
 /* Slot 635 is reserved */
@@ -2534,8 +2537,8 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
-    void (*reserved631)(void);
-    void (*reserved632)(void);
+    int (*tcl_GetLine) (char *historyPath, Tcl_DString *lineString); /* 631 */
+    int (*tcl_GetLineObj) (char *historyPath, Tcl_Obj *lineObj); /* 632 */
     void (*reserved633)(void);
     void (*reserved634)(void);
     void (*reserved635)(void);
@@ -3878,8 +3881,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
 #define Tcl_ZlibStreamSetCompressionDictionary \
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
-/* Slot 631 is reserved */
-/* Slot 632 is reserved */
+#define Tcl_GetLine \
+	(tclStubsPtr->tcl_GetLine) /* 631 */
+#define Tcl_GetLineObj \
+	(tclStubsPtr->tcl_GetLineObj) /* 632 */
 /* Slot 633 is reserved */
 /* Slot 634 is reserved */
 /* Slot 635 is reserved */

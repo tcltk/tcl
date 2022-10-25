@@ -299,6 +299,10 @@ Tcl_SourceRCFile(
  *----------------------------------------------------------------------
  */
 #ifdef USE_LINENOISE
+/*
+ * Helper used by both functions.
+ */
+
 static char* _GetLine(char *historyPath) {
     struct termios initial_termios;
     static int historyLoaded = 0;
@@ -336,24 +340,7 @@ static char* _GetLine(char *historyPath) {
     tcsetattr(fileno(stdin), TCSADRAIN, &initial_termios);
     return line;
 }
-int Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj) {
-    char *line;
-    if (!isatty(0)) {
-	/*
-	 * If stdin is not a tty, revert to Tcl_GetsObj.
-	 */
-	Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
-	return Tcl_GetsObj(input, lineObj);
-    }
-    line = _GetLine(historyPath);
-    if (line) {
-	Tcl_AppendToObj(lineObj, line, -1);
-	free(line);
-    } else {
-	return -1;
-    }
-    return Tcl_GetCharLength(lineObj);
-}
+
 int Tcl_GetLine(char *historyPath, Tcl_DString *lineString) {
     char *line;
     if (!isatty(0)) {
@@ -372,14 +359,33 @@ int Tcl_GetLine(char *historyPath, Tcl_DString *lineString) {
     }
     return Tcl_DStringLength(lineString);
 }
-#else
+
 int Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj) {
-    Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
-    return Tcl_GetsObj(input, lineObj);
+    char *line;
+    if (!isatty(0)) {
+	/*
+	 * If stdin is not a tty, revert to Tcl_GetsObj.
+	 */
+	Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
+	return Tcl_GetsObj(input, lineObj);
+    }
+    line = _GetLine(historyPath);
+    if (line) {
+	Tcl_AppendToObj(lineObj, line, -1);
+	free(line);
+    } else {
+	return -1;
+    }
+    return Tcl_GetCharLength(lineObj);
 }
+#else
 int Tcl_GetLine(char *historyPath, Tcl_DString *lineString) {
     Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
     return Tcl_Gets(input, lineString);
+}
+int Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj) {
+    Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
+    return Tcl_GetsObj(input, lineObj);
 }
 #endif
 
@@ -685,7 +691,6 @@ Tcl_MainEx(
 		if (is.tty) {
 		    Prompt(interp, &is);
 		}
-
 		Tcl_CreateChannelHandler(is.input, TCL_READABLE,
 			StdinProc, &is);
 	    }
@@ -897,7 +902,7 @@ StdinProc(
 	commandPtr = Tcl_DuplicateObj(commandPtr);
 	Tcl_IncrRefCount(commandPtr);
     }
-    length = Tcl_GetsObj(chan, commandPtr);
+    length = Tcl_GetLineObj("", commandPtr);
     if (length < 0) {
 	if (Tcl_InputBlocked(chan)) {
 	    return;

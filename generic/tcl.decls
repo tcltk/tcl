@@ -2322,7 +2322,12 @@ declare 630 {
     void Tcl_ZlibStreamSetCompressionDictionary(Tcl_ZlibStream zhandle,
 	    Tcl_Obj *compressionDictionaryObj)
 }
-
+declare 631 {
+    int Tcl_GetLine(char *historyPath, Tcl_DString *lineString)
+}
+declare 632 {
+    int Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj)
+}
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
 declare 682 {

@@ -10,6 +10,7 @@
  *
  * ------------------------------------------------------------------------
  *
+ * Copyright (c) 2022, Marc Culler (modifications for use in tclsh and wish)
  * Copyright (c) 2010-2016, Salvatore Sanfilippo <antirez at gmail dot com>
  * Copyright (c) 2010-2013, Pieter Noordhuis <pcnoordhuis at gmail dot com>
  *
