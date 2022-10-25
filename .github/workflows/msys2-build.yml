@@ -20,10 +20,9 @@ jobs:
           install: git base-devel msys2-devel zlib
           update: true
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Build
         run: |
-          autoreconf -vfi
           ./configure -C --prefix=/usr --enable-64bit || { cat config.log; cat config.cache; exit 1; }
           make
       - name: Run Tests (ignoring test io-53.4.1 which hangs)
