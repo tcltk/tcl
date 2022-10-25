@@ -227,6 +227,7 @@ TCLTESTOBJS = \
 	$(TMP_DIR)\tclTestProcBodyObj.obj \
 	$(TMP_DIR)\tclThreadTest.obj \
 	$(TMP_DIR)\tclWinTest.obj \
+	$(TMP_DIR)\tclTestABSList.obj \
 !if !$(STATIC_BUILD)
 	$(OUT_DIR)\tommath.lib \
 !endif
@@ -826,6 +827,9 @@ $(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c $(TMP_DIR)\tclUuid.h
 	    -Fo$@ $(GENERICDIR)\tclTest.c
 
 $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
+	$(cc32) $(appcflags) -Fo$@ $?
+
+$(TMP_DIR)\tclTestABSList.obj: $(GENERICDIR)\tclTestABSList.c
 	$(cc32) $(appcflags) -Fo$@ $?
 
 $(TMP_DIR)\tclWinTest.obj: $(WIN_DIR)\tclWinTest.c

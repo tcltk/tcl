@@ -29,7 +29,7 @@ Tcl_AbstractListTypeName(
     }
 }
 
-Tcl_Obj *   Tcl_AbstractListObjNew(Tcl_Interp *interp, const Tcl_AbstractListType *);
+Tcl_Obj *   Tcl_AbstractListObjNew(Tcl_Interp *interp, const Tcl_AbstractListType *vTablePtr);
 Tcl_WideInt Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr);
 int	    Tcl_AbstractListObjIndex(Tcl_Interp *interp, Tcl_Obj *abstractListPtr,
 		Tcl_WideInt index, Tcl_Obj **elemObj);
@@ -42,14 +42,10 @@ int	    Tcl_AbstractListObjGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr, int 
 Tcl_Obj *   Tcl_AbstractListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 void	*   Tcl_AbstractListGetConcreteRep(Tcl_Obj *objPtr);
 Tcl_Obj *   Tcl_AbstractListSetElement(Tcl_Interp *interp, Tcl_Obj *listPtr,
-				       Tcl_Obj *indicies, Tcl_Obj *valueObj);
-int Tcl_AbstractListObjReplace(
-    Tcl_Interp *interp,		  /* Used for error reporting if not NULL. */
-    Tcl_Obj *listObj,		  /* List object whose elements to replace. */
-    Tcl_Size first,		  /* Index of first element to replace. */
-    Tcl_Size numToDelete,	  /* Number of elements to replace. */
-    Tcl_Size numToInsert,	  /* Number of objects to insert. */
-    Tcl_Obj *const insertObjs[]); /* Tcl objects to insert */
+		Tcl_Obj *indicies, Tcl_Obj *valueObj);
+int	    Tcl_AbstractListObjReplace(Tcl_Interp *interp, Tcl_Obj *listObj,
+		Tcl_Size first, Tcl_Size numToDelete, Tcl_Size numToInsert,
+		Tcl_Obj *const insertObjs[]);
 
 #endif
 

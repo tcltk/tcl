@@ -1667,8 +1667,7 @@ Tcl_ListObjGetElements(
 {
     ListRep listRep;
 
-    if (TclHasInternalRep(objPtr,&tclAbstractListType) &&
-	TclAbstractListHasProc(objPtr, TCL_ABSL_GETELEMENTS) &&
+    if (TclAbstractListHasProc(objPtr, TCL_ABSL_GETELEMENTS) &&
 	Tcl_AbstractListObjGetElements(interp, objPtr, objcPtr, objvPtr) == TCL_OK) {
 	return TCL_OK;
     } else if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {

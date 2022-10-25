@@ -2216,8 +2216,7 @@ Tcl_JoinObjCmd(
      * pointer to its array of element pointers.
      */
 
-    if (TclHasInternalRep(objv[1],&tclAbstractListType) &&
-	TclAbstractListHasProc(objv[1], TCL_ABSL_GETELEMENTS)) {
+    if (TclAbstractListHasProc(objv[1], TCL_ABSL_GETELEMENTS)) {
 	listLen = Tcl_AbstractListObjLength(objv[1]);
 	isAbstractList = (listLen ? 1 : 0);
 	if (listLen > 1 &&
@@ -3125,8 +3124,7 @@ Tcl_LreverseObjCmd(
      *  Handle AbstractList special case - do not shimmer into a list, if it
      *  supports a private Reverse function, just to reverse it.
      */
-    if (TclHasInternalRep(objv[1],&tclAbstractListType) &&
-	TclAbstractListHasProc(objv[1], TCL_ABSL_REVERSE)) {
+    if (TclAbstractListHasProc(objv[1], TCL_ABSL_REVERSE)) {
 	Tcl_Obj *resultObj;
 
 	if (Tcl_AbstractListObjReverse(interp, objv[1], &resultObj) == TCL_OK) {
@@ -4697,8 +4695,7 @@ Tcl_LsortObjCmd(
 	sortInfo.compareCmdPtr = newCommandPtr;
     }
 
-    if (TclHasInternalRep(listObj,&tclAbstractListType) &&
-	TclAbstractListHasProc(objv[1], TCL_ABSL_GETELEMENTS)) {
+    if (TclAbstractListHasProc(objv[1], TCL_ABSL_GETELEMENTS)) {
 	sortInfo.resultCode =
 	    Tcl_AbstractListObjGetElements(interp, listObj, &length, &listObjPtrs);
     } else {

@@ -4888,6 +4888,7 @@ TEBCresume(
 	 * Extract the desired list element.
 	 */
 
+	/* TODO: handle AbstractList here? */
 	if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
 		&& !TclHasInternalRep(value2Ptr, &tclListType)) {
 	    int code;
