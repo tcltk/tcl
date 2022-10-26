@@ -1889,13 +1889,13 @@ test chan-io-20.2 {Tcl_CreateChannel: initial settings} -constraints {win} -body
     list [chan configure $f -eofchar] [chan configure $f -translation]
 } -cleanup {
     chan close $f
-} -result [list [list \x1A ""] {auto crlf}]
+} -result {{{}} {auto crlf}}
 test chan-io-20.3 {Tcl_CreateChannel: initial settings} -constraints {unix} -body {
     set f [open $path(test1) w+]
     list [chan configure $f -eofchar] [chan configure $f -translation]
 } -cleanup {
     chan close $f
-} -result {{{} {}} {auto lf}}
+} -result {{{}} {auto lf}}
 test chan-io-20.5 {Tcl_CreateChannel: install channel in empty slot} -setup {
     set path(stdout) [makeFile {} stdout]
 } -constraints {stdio notWinCI} -body {
@@ -4657,7 +4657,7 @@ test chan-io-35.6 {Tcl_Eof, eof char, lf write, auto read} -setup {
     list $s [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
-} -result {9 8 1}
+} -result {8 8 1}
 test chan-io-35.7 {Tcl_Eof, eof char, lf write, lf read} -setup {
     file delete $path(test1)
 } -body {
@@ -4671,7 +4671,7 @@ test chan-io-35.7 {Tcl_Eof, eof char, lf write, lf read} -setup {
     list $s [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
-} -result {9 8 1}
+} -result {8 8 1}
 test chan-io-35.8 {Tcl_Eof, eof char, cr write, auto read} -setup {
     file delete $path(test1)
 } -body {
@@ -4685,7 +4685,7 @@ test chan-io-35.8 {Tcl_Eof, eof char, cr write, auto read} -setup {
     list $s [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
-} -result {9 8 1}
+} -result {8 8 1}
 test chan-io-35.9 {Tcl_Eof, eof char, cr write, cr read} -setup {
     file delete $path(test1)
 } -body {
@@ -4699,7 +4699,7 @@ test chan-io-35.9 {Tcl_Eof, eof char, cr write, cr read} -setup {
     list $s [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
-} -result {9 8 1}
+} -result {8 8 1}
 test chan-io-35.10 {Tcl_Eof, eof char, crlf write, auto read} -setup {
     file delete $path(test1)
 } -body {
@@ -4713,7 +4713,7 @@ test chan-io-35.10 {Tcl_Eof, eof char, crlf write, auto read} -setup {
     list $s [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
-} -result {11 8 1}
+} -result {10 8 1}
 test chan-io-35.11 {Tcl_Eof, eof char, crlf write, crlf read} -setup {
     file delete $path(test1)
 } -body {
@@ -4727,7 +4727,7 @@ test chan-io-35.11 {Tcl_Eof, eof char, crlf write, crlf read} -setup {
     list $s [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
-} -result {11 8 1}
+} -result {10 8 1}
 test chan-io-35.12 {Tcl_Eof, eof char in middle, lf write, auto read} -setup {
     file delete $path(test1)
 } -body {
@@ -5288,26 +5288,26 @@ test chan-io-39.22 {Tcl_SetChannelOption, invariance} -setup {
 } -constraints {unix} -body {
     set f1 [open $path(test1) w+]
     lappend l [chan configure $f1 -eofchar]
-    chan configure $f1 -eofchar {ON GO}
+    chan configure $f1 -eofchar {O {}}
     lappend l [chan configure $f1 -eofchar]
     chan configure $f1 -eofchar D
     lappend l [chan configure $f1 -eofchar]
 } -cleanup {
     chan close $f1
-} -result {{{} {}} {O G} {D D}}
+} -result {{{}} O D}
 test chan-io-39.22a {Tcl_SetChannelOption, invariance} -setup {
     file delete $path(test1)
     set l [list]
 } -body {
     set f1 [open $path(test1) w+]
-    chan configure $f1 -eofchar {ON GO}
+    chan configure $f1 -eofchar {O {}}
     lappend l [chan configure $f1 -eofchar]
     chan configure $f1 -eofchar D
     lappend l [chan configure $f1 -eofchar]
     lappend l [list [catch {chan configure $f1 -eofchar {1 2 3}} msg] $msg]
 } -cleanup {
     chan close $f1
-} -result {{O G} {D D} {1 {bad value for -eofchar: should be a list of zero, one, or two elements}}}
+} -result {O D {1 {bad value for -eofchar: should be a list of zero, one, or two elements}}}
 test chan-io-39.23 {Tcl_GetChannelOption, server socket is not readable or\
         writeable, it should still have valid -eofchar and -translation options} -setup {
     set l [list]
