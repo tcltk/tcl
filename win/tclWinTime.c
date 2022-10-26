@@ -791,14 +791,14 @@ TclpGetDate(
 {
     struct tm *tmPtr;
     time_t time;
-#if defined(_WIN64) || (defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400))
+#if defined(_WIN64) || defined(_USE_64BIT_TIME_T)
 #   define t2 *t		/* no need to cripple time to 32-bit */
 #else
     time_t t2 = *(__time32_t *) t;
 #endif
 
     if (!useGMT) {
-#if defined(_MSC_VER) && (_MSC_VER >= 1900)
+#if defined(_MSC_VER)
 #	undef timezone /* prevent conflict with timezone() function */
 	long timezone = 0;
 #endif
@@ -815,7 +815,7 @@ TclpGetDate(
 	    return TclpLocaltime(&t2);
 	}
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1900)
+#if defined(_MSC_VER)
 	_get_timezone(&timezone);
 #endif
 
@@ -1451,11 +1451,11 @@ TclpGmtime(
      * Posix gmtime_r function.
      */
 
-#if defined(_WIN64) || defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400)
+#if defined(_WIN64) || defined(_USE_64BIT_TIME_T)
     return gmtime(timePtr);
 #else
     return _gmtime32((const __time32_t *) timePtr);
-#endif /* _WIN64 || _USE_64BIT_TIME_T || _MSC_VER < 1400 */
+#endif /* _WIN64 || _USE_64BIT_TIME_T */
 }
 
 /*
@@ -1486,11 +1486,11 @@ TclpLocaltime(
      * provide a Posix localtime_r function.
      */
 
-#if defined(_WIN64) || defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400)
+#if defined(_WIN64) || defined(_USE_64BIT_TIME_T)
     return localtime(timePtr);
 #else
     return _localtime32((const __time32_t *) timePtr);
-#endif /* _WIN64 || _USE_64BIT_TIME_T || _MSC_VER < 1400 */
+#endif /* _WIN64 || _USE_64BIT_TIME_T */
 }
 #endif /* TCL_NO_DEPRECATED */
 

@@ -103,7 +103,7 @@ system, as returned by \fBencoding system\fR.
 .TP
 \fB\-eofchar\fR \fIchar\fR
 .TP
-\fB\-eofchar\fR \fB{\fIinChar outChar\fB}\fR
+\fB\-eofchar\fR \fB{\fIchar outChar\fB}\fR
 .
 This option supports DOS file systems that use Control-z (\ex1A) as an
 end of file marker.  If \fIchar\fR is not an empty string, then this

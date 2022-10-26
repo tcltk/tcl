@@ -48,10 +48,10 @@ extern "C" {
  */
 
 #if !defined(TCL_MAJOR_VERSION)
-#define TCL_MAJOR_VERSION   8
+#   define TCL_MAJOR_VERSION   8
 #endif
 #if TCL_MAJOR_VERSION != 8
-#error "This header-file is for Tcl 8 only"
+#   error "This header-file is for Tcl 8 only"
 #endif
 #define TCL_MINOR_VERSION   7
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
@@ -156,13 +156,8 @@ extern "C" {
 #   endif
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
-#   if defined(_MSC_VER) && (_MSC_VER >= 1310)
-#	define TCL_NORETURN _declspec(noreturn)
-#	define TCL_NOINLINE __declspec(noinline)
-#   else
-#	define TCL_NORETURN /* nothing */
-#	define TCL_NOINLINE /* nothing */
-#   endif
+#   define TCL_NORETURN _declspec(noreturn)
+#   define TCL_NOINLINE __declspec(noinline)
 #   define TCL_NORETURN1 /* nothing */
 #endif
 
@@ -410,11 +405,11 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #ifdef _WIN32
 #   if defined(_WIN64) || defined(_USE_64BIT_TIME_T)
 	typedef struct __stat64 Tcl_StatBuf;
-#   elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
+#   elif defined(_USE_32BIT_TIME_T)
 	typedef struct _stati64	Tcl_StatBuf;
 #   else
 	typedef struct _stat32i64 Tcl_StatBuf;
-#   endif /* _MSC_VER < 1400 */
+#   endif
 #elif defined(__CYGWIN__)
     typedef struct {
 	dev_t st_dev;
@@ -499,9 +494,9 @@ typedef struct Tcl_ZLibStream_ *Tcl_ZlibStream;
  */
 
 #if defined _WIN32
-typedef unsigned (__stdcall Tcl_ThreadCreateProc) (ClientData clientData);
+typedef unsigned (__stdcall Tcl_ThreadCreateProc) (void *clientData);
 #else
-typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
+typedef void (Tcl_ThreadCreateProc) (void *clientData);
 #endif
 
 /*
@@ -665,67 +660,67 @@ struct Tcl_Obj;
  */
 
 typedef int (Tcl_AppInitProc) (Tcl_Interp *interp);
-typedef int (Tcl_AsyncProc) (ClientData clientData, Tcl_Interp *interp,
+typedef int (Tcl_AsyncProc) (void *clientData, Tcl_Interp *interp,
 	int code);
-typedef void (Tcl_ChannelProc) (ClientData clientData, int mask);
-typedef void (Tcl_CloseProc) (ClientData data);
-typedef void (Tcl_CmdDeleteProc) (ClientData clientData);
-typedef int (Tcl_CmdProc) (ClientData clientData, Tcl_Interp *interp,
+typedef void (Tcl_ChannelProc) (void *clientData, int mask);
+typedef void (Tcl_CloseProc) (void *data);
+typedef void (Tcl_CmdDeleteProc) (void *clientData);
+typedef int (Tcl_CmdProc) (void *clientData, Tcl_Interp *interp,
 	int argc, const char *argv[]);
-typedef void (Tcl_CmdTraceProc) (ClientData clientData, Tcl_Interp *interp,
+typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
-	ClientData cmdClientData, int argc, const char *argv[]);
-typedef int (Tcl_CmdObjTraceProc) (ClientData clientData, Tcl_Interp *interp,
+	void *cmdClientData, int argc, const char *argv[]);
+typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, size_t objc,
 	struct Tcl_Obj *const *objv);
-typedef void (Tcl_CmdObjTraceDeleteProc) (ClientData clientData);
+typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
-typedef int (Tcl_EncodingConvertProc) (ClientData clientData, const char *src,
+typedef int (Tcl_EncodingConvertProc) (void *clientData, const char *src,
 	int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
 	int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
-typedef void (Tcl_EncodingFreeProc) (ClientData clientData);
+typedef void (Tcl_EncodingFreeProc) (void *clientData);
 typedef int (Tcl_EventProc) (Tcl_Event *evPtr, int flags);
-typedef void (Tcl_EventCheckProc) (ClientData clientData, int flags);
-typedef int (Tcl_EventDeleteProc) (Tcl_Event *evPtr, ClientData clientData);
-typedef void (Tcl_EventSetupProc) (ClientData clientData, int flags);
-typedef void (Tcl_ExitProc) (ClientData clientData);
-typedef void (Tcl_FileProc) (ClientData clientData, int mask);
-typedef void (Tcl_FileFreeProc) (ClientData clientData);
+typedef void (Tcl_EventCheckProc) (void *clientData, int flags);
+typedef int (Tcl_EventDeleteProc) (Tcl_Event *evPtr, void *clientData);
+typedef void (Tcl_EventSetupProc) (void *clientData, int flags);
+typedef void (Tcl_ExitProc) (void *clientData);
+typedef void (Tcl_FileProc) (void *clientData, int mask);
+typedef void (Tcl_FileFreeProc) (void *clientData);
 typedef void (Tcl_FreeInternalRepProc) (struct Tcl_Obj *objPtr);
 typedef void (Tcl_FreeProc) (char *blockPtr);
-typedef void (Tcl_IdleProc) (ClientData clientData);
-typedef void (Tcl_InterpDeleteProc) (ClientData clientData,
+typedef void (Tcl_IdleProc) (void *clientData);
+typedef void (Tcl_InterpDeleteProc) (void *clientData,
 	Tcl_Interp *interp);
-typedef int (Tcl_MathProc) (ClientData clientData, Tcl_Interp *interp,
+typedef int (Tcl_MathProc) (void *clientData, Tcl_Interp *interp,
 	Tcl_Value *args, Tcl_Value *resultPtr);
-typedef void (Tcl_NamespaceDeleteProc) (ClientData clientData);
-typedef int (Tcl_ObjCmdProc) (ClientData clientData, Tcl_Interp *interp,
+typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
+typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
 	size_t objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
-typedef void (Tcl_TcpAcceptProc) (ClientData callbackData, Tcl_Channel chan,
+typedef void (Tcl_TcpAcceptProc) (void *callbackData, Tcl_Channel chan,
 	char *address, int port);
-typedef void (Tcl_TimerProc) (ClientData clientData);
+typedef void (Tcl_TimerProc) (void *clientData);
 typedef int (Tcl_SetFromAnyProc) (Tcl_Interp *interp, struct Tcl_Obj *objPtr);
 typedef void (Tcl_UpdateStringProc) (struct Tcl_Obj *objPtr);
-typedef char * (Tcl_VarTraceProc) (ClientData clientData, Tcl_Interp *interp,
+typedef char * (Tcl_VarTraceProc) (void *clientData, Tcl_Interp *interp,
 	const char *part1, const char *part2, int flags);
-typedef void (Tcl_CommandTraceProc) (ClientData clientData, Tcl_Interp *interp,
+typedef void (Tcl_CommandTraceProc) (void *clientData, Tcl_Interp *interp,
 	const char *oldName, const char *newName, int flags);
 typedef void (Tcl_CreateFileHandlerProc) (int fd, int mask, Tcl_FileProc *proc,
-	ClientData clientData);
+	void *clientData);
 typedef void (Tcl_DeleteFileHandlerProc) (int fd);
-typedef void (Tcl_AlertNotifierProc) (ClientData clientData);
+typedef void (Tcl_AlertNotifierProc) (void *clientData);
 typedef void (Tcl_ServiceModeHookProc) (int mode);
-typedef ClientData (Tcl_InitNotifierProc) (void);
-typedef void (Tcl_FinalizeNotifierProc) (ClientData clientData);
+typedef void *(Tcl_InitNotifierProc) (void);
+typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
 #ifndef TCL_NO_DEPRECATED
@@ -786,9 +781,11 @@ typedef union Tcl_ObjInternalRep {	/* The internal representation: */
  * An object stores a value as either a string, some internal representation,
  * or both.
  */
+#define Tcl_Size int
+
 
 typedef struct Tcl_Obj {
-    int refCount;		/* When 0 the object will be freed. */
+    Tcl_Size refCount;		/* When 0 the object will be freed. */
     char *bytes;		/* This points to the first byte of the
 				 * object's string representation. The array
 				 * must be followed by a null byte (i.e., at
@@ -800,7 +797,7 @@ typedef struct Tcl_Obj {
 				 * should use Tcl_GetStringFromObj or
 				 * Tcl_GetString to get a pointer to the byte
 				 * array as a readonly value. */
-    int length;			/* The number of bytes at *bytes, not
+    Tcl_Size length;			/* The number of bytes at *bytes, not
 				 * including the terminating null. */
     const Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
 				 * corresponds to the type of the object's
@@ -843,7 +840,7 @@ typedef struct Tcl_Namespace {
 				 * is an synonym. */
     char *fullName;		/* The namespace's fully qualified name. This
 				 * starts with ::. */
-    ClientData clientData;	/* Arbitrary value associated with this
+    void *clientData;	/* Arbitrary value associated with this
 				 * namespace. */
     Tcl_NamespaceDeleteProc *deleteProc;
 				/* Function invoked when deleting the
@@ -880,14 +877,14 @@ typedef struct Tcl_Namespace {
 typedef struct Tcl_CallFrame {
     Tcl_Namespace *nsPtr;
     int dummy1;
-    int dummy2;
+    Tcl_Size dummy2;
     void *dummy3;
     void *dummy4;
     void *dummy5;
-    int dummy6;
+    Tcl_Size dummy6;
     void *dummy7;
     void *dummy8;
-    int dummy9;
+    Tcl_Size dummy9;
     void *dummy10;
     void *dummy11;
     void *dummy12;
@@ -943,9 +940,9 @@ typedef struct Tcl_CmdInfo {
 typedef struct Tcl_DString {
     char *string;		/* Points to beginning of string: either
 				 * staticSpace below or a malloced array. */
-    int length;			/* Number of non-NULL characters in the
+    Tcl_Size length;		/* Number of non-NULL characters in the
 				 * string. */
-    int spaceAvl;		/* Total number of bytes available for the
+    Tcl_Size spaceAvl;		/* Total number of bytes available for the
 				 * string and its terminating NULL char. */
     char staticSpace[TCL_DSTRING_STATIC_SIZE];
 				/* Space to use in common case where string is
@@ -1175,7 +1172,7 @@ struct Tcl_HashEntry {
     void *hash;			/* Hash value, stored as pointer to ensure
 				 * that the offsets of the fields in this
 				 * structure are not changed. */
-    ClientData clientData;	/* Application stores something here with
+    void *clientData;	/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
 	char *oneWordValue;	/* One-word value for key. */
@@ -1263,11 +1260,11 @@ struct Tcl_HashTable {
     Tcl_HashEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables (to
 				 * avoid mallocs and frees). */
-    int numBuckets;		/* Total number of buckets allocated at
+    Tcl_Size numBuckets;		/* Total number of buckets allocated at
 				 * **bucketPtr. */
-    int numEntries;		/* Total number of entries present in
+    Tcl_Size numEntries;		/* Total number of entries present in
 				 * table. */
-    int rebuildSize;		/* Enlarge table when numEntries gets to be
+    Tcl_Size rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
     int downShift;		/* Shift count used in hashing function.
 				 * Designed to use high-order bits of
@@ -1293,7 +1290,7 @@ struct Tcl_HashTable {
 
 typedef struct Tcl_HashSearch {
     Tcl_HashTable *tablePtr;	/* Table being searched. */
-    int nextIndex;		/* Index of next bucket to be enumerated after
+    Tcl_Size nextIndex;		/* Index of next bucket to be enumerated after
 				 * present one. */
     Tcl_HashEntry *nextEntryPtr;/* Next entry to be enumerated in the current
 				 * bucket. */
@@ -1401,8 +1398,8 @@ typedef int (Tcl_WaitForEventProc) (CONST86 Tcl_Time *timePtr);
  * TIP #233 (Virtualized Time)
  */
 
-typedef void (Tcl_GetTimeProc)   (Tcl_Time *timebuf, ClientData clientData);
-typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, ClientData clientData);
+typedef void (Tcl_GetTimeProc)   (Tcl_Time *timebuf, void *clientData);
+typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
 
 /*
  *----------------------------------------------------------------------------
@@ -1463,35 +1460,35 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, ClientData clientData);
  * Typedefs for the various operations in a channel type:
  */
 
-typedef int	(Tcl_DriverBlockModeProc) (ClientData instanceData, int mode);
-typedef int	(Tcl_DriverCloseProc) (ClientData instanceData,
+typedef int	(Tcl_DriverBlockModeProc) (void *instanceData, int mode);
+typedef int	(Tcl_DriverCloseProc) (void *instanceData,
 			Tcl_Interp *interp);
-typedef int	(Tcl_DriverClose2Proc) (ClientData instanceData,
+typedef int	(Tcl_DriverClose2Proc) (void *instanceData,
 			Tcl_Interp *interp, int flags);
-typedef int	(Tcl_DriverInputProc) (ClientData instanceData, char *buf,
+typedef int	(Tcl_DriverInputProc) (void *instanceData, char *buf,
 			int toRead, int *errorCodePtr);
-typedef int	(Tcl_DriverOutputProc) (ClientData instanceData,
+typedef int	(Tcl_DriverOutputProc) (void *instanceData,
 			const char *buf, int toWrite, int *errorCodePtr);
-typedef int	(Tcl_DriverSeekProc) (ClientData instanceData, long offset,
+typedef int	(Tcl_DriverSeekProc) (void *instanceData, long offset,
 			int mode, int *errorCodePtr);
-typedef int	(Tcl_DriverSetOptionProc) (ClientData instanceData,
+typedef int	(Tcl_DriverSetOptionProc) (void *instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			const char *value);
-typedef int	(Tcl_DriverGetOptionProc) (ClientData instanceData,
+typedef int	(Tcl_DriverGetOptionProc) (void *instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			Tcl_DString *dsPtr);
-typedef void	(Tcl_DriverWatchProc) (ClientData instanceData, int mask);
-typedef int	(Tcl_DriverGetHandleProc) (ClientData instanceData,
-			int direction, ClientData *handlePtr);
-typedef int	(Tcl_DriverFlushProc) (ClientData instanceData);
-typedef int	(Tcl_DriverHandlerProc) (ClientData instanceData,
+typedef void	(Tcl_DriverWatchProc) (void *instanceData, int mask);
+typedef int	(Tcl_DriverGetHandleProc) (void *instanceData,
+			int direction, void **handlePtr);
+typedef int	(Tcl_DriverFlushProc) (void *instanceData);
+typedef int	(Tcl_DriverHandlerProc) (void *instanceData,
 			int interestMask);
-typedef long long (Tcl_DriverWideSeekProc) (ClientData instanceData,
+typedef long long (Tcl_DriverWideSeekProc) (void *instanceData,
 			long long offset, int mode, int *errorCodePtr);
 /*
  * TIP #218, Channel Thread Actions
  */
-typedef void	(Tcl_DriverThreadActionProc) (ClientData instanceData,
+typedef void	(Tcl_DriverThreadActionProc) (void *instanceData,
 			int action);
 /*
  * TIP #208, File Truncation (etc.)
@@ -1678,13 +1675,13 @@ typedef Tcl_Obj * (Tcl_FSLinkProc) (Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
 typedef int (Tcl_FSLoadFileProc) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
 	Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr);
 typedef int (Tcl_FSPathInFilesystemProc) (Tcl_Obj *pathPtr,
-	ClientData *clientDataPtr);
+	void **clientDataPtr);
 typedef Tcl_Obj * (Tcl_FSFilesystemPathTypeProc) (Tcl_Obj *pathPtr);
 typedef Tcl_Obj * (Tcl_FSFilesystemSeparatorProc) (Tcl_Obj *pathPtr);
-typedef void (Tcl_FSFreeInternalRepProc) (ClientData clientData);
-typedef ClientData (Tcl_FSDupInternalRepProc) (ClientData clientData);
-typedef Tcl_Obj * (Tcl_FSInternalToNormalizedProc) (ClientData clientData);
-typedef ClientData (Tcl_FSCreateInternalRepProc) (Tcl_Obj *pathPtr);
+typedef void (Tcl_FSFreeInternalRepProc) (void *clientData);
+typedef void *(Tcl_FSDupInternalRepProc) (void *clientData);
+typedef Tcl_Obj * (Tcl_FSInternalToNormalizedProc) (void *clientData);
+typedef void *(Tcl_FSCreateInternalRepProc) (Tcl_Obj *pathPtr);
 
 typedef struct Tcl_FSVersion_ *Tcl_FSVersion;
 
@@ -1714,7 +1711,7 @@ typedef struct Tcl_FSVersion_ *Tcl_FSVersion;
 
 typedef struct Tcl_Filesystem {
     const char *typeName;	/* The name of the filesystem. */
-    int structureLength;	/* Length of this structure, so future binary
+    Tcl_Size structureLength;	/* Length of this structure, so future binary
 				 * compatibility can be assured. */
     Tcl_FSVersion version;	/* Version of the filesystem type. */
     Tcl_FSPathInFilesystemProc *pathInFilesystemProc;
@@ -1876,8 +1873,8 @@ typedef struct Tcl_Token {
     int type;			/* Type of token, such as TCL_TOKEN_WORD; see
 				 * below for valid types. */
     const char *start;		/* First character in token. */
-    int size;			/* Number of bytes in token. */
-    int numComponents;		/* If this token is composed of other tokens,
+    Tcl_Size size;			/* Number of bytes in token. */
+    Tcl_Size numComponents;		/* If this token is composed of other tokens,
 				 * this field tells how many of them there are
 				 * (including components of components, etc.).
 				 * The component tokens immediately follow
@@ -1991,25 +1988,25 @@ typedef struct Tcl_Token {
 typedef struct Tcl_Parse {
     const char *commentStart;	/* Pointer to # that begins the first of one
 				 * or more comments preceding the command. */
-    int commentSize;		/* Number of bytes in comments (up through
+    Tcl_Size commentSize;		/* Number of bytes in comments (up through
 				 * newline character that terminates the last
 				 * comment). If there were no comments, this
 				 * field is 0. */
     const char *commandStart;	/* First character in first word of
 				 * command. */
-    int commandSize;		/* Number of bytes in command, including first
+    Tcl_Size commandSize;		/* Number of bytes in command, including first
 				 * character of first word, up through the
 				 * terminating newline, close bracket, or
 				 * semicolon. */
-    int numWords;		/* Total number of words in command. May be
+    Tcl_Size numWords;		/* Total number of words in command. May be
 				 * 0. */
     Tcl_Token *tokenPtr;	/* Pointer to first token representing the
 				 * words of the command. Initially points to
 				 * staticTokens, but may change to point to
 				 * malloc-ed space if command exceeds space in
 				 * staticTokens. */
-    int numTokens;		/* Total number of tokens in command. */
-    int tokensAvailable;	/* Total number of tokens available at
+    Tcl_Size numTokens;		/* Total number of tokens in command. */
+    Tcl_Size tokensAvailable;	/* Total number of tokens available at
 				 * *tokenPtr. */
     int errorType;		/* One of the parsing error types defined
 				 * above. */
@@ -2062,7 +2059,7 @@ typedef struct Tcl_EncodingType {
     Tcl_EncodingFreeProc *freeProc;
 				/* If non-NULL, function to call when this
 				 * encoding is deleted. */
-    ClientData clientData;	/* Arbitrary value associated with encoding
+    void *clientData;	/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
     int nullSize;		/* Number of zero bytes that signify
 				 * end-of-string in this encoding. This number
@@ -2229,8 +2226,8 @@ typedef struct Tcl_Config {
  * command- or time-limit is exceeded by an interpreter.
  */
 
-typedef void (Tcl_LimitHandlerProc) (ClientData clientData, Tcl_Interp *interp);
-typedef void (Tcl_LimitHandlerDeleteProc) (ClientData clientData);
+typedef void (Tcl_LimitHandlerProc) (void *clientData, Tcl_Interp *interp);
+typedef void (Tcl_LimitHandlerDeleteProc) (void *clientData);
 
 #if 0
 /*
@@ -2268,7 +2265,7 @@ typedef struct {
 				 * depends on type.*/
     const char *helpStr;	/* Documentation message describing this
 				 * option. */
-    ClientData clientData;	/* Word to pass to function callbacks. */
+    void *clientData;	/* Word to pass to function callbacks. */
 } Tcl_ArgvInfo;
 
 /*
@@ -2291,9 +2288,9 @@ typedef struct {
  * argument types:
  */
 
-typedef int (Tcl_ArgvFuncProc)(ClientData clientData, Tcl_Obj *objPtr,
+typedef int (Tcl_ArgvFuncProc)(void *clientData, Tcl_Obj *objPtr,
 	void *dstPtr);
-typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
+typedef int (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
 	int objc, Tcl_Obj *const *objv, void *dstPtr);
 
 /*
@@ -2366,19 +2363,19 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 #define TCL_TCPSERVER_REUSEPORT (1<<1)
 
 /*
- * Constants for special int-typed values, see TIP #494
+ * Constants for special Tcl_Size-typed values, see TIP #494
  */
 
-#define TCL_IO_FAILURE	(-1)
-#define TCL_AUTO_LENGTH	(-1)
-#define TCL_INDEX_NONE	(-1)
+#define TCL_IO_FAILURE	((Tcl_Size)-1)
+#define TCL_AUTO_LENGTH	((Tcl_Size)-1)
+#define TCL_INDEX_NONE  ((Tcl_Size)-1)
 
 /*
  *----------------------------------------------------------------------------
  * Single public declaration for NRE.
  */
 
-typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
+typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
 				int result);
 
 /*
@@ -2437,7 +2434,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp)()))
-EXTERN void		Tcl_MainEx(int argc, char **argv,
+EXTERN void		Tcl_MainEx(Tcl_Size argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);

@@ -461,6 +461,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #   pragma warning(disable:4090) /* see: https://developercommunity.visualstudio.com/t/c-compiler-incorrect-propagation-of-const-qualifie/390711 */
 #   pragma warning(disable:4146)
 #   pragma warning(disable:4244)
+#if !defined(_WIN64)
+#   pragma warning(disable:4305)
+#endif
 #   pragma warning(disable:4267)
 #   pragma warning(disable:4996)
 #endif

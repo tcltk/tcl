@@ -1199,15 +1199,14 @@ TcpSetOptionProc(
 
     if ((len > 1) && (optionName[1] == 'k') &&
 	    (strncmp(optionName, "-keepalive", len) == 0)) {
-	BOOL val;
-	int boolVar, rtn;
+	BOOL boolVar;
+	int rtn;
 
 	if (Tcl_GetBoolean(interp, value, &boolVar) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	val = boolVar ? TRUE : FALSE;
 	rtn = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
-		(const char *) &val, sizeof(BOOL));
+		(const char *) &boolVar, sizeof(boolVar));
 	if (rtn != 0) {
 	    Tcl_WinConvertError(WSAGetLastError());
 	    if (interp) {
@@ -1221,15 +1220,14 @@ TcpSetOptionProc(
     }
     if ((len > 1) && (optionName[1] == 'n') &&
 	(strncmp(optionName, "-nodelay", len) == 0)) {
-	BOOL val;
-	int boolVar, rtn;
+	BOOL boolVar;
+	int rtn;
 
 	if (Tcl_GetBoolean(interp, value, &boolVar) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	val = boolVar ? TRUE : FALSE;
 	rtn = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
-		(const char *) &val, sizeof(BOOL));
+		(const char *) &boolVar, sizeof(boolVar));
 	if (rtn != 0) {
 	    Tcl_WinConvertError(WSAGetLastError());
 	    if (interp) {
