@@ -631,7 +631,10 @@ test http-4.14 {http::Event} -body {
 test http-4.15 {http::Event} -body {
     # This test may fail if you use a proxy server. That is to be
     # expected and is not a problem with Tcl.
-    set token [http::geturl //not_a_host.tcl.tk -timeout 3000 -command \#]
+    # With http::config -threadlevel 1 or 2, the script enters the event loop
+    # during the DNS lookup, and has the opportunity to time out.
+    # Increase -timeout from 3000 to 10000 to prevent this.
+    set token [http::geturl //not_a_host.tcl.tk -timeout 10000 -command \#]
     http::wait $token
     set result "[http::status $token] -- [lindex [http::error $token] 0]"
     # error codes vary among platforms.

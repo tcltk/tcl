@@ -444,7 +444,7 @@ test httpProxy-5.6 {https with-proxy ipv6 with-auth bad-creds-provided} -constra
 }
 
 # cleanup
-unset -nocomplain n4host n6host n4port n6port a4host a6host a4port a6port
+unset -nocomplain n4host n6host n4port n6port a4host a6host a4port a6port aliceCreds badCreds
 
 rename bgerror {}
 
