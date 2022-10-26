@@ -18,7 +18,6 @@
 
 #ifdef USE_LINENOISE
 #include <termios.h>
-#include <assert.h>
 #include "linenoise.h"
 #endif
 

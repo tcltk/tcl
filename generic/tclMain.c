@@ -24,12 +24,6 @@
 
 #include "tclInt.h"
 
-#ifdef USE_LINENOISE
-#include <termios.h>
-#include <assert.h>
-#include "linenoise.h"
-#endif
-
 /*
  * The default prompt used when the user has not overridden it.
  */
@@ -265,7 +259,6 @@ Tcl_SourceRCFile(
     }
 }
 #endif /* !UNICODE */
-
 /*----------------------------------------------------------------------
  *
  * Tcl_MainEx --
