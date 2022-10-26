@@ -2552,6 +2552,16 @@ declare 683 {
    int Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
 }
 
+# line-edit branch
+declare 684 {
+    int Tcl_GetLine(char *historyPath, Tcl_DString *lineString)
+}
+
+declare 685 {
+    int Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj)
+}
+
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################

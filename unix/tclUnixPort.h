@@ -701,6 +701,13 @@ typedef int socklen_t;
 
 /*
  *---------------------------------------------------------------------------
+ * Add support for comand line editing and history in tclsh via linenoise
+ *---------------------------------------------------------------------------
+ */
+#define USE_LINENOISE
+
+/*
+ *---------------------------------------------------------------------------
  * Set of MT-safe implementations of some known-to-be-MT-unsafe library calls.
  * Instead of returning pointers to the static storage, those return pointers
  * to the TSD data.

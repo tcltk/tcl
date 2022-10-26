@@ -24,6 +24,12 @@
 
 #include "tclInt.h"
 
+#ifdef USE_LINENOISE
+#include <termios.h>
+#include <assert.h>
+#include "linenoise.h"
+#endif
+
 /*
  * The default prompt used when the user has not overridden it.
  */
@@ -259,6 +265,128 @@ Tcl_SourceRCFile(
     }
 }
 #endif /* !UNICODE */
+
+/*----------------------------------------------------------------------
+ *
+ * Tcl_GetLine / Tcl_GetLineObj --
+ *
+ *	These functions behave like Tcl_Gets and Tcl_GetsObj, except that
+ *      they always uses the stdin channel and they allow the user to access
+ *      command line history and do basic editing before submitting the line
+ *      by hitting the Enter key.  They accept a path to a history file
+ *      (~/.tcl_history for tclsh) and a pointer to a Tcl Dynamic String or
+ *      String Object.  The input line is appended to the string argument.
+ *
+ *      If stdin is not a tty, or if USE_LINENOISE is not defined, they revert
+ *      to Tcl_Gets or Tcl_GetsObj respectively.
+ *
+ * Results:
+ *	Returns the length of the String Object after appending the line,
+ *      or -1 if EOF is encountered or an error occurs.
+ *
+ * Side effects:
+ *	The String Object is modified and the terminal state of the terminal
+ *      associated to stdin is temporarily changed to raw mode while editing
+ *      is taking place.
+ *
+ *      The history file is initialized on the first call to this function,
+ *      and the path is ignored on subsequent calls.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef USE_LINENOISE
+
+/*
+ * Helper used by both functions.
+ */
+
+static char* _GetLine(char *historyPath) {
+    struct termios initial_termios;
+    static int historyLoaded = 0;
+    static int useHistory = 0;
+    static char cachedPath[1024];
+    char *line;
+    if (tcgetattr(fileno(stdin), &initial_termios) == -1) {
+	perror("tcgetattr:");
+	Tcl_Panic("Cannot read terminal state!");
+    }
+    if (!historyLoaded && historyPath && historyPath[0] != '\0') {
+	int noHistoryFile = linenoiseHistoryLoad(historyPath);
+	historyLoaded = 1;
+	if (noHistoryFile) {
+	    /*
+	     * Make sure this path is usable.
+	     */
+	    FILE *history = fopen(historyPath, "a");
+	    if (history) {
+		useHistory = 1;
+		fclose(history);
+	    }
+	} else {
+	    useHistory = 1;
+	}
+	if (useHistory) {
+	    strncpy(cachedPath, historyPath, sizeof(cachedPath));
+	}
+    }
+    line = linenoise(stdin, stdout, NULL);
+    if (line && useHistory) {
+	linenoiseHistoryAdd(line);
+	linenoiseHistorySave(cachedPath);
+    }
+    tcsetattr(fileno(stdin), TCSADRAIN, &initial_termios);
+    return line;
+}
+
+int Tcl_GetLine(char *historyPath, Tcl_DString *lineString) {
+    char *line;
+    if (!isatty(0)) {
+	/*
+	 * If stdin is not a tty, revert to Tcl_Gets.
+	 */
+	Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
+	return Tcl_Gets(input, lineString);
+    }
+    line = _GetLine(historyPath);
+    if (line) {
+	Tcl_DStringAppend(lineString, line, -1);
+	free(line);
+    } else {
+	return -1;
+    }
+    return Tcl_DStringLength(lineString);
+}
+
+int Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj) {
+    char *line;
+    if (!isatty(0)) {
+	/*
+	 * If stdin is not a tty, revert to Tcl_GetsObj.
+	 */
+	Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
+	return Tcl_GetsObj(input, lineObj);
+    }
+    line = _GetLine(historyPath);
+    if (line) {
+	Tcl_AppendToObj(lineObj, line, -1);
+	free(line);
+    } else {
+	return -1;
+    }
+    return Tcl_GetCharLength(lineObj);
+}
+#else
+int Tcl_GetLine(char *historyPath, Tcl_DString *lineString) {
+    Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
+    return Tcl_Gets(input, lineString);
+}
+int Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj) {
+    Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
+    return Tcl_GetsObj(input, lineObj);
+}
+#endif
+
 
 /*----------------------------------------------------------------------
  *
@@ -295,7 +423,9 @@ Tcl_MainEx(
     Tcl_MainLoopProc *mainLoopProc;
     Tcl_Channel chan;
     InteractiveState is;
-
+    char *home = getenv("HOME");
+    char historyPath[1024];
+    
     TclpSetInitialEncodings();
     if (0 < argc) {
 	--argc;			/* "consume" argv[0] */
@@ -449,6 +579,18 @@ Tcl_MainEx(
 
     Tcl_LinkVar(interp, "tcl_interactive", &is.tty, TCL_LINK_BOOLEAN);
     is.input = Tcl_GetStdChannel(TCL_STDIN);
+
+    /*
+     * Set up the history file.
+     */
+    
+    historyPath[0] = '\0';
+    if (home) {
+        strncpy(historyPath, home, sizeof(historyPath));
+        strncat(historyPath, "/.tcl_history",
+                sizeof(historyPath) - strlen(historyPath) - 1);
+    }
+
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
 	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
@@ -472,7 +614,7 @@ Tcl_MainEx(
 		is.commandPtr = Tcl_DuplicateObj(is.commandPtr);
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
-	    length = Tcl_GetsObj(is.input, is.commandPtr);
+	    length = Tcl_GetLineObj(historyPath, is.commandPtr);
 	    if (length < 0) {
 		if (Tcl_InputBlocked(is.input)) {
 		    /*
@@ -482,7 +624,6 @@ Tcl_MainEx(
 		     * event loop running). If this causes bad CPU hogging, we
 		     * might try toggling the blocking on stdin instead.
 		     */
-
 		    continue;
 		}
 
@@ -530,6 +671,7 @@ Tcl_MainEx(
 		if (chan) {
 		    Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
 		    Tcl_WriteChars(chan, "\n", 1);
+		    Tcl_Flush(chan);
 		}
 	    } else if (is.tty) {
 		resultPtr = Tcl_GetObjResult(interp);
@@ -539,6 +681,7 @@ Tcl_MainEx(
 		if ((length > 0) && chan) {
 		    Tcl_WriteObj(chan, resultPtr);
 		    Tcl_WriteChars(chan, "\n", 1);
+		    Tcl_Flush(chan);
 		}
 		Tcl_DecrRefCount(resultPtr);
 	    }
@@ -553,7 +696,6 @@ Tcl_MainEx(
 		if (is.tty) {
 		    Prompt(interp, &is);
 		}
-
 		Tcl_CreateChannelHandler(is.input, TCL_READABLE,
 			StdinProc, &is);
 	    }
@@ -859,7 +1001,6 @@ Prompt(
     if (isPtr->prompt == PROMPT_NONE) {
 	return;
     }
-
     promptCmdPtr = Tcl_GetVar2Ex(interp,
 	    (isPtr->prompt==PROMPT_CONTINUE ? "tcl_prompt2" : "tcl_prompt1"),
 	    NULL, TCL_GLOBAL_ONLY);
@@ -874,6 +1015,7 @@ Prompt(
 	    if (chan != NULL) {
 		Tcl_WriteChars(chan, DEFAULT_PRIMARY_PROMPT,
 			sizeof(DEFAULT_PRIMARY_PROMPT) - 1);
+		Tcl_Flush(chan);
 	    }
 	}
     } else {
@@ -885,6 +1027,7 @@ Prompt(
 	    if (chan != NULL) {
 		Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
 		Tcl_WriteChars(chan, "\n", 1);
+		Tcl_Flush(chan);
 	    }
 	    goto defaultPrompt;
 	}

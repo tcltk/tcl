@@ -241,6 +241,7 @@ ZLIB_DIR		= ${COMPAT_DIR}/zlib
 ZLIB_INCLUDE		= @ZLIB_INCLUDE@
 TOMMATH_DIR		= $(TOP_DIR)/libtommath
 TOMMATH_INCLUDE		= @TOMMATH_INCLUDE@
+LINENOISE_DIR		= $(TOP_DIR)/linenoise
 
 CC			= @CC@
 OBJEXT			= @OBJEXT@
@@ -276,10 +277,11 @@ VALGRINDARGS		= --tool=memcheck --num-callers=24 \
 # modify it and you shouldn't need to modify it either.
 #--------------------------------------------------------------------------
 
-STUB_CC_SWITCHES = -I"${BUILD_DIR}" -I${UNIX_DIR} -I${GENERIC_DIR} -I${TOMMATH_DIR} \
-	${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
-	${AC_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@ \
-	${NO_DEPRECATED_FLAGS} -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
+STUB_CC_SWITCHES = -I"${BUILD_DIR}" -I${UNIX_DIR} -I${GENERIC_DIR} \
+	-I${TOMMATH_DIR} -I${LINENOISE_DIR} ${CFLAGS} ${CFLAGS_WARNING} \
+	${SHLIB_CFLAGS} ${AC_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} \
+	@EXTRA_CC_SWITCHES@ ${NO_DEPRECATED_FLAGS} -DMP_FIXED_CUTOFFS \
+	-DMP_NO_STDINT
 
 CC_SWITCHES = $(STUB_CC_SWITCHES) -DBUILD_tcl
 
@@ -346,6 +348,8 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_mp_ubin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
 	bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
+LINENOISE_OBJS = linenoise.o
+
 STUB_LIB_OBJS = tclStubLib.o \
 	tclTomMathStubLib.o \
 	tclOOStubLib.o \
@@ -370,7 +374,7 @@ ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zinfback.o \
 TCL_OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
 	${OO_OBJS} @DL_OBJS@ @PLAT_OBJS@
 
-OBJS = ${TCL_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@ @TOMMATH_OBJS@
+OBJS = ${TCL_OBJS} ${LINENOISE_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@ @TOMMATH_OBJS@
 
 TCL_DECLS = \
 	$(GENERIC_DIR)/tcl.decls \
@@ -653,6 +657,8 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_s_mp_toom_mul.c \
 	$(TOMMATH_DIR)/bn_s_mp_toom_sqr.c
 
+LINENOISE_SRCS = $(LINENOISE_DIR)/linenoise.c
+
 UNIX_HDRS = \
 	$(UNIX_DIR)/tclUnixPort.h
 #	$(UNIX_DIR)/tclConfig.h
@@ -716,8 +722,8 @@ ZLIB_SRCS = \
 # won't compile on the current machine, and they will cause problems for
 # things like "make depend".
 
-SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
-	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@ @TOMMATH_SRCS@
+SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) $(OO_SRCS) $(STUB_SRCS) \
+	$(LINENOISE_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@ @TOMMATH_SRCS@
 
 ###
 # Tip 430 - ZipFS Modifications
@@ -824,7 +830,7 @@ tclLibObjs:
 objs: ${OBJS}
 
 ${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${TCL_ZIP_FILE}
-	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} \
+	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} ${LINENOISE_OBJS}\
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCL_EXE}
 	@if test "${ZIPFS_BUILD}" = "2" ; then \
@@ -1804,6 +1810,10 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c tclConfig.sh
 tclUnixCompat.o: $(UNIX_DIR)/tclUnixCompat.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixCompat.c
 
+# Linenoise
+linenoise.o: $(LINENOISE_DIR)/linenoise.c
+	$(CC) -c $(CC_SWITCHES) $(LINENOISE_DIR)/linenoise.c
+
 # The following are Mac OS X only sources:
 tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXBundle.c
@@ -1820,7 +1830,7 @@ tclWinError.o: $(TOP_DIR)/win/tclWinError.c
 
 # DTrace support
 
-$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS) $(XTTEST_OBJS) $(TOMMATH_OBJS): @DTRACE_HDR@
+$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS) $(XTTEST_OBJS) $(TOMMATH_OBJS) $(LINENOISE_OBJS): @DTRACE_HDR@
 
 $(DTRACE_HDR): $(DTRACE_SRC)
 	$(DTRACE) -h $(DTRACE_SWITCHES) -o $@ -s $(DTRACE_SRC)
