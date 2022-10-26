@@ -16,6 +16,12 @@
 #include "tclIO.h"
 #include <assert.h>
 
+#ifdef USE_LINENOISE
+#include <termios.h>
+#include <assert.h>
+#include "linenoise.h"
+#endif
+
 /*
  * For each channel handler registered in a call to Tcl_CreateChannelHandler,
  * there is one record of the following type. All of records for a specific
@@ -5048,6 +5054,127 @@ Tcl_GetsObj(
     TclChannelRelease((Tcl_Channel)chanPtr);
     return copiedTotal;
 }
+
+/*----------------------------------------------------------------------
+ *
+ * Tcl_GetLine / Tcl_GetLineObj --
+ *
+ *	These functions behave like Tcl_Gets and Tcl_GetsObj, except that
+ *      they always uses the stdin channel and they allow the user to access
+ *      command line history and do basic editing before submitting the line
+ *      by hitting the Enter key.  They accept a path to a history file
+ *      (~/.tcl_history for tclsh) and a pointer to a Tcl Dynamic String or
+ *      String Object.  The input line is appended to the string argument.
+ *
+ *      If stdin is not a tty, or if USE_LINENOISE is not defined, they revert
+ *      to Tcl_Gets or Tcl_GetsObj respectively.
+ *
+ * Results:
+ *	Returns the length of the String Object after appending the line,
+ *      or -1 if EOF is encountered or an error occurs.
+ *
+ * Side effects:
+ *	The String Object is modified and the terminal state of the terminal
+ *      associated to stdin is temporarily changed to raw mode while editing
+ *      is taking place.
+ *
+ *      The history file is initialized on the first call to this function,
+ *      and the path is ignored on subsequent calls.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef USE_LINENOISE
+
+/*
+ * Helper used by both functions.
+ */
+
+static char* _GetLine(char *historyPath) {
+    struct termios initial_termios;
+    static int historyLoaded = 0;
+    static int useHistory = 0;
+    static char cachedPath[1024];
+    char *line;
+    if (tcgetattr(fileno(stdin), &initial_termios) == -1) {
+	perror("tcgetattr:");
+	Tcl_Panic("Cannot read terminal state!");
+    }
+    if (!historyLoaded && historyPath && historyPath[0] != '\0') {
+	int noHistoryFile = linenoiseHistoryLoad(historyPath);
+	historyLoaded = 1;
+	if (noHistoryFile) {
+	    /*
+	     * Make sure this path is usable.
+	     */
+	    FILE *history = fopen(historyPath, "a");
+	    if (history) {
+		useHistory = 1;
+		fclose(history);
+	    }
+	} else {
+	    useHistory = 1;
+	}
+	if (useHistory) {
+	    strncpy(cachedPath, historyPath, sizeof(cachedPath));
+	}
+    }
+    line = linenoise(stdin, stdout, NULL);
+    if (line && useHistory) {
+	linenoiseHistoryAdd(line);
+	linenoiseHistorySave(cachedPath);
+    }
+    tcsetattr(fileno(stdin), TCSADRAIN, &initial_termios);
+    return line;
+}
+
+int Tcl_GetLine(char *historyPath, Tcl_DString *lineString) {
+    char *line;
+    if (!isatty(0)) {
+	/*
+	 * If stdin is not a tty, revert to Tcl_Gets.
+	 */
+	Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
+	return Tcl_Gets(input, lineString);
+    }
+    line = _GetLine(historyPath);
+    if (line) {
+	Tcl_DStringAppend(lineString, line, -1);
+	free(line);
+    } else {
+	return -1;
+    }
+    return Tcl_DStringLength(lineString);
+}
+
+int Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj) {
+    char *line;
+    if (!isatty(0)) {
+	/*
+	 * If stdin is not a tty, revert to Tcl_GetsObj.
+	 */
+	Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
+	return Tcl_GetsObj(input, lineObj);
+    }
+    line = _GetLine(historyPath);
+    if (line) {
+	Tcl_AppendToObj(lineObj, line, -1);
+	free(line);
+    } else {
+	return -1;
+    }
+    return Tcl_GetCharLength(lineObj);
+}
+#else
+int Tcl_GetLine(char *historyPath, Tcl_DString *lineString) {
+    Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
+    return Tcl_Gets(input, lineString);
+}
+int Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj) {
+    Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
+    return Tcl_GetsObj(input, lineObj);
+}
+#endif
 
 /*
  *---------------------------------------------------------------------------
