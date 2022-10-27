@@ -1878,7 +1878,7 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 /* 631 */
 EXTERN Tcl_Channel	Tcl_OpenTcpServerEx(Tcl_Interp *interp,
 				const char *service, const char *host,
-				unsigned int flags,
+				unsigned int flags, int backlog,
 				Tcl_TcpAcceptProc *acceptProc,
 				void *callbackData);
 /* 632 */
@@ -2704,7 +2704,7 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
-    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 631 */
+    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, int backlog, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 631 */
     int (*tclZipfs_Mount) (Tcl_Interp *interp, const char *mountPoint, const char *zipname, const char *passwd); /* 632 */
     int (*tclZipfs_Unmount) (Tcl_Interp *interp, const char *mountPoint); /* 633 */
     Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
