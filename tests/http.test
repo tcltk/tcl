@@ -80,7 +80,7 @@ if {![info exists ThreadLevel]} {
     foreach ThreadLevel $ValueRange {
         source [info script]
     }
-    try [lpop threadStack]
+    catch {lpop threadStack}
     catch {unset ThreadLevel}
     catch {unset ValueRange}
     return
