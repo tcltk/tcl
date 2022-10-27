@@ -31,7 +31,7 @@ testConstraint $dll [file readable $x]
 
 # Tests also require that this DLL has not already been loaded.
 set loaded "[file tail $x]Loaded"
-set alreadyLoaded [info loaded]
+set alreadyLoaded [info loaded {}]
 testConstraint $loaded [expr {![string match *pkga* $alreadyLoaded]}]
 
 set alreadyTotalLoaded [info loaded]
@@ -202,13 +202,13 @@ test load-8.1 {TclGetLoadedPackages procedure} [list teststaticpkg_8.x $dll $loa
 test load-8.2 {TclGetLoadedPackages procedure} -constraints {teststaticpkg_8.x} -body {
     info loaded gorp
 } -returnCodes error -result {could not find interpreter "gorp"}
-test load-8.3a {TclGetLoadedPackages procedure} [list !singleTestInterp teststaticpkg_8.x $dll $loaded] {
+test load-8.3a {TclGetLoadedPackages procedure} [list teststaticpkg_8.x $dll $loaded] {
     lsort -index 1 [info loaded {}]
 } [lsort -index 1 [list {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga] [list [file join $testDir pkgb$ext] Pkgb] {*}$alreadyLoaded]]
 test load-8.3b {TclGetLoadedPackages procedure} [list teststaticpkg_8.x $dll $loaded] {
     lsort -index 1 [info loaded child]
 } [lsort -index 1 [list {{} Test} [list [file join $testDir pkgb$ext] Pkgb]]]
-test load-8.4 {TclGetLoadedPackages procedure} [list !singleTestInterp teststaticpkg_8.x $dll $loaded] {
+test load-8.4 {TclGetLoadedPackages procedure} [list teststaticpkg_8.x $dll $loaded] {
     load [file join $testDir pkgb$ext] Pkgb
     list [lsort -index 1 [info loaded {}]] [lsort [info commands pkgb_*]]
 } [list [lsort -index 1 [concat [list [list [file join $testDir pkgb$ext] Pkgb] {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga]] $alreadyLoaded]] {pkgb_demo pkgb_sub pkgb_unsafe}]
