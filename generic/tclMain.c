@@ -457,7 +457,7 @@ Tcl_MainEx(
     
     historyPath[0] = '\0';
     if (home) {
-        strncpy(historyPath, home, sizeof(historyPath));
+        strncpy(historyPath, home, sizeof(historyPath)-1);
         strncat(historyPath, "/.tcl_history",
                 sizeof(historyPath) - strlen(historyPath) - 1);
     }

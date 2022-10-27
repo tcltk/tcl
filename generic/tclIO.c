@@ -5115,7 +5115,7 @@ static char* _GetLine(char *historyPath) {
 	    useHistory = 1;
 	}
 	if (useHistory) {
-	    strncpy(cachedPath, historyPath, sizeof(cachedPath));
+	    strncpy(cachedPath, historyPath, sizeof(cachedPath)-1);
 	}
     }
     line = linenoise(stdin, stdout, NULL);
