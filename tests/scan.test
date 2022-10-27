@@ -605,7 +605,7 @@ test scan-6.8 {floating-point scanning} -setup {
 } -body {
     list [scan "4.6 5.2" "%f %f %f %f" a b c d] $a $b $c $d
 } -result {2 4.6 5.2 {} {}}
-test scan-6.8 {disallow diget separator in floating-point} -setup {
+test scan-6.9 {disallow diget separator in floating-point} -setup {
     set a {}; set b {}; set c {};
 } -body {
     list [scan "3.14_2.35_98.6" %f_%f_%f a b c ] $a $b $c
