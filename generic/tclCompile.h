@@ -1477,15 +1477,15 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  * these macros are:
  *
  * static void		PushLiteral(CompileEnv *envPtr,
- *			    const char *string, size_t length);
+ *			    const char *string, Tcl_Size length);
  * static void		PushStringLiteral(CompileEnv *envPtr,
  *			    const char *string);
  */
 
 #define PushLiteral(envPtr, string, length) \
-    TclEmitPush(TclRegisterLiteral(envPtr, string, length, 0), (envPtr))
+    TclEmitPush(TclRegisterLiteral((envPtr), (string), (length), 0), (envPtr))
 #define PushStringLiteral(envPtr, string) \
-    PushLiteral(envPtr, string, sizeof(string "") - 1)
+    PushLiteral((envPtr), (string), sizeof(string "") - 1)
 
 /*
  * Macro to advance to the next token; it is more mnemonic than the address
@@ -1514,16 +1514,16 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  * of LOOP ranges is an interesting datum for debugging purposes, and that is
  * what we compute now.
  *
- * static int	ExceptionRangeStarts(CompileEnv *envPtr, size_t index);
- * static void	ExceptionRangeEnds(CompileEnv *envPtr, size_t index);
- * static void	ExceptionRangeTarget(CompileEnv *envPtr, size_t index, LABEL);
+ * static int	ExceptionRangeStarts(CompileEnv *envPtr, Tcl_Size index);
+ * static void	ExceptionRangeEnds(CompileEnv *envPtr, Tcl_Size index);
+ * static void	ExceptionRangeTarget(CompileEnv *envPtr, Tcl_Size index, LABEL);
  */
 
 #define ExceptionRangeStarts(envPtr, index) \
     (((envPtr)->exceptDepth++),						\
     ((envPtr)->maxExceptDepth =						\
 	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)),	\
-    ((envPtr)->exceptArrayPtr[(index)].codeOffset= CurrentOffset(envPtr)))
+    ((envPtr)->exceptArrayPtr[(index)].codeOffset = CurrentOffset(envPtr)))
 #define ExceptionRangeEnds(envPtr, index) \
     (((envPtr)->exceptDepth--),						\
     ((envPtr)->exceptArrayPtr[(index)].numCodeBytes =			\
@@ -1575,7 +1575,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 
 #define DefineLineInformation \
     ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
-    size_t eclIndex = mapPtr->nuloc - 1
+    Tcl_Size eclIndex = mapPtr->nuloc - 1
 
 #define SetLineInformation(word) \
     envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
@@ -1753,8 +1753,8 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
     FILE *tclDTraceDebugLog = NULL;				\
     void TclDTraceOpenDebugLog(void) {				\
 	char n[35];						\
-	sprintf(n, "/tmp/tclDTraceDebug-%d.log",		\
-		getpid());			\
+	sprintf(n, "/tmp/tclDTraceDebug-%" TCL_Z_MODIFIER "u.log", \
+		(size_t) getpid());			\
 	tclDTraceDebugLog = fopen(n, "a");			\
     }
 

@@ -4730,8 +4730,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  * of counting along a string of all one-byte characters.  The ANSI C
  * "prototype" for this macro is:
  *
- * MODULE_SCOPE void	TclNumUtfCharsM(size_t numChars, const char *bytes,
- *				size_t numBytes);
+ * MODULE_SCOPE void	TclNumUtfCharsM(int numChars, const char *bytes,
+ *				int numBytes);
  *----------------------------------------------------------------
  */
 

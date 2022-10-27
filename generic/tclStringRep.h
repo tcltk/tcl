@@ -51,15 +51,15 @@
  */
 
 typedef struct {
-    size_t numChars;		/* The number of chars in the string. -1 means
-				 * this value has not been calculated. Any other
-				 * means that there is a valid Unicode rep, or
-				 * that the number of UTF bytes == the number
-				 * of chars. */
-    size_t allocated;		/* The amount of space actually allocated for
+    Tcl_Size numChars;		/* The number of chars in the string.
+				 * TCL_INDEX_NONE means this value has not been
+				 * calculated. Any other means that there is a valid
+				 * Unicode rep, or that the number of UTF bytes ==
+				 * the number of chars. */
+    Tcl_Size allocated;		/* The amount of space actually allocated for
 				 * the UTF string (minus 1 byte for the
 				 * termination char). */
-    size_t maxChars;		/* Max number of chars that can fit in the
+    Tcl_Size maxChars;		/* Max number of chars that can fit in the
 				 * space allocated for the unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has
 				 * a Unicode representation. */

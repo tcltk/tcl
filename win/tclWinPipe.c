@@ -1827,14 +1827,7 @@ TclpCreateCommandChannel(
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    infoPtr, infoPtr->validMask);
 
-    /*
-     * Pipes have AUTO translation mode on Windows and ^Z eof char, which
-     * means that a ^Z will be appended to them at close. This is needed for
-     * Windows programs that expect a ^Z at EOF.
-     */
-
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
     return infoPtr->channel;
 }
 
