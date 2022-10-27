@@ -46,7 +46,6 @@ if {![file exists $httpdFile]} {
 catch {package require Thread 2.7-}
 if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
     set httpthread [thread::create -preserved]
-    lappend threadStack [list thread::release $httpthread]
     thread::send $httpthread [list source $httpdFile]
     thread::send $httpthread [list set bindata $bindata]
     thread::send $httpthread {httpd_init 0; set port} port
@@ -64,7 +63,6 @@ if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
 	catch {unset port}
 	return
     }
-    set threadStack {}
 }
 
 if {![info exists ThreadLevel]} {
@@ -79,7 +77,6 @@ if {![info exists ThreadLevel]} {
     foreach ThreadLevel $ValueRange {
         source [info script]
     }
-    try [lpop threadStack]
     catch {unset ThreadLevel}
     catch {unset ValueRange}
     return
@@ -1170,8 +1167,8 @@ catch {unset url}
 catch {unset badurl}
 catch {unset port}
 catch {unset data}
-if {[llength $threadStack]} {
-    try [lpop threadStack]
+if {[info exists httpthread]} {
+    thread::release $httpthread
 } else {
     close $listen
 }
