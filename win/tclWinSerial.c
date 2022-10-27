@@ -1508,13 +1508,7 @@ TclWinOpenSerialChannel(
 			infoPtr->evWritable), 0, NULL);
     }
 
-    /*
-     * Files have default translation of AUTO and ^Z eof char, which means
-     * that a ^Z will be accepted as EOF when reading.
-     */
-
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
 
     return infoPtr->channel;
 }

@@ -9252,7 +9252,7 @@ See RFC 2045
 2020-09-17 (bug)[835c93] Support TIP 525 exit code for -singleproc 1 (nijtmans)
 => tcltest 2.5.3
 
-2020-09-25 (new) force -eofchar \032 when evaluating library scripts (nijtmans)
+2020-09-25 (new) force -eofchar \x1A when evaluating library scripts (nijtmans)
         *** POTENTIAL INCOMPATIBILITY ***
 
 2020-09-29 (bug)[0063cb] http::geturl -headers must be dict (oehlmann,nijtmans)
