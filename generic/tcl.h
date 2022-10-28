@@ -1294,7 +1294,11 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
  * interface.
  */
 
-#define TCL_CLOSE2PROC		NULL
+#if TCL_MAJOR_VERSION > 8
+#   define TCL_CLOSE2PROC		NULL
+#else
+#   define TCL_CLOSE2PROC		((void *) 1)
+#endif
 
 /*
  * Channel version tag. This was introduced in 8.3.2/8.4.
@@ -1960,8 +1964,13 @@ typedef struct Tcl_EncodingType {
 
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
-#define TCL_ENCODING_STRICT			0x04
-#define TCL_ENCODING_STOPONERROR	0x0 /* Not used any more */
+#if TCL_MAJOR_VERSION > 8
+#   define TCL_ENCODING_STRICT			0x04
+#   define TCL_ENCODING_STOPONERROR	0x0 /* Not used any more */
+#else
+#   define TCL_ENCODING_STRICT			0x44
+#   define TCL_ENCODING_STOPONERROR	0x04
+#endif
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
 #define TCL_ENCODING_MODIFIED		0x20
@@ -2339,7 +2348,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #define Tcl_SetPreInitScript(string) \
 	((const char *(*)(const char *))TclStubCall((void *)9))(string)
 #endif
-
+
 /*
  *----------------------------------------------------------------------------
  * Include the public function declarations that are accessible via the stubs
@@ -2469,7 +2478,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
  */
 
 #define Tcl_GetHashValue(h) ((h)->clientData)
-#define Tcl_SetHashValue(h, value) ((h)->clientData = (void *) (value))
+#define Tcl_SetHashValue(h, value) ((h)->clientData = (void *)(value))
 #define Tcl_GetHashKey(tablePtr, h) \
 	((void *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
 		    (tablePtr)->keyType == TCL_CUSTOM_PTR_KEYS) \
@@ -2481,8 +2490,10 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
  * hash tables:
  */
 
+#undef  Tcl_FindHashEntry
 #define Tcl_FindHashEntry(tablePtr, key) \
 	(*((tablePtr)->findProc))(tablePtr, (const char *)(key))
+#undef  Tcl_CreateHashEntry
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
 

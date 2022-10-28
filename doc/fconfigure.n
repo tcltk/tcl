@@ -112,6 +112,33 @@ string.
 The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7F;
 attempting to set \fB\-eofchar\fR to a value outside of this range will
 generate an error.
+.VS "TCL9.0 TIP633"
+.TP
+\fB\-nocomplainencoding\fR \fIbool\fR
+.
+Reporting mode of encoding errors.
+If set to a \fItrue\fR value, encoding errors are resolved by a replacement
+character (output) or verbatim bytes (input). No error is thrown.
+If set to a \fIfalse\fR value, errors are thrown in case of encoding errors.
+.RS
+.PP
+The default value is \fIfalse\fR starting from TCL 9.0 and \fItrue\fR on TCL 8.7.
+This option was introduced with TCL 8.7 and has the fix value \fItrue\fR.
+.PP
+See the \fI\-nocomplain\fR option of the \fBencoding\fR command for more information.
+.RE
+.VE "TCL9.0 TIP633"
+.VS "TCL8.7 TIP346"
+.TP
+\fB\-strictencoding\fR \fIbool\fR
+.
+Activate additional stricter encoding application rules.
+Default value is \fIfalse\fR.
+.RS
+.PP
+See the \fI\-strict\fR option of the \fBencoding\fR command for more information.
+.VE "TCL8.7 TIP346"
+.RE
 .TP
 \fB\-translation\fR \fImode\fR
 .TP
@@ -268,10 +295,10 @@ set data [read $f $numDataBytes]
 close $f
 .CE
 .SH "SEE ALSO"
-close(n), flush(n), gets(n), open(n), puts(n), read(n), socket(n),
+close(n), encoding(n), flush(n), gets(n), open(n), puts(n), read(n), socket(n),
 Tcl_StandardChannels(3)
 .SH KEYWORDS
-blocking, buffering, carriage return, end of line, flushing, linemode,
+blocking, buffering, carriage return, end of line, encoding, flushing, linemode,
 newline, nonblocking, platform, translation, encoding, filter, byte array,
 binary
 '\" Local Variables:

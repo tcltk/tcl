@@ -1,0 +1,456 @@
+# Commands covered: http::geturl when using a proxy server.
+#
+# This file contains a collection of tests for the http script library.
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994-1996 Sun Microsystems, Inc.
+# Copyright © 1998-2000 Ajuba Solutions.
+# Copyright © 2022      Keith Nash.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+package require http 2.10
+
+proc bgerror {args} {
+    global errorInfo
+    puts stderr "httpProxy.test bgerror"
+    puts stderr [join $args]
+    puts stderr $errorInfo
+}
+
+if {![info exists ThreadLevel]} {
+    if {[catch {package require Thread}] == 0} {
+        set ValueRange {0 1 2}
+    } else {
+        set ValueRange {0 1}
+    }
+
+    # For each value of ThreadLevel, source this file recursively in the
+    # same interpreter.
+    foreach ThreadLevel $ValueRange {
+        source [info script]
+    }
+    catch {unset ThreadLevel}
+    catch {unset ValueRange}
+    return
+}
+
+catch {puts "==== Test with ThreadLevel $ThreadLevel ===="}
+http::config -threadlevel $ThreadLevel
+
+
+#testConstraint needsSquid 1
+#testConstraint needsTls 1
+
+if {[testConstraint needsTls]} {
+    package require tls
+    http::register https 443 [list ::tls::socket -ssl2 0 -ssl3 0 \
+            -tls1 0 -tls1.1 0 -tls1.2 1 -tls1.3 0 -autoservername 1]
+}
+
+# Testing with Squid
+# - Example Squid configuration for Enterprise Linux 8 (Red Hat, Oracle, Rocky,
+#   Alma, ...) is in file tests/httpProxySquidConfigForEL8.tar.gz.
+# - Two instances of Squid are launched, one that needs authentication and one
+#   that does not.
+# - Each instance of Squid listens on IPv4 and IPv6, on different ports.
+
+# Instance of Squid that does not need authentication.
+set n4host 127.0.0.1
+set n6host ::1
+set n4port 3128
+set n6port 3130
+
+# Instance of Squid that needs authentication.
+set a4host 127.0.0.1
+set a6host ::1
+set a4port 3129
+set a6port 3131
+
+# concat Basic [base64::encode alice:alicia]
+set aliceCreds {Basic YWxpY2U6YWxpY2lh}
+
+# concat Basic [base64::encode intruder:intruder]
+set badCreds {Basic aW50cnVkZXI6aW50cnVkZXI=}
+
+test httpProxy-1.1.$ThreadLevel {squid is running - ipv4 noauth} -constraints {needsSquid} -setup {
+} -body {
+    set token [http::geturl http://$n4host:$n4port/]
+    set ri [http::responseInfo $token]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
+} -result {complete ok 400 none} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res
+}
+
+test httpProxy-1.2.$ThreadLevel {squid is running - ipv6 noauth} -constraints {needsSquid} -setup {
+} -body {
+    set token [http::geturl http://\[$n6host\]:$n6port/]
+    set ri [http::responseInfo $token]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
+} -result {complete ok 400 none} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res
+}
+
+test httpProxy-1.3.$ThreadLevel {squid is running - ipv4 auth} -constraints {needsSquid} -setup {
+} -body {
+    set token [http::geturl http://$a4host:$a4port/]
+    set ri [http::responseInfo $token]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
+} -result {complete ok 400 none} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res
+}
+
+test httpProxy-1.4.$ThreadLevel {squid is running - ipv6 auth} -constraints {needsSquid} -setup {
+} -body {
+    set token [http::geturl http://\[$a6host\]:$a6port/]
+    set ri [http::responseInfo $token]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
+} -result {complete ok 400 none} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res
+}
+
+test httpProxy-2.1.$ThreadLevel {http no-proxy no-auth} -constraints {needsSquid} -setup {
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+} -body {
+    set token [http::geturl http://www.google.com/]
+    set ri [http::responseInfo $token]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
+} -result {complete ok 200 none} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res
+}
+
+test httpProxy-2.2.$ThreadLevel {https no-proxy no-auth} -constraints {needsSquid needsTls} -setup {
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+} -body {
+    set token [http::geturl https://www.google.com/]
+    set ri [http::responseInfo $token]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
+} -result {complete ok 200 none} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res
+}
+
+test httpProxy-2.3.$ThreadLevel {http with-proxy ipv4 no-auth} -constraints {needsSquid} -setup {
+   http::config -proxyhost $n4host -proxyport $n4port -proxynot {127.0.0.1 localhost} -proxyauth {}
+} -body {
+    set token [http::geturl http://www.google.com/]
+    set ri [http::responseInfo $token]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
+} -result {complete ok 200 HttpProxy} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res
+    http::config -proxyhost {} -proxyport {} -proxynot {}
+}
+
+test httpProxy-2.4.$ThreadLevel {https with-proxy ipv4 no-auth} -constraints {needsSquid needsTls} -setup {
+   http::config -proxyhost $n4host -proxyport $n4port -proxynot {127.0.0.1 localhost} -proxyauth {}
+} -body {
+    set token [http::geturl https://www.google.com/]
+    set ri [http::responseInfo $token]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
+} -result {complete ok 200 SecureProxy} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res
+    http::config -proxyhost {} -proxyport {} -proxynot {}
+}
+
+test httpProxy-2.5.$ThreadLevel {http with-proxy ipv6 no-auth} -constraints {needsSquid} -setup {
+   http::config -proxyhost $n6host -proxyport $n6port -proxynot {127.0.0.1 localhost} -proxyauth {}
+} -body {
+    set token [http::geturl http://www.google.com/]
+    set ri [http::responseInfo $token]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
+} -result {complete ok 200 HttpProxy} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res
+    http::config -proxyhost {} -proxyport {} -proxynot {}
+}
+
+test httpProxy-2.6.$ThreadLevel {https with-proxy ipv6 no-auth} -constraints {needsSquid needsTls} -setup {
+   http::config -proxyhost $n6host -proxyport $n6port -proxynot {127.0.0.1 localhost} -proxyauth {}
+} -body {
+    set token [http::geturl https://www.google.com/]
+    set ri [http::responseInfo $token]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
+} -result {complete ok 200 SecureProxy} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res
+    http::config -proxyhost {} -proxyport {} -proxynot {}
+}
+
+test httpProxy-3.1.$ThreadLevel {http no-proxy with-auth valid-creds-provided} -constraints {needsSquid} -setup {
+   http::config -proxyhost {} -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
+} -body {
+    set token [http::geturl http://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 200 none 0 0} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.2.$ThreadLevel {https no-proxy with-auth valid-creds-provided} -constraints {needsSquid needsTls} -setup {
+   http::config -proxyhost {} -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
+} -body {
+    set token [http::geturl https://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 200 none 0 0} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.3.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-provided} -constraints {needsSquid} -setup {
+   http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
+} -body {
+    set token [http::geturl http://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 200 HttpProxy 1 1} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.4.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-provided} -constraints {needsSquid needsTls} -setup {
+   http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
+} -body {
+    set token [http::geturl https://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 200 SecureProxy 0 0} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.5.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided} -constraints {needsSquid} -setup {
+   http::config -proxyhost $a6host -proxyport $a6port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
+} -body {
+    set token [http::geturl http://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 200 HttpProxy 1 1} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.6.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided} -constraints {needsSquid needsTls} -setup {
+   http::config -proxyhost $a6host -proxyport $a6port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
+} -body {
+    set token [http::geturl https://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 200 SecureProxy 0 0} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-4.1.$ThreadLevel {http no-proxy with-auth no-creds-provided} -constraints {needsSquid} -setup {
+   http::config -proxyhost {} -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
+} -body {
+    set token [http::geturl http://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 200 none 0 0} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-4.2.$ThreadLevel {https no-proxy with-auth no-creds-provided} -constraints {needsSquid needsTls} -setup {
+   http::config -proxyhost {} -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
+} -body {
+    set token [http::geturl https://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 200 none 0 0} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-4.3.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provided} -constraints {needsSquid} -setup {
+   http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
+} -body {
+    set token [http::geturl http://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 407 HttpProxy 0 0} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-4.4.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provided} -constraints {needsSquid needsTls} -setup {
+   http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
+} -body {
+    set token [http::geturl https://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 407 SecureProxy 0 0} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-4.5.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided} -constraints {needsSquid} -setup {
+   http::config -proxyhost $a6host -proxyport $a6port -proxynot {127.0.0.1 localhost} -proxyauth {}
+} -body {
+    set token [http::geturl http://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 407 HttpProxy 0 0} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-4.6.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided} -constraints {needsSquid needsTls} -setup {
+   http::config -proxyhost $a6host -proxyport $a6port -proxynot {127.0.0.1 localhost} -proxyauth {}
+} -body {
+    set token [http::geturl https://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 407 SecureProxy 0 0} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-5.1.$ThreadLevel {http no-proxy with-auth bad-creds-provided} -constraints {needsSquid} -setup {
+   http::config -proxyhost {} -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
+} -body {
+    set token [http::geturl http://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 200 none 0 0} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-5.2.$ThreadLevel {https no-proxy with-auth bad-creds-provided} -constraints {needsSquid needsTls} -setup {
+   http::config -proxyhost {} -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
+} -body {
+    set token [http::geturl https://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 200 none 0 0} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-5.3.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided} -constraints {needsSquid} -setup {
+   http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
+} -body {
+    set token [http::geturl http://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 407 HttpProxy 1 1} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-5.4.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided} -constraints {needsSquid needsTls} -setup {
+   http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
+} -body {
+    set token [http::geturl https://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 407 SecureProxy 1 1} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-5.5.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provided} -constraints {needsSquid} -setup {
+   http::config -proxyhost $a6host -proxyport $a6port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
+} -body {
+    set token [http::geturl http://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 407 HttpProxy 1 1} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-5.6.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provided} -constraints {needsSquid needsTls} -setup {
+   http::config -proxyhost $a6host -proxyport $a6port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
+} -body {
+    set token [http::geturl https://www.google.com/]
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
+} -result {complete ok 407 SecureProxy 1 1} -cleanup {
+    http::cleanup $token
+    unset -nocomplain ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+# cleanup
+unset -nocomplain n4host n6host n4port n6port a4host a6host a4port a6port aliceCreds badCreds
+
+rename bgerror {}
+
+::tcltest::cleanupTests
+
+# Local variables:
+# mode: tcl
+# End:
+

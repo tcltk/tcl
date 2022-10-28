@@ -839,7 +839,7 @@ for {set header 1} {$header <= 4} {incr header} {
 
 
 	    # Here's the test:
-            test httpPipeline-${header}.${footer}${label}-${tag} $name \
+            test httpPipeline-${header}.${footer}${label}-${tag}-$ThreadLevel $name \
             -constraints $cons \
             -setup [string map [list TE $te] {
 		# Restore default values for tests:
