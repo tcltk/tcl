@@ -36,8 +36,6 @@ typedef struct ArithSeriesDbl {
 MODULE_SCOPE int	TclNewArithSeriesObj(Tcl_Interp *interp, Tcl_Obj **arithSeriesPtr,
                             int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj,
                             Tcl_Obj *stepObj, Tcl_Obj *lenObj);
-
-
 
 /*
  * Local Variables:

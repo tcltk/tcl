@@ -1325,7 +1325,7 @@ TclpGetDefaultStdChannel(
      */
 
     if (Tcl_SetChannelOption(NULL,channel,"-translation","auto")!=TCL_OK ||
-	    Tcl_SetChannelOption(NULL,channel,"-eofchar","\032 {}")!=TCL_OK ||
+	    Tcl_SetChannelOption(NULL,channel,"-eofchar","\x1A {}")!=TCL_OK ||
 	    Tcl_SetChannelOption(NULL,channel,"-buffering",bufMode)!=TCL_OK) {
 	Tcl_Close(NULL, channel);
 	return (Tcl_Channel) NULL;
@@ -1402,7 +1402,7 @@ TclWinOpenFileChannel(
      */
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
+    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\x1A {}");
 
     return infoPtr->channel;
 }

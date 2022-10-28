@@ -308,13 +308,13 @@ test socket_$af-1.1 {arg parsing for socket command} -constraints [list socket s
 } -returnCodes error -result {no argument given for -server option}
 test socket_$af-1.2 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -server foo
-} -returnCodes error -result {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-reuseaddr boolean? ?-reuseport boolean? ?-myaddr addr? port"}
+} -returnCodes error -result {wrong # args: should be "socket ?-async? ?-myaddr addr? ?-myport myport? host port" or "socket -server command ?-backlog count? ?-myaddr addr? ?-reuseaddr boolean? ?-reuseport boolean? port"}
 test socket_$af-1.3 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -myaddr
 } -returnCodes error -result {no argument given for -myaddr option}
 test socket_$af-1.4 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -myaddr $localhost
-} -returnCodes error -result {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-reuseaddr boolean? ?-reuseport boolean? ?-myaddr addr? port"}
+} -returnCodes error -result {wrong # args: should be "socket ?-async? ?-myaddr addr? ?-myport myport? host port" or "socket -server command ?-backlog count? ?-myaddr addr? ?-reuseaddr boolean? ?-reuseport boolean? port"}
 test socket_$af-1.5 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -myport
 } -returnCodes error -result {no argument given for -myport option}
@@ -323,19 +323,19 @@ test socket_$af-1.6 {arg parsing for socket command} -constraints [list socket s
 } -returnCodes error -result {expected integer but got "xxxx"}
 test socket_$af-1.7 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -myport 2522
-} -returnCodes error -result {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-reuseaddr boolean? ?-reuseport boolean? ?-myaddr addr? port"}
+} -returnCodes error -result {wrong # args: should be "socket ?-async? ?-myaddr addr? ?-myport myport? host port" or "socket -server command ?-backlog count? ?-myaddr addr? ?-reuseaddr boolean? ?-reuseport boolean? port"}
 test socket_$af-1.8 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -froboz
-} -returnCodes error -result {bad option "-froboz": must be -async, -myaddr, -myport, -reuseaddr, -reuseport, or -server}
+} -returnCodes error -result {bad option "-froboz": must be -async, -backlog, -myaddr, -myport, -reuseaddr, -reuseport, or -server}
 test socket_$af-1.9 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -server foo -myport 2521 3333
 } -returnCodes error -result {option -myport is not valid for servers}
 test socket_$af-1.10 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket host 2528 -junk
-} -returnCodes error -result {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-reuseaddr boolean? ?-reuseport boolean? ?-myaddr addr? port"}
+} -returnCodes error -result {wrong # args: should be "socket ?-async? ?-myaddr addr? ?-myport myport? host port" or "socket -server command ?-backlog count? ?-myaddr addr? ?-reuseaddr boolean? ?-reuseport boolean? port"}
 test socket_$af-1.11 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -server callback 2520 --
-} -returnCodes error -result {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-reuseaddr boolean? ?-reuseport boolean? ?-myaddr addr? port"}
+} -returnCodes error -result {wrong # args: should be "socket ?-async? ?-myaddr addr? ?-myport myport? host port" or "socket -server command ?-backlog count? ?-myaddr addr? ?-reuseaddr boolean? ?-reuseport boolean? port"}
 test socket_$af-1.12 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket foo badport
 } -returnCodes error -result {expected integer but got "badport"}
@@ -347,19 +347,19 @@ test socket_$af-1.14 {arg parsing for socket command} -constraints [list socket 
 } -returnCodes error -result {cannot set -async option for server sockets}
 test socket_$af-1.15 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseaddr yes 4242
-} -returnCodes error -result {options -reuseaddr and -reuseport are only valid for servers}
+} -returnCodes error -result {options -backlog, -reuseaddr, and -reuseport are only valid for servers}
 test socket_$af-1.16 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseaddr no 4242
-} -returnCodes error -result {options -reuseaddr and -reuseport are only valid for servers}
+} -returnCodes error -result {options -backlog, -reuseaddr, and -reuseport are only valid for servers}
 test socket_$af-1.17 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseaddr
 } -returnCodes error -result {no argument given for -reuseaddr option}
 test socket_$af-1.18 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseport yes 4242
-} -returnCodes error -result {options -reuseaddr and -reuseport are only valid for servers}
+} -returnCodes error -result {options -backlog, -reuseaddr, and -reuseport are only valid for servers}
 test socket_$af-1.19 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseport no 4242
-} -returnCodes error -result {options -reuseaddr and -reuseport are only valid for servers}
+} -returnCodes error -result {options -backlog, -reuseaddr, and -reuseport are only valid for servers}
 test socket_$af-1.20 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseport
 } -returnCodes error -result {no argument given for -reuseport option}

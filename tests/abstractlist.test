@@ -483,9 +483,6 @@ test abstractlist-$not-4.12 {shimmer lrepeat} {
     list $l ${l-isa} $m ${m-isa} [value-isa n] [value-cmp l n]
 } {{I n c o n c e i v a b l e} {l is a lstring} {{I n c o n c e i v a b l e} {I n c o n c e i v a b l e} {I n c o n c e i v a b l e}} {m is a list} {n is a lstring} 0}
 
-memory tag {}
-memory trace off
-
 # Disable constraint
 testConstraint [format "%sShimmer" [string totitle $not]] 1
 

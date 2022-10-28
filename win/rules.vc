@@ -707,7 +707,7 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 
 !if defined(_TK_H)
 !if [echo TK_MAJOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V $(_TK_H) TK_MAJOR_VERSION >> versions.vc]
+   && [nmakehlp -V $(_TK_H) "define TK_MAJOR_VERSION" >> versions.vc]
 !endif
 !if [echo TK_MINOR_VERSION = \>> versions.vc] \
    && [nmakehlp -V $(_TK_H) TK_MINOR_VERSION >> versions.vc]

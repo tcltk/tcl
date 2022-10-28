@@ -636,7 +636,7 @@ EXTERN Tcl_Channel	Tcl_OpenFileChannel(Tcl_Interp *interp,
 /* 199 */
 EXTERN Tcl_Channel	Tcl_OpenTcpClient(Tcl_Interp *interp, int port,
 				const char *address, const char *myaddr,
-				int myport, int async);
+				int myport, int flags);
 /* 200 */
 EXTERN Tcl_Channel	Tcl_OpenTcpServer(Tcl_Interp *interp, int port,
 				const char *host,
@@ -1878,7 +1878,7 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 /* 631 */
 EXTERN Tcl_Channel	Tcl_OpenTcpServerEx(Tcl_Interp *interp,
 				const char *service, const char *host,
-				unsigned int flags,
+				unsigned int flags, int backlog,
 				Tcl_TcpAcceptProc *acceptProc,
 				void *callbackData);
 /* 632 */
@@ -2303,7 +2303,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_ObjSetVar2) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags); /* 196 */
     Tcl_Channel (*tcl_OpenCommandChannel) (Tcl_Interp *interp, Tcl_Size argc, const char **argv, int flags); /* 197 */
     Tcl_Channel (*tcl_OpenFileChannel) (Tcl_Interp *interp, const char *fileName, const char *modeString, int permissions); /* 198 */
-    Tcl_Channel (*tcl_OpenTcpClient) (Tcl_Interp *interp, int port, const char *address, const char *myaddr, int myport, int async); /* 199 */
+    Tcl_Channel (*tcl_OpenTcpClient) (Tcl_Interp *interp, int port, const char *address, const char *myaddr, int myport, int flags); /* 199 */
     Tcl_Channel (*tcl_OpenTcpServer) (Tcl_Interp *interp, int port, const char *host, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 200 */
     void (*tcl_Preserve) (void *data); /* 201 */
     void (*tcl_PrintDouble) (Tcl_Interp *interp, double value, char *dst); /* 202 */
@@ -2735,7 +2735,7 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
-    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 631 */
+    Tcl_Channel (*tcl_OpenTcpServerEx) (Tcl_Interp *interp, const char *service, const char *host, unsigned int flags, int backlog, Tcl_TcpAcceptProc *acceptProc, void *callbackData); /* 631 */
     int (*tclZipfs_Mount) (Tcl_Interp *interp, const char *mountPoint, const char *zipname, const char *passwd); /* 632 */
     int (*tclZipfs_Unmount) (Tcl_Interp *interp, const char *mountPoint); /* 633 */
     Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
@@ -4409,9 +4409,9 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GetString
 #undef Tcl_GetUnicode
 #define Tcl_GetString(objPtr) \
-	Tcl_GetStringFromObj(objPtr, (int *)NULL)
+	Tcl_GetStringFromObj(objPtr, (Tcl_Size *)NULL)
 #define Tcl_GetUnicode(objPtr) \
-	Tcl_GetUnicodeFromObj(objPtr, (int *)NULL)
+	Tcl_GetUnicodeFromObj(objPtr, (Tcl_Size *)NULL)
 #undef Tcl_GetBytesFromObj
 #undef Tcl_GetIndexFromObjStruct
 #undef Tcl_GetBooleanFromObj
@@ -4499,17 +4499,17 @@ extern const TclStubs *tclStubsPtr;
 #endif
 #if defined(USE_TCL_STUBS)
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
-		? (char *(*)(const wchar_t *, int, Tcl_DString *))tclStubsPtr->tcl_UniCharToUtfDString \
-		: (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_Char16ToUtfDString)
+		? (char *(*)(const wchar_t *, Tcl_Size, Tcl_DString *))tclStubsPtr->tcl_UniCharToUtfDString \
+		: (char *(*)(const wchar_t *, Tcl_Size, Tcl_DString *))Tcl_Char16ToUtfDString)
 #   define Tcl_UtfToWCharDString (sizeof(wchar_t) != sizeof(short) \
-		? (wchar_t *(*)(const char *, int, Tcl_DString *))tclStubsPtr->tcl_UtfToUniCharDString \
-		: (wchar_t *(*)(const char *, int, Tcl_DString *))Tcl_UtfToChar16DString)
+		? (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))tclStubsPtr->tcl_UtfToUniCharDString \
+		: (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToChar16DString)
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
 		? (int (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToUniChar \
 		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
-		? (int (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
-		: (int (*)(wchar_t *))Tcl_Char16Len)
+		? (Tcl_Size (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
+		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
 #ifdef TCL_NO_DEPRECATED
 #   undef Tcl_ListObjGetElements
 #   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) == sizeof(int) \
@@ -4542,17 +4542,17 @@ extern const TclStubs *tclStubsPtr;
 #endif /* TCL_NO_DEPRECATED */
 #else
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
-		? (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_UniCharToUtfDString \
-		: (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_Char16ToUtfDString)
+		? (char *(*)(const wchar_t *, Tcl_Size, Tcl_DString *))Tcl_UniCharToUtfDString \
+		: (char *(*)(const wchar_t *, Tcl_Size, Tcl_DString *))Tcl_Char16ToUtfDString)
 #   define Tcl_UtfToWCharDString (sizeof(wchar_t) != sizeof(short) \
-		? (wchar_t *(*)(const char *, int, Tcl_DString *))Tcl_UtfToUniCharDString \
-		: (wchar_t *(*)(const char *, int, Tcl_DString *))Tcl_UtfToChar16DString)
+		? (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToUniCharDString \
+		: (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToChar16DString)
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
 		? (int (*)(const char *, wchar_t *))Tcl_UtfToUniChar \
 		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
-		? (int (*)(wchar_t *))Tcl_UniCharLen \
-		: (int (*)(wchar_t *))Tcl_Char16Len)
+		? (Tcl_Size (*)(wchar_t *))Tcl_UniCharLen \
+		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
 #ifdef TCL_NO_DEPRECATED
 #   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) == sizeof(int) \
 		? (Tcl_ListObjGetElements)((interp), (listPtr), (int *)(void *)(objcPtr), (objvPtr)) \
