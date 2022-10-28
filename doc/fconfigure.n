@@ -124,7 +124,7 @@ If set to a \fIfalse\fR value, errors are thrown in case of encoding errors.
 .PP
 The default value is \fIfalse\fR starting from TCL 9.0 and \fItrue\fR on TCL 8.7.
 This option was introduced with TCL 8.7 and has the fix value \fItrue\fR.
-.TP
+.PP
 See the \fI\-nocomplain\fR option of the \fBencoding\fR command for more information.
 .RE
 .TP
