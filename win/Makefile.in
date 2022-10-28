@@ -830,7 +830,7 @@ clean: cleanhelp clean-packages
 
 distclean: distclean-packages clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
-		tcl.hpj config.status.lineno tclsh.exe.manifest
+		tcl.hpj config.status.lineno tclsh.exe.manifest tclUuid.h
 
 #
 # Bundled package targets
