@@ -110,7 +110,7 @@ static const struct cname {
     {"right-brace",	'}'},
     {"right-curly-bracket", '}'},
     {"tilde",		'~'},
-    {"DEL",		'\177'},
+    {"DEL",		'\x7F'},
     {NULL,		0}
 };
 

@@ -1889,13 +1889,13 @@ test chan-io-20.2 {Tcl_CreateChannel: initial settings} -constraints {win} -body
     list [chan configure $f -eofchar] [chan configure $f -translation]
 } -cleanup {
     chan close $f
-} -result {{{}} {auto crlf}}
+} -result {{} {auto crlf}}
 test chan-io-20.3 {Tcl_CreateChannel: initial settings} -constraints {unix} -body {
     set f [open $path(test1) w+]
     list [chan configure $f -eofchar] [chan configure $f -translation]
 } -cleanup {
     chan close $f
-} -result {{{}} {auto lf}}
+} -result {{} {auto lf}}
 test chan-io-20.5 {Tcl_CreateChannel: install channel in empty slot} -setup {
     set path(stdout) [makeFile {} stdout]
 } -constraints {stdio notWinCI} -body {
@@ -5285,7 +5285,7 @@ test chan-io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
 test chan-io-39.22 {Tcl_SetChannelOption, invariance} -setup {
     file delete $path(test1)
     set l ""
-} -constraints {unix} -body {
+} -constraints {unix deprecated} -body {
     set f1 [open $path(test1) w+]
     lappend l [chan configure $f1 -eofchar]
     chan configure $f1 -eofchar {O {}}
@@ -5298,7 +5298,7 @@ test chan-io-39.22 {Tcl_SetChannelOption, invariance} -setup {
 test chan-io-39.22a {Tcl_SetChannelOption, invariance} -setup {
     file delete $path(test1)
     set l [list]
-} -body {
+} -constraints deprecated -body {
     set f1 [open $path(test1) w+]
     chan configure $f1 -eofchar {O {}}
     lappend l [chan configure $f1 -eofchar]
@@ -5307,7 +5307,7 @@ test chan-io-39.22a {Tcl_SetChannelOption, invariance} -setup {
     lappend l [list [catch {chan configure $f1 -eofchar {1 2 3}} msg] $msg]
 } -cleanup {
     chan close $f1
-} -result {O D {1 {bad value for -eofchar: should be a list of zero, one, or two elements}}}
+} -result {O D {1 {bad value for -eofchar: must be non-NUL ASCII character}}}
 test chan-io-39.23 {Tcl_GetChannelOption, server socket is not readable or\
         writeable, it should still have valid -eofchar and -translation options} -setup {
     set l [list]
@@ -5317,7 +5317,7 @@ test chan-io-39.23 {Tcl_GetChannelOption, server socket is not readable or\
 	[chan configure $sock -translation]
 } -cleanup {
     chan close $sock
-} -result {{{}} auto}
+} -result {{} auto}
 test chan-io-39.24 {Tcl_SetChannelOption, server socket is not readable or\
         writable so we can't change -eofchar or -translation} -setup {
     set l [list]
@@ -5328,7 +5328,7 @@ test chan-io-39.24 {Tcl_SetChannelOption, server socket is not readable or\
 	[chan configure $sock -translation]
 } -cleanup {
     chan close $sock
-} -result {{{}} auto}
+} -result {{} auto}
 
 test chan-io-40.1 {POSIX open access modes: RDWR} -setup {
     file delete $path(test3)

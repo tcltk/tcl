@@ -2093,13 +2093,13 @@ test io-20.2 {Tcl_CreateChannel: initial settings} {win} {
     set x [list [fconfigure $f -eofchar] [fconfigure $f -translation]]
     close $f
     set x
-} {{{}} {auto crlf}}
+} {{} {auto crlf}}
 test io-20.3 {Tcl_CreateChannel: initial settings} {unix} {
     set f [open $path(test1) w+]
     set x [list [fconfigure $f -eofchar] [fconfigure $f -translation]]
     close $f
     set x
-} {{{}} {auto lf}}
+} {{} {auto lf}}
 set path(stdout) [makeFile {} stdout]
 test io-20.5 {Tcl_CreateChannel: install channel in empty slot} stdio {
     set f [open $path(script) w]
@@ -5756,7 +5756,7 @@ test io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
     close $s2
     set modes
 } {auto crlf}
-test io-39.22 {Tcl_SetChannelOption, invariance} {unix} {
+test io-39.22 {Tcl_SetChannelOption, invariance} {unix deprecated} {
     file delete $path(test1)
     set f1 [open $path(test1) w+]
     set l ""
@@ -5767,8 +5767,8 @@ test io-39.22 {Tcl_SetChannelOption, invariance} {unix} {
     lappend l [fconfigure $f1 -eofchar]
     close $f1
     set l
-} {{{}} O D}
-test io-39.22a {Tcl_SetChannelOption, invariance} {
+} {{} O D}
+test io-39.22a {Tcl_SetChannelOption, invariance} deprecated {
     file delete $path(test1)
     set f1 [open $path(test1) w+]
     set l [list]
@@ -5779,7 +5779,7 @@ test io-39.22a {Tcl_SetChannelOption, invariance} {
     lappend l [list [catch {fconfigure $f1 -eofchar {1 2 3}} msg] $msg]
     close $f1
     set l
-} {O D {1 {bad value for -eofchar: should be a list of zero, one, or two elements}}}
+} {O D {1 {bad value for -eofchar: must be non-NUL ASCII character}}}
 test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
         writeable, it should still have valid -eofchar and -translation options } {
     set l [list]
@@ -5787,7 +5787,7 @@ test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
     lappend l [fconfigure $sock -eofchar] [fconfigure $sock -translation]
     close $sock
     set l
-} {{{}} auto}
+} {{} auto}
 test io-39.24 {Tcl_SetChannelOption, server socket is not readable or
         writable so we can't change -eofchar or -translation } {
     set l [list]
@@ -5796,7 +5796,7 @@ test io-39.24 {Tcl_SetChannelOption, server socket is not readable or
     lappend l [fconfigure $sock -eofchar] [fconfigure $sock -translation]
     close $sock
     set l
-} {{{}} auto}
+} {{} auto}
 
 test io-40.1 {POSIX open access modes: RDWR} {
     file delete $path(test3)

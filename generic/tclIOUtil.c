@@ -1715,11 +1715,11 @@ Tcl_FSEvalFileEx(
     }
 
     /*
-     * The eof character is \32 (^Z). This is standard on Windows, and Tcl
-     * uses it on every platform to allow for scripted documents. [Bug: 2040]
+     * The eof character is \x1A (^Z). Tcl uses it on every platform to allow
+     * for scripted documents. [Bug: 2040]
      */
 
-    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32 {}");
+    Tcl_SetChannelOption(interp, chan, "-eofchar", "\x1A");
 
     /*
      * If the encoding is specified, set the channel to that encoding.
@@ -1851,11 +1851,11 @@ TclNREvalFile(
     TclPkgFileSeen(interp, TclGetString(pathPtr));
 
     /*
-     * The eof character is \32 (^Z). This is standard on Windows, and Tcl
-     * uses it on every platform to allow for scripted documents. [Bug: 2040]
+     * The eof character is \x1A (^Z). Tcl uses it on every platform to allow
+     * for scripted documents. [Bug: 2040]
      */
 
-    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32 {}");
+    Tcl_SetChannelOption(interp, chan, "-eofchar", "\x1A");
 
     /*
      * If the encoding is specified, set the channel to that encoding.
