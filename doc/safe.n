@@ -468,7 +468,7 @@ Examples of use with "Sync Mode" off: any of these commands will set the
  safe::interpConfigure foo -accessPath {}
 .CE
 .RE
-.TP
+.PP
 Example of use with "Sync Mode" off: when initializing a safe interpreter
 with a non-empty access path, the ::auto_path will be set to {} unless its
 own value is also specified:
@@ -506,7 +506,7 @@ own value is also specified:
  }
 .CE
 .RE
-.TP
+.PP
 Example of use with "Sync Mode" off: the command
 \fBsafe::interpAddToAccessPath\fR does not change the safe interpreter's
 ::auto_path, and so any necessary change must be made by the script:
@@ -520,7 +520,6 @@ Example of use with "Sync Mode" off: the command
  safe::interpConfigure foo -autoPath $childAutoPath
 .CE
 .RE
-.TP
 .SH "SEE ALSO"
 interp(n), library(n), load(n), package(n), pkg_mkIndex(n), source(n),
 tm(n), unknown(n)
