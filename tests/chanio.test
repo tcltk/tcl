@@ -5294,7 +5294,7 @@ test chan-io-39.22 {Tcl_SetChannelOption, invariance} -setup {
     lappend l [chan configure $f1 -eofchar]
 } -cleanup {
     chan close $f1
-} -result {{{}} O D}
+} -result {{} O D}
 test chan-io-39.22a {Tcl_SetChannelOption, invariance} -setup {
     file delete $path(test1)
     set l [list]
