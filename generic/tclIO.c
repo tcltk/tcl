@@ -7930,20 +7930,18 @@ Tcl_GetChannelOption(
 	}
     }
     if (len == 0 || HaveOpt(2, "-eofchar")) {
+	char buf[4] = "";
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-eofchar");
 	}
-	if (!(flags & TCL_READABLE) || (statePtr->inEofChar == 0)) {
-	    Tcl_DStringAppendElement(dsPtr, "");
-	} else {
-	    char buf[4];
-
+	if ((flags & TCL_READABLE) && (statePtr->inEofChar != 0)) {
 	    sprintf(buf, "%c", statePtr->inEofChar);
-	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	if (len > 0) {
+		Tcl_DStringAppend(dsPtr, buf, TCL_INDEX_NONE);
 	    return TCL_OK;
 	}
+	Tcl_DStringAppendElement(dsPtr, buf);
     }
     if (len == 0 || HaveOpt(1, "-nocomplainencoding")) {
 	if (len == 0) {
@@ -8181,6 +8179,7 @@ Tcl_SetChannelOption(
 	    if (GotFlag(statePtr, TCL_READABLE)) {
 		statePtr->inEofChar = newValue[0];
 	    }
+#ifndef TCL_NO_DEPRECATED
 	} else if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
 	} else if (argc == 0) {
@@ -8201,11 +8200,12 @@ Tcl_SetChannelOption(
 	    if (GotFlag(statePtr, TCL_READABLE)) {
 		statePtr->inEofChar = inValue;
 	    }
+#endif
 	} else {
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"bad value for -eofchar: should be a list of zero,"
-			" one, or two elements", -1));
+			"bad value for -eofchar: must be non-NUL ASCII"
+			" character", -1));
 	    }
 	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;

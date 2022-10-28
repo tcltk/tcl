@@ -28,30 +28,37 @@ formats.
 Performs one of several encoding related operations, depending on
 \fIoption\fR.  The legal \fIoption\fRs are:
 .TP
-\fBencoding convertfrom\fR ?\fB-nocomplain\fR? ?\fB-failindex var\fR?
-?\fIencoding\fR? \fIdata\fR
+\fBencoding convertfrom\fR ?\fB-nocomplain\fR? ?\fB-failindex var\fR? ?\fB-strict\fR? ?\fIencoding\fR? \fIdata\fR
 .
 Convert \fIdata\fR to a Unicode string from the specified \fIencoding\fR.  The
 characters in \fIdata\fR are 8 bit binary data.  The resulting
 sequence of bytes is a string created by applying the given \fIencoding\fR
 to the data. If \fIencoding\fR is not specified, the current
 system encoding is used.
-.
-The call fails on convertion errors, like an incomplete utf-8 sequence.
-The option \fB-failindex\fR is followed by a variable name. The variable
-is set to \fI-1\fR if no conversion error occured. It is set to the
-first error location in \fIdata\fR in case of a conversion error. All data
-until this error location is transformed and retured. This option may not
-be used together with \fB-nocomplain\fR.
-.
-The call does not fail on conversion errors, if the option
-\fB-nocomplain\fR is given. In this case, any error locations are replaced
-by \fB?\fR. Incomplete sequences are written verbatim to the output string.
-The purpose of this switch is to gain compatibility to prior versions of TCL.
-It is not recommended for any other usage.
+.VS "TCL8.7 TIP346, TIP607, TIP601"
+.PP
+.RS
+If the option \fB-nocomplain\fR is given, the command does not fail on
+encoding errors.  Instead, any not convertable bytes (like incomplete UTF-8
+ sequences, see example below) are put as byte values into the output stream.
+If the option \fB-nocomplain\fR is not given, the command will fail with an
+appropriate error message.
+.PP
+If the option \fB-failindex\fR with a variable name is given, the error reporting
+is changed in the following manner:
+in case of a conversion error, the position of the input byte causing the error
+is returned in the given variable.  The return value of the command are the
+converted characters until the first error position. No error condition is raised.
+In case of no error, the value \fI-1\fR is written to the variable.  This option
+may not be used together with \fB-nocomplain\fR.
+.PP
+The \fB-strict\fR option followes more strict rules in conversion.  Currently, only
+the sequence \fB\\xC0\\x80\fR in \fButf-8\fR encoding is disallowed.  Additional rules
+may follow.
+.VE "TCL8.7 TIP346, TIP607, TIP601"
+.RE
 .TP
-\fBencoding convertto\fR ?\fB-nocomplain\fR? ?\fB-failindex var\fR?
-?\fIencoding\fR? \fIstring\fR
+\fBencoding convertto\fR ?\fB-nocomplain\fR? ?\fB-failindex var\fR? ?\fB-strict\fR? ?\fIencoding\fR? \fIstring\fR
 .
 Convert \fIstring\fR from Unicode to the specified \fIencoding\fR.
 The result is a sequence of bytes that represents the converted
@@ -59,21 +66,28 @@ string.  Each byte is stored in the lower 8-bits of a Unicode
 character (indeed, the resulting string is a binary string as far as
 Tcl is concerned, at least initially).  If \fIencoding\fR is not
 specified, the current system encoding is used.
-.
-The call fails on convertion errors, like a Unicode character not representable
-in the given \fIencoding\fR.
-.
-The option \fB-failindex\fR is followed by a variable name. The variable
-is set to \fI-1\fR if no conversion error occured. It is set to the
-first error location in \fIdata\fR in case of a conversion error. All data
-until this error location is transformed and retured. This option may not
-be used together with \fB-nocomplain\fR.
-.
-The call does not fail on conversion errors, if the option
-\fB-nocomplain\fR is given. In this case, any error locations are replaced
-by \fB?\fR. Incomplete sequences are written verbatim to the output string.
-The purpose of this switch is to gain compatibility to prior versions of TCL.
-It is not recommended for any other usage.
+.VS "TCL8.7 TIP346, TIP607, TIP601"
+.PP
+.RS
+If the option \fB-nocomplain\fR is given, the command does not fail on
+encoding errors.  Instead, the replacement character \fB?\fR is output
+for any not representable character (like the dot \fB\\U2022\fR
+in \fBiso-8859-1\fR encoding, see example below).
+If the option \fB-nocomplain\fR is not given, the command will fail with an
+appropriate error message.
+.PP
+If the option \fB-failindex\fR with a variable name is given, the error reporting
+is changed in the following manner:
+in case of a conversion error, the position of the input character causing the error
+is returned in the given variable.  The return value of the command are the
+converted bytes until the first error position. No error condition is raised.
+In case of no error, the value \fI-1\fR is written to the variable.  This option
+may not be used together with \fB-nocomplain\fR.
+.PP
+The \fB-strict\fR option followes more strict rules in conversion.  Currently, it has
+no effect but may be used in future to add additional encoding checks.
+.VE "TCL8.7 TIP346, TIP607, TIP601"
+.RE
 .TP
 \fBencoding dirs\fR ?\fIdirectoryList\fR?
 .
@@ -104,7 +118,7 @@ omitted then the command returns the current system encoding.  The
 system encoding is used whenever Tcl passes strings to system calls.
 .SH EXAMPLE
 .PP
-The following example converts a byte sequence in Japanese euc-jp encoding to a TCL string:
+Example 1: convert a byte sequence in Japanese euc-jp encoding to a TCL string:
 .PP
 .CS
 set s [\fBencoding convertfrom\fR euc-jp "\exA4\exCF"]
@@ -113,8 +127,9 @@ set s [\fBencoding convertfrom\fR euc-jp "\exA4\exCF"]
 The result is the unicode codepoint:
 .QW "\eu306F" ,
 which is the Hiragana letter HA.
+.VS "TCL8.7 TIP346, TIP607, TIP601"
 .PP
-The following example detects the error location in an incomplete UTF-8 sequence:
+Example 2: detect the error location in an incomplete UTF-8 sequence:
 .PP
 .CS
 % set s [\fBencoding convertfrom\fR -failindex i utf-8 "A\exC3"]
@@ -123,7 +138,14 @@ A
 1
 .CE
 .PP
-The following example detects the error location while transforming to ISO8859-1
+Example 3: return the incomplete UTF-8 sequence by raw bytes:
+.PP
+.CS
+% set s [\fBencoding convertfrom\fR -nocomplain utf-8 "A\exC3"]
+.CE
+The result is "A" followed by the byte \exC3.
+.PP
+Example 4: detect the error location while transforming to ISO8859-1
 (ISO-Latin 1):
 .PP
 .CS
@@ -133,8 +155,16 @@ A
 1
 .CE
 .PP
+Example 5: replace a not representable character by the replacement character:
+.PP
+.CS
+% set s [\fBencoding convertto\fR -nocomplain utf-8 "A\eu0141"]
+A?
+.CE
+.VE "TCL8.7 TIP346, TIP607, TIP601"
+.PP
 .SH "SEE ALSO"
-Tcl_GetEncoding(3)
+Tcl_GetEncoding(3), fconfigure(n)
 .SH KEYWORDS
 encoding, unicode
 .\" Local Variables:
