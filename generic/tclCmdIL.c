@@ -4388,8 +4388,7 @@ Tcl_LsetObjCmd(
      * unshared copy of it.
      */
 
-    if (TclHasInternalRep(listPtr,&tclAbstractListType) &&
-        TclAbstractListHasProc(listPtr, TCL_ABSL_SETELEMENT) &&
+    if (TclAbstractListHasProc(listPtr, TCL_ABSL_SETELEMENT) &&
 	objc == 4) {
 	finalValuePtr = Tcl_AbstractListSetElement(interp, listPtr, objv[2], objv[3]);
 	if (finalValuePtr) Tcl_IncrRefCount(finalValuePtr);

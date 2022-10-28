@@ -2,6 +2,7 @@
 #include <string.h>
 #include <limits.h>
 #include "tcl.h"
+#include "tclAbstractList.h"
 
 /*
  * Forward references
@@ -31,6 +32,10 @@ static int my_LStringReplace(Tcl_Interp *interp,
 		      Tcl_WideInt numToDelete,
 		      Tcl_WideInt numToInsert,
 		      Tcl_Obj *const insertObjs[]);
+static int my_LStringGetElements(Tcl_Interp *interp,
+				 Tcl_Obj *listPtr,
+				 int *objcptr,
+				 Tcl_Obj ***objvptr);
 
 /*
  * Internal Representation of an lstring type value
@@ -40,12 +45,105 @@ typedef struct LString {
     char *string;          // NULL terminated utf-8 string
     Tcl_WideInt strlen;    // num bytes in string
     Tcl_WideInt allocated; // num bytes allocated
+    Tcl_Obj**elements;     // elements array, allocated when GetElements is
+			   // called
 } LString;
 
 /*
  * AbstractList definition of an lstring type
  */
-static Tcl_AbstractListType lstringType = {
+static Tcl_AbstractListType lstringTypes[12] = {
+    {
+	TCL_ABSTRACTLIST_VERSION_1,
+	"lstring",
+/**/	NULL, /*default NULL,*/
+	DupLStringRep,
+	my_LStringObjLength,
+	my_LStringObjIndex,
+	my_LStringObjRange,/*ObjRange*/
+	my_LStringObjReverse,
+        my_LStringGetElements,
+        freeRep,
+	NULL /*toString*/,
+	my_LStringObjSetElem, /* use default update string */
+	my_LStringReplace
+    },
+    {
+	TCL_ABSTRACTLIST_VERSION_1,
+	"lstring",
+	NULL,
+/**/	NULL, /*default DupLStringRep,*/
+	my_LStringObjLength,
+	my_LStringObjIndex,
+	my_LStringObjRange,/*ObjRange*/
+	my_LStringObjReverse,
+        my_LStringGetElements,
+        freeRep,
+	NULL /*toString*/,
+	my_LStringObjSetElem, /* use default update string */
+	my_LStringReplace
+    },
+    {
+	TCL_ABSTRACTLIST_VERSION_1,
+	"lstring",
+	NULL,
+	DupLStringRep,
+/**/	NULL, /*default my_LStringObjLength,*/
+	my_LStringObjIndex,
+	my_LStringObjRange,/*ObjRange*/
+	my_LStringObjReverse,
+        my_LStringGetElements,
+        freeRep,
+	NULL /*toString*/,
+	my_LStringObjSetElem, /* use default update string */
+	my_LStringReplace
+    },
+    {
+	TCL_ABSTRACTLIST_VERSION_1,
+	"lstring",
+	NULL,
+	DupLStringRep,
+	my_LStringObjLength,
+/**/	NULL, /*default my_LStringObjIndex,*/
+	my_LStringObjRange,/*ObjRange*/
+	my_LStringObjReverse,
+        my_LStringGetElements,
+        freeRep,
+	NULL /*toString*/,
+	my_LStringObjSetElem, /* use default update string */
+	my_LStringReplace
+    },
+    {
+	TCL_ABSTRACTLIST_VERSION_1,
+	"lstring",
+	NULL,
+	DupLStringRep,
+	my_LStringObjLength,
+	my_LStringObjIndex,
+/**/	NULL, /*default my_LStringObjRange,*/
+	my_LStringObjReverse,
+        my_LStringGetElements,
+        freeRep,
+	NULL /*toString*/,
+	my_LStringObjSetElem, /* use default update string */
+	my_LStringReplace
+    },
+    {
+	TCL_ABSTRACTLIST_VERSION_1,
+	"lstring",
+	NULL,
+	DupLStringRep,
+	my_LStringObjLength,
+	my_LStringObjIndex,
+	my_LStringObjRange,/*ObjRange*/
+/**/	NULL, /*defaults my_LStringObjReverse,*/
+        my_LStringGetElements,
+        freeRep,
+	NULL /*toString*/,
+	my_LStringObjSetElem, /* use default update string */
+	my_LStringReplace
+    },
+    {
 	TCL_ABSTRACTLIST_VERSION_1,
 	"lstring",
 	NULL,
@@ -54,14 +152,88 @@ static Tcl_AbstractListType lstringType = {
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
-        NULL/*my_LStringGetElements*/,
+/**/	NULL, /*default NULL / *my_LStringGetElements,*/
         freeRep,
 	NULL /*toString*/,
 	my_LStringObjSetElem, /* use default update string */
 	my_LStringReplace
+    },
+    {
+	TCL_ABSTRACTLIST_VERSION_1,
+	"lstring",
+	NULL,
+	DupLStringRep,
+	my_LStringObjLength,
+	my_LStringObjIndex,
+	my_LStringObjRange,/*ObjRange*/
+	my_LStringObjReverse,
+        my_LStringGetElements,
+/**/	NULL, /*default freeRep,*/
+	NULL /*toString*/,
+	my_LStringObjSetElem, /* use default update string */
+	my_LStringReplace
+    },
+    {
+	TCL_ABSTRACTLIST_VERSION_1,
+	"lstring",
+	NULL,
+	DupLStringRep,
+	my_LStringObjLength,
+	my_LStringObjIndex,
+	my_LStringObjRange,/*ObjRange*/
+	my_LStringObjReverse,
+        my_LStringGetElements,
+        freeRep,
+/**/	NULL, /*toString*/
+	my_LStringObjSetElem, /* use default update string */
+	my_LStringReplace
+    },
+    {
+	TCL_ABSTRACTLIST_VERSION_1,
+	"lstring",
+	NULL,
+	DupLStringRep,
+	my_LStringObjLength,
+	my_LStringObjIndex,
+	my_LStringObjRange,/*ObjRange*/
+	my_LStringObjReverse,
+        my_LStringGetElements,
+        freeRep,
+	NULL /*toString*/,
+/**/	NULL, /*default my_LStringObjSetElem, / * use default update string */
+	NULL, /*default my_LStringReplace*/
+    },
+    {
+	TCL_ABSTRACTLIST_VERSION_1,
+	"lstring",
+	NULL,
+	DupLStringRep,
+	my_LStringObjLength,
+	my_LStringObjIndex,
+	my_LStringObjRange,/*ObjRange*/
+	my_LStringObjReverse,
+        my_LStringGetElements,
+        freeRep,
+	NULL /*toString*/,
+	my_LStringObjSetElem, /* use default update string */
+/**/	NULL, /*default my_LStringReplace*/
+    },
+    {
+	TCL_ABSTRACTLIST_VERSION_1,
+	"lstring",
+	NULL,
+	DupLStringRep,
+	my_LStringObjLength,
+	my_LStringObjIndex,
+	my_LStringObjRange,/*ObjRange*/
+	my_LStringObjReverse,
+        my_LStringGetElements,
+        freeRep,
+	NULL /*toString*/,
+	my_LStringObjSetElem, /* use default update string */
+	my_LStringReplace
+    }
 };
-
-
 
 
 /*
@@ -158,6 +330,7 @@ DupLStringRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
   memcpy(copyLString, srcLString, sizeof(LString));
   copyLString->string = (char*)Tcl_Alloc(srcLString->allocated);
   strcpy(copyLString->string, srcLString->string);
+  copyLString->elements = NULL;
   Tcl_AbstractListSetConcreteRep(copyPtr,copyLString);
 
   return;
@@ -268,8 +441,6 @@ static int my_LStringObjRange(
 	return TCL_ERROR;
     }
 
-    rangeObj = Tcl_AbstractListObjNew(interp, &lstringType);
-
     if (len <= 0) {
 	// Return empty value;
 	*newObjPtr = Tcl_NewObj();
@@ -280,6 +451,8 @@ static int my_LStringObjRange(
 	rangeRep->string = (char*)Tcl_Alloc(rangeRep->allocated);
 	strncpy(rangeRep->string,&lstringRepPtr->string[fromIdx],len);
 	rangeRep->string[len] = 0;
+	rangeRep->elements = NULL;
+	rangeObj = Tcl_AbstractListObjNew(interp, Tcl_AbstractListGetType(lstringObj));
 	Tcl_AbstractListSetConcreteRep(rangeObj, rangeRep);
 	*newObjPtr = rangeObj;
     }
@@ -306,8 +479,8 @@ static int my_LStringObjRange(
 static int
 my_LStringObjReverse(Tcl_Interp *interp, Tcl_Obj *srcObj, Tcl_Obj **newObjPtr)
 {
-    Tcl_Obj *revObj = Tcl_AbstractListObjNew(interp, &lstringType);
     LString *srcRep = (LString*)Tcl_AbstractListGetConcreteRep(srcObj);
+    Tcl_Obj *revObj;
     LString *revRep = (LString*)Tcl_Alloc(sizeof(LString));
     Tcl_WideInt len;
     char *srcp, *dstp, *endp;
@@ -315,6 +488,7 @@ my_LStringObjReverse(Tcl_Interp *interp, Tcl_Obj *srcObj, Tcl_Obj **newObjPtr)
     revRep->strlen = len;
     revRep->allocated = len+1;
     revRep->string = (char*)Tcl_Alloc(revRep->allocated);
+    revRep->elements = NULL;
     srcp = srcRep->string;
     endp = &srcRep->string[len];
     dstp = &revRep->string[len];
@@ -322,6 +496,7 @@ my_LStringObjReverse(Tcl_Interp *interp, Tcl_Obj *srcObj, Tcl_Obj **newObjPtr)
     while (srcp < endp) {
 	*dstp-- = *srcp++;
     }
+    revObj = Tcl_AbstractListObjNew(interp, Tcl_AbstractListGetType(srcObj));
     Tcl_AbstractListSetConcreteRep(revObj, revRep);
     *newObjPtr = revObj;
     return TCL_OK;
@@ -439,6 +614,17 @@ my_LStringReplace(
     return TCL_OK;
 }
 
+static Tcl_AbstractListType *
+my_SetAbstractProc(Tcl_AbstractListProcType ptype)
+{
+    Tcl_AbstractListType *typePtr = &lstringTypes[11];
+    if (TCL_ABSL_NEW <= ptype && ptype <= TCL_ABSL_REPLACE) {
+	typePtr = &lstringTypes[ptype];
+    }
+    return typePtr;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -465,19 +651,46 @@ my_NewLStringObj(
     size_t repSize;
     Tcl_Obj *lstringPtr;
     const char *string;
-
-    if (objc != 1) {
-	return NULL;
-    }
-    string = Tcl_GetString(objv[0]);
+    static const char* procTypeNames[] = {
+	"NEW", "DUPREP", "LENGTH", "INDEX",
+	"SLICE", "REVERSE", "GETELEMENTS", "FREEREP",
+	"TOSTRING", "SETELEMENT", "REPLACE", NULL
+    };
+    int i = 0;
+    Tcl_AbstractListProcType ptype;
+    Tcl_AbstractListType *lstringTypePtr = &lstringTypes[11];
 
     repSize = sizeof(LString);
-    lstringPtr = Tcl_AbstractListObjNew(interp, &lstringType);
     lstringRepPtr = (LString*)Tcl_Alloc(repSize);
+
+    while (i<objc) {
+	const char *s = Tcl_GetString(objv[i]);
+	if (strcmp(s, "-not")==0) {
+	    i++;
+	    if (Tcl_GetIndexFromObj(interp, objv[i], procTypeNames, "proctype", 0, &ptype)==TCL_OK) {
+		lstringTypePtr = my_SetAbstractProc(ptype);
+	    }
+	} else if (strcmp(s, "--") == 0) {
+	    // End of options
+	    i++;
+	    break;
+	} else {
+	    break;
+	}
+	i++;
+    }
+    if (i != objc-1) {
+	Tcl_WrongNumArgs(interp, 0, objv, "lstring string");
+	return NULL;
+    }
+    string = Tcl_GetString(objv[i]);
+
+    lstringPtr = Tcl_AbstractListObjNew(interp, lstringTypePtr);
     lstringRepPtr->strlen = strlen(string);
     lstringRepPtr->allocated = lstringRepPtr->strlen + 1;
     lstringRepPtr->string = (char*)Tcl_Alloc(lstringRepPtr->allocated);
     strcpy(lstringRepPtr->string, string);
+    lstringRepPtr->elements = NULL;
     Tcl_AbstractListSetConcreteRep(lstringPtr, lstringRepPtr);
     if (lstringRepPtr->strlen > 0) {
 	Tcl_InvalidateStringRep(lstringPtr);
@@ -511,8 +724,59 @@ freeRep(Tcl_Obj* lstringObj)
     if (lstringRepPtr->string) {
 	Tcl_Free(lstringRepPtr->string);
     }
+    if (lstringRepPtr->elements) {
+	Tcl_Obj **objptr = lstringRepPtr->elements;
+	while (objptr < &lstringRepPtr->elements[lstringRepPtr->strlen]) {
+	    Tcl_DecrRefCount(*objptr++);
+	}
+	Tcl_Free((char*)lstringRepPtr->elements);
+	lstringRepPtr->elements = NULL;
+    }
     Tcl_Free((char*)lstringRepPtr);
     Tcl_AbstractListSetConcreteRep(lstringObj, NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * my_LStringGetElements --
+ *
+ *	Get the elements of the list in an array.
+ *
+ * Results:
+ *	objc, objv return values
+ *
+ * Side effects:
+ *	A Tcl_Obj is stored for every element of the abstract list
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int my_LStringGetElements(Tcl_Interp *interp,
+				 Tcl_Obj *lstringObj,
+				 int *objcptr,
+				 Tcl_Obj ***objvptr)
+{
+    LString *lstringRepPtr = (LString*)Tcl_AbstractListGetConcreteRep(lstringObj);
+    Tcl_Obj **objPtr;
+    char *cptr = lstringRepPtr->string;
+    (void)interp;
+    if (lstringRepPtr->strlen == 0) {
+	*objcptr = 0;
+	*objvptr = NULL;
+	return TCL_OK;
+    }
+    if (lstringRepPtr->elements == NULL) {
+	lstringRepPtr->elements = (Tcl_Obj**)Tcl_Alloc(sizeof(Tcl_Obj*) * lstringRepPtr->strlen);
+	objPtr=lstringRepPtr->elements;
+	while (objPtr<&lstringRepPtr->elements[lstringRepPtr->strlen]) {
+	    *objPtr = Tcl_NewStringObj(cptr++,1);
+	    Tcl_IncrRefCount(*objPtr++);
+	}
+    }
+    *objvptr = lstringRepPtr->elements;
+    *objcptr = lstringRepPtr->strlen;
+    return TCL_OK;
 }
 
 /*
@@ -539,8 +803,9 @@ lLStringObjCmd(
     Tcl_Obj * const objv[])
 {
   Tcl_Obj *lstringObj;
+
   (void)clientData;
-  if (objc != 2) {
+  if (objc < 2) {
       Tcl_WrongNumArgs(interp, 1, objv, "string");
       return TCL_ERROR;
   }

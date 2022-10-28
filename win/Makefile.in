@@ -270,7 +270,8 @@ TCLTEST_OBJS = \
 	tclTestObj.$(OBJEXT) \
 	tclTestProcBodyObj.$(OBJEXT) \
 	tclThreadTest.$(OBJEXT) \
-	tclWinTest.$(OBJEXT)
+	tclWinTest.$(OBJEXT) \
+	tclTestABSList.$(OBJEXT)
 
 GENERIC_OBJS = \
 	regcomp.$(OBJEXT) \
