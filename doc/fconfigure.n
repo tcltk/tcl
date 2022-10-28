@@ -122,8 +122,8 @@ reading and the empty string for writing.
 The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7F;
 attempting to set \fB\-eofchar\fR to a value outside of this range will
 generate an error.
-.TP
 .VS "TCL8.7 TIP633"
+.TP
 \fB\-nocomplainencoding\fR \fIbool\fR
 .
 Reporting mode of encoding errors.
@@ -135,10 +135,9 @@ This is the only available mode in Tcl 8.7.
 Starting from TCL 9.0, this value may be set to a \fIfalse\fR value to throw errors
 in case of encoding errors.
 .RE
-.TP
 .VE "TCL8.7 TIP633"
-.TP
 .VS "TCL8.7 TIP346"
+.TP
 \fB\-strictencoding\fR \fIbool\fR
 .
 Activate additional stricter encoding application rules.
