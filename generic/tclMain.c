@@ -101,7 +101,11 @@ typedef struct {
 				 * commands. */
     PromptType prompt;		/* Next prompt to print */
     Tcl_Interp *interp;		/* Interpreter that evaluates interactive
-				 * commands. */
+				   commands. */
+    char *historyPath;          /* Path to history file. */
+    int signalPipe[2];          /* Signal pipe file descriptors. */
+    Tcl_Channel signalRead;     /* Read channel for signal pipe. */
+    Tcl_Channel signalWrite;    /* Write channel for signal pipe. */
 } InteractiveState;
 
 /*
@@ -277,6 +281,44 @@ Tcl_SourceRCFile(
  *----------------------------------------------------------------------
  */
 
+#ifdef USE_LINENOISE
+#define SIGNAL_MAX 32
+static Tcl_ThreadId lineThreadId;
+static void LineThreadProc(ClientData data) {
+    int length;
+    InteractiveState *isPtr = (InteractiveState *)data;
+    Tcl_Channel output = Tcl_GetStdChannel(TCL_STDOUT);
+    Tcl_DString lineString;
+    Tcl_DStringInit(&lineString);
+    const char *readySignal = "Ready  \n";  // Length is a power of 2
+    int written;
+	
+    while (1) {
+	Tcl_Flush(output);
+	/*
+	 * Help the user compose a command line.
+	 */
+	Tcl_DStringSetLength(&lineString, 0);
+	length = Tcl_GetLine(isPtr->historyPath, &lineString);
+	if (length < 0) {
+	    exit(0);
+	}
+	Tcl_Ungets(isPtr->input, Tcl_DStringValue(&lineString),
+		   Tcl_DStringLength(&lineString), 1);
+	/* Add a newline. */
+	Tcl_Ungets(isPtr->input, "\n", 1, 1);
+	// Why do we have to use the file descriptor here, instead of the channel???
+	// We don't need a mutex for a write of 8 chars, according to DKF:
+	// https://stackoverflow.com/questions/1712616/multithreading-read-from-write-to-a-pipe
+	written = write(isPtr->signalPipe[1], readySignal, sizeof(readySignal));
+	if (written != sizeof(readySignal)){
+	    Tcl_Panic("Write to signal pipe failed!\n");
+	}
+    }
+    Tcl_DStringFree(&lineString);
+    Tcl_ExitThread(0);
+}
+#endif
 void
 Tcl_MainEx(
     int argc,			/* Number of arguments. */
@@ -311,7 +353,15 @@ Tcl_MainEx(
     is.interp = interp;
     is.prompt = PROMPT_START;
     TclNewObj(is.commandPtr);
-
+#ifdef USE_LINENOISE
+    // Why do we need to call pipe here and make our own channels,
+    // instead of just calling Tcl_CreatePipe????
+    pipe(is.signalPipe);
+    is.signalRead = Tcl_MakeFileChannel(INT2PTR(is.signalPipe[0]), TCL_READABLE);
+    Tcl_RegisterChannel(interp, is.signalRead);
+    is.signalWrite = Tcl_MakeFileChannel(INT2PTR(is.signalPipe[1]), TCL_WRITABLE);
+    Tcl_RegisterChannel(interp, is.signalWrite);
+#endif
     /*
      * If the application has not already set a startup script, parse the
      * first few command line arguments to determine the script path and
@@ -461,6 +511,7 @@ Tcl_MainEx(
         strncat(historyPath, "/.tcl_history",
                 sizeof(historyPath) - strlen(historyPath) - 1);
     }
+    is.historyPath = historyPath;
 
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
 	mainLoopProc = TclGetMainLoop();
@@ -558,24 +609,41 @@ Tcl_MainEx(
 	    }
 	} else {	/* (mainLoopProc != NULL) */
 	    /*
-	     * If a main loop has been defined while running interactively, we
-	     * want to start a fileevent based prompt by establishing a
-	     * channel handler for stdin.
+	     * An event loop has been created while running interactively.
+	     * Since Tcl_DoOneEvent processes file events, we can arrange to
+	     * execute commands while the event loop is running by creating a
+	     * channel handler that is activated when a file becomes readable.
+	     * Traditionally, Tcl would create a ChannelHandler that would be
+	     * called when stdin became readable, i.e. when it contains a
+	     * complete command ending in \n. But this precludes line editing.
+	     * If USE_LINENOISE is defined, we instead launch a thread to manage
+	     * the line editing, and assign a ChannelHandler to the read end of
+	     * a pipe.  When a command line has been submitted with the Enter
+	     * key, it is copied into the stdin channel with Tcl_Ungets and a
+	     * short message is written to the pipe to activate the handler.
 	     */
 
 	    if (is.input) {
 		if (is.tty) {
 		    Prompt(interp, &is);
+#ifdef USE_LINENOISE
+		    Tcl_CreateThread(&lineThreadId, LineThreadProc, &is,
+				     TCL_THREAD_STACK_DEFAULT, TCL_THREAD_NOFLAGS);
+		    Tcl_CreateChannelHandler(is.signalRead, TCL_READABLE, StdinProc, &is);
+#endif
 		}
-		Tcl_CreateChannelHandler(is.input, TCL_READABLE,
-			StdinProc, &is);
 	    }
 
+	    /* Run the event loop. */
 	    mainLoopProc();
 	    Tcl_SetMainLoop(NULL);
 
 	    if (is.input) {
+#ifdef USE_LINENOISE
+		Tcl_DeleteChannelHandler(is.signalRead, StdinProc, &is);
+#else
 		Tcl_DeleteChannelHandler(is.input, StdinProc, &is);
+#endif
 	    }
 	    is.input = Tcl_GetStdChannel(TCL_STDIN);
 	}
@@ -756,7 +824,13 @@ StdinProc(
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
     Tcl_Interp *interp = isPtr->interp;
+    char message[128];
 
+#ifdef USE_LINENOISE
+    /* Drain the signal pipe. */
+    // Why do we have to use the file descriptor, instead of the channel???
+    length = read(isPtr->signalPipe[0], message, sizeof(message));
+#endif
     if (Tcl_IsShared(commandPtr)) {
 	Tcl_DecrRefCount(commandPtr);
 	commandPtr = Tcl_DuplicateObj(commandPtr);
@@ -776,10 +850,8 @@ StdinProc(
 
 	    Tcl_Exit(0);
 	}
-	Tcl_DeleteChannelHandler(chan, StdinProc, isPtr);
 	return;
     }
-
     if (Tcl_IsShared(commandPtr)) {
 	Tcl_DecrRefCount(commandPtr);
 	commandPtr = Tcl_DuplicateObj(commandPtr);
@@ -794,6 +866,7 @@ StdinProc(
     (void)Tcl_GetStringFromObj(commandPtr, &length);
     Tcl_SetObjLength(commandPtr, --length);
 
+#ifndef USE_LINENOISE
     /*
      * Disable the stdin channel handler while evaluating the command;
      * otherwise if the command re-enters the event loop we might process
@@ -802,15 +875,18 @@ StdinProc(
      */
 
     Tcl_CreateChannelHandler(chan, 0, StdinProc, isPtr);
+#endif
     code = Tcl_RecordAndEvalObj(interp, commandPtr, TCL_EVAL_GLOBAL);
     isPtr->input = chan = Tcl_GetStdChannel(TCL_STDIN);
     Tcl_DecrRefCount(commandPtr);
     TclNewObj(commandPtr);
     isPtr->commandPtr = commandPtr;
     Tcl_IncrRefCount(commandPtr);
+#ifndef USE_LINENOISE
     if (chan != NULL) {
 	Tcl_CreateChannelHandler(chan, TCL_READABLE, StdinProc, isPtr);
     }
+#endif
     if (code != TCL_OK) {
 	chan = Tcl_GetStdChannel(TCL_STDERR);
 
@@ -827,6 +903,7 @@ StdinProc(
 	if ((length > 0) && (chan != NULL)) {
 	    Tcl_WriteObj(chan, resultPtr);
 	    Tcl_WriteChars(chan, "\n", 1);
+	    Tcl_Flush(chan);
 	}
 	Tcl_DecrRefCount(resultPtr);
     }
