@@ -112,8 +112,8 @@ string.
 The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7F;
 attempting to set \fB\-eofchar\fR to a value outside of this range will
 generate an error.
-.TP
 .VS "TCL9.0 TIP633"
+.TP
 \fB\-nocomplainencoding\fR \fIbool\fR
 .
 Reporting mode of encoding errors.
@@ -127,10 +127,9 @@ This option was introduced with TCL 8.7 and has the fix value \fItrue\fR.
 .PP
 See the \fI\-nocomplain\fR option of the \fBencoding\fR command for more information.
 .RE
-.TP
 .VE "TCL9.0 TIP633"
-.TP
 .VS "TCL9.0 TIP346"
+.TP
 \fB\-strictencoding\fR \fIbool\fR
 .
 Activate additional stricter encoding application rules.
