@@ -283,8 +283,10 @@ Tcl_SourceRCFile(
 
 #ifdef USE_LINENOISE
 #define SIGNAL_MAX 32
+static Tcl_ThreadId lineThreadId = 0;
+TCL_DECLARE_MUTEX(linenoiseMutex)
+TCL_DECLARE_MUTEX(signalPipeMutex)
 
-static Tcl_ThreadId lineThreadId;
 static void LineThreadProc(ClientData data) {
     int length, written;
     InteractiveState *isPtr = (InteractiveState *)data;
@@ -298,7 +300,9 @@ static void LineThreadProc(ClientData data) {
 	 * Help the user compose a command line.
 	 */
 	Tcl_DStringSetLength(&lineString, 0);
+	Tcl_MutexLock(&linenoiseMutex);
 	length = Tcl_GetLine(isPtr->historyPath, &lineString);
+	Tcl_MutexUnlock(&linenoiseMutex);
 	if (length < 0) {
 	    break;
 	}
@@ -312,8 +316,14 @@ static void LineThreadProc(ClientData data) {
 	 * https://stackoverflow.com/questions/1712616/multithreading-read-from-write-to-a-pipe
 	 */
 
-	// Why do we have to use the file descriptor here, instead of the channel???
+	/*
+	 * We have to use the file descriptor here, instead of the channel because
+	 * the pipe is shared.
+	 */
+	
+	Tcl_MutexLock(&signalPipeMutex);
 	written = write(isPtr->signalPipe[1], readySignal, sizeof(readySignal));
+	Tcl_MutexUnlock(&signalPipeMutex);
 	if (written != sizeof(readySignal)){
 	    Tcl_Panic("Write to signal pipe failed!\n");
 	}
@@ -342,7 +352,10 @@ Tcl_MainEx(
     InteractiveState is;
     char *home = getenv("HOME");
     char historyPath[1024];
-    
+
+    #ifdef USE_LINENOISE
+    Tcl_MutexLock(&linenoiseMutex);
+    #endif
     TclpSetInitialEncodings();
     if (0 < argc) {
 	--argc;			/* "consume" argv[0] */
@@ -356,13 +369,20 @@ Tcl_MainEx(
     is.prompt = PROMPT_START;
     TclNewObj(is.commandPtr);
 #ifdef USE_LINENOISE
-    // Why do we need to call pipe here and make our own channels,
-    // instead of just calling Tcl_CreatePipe????
+
+    /*
+     * Channels created with Tcl_CreateChannel, and pipes created with
+     * Tcl_CreatePipe are thread-specific.  But we want to create a pipe for
+     * inter-thread communication, which therefore must be shared between the
+     * two threads that are communicating.  So this is a workaround.
+     */
+    
     pipe(is.signalPipe);
     is.signalRead = Tcl_MakeFileChannel(INT2PTR(is.signalPipe[0]), TCL_READABLE);
     Tcl_RegisterChannel(interp, is.signalRead);
     is.signalWrite = Tcl_MakeFileChannel(INT2PTR(is.signalPipe[1]), TCL_WRITABLE);
     Tcl_RegisterChannel(interp, is.signalWrite);
+
 #endif
     /*
      * If the application has not already set a startup script, parse the
@@ -616,7 +636,7 @@ Tcl_MainEx(
 	     * execute commands while the event loop is running by creating a
 	     * channel handler that is activated when a file becomes readable.
 	     * Traditionally, Tcl would create a ChannelHandler that would be
-	     * called when stdin became readable, i.e. when it contains a
+	     * called when stdin became readable, i.e. when it contained a
 	     * complete command ending in \n. But this precludes line editing.
 	     * If USE_LINENOISE is defined, we instead launch a thread to manage
 	     * the line editing, and assign a ChannelHandler to the read end of
@@ -635,18 +655,33 @@ Tcl_MainEx(
 #endif
 		}
 	    }
+#ifdef USE_LINENOISE
 
+	    /*
+	     * Allow the lineThread to call linenoise.
+	     */
+
+	    Tcl_MutexUnlock(&linenoiseMutex);
+#endif
 	    /* Run the event loop. */
 	    mainLoopProc();
 	    Tcl_SetMainLoop(NULL);
-
-	    if (is.input) {
 #ifdef USE_LINENOISE
-		Tcl_DeleteChannelHandler(is.signalRead, StdinProc, &is);
+
+	    /*
+	     * The event loop terminated.  Lock out the lineThread so
+	     * that it does not step on the toes of Tcl_GetLineObj.
+	     * XXXX The lineThread will be waiting for a call to Tcl_GetLine
+	     * to return when this happens. We need a way to abort that.
+	     */
+
+	    Tcl_MutexLock(&linenoiseMutex);
+	    Tcl_DeleteChannelHandler(is.signalRead, StdinProc, &is);
 #else
+	    if (is.input) {
 		Tcl_DeleteChannelHandler(is.input, StdinProc, &is);
-#endif
 	    }
+#endif
 	    is.input = Tcl_GetStdChannel(TCL_STDIN);
 	}
 
@@ -826,12 +861,16 @@ StdinProc(
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
     Tcl_Interp *interp = isPtr->interp;
-    char message[128];
 
 #ifdef USE_LINENOISE
-    /* Drain the signal pipe. */
-    // Why do we have to use the file descriptor here, instead of the channel???
+    /*
+     * Drain the signal pipe.  We have to use the file descriptor here, since
+     * the pipe is shared.
+     */
+    char message[128];
+    Tcl_MutexLock(&signalPipeMutex);
     length = read(isPtr->signalPipe[0], message, sizeof(message));
+    Tcl_MutexUnlock(&signalPipeMutex);
 #endif
     if (Tcl_IsShared(commandPtr)) {
 	Tcl_DecrRefCount(commandPtr);
