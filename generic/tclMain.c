@@ -283,16 +283,15 @@ Tcl_SourceRCFile(
 
 #ifdef USE_LINENOISE
 #define SIGNAL_MAX 32
+
 static Tcl_ThreadId lineThreadId;
 static void LineThreadProc(ClientData data) {
-    int length;
+    int length, written;
     InteractiveState *isPtr = (InteractiveState *)data;
     Tcl_Channel output = Tcl_GetStdChannel(TCL_STDOUT);
     Tcl_DString lineString;
-    Tcl_DStringInit(&lineString);
     const char *readySignal = "Ready  \n";  // Length is a power of 2
-    int written;
-	
+    Tcl_DStringInit(&lineString);
     while (1) {
 	Tcl_Flush(output);
 	/*
@@ -301,24 +300,29 @@ static void LineThreadProc(ClientData data) {
 	Tcl_DStringSetLength(&lineString, 0);
 	length = Tcl_GetLine(isPtr->historyPath, &lineString);
 	if (length < 0) {
-	    exit(0);
+	    break;
 	}
 	Tcl_Ungets(isPtr->input, Tcl_DStringValue(&lineString),
 		   Tcl_DStringLength(&lineString), 1);
 	/* Add a newline. */
 	Tcl_Ungets(isPtr->input, "\n", 1, 1);
+
+	/*
+	 * We don't need a mutex for a write of 8 chars, according to DKF:
+	 * https://stackoverflow.com/questions/1712616/multithreading-read-from-write-to-a-pipe
+	 */
+
 	// Why do we have to use the file descriptor here, instead of the channel???
-	// We don't need a mutex for a write of 8 chars, according to DKF:
-	// https://stackoverflow.com/questions/1712616/multithreading-read-from-write-to-a-pipe
 	written = write(isPtr->signalPipe[1], readySignal, sizeof(readySignal));
 	if (written != sizeof(readySignal)){
 	    Tcl_Panic("Write to signal pipe failed!\n");
 	}
     }
     Tcl_DStringFree(&lineString);
-    Tcl_ExitThread(0);
+    Tcl_Exit(0);
 }
 #endif
+
 void
 Tcl_MainEx(
     int argc,			/* Number of arguments. */
@@ -347,9 +351,7 @@ Tcl_MainEx(
     TclpFindExecutable ((const char *)argv [0]);	/* nb: this could be NULL
 							 * w/ (eg) an empty argv
 							 * supplied to execve() */
-
     Tcl_InitMemory(interp);
-
     is.interp = interp;
     is.prompt = PROMPT_START;
     TclNewObj(is.commandPtr);
@@ -507,7 +509,7 @@ Tcl_MainEx(
     
     historyPath[0] = '\0';
     if (home) {
-        strncpy(historyPath, home, sizeof(historyPath)-1);
+        strncpy(historyPath, home, sizeof(historyPath) - 1);
         strncat(historyPath, "/.tcl_history",
                 sizeof(historyPath) - strlen(historyPath) - 1);
     }
@@ -828,7 +830,7 @@ StdinProc(
 
 #ifdef USE_LINENOISE
     /* Drain the signal pipe. */
-    // Why do we have to use the file descriptor, instead of the channel???
+    // Why do we have to use the file descriptor here, instead of the channel???
     length = read(isPtr->signalPipe[0], message, sizeof(message));
 #endif
     if (Tcl_IsShared(commandPtr)) {
@@ -847,7 +849,6 @@ StdinProc(
 	     * evaluate [exit]? Leaving as is for now due to compatibility
 	     * concerns.
 	     */
-
 	    Tcl_Exit(0);
 	}
 	return;
