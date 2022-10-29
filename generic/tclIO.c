@@ -5129,11 +5129,11 @@ static char* _GetLine(char *historyPath) {
 
 int Tcl_GetLine(char *historyPath, Tcl_DString *lineString) {
     char *line;
+    Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
     if (!isatty(0)) {
 	/*
 	 * If stdin is not a tty, revert to Tcl_Gets.
 	 */
-	Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
 	return Tcl_Gets(input, lineString);
     }
     line = _GetLine(historyPath);
@@ -5148,11 +5148,11 @@ int Tcl_GetLine(char *historyPath, Tcl_DString *lineString) {
 
 int Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj) {
     char *line;
+    Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
     if (!isatty(0)) {
 	/*
 	 * If stdin is not a tty, revert to Tcl_GetsObj.
 	 */
-	Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
 	return Tcl_GetsObj(input, lineObj);
     }
     line = _GetLine(historyPath);
