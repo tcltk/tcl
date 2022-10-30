@@ -1036,6 +1036,124 @@ TclCompileLassignCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileLeditCmd --
+ *
+ *	How to compile the "ledit" command. We only bother with the case
+ *	where the index is constant.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLeditCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for context. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr, *varTokenPtr;
+    int localIndex;             /* Index of var in local var table. */
+    int isScalar;		/* Flag == 1 if scalar, 0 if array. */
+    int tempDepth;		/* Depth used for emitting one part of the
+				 * code burst. */
+    int first, last, i, end_indicator;
+
+    if (parsePtr->numWords < 4) {
+	return TCL_ERROR;
+    }
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    tokenPtr = TokenAfter(varTokenPtr);
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
+	    &first) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    tokenPtr = TokenAfter(tokenPtr);
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
+	    &last) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    end_indicator = 1; /* "end" means last element by default */
+    if (first == (int)TCL_INDEX_NONE) {
+	/* first == TCL_INDEX_NONE => Range after last element. */
+	first = TCL_INDEX_END; /* Insert at end where ... */
+	end_indicator = 0;     /* ... end means AFTER last element */
+	last = TCL_INDEX_NONE; /* Informs lreplace, nothing to replace */
+    }
+
+    PushVarNameWord(interp, varTokenPtr, envPtr, 0,
+	    &localIndex, &isScalar, 1);
+
+    /* Duplicate the variable name if it's been pushed. */
+    if (localIndex < 0) {
+	if (isScalar) {
+	    tempDepth = 0;
+	} else {
+	    tempDepth = 1;
+	}
+	TclEmitInstInt4(INST_OVER, tempDepth, envPtr);
+    }
+
+    /* Duplicate an array index if one's been pushed. */
+    if (!isScalar) {
+	if (localIndex < 0) {
+	    tempDepth = 1;
+	} else {
+	    tempDepth = parsePtr->numWords - 2;
+	}
+	TclEmitInstInt4(INST_OVER, tempDepth, envPtr);
+    }
+
+    /* Emit code to load the variable's value.  */
+    if (isScalar) {
+	if (localIndex < 0) {
+	    TclEmitOpcode(INST_LOAD_STK, envPtr);
+	} else {
+	    Emit14Inst(INST_LOAD_SCALAR, localIndex, envPtr);
+	}
+    } else {
+	if (localIndex < 0) {
+	    TclEmitOpcode(INST_LOAD_ARRAY_STK, envPtr);
+	} else {
+	    Emit14Inst(INST_LOAD_ARRAY, localIndex, envPtr);
+	}
+    }
+
+    for (i=4 ; i<parsePtr->numWords ; ++i) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, i);
+    }
+
+    TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 3, envPtr);
+    TclEmitInt4(end_indicator, envPtr);
+    TclEmitInt4(first, envPtr);
+    TclEmitInt4(last, envPtr);
+    
+    /* Emit code to put the value back in the variable. */
+
+    if (isScalar) {
+	if (localIndex < 0) {
+	    TclEmitOpcode(INST_STORE_STK, envPtr);
+	} else {
+	    Emit14Inst(INST_STORE_SCALAR, localIndex, envPtr);
+	}
+    } else {
+	if (localIndex < 0) {
+	    TclEmitOpcode(INST_STORE_ARRAY_STK, envPtr);
+	} else {
+	    Emit14Inst(INST_STORE_ARRAY, localIndex, envPtr);
+	}
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileLindexCmd --
  *
  *	Procedure called to compile the "lindex" command.
@@ -2904,75 +3022,6 @@ TclCompileObjectSelfCmd(
     TclEmitOpcode(		INST_TCLOO_SELF,		envPtr);
     TclEmitOpcode(		INST_POP,			envPtr);
     TclEmitOpcode(		INST_NS_CURRENT,		envPtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCompileXxCmd --
- *
- *	How to compile the "linsert2" command. We only bother with the case
- *	where the index is constant.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclCompileXxCmd(
-    Tcl_Interp *interp,		/* Tcl interpreter for context. */
-    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
-				 * command. */
-    TCL_UNUSED(Command *),
-    CompileEnv *envPtr)		/* Holds the resulting instructions. */
-{
-    DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr, *listTokenPtr;
-    int first, last, i, end_indicator;
-
-    if (parsePtr->numWords < 4) {
-	return TCL_ERROR;
-    }
-    listTokenPtr = TokenAfter(parsePtr->tokenPtr);
-
-    tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
-	    &first) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
-	    &last) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    end_indicator = 1; /* "end" means last element by default */
-    if (first == (int)TCL_INDEX_NONE) {
-	/* first == TCL_INDEX_NONE => Range after last element. */
-	first = TCL_INDEX_END; /* Insert at end where ... */
-	end_indicator = 0;     /* ... end means AFTER last element */
-	last = TCL_INDEX_NONE; /* Informs lreplace, nothing to replace */
-    } else if (last == TCL_INDEX_NONE) {
-	/*
-	 * last == TCL_INDEX_NONE => last precedes first element
-	 * lreplace4 will treat this as nothing to delete
-	 * Nought to do, just here for clarity, will be optimized away
-	 */
-    } else {
-
-    }
-
-    CompileWord(envPtr, listTokenPtr, interp, 1);
-
-    for (i=4 ; i<parsePtr->numWords ; i++) {
-	tokenPtr = TokenAfter(tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp, i);
-    }
-
-    TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 3, envPtr);
-    TclEmitInt4(end_indicator, envPtr);
-    TclEmitInt4(first, envPtr);
-    TclEmitInt4(last, envPtr);
     return TCL_OK;
 }
 

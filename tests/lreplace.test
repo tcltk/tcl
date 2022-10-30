@@ -521,6 +521,7 @@ apply {{} {
 		foreach i $ins {
 		    set expected [list [catch {$lreplace $ls $a $b {*}$i} m] $m]
 		    set tester [list ledit ls $a $b {*}$i]
+		    #set script [list catch $tester m]
 		    set script [list catch $tester m]
 		    set script "list \[$script\] \$m"
 		    test ledit-6.[incr n] {ledit battery} -body \
