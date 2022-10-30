@@ -672,6 +672,8 @@ TclPlatStubs tclPlatStubs = {
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
+    NULL, /* 2 */
+    TclUnusedStubEntry, /* 3 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
@@ -1481,7 +1483,8 @@ TclStubs tclStubs = {
     NULL, /* 679 */
     NULL, /* 680 */
     NULL, /* 681 */
-    TclUnusedStubEntry, /* 682 */
+    NULL, /* 682 */
+    TclUnusedStubEntry, /* 683 */
 };
 
 /* !END!: Do not edit above this line. */

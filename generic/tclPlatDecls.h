@@ -57,6 +57,12 @@ EXTERN TCHAR *		Tcl_WinUtfToTChar(CONST char *str, int len,
 EXTERN char *		Tcl_WinTCharToUtf(CONST TCHAR *str, int len,
 				Tcl_DString *dsPtr);
 #endif
+/* Slot 2 is reserved */
+#ifndef TclUnusedStubEntry_TCL_DECLARED
+#define TclUnusedStubEntry_TCL_DECLARED
+/* 3 */
+EXTERN void		TclUnusedStubEntry(void);
+#endif
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
 #ifndef Tcl_MacOSXOpenBundleResources_TCL_DECLARED
@@ -89,6 +95,8 @@ typedef struct TclPlatStubs {
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     TCHAR * (*tcl_WinUtfToTChar) (CONST char *str, int len, Tcl_DString *dsPtr); /* 0 */
     char * (*tcl_WinTCharToUtf) (CONST TCHAR *str, int len, Tcl_DString *dsPtr); /* 1 */
+    VOID *reserved2;
+    void (*tclUnusedStubEntry) (void); /* 3 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     int (*tcl_MacOSXOpenBundleResources) (Tcl_Interp *interp, CONST char *bundleName, int hasResourceFile, int maxPathLen, char *libraryPath); /* 0 */
@@ -117,6 +125,11 @@ extern TclPlatStubs *tclPlatStubsPtr;
 #ifndef Tcl_WinTCharToUtf
 #define Tcl_WinTCharToUtf \
 	(tclPlatStubsPtr->tcl_WinTCharToUtf) /* 1 */
+#endif
+/* Slot 2 is reserved */
+#ifndef TclUnusedStubEntry
+#define TclUnusedStubEntry \
+	(tclPlatStubsPtr->tclUnusedStubEntry) /* 3 */
 #endif
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
