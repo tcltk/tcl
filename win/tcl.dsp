@@ -34,7 +34,7 @@ CFG=tcl - Win32 Debug Static
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "Release"
 # PROP BASE Intermediate_Dir "Release\tcl_Dynamic"
-# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=none MSVCDIR=IDE"
+# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc MSVCDIR=IDE"
 # PROP BASE Rebuild_Opt "-a"
 # PROP BASE Target_File "Release\tclsh87.exe"
 # PROP BASE Bsc_Name ""
@@ -43,7 +43,7 @@ CFG=tcl - Win32 Debug Static
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release"
 # PROP Intermediate_Dir "Release\tcl_Dynamic"
-# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=threads MSVCDIR=IDE"
+# PROP Cmd_Line "nmake -nologo -f makefile.vc MSVCDIR=IDE"
 # PROP Rebuild_Opt "clean release"
 # PROP Target_File "Release\tclsh87t.exe"
 # PROP Bsc_Name ""
@@ -148,14 +148,6 @@ SOURCE=..\compat\dlfcn.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\compat\fixstrtod.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\compat\float.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\compat\gettod.c
 # End Source File
 # Begin Source File
@@ -192,10 +184,6 @@ SOURCE=..\compat\strstr.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\compat\strtod.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\compat\strtol.c
 # End Source File
 # Begin Source File
@@ -205,10 +193,6 @@ SOURCE=..\compat\strtoul.c
 # Begin Source File
 
 SOURCE=..\compat\tclErrno.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\compat\unistd.h
 # End Source File
 # Begin Source File
 
@@ -364,7 +348,7 @@ SOURCE=..\doc\CrtObjCmd.3
 # End Source File
 # Begin Source File
 
-SOURCE=..\doc\CrtSlave.3
+SOURCE=..\doc\CrtAlias.3
 # End Source File
 # Begin Source File
 
@@ -776,7 +760,7 @@ SOURCE=..\doc\safe.n
 # End Source File
 # Begin Source File
 
-SOURCE=..\doc\SaveResult.3
+SOURCE=..\doc\SaveInterpState.3
 # End Source File
 # Begin Source File
 
@@ -840,7 +824,7 @@ SOURCE=..\doc\SplitPath.3
 # End Source File
 # Begin Source File
 
-SOURCE=..\doc\StaticPkg.3
+SOURCE=..\doc\StaticLibrary.3
 # End Source File
 # Begin Source File
 
@@ -1268,6 +1252,10 @@ SOURCE=..\generic\tclProc.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\generic\tclProcess.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\generic\tclRegexp.c
 # End Source File
 # Begin Source File
@@ -1456,10 +1444,6 @@ SOURCE=.\rules.vc
 # End Source File
 # Begin Source File
 
-SOURCE=.\tcl.hpj.in
-# End Source File
-# Begin Source File
-
 SOURCE=.\tcl.m4
 # End Source File
 # Begin Source File
@@ -1525,6 +1509,10 @@ SOURCE=.\tclWinLoad.c
 # Begin Source File
 
 SOURCE=.\tclWinNotify.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\tclWinPanic.c
 # End Source File
 # Begin Source File
 

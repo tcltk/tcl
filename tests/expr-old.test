@@ -6,29 +6,26 @@
 # "compExpr.test". Sourcing this file into Tcl runs the tests and generates
 # output for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1994 The Regents of the University of California.
-# Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-2000 by Scriptics Corporation.
+# Copyright © 1991-1994 The Regents of the University of California.
+# Copyright © 1994-1997 Sun Microsystems, Inc.
+# Copyright © 1998-2000 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2.1
-namespace import ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testexprlong   [llength [info commands testexprlong]]
 testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
-testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
-
-if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
-    testConstraint testmathfunctions 0
-} else {
-    testConstraint testmathfunctions 1
-}
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 # Big test for correct ordering of data in [expr]
 
@@ -38,9 +35,9 @@ proc testIEEE {} {
     switch -exact -- $c {
 	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
 	    # little endian
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\xFF d \
 		ieeeValues(-Infinity)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\xBF d \
 		ieeeValues(-Normal)
 	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
 		ieeeValues(-Subnormal)
@@ -50,19 +47,19 @@ proc testIEEE {} {
 		ieeeValues(+0)
 	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
 		ieeeValues(+Subnormal)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\x3F d \
 		ieeeValues(+Normal)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\x7F d \
 		ieeeValues(+Infinity)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF8\x7F d \
 		ieeeValues(NaN)
 	    set ieeeValues(littleEndian) 1
 	    return 1
 	}
 	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
-	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \xFF\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Infinity)
-	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \xBF\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Normal)
 	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Subnormal)
@@ -72,11 +69,11 @@ proc testIEEE {} {
 		ieeeValues(+0)
 	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Subnormal)
-	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x3F\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Normal)
-	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x7F\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Infinity)
-	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x7F\xF8\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(NaN)
 	    set ieeeValues(littleEndian) 0
 	    return 1
@@ -197,34 +194,34 @@ test expr-old-2.38 {floating-point operators} {
 
 test expr-old-3.1 {illegal floating-point operations} {
     list [catch {expr ~4.0} msg] $msg
-} {1 {can't use floating-point value as operand of "~"}}
+} {1 {can't use floating-point value "4.0" as operand of "~"}}
 test expr-old-3.2 {illegal floating-point operations} {
     list [catch {expr 27%4.0} msg] $msg
-} {1 {can't use floating-point value as operand of "%"}}
+} {1 {can't use floating-point value "4.0" as operand of "%"}}
 test expr-old-3.3 {illegal floating-point operations} {
     list [catch {expr 27.0%4} msg] $msg
-} {1 {can't use floating-point value as operand of "%"}}
+} {1 {can't use floating-point value "27.0" as operand of "%"}}
 test expr-old-3.4 {illegal floating-point operations} {
     list [catch {expr 1.0<<3} msg] $msg
-} {1 {can't use floating-point value as operand of "<<"}}
+} {1 {can't use floating-point value "1.0" as operand of "<<"}}
 test expr-old-3.5 {illegal floating-point operations} {
     list [catch {expr 3<<1.0} msg] $msg
-} {1 {can't use floating-point value as operand of "<<"}}
+} {1 {can't use floating-point value "1.0" as operand of "<<"}}
 test expr-old-3.6 {illegal floating-point operations} {
     list [catch {expr 24.0>>3} msg] $msg
-} {1 {can't use floating-point value as operand of ">>"}}
+} {1 {can't use floating-point value "24.0" as operand of ">>"}}
 test expr-old-3.7 {illegal floating-point operations} {
     list [catch {expr 24>>3.0} msg] $msg
-} {1 {can't use floating-point value as operand of ">>"}}
+} {1 {can't use floating-point value "3.0" as operand of ">>"}}
 test expr-old-3.8 {illegal floating-point operations} {
     list [catch {expr 24&3.0} msg] $msg
-} {1 {can't use floating-point value as operand of "&"}}
+} {1 {can't use floating-point value "3.0" as operand of "&"}}
 test expr-old-3.9 {illegal floating-point operations} {
     list [catch {expr 24.0|3} msg] $msg
-} {1 {can't use floating-point value as operand of "|"}}
+} {1 {can't use floating-point value "24.0" as operand of "|"}}
 test expr-old-3.10 {illegal floating-point operations} {
     list [catch {expr 24.0^3} msg] $msg
-} {1 {can't use floating-point value as operand of "^"}}
+} {1 {can't use floating-point value "24.0" as operand of "^"}}
 
 # Check the string operators individually.
 
@@ -265,46 +262,46 @@ test expr-old-4.32 {string operators} {expr {0?"foo":"bar"}} bar
 
 test expr-old-5.1 {illegal string operations} {
     list [catch {expr {-"a"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "-"}}
+} {1 {can't use non-numeric string "a" as operand of "-"}}
 test expr-old-5.2 {illegal string operations} {
     list [catch {expr {+"a"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "+"}}
+} {1 {can't use non-numeric string "a" as operand of "+"}}
 test expr-old-5.3 {illegal string operations} {
     list [catch {expr {~"a"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "~"}}
+} {1 {can't use non-numeric string "a" as operand of "~"}}
 test expr-old-5.4 {illegal string operations} {
     list [catch {expr {!"a"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "!"}}
+} {1 {can't use non-numeric string "a" as operand of "!"}}
 test expr-old-5.5 {illegal string operations} {
     list [catch {expr {"a"*"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "*"}}
+} {1 {can't use non-numeric string "a" as operand of "*"}}
 test expr-old-5.6 {illegal string operations} {
     list [catch {expr {"a"/"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "/"}}
+} {1 {can't use non-numeric string "a" as operand of "/"}}
 test expr-old-5.7 {illegal string operations} {
     list [catch {expr {"a"%"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "%"}}
+} {1 {can't use non-numeric string "a" as operand of "%"}}
 test expr-old-5.8 {illegal string operations} {
     list [catch {expr {"a"+"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "+"}}
+} {1 {can't use non-numeric string "a" as operand of "+"}}
 test expr-old-5.9 {illegal string operations} {
     list [catch {expr {"a"-"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "-"}}
+} {1 {can't use non-numeric string "a" as operand of "-"}}
 test expr-old-5.10 {illegal string operations} {
     list [catch {expr {"a"<<"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "<<"}}
+} {1 {can't use non-numeric string "a" as operand of "<<"}}
 test expr-old-5.11 {illegal string operations} {
     list [catch {expr {"a">>"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of ">>"}}
+} {1 {can't use non-numeric string "a" as operand of ">>"}}
 test expr-old-5.12 {illegal string operations} {
     list [catch {expr {"a"&"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "&"}}
+} {1 {can't use non-numeric string "a" as operand of "&"}}
 test expr-old-5.13 {illegal string operations} {
     list [catch {expr {"a"^"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "^"}}
+} {1 {can't use non-numeric string "a" as operand of "^"}}
 test expr-old-5.14 {illegal string operations} {
     list [catch {expr {"a"|"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "|"}}
+} {1 {can't use non-numeric string "a" as operand of "|"}}
 test expr-old-5.15 {illegal string operations} {
     list [catch {expr {"a"&&"b"}} msg] $msg
 } {1 {expected boolean value but got "a"}}
@@ -493,7 +490,7 @@ test expr-old-25.20 {type conversions} {expr 10.0} 10.0
 
 test expr-old-26.1 {error conditions} {
     list [catch {expr 2+"a"} msg] $msg
-} {1 {can't use non-numeric string as operand of "+"}}
+} {1 {can't use non-numeric string "a" as operand of "+"}}
 test expr-old-26.2 {error conditions} -body {
     expr 2+4*
 } -returnCodes error -match glob -result *
@@ -507,10 +504,10 @@ test expr-old-26.4 {error conditions} {
 set a xx
 test expr-old-26.5 {error conditions} {
     list [catch {expr {2+$a}} msg] $msg
-} {1 {can't use non-numeric string as operand of "+"}}
+} {1 {can't use non-numeric string "xx" as operand of "+"}}
 test expr-old-26.6 {error conditions} {
     list [catch {expr {2+[set a]}} msg] $msg
-} {1 {can't use non-numeric string as operand of "+"}}
+} {1 {can't use non-numeric string "xx" as operand of "+"}}
 test expr-old-26.7 {error conditions} -body {
     expr {2+(4}
 } -returnCodes error -match glob -result *
@@ -527,14 +524,14 @@ test expr-old-26.10b {error conditions} ieeeFloatingPoint {
     list [catch {expr 2.0/0.0} msg] $msg
 } {0 Inf}
 test expr-old-26.11 {error conditions} -body {
-    expr 2#
+    expr 2`
 } -returnCodes error -match glob -result *
 test expr-old-26.12 {error conditions} -body {
     expr a.b
 } -returnCodes error -match glob -result *
 test expr-old-26.13 {error conditions} {
     list [catch {expr {"a"/"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "/"}}
+} {1 {can't use non-numeric string "a" as operand of "/"}}
 test expr-old-26.14 {error conditions} -body {
     expr 2:3
 } -returnCodes error -match glob -result *
@@ -819,10 +816,10 @@ test expr-old-32.32 {math functions in expressions} {
 } {-1}
 test expr-old-32.33 {math functions in expressions} {
     expr int(1e60)
-} 0
+} 999999999999999949387135297074018866963645011013410073083904
 test expr-old-32.34 {math functions in expressions} {
     expr int(-1e60)
-} 0
+} -999999999999999949387135297074018866963645011013410073083904
 test expr-old-32.35 {math functions in expressions} {
     expr round(1.49)
 } {1}
@@ -847,12 +844,6 @@ test expr-old-32.41 {math functions in expressions} {
 test expr-old-32.42 {math functions in expressions} {
     list [catch {expr hypot(5*.8,3)} msg] $msg
 } {0 5.0}
-test expr-old-32.43 {math functions in expressions} testmathfunctions {
-    expr 2*T1()
-} 246
-test expr-old-32.44 {math functions in expressions} testmathfunctions {
-    expr T2()*3
-} 1035
 test expr-old-32.45 {math functions in expressions} {
     expr (0 <= rand()) && (rand() < 1)
 } {1}
@@ -861,7 +852,7 @@ test expr-old-32.46 {math functions in expressions} -body {
 } -match glob -result {1 {too many arguments for math function*}}
 test expr-old-32.47 {math functions in expressions} -body {
     list [catch {expr srand()} msg] $msg
-} -match glob -result {1 {too few arguments for math function*}}
+} -match glob -result {1 {not enough arguments for math function*}}
 test expr-old-32.48 {math functions in expressions} -body {
     expr srand(3.79)
 } -returnCodes error -match glob -result *
@@ -918,7 +909,7 @@ test expr-old-34.6 {errors in math functions} -body {
 } -returnCodes error -match glob -result *
 test expr-old-34.7 {errors in math functions} -body {
     list [catch {expr hypot(1.0)} msg] $msg
-} -match glob -result {1 {too few arguments for math function*}}
+} -match glob -result {1 {not enough arguments for math function*}}
 test expr-old-34.8 {errors in math functions} -body {
     list [catch {expr hypot(1.0, 2.0, 3.0)} msg] $msg
 } -match glob -result {1 {too many arguments for math function*}}
@@ -952,10 +943,6 @@ test expr-old-34.15 {errors in math functions} {
 test expr-old-34.16 {errors in math functions} {
     expr round(-1.0e30)
 } -1000000000000000019884624838656
-test expr-old-34.17 {errors in math functions} -constraints testmathfunctions \
-    -body {
-        list [catch {expr T1(4)} msg] $msg
-    } -match glob -result {1 {too many arguments for math function*}}
 
 test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
     expr 0o289
@@ -963,7 +950,7 @@ test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
 test expr-old-36.2 {ExprLooksLikeInt procedure} {
     set x 0o289
     list [catch {expr {$x+1}} msg] $msg
-} {1 {can't use invalid octal number as operand of "+"}}
+} {1 {can't use invalid octal number "0o289" as operand of "+"}}
 test expr-old-36.3 {ExprLooksLikeInt procedure} {
     list [catch {expr 0289.1} msg] $msg
 } {0 289.1}
@@ -1003,11 +990,11 @@ test expr-old-36.11 {ExprLooksLikeInt procedure} {
 test expr-old-36.12 {ExprLooksLikeInt procedure} {
     set x "10;"
     list [catch {expr {$x+1}} msg] $msg
-} {1 {can't use non-numeric string as operand of "+"}}
+} {1 {can't use non-numeric string "10;" as operand of "+"}}
 test expr-old-36.13 {ExprLooksLikeInt procedure} {
     set x " +"
     list [catch {expr {$x+1}} msg] $msg
-} {1 {can't use non-numeric string as operand of "+"}}
+} {1 {can't use non-numeric string " +" as operand of "+"}}
 test expr-old-36.14 {ExprLooksLikeInt procedure} {
     set x "123456789012345678901234567890 "
     expr {$x+1}
@@ -1015,7 +1002,7 @@ test expr-old-36.14 {ExprLooksLikeInt procedure} {
 test expr-old-36.15 {ExprLooksLikeInt procedure} {
     set x "0o99 "
     list [catch {expr {$x+1}} msg] $msg
-} {1 {can't use invalid octal number as operand of "+"}}
+} {1 {can't use invalid octal number "0o99 " as operand of "+"}}
 test expr-old-36.16 {ExprLooksLikeInt procedure} {
     set x " 0xffffffffffffffffffffffffffffffffffffff  "
     expr {$x+1}
@@ -1052,8 +1039,8 @@ test expr-old-37.8 {Tcl_ExprLong handles overflows} testexprlong {
     testexprlong -0x80000000
 } {This is a result: -2147483648}
 test expr-old-37.9 {Tcl_ExprLong handles overflows} {testexprlong longIs32bit} {
-    testexprlong -0xffffffff
-} {This is a result: 1}
+    testexprlong -0x7fffffff
+} {This is a result: -2147483647}
 test expr-old-37.10 {Tcl_ExprLong handles overflows} \
     -constraints {testexprlong longIs32bit} \
     -match glob \
@@ -1077,9 +1064,13 @@ test expr-old-37.13 {Tcl_ExprLong handles overflows} \
 test expr-old-37.14 {Tcl_ExprLong handles overflows} testexprlong {
     testexprlong -2147483648.
 } {This is a result: -2147483648}
-test expr-old-37.15 {Tcl_ExprLong handles overflows} {testexprlong longIs32bit} {
-    testexprlong -4294967295.
-} {This is a result: 1}
+test expr-old-37.15 {Tcl_ExprLong handles overflows} \
+    -constraints {testexprlong longIs32bit} \
+    -match glob \
+    -body {
+	list [catch {testexprlong -2147483649.} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
 test expr-old-37.16 {Tcl_ExprLong handles overflows} \
     -constraints {testexprlong longIs32bit} \
     -match glob \
@@ -1159,8 +1150,8 @@ test expr-old-40.2 {min math function} -body {
     expr {min(0.0)}
 } -result 0.0
 test expr-old-40.3 {min math function} -body {
-    list [catch {expr {min()}} msg] $msg
-} -result {1 {too few arguments to math function "min"}}
+    expr {min()}
+} -returnCodes error -result {not enough arguments for math function "min"}
 test expr-old-40.4 {min math function} -body {
     expr {min(wide(-1) << 30, 4.5, -10)}
 } -result [expr {wide(-1) << 30}]
@@ -1170,6 +1161,12 @@ test expr-old-40.5 {min math function} -body {
 test expr-old-40.6 {min math function} -body {
     expr {min(300, "0xFF")}
 } -result 255
+test expr-old-40.7 {min math function} -body {
+    expr min(1[string repeat 0 10000], 1e300)
+} -result 1e+300
+test expr-old-40.8 {min math function} -body {
+    expr {min(0, "a")}
+} -returnCodes error -match glob -result *
 
 test expr-old-41.1 {max math function} -body {
     expr {max(0)}
@@ -1178,8 +1175,8 @@ test expr-old-41.2 {max math function} -body {
     expr {max(0.0)}
 } -result 0.0
 test expr-old-41.3 {max math function} -body {
-    list [catch {expr {max()}} msg] $msg
-} -result {1 {too few arguments to math function "max"}}
+    expr {max()}
+} -returnCodes error -result {not enough arguments for math function "max"}
 test expr-old-41.4 {max math function} -body {
     expr {max(wide(1) << 30, 4.5, -10)}
 } -result [expr {wide(1) << 30}]
@@ -1189,6 +1186,12 @@ test expr-old-41.5 {max math function} -body {
 test expr-old-41.6 {max math function} -body {
     expr {max(200, "0xFF")}
 } -result 255
+test expr-old-41.7 {max math function} -body {
+    expr max(1[string repeat 0 10000], 1e300)
+} -result 1[string repeat 0 10000]
+test expr-old-41.8 {max math function} -body {
+    expr {max(0, "a")}
+} -returnCodes error -match glob -result *
 
 # Special test for Pentium arithmetic bug of 1994:
 

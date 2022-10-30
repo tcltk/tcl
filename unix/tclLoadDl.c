@@ -4,7 +4,7 @@
  *	This procedure provides a version of the TclLoadFile that works with
  *	the "dlopen" and "dlsym" library procedures for dynamic loading.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -83,7 +83,7 @@ TclpDlopen(
      * relative path.
      */
 
-    native = Tcl_FSGetNativePath(pathPtr);
+    native = (const char *)Tcl_FSGetNativePath(pathPtr);
     /*
      * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
      */
@@ -108,7 +108,7 @@ TclpDlopen(
 	Tcl_DString ds;
 	const char *fileName = Tcl_GetString(pathPtr);
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
 	/*
 	 * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
 	 */
@@ -131,7 +131,7 @@ TclpDlopen(
 	}
 	return TCL_ERROR;
     }
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)ckalloc(sizeof(*newHandle));
     newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
@@ -179,15 +179,40 @@ FindSymbol(
      * the underscore.
      */
 
-    native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, symbol, TCL_INDEX_NONE, &ds);
     proc = dlsym(handle, native);	/* INTL: Native. */
     if (proc == NULL) {
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
-	native = Tcl_DStringAppend(&newName, native, -1);
+	native = Tcl_DStringAppend(&newName, native, TCL_INDEX_NONE);
 	proc = dlsym(handle, native);	/* INTL: Native. */
 	Tcl_DStringFree(&newName);
     }
+#ifdef __cplusplus
+    if (proc == NULL) {
+	char buf[32];
+	sprintf(buf, "%d", Tcl_DStringLength(&ds));
+	Tcl_DStringInit(&newName);
+	TclDStringAppendLiteral(&newName, "__Z");
+	Tcl_DStringAppend(&newName, buf, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&newName, Tcl_DStringValue(&ds), TCL_INDEX_NONE);
+	TclDStringAppendLiteral(&newName, "P10Tcl_Interp");
+	native = Tcl_DStringValue(&newName);
+	proc = dlsym(handle, native + 1);	/* INTL: Native. */
+	if (proc == NULL) {
+	    proc = dlsym(handle, native);	/* INTL: Native. */
+	}
+	if (proc == NULL) {
+	    TclDStringAppendLiteral(&newName, "i");
+	    native = Tcl_DStringValue(&newName);
+	    proc = dlsym(handle, native + 1);	/* INTL: Native. */
+	}
+	if (proc == NULL) {
+	    proc = dlsym(handle, native);	/* INTL: Native. */
+	}
+	Tcl_DStringFree(&newName);
+    }
+#endif
     Tcl_DStringFree(&ds);
     if (proc == NULL) {
 	const char *errorStr = dlerror();
@@ -210,15 +235,14 @@ FindSymbol(
  *
  * UnloadFile --
  *
- *	Unloads a dynamically loaded binary code file from memory. Code
- *	pointers in the formerly loaded file are no longer valid after calling
- *	this function.
+ *	Unloads a dynamic shared object, after which all pointers to functions
+ *	in the formerly-loaded object are no longer valid.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Code removed from memory.
+ *	Memory for the loaded object is deallocated.
  *
  *----------------------------------------------------------------------
  */
@@ -233,36 +257,6 @@ UnloadFile(
 
     dlclose(handle);
     ckfree(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
-{
-    return 0;
 }
 
 /*

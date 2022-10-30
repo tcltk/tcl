@@ -9,7 +9,7 @@
 #
 #----------------------------------------------------------------------
 #
-# Copyright (c) 2004,2005,2006,2007 by Kevin B. Kenny
+# Copyright © 2004-2007 Kevin B. Kenny
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
@@ -2988,8 +2988,7 @@ proc ::tcl::clock::GetSystemTimeZone {} {
 	set timezone $result
     } elseif {[set result [getenv TZ]] ne {}} {
 	set timezone $result
-    }
-    if {![info exists timezone]} {
+    } else {
         # Cache the time zone only if it was detected by one of the
         # expensive methods.
         if { [info exists CachedSystemTimeZone] } {
@@ -3304,7 +3303,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 	return
     }
 
-    # Since an unsafe interp uses the [clock] command in the master, this code
+    # Since an unsafe interp uses the [clock] command in the parent, this code
     # is security sensitive.  Make sure that the path name cannot escape the
     # given directory.
 
@@ -3314,7 +3313,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 	    "time zone \":$fileName\" not valid"
     }
     try {
-	source -encoding utf-8 [file join $DataDir $fileName]
+	source [file join $DataDir $fileName]
     } on error {} {
 	return -code error \
 	    -errorcode [list CLOCK badTimeZone :$fileName] \
@@ -3344,7 +3343,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 proc ::tcl::clock::LoadZoneinfoFile { fileName } {
     variable ZoneinfoPaths
 
-    # Since an unsafe interp uses the [clock] command in the master, this code
+    # Since an unsafe interp uses the [clock] command in the parent, this code
     # is security sensitive.  Make sure that the path name cannot escape the
     # given directory.
 
@@ -3452,7 +3451,7 @@ proc ::tcl::clock::ReadZoneinfoFile {fileName fname} {
     set times [linsert $times 0 $MINWIDE]
     set codes {}
     foreach c $tempCodes {
-	lappend codes [expr { $c & 0xff }]
+	lappend codes [expr { $c & 0xFF }]
     }
     set codes [linsert $codes 0 0]
 
@@ -4248,7 +4247,7 @@ proc ::tcl::clock::add { clockval args } {
              ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?\""
     }
     if { [catch { expr {wide($clockval)} } result] } {
-	return -code error "expected integer but got \"$clockval\""
+	return -code error $result
     }
 
     set offsets {}
@@ -4287,6 +4286,9 @@ proc ::tcl::clock::add { clockval args } {
 	    -errorcode [list CLOCK gmtWithTimezone] \
 	    "cannot use -gmt and -timezone in same call"
     }
+    if { [catch { expr { wide($clockval) } } result] } {
+	return -code error "expected integer but got \"$clockval\""
+    }
     if { ![string is boolean -strict $gmt] } {
 	return -code error "expected boolean value but got \"$gmt\""
     } elseif { $gmt } {
@@ -4320,11 +4322,6 @@ proc ::tcl::clock::add { clockval args } {
 		}
 		days - day {
 		    set clockval [AddDays $quantity $clockval $timezone \
-			    $changeover]
-		}
-
-		weekdays - weekday {
-		    set clockval [AddWeekDays $quantity $clockval $timezone \
 			    $changeover]
 		}
 
@@ -4423,56 +4420,6 @@ proc ::tcl::clock::AddMonths { months clockval timezone changeover } {
 
     return [dict get $date seconds]
 
-}
-
-#----------------------------------------------------------------------
-#
-# AddWeekDays --
-#
-#	Add a given number of week days (skipping Saturdays and Sundays)
-#	to a given clock value in a given time zone.
-#
-# Parameters:
-#	days - Number of days to add (may be negative)
-#	clockval - Seconds since the epoch before the operation
-#	timezone - Time zone in which the operation is to be performed
-#	changeover - Julian Day on which the Gregorian calendar was adopted
-#		     in the target locale.
-#
-# Results:
-#	Returns the new clock value as a number of seconds since the epoch.
-#
-# Side effects:
-#	None.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::AddWeekDays { days clockval timezone changeover } {
-
-    if {$days == 0} {
-        return $clockval
-    }
-
-    set day [format $clockval -format %u]
-
-    set weeks  [expr {$days / 5}]
-    set rdays  [expr {$days % 5}]
-    set toAdd  [expr {7 * $weeks + $rdays}]
-    set resDay [expr {$day + ($toAdd % 7)}]
-
-    # Adjust if we start from a weekend
-    if {$day > 5} {
-	set adj [expr {5 - $day}]
-	incr toAdd  $adj
-	incr resDay $adj
-    }
-
-    # Adjust if we end up on a weekend
-    if {$resDay > 5} {
-	incr toAdd 2
-    }
-
-    AddDays $toAdd $clockval $timezone $changeover
 }
 
 #----------------------------------------------------------------------

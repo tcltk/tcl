@@ -2,7 +2,7 @@
  * NFA utilities.
  * This file is #included by regcomp.c.
  *
- * Copyright (c) 1998, 1999 Henry Spencer. All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer. All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -2978,6 +2978,9 @@ dumpnfa(
 	dumpcolors(nfa->cm, f);
     }
     fflush(f);
+#else
+    (void)nfa;
+    (void)f;
 #endif
 }
 
@@ -3157,6 +3160,9 @@ dumpcnfa(
 	dumpcstate(st, cnfa, f);
     }
     fflush(f);
+#else
+    (void)cnfa;
+    (void)f;
 #endif
 }
 

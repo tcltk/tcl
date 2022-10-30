@@ -57,11 +57,22 @@
  */
 
 #ifdef HAVE_STRUCT_DIRENT64
-typedef struct dirent64	Tcl_DirEntry;
+typedef struct dirent64		Tcl_DirEntry;
 #   define TclOSreaddir		readdir64
 #else
-typedef struct dirent	Tcl_DirEntry;
+typedef struct dirent		Tcl_DirEntry;
 #   define TclOSreaddir		readdir
+#endif
+#ifdef HAVE_DIR64
+typedef DIR64			TclDIR;
+#   define TclOSopendir		opendir64
+#   define TclOSrewinddir	rewinddir64
+#   define TclOSclosedir	closedir64
+#else
+typedef DIR			TclDIR;
+#   define TclOSopendir		opendir
+#   define TclOSrewinddir	rewinddir
+#   define TclOSclosedir	closedir
 #endif
 
 #ifdef HAVE_TYPE_OFF64_T
@@ -75,43 +86,54 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 
 #ifdef __CYGWIN__
-
+#ifdef __cplusplus
+extern "C" {
+#endif
     /* Make some symbols available without including <windows.h> */
 #   define DWORD unsigned int
 #   define CP_UTF8 65001
 #   define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
 #   define HANDLE void *
 #   define HINSTANCE void *
+#   define HMODULE void *
+#   define MAX_PATH 260
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
     typedef unsigned short WCHAR;
-    __declspec(dllimport) extern __stdcall int GetModuleHandleExW(unsigned int, const char *, void *);
-    __declspec(dllimport) extern __stdcall int GetModuleFileNameW(void *, const char *, int);
-    __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const char *, int,
-	    const char *, int, const char *, const char *);
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wignored-attributes"
+#endif
+    __declspec(dllimport) extern __stdcall int GetModuleHandleExW(unsigned int, const void *, void *);
+    __declspec(dllimport) extern __stdcall int GetModuleFileNameW(void *, const void *, int);
+    __declspec(dllimport) extern __stdcall int WideCharToMultiByte(int, int, const void *, int,
+	    char *, int, const char *, void *);
     __declspec(dllimport) extern __stdcall int MultiByteToWideChar(int, int, const char *, int,
 	    WCHAR *, int);
     __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);
-    __declspec(dllimport) extern __stdcall int IsDebuggerPresent();
-    __declspec(dllimport) extern __stdcall int GetLastError();
+    __declspec(dllimport) extern __stdcall int IsDebuggerPresent(void);
+    __declspec(dllimport) extern __stdcall int GetLastError(void);
     __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
     __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
-
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
-/* On Cygwin, the environment is imported from the Cygwin DLL. */
-#ifndef __x86_64__
-#   define environ __cygwin_environ
-    extern char **__cygwin_environ;
+#ifdef __clang__
+#pragma clang diagnostic pop
 #endif
 #   define timezone _timezone
+    extern int TclOSfstat(int fd, void *statBuf);
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
+#ifdef __cplusplus
+}
+#endif
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
-#   define TclOSstat		stat64
-#   define TclOSlstat		lstat64
+#   define TclOSfstat(fd, buf) fstat64(fd, (struct stat64 *)buf)
+#   define TclOSstat(name, buf) stat64(name, (struct stat64 *)buf)
+#   define TclOSlstat(name,buf) lstat64(name, (struct stat64 *)buf)
 #else
-#   define TclOSstat		stat
-#   define TclOSlstat		lstat
+#   define TclOSfstat(fd, buf) fstat(fd, (struct stat *)buf)
+#   define TclOSstat(name, buf) stat(name, (struct stat *)buf)
+#   define TclOSlstat(name, buf) lstat(name, (struct stat *)buf)
 #endif
 
 /*
@@ -125,33 +147,25 @@ typedef off_t		Tcl_SeekOffset;
 #   include <sys/select.h>
 #endif
 #include <sys/stat.h>
-#if TIME_WITH_SYS_TIME
+#ifdef HAVE_SYS_TIME_H
 #   include <sys/time.h>
-#   include <time.h>
-#else
-#if HAVE_SYS_TIME_H
-#   include <sys/time.h>
-#else
-#   include <time.h>
 #endif
-#endif
+#include <time.h>
 #ifndef NO_SYS_WAIT_H
 #   include <sys/wait.h>
 #endif
-#if HAVE_INTTYPES_H
+#ifdef HAVE_INTTYPES_H
 #   include <inttypes.h>
 #endif
 #include <limits.h>
-#if HAVE_STDINT_H
+#ifdef HAVE_STDINT_H
 #   include <stdint.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#   include <unistd.h>
 #else
-#   include "../compat/unistd.h"
+#   include "../compat/stdint.h"
 #endif
+#include <unistd.h>
 
-extern int TclUnixSetBlockingMode(int fd, int mode);
+MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 
 #include <utime.h>
 
@@ -181,13 +195,7 @@ extern int TclUnixSetBlockingMode(int fd, int mode);
  *---------------------------------------------------------------------------
  */
 
-#ifndef NO_FLOAT_H
-#   include <float.h>
-#else
-#ifndef NO_VALUES_H
-#   include <values.h>
-#endif
-#endif
+#include <float.h>
 
 #ifndef FLT_MAX
 #   ifdef MAXFLOAT
@@ -239,29 +247,29 @@ extern int TclUnixSetBlockingMode(int fd, int mode);
  */
 
 #ifndef WIFEXITED
-#   define WIFEXITED(stat)	(((*((int *) &(stat))) & 0xff) == 0)
+#   define WIFEXITED(stat)	(((*((int *) &(stat))) & 0xFF) == 0)
 #endif
 
 #ifndef WEXITSTATUS
-#   define WEXITSTATUS(stat)	(((*((int *) &(stat))) >> 8) & 0xff)
+#   define WEXITSTATUS(stat)	(((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 #ifndef WIFSIGNALED
 #   define WIFSIGNALED(stat) \
 	(((*((int *) &(stat)))) && ((*((int *) &(stat))) \
-		== ((*((int *) &(stat))) & 0x00ff)))
+		== ((*((int *) &(stat))) & 0x00FF)))
 #endif
 
 #ifndef WTERMSIG
-#   define WTERMSIG(stat)	((*((int *) &(stat))) & 0x7f)
+#   define WTERMSIG(stat)	((*((int *) &(stat))) & 0x7F)
 #endif
 
 #ifndef WIFSTOPPED
-#   define WIFSTOPPED(stat)	(((*((int *) &(stat))) & 0xff) == 0177)
+#   define WIFSTOPPED(stat)	(((*((int *) &(stat))) & 0xFF) == 0177)
 #endif
 
 #ifndef WSTOPSIG
-#   define WSTOPSIG(stat)	(((*((int *) &(stat))) >> 8) & 0xff)
+#   define WSTOPSIG(stat)	(((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 /*
@@ -608,10 +616,8 @@ extern char **		environ;
 #	    undef HAVE_COPYFILE
 #	endif
 #	if MAC_OS_X_VERSION_MAX_ALLOWED < 1030
-#	    ifdef TCL_THREADS
-		/* prior to 10.3, realpath is not threadsafe, c.f. bug 711232 */
-#		define NO_REALPATH 1
-#	    endif
+	    /* prior to 10.3, realpath is not threadsafe, c.f. bug 711232 */
+#	    define NO_REALPATH 1
 #	    undef HAVE_LANGINFO
 #	endif
 #   endif /* MAC_OS_X_VERSION_MAX_ALLOWED */
@@ -684,7 +690,7 @@ typedef int socklen_t;
 
 #define TclpExit	exit
 
-#ifdef TCL_THREADS
+#if !defined(TCL_THREADS) || TCL_THREADS
 #   include <pthread.h>
 #endif /* TCL_THREADS */
 
@@ -704,14 +710,14 @@ typedef int socklen_t;
 #include <pwd.h>
 #include <grp.h>
 
-extern struct passwd *	TclpGetPwNam(const char *name);
-extern struct group *	TclpGetGrNam(const char *name);
-extern struct passwd *	TclpGetPwUid(uid_t uid);
-extern struct group *	TclpGetGrGid(gid_t gid);
-extern struct hostent *	TclpGetHostByName(const char *name);
-extern struct hostent *	TclpGetHostByAddr(const char *addr,
+MODULE_SCOPE struct passwd *	TclpGetPwNam(const char *name);
+MODULE_SCOPE struct group *	TclpGetGrNam(const char *name);
+MODULE_SCOPE struct passwd *	TclpGetPwUid(uid_t uid);
+MODULE_SCOPE struct group *	TclpGetGrGid(gid_t gid);
+MODULE_SCOPE struct hostent *	TclpGetHostByName(const char *name);
+MODULE_SCOPE struct hostent *	TclpGetHostByAddr(const char *addr,
 				    int length, int type);
-extern void *TclpMakeTcpClientChannelMode(
+MODULE_SCOPE void *TclpMakeTcpClientChannelMode(
 				    void *tcpSocket, int mode);
 
 #endif /* _TCLUNIXPORT */

@@ -47,7 +47,8 @@ absolute, and file names may contain any character other than slash.
 The file names \fB\&.\fR and \fB\&..\fR are special and refer to the
 current directory and the parent of the current directory respectively.
 Multiple adjacent slash characters are interpreted as a single
-separator.  Any number of trailing slash characters at the end of a
+separator, except for the first double slash \fB//\fR in absolute paths.
+Any number of trailing slash characters at the end of a
 path are simply ignored, so the paths \fBfoo\fR, \fBfoo/\fR and
 \fBfoo//\fR are all identical, and in particular \fBfoo/\fR does not
 necessarily mean a directory is being referred.
@@ -150,9 +151,7 @@ The safest approach is to use names consisting of
 alphanumeric characters only.  Care should be taken with filenames
 which contain spaces (common on Windows systems) and
 filenames where the backslash is the directory separator (Windows
-native path names).  Also Windows 3.1 only supports file
-names with a root of no more than 8 characters and an extension of no
-more than 3 characters.
+native path names).
 .PP
 On Windows platforms there are file and path length restrictions.
 Complete paths or filenames longer than about 260 characters will lead
@@ -176,3 +175,7 @@ file(n), glob(n)
 .SH KEYWORDS
 current directory, absolute file name, relative file name,
 volume-relative file name, portability
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

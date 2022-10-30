@@ -2,13 +2,13 @@
 # command. Sourcing this file into Tcl runs the tests and generates
 # output for errors. No output means no errors were found.
 #
-# Copyright (c) 2005 Donal K. Fellows
+# Copyright © 2005 Donal K. Fellows
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -48,20 +48,20 @@ test chan-4.1 {chan command: configure subcommand} -body {
     chan configure
 } -returnCodes error -result "wrong # args: should be \"chan configure channelId ?-option value ...?\""
 test chan-4.2 {chan command: [Bug 800753]} -body {
-    chan configure stdout -eofchar \u0100
+    chan configure stdout -eofchar Ā
 } -returnCodes error -match glob -result {bad value*}
 test chan-4.3 {chan command: [Bug 800753]} -body {
-    chan configure stdout -eofchar \u0000
+    chan configure stdout -eofchar \x00
 } -returnCodes error -match glob -result {bad value*}
 test chan-4.4 {chan command: check valid inValue, no outValue} -body {
     chan configure stdout -eofchar [list \x27 {}]
-} -returnCodes ok -result {}
+} -result {}
 test chan-4.5 {chan command: check valid inValue, invalid outValue} -body {
     chan configure stdout -eofchar [list \x27 \x80]
 } -returnCodes error -match glob -result {bad value for -eofchar:*}
 test chan-4.6 {chan command: check no inValue, valid outValue} -body {
     chan configure stdout -eofchar [list {} \x27]
-} -returnCodes ok -result {} -cleanup {chan configure stdout -eofchar [list {} {}]}
+} -result {} -cleanup {chan configure stdout -eofchar [list {} {}]}
 
 test chan-5.1 {chan command: copy subcommand} -body {
     chan copy foo
@@ -173,7 +173,7 @@ test chan-16.9 {chan command: pending input subcommand} -setup {
 
         lappend ::chan-16.9-data $r $l $e $b $i
 
-        if {$r != -1 || $e || $l || !$b || $i > 128} {
+        if {$r >= 0 || $e || $l || !$b || $i > 128} {
             set data [read $sock $i]
             lappend ::chan-16.9-data [string range $data 0 2]
             lappend ::chan-16.9-data [string range $data end-2 end]

@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_GetEncodingFromObj, Tcl_ExternalToUtfDString, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternal, Tcl_WinTCharToUtf, Tcl_WinUtfToTChar, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNameFromEnvironment, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetEncodingSearchPath, Tcl_SetEncodingSearchPath, Tcl_GetDefaultEncodingDir, Tcl_SetDefaultEncodingDir \- procedures for creating and using encodings
+Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_GetEncodingFromObj, Tcl_ExternalToUtfDString, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternal, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNameFromEnvironment, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetEncodingSearchPath, Tcl_SetEncodingSearchPath, Tcl_GetDefaultEncodingDir, Tcl_SetDefaultEncodingDir \- procedures for creating and using encodings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -25,8 +25,14 @@ int
 char *
 \fBTcl_ExternalToUtfDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
 .sp
+int
+\fBTcl_ExternalToUtfDStringEx\fR(\fIencoding, src, srcLen, flags, dstPtr\fR)
+.sp
 char *
 \fBTcl_UtfToExternalDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
+.sp
+int
+\fBTcl_UtfToExternalDStringEx\fR(\fIencoding, src, srcLen, flags, dstPtr\fR)
 .sp
 int
 \fBTcl_ExternalToUtf\fR(\fIinterp, encoding, src, srcLen, flags, statePtr,
@@ -44,6 +50,9 @@ TCHAR *
 .sp
 const char *
 \fBTcl_GetEncodingName\fR(\fIencoding\fR)
+.sp
+int
+\fBTcl_GetEncodingNulLength\fR(\fIencoding\fR)
 .sp
 int
 \fBTcl_SetSystemEncoding\fR(\fIinterp, name\fR)
@@ -108,7 +117,12 @@ byte is converted and then to reset to an initial state.
 \fBTCL_ENCODING_STOPONERROR\fR signifies that the conversion routine should
 return immediately upon reading a source character that does not exist in
 the target encoding; otherwise a default fallback character will
-automatically be substituted.
+automatically be substituted. The flag \fBTCL_ENCODING_STRICT\fR makes the
+encoder/decoder more strict in what it considers to be an invalid byte
+sequence. The flag \fBTCL_ENCODING_NOCOMPLAIN\fR has
+no effect, it is reserved for Tcl 9.0. The flag \fBTCL_ENCODING_MODIFIED\fR makes
+\fBTcl_UtfToExternalDStringEx\fR and \fBTcl_UtfToExternal\fR produce the
+byte sequence \exC0\ex80 in stead of \ex00, for the utf-8/cesu-8 encoders.
 .AP Tcl_EncodingState *statePtr in/out
 Used when converting a (generally long or indefinite length) byte stream
 in a piece-by-piece fashion.  The conversion routine stores its current
@@ -208,6 +222,11 @@ When converting, if any of the characters in the source buffer cannot be
 represented in the target encoding, a default fallback character will be
 used.  The return value is a pointer to the value stored in the DString.
 .PP
+\fBTcl_ExternalToUtfDStringEx\fR is the same as \fBTcl_ExternalToUtfDString\fR,
+but it has an additional flags parameter.  The return value is the index of
+the first byte in the input string causing a conversion error.
+Or TCL_INDEX_NONE if all is OK.
+.PP
 \fBTcl_ExternalToUtf\fR converts a source buffer \fIsrc\fR from the specified
 \fIencoding\fR into UTF-8.  Up to \fIsrcLen\fR bytes are converted from the
 source buffer and up to \fIdstLen\fR converted bytes are stored in \fIdst\fR.
@@ -246,6 +265,11 @@ characters in the source buffer cannot be represented in the target
 encoding, a default fallback character will be used.  The return value is
 a pointer to the value stored in the DString.
 .PP
+\fBTcl_UtfToExternalDStringEx\fR is the same as \fBTcl_UtfToExternalDString\fR,
+but it has an additional flags parameter.  The return value is the index of
+the first byte of an utf-8 byte-sequence in the input string causing a
+conversion error. Or TCL_INDEX_NONE if all is OK.
+.PP
 \fBTcl_UtfToExternal\fR converts a source buffer \fIsrc\fR from UTF-8 into
 the specified \fIencoding\fR.  Up to \fIsrcLen\fR bytes are converted from
 the source buffer and up to \fIdstLen\fR converted bytes are stored in
@@ -255,21 +279,26 @@ is filled with the corresponding number of bytes that were stored in
 \fIdst\fR.  The return values are the same as the return values for
 \fBTcl_ExternalToUtf\fR.
 .PP
-\fBTcl_WinUtfToTChar\fR and \fBTcl_WinTCharToUtf\fR are
-Windows-only convenience
-functions for converting between UTF-8 and Windows strings
-based on the TCHAR type which is by convention
-a Unicode character on Windows NT.
-These functions are essentially wrappers around
-\fBTcl_UtfToExternalDString\fR and
-\fBTcl_ExternalToUtfDString\fR that convert to and from the
-Unicode encoding.
+\fBTcl_WinUtfToTChar\fR and \fBTcl_WinTCharToUtf\fR are Windows-only
+convenience functions for converting between UTF-8 and Windows strings
+based on the TCHAR type which is by convention a Unicode character on
+Windows NT. Those functions are deprecated. You can use
+\fBTcl_UtfToWCharDString\fR resp. \fBTcl_WCharToUtfDString\fR as replacement.
+If you want compatibility with earlier Tcl releases than 8.7, use
+\fBTcl_UtfToUniCharDString\fR resp. \fBTcl_UniCharToUtfDString\fR as
+replacement, and make sure you compile your extension with -DTCL_UTF_MAX=3.
+Beware: Those replacement functions don't initialize their Tcl_DString (you'll
+have to do that yourself), and \fBTcl_UniCharToUtfDString\fR from Tcl 8.6
+doesn't accept -1 as length parameter.
 .PP
 \fBTcl_GetEncodingName\fR is roughly the inverse of \fBTcl_GetEncoding\fR.
 Given an \fIencoding\fR, the return value is the \fIname\fR argument that
 was used to create the encoding.  The string returned by
 \fBTcl_GetEncodingName\fR is only guaranteed to persist until the
 \fIencoding\fR is deleted.  The caller must not modify this string.
+.PP
+\fBTcl_GetEncodingNulLength\fR returns the length of the terminating
+nul byte sequence for strings in the specified encoding.
 .PP
 \fBTcl_SetSystemEncoding\fR sets the default encoding that should be used
 whenever the user passes a NULL value for the \fIencoding\fR argument to
@@ -554,5 +583,16 @@ been loaded, it attempts to load an encoding file called \fIname\fB.enc\fR
 from the \fBencoding\fR subdirectory of each directory that Tcl searches
 for its script library.  If the encoding file exists, but is
 malformed, an error message will be left in \fIinterp\fR.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_GetEncodingFromObj\fR does not modify the reference count of its
+\fIobjPtr\fR argument; it only reads. Note however that this function may set
+the interpreter result; if that is the only place that is holding a reference
+to the object, it will be deleted.
+.PP
+\fBTcl_GetEncodingSearchPath\fR returns an object with a reference count of at
+least 1.
+.SH "SEE ALSO"
+encoding(n)
 .SH KEYWORDS
 utf, encoding, convert

@@ -70,12 +70,11 @@
  */
 
 #define	NOTREACHED	0
-#define	xxx		1
 
 #define	DUPMAX	_POSIX2_RE_DUP_MAX
 #define	DUPINF	(DUPMAX+1)
 
-#define	REMAGIC	0xfed7		/* magic number for main struct */
+#define	REMAGIC	0xFED7		/* magic number for main struct */
 
 /*
  * debugging facilities
@@ -391,7 +390,7 @@ struct fns {
 
 struct guts {
     int magic;
-#define	GUTSMAGIC	0xfed9
+#define	GUTSMAGIC	0xFED9
     int cflags;			/* copy of compile flags */
     long info;			/* copy of re_info */
     size_t nsub;		/* copy of re_nsub */
@@ -412,7 +411,7 @@ struct guts {
 #ifndef AllocVars
 #define AllocVars(vPtr) \
     struct vars var; \
-    register struct vars *vPtr = &var
+    struct vars *vPtr = &var
 #endif
 #ifndef FreeVars
 #define FreeVars(vPtr) ((void) 0)

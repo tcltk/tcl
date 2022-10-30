@@ -1,5 +1,5 @@
 '\"
-'\" Copyright (c) 1998 by Scriptics Corporation.
+'\" Copyright (c) 1998 Scriptics Corporation.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,16 +14,10 @@ encoding \- Manipulate encodings
 .BE
 .SH INTRODUCTION
 .PP
-Strings in Tcl are logically a sequence of 16-bit Unicode characters.
+Strings in Tcl are logically a sequence of Unicode characters.
 These strings are represented in memory as a sequence of bytes that
-may be in one of several encodings: modified UTF\-8 (which uses 1 to 3
-bytes per character), 16-bit
-.QW Unicode
-(which uses 2 bytes per character, with an endianness that is
-dependent on the host architecture), and binary (which uses a single
-byte per character but only handles a restricted range of characters).
-Tcl does not guarantee to always use the same encoding for the same
-string.
+may be in one of several encodings: modified UTF\-8 (which uses 1 to 4
+bytes per character), or a custom encoding start as 8 bit binary data.
 .PP
 Different operating system interfaces or applications may generate
 strings in other encodings such as Shift\-JIS.  The \fBencoding\fR
@@ -34,16 +28,39 @@ formats.
 Performs one of several encoding related operations, depending on
 \fIoption\fR.  The legal \fIoption\fRs are:
 .TP
-\fBencoding convertfrom\fR ?\fIencoding\fR? \fIdata\fR
+\fBencoding convertfrom\fR ?\fB-nocomplain\fR? ?\fB-failindex var\fR? ?\fB-strict\fR? ?\fIencoding\fR? \fIdata\fR
 .
-Convert \fIdata\fR to Unicode from the specified \fIencoding\fR.  The
-characters in \fIdata\fR are treated as binary data where the lower
-8-bits of each character is taken as a single byte.  The resulting
-sequence of bytes is treated as a string in the specified
-\fIencoding\fR.  If \fIencoding\fR is not specified, the current
+Convert \fIdata\fR to a Unicode string from the specified \fIencoding\fR.  The
+characters in \fIdata\fR are 8 bit binary data.  The resulting
+sequence of bytes is a string created by applying the given \fIencoding\fR
+to the data. If \fIencoding\fR is not specified, the current
 system encoding is used.
+.VS "TCL8.7 TIP346, TIP607, TIP601"
+.PP
+.RS
+The command does not fail on encoding errors.  Instead, any not convertable bytes
+(like incomplete UTF-8  sequences, see example below) are put as byte values into
+the output stream.
+.PP
+If the option \fB-failindex\fR with a variable name is given, the error reporting
+is changed in the following manner:
+in case of a conversion error, the position of the input byte causing the error
+is returned in the given variable.  The return value of the command are the
+converted characters until the first error position.
+In case of no error, the value \fI-1\fR is written to the variable.  This option
+may not be used together with \fB-nocomplain\fR.
+.PP
+The option \fB-nocomplain\fR has no effect and is available for compatibility with
+TCL 9. In TCL 9, the encoding command fails with an error on any encoding issue.
+This switch restores the TCL8.7 behaviour.
+.PP
+The \fB-strict\fR option followes more strict rules in conversion.  Currently, only
+the sequence \fB\\xC0\\x80\fR in \fButf-8\fR encoding is disallowed.  Additional rules
+may follow.
+.VE "TCL8.7 TIP346, TIP607, TIP601"
+.RE
 .TP
-\fBencoding convertto\fR ?\fIencoding\fR? \fIstring\fR
+\fBencoding convertto\fR ?\fB-nocomplain\fR? ?\fB-failindex var\fR? ?\fB-strict\fR? ?\fIencoding\fR? \fIstring\fR
 .
 Convert \fIstring\fR from Unicode to the specified \fIencoding\fR.
 The result is a sequence of bytes that represents the converted
@@ -51,6 +68,29 @@ string.  Each byte is stored in the lower 8-bits of a Unicode
 character (indeed, the resulting string is a binary string as far as
 Tcl is concerned, at least initially).  If \fIencoding\fR is not
 specified, the current system encoding is used.
+.VS "TCL8.7 TIP346, TIP607, TIP601"
+.PP
+.RS
+The command does not fail on encoding errors.  Instead, the replacement character
+\fB?\fR is output for any not representable character (like the dot \fB\\U2022\fR
+in \fBiso-8859-1\fR encoding, see example below).
+.PP
+If the option \fB-failindex\fR with a variable name is given, the error reporting
+is changed in the following manner:
+in case of a conversion error, the position of the input character causing the error
+is returned in the given variable.  The return value of the command are the
+converted bytes until the first error position. No error condition is raised.
+In case of no error, the value \fI-1\fR is written to the variable.  This option
+may not be used together with \fB-nocomplain\fR.
+.PP
+The option \fB-nocomplain\fR has no effect and is available for compatibility with
+TCL 9. In TCL 9, the encoding command fails with an error on any encoding issue.
+This switch restores the TCL8.7 behaviour.
+.PP
+The \fB-strict\fR option followes more strict rules in conversion.  Currently, it has
+no effect but may be used in future to add additional encoding checks.
+.VE "TCL8.7 TIP346, TIP607, TIP601"
+.RE
 .TP
 \fBencoding dirs\fR ?\fIdirectoryList\fR?
 .
@@ -81,33 +121,56 @@ omitted then the command returns the current system encoding.  The
 system encoding is used whenever Tcl passes strings to system calls.
 .SH EXAMPLE
 .PP
-It is common practice to write script files using a text editor that
-produces output in the euc-jp encoding, which represents the ASCII
-characters as singe bytes and Japanese characters as two bytes.  This
-makes it easy to embed literal strings that correspond to non-ASCII
-characters by simply typing the strings in place in the script.
-However, because the \fBsource\fR command always reads files using the
-current system encoding, Tcl will only source such files correctly
-when the encoding used to write the file is the same.  This tends not
-to be true in an internationalized setting.  For example, if such a
-file was sourced in North America (where the ISO8859\-1 is normally
-used), each byte in the file would be treated as a separate character
-that maps to the 00 page in Unicode.  The resulting Tcl strings will
-not contain the expected Japanese characters.  Instead, they will
-contain a sequence of Latin-1 characters that correspond to the bytes
-of the original string.  The \fBencoding\fR command can be used to
-convert this string to the expected Japanese Unicode characters.  For
-example,
+Example 1: convert a byte sequence in Japanese euc-jp encoding to a TCL string:
 .PP
 .CS
 set s [\fBencoding convertfrom\fR euc-jp "\exA4\exCF"]
 .CE
 .PP
-would return the Unicode string
+The result is the unicode codepoint:
 .QW "\eu306F" ,
 which is the Hiragana letter HA.
+.VS "TCL8.7 TIP346, TIP607, TIP601"
+.PP
+Example 2: detect the error location in an incomplete UTF-8 sequence:
+.PP
+.CS
+% set s [\fBencoding convertfrom\fR -failindex i utf-8 "A\exC3"]
+A
+% set i
+1
+.CE
+.PP
+Example 3: return the incomplete UTF-8 sequence by raw bytes:
+.PP
+.CS
+% set s [\fBencoding convertfrom\fR -nocomplain utf-8 "A\exC3"]
+.CE
+The result is "A" followed by the byte \exC3.  The option \fB-nocomplain\fR
+has no effect, but assures to get the same result with TCL9.
+.PP
+Example 4: detect the error location while transforming to ISO8859-1
+(ISO-Latin 1):
+.PP
+.CS
+% set s [\fBencoding convertto\fR -failindex i utf-8 "A\eu0141"]
+A
+% set i
+1
+.CE
+.PP
+Example 5: replace a not representable character by the replacement character:
+.PP
+.CS
+% set s [\fBencoding convertto\fR -nocomplain utf-8 "A\eu0141"]
+A?
+.CE
+The option \fB-nocomplain\fR has no effect, but assures to get the same result
+with TCL9.
+.VE "TCL8.7 TIP346, TIP607, TIP601"
+.PP
 .SH "SEE ALSO"
-Tcl_GetEncoding(3)
+Tcl_GetEncoding(3), fconfigure(n)
 .SH KEYWORDS
 encoding, unicode
 .\" Local Variables:

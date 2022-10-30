@@ -4,14 +4,15 @@
  *	Stub object that will be statically linked into extensions that want
  *	to access Tcl.
  *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 1998 Paul Duffin.
+ * Copyright © 1998-1999 Scriptics Corporation.
+ * Copyright © 1998 Paul Duffin.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include "tclInt.h"
+#include "tclTomMath.h"
 
 MODULE_SCOPE const TclTomMathStubs *tclTomMathStubsPtr;
 
@@ -55,9 +56,9 @@ TclTomMathInitializeStubs(
     }
     if (stubsPtr == NULL) {
 	errMsg = "missing stub table pointer";
-    } else if(stubsPtr->tclBN_epoch() != epoch) {
+    } else if (stubsPtr->tclBN_epoch() != epoch) {
 	errMsg = "epoch number mismatch";
-    } else if(stubsPtr->tclBN_revision() != revision) {
+    } else if (stubsPtr->tclBN_revision() != revision) {
 	errMsg = "requires a later revision";
     } else {
 	tclTomMathStubsPtr = stubsPtr;

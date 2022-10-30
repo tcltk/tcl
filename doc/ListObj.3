@@ -28,7 +28,7 @@ int
 \fBTcl_ListObjGetElements\fR(\fIinterp, listPtr, objcPtr, objvPtr\fR)
 .sp
 int
-\fBTcl_ListObjLength\fR(\fIinterp, listPtr, intPtr\fR)
+\fBTcl_ListObjLength\fR(\fIinterp, listPtr, lengthPtr\fR)
 .sp
 int
 \fBTcl_ListObjIndex\fR(\fIinterp, listPtr, index, objPtrPtr\fR)
@@ -76,7 +76,7 @@ An array of pointers to values.
 \fBTcl_NewListObj\fR will insert these values into a new list value
 and \fBTcl_ListObjReplace\fR will insert them into an existing \fIlistPtr\fR.
 Each value will become a separate list element.
-.AP int *intPtr out
+.AP int *lengthPtr out
 Points to location where \fBTcl_ListObjLength\fR
 stores the length of the list.
 .AP int index in
@@ -138,7 +138,9 @@ create a new value or modify an existing value to hold
 the \fIobjc\fR elements of the array referenced by \fIobjv\fR
 where each element is a pointer to a Tcl value.
 If \fIobjc\fR is less than or equal to zero,
-they return an empty value.
+they return an empty value. If \fIobjv\fR is NULL, the resulting list
+contains 0 elements, with reserved space in an internal representation
+for \fIobjc\fR more elements (to avoid its reallocation later).
 The new value's string representation is left invalid.
 The two procedures increment the reference counts
 of the elements in \fIobjc\fR since the list value now refers to them.
@@ -160,7 +162,7 @@ Otherwise it returns \fBTCL_OK\fR after storing the count and array pointer.
 .PP
 \fBTcl_ListObjLength\fR returns the number of elements in the list value
 referenced by \fIlistPtr\fR.
-It returns this count by storing an integer in the address \fIintPtr\fR.
+It returns this count by storing an integer in the address \fIlengthPtr\fR.
 If the value is not already a list value,
 \fBTcl_ListObjLength\fR will attempt to convert it to one;
 if the conversion fails, it returns \fBTCL_ERROR\fR
@@ -244,6 +246,31 @@ with a NULL \fIobjvPtr\fR:
 result = \fBTcl_ListObjReplace\fR(interp, listPtr, first, count,
         0, NULL);
 .CE
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_NewListObj\fR always returns a zero-reference object, much like
+\fBTcl_NewObj\fR. If a non-NULL \fIobjv\fR argument is given, the reference
+counts of the first \fIobjc\fR values in that array are incremented.
+.PP
+\fBTcl_SetListObj\fR does not modify the reference count of its \fIobjPtr\fR
+argument, but does require that the object be unshared. The reference counts
+of the first \fIobjc\fR values in the \fIobjv\fR array are incremented.
+.PP
+\fBTcl_ListObjGetElements\fR, \fBTcl_ListObjIndex\fR, and
+\fBTcl_ListObjLength\fR do not modify the reference count of their
+\fIlistPtr\fR arguments; they only read. Note however that these three
+functions may set the interpreter result; if that is the only place that is
+holding a reference to the object, it will be deleted.
+.PP
+\fBTcl_ListObjAppendList\fR, \fBTcl_ListObjAppendElement\fR, and
+\fBTcl_ListObjReplace\fR require an unshared \fIlistPtr\fR argument.
+\fBTcl_ListObjAppendList\fR only reads its \fIelemListPtr\fR argument.
+\fBTcl_ListObjAppendElement\fR increments the reference count of its
+\fIobjPtr\fR on success. \fBTcl_ListObjReplace\fR increments the reference
+count of the first \fIobjc\fR values in the \fIobjv\fR array on success.  Note
+however that all these three functions may set the interpreter result on
+failure; if that is the only place that is holding a reference to the object,
+it will be deleted.
 .SH "SEE ALSO"
 Tcl_NewObj(3), Tcl_DecrRefCount(3), Tcl_IncrRefCount(3), Tcl_GetObjResult(3)
 .SH KEYWORDS

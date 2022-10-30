@@ -4,7 +4,7 @@ if {[catch {package require Tcl 8.6-} msg]} {
     puts stderr "ERROR: $msg"
     puts stderr "If running this script from 'make html', set the\
 	NATIVE_TCLSH environment\nvariable to point to an installed\
-	tclsh8.7 (or the equivalent tclsh87.exe\non Windows)."
+	tclsh8.6 (or the equivalent tclsh86.exe\non Windows)."
     exit 1
 }
 
@@ -19,8 +19,8 @@ if {[catch {package require Tcl 8.6-} msg]} {
 # into hypertext, not as a general solution to the problem.  If you
 # try to use this, you'll be very much on your own.
 #
-# Copyright (c) 1995-1997 Roger E. Critchlow Jr
-# Copyright (c) 2004-2010 Donal K. Fellows
+# Copyright © 1995-1997 Roger E. Critchlow Jr
+# Copyright © 2004-2010 Donal K. Fellows
 
 set ::Version "50/8.7"
 set ::CSSFILE "docs.css"
@@ -31,6 +31,52 @@ set ::CSSFILE "docs.css"
 ##
 source [file join [file dirname [info script]] tcltk-man2html-utils.tcl]
 
+proc getversion {tclh {name {}}} {
+    if {[file exists $tclh]} {
+	set chan [open $tclh]
+	set data [read $chan]
+	close $chan
+	if {$name eq ""} {
+	    set name [string toupper [file root [file tail $tclh]]]
+	}
+	# backslash isn't required in front of quote, but it keeps syntax
+	# highlighting straight in some editors
+	if {[regexp -lineanchor \
+	    [string map [list @name@ $name] \
+		{^#\s*define\s+@name@_VERSION\s+\"([^.])+\.([^.\"]+)}] \
+	    $data -> major minor]} {
+		return [list $major $minor]
+	}
+    }
+}
+proc findversion {top name useversion} {
+    # Default search version is a glob pattern, switch it for string match:
+    if {$useversion eq {{,[8-9].[0-9]{,[.ab][0-9]{,[0-9]}}}}} {
+	set useversion {[8-9].[0-9]}
+    }
+    # Search:
+    set upper [string toupper $name]
+    foreach top1 [list $top $top/..] sub {{} generic} {
+	foreach dirname [
+	    glob -nocomplain -tails -type d -directory $top1 *] {
+
+	    set tclh [join [list $top1 $dirname {*}$sub ${name}.h] /]
+	    set v [getversion $tclh $upper]
+	    if {[llength $v]} {
+		lassign $v major minor
+		# to do
+		#     use glob matching instead of string matching or add
+		#     brace handling to [string matcch]
+		if {$useversion eq "" || [string match $useversion $major.$minor]} {
+		    set top [file dirname [file dirname $tclh]]
+		    set prefix [file dirname $top]
+		    return [list $prefix [file tail $top] $major $minor]
+		}
+	    }
+	}
+    }
+}
+
 proc parse_command_line {} {
     global argv Version
 
@@ -44,7 +90,9 @@ proc parse_command_line {} {
     set tcldir {}
     set webdir ../html
     set build_tcl 0
+    set opt_build_tcl 0
     set build_tk 0
+    set opt_build_tk 0
     set verbose 0
     # Default search version is a glob pattern
     set useversion {{,[8-9].[0-9]{,[.ab][0-9]{,[0-9]}}}}
@@ -93,10 +141,12 @@ proc parse_command_line {} {
 
 	    --tcl {
 		set build_tcl 1
+		set opt_build_tcl 1
 	    }
 
 	    --tk {
 		set build_tk 1
+		set opt_build_tk 1
 	    }
 
 	    --verbose=* {
@@ -115,26 +165,44 @@ proc parse_command_line {} {
 	set build_tk 1
     }
 
+    set major ""
+    set minor ""
+
     if {$build_tcl} {
-	# Find Tcl.
+	# Find Tcl (firstly using glob pattern / backwards compatible way)
 	set tcldir [lindex [lsort [glob -nocomplain -tails -type d \
 		-directory $tcltkdir tcl$useversion]] end]
-	if {$tcldir eq ""} {
+	if {$tcldir ne ""} {
+	    # obtain version from generic header if we can:
+	    lassign [getversion [file join $tcltkdir $tcldir generic tcl.h]] major minor
+	} else {
+	    lassign [findversion $tcltkdir tcl $useversion] tcltkdir tcldir major minor
+	}
+	if {$tcldir eq "" && $opt_build_tcl} {
 	    puts stderr "tcltk-man-html: couldn't find Tcl below $tcltkdir"
 	    exit 1
 	}
-	puts "using Tcl source directory $tcldir"
+	puts "using Tcl source directory [file join $tcltkdir $tcldir]"
     }
 
+
     if {$build_tk} {
-	# Find Tk.
+	# Find Tk (firstly using glob pattern / backwards compatible way)
 	set tkdir [lindex [lsort [glob -nocomplain -tails -type d \
 		-directory $tcltkdir tk$useversion]] end]
-	if {$tkdir eq ""} {
+	if {$tkdir ne ""} {
+	    if {$major eq ""} {
+		# obtain version from generic header if we can:
+		lassign [getversion [file join $tcltkdir $tkdir generic tk.h]] major minor
+	    }
+	} else {
+	    lassign [findversion $tcltkdir tk $useversion] tcltkdir tkdir major minor
+	}
+	if {$tkdir eq "" && $opt_build_tk} {
 	    puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
 	    exit 1
 	}
-	puts "using Tk source directory $tkdir"
+	puts "using Tk source directory [file join $tcltkdir $tkdir]"
     }
 
     puts "verbose messages are [expr {$verbose ? {on} : {off}}]"
@@ -143,7 +211,11 @@ proc parse_command_line {} {
     global overall_title
     set overall_title ""
     if {$build_tcl} {
-	append overall_title "[capitalize $tcldir]"
+	if {$major ne ""} {
+	    append overall_title "Tcl $major.$minor"
+	} else {
+	    append overall_title "Tcl [capitalize $tcldir]"
+	}
     }
     if {$build_tcl && $build_tk} {
 	append overall_title "/"
@@ -168,7 +240,7 @@ proc css-style args {
     append style $tokens " \{" $body "\}\n"
 }
 proc css-stylesheet {} {
-    set hBd "1px dotted #11577b"
+    set hBd "1px dotted #11577B"
 
     css-style body div p th td li dd ul ol dl dt blockquote {
 	font-family: Verdana, sans-serif;
@@ -177,7 +249,7 @@ proc css-stylesheet {} {
 	font-family: 'Courier New', Courier, monospace;
     }
     css-style pre {
-	background-color:  #f6fcec;
+	background-color:  #F6FCEC;
 	border-top:        1px solid #6A6A6A;
 	border-bottom:     1px solid #6A6A6A;
 	padding:           1em;
@@ -197,20 +269,20 @@ proc css-stylesheet {} {
     }
     css-style h1 {
 	font-size:         18px;
-	color:             #11577b;
+	color:             #11577B;
 	border-bottom:     $hBd;
 	margin-top:        0px;
     }
     css-style h2 {
 	font-size:         14px;
-	color:             #11577b;
-	background-color:  #c5dce8;
+	color:             #11577B;
+	background-color:  #C5DCE8;
 	padding-left:      1em;
 	border:            1px solid #6A6A6A;
     }
     css-style h3 h4 {
 	color:             #1674A4;
-	background-color:  #e8f2f6;
+	background-color:  #E8F2F6;
 	border-bottom:     $hBd;
 	border-top:        $hBd;
     }
@@ -224,16 +296,16 @@ proc css-stylesheet {} {
 	width: 20em;
 	float: left;
 	padding: 2px;
-	border-top: 1px solid #999;
+	border-top: 1px solid #999999;
     }
     css-style ".keylist dt" { font-weight: bold; }
     css-style ".keylist dd" ".arguments dd" {
 	margin-left: 20em;
 	padding: 2px;
-	border-top: 1px solid #999;
+	border-top: 1px solid #999999;
     }
     css-style .copy {
-	background-color:  #f6fcfc;
+	background-color:  #F6FCFC;
 	white-space:       pre;
 	font-size:         80%;
 	border-top:        1px solid #6A6A6A;
@@ -257,12 +329,14 @@ proc make-man-pages {html args} {
 
     makedirhier $html
     set cssfd [open $html/$::CSSFILE w]
+    fconfigure $cssfd -translation lf -encoding utf-8
     puts $cssfd [css-stylesheet]
     close $cssfd
     set manual(short-toc-n) 1
     set manual(short-toc-fp) [open $html/[indexfile] w]
+    fconfigure $manual(short-toc-fp) -translation lf -encoding utf-8
     puts $manual(short-toc-fp) [htmlhead $overall_title $overall_title]
-    puts $manual(short-toc-fp) "<DL class=\"keylist\">"
+    puts $manual(short-toc-fp) "<dl class=\"keylist\">"
     set manual(merge-copyrights) {}
 
     foreach arg $args {
@@ -298,6 +372,7 @@ proc make-man-pages {html args} {
     file delete -force -- $html/Keywords
     makedirhier $html/Keywords
     set keyfp [open $html/Keywords/[indexfile] w]
+    fconfigure $keyfp -translation lf -encoding utf-8
     puts $keyfp [htmlhead "$tcltkdesc Keywords" "$tcltkdesc Keywords" \
 		     $overall_title "../[indexfile]"]
     set letters {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
@@ -306,13 +381,13 @@ proc make-man-pages {html args} {
     foreach a $letters {
 	set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
 	if {[llength $keys]} {
-	    lappend keyheader "<A HREF=\"$a.htm\">$a</A>"
+	    lappend keyheader "<a href=\"$a.html\">$a</a>"
 	} else {
 	    # No keywords for this letter
 	    lappend keyheader $a
 	}
     }
-    set keyheader <H3>[join $keyheader " |\n"]</H3>
+    set keyheader <h3>[join $keyheader " |\n"]</h3>
     puts $keyfp $keyheader
     foreach a $letters {
 	set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
@@ -320,16 +395,17 @@ proc make-man-pages {html args} {
 	    continue
 	}
 	# Per-keyword page
-	set afp [open $html/Keywords/$a.htm w]
+	set afp [open $html/Keywords/$a.html w]
+	fconfigure $afp -translation lf -encoding utf-8
 	puts $afp [htmlhead "$tcltkdesc Keywords - $a" \
 		       "$tcltkdesc Keywords - $a" \
 		       $overall_title "../[indexfile]"]
 	puts $afp $keyheader
-	puts $afp "<DL class=\"keylist\">"
+	puts $afp "<dl class=\"keylist\">"
 	foreach k [lsort -dictionary $keys] {
 	    set k [string range $k 8 end]
-	    puts $afp "<DT><A NAME=\"$k\">$k</A></DT>"
-	    puts $afp "<DD>"
+	    puts $afp "<dt><a name=\"[nospace-text $k]\" id=\"[nospace-text $k]\">$k</a></dt>"
+	    puts $afp "<dd>"
 	    set refs {}
 	    foreach man $manual(keyword-$k) {
 		set name [lindex $man 0]
@@ -339,32 +415,32 @@ proc make-man-pages {html args} {
 		    if {[string match {*[<>""]*} $tooltip]} {
 			manerror "bad tooltip for $file: \"$tooltip\""
 		    }
-		    lappend refs "<A HREF=\"../$file\" TITLE=\"$tooltip\">$name</A>"
+		    lappend refs "<a href=\"../$file\" title=\"$tooltip\">$name</a>"
 		} else {
-		    lappend refs "<A HREF=\"../$file\">$name</A>"
+		    lappend refs "<a href=\"../$file\">$name</a>"
 		}
 	    }
-	    puts $afp "[join $refs {, }]</DD>"
+	    puts $afp "[join $refs {, }]</dd>"
 	}
-	puts $afp "</DL>"
+	puts $afp "</dl>"
 	# insert merged copyrights
 	puts $afp [copyout $manual(merge-copyrights)]
-	puts $afp "</BODY></HTML>"
+	puts $afp "</body></html>"
 	close $afp
     }
     # insert merged copyrights
     puts $keyfp [copyout $manual(merge-copyrights)]
-    puts $keyfp "</BODY></HTML>"
+    puts $keyfp "</body></html>"
     close $keyfp
 
     ##
     ## finish off short table of contents
     ##
-    puts $manual(short-toc-fp) "<DT><A HREF=\"Keywords/[indexfile]\">Keywords</A><DD>The keywords from the $tcltkdesc man pages."
-    puts $manual(short-toc-fp) "</DL>"
+    puts $manual(short-toc-fp) "<dt><a href=\"Keywords/[indexfile]\">Keywords</a><dd>The keywords from the $tcltkdesc man pages."
+    puts $manual(short-toc-fp) "</dl>"
     # insert merged copyrights
     puts $manual(short-toc-fp) [copyout $manual(merge-copyrights)]
-    puts $manual(short-toc-fp) "</BODY></HTML>"
+    puts $manual(short-toc-fp) "</body></html>"
     close $manual(short-toc-fp)
 
     ##
@@ -396,7 +472,8 @@ proc make-man-pages {html args} {
 	    } else {
 		puts -nonewline stderr .
 	    }
-	    set outfd [open $html/$manual(wing-file)/$manual(name).htm w]
+	    set outfd [open $html/$manual(wing-file)/$manual(name).html w]
+	    fconfigure $outfd -translation lf -encoding utf-8
 	    puts $outfd [htmlhead "$manual($manual(wing-file)-$manual(name)-title)" \
 		    $manual(name) $wing_name "[indexfile]" \
 		    $overall_title "../[indexfile]"]
@@ -414,7 +491,7 @@ proc make-man-pages {html args} {
 	    foreach item $text {
 		puts $outfd [insert-cross-references $item]
 	    }
-	    puts $outfd "</BODY></HTML>"
+	    puts $outfd "</body></html>"
 	} on error msg {
 	    if {$verbose} {
 		puts stderr $msg
@@ -439,6 +516,7 @@ proc plus-base {var root glob name dir desc} {
     if {$var} {
 	if {[file exists $tcltkdir/$root/README]} {
 	    set f [open $tcltkdir/$root/README]
+	    fconfigure $f -encoding utf-8
 	    set d [read $f]
 	    close $f
 	    if {[regexp {This is the \w+ (\S+) source distribution} $d -> version]} {
@@ -557,6 +635,7 @@ array set remap_link_target {
     Tk_Font	Tk_GetFont
     Tk_Image	Tk_GetImage
     Tk_ImageMaster Tk_GetImage
+    Tk_ImageModel Tk_GetImage
     Tk_ItemType Tk_CreateItemType
     Tk_Justify	Tk_GetJustify
     Ttk_Theme	Ttk_GetTheme
@@ -603,7 +682,7 @@ array set exclude_refs_map {
     ttk_scale.n		{variable}
     ttk_scrollbar.n	{set}
     ttk_spinbox.n	{format}
-    ttk_treeview.n	{text open}
+    ttk_treeview.n	{text open focus selection}
     ttk_widget.n	{image text variable}
     TclZlib.3		{binary flush filename text}
 }
@@ -668,7 +747,12 @@ try {
 
 	    # ... but try to extract (name, version) from subdir contents
 	    try {
-		set f [open [file join $pkgsDir $dir configure.ac]]
+		try {
+		    set f [open [file join $pkgsDir $dir configure.in]]
+		} trap {POSIX ENOENT} {} {
+		    set f [open [file join $pkgsDir $dir configure.ac]]
+		}
+		fconfigure $f -encoding utf-8
 		foreach line [split [read $f] \n] {
 		    if {2 == [scan $line \
 			    { AC_INIT ( [%[^]]] , [%[^]]] ) } n v]} {
@@ -693,6 +777,7 @@ try {
 	set packageDirNameMap {}
 	if {$build_tcl} {
 	    set f [open $tcltkdir/$tcldir/pkgs/package.list.txt]
+	    fconfigure $f -encoding utf-8
 	    try {
 		foreach line [split [read $f] \n] {
 		    if {[string trim $line] eq ""} continue
@@ -728,9 +813,9 @@ try {
 	[list $tcltkdir/{$appdir}/doc/*.1 "$tcltkdesc Applications" UserCmd \
 	     "The interpreters which implement $cmdesc."] \
 	[plus-base $build_tcl $tcldir doc/*.n {Tcl Commands} TclCmd \
-	     "The commands which the <B>tclsh</B> interpreter implements."] \
+	     "The commands which the <b>tclsh</b> interpreter implements."] \
 	[plus-base $build_tk $tkdir doc/*.n {Tk Commands} TkCmd \
-	     "The additional commands which the <B>wish</B> interpreter implements."] \
+	     "The additional commands which the <b>wish</b> interpreter implements."] \
 	{*}[plus-pkgs n {*}$packageBuildList] \
 	[plus-base $build_tcl $tcldir doc/*.3 {Tcl C API} TclLib \
 	     "The C functions which a Tcl extended C program may use."] \

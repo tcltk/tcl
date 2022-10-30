@@ -14,22 +14,26 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-#if !defined(_WIN64) && defined(BUILD_tcl)
+#if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT)
 /* See [Bug 3354324]: file mtime sets wrong time */
-#   define _USE_32BIT_TIME_T
+#   define __MINGW_USE_VC2005_COMPAT
+#endif
+#if defined(_MSC_VER) && defined(_WIN64) && !defined(STATIC_BUILD) \
+	&& !defined(MP_32BIT) && !defined(MP_64BIT)
+#   define MP_64BIT
 #endif
 
 /*
  * We must specify the lower version we intend to support.
  *
- * WINVER = 0x0500 means Windows 2000 and above
+ * WINVER = 0x0601 means Windows 7 and above
  */
 
 #ifndef WINVER
-#   define WINVER 0x0501
+#   define WINVER 0x0601
 #endif
 #ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0501
+#   define _WIN32_WINNT 0x0601
 #endif
 
 #define WIN32_LEAN_AND_MEAN
@@ -45,21 +49,14 @@ typedef DWORD_PTR * PDWORD_PTR;
 /*
  * Ask for the winsock function typedefs, also.
  */
-#define INCL_WINSOCK_API_TYPEDEFS   1
+#ifndef INCL_WINSOCK_API_TYPEDEFS
+#   define INCL_WINSOCK_API_TYPEDEFS   1
+#endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #ifdef HAVE_WSPIAPI_H
 #   include <wspiapi.h>
 #endif
-
-#ifdef CHECK_UNICODE_CALLS
-#   define _UNICODE
-#   define UNICODE
-#   define __TCHAR_DEFINED
-    typedef float *_TCHAR;
-#   define _TCHAR_DEFINED
-    typedef float *TCHAR;
-#endif /* CHECK_UNICODE_CALLS */
 
 /*
  *  Pull in the typedef of TCHAR for windows.
@@ -91,7 +88,15 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <malloc.h>
 #include <process.h>
 #include <signal.h>
+#ifdef HAVE_INTTYPES_H
+#   include <inttypes.h>
+#endif
 #include <limits.h>
+#ifdef HAVE_STDINT_H
+#   include <stdint.h>
+#else
+#   include "../compat/stdint.h"
+#endif
 
 #ifndef __GNUC__
 #    define strncasecmp _strnicmp
@@ -106,11 +111,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifndef __MWERKS__
 #include <sys/stat.h>
 #include <sys/timeb.h>
-#   ifdef __BORLANDC__
-#	include <utime.h>
-#   else
-#	include <sys/utime.h>
-#   endif /* __BORLANDC__ */
+#include <sys/utime.h>
 #endif /* __MWERKS__ */
 
 /*
@@ -292,7 +293,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * defined in header files above.
  */
 
-#if TCL_UNION_WAIT
+#ifdef TCL_UNION_WAIT
 #   define WAIT_STATUS_TYPE union wait
 #else
 #   define WAIT_STATUS_TYPE int
@@ -311,7 +312,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 #ifndef WTERMSIG
-#   define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7f)
+#   define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7F)
 #endif
 
 #ifndef WIFSTOPPED
@@ -319,7 +320,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 #ifndef WSTOPSIG
-#   define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xff)
+#   define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 /*
@@ -434,10 +435,10 @@ typedef DWORD_PTR * PDWORD_PTR;
  * Define pid_t and uid_t if they're not already defined.
  */
 
-#if ! TCL_PID_T
+#if !defined(TCL_PID_T)
 #   define pid_t int
 #endif /* !TCL_PID_T */
-#if ! TCL_UID_T
+#if !defined(TCL_UID_T)
 #   define uid_t int
 #endif /* !TCL_UID_T */
 
@@ -449,39 +450,20 @@ typedef DWORD_PTR * PDWORD_PTR;
 
 #if defined(_MSC_VER) || defined(__MSVCRT__)
 #   define environ _environ
-#   if defined(_MSC_VER) && (_MSC_VER < 1600)
-#	define hypot _hypot
-#   endif
 #   define exception _exception
 #   undef EDEADLOCK
-#   if defined(_MSC_VER) && (_MSC_VER >= 1700)
+#   if defined(_MSC_VER)
 #	define timezone _timezone
 #   endif
 #endif /* _MSC_VER || __MSVCRT__ */
 
-/*
- * Borland's timezone and environ functions.
- */
-
-#ifdef  __BORLANDC__
-#   define timezone _timezone
-#   define environ  _environ
-#endif /* __BORLANDC__ */
-
-#ifdef __WATCOMC__
-#   if !defined(__CHAR_SIGNED__)
-#	error "You must use the -j switch to ensure char is signed."
-#   endif
-#endif
-
-
-/*
- * MSVC 8.0 started to mark many standard C library functions depreciated
- * including the *printf family and others. Tell it to shut up.
- * (_MSC_VER is 1200 for VC6, 1300 or 1310 for vc7.net, 1400 for 8.0)
- */
-#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+#if defined(_MSC_VER)
+#   pragma warning(disable:4090) /* see: https://developercommunity.visualstudio.com/t/c-compiler-incorrect-propagation-of-const-qualifie/390711 */
+#   pragma warning(disable:4146)
 #   pragma warning(disable:4244)
+#if !defined(_WIN64)
+#   pragma warning(disable:4305)
+#endif
 #   pragma warning(disable:4267)
 #   pragma warning(disable:4996)
 #endif
@@ -567,5 +549,8 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifndef LABEL_SECURITY_INFORMATION
 #   define LABEL_SECURITY_INFORMATION (0x00000010L)
 #endif
+
+#define Tcl_DirEntry void
+#define TclDIR void
 
 #endif /* _TCLWINPORT */

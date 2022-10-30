@@ -37,17 +37,15 @@ allowing for files containing code and data segments (scripted documents).
 If you require a
 .QW ^Z
 in code for string comparison, you can use
-.QW \e032
-or
-.QW \eu001a ,
+.QW \ex1A ,
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 .PP
-A leading BOM (Byte order mark) contained in the file is ignored for unicode encodings (utf-8, unicode).
+A leading BOM (Byte order mark) contained in the file is ignored for unicode encodings (utf-8, utf-16, ucs-2).
 .PP
 The \fB\-encoding\fR option is used to specify the encoding of
 the data stored in \fIfileName\fR.  When the \fB\-encoding\fR option
-is omitted, the system encoding is assumed.
+is omitted, the utf-8 encoding is assumed.
 .SH EXAMPLE
 .PP
 Run the script in the file \fBfoo.tcl\fR and then the script in the
@@ -69,3 +67,7 @@ foreach scriptFile {foo.tcl bar.tcl} {
 file(n), cd(n), encoding(n), info(n)
 .SH KEYWORDS
 file, script
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

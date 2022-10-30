@@ -5,7 +5,7 @@
 # BUT the mapping table between UHC(Microsoft Unified Hangul Code)
 # and Unicode 2.0. Hence, in this pacakge, I renamed it as UHC.TXT
 #
-# The Unix command  used is 
+# The Unix command  used is
 # egrep '^0x' < KSC5601.TXT |   \
 # egrep -v '^0x([8-9]...|A0..|..[4-9].|..A0)' | perl tab.pl
 #
@@ -26,8 +26,8 @@
 # Column #3 : the Unicode name (following a comment sign, '#')
 # The number of characters enumerated in this table is 8824, the
 # as listed in KS C 5601-987
-# 
-# 
+#
+#
 # The entries are in KS C 5601-1987 order
 # You can use the following algorithms to convert the hex form
 # of KS C 5601 to other forms

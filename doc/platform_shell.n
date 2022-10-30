@@ -12,7 +12,7 @@
 platform::shell \- System identification support code and utilities
 .SH SYNOPSIS
 .nf
-\fBpackage require platform::shell ?1.1.4?\fR
+\fBpackage require platform::shell\fR ?\fB1.1.4\fR?
 .sp
 \fBplatform::shell::generic \fIshell\fR
 \fBplatform::shell::identify \fIshell\fR
@@ -55,3 +55,7 @@ This command returns the contents of \fBtcl_platform(platform)\fR for
 the specified Tcl shell.
 .SH KEYWORDS
 operating system, cpu architecture, platform, architecture
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

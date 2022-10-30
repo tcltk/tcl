@@ -38,28 +38,31 @@ generated.  On Windows, FAT file systems do not support access time.
 .TP
 \fBfile attributes \fIname\fR ?\fIoption value option value...\fR?
 .
-This subcommand returns or sets platform specific values associated
-with a file. The first form returns a list of the platform specific
-flags and their values. The second form returns the value for the
-specific option. The third form sets one or more of the values. The
-values are as follows:
+This subcommand returns or sets platform-specific values associated
+with a file. The first form returns a list of the platform-specific
+options and their values. The second form returns the value for the
+given option. The third form sets one or more of the values. The values
+are as follows:
 .RS
 .PP
-On Unix, \fB\-group\fR gets or sets the group name for the file. A group id
-can be given to the command, but it returns a group name. \fB\-owner\fR gets
-or sets the user name of the owner of the file. The command returns the
-owner name, but the numerical id can be passed when setting the
-owner. \fB\-permissions\fR sets or retrieves the octal code that chmod(1)
-uses.  This command does also has limited support for setting using the
-symbolic attributes for chmod(1), of the form [ugo]?[[+\-=][rwxst],[...]],
-where multiple symbolic attributes can be separated by commas (example:
-\fBu+s,go\-rw\fR add sticky bit for user, remove read and write
-permissions for group and other).  A simplified \fBls\fR style string,
-of the form rwxrwxrwx (must be 9 characters), is also supported
-(example: \fBrwxr\-xr\-t\fR is equivalent to 01755).
-On versions of Unix supporting file flags, \fB\-readonly\fR gives the
-value or sets or clears the readonly attribute of the file,
-i.e. the user immutable flag \fBuchg\fR to chflags(1).
+On Unix, \fB\-group\fR gets or sets the group name for the file. A
+group id can be given to the command, but it returns a group name.
+\fB\-owner\fR gets or sets the user name of the owner of the file. The
+command returns the owner name, but the numerical id can be passed when
+setting the owner. \fB\-permissions\fR retrieves or sets a file's
+access permissions, using octal notation by default. This option also
+provides limited support for setting permissions using the symbolic
+notation accepted by the \fBchmod\fR command, following the form
+[\fBugo\fR]?[[\fB+-=\fR][\fBrwxst\fR]\fB,\fR[...]]. Multiple permission
+specifications may be given, separated by commas. E.g., \fBu+s,go-rw\fR
+would set the setuid bit for a file's owner as well as remove read and
+write permission for the file's group and other users. An
+\fBls\fR-style string of the form \fBrwxrwxrwx\fR is also accepted but
+must always be 9 characters long. E.g., \fBrwxr-xr-t\fR is equivalent
+to \fB01755\fR. On versions of Unix supporting file flags,
+\fB-readonly\fR returns the value of, or sets, or clears the readonly
+attribute of a file, i.e., the user immutable flag (\fBuchg\fR) to the
+\fBchflags\fR command.
 .PP
 On Windows, \fB\-archive\fR gives the value or sets or clears the
 archive attribute of the file. \fB\-hidden\fR gives the value or sets
@@ -177,6 +180,24 @@ Returns all of the characters in \fIname\fR after and including the last
 dot in the last element of \fIname\fR.  If there is no dot in the last
 element of \fIname\fR then returns the empty string.
 .TP
+\fBfile home ?\fIusername\fR?
+.VS "8.7, TIP 602"
+If no argument is specified, the command returns the home directory
+of the current user. This is generally the value of the \fB$HOME\fR
+environment variable except that on Windows platforms backslashes
+in the path are replaced by forward slashes. An error is raised if
+the \fB$HOME\fR environment variable is not set.
+.RS
+.PP
+If \fIusername\fR is specified, the command returns the home directory
+configured in the system for the specified user. Note this may be
+different than the value of the \fB$HOME\fR environment variable
+even when \fIusername\fR corresponds to the current user. An error is
+raised if the \fIusername\fR does not correspond to a user account
+on the system.
+.RE
+.VE "8.7, TIP 602"
+.TP
 \fBfile isdirectory \fIname\fR
 .
 Returns \fB1\fR if file \fIname\fR is a directory, \fB0\fR otherwise.
@@ -248,14 +269,14 @@ symbolic and hard links (the latter for files only). Windows
 supports symbolic directory links and hard file links on NTFS drives.
 .RE
 .TP
-\fBfile lstat \fIname varName\fR
+\fBfile lstat \fIname ?varName?\fR
 .
 Same as \fBstat\fR option (see below) except uses the \fIlstat\fR
 kernel call instead of \fIstat\fR.  This means that if \fIname\fR
-refers to a symbolic link the information returned in \fIvarName\fR
-is for the link rather than the file it refers to.  On systems that
-do not support symbolic links this option behaves exactly the same
-as the \fBstat\fR option.
+refers to a symbolic link the information returned is for the link
+rather than the file it refers to.  On systems that do not support
+symbolic links this option behaves exactly the same as the
+\fBstat\fR option.
 .TP
 \fBfile mkdir\fR ?\fIdir\fR ...?
 .
@@ -390,19 +411,20 @@ that use the third component do not attempt to perform tilde
 substitution.
 .RE
 .TP
-\fBfile stat \fIname varName\fR
+\fBfile stat \fIname ?varName?\fR
 .
-Invokes the \fBstat\fR kernel call on \fIname\fR, and uses the variable
-given by \fIvarName\fR to hold information returned from the kernel call.
-\fIVarName\fR is treated as an array variable, and the following elements
-of that variable are set: \fBatime\fR, \fBctime\fR, \fBdev\fR, \fBgid\fR,
-\fBino\fR, \fBmode\fR, \fBmtime\fR, \fBnlink\fR, \fBsize\fR, \fBtype\fR,
-\fBuid\fR.  Each element except \fBtype\fR is a decimal string with the
-value of the corresponding field from the \fBstat\fR return structure;
-see the manual entry for \fBstat\fR for details on the meanings of the
-values.  The \fBtype\fR element gives the type of the file in the same
-form returned by the command \fBfile type\fR.  This command returns an
-empty string.
+Invokes the \fBstat\fR kernel call on \fIname\fR, and returns a
+dictionary with the information returned from the kernel call. If
+\fIvarName\fR is given, it uses the variable to hold the information.
+\fIVarName\fR is treated as an array variable, and in such case the
+command returns the empty string. The following elements are set:
+\fBatime\fR, \fBctime\fR, \fBdev\fR, \fBgid\fR, \fBino\fR, \fBmode\fR,
+\fBmtime\fR, \fBnlink\fR, \fBsize\fR, \fBtype\fR, \fBuid\fR.  Each element
+except \fBtype\fR is a decimal string with the value of the corresponding
+field from the \fBstat\fR return structure; see the manual entry for
+\fBstat\fR for details on the meanings of the values.  The \fBtype\fR
+element gives the type of the file in the same form returned by the
+command \fBfile type\fR.
 .TP
 \fBfile system \fIname\fR
 .
@@ -433,9 +455,38 @@ If \fIname\fR contains no separators then returns \fIname\fR.  So,
 \fBfile tail a/b\fR, \fBfile tail a/b/\fR and \fBfile tail b\fR all
 return \fBb\fR.
 .TP
+\fBfile tempdir\fR ?\fItemplate\fR?
+.VS "8.7, TIP 431"
+Creates a temporary directory (guaranteed to be newly created and writable by
+the current script) and returns its name. If \fItemplate\fR is given, it
+specifies one of or both of the existing directory (on a filesystem controlled
+by the operating system) to contain the temporary directory, and the base part
+of the directory name; it is considered to have the location of the directory
+if there is a directory separator in the name, and the base part is everything
+after the last directory separator (if non-empty).  The default containing
+directory is determined by system-specific operations, and the default base
+name prefix is
+.QW \fBtcl\fR .
+.RS
+.PP
+The following output is typical and illustrative; the actual output will vary
+between platforms:
+.PP
+.CS
+% \fBfile tempdir\fR
+/var/tmp/tcl_u0kuy5
+ % \fBfile tempdir\fR /tmp/myapp
+/tmp/myapp_8o7r9L
+% \fBfile tempdir\fR /tmp/
+/tmp/tcl_1mOJHD
+% \fBfile tempdir\fR myapp
+/var/tmp/myapp_0ihS0n
+.CE
+.RE
+.VE "8.7, TIP 431"
+.TP
 \fBfile tempfile\fR ?\fInameVar\fR? ?\fItemplate\fR?
 '\" TIP #210
-.VS 8.6
 Creates a temporary file and returns a read-write channel opened on that file.
 If the \fInameVar\fR is given, it specifies a variable that the name of the
 temporary file will be written into; if absent, Tcl will attempt to arrange
@@ -450,7 +501,22 @@ Note that temporary files are \fIonly\fR ever created on the native
 filesystem. As such, they can be relied upon to be used with operating-system
 native APIs and external programs that require a filename.
 .RE
-.VE 8.6
+.TP
+\fBfile tildeexpand \fIname\fR
+.VS "8.7, TIP 602"
+Returns the result of performing tilde substitution on \fIname\fR. If the name
+begins with a tilde, then the file name will be interpreted as if the first
+element is replaced with the location of the home directory for the given user.
+If the tilde is followed immediately by a path separator, the \fBHOME\fR
+environment variable is substituted.  Otherwise the characters between the
+tilde and the next separator are taken as a user name, which is used to
+retrieve the user's home directory for substitution.  An error is raised if the
+\fBHOME\fR environment variable or user does not exist.
+.RS
+.PP
+If the file name does not begin with a tilde, it is returned unmodified.
+.RE
+.VE "8.7, TIP 602"
 .TP
 \fBfile type \fIname\fR
 .

@@ -137,7 +137,6 @@ by the \fBcatch\fR command (or from the copy of that information
 stored in the global variable \fBerrorInfo\fR).
 .TP
 \fB\-errorstack \fIlist\fR
-.VS 8.6
 The \fB\-errorstack\fR option receives special treatment only when the value
 of the \fB\-code\fR option is \fBTCL_ERROR\fR.  Then \fIlist\fR is the initial
 error stack, recording actual argument values passed to each proc level.  The error stack will
@@ -152,7 +151,6 @@ the procedure.  Typically the \fIlist\fR value is supplied from
 the value of \fB\-errorstack\fR in a return options dictionary captured
 by the \fBcatch\fR command (or from the copy of that information from
 \fBinfo errorstack\fR).
-.VE 8.6
 .TP
 \fB\-level \fIlevel\fR
 .

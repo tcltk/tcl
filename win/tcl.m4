@@ -28,9 +28,9 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 	# we reset no_tcl in case something fails here
 	no_tcl=true
 	AC_ARG_WITH(tcl,
-	    AC_HELP_STRING([--with-tcl],
+	    AS_HELP_STRING([--with-tcl],
 		[directory containing tcl configuration (tclConfig.sh)]),
-	    with_tclconfig="${withval}")
+	    [with_tclconfig="${withval}"])
 	AC_MSG_CHECKING([for Tcl configuration])
 	AC_CACHE_VAL(ac_cv_c_tclconfig,[
 
@@ -146,9 +146,9 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 	# we reset no_tk in case something fails here
 	no_tk=true
 	AC_ARG_WITH(tk,
-	    AC_HELP_STRING([--with-tk],
+	    AS_HELP_STRING([--with-tk],
 		[directory containing tk configuration (tkConfig.sh)]),
-	    with_tkconfig="${withval}")
+	    [with_tkconfig="${withval}"])
 	AC_MSG_CHECKING([for Tk configuration])
 	AC_CACHE_VAL(ac_cv_c_tkconfig,[
 
@@ -279,14 +279,6 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
         TCL_STUB_LIB_PATH=${TCL_BUILD_STUB_LIB_PATH}
     fi
 
-    #
-    # eval is required to do the TCL_DBGX substitution
-    #
-
-    eval "TCL_LIB_FILE=\"${TCL_LIB_FILE}\""
-    eval "TCL_LIB_FLAG=\"${TCL_LIB_FLAG}\""
-    eval "TCL_LIB_SPEC=\"${TCL_LIB_SPEC}\""
-
     eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
     eval "TCL_STUB_LIB_FLAG=\"${TCL_STUB_LIB_FLAG}\""
     eval "TCL_STUB_LIB_SPEC=\"${TCL_STUB_LIB_SPEC}\""
@@ -364,14 +356,6 @@ AC_DEFUN([SC_ENABLE_SHARED], [
     AC_ARG_ENABLE(shared,
 	[  --enable-shared         build and link with shared libraries (default: on)],
 	[tcl_ok=$enableval], [tcl_ok=yes])
-
-    if test "${enable_shared+set}" = set; then
-	enableval="$enable_shared"
-	tcl_ok=$enableval
-    else
-	tcl_ok=yes
-    fi
-
     if test "$tcl_ok" = "yes" ; then
 	AC_MSG_RESULT([shared])
 	SHARED_BUILD=1
@@ -380,42 +364,7 @@ AC_DEFUN([SC_ENABLE_SHARED], [
 	SHARED_BUILD=0
 	AC_DEFINE(STATIC_BUILD, 1, [Is this a static build?])
     fi
-])
-
-#------------------------------------------------------------------------
-# SC_ENABLE_THREADS --
-#
-#	Specify if thread support should be enabled
-#
-# Arguments:
-#	none
-#
-# Results:
-#
-#	Adds the following arguments to configure:
-#		--enable-threads=yes|no
-#
-#	Defines the following vars:
-#		TCL_THREADS
-#------------------------------------------------------------------------
-
-AC_DEFUN([SC_ENABLE_THREADS], [
-    AC_MSG_CHECKING(for building with threads)
-    AC_ARG_ENABLE(threads, [  --enable-threads        build with threads (default: on)],
-	[tcl_ok=$enableval], [tcl_ok=yes])
-
-    if test "$tcl_ok" = "yes"; then
-	AC_MSG_RESULT([yes (default)])
-	TCL_THREADS=1
-	AC_DEFINE(TCL_THREADS)
-	# USE_THREAD_ALLOC tells us to try the special thread-based
-	# allocator that significantly reduces lock contention
-	AC_DEFINE(USE_THREAD_ALLOC)
-    else
-	TCL_THREADS=0
-	AC_MSG_RESULT(no)
-    fi
-    AC_SUBST(TCL_THREADS)
+    AC_SUBST(SHARED_BUILD)
 ])
 
 #------------------------------------------------------------------------
@@ -442,7 +391,6 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 #				Sets to $(CFLAGS_OPTIMIZE) if false
 #		LDFLAGS_DEFAULT	Sets to $(LDFLAGS_DEBUG) if true
 #				Sets to $(LDFLAGS_OPTIMIZE) if false
-#		DBGX		Debug library extension
 #
 #------------------------------------------------------------------------
 
@@ -453,7 +401,6 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
-	DBGX=""
 	AC_DEFINE(NDEBUG, 1, [Is no debugging enabled?])
 	AC_MSG_RESULT([no])
 
@@ -461,7 +408,6 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
     else
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
-	DBGX=g
 	if test "$tcl_ok" = "yes"; then
 	    AC_MSG_RESULT([yes (standard debugging)])
 	fi
@@ -507,6 +453,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 #		CFLAGS_DEBUG
 #		CFLAGS_OPTIMIZE
 #		CFLAGS_WARNING
+#		CFLAGS_NOLTO
 #		LDFLAGS_DEBUG
 #		LDFLAGS_OPTIMIZE
 #		LDFLAGS_CONSOLE
@@ -544,53 +491,50 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support (where applicable)], [do64bit=$enableval], [do64bit=no])
     AC_MSG_RESULT($do64bit)
 
-    # Cross-compiling options for Windows/CE builds
-
-    AC_MSG_CHECKING([if Windows/CE build is requested])
-    AC_ARG_ENABLE(wince,[  --enable-wince          enable Win/CE support (where applicable)], [doWince=$enableval], [doWince=no])
-    AC_MSG_RESULT($doWince)
-
-    AC_MSG_CHECKING([for Windows/CE celib directory])
-    AC_ARG_WITH(celib,[  --with-celib=DIR        use Windows/CE support library from DIR],
-	    CELIB_DIR=$withval, CELIB_DIR=NO_CELIB)
-    AC_MSG_RESULT([$CELIB_DIR])
-
     # Set some defaults (may get changed below)
     EXTRA_CFLAGS=""
 	AC_DEFINE(MODULE_SCOPE, [extern], [No need to mark inidividual symbols as hidden])
 
     AC_CHECK_PROG(CYGPATH, cygpath, cygpath -m, echo)
+    AC_CHECK_PROG(WINE, wine, wine,)
 
     SHLIB_SUFFIX=".dll"
 
     # MACHINE is IX86 for LINK, but this is used by the manifest,
-    # which requires x86|amd64|ia64.
+    # which requires x86|amd64|arm64|ia64.
     MACHINE="X86"
 
     if test "$GCC" = "yes"; then
 
       AC_CACHE_CHECK(for cross-compile version of gcc,
 	ac_cv_cross,
-	AC_TRY_COMPILE([
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	    #ifndef _WIN32
 		#error cross-compiler
 	    #endif
-	], [],
-	ac_cv_cross=no,
-	ac_cv_cross=yes)
+	]], [[]])],
+	[ac_cv_cross=no],
+	[ac_cv_cross=yes])
       )
 
       if test "$ac_cv_cross" = "yes"; then
 	case "$do64bit" in
 	    amd64|x64|yes)
-		CC="x86_64-w64-mingw32-gcc"
+		CC="x86_64-w64-mingw32-${CC}"
 		LD="x86_64-w64-mingw32-ld"
 		AR="x86_64-w64-mingw32-ar"
 		RANLIB="x86_64-w64-mingw32-ranlib"
 		RC="x86_64-w64-mingw32-windres"
 	    ;;
+	    arm64|aarch64)
+		CC="aarch64-w64-mingw32-${CC}"
+		LD="aarch64-w64-mingw32-ld"
+		AR="aarch64-w64-mingw32-ar"
+		RANLIB="aarch64-w64-mingw32-ranlib"
+		RC="aarch64-w64-mingw32-windres"
+	    ;;
 	    *)
-		CC="i686-w64-mingw32-gcc"
+		CC="i686-w64-mingw32-${CC}"
 		LD="i686-w64-mingw32-ld"
 		AR="i686-w64-mingw32-ar"
 		RANLIB="i686-w64-mingw32-ranlib"
@@ -638,28 +582,30 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	extra_ldflags="-pipe -static-libgcc"
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
-	    AC_TRY_COMPILE([
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		#ifdef _WIN32
 		    #error win32
 		#endif
-	    ], [],
-	    ac_cv_win32=no,
-	    ac_cv_win32=yes)
+	    ]], [[]])],
+	    [ac_cv_win32=no],
+	    [ac_cv_win32=yes])
 	)
 	if test "$ac_cv_win32" != "yes"; then
 	    AC_MSG_ERROR([${CC} cannot produce win32 executables.])
+	fi
+	if test "$do64bit" != "arm64"; then
+	    extra_cflags="$extra_cflags -DHAVE_CPUID=1"
 	fi
 
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -mwindows -municode -Dmain=xxmain"
 	AC_CACHE_CHECK(for working -municode linker flag,
 	    ac_cv_municode,
-	AC_TRY_LINK([
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 	#include <windows.h>
 	int APIENTRY wWinMain(HINSTANCE a, HINSTANCE b, LPWSTR c, int d) {return 0;}
-	],
-	[],
-	    ac_cv_municode=yes,
-	    ac_cv_municode=no)
+	]], [[]])],
+	    [ac_cv_municode=yes],
+	    [ac_cv_municode=no])
 	)
 	CFLAGS=$hold_cflags
 	if test "$ac_cv_municode" = "yes" ; then
@@ -667,6 +613,39 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	else
 	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
 	fi
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
+	AC_CACHE_CHECK(for working -fno-lto,
+	    ac_cv_nolto,
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+	    [ac_cv_nolto=yes],
+	    [ac_cv_nolto=no])
+	)
+	CFLAGS=$hold_cflags
+	if test "$ac_cv_nolto" = "yes" ; then
+	    CFLAGS_NOLTO="-fno-lto"
+	else
+	    CFLAGS_NOLTO=""
+	fi
+	AC_CACHE_CHECK([if the compiler understands -finput-charset],
+	    tcl_cv_cc_input_charset, [
+	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -finput-charset=UTF-8"
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_cc_input_charset=yes],[tcl_cv_cc_input_charset=no])
+	    CFLAGS=$hold_cflags])
+	if test $tcl_cv_cc_input_charset = yes; then
+	    extra_cflags="$extra_cflags -finput-charset=UTF-8"
+	fi
+    fi
+
+    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Wl,--enable-auto-image-base"
+    AC_CACHE_CHECK(for working --enable-auto-image-base,
+	ac_cv_enable_auto_image_base,
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+	[ac_cv_enable_auto_image_base=yes],
+	[ac_cv_enable_auto_image_base=no])
+    )
+    CFLAGS=$hold_cflags
+    if test "$ac_cv_enable_auto_image_base" == "yes" ; then
+	extra_ldflags="$extra_ldflags -Wl,--enable-auto-image-base"
     fi
 
     AC_MSG_CHECKING([compiler flags])
@@ -675,7 +654,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	SHLIB_LD_LIBS='${LIBS}'
 	LIBS="-lnetapi32 -lkernel32 -luser32 -ladvapi32 -luserenv -lws2_32"
 	# mingw needs to link ole32 and oleaut32 for [send], but MSVC doesn't
-	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -lole32 -loleaut32"
+	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -lole32 -loleaut32 -lwinspool"
 	STLIB_LD='${AR} cr'
 	RC_OUT=-o
 	RC_TYPE=
@@ -693,7 +672,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
             AC_MSG_RESULT([using static flags])
 	    runtime=
 	    LIBRARIES="\${STATIC_LIBRARIES}"
-	    EXESUFFIX="s\${DBGX}.exe"
+	    EXESUFFIX="s.exe"
 	else
 	    # dynamic
             AC_MSG_RESULT([using shared flags])
@@ -707,7 +686,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    runtime=
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 
-	    EXESUFFIX="\${DBGX}.exe"
+	    EXESUFFIX=".exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
 	# Link with gcc since ld does not link to default libs like
@@ -715,21 +694,30 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	SHLIB_LD='${CC} -shared'
 	SHLIB_LD_LIBS='${LIBS}'
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
-	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
+	    -Wl,--out-implib,\$(patsubst %.dll,lib%.dll.a,\[$]@)"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
-	DLLSUFFIX="\${DBGX}.dll"
-	LIBSUFFIX="\${DBGX}.a"
-	LIBFLAGSUFFIX="\${DBGX}"
+	DLLSUFFIX=".dll"
+	LIBSUFFIX=".a"
+	LIBFLAGSUFFIX=""
 	SHLIB_SUFFIX=.dll
 
 	EXTRA_CFLAGS="${extra_cflags}"
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement"
+	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
+
+	case "${CC}" in
+	    *++)
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wno-format"
+		;;
+	    *)
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -fextended-identifiers"
+		;;
+	esac
 
 	# Specify the CC output file names based on the target name
 	CC_OBJNAME="-o \[$]@"
@@ -757,23 +745,27 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
 		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 		;;
+	    arm64|aarch64)
+		MACHINE="ARM64"
+		AC_MSG_RESULT([   Using ARM64 $MACHINE mode])
+		;;
 	    ia64)
 		MACHINE="IA64"
-		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		AC_MSG_RESULT([   Using IA64 $MACHINE mode])
 		;;
 	    *)
-		AC_TRY_COMPILE([
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		    #ifndef _WIN64
 			#error 32-bit
 		    #endif
-		], [],
-			tcl_win_64bit=yes,
-			tcl_win_64bit=no
+		]], [[]])],
+			[tcl_win_64bit=yes],
+			[tcl_win_64bit=no]
 		)
 		if test "$tcl_win_64bit" = "yes" ; then
-			do64bit=amd64
-			MACHINE="AMD64"
-			AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		    do64bit=amd64
+		    MACHINE="AMD64"
+		    AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 		fi
 		;;
 	esac
@@ -783,14 +775,14 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
             AC_MSG_RESULT([using static flags])
 	    runtime=-MT
 	    LIBRARIES="\${STATIC_LIBRARIES}"
-	    EXESUFFIX="s\${DBGX}.exe"
+	    EXESUFFIX="s.exe"
 	else
 	    # dynamic
             AC_MSG_RESULT([using shared flags])
 	    runtime=-MD
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 	    LIBRARIES="\${SHARED_LIBRARIES}"
-	    EXESUFFIX="\${DBGX}.exe"
+	    EXESUFFIX=".exe"
 	    case "x`echo \${VisualStudioVersion}`" in
 		x1[[4-9]]*)
 		    lflags="${lflags} -nodefaultlib:libucrt.lib"
@@ -802,32 +794,22 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -out:\[$]@"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
-	DLLSUFFIX="\${DBGX}.dll"
-	LIBSUFFIX="\${DBGX}.lib"
-	LIBFLAGSUFFIX="\${DBGX}"
+	DLLSUFFIX=".dll"
+	LIBSUFFIX=".lib"
+	LIBFLAGSUFFIX=""
 
-	# This is a 2-stage check to make sure we have the 64-bit SDK
-	# We have to know where the SDK is installed.
-	# This magic is based on MS Platform SDK for Win2003 SP1 - hobbs
 	if test "$do64bit" != "no" ; then
-	    if test "x${MSSDK}x" = "xx" ; then
-		MSSDK="C:/Progra~1/Microsoft Platform SDK"
-	    fi
-	    MSSDK=`echo "$MSSDK" | sed -e 's!\\\!/!g'`
-	    PATH64=""
 	    case "$do64bit" in
 		amd64|x64|yes)
 		    MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
-		    PATH64="${MSSDK}/Bin/Win64/x86/AMD64"
+		    ;;
+		arm64|aarch64)
+		    MACHINE="ARM64"
 		    ;;
 		ia64)
 		    MACHINE="IA64"
-		    PATH64="${MSSDK}/Bin/Win64"
 		    ;;
 	    esac
-	    if test ! -d "${PATH64}" ; then
-		AC_MSG_WARN([Could not find 64-bit $MACHINE SDK])
-	    fi
 	    AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 	fi
 
@@ -842,21 +824,11 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	esac
 
 	if test "$do64bit" != "no" ; then
-	    # The space-based-path will work for the Makefile, but will
-	    # not work if AC_TRY_COMPILE is called.  TEA has the
-	    # TEA_PATH_NOSPACE to avoid this issue.
-	    # Check if _WIN64 is already recognized, and if so we don't
-	    # need to modify CC.
-	    AC_CHECK_DECL([_WIN64], [],
-			  [CC="\"${PATH64}/cl.exe\" -I\"${MSSDK}/Include\" \
-			 -I\"${MSSDK}/Include/crt\" \
-			 -I\"${MSSDK}/Include/crt/sys\""])
-	    RC="\"${MSSDK}/bin/rc.exe\""
+	    RC="rc"
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
-	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
-	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
-	    lflags="${lflags} -nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
-	    LINKBIN="\"${PATH64}/link.exe\""
+	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
+	    lflags="${lflags} -nologo -MACHINE:${MACHINE}"
+	    LINKBIN="link"
 	    # Avoid 'unresolved external symbol __security_cookie' errors.
 	    # c.f. http://support.microsoft.com/?id=894573
 	    LIBS="$LIBS bufferoverflowU.lib"
@@ -871,98 +843,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LINKBIN="link"
 	fi
 
-	if test "$doWince" != "no" ; then
-	    # Set defaults for common evc4/PPC2003 setup
-	    # Currently Tcl requires 300+, possibly 420+ for sockets
-	    CEVERSION=420; 		# could be 211 300 301 400 420 ...
-	    TARGETCPU=ARMV4;	# could be ARMV4 ARM MIPS SH3 X86 ...
-	    ARCH=ARM;		# could be ARM MIPS X86EM ...
-	    PLATFORM="Pocket PC 2003"; # or "Pocket PC 2002"
-	    if test "$doWince" != "yes"; then
-		# If !yes then the user specified something
-		# Reset ARCH to allow user to skip specifying it
-		ARCH=
-		eval `echo $doWince | awk -F "," '{ \
-	if (length([$]1)) { printf "CEVERSION=\"%s\"\n", [$]1; \
-	if ([$]1 < 400)	  { printf "PLATFORM=\"Pocket PC 2002\"\n" } }; \
-	if (length([$]2)) { printf "TARGETCPU=\"%s\"\n", toupper([$]2) }; \
-	if (length([$]3)) { printf "ARCH=\"%s\"\n", toupper([$]3) }; \
-	if (length([$]4)) { printf "PLATFORM=\"%s\"\n", [$]4 }; \
-		}'`
-		if test "x${ARCH}" = "x" ; then
-		    ARCH=$TARGETCPU;
-		fi
-	    fi
-	    OSVERSION=WCE$CEVERSION;
-	    if test "x${WCEROOT}" = "x" ; then
-		WCEROOT="C:/Program Files/Microsoft eMbedded C++ 4.0"
-		if test ! -d "${WCEROOT}" ; then
-		    WCEROOT="C:/Program Files/Microsoft eMbedded Tools"
-		fi
-	    fi
-	    if test "x${SDKROOT}" = "x" ; then
-		SDKROOT="C:/Program Files/Windows CE Tools"
-		if test ! -d "${SDKROOT}" ; then
-		    SDKROOT="C:/Windows CE Tools"
-		fi
-	    fi
-	    # The space-based-path will work for the Makefile, but will
-	    # not work if AC_TRY_COMPILE is called.
-	    WCEROOT=`echo "$WCEROOT" | sed -e 's!\\\!/!g'`
-	    SDKROOT=`echo "$SDKROOT" | sed -e 's!\\\!/!g'`
-	    CELIB_DIR=`echo "$CELIB_DIR" | sed -e 's!\\\!/!g'`
-	    if test ! -d "${CELIB_DIR}/inc"; then
-		AC_MSG_ERROR([Invalid celib directory "${CELIB_DIR}"])
-	    fi
-	    if test ! -d "${SDKROOT}/${OSVERSION}/${PLATFORM}/Lib/${TARGETCPU}"\
-		-o ! -d "${WCEROOT}/EVC/${OSVERSION}/bin"; then
-		AC_MSG_ERROR([could not find PocketPC SDK or target compiler to enable WinCE mode [$CEVERSION,$TARGETCPU,$ARCH,$PLATFORM]])
-	    else
-		CEINCLUDE="${SDKROOT}/${OSVERSION}/${PLATFORM}/include"
-		if test -d "${CEINCLUDE}/${TARGETCPU}" ; then
-		    CEINCLUDE="${CEINCLUDE}/${TARGETCPU}"
-		fi
-		CELIBPATH="${SDKROOT}/${OSVERSION}/${PLATFORM}/Lib/${TARGETCPU}"
-	    fi
-	fi
-
-	if test "$doWince" != "no" ; then
-	    CEBINROOT="${WCEROOT}/EVC/${OSVERSION}/bin"
-	    if test "${TARGETCPU}" = "X86"; then
-		CC="${CEBINROOT}/cl.exe"
-	    else
-		CC="${CEBINROOT}/cl${ARCH}.exe"
-	    fi
-	    CC="\"${CC}\" -I\"${CELIB_DIR}/inc\" -I\"${CEINCLUDE}\""
-	    RC="\"${WCEROOT}/Common/EVC/bin/rc.exe\""
-	    arch=`echo ${ARCH} | awk '{print tolower([$]0)}'`
-	    defs="${ARCH} _${ARCH}_ ${arch} PALM_SIZE _MT _DLL _WINDOWS"
-	    for i in $defs ; do
-		AC_DEFINE_UNQUOTED($i)
-	    done
-#	    if test "${ARCH}" = "X86EM"; then
-#		AC_DEFINE_UNQUOTED(_WIN32_WCE_EMULATION)
-#	    fi
-	    AC_DEFINE_UNQUOTED(_WIN32_WCE, $CEVERSION)
-	    AC_DEFINE_UNQUOTED(UNDER_CE, $CEVERSION)
-	    CFLAGS_DEBUG="-nologo -Zi -Od"
-	    CFLAGS_OPTIMIZE="-nologo -O2"
-	    lversion=`echo ${CEVERSION} | sed -e 's/\(.\)\(..\)/\1\.\2/'`
-	    lflags="-nodefaultlib -MACHINE:${ARCH} -LIBPATH:\"${CELIBPATH}\" -subsystem:windowsce,${lversion} -nologo"
-	    LINKBIN="\"${CEBINROOT}/link.exe\""
-	    AC_SUBST(CELIB_DIR)
-	    if test "${CEVERSION}" -lt 400 ; then
-		LIBS="coredll.lib corelibc.lib winsock.lib"
-	    else
-		LIBS="coredll.lib corelibc.lib ws2.lib"
-	    fi
-	    # celib currently stuck at wce300 status
-	    #LIBS="$LIBS \${CELIB_DIR}/wince-${ARCH}-pocket-${OSVERSION}-release/celib.lib"
-	    LIBS="$LIBS \"\${CELIB_DIR}/wince-${ARCH}-pocket-wce300-release/celib.lib\""
-	    LIBS_GUI="commctrl.lib commdlg.lib"
-	else
-	    LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib uuid.lib"
-	fi
+	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib uuid.lib winspool.lib"
 
 	SHLIB_LD="${LINKBIN} -dll -incremental:no ${lflags}"
 	SHLIB_LD_LIBS='${LIBS}'
@@ -993,7 +874,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	# Specify linker flags depending on the type of app being
 	# built -- Console vs. Window.
-	if test "$doWince" != "no" -a "${TARGETCPU}" != "X86"; then
+	if test "${TARGETCPU}" != "X86"; then
 	    LDFLAGS_CONSOLE="-link ${lflags}"
 	    LDFLAGS_WINDOW=${LDFLAGS_CONSOLE}
 	else
@@ -1009,7 +890,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     if test "${GCC}" = "yes" ; then
 	AC_CACHE_CHECK(for SEH support in compiler,
 	    tcl_cv_seh,
-	AC_TRY_RUN([
+	AC_RUN_IFELSE([AC_LANG_SOURCE([[
 	    #define WIN32_LEAN_AND_MEAN
 	    #include <windows.h>
 	    #undef WIN32_LEAN_AND_MEAN
@@ -1024,10 +905,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		}
 		return 1;
 	    }
-	],
-	    tcl_cv_seh=yes,
-	    tcl_cv_seh=no,
-	    tcl_cv_seh=no)
+	]])],
+	    [tcl_cv_seh=yes],
+	    [tcl_cv_seh=no],
+	    [tcl_cv_seh=no])
 	)
 	if test "$tcl_cv_seh" = "no" ; then
 	    AC_DEFINE(HAVE_NO_SEH, 1,
@@ -1042,15 +923,15 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	#
 	AC_CACHE_CHECK(for EXCEPTION_DISPOSITION support in include files,
 	    tcl_cv_eh_disposition,
-	    AC_TRY_COMPILE([
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #	    define WIN32_LEAN_AND_MEAN
 #	    include <windows.h>
 #	    undef WIN32_LEAN_AND_MEAN
-	    ],[
+	    ]], [[
 		EXCEPTION_DISPOSITION x;
-	    ],
-		tcl_cv_eh_disposition=yes,
-		tcl_cv_eh_disposition=no)
+	    ]])],
+		[tcl_cv_eh_disposition=yes],
+		[tcl_cv_eh_disposition=no])
 	)
 	if test "$tcl_cv_eh_disposition" = "no" ; then
 	AC_DEFINE(EXCEPTION_DISPOSITION, int,
@@ -1063,23 +944,25 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	AC_CACHE_CHECK(for winnt.h that ignores VOID define,
 	    tcl_cv_winnt_ignore_void,
-	    AC_TRY_COMPILE([
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		#define VOID void
 		#define WIN32_LEAN_AND_MEAN
 		#include <windows.h>
 		#undef WIN32_LEAN_AND_MEAN
-	    ], [
+	    ]], [[
 		CHAR c;
 		SHORT s;
 		LONG l;
-	    ],
-        tcl_cv_winnt_ignore_void=yes,
-        tcl_cv_winnt_ignore_void=no)
+	    ]])],
+	    [tcl_cv_winnt_ignore_void=yes],
+	    [tcl_cv_winnt_ignore_void=no])
 	)
 	if test "$tcl_cv_winnt_ignore_void" = "yes" ; then
 	    AC_DEFINE(HAVE_WINNT_IGNORE_VOID, 1,
 		    [Defined when cygwin/mingw ignores VOID define in winnt.h])
 	fi
+
+	AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
 
 	# See if the compiler supports casting to a union type.
 	# This is used to stop gcc from printing a compiler
@@ -1087,13 +970,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	AC_CACHE_CHECK(for cast to union support,
 	    tcl_cv_cast_to_union,
-	    AC_TRY_COMPILE([],
-	    [
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
 		  union foo { int i; double d; };
 		  union foo f = (union foo) (int) 0;
-	    ],
-	    tcl_cv_cast_to_union=yes,
-	    tcl_cv_cast_to_union=no)
+	    ]])],
+	    [tcl_cv_cast_to_union=yes],
+	    [tcl_cv_cast_to_union=no])
 	)
 	if test "$tcl_cv_cast_to_union" = "yes"; then
 	    AC_DEFINE(HAVE_CAST_TO_UNION, 1,
@@ -1106,6 +988,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     AC_SUBST(CFLAGS_DEBUG)
     AC_SUBST(CFLAGS_OPTIMIZE)
     AC_SUBST(CFLAGS_WARNING)
+    AC_SUBST(CFLAGS_NOLTO)
 ])
 
 #------------------------------------------------------------------------
@@ -1213,7 +1096,7 @@ AC_DEFUN([SC_PROG_TCLSH], [
 
 AC_DEFUN([SC_BUILD_TCLSH], [
     AC_MSG_CHECKING([for tclsh in Tcl build directory])
-    BUILD_TCLSH=${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}${TCL_DBGX}${EXEEXT}
+    BUILD_TCLSH=${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}\${EXESUFFIX}
     AC_MSG_RESULT($BUILD_TCLSH)
     AC_SUBST(BUILD_TCLSH)
 ])
@@ -1241,8 +1124,7 @@ AC_DEFUN([SC_TCL_CFG_ENCODING], [
     if test x"${with_tcencoding}" != x ; then
 	AC_DEFINE_UNQUOTED(TCL_CFGVAL_ENCODING,"${with_tcencoding}")
     else
-	# Default encoding on windows is not "iso8859-1"
-	AC_DEFINE(TCL_CFGVAL_ENCODING,"cp1252")
+	AC_DEFINE(TCL_CFGVAL_ENCODING,"utf-8")
     fi
 ])
 
@@ -1264,7 +1146,7 @@ AC_DEFUN([SC_TCL_CFG_ENCODING], [
 AC_DEFUN([SC_EMBED_MANIFEST], [
     AC_MSG_CHECKING(whether to embed manifest)
     AC_ARG_ENABLE(embedded-manifest,
-	AC_HELP_STRING([--enable-embedded-manifest],
+	AS_HELP_STRING([--enable-embedded-manifest],
 		[embed manifest if possible (default: yes)]),
 	[embed_ok=$enableval], [embed_ok=yes])
 
@@ -1296,4 +1178,127 @@ print("manifest needed")
     AC_MSG_RESULT([$result])
     AC_SUBST(VC_MANIFEST_EMBED_DLL)
     AC_SUBST(VC_MANIFEST_EMBED_EXE)
+])
+
+#------------------------------------------------------------------------
+# SC_CC_FOR_BUILD
+#	For cross compiles, locate a C compiler that can generate native binaries.
+#
+# Arguments:
+#	none
+#
+# Results:
+#	Substitutes the following vars:
+#		CC_FOR_BUILD
+#		EXEEXT_FOR_BUILD
+#------------------------------------------------------------------------
+
+dnl Get a default for CC_FOR_BUILD to put into Makefile.
+AC_DEFUN([AX_CC_FOR_BUILD],
+[# Put a plausible default for CC_FOR_BUILD in Makefile.
+if test -z "$CC_FOR_BUILD"; then
+  if test "x$cross_compiling" = "xno"; then
+    CC_FOR_BUILD='$(CC)'
+  else
+    AC_MSG_CHECKING([for gcc])
+    AC_CACHE_VAL(ac_cv_path_cc, [
+	search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+	for dir in $search_path ; do
+	    for j in `ls -r $dir/gcc 2> /dev/null` \
+		    `ls -r $dir/gcc 2> /dev/null` ; do
+		if test x"$ac_cv_path_cc" = x ; then
+		    if test -f "$j" ; then
+			ac_cv_path_cc=$j
+			break
+		    fi
+		fi
+	    done
+	done
+    ])
+  fi
+fi
+AC_SUBST(CC_FOR_BUILD)
+# Also set EXEEXT_FOR_BUILD.
+if test "x$cross_compiling" = "xno"; then
+  EXEEXT_FOR_BUILD='$(EXEEXT)'
+  OBJEXT_FOR_BUILD='$(OBJEXT)'
+else
+  OBJEXT_FOR_BUILD='.no'
+  AC_CACHE_CHECK([for build system executable suffix], bfd_cv_build_exeext,
+    [rm -f conftest*
+     echo 'int main () { return 0; }' > conftest.c
+     bfd_cv_build_exeext=
+     ${CC_FOR_BUILD} -o conftest conftest.c 1>&5 2>&5
+     for file in conftest.*; do
+       case $file in
+       *.c | *.o | *.obj | *.ilk | *.pdb) ;;
+       *) bfd_cv_build_exeext=`echo $file | sed -e s/conftest//` ;;
+       esac
+     done
+     rm -f conftest*
+     test x"${bfd_cv_build_exeext}" = x && bfd_cv_build_exeext=no])
+  EXEEXT_FOR_BUILD=""
+  test x"${bfd_cv_build_exeext}" != xno && EXEEXT_FOR_BUILD=${bfd_cv_build_exeext}
+fi
+AC_SUBST(EXEEXT_FOR_BUILD)])dnl
+AC_SUBST(OBJEXT_FOR_BUILD)])dnl
+
+
+
+#------------------------------------------------------------------------
+# SC_ZIPFS_SUPPORT
+#	Locate a zip encoder installed on the system path, or none.
+#
+# Arguments:
+#	none
+#
+# Results:
+#	Substitutes the following vars:
+#		ZIP_PROG
+#       ZIP_PROG_OPTIONS
+#       ZIP_PROG_VFSSEARCH
+#       ZIP_INSTALL_OBJS
+#------------------------------------------------------------------------
+
+AC_DEFUN([SC_ZIPFS_SUPPORT], [
+    ZIP_PROG=""
+    ZIP_PROG_OPTIONS=""
+    ZIP_PROG_VFSSEARCH=""
+    ZIP_INSTALL_OBJS=""
+
+    AC_MSG_CHECKING([for zip])
+    AC_CACHE_VAL(ac_cv_path_zip, [
+    search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+    for dir in $search_path ; do
+        for j in `ls -r $dir/zip 2> /dev/null` \
+            `ls -r $dir/zip 2> /dev/null` ; do
+        if test x"$ac_cv_path_zip" = x ; then
+            if test -f "$j" ; then
+            ac_cv_path_zip=$j
+            break
+            fi
+        fi
+        done
+    done
+    ])
+    if test -f "$ac_cv_path_zip" ; then
+        ZIP_PROG="$ac_cv_path_zip"
+        AC_MSG_RESULT([$ZIP_PROG])
+        ZIP_PROG_OPTIONS="-rq"
+        ZIP_PROG_VFSSEARCH="*"
+        AC_MSG_RESULT([Found INFO Zip in environment])
+        # Use standard arguments for zip
+    else
+        # It is not an error if an installed version of Zip can't be located.
+        # We can use the locally distributed minizip instead
+        ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
+        ZIP_PROG_OPTIONS="-o -r"
+        ZIP_PROG_VFSSEARCH="*"
+        ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
+        AC_MSG_RESULT([No zip found on PATH building minizip])
+    fi
+    AC_SUBST(ZIP_PROG)
+    AC_SUBST(ZIP_PROG_OPTIONS)
+    AC_SUBST(ZIP_PROG_VFSSEARCH)
+    AC_SUBST(ZIP_INSTALL_OBJS)
 ])

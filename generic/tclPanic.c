@@ -5,9 +5,9 @@
  *	applications will probably call Tcl_SetPanicProc() to set an
  *	application-specific panic procedure.
  *
- * Copyright (c) 1988-1993 The Regents of the University of California.
- * Copyright (c) 1994 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1988-1993 The Regents of the University of California.
+ * Copyright © 1994 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -23,8 +23,8 @@
  * procedure.
  */
 
-#if defined(__CYGWIN__)
-static TCL_NORETURN Tcl_PanicProc *panicProc = tclWinDebugPanic;
+#if defined(__CYGWIN__) || (defined(_WIN32) && (defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8))
+static TCL_NORETURN1 Tcl_PanicProc *panicProc = tclWinDebugPanic;
 #else
 static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
 #endif
@@ -45,19 +45,21 @@ static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
  *----------------------------------------------------------------------
  */
 
-void
+#undef Tcl_SetPanicProc
+const char *
 Tcl_SetPanicProc(
     TCL_NORETURN1 Tcl_PanicProc *proc)
 {
 #if defined(_WIN32)
     /* tclWinDebugPanic only installs if there is no panicProc yet. */
-    if ((proc != tclWinDebugPanic) || (panicProc == NULL))
+    if (((Tcl_PanicProc *)proc != tclWinDebugPanic) || (panicProc == NULL))
 #elif defined(__CYGWIN__)
     if (proc == NULL)
 	panicProc = tclWinDebugPanic;
     else
 #endif
     panicProc = proc;
+    return Tcl_InitSubsystems();
 }
 
 /*
@@ -111,7 +113,7 @@ Tcl_PanicVA(
 	__builtin_trap();
 #   elif defined(_WIN64)
 	__debugbreak();
-#   elif defined(_MSC_VER)
+#   elif defined(_MSC_VER) && defined (_M_IX86)
 	_asm {int 3}
 #   else
 	DebugBreak();
@@ -140,8 +142,6 @@ Tcl_PanicVA(
  *
  *----------------------------------------------------------------------
  */
-
-/* ARGSUSED */
 
 /*
  * The following comment is here so that Coverity's static analizer knows that

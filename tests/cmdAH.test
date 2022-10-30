@@ -4,28 +4,34 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1996-1998 by Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1996-1998 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.1
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testchmod       [llength [info commands testchmod]]
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testvolumetype  [llength [info commands testvolumetype]]
+testConstraint testbytestring [llength [info commands testbytestring]]
+testConstraint time64bit [expr {
+    $::tcl_platform(pointerSize) >= 8 ||
+    [llength [info command testsize]] && [testsize st_mtime] >= 8
+}]
 testConstraint linkDirectory [expr {
     ![testConstraint win] ||
-    ([string index $tcl_platform(osVersion) 0] >= 5
+    ($::tcl_platform(osVersion) >= 5.0
      && [lindex [file system [temporaryDirectory]] 1] eq "NTFS")
 }]
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 global env
 set cmdAHwd [pwd]
@@ -144,10 +150,10 @@ test cmdAH-2.6.2 {cd} -constraints {unix nonPortable} -setup {
 test cmdAH-2.6.3 {Tcl_CdObjCmd, bug #3118489} -setup {
     set dir [pwd]
 } -returnCodes error -body {
-    cd .\0
+    cd .\x00
 } -cleanup {
     cd $dir
-} -match glob -result "couldn't change working directory to \".\0\": *"
+} -match glob -result "couldn't change working directory to \".\x00\": *"
 test cmdAH-2.7 {Tcl_ConcatObjCmd} {
     concat
 } {}
@@ -173,7 +179,7 @@ test cmdAH-4.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
 } -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, or system}
 test cmdAH-4.3 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto
-} -result {wrong # args: should be "encoding convertto ?encoding? data"}
+} -result {wrong # args: should be "encoding convertto ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"}
 test cmdAH-4.4 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto foo bar
 } -result {unknown encoding "foo"}
@@ -181,21 +187,21 @@ test cmdAH-4.5 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
     encoding system jis0208
-    encoding convertto \u4e4e
+    encoding convertto 乎
 } -cleanup {
     encoding system $system
 } -result 8C
 test cmdAH-4.6 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
-    encoding system identity
-    encoding convertto jis0208 \u4e4e
+    encoding system iso8859-1
+    encoding convertto jis0208 乎
 } -cleanup {
     encoding system $system
 } -result 8C
 test cmdAH-4.7 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertfrom
-} -result {wrong # args: should be "encoding convertfrom ?encoding? data"}
+} -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"}
 test cmdAH-4.8 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertfrom foo bar
 } -result {unknown encoding "foo"}
@@ -206,15 +212,15 @@ test cmdAH-4.9 {Tcl_EncodingObjCmd} -setup {
     encoding convertfrom 8C
 } -cleanup {
     encoding system $system
-} -result \u4e4e
+} -result 乎
 test cmdAH-4.10 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
-    encoding system identity
+    encoding system iso8859-1
     encoding convertfrom jis0208 8C
 } -cleanup {
     encoding system $system
-} -result \u4e4e
+} -result 乎
 test cmdAH-4.11 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding names foo
 } -result {wrong # args: should be "encoding names"}
@@ -224,18 +230,152 @@ test cmdAH-4.12 {Tcl_EncodingObjCmd} -returnCodes error -body {
 test cmdAH-4.13 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
-    encoding system identity
+    encoding system iso8859-1
     encoding system
 } -cleanup {
     encoding system $system
-} -result identity
+} -result iso8859-1
+
+test cmdAH-4.14.1 {Syntax error, -nocomplain and -failindex, no encoding} -body {
+    encoding convertfrom -nocomplain -failindex 2 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"}
+test cmdAH-4.14.2 {Syntax error, -nocomplain and -failindex, no encoding} -body {
+    encoding convertto -nocomplain -failindex 2 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"}
+test cmdAH-4.15.1 {Syntax error, -failindex and -nocomplain, no encoding} -body {
+    encoding convertfrom -failindex 2 -nocomplain ABC
+} -returnCodes 1 -result {unknown encoding "-nocomplain"}
+test cmdAH-4.15.2 {Syntax error, -failindex and -nocomplain, no encoding} -body {
+    encoding convertto -failindex 2 -nocomplain ABC
+} -returnCodes 1 -result {unknown encoding "-nocomplain"}
+test cmdAH-4.16.1 {Syntax error, -nocomplain and -failindex, encoding} -body {
+    encoding convertfrom -nocomplain -failindex 2 utf-8 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"}
+test cmdAH-4.16.2 {Syntax error, -nocomplain and -failindex, encoding} -body {
+    encoding convertto -nocomplain -failindex 2 utf-8 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"}
+test cmdAH-4.17.1 {Syntax error, -failindex and -nocomplain, encoding} -body {
+    encoding convertfrom -failindex 2 -nocomplain utf-8 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"}
+test cmdAH-4.17.2 {Syntax error, -failindex and -nocomplain, encoding} -body {
+    encoding convertto -failindex 2 -nocomplain utf-8 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"}
+test cmdAH-4.18.1 {Syntax error, -failindex with no var, no encoding} -body {
+    encoding convertfrom -failindex ABC
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"}
+test cmdAH-4.18.2 {Syntax error, -failindex with no var, no encoding (byte compiled)} -setup {
+    proc encoding_test {} {
+        encoding convertfrom -failindex ABC
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.18.3 {Syntax error, -failindex with no var, no encoding} -body {
+    encoding convertto -failindex ABC
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"}
+test cmdAH-4.18.4 {Syntax error, -failindex with no var, no encoding (byte compiled)} -setup {
+    proc encoding_test {} {
+        encoding convertto -failindex ABC
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.19.1 {convertrom -failindex with correct data} -body {
+    encoding convertfrom -failindex test ABC
+    set test
+} -returnCodes 0 -result -1
+test cmdAH-4.19.2 {convertrom -failindex with correct data (byt compiled)} -setup {
+    proc encoding_test {} {
+	encoding convertfrom -failindex test ABC
+	set test
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result -1 -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.19.3 {convertrom -failindex with correct data} -body {
+    encoding convertto -failindex test ABC
+    set test
+} -returnCodes 0 -result -1
+test cmdAH-4.19.4 {convertrom -failindex with correct data (byt compiled)} -setup {
+    proc encoding_test {} {
+	encoding convertto -failindex test ABC
+	set test
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result -1 -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.20.1 {convertrom -failindex with incomplete utf8} -body {
+    set x [encoding convertfrom -failindex i utf-8 A\xc3]
+    binary scan $x H* y
+    list $y $i
+} -returnCodes 0 -result {41c3 -1}
+test cmdAH-4.20.2 {convertrom -failindex with incomplete utf8 (byte compiled)} -setup {
+    proc encoding_test {} {
+	set x [encoding convertfrom -failindex i utf-8 A\xc3]
+	binary scan $x H* y
+	list $y $i
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result {41c3 -1} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.21.1 {convertto -failindex with wrong character} -body {
+    set x [encoding convertto -failindex i iso8859-1 A\u0141]
+    binary scan $x H* y
+    list $y $i
+} -returnCodes 0 -result {41 1}
+test cmdAH-4.21.2 {convertto -failindex with wrong character (byte compiled)} -setup {
+    proc encoding_test {} {
+    set x [encoding convertto -failindex i iso8859-1 A\u0141]
+	binary scan $x H* y
+	list $y $i
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result {41 1} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.22 {convertfrom -strict} -body {
+    encoding convertfrom -strict utf-8 A\x00B
+} -result A\x00B
+
+test cmdAH-4.23 {convertfrom -strict} -body {
+    encoding convertfrom -strict utf-8 A\xC0\x80B
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\xC0'}
+
+test cmdAH-4.24 {convertto -strict} -body {
+    encoding convertto -strict utf-8 A\x00B
+} -result A\x00B
+
+test cmdAH-4.25 {convertfrom -strict} -constraints knownBug -body {
+    encoding convertfrom -strict utf-8 A\x80B
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\x80'}
+
+test cmdAH-4.26 {convertto -strict} -constraints {testbytestring knownBug} -body {
+    encoding convertto -strict utf-8 A[testbytestring \x80]B
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\x80'}
 
 test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
     file
 } -result {wrong # args: should be "file subcommand ?arg ...?"}
 test cmdAH-5.2 {Tcl_FileObjCmd} -returnCodes error -body {
     file x
-} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, home, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, tildeexpand, type, volumes, or writable}
 test cmdAH-5.3 {Tcl_FileObjCmd} -returnCodes error -body {
     file exists
 } -result {wrong # args: should be "file exists name"}
@@ -257,7 +397,7 @@ test cmdAH-6.3 {Tcl_FileObjCmd: volumes} -constraints unix -body {
 test cmdAH-6.4 {Tcl_FileObjCmd: volumes} -constraints win -body {
     set volumeList [string tolower [file volumes]]
     set element [lsearch -exact $volumeList "c:/"]
-    list [expr {$element>-1}] [glob -nocomplain [lindex $volumeList $element]*]
+    list [expr {$element>=0}] [glob -nocomplain [lindex $volumeList $element]*]
 } -match glob -result {1 *}
 
 # attributes
@@ -319,19 +459,19 @@ test cmdAH-8.13 {Tcl_FileObjCmd: dirname} testsetplatform {
 test cmdAH-8.14 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname //foo
-} /
+} //foo
 test cmdAH-8.15 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname //foo/bar
-} /foo
+} //foo
 test cmdAH-8.16 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname {//foo\/bar/baz}
-} {/foo\/bar}
+} {//foo\/bar}
 test cmdAH-8.17 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname {//foo\/bar/baz/blat}
-} {/foo\/bar/baz}
+} {//foo\/bar/baz}
 test cmdAH-8.18 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname /foo//
@@ -463,7 +603,7 @@ test cmdAH-9.13 {Tcl_FileObjCmd: tail} testsetplatform {
 test cmdAH-9.14 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail //foo
-} foo
+} {}
 test cmdAH-9.15 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail //foo/bar
@@ -566,6 +706,13 @@ test cmdAH-9.51 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform windows
     file tail {foo\bar}
 } bar
+test cmdAH-9.52 {Tcl_FileObjCmd: tail / normalize, bug 7a9dc52b29} {
+    list \
+	[file tail {~/~foo}] \
+	[file tail {~/test/~foo}] \
+	[file tail [file normalize {~/~foo}]] \
+	[file tail [file normalize {~/test/~foo}]]
+} [lrepeat 4 ./~foo]
 
 # rootname
 test cmdAH-10.1 {Tcl_FileObjCmd: rootname} -returnCodes error -body {
@@ -881,7 +1028,7 @@ test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix testchmod} {
     file exe $gorpfile
 } 1
 test cmdAH-18.5 {Tcl_FileObjCmd: executable} -constraints {win} -body {
-    # On pc, must be a .exe, .com, etc.
+    # On windows, must be a .exe, .com, etc.
     set x {}
     set gorpexes {}
     foreach ext {exe com cmd bat} {
@@ -954,10 +1101,10 @@ test cmdAH-19.11 {Tcl_FileObjCmd: exists} -constraints {unix notRoot} -setup {
 } -body {
     makeDirectory /tmp/tcl.foo.dir
     makeFile 12345 /tmp/tcl.foo.dir/file
-    file attributes /tmp/tcl.foo.dir -permissions 0000
+    file attributes /tmp/tcl.foo.dir -permissions 0
     file exists /tmp/tcl.foo.dir/file
 } -cleanup {
-    file attributes /tmp/tcl.foo.dir -permissions 0775
+    file attributes /tmp/tcl.foo.dir -permissions 0o775
     removeFile /tmp/tcl.foo.dir/file
     removeDirectory /tmp/tcl.foo.dir
 } -result 0
@@ -980,7 +1127,7 @@ test cmdAH-19.12 {Bug 3608360: [file exists] mustn't do globbing} -setup {
 catch {testsetplatform $platform}
 removeFile $gorpfile
 set gorpfile [makeFile "Test string" gorp.file]
-catch {file attributes $gorpfile -permissions 0765}
+catch {file attributes $gorpfile -permissions 0o765}
 
 # avoid problems with non-local filesystems
 if {[testConstraint unix] && [file exists /tmp]} {
@@ -1040,7 +1187,7 @@ test cmdAH-20.7.1 {
     Tcl_FileObjCmd: atime (built-in Windows names with dir path and extension)
 } -constraints {win} -body {
     file atime [file join [temporaryDirectory] CON.txt]
-} -result "could not get access time for file \"[file join [temporaryDirectory] CON.txt]\"" -returnCodes error
+} -match regexp -result {could not (?:get access time|read)} -returnCodes error
 
 if {[testConstraint unix] && [file exists /tmp]} {
     removeFile touch.me /tmp
@@ -1067,10 +1214,10 @@ test cmdAH-22.3 {Tcl_FileObjCmd: isfile} {file isfile $dirfile} 0
 catch {file link -symbolic $linkfile $gorpfile}
 test cmdAH-23.1 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a
-} -result {wrong # args: should be "file lstat name varName"}
+} -result {could not read "a": no such file or directory}
 test cmdAH-23.2 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a b c
-} -result {wrong # args: should be "file lstat name varName"}
+} -result {wrong # args: should be "file lstat name ?varName?"}
 test cmdAH-23.3 {Tcl_FileObjCmd: lstat} -setup {
     unset -nocomplain stat
 } -constraints {unix nonPortable} -body {
@@ -1081,7 +1228,7 @@ test cmdAH-23.4 {Tcl_FileObjCmd: lstat} -setup {
     unset -nocomplain stat
 } -constraints {unix nonPortable} -body {
     file lstat $linkfile stat
-    list $stat(nlink) [expr $stat(mode)&0777] $stat(type)
+    list $stat(nlink) [expr {$stat(mode) & 0o777}] $stat(type)
 } -result {1 511 link}
 test cmdAH-23.5 {Tcl_FileObjCmd: lstat errors} {nonPortable} {
     list [catch {file lstat _bogus_ stat} msg] [string tolower $msg] \
@@ -1209,7 +1356,7 @@ test cmdAH-24.9 {Tcl_FileObjCmd: mtime touch with non-ascii chars} -setup {
     set oldfile $file
 } -constraints unix -body {
     # introduce some non-ascii characters.
-    append file \u2022
+    append file •
     file delete -force $file
     file rename $oldfile $file
     set mtime [file mtime $file]
@@ -1234,7 +1381,7 @@ test cmdAH-24.11 {Tcl_FileObjCmd: mtime touch with non-ascii chars} -setup {
     set oldfile $file
 } -constraints win -body {
     # introduce some non-ascii characters.
-    append file \u2022
+    append file •
     file delete -force $file
     file rename $oldfile $file
     set mtime [file mtime $file]
@@ -1281,14 +1428,50 @@ test cmdAH-24.14.1 {
     Tcl_FileObjCmd: mtime (built-in Windows names with dir path and extension)
 } -constraints {win} -body {
     file mtime [file join [temporaryDirectory] CON.txt]
-} -result "could not get modification time for file \"[file join [temporaryDirectory] CON.txt]\"" -returnCodes error
+} -match regexp -result {could not (?:get modification time|read)} -returnCodes error
+
+# 3155760000 is 64-bit unix time, Wed Jan 01 00:00:00 GMT 2070:
+test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -constraints {time64bit} -setup {
+    set filename [makeFile "" foo.text]
+} -body {
+    list [file atime $filename 3155760000] [file atime $filename]
+} -cleanup {
+    removeFile $filename
+} -result {3155760000 3155760000}
+test cmdAH-24.20.2 {Tcl_FileObjCmd: mtime 64-bit time_t, bug [4718b41c56]} -constraints {time64bit} -setup {
+    set filename [makeFile "" foo.text]
+} -body {
+    list [file mtime $filename 3155760000] [file mtime $filename]
+} -cleanup {
+    file delete -force $filename
+} -result {3155760000 3155760000}
 
 # owned
 test cmdAH-25.1 {Tcl_FileObjCmd: owned} -returnCodes error -body {
     file owned a b
 } -result {wrong # args: should be "file owned name"}
-test cmdAH-25.2 {Tcl_FileObjCmd: owned} -constraints win -body {
-    file owned $gorpfile
+test cmdAH-25.2 {Tcl_FileObjCmd: owned} -constraints win -setup {
+    set fn $gorpfile
+    # prefer temp file to check owner (try to avoid bug [7de2d722bd]):
+    if {
+	[info exists ::env(TEMP)] && [file isdirectory $::env(TEMP)] &&
+        [file dirname $fn] ne [file normalize $::env(TEMP)]
+    } {
+	set fn [file join $::env(TEMP)/test-owner-from-tcl.txt]
+	set fn [makeFile "data" test-owner-from-tcl.txt $::env(TEMP)]
+    }
+    # be sure we have really owned this file before trying to check that
+    # (avoid dependency on admin with UAC and the setting "System objects:
+    # Default owner for objects created by members of the Administrators group"):
+    catch {
+	exec takeown /F [file nativename $fn]
+    }
+} -body {
+    file owned $fn
+} -cleanup {
+    if {$fn ne $gorpfile} {
+	removeFile $fn
+    }
 } -result 1
 test cmdAH-25.2.1 {Tcl_FileObjCmd: owned} -constraints unix -setup {
     # Avoid problems with AFS
@@ -1301,8 +1484,12 @@ test cmdAH-25.2.1 {Tcl_FileObjCmd: owned} -constraints unix -setup {
 test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unix notRoot} {
     file owned /
 } 0
-test cmdAH-25.3.1 {Tcl_FileObjCmd: owned} -constraints win -body {
-    file owned $env(windir)
+test cmdAH-25.3.1 {Tcl_FileObjCmd: owned} -constraints {win notWine} -body {
+    if {[info exists env(SystemRoot)]} {
+	file owned $env(SystemRoot)
+    } else {
+	file owned $env(windir)
+    }
 } -result 0
 test cmdAH-25.4 {Tcl_FileObjCmd: owned} -body {
     file owned nosuchfile
@@ -1345,24 +1532,29 @@ test cmdAH-27.4 {
 test cmdAH-27.4.1 {
     Tcl_FileObjCmd: size (built-in Windows names with dir path and extension)
 } -constraints {win} -body {
-    file size [file join [temporaryDirectory] con.txt]
+    try {
+	set res [file size [file join [temporaryDirectory] con.txt]]
+    } trap {POSIX ENOENT} {} {
+	set res 0
+    }
+    set res
 } -result 0
 
 catch {testsetplatform $platform}
 removeFile $gorpfile
 set gorpfile [makeFile "Test string" gorp.file]
-catch {file attributes $gorpfile -permissions 0765}
+catch {file attributes $gorpfile -permissions 0o765}
 
 # stat
 test cmdAH-28.1 {Tcl_FileObjCmd: stat} -returnCodes error -body {
-    file stat _bogus_
-} -result {wrong # args: should be "file stat name varName"}
+    file stat
+} -result {wrong # args: should be "file stat name ?varName?"}
 test cmdAH-28.2 {Tcl_FileObjCmd: stat} -returnCodes error -body {
     file stat _bogus_ a b
-} -result {wrong # args: should be "file stat name varName"}
+} -result {wrong # args: should be "file stat name ?varName?"}
 test cmdAH-28.3 {Tcl_FileObjCmd: stat} -setup {
     unset -nocomplain stat
-    set stat(blocks) [set stat(blksize) {}]
+    array set stat {blocks {} blksize {}}
 } -body {
     file stat $gorpfile stat
     unset stat(blocks) stat(blksize); # Ignore these fields; not always set
@@ -1378,8 +1570,8 @@ test cmdAH-28.5 {Tcl_FileObjCmd: stat} -constraints {unix} -setup {
     unset -nocomplain stat
 } -body {
     file stat $gorpfile stat
-    expr {$stat(mode) & 0o777}
-} -result {501}
+    format 0o%03o [expr {$stat(mode) & 0o777}]
+} -result 0o765
 test cmdAH-28.6 {Tcl_FileObjCmd: stat} {
     list [catch {file stat _bogus_ stat} msg] [string tolower $msg] $errorCode
 } {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
@@ -1447,9 +1639,24 @@ test cmdAH-28.13 {Tcl_FileObjCmd: stat (built-in Windows names)} -constraints {w
 test cmdAH-28.13.1 {Tcl_FileObjCmd: stat (built-in Windows names)} -constraints {win} -setup {
     unset -nocomplain stat
 } -body {
-    file stat [file join [temporaryDirectory] CON.txt] stat
-    lmap elem {atime ctime dev gid ino mode mtime nlink size type uid} {set stat($elem)}
+    try {
+	file stat [file join [temporaryDirectory] CON.txt] stat
+	set res [lmap elem {atime ctime dev gid ino mode mtime nlink size type uid} {set stat($elem)}]
+    } trap {POSIX ENOENT} {} {
+	set res {0 0 -1 0 0 8630 0 0 0 characterSpecial 0}
+    }
+    set res
 } -result {0 0 -1 0 0 8630 0 0 0 characterSpecial 0}
+test cmdAH-28.14 {Tcl_FileObjCmd: stat} -setup {
+    unset -nocomplain stat
+} -body {
+    file stat $gorpfile stat
+    expr {
+		[lsort -stride 2 [array get stat]]
+		eq
+		[lsort -stride 2 [file stat $gorpfile]]
+	}
+} -result {1}
 unset -nocomplain stat
 
 # type
@@ -1477,7 +1684,7 @@ test cmdAH-29.4 {Tcl_FileObjCmd: type} -constraints {unix} -setup {
 } -cleanup {
     file delete $linkfile
 } -result link
-test cmdAH-29.4.1 {Tcl_FileObjCmd: type} -constraints {linkDirectory} -setup {
+test cmdAH-29.4.1 {Tcl_FileObjCmd: type} -constraints {linkDirectory notWine} -setup {
     set tempdir [makeDirectory temp]
 } -body {
     set linkdir [file join [temporaryDirectory] link.dir]
@@ -1498,13 +1705,18 @@ test cmdAH-29.6 {
 test cmdAH-29.6.1 {
     Tcl_FileObjCmd: type (built-in Windows names, with dir path and extension)
 } -constraints {win} -body {
-    file type [file join [temporaryDirectory] CON.txt]
+    try {
+	set res [file type [file join [temporaryDirectory] CON.txt]]
+    } trap {POSIX ENOENT} {} {
+	set res {characterSpecial}
+    }
+    set res
 } -result "characterSpecial"
 
 # Error conditions
 test cmdAH-30.1 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file gorp x
-} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, home, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, tildeexpand, type, volumes, or writable}
 test cmdAH-30.2 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file ex x
 } -match glob -result {unknown or ambiguous subcommand "ex": must be *}
@@ -1572,7 +1784,7 @@ test cmdAH-31.9 {Tcl_FileObjCmd: channels in other interp} {
     lsort [safeInterp eval [list file channels]]
 } [lsort [list stdout $newFileId]]
 test cmdAH-31.10 {Tcl_FileObjCmd: channels in other interp} {
-    # we can now write to $newFileId from slave
+    # we can now write to $newFileId from child
     safeInterp eval [list puts $newFileId "hello"]
 } {}
 interp transfer {} $newFileId safeInterp
@@ -1636,6 +1848,62 @@ test cmdAH-32.6 {file tempfile - templates} -body {
 } -constraints {unix nonPortable} -cleanup {
     catch {file delete $name}
 } -result ok
+
+test cmdAH-33.1 {file tempdir} -body {
+    file tempdir a b
+} -returnCodes error -result {wrong # args: should be "file tempdir ?template?"}
+test cmdAH-33.2 {file tempdir} -body {
+    set d [file tempdir]
+    list [file tail $d] [file exists $d] [file type $d] \
+	[glob -nocomplain -directory $d *]
+} -match glob -result {tcl_* 1 directory {}} -cleanup {
+    catch {file delete $d}
+}
+test cmdAH-33.3 {file tempdir} -body {
+    set d [file tempdir gorp]
+    list [file tail $d] [file exists $d] [file type $d] \
+	[glob -nocomplain -directory $d *]
+} -match glob -result {gorp_* 1 directory {}} -cleanup {
+    catch {file delete $d}
+}
+test cmdAH-33.4 {file tempdir} -setup {
+    set base [file join [temporaryDirectory] gorp]
+    file mkdir $base
+} -body {
+    set pre [glob -nocomplain -directory $base *]
+    set d [file normalize [file tempdir $base/]]
+    list [string map [list $base GORP:] $d] [file exists $d] [file type $d] \
+	$pre [glob -nocomplain -directory $d *]
+} -match glob -result {GORP:/tcl_* 1 directory {} {}} -cleanup {
+    catch {file delete -force $base}
+}
+test cmdAH-33.5 {file tempdir} -setup {
+    set base [file join [temporaryDirectory] gorp]
+    file mkdir $base
+} -body {
+    set pre [glob -nocomplain -directory $base *]
+    set d [file normalize [file tempdir $base/gorp]]
+    list [string map [list $base GORP:] $d] [file exists $d] [file type $d] \
+	$pre [glob -nocomplain -directory $d *]
+} -match glob -result {GORP:/gorp_* 1 directory {} {}} -cleanup {
+    catch {file delete -force $base}
+}
+test cmdAH-33.6 {file tempdir: missing parent dir} -setup {
+    set base [file join [temporaryDirectory] gorp]
+    file mkdir $base
+} -returnCodes error -body {
+    file tempdir $base/quux/
+} -cleanup {
+    catch {file delete -force $base}
+} -result {can't create temporary directory: no such file or directory}
+test cmdAH-33.7 {file tempdir: missing parent dir} -setup {
+    set base [file join [temporaryDirectory] gorp]
+    file mkdir $base
+} -returnCodes error -body {
+    file tempdir $base/quux/foobar
+} -cleanup {
+    catch {file delete -force $base}
+} -result {can't create temporary directory: no such file or directory}
 
 # This shouldn't work, but just in case a test above failed...
 catch {close $newFileId}
@@ -1649,7 +1917,7 @@ unset -nocomplain platform
 
 # Tcl_ForObjCmd is tested in for.test
 
-catch {file attributes $dirfile -permissions 0777}
+catch {file attributes $dirfile -permissions 0o777}
 removeDirectory $dirfile
 removeFile $gorpfile
 # No idea how well [removeFile] copes with links...

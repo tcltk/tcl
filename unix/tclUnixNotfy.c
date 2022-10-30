@@ -2,39 +2,42 @@
  * tclUnixNotfy.c --
  *
  *	This file contains subroutines shared by all notifier backend
- *	implementations on *nix platforms.
+ *	implementations on *nix platforms. It is *included* by the epoll,
+ *	kqueue and select notifier implementation files.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 2016 Lucio Andrés Illanes Albornoz <l.illanes@gmx.de>
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 2016 Lucio Andrés Illanes Albornoz <l.illanes@gmx.de>
+ * Copyright © 2021 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include <poll.h>
+#include "tclInt.h"
 
 /*
  * Static routines defined in this file.
  */
 
-#ifdef NOTIFIER_SELECT
-#ifdef TCL_THREADS
+static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
+#if !TCL_THREADS
+# undef NOTIFIER_EPOLL
+# undef NOTIFIER_KQUEUE
+# define NOTIFIER_SELECT
+#elif !defined(NOTIFIER_EPOLL) && !defined(NOTIFIER_KQUEUE)
+# define NOTIFIER_SELECT
 static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
-#if defined(HAVE_PTHREAD_ATFORK)
-static void	AtForkChild(void);
-#endif /* HAVE_PTHREAD_ATFORK */
-#endif /* TCL_THREADS */
-#endif /* NOTIFIER_SELECT */
-static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
+# if defined(HAVE_PTHREAD_ATFORK)
+static void		AtForkChild(void);
+# endif /* HAVE_PTHREAD_ATFORK */
 
-#ifdef NOTIFIER_SELECT
-#if TCL_THREADS
 /*
  *----------------------------------------------------------------------
  *
  * StartNotifierThread --
  *
- *	Start a notfier thread and wait for the notifier pipe to be created.
+ *	Start a notifier thread and wait for the notifier pipe to be created.
  *
  * Results:
  *	None.
@@ -44,8 +47,10 @@ static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
  *
  *----------------------------------------------------------------------
  */
+
 static void
-StartNotifierThread(const char *proc)
+StartNotifierThread(
+    const char *proc)
 {
     if (!notifierThreadRunning) {
 	pthread_mutex_lock(&notifierInitMutex);
@@ -56,6 +61,7 @@ StartNotifierThread(const char *proc)
 	    }
 
 	    pthread_mutex_lock(&notifierMutex);
+
 	    /*
 	     * Wait for the notifier pipe to be created.
 	     */
@@ -70,13 +76,12 @@ StartNotifierThread(const char *proc)
 	pthread_mutex_unlock(&notifierInitMutex);
     }
 }
-#endif /* TCL_THREADS */
 #endif /* NOTIFIER_SELECT */
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_AlertNotifier --
+ * TclpAlertNotifier --
  *
  *	Wake up the specified notifier from any thread. This routine is called
  *	by the platform independent notifier code whenever the Tcl_ThreadAlert
@@ -99,49 +104,99 @@ StartNotifierThread(const char *proc)
  */
 
 void
-Tcl_AlertNotifier(
-    ClientData clientData)
+TclpAlertNotifier(
+    void *clientData)
 {
-    if (tclNotifierHooks.alertNotifierProc) {
-	tclNotifierHooks.alertNotifierProc(clientData);
-	return;
-    } else {
 #ifdef NOTIFIER_SELECT
-#ifdef TCL_THREADS
-	ThreadSpecificData *tsdPtr = clientData;
+#if TCL_THREADS
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
-	pthread_mutex_lock(&notifierMutex);
-	tsdPtr->eventReady = 1;
+    pthread_mutex_lock(&notifierMutex);
+    tsdPtr->eventReady = 1;
 
 #   ifdef __CYGWIN__
-	PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
+    PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
 #   else
-	pthread_cond_broadcast(&tsdPtr->waitCV);
+    pthread_cond_broadcast(&tsdPtr->waitCV);
 #   endif /* __CYGWIN__ */
-	pthread_mutex_unlock(&notifierMutex);
+    pthread_mutex_unlock(&notifierMutex);
+#else
+    (void)clientData;
 #endif /* TCL_THREADS */
-#else
-	ThreadSpecificData *tsdPtr = clientData;
+#else /* !NOTIFIER_SELECT */
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 #if defined(NOTIFIER_EPOLL) && defined(HAVE_EVENTFD)
-	uint64_t eventFdVal = 1;
-	if (write(tsdPtr->triggerEventFd, &eventFdVal,
-		sizeof(eventFdVal)) != sizeof(eventFdVal)) {
-	    Tcl_Panic("Tcl_AlertNotifier: unable to write to %p->triggerEventFd",
-		(void *)tsdPtr);
-#else
-	if (write(tsdPtr->triggerPipe[1], "", 1) != 1) {
-	    Tcl_Panic("Tcl_AlertNotifier: unable to write to %p->triggerPipe",
-		(void *)tsdPtr);
-#endif /* NOTIFIER_EPOLL && HAVE_EVENTFD */
-	}
-#endif /* NOTIFIER_SELECT */
+    uint64_t eventFdVal = 1;
+
+    if (write(tsdPtr->triggerEventFd, &eventFdVal,
+	    sizeof(eventFdVal)) != sizeof(eventFdVal)) {
+	Tcl_Panic("Tcl_AlertNotifier: unable to write to %p->triggerEventFd",
+		(void *) tsdPtr);
     }
+#else
+    if (write(tsdPtr->triggerPipe[1], "", 1) != 1) {
+	Tcl_Panic("Tcl_AlertNotifier: unable to write to %p->triggerPipe",
+		(void *) tsdPtr);
+    }
+#endif /* NOTIFIER_EPOLL && HAVE_EVENTFD */
+#endif /* NOTIFIER_SELECT */
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_SetTimer --
+ * LookUpFileHandler --
+ *
+ *	Look up the file handler structure (and optionally the previous one in
+ *	the chain) associated with a file descriptor.
+ *
+ * Returns:
+ *	A pointer to the file handler, or NULL if it can't be found.
+ *
+ * Side effects:
+ *	If prevPtrPtr is non-NULL, it will be written to if the file handler
+ *	is found.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline FileHandler *
+LookUpFileHandler(
+    ThreadSpecificData *tsdPtr,	/* Where to look things up. */
+    int fd,			/* What we are looking for. */
+    FileHandler **prevPtrPtr)	/* If non-NULL, where to report the previous
+				 * pointer. */
+{
+    FileHandler *filePtr, *prevPtr;
+
+    /*
+     * Find the entry for the given file (and return if there isn't one).
+     */
+
+    for (prevPtr = NULL, filePtr = tsdPtr->firstFileHandlerPtr; ;
+	    prevPtr = filePtr, filePtr = filePtr->nextPtr) {
+	if (filePtr == NULL) {
+	    return NULL;
+	}
+	if (filePtr->fd == fd) {
+	    break;
+	}
+    }
+
+    /*
+     * Report what we've found to our caller.
+     */
+
+    if (prevPtrPtr) {
+	*prevPtrPtr = prevPtr;
+    }
+    return filePtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpSetTimer --
  *
  *	This function sets the current notifier timer value. This interface is
  *	not implemented in this notifier because we are always running inside
@@ -157,19 +212,14 @@ Tcl_AlertNotifier(
  */
 
 void
-Tcl_SetTimer(
-    const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
+TclpSetTimer(
+    TCL_UNUSED(const Tcl_Time *))		/* Timeout value, may be NULL. */
 {
-    if (tclNotifierHooks.setTimerProc) {
-	tclNotifierHooks.setTimerProc(timePtr);
-	return;
-    } else {
-	/*
-	 * The interval timer doesn't do anything in this implementation,
-	 * because the only event loop is via Tcl_DoOneEvent, which passes
-	 * timeout values to Tcl_WaitForEvent.
-	 */
-    }
+    /*
+     * The interval timer doesn't do anything in this implementation, because
+     * the only event loop is via Tcl_DoOneEvent, which passes timeout values
+     * to Tcl_WaitForEvent.
+     */
 }
 
 /*
@@ -189,14 +239,11 @@ Tcl_SetTimer(
  */
 
 void
-Tcl_ServiceModeHook(
+TclpServiceModeHook(
     int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
-    if (tclNotifierHooks.serviceModeHookProc) {
-	tclNotifierHooks.serviceModeHookProc(mode);
-	return;
-    } else if (mode == TCL_SERVICE_ALL) {
+    if (mode == TCL_SERVICE_ALL) {
 #ifdef NOTIFIER_SELECT
 #if TCL_THREADS
 	StartNotifierThread("Tcl_ServiceModeHook");
@@ -280,7 +327,7 @@ FileHandlerEventProc(
 }
 
 #ifdef NOTIFIER_SELECT
-#ifdef TCL_THREADS
+#if TCL_THREADS
 /*
  *----------------------------------------------------------------------
  *
@@ -301,32 +348,32 @@ FileHandlerEventProc(
 
 static void
 AlertSingleThread(
-	ThreadSpecificData *tsdPtr)
+    ThreadSpecificData *tsdPtr)
 {
     tsdPtr->eventReady = 1;
     if (tsdPtr->onList) {
-        /*
-         * Remove the ThreadSpecificData structure of this thread
-         * from the waiting list. This prevents us from
-         * continuously spinning on epoll_wait until the other
-         * threads runs and services the file event.
-         */
+	/*
+	 * Remove the ThreadSpecificData structure of this thread from the
+	 * waiting list. This prevents us from continuously spinning on
+	 * epoll_wait until the other threads runs and services the file
+	 * event.
+	 */
 
-        if (tsdPtr->prevPtr) {
+	if (tsdPtr->prevPtr) {
     	    tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
-        } else {
+	} else {
     	    waitingListPtr = tsdPtr->nextPtr;
-        }
-        if (tsdPtr->nextPtr) {
+	}
+	if (tsdPtr->nextPtr) {
     	    tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
-        }
-        tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
-        tsdPtr->onList = 0;
-        tsdPtr->pollState = 0;
+	}
+	tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
+	tsdPtr->onList = 0;
+	tsdPtr->pollState = 0;
     }
 #ifdef __CYGWIN__
     PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
-#else /* __CYGWIN__ */
+#else /* !__CYGWIN__ */
     pthread_cond_broadcast(&tsdPtr->waitCV);
 #endif /* __CYGWIN__ */
 }
@@ -358,10 +405,15 @@ AtForkChild(void)
     pthread_mutex_init(&notifierMutex, NULL);
     pthread_cond_init(&notifierCV, NULL);
 
+#ifdef NOTIFIER_SELECT
+    asyncPending = 0;
+#endif
+
     /*
-     * notifierThreadRunning == 1: thread is running, (there might be data in notifier lists)
+     * notifierThreadRunning == 1: thread is running, (there might be data in
+     *		notifier lists)
      * atForkInit == 0: InitNotifier was never called
-     * notifierCount != 0: unbalanced  InitNotifier() / FinalizeNotifier calls
+     * notifierCount != 0: unbalanced InitNotifier() / FinalizeNotifier calls
      * waitingListPtr != 0: there are threads currently waiting for events.
      */
 
@@ -374,6 +426,10 @@ AtForkChild(void)
 
 	    close(triggerPipe);
 	    triggerPipe = -1;
+#ifdef NOTIFIER_SELECT
+	    close(otherPipe);
+	    otherPipe = -1;
+#endif
 	    /*
 	     * The waitingListPtr might contain event info from multiple
 	     * threads, which are invalid here, so setting it to NULL is not
@@ -382,8 +438,8 @@ AtForkChild(void)
 	    waitingListPtr = NULL;
 
 	    /*
-	     * The tsdPtr from before the fork is copied as well.  But since
-	     * we are paranoic, we don't trust its condvar and reset it.
+	     * The tsdPtr from before the fork is copied as well. But since we
+	     * are paranoic, we don't trust its condvar and reset it.
 	     */
 #ifdef __CYGWIN__
 	    DestroyWindow(tsdPtr->hwnd);
@@ -391,10 +447,10 @@ AtForkChild(void)
 		    className, 0, 0, 0, 0, 0, NULL, NULL,
 		    TclWinGetTclInstance(), NULL);
 	    ResetEvent(tsdPtr->event);
-#else
+#else /* !__CYGWIN__ */
 	    pthread_cond_destroy(&tsdPtr->waitCV);
 	    pthread_cond_init(&tsdPtr->waitCV, NULL);
-#endif
+#endif /* __CYGWIN__ */
 
 	    /*
 	     * In case, we had multiple threads running before the fork,
@@ -410,14 +466,49 @@ AtForkChild(void)
     }
 
     Tcl_InitNotifier();
+
+#ifdef NOTIFIER_SELECT
+    /*
+     * Restart the notifier thread for signal handling.
+     */
+
+    StartNotifierThread("AtForkChild");
+#endif
 }
 #endif /* HAVE_PTHREAD_ATFORK */
-
 #endif /* TCL_THREADS */
-
 #endif /* NOTIFIER_SELECT */
-#ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
-				 * in tclMacOSXNotify.c */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpNotifierData --
+ *
+ *	This function returns a ClientData pointer to be associated
+ *	with a Tcl_AsyncHandler.
+ *
+ * Results:
+ *	For the epoll and kqueue notifiers, this function returns the
+ *	thread specific data. Otherwise NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+TclpNotifierData(void)
+{
+#if defined(NOTIFIER_EPOLL) || defined(NOTIFIER_KQUEUE)
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    return (ClientData) tsdPtr;
+#else
+    return NULL;
+#endif
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -440,6 +531,9 @@ AtForkChild(void)
  *
  *----------------------------------------------------------------------
  */
+
+#ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
+				 * in tclMacOSXNotify.c */
 
 int
 TclUnixWaitForFile(
@@ -465,8 +559,8 @@ TclUnixWaitForFile(
 
     if (timeout > 0) {
 	Tcl_GetTime(&now);
-	abortTime.sec = now.sec + timeout/1000;
-	abortTime.usec = now.usec + (timeout%1000)*1000;
+	abortTime.sec = now.sec + timeout / 1000;
+	abortTime.usec = now.usec + (timeout % 1000) * 1000;
 	if (abortTime.usec >= 1000000) {
 	    abortTime.usec -= 1000000;
 	    abortTime.sec += 1;
@@ -501,7 +595,7 @@ TclUnixWaitForFile(
      * become ready or a timeout to occur.
      */
 
-    while (1) {
+    do {
 	if (timeout > 0) {
 	    blockTime.tv_sec = abortTime.sec - now.sec;
 	    blockTime.tv_usec = abortTime.usec - now.usec;
@@ -524,21 +618,21 @@ TclUnixWaitForFile(
 	} else if (!timeoutPtr->tv_sec && !timeoutPtr->tv_usec) {
 	    pollTimeout = 0;
 	} else {
-	    pollTimeout = (int)timeoutPtr->tv_sec * 1000;
+	    pollTimeout = (int) timeoutPtr->tv_sec * 1000;
 	    if (timeoutPtr->tv_usec) {
-		pollTimeout += ((int)timeoutPtr->tv_usec / 1000);
+		pollTimeout += (int) timeoutPtr->tv_usec / 1000;
 	    }
 	}
 	numFound = poll(pollFds, 1, pollTimeout);
 	if (numFound == 1) {
 	    result = 0;
-	    if (pollFds[0].events & (POLLIN | POLLHUP)) {
+	    if (pollFds[0].revents & (POLLIN | POLLHUP)) {
 		result |= TCL_READABLE;
 	    }
-	    if (pollFds[0].events & POLLOUT) {
+	    if (pollFds[0].revents & POLLOUT) {
 		result |= TCL_WRITABLE;
 	    }
-	    if (pollFds[0].events & POLLERR) {
+	    if (pollFds[0].revents & POLLERR) {
 		result |= TCL_EXCEPTION;
 	    }
 	    if (result) {
@@ -557,15 +651,12 @@ TclUnixWaitForFile(
 	 */
 
 	Tcl_GetTime(&now);
-	if ((abortTime.sec < now.sec)
-		|| (abortTime.sec==now.sec && abortTime.usec<=now.usec)) {
-	    break;
-	}
-    }
+    } while ((abortTime.sec > now.sec)
+	    || (abortTime.sec == now.sec && abortTime.usec > now.usec));
     return result;
 }
 #endif /* !HAVE_COREFOUNDATION */
-
+
 /*
  * Local Variables:
  * mode: c

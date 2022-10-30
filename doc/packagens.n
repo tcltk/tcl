@@ -1,5 +1,5 @@
 '\"
-'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" Copyright (c) 1998-2000 Scriptics Corporation.
 '\" All rights reserved.
 '\"
 .TH pkg::create n 8.3 Tcl "Tcl Built-In Commands"
@@ -29,7 +29,7 @@ This parameter specifies the name of the package.  It is required.
 This parameter specifies the version of the package.  It is required.
 .TP
 \fB\-load \fIfilespec\fR
-This parameter specifies a binary library that must be loaded with the
+This parameter specifies a library that must be loaded with the
 \fBload\fR command.  \fIfilespec\fR is a list with two elements.  The
 first element is the name of the file to load.  The second, optional
 element is a list of commands supplied by loading that file.  If the
@@ -48,3 +48,7 @@ At least one \fB\-load\fR or \fB\-source\fR parameter must be given.
 package(n)
 .SH KEYWORDS
 auto-load, index, package, version
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

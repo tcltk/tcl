@@ -103,8 +103,8 @@ the argument's value. The following values are acceptable values for
 \fBTCL_ARGV_CONSTANT\fR
 .
 The argument does not take any following value argument. If this argument is
-present, the int pointed to by the \fIsrcPtr\fR field is copied to the
-\fIdstPtr\fR field. The \fIclientData\fR field is ignored.
+present, the (integer) value of the \fIsrcPtr\fR field is copied to the variable
+pointed to by the \fIdstPtr\fR field. The \fIclientData\fR field is ignored.
 .TP
 \fBTCL_ARGV_END\fR
 .
@@ -189,6 +189,12 @@ will be stored at \fIdstPtr\fR; the string inside will have a lifetime linked
 to the lifetime of the string representation of the argument value that it
 came from, and so should be copied if it needs to be retained. The
 \fIsrcPtr\fR and \fIclientData\fR fields are ignored.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The values in the \fIobjv\fR argument to \fBTcl_ParseArgsObjv\fR will not have
+their reference counts modified by this function. The interpreter result may
+be modified on error; the values passed should not be the interpreter result
+with no further reference added.
 .SH "SEE ALSO"
 Tcl_GetIndexFromObj(3), Tcl_Main(3), Tcl_CreateObjCommand(3)
 .SH KEYWORDS

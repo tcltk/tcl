@@ -1426,7 +1426,7 @@
 	initialization assumptions of the TIP 280 code in CompileWord().
 
 	* generic/tclCompExpr.c:	Suppress the attempt to convert to
-	numeric when pre-compiling a constant expresion indicates an error.
+	numeric when pre-compiling a constant expression indicates an error.
 
 2007-08-22  Miguel Sofer  <msofer@users.sf.net>
 
@@ -5262,7 +5262,7 @@
 	* generic/tclStrToD.c: Added code to support the "middle endian"
 	floating point format used in the Nokia N770's software-based floating
 	point. Thanks to Bruce Johnson for reporting this bug, originally on
-	http://wiki.tcl.tk/15408.
+	https://wiki.tcl-lang.org/page/Nokia+770.
 	* library/clock.tcl: Fixed a bug with Daylight Saving Time and Posix
 	time zone specifiers reported by Martin Lemburg in
 	http://groups.google.com/group/comp.lang.tcl/browse_thread/thread/9a8b15a4dfc0b7a0

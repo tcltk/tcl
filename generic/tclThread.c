@@ -4,8 +4,8 @@
  *	This file implements Platform independent thread operations. Most of
  *	the real work is done in the platform dependent files.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 2008 by George Peter Staplin
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 2008 George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -41,21 +41,6 @@ static void		RememberSyncObject(void *objPtr,
 			    SyncObjRecord *recPtr);
 
 /*
- * Several functions are #defined to nothing in tcl.h if TCL_THREADS is not
- * specified. Here we undo that so the functions are defined in the stubs
- * table.
- */
-
-#ifndef TCL_THREADS
-#undef Tcl_MutexLock
-#undef Tcl_MutexUnlock
-#undef Tcl_MutexFinalize
-#undef Tcl_ConditionNotify
-#undef Tcl_ConditionWait
-#undef Tcl_ConditionFinalize
-#endif
-
-/*
  *----------------------------------------------------------------------
  *
  * Tcl_GetThreadData --
@@ -79,7 +64,7 @@ Tcl_GetThreadData(
     int size)			/* Size of storage block */
 {
     void *result;
-#ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * Initialize the key for this thread.
      */
@@ -88,14 +73,14 @@ Tcl_GetThreadData(
 
     if (result == NULL) {
 	result = ckalloc(size);
-	memset(result, 0, (size_t) size);
+	memset(result, 0, size);
 	TclThreadStorageKeySet(keyPtr, result);
     }
 #else /* TCL_THREADS */
     if (*keyPtr == NULL) {
 	result = ckalloc(size);
-	memset(result, 0, (size_t)size);
-	*keyPtr = result;
+	memset(result, 0, size);
+	*keyPtr = (Tcl_ThreadDataKey)result;
 	RememberSyncObject(keyPtr, &keyRecord);
     } else {
 	result = *keyPtr;
@@ -126,7 +111,7 @@ TclThreadDataKeyGet(
     Tcl_ThreadDataKey *keyPtr)	/* Identifier for the data chunk. */
 
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     return TclThreadStorageKeyGet(keyPtr);
 #else /* TCL_THREADS */
     return *keyPtr;
@@ -141,7 +126,7 @@ TclThreadDataKeyGet(
  *	Keep a list of (mutexes/condition variable/data key) used during
  *	finalization.
  *
- *	Assume master lock is held.
+ *	Assume global lock is held.
  *
  * Results:
  *	None.
@@ -179,7 +164,7 @@ RememberSyncObject(
 
     if (recPtr->num >= recPtr->max) {
 	recPtr->max += 8;
-	newList = ckalloc(recPtr->max * sizeof(void *));
+	newList = (void **)ckalloc(recPtr->max * sizeof(void *));
 	for (i=0,j=0 ; i<recPtr->num ; i++) {
 	    if (recPtr->list[i] != NULL) {
 		newList[j++] = recPtr->list[i];
@@ -202,7 +187,7 @@ RememberSyncObject(
  * ForgetSyncObject
  *
  *	Remove a single object from the list.
- *	Assume master lock is held.
+ *	Assume global lock is held.
  *
  * Results:
  *	None.
@@ -234,7 +219,7 @@ ForgetSyncObject(
  * TclRememberMutex
  *
  *	Keep a list of mutexes used during finalization.
- *	Assume master lock is held.
+ *	Assume global lock is held.
  *
  * Results:
  *	None.
@@ -269,16 +254,17 @@ TclRememberMutex(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_MutexFinalize
 void
 Tcl_MutexFinalize(
     Tcl_Mutex *mutexPtr)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     TclpFinalizeMutex(mutexPtr);
 #endif
-    TclpMasterLock();
+    TclpGlobalLock();
     ForgetSyncObject(mutexPtr, &mutexRecord);
-    TclpMasterUnlock();
+    TclpGlobalUnlock();
 }
 
 /*
@@ -287,7 +273,7 @@ Tcl_MutexFinalize(
  * TclRememberCondition
  *
  *	Keep a list of condition variables used during finalization.
- *	Assume master lock is held.
+ *	Assume global lock is held.
  *
  * Results:
  *	None.
@@ -322,16 +308,17 @@ TclRememberCondition(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_ConditionFinalize
 void
 Tcl_ConditionFinalize(
     Tcl_Condition *condPtr)
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     TclpFinalizeCondition(condPtr);
 #endif
-    TclpMasterLock();
+    TclpGlobalLock();
     ForgetSyncObject(condPtr, &condRecord);
-    TclpMasterUnlock();
+    TclpGlobalUnlock();
 }
 
 /*
@@ -356,13 +343,15 @@ void
 TclFinalizeThreadData(int quick)
 {
     TclFinalizeThreadDataThread();
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#if TCL_THREADS && defined(USE_THREAD_ALLOC)
     if (!quick) {
 	/*
 	 * Quick exit principle makes it useless to terminate allocators
 	 */
 	TclFinalizeThreadAllocThread();
     }
+#else
+    (void)quick;
 #endif
 }
 
@@ -389,11 +378,11 @@ TclFinalizeSynchronization(void)
     int i;
     void *blockPtr;
     Tcl_ThreadDataKey *keyPtr;
-#ifdef TCL_THREADS
+#if TCL_THREADS
     Tcl_Mutex *mutexPtr;
     Tcl_Condition *condPtr;
 
-    TclpMasterLock();
+    TclpGlobalLock();
 #endif
 
     /*
@@ -413,9 +402,9 @@ TclFinalizeSynchronization(void)
     keyRecord.max = 0;
     keyRecord.num = 0;
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
     /*
-     * Call thread storage master cleanup.
+     * Call thread storage global cleanup.
      */
 
     TclFinalizeThreadStorage();
@@ -446,7 +435,7 @@ TclFinalizeSynchronization(void)
     condRecord.max = 0;
     condRecord.num = 0;
 
-    TclpMasterUnlock();
+    TclpGlobalUnlock();
 #endif /* TCL_THREADS */
 }
 
@@ -473,12 +462,10 @@ Tcl_ExitThread(
     int status)
 {
     Tcl_FinalizeThread();
-#ifdef TCL_THREADS
     TclpThreadExit(status);
-#endif
 }
 
-#ifndef TCL_THREADS
+#if !TCL_THREADS
 
 /*
  *----------------------------------------------------------------------
@@ -501,30 +488,30 @@ Tcl_ExitThread(
 #undef Tcl_ConditionWait
 void
 Tcl_ConditionWait(
-    Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
-    Tcl_Mutex *mutexPtr,	/* Really (pthread_mutex_t **) */
-    const Tcl_Time *timePtr) /* Timeout on waiting period */
+    TCL_UNUSED(Tcl_Condition *),	/* Really (pthread_cond_t **) */
+    TCL_UNUSED(Tcl_Mutex *),	/* Really (pthread_mutex_t **) */
+    TCL_UNUSED(const Tcl_Time *)) /* Timeout on waiting period */
 {
 }
 
 #undef Tcl_ConditionNotify
 void
 Tcl_ConditionNotify(
-    Tcl_Condition *condPtr)
+    TCL_UNUSED(Tcl_Condition *))
 {
 }
 
 #undef Tcl_MutexLock
 void
 Tcl_MutexLock(
-    Tcl_Mutex *mutexPtr)
+    TCL_UNUSED(Tcl_Mutex *))
 {
 }
 
 #undef Tcl_MutexUnlock
 void
 Tcl_MutexUnlock(
-    Tcl_Mutex *mutexPtr)
+    TCL_UNUSED(Tcl_Mutex *))
 {
 }
 #endif /* !TCL_THREADS */

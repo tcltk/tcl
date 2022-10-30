@@ -1,5 +1,5 @@
 #
-# This file is a Makefile to compile all the encoding files.  
+# This file is a Makefile to compile all the encoding files.
 #
 # Run "make" to compile all the encoding files (*.txt,*.esc) into the
 # format that Tcl can use (*.enc).  It is your responsibility to move the
@@ -26,16 +26,16 @@
 # specifically excludes the right to re-distribute this file directly
 # to third parties or other organizations whether for profit or not.
 #
-# In other words:  Don't put this file on the Internet.  People who want to 
+# In other words:  Don't put this file on the Internet.  People who want to
 # get it over the Internet should do so directly from ftp://unicode.org.  They
 # can therefore be assured of getting the most recent and accurate version.
 #
 #----------------------------------------------------------------------------
 #
 # The txt2enc program built by this makefile is used to compile individual
-# .txt files into .enc files, the format that Tcl understands for encoding 
+# .txt files into .enc files, the format that Tcl understands for encoding
 # files.  This compilation to a different format is allowed by the above
-# restriction. 
+# restriction.
 #
 # The files shiftjis.txt and jis0208.txt were modified from the original
 # ones provided on the Unicode CD.  The double-width backslash character
@@ -53,7 +53,7 @@
 # SCCS: @(#) Makefile 1.1 98/01/28 11:41:36
 #
 
-EUC_ENCODINGS = euc-cn.txt euc-kr.txt euc-jp.txt 
+EUC_ENCODINGS = euc-cn.txt euc-kr.txt euc-jp.txt
 
 encodings: clean txt2enc $(EUC_ENCODINGS)
 	@echo Compiling encoding files.
@@ -69,7 +69,7 @@ encodings: clean txt2enc $(EUC_ENCODINGS)
 	    echo $$enc; \
 	    ./txt2enc -e 0 -u 1 $$p > $$enc; \
 	done
-	@echo 
+	@echo
 	@echo Compiling special versions of encoding files.
 	@for p in ascii.txt; do \
 	    enc=`echo $$p | sed 's/\..*$$/\.enc/'`; \

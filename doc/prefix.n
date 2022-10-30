@@ -12,9 +12,9 @@
 tcl::prefix \- facilities for prefix matching
 .SH SYNOPSIS
 .nf
-\fB::tcl::prefix all\fR \fItable\fR \fIstring\fR
-\fB::tcl::prefix longest\fR \fItable\fR \fIstring\fR
-\fB::tcl::prefix match\fR \fI?option ...?\fR \fItable\fR \fIstring\fR
+\fB::tcl::prefix all\fR \fItable string\fR
+\fB::tcl::prefix longest\fR \fItable string\fR
+\fB::tcl::prefix match\fR ?\fIoption ...\fR? \fItable string\fR
 .fi
 .BE
 .SH DESCRIPTION
@@ -22,17 +22,17 @@ tcl::prefix \- facilities for prefix matching
 This document describes commands looking up a prefix in a list of strings.
 The following commands are supported:
 .TP
-\fB::tcl::prefix all\fR \fItable\fR \fIstring\fR
+\fB::tcl::prefix all\fR \fItable string\fR
 .
 Returns a list of all elements in \fItable\fR that begin with the prefix
 \fIstring\fR.
 .TP
-\fB::tcl::prefix longest\fR \fItable\fR \fIstring\fR
+\fB::tcl::prefix longest\fR \fItable string\fR
 .
 Returns the longest common prefix of all elements in \fItable\fR that
 begin with the prefix \fIstring\fR.
 .TP
-\fB::tcl::prefix match\fR ?\fIoptions\fR? \fItable\fR \fIstring\fR
+\fB::tcl::prefix match\fR ?\fIoptions\fR? \fItable string\fR
 .
 If \fIstring\fR equals one element in \fItable\fR or is a prefix to exactly
 one element, the matched element is returned. If not, the result depends

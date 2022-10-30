@@ -4,7 +4,7 @@
  *	This file contains a simple Tcl package "pkgooa" that is intended for
  *	testing the Tcl dynamic loading facilities.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
+ * Copyright © 1995 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -33,11 +33,13 @@
 
 static int
 Pkgooa_StubsOKObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");
 	return TCL_ERROR;
@@ -76,12 +78,25 @@ static TclOOStubs stubsCopy = {
      * a function with a different memory address than
      * the real Tcl_CopyObjectInstance function in Tcl. */
     (Tcl_Object (*) (Tcl_Interp *, Tcl_Object, const char *,
-	    const char *t)) Pkgooa_StubsOKObjCmd
+	    const char *t))(void *)Pkgooa_StubsOKObjCmd,
     /* More entries could be here, but those are not used
      * for this test-case. So, being NULL is OK. */
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL
+#ifdef Tcl_MethodIsPrivate
+    ,NULL
+#endif
+#ifdef Tcl_GetClassOfObject
+    ,NULL
+#endif
+#ifdef Tcl_GetObjectClassName
+    ,NULL
+#endif
 };
 
-extern DLLEXPORT int
+DLLEXPORT int
 Pkgooa_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
@@ -100,7 +115,7 @@ Pkgooa_Init(
 	return TCL_ERROR;
     }
     if (tclStubsPtr == NULL) {
-	Tcl_AppendResult(interp, "Tcl stubs are not inialized, "
+	Tcl_AppendResult(interp, "Tcl stubs are not initialized, "
 		"did you compile using -DUSE_TCL_STUBS? ");
 	return TCL_ERROR;
     }
@@ -108,11 +123,11 @@ Pkgooa_Init(
 	return TCL_ERROR;
     }
     if (tclOOStubsPtr == NULL) {
-	Tcl_AppendResult(interp, "TclOO stubs are not inialized");
+	Tcl_AppendResult(interp, "TclOO stubs are not initialized");
 	return TCL_ERROR;
     }
     if (tclOOIntStubsPtr == NULL) {
-	Tcl_AppendResult(interp, "TclOO internal stubs are not inialized");
+	Tcl_AppendResult(interp, "TclOO internal stubs are not initialized");
 	return TCL_ERROR;
     }
 
@@ -132,7 +147,7 @@ Pkgooa_Init(
 
     tclOOStubsPtr = &stubsCopy;
 
-    code = Tcl_PkgProvide(interp, "Pkgooa", "1.0");
+    code = Tcl_PkgProvide(interp, "pkgooa", "1.0");
     if (code != TCL_OK) {
 	return code;
     }

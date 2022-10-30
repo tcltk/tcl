@@ -2,7 +2,7 @@
 #
 # mkdepend : generate dependency information from C/C++ files
 #
-# Copyright (c) 1998, Nat Pryce
+# Copyright © 1998, Nat Pryce
 #
 # Permission is hereby granted, without written agreement and without
 # license or royalty fees, to use, copy, modify, and distribute this
@@ -88,7 +88,7 @@ proc readDepends {chan} {
     set line ""
     array set depends {}
 
-    while {[gets $chan line] != -1} {
+    while {[gets $chan line] >= 0} {
         if {[regexp {^#line [0-9]+ \"(.*)\"$} $line dummy fname] != 0} {
 	    set fname [file normalize $fname]
             if {![info exists target]} {
@@ -98,7 +98,7 @@ proc readDepends {chan} {
             } else {
 		# don't include ourselves as a dependency of ourself.
 		if {![string compare $fname $target]} {continue}
-		# store in an array so multiple occurances are not counted.
+		# store in an array so multiple occurrences are not counted.
                 set depends($target|$fname) ""
             }
         }

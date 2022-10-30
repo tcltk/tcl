@@ -15,6 +15,27 @@
  */
 
 #include "tcl.h"
+#if TCL_MAJOR_VERSION < 9
+#  if defined(USE_TCL_STUBS)
+#	error "Don't build with USE_TCL_STUBS!"
+#  endif
+#  if TCL_MINOR_VERSION < 7
+#   define Tcl_LibraryInitProc Tcl_PackageInitProc
+#   define Tcl_StaticLibrary Tcl_StaticPackage
+#  endif
+#endif
+
+#ifdef TCL_TEST
+extern Tcl_LibraryInitProc Tcltest_Init;
+extern Tcl_LibraryInitProc Tcltest_SafeInit;
+#endif /* TCL_TEST */
+
+#if defined(STATIC_BUILD)
+extern Tcl_LibraryInitProc Registry_Init;
+extern Tcl_LibraryInitProc Dde_Init;
+extern Tcl_LibraryInitProc Dde_SafeInit;
+#endif
+
 #define WIN32_LEAN_AND_MEAN
 #define STRICT			/* See MSDN Article Q83456 */
 #include <windows.h>
@@ -23,20 +44,10 @@
 #include <locale.h>
 #include <stdlib.h>
 #include <tchar.h>
-
-#ifdef TCL_TEST
-extern Tcl_PackageInitProc Tcltest_Init;
-extern Tcl_PackageInitProc Tcltest_SafeInit;
-#endif /* TCL_TEST */
-
-#if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
-extern Tcl_PackageInitProc Registry_Init;
-extern Tcl_PackageInitProc Dde_Init;
-extern Tcl_PackageInitProc Dde_SafeInit;
-#endif
-
-#ifdef TCL_BROKEN_MAINARGS
+#if defined(__GNUC__) || defined(TCL_BROKEN_MAINARGS)
 int _CRT_glob = 0;
+#endif /* __GNUC__ || TCL_BROKEN_MAINARGS */
+#ifdef TCL_BROKEN_MAINARGS
 static void setargv(int *argcPtr, TCHAR ***argvPtr);
 #endif /* TCL_BROKEN_MAINARGS */
 
@@ -85,7 +96,7 @@ MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 int
 main(
     int argc,			/* Number of command-line arguments. */
-    char *dummy[])		/* Not used. */
+    char **argv1)		/* Not used. */
 {
     TCHAR **argv;
 #else
@@ -109,6 +120,7 @@ _tmain(
      * Get our args from the c-runtime. Ignore command line.
      */
 
+    (void)argv1;
     setargv(&argc, &argv);
 #endif
 
@@ -124,9 +136,12 @@ _tmain(
 
 #ifdef TCL_LOCAL_MAIN_HOOK
     TCL_LOCAL_MAIN_HOOK(&argc, &argv);
+#elif (TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6) && (!defined(_WIN32) || defined(UNICODE))
+    /* New in Tcl 8.7. This doesn't work on Windows without UNICODE */
+    TclZipfs_AppHook(&argc, &argv);
 #endif
 
-    Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
+    Tcl_Main((size_t)argc, argv, TCL_LOCAL_APPINIT);
     return 0;			/* Needed only to prevent compiler warning. */
 }
 
@@ -153,27 +168,27 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if ((Tcl_Init)(interp) == TCL_ERROR) {
+    if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
-#if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
+#if defined(STATIC_BUILD)
     if (Registry_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
+    Tcl_StaticLibrary(interp, "Registry", Registry_Init, NULL);
 
     if (Dde_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
+    Tcl_StaticLibrary(interp, "Dde", Dde_Init, Dde_SafeInit);
 #endif
 
 #ifdef TCL_TEST
     if (Tcltest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
+    Tcl_StaticLibrary(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
 #endif /* TCL_TEST */
 
     /*
@@ -200,8 +215,8 @@ Tcl_AppInit(
      * user-specific startup file will be run under any conditions.
      */
 
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
-	    Tcl_NewStringObj("~/tclshrc.tcl", -1), TCL_GLOBAL_ONLY);
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", TCL_INDEX_NONE), NULL,
+	    Tcl_NewStringObj("~/tclshrc.tcl", TCL_INDEX_NONE), TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
 
@@ -263,10 +278,10 @@ setargv(
     }
 
     /* Make sure we don't call ckalloc through the (not yet initialized) stub table */
-    #undef Tcl_Alloc
-    #undef Tcl_DbCkalloc
+#   undef Tcl_Alloc
+#   undef Tcl_DbCkalloc
 
-    argSpace = ckalloc(size * sizeof(char *)
+    argSpace = (TCHAR *)ckalloc(size * sizeof(char *)
 	    + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR));
     argv = (TCHAR **) argSpace;
     argSpace += size * (sizeof(char *)/sizeof(TCHAR));

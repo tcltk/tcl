@@ -83,12 +83,15 @@ Specifies that the number should be padded on the left with
 zeroes instead of spaces.
 .TP 10
 \fB#\fR
-Requests an alternate output form. For \fBo\fR and \fBO\fR
-conversions it guarantees that the first digit is always \fB0\fR.
-For \fBx\fR or \fBX\fR conversions, \fB0x\fR or \fB0X\fR (respectively)
+Requests an alternate output form. For \fBo\fR conversions,
+\fB0o\fR will be added to the beginning of the result unless
+it is zero. For \fBx\fR or \fBX\fR conversions, \fB0x\fR
 will be added to the beginning of the result unless it is zero.
 For \fBb\fR conversions, \fB0b\fR
 will be added to the beginning of the result unless it is zero.
+For \fBd\fR conversions, \fB0d\fR there is no effect unless
+the \fB0\fR specifier is used as well: In that case, \fB0d\fR
+will be added to the beginning.
 For all floating-point conversions (\fBe\fR, \fBE\fR, \fBf\fR,
 \fBg\fR, and \fBG\fR) it guarantees that the result always
 has a decimal point.
@@ -130,7 +133,7 @@ it must be a numeric string.
 .SS "OPTIONAL SIZE MODIFIER"
 .PP
 The fifth part of a conversion specifier is a size modifier,
-which must be \fBll\fR, \fBh\fR, or \fBl\fR.
+which must be \fBll\fR, \fBh\fR, \fBl\fR, or \fBL\fR.
 If it is \fBll\fR it specifies that an integer value is taken
 without truncation for conversion to a formatted substring.
 If it is \fBh\fR it specifies that an integer value is
@@ -138,7 +141,9 @@ truncated to a 16-bit range before converting.  This option is rarely useful.
 If it is \fBl\fR it specifies that the integer value is
 truncated to the same range as that produced by the \fBwide()\fR
 function of the \fBexpr\fR command (at least a 64-bit range).
-If neither \fBh\fR nor \fBl\fR are present, the integer value is
+If it is \fBL\fR it specifies that an integer or double value is taken
+without truncation for conversion to a formatted substring.
+If neither \fBh\fR nor \fBl\fR nor \fBL\fR are present, the integer value is
 truncated to the same range as that produced by the \fBint()\fR
 function of the \fBexpr\fR command (at least a 32-bit range, but
 determined by the value of the \fBwordSize\fR element of the
@@ -169,7 +174,7 @@ for \fBx\fR and
 for \fBX\fR).
 .TP 10
 \fBb\fR
-Convert integer to binary string, using digits 0 and 1.
+Convert integer to unsigned binary string, using digits 0 and 1.
 .TP 10
 \fBc\fR
 Convert integer to the Unicode character it represents.
@@ -198,8 +203,19 @@ precision, then convert number as for \fB%e\fR or
 Otherwise convert as for \fB%f\fR.
 Trailing zeroes and a trailing decimal point are omitted.
 .TP 10
+\fBa\fR or \fBA\fR
+Convert double to hexadecimal notation in the form
+\fI0x1.yyy\fBp\(+-\fIzz\fR, where the number of \fIy\fR's is
+determined by the precision (default: 13).
+If the \fBA\fR form is used then the hex characters
+are printed in uppercase.
+.TP 10
 \fB%\fR
 No conversion: just insert \fB%\fR.
+.TP 10
+\fBp\fR
+Shorthand form for \fB0x%zx\fR, so it outputs the integer in
+hexadecimal form with \fB0x\fR prefix.
 .SH "DIFFERENCES FROM ANSI SPRINTF"
 .PP
 The behavior of the format command is the same as the
@@ -208,13 +224,12 @@ differences:
 .IP [1]
 Tcl guarantees that it will be working with UNICODE characters.
 .IP [2]
-\fB%p\fR and \fB%n\fR specifiers are not supported.
+\fB%n\fR specifier is not supported.
 .IP [3]
 For \fB%c\fR conversions the argument must be an integer value,
 which will then be converted to the corresponding character value.
 .IP [4]
 The size modifiers are ignored when formatting floating-point values.
-The \fBll\fR modifier has no \fBsprintf\fR counterpart.
 The \fBb\fR specifier has no \fBsprintf\fR counterpart.
 .SH EXAMPLES
 .PP

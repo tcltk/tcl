@@ -4,8 +4,8 @@
  *	This file provides the generic portions (those that are the same on
  *	all platforms and for all channel types) of Tcl's IO facilities.
  *
- * Copyright (c) 1998-2000 Ajuba Solutions
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Ajuba Solutions
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  * Contributions from Don Porter, NIST, 2014. (not subject to US copyright)
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -28,7 +28,7 @@ typedef struct ChannelHandler {
     int mask;			/* Mask of desired events. */
     Tcl_ChannelProc *proc;	/* Procedure to call in the type of
 				 * Tcl_CreateChannelHandler. */
-    ClientData clientData;	/* Argument to pass to procedure. */
+    void *clientData;	/* Argument to pass to procedure. */
     struct ChannelHandler *nextPtr;
 				/* Next one in list of registered handlers. */
 } ChannelHandler;
@@ -103,7 +103,7 @@ typedef struct CopyState {
     Tcl_Interp *interp;		/* Interp that started the copy. */
     Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
     int bufSize;		/* Size of appended buffer. */
-    char buffer[1];		/* Copy buffer, this must be the last
+    char buffer[TCLFLEXARRAY];		/* Copy buffer, this must be the last
                                  * field. */
 } CopyState;
 
@@ -142,7 +142,7 @@ static Tcl_ThreadDataKey dataKey;
 
 typedef struct CloseCallback {
     Tcl_CloseProc *proc;		/* The procedure to call. */
-    ClientData clientData;		/* Arbitrary one-word data to pass
+    void *clientData;		/* Arbitrary one-word data to pass
 					 * to the callback. */
     struct CloseCallback *nextPtr;	/* For chaining close callbacks. */
 } CloseCallback;
@@ -156,7 +156,7 @@ static void		PreserveChannelBuffer(ChannelBuffer *bufPtr);
 static void		ReleaseChannelBuffer(ChannelBuffer *bufPtr);
 static int		IsShared(ChannelBuffer *bufPtr);
 static void		ChannelFree(Channel *chanPtr);
-static void		ChannelTimerProc(ClientData clientData);
+static void		ChannelTimerProc(void *clientData);
 static int		ChanRead(Channel *chanPtr, char *dst, int dstSize);
 static int		CheckChannelErrors(ChannelState *statePtr,
 			    int direction);
@@ -178,12 +178,12 @@ static void		MBCallback(CopyState *csPtr, Tcl_Obj *errObj);
 static void		MBError(CopyState *csPtr, int mask, int errorCode);
 static int		MBRead(CopyState *csPtr);
 static int		MBWrite(CopyState *csPtr);
-static void		MBEvent(ClientData clientData, int mask);
+static void		MBEvent(void *clientData, int mask);
 
-static void		CopyEventProc(ClientData clientData, int mask);
+static void		CopyEventProc(void *clientData, int mask);
 static void		CreateScriptRecord(Tcl_Interp *interp,
 			    Channel *chanPtr, int mask, Tcl_Obj *scriptPtr);
-static void		DeleteChannelTable(ClientData clientData,
+static void		DeleteChannelTable(void *clientData,
 			    Tcl_Interp *interp);
 static void		DeleteScriptRecord(Tcl_Interp *interp,
 			    Channel *chanPtr, int mask);
@@ -200,12 +200,10 @@ static int		FilterInputBytes(Channel *chanPtr,
 static int		FlushChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int calledFromAsyncFlush);
 static int		TclGetsObjBinary(Tcl_Channel chan, Tcl_Obj *objPtr);
-static Tcl_Encoding	GetBinaryEncoding();
-static void		FreeBinaryEncoding(ClientData clientData);
+static Tcl_Encoding	GetBinaryEncoding(void);
+static Tcl_ExitProc	FreeBinaryEncoding;
 static Tcl_HashTable *	GetChannelTable(Tcl_Interp *interp);
 static int		GetInput(Channel *chanPtr);
-static int		HaveVersion(const Tcl_ChannelType *typePtr,
-			    Tcl_ChannelTypeVersion minimumVersion);
 static void		PeekAhead(Channel *chanPtr, char **dstEndPtr,
 			    GetsState *gsPtr);
 static int		ReadBytes(ChannelState *statePtr, Tcl_Obj *objPtr,
@@ -289,9 +287,9 @@ static int              WillRead(Channel *chanPtr);
 
 #define IsBufferOverflowing(bufPtr) ((bufPtr)->nextAdded>(bufPtr)->bufLength)
 
-#define InsertPoint(bufPtr)	((bufPtr)->buf + (bufPtr)->nextAdded)
+#define InsertPoint(bufPtr)	(&(bufPtr)->buf[(bufPtr)->nextAdded])
 
-#define RemovePoint(bufPtr)	((bufPtr)->buf + (bufPtr)->nextRemoved)
+#define RemovePoint(bufPtr)	(&(bufPtr)->buf[(bufPtr)->nextRemoved])
 
 /*
  * For working with channel state flag bits.
@@ -326,16 +324,32 @@ typedef struct ResolvedChanName {
     size_t refCount;		/* Share this struct among many Tcl_Obj. */
 } ResolvedChanName;
 
-static void		DupChannelIntRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
-static void		FreeChannelIntRep(Tcl_Obj *objPtr);
+static void		DupChannelInternalRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
+static void		FreeChannelInternalRep(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType chanObjType = {
     "channel",			/* name for this type */
-    FreeChannelIntRep,		/* freeIntRepProc */
-    DupChannelIntRep,		/* dupIntRepProc */
+    FreeChannelInternalRep,		/* freeIntRepProc */
+    DupChannelInternalRep,		/* dupIntRepProc */
     NULL,			/* updateStringProc */
     NULL			/* setFromAnyProc */
 };
+
+#define ChanSetInternalRep(objPtr, resPtr)					\
+    do {								\
+	Tcl_ObjInternalRep ir;						\
+	(resPtr)->refCount++;						\
+	ir.twoPtrValue.ptr1 = (resPtr);					\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreInternalRep((objPtr), &chanObjType, &ir);			\
+    } while (0)
+
+#define ChanGetInternalRep(objPtr, resPtr)					\
+    do {								\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), &chanObjType);		\
+	(resPtr) = irPtr ? (ResolvedChanName *)irPtr->twoPtrValue.ptr1 : NULL;		\
+    } while (0)
 
 #define BUSY_STATE(st, fl) \
      ((((st)->csPtrR) && ((fl) & TCL_READABLE)) || \
@@ -360,20 +374,12 @@ ChanClose(
     Channel *chanPtr,
     Tcl_Interp *interp)
 {
-    if (chanPtr->typePtr->closeProc != TCL_CLOSE2PROC) {
+#ifndef TCL_NO_DEPRECATED
+    if ((chanPtr->typePtr->closeProc != TCL_CLOSE2PROC) && (chanPtr->typePtr->closeProc != NULL)) {
 	return chanPtr->typePtr->closeProc(chanPtr->instanceData, interp);
-    } else {
-	return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, 0);
     }
-}
-
-static inline int
-ChanCloseHalf(
-    Channel *chanPtr,
-    Tcl_Interp *interp,
-    int flags)
-{
-    return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, flags);
+#endif
+    return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, 0);
 }
 
 /*
@@ -440,7 +446,16 @@ ChanRead(
     }
     ResetFlag(chanPtr->state, CHANNEL_BLOCKED | CHANNEL_EOF);
     chanPtr->state->inputEncodingFlags &= ~TCL_ENCODING_END;
-    if (bytesRead > 0) {
+    if (bytesRead < 0) {
+	if ((result == EWOULDBLOCK) || (result == EAGAIN)) {
+	    SetFlag(chanPtr->state, CHANNEL_BLOCKED);
+	    result = EAGAIN;
+	}
+	Tcl_SetErrno(result);
+    } else if (bytesRead == 0) {
+	SetFlag(chanPtr->state, CHANNEL_EOF);
+	chanPtr->state->inputEncodingFlags |= TCL_ENCODING_END;
+    } else {
 	/*
 	 * If we get a short read, signal up that we may be BLOCKED. We should
 	 * avoid calling the driver because on some platforms we will block in
@@ -451,15 +466,6 @@ ChanRead(
 	if (bytesRead < dstSize) {
 	    SetFlag(chanPtr->state, CHANNEL_BLOCKED);
 	}
-    } else if (bytesRead == 0) {
-	SetFlag(chanPtr->state, CHANNEL_EOF);
-	chanPtr->state->inputEncodingFlags |= TCL_ENCODING_END;
-    } else if (bytesRead < 0) {
-	if ((result == EWOULDBLOCK) || (result == EAGAIN)) {
-	    SetFlag(chanPtr->state, CHANNEL_BLOCKED);
-	    result = EAGAIN;
-	}
-	Tcl_SetErrno(result);
     }
     return bytesRead;
 }
@@ -476,19 +482,23 @@ ChanSeek(
      * type and non-NULL.
      */
 
-    if (HaveVersion(chanPtr->typePtr, TCL_CHANNEL_VERSION_3) &&
-	    chanPtr->typePtr->wideSeekProc != NULL) {
-	return chanPtr->typePtr->wideSeekProc(chanPtr->instanceData,
+    if (Tcl_ChannelWideSeekProc(chanPtr->typePtr) == NULL) {
+#ifndef TCL_NO_DEPRECATED
+	if (offset<LONG_MIN || offset>LONG_MAX) {
+	    *errnoPtr = EOVERFLOW;
+	    return -1;
+	}
+
+	return Tcl_ChannelSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
 		offset, mode, errnoPtr);
+#else
+	*errnoPtr = EINVAL;
+	return -1;
+#endif
     }
 
-    if (offset<Tcl_LongAsWide(LONG_MIN) || offset>Tcl_LongAsWide(LONG_MAX)) {
-	*errnoPtr = EOVERFLOW;
-	return Tcl_LongAsWide(-1);
-    }
-
-    return Tcl_LongAsWide(chanPtr->typePtr->seekProc(chanPtr->instanceData,
-	    Tcl_WideAsLong(offset), mode, errnoPtr));
+	return Tcl_ChannelWideSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
+		offset, mode, errnoPtr);
 }
 
 static inline void
@@ -569,7 +579,6 @@ TclInitIOSubsystem(void)
  *-------------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 void
 TclFinalizeIOSubsystem(void)
 {
@@ -721,17 +730,18 @@ Tcl_SetStdChannel(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
+    int init = channel ? 1 : -1;
     switch (type) {
     case TCL_STDIN:
-	tsdPtr->stdinInitialized = 1;
+	tsdPtr->stdinInitialized = init;
 	tsdPtr->stdinChannel = channel;
 	break;
     case TCL_STDOUT:
-	tsdPtr->stdoutInitialized = 1;
+	tsdPtr->stdoutInitialized = init;
 	tsdPtr->stdoutChannel = channel;
 	break;
     case TCL_STDERR:
-	tsdPtr->stderrInitialized = 1;
+	tsdPtr->stderrInitialized = init;
 	tsdPtr->stderrChannel = channel;
 	break;
     }
@@ -768,8 +778,8 @@ Tcl_GetStdChannel(
     switch (type) {
     case TCL_STDIN:
 	if (!tsdPtr->stdinInitialized) {
+	    tsdPtr->stdinInitialized = -1;
 	    tsdPtr->stdinChannel = TclpGetDefaultStdChannel(TCL_STDIN);
-	    tsdPtr->stdinInitialized = 1;
 
 	    /*
 	     * Artificially bump the refcount to ensure that the channel is
@@ -781,6 +791,7 @@ Tcl_GetStdChannel(
 	     */
 
 	    if (tsdPtr->stdinChannel != NULL) {
+		tsdPtr->stdinInitialized = 1;
 		Tcl_RegisterChannel(NULL, tsdPtr->stdinChannel);
 	    }
 	}
@@ -788,9 +799,10 @@ Tcl_GetStdChannel(
 	break;
     case TCL_STDOUT:
 	if (!tsdPtr->stdoutInitialized) {
+	    tsdPtr->stdoutInitialized = -1;
 	    tsdPtr->stdoutChannel = TclpGetDefaultStdChannel(TCL_STDOUT);
-	    tsdPtr->stdoutInitialized = 1;
 	    if (tsdPtr->stdoutChannel != NULL) {
+		tsdPtr->stdoutInitialized = 1;
 		Tcl_RegisterChannel(NULL, tsdPtr->stdoutChannel);
 	    }
 	}
@@ -798,9 +810,10 @@ Tcl_GetStdChannel(
 	break;
     case TCL_STDERR:
 	if (!tsdPtr->stderrInitialized) {
+	    tsdPtr->stderrInitialized = -1;
 	    tsdPtr->stderrChannel = TclpGetDefaultStdChannel(TCL_STDERR);
-	    tsdPtr->stderrInitialized = 1;
 	    if (tsdPtr->stderrChannel != NULL) {
+		tsdPtr->stderrInitialized = 1;
 		Tcl_RegisterChannel(NULL, tsdPtr->stderrChannel);
 	    }
 	}
@@ -834,13 +847,13 @@ Tcl_CreateCloseHandler(
 				 * callback. */
     Tcl_CloseProc *proc,	/* The callback routine to call when the
 				 * channel will be closed. */
-    ClientData clientData)	/* Arbitrary data to pass to the close
+    void *clientData)	/* Arbitrary data to pass to the close
 				 * callback. */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
     CloseCallback *cbPtr;
 
-    cbPtr = ckalloc(sizeof(CloseCallback));
+    cbPtr = (CloseCallback *)ckalloc(sizeof(CloseCallback));
     cbPtr->proc = proc;
     cbPtr->clientData = clientData;
 
@@ -872,7 +885,7 @@ Tcl_DeleteCloseHandler(
 				 * callback. */
     Tcl_CloseProc *proc,	/* The procedure for the callback to
 				 * remove. */
-    ClientData clientData)	/* The callback data for the callback to
+    void *clientData)	/* The callback data for the callback to
 				 * remove. */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
@@ -919,9 +932,9 @@ GetChannelTable(
     Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
     Tcl_Channel stdinChan, stdoutChan, stderrChan;
 
-    hTblPtr = Tcl_GetAssocData(interp, "tclIO", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclIO", NULL);
     if (hTblPtr == NULL) {
-	hTblPtr = ckalloc(sizeof(Tcl_HashTable));
+	hTblPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_STRING_KEYS);
 	Tcl_SetAssocData(interp, "tclIO",
 		(Tcl_InterpDeleteProc *) DeleteChannelTable, hTblPtr);
@@ -971,7 +984,7 @@ GetChannelTable(
 
 static void
 DeleteChannelTable(
-    ClientData clientData,	/* The per-interpreter data structure. */
+    void *clientData,	/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     Tcl_HashTable *hTblPtr;	/* The hash table. */
@@ -989,10 +1002,10 @@ DeleteChannelTable(
      * refcount reaches zero.
      */
 
-    hTblPtr = clientData;
+    hTblPtr = (Tcl_HashTable *)clientData;
     for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch); hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch)) {
-	chanPtr = Tcl_GetHashValue(hPtr);
+	chanPtr = (Channel *)Tcl_GetHashValue(hPtr);
 	statePtr = chanPtr->state;
 
 	/*
@@ -1068,7 +1081,7 @@ CheckForStdChannelsBeingClosed(
     ChannelState *statePtr = ((Channel *) chan)->state;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (tsdPtr->stdinInitialized
+    if (tsdPtr->stdinInitialized == 1
 	    && tsdPtr->stdinChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stdinChannel)->state) {
 	if (statePtr->refCount < 2) {
@@ -1076,7 +1089,7 @@ CheckForStdChannelsBeingClosed(
 	    tsdPtr->stdinChannel = NULL;
 	    return;
 	}
-    } else if (tsdPtr->stdoutInitialized
+    } else if (tsdPtr->stdoutInitialized == 1
 	    && tsdPtr->stdoutChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stdoutChannel)->state) {
 	if (statePtr->refCount < 2) {
@@ -1084,7 +1097,7 @@ CheckForStdChannelsBeingClosed(
 	    tsdPtr->stdoutChannel = NULL;
 	    return;
 	}
-    } else if (tsdPtr->stderrInitialized
+    } else if (tsdPtr->stderrInitialized == 1
 	    && tsdPtr->stderrChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stderrChannel)->state) {
 	if (statePtr->refCount < 2) {
@@ -1359,7 +1372,7 @@ DetachChannel(
     statePtr = chanPtr->state;
 
     if (interp != NULL) {
-	hTblPtr = Tcl_GetAssocData(interp, "tclIO", NULL);
+	hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclIO", NULL);
 	if (hTblPtr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -1462,10 +1475,10 @@ Tcl_GetChannel(
      * compensate where necessary to retrieve the topmost channel again.
      */
 
-    chanPtr = Tcl_GetHashValue(hPtr);
+    chanPtr = (Channel *)Tcl_GetHashValue(hPtr);
     chanPtr = chanPtr->state->bottomChanPtr;
     if (modePtr != NULL) {
-	*modePtr = chanPtr->state->flags & (TCL_READABLE|TCL_WRITABLE);
+	*modePtr = GotFlag(chanPtr->state, TCL_READABLE|TCL_WRITABLE);
     }
 
     return (Tcl_Channel) chanPtr;
@@ -1501,7 +1514,7 @@ TclGetChannelFromObj(
 				 * channel was opened? Will contain an ORed
 				 * combination of TCL_READABLE and
 				 * TCL_WRITABLE, if non-NULL. */
-    int flags)
+    TCL_UNUSED(int) /*flags*/)
 {
     ChannelState *statePtr;
     ResolvedChanName *resPtr = NULL;
@@ -1511,19 +1524,19 @@ TclGetChannelFromObj(
 	return TCL_ERROR;
     }
 
-    if (objPtr->typePtr == &chanObjType) {
+    ChanGetInternalRep(objPtr, resPtr);
+    if (resPtr) {
 	/*
  	 * Confirm validity of saved lookup results.
  	 */
 
-	resPtr = (ResolvedChanName *) objPtr->internalRep.twoPtrValue.ptr1;
 	statePtr = resPtr->statePtr;
 	if ((resPtr->interp == interp)		/* Same interp context */
 			/* No epoch change in channel since lookup */
 		&& (resPtr->epoch == statePtr->epoch)) {
 	    /*
-             * Have a valid saved lookup. Jump to end to return it.
-             */
+	     * Have a valid saved lookup. Jump to end to return it.
+	     */
 
 	    goto valid;
 	}
@@ -1533,7 +1546,7 @@ TclGetChannelFromObj(
 
     if (chan == NULL) {
 	if (resPtr) {
-	    FreeChannelIntRep(objPtr);
+	    Tcl_StoreInternalRep(objPtr, &chanObjType, NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1543,19 +1556,15 @@ TclGetChannelFromObj(
          * Re-use the ResolvedCmdName struct.
          */
 
-	Tcl_Release((ClientData) resPtr->statePtr);
-
+	Tcl_Release((void *) resPtr->statePtr);
     } else {
-	TclFreeIntRep(objPtr);
-
 	resPtr = (ResolvedChanName *) ckalloc(sizeof(ResolvedChanName));
-	resPtr->refCount = 1;
-	objPtr->internalRep.twoPtrValue.ptr1 = (ClientData) resPtr;
-	objPtr->typePtr = &chanObjType;
+	resPtr->refCount = 0;
+	ChanSetInternalRep(objPtr, resPtr);		/* Overwrites, if needed */
     }
     statePtr = ((Channel *)chan)->state;
     resPtr->statePtr = statePtr;
-    Tcl_Preserve((ClientData) statePtr);
+    Tcl_Preserve((void *) statePtr);
     resPtr->interp = interp;
     resPtr->epoch = statePtr->epoch;
 
@@ -1563,7 +1572,7 @@ TclGetChannelFromObj(
     *channelPtr = (Tcl_Channel) statePtr->bottomChanPtr;
 
     if (modePtr != NULL) {
-	*modePtr = statePtr->flags & (TCL_READABLE|TCL_WRITABLE);
+	*modePtr = GotFlag(statePtr, TCL_READABLE|TCL_WRITABLE);
     }
 
     return TCL_OK;
@@ -1589,7 +1598,7 @@ Tcl_Channel
 Tcl_CreateChannel(
     const Tcl_ChannelType *typePtr, /* The channel type record. */
     const char *chanName,	/* Name of channel to record. */
-    ClientData instanceData,	/* Instance specific data. */
+    void *instanceData,	/* Instance specific data. */
     int mask)			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
 {
@@ -1612,9 +1621,18 @@ Tcl_CreateChannel(
 
     assert(sizeof(Tcl_ChannelTypeVersion) == sizeof(Tcl_DriverBlockModeProc *));
     assert(typePtr->typeName != NULL);
-    if (NULL == typePtr->closeProc) {
-	Tcl_Panic("channel type %s must define closeProc", typePtr->typeName);
+#ifndef TCL_NO_DEPRECATED
+    if (((NULL == typePtr->closeProc) || (TCL_CLOSE2PROC == typePtr->closeProc)) && (typePtr->close2Proc == NULL)) {
+	Tcl_Panic("channel type %s must define closeProc or close2Proc", typePtr->typeName);
     }
+#else
+    if (Tcl_ChannelVersion(typePtr) < TCL_CHANNEL_VERSION_5) {
+	Tcl_Panic("channel type %s must be version TCL_CHANNEL_VERSION_5", typePtr->typeName);
+    }
+    if (typePtr->close2Proc == NULL) {
+	Tcl_Panic("channel type %s must define close2Proc", typePtr->typeName);
+    }
+#endif
     if ((TCL_READABLE & mask) && (NULL == typePtr->inputProc)) {
 	Tcl_Panic("channel type %s must define inputProc when used for reader channel", typePtr->typeName);
     }
@@ -1624,17 +1642,19 @@ Tcl_CreateChannel(
     if (NULL == typePtr->watchProc) {
 	Tcl_Panic("channel type %s must define watchProc", typePtr->typeName);
     }
-    if ((NULL!=typePtr->wideSeekProc) && (NULL == typePtr->seekProc)) {
+#ifndef TCL_NO_DEPRECATED
+    if ((NULL != typePtr->wideSeekProc) && (NULL == typePtr->seekProc)) {
 	Tcl_Panic("channel type %s must define seekProc if defining wideSeekProc", typePtr->typeName);
     }
+#endif
 
     /*
      * JH: We could subsequently memset these to 0 to avoid the numerous
      * assignments to 0/NULL below.
      */
 
-    chanPtr = ckalloc(sizeof(Channel));
-    statePtr = ckalloc(sizeof(ChannelState));
+    chanPtr = (Channel *)ckalloc(sizeof(Channel));
+    statePtr = (ChannelState *)ckalloc(sizeof(ChannelState));
     chanPtr->state = statePtr;
 
     chanPtr->instanceData = instanceData;
@@ -1653,14 +1673,15 @@ Tcl_CreateChannel(
          * later.
          */
 
-	tmp = ckalloc((len < 7) ? 7 : len);
+	tmp = (char *)ckalloc((len < 7) ? 7 : len);
 	strcpy(tmp, chanName);
     } else {
-	tmp = ckalloc(7);
+	tmp = (char *)ckalloc(7);
 	tmp[0] = '\0';
     }
     statePtr->channelName = tmp;
     statePtr->flags = mask;
+    statePtr->maxPerms = mask; /* Save max privileges for close callback */
 
     /*
      * Set the channel to system default encoding.
@@ -1810,7 +1831,7 @@ Tcl_StackChannel(
     const Tcl_ChannelType *typePtr,
 				/* The channel type record for the new
 				 * channel. */
-    ClientData instanceData,	/* Instance specific data for the new
+    void *instanceData,	/* Instance specific data for the new
 				 * channel. */
     int mask,			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
@@ -1856,7 +1877,7 @@ Tcl_StackChannel(
      *	--+---+---+---+----+
      */
 
-    if ((mask & (statePtr->flags & (TCL_READABLE | TCL_WRITABLE))) == 0) {
+    if ((mask & GotFlag(statePtr, TCL_READABLE|TCL_WRITABLE)) == 0) {
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "reading and writing both disallowed for channel \"%s\"",
@@ -1929,7 +1950,7 @@ Tcl_StackChannel(
 	statePtr->inQueueTail = NULL;
     }
 
-    chanPtr = ckalloc(sizeof(Channel));
+    chanPtr = (Channel *)ckalloc(sizeof(Channel));
 
     /*
      * Save some of the current state into the new structure, reinitialize the
@@ -2146,8 +2167,11 @@ Tcl_UnstackChannel(
 
 	/*
 	 * Close and free the channel driver state.
+	 * TIP #220: This is done with maximum privileges (as created).
 	 */
 
+	ResetFlag(statePtr, TCL_READABLE|TCL_WRITABLE);
+	SetFlag(statePtr, statePtr->maxPerms);
 	result = ChanClose(chanPtr, interp);
 	ChannelFree(chanPtr);
 
@@ -2266,7 +2290,7 @@ Tcl_GetTopChannel(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 Tcl_GetChannelInstanceData(
     Tcl_Channel chan)		/* Channel for which to return client data. */
 {
@@ -2354,7 +2378,7 @@ Tcl_GetChannelMode(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of actual channel. */
 
-    return (statePtr->flags & (TCL_READABLE | TCL_WRITABLE));
+    return GotFlag(statePtr, TCL_READABLE|TCL_WRITABLE);
 }
 
 /*
@@ -2405,10 +2429,10 @@ int
 Tcl_GetChannelHandle(
     Tcl_Channel chan,		/* The channel to get file from. */
     int direction,		/* TCL_WRITABLE or TCL_READABLE. */
-    ClientData *handlePtr)	/* Where to store handle */
+    void **handlePtr)	/* Where to store handle */
 {
     Channel *chanPtr;		/* The actual channel. */
-    ClientData handle;
+    void *handle;
     int result;
 
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
@@ -2424,6 +2448,54 @@ Tcl_GetChannelHandle(
 	*handlePtr = handle;
     }
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_RemoveChannelMode --
+ *
+ *	Remove either read or write privileges from the channel.
+ *
+ * Results:
+ *	A standard Tcl result code.
+ *
+ * Side effects:
+ *	May change the access mode of the channel.
+ *	May leave an error message in the interp.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_RemoveChannelMode(
+     Tcl_Interp* interp,        /* The interp for an error message. Allowed to be NULL. */
+     Tcl_Channel chan,		/* The channel which is modified. */
+     int         mode)          /* The access mode to drop from the channel */
+{
+    const char* emsg;
+    ChannelState *statePtr = ((Channel *) chan)->state;
+					/* State of actual channel. */
+
+    if ((mode != TCL_READABLE) && (mode != TCL_WRITABLE)) {
+        emsg = "Illegal mode value.";
+	goto error;
+    }
+    if (0 == (GotFlag(statePtr, TCL_READABLE|TCL_WRITABLE) & ~mode)) {
+        emsg = "Bad mode, would make channel inacessible";
+	goto error;
+    }
+
+    ResetFlag(statePtr, mode);
+    return TCL_OK;
+
+ error:
+    if (interp != NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"Tcl_RemoveChannelMode error: %s. Channel: \"%s\"",
+		emsg, Tcl_GetChannelName((Tcl_Channel) chan)));
+    }
+    return TCL_ERROR;
 }
 
 /*
@@ -2458,7 +2530,7 @@ AllocChannelBuffer(
     int n;
 
     n = length + CHANNELBUFFER_HEADER_SIZE + BUFFER_PADDING + BUFFER_PADDING;
-    bufPtr = ckalloc(n);
+    bufPtr = (ChannelBuffer *)ckalloc(n);
     bufPtr->nextAdded	= BUFFER_PADDING;
     bufPtr->nextRemoved	= BUFFER_PADDING;
     bufPtr->bufLength	= length + BUFFER_PADDING;
@@ -2471,7 +2543,7 @@ static void
 PreserveChannelBuffer(
     ChannelBuffer *bufPtr)
 {
-    if (bufPtr->refCount == 0) {
+    if (!bufPtr->refCount) {
 	Tcl_Panic("Reuse of ChannelBuffer! %p", bufPtr);
     }
     bufPtr->refCount++;
@@ -2538,7 +2610,7 @@ RecycleBuffer(
      * This is to honor dynamic changes of the buffersize made by the user.
      */
 
-    if ((bufPtr->bufLength - BUFFER_PADDING) != statePtr->bufSize) {
+    if ((bufPtr->bufLength) != statePtr->bufSize + BUFFER_PADDING) {
 	ReleaseChannelBuffer(bufPtr);
 	return;
     }
@@ -2691,6 +2763,7 @@ FlushChannel(
     int wroteSome = 0;		/* Set to one if any data was written to the
 				 * driver. */
 
+    int bufExists;
     /*
      * Prevent writing on a dead channel -- a channel that has been closed but
      * not yet deallocated. This can occur if the exit handler for the channel
@@ -2859,32 +2932,44 @@ FlushChannel(
 	     * queued.
 	     */
 
-	    DiscardOutputQueued(statePtr);
 	    ReleaseChannelBuffer(bufPtr);
+	    DiscardOutputQueued(statePtr);
 	    break;
 	} else {
 	    /*
-             * TODO: Consider detecting and reacting to short writes on
+	     * TODO: Consider detecting and reacting to short writes on
 	     * blocking channels.  Ought not happen.  See iocmd-24.2.
-             */
+	     */
 
 	    wroteSome = 1;
 	}
 
-	bufPtr->nextRemoved += written;
-
-	/*
-	 * If this buffer is now empty, recycle it.
-	 */
-
-	if (IsBufferEmpty(bufPtr)) {
-	    statePtr->outQueueHead = bufPtr->nextPtr;
-	    if (statePtr->outQueueHead == NULL) {
-		statePtr->outQueueTail = NULL;
-	    }
-	    RecycleBuffer(statePtr, bufPtr, 0);
-	}
+	bufExists = bufPtr->refCount > 1;
 	ReleaseChannelBuffer(bufPtr);
+	if (bufExists) {
+	    /* There is still a reference to this buffer other than the one
+	     * this routine just released, meaning that final cleanup of the
+	     * buffer hasn't been ordered by, e.g. by a reflected channel
+	     * closing the channel from within one of its handler scripts (not
+	     * something one would expecte, but it must be considered).  Normal
+	     * operations on the buffer can proceed.
+	     */
+
+	    bufPtr->nextRemoved += written;
+
+	    /*
+	     * If this buffer is now empty, recycle it.
+	     */
+
+	    if (IsBufferEmpty(bufPtr)) {
+		statePtr->outQueueHead = bufPtr->nextPtr;
+		if (statePtr->outQueueHead == NULL) {
+		    statePtr->outQueueTail = NULL;
+		}
+		RecycleBuffer(statePtr, bufPtr, 0);
+	    }
+	}
+
     }	/* Closes "while". */
 
     /*
@@ -2911,7 +2996,7 @@ FlushChannel(
 	     * there is some kind failure in the writable event machinery.
 	     *
 	     * The tls extension indeed suffers from flaws in its channel
-	     * event mgmt.  See http://core.tcl.tk/tcl/info/c31ca233ca.
+	     * event mgmt.  See https://core.tcl-lang.org/tcl/info/c31ca233ca.
 	     * Until that patch is broadly distributed, disable the
 	     * assertion checking here, so that programs using Tcl and
 	     * tls can be debugged.
@@ -3199,6 +3284,9 @@ CutChannel(
      */
 
     ChanThreadAction((Channel *) chan, TCL_CHANNEL_THREAD_REMOVE);
+
+    /* Channel is not managed by any thread */
+    statePtr->managingThread = NULL;
 }
 
 void
@@ -3243,6 +3331,9 @@ Tcl_CutChannel(
     for (; chanPtr != NULL ; chanPtr = chanPtr->upChanPtr) {
 	ChanThreadAction(chanPtr, TCL_CHANNEL_THREAD_REMOVE);
     }
+
+    /* Channel is not managed by any thread */
+    statePtr->managingThread = NULL;
 }
 
 /*
@@ -3357,18 +3448,18 @@ Tcl_SpliceChannel(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_Close(
     Tcl_Interp *interp,		/* Interpreter for errors. */
     Tcl_Channel chan)		/* The channel being closed. Must not be
-				 * referenced in any interpreter. */
+				 * referenced in any interpreter. May be NULL,
+				 * in which case this is a no-op. */
 {
     CloseCallback *cbPtr;	/* Iterate over close callbacks for this
 				 * channel. */
     Channel *chanPtr;		/* The real IO channel. */
     ChannelState *statePtr;	/* State of real IO channel. */
-    int result;			/* Of calling FlushChannel. */
+    int result = 0;			/* Of calling FlushChannel. */
     int flushcode;
     int stickyError;
 
@@ -3447,6 +3538,11 @@ Tcl_Close(
     Tcl_ClearChannelHandlers(chan);
 
     /*
+     * Cancel any outstanding timer.
+     */
+    Tcl_DeleteTimerHandler(statePtr->timer);
+
+    /*
      * Invoke the registered close callbacks and delete their records.
      */
 
@@ -3464,12 +3560,20 @@ Tcl_Close(
      * it anymore and this will help avoid deadlocks on some channel types.
      */
 
-    if (chanPtr->typePtr->closeProc == TCL_CLOSE2PROC) {
-	result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp,
-		TCL_CLOSE_READ);
-    } else {
+#ifndef TCL_NO_DEPRECATED
+    if ((chanPtr->typePtr->closeProc == TCL_CLOSE2PROC) || (chanPtr->typePtr->closeProc == NULL)) {
+	/* If this half-close gives a EINVAL or ENOTCONN, just continue the full close */
+	result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, TCL_CLOSE_READ);
+	if ((result == EINVAL) || result == ENOTCONN) {
+	    result = 0;
+	}
+    }
+#else
+    result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, TCL_CLOSE_READ);
+    if ((result == EINVAL) || result == ENOTCONN) {
 	result = 0;
     }
+#endif
 
     /*
      * The call to FlushChannel will flush any queued output and invoke the
@@ -3512,13 +3616,17 @@ Tcl_Close(
      * message set up to now.
      */
 
-    if (flushcode != 0 && interp != NULL
-	    && 0 == Tcl_GetCharLength(Tcl_GetObjResult(interp))) {
-	Tcl_SetErrno(flushcode);
+    if (flushcode != 0) {
+	/* flushcode has precedence, if available */
+	result = flushcode;
+    }
+    if ((result != 0) && (result != TCL_ERROR) && (interp != NULL)
+	    && 0 == TclGetCharLength(Tcl_GetObjResult(interp))) {
+	Tcl_SetErrno(result);
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj(Tcl_PosixError(interp), -1));
     }
-    if ((flushcode != 0) || (result != 0)) {
+    if (result != 0) {
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -3529,24 +3637,21 @@ Tcl_Close(
  *
  * Tcl_CloseEx --
  *
- *	Closes one side of a channel, read or write.
+ *	Closes one side of a channel, read or write, close all.
  *
  * Results:
  *	A standard Tcl result.
  *
  * Side effects:
- *	Closes one direction of the channel.
+ *	Closes one direction of the channel, or do a full close.
  *
  * NOTE:
  *	Tcl_CloseEx closes the specified direction of the channel as far as
- *	the user is concerned. The channel keeps existing however. You cannot
- *	calls this function to close the last possible direction of the
- *	channel. Use Tcl_Close for that.
+ *	the user is concerned. If flags = 0, this is equivalent to Tcl_Close.
  *
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_CloseEx(
     Tcl_Interp *interp,		/* Interpreter for errors. */
@@ -3561,10 +3666,18 @@ Tcl_CloseEx(
 	return TCL_OK;
     }
 
-    /* TODO: assert flags validity ? */
-
     chanPtr = (Channel *) chan;
     statePtr = chanPtr->state;
+
+    if ((flags & (TCL_READABLE | TCL_WRITABLE)) == 0) {
+	return Tcl_Close(interp, chan);
+    }
+    if ((flags & (TCL_READABLE | TCL_WRITABLE)) == (TCL_READABLE | TCL_WRITABLE)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"double-close of channels not supported by %ss",
+		chanPtr->typePtr->typeName));
+	return TCL_ERROR;
+    }
 
     /*
      * Does the channel support half-close anyway? Error if not.
@@ -3572,7 +3685,7 @@ Tcl_CloseEx(
 
     if (!chanPtr->typePtr->close2Proc) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "half-close of channels not supported by %ss",
+		"half-close of channels not supported by %ss",
 		chanPtr->typePtr->typeName));
 	return TCL_ERROR;
     }
@@ -3593,7 +3706,7 @@ Tcl_CloseEx(
      * opened for that direction).
      */
 
-    if (!(statePtr->flags & (TCL_READABLE | TCL_WRITABLE) & flags)) {
+    if (!(GotFlag(statePtr, TCL_READABLE|TCL_WRITABLE) & flags)) {
 	const char *msg;
 
 	if (flags & TCL_CLOSE_READ) {
@@ -3612,7 +3725,7 @@ Tcl_CloseEx(
      * That won't do.
      */
 
-    if (statePtr->flags & CHANNEL_INCLOSE) {
+    if (GotFlag(statePtr, CHANNEL_INCLOSE)) {
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "illegal recursive call to close through close-handler"
@@ -3808,7 +3921,7 @@ CloseChannelPart(
      * message in the interp.
      */
 
-    result = ChanCloseHalf(chanPtr, interp, flags);
+    result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, NULL, flags);
 
     /*
      * If we are being called synchronously, report either any latent error on
@@ -3970,8 +4083,8 @@ Tcl_ClearChannelHandlers(
  *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
- *	The number of bytes written or -1 in case of error. If -1,
- *	Tcl_GetErrno will return the error code.
+ *	The number of bytes written or TCL_INDEX_NONE in case of error. If
+ *	TCL_INDEX_NONE, Tcl_GetErrno will return the error code.
  *
  * Side effects:
  *	May buffer up output and may cause output to be produced on the
@@ -4005,7 +4118,7 @@ Tcl_Write(
 	srcLen = strlen(src);
     }
     if (WriteBytes(chanPtr, src, srcLen) < 0) {
-	return -1;
+	return TCL_INDEX_NONE;
     }
     return srcLen;
 }
@@ -4024,8 +4137,8 @@ Tcl_Write(
  *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
- *	The number of bytes written or -1 in case of error. If -1,
- *	Tcl_GetErrno will return the error code.
+ *	The number of bytes written or TCL_INDEX_NONE in case of error. If
+ *	TCL_INDEX_NONE, Tcl_GetErrno will return the error code.
  *
  * Side effects:
  *	May buffer up output and may cause output to be produced on the
@@ -4047,7 +4160,7 @@ Tcl_WriteRaw(
     int errorCode, written;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | CHANNEL_RAW_MODE) != 0) {
-	return -1;
+	return TCL_INDEX_NONE;
     }
 
     if (srcLen < 0) {
@@ -4080,8 +4193,8 @@ Tcl_WriteRaw(
  *	specified channel to the topmost channel in a stack.
  *
  * Results:
- *	The number of bytes written or -1 in case of error. If -1,
- *	Tcl_GetErrno will return the error code.
+ *	The number of bytes written or TCL_INDEX_NONE in case of error. If
+ *	TCL_INDEX_NONE, Tcl_GetErrno will return the error code.
  *
  * Side effects:
  *	May buffer up output and may cause output to be produced on the
@@ -4104,7 +4217,7 @@ Tcl_WriteChars(
     Tcl_Obj *objPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return -1;
+	return TCL_INDEX_NONE;
     }
 
     chanPtr = statePtr->topChanPtr;
@@ -4149,8 +4262,8 @@ Tcl_WriteChars(
  *	line buffering mode.
  *
  * Results:
- *	The number of bytes written or -1 in case of error. If -1,
- *	Tcl_GetErrno() will return the error code.
+ *	The number of bytes written or TCL_INDEX_NONE in case of error. If
+ *	TCL_INDEX_NONE, Tcl_GetErrno() will return the error code.
  *
  * Side effects:
  *	May buffer up output and may cause output to be produced on the
@@ -4177,7 +4290,7 @@ Tcl_WriteObj(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return -1;
+	return TCL_INDEX_NONE;
     }
     if (statePtr->encoding == NULL) {
 	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &srcLen);
@@ -4194,12 +4307,15 @@ WillWrite(
 {
     int inputBuffered;
 
-    if ((chanPtr->typePtr->seekProc != NULL) &&
-            ((inputBuffered = Tcl_InputBuffered((Tcl_Channel) chanPtr)) > 0)){
-        int ignore;
+    if (((Tcl_ChannelWideSeekProc(chanPtr->typePtr) != NULL)
+#ifndef TCL_NO_DEPRECATED
+	    || (Tcl_ChannelSeekProc(chanPtr->typePtr) != NULL)
+#endif
+	    ) && ((inputBuffered = Tcl_InputBuffered((Tcl_Channel) chanPtr)) > 0)){
+	int ignore;
 
-        DiscardInputQueued(chanPtr->state, 0);
-        ChanSeek(chanPtr, -inputBuffered, SEEK_CUR, &ignore);
+	DiscardInputQueued(chanPtr->state, 0);
+	ChanSeek(chanPtr, -inputBuffered, SEEK_CUR, &ignore);
     }
 }
 
@@ -4209,15 +4325,18 @@ WillRead(
 {
     if (chanPtr->typePtr == NULL) {
 	/*
-         * Prevent read attempts on a closed channel.
-         */
+	 * Prevent read attempts on a closed channel.
+	 */
 
-        DiscardInputQueued(chanPtr->state, 0);
+	DiscardInputQueued(chanPtr->state, 0);
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
-    if ((chanPtr->typePtr->seekProc != NULL)
-            && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
+    if (((Tcl_ChannelWideSeekProc(chanPtr->typePtr) != NULL)
+#ifndef TCL_NO_DEPRECATED
+	    || (Tcl_ChannelSeekProc(chanPtr->typePtr) != NULL)
+#endif
+	    ) && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
 	/*
 	 * CAVEAT - The assumption here is that FlushChannel() will push out
 	 * the bytes of any writes that are in progress.  Since this is a
@@ -4228,9 +4347,9 @@ WillRead(
 	 * blocking mode.
 	 */
 
-        if (FlushChannel(NULL, chanPtr, 0) != 0) {
-            return -1;
-        }
+	if (FlushChannel(NULL, chanPtr, 0) != 0) {
+	return -1;
+	}
     }
     return 0;
 }
@@ -4267,9 +4386,26 @@ Write(
 				/* State info for channel */
     char *nextNewLine = NULL;
     int endEncoding, saved = 0, total = 0, flushed = 0, needNlFlush = 0;
+    char safe[BUFFER_PADDING];
+    int encodingError = 0;
 
     if (srcLen) {
         WillWrite(chanPtr);
+    }
+
+    /*
+     * Transfer encoding strict/nocomplain option to the encoding flags
+     */
+
+    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	statePtr->outputEncodingFlags |= TCL_ENCODING_STRICT;
+#ifdef TCL_NO_DEPRECATED
+    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->outputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
+#endif
+    } else {
+	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
 
     /*
@@ -4280,12 +4416,12 @@ Write(
 
     if (GotFlag(statePtr, CHANNEL_LINEBUFFERED)
 	    || (statePtr->outputTranslation != TCL_TRANSLATE_LF)) {
-	nextNewLine = memchr(src, '\n', srcLen);
+	nextNewLine = (char *)memchr(src, '\n', srcLen);
     }
 
-    while (srcLen + saved + endEncoding > 0) {
+    while (srcLen + saved + endEncoding > 0 && !encodingError) {
 	ChannelBuffer *bufPtr;
-	char *dst, safe[BUFFER_PADDING];
+	char *dst;
 	int result, srcRead, dstLen, dstWrote, srcLimit = srcLen;
 
 	if (nextNewLine) {
@@ -4304,11 +4440,10 @@ Write(
 	     * that we need to stick at the beginning of this buffer.
 	     */
 
-	    memcpy(InsertPoint(bufPtr), safe, (size_t) saved);
+	    memcpy(InsertPoint(bufPtr), safe, saved);
 	    bufPtr->nextAdded += saved;
 	    saved = 0;
 	}
-	PreserveChannelBuffer(bufPtr);
 	dst = InsertPoint(bufPtr);
 	dstLen = SpaceLeft(bufPtr);
 
@@ -4318,22 +4453,31 @@ Write(
 		dstLen + BUFFER_PADDING, &srcRead, &dstWrote, NULL);
 
 	/*
-         * See chan-io-1.[89]. Tcl Bug 506297.
-         */
+	 * See chan-io-1.[89]. Tcl Bug 506297.
+	 */
 
 	statePtr->outputEncodingFlags &= ~TCL_ENCODING_START;
 
+	/*
+	 * See io-75.2, TCL bug 6978c01b65.
+	 * Check, if an encoding error occured and should be reported to the
+	 * script level.
+	 * This happens, if a written character may not be represented by the
+	 * current output encoding and strict encoding is active.
+	 */
+
+	if (result == TCL_CONVERT_UNKNOWN) {
+	    encodingError = 1;
+	    result = TCL_OK;
+	}
+
 	if ((result != TCL_OK) && (srcRead + dstWrote == 0)) {
 	    /*
-             * We're reading from invalid/incomplete UTF-8.
-             */
+	     * We're reading from invalid/incomplete UTF-8.
+	     */
 
-	    ReleaseChannelBuffer(bufPtr);
-	    if (total == 0) {
-		Tcl_SetErrno(EINVAL);
-		return -1;
-	    }
-	    break;
+	    encodingError = 1;
+	    result = TCL_OK;
 	}
 
 	bufPtr->nextAdded += dstWrote;
@@ -4378,7 +4522,7 @@ Write(
 	    total += dstWrote;
 	    dst += dstWrote;
 	    dstLen -= dstWrote;
-	    nextNewLine = memchr(src, '\n', srcLen);
+	    nextNewLine = (char *)memchr(src, '\n', srcLen);
 	    needNlFlush = 1;
 	}
 
@@ -4392,7 +4536,7 @@ Write(
 	     */
 
 	    saved = -SpaceLeft(bufPtr);
-	    memcpy(safe, dst + dstLen, (size_t) saved);
+	    memcpy(safe, dst + dstLen, saved);
 	    bufPtr->nextAdded = bufPtr->bufLength;
 	}
 
@@ -4402,7 +4546,6 @@ Write(
 
 	if (IsBufferFull(bufPtr)) {
 	    if (FlushChannel(NULL, chanPtr, 0) != 0) {
-		ReleaseChannelBuffer(bufPtr);
 		return -1;
 	    }
 	    flushed += statePtr->bufSize;
@@ -4422,15 +4565,20 @@ Write(
 		needNlFlush = 0;
 	    }
 	}
-	ReleaseChannelBuffer(bufPtr);
     }
-    if ((flushed < total) && (GotFlag(statePtr, CHANNEL_UNBUFFERED) ||
-	    (needNlFlush && GotFlag(statePtr, CHANNEL_LINEBUFFERED)))) {
+    if (((flushed < total) && GotFlag(statePtr, CHANNEL_UNBUFFERED)) ||
+	    (needNlFlush && GotFlag(statePtr, CHANNEL_LINEBUFFERED))) {
 	if (FlushChannel(NULL, chanPtr, 0) != 0) {
 	    return -1;
 	}
     }
 
+    UpdateInterest(chanPtr);
+
+    if (encodingError) {
+	Tcl_SetErrno(EILSEQ);
+	return -1;
+    }
     return total;
 }
 
@@ -4507,13 +4655,14 @@ Tcl_GetsObj(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    int inEofChar, skip, copiedTotal, oldLength, oldFlags, oldRemoved;
+    int inEofChar, skip, copiedTotal, oldFlags, oldRemoved;
+    int oldLength;
     Tcl_Encoding encoding;
     char *dst, *dstEnd, *eol, *eof;
     Tcl_EncodingState oldState;
 
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	return -1;
+	return TCL_INDEX_NONE;
     }
 
     /*
@@ -4528,7 +4677,7 @@ Tcl_GetsObj(
 
 	/* TODO: Do we need this? */
 	UpdateInterest(chanPtr);
-	return -1;
+	return TCL_INDEX_NONE;
     }
 
     /*
@@ -4573,6 +4722,21 @@ Tcl_GetsObj(
 
     if (encoding == NULL) {
 	encoding = GetBinaryEncoding();
+    }
+
+    /*
+     * Transfer encoding nocomplain/strict option to the encoding flags
+     */
+
+    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
+#ifdef TCL_NO_DEPRECATED
+    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
+#endif
+    } else {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
 
     /*
@@ -4683,25 +4847,24 @@ Tcl_GetsObj(
 	    eol = dst;
 	    skip = 1;
 	    if (GotFlag(statePtr, INPUT_SAW_CR)) {
-		ResetFlag(statePtr, INPUT_SAW_CR);
 		if ((eol < dstEnd) && (*eol == '\n')) {
 		    /*
 		     * Skip the raw bytes that make up the '\n'.
 		     */
 
-		    char tmp[TCL_UTF_MAX];
 		    int rawRead;
+		    char tmp[TCL_UTF_MAX];
 
 		    bufPtr = gs.bufPtr;
 		    Tcl_ExternalToUtf(NULL, gs.encoding, RemovePoint(bufPtr),
 			    gs.rawRead, statePtr->inputEncodingFlags
 				| TCL_ENCODING_NO_TERMINATE, &gs.state, tmp,
-			    TCL_UTF_MAX, &rawRead, NULL, NULL);
+			    sizeof(tmp), &rawRead, NULL, NULL);
 		    bufPtr->nextRemoved += rawRead;
 		    gs.rawRead -= rawRead;
 		    gs.bytesWrote--;
 		    gs.charsWrote--;
-		    memmove(dst, dst + 1, (size_t) (dstEnd - dst));
+		    memmove(dst, dst + 1, dstEnd - dst);
 		    dstEnd--;
 		}
 	    }
@@ -4733,8 +4896,10 @@ Tcl_GetsObj(
 			skip++;
 		    }
 		    eol--;
+		    ResetFlag(statePtr, INPUT_SAW_CR);
 		    goto gotEOL;
 		} else if (*eol == '\n') {
+		    ResetFlag(statePtr, INPUT_SAW_CR);
 		    goto gotEOL;
 		}
 	    }
@@ -4763,7 +4928,7 @@ Tcl_GetsObj(
 		Tcl_SetObjLength(objPtr, oldLength);
 		CommonGetsCleanup(chanPtr);
 		copiedTotal = -1;
-		ResetFlag(statePtr, CHANNEL_BLOCKED);
+		ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR);
 		goto done;
 	    }
 	    goto gotEOL;
@@ -4922,8 +5087,9 @@ TclGetsObjBinary(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    int inEofChar, skip, copiedTotal, oldLength, oldFlags, oldRemoved;
-    int rawLen, byteLen, eolChar;
+    int inEofChar, skip, copiedTotal, oldFlags, oldRemoved;
+    int rawLen, byteLen, oldLength;
+    int eolChar;
     unsigned char *dst, *dstEnd, *eol, *eof, *byteArray;
 
     /*
@@ -5070,7 +5236,7 @@ TclGetsObjBinary(
 
 	rawLen = dstEnd - dst;
 	byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
-	memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+	memcpy(byteArray + byteLen, dst, rawLen);
 	byteLen += rawLen;
     }
 
@@ -5087,7 +5253,7 @@ TclGetsObjBinary(
 
     rawLen = eol - dst;
     byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
-    memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+    memcpy(byteArray + byteLen, dst, rawLen);
     byteLen += rawLen;
     bufPtr->nextRemoved += rawLen + skip;
 
@@ -5175,7 +5341,7 @@ TclGetsObjBinary(
 
 static void
 FreeBinaryEncoding(
-    ClientData dummy)	/* Not used */
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -5186,7 +5352,7 @@ FreeBinaryEncoding(
 }
 
 static Tcl_Encoding
-GetBinaryEncoding()
+GetBinaryEncoding(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -5330,6 +5496,22 @@ FilterInputBytes(
 	*gsPtr->dstPtr = dst;
     }
     gsPtr->state = statePtr->inputEncodingState;
+
+    /*
+     * Transfer encoding nocomplain/strict option to the encoding flags
+     */
+
+    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
+#ifdef TCL_NO_DEPRECATED
+    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
+#endif
+    } else {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+    }
+
     result = Tcl_ExternalToUtf(NULL, gsPtr->encoding, raw, rawLen,
 	    statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE,
 	    &statePtr->inputEncodingState, dst, spaceLeft, &gsPtr->rawRead,
@@ -5580,7 +5762,7 @@ Tcl_Read(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	return -1;
+	return TCL_INDEX_NONE;
     }
 
     return DoRead(chanPtr, dst, bytesToRead, 0);
@@ -5621,7 +5803,7 @@ Tcl_ReadRaw(
 
     assert(bytesToRead > 0);
     if (CheckChannelErrors(statePtr, TCL_READABLE | CHANNEL_RAW_MODE) != 0) {
-	return -1;
+	return TCL_INDEX_NONE;
     }
 
     /*
@@ -5635,10 +5817,10 @@ Tcl_ReadRaw(
 		: bytesToRead;
 
 	/*
-         * Copy the current chunk into the read buffer.
-         */
+	 * Copy the current chunk into the read buffer.
+	 */
 
-	memcpy(readBuf, RemovePoint(bufPtr), (size_t) toCopy);
+	memcpy(readBuf, RemovePoint(bufPtr), toCopy);
 	bufPtr->nextRemoved += toCopy;
 	copied += toCopy;
 	readBuf += toCopy;
@@ -5675,13 +5857,7 @@ Tcl_ReadRaw(
     if (bytesToRead > 0) {
 	int nread = ChanRead(chanPtr, readBuf, bytesToRead);
 
-	if (nread > 0) {
-	    /*
-             * Successful read (short is OK) - add to bytes copied.
-             */
-
-	    copied += nread;
-	} else if (nread < 0) {
+	if (nread < 0) {
 	    /*
 	     * An error signaled.  If CHANNEL_BLOCKED, then the error is not
 	     * real, but an indication of blocked state.  In that case, retain
@@ -5695,6 +5871,12 @@ Tcl_ReadRaw(
 	    if (!GotFlag(statePtr, CHANNEL_BLOCKED) || copied == 0) {
 		copied = -1;
 	    }
+	} else if (nread > 0) {
+	    /*
+	     * Successful read (short is OK) - add to bytes copied.
+	     */
+
+	    copied += nread;
 	} else {
 	    /*
 	     * nread == 0.  Driver is at EOF. Let that state filter up.
@@ -5807,7 +5989,11 @@ DoReadChars(
 	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF)
 	    && (statePtr->inEofChar == '\0');
 
-    if (appendFlag == 0) {
+    if (appendFlag) {
+	if (binaryMode && (NULL == TclGetBytesFromObj(NULL, objPtr, NULL))) {
+	    binaryMode = 0;
+	}
+    } else {
 	if (binaryMode) {
 	    Tcl_SetByteArrayLength(objPtr, 0);
 	} else {
@@ -6067,7 +6253,8 @@ ReadChars(
     int savedIEFlags = statePtr->inputEncodingFlags;
     int savedFlags = statePtr->flags;
     char *dst, *src = RemovePoint(bufPtr);
-    int numBytes, srcLen = BytesLeft(bufPtr);
+    int numBytes;
+    int srcLen = BytesLeft(bufPtr);
 
     /*
      * One src byte can yield at most one character.  So when the number of
@@ -6096,6 +6283,21 @@ ReadChars(
 	dstLimit = size - numBytes;
     } else {
 	dst = TclGetString(objPtr) + numBytes;
+    }
+
+    /*
+     * Transfer encoding nocomplain/strict option to the encoding flags
+     */
+
+    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
+#ifdef TCL_NO_DEPRECATED
+    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
+#endif
+    } else {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
 
     /*
@@ -6200,7 +6402,7 @@ ReadChars(
 		     * and do not encounter the eof char this time.
 		     */
 
-		    dstLimit = dstRead - 1 + TCL_UTF_MAX;
+		    dstLimit = dstRead + (TCL_UTF_MAX - 1);
 		    statePtr->flags = savedFlags;
 		    statePtr->inputEncodingFlags = savedIEFlags;
 		    statePtr->inputEncodingState = savedState;
@@ -6225,7 +6427,7 @@ ReadChars(
 		 * here in this call.
 		 */
 
-		dstLimit = dstRead - 1 + TCL_UTF_MAX;
+		dstLimit = dstRead + (TCL_UTF_MAX - 1);
 		statePtr->flags = savedFlags;
 		statePtr->inputEncodingFlags = savedIEFlags;
 		statePtr->inputEncodingState = savedState;
@@ -6242,8 +6444,8 @@ ReadChars(
 	     */
 
 	    if (code != TCL_OK) {
-		char buffer[TCL_UTF_MAX + 1];
 		int read, decoded, count;
+		char buffer[TCL_UTF_MAX + 1];
 
 		/*
 		 * Didn't get everything the buffer could offer
@@ -6259,7 +6461,7 @@ ReadChars(
 
 		Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		(statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE),
-		&statePtr->inputEncodingState, buffer, TCL_UTF_MAX + 1,
+		&statePtr->inputEncodingState, buffer, sizeof(buffer),
 		&read, &decoded, &count);
 
 		if (count == 2) {
@@ -6278,7 +6480,7 @@ ReadChars(
 		    return 1;
 		}
 
-	    } else if (statePtr->flags & CHANNEL_EOF) {
+	    } else if (GotFlag(statePtr, CHANNEL_EOF)) {
 		/*
 		 * The bare \r is the only char and we will never read a
 		 * subsequent char to make the determination.
@@ -6318,7 +6520,7 @@ ReadChars(
 	     * bytes demanded by the Tcl_ExternalToUtf() call!
 	     */
 
-	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead) - 1 + TCL_UTF_MAX - dst;
+	    dstLimit = TclUtfAtIndex(dst, charsToRead) - dst + (TCL_UTF_MAX - 1);
 	    statePtr->flags = savedFlags;
 	    statePtr->inputEncodingFlags = savedIEFlags;
 	    statePtr->inputEncodingState = savedState;
@@ -6329,8 +6531,8 @@ ReadChars(
 	    ChannelBuffer *nextPtr;
 
 	    /*
-             * We were not able to read any chars.
-             */
+	     * We were not able to read any chars.
+	     */
 
 	    assert(numChars == 0);
 
@@ -6350,7 +6552,7 @@ ReadChars(
 	    }
 
 	    /*
-             * Otherwise, reading zero characters indicates there's something
+	     * Otherwise, reading zero characters indicates there's something
 	     * incomplete at the end of the src buffer.  Maybe there were not
 	     * enough src bytes to decode into a char.  Maybe a lone \r could
 	     * not be translated (crlf mode).  Need to combine any unused src
@@ -6386,7 +6588,7 @@ ReadChars(
 	    }
 
 	    nextPtr->nextRemoved -= srcLen;
-	    memcpy(RemovePoint(nextPtr), src, (size_t) srcLen);
+	    memcpy(RemovePoint(nextPtr), src, srcLen);
 	    RecycleBuffer(statePtr, bufPtr, 0);
 	    statePtr->inQueueHead = nextPtr;
 	    Tcl_SetObjLength(objPtr, numBytes);
@@ -6459,17 +6661,17 @@ TranslateInputEOL(
     case TCL_TRANSLATE_LF:
     case TCL_TRANSLATE_CR:
 	if (srcLen > dstLen) {
-            /*
-             * In these modes, each src byte become a dst byte.
-             */
+	    /*
+	     * In these modes, each src byte become a dst byte.
+	     */
 
 	    srcLen = dstLen;
 	}
 	break;
     default:
 	/*
-         * In other modes, at most 2 src bytes become a dst byte.
-         */
+	 * In other modes, at most 2 src bytes become a dst byte.
+	 */
 
 	if (srcLen/2 > dstLen) {
 	    srcLen = 2 * dstLen;
@@ -6483,7 +6685,7 @@ TranslateInputEOL(
 	 * created by the presence of the input eof char.
 	 */
 
-	if ((eof = memchr(srcStart, inEofChar, srcLen))) {
+	if ((eof = (const char *)memchr(srcStart, inEofChar, srcLen))) {
 	    srcLen = eof - srcStart;
 	}
     }
@@ -6492,13 +6694,13 @@ TranslateInputEOL(
     case TCL_TRANSLATE_LF:
     case TCL_TRANSLATE_CR:
 	if (dstStart != srcStart) {
-	    memcpy(dstStart, srcStart, (size_t) srcLen);
+	    memcpy(dstStart, srcStart, srcLen);
 	}
 	if (statePtr->inputTranslation == TCL_TRANSLATE_CR) {
 	    char *dst = dstStart;
 	    char *dstEnd = dstStart + srcLen;
 
-	    while ((dst = memchr(dst, '\r', dstEnd - dst))) {
+	    while ((dst = (char *)memchr(dst, '\r', dstEnd - dst))) {
 		*dst++ = '\n';
 	    }
 	}
@@ -6509,7 +6711,7 @@ TranslateInputEOL(
 	char *dst = dstStart;
 	int lesser = (dstLen < srcLen) ? dstLen : srcLen;
 
-	while ((crFound = memchr(src, '\r', lesser))) {
+	while ((crFound = (const char *)memchr(src, '\r', lesser))) {
 	    int numBytes = crFound - src;
 	    memmove(dst, src, numBytes);
 
@@ -6544,12 +6746,12 @@ TranslateInputEOL(
 	char *dst = dstStart;
 	int lesser;
 
-	if ((statePtr->flags & INPUT_SAW_CR) && srcLen) {
+	if (GotFlag(statePtr, INPUT_SAW_CR) && srcLen) {
 	    if (*src == '\n') { src++; srcLen--; }
 	    ResetFlag(statePtr, INPUT_SAW_CR);
 	}
 	lesser = (dstLen < srcLen) ? dstLen : srcLen;
-	while ((crFound = memchr(src, '\r', lesser))) {
+	while ((crFound = (const char *)memchr(src, '\r', lesser))) {
 	    int numBytes = crFound - src;
 	    memmove(dst, src, numBytes);
 
@@ -6596,7 +6798,7 @@ TranslateInputEOL(
  *	channel, at either the head or tail of the queue.
  *
  * Results:
- *	The number of bytes stored in the channel, or -1 on error.
+ *	The number of bytes stored in the channel, or TCL_INDEX_NONE on error.
  *
  * Side effects:
  *	Adds input to the input queue of a channel.
@@ -6632,7 +6834,7 @@ Tcl_Ungets(
 
     flags = statePtr->flags;
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	len = -1;
+	len = TCL_INDEX_NONE;
 	goto done;
     }
     statePtr->flags = flags;
@@ -6649,7 +6851,7 @@ Tcl_Ungets(
     statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 
     bufPtr = AllocChannelBuffer(len);
-    memcpy(InsertPoint(bufPtr), str, (size_t) len);
+    memcpy(InsertPoint(bufPtr), str, len);
     bufPtr->nextAdded += len;
 
     if (statePtr->inQueueHead == NULL) {
@@ -6708,7 +6910,7 @@ Tcl_Flush(
     chanPtr = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
-	return -1;
+	return TCL_ERROR;
     }
 
     result = FlushChannel(NULL, chanPtr, 0);
@@ -6875,7 +7077,7 @@ GetInput(
 	 */
 
 	if ((bufPtr != NULL)
-		&& (bufPtr->bufLength - BUFFER_PADDING != statePtr->bufSize)) {
+		&& (bufPtr->bufLength != statePtr->bufSize + BUFFER_PADDING)) {
 	    ReleaseChannelBuffer(bufPtr);
 	    bufPtr = NULL;
 	}
@@ -6900,15 +7102,17 @@ GetInput(
 
     PreserveChannelBuffer(bufPtr);
     nread = ChanRead(chanPtr, InsertPoint(bufPtr), toRead);
+    ReleaseChannelBuffer(bufPtr);
 
     if (nread < 0) {
 	result = Tcl_GetErrno();
     } else {
 	result = 0;
-	bufPtr->nextAdded += nread;
+	if (statePtr->inQueueTail != NULL) {
+	    statePtr->inQueueTail->nextAdded += nread;
+	}
     }
 
-    ReleaseChannelBuffer(bufPtr);
     return result;
 }
 
@@ -6930,10 +7134,10 @@ GetInput(
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+long long
 Tcl_Seek(
     Tcl_Channel chan,		/* The channel on which to seek. */
-    Tcl_WideInt offset,		/* Offset to seek to. */
+    long long offset,		/* Offset to seek to. */
     int mode)			/* Relative to which location to seek? */
 {
     Channel *chanPtr = (Channel *) chan;
@@ -6943,13 +7147,13 @@ Tcl_Seek(
     int inputBuffered, outputBuffered;
 				/* # bytes held in buffers. */
     int result;			/* Of device driver operations. */
-    Tcl_WideInt curPos;		/* Position on the device. */
+    long long curPos;		/* Position on the device. */
     int wasAsync;		/* Was the channel nonblocking before the seek
 				 * operation? If so, must restore to
 				 * non-blocking mode after the seek. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -6960,7 +7164,7 @@ Tcl_Seek(
      */
 
     if (CheckForDeadChannel(NULL, statePtr)) {
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -6974,9 +7178,13 @@ Tcl_Seek(
      * defined. This means that the channel does not support seeking.
      */
 
-    if (chanPtr->typePtr->seekProc == NULL) {
+    if ((Tcl_ChannelWideSeekProc(chanPtr->typePtr) == NULL)
+#ifndef TCL_NO_DEPRECATED
+	    && (Tcl_ChannelSeekProc(chanPtr->typePtr) == NULL)
+#endif
+    ) {
 	Tcl_SetErrno(EINVAL);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -6989,7 +7197,7 @@ Tcl_Seek(
 
     if ((inputBuffered != 0) && (outputBuffered != 0)) {
 	Tcl_SetErrno(EFAULT);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7032,7 +7240,7 @@ Tcl_Seek(
 	wasAsync = 1;
 	result = StackSetBlockMode(chanPtr, TCL_MODE_BLOCKING);
 	if (result != 0) {
-	    return Tcl_LongAsWide(-1);
+	    return -1;
 	}
 	ResetFlag(statePtr, CHANNEL_NONBLOCKING);
 	if (GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
@@ -7057,7 +7265,7 @@ Tcl_Seek(
 	 */
 
 	curPos = ChanSeek(chanPtr, offset, mode, &result);
-	if (curPos == Tcl_LongAsWide(-1)) {
+	if (curPos == -1) {
 	    Tcl_SetErrno(result);
 	}
     }
@@ -7073,7 +7281,7 @@ Tcl_Seek(
 	SetFlag(statePtr, CHANNEL_NONBLOCKING);
 	result = StackSetBlockMode(chanPtr, TCL_MODE_NONBLOCKING);
 	if (result != 0) {
-	    return Tcl_LongAsWide(-1);
+	    return -1;
 	}
     }
 
@@ -7099,7 +7307,7 @@ Tcl_Seek(
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+long long
 Tcl_Tell(
     Tcl_Channel chan)		/* The channel to return pos for. */
 {
@@ -7110,10 +7318,10 @@ Tcl_Tell(
     int inputBuffered, outputBuffered;
 				/* # bytes held in buffers. */
     int result;			/* Of calling device driver. */
-    Tcl_WideInt curPos;		/* Position on device. */
+    long long curPos;		/* Position on device. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7124,7 +7332,7 @@ Tcl_Tell(
      */
 
     if (CheckForDeadChannel(NULL, statePtr)) {
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7138,9 +7346,13 @@ Tcl_Tell(
      * defined. This means that the channel does not support seeking.
      */
 
-    if (chanPtr->typePtr->seekProc == NULL) {
+    if ((Tcl_ChannelWideSeekProc(chanPtr->typePtr) == NULL)
+#ifndef TCL_NO_DEPRECATED
+	    && (Tcl_ChannelSeekProc(chanPtr->typePtr) == NULL)
+#endif
+    ) {
 	Tcl_SetErrno(EINVAL);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     /*
@@ -7157,10 +7369,10 @@ Tcl_Tell(
      * wideSeekProc if that is available and non-NULL...
      */
 
-    curPos = ChanSeek(chanPtr, Tcl_LongAsWide(0), SEEK_CUR, &result);
-    if (curPos == Tcl_LongAsWide(-1)) {
+    curPos = ChanSeek(chanPtr, 0, SEEK_CUR, &result);
+    if (curPos == -1) {
 	Tcl_SetErrno(result);
-	return Tcl_LongAsWide(-1);
+	return -1;
     }
 
     if (inputBuffered != 0) {
@@ -7190,7 +7402,7 @@ Tcl_Tell(
 int
 Tcl_TruncateChannel(
     Tcl_Channel chan,		/* Channel to truncate. */
-    Tcl_WideInt length)		/* Length to truncate it to. */
+    long long length)		/* Length to truncate it to. */
 {
     Channel *chanPtr = (Channel *) chan;
     Tcl_DriverTruncateProc *truncateProc =
@@ -7304,7 +7516,7 @@ CheckChannelErrors(
      * Fail if the channel is not opened for desired operation.
      */
 
-    if ((statePtr->flags & direction) == 0) {
+    if (GotFlag(statePtr, direction) == 0) {
 	Tcl_SetErrno(EACCES);
 	return -1;
     }
@@ -7457,7 +7669,7 @@ Tcl_OutputBuffered(
 	bytesBuffered += BytesLeft(bufPtr);
     }
     if (statePtr->curOutPtr != NULL) {
-	register ChannelBuffer *curOutPtr = statePtr->curOutPtr;
+	ChannelBuffer *curOutPtr = statePtr->curOutPtr;
 
 	if (IsBufferReady(curOutPtr)) {
 	    bytesBuffered += BytesLeft(curOutPtr);
@@ -7644,7 +7856,7 @@ Tcl_BadChannelOption(
 	}
 	Tcl_ResetResult(interp);
 	errObj = Tcl_ObjPrintf("bad option \"%s\": should be one of ",
-                optionName);
+                optionName ? optionName : "");
 	argc--;
 	for (i = 0; i < argc; i++) {
 	    Tcl_AppendPrintfToObj(errObj, "-%s, ", argv[i]);
@@ -7824,6 +8036,31 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
+    if (len == 0 || HaveOpt(1, "-nocomplainencoding")) {
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-nocomplainencoding");
+	}
+#ifdef TCL_NO_DEPRECATED
+	Tcl_DStringAppendElement(dsPtr,
+		(flags & CHANNEL_ENCODING_NOCOMPLAIN) ? "1" : "0");
+#else
+	Tcl_DStringAppendElement(dsPtr,
+		(flags & CHANNEL_ENCODING_STRICT) ? "0" : "1");
+#endif
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
+    if (len == 0 || HaveOpt(1, "-strictencoding")) {
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-strictencoding");
+	}
+	Tcl_DStringAppendElement(dsPtr,
+		(flags & CHANNEL_ENCODING_STRICT) ? "1" : "0");
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
     if (len == 0 || HaveOpt(1, "-translation")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-translation");
@@ -7920,7 +8157,7 @@ Tcl_SetChannelOption(
 				/* State info for channel */
     size_t len;			/* Length of optionName string. */
     int argc;
-    const char **argv;
+    const char **argv = NULL;
 
     /*
      * If the channel is in the middle of a background copy, fail.
@@ -8026,16 +8263,19 @@ Tcl_SetChannelOption(
 	UpdateInterest(chanPtr);
 	return TCL_OK;
     } else if (HaveOpt(2, "-eofchar")) {
-	if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
+	if (!newValue[0] || (!(newValue[0] & 0x80) && !newValue[1])) {
+	    if (GotFlag(statePtr, TCL_READABLE)) {
+		statePtr->inEofChar = newValue[0];
+	    }
+	    statePtr->outEofChar = 0;
+	} else if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
-	}
-	if (argc == 0) {
+	} else if (argc == 0) {
 	    statePtr->inEofChar = 0;
 	    statePtr->outEofChar = 0;
 	} else if (argc == 1 || argc == 2) {
-	    int outIndex = (argc - 1);
 	    int inValue = (int) argv[0][0];
-	    int outValue = (int) argv[outIndex][0];
+	    int outValue = (argc == 2) ? (int) argv[1][0] : 0;
 
 	    if (inValue & 0x80 || outValue & 0x80) {
 		if (interp) {
@@ -8076,6 +8316,43 @@ Tcl_SetChannelOption(
 	}
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
+	return TCL_OK;
+    } else if (HaveOpt(1, "-nocomplainencoding")) {
+	int newMode;
+
+	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (newMode) {
+	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
+	    SetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
+	} else {
+#ifdef TCL_NO_DEPRECATED
+	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
+#else
+	    if (SetFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+		if (interp) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "bad value for -nocomplainencoding: only true allowed",
+			    TCL_INDEX_NONE));
+		}
+		return TCL_ERROR;
+	    }
+#endif
+	}
+	return TCL_OK;
+    } else if (HaveOpt(1, "-strictencoding")) {
+	int newMode;
+
+	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (newMode) {
+	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
+	    SetFlag(statePtr, CHANNEL_ENCODING_STRICT);
+	} else {
+	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
+	}
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {
 	const char *readMode, *writeMode;
@@ -8333,6 +8610,13 @@ Tcl_NotifyChannel(
     Tcl_Preserve(statePtr);
 
     /*
+     * Avoid processing if the channel owner has been changed.
+     */
+    if (statePtr->managingThread != Tcl_GetCurrentThread()) {
+	goto done;
+    }
+
+    /*
      * If we are flushing in the background, be sure to call FlushChannel for
      * writable events. Note that we have to discard the writable event so we
      * don't call any write handlers before the flush is complete.
@@ -8366,6 +8650,13 @@ Tcl_NotifyChannel(
 	} else {
 	    chPtr = chPtr->nextPtr;
 	}
+
+	/*
+	 * Stop if the channel owner has been changed in-between.
+	 */
+	if (chanPtr->state->managingThread != Tcl_GetCurrentThread()) {
+	    goto done;
+	}
     }
 
     /*
@@ -8383,6 +8674,7 @@ Tcl_NotifyChannel(
 	UpdateInterest(chanPtr);
     }
 
+done:
     Tcl_Release(statePtr);
     TclChannelRelease(channel);
 
@@ -8459,9 +8751,9 @@ UpdateInterest(
 	     *
 	     * - Tcl drops READABLE here, because it has data in its own
 	     *	 buffers waiting to be read by the extension.
-	     * - A READABLE event is syntesized via timer.
+	     * - A READABLE event is synthesized via timer.
 	     * - The OS still reports the EXCEPTION condition on the file.
-	     * - And the extension gets the EXCPTION event first, and handles
+	     * - And the extension gets the EXCEPTION event first, and handles
 	     *	 this as EOF.
 	     *
 	     * End result ==> Premature end of reading from a file.
@@ -8487,6 +8779,16 @@ UpdateInterest(
 	    }
 	}
     }
+
+    if (!statePtr->timer
+	&& mask & TCL_WRITABLE
+	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+
+	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+	    ChannelTimerProc,chanPtr);
+    }
+
+
     ChanWatch(chanPtr, mask);
 }
 
@@ -8509,30 +8811,51 @@ UpdateInterest(
 
 static void
 ChannelTimerProc(
-    ClientData clientData)
+    void *clientData)
 {
-    Channel *chanPtr = clientData;
-    ChannelState *statePtr = chanPtr->state;
-				/* State info for channel */
+    Channel *chanPtr = (Channel *)clientData;
 
-    if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
-	    && (statePtr->interestMask & TCL_READABLE)
-	    && (statePtr->inQueueHead != NULL)
-	    && IsBufferReady(statePtr->inQueueHead)) {
+    /* State info for channel */
+    ChannelState *statePtr = chanPtr->state;
+
+	/* Preserve chanPtr to guard against deallocation in Tcl_NotifyChannel. */
+    TclChannelPreserve((Tcl_Channel)chanPtr);
+    Tcl_Preserve(statePtr);
+    statePtr->timer = NULL;
+    if (statePtr->interestMask & TCL_WRITABLE
+	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)
+	&& !GotFlag(statePtr, BG_FLUSH_SCHEDULED)
+	) {
 	/*
 	 * Restart the timer in case a channel handler reenters the event loop
 	 * before UpdateInterest gets called by Tcl_NotifyChannel.
 	 */
-
 	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
                 ChannelTimerProc,chanPtr);
-	Tcl_Preserve(statePtr);
-	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
-	Tcl_Release(statePtr);
-    } else {
-	statePtr->timer = NULL;
-	UpdateInterest(chanPtr);
+	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_WRITABLE);
     }
+
+    /* The channel may have just been closed from within Tcl_NotifyChannel */
+    if (!GotFlag(statePtr, CHANNEL_INCLOSE)) {
+	if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
+		&& (statePtr->interestMask & TCL_READABLE)
+		&& (statePtr->inQueueHead != NULL)
+		&& IsBufferReady(statePtr->inQueueHead)) {
+	    /*
+	     * Restart the timer in case a channel handler reenters the event loop
+	     * before UpdateInterest gets called by Tcl_NotifyChannel.
+	     */
+
+	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+		    ChannelTimerProc,chanPtr);
+	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
+	} else {
+	    UpdateInterest(chanPtr);
+	}
+    }
+
+    Tcl_Release(statePtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
 }
 
 /*
@@ -8566,7 +8889,7 @@ Tcl_CreateChannelHandler(
 				 * handler. */
     Tcl_ChannelProc *proc,	/* Procedure to call for each selected
 				 * event. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)	/* Arbitrary data to pass to proc. */
 {
     ChannelHandler *chPtr;
     Channel *chanPtr = (Channel *) chan;
@@ -8586,7 +8909,7 @@ Tcl_CreateChannelHandler(
 	}
     }
     if (chPtr == NULL) {
-	chPtr = ckalloc(sizeof(ChannelHandler));
+	chPtr = (ChannelHandler *)ckalloc(sizeof(ChannelHandler));
 	chPtr->mask = 0;
 	chPtr->proc = proc;
 	chPtr->clientData = clientData;
@@ -8597,7 +8920,7 @@ Tcl_CreateChannelHandler(
 
     /*
      * The remainder of the initialization below is done regardless of whether
-     * or not this is a new record or a modification of an old one.
+     * this is a new record or a modification of an old one.
      */
 
     chPtr->mask = mask;
@@ -8638,7 +8961,7 @@ Tcl_DeleteChannelHandler(
     Tcl_Channel chan,		/* The channel for which to remove the
 				 * callback. */
     Tcl_ChannelProc *proc,	/* The procedure in the callback to delete. */
-    ClientData clientData)	/* The client data in the callback to
+    void *clientData)	/* The client data in the callback to
 				 * delete. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -8798,7 +9121,7 @@ CreateScriptRecord(
     makeCH = (esPtr == NULL);
 
     if (makeCH) {
-	esPtr = ckalloc(sizeof(EventScriptRecord));
+	esPtr = (EventScriptRecord *)ckalloc(sizeof(EventScriptRecord));
     }
 
     /*
@@ -8844,20 +9167,24 @@ CreateScriptRecord(
 
 void
 TclChannelEventScriptInvoker(
-    ClientData clientData,	/* The script+interp record. */
-    int mask)			/* Not used. */
+    void *clientData,	/* The script+interp record. */
+    TCL_UNUSED(int) /*mask*/)
 {
-    Tcl_Interp *interp;		/* Interpreter in which to eval the script. */
-    Channel *chanPtr;		/* The channel for which this handler is
-				 * registered. */
-    EventScriptRecord *esPtr;	/* The event script + interpreter to eval it
+    EventScriptRecord *esPtr = (EventScriptRecord *)clientData;
+				/* The event script + interpreter to eval it
 				 * in. */
+    Channel *chanPtr = esPtr->chanPtr;
+				/* The channel for which this handler is
+				 * registered. */
+    Tcl_Interp *interp = esPtr->interp;
+				/* Interpreter in which to eval the script. */
+    int mask = esPtr->mask;
     int result;			/* Result of call to eval script. */
 
-    esPtr = clientData;
-    chanPtr = esPtr->chanPtr;
-    mask = esPtr->mask;
-    interp = esPtr->interp;
+    /*
+     * Be sure event executed in managed channel (covering bugs similar [f583715154]).
+     */
+    assert(chanPtr->state->managingThread == Tcl_GetCurrentThread());
 
     /*
      * We must preserve the interpreter so we can report errors on it later.
@@ -8906,10 +9233,9 @@ TclChannelEventScriptInvoker(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_FileEventObjCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which the channel for which
 				 * to create the handler is found. */
     int objc,			/* Number of arguments. */
@@ -8941,7 +9267,7 @@ Tcl_FileEventObjCmd(
     }
     chanPtr = (Channel *) chan;
     statePtr = chanPtr->state;
-    if ((statePtr->flags & mask) == 0) {
+    if (GotFlag(statePtr, mask) == 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("channel is not %s",
 		(mask == TCL_READABLE) ? "readable" : "writable"));
 	return TCL_ERROR;
@@ -9003,12 +9329,12 @@ Tcl_FileEventObjCmd(
 
 static void
 ZeroTransferTimerProc(
-    ClientData clientData)
+    void *clientData)
 {
     /* calling CopyData with mask==0 still implies immediate invocation of the
      *  -command callback, and completion of the fcopy.
      */
-    CopyData(clientData, 0);
+    CopyData((CopyState *)clientData, 0);
 }
 
 /*
@@ -9032,6 +9358,7 @@ ZeroTransferTimerProc(
  *----------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED)
 int
 TclCopyChannelOld(
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -9043,13 +9370,14 @@ TclCopyChannelOld(
     return TclCopyChannel(interp, inChan, outChan, (Tcl_WideInt) toRead,
             cmdPtr);
 }
+#endif
 
 int
 TclCopyChannel(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Channel inChan,		/* Channel to read from. */
     Tcl_Channel outChan,	/* Channel to write to. */
-    Tcl_WideInt toRead,		/* Amount of data to copy, or -1 for all. */
+    long long toRead,		/* Amount of data to copy, or -1 for all. */
     Tcl_Obj *cmdPtr)		/* Pointer to script to execute or NULL. */
 {
     Channel *inPtr = (Channel *) inChan;
@@ -9106,8 +9434,8 @@ TclCopyChannel(
      * Make sure the output side is unbuffered.
      */
 
-    outStatePtr->flags = (outStatePtr->flags & ~CHANNEL_LINEBUFFERED)
-	    | CHANNEL_UNBUFFERED;
+    ResetFlag(outStatePtr, CHANNEL_LINEBUFFERED);
+    SetFlag(outStatePtr, CHANNEL_UNBUFFERED);
 
     /*
      * Test for conditions where we know we can just move bytes from input
@@ -9126,7 +9454,7 @@ TclCopyChannel(
      * completed.
      */
 
-    csPtr = ckalloc(sizeof(CopyState) + !moveBytes * inStatePtr->bufSize);
+    csPtr = (CopyState *)ckalloc(offsetof(CopyState, buffer) + 1U + !moveBytes * inStatePtr->bufSize);
     csPtr->bufSize = !moveBytes * inStatePtr->bufSize;
     csPtr->readPtr = inPtr;
     csPtr->writePtr = outPtr;
@@ -9237,7 +9565,7 @@ MBError(
 
 static void
 MBEvent(
-    ClientData clientData,
+    void *clientData,
     int mask)
 {
     CopyState *csPtr = (CopyState *) clientData;
@@ -9316,13 +9644,13 @@ MBWrite(
     if (bufPtr) {
 	/* Split the overflowing buffer in two */
 	int extra = (int) (inBytes - csPtr->toRead);
-        /* Note that going with int for extra assumes that inBytes is not too
-         * much over toRead to require a wide itself. If that gets violated
-         * then the calculations involving extra must be made wide too.
-         *
-         * Noted with Win32/MSVC debug build treating the warning (possible of
-         * data in __int64 to int conversion) as error.
-         */
+	/* Note that going with int for extra assumes that inBytes is not too
+	 * much over toRead to require a wide itself. If that gets violated
+	 * then the calculations involving extra must be made wide too.
+	 *
+	 * Noted with Win32/MSVC debug build treating the warning (possible of
+	 * data in long long to int conversion) as error.
+	 */
 
 	bufPtr = AllocChannelBuffer(extra);
 
@@ -9420,7 +9748,8 @@ CopyData(
     Tcl_Obj *cmdPtr, *errObj = NULL, *bufObj = NULL, *msg = NULL;
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
-    int result = TCL_OK, size, sizeb;
+    int result = TCL_OK, size;
+    int sizeb;
     Tcl_WideInt total;
     const char *buffer;
     int inBinary, outBinary, sameEncoding;
@@ -9538,8 +9867,8 @@ CopyData(
 	    if (size == 0) {
 		if (!GotFlag(inStatePtr, CHANNEL_NONBLOCKING)) {
 		    /*
-                     * We allowed a short read.  Keep trying.
-                     */
+		     * We allowed a short read.  Keep trying.
+		     */
 
 		    continue;
 		}
@@ -9822,16 +10151,16 @@ DoRead(
 
 	    if (GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)) {
 		/*
-                 * Further reads cannot do any more.
-                 */
+		 * Further reads cannot do any more.
+		 */
 
 		break;
 	    }
 
 	    if (code) {
 		/*
-                 * Read error
-                 */
+	     * Read error
+	     */
 
 		UpdateInterest(chanPtr);
 		TclChannelRelease((Tcl_Channel)chanPtr);
@@ -9883,28 +10212,28 @@ DoRead(
 
 	    if (bufPtr->nextPtr == NULL) {
 		/*
-                 * There's no more buffered data...
-                 */
+		 * There's no more buffered data...
+		 */
 
-		if (statePtr->flags & CHANNEL_EOF) {
+		if (GotFlag(statePtr, CHANNEL_EOF)) {
 		    /*
-                     * ...and there never will be.
-                     */
+		     * ...and there never will be.
+		     */
 
 		    *p++ = '\r';
 		    bytesToRead--;
 		    bufPtr->nextRemoved++;
-		} else if (statePtr->flags & CHANNEL_BLOCKED) {
+		} else if (GotFlag(statePtr, CHANNEL_BLOCKED)) {
 		    /*
-                     * ...and we cannot get more now.
-                     */
+		     * ...and we cannot get more now.
+		     */
 
 		    SetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
 		    break;
 		} else {
 		    /*
-                     * ...so we need to get some.
-                     */
+		     * ...so we need to get some.
+		     */
 
 		    goto moreData;
 		}
@@ -9912,8 +10241,8 @@ DoRead(
 
 	    if (bufPtr->nextPtr) {
 		/*
-                 * There's a next buffer.  Shift orphan \r to it.
-                 */
+		 * There's a next buffer.  Shift orphan \r to it.
+		 */
 
 		ChannelBuffer *nextPtr = bufPtr->nextPtr;
 
@@ -9981,10 +10310,10 @@ DoRead(
 
 static void
 CopyEventProc(
-    ClientData clientData,
+    void *clientData,
     int mask)
 {
-    (void) CopyData(clientData, mask);
+    (void) CopyData((CopyState *)clientData, mask);
 }
 
 /*
@@ -10027,20 +10356,20 @@ StopCopy(
      */
 
     nonBlocking = csPtr->readFlags & CHANNEL_NONBLOCKING;
-    if (nonBlocking != (inStatePtr->flags & CHANNEL_NONBLOCKING)) {
+    if (nonBlocking != GotFlag(inStatePtr, CHANNEL_NONBLOCKING)) {
 	SetBlockMode(NULL, csPtr->readPtr,
 		nonBlocking ? TCL_MODE_NONBLOCKING : TCL_MODE_BLOCKING);
     }
     if (csPtr->readPtr != csPtr->writePtr) {
 	nonBlocking = csPtr->writeFlags & CHANNEL_NONBLOCKING;
-	if (nonBlocking != (outStatePtr->flags & CHANNEL_NONBLOCKING)) {
+	if (nonBlocking != GotFlag(outStatePtr, CHANNEL_NONBLOCKING)) {
 	    SetBlockMode(NULL, csPtr->writePtr,
 		    nonBlocking ? TCL_MODE_NONBLOCKING : TCL_MODE_BLOCKING);
 	}
     }
     ResetFlag(outStatePtr, CHANNEL_LINEBUFFERED | CHANNEL_UNBUFFERED);
-    outStatePtr->flags |=
-	    csPtr->writeFlags & (CHANNEL_LINEBUFFERED | CHANNEL_UNBUFFERED);
+    SetFlag(outStatePtr,
+	    csPtr->writeFlags & (CHANNEL_LINEBUFFERED | CHANNEL_UNBUFFERED));
 
     if (csPtr->cmdPtr) {
 	Tcl_DeleteChannelHandler(inChan, CopyEventProc, csPtr);
@@ -10317,7 +10646,7 @@ Tcl_IsChannelRegistered(
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
     statePtr = chanPtr->state;
 
-    hTblPtr = Tcl_GetAssocData(interp, "tclIO", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclIO", NULL);
     if (hTblPtr == NULL) {
 	return 0;
     }
@@ -10399,7 +10728,7 @@ Tcl_IsChannelExisting(
 	}
 
 	if ((*chanName == *name) &&
-		(memcmp(name, chanName, (size_t) chanNameLen + 1) == 0)) {
+		(memcmp(name, chanName, chanNameLen + 1) == 0)) {
 	    return 1;
 	}
     }
@@ -10451,49 +10780,17 @@ Tcl_ChannelVersion(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (chanTypePtr->version == TCL_CHANNEL_VERSION_2) {
-	return TCL_CHANNEL_VERSION_2;
-    } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_3) {
-	return TCL_CHANNEL_VERSION_3;
-    } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_4) {
-	return TCL_CHANNEL_VERSION_4;
-    } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_5) {
-	return TCL_CHANNEL_VERSION_5;
-    } else {
+#ifndef TCL_NO_DEPRECATED
+    if ((chanTypePtr->version < TCL_CHANNEL_VERSION_2)
+	    || (chanTypePtr->version > TCL_CHANNEL_VERSION_5)) {
 	/*
 	 * In <v2 channel versions, the version field is occupied by the
 	 * Tcl_DriverBlockModeProc
 	 */
-
 	return TCL_CHANNEL_VERSION_1;
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * HaveVersion --
- *
- *	Return whether a channel type is (at least) of a given version.
- *
- * Results:
- *	True if the minimum version is exceeded by the version actually
- *	present.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-HaveVersion(
-    const Tcl_ChannelType *chanTypePtr,
-    Tcl_ChannelTypeVersion minimumVersion)
-{
-    Tcl_ChannelTypeVersion actualVersion = Tcl_ChannelVersion(chanTypePtr);
-
-    return (PTR2INT(actualVersion)) >= (PTR2INT(minimumVersion));
+#endif
+    return chanTypePtr->version;
 }
 
 /*
@@ -10516,15 +10813,15 @@ Tcl_ChannelBlockModeProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
-	return chanTypePtr->blockModeProc;
+#ifndef TCL_NO_DEPRECATED
+    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_2) {
+	/*
+	 * The v1 structure had the blockModeProc in a different place.
+	 */
+	return (Tcl_DriverBlockModeProc *) chanTypePtr->version;
     }
-
-    /*
-     * The v1 structure had the blockModeProc in a different place.
-     */
-
-    return (Tcl_DriverBlockModeProc *) chanTypePtr->version;
+#endif
+    return chanTypePtr->blockModeProc;
 }
 
 /*
@@ -10543,6 +10840,7 @@ Tcl_ChannelBlockModeProc(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_DriverCloseProc *
 Tcl_ChannelCloseProc(
     const Tcl_ChannelType *chanTypePtr)
@@ -10550,6 +10848,7 @@ Tcl_ChannelCloseProc(
 {
     return chanTypePtr->closeProc;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -10639,6 +10938,7 @@ Tcl_ChannelOutputProc(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_DriverSeekProc *
 Tcl_ChannelSeekProc(
     const Tcl_ChannelType *chanTypePtr)
@@ -10646,6 +10946,7 @@ Tcl_ChannelSeekProc(
 {
     return chanTypePtr->seekProc;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -10764,10 +11065,12 @@ Tcl_ChannelFlushProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
-	return chanTypePtr->flushProc;
+#ifndef TCL_NO_DEPRECATED
+    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_2) {
+	return NULL;
     }
-    return NULL;
+#endif
+    return chanTypePtr->flushProc;
 }
 
 /*
@@ -10791,10 +11094,12 @@ Tcl_ChannelHandlerProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
-	return chanTypePtr->handlerProc;
+#ifndef TCL_NO_DEPRECATED
+    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_2) {
+	return NULL;
     }
-    return NULL;
+#endif
+    return chanTypePtr->handlerProc;
 }
 
 /*
@@ -10818,10 +11123,12 @@ Tcl_ChannelWideSeekProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_3)) {
-	return chanTypePtr->wideSeekProc;
+#ifndef TCL_NO_DEPRECATED
+    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_3) {
+	return NULL;
     }
-    return NULL;
+#endif
+    return chanTypePtr->wideSeekProc;
 }
 
 /*
@@ -10846,10 +11153,12 @@ Tcl_ChannelThreadActionProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
-	return chanTypePtr->threadActionProc;
+#ifndef TCL_NO_DEPRECATED
+    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_4) {
+	return NULL;
     }
-    return NULL;
+#endif
+    return chanTypePtr->threadActionProc;
 }
 
 /*
@@ -10875,15 +11184,17 @@ Tcl_SetChannelErrorInterp(
     Tcl_Obj *msg)		/* Error message to store. */
 {
     Interp *iPtr = (Interp *) interp;
-
-    if (iPtr->chanMsg != NULL) {
-	TclDecrRefCount(iPtr->chanMsg);
-	iPtr->chanMsg = NULL;
-    }
+    Tcl_Obj *disposePtr = iPtr->chanMsg;
 
     if (msg != NULL) {
 	iPtr->chanMsg = FixLevelCode(msg);
 	Tcl_IncrRefCount(iPtr->chanMsg);
+    } else {
+	iPtr->chanMsg = NULL;
+    }
+
+    if (disposePtr != NULL) {
+        TclDecrRefCount(disposePtr);
     }
     return;
 }
@@ -10911,15 +11222,17 @@ Tcl_SetChannelError(
     Tcl_Obj *msg)		/* Error message to store. */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
-
-    if (statePtr->chanMsg != NULL) {
-	TclDecrRefCount(statePtr->chanMsg);
-	statePtr->chanMsg = NULL;
-    }
+    Tcl_Obj *disposePtr = statePtr->chanMsg;
 
     if (msg != NULL) {
 	statePtr->chanMsg = FixLevelCode(msg);
 	Tcl_IncrRefCount(statePtr->chanMsg);
+    } else {
+	statePtr->chanMsg = NULL;
+    }
+
+    if (disposePtr != NULL) {
+        TclDecrRefCount(disposePtr);
     }
     return;
 }
@@ -10947,7 +11260,8 @@ static Tcl_Obj *
 FixLevelCode(
     Tcl_Obj *msg)
 {
-    int explicitResult, numOptions, lc, lcn;
+    int explicitResult, numOptions, lcn;
+    int lc;
     Tcl_Obj **lv, **lvn;
     int res, i, j, val, lignore, cignore;
     int newlevel = -1, newcode = -1;
@@ -10964,7 +11278,7 @@ FixLevelCode(
      * information. Hence an error means that we've got serious breakage.
      */
 
-    res = Tcl_ListObjGetElements(NULL, msg, &lc, &lv);
+    res = TclListObjGetElementsM(NULL, msg, &lc, &lv);
     if (res != TCL_OK) {
 	Tcl_Panic("Tcl_SetChannelError: bad syntax of message");
     }
@@ -11026,7 +11340,7 @@ FixLevelCode(
 	lcn += 2;
     }
 
-    lvn = ckalloc(lcn * sizeof(Tcl_Obj *));
+    lvn = (Tcl_Obj **)ckalloc(lcn * sizeof(Tcl_Obj *));
 
     /*
      * New level/code information is spliced into the first occurence of
@@ -11040,7 +11354,7 @@ FixLevelCode(
 	if (0 == strcmp(TclGetString(lv[i]), "-level")) {
 	    if (newlevel >= 0) {
 		lvn[j++] = lv[i];
-		lvn[j++] = Tcl_NewIntObj(newlevel);
+		lvn[j++] = Tcl_NewWideIntObj(newlevel);
 		newlevel = -1;
 		lignore = 1;
 		continue;
@@ -11050,7 +11364,7 @@ FixLevelCode(
 	} else if (0 == strcmp(TclGetString(lv[i]), "-code")) {
 	    if (newcode >= 0) {
 		lvn[j++] = lv[i];
-		lvn[j++] = Tcl_NewIntObj(newcode);
+		lvn[j++] = Tcl_NewWideIntObj(newcode);
 		newcode = -1;
 		cignore = 1;
 		continue;
@@ -11161,16 +11475,16 @@ Tcl_ChannelTruncateProc(
     const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_5)) {
-	return chanTypePtr->truncateProc;
+    if (Tcl_ChannelVersion(chanTypePtr) < TCL_CHANNEL_VERSION_5) {
+	return NULL;
     }
-    return NULL;
+    return chanTypePtr->truncateProc;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * DupChannelIntRep --
+ * DupChannelInternalRep --
  *
  *	Initialize the internal representation of a new Tcl_Obj to a copy of
  *	the internal representation of an existing string object.
@@ -11186,23 +11500,23 @@ Tcl_ChannelTruncateProc(
  */
 
 static void
-DupChannelIntRep(
-    register Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
+DupChannelInternalRep(
+    Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
 				 * an internal rep of type "Channel". */
-    register Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
+    Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
-    ResolvedChanName *resPtr = srcPtr->internalRep.twoPtrValue.ptr1;
+    ResolvedChanName *resPtr;
 
-    resPtr->refCount++;
-    copyPtr->internalRep.twoPtrValue.ptr1 = resPtr;
-    copyPtr->typePtr = srcPtr->typePtr;
+    ChanGetInternalRep(srcPtr, resPtr);
+    assert(resPtr);
+    ChanSetInternalRep(copyPtr, resPtr);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FreeChannelIntRep --
+ * FreeChannelInternalRep --
  *
  *	Release statePtr storage.
  *
@@ -11216,12 +11530,13 @@ DupChannelIntRep(
  */
 
 static void
-FreeChannelIntRep(
+FreeChannelInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
-    ResolvedChanName *resPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ResolvedChanName *resPtr;
 
-    objPtr->typePtr = NULL;
+    ChanGetInternalRep(objPtr, resPtr);
+    assert(resPtr);
     if (resPtr->refCount-- > 1) {
 	return;
     }

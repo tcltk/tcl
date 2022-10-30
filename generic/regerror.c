@@ -1,7 +1,7 @@
 /*
  * regerror - error-code expansion
  *
- * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -54,11 +54,9 @@ static const struct rerr {
 /*
  - regerror - the interface to error numbers
  */
-/* ARGSUSED */
 size_t				/* Actual space needed (including NUL) */
 regerror(
     int code,			/* Error code, or REG_ATOI or REG_ITOA */
-    const regex_t *preg,	/* Associated regex_t (unused at present) */
     char *errbuf,		/* Result buffer (unless errbuf_size==0) */
     size_t errbuf_size)		/* Available space in errbuf, can be 0 */
 {

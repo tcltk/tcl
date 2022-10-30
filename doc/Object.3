@@ -257,7 +257,7 @@ The \fBincr\fR command first gets an integer from \fIx\fR's value
 by calling \fBTcl_GetIntFromObj\fR.
 This procedure checks whether the value is already an integer value.
 Since it is not, it converts the value
-by setting the value's \fIinternalRep.longValue\fR member
+by setting the value's internal representation
 to the integer \fB123\fR
 and setting the value's \fItypePtr\fR
 to point to the integer Tcl_ObjType structure.
@@ -283,7 +283,12 @@ to reduce storage requirements.
 Reference counting is used to determine when a value is
 no longer needed and can safely be freed.
 A value just created by \fBTcl_NewObj\fR or \fBTcl_NewStringObj\fR
-has \fIrefCount\fR 0.
+has \fIrefCount\fR 0, meaning that the object can often be given to a function
+like \fBTcl_SetObjResult\fR, \fBTcl_ListObjAppendElement\fR, or
+\fBTcl_DictObjPut\fR (as a value) without explicit reference management, all
+of which are common use cases. (The latter two require that the the target
+list or dictionary be well-formed, but that is often easy to arrange when the
+value is being initially constructed.)
 The macro \fBTcl_IncrRefCount\fR increments the reference count
 when a new reference to the value is created.
 The macro \fBTcl_DecrRefCount\fR decrements the count

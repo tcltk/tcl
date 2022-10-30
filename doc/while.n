@@ -63,3 +63,7 @@ set lineCount 0
 break(n), continue(n), for(n), foreach(n)
 .SH KEYWORDS
 boolean, loop, test, while
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

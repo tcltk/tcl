@@ -156,6 +156,10 @@ pointed to by \fIargTypesPointer\fR.
 \fBTcl_ListMathFuncs\fR returns a Tcl value containing a list of all
 the math functions defined in the interpreter whose name matches
 \fIpattern\fR.  The returned value has a reference count of zero.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_ListMathFuncs\fR always returns a zero-reference object, much
+like \fBTcl_NewObj\fR.
 .SH "SEE ALSO"
 expr(n), info(n), Tcl_CreateObjCommand(3), Tcl_Free(3), Tcl_NewListObj(3)
 .SH KEYWORDS

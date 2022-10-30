@@ -1,0 +1,146 @@
+name: Build Binaries
+on: [push]
+permissions:
+  contents: read
+jobs:
+  linux:
+    name: Linux
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Prepare
+        run: |
+          touch generic/tclStubInit.c generic/tclOOStubInit.c
+          mkdir 1dist
+          echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
+        working-directory: .
+      - name: Configure
+        run: ./configure --disable-symbols --disable-shared --enable-zipfs
+        working-directory: unix
+      - name: Build
+        run: |
+          make tclsh
+          make shell SCRIPT="$VER_PATH $GITHUB_ENV"
+          echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
+        working-directory: unix
+      - name: Package
+        run: |
+          cp ../unix/tclsh tclsh${TCL_PATCHLEVEL}_snapshot
+          chmod +x tclsh${TCL_PATCHLEVEL}_snapshot
+          tar -cf tclsh${TCL_PATCHLEVEL}_snapshot.tar tclsh${TCL_PATCHLEVEL}_snapshot
+        working-directory: 1dist
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: Tclsh ${{ env.TCL_PATCHLEVEL }} Linux single-file build (snapshot)
+          path: 1dist/*.tar
+  macos:
+    name: macOS
+    runs-on: macos-11
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Checkout create-dmg
+        uses: actions/checkout@v3
+        with:
+          repository: create-dmg/create-dmg
+          ref: v1.0.8
+          path: create-dmg
+      - name: Prepare
+        run: |
+          mkdir 1dist
+          touch generic/tclStubInit.c generic/tclOOStubInit.c || true
+          wget https://github.com/culler/macher/releases/download/v1.3/macher
+          sudo cp macher /usr/local/bin
+          sudo chmod a+x /usr/local/bin/macher
+          echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
+          echo "CREATE_DMG=$(cd create-dmg;pwd)/create-dmg" >> $GITHUB_ENV
+          echo "CFLAGS=-arch x86_64 -arch arm64e" >> $GITHUB_ENV
+      - name: Configure
+        run: ./configure --disable-symbols --disable-shared --enable-zipfs
+        working-directory: unix
+      - name: Build
+        run: |
+          make tclsh
+          make shell SCRIPT="$VER_PATH $GITHUB_ENV"
+          echo "TCL_BIN=`pwd`/tclsh" >> $GITHUB_ENV
+          echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
+        working-directory: unix
+      - name: Package
+        run: |
+          mkdir contents
+          cp $TCL_BIN contents/tclsh${TCL_PATCHLEVEL}_snapshot
+          chmod +x contents/tclsh${TCL_PATCHLEVEL}_snapshot
+          cat > contents/README.txt <<EOF
+          This is a single-file executable developer preview of Tcl $TCL_PATCHLEVEL
+
+          It is not intended as an official release at all, so it is unsigned and unnotarized.
+          Use strictly at your own risk.
+
+          To run it, you need to copy the executable out and run:
+              xattr -d com.apple.quarantine tclsh${TCL_PATCHLEVEL}_snapshot
+          to mark the executable as runnable on your machine.
+          EOF
+          $CREATE_DMG \
+              --volname "Tcl $TCL_PATCHLEVEL (snapshot)" \
+              --window-pos 200 120 \
+              --window-size 800 400 \
+              "Tcl-$TCL_PATCHLEVEL-(snapshot).dmg" \
+              "contents/"
+        working-directory: 1dist
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: Tclsh ${{ env.TCL_PATCHLEVEL }} macOS single-file build (snapshot)
+          path: 1dist/*.dmg
+  win:
+    name: Windows
+    runs-on: windows-2019
+    defaults:
+      run:
+        shell: msys2 {0}
+    env:
+      CC: gcc
+      CFGOPT: --disable-symbols --disable-shared
+    steps:
+      - name: Install MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          install: git mingw-w64-ucrt-x86_64-toolchain make zip
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Prepare
+        run: |
+          touch generic/tclStubInit.c generic/tclOOStubInit.c
+          echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
+          mkdir 1dist
+        working-directory: .
+      - name: Configure
+        run: ./configure $CFGOPT
+        working-directory: win
+      - name: Build
+        run: |
+          make binaries libraries
+          echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
+        working-directory: win
+      - name: Get Exact Version
+        run: |
+          ./tclsh*.exe $VER_PATH $GITHUB_ENV
+        working-directory: win
+      - name: Set Executable Name
+        run: |
+          cp ../win/tclsh*.exe tclsh${TCL_PATCHLEVEL}_snapshot.exe
+        working-directory: 1dist
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: Tclsh ${{ env.TCL_PATCHLEVEL }} Windows single-file build (snapshot)
+          path: '1dist/*_snapshot.exe'

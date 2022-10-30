@@ -90,9 +90,10 @@ necessary.
 .AP Tcl_Event *evPtr in
 An event to add to the event queue.  The storage for the event must
 have been allocated by the caller using \fBTcl_Alloc\fR or \fBckalloc\fR.
-.AP Tcl_QueuePosition position in
+.AP int position in
 Where to add the new event in the queue:  \fBTCL_QUEUE_TAIL\fR,
-\fBTCL_QUEUE_HEAD\fR, or \fBTCL_QUEUE_MARK\fR.
+\fBTCL_QUEUE_HEAD\fR, \fBTCL_QUEUE_MARK\fR, and whether to do
+an alert if the queue is empty: \fBTCL_QUEUE_ALERT_IF_EMPTY\fR.
 .AP Tcl_ThreadId threadId in
 A unique identifier for a thread.
 .AP Tcl_EventDeleteProc *deleteProc in
@@ -103,7 +104,7 @@ passed to \fBTcl_DoOneEvent\fR.
 .AP int mode in
 Indicates whether events should be serviced by \fBTcl_ServiceAll\fR.
 Must be one of \fBTCL_SERVICE_NONE\fR or \fBTCL_SERVICE_ALL\fR.
-.AP Tcl_NotifierProcs* notifierProcPtr in
+.AP const Tcl_NotifierProcs* notifierProcPtr in
 Structure of function pointers describing notifier procedures that are
 to replace the ones installed in the executable.  See
 \fBREPLACING THE NOTIFIER\fR for details.
@@ -132,22 +133,17 @@ higher-level software that they have occurred.  The procedures
 and \fBTcl_SetMaxBlockTime\fR, \fBTcl_QueueEvent\fR, and
 \fBTcl_DeleteEvents\fR are used primarily by event sources.
 .IP [2]
-The event queue: for non-threaded applications,
-there is a single queue for the whole application,
-containing events that have been detected but not yet serviced.  Event
-sources place events onto the queue so that they may be processed in
-order at appropriate times during the event loop. The event queue
-guarantees a fair discipline of event handling, so that no event
-source can starve the others.  It also allows events to be saved for
-servicing at a future time.  Threaded applications work in a
-similar manner, except that there is a separate event queue for
-each thread containing a Tcl interpreter.
+The event queue: there is a single queue for each thread containing
+a Tcl interpreter, containing events that have been detected but not
+yet serviced.  Event sources place events onto the queue so that they
+may be processed in order at appropriate times during the event loop.
+The event queue guarantees a fair discipline of event handling, so that
+no event source can starve the others.  It also allows events to be
+saved for servicing at a future time.
 \fBTcl_QueueEvent\fR is used (primarily
-by event sources) to add events to the event queue and
+by event sources) to add events to the current thread's event queue and
 \fBTcl_DeleteEvents\fR is used to remove events from the queue without
-processing them.  In a threaded application, \fBTcl_QueueEvent\fR adds
-an event to the current thread's queue, and \fBTcl_ThreadQueueEvent\fR
-adds an event to a queue in a specific thread.
+processing them.
 .IP [3]
 The event loop: in order to detect and process events, the application
 enters a loop that waits for events to occur, places them on the event
@@ -345,14 +341,14 @@ and should not be modified by the event source.
 .PP
 An event may be added to the queue at any of three positions, depending
 on the \fIposition\fR argument to \fBTcl_QueueEvent\fR:
-.IP \fBTCL_QUEUE_TAIL\fR 24
+.IP \fBTCL_QUEUE_TAIL\fR 32
 Add the event at the back of the queue, so that all other pending
 events will be serviced first.  This is almost always the right
 place for new events.
-.IP \fBTCL_QUEUE_HEAD\fR 24
+.IP \fBTCL_QUEUE_HEAD\fR 32
 Add the event at the front of the queue, so that it will be serviced
 before all other queued events.
-.IP \fBTCL_QUEUE_MARK\fR 24
+.IP \fBTCL_QUEUE_MARK\fR 32
 Add the event at the front of the queue, unless there are other
 events at the front whose position is \fBTCL_QUEUE_MARK\fR;  if so,
 add the new event just after all other \fBTCL_QUEUE_MARK\fR events.
@@ -360,6 +356,10 @@ This value of \fIposition\fR is used to insert an ordered sequence of
 events at the front of the queue, such as a series of
 Enter and Leave events synthesized during a grab or ungrab operation
 in Tk.
+.IP \fBTCL_QUEUE_ALERT_IF_EMPTY\fR 32
+When used in \fBTcl_ThreadQueueEvent\fR
+arranges for an automatic call of \fBTcl_ThreadAlert\fR when the queue was
+empty.
 .PP
 When it is time to handle an event from the queue (steps 1 and 4
 above) \fBTcl_ServiceEvent\fR will invoke the \fIproc\fR specified
@@ -403,11 +403,7 @@ the event source (using \fBTcl_Alloc\fR or the Tcl macro \fBckalloc\fR)
 before calling \fBTcl_QueueEvent\fR, but it
 will be freed by \fBTcl_ServiceEvent\fR, not by the event source.
 .PP
-Threaded applications work in a
-similar manner, except that there is a separate event queue for
-each thread containing a Tcl interpreter.
-Calling \fBTcl_QueueEvent\fR in a multithreaded application adds
-an event to the current thread's queue.
+Calling \fBTcl_QueueEvent\fR adds an event to the current thread's queue.
 To add an event to another thread's queue, use \fBTcl_ThreadQueueEvent\fR.
 \fBTcl_ThreadQueueEvent\fR accepts as an argument a Tcl_ThreadId argument,
 which uniquely identifies a thread in a Tcl application.  To obtain the
@@ -498,8 +494,7 @@ under Unix it happens when \fBTcl_WaitForEvent\fR would have waited
 forever because there were no active event sources and the timeout was
 infinite.
 .PP
-\fBTcl_AlertNotifier\fR is used in multithreaded applications to allow
-any thread to
+\fBTcl_AlertNotifier\fR is used to allow any thread to
 .QW "wake up"
 the notifier to alert it to new events on its
 queue.  \fBTcl_AlertNotifier\fR requires as an argument the notifier

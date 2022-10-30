@@ -3,7 +3,7 @@
  *
  *	Common routines used by all socket based channel types.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -11,7 +11,7 @@
 
 #include "tclInt.h"
 
-#if defined(_WIN32) && defined(UNICODE)
+#if defined(_WIN32)
 /*
  * On Windows, we need to do proper Unicode->UTF-8 conversion.
  */
@@ -30,11 +30,12 @@ gai_strerror(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (tsdPtr->initialized) {
-	Tcl_DStringFree(&tsdPtr->errorMsg);
+	Tcl_DStringSetLength(&tsdPtr->errorMsg, 0);
     } else {
+	Tcl_DStringInit(&tsdPtr->errorMsg);
 	tsdPtr->initialized = 1;
     }
-    Tcl_WinTCharToUtf(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
+    Tcl_WCharToUtfDString(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
     return Tcl_DStringValue(&tsdPtr->errorMsg);
 }
 #endif
@@ -317,8 +318,8 @@ Tcl_OpenTcpServer(
     char portbuf[TCL_INTEGER_SPACE];
 
     TclFormatInt(portbuf, port);
-    return Tcl_OpenTcpServerEx(interp, portbuf, host, TCL_TCPSERVER_REUSEADDR,
-	    acceptProc, callbackData);
+    return Tcl_OpenTcpServerEx(interp, portbuf, host, -1,
+	    TCL_TCPSERVER_REUSEADDR, acceptProc, callbackData);
 }
 
 /*

@@ -36,21 +36,21 @@
  */
 
 typedef struct ChannelBuffer {
-    int refCount;		/* Current uses count */
-    int nextAdded;		/* The next position into which a character
+    Tcl_Size refCount;		/* Current uses count */
+    Tcl_Size nextAdded;		/* The next position into which a character
 				 * will be put in the buffer. */
-    int nextRemoved;		/* Position of next byte to be removed from
+    Tcl_Size nextRemoved;		/* Position of next byte to be removed from
 				 * the buffer. */
-    int bufLength;		/* How big is the buffer? */
+    Tcl_Size bufLength;		/* How big is the buffer? */
     struct ChannelBuffer *nextPtr;
     				/* Next buffer in chain. */
-    char buf[1];		/* Placeholder for real buffer. The real
+    char buf[TCLFLEXARRAY];		/* Placeholder for real buffer. The real
 				 * buffer occuppies this space + bufSize-1
 				 * bytes. This must be the last field in the
 				 * structure. */
 } ChannelBuffer;
 
-#define CHANNELBUFFER_HEADER_SIZE	TclOffset(ChannelBuffer, buf)
+#define CHANNELBUFFER_HEADER_SIZE	offsetof(ChannelBuffer, buf)
 
 /*
  * How much extra space to allocate in buffer to hold bytes from previous
@@ -96,7 +96,7 @@ typedef struct EventScriptRecord {
 
 typedef struct Channel {
     struct ChannelState *state; /* Split out state information */
-    ClientData instanceData;	/* Instance-specific data provided by creator
+    void *instanceData;	/* Instance-specific data provided by creator
 				 * of channel. */
     const Tcl_ChannelType *typePtr; /* Pointer to channel type structure. */
     struct Channel *downChanPtr;/* Refers to channel this one was stacked
@@ -113,7 +113,7 @@ typedef struct Channel {
     ChannelBuffer *inQueueHead;	/* Points at first buffer in input queue. */
     ChannelBuffer *inQueueTail;	/* Points at last buffer in input queue. */
 
-    int refCount;
+    Tcl_Size refCount;
 } Channel;
 
 /*
@@ -163,7 +163,7 @@ typedef struct ChannelState {
     int unreportedError;	/* Non-zero if an error report was deferred
 				 * because it happened in the background. The
 				 * value is the POSIX error code. */
-    int refCount;		/* How many interpreters hold references to
+    Tcl_Size refCount;		/* How many interpreters hold references to
 				 * this IO channel? */
     struct CloseCallback *closeCbPtr;
 				/* Callbacks registered to be called when the
@@ -186,7 +186,7 @@ typedef struct ChannelState {
     EventScriptRecord *scriptRecordPtr;
 				/* Chain of all scripts registered for event
 				 * handlers ("fileevent") on this channel. */
-    int bufSize;		/* What size buffers to allocate? */
+    Tcl_Size bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
     struct CopyState *csPtrR;	/* State of background copy for which channel
 				 * is input, or NULL. */
@@ -216,6 +216,8 @@ typedef struct ChannelState {
 				 * companion to 'unreportedError'. */
     size_t epoch;		/* Used to test validity of stored channelname
 				 * lookup results. */
+    int maxPerms;		/* TIP #220: Max access privileges
+				 * the channel was created with. */
 } ChannelState;
 
 /*
@@ -271,7 +273,10 @@ typedef struct ChannelState {
 					 * changes. */
 #define CHANNEL_RAW_MODE	(1<<16)	/* When set, notes that the Raw API is
 					 * being used. */
-
+#define CHANNEL_ENCODING_NOCOMPLAIN	(1<<17)	/* set if option
+					 * -nocomplainencoding is set to 1 */
+#define CHANNEL_ENCODING_STRICT	(1<<18)	/* set if option
+					 * -strictencoding is set to 1 */
 #define CHANNEL_INCLOSE		(1<<19)	/* Channel is currently being closed.
 					 * Its structures are still live and
 					 * usable, but it may not be closed

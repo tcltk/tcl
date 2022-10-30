@@ -4,8 +4,8 @@
  *	This file contains the DLL entry point and other low-level bit bashing
  *	code that needs inline assembly.
  *
- * Copyright (c) 1995-1996 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 Scriptics Corporation.
+ * Copyright © 1995-1996 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -23,17 +23,6 @@
  */
 
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
-static int platformId;		/* Running under NT, or 95/98? */
-
-/*
- * VC++ 5.x has no 'cpuid' assembler instruction, so we must emulate it
- */
-
-#if defined(_MSC_VER) && (_MSC_VER <= 1100)
-#define cpuid	__asm __emit 0fh __asm __emit 0a2h
-#endif
-
-static Tcl_Encoding winTCharEncoding = NULL;
 
 /*
  * The following declaration is for the VC++ DLL entry point.
@@ -49,8 +38,8 @@ BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
  */
 
 typedef struct MountPointMap {
-    TCHAR *volumeName;		/* Native wide string volume name. */
-    TCHAR driveLetter;		/* Drive letter corresponding to the volume
+    WCHAR *volumeName;		/* Native wide string volume name. */
+    WCHAR driveLetter;		/* Drive letter corresponding to the volume
 				 * name. */
     struct MountPointMap *nextPtr;
 				/* Pointer to next structure in list, or
@@ -93,7 +82,7 @@ BOOL APIENTRY
 DllEntryPoint(
     HINSTANCE hInst,		/* Library instance handle. */
     DWORD reason,		/* Reason this function is being called. */
-    LPVOID reserved)		/* Not used. */
+    LPVOID reserved)
 {
     return DllMain(hInst, reason, reserved);
 }
@@ -120,7 +109,7 @@ BOOL APIENTRY
 DllMain(
     HINSTANCE hInst,		/* Library instance handle. */
     DWORD reason,		/* Reason this function is being called. */
-    LPVOID reserved)		/* Not used. */
+    TCL_UNUSED(LPVOID))
 {
     switch (reason) {
     case DLL_PROCESS_ATTACH:
@@ -186,48 +175,15 @@ TclWinInit(
     hInstance = hInst;
     os.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
     GetVersionExW(&os);
-    platformId = os.dwPlatformId;
 
     /*
-     * We no longer support Win32s or Win9x, so just in case someone manages
-     * to get a runtime there, make sure they know that.
+     * We no longer support Win32s or Win9x or Windows CE or Windows XP, so just
+     * in case someone manages to get a runtime there, make sure they know that.
      */
 
-    if (platformId == VER_PLATFORM_WIN32s) {
-	Tcl_Panic("Win32s is not a supported platform");
+    if (os.dwPlatformId != VER_PLATFORM_WIN32_NT) {
+	Tcl_Panic("Windows 7 is the minimum supported platform");
     }
-    if (platformId == VER_PLATFORM_WIN32_WINDOWS) {
-	Tcl_Panic("Windows 9x is not a supported platform");
-    }
-
-    TclWinResetInterfaces();
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclWinGetPlatformId --
- *
- *	Determines whether running under NT, 95, or Win32s, to allow runtime
- *	conditional code.
- *
- * Results:
- *	The return value is one of:
- *	VER_PLATFORM_WIN32s	   Win32s on Windows 3.1 (not supported)
- *	VER_PLATFORM_WIN32_WINDOWS Win32 on Windows 95, 98, ME (not supported)
- *	VER_PLATFORM_WIN32_NT	Win32 on Windows NT, 2000, XP
- *	VER_PLATFORM_WIN32_CE	Win32 on Windows CE
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclWinGetPlatformId(void)
-{
-    return platformId;
 }
 
 /*
@@ -264,36 +220,10 @@ TclWinNoBackslash(
 /*
  *---------------------------------------------------------------------------
  *
- * TclpSetInterfaces --
- *
- *	A helper proc that initializes winTCharEncoding.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-
-void
-TclpSetInterfaces(void)
-{
-    TclWinResetInterfaces();
-    winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
-}
-
-/*
- *---------------------------------------------------------------------------
- *
  * TclWinEncodingsCleanup --
  *
- *	Called during finalization to free up any encodings we use.
- *
- *	We also clean up any memory allocated in our mount point map which is
- *	used to follow certain kinds of symlinks. That code should never be
- *	used once encodings are taken down.
+ *	Called during finalization to clean up any memory allocated in our
+ *	mount point map which is used to follow certain kinds of symlinks.
  *
  * Results:
  *	None.
@@ -309,8 +239,6 @@ TclWinEncodingsCleanup(void)
 {
     MountPointMap *dlIter, *dlIter2;
 
-    TclWinResetInterfaces();
-
     /*
      * Clean up the mount point map.
      */
@@ -324,30 +252,6 @@ TclWinEncodingsCleanup(void)
 	dlIter = dlIter2;
     }
     Tcl_MutexUnlock(&mountPointMap);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclWinResetInterfaces --
- *
- *	Called during finalization to reset us to a safe state for reuse.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-void
-TclWinResetInterfaces(void)
-{
-    if (winTCharEncoding != NULL) {
-	Tcl_FreeEncoding(winTCharEncoding);
-	winTCharEncoding = NULL;
-    }
 }
 
 /*
@@ -374,11 +278,11 @@ TclWinResetInterfaces(void)
 
 char
 TclWinDriveLetterForVolMountPoint(
-    const TCHAR *mountPoint)
+    const WCHAR *mountPoint)
 {
     MountPointMap *dlIter, *dlPtr2;
-    TCHAR Target[55];		/* Target of mount at mount point */
-    TCHAR drive[4] = TEXT("A:\\");
+    WCHAR Target[55];		/* Target of mount at mount point */
+    WCHAR drive[4] = L"A:\\";
 
     /*
      * Detect the volume mounted there. Unfortunately, there is no simple way
@@ -389,22 +293,22 @@ TclWinDriveLetterForVolMountPoint(
     Tcl_MutexLock(&mountPointMap);
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
-	if (_tcscmp(dlIter->volumeName, mountPoint) == 0) {
+	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
 	    /*
 	     * We need to check whether this information is still valid, since
 	     * either the user or various programs could have adjusted the
 	     * mount points on the fly.
 	     */
 
-	    drive[0] = (TCHAR) dlIter->driveLetter;
+	    drive[0] = (WCHAR) dlIter->driveLetter;
 
 	    /*
 	     * Try to read the volume mount point and see where it points.
 	     */
 
-	    if (GetVolumeNameForVolumeMountPoint(drive,
+	    if (GetVolumeNameForVolumeMountPointW(drive,
 		    Target, 55) != 0) {
-		if (_tcscmp(dlIter->volumeName, Target) == 0) {
+		if (wcscmp(dlIter->volumeName, Target) == 0) {
 		    /*
 		     * Nothing has changed.
 		     */
@@ -456,25 +360,25 @@ TclWinDriveLetterForVolMountPoint(
      * We couldn't find it, so we must iterate over the letters.
      */
 
-    for (drive[0] = L'A'; drive[0] <= L'Z'; drive[0]++) {
+    for (drive[0] = 'A'; drive[0] <= 'Z'; drive[0]++) {
 	/*
 	 * Try to read the volume mount point and see where it points.
 	 */
 
-	if (GetVolumeNameForVolumeMountPoint(drive,
+	if (GetVolumeNameForVolumeMountPointW(drive,
 		Target, 55) != 0) {
 	    int alreadyStored = 0;
 
 	    for (dlIter = driveLetterLookup; dlIter != NULL;
 		    dlIter = dlIter->nextPtr) {
-		if (_tcscmp(dlIter->volumeName, Target) == 0) {
+		if (wcscmp(dlIter->volumeName, Target) == 0) {
 		    alreadyStored = 1;
 		    break;
 		}
 	    }
 	    if (!alreadyStored) {
-		dlPtr2 = ckalloc(sizeof(MountPointMap));
-		dlPtr2->volumeName = TclNativeDupInternalRep(Target);
+		dlPtr2 = (MountPointMap *)ckalloc(sizeof(MountPointMap));
+		dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep(Target);
 		dlPtr2->driveLetter = (char) drive[0];
 		dlPtr2->nextPtr = driveLetterLookup;
 		driveLetterLookup = dlPtr2;
@@ -488,7 +392,7 @@ TclWinDriveLetterForVolMountPoint(
 
     for (dlIter = driveLetterLookup; dlIter != NULL;
 	    dlIter = dlIter->nextPtr) {
-	if (_tcscmp(dlIter->volumeName, mountPoint) == 0) {
+	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
 	    Tcl_MutexUnlock(&mountPointMap);
 	    return (char) dlIter->driveLetter;
 	}
@@ -499,8 +403,8 @@ TclWinDriveLetterForVolMountPoint(
      * that fact and store '-1' so we don't have to look it up each time.
      */
 
-    dlPtr2 = ckalloc(sizeof(MountPointMap));
-    dlPtr2->volumeName = TclNativeDupInternalRep((ClientData) mountPoint);
+    dlPtr2 = (MountPointMap *)ckalloc(sizeof(MountPointMap));
+    dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep((void *)mountPoint);
     dlPtr2->driveLetter = -1;
     dlPtr2->nextPtr = driveLetterLookup;
     driveLetterLookup = dlPtr2;
@@ -513,39 +417,32 @@ TclWinDriveLetterForVolMountPoint(
  *
  * Tcl_WinUtfToTChar, Tcl_WinTCharToUtf --
  *
- *	Convert between UTF-8 and Unicode when running Windows NT or the
- *	current ANSI code page when running Windows 95.
+ *	Convert between UTF-8 and Unicode when running Windows.
  *
- *	On Mac, Unix, and Windows 95, all strings exchanged between Tcl and
- *	the OS are "char" oriented. We need only one Tcl_Encoding to convert
- *	between UTF-8 and the system's native encoding. We use NULL to
- *	represent that encoding.
+ *	On Mac and Unix, all strings exchanged between Tcl and the OS are
+ *	"char" oriented. We need only one Tcl_Encoding to convert between
+ *	UTF-8 and the system's native encoding. We use NULL to represent
+ *	that encoding.
  *
- *	On NT, some strings exchanged between Tcl and the OS are "char"
+ *	On Windows, some strings exchanged between Tcl and the OS are "char"
  *	oriented, while others are in Unicode. We need two Tcl_Encoding APIs
  *	depending on whether we are targeting a "char" or Unicode interface.
  *
- *	Calling Tcl_UtfToExternal() or Tcl_ExternalToUtf() with an encoding of
- *	NULL should always used to convert between UTF-8 and the system's
+ *	Calling Tcl_UtfToExternal() or Tcl_ExternalToUtf() with an encoding
+ *	of NULL should always used to convert between UTF-8 and the system's
  *	"char" oriented encoding. The following two functions are used in
- *	Windows-specific code to convert between UTF-8 and Unicode strings
- *	(NT) or "char" strings(95). This saves you the trouble of writing the
+ *	Windows-specific code to convert between UTF-8 and Unicode strings.
+ *	This saves you the trouble of writing the
  *	following type of fragment over and over:
  *
- *		if (running NT) {
- *		    encoding <- Tcl_GetEncoding("unicode");
- *		    nativeBuffer <- UtfToExternal(encoding, utfBuffer);
- *		    Tcl_FreeEncoding(encoding);
- *		} else {
- *		    nativeBuffer <- UtfToExternal(NULL, utfBuffer);
- *		}
+ *		encoding <- Tcl_GetEncoding("unicode");
+ *		nativeBuffer <- UtfToExternal(encoding, utfBuffer);
+ *		Tcl_FreeEncoding(encoding);
  *
- *	By convention, in Windows a TCHAR is a character in the ANSI code page
- *	on Windows 95, a Unicode character on Windows NT. If you plan on
- *	targeting a Unicode interfaces when running on NT and a "char"
- *	oriented interface while running on 95, these functions should be
- *	used. If you plan on targetting the same "char" oriented function on
- *	both 95 and NT, use Tcl_UtfToExternal() with an encoding of NULL.
+ *	By convention, in Windows a WCHAR is a Unicode character. If you plan
+ *	on targeting a Unicode interface when running on Windows, these
+ *	functions should be used. If you plan on targetting a "char" oriented
+ *	function on Windows, use Tcl_UtfToExternal() with an encoding of NULL.
  *
  * Results:
  *	The result is a pointer to the string in the desired target encoding.
@@ -558,30 +455,32 @@ TclWinDriveLetterForVolMountPoint(
  *---------------------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#undef Tcl_WinUtfToTChar
 TCHAR *
 Tcl_WinUtfToTChar(
     const char *string,		/* Source string in UTF-8. */
-    int len,			/* Source string length in bytes, or < 0 for
+    int len,			/* Source string length in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    return (TCHAR *) Tcl_UtfToExternalDString(winTCharEncoding,
-	    string, len, dsPtr);
+    Tcl_DStringInit(dsPtr);
+    return (TCHAR *)Tcl_UtfToWCharDString(string, len, dsPtr);
 }
-
+#undef Tcl_WinTCharToUtf
 char *
 Tcl_WinTCharToUtf(
-    const TCHAR *string,	/* Source string in Unicode when running NT,
-				 * ANSI when running 95. */
-    int len,			/* Source string length in bytes, or < 0 for
+    const TCHAR *string,	/* Source string in Unicode. */
+    int len,			/* Source string length in bytes, or -1 for
 				 * platform-specific string length. */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    return Tcl_ExternalToUtfDString(winTCharEncoding,
-	    (const char *) string, len, dsPtr);
+    Tcl_DStringInit(dsPtr);
+    return Tcl_WCharToUtfDString((WCHAR *)string, len >> 1, dsPtr);
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 /*
  *------------------------------------------------------------------------
@@ -608,12 +507,12 @@ TclWinCPUID(
 {
     int status = TCL_ERROR;
 
-#if defined(HAVE_INTRIN_H) && defined(_WIN64)
+#if defined(HAVE_INTRIN_H) && defined(_WIN64) && defined(HAVE_CPUID)
 
-    __cpuid(regsPtr, index);
+    __cpuid((int *)regsPtr, index);
     status = TCL_OK;
 
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && defined(HAVE_CPUID)
 #   if defined(_WIN64)
     /*
      * Execute the CPUID instruction with the given index, and store results
@@ -632,7 +531,7 @@ TclWinCPUID(
 	"movl	%%eax,		0x0(%%edi)"	"\n\t"
 	"movl	%%ebx,		0x4(%%edi)"	"\n\t"
 	"movl	%%ecx,		0x8(%%edi)"	"\n\t"
-	"movl	%%edx,		0xc(%%edi)"	"\n\t"
+	"movl	%%edx,		0xC(%%edi)"	"\n\t"
 
 	:
 	/* No outputs */
@@ -664,7 +563,7 @@ TclWinCPUID(
 	"leal	1f,		%%eax"		"\n\t"
 	"movl	%%eax,		0x4(%%edx)"	"\n\t" /* handler */
 	"movl	%%ebp,		0x8(%%edx)"	"\n\t" /* ebp */
-	"movl	%%esp,		0xc(%%edx)"	"\n\t" /* esp */
+	"movl	%%esp,		0xC(%%edx)"	"\n\t" /* esp */
 	"movl	%[error],	0x10(%%edx)"	"\n\t" /* status */
 
 	/*
@@ -684,7 +583,7 @@ TclWinCPUID(
 	"movl	%%eax,		0x0(%%edi)"	"\n\t"
 	"movl	%%ebx,		0x4(%%edi)"	"\n\t"
 	"movl	%%ecx,		0x8(%%edi)"	"\n\t"
-	"movl	%%edx,		0xc(%%edi)"	"\n\t"
+	"movl	%%edx,		0xC(%%edi)"	"\n\t"
 
 	/*
 	 * Come here on a normal exit. Recover the TCLEXCEPTION_REGISTRATION and
@@ -711,7 +610,7 @@ TclWinCPUID(
 	 */
 
 	"2:"					"\t"
-	"movl	0xc(%%edx),	%%esp"		"\n\t"
+	"movl	0xC(%%edx),	%%esp"		"\n\t"
 	"movl	0x8(%%edx),	%%ebp"		"\n\t"
 	"movl	0x0(%%edx),	%%eax"		"\n\t"
 	"movl	%%eax,		%%fs:0"		"\n\t"
@@ -729,13 +628,13 @@ TclWinCPUID(
     status = registration.status;
 
 #   endif /* !_WIN64 */
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && defined(HAVE_CPUID)
 #   if defined(_WIN64)
 
     __cpuid(regsPtr, index);
     status = TCL_OK;
 
-#   else
+#   elif defined (_M_IX86)
     /*
      * Define a structure in the stack frame to hold the registers.
      */
@@ -784,6 +683,8 @@ TclWinCPUID(
 
 #   endif
 #else
+    (void)index;
+    (void)regsPtr;
     /*
      * Don't know how to do assembly code for this compiler and/or
      * architecture.

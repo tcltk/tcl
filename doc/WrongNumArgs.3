@@ -73,6 +73,12 @@ is now an \fIindexObject\fR because it was passed to
 .CS
 wrong # args: should be "foo barfly fileName count"
 .CE
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The \fIobjv\fR argument to \fBTcl_WrongNumArgs\fR should be the exact
+arguments passed to the command or method implementation function that is
+calling \fBTcl_WrongNumArgs\fR. As such, all values referenced in it should
+have reference counts greater than zero; this is usually a non-issue.
 .SH "SEE ALSO"
 Tcl_GetIndexFromObj(3)
 .SH KEYWORDS

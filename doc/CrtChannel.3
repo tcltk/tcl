@@ -35,6 +35,11 @@ Tcl_ThreadId
 int
 \fBTcl_GetChannelMode\fR(\fIchannel\fR)
 .sp
+.VS 8.7
+int
+\fBTcl_RemoveChannelMode\fR(\fIinterp, channel, mode\fR)
+.VE 8.7
+.sp
 int
 \fBTcl_GetChannelBufferSize\fR(\fIchannel\fR)
 .sp
@@ -243,6 +248,16 @@ events to the correct event queue even for a multi-threaded core.
 and \fBTCL_WRITABLE\fR, indicating whether the channel is open for input
 and output.
 .PP
+.VS 8.7
+.PP
+\fBTcl_RemoveChannelMode\fR removes an access privilege from the
+channel, either \fBTCL_READABLE\fR or \fBTCL_WRITABLE\fR, and returns
+a regular Tcl result code, \fBTCL_OK\fR, or \fBTCL_ERROR\fR. The
+function throws an error if either an invalid mode is specified or the
+result of the removal would be an inaccessible channel. In that case
+an error message is left in the interp argument, if not NULL.
+.VE 8.7
+.PP
 \fBTcl_GetChannelBufferSize\fR returns the size, in bytes, of buffers
 allocated to store input or output in \fIchannel\fR. If the value was not set
 by a previous call to \fBTcl_SetChannelBufferSize\fR, described below, then
@@ -259,7 +274,8 @@ outside this range, \fBTcl_SetChannelBufferSize\fR sets the buffer size to
 the generic layer that the events specified by \fImask\fR have
 occurred on the channel.  Channel drivers are responsible for invoking
 this function whenever the channel handlers need to be called for the
-channel.  See \fBWATCHPROC\fR below for more details.
+channel (or other pending tasks like a write flush should be performed).
+See \fBWATCHPROC\fR below for more details.
 .PP
 \fBTcl_BadChannelOption\fR is called from driver specific
 \fIsetOptionProc\fR or \fIgetOptionProc\fR to generate a complete
@@ -599,9 +615,9 @@ in preference to the \fIseekProc\fR, but both must be defined if the
 following prototype:
 .PP
 .CS
-typedef Tcl_WideInt \fBTcl_DriverWideSeekProc\fR(
+typedef long long \fBTcl_DriverWideSeekProc\fR(
         ClientData \fIinstanceData\fR,
-        Tcl_WideInt \fIoffset\fR,
+        long long \fIoffset\fR,
         int \fIseekMode\fR,
         int *\fIerrorCodePtr\fR);
 .CE
@@ -648,8 +664,8 @@ It should call \fBTcl_BadChannelOption\fR which itself returns
 unrecognized.
 If \fInewValue\fR specifies a value for the option that
 is not supported or if a system call error occurs,
-the function should leave an error message in the
-\fIresult\fR field of \fIinterp\fR if \fIinterp\fR is not NULL. The
+the function should leave an error message in the result
+of \fIinterp\fR if \fIinterp\fR is not NULL. The
 function should also call \fBTcl_SetErrno\fR to store an appropriate POSIX
 error code.
 .PP
@@ -823,7 +839,7 @@ length. It can be NULL.
 .CS
 typedef int \fBTcl_DriverTruncateProc\fR(
         ClientData \fIinstanceData\fR,
-        Tcl_WideInt \fIlength\fR);
+        long long \fIlength\fR);
 .CE
 .PP
 \fIInstanceData\fR is the same as the value passed to

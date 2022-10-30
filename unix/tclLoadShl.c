@@ -5,7 +5,7 @@
  *	the "shl_load" and "shl_findsym" library procedures for dynamic
  *	loading (e.g. for HP machines).
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -86,7 +86,7 @@ TclpDlopen(
 
 	Tcl_DString ds;
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
 	handle = shl_load(native, BIND_DEFERRED|BIND_VERBOSE|DYNAMIC_PATH, 0L);
 	Tcl_DStringFree(&ds);
     }
@@ -97,7 +97,7 @@ TclpDlopen(
 		fileName, Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)ckalloc(sizeof(*newHandle));
     newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = *unloadProcPtr = &UnloadFile;
@@ -128,7 +128,7 @@ FindSymbol(
     const char *symbol)
 {
     Tcl_DString newName;
-    Tcl_PackageInitProc *proc = NULL;
+    Tcl_LibraryInitProc *proc = NULL;
     shl_t handle = (shl_t) loadHandle->clientData;
 
     /*
@@ -140,7 +140,7 @@ FindSymbol(
 	    (void *) &proc) != 0) {
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
-	Tcl_DStringAppend(&newName, symbol, -1);
+	Tcl_DStringAppend(&newName, symbol, TCL_INDEX_NONE);
 	if (shl_findsym(&handle, Tcl_DStringValue(&newName),
 		(short) TYPE_PROCEDURE, (void *) &proc) != 0) {
 	    proc = NULL;
@@ -183,36 +183,6 @@ UnloadFile(
 
     shl_unload(handle);
     ckfree(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
-{
-    return 0;
 }
 
 /*

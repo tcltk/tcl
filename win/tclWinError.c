@@ -4,7 +4,7 @@
  *	This file contains code for converting from Win32 errors to errno
  *	errors.
  *
- * Copyright (c) 1995-1996 by Sun Microsystems, Inc.
+ * Copyright © 1995-1996 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -30,7 +30,7 @@ static const unsigned char errorTable[] = {
     ENOEXEC,	/* ERROR_BAD_FORMAT		11 */
     EACCES,	/* ERROR_INVALID_ACCESS		12 */
     EINVAL,	/* ERROR_INVALID_DATA		13 */
-    EFAULT,	/* ERROR_OUT_OF_MEMORY		14 */
+    ENOMEM,	/* ERROR_OUT_OF_MEMORY		14 */
     ENOENT,	/* ERROR_INVALID_DRIVE		15 */
     EACCES,	/* ERROR_CURRENT_DIRECTORY	16 */
     EXDEV,	/* ERROR_NOT_SAME_DEVICE	17 */
@@ -334,7 +334,7 @@ static const unsigned char wsaErrorTable[] = {
 /*
  *----------------------------------------------------------------------
  *
- * TclWinConvertError --
+ * Tcl_WinConvertError --
  *
  *	This routine converts a Win32 error into an errno value.
  *
@@ -348,8 +348,8 @@ static const unsigned char wsaErrorTable[] = {
  */
 
 void
-TclWinConvertError(
-    DWORD errCode)		/* Win32 error code. */
+Tcl_WinConvertError(
+    unsigned errCode)		/* Win32 error code. */
 {
     if (errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
 	errCode -= WSAEWOULDBLOCK;
@@ -391,21 +391,24 @@ tclWinDebugPanic(
 
     if (IsDebuggerPresent()) {
 	WCHAR msgString[TCL_MAX_WARN_LEN];
-	char buf[TCL_MAX_WARN_LEN * TCL_UTF_MAX];
+	char buf[TCL_MAX_WARN_LEN * 3];
 
 	vsnprintf(buf, sizeof(buf), format, argList);
-	msgString[TCL_MAX_WARN_LEN-1] = L'\0';
+	msgString[TCL_MAX_WARN_LEN-1] = '\0';
 	MultiByteToWideChar(CP_UTF8, 0, buf, -1, msgString, TCL_MAX_WARN_LEN);
 
 	/*
 	 * Truncate MessageBox string if it is too long to not overflow the buffer.
 	 */
 
-	if (msgString[TCL_MAX_WARN_LEN-1] != L'\0') {
+	if (msgString[TCL_MAX_WARN_LEN-1] != '\0') {
 	    memcpy(msgString + (TCL_MAX_WARN_LEN - 5), L" ...", 5 * sizeof(WCHAR));
 	}
 	OutputDebugStringW(msgString);
     } else {
+	if (!isatty(fileno(stderr))) {
+	    fprintf(stderr, "\xEF\xBB\xBF");
+	}
 	vfprintf(stderr, format, argList);
 	fprintf(stderr, "\n");
 	fflush(stderr);

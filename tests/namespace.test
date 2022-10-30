@@ -6,18 +6,20 @@
 # Sourcing this file into Tcl runs the tests and generates output for errors.
 # No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-2000 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-2000 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2
-namespace import -force ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 testConstraint memory [llength [info commands memory]]
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 #
 # REMARK: the tests for 'namespace upvar' are not done here. They are to be
@@ -179,22 +181,97 @@ test namespace-7.6 {recursive Tcl_DeleteNamespace, no active call frames in ns} 
     namespace delete test_ns_2
 } {}
 test namespace-7.7 {Bug 1655305} -setup {
-    interp create slave
-    # Can't invoke through the ensemble, since deleting the global namespace
-    # (indirectly, via deleting ::tcl) deletes the ensemble.
-    slave eval {rename ::tcl::info::commands ::infocommands}
-    slave hide infocommands
-    slave eval {
+    interp create child
+    # Can't invoke through the ensemble, since deleting ::tcl
+    # (indirectly, via deleting the global namespace) deletes the ensemble.
+    child eval {rename ::tcl::info::commands ::infocommands}
+    child hide infocommands
+    child eval {
 	proc foo {} {
 	    namespace delete ::
 	}
     }
 } -body {
-    slave eval foo
-    slave invokehidden infocommands
+    child eval foo
+    child invokehidden infocommands
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result {}
+
+test namespace-7.8 {Bug ba1419303b4c} -setup {
+    namespace eval ns1 {
+	namespace ensemble create
+    }
+
+    trace add command ns1 delete {
+	namespace delete ns1
+    }
+} -body {
+    # No segmentation fault given --enable-symbols.
+    namespace delete ns1
+} -result {}
+
+
+test namespace-7.9 {
+	Bug e39cb3f462631a99
+
+	A namespace being deleted should not be removed from other namespace paths
+	until the contents of the namespace are entirely removed.
+} -setup {
+
+
+
+
+} -body {
+
+	variable res {}
+
+
+	namespace eval ns1 {
+		proc p1 caller {
+			lappend [namespace parent]::res $caller
+		}
+	}
+
+
+	namespace eval ns1a {
+		namespace path [namespace parent]::ns1
+
+		proc t1 {old new op} {
+			$old t1
+		}
+	}
+
+	namespace eval ns2 {
+		proc p1 caller {
+			lappend [namespace parent]::res $caller
+		}
+	}
+
+	namespace eval ns2a {
+		namespace path [namespace parent]::ns2
+
+		proc t1 {old new op} {
+			[namespace tail $old] t2
+		}
+	}
+
+
+	trace add command ns1::p1 delete ns1a::t1
+	namespace delete ns1
+
+	trace add command ns2::p1 delete ns2a::t1
+	namespace delete ns2
+
+	return $res
+
+} -cleanup {
+	namespace delete ns1a
+	namespace delete ns2a
+	unset res
+} -result {t1 t2}
+
+
 
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
     catch {interp delete test_interp}
@@ -256,28 +333,28 @@ test namespace-8.4 {TclTeardownNamespace, cmds imported from deleted ns go away}
          [info commands test_ns_import::*]
 } [list [lsort {::test_ns_import::p ::test_ns_import::cmd1 ::test_ns_import::cmd2}] {} ::test_ns_import::p]
 test namespace-8.5 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
-    interp create slave
-    slave eval {trace add execution error leave {namespace delete :: ;#}}
-    catch {slave eval error foo bar baz}
-    interp delete slave
+    interp create child
+    child eval {trace add execution error leave {namespace delete :: ;#}}
+    catch {child eval error foo bar baz}
+    interp delete child
     set ::errorInfo
 } {bar
     invoked from within
-"slave eval error foo bar baz"}
+"child eval error foo bar baz"}
 test namespace-8.6 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
-    interp create slave
-    slave eval {trace add variable errorCode write {namespace delete :: ;#}}
-    catch {slave eval error foo bar baz}
-    interp delete slave
+    interp create child
+    child eval {trace add variable errorCode write {namespace delete :: ;#}}
+    catch {child eval error foo bar baz}
+    interp delete child
     set ::errorInfo
 } {bar
     invoked from within
-"slave eval error foo bar baz"}
+"child eval error foo bar baz"}
 test namespace-8.7 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
-    interp create slave
-    slave eval {trace add execution error leave {namespace delete :: ;#}}
-    catch {slave eval error foo bar baz}
-    interp delete slave
+    interp create child
+    child eval {trace add execution error leave {namespace delete :: ;#}}
+    catch {child eval error foo bar baz}
+    interp delete child
     set ::errorCode
 } baz
 
@@ -1785,7 +1862,10 @@ test namespace-42.7 {ensembles: nested} -body {
 } -cleanup {
     namespace delete ns
 } -result {{1 ::ns::x0::z} 1 2 3}
-test namespace-42.8 {ensembles: [Bug 1670091]} -setup {
+test namespace-42.8 {
+    ensembles: [Bug 1670091], panic due to pointer to a deallocated List
+    struct.
+} -setup {
     proc demo args {}
     variable target [list [namespace which demo] x]
     proc trial args {variable target; string length $target}
@@ -1799,6 +1879,52 @@ test namespace-42.8 {ensembles: [Bug 1670091]} -setup {
     rename trial {}
     rename foo {}
 } -result {}
+
+test namespace-42.9 {
+    ensembles: [Bug 4f6a1ebd64], segmentation fault due to pointer to a
+    deallocated List struct.
+} -setup {
+    namespace eval n {namespace ensemble create}
+    set lst [dict create one ::two]
+    namespace ensemble configure n -subcommands $lst -map $lst
+} -body {
+    n one
+} -cleanup {
+    namespace delete n
+    unset -nocomplain lst
+} -returnCodes error -match glob -result {invalid command name*}
+
+test namespace-42.10 {
+    ensembles: [Bug 4f6a1ebd64] segmentation fault due to pointer to a
+    deallocated List struct (this time with duplicate of one in "dict").
+} -setup {
+    namespace eval n {namespace ensemble create}
+    set lst [list one ::two one ::three]
+    namespace ensemble configure n -subcommands $lst -map $lst
+} -body {
+    n one
+} -cleanup {
+    namespace delete n
+    unset -nocomplain lst
+} -returnCodes error -match glob -result {invalid command name *three*}
+
+
+test namespace-42.11 {
+	ensembles: prefix matching segmentation fault
+
+	issue ccc448a6bfd59cbd
+} -body {
+    namespace eval n1 {
+        namespace ensemble create
+        namespace export *
+        proc p1 args {error success}
+    }
+    # segmentation fault only occurs in the non-byte-compiled path, so avoid
+    # byte compilation
+    set cmd {namespace eva n1 {[namespace parent]::n1 p1}}
+    {*}$cmd
+} -returnCodes error -result success
+
 
 test namespace-43.1 {ensembles: dict-driven} {
     namespace eval ns {
@@ -1920,7 +2046,7 @@ test namespace-44.5 {ensemble: errors} -setup {
     foobar foobarcon
 } -cleanup {
     rename foobar {}
-} -returnCodes error -result {invalid command name "::foobarconfigure"}
+} -returnCodes error -result {invalid command name "foobarconfigure"}
 test namespace-44.6 {ensemble: errors} -returnCodes error -body {
     namespace ensemble create gorp
 } -result {wrong # args: should be "namespace ensemble create ?option value ...?"}
@@ -2580,6 +2706,7 @@ test namespace-51.6 {name resolution path control} -body {
     namespace delete ::test_ns_1
     catch {rename ::pathtestB {}}
     catch {rename ::pathtestD {}}
+    catch {rename ::pathtestC {}}
 }
 test namespace-51.7 {name resolution path control} -body {
     namespace eval ::test_ns_1 {
@@ -2676,7 +2803,11 @@ test namespace-51.12 {name resolution path control} -body {
     catch {namespace delete ::test_ns_3}
     catch {namespace delete ::test_ns_4}
 }
-test namespace-51.13 {name resolution path control} -body {
+test namespace-51.13 {
+    name resolution path control
+    when the trace fires, ns_2 is being deleted but isn't gone yet, and is
+    still visible for the trace
+} -body {
     set ::result {}
     namespace eval ::test_ns_1 {
 	proc foo {} {lappend ::result 1}
@@ -2699,8 +2830,7 @@ test namespace-51.13 {name resolution path control} -body {
 	}
 	bar
     }
-    # Should the result be "2 {} {2 3 2 1}" instead?
-} -result {2 {} {2 3 1 1}} -cleanup {
+} -result {2 {} {2 3 2 1}} -cleanup {
     catch {namespace delete ::test_ns_1}
     catch {namespace delete ::test_ns_2}
     catch {namespace delete ::test_ns_3}
@@ -2752,9 +2882,9 @@ test namespace-51.15 {namespace resolution path control} -body {
     namespace delete ::test_ns_2
 }
 test namespace-51.16 {Bug 1566526} {
-    interp create slave
-    slave eval namespace eval demo namespace path ::
-    interp delete slave
+    interp create child
+    child eval namespace eval demo namespace path ::
+    interp delete child
 } {}
 test namespace-51.17 {resolution epoch handling: Bug 2898722} -setup {
     set result {}
@@ -2955,19 +3085,19 @@ test namespace-52.11 {unknown: with TCL_EVAL_INVOKE} -setup {
 	}
     }
     catch {rename ::noSuchCommand {}}
-    set ::slave [interp create]
+    set ::child [interp create]
 } -body {
-    $::slave alias bar noSuchCommand
+    $::child alias bar noSuchCommand
     namespace eval test_ns_1 {
 	namespace unknown unknown
 	proc unknown args {
 	    return FAIL
 	}
-	$::slave eval bar
+	$::child eval bar
     }
 } -cleanup {
-    interp delete $::slave
-    unset ::slave
+    interp delete $::child
+    unset ::child
     namespace delete test_ns_1
     rename ::unknown {}
     rename unknown.save ::unknown
@@ -3267,6 +3397,111 @@ test namespace-56.3 {bug f97d4ee020: mutually-entangled deletion} {
 	}
     }
 } {::testing::abc::def ::testing::abc::ghi}
+
+test namespace-56.4 {bug 16fe1b5807: names starting with ":"} knownBug {
+namespace eval : {
+    namespace ensemble create
+    namespace export *
+    proc p1 {} {
+	    return 16fe1b5807
+    }
+}
+
+: p1
+} 16fe1b5807
+
+test namespace-56.5 {Bug 8b9854c3d8} -setup {
+    namespace eval namespace-56.5 {
+	proc cmd {} {string match ::* [lindex [[string cat info] level 0] 0]}
+	namespace export *
+	namespace ensemble create
+    }
+} -body {
+    namespace-56.5 cmd
+} -cleanup {
+    namespace delete namespace-56.5
+} -result 1
+
+
+test namespace-56.6 {
+	Namespace deletion traces on both the original routine and the imported
+	routine should run without any memory error under a debug build.
+} -body {
+	variable res {}
+
+	proc ondelete {old new op} {
+	    variable res
+	    set tail [namespace tail $old]
+	    set up [namespace tail [namespace qualifiers $old]]
+	    lappend res [list $up $tail]
+	}
+
+
+	namespace eval ns1 {} {
+		namespace export *
+		proc p1 {} {
+			namespace upvar [namespace parent] res res
+			incr res
+		}
+		trace add command p1 delete ondelete
+	}
+
+	namespace eval ns2 {} {
+		namespace import [namespace parent]::ns1::p1
+		trace add command p1 delete ondelete
+	}
+
+	namespace delete ns1
+	namespace delete ns2
+	after 1
+	return $res
+} -cleanup {
+	unset res
+	rename ondelete {}
+} -result {{ns1 p1} {ns2 p1}}
+
+
+test namespace-57.0 {
+    an imported alias should be usable in the deletion trace for the alias
+
+    see 29e8848eb976
+} -body {
+    variable res {}
+    namespace eval ns2 {
+	namespace export *
+	proc p1 {oldname newname op} {
+	    return success
+	}
+
+	interp alias {} [namespace current]::p2 {} [namespace which p1]
+    }
+
+
+    namespace eval ns3 {
+	namespace import ::ns2::p2
+    }
+
+
+    set ondelete [list apply [list {oldname newname op} {
+	variable res
+	catch {
+		ns3::p2 $oldname $newname $op
+	} cres
+	lappend res $cres
+    } [namespace current]]]
+
+
+    trace add command ::ns2::p2 delete $ondelete
+    rename ns2::p2 {}
+    return $res
+} -cleanup {
+    unset res
+    namespace delete ns2
+    namespace delete ns3
+} -result success
+
+
+
 
 # cleanup
 catch {rename cmd1 {}}

@@ -4,7 +4,7 @@
  * Mostly for implementation of backward-compatibility kludges. Note that
  * these routines exist ONLY in char versions.
  *
- * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics

@@ -6,25 +6,20 @@
 # "compExpr.test". Sourcing this file into Tcl runs the tests and generates
 # output for errors. No output means no errors were found.
 #
-# Copyright (c) 1996-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1996-1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
-::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
 
-if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
-    testConstraint testmathfunctions 0
-} else {
-    testConstraint testmathfunctions 1
-}
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Big test for correct ordering of data in [expr]
 
@@ -34,9 +29,9 @@ proc testIEEE {} {
     switch -exact -- $c {
 	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
 	    # little endian
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\xFF d \
 		ieeeValues(-Infinity)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\xBF d \
 		ieeeValues(-Normal)
 	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
 		ieeeValues(-Subnormal)
@@ -46,19 +41,19 @@ proc testIEEE {} {
 		ieeeValues(+0)
 	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
 		ieeeValues(+Subnormal)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\x3F d \
 		ieeeValues(+Normal)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\x7F d \
 		ieeeValues(+Infinity)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF8\x7F d \
 		ieeeValues(NaN)
 	    set ieeeValues(littleEndian) 1
 	    return 1
 	}
 	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
-	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \xFF\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Infinity)
-	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \xBF\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Normal)
 	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Subnormal)
@@ -68,11 +63,11 @@ proc testIEEE {} {
 		ieeeValues(+0)
 	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Subnormal)
-	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x3F\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Normal)
-	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x7F\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Infinity)
-	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x7F\xF8\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(NaN)
 	    set ieeeValues(littleEndian) 0
 	    return 1
@@ -84,8 +79,8 @@ proc testIEEE {} {
 }
 testConstraint ieeeFloatingPoint [testIEEE]
 
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
-testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 # procedures used below
 
@@ -285,10 +280,10 @@ test compExpr-old-6.8 {CompileBitXorExpr: error compiling bitxor arm} -body {
 } -returnCodes error -match glob -result *
 test compExpr-old-6.9 {CompileBitXorExpr: runtime error in bitxor arm} {
     list [catch {expr {24.0^3}} msg] $msg
-} {1 {can't use floating-point value as operand of "^"}}
+} {1 {can't use floating-point value "24.0" as operand of "^"}}
 test compExpr-old-6.10 {CompileBitXorExpr: runtime error in bitxor arm} {
     list [catch {expr {"a"^"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "^"}}
+} {1 {can't use non-numeric string "a" as operand of "^"}}
 
 test compExpr-old-7.1 {CompileBitAndExpr: just equality expr} {expr 3==2} 0
 test compExpr-old-7.2 {CompileBitAndExpr: just equality expr} {expr 2.0==2} 1
@@ -309,10 +304,10 @@ test compExpr-old-7.11 {CompileBitAndExpr: error compiling bitand arm} -body {
 } -returnCodes error -match glob -result *
 test compExpr-old-7.12 {CompileBitAndExpr: runtime error in bitand arm} {
     list [catch {expr {24.0&3}} msg] $msg
-} {1 {can't use floating-point value as operand of "&"}}
+} {1 {can't use floating-point value "24.0" as operand of "&"}}
 test compExpr-old-7.13 {CompileBitAndExpr: runtime error in bitand arm} {
     list [catch {expr {"a"&"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "&"}}
+} {1 {can't use non-numeric string "a" as operand of "&"}}
 
 test compExpr-old-8.1 {CompileEqualityExpr: just relational expr} {expr 3>=2} 1
 test compExpr-old-8.2 {CompileEqualityExpr: just relational expr} {expr 2<=2.1} 1
@@ -337,16 +332,9 @@ test compExpr-old-9.1 {CompileRelationalExpr: just shift expr} {expr 3<<2} 12
 test compExpr-old-9.2 {CompileRelationalExpr: just shift expr} {expr 0xff>>2} 63
 test compExpr-old-9.3 {CompileRelationalExpr: just shift expr} {expr -1>>2} -1
 test compExpr-old-9.4 {CompileRelationalExpr: just shift expr} {expr {1<<3}} 8
-
-# The following test is different for 32-bit versus 64-bit
-# architectures because LONG_MIN is different
-
-test compExpr-old-9.5a {CompileRelationalExpr: shift expr producing LONG_MIN} longIs64bit {
+test compExpr-old-9.5 {CompileRelationalExpr: large shift expr} {
     expr {int(1<<63)}
-} -9223372036854775808
-test compExpr-old-9.5b {CompileRelationalExpr: shift expr producing LONG_MIN} longIs32bit {
-    expr {int(1<<31)}
-} -2147483648
+} 9223372036854775808
 
 test compExpr-old-9.6 {CompileRelationalExpr: error in shift expr} -body {
     expr x>>3
@@ -377,10 +365,10 @@ test compExpr-old-10.9 {CompileShiftExpr: error compiling shift arm} -body {
 } -returnCodes error -match glob -result *
 test compExpr-old-10.10 {CompileShiftExpr: runtime error} {
     list [catch {expr {24.0>>43}} msg] $msg
-} {1 {can't use floating-point value as operand of ">>"}}
+} {1 {can't use floating-point value "24.0" as operand of ">>"}}
 test compExpr-old-10.11 {CompileShiftExpr: runtime error} {
     list [catch {expr {"a"<<"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "<<"}}
+} {1 {can't use non-numeric string "a" as operand of "<<"}}
 
 test compExpr-old-11.1 {CompileAddExpr: just multiply expr} {expr 4*-2} -8
 test compExpr-old-11.2 {CompileAddExpr: just multiply expr} {expr 0xff%2} 1
@@ -399,10 +387,10 @@ test compExpr-old-11.9 {CompileAddExpr: error compiling add arm} -body {
 } -returnCodes error -match glob -result *
 test compExpr-old-11.10 {CompileAddExpr: runtime error} {
     list [catch {expr {24.0+"xx"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "+"}}
+} {1 {can't use non-numeric string "xx" as operand of "+"}}
 test compExpr-old-11.11 {CompileAddExpr: runtime error} {
     list [catch {expr {"a"-"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "-"}}
+} {1 {can't use non-numeric string "a" as operand of "-"}}
 test compExpr-old-11.12 {CompileAddExpr: runtime error} {
     list [catch {expr {3/0}} msg] $msg
 } {1 {divide by zero}}
@@ -430,10 +418,10 @@ test compExpr-old-12.9 {CompileMultiplyExpr: error compiling multiply arm} -body
 } -returnCodes error -match glob -result *
 test compExpr-old-12.10 {CompileMultiplyExpr: runtime error} {
     list [catch {expr {24.0*"xx"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "*"}}
+} {1 {can't use non-numeric string "xx" as operand of "*"}}
 test compExpr-old-12.11 {CompileMultiplyExpr: runtime error} {
     list [catch {expr {"a"/"b"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "/"}}
+} {1 {can't use non-numeric string "a" as operand of "/"}}
 
 test compExpr-old-13.1 {CompileUnaryExpr: unary exprs} {expr -0xff} -255
 test compExpr-old-13.2 {CompileUnaryExpr: unary exprs} {expr +0o00123} 83
@@ -451,10 +439,10 @@ test compExpr-old-13.9 {CompileUnaryExpr: error compiling unary expr} -body {
 } -returnCodes error -match glob -result *
 test compExpr-old-13.10 {CompileUnaryExpr: runtime error} {
     list [catch {expr {~"xx"}} msg] $msg
-} {1 {can't use non-numeric string as operand of "~"}}
+} {1 {can't use non-numeric string "xx" as operand of "~"}}
 test compExpr-old-13.11 {CompileUnaryExpr: runtime error} {
     list [catch {expr ~4.0} msg] $msg
-} {1 {can't use floating-point value as operand of "~"}}
+} {1 {can't use floating-point value "4.0" as operand of "~"}}
 test compExpr-old-13.12 {CompileUnaryExpr: just primary expr} {expr 0x123} 291
 test compExpr-old-13.13 {CompileUnaryExpr: just primary expr} {
     set a 27
@@ -590,33 +578,18 @@ test compExpr-old-15.3 {CompileMathFuncCall: too many arguments} -body {
 test compExpr-old-15.4 {CompileMathFuncCall: ')' found before last required arg} -body {
     catch {expr sin()} msg
     set ::errorInfo
-} -match glob -result {too few arguments for math function*
+} -match glob -result {not enough arguments for math function*
     while *ing
 "expr sin()"}
-test compExpr-old-15.5 {CompileMathFuncCall: too few arguments} -body {
+test compExpr-old-15.5 {CompileMathFuncCall: not enough arguments} -body {
     catch {expr pow(1)} msg
     set ::errorInfo
-} -match glob -result {too few arguments for math function*
+} -match glob -result {not enough arguments for math function*
     while *ing
 "expr pow(1)"}
 test compExpr-old-15.6 {CompileMathFuncCall: missing ')'} -body {
     expr sin(1
 } -returnCodes error -match glob -result *
-test compExpr-old-15.7 {CompileMathFuncCall: call registered math function} testmathfunctions {
-    expr 2*T1()
-} 246
-test compExpr-old-15.8 {CompileMathFuncCall: call registered math function} testmathfunctions {
-    expr T2()*3
-} 1035
-test compExpr-old-15.9 {CompileMathFuncCall: call registered math function} testmathfunctions {
-    expr T3(21, 37)
-} 37
-test compExpr-old-15.10 {CompileMathFuncCall: call registered math function} testmathfunctions {
-    expr T3(21.2, 37)
-} 37.0
-test compExpr-old-15.11 {CompileMathFuncCall: call registered math function} testmathfunctions {
-    expr T3(-21.2, -17.5)
-} -17.5
 
 test compExpr-old-16.1 {GetToken: checks whether integer token starting with "0x" (e.g., "0x$") is invalid} {
     catch {unset a}

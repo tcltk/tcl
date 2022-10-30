@@ -322,6 +322,19 @@ invocation (usually \fBfconfigure\fR or \fBchan configure\fR) will appear to
 have thrown this error. Any exception beyond \fBerror\fR (e.g.,\ \fBbreak\fR,
 etc.) is treated as and converted to an error.
 .RE
+.TP
+\fIcmdPrefix \fBtruncate\fR \fIchannelId length\fR
+.
+This \fIoptional\fR subcommand handles changing the length of the
+underlying data stream for the channel \fIchannelId\fR. Its length
+gets set to \fIlength\fR.
+.RS
+.PP
+If the subcommand throws an error the command which caused its
+invocation (usually \fBchan truncate\fR) will appear to have thrown
+this error. Any exception beyond \fBerror\fR (e.g.,\ \fBbreak\fR,
+etc.) is treated as and converted to an error.
+.RE
 .SH NOTES
 Some of the functions supported in channels defined in Tcl's C
 interface are not available to channels reflected to the Tcl level.

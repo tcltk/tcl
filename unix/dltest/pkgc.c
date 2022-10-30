@@ -5,7 +5,7 @@
  *	testing the Tcl dynamic loading facilities. It can be used in both
  *	safe and unsafe interpreters.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
+ * Copyright © 1995 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,15 +14,6 @@
 #undef STATIC_BUILD
 #include "tcl.h"
 
-/*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    Pkgc_SubObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkgc_UnsafeObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-
 /*
  *----------------------------------------------------------------------
  *
@@ -42,12 +33,13 @@ static int    Pkgc_UnsafeObjCmd(ClientData clientData,
 
 static int
 Pkgc_SubObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int first, second;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "num num");
@@ -80,11 +72,15 @@ Pkgc_SubObjCmd(
 
 static int
 Pkgc_UnsafeObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+    (void)objc;
+    (void)objv;
+
     Tcl_SetObjResult(interp, Tcl_NewStringObj("unsafe command invoked", -1));
     return TCL_OK;
 }
@@ -116,7 +112,7 @@ Pkgc_Init(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgc", "1.7.2");
+    code = Tcl_PkgProvide(interp, "pkgc", "1.7.2");
     if (code != TCL_OK) {
 	return code;
     }
@@ -153,7 +149,7 @@ Pkgc_SafeInit(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgc", "1.7.2");
+    code = Tcl_PkgProvide(interp, "pkgc", "1.7.2");
     if (code != TCL_OK) {
 	return code;
     }

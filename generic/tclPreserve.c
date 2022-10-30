@@ -5,8 +5,8 @@
  *	sure that widget records and other data structures aren't reallocated
  *	when there are nested functions that depend on their existence.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1998 Sun Microsystems, Inc.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -83,7 +83,6 @@ typedef struct HandleStruct {
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 void
 TclFinalizePreserve(void)
 {
@@ -144,7 +143,7 @@ Tcl_Preserve(
 
     if (inUse == spaceAvl) {
 	spaceAvl = spaceAvl ? 2*spaceAvl : INITIAL_SIZE;
-	refArray = ckrealloc(refArray, spaceAvl * sizeof(Reference));
+	refArray = (Reference *)ckrealloc(refArray, spaceAvl * sizeof(Reference));
     }
 
     /*
@@ -226,7 +225,7 @@ Tcl_Release(
 	    if (freeProc == TCL_DYNAMIC) {
 		ckfree(clientData);
 	    } else {
-		freeProc(clientData);
+		freeProc((char *)clientData);
 	    }
 	}
 	return;
@@ -293,7 +292,7 @@ Tcl_EventuallyFree(
     if (freeProc == TCL_DYNAMIC) {
 	ckfree(clientData);
     } else {
-	freeProc(clientData);
+	freeProc((char *)clientData);
     }
 }
 
@@ -327,7 +326,7 @@ TclHandleCreate(
 				 * be tracked for deletion. Must not be
 				 * NULL. */
 {
-    HandleStruct *handlePtr = ckalloc(sizeof(HandleStruct));
+    HandleStruct *handlePtr = (HandleStruct *)ckalloc(sizeof(HandleStruct));
 
     handlePtr->ptr = ptr;
 #ifdef TCL_MEM_DEBUG

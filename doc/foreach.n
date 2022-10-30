@@ -102,3 +102,7 @@ for(n), while(n), break(n), continue(n)
 
 .SH KEYWORDS
 foreach, iteration, list, loop
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

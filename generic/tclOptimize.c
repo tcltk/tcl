@@ -3,7 +3,7 @@
  *
  *	This file contains the bytecode optimizer.
  *
- * Copyright (c) 2013 by Donal Fellows.
+ * Copyright © 2013 Donal Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -34,7 +34,7 @@ static void		TrimUnreachable(CompileEnv *envPtr);
 #define AddrLength(address) \
     (tclInstructionTable[*(unsigned char *)(address)].numBytes)
 #define InstLength(instruction) \
-    (tclInstructionTable[(unsigned char)(instruction)].numBytes)
+    (tclInstructionTable[UCHAR(instruction)].numBytes)
 
 /*
  * ----------------------------------------------------------------------
@@ -429,9 +429,9 @@ void
 TclOptimizeBytecode(
     void *envPtr)
 {
-    ConvertZeroEffectToNOP(envPtr);
-    AdvanceJumps(envPtr);
-    TrimUnreachable(envPtr);
+    ConvertZeroEffectToNOP((CompileEnv *)envPtr);
+    AdvanceJumps((CompileEnv *)envPtr);
+    TrimUnreachable((CompileEnv *)envPtr);
 }
 
 /*

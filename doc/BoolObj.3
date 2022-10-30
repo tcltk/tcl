@@ -9,21 +9,24 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewBooleanObj, Tcl_SetBooleanObj, Tcl_GetBooleanFromObj \- store/retrieve boolean value in a Tcl_Obj
+Tcl_NewBooleanObj, Tcl_SetBooleanObj, Tcl_GetBooleanFromObj, Tcl_GetBoolFromObj \- store/retrieve boolean value in a Tcl_Obj
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
 Tcl_Obj *
-\fBTcl_NewBooleanObj\fR(\fIboolValue\fR)
+\fBTcl_NewBooleanObj\fR(\fIintValue\fR)
 .sp
-\fBTcl_SetBooleanObj\fR(\fIobjPtr, boolValue\fR)
+\fBTcl_SetBooleanObj\fR(\fIobjPtr, intValue\fR)
 .sp
 int
 \fBTcl_GetBooleanFromObj\fR(\fIinterp, objPtr, boolPtr\fR)
+.sp
+int
+\fBTcl_GetBoolFromObj\fR(\fIinterp, objPtr, flags. charPtr\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp boolValue in/out
-.AP int boolValue in
+.AS Tcl_Interp intValue in/out
+.AP int intValue in
 Integer value to be stored as a boolean value in a Tcl_Obj.
 .AP Tcl_Obj *objPtr in/out
 Points to the Tcl_Obj in which to store, or from which to
@@ -32,29 +35,36 @@ retrieve a boolean value.
 If a boolean value cannot be retrieved,
 an error message is left in the interpreter's result value
 unless \fIinterp\fR is NULL.
-.AP int *boolPtr out
+.AP "bool \&| int" *boolPtr out
 Points to place where \fBTcl_GetBooleanFromObj\fR
 stores the boolean value (0 or 1) obtained from \fIobjPtr\fR.
+.AP char *charPtr out
+Points to place where \fBTcl_GetBoolFromObj\fR
+stores the boolean value (0 or 1) obtained from \fIobjPtr\fR.
+.AP int flags in
+0 or TCL_NULL_OK. If TCL_NULL_OK
+is used, then the empty string or NULL will result in \fBTcl_GetBoolFromObj\fR
+return TCL_OK, the *charPtr filled with the value \fB'\exFF'\fR;
 .BE
 
 .SH DESCRIPTION
 .PP
 These procedures are used to pass boolean values to and from
 Tcl as Tcl_Obj's.  When storing a boolean value into a Tcl_Obj,
-any non-zero integer value in \fIboolValue\fR is taken to be
+any non-zero integer value in \fIintValue\fR is taken to be
 the boolean value \fB1\fR, and the integer value \fB0\fR is
 taken to be the boolean value \fB0\fR.
 .PP
 \fBTcl_NewBooleanObj\fR creates a new Tcl_Obj, stores the boolean
-value \fIboolValue\fR in it, and returns a pointer to the new Tcl_Obj.
+value \fIintValue\fR in it, and returns a pointer to the new Tcl_Obj.
 The new Tcl_Obj has reference count of zero.
 .PP
 \fBTcl_SetBooleanObj\fR accepts \fIobjPtr\fR, a pointer to
 an existing Tcl_Obj, and stores in the Tcl_Obj \fI*objPtr\fR
-the boolean value \fIboolValue\fR.  This is a write operation
+the boolean value \fIintValue\fR.  This is a write operation
 on \fI*objPtr\fR, so \fIobjPtr\fR must be unshared.  Attempts to
 write to a shared Tcl_Obj will panic.  A successful write
-of \fIboolValue\fR into \fI*objPtr\fR implies the freeing of
+of \fIintValue\fR into \fI*objPtr\fR implies the freeing of
 any former value stored in \fI*objPtr\fR.
 .PP
 \fBTcl_GetBooleanFromObj\fR attempts to retrieve a boolean value
@@ -76,6 +86,11 @@ fields of \fI*objPtr\fR so that future calls to
 \fBTcl_GetBooleanFromObj\fR on the same \fIobjPtr\fR can be
 performed more efficiently.
 .PP
+\fBTcl_GetBoolFromObj\fR functions almost the same as
+\fBTcl_GetBooleanFromObj\fR, but it has an additional parameter
+\fBflags\fR, which can be used to specify whether the empty
+string or NULL is accepted as valid.
+.PP
 Note that the routines \fBTcl_GetBooleanFromObj\fR and
 \fBTcl_GetBoolean\fR are not functional equivalents.
 The set of values for which \fBTcl_GetBooleanFromObj\fR
@@ -88,6 +103,18 @@ will lead to a \fBTCL_OK\fR return (and the boolean value 1),
 while the same value passed to \fBTcl_GetBoolean\fR will lead to
 a \fBTCL_ERROR\fR return.
 
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_NewBooleanObj\fR always returns a zero-reference object, much
+like \fBTcl_NewObj\fR.
+.PP
+\fBTcl_SetBooleanObj\fR does not modify the reference count of its
+\fIobjPtr\fR argument, but does require that the object be unshared.
+.PP
+\fBTcl_GetBooleanFromObj\fR does not modify the reference count of its
+\fIobjPtr\fR argument; it only reads. Note however that this function
+may set the interpreter result; if that is the only place that
+is holding a reference to the object, it will be deleted.
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_IsShared, Tcl_GetBoolean
 

@@ -37,7 +37,7 @@ Tcl_UniChar *
 Tcl_UniChar *
 \fBTcl_GetUnicode\fR(\fIobjPtr\fR)
 .sp
-Tcl_UniChar
+int
 \fBTcl_GetUniChar\fR(\fIobjPtr, index\fR)
 .sp
 int
@@ -91,7 +91,7 @@ Points to the first byte of an array of UTF-8-encoded bytes
 used to set or append to a string value.
 This byte array may contain embedded null characters
 unless \fInumChars\fR is negative.  (Applications needing null bytes
-should represent them as the two-byte sequence \fI\e700\e600\fR, use
+should represent them as the two-byte sequence \fI\e300\e200\fR, use
 \fBTcl_ExternalToUtf\fR to convert, or \fBTcl_NewByteArrayObj\fR if
 the string is a collection of uninterpreted bytes.)
 .AP int length in
@@ -111,17 +111,19 @@ If negative, all characters up to the first null character are used.
 The index of the Unicode character to return.
 .AP int first in
 The index of the first Unicode character in the Unicode range to be
-returned as a new value.
+returned as a new value. If negative, behave the same as if the
+value was 0.
 .AP int last in
 The index of the last Unicode character in the Unicode range to be
-returned as a new value.
+returned as a new value. If negative, take all characters up to
+the last one available.
 .AP Tcl_Obj *objPtr in/out
 Points to a value to manipulate.
 .AP Tcl_Obj *appendObjPtr in
 The value to append to \fIobjPtr\fR in \fBTcl_AppendObjToObj\fR.
 .AP int *lengthPtr out
-If non-NULL, the location where \fBTcl_GetStringFromObj\fR will store
-the length of a value's string representation.
+The location where \fBTcl_GetStringFromObj\fR will store the length
+of a value's string representation. May be (int *)NULL when not used.
 .AP "const char" *string in
 Null-terminated string value to append to \fIobjPtr\fR.
 .AP va_list argList in
@@ -204,13 +206,16 @@ where the caller does not need the length of the unicode string
 representation.
 .PP
 \fBTcl_GetUniChar\fR returns the \fIindex\fR'th character in the
-value's Unicode representation.
+value's Unicode representation. If the index is out of range or
+it references a low surrogate preceded by a high surrogate, it returns -1;
 .PP
 \fBTcl_GetRange\fR returns a newly created value comprised of the
 characters between \fIfirst\fR and \fIlast\fR (inclusive) in the
 value's Unicode representation.  If the value's Unicode
 representation is invalid, the Unicode representation is regenerated
-from the value's string representation.
+from the value's string representation.  If \fIfirst\fR < 0, then
+the returned string starts at the beginning of the value. If \fIlast\fR < 0,
+then the returned string ends at the end of the value.
 .PP
 \fBTcl_GetCharLength\fR returns the number of characters (as opposed
 to bytes) in the string value.
@@ -248,7 +253,9 @@ must be a NULL pointer to indicate the end of the list.
 .PP
 \fBTcl_AppendStringsToObjVA\fR is the same as \fBTcl_AppendStringsToObj\fR
 except that instead of taking a variable number of arguments it takes an
-argument list.
+argument list.  Interfaces using argument lists have been found to be
+nonportable in practice. This function is deprecated and will be removed
+in Tcl 9.0.
 .PP
 \fBTcl_AppendLimitedToObj\fR is similar to \fBTcl_AppendToObj\fR
 except that it imposes a limit on how many bytes are appended.
@@ -380,6 +387,33 @@ white space, then that value is ignored entirely. This white-space
 removal was added to make the output of the \fBconcat\fR command
 cleaner-looking. \fBTcl_ConcatObj\fR returns a pointer to a
 newly-created value whose ref count is zero.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_NewStringObj\fR, \fBTcl_NewUnicodeObj\fR, \fBTcl_Format\fR,
+\fBTcl_ObjPrintf\fR, and \fBTcl_ConcatObj\fR always return a zero-reference
+object, much like \fBTcl_NewObj\fR.
+.PP
+\fBTcl_GetStringFromObj\fR, \fBTcl_GetString\fR, \fBTcl_GetUnicodeFromObj\fR,
+\fBTcl_GetUnicode\fR, \fBTcl_GetUniChar\fR, \fBTcl_GetCharLength\fR, and
+\fBTcl_GetRange\fR all only work with an existing value; they do not
+manipulate its reference count in any way.
+.PP
+\fBTcl_SetStringObj\fR, \fBTcl_SetUnicodeObj\fR, \fBTcl_AppendToObj\fR,
+\fBTcl_AppendUnicodeToObj\fR, \fBTcl_AppendObjToObj\fR,
+\fBTcl_AppendStringsToObj\fR, \fBTcl_AppendStringsToObjVA\fR,
+\fBTcl_AppendLimitedToObj\fR, \fBTcl_AppendFormatToObj\fR,
+\fBTcl_AppendPrintfToObj\fR, \fBTcl_SetObjLength\fR, and
+\fBTcl_AttemptSetObjLength\fR and require their \fIobjPtr\fR to be an unshared
+value (i.e, a reference count no more than 1) as they will modify it.
+.PP
+Additional arguments to the above functions (the \fIappendObjPtr\fR argument
+to \fBTcl_AppendObjToObj\fR, values in the \fIobjv\fR argument to
+\fBTcl_Format\fR, \fBTcl_AppendFormatToObj\fR, and \fBTcl_ConcatObj\fR) can
+have any reference count, but reference counts of zero are not recommended.
+.PP
+\fBTcl_Format\fR and \fBTcl_AppendFormatToObj\fR may modify the interpreter
+result, which involves changing the reference count of a value.
+
 .SH "SEE ALSO"
 Tcl_NewObj(3), Tcl_IncrRefCount(3), Tcl_DecrRefCount(3), format(n), sprintf(3)
 .SH KEYWORDS

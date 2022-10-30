@@ -176,7 +176,7 @@ main(int argc, char **argv)
 	}
 
 	hi = enc >> 8;
-	lo = enc & 0xff;
+	lo = enc & 0xFF;
 	if (toUnicode[hi] == NULL) {
 	    toUnicode[hi] = (Rune *) malloc(256 * sizeof(Rune));
 	    memset(toUnicode[hi], 0, 256 * sizeof(Rune));
@@ -208,7 +208,7 @@ main(int argc, char **argv)
 	    toUnicode[0][i] = i;
 	}
 	if (fixmissing) {
-	    for (i = 0x7F; i < 0xa0; i++) {
+	    for (i = 0x7F; i < 0xA0; i++) {
 		if (toUnicode[i] == NULL && toUnicode[0][i] == 0) {
 		    toUnicode[0][i] = i;
 		}
@@ -234,7 +234,7 @@ main(int argc, char **argv)
 	    printf("%02X\n", hi);
 	    for (lo = 0; lo < 256; lo++) {
 		printf("%04X", toUnicode[hi][lo]);
-		if ((lo & 0x0f) == 0x0f) {
+		if ((lo & 0x0F) == 0x0F) {
 		    putchar('\n');
 		}
 	    }

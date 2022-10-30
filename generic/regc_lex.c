@@ -2,7 +2,7 @@
  * lexical analyzer
  * This file is #included by regcomp.c.
  *
- * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -259,15 +259,15 @@ static const chr brbacks[] = {	/* \s within brackets */
 
 #define PUNCT_CONN \
 	CHR('_'), \
-	0x203f /* UNDERTIE */, \
+	0x203F /* UNDERTIE */, \
 	0x2040 /* CHARACTER TIE */,\
 	0x2054 /* INVERTED UNDERTIE */,\
-	0xfe33 /* PRESENTATION FORM FOR VERTICAL LOW LINE */, \
-	0xfe34 /* PRESENTATION FORM FOR VERTICAL WAVY LOW LINE */, \
-	0xfe4d /* DASHED LOW LINE */, \
-	0xfe4e /* CENTRELINE LOW LINE */, \
-	0xfe4f /* WAVY LOW LINE */, \
-	0xff3f /* FULLWIDTH LOW LINE */
+	0xFE33 /* PRESENTATION FORM FOR VERTICAL LOW LINE */, \
+	0xFE34 /* PRESENTATION FORM FOR VERTICAL WAVY LOW LINE */, \
+	0xFE4D /* DASHED LOW LINE */, \
+	0xFE4E /* CENTRELINE LOW LINE */, \
+	0xFE4F /* WAVY LOW LINE */, \
+	0xFF3F /* FULLWIDTH LOW LINE */
 
 static const chr backw[] = {	/* \w */
     CHR('['), CHR('['), CHR(':'),
@@ -427,7 +427,7 @@ next(
 	    if (INCON(L_BBND) && NEXT1('}')) {
 		v->now++;
 		INTOCON(L_BRE);
-		RET('}');
+		RETV('}', 1);
 	    } else {
 		FAILW(REG_BADBR);
 	    }
@@ -775,7 +775,7 @@ lexescape(
     NOTE(REG_UNONPOSIX);
     switch (c) {
     case CHR('a'):
-	RETV(PLAIN, chrnamed(v, alert, ENDOF(alert), CHR('\007')));
+	RETV(PLAIN, chrnamed(v, alert, ENDOF(alert), CHR('\x07')));
 	break;
     case CHR('A'):
 	RETV(SBEGIN, 0);
@@ -803,7 +803,7 @@ lexescape(
 	break;
     case CHR('e'):
 	NOTE(REG_UUNPORT);
-	RETV(PLAIN, chrnamed(v, esc, ENDOF(esc), CHR('\033')));
+	RETV(PLAIN, chrnamed(v, esc, ENDOF(esc), CHR('\x1B')));
 	break;
     case CHR('f'):
 	RETV(PLAIN, CHR('\f'));
@@ -905,9 +905,7 @@ lexescape(
 
 	v->now = save;
 
-	/*
-	 * And fall through into octal number.
-	 */
+	/* FALLTHRU */
 
     case CHR('0'):
 	NOTE(REG_UUNPORT);
@@ -916,7 +914,7 @@ lexescape(
 	if (ISERR()) {
 	    FAILW(REG_EESCAPE);
 	}
-	if (c > 0xff) {
+	if (c > 0xFF) {
 	    /* out of range, so we handled one digit too much */
 	    v->now--;
 	    c >>= 3;
@@ -950,7 +948,7 @@ lexdigits(
 
     n = 0;
     for (len = 0; len < maxlen && !ATEOS(); len++) {
-	if (n > 0x10fff) {
+	if (n > 0x10FFF) {
 	    /* Stop when continuing would otherwise overflow */
 	    break;
 	}
@@ -1007,7 +1005,7 @@ brenext(
 	if (LASTTYPE(EMPTY) || LASTTYPE('(') || LASTTYPE('^')) {
 	    RETV(PLAIN, c);
 	}
-	RET('*');
+	RETV('*', 1);
 	break;
     case CHR('['):
 	if (HAVE(6) &&	*(v->now+0) == CHR('[') &&
