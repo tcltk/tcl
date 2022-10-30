@@ -848,8 +848,10 @@ typedef struct ByteCode {
 #define INST_STR_LE			193
 #define INST_STR_GE			194
 
+#define INST_LREPLACE4                   195
+
 /* The last opcode */
-#define LAST_INST_OPCODE		194
+#define LAST_INST_OPCODE		195
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -860,7 +862,7 @@ typedef struct ByteCode {
  * instruction.
  */
 
-#define MAX_INSTRUCTION_OPERANDS 2
+#define MAX_INSTRUCTION_OPERANDS 3
 
 typedef enum InstOperandType {
     OPERAND_NONE,

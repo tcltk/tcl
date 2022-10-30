@@ -5244,11 +5244,67 @@ TEBCresume(
 	    NEXT_INST_F(1, 1, 0);
 	}
 
-    /*
-     *	   End of INST_LIST and related instructions.
-     * -----------------------------------------------------------------
-     *	   Start of string-related instructions.
-     */
+    case INST_LREPLACE4:
+	{
+	    int firstIdx, lastIdx, numToDelete, numNewElems;
+	    opnd = TclGetInt4AtPtr(pc + 1);
+	    firstIdx = TclGetInt4AtPtr(pc + 5); /* First delete position */
+	    lastIdx = TclGetInt4AtPtr(pc + 9);  /* Last delete position */
+	    numNewElems = opnd - 1;
+	    valuePtr = OBJ_AT_DEPTH(numNewElems);
+	    if (Tcl_ListObjLength(interp, valuePtr, &length) != TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    firstIdx = TclIndexDecode(firstIdx, length-1);
+	    if (firstIdx == TCL_INDEX_NONE) {
+		firstIdx = 0;
+	    } else if (firstIdx > length) {
+		firstIdx = length;
+	    }
+	    numToDelete = 0;
+	    if (lastIdx != TCL_INDEX_NONE) {
+		lastIdx = TclIndexDecode(lastIdx, length - 1);
+		if (lastIdx >= firstIdx) {
+		    numToDelete = lastIdx - firstIdx + 1;
+		}
+	    }
+	    if (Tcl_IsShared(valuePtr)) {
+		objResultPtr = Tcl_DuplicateObj(valuePtr);
+		if (Tcl_ListObjReplace(interp,
+				       objResultPtr,
+				       firstIdx,
+				       numToDelete,
+				       numNewElems,
+				       &OBJ_AT_DEPTH(numNewElems-1))
+		    != TCL_OK) {
+		    TRACE_ERROR(interp);
+		    Tcl_DecrRefCount(objResultPtr);
+		    goto gotError;
+		}
+		TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
+		NEXT_INST_V(13, opnd, 1);
+	    } else {
+		if (Tcl_ListObjReplace(interp,
+				       valuePtr,
+				       firstIdx,
+				       numToDelete,
+				       numNewElems,
+				       &OBJ_AT_DEPTH(numNewElems-1))
+		    != TCL_OK) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+		TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
+		NEXT_INST_V(13, opnd-1, 0);
+	    }
+	}
+
+	/*
+	 *	   End of INST_LIST and related instructions.
+	 * -----------------------------------------------------------------
+	 *	   Start of string-related instructions.
+	 */
 
     case INST_STR_EQ:
     case INST_STR_NEQ:		/* String (in)equality check */

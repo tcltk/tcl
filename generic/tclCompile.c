@@ -675,6 +675,8 @@ InstructionDesc const tclInstructionTable[] = {
 	/* String Less or equal:	push (stknext <= stktop) */
     {"strge",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* String Greater or equal:	push (stknext >= stktop) */
+    {"lreplace4",	  13,   INT_MIN,    3,	{OPERAND_UINT4, OPERAND_INT4, OPERAND_INT4}},
+	/* Stack: ... listobj num_elems first last new1 ... newN => ... newlistobj */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };

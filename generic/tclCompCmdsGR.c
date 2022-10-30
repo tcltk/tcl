@@ -3024,6 +3024,75 @@ TclCompileObjectSelfCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileXxCmd --
+ *
+ *	How to compile the "linsert2" command. We only bother with the case
+ *	where the index is constant.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileXxCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for context. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    TCL_UNUSED(Command *),
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr, *listTokenPtr;
+    int idx, i;
+
+    if (parsePtr->numWords < 3) {
+	return TCL_ERROR;
+    }
+    listTokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    /*
+     * Parse the index. Will only compile if it is constant and not an
+     * _integer_ less than zero (since we reserve negative indices here for
+     * end-relative indexing) or an end-based index greater than 'end' itself.
+     */
+
+    tokenPtr = TokenAfter(listTokenPtr);
+
+    /*
+     * NOTE: This command treats all inserts at indices before the list
+     * the same as inserts at the start of the list, and all inserts
+     * after the list the same as inserts at the end of the list. We
+     * make that transformation here so we can use the optimized bytecode
+     * as much as possible.
+     */
+    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_END,
+	    &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * There are four main cases. If there are no values to insert, this is
+     * just a confirm-listiness check. If the index is '0', this is a prepend.
+     * If the index is 'end' (== TCL_INDEX_END), this is an append. Otherwise,
+     * this is a splice (== split, insert values as list, concat-3).
+     */
+
+    CompileWord(envPtr, listTokenPtr, interp, 1);
+
+    for (i=3 ; i<parsePtr->numWords ; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, i);
+    }
+
+    TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 2, envPtr);
+    TclEmitInt4(idx, envPtr);
+    TclEmitInt4(idx-1, envPtr);
+
+    return TCL_OK;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
