@@ -862,7 +862,7 @@ typedef struct ByteCode {
  * instruction.
  */
 
-#define MAX_INSTRUCTION_OPERANDS 3
+#define MAX_INSTRUCTION_OPERANDS 4
 
 typedef enum InstOperandType {
     OPERAND_NONE,

@@ -5246,17 +5246,18 @@ TEBCresume(
 
     case INST_LREPLACE4:
 	{
-	    int firstIdx, lastIdx, numToDelete, numNewElems;
+	    int firstIdx, lastIdx, numToDelete, numNewElems, end_indicator;
 	    opnd = TclGetInt4AtPtr(pc + 1);
-	    firstIdx = TclGetInt4AtPtr(pc + 5); /* First delete position */
-	    lastIdx = TclGetInt4AtPtr(pc + 9);  /* Last delete position */
+	    end_indicator = TclGetInt4AtPtr(pc + 5);
+	    firstIdx = TclGetInt4AtPtr(pc + 9);
+	    lastIdx = TclGetInt4AtPtr(pc + 13);
 	    numNewElems = opnd - 1;
 	    valuePtr = OBJ_AT_DEPTH(numNewElems);
 	    if (Tcl_ListObjLength(interp, valuePtr, &length) != TCL_OK) {
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    firstIdx = TclIndexDecode(firstIdx, length-1);
+	    firstIdx = TclIndexDecode(firstIdx, length-end_indicator);
 	    if (firstIdx == TCL_INDEX_NONE) {
 		firstIdx = 0;
 	    } else if (firstIdx > length) {
@@ -5264,7 +5265,7 @@ TEBCresume(
 	    }
 	    numToDelete = 0;
 	    if (lastIdx != TCL_INDEX_NONE) {
-		lastIdx = TclIndexDecode(lastIdx, length - 1);
+		lastIdx = TclIndexDecode(lastIdx, length - end_indicator);
 		if (lastIdx >= firstIdx) {
 		    numToDelete = lastIdx - firstIdx + 1;
 		}
@@ -5283,7 +5284,7 @@ TEBCresume(
 		    goto gotError;
 		}
 		TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
-		NEXT_INST_V(13, opnd, 1);
+		NEXT_INST_V(17, opnd, 1);
 	    } else {
 		if (Tcl_ListObjReplace(interp,
 				       valuePtr,
@@ -5296,7 +5297,7 @@ TEBCresume(
 		    goto gotError;
 		}
 		TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
-		NEXT_INST_V(13, opnd-1, 0);
+		NEXT_INST_V(17, opnd-1, 0);
 	    }
 	}
 

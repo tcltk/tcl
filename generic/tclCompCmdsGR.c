@@ -1391,48 +1391,16 @@ TclCompileLinsertCmd(
      */
 
     CompileWord(envPtr, listTokenPtr, interp, 1);
-    if (parsePtr->numWords == 3) {
-	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
-	return TCL_OK;
-    }
 
     for (i=3 ; i<parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
-    TclEmitInstInt4(		INST_LIST, i - 3,		envPtr);
 
-    if (idx == (int)TCL_INDEX_START) {
-	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
-	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    } else if (idx == (int)TCL_INDEX_END) {
-	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    } else {
-	/*
-	 * Here we handle two ranges for idx. First when idx > 0, we
-	 * want the first half of the split to end at index idx-1 and
-	 * the second half to start at index idx.
-	 * Second when idx < TCL_INDEX_END, indicating "end-N" indexing,
-	 * we want the first half of the split to end at index end-N and
-	 * the second half to start at index end-N+1. We accomplish this
-	 * with a pre-adjustment of the end-N value.
-	 * The root of this is that the commands [lrange] and [linsert]
-	 * differ in their interpretation of the "end" index.
-	 */
-
-	if (idx < (int)TCL_INDEX_END) {
-	    idx++;
-	}
-	TclEmitInstInt4(	INST_OVER, 1,			envPtr);
-	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			idx - 1,		envPtr);
-	TclEmitInstInt4(	INST_REVERSE, 3,		envPtr);
-	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx,	envPtr);
-	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
-	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    }
+    TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 2, envPtr);
+    TclEmitInt4(0, envPtr);
+    TclEmitInt4(idx, envPtr);
+    TclEmitInt4(idx-1, envPtr);
 
     return TCL_OK;
 }
@@ -3086,6 +3054,7 @@ TclCompileXxCmd(
     }
 
     TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 2, envPtr);
+    TclEmitInt4(0, envPtr);
     TclEmitInt4(idx, envPtr);
     TclEmitInt4(idx-1, envPtr);
 
