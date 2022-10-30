@@ -284,16 +284,19 @@ Tcl_SourceRCFile(
 #ifdef USE_LINENOISE
 #define SIGNAL_MAX 32
 static Tcl_ThreadId lineThreadId = 0;
-TCL_DECLARE_MUTEX(linenoiseMutex)
-TCL_DECLARE_MUTEX(signalPipeMutex)
+static int eventLoopRunning = 0;
+TCL_DECLARE_MUTEX(linenoiseMutex)  // Protects calls to linenoise.
+TCL_DECLARE_MUTEX(signalPipeMutex) // Protects reading and writing the signal pipe.
+TCL_DECLARE_MUTEX(promptMutex)     // Wait for a prompt before calling linenoise.
 
 static void LineThreadProc(ClientData data) {
     int length, written;
     InteractiveState *isPtr = (InteractiveState *)data;
     Tcl_Channel output = Tcl_GetStdChannel(TCL_STDOUT);
     Tcl_DString lineString;
-    const char *readySignal = "Ready  \n";  // Length is a power of 2
+    const char *readySignal = "Ready  \n";
     Tcl_DStringInit(&lineString);
+
     while (1) {
 	Tcl_Flush(output);
 	/*
@@ -312,23 +315,31 @@ static void LineThreadProc(ClientData data) {
 	Tcl_Ungets(isPtr->input, "\n", 1, 1);
 
 	/*
-	 * We don't need a mutex for a write of 8 chars, according to DKF:
-	 * https://stackoverflow.com/questions/1712616/multithreading-read-from-write-to-a-pipe
+	 * We have to use the file descriptor here, instead of the channel
+	 * because the pipe is shared.
 	 */
 
-	/*
-	 * We have to use the file descriptor here, instead of the channel because
-	 * the pipe is shared.
-	 */
-	
 	Tcl_MutexLock(&signalPipeMutex);
 	written = write(isPtr->signalPipe[1], readySignal, sizeof(readySignal));
-	Tcl_MutexUnlock(&signalPipeMutex);
 	if (written != sizeof(readySignal)){
 	    Tcl_Panic("Write to signal pipe failed!\n");
 	}
+	Tcl_MutexUnlock(&signalPipeMutex);
+	if (eventLoopRunning) {
+	    /* Wait for the prompt to be written */
+	    Tcl_MutexLock(&promptMutex);
+	} else {
+
+	    /*
+	     * If the event loop has terminated during the call to linenoise,
+	     * the channel handler will no longer exist.  So we have to call
+	     * StdinProc directly.
+	     */
+
+	    StdinProc(isPtr, 0);
+	}
+	Tcl_DStringFree(&lineString);
     }
-    Tcl_DStringFree(&lineString);
     Tcl_Exit(0);
 }
 #endif
@@ -376,7 +387,7 @@ Tcl_MainEx(
      * inter-thread communication, which therefore must be shared between the
      * two threads that are communicating.  So this is a workaround.
      */
-    
+
     pipe(is.signalPipe);
     is.signalRead = Tcl_MakeFileChannel(INT2PTR(is.signalPipe[0]), TCL_READABLE);
     Tcl_RegisterChannel(interp, is.signalRead);
@@ -526,7 +537,7 @@ Tcl_MainEx(
     /*
      * Set up the history file.
      */
-    
+
     historyPath[0] = '\0';
     if (home) {
         strncpy(historyPath, home, sizeof(historyPath) - 1);
@@ -558,7 +569,14 @@ Tcl_MainEx(
 		is.commandPtr = Tcl_DuplicateObj(is.commandPtr);
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
+
+#ifdef USE_LINENOISE
+	    Tcl_MutexLock(&promptMutex);
 	    length = Tcl_GetLineObj(historyPath, is.commandPtr);
+#else
+	    length = Tcl_GetsObj(is.commandPtr);
+#endif
+
 	    if (length < 0) {
 		if (Tcl_InputBlocked(is.input)) {
 		    /*
@@ -656,26 +674,14 @@ Tcl_MainEx(
 		}
 	    }
 #ifdef USE_LINENOISE
-
-	    /*
-	     * Allow the lineThread to call linenoise.
-	     */
-
 	    Tcl_MutexUnlock(&linenoiseMutex);
 #endif
 	    /* Run the event loop. */
+	    eventLoopRunning = 1;
 	    mainLoopProc();
 	    Tcl_SetMainLoop(NULL);
 #ifdef USE_LINENOISE
-
-	    /*
-	     * The event loop terminated.  Lock out the lineThread so
-	     * that it does not step on the toes of Tcl_GetLineObj.
-	     * XXXX The lineThread will be waiting for a call to Tcl_GetLine
-	     * to return when this happens. We need a way to abort that.
-	     */
-
-	    Tcl_MutexLock(&linenoiseMutex);
+	    eventLoopRunning = 0;
 	    Tcl_DeleteChannelHandler(is.signalRead, StdinProc, &is);
 #else
 	    if (is.input) {
@@ -864,14 +870,16 @@ StdinProc(
 
 #ifdef USE_LINENOISE
     /*
-     * Drain the signal pipe.  We have to use the file descriptor here, since
-     * the pipe is shared.
+     * We were called by the channel handler because the signal pipe became
+     * readable.  Drain the pipe, using the file descriptor because the pipe is
+     * shared.
      */
-    char message[128];
+    char message[SIGNAL_MAX];
     Tcl_MutexLock(&signalPipeMutex);
     length = read(isPtr->signalPipe[0], message, sizeof(message));
     Tcl_MutexUnlock(&signalPipeMutex);
 #endif
+
     if (Tcl_IsShared(commandPtr)) {
 	Tcl_DecrRefCount(commandPtr);
 	commandPtr = Tcl_DuplicateObj(commandPtr);
@@ -957,6 +965,7 @@ StdinProc(
 	Prompt(interp, isPtr);
 	isPtr->input = Tcl_GetStdChannel(TCL_STDIN);
     }
+
 }
 
 /*
@@ -1026,6 +1035,12 @@ Prompt(
 	Tcl_Flush(chan);
     }
     isPtr->prompt = PROMPT_NONE;
+#ifdef USE_LINENOISE
+    if (promptMutex) {
+	Tcl_MutexUnlock(&promptMutex);
+    }
+#endif
+
 }
 
 /*
