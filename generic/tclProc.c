@@ -415,7 +415,7 @@ TclCreateProc(
      *  - set to 2 when 1 and required is found
      *  - error when 2 and optional/args is found
      */
-    int arglist_shape = 0;
+    int arglistShape = 0, isArgs, seenArgs = 0;
 
     ProcGetInternalRep(bodyPtr, procPtr);
     if (procPtr != NULL) {
@@ -546,17 +546,23 @@ TclCreateProc(
 	}
 
 	argname = Tcl_GetStringFromObj(fieldValues[0], &nameLength);
+	isArgs = (nameLength == 4) && !strcmp(argname, "args");
 
 	/*
 	 * Reject invalid argspecs early
 	 */
-	if (fieldCount == 2 
-		|| ((nameLength == 4)
-		    && !strcmp(argname, "args"))) {
-	    if (arglist_shape == 0) {
-		arglist_shape = 1;
-	    } else if (arglist_shape == 2) {
-		ckfree(fieldValues);
+	if (fieldCount == 2 || isArgs) {
+	    if (isArgs && seenArgs) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"repeated \"args\" in argument list", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+			"FORMALARGUMENTFORMAT", NULL);
+		goto procError;
+	    }
+	    seenArgs = seenArgs || isArgs;
+	    if (arglistShape == 0) {
+		arglistShape = 1;
+	    } else if (arglistShape == 2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"required args in the middle", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
@@ -564,8 +570,8 @@ TclCreateProc(
 		goto procError;
 	    }
 	} else {
-	    if (arglist_shape == 1) {
-		arglist_shape = 2;
+	    if (arglistShape == 1) {
+		arglistShape = 2;
 	    }
 	}
 
@@ -648,9 +654,7 @@ TclCreateProc(
 		    goto procError;
 		}
 	    }
-	    if ((localPtr->nameLength == 4)
-		    && (localPtr->name[0] == 'a')
-		    && (strcmp(localPtr->name, "args") == 0)) {
+	    if (isArgs) {
 		localPtr->flags |= VAR_IS_ARGS;
 	    }
 
@@ -682,9 +686,7 @@ TclCreateProc(
 		localPtr->defValuePtr = NULL;
 	    }
 	    memcpy(localPtr->name, argname, fieldValues[0]->length + 1);
-	    if ((localPtr->nameLength == 4)
-		    && (localPtr->name[0] == 'a')
-		    && (memcmp(localPtr->name, "args", 4) == 0)) {
+	    if (isArgs) {
 		localPtr->flags |= VAR_IS_ARGS;
 	    }
 	}
@@ -1092,7 +1094,7 @@ ProcWrongNumArgs(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     Proc *procPtr = framePtr->procPtr;
-    int localCt = procPtr->numCompiledLocals, numArgs, i;
+    int localCt = procPtr->numCompiledLocals, numArgs, i, i2;
     Tcl_Obj **desiredObjs;
     const char *final = NULL;
 
@@ -1102,7 +1104,7 @@ ProcWrongNumArgs(
 
     numArgs = framePtr->procPtr->numArgs;
     desiredObjs = (Tcl_Obj **)TclStackAlloc(interp,
-	    sizeof(Tcl_Obj *) * (numArgs+1));
+	    sizeof(Tcl_Obj *) * (numArgs+2));
 
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
@@ -1118,7 +1120,7 @@ ProcWrongNumArgs(
     if (localCt > 0) {
 	Var *defPtr = (Var *)(&framePtr->localCachePtr->varName0 + localCt);
 
-	for (i=1 ; i<=numArgs ; i++, defPtr++) {
+	for (i=i2=1 ; i<=numArgs ; i++, i2++, defPtr++) {
 	    Tcl_Obj *argObj;
 	    Tcl_Obj *namePtr = localName(framePtr, i-1);
 
@@ -1126,19 +1128,27 @@ ProcWrongNumArgs(
 		TclNewObj(argObj);
 		Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?", NULL);
 	    } else if (defPtr->flags & VAR_IS_ARGS) {
-	        TclNewLiteralStringObj(argObj, "?arg ...?");
+		/*
+		 * Work around the list quoting in WrongNumArgs which we
+		 * do not want for ?arg ...?.
+		 */
+
+	        TclNewLiteralStringObj(argObj, "?arg");
+		desiredObjs[i2] = argObj;
+		i2++;
+	        TclNewLiteralStringObj(argObj, "...?");
             } else {
 		argObj = namePtr;
 		Tcl_IncrRefCount(namePtr);
 	    }
-	    desiredObjs[i] = argObj;
+	    desiredObjs[i2] = argObj;
 	}
     }
 
     Tcl_ResetResult(interp);
-    Tcl_WrongNumArgs(interp, numArgs+1, desiredObjs, final);
+    Tcl_WrongNumArgs(interp, i2, desiredObjs, final);
 
-    for (i=0 ; i<=numArgs ; i++) {
+    for (i=0 ; i<i2 ; i++) {
 	Tcl_DecrRefCount(desiredObjs[i]);
     }
     TclStackFree(interp, desiredObjs);

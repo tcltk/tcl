@@ -32,11 +32,31 @@ test tip288-1.4 {Examples for TIP#288} -setup $setup -cleanup $cleanup -body {
     y 1 2 3
 } -result {a=1, b=2, args=, c=3}
 
+test tip288-1.4b {Examples for TIP#288} -setup $setup -cleanup $cleanup -body {
+    y 1 2
+} -result {a=1, b=x, args=, c=2}
+
+# TODO:
+# According to 288, this should not be an error, this was valid before.
+# Should 288 be updated to behave like this?
 test tip288-1.5 {Examples for TIP#288} -body {
     proc z {a {b x} c args} {
         return "a=$a, b=$b, c=$c, args=$args"
     }
 } -returnCodes error -result {required args in the middle}
+# This is how it should work according to 288 as of now.
+test tip288-1.5b {Examples for TIP#288} -body {
+    proc z {a {b x} c args} {
+        return "a=$a, b=$b, c=$c, args=$args"
+    }
+    z 1 2 3
+} -result {a=1, b=2, c=3, args=}
+
+test tip288-1.6 {Error cases, repeated args} -body {
+    proc z {a args args} {
+        return "a=$a, b=$b, c=$c, args=$args"
+    }
+} -returnCodes error -result {repeated "args" in argument list}
 
 set setup {
     proc x {a b {c _c} {d _d} args {e _e} {f _f} g h} {
