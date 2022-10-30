@@ -677,8 +677,8 @@ InstructionDesc const tclInstructionTable[] = {
 	/* String Greater or equal:	push (stknext >= stktop) */
     {"lreplace4",	  17,   INT_MIN,    4,	{OPERAND_UINT4, OPERAND_UINT4, OPERAND_INT4, OPERAND_INT4}},
 	/* Operands: number of arguments, end_indicator, firstIdx, lastIdx
-	 * end_indicator: 0 if "end" is treated as index of last element, 
-	 *                1 if "end" is position after last element
+	 * end_indicator: 1 if "end" is treated as index of last element, 
+	 *                0 if "end" is position after last element
 	 * firstIdx,lastIdx: range of elements to delete
 	 * Stack: ... listobj new1 ... newN => ... newlistobj */
 
