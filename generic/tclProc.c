@@ -564,7 +564,7 @@ TclCreateProc(
 		arglistShape = 1;
 	    } else if (arglistShape == 2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"required args in the middle", -1));
+			"required arg may not be in the middle", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			"FORMALARGUMENTFORMAT", NULL);
 		goto procError;
@@ -1424,7 +1424,7 @@ InitLocalCache(
 
 static int
 InitArgsAndLocals(
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int skip)			/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
@@ -1432,13 +1432,16 @@ InitArgsAndLocals(
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     Proc *procPtr = framePtr->procPtr;
     ByteCode *codePtr;
-    Var *varPtr, *defPtr;
-    int numLocals = procPtr->numCompiledLocals;	/* Total compiled locals, >= numArgs */
-    int numArgs = procPtr->numArgs;		/* Number of args taken */
-    int argCt = framePtr->objc - skip;		/* Number of arguments given */
-    register Var *nextVarPtr, *lastVarPtr, *localVarPtr, *nextDefPtr, *lastDefPtr;
+    Var *nextVarPtr, *lastVarPtr, *localVarPtr, *nextDefPtr, *lastDefPtr;
+    /* Total compiled locals, >= numArgs */
+    int numLocals = procPtr->numCompiledLocals;
+    /* Number of arguments taken */
+    int numArgs = procPtr->numArgs;
+    /* Number of arguments given */
+    int argCt = framePtr->objc - skip;
     Tcl_Obj *const *nextArgObj;
     Tcl_Obj *const *lastArgObj;
+
     ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
     /*
@@ -1465,12 +1468,11 @@ InitArgsAndLocals(
      * parameters.
      */
 
-    nextVarPtr = (Var *)TclStackAlloc(interp, (int)(numLocals * sizeof(Var)));
+    nextVarPtr = (Var *)TclStackAlloc(interp, numLocals * sizeof(Var));
     lastVarPtr = &nextVarPtr[numArgs-1];
     localVarPtr = &nextVarPtr[numArgs];
     framePtr->compiledLocals = nextVarPtr;
     framePtr->numCompiledLocals = numLocals;
-    // printf("compiledLocals alloced at %p (%d)\n", framePtr->compiledLocals, framePtr->numCompiledLocals); fflush(stdout);
 
     /*
      * Match and assign the call's actual parameters to the procedure's formal
@@ -1488,11 +1490,7 @@ InitArgsAndLocals(
 	}
     }
     lastArgObj = &nextArgObj[argCt-1];
-    if(nextDefPtr == NULL) {
-	//Tcl_Panic("defPtr is null for %s\n", Tcl_GetStringFromObj(procNameObj, NULL));
-    }
 
-    // printf("proc %s: numArgs = %d, argCt = %d, numLocals = %d\n", Tcl_GetStringFromObj(procNameObj, NULL), numArgs, argCt, numLocals); fflush(stdout);
     /*
      * Required args, LHS
      */
@@ -1503,7 +1501,6 @@ InitArgsAndLocals(
 	nextVarPtr->flags = 0;
 	nextVarPtr->value.objPtr = *(nextArgObj++);
 	Tcl_IncrRefCount(nextVarPtr->value.objPtr);	/* Local var is a reference. */
-	// printf("Assigned req LHS 1\n"); fflush(stdout);
 
 	++nextVarPtr; ++nextDefPtr;
     }
@@ -1517,7 +1514,6 @@ InitArgsAndLocals(
 	lastVarPtr->flags = 0;
 	lastVarPtr->value.objPtr = *(lastArgObj--);
 	Tcl_IncrRefCount(lastVarPtr->value.objPtr);	/* Local var is a reference. */
-	// printf("Assigned req RHS 1\n"); fflush(stdout);
 
 	--lastVarPtr; --lastDefPtr;
     }
@@ -1536,7 +1532,6 @@ InitArgsAndLocals(
 	nextVarPtr->value.objPtr = objPtr;
 	nextVarPtr->flags = 0;
 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
-	// printf("Assigned opt LHS 1\n"); fflush(stdout);
 
 	++nextVarPtr; ++nextDefPtr;
     }
@@ -1555,7 +1550,6 @@ InitArgsAndLocals(
 	lastVarPtr->value.objPtr = objPtr;
 	lastVarPtr->flags = 0;
 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
-	// printf("Assigned opt RHS 1\n"); fflush(stdout);
 
 	--lastVarPtr; --lastDefPtr;
     }
@@ -1588,21 +1582,11 @@ InitArgsAndLocals(
     if (numArgs < numLocals) {
 	if (!framePtr->nsPtr->compiledVarResProc
 		&& !((Interp *)interp)->resolverPtr) {
-	    // printf("Zeroing %d Vars at localVarPtr = %p (%tx)\n", numLocals - numArgs, localVarPtr, localVarPtr - framePtr->compiledLocals); fflush(stdout);
 	    memset(localVarPtr, 0, (numLocals - numArgs)*sizeof(Var));
 	} else {
-	    // printf("calling InitResolvedLocals with localVarPtr = %p (%tx)\n", localVarPtr, localVarPtr - framePtr->compiledLocals); fflush(stdout);
 	    InitResolvedLocals(interp, codePtr, localVarPtr, framePtr->nsPtr);
 	}
     }
-//    do {
-//	int n = ((Interp *)interp)->varFramePtr->numCompiledLocals;
-//	Var * vs = ((Interp *)interp)->varFramePtr->compiledLocals;
-//	int i = 0;
-//	for(i=0; i<n; ++i) {
-//	    printf("compiledLocals[%d] = %p\n", i, vs[i].value.objPtr); fflush(stdout);
-//	}
- //   } while (0);
 
     return TCL_OK;
 
@@ -1611,7 +1595,6 @@ InitArgsAndLocals(
      */
 
   incorrectArgs:
-    // printf("incorrectArgs for %s (numArgs = %d, argCt = %d, numLocals = %d)\n", Tcl_GetStringFromObj(procNameObj, NULL), numArgs, argCt, numLocals); fflush(stdout);
     if ((skip != 1) &&
 	    TclInitRewriteEnsemble(interp, skip-1, 0, framePtr->objv)) {
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
@@ -1619,7 +1602,6 @@ InitArgsAndLocals(
     /*
      * Ensure all un-assigned vars are zeroed
      */
-    // printf("memset(%p, %d * sizeof(Var))\n", nextVarPtr, ((framePtr->compiledLocals + numLocals)-nextVarPtr)); fflush(stdout);
     memset(nextVarPtr, 0,
 	    ((framePtr->compiledLocals + numLocals)-nextVarPtr) * sizeof(Var));
     return ProcWrongNumArgs(interp, skip);

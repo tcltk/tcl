@@ -16,47 +16,46 @@ set setup {
 }
 set cleanup {rename x {}; rename y {}}
 
-test tip288-1.1 {Examples for TIP#288} -setup $setup -cleanup $cleanup -body {
+test tip288-1.1 {Error cases, repeated args} -body {
+    proc z {a args args} {
+    }
+} -returnCodes error -result {repeated "args" in argument list}
+
+test tip288-1.2 {Examples for TIP#288} -setup $setup -cleanup $cleanup -body {
     x 1 2
 } -result {a=1, args=, b=2}
 
-test tip288-1.2 {Examples for TIP#288} -setup $setup -cleanup $cleanup -body {
+test tip288-1.3 {Examples for TIP#288} -setup $setup -cleanup $cleanup -body {
     x 1 2 3
 } -result {a=1, args=2, b=3}
 
-test tip288-1.3 {Examples for TIP#288} -setup $setup -cleanup $cleanup -body {
+test tip288-1.4 {Examples for TIP#288} -setup $setup -cleanup $cleanup -body {
     x 1
 } -returnCodes error -result {wrong # args: should be "x a ?arg ...? b"}
 
-test tip288-1.4 {Examples for TIP#288} -setup $setup -cleanup $cleanup -body {
+test tip288-1.5 {Examples for TIP#288} -setup $setup -cleanup $cleanup -body {
     y 1 2 3
 } -result {a=1, b=2, args=, c=3}
 
-test tip288-1.4b {Examples for TIP#288} -setup $setup -cleanup $cleanup -body {
+test tip288-1.6 {Examples for TIP#288} -setup $setup -cleanup $cleanup -body {
     y 1 2
 } -result {a=1, b=x, args=, c=2}
 
-# TODO:
-# According to 288, this should not be an error, this was valid before.
-# Should 288 be updated to behave like this?
-test tip288-1.5 {Examples for TIP#288} -body {
+# This is now an error
+test tip288-1.7 {Examples for TIP#288} -body {
     proc z {a {b x} c args} {
         return "a=$a, b=$b, c=$c, args=$args"
     }
-} -returnCodes error -result {required args in the middle}
-# This is how it should work according to 288 as of now.
-test tip288-1.5b {Examples for TIP#288} -body {
-    proc z {a {b x} c args} {
-        return "a=$a, b=$b, c=$c, args=$args"
-    }
-    z 1 2 3
-} -result {a=1, b=2, c=3, args=}
+} -returnCodes error -result {required arg may not be in the middle}
 
-test tip288-1.6 {Error cases, repeated args} -body {
-    proc z {a args args} {
-        return "a=$a, b=$b, c=$c, args=$args"
+# A default value for "args" is still allowed but pointless
+test tip288-1.8 {Examples for TIP#288} -body {
+    proc z {a b {args {b}}} {
+        return "a=$a, b=$b, args=$args"
     }
-} -returnCodes error -result {repeated "args" in argument list}
+    z 1 2
+} -result {a=1, b=2, args=}
+
 
 set setup {
     proc x {a b {c _c} {d _d} args {e _e} {f _f} g h} {
@@ -92,9 +91,9 @@ set setup {
 set cleanup {rename stup {}}
 set i 0
 foreach {args code result} {
-        {}  error {wrong # args: should be "stup ?chan? text"}
-        {foo} ok {chan stdout text foo}
-        {foo bar} ok {chan foo text bar}
+        {}             error {wrong # args: should be "stup ?chan? text"}
+        {foo}          ok    {chan stdout text foo}
+        {foo bar}      ok    {chan foo text bar}
         {foo bar baz}  error {wrong # args: should be "stup ?chan? text"}
 } {
     test tip288-3.[incr i] {Pathological arglist} -setup $setup -cleanup $cleanup -body [

@@ -200,14 +200,13 @@ test proc-old-30.7 {arguments and defaults} {
     }
     list [catch {tproc} msg] $msg
 } {1 {wrong # args: should be "tproc x ?y? ?z?"}}
+# Prior to TIP#288, this was an error
 test proc-old-30.8 {arguments and defaults} {
-    list [catch {
-	proc tproc {x {y y-default} z} {
-	    return [list $x $y $z]
-	}
-	tproc 2 3
-    } msg] $msg
-} {1 {wrong # args: should be "tproc x ?y? z"}}
+    proc tproc {x {y y-default} z} {
+        return [list $x $y $z]
+    }
+    tproc 2 3
+} {2 y-default 3}
 test proc-old-30.9 {arguments and defaults} {
     proc tproc {x {y y-default} args} {
 	return [list $x $y $args]
