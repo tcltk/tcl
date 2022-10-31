@@ -103,9 +103,11 @@ typedef struct {
     Tcl_Interp *interp;		/* Interpreter that evaluates interactive
 				   commands. */
     char *historyPath;          /* Path to history file. */
-    int signalPipe[2];          /* Signal pipe file descriptors. */
     Tcl_Channel signalRead;     /* Read channel for signal pipe. */
     Tcl_Channel signalWrite;    /* Write channel for signal pipe. */
+    ClientData signalReadFH;    /* Signal pipe read file descriptor. */
+    ClientData signalWriteFH;   /* Signal pipe write file descriptor. */
+
 } InteractiveState;
 
 /*
@@ -285,62 +287,88 @@ Tcl_SourceRCFile(
 #define SIGNAL_MAX 32
 static Tcl_ThreadId lineThreadId = 0;
 static int eventLoopRunning = 0;
-TCL_DECLARE_MUTEX(linenoiseMutex)  // Protects calls to linenoise.
-TCL_DECLARE_MUTEX(signalPipeMutex) // Protects reading and writing the signal pipe.
-TCL_DECLARE_MUTEX(promptMutex)     // Wait for a prompt before calling linenoise.
+TCL_DECLARE_MUTEX(signalPipeMutex) /* Protects reading and writing the signal pipe. */
+TCL_DECLARE_MUTEX(promptMutex)     /* Wait for a prompt before calling linenoise. */
+TCL_DECLARE_MUTEX(lineThreadMutex) /* Prevent calling Tcl_GetLineObj while the thread
+                                    * is running. */
+/* Messages sent over the signal pipe. */
+const char *readySignal = "Ready  \n";
+const char *eofSignal = "EOF\n";
 
-static void LineThreadProc(ClientData data) {
-    int length, written;
+static void sendSignal(InteractiveState *isPtr, const char *signal) {
+    int size = strlen(signal);
+    int written;
+    Tcl_MutexLock(&signalPipeMutex);
+    written = write(PTR2INT(isPtr->signalWriteFH), signal, size);
+    if (written != size){
+	Tcl_Panic("Write to signal pipe failed!\n");
+    }
+    Tcl_MutexUnlock(&signalPipeMutex);
+}
+
+static void lineThreadProc(ClientData data) {
+    int length;
     InteractiveState *isPtr = (InteractiveState *)data;
     Tcl_Channel output = Tcl_GetStdChannel(TCL_STDOUT);
     Tcl_DString lineString;
-    const char *readySignal = "Ready  \n";
     Tcl_DStringInit(&lineString);
+    Tcl_MutexLock(&lineThreadMutex);
 
     while (1) {
 	Tcl_Flush(output);
+
 	/*
-	 * Help the user compose a command line.
+	 * Wait for the user to compose a command line.
 	 */
+
 	Tcl_DStringSetLength(&lineString, 0);
-	Tcl_MutexLock(&linenoiseMutex);
 	length = Tcl_GetLine(isPtr->historyPath, &lineString);
-	Tcl_MutexUnlock(&linenoiseMutex);
 	if (length < 0) {
+	    sendSignal(isPtr, eofSignal);
 	    break;
 	}
-	Tcl_Ungets(isPtr->input, Tcl_DStringValue(&lineString),
-		   Tcl_DStringLength(&lineString), 1);
-	/* Add a newline. */
-	Tcl_Ungets(isPtr->input, "\n", 1, 1);
 
 	/*
-	 * We have to use the file descriptor here, instead of the channel
-	 * because the pipe is shared.
+	 * Push the line onto the stdin channel with a newline added.
 	 */
 
-	Tcl_MutexLock(&signalPipeMutex);
-	written = write(isPtr->signalPipe[1], readySignal, sizeof(readySignal));
-	if (written != sizeof(readySignal)){
-	    Tcl_Panic("Write to signal pipe failed!\n");
-	}
-	Tcl_MutexUnlock(&signalPipeMutex);
+	Tcl_Ungets(isPtr->input, Tcl_DStringValue(&lineString),
+		   Tcl_DStringLength(&lineString), 1);
+	Tcl_Ungets(isPtr->input, "\n", 1, 1);
+
 	if (eventLoopRunning) {
-	    /* Wait for the prompt to be written */
+
+	    /*
+	     * Send a ready signal to wake up the StdinProc.  Then wait for a
+	     * prompt.
+	     */
+
+	    sendSignal(isPtr, readySignal);
 	    Tcl_MutexLock(&promptMutex);
 	} else {
 
 	    /*
-	     * If the event loop has terminated during the call to linenoise,
+	     * The event loop terminated during the call to Tcl_GetLine, so
 	     * the channel handler will no longer exist.  So we have to call
 	     * StdinProc directly.
 	     */
 
+	    sendSignal(isPtr, readySignal);
 	    StdinProc(isPtr, 0);
+	    break;
 	}
-	Tcl_DStringFree(&lineString);
     }
-    Tcl_Exit(0);
+    lineThreadId = 0;
+    Tcl_MutexUnlock(&lineThreadMutex);
+    Tcl_ExitThread(0);
+}
+
+static void startLineThread(InteractiveState *isPtr) {
+    if (lineThreadId == 0) {
+	Tcl_CreateChannelHandler(isPtr->signalRead, TCL_READABLE, StdinProc, isPtr);
+	Tcl_CreateThread(&lineThreadId, lineThreadProc, isPtr,
+			 TCL_THREAD_STACK_DEFAULT, TCL_THREAD_NOFLAGS);
+    }
 }
 #endif
 
@@ -364,9 +392,6 @@ Tcl_MainEx(
     char *home = getenv("HOME");
     char historyPath[1024];
 
-    #ifdef USE_LINENOISE
-    Tcl_MutexLock(&linenoiseMutex);
-    #endif
     TclpSetInitialEncodings();
     if (0 < argc) {
 	--argc;			/* "consume" argv[0] */
@@ -380,20 +405,11 @@ Tcl_MainEx(
     is.prompt = PROMPT_START;
     TclNewObj(is.commandPtr);
 #ifdef USE_LINENOISE
-
-    /*
-     * Channels created with Tcl_CreateChannel, and pipes created with
-     * Tcl_CreatePipe are thread-specific.  But we want to create a pipe for
-     * inter-thread communication, which therefore must be shared between the
-     * two threads that are communicating.  So this is a workaround.
-     */
-
-    pipe(is.signalPipe);
-    is.signalRead = Tcl_MakeFileChannel(INT2PTR(is.signalPipe[0]), TCL_READABLE);
-    Tcl_RegisterChannel(interp, is.signalRead);
-    is.signalWrite = Tcl_MakeFileChannel(INT2PTR(is.signalPipe[1]), TCL_WRITABLE);
-    Tcl_RegisterChannel(interp, is.signalWrite);
-
+    Tcl_CreatePipe(interp, &is.signalRead, &is.signalWrite, 0);
+    Tcl_GetChannelHandle(is.signalRead, TCL_READABLE,
+			 &is.signalReadFH);
+    Tcl_GetChannelHandle(is.signalWrite, TCL_WRITABLE,
+			 &is.signalWriteFH);
 #endif
     /*
      * If the application has not already set a startup script, parse the
@@ -550,6 +566,8 @@ Tcl_MainEx(
 	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
 	    int length;
+	    eventLoopRunning = 0;
+	    fflush(stderr);
 
 	    if (is.tty) {
 		Prompt(interp, &is);
@@ -571,8 +589,9 @@ Tcl_MainEx(
 	    }
 
 #ifdef USE_LINENOISE
-	    Tcl_MutexLock(&promptMutex);
+	    Tcl_MutexLock(&lineThreadMutex);
 	    length = Tcl_GetLineObj(historyPath, is.commandPtr);
+	    Tcl_MutexUnlock(&lineThreadMutex);
 #else
 	    length = Tcl_GetsObj(is.commandPtr);
 #endif
@@ -656,32 +675,26 @@ Tcl_MainEx(
 	     * Traditionally, Tcl would create a ChannelHandler that would be
 	     * called when stdin became readable, i.e. when it contained a
 	     * complete command ending in \n. But this precludes line editing.
-	     * If USE_LINENOISE is defined, we instead launch a thread to manage
-	     * the line editing, and assign a ChannelHandler to the read end of
-	     * a pipe.  When a command line has been submitted with the Enter
-	     * key, it is copied into the stdin channel with Tcl_Ungets and a
-	     * short message is written to the pipe to activate the handler.
+	     * If USE_LINENOISE is defined, we instead launch a thread to
+	     * manage the line editing, and assign a ChannelHandler to the
+	     * read end of a pipe.  When a command line has been submitted
+	     * with the Enter key, the thread pushes it onto the stdin channel
+	     * with Tcl_Ungets and writes a message to the pipe to activate
+	     * the handler.
 	     */
-
+	    eventLoopRunning = 1;
 	    if (is.input) {
 		if (is.tty) {
 		    Prompt(interp, &is);
 #ifdef USE_LINENOISE
-		    Tcl_CreateThread(&lineThreadId, LineThreadProc, &is,
-				     TCL_THREAD_STACK_DEFAULT, TCL_THREAD_NOFLAGS);
-		    Tcl_CreateChannelHandler(is.signalRead, TCL_READABLE, StdinProc, &is);
+		    startLineThread(&is);
 #endif
 		}
 	    }
-#ifdef USE_LINENOISE
-	    Tcl_MutexUnlock(&linenoiseMutex);
-#endif
 	    /* Run the event loop. */
-	    eventLoopRunning = 1;
 	    mainLoopProc();
 	    Tcl_SetMainLoop(NULL);
 #ifdef USE_LINENOISE
-	    eventLoopRunning = 0;
 	    Tcl_DeleteChannelHandler(is.signalRead, StdinProc, &is);
 #else
 	    if (is.input) {
@@ -869,15 +882,22 @@ StdinProc(
     Tcl_Interp *interp = isPtr->interp;
 
 #ifdef USE_LINENOISE
+
     /*
      * We were called by the channel handler because the signal pipe became
      * readable.  Drain the pipe, using the file descriptor because the pipe is
-     * shared.
+     * shared between two threads.  If the message says EOF was received,
+     * call Tcl_Exit.  Otherwise it must be the ready message, so run the
+     * command.
      */
+
     char message[SIGNAL_MAX];
     Tcl_MutexLock(&signalPipeMutex);
-    length = read(isPtr->signalPipe[0], message, sizeof(message));
+    length = read(PTR2INT(isPtr->signalReadFH), message, sizeof(message));
     Tcl_MutexUnlock(&signalPipeMutex);
+    if (strncmp(message, eofSignal, strlen(eofSignal)) == 0) {
+	Tcl_Exit(0);
+    }
 #endif
 
     if (Tcl_IsShared(commandPtr)) {
