@@ -10,6 +10,8 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+testConstraint testevalex [llength [info commands testevalex]]
+
 set abstractlisttestvars [info var *]
 
 proc value-isa {var {expected ""}} {
@@ -193,6 +195,15 @@ test abstractlist-2.13 {no shimmer join llength==1} {
     list ${l-isa} $l ${j-isa} $j
 } {{l is a lstring} G {j is a pure} G}
 
+test abstractlist-2.14 {error case lset multiple indicies} -body {
+    set l [lstring Inconceivable]
+    set l-isa [value-isa l]
+    set m [lset l 2 0 1 k]
+    set m-isa [value-isa m]
+    list $l ${l-isa} $m ${m-isa} [value-cmp l m]
+} -returnCodes 1 \
+    -result {Multiple indicies not supported by lstring.}
+
 # lsort
 
 test abstractlist-3.0 {no shimmer llength} {
@@ -206,7 +217,8 @@ test abstractlist-3.0 {no shimmer llength} {
 test abstractlist-3.1 {no shimmer lindex} {
     set l [lstring -not SLICE $str]
     set l-isa [value-isa l]
-    set ele [lindex $l 22]
+    set n 22
+    set ele [lindex $l $n] ;# exercise INST_LIST_INDEX
     set l-isa2 [value-isa l]
     list $l ${l-isa} ${ele} ${l-isa2}
 } {{M y { } n a m e { } i s { } I n i g o { } M o n t o y a . { } Y o u { } k i l l e d { } m y { } f a t h e r . { } P r e p a r e { } t o { } d i e !} {l is a lstring} y {l is a lstring}}
@@ -266,7 +278,7 @@ test abstractlist-3.5 {!no shimmer lreplace} {
     set m-isa [value-isa m]
     set l-isa1 [value-isa l]
     list ${l-isa} $m ${m-isa} ${l-isa1}
-} {{l is a lstring} {V i z z i n i : { } H E { } D I D N ' T { } f a i l ? { } I N C O N C E I V A B L E . { } I n i g o { } M o n t o y a : { } Y o u { } k e e p { } u s i n g { } t h a t { } w o r d . { } I { } d o { } n o t { } t h i n k { } i t { } m e a n s { } w h a t { } y o u { } t h i n k { } i t { } m e a n s .} {m is a list} {l is a lstring}}
+} {{l is a lstring} {V i z z i n i : { } H E { } D I D N ' T { } f a i l ? { } I N C O N C E I V A B L E . { } I n i g o { } M o n t o y a : { } Y o u { } k e e p { } u s i n g { } t h a t { } w o r d . { } I { } d o { } n o t { } t h i n k { } i t { } m e a n s { } w h a t { } y o u { } t h i n k { } i t { } m e a n s .} {m is a list} {l is a list}}
 
 test abstractlist-3.6 {no shimmer ledit} {
     # "ledit m 9 8 S"
@@ -298,7 +310,7 @@ test abstractlist-3.8 {shimmer lassign} {
     set l-isa2 [value-isa l]
     set l2-isa [value-isa l2]
     list $l ${l-isa} $l2 ${l-isa2} ${l2-isa}
-} {{I n c o n c e i v a b l e} {l is a lstring} {o n c e i v a b l e} {l is a lstring} {l2 is a list}}
+} {{I n c o n c e i v a b l e} {l is a lstring} {o n c e i v a b l e} {l is a list} {l2 is a list}}
 
 test abstractlist-3.9 {no shimmer lremove} {
     set l [lstring -not SLICE Inconceivable]
@@ -406,7 +418,7 @@ test abstractlist-$not-4.4 {no shimmer foreach} {
 #
 # The TBCE implements lreplace as a lrange + lappend operation, so, in this case, $m results is a list, not an lstring.
 #
-test abstractlist-$not-4.5 {!no shimmer lreplace} {
+test abstractlist-$not-4.5 {!no shimmer lreplace} RangeShimmer {
     set l [lstring {*}$options $str2]
     set l-isa [value-isa l]
     set m [lreplace $l 18 23 { } f a i l ?]
@@ -472,6 +484,24 @@ test abstractlist-$not-4.11 {shimmer lset} SetelementShimmer {
     set m-isa [value-isa m]
     list $l ${l-isa} $m ${m-isa} [value-cmp l m]
 } {{I n k o n c e i v a b l e} {l is a lstring} {I n k o n c e i v a b l e} {m is a lstring} 0}
+
+test abstractlist-$not-4.11x {lset not compiled} {SetelementShimmer testevalex} {
+    set l [lstring {*}$options Inconceivable]
+    set l-isa [value-isa l]
+    set m [testevalex {lset l 2 k}]
+    set m-isa [value-isa m]
+    list $l ${l-isa} $m ${m-isa} [value-cmp l m]
+} {{I n k o n c e i v a b l e} {l is a lstring} {I n k o n c e i v a b l e} {m is a lstring} 0}
+
+test abstractlist-$not-4.11e {error case lset multiple indicies} \
+    -constraints {SetelementShimmer testevalex} -body {
+    set l [lstring Inconceivable]
+    set l-isa [value-isa l]
+    set m [testevalex {lset l 2 0 1 k}]
+    set m-isa [value-isa m]
+    list $l ${l-isa} $m ${m-isa} [value-cmp l m]
+} -returnCodes 1 \
+    -result {Multiple indicies not supported by lstring.}
 
 # lrepeat
 test abstractlist-$not-4.12 {shimmer lrepeat} {

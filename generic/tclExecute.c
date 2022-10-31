@@ -5027,8 +5027,14 @@ TEBCresume(
 	 * Compute the new variable value.
 	 */
 
-	objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
+	if (TclAbstractListHasProc(valuePtr, TCL_ABSL_SLICE)) {
+	    objResultPtr = Tcl_AbstractListSetElement(interp,
+		valuePtr, numIndices,
+	        &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+	} else {
+	    objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
 		&OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+	}
 	if (!objResultPtr) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -5149,7 +5155,7 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
+	if (TclAbstractListHasProc(valuePtr, TCL_ABSL_SLICE)) {
 	    if (Tcl_AbstractListObjRange(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
 		TRACE_ERROR(interp);
 		goto gotError;

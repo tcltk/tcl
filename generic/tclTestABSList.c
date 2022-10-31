@@ -13,7 +13,8 @@ Tcl_Obj *myNewLStringObj(Tcl_WideInt start,
 static void freeRep(Tcl_Obj* alObj);
 static Tcl_Obj* my_LStringObjSetElem(Tcl_Interp *interp,
 				     Tcl_Obj *listPtr,
-				     Tcl_Obj *indicies,
+				     Tcl_Size numIndcies,
+				     Tcl_Obj *const indicies[],
 				     Tcl_Obj *valueObj);
 static void DupLStringRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static Tcl_WideInt my_LStringObjLength(Tcl_Obj *lstringObjPtr);
@@ -360,28 +361,23 @@ static Tcl_Obj*
 my_LStringObjSetElem(
     Tcl_Interp *interp,
     Tcl_Obj *lstringObj,
-    Tcl_Obj *indicies,
+    Tcl_Size numIndicies,
+    Tcl_Obj *const indicies[],
     Tcl_Obj *valueObj)
 {
     LString *lstringRepPtr = (LString*)Tcl_AbstractListGetConcreteRep(lstringObj);
-    int indc;
-    Tcl_Obj **indv;
     int index;
     const char *newvalue;
     int status;
     Tcl_Obj *returnObj;
 
-    if (Tcl_ListObjGetElements(interp, indicies, &indc, &indv) != TCL_OK) {
-	return NULL;
-    }
-
-    if (indc > 1) {
+    if (numIndicies > 1) {
 	Tcl_SetObjResult(interp,
 	    Tcl_ObjPrintf("Multiple indicies not supported by lstring."));
 	return NULL;
     }
 
-    status = Tcl_GetIntForIndex(interp, indv[0], lstringRepPtr->strlen, &index);
+    status = Tcl_GetIntForIndex(interp, indicies[0], lstringRepPtr->strlen, &index);
     if (status != TCL_OK) {
 	return NULL;
     }

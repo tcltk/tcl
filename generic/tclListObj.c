@@ -2769,10 +2769,10 @@ TclLsetList(
 	TclGetIntForIndexM(NULL, indexArgObj, ListSizeT_MAX - 1, &index)
 	== TCL_OK) {
 
-	if (TclHasInternalRep(listObj,&tclAbstractListType) &&
-	    TclAbstractListHasProc(listObj, TCL_ABSL_SETELEMENT)) {
+	if (TclAbstractListHasProc(listObj, TCL_ABSL_SETELEMENT)) {
+	    indices = &indexArgObj;
 	    Tcl_Obj *returnValue =
-		Tcl_AbstractListSetElement(interp, listObj, indexArgObj, valueObj);
+		Tcl_AbstractListSetElement(interp, listObj, 1, indices, valueObj);
 	    if (returnValue) Tcl_IncrRefCount(returnValue);
 	    return returnValue;
 	}
@@ -2783,24 +2783,33 @@ TclLsetList(
 
     }
 
+    /*
+     * Make copy to not shimmer index argument
+     */
     indexListCopy = TclListObjCopy(NULL, indexArgObj);
+
     if (indexListCopy == NULL) {
 	/*
 	 * indexArgPtr designates something that is neither an index nor a
 	 * well formed list. Report the error via TclLsetFlat.
 	 */
-	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
-    }
-    LIST_ASSERT_TYPE(indexListCopy);
-    ListObjGetElements(indexListCopy, indexCount, indices);
+	indexCount = 1;
+	indices = &indexArgObj;
 
-    /*
-     * Let TclLsetFlat handle the actual lset'ting.
-     */
+    } else {
+	/*
+	 * Expand list into indicies array
+	 */
+	LIST_ASSERT_TYPE(indexListCopy);
+	ListObjGetElements(indexListCopy, indexCount, indices);
+    }
 
     retValueObj = TclLsetFlat(interp, listObj, indexCount, indices, valueObj);
 
-    Tcl_DecrRefCount(indexListCopy);
+    if (indexListCopy) {
+	Tcl_DecrRefCount(indexListCopy);
+    }
+
     return retValueObj;
 }
 

@@ -42,7 +42,7 @@ int	    Tcl_AbstractListObjGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr, int 
 Tcl_Obj *   Tcl_AbstractListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 void	*   Tcl_AbstractListGetConcreteRep(Tcl_Obj *objPtr);
 Tcl_Obj *   Tcl_AbstractListSetElement(Tcl_Interp *interp, Tcl_Obj *listPtr,
-		Tcl_Obj *indicies, Tcl_Obj *valueObj);
+		Tcl_Size indexCount, Tcl_Obj *const indexArray[], Tcl_Obj *valueObj);
 int	    Tcl_AbstractListObjReplace(Tcl_Interp *interp, Tcl_Obj *listObj,
 		Tcl_Size first, Tcl_Size numToDelete, Tcl_Size numToInsert,
 		Tcl_Obj *const insertObjs[]);

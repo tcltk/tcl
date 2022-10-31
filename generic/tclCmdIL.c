@@ -2726,8 +2726,7 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    if (TclHasInternalRep(objv[1],&tclAbstractListType) &&
-	TclAbstractListHasProc(objv[1], TCL_ABSL_SLICE)) {
+    if (TclAbstractListHasProc(objv[1], TCL_ABSL_SLICE)) {
 	Tcl_Obj *resultObj;
 	int status = Tcl_AbstractListObjRange(interp, objv[1], first, last, &resultObj);
 	if (status == TCL_OK) {
@@ -4388,15 +4387,19 @@ Tcl_LsetObjCmd(
      * unshared copy of it.
      */
 
-    if (TclAbstractListHasProc(listPtr, TCL_ABSL_SETELEMENT) &&
-	objc == 4) {
-	finalValuePtr = Tcl_AbstractListSetElement(interp, listPtr, objv[2], objv[3]);
-	if (finalValuePtr) Tcl_IncrRefCount(finalValuePtr);
-    } else if (objc == 4) {
+    if (objc == 4) {
 	finalValuePtr = TclLsetList(interp, listPtr, objv[2], objv[3]);
     } else {
-	finalValuePtr = TclLsetFlat(interp, listPtr, objc-3, objv+2,
-				    objv[objc-1]);
+	if (TclAbstractListHasProc(listPtr, TCL_ABSL_SETELEMENT)) {
+	    finalValuePtr = Tcl_AbstractListSetElement(interp, listPtr,
+						       objc-3, objv+2, objv[objc-1]);
+	    if (finalValuePtr) {
+		Tcl_IncrRefCount(finalValuePtr);
+	    }
+	} else {
+	    finalValuePtr = TclLsetFlat(interp, listPtr, objc-3, objv+2,
+					objv[objc-1]);
+	}
     }
 
     /*

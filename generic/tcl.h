@@ -723,38 +723,6 @@ typedef void *(Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
-/* Abstract List functions */
-typedef struct Tcl_Obj* (Tcl_ALNewObjProc) (int objc, struct Tcl_Obj * const objv[]);
-typedef		  void	(Tcl_ALDupRepProc) (struct Tcl_Obj *srcPtr, struct Tcl_Obj *copyPtr);
-typedef	   Tcl_WideInt	(Tcl_ALLengthProc) (struct Tcl_Obj *listPtr);
-typedef		   int	(Tcl_ALIndexProc)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-					    Tcl_WideInt index, struct Tcl_Obj** elemObj);
-typedef		   int	(Tcl_ALSliceProc)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-					    Tcl_WideInt fromIdx, Tcl_WideInt toIdx,
-					    struct Tcl_Obj **newObjPtr);
-typedef		   int	(Tcl_ALReverseProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-					     struct Tcl_Obj **newObjPtr);
-typedef		   int	(Tcl_ALGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-					     int *objcptr, struct Tcl_Obj ***objvptr);
-typedef		  void	(Tcl_ALFreeConcreteRep) (struct Tcl_Obj *listPtr);
-typedef		  void	(Tcl_ALToStringRep) (struct Tcl_Obj *listPtr);
-typedef	struct Tcl_Obj*	(Tcl_ALSetElement) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-					    struct Tcl_Obj *indicies,
-					    struct Tcl_Obj *valueObj);
-typedef            int  (Tcl_ALReplaceProc) (Tcl_Interp *interp, struct Tcl_Obj *listObj,
-					    Tcl_WideInt first, Tcl_WideInt numToDelete,
-					    Tcl_WideInt numToInsert,
-					    struct Tcl_Obj *const insertObjs[]);
-
-typedef enum {
-    TCL_ABSL_NEW, TCL_ABSL_DUPREP, TCL_ABSL_LENGTH, TCL_ABSL_INDEX,
-    TCL_ABSL_SLICE, TCL_ABSL_REVERSE, TCL_ABSL_GETELEMENTS, TCL_ABSL_FREEREP,
-    TCL_ABSL_TOSTRING, TCL_ABSL_SETELEMENT, TCL_ABSL_REPLACE
-} Tcl_AbstractListProcType;
-
-typedef struct Tcl_AbstractListVersion_ *Tcl_AbstractListVersion;
-
-
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_PackageInitProc Tcl_LibraryInitProc
 #   define Tcl_PackageUnloadProc Tcl_LibraryUnloadProc
@@ -845,6 +813,39 @@ typedef struct Tcl_Obj {
  *  This structure provides the functions used in List operations to emulate a
  *  List for AbstractList types.
  */
+
+/* Abstract List functions */
+typedef struct Tcl_Obj* (Tcl_ALNewObjProc) (int objc, struct Tcl_Obj * const objv[]);
+typedef		  void	(Tcl_ALDupRepProc) (struct Tcl_Obj *srcPtr, struct Tcl_Obj *copyPtr);
+typedef	   Tcl_WideInt	(Tcl_ALLengthProc) (struct Tcl_Obj *listPtr);
+typedef		   int	(Tcl_ALIndexProc)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					    Tcl_WideInt index, struct Tcl_Obj** elemObj);
+typedef		   int	(Tcl_ALSliceProc)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					    Tcl_WideInt fromIdx, Tcl_WideInt toIdx,
+					    struct Tcl_Obj **newObjPtr);
+typedef		   int	(Tcl_ALReverseProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					     struct Tcl_Obj **newObjPtr);
+typedef		   int	(Tcl_ALGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					     int *objcptr, struct Tcl_Obj ***objvptr);
+typedef		  void	(Tcl_ALFreeConcreteRep) (struct Tcl_Obj *listPtr);
+typedef		  void	(Tcl_ALToStringRep) (struct Tcl_Obj *listPtr);
+typedef	struct Tcl_Obj*	(Tcl_ALSetElement) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					    Tcl_Size indexCount,
+					    struct Tcl_Obj *const indexArray[],
+					    struct Tcl_Obj *valueObj);
+typedef            int  (Tcl_ALReplaceProc) (Tcl_Interp *interp, struct Tcl_Obj *listObj,
+					    Tcl_WideInt first, Tcl_WideInt numToDelete,
+					    Tcl_WideInt numToInsert,
+					    struct Tcl_Obj *const insertObjs[]);
+
+typedef enum {
+    TCL_ABSL_NEW, TCL_ABSL_DUPREP, TCL_ABSL_LENGTH, TCL_ABSL_INDEX,
+    TCL_ABSL_SLICE, TCL_ABSL_REVERSE, TCL_ABSL_GETELEMENTS, TCL_ABSL_FREEREP,
+    TCL_ABSL_TOSTRING, TCL_ABSL_SETELEMENT, TCL_ABSL_REPLACE
+} Tcl_AbstractListProcType;
+
+typedef struct Tcl_AbstractListVersion_ *Tcl_AbstractListVersion;
+
 
 #define TCL_ABSTRACTLIST_VERSION_1 ((Tcl_AbstractListVersion) 0x1)
 

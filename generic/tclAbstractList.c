@@ -634,7 +634,8 @@ Tcl_Obj *
 Tcl_AbstractListSetElement(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
-    Tcl_Obj *indicies,
+    Tcl_Size indexCount,
+    Tcl_Obj *const indexArray[],
     Tcl_Obj *valueObj)
 {
     Tcl_Obj *returnObj = NULL;
@@ -642,7 +643,7 @@ Tcl_AbstractListSetElement(
     if (TclHasInternalRep(objPtr,&tclAbstractListType)) {
 	Tcl_AbstractListType *typePtr  = Tcl_AbstractListGetType(objPtr);
         if (TclAbstractListHasProc(objPtr, TCL_ABSL_SETELEMENT)) {
-            returnObj = typePtr->setElementProc(interp, objPtr, indicies, valueObj);
+            returnObj = typePtr->setElementProc(interp, objPtr, indexCount, indexArray, valueObj);
         } else {
             if (interp) {
                 Tcl_SetObjResult(
