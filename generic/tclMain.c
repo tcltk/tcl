@@ -102,12 +102,13 @@ typedef struct {
     PromptType prompt;		/* Next prompt to print */
     Tcl_Interp *interp;		/* Interpreter that evaluates interactive
 				   commands. */
+#ifdef USE_LINENOISE
     char *historyPath;          /* Path to history file. */
     Tcl_Channel signalRead;     /* Read channel for signal pipe. */
     Tcl_Channel signalWrite;    /* Write channel for signal pipe. */
     ClientData signalReadFH;    /* Signal pipe read file descriptor. */
     ClientData signalWriteFH;   /* Signal pipe write file descriptor. */
-
+#endif
 } InteractiveState;
 
 /*
@@ -389,8 +390,11 @@ Tcl_MainEx(
     Tcl_MainLoopProc *mainLoopProc;
     Tcl_Channel chan;
     InteractiveState is;
+
+#ifdef USE_LINENOISE
     char *home = getenv("HOME");
     char historyPath[1024];
+#endif
 
     TclpSetInitialEncodings();
     if (0 < argc) {
@@ -550,6 +554,7 @@ Tcl_MainEx(
     Tcl_LinkVar(interp, "tcl_interactive", &is.tty, TCL_LINK_BOOLEAN);
     is.input = Tcl_GetStdChannel(TCL_STDIN);
 
+#ifdef USE_LINENOISE
     /*
      * Set up the history file.
      */
@@ -561,13 +566,16 @@ Tcl_MainEx(
                 sizeof(historyPath) - strlen(historyPath) - 1);
     }
     is.historyPath = historyPath;
+#endif
 
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
 	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
 	    int length;
+
+#ifdef USE_LINENOISE
 	    eventLoopRunning = 0;
-	    fflush(stderr);
+#endif
 
 	    if (is.tty) {
 		Prompt(interp, &is);
