@@ -103,7 +103,7 @@ system, as returned by \fBencoding system\fR.
 .TP
 \fB\-eofchar\fR \fIchar\fR
 .TP
-\fB\-eofchar\fR \fB{\fIinChar outChar\fB}\fR
+\fB\-eofchar\fR \fB{\fIchar outChar\fB}\fR
 .
 This option supports DOS file systems that use Control-z (\ex1A) as an
 end of file marker.  If \fIchar\fR is not an empty string, then this
@@ -122,6 +122,31 @@ reading and the empty string for writing.
 The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7F;
 attempting to set \fB\-eofchar\fR to a value outside of this range will
 generate an error.
+.VS "TCL8.7 TIP633"
+.TP
+\fB\-nocomplainencoding\fR \fIbool\fR
+.
+Reporting mode of encoding errors.
+If set to a \fItrue\fR value, encoding errors are resolved by a replacement
+character (output) or verbatim bytes (input). No error is thrown.
+This is the only available mode in Tcl 8.7.
+.RS
+.PP
+Starting from TCL 9.0, this value may be set to a \fIfalse\fR value to throw errors
+in case of encoding errors.
+.RE
+.VE "TCL8.7 TIP633"
+.VS "TCL8.7 TIP346"
+.TP
+\fB\-strictencoding\fR \fIbool\fR
+.
+Activate additional stricter encoding application rules.
+Default value is \fIfalse\fR.
+.RS
+.PP
+See the \fI\-strict\fR option of the \fBencoding\fR command for more information.
+.VE "TCL8.7 TIP346"
+.RE
 .TP
 \fB\-translation\fR \fImode\fR
 .TP

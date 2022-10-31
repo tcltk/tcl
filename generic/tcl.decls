@@ -714,7 +714,7 @@ declare 198 {
 }
 declare 199 {
     Tcl_Channel Tcl_OpenTcpClient(Tcl_Interp *interp, int port,
-	    const char *address, const char *myaddr, int myport, int async)
+	    const char *address, const char *myaddr, int myport, int flags)
 }
 declare 200 {
     Tcl_Channel Tcl_OpenTcpServer(Tcl_Interp *interp, int port,
@@ -2327,11 +2327,11 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
-# TIP #456
+# TIP #456/#468
 declare 631 {
     Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
-	    const char *host, unsigned int flags, Tcl_TcpAcceptProc *acceptProc,
-	    void *callbackData)
+	    const char *host, unsigned int flags, int backlog,
+	    Tcl_TcpAcceptProc *acceptProc, void *callbackData)
 }
 
 # TIP #430
