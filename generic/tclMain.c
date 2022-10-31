@@ -601,7 +601,7 @@ Tcl_MainEx(
 	    length = Tcl_GetLineObj(historyPath, is.commandPtr);
 	    Tcl_MutexUnlock(&lineThreadMutex);
 #else
-	    length = Tcl_GetsObj(is.commandPtr);
+	    length = Tcl_GetsObj(is.input, is.commandPtr);
 #endif
 
 	    if (length < 0) {
@@ -690,7 +690,9 @@ Tcl_MainEx(
 	     * with Tcl_Ungets and writes a message to the pipe to activate
 	     * the handler.
 	     */
+#ifdef USE_LINENOISE
 	    eventLoopRunning = 1;
+#endif
 	    if (is.input) {
 		if (is.tty) {
 		    Prompt(interp, &is);
@@ -926,6 +928,9 @@ StdinProc(
 	     */
 	    Tcl_Exit(0);
 	}
+#ifndef USE_LINENOISE
+	Tcl_DeleteChannelHandler(chan, StdinProc, isPtr);
+#endif
 	return;
     }
     if (Tcl_IsShared(commandPtr)) {

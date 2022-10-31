@@ -5167,10 +5167,12 @@ int Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj) {
 #else
 int Tcl_GetLine(char *historyPath, Tcl_DString *lineString) {
     Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
+    (void) historyPath;
     return Tcl_Gets(input, lineString);
 }
 int Tcl_GetLineObj(char *historyPath, Tcl_Obj *lineObj) {
     Tcl_Channel input = Tcl_GetStdChannel(TCL_STDIN);
+    (void) historyPath;
     return Tcl_GetsObj(input, lineObj);
 }
 #endif
