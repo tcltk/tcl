@@ -728,7 +728,7 @@ TclArithSeriesObjRange(
 	if (interp) {
 	    Tcl_SetObjResult(
 		interp,
-		Tcl_ObjPrintf("index %d is out of bounds 0 to %"
+		Tcl_ObjPrintf("index %" TCL_Z_MODIFIER "u is out of bounds 0 to %"
 			      TCL_LL_MODIFIER "d", fromIdx, (arithSeriesRepPtr->len-1)));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}
@@ -739,7 +739,7 @@ TclArithSeriesObjRange(
 	if (interp) {
 	    Tcl_SetObjResult(
 		interp,
-		Tcl_ObjPrintf("index %d is out of bounds 0 to %"
+		Tcl_ObjPrintf("index %" TCL_Z_MODIFIER "u is out of bounds 0 to %"
 			      TCL_LL_MODIFIER "d", fromIdx, (arithSeriesRepPtr->len-1)));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}

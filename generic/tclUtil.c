@@ -3751,11 +3751,7 @@ TclIndexEncode(
 	 * We parsed an end+offset index value.
 	 * wide holds the offset value in the range WIDE_MIN...WIDE_MAX.
 	 */
-	if (!irPtr && (wide > INT_MAX)) {
-	    return TCL_ERROR;
-	} else if (irPtr && (wide < INT_MIN)) {
-	    return TCL_ERROR;
-	} else if (wide > (unsigned)(irPtr ? TCL_INDEX_END : INT_MAX)) {
+	if (wide > (unsigned)(irPtr ? TCL_INDEX_END : INT_MAX)) {
 	    /*
 	     * All end+postive or end-negative expressions
 	     * always indicate "after the end".
