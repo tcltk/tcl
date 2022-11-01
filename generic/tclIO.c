@@ -8175,32 +8175,14 @@ Tcl_SetChannelOption(
 	UpdateInterest(chanPtr);
 	return TCL_OK;
     } else if (HaveOpt(2, "-eofchar")) {
-	if (!newValue[0] || (!(newValue[0] & 0x80) && !newValue[1])) {
+	if (!newValue[0] || (!(newValue[0] & 0x80) && (!newValue[1]
+#ifndef TCL_NO_DEPRECATED
+		|| !strcmp(newValue+1, " {}")
+#endif
+		))) {
 	    if (GotFlag(statePtr, TCL_READABLE)) {
 		statePtr->inEofChar = newValue[0];
 	    }
-#ifndef TCL_NO_DEPRECATED
-	} else if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
-	    return TCL_ERROR;
-	} else if (argc == 0) {
-	    statePtr->inEofChar = 0;
-	} else if (argc == 1 || argc == 2) {
-	    int inValue = (int) argv[0][0];
-	    int outValue = (argc == 2) ? (int) argv[1][0] : 0;
-
-	    if (inValue & 0x80 || (inValue && argv[0][1]) || outValue) {
-		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                            "bad value for -eofchar: must be non-NUL ASCII"
-                            " character", -1));
-		}
-		Tcl_Free((void *)argv);
-		return TCL_ERROR;
-	    }
-	    if (GotFlag(statePtr, TCL_READABLE)) {
-		statePtr->inEofChar = inValue;
-	    }
-#endif
 	} else {
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
