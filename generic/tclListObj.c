@@ -2644,10 +2644,10 @@ TclLindexFlat(
 		/* ArithSeries cannot be a list of lists */
 		Tcl_DecrRefCount(elemObj);
 		TclNewObj(elemObj);
-		Tcl_IncrRefCount(elemObj);
 		break;
 	    }
 	}
+	Tcl_IncrRefCount(elemObj);
 	return elemObj;
     }
 
