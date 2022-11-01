@@ -864,6 +864,8 @@ static const TclPlatStubs tclPlatStubs = {
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
+    0, /* 2 */
+    TclUnusedStubEntry, /* 3 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
@@ -1673,7 +1675,8 @@ const TclStubs tclStubs = {
     0, /* 679 */
     0, /* 680 */
     0, /* 681 */
-    TclUnusedStubEntry, /* 682 */
+    0, /* 682 */
+    TclUnusedStubEntry, /* 683 */
 };
 
 /* !END!: Do not edit above this line. */
