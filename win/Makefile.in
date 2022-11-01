@@ -82,7 +82,7 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG)
 #CFLAGS = 		$(CFLAGS_OPTIMIZE)
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -D__USE_MINGW_ANSI_STDIO=0 -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
+CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -D__USE_MINGW_ANSI_STDIO=0 -DMP_FIXED_CUTOFFS -DMP_NO_STDINT -DUSE_LINENOISE
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
@@ -106,6 +106,7 @@ PKGS_DIR		= $(TOP_DIR)/pkgs
 ZLIB_DIR		= $(COMPAT_DIR)/zlib
 MINIZIP_DIR		= $(ZLIB_DIR)/contrib/minizip
 TOMMATH_DIR		= $(TOP_DIR)/libtommath
+LINENOISE_DIR	= $(TOP_DIR)/linenoise
 
 # Converts a POSIX path to a Windows native path.
 CYGPATH			= @CYGPATH@
@@ -125,6 +126,7 @@ ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W 2>/dev/null || pwd -P)
 ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)')
 MINIZIP_DIR_NATIVE	= $(shell $(CYGPATH) '$(MINIZIP_DIR)')
 TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
+LINENOISE_DIR_NATIVE = $(shell $(CYGPATH) '$(LINENOISE_DIR)')
 
 # Fully qualify library path so that `make test`
 # does not depend on the current directory.
@@ -183,7 +185,7 @@ TCL_EXE			= @TCL_EXE@
 # Setting the VPATH variable to a list of paths will cause the Makefile to
 # look into these paths when resolving .c to .obj dependencies.
 
-VPATH = $(GENERIC_DIR):$(WIN_DIR):$(COMPAT_DIR):$(ZLIB_DIR):$(TOMMATH_DIR)
+VPATH = $(GENERIC_DIR):$(WIN_DIR):$(COMPAT_DIR):$(ZLIB_DIR):$(TOMMATH_DIR):$(LINENOISE_DIR)
 
 AR		= @AR@
 RANLIB		= @RANLIB@
@@ -253,7 +255,7 @@ MINIZIP_OBJS = \
 ZIP_INSTALL_OBJS =  @ZIP_INSTALL_OBJS@
 
 CC_SWITCHES = -I"${BUILD_DIR}" -I"${GENERIC_DIR_NATIVE}" -I"${TOMMATH_DIR_NATIVE}" \
--I"${ZLIB_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
+-I"${LINENOISE_DIR_NATIVE}" -I"${ZLIB_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
 ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} -DMP_PREC=4 \
 ${AC_FLAGS} ${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
 
@@ -261,7 +263,7 @@ CC_OBJNAME = @CC_OBJNAME@
 CC_EXENAME = @CC_EXENAME@
 
 STUB_CC_SWITCHES = -I"${GENERIC_DIR_NATIVE}" -I"${TOMMATH_DIR_NATIVE}" \
--I"${ZLIB_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
+-I"${LINENOISE_DIR_NATIVE}" -I"${ZLIB_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
 ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} -DMP_PREC=4 \
 ${AC_FLAGS} ${COMPILE_DEBUG_FLAGS}
 
@@ -432,6 +434,8 @@ TOMMATH_OBJS = \
 	bn_s_mp_toom_mul.${OBJEXT} \
 	bn_s_mp_toom_sqr.${OBJEXT}
 
+LINENOISE_OBJS = \
+	linenoise.${OBJEXT} \
 
 WIN_OBJS = \
 	tclWin32Dll.$(OBJEXT) \
@@ -474,7 +478,7 @@ ZLIB_OBJS = \
 	uncompr.$(OBJEXT) \
 	zutil.$(OBJEXT)
 
-TCL_OBJS = ${GENERIC_OBJS} ${WIN_OBJS} @ZLIB_OBJS@ @TOMMATH_OBJS@
+TCL_OBJS = ${GENERIC_OBJS} ${WIN_OBJS} ${LINENOISE_OBJS} @ZLIB_OBJS@ @TOMMATH_OBJS@
 
 TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
