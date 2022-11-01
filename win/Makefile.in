@@ -997,7 +997,7 @@ clean: cleanhelp clean-packages
 
 distclean: distclean-packages clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
-		config.status.lineno tclsh.exe.manifest
+		config.status.lineno tclsh.exe.manifest tclUuid.h
 
 #
 # Bundled package targets

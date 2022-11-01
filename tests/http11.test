@@ -954,7 +954,7 @@ test http11-3.8.$ThreadLevel "close,identity no -handler but with -progress" -se
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close {} {} 0 0 0}
 
-test http11-3.9 "close,identity no -handler but with -progress progressPause enters event loop" -setup {
+test http11-3.9.$ThreadLevel "close,identity no -handler but with -progress progressPause enters event loop" -setup {
     variable httpd [create_httpd]
     set logdata ""
 } -body {
