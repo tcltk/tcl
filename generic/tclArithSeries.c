@@ -724,9 +724,27 @@ TclArithSeriesObjRange(
 	return obj;
     }
 
-    TclArithSeriesObjIndex(arithSeriesPtr, fromIdx, &startObj);
+    if (TclArithSeriesObjIndex(arithSeriesPtr, fromIdx, &startObj) != TCL_OK) {
+	if (interp) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_ObjPrintf("index %d is out of bounds 0 to %"
+			      TCL_LL_MODIFIER "d", fromIdx, (arithSeriesRepPtr->len-1)));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	}
+	return NULL;
+    }
     Tcl_IncrRefCount(startObj);
-    TclArithSeriesObjIndex(arithSeriesPtr, toIdx, &endObj);
+    if (TclArithSeriesObjIndex(arithSeriesPtr, toIdx, &endObj) != TCL_OK) {
+	if (interp) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_ObjPrintf("index %d is out of bounds 0 to %"
+			      TCL_LL_MODIFIER "d", fromIdx, (arithSeriesRepPtr->len-1)));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	}
+	return NULL;
+    }
     Tcl_IncrRefCount(endObj);
     TclArithSeriesObjStep(arithSeriesPtr, &stepObj);
     Tcl_IncrRefCount(stepObj);

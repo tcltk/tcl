@@ -255,8 +255,9 @@ test lseq-3.7 {lmap lseq} {
 
 test lseq-3.8 {lrange lseq} {
     set r [lrange [lseq 1 100] 10 20]
-    lindex [tcl::unsupported::representation $r] 3
-} {arithseries}
+    set empty [lrange [lseq 1 100] 20 10]
+    list $r $empty [lindex [tcl::unsupported::representation $r] 3]
+} {{11 12 13 14 15 16 17 18 19 20 21} {} arithseries}
 
 test lseq-3.9 {lassign lseq} arithSeriesShimmer {
     set r [lseq 15]
@@ -509,11 +510,43 @@ test lseq-4.5 {lindex off by one} -body {
     unset res
 } -result {4 3}
 
+# Bad refcount on ResultObj
+test lseq-4.6 {lindex flat} -body {
+    set l [lseq 2 10]
+    set cmd lindex
+    set i 4
+    set c [lindex $l $i]
+    set d [$cmd $l $i]
+    set e [lindex [lseq 2 10] $i]
+    set f [$cmd [lseq 2 10] $i]
+    list $c $d $e $f
+} -cleanup {
+    unset l
+    unset e
+} -result [lrepeat 4 6]
+
+test lseq-4.7 {empty list} {
+    list [lseq 0] [join [lseq 0] {}] [join [lseq 1] {}]
+} {{} {} 0}
+
+test lseq-4.8 {error case lrange} -body {
+    lrange [lseq 1 5] fred ginger
+} -returnCodes 1 \
+    -result {bad index "fred": must be integer?[+-]integer? or end?[+-]integer?}
+
+test lseq-4.9 {error case lrange} -body {
+    set fred 7
+    set ginger 8
+    lrange [lseq 1 5] $fred $ginger
+} -returnCodes 1 \
+    -result {index 7 is out of bounds 0 to 4}
+
 # Panic when using variable value?
-test lseq-4.6 {panic using variable index} {
+test lseq-4.10 {panic using variable index} {
     set i 0
     lindex [lseq 10] $i
 } {0}
+
 
 # cleanup
 ::tcltest::cleanupTests
