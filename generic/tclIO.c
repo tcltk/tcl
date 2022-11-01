@@ -333,7 +333,7 @@ static const Tcl_ObjType chanObjType = {
     DupChannelInternalRep,		/* dupIntRepProc */
     NULL,			/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_SIZE
+    0
 };
 
 #define ChanSetInternalRep(objPtr, resPtr)					\

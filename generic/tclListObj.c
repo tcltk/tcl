@@ -156,7 +156,7 @@ const Tcl_ObjType tclListType = {
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
     SetListFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_SIZE
+    0
 };
 
 /* Macros to manipulate the List internal rep */

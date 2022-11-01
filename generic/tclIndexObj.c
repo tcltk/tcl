@@ -42,7 +42,7 @@ static const Tcl_ObjType indexType = {
     DupIndex,			/* dupIntRepProc */
     UpdateStringOfIndex,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_SIZE
+    0
 };
 
 /*

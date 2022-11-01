@@ -82,7 +82,7 @@ static const Tcl_ObjType ensembleCmdType = {
     DupEnsembleCmdRep,		/* dupIntRepProc */
     NULL,			/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_SIZE
+    0
 };
 
 #define ECRSetInternalRep(objPtr, ecRepPtr)					\

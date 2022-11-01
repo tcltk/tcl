@@ -620,7 +620,6 @@ typedef struct Tcl_ObjType {
 				 * compatibility can be assured. Can be 0 as well,
 				 * for Tcl 8.x compatibility */
 } Tcl_ObjType;
-#define TCL_OBJTYPE_SIZE sizeof(Tcl_ObjType)
 
 /*
  * The following structure stores an internal representation (internalrep) for

@@ -241,7 +241,7 @@ static const Tcl_ObjType encodingType = {
     DupEncodingInternalRep,
     NULL,
     NULL,
-    TCL_OBJTYPE_SIZE,
+    0,
 };
 
 #define EncodingSetInternalRep(objPtr, encoding)				\
