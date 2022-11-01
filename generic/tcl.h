@@ -633,6 +633,9 @@ typedef struct Tcl_ObjType {
 				/* Called to convert the object's internal rep
 				 * to this type. Frees the internal rep of the
 				 * old type. Returns TCL_ERROR on failure. */
+    size_t structureLength;	/* Length of this structure, so future binary
+				 * compatibility can be assured. Can be 0 as well,
+				 * for Tcl 8.x compatibility */
 } Tcl_ObjType;
 
 /*

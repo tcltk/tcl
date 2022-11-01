@@ -75,7 +75,8 @@ const Tcl_ObjType tclArithSeriesType = {
     FreeArithSeriesInternalRep,		/* freeIntRepProc */
     DupArithSeriesInternalRep,		/* dupIntRepProc */
     UpdateStringOfArithSeries,		/* updateStringProc */
-    SetArithSeriesFromAny		/* setFromAnyProc */
+    SetArithSeriesFromAny,		/* setFromAnyProc */
+    0
 };
 
 /*

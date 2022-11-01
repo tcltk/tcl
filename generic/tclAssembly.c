@@ -325,7 +325,8 @@ static const Tcl_ObjType assembleCodeType = {
     FreeAssembleCodeInternalRep, /* freeIntRepProc */
     DupAssembleCodeInternalRep,	 /* dupIntRepProc */
     NULL,			 /* updateStringProc */
-    NULL			 /* setFromAnyProc */
+    NULL,			 /* setFromAnyProc */
+    0
 };
 
 /*

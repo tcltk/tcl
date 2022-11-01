@@ -41,7 +41,8 @@ static const Tcl_ObjType fsPathType = {
     FreeFsPathInternalRep,		/* freeIntRepProc */
     DupFsPathInternalRep,		/* dupIntRepProc */
     UpdateStringOfFsPath,		/* updateStringProc */
-    SetFsPathFromAny			/* setFromAnyProc */
+    SetFsPathFromAny,			/* setFromAnyProc */
+    0
 };
 
 /*

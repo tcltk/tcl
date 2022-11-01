@@ -150,7 +150,8 @@ static const Tcl_ObjType methodNameType = {
     FreeMethodNameRep,
     DupMethodNameRep,
     NULL,
-    NULL
+    NULL,
+    0
 };
 
 
