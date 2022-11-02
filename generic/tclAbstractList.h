@@ -14,8 +14,6 @@
 
 #include "tclInt.h"
 
-Tcl_AbstractListType * Tcl_AbstractListGetType(Tcl_Obj *objPtr);
-
 static inline const char*
 Tcl_AbstractListTypeName(
     Tcl_Obj *objPtr) /* Should be of type AbstractList */

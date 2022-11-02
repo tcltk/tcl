@@ -889,7 +889,7 @@ static inline void Tcl_AbstractListSetConcreteRep(
     void *repPtr)       /* New representation */
 {
     /*  assert(objPtr->typePtr == &tclAbstractListType); */
-    objPtr->internalRep.twoPtrValue.ptr2 = repPtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = repPtr;
 }
 
 /*

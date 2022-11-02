@@ -91,9 +91,9 @@ Tcl_AbstractListObjNew(Tcl_Interp *interp, const Tcl_AbstractListType* vTablePtr
     Tcl_ObjInternalRep itr;
     (void)interp;
     TclNewObj(objPtr);
-    itr.twoPtrValue.ptr1 = (void*)vTablePtr; /* dispatch table for concrete type */
-    itr.twoPtrValue.ptr2 = NULL;
     Tcl_StoreInternalRep(objPtr, &tclAbstractListType, &itr);
+    Tcl_AbstractListSetType(objPtr, (void*)vTablePtr); /* dispatch table for concrete type */
+    Tcl_AbstractListSetConcreteRep(objPtr, NULL);
     Tcl_InvalidateStringRep(objPtr);
     return objPtr;
 }
@@ -159,7 +159,7 @@ Tcl_AbstractListObjIndex(
  *
  * Side effects:
  *	Frees abstractListPtr's AbstractList* internal representation and
- *	sets listPtr's	internalRep.twoPtrValue.ptr1 to NULL.
+ *	sets listPtr's	internalRep.twoPtrValue.ptr2 to NULL.
  *
  *----------------------------------------------------------------------
  */
@@ -173,8 +173,8 @@ FreeAbstractListInternalRep(Tcl_Obj *abstractListObjPtr)
         /* call the free callback for the concrete rep */
         typePtr->freeRepProc(abstractListObjPtr);
     }
-    abstractListObjPtr->internalRep.twoPtrValue.ptr1 = NULL;
     abstractListObjPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    abstractListObjPtr->internalRep.twoPtrValue.ptr1 = NULL;
 }
 
 /*
@@ -201,9 +201,9 @@ DupAbstractListInternalRep(
 				 * Internal rep must be clear, it is stomped */
 {
     Tcl_AbstractListType *typePtr;
-    typePtr = AbstractListGetType(srcPtr);
-    copyPtr->internalRep.twoPtrValue.ptr1 = typePtr;
-    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    typePtr = Tcl_AbstractListGetType(srcPtr);
+    Tcl_AbstractListSetType(copyPtr, typePtr);
+    Tcl_AbstractListSetConcreteRep(copyPtr, NULL);
 
     /* Now do concrete type dup. It is responsible for calling
        Tcl_AbstractListSetConcreteRep to initialize ptr2 */
@@ -212,8 +212,8 @@ DupAbstractListInternalRep(
 	typePtr->dupRepProc(srcPtr, copyPtr);
     } else {
 	/* TODO - or set it to NULL instead? */
-	copyPtr->internalRep.twoPtrValue.ptr2 =
-	    srcPtr->internalRep.twoPtrValue.ptr2;
+	Tcl_AbstractListSetConcreteRep
+	    (copyPtr, Tcl_AbstractListGetConcreteRep(srcPtr));
     }
 
     copyPtr->typePtr = &tclAbstractListType;
@@ -265,7 +265,7 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
      * destination allocation if necessary.
      */
 
-    typePtr = AbstractListGetType(abstractListObjPtr);
+    typePtr = Tcl_AbstractListGetType(abstractListObjPtr);
 
     /*
      * If concrete type has a better way to generate the string,
@@ -614,7 +614,7 @@ Tcl_AbstractListGetType(
     if (objPtr->typePtr != &tclAbstractListType) {
 	return NULL;
     }
-    return (Tcl_AbstractListType *) objPtr->internalRep.twoPtrValue.ptr1;
+    return (Tcl_AbstractListType *) objPtr->internalRep.twoPtrValue.ptr2;
 }
 
 /* Returns the storage used by the concrete abstract list type */
@@ -625,7 +625,7 @@ void* Tcl_AbstractListGetConcreteRep(
     if (objPtr == NULL || objPtr->typePtr != &tclAbstractListType) {
 	return NULL;
     }
-    return objPtr->internalRep.twoPtrValue.ptr2;
+    return objPtr->internalRep.twoPtrValue.ptr1;
 }
 
 /* Replace or add the element in the list @indicies with the given new value
