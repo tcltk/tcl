@@ -67,7 +67,7 @@ const Tcl_ObjType tclProcBodyType = {
 				 * should panic instead. */
 };
 
-#define ProcSetIntRep(objPtr, procPtr)					\
+#define ProcSetInternalRep(objPtr, procPtr)					\
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	(procPtr)->refCount++;						\
@@ -113,7 +113,7 @@ static const Tcl_ObjType lambdaType = {
     SetLambdaFromAny		/* setFromAnyProc */
 };
 
-#define LambdaSetIntRep(objPtr, procPtr, nsObjPtr)			\
+#define LambdaSetInternalRep(objPtr, procPtr, nsObjPtr)			\
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (procPtr);				\
@@ -122,7 +122,7 @@ static const Tcl_ObjType lambdaType = {
 	Tcl_StoreInternalRep((objPtr), &lambdaType, &ir);			\
     } while (0)
 
-#define LambdaGetIntRep(objPtr, procPtr, nsObjPtr)			\
+#define LambdaGetInternalRep(objPtr, procPtr, nsObjPtr)			\
     do {								\
 	const Tcl_ObjInternalRep *irPtr;					\
 	irPtr = TclFetchInternalRep((objPtr), &lambdaType);			\
@@ -328,7 +328,7 @@ Tcl_ProcObjCmd(
      *	   of all procs whose argument list is just _args_
      */
 
-    if (objv[3]->typePtr == &tclProcBodyType) {
+    if (TclHasInternalRep(objv[3], &tclProcBodyType)) {
 	goto done;
     }
 
@@ -1296,7 +1296,7 @@ InitLocalCache(
 	    *namePtr = NULL;
 	} else {
 	    *namePtr = TclCreateLiteral(iPtr, localPtr->name,
-		    localPtr->nameLength, /* hash */ -1,
+		    localPtr->nameLength, /* hash */ (size_t) -1,
 		    &isNew, /* nsPtr */ NULL, 0, NULL);
 	    Tcl_IncrRefCount(*namePtr);
 	}
@@ -2076,14 +2076,14 @@ MakeProcError(
     Tcl_Obj *procNameObj)	/* Name of the procedure. Used for error
 				 * messages and trace information. */
 {
-    unsigned int overflow, limit = 60;
+    int overflow, limit = 60;
     Tcl_Size nameLen;
     const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
-    overflow = (nameLen > limit);
+    overflow = (nameLen > (Tcl_Size)limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (procedure \"%.*s%s\" line %d)",
-	    (int)(overflow ? limit :nameLen), procName,
+	    (overflow ? limit : (int)nameLen), procName,
 	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 
@@ -2319,7 +2319,7 @@ TclNewProcBodyObj(
 
     TclNewObj(objPtr);
     if (objPtr) {
-	ProcSetIntRep(objPtr, procPtr);
+	ProcSetInternalRep(objPtr, procPtr);
     }
 
     return objPtr;
@@ -2350,7 +2350,7 @@ ProcBodyDup(
     Proc *procPtr;
     ProcGetInternalRep(srcPtr, procPtr);
 
-    ProcSetIntRep(dupPtr, procPtr);
+    ProcSetInternalRep(dupPtr, procPtr);
 }
 
 /*
@@ -2407,12 +2407,12 @@ DupLambdaInternalRep(
     Proc *procPtr;
     Tcl_Obj *nsObjPtr;
 
-    LambdaGetIntRep(srcPtr, procPtr, nsObjPtr);
+    LambdaGetInternalRep(srcPtr, procPtr, nsObjPtr);
     assert(procPtr != NULL);
 
     procPtr->refCount++;
 
-    LambdaSetIntRep(copyPtr, procPtr, nsObjPtr);
+    LambdaSetInternalRep(copyPtr, procPtr, nsObjPtr);
 }
 
 static void
@@ -2423,7 +2423,7 @@ FreeLambdaInternalRep(
     Proc *procPtr;
     Tcl_Obj *nsObjPtr;
 
-    LambdaGetIntRep(objPtr, procPtr, nsObjPtr);
+    LambdaGetInternalRep(objPtr, procPtr, nsObjPtr);
     assert(procPtr != NULL);
 
     if (procPtr->refCount-- <= 1) {
@@ -2598,7 +2598,7 @@ SetLambdaFromAny(
      * conversion to lambdaType.
      */
 
-    LambdaSetIntRep(objPtr, procPtr, nsObjPtr);
+    LambdaSetInternalRep(objPtr, procPtr, nsObjPtr);
     return TCL_OK;
 }
 
@@ -2611,13 +2611,13 @@ TclGetLambdaFromObj(
     Proc *procPtr;
     Tcl_Obj *nsObjPtr;
 
-    LambdaGetIntRep(objPtr, procPtr, nsObjPtr);
+    LambdaGetInternalRep(objPtr, procPtr, nsObjPtr);
 
     if (procPtr == NULL) {
 	if (SetLambdaFromAny(interp, objPtr) != TCL_OK) {
 	    return NULL;
 	}
-	LambdaGetIntRep(objPtr, procPtr, nsObjPtr);
+	LambdaGetInternalRep(objPtr, procPtr, nsObjPtr);
     }
 
     assert(procPtr != NULL);
@@ -2762,14 +2762,14 @@ MakeLambdaError(
     Tcl_Obj *procNameObj)	/* Name of the procedure. Used for error
 				 * messages and trace information. */
 {
-    unsigned int overflow, limit = 60;
+    int overflow, limit = 60;
     Tcl_Size nameLen;
     const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
-    overflow = (nameLen > limit);
+    overflow = (nameLen > (Tcl_Size)limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (lambda term \"%.*s%s\" line %d)",
-	    (int)(overflow ? limit : nameLen), procName,
+	    (overflow ? limit : (int)nameLen), procName,
 	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 
