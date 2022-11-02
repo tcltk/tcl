@@ -195,7 +195,7 @@
     #
     # ----------------------------------------------------------------------
 
-    proc define::classmethod {name {argv {}} {body {}}} {
+    proc define::classmethod {name args} {
         # Create the method on the class if the caller gave arguments and body
         ::set argc [::llength [::info level 0]]
         ::if {$argc == 3} {
@@ -205,7 +205,7 @@
         }
         ::set cls [::uplevel 1 self]
         ::if {$argc == 4} {
-            ::oo::define [::oo::DelegateName $cls] method $name $argv $body
+            ::oo::define [::oo::DelegateName $cls] method $name {*}$args
         }
         # Make the connection by forwarding
         ::tailcall forward $name myclass $name
