@@ -2337,7 +2337,7 @@ StringReptCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int count;
+    Tcl_WideInt count;
     Tcl_Obj *resultPtr;
 
     if (objc != 3) {
@@ -2345,7 +2345,7 @@ StringReptCmd(
 	return TCL_ERROR;
     }
 
-    if (TclGetIntFromObj(interp, objv[2], &count) != TCL_OK) {
+    if (TclGetWideIntFromObj(interp, objv[2], &count) != TCL_OK) {
 	return TCL_ERROR;
     }
 
