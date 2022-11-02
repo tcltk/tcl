@@ -3751,8 +3751,8 @@ TclIndexEncode(
 	 * We parsed an end+offset index value.
 	 * wide holds the offset value in the range WIDE_MIN...WIDE_MAX.
 	 */
-	if (irPtr ? ((wide < INT_MIN) && ((size_t)-wide <= LIST_MAX))
-		: ((wide > INT_MAX) && ((size_t)wide <= LIST_MAX))) {
+	if ((irPtr ? ((wide < INT_MIN) && ((size_t)-wide <= LIST_MAX))
+		: ((wide > INT_MAX) && ((size_t)wide <= LIST_MAX))) && (sizeof(int) != sizeof(size_t))) {
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"index \"%s\" out of range",
