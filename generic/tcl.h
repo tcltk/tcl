@@ -668,7 +668,6 @@ typedef size_t Tcl_Size;
 #else
 typedef int Tcl_Size;
 #endif
-#define TCL_SIZE_SMAX ((((Tcl_Size) 1) << ((8*sizeof(Tcl_Size)) - 1)) - 1)
 
 
 typedef struct Tcl_Obj {

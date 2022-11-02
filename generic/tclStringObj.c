@@ -3089,7 +3089,7 @@ TclStringCat(
 {
     Tcl_Obj *objResultPtr, * const *ov;
     int oc, binary = 1;
-	size_t length = 0;
+    size_t length = 0;
     int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
     int first = objc - 1;	/* Index of first value possibly not empty */
     int last = 0;		/* Index of last value possibly not empty */
@@ -3171,6 +3171,9 @@ TclStringCat(
 		    if (length == 0) {
 			first = last;
 		    }
+		    if (length > (TCL_SIZE_SMAX-numBytes)) {
+			goto overflow;
+		    }
 		    length += numBytes;
 		}
 	    }
@@ -3193,6 +3196,9 @@ TclStringCat(
 		    last = objc - oc;
 		    if (length == 0) {
 			first = last;
+		    }
+		    if (length > ((TCL_SIZE_SMAX/sizeof(Tcl_UniChar))-numChars)) {
+			goto overflow;
 		    }
 		    length += numChars;
 		}
@@ -3258,7 +3264,7 @@ TclStringCat(
 		    if (numBytes) {
 			first = last;
 		    }
-		} else if (numBytes + length > (size_t)INT_MAX) {
+		} else if (numBytes > (TCL_SIZE_SMAX - length)) {
 		    goto overflow;
 		}
 		length += numBytes;
@@ -3275,7 +3281,7 @@ TclStringCat(
 	    numBytes = objPtr->length;
 	    if (numBytes) {
 		last = objc - oc;
-		if (numBytes + length > (size_t)INT_MAX) {
+		if (numBytes > (TCL_SIZE_SMAX - length)) {
 		    goto overflow;
 		}
 		length += numBytes;
@@ -3434,7 +3440,7 @@ TclStringCat(
   overflow:
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+		    "max size for a Tcl value (%u" TCL_Z_MODIFIER " bytes) exceeded", TCL_SIZE_SMAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
     return NULL;

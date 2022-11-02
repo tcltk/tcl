@@ -105,6 +105,11 @@
 #endif
 
 /*
+ * Maximum *signed* value that can be stored in a Tcl_Size type.
+ */
+#define TCL_SIZE_SMAX ((((Tcl_Size) 1) << ((8*sizeof(Tcl_Size)) - 1)) - 1)
+
+/*
  * Macros used to cast between pointers and integers (e.g. when storing an int
  * in ClientData), on 64-bit architectures they avoid gcc warning about "cast
  * to/from pointer from/to integer of different size".
