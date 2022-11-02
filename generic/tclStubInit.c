@@ -55,6 +55,13 @@
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
 #undef Tcl_SetLongObj
+#undef Tcl_ListObjGetElements
+#undef Tcl_ListObjLength
+#undef Tcl_DictObjSize
+#undef Tcl_SplitList
+#undef Tcl_SplitPath
+#undef Tcl_FSSplitPath
+#undef Tcl_ParseArgsObjv
 #undef TclpInetNtoa
 #undef TclWinGetServByName
 #undef TclWinGetSockOpt
