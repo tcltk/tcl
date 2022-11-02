@@ -694,6 +694,110 @@ typedef struct Tcl_Obj {
 
 
 /*
+ * Abstract List
+ *
+ *  This structure provides the functions used in List operations to emulate a
+ *  List for AbstractList types.
+ */
+
+/* Abstract List functions */
+typedef struct Tcl_Obj* (Tcl_ALNewObjProc) (Tcl_Size objc, struct Tcl_Obj * const objv[]);
+typedef		  void	(Tcl_ALDupRepProc) (struct Tcl_Obj *srcPtr, struct Tcl_Obj *copyPtr);
+typedef	   Tcl_WideInt	(Tcl_ALLengthProc) (struct Tcl_Obj *listPtr);
+typedef		   int	(Tcl_ALIndexProc)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					    Tcl_Size index, struct Tcl_Obj** elemObj);
+typedef		   int	(Tcl_ALSliceProc)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					    Tcl_Size fromIdx, Tcl_Size toIdx,
+					    struct Tcl_Obj **newObjPtr);
+typedef		   int	(Tcl_ALReverseProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					     struct Tcl_Obj **newObjPtr);
+typedef		   int	(Tcl_ALGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					     Tcl_Size *objcptr, struct Tcl_Obj ***objvptr);
+typedef		  void	(Tcl_ALFreeConcreteRep) (struct Tcl_Obj *listPtr);
+typedef		  void	(Tcl_ALToStringRep) (struct Tcl_Obj *listPtr);
+typedef	struct Tcl_Obj*	(Tcl_ALSetElement) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					    Tcl_Size indexCount,
+					    struct Tcl_Obj *const indexArray[],
+					    struct Tcl_Obj *valueObj);
+typedef            int  (Tcl_ALReplaceProc) (Tcl_Interp *interp, struct Tcl_Obj *listObj,
+					    Tcl_Size first, Tcl_Size numToDelete,
+					    Tcl_Size numToInsert,
+					    struct Tcl_Obj *const insertObjs[]);
+
+typedef enum {
+    TCL_ABSL_NEW, TCL_ABSL_DUPREP, TCL_ABSL_LENGTH, TCL_ABSL_INDEX,
+    TCL_ABSL_SLICE, TCL_ABSL_REVERSE, TCL_ABSL_GETELEMENTS, TCL_ABSL_FREEREP,
+    TCL_ABSL_TOSTRING, TCL_ABSL_SETELEMENT, TCL_ABSL_REPLACE
+} Tcl_AbstractListProcType;
+
+typedef struct Tcl_AbstractListVersion_ *Tcl_AbstractListVersion;
+
+
+#define TCL_ABSTRACTLIST_VERSION_1 ((Tcl_AbstractListVersion) 0x1)
+
+/* Virtual function dispatch a la Tcl_ObjType but for AbstractList */
+typedef struct Tcl_AbstractListType {
+    Tcl_AbstractListVersion version;/* Structure version */
+    const char *typeName;	    /* Custom value reference */
+
+    /* List emulation functions */
+    Tcl_ALNewObjProc *newObjProc;	/* How to create a new Tcl_Obj of this
+					** custom type */
+    Tcl_ALDupRepProc *dupRepProc;	/* How to duplicate a internal rep of this
+					** custom type */
+    Tcl_ALLengthProc *lengthProc;	/* Return the [llength] of the
+					** AbstractList */
+    Tcl_ALIndexProc *indexProc;		/* Return a value (Tcl_Obj) for
+					** [lindex $al $index] */
+    Tcl_ALSliceProc *sliceProc;		/* Return an AbstractList for
+					** [lrange $al $start $end] */
+    Tcl_ALReverseProc *reverseProc;	/* Return an AbstractList for
+					** [lreverse $al] */
+    Tcl_ALGetElements *getElementsProc; /* Return an objv[] of all elements in
+					** the list */
+    Tcl_ALFreeConcreteRep *freeRepProc; /* Free ConcreteRep internals if
+                                        ** necessary */
+    Tcl_ALToStringRep *toStringProc;	/* Optimized "to-string" conversion
+                                        ** for updating the string rep */
+    Tcl_ALSetElement *setElementProc;   /* Replace the element at the indicie
+					** with the given valueObj. */
+    Tcl_ALReplaceProc *replaceProc;     /* Replace subset with subset */
+
+} Tcl_AbstractListType;
+
+/*
+ * Sets the storage used by the concrete abstract list type
+ * Caller has to ensure type is AbstractList. Existing rep will be
+ * overwritten so caller has to free previous rep if necessary.
+ */
+static inline void Tcl_AbstractListSetConcreteRep(
+    Tcl_Obj *objPtr,    /* Object of type AbstractList */
+    void *repPtr)       /* New representation */
+{
+    /*  assert(objPtr->typePtr == &tclAbstractListType); */
+    objPtr->internalRep.twoPtrValue.ptr1 = repPtr;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ * The following structure contains the state needed by Tcl_SaveResult. No-one
+ * outside of Tcl should access any of these fields. This structure is
+ * typically allocated on the stack.
+ */
+
+#ifndef TCL_NO_DEPRECATED
+typedef struct Tcl_SavedResult {
+    char *result;
+    Tcl_FreeProc *freeProc;
+    Tcl_Obj *objResultPtr;
+    char *appendResult;
+    int appendAvl;
+    int appendUsed;
+    char resultSpace[200+1];
+} Tcl_SavedResult;
+#endif
+
+/*
  *----------------------------------------------------------------------------
  * The following definitions support Tcl's namespace facility. Note: the first
  * five fields must match exactly the fields in a Namespace structure (see

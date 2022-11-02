@@ -272,15 +272,17 @@ TCLTEST_OBJS = \
 	tclTestObj.$(OBJEXT) \
 	tclTestProcBodyObj.$(OBJEXT) \
 	tclThreadTest.$(OBJEXT) \
-	tclWinTest.$(OBJEXT)
+	tclWinTest.$(OBJEXT) \
+	tclTestABSList.$(OBJEXT)
 
 GENERIC_OBJS = \
 	regcomp.$(OBJEXT) \
 	regexec.$(OBJEXT) \
 	regfree.$(OBJEXT) \
 	regerror.$(OBJEXT) \
-	tclAlloc.$(OBJEXT) \
+	tclAbstractList.$(OBJEXT) \
 	tclArithSeries.$(OBJEXT) \
+	tclAlloc.$(OBJEXT) \
 	tclAssembly.$(OBJEXT) \
 	tclAsync.$(OBJEXT) \
 	tclBasic.$(OBJEXT) \

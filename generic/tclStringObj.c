@@ -2979,8 +2979,8 @@ TclStringRepeat(
 	if (interp) {
 	    Tcl_SetObjResult(
 		interp,
-		Tcl_ObjPrintf("max size for a Tcl value (%u" TCL_Z_MODIFIER
-			      " bytes) exceeded",
+		Tcl_ObjPrintf("max size for a Tcl value (%" TCL_Z_MODIFIER
+			      "u bytes) exceeded",
 			      TCL_SIZE_SMAX));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}
@@ -3440,7 +3440,7 @@ TclStringCat(
   overflow:
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max size for a Tcl value (%u" TCL_Z_MODIFIER " bytes) exceeded", TCL_SIZE_SMAX));
+		    "max size for a Tcl value (%" TCL_Z_MODIFIER "u bytes) exceeded", TCL_SIZE_SMAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
     return NULL;

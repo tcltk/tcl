@@ -1,0 +1,319 @@
+'\"
+'\" Copyright (c) 2022 Brian Griffin.  All rights reserved.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_AbstractListType 3 8.7 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_AbstractListObjNew,
+Tcl_AbsstractListObjCopy,
+Tcl_AbstractListGetConcreteRep,
+Tcl_AbstractListGetElements,
+Tcl_AbstractListGetType,
+Tcl_AbstractListObjIndex,
+Tcl_AbstractListObjLength,
+Tcl_AbstractListObjRange,
+Tcl_AbstractListObjReverse,
+Tcl_AbstractListSetConcreteRep,
+\- manipulate Tcl values as abstract lists.
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_Obj *
+\fBTcl_AbstractListObjNew\fR(\fIinterp, abstractListType\fR)
+Tcl_AbstractListType *
+\fBTcl_AbstractListGetType\fR(\fIlistPtr\fR)
+void
+\fBTcl_AbstractListSetConcreteRep\fR(\fIlistPtr, repPtr\fR)
+void *
+\fBTcl_AbstractListGetConcreteRep\fR(\fIlistPtr\fR)
+Tcl_WideInt
+\fBTcl_AbstractListObjLength\fR(\fIlistPtr\fR)
+int
+\fBTcl_AbstractListObjIndex\fR(\fIinterp\fR, \fIlistPtr, index\fR, \fIelemObjPtr*\fR)
+int
+\fBTcl_AbstractListObjRange\fR(\fIinterp\fR, \fIlistPtr, fromIdx, toIdx\fR, \fInewObjPtr\fR)
+int
+\fBTcl_AbstractListObjReverse(\fIinterp\fR, \fIlistPtr\fR, \fInewObjPtr\fR)
+int
+\fBTcl_AbstraceListObjGetElements\fR(\fIinterp\fR, \fIlistPtr\fR, \fIobjcPtr\fR, \fIobjvPtr\fR)
+Tcl_Obj *
+\fBTcl_AbstractListObjCopy\fR(\fIinterp\fR, \fIlistPtr\fR);
+typedef Tcl_Obj* (Tcl_ALNewObjProc) (int objc, Tcl_Obj * const objv[]);
+typedef void (Tcl_ALDupRepProc) (Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
+typedef Tcl_WideInt (Tcl_ALLengthProc) (Tcl_Obj *listPtr);
+typedef int (Tcl_ALIndexProc) (Tcl_Interp *interp, Tcl_Obj *listPtr,
+                               Tcl_WideInt index, Tcl_Obj** elemObj);
+typedef int (Tcl_ALSliceProc) (Tcl_Interp *interp, Tcl_Obj *listPtr,
+                               Tcl_WideInt fromIdx, Tcl_WideInt toIdx,
+                               Tcl_Obj **newObjPtr);
+typedef int (Tcl_ALReverseProc) (Tcl_Interp *interp, Tcl_Obj *listPtr,
+                                 Tcl_Obj **newObjPtr);
+typedef int (Tcl_ALGetElements) (Tcl_Interp *interp, Tcl_Obj *listPtr,
+                                 int *objcptr, Tcl_Obj ***objvptr);
+typedef void (Tcl_ALFreeConcreteRep) (Tcl_Obj *listPtr);
+typedef void (Tcl_ALToStringRep) (Tcl_Obj *listPtr);
+.SH ARGUMENTS
+.AS
+.AP Tcl_Interp *interp in
+If an error occurs while converting a value to be a list value,
+an error message is left in the interpreter's result value
+unless \fIinterp\fR is NULL.
+.AP Tcl_AbstractListType *abstractListType in
+This structure defines the behavior for the \fBAbstractList\fR for a
+given concrete \fBAbstractList\fR type. The struct provides the name
+plus a collection of functions that implement the various List
+operations on the AbstractType value.  \fBTcl_AbstractListObjNew\fR
+call creates a new Tcl_Obj based on a preinitilized AbstractList
+struct.
+.AP Tcl_Obj *listPtr in/out
+A Tcl_Obj of type AbstractList. Use to read or modify the type or
+value content an AbstractList type.
+.AP void *repPtr in
+A reference to the concrete type representation storage. Specific
+concrete types allocate and use this space to store whatever details
+of value are needed.
+.AP Tcl_WideInt index in
+Index of the list element that \fBTcl_AbstractListObjIndex\fR
+is to return.
+The first element has index 0.
+.AP Tcl_Obj **elemObjPtr
+A location where the returned reference to an element Obj is to be
+stored.
+.AP Tcl_WideInt fromIdx in
+The starting index of the list element for the slice that
+\fBTcl_AbstractListObjRange\fR is to return.
+.AP Tcl_WideInt toIdx in
+The ending index of the list element for the slice that
+\fBTcl_AbstractListObjRange\fR is to return.
+.AP Tcl_Obj **newObjPtr in
+A location where the new slice or reversed Obj reference is to be
+stored.
+.AP (Tcl_ALNewObjProc) in
+Function pointer for a function used to create new instances of the
+custom AbstractList listPtr.
+.AP (Tcl_ALDupRepProc) in
+Function pointer for a function used to duplicate (make a copy) of the
+custom AbstractList listPtr.
+.AP (Tcl_ALLengthProc) in
+Function pointer for a function used to return the length of the
+custom AbstractList.
+.AP (Tcl_ALIndexProc) in
+Function pointer for a function used to return an element listPtr for
+the given index value.
+.AP (Tcl_ALSliceProc) in
+Function pointer for a function used to create a new slice from an
+existing AbstractList.
+.AP (Tcl_ALReverseProc) in
+Function pointer for a function used to create a new AbstractList with
+the element order reversed.
+.BE
+
+.SH DESCRIPTION
+.PP
+The AbstractList type provides an interface for creating new List type
+representations. An AbstractList behaves like a List when using script
+level list commands.  How the values are stored or produced is up to
+the implementation.  A simple example of an AbstractList is the [lseq]
+command which produces a list of numeric values in sequence.  The
+underlying implementation does not store a list of numeric values.
+Instead, it produces values on demand based on the index using an
+arithmetic expression: "value = start + (step * index)".
+.PP
+An AbstractList is created by defining an internal storage
+representation for the list along with a set of functions that manage
+and manipulate the list value(s).  These functions provide
+"List" like results from the List family of commands.
+
+.SH ABSTRACTLIST C API
+.PP
+\fBTcl_AbstractListObjNew\fR returns a new Tcl_Obj based on the
+concrete type definition given. The caller must then complete the
+initialization of the Obj by setting the concrete represtation. (see
+\fBTcl_AbstractListSetConcreteRep\fR())
+
+\fBTcl_AbstractListGetType\fR returns the Tcl_AbstractList struct for
+the given Obj.  This function is used internally to access the
+implementation functions.  It can also be used in a specific
+implementation to confirm that the Obj is of the expected AbstractList
+type.
+
+\fBTcl_AbstractListSetConcreteRep\fR is called when creating an
+instance of an AbstractList. It stores the repPtr, to the allocated
+value Representation, in the Tcl_Obj.
+
+\fBTcl_AbstractListGetConcreteRep\fR returns the previously stored
+repPtr for a given Obj value.
+
+\fBTcl_AbstractListObjLength\fR returns the list length, i.e., number
+of elements in the given AbstractList. This function is typically used
+internally by when evaluating various List operations.  It would not
+typically be used by an AbstractList concrete implementaion since the
+internal representation is readily available within the
+implementation, presumably.
+
+\fBTcl_AbstractListObjIndex\fR returns the element Tcl_Obj for a given
+index location.
+
+\fBTcl_AbstractListObjRange\fR returns a new Obj value constructed
+from a slice of the original AbstractList value, ranging from
+\fIfromIdx\fR to the \fItoIdx\fR. If this function is not provided,
+the default behavior will be to construct a traditional List using the
+Index function.
+
+\fBTcl_AbstractListObjReverse\fR returns a new Obj value constructed by
+reversing the index order. If this function is not provided, the
+default behavior will be to construct a traditional List using the
+Index function.
+
+\fBTcl_AbstraceListObjGetElements\fR returns an objv array containing
+all elements of the AbstractList. (*** need words about memory
+ownership ***)
+
+\fBTcl_AbstractListObjCopy\fR returns a duplicate Obj from the original.
+
+.SH ABSTRACTLIST IMPLEMENTATION FUNCTIONS
+The following functions are to be defined by a specific implementation
+to provide full or parcial List compatible behavior. The Length and
+Index functions are required, and the rest are optional.
+Unimplemented functions will either use a default implementation that
+relies on Length and Index functions, or, the AbstractList will
+"shimmer" into a formal List value.
+.PP
+.CS
+typedef Tcl_Obj* (Tcl_ALNewObjProc) (int objc, Tcl_Obj * const objv[]);
+typedef void (Tcl_ALDupRepProc) (Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
+typedef Tcl_WideInt  (Tcl_ALLengthProc) (Tcl_Obj *listPtr);
+typedef int (Tcl_ALIndexProc)  (Tcl_Interp *interp, Tcl_Obj *listPtr,
+                                 Tcl_WideInt index, Tcl_Obj** elemObj);
+typedef int (Tcl_ALSliceProc)  (Tcl_Interp *interp, Tcl_Obj *listPtr,
+                                Tcl_WideInt fromIdx, Tcl_WideInt toIdx,
+                                Tcl_Obj **newObjPtr);
+typedef int (Tcl_ALReverseProc) (Tcl_Interp *interp, Tcl_Obj *listPtr,
+                                 Tcl_Obj **newObjPtr);
+typedef int (Tcl_ALGetElements) (Tcl_Interp *interp, Tcl_Obj *listPtr,
+                                 int *objcptr, Tcl_Obj ***objvptr);
+typedef void (Tcl_ALFreeConcreteRep) (Tcl_Obj *listPtr);
+typedef void (Tcl_ALToStringRep) (Tcl_Obj *listPtr);
+.CE
+.PP
+.SH AbstractList Example
+.PP
+\fBTcl_AbstractListObjNew\fR is used to create an object with a custom
+List representation.
+.PP
+.CS
+/*
+** Define the AbstractList type callbacks
+*/
+static \fBTcl_AbstractListType\fR arithSeriesType = {
+    TCL_ABSTRACTLIST_VERSION_1,
+    "arithseries",
+    Tcl_NewArithSeriesObj,
+    DupArithSeriesRep,
+    TclArithSeriesObjLength,
+    TclArithSeriesObjIndex,
+    TclArithSeriesObjRange,
+    TclArithSeriesObjReverse,
+    TclArithSeriesGetElements,
+    FreeArithSeriesRep,
+    UpdateStringOfArithSeries
+};
+.CE
+.PP
+The Index and Length procs must be defined. The others are optional.
+If an optional proc is not defined, it may use a default routine that
+makes use of Length and Index, or the value will be converted to a
+List, and then the operation will proceed normally, and note: this
+will permanently change the value representation to a \fBList\fR
+representation.
+.PP
+.CS
+/*
+** Define the concrete representation for the ArithSeries type
+*/
+typedef struct ArithSeries {
+    int start,
+    int end,
+    int step,
+    int length
+} ArithSeries;
+
+/*
+** Allocate and initialize the concrete repdresentation.
+*/
+arithSeriesRepPtr = (ArithSeries*)\fBTcl_Alloc\fR(sizeof (ArithSeries));
+arithSeriesRepPtr->isDouble = 0;
+arithSeriesRepPtr->start = 0;
+arithSeriesRepPtr->end = 15;
+arithSeriesRepPtr->step = 1;
+arithSeriesRepPtr->len = 15;
+arithSeriesRepPtr->elements = NULL;
+
+/*
+** Create an instance Tcl_Obj
+*/
+\fBTcl_Obj\fR *arithObj = \fBTcl_AbstractListObjNew\fR(interp, &arithSeriesType);
+
+/*
+** Set the concrete value for the Obj.
+*/
+\fBTcl_AbstractListSetConcreteRep\fR(arithObj, arithSeriesRepPtr);
+
+return arithObj;
+.CE
+.PP
+If any List operation is used to modify the AbstractList, for example
+[lset $abstraceList 3 17], it will first be converted to a List before
+completing the change.
+.PP
+.CS
+/* Example functions */
+Tcl_Obj*
+ArithSeriesObjIndex(Tcl_Obj *arithSeriesObjPtr, Tcl_WideInt index)
+{
+    ArithSeries *arithSeriesRepPtr;
+    Tcl_WideInt element;
+    if (arithSeriesObjPtr->typePtr != &tclAbstractListType) {
+        Tcl_Panic("ArithSeriesObjIndex called with a not ArithSeries Obj.");
+    }
+    arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesObjPtr);
+
+    if (index < 0 || index >= arithSeriesRepPtr->length) {
+        return NULL;
+    }
+
+    /* List[i] = Start + (Step * i) */
+    element = (arithSeriesRepPtr->start + (index) * arithSeriesRepPtr->step);
+
+    return Tcl_NewWideIntObj(element);
+}
+
+Tcl_WideInt ArithSeriesObjLength(Tcl_Obj *arithSeriesObjPtr)
+{
+    ArithSeries *arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesObjPtr);
+    return arithSeriesRepPtr->length;
+}
+
+.CE
+.PP
+The functions \fBTcl_AbstractListObjLength\fR,
+\fBTcl_AbstractListObjIndex\fR, \fBTcl_AbstractListObjRange\fR, and
+\fBTcl_AbstractListObjReverse\fR can be used to interact with a known
+AbstatractList Tcl_Obj value, as well as \fBTcl_ListObjLength\fR,
+\fBTcl_ListObjIndex\fR, without causing the obj value to converted to
+a \fBList\fR.  Tcl_ListObjGetElements can also be used on an
+AbstractList, just note that this call may result in new element
+objects being created for every element in the abstract list.  Since
+an abstract list can be arbitrarily large and not consume space, this
+call may have undesired consequences.
+.PP
+.SH "SEE ALSO"
+Tcl_NewListObj(3), Tcl_NewObj(3), Tcl_DecrRefCount(3), Tcl_IncrRefCount(3), Tcl_GetObjResult(3)
+.SH KEYWORDS
+index, internal representation, length, list, list value,
+list type, value, value type, replace, string representation

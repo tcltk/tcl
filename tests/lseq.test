@@ -537,9 +537,16 @@ test lseq-4.8 {error case lrange} -body {
 test lseq-4.9 {error case lrange} -body {
     set fred 7
     set ginger 8
-    lrange [lseq 1 5] $fred $ginger
-} -returnCodes 1 \
-    -result {index 7 is out of bounds 0 to 4}
+    lrange [lseq 1 10] $fred $ginger
+} -result {8 9}
+
+test lseq-4.10 {lset shimmer} -body {
+    set l [lseq 15]
+    lappend res $l [lindex [tcl::unsupported::representation $l] 3]
+    lset l 3 25
+    lappend res $l [lindex [tcl::unsupported::representation $l] 3]
+} -result {{0 1 2 3 4 5 6 7 8 9 10 11 12 13 14} arithseries {0 1 2 25 4 5 6 7 8 9 10 11 12 13 14} list}
+
 
 # Panic when using variable value?
 test lseq-4.10 {panic using variable index} {

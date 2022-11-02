@@ -19,7 +19,7 @@
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tclTomMath.h"
-#include "tclArithSeries.h"
+#include "tclAbstractList.h"
 #include <math.h>
 #include <assert.h>
 
@@ -4657,16 +4657,15 @@ TEBCresume(
 	valuePtr = OBJ_UNDER_TOS;
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
-
-	/* special case for ArithSeries */
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
-	    length = TclArithSeriesObjLength(valuePtr);
+	/* special case for AbstractList */
+	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
+	    length = Tcl_AbstractListObjLength(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    if (TclArithSeriesObjIndex(valuePtr, index, &objResultPtr) != TCL_OK) {
+	    if (Tcl_AbstractListObjIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4679,6 +4678,7 @@ TEBCresume(
 	 * Extract the desired list element.
 	 */
 
+	/* TODO: handle AbstractList here? */
 	if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
 		&& !TclHasInternalRep(value2Ptr, &tclListType)) {
 	    int code;
@@ -4721,33 +4721,30 @@ TEBCresume(
 	opnd = TclGetInt4AtPtr(pc+1);
 	TRACE(("\"%.30s\" %d => ", O2S(valuePtr), opnd));
 
-	/* special case for ArithSeries */
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
-	    length = TclArithSeriesObjLength(valuePtr);
-
-	    /* Decode end-offset index values. */
-
-	    index = TclIndexDecode(opnd, length-1);
-
-	    /* Compute value @ index */
-	    if (index < length) {
-		if (TclArithSeriesObjIndex(valuePtr, index, &objResultPtr) != TCL_OK) {
-		    CACHE_STACK_INFO();
-		    TRACE_ERROR(interp);
-		    goto gotError;
-		}
-	    } else {
-		TclNewObj(objResultPtr);
-	    }
-	    pcAdjustment = 5;
-	    goto lindexFastPath2;
-	}
-
 	/*
 	 * Get the contents of the list, making sure that it really is a list
 	 * in the process.
 	 */
 
+	/* special case for AbstractList */
+	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
+	    length = Tcl_AbstractListObjLength(valuePtr);
+
+	    /* Decode end-offset index values. */
+	    index = TclIndexDecode(opnd, length-1);
+
+	    /* Compute value @ index */
+	    if (Tcl_AbstractListObjIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+
+	    pcAdjustment = 5;
+	    goto lindexFastPath2;
+	}
+
+	/* List case */
 	if (TclListObjGetElementsM(interp, valuePtr, &objc, &objv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -4820,8 +4817,14 @@ TEBCresume(
 	 * Compute the new variable value.
 	 */
 
-	objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
+	if (TclAbstractListHasProc(valuePtr, TCL_ABSL_SLICE)) {
+	    objResultPtr = Tcl_AbstractListSetElement(interp,
+		valuePtr, numIndices,
+	        &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+	} else {
+	    objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
 		&OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+	}
 	if (!objResultPtr) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -4942,9 +4945,8 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
-	    objResultPtr = TclArithSeriesObjRange(interp, valuePtr, fromIdx, toIdx);
-	    if (objResultPtr == NULL) {
+	if (TclAbstractListHasProc(valuePtr, TCL_ABSL_SLICE)) {
+	    if (Tcl_AbstractListObjRange(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
@@ -4970,14 +4972,18 @@ TEBCresume(
 	if (length > 0) {
 	    size_t i = 0;
 	    Tcl_Obj *o;
-	    int isArithSeries = TclHasInternalRep(value2Ptr,&tclArithSeriesType);
+	    int isAbstractList = TclHasInternalRep(value2Ptr,&tclAbstractListType);
+
 	    /*
 	     * An empty list doesn't match anything.
 	     */
 
 	    do {
-		if (isArithSeries) {
-		    TclArithSeriesObjIndex(value2Ptr, i, &o);
+		if (isAbstractList) {
+		    if (Tcl_AbstractListObjIndex(interp, value2Ptr, i, &o) != TCL_OK) {
+			TRACE_ERROR(interp);
+			goto gotError;
+		    }
 		} else {
 		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		}
@@ -4990,7 +4996,7 @@ TEBCresume(
 		if (s1len == s2len) {
 		    match = (memcmp(s1, s2, s1len) == 0);
 		}
-		if (isArithSeries) {
+		if (isAbstractList) {
 		    TclDecrRefCount(o);
 		}
 		i++;

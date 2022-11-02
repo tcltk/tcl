@@ -21,15 +21,36 @@ lseq \- Build a numeric sequence returned as a list
 .PP
 The \fBlseq\fR command creates a sequence of numeric values using the given
 parameters \fIStart\fR, \fIEnd\fR, and \fIStep\fR. The \fIoperation\fR
-argument ".." or "to" defines an inclusive range. The "count" option is used
-to define a count of the number of elements in the list. The short form with a
-single count value will create a range from 0 to count-1.
+argument ".." or "to" defines the range. The "count" option is used
+to define a count of the number of elements in the list. A short form use of
+the command, with a
+single count value, will create a range from 0 to count-1.
+
+The \fBlseq\fR command can produce both increasing and decreasing sequences. When
+both Start and End are provided without a Step value, then if Start <= End,
+the sequence will be increasing and if Start > End it will be decreasing. If a
+Step vale is included, it's sign should agree with the direction of the
+sequence (descending -> negative and ascending -> positive), otherwise an
+empty list is returned.  For example:
+
+.CS \"
+    % lseq 1 to 5    ;# increasing
+    1 2 3 4 5
+
+    % lseq 5 to 1    ;# decreasing
+    5 4 3 2 1
+
+    % lseq 6 to 1 by 2   ;# decreasing, step wrong sign, empty list
+
+    % lseq 1 to 5 by 0   ;# all step sizes of 0 produce an empty list
+
+.\"
+.CE
 
 The numeric arguments, \fIStart\fR, \fIEnd\fR, \fIStep\fR, and \fICount\fR,
-can also be a valid expression. the lseq command will evaluate the expression
-and use the numeric result, or return an error as with any invalid argument
-value. A valid expression is a valid [expr] expression, however, the result
-must be numeric; a non-numeric string will result in an error.
+may also be a valid expression. The expression will be evaluate and the
+numeric result be used.  An expression that does not evaluate to a number will
+produce an invalid argument error.
 
 .SH EXAMPLES
 .CS
@@ -67,22 +88,13 @@ must be numeric; a non-numeric string will result in an error.
     l(1)=-1
     l(0)=0
 
- set i 17
- \(-> 17
- if {$i in [lseq 0 50]} { # equivalent to: (0 <= $i && $i < 50)
-     puts "Ok"
- } else {
-     puts "outside :("
- }
- \(-> Ok
-
  set sqrs [lmap i [lseq 1 10] {expr $i*$i}]
  \(-> 1 4 9 16 25 36 49 64 81 100
 .\"
 .CE
 .SH "SEE ALSO"
-foreach(n), list(n), lappend(n), lassign(n), ledit(n), lindex(n), linsert(n),
-llength(n), lmap(n), lpop(n), lrange(n), lremove(n), lreplace(n),
+foreach(n), list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lreplace(n),
 lreverse(n), lsearch(n), lset(n), lsort(n)
 .SH KEYWORDS
 element, index, list
