@@ -1094,7 +1094,7 @@ ProcWrongNumArgs(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     Proc *procPtr = framePtr->procPtr;
-    int localCt = procPtr->numCompiledLocals, numArgs, i, i2;
+    int localCt = procPtr->numCompiledLocals, numArgs, i, i2 = 1;
     Tcl_Obj **desiredObjs;
     const char *final = NULL;
 
