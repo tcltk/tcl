@@ -5246,59 +5246,92 @@ TEBCresume(
 
     case INST_LREPLACE4:
 	{
-	    int firstIdx, lastIdx, numToDelete, numNewElems, end_indicator;
-	    opnd = TclGetInt4AtPtr(pc + 1);
-	    end_indicator = TclGetInt4AtPtr(pc + 5);
-	    firstIdx = TclGetInt4AtPtr(pc + 9);
-	    lastIdx = TclGetInt4AtPtr(pc + 13);
-	    numNewElems = opnd - 1;
-	    valuePtr = OBJ_AT_DEPTH(numNewElems);
-	    if (Tcl_ListObjLength(interp, valuePtr, &length) != TCL_OK) {
+	int numToDelete, numNewElems, end_indicator;
+	int haveSecondIndex, flags;
+	Tcl_Obj *fromIdxObj, *toIdxObj;
+	opnd = TclGetInt4AtPtr(pc + 1);
+	flags = TclGetInt1AtPtr(pc + 5);
+
+	/* Stack: ... listobj index1 ?index2? new1 ... newN */
+	valuePtr = OBJ_AT_DEPTH(opnd-1);
+
+	/* haveSecondIndex==0 => pure insert */
+	haveSecondIndex = (flags & TCL_LREPLACE4_SINGLE_INDEX) == 0;
+	numNewElems = opnd - 2 - haveSecondIndex;
+
+	/* end_indicator==1 => "end" is last element's index, 0=>index beyond */
+	end_indicator = (flags & TCL_LREPLACE4_END_IS_LAST) != 0;
+	fromIdxObj = OBJ_AT_DEPTH(opnd - 2);
+	toIdxObj = haveSecondIndex ? OBJ_AT_DEPTH(opnd - 3) : NULL;
+	if (Tcl_ListObjLength(interp, valuePtr, &length) != TCL_OK) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+
+	DECACHE_STACK_INFO();
+
+	if (TclGetIntForIndexM(
+		interp, fromIdxObj, length - end_indicator, &fromIdx)
+	    != TCL_OK) {
+	    CACHE_STACK_INFO();
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	if (fromIdx == TCL_INDEX_NONE) {
+	    fromIdx = 0;
+	}
+	else if (fromIdx > length) {
+	    fromIdx = length;
+	}
+	numToDelete = 0;
+	if (toIdxObj) {
+	    if (TclGetIntForIndexM(
+		    interp, toIdxObj, length - end_indicator, &toIdx)
+		!= TCL_OK) {
+		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    firstIdx = TclIndexDecode(firstIdx, length-end_indicator);
-	    if (firstIdx == TCL_INDEX_NONE) {
-		firstIdx = 0;
-	    } else if (firstIdx > length) {
-		firstIdx = length;
+	    if (toIdx > length) {
+		toIdx = length;
 	    }
-	    numToDelete = 0;
-	    if (lastIdx != TCL_INDEX_NONE) {
-		lastIdx = TclIndexDecode(lastIdx, length - end_indicator);
-		if (lastIdx >= firstIdx) {
-		    numToDelete = lastIdx - firstIdx + 1;
-		}
+	    if (toIdx >= fromIdx) {
+		numToDelete = toIdx - fromIdx + 1;
 	    }
-	    if (Tcl_IsShared(valuePtr)) {
-		objResultPtr = Tcl_DuplicateObj(valuePtr);
-		if (Tcl_ListObjReplace(interp,
-				       objResultPtr,
-				       firstIdx,
-				       numToDelete,
-				       numNewElems,
-				       &OBJ_AT_DEPTH(numNewElems-1))
-		    != TCL_OK) {
-		    TRACE_ERROR(interp);
-		    Tcl_DecrRefCount(objResultPtr);
-		    goto gotError;
-		}
-		TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
-		NEXT_INST_V(17, opnd, 1);
-	    } else {
-		if (Tcl_ListObjReplace(interp,
-				       valuePtr,
-				       firstIdx,
-				       numToDelete,
-				       numNewElems,
-				       &OBJ_AT_DEPTH(numNewElems-1))
-		    != TCL_OK) {
-		    TRACE_ERROR(interp);
-		    goto gotError;
-		}
-		TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
-		NEXT_INST_V(17, opnd-1, 0);
+	}
+
+	CACHE_STACK_INFO();
+
+	if (Tcl_IsShared(valuePtr)) {
+	    objResultPtr = Tcl_DuplicateObj(valuePtr);
+	    if (Tcl_ListObjReplace(interp,
+				   objResultPtr,
+				   fromIdx,
+				   numToDelete,
+				   numNewElems,
+				   &OBJ_AT_DEPTH(numNewElems - 1))
+		!= TCL_OK) {
+		TRACE_ERROR(interp);
+		Tcl_DecrRefCount(objResultPtr);
+		goto gotError;
 	    }
+	    TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
+	    NEXT_INST_V(6, opnd, 1);
+	}
+	else {
+	    if (Tcl_ListObjReplace(interp,
+				   valuePtr,
+				   fromIdx,
+				   numToDelete,
+				   numNewElems,
+				   &OBJ_AT_DEPTH(numNewElems - 1))
+		!= TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
+	    NEXT_INST_V(6, opnd - 1, 0);
+	}
 	}
 
 	/*

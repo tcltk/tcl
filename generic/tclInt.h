@@ -3759,9 +3759,6 @@ MODULE_SCOPE int	TclCompileLappendCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileLassignCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE int	TclCompileLeditCmd(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, Command *cmdPtr,
-			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileLindexCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
