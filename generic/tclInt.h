@@ -105,7 +105,8 @@
 #endif
 
 /*
- * Maximum *signed* value that can be stored in a Tcl_Size type.
+ * Maximum *signed* value that can be stored in a Tcl_Size type. This is
+ * primarily used for checking overflows in dynamically allocating memory.
  */
 #define TCL_SIZE_SMAX ((((Tcl_Size) 1) << ((8*sizeof(Tcl_Size)) - 1)) - 1)
 
