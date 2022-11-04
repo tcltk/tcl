@@ -41,8 +41,9 @@ static const Tcl_ObjType indexType = {
     FreeIndex,			/* freeIntRepProc */
     DupIndex,			/* dupIntRepProc */
     UpdateStringOfIndex,	/* updateStringProc */
-    NULL			/* setFromAnyProc */
-};
+    NULL,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0_INIT
+    };
 
 /*
  * The definition of the internal representation of the "index" object; The

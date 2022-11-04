@@ -63,9 +63,10 @@ const Tcl_ObjType tclProcBodyType = {
     NULL,			/* UpdateString function; Tcl_GetString and
 				 * Tcl_GetStringFromObj should panic
 				 * instead. */
-    NULL			/* SetFromAny function; Tcl_ConvertToType
+    NULL,			/* SetFromAny function; Tcl_ConvertToType
 				 * should panic instead. */
-};
+    TCL_OBJTYPE_V0_INIT
+    };
 
 #define ProcSetInternalRep(objPtr, procPtr)					\
     do {								\
@@ -93,7 +94,7 @@ const Tcl_ObjType tclProcBodyType = {
 
 static const Tcl_ObjType levelReferenceType = {
     "levelReference",
-    NULL, NULL, NULL, NULL
+    NULL, NULL, NULL, NULL, TCL_OBJTYPE_V0_INIT
 };
 
 /*
@@ -110,7 +111,8 @@ static const Tcl_ObjType lambdaType = {
     FreeLambdaInternalRep,	/* freeIntRepProc */
     DupLambdaInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetLambdaFromAny		/* setFromAnyProc */
+    SetLambdaFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V0_INIT
 };
 
 #define LambdaSetInternalRep(objPtr, procPtr, nsObjPtr)			\

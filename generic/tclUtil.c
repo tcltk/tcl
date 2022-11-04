@@ -127,7 +127,8 @@ static const Tcl_ObjType endOffsetType = {
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
-    NULL				/* setFromAnyProc */
+    NULL,				/* setFromAnyProc */
+    TCL_OBJTYPE_V0_INIT
 };
 
 /*

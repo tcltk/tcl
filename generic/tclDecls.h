@@ -1850,39 +1850,6 @@ EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
 				Tcl_Channel chan, int mode);
 /* 683 */
 EXTERN int		Tcl_GetEncodingNulLength(Tcl_Encoding encoding);
-/* 684 */
-EXTERN Tcl_AbstractListType * Tcl_AbstractListGetType(Tcl_Obj *objPtr);
-/* 685 */
-EXTERN Tcl_Obj *	Tcl_AbstractListObjNew(Tcl_Interp *interp,
-				const Tcl_AbstractListType*vTablePtr);
-/* 686 */
-EXTERN Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr);
-/* 687 */
-EXTERN int		Tcl_AbstractListObjIndex(Tcl_Interp *interp,
-				Tcl_Obj *abstractListPtr, Tcl_Size index,
-				Tcl_Obj **elemObjPtr);
-/* 688 */
-EXTERN int		Tcl_AbstractListObjRange(Tcl_Interp *interp,
-				Tcl_Obj *abstractListPtr, Tcl_Size fromIdx,
-				Tcl_Size toIdx, Tcl_Obj **newObjPtr);
-/* 689 */
-EXTERN int		Tcl_AbstractListObjReverse(Tcl_Interp *interp,
-				Tcl_Obj *abstractListPtr,
-				Tcl_Obj **newObjPtr);
-/* 690 */
-EXTERN int		Tcl_AbstractListObjGetElements(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, Tcl_Size *objcPtr,
-				Tcl_Obj ***objvPtr);
-/* 691 */
-EXTERN Tcl_Obj *	Tcl_AbstractListObjCopy(Tcl_Interp *interp,
-				Tcl_Obj *listPtr);
-/* 692 */
-EXTERN void *		Tcl_AbstractListGetConcreteRep(Tcl_Obj *objPtr);
-/* 693 */
-EXTERN Tcl_Obj *	Tcl_AbstractListSetElement(Tcl_Interp *interp,
-				Tcl_Obj *listPtr, Tcl_Size indexCount,
-				Tcl_Obj *const indexArray[],
-				Tcl_Obj *valueObj);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2578,16 +2545,6 @@ typedef struct TclStubs {
     int (*tcl_GetNumber) (Tcl_Interp *interp, const char *bytes, size_t numBytes, void **clientDataPtr, int *typePtr); /* 681 */
     int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
     int (*tcl_GetEncodingNulLength) (Tcl_Encoding encoding); /* 683 */
-    Tcl_AbstractListType * (*tcl_AbstractListGetType) (Tcl_Obj *objPtr); /* 684 */
-    Tcl_Obj * (*tcl_AbstractListObjNew) (Tcl_Interp *interp, const Tcl_AbstractListType*vTablePtr); /* 685 */
-    Tcl_WideInt (*tcl_AbstractListObjLength) (Tcl_Obj *abstractListPtr); /* 686 */
-    int (*tcl_AbstractListObjIndex) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_Size index, Tcl_Obj **elemObjPtr); /* 687 */
-    int (*tcl_AbstractListObjRange) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_Size fromIdx, Tcl_Size toIdx, Tcl_Obj **newObjPtr); /* 688 */
-    int (*tcl_AbstractListObjReverse) (Tcl_Interp *interp, Tcl_Obj *abstractListPtr, Tcl_Obj **newObjPtr); /* 689 */
-    int (*tcl_AbstractListObjGetElements) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *objcPtr, Tcl_Obj ***objvPtr); /* 690 */
-    Tcl_Obj * (*tcl_AbstractListObjCopy) (Tcl_Interp *interp, Tcl_Obj *listPtr); /* 691 */
-    void * (*tcl_AbstractListGetConcreteRep) (Tcl_Obj *objPtr); /* 692 */
-    Tcl_Obj * (*tcl_AbstractListSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size indexCount, Tcl_Obj *const indexArray[], Tcl_Obj *valueObj); /* 693 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3908,26 +3865,6 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
 #define Tcl_GetEncodingNulLength \
 	(tclStubsPtr->tcl_GetEncodingNulLength) /* 683 */
-#define Tcl_AbstractListGetType \
-	(tclStubsPtr->tcl_AbstractListGetType) /* 684 */
-#define Tcl_AbstractListObjNew \
-	(tclStubsPtr->tcl_AbstractListObjNew) /* 685 */
-#define Tcl_AbstractListObjLength \
-	(tclStubsPtr->tcl_AbstractListObjLength) /* 686 */
-#define Tcl_AbstractListObjIndex \
-	(tclStubsPtr->tcl_AbstractListObjIndex) /* 687 */
-#define Tcl_AbstractListObjRange \
-	(tclStubsPtr->tcl_AbstractListObjRange) /* 688 */
-#define Tcl_AbstractListObjReverse \
-	(tclStubsPtr->tcl_AbstractListObjReverse) /* 689 */
-#define Tcl_AbstractListObjGetElements \
-	(tclStubsPtr->tcl_AbstractListObjGetElements) /* 690 */
-#define Tcl_AbstractListObjCopy \
-	(tclStubsPtr->tcl_AbstractListObjCopy) /* 691 */
-#define Tcl_AbstractListGetConcreteRep \
-	(tclStubsPtr->tcl_AbstractListGetConcreteRep) /* 692 */
-#define Tcl_AbstractListSetElement \
-	(tclStubsPtr->tcl_AbstractListSetElement) /* 693 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

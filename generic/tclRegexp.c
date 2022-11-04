@@ -106,7 +106,8 @@ const Tcl_ObjType tclRegexpType = {
     FreeRegexpInternalRep,		/* freeIntRepProc */
     DupRegexpInternalRep,		/* dupIntRepProc */
     NULL,				/* updateStringProc */
-    SetRegexpFromAny			/* setFromAnyProc */
+    SetRegexpFromAny,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0_INIT
 };
 
 #define RegexpSetInternalRep(objPtr, rePtr)					\

@@ -16,7 +16,6 @@
 
 #include "tclInt.h"
 #include "tclTomMath.h"
-#include "tclAbstractList.h"
 #include <math.h>
 #include <assert.h>
 
@@ -231,28 +230,32 @@ const Tcl_ObjType tclBooleanType = {
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    TclSetBooleanFromAny		/* setFromAnyProc */
+    TclSetBooleanFromAny,	/* setFromAnyProc */
+    TCL_OBJTYPE_V0_INIT
 };
 const Tcl_ObjType tclDoubleType = {
     "double",			/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     UpdateStringOfDouble,	/* updateStringProc */
-    SetDoubleFromAny		/* setFromAnyProc */
+    SetDoubleFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V0_INIT
 };
 const Tcl_ObjType tclIntType = {
     "int",			/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     UpdateStringOfInt,		/* updateStringProc */
-    SetIntFromAny		/* setFromAnyProc */
+    SetIntFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V0_INIT
 };
 const Tcl_ObjType tclBignumType = {
     "bignum",			/* name */
     FreeBignum,			/* freeIntRepProc */
     DupBignum,			/* dupIntRepProc */
     UpdateStringOfBignum,	/* updateStringProc */
-    NULL			/* setFromAnyProc */
+    NULL,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0_INIT
 };
 
 /*
@@ -296,7 +299,8 @@ Tcl_ObjType tclCmdNameType = {
     FreeCmdNameInternalRep,	/* freeIntRepProc */
     DupCmdNameInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetCmdNameFromAny		/* setFromAnyProc */
+    SetCmdNameFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V0_INIT
 };
 
 /*
@@ -378,8 +382,6 @@ TclInitObjSubsystem(void)
 #endif
     Tcl_RegisterObjType(&oldBooleanType);
 #endif
-
-    Tcl_RegisterObjType(&tclAbstractListType);
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
@@ -4432,11 +4434,7 @@ Tcl_RepresentationCmd(
 	return TCL_ERROR;
     }
 
-    typeName = (TclHasInternalRep(objv[1],&tclAbstractListType)
-                ? Tcl_AbstractListTypeName(objv[1])
-                : (objv[1]->typePtr
-                   ? objv[1]->typePtr->name
-                   : "pure string"));
+    typeName = objv[1]->typePtr ? objv[1]->typePtr->name : "pure string";
 
     /*
      * Value is a bignum with a refcount of 14, object pointer at 0x12345678,

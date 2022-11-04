@@ -12,7 +12,6 @@
  */
 
 #include "tclInt.h"
-#include "tclAbstractList.h"
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
@@ -2726,15 +2725,17 @@ EachloopCmd(
 	}
 
 	/* Values */
-	if (TclHasInternalRep(objv[2+i*2],&tclAbstractListType)) {
-	    /* Special case for Abstract List */
-	    statePtr->aCopyList[i] = Tcl_AbstractListObjCopy(interp, objv[2+i*2]);
+	if (!TclHasInternalRep(objv[2+i*2], &tclListType) &&
+	    TclObjTypeHasProc(objv[2+i*2],TCL_OBJ_DUPREP) &&
+	    TclObjTypeHasProc(objv[2+i*2],TCL_OBJ_INDEX)) {
+	    /* Special case for AbstractList */
+	    statePtr->aCopyList[i] = Tcl_DuplicateObj(objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;
 	    }
 	    /* Don't compute values here, wait until the last momement */
-	    statePtr->argcList[i] = Tcl_AbstractListObjLength(statePtr->aCopyList[i]);
+	    statePtr->argcList[i] = Tcl_ObjTypeLength(statePtr->aCopyList[i]);
 	} else {
 	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
@@ -2868,13 +2869,13 @@ ForeachAssignments(
 
     for (i=0 ; i<statePtr->numLists ; i++) {
 	int isAbstractList =
-	    TclHasInternalRep(statePtr->aCopyList[i],&tclAbstractListType);
+	    TclObjTypeHasProc(statePtr->aCopyList[i],TCL_OBJ_INDEX);
 
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
 		if (isAbstractList) {
-		    if (Tcl_AbstractListObjIndex(interp, statePtr->aCopyList[i], k, &valuePtr)
+		    if (Tcl_ObjTypeIndex(interp, statePtr->aCopyList[i], k, &valuePtr)
                         != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (setting %s loop variable \"%s\")",

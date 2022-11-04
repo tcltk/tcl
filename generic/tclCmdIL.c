@@ -20,7 +20,6 @@
 #include <math.h>
 #include "tclInt.h"
 #include "tclRegexp.h"
-#include "tclAbstractList.h"
 #include "tclArithSeries.h"
 #include <assert.h>
 
@@ -2215,11 +2214,11 @@ Tcl_JoinObjCmd(
      * pointer to its array of element pointers.
      */
 
-    if (TclAbstractListHasProc(objv[1], TCL_ABSL_GETELEMENTS)) {
-	listLen = Tcl_AbstractListObjLength(objv[1]);
+    if (TclObjTypeHasProc(objv[1], TCL_OBJ_GETELEMENTS)) {
+	listLen = Tcl_ObjTypeLength(objv[1]);
 	isAbstractList = (listLen ? 1 : 0);
 	if (listLen > 1 &&
-	    Tcl_AbstractListObjGetElements(interp, objv[1], &listLen, &elemPtrs)
+	    Tcl_ObjTypeGetElements(interp, objv[1], &listLen, &elemPtrs)
 	    != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -2238,7 +2237,7 @@ Tcl_JoinObjCmd(
 	    Tcl_SetObjResult(interp, elemPtrs[0]);
 	} else {
             Tcl_Obj *elemObj;
-            if (Tcl_AbstractListObjIndex(interp, objv[1], 0, &elemObj)
+            if (Tcl_ObjTypeIndex(interp, objv[1], 0, &elemObj)
 		!= TCL_OK) {
                 return TCL_ERROR;
             }
@@ -2729,9 +2728,9 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    if (TclAbstractListHasProc(objv[1], TCL_ABSL_SLICE)) {
+    if (TclObjTypeHasProc(objv[1], TCL_OBJ_SLICE)) {
 	Tcl_Obj *resultObj;
-	int status = Tcl_AbstractListObjRange(interp, objv[1], first, last, &resultObj);
+	int status = Tcl_ObjTypeSlice(interp, objv[1], first, last, &resultObj);
 	if (status == TCL_OK) {
 	    Tcl_SetObjResult(interp, resultObj);
 	}
@@ -3126,10 +3125,10 @@ Tcl_LreverseObjCmd(
      *  Handle AbstractList special case - do not shimmer into a list, if it
      *  supports a private Reverse function, just to reverse it.
      */
-    if (TclAbstractListHasProc(objv[1], TCL_ABSL_REVERSE)) {
+    if (TclObjTypeHasProc(objv[1], TCL_OBJ_REVERSE)) {
 	Tcl_Obj *resultObj;
 
-	if (Tcl_AbstractListObjReverse(interp, objv[1], &resultObj) == TCL_OK) {
+	if (Tcl_ObjTypeReverse(interp, objv[1], &resultObj) == TCL_OK) {
 	    Tcl_SetObjResult(interp, resultObj);
 	    return TCL_OK;
 	}
@@ -4396,8 +4395,8 @@ Tcl_LsetObjCmd(
     if (objc == 4) {
 	finalValuePtr = TclLsetList(interp, listPtr, objv[2], objv[3]);
     } else {
-	if (TclAbstractListHasProc(listPtr, TCL_ABSL_SETELEMENT)) {
-	    finalValuePtr = Tcl_AbstractListSetElement(interp, listPtr,
+	if (TclObjTypeHasProc(listPtr, TCL_OBJ_SETELEMENT)) {
+	    finalValuePtr = Tcl_ObjTypeSetElement(interp, listPtr,
 						       objc-3, objv+2, objv[objc-1]);
 	    if (finalValuePtr) {
 		Tcl_IncrRefCount(finalValuePtr);
@@ -4706,9 +4705,9 @@ Tcl_LsortObjCmd(
 	sortInfo.compareCmdPtr = newCommandPtr;
     }
 
-    if (TclAbstractListHasProc(objv[1], TCL_ABSL_GETELEMENTS)) {
+    if (TclObjTypeHasProc(objv[1], TCL_OBJ_GETELEMENTS)) {
 	sortInfo.resultCode =
-	    Tcl_AbstractListObjGetElements(interp, listObj, &length, &listObjPtrs);
+	    Tcl_ObjTypeGetElements(interp, listObj, &length, &listObjPtrs);
     } else {
 	sortInfo.resultCode = TclListObjGetElementsM(interp, listObj,
 	    &length, &listObjPtrs);

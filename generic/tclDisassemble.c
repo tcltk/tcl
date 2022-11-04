@@ -42,6 +42,7 @@ static const Tcl_ObjType instNameType = {
     NULL,			/* dupIntRepProc */
     UpdateStringOfInstName,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0_INIT
 };
 
 #define InstNameSetInternalRep(objPtr, inst)				\

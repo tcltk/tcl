@@ -236,7 +236,6 @@ COREOBJS = \
 	$(TMP_DIR)\regerror.obj \
 	$(TMP_DIR)\regexec.obj \
 	$(TMP_DIR)\regfree.obj \
-	$(TMP_DIR)\tclAbstractList.obj \
 	$(TMP_DIR)\tclArithSeries.obj \
 	$(TMP_DIR)\tclAlloc.obj \
 	$(TMP_DIR)\tclAssembly.obj \

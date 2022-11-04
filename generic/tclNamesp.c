@@ -130,7 +130,8 @@ static const Tcl_ObjType nsNameType = {
     FreeNsNameInternalRep,	/* freeIntRepProc */
     DupNsNameInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetNsNameFromAny		/* setFromAnyProc */
+    SetNsNameFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V0_INIT
 };
 
 #define NsNameSetInternalRep(objPtr, nnPtr)					\

@@ -9,7 +9,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclAbstractList.h"
 #include <assert.h>
 #include "tclInt.h"
 
@@ -155,7 +154,16 @@ const Tcl_ObjType tclListType = {
     FreeListInternalRep,	/* freeIntRepProc */
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
-    SetListFromAny		/* setFromAnyProc */
+    SetListFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V1,		/* Extended type for AbstractLists */
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 /* Macros to manipulate the List internal rep */
@@ -1366,8 +1374,9 @@ TclListObjCopy(
     Tcl_Obj *copyObj;
 
     if (!TclHasInternalRep(listObj, &tclListType)) {
-	if (TclHasInternalRep(listObj,&tclAbstractListType)) {
-	    return Tcl_AbstractListObjCopy(interp, listObj);
+	if (TclObjTypeHasProc(listObj,TCL_OBJ_DUPREP) &&
+	    TclObjTypeHasProc(listObj,TCL_OBJ_INDEX)) {
+	    return Tcl_DuplicateObj(listObj);
 	}
 	if (SetListFromAny(interp, listObj) != TCL_OK) {
 	    return NULL;
@@ -1662,8 +1671,8 @@ Tcl_ListObjGetElements(
 {
     ListRep listRep;
 
-    if (TclAbstractListHasProc(objPtr, TCL_ABSL_GETELEMENTS) &&
-	Tcl_AbstractListObjGetElements(interp, objPtr, objcPtr, objvPtr) == TCL_OK) {
+    if (TclObjTypeHasProc(objPtr, TCL_OBJ_GETELEMENTS) &&
+	objPtr->typePtr->getElementsProc(interp, objPtr, objcPtr, objvPtr) == TCL_OK) {
 	return TCL_OK;
     } else if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
 	int length;
@@ -2000,9 +2009,9 @@ Tcl_ListObjLength(
     ListRep listRep;
 
     /* Handle AbstractList before attempting SetListFromAny */
-    if (!TclHasInternalRep(listObj, &tclListType) &&
-	TclHasInternalRep(listObj, &tclAbstractListType)) {
-	*lenPtr = Tcl_AbstractListObjLength(listObj);
+    if (TclObjTypeHasProc(listObj, TCL_OBJ_LENGTH)) {
+
+	*lenPtr = listObj->typePtr->lengthProc(listObj);
 	return TCL_OK;
     }
 
@@ -2081,9 +2090,9 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
 
-    if (TclAbstractListHasProc(listObj, TCL_ABSL_REPLACE)) {
-	return Tcl_AbstractListObjReplace(interp, listObj, first,
-					  numToDelete, numToInsert, insertObjs);
+    if (TclObjTypeHasProc(listObj, TCL_OBJ_REPLACE)) {
+	return Tcl_ObjTypeReplace(interp, listObj, first,
+				  numToDelete, numToInsert, insertObjs);
     }
 
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK)
@@ -2639,8 +2648,8 @@ TclLindexFlat(
     Tcl_Size i;
 
     /* Handle AbstractList as special case */
-    if (TclHasInternalRep(listObj,&tclAbstractListType)) {
-	Tcl_WideInt listLen = Tcl_AbstractListObjLength(listObj);
+    if (TclObjTypeHasProc(listObj,TCL_OBJ_INDEX)) {
+	Tcl_WideInt listLen = Tcl_ObjTypeLength(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = NULL;
 	for (i=0 ; i<indexCount && listObj ; i++) {
@@ -2648,7 +2657,7 @@ TclLindexFlat(
 				   &index) == TCL_OK) {
 	    }
 	    if (i==0) {
-		if (Tcl_AbstractListObjIndex(interp, listObj, index, &elemObj) != TCL_OK) {
+		if (Tcl_ObjTypeIndex(interp, listObj, index, &elemObj) != TCL_OK) {
 		    return NULL;
 		}
 	    } else if (index > 0) {
@@ -2764,10 +2773,10 @@ TclLsetList(
 	TclGetIntForIndexM(NULL, indexArgObj, ListSizeT_MAX - 1, &index)
 	== TCL_OK) {
 
-	if (TclAbstractListHasProc(listObj, TCL_ABSL_SETELEMENT)) {
+	if (TclObjTypeHasProc(listObj, TCL_OBJ_SETELEMENT)) {
 	    indices = &indexArgObj;
 	    Tcl_Obj *returnValue =
-		Tcl_AbstractListSetElement(interp, listObj, 1, indices, valueObj);
+		Tcl_ObjTypeSetElement(interp, listObj, 1, indices, valueObj);
 	    if (returnValue) Tcl_IncrRefCount(returnValue);
 	    return returnValue;
 	}
@@ -3309,10 +3318,10 @@ SetListFromAny(
 	    Tcl_IncrRefCount(valuePtr);
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
-    } else if (TclHasInternalRep(objPtr,&tclAbstractListType)) {
+    } else if (TclObjTypeHasProc(objPtr,TCL_OBJ_INDEX)) {
 	Tcl_Size elemCount, i;
 
-	elemCount = Tcl_AbstractListObjLength(objPtr);
+	elemCount = Tcl_ObjTypeLength(objPtr);
 
 	if (ListRepInitAttempt(interp, elemCount, NULL, &listRep) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3325,13 +3334,13 @@ SetListFromAny(
 
 	/* Each iteration, store a list element */
         for (i = 0; i < elemCount; i++) {
-	    if (Tcl_AbstractListObjIndex(interp, objPtr, i, elemPtrs) != TCL_OK) {
+	    if (Tcl_ObjTypeIndex(interp, objPtr, i, elemPtrs) != TCL_OK) {
                 return TCL_ERROR;
             }
 	    Tcl_IncrRefCount(*elemPtrs++);/* Since list now holds ref to it. */
 	}
 
-	LIST_ASSERT((elemPtrs - listRep.storePtr->slots) == elemCount);
+	LIST_ASSERT((elemPtrs - listRep.storePtr->slots) == (Tcl_WideInt)elemCount);
 
 	listRep.storePtr->numUsed = elemCount;
 

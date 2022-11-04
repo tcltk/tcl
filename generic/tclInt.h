@@ -2632,18 +2632,6 @@ typedef struct ListRep {
     (((listObj_)->typePtr == &tclListType) ? ListObjIsCanonical((listObj_)) : 0)
 
 
-static inline void Tcl_AbstractListSetType(Tcl_Obj* abstractListObjPtr, void* ptr)
-{
-    abstractListObjPtr->internalRep.twoPtrValue.ptr2 = ptr;
-}
-
-static inline Tcl_WideInt
-AbstractListObjLength(Tcl_Obj* abstractListObjPtr)
-{
-    Tcl_AbstractListType *typePtr = Tcl_AbstractListGetType(abstractListObjPtr);
-    return typePtr->lengthProc(abstractListObjPtr);
-}
-
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
  * TclNRLmapCmd and their compilations.
@@ -2895,7 +2883,6 @@ MODULE_SCOPE const Tcl_ObjType tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
 MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
-MODULE_SCOPE const Tcl_ObjType tclAbstractListType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
 MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
@@ -4684,36 +4671,55 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 	(TclHasInternalRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
 
 static inline int
-TclAbstractListHasProc(Tcl_Obj* abstractListObjPtr, Tcl_AbstractListProcType ptype)
+TclObjTypeHasProc(Tcl_Obj* objPtr, Tcl_ObjProcType ptype)
 {
-    Tcl_AbstractListType *typePtr;
-    if ( ! TclHasInternalRep(abstractListObjPtr,&tclAbstractListType)) {
+    Tcl_ObjType const *typePtr = objPtr->typePtr;
+    if (typePtr == NULL) {
 	return 0;
     }
-    typePtr = Tcl_AbstractListGetType(abstractListObjPtr);
-    switch (ptype) {
-    case TCL_ABSL_NEW:
-	return (typePtr->newObjProc != NULL);
-    case TCL_ABSL_DUPREP:
-	return (typePtr->dupRepProc != NULL);
-    case TCL_ABSL_LENGTH:
-	return (typePtr->lengthProc != NULL);
-    case TCL_ABSL_INDEX:
-	return (typePtr->indexProc != NULL);
-    case TCL_ABSL_SLICE:
-	return (typePtr->sliceProc != NULL);
-    case TCL_ABSL_REVERSE:
-	return (typePtr->reverseProc != NULL);
-    case TCL_ABSL_GETELEMENTS:
-        return (typePtr->getElementsProc != NULL);
-    case TCL_ABSL_FREEREP:
-	return (typePtr->freeRepProc != NULL);
-    case TCL_ABSL_TOSTRING:
-	return (typePtr->toStringProc != NULL);
-    case TCL_ABSL_SETELEMENT:
-	return (typePtr->setElementProc != NULL);
-    case TCL_ABSL_REPLACE:
-	return (typePtr->replaceProc != NULL);
+    switch ((size_t)typePtr->version) {
+    case (size_t)TCL_OBJTYPE_V0:
+	switch (ptype) {
+	case TCL_OBJ_DUPREP:
+	    return (typePtr->dupIntRepProc != NULL);
+	case TCL_OBJ_FREEREP:
+	    return (typePtr->freeIntRepProc != NULL);
+	case TCL_OBJ_UPDATESTRING:
+	    return (typePtr->updateStringProc != NULL);
+	case TCL_OBJ_SETFROMANY:
+	    return (typePtr->setFromAnyProc != NULL);
+	default:
+	    return 0;
+	}
+    case (size_t)TCL_OBJTYPE_V1:
+	switch (ptype) {
+	case TCL_OBJ_NEW:
+	    return (typePtr->newObjProc != NULL);
+	case TCL_OBJ_DUPREP:
+	    return (typePtr->dupIntRepProc != NULL);
+	case TCL_OBJ_LENGTH:
+	    return (typePtr->lengthProc != NULL);
+	case TCL_OBJ_INDEX:
+	    return (typePtr->indexProc != NULL);
+	case TCL_OBJ_SLICE:
+	    return (typePtr->sliceProc != NULL);
+	case TCL_OBJ_REVERSE:
+	    return (typePtr->reverseProc != NULL);
+	case TCL_OBJ_GETELEMENTS:
+	    return (typePtr->getElementsProc != NULL);
+	case TCL_OBJ_FREEREP:
+	    return (typePtr->freeIntRepProc != NULL);
+	case TCL_OBJ_UPDATESTRING:
+	    return (typePtr->updateStringProc != NULL);
+	case TCL_OBJ_SETELEMENT:
+	    return (typePtr->setElementProc != NULL);
+	case TCL_OBJ_REPLACE:
+	    return (typePtr->replaceProc != NULL);
+	default:
+	    return 0;
+	}
+    default:
+	return 0;
     }
     return 0;
 }

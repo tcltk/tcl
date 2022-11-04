@@ -19,7 +19,6 @@
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tclTomMath.h"
-#include "tclAbstractList.h"
 #include <math.h>
 #include <assert.h>
 
@@ -663,7 +662,8 @@ static const Tcl_ObjType exprCodeType = {
     FreeExprCodeInternalRep,	/* freeIntRepProc */
     DupExprCodeInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    NULL			/* setFromAnyProc */
+    NULL,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0_INIT
 };
 
 /*
@@ -674,7 +674,8 @@ static const Tcl_ObjType exprCodeType = {
 static const Tcl_ObjType dictIteratorType = {
     "dictIterator",
     ReleaseDictIterator,
-    NULL, NULL, NULL
+    NULL, NULL, NULL,
+    TCL_OBJTYPE_V0_INIT
 };
 
 /*
@@ -4658,14 +4659,14 @@ TEBCresume(
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
 	/* special case for AbstractList */
-	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
-	    length = Tcl_AbstractListObjLength(valuePtr);
+	if (TclObjTypeHasProc(valuePtr,TCL_OBJ_INDEX)) {
+	    length = Tcl_ObjTypeLength(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    if (Tcl_AbstractListObjIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+	    if (Tcl_ObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4727,14 +4728,14 @@ TEBCresume(
 	 */
 
 	/* special case for AbstractList */
-	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
-	    length = Tcl_AbstractListObjLength(valuePtr);
+	if (TclObjTypeHasProc(valuePtr,TCL_OBJ_INDEX)) {
+	    length = Tcl_ObjTypeLength(valuePtr);
 
 	    /* Decode end-offset index values. */
 	    index = TclIndexDecode(opnd, length-1);
 
 	    /* Compute value @ index */
-	    if (Tcl_AbstractListObjIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+	    if (Tcl_ObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4817,8 +4818,8 @@ TEBCresume(
 	 * Compute the new variable value.
 	 */
 
-	if (TclAbstractListHasProc(valuePtr, TCL_ABSL_SLICE)) {
-	    objResultPtr = Tcl_AbstractListSetElement(interp,
+	if (TclObjTypeHasProc(valuePtr, TCL_OBJ_SLICE)) {
+	    objResultPtr = Tcl_ObjTypeSetElement(interp,
 		valuePtr, numIndices,
 	        &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
 	} else {
@@ -4945,8 +4946,8 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	if (TclAbstractListHasProc(valuePtr, TCL_ABSL_SLICE)) {
-	    if (Tcl_AbstractListObjRange(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
+	if (TclObjTypeHasProc(valuePtr, TCL_OBJ_SLICE)) {
+	    if (Tcl_ObjTypeSlice(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
@@ -4972,7 +4973,7 @@ TEBCresume(
 	if (length > 0) {
 	    size_t i = 0;
 	    Tcl_Obj *o;
-	    int isAbstractList = TclHasInternalRep(value2Ptr,&tclAbstractListType);
+	    int isAbstractList = TclObjTypeHasProc(value2Ptr,TCL_OBJ_INDEX);
 
 	    /*
 	     * An empty list doesn't match anything.
@@ -4980,7 +4981,7 @@ TEBCresume(
 
 	    do {
 		if (isAbstractList) {
-		    if (Tcl_AbstractListObjIndex(interp, value2Ptr, i, &o) != TCL_OK) {
+		    if (Tcl_ObjTypeIndex(interp, value2Ptr, i, &o) != TCL_OK) {
 			TRACE_ERROR(interp);
 			goto gotError;
 		    }
