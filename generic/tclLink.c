@@ -1456,7 +1456,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		TclNewIntObj(objv[i], (Tcl_WideInt)
+		objv[i] = Tcl_NewWideUIntObj(
 			linkPtr->lastValue.uwPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
@@ -1464,7 +1464,7 @@ ObjValue(
 	    return resultObj;
 	}
 	linkPtr->lastValue.uw = LinkedVar(Tcl_WideUInt);
-	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.uw);
+	return Tcl_NewWideUIntObj(linkPtr->lastValue.uw);
 
     case TCL_LINK_STRING:
 	p = LinkedVar(char *);

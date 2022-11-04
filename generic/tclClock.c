@@ -1810,7 +1810,7 @@ ClockMillisecondsObjCmd(
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
+    Tcl_SetObjResult(interp, Tcl_NewWideUIntObj(
 	    now.sec * 1000 + now.usec / 1000));
     return TCL_OK;
 }
@@ -1998,7 +1998,7 @@ ClockSecondsObjCmd(
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) now.sec));
+    Tcl_SetObjResult(interp, Tcl_NewWideUIntObj(now.sec));
     return TCL_OK;
 }
 
