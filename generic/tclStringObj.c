@@ -4100,11 +4100,11 @@ TclStringReplace(
 		return objPtr;
 	    }
 
-	    if ((size_t)newBytes > INT_MAX - (numBytes - count)) {
+	    if (newBytes > (TCL_SIZE_SMAX - (numBytes - count))) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "max size for a Tcl value (%d bytes) exceeded",
-			    INT_MAX));
+			    "max size for a Tcl value (%" TCL_Z_MODIFIER "u bytes) exceeded",
+			    TCL_SIZE_SMAX));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
 		return NULL;
@@ -4139,7 +4139,7 @@ TclStringReplace(
 	if (insertPtr) {
 	    Tcl_AppendObjToObj(result, insertPtr);
 	}
-	if (first + count < (size_t)numChars) {
+	if ((first + count) < numChars) {
 	    Tcl_AppendUnicodeToObj(result, ustring + first + count,
 		    numChars - first - count);
 	}
