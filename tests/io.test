@@ -77,7 +77,7 @@ set path(cat) [makeFile {
     if {$argv != ""} {
 	set f [open [lindex $argv 0]]
     }
-    fconfigure $f -encoding binary -translation lf -blocking 0 -eofchar \x1A
+    fconfigure $f -encoding binary -translation lf -blocking 0 -eofchar "\x1A \x1A"
     fconfigure stdout -encoding binary -translation lf -buffering none
     fileevent $f readable "foo $f"
     proc foo {f} {
@@ -517,7 +517,7 @@ test io-6.8 {Tcl_GetsObj: remember if EOF is seen} {
     puts $f "abcdef\x1Aghijk\nwombat"
     close $f
     set f [open $path(test1)]
-    fconfigure $f -eofchar \x1A
+    fconfigure $f -eofchar "\x1A \x1A"
     set x [list [gets $f line] $line [gets $f line] $line]
     close $f
     set x
@@ -527,7 +527,7 @@ test io-6.9 {Tcl_GetsObj: remember if EOF is seen} {
     puts $f "abcdefghijk\nwom\x1Abat"
     close $f
     set f [open $path(test1)]
-    fconfigure $f -eofchar \x1A
+    fconfigure $f -eofchar "\x1A \x1A"
     set x [list [gets $f line] $line [gets $f line] $line]
     close $f
     set x
@@ -1036,7 +1036,7 @@ test io-6.52 {Tcl_GetsObj: saw EOF character} {testchannel} {
     puts -nonewline $f "123456\x1Ak9012345\r"
     close $f
     set f [open $path(test1)]
-    fconfigure $f -eofchar \x1A
+    fconfigure $f -eofchar "\x1A \x1A"
     set x [list [gets $f] [testchannel queuedcr $f] [tell $f] [gets $f]]
     close $f
     set x
@@ -3382,7 +3382,7 @@ test io-30.16 {Tcl_Write ^Z at end, Tcl_Read auto} {
     puts -nonewline $f hello\nthere\nand\rhere\n\x1A
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set c [read $f]
     close $f
     set c
@@ -3394,11 +3394,11 @@ here
 test io-30.17 {Tcl_Write, implicit ^Z at end, Tcl_Read auto} {win} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar \x1A
+    fconfigure $f -translation lf -eofchar "\x1A \x1A"
     puts $f hello\nthere\nand\rhere
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set c [read $f]
     close $f
     set c
@@ -3415,7 +3415,7 @@ test io-30.18 {Tcl_Write, ^Z in middle, Tcl_Read auto} {
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -3435,7 +3435,7 @@ test io-30.19 {Tcl_Write, ^Z no newline in middle, Tcl_Read auto} {
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -3513,7 +3513,7 @@ test io-30.23 {Tcl_Write lf, ^Z in middle, Tcl_Read auto} {
     puts $f $c
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set c [string length [read $f]]
     set e [eof $f]
     close $f
@@ -3527,7 +3527,7 @@ test io-30.24 {Tcl_Write lf, ^Z in middle, Tcl_Read lf} {
     puts $f $c
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation lf -eofchar \x1A
+    fconfigure $f -translation lf -eofchar "\x1A \x1A"
     set c [string length [read $f]]
     set e [eof $f]
     close $f
@@ -3541,7 +3541,7 @@ test io-30.25 {Tcl_Write cr, ^Z in middle, Tcl_Read auto} {
     puts $f $c
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set c [string length [read $f]]
     set e [eof $f]
     close $f
@@ -3555,7 +3555,7 @@ test io-30.26 {Tcl_Write cr, ^Z in middle, Tcl_Read cr} {
     puts $f $c
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation cr -eofchar \x1A
+    fconfigure $f -translation cr -eofchar "\x1A \x1A"
     set c [string length [read $f]]
     set e [eof $f]
     close $f
@@ -3569,7 +3569,7 @@ test io-30.27 {Tcl_Write crlf, ^Z in middle, Tcl_Read auto} {
     puts $f $c
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set c [string length [read $f]]
     set e [eof $f]
     close $f
@@ -3583,7 +3583,7 @@ test io-30.28 {Tcl_Write crlf, ^Z in middle, Tcl_Read crlf} {
     puts $f $c
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation crlf -eofchar \x1A
+    fconfigure $f -translation crlf -eofchar "\x1A \x1A"
     set c [string length [read $f]]
     set e [eof $f]
     close $f
@@ -3916,7 +3916,7 @@ test io-31.18 {Tcl_Write ^Z at end, Tcl_Gets auto} {
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -3931,11 +3931,11 @@ test io-31.18 {Tcl_Write ^Z at end, Tcl_Gets auto} {
 test io-31.19 {Tcl_Write, implicit ^Z at end, Tcl_Gets auto} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar \x1A
+    fconfigure $f -translation lf -eofchar "\x1A \x1A"
     puts $f hello\nthere\nand\rhere
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -3955,7 +3955,7 @@ test io-31.20 {Tcl_Write, ^Z in middle, Tcl_Gets auto, eofChar} {
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -3973,7 +3973,7 @@ test io-31.21 {Tcl_Write, no newline ^Z in middle, Tcl_Gets auto, eofChar} {
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -4057,7 +4057,7 @@ test io-31.25 {Tcl_Write lf, ^Z in middle, Tcl_Gets auto} {
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -4075,7 +4075,7 @@ test io-31.26 {Tcl_Write lf, ^Z in middle, Tcl_Gets lf} {
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation lf -eofchar \x1A
+    fconfigure $f -translation lf -eofchar "\x1A \x1A"
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -4093,7 +4093,7 @@ test io-31.27 {Tcl_Write cr, ^Z in middle, Tcl_Gets auto} {
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -4111,7 +4111,7 @@ test io-31.28 {Tcl_Write cr, ^Z in middle, Tcl_Gets cr} {
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation cr -eofchar \x1A
+    fconfigure $f -translation cr -eofchar "\x1A \x1A"
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -4129,7 +4129,7 @@ test io-31.29 {Tcl_Write crlf, ^Z in middle, Tcl_Gets auto} {
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -4147,7 +4147,7 @@ test io-31.30 {Tcl_Write crlf, ^Z in middle, Tcl_Gets crlf} {
     puts $f $s
     close $f
     set f [open $path(test1) r]
-    fconfigure $f -translation crlf -eofchar \x1A
+    fconfigure $f -translation crlf -eofchar "\x1A \x1A"
     set l ""
     lappend l [gets $f]
     lappend l [gets $f]
@@ -5028,12 +5028,12 @@ test io-35.5 {Tcl_Eof, eof detection on nonblocking pipe} stdio {
 test io-35.6 {Tcl_Eof, eof char, lf write, auto read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar \x1A
+    fconfigure $f -translation lf -eofchar "\x1A \x1A"
     puts $f abc\ndef
     close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l [string length [read $f]]
     set e [eof $f]
     close $f
@@ -5042,12 +5042,12 @@ test io-35.6 {Tcl_Eof, eof char, lf write, auto read} {
 test io-35.7 {Tcl_Eof, eof char, lf write, lf read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation lf -eofchar \x1A
+    fconfigure $f -translation lf -eofchar "\x1A \x1A"
     puts $f abc\ndef
     close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation lf -eofchar \x1A
+    fconfigure $f -translation lf -eofchar "\x1A \x1A"
     set l [string length [read $f]]
     set e [eof $f]
     close $f
@@ -5056,12 +5056,12 @@ test io-35.7 {Tcl_Eof, eof char, lf write, lf read} {
 test io-35.8 {Tcl_Eof, eof char, cr write, auto read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation cr -eofchar \x1A
+    fconfigure $f -translation cr -eofchar "\x1A \x1A"
     puts $f abc\ndef
     close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l [string length [read $f]]
     set e [eof $f]
     close $f
@@ -5070,12 +5070,12 @@ test io-35.8 {Tcl_Eof, eof char, cr write, auto read} {
 test io-35.9 {Tcl_Eof, eof char, cr write, cr read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation cr -eofchar \x1A
+    fconfigure $f -translation cr -eofchar "\x1A \x1A"
     puts $f abc\ndef
     close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation cr -eofchar \x1A
+    fconfigure $f -translation cr -eofchar "\x1A \x1A"
     set l [string length [read $f]]
     set e [eof $f]
     close $f
@@ -5084,12 +5084,12 @@ test io-35.9 {Tcl_Eof, eof char, cr write, cr read} {
 test io-35.10 {Tcl_Eof, eof char, crlf write, auto read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation crlf -eofchar \x1A
+    fconfigure $f -translation crlf -eofchar "\x1A \x1A"
     puts $f abc\ndef
     close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l [string length [read $f]]
     set e [eof $f]
     close $f
@@ -5098,12 +5098,12 @@ test io-35.10 {Tcl_Eof, eof char, crlf write, auto read} {
 test io-35.11 {Tcl_Eof, eof char, crlf write, crlf read} {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation crlf -eofchar \x1A
+    fconfigure $f -translation crlf -eofchar "\x1A \x1A"
     puts $f abc\ndef
     close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation crlf -eofchar \x1A
+    fconfigure $f -translation crlf -eofchar "\x1A \x1A"
     set l [string length [read $f]]
     set e [eof $f]
     close $f
@@ -5118,7 +5118,7 @@ test io-35.12 {Tcl_Eof, eof char in middle, lf write, auto read} {
     close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l [string length [read $f]]
     set e [eof $f]
     close $f
@@ -5133,7 +5133,7 @@ test io-35.13 {Tcl_Eof, eof char in middle, lf write, lf read} {
     close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation lf -eofchar \x1A
+    fconfigure $f -translation lf -eofchar "\x1A \x1A"
     set l [string length [read $f]]
     set e [eof $f]
     close $f
@@ -5148,7 +5148,7 @@ test io-35.14 {Tcl_Eof, eof char in middle, cr write, auto read} {
     close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l [string length [read $f]]
     set e [eof $f]
     close $f
@@ -5163,7 +5163,7 @@ test io-35.15 {Tcl_Eof, eof char in middle, cr write, cr read} {
     close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation cr -eofchar \x1A
+    fconfigure $f -translation cr -eofchar "\x1A \x1A"
     set l [string length [read $f]]
     set e [eof $f]
     close $f
@@ -5178,7 +5178,7 @@ test io-35.16 {Tcl_Eof, eof char in middle, crlf write, auto read} {
     close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     set l [string length [read $f]]
     set e [eof $f]
     close $f
@@ -5193,7 +5193,7 @@ test io-35.17 {Tcl_Eof, eof char in middle, crlf write, crlf read} {
     close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation crlf -eofchar \x1A
+    fconfigure $f -translation crlf -eofchar "\x1A \x1A"
     set l [string length [read $f]]
     set e [eof $f]
     close $f
@@ -5216,12 +5216,12 @@ test io-35.18 {Tcl_Eof, eof char, cr write, crlf read} -body {
 test io-35.18a {Tcl_Eof, eof char, cr write, crlf read} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation cr -eofchar \x1A
+    fconfigure $f -translation cr -eofchar "\x1A \x1A"
     puts $f abc\ndef
     close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation crlf -eofchar \x1A
+    fconfigure $f -translation crlf -eofchar "\x1A \x1A"
     set l [string length [set in [read $f]]]
     set e [eof $f]
     close $f
@@ -5230,12 +5230,12 @@ test io-35.18a {Tcl_Eof, eof char, cr write, crlf read} -body {
 test io-35.18b {Tcl_Eof, eof char, cr write, crlf read} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
-    fconfigure $f -translation cr -eofchar \x1A
+    fconfigure $f -translation cr -eofchar "\x1A \x1A"
     puts $f {}
     close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation crlf -eofchar \x1A
+    fconfigure $f -translation crlf -eofchar "\x1A \x1A"
     set l [string length [set in [read $f]]]
     set e [eof $f]
     close $f
@@ -5264,7 +5264,7 @@ test io-35.19 {Tcl_Eof, eof char in middle, cr write, crlf read} -body {
     close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation crlf -eofchar \x1A
+    fconfigure $f -translation crlf -eofchar "\x1A \x1A"
     set l [string length [set in [read $f]]]
     set e [eof $f]
     close $f
@@ -5279,7 +5279,7 @@ test io-35.20 {Tcl_Eof, eof char in middle, cr write, crlf read} {
     close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    fconfigure $f -translation crlf -eofchar \x1A
+    fconfigure $f -translation crlf -eofchar "\x1A \x1A"
     set l [string length [set in [read $f]]]
     set e [eof $f]
     close $f
@@ -5763,7 +5763,7 @@ test io-39.22 {Tcl_SetChannelOption, invariance} {unix} {
     lappend l [fconfigure $f1 -eofchar]
     fconfigure $f1 -eofchar {ON GO}
     lappend l [fconfigure $f1 -eofchar]
-    fconfigure $f1 -eofchar D
+    fconfigure $f1 -eofchar {D D}
     lappend l [fconfigure $f1 -eofchar]
     close $f1
     set l
@@ -5774,7 +5774,7 @@ test io-39.22a {Tcl_SetChannelOption, invariance} {
     set l [list]
     fconfigure $f1 -eofchar {ON GO}
     lappend l [fconfigure $f1 -eofchar]
-    fconfigure $f1 -eofchar D
+    fconfigure $f1 -eofchar {D D}
     lappend l [fconfigure $f1 -eofchar]
     lappend l [list [catch {fconfigure $f1 -eofchar {1 2 3}} msg] $msg]
     close $f1
@@ -6539,7 +6539,7 @@ test io-48.4 {lf write, testing readability, ^Z termination, auto read mode} {fi
     set c 0
     set l ""
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     fileevent $f readable [namespace code [list consume $f]]
     variable x
     vwait [namespace which -variable x]
@@ -6567,7 +6567,7 @@ test io-48.5 {lf write, testing readability, ^Z in middle, auto read mode} {file
     set c 0
     set l ""
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     fileevent $f readable [namespace code [list consume $f]]
     variable x
     vwait [namespace which -variable x]
@@ -6595,7 +6595,7 @@ test io-48.6 {cr write, testing readability, ^Z termination, auto read mode} {fi
     set c 0
     set l ""
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     fileevent $f readable [namespace code [list consume $f]]
     variable x
     vwait [namespace which -variable x]
@@ -6623,7 +6623,7 @@ test io-48.7 {cr write, testing readability, ^Z in middle, auto read mode} {file
     set c 0
     set l ""
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     fileevent $f readable [namespace code [list consume $f]]
     variable x
     vwait [namespace which -variable x]
@@ -6651,7 +6651,7 @@ test io-48.8 {crlf write, testing readability, ^Z termination, auto read mode} {
     set c 0
     set l ""
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     fileevent $f readable [namespace code [list consume $f]]
     variable x
     vwait [namespace which -variable x]
@@ -6679,7 +6679,7 @@ test io-48.9 {crlf write, testing readability, ^Z in middle, auto read mode} {fi
     set c 0
     set l ""
     set f [open $path(test1) r]
-    fconfigure $f -translation auto -eofchar \x1A
+    fconfigure $f -translation auto -eofchar "\x1A \x1A"
     fileevent $f readable [namespace code [list consume $f]]
     variable x
     vwait [namespace which -variable x]
@@ -6707,7 +6707,7 @@ test io-48.10 {lf write, testing readability, ^Z in middle, lf read mode} {filee
     set c 0
     set l ""
     set f [open $path(test1) r]
-    fconfigure $f -translation lf -eofchar \x1A
+    fconfigure $f -translation lf -eofchar "\x1A \x1A"
     fileevent $f readable [namespace code [list consume $f]]
     variable x
     vwait [namespace which -variable x]
@@ -6735,7 +6735,7 @@ test io-48.11 {lf write, testing readability, ^Z termination, lf read mode} {fil
     set c 0
     set l ""
     set f [open $path(test1) r]
-    fconfigure $f -translation lf -eofchar \x1A
+    fconfigure $f -translation lf -eofchar "\x1A \x1A"
     fileevent $f readable [namespace code [list consume $f]]
     variable x
     vwait [namespace which -variable x]
@@ -6763,7 +6763,7 @@ test io-48.12 {cr write, testing readability, ^Z in middle, cr read mode} {filee
     set c 0
     set l ""
     set f [open $path(test1) r]
-    fconfigure $f -translation cr -eofchar \x1A
+    fconfigure $f -translation cr -eofchar "\x1A \x1A"
     fileevent $f readable [namespace code [list consume $f]]
     variable x
     vwait [namespace which -variable x]
@@ -6791,7 +6791,7 @@ test io-48.13 {cr write, testing readability, ^Z termination, cr read mode} {fil
     set c 0
     set l ""
     set f [open $path(test1) r]
-    fconfigure $f -translation cr -eofchar \x1A
+    fconfigure $f -translation cr -eofchar "\x1A \x1A"
     fileevent $f readable [namespace code [list consume $f]]
     variable x
     vwait [namespace which -variable x]
@@ -6819,7 +6819,7 @@ test io-48.14 {crlf write, testing readability, ^Z in middle, crlf read mode} {f
     set c 0
     set l ""
     set f [open $path(test1) r]
-    fconfigure $f -translation crlf -eofchar \x1A
+    fconfigure $f -translation crlf -eofchar "\x1A \x1A"
     fileevent $f readable [namespace code [list consume $f]]
     variable x
     vwait [namespace which -variable x]
@@ -6847,7 +6847,7 @@ test io-48.15 {crlf write, testing readability, ^Z termi, crlf read mode} {filee
     set c 0
     set l ""
     set f [open $path(test1) r]
-    fconfigure $f -translation crlf -eofchar \x1A
+    fconfigure $f -translation crlf -eofchar "\x1A \x1A"
     fileevent $f readable [namespace code [list consume $f]]
     variable x
     vwait [namespace which -variable x]

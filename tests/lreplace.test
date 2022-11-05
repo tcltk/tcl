@@ -434,7 +434,7 @@ test ledit-4.4 {ledit edge case} {
     set l {1 2 3 4 5}
     list [ledit l 3 1] $l
 } {{1 2 3 4 5} {1 2 3 4 5}}
-test lreplace-4.5 {lreplace edge case} {
+test ledit-4.5 {ledit edge case} {
     lreplace {1 2 3 4 5} 3 0 _
 } {1 2 3 _ 4 5}
 test ledit-4.6 {ledit end-x: bug a4cb3f06c4} {

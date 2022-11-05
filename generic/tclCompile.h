@@ -1214,7 +1214,6 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int isLambda);
-
 
 /*
  *----------------------------------------------------------------
@@ -1262,10 +1261,10 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 
 #define TclCheckStackDepth(depth, envPtr)				\
     do {								\
-	int _dd = (depth);						\
-	if (_dd != (envPtr)->currStackDepth) {				\
-	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
-		    (envPtr)->currStackDepth, _dd);		\
+	size_t _dd = (depth);						\
+	if (_dd != (size_t)(envPtr)->currStackDepth) {				\
+	    Tcl_Panic("bad stack depth computations: is %" TCL_Z_MODIFIER "u, should be %" TCL_Z_MODIFIER "u", \
+		    (size_t)(envPtr)->currStackDepth, _dd);		\
 	}								\
     } while (0)
 
@@ -1582,9 +1581,9 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  * of LOOP ranges is an interesting datum for debugging purposes, and that is
  * what we compute now.
  *
- * static int	ExceptionRangeStarts(CompileEnv *envPtr, int index);
- * static void	ExceptionRangeEnds(CompileEnv *envPtr, int index);
- * static void	ExceptionRangeTarget(CompileEnv *envPtr, int index, LABEL);
+ * static int	ExceptionRangeStarts(CompileEnv *envPtr, Tcl_Size index);
+ * static void	ExceptionRangeEnds(CompileEnv *envPtr, Tcl_Size index);
+ * static void	ExceptionRangeTarget(CompileEnv *envPtr, Tcl_Size index, LABEL);
  */
 
 #define ExceptionRangeStarts(envPtr, index) \
@@ -1643,7 +1642,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 
 #define DefineLineInformation \
     ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
-    int eclIndex = mapPtr->nuloc - 1
+    Tcl_Size eclIndex = mapPtr->nuloc - 1
 
 #define SetLineInformation(word) \
     envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
