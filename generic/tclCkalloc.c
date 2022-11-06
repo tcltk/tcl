@@ -799,7 +799,7 @@ static int
 MemoryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     const char *fileName;
@@ -971,7 +971,7 @@ static int
 CheckmemCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     if (objc != 2) {
@@ -1005,8 +1005,8 @@ Tcl_InitMemory(
 				 * added */
 {
     TclInitDbCkalloc();
-    Tcl_CreateObjCommand(interp, "memory", MemoryCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "checkmem", CheckmemCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "memory", MemoryCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "checkmem", CheckmemCmd, NULL, NULL);
 }
 
 

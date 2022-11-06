@@ -502,7 +502,7 @@ int
 TclChanCreateObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     ReflectedChannel *rcPtr;	/* Instance data of the new channel */
@@ -821,7 +821,7 @@ int
 TclChanPostEventObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     /*

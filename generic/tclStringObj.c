@@ -3083,7 +3083,7 @@ TclStringRepeat(
 Tcl_Obj *
 TclStringCat(
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj * const objv[],
     int flags)
 {

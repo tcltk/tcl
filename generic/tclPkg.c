@@ -101,7 +101,7 @@ static int		PkgRequireCoreFinal(ClientData data[], Tcl_Interp *interp, int resul
 static int		PkgRequireCoreCleanup(ClientData data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreStep1(ClientData data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreStep2(ClientData data[], Tcl_Interp *interp, int result);
-static int		TclNRPkgRequireProc(ClientData clientData, Tcl_Interp *interp, int reqc, Tcl_Obj *const reqv[]);
+static int		TclNRPkgRequireProc(ClientData clientData, Tcl_Interp *interp, size_t reqc, Tcl_Obj *const reqv[]);
 static int		SelectPackage(ClientData data[], Tcl_Interp *interp, int result);
 static int		SelectPackageFinal(ClientData data[], Tcl_Interp *interp, int result);
 static int		TclNRPackageObjCmdCleanup(ClientData data[], Tcl_Interp *interp, int result);
@@ -436,7 +436,7 @@ Tcl_PkgRequireProc(
 
     args.name = name;
     args.clientDataPtr = clientDataPtr;
-    return Tcl_NRCallObjProc(interp,
+    return Tcl_NRCallObjProc2(interp,
 	    TclNRPkgRequireProc, (void *) &args, reqc, reqv);
 }
 
@@ -444,7 +444,7 @@ static int
 TclNRPkgRequireProc(
     ClientData clientData,
     Tcl_Interp *interp,
-    int reqc,
+    size_t reqc,
     Tcl_Obj *const reqv[])
 {
     RequireProcArgs *args = (RequireProcArgs *)clientData;
@@ -1055,17 +1055,17 @@ int
 Tcl_PackageObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRPackageObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRPackageObjCmd, clientData, objc, objv);
 }
 
 int
 TclNRPackageObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const pkgOptions[] = {

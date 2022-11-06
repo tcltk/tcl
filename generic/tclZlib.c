@@ -171,11 +171,11 @@ static Tcl_DriverInputProc	ZlibTransformInput;
 static Tcl_DriverOutputProc	ZlibTransformOutput;
 static Tcl_DriverSetOptionProc	ZlibTransformSetOption;
 static Tcl_DriverWatchProc	ZlibTransformWatch;
-static Tcl_ObjCmdProc		ZlibCmd;
-static Tcl_ObjCmdProc		ZlibStreamCmd;
-static Tcl_ObjCmdProc		ZlibStreamAddCmd;
-static Tcl_ObjCmdProc		ZlibStreamHeaderCmd;
-static Tcl_ObjCmdProc		ZlibStreamPutCmd;
+static Tcl_ObjCmdProc2		ZlibCmd;
+static Tcl_ObjCmdProc2		ZlibStreamCmd;
+static Tcl_ObjCmdProc2		ZlibStreamAddCmd;
+static Tcl_ObjCmdProc2		ZlibStreamHeaderCmd;
+static Tcl_ObjCmdProc2		ZlibStreamPutCmd;
 
 static void		ConvertError(Tcl_Interp *interp, int code,
 			    uLong adler);
@@ -185,7 +185,7 @@ static inline int	Deflate(z_streamp strm, void *bufferPtr,
 static void		ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
 static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
 			    GzipHeader *headerPtr, int *extraSizePtr);
-static int		ZlibPushSubcmd(Tcl_Interp *interp, int objc,
+static int		ZlibPushSubcmd(Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static int		ResultDecompress(ZlibChannelData *cd, char *buf,
 			    int toRead, int flush, int *errorCodePtr);
@@ -194,7 +194,7 @@ static Tcl_Channel	ZlibStackChannelTransform(Tcl_Interp *interp,
 			    Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr,
 			    Tcl_Obj *compDictObj);
 static void		ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
-static int		ZlibStreamSubcmd(Tcl_Interp *interp, int objc,
+static int		ZlibStreamSubcmd(Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static inline void	ZlibTransformEventTimerKill(ZlibChannelData *cd);
 static void		ZlibTransformTimerRun(void *clientData);
@@ -824,7 +824,7 @@ Tcl_ZlibStreamInit(
 	 * Create the command.
 	 */
 
-	zshPtr->cmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&cmdname),
+	zshPtr->cmd = Tcl_CreateObjCommand2(interp, Tcl_DStringValue(&cmdname),
 		ZlibStreamCmd, zshPtr, ZlibStreamCmdDelete);
 	Tcl_DStringFree(&cmdname);
 	if (zshPtr->cmd == NULL) {
@@ -1949,11 +1949,11 @@ static int
 ZlibCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
-    int i, option, level = -1;
-    size_t dlen = 0, start, buffersize = 0;
+    int option, level = -1;
+    size_t i, dlen = 0, start, buffersize = 0;
     Tcl_WideInt wideLen;
     Byte *data;
     Tcl_Obj *headerDictObj;
@@ -2227,7 +2227,7 @@ ZlibCmd(
 static int
 ZlibStreamSubcmd(
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     static const char *const stream_formats[] = {
@@ -2238,7 +2238,8 @@ ZlibStreamSubcmd(
 	FMT_COMPRESS, FMT_DECOMPRESS, FMT_DEFLATE, FMT_GUNZIP, FMT_GZIP,
 	FMT_INFLATE
     } fmt;
-    int i, format, mode = 0, option, level;
+    size_t i;
+    int format, mode = 0, option, level;
     enum objIndices {
 	OPT_COMPRESSION_DICTIONARY = 0,
 	OPT_GZIP_HEADER = 1,
@@ -2387,7 +2388,7 @@ ZlibStreamSubcmd(
 static int
 ZlibPushSubcmd(
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     static const char *const stream_formats[] = {
@@ -2399,7 +2400,7 @@ ZlibPushSubcmd(
 	FMT_INFLATE
     } fmt;
     Tcl_Channel chan;
-    int chanMode, format, mode = 0, level, i;
+    int chanMode, format, mode = 0, level;
     static const char *const pushCompressOptions[] = {
 	"-dictionary", "-header", "-level", NULL
     };
@@ -2410,7 +2411,7 @@ ZlibPushSubcmd(
     enum pushOptionsEnum {poDictionary, poHeader, poLevel, poLimit} option;
     Tcl_Obj *headerObj = NULL, *compDictObj = NULL;
     int limit = DEFAULT_BUFFER_SIZE;
-    size_t dummy;
+    size_t i, dummy;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "mode channel ?options...?");
@@ -2566,7 +2567,7 @@ static int
 ZlibStreamCmd(
     void *cd,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream)cd;
@@ -2692,11 +2693,12 @@ static int
 ZlibStreamAddCmd(
     void *cd,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream)cd;
-    int code, buffersize = -1, flush = -1, i;
+    int code, buffersize = -1, flush = -1;
+    size_t i;
     Tcl_Obj *obj, *compDictObj = NULL;
     static const char *const add_options[] = {
 	"-buffer", "-dictionary", "-finalize", "-flush", "-fullflush", NULL
@@ -2819,11 +2821,12 @@ static int
 ZlibStreamPutCmd(
     void *cd,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream)cd;
-    int flush = -1, i;
+    int flush = -1;
+    size_t i;
     Tcl_Obj *compDictObj = NULL;
     static const char *const put_options[] = {
 	"-dictionary", "-finalize", "-flush", "-fullflush", NULL
@@ -2910,7 +2913,7 @@ static int
 ZlibStreamHeaderCmd(
     void *cd,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *)cd;
@@ -3946,7 +3949,7 @@ TclZlibInit(
      * Create the public scripted interface to this file's functionality.
      */
 
-    Tcl_CreateObjCommand(interp, "zlib", ZlibCmd, 0, 0);
+    Tcl_CreateObjCommand2(interp, "zlib", ZlibCmd, 0, 0);
 
     /*
      * Store the underlying configuration information.

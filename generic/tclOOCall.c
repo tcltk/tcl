@@ -311,7 +311,7 @@ TclOOInvokeContext(
 				 * other sorts of context handling (e.g.,
 				 * commands, variables) depending on method
 				 * implementation. */
-    int objc,			/* The number of arguments. */
+    size_t objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The arguments as actually seen. */
 {
     CallContext *const contextPtr = (CallContext *)clientData;
@@ -369,11 +369,17 @@ TclOOInvokeContext(
      * Run the method implementation.
      */
 
-    if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
-	return (mPtr->typePtr->callProc)(mPtr->clientData, interp,
+#ifndef TCL_NO_DEPRECATED
+    if (mPtr->typePtr->version == TCL_OO_METHOD_VERSION_1) {
+	if (objc > INT_MAX) {
+	    Tcl_WrongNumArgs(interp, 1, objv, "?args?");
+	    return TCL_ERROR;
+	}
+	return ((Tcl_MethodCallProc *)(void *)mPtr->typePtr->callProc)(mPtr->clientData, interp,
 		(Tcl_ObjectContext) contextPtr, objc, objv);
     }
-    return ((Tcl_MethodCallProc2 *)(void *)(mPtr->typePtr->callProc))(mPtr->clientData, interp,
+#endif /* TCL_NO_DEPRECATED */
+    return mPtr->typePtr->callProc(mPtr->clientData, interp,
 	    (Tcl_ObjectContext) contextPtr, objc, objv);
 }
 

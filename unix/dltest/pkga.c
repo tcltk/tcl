@@ -35,12 +35,12 @@ static int
 Pkga_EqObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
     const char *str1, *str2;
-    int len1, len2;
+    size_t len1, len2;
     (void)dummy;
 
     if (objc != 3) {
@@ -80,7 +80,7 @@ static int
 Pkga_QuoteObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     (void)dummy;
@@ -124,8 +124,8 @@ Pkga_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkga_eq", Pkga_EqObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "pkga_quote", Pkga_QuoteObjCmd, NULL,
+    Tcl_CreateObjCommand2(interp, "pkga_eq", Pkga_EqObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "pkga_quote", Pkga_QuoteObjCmd, NULL,
 	    NULL);
     return TCL_OK;
 }
