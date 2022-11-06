@@ -319,29 +319,6 @@ Tcl_GetHostName(void)
 /*
  * ----------------------------------------------------------------------
  *
- * TclpHasSockets --
- *
- *	Detect if sockets are available on this platform.
- *
- * Results:
- *	Returns TCL_OK.
- *
- * Side effects:
- *	None.
- *
- * ----------------------------------------------------------------------
- */
-
-int
-TclpHasSockets(
-    TCL_UNUSED(Tcl_Interp *))
-{
-    return TCL_OK;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
  * TclpFinalizeSockets --
  *
  *	Performs per-thread socket subsystem finalization.

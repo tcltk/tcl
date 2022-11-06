@@ -330,9 +330,10 @@ declare 131 {
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc,
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-declare 132 {
-    int TclpHasSockets(Tcl_Interp *interp)
-}
+# Removed in 9.0:
+#declare 132 {
+#    int TclpHasSockets(Tcl_Interp *interp)
+#}
 # Removed in 9.0:
 #declare 133 {
 #    struct tm *TclpGetDate(const time_t *time, int useGMT)
