@@ -3340,7 +3340,7 @@ SetListFromAny(
 	    Tcl_IncrRefCount(*elemPtrs++);/* Since list now holds ref to it. */
 	}
 
-	LIST_ASSERT((elemPtrs - listRep.storePtr->slots) == (Tcl_WideInt)elemCount);
+	LIST_ASSERT((Tcl_Size)(elemPtrs - listRep.storePtr->slots) == elemCount);
 
 	listRep.storePtr->numUsed = elemCount;
 

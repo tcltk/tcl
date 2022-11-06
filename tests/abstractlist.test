@@ -118,7 +118,7 @@ test abstractlist-2.5 {!no shimmer lreplace} {
     set m-isa [value-isa m]
     set l-isa1 [value-isa l]
     list ${l-isa} $m ${m-isa} ${l-isa1}
-} {{l is a lstring} {V i z z i n i : { } H E { } D I D N ' T { } f a i l ? { } I N C O N C E I V A B L E . { } I n i g o { } M o n t o y a : { } Y o u { } k e e p { } u s i n g { } t h a t { } w o r d . { } I { } d o { } n o t { } t h i n k { } i t { } m e a n s { } w h a t { } y o u { } t h i n k { } i t { } m e a n s .} {m is a list} {l is a lstring}}
+} {{l is a lstring} {V i z z i n i : { } H E { } D I D N ' T { } f a i l ? { } I N C O N C E I V A B L E . { } I n i g o { } M o n t o y a : { } Y o u { } k e e p { } u s i n g { } t h a t { } w o r d . { } I { } d o { } n o t { } t h i n k { } i t { } m e a n s { } w h a t { } y o u { } t h i n k { } i t { } m e a n s .} {m is a lstring} {l is a lstring}}
 
 test abstractlist-2.6 {no shimmer ledit} {
     # "ledit m 9 8 S"
@@ -278,7 +278,7 @@ test abstractlist-3.5 {!no shimmer lreplace} {
     set m-isa [value-isa m]
     set l-isa1 [value-isa l]
     list ${l-isa} $m ${m-isa} ${l-isa1}
-} {{l is a lstring} {V i z z i n i : { } H E { } D I D N ' T { } f a i l ? { } I N C O N C E I V A B L E . { } I n i g o { } M o n t o y a : { } Y o u { } k e e p { } u s i n g { } t h a t { } w o r d . { } I { } d o { } n o t { } t h i n k { } i t { } m e a n s { } w h a t { } y o u { } t h i n k { } i t { } m e a n s .} {m is a list} {l is a list}}
+} {{l is a lstring} {V i z z i n i : { } H E { } D I D N ' T { } f a i l ? { } I N C O N C E I V A B L E . { } I n i g o { } M o n t o y a : { } Y o u { } k e e p { } u s i n g { } t h a t { } w o r d . { } I { } d o { } n o t { } t h i n k { } i t { } m e a n s { } w h a t { } y o u { } t h i n k { } i t { } m e a n s .} {m is a lstring} {l is a lstring}}
 
 test abstractlist-3.6 {no shimmer ledit} {
     # "ledit m 9 8 S"

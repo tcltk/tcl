@@ -2437,6 +2437,9 @@ StringRplcCmd(
 		last + 1 - first, (objc == 5) ? objv[4] : NULL,
 		TCL_STRING_IN_PLACE);
 
+	if (resultPtr == NULL) {
+	    return TCL_ERROR;
+	}
 	Tcl_SetObjResult(interp, resultPtr);
     }
     return TCL_OK;

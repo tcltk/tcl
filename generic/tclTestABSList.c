@@ -1,7 +1,10 @@
 // Tcl Abstract List test command: "lstring"
+
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include <string.h>
 #include <limits.h>
-#include "tcl.h"
 #include "tclInt.h"
 
 /*
