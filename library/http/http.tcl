@@ -77,6 +77,7 @@ namespace eval http {
 	variable socketClosing
 	variable socketPlayCmd
 	variable socketCoEvent
+	variable socketProxyId
 	if {[info exists socketMapping]} {
 	    # Close open sockets on re-init.  Do not permit retries.
 	    foreach {url sock} [array get socketMapping] {
@@ -101,6 +102,7 @@ namespace eval http {
 	array unset socketClosing
 	array unset socketPlayCmd
 	array unset socketCoEvent
+	array unset socketProxyId
 	array set socketMapping {}
 	array set socketRdState {}
 	array set socketWrState {}
@@ -110,6 +112,7 @@ namespace eval http {
 	array set socketClosing {}
 	array set socketPlayCmd {}
 	array set socketCoEvent {}
+	array set socketProxyId {}
 	return
     }
     init
@@ -407,6 +410,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -540,6 +544,7 @@ proc http::KeepSocket {token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -742,6 +747,7 @@ proc http::CloseSocket {s {token {}}} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     set tk [namespace tail $token]
 
@@ -804,6 +810,7 @@ proc http::CloseQueuedQueries {connId {token {}}} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     ##Log CloseQueuedQueries $connId $token
     if {![info exists socketMapping($connId)]} {
@@ -865,6 +872,7 @@ proc http::Unset {connId} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     unset socketMapping($connId)
     unset socketRdState($connId)
@@ -873,6 +881,7 @@ proc http::Unset {connId} {
     unset -nocomplain socketWrQueue($connId)
     unset -nocomplain socketClosing($connId)
     unset -nocomplain socketPlayCmd($connId)
+    unset -nocomplain socketProxyId($connId)
     return
 }
 
@@ -1344,6 +1353,11 @@ proc http::CreateToken {url args} {
 	set srvurl $url
 	set targetAddr [list $phost $pport]
 	set state(proxyUsed) HttpProxy
+	# The value of state(proxyUsed) none|HttpProxy depends only on the
+	# all-transactions http::config settings and on the target URL.
+	# Even if this is a persistent socket there is no need to change the
+	# value of state(proxyUsed) for other transactions that use the socket:
+	# they have the same value already.
     } else {
 	set targetAddr [list $host $port]
     }
@@ -1379,6 +1393,7 @@ proc http::CreateToken {url args} {
 	variable socketClosing
 	variable socketPlayCmd
 	variable socketCoEvent
+	variable socketProxyId
 
 	if {[info exists socketMapping($state(socketinfo))]} {
 	    # - If the connection is idle, it has a "fileevent readable" binding
@@ -1401,6 +1416,7 @@ proc http::CreateToken {url args} {
 		# causes a call to Finish.
 		set reusing 1
 		set sock $socketMapping($state(socketinfo))
+		set state(proxyUsed) $socketProxyId($state(socketinfo))
 		Log "reusing closing socket $sock for $state(socketinfo) - token $token"
 
 		set state(alreadyQueued) 1
@@ -1435,6 +1451,7 @@ proc http::CreateToken {url args} {
 		# - The socket may not yet exist, and be defined with a placeholder.
 		set reusing 1
 		set sock $socketMapping($state(socketinfo))
+		set state(proxyUsed) $socketProxyId($state(socketinfo))
 		if {[SockIsPlaceHolder $sock]} {
 		    set state(ReusingPlaceholder) 1
 		    lappend socketPhQueue($sock) $token
@@ -1533,6 +1550,7 @@ proc http::AsyncTransaction {token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     set sock $state(sock)
 
@@ -1609,9 +1627,15 @@ proc http::PreparePersistentConnection {token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     set DoLater {-traceread 0 -tracewrite 0}
     set socketMapping($state(socketinfo)) $state(sock)
+    set socketProxyId($state(socketinfo)) $state(proxyUsed)
+    # - The value of state(proxyUsed) was set in http::CreateToken to either
+    #   "none" or "HttpProxy".
+    # - $token is the first transaction to use this placeholder, so there are
+    #   no other tokens whose (proxyUsed) must be modified.
 
     if {![info exists socketRdState($state(socketinfo))]} {
         set socketRdState($state(socketinfo)) {}
@@ -1643,10 +1667,11 @@ proc http::PreparePersistentConnection {token} {
 
     set socketRdQueue($state(socketinfo)) {}
     set socketWrQueue($state(socketinfo)) {}
-    set socketPhQueue($state(socketinfo)) {}
+    set socketPhQueue($state(sock))       {}
     set socketClosing($state(socketinfo)) 0
     set socketPlayCmd($state(socketinfo)) {ReplayIfClose Wready {} {}}
     set socketCoEvent($state(socketinfo)) {}
+    set socketProxyId($state(socketinfo)) {}
 
     return $DoLater
 }
@@ -1679,6 +1704,7 @@ proc http::OpenSocket {token DoLater} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     Log >K$tk Start OpenSocket coroutine
 
@@ -1795,9 +1821,11 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     set reusing $state(reusing)
     set sock $state(sock)
+    set proxyUsed $state(proxyUsed)
     ##Log "  ConfigureNewSocket" $token $sockOld ... -- $sock
 
     if {(!$reusing) && ($sock ne $sockOld)} {
@@ -1807,6 +1835,8 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
              && ($socketMapping($state(socketinfo)) eq $sockOld)
         } {
             set socketMapping($state(socketinfo)) $sock
+            set socketProxyId($state(socketinfo)) $proxyUsed
+            # tokens that use the placeholder $sockOld are updated below.
             ##Log set socketMapping($state(socketinfo)) $sock
         }
 
@@ -1846,6 +1876,7 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
 	    # 1. Amend the token's (sock).
 	    ##Log set ${tok}(sock) $sock
 	    set ${tok}(sock) $sock
+	    set ${tok}(proxyUsed) $proxyUsed
 
 	    # 2. Schedule the token's HTTP request.
 	    # Every token in socketPhQueue(*) has reusing 1 alreadyQueued 0.
@@ -1876,7 +1907,7 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
 #                        waiting until the read(s) in progress are finished).
 # socketRdQueue($connId) List of tokens that are queued for reading later.
 # socketWrQueue($connId) List of tokens that are queued for writing later.
-# socketPhQueue($connId) List of tokens that are queued to use a placeholder
+# socketPhQueue($sock)   List of tokens that are queued to use a placeholder
 #                        socket, when the real socket has not yet been created.
 # socketClosing($connId) (boolean) true iff a server response header indicates
 #                        that the server will close the connection at the end of
@@ -1885,6 +1916,11 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
 #                        part-completed transactions if the socket closes early.
 # socketCoEvent($connId) Identifier for the "after idle" event that will launch
 #                        an OpenSocket coroutine to open or re-use a socket.
+# socketProxyId($connId) The type of proxy that this socket uses: values are
+#                        those of state(proxyUsed) i.e. none, HttpProxy,
+#                        SecureProxy, and SecureProxyFailed.
+#                        The value is not used for anything by http, its purpose
+#                        is to set the value of state() for caller information.
 # ------------------------------------------------------------------------------
 
 
@@ -1940,6 +1976,7 @@ proc http::ScheduleRequest {token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     set Unfinished 0
 
@@ -2085,6 +2122,7 @@ proc http::Connected {token proto phost srvurl} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -2424,6 +2462,7 @@ proc http::DoneRequest {token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -2755,6 +2794,7 @@ proc http::ReplayIfDead {token doing} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -2998,6 +3038,7 @@ proc http::ReplayCore {newQueue} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     if {[llength $newQueue] == 0} {
 	# Nothing to do.
@@ -3347,6 +3388,7 @@ proc http::Write {token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -3459,6 +3501,7 @@ proc http::Event {sock token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
