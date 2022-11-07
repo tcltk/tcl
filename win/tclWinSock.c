@@ -234,7 +234,6 @@ static TcpState *	NewSocketInfo(SOCKET socket);
 static void		SocketExitHandler(void *clientData);
 static LRESULT CALLBACK	SocketProc(HWND hwnd, UINT message, WPARAM wParam,
 			    LPARAM lParam);
-static int		SocketsEnabled(void);
 static void		TcpAccept(TcpFdList *fds, SOCKET newSocket, address addr);
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
 static int		WaitForSocketEvent(TcpState *statePtr, int events,
@@ -362,23 +361,22 @@ InitializeHostName(
 	Tcl_UtfToLower(Tcl_WCharToUtfDString(wbuf, TCL_INDEX_NONE, &ds));
 
     } else {
-	if (TclpHasSockets(NULL) == TCL_OK) {
-	    /*
-	     * The buffer size of 256 is recommended by the MSDN page that
-	     * documents gethostname() as being always adequate.
-	     */
+	TclInitSockets();
+	/*
+	 * The buffer size of 256 is recommended by the MSDN page that
+	 * documents gethostname() as being always adequate.
+	 */
 
-	    Tcl_DString inDs;
+	Tcl_DString inDs;
 
-	    Tcl_DStringInit(&inDs);
-	    Tcl_DStringSetLength(&inDs, 256);
-	    if (gethostname(Tcl_DStringValue(&inDs),
-		    Tcl_DStringLength(&inDs)) == 0) {
-		Tcl_ExternalToUtfDStringEx(NULL, Tcl_DStringValue(&inDs),
-			TCL_INDEX_NONE, TCL_ENCODING_NOCOMPLAIN, &ds);
-	    }
-	    Tcl_DStringFree(&inDs);
+	Tcl_DStringInit(&inDs);
+	Tcl_DStringSetLength(&inDs, 256);
+	if (gethostname(Tcl_DStringValue(&inDs),
+		Tcl_DStringLength(&inDs)) == 0) {
+	    Tcl_ExternalToUtfDStringEx(NULL, Tcl_DStringValue(&inDs),
+		    TCL_INDEX_NONE, TCL_ENCODING_NOCOMPLAIN, &ds);
 	}
+	Tcl_DStringFree(&inDs);
     }
 
     *encodingPtr = Tcl_GetEncoding(NULL, "utf-8");
@@ -415,11 +413,9 @@ Tcl_GetHostName(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpHasSockets --
+ * TclInitSockets --
  *
- *	This function determines whether sockets are available on the current
- *	system and returns an error in interp if they are not. Note that
- *	interp may be NULL.
+ *	This function just calls InitSockets(), but is protected by a mutex.
  *
  * Results:
  *	Returns TCL_OK if the system supports sockets, or TCL_ERROR with an
@@ -433,24 +429,16 @@ Tcl_GetHostName(void)
  *----------------------------------------------------------------------
  */
 
-int
-TclpHasSockets(
-    Tcl_Interp *interp)		/* Where to write an error message if sockets
-				 * are not present, or NULL if no such message
-				 * is to be written. */
+void
+TclInitSockets()
 {
-    Tcl_MutexLock(&socketMutex);
-    InitSockets();
-    Tcl_MutexUnlock(&socketMutex);
-
-    if (SocketsEnabled()) {
-	return TCL_OK;
+    if (!initialized) {
+	Tcl_MutexLock(&socketMutex);
+	if (!initialized) {
+	    InitSockets();
+	}
+	Tcl_MutexUnlock(&socketMutex);
     }
-    if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"sockets are not available on this system", TCL_INDEX_NONE));
-    }
-    return TCL_ERROR;
 }
 
 /*
@@ -775,17 +763,6 @@ TcpInputProc(
     *errorCodePtr = 0;
 
     /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	*errorCodePtr = EFAULT;
-	return -1;
-    }
-
-    /*
      * First check to see if EOF was already detected, to prevent calling the
      * socket stack after the first time EOF is detected.
      */
@@ -918,17 +895,6 @@ TcpOutputProc(
     *errorCodePtr = 0;
 
     /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	*errorCodePtr = EFAULT;
-	return -1;
-    }
-
-    /*
      * Check if there is an async connect running.
      * For blocking sockets terminate connect, otherwise do one step.
      * For a non blocking socket return EWOULDBLOCK if connect not terminated
@@ -1029,28 +995,20 @@ TcpCloseProc(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
+     * Clean up the OS socket handle. The default Windows setting for a
+     * socket is SO_DONTLINGER, which does a graceful shutdown in the
+     * background.
      */
 
-    if (SocketsEnabled()) {
-	/*
-	 * Clean up the OS socket handle. The default Windows setting for a
-	 * socket is SO_DONTLINGER, which does a graceful shutdown in the
-	 * background.
-	 */
+    while (statePtr->sockets != NULL) {
+	TcpFdList *thisfd = statePtr->sockets;
 
-	while (statePtr->sockets != NULL) {
-	    TcpFdList *thisfd = statePtr->sockets;
-
-	    statePtr->sockets = thisfd->next;
-	    if (closesocket(thisfd->fd) == SOCKET_ERROR) {
-		Tcl_WinConvertError((DWORD) WSAGetLastError());
-		errorCode = Tcl_GetErrno();
-	    }
-	    Tcl_Free(thisfd);
+	statePtr->sockets = thisfd->next;
+	if (closesocket(thisfd->fd) == SOCKET_ERROR) {
+	    Tcl_WinConvertError((DWORD) WSAGetLastError());
+	    errorCode = Tcl_GetErrno();
 	}
+	Tcl_Free(thisfd);
     }
 
     if (statePtr->addrlist != NULL) {
@@ -1177,20 +1135,6 @@ TcpSetOptionProc(
 	len = strlen(optionName);
     }
 
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "winsock is not initialized", -1));
-	}
-	return TCL_ERROR;
-    }
-
     sock = statePtr->sockets->fd;
 
     if ((len > 1) && (optionName[1] == 'k') &&
@@ -1275,20 +1219,6 @@ TcpGetOptionProc(
     size_t len = 0;
     int reverseDNS = 0;
 #define SUPPRESS_RDNS_VAR "::tcl::unsupported::noReverseDNS"
-
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "winsock is not initialized", -1));
-	}
-	return TCL_ERROR;
-    }
 
     /*
      * Go one step in async connect
@@ -2013,19 +1943,7 @@ Tcl_OpenTcpClient(
     struct addrinfo *addrlist = NULL, *myaddrlist = NULL;
     char channelName[SOCK_CHAN_LENGTH];
 
-    if (TclpHasSockets(interp) != TCL_OK) {
-	return NULL;
-    }
-
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	return NULL;
-    }
+    TclInitSockets();
 
     /*
      * Do the name lookups for the local and remote addresses.
@@ -2099,9 +2017,7 @@ Tcl_MakeTcpClientChannel(
     char channelName[SOCK_CHAN_LENGTH];
     ThreadSpecificData *tsdPtr;
 
-    if (TclpHasSockets(NULL) != TCL_OK) {
-	return NULL;
-    }
+    TclInitSockets();
 
     tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
@@ -2167,19 +2083,7 @@ Tcl_OpenTcpServerEx(
     const char *errorMsg = NULL;
     int optvalue, port;
 
-    if (TclpHasSockets(interp) != TCL_OK) {
-	return NULL;
-    }
-
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	return NULL;
-    }
+    TclInitSockets();
 
     /*
      * Construct the addresses for each end of the socket.
@@ -2510,51 +2414,15 @@ InitSockets(void)
 
     WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
 
-    if (tsdPtr->hwnd == NULL) {
-	goto initFailure;	/* Trouble creating the window. */
+    if (tsdPtr->hwnd != NULL) {
+	Tcl_CreateEventSource(SocketSetupProc, SocketCheckProc, NULL);
+	return;
     }
 
-    Tcl_CreateEventSource(SocketSetupProc, SocketCheckProc, NULL);
-    return;
-
   initFailure:
-    TclpFinalizeSockets();
-    initialized = -1;
+    Tcl_Panic("InitSockets failed");
     return;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * SocketsEnabled --
- *
- *	Check that the WinSock was successfully initialized.
- *
- * Warning:
- *	This check was useful in times of Windows98 where WinSock may
- *	not be available. This is not the case any more.
- *	This function may be removed with TCL 9.0
- *
- * Results:
- *	1 if it is.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SocketsEnabled(void)
-{
-    int enabled;
-
-    Tcl_MutexLock(&socketMutex);
-    enabled = (initialized == 1);
-    Tcl_MutexUnlock(&socketMutex);
-    return enabled;
-}
-
 
 /*
  *----------------------------------------------------------------------
@@ -3388,9 +3256,7 @@ TcpThreadActionProc(
 	 * sockets will not work.
 	 */
 
-	Tcl_MutexLock(&socketMutex);
-	InitSockets();
-	Tcl_MutexUnlock(&socketMutex);
+	TclInitSockets();
 
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 

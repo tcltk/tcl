@@ -281,8 +281,7 @@ TCLAPI void		Tcl_SetNamespaceResolvers(
 				Tcl_ResolveCmdProc *cmdProc,
 				Tcl_ResolveVarProc *varProc,
 				Tcl_ResolveCompiledVarProc *compiledVarProc);
-/* 132 */
-TCLAPI int		TclpHasSockets(Tcl_Interp *interp);
+/* Slot 132 is reserved */
 /* Slot 133 is reserved */
 /* Slot 134 is reserved */
 /* Slot 135 is reserved */
@@ -710,7 +709,7 @@ typedef struct TclIntStubs {
     int (*tcl_PushCallFrame) (Tcl_Interp *interp, Tcl_CallFrame *framePtr, Tcl_Namespace *nsPtr, int isProcCallFrame); /* 129 */
     int (*tcl_RemoveInterpResolvers) (Tcl_Interp *interp, const char *name); /* 130 */
     void (*tcl_SetNamespaceResolvers) (Tcl_Namespace *namespacePtr, Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, Tcl_ResolveCompiledVarProc *compiledVarProc); /* 131 */
-    int (*tclpHasSockets) (Tcl_Interp *interp); /* 132 */
+    void (*reserved132)(void);
     void (*reserved133)(void);
     void (*reserved134)(void);
     void (*reserved135)(void);
@@ -1047,8 +1046,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tcl_RemoveInterpResolvers) /* 130 */
 #define Tcl_SetNamespaceResolvers \
 	(tclIntStubsPtr->tcl_SetNamespaceResolvers) /* 131 */
-#define TclpHasSockets \
-	(tclIntStubsPtr->tclpHasSockets) /* 132 */
+/* Slot 132 is reserved */
 /* Slot 133 is reserved */
 /* Slot 134 is reserved */
 /* Slot 135 is reserved */
