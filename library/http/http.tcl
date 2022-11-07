@@ -1753,7 +1753,20 @@ proc http::OpenSocket {token DoLater} {
         ConfigureNewSocket $token $sockOld $DoLater
         ##Log OpenSocket success $sock - token $token
     } result errdict]} {
-        ##Log OpenSocket failed $result - token $token
+	##Log OpenSocket failed $result - token $token
+	# There may be other requests in the socketPhQueue.
+	# Prepare socketPlayCmd so that Finish will replay them.
+	if {    ($state(-keepalive)) && (!$state(reusing))
+	     && [info exists socketPhQueue($sockOld)]
+	     && ($socketPhQueue($sockOld) ne {})
+	} {
+	    if {$socketMapping($state(socketinfo)) ne $sockOld} {
+		Log "WARNING: this code should not be reached.\
+			{$socketMapping($state(socketinfo)) ne $sockOld}"
+	    }
+	    set socketPlayCmd($state(socketinfo)) [list ReplayIfClose Wready {} $socketPhQueue($sockOld)]
+	    set socketPhQueue($sockOld) {}
+	}
         if {[string range $result 0 20] eq {proxy connect failed:}} {
 	    # - The HTTPS proxy did not create a socket.  The pre-existing value
 	    #   (a "placeholder socket") is unchanged.
