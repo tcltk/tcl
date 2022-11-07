@@ -1355,84 +1355,34 @@ TclCompileLinsertCmd(
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr, *listTokenPtr;
-    int idx, i;
+    Tcl_Token *tokenPtr;
+    int i;
 
     if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
-    listTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    
+    /* Push list, insertion index onto the stack */
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 2);
 
-    /*
-     * Parse the index. Will only compile if it is constant and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing) or an end-based index greater than 'end' itself.
-     */
-
-    tokenPtr = TokenAfter(listTokenPtr);
-
-    /*
-     * NOTE: This command treats all inserts at indices before the list
-     * the same as inserts at the start of the list, and all inserts
-     * after the list the same as inserts at the end of the list. We
-     * make that transformation here so we can use the optimized bytecode
-     * as much as possible.
-     */
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_END,
-	    &idx) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * There are four main cases. If there are no values to insert, this is
-     * just a confirm-listiness check. If the index is '0', this is a prepend.
-     * If the index is 'end' (== TCL_INDEX_END), this is an append. Otherwise,
-     * this is a splice (== split, insert values as list, concat-3).
-     */
-
-    CompileWord(envPtr, listTokenPtr, interp, 1);
-    if (parsePtr->numWords == 3) {
-	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
-	return TCL_OK;
-    }
-
+    /* Push new elements to be inserted */
     for (i=3 ; i<parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
-    TclEmitInstInt4(		INST_LIST, i - 3,		envPtr);
 
-    if (idx == (int)TCL_INDEX_START) {
-	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
-	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    } else if (idx == (int)TCL_INDEX_END) {
-	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    } else {
-	/*
-	 * Here we handle two ranges for idx. First when idx > 0, we
-	 * want the first half of the split to end at index idx-1 and
-	 * the second half to start at index idx.
-	 * Second when idx < TCL_INDEX_END, indicating "end-N" indexing,
-	 * we want the first half of the split to end at index end-N and
-	 * the second half to start at index end-N+1. We accomplish this
-	 * with a pre-adjustment of the end-N value.
-	 * The root of this is that the commands [lrange] and [linsert]
-	 * differ in their interpretation of the "end" index.
-	 */
-
-	if (idx < (int)TCL_INDEX_END) {
-	    idx++;
-	}
-	TclEmitInstInt4(	INST_OVER, 1,			envPtr);
-	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			idx - 1,		envPtr);
-	TclEmitInstInt4(	INST_REVERSE, 3,		envPtr);
-	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx,	envPtr);
-	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
-	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    }
+    /* First operand is count of arguments */
+    TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 1, envPtr);
+    /* 
+     * Second operand is bitmask
+     *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
+     *  TCL_LREPLACE4_SINGLE_INDEX - second index is not present
+     *     indicating this is a pure insert
+     */
+    TclEmitInt1(TCL_LREPLACE4_SINGLE_INDEX, envPtr);
 
     return TCL_OK;
 }
@@ -1457,120 +1407,38 @@ TclCompileLreplaceCmd(
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr, *listTokenPtr;
-    int idx1, idx2, i;
-    int emptyPrefix=1, suffixStart = 0;
+    Tcl_Token *tokenPtr;
+    int i;
 
     if (parsePtr->numWords < 4) {
 	return TCL_ERROR;
     }
-    listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    tokenPtr = TokenAfter(listTokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
-	    &idx1) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
+    /* Push list, first, last onto the stack */
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
     tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
-	    &idx2) != TCL_OK) {
-	return TCL_ERROR;
-    }
+    CompileWord(envPtr, tokenPtr, interp, 2);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 3);
 
-    /*
-     * General structure of the [lreplace] result is
-     *		prefix replacement suffix
-     * In a few cases we can predict various parts will be empty and
-     * take advantage.
-     *
-     * The proper suffix begins with the greater of indices idx1 or
-     * idx2 + 1. If we cannot tell at compile time which is greater,
-     * we must defer to direct evaluation.
-     */
-
-    if (idx1 == (int)TCL_INDEX_NONE) {
-	suffixStart = (int)TCL_INDEX_NONE;
-    } else if (idx2 == (int)TCL_INDEX_NONE) {
-	suffixStart = idx1;
-    } else if (idx2 == (int)TCL_INDEX_END) {
-	suffixStart = (int)TCL_INDEX_NONE;
-    } else if (((idx2 < (int)TCL_INDEX_END) && (idx1 <= (int)TCL_INDEX_END))
-	    || ((idx2 >= (int)TCL_INDEX_START) && (idx1 >= (int)TCL_INDEX_START))) {
-	suffixStart = (idx1 > idx2 + 1) ? idx1 : idx2 + 1;
-    } else {
-	return TCL_ERROR;
-    }
-
-    /* All paths start with computing/pushing the original value. */
-    CompileWord(envPtr, listTokenPtr, interp, 1);
-
-    /*
-     * Push all the replacement values next so any errors raised in
-     * creating them get raised first.
-     */
-    if (parsePtr->numWords > 4) {
-	/* Push the replacement arguments */
+    /* Push new elements to be inserted */
+    for (i=4 ; i<parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
-	for (i=4 ; i<parsePtr->numWords ; i++) {
-	    CompileWord(envPtr, tokenPtr, interp, i);
-	    tokenPtr = TokenAfter(tokenPtr);
-	}
-
-	/* Make a list of them... */
-	TclEmitInstInt4(	INST_LIST, i - 4,		envPtr);
-
-	emptyPrefix = 0;
+	CompileWord(envPtr, tokenPtr, interp, i);
     }
 
-    if ((idx1 == suffixStart) && (parsePtr->numWords == 4)) {
-	/*
-	 * This is a "no-op". Example: [lreplace {a b c} 2 0]
-	 * We still do a list operation to get list-verification
-	 * and canonicalization side effects.
-	 */
-	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
-	return TCL_OK;
-    }
-
-    if (idx1 != (int)TCL_INDEX_START) {
-	/* Prefix may not be empty; generate bytecode to push it */
-	if (emptyPrefix) {
-	    TclEmitOpcode(	INST_DUP,			envPtr);
-	} else {
-	    TclEmitInstInt4(	INST_OVER, 1,			envPtr);
-	}
-	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			idx1 - 1,		envPtr);
-	if (!emptyPrefix) {
-	    TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
-	    TclEmitOpcode(	INST_LIST_CONCAT,		envPtr);
-	}
-	emptyPrefix = 0;
-    }
-
-    if (!emptyPrefix) {
-	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
-    }
-
-    if (suffixStart == (int)TCL_INDEX_NONE) {
-	TclEmitOpcode(		INST_POP,			envPtr);
-	if (emptyPrefix) {
-	    PushStringLiteral(envPtr, "");
-	}
-    } else {
-	/* Suffix may not be empty; generate bytecode to push it */
-	TclEmitInstInt4(	INST_LIST_RANGE_IMM, suffixStart, envPtr);
-	TclEmitInt4(			(int)TCL_INDEX_END,		envPtr);
-	if (!emptyPrefix) {
-	    TclEmitOpcode(	INST_LIST_CONCAT,		envPtr);
-	}
-    }
+    /* First operand is count of arguments */
+    TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 1, envPtr);
+    /* 
+     * Second operand is bitmask
+     *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
+     */
+    TclEmitInt1(TCL_LREPLACE4_END_IS_LAST, envPtr);
 
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
