@@ -321,7 +321,7 @@ declare 131 {
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc,
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-declare 132 {
+declare 132 {deprecated {}} {
     int TclpHasSockets(Tcl_Interp *interp)
 }
 declare 133 {deprecated {}} {
