@@ -4896,7 +4896,7 @@ proc http::SecureProxyConnect {args} {
     # Extract (non-proxy) target from args.
     set host [lindex $args end-3]
     set port [lindex $args end-2]
-    set args [lremove $args end-3 end-2]
+    set args [lreplace $args end-3 end-2]
 
     # Proxy server URL for connection.
     # This determines where the socket is opened.
