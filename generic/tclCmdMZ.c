@@ -2337,7 +2337,7 @@ StringReptCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int count;
+    Tcl_WideInt count;
     Tcl_Obj *resultPtr;
 
     if (objc != 3) {
@@ -2345,7 +2345,7 @@ StringReptCmd(
 	return TCL_ERROR;
     }
 
-    if (TclGetIntFromObj(interp, objv[2], &count) != TCL_OK) {
+    if (TclGetWideIntFromObj(interp, objv[2], &count) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2437,6 +2437,9 @@ StringRplcCmd(
 		last + 1 - first, (objc == 5) ? objv[4] : NULL,
 		TCL_STRING_IN_PLACE);
 
+	if (resultPtr == NULL) {
+	    return TCL_ERROR;
+	}
 	Tcl_SetObjResult(interp, resultPtr);
     }
     return TCL_OK;

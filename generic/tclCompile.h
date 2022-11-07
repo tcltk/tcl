@@ -801,6 +801,8 @@ enum TclInstruction {
 	INST_STR_LE,
 	INST_STR_GE,
 
+    INST_LREPLACE4,
+
     /* The last opcode */
     LAST_INST_OPCODE
 };
@@ -1615,6 +1617,12 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 
 #define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
 #define TCL_NO_ELEMENT 2	/* Do not push the array element. */
+
+/*
+ * Flags bits used by lreplace4 instruction
+ */
+#define TCL_LREPLACE4_END_IS_LAST  1 /* "end" refers to last element */
+#define TCL_LREPLACE4_SINGLE_INDEX 2 /* Second index absent (pure insert) */
 
 /*
  * DTrace probe macros (NOPs if DTrace support is not enabled).

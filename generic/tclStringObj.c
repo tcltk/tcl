@@ -2933,6 +2933,7 @@ TclStringRepeat(
     int inPlace = flags & TCL_STRING_IN_PLACE;
     size_t length = 0, unichar = 0, done = 1;
     int binary = TclIsPureByteArray(objPtr);
+    size_t maxCount;
 
     /* assert (count >= 2) */
 
@@ -2955,12 +2956,17 @@ TclStringRepeat(
     if (binary) {
 	/* Result will be pure byte array. Pre-size it */
 	(void)Tcl_GetByteArrayFromObj(objPtr, &length);
-    } else if (unichar) {
+	maxCount = TCL_SIZE_SMAX;
+    }
+    else if (unichar) {
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
 	(void)Tcl_GetUnicodeFromObj(objPtr, &length);
-    } else {
+	maxCount = TCL_SIZE_SMAX/sizeof(Tcl_UniChar);
+    }
+    else {
 	/* Result will be concat of string reps. Pre-size it. */
 	(void)Tcl_GetStringFromObj(objPtr, &length);
+	maxCount = TCL_SIZE_SMAX;
     }
 
     if (length == 0) {
@@ -2968,10 +2974,14 @@ TclStringRepeat(
 	return objPtr;
     }
 
-    if (count > INT_MAX/length) {
+    /* maxCount includes space for null */
+    if (count > (maxCount-1)) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_ObjPrintf("max size for a Tcl value (%" TCL_Z_MODIFIER
+			      "u bytes) exceeded",
+			      TCL_SIZE_SMAX));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}
 	return NULL;
@@ -2982,6 +2992,7 @@ TclStringRepeat(
 	objResultPtr = (!inPlace || Tcl_IsShared(objPtr)) ?
 		Tcl_DuplicateObj(objPtr) : objPtr;
 
+	/* Allocate count*length space */
 	Tcl_SetByteArrayLength(objResultPtr, count*length); /* PANIC? */
 	Tcl_SetByteArrayLength(objResultPtr, length);
 	while (count - done > done) {
@@ -3049,6 +3060,7 @@ TclStringRepeat(
 		(count - done) * length);
     }
     return objResultPtr;
+
 }
 
 /*
@@ -3077,7 +3089,7 @@ TclStringCat(
 {
     Tcl_Obj *objResultPtr, * const *ov;
     int oc, binary = 1;
-	size_t length = 0;
+    size_t length = 0;
     int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
     int first = objc - 1;	/* Index of first value possibly not empty */
     int last = 0;		/* Index of last value possibly not empty */
@@ -3159,6 +3171,9 @@ TclStringCat(
 		    if (length == 0) {
 			first = last;
 		    }
+		    if (length > (TCL_SIZE_SMAX-numBytes)) {
+			goto overflow;
+		    }
 		    length += numBytes;
 		}
 	    }
@@ -3181,6 +3196,9 @@ TclStringCat(
 		    last = objc - oc;
 		    if (length == 0) {
 			first = last;
+		    }
+		    if (length > ((TCL_SIZE_SMAX/sizeof(Tcl_UniChar))-numChars)) {
+			goto overflow;
 		    }
 		    length += numChars;
 		}
@@ -3246,7 +3264,7 @@ TclStringCat(
 		    if (numBytes) {
 			first = last;
 		    }
-		} else if (numBytes + length > (size_t)INT_MAX) {
+		} else if (numBytes > (TCL_SIZE_SMAX - length)) {
 		    goto overflow;
 		}
 		length += numBytes;
@@ -3263,7 +3281,7 @@ TclStringCat(
 	    numBytes = objPtr->length;
 	    if (numBytes) {
 		last = objc - oc;
-		if (numBytes + length > (size_t)INT_MAX) {
+		if (numBytes > (TCL_SIZE_SMAX - length)) {
 		    goto overflow;
 		}
 		length += numBytes;
@@ -3422,7 +3440,7 @@ TclStringCat(
   overflow:
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+		    "max size for a Tcl value (%" TCL_Z_MODIFIER "u bytes) exceeded", TCL_SIZE_SMAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
     return NULL;
@@ -4082,11 +4100,11 @@ TclStringReplace(
 		return objPtr;
 	    }
 
-	    if ((size_t)newBytes > INT_MAX - (numBytes - count)) {
+	    if (newBytes > (TCL_SIZE_SMAX - (numBytes - count))) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "max size for a Tcl value (%d bytes) exceeded",
-			    INT_MAX));
+			    "max size for a Tcl value (%" TCL_Z_MODIFIER "u bytes) exceeded",
+			    TCL_SIZE_SMAX));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
 		return NULL;
@@ -4121,7 +4139,7 @@ TclStringReplace(
 	if (insertPtr) {
 	    Tcl_AppendObjToObj(result, insertPtr);
 	}
-	if (first + count < (size_t)numChars) {
+	if ((first + count) < numChars) {
 	    Tcl_AppendUnicodeToObj(result, ustring + first + count,
 		    numChars - first - count);
 	}

@@ -106,6 +106,12 @@
 #endif
 
 /*
+ * Maximum *signed* value that can be stored in a Tcl_Size type. This is
+ * primarily used for checking overflows in dynamically allocating memory.
+ */
+#define TCL_SIZE_SMAX ((((Tcl_Size) 1) << ((8*sizeof(Tcl_Size)) - 1)) - 1)
+
+/*
  * Macros used to cast between pointers and integers (e.g. when storing an int
  * in ClientData), on 64-bit architectures they avoid gcc warning about "cast
  * to/from pointer from/to integer of different size".
@@ -3373,6 +3379,11 @@ MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
 MODULE_SCOPE void	TclpFinalizeNotifier(void *clientData);
 MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
+#ifdef _WIN32
+MODULE_SCOPE void	TclInitSockets(void);
+#else
+#define TclInitSockets() /* do nothing */
+#endif
 MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 			    struct addrinfo **addrlist,
 			    const char *host, int port, int willBind,
