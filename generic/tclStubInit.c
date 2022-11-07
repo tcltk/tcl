@@ -537,7 +537,7 @@ static const TclIntStubs tclIntStubs = {
     Tcl_PushCallFrame, /* 129 */
     Tcl_RemoveInterpResolvers, /* 130 */
     Tcl_SetNamespaceResolvers, /* 131 */
-    TclpHasSockets, /* 132 */
+    0, /* 132 */
     0, /* 133 */
     0, /* 134 */
     0, /* 135 */
