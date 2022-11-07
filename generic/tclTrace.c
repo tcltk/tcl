@@ -22,7 +22,7 @@ typedef struct {
     int flags;			/* Operations for which Tcl command is to be
 				 * invoked. */
     size_t length;		/* Number of non-NUL chars. in command. */
-    char command[1];		/* Space for Tcl command to invoke. Actual
+    char command[TCLFLEXARRAY];		/* Space for Tcl command to invoke. Actual
 				 * size will be as large as necessary to hold
 				 * command. This field must be the last in the
 				 * structure, so that it can be larger than 1
@@ -56,7 +56,7 @@ typedef struct {
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
-    char command[1];		/* Space for Tcl command to invoke. Actual
+    char command[TCLFLEXARRAY];		/* Space for Tcl command to invoke. Actual
 				 * size will be as large as necessary to hold
 				 * command. This field must be the last in the
 				 * structure, so that it can be larger than 1
@@ -1608,13 +1608,13 @@ TclCheckInterpTraces(
 		 */
 
 		if (tracePtr->flags & traceFlags) {
-		    if (tracePtr->proc2 == TraceExecutionProc) {
+		    if (tracePtr->proc == TraceExecutionProc) {
 			TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)tracePtr->clientData;
 
 			tcmdPtr->curFlags = traceFlags;
 			tcmdPtr->curCode = code;
 		    }
-		    traceCode = tracePtr->proc2(tracePtr->clientData, interp,
+		    traceCode = tracePtr->proc(tracePtr->clientData, interp,
 			    curLevel, command, (Tcl_Command) cmdPtr, objc,
 			    objv);
 		}
@@ -1696,7 +1696,7 @@ CallTraceFunction(
      * Call the trace function then free allocated storage.
      */
 
-    traceCode = tracePtr->proc2(tracePtr->clientData, (Tcl_Interp *) iPtr,
+    traceCode = tracePtr->proc(tracePtr->clientData, (Tcl_Interp *) iPtr,
 	    iPtr->numLevels, commandCopy, (Tcl_Command) cmdPtr, objc, objv);
 
     TclStackFree(interp, commandCopy);
@@ -1818,7 +1818,8 @@ TraceExecutionProc(
 
 	if (call) {
 	    Tcl_DString cmd, sub;
-	    size_t i, saveInterpFlags;
+	    size_t i;
+	    int saveInterpFlags;
 
 	    Tcl_DStringInit(&cmd);
 	    Tcl_DStringAppend(&cmd, tcmdPtr->command, tcmdPtr->length);
@@ -2216,7 +2217,7 @@ Tcl_CreateObjTrace2(
 
     tracePtr = (Trace *)Tcl_Alloc(sizeof(Trace));
     tracePtr->level = level;
-    tracePtr->proc2 = proc2;
+    tracePtr->proc = proc2;
     tracePtr->clientData = clientData;
     tracePtr->delProc = delProc;
     tracePtr->nextPtr = iPtr->tracePtr;
