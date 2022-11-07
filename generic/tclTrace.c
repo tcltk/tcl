@@ -56,7 +56,7 @@ typedef struct {
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
-    char command[1];		/* Space for Tcl command to invoke. Actual
+    char command[TCLFLEXARRAY];		/* Space for Tcl command to invoke. Actual
 				 * size will be as large as necessary to hold
 				 * command. This field must be the last in the
 				 * structure, so that it can be larger than 1
@@ -1039,7 +1039,7 @@ TraceVariableObjCmd(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 Tcl_CommandTraceInfo(
     Tcl_Interp *interp,		/* Interpreter containing command. */
     const char *cmdName,	/* Name of command. */
@@ -1818,7 +1818,8 @@ TraceExecutionProc(
 
 	if (call) {
 	    Tcl_DString cmd, sub;
-	    int i, saveInterpFlags;
+	    int i;
+	    int saveInterpFlags;
 
 	    Tcl_DStringInit(&cmd);
 	    Tcl_DStringAppend(&cmd, tcmdPtr->command, tcmdPtr->length);
@@ -2074,7 +2075,7 @@ TraceVarProc(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CreateObjTrace --
+ * Tcl_CreateObjTrace/Tcl_CreateObjTrace2 --
  *
  *	Arrange for a function to be called to trace command execution.
  *
@@ -2087,7 +2088,7 @@ TraceVarProc(
  *	called to execute a Tcl command. Calls to proc will have the following
  *	form:
  *
- *	void proc(ClientData	 clientData,
+ *	void proc(void   *	 clientData,
  *		  Tcl_Interp *	 interp,
  *		  int		 level,
  *		  const char *	 command,
@@ -3036,7 +3037,7 @@ Tcl_UntraceVar2(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 Tcl_VarTraceInfo2(
     Tcl_Interp *interp,		/* Interpreter containing variable. */
     const char *part1,		/* Name of variable or array. */
