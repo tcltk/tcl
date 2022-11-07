@@ -805,7 +805,7 @@ proc http::CloseQueuedQueries {connId {token {}}} {
     variable socketPlayCmd
     variable socketCoEvent
 
-    ##Log CloseQueuedQueries $connId
+    ##Log CloseQueuedQueries $connId $token
     if {![info exists socketMapping($connId)]} {
 	# Command has already been called.
 	# Don't come here again - especially recursively.
@@ -1725,7 +1725,9 @@ proc http::OpenSocket {token DoLater} {
 
         # Code above has set state(sock) $sock
         ConfigureNewSocket $token $sockOld $DoLater
+        ##Log OpenSocket success $sock - token $token
     } result errdict]} {
+        ##Log OpenSocket failed $result - token $token
         if {[string range $result 0 20] eq {proxy connect failed:}} {
 	    # - The HTTPS proxy did not create a socket.  The pre-existing value
 	    #   (a "placeholder socket") is unchanged.
@@ -4958,8 +4960,12 @@ proc http::SecureProxyConnect {args} {
         # Record in the token that this is a proxy call.
         set token [lindex $args $targ+1]
         upvar 0 ${token} state
-        set state(proxyUsed) SecureProxy
         set tim $state(-timeout)
+        set state(proxyUsed) SecureProxyFailed
+        # This value is overwritten with "SecureProxy" below if the CONNECT is
+        # successful.  If it is unsuccessful, the socket will be closed
+        # below, and so in this unsuccessful case there are no other transactions
+        # whose (proxyUsed) must be updated.
     } else {
         set tim 0
     }
@@ -5023,6 +5029,11 @@ proc http::SecureProxyConnect {args} {
         # All OK.  The caller in package tls will now call "tls::import $sock".
         # The cleanup command does not close $sock.
         # Other tidying was done in http::Event.
+
+        # If this is a persistent socket, any other transactions that are
+        # already marked to use the socket will have their (proxyUsed) updated
+        # when http::OpenSocket calls http::ConfigureNewSocket.
+        set state(proxyUsed) SecureProxy
         set sock $state2(sock)
         cleanup $token2
         return $sock
@@ -5039,7 +5050,6 @@ proc http::SecureProxyConnect {args} {
                 set state($name) $state2($name)
             }
         }
-        set state(proxyUsed) SecureProxyFailed
         set state(connection) close
         set msg "proxy connect failed: $code"
 	# - This error message will be detected by http::OpenSocket and will
