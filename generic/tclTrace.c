@@ -21,7 +21,7 @@
 typedef struct {
     int flags;			/* Operations for which Tcl command is to be
 				 * invoked. */
-    size_t length;		/* Number of non-NUL chars. in command. */
+    Tcl_Size length;		/* Number of non-NUL chars. in command. */
     char command[TCLFLEXARRAY];		/* Space for Tcl command to invoke. Actual
 				 * size will be as large as necessary to hold
 				 * command. This field must be the last in the
@@ -41,7 +41,7 @@ typedef struct {
 typedef struct {
     int flags;			/* Operations for which Tcl command is to be
 				 * invoked. */
-    size_t length;		/* Number of non-NUL chars. in command. */
+    Tcl_Size length;		/* Number of non-NUL chars. in command. */
     Tcl_Trace stepTrace;	/* Used for execution traces, when tracing
 				 * inside the given command */
     Tcl_Size startLevel;		/* Used for bookkeeping with step execution
@@ -92,6 +92,7 @@ typedef struct {
  * Forward declarations for functions defined in this file:
  */
 
+/* 'OLD' options are pre-Tcl-8.4 style */
 enum traceOptionsEnum {
     TRACE_ADD, TRACE_INFO, TRACE_REMOVE
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
@@ -206,7 +207,6 @@ Tcl_TraceObjCmd(
 #endif
 	NULL
     };
-    /* 'OLD' options are pre-Tcl-8.4 style */
     enum traceOptionsEnum optionIndex;
 
     if (objc < 2) {
@@ -269,8 +269,7 @@ Tcl_TraceObjCmd(
     case TRACE_OLD_VDELETE: {
 	Tcl_Obj *copyObjv[6];
 	Tcl_Obj *opsList;
-	int code;
-	Tcl_Size numFlags;
+	int code, numFlags;
 
 	if (objc != 5) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "name ops command");
@@ -398,7 +397,7 @@ Tcl_TraceObjCmd(
 static int
 TraceExecutionObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-	enum traceOptionsEnum optionIndex,		/* Add, info or remove */
+    enum traceOptionsEnum optionIndex,		/* Add, info or remove */
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -645,7 +644,7 @@ TraceExecutionObjCmd(
 static int
 TraceCommandObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-	enum traceOptionsEnum optionIndex,		/* Add, info or remove */
+    enum traceOptionsEnum optionIndex,		/* Add, info or remove */
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -840,7 +839,7 @@ TraceCommandObjCmd(
 static int
 TraceVariableObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-	enum traceOptionsEnum optionIndex,		/* Add, info or remove */
+    enum traceOptionsEnum optionIndex,		/* Add, info or remove */
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -2126,7 +2125,7 @@ TraceVarProc(
 
 #ifndef TCL_NO_DEPRECATED
 typedef struct {
-	Tcl_CmdObjTraceProc *proc;
+    Tcl_CmdObjTraceProc *proc;
     Tcl_CmdObjTraceDeleteProc *delProc;
     void *clientData;
 } TraceWrapperInfo;
@@ -2167,7 +2166,7 @@ Tcl_CreateObjTrace(
     Tcl_CmdObjTraceDeleteProc *delProc)
 				/* Function to call when trace is deleted */
 {
-	TraceWrapperInfo *info = (TraceWrapperInfo *)Tcl_Alloc(sizeof(TraceWrapperInfo));
+    TraceWrapperInfo *info = (TraceWrapperInfo *)Tcl_Alloc(sizeof(TraceWrapperInfo));
     info->proc = proc;
     info->delProc = delProc;
     info->clientData = clientData;
@@ -2182,7 +2181,7 @@ Tcl_CreateObjTrace2(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Size level,			/* Maximum nesting level */
     int flags,			/* Flags, see above */
-    Tcl_CmdObjTraceProc2 *proc2,	/* Trace callback */
+    Tcl_CmdObjTraceProc2 *proc,	/* Trace callback */
     void *clientData,	/* Client data for the callback */
     Tcl_CmdObjTraceDeleteProc *delProc)
 				/* Function to call when trace is deleted */
@@ -2214,7 +2213,7 @@ Tcl_CreateObjTrace2(
 
     tracePtr = (Trace *)Tcl_Alloc(sizeof(Trace));
     tracePtr->level = level;
-    tracePtr->proc = proc2;
+    tracePtr->proc = proc;
     tracePtr->clientData = clientData;
     tracePtr->delProc = delProc;
     tracePtr->nextPtr = iPtr->tracePtr;
