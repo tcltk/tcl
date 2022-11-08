@@ -53,7 +53,7 @@ extern "C" {
 #if TCL_MAJOR_VERSION == 9
 #   define TCL_MINOR_VERSION   0
 #   define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#   define TCL_RELEASE_SERIAL  4
+#   define TCL_RELEASE_SERIAL  0
 
 #   define TCL_VERSION	    "9.1"
 #   define TCL_PATCH_LEVEL	    "9.1a0"

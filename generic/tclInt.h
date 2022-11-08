@@ -1041,7 +1041,7 @@ typedef void (ProcErrorProc)(Tcl_Interp *interp, Tcl_Obj *procNameObj);
  */
 
 typedef struct Trace {
-    Tcl_Size level;			/* Only trace commands at nesting level less
+    Tcl_Size level;		/* Only trace commands at nesting level less
 				 * than or equal to this. */
 #if TCL_MAJOR_VERSION > 8
     Tcl_CmdObjTraceProc2 *proc;	/* Procedure to call to trace command. */

@@ -92,13 +92,13 @@ typedef struct {
  * Forward declarations for functions defined in this file:
  */
 
-enum traceOptions {
+enum traceOptionsEnum {
     TRACE_ADD, TRACE_INFO, TRACE_REMOVE
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
     ,TRACE_OLD_VARIABLE, TRACE_OLD_VDELETE, TRACE_OLD_VINFO
 #endif
 };
-typedef int (Tcl_TraceTypeObjCmd)(Tcl_Interp *interp, enum traceOptions optionIndex,
+typedef int (Tcl_TraceTypeObjCmd)(Tcl_Interp *interp, enum traceOptionsEnum optionIndex,
 	Tcl_Size objc, Tcl_Obj *const objv[]);
 
 static Tcl_TraceTypeObjCmd TraceVariableObjCmd;
@@ -207,7 +207,7 @@ Tcl_TraceObjCmd(
 	NULL
     };
     /* 'OLD' options are pre-Tcl-8.4 style */
-    enum traceOptions optionIndex;
+    enum traceOptionsEnum optionIndex;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -398,7 +398,7 @@ Tcl_TraceObjCmd(
 static int
 TraceExecutionObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-	enum traceOptions optionIndex,		/* Add, info or remove */
+	enum traceOptionsEnum optionIndex,		/* Add, info or remove */
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -645,7 +645,7 @@ TraceExecutionObjCmd(
 static int
 TraceCommandObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-	enum traceOptions optionIndex,		/* Add, info or remove */
+	enum traceOptionsEnum optionIndex,		/* Add, info or remove */
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -840,7 +840,7 @@ TraceCommandObjCmd(
 static int
 TraceVariableObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-	enum traceOptions optionIndex,		/* Add, info or remove */
+	enum traceOptionsEnum optionIndex,		/* Add, info or remove */
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
