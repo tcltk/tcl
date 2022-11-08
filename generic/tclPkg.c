@@ -828,7 +828,7 @@ SelectPackage(
 	 * Push "ifneeded" package name in "tclPkgFiles" assocdata.
 	 */
 
-	pkgName = (PkgName *)ckalloc(sizeof(PkgName) + strlen(name));
+	pkgName = (PkgName *)ckalloc(offsetof(PkgName, name) + 1 + strlen(name));
 	pkgName->nextPtr = pkgFiles->names;
 	strcpy(pkgName->name, name);
 	pkgFiles->names = pkgName;
