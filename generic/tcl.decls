@@ -388,7 +388,7 @@ declare 98 {
 	    Tcl_TimerProc *proc, void *clientData)
 }
 declare 99 {
-    Tcl_Trace Tcl_CreateTrace(Tcl_Interp *interp, int level,
+    Tcl_Trace Tcl_CreateTrace(Tcl_Interp *interp, Tcl_Size level,
 	    Tcl_CmdTraceProc *proc, void *clientData)
 }
 declare 100 {
@@ -1781,7 +1781,7 @@ declare 482 {
 
 # TIP#32 (object-enabled traces) kbk
 declare 483 {
-    Tcl_Trace Tcl_CreateObjTrace(Tcl_Interp *interp, int level, int flags,
+    Tcl_Trace Tcl_CreateObjTrace(Tcl_Interp *interp, Tcl_Size level, int flags,
 	    Tcl_CmdObjTraceProc *objProc, void *clientData,
 	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
@@ -2576,7 +2576,7 @@ declare 676 {
 	    Tcl_CmdDeleteProc *deleteProc)
 }
 declare 677 {
-    Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, int level, int flags,
+    Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, Tcl_Size level, int flags,
 	    Tcl_CmdObjTraceProc2 *objProc2, void *clientData,
 	    Tcl_CmdObjTraceDeleteProc *delProc)
 }

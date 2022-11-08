@@ -560,7 +560,7 @@ typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	struct Tcl_Obj *const *objv);
 #endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
-	int level, const char *command, Tcl_Command commandInfo, size_t objc,
+	size_t level, const char *command, Tcl_Command commandInfo, size_t objc,
 	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
