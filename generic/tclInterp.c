@@ -333,7 +333,7 @@ int
 Tcl_Init(
     Tcl_Interp *interp)		/* Interpreter to initialize. */
 {
-    PkgName pkgName = {NULL, "Tcl"};
+    PkgName pkgName = {NULL, "tcl"};
     PkgName **names = (PkgName **)TclInitPkgFiles(interp);
     int result = TCL_ERROR;
 
