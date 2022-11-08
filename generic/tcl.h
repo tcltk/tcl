@@ -613,8 +613,6 @@ typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
 /* Abstract List functions */
-typedef struct Tcl_Obj* (Tcl_ALNewObjProc) (Tcl_Size objc, struct Tcl_Obj * const objv[]);
-typedef		  void	(Tcl_ALDupRepProc) (struct Tcl_Obj *srcPtr, struct Tcl_Obj *copyPtr);
 typedef	   Tcl_WideInt	(Tcl_ALLengthProc) (struct Tcl_Obj *listPtr);
 typedef		   int	(Tcl_ALIndexProc)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
 					    Tcl_Size index, struct Tcl_Obj** elemObj);
@@ -625,8 +623,6 @@ typedef		   int	(Tcl_ALReverseProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr
 					     struct Tcl_Obj **newObjPtr);
 typedef		   int	(Tcl_ALGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
 					     Tcl_Size *objcptr, struct Tcl_Obj ***objvptr);
-typedef		  void	(Tcl_ALFreeConcreteRep) (struct Tcl_Obj *listPtr);
-typedef		  void	(Tcl_ALToStringRep) (struct Tcl_Obj *listPtr);
 typedef	struct Tcl_Obj*	(Tcl_ALSetElement) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
 					    Tcl_Size indexCount,
 					    struct Tcl_Obj *const indexArray[],
@@ -667,8 +663,6 @@ typedef struct Tcl_ObjType {
     Tcl_ObjTypeVersion version;
 
     /* List emulation functions - ObjTypeVersion 1 */
-    Tcl_ALNewObjProc *newObjProc;	/* How to create a new Tcl_Obj of this
-					** custom type */
     Tcl_ALLengthProc *lengthProc;	/* Return the [llength] of the
 					** AbstractList */
     Tcl_ALIndexProc *indexProc;		/* Return a value (Tcl_Obj) for
@@ -693,7 +687,6 @@ typedef struct Tcl_ObjType {
 #define TCL_OBJTYPE_CURRENT TCL_OBJTYPE_V1
 #define TCL_OBJTYPE_V0_INIT \
     TCL_OBJTYPE_V0,	    \
-	NULL,		    \
 	NULL,		    \
 	NULL,		    \
 	NULL,		    \
@@ -764,7 +757,7 @@ typedef struct Tcl_Obj {
 
 typedef enum {
     TCL_OBJ_FREEREP, TCL_OBJ_DUPREP, TCL_OBJ_UPDATESTRING, TCL_OBJ_SETFROMANY,
-    TCL_OBJ_NEW, TCL_OBJ_LENGTH, TCL_OBJ_INDEX,
+    TCL_OBJ_LENGTH, TCL_OBJ_INDEX,
     TCL_OBJ_SLICE, TCL_OBJ_REVERSE, TCL_OBJ_GETELEMENTS,
     TCL_OBJ_SETELEMENT, TCL_OBJ_REPLACE
 } Tcl_ObjProcType;

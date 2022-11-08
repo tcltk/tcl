@@ -61,6 +61,8 @@ static Tcl_ObjCmdProc		DictForNRCmd;
 static Tcl_ObjCmdProc		DictMapNRCmd;
 static Tcl_NRPostProc		DictForLoopCallback;
 static Tcl_NRPostProc		DictMapLoopCallback;
+static Tcl_ALLengthProc         DictAsListLength;
+static Tcl_ALIndexProc          DictAsListIndex;
 
 /*
  * Table of dict subcommand names and implementations.
@@ -143,14 +145,16 @@ typedef struct Dict {
 
 const Tcl_ObjType tclDictType = {
     "dict",
-    FreeDictInternalRep,		/* freeIntRepProc */
-    DupDictInternalRep,			/* dupIntRepProc */
-    UpdateStringOfDict,			/* updateStringProc */
-    SetDictFromAny,			/* setFromAnyProc */
-    TCL_OBJTYPE_V1,			/* Extended type for AbstractLists */
-    NULL,
-    NULL,
-    NULL,
+    FreeDictInternalRep,	/* freeIntRepProc */
+    DupDictInternalRep,		/* dupIntRepProc */
+    UpdateStringOfDict,		/* updateStringProc */
+    SetDictFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V1,		/* Extended type for AbstractLists */
+    DictAsListLength,		/* return "list" length of dict value w/o
+				 * shimmering */
+    DictAsListIndex,		/* return key or value at "list" index
+				 * location.  (keysare at even indicies,
+				 * values at odd indicies) */
     NULL,
     NULL,
     NULL,
@@ -3776,6 +3780,158 @@ TclInitDictCmd(
     return TclMakeEnsemble(interp, "dict", implementationMap);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * DictAsListLength --
+ *
+ *   Compute the length of a list as if the dict value were converted to a
+ *   list.
+ *
+ *   Note: the list length may not match the dict size * 2.  This occurs when
+ *   there are duplicate keys in the original string representation.
+ *
+ * Side Effects --
+ *
+ *   The intent is to have no side effects.
+ */
+
+static Tcl_WideInt
+DictAsListLength(
+    Tcl_Obj *objPtr)
+{
+    Tcl_Size estCount, length, llen;
+    const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
+    Tcl_Obj *elemPtr;
+
+    /*
+     * Allocate enough space to hold a (Tcl_Obj *) for each
+     * (possible) list element.
+     */
+
+    estCount = TclMaxListLength(nextElem, length, &limit);
+    estCount += (estCount == 0); /* Smallest list struct holds 1
+				  * element. */
+    elemPtr = Tcl_NewObj();
+
+    llen = 0;
+
+    while (nextElem < limit) {
+	const char *elemStart;
+	char *check;
+	Tcl_Size elemSize;
+	int literal;
+
+	if (TCL_OK != TclFindElement(NULL, nextElem, limit - nextElem,
+		          &elemStart, &nextElem, &elemSize, &literal)) {
+	    Tcl_DecrRefCount(elemPtr);
+	    return 0;
+	}
+	if (elemStart == limit) {
+	    break;
+	}
+
+	TclInvalidateStringRep(elemPtr);
+	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
+				  elemSize);
+	if (elemSize && check == NULL) {
+	    Tcl_DecrRefCount(elemPtr);
+	    return 0;
+	}
+	if (!literal) {
+	    Tcl_InitStringRep(elemPtr, NULL,
+			      TclCopyAndCollapse(elemSize, elemStart, check));
+	}
+	llen++;
+    }
+    Tcl_DecrRefCount(elemPtr);
+    return llen;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DictAsListIndex --
+ *
+ *   Return the key or value at the given "list" index, i.e., as if the string
+ *   value where treated as a list. The intent is to support this list
+ *   operation w/o causing the Obj value to shimmer into a List.
+ *
+ * Side Effects --
+ *
+ *   The intent is to have no side effects.
+ *
+ */
+
+static int
+DictAsListIndex(
+    Tcl_Interp *interp,
+    struct Tcl_Obj *objPtr,
+    Tcl_Size index,
+    Tcl_Obj** elemObjPtr)
+{
+    Tcl_Size /*estCount,*/ length, llen;
+    const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
+    Tcl_Obj *elemPtr;
+
+    /*
+     * Compute limit of the list string
+     */
+
+    TclMaxListLength(nextElem, length, &limit);
+    elemPtr = Tcl_NewObj();
+
+    llen = 0;
+
+    /*
+     * parse out each element until reaching the "index"th element.
+     * Sure this is slow, but shimmering is slower.
+     */
+    while (nextElem < limit) {
+	const char *elemStart;
+	char *check;
+	Tcl_Size elemSize;
+	int literal;
+
+	if (TCL_OK != TclFindElement(NULL, nextElem, limit - nextElem,
+		          &elemStart, &nextElem, &elemSize, &literal)) {
+	    Tcl_DecrRefCount(elemPtr);
+	    return 0;
+	}
+	if (elemStart == limit) {
+	    break;
+	}
+
+	TclInvalidateStringRep(elemPtr);
+	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
+				  elemSize);
+	if (elemSize && check == NULL) {
+	    Tcl_DecrRefCount(elemPtr);
+	    if (interp) {
+		// Need error message here
+	    }
+	    return TCL_ERROR;
+	}
+	if (!literal) {
+	    Tcl_InitStringRep(elemPtr, NULL,
+			      TclCopyAndCollapse(elemSize, elemStart, check));
+	}
+	if (llen == index) {
+	    *elemObjPtr = elemPtr;
+	    return TCL_OK;
+	}
+	llen++;
+    }
+
+    /*
+     * Index is beyond end of list - return empty
+     */
+    Tcl_InitStringRep(elemPtr, NULL, 0);
+    *elemObjPtr = elemPtr;
+    return TCL_OK;
+}
+
 /*
  * Local Variables:
  * mode: c

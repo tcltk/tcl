@@ -4694,8 +4694,6 @@ TclObjTypeHasProc(Tcl_Obj* objPtr, Tcl_ObjProcType ptype)
 	}
     case (size_t)TCL_OBJTYPE_V1:
 	switch (ptype) {
-	case TCL_OBJ_NEW:
-	    return (typePtr->newObjProc != NULL);
 	case TCL_OBJ_DUPREP:
 	    return (typePtr->dupIntRepProc != NULL);
 	case TCL_OBJ_LENGTH:

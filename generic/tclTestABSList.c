@@ -57,7 +57,7 @@ typedef struct LString {
 /*
  * AbstractList definition of an lstring type
  */
-static Tcl_ObjType lstringTypes[12] = {
+static Tcl_ObjType lstringTypes[11] = {
     {
 	"lstring",
 	freeRep,
@@ -65,7 +65,6 @@ static Tcl_ObjType lstringTypes[12] = {
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1,
-/**/	NULL, /*default NULL,*/
 	my_LStringObjLength,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
@@ -81,23 +80,6 @@ static Tcl_ObjType lstringTypes[12] = {
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1,
-	NULL,
-	my_LStringObjLength,
-	my_LStringObjIndex,
-	my_LStringObjRange,/*ObjRange*/
-	my_LStringObjReverse,
-        my_LStringGetElements,
-	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace
-    },
-    {
-	"lstring",
-	freeRep,
-	DupLStringRep,
-	UpdateStringOfLString,
-	NULL,
-	TCL_OBJTYPE_V1,
-	NULL,
 /**/	NULL, /*default my_LStringObjLength,*/
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
@@ -113,7 +95,6 @@ static Tcl_ObjType lstringTypes[12] = {
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1,
-	NULL,
 	my_LStringObjLength,
 /**/	NULL, /*default my_LStringObjIndex,*/
 	my_LStringObjRange,/*ObjRange*/
@@ -130,7 +111,6 @@ static Tcl_ObjType lstringTypes[12] = {
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1,
-	NULL,
 	my_LStringObjLength,
 	my_LStringObjIndex,
 /**/	NULL, /*default my_LStringObjRange,*/
@@ -146,7 +126,6 @@ static Tcl_ObjType lstringTypes[12] = {
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1,
-	NULL,
 	my_LStringObjLength,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
@@ -162,7 +141,6 @@ static Tcl_ObjType lstringTypes[12] = {
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1,
-	NULL,
 	my_LStringObjLength,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
@@ -178,7 +156,6 @@ static Tcl_ObjType lstringTypes[12] = {
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1,
-	NULL,
 	my_LStringObjLength,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
@@ -194,7 +171,6 @@ static Tcl_ObjType lstringTypes[12] = {
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1,
-	NULL,
 	my_LStringObjLength,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
@@ -210,7 +186,6 @@ static Tcl_ObjType lstringTypes[12] = {
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1,
-	NULL,
 	my_LStringObjLength,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
@@ -226,7 +201,6 @@ static Tcl_ObjType lstringTypes[12] = {
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1,
-	NULL,
 	my_LStringObjLength,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
@@ -242,7 +216,6 @@ static Tcl_ObjType lstringTypes[12] = {
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1,
-	NULL,
 	my_LStringObjLength,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
@@ -639,9 +612,10 @@ my_LStringReplace(
 static Tcl_ObjType *
 my_SetAbstractProc(Tcl_ObjProcType ptype)
 {
-    Tcl_ObjType *typePtr = &lstringTypes[11];
-    if (TCL_OBJ_NEW <= ptype && ptype <= TCL_OBJ_REPLACE) {
-	typePtr = &lstringTypes[ptype];
+    Tcl_ObjType *typePtr = &lstringTypes[0]; /* default value */
+    if (TCL_OBJ_LENGTH <= ptype && ptype <= TCL_OBJ_REPLACE) {
+	/* Table has no entries for the slots upto setfromany */
+	typePtr = &lstringTypes[(ptype-TCL_OBJ_SETFROMANY)];
     }
     return typePtr;
 }
@@ -675,13 +649,13 @@ my_NewLStringObj(
     Tcl_Obj *lstringPtr;
     const char *string;
     static const char* procTypeNames[] = {
-	"NEW", "DUPREP", "LENGTH", "INDEX",
-	"SLICE", "REVERSE", "GETELEMENTS", "FREEREP",
+	"FREEREP", "DUPREP", "UPDATESTRING", "SETFROMANY",
+	"LENGTH", "INDEX", "SLICE", "REVERSE", "GETELEMENTS",
 	"TOSTRING", "SETELEMENT", "REPLACE", NULL
     };
     int i = 0;
     Tcl_ObjProcType ptype;
-    Tcl_ObjType *lstringTypePtr = &lstringTypes[11];
+    Tcl_ObjType *lstringTypePtr = &lstringTypes[10];
 
     repSize = sizeof(LString);
     lstringRepPtr = (LString*)Tcl_Alloc(repSize);

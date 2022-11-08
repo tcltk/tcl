@@ -69,7 +69,6 @@ static Tcl_Obj *TclNewArithSeriesDbl(double start, double end,
 static void DupArithSeriesRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void FreeArithSeriesRep(Tcl_Obj *arithSeriesObjPtr);
 static void UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr);
-static Tcl_Obj *Tcl_NewArithSeriesObj(Tcl_Size objc, Tcl_Obj * const objv[]);
 
 static Tcl_ObjType arithSeriesType = {
 	"arithseries",
@@ -78,7 +77,6 @@ static Tcl_ObjType arithSeriesType = {
 	UpdateStringOfArithSeries,
 	NULL, // setFromAny
 	TCL_OBJTYPE_V1,
-	Tcl_NewArithSeriesObj,
 	TclArithSeriesObjLength,
 	TclArithSeriesObjIndex,
 	TclArithSeriesObjRange,
@@ -547,39 +545,6 @@ TclArithSeriesObjStep(
 	*stepObj = Tcl_NewWideIntObj(arithSeriesRepPtr->step);
     }
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_NewArithSeriesObj --
- *
- *	Creates a new ArithSeries object. The returned object has
- *	refcount = 0.
- *
- * Results:
- *
- * 	A Tcl_Obj pointer to the created ArithSeries object.
- * 	A NULL pointer of the range is invalid.
- *
- * Side Effects:
- *
- * 	None.
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-Tcl_NewArithSeriesObj(Tcl_Size objc, Tcl_Obj * const objv[])
-{
-    Tcl_Obj *arithSeriesObj;
-    if (objc != 4) return NULL;
-    // TODO: Define this use model!
-    if (TclNewArithSeriesObj(NULL, &arithSeriesObj, 0/*TODO: int vs double support */,
-               objv[0]/*start*/, objv[1]/*end*/,
-               objv[2]/*step*/, objv[3]/*len*/) != TCL_OK) {
-        arithSeriesObj = NULL;
-    }
-    return arithSeriesObj;
 }
 
 /*
