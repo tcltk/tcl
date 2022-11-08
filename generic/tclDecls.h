@@ -360,7 +360,7 @@ EXTERN Tcl_Interp *	Tcl_CreateChild(Tcl_Interp *interp, const char *name,
 EXTERN Tcl_TimerToken	Tcl_CreateTimerHandler(int milliseconds,
 				Tcl_TimerProc *proc, void *clientData);
 /* 99 */
-EXTERN Tcl_Trace	Tcl_CreateTrace(Tcl_Interp *interp, int level,
+EXTERN Tcl_Trace	Tcl_CreateTrace(Tcl_Interp *interp, Tcl_Size level,
 				Tcl_CmdTraceProc *proc, void *clientData);
 /* 100 */
 EXTERN void		Tcl_DeleteAssocData(Tcl_Interp *interp,
@@ -1451,8 +1451,9 @@ EXTERN int		Tcl_EvalTokensStandard(Tcl_Interp *interp,
 /* 482 */
 EXTERN void		Tcl_GetTime(Tcl_Time *timeBuf);
 /* 483 */
-EXTERN Tcl_Trace	Tcl_CreateObjTrace(Tcl_Interp *interp, int level,
-				int flags, Tcl_CmdObjTraceProc *objProc,
+EXTERN Tcl_Trace	Tcl_CreateObjTrace(Tcl_Interp *interp,
+				Tcl_Size level, int flags,
+				Tcl_CmdObjTraceProc *objProc,
 				void *clientData,
 				Tcl_CmdObjTraceDeleteProc *delProc);
 /* 484 */
@@ -2012,8 +2013,9 @@ EXTERN Tcl_Command	Tcl_CreateObjCommand2(Tcl_Interp *interp,
 				void *clientData,
 				Tcl_CmdDeleteProc *deleteProc);
 /* 677 */
-EXTERN Tcl_Trace	Tcl_CreateObjTrace2(Tcl_Interp *interp, int level,
-				int flags, Tcl_CmdObjTraceProc2 *objProc2,
+EXTERN Tcl_Trace	Tcl_CreateObjTrace2(Tcl_Interp *interp,
+				Tcl_Size level, int flags,
+				Tcl_CmdObjTraceProc2 *objProc2,
 				void *clientData,
 				Tcl_CmdObjTraceDeleteProc *delProc);
 /* 678 */
@@ -2164,7 +2166,7 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_CreateObjCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc *proc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 96 */
     Tcl_Interp * (*tcl_CreateChild) (Tcl_Interp *interp, const char *name, int isSafe); /* 97 */
     Tcl_TimerToken (*tcl_CreateTimerHandler) (int milliseconds, Tcl_TimerProc *proc, void *clientData); /* 98 */
-    Tcl_Trace (*tcl_CreateTrace) (Tcl_Interp *interp, int level, Tcl_CmdTraceProc *proc, void *clientData); /* 99 */
+    Tcl_Trace (*tcl_CreateTrace) (Tcl_Interp *interp, Tcl_Size level, Tcl_CmdTraceProc *proc, void *clientData); /* 99 */
     void (*tcl_DeleteAssocData) (Tcl_Interp *interp, const char *name); /* 100 */
     void (*tcl_DeleteChannelHandler) (Tcl_Channel chan, Tcl_ChannelProc *proc, void *clientData); /* 101 */
     void (*tcl_DeleteCloseHandler) (Tcl_Channel chan, Tcl_CloseProc *proc, void *clientData); /* 102 */
@@ -2556,7 +2558,7 @@ typedef struct TclStubs {
     void (*tcl_FSMountsChanged) (const Tcl_Filesystem *fsPtr); /* 480 */
     int (*tcl_EvalTokensStandard) (Tcl_Interp *interp, Tcl_Token *tokenPtr, Tcl_Size count); /* 481 */
     void (*tcl_GetTime) (Tcl_Time *timeBuf); /* 482 */
-    Tcl_Trace (*tcl_CreateObjTrace) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc *objProc, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 483 */
+    Tcl_Trace (*tcl_CreateObjTrace) (Tcl_Interp *interp, Tcl_Size level, int flags, Tcl_CmdObjTraceProc *objProc, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 483 */
     int (*tcl_GetCommandInfoFromToken) (Tcl_Command token, Tcl_CmdInfo *infoPtr); /* 484 */
     int (*tcl_SetCommandInfoFromToken) (Tcl_Command token, const Tcl_CmdInfo *infoPtr); /* 485 */
     Tcl_Obj * (*tcl_DbNewWideIntObj) (Tcl_WideInt wideValue, const char *file, int line); /* 486 */
@@ -2750,7 +2752,7 @@ typedef struct TclStubs {
     int (*tcl_GetBool) (Tcl_Interp *interp, const char *src, int flags, char *charPtr); /* 674 */
     int (*tcl_GetBoolFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, char *charPtr); /* 675 */
     Tcl_Command (*tcl_CreateObjCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 676 */
-    Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
+    Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, Tcl_Size level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
     Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 678 */
     int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 679 */
     int (*tcl_GetNumberFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, void **clientDataPtr, int *typePtr); /* 680 */
