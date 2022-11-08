@@ -29,7 +29,7 @@ Tcl_Trace
 .AS Tcl_CmdObjTraceDeleteProc *deleteProc
 .AP Tcl_Interp *interp in
 Interpreter containing command to be traced or untraced.
-.AP int level in
+.AP size_t level in
 Only commands at or below this nesting level will be traced unless
 0 is specified.  1 means
 top-level commands only, 2 means top-level commands or those that are
@@ -78,6 +78,20 @@ typedef int \fBTcl_CmdObjTraceProc\fR(
         const char *\fIcommand\fR,
         \fBTcl_Command\fR \fIcommandToken\fR,
         int \fIobjc\fR,
+        \fBTcl_Obj\fR *const \fIobjv\fR[]);
+.CE
+.PP
+\fIobjProc2\fR should have arguments and result that match the type,
+\fBTcl_CmdObjTraceProc2\fR:
+.PP
+.CS
+typedef int \fBTcl_CmdObjTraceProc2\fR(
+        \fBvoid *\fR \fIclientData\fR,
+        \fBTcl_Interp\fR* \fIinterp\fR,
+        size_t \fIlevel\fR,
+        const char *\fIcommand\fR,
+        \fBTcl_Command\fR \fIcommandToken\fR,
+        size_t \fIobjc\fR,
         \fBTcl_Obj\fR *const \fIobjv\fR[]);
 .CE
 .PP
