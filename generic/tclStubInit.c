@@ -55,6 +55,13 @@
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
 #undef Tcl_SetLongObj
+#undef Tcl_ListObjGetElements
+#undef Tcl_ListObjLength
+#undef Tcl_DictObjSize
+#undef Tcl_SplitList
+#undef Tcl_SplitPath
+#undef Tcl_FSSplitPath
+#undef Tcl_ParseArgsObjv
 #undef TclpInetNtoa
 #undef TclWinGetServByName
 #undef TclWinGetSockOpt
@@ -524,7 +531,7 @@ static const TclIntStubs tclIntStubs = {
     Tcl_PushCallFrame, /* 129 */
     Tcl_RemoveInterpResolvers, /* 130 */
     Tcl_SetNamespaceResolvers, /* 131 */
-    TclpHasSockets, /* 132 */
+    0, /* 132 */
     0, /* 133 */
     0, /* 134 */
     0, /* 135 */
@@ -1479,6 +1486,7 @@ const TclStubs tclStubs = {
     Tcl_GetNumberFromObj, /* 680 */
     Tcl_GetNumber, /* 681 */
     Tcl_RemoveChannelMode, /* 682 */
+    Tcl_GetEncodingNulLength, /* 683 */
 };
 
 /* !END!: Do not edit above this line. */

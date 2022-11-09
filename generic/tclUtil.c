@@ -3752,7 +3752,17 @@ TclIndexEncode(
 	 * We parsed an end+offset index value.
 	 * wide holds the offset value in the range WIDE_MIN...WIDE_MAX.
 	 */
-	if (wide > (unsigned)(irPtr ? TCL_INDEX_END : INT_MAX)) {
+	if ((irPtr ? ((wide < INT_MIN) && ((size_t)-wide <= LIST_MAX))
+		: ((wide > INT_MAX) && ((size_t)wide <= LIST_MAX))) && (sizeof(int) != sizeof(size_t))) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"index \"%s\" out of range",
+			TclGetString(objPtr)));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
+			"OUTOFRANGE", NULL);
+	    }
+	    return TCL_ERROR;
+	} else if (wide > (unsigned)(irPtr ? TCL_INDEX_END : INT_MAX)) {
 	    /*
 	     * All end+postive or end-negative expressions
 	     * always indicate "after the end".

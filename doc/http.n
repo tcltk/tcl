@@ -172,14 +172,15 @@ fresh socket, overriding the \fB\-keepalive\fR option of
 command \fBhttp::geturl\fR.  See the \fBPERSISTENT SOCKETS\fR section for
 details. The default is 0.
 .TP
-\fB\-proxyhost\fR \fIhostname\fR
+\fB\-proxyauth\fR \fIstring\fR
 .
-The name of the proxy host, if any.  If this value is the
-empty string, the URL host is contacted directly.
-.TP
-\fB\-proxyport\fR \fInumber\fR
-.
-The proxy port number.
+If non-empty, the string is supplied to the proxy server as the value of the
+request header Proxy-Authorization.  This option can be used for HTTP Basic
+Authentication.  If the proxy server requires authentication by another
+technique, e.g. Digest Authentication, the \fB\-proxyauth\fR option is not
+useful.  In that case the caller must expect a 407 response from the proxy,
+compute the authentication value to be supplied, and use the \fB\-headers\fR
+option to supply it as the value of the Proxy-Authorization header.
 .TP
 \fB\-proxyfilter\fR \fIcommand\fR
 .
@@ -188,17 +189,45 @@ The command is a callback that is made during
 to determine if a proxy is required for a given host.  One argument, a
 host name, is added to \fIcommand\fR when it is invoked.  If a proxy
 is required, the callback should return a two-element list containing
-the proxy server and proxy port.  Otherwise the filter should return
-an empty list.  The default filter returns the values of the
-\fB\-proxyhost\fR and \fB\-proxyport\fR settings if they are
-non-empty.
+the proxy server and proxy port.  Otherwise the filter command should return
+an empty list.
 .RS
+.PP
+The default value of \fB\-proxyfilter\fR is \fBhttp::ProxyRequired\fR, and
+this command returns the values of the \fB\-proxyhost\fR and
+\fB\-proxyport\fR settings if they are non-empty.  The options
+\fB\-proxyhost\fR, \fB\-proxyport\fR, and \fB\-proxynot\fR are used only
+by \fBhttp::ProxyRequired\fR, and nowhere else in \fB::http::geturl\fR.
+A user-supplied \fB\-proxyfilter\fR command may use these options, or
+alternatively it may obtain values from elsewhere in the calling script.
+In the latter case, any values provided for \fB\-proxyhost\fR,
+\fB\-proxyport\fR, and \fB\-proxynot\fR are unused.
 .PP
 The \fB::http::geturl\fR command runs the \fB\-proxyfilter\fR callback inside
 a \fBcatch\fR command.  Therefore an error in the callback command does
 not call the \fBbgerror\fR handler.  See the \fBERRORS\fR section for
 details.
 .RE
+.TP
+\fB\-proxyhost\fR \fIhostname\fR
+.
+The host name or IP address of the proxy server, if any.  If this value is
+the empty string, the URL host is contacted directly.  See
+\fB\-proxyfilter\fR for how the value is used.
+.TP
+\fB\-proxynot\fR \fIlist\fR
+.
+A Tcl list of domain names and IP addresses that should be accessed directly,
+not through the proxy server.  The target hostname is compared with each list
+element using a case-insensitive \fBstring match\fR.  It is often convenient
+to use the wildcard "*" at the start of a domain name (e.g. *.example.com) or
+at the end of an IP address (e.g. 192.168.0.*).  See \fB\-proxyfilter\fR for
+how the value is used.
+.TP
+\fB\-proxyport\fR \fInumber\fR
+.
+The port number of the proxy server.  See \fB\-proxyfilter\fR for how the
+value is used.
 .TP
 \fB\-repost\fR \fIboolean\fR
 .

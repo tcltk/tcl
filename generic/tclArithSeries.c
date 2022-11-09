@@ -708,15 +708,15 @@ Tcl_Obj *
 TclArithSeriesObjRange(
     Tcl_Interp *interp,         /* For error message(s) */
     Tcl_Obj *arithSeriesPtr,	/* List object to take a range from. */
-    int fromIdx,		/* Index of first element to include. */
-    int toIdx)			/* Index of last element to include. */
+    Tcl_Size fromIdx,		/* Index of first element to include. */
+    Tcl_Size toIdx)			/* Index of last element to include. */
 {
     ArithSeries *arithSeriesRepPtr;
     Tcl_Obj *startObj, *endObj, *stepObj;
 
     ArithSeriesGetInternalRep(arithSeriesPtr, arithSeriesRepPtr);
 
-    if (fromIdx < 0) {
+    if (fromIdx == TCL_INDEX_NONE) {
 	fromIdx = 0;
     }
     if (fromIdx > toIdx) {
@@ -725,9 +725,27 @@ TclArithSeriesObjRange(
 	return obj;
     }
 
-    TclArithSeriesObjIndex(arithSeriesPtr, fromIdx, &startObj);
+    if (TclArithSeriesObjIndex(arithSeriesPtr, fromIdx, &startObj) != TCL_OK) {
+	if (interp) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_ObjPrintf("index %" TCL_Z_MODIFIER "u is out of bounds 0 to %"
+			      TCL_LL_MODIFIER "d", fromIdx, (arithSeriesRepPtr->len-1)));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	}
+	return NULL;
+    }
     Tcl_IncrRefCount(startObj);
-    TclArithSeriesObjIndex(arithSeriesPtr, toIdx, &endObj);
+    if (TclArithSeriesObjIndex(arithSeriesPtr, toIdx, &endObj) != TCL_OK) {
+	if (interp) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_ObjPrintf("index %" TCL_Z_MODIFIER "u is out of bounds 0 to %"
+			      TCL_LL_MODIFIER "d", fromIdx, (arithSeriesRepPtr->len-1)));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	}
+	return NULL;
+    }
     Tcl_IncrRefCount(endObj);
     TclArithSeriesObjStep(arithSeriesPtr, &stepObj);
     Tcl_IncrRefCount(stepObj);
@@ -822,7 +840,7 @@ TclArithSeriesGetElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *objPtr,		/* AbstractList object for which an element
 				 * array is to be returned. */
-    ListSizeT *objcPtr,		/* Where to store the count of objects
+    Tcl_Size *objcPtr,		/* Where to store the count of objects
 				 * referenced by objv. */
     Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
 				 * pointers to the list's objects. */

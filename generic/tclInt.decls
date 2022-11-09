@@ -28,14 +28,14 @@ declare 3 {
     void TclAllocateFreeObjects(void)
 }
 declare 5 {
-    int TclCleanupChildren(Tcl_Interp *interp, size_t numPids, Tcl_Pid *pidPtr,
+    int TclCleanupChildren(Tcl_Interp *interp, Tcl_Size numPids, Tcl_Pid *pidPtr,
 	    Tcl_Channel errorChan)
 }
 declare 6 {
     void TclCleanupCommand(Command *cmdPtr)
 }
 declare 7 {
-    size_t TclCopyAndCollapse(size_t count, const char *src, char *dst)
+    Tcl_Size TclCopyAndCollapse(Tcl_Size count, const char *src, char *dst)
 }
 # Removed in 9.0:
 #declare 8 {
@@ -44,7 +44,7 @@ declare 7 {
 #}
 # TclCreatePipeline unofficially exported for use by BLT.
 declare 9 {
-    size_t TclCreatePipeline(Tcl_Interp *interp, size_t argc, const char **argv,
+    Tcl_Size TclCreatePipeline(Tcl_Interp *interp, Tcl_Size argc, const char **argv,
 	    Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr,
 	    TclFile *errFilePtr)
 }
@@ -67,15 +67,15 @@ declare 16 {
 }
 declare 22 {
     int TclFindElement(Tcl_Interp *interp, const char *listStr,
-	    size_t listLength, const char **elementPtr, const char **nextPtr,
-	    size_t *sizePtr, int *bracePtr)
+	    Tcl_Size listLength, const char **elementPtr, const char **nextPtr,
+	    Tcl_Size *sizePtr, int *bracePtr)
 }
 declare 23 {
     Proc *TclFindProc(Interp *iPtr, const char *procName)
 }
 # Replaced with macro (see tclInt.h) in Tcl 8.5.0, restored in 8.5.10
 declare 24 {
-    size_t TclFormatInt(char *buffer, Tcl_WideInt n)
+    Tcl_Size TclFormatInt(char *buffer, Tcl_WideInt n)
 }
 declare 25 {
     void TclFreePackageInfo(Interp *iPtr)
@@ -171,7 +171,7 @@ declare 64 {
 	    int flags)
 }
 declare 69 {
-    void *TclpAlloc(size_t size)
+    void *TclpAlloc(TCL_HASH_TYPE size)
 }
 declare 74 {
     void TclpFree(void *ptr)
@@ -187,7 +187,7 @@ declare 76 {
 #    void TclpGetTime(Tcl_Time *time)
 #}
 declare 81 {
-    void *TclpRealloc(void *ptr, size_t size)
+    void *TclpRealloc(void *ptr, TCL_HASH_TYPE size)
 }
 # Removed in 9.0:
 #declare 88 {
@@ -241,7 +241,7 @@ declare 109 {
     int TclUpdateReturnInfo(Interp *iPtr)
 }
 declare 110 {
-    int TclSockMinimumBuffers(void *sock, size_t size)
+    int TclSockMinimumBuffers(void *sock, Tcl_Size size)
 }
 
 # Procedures used in conjunction with Tcl namespaces. They are
@@ -330,9 +330,10 @@ declare 131 {
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc,
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-declare 132 {
-    int TclpHasSockets(Tcl_Interp *interp)
-}
+# Removed in 9.0:
+#declare 132 {
+#    int TclpHasSockets(Tcl_Interp *interp)
+#}
 # Removed in 9.0:
 #declare 133 {
 #    struct tm *TclpGetDate(const time_t *time, int useGMT)
@@ -349,7 +350,7 @@ declare 142 {
 	    CompileHookProc *hookProc, void *clientData)
 }
 declare 143 {
-    size_t TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr,
+    Tcl_Size TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr,
 	    LiteralEntry **litPtrPtr)
 }
 declare 144 {
@@ -375,8 +376,8 @@ declare 150 {
     int TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re)
 }
 declare 151 {
-    void TclRegExpRangeUniChar(Tcl_RegExp re, size_t index, size_t *startPtr,
-	    size_t *endPtr)
+    void TclRegExpRangeUniChar(Tcl_RegExp re, Tcl_Size index, Tcl_Size *startPtr,
+	    Tcl_Size *endPtr)
 }
 declare 152 {
     void TclSetLibraryPath(Tcl_Obj *pathPtr)
@@ -432,7 +433,7 @@ declare 165 {
 # New function due to TIP #33
 declare 166 {
     int TclListObjSetElement(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    size_t index, Tcl_Obj *valuePtr)
+	    Tcl_Size index, Tcl_Obj *valuePtr)
 }
 
 # Removed in 9.0:
@@ -448,20 +449,20 @@ declare 169 {
 }
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
-	    size_t numChars, Command *cmdPtr, int result, int traceFlags,
-	    size_t objc, Tcl_Obj *const objv[])
+	    Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags,
+	    Tcl_Size objc, Tcl_Obj *const objv[])
 }
 declare 171 {
     int TclCheckExecutionTraces(Tcl_Interp *interp, const char *command,
-	    size_t numChars, Command *cmdPtr, int result, int traceFlags,
-	    size_t objc, Tcl_Obj *const objv[])
+	    Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags,
+	    Tcl_Size objc, Tcl_Obj *const objv[])
 }
 declare 172 {
     int TclInThreadExit(void)
 }
 declare 173 {
-    int TclUniCharMatch(const Tcl_UniChar *string, size_t strLen,
-	    const Tcl_UniChar *pattern, size_t ptnLen, int flags)
+    int TclUniCharMatch(const Tcl_UniChar *string, Tcl_Size strLen,
+	    const Tcl_UniChar *pattern, Tcl_Size ptnLen, int flags)
 }
 declare 175 {
     int TclCallVarTraces(Interp *iPtr, Var *arrayPtr, Var *varPtr,
@@ -535,7 +536,7 @@ declare 214 {
     void TclSetObjNameOfExecutable(Tcl_Obj *name, Tcl_Encoding encoding)
 }
 declare 215 {
-    void *TclStackAlloc(Tcl_Interp *interp, size_t numBytes)
+    void *TclStackAlloc(Tcl_Interp *interp, Tcl_Size numBytes)
 }
 declare 216 {
     void TclStackFree(Tcl_Interp *interp, void *freePtr)
@@ -554,13 +555,13 @@ declare 224 {
 }
 declare 225 {
     Tcl_Obj *TclTraceDictPath(Tcl_Interp *interp, Tcl_Obj *rootPtr,
-	    size_t keyc, Tcl_Obj *const keyv[], int flags)
+	    Tcl_Size keyc, Tcl_Obj *const keyv[], int flags)
 }
 declare 226 {
     int TclObjBeingDeleted(Tcl_Obj *objPtr)
 }
 declare 227 {
-    void TclSetNsPath(Namespace *nsPtr, size_t pathLength,
+    void TclSetNsPath(Namespace *nsPtr, Tcl_Size pathLength,
             Tcl_Namespace *pathAry[])
 }
 declare 229 {
@@ -612,7 +613,7 @@ declare 238 {
 }
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
-			    size_t skip, ProcErrorProc *errorProc)
+	    Tcl_Size skip, ProcErrorProc *errorProc)
 }
 declare 240 {
     int TclNRRunCallbacks(Tcl_Interp *interp, int result,
@@ -623,7 +624,7 @@ declare 241 {
 	    const CmdFrame *invoker, int word)
 }
 declare 242 {
-    int TclNREvalObjv(Tcl_Interp *interp, size_t objc,
+    int TclNREvalObjv(Tcl_Interp *interp, Tcl_Size objc,
 	      Tcl_Obj *const objv[], int flags, Command *cmdPtr)
 }
 
@@ -640,8 +641,8 @@ declare 245 {
     Tcl_HashTable *TclGetNamespaceCommandTable(Tcl_Namespace *nsPtr)
 }
 declare 246 {
-    int TclInitRewriteEnsemble(Tcl_Interp *interp, size_t numRemoved,
-	    size_t numInserted, Tcl_Obj *const *objv)
+    int TclInitRewriteEnsemble(Tcl_Interp *interp, Tcl_Size numRemoved,
+	    Tcl_Size numInserted, Tcl_Obj *const *objv)
 }
 declare 247 {
     void TclResetRewriteEnsemble(Tcl_Interp *interp, int isRootEnsemble)
@@ -663,8 +664,8 @@ declare 250 {
 
 # Allow extensions for optimization
 declare 251 {
-    size_t TclRegisterLiteral(void *envPtr,
-	    const char *bytes, size_t length, int flags)
+    Tcl_Size TclRegisterLiteral(void *envPtr,
+	    const char *bytes, Tcl_Size length, int flags)
 }
 
 # Exporting of the internal API to variables.

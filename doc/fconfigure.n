@@ -102,26 +102,43 @@ system, as returned by \fBencoding system\fR.
 .RE
 .TP
 \fB\-eofchar\fR \fIchar\fR
-.TP
-\fB\-eofchar\fR \fB{\fIinChar outChar\fB}\fR
 .
 This option supports DOS file systems that use Control-z (\ex1A) as an
 end of file marker.  If \fIchar\fR is not an empty string, then this
-character signals end-of-file when it is encountered during input.  For
-output, the end-of-file character is output when the channel is closed.
+character signals end-of-file when it is encountered during input.
 If \fIchar\fR is the empty string, then there is no special end of file
-character marker.  For read-write channels, a two-element list specifies
-the end of file marker for input and output, respectively.  As a
-convenience, when setting the end-of-file character for a read-write
-channel you can specify a single value that will apply to both reading
-and writing.  When querying the end-of-file character of a read-write
-channel, a two-element list will always be returned.  The default value
-for \fB\-eofchar\fR is the empty string in all cases except for files
-under Windows.  In that case the \fB\-eofchar\fR is Control-z (\ex1A) for
-reading and the empty string for writing.
+character marker.  The default value for \fB\-eofchar\fR is the empty
+string.
 The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7F;
 attempting to set \fB\-eofchar\fR to a value outside of this range will
 generate an error.
+.VS "TCL9.0 TIP633"
+.TP
+\fB\-nocomplainencoding\fR \fIbool\fR
+.
+Reporting mode of encoding errors.
+If set to a \fItrue\fR value, encoding errors are resolved by a replacement
+character (output) or verbatim bytes (input). No error is thrown.
+If set to a \fIfalse\fR value, errors are thrown in case of encoding errors.
+.RS
+.PP
+The default value is \fIfalse\fR starting from TCL 9.0 and \fItrue\fR on TCL 8.7.
+This option was introduced with TCL 8.7 and has the fix value \fItrue\fR.
+.PP
+See the \fI\-nocomplain\fR option of the \fBencoding\fR command for more information.
+.RE
+.VE "TCL9.0 TIP633"
+.VS "TCL8.7 TIP346"
+.TP
+\fB\-strictencoding\fR \fIbool\fR
+.
+Activate additional stricter encoding application rules.
+Default value is \fIfalse\fR.
+.RS
+.PP
+See the \fI\-strict\fR option of the \fBencoding\fR command for more information.
+.VE "TCL8.7 TIP346"
+.RE
 .TP
 \fB\-translation\fR \fImode\fR
 .TP
@@ -278,10 +295,10 @@ set data [read $f $numDataBytes]
 close $f
 .CE
 .SH "SEE ALSO"
-close(n), flush(n), gets(n), open(n), puts(n), read(n), socket(n),
+close(n), encoding(n), flush(n), gets(n), open(n), puts(n), read(n), socket(n),
 Tcl_StandardChannels(3)
 .SH KEYWORDS
-blocking, buffering, carriage return, end of line, flushing, linemode,
+blocking, buffering, carriage return, end of line, encoding, flushing, linemode,
 newline, nonblocking, platform, translation, encoding, filter, byte array,
 binary
 '\" Local Variables:
