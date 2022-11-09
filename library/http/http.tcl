@@ -1665,9 +1665,12 @@ proc http::PreparePersistentConnection {token} {
         set socketWrState($state(socketinfo)) $token
     }
 
+    # Value of socketPhQueue() may have already been set by ReplayCore.
+    if {![info exists socketPhQueue($state(sock))]} {
+        set socketPhQueue($state(sock))   {}
+    }
     set socketRdQueue($state(socketinfo)) {}
     set socketWrQueue($state(socketinfo)) {}
-    set socketPhQueue($state(sock))       {}
     set socketClosing($state(socketinfo)) 0
     set socketPlayCmd($state(socketinfo)) {ReplayIfClose Wready {} {}}
     set socketCoEvent($state(socketinfo)) {}
@@ -1839,7 +1842,7 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
     set reusing $state(reusing)
     set sock $state(sock)
     set proxyUsed $state(proxyUsed)
-    ##Log "  ConfigureNewSocket" $token $sockOld ... -- $sock
+    ##Log "  ConfigureNewSocket" $token $sockOld ... -- $reusing $sock $proxyUsed
 
     if {(!$reusing) && ($sock ne $sockOld)} {
         # Replace the placeholder value sockOld with sock.
@@ -3071,6 +3074,7 @@ proc http::ReplayCore {newQueue} {
 
     if {![ReInit $token]} {
 	Log FAILED in http::ReplayCore - NO tmp vars
+	Log ReplayCore reject $token
 	Finish $token {cannot send this request again}
 	return
     }
@@ -3085,6 +3089,7 @@ proc http::ReplayCore {newQueue} {
     set state(reusing) 0
     set state(ReusingPlaceholder) 0
     set state(alreadyQueued) 0
+    Log ReplayCore replay $token
 
     # Give the socket a placeholder name before it is created.
     set sock HTTP_PLACEHOLDER_[incr TmpSockCounter]
@@ -3097,7 +3102,9 @@ proc http::ReplayCore {newQueue} {
 	    set ${tok}(reusing) 1
 	    set ${tok}(sock) $sock
 	    lappend socketPhQueue($sock) $tok
+	    Log ReplayCore replay $tok
 	} else {
+	    Log ReplayCore reject $tok
 	    set ${tok}(reusing) 1
 	    set ${tok}(sock) NONE
 	    Finish $tok {cannot send this request again}
