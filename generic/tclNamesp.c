@@ -1425,7 +1425,7 @@ Tcl_Export(
      */
 
     if (nsPtr->exportPatternList != NULL) {
-	int objc;
+	size_t objc;
 	Tcl_Obj **objv;
 
 	TclListObjGetElementsM(NULL, nsPtr->exportPatternList, &objc, &objv);
@@ -1548,7 +1548,7 @@ TclFillTableWithExports(
 
     hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
     for (; hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-	int objc;
+	size_t objc;
 	Tcl_Obj **objv;
 	char *nsCmdName = (char *)Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
 
@@ -1761,8 +1761,7 @@ DoImport(
     Namespace *importNsPtr,
     int allowOverwrite)
 {
-    int objc;
-    size_t exported = 0;
+    size_t objc, exported = 0;
     Tcl_Obj **objv;
     Tcl_HashEntry *found;
 
@@ -3604,7 +3603,8 @@ NamespaceExportCmd(
 {
     Namespace *nsPtr;
     Tcl_Obj *dict, *value;
-    int startSize, endSize, firstArg, i, changed = 0;
+    size_t startSize, endSize, firstArg, i;
+    int changed = 0;
     int code = TCL_OK;
 
     if (objc < 1) {
@@ -3649,7 +3649,7 @@ NamespaceExportCmd(
     value = Tcl_NewObj();
     Tcl_IncrRefCount(value);
     if (nsPtr->exportPatternList) {
-	int epc;
+	size_t epc;
 	Tcl_Obj **epv;
 
 	TclListObjGetElementsM(NULL, nsPtr->exportPatternList, &epc, &epv);
@@ -3659,7 +3659,7 @@ NamespaceExportCmd(
     }
     Tcl_DictObjSize(NULL, dict, &startSize);
 
-    for (i = firstArg;  i < objc;  i++) {
+    for (i = firstArg;  i < (size_t) objc;  i++) {
 	Namespace *exportNsPtr, *dummyPtr;
 	const char *simplePattern, *pattern = Tcl_GetString(objv[i]);
 

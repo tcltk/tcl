@@ -5249,9 +5249,9 @@ TclEvalScriptTokens(
     lineSpace = linesStack = (int *)
 	    TclStackAlloc(interp, objLength * sizeof(int));
     while (numCommands-- && (code == TCL_OK)) {
-	unsigned int objc, expandRequested = 0;
-        unsigned int objectsNeeded = 0;
-        unsigned int numWords = tokenPtr->numComponents;
+	int expandRequested = 0;
+	size_t objc, objectsNeeded = 0;
+        size_t numWords = tokenPtr->numComponents;
 	Tcl_Obj **objv;
         Tcl_Token *commandTokenPtr = tokenPtr;
 
@@ -5338,7 +5338,7 @@ TclEvalScriptTokens(
 	    objv[objc] = Tcl_GetObjResult(interp);
 	    Tcl_IncrRefCount(objv[objc]);
 	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		int numElements;
+		size_t numElements;
 
 		code = TclListObjLengthM(interp, objv[objc], &numElements);
 		if (code == TCL_ERROR) {
@@ -5346,7 +5346,7 @@ TclEvalScriptTokens(
 		     * Attempt to expand a non-list
 		     */
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			    "\n    (expanding word %d)", objc));
+			    "\n    (expanding word %ld)", objc));
 		    objc++;
 		    break;
 		}
@@ -5384,7 +5384,7 @@ TclEvalScriptTokens(
 	    objc = 0;
 	    while (wordIdx--) {
 		if (expand[wordIdx]) {
-		    int numElements;
+		    size_t numElements;
 		    Tcl_Obj **elements, *temp = copy[wordIdx];
 		    TclListObjGetElementsM(NULL, temp, &numElements,
 			    &elements);

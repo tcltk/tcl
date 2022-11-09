@@ -832,7 +832,7 @@ UpdateStringOfInstName(
 
     InstNameGetInternalRep(objPtr, inst);
 
-    if (inst > LAST_INST_OPCODE) {
+    if (inst >= LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
 	TclOOM(dst, TCL_INTEGER_SPACE + 5);
         sprintf(dst, "inst_%" TCL_Z_MODIFIER "u", inst);

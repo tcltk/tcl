@@ -96,7 +96,7 @@ TclCompileGlobalCmd(
     int localIndex, numWords, i;
 
     /* TODO: Consider support for compiling expanded args. */
-    numWords = (int)parsePtr->numWords;
+    numWords = parsePtr->numWords;
     if (numWords < 2) {
 	return TCL_ERROR;
     }
@@ -199,7 +199,7 @@ TclCompileIfCmd(
 
     tokenPtr = parsePtr->tokenPtr;
     wordIdx = 0;
-    numWords = (int)parsePtr->numWords;
+    numWords = parsePtr->numWords;
 
     for (wordIdx = 0; wordIdx < numWords; wordIdx++) {
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -839,7 +839,7 @@ TclCompileLappendCmd(
     int isScalar, localIndex, numWords, i;
 
     /* TODO: Consider support for compiling expanded args. */
-    numWords = (int)parsePtr->numWords;
+    numWords = parsePtr->numWords;
     if (numWords < 3) {
 	return TCL_ERROR;
     }
@@ -953,7 +953,7 @@ TclCompileLassignCmd(
     Tcl_Token *tokenPtr;
     int isScalar, localIndex, numWords, idx;
 
-    numWords = (int)parsePtr->numWords;
+    numWords = parsePtr->numWords;
 
     /*
      * Check for command syntax error, but we'll punt that to runtime.
@@ -1054,7 +1054,7 @@ TclCompileLindexCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *idxTokenPtr, *valTokenPtr;
-    int i, idx, numWords = (int)parsePtr->numWords;
+    int i, idx, numWords = parsePtr->numWords;
 
     /*
      * Quit if not enough args.
@@ -1161,7 +1161,7 @@ TclCompileListCmd(
      * implement with a simple push.
      */
 
-    numWords = (int)parsePtr->numWords;
+    numWords = parsePtr->numWords;
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
     TclNewObj(listObj);
     for (i = 1; i < numWords && listObj != NULL; i++) {
@@ -1184,7 +1184,7 @@ TclCompileListCmd(
      * Push the all values onto the stack.
      */
 
-    numWords = (int)parsePtr->numWords;
+    numWords = parsePtr->numWords;
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
     concat = build = 0;
     for (i = 1; i < numWords; i++) {
@@ -1354,7 +1354,7 @@ TclCompileLinsertCmd(
     if ((int)parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
-    
+
     /* Push list, insertion index onto the stack */
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 1);
@@ -1369,7 +1369,7 @@ TclCompileLinsertCmd(
 
     /* First operand is count of arguments */
     TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 1, envPtr);
-    /* 
+    /*
      * Second operand is bitmask
      *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
      *  TCL_LREPLACE4_SINGLE_INDEX - second index is not present
@@ -1416,14 +1416,14 @@ TclCompileLreplaceCmd(
     CompileWord(envPtr, tokenPtr, interp, 3);
 
     /* Push new elements to be inserted */
-    for (i=4 ; i< (int) parsePtr->numWords ; i++) {
+    for (i=4 ; i< (int)parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
 
     /* First operand is count of arguments */
     TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 1, envPtr);
-    /* 
+    /*
      * Second operand is bitmask
      *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
      */
@@ -1958,7 +1958,7 @@ TclCompileRegexpCmd(
 	    sawLast++;
 	    i++;
 	    break;
-	} else if ((len > 1) && (strncmp(str,"-nocase", len) == 0)) {
+	} else if ((len > 1) && (strncmp(str, "-nocase", len) == 0)) {
 	    nocase = 1;
 	} else {
 	    /*
@@ -2261,7 +2261,7 @@ TclCompileReturnCmd(
      */
     int level, code, objc, status = TCL_OK;
     size_t size;
-    int numWords = (int)parsePtr->numWords;
+    int numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
     Tcl_Obj *returnOpts, **objv;
@@ -2515,7 +2515,7 @@ TclCompileUpvarCmd(
 	return TCL_ERROR;
     }
 
-    numWords = (int)parsePtr->numWords;
+    numWords = parsePtr->numWords;
     if (numWords < 3) {
 	return TCL_ERROR;
     }
@@ -2616,7 +2616,7 @@ TclCompileVariableCmd(
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int localIndex, numWords, i;
 
-    numWords = (int)parsePtr->numWords;
+    numWords = parsePtr->numWords;
     if (numWords < 2) {
 	return TCL_ERROR;
     }
