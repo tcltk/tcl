@@ -146,7 +146,8 @@ const Tcl_ObjType tclDictType = {
     FreeDictInternalRep,		/* freeIntRepProc */
     DupDictInternalRep,			/* dupIntRepProc */
     UpdateStringOfDict,			/* updateStringProc */
-    SetDictFromAny			/* setFromAnyProc */
+    SetDictFromAny,			/* setFromAnyProc */
+    0
 };
 
 #define DictSetInternalRep(objPtr, dictRepPtr)				\
