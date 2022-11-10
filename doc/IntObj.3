@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_NewWideUIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
+Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_NewWideUIntObj, Tcl_NewSizeObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_NewWideUIntObj, Tcl_NewSizeObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -25,6 +25,9 @@ Tcl_Obj *
 Tcl_Obj *
 \fBTcl_NewWideUIntObj\fR(\fIuwideValue\fR)
 .sp
+Tcl_Obj *
+\fBTcl_NewSizeObj\fR(\fIsizeValue\fR)
+.sp
 \fBTcl_SetIntObj\fR(\fIobjPtr, intValue\fR)
 .sp
 \fBTcl_SetLongObj\fR(\fIobjPtr, longValue\fR)
@@ -32,6 +35,8 @@ Tcl_Obj *
 \fBTcl_SetWideIntObj\fR(\fIobjPtr, wideValue\fR)
 .sp
 \fBTcl_SetWideUIntObj\fR(\fIobjPtr, uwideValue\fR)
+.sp
+\fBTcl_SetSizeObj\fR(\fIobjPtr, sizeValue\fR)
 .sp
 int
 \fBTcl_GetIntFromObj\fR(\fIinterp, objPtr, intPtr\fR)
@@ -73,8 +78,12 @@ Long integer value used to initialize or set a Tcl value.
 Wide integer value used to initialize or set a Tcl value.
 .AP Tcl_WideUInt uwideValue in
 Unsigned wide integer value used to initialize or set a Tcl value.
+.AP Tcl_Size sizeValue in
+\fTcl_Size\f integer value used to initialize or set a Tcl value.
+In Tcl 8.x, \fTcl_Size\f is actually the same as int.
 .AP Tcl_Obj *objPtr in/out
 For \fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR, \fBTcl_SetWideIntObj\fR,
+\fBTcl_SetWideUIntObj\fR, \fBTcl_SetSizeObj\fR,
 and \fBTcl_SetBignumObj\fR, this points to the value in which to store an
 integral value.  For \fBTcl_GetIntFromObj\fR, \fBTcl_GetLongFromObj\fR,
 \fBTcl_GetWideIntFromObj\fR, \fBTcl_GetBignumFromObj\fR, and
