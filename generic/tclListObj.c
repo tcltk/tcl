@@ -3516,11 +3516,6 @@ UpdateStringOfList(
 Tcl_Obj *
 TclListTestObj (Tcl_Size length, Tcl_Size leadingSpace, Tcl_Size endSpace)
 {
-    if (leadingSpace < 0)
-	leadingSpace = 0;
-    if (endSpace < 0)
-	endSpace = 0;
-
     ListRep listRep;
     Tcl_Size capacity;
     Tcl_Obj *listObj;
@@ -3538,7 +3533,7 @@ TclListTestObj (Tcl_Size length, Tcl_Size leadingSpace, Tcl_Size endSpace)
     ListStore *storePtr = listRep.storePtr;
     Tcl_Size i;
     for (i = 0; i < length; ++i) {
-	storePtr->slots[i + leadingSpace] = Tcl_NewSizeObj(i);
+	storePtr->slots[i + leadingSpace] = Tcl_NewIndexObj(i);
 	Tcl_IncrRefCount(storePtr->slots[i + leadingSpace]);
     }
     storePtr->firstUsed = leadingSpace;
