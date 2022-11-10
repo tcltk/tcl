@@ -4432,8 +4432,8 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_StringMatch(str, pattern) Tcl_StringCaseMatch((str), (pattern), 0)
 
 #if TCL_MAJOR_VERSION > 8
-#   define Tcl_NewSizeObj(value) (((value) == TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideUIntObj(value))
-#   define Tcl_SetSizeObj(objPtr, value) (((value) == TCL_INDEX_NONE) ? Tcl_SetWideIntObj(objPtr, -1) : Tcl_SetWideUIntObj(objPtr, value))
+#   define Tcl_NewSizeObj(value) (((value) >= TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideUIntObj(value))
+#   define Tcl_SetSizeObj(objPtr, value) (((value) >= TCL_INDEX_NONE) ? Tcl_SetWideIntObj(objPtr, -1) : Tcl_SetWideUIntObj(objPtr, value))
 #else
 #   define Tcl_NewSizeObj Tcl_NewIntObj
 #   define Tcl_SetSizeObj Tcl_SetIntObj
