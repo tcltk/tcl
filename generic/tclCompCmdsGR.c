@@ -181,7 +181,8 @@ TclCompileIfCmd(
 				 * determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
     int jumpIndex = 0;		/* Avoid compiler warning. */
-    int jumpFalseDist, numWords, wordIdx, numBytes, j, code;
+    int numBytes, j;
+    int jumpFalseDist, numWords, wordIdx, code;
     const char *word;
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
@@ -1361,7 +1362,7 @@ TclCompileLinsertCmd(
     if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
-    
+
     /* Push list, insertion index onto the stack */
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 1);
@@ -1376,7 +1377,7 @@ TclCompileLinsertCmd(
 
     /* First operand is count of arguments */
     TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 1, envPtr);
-    /* 
+    /*
      * Second operand is bitmask
      *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
      *  TCL_LREPLACE4_SINGLE_INDEX - second index is not present
@@ -1430,7 +1431,7 @@ TclCompileLreplaceCmd(
 
     /* First operand is count of arguments */
     TclEmitInstInt4(INST_LREPLACE4, parsePtr->numWords - 1, envPtr);
-    /* 
+    /*
      * Second operand is bitmask
      *  TCL_LREPLACE4_END_IS_LAST - end refers to last element
      */
@@ -1438,7 +1439,7 @@ TclCompileLreplaceCmd(
 
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1924,7 +1925,8 @@ TclCompileRegexpCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the RE or string. */
-    int i, len, nocase, exact, sawLast, simple;
+    int len;
+    int i, nocase, exact, sawLast, simple;
     const char *str;
 
     /*
@@ -2110,7 +2112,8 @@ TclCompileRegsubCmd(
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
     Tcl_DString pattern;
     const char *bytes;
-    int len, exact, quantified, result = TCL_ERROR;
+    int exact, quantified, result = TCL_ERROR;
+    int len;
 
     if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -2264,7 +2267,8 @@ TclCompileReturnCmd(
      * General syntax: [return ?-option value ...? ?result?]
      * An even number of words means an explicit result argument is present.
      */
-    int level, code, objc, size, status = TCL_OK;
+    int level, code, objc, status = TCL_OK;
+    int size;
     int numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
@@ -2374,7 +2378,7 @@ TclCompileReturnCmd(
 	    ExceptionRange range = envPtr->exceptArrayPtr[index];
 
 	    if ((range.type == CATCH_EXCEPTION_RANGE)
-		    && (range.catchOffset == -1)) {
+		    && (range.catchOffset == TCL_INDEX_NONE)) {
 		enclosingCatch = 1;
 		break;
 	    }
@@ -2700,7 +2704,8 @@ IndexTailVarIfKnown(
 {
     Tcl_Obj *tailPtr;
     const char *tailName, *p;
-    int len, n = varTokenPtr->numComponents;
+    int n = varTokenPtr->numComponents;
+    int len;
     Tcl_Token *lastTokenPtr;
     int full, localIndex;
 

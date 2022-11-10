@@ -795,6 +795,7 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   undef TclBN_s_mp_sub
 #   define TclBN_s_mp_sub 0
 #   define Tcl_MakeSafe 0
+#   define TclpHasSockets 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
@@ -817,6 +818,8 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
 #   define Tcl_MakeSafe TclMakeSafe
+
+int TclpHasSockets(TCL_UNUSED(Tcl_Interp *)) {return TCL_OK;}
 
 static int
 seekOld(

@@ -354,7 +354,8 @@ EXTERN void		Tcl_SetNamespaceResolvers(
 				Tcl_ResolveVarProc *varProc,
 				Tcl_ResolveCompiledVarProc *compiledVarProc);
 /* 132 */
-EXTERN int		TclpHasSockets(Tcl_Interp *interp);
+TCL_DEPRECATED("")
+int			TclpHasSockets(Tcl_Interp *interp);
 /* 133 */
 TCL_DEPRECATED("")
 struct tm *		TclpGetDate(const time_t *time, int useGMT);
@@ -801,7 +802,7 @@ typedef struct TclIntStubs {
     int (*tcl_PushCallFrame) (Tcl_Interp *interp, Tcl_CallFrame *framePtr, Tcl_Namespace *nsPtr, int isProcCallFrame); /* 129 */
     int (*tcl_RemoveInterpResolvers) (Tcl_Interp *interp, const char *name); /* 130 */
     void (*tcl_SetNamespaceResolvers) (Tcl_Namespace *namespacePtr, Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, Tcl_ResolveCompiledVarProc *compiledVarProc); /* 131 */
-    int (*tclpHasSockets) (Tcl_Interp *interp); /* 132 */
+    TCL_DEPRECATED_API("") int (*tclpHasSockets) (Tcl_Interp *interp); /* 132 */
     TCL_DEPRECATED_API("") struct tm * (*tclpGetDate) (const time_t *time, int useGMT); /* 133 */
     void (*reserved134)(void);
     void (*reserved135)(void);
