@@ -4852,6 +4852,26 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
+#define TclNewUIntObj(objPtr, uw) \
+    do {						\
+	TclIncrObjsAllocated();				\
+	TclAllocObjStorage(objPtr);			\
+	(objPtr)->refCount = 0;				\
+	(objPtr)->bytes = NULL;				\
+	Tcl_WideUInt uw_ = (uw);		\
+	if (uw_ > WIDE_MAX) {			\
+	    mp_int bignumValue_;		\
+	    if (mp_init_u64(&bignumValue_, uw_) != MP_OKAY) {	\
+		Tcl_Panic("%s: memory overflow", "TclNewUIntObj");	\
+	    }	\
+	    TclSetBignumInternalRep((objPtr), &bignumValue_);	\
+	} else {	\
+	    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(uw_);	\
+	    (objPtr)->typePtr = &tclIntType;		\
+	}	\
+	TCL_DTRACE_OBJ_CREATE(objPtr);			\
+    } while (0)
+
 #define TclNewIndexObj(objPtr, w) \
     TclNewIntObj(objPtr, w)
 
@@ -4879,6 +4899,21 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 #else /* TCL_MEM_DEBUG */
 #define TclNewIntObj(objPtr, w) \
     (objPtr) = Tcl_NewWideIntObj(w)
+
+#define TclNewUIntObj(objPtr, uw) \
+    do {						\
+	Tcl_WideUInt uw_ = (uw);		\
+	if (uw_ > WIDE_MAX) {			\
+	    mp_int bignumValue_;		\
+	    if (mp_init_u64(&bignumValue_, uw_) == MP_OKAY) {	\
+		(objPtr) = Tcl_NewBignumObj(&bignumValue_));	\
+	    } else {	\
+		(objPtr) = NULL; \
+	    } \
+	} else {	\
+	    (objPtr) = Tcl_NewWideIntObj(uw_);	\
+	}	\
+    } while (0)
 
 #define TclNewIndexObj(objPtr, w) \
     TclNewIntObj(objPtr, w)
