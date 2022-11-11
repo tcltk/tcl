@@ -3372,7 +3372,7 @@ Tcl_SetWideUIntObj(
     if (uwideValue > WIDE_MAX) {
 	mp_int bignumValue;
 	if (mp_init_u64(&bignumValue, uwideValue) != MP_OKAY) {
-	    Tcl_Panic("%s called with shared object", "Tcl_SetWideUIntObj");
+	    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
 	}
 	TclSetBignumInternalRep(objPtr, &bignumValue);
     } {
