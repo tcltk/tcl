@@ -3239,8 +3239,7 @@ Tcl_NewWideUIntObj(
 {
     Tcl_Obj *objPtr;
 
-    TclNewObj(objPtr);
-    Tcl_SetWideUIntObj(objPtr, uwideValue);
+    TclNewUIntObj(objPtr, uwideValue);
     return objPtr;
 }
 

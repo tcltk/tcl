@@ -553,7 +553,7 @@ GetUWide(
 		 */
 		return 1;
 	    }
-#ifdef WORDS_BIGENDIAN
+#ifndef WORDS_BIGENDIAN
 	    while (numBytes-- > 0) {
 		value = (value << CHAR_BIT) | *bytes++;
 	    }
@@ -1451,12 +1451,12 @@ ObjValue(
 	}
 	linkPtr->lastValue.f = LinkedVar(float);
 	return Tcl_NewDoubleObj(linkPtr->lastValue.f);
-    case TCL_LINK_WIDE_UINT:
+    case TCL_LINK_WIDE_UINT: {
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewWideUIntObj(
+		TclNewUIntObj(objv[i],
 			linkPtr->lastValue.uwPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
@@ -1464,7 +1464,10 @@ ObjValue(
 	    return resultObj;
 	}
 	linkPtr->lastValue.uw = LinkedVar(Tcl_WideUInt);
-	return Tcl_NewWideUIntObj(linkPtr->lastValue.uw);
+	Tcl_Obj *uwObj;
+	TclNewUIntObj(uwObj, linkPtr->lastValue.uw);
+	return uwObj;
+	}
 
     case TCL_LINK_STRING:
 	p = LinkedVar(char *);
