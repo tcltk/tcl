@@ -3,7 +3,7 @@
 #	Test HTTP/1.1 concurrent requests including
 #	queueing, pipelining and retries.
 #
-# Copyright (C) 2018 Keith Nash <kjnash@users.sourceforge.net>
+# Copyright © 2018 Keith Nash <kjnash@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -68,7 +68,11 @@ proc http::Log {args} {
     }
     return
 }
-
+# The http::Log routine above needs the variable ::httpTest::testOptions
+# Set up to destroy it when that variable goes away.
+trace add variable ::httpTest::testOptions unset {apply {args {
+    proc ::http::Log args {}
+}}}
 
 # Called by http::Log (the "testing" version) to record logs for later analysis.
 
