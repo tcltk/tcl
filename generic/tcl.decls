@@ -2552,6 +2552,14 @@ declare 683 {
    int Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
 }
 
+# TIP #648
+declare 684 {
+    Tcl_Obj *Tcl_NewWideUIntObj(Tcl_WideUInt wideValue)
+}
+declare 685 {
+    void Tcl_SetWideUIntObj(Tcl_Obj *objPtr, Tcl_WideUInt uwideValue)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################

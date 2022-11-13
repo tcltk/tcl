@@ -3114,12 +3114,12 @@ TestlinkCmd(
 	tmp = Tcl_NewWideIntObj(longVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
-	tmp = Tcl_NewWideIntObj((long)ulongVar);
+	tmp = Tcl_NewWideUIntObj(ulongVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
 	Tcl_PrintDouble(NULL, (double)floatVar, buffer);
 	Tcl_AppendElement(interp, buffer);
-	tmp = Tcl_NewWideIntObj((Tcl_WideInt)uwideVar);
+	tmp = Tcl_NewWideUIntObj(uwideVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
     } else if (strcmp(argv[1], "set") == 0) {
