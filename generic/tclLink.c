@@ -557,9 +557,9 @@ GetUWide(
 	    while (numBytes-- > 0) {
 		value = (value << CHAR_BIT) | *bytes++;
 	    }
-#else /* !WORDS_BIGENDIAN */
+#else /* WORDS_BIGENDIAN */
 	    /*
-	     * Little-endian can read the value directly.
+	     * Big-endian can read the value directly.
 	     */
 	    value = scratch.value;
 #endif /* WORDS_BIGENDIAN */

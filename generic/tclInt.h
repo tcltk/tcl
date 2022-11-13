@@ -4906,7 +4906,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	if (uw_ > WIDE_MAX) {			\
 	    mp_int bignumValue_;		\
 	    if (mp_init_u64(&bignumValue_, uw_) == MP_OKAY) {	\
-		(objPtr) = Tcl_NewBignumObj(&bignumValue_));	\
+		(objPtr) = Tcl_NewBignumObj(&bignumValue_);	\
 	    } else {	\
 		(objPtr) = NULL; \
 	    } \
