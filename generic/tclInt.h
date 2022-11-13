@@ -4806,15 +4806,46 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
-#define TclNewIndexObj(objPtr, w) \
+#define TclNewUIntObj(objPtr, uw) \
     do {						\
-	size_t _w = (w);		\
 	TclIncrObjsAllocated();				\
 	TclAllocObjStorage(objPtr);			\
 	(objPtr)->refCount = 0;				\
 	(objPtr)->bytes = NULL;				\
-	(objPtr)->internalRep.wideValue = ((size_t)(_w) == (size_t)TCL_INDEX_NONE) ? -1 : (Tcl_WideInt)(_w); \
-	(objPtr)->typePtr = &tclIntType;		\
+	Tcl_WideUInt uw_ = (uw);		\
+	if (uw_ > WIDE_MAX) {			\
+	    mp_int bignumValue_;		\
+	    if (mp_init_u64(&bignumValue_, uw_) != MP_OKAY) {	\
+		Tcl_Panic("%s: memory overflow", "TclNewUIntObj");	\
+	    }	\
+	    TclSetBignumInternalRep((objPtr), &bignumValue_);	\
+	} else {	\
+	    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(uw_);	\
+	    (objPtr)->typePtr = &tclIntType;		\
+	}	\
+	TCL_DTRACE_OBJ_CREATE(objPtr);			\
+    } while (0)
+
+#define TclNewIndexObj(objPtr, uw) \
+    do {						\
+	TclIncrObjsAllocated();				\
+	TclAllocObjStorage(objPtr);			\
+	(objPtr)->refCount = 0;				\
+	(objPtr)->bytes = NULL;				\
+	Tcl_WideUInt uw_ = (uw);		\
+	if (uw_ >= TCL_INDEX_NONE) {			\
+	    (objPtr)->internalRep.wideValue = -1; \
+	    (objPtr)->typePtr = &tclIntType;		\
+	} else if (uw_ > WIDE_MAX) {			\
+	    mp_int bignumValue_;		\
+	    if (mp_init_u64(&bignumValue_, uw_) != MP_OKAY) {	\
+		Tcl_Panic("%s: memory overflow", "TclNewUIntObj");	\
+	    }	\
+	    TclSetBignumInternalRep((objPtr), &bignumValue_);	\
+	} else {	\
+	    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(uw_); \
+	    (objPtr)->typePtr = &tclIntType;		\
+	}	\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
@@ -4843,8 +4874,23 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 #define TclNewIntObj(objPtr, w) \
     (objPtr) = Tcl_NewWideIntObj(w)
 
+#define TclNewUIntObj(objPtr, uw) \
+    do {						\
+	Tcl_WideUInt uw_ = (uw);		\
+	if (uw_ > WIDE_MAX) {			\
+	    mp_int bignumValue_;		\
+	    if (mp_init_u64(&bignumValue_, uw_) == MP_OKAY) {	\
+		(objPtr) = Tcl_NewBignumObj(&bignumValue_);	\
+	    } else {	\
+		(objPtr) = NULL; \
+	    } \
+	} else {	\
+	    (objPtr) = Tcl_NewWideIntObj(uw_);	\
+	}	\
+    } while (0)
+
 #define TclNewIndexObj(objPtr, w) \
-    (objPtr) = (((size_t)w) == TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideIntObj(w)
+    (objPtr) = (((Tcl_WideUInt)w) >= TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideIntObj(w)
 
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)

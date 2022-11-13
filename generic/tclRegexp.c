@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 #include "tclRegexp.h"
+#include "tclTomMath.h"
 #include <assert.h>
 
 /*

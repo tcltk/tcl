@@ -26,6 +26,10 @@ proc bgerror {args} {
     puts stderr $errorInfo
 }
 
+proc stopMe {token} {
+    set ${token}(z) done
+}
+
 if {![info exists ThreadLevel]} {
     if {[catch {package require Thread}] == 0} {
         set ValueRange {0 1 2}
@@ -85,40 +89,44 @@ test httpProxy-1.1.$ThreadLevel {squid is running - ipv4 noauth} -constraints {n
 } -body {
     set token [http::geturl http://$n4host:$n4port/]
     set ri [http::responseInfo $token]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
-} -result {complete ok 400 none} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed]"
+} -result {complete ok 400 -- none} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res
+    unset -nocomplain token ri res
 }
 
 test httpProxy-1.2.$ThreadLevel {squid is running - ipv6 noauth} -constraints {needsSquid} -setup {
 } -body {
     set token [http::geturl http://\[$n6host\]:$n6port/]
     set ri [http::responseInfo $token]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
-} -result {complete ok 400 none} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed]"
+} -result {complete ok 400 -- none} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res
+    unset -nocomplain token ri res
 }
 
 test httpProxy-1.3.$ThreadLevel {squid is running - ipv4 auth} -constraints {needsSquid} -setup {
 } -body {
     set token [http::geturl http://$a4host:$a4port/]
     set ri [http::responseInfo $token]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
-} -result {complete ok 400 none} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed]"
+} -result {complete ok 400 -- none} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res
+    unset -nocomplain token ri res
 }
 
 test httpProxy-1.4.$ThreadLevel {squid is running - ipv6 auth} -constraints {needsSquid} -setup {
 } -body {
     set token [http::geturl http://\[$a6host\]:$a6port/]
     set ri [http::responseInfo $token]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
-} -result {complete ok 400 none} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed]"
+} -result {complete ok 400 -- none} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res
+    unset -nocomplain token ri res
 }
 
 test httpProxy-2.1.$ThreadLevel {http no-proxy no-auth} -constraints {needsSquid} -setup {
@@ -126,10 +134,12 @@ test httpProxy-2.1.$ThreadLevel {http no-proxy no-auth} -constraints {needsSquid
 } -body {
     set token [http::geturl http://www.google.com/]
     set ri [http::responseInfo $token]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
-} -result {complete ok 200 none} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- none -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res
+    unset -nocomplain token ri res
 }
 
 test httpProxy-2.2.$ThreadLevel {https no-proxy no-auth} -constraints {needsSquid needsTls} -setup {
@@ -137,10 +147,12 @@ test httpProxy-2.2.$ThreadLevel {https no-proxy no-auth} -constraints {needsSqui
 } -body {
     set token [http::geturl https://www.google.com/]
     set ri [http::responseInfo $token]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
-} -result {complete ok 200 none} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- none -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res
+    unset -nocomplain token ri res
 }
 
 test httpProxy-2.3.$ThreadLevel {http with-proxy ipv4 no-auth} -constraints {needsSquid} -setup {
@@ -148,10 +160,12 @@ test httpProxy-2.3.$ThreadLevel {http with-proxy ipv4 no-auth} -constraints {nee
 } -body {
     set token [http::geturl http://www.google.com/]
     set ri [http::responseInfo $token]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
-} -result {complete ok 200 HttpProxy} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- HttpProxy -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res
+    unset -nocomplain token ri res
     http::config -proxyhost {} -proxyport {} -proxynot {}
 }
 
@@ -160,34 +174,40 @@ test httpProxy-2.4.$ThreadLevel {https with-proxy ipv4 no-auth} -constraints {ne
 } -body {
     set token [http::geturl https://www.google.com/]
     set ri [http::responseInfo $token]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
-} -result {complete ok 200 SecureProxy} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- SecureProxy -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res
+    unset -nocomplain token ri res
     http::config -proxyhost {} -proxyport {} -proxynot {}
 }
 
 test httpProxy-2.5.$ThreadLevel {http with-proxy ipv6 no-auth} -constraints {needsSquid} -setup {
-   http::config -proxyhost $n6host -proxyport $n6port -proxynot {127.0.0.1 localhost} -proxyauth {}
+   http::config -proxyhost $n6host -proxyport $n6port -proxynot {::1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl http://www.google.com/]
     set ri [http::responseInfo $token]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
-} -result {complete ok 200 HttpProxy} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- HttpProxy -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res
+    unset -nocomplain token ri res
     http::config -proxyhost {} -proxyport {} -proxynot {}
 }
 
 test httpProxy-2.6.$ThreadLevel {https with-proxy ipv6 no-auth} -constraints {needsSquid needsTls} -setup {
-   http::config -proxyhost $n6host -proxyport $n6port -proxynot {127.0.0.1 localhost} -proxyauth {}
+   http::config -proxyhost $n6host -proxyport $n6port -proxynot {::1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl https://www.google.com/]
     set ri [http::responseInfo $token]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed]"
-} -result {complete ok 200 SecureProxy} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- SecureProxy -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res
+    unset -nocomplain token ri res
     http::config -proxyhost {} -proxyport {} -proxynot {}
 }
 
@@ -198,10 +218,12 @@ test httpProxy-3.1.$ThreadLevel {http no-proxy with-auth valid-creds-provided} -
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 200 none 0 0} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- none 0 0 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
@@ -212,10 +234,12 @@ test httpProxy-3.2.$ThreadLevel {https no-proxy with-auth valid-creds-provided} 
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 200 none 0 0} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- none 0 0 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
@@ -226,10 +250,12 @@ test httpProxy-3.3.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-prov
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 200 HttpProxy 1 1} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- HttpProxy 1 1 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
@@ -240,38 +266,332 @@ test httpProxy-3.4.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-pro
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 200 SecureProxy 0 0} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- SecureProxy 0 0 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
 test httpProxy-3.5.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided} -constraints {needsSquid} -setup {
-   http::config -proxyhost $a6host -proxyport $a6port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
+   http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $aliceCreds
 } -body {
     set token [http::geturl http://www.google.com/]
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 200 HttpProxy 1 1} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- HttpProxy 1 1 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
 test httpProxy-3.6.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided} -constraints {needsSquid needsTls} -setup {
-   http::config -proxyhost $a6host -proxyport $a6port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
+   http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $aliceCreds
 } -body {
     set token [http::geturl https://www.google.com/]
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 200 SecureProxy 0 0} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- SecureProxy 0 0 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.7.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquid} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
+    set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
+} -body {
+    # Use the same caution as for the corresponding https test.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 200 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.7x.$ThreadLevel {http with-proxy ipv4 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquid} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
+    set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
+
+    http::config -proxyauth $aliceCreds
+} -body {
+    # Use the same caution as for the corresponding https test.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 200 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.8.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquid needsTls} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
+    set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
+} -body {
+    # If a bug passes the socket of a failed CONNECT to the main request, an infinite
+    # wait can occur despite -timeout.  Fix this with http::reset; to do this the call
+    # to http::geturl must be async so we have $token for use as argument of reset.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 200 -- SecureProxy 0 0 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.8x.$ThreadLevel {https with-proxy ipv4 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquid needsTls} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
+    set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
+
+    http::config -proxyauth $aliceCreds
+} -body {
+    # If a bug passes the socket of a failed CONNECT to the main request, an infinite
+    # wait can occur despite -timeout.  Fix this with http::reset; to do this the call
+    # to http::geturl must be async so we have $token for use as argument of reset.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 200 -- SecureProxy 0 0 -- -1 done 0} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.9.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquid} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $aliceCreds
+    set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
+} -body {
+    # Use the same caution as for the corresponding https test.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 200 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.9p.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works, pipelining requested and possible} -constraints {needsSquid} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $aliceCreds
+} -body {
+    set can0 [after 6000 {http::reset $token0; set ${token0}(z) timeout}]
+    set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+after idle {
+    # Use the same caution as for the corresponding https test.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+}
+    vwait ${token0}(z)
+    after cancel $can0
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 200 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can0 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.9x.$ThreadLevel {http with-proxy ipv6 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquid} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
+    set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
+
+    http::config -proxyauth $aliceCreds
+} -body {
+    # Use the same caution as for the corresponding https test.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 200 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.10.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquid needsTls} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $aliceCreds
+    set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
+} -body {
+    # If a bug passes the socket of a failed CONNECT to the main request, an infinite
+    # wait can occur despite -timeout.  Fix this with http::reset; to do this the call
+    # to http::geturl must be async so we have $token for use as argument of reset.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 200 -- SecureProxy 0 0 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.10p.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works, pipelining requested and possible} -constraints {needsSquid needsTls} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $aliceCreds
+} -body {
+    set can0 [after 6000 {http::reset $token0; set ${token0}(z) timeout}]
+    set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+after idle {
+    # If a bug passes the socket of a failed CONNECT to the main request, an infinite
+    # wait can occur despite -timeout.  Fix this with http::reset; to do this the call
+    # to http::geturl must be async so we have $token for use as argument of reset.
+    set can [after 6000 {http::reset $token0; set ${token}(z) timeout}]
+    set token [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+}
+    vwait ${token0}(z)
+    after cancel $can0
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 200 -- SecureProxy 0 0 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can0 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-3.10x.$ThreadLevel {https with-proxy ipv6 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquid needsTls} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
+    set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
+
+    http::config -proxyauth $aliceCreds
+} -body {
+    # If a bug passes the socket of a failed CONNECT to the main request, an infinite
+    # wait can occur despite -timeout.  Fix this with http::reset; to do this the call
+    # to http::geturl must be async so we have $token for use as argument of reset.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 200 -- SecureProxy 0 0 -- -1 done 0} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
@@ -282,10 +602,12 @@ test httpProxy-4.1.$ThreadLevel {http no-proxy with-auth no-creds-provided} -con
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 200 none 0 0} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- none 0 0 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
@@ -296,10 +618,12 @@ test httpProxy-4.2.$ThreadLevel {https no-proxy with-auth no-creds-provided} -co
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 200 none 0 0} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- none 0 0 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
@@ -310,10 +634,12 @@ test httpProxy-4.3.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provide
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 407 HttpProxy 0 0} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 407 -- HttpProxy 0 0 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
@@ -324,38 +650,217 @@ test httpProxy-4.4.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provid
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 407 SecureProxy 0 0} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 407 -- SecureProxyFailed 0 0 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
 test httpProxy-4.5.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided} -constraints {needsSquid} -setup {
-   http::config -proxyhost $a6host -proxyport $a6port -proxynot {127.0.0.1 localhost} -proxyauth {}
+   http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl http://www.google.com/]
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 407 HttpProxy 0 0} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 407 -- HttpProxy 0 0 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
 test httpProxy-4.6.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided} -constraints {needsSquid needsTls} -setup {
-   http::config -proxyhost $a6host -proxyport $a6port -proxynot {127.0.0.1 localhost} -proxyauth {}
+   http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl https://www.google.com/]
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 407 SecureProxy 0 0} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 407 -- SecureProxyFailed 0 0 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-4.7.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquid} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
+    set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
+} -body {
+    # Use the same caution as for the corresponding https test.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 407 -- HttpProxy 0 0 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-4.8.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquid needsTls} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
+    set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
+} -body {
+    # If a bug passes the socket of a failed CONNECT to the main request, an infinite
+    # wait can occur despite -timeout.  Fix this with http::reset; to do this the call
+    # to http::geturl must be async so we have $token for use as argument of reset.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 407 -- SecureProxyFailed 0 0 -- -1 done 0} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-4.9.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquid} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
+    set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
+} -body {
+    # Use the same caution as for the corresponding https test.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 407 -- HttpProxy 0 0 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-4.9p.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible, pipelining requested and possible} -constraints {needsSquid} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
+} -body {
+    set can0 [after 6000 {http::reset $token0; set ${token0}(z) timeout}]
+    set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+after idle {
+    # Use the same caution as for the corresponding https test.
+    set can [after 6000 {http::reset $token0; set ${token}(z) timeout}]
+    set token [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+}
+    vwait ${token0}(z)
+    after cancel $can0
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 407 -- HttpProxy 0 0 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can0 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-4.10.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquid needsTls} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
+    set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
+} -body {
+    # If a bug passes the socket of a failed CONNECT to the main request, an infinite
+    # wait can occur despite -timeout.  Fix this with http::reset; to do this the call
+    # to http::geturl must be async so we have $token for use as argument of reset.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 407 -- SecureProxyFailed 0 0 -- -1 done 0} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-4.10p.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible, pipelining requested but not possible} -constraints {needsSquid needsTls} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
+} -body {
+    set can0 [after 6000 {http::reset $token0; set ${token0}(z) timeout}]
+    set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+
+after idle {
+    # If a bug passes the socket of a failed CONNECT to the main request, an infinite
+    # wait can occur despite -timeout.  Fix this with http::reset; to do this the call
+    # to http::geturl must be async so we have $token for use as argument of reset.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+}
+    vwait ${token0}(z)
+    after cancel $can0
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $aliceCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 407 -- SecureProxyFailed 0 0 -- -1 done 0} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can0 can same
+    array unset ::http::socketMapping
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
@@ -366,10 +871,12 @@ test httpProxy-5.1.$ThreadLevel {http no-proxy with-auth bad-creds-provided} -co
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 200 none 0 0} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- none 0 0 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
@@ -380,10 +887,12 @@ test httpProxy-5.2.$ThreadLevel {https no-proxy with-auth bad-creds-provided} -c
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 200 none 0 0} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 200 -- none 0 0 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
@@ -394,10 +903,12 @@ test httpProxy-5.3.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provid
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 407 HttpProxy 1 1} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 407 -- HttpProxy 1 1 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
@@ -408,38 +919,216 @@ test httpProxy-5.4.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provi
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 407 SecureProxy 1 1} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 407 -- SecureProxyFailed 1 1 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
 test httpProxy-5.5.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provided} -constraints {needsSquid} -setup {
-   http::config -proxyhost $a6host -proxyport $a6port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
+   http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $badCreds
 } -body {
     set token [http::geturl http://www.google.com/]
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 407 HttpProxy 1 1} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 407 -- HttpProxy 1 1 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
 test httpProxy-5.6.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provided} -constraints {needsSquid needsTls} -setup {
-   http::config -proxyhost $a6host -proxyport $a6port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
+   http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $badCreds
 } -body {
     set token [http::geturl https://www.google.com/]
     set ri [http::responseInfo $token]
     set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
     set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
-    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}]"
-} -result {complete ok 407 SecureProxy 1 1} -cleanup {
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*]"
+} -result {complete ok 407 -- SecureProxyFailed 1 1 -- -1} -cleanup {
     http::cleanup $token
-    unset -nocomplain ri res pos1 pos2
+    unset -nocomplain token ri res pos1 pos2
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-5.7.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquid} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
+    set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
+} -body {
+    # Use the same caution as for the corresponding https test.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 407 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-5.7p.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible, pipelining requested and possible} -constraints {needsSquid} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
+} -body {
+    set can0 [after 6000 {http::reset $token0; set ${token0}(z) timeout}]
+    set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    # Use the same caution as for the corresponding https test.
+after idle {
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+}
+    vwait ${token0}(z)
+    after cancel $can0
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 407 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can0 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-5.8.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquid needsTls} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
+    set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
+} -body {
+    # If a bug passes the socket of a failed CONNECT to the main request, an infinite
+    # wait can occur despite -timeout.  Fix this with http::reset; to do this the call
+    # to http::geturl must be async so we have $token for use as argument of reset.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 407 -- SecureProxyFailed 1 1 -- -1 done 0} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-5.8p.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible, pipelining requested but not possible} -constraints {needsSquid needsTls} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
+} -body {
+    set can0 [after 6000 {http::reset $token0; set ${token0}(z) timeout}]
+    set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    # If a bug passes the socket of a failed CONNECT to the main request, an infinite
+    # wait can occur despite -timeout.  Fix this with http::reset; to do this the call
+    # to http::geturl must be async so we have $token for use as argument of reset.
+after idle {
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+}
+    vwait ${token0}(z)
+    after cancel $can0
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 407 -- SecureProxyFailed 1 1 -- -1 done 0} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can0 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-5.9.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquid} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $badCreds
+    set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
+} -body {
+    # Use the same caution as for the corresponding https test.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 407 -- HttpProxy 1 1 -- -1 done 1} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
+    http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
+}
+
+test httpProxy-5.10.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquid needsTls} -setup {
+    array unset ::http::socketMapping
+    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $badCreds
+    set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
+} -body {
+    # If a bug passes the socket of a failed CONNECT to the main request, an infinite
+    # wait can occur despite -timeout.  Fix this with http::reset; to do this the call
+    # to http::geturl must be async so we have $token for use as argument of reset.
+    set can [after 6000 {http::reset $token; set ${token}(z) timeout}]
+    set token [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000 -command stopMe]
+    vwait ${token}(z)
+    after cancel $can
+
+    set ri [http::responseInfo $token]
+    set pos1 [lsearch -exact [string tolower [set ${token}(requestHeaders)]] proxy-authorization]
+    set pos2 [lsearch -exact [set ${token}(requestHeaders)] $badCreds]
+    set same [string equal [set ${token0}(sock)] [set ${token}(sock)]]
+    set res "[dict get $ri stage] [dict get $ri status] [dict get $ri responseCode] --\
+             [dict get $ri proxyUsed] [expr {$pos1 > -1}] [expr {$pos2 > -1}] --\
+             [lsearch -glob [array get ::http::socketMapping] HTTP_PLACEHOLDER_*] [set ${token}(z)] $same"
+} -result {complete ok 407 -- SecureProxyFailed 1 1 -- -1 done 0} -cleanup {
+    http::cleanup $token0
+    http::cleanup $token
+    unset -nocomplain token0 token ri res pos1 pos2 can same
+    array unset ::http::socketMapping
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
@@ -447,6 +1136,7 @@ test httpProxy-5.6.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provi
 unset -nocomplain n4host n6host n4port n6port a4host a6host a4port a6port aliceCreds badCreds
 
 rename bgerror {}
+rename stopMe {}
 
 ::tcltest::cleanupTests
 
