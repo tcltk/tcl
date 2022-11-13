@@ -77,6 +77,7 @@ namespace eval http {
 	variable socketClosing
 	variable socketPlayCmd
 	variable socketCoEvent
+	variable socketProxyId
 	if {[info exists socketMapping]} {
 	    # Close open sockets on re-init.  Do not permit retries.
 	    foreach {url sock} [array get socketMapping] {
@@ -101,6 +102,7 @@ namespace eval http {
 	array unset socketClosing
 	array unset socketPlayCmd
 	array unset socketCoEvent
+	array unset socketProxyId
 	array set socketMapping {}
 	array set socketRdState {}
 	array set socketWrState {}
@@ -110,6 +112,7 @@ namespace eval http {
 	array set socketClosing {}
 	array set socketPlayCmd {}
 	array set socketCoEvent {}
+	array set socketProxyId {}
 	return
     }
     init
@@ -218,6 +221,33 @@ namespace eval http {
         510 {Not Extended (OBSOLETED)}
         511 {Network Authentication Required}
     }]
+
+    variable failedProxyValues {
+	binary
+	body
+	charset
+	coding
+	connection
+	connectionRespFlag
+	currentsize
+	host
+	http
+	httpResponse
+	meta
+	method
+	querylength
+	queryoffset
+	reasonPhrase
+	requestHeaders
+	requestLine
+	responseCode
+	state
+	status
+	tid
+	totalsize
+	transfer
+	type
+    }
 
     namespace export geturl config reset wait formatQuery postError quoteString
     namespace export register unregister registerError
@@ -380,6 +410,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -513,6 +544,7 @@ proc http::KeepSocket {token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -715,6 +747,7 @@ proc http::CloseSocket {s {token {}}} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     set tk [namespace tail $token]
 
@@ -777,8 +810,9 @@ proc http::CloseQueuedQueries {connId {token {}}} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
-    ##Log CloseQueuedQueries $connId
+    ##Log CloseQueuedQueries $connId $token
     if {![info exists socketMapping($connId)]} {
 	# Command has already been called.
 	# Don't come here again - especially recursively.
@@ -838,6 +872,7 @@ proc http::Unset {connId} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     unset socketMapping($connId)
     unset socketRdState($connId)
@@ -846,6 +881,7 @@ proc http::Unset {connId} {
     unset -nocomplain socketWrQueue($connId)
     unset -nocomplain socketClosing($connId)
     unset -nocomplain socketPlayCmd($connId)
+    unset -nocomplain socketProxyId($connId)
     return
 }
 
@@ -871,6 +907,7 @@ proc http::reset {token {why reset}} {
 	set errorlist $state(error)
 	unset state
 	eval ::error $errorlist
+	# i.e. error msg errorInfo errorCode
     }
     return
 }
@@ -1316,6 +1353,11 @@ proc http::CreateToken {url args} {
 	set srvurl $url
 	set targetAddr [list $phost $pport]
 	set state(proxyUsed) HttpProxy
+	# The value of state(proxyUsed) none|HttpProxy depends only on the
+	# all-transactions http::config settings and on the target URL.
+	# Even if this is a persistent socket there is no need to change the
+	# value of state(proxyUsed) for other transactions that use the socket:
+	# they have the same value already.
     } else {
 	set targetAddr [list $host $port]
     }
@@ -1351,6 +1393,7 @@ proc http::CreateToken {url args} {
 	variable socketClosing
 	variable socketPlayCmd
 	variable socketCoEvent
+	variable socketProxyId
 
 	if {[info exists socketMapping($state(socketinfo))]} {
 	    # - If the connection is idle, it has a "fileevent readable" binding
@@ -1373,6 +1416,7 @@ proc http::CreateToken {url args} {
 		# causes a call to Finish.
 		set reusing 1
 		set sock $socketMapping($state(socketinfo))
+		set state(proxyUsed) $socketProxyId($state(socketinfo))
 		Log "reusing closing socket $sock for $state(socketinfo) - token $token"
 
 		set state(alreadyQueued) 1
@@ -1407,6 +1451,7 @@ proc http::CreateToken {url args} {
 		# - The socket may not yet exist, and be defined with a placeholder.
 		set reusing 1
 		set sock $socketMapping($state(socketinfo))
+		set state(proxyUsed) $socketProxyId($state(socketinfo))
 		if {[SockIsPlaceHolder $sock]} {
 		    set state(ReusingPlaceholder) 1
 		    lappend socketPhQueue($sock) $token
@@ -1505,6 +1550,7 @@ proc http::AsyncTransaction {token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     set sock $state(sock)
 
@@ -1581,9 +1627,15 @@ proc http::PreparePersistentConnection {token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     set DoLater {-traceread 0 -tracewrite 0}
     set socketMapping($state(socketinfo)) $state(sock)
+    set socketProxyId($state(socketinfo)) $state(proxyUsed)
+    # - The value of state(proxyUsed) was set in http::CreateToken to either
+    #   "none" or "HttpProxy".
+    # - $token is the first transaction to use this placeholder, so there are
+    #   no other tokens whose (proxyUsed) must be modified.
 
     if {![info exists socketRdState($state(socketinfo))]} {
         set socketRdState($state(socketinfo)) {}
@@ -1613,12 +1665,16 @@ proc http::PreparePersistentConnection {token} {
         set socketWrState($state(socketinfo)) $token
     }
 
+    # Value of socketPhQueue() may have already been set by ReplayCore.
+    if {![info exists socketPhQueue($state(sock))]} {
+        set socketPhQueue($state(sock))   {}
+    }
     set socketRdQueue($state(socketinfo)) {}
     set socketWrQueue($state(socketinfo)) {}
-    set socketPhQueue($state(socketinfo)) {}
     set socketClosing($state(socketinfo)) 0
     set socketPlayCmd($state(socketinfo)) {ReplayIfClose Wready {} {}}
     set socketCoEvent($state(socketinfo)) {}
+    set socketProxyId($state(socketinfo)) {}
 
     return $DoLater
 }
@@ -1651,6 +1707,7 @@ proc http::OpenSocket {token DoLater} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     Log >K$tk Start OpenSocket coroutine
 
@@ -1697,16 +1754,38 @@ proc http::OpenSocket {token DoLater} {
 
         # Code above has set state(sock) $sock
         ConfigureNewSocket $token $sockOld $DoLater
+        ##Log OpenSocket success $sock - token $token
     } result errdict]} {
+	##Log OpenSocket failed $result - token $token
+	# There may be other requests in the socketPhQueue.
+	# Prepare socketPlayCmd so that Finish will replay them.
+	if {    ($state(-keepalive)) && (!$state(reusing))
+	     && [info exists socketPhQueue($sockOld)]
+	     && ($socketPhQueue($sockOld) ne {})
+	} {
+	    if {$socketMapping($state(socketinfo)) ne $sockOld} {
+		Log "WARNING: this code should not be reached.\
+			{$socketMapping($state(socketinfo)) ne $sockOld}"
+	    }
+	    set socketPlayCmd($state(socketinfo)) [list ReplayIfClose Wready {} $socketPhQueue($sockOld)]
+	    set socketPhQueue($sockOld) {}
+	}
         if {[string range $result 0 20] eq {proxy connect failed:}} {
-            # The socket can be persistent: if so it is identified with
-            # the https target host, and will be kept open.
-            # Results of the failed proxy CONNECT have been copied to $token and
-            # are available to the caller.
-            Eot $token
-        } else {
-            Finish $token $result
-        }
+	    # - The HTTPS proxy did not create a socket.  The pre-existing value
+	    #   (a "placeholder socket") is unchanged.
+	    # - The proxy returned a valid HTTP response to the failed CONNECT
+	    #   request, and http::SecureProxyConnect copied this to $token,
+	    #   and also set ${token}(connection) set to "close".
+	    # - Remove the error message $result so that Finish delivers this
+	    #   HTTP response to the caller.
+	    set result {}
+	}
+	Finish $token $result
+	# Because socket creation failed, the placeholder "socket" must be
+	# "closed" and (if persistent) removed from the persistent sockets
+	# table.  In the {proxy connect failed:} case Finish does this because
+	# the value of ${token}(connection) is "close". In the other cases here,
+	# it does so because $result is non-empty.
     }
     ##Log Leaving http::OpenSocket coroutine [info coroutine] - token $token
     return
@@ -1758,10 +1837,12 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     set reusing $state(reusing)
     set sock $state(sock)
-    ##Log "  ConfigureNewSocket" $token $sockOld ... -- $sock
+    set proxyUsed $state(proxyUsed)
+    ##Log "  ConfigureNewSocket" $token $sockOld ... -- $reusing $sock $proxyUsed
 
     if {(!$reusing) && ($sock ne $sockOld)} {
         # Replace the placeholder value sockOld with sock.
@@ -1770,6 +1851,8 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
              && ($socketMapping($state(socketinfo)) eq $sockOld)
         } {
             set socketMapping($state(socketinfo)) $sock
+            set socketProxyId($state(socketinfo)) $proxyUsed
+            # tokens that use the placeholder $sockOld are updated below.
             ##Log set socketMapping($state(socketinfo)) $sock
         }
 
@@ -1809,6 +1892,7 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
 	    # 1. Amend the token's (sock).
 	    ##Log set ${tok}(sock) $sock
 	    set ${tok}(sock) $sock
+	    set ${tok}(proxyUsed) $proxyUsed
 
 	    # 2. Schedule the token's HTTP request.
 	    # Every token in socketPhQueue(*) has reusing 1 alreadyQueued 0.
@@ -1839,7 +1923,7 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
 #                        waiting until the read(s) in progress are finished).
 # socketRdQueue($connId) List of tokens that are queued for reading later.
 # socketWrQueue($connId) List of tokens that are queued for writing later.
-# socketPhQueue($connId) List of tokens that are queued to use a placeholder
+# socketPhQueue($sock)   List of tokens that are queued to use a placeholder
 #                        socket, when the real socket has not yet been created.
 # socketClosing($connId) (boolean) true iff a server response header indicates
 #                        that the server will close the connection at the end of
@@ -1848,6 +1932,11 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
 #                        part-completed transactions if the socket closes early.
 # socketCoEvent($connId) Identifier for the "after idle" event that will launch
 #                        an OpenSocket coroutine to open or re-use a socket.
+# socketProxyId($connId) The type of proxy that this socket uses: values are
+#                        those of state(proxyUsed) i.e. none, HttpProxy,
+#                        SecureProxy, and SecureProxyFailed.
+#                        The value is not used for anything by http, its purpose
+#                        is to set the value of state() for caller information.
 # ------------------------------------------------------------------------------
 
 
@@ -1903,6 +1992,7 @@ proc http::ScheduleRequest {token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     set Unfinished 0
 
@@ -2048,6 +2138,7 @@ proc http::Connected {token proto phost srvurl} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -2325,7 +2416,8 @@ proc http::Connected {token proto phost srvurl} {
 	    # If any other requests are in flight or pipelined/queued, they will
 	    # be discarded.
 	} elseif {$state(status) eq ""} {
-	    # ...https handshake errors come here.
+	    # https handshake errors come here, for
+	    # Tcl 8.7 without http::SecureProxyConnect, and for Tcl 8.6.
 	    set msg [registerError $sock]
 	    registerError $sock {}
 	    if {$msg eq {}} {
@@ -2386,6 +2478,7 @@ proc http::DoneRequest {token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -2717,6 +2810,7 @@ proc http::ReplayIfDead {token doing} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -2960,6 +3054,7 @@ proc http::ReplayCore {newQueue} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     if {[llength $newQueue] == 0} {
 	# Nothing to do.
@@ -2979,6 +3074,7 @@ proc http::ReplayCore {newQueue} {
 
     if {![ReInit $token]} {
 	Log FAILED in http::ReplayCore - NO tmp vars
+	Log ReplayCore reject $token
 	Finish $token {cannot send this request again}
 	return
     }
@@ -2993,6 +3089,7 @@ proc http::ReplayCore {newQueue} {
     set state(reusing) 0
     set state(ReusingPlaceholder) 0
     set state(alreadyQueued) 0
+    Log ReplayCore replay $token
 
     # Give the socket a placeholder name before it is created.
     set sock HTTP_PLACEHOLDER_[incr TmpSockCounter]
@@ -3005,7 +3102,9 @@ proc http::ReplayCore {newQueue} {
 	    set ${tok}(reusing) 1
 	    set ${tok}(sock) $sock
 	    lappend socketPhQueue($sock) $tok
+	    Log ReplayCore replay $tok
 	} else {
+	    Log ReplayCore reject $tok
 	    set ${tok}(reusing) 1
 	    set ${tok}(sock) NONE
 	    Finish $tok {cannot send this request again}
@@ -3309,6 +3408,7 @@ proc http::Write {token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -3421,6 +3521,7 @@ proc http::Event {sock token} {
     variable socketClosing
     variable socketPlayCmd
     variable socketCoEvent
+    variable socketProxyId
 
     variable $token
     upvar 0 $token state
@@ -3473,8 +3574,15 @@ proc http::Event {sock token} {
 		    # If any other requests are in flight or pipelined/queued,
 		    # they will be discarded.
 		} else {
+		    # https handshake errors come here, for
+		    # Tcl 8.7 with http::SecureProxyConnect.
+		    set msg [registerError $sock]
+		    registerError $sock {}
+		    if {$msg eq {}} {
+			set msg $nsl
+		    }
 		    Log ^X$tk end of response (error) - token $token
-		    Finish $token $nsl
+		    Finish $token $msg
 		    return
 		}
 	    } elseif {$nsl >= 0} {
@@ -4882,21 +4990,18 @@ proc http::socketForTls {args} {
 #
 # Return Value: a socket identifier
 # ------------------------------------------------------------------------------
-proc http::AllDone {varName args} {
-    set $varName done
-    return
-}
 
 proc http::SecureProxyConnect {args} {
     variable http
     variable ConnectVar
     variable ConnectCounter
+    variable failedProxyValues
     set varName ::http::ConnectVar([incr ConnectCounter])
 
     # Extract (non-proxy) target from args.
     set host [lindex $args end-3]
     set port [lindex $args end-2]
-    set args [lremove $args end-3 end-2]
+    set args [lreplace $args end-3 end-2]
 
     # Proxy server URL for connection.
     # This determines where the socket is opened.
@@ -4918,8 +5023,12 @@ proc http::SecureProxyConnect {args} {
         # Record in the token that this is a proxy call.
         set token [lindex $args $targ+1]
         upvar 0 ${token} state
-        set state(proxyUsed) SecureProxy
         set tim $state(-timeout)
+        set state(proxyUsed) SecureProxyFailed
+        # This value is overwritten with "SecureProxy" below if the CONNECT is
+        # successful.  If it is unsuccessful, the socket will be closed
+        # below, and so in this unsuccessful case there are no other transactions
+        # whose (proxyUsed) must be updated.
     } else {
         set tim 0
     }
@@ -4941,8 +5050,11 @@ proc http::SecureProxyConnect {args} {
     variable $token2
     upvar 0 $token2 state2
 
-    # Setting this variable overrides the HTTP request line and allows
+    # Kludges:
+    # Setting this variable overrides the HTTP request line and also allows
     # -headers to override the Connection: header set by -keepalive.
+    # The arguments "-keepalive 0" ensure that when Finish is called for an
+    # unsuccessful request, the socket is always closed.
     set state2(bypass) "CONNECT $host:$port HTTP/1.1"
 
     AsyncTransaction $token2
@@ -4961,41 +5073,90 @@ proc http::SecureProxyConnect {args} {
     }
     unset $varName
 
-    set sock $state2(sock)
-    set code $state2(responseCode)
-    if {[string is integer -strict $code] && ($code >= 200) && ($code < 300)} {
-        # All OK.  The caller in tls will now call "tls::import $sock".
-        # Do not use Finish, which will close (sock).
-        # Other tidying done in http::Event.
-        array unset state2
-    } elseif {$targ != -1} {
-        # Bad HTTP status code; token is known.
-        # Copy from state2 to state, including (sock).
-        foreach name [array names state2] {
-            set state($name) $state2($name)
+    if {    ($state2(state) ne "complete")
+         || ($state2(status) ne "ok")
+         || (![string is integer -strict $state2(responseCode)])
+    } {
+        set msg {the HTTP request to the proxy server did not return a valid\
+                and complete response}
+        if {[info exists state2(error)]} {
+            append msg ": " [lindex $state2(error) 0]
         }
-        set state(proxyUsed) SecureProxy
-        set state(proxyFail) failed
-
-        # Do not use Finish, which will close (sock).
-        # Other tidying done in http::Event.
-        array unset state2
-
-        # Error message detected by http::OpenSocket.
-        return -code error "proxy connect failed: $code"
-    } else {
-        # Bad HTTP status code; token is not known because option -type
-        # (cf. targ) was not passed through tcltls, and so the script
-        # cannot write to state(*).
-        # Do not use Finish, which will close (sock).
-        # Other tidying done in http::Event.
-        array unset state2
-
-        # Error message detected by http::OpenSocket.
-        return -code error "proxy connect failed: $code\n$block"
+        cleanup $token2
+        return -code error $msg
     }
 
-    return $sock
+    set code $state2(responseCode)
+
+    if {($code >= 200) && ($code < 300)} {
+        # All OK.  The caller in package tls will now call "tls::import $sock".
+        # The cleanup command does not close $sock.
+        # Other tidying was done in http::Event.
+
+        # If this is a persistent socket, any other transactions that are
+        # already marked to use the socket will have their (proxyUsed) updated
+        # when http::OpenSocket calls http::ConfigureNewSocket.
+        set state(proxyUsed) SecureProxy
+        set sock $state2(sock)
+        cleanup $token2
+        return $sock
+    }
+
+    if {$targ != -1} {
+        # Non-OK HTTP status code; token is known because option -type
+        # (cf. targ) was passed through tcltls, and so the useful
+        # parts of the proxy's response can be copied to state(*).
+        # Do not copy state2(sock).
+        # Return the proxy response to the caller of geturl.
+        foreach name $failedProxyValues {
+            if {[info exists state2($name)]} {
+                set state($name) $state2($name)
+            }
+        }
+        set state(connection) close
+        set msg "proxy connect failed: $code"
+	# - This error message will be detected by http::OpenSocket and will
+	#   cause it to present the proxy's HTTP response as that of the
+	#   original $token transaction, identified only by state(proxyUsed)
+	#   as the response of the proxy.
+	# - The cases where this would mislead the caller of http::geturl are
+	#   given a different value of msg (below) so that http::OpenSocket will
+	#   treat them as errors, but will preserve the $token array for
+	#   inspection by the caller.
+	# - Status code 305 (Proxy Required) was deprecated for security reasons
+	#   in RFC 2616 (June 1999) and in any case should never be served by a
+	#   proxy.
+	# - Other 3xx responses from the proxy are inappropriate, and should not
+	#   occur.
+	# - A 401 response from the proxy is inappropriate, and should not
+	#   occur.  It would be confusing if returned to the caller.
+
+	if {($code >= 300) && ($code < 400)} {
+	    set msg "the proxy server responded to the HTTP request with an\
+		    inappropriate $code redirect"
+	    set loc [responseHeaderValue $token2 location]
+	    if {$loc ne {}} {
+		append msg "to " $loc
+	    }
+	} elseif {($code == 401)} {
+	    set msg "the proxy server responded to the HTTP request with an\
+		    inappropriate 401 request for target-host credentials"
+	} else {
+	}
+    } else {
+	set msg "connection to proxy failed with status code $code"
+    }
+
+    # - ${token2}(sock) has already been closed because -keepalive 0.
+    # - Error return does not pass the socket ID to the
+    #   $token transaction, which retains its socket placeholder.
+    cleanup $token2
+    return -code error $msg
+}
+
+proc http::AllDone {varName args} {
+    set $varName done
+    return
 }
 
 

@@ -15,6 +15,7 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
+#include "tclTomMath.h"
 
 static inline Tcl_Object *AddConstructionFinalizer(Tcl_Interp *interp);
 static Tcl_NRPostProc	AfterNRDestructor;
@@ -1249,7 +1250,7 @@ TclOOSelfObjCmd(
 	}
     case SELF_CALL:
 	result[0] = TclOORenderCallChain(interp, contextPtr->callPtr);
-	TclNewIntObj(result[1], contextPtr->index);
+	TclNewIndexObj(result[1], contextPtr->index);
 	Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	return TCL_OK;
     }
