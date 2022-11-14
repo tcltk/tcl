@@ -9166,4 +9166,4 @@ Update bundled libtommath
 
 Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
-- Released 8.6.13, Nov 15, 2022 - details at https://core.tcl-lang.org/tcl/ -
+- Released 8.6.13, Nov 16, 2022 - details at https://core.tcl-lang.org/tcl/ -
