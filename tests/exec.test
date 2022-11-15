@@ -19,8 +19,6 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-package require tcltests
-
 # All tests require the "exec" command.
 # Skip them if exec is not defined.
 testConstraint exec [llength [info commands exec]]

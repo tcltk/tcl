@@ -81,7 +81,8 @@ if {![info exists ThreadLevel]} {
         source [info script]
     }
     if {[llength $threadStack]} {
-	eval [lpop threadStack]
+	eval [lindex $threadStack end]
+	set threadStack [lrange $threadStack 0 end-1]
     }
     catch {unset ThreadLevel}
     catch {unset ValueRange}
@@ -1174,7 +1175,8 @@ catch {unset badurl}
 catch {unset port}
 catch {unset data}
 if {[llength $threadStack]} {
-    eval [lpop threadStack]
+    eval [lindex $threadStack end]
+    set threadStack [lrange $threadStack 0 end-1]
 } else {
     close $listen
 }
