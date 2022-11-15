@@ -1,4 +1,4 @@
-# cookiejar.tcl --
+# idna.tcl --
 #
 #	Implementation of IDNA (Internationalized Domain Names for
 #	Applications) encoding/decoding system, built on a punycode engine

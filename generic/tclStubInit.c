@@ -232,6 +232,8 @@ int TclParseArgsObjv(Tcl_Interp *interp,
 #define TclBN_mp_mul_2d mp_mul_2d
 #define TclBN_mp_neg mp_neg
 #define TclBN_mp_or mp_or
+#define TclBN_mp_pack mp_pack
+#define TclBN_mp_pack_count mp_pack_count
 #define TclBN_mp_radix_size mp_radix_size
 #define TclBN_mp_reverse mp_reverse
 #define TclBN_mp_read_radix mp_read_radix
@@ -1325,12 +1327,12 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_get_mag_u64, /* 69 */
     TclBN_mp_set_i64, /* 70 */
     TclBN_mp_unpack, /* 71 */
-    0, /* 72 */
+    TclBN_mp_pack, /* 72 */
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
     TclBN_mp_signed_rsh, /* 76 */
-    0, /* 77 */
+    TclBN_mp_pack_count, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
     TclBN_mp_div_ld, /* 79 */
     TclBN_mp_to_radix, /* 80 */
