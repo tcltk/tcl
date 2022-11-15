@@ -335,9 +335,9 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_mp_init_i64.o bn_mp_init_u64.o \
 	bn_s_mp_karatsuba_sqr.o bn_s_mp_balance_mul.o \
 	bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
-	bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
-	bn_mp_radix_size.o bn_mp_radix_smap.o bn_mp_set_i64.o  \
-	bn_mp_read_radix.o bn_mp_rshd.o \
+	bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o bn_mp_pack.o \
+	bn_mp_pack_count.o bn_mp_radix_size.o bn_mp_radix_smap.o  \
+	bn_mp_set_i64.o bn_mp_read_radix.o bn_mp_rshd.o \
 	bn_mp_set_u64.o bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
 	bn_mp_signed_rsh.o \
@@ -1693,6 +1693,12 @@ bn_mp_neg.o: $(TOMMATH_DIR)/bn_mp_neg.c $(MATHHDRS)
 
 bn_mp_or.o: $(TOMMATH_DIR)/bn_mp_or.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_or.c
+
+bn_mp_pack.o: $(TOMMATH_DIR)/bn_mp_pack.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_pack.c
+
+bn_mp_pack_count.o: $(TOMMATH_DIR)/bn_mp_pack_count.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_pack_count.c
 
 bn_mp_radix_size.o: $(TOMMATH_DIR)/bn_mp_radix_size.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_radix_size.c
