@@ -2040,6 +2040,12 @@ EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
 				Tcl_Channel chan, int mode);
 /* 683 */
 EXTERN int		Tcl_GetEncodingNulLength(Tcl_Encoding encoding);
+/* Slot 684 is reserved */
+/* Slot 685 is reserved */
+/* Slot 686 is reserved */
+/* 687 */
+EXTERN int		Tcl_GetWideUIntFromObj(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, Tcl_WideUInt *uwidePtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2759,6 +2765,10 @@ typedef struct TclStubs {
     int (*tcl_GetNumber) (Tcl_Interp *interp, const char *bytes, size_t numBytes, void **clientDataPtr, int *typePtr); /* 681 */
     int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
     int (*tcl_GetEncodingNulLength) (Tcl_Encoding encoding); /* 683 */
+    void (*reserved684)(void);
+    void (*reserved685)(void);
+    void (*reserved686)(void);
+    int (*tcl_GetWideUIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideUInt *uwidePtr); /* 687 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4157,6 +4167,11 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
 #define Tcl_GetEncodingNulLength \
 	(tclStubsPtr->tcl_GetEncodingNulLength) /* 683 */
+/* Slot 684 is reserved */
+/* Slot 685 is reserved */
+/* Slot 686 is reserved */
+#define Tcl_GetWideUIntFromObj \
+	(tclStubsPtr->tcl_GetWideUIntFromObj) /* 687 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

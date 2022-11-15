@@ -2552,6 +2552,11 @@ declare 683 {
    int Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
 }
 
+declare 687 {
+    int Tcl_GetWideUIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_WideUInt *uwidePtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
