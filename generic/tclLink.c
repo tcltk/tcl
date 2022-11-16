@@ -529,15 +529,10 @@ GetUWide(
 	} else if (type == TCL_NUMBER_BIG) {
 	    mp_int *numPtr = (mp_int *)clientData;
 	    Tcl_WideUInt value = 0;
-	    union {
-		Tcl_WideUInt value;
-		unsigned char bytes[sizeof(Tcl_WideUInt)];
-	    } scratch;
 	    size_t numBytes;
-	    unsigned char *bytes = scratch.bytes;
 
-	    if (numPtr->sign || (MP_OKAY != mp_to_ubin(numPtr,
-		    bytes, sizeof(Tcl_WideUInt), &numBytes))) {
+	    if (numPtr->sign || (MP_OKAY != mp_pack(&value, 1,
+		    &numBytes, 0, sizeof(Tcl_WideUInt), 0, 0, numPtr))) {
 		/*
 		 * If the sign bit is set (a negative value) or if the value
 		 * can't possibly fit in the bits of an unsigned wide, there's
@@ -545,16 +540,6 @@ GetUWide(
 		 */
 		return 1;
 	    }
-#ifndef WORDS_BIGENDIAN
-	    while (numBytes-- > 0) {
-		value = (value << CHAR_BIT) | *bytes++;
-	    }
-#else /* WORDS_BIGENDIAN */
-	    /*
-	     * Big-endian can read the value directly.
-	     */
-	    value = scratch.value;
-#endif /* WORDS_BIGENDIAN */
 	    *uwidePtr = value;
 	    return 0;
 	}

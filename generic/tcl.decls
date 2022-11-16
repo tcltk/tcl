@@ -2613,7 +2613,22 @@ declare 683 {
    int Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
 }
 
-# ----- BASELINE -- FOR -- 8.7.0 ----- #
+# TIP #648 (reserved)
+#declare 684 {
+#    Tcl_Obj *Tcl_NewWideUIntObj(Tcl_WideUInt wideValue)
+#}
+#declare 685 {
+#    void Tcl_SetWideUIntObj(Tcl_Obj *objPtr, Tcl_WideUInt uwideValue)
+#}
+
+# TIP #650 (reserved)
+#declare 686 {
+#    int Tcl_GetWideUIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+#	    Tcl_WideUInt *uwidePtr)
+#}
+
+
+# ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
 ##############################################################################
 
