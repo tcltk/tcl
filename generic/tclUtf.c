@@ -447,7 +447,7 @@ static const unsigned short cp1252[32] = {
 };
 
 #undef Tcl_UtfToUniChar
-int
+size_t
 Tcl_UtfToUniChar(
     const char *src,	/* The UTF-8 string. */
     int *chPtr)/* Filled with the Unicode character represented by
@@ -530,7 +530,7 @@ Tcl_UtfToUniChar(
     return 1;
 }
 
-int
+size_t
 Tcl_UtfToChar16(
     const char *src,	/* The UTF-8 string. */
     unsigned short *chPtr)/* Filled with the Tcl_UniChar represented by
@@ -1335,7 +1335,7 @@ Tcl_UtfBackslash(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_UtfToUpper(
     char *str)			/* String to convert in place. */
 {
@@ -1388,7 +1388,7 @@ Tcl_UtfToUpper(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_UtfToLower(
     char *str)			/* String to convert in place. */
 {
@@ -1442,7 +1442,7 @@ Tcl_UtfToLower(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_UtfToTitle(
     char *str)			/* String to convert in place. */
 {
