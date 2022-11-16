@@ -209,7 +209,7 @@ Invalid(
  */
 
 #undef Tcl_UniCharToUtf
-int
+size_t
 Tcl_UniCharToUtf(
     int ch,			/* The Tcl_UniChar to be stored in the
 				 * buffer. Can be or'ed with flag TCL_COMBINE */

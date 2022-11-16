@@ -860,7 +860,7 @@ EXTERN int		Tcl_UniCharToTitle(int ch);
 /* 323 */
 EXTERN int		Tcl_UniCharToUpper(int ch);
 /* 324 */
-EXTERN int		Tcl_UniCharToUtf(int ch, char *buf);
+EXTERN Tcl_Size		Tcl_UniCharToUtf(int ch, char *buf);
 /* 325 */
 EXTERN const char *	TclUtfAtIndex(const char *src, Tcl_Size index);
 /* 326 */
@@ -2187,7 +2187,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharToLower) (int ch); /* 321 */
     int (*tcl_UniCharToTitle) (int ch); /* 322 */
     int (*tcl_UniCharToUpper) (int ch); /* 323 */
-    int (*tcl_UniCharToUtf) (int ch, char *buf); /* 324 */
+    Tcl_Size (*tcl_UniCharToUtf) (int ch, char *buf); /* 324 */
     const char * (*tclUtfAtIndex) (const char *src, Tcl_Size index); /* 325 */
     int (*tclUtfCharComplete) (const char *src, Tcl_Size length); /* 326 */
     Tcl_Size (*tcl_UtfBackslash) (const char *src, int *readPtr, char *dst); /* 327 */
@@ -4128,8 +4128,8 @@ extern const TclStubs *tclStubsPtr;
 		? (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))tclStubsPtr->tcl_UtfToUniCharDString \
 		: (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToChar16DString)
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
-		? (int (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToUniChar \
-		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
+		? (Tcl_Size (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToUniChar \
+		: (Tcl_Size (*)(const char *, wchar_t *))Tcl_UtfToChar16)
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (Tcl_Size (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
 		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
@@ -4169,8 +4169,8 @@ extern const TclStubs *tclStubsPtr;
 		? (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToUniCharDString \
 		: (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToChar16DString)
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
-		? (int (*)(const char *, wchar_t *))Tcl_UtfToUniChar \
-		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
+		? (Tcl_Size (*)(const char *, wchar_t *))Tcl_UtfToUniChar \
+		: (Tcl_Size (*)(const char *, wchar_t *))Tcl_UtfToChar16)
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (Tcl_Size (*)(wchar_t *))Tcl_UniCharLen \
 		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)

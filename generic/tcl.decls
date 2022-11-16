@@ -1205,7 +1205,7 @@ declare 323 {
     int Tcl_UniCharToUpper(int ch)
 }
 declare 324 {
-    int Tcl_UniCharToUtf(int ch, char *buf)
+    Tcl_Size Tcl_UniCharToUtf(int ch, char *buf)
 }
 declare 325 {
     const char *TclUtfAtIndex(const char *src, Tcl_Size index)
