@@ -3107,7 +3107,7 @@ Tcl_DStringGetResult(
  */
 
 Tcl_Obj *
-TclDStringToObj(
+Tcl_DStringToObj(
     Tcl_DString *dsPtr)
 {
     Tcl_Obj *result;
