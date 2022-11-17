@@ -752,6 +752,7 @@ typedef struct Tcl_ObjType {
 				 * to this type. Frees the internal rep of the
 				 * old type. Returns TCL_ERROR on failure. */
 } Tcl_ObjType;
+#define TCL_OBJTYPE_V0 /* just empty */
 
 /*
  * The following structure stores an internal representation (internalrep) for
