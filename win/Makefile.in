@@ -403,6 +403,8 @@ TOMMATH_OBJS = \
 	bn_mp_mul_d.${OBJEXT} \
 	bn_mp_neg.${OBJEXT} \
 	bn_mp_or.${OBJEXT} \
+	bn_mp_pack.${OBJEXT} \
+	bn_mp_pack_count.${OBJEXT} \
 	bn_mp_radix_size.${OBJEXT} \
 	bn_mp_radix_smap.${OBJEXT} \
 	bn_mp_read_radix.${OBJEXT} \
