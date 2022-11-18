@@ -20,10 +20,12 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
+#undef TCL_UTF_MAX
 #ifdef TCL_NO_DEPRECATED
 #   define TCL_UTF_MAX 4
 #else
 #   define TCL_NO_DEPRECATED
+#   define TCL_UTF_MAX 3
 #endif
 #include "tclInt.h"
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
