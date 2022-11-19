@@ -162,7 +162,8 @@ static const Tcl_ObjType properByteArrayType = {
     FreeProperByteArrayInternalRep,
     DupProperByteArrayInternalRep,
     UpdateStringOfByteArray,
-    NULL
+    NULL,
+    TCL_OBJTYPE_V0
 };
 
 /*

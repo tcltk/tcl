@@ -89,7 +89,8 @@ const Tcl_ObjType tclStringType = {
     FreeStringInternalRep,	/* freeIntRepPro */
     DupStringInternalRep,	/* dupIntRepProc */
     UpdateStringOfString,	/* updateStringProc */
-    SetStringFromAny		/* setFromAnyProc */
+    SetStringFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 /*

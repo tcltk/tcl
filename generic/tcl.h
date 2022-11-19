@@ -637,7 +637,12 @@ typedef struct Tcl_ObjType {
 				/* Called to convert the object's internal rep
 				 * to this type. Frees the internal rep of the
 				 * old type. Returns TCL_ERROR on failure. */
+    size_t version;
 } Tcl_ObjType;
+#define TCL_OBJTYPE_V0 0 /* Pre-Tcl 9. Set to 0 so compiler will auto-init
+			  * when existing code that does not init this
+			  * field is compiled with Tcl9 headers */
+#define TCL_OBJTYPE_CURRENT TCL_OBJTYPE_V0
 
 /*
  * The following structure stores an internal representation (internalrep) for
