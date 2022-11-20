@@ -2295,7 +2295,7 @@ SetFsPathFromAny(
 	    Tcl_DStringFree(&userName);
 	}
 
-	transPtr = TclDStringToObj(&temp);
+	transPtr = Tcl_DStringToObj(&temp);
 
 	if (split != len) {
 	    /*
@@ -2657,7 +2657,7 @@ TclGetHomeDirObj(
     if (MakeTildeRelativePath(interp, user, NULL, &dirString) != TCL_OK) {
 	return NULL;
     }
-    return TclDStringToObj(&dirString);
+    return Tcl_DStringToObj(&dirString);
 }
 
 /*
@@ -2729,7 +2729,7 @@ TclResolveTildePath(
 	}
 	Tcl_DStringFree(&userName);
     }
-    return TclDStringToObj(&resolvedPath);
+    return Tcl_DStringToObj(&resolvedPath);
 }
 
 /*

@@ -1002,7 +1002,7 @@ TclpObjRemoveDirectory(
 		    !strcmp(Tcl_DStringValue(&ds), TclGetString(normPtr))) {
 		*errorPtr = pathPtr;
 	    } else {
-		*errorPtr = TclDStringToObj(&ds);
+		*errorPtr = Tcl_DStringToObj(&ds);
 	    }
 	    Tcl_IncrRefCount(*errorPtr);
 	}
@@ -1725,7 +1725,7 @@ ConvertFileNameFormat(
 			Tcl_DStringLength(&dsTemp));
 		Tcl_DStringFree(&dsTemp);
 	    } else {
-		tempPath = TclDStringToObj(&dsTemp);
+		tempPath = Tcl_DStringToObj(&dsTemp);
 	    }
 	    Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
 	    FindClose(handle);
@@ -2080,7 +2080,7 @@ TclpCreateTemporaryDirectory(
     Tcl_DStringInit(&name);
     Tcl_WCharToUtfDString((LPCWSTR) Tcl_DStringValue(&base), TCL_INDEX_NONE, &name);
     Tcl_DStringFree(&base);
-    return TclDStringToObj(&name);
+    return Tcl_DStringToObj(&name);
 }
 
 /*

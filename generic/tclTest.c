@@ -20,10 +20,12 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
+#undef TCL_UTF_MAX
 #ifdef TCL_NO_DEPRECATED
 #   define TCL_UTF_MAX 4
 #else
 #   define TCL_NO_DEPRECATED
+#   define TCL_UTF_MAX 3
 #endif
 #include "tclInt.h"
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
@@ -552,7 +554,7 @@ Tcltest_Init(
 {
     Tcl_CmdInfo info;
     Tcl_Obj **objv, *objPtr;
-    size_t objc;
+    Tcl_Size objc;
     int index;
     static const char *const specialOptions[] = {
 	"-appinitprocerror", "-appinitprocdeleteinterp",
@@ -1934,6 +1936,11 @@ TestdstringCmd(
 	    goto wrongNumArgs;
 	}
 	Tcl_DStringResult(interp, &dstring);
+    } else if (strcmp(argv[1], "toobj") == 0) {
+	if (argc != 2) {
+	    goto wrongNumArgs;
+	}
+	Tcl_SetObjResult(interp, Tcl_DStringToObj(&dstring));
     } else if (strcmp(argv[1], "trunc") == 0) {
 	if (argc != 3) {
 	    goto wrongNumArgs;
@@ -1949,8 +1956,8 @@ TestdstringCmd(
 	Tcl_DStringStartSublist(&dstring);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be append, element, end, free, get, length, "
-		"result, trunc, or start", NULL);
+		"\": must be append, element, end, free, get, gresult, length, "
+		"result, start, toobj, or trunc", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1996,11 +2003,16 @@ TestencodingObjCmd(
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
-	"create",	"delete",	NULL
+	"create", "delete", "nullength", NULL
     };
     enum options {
-	ENC_CREATE,	ENC_DELETE
+	ENC_CREATE, ENC_DELETE, ENC_NULLENGTH
     };
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
+	return TCL_ERROR;
+    }
 
     if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
 	    &index) != TCL_OK) {
@@ -2012,6 +2024,7 @@ TestencodingObjCmd(
 	Tcl_EncodingType type;
 
 	if (objc != 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "name toutfcmd fromutfcmd");
 	    return TCL_ERROR;
 	}
 	encodingPtr = (TclEncoding*)ckalloc(sizeof(TclEncoding));
@@ -2048,6 +2061,20 @@ TestencodingObjCmd(
 	Tcl_FreeEncoding(encoding);	/* Free to match CREATE */
 	TclFreeInternalRep(objv[2]);		/* Free the cached ref */
 	break;
+
+    case ENC_NULLENGTH:
+	if (objc > 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "?encoding?");
+	    return TCL_ERROR;
+	}
+	encoding =
+	    Tcl_GetEncoding(interp, objc == 2 ? NULL : Tcl_GetString(objv[2]));
+	if (encoding == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp,
+			 Tcl_NewIntObj(Tcl_GetEncodingNulLength(encoding)));
+	Tcl_FreeEncoding(encoding);
     }
     return TCL_OK;
 }
@@ -3539,7 +3566,7 @@ TestlistrepCmd(
 	    return TCL_ERROR;
 	} else {
 	    Tcl_Obj **objs;
-	    ListSizeT nobjs;
+	    Tcl_Size nobjs;
 	    ListRep listRep;
 	    Tcl_Obj *listRepObjs[4];
 

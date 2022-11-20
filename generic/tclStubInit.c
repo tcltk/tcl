@@ -232,6 +232,8 @@ int TclParseArgsObjv(Tcl_Interp *interp,
 #define TclBN_mp_mul_2d mp_mul_2d
 #define TclBN_mp_neg mp_neg
 #define TclBN_mp_or mp_or
+#define TclBN_mp_pack mp_pack
+#define TclBN_mp_pack_count mp_pack_count
 #define TclBN_mp_radix_size mp_radix_size
 #define TclBN_mp_reverse mp_reverse
 #define TclBN_mp_read_radix mp_read_radix
@@ -380,6 +382,7 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define TclGetLoadedPackages 0
 #   undef TclSetPreInitScript
 #   define TclSetPreInitScript 0
+#   define TclInitCompiledLocals 0
 #else
 
 #define TclGuessPackageName guessPackageName
@@ -794,6 +797,7 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   undef TclBN_s_mp_sub
 #   define TclBN_s_mp_sub 0
 #   define Tcl_MakeSafe 0
+#   define TclpHasSockets 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
@@ -816,6 +820,8 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
 #   define Tcl_MakeSafe TclMakeSafe
+
+int TclpHasSockets(TCL_UNUSED(Tcl_Interp *)) {return TCL_OK;}
 
 static int
 seekOld(
@@ -1321,12 +1327,12 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_get_mag_u64, /* 69 */
     TclBN_mp_set_i64, /* 70 */
     TclBN_mp_unpack, /* 71 */
-    0, /* 72 */
+    TclBN_mp_pack, /* 72 */
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
     TclBN_mp_signed_rsh, /* 76 */
-    0, /* 77 */
+    TclBN_mp_pack_count, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
     TclBN_mp_div_ld, /* 79 */
     TclBN_mp_to_radix, /* 80 */
@@ -2048,6 +2054,11 @@ const TclStubs tclStubs = {
     Tcl_GetNumberFromObj, /* 680 */
     Tcl_GetNumber, /* 681 */
     Tcl_RemoveChannelMode, /* 682 */
+    Tcl_GetEncodingNulLength, /* 683 */
+    0, /* 684 */
+    0, /* 685 */
+    0, /* 686 */
+    Tcl_DStringToObj, /* 687 */
 };
 
 /* !END!: Do not edit above this line. */

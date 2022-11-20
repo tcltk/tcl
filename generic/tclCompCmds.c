@@ -122,7 +122,7 @@ TclCompileAppendCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -279,7 +279,7 @@ TclCompileArraySetCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -452,7 +452,7 @@ TclCompileArrayUnsetCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -816,7 +816,7 @@ TclCompileClockReadingCmd(
     TCL_UNUSED(Tcl_Interp *),
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1053,7 +1053,7 @@ TclCompileDictIncrCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1228,7 +1228,7 @@ TclCompileDictUnsetCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1281,7 +1281,7 @@ TclCompileDictCreateCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1374,7 +1374,7 @@ TclCompileDictMergeCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1488,7 +1488,7 @@ TclCompileDictForCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1501,7 +1501,7 @@ TclCompileDictMapCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1514,7 +1514,7 @@ CompileDictEachCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int collect)		/* Flag == TCL_EACH_COLLECT to collect and
@@ -1743,7 +1743,7 @@ TclCompileDictUpdateCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1894,7 +1894,7 @@ TclCompileDictAppendCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1949,7 +1949,7 @@ TclCompileDictLappendCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1994,7 +1994,7 @@ TclCompileDictWithCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -2263,9 +2263,9 @@ TclCompileDictWithCmd(
  *----------------------------------------------------------------------
  */
 
-static ClientData
+static void *
 DupDictUpdateInfo(
-    ClientData clientData)
+    void *clientData)
 {
     DictUpdateInfo *dui1Ptr, *dui2Ptr;
     size_t len;
@@ -2279,14 +2279,14 @@ DupDictUpdateInfo(
 
 static void
 FreeDictUpdateInfo(
-    ClientData clientData)
+    void *clientData)
 {
     ckfree(clientData);
 }
 
 static void
 PrintDictUpdateInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(unsigned int))
@@ -2304,7 +2304,7 @@ PrintDictUpdateInfo(
 
 static void
 DisassembleDictUpdateInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(unsigned int))
@@ -2610,7 +2610,7 @@ TclCompileForeachCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -2882,9 +2882,9 @@ CompileEachloopCmd(
  *----------------------------------------------------------------------
  */
 
-static ClientData
+static void *
 DupForeachInfo(
-    ClientData clientData)	/* The foreach command's compilation auxiliary
+    void *clientData)	/* The foreach command's compilation auxiliary
 				 * data to duplicate. */
 {
     ForeachInfo *srcPtr = (ForeachInfo *)clientData;
@@ -2933,7 +2933,7 @@ DupForeachInfo(
 
 static void
 FreeForeachInfo(
-    ClientData clientData)	/* The foreach command's compilation auxiliary
+    void *clientData)	/* The foreach command's compilation auxiliary
 				 * data to free. */
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
@@ -2967,7 +2967,7 @@ FreeForeachInfo(
 
 static void
 PrintForeachInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(unsigned int))
@@ -3007,7 +3007,7 @@ PrintForeachInfo(
 
 static void
 PrintNewForeachInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(unsigned int))
@@ -3037,7 +3037,7 @@ PrintNewForeachInfo(
 
 static void
 DisassembleForeachInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(unsigned int))
@@ -3084,7 +3084,7 @@ DisassembleForeachInfo(
 
 static void
 DisassembleNewForeachInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(unsigned int))

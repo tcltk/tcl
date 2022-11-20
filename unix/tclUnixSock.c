@@ -322,29 +322,6 @@ Tcl_GetHostName(void)
 /*
  * ----------------------------------------------------------------------
  *
- * TclpHasSockets --
- *
- *	Detect if sockets are available on this platform.
- *
- * Results:
- *	Returns TCL_OK.
- *
- * Side effects:
- *	None.
- *
- * ----------------------------------------------------------------------
- */
-
-int
-TclpHasSockets(
-    TCL_UNUSED(Tcl_Interp *))
-{
-    return TCL_OK;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
  * TclpFinalizeSockets --
  *
  *	Performs per-thread socket subsystem finalization.
@@ -541,7 +518,7 @@ TcpInputProc(
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
-    bytesRead = recv(statePtr->fds.fd, buf, (size_t) bufSize, 0);
+    bytesRead = recv(statePtr->fds.fd, buf, bufSize, 0);
     if (bytesRead >= 0) {
 	return bytesRead;
     }
@@ -591,7 +568,7 @@ TcpOutputProc(
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
-    written = send(statePtr->fds.fd, buf, (size_t) toWrite, 0);
+    written = send(statePtr->fds.fd, buf, toWrite, 0);
 
     if (written >= 0) {
 	return written;
@@ -1673,6 +1650,7 @@ Tcl_OpenTcpServerEx(
     const char *service,	/* Port number to open. */
     const char *myHost,		/* Name of local host. */
     unsigned int flags,		/* Flags. */
+    int backlog,                /* Length of OS listen backlog queue. */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */
@@ -1838,7 +1816,10 @@ Tcl_OpenTcpServerEx(
                 chosenport = ntohs(sockname.sa4.sin_port);
             }
         }
-        status = listen(sock, SOMAXCONN);
+        if (backlog < 0) {
+            backlog = SOMAXCONN;
+        }
+        status = listen(sock, backlog);
         if (status < 0) {
 	    if (howfar < LISTEN) {
 		howfar = LISTEN;

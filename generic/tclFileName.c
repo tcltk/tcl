@@ -454,7 +454,7 @@ TclpGetNativePathType(
 	    if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
 		*driveNameLengthPtr = rootEnd - path;
 		if (driveNameRef != NULL) {
-		    *driveNameRef = TclDStringToObj(&ds);
+		    *driveNameRef = Tcl_DStringToObj(&ds);
 		    Tcl_IncrRefCount(*driveNameRef);
 		}
 	    }
@@ -734,7 +734,7 @@ SplitWinPath(
      */
 
     if (p != path) {
-	Tcl_ListObjAppendElement(NULL, result, TclDStringToObj(&buf));
+	Tcl_ListObjAppendElement(NULL, result, Tcl_DStringToObj(&buf));
     }
     Tcl_DStringFree(&buf);
 
@@ -1767,7 +1767,7 @@ TclGlob(
 	    if (head != Tcl_DStringValue(&buffer)) {
 		Tcl_DStringAppend(&buffer, head, -1);
 	    }
-	    pathPrefix = TclDStringToObj(&buffer);
+	    pathPrefix = Tcl_DStringToObj(&buffer);
 	    Tcl_IncrRefCount(pathPrefix);
 	    globFlags |= TCL_GLOBMODE_DIR;
 	    if (c != '\0') {
@@ -2427,7 +2427,7 @@ DoGlob(
 	 */
 
 	if (pathPtr == NULL) {
-	    joinedPtr = TclDStringToObj(&append);
+	    joinedPtr = Tcl_DStringToObj(&append);
 	} else if (flags) {
 	    joinedPtr = TclNewFSPathObj(pathPtr, Tcl_DStringValue(&append),
 		    Tcl_DStringLength(&append));

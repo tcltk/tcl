@@ -22,7 +22,7 @@ catch {
     package require -exact tcl::test [info patchlevel]
 }
 
-package require tcltests
+source [file join [file dirname [info script]] tcltests.tcl]
 
 proc toutf {args} {
     variable x
@@ -840,6 +840,17 @@ test encoding-28.0 {all encodings load} -body {
 runtests
 
 }
+
+test encoding-29.0 {get encoding nul terminator lengths} -constraints {
+    testencoding
+} -body {
+    list \
+        [testencoding nullength ascii] \
+        [testencoding nullength utf-16] \
+        [testencoding nullength utf-32] \
+        [testencoding nullength gb12345] \
+        [testencoding nullength ksc5601]
+} -result {1 2 4 2 2}
 
 # cleanup
 namespace delete ::tcl::test::encoding
