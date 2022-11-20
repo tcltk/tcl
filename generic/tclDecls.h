@@ -2040,8 +2040,11 @@ EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
 				Tcl_Channel chan, int mode);
 /* 683 */
 EXTERN int		Tcl_GetEncodingNulLength(Tcl_Encoding encoding);
-/* Slot 684 is reserved */
-/* Slot 685 is reserved */
+/* 684 */
+EXTERN Tcl_Obj *	Tcl_NewWideUIntObj(Tcl_WideUInt wideValue);
+/* 685 */
+EXTERN void		Tcl_SetWideUIntObj(Tcl_Obj *objPtr,
+				Tcl_WideUInt uwideValue);
 /* Slot 686 is reserved */
 /* 687 */
 EXTERN Tcl_Obj *	Tcl_DStringToObj(Tcl_DString *dsPtr);
@@ -2764,8 +2767,8 @@ typedef struct TclStubs {
     int (*tcl_GetNumber) (Tcl_Interp *interp, const char *bytes, size_t numBytes, void **clientDataPtr, int *typePtr); /* 681 */
     int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
     int (*tcl_GetEncodingNulLength) (Tcl_Encoding encoding); /* 683 */
-    void (*reserved684)(void);
-    void (*reserved685)(void);
+    Tcl_Obj * (*tcl_NewWideUIntObj) (Tcl_WideUInt wideValue); /* 684 */
+    void (*tcl_SetWideUIntObj) (Tcl_Obj *objPtr, Tcl_WideUInt uwideValue); /* 685 */
     void (*reserved686)(void);
     Tcl_Obj * (*tcl_DStringToObj) (Tcl_DString *dsPtr); /* 687 */
 } TclStubs;
@@ -4166,8 +4169,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
 #define Tcl_GetEncodingNulLength \
 	(tclStubsPtr->tcl_GetEncodingNulLength) /* 683 */
-/* Slot 684 is reserved */
-/* Slot 685 is reserved */
+#define Tcl_NewWideUIntObj \
+	(tclStubsPtr->tcl_NewWideUIntObj) /* 684 */
+#define Tcl_SetWideUIntObj \
+	(tclStubsPtr->tcl_SetWideUIntObj) /* 685 */
 /* Slot 686 is reserved */
 #define Tcl_DStringToObj \
 	(tclStubsPtr->tcl_DStringToObj) /* 687 */
@@ -4433,6 +4438,14 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_BackgroundError(interp)	Tcl_BackgroundException((interp), TCL_ERROR)
 #undef Tcl_StringMatch
 #define Tcl_StringMatch(str, pattern) Tcl_StringCaseMatch((str), (pattern), 0)
+
+#if TCL_MAJOR_VERSION > 8
+#   define Tcl_NewIndexObj(value) (((value) >= TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideUIntObj(value))
+#   define Tcl_SetIndexObj(objPtr, value) (((value) >= TCL_INDEX_NONE) ? Tcl_SetWideIntObj(objPtr, -1) : Tcl_SetWideUIntObj(objPtr, value))
+#else
+#   define Tcl_NewIndexObj Tcl_NewIntObj
+#   define Tcl_SetIndexObj Tcl_SetIntObj
+#endif
 
 #if TCL_UTF_MAX < 4
 #   undef Tcl_UniCharToUtfDString
