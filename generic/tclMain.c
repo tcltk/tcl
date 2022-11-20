@@ -55,7 +55,7 @@ NewNativeObj(
 #else
     (void)Tcl_ExternalToUtfDString(NULL, (char *)string, -1, &ds);
 #endif
-    return TclDStringToObj(&ds);
+    return Tcl_DStringToObj(&ds);
 }
 
 /*

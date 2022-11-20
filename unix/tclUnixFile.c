@@ -997,7 +997,7 @@ TclpObjLink(
 	}
 
 	Tcl_ExternalToUtfDStringEx(NULL, link, length, TCL_ENCODING_NOCOMPLAIN, &ds);
-	linkPtr = TclDStringToObj(&ds);
+	linkPtr = Tcl_DStringToObj(&ds);
 	Tcl_IncrRefCount(linkPtr);
 	return linkPtr;
     }
@@ -1062,7 +1062,7 @@ TclpNativeToNormalized(
     Tcl_DString ds;
 
     Tcl_ExternalToUtfDStringEx(NULL, (const char *) clientData, TCL_INDEX_NONE, TCL_ENCODING_NOCOMPLAIN, &ds);
-    return TclDStringToObj(&ds);
+    return Tcl_DStringToObj(&ds);
 }
 
 /*

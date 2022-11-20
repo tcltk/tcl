@@ -2625,10 +2625,10 @@ declare 683 {
 #	    Tcl_WideUInt *uwidePtr)
 #}
 
-# TIP 651 (reserved)
-#declare 687 {
-#    Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
-#}
+# TIP 651
+declare 687 {
+    Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
