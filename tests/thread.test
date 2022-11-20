@@ -20,7 +20,7 @@ if {"::tcltest" ni [namespace children]} {
 #  be fully finalized, which avoids valgrind "still reachable" reports.
 
 package require tcltest 2.5
-namespace import ::tcltest::*
+source [file join [file dirname [info script]] tcltests.tcl]
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
