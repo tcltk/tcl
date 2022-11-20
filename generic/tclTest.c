@@ -1906,6 +1906,11 @@ TestdstringCmd(
 	    goto wrongNumArgs;
 	}
 	Tcl_DStringResult(interp, &dstring);
+    } else if (strcmp(argv[1], "toobj") == 0) {
+	if (argc != 2) {
+	    goto wrongNumArgs;
+	}
+	Tcl_SetObjResult(interp, Tcl_DStringToObj(&dstring));
     } else if (strcmp(argv[1], "trunc") == 0) {
 	if (argc != 3) {
 	    goto wrongNumArgs;
@@ -1921,8 +1926,8 @@ TestdstringCmd(
 	Tcl_DStringStartSublist(&dstring);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be append, element, end, free, get, length, "
-		"result, trunc, or start", NULL);
+		"\": must be append, element, end, free, get, gresult, length, "
+		"result, start, toobj, or trunc", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;

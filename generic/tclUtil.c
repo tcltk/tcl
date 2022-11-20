@@ -127,7 +127,8 @@ static const Tcl_ObjType endOffsetType = {
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
-    NULL				/* setFromAnyProc */
+    NULL,				/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 /*
@@ -2871,7 +2872,7 @@ Tcl_DStringResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the
 				 * result of interp. */
 {
-    Tcl_SetObjResult(interp, TclDStringToObj(dsPtr));
+    Tcl_SetObjResult(interp, Tcl_DStringToObj(dsPtr));
 }
 
 /*
@@ -2911,7 +2912,7 @@ Tcl_DStringGetResult(
 /*
  *----------------------------------------------------------------------
  *
- * TclDStringToObj --
+ * Tcl_DStringToObj --
  *
  *	This function moves a dynamic string's contents to a new Tcl_Obj. Be
  *	aware that this function does *not* check that the encoding of the
@@ -2931,7 +2932,7 @@ Tcl_DStringGetResult(
  */
 
 Tcl_Obj *
-TclDStringToObj(
+Tcl_DStringToObj(
     Tcl_DString *dsPtr)
 {
     Tcl_Obj *result;

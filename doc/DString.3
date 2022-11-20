@@ -39,6 +39,10 @@ char *
 \fBTcl_DStringResult\fR(\fIinterp, dsPtr\fR)
 .sp
 \fBTcl_DStringGetResult\fR(\fIinterp, dsPtr\fR)
+.sp
+Tcl_Obj *
+\fBTcl_DStringToObj\fR(\fIdsPtr\fR)
+.sp
 .SH ARGUMENTS
 .AS Tcl_DString newLength in/out
 .AP Tcl_DString *dsPtr in/out
@@ -136,12 +140,25 @@ a pointer from \fIdsPtr\fR to the interpreter's result.
 This saves the cost of allocating new memory and copying the string.
 \fBTcl_DStringResult\fR also reinitializes the dynamic string to
 an empty string.
+Since the dynamic string is reinitialized, there is no need to
+further call \fBTcl_DStringFree\fR on it and it can be reused without
+calling \fBTcl_DStringInit\fR.
 .PP
 \fBTcl_DStringGetResult\fR does the opposite of \fBTcl_DStringResult\fR.
 It sets the value of \fIdsPtr\fR to the result of \fIinterp\fR and
 it clears \fIinterp\fR's result.
 If possible it does this by moving a pointer rather than by copying
 the string.
+.PP
+\fBTcl_DStringToObj\fR returns a \fBTcl_Obj\fR containing the value of
+the dynamic string given by \fIdsPtr\fR.  It does this by moving
+a pointer from \fIdsPtr\fR to a newly allocated \fBTcl_Obj\fR
+and reinitializing to dynamic string to an empty string.
+This saves the cost of allocating new memory and copying the string.
+Since the dynamic string is reinitialized, there is no need to
+further call \fBTcl_DStringFree\fR on it and it can be reused without
+calling \fBTcl_DStringInit\fR.
+The returned \fBTcl_Obj\fR has a reference count of 0.
 
 .SH KEYWORDS
 append, dynamic string, free, result

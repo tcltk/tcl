@@ -140,8 +140,6 @@ EXTERN int		TclWinSetSockOpt(SOCKET s, int level, int optname,
 EXTERN int		TclpGetPid(Tcl_Pid pid);
 /* 9 */
 EXTERN int		TclWinGetPlatformId(void);
-/* 10 */
-EXTERN Tcl_DirEntry *	TclpReaddir(TclDIR *dir);
 /* 11 */
 EXTERN void		TclGetAndDetachPids(Tcl_Interp *interp,
 				Tcl_Channel chan);
@@ -316,7 +314,7 @@ typedef struct TclIntPlatStubs {
     int (*tclWinSetSockOpt) (SOCKET s, int level, int optname, const char *optval, int optlen); /* 7 */
     int (*tclpGetPid) (Tcl_Pid pid); /* 8 */
     int (*tclWinGetPlatformId) (void); /* 9 */
-    Tcl_DirEntry * (*tclpReaddir) (TclDIR *dir); /* 10 */
+    void *(*tclpReaddir) (void *dir); /* 10 */
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 11 */
     int (*tclpCloseFile) (TclFile file); /* 12 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 13 */
@@ -462,8 +460,6 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclpGetPid) /* 8 */
 #define TclWinGetPlatformId \
 	(tclIntPlatStubsPtr->tclWinGetPlatformId) /* 9 */
-#define TclpReaddir \
-	(tclIntPlatStubsPtr->tclpReaddir) /* 10 */
 #define TclGetAndDetachPids \
 	(tclIntPlatStubsPtr->tclGetAndDetachPids) /* 11 */
 #define TclpCloseFile \

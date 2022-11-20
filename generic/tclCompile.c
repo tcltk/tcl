@@ -734,7 +734,8 @@ const Tcl_ObjType tclByteCodeType = {
     FreeByteCodeInternalRep,	/* freeIntRepProc */
     DupByteCodeInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetByteCodeFromAny		/* setFromAnyProc */
+    SetByteCodeFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 /*
@@ -748,6 +749,7 @@ static const Tcl_ObjType substCodeType = {
     DupByteCodeInternalRep,	/* dupIntRepProc - shared with bytecode */
     NULL,			/* updateStringProc */
     NULL,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 #define SubstFlags(objPtr) (objPtr)->internalRep.twoPtrValue.ptr2
 

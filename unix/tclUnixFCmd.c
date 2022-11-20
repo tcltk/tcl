@@ -1425,7 +1425,7 @@ GetOwnerAttribute(
 	Tcl_DString ds;
 
 	Tcl_ExternalToUtfDStringEx(NULL, pwPtr->pw_name, TCL_INDEX_NONE, TCL_ENCODING_NOCOMPLAIN, &ds);
-	*attributePtrPtr = TclDStringToObj(&ds);
+	*attributePtrPtr = Tcl_DStringToObj(&ds);
     }
     return TCL_OK;
 }
@@ -2345,7 +2345,7 @@ TclpCreateTemporaryDirectory(
     Tcl_ExternalToUtfDStringEx(NULL, Tcl_DStringValue(&templ),
 	    Tcl_DStringLength(&templ), TCL_ENCODING_NOCOMPLAIN, &tmp);
     Tcl_DStringFree(&templ);
-    return TclDStringToObj(&tmp);
+    return Tcl_DStringToObj(&tmp);
 }
 
 #if defined(__CYGWIN__)

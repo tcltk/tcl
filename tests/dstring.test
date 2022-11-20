@@ -473,6 +473,45 @@ test dstring-6.5 {Tcl_DStringGetResult} -constraints testdstring -body {
 } -cleanup {
     testdstring free
 } -result {{} {This is a specially-allocated stringz}}
+
+test dstring-7.1 {copying to Tcl_Obj} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append xyz -1
+    list [testdstring toobj] [testdstring length]
+} -cleanup {
+    testdstring free
+} -result {xyz 0}
+test dstring-7.2 {copying to a Tcl_Obj} -constraints testdstring -setup {
+    testdstring free
+    unset -nocomplain a
+} -body {
+    foreach l {a b c d e f g h i j k l m n o p} {
+	testdstring append $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l\n -1
+    }
+    set a [testdstring toobj]
+    testdstring append abc -1
+    list $a [testdstring get]
+} -cleanup {
+    testdstring free
+} -result {{aaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbb
+ccccccccccccccccccccc
+ddddddddddddddddddddd
+eeeeeeeeeeeeeeeeeeeee
+fffffffffffffffffffff
+ggggggggggggggggggggg
+hhhhhhhhhhhhhhhhhhhhh
+iiiiiiiiiiiiiiiiiiiii
+jjjjjjjjjjjjjjjjjjjjj
+kkkkkkkkkkkkkkkkkkkkk
+lllllllllllllllllllll
+mmmmmmmmmmmmmmmmmmmmm
+nnnnnnnnnnnnnnnnnnnnn
+ooooooooooooooooooooo
+ppppppppppppppppppppp
+} abc}
+
 
 # cleanup
 if {[testConstraint testdstring]} {

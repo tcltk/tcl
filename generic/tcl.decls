@@ -1205,7 +1205,7 @@ declare 323 {
     int Tcl_UniCharToUpper(int ch)
 }
 declare 324 {
-    int Tcl_UniCharToUtf(int ch, char *buf)
+    Tcl_Size Tcl_UniCharToUtf(int ch, char *buf)
 }
 declare 325 {
     const char *TclUtfAtIndex(const char *src, Tcl_Size index)
@@ -1239,16 +1239,16 @@ declare 333 {
 	    const char *src, Tcl_Size srcLen, Tcl_DString *dsPtr)
 }
 declare 334 {
-    int Tcl_UtfToLower(char *src)
+    Tcl_Size Tcl_UtfToLower(char *src)
 }
 declare 335 {
-    int Tcl_UtfToTitle(char *src)
+    Tcl_Size Tcl_UtfToTitle(char *src)
 }
 declare 336 {
-    int Tcl_UtfToChar16(const char *src, unsigned short *chPtr)
+    Tcl_Size Tcl_UtfToChar16(const char *src, unsigned short *chPtr)
 }
 declare 337 {
-    int Tcl_UtfToUpper(char *src)
+    Tcl_Size Tcl_UtfToUpper(char *src)
 }
 declare 338 {
     Tcl_Size Tcl_WriteChars(Tcl_Channel chan, const char *src, Tcl_Size srcLen)
@@ -2454,7 +2454,7 @@ declare 645 {
 
 # TIP #548
 declare 646 {
-    int Tcl_UtfToUniChar(const char *src, int *chPtr)
+    Tcl_Size Tcl_UtfToUniChar(const char *src, int *chPtr)
 }
 declare 647 {
     char *Tcl_UniCharToUtfDString(const int *uniStr,
@@ -2625,6 +2625,10 @@ declare 683 {
 #	    Tcl_WideUInt *uwidePtr)
 #}
 
+# TIP 651
+declare 687 {
+    Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
