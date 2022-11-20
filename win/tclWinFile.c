@@ -2502,7 +2502,7 @@ TclpFilesystemPathType(
 
 	Tcl_DStringInit(&ds);
 	Tcl_WCharToUtfDString(volType, TCL_INDEX_NONE, &ds);
-	return TclDStringToObj(&ds);
+	return Tcl_DStringToObj(&ds);
     }
 #undef VOL_BUF_SIZE
 }

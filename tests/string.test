@@ -19,7 +19,8 @@ if {"::tcltest" ni [namespace children]} {
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
-package require tcltests
+source [file join [file dirname [info script]] tcltests.tcl]
+
 
 # Helper commands to test various optimizations, code paths, and special cases.
 proc makeByteArray {s} {binary format a* $s}

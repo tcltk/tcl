@@ -510,7 +510,7 @@ TclpInitLibraryPath(
 
 	    pathv[pathc - 1] = installLib + 4;
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
-	    Tcl_ListObjAppendElement(NULL, pathPtr, TclDStringToObj(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_DStringToObj(&ds));
 	}
 	ckfree(pathv);
     }
