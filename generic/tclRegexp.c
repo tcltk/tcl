@@ -107,7 +107,8 @@ const Tcl_ObjType tclRegexpType = {
     FreeRegexpInternalRep,		/* freeIntRepProc */
     DupRegexpInternalRep,		/* dupIntRepProc */
     NULL,				/* updateStringProc */
-    SetRegexpFromAny			/* setFromAnyProc */
+    SetRegexpFromAny,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 #define RegexpSetInternalRep(objPtr, rePtr)					\
@@ -959,7 +960,7 @@ CompileRegexp(
 
     if (TclReToGlob(NULL, string, length, &stringBuf, &exact,
 	    NULL) == TCL_OK) {
-	regexpPtr->globObjPtr = TclDStringToObj(&stringBuf);
+	regexpPtr->globObjPtr = Tcl_DStringToObj(&stringBuf);
 	Tcl_IncrRefCount(regexpPtr->globObjPtr);
     } else {
 	regexpPtr->globObjPtr = NULL;

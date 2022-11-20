@@ -847,7 +847,7 @@ TCLAPI int		Tcl_UniCharToTitle(int ch);
 /* 323 */
 TCLAPI int		Tcl_UniCharToUpper(int ch);
 /* 324 */
-TCLAPI int		Tcl_UniCharToUtf(int ch, char *buf);
+TCLAPI Tcl_Size		Tcl_UniCharToUtf(int ch, char *buf);
 /* 325 */
 TCLAPI const char *	TclUtfAtIndex(const char *src, Tcl_Size index);
 /* 326 */
@@ -875,14 +875,14 @@ TCLAPI char *		Tcl_UtfToExternalDString(Tcl_Encoding encoding,
 				const char *src, Tcl_Size srcLen,
 				Tcl_DString *dsPtr);
 /* 334 */
-TCLAPI int		Tcl_UtfToLower(char *src);
+TCLAPI Tcl_Size		Tcl_UtfToLower(char *src);
 /* 335 */
-TCLAPI int		Tcl_UtfToTitle(char *src);
+TCLAPI Tcl_Size		Tcl_UtfToTitle(char *src);
 /* 336 */
-TCLAPI int		Tcl_UtfToChar16(const char *src,
+TCLAPI Tcl_Size		Tcl_UtfToChar16(const char *src,
 				unsigned short *chPtr);
 /* 337 */
-TCLAPI int		Tcl_UtfToUpper(char *src);
+TCLAPI Tcl_Size		Tcl_UtfToUpper(char *src);
 /* 338 */
 TCLAPI Tcl_Size		Tcl_WriteChars(Tcl_Channel chan, const char *src,
 				Tcl_Size srcLen);
@@ -1722,7 +1722,7 @@ TCLAPI int		Tcl_GetIntForIndex(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, Tcl_Size endValue,
 				Tcl_Size *indexPtr);
 /* 646 */
-TCLAPI int		Tcl_UtfToUniChar(const char *src, int *chPtr);
+TCLAPI Tcl_Size		Tcl_UtfToUniChar(const char *src, int *chPtr);
 /* 647 */
 TCLAPI char *		Tcl_UniCharToUtfDString(const int *uniStr,
 				Tcl_Size uniLength, Tcl_DString *dsPtr);
@@ -1839,6 +1839,11 @@ TCLAPI int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
 				Tcl_Channel chan, int mode);
 /* 683 */
 TCLAPI int		Tcl_GetEncodingNulLength(Tcl_Encoding encoding);
+/* Slot 684 is reserved */
+/* Slot 685 is reserved */
+/* Slot 686 is reserved */
+/* 687 */
+TCLAPI Tcl_Obj *	Tcl_DStringToObj(Tcl_DString *dsPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2176,7 +2181,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharToLower) (int ch); /* 321 */
     int (*tcl_UniCharToTitle) (int ch); /* 322 */
     int (*tcl_UniCharToUpper) (int ch); /* 323 */
-    int (*tcl_UniCharToUtf) (int ch, char *buf); /* 324 */
+    Tcl_Size (*tcl_UniCharToUtf) (int ch, char *buf); /* 324 */
     const char * (*tclUtfAtIndex) (const char *src, Tcl_Size index); /* 325 */
     int (*tclUtfCharComplete) (const char *src, Tcl_Size length); /* 326 */
     Tcl_Size (*tcl_UtfBackslash) (const char *src, int *readPtr, char *dst); /* 327 */
@@ -2186,10 +2191,10 @@ typedef struct TclStubs {
     const char * (*tclUtfPrev) (const char *src, const char *start); /* 331 */
     int (*tcl_UtfToExternal) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr); /* 332 */
     char * (*tcl_UtfToExternalDString) (Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, Tcl_DString *dsPtr); /* 333 */
-    int (*tcl_UtfToLower) (char *src); /* 334 */
-    int (*tcl_UtfToTitle) (char *src); /* 335 */
-    int (*tcl_UtfToChar16) (const char *src, unsigned short *chPtr); /* 336 */
-    int (*tcl_UtfToUpper) (char *src); /* 337 */
+    Tcl_Size (*tcl_UtfToLower) (char *src); /* 334 */
+    Tcl_Size (*tcl_UtfToTitle) (char *src); /* 335 */
+    Tcl_Size (*tcl_UtfToChar16) (const char *src, unsigned short *chPtr); /* 336 */
+    Tcl_Size (*tcl_UtfToUpper) (char *src); /* 337 */
     Tcl_Size (*tcl_WriteChars) (Tcl_Channel chan, const char *src, Tcl_Size srcLen); /* 338 */
     Tcl_Size (*tcl_WriteObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 339 */
     char * (*tcl_GetString) (Tcl_Obj *objPtr); /* 340 */
@@ -2498,7 +2503,7 @@ typedef struct TclStubs {
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
     int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, void *addr, int type, Tcl_Size size); /* 644 */
     int (*tcl_GetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size endValue, Tcl_Size *indexPtr); /* 645 */
-    int (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 646 */
+    Tcl_Size (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 646 */
     char * (*tcl_UniCharToUtfDString) (const int *uniStr, Tcl_Size uniLength, Tcl_DString *dsPtr); /* 647 */
     int * (*tcl_UtfToUniCharDString) (const char *src, Tcl_Size length, Tcl_DString *dsPtr); /* 648 */
     unsigned char * (*tclGetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *numBytesPtr); /* 649 */
@@ -2536,6 +2541,10 @@ typedef struct TclStubs {
     int (*tcl_GetNumber) (Tcl_Interp *interp, const char *bytes, size_t numBytes, void **clientDataPtr, int *typePtr); /* 681 */
     int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
     int (*tcl_GetEncodingNulLength) (Tcl_Encoding encoding); /* 683 */
+    void (*reserved684)(void);
+    void (*reserved685)(void);
+    void (*reserved686)(void);
+    Tcl_Obj * (*tcl_DStringToObj) (Tcl_DString *dsPtr); /* 687 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3855,6 +3864,11 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
 #define Tcl_GetEncodingNulLength \
 	(tclStubsPtr->tcl_GetEncodingNulLength) /* 683 */
+/* Slot 684 is reserved */
+/* Slot 685 is reserved */
+/* Slot 686 is reserved */
+#define Tcl_DStringToObj \
+	(tclStubsPtr->tcl_DStringToObj) /* 687 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4116,8 +4130,8 @@ extern const TclStubs *tclStubsPtr;
 		? (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))tclStubsPtr->tcl_UtfToUniCharDString \
 		: (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToChar16DString)
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
-		? (int (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToUniChar \
-		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
+		? (Tcl_Size (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToUniChar \
+		: (Tcl_Size (*)(const char *, wchar_t *))Tcl_UtfToChar16)
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (Tcl_Size (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
 		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
@@ -4157,8 +4171,8 @@ extern const TclStubs *tclStubsPtr;
 		? (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToUniCharDString \
 		: (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToChar16DString)
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
-		? (int (*)(const char *, wchar_t *))Tcl_UtfToUniChar \
-		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
+		? (Tcl_Size (*)(const char *, wchar_t *))Tcl_UtfToUniChar \
+		: (Tcl_Size (*)(const char *, wchar_t *))Tcl_UtfToChar16)
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (Tcl_Size (*)(wchar_t *))Tcl_UniCharLen \
 		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)

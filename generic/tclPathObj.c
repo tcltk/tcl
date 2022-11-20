@@ -41,7 +41,8 @@ static const Tcl_ObjType fsPathType = {
     FreeFsPathInternalRep,		/* freeIntRepProc */
     DupFsPathInternalRep,		/* dupIntRepProc */
     UpdateStringOfFsPath,		/* updateStringProc */
-    SetFsPathFromAny			/* setFromAnyProc */
+    SetFsPathFromAny,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 /*
@@ -2513,7 +2514,7 @@ TclGetHomeDirObj(
     if (MakeTildeRelativePath(interp, user, NULL, &dirString) != TCL_OK) {
 	return NULL;
     }
-    return TclDStringToObj(&dirString);
+    return Tcl_DStringToObj(&dirString);
 }
 
 /*
@@ -2585,7 +2586,7 @@ TclResolveTildePath(
 	}
 	Tcl_DStringFree(&userName);
     }
-    return TclDStringToObj(&resolvedPath);
+    return Tcl_DStringToObj(&resolvedPath);
 }
 
 /*

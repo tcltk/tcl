@@ -15,16 +15,16 @@ Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UtfToWChar
 .sp
 typedef ... \fBTcl_UniChar\fR;
 .sp
-int
+size_t
 \fBTcl_UniCharToUtf\fR(\fIch, buf\fR)
 .sp
-int
+size_t
 \fBTcl_UtfToUniChar\fR(\fIsrc, chPtr\fR)
 .sp
-int
+size_t
 \fBTcl_UtfToChar16\fR(\fIsrc, uPtr\fR)
 .sp
-int
+size_t
 \fBTcl_UtfToWChar\fR(\fIsrc, wPtr\fR)
 .sp
 char *
