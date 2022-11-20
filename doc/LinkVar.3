@@ -239,8 +239,7 @@ The C variable, or each element of the C array, is of type \fBTcl_WideUInt\fR
 (which is an unsigned integer type at least 64-bits wide on all platforms that
 can support it.)
 Any value written into the Tcl variable must have a proper unsigned
-wideinteger form acceptable to \fBTcl_GetBignumFromObj\fR and in the
-platform's defined range for the \fBTcl_WideUInt\fR type;
+wideinteger form acceptable to \fBTcl_GetWideUIntFromObj\fR;
 attempts to write non-integer values into \fIvarName\fR will be
 rejected with Tcl errors. Incomplete integer representations (like
 the empty string, '+', '-' or the hex/octal/decimal/binary prefix) are accepted
