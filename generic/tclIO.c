@@ -5518,8 +5518,8 @@ FilterInputBytes(
 	    &gsPtr->bytesWrote, &gsPtr->charsWrote);
 
 	if (result == TCL_CONVERT_UNKNOWN || result == TCL_CONVERT_SYNTAX) {
-		SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
-		result = TCL_OK;
+	    SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+	    result = TCL_OK;
 	}
 
     /*
@@ -6351,7 +6351,7 @@ ReadChars(
 		dst, dstLimit, &srcRead, &dstDecoded, &numChars);
 
 	if (code == TCL_CONVERT_UNKNOWN || code == TCL_CONVERT_SYNTAX) {
-		SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+	    SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
 	    code = TCL_OK;
 	}
 
