@@ -1428,7 +1428,9 @@ struct CompileEnv;
  * 			sake of old code only.
  */
 
-#define TCL_OUT_LINE_COMPILE	TCL_ERROR
+#ifndef TCL_NO_DEPRECATED
+#   define TCL_OUT_LINE_COMPILE	TCL_ERROR
+#endif
 
 typedef int (CompileProc)(Tcl_Interp *interp, Tcl_Parse *parsePtr,
 	struct Command *cmdPtr, struct CompileEnv *compEnvPtr);
