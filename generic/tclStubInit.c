@@ -1491,7 +1491,7 @@ const TclStubs tclStubs = {
     Tcl_GetEncodingNulLength, /* 683 */
     0, /* 684 */
     0, /* 685 */
-    0, /* 686 */
+    Tcl_GetWideUIntFromObj, /* 686 */
     Tcl_DStringToObj, /* 687 */
 };
 

@@ -1854,7 +1854,9 @@ EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
 EXTERN int		Tcl_GetEncodingNulLength(Tcl_Encoding encoding);
 /* Slot 684 is reserved */
 /* Slot 685 is reserved */
-/* Slot 686 is reserved */
+/* 686 */
+EXTERN int		Tcl_GetWideUIntFromObj(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, Tcl_WideUInt *uwidePtr);
 /* 687 */
 EXTERN Tcl_Obj *	Tcl_DStringToObj(Tcl_DString *dsPtr);
 
@@ -2554,7 +2556,7 @@ typedef struct TclStubs {
     int (*tcl_GetEncodingNulLength) (Tcl_Encoding encoding); /* 683 */
     void (*reserved684)(void);
     void (*reserved685)(void);
-    void (*reserved686)(void);
+    int (*tcl_GetWideUIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideUInt *uwidePtr); /* 686 */
     Tcl_Obj * (*tcl_DStringToObj) (Tcl_DString *dsPtr); /* 687 */
 } TclStubs;
 
@@ -3878,7 +3880,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetEncodingNulLength) /* 683 */
 /* Slot 684 is reserved */
 /* Slot 685 is reserved */
-/* Slot 686 is reserved */
+#define Tcl_GetWideUIntFromObj \
+	(tclStubsPtr->tcl_GetWideUIntFromObj) /* 686 */
 #define Tcl_DStringToObj \
 	(tclStubsPtr->tcl_DStringToObj) /* 687 */
 
