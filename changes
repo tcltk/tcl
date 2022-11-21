@@ -9132,7 +9132,7 @@ See RFC 2045
 
 2022-04-26 (bug)[27520c] test error-9.6 (goth,sebres)
 
-2022-05-04 (bug)[8eb64b] http package support for Content-encoding: br
+2022-05-04 (bug)[8eb64b] http package tolerant again invalid reply header
 
 2022-05-11 (bug)[6898f9] http package failed detection of shiftjis charset
 
