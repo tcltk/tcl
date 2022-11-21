@@ -3219,6 +3219,33 @@ Tcl_NewWideIntObj(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_NewWideUIntObj --
+ *
+ * Results:
+ *	The newly created object is returned. This object will have an invalid
+ *	string representation. The returned object has ref count 0.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_NewWideUIntObj(
+    Tcl_WideUInt uwideValue)
+				/* Wide integer used to initialize the new
+				 * object. */
+{
+    Tcl_Obj *objPtr;
+
+    TclNewUIntObj(objPtr, uwideValue);
+    return objPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_DbNewWideIntObj --
  *
  *	If a client is compiled with TCL_MEM_DEBUG defined, calls to
@@ -3311,6 +3338,46 @@ Tcl_SetWideIntObj(
     }
 
     TclSetIntObj(objPtr, wideValue);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetWideUIntObj --
+ *
+ *	Modify an object to be a wide integer object or a bignum object
+ *	and to have the specified unsigned wide integer value.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's old string rep, if any, is freed. Also, any old internal
+ *	rep is freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetWideUIntObj(
+    Tcl_Obj *objPtr,	/* Object w. internal rep to init. */
+    Tcl_WideUInt uwideValue)
+				/* Wide integer used to initialize the
+				 * object's value. */
+{
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object", "Tcl_SetWideUIntObj");
+    }
+
+    if (uwideValue > WIDE_MAX) {
+	mp_int bignumValue;
+	if (mp_init_u64(&bignumValue, uwideValue) != MP_OKAY) {
+	    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
+	}
+	TclSetBignumInternalRep(objPtr, &bignumValue);
+    } {
+	TclSetIntObj(objPtr, (Tcl_WideInt)uwideValue);
+    }
 }
 
 /*

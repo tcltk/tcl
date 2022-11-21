@@ -3775,7 +3775,7 @@ TclNRSwitchObjCmd(
 		    TclNewIndexObj(rangeObjAry[0], info.matches[j].start);
 		    TclNewIndexObj(rangeObjAry[1], info.matches[j].end-1);
 		} else {
-		    TclNewIndexObj(rangeObjAry[1], TCL_INDEX_NONE);
+		    TclNewIntObj(rangeObjAry[1], -1);
 		    rangeObjAry[0] = rangeObjAry[1];
 		}
 
@@ -4099,7 +4099,7 @@ Tcl_TimeObjCmd(
 	 * Use int obj since we know time is not fractional. [Bug 1202178]
 	 */
 
-	objs[0] = Tcl_NewWideIntObj((count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
+	objs[0] = Tcl_NewWideUIntObj((count <= 0) ? 0 : (Tcl_WideUInt)totalMicroSec);
     } else {
 	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
     }
