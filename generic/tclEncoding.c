@@ -2391,7 +2391,7 @@ UtfToUtfProc(
 	     * If in input mode, and -strict is specified: This is an error.
 	     */
 	    if (flags & TCL_ENCODING_MODIFIED) {
-		result = TCL_CONVERT_UNKNOWN;
+		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
 
@@ -2413,6 +2413,10 @@ UtfToUtfProc(
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
+	    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+		result = TCL_CONVERT_SYNTAX;
+		break;
+	    }
 		ch = UCHAR(*src++);
 	    } else {
 		char chbuf[2];
@@ -2424,8 +2428,8 @@ UtfToUtfProc(
 	    int low;
 	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
-	    if ((len < 2) && (ch != 0) && STOPONERROR
-		    && (flags & TCL_ENCODING_MODIFIED)) {
+	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_MODIFIED)
+		    && (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
