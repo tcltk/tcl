@@ -348,7 +348,7 @@ test unixInit-3.2 {TclpSetInitialEncodings} -setup {
     catch {set oldlc_all $env(LC_ALL)}
     catch {set oldtcl_library $env(TCL_LIBRARY)}
     unset -nocomplain env(TCL_LIBRARY)
-} -constraints {unix stdio} -body {
+} -constraints {unix stdio knownBug} -body {
     set env(LANG) japanese
     set env(LC_ALL) japanese
     set f [open "|[list [interpreter]]" w+]

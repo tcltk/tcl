@@ -2960,6 +2960,90 @@ Tcl_GetWideIntFromObj(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_GetWideUIntFromObj --
+ *
+ *	Attempt to return a unsigned wide integer from the Tcl object "objPtr". If the
+ *	object is not already a wide int object or a bignum object, an attempt will
+ *	be made to convert it to one.
+ *
+ * Results:
+ *	The return value is a standard Tcl object result. If an error occurs
+ *	during conversion, an error message is left in the interpreter's
+ *	result unless "interp" is NULL.
+ *
+ * Side effects:
+ *	If the object is not already an int object, the conversion will free
+ *	any old internal representation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GetWideUIntFromObj(
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr,	/* Object from which to get a wide int. */
+    Tcl_WideUInt *wideUIntPtr)
+				/* Place to store resulting long. */
+{
+    do {
+	if (objPtr->typePtr == &tclIntType) {
+	    if (objPtr->internalRep.wideValue < 0) {
+	wideUIntOutOfRange:
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "expected unsigned integer but got \"%s\"",
+			    TclGetString(objPtr)));
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+		}
+		return TCL_ERROR;
+	    }
+	    *wideUIntPtr = (Tcl_WideUInt)objPtr->internalRep.wideValue;
+	    return TCL_OK;
+	}
+	if (objPtr->typePtr == &tclDoubleType) {
+	    goto wideUIntOutOfRange;
+	}
+	if (objPtr->typePtr == &tclBignumType) {
+	    /*
+	     * Must check for those bignum values that can fit in a
+	     * Tcl_WideUInt, even when auto-narrowing is enabled.
+	     */
+
+	    mp_int big;
+	    Tcl_WideUInt value = 0;
+	    size_t numBytes;
+	    Tcl_WideUInt scratch;
+	    unsigned char *bytes = (unsigned char *) &scratch;
+
+	    TclUnpackBignum(objPtr, big);
+	    if (big.sign == MP_NEG) {
+		goto wideUIntOutOfRange;
+	    }
+	    if (mp_to_ubin(&big, bytes, sizeof(Tcl_WideUInt), &numBytes) == MP_OKAY) {
+		while (numBytes-- > 0) {
+		    value = (value << CHAR_BIT) | *bytes++;
+		}
+		*wideUIntPtr = (Tcl_WideUInt)value;
+		return TCL_OK;
+	    }
+
+	    if (interp != NULL) {
+		const char *s = "integer value too large to represent";
+		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
+
+		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+	    }
+	    return TCL_ERROR;
+	}
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
+	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclGetWideBitsFromObj --
  *
  *	Attempt to return a wide integer from the Tcl object "objPtr". If the
