@@ -2428,8 +2428,8 @@ UtfToUtfProc(
 	    int low;
 	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
-	    if ((len < 2) && (ch != 0) && STOPONERROR
-		    && (flags & TCL_ENCODING_MODIFIED)) {
+	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_MODIFIED)
+		    && (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }

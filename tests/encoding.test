@@ -674,16 +674,19 @@ test encoding-24.23 {Syntax error, two encodings} -body {
     encoding convertto iso8859-1 utf-8 "ZX\uD800"
 } -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-nocomplain? ?-strict? ?-failindex var? ?encoding? data"}
 test encoding-24.24 {Parse invalid utf-8 with -strict} -body {
-    encoding convertfrom -strict utf-8 "\xC0\x80"
+    encoding convertfrom -strict utf-8 "\xC0\x80\x00\x00"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
 test encoding-24.25 {Parse invalid utf-8 with -strict} -body {
-    encoding convertfrom -strict utf-8 "\x80"
-} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x80'}
-test encoding-24.26 {Parse invalid utf-8 with -strict} -body {
-    encoding convertfrom -strict utf-8 "\xF0"
-} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xF0'}
+    encoding convertfrom -strict utf-8 "\x40\x80\x00\x00"
+} -returnCodes 1 -result {unexpected byte sequence starting at index 1: '\x80'}
+test encoding-24.26 {Parse valid utf-8 with -strict} -body {
+    encoding convertfrom -strict utf-8 "\xF1\x80\x80\x80"
+} -result \U40000
 test encoding-24.27 {Parse invalid utf-8 with -strict} -body {
-    encoding convertfrom -strict utf-8 "\xFF"
+    encoding convertfrom -strict utf-8 "\xF0\x80\x80\x80"
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xF0'}
+test encoding-24.28 {Parse invalid utf-8 with -strict} -body {
+    encoding convertfrom -strict utf-8 "\xFF\x00\x00"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xFF'}
 
 file delete [file join [temporaryDirectory] iso2022.txt]
