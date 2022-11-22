@@ -411,6 +411,13 @@ TclCreateProc(
     CompiledLocal *localPtr = NULL;
     Tcl_Obj **argArray;
     int precompiled = 0, result;
+    /*
+     * To report on bad arglists:
+     *  - set to 1 when 0 and optional/args is found
+     *  - set to 2 when 1 and required is found
+     *  - error when 2 and optional/args is found
+     */
+    int arglistShape = 0, isArgs, seenArgs = 0;
 
     ProcGetInternalRep(bodyPtr, procPtr);
     if (procPtr != NULL) {
@@ -541,6 +548,34 @@ TclCreateProc(
 	}
 
 	argname = Tcl_GetStringFromObj(fieldValues[0], &nameLength);
+	isArgs = (nameLength == 4) && !strcmp(argname, "args");
+
+	/*
+	 * Reject invalid argspecs early
+	 */
+	if (fieldCount == 2 || isArgs) {
+	    if (isArgs && seenArgs) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"repeated \"args\" in argument list", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+			"FORMALARGUMENTFORMAT", NULL);
+		goto procError;
+	    }
+	    seenArgs = seenArgs || isArgs;
+	    if (arglistShape == 0) {
+		arglistShape = 1;
+	    } else if (arglistShape == 2) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"required arg may not be in the middle", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
+			"FORMALARGUMENTFORMAT", NULL);
+		goto procError;
+	    }
+	} else {
+	    if (arglistShape == 1) {
+		arglistShape = 2;
+	    }
+	}
 
 	/*
 	 * Check that the formal parameter name is a scalar.
@@ -620,10 +655,7 @@ TclCreateProc(
 		    goto procError;
 		}
 	    }
-	    if ((i == numArgs - 1)
-		    && (localPtr->nameLength == 4)
-		    && (localPtr->name[0] == 'a')
-		    && (strcmp(localPtr->name, "args") == 0)) {
+	    if (isArgs) {
 		localPtr->flags |= VAR_IS_ARGS;
 	    }
 
@@ -655,10 +687,7 @@ TclCreateProc(
 		localPtr->defValuePtr = NULL;
 	    }
 	    memcpy(localPtr->name, argname, fieldValues[0]->length + 1);
-	    if ((i == numArgs - 1)
-		    && (localPtr->nameLength == 4)
-		    && (localPtr->name[0] == 'a')
-		    && (memcmp(localPtr->name, "args", 4) == 0)) {
+	    if (isArgs) {
 		localPtr->flags |= VAR_IS_ARGS;
 	    }
 	}
@@ -1067,7 +1096,7 @@ ProcWrongNumArgs(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     Proc *procPtr = framePtr->procPtr;
-    int localCt = procPtr->numCompiledLocals, numArgs, i;
+    int localCt = procPtr->numCompiledLocals, numArgs, i, i2 = 1;
     Tcl_Obj **desiredObjs;
     const char *final = NULL;
 
@@ -1077,7 +1106,7 @@ ProcWrongNumArgs(
 
     numArgs = framePtr->procPtr->numArgs;
     desiredObjs = (Tcl_Obj **)TclStackAlloc(interp,
-	    sizeof(Tcl_Obj *) * (numArgs+1));
+	    sizeof(Tcl_Obj *) * (numArgs+2));
 
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
@@ -1089,7 +1118,7 @@ ProcWrongNumArgs(
     if (localCt > 0) {
 	Var *defPtr = (Var *)(&framePtr->localCachePtr->varName0 + localCt);
 
-	for (i=1 ; i<=numArgs ; i++, defPtr++) {
+	for (i=i2=1 ; i<=numArgs ; i++, i2++, defPtr++) {
 	    Tcl_Obj *argObj;
 	    Tcl_Obj *namePtr = localName(framePtr, i-1);
 
@@ -1097,21 +1126,27 @@ ProcWrongNumArgs(
 		TclNewObj(argObj);
 		Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?", NULL);
 	    } else if (defPtr->flags & VAR_IS_ARGS) {
-		numArgs--;
-		final = "?arg ...?";
-		break;
-	    } else {
+		/*
+		 * Work around the list quoting in WrongNumArgs which we
+		 * do not want for ?arg ...?.
+		 */
+
+	        TclNewLiteralStringObj(argObj, "?arg");
+		desiredObjs[i2] = argObj;
+		i2++;
+	        TclNewLiteralStringObj(argObj, "...?");
+            } else {
 		argObj = namePtr;
 		Tcl_IncrRefCount(namePtr);
 	    }
-	    desiredObjs[i] = argObj;
+	    desiredObjs[i2] = argObj;
 	}
     }
 
     Tcl_ResetResult(interp);
-    Tcl_WrongNumArgs(interp, numArgs+1, desiredObjs, final);
+    Tcl_WrongNumArgs(interp, i2, desiredObjs, final);
 
-    for (i=0 ; i<=numArgs ; i++) {
+    for (i=0 ; i<i2 ; i++) {
 	Tcl_DecrRefCount(desiredObjs[i]);
     }
     TclStackFree(interp, desiredObjs);
@@ -1347,9 +1382,15 @@ InitArgsAndLocals(
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     Proc *procPtr = framePtr->procPtr;
     ByteCode *codePtr;
-    Var *varPtr, *defPtr;
-    int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
-    Tcl_Obj *const *argObjs;
+    Var *nextVarPtr, *lastVarPtr, *localVarPtr, *nextDefPtr, *lastDefPtr;
+    /* Total compiled locals, >= numArgs */
+    int numLocals = procPtr->numCompiledLocals;
+    /* Number of arguments taken */
+    int numArgs = procPtr->numArgs;
+    /* Number of arguments given */
+    int argCt = framePtr->objc - skip;
+    Tcl_Obj *const *nextArgObj;
+    Tcl_Obj *const *lastArgObj;
 
     ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
@@ -1358,15 +1399,17 @@ InitArgsAndLocals(
      * been initialised properly .
      */
 
-    if (localCt) {
+    if (numLocals) {
 	if (!codePtr->localCachePtr) {
 	    InitLocalCache(procPtr) ;
 	}
 	framePtr->localCachePtr = codePtr->localCachePtr;
 	framePtr->localCachePtr->refCount++;
-	defPtr = (Var *) (&framePtr->localCachePtr->varName0 + localCt);
+	nextDefPtr = (Var *) (&framePtr->localCachePtr->varName0 + numLocals);
+	lastDefPtr = &nextDefPtr[numArgs-1];
     } else {
-	defPtr = NULL;
+	nextDefPtr = NULL;
+	lastDefPtr = NULL;
     }
 
     /*
@@ -1375,9 +1418,11 @@ InitArgsAndLocals(
      * parameters.
      */
 
-    varPtr = (Var *)TclStackAlloc(interp, localCt * sizeof(Var));
-    framePtr->compiledLocals = varPtr;
-    framePtr->numCompiledLocals = localCt;
+    nextVarPtr = (Var *)TclStackAlloc(interp, numLocals * sizeof(Var));
+    lastVarPtr = &nextVarPtr[numArgs-1];
+    localVarPtr = &nextVarPtr[numArgs];
+    framePtr->compiledLocals = nextVarPtr;
+    framePtr->numCompiledLocals = numLocals;
 
     /*
      * Match and assign the call's actual parameters to the procedure's formal
@@ -1386,9 +1431,7 @@ InitArgsAndLocals(
      * frame's local variable array.
      */
 
-    numArgs = procPtr->numArgs;
-    argCt = framePtr->objc - skip;	/* Set it to the number of args to the
-					 * procedure. */
+    nextArgObj = framePtr->objv + skip;
     if (numArgs == 0) {
 	if (argCt) {
 	    goto incorrectArgs;
@@ -1396,61 +1439,89 @@ InitArgsAndLocals(
 	    goto correctArgs;
 	}
     }
-    argObjs = framePtr->objv + skip;
-    imax = ((argCt < numArgs-1) ? argCt : numArgs-1);
-    for (i = 0; i < imax; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
-	/*
-	 * "Normal" arguments; last formal is special, depends on it being
-	 * 'args'.
-	 */
-
-	Tcl_Obj *objPtr = argObjs[i];
-
-	varPtr->flags = 0;
-	varPtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
-    }
-    for (; i < numArgs-1; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
-	/*
-	 * This loop is entered if argCt < (numArgs-1). Set default values;
-	 * last formal is special.
-	 */
-
-	Tcl_Obj *objPtr = defPtr ? defPtr->value.objPtr : NULL;
-
-	if (!objPtr) {
-	    goto incorrectArgs;
-	}
-	varPtr->flags = 0;
-	varPtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);	/* Local var reference. */
-    }
+    lastArgObj = &nextArgObj[argCt-1];
 
     /*
-     * When we get here, the last formal argument remains to be defined:
-     * defPtr and varPtr point to the last argument to be initialized.
+     * Required args, LHS
      */
+    while ( (nextVarPtr <= lastVarPtr)
+	 && !(nextDefPtr->flags & VAR_IS_ARGS)
+	 && (nextDefPtr->value.objPtr == NULL) ) {
+	if (nextArgObj > lastArgObj) goto incorrectArgs;	/* not enough args */
+	nextVarPtr->flags = 0;
+	nextVarPtr->value.objPtr = *(nextArgObj++);
+	Tcl_IncrRefCount(nextVarPtr->value.objPtr);	/* Local var is a reference. */
 
-    varPtr->flags = 0;
-    if (defPtr && defPtr->flags & VAR_IS_ARGS) {
-	Tcl_Obj *listPtr = Tcl_NewListObj((argCt>i)? argCt-i : 0, argObjs+i);
-
-	varPtr->value.objPtr = listPtr;
-	Tcl_IncrRefCount(listPtr);	/* Local var is a reference. */
-    } else if (argCt == numArgs) {
-	Tcl_Obj *objPtr = argObjs[i];
-
-	varPtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
-    } else if ((argCt < numArgs) && defPtr && defPtr->value.objPtr) {
-	Tcl_Obj *objPtr = defPtr->value.objPtr;
-
-	varPtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
-    } else {
-	goto incorrectArgs;
+	++nextVarPtr; ++nextDefPtr;
     }
-    varPtr++;
+    /*
+     * Required args, RHS
+     */
+    while ( (nextVarPtr <= lastVarPtr)
+	 && !(lastDefPtr->flags & VAR_IS_ARGS)
+	 && (lastDefPtr->value.objPtr == NULL) ) {
+	if (nextArgObj > lastArgObj) goto incorrectArgs;	/* not enough args */
+	lastVarPtr->flags = 0;
+	lastVarPtr->value.objPtr = *(lastArgObj--);
+	Tcl_IncrRefCount(lastVarPtr->value.objPtr);	/* Local var is a reference. */
+
+	--lastVarPtr; --lastDefPtr;
+    }
+    /*
+     * Optional args, LHS
+     */
+    while ( (nextVarPtr <= lastVarPtr)
+	 && !(nextDefPtr->flags & VAR_IS_ARGS) ) {
+	Tcl_Obj * objPtr;
+	if (nextArgObj > lastArgObj) {
+	    objPtr = nextDefPtr->value.objPtr;	/* take default */
+	} else {
+	    objPtr = *(nextArgObj++);
+	}
+	if (objPtr == NULL) Tcl_Panic("oops LHS!");
+	nextVarPtr->value.objPtr = objPtr;
+	nextVarPtr->flags = 0;
+	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
+
+	++nextVarPtr; ++nextDefPtr;
+    }
+    /*
+     * Optional args, RHS
+     */
+    while ( (nextVarPtr <= lastVarPtr)
+	 && !(lastDefPtr->flags & VAR_IS_ARGS) ) {
+	Tcl_Obj * objPtr;
+	if (nextArgObj > lastArgObj) {
+	    objPtr = lastDefPtr->value.objPtr;	/* take default */
+	} else {
+	    objPtr = *(lastArgObj--);
+	}
+	if (objPtr == NULL) Tcl_Panic("oops RHS!");
+	lastVarPtr->value.objPtr = objPtr;
+	lastVarPtr->flags = 0;
+	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
+
+	--lastVarPtr; --lastDefPtr;
+    }
+    /*
+     * Args?
+     */
+    if (nextVarPtr < lastVarPtr) {
+	Tcl_Panic("nextVarPtr < lastVarPtr!\n");
+    }
+    if (nextVarPtr == lastVarPtr) {
+	if (!(nextDefPtr->flags & VAR_IS_ARGS)) {
+	    goto incorrectArgs;
+	}
+	Tcl_Obj *listPtr = Tcl_NewListObj(1+lastArgObj-nextArgObj, nextArgObj);
+	nextVarPtr->value.objPtr = listPtr;
+	nextVarPtr->flags = 0;
+	Tcl_IncrRefCount(listPtr);	/* Local var is a reference. */
+    } else {
+	if (nextArgObj <= lastArgObj) {
+	    goto incorrectArgs;
+	}
+    }
 
     /*
      * Initialise and resolve the remaining compiledLocals. In the absence of
@@ -1458,12 +1529,12 @@ InitArgsAndLocals(
      */
 
   correctArgs:
-    if (numArgs < localCt) {
+    if (numArgs < numLocals) {
 	if (!framePtr->nsPtr->compiledVarResProc
 		&& !((Interp *)interp)->resolverPtr) {
-	    memset(varPtr, 0, (localCt - numArgs)*sizeof(Var));
+	    memset(localVarPtr, 0, (numLocals - numArgs)*sizeof(Var));
 	} else {
-	    InitResolvedLocals(interp, codePtr, varPtr, framePtr->nsPtr);
+	    InitResolvedLocals(interp, codePtr, localVarPtr, framePtr->nsPtr);
 	}
     }
 
@@ -1478,8 +1549,11 @@ InitArgsAndLocals(
 	    TclInitRewriteEnsemble(interp, skip-1, 0, framePtr->objv)) {
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
-    memset(varPtr, 0,
-	    ((framePtr->compiledLocals + localCt)-varPtr) * sizeof(Var));
+    /*
+     * Ensure all un-assigned vars are zeroed
+     */
+    memset(nextVarPtr, 0,
+	    ((framePtr->compiledLocals + numLocals)-nextVarPtr) * sizeof(Var));
     return ProcWrongNumArgs(interp, skip);
 }
 
