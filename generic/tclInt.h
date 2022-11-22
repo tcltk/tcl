@@ -1450,11 +1450,7 @@ struct CompileEnv;
  * 			reporting is deferred until the actual runtime,
  * 			because by then changes in the interp state may allow
  * 			the command to be successfully evaluated.
- * TCL_OUT_LINE_COMPILE	A source-compatible alias for TCL_ERROR, kept for the
- * 			sake of old code only.
  */
-
-#define TCL_OUT_LINE_COMPILE	TCL_ERROR
 
 typedef int (CompileProc)(Tcl_Interp *interp, Tcl_Parse *parsePtr,
 	struct Command *cmdPtr, struct CompileEnv *compEnvPtr);

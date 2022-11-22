@@ -519,56 +519,14 @@ GetUWide(
     Tcl_Obj *objPtr,
     Tcl_WideUInt *uwidePtr)
 {
-    Tcl_WideInt *widePtr = (Tcl_WideInt *) uwidePtr;
-    void *clientData;
-    int type, intValue;
+    if (Tcl_GetWideUIntFromObj(NULL, objPtr, uwidePtr) != TCL_OK) {
+	int intValue;
 
-    if (Tcl_GetNumberFromObj(NULL, objPtr, &clientData, &type) == TCL_OK) {
-	if (type == TCL_NUMBER_INT) {
-	    *widePtr = *((const Tcl_WideInt *) clientData);
-	    return (*widePtr < 0);
-	} else if (type == TCL_NUMBER_BIG) {
-	    mp_int *numPtr = (mp_int *)clientData;
-	    Tcl_WideUInt value = 0;
-	    union {
-		Tcl_WideUInt value;
-		unsigned char bytes[sizeof(Tcl_WideUInt)];
-	    } scratch;
-	    size_t numBytes;
-	    unsigned char *bytes = scratch.bytes;
-
-	    if (numPtr->sign || (MP_OKAY != mp_to_ubin(numPtr,
-		    bytes, sizeof(Tcl_WideUInt), &numBytes))) {
-		/*
-		 * If the sign bit is set (a negative value) or if the value
-		 * can't possibly fit in the bits of an unsigned wide, there's
-		 * no point in doing further conversion.
-		 */
-		return 1;
-	    }
-#ifndef WORDS_BIGENDIAN
-	    while (numBytes-- > 0) {
-		value = (value << CHAR_BIT) | *bytes++;
-	    }
-#else /* WORDS_BIGENDIAN */
-	    /*
-	     * Big-endian can read the value directly.
-	     */
-	    value = scratch.value;
-#endif /* WORDS_BIGENDIAN */
-	    *uwidePtr = value;
-	    return 0;
+	if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
+	    return 1;
 	}
+	*uwidePtr = intValue;
     }
-
-    /*
-     * Evil edge case fallback.
-     */
-
-    if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
-	return 1;
-    }
-    *uwidePtr = intValue;
     return 0;
 }
 

@@ -2621,11 +2621,11 @@ declare 683 {
 #    void Tcl_SetWideUIntObj(Tcl_Obj *objPtr, Tcl_WideUInt uwideValue)
 #}
 
-# TIP #650 (reserved)
-#declare 686 {
-#    int Tcl_GetWideUIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-#	    Tcl_WideUInt *uwidePtr)
-#}
+# TIP #650
+declare 686 {
+    int Tcl_GetWideUIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_WideUInt *uwidePtr)
+}
 
 # TIP 651
 declare 687 {
