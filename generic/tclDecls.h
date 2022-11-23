@@ -209,10 +209,10 @@ EXTERN Tcl_Obj *	Tcl_NewStringObj(const char *bytes, int length);
 /* 57 */
 EXTERN void		Tcl_SetBooleanObj(Tcl_Obj *objPtr, int intValue);
 /* 58 */
-EXTERN unsigned char *	Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int length);
+EXTERN unsigned char *	Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int numBytes);
 /* 59 */
 EXTERN void		Tcl_SetByteArrayObj(Tcl_Obj *objPtr,
-				const unsigned char *bytes, int length);
+				const unsigned char *bytes, int numBytes);
 /* 60 */
 EXTERN void		Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue);
 /* 61 */
@@ -603,7 +603,7 @@ EXTERN Tcl_Channel	Tcl_OpenFileChannel(Tcl_Interp *interp,
 /* 199 */
 EXTERN Tcl_Channel	Tcl_OpenTcpClient(Tcl_Interp *interp, int port,
 				const char *address, const char *myaddr,
-				int myport, int async);
+				int myport, int flags);
 /* 200 */
 EXTERN Tcl_Channel	Tcl_OpenTcpServer(Tcl_Interp *interp, int port,
 				const char *host,
@@ -1866,7 +1866,12 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 /* Slot 679 is reserved */
 /* Slot 680 is reserved */
 /* Slot 681 is reserved */
-/* 682 */
+/* Slot 682 is reserved */
+/* Slot 683 is reserved */
+/* Slot 684 is reserved */
+/* Slot 685 is reserved */
+/* Slot 686 is reserved */
+/* 687 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -1953,8 +1958,8 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_NewObj) (void); /* 55 */
     Tcl_Obj * (*tcl_NewStringObj) (const char *bytes, int length); /* 56 */
     void (*tcl_SetBooleanObj) (Tcl_Obj *objPtr, int intValue); /* 57 */
-    unsigned char * (*tcl_SetByteArrayLength) (Tcl_Obj *objPtr, int length); /* 58 */
-    void (*tcl_SetByteArrayObj) (Tcl_Obj *objPtr, const unsigned char *bytes, int length); /* 59 */
+    unsigned char * (*tcl_SetByteArrayLength) (Tcl_Obj *objPtr, int numBytes); /* 58 */
+    void (*tcl_SetByteArrayObj) (Tcl_Obj *objPtr, const unsigned char *bytes, int numBytes); /* 59 */
     void (*tcl_SetDoubleObj) (Tcl_Obj *objPtr, double doubleValue); /* 60 */
     void (*tcl_SetIntObj) (Tcl_Obj *objPtr, int intValue); /* 61 */
     void (*tcl_SetListObj) (Tcl_Obj *objPtr, int objc, Tcl_Obj *const objv[]); /* 62 */
@@ -2102,7 +2107,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_ObjSetVar2) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags); /* 196 */
     Tcl_Channel (*tcl_OpenCommandChannel) (Tcl_Interp *interp, int argc, CONST84 char **argv, int flags); /* 197 */
     Tcl_Channel (*tcl_OpenFileChannel) (Tcl_Interp *interp, const char *fileName, const char *modeString, int permissions); /* 198 */
-    Tcl_Channel (*tcl_OpenTcpClient) (Tcl_Interp *interp, int port, const char *address, const char *myaddr, int myport, int async); /* 199 */
+    Tcl_Channel (*tcl_OpenTcpClient) (Tcl_Interp *interp, int port, const char *address, const char *myaddr, int myport, int flags); /* 199 */
     Tcl_Channel (*tcl_OpenTcpServer) (Tcl_Interp *interp, int port, const char *host, Tcl_TcpAcceptProc *acceptProc, ClientData callbackData); /* 200 */
     void (*tcl_Preserve) (ClientData data); /* 201 */
     void (*tcl_PrintDouble) (Tcl_Interp *interp, double value, char *dst); /* 202 */
@@ -2585,7 +2590,12 @@ typedef struct TclStubs {
     void (*reserved679)(void);
     void (*reserved680)(void);
     void (*reserved681)(void);
-    void (*tclUnusedStubEntry) (void); /* 682 */
+    void (*reserved682)(void);
+    void (*reserved683)(void);
+    void (*reserved684)(void);
+    void (*reserved685)(void);
+    void (*reserved686)(void);
+    void (*tclUnusedStubEntry) (void); /* 687 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3929,8 +3939,13 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 679 is reserved */
 /* Slot 680 is reserved */
 /* Slot 681 is reserved */
+/* Slot 682 is reserved */
+/* Slot 683 is reserved */
+/* Slot 684 is reserved */
+/* Slot 685 is reserved */
+/* Slot 686 is reserved */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 682 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 687 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

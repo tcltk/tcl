@@ -868,6 +868,8 @@ static const TclPlatStubs tclPlatStubs = {
 #if defined(_WIN32) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
+    0, /* 2 */
+    TclUnusedStubEntry, /* 3 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
@@ -950,13 +952,13 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_set_ull, /* 68 */
     TclBN_mp_get_mag_ull, /* 69 */
     TclBN_mp_set_ll, /* 70 */
-    0, /* 71 */
-    0, /* 72 */
+    TclBN_mp_unpack, /* 71 */
+    TclBN_mp_pack, /* 72 */
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
     TclBN_mp_signed_rsh, /* 76 */
-    0, /* 77 */
+    TclBN_mp_pack_count, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
     TclBN_mp_div_ld, /* 79 */
     TclBN_mp_to_radix, /* 80 */
@@ -1677,7 +1679,12 @@ const TclStubs tclStubs = {
     0, /* 679 */
     0, /* 680 */
     0, /* 681 */
-    TclUnusedStubEntry, /* 682 */
+    0, /* 682 */
+    0, /* 683 */
+    0, /* 684 */
+    0, /* 685 */
+    0, /* 686 */
+    TclUnusedStubEntry, /* 687 */
 };
 
 /* !END!: Do not edit above this line. */

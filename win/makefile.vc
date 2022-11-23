@@ -355,6 +355,8 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_mul_d.obj \
 	$(TMP_DIR)\bn_mp_neg.obj \
 	$(TMP_DIR)\bn_mp_or.obj \
+	$(TMP_DIR)\bn_mp_pack.obj \
+	$(TMP_DIR)\bn_mp_pack_count.obj \
 	$(TMP_DIR)\bn_mp_radix_size.obj \
 	$(TMP_DIR)\bn_mp_radix_smap.obj \
 	$(TMP_DIR)\bn_mp_read_radix.obj \
@@ -369,6 +371,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_to_ubin.obj \
 	$(TMP_DIR)\bn_mp_to_radix.obj \
 	$(TMP_DIR)\bn_mp_ubin_size.obj \
+	$(TMP_DIR)\bn_mp_unpack.obj \
 	$(TMP_DIR)\bn_mp_xor.obj \
 	$(TMP_DIR)\bn_mp_zero.obj \
 	$(TMP_DIR)\bn_s_mp_add.obj \
