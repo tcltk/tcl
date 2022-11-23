@@ -4149,13 +4149,13 @@ Tcl_WriteChars(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* UTF-8 characters to queue in output
 				 * buffer. */
-    size_t len)			/* Length of string in bytes, or -1 for
+    size_t len)			/* Length of string in bytes, or TCL_INDEX_NONE for
 				 * strlen(). */
 {
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;	/* State info for channel */
-    int result;
-    Tcl_Obj *objPtr, *copy;
+    size_t result;
+    Tcl_Obj *objPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
 	return TCL_INDEX_NONE;
@@ -4182,11 +4182,15 @@ Tcl_WriteChars(
     }
 
     objPtr = Tcl_NewStringObj(src, len);
-    copy = TclNarrowToBytes(objPtr);
-    src = (char *) Tcl_GetByteArrayFromObj(copy, &len);
+    Tcl_IncrRefCount(objPtr);
+    src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
+    if (src == NULL) {
+	Tcl_SetErrno(EILSEQ);
+	result = TCL_INDEX_NONE;
+    } else {
+	result = WriteBytes(chanPtr, src, len);
+    }
     TclDecrRefCount(objPtr);
-    result = WriteBytes(chanPtr, src, len);
-    TclDecrRefCount(copy);
     return result;
 }
 
@@ -4205,8 +4209,8 @@ Tcl_WriteChars(
  *	line buffering mode.
  *
  * Results:
- *	The number of bytes written or -1 in case of error. If -1,
- *	Tcl_GetErrno() will return the error code.
+ *	The number of bytes written or TCL_INDEX_NONE in case of error. If
+ *	TCL_INDEX_NONE, Tcl_GetErrno() will return the error code.
  *
  * Side effects:
  *	May buffer up output and may cause output to be produced on the
@@ -4236,12 +4240,15 @@ Tcl_WriteObj(
 	return TCL_INDEX_NONE;
     }
     if (statePtr->encoding == NULL) {
-	int result;
-	Tcl_Obj *copy = TclNarrowToBytes(objPtr);
+	size_t result;
 
-	src = (char *) Tcl_GetByteArrayFromObj(copy, &srcLen);
-	result = WriteBytes(chanPtr, src, srcLen);
-	Tcl_DecrRefCount(copy);
+	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &srcLen);
+	if (src == NULL) {
+	    Tcl_SetErrno(EILSEQ);
+	    result = TCL_INDEX_NONE;
+	} else {
+	    result = WriteBytes(chanPtr, src, srcLen);
+	}
 	return result;
     } else {
 	src = Tcl_GetStringFromObj(objPtr, &srcLen);
