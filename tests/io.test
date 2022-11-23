@@ -108,7 +108,7 @@ set path(test1) [makeFile {} test1]
 test io-1.6 {Tcl_WriteChars: WriteBytes} {
     set f [open $path(test1) w]
     fconfigure $f -encoding binary
-    puts -nonewline $f "a乍\x00"
+    puts -nonewline $f "a\x4D\x00"
     close $f
     contents $path(test1)
 } "a\x4D\x00"
@@ -466,7 +466,7 @@ test io-6.3 {Tcl_GetsObj: how many have we used?} {
 test io-6.4 {Tcl_GetsObj: encoding == NULL} {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
-    puts $f "\x81\u1234\x00"
+    puts $f "\x81\x34\x00"
     close $f
     set f [open $path(test1)]
     fconfigure $f -translation binary
