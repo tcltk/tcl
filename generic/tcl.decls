@@ -2619,16 +2619,16 @@ declare 683 {
 #    void Tcl_SetWideUIntObj(Tcl_Obj *objPtr, Tcl_WideUInt uwideValue)
 #}
 
-# TIP #650 (reserved)
-#declare 686 {
-#    int Tcl_GetWideUIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-#	    Tcl_WideUInt *uwidePtr)
-#}
+# TIP #650
+declare 686 {
+    int Tcl_GetWideUIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_WideUInt *uwidePtr)
+}
 
-# TIP 651 (reserved)
-#declare 687 {
-#    Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
-#}
+# TIP 651
+declare 687 {
+    Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 

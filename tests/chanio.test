@@ -39,6 +39,7 @@ namespace eval ::tcl::test::io {
 	package require -exact tcl::test [info patchlevel]
 	set ::tcltestlib [info loaded {} Tcltest]
     }
+    source [file join [file dirname [info script]] tcltests.tcl]
 
     testConstraint testbytestring   [llength [info commands testbytestring]]
     testConstraint testchannel      [llength [info commands testchannel]]
@@ -115,7 +116,7 @@ set path(test1) [makeFile {} test1]
 test chan-io-1.6 {Tcl_WriteChars: WriteBytes} {
     set f [open $path(test1) w]
     chan configure $f -encoding binary
-    chan puts -nonewline $f "a乍\x00"
+    chan puts -nonewline $f "a\x4D\x00"
     chan close $f
     contents $path(test1)
 } "aM\x00"
@@ -431,7 +432,7 @@ test chan-io-6.3 {Tcl_GetsObj: how many have we used?} -body {
 test chan-io-6.4 {Tcl_GetsObj: encoding == NULL} -body {
     set f [open $path(test1) w]
     chan configure $f -translation binary
-    chan puts $f "\x81\u1234\x00"
+    chan puts $f "\x81\x34\x00"
     chan close $f
     set f [open $path(test1)]
     chan configure $f -translation binary

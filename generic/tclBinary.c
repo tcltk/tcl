@@ -530,7 +530,7 @@ MakeByteArray(
     return proper;
 }
 
-Tcl_Obj *
+static Tcl_Obj *
 TclNarrowToBytes(
     Tcl_Obj *objPtr)
 {
