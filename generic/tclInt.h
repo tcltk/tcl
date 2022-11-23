@@ -1076,6 +1076,14 @@ typedef struct ActiveInterpTrace {
 				 * in reverse order. */
 } ActiveInterpTrace;
 
+
+#define TCL_OBJTYPE_V0_1 ((size_t)1) /* For internal core use only */
+
+typedef struct {  /* For internal core use only */
+    Tcl_ObjType objType;
+    unsigned long long (*lengthProc)(Tcl_Obj *obj);
+} TclObjTypeWithAbstractList;
+
 /*
  * Flag values designating types of execution traces. See tclTrace.c for
  * related flag values.
@@ -2613,7 +2621,7 @@ typedef struct ListRep {
  * converted to a list.
  */
 #define TclListObjGetElementsM(interp_, listObj_, objcPtr_, objvPtr_)    \
-    (((listObj_)->typePtr == &tclListType)                              \
+    (((listObj_)->typePtr == &tclListType.objType)                              \
 	 ? ((ListObjGetElements((listObj_), *(objcPtr_), *(objvPtr_))), \
 	    TCL_OK)                                                     \
 	 : Tcl_ListObjGetElements(                                      \
@@ -2625,12 +2633,12 @@ typedef struct ListRep {
  * Tcl_Obj cannot be converted to a list.
  */
 #define TclListObjLengthM(interp_, listObj_, lenPtr_)         \
-    (((listObj_)->typePtr == &tclListType)                   \
+    (((listObj_)->typePtr == &tclListType.objType)                   \
 	 ? ((ListObjLength((listObj_), *(lenPtr_))), TCL_OK) \
 	 : Tcl_ListObjLength((interp_), (listObj_), (lenPtr_)))
 
 #define TclListObjIsCanonical(listObj_) \
-    (((listObj_)->typePtr == &tclListType) ? ListObjIsCanonical((listObj_)) : 0)
+    (((listObj_)->typePtr == &tclListType.objType) ? ListObjIsCanonical((listObj_)) : 0)
 
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
@@ -2650,27 +2658,27 @@ typedef struct ListRep {
 
 #if TCL_MAJOR_VERSION > 8
 #define TclGetBooleanFromObj(interp, objPtr, intPtr) \
-    (((objPtr)->typePtr == &tclIntType \
-	    || (objPtr)->typePtr == &tclBooleanType) \
+    (((objPtr)->typePtr == &tclIntType.objType \
+	    || (objPtr)->typePtr == &tclBooleanType.objType) \
 	? (*(intPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
 	: Tcl_GetBooleanFromObj((interp), (objPtr), (intPtr)))
 #else
 #define TclGetBooleanFromObj(interp, objPtr, intPtr) \
-    (((objPtr)->typePtr == &tclIntType)			\
+    (((objPtr)->typePtr == &tclIntType.objType)			\
 	? (*(intPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
-	: ((objPtr)->typePtr == &tclBooleanType)			\
+	: ((objPtr)->typePtr == &tclBooleanType.objType)			\
 	? (*(intPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
 	: Tcl_GetBooleanFromObj((interp), (objPtr), (intPtr)))
 #endif
 
 #ifdef TCL_WIDE_INT_IS_LONG
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
-    (((objPtr)->typePtr == &tclIntType)	\
+    (((objPtr)->typePtr == &tclIntType.objType)	\
 	    ? ((*(longPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
 #else
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
-    (((objPtr)->typePtr == &tclIntType \
+    (((objPtr)->typePtr == &tclIntType.objType \
 	    && (objPtr)->internalRep.wideValue >= (Tcl_WideInt)(LONG_MIN) \
 	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(LONG_MAX)) \
 	    ? ((*(longPtr) = (long)(objPtr)->internalRep.wideValue), TCL_OK) \
@@ -2678,13 +2686,13 @@ typedef struct ListRep {
 #endif
 
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
-    (((objPtr)->typePtr == &tclIntType \
+    (((objPtr)->typePtr == &tclIntType.objType \
 	    && (objPtr)->internalRep.wideValue >= (Tcl_WideInt)(INT_MIN) \
 	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
 	    ? ((*(intPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
-    ((((objPtr)->typePtr == &tclIntType) && ((objPtr)->internalRep.wideValue >= 0) \
+    ((((objPtr)->typePtr == &tclIntType.objType) && ((objPtr)->internalRep.wideValue >= 0) \
 	    && ((Tcl_WideUInt)(objPtr)->internalRep.wideValue <= (Tcl_WideUInt)(endValue + 1))) \
 	    ? ((*(idxPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
@@ -2698,7 +2706,7 @@ typedef struct ListRep {
  */
 
 #define TclGetWideIntFromObj(interp, objPtr, wideIntPtr) \
-    (((objPtr)->typePtr == &tclIntType)					\
+    (((objPtr)->typePtr == &tclIntType.objType)					\
 	? (*(wideIntPtr) =						\
 		((objPtr)->internalRep.wideValue), TCL_OK) :		\
 	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
@@ -2876,13 +2884,13 @@ MODULE_SCOPE void *tclTimeClientData;
  * Variables denoting the Tcl object types defined in the core.
  */
 
-MODULE_SCOPE const Tcl_ObjType tclBignumType;
-MODULE_SCOPE const Tcl_ObjType tclBooleanType;
+MODULE_SCOPE const TclObjTypeWithAbstractList tclBignumType;
+MODULE_SCOPE const TclObjTypeWithAbstractList tclBooleanType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
-MODULE_SCOPE const Tcl_ObjType tclDoubleType;
-MODULE_SCOPE const Tcl_ObjType tclIntType;
-MODULE_SCOPE const Tcl_ObjType tclListType;
-MODULE_SCOPE const Tcl_ObjType tclArithSeriesType;
+MODULE_SCOPE const TclObjTypeWithAbstractList tclDoubleType;
+MODULE_SCOPE const TclObjTypeWithAbstractList tclIntType;
+MODULE_SCOPE const TclObjTypeWithAbstractList tclListType;
+MODULE_SCOPE const TclObjTypeWithAbstractList tclArithSeriesType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
@@ -4764,7 +4772,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	Tcl_ObjInternalRep ir;				\
 	ir.wideValue = (Tcl_WideInt) i;			\
 	TclInvalidateStringRep(objPtr);			\
-	Tcl_StoreInternalRep(objPtr, &tclIntType, &ir);	\
+	Tcl_StoreInternalRep(objPtr, &tclIntType.objType, &ir);	\
     } while (0)
 
 #define TclSetDoubleObj(objPtr, d) \
@@ -4772,7 +4780,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	Tcl_ObjInternalRep ir;				\
 	ir.doubleValue = (double) d;			\
 	TclInvalidateStringRep(objPtr);			\
-	Tcl_StoreInternalRep(objPtr, &tclDoubleType, &ir);	\
+	Tcl_StoreInternalRep(objPtr, &tclDoubleType.objType, &ir);	\
     } while (0)
 
 /*
@@ -4797,7 +4805,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	(objPtr)->refCount = 0;				\
 	(objPtr)->bytes = NULL;				\
 	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(w);	\
-	(objPtr)->typePtr = &tclIntType;		\
+	(objPtr)->typePtr = &tclIntType.objType;		\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
@@ -4816,7 +4824,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	    TclSetBignumInternalRep((objPtr), &bignumValue_);	\
 	} else {	\
 	    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(uw_);	\
-	    (objPtr)->typePtr = &tclIntType;		\
+	    (objPtr)->typePtr = &tclIntType.objType;		\
 	}	\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
@@ -4830,7 +4838,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	Tcl_WideUInt uw_ = (uw);		\
 	if (uw_ >= TCL_INDEX_NONE) {			\
 	    (objPtr)->internalRep.wideValue = -1; \
-	    (objPtr)->typePtr = &tclIntType;		\
+	    (objPtr)->typePtr = &tclIntType.objType;		\
 	} else if (uw_ > WIDE_MAX) {			\
 	    mp_int bignumValue_;		\
 	    if (mp_init_u64(&bignumValue_, uw_) != MP_OKAY) {	\
@@ -4839,7 +4847,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	    TclSetBignumInternalRep((objPtr), &bignumValue_);	\
 	} else {	\
 	    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(uw_); \
-	    (objPtr)->typePtr = &tclIntType;		\
+	    (objPtr)->typePtr = &tclIntType.objType;		\
 	}	\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
@@ -4851,7 +4859,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	(objPtr)->refCount = 0;					\
 	(objPtr)->bytes = NULL;					\
 	(objPtr)->internalRep.doubleValue = (double)(d);	\
-	(objPtr)->typePtr = &tclDoubleType;			\
+	(objPtr)->typePtr = &tclDoubleType.objType;			\
 	TCL_DTRACE_OBJ_CREATE(objPtr);				\
     } while (0)
 

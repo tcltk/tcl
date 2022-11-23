@@ -2726,7 +2726,7 @@ EachloopCmd(
 	}
 
 	/* Values */
-	if (TclHasInternalRep(objv[2+i*2],&tclArithSeriesType)) {
+	if (TclHasInternalRep(objv[2+i*2],&tclArithSeriesType.objType)) {
 	    /* Special case for Arith Series */
 	    statePtr->aCopyList[i] = TclArithSeriesObjCopy(interp, objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
@@ -2868,7 +2868,7 @@ ForeachAssignments(
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
-	int isarithseries = TclHasInternalRep(statePtr->aCopyList[i],&tclArithSeriesType);
+	int isarithseries = TclHasInternalRep(statePtr->aCopyList[i],&tclArithSeriesType.objType);
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {

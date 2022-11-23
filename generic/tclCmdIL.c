@@ -2215,7 +2215,7 @@ Tcl_JoinObjCmd(
      * pointer to its array of element pointers.
      */
 
-    if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
+    if (TclHasInternalRep(objv[1],&tclArithSeriesType.objType)) {
 	isArithSeries = 1;
 	listLen = TclArithSeriesObjLength(objv[1]);
     } else {
@@ -2746,7 +2746,7 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
+    if (TclHasInternalRep(objv[1],&tclArithSeriesType.objType)) {
 	Tcl_Obj *rangeObj;
 	rangeObj = TclArithSeriesObjRange(interp, objv[1], first, last);
 	if (rangeObj) {
@@ -3145,7 +3145,7 @@ Tcl_LreverseObjCmd(
      *  Handle ArithSeries special case - don't shimmer a series into a list
      *  just to reverse it.
      */
-    if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
+    if (TclHasInternalRep(objv[1],&tclArithSeriesType.objType)) {
 	Tcl_Obj *resObj = TclArithSeriesObjReverse(interp, objv[1]);
 	if (resObj) {
 	    Tcl_SetObjResult(interp, resObj);
@@ -4728,7 +4728,7 @@ Tcl_LsortObjCmd(
 	sortInfo.compareCmdPtr = newCommandPtr;
     }
 
-    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+    if (TclHasInternalRep(listObj,&tclArithSeriesType.objType)) {
 	sortInfo.resultCode = TclArithSeriesGetElements(interp,
 	    listObj, &length, &listObjPtrs);
     } else {

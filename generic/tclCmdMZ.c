@@ -1612,7 +1612,7 @@ StringIsCmd(
     case STR_IS_BOOL:
     case STR_IS_TRUE:
     case STR_IS_FALSE:
-	if (!TclHasInternalRep(objPtr, &tclBooleanType)
+	if (!TclHasInternalRep(objPtr, &tclBooleanType.objType)
 		&& (TCL_OK != TclSetBooleanFromAny(NULL, objPtr))) {
 	    if (strict) {
 		result = 0;
@@ -1682,9 +1682,9 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	if (TclHasInternalRep(objPtr, &tclDoubleType) ||
-		TclHasInternalRep(objPtr, &tclIntType) ||
-		TclHasInternalRep(objPtr, &tclBignumType)) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType.objType) ||
+		TclHasInternalRep(objPtr, &tclIntType.objType) ||
+		TclHasInternalRep(objPtr, &tclBignumType.objType)) {
 	    break;
 	}
 	string1 = Tcl_GetStringFromObj(objPtr, &length1);
@@ -1713,8 +1713,8 @@ StringIsCmd(
 	break;
     case STR_IS_INT:
     case STR_IS_ENTIER:
-	if (TclHasInternalRep(objPtr, &tclIntType) ||
-		TclHasInternalRep(objPtr, &tclBignumType)) {
+	if (TclHasInternalRep(objPtr, &tclIntType.objType) ||
+		TclHasInternalRep(objPtr, &tclBignumType.objType)) {
 	    break;
 	}
 	string1 = Tcl_GetStringFromObj(objPtr, &length1);

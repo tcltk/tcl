@@ -68,7 +68,7 @@
 
 /* Checks for when caller should have already converted to internal list type */
 #define LIST_ASSERT_TYPE(listObj_) \
-    LIST_ASSERT((listObj_)->typePtr == &tclListType);
+    LIST_ASSERT((listObj_)->typePtr == &tclListType.objType);
 
 
 /*
@@ -142,6 +142,7 @@ static void	DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void	FreeListInternalRep(Tcl_Obj *listPtr);
 static int	SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void	UpdateStringOfList(Tcl_Obj *listPtr);
+static unsigned long long ListLength(Tcl_Obj *listPtr);
 
 /*
  * The structure below defines the list Tcl object type by means of functions
@@ -150,13 +151,14 @@ static void	UpdateStringOfList(Tcl_Obj *listPtr);
  * The internal representation of a list object is ListRep defined in tcl.h.
  */
 
-const Tcl_ObjType tclListType = {
-    "list",			/* name */
+const TclObjTypeWithAbstractList tclListType = {
+    {"list",			/* name */
     FreeListInternalRep,	/* freeIntRepProc */
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
     SetListFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TCL_OBJTYPE_V0_1},
+    ListLength
 };
 
 /* Macros to manipulate the List internal rep */
@@ -202,7 +204,7 @@ const Tcl_ObjType tclListType = {
     do {                                                               \
 	(objPtr_)->internalRep.twoPtrValue.ptr1 = (repPtr_)->storePtr; \
 	(objPtr_)->internalRep.twoPtrValue.ptr2 = (repPtr_)->spanPtr;  \
-	(objPtr_)->typePtr = &tclListType;                             \
+	(objPtr_)->typePtr = &tclListType.objType;                             \
     } while (0)
 
 #define ListObjOverwriteRep(objPtr_, repPtr_) \
@@ -1272,7 +1274,7 @@ TclListObjGetRep(
 			 * to be returned. */
     ListRep *repPtr) /* Location to store descriptor */
 {
-    if (!TclHasInternalRep(listObj, &tclListType)) {
+    if (!TclHasInternalRep(listObj, &tclListType.objType)) {
 	int result;
 	result = SetListFromAny(interp, listObj);
 	if (result != TCL_OK) {
@@ -1366,8 +1368,8 @@ TclListObjCopy(
 {
     Tcl_Obj *copyObj;
 
-    if (!TclHasInternalRep(listObj, &tclListType)) {
-	if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+    if (!TclHasInternalRep(listObj, &tclListType.objType)) {
+	if (TclHasInternalRep(listObj,&tclArithSeriesType.objType)) {
 	    return TclArithSeriesObjCopy(interp, listObj);
 	}
 	if (SetListFromAny(interp, listObj) != TCL_OK) {
@@ -1663,7 +1665,7 @@ Tcl_ListObjGetElements(
 {
     ListRep listRep;
 
-    if (TclHasInternalRep(objPtr,&tclArithSeriesType)) {
+    if (TclHasInternalRep(objPtr,&tclArithSeriesType.objType)) {
 	return TclArithSeriesGetElements(interp, objPtr, objcPtr, objvPtr);
     }
 
@@ -1991,11 +1993,19 @@ Tcl_ListObjLength(
     Tcl_Obj *listObj,	/* List object whose #elements to return. */
     Tcl_Size *lenPtr)	/* The resulting int is stored here. */
 {
-    ListRep listRep;
-
-    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
-	*lenPtr = TclArithSeriesObjLength(listObj);
-	return TCL_OK;
+    if (listObj->typePtr && (listObj->typePtr->version == TCL_OBJTYPE_V0_1)) {
+	const TclObjTypeWithAbstractList *objType =  (const TclObjTypeWithAbstractList *)listObj->typePtr;
+	if (objType->lengthProc) {
+	    unsigned long long len = objType->lengthProc(listObj);
+	    if (len >= TCL_INDEX_NONE) {
+		if (interp) {
+			Tcl_AppendResult(interp, "List too large");
+		}
+		return TCL_ERROR;
+	    }
+	    *lenPtr = len;
+	    return TCL_OK;
+	}
     }
 
     /*
@@ -2005,11 +2015,22 @@ Tcl_ListObjLength(
      * other hand, this code will be faster for the case where the object
      * is currently a dict. Benchmark the two cases.
      */
+    ListRep listRep;
+
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
 	return TCL_ERROR;
     }
     *lenPtr = ListRepLength(&listRep);
     return TCL_OK;
+}
+
+unsigned long long ListLength(
+    Tcl_Obj *listPtr)
+{
+	ListRep listRep;
+	ListObjGetRep(listPtr, &listRep);
+
+    return ListRepLength(&listRep);
 }
 
 /*
@@ -2553,7 +2574,7 @@ TclLindexList(
      * shimmering; if internal rep is already a list do not shimmer it.
      * see TIP#22 and TIP#33 for the details.
      */
-    if (!TclHasInternalRep(argObj, &tclListType)
+    if (!TclHasInternalRep(argObj, &tclListType.objType)
 	&& TclGetIntForIndexM(NULL, argObj, ListSizeT_MAX - 1, &index)
 	       == TCL_OK) {
 	/*
@@ -2626,7 +2647,7 @@ TclLindexFlat(
     Tcl_Size i;
 
     /* Handle ArithSeries as special case */
-    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+    if (TclHasInternalRep(listObj,&tclArithSeriesType.objType)) {
 	Tcl_WideInt listLen = TclArithSeriesObjLength(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = NULL;
@@ -2744,7 +2765,7 @@ TclLsetList(
      * shimmering; see TIP #22 and #23 for details.
      */
 
-    if (!TclHasInternalRep(indexArgObj, &tclListType)
+    if (!TclHasInternalRep(indexArgObj, &tclListType.objType)
 	&& TclGetIntForIndexM(NULL, indexArgObj, ListSizeT_MAX - 1, &index)
 	       == TCL_OK) {
 	/* indexArgPtr designates a single index. */
@@ -3274,7 +3295,7 @@ SetListFromAny(
 	    Tcl_IncrRefCount(valuePtr);
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
-    } else if (TclHasInternalRep(objPtr,&tclArithSeriesType)) {
+    } else if (TclHasInternalRep(objPtr,&tclArithSeriesType.objType)) {
 	/*
 	 * Convertion from Arithmetic Series is a special case
 	 * because it can be done an order of magnitude faster
@@ -3382,7 +3403,7 @@ fail:
     TclFreeInternalRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = listRep.storePtr;
     objPtr->internalRep.twoPtrValue.ptr2 = listRep.spanPtr;
-    objPtr->typePtr = &tclListType;
+    objPtr->typePtr = &tclListType.objType;
 
     return TCL_OK;
 }
