@@ -346,8 +346,6 @@ test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
 } -match regexp -result {^(iso8859-15?|utf-8)$}
 test unixInit-3.2 {TclpSetInitialEncodings} -setup {
     catch {set oldlc_all $env(LC_ALL)}
-    catch {set oldtcl_library $env(TCL_LIBRARY)}
-    unset -nocomplain env(TCL_LIBRARY)
 } -constraints {unix stdio knownBug} -body {
     set env(LANG) japanese
     set env(LC_ALL) japanese
@@ -366,7 +364,6 @@ test unixInit-3.2 {TclpSetInitialEncodings} -setup {
 } -cleanup {
     unset -nocomplain env(LANG) env(LC_ALL)
     catch {set env(LC_ALL) $oldlc_all}
-    catch {set env(TCL_LIBRARY) $oldtcl_library}
 } -result 0
 
 test unixInit-4.1 {TclpSetVariables} {unix} {
