@@ -243,6 +243,14 @@ declare 69 {
 declare 70 {
     void TclBN_mp_set_ll(mp_int *a, Tcl_WideInt i)
 }
+declare 71 {
+    mp_err TclBN_mp_unpack(mp_int *rop, size_t count, mp_order order, size_t size,
+	    mp_endian endian, size_t nails, const void *op)
+}
+declare 72 {
+    mp_err TclBN_mp_pack(void *rop, size_t maxcount, size_t *written, mp_order order,
+	    size_t size, mp_endian endian, size_t nails, const mp_int *op)
+}
 
 # Added in libtommath 1.1.0
 declare 73 {
@@ -256,6 +264,9 @@ declare 75 {
 }
 declare 76 {
     mp_err TclBN_mp_signed_rsh(const mp_int *a, int b, mp_int *c)
+}
+declare 77 {
+    size_t TclBN_mp_pack_count(const mp_int *a, size_t nails, size_t size)
 }
 
 # Added in libtommath 1.2.0
