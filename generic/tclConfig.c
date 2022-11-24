@@ -258,7 +258,10 @@ QueryConfigObjCmd(
 	 * Value is stored as-is in a byte array, see Bug [9b2e636361],
 	 * so we have to decode it first.
 	 */
-	value = (const char *) Tcl_GetByteArrayFromObj(val, &n);
+	value = (const char *) Tcl_GetBytesFromObj(interp, val, &n);
+	if (value == NULL) {
+	    return TCL_ERROR;
+	}
 	value = Tcl_ExternalToUtfDString(venc, value, n, &conv);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(value,
 		Tcl_DStringLength(&conv)));

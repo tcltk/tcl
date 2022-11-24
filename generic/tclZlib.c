@@ -597,6 +597,9 @@ SetInflateDictionary(
 	size_t length = 0;
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(compDictObj, &length);
 
+	if (bytes == NULL) {
+	    return Z_DATA_ERROR;
+	}
 	return inflateSetDictionary(strm, bytes, length);
     }
     return Z_OK;
@@ -611,6 +614,9 @@ SetDeflateDictionary(
 	size_t length = 0;
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(compDictObj, &length);
 
+	if (bytes == NULL) {
+	    return Z_DATA_ERROR;
+	}
 	return deflateSetDictionary(strm, bytes, length);
     }
     return Z_OK;
@@ -1154,7 +1160,7 @@ Tcl_ZlibStreamSetCompressionDictionary(
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
 
-    if (compressionDictionaryObj && (NULL == Tcl_GetBytesFromObj(NULL,
+    if (compressionDictionaryObj && (NULL == Tcl_GetByteArrayFromObj(
 	    compressionDictionaryObj, (size_t *)NULL))) {
 	/* Missing or invalid compression dictionary */
 	compressionDictionaryObj = NULL;
@@ -3725,7 +3731,7 @@ ZlibStackChannelTransform(
     if (compDictObj != NULL) {
 	cd->compDictObj = Tcl_DuplicateObj(compDictObj);
 	Tcl_IncrRefCount(cd->compDictObj);
-	Tcl_GetBytesFromObj(NULL, cd->compDictObj, (size_t *)NULL);
+	Tcl_GetByteArrayFromObj(cd->compDictObj, (size_t *)NULL);
     }
 
     if (format == TCL_ZLIB_FORMAT_RAW) {

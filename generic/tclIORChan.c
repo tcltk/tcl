@@ -1387,7 +1387,7 @@ ReflectInput(
 
     if (bytev == NULL) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_nonbyte);
-        goto invalid;
+	goto invalid;
     } else if ((size_t)toRead < bytec) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_toomuch);
 	goto invalid;
