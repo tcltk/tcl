@@ -4638,7 +4638,7 @@ Tcl_GetsObj(
     if ((statePtr->encoding == NULL)
 	    && ((statePtr->inputTranslation == TCL_TRANSLATE_LF)
 		    || (statePtr->inputTranslation == TCL_TRANSLATE_CR))
-	    && Tcl_GetBytesFromObj(NULL, objPtr, (size_t *)NULL) != NULL) {
+	    && Tcl_GetByteArrayFromObj(objPtr, (size_t *)NULL) != NULL) {
 	return TclGetsObjBinary(chan, objPtr);
     }
 
@@ -5057,6 +5057,10 @@ TclGetsObjBinary(
      */
 
     byteArray = Tcl_GetByteArrayFromObj(objPtr, &byteLen);
+    if (byteArray == NULL) {
+	Tcl_SetErrno(EILSEQ);
+	return -1;
+    }
     oldFlags = statePtr->inputEncodingFlags;
     oldRemoved = BUFFER_PADDING;
     oldLength = byteLen;
@@ -5945,7 +5949,7 @@ DoReadChars(
 	    && (statePtr->inEofChar == '\0');
 
     if (appendFlag) {
-	if (binaryMode && (NULL == Tcl_GetBytesFromObj(NULL, objPtr, (size_t *)NULL))) {
+	if (binaryMode && (NULL == Tcl_GetByteArrayFromObj(objPtr, (size_t *)NULL))) {
 	    binaryMode = 0;
 	}
     } else {
