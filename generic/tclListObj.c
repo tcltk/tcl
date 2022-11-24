@@ -155,7 +155,7 @@ const Tcl_ObjType tclListType = {
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
     SetListFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0_INIT		/* Extended type for AbstractLists */
+    TCL_OBJTYPE_V0
 };
 
 /* Macros to manipulate the List internal rep */

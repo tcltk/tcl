@@ -163,7 +163,7 @@ static const Tcl_ObjType properByteArrayType = {
     DupProperByteArrayInternalRep,
     UpdateStringOfByteArray,
     NULL,
-    TCL_OBJTYPE_V0_INIT
+    TCL_OBJTYPE_V0
 };
 
 /*

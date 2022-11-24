@@ -663,7 +663,7 @@ static const Tcl_ObjType exprCodeType = {
     DupExprCodeInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_V0_INIT
+    TCL_OBJTYPE_V0
 };
 
 /*
@@ -675,7 +675,7 @@ static const Tcl_ObjType dictIteratorType = {
     "dictIterator",
     ReleaseDictIterator,
     NULL, NULL, NULL,
-    TCL_OBJTYPE_V0_INIT
+    TCL_OBJTYPE_V0
 };
 
 /*

@@ -365,7 +365,6 @@ typedef int Tcl_Size;
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
 typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
-typedef struct Tcl_ObjTypeVersion_ *Tcl_ObjTypeVersion;
 typedef struct Tcl_Command_ *Tcl_Command;
 typedef struct Tcl_Condition_ *Tcl_Condition;
 typedef struct Tcl_Dict_ *Tcl_Dict;
@@ -678,20 +677,16 @@ typedef struct Tcl_ObjType {
     Tcl_ALReplaceProc *replaceProc;     /* Replace subset with subset */
 } Tcl_ObjType;
 
-#define TCL_OBJTYPE_V0 0 /* Pre-Tcl 9. Set to 0 so compiler will auto-init
-			  * when existing code that does not init this
-			  * field is compiled with Tcl9 headers */
+#define TCL_OBJTYPE_V0 0, /* Pre-Tcl 9 */ \
+    NULL,		    \
+    NULL,		    \
+    NULL,		    \
+    NULL,		    \
+    NULL,		    \
+    NULL,		    \
+    NULL
 #define TCL_OBJTYPE_V1 (1) /* Tcl 9 - AbstractLists */
 #define TCL_OBJTYPE_CURRENT TCL_OBJTYPE_V1
-#define TCL_OBJTYPE_V0_INIT \
-    TCL_OBJTYPE_V0,	    \
-	NULL,		    \
-	NULL,		    \
-	NULL,		    \
-	NULL,		    \
-	NULL,		    \
-	NULL,		    \
-	NULL
 
 /*
  * The following structure stores an internal representation (internalrep) for
@@ -797,27 +792,6 @@ static inline void* Tcl_ObjGetConcreteRep(
 {
     return objPtr->internalRep.twoPtrValue.ptr1;
 }
-
-
-
-/*
- *----------------------------------------------------------------------------
- * The following structure contains the state needed by Tcl_SaveResult. No-one
- * outside of Tcl should access any of these fields. This structure is
- * typically allocated on the stack.
- */
-
-#ifndef TCL_NO_DEPRECATED
-typedef struct Tcl_SavedResult {
-    char *result;
-    Tcl_FreeProc *freeProc;
-    Tcl_Obj *objResultPtr;
-    char *appendResult;
-    int appendAvl;
-    int appendUsed;
-    char resultSpace[200+1];
-} Tcl_SavedResult;
-#endif
 
 /*
  *----------------------------------------------------------------------------

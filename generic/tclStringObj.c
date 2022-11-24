@@ -90,7 +90,7 @@ const Tcl_ObjType tclStringType = {
     DupStringInternalRep,	/* dupIntRepProc */
     UpdateStringOfString,	/* updateStringProc */
     SetStringFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0_INIT
+    TCL_OBJTYPE_V0
 };
 
 /*

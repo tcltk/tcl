@@ -4682,7 +4682,7 @@ TclObjTypeHasProc(Tcl_Obj* objPtr, Tcl_ObjProcType ptype)
 	return 0;
     }
     switch ((size_t)typePtr->version) {
-    case (size_t)TCL_OBJTYPE_V0:
+    case 0:
 	switch (ptype) {
 	case TCL_OBJ_DUPREP:
 	    return (typePtr->dupIntRepProc != NULL);

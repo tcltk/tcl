@@ -151,7 +151,7 @@ static const Tcl_ObjType methodNameType = {
     DupMethodNameRep,
     NULL,
     NULL,
-    TCL_OBJTYPE_V0_INIT
+    TCL_OBJTYPE_V0
 };
 
 

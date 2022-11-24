@@ -246,7 +246,7 @@ static Tcl_DupInternalRepProc	DupParsedVarName;
 static const Tcl_ObjType localVarNameType = {
     "localVarName",
     FreeLocalVarName, DupLocalVarName, NULL, NULL,
-    TCL_OBJTYPE_V0_INIT
+    TCL_OBJTYPE_V0
 };
 
 #define LocalSetInternalRep(objPtr, index, namePtr)				\
@@ -270,7 +270,7 @@ static const Tcl_ObjType localVarNameType = {
 static const Tcl_ObjType parsedVarNameType = {
     "parsedVarName",
     FreeParsedVarName, DupParsedVarName, NULL, NULL,
-    TCL_OBJTYPE_V0_INIT
+    TCL_OBJTYPE_V0
 };
 
 #define ParsedSetInternalRep(objPtr, arrayPtr, elem)				\
