@@ -98,7 +98,7 @@ TclpDlopen(
 		ERROR_MOD_NOT_FOUND : GetLastError();
 
 	Tcl_DStringInit(&ds);
-	nativeName = Tcl_UtfToWCharDString(Tcl_GetString(pathPtr), -1, &ds);
+	nativeName = Tcl_UtfToWCharDString(TclGetString(pathPtr), TCL_INDEX_NONE, &ds);
 	hInstance = LoadLibraryExW(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
 	Tcl_DStringFree(&ds);
@@ -139,31 +139,31 @@ TclpDlopen(
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_NOT_FOUND", NULL);
 	    notFoundMsg:
 		Tcl_AppendToObj(errMsg, "this library or a dependent library"
-			" could not be found in library path", -1);
+			" could not be found in library path", TCL_INDEX_NONE);
 		break;
 	    case ERROR_PROC_NOT_FOUND:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "PROC_NOT_FOUND", NULL);
 		Tcl_AppendToObj(errMsg, "A function specified in the import"
 			" table could not be resolved by the system. Windows"
-			" is not telling which one, I'm sorry.", -1);
+			" is not telling which one, I'm sorry.", TCL_INDEX_NONE);
 		break;
 	    case ERROR_INVALID_DLL:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "INVALID_DLL", NULL);
 		Tcl_AppendToObj(errMsg, "this library or a dependent library"
-			" is damaged", -1);
+			" is damaged", TCL_INDEX_NONE);
 		break;
 	    case ERROR_DLL_INIT_FAILED:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_INIT_FAILED", NULL);
 		Tcl_AppendToObj(errMsg, "the library initialization"
-			" routine failed", -1);
+			" routine failed", TCL_INDEX_NONE);
 		break;
             case ERROR_BAD_EXE_FORMAT:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "BAD_EXE_FORMAT", NULL);
-		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", -1);
+		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", TCL_INDEX_NONE);
                 break;
             default:
 		Tcl_WinConvertError(lastError);
-		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), -1);
+		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), TCL_INDEX_NONE);
 	    }
 	    Tcl_SetObjResult(interp, errMsg);
 	}
