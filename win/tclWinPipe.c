@@ -104,7 +104,7 @@ typedef struct PipeInfo {
     TclFile readFile;		/* Output from pipe. */
     TclFile writeFile;		/* Input from pipe. */
     TclFile errorFile;		/* Error output from pipe. */
-    size_t numPids;		/* Number of processes attached to pipe. */
+    Tcl_Size numPids;		/* Number of processes attached to pipe. */
     Tcl_Pid *pidPtr;		/* Pids of attached processes. */
     Tcl_ThreadId threadId;	/* Thread to which events should be reported.
 				 * This value is used by the reader/writer
@@ -171,7 +171,7 @@ typedef struct {
 
 static int		ApplicationType(Tcl_Interp *interp,
 			    const char *fileName, char *fullName);
-static void		BuildCommandLine(const char *executable, size_t argc,
+static void		BuildCommandLine(const char *executable, Tcl_Size argc,
 			    const char **argv, Tcl_DString *linePtr);
 static BOOL		HasConsole(void);
 static int		PipeBlockModeProc(void *instanceData, int mode);
@@ -578,7 +578,7 @@ TclpOpenFile(
     }
 
     Tcl_DStringInit(&ds);
-    nativePath = Tcl_UtfToWCharDString(path, -1, &ds);
+    nativePath = Tcl_UtfToWCharDString(path, TCL_INDEX_NONE, &ds);
 
     /*
      * If the file is not being created, use the existing file attributes.
@@ -859,7 +859,7 @@ TclpCloseFile(
  *--------------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
@@ -869,7 +869,7 @@ TclpGetPid(
 
     Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->dwProcessId == (size_t) pid) {
+	if (infoPtr->dwProcessId == (size_t)pid) {
 	    Tcl_MutexUnlock(&pipeMutex);
 	    return infoPtr->dwProcessId;
 	}
@@ -911,7 +911,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    size_t argc,			/* Number of arguments in following array. */
+    Tcl_Size argc,			/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings. argv[0] contains
 				 * the name of the executable converted to
 				 * native format (using the
@@ -1536,14 +1536,14 @@ static void
 BuildCommandLine(
     const char *executable,	/* Full path of executable (including
 				 * extension). Replacement for argv[0]. */
-    size_t argc,			/* Number of arguments. */
+    Tcl_Size argc,			/* Number of arguments. */
     const char **argv,		/* Argument strings in UTF. */
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
 				 * command line (WCHAR). */
 {
     const char *arg, *start, *special, *bspos;
     int quote = 0;
-    size_t i;
+    Tcl_Size i;
     Tcl_DString ds;
     static const char specMetaChars[] = "&|^<>!()%";
 				/* Characters to enclose in quotes if unpaired
@@ -1760,7 +1760,7 @@ TclpCreateCommandChannel(
     TclFile writeFile,		/* If non-null, gives the file for writing. */
     TclFile errorFile,		/* If non-null, gives the file where errors
 				 * can be read. */
-    size_t numPids,		/* The number of pids in the pid array. */
+    Tcl_Size numPids,		/* The number of pids in the pid array. */
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -1900,7 +1900,7 @@ TclGetAndDetachPids(
     PipeInfo *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
     Tcl_Obj *pidsObj;
-    size_t i;
+    Tcl_Size i;
 
     /*
      * Punt if the channel is not a command channel.
@@ -2744,7 +2744,7 @@ Tcl_PidObjCmd(
     Tcl_Channel chan;
     const Tcl_ChannelType *chanTypePtr;
     PipeInfo *pipePtr;
-    size_t i;
+    Tcl_Size i;
     Tcl_Obj *resultPtr;
 
     if (objc > 2) {
@@ -3191,7 +3191,7 @@ TclpOpenTemporaryFile(
     char *namePtr;
     HANDLE handle;
     DWORD flags = FILE_ATTRIBUTE_TEMPORARY;
-    size_t length;
+    Tcl_Size length;
     int counter, counter2;
     Tcl_DString buf;
 

@@ -311,6 +311,12 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
+#if TCL_MAJOR_VERSION > 8
+typedef size_t Tcl_Size;
+#else
+typedef int Tcl_Size;
+#endif
+
 #ifdef _WIN32
 #   if TCL_MAJOR_VERSION > 8
 	typedef struct __stat64 Tcl_StatBuf;
@@ -672,12 +678,6 @@ typedef union Tcl_ObjInternalRep {	/* The internal representation: */
  * An object stores a value as either a string, some internal representation,
  * or both.
  */
-#if TCL_MAJOR_VERSION > 8
-typedef size_t Tcl_Size;
-#else
-typedef int Tcl_Size;
-#endif
-
 
 typedef struct Tcl_Obj {
     Tcl_Size refCount;		/* When 0 the object will be freed. */
@@ -692,7 +692,7 @@ typedef struct Tcl_Obj {
 				 * should use Tcl_GetStringFromObj or
 				 * Tcl_GetString to get a pointer to the byte
 				 * array as a readonly value. */
-    Tcl_Size length;			/* The number of bytes at *bytes, not
+    Tcl_Size length;		/* The number of bytes at *bytes, not
 				 * including the terminating null. */
     const Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
 				 * corresponds to the type of the object's
