@@ -16,21 +16,21 @@
  * but it's faster to cache it inside the internal representation.
  */
 typedef struct ArithSeries {
+    Tcl_Size len;
+    Tcl_Obj **elements;
+    int isDouble;
     Tcl_WideInt start;
     Tcl_WideInt end;
     Tcl_WideInt step;
-    Tcl_Size len;
-    Tcl_Obj **elements;
-    int isDouble;
 } ArithSeries;
 
 typedef struct ArithSeriesDbl {
-    double start;
-    double end;
-    double step;
     Tcl_Size len;
     Tcl_Obj **elements;
     int isDouble;
+    double start;
+    double end;
+    double step;
 } ArithSeriesDbl;
 
 MODULE_SCOPE int	TclNewArithSeriesObj(Tcl_Interp *interp, Tcl_Obj **arithSeriesPtr,

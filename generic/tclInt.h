@@ -1450,11 +1450,7 @@ struct CompileEnv;
  * 			reporting is deferred until the actual runtime,
  * 			because by then changes in the interp state may allow
  * 			the command to be successfully evaluated.
- * TCL_OUT_LINE_COMPILE	A source-compatible alias for TCL_ERROR, kept for the
- * 			sake of old code only.
  */
-
-#define TCL_OUT_LINE_COMPILE	TCL_ERROR
 
 typedef int (CompileProc)(Tcl_Interp *interp, Tcl_Parse *parsePtr,
 	struct Command *cmdPtr, struct CompileEnv *compEnvPtr);
@@ -3113,7 +3109,6 @@ MODULE_SCOPE char *	TclDStringAppendObj(Tcl_DString *dsPtr,
 			    Tcl_Obj *objPtr);
 MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 			    Tcl_DString *toAppendPtr);
-MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
 MODULE_SCOPE Tcl_Obj *const *TclFetchEnsembleRoot(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, size_t objc, size_t *objcPtr);
 MODULE_SCOPE Tcl_Obj *const *TclEnsembleGetRewriteValues(Tcl_Interp *interp);
@@ -3235,7 +3230,6 @@ MODULE_SCOPE int	TclMaxListLength(const char *bytes, size_t numBytes,
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
-MODULE_SCOPE Tcl_Obj *	TclNarrowToBytes(Tcl_Obj *objPtr);
 MODULE_SCOPE Tcl_Obj *  TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
 MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);

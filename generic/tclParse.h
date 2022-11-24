@@ -16,4 +16,4 @@
 
 #define CHAR_TYPE(c) tclCharTypeTable[(unsigned char)(c)]
 
-MODULE_SCOPE const char tclCharTypeTable[];
+MODULE_SCOPE const unsigned char tclCharTypeTable[];

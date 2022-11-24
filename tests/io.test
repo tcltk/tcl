@@ -34,7 +34,7 @@ namespace eval ::tcl::test::io {
 	package require -exact tcl::test [info patchlevel]
 	set ::tcltestlib [info loaded {} Tcltest]
     }
-    package require tcltests
+    source [file join [file dirname [info script]] tcltests.tcl]
 
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testchannel      [llength [info commands testchannel]]
@@ -108,7 +108,7 @@ set path(test1) [makeFile {} test1]
 test io-1.6 {Tcl_WriteChars: WriteBytes} {
     set f [open $path(test1) w]
     fconfigure $f -encoding binary
-    puts -nonewline $f "a乍\x00"
+    puts -nonewline $f "a\x4D\x00"
     close $f
     contents $path(test1)
 } "a\x4D\x00"
@@ -466,7 +466,7 @@ test io-6.3 {Tcl_GetsObj: how many have we used?} {
 test io-6.4 {Tcl_GetsObj: encoding == NULL} {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
-    puts $f "\x81\u1234\x00"
+    puts $f "\x81\x34\x00"
     close $f
     set f [open $path(test1)]
     fconfigure $f -translation binary
@@ -9124,11 +9124,10 @@ test io-75.9 {shiftjis encoding error read results in raw bytes} -setup {
 # The current result cuts at the invalid sequence. IMHO, there should be an
 # error thrown or the whole sequence should be returned as byte (compat mode).
 
-test io-75.10 {incomplete shiftjis encoding read is ignored} -setup {
-    set fn [makeFile {} io-75.10]
+test io-75.10 {invalid utf-8 encoding read is ignored} -setup {
+    set fn [makeFile {} io-75.5]
     set f [open $fn w+]
     fconfigure $f -encoding binary
-    # \x81 announces a two byte sequence.
     puts -nonewline $f "A\x81"
     flush $f
     seek $f 0
@@ -9141,6 +9140,24 @@ test io-75.10 {incomplete shiftjis encoding read is ignored} -setup {
 } -cleanup {
     removeFile io-75.10
 } -result "4181"
+test io-75.11 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -setup {
+    set fn [makeFile {} io-75.6]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 is invalid in utf-8
+    puts -nonewline $f "A\x81"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -strictencoding 1
+} -body {
+    set d [read $f]
+    binary scan $d H* hd
+    lappend hd [catch {read $f} msg]
+    close $f
+    lappend hd $msg
+} -cleanup {
+    removeFile io-75.6
+} -result "41 0 {}" ; # Here, an exception should be thrown
 
 # ### ### ### ######### ######### #########
 

@@ -510,7 +510,7 @@ EncodingConvertfromObjCmd(
      * truncate the string at the first null byte.
      */
 
-    Tcl_SetObjResult(interp, TclDStringToObj(&ds));
+    Tcl_SetObjResult(interp, Tcl_DStringToObj(&ds));
 
     /*
      * We're done with the encoding
@@ -1911,7 +1911,7 @@ PathNativeNameCmd(
     if (Tcl_TranslateFileName(interp, TclGetString(objv[1]), &ds) == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, TclDStringToObj(&ds));
+    Tcl_SetObjResult(interp, Tcl_DStringToObj(&ds));
     return TCL_OK;
 }
 
