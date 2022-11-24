@@ -912,9 +912,9 @@ BinaryFormatCmd(
 		goto badIndex;
 	    }
 	    if (count == BINARY_ALL) {
-		Tcl_Obj *copy = TclNarrowToBytes(objv[arg]);
-		(void)Tcl_GetByteArrayFromObj(copy, &count);
-		Tcl_DecrRefCount(copy);
+		if (Tcl_GetByteArrayFromObj(objv[arg], &count) == NULL) {
+		    count = Tcl_GetCharLength(objv[arg]);
+		}
 	    } else if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
@@ -2524,7 +2524,7 @@ BinaryDecodeHex(
     }
 
     TclNewObj(resultObj);
-    data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
+    data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
 	data = (unsigned char *) Tcl_GetStringFromObj(objv[objc - 1], &count);
@@ -2657,7 +2657,7 @@ BinaryEncode64(
 	    }
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = (const char *)Tcl_GetBytesFromObj(NULL,
+	    wrapchar = (const char *)Tcl_GetByteArrayFromObj(
 		    objv[i + 1], &wrapcharlen);
 	    if (wrapchar == NULL) {
 		purewrap = 0;
@@ -2928,7 +2928,7 @@ BinaryDecodeUu(
     }
 
     TclNewObj(resultObj);
-    data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
+    data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
 	data = (unsigned char *) Tcl_GetStringFromObj(objv[objc - 1], &count);
@@ -3103,7 +3103,7 @@ BinaryDecode64(
     }
 
     TclNewObj(resultObj);
-    data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
+    data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
 	data = (unsigned char *) Tcl_GetStringFromObj(objv[objc - 1], &count);

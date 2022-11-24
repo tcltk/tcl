@@ -880,7 +880,9 @@ LinkTraceProc(
 
     case TCL_LINK_BINARY:
 	value = (char *) Tcl_GetByteArrayFromObj(valueObj, &valueLength);
-	if (valueLength != linkPtr->bytes) {
+	if (value == NULL) {
+	    return (char *) "invalid binary value";
+	} else if (valueLength != linkPtr->bytes) {
 	    return (char *) "wrong size of binary value";
 	}
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
