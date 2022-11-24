@@ -17,6 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 testConstraint arithSeriesDouble 1
 testConstraint arithSeriesShimmer 1
 testConstraint arithSeriesShimmerOk 1
+testConstraint knownBug 0
 
 ## Arg errors
 test lseq-1.1 {error cases} -body {
@@ -554,6 +555,20 @@ test lseq-4.10 {panic using variable index} {
     lindex [lseq 10] $i
 } {0}
 
+test lseq-4.11 {bug e5f06285de} knownBug {
+    set a1 [lseq 4 40 0.1]
+    set b1 [lseq 6 40 0.1]
+    for {set i 0} {$i < [llength $b1]} {incr i} {
+        set e1 [lindex $a1 $i+20]
+        set e2 [lindex $b1 $i]
+	set c1 [expr {4.0 + (double($i+20) * 0.1)}]
+	set c2 [expr {6.0 + (double($i) * 0.1)}]
+        if {[string compare $e1 $e2]} {
+            lappend bad [list $i $e1 $e2 [format %g $e1]]
+        }
+    }
+    set bad
+} {}
 
 # cleanup
 ::tcltest::cleanupTests

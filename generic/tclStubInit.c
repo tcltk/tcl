@@ -232,6 +232,8 @@ int TclParseArgsObjv(Tcl_Interp *interp,
 #define TclBN_mp_mul_2d mp_mul_2d
 #define TclBN_mp_neg mp_neg
 #define TclBN_mp_or mp_or
+#define TclBN_mp_pack mp_pack
+#define TclBN_mp_pack_count mp_pack_count
 #define TclBN_mp_radix_size mp_radix_size
 #define TclBN_mp_read_radix mp_read_radix
 #define TclBN_mp_rshd mp_rshd
@@ -531,7 +533,7 @@ static const TclIntStubs tclIntStubs = {
     Tcl_PushCallFrame, /* 129 */
     Tcl_RemoveInterpResolvers, /* 130 */
     Tcl_SetNamespaceResolvers, /* 131 */
-    TclpHasSockets, /* 132 */
+    0, /* 132 */
     0, /* 133 */
     0, /* 134 */
     0, /* 135 */
@@ -783,12 +785,12 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_get_mag_u64, /* 69 */
     TclBN_mp_set_i64, /* 70 */
     TclBN_mp_unpack, /* 71 */
-    0, /* 72 */
+    TclBN_mp_pack, /* 72 */
     0, /* 73 */
     0, /* 74 */
     0, /* 75 */
     TclBN_mp_signed_rsh, /* 76 */
-    0, /* 77 */
+    TclBN_mp_pack_count, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
     0, /* 79 */
     TclBN_mp_to_radix, /* 80 */

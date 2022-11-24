@@ -660,7 +660,7 @@ InstructionDesc const tclInstructionTable[] = {
     {"lreplace4",	  6,   INT_MIN,    2,	{OPERAND_UINT4, OPERAND_UINT1}},
 	/* Operands: number of arguments, flags
 	 * flags: Combination of TCL_LREPLACE4_* flags
-	 * Stack: ... listobj index1 ?index2? new1 ... newN => ... newlistobj 
+	 * Stack: ... listobj index1 ?index2? new1 ... newN => ... newlistobj
 	 * where index2 is present only if TCL_LREPLACE_SINGLE_INDEX is not
 	 * set in flags.
 	 */

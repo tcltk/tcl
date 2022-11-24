@@ -850,7 +850,7 @@ The \fBTcl_Filesystem\fR structure contains the following fields:
 .CS
 typedef struct Tcl_Filesystem {
     const char *\fItypeName\fR;
-    int \fIstructureLength\fR;
+    size_t \fIstructureLength\fR;
     Tcl_FSVersion \fIversion\fR;
     Tcl_FSPathInFilesystemProc *\fIpathInFilesystemProc\fR;
     Tcl_FSDupInternalRepProc *\fIdupInternalRepProc\fR;

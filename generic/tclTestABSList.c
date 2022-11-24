@@ -20,7 +20,7 @@ static Tcl_Obj* my_LStringObjSetElem(Tcl_Interp *interp,
 				     Tcl_Obj *const indicies[],
 				     Tcl_Obj *valueObj);
 static void DupLStringRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
-static Tcl_WideInt my_LStringObjLength(Tcl_Obj *lstringObjPtr);
+static Tcl_Size my_LStringObjLength(Tcl_Obj *lstringObjPtr);
 static int my_LStringObjIndex(Tcl_Interp *interp,
 			      Tcl_Obj *lstringObj,
 			      Tcl_Size index,
@@ -287,7 +287,7 @@ my_LStringObjIndex(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static Tcl_Size
 my_LStringObjLength(Tcl_Obj *lstringObjPtr)
 {
     LString *lstringRepPtr = (LString *)Tcl_ObjGetConcreteRep(lstringObjPtr);
@@ -473,7 +473,7 @@ my_LStringObjReverse(Tcl_Interp *interp, Tcl_Obj *srcObj, Tcl_Obj **newObjPtr)
     Tcl_Obj *revObj;
     LString *revRep = (LString*)Tcl_Alloc(sizeof(LString));
     Tcl_ObjInternalRep itr;
-    Tcl_WideInt len;
+    Tcl_Size len;
     char *srcp, *dstp, *endp;
     (void)interp;
     len = srcRep->strlen;

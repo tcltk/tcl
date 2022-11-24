@@ -3796,7 +3796,7 @@ TclInitDictCmd(
  *   The intent is to have no side effects.
  */
 
-static Tcl_WideInt
+static Tcl_Size
 DictAsListLength(
     Tcl_Obj *objPtr)
 {

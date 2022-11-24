@@ -21,6 +21,8 @@
 #include "tclInt.h"
 #include "tclRegexp.h"
 #include "tclArithSeries.h"
+#include "tclTomMath.h"
+#include <math.h>
 #include <assert.h>
 
 /*
@@ -3591,7 +3593,7 @@ Tcl_LsearchObjCmd(
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
-		TclNewIndexObj(itemPtr, TCL_INDEX_NONE);
+		TclNewIntObj(itemPtr, TCL_INDEX_NONE);
 		Tcl_SetObjResult(interp, itemPtr);
 	    }
 	    goto done;

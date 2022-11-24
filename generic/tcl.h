@@ -565,7 +565,7 @@ typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
-	int level, const char *command, Tcl_Command commandInfo, size_t objc,
+	size_t level, const char *command, Tcl_Command commandInfo, size_t objc,
 	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
@@ -613,7 +613,7 @@ typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
 /* Abstract List functions */
-typedef	   Tcl_WideInt	(Tcl_ALLengthProc) (struct Tcl_Obj *listPtr);
+typedef	      Tcl_Size	(Tcl_ALLengthProc) (struct Tcl_Obj *listPtr);
 typedef		   int	(Tcl_ALIndexProc)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
 					    Tcl_Size index, struct Tcl_Obj** elemObj);
 typedef		   int	(Tcl_ALSliceProc)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
@@ -660,7 +660,7 @@ typedef struct Tcl_ObjType {
 				/* Called to convert the object's internal rep
 				 * to this type. Frees the internal rep of the
 				 * old type. Returns TCL_ERROR on failure. */
-    Tcl_ObjTypeVersion version;
+    size_t version;
 
     /* List emulation functions - ObjTypeVersion 1 */
     Tcl_ALLengthProc *lengthProc;	/* Return the [llength] of the
@@ -676,14 +676,12 @@ typedef struct Tcl_ObjType {
     Tcl_ALSetElement *setElementProc;   /* Replace the element at the indicie
 					** with the given valueObj. */
     Tcl_ALReplaceProc *replaceProc;     /* Replace subset with subset */
-
 } Tcl_ObjType;
 
-
-#define TCL_OBJTYPE_V0 ((Tcl_ObjTypeVersion)0) /* Pre-Tcl 9. Set to 0 so
-			  * compiler will auto-init  when existing code that does
-			  * not init this field is compiled with Tcl9 headers */
-#define TCL_OBJTYPE_V1 ((Tcl_ObjTypeVersion)1) /* Tcl 9 - AbstractLists */
+#define TCL_OBJTYPE_V0 0 /* Pre-Tcl 9. Set to 0 so compiler will auto-init
+			  * when existing code that does not init this
+			  * field is compiled with Tcl9 headers */
+#define TCL_OBJTYPE_V1 (1) /* Tcl 9 - AbstractLists */
 #define TCL_OBJTYPE_CURRENT TCL_OBJTYPE_V1
 #define TCL_OBJTYPE_V0_INIT \
     TCL_OBJTYPE_V0,	    \
@@ -901,7 +899,7 @@ typedef struct Tcl_CallFrame {
  * then calls the other function.
  */
 
-typedef struct Tcl_CmdInfo {
+typedef struct {
     int isNativeObjectProc;	/* 1 if objProc was registered by a call to
 				 * Tcl_CreateObjCommand; 2 if objProc was registered by
 				 * a call to Tcl_CreateObjCommand2; 0 otherwise.

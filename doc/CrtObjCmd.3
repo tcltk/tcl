@@ -224,7 +224,7 @@ pointed to by \fIinfoPtr\fR and returns 1.
 A \fBTcl_CmdInfo\fR structure has the following fields:
 .PP
 .CS
-typedef struct Tcl_CmdInfo {
+typedef struct {
     int \fIisNativeObjectProc\fR;
     Tcl_ObjCmdProc *\fIobjProc\fR;
     void *\fIobjClientData\fR;

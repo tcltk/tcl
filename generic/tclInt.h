@@ -1041,9 +1041,13 @@ typedef void (ProcErrorProc)(Tcl_Interp *interp, Tcl_Obj *procNameObj);
  */
 
 typedef struct Trace {
-    int level;			/* Only trace commands at nesting level less
+    Tcl_Size level;		/* Only trace commands at nesting level less
 				 * than or equal to this. */
+#if TCL_MAJOR_VERSION > 8
+    Tcl_CmdObjTraceProc2 *proc;	/* Procedure to call to trace command. */
+#else
     Tcl_CmdObjTraceProc *proc;	/* Procedure to call to trace command. */
+#endif
     void *clientData;	/* Arbitrary value to pass to proc. */
     struct Trace *nextPtr;	/* Next in list of traces for this interp. */
     int flags;			/* Flags governing the trace - see
@@ -3276,6 +3280,11 @@ MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
 MODULE_SCOPE void	TclpFinalizeNotifier(void *clientData);
 MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
+#ifdef _WIN32
+MODULE_SCOPE void	TclInitSockets(void);
+#else
+#define TclInitSockets() /* do nothing */
+#endif
 MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 			    struct addrinfo **addrlist,
 			    const char *host, int port, int willBind,
@@ -4851,15 +4860,46 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
-#define TclNewIndexObj(objPtr, w) \
+#define TclNewUIntObj(objPtr, uw) \
     do {						\
-	size_t _w = (w);		\
 	TclIncrObjsAllocated();				\
 	TclAllocObjStorage(objPtr);			\
 	(objPtr)->refCount = 0;				\
 	(objPtr)->bytes = NULL;				\
-	(objPtr)->internalRep.wideValue = ((size_t)(_w) == (size_t)TCL_INDEX_NONE) ? -1 : (Tcl_WideInt)(_w); \
-	(objPtr)->typePtr = &tclIntType;		\
+	Tcl_WideUInt uw_ = (uw);		\
+	if (uw_ > WIDE_MAX) {			\
+	    mp_int bignumValue_;		\
+	    if (mp_init_u64(&bignumValue_, uw_) != MP_OKAY) {	\
+		Tcl_Panic("%s: memory overflow", "TclNewUIntObj");	\
+	    }	\
+	    TclSetBignumInternalRep((objPtr), &bignumValue_);	\
+	} else {	\
+	    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(uw_);	\
+	    (objPtr)->typePtr = &tclIntType;		\
+	}	\
+	TCL_DTRACE_OBJ_CREATE(objPtr);			\
+    } while (0)
+
+#define TclNewIndexObj(objPtr, uw) \
+    do {						\
+	TclIncrObjsAllocated();				\
+	TclAllocObjStorage(objPtr);			\
+	(objPtr)->refCount = 0;				\
+	(objPtr)->bytes = NULL;				\
+	Tcl_WideUInt uw_ = (uw);		\
+	if (uw_ >= TCL_INDEX_NONE) {			\
+	    (objPtr)->internalRep.wideValue = -1; \
+	    (objPtr)->typePtr = &tclIntType;		\
+	} else if (uw_ > WIDE_MAX) {			\
+	    mp_int bignumValue_;		\
+	    if (mp_init_u64(&bignumValue_, uw_) != MP_OKAY) {	\
+		Tcl_Panic("%s: memory overflow", "TclNewUIntObj");	\
+	    }	\
+	    TclSetBignumInternalRep((objPtr), &bignumValue_);	\
+	} else {	\
+	    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(uw_); \
+	    (objPtr)->typePtr = &tclIntType;		\
+	}	\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
@@ -4888,8 +4928,23 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 #define TclNewIntObj(objPtr, w) \
     (objPtr) = Tcl_NewWideIntObj(w)
 
+#define TclNewUIntObj(objPtr, uw) \
+    do {						\
+	Tcl_WideUInt uw_ = (uw);		\
+	if (uw_ > WIDE_MAX) {			\
+	    mp_int bignumValue_;		\
+	    if (mp_init_u64(&bignumValue_, uw_) == MP_OKAY) {	\
+		(objPtr) = Tcl_NewBignumObj(&bignumValue_);	\
+	    } else {	\
+		(objPtr) = NULL; \
+	    } \
+	} else {	\
+	    (objPtr) = Tcl_NewWideIntObj(uw_);	\
+	}	\
+    } while (0)
+
 #define TclNewIndexObj(objPtr, w) \
-    (objPtr) = (((size_t)w) == TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideIntObj(w)
+    (objPtr) = (((Tcl_WideUInt)w) >= TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideIntObj(w)
 
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)

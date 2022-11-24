@@ -20,6 +20,7 @@
 #include "tclCompile.h"
 #include "tclRegexp.h"
 #include "tclStringTrim.h"
+#include "tclTomMath.h"
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
@@ -3748,7 +3749,7 @@ TclNRSwitchObjCmd(
 		    TclNewIndexObj(rangeObjAry[0], info.matches[j].start);
 		    TclNewIndexObj(rangeObjAry[1], info.matches[j].end-1);
 		} else {
-		    TclNewIndexObj(rangeObjAry[1], TCL_INDEX_NONE);
+		    TclNewIntObj(rangeObjAry[1], TCL_INDEX_NONE);
 		    rangeObjAry[0] = rangeObjAry[1];
 		}
 

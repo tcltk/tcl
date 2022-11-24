@@ -306,7 +306,7 @@ EXTERN Tcl_Interp *	Tcl_CreateChild(Tcl_Interp *interp, const char *name,
 EXTERN Tcl_TimerToken	Tcl_CreateTimerHandler(int milliseconds,
 				Tcl_TimerProc *proc, void *clientData);
 /* 99 */
-EXTERN Tcl_Trace	Tcl_CreateTrace(Tcl_Interp *interp, int level,
+EXTERN Tcl_Trace	Tcl_CreateTrace(Tcl_Interp *interp, Tcl_Size level,
 				Tcl_CmdTraceProc *proc, void *clientData);
 /* 100 */
 EXTERN void		Tcl_DeleteAssocData(Tcl_Interp *interp,
@@ -860,7 +860,7 @@ EXTERN int		Tcl_UniCharToTitle(int ch);
 /* 323 */
 EXTERN int		Tcl_UniCharToUpper(int ch);
 /* 324 */
-EXTERN int		Tcl_UniCharToUtf(int ch, char *buf);
+EXTERN Tcl_Size		Tcl_UniCharToUtf(int ch, char *buf);
 /* 325 */
 EXTERN const char *	TclUtfAtIndex(const char *src, Tcl_Size index);
 /* 326 */
@@ -888,14 +888,14 @@ EXTERN char *		Tcl_UtfToExternalDString(Tcl_Encoding encoding,
 				const char *src, Tcl_Size srcLen,
 				Tcl_DString *dsPtr);
 /* 334 */
-EXTERN int		Tcl_UtfToLower(char *src);
+EXTERN Tcl_Size		Tcl_UtfToLower(char *src);
 /* 335 */
-EXTERN int		Tcl_UtfToTitle(char *src);
+EXTERN Tcl_Size		Tcl_UtfToTitle(char *src);
 /* 336 */
-EXTERN int		Tcl_UtfToChar16(const char *src,
+EXTERN Tcl_Size		Tcl_UtfToChar16(const char *src,
 				unsigned short *chPtr);
 /* 337 */
-EXTERN int		Tcl_UtfToUpper(char *src);
+EXTERN Tcl_Size		Tcl_UtfToUpper(char *src);
 /* 338 */
 EXTERN Tcl_Size		Tcl_WriteChars(Tcl_Channel chan, const char *src,
 				Tcl_Size srcLen);
@@ -1263,8 +1263,9 @@ EXTERN int		Tcl_EvalTokensStandard(Tcl_Interp *interp,
 /* 482 */
 EXTERN void		Tcl_GetTime(Tcl_Time *timeBuf);
 /* 483 */
-EXTERN Tcl_Trace	Tcl_CreateObjTrace(Tcl_Interp *interp, int level,
-				int flags, Tcl_CmdObjTraceProc *objProc,
+EXTERN Tcl_Trace	Tcl_CreateObjTrace(Tcl_Interp *interp,
+				Tcl_Size level, int flags,
+				Tcl_CmdObjTraceProc *objProc,
 				void *clientData,
 				Tcl_CmdObjTraceDeleteProc *delProc);
 /* 484 */
@@ -1734,7 +1735,7 @@ EXTERN int		Tcl_GetIntForIndex(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, Tcl_Size endValue,
 				Tcl_Size *indexPtr);
 /* 646 */
-EXTERN int		Tcl_UtfToUniChar(const char *src, int *chPtr);
+EXTERN Tcl_Size		Tcl_UtfToUniChar(const char *src, int *chPtr);
 /* 647 */
 EXTERN char *		Tcl_UniCharToUtfDString(const int *uniStr,
 				Tcl_Size uniLength, Tcl_DString *dsPtr);
@@ -1824,8 +1825,9 @@ EXTERN Tcl_Command	Tcl_CreateObjCommand2(Tcl_Interp *interp,
 				void *clientData,
 				Tcl_CmdDeleteProc *deleteProc);
 /* 677 */
-EXTERN Tcl_Trace	Tcl_CreateObjTrace2(Tcl_Interp *interp, int level,
-				int flags, Tcl_CmdObjTraceProc2 *objProc2,
+EXTERN Tcl_Trace	Tcl_CreateObjTrace2(Tcl_Interp *interp,
+				Tcl_Size level, int flags,
+				Tcl_CmdObjTraceProc2 *objProc2,
 				void *clientData,
 				Tcl_CmdObjTraceDeleteProc *delProc);
 /* 678 */
@@ -1960,7 +1962,7 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_CreateObjCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc *proc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 96 */
     Tcl_Interp * (*tcl_CreateChild) (Tcl_Interp *interp, const char *name, int isSafe); /* 97 */
     Tcl_TimerToken (*tcl_CreateTimerHandler) (int milliseconds, Tcl_TimerProc *proc, void *clientData); /* 98 */
-    Tcl_Trace (*tcl_CreateTrace) (Tcl_Interp *interp, int level, Tcl_CmdTraceProc *proc, void *clientData); /* 99 */
+    Tcl_Trace (*tcl_CreateTrace) (Tcl_Interp *interp, Tcl_Size level, Tcl_CmdTraceProc *proc, void *clientData); /* 99 */
     void (*tcl_DeleteAssocData) (Tcl_Interp *interp, const char *name); /* 100 */
     void (*tcl_DeleteChannelHandler) (Tcl_Channel chan, Tcl_ChannelProc *proc, void *clientData); /* 101 */
     void (*tcl_DeleteCloseHandler) (Tcl_Channel chan, Tcl_CloseProc *proc, void *clientData); /* 102 */
@@ -2185,7 +2187,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharToLower) (int ch); /* 321 */
     int (*tcl_UniCharToTitle) (int ch); /* 322 */
     int (*tcl_UniCharToUpper) (int ch); /* 323 */
-    int (*tcl_UniCharToUtf) (int ch, char *buf); /* 324 */
+    Tcl_Size (*tcl_UniCharToUtf) (int ch, char *buf); /* 324 */
     const char * (*tclUtfAtIndex) (const char *src, Tcl_Size index); /* 325 */
     int (*tclUtfCharComplete) (const char *src, Tcl_Size length); /* 326 */
     Tcl_Size (*tcl_UtfBackslash) (const char *src, int *readPtr, char *dst); /* 327 */
@@ -2195,10 +2197,10 @@ typedef struct TclStubs {
     const char * (*tclUtfPrev) (const char *src, const char *start); /* 331 */
     int (*tcl_UtfToExternal) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr); /* 332 */
     char * (*tcl_UtfToExternalDString) (Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, Tcl_DString *dsPtr); /* 333 */
-    int (*tcl_UtfToLower) (char *src); /* 334 */
-    int (*tcl_UtfToTitle) (char *src); /* 335 */
-    int (*tcl_UtfToChar16) (const char *src, unsigned short *chPtr); /* 336 */
-    int (*tcl_UtfToUpper) (char *src); /* 337 */
+    Tcl_Size (*tcl_UtfToLower) (char *src); /* 334 */
+    Tcl_Size (*tcl_UtfToTitle) (char *src); /* 335 */
+    Tcl_Size (*tcl_UtfToChar16) (const char *src, unsigned short *chPtr); /* 336 */
+    Tcl_Size (*tcl_UtfToUpper) (char *src); /* 337 */
     Tcl_Size (*tcl_WriteChars) (Tcl_Channel chan, const char *src, Tcl_Size srcLen); /* 338 */
     Tcl_Size (*tcl_WriteObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 339 */
     char * (*tcl_GetString) (Tcl_Obj *objPtr); /* 340 */
@@ -2344,7 +2346,7 @@ typedef struct TclStubs {
     void (*tcl_FSMountsChanged) (const Tcl_Filesystem *fsPtr); /* 480 */
     int (*tcl_EvalTokensStandard) (Tcl_Interp *interp, Tcl_Token *tokenPtr, Tcl_Size count); /* 481 */
     void (*tcl_GetTime) (Tcl_Time *timeBuf); /* 482 */
-    Tcl_Trace (*tcl_CreateObjTrace) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc *objProc, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 483 */
+    Tcl_Trace (*tcl_CreateObjTrace) (Tcl_Interp *interp, Tcl_Size level, int flags, Tcl_CmdObjTraceProc *objProc, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 483 */
     int (*tcl_GetCommandInfoFromToken) (Tcl_Command token, Tcl_CmdInfo *infoPtr); /* 484 */
     int (*tcl_SetCommandInfoFromToken) (Tcl_Command token, const Tcl_CmdInfo *infoPtr); /* 485 */
     Tcl_Obj * (*tcl_DbNewWideIntObj) (Tcl_WideInt wideValue, const char *file, int line); /* 486 */
@@ -2507,7 +2509,7 @@ typedef struct TclStubs {
     int (*tcl_IsShared) (Tcl_Obj *objPtr); /* 643 */
     int (*tcl_LinkArray) (Tcl_Interp *interp, const char *varName, void *addr, int type, Tcl_Size size); /* 644 */
     int (*tcl_GetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size endValue, Tcl_Size *indexPtr); /* 645 */
-    int (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 646 */
+    Tcl_Size (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 646 */
     char * (*tcl_UniCharToUtfDString) (const int *uniStr, Tcl_Size uniLength, Tcl_DString *dsPtr); /* 647 */
     int * (*tcl_UtfToUniCharDString) (const char *src, Tcl_Size length, Tcl_DString *dsPtr); /* 648 */
     unsigned char * (*tclGetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *numBytesPtr); /* 649 */
@@ -2538,7 +2540,7 @@ typedef struct TclStubs {
     int (*tcl_GetBool) (Tcl_Interp *interp, const char *src, int flags, char *charPtr); /* 674 */
     int (*tcl_GetBoolFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, char *charPtr); /* 675 */
     Tcl_Command (*tcl_CreateObjCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 676 */
-    Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
+    Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, Tcl_Size level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
     Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 678 */
     int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 679 */
     int (*tcl_GetNumberFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, void **clientDataPtr, int *typePtr); /* 680 */
@@ -4126,8 +4128,8 @@ extern const TclStubs *tclStubsPtr;
 		? (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))tclStubsPtr->tcl_UtfToUniCharDString \
 		: (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToChar16DString)
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
-		? (int (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToUniChar \
-		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
+		? (Tcl_Size (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToUniChar \
+		: (Tcl_Size (*)(const char *, wchar_t *))Tcl_UtfToChar16)
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (Tcl_Size (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
 		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
@@ -4167,8 +4169,8 @@ extern const TclStubs *tclStubsPtr;
 		? (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToUniCharDString \
 		: (wchar_t *(*)(const char *, Tcl_Size, Tcl_DString *))Tcl_UtfToChar16DString)
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
-		? (int (*)(const char *, wchar_t *))Tcl_UtfToUniChar \
-		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
+		? (Tcl_Size (*)(const char *, wchar_t *))Tcl_UtfToUniChar \
+		: (Tcl_Size (*)(const char *, wchar_t *))Tcl_UtfToChar16)
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (Tcl_Size (*)(wchar_t *))Tcl_UniCharLen \
 		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)

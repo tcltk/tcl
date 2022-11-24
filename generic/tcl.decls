@@ -388,7 +388,7 @@ declare 98 {
 	    Tcl_TimerProc *proc, void *clientData)
 }
 declare 99 {
-    Tcl_Trace Tcl_CreateTrace(Tcl_Interp *interp, int level,
+    Tcl_Trace Tcl_CreateTrace(Tcl_Interp *interp, Tcl_Size level,
 	    Tcl_CmdTraceProc *proc, void *clientData)
 }
 declare 100 {
@@ -1205,7 +1205,7 @@ declare 323 {
     int Tcl_UniCharToUpper(int ch)
 }
 declare 324 {
-    int Tcl_UniCharToUtf(int ch, char *buf)
+    Tcl_Size Tcl_UniCharToUtf(int ch, char *buf)
 }
 declare 325 {
     const char *TclUtfAtIndex(const char *src, Tcl_Size index)
@@ -1239,16 +1239,16 @@ declare 333 {
 	    const char *src, Tcl_Size srcLen, Tcl_DString *dsPtr)
 }
 declare 334 {
-    int Tcl_UtfToLower(char *src)
+    Tcl_Size Tcl_UtfToLower(char *src)
 }
 declare 335 {
-    int Tcl_UtfToTitle(char *src)
+    Tcl_Size Tcl_UtfToTitle(char *src)
 }
 declare 336 {
-    int Tcl_UtfToChar16(const char *src, unsigned short *chPtr)
+    Tcl_Size Tcl_UtfToChar16(const char *src, unsigned short *chPtr)
 }
 declare 337 {
-    int Tcl_UtfToUpper(char *src)
+    Tcl_Size Tcl_UtfToUpper(char *src)
 }
 declare 338 {
     Tcl_Size Tcl_WriteChars(Tcl_Channel chan, const char *src, Tcl_Size srcLen)
@@ -1781,7 +1781,7 @@ declare 482 {
 
 # TIP#32 (object-enabled traces) kbk
 declare 483 {
-    Tcl_Trace Tcl_CreateObjTrace(Tcl_Interp *interp, int level, int flags,
+    Tcl_Trace Tcl_CreateObjTrace(Tcl_Interp *interp, Tcl_Size level, int flags,
 	    Tcl_CmdObjTraceProc *objProc, void *clientData,
 	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
@@ -2454,7 +2454,7 @@ declare 645 {
 
 # TIP #548
 declare 646 {
-    int Tcl_UtfToUniChar(const char *src, int *chPtr)
+    Tcl_Size Tcl_UtfToUniChar(const char *src, int *chPtr)
 }
 declare 647 {
     char *Tcl_UniCharToUtfDString(const int *uniStr,
@@ -2576,7 +2576,7 @@ declare 676 {
 	    Tcl_CmdDeleteProc *deleteProc)
 }
 declare 677 {
-    Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, int level, int flags,
+    Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, Tcl_Size level, int flags,
 	    Tcl_CmdObjTraceProc2 *objProc2, void *clientData,
 	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
@@ -2611,7 +2611,26 @@ declare 683 {
    int Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
 }
 
-# ----- BASELINE -- FOR -- 8.7.0 ----- #
+# TIP #648 (reserved)
+#declare 684 {
+#    Tcl_Obj *Tcl_NewWideUIntObj(Tcl_WideUInt wideValue)
+#}
+#declare 685 {
+#    void Tcl_SetWideUIntObj(Tcl_Obj *objPtr, Tcl_WideUInt uwideValue)
+#}
+
+# TIP #650 (reserved)
+#declare 686 {
+#    int Tcl_GetWideUIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+#	    Tcl_WideUInt *uwidePtr)
+#}
+
+# TIP 651 (reserved)
+#declare 687 {
+#    Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
+#}
+
+# ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
 ##############################################################################
 

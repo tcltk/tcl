@@ -43,9 +43,9 @@
  * are valid and will be equivalent to the empty list.
  */
 
-static inline double ArithSeriesIndexDbl(ArithSeriesDbl *repPtr, double index)
+static inline double ArithSeriesIndexDbl(ArithSeriesDbl *repPtr, Tcl_Size index)
 {
-    return (repPtr->start + (index * repPtr->step));
+    return (repPtr->start + ((double)index * repPtr->step));
 }
 static inline Tcl_WideInt ArithSeriesIndexInt(ArithSeries *repPtr, Tcl_Size index)
 {
@@ -55,7 +55,7 @@ static inline Tcl_WideInt ArithSeriesIndexInt(ArithSeries *repPtr, Tcl_Size inde
 static int TclArithSeriesObjStep(Tcl_Obj *arithSeriesPtr, Tcl_Obj **stepObj);
 static int TclArithSeriesObjIndex(Tcl_Interp *interp, Tcl_Obj *arithSeriesPtr,
 			    Tcl_Size index, Tcl_Obj **elemObj);
-static Tcl_WideInt TclArithSeriesObjLength(Tcl_Obj *arithSeriesObj);
+static Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesObj);
 static int TclArithSeriesObjRange(Tcl_Interp *interp, Tcl_Obj *arithSeriesPtr,
 			    Tcl_Size fromIdx, Tcl_Size toIdx, Tcl_Obj **newObjPtr);
 static int TclArithSeriesObjReverse(Tcl_Interp *interp, Tcl_Obj *arithSeriesPtr, Tcl_Obj **newObjPtr);
@@ -71,19 +71,19 @@ static void FreeArithSeriesRep(Tcl_Obj *arithSeriesObjPtr);
 static void UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr);
 
 static Tcl_ObjType arithSeriesType = {
-	"arithseries",
-	FreeArithSeriesRep,
-	DupArithSeriesRep,
-	UpdateStringOfArithSeries,
-	NULL, // setFromAny
-	TCL_OBJTYPE_V1,
-	TclArithSeriesObjLength,
-	TclArithSeriesObjIndex,
-	TclArithSeriesObjRange,
-	TclArithSeriesObjReverse,
-        TclArithSeriesGetElements,
-	NULL, // SetElement
-	NULL  // Replace
+    "arithseries",			/* name */
+    FreeArithSeriesRep,		/* freeIntRepProc */
+    DupArithSeriesRep,		/* dupIntRepProc */
+    UpdateStringOfArithSeries,	/* updateStringProc */
+    NULL,			/* setFromAnyProc */
+    TCL_OBJTYPE_V1,
+    TclArithSeriesObjLength,
+    TclArithSeriesObjIndex,
+    TclArithSeriesObjRange,
+    TclArithSeriesObjReverse,
+    TclArithSeriesGetElements,
+    NULL, // SetElement
+    NULL  // Replace
 };
 
 /*
@@ -463,7 +463,7 @@ TclNewArithSeriesObj(
  *
  *----------------------------------------------------------------------
  */
-Tcl_WideInt TclArithSeriesObjLength(Tcl_Obj *arithSeriesObj)
+Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesObj)
 {
     ArithSeries *arithSeriesRepPtr = (ArithSeries *)Tcl_ObjGetConcreteRep(arithSeriesObj);
     return arithSeriesRepPtr->len;
@@ -825,7 +825,6 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr)
     Tcl_WideInt length = 0;
     int llen, slen, i;
 
-
     /*
      * Pass 1: estimate space.
      */
@@ -836,12 +835,12 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr)
     }
     for (i = 0; i < llen; i++) {
 	if (TclArithSeriesObjIndex(NULL, arithSeriesObjPtr, i, &eleObj) == TCL_OK) {
-            Tcl_GetStringFromObj(eleObj, &slen);
-            length += slen + 1; /* one more for the space char */
-            Tcl_DecrRefCount(eleObj);
-        } else {
-            // TODO: report error?
-        }
+	    Tcl_GetStringFromObj(eleObj, &slen);
+	    length += slen + 1; /* one more for the space char */
+	    Tcl_DecrRefCount(eleObj);
+	} else {
+	    // TODO: report error?
+	}
     }
 
     /*
@@ -851,12 +850,12 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr)
     p = Tcl_InitStringRep(arithSeriesObjPtr, NULL, length);
     for (i = 0; i < llen; i++) {
 	if (TclArithSeriesObjIndex(NULL, arithSeriesObjPtr, i, &eleObj) == TCL_OK) {
-            str = Tcl_GetStringFromObj(eleObj, &slen);
-            strcpy(p, str);
-            p[slen] = ' ';
-            p += slen+1;
-            Tcl_DecrRefCount(eleObj);
-        } // else TODO: report error here?
+	    str = Tcl_GetStringFromObj(eleObj, &slen);
+	    strcpy(p, str);
+	    p[slen] = ' ';
+	    p += slen+1;
+	    Tcl_DecrRefCount(eleObj);
+	} // else TODO: report error here?
     }
     if (length > 0) arithSeriesObjPtr->bytes[length-1] = '\0';
     arithSeriesObjPtr->length = length-1;

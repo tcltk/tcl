@@ -1455,9 +1455,7 @@ Tcl_SocketObjCmd(
     Tcl_Obj *script = NULL;
     Tcl_Channel chan;
 
-    if (TclpHasSockets(interp) != TCL_OK) {
-	return TCL_ERROR;
-    }
+    TclInitSockets();
 
     for (a = 1; a < objc; a++) {
 	const char *arg = TclGetString(objv[a]);

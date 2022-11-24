@@ -155,14 +155,7 @@ const Tcl_ObjType tclListType = {
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
     SetListFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V1,		/* Extended type for AbstractLists */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    TCL_OBJTYPE_V0_INIT		/* Extended type for AbstractLists */
 };
 
 /* Macros to manipulate the List internal rep */
@@ -2661,10 +2654,9 @@ TclLindexFlat(
 		}
 	    } else if (index > 0) {
 		// TODO: support nested lists
-		// For now, only support 1 index, which is all an ArithSeries has
+		Tcl_Obj *e2Obj = TclLindexFlat(interp, elemObj, 1, &indexArray[i]);
 		Tcl_DecrRefCount(elemObj);
-		TclNewObj(elemObj);
-		break;
+		elemObj = e2Obj;
 	    }
 	}
 	Tcl_IncrRefCount(elemObj);

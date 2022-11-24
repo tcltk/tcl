@@ -538,15 +538,10 @@ GetUWide(
 	} else if (type == TCL_NUMBER_BIG) {
 	    mp_int *numPtr = (mp_int *)clientData;
 	    Tcl_WideUInt value = 0;
-	    union {
-		Tcl_WideUInt value;
-		unsigned char bytes[sizeof(Tcl_WideUInt)];
-	    } scratch;
 	    size_t numBytes;
-	    unsigned char *bytes = scratch.bytes;
 
-	    if (numPtr->sign || (MP_OKAY != mp_to_ubin(numPtr,
-		    bytes, sizeof(Tcl_WideUInt), &numBytes))) {
+	    if (numPtr->sign || (MP_OKAY != mp_pack(&value, 1,
+		    &numBytes, 0, sizeof(Tcl_WideUInt), 0, 0, numPtr))) {
 		/*
 		 * If the sign bit is set (a negative value) or if the value
 		 * can't possibly fit in the bits of an unsigned wide, there's
@@ -554,16 +549,6 @@ GetUWide(
 		 */
 		return 1;
 	    }
-#ifdef WORDS_BIGENDIAN
-	    while (numBytes-- > 0) {
-		value = (value << CHAR_BIT) | *bytes++;
-	    }
-#else /* !WORDS_BIGENDIAN */
-	    /*
-	     * Little-endian can read the value directly.
-	     */
-	    value = scratch.value;
-#endif /* WORDS_BIGENDIAN */
 	    *uwidePtr = value;
 	    return 0;
 	}
@@ -1450,12 +1435,12 @@ ObjValue(
 	}
 	linkPtr->lastValue.f = LinkedVar(float);
 	return Tcl_NewDoubleObj(linkPtr->lastValue.f);
-    case TCL_LINK_WIDE_UINT:
+    case TCL_LINK_WIDE_UINT: {
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		TclNewIntObj(objv[i], (Tcl_WideInt)
+		TclNewUIntObj(objv[i],
 			linkPtr->lastValue.uwPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
@@ -1463,7 +1448,10 @@ ObjValue(
 	    return resultObj;
 	}
 	linkPtr->lastValue.uw = LinkedVar(Tcl_WideUInt);
-	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.uw);
+	Tcl_Obj *uwObj;
+	TclNewUIntObj(uwObj, linkPtr->lastValue.uw);
+	return uwObj;
+	}
 
     case TCL_LINK_STRING:
 	p = LinkedVar(char *);
