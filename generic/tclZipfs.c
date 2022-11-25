@@ -669,11 +669,11 @@ ToDosDate(
  *-------------------------------------------------------------------------
  */
 
-static inline int
+static inline size_t
 CountSlashes(
     const char *string)
 {
-    int count = 0;
+    size_t count = 0;
     const char *p = string;
 
     while (*p != '\0') {
@@ -1515,7 +1515,7 @@ static inline int
 IsPasswordValid(
     Tcl_Interp *interp,
     const char *passwd,
-    int pwlen)
+    size_t pwlen)
 {
     if ((pwlen > 255) || strchr(passwd, 0xff)) {
 	ZIPFS_ERROR(interp, "illegal password");
@@ -1552,8 +1552,8 @@ ZipFSCatalogFilesystem(
 				 * the ZIP is unprotected. */
     const char *zipname)	/* Path to ZIP file to build a catalog of. */
 {
-    int pwlen, isNew;
-    size_t i;
+    int isNew;
+    size_t i, pwlen;
     ZipFile *zf0;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
@@ -2391,7 +2391,7 @@ ZipFSMkKeyObjCmd(
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int len, i = 0;
+    size_t len, i = 0;
     const char *pw;
     Tcl_Obj *passObj;
     unsigned char *passBuf;
@@ -2400,7 +2400,7 @@ ZipFSMkKeyObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "password");
 	return TCL_ERROR;
     }
-    pw = TclGetStringFromObj(objv[1], &len);
+    pw = Tcl_GetStringFromObj(objv[1], &len);
     if (len == 0) {
 	return TCL_OK;
     }
@@ -2918,16 +2918,16 @@ ComputeNameInArchive(
 				 * archive */
     const char *strip,		/* A prefix to strip; may be NULL if no
 				 * stripping need be done. */
-    int slen)			/* The length of the prefix; must be 0 if no
+    size_t slen)			/* The length of the prefix; must be 0 if no
 				 * stripping need be done. */
 {
     const char *name;
-    int len;
+    size_t len;
 
     if (directNameObj) {
 	name = TclGetString(directNameObj);
     } else {
-	name = TclGetStringFromObj(pathObj, &len);
+	name = Tcl_GetStringFromObj(pathObj, &len);
 	if (slen > 0) {
 	    if ((len <= slen) || (strncmp(strip, name, slen) != 0)) {
 		/*
@@ -2990,8 +2990,8 @@ ZipFSMkZipOrImg(
 				 * there's no password protection. */
 {
     Tcl_Channel out;
-    int pwlen = 0, slen = 0, count, ret = TCL_ERROR;
-    size_t lobjc, len, i = 0;
+    int count, ret = TCL_ERROR;
+    size_t pwlen = 0, slen = 0, lobjc, len, i = 0;
     long long directoryStartOffset;
 				/* The overall file offset of the start of the
 				 * central directory. */
@@ -3013,13 +3013,12 @@ ZipFSMkZipOrImg(
 
     passBuf[0] = 0;
     if (passwordObj != NULL) {
-	pw = TclGetStringFromObj(passwordObj, &pwlen);
+	pw = Tcl_GetStringFromObj(passwordObj, &pwlen);
 	if (IsPasswordValid(interp, pw, pwlen) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (pwlen <= 0) {
+	if (pwlen == 0) {
 	    pw = NULL;
-	    pwlen = 0;
 	}
     }
     if (dirRoot != NULL) {
@@ -3169,7 +3168,7 @@ ZipFSMkZipOrImg(
 
     Tcl_InitHashTable(&fileHash, TCL_STRING_KEYS);
     if (mappingList == NULL && stripPrefix != NULL) {
-	strip = TclGetStringFromObj(stripPrefix, &slen);
+	strip = Tcl_GetStringFromObj(stripPrefix, &slen);
 	if (!slen) {
 	    strip = NULL;
 	}
@@ -4998,7 +4997,8 @@ ZipFSMatchInDirectoryProc(
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_Obj *normPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-    int scnt, l, dirOnly = -1, prefixLen, strip = 0, mounts = 0, len;
+    int scnt, l, dirOnly = -1, strip = 0, mounts = 0;
+    size_t prefixLen, len;
     char *pat, *prefix, *path;
     Tcl_DString dsPref, *prefixBuf = NULL;
 
@@ -5014,13 +5014,13 @@ ZipFSMatchInDirectoryProc(
      * The prefix that gets prepended to results.
      */
 
-    prefix = TclGetStringFromObj(pathPtr, &prefixLen);
+    prefix = Tcl_GetStringFromObj(pathPtr, &prefixLen);
 
     /*
      * The (normalized) path we're searching.
      */
 
-    path = TclGetStringFromObj(normPathPtr, &len);
+    path = Tcl_GetStringFromObj(normPathPtr, &len);
 
     Tcl_DStringInit(&dsPref);
     if (strcmp(prefix, path) == 0) {
@@ -5134,9 +5134,9 @@ ZipFSMatchMountPoints(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int l, normLength;
-    const char *path = TclGetStringFromObj(normPathPtr, &normLength);
-    size_t len = (size_t) normLength;
+    size_t l, normLength;
+    const char *path = Tcl_GetStringFromObj(normPathPtr, &normLength);
+    size_t len = normLength;
 
     if (len < 1) {
 	/*
@@ -5215,14 +5215,15 @@ ZipFSPathInFilesystemProc(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int ret = -1, len;
+    int ret = -1;
+    size_t len;
     char *path;
 
     pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (!pathPtr) {
 	return -1;
     }
-    path = TclGetStringFromObj(pathPtr, &len);
+    path = Tcl_GetStringFromObj(pathPtr, &len);
     if (strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) != 0) {
 	return -1;
     }
@@ -5362,7 +5363,8 @@ ZipFSFileAttrsGetProc(
     Tcl_Obj *pathPtr,
     Tcl_Obj **objPtrRef)
 {
-    int len, ret = TCL_OK;
+    size_t len;
+    int ret = TCL_OK;
     char *path;
     ZipEntry *z;
 
@@ -5370,7 +5372,7 @@ ZipFSFileAttrsGetProc(
     if (!pathPtr) {
 	return -1;
     }
-    path = TclGetStringFromObj(pathPtr, &len);
+    path = Tcl_GetStringFromObj(pathPtr, &len);
     ReadLock();
     z = ZipFSLookup(path);
     if (!z) {
