@@ -393,9 +393,9 @@ ChanClose(
  *	    calling Tcl_GetErrno().
  *
  * Side effects:
- *	The CHANNEL_BLOCKED and CHANNEL_EOF flags of the channel state are set
- *	as appropriate.  On EOF, the inputEncodingFlags are set to perform
- *	ending operations on decoding.
+ *	The CHANNEL_ENCODING_ERROR, CHANNEL_BLOCKED and CHANNEL_EOF flags
+ *	of the channel state are set as appropriate.  On EOF, the
+ *	inputEncodingFlags are set to perform ending operations on decoding.
  *
  *	TODO - Is this really the right place for that?
  *
@@ -4610,6 +4610,12 @@ Tcl_GetsObj(
     char *dst, *dstEnd, *eol, *eof;
     Tcl_EncodingState oldState;
 
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+	UpdateInterest(chanPtr);
+	Tcl_SetErrno(EILSEQ);
+	return TCL_INDEX_NONE;
+    }
+
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
 	return TCL_INDEX_NONE;
     }
@@ -4981,6 +4987,7 @@ Tcl_GetsObj(
   done:
     assert(!GotFlag(statePtr, CHANNEL_EOF)
 	    || GotFlag(statePtr, CHANNEL_STICKY_EOF)
+	    || GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 	    || Tcl_InputBuffered((Tcl_Channel)chanPtr) == 0);
     assert(!(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
 	    == (CHANNEL_EOF|CHANNEL_BLOCKED)));
@@ -5970,6 +5977,12 @@ DoReadChars(
 	}
     }
 
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+	/* TODO: We don't need this call? */
+	UpdateInterest(chanPtr);
+	Tcl_SetErrno(EILSEQ);
+	return -1;
+    }
     /*
      * Early out when next read will see eofchar.
      *
@@ -9983,6 +9996,11 @@ DoRead(
      * too.  Keep on keeping on for now.
      */
 
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+	UpdateInterest(chanPtr);
+	Tcl_SetErrno(EILSEQ);
+	return -1;
+    }
     if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
 	SetFlag(statePtr, CHANNEL_EOF);
 	assert(statePtr->inputEncodingFlags & TCL_ENCODING_END);
@@ -10080,10 +10098,10 @@ DoRead(
 	    }
 
 	    /*
-	     * 1) We're @EOF because we saw eof char.
+	     * 1) We're @EOF because we saw eof char, or there was an encoding error.
 	     */
 
-	    if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
+	    if (GotFlag(statePtr, CHANNEL_STICKY_EOF|CHANNEL_ENCODING_ERROR)) {
 		break;
 	    }
 
@@ -10168,6 +10186,7 @@ DoRead(
 
     assert(!GotFlag(statePtr, CHANNEL_EOF)
 	    || GotFlag(statePtr, CHANNEL_STICKY_EOF)
+	    || GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 	    || Tcl_InputBuffered((Tcl_Channel)chanPtr) == 0);
     assert(!(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
 	    == (CHANNEL_EOF|CHANNEL_BLOCKED)));
@@ -11348,8 +11367,8 @@ DumpFlags(
     char *str,
     int flags)
 {
-    char buf[20];
     int i = 0;
+    char buf[24];
 
 #define ChanFlag(chr, bit)      (buf[i++] = ((flags & (bit)) ? (chr) : '_'))
 
@@ -11362,6 +11381,7 @@ DumpFlags(
     ChanFlag('c', CHANNEL_CLOSED);
     ChanFlag('E', CHANNEL_EOF);
     ChanFlag('S', CHANNEL_STICKY_EOF);
+    ChanFlag('U', CHANNEL_ENCODING_ERROR);
     ChanFlag('B', CHANNEL_BLOCKED);
     ChanFlag('/', INPUT_SAW_CR);
     ChanFlag('D', CHANNEL_DEAD);

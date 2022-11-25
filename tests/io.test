@@ -9157,7 +9157,7 @@ test io-75.11 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -
     lappend hd $msg
 } -cleanup {
     removeFile io-75.6
-} -result "41 0 {}" ; # Here, an exception should be thrown
+} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
 # ### ### ### ######### ######### #########
 
