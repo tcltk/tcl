@@ -1515,7 +1515,7 @@ static inline int
 IsPasswordValid(
     Tcl_Interp *interp,
     const char *passwd,
-    int pwlen)
+    size_t pwlen)
 {
     if ((pwlen > 255) || strchr(passwd, 0xff)) {
 	ZIPFS_ERROR(interp, "illegal password");
@@ -1552,8 +1552,8 @@ ZipFSCatalogFilesystem(
 				 * the ZIP is unprotected. */
     const char *zipname)	/* Path to ZIP file to build a catalog of. */
 {
-    int pwlen, isNew;
-    size_t i;
+    int isNew;
+    size_t i, pwlen;
     ZipFile *zf0;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
@@ -2990,8 +2990,8 @@ ZipFSMkZipOrImg(
 				 * there's no password protection. */
 {
     Tcl_Channel out;
-    int pwlen = 0, count, ret = TCL_ERROR;
-    size_t slen = 0, lobjc, len, i = 0;
+    int count, ret = TCL_ERROR;
+    size_t pwlen = 0, slen = 0, lobjc, len, i = 0;
     long long directoryStartOffset;
 				/* The overall file offset of the start of the
 				 * central directory. */
@@ -3013,13 +3013,12 @@ ZipFSMkZipOrImg(
 
     passBuf[0] = 0;
     if (passwordObj != NULL) {
-	pw = TclGetStringFromObj(passwordObj, &pwlen);
+	pw = Tcl_GetStringFromObj(passwordObj, &pwlen);
 	if (IsPasswordValid(interp, pw, pwlen) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (pwlen <= 0) {
+	if (pwlen == 0) {
 	    pw = NULL;
-	    pwlen = 0;
 	}
     }
     if (dirRoot != NULL) {
