@@ -4111,10 +4111,10 @@ SequenceIdentifyArgument(
 		exprValueObj = argPtr;
 	    } else {
 		if (floor(dvalue) == dvalue) {
-		    exprValueObj = Tcl_NewWideIntObj(value);
+		    TclNewIntObj(exprValueObj, value);
 		    keyword = TCL_NUMBER_INT;
 		} else {
-		    exprValueObj = Tcl_NewDoubleObj(dvalue);
+		    TclNewDoubleObj(exprValueObj, dvalue);
 		    keyword = TCL_NUMBER_DOUBLE;
 		}
 	    }
