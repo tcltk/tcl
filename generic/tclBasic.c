@@ -621,8 +621,8 @@ buildInfoObjCmd2(
 	return TCL_ERROR;
     }
     if (objc == 2) {
-	int len;
-	const char *arg = TclGetStringFromObj(objv[1], &len);
+	size_t len;
+	const char *arg = Tcl_GetStringFromObj(objv[1], &len);
 	if (len == 7 && !strcmp(arg, "version")) {
 	    char buf[80];
 	    const char *p = strchr((char *)clientData, '.');
