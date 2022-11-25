@@ -3775,7 +3775,7 @@ TclNRSwitchObjCmd(
 		    TclNewIndexObj(rangeObjAry[0], info.matches[j].start);
 		    TclNewIndexObj(rangeObjAry[1], info.matches[j].end-1);
 		} else {
-		    TclNewIndexObj(rangeObjAry[1], TCL_INDEX_NONE);
+		    TclNewIntObj(rangeObjAry[1], -1);
 		    rangeObjAry[0] = rangeObjAry[1];
 		}
 
@@ -4099,9 +4099,9 @@ Tcl_TimeObjCmd(
 	 * Use int obj since we know time is not fractional. [Bug 1202178]
 	 */
 
-	objs[0] = Tcl_NewWideIntObj((count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
+	TclNewIntObj(objs[0], (count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
     } else {
-	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
+	TclNewDoubleObj(objs[0], totalMicroSec/count);
     }
 
     /*
@@ -4586,7 +4586,7 @@ Tcl_TimeRateObjCmd(
 	    if (measureOverhead > ((double) usec) / count) {
 		measureOverhead = ((double) usec) / count;
 	    }
-	    objs[0] = Tcl_NewDoubleObj(measureOverhead);
+	    TclNewDoubleObj(objs[0], measureOverhead);
 	    TclNewLiteralStringObj(objs[1], "\xC2\xB5s/#-overhead"); /* mics */
 	    objs += 2;
 	}

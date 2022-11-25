@@ -3607,7 +3607,7 @@ Tcl_LsearchObjCmd(
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
-		TclNewIndexObj(itemPtr, TCL_INDEX_NONE);
+		TclNewIntObj(itemPtr, -1);
 		Tcl_SetObjResult(interp, itemPtr);
 	    }
 	    goto done;
@@ -4103,10 +4103,10 @@ SequenceIdentifyArgument(
 		exprValueObj = argPtr;
 	    } else {
 		if (floor(dvalue) == dvalue) {
-		    exprValueObj = Tcl_NewWideIntObj(value);
+		    TclNewIntObj(exprValueObj, value);
 		    keyword = TCL_NUMBER_INT;
 		} else {
-		    exprValueObj = Tcl_NewDoubleObj(dvalue);
+		    TclNewDoubleObj(exprValueObj, dvalue);
 		    keyword = TCL_NUMBER_DOUBLE;
 		}
 	    }

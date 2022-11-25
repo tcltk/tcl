@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include "tclInt.h"
+#include "tclTomMath.h"
 #include "tclArithSeries.h"
 
 /*
@@ -3514,15 +3515,8 @@ UpdateStringOfList(
  *------------------------------------------------------------------------
  */
 Tcl_Obj *
-TclListTestObj (int length, int leadingSpace, int endSpace)
+TclListTestObj(Tcl_Size length, Tcl_Size leadingSpace, Tcl_Size endSpace)
 {
-    if (length < 0)
-	length = 0;
-    if (leadingSpace < 0)
-	leadingSpace = 0;
-    if (endSpace < 0)
-	endSpace = 0;
-
     ListRep listRep;
     Tcl_Size capacity;
     Tcl_Obj *listObj;
@@ -3538,9 +3532,9 @@ TclListTestObj (int length, int leadingSpace, int endSpace)
     ListRepInit(capacity, NULL, 0, &listRep);
 
     ListStore *storePtr = listRep.storePtr;
-    int i;
+    Tcl_Size i;
     for (i = 0; i < length; ++i) {
-	storePtr->slots[i + leadingSpace] = Tcl_NewIntObj(i);
+	TclNewUIntObj(storePtr->slots[i + leadingSpace], i);
 	Tcl_IncrRefCount(storePtr->slots[i + leadingSpace]);
     }
     storePtr->firstUsed = leadingSpace;

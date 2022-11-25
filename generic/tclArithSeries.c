@@ -390,9 +390,9 @@ TclArithSeriesObjStep(
     }
     arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesPtr);
     if (arithSeriesRepPtr->isDouble) {
-	*stepObj = Tcl_NewDoubleObj(((ArithSeriesDbl*)(arithSeriesRepPtr))->step);
+	TclNewDoubleObj(*stepObj, ((ArithSeriesDbl*)(arithSeriesRepPtr))->step);
     } else {
-	*stepObj = Tcl_NewWideIntObj(arithSeriesRepPtr->step);
+	TclNewIntObj(*stepObj, arithSeriesRepPtr->step);
     }
     return TCL_OK;
 }
@@ -956,7 +956,8 @@ TclArithSeriesObjReverse(
 
     if (Tcl_IsShared(arithSeriesPtr) ||
 	    ((arithSeriesPtr->refCount > 1))) {
-	Tcl_Obj *lenObj = Tcl_NewWideIntObj(len);
+	Tcl_Obj *lenObj;
+	TclNewIntObj(lenObj, len);
 	if (TclNewArithSeriesObj(interp, &resultObj,
 		 isDouble, startObj, endObj, stepObj, lenObj) != TCL_OK) {
 	    resultObj = NULL;
