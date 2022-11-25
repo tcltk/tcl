@@ -579,14 +579,14 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesPtr)
     Tcl_Obj *elemObj;
     unsigned long long i;
     Tcl_WideInt length = 0;
-    int slen;
+    size_t slen;
 
     /*
      * Pass 1: estimate space.
      */
     for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	TclArithSeriesObjIndex(arithSeriesPtr, i, &elemObj);
-	elem = TclGetStringFromObj(elemObj, &slen);
+	elem = Tcl_GetStringFromObj(elemObj, &slen);
 	Tcl_DecrRefCount(elemObj);
 	slen += 1; /* + 1 is for the space or the nul-term */
 	length += slen;
@@ -599,7 +599,7 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesPtr)
     p = Tcl_InitStringRep(arithSeriesPtr, NULL, length);
     for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	TclArithSeriesObjIndex(arithSeriesPtr, i, &elemObj);
-	elem = TclGetStringFromObj(elemObj, &slen);
+	elem = Tcl_GetStringFromObj(elemObj, &slen);
 	strcpy(p, elem);
 	p[slen] = ' ';
 	p += slen+1;

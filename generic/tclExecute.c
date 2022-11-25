@@ -5274,7 +5274,7 @@ TEBCresume(
 	    TclNewObj(objResultPtr);
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
-		    Tcl_GetBytesFromObj(NULL, valuePtr, (size_t *)NULL)+index, 1);
+		    Tcl_GetByteArrayFromObj(valuePtr, (size_t *)NULL)+index, 1);
 	} else if (valuePtr->bytes && slength == valuePtr->length) {
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
@@ -5536,7 +5536,7 @@ TEBCresume(
 	    ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
 	    match = TclUniCharMatch(ustring1, slength, ustring2, length2,
 		    nocase);
-	} else if (TclIsPureByteArray(valuePtr) && !nocase) {
+	} else if (TclIsPureByteArray(valuePtr) && TclIsPureByteArray(value2Ptr) && !nocase) {
 	    unsigned char *bytes1, *bytes2;
 	    size_t wlen1 = 0, wlen2 = 0;
 

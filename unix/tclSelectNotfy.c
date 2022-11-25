@@ -938,7 +938,10 @@ TclAsyncNotifier(
 	    *flagPtr = value;
 	    if (!asyncPending) {
 		asyncPending = 1;
-		write(triggerPipe, "S", 1);
+		if (write(triggerPipe, "S", 1) != 1) {
+		    asyncPending = 0;
+		    return 0;
+		};
 	    }
 	    return 1;
 	}
