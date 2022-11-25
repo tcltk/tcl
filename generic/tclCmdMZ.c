@@ -4073,9 +4073,9 @@ Tcl_TimeObjCmd(
 	 * Use int obj since we know time is not fractional. [Bug 1202178]
 	 */
 
-	objs[0] = Tcl_NewWideIntObj((count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
+	TclNewIntObj(objs[0], (count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
     } else {
-	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
+	TclNewDoubleObj(objs[0], totalMicroSec/count);
     }
 
     /*
@@ -4560,7 +4560,7 @@ Tcl_TimeRateObjCmd(
 	    if (measureOverhead > ((double) usec) / count) {
 		measureOverhead = ((double) usec) / count;
 	    }
-	    objs[0] = Tcl_NewDoubleObj(measureOverhead);
+	    TclNewDoubleObj(objs[0], measureOverhead);
 	    TclNewLiteralStringObj(objs[1], "\xC2\xB5s/#-overhead"); /* mics */
 	    objs += 2;
 	}

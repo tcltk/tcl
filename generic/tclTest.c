@@ -3500,18 +3500,18 @@ TestlistrepCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "length ?leadSpace endSpace?");
 	    return TCL_ERROR;
 	} else {
-	    int length;
-	    int leadSpace = 0;
-	    int endSpace = 0;
-	    if (Tcl_GetIntFromObj(interp, objv[2], &length) != TCL_OK) {
+	    Tcl_WideInt length;
+	    Tcl_WideInt leadSpace = 0;
+	    Tcl_WideInt endSpace = 0;
+	    if (Tcl_GetWideIntFromObj(interp, objv[2], &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (objc > 3) {
-		if (Tcl_GetIntFromObj(interp, objv[3], &leadSpace) != TCL_OK) {
+		if (Tcl_GetWideIntFromObj(interp, objv[3], &leadSpace) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (objc > 4) {
-		    if (Tcl_GetIntFromObj(interp, objv[4], &endSpace)
+		    if (Tcl_GetWideIntFromObj(interp, objv[4], &endSpace)
 			!= TCL_OK) {
 			return TCL_ERROR;
 		    }

@@ -14,6 +14,7 @@
  */
 
 #include "tclInt.h"
+#include "tclTomMath.h"
 
 /*
  * Windows has mktime. The configurators do not check.
@@ -1804,14 +1805,16 @@ ClockMillisecondsObjCmd(
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
+    Tcl_Obj *timeObj;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
-	    now.sec * 1000 + now.usec / 1000));
+    TclNewUIntObj(timeObj, (Tcl_WideUInt)
+	    now.sec * 1000 + now.usec / 1000);
+    Tcl_SetObjResult(interp, timeObj);
     return TCL_OK;
 }
 
@@ -1992,13 +1995,16 @@ ClockSecondsObjCmd(
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
+    Tcl_Obj *timeObj;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) now.sec));
+    TclNewUIntObj(timeObj, (Tcl_WideUInt)now.sec);
+
+    Tcl_SetObjResult(interp, timeObj);
     return TCL_OK;
 }
 

@@ -706,7 +706,7 @@ declare 258 {
 
 # TIP 625: for unit testing - create list objects with span
 declare 260 {
-    Tcl_Obj *TclListTestObj(int length, int leadingSpace, int endSpace)
+    Tcl_Obj *TclListTestObj(Tcl_Size length, Tcl_Size leadingSpace, Tcl_Size endSpace)
 }
 
 # TIP 625: for unit testing - check list invariants
