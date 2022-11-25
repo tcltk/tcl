@@ -318,10 +318,7 @@ typedef long LONG;
  * Miscellaneous declarations.
  */
 
-#ifndef _CLIENTDATA
-    typedef void *ClientData;
-#   define _CLIENTDATA
-#endif
+typedef void *ClientData;
 
 /*
  * Darwin specific configure overrides (to support fat compiles, where
@@ -402,8 +399,16 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
+#if TCL_MAJOR_VERSION > 8
+typedef size_t Tcl_Size;
+#else
+typedef int Tcl_Size;
+#endif
+
 #ifdef _WIN32
-#   if defined(_WIN64) || defined(_USE_64BIT_TIME_T)
+#   if TCL_MAJOR_VERSION > 8
+	typedef struct __stat64 Tcl_StatBuf;
+#   elif defined(_WIN64) || defined(_USE_64BIT_TIME_T)
 	typedef struct __stat64 Tcl_StatBuf;
 #   elif defined(_USE_32BIT_TIME_T)
 	typedef struct _stati64	Tcl_StatBuf;
@@ -422,10 +427,16 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	dev_t st_rdev;
 	/* Here is a 4-byte gap */
 	long long st_size;
+#if TCL_MAJOR_VERSION > 8
+	struct {long long tv_sec;} st_atim;
+	struct {long long tv_sec;} st_mtim;
+	struct {long long tv_sec;} st_ctim;
+#else
 	struct {long tv_sec;} st_atim;
 	struct {long tv_sec;} st_mtim;
 	struct {long tv_sec;} st_ctim;
 	/* Here is a 4-byte gap */
+#endif
     } Tcl_StatBuf;
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;
@@ -782,8 +793,6 @@ typedef union Tcl_ObjInternalRep {	/* The internal representation: */
  * An object stores a value as either a string, some internal representation,
  * or both.
  */
-#define Tcl_Size int
-
 
 typedef struct Tcl_Obj {
     Tcl_Size refCount;		/* When 0 the object will be freed. */
@@ -798,7 +807,7 @@ typedef struct Tcl_Obj {
 				 * should use Tcl_GetStringFromObj or
 				 * Tcl_GetString to get a pointer to the byte
 				 * array as a readonly value. */
-    Tcl_Size length;			/* The number of bytes at *bytes, not
+    Tcl_Size length;		/* The number of bytes at *bytes, not
 				 * including the terminating null. */
     const Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
 				 * corresponds to the type of the object's
@@ -958,8 +967,8 @@ typedef struct Tcl_DString {
 
 /*
  * Definitions for the maximum number of digits of precision that may be
- * specified in the "tcl_precision" variable, and the number of bytes of
- * buffer space required by Tcl_PrintDouble.
+ * produced by Tcl_PrintDouble, and the number of bytes of buffer space
+ * required by Tcl_PrintDouble.
  */
 
 #define TCL_MAX_PREC		17
@@ -1018,8 +1027,11 @@ typedef struct Tcl_DString {
  * TCL_COMBINE Combine surrogates (default in Tcl 8.x)
  */
 
-#define TCL_COMBINE		0
-
+#if TCL_MAJOR_VERSION > 8
+#    define TCL_COMBINE		0x1000000
+#else
+#    define TCL_COMBINE		0
+#endif
 /*
  *----------------------------------------------------------------------------
  * Flag values passed to Tcl_RecordAndEval, Tcl_EvalObj, Tcl_EvalObjv.
@@ -1148,7 +1160,11 @@ typedef struct Tcl_DString {
  */
 
 #ifndef TCL_HASH_TYPE
+#if TCL_MAJOR_VERSION > 8
+#  define TCL_HASH_TYPE size_t
+#else
 #  define TCL_HASH_TYPE unsigned
+#endif
 #endif
 
 typedef struct Tcl_HashKeyType Tcl_HashKeyType;
