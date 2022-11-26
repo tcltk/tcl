@@ -158,8 +158,9 @@ const TclObjTypeWithAbstractList tclListType = {
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
     SetListFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0_1},
-    ListLength
+    TCL_OBJTYPE_V0_1(
+	ListLength
+    )
 };
 
 /* Macros to manipulate the List internal rep */
@@ -1994,19 +1995,17 @@ Tcl_ListObjLength(
     Tcl_Obj *listObj,	/* List object whose #elements to return. */
     Tcl_Size *lenPtr)	/* The resulting int is stored here. */
 {
-    if (listObj->typePtr && (listObj->typePtr->version == TCL_OBJTYPE_V0_1)) {
+    if (HAS_ABSTRACTLIST_PROC(listObj, lengthProc)) {
 	const TclObjTypeWithAbstractList *objType =  (const TclObjTypeWithAbstractList *)listObj->typePtr;
-	if (objType->lengthProc) {
-	    unsigned long long len = objType->lengthProc(listObj);
-	    if (len >= TCL_INDEX_NONE) {
-		if (interp) {
-			Tcl_AppendResult(interp, "List too large");
-		}
-		return TCL_ERROR;
+	unsigned long long len = objType->lengthProc(listObj);
+	if (len >= TCL_INDEX_NONE) {
+	    if (interp) {
+		    Tcl_AppendResult(interp, "List too large");
 	    }
-	    *lenPtr = len;
-	    return TCL_OK;
+	    return TCL_ERROR;
 	}
+	*lenPtr = len;
+	return TCL_OK;
     }
 
     /*

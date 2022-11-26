@@ -1076,14 +1076,6 @@ typedef struct ActiveInterpTrace {
 				 * in reverse order. */
 } ActiveInterpTrace;
 
-
-#define TCL_OBJTYPE_V0_1 ((size_t)1) /* For internal core use only */
-
-typedef struct {  /* For internal core use only */
-    Tcl_ObjType objType;
-    unsigned long long (*lengthProc)(Tcl_Obj *obj);
-} TclObjTypeWithAbstractList;
-
 /*
  * Flag values designating types of execution traces. See tclTrace.c for
  * related flag values.
@@ -1098,6 +1090,16 @@ typedef struct {  /* For internal core use only */
 
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
+
+typedef struct {  /* For internal core use only */
+    Tcl_ObjType objType;
+    unsigned long long (*lengthProc)(Tcl_Obj *obj);
+} TclObjTypeWithAbstractList;
+#define TCL_OBJTYPE_V0_1(lengthProc) (sizeof(TclObjTypeWithAbstractList)) \
+	}, lengthProc /* For internal core use only */
+#define HAS_ABSTRACTLIST_PROC(objPtr, proc) (objPtr->typePtr \
+	&& (objPtr->typePtr->version > offsetof(TclObjTypeWithAbstractList, proc)) \
+	&& (((const TclObjTypeWithAbstractList *)objPtr->typePtr)->proc))
 
 /*
  * The structure below defines an entry in the assocData hash table which is

@@ -76,8 +76,9 @@ const TclObjTypeWithAbstractList tclArithSeriesType = {
     DupArithSeriesInternalRep,		/* dupIntRepProc */
     UpdateStringOfArithSeries,		/* updateStringProc */
     SetArithSeriesFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0_1},
+    TCL_OBJTYPE_V0_1(
 	TclArithSeriesObjLength
+    )
 };
 
 /*

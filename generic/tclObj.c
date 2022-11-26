@@ -233,8 +233,9 @@ const TclObjTypeWithAbstractList tclBooleanType= {
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
     TclSetBooleanFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0_1},
-    LengthOne
+    TCL_OBJTYPE_V0_1(
+	LengthOne
+    )
 };
 const TclObjTypeWithAbstractList tclDoubleType= {
     {"double",			/* name */
@@ -242,8 +243,9 @@ const TclObjTypeWithAbstractList tclDoubleType= {
     NULL,			/* dupIntRepProc */
     UpdateStringOfDouble,	/* updateStringProc */
     SetDoubleFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0_1},
-    LengthOne
+    TCL_OBJTYPE_V0_1(
+	LengthOne
+    )
 };
 const TclObjTypeWithAbstractList tclIntType = {
     {"int",			/* name */
@@ -251,8 +253,9 @@ const TclObjTypeWithAbstractList tclIntType = {
     NULL,			/* dupIntRepProc */
     UpdateStringOfInt,		/* updateStringProc */
     SetIntFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0_1},
-    LengthOne
+    TCL_OBJTYPE_V0_1(
+	LengthOne
+    )
 };
 const TclObjTypeWithAbstractList tclBignumType = {
     {"bignum",			/* name */
@@ -260,8 +263,9 @@ const TclObjTypeWithAbstractList tclBignumType = {
     DupBignum,			/* dupIntRepProc */
     UpdateStringOfBignum,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_V0_1},
-    LengthOne
+    TCL_OBJTYPE_V0_1(
+	LengthOne
+    )
 };
 
 /*
