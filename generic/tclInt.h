@@ -1093,7 +1093,7 @@ typedef struct ActiveInterpTrace {
 
 typedef struct {  /* For internal core use only */
     Tcl_ObjType objType;
-    unsigned long long (*lengthProc)(Tcl_Obj *obj);
+    size_t (*lengthProc)(Tcl_Obj *obj);
 } TclObjTypeWithAbstractList;
 #define TCL_OBJTYPE_V0_1(lengthProc) (sizeof(TclObjTypeWithAbstractList)) \
 	}, lengthProc /* For internal core use only */

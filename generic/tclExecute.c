@@ -4649,7 +4649,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	TclNewIntObj(objResultPtr, length);
+	TclNewUIntObj(objResultPtr, length);
 	TRACE_APPEND(("%" TCL_Z_MODIFIER "u\n", length));
 	NEXT_INST_F(1, 1, 1);
 

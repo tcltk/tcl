@@ -225,7 +225,7 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * implementations.
  */
 
-static unsigned long long LengthOne(TCL_UNUSED(Tcl_Obj *)) {return 1;}
+static size_t LengthOne(TCL_UNUSED(Tcl_Obj *)) {return 1;}
 
 const TclObjTypeWithAbstractList tclBooleanType= {
     {"boolean",			/* name */

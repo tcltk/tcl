@@ -143,7 +143,7 @@ static void	DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void	FreeListInternalRep(Tcl_Obj *listPtr);
 static int	SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void	UpdateStringOfList(Tcl_Obj *listPtr);
-static unsigned long long ListLength(Tcl_Obj *listPtr);
+static size_t ListLength(Tcl_Obj *listPtr);
 
 /*
  * The structure below defines the list Tcl object type by means of functions
@@ -2024,7 +2024,7 @@ Tcl_ListObjLength(
     return TCL_OK;
 }
 
-unsigned long long ListLength(
+size_t ListLength(
     Tcl_Obj *listPtr)
 {
 	ListRep listRep;
@@ -2648,7 +2648,7 @@ TclLindexFlat(
 
     /* Handle ArithSeries as special case */
     if (TclHasInternalRep(listObj,&tclArithSeriesType.objType)) {
-	Tcl_WideInt listLen = TclArithSeriesObjLength(listObj);
+	size_t listLen = TclArithSeriesObjLength(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = NULL;
 	for (i=0 ; i<indexCount && listObj ; i++) {

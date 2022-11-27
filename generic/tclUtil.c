@@ -122,7 +122,7 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  * is unregistered, so has no need of a setFromAnyProc either.
  */
 
-static unsigned long long LengthOne(TCL_UNUSED(Tcl_Obj *)) {return 1;}
+static size_t LengthOne(TCL_UNUSED(Tcl_Obj *)) {return 1;}
 
 static const TclObjTypeWithAbstractList endOffsetType = {
     {"end-offset",			/* name */
