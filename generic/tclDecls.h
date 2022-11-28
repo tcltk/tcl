@@ -4182,6 +4182,7 @@ extern const TclStubs *tclStubsPtr;
 /* !END!: Do not edit above this line. */
 
 #undef TclUnusedStubEntry
+
 #if defined(USE_TCL_STUBS)
 #   undef Tcl_CreateInterp
 #   undef Tcl_FindExecutable

@@ -20,6 +20,7 @@
 #include "tclInt.h"
 #include "tclRegexp.h"
 #include "tclArithSeries.h"
+#include "tclTomMath.h"
 #include <math.h>
 #include <assert.h>
 
@@ -2573,6 +2574,7 @@ Tcl_LlengthObjCmd(
 				/* Argument objects. */
 {
     int listLen, result;
+    Tcl_Obj *objPtr;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list");
@@ -2589,7 +2591,8 @@ Tcl_LlengthObjCmd(
      * length.
      */
 
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(listLen));
+    TclNewUIntObj(objPtr, listLen);
+    Tcl_SetObjResult(interp, objPtr);
     return TCL_OK;
 }
 
@@ -3152,7 +3155,7 @@ Tcl_LreverseObjCmd(
     } /* end ArithSeries */
 
     /* True List */
-    if (TclListObjGetElementsM(interp, objv[1], &elemc, &elemv) != TCL_OK) {
+    if (TclListObjLengthM(interp, objv[1], &elemc) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3163,6 +3166,9 @@ Tcl_LreverseObjCmd(
     if (!elemc) {
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
+    }
+    if (TclListObjGetElementsM(interp, objv[1], &elemc, &elemv) != TCL_OK) {
+	return TCL_ERROR;
     }
 
     if (Tcl_IsShared(objv[1])
