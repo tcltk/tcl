@@ -16,7 +16,7 @@
  * but it's faster to cache it inside the internal representation.
  */
 typedef struct ArithSeries {
-    Tcl_WideInt len;
+    Tcl_Size len;
     Tcl_Obj **elements;
     int isDouble;
     Tcl_WideInt start;
@@ -24,7 +24,7 @@ typedef struct ArithSeries {
     Tcl_WideInt step;
 } ArithSeries;
 typedef struct ArithSeriesDbl {
-    Tcl_WideInt len;
+    Tcl_Size len;
     Tcl_Obj **elements;
     int isDouble;
     double start;
@@ -39,7 +39,7 @@ MODULE_SCOPE int	TclArithSeriesObjStep(Tcl_Obj *arithSeriesPtr,
 			    Tcl_Obj **stepObj);
 MODULE_SCOPE int	TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr,
 			    Tcl_WideInt index, Tcl_Obj **elementObj);
-MODULE_SCOPE Tcl_WideInt TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
+MODULE_SCOPE Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjRange(Tcl_Interp *interp,
 			    Tcl_Obj *arithSeriesPtr, Tcl_Size fromIdx, Tcl_Size toIdx);
 MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjReverse(Tcl_Interp *interp,
@@ -55,3 +55,11 @@ MODULE_SCOPE int 	TclNewArithSeriesObj(Tcl_Interp *interp,
 			    Tcl_Obj **arithSeriesObj, int useDoubles,
 			    Tcl_Obj *startObj, Tcl_Obj *endObj,
 			    Tcl_Obj *stepObj, Tcl_Obj *lenObj);
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

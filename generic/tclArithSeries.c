@@ -431,7 +431,7 @@ TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr, Tcl_WideInt index, Tcl_Obj **ele
 	Tcl_Panic("TclArithSeriesObjIndex called with a not ArithSeries Obj.");
     }
     arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesPtr);
-    if (index < 0 || index >= arithSeriesRepPtr->len) {
+    if (index < 0 || (Tcl_Size)index >= arithSeriesRepPtr->len) {
 	return TCL_ERROR;
     }
     /* List[i] = Start + (Step * index) */
@@ -460,7 +460,7 @@ TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr, Tcl_WideInt index, Tcl_Obj **ele
  *
  *----------------------------------------------------------------------
  */
-Tcl_WideInt TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr)
+Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr)
 {
     ArithSeries *arithSeriesRepPtr = (ArithSeries*)
 	    arithSeriesPtr->internalRep.twoPtrValue.ptr1;
@@ -491,7 +491,7 @@ FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesPtr)
     ArithSeries *arithSeriesRepPtr =
 	    (ArithSeries *) arithSeriesPtr->internalRep.twoPtrValue.ptr1;
     if (arithSeriesRepPtr->elements) {
-	Tcl_WideInt i;
+	Tcl_Size i;
 	Tcl_Obj**elmts = arithSeriesRepPtr->elements;
 	for(i=0; i<arithSeriesRepPtr->len; i++) {
 	    if (elmts[i]) {
@@ -576,7 +576,7 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesPtr)
 	    (ArithSeries*) arithSeriesPtr->internalRep.twoPtrValue.ptr1;
     char *elem, *p;
     Tcl_Obj *elemObj;
-    Tcl_WideInt i;
+    Tcl_Size i;
     Tcl_WideInt length = 0;
     size_t slen;
 
@@ -730,7 +730,7 @@ TclArithSeriesObjRange(
 	    Tcl_SetObjResult(
 		interp,
 		Tcl_ObjPrintf("index %" TCL_Z_MODIFIER "u is out of bounds 0 to %"
-			      TCL_LL_MODIFIER "d", fromIdx, (arithSeriesRepPtr->len-1)));
+			      TCL_Z_MODIFIER "u", fromIdx, (arithSeriesRepPtr->len-1)));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}
 	return NULL;
@@ -741,7 +741,7 @@ TclArithSeriesObjRange(
 	    Tcl_SetObjResult(
 		interp,
 		Tcl_ObjPrintf("index %" TCL_Z_MODIFIER "u is out of bounds 0 to %"
-			      TCL_LL_MODIFIER "d", fromIdx, (arithSeriesRepPtr->len-1)));
+			      TCL_Z_MODIFIER "d", fromIdx, (arithSeriesRepPtr->len-1)));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}
 	return NULL;
@@ -1002,3 +1002,11 @@ TclArithSeriesObjReverse(
 
     return resultObj;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

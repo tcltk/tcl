@@ -3089,12 +3089,28 @@ TestlinkCmd(
 	tmp = Tcl_NewWideIntObj(longVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
-	tmp = Tcl_NewWideIntObj((long)ulongVar);
+	if (ulongVar > WIDE_MAX) {
+		mp_int bignumValue;
+		if (mp_init_u64(&bignumValue, ulongVar) != MP_OKAY) {
+		    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
+		}
+		tmp = Tcl_NewBignumObj(&bignumValue);
+	} else {
+	    tmp = Tcl_NewWideIntObj((Tcl_WideInt)ulongVar);
+	}
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
 	Tcl_PrintDouble(NULL, (double)floatVar, buffer);
 	Tcl_AppendElement(interp, buffer);
-	tmp = Tcl_NewWideIntObj((Tcl_WideInt)uwideVar);
+	if (uwideVar > WIDE_MAX) {
+		mp_int bignumValue;
+		if (mp_init_u64(&bignumValue, uwideVar) != MP_OKAY) {
+		    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
+		}
+		tmp = Tcl_NewBignumObj(&bignumValue);
+	} else {
+	    tmp = Tcl_NewWideIntObj((Tcl_WideInt)uwideVar);
+	}
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
     } else if (strcmp(argv[1], "set") == 0) {
@@ -3500,24 +3516,28 @@ TestlistrepCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "length ?leadSpace endSpace?");
 	    return TCL_ERROR;
 	} else {
-	    Tcl_WideInt length;
-	    Tcl_WideInt leadSpace = 0;
-	    Tcl_WideInt endSpace = 0;
-	    if (Tcl_GetWideIntFromObj(interp, objv[2], &length) != TCL_OK) {
+	    Tcl_WideUInt length;
+	    Tcl_WideUInt leadSpace = 0;
+	    Tcl_WideUInt endSpace = 0;
+	    if (Tcl_GetWideUIntFromObj(interp, objv[2], &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (objc > 3) {
-		if (Tcl_GetWideIntFromObj(interp, objv[3], &leadSpace) != TCL_OK) {
+		if (Tcl_GetWideUIntFromObj(interp, objv[3], &leadSpace) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (objc > 4) {
-		    if (Tcl_GetWideIntFromObj(interp, objv[4], &endSpace)
+		    if (Tcl_GetWideUIntFromObj(interp, objv[4], &endSpace)
 			!= TCL_OK) {
 			return TCL_ERROR;
 		    }
 		}
 	    }
 	    resultObj = TclListTestObj(length, leadSpace, endSpace);
+	    if (resultObj == NULL) {
+		Tcl_AppendResult(interp, "List capacity exceeded", NULL);
+		return TCL_ERROR;
+	    }
 	}
 	break;
 
