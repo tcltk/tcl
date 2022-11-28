@@ -3583,7 +3583,7 @@ TclNRSwitchObjCmd(
 	size_t listc;
 
 	blist = objv[0];
-	if (TclListObjGetElementsM(interp, objv[0], &listc, &listv) != TCL_OK) {
+	if (TclListObjLengthM(interp, objv[0], &listc) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -3594,6 +3594,9 @@ TclNRSwitchObjCmd(
 	if (listc < 1 || listc > INT_MAX) {
 	    Tcl_WrongNumArgs(interp, 1, savedObjv,
 		    "?-option ...? string {?pattern body ...? ?default body?}");
+	    return TCL_ERROR;
+	}
+	if (TclListObjGetElementsM(interp, objv[0], &listc, &listv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	objc = listc;

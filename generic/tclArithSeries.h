@@ -15,7 +15,7 @@
  * Note that the len can in theory be always computed by start,end,step
  * but it's faster to cache it inside the internal representation.
  */
-typedef struct ArithSeries {
+typedef struct {
     Tcl_Size len;
     Tcl_Obj **elements;
     int isDouble;
@@ -23,7 +23,7 @@ typedef struct ArithSeries {
     Tcl_WideInt end;
     Tcl_WideInt step;
 } ArithSeries;
-typedef struct ArithSeriesDbl {
+typedef struct {
     Tcl_Size len;
     Tcl_Obj **elements;
     int isDouble;
