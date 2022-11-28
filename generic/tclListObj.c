@@ -159,8 +159,8 @@ const TclObjTypeWithAbstractList tclListType = {
     UpdateStringOfList,		/* updateStringProc */
     SetListFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
-	ListLength
-    )
+    ListLength
+    )}
 };
 
 /* Macros to manipulate the List internal rep */
@@ -1993,18 +1993,13 @@ int
 Tcl_ListObjLength(
     Tcl_Interp *interp,	/* Used to report errors if not NULL. */
     Tcl_Obj *listObj,	/* List object whose #elements to return. */
-    Tcl_Size *lenPtr)	/* The resulting int is stored here. */
+    Tcl_Size *lenPtr)	/* The resulting length is stored here. */
 {
-    if (HAS_ABSTRACTLIST_PROC(listObj, lengthProc)) {
-	const TclObjTypeWithAbstractList *objType =  (const TclObjTypeWithAbstractList *)listObj->typePtr;
-	unsigned long long len = objType->lengthProc(listObj);
-	if (len >= TCL_INDEX_NONE) {
-	    if (interp) {
-		    Tcl_AppendResult(interp, "List too large");
-	    }
-	    return TCL_ERROR;
-	}
-	*lenPtr = len;
+    ListRep listRep;
+
+    size_t (*lengthProc)(Tcl_Obj *obj) =  ABSTRACTLIST_PROC(listObj, lengthProc);
+    if (lengthProc) {
+	*lenPtr = lengthProc(listObj);
 	return TCL_OK;
     }
 
@@ -2015,8 +2010,6 @@ Tcl_ListObjLength(
      * other hand, this code will be faster for the case where the object
      * is currently a dict. Benchmark the two cases.
      */
-    ListRep listRep;
-
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2648,7 +2641,7 @@ TclLindexFlat(
 
     /* Handle ArithSeries as special case */
     if (TclHasInternalRep(listObj,&tclArithSeriesType.objType)) {
-	size_t listLen = TclArithSeriesObjLength(listObj);
+	Tcl_Size listLen = TclArithSeriesObjLength(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = NULL;
 	for (i=0 ; i<indexCount && listObj ; i++) {
@@ -3528,10 +3521,10 @@ UpdateStringOfList(
  *------------------------------------------------------------------------
  */
 Tcl_Obj *
-TclListTestObj(Tcl_Size length, Tcl_Size leadingSpace, Tcl_Size endSpace)
+TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
 {
     ListRep listRep;
-    Tcl_Size capacity;
+    size_t capacity;
     Tcl_Obj *listObj;
 
     TclNewObj(listObj);
@@ -3541,11 +3534,14 @@ TclListTestObj(Tcl_Size length, Tcl_Size leadingSpace, Tcl_Size endSpace)
     if (capacity == 0) {
 	return listObj;
     }
+    if (capacity > LIST_MAX) {
+	return NULL;
+    }
 
     ListRepInit(capacity, NULL, 0, &listRep);
 
     ListStore *storePtr = listRep.storePtr;
-    Tcl_Size i;
+    size_t i;
     for (i = 0; i < length; ++i) {
 	TclNewUIntObj(storePtr->slots[i + leadingSpace], i);
 	Tcl_IncrRefCount(storePtr->slots[i + leadingSpace]);

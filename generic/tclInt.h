@@ -1093,13 +1093,15 @@ typedef struct ActiveInterpTrace {
 
 typedef struct {  /* For internal core use only */
     Tcl_ObjType objType;
-    size_t (*lengthProc)(Tcl_Obj *obj);
+    struct {
+	size_t (*lengthProc)(Tcl_Obj *obj);
+    } abstractList;
 } TclObjTypeWithAbstractList;
 #define TCL_OBJTYPE_V0_1(lengthProc) (sizeof(TclObjTypeWithAbstractList)) \
-	}, lengthProc /* For internal core use only */
-#define HAS_ABSTRACTLIST_PROC(objPtr, proc) (objPtr->typePtr \
-	&& (objPtr->typePtr->version > offsetof(TclObjTypeWithAbstractList, proc)) \
-	&& (((const TclObjTypeWithAbstractList *)objPtr->typePtr)->proc))
+	}, {lengthProc /* For internal core use only */
+#define ABSTRACTLIST_PROC(objPtr, proc) (((objPtr)->typePtr \
+	&& ((objPtr)->typePtr->version > offsetof(TclObjTypeWithAbstractList, abstractList.proc))) ? \
+	((const TclObjTypeWithAbstractList *)(objPtr)->typePtr)->abstractList.proc : NULL)
 
 /*
  * The structure below defines an entry in the assocData hash table which is
