@@ -609,13 +609,13 @@ my_LStringReplace(
     return TCL_OK;
 }
 
-static Tcl_ObjType *
-my_SetAbstractProc(Tcl_ObjProcType ptype)
+static const Tcl_ObjType *
+my_SetAbstractProc(int ptype)
 {
     Tcl_ObjType *typePtr = &lstringTypes[0]; /* default value */
-    if (TCL_OBJ_LENGTH <= ptype && ptype <= TCL_OBJ_REPLACE) {
+    if (4 <= ptype && ptype <= 11) {
 	/* Table has no entries for the slots upto setfromany */
-	typePtr = &lstringTypes[(ptype-TCL_OBJ_SETFROMANY)];
+	typePtr = &lstringTypes[(ptype-3)];
     }
     return typePtr;
 }
@@ -651,11 +651,11 @@ my_NewLStringObj(
     static const char* procTypeNames[] = {
 	"FREEREP", "DUPREP", "UPDATESTRING", "SETFROMANY",
 	"LENGTH", "INDEX", "SLICE", "REVERSE", "GETELEMENTS",
-	"TOSTRING", "SETELEMENT", "REPLACE", NULL
+	"SETELEMENT", "REPLACE", NULL
     };
     int i = 0;
-    Tcl_ObjProcType ptype;
-    Tcl_ObjType *lstringTypePtr = &lstringTypes[10];
+    int ptype;
+    const Tcl_ObjType *lstringTypePtr = &lstringTypes[10];
 
     repSize = sizeof(LString);
     lstringRepPtr = (LString*)Tcl_Alloc(repSize);

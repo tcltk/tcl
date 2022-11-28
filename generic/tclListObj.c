@@ -1368,8 +1368,8 @@ TclListObjCopy(
     Tcl_Obj *copyObj;
 
     if (!TclHasInternalRep(listObj, &tclListType)) {
-	if (TclObjTypeHasProc(listObj,TCL_OBJ_DUPREP) &&
-	    TclObjTypeHasProc(listObj,TCL_OBJ_INDEX)) {
+	if (TclObjTypeHasProc(listObj,dupIntRepProc) &&
+	    TclObjTypeHasProc(listObj,indexProc)) {
 	    return Tcl_DuplicateObj(listObj);
 	}
 	if (SetListFromAny(interp, listObj) != TCL_OK) {
@@ -1665,7 +1665,7 @@ Tcl_ListObjGetElements(
 {
     ListRep listRep;
 
-    if (TclObjTypeHasProc(objPtr, TCL_OBJ_GETELEMENTS) &&
+    if (TclObjTypeHasProc(objPtr, getElementsProc) &&
 	objPtr->typePtr->getElementsProc(interp, objPtr, objcPtr, objvPtr) == TCL_OK) {
 	return TCL_OK;
     } else if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
@@ -2003,7 +2003,7 @@ Tcl_ListObjLength(
     ListRep listRep;
 
     /* Handle AbstractList before attempting SetListFromAny */
-    if (TclObjTypeHasProc(listObj, TCL_OBJ_LENGTH)) {
+    if (TclObjTypeHasProc(listObj, lengthProc)) {
 
 	*lenPtr = listObj->typePtr->lengthProc(listObj);
 	return TCL_OK;
@@ -2084,7 +2084,7 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
 
-    if (TclObjTypeHasProc(listObj, TCL_OBJ_REPLACE)) {
+    if (TclObjTypeHasProc(listObj, replaceProc)) {
 	return Tcl_ObjTypeReplace(interp, listObj, first,
 				  numToDelete, numToInsert, insertObjs);
     }
@@ -2642,7 +2642,7 @@ TclLindexFlat(
     Tcl_Size i;
 
     /* Handle AbstractList as special case */
-    if (TclObjTypeHasProc(listObj,TCL_OBJ_INDEX)) {
+    if (TclObjTypeHasProc(listObj,indexProc)) {
 	Tcl_WideInt listLen = Tcl_ObjTypeLength(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = NULL;
@@ -2766,7 +2766,7 @@ TclLsetList(
 	TclGetIntForIndexM(NULL, indexArgObj, ListSizeT_MAX - 1, &index)
 	== TCL_OK) {
 
-	if (TclObjTypeHasProc(listObj, TCL_OBJ_SETELEMENT)) {
+	if (TclObjTypeHasProc(listObj, setElementProc)) {
 	    indices = &indexArgObj;
 	    Tcl_Obj *returnValue =
 		Tcl_ObjTypeSetElement(interp, listObj, 1, indices, valueObj);
@@ -3311,7 +3311,7 @@ SetListFromAny(
 	    Tcl_IncrRefCount(valuePtr);
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
-    } else if (TclObjTypeHasProc(objPtr,TCL_OBJ_INDEX)) {
+    } else if (TclObjTypeHasProc(objPtr,indexProc)) {
 	Tcl_Size elemCount, i;
 
 	elemCount = Tcl_ObjTypeLength(objPtr);

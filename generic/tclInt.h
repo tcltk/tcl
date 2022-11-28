@@ -4674,58 +4674,9 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclFetchInternalRep(objPtr, type) \
 	(TclHasInternalRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
 
-static inline int
-TclObjTypeHasProc(Tcl_Obj* objPtr, Tcl_ObjProcType ptype)
-{
-    Tcl_ObjType const *typePtr = objPtr->typePtr;
-    if (typePtr == NULL) {
-	return 0;
-    }
-    switch ((size_t)typePtr->version) {
-    case 0:
-	switch (ptype) {
-	case TCL_OBJ_DUPREP:
-	    return (typePtr->dupIntRepProc != NULL);
-	case TCL_OBJ_FREEREP:
-	    return (typePtr->freeIntRepProc != NULL);
-	case TCL_OBJ_UPDATESTRING:
-	    return (typePtr->updateStringProc != NULL);
-	case TCL_OBJ_SETFROMANY:
-	    return (typePtr->setFromAnyProc != NULL);
-	default:
-	    return 0;
-	}
-    case (size_t)TCL_OBJTYPE_V1:
-	switch (ptype) {
-	case TCL_OBJ_DUPREP:
-	    return (typePtr->dupIntRepProc != NULL);
-	case TCL_OBJ_LENGTH:
-	    return (typePtr->lengthProc != NULL);
-	case TCL_OBJ_INDEX:
-	    return (typePtr->indexProc != NULL);
-	case TCL_OBJ_SLICE:
-	    return (typePtr->sliceProc != NULL);
-	case TCL_OBJ_REVERSE:
-	    return (typePtr->reverseProc != NULL);
-	case TCL_OBJ_GETELEMENTS:
-	    return (typePtr->getElementsProc != NULL);
-	case TCL_OBJ_FREEREP:
-	    return (typePtr->freeIntRepProc != NULL);
-	case TCL_OBJ_UPDATESTRING:
-	    return (typePtr->updateStringProc != NULL);
-	case TCL_OBJ_SETELEMENT:
-	    return (typePtr->setElementProc != NULL);
-	case TCL_OBJ_REPLACE:
-	    return (typePtr->replaceProc != NULL);
-	default:
-	    return 0;
-	}
-    default:
-	return 0;
-    }
-    return 0;
-}
-
+#define TclObjTypeHasProc(objPtr, proc) ((((objPtr)->typePtr) \
+	&& (offsetof(Tcl_ObjType, proc) <= offsetof(Tcl_ObjType, setFromAnyProc) || (objPtr)->typePtr->version == TCL_OBJTYPE_V1)) \
+	? (objPtr)->typePtr->proc : NULL)
 
 
 /*

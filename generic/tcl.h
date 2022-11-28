@@ -748,13 +748,6 @@ typedef struct Tcl_Obj {
  */
 
 
-typedef enum {
-    TCL_OBJ_FREEREP, TCL_OBJ_DUPREP, TCL_OBJ_UPDATESTRING, TCL_OBJ_SETFROMANY,
-    TCL_OBJ_LENGTH, TCL_OBJ_INDEX,
-    TCL_OBJ_SLICE, TCL_OBJ_REVERSE, TCL_OBJ_GETELEMENTS,
-    TCL_OBJ_SETELEMENT, TCL_OBJ_REPLACE
-} Tcl_ObjProcType;
-
 #define Tcl_ObjTypeLength(objPtr) (objPtr)->typePtr->lengthProc(objPtr)
 #define Tcl_ObjTypeIndex(interp, objPtr, index, elemObjPtr) \
     (objPtr)->typePtr->indexProc((interp),(objPtr),(index),(elemObjPtr))
