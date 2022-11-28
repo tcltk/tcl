@@ -149,7 +149,7 @@ TclNewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_W
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->end = end;
     arithSeriesRepPtr->step = step;
-    arithSeriesRepPtr->len1 = length;
+    arithSeriesRepPtr->len = length;
     arithSeriesRepPtr->elements = NULL;
     arithSeriesPtr->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesPtr->internalRep.twoPtrValue.ptr2 = NULL;
@@ -196,7 +196,7 @@ TclNewArithSeriesDbl(double start, double end, double step, Tcl_WideInt len)
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->end = end;
     arithSeriesRepPtr->step = step;
-    arithSeriesRepPtr->len1 = length;
+    arithSeriesRepPtr->len = length;
     arithSeriesRepPtr->elements = NULL;
     arithSeriesPtr->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesPtr->internalRep.twoPtrValue.ptr2 = NULL;
@@ -429,7 +429,7 @@ TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr, Tcl_WideInt index, Tcl_Obj **ele
 	Tcl_Panic("TclArithSeriesObjIndex called with a not ArithSeries Obj.");
     }
     arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesPtr);
-    if (index < 0 || index >= arithSeriesRepPtr->len1) {
+    if (index < 0 || index >= arithSeriesRepPtr->len) {
 	return TCL_ERROR;
     }
     /* List[i] = Start + (Step * index) */
@@ -462,7 +462,7 @@ Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr)
 {
     ArithSeries *arithSeriesRepPtr = (ArithSeries*)
 	    arithSeriesPtr->internalRep.twoPtrValue.ptr1;
-    return arithSeriesRepPtr->len1;
+    return arithSeriesRepPtr->len;
 }
 
 /*
@@ -491,7 +491,7 @@ FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesPtr)
     if (arithSeriesRepPtr->elements) {
 	Tcl_WideInt i;
 	Tcl_Obj**elmts = arithSeriesRepPtr->elements;
-	for(i=0; i<arithSeriesRepPtr->len1; i++) {
+	for(i=0; i<arithSeriesRepPtr->len; i++) {
 	    if (elmts[i]) {
 		Tcl_DecrRefCount(elmts[i]);
 	    }
@@ -581,7 +581,7 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesPtr)
     /*
      * Pass 1: estimate space.
      */
-    for (i = 0; i < arithSeriesRepPtr->len1; i++) {
+    for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	TclArithSeriesObjIndex(arithSeriesPtr, i, &elemObj);
 	elem = TclGetStringFromObj(elemObj, &slen);
 	Tcl_DecrRefCount(elemObj);
@@ -594,7 +594,7 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesPtr)
      */
 
     p = Tcl_InitStringRep(arithSeriesPtr, NULL, length);
-    for (i = 0; i < arithSeriesRepPtr->len1; i++) {
+    for (i = 0; i < arithSeriesRepPtr->len; i++) {
 	TclArithSeriesObjIndex(arithSeriesPtr, i, &elemObj);
 	elem = TclGetStringFromObj(elemObj, &slen);
 	strcpy(p, elem);
@@ -727,7 +727,7 @@ TclArithSeriesObjRange(
 	if (interp) {
 	    Tcl_SetObjResult(interp,
 		    Tcl_ObjPrintf("index %d is out of bounds 0 to %"
-			    "d", fromIdx, (arithSeriesRepPtr->len1-1)));
+			    "d", fromIdx, (arithSeriesRepPtr->len-1)));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}
 	return NULL;
@@ -737,7 +737,7 @@ TclArithSeriesObjRange(
 	if (interp) {
 	    Tcl_SetObjResult(interp,
 		    Tcl_ObjPrintf("index %d is out of bounds 0 to %"
-			    "d", fromIdx, (arithSeriesRepPtr->len1-1)));
+			    "d", fromIdx, (arithSeriesRepPtr->len-1)));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}
 	return NULL;
@@ -780,7 +780,7 @@ TclArithSeriesObjRange(
 	arithSeriesDblRepPtr->start = start;
 	arithSeriesDblRepPtr->end = end;
 	arithSeriesDblRepPtr->step = step;
-	arithSeriesDblRepPtr->len1 = (end-start+step)/step;
+	arithSeriesDblRepPtr->len = (end-start+step)/step;
 	arithSeriesDblRepPtr->elements = NULL;
 
     } else {
@@ -791,7 +791,7 @@ TclArithSeriesObjRange(
 	arithSeriesRepPtr->start = start;
 	arithSeriesRepPtr->end = end;
 	arithSeriesRepPtr->step = step;
-	arithSeriesRepPtr->len1 = (end-start+step)/step;
+	arithSeriesRepPtr->len = (end-start+step)/step;
 	arithSeriesRepPtr->elements = NULL;
     }
 
@@ -847,7 +847,7 @@ TclArithSeriesGetElements(
 	int i, objc;
 
 	ArithSeriesGetInternalRep(objPtr, arithSeriesRepPtr);
-	objc = arithSeriesRepPtr->len1;
+	objc = arithSeriesRepPtr->len;
 	if (objc > 0) {
 	    if (arithSeriesRepPtr->elements) {
 		/* If this exists, it has already been populated */
@@ -929,7 +929,7 @@ TclArithSeriesObjReverse(
     ArithSeriesGetInternalRep(arithSeriesPtr, arithSeriesRepPtr);
 
     isDouble = arithSeriesRepPtr->isDouble;
-    len = arithSeriesRepPtr->len1;
+    len = arithSeriesRepPtr->len;
 
     TclArithSeriesObjIndex(arithSeriesPtr, (len-1), &startObj);
     Tcl_IncrRefCount(startObj);
