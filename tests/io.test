@@ -9053,8 +9053,8 @@ test io-75.6 {multibyte encoding error read results in raw bytes} -setup {
     puts -nonewline $f "A\xC0\x40"
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none
-} -constraints knownBug -body {
+    fconfigure $f -encoding utf-8 -buffering none -strict 1
+} -body {
     set d [read $f]
     binary scan $d H* hd
     set hd
@@ -9113,7 +9113,7 @@ test io-75.9 {shiftjis encoding error read results in raw bytes} -setup {
     flush $f
     seek $f 0
     fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf
-} -constraints knownBug -body {
+} -body {
     set d [read $f]
     binary scan $d H* hd
     set hd
@@ -9157,7 +9157,7 @@ test io-75.11 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -
     lappend hd $msg
 } -cleanup {
     removeFile io-75.6
-} -result "41 0 {}" ; # Here, an exception should be thrown
+} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
 # ### ### ### ######### ######### #########
 

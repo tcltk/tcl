@@ -11,6 +11,8 @@
 
 #include <assert.h>
 #include "tclInt.h"
+#include "tclTomMath.h"
+#include "tclArithSeries.h"
 
 /*
  * TODO - memmove is fast. Measure at what size we should prefer memmove
@@ -3541,17 +3543,10 @@ UpdateStringOfList(
  *------------------------------------------------------------------------
  */
 Tcl_Obj *
-TclListTestObj (int length, int leadingSpace, int endSpace)
+TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
 {
-    if (length < 0)
-	length = 0;
-    if (leadingSpace < 0)
-	leadingSpace = 0;
-    if (endSpace < 0)
-	endSpace = 0;
-
     ListRep listRep;
-    Tcl_Size capacity;
+    size_t capacity;
     Tcl_Obj *listObj;
 
     TclNewObj(listObj);
@@ -3561,13 +3556,16 @@ TclListTestObj (int length, int leadingSpace, int endSpace)
     if (capacity == 0) {
 	return listObj;
     }
+    if (capacity > LIST_MAX) {
+	return NULL;
+    }
 
     ListRepInit(capacity, NULL, 0, &listRep);
 
     ListStore *storePtr = listRep.storePtr;
-    int i;
+    size_t i;
     for (i = 0; i < length; ++i) {
-	storePtr->slots[i + leadingSpace] = Tcl_NewIntObj(i);
+	TclNewUIntObj(storePtr->slots[i + leadingSpace], i);
 	Tcl_IncrRefCount(storePtr->slots[i + leadingSpace]);
     }
     storePtr->firstUsed = leadingSpace;
