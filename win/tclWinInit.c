@@ -173,6 +173,44 @@ TclpInitPlatform(void)
 }
 
 /*
+ *---------------------------------------------------------------------------
+ *
+ * TclpGetObjNameOfExecutable --
+ *
+ *	This is the fallback routine that sets the name of executable if the
+ *	application has not yet set one by the first time it is needed.
+ *
+ *	Typically set by TclSetObjNameOfExecutable from TclpFindExecutable.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the path to an initial value (name of the current process).
+ *
+ *-------------------------------------------------------------------------
+ */
+
+void
+TclpGetObjNameOfExecutable(
+    char **valuePtr,
+    int *lengthPtr,
+    Tcl_Encoding *encodingPtr)
+{
+    WCHAR wName[MAX_PATH];
+    char name[MAX_PATH * TCL_UTF_MAX];
+    int len;
+
+    GetModuleFileNameW(NULL, wName, MAX_PATH);
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
+    TclWinNoBackslash(name);
+
+    *lengthPtr = len = strlen(name);
+    *valuePtr = ckalloc(++len);
+    memcpy(*valuePtr, name, len);
+}
+
+/*
  *-------------------------------------------------------------------------
  *
  * TclpInitLibraryPath --
