@@ -342,6 +342,42 @@ long tclMacOSXDarwinRelease = 0;
 /*
  *---------------------------------------------------------------------------
  *
+ * GetLocEncFromEnv --
+ *
+ *	Read initial locale-dependend encoding (or language), corresponding
+ *	environment specified parameters.
+ *
+ *	Typically called once by process initialization (before "setlocale").
+ *
+ * Results:
+ *	String contains encoding/language or NULL.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static const char *
+GetLocEncFromEnv()
+{
+    const char *encoding;
+
+    encoding = getenv("LC_ALL");
+
+    if (encoding == NULL || encoding[0] == '\0') {
+	encoding = getenv("LC_CTYPE");
+    }
+    if (encoding == NULL || encoding[0] == '\0') {
+	encoding = getenv("LANG");
+    }
+    if (encoding == NULL || encoding[0] == '\0') {
+	encoding = NULL;
+    }
+
+    return encoding;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclpInitPlatform --
  *
  *	Initialize all the platform-dependent things like signals and
@@ -358,9 +394,19 @@ long tclMacOSXDarwinRelease = 0;
  *---------------------------------------------------------------------------
  */
 
+static const char *init_EnvEnc = NULL;
+static const char *init_LocCType = NULL;
+
 void
 TclpInitPlatform(void)
 {
+    /*
+     * Save current env/locale encoding before set locale (because it could change
+     * later env-var "LANG" to "C" (if selected local unsupported).
+     */
+
+    init_EnvEnc = GetLocEncFromEnv();
+
 #ifdef DJGPP
     tclPlatform = TCL_PLATFORM_WINDOWS;
 #else
@@ -423,7 +469,7 @@ TclpInitPlatform(void)
      * 2521].
      */
 
-    setlocale(LC_CTYPE, "");
+    init_LocCType = setlocale(LC_CTYPE, "");
 
     /*
      * In case the initial locale is not "C", ensure that the numeric
@@ -443,6 +489,41 @@ TclpInitPlatform(void)
 	}
     }
 #endif
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpGetObjNameOfExecutable --
+ *
+ *	This is the fallback routine that sets the name of executable if the
+ *	application has not yet set one by the first time it is needed.
+ *
+ *	Typically set by TclSetObjNameOfExecutable from TclpFindExecutable.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the path to an initial value (name of the current process).
+ *
+ *-------------------------------------------------------------------------
+ */
+
+void
+TclpGetObjNameOfExecutable(
+    char **valuePtr,
+    int *lengthPtr,
+    Tcl_Encoding *encodingPtr)
+{
+    char buf[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf)-1);
+    if (len != -1) {
+	buf[len] = '\0';
+	*lengthPtr = len;
+	*valuePtr = ckalloc(len+1);
+	memcpy(*valuePtr, buf, len+1);
+    }
 }
 
 /*
@@ -472,6 +553,7 @@ TclpInitLibraryPath(
     Tcl_Obj *pathPtr, *objPtr;
     const char *str;
     Tcl_DString buffer;
+    Tcl_StatBuf stat;
 
     TclNewObj(pathPtr);
 
@@ -506,7 +588,12 @@ TclpInitLibraryPath(
 	 * If TCL_LIBRARY is set, search there.
 	 */
 
-	Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(str, -1));
+	objPtr = Tcl_NewStringObj(str, -1);
+	Tcl_IncrRefCount(objPtr);
+	if ((0 == Tcl_FSStat(objPtr, &stat)) && S_ISDIR(stat.st_mode)) {
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	}
+	Tcl_DecrRefCount(objPtr);
 
 	Tcl_SplitPath(str, &pathc, &pathv);
 	if ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc-1]) != 0)) {
@@ -520,14 +607,22 @@ TclpInitLibraryPath(
 
 	    pathv[pathc - 1] = installLib + 4;
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
-	    Tcl_ListObjAppendElement(NULL, pathPtr, TclDStringToObj(&ds));
+	    objPtr = TclDStringToObj(&ds);
+	    Tcl_IncrRefCount(objPtr);
+	    if ((0 == Tcl_FSStat(objPtr, &stat)) && S_ISDIR(stat.st_mode)) {
+		Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    }
+	    Tcl_DecrRefCount(objPtr);
 	}
 	ckfree(pathv);
     }
 
     /*
-     * Finally, look for the library relative to the compiled-in path. This is
-     * needed when users install Tcl with an exec-prefix that is different
+     * Finally, look for the library relative to the compiled-in path:
+     *    defaultLibraryDir
+     * as well as for the runtime paths relative executable:
+     *    parentDir/lib/tcl<V> and parentDir/library.
+     * This is needed when users install Tcl with an exec-prefix that is different
      * from the prefix.
      */
 
@@ -548,9 +643,17 @@ TclpInitLibraryPath(
 	}
 	if (str[0] != '\0') {
 	    objPtr = Tcl_NewStringObj(str, -1);
-	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_IncrRefCount(objPtr);
+	    if ((0 == Tcl_FSStat(objPtr, &stat)) && S_ISDIR(stat.st_mode)) {
+		Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    }
+	    Tcl_DecrRefCount(objPtr);
 	}
     }
+
+    /* extend path-list with parents relative library paths */
+    TclpExtendWithRelativeLibraryPaths(pathPtr);
+
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
@@ -620,10 +723,18 @@ const char *
 Tcl_GetEncodingNameFromEnvironment(
     Tcl_DString *bufPtr)
 {
-    const char *encoding;
-    const char *knownEncoding;
+    const char *encoding, *initEncoding, *knownEncoding;
+    const char *initLocCType;
 
     Tcl_DStringInit(bufPtr);
+
+    /*
+     * First time called during initialization process (once).
+     */
+    initEncoding = init_EnvEnc;
+    init_EnvEnc = NULL;
+    initLocCType = init_LocCType;
+    init_LocCType = NULL;
 
     /*
      * Determine the current encoding from the LC_* or LANG environment
@@ -636,7 +747,12 @@ Tcl_GetEncodingNameFromEnvironment(
 #ifdef WEAK_IMPORT_NL_LANGINFO
 	    nl_langinfo != NULL &&
 #endif
-	    setlocale(LC_CTYPE, "") != NULL) {
+	    (initLocCType != NULL || 
+		(initLocCType = setlocale(LC_CTYPE, "")) != NULL) &&
+	    /* avoid implicit fallback to C */
+	    (strcmp(initLocCType, "C") != 0 || 
+		!initEncoding || strcmp(initEncoding, "C") == 0)
+    ) {
 	Tcl_DString ds;
 
 	/*
@@ -664,16 +780,13 @@ Tcl_GetEncodingNameFromEnvironment(
      * what encoding should be used based on env vars.
      */
 
-    encoding = getenv("LC_ALL");
-
-    if (encoding == NULL || encoding[0] == '\0') {
-	encoding = getenv("LC_CTYPE");
-    }
-    if (encoding == NULL || encoding[0] == '\0') {
-	encoding = getenv("LANG");
-    }
-    if (encoding == NULL || encoding[0] == '\0') {
-	encoding = NULL;
+    /* Try to determine proper encoding after locale was changed (setlocale). */
+    encoding = GetLocEncFromEnv();
+    if (initEncoding && strcmp(initEncoding, "C") != 0 &&
+    	(!initLocCType || strcmp(initLocCType, "C") == 0)
+    ) {
+	/* use initial encoding, setlocale has not found better suitable one. */
+	encoding = initEncoding;
     }
 
     if (encoding != NULL) {

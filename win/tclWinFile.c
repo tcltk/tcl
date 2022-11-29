@@ -582,7 +582,7 @@ WinReadLinkDirectory(
 	 */
 
 	offset = 0;
-	if (reparseBuffer->MountPointReparseBuffer.PathBuffer[0] == '\\') {
+	if (reparseBuffer->MountPointReparseBuffer.PathBuffer[0] == L'\\') {
 	    /*
 	     * Check whether this is a mounted volume.
 	     */
@@ -876,9 +876,6 @@ TclpFindExecutable(
     const char *argv0)		/* If NULL, install PanicMessageBox, otherwise
 				 * ignore. */
 {
-    WCHAR wName[MAX_PATH];
-    char name[MAX_PATH * 3];
-
     /*
      * Under Windows we ignore argv0, and return the path for the file used to
      * create this process. Only if it is NULL, install a new panic handler.
@@ -888,10 +885,10 @@ TclpFindExecutable(
 	Tcl_SetPanicProc(tclWinDebugPanic);
     }
 
-    GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(WCHAR));
-    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
-    TclWinNoBackslash(name);
-    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, -1), NULL);
+    /*
+     * We don't need to set executable path right now, because it will be set
+     * on demand using callback TclpGetObjNameOfExecutable.
+     */
 }
 
 /*
