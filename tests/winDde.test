@@ -19,7 +19,7 @@ testConstraint dde 0
 if {[testConstraint win]} {
     if {![catch {
 	    ::tcltest::loadTestedCommands
-	    set ::ddever [package require dde 1.4.4]
+	    set ::ddever [package require dde 1.4.5]
 	    set ::ddelib [info loaded {} Dde]}]} {
 	testConstraint dde 1
     }
@@ -105,7 +105,7 @@ proc createChildProcess {ddeServerName args} {
 # -------------------------------------------------------------------------
 test winDde-1.0 {check if we are testing the right dll} {win dde} {
     set ::ddever
-} {1.4.4}
+} {1.4.5}
 
 test winDde-1.1 {Settings the server's topic name} -constraints dde -body {
     list [dde servername foobar] [dde servername] [dde servername self]
