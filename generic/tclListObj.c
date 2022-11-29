@@ -1998,7 +1998,7 @@ int
 Tcl_ListObjLength(
     Tcl_Interp *interp,	/* Used to report errors if not NULL. */
     Tcl_Obj *listObj,	/* List object whose #elements to return. */
-    Tcl_Size *lenPtr)	/* The resulting int is stored here. */
+    Tcl_Size *lenPtr)	/* The resulting length is stored here. */
 {
     ListRep listRep;
 

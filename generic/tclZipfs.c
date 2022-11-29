@@ -3028,7 +3028,7 @@ ZipFSMkZipOrImg(
 	}
     }
     Tcl_IncrRefCount(list);
-    if (TclListObjGetElementsM(interp, list, &lobjc, &lobjv) != TCL_OK) {
+    if (TclListObjLengthM(interp, list, &lobjc) != TCL_OK) {
 	Tcl_DecrRefCount(list);
 	return TCL_ERROR;
     }
@@ -3042,6 +3042,10 @@ ZipFSMkZipOrImg(
 	Tcl_DecrRefCount(list);
 	ZIPFS_ERROR(interp, "empty archive");
 	ZIPFS_ERROR_CODE(interp, "EMPTY");
+	return TCL_ERROR;
+    }
+    if (TclListObjGetElementsM(interp, list, &lobjc, &lobjv) != TCL_OK) {
+	Tcl_DecrRefCount(list);
 	return TCL_ERROR;
     }
     out = Tcl_FSOpenFileChannel(interp, targetFile, "wb", 0755);

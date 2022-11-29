@@ -2456,6 +2456,14 @@ SetLambdaFromAny(
      * length is not 2, then it cannot be converted to lambdaType.
      */
 
+    result = TclListObjLengthM(NULL, objPtr, &objc);
+    if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't interpret \"%s\" as a lambda expression",
+		Tcl_GetString(objPtr)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", NULL);
+	return TCL_ERROR;
+    }
     result = TclListObjGetElementsM(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
