@@ -2608,7 +2608,7 @@ declare 682 {
 
 # TIP 643
 declare 683 {
-   int Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
+   Tcl_Size Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
 }
 
 # TIP #650

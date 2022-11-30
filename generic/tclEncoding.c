@@ -33,13 +33,13 @@ typedef struct {
     Tcl_EncodingFreeProc *freeProc;
 				/* If non-NULL, function to call when this
 				 * encoding is deleted. */
-    int nullSize;		/* Number of 0x00 bytes that signify
+    void *clientData;	/* Arbitrary value associated with encoding
+				 * type. Passed to conversion functions. */
+    size_t nullSize;		/* Number of 0x00 bytes that signify
 				 * end-of-string in this encoding. This number
 				 * is used to determine the source string
 				 * length when the srcLen argument is
 				 * negative. This number can be 1, 2, or 4. */
-    void *clientData;	/* Arbitrary value associated with encoding
-				 * type. Passed to conversion functions. */
     LengthProc *lengthProc;	/* Function to compute length of
 				 * null-terminated strings in this encoding.
 				 * If nullSize is 1, this is strlen; if
@@ -826,7 +826,7 @@ FreeEncoding(
  *
  * Tcl_GetEncodingName --
  *
- *	Given an encoding, return the name that was used to constuct the
+ *	Given an encoding, return the name that was used to construct the
  *	encoding.
  *
  * Results:
@@ -929,14 +929,14 @@ Tcl_GetEncodingNames(
  *      string termination.
  *
  * Results:
- *	The name of the encoding.
+ *	The number of nul bytes used for the string termination.
  *
  * Side effects:
  *	None.
  *
  *---------------------------------------------------------------------------
  */
-int
+size_t
 Tcl_GetEncodingNulLength(
     Tcl_Encoding encoding)
 {

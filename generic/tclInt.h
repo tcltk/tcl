@@ -1091,6 +1091,10 @@ typedef struct ActiveInterpTrace {
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
 
+#define ABSTRACTLIST_PROC(objPtr, proc) ((((objPtr)->typePtr) \
+	&& (offsetof(Tcl_ObjType, proc) <= offsetof(Tcl_ObjType, setFromAnyProc) || (objPtr)->typePtr->version == TCL_OBJTYPE_V1)) \
+	? (objPtr)->typePtr->proc : NULL)
+
 /*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function
@@ -2631,7 +2635,6 @@ typedef struct ListRep {
 
 #define TclListObjIsCanonical(listObj_) \
     (((listObj_)->typePtr == &tclListType) ? ListObjIsCanonical((listObj_)) : 0)
-
 
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
@@ -4673,10 +4676,6 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 	((objPtr)->typePtr == (type))
 #define TclFetchInternalRep(objPtr, type) \
 	(TclHasInternalRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
-
-#define TclObjTypeHasProc(objPtr, proc) ((((objPtr)->typePtr) \
-	&& (offsetof(Tcl_ObjType, proc) <= offsetof(Tcl_ObjType, setFromAnyProc) || (objPtr)->typePtr->version == TCL_OBJTYPE_V1)) \
-	? (objPtr)->typePtr->proc : NULL)
 
 
 /*

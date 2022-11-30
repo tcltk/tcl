@@ -1997,11 +1997,11 @@ typedef struct Tcl_EncodingType {
 				 * encoding is deleted. */
     void *clientData;	/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
-    int nullSize;		/* Number of zero bytes that signify
+    Tcl_Size nullSize;		/* Number of zero bytes that signify
 				 * end-of-string in this encoding. This number
 				 * is used to determine the source string
 				 * length when the srcLen argument is
-				 * negative. Must be 1 or 2. */
+				 * negative. Must be 1, 2, or 4. */
 } Tcl_EncodingType;
 
 /*

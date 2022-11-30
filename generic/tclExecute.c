@@ -4659,7 +4659,7 @@ TEBCresume(
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
 	/* special case for AbstractList */
-	if (TclObjTypeHasProc(valuePtr,indexProc)) {
+	if (ABSTRACTLIST_PROC(valuePtr,indexProc)) {
 	    length = Tcl_ObjTypeLength(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
@@ -4728,7 +4728,7 @@ TEBCresume(
 	 */
 
 	/* special case for AbstractList */
-	if (TclObjTypeHasProc(valuePtr,indexProc)) {
+	if (ABSTRACTLIST_PROC(valuePtr,indexProc)) {
 	    length = Tcl_ObjTypeLength(valuePtr);
 
 	    /* Decode end-offset index values. */
@@ -4818,7 +4818,7 @@ TEBCresume(
 	 * Compute the new variable value.
 	 */
 
-	if (TclObjTypeHasProc(valuePtr, sliceProc)) {
+	if (ABSTRACTLIST_PROC(valuePtr, sliceProc)) {
 	    objResultPtr = Tcl_ObjTypeSetElement(interp,
 		valuePtr, numIndices,
 	        &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
@@ -4946,7 +4946,7 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	if (TclObjTypeHasProc(valuePtr, sliceProc)) {
+	if (ABSTRACTLIST_PROC(valuePtr, sliceProc)) {
 	    if (Tcl_ObjTypeSlice(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4973,7 +4973,7 @@ TEBCresume(
 	if (length > 0) {
 	    size_t i = 0;
 	    Tcl_Obj *o;
-	    int isAbstractList = TclObjTypeHasProc(value2Ptr,indexProc) != NULL;
+	    int isAbstractList = ABSTRACTLIST_PROC(value2Ptr,indexProc) != NULL;
 
 	    /*
 	     * An empty list doesn't match anything.

@@ -2216,7 +2216,7 @@ Tcl_JoinObjCmd(
      * pointer to its array of element pointers.
      */
 
-    if (TclObjTypeHasProc(objv[1], getElementsProc)) {
+    if (ABSTRACTLIST_PROC(objv[1], getElementsProc)) {
 	listLen = Tcl_ObjTypeLength(objv[1]);
 	isAbstractList = (listLen ? 1 : 0);
 	if (listLen > 1 &&
@@ -2732,7 +2732,7 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    if (TclObjTypeHasProc(objv[1], sliceProc)) {
+    if (ABSTRACTLIST_PROC(objv[1], sliceProc)) {
 	Tcl_Obj *resultObj;
 	int status = Tcl_ObjTypeSlice(interp, objv[1], first, last, &resultObj);
 	if (status == TCL_OK) {
@@ -3129,7 +3129,7 @@ Tcl_LreverseObjCmd(
      *  Handle AbstractList special case - do not shimmer into a list, if it
      *  supports a private Reverse function, just to reverse it.
      */
-    if (TclObjTypeHasProc(objv[1], reverseProc)) {
+    if (ABSTRACTLIST_PROC(objv[1], reverseProc)) {
 	Tcl_Obj *resultObj;
 
 	if (Tcl_ObjTypeReverse(interp, objv[1], &resultObj) == TCL_OK) {
@@ -4402,7 +4402,7 @@ Tcl_LsetObjCmd(
     if (objc == 4) {
 	finalValuePtr = TclLsetList(interp, listPtr, objv[2], objv[3]);
     } else {
-	if (TclObjTypeHasProc(listPtr, setElementProc)) {
+	if (ABSTRACTLIST_PROC(listPtr, setElementProc)) {
 	    finalValuePtr = Tcl_ObjTypeSetElement(interp, listPtr,
 						       objc-3, objv+2, objv[objc-1]);
 	    if (finalValuePtr) {
@@ -4712,7 +4712,7 @@ Tcl_LsortObjCmd(
 	sortInfo.compareCmdPtr = newCommandPtr;
     }
 
-    if (TclObjTypeHasProc(objv[1], getElementsProc)) {
+    if (ABSTRACTLIST_PROC(objv[1], getElementsProc)) {
 	sortInfo.resultCode =
 	    Tcl_ObjTypeGetElements(interp, listObj, &length, &listObjPtrs);
     } else {

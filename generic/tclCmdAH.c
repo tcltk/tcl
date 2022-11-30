@@ -2728,8 +2728,8 @@ EachloopCmd(
 
 	/* Values */
 	if (!TclHasInternalRep(objv[2+i*2], &tclListType) &&
-	    TclObjTypeHasProc(objv[2+i*2],dupIntRepProc) &&
-	    TclObjTypeHasProc(objv[2+i*2],indexProc)) {
+	    ABSTRACTLIST_PROC(objv[2+i*2],dupIntRepProc) &&
+	    ABSTRACTLIST_PROC(objv[2+i*2],indexProc)) {
 	    /* Special case for AbstractList */
 	    statePtr->aCopyList[i] = Tcl_DuplicateObj(objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
@@ -2871,7 +2871,7 @@ ForeachAssignments(
 
     for (i=0 ; i<statePtr->numLists ; i++) {
 	int isAbstractList =
-	    TclObjTypeHasProc(statePtr->aCopyList[i],indexProc) != NULL;
+	    ABSTRACTLIST_PROC(statePtr->aCopyList[i],indexProc) != NULL;
 
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
