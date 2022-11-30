@@ -77,7 +77,8 @@ const TclObjTypeWithAbstractList tclArithSeriesType = {
     UpdateStringOfArithSeries,		/* updateStringProc */
     SetArithSeriesFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
-    TclArithSeriesObjLength
+    TclArithSeriesObjLength,
+    NULL
     )}
 };
 

@@ -131,7 +131,8 @@ static const TclObjTypeWithAbstractList endOffsetType = {
     NULL,				/* updateStringProc */
     NULL,				/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
-    LengthOne
+    LengthOne,
+    NULL
     )}
 };
 

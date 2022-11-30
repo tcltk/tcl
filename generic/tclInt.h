@@ -1095,10 +1095,11 @@ typedef struct {  /* For internal core use only */
     Tcl_ObjType objType;
     struct {
 	size_t (*lengthProc)(Tcl_Obj *obj);
+	void (*getElementsProc)(Tcl_Obj *obj, Tcl_Obj **elements, size_t start, size_t length);
     } abstractList;
 } TclObjTypeWithAbstractList;
-#define TCL_OBJTYPE_V0_1(lengthProc) (sizeof(TclObjTypeWithAbstractList)) \
-	}, {lengthProc /* For internal core use only */
+#define TCL_OBJTYPE_V0_1(lengthProc, getElementsProc) (sizeof(TclObjTypeWithAbstractList)) \
+	}, {lengthProc, getElementsProc /* For internal core use only */
 #define ABSTRACTLIST_PROC(objPtr, proc) (((objPtr)->typePtr \
 	&& ((objPtr)->typePtr->version > offsetof(TclObjTypeWithAbstractList, abstractList.proc))) ? \
 	((const TclObjTypeWithAbstractList *)(objPtr)->typePtr)->abstractList.proc : NULL)

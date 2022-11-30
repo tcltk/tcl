@@ -159,7 +159,8 @@ const TclObjTypeWithAbstractList tclListType = {
     UpdateStringOfList,		/* updateStringProc */
     SetListFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
-    ListLength
+    ListLength,
+    NULL
     )}
 };
 
