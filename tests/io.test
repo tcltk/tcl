@@ -5756,7 +5756,7 @@ test io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
     close $s2
     set modes
 } {auto crlf}
-test io-39.22 {Tcl_SetChannelOption, invariance} {unix deprecated} {
+test io-39.22 {Tcl_SetChannelOption, invariance} unix {
     file delete $path(test1)
     set f1 [open $path(test1) w+]
     set l ""
@@ -5768,7 +5768,7 @@ test io-39.22 {Tcl_SetChannelOption, invariance} {unix deprecated} {
     close $f1
     set l
 } {{} O D}
-test io-39.22a {Tcl_SetChannelOption, invariance} deprecated {
+test io-39.22a {Tcl_SetChannelOption, invariance} {
     file delete $path(test1)
     set f1 [open $path(test1) w+]
     set l [list]
