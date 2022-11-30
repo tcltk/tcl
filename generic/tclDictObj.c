@@ -136,20 +136,6 @@ typedef struct Dict {
 				 * dictionaries. */
 } Dict;
 
-/*
- * The structure below defines the dictionary object type by means of
- * functions that can be invoked by generic object code.
- */
-
-const Tcl_ObjType tclDictType = {
-    "dict",
-    FreeDictInternalRep,		/* freeIntRepProc */
-    DupDictInternalRep,			/* dupIntRepProc */
-    UpdateStringOfDict,			/* updateStringProc */
-    SetDictFromAny,			/* setFromAnyProc */
-    TCL_OBJTYPE_V0
-};
-
 #define DictSetInternalRep(objPtr, dictRepPtr)				\
     do {                                                                \
         Tcl_ObjInternalRep ir;                                               \
@@ -164,6 +150,20 @@ const Tcl_ObjType tclDictType = {
         irPtr = TclFetchInternalRep((objPtr), &tclDictType);                \
         (dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;          \
     } while (0)
+
+/*
+ * The structure below defines the dictionary object type by means of
+ * functions that can be invoked by generic object code.
+ */
+
+const Tcl_ObjType tclDictType = {
+    "dict",
+    FreeDictInternalRep,		/* freeIntRepProc */
+    DupDictInternalRep,			/* dupIntRepProc */
+    UpdateStringOfDict,			/* updateStringProc */
+    SetDictFromAny,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0
+};
 
 /*
  * The type of the specially adapted version of the Tcl_Obj*-containing hash
@@ -603,7 +603,7 @@ SetDictFromAny(
      * the conversion from lists to dictionaries.
      */
 
-    if (TclHasInternalRep(objPtr, &tclListType)) {
+    if (TclHasInternalRep(objPtr, &tclListType.objType)) {
 	size_t objc, i;
 	Tcl_Obj **objv;
 

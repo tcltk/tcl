@@ -29,7 +29,7 @@
 #define ArithSeriesGetInternalRep(objPtr, arithRepPtr)		\
     do {								\
 	const Tcl_ObjInternalRep *irPtr;				\
-	irPtr = TclFetchInternalRep((objPtr), &tclArithSeriesType);	\
+	irPtr = TclFetchInternalRep((objPtr), &tclArithSeriesType.objType);	\
 	(arithRepPtr) = irPtr ? (ArithSeries *)irPtr->twoPtrValue.ptr1 : NULL;	\
     } while (0)
 
@@ -70,13 +70,15 @@ static void		UpdateStringOfArithSeries (Tcl_Obj *listPtr);
  * are valid and will be equivalent to the empty list.
  */
 
-const Tcl_ObjType tclArithSeriesType = {
-    "arithseries",			/* name */
+const TclObjTypeWithAbstractList tclArithSeriesType = {
+    {"arithseries",			/* name */
     FreeArithSeriesInternalRep,		/* freeIntRepProc */
     DupArithSeriesInternalRep,		/* dupIntRepProc */
     UpdateStringOfArithSeries,		/* updateStringProc */
     SetArithSeriesFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TCL_OBJTYPE_V0_1(
+    TclArithSeriesObjLength
+    )}
 };
 
 /*
@@ -154,7 +156,7 @@ TclNewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_W
     arithSeriesRepPtr->elements = NULL;
     arithSeriesPtr->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    arithSeriesPtr->typePtr = &tclArithSeriesType;
+    arithSeriesPtr->typePtr = &tclArithSeriesType.objType;
     if (length > 0)
     	Tcl_InvalidateStringRep(arithSeriesPtr);
 
@@ -201,7 +203,7 @@ TclNewArithSeriesDbl(double start, double end, double step, Tcl_WideInt len)
     arithSeriesRepPtr->elements = NULL;
     arithSeriesPtr->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    arithSeriesPtr->typePtr = &tclArithSeriesType;
+    arithSeriesPtr->typePtr = &tclArithSeriesType.objType;
     if (length > 0)
     	Tcl_InvalidateStringRep(arithSeriesPtr);
 
@@ -387,7 +389,7 @@ TclArithSeriesObjStep(
 {
     ArithSeries *arithSeriesRepPtr;
 
-    if (arithSeriesPtr->typePtr != &tclArithSeriesType) {
+    if (arithSeriesPtr->typePtr != &tclArithSeriesType.objType) {
         Tcl_Panic("TclArithSeriesObjIndex called with a not ArithSeries Obj.");
     }
     arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesPtr);
@@ -427,7 +429,7 @@ TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr, Tcl_WideInt index, Tcl_Obj **ele
 {
     ArithSeries *arithSeriesRepPtr;
 
-    if (arithSeriesPtr->typePtr != &tclArithSeriesType) {
+    if (arithSeriesPtr->typePtr != &tclArithSeriesType.objType) {
 	Tcl_Panic("TclArithSeriesObjIndex called with a not ArithSeries Obj.");
     }
     arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesPtr);
@@ -538,7 +540,7 @@ DupArithSeriesInternalRep(
     copyArithSeriesRepPtr->elements = NULL;
     copyPtr->internalRep.twoPtrValue.ptr1 = copyArithSeriesRepPtr;
     copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    copyPtr->typePtr = &tclArithSeriesType;
+    copyPtr->typePtr = &tclArithSeriesType.objType;
 }
 
 /*
@@ -845,7 +847,7 @@ TclArithSeriesGetElements(
     Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
 				 * pointers to the list's objects. */
 {
-    if (TclHasInternalRep(objPtr,&tclArithSeriesType)) {
+    if (TclHasInternalRep(objPtr,&tclArithSeriesType.objType)) {
 	ArithSeries *arithSeriesRepPtr;
 	Tcl_Obj **objv;
 	int i, objc;
