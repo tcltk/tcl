@@ -5,7 +5,7 @@
  *	and network form.
  *
  * Copyright (c) 1995-1998 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -422,22 +422,11 @@ TclpGetNativePathType(
 		    while (*path && *path != '/') {
 			++path;
 		    }
-#if defined(__CYGWIN__)
-		    /* UNC paths need to be followed by a share name */
-		    if (*path++ && (*path && *path != '/')) {
-			++path;
-			while (*path && *path != '/') {
-			    ++path;
-			}
-		    } else {
-			path = origPath + 1;
-		    }
-#endif
 		}
 #endif
 		if (driveNameLengthPtr != NULL) {
 		    /*
-		     * We need this addition in case the QNX or Cygwin code was used.
+		     * We need this addition in case the "//" code was used.
 		     */
 
 		    *driveNameLengthPtr = (path - origPath);
@@ -664,17 +653,6 @@ SplitUnixPath(
 	    while (*path && *path != '/') {
 		++path;
 	    }
-#if defined(__CYGWIN__)
-	    /* UNC paths need to be followed by a share name */
-	    if (*path++ && (*path && *path != '/')) {
-		++path;
-		while (*path && *path != '/') {
-		    ++path;
-		}
-	    } else {
-		path = origPath + 1;
-	    }
-#endif
 	}
 #endif
 	rootElt = Tcl_NewStringObj(origPath, path - origPath);
@@ -1889,7 +1867,11 @@ TclGlob(
 	separators = "/\\";
 
     } else if (tclPlatform == TCL_PLATFORM_UNIX) {
-	if (pathPrefix == NULL && tail[0] == '/') {
+	if (pathPrefix == NULL && tail[0] == '/'
+#if defined(__CYGWIN__) || defined(__QNX__)
+		&& tail[1] != '/'
+#endif
+	) {
 	    pathPrefix = Tcl_NewStringObj(tail, 1);
 	    tail++;
 	    Tcl_IncrRefCount(pathPrefix);
