@@ -17,7 +17,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <math.h>
 #include "tclInt.h"
 #include "tclRegexp.h"
 #include "tclArithSeries.h"
@@ -99,6 +98,23 @@ typedef struct {
 #define SORTMODE_ASCII_NC	8
 
 /*
+ * Definitions for [lseq] command
+ */
+static const char *const seq_operations[] = {
+    "..", "to", "count", "by", NULL
+};
+typedef enum Sequence_Operators {
+    LSEQ_DOTS, LSEQ_TO, LSEQ_COUNT, LSEQ_BY
+} SequenceOperators;
+static const char *const seq_step_keywords[] = {"by", NULL};
+typedef enum Step_Operators {
+    STEP_BY = 4
+} SequenceByMode;
+typedef enum Sequence_Decoded {
+     NoneArg, NumericArg, RangeKeywordArg, ByKeywordArg
+} SequenceDecoded;
+
+/*
  * Forward declarations for procedures defined in this file:
  */
 
@@ -166,24 +182,6 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"vars",		   TclInfoVarsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
-
-/*
- * Definitions for [lseq] command
- */
-static const char *const seq_operations[] = {
-    "..", "to", "count", "by", NULL
-};
-typedef enum Sequence_Operators {
-    LSEQ_DOTS, LSEQ_TO, LSEQ_COUNT, LSEQ_BY
-} SequenceOperators;
-static const char *const seq_step_keywords[] = {"by", NULL};
-typedef enum Step_Operators {
-    STEP_BY = 4
-} SequenceByMode;
-typedef enum Sequence_Decoded {
-     NoneArg, NumericArg, RangeKeywordArg, ByKeywordArg
-} SequenceDecoded;
-
 
 /*
  *----------------------------------------------------------------------
@@ -2203,7 +2201,8 @@ Tcl_JoinObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    size_t length, listLen, isAbstractList = 0;
+    size_t length, listLen;
+    int isAbstractList = 0;
     Tcl_Obj *resObjPtr = NULL, *joinObjPtr, **elemPtrs;
 
     if ((objc < 2) || (objc > 3)) {
@@ -2709,7 +2708,7 @@ Tcl_LrangeObjCmd(
 				/* Argument objects. */
 {
     int result;
-    Tcl_Size listLen, first, last;
+    size_t listLen, first, last;
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
 	return TCL_ERROR;
@@ -2737,8 +2736,9 @@ Tcl_LrangeObjCmd(
 	int status = Tcl_ObjTypeSlice(interp, objv[1], first, last, &resultObj);
 	if (status == TCL_OK) {
 	    Tcl_SetObjResult(interp, resultObj);
+	} else {
+	    return TCL_ERROR;
 	}
-	return status;
     } else {
 	Tcl_SetObjResult(interp, TclListObjRange(objv[1], first, last));
     }
@@ -3125,6 +3125,7 @@ Tcl_LreverseObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "list");
 	return TCL_ERROR;
     }
+
     /*
      *  Handle AbstractList special case - do not shimmer into a list, if it
      *  supports a private Reverse function, just to reverse it.
@@ -3598,7 +3599,7 @@ Tcl_LsearchObjCmd(
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
-		TclNewIntObj(itemPtr, TCL_INDEX_NONE);
+		TclNewIntObj(itemPtr, -1);
 		Tcl_SetObjResult(interp, itemPtr);
 	    }
 	    goto done;
@@ -3985,12 +3986,9 @@ SequenceIdentifyArgument(
     int status;
     SequenceOperators opmode;
     SequenceByMode bymode;
-    union {
-	Tcl_WideInt i;
-	double d;
-    } *nvalue;
+    void *clientData;
 
-    status = Tcl_GetNumberFromObj(NULL, argPtr, (void**)&nvalue, keywordIndexPtr);
+    status = Tcl_GetNumberFromObj(NULL, argPtr, &clientData, keywordIndexPtr);
     if (status == TCL_OK) {
 	if (numValuePtr) {
 	    *numValuePtr = argPtr;
@@ -4330,9 +4328,11 @@ Tcl_LseqObjCmd(
     /*
      * Success!  Now lets create the series object.
      */
-    status = TclNewArithSeriesObj(interp, &arithSeriesPtr, useDoubles, start, end, step, elementCount);
+    status = TclNewArithSeriesObj(interp, &arithSeriesPtr,
+		  useDoubles, start, end, step, elementCount);
+
     if (status == TCL_OK) {
-        Tcl_SetObjResult(interp, arithSeriesPtr);
+	Tcl_SetObjResult(interp, arithSeriesPtr);
     }
 
  done:

@@ -3752,7 +3752,7 @@ TclNRSwitchObjCmd(
 		    TclNewIndexObj(rangeObjAry[0], info.matches[j].start);
 		    TclNewIndexObj(rangeObjAry[1], info.matches[j].end-1);
 		} else {
-		    TclNewIntObj(rangeObjAry[1], TCL_INDEX_NONE);
+		    TclNewIntObj(rangeObjAry[1], -1);
 		    rangeObjAry[0] = rangeObjAry[1];
 		}
 

@@ -43,7 +43,7 @@ static const Tcl_ObjType indexType = {
     UpdateStringOfIndex,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
     TCL_OBJTYPE_V0
-    };
+};
 
 /*
  * The definition of the internal representation of the "index" object; The

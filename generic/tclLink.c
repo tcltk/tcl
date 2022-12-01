@@ -116,7 +116,7 @@ static Tcl_ObjType invalidRealType = {
     NULL,				/* updateStringProc */
     NULL,				/* setFromAnyProc */
     TCL_OBJTYPE_V0
-    };
+};
 
 /*
  * Convenience macro for accessing the value of the C variable pointed to by a

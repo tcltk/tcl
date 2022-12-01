@@ -66,7 +66,7 @@ const Tcl_ObjType tclProcBodyType = {
     NULL,			/* SetFromAny function; Tcl_ConvertToType
 				 * should panic instead. */
     TCL_OBJTYPE_V0
-    };
+};
 
 #define ProcSetInternalRep(objPtr, procPtr)					\
     do {								\
