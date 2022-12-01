@@ -4818,7 +4818,8 @@ TEBCresume(
 	 * Compute the new variable value.
 	 */
 
-	if (ABSTRACTLIST_PROC(valuePtr, sliceProc)) {
+	if (ABSTRACTLIST_PROC(valuePtr, setElementProc)) {
+
 	    objResultPtr = Tcl_ObjTypeSetElement(interp,
 		valuePtr, numIndices,
 	        &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);

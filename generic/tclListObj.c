@@ -2004,8 +2004,7 @@ Tcl_ListObjLength(
 
     /* Handle AbstractList before attempting SetListFromAny */
     if (ABSTRACTLIST_PROC(listObj, lengthProc)) {
-
-	*lenPtr = listObj->typePtr->lengthProc(listObj);
+	*lenPtr = Tcl_ObjTypeLength(listObj);
 	return TCL_OK;
     }
 

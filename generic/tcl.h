@@ -661,7 +661,7 @@ typedef struct Tcl_ObjType {
 				 * old type. Returns TCL_ERROR on failure. */
     size_t version;
 
-    /* List emulation functions - ObjTypeVersion 1 */
+    /* List emulation functions - ObjType Version 1 */
     Tcl_ALLengthProc *lengthProc;	/* Return the [llength] of the
 					** AbstractList */
     Tcl_ALIndexProc *indexProc;		/* Return a value (Tcl_Obj) for
