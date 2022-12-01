@@ -93,6 +93,7 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #define TclGetByteArrayFromObj 0
 #undef Tcl_GetByteArrayFromObj
 #define Tcl_GetByteArrayFromObj 0
+#define TclUnusedStubEntry 0
 
 
 #if TCL_UTF_MAX < 4
@@ -1499,10 +1500,10 @@ const TclStubs tclStubs = {
     Tcl_GetNumber, /* 681 */
     Tcl_RemoveChannelMode, /* 682 */
     Tcl_GetEncodingNulLength, /* 683 */
-    0, /* 684 */
-    0, /* 685 */
-    Tcl_GetWideUIntFromObj, /* 686 */
-    Tcl_DStringToObj, /* 687 */
+    Tcl_GetWideUIntFromObj, /* 684 */
+    Tcl_DStringToObj, /* 685 */
+    0, /* 686 */
+    TclUnusedStubEntry, /* 687 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -71,7 +71,7 @@ test link-2.1 {writing C variables from Tcl} -constraints {testlink} -setup {
     set float 1.0987654321
     set uwide 12345678901234567890
     concat [testlink get] | $int $real $bool $string $wide $char $uchar $short $ushort $uint $long $ulong $float $uwide
-} -result {465 -10.5 1 abcdef 135135 79 161 8000 40000 -1073628482 34543 567890 1.0987653732299805 -6101065172474983726 | 0o0721 -10.5 true abcdef 135135 79 161 8000 40000 0xc001babe 34543 567890 1.0987654321 12345678901234567890}
+} -result {465 -10.5 1 abcdef 135135 79 161 8000 40000 -1073628482 34543 567890 1.0987653732299805 12345678901234567890 | 0o0721 -10.5 true abcdef 135135 79 161 8000 40000 0xc001babe 34543 567890 1.0987654321 12345678901234567890}
 test link-2.2 {writing bad values into variables} -setup {
     testlink delete
 } -constraints {testlink} -body {

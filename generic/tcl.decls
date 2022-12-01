@@ -2610,29 +2610,25 @@ declare 682 {
 
 # TIP 643
 declare 683 {
-   int Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
+   Tcl_Size Tcl_GetEncodingNulLength(Tcl_Encoding encoding)
 }
 
-# TIP #648 (reserved)
-#declare 684 {
-#    Tcl_Obj *Tcl_NewWideUIntObj(Tcl_WideUInt wideValue)
-#}
-#declare 685 {
-#    void Tcl_SetWideUIntObj(Tcl_Obj *objPtr, Tcl_WideUInt uwideValue)
-#}
-
 # TIP #650
-declare 686 {
+declare 684 {
     int Tcl_GetWideUIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    Tcl_WideUInt *uwidePtr)
 }
 
 # TIP 651
-declare 687 {
+declare 685 {
     Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
+
+declare 687 {
+    void TclUnusedStubEntry(void)
+}
 
 ##############################################################################
 
@@ -2705,6 +2701,7 @@ export {
 export {
     const char *TclZipfs_AppHook(int *argc, char ***argv)
 }
+
 
 # Local Variables:
 # mode: tcl

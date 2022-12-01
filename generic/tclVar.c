@@ -4042,8 +4042,7 @@ ArraySetCmd(
 	size_t elemLen;
 	Tcl_Obj **elemPtrs, *copyListObj;
 
-	result = TclListObjGetElementsM(interp, arrayElemObj,
-		&elemLen, &elemPtrs);
+	result = TclListObjLengthM(interp, arrayElemObj, &elemLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -4055,6 +4054,11 @@ ArraySetCmd(
 	}
 	if (elemLen == 0) {
 	    goto ensureArray;
+	}
+	result = TclListObjGetElementsM(interp, arrayElemObj,
+		&elemLen, &elemPtrs);
+	if (result != TCL_OK) {
+	    return result;
 	}
 
 	/*

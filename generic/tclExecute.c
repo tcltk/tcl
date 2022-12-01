@@ -452,11 +452,11 @@ VarHashCreateVar(
  */
 
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
-    ((TclHasInternalRep((objPtr), &tclIntType))					\
+    ((TclHasInternalRep((objPtr), &tclIntType.objType))					\
 	?	(*(tPtr) = TCL_NUMBER_INT,				\
 		*(ptrPtr) = (void *)				\
 		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
-    TclHasInternalRep((objPtr), &tclDoubleType)				\
+    TclHasInternalRep((objPtr), &tclDoubleType.objType)				\
 	?	(((isnan((objPtr)->internalRep.doubleValue))		\
 		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
@@ -4649,7 +4649,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	TclNewIntObj(objResultPtr, length);
+	TclNewUIntObj(objResultPtr, length);
 	TRACE_APPEND(("%" TCL_Z_MODIFIER "u\n", length));
 	NEXT_INST_F(1, 1, 1);
 
@@ -4660,7 +4660,7 @@ TEBCresume(
 
 
 	/* special case for ArithSeries */
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
+	if (TclHasInternalRep(valuePtr,&tclArithSeriesType.objType)) {
 	    length = TclArithSeriesObjLength(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
@@ -4681,7 +4681,7 @@ TEBCresume(
 	 */
 
 	if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& !TclHasInternalRep(value2Ptr, &tclListType)) {
+		&& !TclHasInternalRep(value2Ptr, &tclListType.objType)) {
 	    int code;
 
 	    DECACHE_STACK_INFO();
@@ -4723,7 +4723,7 @@ TEBCresume(
 	TRACE(("\"%.30s\" %d => ", O2S(valuePtr), opnd));
 
 	/* special case for ArithSeries */
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
+	if (TclHasInternalRep(valuePtr,&tclArithSeriesType.objType)) {
 	    length = TclArithSeriesObjLength(valuePtr);
 
 	    /* Decode end-offset index values. */
@@ -4943,7 +4943,7 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
+	if (TclHasInternalRep(valuePtr,&tclArithSeriesType.objType)) {
 	    objResultPtr = TclArithSeriesObjRange(interp, valuePtr, fromIdx, toIdx);
 	    if (objResultPtr == NULL) {
 		TRACE_ERROR(interp);
@@ -4971,7 +4971,7 @@ TEBCresume(
 	if (length > 0) {
 	    size_t i = 0;
 	    Tcl_Obj *o;
-	    int isArithSeries = TclHasInternalRep(value2Ptr,&tclArithSeriesType);
+	    int isArithSeries = TclHasInternalRep(value2Ptr,&tclArithSeriesType.objType);
 	    /*
 	     * An empty list doesn't match anything.
 	     */
@@ -5274,7 +5274,7 @@ TEBCresume(
 	    TclNewObj(objResultPtr);
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
-		    Tcl_GetBytesFromObj(NULL, valuePtr, (size_t *)NULL)+index, 1);
+		    Tcl_GetByteArrayFromObj(valuePtr, (size_t *)NULL)+index, 1);
 	} else if (valuePtr->bytes && slength == valuePtr->length) {
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
@@ -5536,7 +5536,7 @@ TEBCresume(
 	    ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
 	    match = TclUniCharMatch(ustring1, slength, ustring2, length2,
 		    nocase);
-	} else if (TclIsPureByteArray(valuePtr) && !nocase) {
+	} else if (TclIsPureByteArray(valuePtr) && TclIsPureByteArray(value2Ptr) && !nocase) {
 	    unsigned char *bytes1, *bytes2;
 	    size_t wlen1 = 0, wlen2 = 0;
 
@@ -6337,7 +6337,7 @@ TEBCresume(
 
     case INST_TRY_CVT_TO_BOOLEAN:
 	valuePtr = OBJ_AT_TOS;
-	if (TclHasInternalRep(valuePtr,  &tclBooleanType)) {
+	if (TclHasInternalRep(valuePtr,  &tclBooleanType.objType)) {
 	    objResultPtr = TCONST(1);
 	} else {
 	    int res = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
@@ -8357,7 +8357,7 @@ ExecuteExtendedBinaryMathOp(
     overflowExpon:
 
 	if ((TclGetWideIntFromObj(NULL, value2Ptr, &w2) != TCL_OK)
-		|| (value2Ptr->typePtr != &tclIntType)
+		|| (value2Ptr->typePtr != &tclIntType.objType)
 		|| (Tcl_WideUInt)w2 >= (1<<28)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "exponent too large", -1));
