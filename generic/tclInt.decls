@@ -914,7 +914,7 @@ declare 229 {
 declare 230 {
     Var *TclObjLookupVar(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    const char *part2, int flags, const char *msg,
-	    const int createPart1, const int createPart2, Var **arrayPtrPtr)
+	    int createPart1, int createPart2, Var **arrayPtrPtr)
 }
 declare 231 {
     int	TclGetNamespaceFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -1018,17 +1018,17 @@ declare 251 {
 declare 252 {
     Tcl_Obj *TclPtrGetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
-	    const int flags)
+	    int flags)
 }
 declare 253 {
     Tcl_Obj *TclPtrSetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
-	    Tcl_Obj *newValuePtr, const int flags)
+	    Tcl_Obj *newValuePtr, int flags)
 }
 declare 254 {
     Tcl_Obj *TclPtrIncrObjVar(Tcl_Interp *interp, Tcl_Var varPtr,
 	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
-	    Tcl_Obj *incrPtr, const int flags)
+	    Tcl_Obj *incrPtr, int flags)
 }
 declare 255 {
     int	TclPtrObjMakeUpvar(Tcl_Interp *interp, Tcl_Var otherPtr,
@@ -1036,7 +1036,7 @@ declare 255 {
 }
 declare 256 {
     int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
-	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
+	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags)
 }
 
 declare 257 {
