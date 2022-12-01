@@ -269,19 +269,19 @@ ${AC_FLAGS} ${COMPILE_DEBUG_FLAGS}
 
 TCLTEST_OBJS = \
 	tclTest.$(OBJEXT) \
+	tclTestABSList.$(OBJEXT) \
 	tclTestObj.$(OBJEXT) \
 	tclTestProcBodyObj.$(OBJEXT) \
 	tclThreadTest.$(OBJEXT) \
-	tclWinTest.$(OBJEXT) \
-	tclTestABSList.$(OBJEXT)
+	tclWinTest.$(OBJEXT)
 
 GENERIC_OBJS = \
 	regcomp.$(OBJEXT) \
 	regexec.$(OBJEXT) \
 	regfree.$(OBJEXT) \
 	regerror.$(OBJEXT) \
-	tclArithSeries.$(OBJEXT) \
 	tclAlloc.$(OBJEXT) \
+	tclArithSeries.$(OBJEXT) \
 	tclAssembly.$(OBJEXT) \
 	tclAsync.$(OBJEXT) \
 	tclBasic.$(OBJEXT) \

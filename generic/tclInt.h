@@ -1092,7 +1092,7 @@ typedef struct ActiveInterpTrace {
 #define TCL_TRACE_LEAVE_EXEC	2
 
 #define ABSTRACTLIST_PROC(objPtr, proc) ((((objPtr)->typePtr) \
-	&& (offsetof(Tcl_ObjType, proc) <= offsetof(Tcl_ObjType, setFromAnyProc) || (objPtr)->typePtr->version == TCL_OBJTYPE_V1)) \
+	&& (offsetof(Tcl_ObjType, proc) <= offsetof(Tcl_ObjType, setFromAnyProc) || (objPtr)->typePtr->version == TCL_OBJTYPE_CURRENT)) \
 	? (objPtr)->typePtr->proc : NULL)
 
 /*

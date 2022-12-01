@@ -225,21 +225,37 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * implementations.
  */
 
-const Tcl_ObjType tclBooleanType = {
+static size_t LengthOne(TCL_UNUSED(Tcl_Obj *)) {return 1;}
+
+const Tcl_ObjType tclBooleanType= {
     "boolean",			/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    TclSetBooleanFromAny,	/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TclSetBooleanFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V1(
+    LengthOne,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL)
 };
-const Tcl_ObjType tclDoubleType = {
+const Tcl_ObjType tclDoubleType= {
     "double",			/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     UpdateStringOfDouble,	/* updateStringProc */
     SetDoubleFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TCL_OBJTYPE_V1(
+    LengthOne,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL)
 };
 const Tcl_ObjType tclIntType = {
     "int",			/* name */
@@ -247,7 +263,14 @@ const Tcl_ObjType tclIntType = {
     NULL,			/* dupIntRepProc */
     UpdateStringOfInt,		/* updateStringProc */
     SetIntFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TCL_OBJTYPE_V1(
+    LengthOne,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL)
 };
 const Tcl_ObjType tclBignumType = {
     "bignum",			/* name */
@@ -255,7 +278,14 @@ const Tcl_ObjType tclBignumType = {
     DupBignum,			/* dupIntRepProc */
     UpdateStringOfBignum,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TCL_OBJTYPE_V1(
+    LengthOne,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL)
 };
 
 /*
@@ -4511,14 +4541,11 @@ Tcl_RepresentationCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *descObj;
-    const char *typeName;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
-
-    typeName = objv[1]->typePtr ? objv[1]->typePtr->name : "pure string";
 
     /*
      * Value is a bignum with a refcount of 14, object pointer at 0x12345678,
@@ -4528,7 +4555,7 @@ Tcl_RepresentationCmd(
 
     descObj = Tcl_ObjPrintf("value is a %s with a refcount of %" TCL_Z_MODIFIER "u,"
 	    " object pointer at %p",
-	    objv[1]->typePtr ? typeName : "pure string",
+	    objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
 	    objv[1]->refCount, objv[1]);
 
     if (objv[1]->typePtr) {

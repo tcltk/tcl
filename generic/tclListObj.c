@@ -143,6 +143,7 @@ static void	DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void	FreeListInternalRep(Tcl_Obj *listPtr);
 static int	SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void	UpdateStringOfList(Tcl_Obj *listPtr);
+static size_t ListLength(Tcl_Obj *listPtr);
 
 /*
  * The structure below defines the list Tcl object type by means of functions
@@ -157,7 +158,14 @@ const Tcl_ObjType tclListType = {
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
     SetListFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0
+    TCL_OBJTYPE_V1(
+    ListLength,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL)
 };
 
 /* Macros to manipulate the List internal rep */
@@ -2002,9 +2010,9 @@ Tcl_ListObjLength(
 {
     ListRep listRep;
 
-    /* Handle AbstractList before attempting SetListFromAny */
-    if (ABSTRACTLIST_PROC(listObj, lengthProc)) {
-	*lenPtr = Tcl_ObjTypeLength(listObj);
+    size_t (*lengthProc)(Tcl_Obj *obj) =  ABSTRACTLIST_PROC(listObj, lengthProc);
+    if (lengthProc) {
+	*lenPtr = lengthProc(listObj);
 	return TCL_OK;
     }
 
@@ -2020,6 +2028,15 @@ Tcl_ListObjLength(
     }
     *lenPtr = ListRepLength(&listRep);
     return TCL_OK;
+}
+
+size_t ListLength(
+    Tcl_Obj *listPtr)
+{
+	ListRep listRep;
+	ListObjGetRep(listPtr, &listRep);
+
+    return ListRepLength(&listRep);
 }
 
 /*

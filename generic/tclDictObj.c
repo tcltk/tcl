@@ -149,7 +149,7 @@ const Tcl_ObjType tclDictType = {
     DupDictInternalRep,		/* dupIntRepProc */
     UpdateStringOfDict,		/* updateStringProc */
     SetDictFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V1,		/* Extended type for AbstractLists */
+    TCL_OBJTYPE_V1(		/* Extended type for AbstractLists */
     DictAsListLength,		/* return "list" length of dict value w/o
 				 * shimmering */
     DictAsListIndex,		/* return key or value at "list" index
@@ -159,7 +159,7 @@ const Tcl_ObjType tclDictType = {
     NULL,
     NULL,
     NULL,
-    NULL
+    NULL)
 };
 
 #define DictSetInternalRep(objPtr, dictRepPtr)				\

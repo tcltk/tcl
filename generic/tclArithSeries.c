@@ -76,14 +76,14 @@ static Tcl_ObjType arithSeriesType = {
     DupArithSeriesRep,		/* dupIntRepProc */
     UpdateStringOfArithSeries,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_V1,
+    TCL_OBJTYPE_V1(
     TclArithSeriesObjLength,
     TclArithSeriesObjIndex,
     TclArithSeriesObjRange,
     TclArithSeriesObjReverse,
     TclArithSeriesGetElements,
     NULL, // SetElement
-    NULL  // Replace
+    NULL)  // Replace
 };
 
 /*
