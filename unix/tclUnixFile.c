@@ -39,7 +39,6 @@ TclpFindExecutable(
     const char *argv0)		/* The value of the application's argv[0]
 				 * (native). */
 {
-    Tcl_Encoding encoding;
 #if 0
     int length;
     wchar_t buf[PATH_MAX] = L"";
@@ -52,10 +51,10 @@ TclpFindExecutable(
 	/* Strip '.exe' part. */
 	length -= 4;
     }
-    encoding = Tcl_GetEncoding(NULL, NULL);
     TclSetObjNameOfExecutable(
-	    Tcl_NewStringObj(name, length), encoding);
+	    Tcl_NewStringObj(name, length), NULL);
 #else
+    Tcl_Encoding encoding;
     const char *name, *p;
     Tcl_StatBuf statBuf;
     Tcl_DString buffer, nameString, cwd, utfName;

@@ -5,7 +5,7 @@
  *	and network form.
  *
  * Copyright (c) 1995-1998 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -413,6 +413,7 @@ TclpGetNativePathType(
 
 	    if (path[0] == '/') {
 		++path;
+#if defined(__CYGWIN__) || defined(__QNX__)
 		/*
 		 * Check for "//" network path prefix
 		 */
@@ -422,6 +423,7 @@ TclpGetNativePathType(
 			++path;
 		    }
 		}
+#endif
 		if (driveNameLengthPtr != NULL) {
 		    /*
 		     * We need this addition in case the "//" code was used.
@@ -642,6 +644,7 @@ SplitUnixPath(
     if (*path == '/') {
 	Tcl_Obj *rootElt;
 	++path;
+#if defined(__CYGWIN__) || defined(__QNX__)
 	/*
 	 * Check for "//" network path prefix
 	 */
@@ -651,6 +654,7 @@ SplitUnixPath(
 		++path;
 	    }
 	}
+#endif
 	rootElt = Tcl_NewStringObj(origPath, path - origPath);
 	Tcl_ListObjAppendElement(NULL, result, rootElt);
 	while (*path == '/') {
@@ -1863,7 +1867,11 @@ TclGlob(
 	separators = "/\\";
 
     } else if (tclPlatform == TCL_PLATFORM_UNIX) {
-	if (pathPrefix == NULL && tail[0] == '/' && tail[1] != '/') {
+	if (pathPrefix == NULL && tail[0] == '/'
+#if defined(__CYGWIN__) || defined(__QNX__)
+		&& tail[1] != '/'
+#endif
+	) {
 	    pathPrefix = Tcl_NewStringObj(tail, 1);
 	    tail++;
 	    Tcl_IncrRefCount(pathPrefix);

@@ -551,9 +551,8 @@ EXTERN int		TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
 /* 230 */
 EXTERN Var *		TclObjLookupVar(Tcl_Interp *interp,
 				Tcl_Obj *part1Ptr, const char *part2,
-				int flags, const char *msg,
-				const int createPart1, const int createPart2,
-				Var **arrayPtrPtr);
+				int flags, const char *msg, int createPart1,
+				int createPart2, Var **arrayPtrPtr);
 /* 231 */
 EXTERN int		TclGetNamespaceFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
@@ -619,17 +618,17 @@ EXTERN int		TclRegisterLiteral(void *envPtr, char *bytes,
 /* 252 */
 EXTERN Tcl_Obj *	TclPtrGetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
-				Tcl_Obj *part2Ptr, const int flags);
+				Tcl_Obj *part2Ptr, int flags);
 /* 253 */
 EXTERN Tcl_Obj *	TclPtrSetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
 				Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr,
-				const int flags);
+				int flags);
 /* 254 */
 EXTERN Tcl_Obj *	TclPtrIncrObjVar(Tcl_Interp *interp, Tcl_Var varPtr,
 				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
 				Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr,
-				const int flags);
+				int flags);
 /* 255 */
 EXTERN int		TclPtrObjMakeUpvar(Tcl_Interp *interp,
 				Tcl_Var otherPtr, Tcl_Obj *myNamePtr,
@@ -637,7 +636,7 @@ EXTERN int		TclPtrObjMakeUpvar(Tcl_Interp *interp,
 /* 256 */
 EXTERN int		TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
-				Tcl_Obj *part2Ptr, const int flags);
+				Tcl_Obj *part2Ptr, int flags);
 /* 257 */
 EXTERN void		TclStaticPackage(Tcl_Interp *interp,
 				const char *prefix,
@@ -883,7 +882,7 @@ typedef struct TclIntStubs {
     void (*tclSetNsPath) (Namespace *nsPtr, int pathLength, Tcl_Namespace *pathAry[]); /* 227 */
     void (*reserved228)(void);
     int (*tclPtrMakeUpvar) (Tcl_Interp *interp, Var *otherP1Ptr, const char *myName, int myFlags, int index); /* 229 */
-    Var * (*tclObjLookupVar) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, const char *part2, int flags, const char *msg, const int createPart1, const int createPart2, Var **arrayPtrPtr); /* 230 */
+    Var * (*tclObjLookupVar) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, const char *part2, int flags, const char *msg, int createPart1, int createPart2, Var **arrayPtrPtr); /* 230 */
     int (*tclGetNamespaceFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr); /* 231 */
     int (*tclEvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 232 */
     void (*tclGetSrcInfoForPc) (CmdFrame *contextPtr); /* 233 */
@@ -905,11 +904,11 @@ typedef struct TclIntStubs {
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
     int (*tclRegisterLiteral) (void *envPtr, char *bytes, int length, int flags); /* 251 */
-    Tcl_Obj * (*tclPtrGetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 252 */
-    Tcl_Obj * (*tclPtrSetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, const int flags); /* 253 */
-    Tcl_Obj * (*tclPtrIncrObjVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, const int flags); /* 254 */
+    Tcl_Obj * (*tclPtrGetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 252 */
+    Tcl_Obj * (*tclPtrSetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags); /* 253 */
+    Tcl_Obj * (*tclPtrIncrObjVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags); /* 254 */
     int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
-    int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 256 */
+    int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 256 */
     void (*tclStaticPackage) (Tcl_Interp *interp, const char *prefix, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 257 */
     void (*reserved258)(void);
     void (*reserved259)(void);

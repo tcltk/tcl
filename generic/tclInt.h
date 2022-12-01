@@ -4017,30 +4017,30 @@ MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 
 MODULE_SCOPE Var *	TclObjLookupVarEx(Tcl_Interp * interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags,
-			    const char *msg, const int createPart1,
-			    const int createPart2, Var **arrayPtrPtr);
+			    const char *msg, int createPart1,
+			    int createPart2, Var **arrayPtrPtr);
 MODULE_SCOPE Var *	TclLookupArrayElement(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNamePtr, Tcl_Obj *elNamePtr,
-			    const int flags, const char *msg,
-			    const int createPart1, const int createPart2,
+			    int flags, const char *msg,
+			    int createPart1, int createPart2,
 			    Var *arrayPtr, int index);
 MODULE_SCOPE Tcl_Obj *	TclPtrGetVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
-			    Tcl_Obj *part2Ptr, const int flags, int index);
+			    Tcl_Obj *part2Ptr, int flags, int index);
 MODULE_SCOPE Tcl_Obj *	TclPtrSetVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr,
-			    const int flags, int index);
+			    int flags, int index);
 MODULE_SCOPE Tcl_Obj *	TclPtrIncrObjVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr,
-			    const int flags, int index);
+			    int flags, int index);
 MODULE_SCOPE int	TclPtrObjMakeUpvarIdx(Tcl_Interp *interp,
 			    Var *otherPtr, Tcl_Obj *myNamePtr, int myFlags,
 			    int index);
 MODULE_SCOPE int	TclPtrUnsetVarIdx(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *part1Ptr,
-			    Tcl_Obj *part2Ptr, const int flags,
+			    Tcl_Obj *part2Ptr, int flags,
 			    int index);
 MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 MODULE_SCOPE void	TclFindArrayPtrElements(Var *arrayPtr,

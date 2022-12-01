@@ -41,9 +41,7 @@ typedef struct QCCD {
  * Static functions in this file:
  */
 
-static int		QueryConfigObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    struct Tcl_Obj *const *objv);
+static Tcl_ObjCmdProc QueryConfigObjCmd;
 static void		QueryConfigDelete(ClientData clientData);
 static Tcl_Obj *	GetConfigDict(Tcl_Interp *interp);
 static void		ConfigDictDeleteProc(ClientData clientData,
@@ -197,7 +195,7 @@ QueryConfigObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
-    struct Tcl_Obj *const *objv)
+    Tcl_Obj *const *objv)
 {
     QCCD *cdPtr = clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
