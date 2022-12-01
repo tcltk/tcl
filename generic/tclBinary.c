@@ -978,11 +978,10 @@ BinaryFormatCmd(
 		 * The macro evals its args more than once: avoid arg++
 		 */
 
-		if (TclListObjGetElementsM(interp, objv[arg], &listc,
-			&listv) != TCL_OK) {
+		if (TclListObjLengthM(interp, objv[arg], &listc
+			) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		arg++;
 
 		if (count == BINARY_ALL) {
 		    count = listc;
@@ -992,6 +991,11 @@ BinaryFormatCmd(
 			    -1));
 		    return TCL_ERROR;
 		}
+		if (TclListObjGetElementsM(interp, objv[arg], &listc,
+			&listv) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		arg++;
 	    }
 	    offset += count*size;
 	    break;
@@ -2017,7 +2021,7 @@ FormatNumber(
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(src, &tclDoubleType);
+	    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(src, &tclDoubleType.objType);
 	    if (irPtr == NULL) {
 		return TCL_ERROR;
 	    }
@@ -2037,7 +2041,7 @@ FormatNumber(
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(src, &tclDoubleType);
+	    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(src, &tclDoubleType.objType);
 
 	    if (irPtr == NULL) {
 		return TCL_ERROR;

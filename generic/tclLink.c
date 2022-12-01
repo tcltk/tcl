@@ -547,7 +547,7 @@ GetDouble(
 	return 0;
     } else {
 #ifdef ACCEPT_NAN
-	Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &tclDoubleType);
+	Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &tclDoubleType.objType);
 
 	if (irPtr != NULL) {
 	    *dblPtr = irPtr->doubleValue;
@@ -1283,7 +1283,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewDoubleObj(linkPtr->lastValue.dPtr[i]);
+		TclNewDoubleObj(objv[i], linkPtr->lastValue.dPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);
@@ -1402,7 +1402,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewDoubleObj(linkPtr->lastValue.fPtr[i]);
+		TclNewDoubleObj(objv[i], linkPtr->lastValue.fPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);
@@ -1415,8 +1415,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		TclNewUIntObj(objv[i],
-			linkPtr->lastValue.uwPtr[i]);
+		TclNewUIntObj(objv[i], linkPtr->lastValue.uwPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);

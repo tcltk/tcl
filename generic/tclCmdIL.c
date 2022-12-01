@@ -2215,7 +2215,7 @@ Tcl_JoinObjCmd(
      * pointer to its array of element pointers.
      */
 
-    if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
+    if (TclHasInternalRep(objv[1],&tclArithSeriesType.objType)) {
 	isArithSeries = 1;
 	listLen = TclArithSeriesObjLength(objv[1]);
     } else {
@@ -2575,6 +2575,7 @@ Tcl_LlengthObjCmd(
 {
     size_t listLen;
     int result;
+    Tcl_Obj *objPtr;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list");
@@ -2591,7 +2592,8 @@ Tcl_LlengthObjCmd(
      * length.
      */
 
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(listLen));
+    TclNewUIntObj(objPtr, listLen);
+    Tcl_SetObjResult(interp, objPtr);
     return TCL_OK;
 }
 
@@ -2746,7 +2748,7 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
+    if (TclHasInternalRep(objv[1],&tclArithSeriesType.objType)) {
 	Tcl_Obj *rangeObj;
 	rangeObj = TclArithSeriesObjRange(interp, objv[1], first, last);
 	if (rangeObj) {
@@ -3145,7 +3147,7 @@ Tcl_LreverseObjCmd(
      *  Handle ArithSeries special case - don't shimmer a series into a list
      *  just to reverse it.
      */
-    if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
+    if (TclHasInternalRep(objv[1],&tclArithSeriesType.objType)) {
 	Tcl_Obj *resObj = TclArithSeriesObjReverse(interp, objv[1]);
 	if (resObj) {
 	    Tcl_SetObjResult(interp, resObj);
@@ -3156,7 +3158,7 @@ Tcl_LreverseObjCmd(
     } /* end ArithSeries */
 
     /* True List */
-    if (TclListObjGetElementsM(interp, objv[1], &elemc, &elemv) != TCL_OK) {
+    if (TclListObjLengthM(interp, objv[1], &elemc) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3167,6 +3169,9 @@ Tcl_LreverseObjCmd(
     if (!elemc) {
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
+    }
+    if (TclListObjGetElementsM(interp, objv[1], &elemc, &elemv) != TCL_OK) {
+	return TCL_ERROR;
     }
 
     if (Tcl_IsShared(objv[1])
@@ -4111,10 +4116,10 @@ SequenceIdentifyArgument(
 		exprValueObj = argPtr;
 	    } else {
 		if (floor(dvalue) == dvalue) {
-		    exprValueObj = Tcl_NewWideIntObj(value);
+		    TclNewIntObj(exprValueObj, value);
 		    keyword = TCL_NUMBER_INT;
 		} else {
-		    exprValueObj = Tcl_NewDoubleObj(dvalue);
+		    TclNewDoubleObj(exprValueObj, dvalue);
 		    keyword = TCL_NUMBER_DOUBLE;
 		}
 	    }
@@ -4729,7 +4734,7 @@ Tcl_LsortObjCmd(
 	sortInfo.compareCmdPtr = newCommandPtr;
     }
 
-    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+    if (TclHasInternalRep(listObj,&tclArithSeriesType.objType)) {
 	sortInfo.resultCode = TclArithSeriesGetElements(interp,
 	    listObj, &length, &listObjPtrs);
     } else {

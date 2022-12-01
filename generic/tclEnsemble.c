@@ -566,8 +566,8 @@ TclNamespaceEnsembleCmd(
 			continue;
 		    }
 		    do {
-			if (TclListObjGetElementsM(interp, listObj, &len,
-				&listv) != TCL_OK) {
+			if (TclListObjLengthM(interp, listObj, &len
+				) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
 				Tcl_DecrRefCount(patchedDict);
@@ -580,6 +580,14 @@ TclNamespaceEnsembleCmd(
 				    "must be non-empty lists", -1));
 			    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE",
 				    "EMPTY_TARGET", NULL);
+			    Tcl_DictObjDone(&search);
+			    if (patchedDict) {
+				Tcl_DecrRefCount(patchedDict);
+			    }
+			    goto freeMapAndError;
+			}
+			if (TclListObjGetElementsM(interp, listObj, &len,
+				&listv) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
 				Tcl_DecrRefCount(patchedDict);

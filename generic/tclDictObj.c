@@ -603,7 +603,7 @@ SetDictFromAny(
      * the conversion from lists to dictionaries.
      */
 
-    if (TclHasInternalRep(objPtr, &tclListType)) {
+    if (TclHasInternalRep(objPtr, &tclListType.objType)) {
 	size_t objc, i;
 	Tcl_Obj **objv;
 

@@ -11,6 +11,7 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+source [file join [file dirname [info script]] tcltests.tcl]
 
 package require tcltests
 

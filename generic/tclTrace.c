@@ -428,7 +428,7 @@ TraceExecutionObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjLengthM(interp, objv[4], &listLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -439,6 +439,10 @@ TraceExecutionObjCmd(
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
 		    NULL);
 	    return TCL_ERROR;
+	}
+	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
+	if (result != TCL_OK) {
+	    return result;
 	}
 	for (i = 0; i < listLen; i++) {
 	    if (Tcl_GetIndexFromObj(interp, elemPtrs[i], opStrings,
@@ -670,7 +674,7 @@ TraceCommandObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjLengthM(interp, objv[4], &listLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -682,7 +686,10 @@ TraceCommandObjCmd(
 		    NULL);
 	    return TCL_ERROR;
 	}
-
+	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
+	if (result != TCL_OK) {
+	    return result;
+	}
 	for (i = 0; i < listLen; i++) {
 	    if (Tcl_GetIndexFromObj(interp, elemPtrs[i], opStrings,
 		    "operation", TCL_EXACT, &index) != TCL_OK) {
@@ -870,7 +877,7 @@ TraceVariableObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjLengthM(interp, objv[4], &listLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -881,6 +888,10 @@ TraceVariableObjCmd(
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
 		    NULL);
 	    return TCL_ERROR;
+	}
+	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
+	if (result != TCL_OK) {
+	    return result;
 	}
 	for (i = 0; i < listLen ; i++) {
 	    if (Tcl_GetIndexFromObj(interp, elemPtrs[i], opStrings,

@@ -7067,7 +7067,7 @@ ExprCeilFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType.objType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -7107,7 +7107,7 @@ ExprFloorFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType.objType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -7253,7 +7253,7 @@ ExprSqrtFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType.objType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -7307,7 +7307,7 @@ ExprUnaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType.objType);
 
 	if (irPtr) {
 	    d = irPtr->doubleValue;
@@ -7371,7 +7371,7 @@ ExprBinaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d1);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType.objType);
 
 	if (irPtr) {
 	    d1 = irPtr->doubleValue;
@@ -7386,7 +7386,7 @@ ExprBinaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[2], &d2);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType.objType);
 
 	if (irPtr) {
 	    d2 = irPtr->doubleValue;
@@ -7547,7 +7547,7 @@ ExprDoubleFunc(
     }
     if (Tcl_GetDoubleFromObj(interp, objv[1], &dResult) != TCL_OK) {
 #ifdef ACCEPT_NAN
-	if (TclHasInternalRep(objv[1], &tclDoubleType)) {
+	if (TclHasInternalRep(objv[1], &tclDoubleType.objType)) {
 	    Tcl_SetObjResult(interp, objv[1]);
 	    return TCL_OK;
 	}

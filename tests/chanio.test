@@ -5295,10 +5295,10 @@ test chan-io-39.22 {Tcl_SetChannelOption, invariance} -setup {
 } -cleanup {
     chan close $f1
 } -result {{} O D}
-test chan-io-39.22a {Tcl_SetChannelOption, invariance} -setup {
+test chan-io-39.22a {Tcl_SetChannelOption, invariance} -constraints deprecated -setup {
     file delete $path(test1)
     set l [list]
-} -constraints deprecated -body {
+} -body {
     set f1 [open $path(test1) w+]
     chan configure $f1 -eofchar {O {}}
     lappend l [chan configure $f1 -eofchar]

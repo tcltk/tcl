@@ -33,13 +33,13 @@ typedef struct {
     Tcl_EncodingFreeProc *freeProc;
 				/* If non-NULL, function to call when this
 				 * encoding is deleted. */
-    int nullSize;		/* Number of 0x00 bytes that signify
+    void *clientData;	/* Arbitrary value associated with encoding
+				 * type. Passed to conversion functions. */
+    size_t nullSize;		/* Number of 0x00 bytes that signify
 				 * end-of-string in this encoding. This number
 				 * is used to determine the source string
 				 * length when the srcLen argument is
 				 * negative. This number can be 1, 2, or 4. */
-    void *clientData;	/* Arbitrary value associated with encoding
-				 * type. Passed to conversion functions. */
     LengthProc *lengthProc;	/* Function to compute length of
 				 * null-terminated strings in this encoding.
 				 * If nullSize is 1, this is strlen; if
@@ -568,7 +568,7 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 1;
     type.clientData	= INT2PTR(TCL_ENCODING_UTF);
     Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(0);
+    type.clientData	= INT2PTR(TCL_ENCODING_NOCOMPLAIN);
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
 
@@ -577,13 +577,13 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "ucs-2le";
-    type.clientData	= INT2PTR(TCL_ENCODING_LE);
+    type.clientData	= INT2PTR(TCL_ENCODING_LE|TCL_ENCODING_NOCOMPLAIN);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2be";
-    type.clientData	= INT2PTR(0);
+    type.clientData	= INT2PTR(TCL_ENCODING_NOCOMPLAIN);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2";
-    type.clientData	= INT2PTR(isLe.c);
+    type.clientData	= INT2PTR(isLe.c|TCL_ENCODING_NOCOMPLAIN);
     Tcl_CreateEncoding(&type);
 
     type.toUtfProc	= Utf32ToUtfProc;
@@ -830,7 +830,7 @@ FreeEncoding(
  *
  * Tcl_GetEncodingName --
  *
- *	Given an encoding, return the name that was used to constuct the
+ *	Given an encoding, return the name that was used to construct the
  *	encoding.
  *
  * Results:
@@ -933,14 +933,14 @@ Tcl_GetEncodingNames(
  *      string termination.
  *
  * Results:
- *	The name of the encoding.
+ *	The number of nul bytes used for the string termination.
  *
  * Side effects:
  *	None.
  *
  *---------------------------------------------------------------------------
  */
-int
+size_t
 Tcl_GetEncodingNulLength(
     Tcl_Encoding encoding)
 {
@@ -2408,15 +2408,16 @@ UtfToUtfProc(
 		dst += Tcl_UniCharToUtf(ch, dst);
 		ch = low;
 #endif
-	    } else if (!Tcl_UniCharIsUnicode(ch)) {
-		if (STOPONERROR) {
-		    result = TCL_CONVERT_UNKNOWN;
-		    src = saveSrc;
-		    break;
-		}
-		if (!(flags & TCL_ENCODING_MODIFIED)) {
-		    ch = 0xFFFD;
-		}
+	    } else if (STOPONERROR && !(flags & TCL_ENCODING_MODIFIED) && !Tcl_UniCharIsUnicode(ch)
+		    && (((ch  & ~0x7FF) == 0xD800) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
+		result = TCL_CONVERT_UNKNOWN;
+		src = saveSrc;
+		break;
+	    } else if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
+		    && (flags & TCL_ENCODING_MODIFIED) && !Tcl_UniCharIsUnicode(ch)) {
+		result = TCL_CONVERT_SYNTAX;
+		src = saveSrc;
+		break;
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}

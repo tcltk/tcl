@@ -1984,7 +1984,7 @@ CreateMirrorJumpTable(
 				 * table. */
     size_t i;
 
-    if (TclListObjGetElementsM(interp, jumps, &objc, &objv) != TCL_OK) {
+    if (TclListObjLengthM(interp, jumps, &objc) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (objc % 2 != 0) {
@@ -1994,6 +1994,9 @@ CreateMirrorJumpTable(
 		    -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADJUMPTABLE", NULL);
 	}
+	return TCL_ERROR;
+    }
+    if (TclListObjGetElementsM(interp, jumps, &objc, &objv) != TCL_OK) {
 	return TCL_ERROR;
     }
 

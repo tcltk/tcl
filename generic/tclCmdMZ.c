@@ -1612,7 +1612,7 @@ StringIsCmd(
     case STR_IS_BOOL:
     case STR_IS_TRUE:
     case STR_IS_FALSE:
-	if (!TclHasInternalRep(objPtr, &tclBooleanType)
+	if (!TclHasInternalRep(objPtr, &tclBooleanType.objType)
 		&& (TCL_OK != TclSetBooleanFromAny(NULL, objPtr))) {
 	    if (strict) {
 		result = 0;
@@ -1682,9 +1682,9 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	if (TclHasInternalRep(objPtr, &tclDoubleType) ||
-		TclHasInternalRep(objPtr, &tclIntType) ||
-		TclHasInternalRep(objPtr, &tclBignumType)) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType.objType) ||
+		TclHasInternalRep(objPtr, &tclIntType.objType) ||
+		TclHasInternalRep(objPtr, &tclBignumType.objType)) {
 	    break;
 	}
 	string1 = Tcl_GetStringFromObj(objPtr, &length1);
@@ -1713,8 +1713,8 @@ StringIsCmd(
 	break;
     case STR_IS_INT:
     case STR_IS_ENTIER:
-	if (TclHasInternalRep(objPtr, &tclIntType) ||
-		TclHasInternalRep(objPtr, &tclBignumType)) {
+	if (TclHasInternalRep(objPtr, &tclIntType.objType) ||
+		TclHasInternalRep(objPtr, &tclBignumType.objType)) {
 	    break;
 	}
 	string1 = Tcl_GetStringFromObj(objPtr, &length1);
@@ -3583,7 +3583,7 @@ TclNRSwitchObjCmd(
 	size_t listc;
 
 	blist = objv[0];
-	if (TclListObjGetElementsM(interp, objv[0], &listc, &listv) != TCL_OK) {
+	if (TclListObjLengthM(interp, objv[0], &listc) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -3594,6 +3594,9 @@ TclNRSwitchObjCmd(
 	if (listc < 1 || listc > INT_MAX) {
 	    Tcl_WrongNumArgs(interp, 1, savedObjv,
 		    "?-option ...? string {?pattern body ...? ?default body?}");
+	    return TCL_ERROR;
+	}
+	if (TclListObjGetElementsM(interp, objv[0], &listc, &listv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	objc = listc;
@@ -4073,9 +4076,9 @@ Tcl_TimeObjCmd(
 	 * Use int obj since we know time is not fractional. [Bug 1202178]
 	 */
 
-	objs[0] = Tcl_NewWideIntObj((count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
+	TclNewIntObj(objs[0], (count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
     } else {
-	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
+	TclNewDoubleObj(objs[0], totalMicroSec/count);
     }
 
     /*
@@ -4561,7 +4564,7 @@ Tcl_TimeRateObjCmd(
 	    if (measureOverhead > ((double) usec) / count) {
 		measureOverhead = ((double) usec) / count;
 	    }
-	    objs[0] = Tcl_NewDoubleObj(measureOverhead);
+	    TclNewDoubleObj(objs[0], measureOverhead);
 	    TclNewLiteralStringObj(objs[1], "\xC2\xB5s/#-overhead"); /* mics */
 	    objs += 2;
 	}
