@@ -2105,7 +2105,7 @@ ParseLexeme(
 	     * Example: Inf + luence + () becomes a valid function call.
 	     * [Bug 3401704]
 	     */
-	    if (TclHasInternalRep(literal, &tclDoubleType)) {
+	    if (TclHasInternalRep(literal, &tclDoubleType.objType)) {
 		const char *p = start;
 
 		while (p < end) {
@@ -2779,7 +2779,7 @@ TclVariadicOpCmd(
 	    nodes[1].p.parent = 0;
 	} else {
 	    if (lexeme == DIVIDE) {
-		litObjv[0] = Tcl_NewDoubleObj(1.0);
+		TclNewDoubleObj(litObjv[0], 1.0);
 	    } else {
 		TclNewIntObj(litObjv[0], occdPtr->i.identity);
 	    }

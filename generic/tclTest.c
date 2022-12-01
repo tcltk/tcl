@@ -492,9 +492,6 @@ static const char version[] = TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
 #ifdef USE_NMAKE
 	    ".nmake"
 #endif
-#ifdef TCL_NO_DEPRECATED
-	    ".no-deprecate"
-#endif
 #if !TCL_THREADS
 	    ".no-thread"
 #endif
@@ -528,7 +525,7 @@ Tcltest_Init(
     Tcl_CmdInfo info;
     Tcl_Obj **objv, *objPtr;
     Tcl_Size objc;
-	int index;
+    int index;
     static const char *const specialOptions[] = {
 	"-appinitprocerror", "-appinitprocdeleteinterp",
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
@@ -1969,7 +1966,7 @@ TestencodingObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Encoding encoding;
-    int length;
+    size_t length;
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
@@ -3091,12 +3088,28 @@ TestlinkCmd(
 	tmp = Tcl_NewWideIntObj(longVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
-	tmp = Tcl_NewWideIntObj((long)ulongVar);
+	if (ulongVar > WIDE_MAX) {
+		mp_int bignumValue;
+		if (mp_init_u64(&bignumValue, ulongVar) != MP_OKAY) {
+		    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
+		}
+		tmp = Tcl_NewBignumObj(&bignumValue);
+	} else {
+	    tmp = Tcl_NewWideIntObj((Tcl_WideInt)ulongVar);
+	}
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
 	Tcl_PrintDouble(NULL, (double)floatVar, buffer);
 	Tcl_AppendElement(interp, buffer);
-	tmp = Tcl_NewWideIntObj((Tcl_WideInt)uwideVar);
+	if (uwideVar > WIDE_MAX) {
+		mp_int bignumValue;
+		if (mp_init_u64(&bignumValue, uwideVar) != MP_OKAY) {
+		    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
+		}
+		tmp = Tcl_NewBignumObj(&bignumValue);
+	} else {
+	    tmp = Tcl_NewWideIntObj((Tcl_WideInt)uwideVar);
+	}
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
     } else if (strcmp(argv[1], "set") == 0) {
@@ -3502,24 +3515,28 @@ TestlistrepCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "length ?leadSpace endSpace?");
 	    return TCL_ERROR;
 	} else {
-	    int length;
-	    int leadSpace = 0;
-	    int endSpace = 0;
-	    if (Tcl_GetIntFromObj(interp, objv[2], &length) != TCL_OK) {
+	    Tcl_WideUInt length;
+	    Tcl_WideUInt leadSpace = 0;
+	    Tcl_WideUInt endSpace = 0;
+	    if (Tcl_GetWideUIntFromObj(interp, objv[2], &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (objc > 3) {
-		if (Tcl_GetIntFromObj(interp, objv[3], &leadSpace) != TCL_OK) {
+		if (Tcl_GetWideUIntFromObj(interp, objv[3], &leadSpace) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (objc > 4) {
-		    if (Tcl_GetIntFromObj(interp, objv[4], &endSpace)
+		    if (Tcl_GetWideUIntFromObj(interp, objv[4], &endSpace)
 			!= TCL_OK) {
 			return TCL_ERROR;
 		    }
 		}
 	    }
 	    resultObj = TclListTestObj(length, leadSpace, endSpace);
+	    if (resultObj == NULL) {
+		Tcl_AppendResult(interp, "List capacity exceeded", NULL);
+		return TCL_ERROR;
+	    }
 	}
 	break;
 
@@ -4253,7 +4270,7 @@ TestregexpObjCmd(
 
 	    varName = Tcl_GetString(objv[2]);
 	    TclRegExpRangeUniChar(regExpr, TCL_INDEX_NONE, &start, &end);
-	    sprintf(resinfo, "%" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d", start, (end-1));
+	    sprintf(resinfo, "%" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d", start, end-1);
 	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
@@ -7071,7 +7088,7 @@ SimpleMatchInDirectory(
     origPtr = SimpleRedirect(dirPtr);
     res = Tcl_FSMatchInDirectory(interp, resPtr, origPtr, pattern, types);
     if (res == TCL_OK) {
-	int gLength, j;
+	size_t gLength, j;
 	Tcl_ListObjLength(NULL, resPtr, &gLength);
 	for (j = 0; j < gLength; j++) {
 	    Tcl_Obj *gElt, *nElt;
@@ -7635,7 +7652,8 @@ TestconcatobjCmd(
     TCL_UNUSED(const char **) /*argv*/)
 {
     Tcl_Obj *list1Ptr, *list2Ptr, *emptyPtr, *concatPtr, *tmpPtr;
-    int result = TCL_OK, len;
+    int result = TCL_OK;
+    size_t len;
     Tcl_Obj *objv[3];
 
     /*
@@ -7992,7 +8010,7 @@ TestparseargsCmd(
     Tcl_Obj *const objv[])	/* Arguments. */
 {
     static int foo = 0;
-    int count = objc;
+    size_t count = objc;
     Tcl_Obj **remObjv, *result[3];
     Tcl_ArgvInfo argTable[] = {
         {TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},

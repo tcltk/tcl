@@ -993,7 +993,7 @@ Tcl_ScanObjCmd(
 	     * Scan a floating point number
 	     */
 
-	    objPtr = Tcl_NewDoubleObj(0.0);
+	    TclNewDoubleObj(objPtr, 0.0);
 	    Tcl_IncrRefCount(objPtr);
 	    if (width == 0) {
 		width = ~0;
@@ -1019,7 +1019,7 @@ Tcl_ScanObjCmd(
 		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
 #ifdef ACCEPT_NAN
 		    const Tcl_ObjInternalRep *irPtr
-			    = TclFetchInternalRep(objPtr, &tclDoubleType);
+			    = TclFetchInternalRep(objPtr, &tclDoubleType.objType);
 		    if (irPtr) {
 			dvalue = irPtr->doubleValue;
 		    } else
@@ -1090,7 +1090,7 @@ Tcl_ScanObjCmd(
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
-		TclNewIndexObj(objPtr, TCL_INDEX_NONE);
+		TclNewIntObj(objPtr, -1);
 	    } else {
 		if (objPtr) {
 		    Tcl_SetListObj(objPtr, 0, NULL);

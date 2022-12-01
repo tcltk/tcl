@@ -116,7 +116,7 @@ set path(test1) [makeFile {} test1]
 test chan-io-1.6 {Tcl_WriteChars: WriteBytes} {
     set f [open $path(test1) w]
     chan configure $f -encoding binary
-    chan puts -nonewline $f "a乍\x00"
+    chan puts -nonewline $f "a\x4D\x00"
     chan close $f
     contents $path(test1)
 } "aM\x00"
@@ -432,7 +432,7 @@ test chan-io-6.3 {Tcl_GetsObj: how many have we used?} -body {
 test chan-io-6.4 {Tcl_GetsObj: encoding == NULL} -body {
     set f [open $path(test1) w]
     chan configure $f -translation binary
-    chan puts $f "\x81\u1234\x00"
+    chan puts $f "\x81\x34\x00"
     chan close $f
     set f [open $path(test1)]
     chan configure $f -translation binary
@@ -5295,10 +5295,10 @@ test chan-io-39.22 {Tcl_SetChannelOption, invariance} -setup {
 } -cleanup {
     chan close $f1
 } -result {{} O D}
-test chan-io-39.22a {Tcl_SetChannelOption, invariance} -setup {
+test chan-io-39.22a {Tcl_SetChannelOption, invariance} -constraints deprecated -setup {
     file delete $path(test1)
     set l [list]
-} -constraints deprecated -body {
+} -body {
     set f1 [open $path(test1) w+]
     chan configure $f1 -eofchar {O {}}
     lappend l [chan configure $f1 -eofchar]

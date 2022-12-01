@@ -39,7 +39,7 @@
  * TYPE_BRACE -		Character is a curly brace (either left or right).
  */
 
-const char tclCharTypeTable[] = {
+const unsigned char tclCharTypeTable[] = {
 
     /*
      * Positive character values, from 0-127:

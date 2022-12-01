@@ -45,7 +45,7 @@ int
 const char *
 \fBTcl_GetEncodingName\fR(\fIencoding\fR)
 .sp
-int
+size_t
 \fBTcl_GetEncodingNulLength\fR(\fIencoding\fR)
 .sp
 int
@@ -324,7 +324,7 @@ typedef struct Tcl_EncodingType {
     Tcl_EncodingConvertProc *\fIfromUtfProc\fR;
     Tcl_EncodingFreeProc *\fIfreeProc\fR;
     void *\fIclientData\fR;
-    int \fInullSize\fR;
+    size_t \fInullSize\fR;
 } \fBTcl_EncodingType\fR;
 .CE
 .PP

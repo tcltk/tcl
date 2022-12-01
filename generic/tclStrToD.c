@@ -554,7 +554,7 @@ TclParseNumber(
 		/* A dict can never be a (single) number */
 		return TCL_ERROR;
 	    }
-	    if (TclHasInternalRep(objPtr, &tclListType)) {
+	    if (TclHasInternalRep(objPtr, &tclListType.objType)) {
 		size_t length;
 		/* A list can only be a (single) number if its length == 1 */
 		TclListObjLengthM(NULL, objPtr, &length);
@@ -1377,7 +1377,7 @@ TclParseNumber(
 			    octalSignificandWide);
 		    octalSignificandOverflow = 1;
 		} else {
-		    objPtr->typePtr = &tclIntType;
+		    objPtr->typePtr = &tclIntType.objType;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
 				(Tcl_WideInt)(-octalSignificandWide);
@@ -1413,7 +1413,7 @@ TclParseNumber(
 			    significandWide);
 		    significandOverflow = 1;
 		} else {
-		    objPtr->typePtr = &tclIntType;
+		    objPtr->typePtr = &tclIntType.objType;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
 				(Tcl_WideInt)(-significandWide);
@@ -1445,7 +1445,7 @@ TclParseNumber(
 	     * k = numTrailZeros+exponent-numDigitsAfterDp.
 	     */
 
-	    objPtr->typePtr = &tclDoubleType;
+	    objPtr->typePtr = &tclDoubleType.objType;
 	    if (exponentSignum) {
 		/*
 		 * At this point exponent>=0, so the following calculation
@@ -1496,14 +1496,14 @@ TclParseNumber(
 	    } else {
 		objPtr->internalRep.doubleValue = HUGE_VAL;
 	    }
-	    objPtr->typePtr = &tclDoubleType;
+	    objPtr->typePtr = &tclDoubleType.objType;
 	    break;
 
 #ifdef IEEE_FLOATING_POINT
 	case sNAN:
 	case sNANFINISH:
 	    objPtr->internalRep.doubleValue = MakeNaN(signum, significandWide);
-	    objPtr->typePtr = &tclDoubleType;
+	    objPtr->typePtr = &tclDoubleType.objType;
 	    break;
 #endif
 	case INITIAL:
