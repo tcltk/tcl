@@ -300,7 +300,7 @@ static Tcl_ObjCmdProc	TestprintObjCmd;
 static Tcl_ObjCmdProc	TestregexpObjCmd;
 static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
-			    int length, int *cflagsPtr, int *eflagsPtr);
+			    size_t length, int *cflagsPtr, int *eflagsPtr);
 #ifndef TCL_NO_DEPRECATED
 static Tcl_ObjCmdProc	TestsaveresultCmd;
 static void		TestsaveresultFree(char *blockPtr);
@@ -999,7 +999,8 @@ AsyncHandlerProc(
 {
     TestAsyncHandler *asyncPtr;
     int id = PTR2INT(clientData);
-    const char *listArgv[4], *cmd;
+    const char *listArgv[4];
+    char *cmd;
     char string[TCL_INTEGER_SPACE];
 
     Tcl_MutexLock(&asyncTestMutex);
@@ -3121,12 +3122,28 @@ TestlinkCmd(
 	tmp = Tcl_NewWideIntObj(longVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
-	tmp = Tcl_NewWideIntObj((long)ulongVar);
+	if (ulongVar > WIDE_MAX) {
+		mp_int bignumValue;
+		if (mp_init_u64(&bignumValue, ulongVar) != MP_OKAY) {
+		    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
+		}
+		tmp = Tcl_NewBignumObj(&bignumValue);
+	} else {
+	    tmp = Tcl_NewWideIntObj((Tcl_WideInt)ulongVar);
+	}
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
 	Tcl_PrintDouble(NULL, (double)floatVar, buffer);
 	Tcl_AppendElement(interp, buffer);
-	tmp = Tcl_NewWideIntObj((Tcl_WideInt)uwideVar);
+	if (uwideVar > WIDE_MAX) {
+		mp_int bignumValue;
+		if (mp_init_u64(&bignumValue, uwideVar) != MP_OKAY) {
+		    Tcl_Panic("%s: memory overflow", "Tcl_SetWideUIntObj");
+		}
+		tmp = Tcl_NewBignumObj(&bignumValue);
+	} else {
+	    tmp = Tcl_NewWideIntObj((Tcl_WideInt)uwideVar);
+	}
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
     } else if (strcmp(argv[1], "set") == 0) {
@@ -3532,24 +3549,28 @@ TestlistrepCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "length ?leadSpace endSpace?");
 	    return TCL_ERROR;
 	} else {
-	    int length;
-	    int leadSpace = 0;
-	    int endSpace = 0;
-	    if (Tcl_GetIntFromObj(interp, objv[2], &length) != TCL_OK) {
+	    Tcl_WideUInt length;
+	    Tcl_WideUInt leadSpace = 0;
+	    Tcl_WideUInt endSpace = 0;
+	    if (Tcl_GetWideUIntFromObj(interp, objv[2], &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (objc > 3) {
-		if (Tcl_GetIntFromObj(interp, objv[3], &leadSpace) != TCL_OK) {
+		if (Tcl_GetWideUIntFromObj(interp, objv[3], &leadSpace) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (objc > 4) {
-		    if (Tcl_GetIntFromObj(interp, objv[4], &endSpace)
+		    if (Tcl_GetWideUIntFromObj(interp, objv[4], &endSpace)
 			!= TCL_OK) {
 			return TCL_ERROR;
 		    }
 		}
 	    }
 	    resultObj = TclListTestObj(length, leadSpace, endSpace);
+	    if (resultObj == NULL) {
+		Tcl_AppendResult(interp, "List capacity exceeded", NULL);
+		return TCL_ERROR;
+	    }
 	}
 	break;
 
@@ -4347,11 +4368,11 @@ TestregexpObjCmd(
 static void
 TestregexpXflags(
     const char *string,	/* The string of flags. */
-    int length,			/* The length of the string in bytes. */
+    size_t length,			/* The length of the string in bytes. */
     int *cflagsPtr,		/* compile flags word */
     int *eflagsPtr)		/* exec flags word */
 {
-    int i;
+    size_t i;
     int cflags, eflags;
 
     cflags = *cflagsPtr;
@@ -5369,12 +5390,17 @@ TestsetbytearraylengthObjCmd(
     if (TCL_OK != Tcl_GetIntFromObj(interp, objv[2], &n)) {
 	return TCL_ERROR;
     }
-    if (Tcl_IsShared(objv[1])) {
-	obj = Tcl_DuplicateObj(objv[1]);
-    } else {
-	obj = objv[1];
+    obj = objv[1];
+    if (Tcl_IsShared(obj)) {
+	obj = Tcl_DuplicateObj(obj);
     }
-    Tcl_SetByteArrayLength(obj, n);
+    if (Tcl_SetByteArrayLength(obj, n) == NULL) {
+	if (obj != objv[1]) {
+	    Tcl_DecrRefCount(obj);
+	}
+	Tcl_AppendResult(interp, "expected bytes", NULL);
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, obj);
     return TCL_OK;
 }
@@ -6658,15 +6684,14 @@ TestWrongNumArgsObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i;
-    int length;
+    int i, length;
     const char *msg;
 
     if (objc < 3) {
 	goto insufArgs;
     }
 
-    if (Tcl_GetIntFromObj(interp, objv[1], &i) != TCL_OK) {
+    if (Tcl_GetIntForIndex(interp, objv[1], TCL_INDEX_NONE, &i) != TCL_OK) {
 	return TCL_ERROR;
     }
 

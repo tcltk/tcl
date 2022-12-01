@@ -349,7 +349,7 @@ printaddrinfolist(
 void
 InitializeHostName(
     char **valuePtr,
-    unsigned int *lengthPtr,
+    TCL_HASH_TYPE *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     WCHAR wbuf[256];
@@ -1256,7 +1256,7 @@ TcpGetOptionProc(
 
 		if (statePtr->connectError != 0) {
 		    Tcl_DStringAppend(dsPtr,
-			    Tcl_ErrnoMsg(statePtr->connectError), -1);
+			    Tcl_ErrnoMsg(statePtr->connectError), TCL_INDEX_NONE);
 		    statePtr->connectError = 0;
 		}
 	    } else {
@@ -1291,7 +1291,7 @@ TcpGetOptionProc(
 
 		if (err) {
 		    Tcl_WinConvertError(err);
-		    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
+		    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), TCL_INDEX_NONE);
 		}
 	    }
 	}
@@ -1302,7 +1302,7 @@ TcpGetOptionProc(
 	    (strncmp(optionName, "-connecting", len) == 0)) {
 	Tcl_DStringAppend(dsPtr,
 		GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)
-		? "1" : "0", -1);
+		? "1" : "0", TCL_INDEX_NONE);
         return TCL_OK;
     }
 

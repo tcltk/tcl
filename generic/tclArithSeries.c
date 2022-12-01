@@ -390,9 +390,9 @@ TclArithSeriesObjStep(
     }
     arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesPtr);
     if (arithSeriesRepPtr->isDouble) {
-	*stepObj = Tcl_NewDoubleObj(((ArithSeriesDbl*)(arithSeriesRepPtr))->step);
+	TclNewDoubleObj(*stepObj, ((ArithSeriesDbl*)(arithSeriesRepPtr))->step);
     } else {
-	*stepObj = Tcl_NewWideIntObj(arithSeriesRepPtr->step);
+	TclNewIntObj(*stepObj, arithSeriesRepPtr->step);
     }
     return TCL_OK;
 }
@@ -458,7 +458,7 @@ TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr, Tcl_WideInt index, Tcl_Obj **ele
  *
  *----------------------------------------------------------------------
  */
-Tcl_WideInt TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr)
+Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr)
 {
     ArithSeries *arithSeriesRepPtr = (ArithSeries*)
 	    arithSeriesPtr->internalRep.twoPtrValue.ptr1;
@@ -725,10 +725,9 @@ TclArithSeriesObjRange(
 
     if (TclArithSeriesObjIndex(arithSeriesPtr, fromIdx, &startObj) != TCL_OK) {
 	if (interp) {
-	    Tcl_SetObjResult(
-		interp,
-		Tcl_ObjPrintf("index %d is out of bounds 0 to %"
-			      TCL_LL_MODIFIER "d", fromIdx, (arithSeriesRepPtr->len-1)));
+	    Tcl_SetObjResult(interp,
+		    Tcl_ObjPrintf("index %d is out of bounds 0 to %"
+			    "d", fromIdx, (arithSeriesRepPtr->len-1)));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}
 	return NULL;
@@ -736,10 +735,9 @@ TclArithSeriesObjRange(
     Tcl_IncrRefCount(startObj);
     if (TclArithSeriesObjIndex(arithSeriesPtr, toIdx, &endObj) != TCL_OK) {
 	if (interp) {
-	    Tcl_SetObjResult(
-		interp,
-		Tcl_ObjPrintf("index %d is out of bounds 0 to %"
-			      TCL_LL_MODIFIER "d", fromIdx, (arithSeriesRepPtr->len-1)));
+	    Tcl_SetObjResult(interp,
+		    Tcl_ObjPrintf("index %d is out of bounds 0 to %"
+			    "d", fromIdx, (arithSeriesRepPtr->len-1)));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}
 	return NULL;
@@ -956,7 +954,8 @@ TclArithSeriesObjReverse(
 
     if (Tcl_IsShared(arithSeriesPtr) ||
 	    ((arithSeriesPtr->refCount > 1))) {
-	Tcl_Obj *lenObj = Tcl_NewWideIntObj(len);
+	Tcl_Obj *lenObj;
+	TclNewIntObj(lenObj, len);
 	if (TclNewArithSeriesObj(interp, &resultObj,
 		 isDouble, startObj, endObj, stepObj, lenObj) != TCL_OK) {
 	    resultObj = NULL;
@@ -999,3 +998,11 @@ TclArithSeriesObjReverse(
 
     return resultObj;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

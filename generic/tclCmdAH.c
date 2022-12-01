@@ -2860,8 +2860,8 @@ EachloopCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjGetElementsM(NULL, statePtr->vCopyList[i],
-	    &statePtr->varcList[i], &statePtr->varvList[i]);
+	TclListObjLengthM(NULL, statePtr->vCopyList[i],
+	    &statePtr->varcList[i]);
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s varlist is empty",
@@ -2872,6 +2872,8 @@ EachloopCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
+	TclListObjGetElementsM(NULL, statePtr->vCopyList[i],
+	    &statePtr->varcList[i], &statePtr->varvList[i]);
 
 	/* Values */
 	if (TclHasInternalRep(objv[2+i*2],&tclArithSeriesType)) {

@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include "tclInt.h"
+#include "tclTomMath.h"
 #include "tclArithSeries.h"
 
 /*
@@ -1993,7 +1994,7 @@ int
 Tcl_ListObjLength(
     Tcl_Interp *interp,	/* Used to report errors if not NULL. */
     Tcl_Obj *listObj,	/* List object whose #elements to return. */
-    Tcl_Size *lenPtr)	/* The resulting int is stored here. */
+    Tcl_Size *lenPtr)	/* The resulting length is stored here. */
 {
     ListRep listRep;
 
@@ -2631,7 +2632,7 @@ TclLindexFlat(
 
     /* Handle ArithSeries as special case */
     if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
-	Tcl_WideInt listLen = TclArithSeriesObjLength(listObj);
+	Tcl_Size listLen = TclArithSeriesObjLength(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = NULL;
 	for (i=0 ; i<indexCount && listObj ; i++) {
@@ -3514,17 +3515,10 @@ UpdateStringOfList(
  *------------------------------------------------------------------------
  */
 Tcl_Obj *
-TclListTestObj (int length, int leadingSpace, int endSpace)
+TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
 {
-    if (length < 0)
-	length = 0;
-    if (leadingSpace < 0)
-	leadingSpace = 0;
-    if (endSpace < 0)
-	endSpace = 0;
-
     ListRep listRep;
-    Tcl_Size capacity;
+    size_t capacity;
     Tcl_Obj *listObj;
 
     TclNewObj(listObj);
@@ -3534,13 +3528,16 @@ TclListTestObj (int length, int leadingSpace, int endSpace)
     if (capacity == 0) {
 	return listObj;
     }
+    if (capacity > LIST_MAX) {
+	return NULL;
+    }
 
     ListRepInit(capacity, NULL, 0, &listRep);
 
     ListStore *storePtr = listRep.storePtr;
-    int i;
+    size_t i;
     for (i = 0; i < length; ++i) {
-	storePtr->slots[i + leadingSpace] = Tcl_NewIntObj(i);
+	TclNewUIntObj(storePtr->slots[i + leadingSpace], i);
 	Tcl_IncrRefCount(storePtr->slots[i + leadingSpace]);
     }
     storePtr->firstUsed = leadingSpace;
