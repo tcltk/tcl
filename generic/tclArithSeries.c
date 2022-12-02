@@ -126,11 +126,18 @@ ArithSeriesGetElements(
     size_t start,
     size_t length)
 {
-    (void)arithSeriesPtr;
-    (void)elemPtr;
-    (void)start;
-    (void)length;
-    //TODO;
+    size_t i, objc;
+
+    if (start + length < start) {
+	Tcl_Panic("%s: length overflow", "ArithSeriesGetElements");
+    }
+    objc = TclArithSeriesObjLength(arithSeriesPtr);
+    while (length > 0 && start + length > objc) {
+	elemPtr[--length] = NULL;
+    }
+    for (i = 0; i < length; i++) {
+	TclArithSeriesObjIndex(arithSeriesPtr, start + i, &elemPtr[i]);
+    }
 }
 
 /*

@@ -122,9 +122,6 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  * is unregistered, so has no need of a setFromAnyProc either.
  */
 
-static size_t LengthOne(TCL_UNUSED(Tcl_Obj *)) {return 1;}
-static void EndOffsetGetElements(Tcl_Obj *, Tcl_Obj **, size_t, size_t);
-
 static const TclObjTypeWithAbstractList endOffsetType = {
     {"end-offset",			/* name */
     NULL,				/* freeIntRepProc */
@@ -132,18 +129,28 @@ static const TclObjTypeWithAbstractList endOffsetType = {
     NULL,				/* updateStringProc */
     NULL,				/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
-    LengthOne,
-    EndOffsetGetElements
+    TclLengthOne,
+    TclGetSingleElements
     )}
 };
 
-static void
-EndOffsetGetElements(
+size_t
+TclLengthOne(
+    TCL_UNUSED(Tcl_Obj *))
+{
+    return 1;
+}
+
+void
+TclGetSingleElements(
     Tcl_Obj *endOffsetPtr,
     Tcl_Obj **elemPtr,
     size_t start,
     size_t length)
 {
+    if (start + length < start) {
+	Tcl_Panic("%s: length overflow", "ListGetElements");
+    }
     if (length > 0 && start == 0) {
 	size_t len;
 	const char *str = Tcl_GetStringFromObj(endOffsetPtr, &len);
