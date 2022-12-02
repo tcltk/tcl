@@ -123,6 +123,7 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  */
 
 static size_t LengthOne(TCL_UNUSED(Tcl_Obj *)) {return 1;}
+static void EndOffsetGetElements(Tcl_Obj *, Tcl_Obj **, size_t, size_t);
 
 static const TclObjTypeWithAbstractList endOffsetType = {
     {"end-offset",			/* name */
@@ -132,9 +133,40 @@ static const TclObjTypeWithAbstractList endOffsetType = {
     NULL,				/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
     LengthOne,
-    NULL
+    EndOffsetGetElements
     )}
 };
+
+static void
+EndOffsetGetElements(
+    Tcl_Obj *endOffsetPtr,
+    Tcl_Obj **elemPtr,
+    size_t start,
+    size_t length)
+{
+    if (length > 0 && start == 0) {
+	size_t len;
+	const char *str = Tcl_GetStringFromObj(endOffsetPtr, &len);
+	if (len == 0 || (!isspace(UCHAR(*str)) && !isspace(UCHAR(str[len-1])))) {
+	    /* If the endOffset doesn't start or end with space, we can use the obj itself. */
+	    *elemPtr++ = endOffsetPtr;
+	} else {
+	    /* otherwise, strip the spaces */
+	    Tcl_Obj *obj;
+
+	    while (len > 0 && isspace(UCHAR(str[len-1]))) {
+		len--;
+	    }
+	    while (len > 0 && isspace(UCHAR(*str))) {
+		str++; len--;
+	    }
+	    TclNewStringObj(obj, str, len);
+	    *elemPtr++ = obj;
+	    start++, length--;
+	}
+    }
+    memset(elemPtr, 0, length * sizeof(Tcl_Obj *));
+}
 
 /*
  *	*	STRING REPRESENTATION OF LISTS	*	*	*

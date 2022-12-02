@@ -42,6 +42,8 @@ static void		DupArithSeriesInternalRep (Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void		FreeArithSeriesInternalRep (Tcl_Obj *listPtr);
 static int		SetArithSeriesFromAny (Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfArithSeries (Tcl_Obj *listPtr);
+static void		ArithSeriesGetElements(Tcl_Obj *, Tcl_Obj **, size_t, size_t);
+
 
 /*
  * The structure below defines the arithmetic series Tcl object type by
@@ -78,7 +80,7 @@ const TclObjTypeWithAbstractList tclArithSeriesType = {
     SetArithSeriesFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
     TclArithSeriesObjLength,
-    NULL
+    ArithSeriesGetElements
     )}
 };
 
@@ -115,6 +117,20 @@ ArithSeriesLen(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step)
     }
     len = 1 + ((end-start)/step);
     return (len < 0) ? -1 : len;
+}
+
+static void
+ArithSeriesGetElements(
+    Tcl_Obj *arithSeriesPtr,
+    Tcl_Obj **elemPtr,
+    size_t start,
+    size_t length)
+{
+    (void)arithSeriesPtr;
+    (void)elemPtr;
+    (void)start;
+    (void)length;
+    //TODO;
 }
 
 /*

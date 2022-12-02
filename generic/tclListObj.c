@@ -144,6 +144,7 @@ static void	FreeListInternalRep(Tcl_Obj *listPtr);
 static int	SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void	UpdateStringOfList(Tcl_Obj *listPtr);
 static size_t ListLength(Tcl_Obj *listPtr);
+static void ListGetElements(Tcl_Obj *, Tcl_Obj **, size_t, size_t);
 
 /*
  * The structure below defines the list Tcl object type by means of functions
@@ -160,7 +161,7 @@ const TclObjTypeWithAbstractList tclListType = {
     SetListFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
     ListLength,
-    NULL
+    ListGetElements
     )}
 };
 
@@ -2025,6 +2026,30 @@ size_t ListLength(
 	ListObjGetRep(listPtr, &listRep);
 
     return ListRepLength(&listRep);
+}
+
+static void ListGetElements(
+    Tcl_Obj *listPtr,
+    Tcl_Obj **elemPtr,
+    size_t start,
+    size_t length)
+{
+    ListRep listRep;
+    size_t i, objc;
+    Tcl_Obj **objv;
+
+    ListObjGetRep(listPtr, &listRep);
+    ListRepElements(&listRep, objc, objv);
+    if (start + length < start) {
+	Tcl_Panic("%s: length overflow", "ListGetElements");
+    }
+    while (length > 0 && start + length > objc) {
+	elemPtr[--length] = NULL;
+    }
+    objv += start;
+    for (i = 0; i < length; i++) {
+	elemPtr[i] =  objv[i];
+    }
 }
 
 /*
