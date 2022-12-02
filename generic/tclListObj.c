@@ -2043,9 +2043,6 @@ static void ListGetElements(
     }
     ListObjGetRep(listPtr, &listRep);
     ListRepElements(&listRep, objc, objv);
-    if (start + length < start) {
-	Tcl_Panic("%s: length overflow", "ListGetElements");
-    }
     while (length > 0 && start + length > objc) {
 	elemPtr[--length] = NULL;
     }
