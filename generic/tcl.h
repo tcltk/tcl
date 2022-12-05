@@ -336,7 +336,7 @@ typedef int Tcl_Size;
 	/* Here is a 2-byte gap */
 	unsigned st_rdev;
 	/* Here is a 4-byte gap */
-	long st_size;
+	long long st_size;
 	struct {long tv_sec;} st_atim;
 	struct {long tv_sec;} st_mtim;
 	struct {long tv_sec;} st_ctim;
