@@ -340,7 +340,6 @@ typedef int Tcl_Size;
 	struct {long tv_sec;} st_atim;
 	struct {long tv_sec;} st_mtim;
 	struct {long tv_sec;} st_ctim;
-	/* Here is a 4-byte gap */
     } Tcl_StatBuf;
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;
