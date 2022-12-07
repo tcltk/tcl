@@ -240,6 +240,7 @@ const Tcl_ObjType tclBooleanType= {
     NULL,
     NULL,
     NULL,
+    NULL,
     NULL)
 };
 const Tcl_ObjType tclDoubleType= {
@@ -250,6 +251,7 @@ const Tcl_ObjType tclDoubleType= {
     SetDoubleFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V1(
     LengthOne,
+    NULL,
     NULL,
     NULL,
     NULL,
@@ -270,6 +272,7 @@ const Tcl_ObjType tclIntType = {
     NULL,
     NULL,
     NULL,
+    NULL,
     NULL)
 };
 const Tcl_ObjType tclBignumType = {
@@ -280,6 +283,7 @@ const Tcl_ObjType tclBignumType = {
     NULL,			/* setFromAnyProc */
     TCL_OBJTYPE_V1(
     LengthOne,
+    NULL,
     NULL,
     NULL,
     NULL,
@@ -2448,6 +2452,9 @@ Tcl_GetDoubleFromObj(
     double *dblPtr)	/* Place to store resulting double. */
 {
     do {
+        if (ABSTRACTLIST_PROC(objPtr, getDoubleProc)) {
+            return Tcl_ObjTypeGetDouble(interp, objPtr, dblPtr);
+        }
 	if (objPtr->typePtr == &tclDoubleType) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
 		if (interp != NULL) {

@@ -137,6 +137,7 @@ static const Tcl_ObjType endOffsetType = {
     NULL,
     NULL,
     NULL,
+    NULL,
     NULL)
 };
 

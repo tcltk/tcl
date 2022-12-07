@@ -83,7 +83,8 @@ static Tcl_ObjType arithSeriesType = {
     TclArithSeriesObjReverse,
     TclArithSeriesGetElements,
     NULL, // SetElement
-    NULL)  // Replace
+    NULL, // Replace
+    NULL)  // GetDouble
 };
 
 /*

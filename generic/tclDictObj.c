@@ -159,6 +159,7 @@ const Tcl_ObjType tclDictType = {
     NULL,
     NULL,
     NULL,
+    NULL,
     NULL)
 };
 
