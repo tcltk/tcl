@@ -2217,7 +2217,7 @@ Tcl_JoinObjCmd(
 
     if (TclHasInternalRep(objv[1],&tclArithSeriesType.objType)) {
 	isArithSeries = 1;
-	listLen = TclArithSeriesObjLength(objv[1]);
+	listLen = ABSTRACTLIST_PROC(objv[1], lengthProc)(objv[1]);
     } else {
 	if (TclListObjGetElementsM(interp, objv[1], &listLen,
 	    &elemPtrs) != TCL_OK) {
@@ -4734,8 +4734,8 @@ Tcl_LsortObjCmd(
     }
 
     if (TclHasInternalRep(listObj,&tclArithSeriesType.objType)) {
-	sortInfo.resultCode = TclArithSeriesGetElements(interp,
-	    listObj, &length, &listObjPtrs);
+	listObjPtrs = TclArithSeriesGetElements(interp, listObj, &length);
+	sortInfo.resultCode = listObjPtrs ? TCL_OK : TCL_ERROR;
     } else {
 	sortInfo.resultCode = TclListObjGetElementsM(interp, listObj,
 	    &length, &listObjPtrs);

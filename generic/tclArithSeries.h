@@ -35,17 +35,14 @@ typedef struct {
 
 MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjCopy(Tcl_Interp *interp,
 			    Tcl_Obj *arithSeriesPtr);
-MODULE_SCOPE int	TclArithSeriesObjStep(Tcl_Obj *arithSeriesPtr,
-			    Tcl_Obj **stepObj);
 MODULE_SCOPE int	TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr,
 			    Tcl_WideInt index, Tcl_Obj **elementObj);
-MODULE_SCOPE Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjRange(Tcl_Interp *interp,
 			    Tcl_Obj *arithSeriesPtr, Tcl_Size fromIdx, Tcl_Size toIdx);
 MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjReverse(Tcl_Interp *interp,
 			    Tcl_Obj *arithSeriesPtr);
-MODULE_SCOPE int	TclArithSeriesGetElements(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, Tcl_Size *objcPtr, Tcl_Obj ***objvPtr);
+MODULE_SCOPE Tcl_Obj **TclArithSeriesGetElements(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, Tcl_Size *objcPtr);
 MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesInt(Tcl_WideInt start,
 			    Tcl_WideInt end, Tcl_WideInt step,
 			    Tcl_WideInt len);
