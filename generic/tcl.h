@@ -406,9 +406,7 @@ typedef int Tcl_Size;
 #endif
 
 #ifdef _WIN32
-#   if TCL_MAJOR_VERSION > 8
-	typedef struct __stat64 Tcl_StatBuf;
-#   elif defined(_WIN64) || defined(_USE_64BIT_TIME_T)
+#   if TCL_MAJOR_VERSION > 8 || defined(_WIN64) || defined(_USE_64BIT_TIME_T)
 	typedef struct __stat64 Tcl_StatBuf;
 #   elif defined(_USE_32BIT_TIME_T)
 	typedef struct _stati64	Tcl_StatBuf;
@@ -417,26 +415,19 @@ typedef int Tcl_Size;
 #   endif
 #elif defined(__CYGWIN__)
     typedef struct {
-	dev_t st_dev;
+	unsigned st_dev;
 	unsigned short st_ino;
 	unsigned short st_mode;
 	short st_nlink;
 	short st_uid;
 	short st_gid;
 	/* Here is a 2-byte gap */
-	dev_t st_rdev;
+	unsigned st_rdev;
 	/* Here is a 4-byte gap */
 	long long st_size;
-#if TCL_MAJOR_VERSION > 8
-	struct {long long tv_sec;} st_atim;
-	struct {long long tv_sec;} st_mtim;
-	struct {long long tv_sec;} st_ctim;
-#else
 	struct {long tv_sec;} st_atim;
 	struct {long tv_sec;} st_mtim;
 	struct {long tv_sec;} st_ctim;
-	/* Here is a 4-byte gap */
-#endif
     } Tcl_StatBuf;
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;
