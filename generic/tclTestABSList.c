@@ -69,9 +69,10 @@ static const Tcl_ObjType lstringTypes[11] = {
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
-        my_LStringGetElements,
+	my_LStringGetElements,
 	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace)
+	my_LStringReplace,
+	NULL)
     },
     {
 	"lstring",
@@ -80,13 +81,14 @@ static const Tcl_ObjType lstringTypes[11] = {
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1(
-/**/	NULL, /*default my_LStringObjLength,*/
+	NULL, /*default my_LStringObjLength,*/
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
-        my_LStringGetElements,
+	my_LStringGetElements,
 	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace)
+	my_LStringReplace,
+	NULL)
     },
     {
 	"lstring",
@@ -96,13 +98,14 @@ static const Tcl_ObjType lstringTypes[11] = {
 	NULL,
 	TCL_OBJTYPE_V1(
 	my_LStringObjLength,
-/**/	NULL, /*default my_LStringObjIndex,*/
+	NULL, /*default my_LStringObjIndex,*/
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
-        my_LStringGetElements,
+	my_LStringGetElements,
 
 	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace)
+	my_LStringReplace,
+	NULL)
     },
     {
 	"lstring",
@@ -113,11 +116,12 @@ static const Tcl_ObjType lstringTypes[11] = {
 	TCL_OBJTYPE_V1(
 	my_LStringObjLength,
 	my_LStringObjIndex,
-/**/	NULL, /*default my_LStringObjRange,*/
+	NULL, /*default my_LStringObjRange,*/
 	my_LStringObjReverse,
-        my_LStringGetElements,
+	my_LStringGetElements,
 	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace)
+	my_LStringReplace,
+	NULL)
     },
     {
 	"lstring",
@@ -129,25 +133,11 @@ static const Tcl_ObjType lstringTypes[11] = {
 	my_LStringObjLength,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
-/**/	NULL, /*defaults my_LStringObjReverse,*/
-        my_LStringGetElements,
+	NULL, /*defaults my_LStringObjReverse,*/
+	my_LStringGetElements,
 	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace)
-    },
-    {
-	"lstring",
-	freeRep,
-	DupLStringRep,
-	UpdateStringOfLString,
-	NULL,
-	TCL_OBJTYPE_V1(
-	my_LStringObjLength,
-	my_LStringObjIndex,
-	my_LStringObjRange,/*ObjRange*/
-	my_LStringObjReverse,
-/**/	NULL, /*default NULL / *my_LStringGetElements,*/
-	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace)
+	my_LStringReplace,
+	NULL)
     },
     {
 	"lstring",
@@ -160,9 +150,10 @@ static const Tcl_ObjType lstringTypes[11] = {
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
-        my_LStringGetElements,
+	NULL, /*default NULL / *my_LStringGetElements,*/
 	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace)
+	my_LStringReplace,
+	NULL)
     },
     {
 	"lstring",
@@ -175,9 +166,10 @@ static const Tcl_ObjType lstringTypes[11] = {
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
-        my_LStringGetElements,
+	my_LStringGetElements,
 	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace)
+	my_LStringReplace,
+	NULL)
     },
     {
 	"lstring",
@@ -190,9 +182,10 @@ static const Tcl_ObjType lstringTypes[11] = {
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
-        my_LStringGetElements,
-/**/	NULL, /*default my_LStringObjSetElem, / * use default update string */
-	NULL) /*default my_LStringReplace*/
+	my_LStringGetElements,
+	my_LStringObjSetElem, /* use default update string */
+	my_LStringReplace,
+	NULL)
     },
     {
 	"lstring",
@@ -205,9 +198,10 @@ static const Tcl_ObjType lstringTypes[11] = {
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
-        my_LStringGetElements,
-	my_LStringObjSetElem, /* use default update string */
-/**/	NULL) /*default my_LStringReplace*/
+	my_LStringGetElements,
+	NULL, /*default my_LStringObjSetElem, / * use default update string */
+	NULL, /*default my_LStringReplace*/
+	NULL)
     },
     {
 	"lstring",
@@ -220,9 +214,26 @@ static const Tcl_ObjType lstringTypes[11] = {
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
-        my_LStringGetElements,
+	my_LStringGetElements,
 	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace)
+	NULL, /*default my_LStringReplace*/
+	NULL)
+    },
+    {
+	"lstring",
+	freeRep,
+	DupLStringRep,
+	UpdateStringOfLString,
+	NULL,
+	TCL_OBJTYPE_V1(
+	my_LStringObjLength,
+	my_LStringObjIndex,
+	my_LStringObjRange,/*ObjRange*/
+	my_LStringObjReverse,
+	my_LStringGetElements,
+	my_LStringObjSetElem, /* use default update string */
+	my_LStringReplace,
+	NULL)
     }
 };
 

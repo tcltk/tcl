@@ -2736,7 +2736,7 @@ EachloopCmd(
 		result = TCL_ERROR;
 		goto done;
 	    }
-	    /* Don't compute values here, wait until the last momement */
+	    /* Don't compute values here, wait until the last moment */
 	    statePtr->argcList[i] = Tcl_ObjTypeLength(statePtr->aCopyList[i]);
 	} else {
 	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
@@ -2871,18 +2871,17 @@ ForeachAssignments(
 
     for (i=0 ; i<statePtr->numLists ; i++) {
 	int isAbstractList =
-	    ABSTRACTLIST_PROC(statePtr->aCopyList[i],indexProc) != NULL;
+		ABSTRACTLIST_PROC(statePtr->aCopyList[i],indexProc) != NULL;
 
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
 		if (isAbstractList) {
-		    if (Tcl_ObjTypeIndex(interp, statePtr->aCopyList[i], k, &valuePtr)
-                        != TCL_OK) {
+		    if (Tcl_ObjTypeIndex(interp, statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			    "\n    (setting %s loop variable \"%s\")",
-			    (statePtr->resultList != NULL ? "lmap" : "foreach"),
-			    TclGetString(statePtr->varvList[i][v])));
+				"\n    (setting %s loop variable \"%s\")",
+				(statePtr->resultList != NULL ? "lmap" : "foreach"),
+				TclGetString(statePtr->varvList[i][v])));
 			return TCL_ERROR;
 		    }
 		} else {
