@@ -2217,7 +2217,7 @@ Tcl_JoinObjCmd(
 
     if (TclHasInternalRep(objv[1],&tclArithSeriesType.objType)) {
 	isArithSeries = 1;
-	listLen = TclArithSeriesObjLength(objv[1]);
+	listLen = ABSTRACTLIST_PROC(objv[1], lengthProc)(objv[1]);
     } else {
 	if (TclListObjGetElementsM(interp, objv[1], &listLen,
 	    &elemPtrs) != TCL_OK) {

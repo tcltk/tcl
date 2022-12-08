@@ -4661,7 +4661,7 @@ TEBCresume(
 
 	/* special case for ArithSeries */
 	if (TclHasInternalRep(valuePtr,&tclArithSeriesType.objType)) {
-	    length = TclArithSeriesObjLength(valuePtr);
+	    length = ABSTRACTLIST_PROC(valuePtr, lengthProc)(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
@@ -4724,7 +4724,7 @@ TEBCresume(
 
 	/* special case for ArithSeries */
 	if (TclHasInternalRep(valuePtr,&tclArithSeriesType.objType)) {
-	    length = TclArithSeriesObjLength(valuePtr);
+	    length = ABSTRACTLIST_PROC(valuePtr, lengthProc)(valuePtr);
 
 	    /* Decode end-offset index values. */
 

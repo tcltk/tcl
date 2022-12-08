@@ -42,6 +42,7 @@ static void		DupArithSeriesInternalRep (Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void		FreeArithSeriesInternalRep (Tcl_Obj *listPtr);
 static int		SetArithSeriesFromAny (Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfArithSeries (Tcl_Obj *listPtr);
+static Tcl_Size ArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
 
 /*
  * The structure below defines the arithmetic series Tcl object type by
@@ -77,7 +78,7 @@ const TclObjTypeWithAbstractList tclArithSeriesType = {
     UpdateStringOfArithSeries,		/* updateStringProc */
     SetArithSeriesFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
-    TclArithSeriesObjLength
+    ArithSeriesObjLength
     )}
 };
 
@@ -364,7 +365,7 @@ TclNewArithSeriesObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclArithSeriesObjStep --
+ * ArithSeriesObjStep --
  *
  *	Return a Tcl_Obj with the step value from the give ArithSeries Obj.
  *	refcount = 0.
@@ -380,10 +381,10 @@ TclNewArithSeriesObj(
  *----------------------------------------------------------------------
  */
 /*
- * TclArithSeriesObjStep --
+ * ArithSeriesObjStep --
  */
-int
-TclArithSeriesObjStep(
+static int
+ArithSeriesObjStep(
     Tcl_Obj *arithSeriesPtr,
     Tcl_Obj **stepObj)
 {
@@ -448,7 +449,7 @@ TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr, Tcl_WideInt index, Tcl_Obj **ele
 /*
  *----------------------------------------------------------------------
  *
- * TclArithSeriesObjLength
+ * ArithSeriesObjLength
  *
  *	Returns the length of the arithmetic series.
  *
@@ -462,7 +463,7 @@ TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr, Tcl_WideInt index, Tcl_Obj **ele
  *
  *----------------------------------------------------------------------
  */
-Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr)
+Tcl_Size ArithSeriesObjLength(Tcl_Obj *arithSeriesPtr)
 {
     ArithSeries *arithSeriesRepPtr = (ArithSeries*)
 	    arithSeriesPtr->internalRep.twoPtrValue.ptr1;
@@ -749,7 +750,7 @@ TclArithSeriesObjRange(
 	return NULL;
     }
     Tcl_IncrRefCount(endObj);
-    TclArithSeriesObjStep(arithSeriesPtr, &stepObj);
+    ArithSeriesObjStep(arithSeriesPtr, &stepObj);
     Tcl_IncrRefCount(stepObj);
 
     if (Tcl_IsShared(arithSeriesPtr) ||
@@ -941,7 +942,7 @@ TclArithSeriesObjReverse(
     Tcl_IncrRefCount(startObj);
     TclArithSeriesObjIndex(arithSeriesPtr, 0, &endObj);
     Tcl_IncrRefCount(endObj);
-    TclArithSeriesObjStep(arithSeriesPtr, &stepObj);
+    ArithSeriesObjStep(arithSeriesPtr, &stepObj);
     Tcl_IncrRefCount(stepObj);
 
     if (isDouble) {
