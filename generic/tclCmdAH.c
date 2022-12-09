@@ -2735,8 +2735,8 @@ EachloopCmd(
 		result = TCL_ERROR;
 		goto done;
 	    }
-	    /* Don't compute values here, wait until the last momement */
-	    statePtr->argcList[i] = TclArithSeriesObjLength(statePtr->aCopyList[i]);
+	    /* Don't compute values here, wait until the last moment */
+	    statePtr->argcList[i] = ABSTRACTLIST_PROC(statePtr->aCopyList[i], lengthProc)(statePtr->aCopyList[i]);
 	} else {
 	    /* List values */
 	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
