@@ -9065,6 +9065,49 @@ test io-75.6 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -s
     removeFile io-75.6
 } -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
+test io-75.7 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
+    set fn [makeFile {} io-75.7]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \xA1 is invalid in utf-8. -eofchar is not detected, because it comes later.
+    puts -nonewline $f "A\xA1\x1A"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -strictencoding 1
+} -body {
+    set d [read $f]
+    binary scan $d H* hd
+    lappend hd [eof $f]
+    lappend hd [catch {read $f} msg]
+    lappend hd $msg
+    fconfigure $f -encoding iso8859-1
+    lappend hd [read $f];# We changed encoding, so now we can read the \xA1
+    close $f
+    set hd
+} -cleanup {
+    removeFile io-75.6
+} -match glob -result {41 0 1 {error reading "*": illegal byte sequence} ¡}
+
+test io-75.8 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
+    set fn [makeFile {} io-75.8]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 is invalid in utf-8, but since \x1A comes first, -eofchar takes precedence.
+    puts -nonewline $f "A\x1A\x81"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -strictencoding 1
+} -body {
+    set d [read $f]
+    binary scan $d H* hd
+    lappend hd [eof $f]
+    lappend hd [read $f]
+    close $f
+    set hd
+} -cleanup {
+    removeFile io-75.6
+} -result {41 1 {}}
+
 # ### ### ### ######### ######### #########
 
 
