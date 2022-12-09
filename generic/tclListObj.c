@@ -2641,7 +2641,7 @@ TclLindexFlat(
 
     /* Handle ArithSeries as special case */
     if (TclHasInternalRep(listObj,&tclArithSeriesType.objType)) {
-	Tcl_Size listLen = TclArithSeriesObjLength(listObj);
+	Tcl_Size listLen = ABSTRACTLIST_PROC(listObj, lengthProc)(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = NULL;
 	for (i=0 ; i<indexCount && listObj ; i++) {
@@ -3294,7 +3294,7 @@ SetListFromAny(
 	 * because it can be done an order of magnitude faster
 	 * and may occur frequently.
 	 */
-	Tcl_Size j, size = TclArithSeriesObjLength(objPtr);
+	Tcl_Size j, size = ABSTRACTLIST_PROC(objPtr, lengthProc)(objPtr);
 
 	/* TODO - leave space in front and/or back? */
 	if (ListRepInitAttempt(
