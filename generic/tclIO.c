@@ -8283,7 +8283,7 @@ Tcl_SetChannelOption(
 	statePtr->inputEncodingFlags = TCL_ENCODING_START;
 	statePtr->outputEncodingState = NULL;
 	statePtr->outputEncodingFlags = TCL_ENCODING_START;
-	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
+	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	UpdateInterest(chanPtr);
 	return TCL_OK;
     } else if (HaveOpt(2, "-eofchar")) {
