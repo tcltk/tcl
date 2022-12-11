@@ -8924,7 +8924,7 @@ test io-73.5 {effect of eof on encoding end flags} -setup {
     read $rfd
 } -body {
     set result [eof $rfd]
-    puts -nonewline $wfd "more\xC2\xA0data"
+    puts -nonewline $wfd more\xC2\xA0data
     lappend result [eof $rfd]
     lappend result [read $rfd]
     lappend result [eof $rfd]
@@ -8958,7 +8958,7 @@ test io-75.1 {multibyte encoding error read results in raw bytes (-nocomplainenc
     fconfigure $f -encoding binary
     # In UTF-8, a byte 0xCx starts a multibyte sequence and must be followed
     # by a byte > 0x7F. This is violated to get an invalid sequence.
-    puts -nonewline $f "A\xC0\x40"
+    puts -nonewline $f A\xC0\x40
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -nocomplainencoding 1 -buffering none
@@ -8969,21 +8969,21 @@ test io-75.1 {multibyte encoding error read results in raw bytes (-nocomplainenc
 } -cleanup {
     close $f
     removeFile io-75.1
-} -result "41c040"
+} -result 41c040
 
 test io-75.2 {unrepresentable character write passes and is replaced by ? (-nocomplainencoding 1)} -setup {
     set fn [makeFile {} io-75.2]
     set f [open $fn w+]
     fconfigure $f -encoding iso8859-1 -nocomplainencoding 1
 } -body {
-    puts -nonewline $f "A\u2022"
+    puts -nonewline $f A\u2022
     flush $f
     seek $f 0
     read $f
 } -cleanup {
     close $f
     removeFile io-75.2
-} -result "A?"
+} -result A?
 
 # Incomplete sequence test.
 # This error may IMHO only be detected with the close.
@@ -9003,7 +9003,7 @@ test io-75.3 {incomplete multibyte encoding read is ignored (-nocomplainencoding
     set hd
 } -cleanup {
     removeFile io-75.3
-} -result "41c0"
+} -result 41c0
 
 # As utf-8 has a special treatment in multi-byte decoding, also test another
 # one.
@@ -9013,7 +9013,7 @@ test io-75.4 {shiftjis encoding error read results in raw bytes (-nocomplainenco
     fconfigure $f -encoding binary
     # In shiftjis, \x81 starts a two-byte sequence.
     # But 2nd byte \xFF is not allowed
-    puts -nonewline $f "A\x81\xFFA"
+    puts -nonewline $f A\x81\xFFA
     flush $f
     seek $f 0
     fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -nocomplainencoding 1
@@ -9024,14 +9024,13 @@ test io-75.4 {shiftjis encoding error read results in raw bytes (-nocomplainenco
 } -cleanup {
     close $f
     removeFile io-75.4
-} -result "4181ff41"
+} -result 4181ff41
 
-test io-75.5 {incomplete shiftjis encoding read is ignored (-nocomplainencoding 1)} -setup {
+test io-75.5 {invalid utf-8 encoding read is ignored (-nocomplainencoding 1)} -setup {
     set fn [makeFile {} io-75.5]
     set f [open $fn w+]
     fconfigure $f -encoding binary
-    # \x81 announces a two byte sequence.
-    puts -nonewline $f "A\x81"
+    puts -nonewline $f A\x81
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -nocomplainencoding 1
@@ -9042,33 +9041,33 @@ test io-75.5 {incomplete shiftjis encoding read is ignored (-nocomplainencoding 
     set hd
 } -cleanup {
     removeFile io-75.5
-} -result "4181"
+} -result 4181
 
-test io-75.6 {multibyte encoding error read results in raw bytes} -setup {
+test io-75.6 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -setup {
     set fn [makeFile {} io-75.6]
     set f [open $fn w+]
     fconfigure $f -encoding binary
-    # In UTF-8, a byte 0xCx starts a multibyte sequence and must be followed
-    # by a byte > 0x7F. This is violated to get an invalid sequence.
-    puts -nonewline $f "A\xC0\x40"
+    # \x81 is invalid in utf-8
+    puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -strict 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -strictencoding 1
 } -body {
     set d [read $f]
     binary scan $d H* hd
-    set hd
-} -cleanup {
+    lappend hd [catch {read $f} msg]
     close $f
+    lappend hd $msg
+} -cleanup {
     removeFile io-75.6
-} -result "41"
+} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
 test io-75.7 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
     set fn [makeFile {} io-75.7]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     # \xA1 is invalid in utf-8. -eofchar is not detected, because it comes later.
-    puts -nonewline $f "A\xA1\x1A"
+    puts -nonewline $f A\xA1\x1A
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -strictencoding 1
@@ -9091,7 +9090,7 @@ test io-75.8 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
     set f [open $fn w+]
     fconfigure $f -encoding binary
     # \x81 is invalid in utf-8, but since \x1A comes first, -eofchar takes precedence.
-    puts -nonewline $f "A\x1A\x81"
+    puts -nonewline $f A\x1A\x81
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -strictencoding 1
@@ -9109,7 +9108,7 @@ test io-75.8 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
 test io-75.9 {unrepresentable character write passes and is replaced by ?} -setup {
     set fn [makeFile {} io-75.9]
     set f [open $fn w+]
-    fconfigure $f -encoding iso8859-1
+    fconfigure $f -encoding iso8859-1 -strictencoding 1
 } -body {
     catch {puts -nonewline $f "A\u2022"} msg
     flush $f
@@ -9127,7 +9126,7 @@ test io-75.10 {incomplete multibyte encoding read is ignored} -setup {
     set fn [makeFile {} io-75.10]
     set f [open $fn w+]
     fconfigure $f -encoding binary
-    puts -nonewline $f "A\xC0"
+    puts -nonewline $f A\xC0
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none
@@ -9138,7 +9137,7 @@ test io-75.10 {incomplete multibyte encoding read is ignored} -setup {
     set hd
 } -cleanup {
     removeFile io-75.10
-} -result "41c0"
+} -result 41c0
 # The current result returns the orphan byte as byte.
 # This may be expected due to special utf-8 handling.
 
@@ -9150,26 +9149,25 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
     fconfigure $f -encoding binary
     # In shiftjis, \x81 starts a two-byte sequence.
     # But 2nd byte \xFF is not allowed
-    puts -nonewline $f "A\x81\xFFA"
+    puts -nonewline $f A\x81\xFFA
     flush $f
     seek $f 0
-    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf
+    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -strictencoding 1
 } -body {
     set d [read $f]
     binary scan $d H* hd
-    set hd
+    lappend hd [catch {set d [read $f]} msg]
+    lappend hd $msg
 } -cleanup {
     close $f
     removeFile io-75.11
-} -result "41"
-# The current result cuts at the invalid sequence. IMHO, there should be an
-# error thrown or the whole sequence should be returned as byte (compat mode).
+} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
 test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
     set fn [makeFile {} io-75.12]
     set f [open $fn w+]
     fconfigure $f -encoding binary
-    puts -nonewline $f "A\x81"
+    puts -nonewline $f A\x81
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf
@@ -9180,7 +9178,7 @@ test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
     set hd
 } -cleanup {
     removeFile io-75.12
-} -result "4181"
+} -result 4181
 test io-75.13 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -setup {
     set fn [makeFile {} io-75.13]
     set f [open $fn w+]
