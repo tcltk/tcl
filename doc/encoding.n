@@ -54,9 +54,9 @@ The option \fB-nocomplain\fR has no effect and is available for compatibility wi
 TCL 9. In TCL 9, the encoding command fails with an error on any encoding issue.
 This switch restores the TCL8.7 behaviour.
 .PP
-The \fB-strict\fR option followes more strict rules in conversion.  Currently, only
-the sequence \fB\\xC0\\x80\fR in \fButf-8\fR encoding is disallowed.  Additional rules
-may follow.
+The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
+encoder, it disallows the the sequence \fB\\xC0\\x80\fR and noncharacters (which -
+otherwise - are just passed through).
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .RE
 .TP
@@ -87,8 +87,9 @@ The option \fB-nocomplain\fR has no effect and is available for compatibility wi
 TCL 9. In TCL 9, the encoding command fails with an error on any encoding issue.
 This switch restores the TCL8.7 behaviour.
 .PP
-The \fB-strict\fR option followes more strict rules in conversion.  Currently, it has
-no effect but may be used in future to add additional encoding checks.
+The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
+encoder, it disallows the the sequence \fB\\xC0\\x80\fR and noncharacters (which -
+otherwise - are just passed through).
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .RE
 .TP
