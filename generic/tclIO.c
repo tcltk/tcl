@@ -8341,11 +8341,16 @@ Tcl_SetChannelOption(
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	return TCL_OK;
-    } else if (HaveOpt(1, "-nocomplainencoding")) {
+    } else if (HaveOpt(1, "-nocomplainencoding") || HaveOpt(1, "-strict-for-rolf")) {
 	int newMode;
 
 	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
 	    return TCL_ERROR;
+	}
+	if (HaveOpt(1, "-strict-for-rolf")) {
+	    /* -strict-for-rolf 1 is the same as -nocomplainencoding 0
+	     * (which is already the default in Tcl 9) */
+	    newMode = !newMode;
 	}
 	if (newMode) {
 	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);

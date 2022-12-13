@@ -56,7 +56,8 @@ This switch restores the TCL8.7 behaviour.
 .PP
 The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
 encoder, it disallows the the sequence \fB\\xC0\\x80\fR and noncharacters (which -
-otherwise - are just passed through).
+otherwise - are just passed through). This is NOT the same as what "strict"
+means in Python.
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .RE
 .TP
@@ -89,7 +90,8 @@ This switch restores the TCL8.7 behaviour.
 .PP
 The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
 encoder, it disallows the the sequence \fB\\xC0\\x80\fR and noncharacters (which -
-otherwise - are just passed through).
+otherwise - are just passed through). This is NOT the same as what "strict"
+means in Python.
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .RE
 .TP
