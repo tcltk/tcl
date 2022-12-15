@@ -7862,7 +7862,7 @@ Tcl_BadChannelOption(
 {
     if (interp != NULL) {
 	const char *genericopt =
-		"blocking buffering buffersize encoding eofchar translation";
+		"blocking buffering buffersize encoding eofchar nocomplainencoding strictencoding translation";
 	const char **argv;
 	int argc, i;
 	Tcl_DString ds;
