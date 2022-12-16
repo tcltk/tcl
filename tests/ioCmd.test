@@ -207,7 +207,7 @@ test iocmd-7.5 {close command} -setup {
 
 proc expectedOpts {got extra} {
     set basicOpts {
-	-blocking -buffering -buffersize -encoding -eofchar -translation
+	-blocking -buffering -buffersize -encoding -eofchar -nocomplainencoding -strictencoding -translation
     }
     set opts [list {*}$basicOpts {*}$extra]
     lset opts end [string cat "or " [lindex $opts end]]
