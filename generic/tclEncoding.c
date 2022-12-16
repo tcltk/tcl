@@ -2565,7 +2565,7 @@ Utf32ToUtfProc(
 	} else {
 	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
-	if  (ch >= 0x10FFFF || (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
+	if  ((unsigned)ch > 0x10FFFF || (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
 		&& !Tcl_UniCharIsUnicode(ch))) {
 	    if (STOPONERROR) {
 		result = TCL_CONVERT_SYNTAX;
