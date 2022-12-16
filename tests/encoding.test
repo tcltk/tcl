@@ -490,16 +490,22 @@ test encoding-17.2 {UtfToUcs2Proc} -body {
 } -result "\uFFFD"
 test encoding-17.3 {UtfToUtf16Proc} -body {
     encoding convertto -nocomplain utf-16be "\uDCDC"
-} -result "\xFF\xFD"
+} -result "\xDC\xDC"
 test encoding-17.4 {UtfToUtf16Proc} -body {
     encoding convertto -nocomplain utf-16le "\uD8D8"
-} -result "\xFD\xFF"
+} -result "\xD8\xD8"
 test encoding-17.5 {UtfToUtf16Proc} -body {
     encoding convertto utf-32le "\U460DC"
 } -result "\xDC\x60\x04\x00"
 test encoding-17.6 {UtfToUtf16Proc} -body {
     encoding convertto utf-32be "\U460DC"
 } -result "\x00\x04\x60\xDC"
+test encoding-17.7 {UtfToUtf16Proc} -body {
+    encoding convertto -strict utf-16be "\uDCDC"
+} -returnCodes error -result {unexpected character at index 0: 'U+00DCDC'}
+test encoding-17.8 {UtfToUtf16Proc} -body {
+    encoding convertto -strict utf-16le "\uD8D8"
+} -returnCodes error -result {unexpected character at index 0: 'U+00D8D8'}
 
 test encoding-18.1 {TableToUtfProc} {
 } {}
