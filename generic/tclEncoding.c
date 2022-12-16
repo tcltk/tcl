@@ -2505,6 +2505,13 @@ Utf32ToUtfProc(
 	} else {
 	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
+	if  (ch >= 0x10FFFF || (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
+		&& !Tcl_UniCharIsUnicode(ch))) {
+	    if (STOPONERROR) {
+		result = TCL_CONVERT_SYNTAX;
+		break;
+	    }
+	}
 
 	/*
 	 * Special case for 1-byte utf chars for speed. Make sure we work with
@@ -2595,12 +2602,11 @@ UtfToUtf32Proc(
 	    break;
 	}
 	len = TclUtfToUCS4(src, &ch);
-	if (!Tcl_UniCharIsUnicode(ch)) {
+	if (!Tcl_UniCharIsUnicode(ch) && (((ch  & ~0x7FF) == 0xD800) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
 	    if (STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
-	    ch = 0xFFFD;
 	}
 	src += len;
 	if (flags & TCL_ENCODING_LE) {
@@ -2798,12 +2804,11 @@ UtfToUtf16Proc(
 	    break;
 	}
 	len = TclUtfToUCS4(src, &ch);
-	if (!Tcl_UniCharIsUnicode(ch)) {
+	if (!Tcl_UniCharIsUnicode(ch) && (((ch  & ~0x7FF) == 0xD800) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
 	    if (STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
-	    ch = 0xFFFD;
 	}
 	src += len;
 	if (flags & TCL_ENCODING_LE) {
