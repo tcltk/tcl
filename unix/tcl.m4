@@ -1185,7 +1185,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	CYGWIN_*|MINGW32_*|MSYS_*)
-	    SHLIB_CFLAGS=""
+	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
 	    DL_OBJS="tclLoadDl.o"
@@ -1215,9 +1215,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    fi
 	    do64bit_ok=yes
 	    if test "x${SHARED_BUILD}" = "x1"; then
-		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
+		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args --enable-64bit --host=x86_64-w64-mingw32"
 		# The eval makes quoting arguments work.
-		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
+		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args --enable-64bit --host=x86_64-w64-mingw32; cd ../unix
 		then :
 		else
 		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
@@ -1373,7 +1373,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ])
 	    ;;
 	Linux*|GNU*|NetBSD-Debian|DragonFly-*|FreeBSD-*)
-	    SHLIB_CFLAGS="-fPIC"
+	    SHLIB_CFLAGS="-fPIC -fno-common"
 	    SHLIB_SUFFIX=".so"
 
 	    CFLAGS_OPTIMIZE="-O2"
@@ -1500,7 +1500,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		# The -pthread needs to go in the CFLAGS, not LIBS
 		LIBS=`echo $LIBS | sed s/-pthread//`
 		CFLAGS="$CFLAGS -pthread"
-	    	LDFLAGS="$LDFLAGS -pthread"
+		LDFLAGS="$LDFLAGS -pthread"
 	    ])
 	    ;;
 	Darwin-*)
@@ -1740,11 +1740,11 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # this test works, since "uname -s" was non-standard in 3.2.4 and
 	    # below.
 	    AS_IF([test "$GCC" = yes], [
-	    	SHLIB_CFLAGS="-fPIC -melf"
-	    	LDFLAGS="$LDFLAGS -melf -Wl,-Bexport"
+		SHLIB_CFLAGS="-fPIC -melf"
+		LDFLAGS="$LDFLAGS -melf -Wl,-Bexport"
 	    ], [
-	    	SHLIB_CFLAGS="-Kpic -belf"
-	    	LDFLAGS="$LDFLAGS -belf -Wl,-Bexport"
+		SHLIB_CFLAGS="-Kpic -belf"
+		LDFLAGS="$LDFLAGS -belf -Wl,-Bexport"
 	    ])
 	    SHLIB_LD="ld -G"
 	    SHLIB_LD_LIBS=""
@@ -2037,36 +2037,36 @@ dnl # preprocessing tests use only CPPFLAGS.
         TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"])
     AC_SUBST(TCL_LIBS)
 
-	# See if the compiler supports casting to a union type.
-	# This is used to stop gcc from printing a compiler
-	# warning when initializing a union member.
+    # See if the compiler supports casting to a union type.
+    # This is used to stop gcc from printing a compiler
+    # warning when initializing a union member.
 
-	AC_CACHE_CHECK(for cast to union support,
-	    tcl_cv_cast_to_union,
-	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-		  union foo { int i; double d; };
-		  union foo f = (union foo) (int) 0;
-	    ]])],
-	    [tcl_cv_cast_to_union=yes],
-	    [tcl_cv_cast_to_union=no])
-	)
-	if test "$tcl_cv_cast_to_union" = "yes"; then
-	    AC_DEFINE(HAVE_CAST_TO_UNION, 1,
-		    [Defined when compiler supports casting to union type.])
-	fi
-	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
-	AC_CACHE_CHECK(for working -fno-lto,
-	    ac_cv_nolto,
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
-	    [ac_cv_nolto=yes],
-	    [ac_cv_nolto=no])
-	)
-	CFLAGS=$hold_cflags
-	if test "$ac_cv_nolto" = "yes" ; then
-	    CFLAGS_NOLTO="-fno-lto"
-	else
-	    CFLAGS_NOLTO=""
-	fi
+    AC_CACHE_CHECK(for cast to union support,
+	tcl_cv_cast_to_union,
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+		union foo { int i; double d; };
+		union foo f = (union foo) (int) 0;
+	]])],
+	[tcl_cv_cast_to_union=yes],
+	[tcl_cv_cast_to_union=no])
+    )
+    if test "$tcl_cv_cast_to_union" = "yes"; then
+	AC_DEFINE(HAVE_CAST_TO_UNION, 1,
+		[Defined when compiler supports casting to union type.])
+    fi
+    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
+    AC_CACHE_CHECK(for working -fno-lto,
+	ac_cv_nolto,
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+	[ac_cv_nolto=yes],
+	[ac_cv_nolto=no])
+    )
+    CFLAGS=$hold_cflags
+    if test "$ac_cv_nolto" = "yes" ; then
+	CFLAGS_NOLTO="-fno-lto"
+    else
+	CFLAGS_NOLTO=""
+    fi
 
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
