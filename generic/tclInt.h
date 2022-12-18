@@ -1103,6 +1103,8 @@ typedef struct {  /* For internal core use only */
 	&& ((objPtr)->typePtr->version > offsetof(TclObjTypeWithAbstractList, abstractList.proc))) ? \
 	((const TclObjTypeWithAbstractList *)(objPtr)->typePtr)->abstractList.proc : NULL)
 
+MODULE_SCOPE size_t TclLengthOne(Tcl_Obj *);
+
 /*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function
