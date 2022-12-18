@@ -669,7 +669,6 @@ typedef struct Tcl_ObjType {
 					** with the given valueObj. */
     Tcl_ALReplaceProc *replaceProc;     /* Replace subset with subset */
     Tcl_ALGetDblProc *getDoubleProc;    /* GetDouble from internal rep */
-    
 } Tcl_ObjType;
 
 #define TCL_OBJTYPE_V0 0, /* Pre-Tcl 9 */ \
@@ -746,7 +745,6 @@ typedef struct Tcl_Obj {
  */
 
 
-#define Tcl_ObjTypeLength(objPtr) (objPtr)->typePtr->lengthProc(objPtr)
 #define Tcl_ObjTypeIndex(interp, objPtr, index, elemObjPtr) \
     (objPtr)->typePtr->indexProc((interp),(objPtr),(index),(elemObjPtr))
 #define Tcl_ObjTypeSlice(interp, objPtr, fromIdx, toIdx, newObjPtr) \

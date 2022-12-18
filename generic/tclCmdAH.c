@@ -2737,7 +2737,7 @@ EachloopCmd(
 		goto done;
 	    }
 	    /* Don't compute values here, wait until the last moment */
-	    statePtr->argcList[i] = Tcl_ObjTypeLength(statePtr->aCopyList[i]);
+	    statePtr->argcList[i] = ABSTRACTLIST_PROC(statePtr->aCopyList[i], lengthProc)(statePtr->aCopyList[i]);
 	} else {
 	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {

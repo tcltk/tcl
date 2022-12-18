@@ -4660,7 +4660,7 @@ TEBCresume(
 
 	/* special case for AbstractList */
 	if (ABSTRACTLIST_PROC(valuePtr,indexProc)) {
-	    length = Tcl_ObjTypeLength(valuePtr);
+	    length = ABSTRACTLIST_PROC(valuePtr, lengthProc)(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
@@ -4729,7 +4729,7 @@ TEBCresume(
 
 	/* special case for AbstractList */
 	if (ABSTRACTLIST_PROC(valuePtr,indexProc)) {
-	    length = Tcl_ObjTypeLength(valuePtr);
+	    length = ABSTRACTLIST_PROC(valuePtr, lengthProc)(valuePtr);
 
 	    /* Decode end-offset index values. */
 	    index = TclIndexDecode(opnd, length-1);

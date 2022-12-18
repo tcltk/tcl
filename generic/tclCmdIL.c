@@ -2216,7 +2216,7 @@ Tcl_JoinObjCmd(
      */
 
     if (ABSTRACTLIST_PROC(objv[1], getElementsProc)) {
-	listLen = Tcl_ObjTypeLength(objv[1]);
+	listLen = ABSTRACTLIST_PROC(objv[1], lengthProc)(objv[1]);
 	isAbstractList = (listLen ? 1 : 0);
 	if (listLen > 1 &&
 	    Tcl_ObjTypeGetElements(interp, objv[1], &listLen, &elemPtrs)

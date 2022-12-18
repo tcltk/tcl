@@ -2660,7 +2660,7 @@ TclLindexFlat(
 
     /* Handle AbstractList as special case */
     if (ABSTRACTLIST_PROC(listObj,indexProc)) {
-	Tcl_Size listLen = Tcl_ObjTypeLength(listObj);
+	Tcl_Size listLen = ABSTRACTLIST_PROC(listObj,lengthProc)(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = NULL;
 	for (i=0 ; i<indexCount && listObj ; i++) {
@@ -3331,7 +3331,7 @@ SetListFromAny(
     } else if (ABSTRACTLIST_PROC(objPtr,indexProc)) {
 	Tcl_Size elemCount, i;
 
-	elemCount = Tcl_ObjTypeLength(objPtr);
+	elemCount = ABSTRACTLIST_PROC(objPtr,lengthProc)(objPtr);
 
 	if (ListRepInitAttempt(interp, elemCount, NULL, &listRep) != TCL_OK) {
 	    return TCL_ERROR;
