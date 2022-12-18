@@ -122,8 +122,6 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  * is unregistered, so has no need of a setFromAnyProc either.
  */
 
-static size_t LengthOne(TCL_UNUSED(Tcl_Obj *)) {return 1;}
-
 static const Tcl_ObjType endOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
@@ -131,7 +129,8 @@ static const Tcl_ObjType endOffsetType = {
     NULL,				/* updateStringProc */
     NULL,				/* setFromAnyProc */
     TCL_OBJTYPE_V1(
-    LengthOne,
+    TclLengthOne,
+    NULL,
     NULL,
     NULL,
     NULL,
@@ -141,6 +140,13 @@ static const Tcl_ObjType endOffsetType = {
     NULL)
 };
 
+size_t
+TclLengthOne(
+    TCL_UNUSED(Tcl_Obj *))
+{
+    return 1;
+}
+
 /*
  *	*	STRING REPRESENTATION OF LISTS	*	*	*
  *

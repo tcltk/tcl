@@ -166,6 +166,7 @@ const Tcl_ObjType tclListType = {
     NULL,
     NULL,
     NULL,
+    NULL,
     NULL)
 };
 

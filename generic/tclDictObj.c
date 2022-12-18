@@ -152,6 +152,7 @@ const Tcl_ObjType tclDictType = {
     TCL_OBJTYPE_V1(		/* Extended type for AbstractLists */
     DictAsListLength,		/* return "list" length of dict value w/o
 				 * shimmering */
+    NULL,
     DictAsListIndex,		/* return key or value at "list" index
 				 * location.  (keysare at even indicies,
 				 * values at odd indicies) */

@@ -657,6 +657,7 @@ typedef struct Tcl_ObjType {
     /* List emulation functions - ObjType Version 1 */
     Tcl_ALLengthProc *lengthProc;	/* Return the [llength] of the
 					** AbstractList */
+    void *reserved;
     Tcl_ALIndexProc *indexProc;		/* Return a value (Tcl_Obj) for
 					** [lindex $al $index] */
     Tcl_ALSliceProc *sliceProc;		/* Return an AbstractList for
@@ -679,11 +680,12 @@ typedef struct Tcl_ObjType {
     NULL,		    \
     NULL,		    \
     NULL,		    \
+    NULL,		    \
     NULL
-#define TCL_OBJTYPE_CURRENT 1
-#define TCL_OBJTYPE_V1(a,b,c,d,e,f,g,h)          \
+#define TCL_OBJTYPE_CURRENT sizeof(Tcl_ObjType)
+#define TCL_OBJTYPE_V1(a,b,c,d,e,f,g,h,i)          \
 	TCL_OBJTYPE_CURRENT, \
-            a,b,c,d,e,f,g,h /* Tcl 9 - AbstractLists */
+            a,b,c,d,e,f,g,h,i /* Tcl 9 - AbstractLists */
 
 /*
  * The following structure stores an internal representation (internalrep) for

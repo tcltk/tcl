@@ -78,6 +78,7 @@ static Tcl_ObjType arithSeriesType = {
     NULL,			/* setFromAnyProc */
     TCL_OBJTYPE_V1(
     TclArithSeriesObjLength,
+    NULL,
     TclArithSeriesObjIndex,
     TclArithSeriesObjRange,
     TclArithSeriesObjReverse,

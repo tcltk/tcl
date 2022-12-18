@@ -66,6 +66,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	NULL,
 	TCL_OBJTYPE_V1(
 	my_LStringObjLength,
+	NULL,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
@@ -82,6 +83,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	NULL,
 	TCL_OBJTYPE_V1(
 	NULL, /*default my_LStringObjLength,*/
+	NULL,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
@@ -98,6 +100,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	NULL,
 	TCL_OBJTYPE_V1(
 	my_LStringObjLength,
+	NULL,
 	NULL, /*default my_LStringObjIndex,*/
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
@@ -115,6 +118,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	NULL,
 	TCL_OBJTYPE_V1(
 	my_LStringObjLength,
+	NULL,
 	my_LStringObjIndex,
 	NULL, /*default my_LStringObjRange,*/
 	my_LStringObjReverse,
@@ -131,6 +135,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	NULL,
 	TCL_OBJTYPE_V1(
 	my_LStringObjLength,
+	NULL,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	NULL, /*defaults my_LStringObjReverse,*/
@@ -147,6 +152,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	NULL,
 	TCL_OBJTYPE_V1(
 	my_LStringObjLength,
+	NULL,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
@@ -163,6 +169,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	NULL,
 	TCL_OBJTYPE_V1(
 	my_LStringObjLength,
+	NULL,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
@@ -179,6 +186,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	NULL,
 	TCL_OBJTYPE_V1(
 	my_LStringObjLength,
+	NULL,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
@@ -195,6 +203,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	NULL,
 	TCL_OBJTYPE_V1(
 	my_LStringObjLength,
+	NULL,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
@@ -211,6 +220,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	NULL,
 	TCL_OBJTYPE_V1(
 	my_LStringObjLength,
+	NULL,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
@@ -227,6 +237,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	NULL,
 	TCL_OBJTYPE_V1(
 	my_LStringObjLength,
+	NULL,
 	my_LStringObjIndex,
 	my_LStringObjRange,/*ObjRange*/
 	my_LStringObjReverse,
