@@ -1675,6 +1675,7 @@ Tcl_ListObjGetElements(
 	    return TCL_ERROR;
 	}
 	*objvPtr = objv;
+	return TCL_OK;
     }
     if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK)
 	return TCL_ERROR;
