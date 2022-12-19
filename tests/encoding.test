@@ -703,18 +703,18 @@ test encoding-24.28 {Parse invalid utf-8 with -strict} -body {
 test encoding-24.29 {Parse invalid utf-8} -body {
     encoding convertfrom utf-8 \xEF\xBF\xBF
 } -result \uFFFF
-test encoding-24.30 {Parse invalid utf-8 with -strict} -body {
+test encoding-24.30 {Parse noncharacter with -strict} -body {
     encoding convertfrom -strict utf-8 \xEF\xBF\xBF
-} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xEF'}
+} -result \uFFFF
 test encoding-24.31 {Parse invalid utf-8 with -nocomplain} -body {
     encoding convertfrom -nocomplain utf-8 \xEF\xBF\xBF
 } -result \uFFFF
 test encoding-24.32 {Try to generate invalid utf-8} -body {
     encoding convertto utf-8 \uFFFF
 } -result \xEF\xBF\xBF
-test encoding-24.33 {Try to generate invalid utf-8 with -strict} -body {
+test encoding-24.33 {Try to generate noncharacter with -strict} -body {
     encoding convertto -strict utf-8 \uFFFF
-} -returnCodes 1 -result {unexpected character at index 0: 'U+00FFFF'}
+} -result \xEF\xBF\xBF
 test encoding-24.34 {Try to generate invalid utf-8 with -nocomplain} -body {
     encoding convertto -nocomplain utf-8 \uFFFF
 } -result \xEF\xBF\xBF
