@@ -9198,6 +9198,84 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -
     removeFile io-75.13
 } -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
+# Testcase for Rolf's use-case (detecting Invalid byte sequence, but allowing noncharacter)
+test io-75.14 {How to use -strict, but allow non-characters} -setup {
+    set fn [makeFile {} io-75.14]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # Noncharacter followed by a single 
+    puts -nonewline $f pre\xEF\xBF\xBE\x81post
+    flush $f
+    seek $f 0
+    fconfigure stdout -nocomplainencoding 1
+    catch {fconfigure $f -nocomplainencoding 0};# Only needed on Tcl 9
+    fconfigure $f -encoding utf-8 -buffering none -translation lf -strictencoding 1
+} -body {
+    set hd {}
+    catch {
+    while {![eof $f]} {
+	if {[catch {
+	    append hd [read $f]
+	}]} {
+	    fconfigure $f -nocomplainencoding 1 -strictencoding 0
+	    set char [read $f 1]
+	    if {[string is unicode $char]} {
+		error "InvalidByteSequence"
+	    } elseif {$char >= "\uD800" && $char < "\uE000"} {
+		error "Surrogate"
+	    } else {
+		append hd $char
+	    }
+	    catch {fconfigure $f -nocomplainencoding 0};# Only needed on Tcl 9
+	    fconfigure $f -strictencoding 1 -encoding utf-8
+	}
+	}
+	} msg
+    close $f
+    append hd +$msg
+} -cleanup {
+    removeFile io-75.14
+} -result "pre\uFFFE+InvalidByteSequence"
+
+# Testcase for Rolf's use-case (detecting Surrogate, but allowing noncharacter)
+test io-75.15 {How to use -strict, but allow non-characters} -setup {
+    set fn [makeFile {} io-75.14]
+    set f [open $fn w+]
+    fconfigure $f -encoding utf-8 -nocomplainencoding 1
+    # Noncharacter followed by a single 
+    puts -nonewline $f pre\uFFFE\uD800post
+    flush $f
+    seek $f 0
+    fconfigure stdout -nocomplainencoding 1
+    catch {fconfigure $f -nocomplainencoding 0};# Only needed on Tcl 9
+    fconfigure $f -buffering none -translation lf -strictencoding 1
+} -body {
+    set hd {}
+    catch {
+    while {![eof $f]} {
+	if {[catch {
+	    append hd [read $f]
+	}]} {
+	    fconfigure $f -nocomplainencoding 1 -strictencoding 0
+	    set char [read $f 1]
+	    if {[string is unicode $char]} {
+		error "Invalid Byte Sequence"
+	    } elseif {$char >= "\uD800" && $char < "\uE000"} {
+		error "Surrogate"
+	    } else {
+		append hd $char
+	    }
+	    catch {fconfigure $f -nocomplainencoding 0};# Only needed on Tcl 9
+	    fconfigure $f -strictencoding 1
+	}
+	}
+	} msg
+    close $f
+    append hd +$msg
+} -cleanup {
+    removeFile io-75.15
+} -result "pre\uFFFE+Surrogate"
+
 # ### ### ### ######### ######### #########
 
 
