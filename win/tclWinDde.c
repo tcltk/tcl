@@ -171,6 +171,14 @@ Dde_Init(
     Tcl_CreateExitHandler(DdeExitProc, NULL);
     return Tcl_PkgProvideEx(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION, NULL);
 }
+#if TCL_MAJOR_VERSION < 9
+int
+Tcldde_Init(
+    Tcl_Interp *interp)
+{
+    return Dde_Init(interp);
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -198,6 +206,14 @@ Dde_SafeInit(
     }
     return result;
 }
+#if TCL_MAJOR_VERSION < 9
+int
+Tcldde_SafeInit(
+    Tcl_Interp *interp)
+{
+    return Dde_SafeInit(interp);
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
