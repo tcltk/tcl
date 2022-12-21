@@ -225,8 +225,6 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * implementations.
  */
 
-static size_t LengthOne(TCL_UNUSED(Tcl_Obj *)) {return 1;}
-
 const TclObjTypeWithAbstractList tclBooleanType= {
     {"boolean",			/* name */
     NULL,			/* freeIntRepProc */
@@ -234,7 +232,7 @@ const TclObjTypeWithAbstractList tclBooleanType= {
     NULL,			/* updateStringProc */
     TclSetBooleanFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
-    LengthOne
+    TclLengthOne
     )}
 };
 const TclObjTypeWithAbstractList tclDoubleType= {
@@ -244,7 +242,7 @@ const TclObjTypeWithAbstractList tclDoubleType= {
     UpdateStringOfDouble,	/* updateStringProc */
     SetDoubleFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
-    LengthOne
+    TclLengthOne
     )}
 };
 const TclObjTypeWithAbstractList tclIntType = {
@@ -254,7 +252,7 @@ const TclObjTypeWithAbstractList tclIntType = {
     UpdateStringOfInt,		/* updateStringProc */
     SetIntFromAny,		/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
-    LengthOne
+    TclLengthOne
     )}
 };
 const TclObjTypeWithAbstractList tclBignumType = {
@@ -264,7 +262,7 @@ const TclObjTypeWithAbstractList tclBignumType = {
     UpdateStringOfBignum,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
     TCL_OBJTYPE_V0_1(
-    LengthOne
+    TclLengthOne
     )}
 };
 

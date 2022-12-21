@@ -7536,7 +7536,7 @@ Tcl_Eof(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
+    return (GotFlag(statePtr, CHANNEL_EOF) && !GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) ? 1 : 0;
 }
 
 /*
@@ -7810,7 +7810,7 @@ Tcl_BadChannelOption(
 {
     if (interp != NULL) {
 	const char *genericopt =
-		"blocking buffering buffersize encoding eofchar translation";
+		"blocking buffering buffersize encoding eofchar nocomplainencoding strictencoding translation";
 	const char **argv;
 	size_t argc, i;
 	Tcl_DString ds;
@@ -8207,7 +8207,7 @@ Tcl_SetChannelOption(
 	statePtr->inputEncodingFlags = TCL_ENCODING_START;
 	statePtr->outputEncodingState = NULL;
 	statePtr->outputEncodingFlags = TCL_ENCODING_START;
-	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
+	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	UpdateInterest(chanPtr);
 	return TCL_OK;
     } else if (HaveOpt(2, "-eofchar")) {
@@ -8255,6 +8255,7 @@ Tcl_SetChannelOption(
 	} else {
 	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
 	}
+	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	return TCL_OK;
     } else if (HaveOpt(1, "-strictencoding")) {
 	int newMode;
@@ -8267,6 +8268,7 @@ Tcl_SetChannelOption(
 	} else {
 	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
 	}
+	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {
 	const char *readMode, *writeMode;

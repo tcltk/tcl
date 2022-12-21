@@ -2641,7 +2641,7 @@ TclLindexFlat(
 
     /* Handle ArithSeries as special case */
     if (TclHasInternalRep(listObj,&tclArithSeriesType.objType)) {
-	Tcl_Size listLen = TclArithSeriesObjLength(listObj);
+	Tcl_Size listLen = ABSTRACTLIST_PROC(listObj, lengthProc)(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = NULL;
 	for (i=0 ; i<indexCount && listObj ; i++) {
@@ -2649,7 +2649,7 @@ TclLindexFlat(
 				   &index) == TCL_OK) {
 	    }
 	    if (i==0) {
-		TclArithSeriesObjIndex(listObj, index, &elemObj);
+		elemObj = TclArithSeriesObjIndex(NULL, listObj, index);
 	    } else if (index > 0) {
 		/* ArithSeries cannot be a list of lists */
 		Tcl_DecrRefCount(elemObj);
@@ -3294,7 +3294,7 @@ SetListFromAny(
 	 * because it can be done an order of magnitude faster
 	 * and may occur frequently.
 	 */
-	Tcl_Size j, size = TclArithSeriesObjLength(objPtr);
+	Tcl_Size j, size = ABSTRACTLIST_PROC(objPtr, lengthProc)(objPtr);
 
 	/* TODO - leave space in front and/or back? */
 	if (ListRepInitAttempt(
@@ -3310,7 +3310,8 @@ SetListFromAny(
 	listRep.storePtr->numUsed = size;
 	elemPtrs = listRep.storePtr->slots;
 	for (j = 0; j < size; j++) {
-	    if (TclArithSeriesObjIndex(objPtr, j, &elemPtrs[j]) != TCL_OK) {
+	    elemPtrs[j] = TclArithSeriesObjIndex(interp, objPtr, j);
+	    if (elemPtrs[j] == NULL) {
 		return TCL_ERROR;
 	    }
 	}

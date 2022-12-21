@@ -233,6 +233,9 @@ AC_REPLACE_FUNCS(mkstemp opendir strtol waitpid)
 AC_CHECK_FUNC(strerror, , [AC_DEFINE(NO_STRERROR, 1, [Do we have strerror()])])
 AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD, 1, [Do we have getwd()])])
 AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3, 1, [Do we have wait3()])])
+AC_CHECK_FUNC(fork, , [AC_DEFINE(NO_FORK, 1, [Do we have fork()])])
+AC_CHECK_FUNC(mknod, , [AC_DEFINE(NO_MKNOD, 1, [Do we have mknod()])])
+AC_CHECK_FUNC(tcdrain, , [AC_DEFINE(NO_TCDRAIN, 1, [Do we have tcdrain()])])
 AC_CHECK_FUNC(uname, , [AC_DEFINE(NO_UNAME, 1, [Do we have uname()])])
 
 if test "`uname -s`" = "Darwin" && \
