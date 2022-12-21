@@ -35,10 +35,8 @@ typedef struct {
 
 MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjCopy(Tcl_Interp *interp,
 			    Tcl_Obj *arithSeriesPtr);
-MODULE_SCOPE int	TclArithSeriesObjStep(Tcl_Obj *arithSeriesPtr,
-			    Tcl_Obj **stepObj);
-MODULE_SCOPE int	TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr,
-			    Tcl_WideInt index, Tcl_Obj **elementObj);
+MODULE_SCOPE  Tcl_Obj *TclArithSeriesObjIndex(Tcl_Interp *, Tcl_Obj *,
+			    Tcl_Size index);
 MODULE_SCOPE Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjRange(Tcl_Interp *interp,
 			    Tcl_Obj *arithSeriesPtr, Tcl_Size fromIdx, Tcl_Size toIdx);
