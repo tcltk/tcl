@@ -738,52 +738,6 @@ typedef struct Tcl_Obj {
     Tcl_ObjInternalRep internalRep;	/* The internal representation: */
 } Tcl_Obj;
 
-
-/*
- * Abstract List
- *
- *  This structure provides the functions used in List operations to emulate a
- *  List for AbstractList types.
- */
-
-
-#define Tcl_ObjTypeIndex(interp, objPtr, index, elemObjPtr) \
-    (objPtr)->typePtr->indexProc((interp),(objPtr),(index),(elemObjPtr))
-#define Tcl_ObjTypeSlice(interp, objPtr, fromIdx, toIdx, newObjPtr) \
-    (objPtr)->typePtr->sliceProc((interp),(objPtr),(fromIdx),(toIdx),(newObjPtr))
-#define Tcl_ObjTypeReverse(interp, objPtr, newObjPtr) \
-    (objPtr)->typePtr->reverseProc((interp),(objPtr),(newObjPtr))
-#define Tcl_ObjTypeGetElements(interp, objPtr, objCPtr, objVPtr) \
-    (objPtr)->typePtr->getElementsProc((interp),(objPtr),(objCPtr),(objVPtr))
-#define Tcl_ObjTypeSetElement(interp, objPtr, indexCount, indexArray, valueObj) \
-    (objPtr)->typePtr->setElementProc((interp), (objPtr), (indexCount), (indexArray), (valueObj))
-#define Tcl_ObjTypeReplace(interp, objPtr, first, numToDelete, numToInsert, insertObjs) \
-    (objPtr)->typePtr->replaceProc((interp), (objPtr), (first), (numToDelete), (numToInsert), (insertObjs))
-
-
-/*
- * Sets the storage used by the concrete abstract list type
- * Caller has to ensure type is AbstractList. Existing rep will be
- * overwritten so caller has to free previous rep if necessary.
- */
-static inline void Tcl_ObjSetConcreteRep(
-    Tcl_Obj *objPtr,    /* Object of type AbstractList */
-    void *repPtr)       /* New representation */
-{
-    /*  assert(objPtr->typePtr == &tclAbstractListType); */
-    objPtr->internalRep.twoPtrValue.ptr1 = repPtr;
-}
-
-/*
- * Return the internal rep for the Obj.
- * Note: Caller is responsible for confirming and casting returned value.
- */
-static inline void* Tcl_ObjGetConcreteRep(
-    Tcl_Obj *objPtr)         /* Object of type AbstractList */
-{
-    return objPtr->internalRep.twoPtrValue.ptr1;
-}
-
 /*
  *----------------------------------------------------------------------------
  * The following definitions support Tcl's namespace facility. Note: the first

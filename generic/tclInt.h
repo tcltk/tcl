@@ -1098,6 +1098,42 @@ typedef struct ActiveInterpTrace {
 
 MODULE_SCOPE size_t TclLengthOne(Tcl_Obj *);
 
+
+/*
+ * Abstract List
+ *
+ *  This structure provides the functions used in List operations to emulate a
+ *  List for AbstractList types.
+ */
+
+
+#define Tcl_ObjTypeLength(objPtr) (objPtr)->typePtr->lengthProc(objPtr)
+#define Tcl_ObjTypeIndex(interp, objPtr, index, elemObjPtr) \
+    (objPtr)->typePtr->indexProc((interp),(objPtr),(index),(elemObjPtr))
+#define Tcl_ObjTypeSlice(interp, objPtr, fromIdx, toIdx, newObjPtr) \
+    (objPtr)->typePtr->sliceProc((interp),(objPtr),(fromIdx),(toIdx),(newObjPtr))
+#define Tcl_ObjTypeReverse(interp, objPtr, newObjPtr) \
+    (objPtr)->typePtr->reverseProc((interp),(objPtr),(newObjPtr))
+#define Tcl_ObjTypeGetElements(interp, objPtr, objCPtr, objVPtr) \
+    (objPtr)->typePtr->getElementsProc((interp),(objPtr),(objCPtr),(objVPtr))
+#define Tcl_ObjTypeSetElement(interp, objPtr, indexCount, indexArray, valueObj) \
+    (objPtr)->typePtr->setElementProc((interp), (objPtr), (indexCount), (indexArray), (valueObj))
+#define Tcl_ObjTypeReplace(interp, objPtr, first, numToDelete, numToInsert, insertObjs) \
+    (objPtr)->typePtr->replaceProc((interp), (objPtr), (first), (numToDelete), (numToInsert), (insertObjs))
+#define Tcl_ObjTypeGetDouble(interp, objPtr, doublePtr) \
+    (objPtr)->typePtr->getDoubleProc((interp), (objPtr), (doublePtr))
+
+
+/*
+ * Return the internal rep for the Obj.
+ * Note: Caller is responsible for confirming and casting returned value.
+ */
+static inline void* Tcl_ObjGetConcreteRep(
+    Tcl_Obj *objPtr)         /* Object of type AbstractList */
+{
+    return objPtr->internalRep.twoPtrValue.ptr1;
+}
+
 /*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function
@@ -3264,6 +3300,9 @@ MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp,
 			    Tcl_Obj* pathPtr);
+MODULE_SCOPE int	TclNewArithSeriesObj(Tcl_Interp *interp, Tcl_Obj **arithSeriesPtr,
+                            int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj,
+                            Tcl_Obj *stepObj, Tcl_Obj *lenObj);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    size_t len);
 MODULE_SCOPE void	TclpAlertNotifier(void *clientData);

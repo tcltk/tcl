@@ -58,193 +58,192 @@ typedef struct LString {
  * AbstractList definition of an lstring type
  */
 static const Tcl_ObjType lstringTypes[11] = {
-    {
+    {/*0*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1(
-	my_LStringObjLength,
-	NULL,
-	my_LStringObjIndex,
-	my_LStringObjRange,/*ObjRange*/
-	my_LStringObjReverse,
-	my_LStringGetElements,
-	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace,
-	NULL)
+	    my_LStringObjLength,   /* Length */
+	    NULL,                  /* RESERVED */
+	    my_LStringObjIndex,    /* Index */
+	    my_LStringObjRange,    /* Slice */
+	    my_LStringObjReverse,  /* Reverse */
+	    my_LStringGetElements, /* GetElements */
+	    my_LStringObjSetElem,  /* SetElement */
+	    my_LStringReplace,     /* Replace */
+	    NULL)                  /* getDouble */
     },
-    {
+    {/*1*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1(
-	NULL, /*default my_LStringObjLength,*/
-	NULL,
-	my_LStringObjIndex,
-	my_LStringObjRange,/*ObjRange*/
-	my_LStringObjReverse,
-	my_LStringGetElements,
-	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace,
-	NULL)
+	    NULL,   /* Length */
+	    NULL,                  /* RESERVED */
+	    my_LStringObjIndex,    /* Index */
+	    my_LStringObjRange,    /* Slice */
+	    my_LStringObjReverse,  /* Reverse */
+	    my_LStringGetElements, /* GetElements */
+	    my_LStringObjSetElem,  /* SetElement */
+	    my_LStringReplace,     /* Replace */
+	    NULL)                  /* getDouble */
     },
-    {
+    {/*2*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1(
-	my_LStringObjLength,
-	NULL,
-	NULL, /*default my_LStringObjIndex,*/
-	my_LStringObjRange,/*ObjRange*/
-	my_LStringObjReverse,
-	my_LStringGetElements,
-
-	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace,
-	NULL)
+	    my_LStringObjLength,   /* Length */
+	    NULL,                  /* RESERVED */
+	    NULL,                  /* Index */
+	    my_LStringObjRange,    /* Slice */
+	    my_LStringObjReverse,  /* Reverse */
+	    my_LStringGetElements, /* GetElements */
+	    my_LStringObjSetElem,  /* SetElement */
+	    my_LStringReplace,     /* Replace */
+	    NULL)                  /* getDouble */
     },
-    {
+    {/*3*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1(
-	my_LStringObjLength,
-	NULL,
-	my_LStringObjIndex,
-	NULL, /*default my_LStringObjRange,*/
-	my_LStringObjReverse,
-	my_LStringGetElements,
-	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace,
-	NULL)
+	    my_LStringObjLength,   /* Length */
+	    NULL,                  /* RESERVED */
+	    my_LStringObjIndex,    /* Index */
+	    NULL,                  /* Slice */
+	    my_LStringObjReverse,  /* Reverse */
+	    my_LStringGetElements, /* GetElements */
+	    my_LStringObjSetElem,  /* SetElement */
+	    my_LStringReplace,     /* Replace */
+	    NULL)                  /* getDouble */
     },
-    {
+    {/*4*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1(
-	my_LStringObjLength,
-	NULL,
-	my_LStringObjIndex,
-	my_LStringObjRange,/*ObjRange*/
-	NULL, /*defaults my_LStringObjReverse,*/
-	my_LStringGetElements,
-	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace,
-	NULL)
+	    my_LStringObjLength,   /* Length */
+	    NULL,                  /* RESERVED */
+	    my_LStringObjIndex,    /* Index */
+	    my_LStringObjRange,    /* Slice */
+	    NULL,                  /* Reverse */
+	    my_LStringGetElements, /* GetElements */
+	    my_LStringObjSetElem,  /* SetElement */
+	    my_LStringReplace,     /* Replace */
+	    NULL)                  /* getDouble */
     },
-    {
+    {/*5*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1(
-	my_LStringObjLength,
-	NULL,
-	my_LStringObjIndex,
-	my_LStringObjRange,/*ObjRange*/
-	my_LStringObjReverse,
-	NULL, /*default NULL / *my_LStringGetElements,*/
-	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace,
-	NULL)
+	    my_LStringObjLength,   /* Length */
+	    NULL,                  /* RESERVED */
+	    my_LStringObjIndex,    /* Index */
+	    my_LStringObjRange,    /* Slice */
+	    my_LStringObjReverse,  /* Reverse */
+	    NULL,                  /* GetElements */
+	    my_LStringObjSetElem,  /* SetElement */
+	    my_LStringReplace,     /* Replace */
+	    NULL)                  /* getDouble */
     },
-    {
+    {/*6*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1(
-	my_LStringObjLength,
-	NULL,
-	my_LStringObjIndex,
-	my_LStringObjRange,/*ObjRange*/
-	my_LStringObjReverse,
-	my_LStringGetElements,
-	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace,
-	NULL)
+	    my_LStringObjLength,   /* Length */
+	    NULL,                  /* RESERVED */
+	    my_LStringObjIndex,    /* Index */
+	    my_LStringObjRange,    /* Slice */
+	    my_LStringObjReverse,  /* Reverse */
+	    my_LStringGetElements, /* GetElements */
+	    NULL,                  /* SetElement */
+	    my_LStringReplace,     /* Replace */
+	    NULL)                  /* getDouble */
     },
-    {
+    {/*7*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1(
-	my_LStringObjLength,
-	NULL,
-	my_LStringObjIndex,
-	my_LStringObjRange,/*ObjRange*/
-	my_LStringObjReverse,
-	my_LStringGetElements,
-	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace,
-	NULL)
+	    my_LStringObjLength,   /* Length */
+	    NULL,                  /* RESERVED */
+	    my_LStringObjIndex,    /* Index */
+	    my_LStringObjRange,    /* Slice */
+	    my_LStringObjReverse,  /* Reverse */
+	    my_LStringGetElements, /* GetElements */
+	    my_LStringObjSetElem,  /* SetElement */
+	    NULL,                  /* Replace */
+	    NULL)                  /* getDouble */
     },
-    {
+    {/*8*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1(
-	my_LStringObjLength,
-	NULL,
-	my_LStringObjIndex,
-	my_LStringObjRange,/*ObjRange*/
-	my_LStringObjReverse,
-	my_LStringGetElements,
-	NULL, /*default my_LStringObjSetElem, / * use default update string */
-	NULL, /*default my_LStringReplace*/
-	NULL)
+	    my_LStringObjLength,   /* Length */
+	    NULL,                  /* RESERVED */
+	    my_LStringObjIndex,    /* Index */
+	    my_LStringObjRange,    /* Slice */
+	    my_LStringObjReverse,  /* Reverse */
+	    my_LStringGetElements, /* GetElements */
+	    my_LStringObjSetElem,  /* SetElement */
+	    my_LStringReplace,     /* Replace */
+	    NULL)                  /* getDouble */
     },
-    {
+    {/*9*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1(
-	my_LStringObjLength,
-	NULL,
-	my_LStringObjIndex,
-	my_LStringObjRange,/*ObjRange*/
-	my_LStringObjReverse,
-	my_LStringGetElements,
-	my_LStringObjSetElem, /* use default update string */
-	NULL, /*default my_LStringReplace*/
-	NULL)
+	    my_LStringObjLength,   /* Length */
+	    NULL,                  /* RESERVED */
+	    my_LStringObjIndex,    /* Index */
+	    my_LStringObjRange,    /* Slice */
+	    my_LStringObjReverse,  /* Reverse */
+	    my_LStringGetElements, /* GetElements */
+	    my_LStringObjSetElem,  /* SetElement */
+	    my_LStringReplace,     /* Replace */
+	    NULL)                  /* getDouble */
     },
-    {
+    {/*10*/
 	"lstring",
 	freeRep,
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
 	TCL_OBJTYPE_V1(
-	my_LStringObjLength,
-	NULL,
-	my_LStringObjIndex,
-	my_LStringObjRange,/*ObjRange*/
-	my_LStringObjReverse,
-	my_LStringGetElements,
-	my_LStringObjSetElem, /* use default update string */
-	my_LStringReplace,
-	NULL)
+	    my_LStringObjLength,   /* Length */
+	    NULL,                  /* RESERVED */
+	    my_LStringObjIndex,    /* Index */
+	    my_LStringObjRange,    /* Slice */
+	    my_LStringObjReverse,  /* Reverse */
+	    my_LStringGetElements, /* GetElements */
+	    my_LStringObjSetElem,  /* SetElement */
+	    my_LStringReplace,     /* Replace */
+	    NULL)                  /* getDouble */
     }
 };
 
@@ -344,8 +343,10 @@ DupLStringRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
   copyLString->string = (char*)Tcl_Alloc(srcLString->allocated);
   strcpy(copyLString->string, srcLString->string);
   copyLString->elements = NULL;
-  Tcl_ObjSetConcreteRep(copyPtr,copyLString);
-  copyPtr->typePtr = srcPtr->typePtr;
+  Tcl_ObjInternalRep itr;
+  itr.twoPtrValue.ptr1 = copyLString;
+  itr.twoPtrValue.ptr2 = NULL;
+  Tcl_StoreInternalRep(copyPtr, srcPtr->typePtr, &itr);
 
   return;
 }
@@ -459,8 +460,10 @@ static int my_LStringObjRange(
 	rangeRep->string[len] = 0;
 	rangeRep->elements = NULL;
 	rangeObj = Tcl_NewObj();
-	rangeObj->typePtr = lstringObj->typePtr;
-	Tcl_ObjSetConcreteRep(rangeObj, rangeRep);
+	Tcl_ObjInternalRep itr;
+	itr.twoPtrValue.ptr1 = rangeRep;
+	itr.twoPtrValue.ptr2 = NULL;
+	Tcl_StoreInternalRep(rangeObj, lstringObj->typePtr, &itr);
 	if (rangeRep->strlen > 0) {
 	    Tcl_InvalidateStringRep(rangeObj);
 	} else {
@@ -511,8 +514,9 @@ my_LStringObjReverse(Tcl_Interp *interp, Tcl_Obj *srcObj, Tcl_Obj **newObjPtr)
 	*dstp-- = *srcp++;
     }
     revObj = Tcl_NewObj();
+    itr.twoPtrValue.ptr1 = revRep;
+    itr.twoPtrValue.ptr2 = NULL;
     Tcl_StoreInternalRep(revObj, srcObj->typePtr, &itr);
-    Tcl_ObjSetConcreteRep(revObj, revRep);
     if (revRep->strlen > 0) {
 	Tcl_InvalidateStringRep(revObj);
     } else {
@@ -710,10 +714,9 @@ my_NewLStringObj(
     strcpy(lstringRepPtr->string, string);
     lstringRepPtr->elements = NULL;
     lstringPtr = Tcl_NewObj();
-    itr.twoPtrValue.ptr1 = NULL;
+    itr.twoPtrValue.ptr1 = lstringRepPtr;
     itr.twoPtrValue.ptr2 = NULL;
     Tcl_StoreInternalRep(lstringPtr, lstringTypePtr, &itr);
-    Tcl_ObjSetConcreteRep(lstringPtr, lstringRepPtr);
     if (lstringRepPtr->strlen > 0) {
 	Tcl_InvalidateStringRep(lstringPtr);
     } else {
@@ -755,7 +758,7 @@ freeRep(Tcl_Obj* lstringObj)
 	lstringRepPtr->elements = NULL;
     }
     Tcl_Free((char*)lstringRepPtr);
-    Tcl_ObjSetConcreteRep(lstringObj, NULL);
+    lstringObj->internalRep.twoPtrValue.ptr1 = NULL;
 }
 
 /*
