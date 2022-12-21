@@ -2649,7 +2649,7 @@ TclLindexFlat(
 				   &index) == TCL_OK) {
 	    }
 	    if (i==0) {
-		TclArithSeriesObjIndex(listObj, index, &elemObj);
+		elemObj = TclArithSeriesObjIndex(NULL, listObj, index);
 	    } else if (index > 0) {
 		/* ArithSeries cannot be a list of lists */
 		Tcl_DecrRefCount(elemObj);
@@ -3310,7 +3310,8 @@ SetListFromAny(
 	listRep.storePtr->numUsed = size;
 	elemPtrs = listRep.storePtr->slots;
 	for (j = 0; j < size; j++) {
-	    if (TclArithSeriesObjIndex(objPtr, j, &elemPtrs[j]) != TCL_OK) {
+	    elemPtrs[j] = TclArithSeriesObjIndex(interp, objPtr, j);
+	    if (elemPtrs[j] == NULL) {
 		return TCL_ERROR;
 	    }
 	}
