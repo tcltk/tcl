@@ -117,7 +117,7 @@ ArithSeriesLen(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step)
 /*
  *----------------------------------------------------------------------
  *
- * TclNewArithSeriesInt --
+ * NewArithSeriesInt --
  *
  *	Creates a new ArithSeries object. The returned object has
  *	refcount = 0.
@@ -132,8 +132,9 @@ ArithSeriesLen(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step)
  * 	None.
  *----------------------------------------------------------------------
  */
+static
 Tcl_Obj *
-TclNewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_WideInt len)
+NewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_WideInt len)
 {
     Tcl_WideInt length = (len>=0 ? len : ArithSeriesLen(start, end, step));
     Tcl_Obj *arithSeriesObj;
@@ -164,7 +165,7 @@ TclNewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_W
 /*
  *----------------------------------------------------------------------
  *
- * TclNewArithSeriesDbl --
+ * NewArithSeriesDbl --
  *
  *	Creates a new ArithSeries object with doubles. The returned object has
  *	refcount = 0.
@@ -179,8 +180,9 @@ TclNewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_W
  * 	None.
  *----------------------------------------------------------------------
  */
+static
 Tcl_Obj *
-TclNewArithSeriesDbl(double start, double end, double step, Tcl_WideInt len)
+NewArithSeriesDbl(double start, double end, double step, Tcl_WideInt len)
 {
     Tcl_WideInt length = (len>=0 ? len : ArithSeriesLen(start, end, step));
     Tcl_Obj *arithSeriesObj;
@@ -357,8 +359,8 @@ TclNewArithSeriesObj(
 
     if (arithSeriesObj) {
 	*arithSeriesObj = (useDoubles)
-	    ? TclNewArithSeriesDbl(dstart, dend, dstep, len)
-	    : TclNewArithSeriesInt(start, end, step, len);
+	    ? NewArithSeriesDbl(dstart, dend, dstep, len)
+	    : NewArithSeriesInt(start, end, step, len);
     }
     return TCL_OK;
 }

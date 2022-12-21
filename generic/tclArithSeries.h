@@ -44,11 +44,6 @@ MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjReverse(Tcl_Interp *interp,
 			    Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE int	TclArithSeriesGetElements(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Size *objcPtr, Tcl_Obj ***objvPtr);
-MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesInt(Tcl_WideInt start,
-			    Tcl_WideInt end, Tcl_WideInt step,
-			    Tcl_WideInt len);
-MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesDbl(double start, double end,
-			    double step, Tcl_WideInt len);
 MODULE_SCOPE int 	TclNewArithSeriesObj(Tcl_Interp *interp,
 			    Tcl_Obj **arithSeriesObj, int useDoubles,
 			    Tcl_Obj *startObj, Tcl_Obj *endObj,
