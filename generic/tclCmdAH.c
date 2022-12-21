@@ -2875,7 +2875,8 @@ ForeachAssignments(
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
 		if (isarithseries) {
-		    if (TclArithSeriesObjIndex(statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
+		    valuePtr = TclArithSeriesObjIndex(interp, statePtr->aCopyList[i], k);
+		    if (valuePtr == NULL) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (setting %s loop variable \"%s\")",
 			(statePtr->resultList != NULL ? "lmap" : "foreach"),

@@ -2232,8 +2232,8 @@ Tcl_JoinObjCmd(
     if (listLen == 1) {
 	/* One element; return it */
 	if (isArithSeries) {
-	    Tcl_Obj *valueObj;
-	    if (TclArithSeriesObjIndex(objv[1], 0, &valueObj) != TCL_OK) {
+	    Tcl_Obj *valueObj = TclArithSeriesObjIndex(interp, objv[1], 0);
+	    if (valueObj == NULL) {
 		return TCL_ERROR;
 	    }
 	    Tcl_SetObjResult(interp, valueObj);
@@ -2267,7 +2267,8 @@ Tcl_JoinObjCmd(
 
 		    Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
 		}
-		if (TclArithSeriesObjIndex(objv[1], i, &valueObj) != TCL_OK) {
+		valueObj = TclArithSeriesObjIndex(interp, objv[1], i);
+		if (valueObj == NULL) {
 		    return TCL_ERROR;
 		}
 		Tcl_AppendObjToObj(resObjPtr, valueObj);

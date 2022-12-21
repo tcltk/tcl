@@ -144,7 +144,7 @@ DLLEXPORT int		Registry_Unload(Tcl_Interp *interp, int flags);
 #if TCL_MAJOR_VERSION < 9
 /* With those additional entries, "load registry13.dll" works without 3th argument */
 DLLEXPORT int		Tclregistry_Init(Tcl_Interp *interp);
-DLLEXPORT int		Tclregistry_SafeInit(Tcl_Interp *interp);
+DLLEXPORT int		Tclregistry_Unload(Tcl_Interp *interp, int flags);
 #endif
 #ifdef __cplusplus
 }
