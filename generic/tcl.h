@@ -464,20 +464,19 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #   endif /* _MSC_VER < 1400 */
 #elif 0
     typedef struct {
-	dev_t st_dev;
+	unsigned st_dev;
 	unsigned short st_ino;
 	unsigned short st_mode;
 	short st_nlink;
 	short st_uid;
 	short st_gid;
 	/* Here is a 2-byte gap */
-	dev_t st_rdev;
+	unsigned st_rdev;
 	/* Here is a 4-byte gap */
 	long long st_size;
 	struct {long tv_sec;} st_atim;
 	struct {long tv_sec;} st_mtim;
 	struct {long tv_sec;} st_ctim;
-	/* Here is a 4-byte gap */
     } Tcl_StatBuf;
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;

@@ -5731,7 +5731,7 @@ fi
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	CYGWIN_*|MINGW32_*|MSYS_*)
-	    SHLIB_CFLAGS=""
+	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
 	    DL_OBJS="tclLoadDl.o"
@@ -5778,35 +5778,7 @@ printf "%s\n" "$ac_cv_cygwin" >&6; }
 	    if test "$ac_cv_cygwin" = "no"; then
 		as_fn_error $? "${CC} is not a cygwin compiler." "$LINENO" 5
 	    fi
-	    if test "x${TCL_THREADS}" = "x0"; then
-		as_fn_error $? "CYGWIN compile is only supported with --enable-threads" "$LINENO" 5
-	    fi
-	    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether CYGWIN platform is 64-bit" >&5
-printf %s "checking whether CYGWIN platform is 64-bit... " >&6; }
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <stdint.h>
-			#if INTPTR_MAX == INT64_MAX
-			    #error 64-bit platform
-			#endif
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  do64bit_ok=no
-else $as_nop
-  do64bit_ok=yes
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $do64bit_ok" >&5
-printf "%s\n" "$do64bit_ok" >&6; }
+	    do64bit_ok=yes
 	    ;;
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
@@ -6148,7 +6120,7 @@ fi
 fi
 	    ;;
 	Linux*|GNU*|NetBSD-Debian|DragonFly-*|FreeBSD-*)
-	    SHLIB_CFLAGS="-fPIC"
+	    SHLIB_CFLAGS="-fPIC -fno-common"
 	    SHLIB_SUFFIX=".so"
 
 	    CFLAGS_OPTIMIZE="-O2"
@@ -6333,7 +6305,7 @@ then :
 		# The -pthread needs to go in the CFLAGS, not LIBS
 		LIBS=`echo $LIBS | sed s/-pthread//`
 		CFLAGS="$CFLAGS -pthread"
-	    	LDFLAGS="$LDFLAGS -pthread"
+		LDFLAGS="$LDFLAGS -pthread"
 
 fi
 	    ;;
@@ -6832,13 +6804,13 @@ fi
 	    if test "$GCC" = yes
 then :
 
-	    	SHLIB_CFLAGS="-fPIC -melf"
-	    	LDFLAGS="$LDFLAGS -melf -Wl,-Bexport"
+		SHLIB_CFLAGS="-fPIC -melf"
+		LDFLAGS="$LDFLAGS -melf -Wl,-Bexport"
 
 else $as_nop
 
-	    	SHLIB_CFLAGS="-Kpic -belf"
-	    	LDFLAGS="$LDFLAGS -belf -Wl,-Bexport"
+		SHLIB_CFLAGS="-Kpic -belf"
+		LDFLAGS="$LDFLAGS -belf -Wl,-Bexport"
 
 fi
 	    SHLIB_LD="ld -G"
@@ -7302,11 +7274,11 @@ then :
 fi
 
 
-	# See if the compiler supports casting to a union type.
-	# This is used to stop gcc from printing a compiler
-	# warning when initializing a union member.
+    # See if the compiler supports casting to a union type.
+    # This is used to stop gcc from printing a compiler
+    # warning when initializing a union member.
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for cast to union support" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for cast to union support" >&5
 printf %s "checking for cast to union support... " >&6; }
 if test ${tcl_cv_cast_to_union+y}
 then :
@@ -7319,8 +7291,8 @@ int
 main (void)
 {
 
-		  union foo { int i; double d; };
-		  union foo f = (union foo) (int) 0;
+		union foo { int i; double d; };
+		union foo f = (union foo) (int) 0;
 
   ;
   return 0;
@@ -7337,13 +7309,13 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cast_to_union" >&5
 printf "%s\n" "$tcl_cv_cast_to_union" >&6; }
-	if test "$tcl_cv_cast_to_union" = "yes"; then
+    if test "$tcl_cv_cast_to_union" = "yes"; then
 
 printf "%s\n" "#define HAVE_CAST_TO_UNION 1" >>confdefs.h
 
-	fi
-	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for working -fno-lto" >&5
+    fi
+    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for working -fno-lto" >&5
 printf %s "checking for working -fno-lto... " >&6; }
 if test ${ac_cv_nolto+y}
 then :
@@ -7371,12 +7343,12 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_nolto" >&5
 printf "%s\n" "$ac_cv_nolto" >&6; }
-	CFLAGS=$hold_cflags
-	if test "$ac_cv_nolto" = "yes" ; then
-	    CFLAGS_NOLTO="-fno-lto"
-	else
-	    CFLAGS_NOLTO=""
-	fi
+    CFLAGS=$hold_cflags
+    if test "$ac_cv_nolto" = "yes" ; then
+	CFLAGS_NOLTO="-fno-lto"
+    else
+	CFLAGS_NOLTO=""
+    fi
 
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
@@ -8222,6 +8194,36 @@ then :
 else $as_nop
 
 printf "%s\n" "#define NO_WAIT3 1" >>confdefs.h
+
+fi
+
+ac_fn_c_check_func "$LINENO" "fork" "ac_cv_func_fork"
+if test "x$ac_cv_func_fork" = xyes
+then :
+
+else $as_nop
+
+printf "%s\n" "#define NO_FORK 1" >>confdefs.h
+
+fi
+
+ac_fn_c_check_func "$LINENO" "mknod" "ac_cv_func_mknod"
+if test "x$ac_cv_func_mknod" = xyes
+then :
+
+else $as_nop
+
+printf "%s\n" "#define NO_MKNOD 1" >>confdefs.h
+
+fi
+
+ac_fn_c_check_func "$LINENO" "tcdrain" "ac_cv_func_tcdrain"
+if test "x$ac_cv_func_tcdrain" = xyes
+then :
+
+else $as_nop
+
+printf "%s\n" "#define NO_TCDRAIN 1" >>confdefs.h
 
 fi
 
@@ -9292,14 +9294,6 @@ then :
 
 fi
 
-
-# Obsolete code to be removed.
-if test $ac_cv_header_sys_time_h = yes; then
-
-printf "%s\n" "#define TIME_WITH_SYS_TIME 1" >>confdefs.h
-
-fi
-# End of obsolete code.
 
 
     ac_fn_c_check_func "$LINENO" "gmtime_r" "ac_cv_func_gmtime_r"
