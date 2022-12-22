@@ -21,6 +21,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 testConstraint testchmod       [llength [info commands testchmod]]
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testvolumetype  [llength [info commands testvolumetype]]
+testConstraint cygwin [tcl::build-info cygwin]
 testConstraint time64bit [expr {
     $::tcl_platform(pointerSize) >= 8 ||
     [llength [info command testsize]] && [testsize st_mtime] >= 8
@@ -320,19 +321,19 @@ test cmdAH-8.13 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname /foo
 } /
-test cmdAH-8.14 {Tcl_FileObjCmd: dirname} testsetplatform {
+test cmdAH-8.14 {Tcl_FileObjCmd: dirname} {testsetplatform cygwin} {
     testsetplatform unix
     file dirname //foo
 } //foo
-test cmdAH-8.15 {Tcl_FileObjCmd: dirname} testsetplatform {
+test cmdAH-8.15 {Tcl_FileObjCmd: dirname} {testsetplatform cygwin} {
     testsetplatform unix
     file dirname //foo/bar
 } //foo
-test cmdAH-8.16 {Tcl_FileObjCmd: dirname} testsetplatform {
+test cmdAH-8.16 {Tcl_FileObjCmd: dirname} {testsetplatform cygwin} {
     testsetplatform unix
     file dirname {//foo\/bar/baz}
 } {//foo\/bar}
-test cmdAH-8.17 {Tcl_FileObjCmd: dirname} testsetplatform {
+test cmdAH-8.17 {Tcl_FileObjCmd: dirname} {testsetplatform cygwin} {
     testsetplatform unix
     file dirname {//foo\/bar/baz/blat}
 } {//foo\/bar/baz}
@@ -464,7 +465,7 @@ test cmdAH-9.13 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail /foo
 } foo
-test cmdAH-9.14 {Tcl_FileObjCmd: tail} testsetplatform {
+test cmdAH-9.14 {Tcl_FileObjCmd: tail} {testsetplatform cygwin} {
     testsetplatform unix
     file tail //foo
 } {}

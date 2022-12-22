@@ -22,6 +22,7 @@ testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testtranslatefilename [llength [info commands testtranslatefilename]]
 testConstraint linkDirectory 1
 testConstraint symbolicLinkFile 1
+testConstraint cygwin [tcl::build-info cygwin]
 if {[testConstraint win]} {
     if {$::tcl_platform(osVersion) < 5.0 \
 	    || [lindex [file system [temporaryDirectory]] 1] ne "NTFS"} {
@@ -196,7 +197,7 @@ test filename-4.12 {Tcl_SplitPath: unix} {testsetplatform} {
     testsetplatform unix
     file split ../..
 } {.. ..}
-test filename-4.13 {Tcl_SplitPath: unix} {testsetplatform} {
+test filename-4.13 {Tcl_SplitPath: unix} {testsetplatform cygwin} {
     testsetplatform unix
     file split //foo
 } "//foo"
@@ -433,7 +434,7 @@ test filename-7.16 {Tcl_JoinPath: unix} {testsetplatform} {
     testsetplatform unix
     file join a . ./~b
 } {a/./~b}
-test filename-7.17 {Tcl_JoinPath: unix} {testsetplatform} {
+test filename-7.17 {Tcl_JoinPath: unix} {testsetplatform cygwin} {
     testsetplatform unix
     file join //a b
 } "//a/b"
@@ -441,7 +442,7 @@ test filename-7.18 {Tcl_JoinPath: unix} {testsetplatform} {
     testsetplatform unix
     file join /// a b
 } "/a/b"
-test filename-7.19 {[Bug f34cf83dd0]} {
+test filename-7.19 {[Bug f34cf83dd0]} cygwin {
     file join foo //bar
 } //bar
 
