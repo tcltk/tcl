@@ -857,7 +857,7 @@ ArithSeriesGetElements(
 	elemPtr[--length] = NULL;
     }
     for (i = 0; i < length; i++) {
-	TclArithSeriesObjIndex(arithSeriesPtr, start + i, &elemPtr[i]);
+	elemPtr[i] = TclArithSeriesObjIndex(NULL, arithSeriesPtr, start + i);
     }
 }
 
