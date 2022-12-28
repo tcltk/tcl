@@ -4876,7 +4876,8 @@ TEBCresume(
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    if (TclArithSeriesObjIndex(valuePtr, index, &objResultPtr) != TCL_OK) {
+	    objResultPtr = TclArithSeriesObjIndex(interp, valuePtr, index);
+	    if (objResultPtr == NULL) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4941,7 +4942,8 @@ TEBCresume(
 
 	    /* Compute value @ index */
 	    if (index >= 0 && index < length) {
-		if (TclArithSeriesObjIndex(valuePtr, index, &objResultPtr) != TCL_OK) {
+		objResultPtr = TclArithSeriesObjIndex(interp, valuePtr, index);
+		if (objResultPtr == NULL) {
 		    CACHE_STACK_INFO();
 		    TRACE_ERROR(interp);
 		    goto gotError;
@@ -5187,7 +5189,7 @@ TEBCresume(
 
 	    do {
 		if (isArithSeries) {
-		    TclArithSeriesObjIndex(value2Ptr, i, &o);
+		    o = TclArithSeriesObjIndex(NULL, value2Ptr, i);
 		} else {
 		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		}
