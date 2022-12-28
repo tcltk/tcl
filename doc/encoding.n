@@ -52,9 +52,9 @@ converted characters until the first error position. No error condition is raise
 In case of no error, the value \fI-1\fR is written to the variable.  This option
 may not be used together with \fB-nocomplain\fR.
 .PP
-The \fB-strict\fR option followes more strict rules in conversion.  Currently, only
-the sequence \fB\\xC0\\x80\fR in \fButf-8\fR encoding is disallowed.  Additional rules
-may follow.
+The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
+encoder, it disallows the the sequence \fB\\xC0\\x80\fR and noncharacters (which -
+otherwise - are just passed through).
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .RE
 .TP
@@ -84,8 +84,9 @@ converted bytes until the first error position. No error condition is raised.
 In case of no error, the value \fI-1\fR is written to the variable.  This option
 may not be used together with \fB-nocomplain\fR.
 .PP
-The \fB-strict\fR option followes more strict rules in conversion.  Currently, it has
-no effect but may be used in future to add additional encoding checks.
+The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
+encoder, it disallows the the sequence \fB\\xC0\\x80\fR and noncharacters (which -
+otherwise - are just passed through).
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .RE
 .TP

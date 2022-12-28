@@ -8238,6 +8238,36 @@ printf "%s\n" "#define NO_WAIT3 1" >>confdefs.h
 
 fi
 
+ac_fn_c_check_func "$LINENO" "fork" "ac_cv_func_fork"
+if test "x$ac_cv_func_fork" = xyes
+then :
+
+else $as_nop
+
+printf "%s\n" "#define NO_FORK 1" >>confdefs.h
+
+fi
+
+ac_fn_c_check_func "$LINENO" "mknod" "ac_cv_func_mknod"
+if test "x$ac_cv_func_mknod" = xyes
+then :
+
+else $as_nop
+
+printf "%s\n" "#define NO_MKNOD 1" >>confdefs.h
+
+fi
+
+ac_fn_c_check_func "$LINENO" "tcdrain" "ac_cv_func_tcdrain"
+if test "x$ac_cv_func_tcdrain" = xyes
+then :
+
+else $as_nop
+
+printf "%s\n" "#define NO_TCDRAIN 1" >>confdefs.h
+
+fi
+
 ac_fn_c_check_func "$LINENO" "uname" "ac_cv_func_uname"
 if test "x$ac_cv_func_uname" = xyes
 then :
