@@ -471,10 +471,6 @@ Tcl_ReadObjCmd(
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
 	returnOptsPtr = Tcl_NewDictObj();
-	Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-code", -1)
-	    , Tcl_NewStringObj("error", -1));
-	Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-level", -1)
-	    , Tcl_NewIntObj(0));
 	Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-result", -1)
 	    , resultPtr);
 	TclChannelRelease(chan);
