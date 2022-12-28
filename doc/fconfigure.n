@@ -114,7 +114,7 @@ attempting to set \fB\-eofchar\fR to a value outside of this range will
 generate an error.
 .VS "TCL9.0 TIP633"
 .TP
-\fB\-nocomplainencoding\fR \fIbool\fR
+\fB\-encodingignore\fR \fIbool\fR
 .
 Reporting mode of encoding errors.
 If set to a \fItrue\fR value, encoding errors are resolved by a replacement
@@ -130,7 +130,7 @@ See the \fI\-nocomplain\fR option of the \fBencoding\fR command for more informa
 .VE "TCL9.0 TIP633"
 .VS "TCL8.7 TIP346"
 .TP
-\fB\-strictencoding\fR \fIbool\fR
+\fB\-encodingstrict\fR \fIbool\fR
 .
 Activate additional stricter encoding application rules.
 Default value is \fIfalse\fR.

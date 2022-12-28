@@ -568,7 +568,7 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 1;
     type.clientData	= INT2PTR(TCL_ENCODING_UTF);
     Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(TCL_ENCODING_NOCOMPLAIN);
+    type.clientData	= NULL;
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
 
@@ -577,13 +577,13 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "ucs-2le";
-    type.clientData	= INT2PTR(TCL_ENCODING_LE|TCL_ENCODING_NOCOMPLAIN);
+    type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2be";
-    type.clientData	= INT2PTR(TCL_ENCODING_NOCOMPLAIN);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2";
-    type.clientData	= INT2PTR(isLe.c|TCL_ENCODING_NOCOMPLAIN);
+    type.clientData	= INT2PTR(isLe.c);
     Tcl_CreateEncoding(&type);
 
     type.toUtfProc	= Utf32ToUtfProc;
@@ -1112,7 +1112,7 @@ Tcl_ExternalToUtfDString(
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    Tcl_ExternalToUtfDStringEx(encoding, src, srcLen, TCL_ENCODING_NOCOMPLAIN, dstPtr);
+    Tcl_ExternalToUtfDStringEx(encoding, src, srcLen, 0, dstPtr);
     return Tcl_DStringValue(dstPtr);
 }
 
@@ -1123,7 +1123,8 @@ Tcl_ExternalToUtfDString(
  * Tcl_ExternalToUtfDStringEx --
  *
  *	Convert a source buffer from the specified encoding into UTF-8.
- *	The parameter flags controls the behavior, if any of the bytes in
+ *
+ *	"flags" controls the behavior, if any of the bytes in
  *	the source buffer are invalid or cannot be represented in utf-8.
  *	Possible flags values:
  *	TCL_ENCODING_NOCOMPLAIN: replace invalid characters/bytes by a default
@@ -1349,7 +1350,7 @@ Tcl_UtfToExternalDString(
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    Tcl_UtfToExternalDStringEx(encoding, src, srcLen, TCL_ENCODING_NOCOMPLAIN, dstPtr);
+    Tcl_UtfToExternalDStringEx(encoding, src, srcLen, 0, dstPtr);
     return Tcl_DStringValue(dstPtr);
 }
 
@@ -2255,7 +2256,7 @@ BinaryProc(
  *-------------------------------------------------------------------------
  */
 
-#define STOPONERROR (!(flags & TCL_ENCODING_NOCOMPLAIN))
+#define ENCODINGSTRICT ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
 
 static int
 UtfToUtfProc(
@@ -2339,14 +2340,14 @@ UtfToUtfProc(
 	    src += 2;
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
-	     * Always check before using TclUtfToUCS4. Not doing can so
-	     * cause it run beyond the end of the buffer! If we happen such an
+	     * Always check before using TclUtfToUCS4. Not doing can so cause
+	     * it to run beyond the end of the buffer! If we happen such an
 	     * incomplete char its bytes are made to represent themselves
 	     * unless the user has explicitly asked to be told.
 	     */
 
 	    if (flags & TCL_ENCODING_MODIFIED) {
-		if ((STOPONERROR) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
+		if ((ENCODINGSTRICT) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
@@ -2397,7 +2398,7 @@ UtfToUtfProc(
 
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
 
-		    if (STOPONERROR) {
+		    if (ENCODINGSTRICT) {
 			result = TCL_CONVERT_UNKNOWN;
 			src = saveSrc;
 			break;
@@ -2408,7 +2409,7 @@ UtfToUtfProc(
 		dst += Tcl_UniCharToUtf(ch, dst);
 		ch = low;
 #endif
-	    } else if (STOPONERROR && !(flags & TCL_ENCODING_MODIFIED) && (((ch  & ~0x7FF) == 0xD800))) {
+	    } else if (ENCODINGSTRICT && !(flags & TCL_ENCODING_MODIFIED) && (((ch  & ~0x7FF) == 0xD800))) {
 		result = TCL_CONVERT_UNKNOWN;
 		src = saveSrc;
 		break;
@@ -2504,12 +2505,11 @@ Utf32ToUtfProc(
 	} else {
 	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
-	if  ((unsigned)ch > 0x10FFFF || (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
-		&& ((ch  & ~0x7FF) == 0xD800))) {
-	    if (STOPONERROR) {
-		result = TCL_CONVERT_SYNTAX;
-		break;
-	    }
+	if  ((unsigned)ch > (0x10FFFF || (((ch  & ~0x7FF) == 0xD800))) &&
+	    ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
+	) {
+	    result = TCL_CONVERT_SYNTAX;
+	    break;
 	}
 
 	/*
@@ -2602,7 +2602,7 @@ UtfToUtf32Proc(
 	}
 	len = TclUtfToUCS4(src, &ch);
 	if ((ch  & ~0x7FF) == 0xD800) {
-	    if (STOPONERROR) {
+	    if (ENCODINGSTRICT) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -2804,7 +2804,7 @@ UtfToUtf16Proc(
 	}
 	len = TclUtfToUCS4(src, &ch);
 	if ((ch  & ~0x7FF) == 0xD800) {
-	    if (STOPONERROR) {
+	    if (ENCODINGSTRICT) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -3023,7 +3023,7 @@ TableToUtfProc(
 	    ch = pageZero[byte];
 	}
 	if ((ch == 0) && (byte != 0)) {
-	    if (STOPONERROR) {
+	    if (ENCODINGSTRICT) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
@@ -3139,7 +3139,7 @@ TableFromUtfProc(
 	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
-	    if ((STOPONERROR) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
+	    if ((ENCODINGSTRICT) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -3327,7 +3327,7 @@ Iso88591FromUtfProc(
 		|| ((ch >= 0xD800) && (len < 3))
 #endif
 		) {
-	    if (STOPONERROR) {
+	    if (ENCODINGSTRICT) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -3554,7 +3554,7 @@ EscapeToUtfProc(
 
 	    if ((checked == dataPtr->numSubTables + 2)
 		    || (flags & TCL_ENCODING_END)) {
-		if (!STOPONERROR) {
+		if (!ENCODINGSTRICT) {
 		    /*
 		     * Skip the unknown escape sequence.
 		     */
@@ -3729,7 +3729,7 @@ EscapeFromUtfProc(
 
 	    if (word == 0) {
 		state = oldState;
-		if (STOPONERROR) {
+		if (ENCODINGSTRICT) {
 		    result = TCL_CONVERT_UNKNOWN;
 		    break;
 		}

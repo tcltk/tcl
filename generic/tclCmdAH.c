@@ -418,7 +418,7 @@ EncodingConvertfromObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     size_t length = 0;			/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
-    int flags = 0;
+    int flags = TCL_ENCODING_STRICT;
     size_t result;
     Tcl_Obj *failVarObj = NULL;
     /*
@@ -426,10 +426,10 @@ EncodingConvertfromObjCmd(
      * Possible combinations:
      * 1) data						-> objc = 2
      * 2) encoding data					-> objc = 3
-     * 3) -nocomplain data				-> objc = 3
-     * 4) -nocomplain encoding data			-> objc = 4
-     * 5) -strict data				-> objc = 3
-     * 6) -strict encoding data			-> objc = 4
+     * 3) -ignore data					-> objc = 3
+     * 4) -ignore encoding data				-> objc = 4
+     * 5) -strict data					-> objc = 3
+     * 6) -strict encoding data				-> objc = 4
      * 7) -failindex val data				-> objc = 4
      * 8) -failindex val encoding data			-> objc = 5
      */
@@ -441,9 +441,9 @@ EncodingConvertfromObjCmd(
 	int objcUnprocessed = objc;
 	data = objv[objc - 1];
 	bytesPtr = Tcl_GetString(objv[1]);
-	if (bytesPtr[0] == '-' && bytesPtr[1] == 'n'
-		&& !strncmp(bytesPtr, "-nocomplain", strlen(bytesPtr))) {
-	    flags = TCL_ENCODING_NOCOMPLAIN;
+	if (bytesPtr[0] == '-' && bytesPtr[1] == 'i'
+		&& !strncmp(bytesPtr, "-ignore", strlen(bytesPtr))) {
+	    flags = 0;
 	    objcUnprocessed--;
 	} else if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
 		&& !strncmp(bytesPtr, "-strict", strlen(bytesPtr))) {
@@ -472,7 +472,7 @@ EncodingConvertfromObjCmd(
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?-strict? ?-failindex var? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-ignore? ?-strict? ?-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 
@@ -485,7 +485,7 @@ EncodingConvertfromObjCmd(
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
-    if ((!(flags & TCL_ENCODING_NOCOMPLAIN) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) && (result != TCL_INDEX_NONE)) {
+    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) && (result != TCL_INDEX_NONE)) {
 	if (failVarObj != NULL) {
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
@@ -549,7 +549,7 @@ EncodingConverttoObjCmd(
     size_t length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
     size_t result;
-    int flags = 0;
+    int flags = TCL_ENCODING_STRICT;
     Tcl_Obj *failVarObj = NULL;
 
     /*
@@ -570,9 +570,9 @@ EncodingConverttoObjCmd(
 	int objcUnprocessed = objc;
 	data = objv[objc - 1];
 	stringPtr = Tcl_GetString(objv[1]);
-	if (stringPtr[0] == '-' && stringPtr[1] == 'n'
-		&& !strncmp(stringPtr, "-nocomplain", strlen(stringPtr))) {
-	    flags = TCL_ENCODING_NOCOMPLAIN;
+	if (stringPtr[0] == '-' && stringPtr[1] == 'i'
+		&& !strncmp(stringPtr, "-ignore", strlen(stringPtr))) {
+	    flags = 0;
 	    objcUnprocessed--;
 	} else if (stringPtr[0] == '-' && stringPtr[1] == 's'
 		&& !strncmp(stringPtr, "-strict", strlen(stringPtr))) {
@@ -601,7 +601,7 @@ EncodingConverttoObjCmd(
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?-strict? ?-failindex var? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-ignore? ?-strict? ?-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 
@@ -612,7 +612,7 @@ EncodingConverttoObjCmd(
     stringPtr = Tcl_GetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    flags, &ds);
-    if ((!(flags & TCL_ENCODING_NOCOMPLAIN) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) && (result != TCL_INDEX_NONE)) {
+    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) && (result != TCL_INDEX_NONE)) {
 	if (failVarObj != NULL) {
 	    /* I hope, wide int will cover size_t data type */
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {

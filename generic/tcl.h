@@ -1927,9 +1927,8 @@ typedef struct Tcl_EncodingType {
  *				reset to an initial state. If the source
  *				buffer contains the entire input stream to be
  *				converted, this flag should be set.
- * TCL_ENCODING_STRICT -	Be more strict in accepting what
- *				is considered a 'invalid byte sequence'.
- * TCL_ENCODING_STOPONERROR -	Not used any more.
+ * TCL_ENCODING_STRICT -	Invalid encoded data is an error.
+ * TCL_ENCODING_STOPONERROR -	Obsolete.
  * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf does not append a
  *				terminating NUL byte.  Since it does not need
  *				an extra byte for a terminating NUL, it fills
@@ -1948,14 +1947,7 @@ typedef struct Tcl_EncodingType {
  *				0x00. Only valid for "utf-8" and "cesu-8".
  *				This flag is implicit for external -> internal conversions,
  *				optional for internal -> external conversions.
- * TCL_ENCODING_NOCOMPLAIN -	If set, the converter
- *				substitutes the problematic character(s) with
- *				one or more "close" characters in the
- *				destination buffer and then continues to
- *				convert the source. If clear, the converter returns
- *				immediately upon encountering an invalid byte sequence
- *				or a source character that has no mapping in the
- *				target encoding. Only for Tcl 9.x.
+ * TCL_ENCODING_NOCOMPLAIN -	Obsolete.
  */
 
 #define TCL_ENCODING_START		0x01
