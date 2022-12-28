@@ -381,7 +381,7 @@ Tcl_ReadObjCmd(
     int toRead;			/* How many bytes to read? */
     int charactersRead;		/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
-    Tcl_Obj *resultPtr, *chanObjPtr;
+    Tcl_Obj *resultPtr, *returnOptsPtr, *chanObjPtr;
 
     if ((objc != 2) && (objc != 3)) {
 	Interp *iPtr;
@@ -470,8 +470,12 @@ Tcl_ReadObjCmd(
 		    "error reading \"%s\": %s",
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
+	returnOptsPtr = Tcl_NewDictObj();
+	Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-result", -1)
+	    , resultPtr);
 	TclChannelRelease(chan);
 	Tcl_DecrRefCount(resultPtr);
+	Tcl_SetReturnOptions(interp, returnOptsPtr);
 	return TCL_ERROR;
     }
 

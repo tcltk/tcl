@@ -9056,12 +9056,12 @@ test io-75.6 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -s
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -strictencoding 1
 } -body {
-    set d [read $f]
+    set status [catch {read $f} cres copts]
+    set d [dict get $copts -result]
     binary scan $d H* hd
-    lappend hd [catch {read $f} msg]
-    close $f
-    lappend hd $msg
+    lappend hd $status $cres
 } -cleanup {
+    close $f
     removeFile io-75.6
 } -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
@@ -9075,11 +9075,12 @@ test io-75.7 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -strictencoding 1
 } -body {
-    set d [read $f]
+    set status [catch {read $f} cres copts]
+    set d [dict get $copts -result]
     binary scan $d H* hd
     lappend hd [eof $f]
-    lappend hd [catch {read $f} msg]
-    lappend hd $msg
+    lappend hd $status
+    lappend hd $cres
     fconfigure $f -encoding iso8859-1
     lappend hd [read $f];# We changed encoding, so now we can read the \xA1
     close $f
@@ -9157,10 +9158,11 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
     seek $f 0
     fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -strictencoding 1
 } -body {
-    set d [read $f]
+    set status [catch {read $f} cres copts]
+    set d [dict get $copts -result]
     binary scan $d H* hd
-    lappend hd [catch {set d [read $f]} msg]
-    lappend hd $msg
+    lappend hd $status
+    lappend hd $cres
 } -cleanup {
     close $f
     removeFile io-75.11
@@ -9192,11 +9194,12 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -strictencoding 1
 } -body {
-    set d [read $f]
+    set status [catch {read $f} cres copts]
+    set d [dict get $copts -result]
     binary scan $d H* hd
-    lappend hd [catch {read $f} msg]
+    lappend hd $status
     close $f
-    lappend hd $msg
+    lappend hd $cres
 } -cleanup {
     removeFile io-75.13
 } -match glob -result {41 1 {error reading "*": illegal byte sequence}}
