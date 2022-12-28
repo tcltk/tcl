@@ -6041,7 +6041,7 @@ DoReadChars(
 	assert(statePtr->inputEncodingFlags & TCL_ENCODING_END);
 	assert(!GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR));
 
-	/* TODO: We don't need this call? */
+	/* TODO: UpdateInterest isn't needed here? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -6055,7 +6055,7 @@ DoReadChars(
 	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
-	/* TODO: We don't need this call? */
+	/* TODO: UpdateInterest isn't needed here? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -6083,6 +6083,15 @@ DoReadChars(
 		copiedNow = ReadBytes(statePtr, objPtr, toRead);
 	    } else {
 		copiedNow = ReadChars(statePtr, objPtr, toRead, &factor);
+	    }
+	    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) && !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+		/* Channel is Synchronous.  Return an error so that [read] and
+		 * friends can return an error
+		*/
+		TclChannelRelease((Tcl_Channel)chanPtr);
+		UpdateInterest(chanPtr);
+		Tcl_SetErrno(EILSEQ);
+		return -1;
 	    }
 
 	    /*
