@@ -583,7 +583,6 @@ proc output-IP-list {context code rest} {
 	backup-text 1
 	set accept_RE 0
 	set para {}
-	set endpara {}
 	while {[more-text]} {
 	    set line [next-text]
 	    if {[is-a-directive $line]} {
@@ -595,7 +594,7 @@ proc output-IP-list {context code rest} {
 			    continue
 			}
 			if {$manual(section) eq "ARGUMENTS"} {
-			    man-puts "$para<DT>$rest<DD>$endpara"
+			    man-puts "$para<DT>$rest<DD>"
 			} elseif {[regexp {^\[([\da-f]+)\]$} $rest -> value]} {
 			    man-puts "$para<LI value=\"$value\">"
 			} elseif {[regexp {^\(?([\da-f]+)\)$} $rest -> value]} {
@@ -665,7 +664,6 @@ proc output-IP-list {context code rest} {
 		man-puts $line
 	    }
 	    set para <P>
-	    set endpara </P>
 	}
 	man-puts "$para$enddl"
 	lappend manual(section-toc) $enddl
