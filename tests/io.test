@@ -9098,11 +9098,11 @@ test io-75.6 {invalid utf-8 encoding read is not ignored (-encodingstrict 1)} -s
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingstrict 1
 } -body {
     set status [catch {read $f} cres copts]
+    set d [dict get $copts -result]
     binary scan $d H* hd
-    lappend hd [catch {read $f} msg]
-    close $f
-    lappend hd $msg
+    lappend hd $status $cres
 } -cleanup {
+    close $f
     removeFile io-75.6
 } -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
@@ -9116,11 +9116,12 @@ test io-75.7 {invalid utf-8 encoding eof handling (-encodingstrict 1)} -setup {
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -encodingstrict 1
 } -body {
-    set d [read $f]
+    set status [catch {read $f} cres copts]
+    set d [dict get $copts -result]
     binary scan $d H* hd
     lappend hd [eof $f]
-    lappend hd [catch {read $f} msg]
-    lappend hd $msg
+    lappend hd $status
+    lappend hd $cres
     fconfigure $f -encoding iso8859-1
     lappend hd [read $f];# We changed encoding, so now we can read the \xA1
     close $f
@@ -9163,10 +9164,9 @@ test io-75.9 {unrepresentable character write passes and is replaced by ?} -setu
     removeFile io-75.9
 } -match glob -result [list A {error writing "*": illegal byte sequence}]
 
-# Incomplete sequence test.
-# This error may IMHO only be detected with the close.
-# But the read already returns the incomplete sequence.
+
 test io-75.10 {incomplete multibyte encoding read is ignored} -setup {
+	set res {}
     set fn [makeFile {} io-75.10]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9175,13 +9175,17 @@ test io-75.10 {incomplete multibyte encoding read is ignored} -setup {
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none
 } -body {
-    set d [read $f]
+    set status [catch {read $f} cres copts]
+    set d [dict get $copts -result]
     close $f
     binary scan $d H* hd
-    set hd
+	lappend res $hd
+	lappend res $status
+	lappend res $cres
+	return $res
 } -cleanup {
     removeFile io-75.10
-} -result 41c0
+} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 # The current result returns the orphan byte as byte.
 # This may be expected due to special utf-8 handling.
 
@@ -9198,23 +9202,44 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
     seek $f 0
     fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -encodingstrict 1
 } -body {
-    set d [read $f]
+    set status [catch {read $f} cres copts]
+    set d [dict get $copts -result]
     binary scan $d H* hd
-    lappend hd [catch {set d [read $f]} msg]
-    lappend hd $msg
+    lappend hd $status
+    lappend hd $cres
 } -cleanup {
     close $f
     removeFile io-75.11
 } -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
-test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
+test io-75.12 {invalid utf-8 encoding read returns an error} -setup {
+	set res {}
     set fn [makeFile {} io-75.12]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf
+} -body {
+    set status [catch {read $f} cres copts]
+    set d [dict get $copts -result]
+    close $f
+    binary scan $d H* hd
+	lappend res $hd $status $cres
+	return $res
+} -cleanup {
+    removeFile io-75.12
+} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
+test io-75.12_ignore {invalid utf-8 encoding read is ignored} -setup {
+    set fn [makeFile {} io-75.12]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    puts -nonewline $f A\x81
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+		-translation lf -encodingignore 1
 } -body {
     set d [read $f]
     close $f
@@ -9233,11 +9258,12 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-encodingstrict 1)} -
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingstrict 1
 } -body {
-    set d [read $f]
+    set status [catch {read $f} cres copts]
+    set d [dict get $copts -result]
     binary scan $d H* hd
-    lappend hd [catch {read $f} msg]
+    lappend hd $status
     close $f
-    lappend hd $msg
+    lappend hd $cres
 } -cleanup {
     removeFile io-75.13
 } -match glob -result {41 1 {error reading "*": illegal byte sequence}}
