@@ -6024,8 +6024,9 @@ DoReadChars(
     }
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
-	/* TODO: We don't need this call? */
+	/* TODO: UpdateInterest not needed here? */
 	UpdateInterest(chanPtr);
+
 	Tcl_SetErrno(EILSEQ);
 	return -1;
     }
@@ -6041,7 +6042,7 @@ DoReadChars(
 	assert(statePtr->inputEncodingFlags & TCL_ENCODING_END);
 	assert(!GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR));
 
-	/* TODO: UpdateInterest isn't needed here? */
+	/* TODO: UpdateInterest not needed here? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -6055,7 +6056,7 @@ DoReadChars(
 	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
-	/* TODO: UpdateInterest isn't needed here? */
+	/* TODO: UpdateInterest not needed here? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -6084,18 +6085,9 @@ DoReadChars(
 	    } else {
 		copiedNow = ReadChars(statePtr, objPtr, toRead, &factor);
 	    }
-	    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) && !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
-		/* Channel is Synchronous.  Return an error so that [read] and
-		 * friends can return an error
-		*/
-		TclChannelRelease((Tcl_Channel)chanPtr);
-		UpdateInterest(chanPtr);
-		Tcl_SetErrno(EILSEQ);
-		return -1;
-	    }
 
 	    /*
-	     * If the current buffer is empty recycle it.
+	     * Recycle current buffer if empty.
 	     */
 
 	    bufPtr = statePtr->inQueueHead;
@@ -6107,6 +6099,15 @@ DoReadChars(
 		if (nextPtr == NULL) {
 		    statePtr->inQueueTail = NULL;
 		}
+	    }
+
+	    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) && !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+		/* Channel is synchronous.  Return an error so that callers
+		 * like [read] can return an error.
+		*/
+		Tcl_SetErrno(EILSEQ);
+		copied = -1;
+		goto finish;
 	    }
 	}
 
@@ -6136,6 +6137,7 @@ DoReadChars(
 	}
     }
 
+finish:
     /*
      * Failure to fill a channel buffer may have left channel reporting a
      * "blocked" state, but so long as we fulfilled the request here, the
