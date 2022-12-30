@@ -9089,11 +9089,15 @@ test io-75.7 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
     removeFile io-75.7
 } -match glob -result {41 0 1 {error reading "*": illegal byte sequence} ¡}
 
-test io-75.8 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
+test io-75.8.incomplete {
+    incomplete uft-8 char after eof char is not an error (-strictencoding 1)
+} -setup {
+    set hd {}
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]
     fconfigure $f -encoding binary
-    # \x81 is invalid in utf-8, but since \x1A comes first, -eofchar takes precedence.
+    # \x81 is invalid and also incomplete utf-8 data, but because the eof
+    # character \x1A appears first, it's not an error.
     puts -nonewline $f A\x1A\x81
     flush $f
     seek $f 0
@@ -9102,12 +9106,40 @@ test io-75.8 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
     set d [read $f]
     binary scan $d H* hd
     lappend hd [eof $f]
+    # there should be no error on additional reads
     lappend hd [read $f]
     close $f
     set hd
 } -cleanup {
     removeFile io-75.8
 } -result {41 1 {}}
+
+
+test io-75.8.invalid {invalid utf-8 after eof char is not an error  (-strictencoding 1)} -setup {
+    set res {}
+    set fn [makeFile {} io-75.8]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \xc0\x80 is invalid utf-8 data, but because the eof character \x1A
+    # appears first, it's not an error.
+    puts -nonewline $f A\x1a\xc0\x80
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -strictencoding 1
+} -body {
+    set d [read $f]
+    foreach char [split $d {}] {
+	lappend res [format %x [scan $char %c]]
+    }
+    lappend res [eof $f]
+    # there should be no error on additional reads
+    lappend res [read $f]
+    close $f
+    set res
+} -cleanup {
+    removeFile io-75.8
+} -result {41 1 {}}
+
 
 test io-75.9 {unrepresentable character write passes and is replaced by ?} -setup {
     set fn [makeFile {} io-75.9]

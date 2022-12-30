@@ -2386,7 +2386,12 @@ UtfToUtfProc(
 
 	    *dst++ = *src++;
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
-		&& (UCHAR(src[1]) == 0x80) && (!(flags & TCL_ENCODING_MODIFIED) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
+	    && (UCHAR(src[1]) == 0x80)
+	    && (
+		!(flags & TCL_ENCODING_MODIFIED)
+		|| ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
+	    ))
+	{
 	    /*
 	     * If in input mode, and -strict is specified: This is an error.
 	     */
