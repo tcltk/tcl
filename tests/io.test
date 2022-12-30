@@ -9254,6 +9254,28 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -
     removeFile io-75.13
 } -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
+test io-75.14 {invalid utf-8 encoding [gets] coninues in non-strict mode after error} -setup {
+    set fn [makeFile {} io-75.14]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \xc0 is invalid in utf-8
+    puts -nonewline $f a\nb\xc0\nc\n
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf -strictencoding 1
+} -body {
+    lappend res [gets $f]
+    set status [catch {gets $f} cres copts]
+    lappend res $status $cres
+    chan configure $f -strictencoding 0
+    lappend res [gets $f]
+    lappend res [gets $f]
+    close $f
+	return $res
+} -cleanup {
+    removeFile io-75.14
+} -match glob -result {a 1 {error reading "*": illegal byte sequence} bÀ c}
+
 # ### ### ### ######### ######### #########
 
 
