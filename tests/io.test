@@ -1555,11 +1555,29 @@ test io-12.9 {ReadChars: multibyte chars split} -body {
     set f [open $path(test1)]
     fconfigure $f -encoding utf-8 -buffersize 10
     set in [read $f]
+    read $f
     close $f
     scan [string index $in end] %c
 } -cleanup {
     catch {close $f}
 } -result 194
+test io-12.9.strict {ReadChars: multibyte chars split} -body {
+    set res {}
+    set f [open $path(test1) w]
+    fconfigure $f -translation binary
+    puts -nonewline $f [string repeat a 9]\xC2
+    close $f
+    set f [open $path(test1)]
+    fconfigure $f -encoding utf-8 -strictencoding 1 -buffersize 10
+    set status [catch {read $f} cres copts]
+    set in [dict get $copts -result]
+    lappend res $in
+    lappend res $status $cres
+    set res
+} -cleanup {
+    close $f
+    catch {close $f}
+} -match glob -result {aaaaaaaaa 1 {error reading "*": illegal byte sequence}}
 test io-12.10 {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
