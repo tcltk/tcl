@@ -1547,34 +1547,42 @@ test io-12.8 {ReadChars: multibyte chars split} {
     close $f
     scan [string index $in end] %c
 } 160
-test io-12.9 {ReadChars: multibyte chars split, default (strict)} -body {
-    set f [open $path(test1) w]
-    fconfigure $f -translation binary
-    puts -nonewline $f [string repeat a 9]\xC2
-    close $f
-    set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -buffersize 10
-    set in [read $f]
-    close $f
-    scan [string index $in end] %c
-} -cleanup {
-    catch {close $f}
-} -returnCodes 1 -match glob -result "error reading \"*\": illegal byte sequence"
 
 
-test io-12.9_encodingstrict {ReadChars: multibyte chars split, default (strict)} -body {
-    set f [open $path(test1) w]
-    fconfigure $f -translation binary
-    puts -nonewline $f [string repeat a 9]\xC2
-    close $f
-    set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -encodingstrict 1 -buffersize 10
-    set in [read $f]
-    close $f
-    scan [string index $in end] %c
-} -cleanup {
-    catch {close $f}
-} -returnCodes 1 -match glob -result "error reading \"*\": illegal byte sequence"
+apply [list {} {
+	set template {
+		test io-12.9.@variant@ {ReadChars: multibyte chars split, default (strict)} -body {
+			set res {}
+			set f [open $path(test1) w]
+			fconfigure $f -translation binary
+			puts -nonewline $f [string repeat a 9]\xC2
+			close $f
+			set f [open $path(test1)]
+			fconfigure $f -encoding utf-8 @strict@ -buffersize 10
+			set status [catch {read $f} cres copts]
+			set in [dict get $copts -result]
+			lappend res $in
+			lappend res $status $cres
+			set status [catch {read $f} cres copts]
+			set in [dict get $copts -result]
+			lappend res $in
+			lappend res $status $cres
+			set res
+		} -cleanup {
+			catch {close $f}
+		} -match glob -result {aaaaaaaaa 1\
+			{error reading "*": illegal byte sequence}\
+			{} 1 {error reading "*": illegal byte sequence}}
+	}
+
+	foreach variant {default encodingstrict} strict {{} {-encodingstrict 1}} {
+		set script [string map [
+			list @variant@ $variant @strict@ $strict] $template] 
+		uplevel 1 $script
+	}
+} [namespace current]]
+
+
 
 test io-12.9_encodingignore {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
@@ -1584,7 +1592,7 @@ test io-12.9_encodingignore {ReadChars: multibyte chars split} -body {
     set f [open $path(test1)]
     fconfigure $f -encoding utf-8 -encodingignore 1 -buffersize 10
     set in [read $f]
-    close $f
+    read $f
     scan [string index $in end] %c
 } -cleanup {
     catch {close $f}
@@ -9130,11 +9138,15 @@ test io-75.7 {invalid utf-8 encoding eof handling (-encodingstrict 1)} -setup {
     removeFile io-75.7
 } -match glob -result {41 0 1 {error reading "*": illegal byte sequence} ¡}
 
-test io-75.8 {invalid utf-8 encoding eof handling (-encodingstrict 1)} -setup {
+test io-75.8.incomplete {
+    incomplete uft-8 char after eof char is not an error (-encodingstrict 1)
+} -setup {
+    set hd {}
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]
     fconfigure $f -encoding binary
-    # \x81 is invalid in utf-8, but since \x1A comes first, -eofchar takes precedence.
+    # \x81 is invalid and also incomplete utf-8 data, but because the eof
+    # character \x1A appears first, it's not an error.
     puts -nonewline $f A\x1A\x81
     flush $f
     seek $f 0
@@ -9143,12 +9155,40 @@ test io-75.8 {invalid utf-8 encoding eof handling (-encodingstrict 1)} -setup {
     set d [read $f]
     binary scan $d H* hd
     lappend hd [eof $f]
+    # there should be no error on additional reads
     lappend hd [read $f]
     close $f
     set hd
 } -cleanup {
     removeFile io-75.8
 } -result {41 1 {}}
+
+
+test io-75.8.invalid {invalid utf-8 after eof char is not an error  (-encodingstrict 1)} -setup {
+    set res {}
+    set fn [makeFile {} io-75.8]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \xc0\x80 is invalid utf-8 data, but because the eof character \x1A
+    # appears first, it's not an error.
+    puts -nonewline $f A\x1a\xc0\x80
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -encodingstrict 1
+} -body {
+    set d [read $f]
+    foreach char [split $d {}] {
+	lappend res [format %x [scan $char %c]]
+    }
+    lappend res [eof $f]
+    # there should be no error on additional reads
+    lappend res [read $f]
+    close $f
+    set res
+} -cleanup {
+    removeFile io-75.8
+} -result {41 1 {}}
+
 
 test io-75.9 {unrepresentable character write passes and is replaced by ?} -setup {
     set fn [makeFile {} io-75.9]
@@ -9268,9 +9308,32 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-encodingstrict 1)} -
     removeFile io-75.13
 } -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
+test io-75.14 {invalid utf-8 encoding [gets] coninues in non-strict mode after error} -setup {
+	set res {}
+    set fn [makeFile {} io-75.14]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \xc0 is invalid in utf-8
+    puts -nonewline $f a\nb\xc0\nc\n
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf -encodingstrict 1
+} -body {
+    lappend res [gets $f]
+    set status [catch {gets $f} cres copts]
+    lappend res $status $cres
+    chan configure $f -encodingstrict 0
+    lappend res [gets $f]
+    lappend res [gets $f]
+    close $f
+	return $res
+} -cleanup {
+    removeFile io-75.14
+} -match glob -result {a 1 {error reading "*": illegal byte sequence} bÀ c}
 
-#test io-75.14 {invalid utf-8 encoding strict gets should not hang} -setup {
-#    set fn [makeFile {} io-75.14]
+
+#test io-75.15 {invalid utf-8 encoding strict gets should not hang} -setup {
+#    set fn [makeFile {} io-75.15]
 #    set chan [open $fn w+]
 #    fconfigure $chan -encoding binary
 #    # This is not valid UTF-8
@@ -9285,7 +9348,7 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-encodingstrict 1)} -
 #    return $data
 #} -cleanup {
 #    close $chan
-#    removeFile io-75.13
+#    removeFile io-75.15
 #} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
 # ### ### ### ######### ######### #########
