@@ -4601,6 +4601,7 @@ Tcl_GetsObj(
 				/* State info for channel */
     ChannelBuffer *bufPtr;
     int inEofChar, skip, copiedTotal, oldFlags, oldRemoved;
+    int reportError = 0;
     size_t oldLength;
     Tcl_Encoding encoding;
     char *dst, *dstEnd, *eol, *eof;
@@ -4609,6 +4610,7 @@ Tcl_GetsObj(
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	UpdateInterest(chanPtr);
 	Tcl_SetErrno(EILSEQ);
+	ResetFlag(statePtr, CHANNEL_ENCODING_ERROR);
 	return TCL_INDEX_NONE;
     }
 
@@ -4879,6 +4881,19 @@ Tcl_GetsObj(
 		goto done;
 	    }
 	    goto gotEOL;
+	} else if (gs.bytesWrote == 0
+		&& GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+	    /* Set eol to the position that caused the encoding error, and then
+	     * coninue to gotEOL, which stores the data that was decoded
+	     * without error to objPtr.  This allows the caller to do something
+	     * useful with the data decoded so far, and also results in the
+	     * position of the file being the first byte that was not
+	     * succesfully decoded, allowing further processing at exactly that
+	     * point, if desired.
+	     */
+	    eol = dstEnd;
+	    reportError = 1;
+	    goto gotEOL;
 	}
 	dst = dstEnd;
     }
@@ -4922,7 +4937,16 @@ Tcl_GetsObj(
     Tcl_SetObjLength(objPtr, eol - objPtr->bytes);
     CommonGetsCleanup(chanPtr);
     ResetFlag(statePtr, CHANNEL_BLOCKED);
-    copiedTotal = gs.totalChars + gs.charsWrote - skip;
+    if (reportError) {
+	ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR|CHANNEL_ENCODING_ERROR);
+	/* reset CHANNEL_ENCODING_ERROR to afford a chance to reconfigure
+	 * the channel and try again
+	 */
+	Tcl_SetErrno(EILSEQ);
+	copiedTotal = -1;
+    } else {
+	copiedTotal = gs.totalChars + gs.charsWrote - skip;
+    }
     goto done;
 
     /*

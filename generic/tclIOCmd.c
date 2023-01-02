@@ -282,7 +282,7 @@ Tcl_GetsObjCmd(
     Tcl_Channel chan;		/* The channel to read from. */
     size_t lineLen;		/* Length of line just read. */
     int mode;			/* Mode in which channel is opened. */
-    Tcl_Obj *linePtr, *chanObjPtr;
+    Tcl_Obj *linePtr, *chanObjPtr, *returnOptsPtr;
     int code = TCL_OK;
 
     if ((objc != 2) && (objc != 3)) {
@@ -305,7 +305,6 @@ Tcl_GetsObjCmd(
     lineLen = Tcl_GetsObj(chan, linePtr);
     if (lineLen == TCL_IO_FAILURE) {
 	if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
-	    Tcl_DecrRefCount(linePtr);
 
 	    /*
 	     * TIP #219.
@@ -319,7 +318,11 @@ Tcl_GetsObjCmd(
 			"error reading \"%s\": %s",
 			TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	    }
+	    returnOptsPtr = Tcl_NewDictObj();
+	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-result", -1)
+	    , linePtr);
 	    code = TCL_ERROR;
+	    Tcl_SetReturnOptions(interp, returnOptsPtr);
 	    goto done;
 	}
 	lineLen = TCL_IO_FAILURE;
