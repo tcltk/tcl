@@ -9255,6 +9255,7 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -
 } -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
 test io-75.14 {invalid utf-8 encoding [gets] coninues in non-strict mode after error} -setup {
+    set res {} 
     set fn [makeFile {} io-75.14]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9271,13 +9272,40 @@ test io-75.14 {invalid utf-8 encoding [gets] coninues in non-strict mode after e
     lappend res [gets $f]
     lappend res [gets $f]
     close $f
-	return $res
+    return $res
 } -cleanup {
     removeFile io-75.14
 } -match glob -result {a 1 {error reading "*": illegal byte sequence} bÀ c}
 
-# ### ### ### ######### ######### #########
 
+test io-75.15 {invalid utf-8 encoding strict gets should not hang} -setup {
+    set res {}
+    set fn [makeFile {} io-75.15]
+    set chan [open $fn w+]
+    fconfigure $chan -encoding binary
+    # This is not valid UTF-8
+    puts $chan hello\nAB\xc0\x40CD\nEFG
+    close $chan
+} -body {
+    #Now try to read it with [gets]
+    set chan [open $fn]
+    fconfigure $chan -encoding utf-8 -strictencoding 1
+    lappend res [gets $chan]
+    set status [catch {gets $chan} cres copts]
+    lappend res $status $cres
+    set status [catch {gets $chan} cres copts]
+    lappend res $status $cres
+    lappend res [dict get $copts -result]
+    chan configur $chan -encoding binary
+    foreach char [split [read $chan 2] {}] {
+	lappend res [format %x [scan $char %c]]
+    }
+    return $res
+} -cleanup {
+    close $chan
+    removeFile io-75.15
+} -match glob -result {hello 1 {error reading "*": illegal byte sequence}\
+    1 {error reading "*": illegal byte sequence} AB c0 40}
 
 
 test io-76.0 {channel modes} -setup {
