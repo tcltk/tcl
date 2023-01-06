@@ -6654,7 +6654,7 @@ printf "%s\n" "#define MODULE_SCOPE __private_extern__" >>confdefs.h
 fi
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
-	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
+	    LD_LIBRARY_PATH_VAR="DYLD_FALLBACK_LIBRARY_PATH"
 
 printf "%s\n" "#define MAC_OSX_TCL 1" >>confdefs.h
 
