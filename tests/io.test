@@ -1570,9 +1570,9 @@ apply [list {} {
 			set res
 		} -cleanup {
 			catch {close $f}
-		} -match glob -result {aaaaaaaaa 1\
+		} -match glob -result {{read aaaaaaaaa} 1\
 			{error reading "*": illegal byte sequence}\
-			{} 1 {error reading "*": illegal byte sequence}}
+			{read {}} 1 {error reading "*": illegal byte sequence}}
 	}
 
 	foreach variant {default encodingstrict} strict {{} {-encodingstrict 1}} {
@@ -9106,7 +9106,7 @@ test io-75.6 {invalid utf-8 encoding read is not ignored (-encodingstrict 1)} -s
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingstrict 1
 } -body {
     set status [catch {read $f} cres copts]
-    set d [dict get $copts -result]
+    set d [dict get $copts -result read]
     binary scan $d H* hd
     lappend hd $status $cres
 } -cleanup {
@@ -9125,7 +9125,7 @@ test io-75.7 {invalid utf-8 encoding eof handling (-encodingstrict 1)} -setup {
     fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -encodingstrict 1
 } -body {
     set status [catch {read $f} cres copts]
-    set d [dict get $copts -result]
+    set d [dict get $copts -result read]
     binary scan $d H* hd
     lappend hd [eof $f]
     lappend hd $status
@@ -9216,7 +9216,7 @@ test io-75.10 {incomplete multibyte encoding read is ignored} -setup {
     fconfigure $f -encoding utf-8 -buffering none
 } -body {
     set status [catch {read $f} cres copts]
-    set d [dict get $copts -result]
+    set d [dict get $copts -result read]
     close $f
     binary scan $d H* hd
 	lappend res $hd
@@ -9243,7 +9243,7 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
     fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -encodingstrict 1
 } -body {
     set status [catch {read $f} cres copts]
-    set d [dict get $copts -result]
+    set d [dict get $copts -result read]
     binary scan $d H* hd
     lappend hd $status
     lappend hd $cres
@@ -9263,7 +9263,7 @@ test io-75.12 {invalid utf-8 encoding read returns an error} -setup {
     fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf
 } -body {
     set status [catch {read $f} cres copts]
-    set d [dict get $copts -result]
+    set d [dict get $copts -result read]
     close $f
     binary scan $d H* hd
 	lappend res $hd $status $cres
@@ -9299,7 +9299,7 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-encodingstrict 1)} -
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingstrict 1
 } -body {
     set status [catch {read $f} cres copts]
-    set d [dict get $copts -result]
+    set d [dict get $copts -result read]
     binary scan $d H* hd
     lappend hd $status
     close $f
@@ -9359,7 +9359,7 @@ test io-75.15 {invalid utf-8 encoding strict gets should not hang} -setup {
     close $chan
     removeFile io-75.15
 } -match glob -result {hello 1 {error reading "*": illegal byte sequence}\
-    1 {error reading "*": illegal byte sequence} AB c0 40}
+    1 {error reading "*": illegal byte sequence} {read AB} c0 40}
 
 # ### ### ### ######### ######### #########
 
