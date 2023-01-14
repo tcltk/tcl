@@ -732,7 +732,7 @@ EncodingConverttoObjCmd(
 		goto encConvToError;
 	    }
 	    failVarObj = objv[2];
-	    flags = TCL_ENCODING_STOPONERROR;
+	    flags = TCL_ENCODING_STRICT;
 	    objcUnprocessed -= 2;
 	}
 	switch (objcUnprocessed) {
