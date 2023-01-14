@@ -593,7 +593,7 @@ EncodingConvertfromObjCmd(
 		goto encConvFromError;
 	    }
 	    failVarObj = objv[2];
-	    flags = TCL_ENCODING_STOPONERROR;
+	    flags = TCL_ENCODING_STRICT;
 	    objcUnprocessed -= 2;
 	}
 	switch (objcUnprocessed) {
@@ -610,7 +610,7 @@ EncodingConvertfromObjCmd(
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?-strict? ?-failindex var? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain|-strict|-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 
@@ -749,7 +749,7 @@ EncodingConverttoObjCmd(
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?-strict? ?-failindex var? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain|-strict|-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 
