@@ -270,6 +270,8 @@ VALGRINDARGS		= --tool=memcheck --num-callers=24 \
 	--keep-debuginfo=yes \
 	--suppressions=$(TOOL_DIR)/valgrind_suppress
 
+shquotequote = $(subst ",\",$(subst ',\',$(1)))
+shquotesingle = $(subst ','\'',$(1))
 #--------------------------------------------------------------------------
 # The information below should be usable as is. The configure script won't
 # modify it and you shouldn't need to modify it either.
@@ -816,9 +818,12 @@ test-tcl: ${TCLTEST_EXE}
 	$(SHELL_ENV) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
 gdb-test: ${TCLTEST_EXE}
-	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > gdb.run
-	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
-	@echo "set args $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1" >> gdb.run
+	@printf '%s ' set env @LD_LIBRARY_PATH_VAR@=\"`pwd`$${@LD_LIBRARY_PATH_VAR@:+:$${@LD_LIBRARY_PATH_VAR}}\" > gdb.run
+	@printf '\n' >>gdb.run
+	@printf '%s ' set env TCL_LIBRARY=\'$(call shquotesingle,${TCL_BUILDTIME_LIBRARY})\' >> gdb.run
+	@printf '\n' >>gdb.run
+	@printf '%s ' set args $(call shquotequote,$(TOP_DIR))/tests/all.tcl\
+		$(call shquotequote,$(TESTFLAGS)) -singleproc 1 >> gdb.run
 	$(GDB) ./${TCLTEST_EXE} --command=gdb.run
 	rm gdb.run
 
