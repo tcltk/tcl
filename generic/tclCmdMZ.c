@@ -2629,7 +2629,7 @@ StringEqualCmd(
      */
 
     objv += objc-2;
-    match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
+    match = TclStringCmp(objv[0], objv[1], 1, nocase, reqlength);
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
     return TCL_OK;
 }
@@ -2702,8 +2702,8 @@ TclStringCmp(
     Tcl_Obj *value2Ptr,
     int checkEq,		/* comparison is only for equality */
     int nocase,			/* comparison is not case sensitive */
-    int reqlength)		/* requested length; -1 to compare whole
-				 * strings */
+    int reqlength)		/* requested length in characters; -1 to
+				 * compare whole strings */
 {
     const char *s1, *s2;
     int empty, length, match, s1len, s2len;
@@ -2731,10 +2731,10 @@ TclStringCmp(
     } else if ((value1Ptr->typePtr == &tclStringType)
 	    && (value2Ptr->typePtr == &tclStringType)) {
 	/*
-	 * Do a unicode-specific comparison if both of the args are of String
+	 * Do a Unicode-specific comparison if both of the args are of String
 	 * type. If the char length == byte length, we can do a memcmp. In
 	 * benchmark testing this proved the most efficient check between the
-	 * unicode and string comparison operations.
+	 * Unicode and string comparison operations.
 	 */
 
 	if (nocase) {
@@ -2748,6 +2748,9 @@ TclStringCmp(
 		    && (value1Ptr->bytes != NULL)
 		    && (s2len == value2Ptr->length)
 		    && (value2Ptr->bytes != NULL)) {
+		/* each byte represents one character so s1l3n, s2l3n, and
+		 * reqlength are in both bytes and characters
+		 */
 		s1 = value1Ptr->bytes;
 		s2 = value2Ptr->bytes;
 		memCmpFn = memcmp;
@@ -2756,14 +2759,17 @@ TclStringCmp(
 		s2 = (char *) Tcl_GetUnicode(value2Ptr);
 		if (
 #if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX != 4)
-			1
+		    1
 #else
-			checkEq
+		    checkEq
 #endif /* WORDS_BIGENDIAN */
-		        ) {
+		) {
 		    memCmpFn = memcmp;
 		    s1len *= sizeof(Tcl_UniChar);
 		    s2len *= sizeof(Tcl_UniChar);
+		    if (reqlength > 0) {
+			reqlength *= sizeof(Tcl_UniChar);
+		    }
 		} else {
 		    memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
 		}
@@ -2805,7 +2811,7 @@ TclStringCmp(
 	    s2 = TclGetStringFromObj(value2Ptr, &s2len);
 	}
 
-	if (!nocase && checkEq) {
+	if (!nocase && checkEq && reqlength < 0) {
 	    /*
 	     * When we have equal-length we can check only for (in)equality.
 	     * We can use memcmp() in all (n)eq cases because we don't need to
@@ -2826,24 +2832,28 @@ TclStringCmp(
 		s1len = Tcl_NumUtfChars(s1, s1len);
 		s2len = Tcl_NumUtfChars(s2, s2len);
 		memCmpFn = (memCmpFn_t)
-			(nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
+		    (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
 	    }
 	}
     }
+
+    /* At this point s1len, s2len, and reqlength should by now have been
+     * adjusted so that they are all in the units expected by the selected
+     * comparison function.
+     */
 
     length = (s1len < s2len) ? s1len : s2len;
     if (reqlength > 0 && reqlength < length) {
 	length = reqlength;
     } else if (reqlength < 0) {
 	/*
-	 * The requested length is negative, so we ignore it by setting it to
-	 * length + 1 so we correct the match var.
+	 * The requested length is negative, so ignore it by setting it to
+	 * length + 1 to correct the match var.
 	 */
-
 	reqlength = length + 1;
     }
 
-    if (checkEq && (s1len != s2len)) {
+    if (checkEq && reqlength < 0 && (s1len != s2len)) {
 	match = 1;		/* This will be reversed below. */
     } else {
 	/*
