@@ -2222,11 +2222,11 @@ test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
     -constraints {socket} \
     -body {
         set sock [socket -async localhost [randport]]
-        catch {gets $sock} x
-        list $x [fconfigure $sock -error] [fconfigure $sock -error]
+        catch {gets $sock} x copts
+        list [dict get $copts -errorinfo] [fconfigure $sock -error] [fconfigure $sock -error]
     } -cleanup {
         close $sock
-    } -match glob -result {{error reading "sock*": socket is not connected} {connection refused} {}}
+    } -match glob -result {{error reading "sock*": socket is not connected*} {connection refused} {}}
 test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
@@ -2285,13 +2285,15 @@ test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener}
         set sock [socket -async localhost [randport]]
         fconfigure $sock -blocking 0
         for {set i 0} {$i < 50} {incr i } {
-            if {[catch {gets $sock} x] || $x ne "" || ![fblocked $sock]} break
+            if {[catch {gets $sock} x copts] || $x ne "" || ![fblocked $sock]} break
             after 200
         }
-        list $x [fconfigure $sock -error] [fconfigure $sock -error]
+        list [dict get $copts -errorinfo] [fconfigure $sock -error] [
+	    fconfigure $sock -error]
     } -cleanup {
         close $sock
-    } -match glob -result {{error reading "sock*": socket is not connected} {connection refused} {}}
+    } -match glob -result {{error reading "sock*": socket is not connected*}\
+	{connection refused} {}}
 test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {

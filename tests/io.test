@@ -9313,6 +9313,7 @@ test io-75.14 {invalid utf-8 encoding [gets] coninues in non-strict mode after e
     lappend res [gets $f]
     set status [catch {gets $f} cres copts]
     lappend res $status $cres
+    lappend res [dict get $copts -errorinfo]
     chan configure $f -strictencoding 0
     lappend res [gets $f]
     lappend res [gets $f]
@@ -9320,7 +9321,7 @@ test io-75.14 {invalid utf-8 encoding [gets] coninues in non-strict mode after e
     return $res
 } -cleanup {
     removeFile io-75.14
-} -match glob -result {a 1 {error reading "*": illegal byte sequence} bÀ c}
+} -match glob -result {a 1 {} {error reading "*": illegal byte sequence*} bÀ c}
 
 
 test io-75.15 {invalid utf-8 encoding strict gets should not hang} -setup {
@@ -9338,9 +9339,10 @@ test io-75.15 {invalid utf-8 encoding strict gets should not hang} -setup {
     lappend res [gets $chan]
     set status [catch {gets $chan} cres copts]
     lappend res $status $cres
+    lappend res [dict get $copts -errorinfo]
     set status [catch {gets $chan} cres copts]
     lappend res $status $cres
-    lappend res [dict get $copts -result]
+    lappend res [dict get $copts -errorinfo]
     chan configur $chan -encoding binary
     foreach char [split [read $chan 2] {}] {
 	lappend res [format %x [scan $char %c]]
@@ -9349,8 +9351,8 @@ test io-75.15 {invalid utf-8 encoding strict gets should not hang} -setup {
 } -cleanup {
     close $chan
     removeFile io-75.15
-} -match glob -result {hello 1 {error reading "*": illegal byte sequence}\
-    1 {error reading "*": illegal byte sequence} {read AB} c0 40}
+} -match glob -result {hello 1 {} {error reading "*": illegal byte sequence*}\
+    1 {} {error reading "*": illegal byte sequence*} c0 40}
 
 
 test io-76.0 {channel modes} -setup {

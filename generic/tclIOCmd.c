@@ -295,7 +295,7 @@ Tcl_GetsObjCmd(
     Tcl_Channel chan;		/* The channel to read from. */
     int lineLen;		/* Length of line just read. */
     int mode;			/* Mode in which channel is opened. */
-    Tcl_Obj *linePtr, *chanObjPtr, *resultDictPtr, *returnOptsPtr;
+    Tcl_Obj *linePtr, *chanObjPtr;
     int code = TCL_OK;
 
     if ((objc != 2) && (objc != 3)) {
@@ -326,19 +326,15 @@ Tcl_GetsObjCmd(
 	     * the regular message if nothing was found in the bypass.
 	     */
 
-	    if (!TclChanCaughtErrorBypass(interp, chan)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"error reading \"%s\": %s",
-			TclGetString(chanObjPtr), Tcl_PosixError(interp)));
+	    if (TclChanCaughtErrorBypass(interp, chan)) {
+		Tcl_AddObjErrorInfo(interp, Tcl_GetString(Tcl_ObjPrintf(
+		    "\n %s", Tcl_GetString(Tcl_GetObjResult(interp)))),-1);
+	    } else {
+		Tcl_AddObjErrorInfo(interp, Tcl_GetString(Tcl_ObjPrintf(
+		    "error reading \"%s\": %s",
+		    TclGetString(chanObjPtr), Tcl_PosixError(interp))), -1);
 	    }
-	    resultDictPtr = Tcl_NewDictObj();
-	    Tcl_DictObjPut(NULL, resultDictPtr, Tcl_NewStringObj("read", -1)
-	    , linePtr);
-	    returnOptsPtr = Tcl_NewDictObj();
-	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-result", -1)
-	    , resultDictPtr);
 	    code = TCL_ERROR;
-	    Tcl_SetReturnOptions(interp, returnOptsPtr);
 	    goto done;
 	}
 	lineLen = TCL_INDEX_NONE;
