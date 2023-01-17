@@ -6700,8 +6700,8 @@ test chan-io-52.3 {TclCopyChannel} -constraints {fcopy} -setup {
 } -body {
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    chan configure $f1 -translation lf -blocking 0
-    chan configure $f2 -translation cr -blocking 0
+    chan configure $f1 -translation lf -encoding iso8859-1 -blocking 0
+    chan configure $f2 -translation cr -encoding iso8859-1 -blocking 0
     set s0 [chan copy $f1 $f2]
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     chan close $f1
@@ -6779,8 +6779,8 @@ test chan-io-52.6 {TclCopyChannel} -setup {
 } -constraints {fcopy} -body {
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    chan configure $f1 -translation lf -blocking 0
-    chan configure $f2 -translation lf -blocking 0
+    chan configure $f1 -translation lf -encoding iso8859-1 -blocking 0
+    chan configure $f2 -translation lf -encoding iso8859-1 -blocking 0
     set s0 [chan copy $f1 $f2 -size [expr {[file size $thisScript] + 5}]]
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     chan close $f1
@@ -6915,8 +6915,8 @@ test chan-io-53.2 {CopyData} -setup {
 } -constraints {fcopy} -body {
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    chan configure $f1 -translation lf -blocking 0
-    chan configure $f2 -translation cr -blocking 0
+    chan configure $f1 -translation lf -encoding iso8859-1 -blocking 0
+    chan configure $f2 -translation cr -encoding iso8859-1 -blocking 0
     chan copy $f1 $f2 -command [namespace code {set s0}]
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     variable s0
