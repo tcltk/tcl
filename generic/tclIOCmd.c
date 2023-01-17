@@ -387,7 +387,8 @@ Tcl_ReadObjCmd(
     int toRead;			/* How many bytes to read? */
     int charactersRead;		/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
-    Tcl_Obj *resultPtr, *resultDictPtr, *returnOptsPtr, *chanObjPtr;
+    int exitstatus = TCL_OK;
+    Tcl_Obj *resultPtr, *chanObjPtr;
 
     if ((objc != 2) && (objc != 3)) {
 	Interp *iPtr;
@@ -471,28 +472,20 @@ Tcl_ReadObjCmd(
 	 * regular message if nothing was found in the bypass.
 	 */
 
-	if (!TclChanCaughtErrorBypass(interp, chan)) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "error reading \"%s\": %s",
-		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
+	if (TclChanCaughtErrorBypass(interp, chan)) {
+	    Tcl_AddObjErrorInfo(interp, Tcl_GetString(Tcl_ObjPrintf(
+		"\n %s", Tcl_GetString(Tcl_GetObjResult(interp)))),-1);
+	} else {
+	    Tcl_AddObjErrorInfo(interp, Tcl_GetString(Tcl_ObjPrintf(
+		"error reading \"%s\": %s",
+		TclGetString(chanObjPtr), Tcl_PosixError(interp))), -1);
 	}
-	resultDictPtr = Tcl_NewDictObj();
-	Tcl_DictObjPut(NULL, resultDictPtr, Tcl_NewStringObj("read", -1)
-	    , resultPtr);
-	returnOptsPtr = Tcl_NewDictObj();
-	Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-result", -1)
-	    , resultDictPtr);
-	TclChannelRelease(chan);
-	Tcl_DecrRefCount(resultPtr);
-	Tcl_SetReturnOptions(interp, returnOptsPtr);
-	return TCL_ERROR;
-    }
+	exitstatus = TCL_ERROR;
+    } else if ((charactersRead > 0) && (newline != 0)) {
+	/*
+	 * If requested, remove the last newline in the channel if at EOF.
+	 */
 
-    /*
-     * If requested, remove the last newline in the channel if at EOF.
-     */
-
-    if ((charactersRead > 0) && (newline != 0)) {
 	const char *result;
 	int length;
 
@@ -504,7 +497,7 @@ Tcl_ReadObjCmd(
     Tcl_SetObjResult(interp, resultPtr);
     TclChannelRelease(chan);
     Tcl_DecrRefCount(resultPtr);
-    return TCL_OK;
+    return exitstatus;
 }
 
 /*

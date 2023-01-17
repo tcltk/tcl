@@ -864,8 +864,11 @@ test iocmd-21.22 {[close] in [read] segfaults} -setup {
     }
     set ch [chan create read foo]
 } -body {
-    read $ch 1
-} -returnCodes error -cleanup {
+    set status [catch {
+	read $ch 1
+    } cres copts]
+    list $status [dict get $copts -errorinfo]
+} -cleanup {
     catch {close $ch}
     rename foo {}
 } -match glob -result {*invalid argument*}
@@ -1058,16 +1061,18 @@ test iocmd-23.1 {chan read, regular data return} -match glob -body {
 } -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
 test iocmd-23.2 {chan read, bad data return, to much} -match glob -body {
     set res {}
-    proc foo {args} {
+    proc foo args {
 	oninit; onfinal; track
 	return [string repeat snarf 1000]
     }
     set c [chan create {r w} foo]
-    note [catch {read $c 2} msg]; note $msg
+    note [catch {read $c 2} msg copts]
+    note $msg
+    note [dict get $copts -errorinfo]
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 {read delivered more than requested}}
+} -result {{read rc* 4096} 1 {} {read delivered more than requested*}}
 test iocmd-23.3 {chan read, for non-readable channel} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1086,11 +1091,13 @@ test iocmd-23.4 {chan read, error return} -match glob -body {
 	return -code error BOOM!
     }
     set c [chan create {r w} foo]
-    note [catch {read $c 2} msg]; note $msg
+    note [catch {read $c 2} msg copts]
+    note $msg
+    note [dict get $copts -errorinfo]
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 BOOM!}
+} -result {{read rc* 4096} 1 {} {BOOM!*}}
 test iocmd-23.5 {chan read, break return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1098,11 +1105,13 @@ test iocmd-23.5 {chan read, break return is error} -match glob -body {
 	return -code break BOOM!
     }
     set c [chan create {r w} foo]
-    note [catch {read $c 2} msg]; note $msg
+    note [catch {read $c 2} msg copts]
+    note $msg
+    note [dict get $copts -errorinfo]
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 *bad code*}
+} -result {{read rc* 4096} 1 {} {chan handler *bad code*}}
 test iocmd-23.6 {chan read, continue return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1110,11 +1119,13 @@ test iocmd-23.6 {chan read, continue return is error} -match glob -body {
 	return -code continue BOOM!
     }
     set c [chan create {r w} foo]
-    note [catch {read $c 2} msg]; note $msg
+    note [catch {read $c 2} msg copts]
+    note $msg
+    note [dict get $copts -errorinfo]
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 *bad code*}
+} -result {{read rc* 4096} 1 {} {chan handler *bad code*}}
 test iocmd-23.7 {chan read, custom return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1122,11 +1133,13 @@ test iocmd-23.7 {chan read, custom return is error} -match glob -body {
 	return -code 777 BOOM!
     }
     set c [chan create {r w} foo]
-    note [catch {read $c 2} msg]; note $msg
+    note [catch {read $c 2} msg copts]
+    note $msg
+    note [dict get $copts -errorinfo]
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 *bad code*}
+} -result {{read rc* 4096} 1 {} {chan handler *bad code*}}
 test iocmd-23.8 {chan read, level is squashed} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1134,11 +1147,14 @@ test iocmd-23.8 {chan read, level is squashed} -match glob -body {
 	return -level 55 -code 777 BOOM!
     }
     set c [chan create {r w} foo]
-    note [catch {read $c 2} msg opt]; note $msg; noteOpts $opt
+    note [catch {read $c 2} msg opt]
+    note $msg
+    noteOpts $opt
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "read"*}}
+} -result {{read rc* 4096} 1 {} {-code 1 -level 0 -errorcode NONE\
+    -errorline 1 -errorinfo *bad code*subcommand "read"*}}
 test iocmd-23.9 {chan read, no data means eof} -match glob -setup {
     set res {}
     proc foo {args} {

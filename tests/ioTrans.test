@@ -450,12 +450,13 @@ test iortrans-4.3 {chan read, error return} -setup {
 	return -code error BOOM!
     }
     set c [chan push [tempchan] foo]
-    lappend res [catch {read $c 2} msg] $msg
+    lappend res [catch {read $c 2} msg copts] $msg
+    lappend res [dict get $copts -errorinfo]
 } -cleanup {
     tempdone
     rename foo {}
 } -result {{read rt* {test data
-}} 1 BOOM!}
+}} 1 {} {BOOM!*}}
 test iortrans-4.4 {chan read, break return is error} -setup {
     set res {}
 } -match glob -body {
@@ -466,12 +467,13 @@ test iortrans-4.4 {chan read, break return is error} -setup {
 	return -code break BOOM!
     }
     set c [chan push [tempchan] foo]
-    lappend res [catch {read $c 2} msg] $msg
+    lappend res [catch {read $c 2} msg copts] $msg
+    lappend res [dict get $copts -errorinfo]
 } -cleanup {
     tempdone
     rename foo {}
 } -result {{read rt* {test data
-}} 1 *bad code*}
+}} 1 {} {chan handler returned bad code*}}
 test iortrans-4.5 {chan read, continue return is error} -setup {
     set res {}
 } -match glob -body {
@@ -482,12 +484,13 @@ test iortrans-4.5 {chan read, continue return is error} -setup {
 	return -code continue BOOM!
     }
     set c [chan push [tempchan] foo]
-    lappend res [catch {read $c 2} msg] $msg
+    lappend res [catch {read $c 2} msg copts] $msg
+    lappend res [dict get $copts -errorinfo]
 } -cleanup {
     tempdone
     rename foo {}
 } -result {{read rt* {test data
-}} 1 *bad code*}
+}} 1 {} {chan handler returned bad code*}}
 test iortrans-4.6 {chan read, custom return is error} -setup {
     set res {}
 } -match glob -body {
@@ -498,12 +501,13 @@ test iortrans-4.6 {chan read, custom return is error} -setup {
 	return -code 777 BOOM!
     }
     set c [chan push [tempchan] foo]
-    lappend res [catch {read $c 2} msg] $msg
+    lappend res [catch {read $c 2} msg copts] $msg
+    lappend res [dict get $copts -errorinfo]
 } -cleanup {
     tempdone
     rename foo {}
 } -result {{read rt* {test data
-}} 1 *bad code*}
+}} 1 {} {chan handler returned bad code*}}
 test iortrans-4.7 {chan read, level is squashed} -setup {
     set res {}
 } -match glob -body {
@@ -520,7 +524,8 @@ test iortrans-4.7 {chan read, level is squashed} -setup {
     tempdone
     rename foo {}
 } -result {{read rt* {test data
-}} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "read"*}}
+}} 1 {} {-code 1 -level 0 -errorcode NONE -errorline 1\
+    -errorinfo *bad code*subcommand "read"*}}
 test iortrans-4.8 {chan read, read, bug 2921116} -setup {
     set res {}
 } -match glob -body {
