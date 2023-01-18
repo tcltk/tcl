@@ -2145,7 +2145,6 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_MODIFIED		0x20
 #define TCL_ENCODING_NOCOMPLAIN		0x40
 #define TCL_ENCODING_STRICT			0x44
-#define TCL_ENCODING_HACK_FLAG (1<<20)
 
 /*
  * The following definitions are the error codes returned by the conversion
