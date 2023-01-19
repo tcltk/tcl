@@ -48,7 +48,7 @@ in case of a conversion error, the position of the input byte causing the error
 is returned in the given variable.  The return value of the command are the
 converted characters until the first error position.
 In case of no error, the value \fI-1\fR is written to the variable.  This option
-may not be used together with \fB-nocomplain\fR, and it already implies \fB-strict\fR.
+may not be used together with \fB-nocomplain\fR.
 .PP
 The option \fB-nocomplain\fR has no effect and is available for compatibility with
 TCL 9. In TCL 9, the encoding command fails with an error on any encoding issue.
@@ -81,7 +81,7 @@ in case of a conversion error, the position of the input character causing the e
 is returned in the given variable.  The return value of the command are the
 converted bytes until the first error position. No error condition is raised.
 In case of no error, the value \fI-1\fR is written to the variable.  This option
-may not be used together with \fB-nocomplain\fR, and it already implies \fB-strict\fR.
+may not be used together with \fB-nocomplain\fR.
 .PP
 The option \fB-nocomplain\fR has no effect and is available for compatibility with
 TCL 9. In TCL 9, the encoding command fails with an error on any encoding issue.
