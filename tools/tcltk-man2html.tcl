@@ -293,14 +293,14 @@ proc css-stylesheet {} {
 	font-size: 11px;
     }
     css-style ".keylist dt" ".arguments dt" {
-	width: 20em;
+	width: 25em;
 	float: left;
 	padding: 2px;
 	border-top: 1px solid #999999;
     }
     css-style ".keylist dt" { font-weight: bold; }
     css-style ".keylist dd" ".arguments dd" {
-	margin-left: 20em;
+	margin-left: 25em;
 	padding: 2px;
 	border-top: 1px solid #999999;
     }

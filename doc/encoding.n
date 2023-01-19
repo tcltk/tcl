@@ -28,7 +28,7 @@ formats.
 Performs one of several encoding related operations, depending on
 \fIoption\fR.  The legal \fIoption\fRs are:
 .TP
-\fBencoding convertfrom\fR ?\fB-nocomplain\fR? ?\fB-failindex var\fR? ?\fB-strict\fR? ?\fIencoding\fR? \fIdata\fR
+\fBencoding convertfrom\fR ?\fB-nocomplain\fR|\fB-strict\fR|\fB-failindex var\fR? ?\fIencoding\fR? \fIdata\fR
 .
 Convert \fIdata\fR to a Unicode string from the specified \fIencoding\fR.  The
 characters in \fIdata\fR are 8 bit binary data.  The resulting
@@ -50,15 +50,15 @@ in case of a conversion error, the position of the input byte causing the error
 is returned in the given variable.  The return value of the command are the
 converted characters until the first error position. No error condition is raised.
 In case of no error, the value \fI-1\fR is written to the variable.  This option
-may not be used together with \fB-nocomplain\fR.
+may not be used together with \fB-nocomplain\fR or \fB-strict\fR.
 .PP
 The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
-encoder, it disallows the the sequence \fB\\xC0\\x80\fR and noncharacters (which -
+encoder, it disallows invalid byte sequences and surrogates (which -
 otherwise - are just passed through).
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .RE
 .TP
-\fBencoding convertto\fR ?\fB-nocomplain\fR? ?\fB-failindex var\fR? ?\fB-strict\fR? ?\fIencoding\fR? \fIstring\fR
+\fBencoding convertto\fR ?\fB-nocomplain\fR|\fB-strict\fR|\fB-failindex var\fR? ?\fIencoding\fR? \fIstring\fR
 .
 Convert \fIstring\fR from Unicode to the specified \fIencoding\fR.
 The result is a sequence of bytes that represents the converted
@@ -82,11 +82,10 @@ in case of a conversion error, the position of the input character causing the e
 is returned in the given variable.  The return value of the command are the
 converted bytes until the first error position. No error condition is raised.
 In case of no error, the value \fI-1\fR is written to the variable.  This option
-may not be used together with \fB-nocomplain\fR.
+may not be used together with \fB-nocomplain\fR or \fB-strict\fR.
 .PP
 The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
-encoder, it disallows the the sequence \fB\\xC0\\x80\fR and noncharacters (which -
-otherwise - are just passed through).
+encoder, it has no effect.
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .RE
 .TP
