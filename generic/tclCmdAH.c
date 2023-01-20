@@ -627,7 +627,9 @@ EncodingConvertfromObjCmd(
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain|?-strict? ?-failindex var?? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-strict? ?-failindex var? ?encoding? data");
+	((Interp *) interp)->flags |= INTERP_ALTERNATE_WRONG_ARGS;
+	Tcl_WrongNumArgs(interp, 1, objv, "-nocomplain ?encoding? data");
 	return TCL_ERROR;
     }
 
@@ -782,7 +784,10 @@ EncodingConverttoObjCmd(
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain|?-strict? ?-failindex var?? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-strict? ?-failindex var? ?encoding? data");
+	((Interp *) interp)->flags |= INTERP_ALTERNATE_WRONG_ARGS;
+	Tcl_WrongNumArgs(interp, 1, objv, "-nocomplain ?encoding? data");
+
 	return TCL_ERROR;
     }
 
