@@ -420,6 +420,7 @@ EncodingConvertfromObjCmd(
     const char *bytesPtr;	/* Pointer to the first byte of the array */
     int flags = TCL_ENCODING_STRICT;
     size_t result;
+    int current = 1;
     Tcl_Obj *failVarObj = NULL;
     /*
      * Decode parameters:
@@ -437,42 +438,37 @@ EncodingConvertfromObjCmd(
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if (objc > 2 && objc < 6) {
-	int objcUnprocessed = objc;
+    } else if (objc > 2) {
 	data = objv[objc - 1];
-	bytesPtr = Tcl_GetString(objv[1]);
-	if (bytesPtr[0] == '-' && bytesPtr[1] == 'i'
-		&& !strncmp(bytesPtr, "-ignore", strlen(bytesPtr))) {
-	    flags = 0;
-	    objcUnprocessed--;
-	} else if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
-		&& !strncmp(bytesPtr, "-strict", strlen(bytesPtr))) {
-	    flags = TCL_ENCODING_STRICT;
-	    objcUnprocessed--;
-	} else if (bytesPtr[0] == '-' && bytesPtr[1] == 'f'
-		&& !strncmp(bytesPtr, "-failindex", strlen(bytesPtr))) {
-	    /* at least two additional arguments needed */
-	    if (objc < 4) {
-		goto encConvFromError;
-	    }
-	    failVarObj = objv[2];
-	    objcUnprocessed -= 2;
-	}
-	switch (objcUnprocessed) {
-	    case 3:
-		if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
-		    return TCL_ERROR;
+	while (current < objc - 2) {
+	    bytesPtr = Tcl_GetString(objv[current++]);
+	    if (bytesPtr[0] == '-' && bytesPtr[1] == 'i'
+		    && !strncmp(bytesPtr, "-ignore", strlen(bytesPtr))) {
+		flags = 0;
+	    } else if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
+		    && !strncmp(bytesPtr, "-strict", strlen(bytesPtr))) {
+		flags = TCL_ENCODING_STRICT;
+	    } else if (bytesPtr[0] == '-' && bytesPtr[1] == 'f'
+		    && !strncmp(bytesPtr, "-failindex", strlen(bytesPtr))) {
+		/* at least two additional arguments needed */
+		if (current >= objc - 2) {
+		    goto encConvFromError;
 		}
+		failVarObj = objv[current++];
+	    } else {
 		break;
-	    case 2:
-		encoding = Tcl_GetEncoding(interp, NULL);
-		break;
-	    default:
-		goto encConvFromError;
+	    }
+	}
+	if (current == objc - 2) {
+	    if (Tcl_GetEncodingFromObj(interp, objv[current], &encoding) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else {
+	    goto encConvFromError;
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-ignore? ?-strict? ?-failindex var? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-ignore|-strict|-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 
@@ -550,6 +546,7 @@ EncodingConverttoObjCmd(
     const char *stringPtr;	/* Pointer to the first byte of the string */
     size_t result;
     int flags = TCL_ENCODING_STRICT;
+    int current = 1;
     Tcl_Obj *failVarObj = NULL;
 
     /*
@@ -566,42 +563,38 @@ EncodingConverttoObjCmd(
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if (objc > 2 && objc < 6) {
-	int objcUnprocessed = objc;
+    } else if (objc > 2) {
 	data = objv[objc - 1];
-	stringPtr = Tcl_GetString(objv[1]);
-	if (stringPtr[0] == '-' && stringPtr[1] == 'i'
-		&& !strncmp(stringPtr, "-ignore", strlen(stringPtr))) {
-	    flags = 0;
-	    objcUnprocessed--;
-	} else if (stringPtr[0] == '-' && stringPtr[1] == 's'
-		&& !strncmp(stringPtr, "-strict", strlen(stringPtr))) {
-	    flags = TCL_ENCODING_STRICT;
-	    objcUnprocessed--;
-	} else if (stringPtr[0] == '-' && stringPtr[1] == 'f'
-		&& !strncmp(stringPtr, "-failindex", strlen(stringPtr))) {
-	    /* at least two additional arguments needed */
-	    if (objc < 4) {
-		goto encConvToError;
-	    }
-	    failVarObj = objv[2];
-	    objcUnprocessed -= 2;
-	}
-	switch (objcUnprocessed) {
-	    case 3:
-		if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
-		    return TCL_ERROR;
+
+	while (current < objc - 2) {
+	    stringPtr = Tcl_GetString(objv[current++]);
+	    if (stringPtr[0] == '-' && stringPtr[1] == 'i'
+		    && !strncmp(stringPtr, "-ignore", strlen(stringPtr))) {
+		flags = 0;
+	    } else if (stringPtr[0] == '-' && stringPtr[1] == 's'
+		    && !strncmp(stringPtr, "-strict", strlen(stringPtr))) {
+		flags = TCL_ENCODING_STRICT;
+	    } else if (stringPtr[0] == '-' && stringPtr[1] == 'f'
+		    && !strncmp(stringPtr, "-failindex", strlen(stringPtr))) {
+		/* at least two additional arguments needed */
+		if (current >= objc - 2) {
+		    goto encConvToError;
 		}
+		failVarObj = objv[current++];
+	    } else {
 		break;
-	    case 2:
-		encoding = Tcl_GetEncoding(interp, NULL);
-		break;
-	    default:
-		goto encConvToError;
+	    }
+	}
+	if (current == objc - 2) {
+	    if (Tcl_GetEncodingFromObj(interp, objv[current], &encoding) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else {
+	    goto encConvToError;
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-ignore? ?-strict? ?-failindex var? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-ignore|-strict|-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 

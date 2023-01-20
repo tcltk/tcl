@@ -1,5 +1,6 @@
 '\"
 '\" Copyright (c) 1998 Scriptics Corporation.
+'\" Copyright (c) 2023 Nathan Coulter
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -28,66 +29,45 @@ formats.
 Performs one of several encoding related operations, depending on
 \fIoption\fR.  The legal \fIoption\fRs are:
 .TP
-\fBencoding convertfrom\fR ?\fB-nocomplain\fR? ?\fB-failindex var\fR? ?\fB-strict\fR? ?\fIencoding\fR? \fIdata\fR
+\fBencoding convertfrom\fR ?\fB-ignore\fR|\fB-strict\fR|\fB-failindex var\fR ...? \fIencoding\fR \fIdata\fR
 .
 Convert \fIdata\fR to a Unicode string from the specified \fIencoding\fR.  The
 characters in \fIdata\fR are 8 bit binary data.  The resulting
 sequence of bytes is a string created by applying the given \fIencoding\fR
-to the data. If \fIencoding\fR is not specified, the current
-system encoding is used.
-.VS "TCL8.7 TIP346, TIP607, TIP601"
+to the data.
 .PP
 .RS
-If the option \fB-nocomplain\fR is given, the command does not fail on
-encoding errors.  Instead, any not convertable bytes (like incomplete UTF-8
- sequences, see example below) are put as byte values into the output stream.
-If the option \fB-nocomplain\fR is not given, the command will fail with an
-appropriate error message.
+If the option \fB-ignore\fR is given, bytes that are invalid for the given
+encoding are copied to the output stream.
 .PP
-If the option \fB-failindex\fR with a variable name is given, the error reporting
-is changed in the following manner:
-in case of a conversion error, the position of the input byte causing the error
-is returned in the given variable.  The return value of the command are the
-converted characters until the first error position. No error condition is raised.
-In case of no error, the value \fI-1\fR is written to the variable.  This option
-may not be used together with \fB-nocomplain\fR.
+If the option \fB-failindex\fR with a variable name is given, the position of
+the first byte of invalid data for the given encoding is stored in the named
+variable.  The return value of the command is the characters successfully
+obtained up to the first invalid byte. If no invalid bytes were encountered,
+\fI-1\fR is stored to the variable.
 .PP
-The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
-encoder, it disallows the the sequence \fB\\xC0\\x80\fR and noncharacters (which -
-otherwise - are just passed through).
-.VE "TCL8.7 TIP346, TIP607, TIP601"
+The \fB-strict\fR option raises an error when decoding fails.
 .RE
 .TP
-\fBencoding convertto\fR ?\fB-nocomplain\fR? ?\fB-failindex var\fR? ?\fB-strict\fR? ?\fIencoding\fR? \fIstring\fR
+\fBencoding convertto\fR ?\fB-ignore\fR|\fB-strict\fR|\fB-failindex var\fR ...? \fIencoding\fR \fIstring\fR
 .
-Convert \fIstring\fR from Unicode to the specified \fIencoding\fR.
-The result is a sequence of bytes that represents the converted
-string.  Each byte is stored in the lower 8-bits of a Unicode
-character (indeed, the resulting string is a binary string as far as
-Tcl is concerned, at least initially).  If \fIencoding\fR is not
-specified, the current system encoding is used.
-.VS "TCL8.7 TIP346, TIP607, TIP601"
+Convert \fIstring\fR from Unicode to the specified \fIencoding\fR.  The result
+is the encoded data:  Each character in the result one byte, i.e. it has a
+code-point of 255 or less.
 .PP
 .RS
-If the option \fB-nocomplain\fR is given, the command does not fail on
-encoding errors.  Instead, the replacement character \fB?\fR is output
-for any not representable character (like the dot \fB\\U2022\fR
-in \fBiso-8859-1\fR encoding, see example below).
-If the option \fB-nocomplain\fR is not given, the command will fail with an
-appropriate error message.
+If the option \fB-ignore\fR is given, the replacement character \fB?\fR is
+output in place of any character that is not allowed by the given encoding
+(like the dot \fB\\U2022\fR in \fBiso-8859-1\fR encoding, see example below).
 .PP
-If the option \fB-failindex\fR with a variable name is given, the error reporting
-is changed in the following manner:
-in case of a conversion error, the position of the input character causing the error
-is returned in the given variable.  The return value of the command are the
-converted bytes until the first error position. No error condition is raised.
-In case of no error, the value \fI-1\fR is written to the variable.  This option
-may not be used together with \fB-nocomplain\fR.
+If the option \fB-failindex\fR with a variable name is given, and a character
+that can not be converted to the given encoding is encounterd, its position 
+is stored in the named variable and the encoded data produced up until
+that point that is returned. If all characters are
+successfully encoded, \fI-1\fR is stored in the variable.
 .PP
-The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
-encoder, it disallows the the sequence \fB\\xC0\\x80\fR and noncharacters (which -
-otherwise - are just passed through).
-.VE "TCL8.7 TIP346, TIP607, TIP601"
+The \fB-strict\fR option causes an error to be returned if invalid data for the
+encoding is encountered.
 .RE
 .TP
 \fBencoding dirs\fR ?\fIdirectoryList\fR?
