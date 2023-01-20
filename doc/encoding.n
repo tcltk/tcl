@@ -28,7 +28,8 @@ formats.
 Performs one of several encoding related operations, depending on
 \fIoption\fR.  The legal \fIoption\fRs are:
 .TP
-\fBencoding convertfrom\fR ?\fB-nocomplain\fR|\fB-strict\fR|\fB-failindex var\fR? ?\fIencoding\fR? \fIdata\fR
+\fBencoding convertfrom\fR ?\fB-strict\fR? ?\fB-failindex var\fR? ?\fIencoding\fR? \fIdata\fR
+\fBencoding convertfrom\fR \fB-nocomplain\fR ?\fIencoding\fR? \fIdata\fR
 .
 Convert \fIdata\fR to a Unicode string from the specified \fIencoding\fR.  The
 characters in \fIdata\fR are 8 bit binary data.  The resulting
@@ -56,11 +57,13 @@ This switch restores the TCL8.7 behaviour.
 .PP
 The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
 encoder, it disallows invalid byte sequences and surrogates (which -
-otherwise - are just passed through).
+otherwise - are just passed through).  This option may not be used together
+with \fB-nocomplain\fR.
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .RE
 .TP
-\fBencoding convertto\fR ?\fB-nocomplain\fR|\fB-strict\fR|\fB-failindex var\fR? ?\fIencoding\fR? \fIstring\fR
+\fBencoding convertto\fR ?\fB-strict\fR? ?\fB-failindex var\fR? ?\fIencoding\fR? \fIdata\fR
+\fBencoding convertto\fR \fB-nocomplain\fR ?\fIencoding\fR? \fIdata\fR
 .
 Convert \fIstring\fR from Unicode to the specified \fIencoding\fR.
 The result is a sequence of bytes that represents the converted
@@ -88,7 +91,8 @@ TCL 9. In TCL 9, the encoding command fails with an error on any encoding issue.
 This switch restores the TCL8.7 behaviour.
 .PP
 The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
-encoder, it disallows surrogates (which - otherwise - are just passed through).
+encoder, it disallows surrogates (which - otherwise - are just passed through).  This
+option may not be used together with \fB-nocomplain\fR.
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .RE
 .TP
