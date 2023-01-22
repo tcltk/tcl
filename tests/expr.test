@@ -7277,6 +7277,43 @@ test expr-52.1 {
 		::tcl::unsupported::representation $a]]
 } {0 0 1 1}
 
+# Bug e3dcab1d14
+proc do-one-test-expr-61 {e p float athreshold} {
+    # e - power of 2 to test
+    # p - tcl_precision to test wuth
+    # float - floating point value 2**-$p
+    # athreshold - tolerable absolute error (1/2 decimal digit in
+    #              least significant place plus 1/2 least significant bit)
+    set trouble {}
+    set ::tcl_precision $p
+    set xfmt x[expr $float]
+    set ::tcl_precision 0
+    set fmt [string range $xfmt 1 end]
+    set aerror [expr {abs($fmt - $float)}]
+    if {$aerror > $athreshold} {
+        return "Result $fmt is more than $athreshold away from $float"
+    } else {
+        return {}
+    }
+}
+
+proc run-test-expr-61 {} {
+    for {set e 0} {$e <= 1023} {incr e} {
+        set pt [expr {floor($e*log(2)/log(10))}]
+        for {set p 6} {$p <= 17} {incr p} {
+            set athreshold [expr {0.5*10.0**-($pt+$p) + 2.0**-($e+53)}]
+            set numer [expr {5**$e}]
+            set xfloat x[expr {2.**-$e}]
+            set float [string range $xfloat 1 end]
+            test expr-61.$p.$e "convert 2**-$e to decimal at precision $p" {
+                do-one-test-expr-61 $e $p $float $athreshold
+            } {}
+        }
+    }
+    rename do-one-test-expr-61 {}
+    rename run-test-expr-61 {}
+}
+run-test-expr-61
 
 
 # cleanup
