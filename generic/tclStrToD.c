@@ -4453,7 +4453,7 @@ TclDoubleDigits(
 	    s2 -= b2; b2 = 0;
 	}
 
-	if (s5+1 < N_LOG2POW5 && s2+1 + log2pow5[s5+1] <= 64) {
+	if (s5+1 < N_LOG2POW5 && s2+1 + log2pow5[s5+1] < 64) {
 	    /*
 	     * If 10*2**s2*5**s5 == 2**(s2+1)+5**(s5+1) fits in a 64-bit word,
 	     * then all our intermediate calculations can be done using exact

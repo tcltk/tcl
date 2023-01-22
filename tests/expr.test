@@ -7278,7 +7278,7 @@ test expr-52.1 {
 } {0 0 1 1}
 
 # Bug e3dcab1d14
-proc do-one-test-expr-61 {e p float athreshold} {
+proc do-one-test-expr-63 {e p float athreshold} {
     # e - power of 2 to test
     # p - tcl_precision to test wuth
     # float - floating point value 2**-$p
@@ -7297,7 +7297,7 @@ proc do-one-test-expr-61 {e p float athreshold} {
     }
 }
 
-proc run-test-expr-61 {} {
+proc run-test-expr-63 {} {
     for {set e 0} {$e <= 1023} {incr e} {
         set pt [expr {floor($e*log(2)/log(10))}]
         for {set p 6} {$p <= 17} {incr p} {
@@ -7305,15 +7305,15 @@ proc run-test-expr-61 {} {
             set numer [expr {5**$e}]
             set xfloat x[expr {2.**-$e}]
             set float [string range $xfloat 1 end]
-            test expr-61.$p.$e "convert 2**-$e to decimal at precision $p" {
-                do-one-test-expr-61 $e $p $float $athreshold
+            test expr-63.$p.$e "convert 2**-$e to decimal at precision $p" {
+                do-one-test-expr-63 $e $p $float $athreshold
             } {}
         }
     }
-    rename do-one-test-expr-61 {}
-    rename run-test-expr-61 {}
+    rename do-one-test-expr-63 {}
+    rename run-test-expr-63 {}
 }
-run-test-expr-61
+run-test-expr-63
 
 
 # cleanup
