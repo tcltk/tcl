@@ -441,7 +441,7 @@ EncodingConvertfromObjCmd(
     } else if (objc > 2) {
 	data = objv[objc - 1];
 	while (current < objc - 2) {
-	    bytesPtr = Tcl_GetString(objv[current++]);
+	    bytesPtr = Tcl_GetString(objv[current]);
 	    if (bytesPtr[0] == '-' && bytesPtr[1] == 'i'
 		    && !strncmp(bytesPtr, "-ignore", strlen(bytesPtr))) {
 		flags = 0;
@@ -454,10 +454,11 @@ EncodingConvertfromObjCmd(
 		if (current >= objc - 2) {
 		    goto encConvFromError;
 		}
-		failVarObj = objv[current++];
+		failVarObj = objv[++current];
 	    } else {
 		break;
 	    }
+	    current++;
 	}
 	if (current == objc - 2) {
 	    if (Tcl_GetEncodingFromObj(interp, objv[current], &encoding) != TCL_OK) {
@@ -567,7 +568,7 @@ EncodingConverttoObjCmd(
 	data = objv[objc - 1];
 
 	while (current < objc - 2) {
-	    stringPtr = Tcl_GetString(objv[current++]);
+	    stringPtr = Tcl_GetString(objv[current]);
 	    if (stringPtr[0] == '-' && stringPtr[1] == 'i'
 		    && !strncmp(stringPtr, "-ignore", strlen(stringPtr))) {
 		flags = 0;
@@ -580,10 +581,11 @@ EncodingConverttoObjCmd(
 		if (current >= objc - 2) {
 		    goto encConvToError;
 		}
-		failVarObj = objv[current++];
+		failVarObj = objv[++current];
 	    } else {
 		break;
 	    }
+	    current++;
 	}
 	if (current == objc - 2) {
 	    if (Tcl_GetEncodingFromObj(interp, objv[current], &encoding) != TCL_OK) {
