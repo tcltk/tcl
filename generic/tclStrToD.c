@@ -263,7 +263,7 @@ static const int log2pow5[27] = {
 };
 #define N_LOG2POW5 27
 
-static const Tcl_WideUInt wuipow5[28] = {
+static const Tcl_WideUInt wuipow5[] = {
     (Tcl_WideUInt) 1U,		/* 5**0 */
     (Tcl_WideUInt) 5U,
     (Tcl_WideUInt) 25U,
