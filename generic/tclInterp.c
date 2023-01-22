@@ -4686,7 +4686,7 @@ ChildTimeLimitCmd(
 		Tcl_Time limitMoment;
 
 		Tcl_LimitGetTime(childInterp, &limitMoment);
-		Tcl_SetObjResult(interp, Tcl_NewLongObj(limitMoment.sec));
+		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(limitMoment.sec));
 	    }
 	    break;
 	}
@@ -4744,24 +4744,26 @@ ChildTimeLimitCmd(
 		}
 		limitMoment.usec = ((long) tmp)*1000;
 		break;
-	    case OPT_SEC:
+	    case OPT_SEC: {
+		Tcl_WideInt sec;
 		secObj = objv[i+1];
 		(void) Tcl_GetStringFromObj(objv[i+1], &secLen);
 		if (secLen == 0) {
 		    break;
 		}
-		if (TclGetIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
+		if (TclGetWideIntFromObj(interp, objv[i+1], &sec) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		if (tmp < 0) {
+		if (sec < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "seconds must be at least 0", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
 		}
-		limitMoment.sec = tmp;
+		limitMoment.sec = sec;
 		break;
+	    }
 	    }
 	}
 	if (milliObj != NULL || secObj != NULL) {
