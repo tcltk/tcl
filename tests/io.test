@@ -1575,7 +1575,9 @@ apply [list {} {
 	    {read {}} 1 {error reading "*": illegal byte sequence}}
     }
 
-    foreach variant {default encodingstrict} strict {{} {-encodingstrict 1}} {
+	# if default encoding is not currently to strict
+    # foreach variant {default encodingstrict} strict {{} {-encodingstrict 1}} 
+    foreach variant {encodingstrict} strict {{-encodingstrict 1}} {
 	set script [string map [
 	    list @variant@ $variant @strict@ $strict] $template] 
 	uplevel 1 $script
@@ -1584,26 +1586,28 @@ apply [list {} {
 
 
 
-test {io-12.9 ignore} {ReadChars: multibyte chars split} -body {
+test {io-12.9 pass} {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -encodingignore 1 -buffersize 10
+    fconfigure $f -encoding utf-8 -encodingpass 1 -buffersize 10
     set in [read $f]
     read $f
     scan [string index $in end] %c
 } -cleanup {
     catch {close $f}
 } -result 194
+
+
 test io-12.10 {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -buffersize 11
+    fconfigure $f -encoding utf-8 -encodingstrict 1 -buffersize 11
     set in [read $f]
     close $f
     scan [string index $in end] %c
@@ -1612,13 +1616,13 @@ test io-12.10 {ReadChars: multibyte chars split} -body {
 } -returnCodes 1 -match glob -result "error reading \"*\": illegal byte sequence"
 
 
-test io-12.10_encodingignore {ReadChars: multibyte chars split} -body {
+test io-12.10_encodingpass {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -encodingignore 1 -buffersize 11
+    fconfigure $f -encoding utf-8 -encodingpass 1 -buffersize 11
     set in [read $f]
     close $f
     scan [string index $in end] %c
@@ -9004,7 +9008,7 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
 
-test io-75.1 {multibyte encoding error read results in raw bytes (-encodingignore 1)} -setup {
+test io-75.1 {multibyte encoding error read results in raw bytes (-encodingpass 1)} -setup {
     set fn [makeFile {} io-75.1]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9013,7 +9017,7 @@ test io-75.1 {multibyte encoding error read results in raw bytes (-encodingignor
     puts -nonewline $f A\xC0\x40
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -encodingignore 1 -buffering none
+    fconfigure $f -encoding utf-8 -encodingpass 1 -buffering none
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9023,10 +9027,10 @@ test io-75.1 {multibyte encoding error read results in raw bytes (-encodingignor
     removeFile io-75.1
 } -result 41c040
 
-test io-75.2 {unrepresentable character write passes and is replaced by ? (-encodingignore 1)} -setup {
+test io-75.2 {unrepresentable character write passes and is replaced by ? (-encodingpass 1)} -setup {
     set fn [makeFile {} io-75.2]
     set f [open $fn w+]
-    fconfigure $f -encoding iso8859-1 -encodingignore 1
+    fconfigure $f -encoding iso8859-1 -encodingpass 1
 } -body {
     puts -nonewline $f A\u2022
     flush $f
@@ -9040,14 +9044,14 @@ test io-75.2 {unrepresentable character write passes and is replaced by ? (-enco
 # Incomplete sequence test.
 # This error may IMHO only be detected with the close.
 # But the read already returns the incomplete sequence.
-test io-75.3 {incomplete multibyte encoding read is ignored (-encodingignore 1)} -setup {
+test io-75.3 {incomplete multibyte encoding read is ignored (-encodingpass 1)} -setup {
     set fn [makeFile {} io-75.3]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     puts -nonewline $f "A\xC0"
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -encodingignore 1
+    fconfigure $f -encoding utf-8 -buffering none -encodingpass 1
 } -body {
     set d [read $f]
     close $f
@@ -9059,7 +9063,7 @@ test io-75.3 {incomplete multibyte encoding read is ignored (-encodingignore 1)}
 
 # As utf-8 has a special treatment in multi-byte decoding, also test another
 # one.
-test io-75.4 {shiftjis encoding error read results in raw bytes (-encodingignore 1)} -setup {
+test io-75.4 {shiftjis encoding error read results in raw bytes (-encodingpass 1)} -setup {
     set fn [makeFile {} io-75.4]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9068,7 +9072,7 @@ test io-75.4 {shiftjis encoding error read results in raw bytes (-encodingignore
     puts -nonewline $f A\x81\xFFA
     flush $f
     seek $f 0
-    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -encodingignore 1
+    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -encodingpass 1
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9078,14 +9082,14 @@ test io-75.4 {shiftjis encoding error read results in raw bytes (-encodingignore
     removeFile io-75.4
 } -result 4181ff41
 
-test io-75.5 {invalid utf-8 encoding read is ignored (-encodingignore 1)} -setup {
+test io-75.5 {invalid utf-8 encoding read is ignored (-encodingpass 1)} -setup {
     set fn [makeFile {} io-75.5]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingignore 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingpass 1
 } -body {
     set d [read $f]
     close $f
@@ -9231,7 +9235,9 @@ apply [list {} {
 	    removeFile io-75.10
 	} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
     }
-    foreach mode {default strict} option {{} {-encodingstrict 1}} {
+	# the default encoding mode is not currently strict
+    #foreach mode {default strict} option {{} {-encodingstrict 1}} 
+    foreach mode {strict} option {{-encodingstrict 1}} {
 	set test [string map [
 	    list {${mode}} [list $mode] {${option}} [list $option]] $template]
 	uplevel $test
@@ -9306,7 +9312,9 @@ apply [list {} {
 	} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
     }
 
-    foreach mode {default strict} option {{} {-encodingstrict 1}} {
+	# the default encoding mod is not currently strict
+    #foreach mode {default strict} option {{} {-encodingstrict 1}} 
+    foreach mode {strict} option {{-encodingstrict 1}} {
 	set test [string map [
 	    list {${mode}} [list $mode] {${option}} [list $option]] $template]
 	uplevel $test
@@ -9314,7 +9322,7 @@ apply [list {} {
 } [namespace current]]
 
 
-test {io-75.12 ignore} {invalid utf-8 encoding read is ignored} -setup {
+test {io-75.12 pass} {invalid utf-8 encoding read is ignored} -setup {
     set fn [makeFile {} io-75.12]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9322,7 +9330,7 @@ test {io-75.12 ignore} {invalid utf-8 encoding read is ignored} -setup {
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
-	-translation lf -encodingignore 1
+	-translation lf -encodingpass 1
 } -body {
     set d [read $f]
     close $f
