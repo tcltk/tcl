@@ -33,7 +33,7 @@ proc makeShared {s} {uplevel 1 [list lappend copy $s]; return $s}
 testConstraint testobj [expr {[info commands testobj] ne {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
-testConstraint utf32 [expr {[string length \U010000] == 1}]
+testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
 testConstraint utf32 [expr {[testConstraint fullutf]
 		&& [string length [format %c 0x10000]] == 1}]
