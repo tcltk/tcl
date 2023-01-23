@@ -225,15 +225,12 @@ static int		AliasList(Tcl_Interp *interp, Tcl_Interp *childInterp);
 static int		AliasObjCmd(ClientData dummy,
 			    Tcl_Interp *currentInterp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		AliasNRCmd(ClientData dummy,
-			    Tcl_Interp *currentInterp, int objc,
-			    Tcl_Obj *const objv[]);
-static void		AliasObjCmdDeleteProc(ClientData clientData);
+static Tcl_ObjCmdProc		AliasNRCmd;
+static Tcl_CmdDeleteProc	AliasObjCmdDeleteProc;
 static Tcl_Interp *	GetInterp(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static Tcl_Interp *	GetInterp2(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static void		InterpInfoDeleteProc(ClientData clientData,
-			    Tcl_Interp *interp);
+static Tcl_InterpDeleteProc	InterpInfoDeleteProc;
 static int		ChildBgerror(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -259,7 +256,7 @@ static int		ChildMarkTrusted(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp);
 static int		ChildObjCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static void		ChildObjCmdDeleteProc(ClientData clientData);
+static Tcl_CmdDeleteProc	ChildObjCmdDeleteProc;
 static int		ChildRecursionLimit(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -309,7 +306,7 @@ TclSetPreInitScript(
 {
     const char *prevString = tclPreInitScript;
     tclPreInitScript = string;
-    return(prevString);
+    return prevString;
 }
 
 /*
@@ -473,7 +470,7 @@ TclInterpInit(
     Parent *parentPtr;
     Child *childPtr;
 
-    interpInfoPtr = ckalloc(sizeof(InterpInfo));
+    interpInfoPtr = (InterpInfo *)ckalloc(sizeof(InterpInfo));
     ((Interp *) interp)->interpInfo = interpInfoPtr;
 
     parentPtr = &interpInfoPtr->parent;
@@ -589,7 +586,7 @@ InterpInfoDeleteProc(
  *
  *----------------------------------------------------------------------
  */
-	/* ARGSUSED */
+
 int
 Tcl_InterpObjCmd(
     ClientData clientData,		/* Unused. */
@@ -618,7 +615,7 @@ NRInterpCmd(
 	"slaves",	"share",	"target",	"transfer",
 	NULL
     };
-    enum option {
+    enum interpOptionEnum {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CANCEL,
 	OPT_CHILDREN,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,
@@ -635,7 +632,7 @@ NRInterpCmd(
 	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch ((enum option) index) {
+    switch ((enum interpOptionEnum)index) {
     case OPT_ALIAS: {
 	Tcl_Interp *parentInterp;
 
@@ -688,7 +685,7 @@ NRInterpCmd(
 	static const char *const cancelOptions[] = {
 	    "-unwind",	"--",	NULL
 	};
-	enum option {
+	enum optionCancelEnum {
 	    OPT_UNWIND,	OPT_LAST
 	};
 
@@ -703,7 +700,7 @@ NRInterpCmd(
 		return TCL_ERROR;
 	    }
 
-	    switch ((enum option) index) {
+	    switch ((enum optionCancelEnum) index) {
 	    case OPT_UNWIND:
 		/*
 		 * The evaluation stack in the target interp is to be unwound.
@@ -1024,7 +1021,7 @@ NRInterpCmd(
 	TclNewObj(resultPtr);
 	hPtr = Tcl_FirstHashEntry(&iiPtr->parent.childTable, &hashSearch);
 	for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
-	    string = Tcl_GetHashKey(&iiPtr->parent.childTable, hPtr);
+	    string = (char *)Tcl_GetHashKey(&iiPtr->parent.childTable, hPtr);
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
 		    Tcl_NewStringObj(string, -1));
 	}
@@ -1095,7 +1092,7 @@ NRInterpCmd(
 		    NULL);
 	    return TCL_ERROR;
 	}
-	aliasPtr = Tcl_GetHashValue(hPtr);
+	aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
 	if (Tcl_GetInterpPath(interp, aliasPtr->targetInterp) != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "target interpreter for alias \"%s\" in path \"%s\" is "
@@ -1178,7 +1175,7 @@ Tcl_CreateAlias(
     int i;
     int result;
 
-    objv = TclStackAlloc(childInterp, (unsigned) sizeof(Tcl_Obj *) * argc);
+    objv = (Tcl_Obj **)TclStackAlloc(childInterp, sizeof(Tcl_Obj *) * argc);
     for (i = 0; i < argc; i++) {
 	objv[i] = Tcl_NewStringObj(argv[i], -1);
 	Tcl_IncrRefCount(objv[i]);
@@ -1284,7 +1281,7 @@ Tcl_GetAlias(
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, NULL);
 	return TCL_ERROR;
     }
-    aliasPtr = Tcl_GetHashValue(hPtr);
+    aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
     objc = aliasPtr->objc;
     objv = &aliasPtr->objPtr;
 
@@ -1346,7 +1343,7 @@ Tcl_GetAliasObj(
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, NULL);
 	return TCL_ERROR;
     }
-    aliasPtr = Tcl_GetHashValue(hPtr);
+    aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
     objc = aliasPtr->objc;
     objv = &aliasPtr->objPtr;
 
@@ -1414,7 +1411,7 @@ TclPreventAliasLoop(
      * chain then we have a loop.
      */
 
-    aliasPtr = cmdPtr->objClientData;
+    aliasPtr = (Alias *)cmdPtr->objClientData;
     nextAliasPtr = aliasPtr;
     while (1) {
 	Tcl_Obj *cmdNamePtr;
@@ -1462,10 +1459,8 @@ TclPreventAliasLoop(
 	if (aliasCmdPtr->objProc != AliasObjCmd) {
 	    return TCL_OK;
 	}
-	nextAliasPtr = aliasCmdPtr->objClientData;
+	nextAliasPtr = (Alias *)aliasCmdPtr->objClientData;
     }
-
-    /* NOTREACHED */
 }
 
 /*
@@ -1505,7 +1500,7 @@ AliasCreate(
     Tcl_Obj **prefv;
     int isNew, i;
 
-    aliasPtr = ckalloc(sizeof(Alias) + objc * sizeof(Tcl_Obj *));
+    aliasPtr = (Alias *)ckalloc(sizeof(Alias) + objc * sizeof(Tcl_Obj *));
     aliasPtr->token = namePtr;
     Tcl_IncrRefCount(aliasPtr->token);
     aliasPtr->targetInterp = parentInterp;
@@ -1613,7 +1608,7 @@ AliasCreate(
      * interp alias {} foo {} zop		# Now recreate "foo"...
      */
 
-    targetPtr = ckalloc(sizeof(Target));
+    targetPtr = (Target *)ckalloc(sizeof(Target));
     targetPtr->childCmd = aliasPtr->childCmd;
     targetPtr->childInterp = childInterp;
 
@@ -1674,7 +1669,7 @@ AliasDelete(
 		TclGetString(namePtr), NULL);
 	return TCL_ERROR;
     }
-    aliasPtr = Tcl_GetHashValue(hPtr);
+    aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
     Tcl_DeleteCommandFromToken(childInterp, aliasPtr->childCmd);
     return TCL_OK;
 }
@@ -1719,7 +1714,7 @@ AliasDescribe(
     if (hPtr == NULL) {
 	return TCL_OK;
     }
-    aliasPtr = Tcl_GetHashValue(hPtr);
+    aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
     prefixPtr = Tcl_NewListObj(aliasPtr->objc, &aliasPtr->objPtr);
     Tcl_SetObjResult(interp, prefixPtr);
     return TCL_OK;
@@ -1757,7 +1752,7 @@ AliasList(
 
     entryPtr = Tcl_FirstHashEntry(&childPtr->aliasTable, &hashSearch);
     for ( ; entryPtr != NULL; entryPtr = Tcl_NextHashEntry(&hashSearch)) {
-	aliasPtr = Tcl_GetHashValue(entryPtr);
+	aliasPtr = (Alias *)Tcl_GetHashValue(entryPtr);
 	Tcl_ListObjAppendElement(NULL, resultPtr, aliasPtr->token);
     }
     Tcl_SetObjResult(interp, resultPtr);
@@ -1793,7 +1788,7 @@ AliasNRCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
-    Alias *aliasPtr = clientData;
+    Alias *aliasPtr = (Alias *)clientData;
     int prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *listPtr;
@@ -1842,7 +1837,7 @@ AliasObjCmd(
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
 #define ALIAS_CMDV_PREALLOC 10
-    Alias *aliasPtr = clientData;
+    Alias *aliasPtr = (Alias *)clientData;
     Tcl_Interp *targetInterp = aliasPtr->targetInterp;
     int result, prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
@@ -1861,7 +1856,7 @@ AliasObjCmd(
     if (cmdc <= ALIAS_CMDV_PREALLOC) {
 	cmdv = cmdArr;
     } else {
-	cmdv = TclStackAlloc(interp, cmdc * sizeof(Tcl_Obj *));
+	cmdv = (Tcl_Obj **)TclStackAlloc(interp, cmdc * sizeof(Tcl_Obj *));
     }
 
     memcpy(cmdv, prefv, prefc * sizeof(Tcl_Obj *));
@@ -1947,7 +1942,7 @@ static void
 AliasObjCmdDeleteProc(
     ClientData clientData)	/* The alias record for this alias. */
 {
-    Alias *aliasPtr = clientData;
+    Alias *aliasPtr = (Alias *)clientData;
     Target *targetPtr;
     int i;
     Tcl_Obj **objv;
@@ -2123,7 +2118,7 @@ TclSetChildCancelFlags(
 
     hPtr = Tcl_FirstHashEntry(&parentPtr->childTable, &hashSearch);
     for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
-	childPtr = Tcl_GetHashValue(hPtr);
+	childPtr = (Child *)Tcl_GetHashValue(hPtr);
 	iPtr = (Interp *) childPtr->childInterp;
 
 	if (iPtr == NULL) {
@@ -2188,7 +2183,7 @@ Tcl_GetInterpPath(
 	return TCL_ERROR;
     }
     Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-	    Tcl_NewStringObj(Tcl_GetHashKey(&iiPtr->parent.childTable,
+	    Tcl_NewStringObj((const char *)Tcl_GetHashKey(&iiPtr->parent.childTable,
 		    iiPtr->child.childEntryPtr), -1));
     return TCL_OK;
 }
@@ -2236,7 +2231,7 @@ GetInterp(
 	    searchInterp = NULL;
 	    break;
 	}
-	childPtr = Tcl_GetHashValue(hPtr);
+	childPtr = (Child *)Tcl_GetHashValue(hPtr);
 	searchInterp = childPtr->childInterp;
 	if (searchInterp == NULL) {
 	    break;
@@ -2462,7 +2457,7 @@ NRChildCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Interp *childInterp = clientData;
+    Tcl_Interp *childInterp = (Tcl_Interp *)clientData;
     int index;
     static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"debug",
@@ -2470,7 +2465,7 @@ NRChildCmd(
 	"issafe",	"invokehidden",	"limit",	"marktrusted",
 	"recursionlimit", NULL
     };
-    enum options {
+    enum childCmdOptionsEnum {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_DEBUG,
 	OPT_EVAL,	OPT_EXPOSE,	OPT_HIDE,	OPT_HIDDEN,
 	OPT_ISSAFE,	OPT_INVOKEHIDDEN, OPT_LIMIT,	OPT_MARKTRUSTED,
@@ -2490,7 +2485,7 @@ NRChildCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum options) index) {
+    switch ((enum childCmdOptionsEnum) index) {
     case OPT_ALIAS:
 	if (objc > 2) {
 	    if (objc == 3) {
@@ -2666,7 +2661,7 @@ ChildObjCmdDeleteProc(
     ClientData clientData)	/* The ChildRecord for the command. */
 {
     Child *childPtr;		/* Interim storage for Child record. */
-    Tcl_Interp *childInterp = clientData;
+    Tcl_Interp *childInterp = (Tcl_Interp *)clientData;
 				/* And for a child interp. */
 
     childPtr = &((InterpInfo *) ((Interp *) childInterp)->interpInfo)->child;
@@ -2995,7 +2990,7 @@ ChildHidden(
     Tcl_Interp *interp,		/* Interp for data return. */
     Tcl_Interp *childInterp)	/* Interp whose hidden commands to query. */
 {
-    Tcl_Obj *listObjPtr;	/* Local object pointer. */
+    Tcl_Obj *listObjPtr;		/* Local object pointer. */
     Tcl_HashTable *hTblPtr;		/* For local searches. */
     Tcl_HashEntry *hPtr;		/* For local searches. */
     Tcl_HashSearch hSearch;		/* For local searches. */
@@ -3007,7 +3002,7 @@ ChildHidden(
 		hPtr != NULL;
 		hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    Tcl_ListObjAppendElement(NULL, listObjPtr,
-		    Tcl_NewStringObj(Tcl_GetHashKey(hTblPtr, hPtr), -1));
+		    Tcl_NewStringObj((const char *)Tcl_GetHashKey(hTblPtr, hPtr), -1));
 	}
     }
     Tcl_SetObjResult(interp, listObjPtr);
@@ -3530,7 +3525,7 @@ Tcl_LimitAddHandler(
      * Allocate a handler record.
      */
 
-    handlerPtr = ckalloc(sizeof(LimitHandler));
+    handlerPtr = (LimitHandler *)ckalloc(sizeof(LimitHandler));
     handlerPtr->flags = 0;
     handlerPtr->handlerProc = handlerProc;
     handlerPtr->clientData = clientData;
@@ -3987,8 +3982,8 @@ static void
 TimeLimitCallback(
     ClientData clientData)
 {
-    Tcl_Interp *interp = clientData;
-    Interp *iPtr = clientData;
+    Tcl_Interp *interp = (Tcl_Interp *)clientData;
+    Interp *iPtr = (Interp *)clientData;
     int code;
 
     Tcl_Preserve(interp);
@@ -4131,7 +4126,7 @@ static void
 DeleteScriptLimitCallback(
     ClientData clientData)
 {
-    ScriptLimitCallback *limitCBPtr = clientData;
+    ScriptLimitCallback *limitCBPtr = (ScriptLimitCallback *)clientData;
 
     Tcl_DecrRefCount(limitCBPtr->scriptObj);
     if (limitCBPtr->entryPtr != NULL) {
@@ -4163,7 +4158,7 @@ CallScriptLimitCallback(
     ClientData clientData,
     Tcl_Interp *interp)		/* Interpreter which failed the limit */
 {
-    ScriptLimitCallback *limitCBPtr = clientData;
+    ScriptLimitCallback *limitCBPtr = (ScriptLimitCallback *)clientData;
     int code;
 
     if (Tcl_InterpDeleted(limitCBPtr->interp)) {
@@ -4231,13 +4226,13 @@ SetScriptLimitCallback(
     hashPtr = Tcl_CreateHashEntry(&iPtr->limit.callbacks, &key,
 	    &isNew);
     if (!isNew) {
-	limitCBPtr = Tcl_GetHashValue(hashPtr);
+	limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hashPtr);
 	limitCBPtr->entryPtr = NULL;
 	Tcl_LimitRemoveHandler(targetInterp, type, CallScriptLimitCallback,
 		limitCBPtr);
     }
 
-    limitCBPtr = ckalloc(sizeof(ScriptLimitCallback));
+    limitCBPtr = (ScriptLimitCallback *)ckalloc(sizeof(ScriptLimitCallback));
     limitCBPtr->interp = interp;
     limitCBPtr->scriptObj = scriptObj;
     limitCBPtr->entryPtr = hashPtr;
@@ -4426,7 +4421,7 @@ ChildCommandLimitCmd(
 	key.type = TCL_LIMIT_COMMANDS;
 	hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
 	if (hPtr != NULL) {
-	    limitCBPtr = Tcl_GetHashValue(hPtr);
+	    limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
 		Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[0], -1),
 			limitCBPtr->scriptObj);
@@ -4468,7 +4463,7 @@ ChildCommandLimitCmd(
 	    key.type = TCL_LIMIT_COMMANDS;
 	    hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
 	    if (hPtr != NULL) {
-		limitCBPtr = Tcl_GetHashValue(hPtr);
+		limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 		if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
 		    Tcl_SetObjResult(interp, limitCBPtr->scriptObj);
 		}
@@ -4502,7 +4497,7 @@ ChildCommandLimitCmd(
 	    switch ((enum Options) index) {
 	    case OPT_CMD:
 		scriptObj = objv[i+1];
-		(void) Tcl_GetStringFromObj(objv[i+1], &scriptLen);
+		(void) Tcl_GetStringFromObj(scriptObj, &scriptLen);
 		break;
 	    case OPT_GRAN:
 		granObj = objv[i+1];
@@ -4614,7 +4609,7 @@ ChildTimeLimitCmd(
 	key.type = TCL_LIMIT_TIME;
 	hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
 	if (hPtr != NULL) {
-	    limitCBPtr = Tcl_GetHashValue(hPtr);
+	    limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
 		Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[0], -1),
 			limitCBPtr->scriptObj);
@@ -4662,7 +4657,7 @@ ChildTimeLimitCmd(
 	    key.type = TCL_LIMIT_TIME;
 	    hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
 	    if (hPtr != NULL) {
-		limitCBPtr = Tcl_GetHashValue(hPtr);
+		limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 		if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
 		    Tcl_SetObjResult(interp, limitCBPtr->scriptObj);
 		}
@@ -4754,9 +4749,15 @@ ChildTimeLimitCmd(
 		if (TclGetWideIntFromObj(interp, objv[i+1], &sec) != TCL_OK) {
 		    return TCL_ERROR;
 		}
+		if (sec > LONG_MAX) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "seconds must be between 0 and %ld", LONG_MAX));
+		    goto badValue;
+		}
 		if (sec < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "seconds must be at least 0", -1));
+		badValue:
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
