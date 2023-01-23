@@ -186,7 +186,7 @@ test cmdAH-4.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
 } -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, or system}
 test cmdAH-4.3 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto
-} -result {wrong # args: should be "encoding convertto ?-ignore|-strict|-failindex var? ?encoding? data"}
+} -result {wrong # args: should be "encoding convertto ?-pass|-strict|-failindex var? ?encoding? data"}
 test cmdAH-4.4 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto foo bar
 } -result {unknown encoding "foo"}
@@ -208,7 +208,7 @@ test cmdAH-4.6 {Tcl_EncodingObjCmd} -setup {
 } -result 8C
 test cmdAH-4.7 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertfrom
-} -result {wrong # args: should be "encoding convertfrom ?-ignore|-strict|-failindex var? ?encoding? data"}
+} -result {wrong # args: should be "encoding convertfrom ?-pass|-strict|-failindex var? ?encoding? data"}
 test cmdAH-4.8 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertfrom foo bar
 } -result {unknown encoding "foo"}
@@ -243,29 +243,29 @@ test cmdAH-4.13 {Tcl_EncodingObjCmd} -setup {
     encoding system $system
 } -result iso8859-1
 
-test cmdAH-4.14.1 {Syntax error, -ignore and -failindex, no encoding} -body {
-    encoding convertfrom -ignore -failindex 2 [encoding system] ABC
+test cmdAH-4.14.1 {Syntax error, -pass and -failindex, no encoding} -body {
+    encoding convertfrom -pass -failindex 2 [encoding system] ABC
 } -result ABC
-test cmdAH-4.14.2 {-ignore and -failindex, no encoding} -body {
-    encoding convertto -ignore -failindex 2 [encoding system] ABC
+test cmdAH-4.14.2 {-pass and -failindex, no encoding} -body {
+    encoding convertto -pass -failindex 2 [encoding system] ABC
 } -result ABC
-test cmdAH-4.15.1 {Syntax error, -failindex and -ignore, no encoding} -body {
-    encoding convertfrom -failindex 2 -ignore ABC
-} -returnCodes 1 -result {unknown encoding "-ignore"}
-test cmdAH-4.15.2 {Syntax error, -failindex and -ignore, no encoding} -body {
-    encoding convertto -failindex 2 -ignore ABC
-} -returnCodes 1 -result {unknown encoding "-ignore"}
-test cmdAH-4.16.1 {-ignore and -failindex, encoding} -body {
-    encoding convertfrom -ignore -failindex 2 utf-8 ABC
+test cmdAH-4.15.1 {Syntax error, -failindex and -pass, no encoding} -body {
+    encoding convertfrom -failindex 2 -pass ABC
+} -returnCodes 1 -result {unknown encoding "-pass"}
+test cmdAH-4.15.2 {Syntax error, -failindex and -pass, no encoding} -body {
+    encoding convertto -failindex 2 -pass ABC
+} -returnCodes 1 -result {unknown encoding "-pass"}
+test cmdAH-4.16.1 {-pass and -failindex, encoding} -body {
+    encoding convertfrom -pass -failindex 2 utf-8 ABC
 } -result ABC
-test cmdAH-4.16.2 {-ignore and -failindex, encoding} -body {
-    encoding convertto -ignore -failindex 2 utf-8 ABC
+test cmdAH-4.16.2 {-pass and -failindex, encoding} -body {
+    encoding convertto -pass -failindex 2 utf-8 ABC
 } -result ABC 
-test cmdAH-4.17.1 {-failindex and -ignore, encoding} -body {
-    encoding convertfrom -failindex 2 -ignore utf-8 ABC
+test cmdAH-4.17.1 {-failindex and -pass, encoding} -body {
+    encoding convertfrom -failindex 2 -pass utf-8 ABC
 } -result ABC
-test cmdAH-4.17.2 {Syntax error, -failindex and -ignore, encoding} -body {
-    encoding convertto -failindex 2 -ignore utf-8 ABC
+test cmdAH-4.17.2 {Syntax error, -failindex and -pass, encoding} -body {
+    encoding convertto -failindex 2 -pass utf-8 ABC
 } -result ABC 
 test cmdAH-4.18.1 {Syntax error, -failindex with no var, no encoding} -body {
     encoding convertfrom -failindex ABC

@@ -423,18 +423,6 @@ EncodingConvertfromObjCmd(
     size_t result;
     int current = 1;
     Tcl_Obj *failVarObj = NULL;
-    /*
-     * Decode parameters:
-     * Possible combinations:
-     * 1) data						-> objc = 2
-     * 2) encoding data					-> objc = 3
-     * 3) -ignore data					-> objc = 3
-     * 4) -ignore encoding data				-> objc = 4
-     * 5) -strict data					-> objc = 3
-     * 6) -strict encoding data				-> objc = 4
-     * 7) -failindex val data				-> objc = 4
-     * 8) -failindex val encoding data			-> objc = 5
-     */
 
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
@@ -443,8 +431,8 @@ EncodingConvertfromObjCmd(
 	data = objv[objc - 1];
 	while (current < objc - 2) {
 	    bytesPtr = Tcl_GetString(objv[current]);
-	    if (bytesPtr[0] == '-' && bytesPtr[1] == 'i'
-		    && !strncmp(bytesPtr, "-ignore", strlen(bytesPtr))) {
+	    if (bytesPtr[0] == '-' && bytesPtr[1] == 'p'
+		    && !strncmp(bytesPtr, "-pass", strlen(bytesPtr))) {
 		flags = 0;
 	    } else if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
 		    && !strncmp(bytesPtr, "-strict", strlen(bytesPtr))) {
@@ -470,7 +458,7 @@ EncodingConvertfromObjCmd(
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-ignore|-strict|-failindex var? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-pass|-strict|-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 
@@ -552,17 +540,6 @@ EncodingConverttoObjCmd(
     int current = 1;
     Tcl_Obj *failVarObj = NULL;
 
-    /*
-     * Decode parameters:
-     * Possible combinations:
-     * 1) data						-> objc = 2
-     * 2) encoding data					-> objc = 3
-     * 3) -nocomplain data				-> objc = 3
-     * 4) -nocomplain encoding data			-> objc = 4
-     * 5) -failindex val data				-> objc = 4
-     * 6) -failindex val encoding data			-> objc = 5
-     */
-
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
@@ -571,8 +548,8 @@ EncodingConverttoObjCmd(
 
 	while (current < objc - 2) {
 	    stringPtr = Tcl_GetString(objv[current]);
-	    if (stringPtr[0] == '-' && stringPtr[1] == 'i'
-		    && !strncmp(stringPtr, "-ignore", strlen(stringPtr))) {
+	    if (stringPtr[0] == '-' && stringPtr[1] == 'p'
+		    && !strncmp(stringPtr, "-pass", strlen(stringPtr))) {
 		flags = 0;
 	    } else if (stringPtr[0] == '-' && stringPtr[1] == 's'
 		    && !strncmp(stringPtr, "-strict", strlen(stringPtr))) {
@@ -598,7 +575,7 @@ EncodingConverttoObjCmd(
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-ignore|-strict|-failindex var? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-pass|-strict|-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 

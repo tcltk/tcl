@@ -7841,7 +7841,7 @@ Tcl_BadChannelOption(
 {
     if (interp != NULL) {
 	const char *genericopt =
-		"blocking buffering buffersize encoding eofchar encodingignore encodingstrict translation";
+		"blocking buffering buffersize encoding eofchar encodingpass encodingstrict translation";
 	const char **argv;
 	size_t argc, i;
 	Tcl_DString ds;
@@ -8010,9 +8010,9 @@ Tcl_GetChannelOption(
 	}
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
-    if (len == 0 || HaveOpt(1, "-encodingignore")) {
+    if (len == 0 || HaveOpt(1, "-encodingpass")) {
 	if (len == 0) {
-	    Tcl_DStringAppendElement(dsPtr, "-encodingignore");
+	    Tcl_DStringAppendElement(dsPtr, "-encodingpass");
 	}
 	Tcl_DStringAppendElement(dsPtr,
 		(flags & CHANNEL_ENCODING_STRICT) ? "0" : "1");
@@ -8275,7 +8275,7 @@ Tcl_SetChannelOption(
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	return TCL_OK;
-    } else if (HaveOpt(1, "-encodingignore")) {
+    } else if (HaveOpt(1, "-encodingpass")) {
 	int newMode;
 
 	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
