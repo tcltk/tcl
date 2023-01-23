@@ -475,7 +475,7 @@ test encoding-16.5 {Ucs2ToUtfProc} -body {
     list $val [format %x [scan $val %c]]
 } -result "\U460DC 460dc"
 test encoding-16.6 {Utf32ToUtfProc surrogate} -body {
-    set val [encoding convertfrom utf-32le NN\0\0]
+    set val [encoding convertfrom -strict utf-32le NN\0\0]
     list $val [format %x [scan $val %c]]
 } -returnCodes 1 -result "unexpected byte sequence starting at index 0: '\\x4E'"
 test encoding-16.7 {Utf32ToUtfProc surrogate} -body {
@@ -483,7 +483,7 @@ test encoding-16.7 {Utf32ToUtfProc surrogate} -body {
     list $val [format %x [scan $val %c]]
 } -result "乎 4e4e"
 test encoding-16.8 {Utf32ToUtfProc} -body {
-    set val [encoding convertfrom utf-32be \0\0NN]
+    set val [encoding convertfrom -strict utf-32be \0\0NN]
     list $val [format %x [scan $val %c]]
 } -returnCodes 1 -result "unexpected byte sequence starting at index 0: '\\x0'"
 test encoding-16.9 {Utf32ToUtfProc} -body {
@@ -634,8 +634,8 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     list $count [viewable $line]
 } [list 3 "乎乞也 (\\u4E4E\\u4E5E\\u4E5F)"]
 
-test encoding-24.4 {Parse invalid utf-8, default handling} -body {
-    string length [encoding convertfrom utf-8 "\xC0\x80"]
+test encoding-24.4 {Parse invalid utf-8, strict} -body {
+    string length [encoding convertfrom -strict utf-8 "\xC0\x80"]
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
 test encoding-24.5 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom -ignore utf-8 "\xC0\x81"]
@@ -668,10 +668,10 @@ test encoding-24.14 {Parse valid utf-8} {
     expr {[encoding convertfrom utf-8 "\xC2\x80"] eq "\u80"}
 } 1
 test encoding-24.15 {Parse invalid utf-8, default} -body {
-    encoding convertfrom utf-8 "Z\xE0\x80"
-} -returnCodes 1 -result "unexpected byte sequence starting at index 1: '\\xE0'"
+    encoding convertfrom -ignore utf-8 "Z\xE0\x80"
+} -result Z\xE0\x80
 test encoding-24.15 {Parse invalid utf-8, -strict} -body {
-    encoding convertfrom utf-8 "Z\xE0\x80"
+    encoding convertfrom -strict utf-8 "Z\xE0\x80"
 } -returnCodes 1 -result "unexpected byte sequence starting at index 1: '\\xE0'"
 test encoding-24.15 {Parse invalid utf-8, -ignore} -body {
     encoding convertfrom -ignore utf-8 "Z\xE0\x80"
@@ -685,9 +685,9 @@ test encoding-24.17 {Parse valid or invalid utf-8} -constraints testbytestring -
 test encoding-24.18 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\xE0\x80xxxxxx"]
 } -result "Z\xC3\xA0\xE2\x82\xACxxxxxx"
-test encoding-24.19 {Parse invalid utf-8, default} -body {
-    encoding convertto utf-8 "ZX\uD800"
-} -returnCodes 1 -match glob -result "unexpected character at index 2: 'U+00D800'"
+test encoding-24.19 {Parse invalid utf-8, -default} -body {
+    encoding convertto -ignore utf-8 "ZX\uD800"
+} -returnCodes 0 -result "ZXí\xa0\x80"
 test encoding-24.19 {Parse invalid utf-8, -strict} -body {
     encoding convertto -strict utf-8 "ZX\uD800"
 } -returnCodes 1 -match glob -result "unexpected character at index 2: 'U+00D800'"
@@ -752,7 +752,7 @@ test encoding-24.38 {Parse invalid utf-8 with -ignore} -body {
     encoding convertfrom -ignore utf-8 \xED\xA0\x80
 } -result \uD800
 test encoding-24.39 {Try to generate invalid utf-8} -body {
-    encoding convertto utf-8 \uD800
+    encoding convertto -strict utf-8 \uD800
 } -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
 test encoding-24.40 {Try to generate invalid utf-8 with -strict} -body {
     encoding convertto -strict utf-8 \uD800

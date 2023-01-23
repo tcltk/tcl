@@ -1575,7 +1575,9 @@ apply [list {} {
 	    {read {}} 1 {error reading "*": illegal byte sequence}}
     }
 
-    foreach variant {default encodingstrict} strict {{} {-encodingstrict 1}} {
+	# if default encoding is not currently to strict
+    # foreach variant {default encodingstrict} strict {{} {-encodingstrict 1}} 
+    foreach variant {encodingstrict} strict {{-encodingstrict 1}} {
 	set script [string map [
 	    list @variant@ $variant @strict@ $strict] $template] 
 	uplevel 1 $script
@@ -1597,13 +1599,15 @@ test {io-12.9 ignore} {ReadChars: multibyte chars split} -body {
 } -cleanup {
     catch {close $f}
 } -result 194
+
+
 test io-12.10 {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -buffersize 11
+    fconfigure $f -encoding utf-8 -encodingstrict 1 -buffersize 11
     set in [read $f]
     close $f
     scan [string index $in end] %c
@@ -9231,7 +9235,9 @@ apply [list {} {
 	    removeFile io-75.10
 	} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
     }
-    foreach mode {default strict} option {{} {-encodingstrict 1}} {
+	# the default encoding mode is not currently strict
+    #foreach mode {default strict} option {{} {-encodingstrict 1}} 
+    foreach mode {strict} option {{-encodingstrict 1}} {
 	set test [string map [
 	    list {${mode}} [list $mode] {${option}} [list $option]] $template]
 	uplevel $test
@@ -9306,7 +9312,9 @@ apply [list {} {
 	} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
     }
 
-    foreach mode {default strict} option {{} {-encodingstrict 1}} {
+	# the default encoding mod is not currently strict
+    #foreach mode {default strict} option {{} {-encodingstrict 1}} 
+    foreach mode {strict} option {{-encodingstrict 1}} {
 	set test [string map [
 	    list {${mode}} [list $mode] {${option}} [list $option]] $template]
 	uplevel $test

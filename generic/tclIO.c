@@ -1656,7 +1656,10 @@ Tcl_CreateChannel(
     }
     statePtr->channelName = tmp;
     statePtr->flags = mask;
+	/* uncomment this to make default encoding error handling strict */
+	/*
     statePtr->flags |= CHANNEL_ENCODING_STRICT;
+	*/
     statePtr->maxPerms = mask; /* Save max privileges for close callback */
 
     /*

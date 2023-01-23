@@ -330,7 +330,7 @@ test cmdAH-4.20.1 {convertrom -failindex with incomplete utf8} -body {
 } -returnCodes 0 -result {41 1}
 test cmdAH-4.20.2 {convertrom -failindex with incomplete utf8 (byte compiled)} -setup {
     proc encoding_test {} {
-	set x [encoding convertfrom -failindex i utf-8 A\xc3]
+	set x [encoding convertfrom -strict -failindex i utf-8 A\xc3]
 	binary scan $x H* y
 	list $y $i
     }
@@ -341,13 +341,13 @@ test cmdAH-4.20.2 {convertrom -failindex with incomplete utf8 (byte compiled)} -
     rename encoding_test {} 
 }
 test cmdAH-4.21.1 {convertto -failindex with wrong character} -body {
-    set x [encoding convertto -failindex i iso8859-1 A\u0141]
+    set x [encoding convertto -strict -failindex i iso8859-1 A\u0141]
     binary scan $x H* y
     list $y $i
 } -returnCodes 0 -result {41 1}
 test cmdAH-4.21.2 {convertto -failindex with wrong character (byte compiled)} -setup {
     proc encoding_test {} {
-    set x [encoding convertto -failindex i iso8859-1 A\u0141]
+    set x [encoding convertto -strict -failindex i iso8859-1 A\u0141]
 	binary scan $x H* y
 	list $y $i
     }

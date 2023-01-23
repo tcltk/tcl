@@ -244,7 +244,7 @@ test iocmd-8.7 {fconfigure command} -setup {
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
-} -result {-blocking 1 -buffering full -buffersize 4096 -encoding utf-16 -eofchar {} -encodingignore 0 -encodingstrict 1 -translation lf}
+} -result {-blocking 1 -buffering full -buffersize 4096 -encoding utf-16 -eofchar {} -encodingignore 1 -encodingstrict 0 -translation lf}
 test iocmd-8.8 {fconfigure command} -setup {
     file delete $path(test1)
     set x {}
@@ -256,7 +256,7 @@ test iocmd-8.8 {fconfigure command} -setup {
     lappend x [fconfigure $f1]
 } -cleanup {
     catch {close $f1}
-} -result {line {-blocking 1 -buffering line -buffersize 3030 -encoding utf-16 -eofchar {} -encodingignore 0 -encodingstrict 1 -translation lf}}
+} -result {line {-blocking 1 -buffering line -buffersize 3030 -encoding utf-16 -eofchar {} -encodingignore 1 -encodingstrict 0 -translation lf}}
 test iocmd-8.9 {fconfigure command} -setup {
     file delete $path(test1)
 } -body {
@@ -266,7 +266,7 @@ test iocmd-8.9 {fconfigure command} -setup {
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
-} -result {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -encodingignore 0 -encodingstrict 1 -translation lf}
+} -result {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -encodingignore 1 -encodingstrict 0 -translation lf}
 test iocmd-8.10 {fconfigure command} -returnCodes error -body {
     fconfigure a b
 } -result {can not find channel named "a"}
@@ -1368,7 +1368,7 @@ test iocmd-25.1 {chan configure, cgetall, standard options} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -encodingignore 0 -encodingstrict 1 -translation {auto *}}}
+} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -encodingignore 1 -encodingstrict 0 -translation {auto *}}}
 test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
     set res {}
     proc foo args {oninit cget cgetall; onfinal; track; return {}}
@@ -1377,7 +1377,7 @@ test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -encodingignore 0 -encodingstrict 1 -translation {auto *}}}
+} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -encodingignore 1 -encodingstrict 0 -translation {auto *}}}
 test iocmd-25.3 {chan configure, cgetall, regular result} -match glob -body {
     set res {}
     proc foo args {
@@ -1389,7 +1389,7 @@ test iocmd-25.3 {chan configure, cgetall, regular result} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -encodingignore 0 -encodingstrict 1 -translation {auto *} -bar foo -snarf x}}
+} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -encodingignore 1 -encodingstrict 0 -translation {auto *} -bar foo -snarf x}}
 test iocmd-25.4 {chan configure, cgetall, bad result, list of uneven length} -match glob -body {
     set res {}
     proc foo {args} {

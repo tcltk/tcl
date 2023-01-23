@@ -418,7 +418,7 @@ EncodingConvertfromObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     size_t length = 0;			/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
-    int flags = TCL_ENCODING_STRICT;
+    int flags = 0;
     size_t result;
     int current = 1;
     Tcl_Obj *failVarObj = NULL;
@@ -546,7 +546,7 @@ EncodingConverttoObjCmd(
     size_t length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
     size_t result;
-    int flags = TCL_ENCODING_STRICT;
+    int flags = 0;
     int current = 1;
     Tcl_Obj *failVarObj = NULL;
 

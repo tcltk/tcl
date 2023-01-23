@@ -4709,7 +4709,7 @@ proc http::quoteString {string} {
     # a pre-computed map and [string map] to do the conversion (much faster
     # than [regsub]/[subst]). [Bug 1020491]
 
-    set string [encoding convertto $http(-urlencoding) $string]
+    set string [encoding convertto -strict $http(-urlencoding) $string]
     return [string map $formMap $string]
 }
 
