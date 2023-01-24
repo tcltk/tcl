@@ -41,7 +41,7 @@ extern "C" {
  * unix/configure.ac	(2 LOC Major, 2 LOC minor, 1 LOC patch)
  * win/configure.ac	(as above)
  * win/tcl.m4		(not patchlevel)
- * README		(sections 0 and 2, with and without separator)
+ * README.md		(sections 0 and 2, with and without separator)
  * macosx/Tcl-Common.xcconfig (not patchlevel) 1 LOC
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(1 LOC patch)
@@ -52,11 +52,11 @@ extern "C" {
 #endif
 #if TCL_MAJOR_VERSION == 9
 #   define TCL_MINOR_VERSION   0
-#   define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#   define TCL_RELEASE_SERIAL  4
+#   define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
+#   define TCL_RELEASE_SERIAL  1
 
 #   define TCL_VERSION	    "9.0"
-#   define TCL_PATCH_LEVEL	    "9.0a4"
+#   define TCL_PATCH_LEVEL	    "9.0b1"
 #endif /* TCL_MAJOR_VERSION */
 
 #if defined(RC_INVOKED)
