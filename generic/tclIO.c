@@ -9472,7 +9472,9 @@ TclCopyChannel(
     moveBytes = inStatePtr->inEofChar == '\0'	/* No eofChar to stop input */
 	    && inStatePtr->inputTranslation == TCL_TRANSLATE_LF
 	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
-	    && inStatePtr->encoding == outStatePtr->encoding;
+	    && inStatePtr->encoding == outStatePtr->encoding
+	    && (inStatePtr->flags & TCL_ENCODING_STRICT) != TCL_ENCODING_STRICT
+	    && outStatePtr->flags & TCL_ENCODING_NOCOMPLAIN;
 
     /*
      * Allocate a new CopyState to maintain info about the current copy in
@@ -9799,7 +9801,9 @@ CopyData(
 
     inBinary = (inStatePtr->encoding == NULL);
     outBinary = (outStatePtr->encoding == NULL);
-    sameEncoding = (inStatePtr->encoding == outStatePtr->encoding);
+    sameEncoding = inStatePtr->encoding == outStatePtr->encoding
+	    && (inStatePtr->flags & TCL_ENCODING_STRICT) != TCL_ENCODING_STRICT
+	    && outStatePtr->flags & TCL_ENCODING_NOCOMPLAIN;
 
     if (!(inBinary || sameEncoding)) {
 	TclNewObj(bufObj);
