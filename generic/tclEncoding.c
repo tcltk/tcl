@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 
 typedef size_t (LengthProc)(const char *src);
 
@@ -2323,9 +2324,9 @@ UtfToUtfProc(
 
 	    *dst++ = *src++;
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
-		&& (UCHAR(src[1]) == 0x80) && (!(flags & TCL_ENCODING_MODIFIED) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
+		&& (UCHAR(src[1]) == 0x80) && (!(flags & TCL_ENCODING_MODIFIED) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX))) {
 	    /*
-	     * If in input mode, and -strict is specified: This is an error.
+	     * If in input mode, and -strict or -failindex is specified: This is an error.
 	     */
 	    if (flags & TCL_ENCODING_MODIFIED) {
 		result = TCL_CONVERT_SYNTAX;
@@ -2350,7 +2351,7 @@ UtfToUtfProc(
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
-	    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+	    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
@@ -3139,7 +3140,7 @@ TableFromUtfProc(
 	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
-	    if ((STOPONERROR) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
+	    if (STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
