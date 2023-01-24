@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
@@ -574,7 +575,7 @@ EncodingConvertfromObjCmd(
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if (objc > 2 && objc < 6) {
+    } else if (objc > 2 && objc < 7) {
 	int objcUnprocessed = objc;
 	data = objv[objc - 1];
 	bytesPtr = Tcl_GetString(objv[1]);
@@ -586,6 +587,16 @@ EncodingConvertfromObjCmd(
 		&& !strncmp(bytesPtr, "-strict", strlen(bytesPtr))) {
 	    flags = TCL_ENCODING_STRICT;
 	    objcUnprocessed--;
+		bytesPtr = Tcl_GetString(objv[2]);
+		if (bytesPtr[0] == '-' && bytesPtr[1] == 'f'
+			&& !strncmp(bytesPtr, "-failindex", strlen(bytesPtr))) {
+		    /* at least two additional arguments needed */
+		    if (objc < 6) {
+			goto encConvFromError;
+		    }
+		    failVarObj = objv[3];
+		    objcUnprocessed -= 2;
+		}
 	} else if (bytesPtr[0] == '-' && bytesPtr[1] == 'f'
 		&& !strncmp(bytesPtr, "-failindex", strlen(bytesPtr))) {
 	    /* at least two additional arguments needed */
@@ -593,8 +604,14 @@ EncodingConvertfromObjCmd(
 		goto encConvFromError;
 	    }
 	    failVarObj = objv[2];
-	    flags = TCL_ENCODING_STOPONERROR;
+	    flags = ENCODING_FAILINDEX;
 	    objcUnprocessed -= 2;
+		bytesPtr = Tcl_GetString(objv[3]);
+		if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
+			&& !strncmp(bytesPtr, "-strict", strlen(bytesPtr))) {
+		    flags = TCL_ENCODING_STRICT;
+		    objcUnprocessed --;
+		}
 	}
 	switch (objcUnprocessed) {
 	    case 3:
@@ -610,7 +627,9 @@ EncodingConvertfromObjCmd(
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?-strict? ?-failindex var? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-strict? ?-failindex var? ?encoding? data");
+	((Interp *) interp)->flags |= INTERP_ALTERNATE_WRONG_ARGS;
+	Tcl_WrongNumArgs(interp, 1, objv, "-nocomplain ?encoding? data");
 	return TCL_ERROR;
     }
 
@@ -725,6 +744,16 @@ EncodingConverttoObjCmd(
 		&& !strncmp(stringPtr, "-strict", strlen(stringPtr))) {
 	    flags = TCL_ENCODING_STRICT;
 	    objcUnprocessed--;
+		stringPtr = Tcl_GetString(objv[2]);
+		if (stringPtr[0] == '-' && stringPtr[1] == 'f'
+			&& !strncmp(stringPtr, "-failindex", strlen(stringPtr))) {
+		    /* at least two additional arguments needed */
+		    if (objc < 6) {
+			goto encConvToError;
+		    }
+		    failVarObj = objv[3];
+		    objcUnprocessed -= 2;
+		}
 	} else if (stringPtr[0] == '-' && stringPtr[1] == 'f'
 		&& !strncmp(stringPtr, "-failindex", strlen(stringPtr))) {
 	    /* at least two additional arguments needed */
@@ -734,6 +763,12 @@ EncodingConverttoObjCmd(
 	    failVarObj = objv[2];
 	    flags = TCL_ENCODING_STOPONERROR;
 	    objcUnprocessed -= 2;
+		stringPtr = Tcl_GetString(objv[3]);
+		if (stringPtr[0] == '-' && stringPtr[1] == 's'
+			&& !strncmp(stringPtr, "-strict", strlen(stringPtr))) {
+		    flags = TCL_ENCODING_STRICT;
+		    objcUnprocessed --;
+		}
 	}
 	switch (objcUnprocessed) {
 	    case 3:
@@ -749,7 +784,10 @@ EncodingConverttoObjCmd(
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?-strict? ?-failindex var? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-strict? ?-failindex var? ?encoding? data");
+	((Interp *) interp)->flags |= INTERP_ALTERNATE_WRONG_ARGS;
+	Tcl_WrongNumArgs(interp, 1, objv, "-nocomplain ?encoding? data");
+
 	return TCL_ERROR;
     }
 
