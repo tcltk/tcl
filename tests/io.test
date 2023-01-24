@@ -272,7 +272,7 @@ test io-3.4 {WriteChars: loop over stage buffer} -body {
     # stage buffer maps to more than can be queued at once.
 
     set f [open $path(test1) w]
-    fconfigure $f -encoding jis0208 -buffersize 16
+    fconfigure $f -encoding jis0208 -buffersize 16 -nocomplainencoding 1
     puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     close $f
@@ -286,7 +286,7 @@ test io-3.5 {WriteChars: saved != 0} -body {
     # requested buffersize.
 
     set f [open $path(test1) w]
-    fconfigure $f -encoding jis0208 -buffersize 17
+    fconfigure $f -encoding jis0208 -buffersize 17 -nocomplainencoding 1
     puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     close $f
@@ -319,7 +319,7 @@ test io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} -body {
     # of the next channel buffer.
 
     set f [open $path(test1) w]
-    fconfigure $f -encoding jis0208 -buffersize 17
+    fconfigure $f -encoding jis0208 -buffersize 17 -nocomplainencoding 1
     puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     close $f
