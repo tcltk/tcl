@@ -513,8 +513,11 @@ test encoding-17.10 {Utf32ToUtfProc} -body {
     encoding convertfrom -nocomplain utf-32 "\xFF\xFF\xFF\xFF"
 } -result \uFFFD
 
-test encoding-18.1 {TableToUtfProc} {
-} {}
+
+test encoding-18.1 {TableToUtfProc error on invalid input with -strict} -body {
+	list [catch {encoding convertto -strict jis0208 \\} res] $res
+} -result {1 {unexpected character at index 0: 'U+00005C'}}
+
 
 test encoding-19.1 {TableFromUtfProc} {
 } {}
@@ -914,6 +917,7 @@ test encoding-29.0 {get encoding nul terminator lengths} -constraints {
         [testencoding nullength gb12345] \
         [testencoding nullength ksc5601]
 } -result {1 2 4 2 2}
+
 
 # cleanup
 namespace delete ::tcl::test::encoding
