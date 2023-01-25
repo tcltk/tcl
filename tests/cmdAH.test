@@ -262,7 +262,7 @@ test cmdAH-4.17.2 {Syntax error, -failindex and -nocomplain, encoding} -body {
 } -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-strict? ?-failindex var? ?encoding? data" or "encoding convertto -nocomplain ?encoding? data"}
 test cmdAH-4.18.1 {Syntax error, -failindex with no var, no encoding} -body {
     encoding convertfrom -failindex ABC
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertfrom -nocomplain ?encoding? data"}
+} -returnCodes 1 -result {unknown encoding "-failindex"}
 test cmdAH-4.18.2 {Syntax error, -failindex with no var, no encoding (byte compiled)} -setup {
     proc encoding_test {} {
         encoding convertfrom -failindex ABC
@@ -270,12 +270,12 @@ test cmdAH-4.18.2 {Syntax error, -failindex with no var, no encoding (byte compi
 } -body {
     # Compile and execute
     encoding_test
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertfrom -nocomplain ?encoding? data"} -cleanup {
+} -returnCodes 1 -result {unknown encoding "-failindex"} -cleanup {
     rename encoding_test ""
 }
 test cmdAH-4.18.3 {Syntax error, -failindex with no var, no encoding} -body {
     encoding convertto -failindex ABC
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertto -nocomplain ?encoding? data"}
+} -returnCodes 1 -result {unknown encoding "-failindex"}
 test cmdAH-4.18.4 {Syntax error, -failindex with no var, no encoding (byte compiled)} -setup {
     proc encoding_test {} {
         encoding convertto -failindex ABC
@@ -283,16 +283,16 @@ test cmdAH-4.18.4 {Syntax error, -failindex with no var, no encoding (byte compi
 } -body {
     # Compile and execute
     encoding_test
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertto -nocomplain ?encoding? data"} -cleanup {
+} -returnCodes 1 -result {unknown encoding "-failindex"} -cleanup {
     rename encoding_test ""
 }
 test cmdAH-4.19.1 {convertrom -failindex with correct data} -body {
-    encoding convertfrom -failindex test ABC
+    encoding convertfrom -failindex test [encoding system] ABC
     set test
 } -returnCodes 0 -result -1
 test cmdAH-4.19.2 {convertrom -failindex with correct data (byt compiled)} -setup {
     proc encoding_test {} {
-	encoding convertfrom -failindex test ABC
+	encoding convertfrom -failindex test [encoding system] ABC
 	set test
     }
 } -body {
@@ -302,12 +302,12 @@ test cmdAH-4.19.2 {convertrom -failindex with correct data (byt compiled)} -setu
     rename encoding_test ""
 }
 test cmdAH-4.19.3 {convertrom -failindex with correct data} -body {
-    encoding convertto -failindex test ABC
+    encoding convertto -failindex test [encoding system] ABC
     set test
 } -returnCodes 0 -result -1
 test cmdAH-4.19.4 {convertrom -failindex with correct data (byt compiled)} -setup {
     proc encoding_test {} {
-	encoding convertto -failindex test ABC
+	encoding convertto -failindex test [encoding system] ABC
 	set test
     }
 } -body {

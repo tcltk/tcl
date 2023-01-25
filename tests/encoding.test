@@ -676,12 +676,12 @@ test encoding-24.18 {Parse valid or invalid utf-8} -constraints testbytestring -
 test encoding-24.19 {Parse valid or invalid utf-8} -constraints deprecated -body {
     encoding convertto utf-8 "ZX\uD800"
 } -result ZX\xED\xA0\x80
-test encoding-24.20 {Parse with -nocomplain but without providing encoding} {
+test encoding-24.20 {Parse with -nocomplain but without providing encoding} -body {
     string length [encoding convertfrom -nocomplain "\x20"]
-} 1
-test encoding-24.21 {Parse with -nocomplain but without providing encoding} {
+} -returnCodes 1 -result {unknown encoding "-nocomplain"}
+test encoding-24.21 {Parse with -nocomplain but without providing encoding} -body {
     string length [encoding convertto -nocomplain "\x20"]
-} 1
+} -returnCodes 1 -result {unknown encoding "-nocomplain"}
 test encoding-24.22 {Syntax error, two encodings} -body {
     encoding convertfrom iso8859-1 utf-8 "ZX\uD800"
 } -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertfrom -nocomplain ?encoding? data"}

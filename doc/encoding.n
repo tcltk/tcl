@@ -35,7 +35,8 @@ Convert \fIdata\fR to a Unicode string from the specified \fIencoding\fR.  The
 characters in \fIdata\fR are 8 bit binary data.  The resulting
 sequence of bytes is a string created by applying the given \fIencoding\fR
 to the data. If \fIencoding\fR is not specified, the current
-system encoding is used.
+system encoding is used. If at least one of \fB-strict\fR/\fB-failindex var\fR/\fB-nocomplain\fR
+is provided, this makes the \fIencoding\fR argument mandatory.
 .VS "TCL8.7 TIP346, TIP607, TIP601"
 .PP
 .RS
@@ -70,7 +71,9 @@ The result is a sequence of bytes that represents the converted
 string.  Each byte is stored in the lower 8-bits of a Unicode
 character (indeed, the resulting string is a binary string as far as
 Tcl is concerned, at least initially).  If \fIencoding\fR is not
-specified, the current system encoding is used.
+specified, the current system encoding is used. If at least one of
+\fB-strict\fR/\fB-failindex var\fR/\fB-nocomplain\fR
+is provided, this makes the \fIencoding\fR argument mandatory.
 .VS "TCL8.7 TIP346, TIP607, TIP601"
 .PP
 .RS

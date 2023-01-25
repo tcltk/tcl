@@ -564,18 +564,22 @@ EncodingConvertfromObjCmd(
      * Possible combinations:
      * 1) data						-> objc = 2
      * 2) encoding data					-> objc = 3
-     * 3) -nocomplain data				-> objc = 3
-     * 4) -nocomplain encoding data			-> objc = 4
-     * 5) -strict data				-> objc = 3
-     * 6) -strict encoding data			-> objc = 4
-     * 7) -failindex val data				-> objc = 4
-     * 8) -failindex val encoding data			-> objc = 5
+     * 3) -nocomplain encoding data			-> objc = 4
+     * 4) -strict -failindex val encoding data			-> objc = 6
+     * 5) -strict encoding data			-> objc = 4
+     * 6) -failindex val encoding data			-> objc = 5
+     * 7) -failindex val -strict encoding data			-> objc = 6
      */
 
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if (objc > 2 && objc < 7) {
+    } else if (objc == 3) {
+	if (Tcl_GetEncodingFromObj(interp, objv[1], &encoding) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	data = objv[2];
+    } else if (objc > 3 && objc < 7) {
 	int objcUnprocessed = objc;
 	data = objv[objc - 1];
 	bytesPtr = Tcl_GetString(objv[1]);
@@ -590,7 +594,7 @@ EncodingConvertfromObjCmd(
 		bytesPtr = Tcl_GetString(objv[2]);
 		if (bytesPtr[0] == '-' && bytesPtr[1] == 'f'
 			&& !strncmp(bytesPtr, "-failindex", strlen(bytesPtr))) {
-		    /* at least two additional arguments needed */
+		    /* at least three additional arguments needed */
 		    if (objc < 6) {
 			goto encConvFromError;
 		    }
@@ -599,8 +603,8 @@ EncodingConvertfromObjCmd(
 		}
 	} else if (bytesPtr[0] == '-' && bytesPtr[1] == 'f'
 		&& !strncmp(bytesPtr, "-failindex", strlen(bytesPtr))) {
-	    /* at least two additional arguments needed */
-	    if (objc < 4) {
+	    /* at least three additional arguments needed */
+	    if (objc < 5) {
 		goto encConvFromError;
 	    }
 	    failVarObj = objv[2];
@@ -723,16 +727,22 @@ EncodingConverttoObjCmd(
      * Possible combinations:
      * 1) data						-> objc = 2
      * 2) encoding data					-> objc = 3
-     * 3) -nocomplain data				-> objc = 3
-     * 4) -nocomplain encoding data			-> objc = 4
-     * 5) -failindex val data				-> objc = 4
+     * 3) -nocomplain encoding data			-> objc = 4
+     * 4) -strict -failindex val encoding data			-> objc = 6
+     * 5) -strict encoding data			-> objc = 4
      * 6) -failindex val encoding data			-> objc = 5
+     * 7) -failindex val -strict encoding data			-> objc = 6
      */
 
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if (objc > 2 && objc < 6) {
+    } else if (objc == 3) {
+	if (Tcl_GetEncodingFromObj(interp, objv[1], &encoding) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	data = objv[2];
+    } else if (objc > 3 && objc < 7) {
 	int objcUnprocessed = objc;
 	data = objv[objc - 1];
 	stringPtr = Tcl_GetString(objv[1]);
@@ -747,7 +757,7 @@ EncodingConverttoObjCmd(
 		stringPtr = Tcl_GetString(objv[2]);
 		if (stringPtr[0] == '-' && stringPtr[1] == 'f'
 			&& !strncmp(stringPtr, "-failindex", strlen(stringPtr))) {
-		    /* at least two additional arguments needed */
+		    /* at least three additional arguments needed */
 		    if (objc < 6) {
 			goto encConvToError;
 		    }
@@ -756,8 +766,8 @@ EncodingConverttoObjCmd(
 		}
 	} else if (stringPtr[0] == '-' && stringPtr[1] == 'f'
 		&& !strncmp(stringPtr, "-failindex", strlen(stringPtr))) {
-	    /* at least two additional arguments needed */
-	    if (objc < 4) {
+	    /* at least three additional arguments needed */
+	    if (objc < 5) {
 		goto encConvToError;
 	    }
 	    failVarObj = objv[2];
