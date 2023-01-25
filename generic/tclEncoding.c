@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 
 typedef size_t (LengthProc)(const char *src);
 
@@ -2331,7 +2332,7 @@ UtfToUtfProc(
 	    ))
 	{
 	    /*
-	     * If in input mode, and -strict is specified: This is an error.
+	     * If in input mode, and -strict or -failindex is specified: This is an error.
 	     */
 	    if (flags & TCL_ENCODING_MODIFIED) {
 		result = TCL_CONVERT_SYNTAX;
@@ -2356,7 +2357,7 @@ UtfToUtfProc(
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
-	    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+	    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }

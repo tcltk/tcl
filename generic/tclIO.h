@@ -286,6 +286,7 @@ typedef struct ChannelState {
 					 * usable, but it may not be closed
 					 * again from within the close
 					 * handler. */
+#define ENCODING_FAILINDEX	(1<<20) /* Internal flag, fail on Invalid bytes only */
 #define CHANNEL_CLOSEDWRITE	(1<<21)	/* Channel write side has been closed.
 					 * No further Tcl-level write IO on
 					 * the channel is allowed. */

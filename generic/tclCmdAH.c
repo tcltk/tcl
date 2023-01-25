@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
