@@ -3145,7 +3145,7 @@ TableFromUtfProc(
 	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
-	    if ((ENCODINGSTRICT) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
+	    if (ENCODINGSTRICT) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
