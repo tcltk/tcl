@@ -2503,8 +2503,8 @@ TEBCresume(
 	 * 'yieldParameter').
 	 */
 
-	Tcl_IncrRefCount(valuePtr);
 	iPtr->execEnvPtr = corPtr->callerEEPtr;
+	Tcl_IncrRefCount(valuePtr);
 	TclSetTailcall(interp, valuePtr);
 	corPtr->yieldPtr = valuePtr;
 	iPtr->execEnvPtr = corPtr->eePtr;
