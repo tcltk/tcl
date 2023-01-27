@@ -172,7 +172,7 @@ test encoding-6.2 {Tcl_CreateEncoding: replace encoding} {testencoding} {
 
 test encoding-7.1 {Tcl_ExternalToUtfDString: small buffer} {
     encoding convertfrom jis0208 8c8c8c8c
-} "吾吾吾吾"
+} 吾吾吾吾
 test encoding-7.2 {Tcl_UtfToExternalDString: big buffer} {
     set a 8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C
     append a $a
@@ -194,7 +194,7 @@ test encoding-8.1 {Tcl_ExternalToUtf} {
     close $f
     file delete [file join [temporaryDirectory] dummy]
     return $x
-} "ab乎g"
+} ab乎g
 
 test encoding-9.1 {Tcl_UtfToExternalDString: small buffer} {
     encoding convertto jis0208 "吾吾吾吾"
@@ -214,7 +214,7 @@ test encoding-9.2 {Tcl_UtfToExternalDString: big buffer} {
 test encoding-10.1 {Tcl_UtfToExternal} {
     set f [open [file join [temporaryDirectory] dummy] w]
     fconfigure $f -translation binary -encoding shiftjis
-    puts -nonewline $f "ab乎g"
+    puts -nonewline $f ab乎g
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
     fconfigure $f -translation binary -encoding iso8859-1
@@ -249,7 +249,7 @@ test encoding-11.1 {LoadEncodingFile: unknown encoding} {testencoding} {
 } {1 {unknown encoding "jis0208"} 8C}
 test encoding-11.2 {LoadEncodingFile: single-byte} {
     encoding convertfrom jis0201 \xA1
-} "｡"
+} ｡
 test encoding-11.3 {LoadEncodingFile: double-byte} {
     encoding convertfrom jis0208 8C
 } 乎
@@ -514,11 +514,24 @@ test encoding-17.10 {Utf32ToUtfProc} -body {
     encoding convertfrom -nocomplain utf-32 "\xFF\xFF\xFF\xFF"
 } -result \uFFFD
 
-
-test encoding-18.1 {TableToUtfProc error on invalid input with -strict} -body {
+test encoding-18.1 {TableToUtfProc on invalid input} -body {
+	list [catch {encoding convertto jis0208 \\} res] $res
+} -result {1 {unexpected character at index 0: 'U+00005C'}}
+test encoding-18.2 {TableToUtfProc on invalid input with -strict} -body {
 	list [catch {encoding convertto -strict jis0208 \\} res] $res
 } -result {1 {unexpected character at index 0: 'U+00005C'}}
-
+test encoding-18.3 {TableToUtfProc on invalid input with -strict -failindex} -body {
+	list [catch {encoding convertto -strict -failindex pos jis0208 \\} res] $res $pos
+} -result {0 {} 0}
+test encoding-18.4 {TableToUtfProc on invalid input with -failindex -strict} -body {
+	list [catch {encoding convertto -failindex pos -strict jis0208 \\} res] $res $pos
+} -result {0 {} 0}
+test encoding-18.5 {TableToUtfProc on invalid input with -failindex} -body {
+	list [catch {encoding convertto -failindex pos jis0208 \\} res] $res $pos
+} -result {0 {} 0}
+test encoding-18.6 {TableToUtfProc on invalid input with -nocomplain} -body {
+	list [catch {encoding convertto -nocomplain jis0208 \\} res] $res
+} -result {0 !)}
 
 test encoding-19.1 {TableFromUtfProc} {
 } {}
