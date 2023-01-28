@@ -482,6 +482,10 @@ test encoding-16.7 {Utf32ToUtfProc} -body {
     set val [encoding convertfrom utf-32be \0\0NN]
     list $val [format %x [scan $val %c]]
 } -result "乎 4e4e"
+test encoding-16.8 {Utf32ToUtfProc} -body {
+    set val [encoding convertfrom -nocomplain utf-32 \x41\x00\x00\x41]
+    list $val [format %x [scan $val %c]]
+} -result "\uFFFD fffd"
 
 test encoding-17.1 {UtfToUtf16Proc} -body {
     encoding convertto utf-16 "\U460DC"
