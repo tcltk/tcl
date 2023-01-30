@@ -266,8 +266,8 @@ Tcl_UniCharToUtf(
 	}
 	if (ch <= 0x10FFFF) {
 	    buf[3] = (char) (0x80 | (0x3F & ch));
-	    buf[2] = (char) (0xBF & (0x80 | (ch >> 6)));
-	    buf[1] = (char) (0xBF & (0x80 | (ch >> 12)));
+	    buf[2] = (char) (0x80 | (0x3F & (ch >> 6)));
+	    buf[1] = (char) (0x80 | (0x3F & (ch >> 12)));
 	    buf[0] = (char) (0xF0 |         (ch >> 18));
 	    return 4;
 	}
@@ -279,8 +279,8 @@ Tcl_UniCharToUtf(
 		+ ((0x07 & buf[-1]) << 8)
 		+ ((0x3F & buf[0])  << 2)
 		+ ((0x30 & buf[1])  >> 4);
-	    buf[1]  = (char) (0xBF & (0x80 | ch));
-	    buf[0]  = (char) (0xBF & (0x80 | (ch >> 6)));
+	    buf[1]  = (char) (0x80 | (0x3F & ch));
+	    buf[0]  = (char) (0x80 | (0x3F & (ch >> 6)));
 	    buf[-1] = (char) (0xE0 | (ch >> 12));
 	    return 2;
 	}
