@@ -109,14 +109,14 @@ test result-6.0 {Bug 1209759} -constraints testreturn -body {
     # Might panic if bug is not fixed.
     proc foo {} {testreturn}
     foo
-} -returnCodes ok  -result {}
+}  -result {}
 test result-6.1 {Bug 1209759} -constraints testreturn -body {
     # Might panic if bug is not fixed.
     proc foo {} {catch {return -level 2}; testreturn}
     foo
 } -cleanup {
     rename foo {}
-} -returnCodes ok -result {}
+} -result {}
 test result-6.2 {Bug 1649062} -setup {
     proc foo {} {
         if {[catch {

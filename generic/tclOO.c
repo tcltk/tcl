@@ -137,7 +137,7 @@ static const Tcl_MethodType classConstructor = {
  * file).
  */
 
-static const char *initScript =
+static const char initScript[] =
 #ifndef TCL_NO_DEPRECATED
 "package ifneeded TclOO " TCLOO_PATCHLEVEL " {# Already present, OK?};"
 #endif
@@ -262,10 +262,10 @@ TclOOInit(
 
 #ifndef TCL_NO_DEPRECATED
     Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
-    	    (void *) &tclOOStubs);
+	    &tclOOStubs);
 #endif
     return Tcl_PkgProvideEx(interp, "tcl::oo", TCLOO_PATCHLEVEL,
-	    (void *) &tclOOStubs);
+	    &tclOOStubs);
 }
 
 /*
@@ -391,9 +391,9 @@ InitFoundation(
      */
 
     TclNewLiteralStringObj(namePtr, "new");
-    Tcl_NewInstanceMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
+    TclNewInstanceMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
 	    namePtr /* keeps ref */, 0 /* private */, NULL, NULL);
-    fPtr->classCls->constructorPtr = (Method *) Tcl_NewMethod(interp,
+    fPtr->classCls->constructorPtr = (Method *) TclNewMethod(interp,
 	    (Tcl_Class) fPtr->classCls, NULL, 0, &classConstructor, NULL);
 
     /*
@@ -2246,7 +2246,7 @@ CloneObjectMethod(
     Tcl_Obj *namePtr)
 {
     if (mPtr->typePtr == NULL) {
-	Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
+	TclNewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
     } else if (mPtr->typePtr->cloneProc) {
 	ClientData newClientData;
@@ -2255,10 +2255,10 @@ CloneObjectMethod(
 		&newClientData) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
+	TclNewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
     } else {
-	Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
+	TclNewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, mPtr->clientData);
     }
     return TCL_OK;
@@ -2275,7 +2275,7 @@ CloneClassMethod(
     Method *m2Ptr;
 
     if (mPtr->typePtr == NULL) {
-	m2Ptr = (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr,
+	m2Ptr = (Method *) TclNewMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, NULL, NULL);
     } else if (mPtr->typePtr->cloneProc) {
 	ClientData newClientData;
@@ -2284,11 +2284,11 @@ CloneClassMethod(
 		&newClientData) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	m2Ptr = (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr,
+	m2Ptr = (Method *) TclNewMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
 		newClientData);
     } else {
-	m2Ptr = (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr,
+	m2Ptr = (Method *) TclNewMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
 		mPtr->clientData);
     }

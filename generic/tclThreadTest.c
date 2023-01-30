@@ -119,9 +119,7 @@ static char *errorProcString;
 
 TCL_DECLARE_MUTEX(threadMutex)
 
-static int		ThreadObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ThreadObjCmd;
 static int		ThreadCreate(Tcl_Interp *interp, const char *script,
 			    int joinable);
 static int		ThreadList(Tcl_Interp *interp);
@@ -271,7 +269,7 @@ ThreadObjCmd(
 	} else {
 	    result = NULL;
 	}
-	return ThreadCancel(interp, (Tcl_ThreadId) (size_t) id, result, flags);
+	return ThreadCancel(interp, (Tcl_ThreadId) INT2PTR(id), result, flags);
     }
     case THREAD_CREATE: {
 	const char *script;
@@ -335,11 +333,11 @@ ThreadObjCmd(
 	     */
 
 	    if (objc == 2) {
-		idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t)Tcl_GetCurrentThread());
+		idObj = Tcl_NewWideIntObj((Tcl_WideInt)PTR2INT(Tcl_GetCurrentThread()));
 	    } else if (objc == 3
 		    && strcmp("-main", Tcl_GetString(objv[2])) == 0) {
 		Tcl_MutexLock(&threadMutex);
-		idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t)mainThreadId);
+		idObj = Tcl_NewWideIntObj((Tcl_WideInt)PTR2INT(mainThreadId));
 		Tcl_MutexUnlock(&threadMutex);
 	    } else {
 		Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -364,7 +362,7 @@ ThreadObjCmd(
 	    return TCL_ERROR;
 	}
 
-	result = Tcl_JoinThread((Tcl_ThreadId)(size_t)id, &status);
+	result = Tcl_JoinThread((Tcl_ThreadId)INT2PTR(id), &status);
 	if (result == TCL_OK) {
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), status);
 	} else {
@@ -406,7 +404,7 @@ ThreadObjCmd(
 	}
 	arg++;
 	script = Tcl_GetString(objv[arg]);
-	return ThreadSend(interp, (Tcl_ThreadId)(size_t)id, script, wait);
+	return ThreadSend(interp, (Tcl_ThreadId)INT2PTR(id), script, wait);
     }
     case THREAD_EVENT: {
 	if (objc > 2) {
@@ -878,8 +876,7 @@ ThreadSend(
 
     threadEventPtr->event.proc = ThreadEventProc;
     Tcl_ThreadQueueEvent(threadId, (Tcl_Event *) threadEventPtr,
-	    TCL_QUEUE_TAIL);
-    Tcl_ThreadAlert(threadId);
+	    TCL_QUEUE_TAIL|TCL_QUEUE_ALERT_IF_EMPTY);
 
     if (!wait) {
 	Tcl_MutexUnlock(&threadMutex);

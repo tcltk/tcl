@@ -31,6 +31,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
+
+#ifndef _TCLSTRINGREP
+#define _TCLSTRINGREP
+
 
 /*
  * The following structure is the internal rep for a String object. It keeps
@@ -39,40 +43,35 @@
  * Unicode reps of the String object with fewer mallocs. To optimize string
  * length and indexing operations, this structure also stores the number of
  * characters (same of UTF and Unicode!) once that value has been computed.
- *
- * Under normal configurations, what Tcl calls "Unicode" is actually UTF-16
- * restricted to the Basic Multilingual Plane (i.e. U+00000 to U+0FFFF). This
- * can be officially modified by altering the definition of Tcl_UniChar in
- * tcl.h, but do not do that unless you are sure what you're doing!
  */
 
 typedef struct {
-    int numChars;		/* The number of chars in the string. -1 means
-				 * this value has not been calculated. >= 0
-				 * means that there is a valid Unicode rep, or
-				 * that the number of UTF bytes == the number
-				 * of chars. */
-    int allocated;		/* The amount of space actually allocated for
+    Tcl_Size numChars;		/* The number of chars in the string.
+				 * TCL_INDEX_NONE means this value has not been
+				 * calculated. Any other means that there is a valid
+				 * Unicode rep, or that the number of UTF bytes ==
+				 * the number of chars. */
+    Tcl_Size allocated;		/* The amount of space actually allocated for
 				 * the UTF string (minus 1 byte for the
 				 * termination char). */
-    int maxChars;		/* Max number of chars that can fit in the
+    Tcl_Size maxChars;		/* Max number of chars that can fit in the
 				 * space allocated for the unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has
 				 * a Unicode representation. */
-    Tcl_UniChar unicode[TCLFLEXARRAY];	/* The array of Unicode chars. The actual size
+    unsigned short unicode[TCLFLEXARRAY];	/* The array of Unicode chars. The actual size
 				 * of this field depends on the 'maxChars'
 				 * field above. */
 } String;
 
 #define STRING_MAXCHARS \
-    (int)(((size_t)UINT_MAX - 1 - offsetof(String, unicode))/sizeof(Tcl_UniChar))
+    (int)(((size_t)UINT_MAX - offsetof(String, unicode))/sizeof(unsigned short) - 1)
 #define STRING_SIZE(numChars) \
-    (offsetof(String, unicode) + ((numChars + 1) * sizeof(Tcl_UniChar)))
+    (offsetof(String, unicode) + sizeof(unsigned short) + ((numChars) * sizeof(unsigned short)))
 #define stringCheckLimits(numChars) \
     do {								\
 	if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) {		\
 	    Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
-		      (int)STRING_MAXCHARS);					\
+		      STRING_MAXCHARS);					\
 	}								\
     } while (0)
 #define stringAttemptAlloc(numChars) \
@@ -89,6 +88,7 @@ typedef struct {
     ((objPtr)->internalRep.twoPtrValue.ptr2 = NULL),			\
     ((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr))
 
+#endif /*  _TCLSTRINGREP */
 /*
  * Local Variables:
  * mode: c

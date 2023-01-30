@@ -40,7 +40,7 @@ typedef struct PkgAvail {
 typedef struct PkgName {
     struct PkgName *nextPtr;	/* Next in list of package names being
 				 * initialized. */
-    char name[1];
+    char name[TCLFLEXARRAY];
 } PkgName;
 
 typedef struct PkgFiles {
@@ -828,7 +828,7 @@ SelectPackage(
 	 * Push "ifneeded" package name in "tclPkgFiles" assocdata.
 	 */
 
-	pkgName = (PkgName *)ckalloc(sizeof(PkgName) + strlen(name));
+	pkgName = (PkgName *)ckalloc(offsetof(PkgName, name) + 1 + strlen(name));
 	pkgName->nextPtr = pkgFiles->names;
 	strcpy(pkgName->name, name);
 	pkgFiles->names = pkgName;
@@ -1359,7 +1359,7 @@ TclNRPackageObjCmd(
 	    objvListPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_IncrRefCount(objvListPtr);
 	    Tcl_ListObjAppendElement(interp, objvListPtr, ov);
-	    Tcl_ListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
+	    TclListObjGetElementsM(interp, objvListPtr, &newobjc, &newObjvPtr);
 
 	    Tcl_NRAddCallback(interp,
 		    TclNRPackageObjCmdCleanup, objv[3], objvListPtr, NULL,NULL);
@@ -1386,7 +1386,7 @@ TclNRPackageObjCmd(
 		Tcl_ListObjAppendElement(interp, objvListPtr,
 			Tcl_DuplicateObj(newobjv[i]));
 	    }
-	    Tcl_ListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
+	    TclListObjGetElementsM(interp, objvListPtr, &newobjc, &newObjvPtr);
 	    Tcl_NRAddCallback(interp,
 		    TclNRPackageObjCmdCleanup, objv[2], objvListPtr, NULL,NULL);
 	    Tcl_NRAddCallback(interp,

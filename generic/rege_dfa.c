@@ -419,7 +419,7 @@ freeDFA(
 static unsigned
 hash(
     unsigned *const uv,
-    const int n)
+    int n)
 {
     int i;
     unsigned h;

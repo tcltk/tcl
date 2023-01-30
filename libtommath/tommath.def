@@ -143,3 +143,14 @@ EXPORTS
     mp_unpack
     mp_xor
     mp_zero
+    s_mp_mul_digs
+    s_mp_sub
+    s_mp_add
+    s_mp_toom_mul
+    s_mp_mul_digs_fast
+    s_mp_karatsuba_mul
+    s_mp_sqr_fast
+    s_mp_reverse
+    s_mp_karatsuba_sqr
+    s_mp_toom_sqr
+    s_mp_sqr

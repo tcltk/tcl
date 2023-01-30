@@ -17,7 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 unset -nocomplain foo
-package require tcltests
+source [file join [file dirname [info script]] tcltests.tcl]
 testConstraint exec [llength [info commands exec]]
 
 # Used for constraining memory leak tests
@@ -765,7 +765,7 @@ test regexp-19.2 {regsub null replacement} {
     string equal $result $expected
 } 1
 
-test regexp-20.1 {regsub shared object shimmering} -constraints nodep -body {
+test regexp-20.1 {regsub shared object shimmering} -constraints deprecated -body {
     # Bug #461322
     set a abcdefghijklmnopqurstuvwxyz
     set b $a

@@ -97,7 +97,7 @@ typedef struct {
 
 static Tcl_ThreadDataKey dataKey;
 
-static void             TclThreadFinalizeContLines(ClientData clientData);
+static void             TclThreadFinalizeContLines(void *clientData);
 static ThreadSpecificData *TclGetContLineTable(void);
 
 /*
@@ -341,12 +341,12 @@ typedef struct ResolvedCmdName {
 				 * it's possible that the cmd's containing
 				 * namespace was deleted and a new one created
 				 * at the same address). */
-    unsigned int refNsCmdEpoch;	/* Value of the referencing namespace's
+    int refNsCmdEpoch;		/* Value of the referencing namespace's
 				 * cmdRefEpoch when the pointer was cached.
 				 * Before using the cached pointer, we check
 				 * if the namespace's epoch was incremented;
 				 * if so, this cached pointer is invalid. */
-    unsigned int cmdEpoch; /* Value of the command's cmdEpoch when this
+    int cmdEpoch;		/* Value of the command's cmdEpoch when this
 				 * pointer was cached. Before using the cached
 				 * pointer, we check if the cmd's epoch was
 				 * incremented; if so, the cmd was renamed,
@@ -387,7 +387,9 @@ TclInitObjSubsystem(void)
 
     Tcl_RegisterObjType(&tclByteArrayType);
     Tcl_RegisterObjType(&tclDoubleType);
+#if (TCL_UTF_MAX < 4) || !defined(TCL_NO_DEPRECATED)
     Tcl_RegisterObjType(&tclStringType);
+#endif
     Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclDictType);
     Tcl_RegisterObjType(&tclByteCodeType);
@@ -567,7 +569,7 @@ TclContinuationsEnter(
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
 	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = (ContLineLoc *)ckalloc(offsetof(ContLineLoc, loc) + (num + 1) *sizeof(int));
+    ContLineLoc *clLocPtr = (ContLineLoc *)ckalloc(offsetof(ContLineLoc, loc) + (num + 1U) *sizeof(int));
 
     if (!newEntry) {
 	/*
@@ -783,7 +785,7 @@ TclContinuationsGet(
 
 static void
 TclThreadFinalizeContLines(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     /*
      * Release the hashtable tracking invisible continuation lines.
@@ -875,7 +877,7 @@ Tcl_AppendAllObjTypes(
      * Get the test for a valid list out of the way first.
      */
 
-    if (TclListObjLength(interp, objPtr, &numElems) != TCL_OK) {
+    if (TclListObjLengthM(interp, objPtr, &numElems) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2004,7 +2006,7 @@ Tcl_FreeInternalRep(
  *
  *	This function is normally called when not debugging: i.e., when
  *	TCL_MEM_DEBUG is not defined. It creates a new Tcl_Obj and
- *	initializes it from the argument boolean value. A nonzero "boolValue"
+ *	initializes it from the argument boolean value. A nonzero "intValue"
  *	is coerced to 1.
  *
  *	When TCL_MEM_DEBUG is defined, this function just returns the result
@@ -2025,20 +2027,20 @@ Tcl_FreeInternalRep(
 
 Tcl_Obj *
 Tcl_NewBooleanObj(
-    int boolValue)	/* Boolean used to initialize new object. */
+    int intValue)	/* Boolean used to initialize new object. */
 {
-    return Tcl_DbNewWideIntObj(boolValue!=0, "unknown", 0);
+    return Tcl_DbNewWideIntObj(intValue!=0, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
 
 Tcl_Obj *
 Tcl_NewBooleanObj(
-    int boolValue)	/* Boolean used to initialize new object. */
+    int intValue)	/* Boolean used to initialize new object. */
 {
     Tcl_Obj *objPtr;
 
-    TclNewIntObj(objPtr, boolValue!=0);
+    TclNewIntObj(objPtr, intValue!=0);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -2075,7 +2077,7 @@ Tcl_NewBooleanObj(
 
 Tcl_Obj *
 Tcl_DbNewBooleanObj(
-    int boolValue,	/* Boolean used to initialize new object. */
+    int intValue,	/* Boolean used to initialize new object. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
     int line)			/* Line number in the source file; used for
@@ -2087,7 +2089,7 @@ Tcl_DbNewBooleanObj(
     /* Optimized TclInvalidateStringRep() */
     objPtr->bytes = NULL;
 
-    objPtr->internalRep.wideValue = (boolValue != 0);
+    objPtr->internalRep.wideValue = (intValue != 0);
     objPtr->typePtr = &tclIntType;
     return objPtr;
 }
@@ -2096,11 +2098,11 @@ Tcl_DbNewBooleanObj(
 
 Tcl_Obj *
 Tcl_DbNewBooleanObj(
-    int boolValue,	/* Boolean used to initialize new object. */
+    int intValue,	/* Boolean used to initialize new object. */
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
-    return Tcl_NewBooleanObj(boolValue);
+    return Tcl_NewBooleanObj(intValue);
 }
 #endif /* TCL_MEM_DEBUG */
 
@@ -2110,7 +2112,7 @@ Tcl_DbNewBooleanObj(
  * Tcl_SetBooleanObj --
  *
  *	Modify an object to be a boolean object and to have the specified
- *	boolean value. A nonzero "boolValue" is coerced to 1.
+ *	boolean value. A nonzero "intValue" is coerced to 1.
  *
  * Results:
  *	None.
@@ -2126,20 +2128,20 @@ Tcl_DbNewBooleanObj(
 void
 Tcl_SetBooleanObj(
     Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
-    int boolValue)	/* Boolean used to set object's value. */
+    int intValue)	/* Boolean used to set object's value. */
 {
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetBooleanObj");
     }
 
-    TclSetIntObj(objPtr, boolValue!=0);
+    TclSetIntObj(objPtr, intValue!=0);
 }
 #endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetBooleanFromObj --
+ * Tcl_GetBoolFromObj, Tcl_GetBooleanFromObj --
  *
  *	Attempt to return a boolean from the Tcl object "objPtr". This
  *	includes conversion from any of Tcl's numeric types.
@@ -2155,20 +2157,36 @@ Tcl_SetBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetBoolFromObj
 int
-Tcl_GetBooleanFromObj(
+Tcl_GetBoolFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,	/* The object from which to get boolean. */
-    int *boolPtr)	/* Place to store resulting boolean. */
+    int flags,
+    char *charPtr)	/* Place to store resulting boolean. */
 {
+    int result;
+
+    if ((flags & TCL_NULL_OK) && (objPtr == NULL || Tcl_GetString(objPtr)[0] == '\0')) {
+	result = -1;
+	goto boolEnd;
+    } else if (objPtr == NULL) {
+	if (interp) {
+	    TclNewObj(objPtr);
+	    TclParseNumber(interp, objPtr, (flags & TCL_NULL_OK)
+		    ? "boolean value or \"\"" : "boolean value", NULL, -1, NULL, 0);
+	    Tcl_DecrRefCount(objPtr);
+	}
+	return TCL_ERROR;
+    }
     do {
 	if (objPtr->typePtr == &tclIntType) {
-	    *boolPtr = (objPtr->internalRep.wideValue != 0);
-	    return TCL_OK;
+	    result = (objPtr->internalRep.wideValue != 0);
+	    goto boolEnd;
 	}
 	if (objPtr->typePtr == &tclBooleanType) {
-	    *boolPtr = objPtr->internalRep.longValue != 0;
-	    return TCL_OK;
+	    result = objPtr->internalRep.longValue != 0;
+	    goto boolEnd;
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
 	    /*
@@ -2184,18 +2202,45 @@ Tcl_GetBooleanFromObj(
 	    if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    *boolPtr = (d != 0.0);
-	    return TCL_OK;
+	    result = (d != 0.0);
+	    goto boolEnd;
 	}
 	if (objPtr->typePtr == &tclBignumType) {
-	    *boolPtr = 1;
+	    result = 1;
+	boolEnd:
+	    if (charPtr != NULL) {
+		flags &= (TCL_NULL_OK-2);
+		if (flags) {
+		    if (flags == (int)sizeof(int)) {
+			*(int *)charPtr = result;
+			return TCL_OK;
+		    } else if (flags == (int)sizeof(short)) {
+			*(short *)charPtr = result;
+			return TCL_OK;
+		    } else {
+			Tcl_Panic("Wrong bool var for %s", "Tcl_GetBoolFromObj");
+		    }
+		}
+		*charPtr = result;
+	    }
 	    return TCL_OK;
 	}
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
-	    TclParseNumber(interp, objPtr, "boolean value", NULL,-1,NULL,0)));
+	    TclParseNumber(interp, objPtr, (flags & TCL_NULL_OK)
+		    ? "boolean value or \"\"" : "boolean value", NULL,-1,NULL,0)));
     return TCL_ERROR;
 }
 
+#undef Tcl_GetBooleanFromObj
+int
+Tcl_GetBooleanFromObj(
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr,	/* The object from which to get boolean. */
+    int *intPtr)	/* Place to store resulting boolean. */
+{
+    return Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof(int), (char *)(void *)intPtr);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2547,7 +2592,7 @@ Tcl_GetDoubleFromObj(
 {
     do {
 	if (objPtr->typePtr == &tclDoubleType) {
-	    if (TclIsNaN(objPtr->internalRep.doubleValue)) {
+	    if (isnan(objPtr->internalRep.doubleValue)) {
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "floating point value is Not a Number", -1));
@@ -2674,7 +2719,7 @@ Tcl_Obj *
 Tcl_NewIntObj(
     int intValue)	/* Int used to initialize the new object. */
 {
-    return Tcl_DbNewWideIntObj((long)intValue, "unknown", 0);
+    return Tcl_DbNewWideIntObj(intValue, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
@@ -2766,7 +2811,7 @@ Tcl_GetIntFromObj(
     if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < INT_MIN))) {
 	if (interp != NULL) {
 	    const char *s =
-		    "integer value too large to represent as non-long integer";
+		    "integer value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}
@@ -3054,7 +3099,7 @@ Tcl_GetLongFromObj(
 
 	    if (w >= (Tcl_WideInt)(LONG_MIN)
 		    && w <= (Tcl_WideInt)(ULONG_MAX)) {
-		*longPtr = (long) w;
+		*longPtr = (long)w;
 		return TCL_OK;
 	    }
 	    goto tooLarge;
@@ -3090,12 +3135,12 @@ Tcl_GetLongFromObj(
 		}
 		if (big.sign) {
 		    if (value <= 1 + (unsigned long)LONG_MAX) {
-			*longPtr = - (long) value;
+			*longPtr = (long)(-value);
 			return TCL_OK;
 		    }
 		} else {
 		    if (value <= (unsigned long)ULONG_MAX) {
-			*longPtr = (long) value;
+			*longPtr = (long)value;
 			return TCL_OK;
 		    }
 		}
@@ -3329,12 +3374,12 @@ Tcl_GetWideIntFromObj(
 		}
 		if (big.sign) {
 		    if (value <= 1 + ~(Tcl_WideUInt)WIDE_MIN) {
-			*wideIntPtr = - (Tcl_WideInt) value;
+			*wideIntPtr = (Tcl_WideInt)(-value);
 			return TCL_OK;
 		    }
 		} else {
 		    if (value <= (Tcl_WideUInt)WIDE_MAX) {
-			*wideIntPtr = (Tcl_WideInt) value;
+			*wideIntPtr = (Tcl_WideInt)value;
 			return TCL_OK;
 		    }
 		}
@@ -3353,6 +3398,90 @@ Tcl_GetWideIntFromObj(
     return TCL_ERROR;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetWideUIntFromObj --
+ *
+ *	Attempt to return a unsigned wide integer from the Tcl object "objPtr". If the
+ *	object is not already a wide int object or a bignum object, an attempt will
+ *	be made to convert it to one.
+ *
+ * Results:
+ *	The return value is a standard Tcl object result. If an error occurs
+ *	during conversion, an error message is left in the interpreter's
+ *	result unless "interp" is NULL.
+ *
+ * Side effects:
+ *	If the object is not already an int object, the conversion will free
+ *	any old internal representation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GetWideUIntFromObj(
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr,	/* Object from which to get a wide int. */
+    Tcl_WideUInt *wideUIntPtr)
+				/* Place to store resulting long. */
+{
+    do {
+	if (objPtr->typePtr == &tclIntType) {
+	    if (objPtr->internalRep.wideValue < 0) {
+	wideUIntOutOfRange:
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "expected unsigned integer but got \"%s\"",
+			    TclGetString(objPtr)));
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+		}
+		return TCL_ERROR;
+	    }
+	    *wideUIntPtr = (Tcl_WideUInt)objPtr->internalRep.wideValue;
+	    return TCL_OK;
+	}
+	if (objPtr->typePtr == &tclDoubleType) {
+	    goto wideUIntOutOfRange;
+	}
+	if (objPtr->typePtr == &tclBignumType) {
+	    /*
+	     * Must check for those bignum values that can fit in a
+	     * Tcl_WideUInt, even when auto-narrowing is enabled.
+	     */
+
+	    mp_int big;
+	    Tcl_WideUInt value = 0;
+	    size_t numBytes;
+	    Tcl_WideUInt scratch;
+	    unsigned char *bytes = (unsigned char *) &scratch;
+
+	    TclUnpackBignum(objPtr, big);
+	    if (big.sign == MP_NEG) {
+		goto wideUIntOutOfRange;
+	    }
+	    if (mp_to_ubin(&big, bytes, sizeof(Tcl_WideUInt), &numBytes) == MP_OKAY) {
+		while (numBytes-- > 0) {
+		    value = (value << CHAR_BIT) | *bytes++;
+		}
+		*wideUIntPtr = (Tcl_WideUInt)value;
+		return TCL_OK;
+	    }
+
+	    if (interp != NULL) {
+		const char *s = "integer value too large to represent";
+		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
+
+		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+	    }
+	    return TCL_ERROR;
+	}
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
+	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
+    return TCL_ERROR;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3800,7 +3929,7 @@ Tcl_SetBignumObj(
 	goto tooLargeForWide;
     }
     if (bignumValue->sign) {
-	TclSetIntObj(objPtr, -(Tcl_WideInt)value);
+	TclSetIntObj(objPtr, (Tcl_WideInt)(-value));
     } else {
 	TclSetIntObj(objPtr, (Tcl_WideInt)value);
     }
@@ -3854,7 +3983,7 @@ TclSetBignumInternalRep(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetNumberFromObj --
+ * Tcl_GetNumberFromObj --
  *
  *      Extracts a number (of any possible numeric type) from an object.
  *
@@ -3872,15 +4001,15 @@ TclSetBignumInternalRep(
  */
 
 int
-TclGetNumberFromObj(
+Tcl_GetNumberFromObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
-    ClientData *clientDataPtr,
+    void **clientDataPtr,
     int *typePtr)
 {
     do {
 	if (objPtr->typePtr == &tclDoubleType) {
-	    if (TclIsNaN(objPtr->internalRep.doubleValue)) {
+	    if (isnan(objPtr->internalRep.doubleValue)) {
 		*typePtr = TCL_NUMBER_NAN;
 	    } else {
 		*typePtr = TCL_NUMBER_DOUBLE;
@@ -3906,6 +4035,42 @@ TclGetNumberFromObj(
     } while (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
     return TCL_ERROR;
+}
+
+int
+Tcl_GetNumber(
+    Tcl_Interp *interp,
+    const char *bytes,
+    size_t numBytes,
+    void **clientDataPtr,
+    int *typePtr)
+{
+    static Tcl_ThreadDataKey numberCacheKey;
+    Tcl_Obj *objPtr = (Tcl_Obj *)Tcl_GetThreadData(&numberCacheKey,
+	    sizeof(Tcl_Obj));
+
+    Tcl_FreeInternalRep(objPtr);
+
+    if (bytes == NULL) {
+	bytes = &tclEmptyString;
+	numBytes = 0;
+    }
+    if (numBytes == (size_t)TCL_INDEX_NONE) {
+	numBytes = strlen(bytes);
+    }
+    if (numBytes > INT_MAX) {
+	if (interp) {
+            Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    objPtr->bytes = (char *) bytes;
+    objPtr->length = numBytes;
+
+    return Tcl_GetNumberFromObj(interp, objPtr, clientDataPtr, typePtr);
 }
 
 /*
@@ -4772,7 +4937,7 @@ SetCmdNameFromAny(
 
 int
 Tcl_RepresentationCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])

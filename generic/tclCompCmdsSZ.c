@@ -497,7 +497,7 @@ TclCompileStringIsCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -788,7 +788,7 @@ TclCompileStringMatchCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -890,7 +890,7 @@ TclCompileStringLenCmd(
 	 */
 
 	char buf[TCL_INTEGER_SPACE];
-	int len = Tcl_GetCharLength(objPtr);
+	int len = TclGetCharLength(objPtr);
 
 	len = sprintf(buf, "%d", len);
 	PushLiteral(envPtr, buf, len);
@@ -908,7 +908,7 @@ TclCompileStringMapCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -938,7 +938,7 @@ TclCompileStringMapCmd(
     if (!TclWordKnownAtCompileTime(mapTokenPtr, mapObj)) {
 	Tcl_DecrRefCount(mapObj);
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    } else if (Tcl_ListObjGetElements(NULL, mapObj, &len, &objv) != TCL_OK) {
+    } else if (TclListObjGetElementsM(NULL, mapObj, &len, &objv) != TCL_OK) {
 	Tcl_DecrRefCount(mapObj);
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     } else if (len != 2) {
@@ -1325,7 +1325,7 @@ TclCompileStringToUpperCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1347,7 +1347,7 @@ TclCompileStringToLowerCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1369,7 +1369,7 @@ TclCompileStringToTitleCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -2427,7 +2427,7 @@ IssueSwitchJumpTable(
 		 * point to here.
 		 */
 
-		Tcl_SetHashValue(hPtr, CurrentOffset(envPtr) - jumpLocation);
+		Tcl_SetHashValue(hPtr, INT2PTR(CurrentOffset(envPtr) - jumpLocation));
 	    }
 	    Tcl_DStringFree(&buffer);
 	} else {
@@ -2547,9 +2547,9 @@ IssueSwitchJumpTable(
  *----------------------------------------------------------------------
  */
 
-static ClientData
+static void *
 DupJumptableInfo(
-    ClientData clientData)
+    void *clientData)
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
     JumptableInfo *newJtPtr = (JumptableInfo *)ckalloc(sizeof(JumptableInfo));
@@ -2569,7 +2569,7 @@ DupJumptableInfo(
 
 static void
 FreeJumptableInfo(
-    ClientData clientData)
+    void *clientData)
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
 
@@ -2579,7 +2579,7 @@ FreeJumptableInfo(
 
 static void
 PrintJumptableInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
     unsigned int pcOffset)
@@ -2608,7 +2608,7 @@ PrintJumptableInfo(
 
 static void
 DisassembleJumptableInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(unsigned int))
@@ -2731,7 +2731,7 @@ TclCompileThrowCmd(
     CompileWord(envPtr, msgToken, interp, 2);
 
     codeIsList = codeKnown && (TCL_OK ==
-	    Tcl_ListObjLength(interp, objPtr, &len));
+	    TclListObjLengthM(interp, objPtr, &len));
     codeIsValid = codeIsList && (len != 0);
 
     if (codeIsValid) {
@@ -2864,7 +2864,7 @@ TclCompileTryCmd(
 		TclNewObj(tmpObj);
 		Tcl_IncrRefCount(tmpObj);
 		if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)
-			|| Tcl_ListObjLength(NULL, tmpObj, &objc) != TCL_OK
+			|| TclListObjLengthM(NULL, tmpObj, &objc) != TCL_OK
 			|| (objc == 0)) {
 		    TclDecrRefCount(tmpObj);
 		    goto failedToCompile;
@@ -2907,7 +2907,7 @@ TclCompileTryCmd(
 		TclDecrRefCount(tmpObj);
 		goto failedToCompile;
 	    }
-	    if (Tcl_ListObjGetElements(NULL, tmpObj, &objc, &objv) != TCL_OK
+	    if (TclListObjGetElementsM(NULL, tmpObj, &objc, &objv) != TCL_OK
 		    || (objc > 2)) {
 		TclDecrRefCount(tmpObj);
 		goto failedToCompile;
@@ -2972,6 +2972,9 @@ TclCompileTryCmd(
 	    goto failedToCompile;
 	}
 	finallyToken = TokenAfter(tokenPtr);
+	if (finallyToken->type != TCL_TOKEN_SIMPLE_WORD) {
+	    goto failedToCompile;
+	}
     } else {
 	goto failedToCompile;
     }
@@ -3118,7 +3121,7 @@ IssueTryClausesInstructions(
 	JUMP4(				JUMP_FALSE, notCodeJumpSource);
 	if (matchClauses[i]) {
 	    const char *p;
-	    Tcl_ListObjLength(NULL, matchClauses[i], &len);
+	    TclListObjLengthM(NULL, matchClauses[i], &len);
 
 	    /*
 	     * Match the errorcode according to try/trap rules.
@@ -3329,7 +3332,7 @@ IssueTryClausesFinallyInstructions(
 	OP(				EQ);
 	JUMP4(				JUMP_FALSE, notCodeJumpSource);
 	if (matchClauses[i]) {
-	    Tcl_ListObjLength(NULL, matchClauses[i], &len);
+	    TclListObjLengthM(NULL, matchClauses[i], &len);
 
 	    /*
 	     * Match the errorcode according to try/trap rules.

@@ -73,7 +73,7 @@ the application source code.  New languages
 or locales may be provided by adding a new file to
 the message catalog.
 .PP
-\fBmsgcat\fR distinguises packages by its namespace.
+\fBmsgcat\fR distinguishes packages by its namespace.
 Each package has its own message catalog and configuration settings in \fBmsgcat\fR.
 .PP
 A \fIlocale\fR is a specification string describing a user language like \fBde_ch\fR for Swiss German.
@@ -224,9 +224,7 @@ As an example, the user may prefer French or English text. This may be configure
 This group of commands manage the list of loaded locales for packages not setting a package locale.
 .PP
 .RS
-The subcommand \fBget\fR returns the list of currently loaded locales.
-.PP
-The subcommand \fBpresent\fR requires the argument \fIlocale\fR and returns true, if this locale is loaded.
+The subcommand \fBloaded\fR returns the list of currently loaded locales.
 .PP
 The subcommand \fBclear\fR removes all locales and their data, which are not in the current preference list.
 .RE
@@ -235,7 +233,7 @@ The subcommand \fBclear\fR removes all locales and their data, which are not in 
 .
 .VS "TIP 412"
 Searches the specified directory for files that match
-the language specifications returned by \fB::msgcat::mcloadedlocales get\fR
+the language specifications returned by \fB::msgcat::mcloadedlocales loaded\fR
 (or \fBmsgcat::mcpackagelocale preferences\fR if a package locale is set) (note that these are all lowercase), extended by the file extension
 .QW .msg .
 Each matching file is

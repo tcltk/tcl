@@ -50,6 +50,19 @@ typedef struct {
 } ErrAssocData;
 
 /*
+ * For each "vwait" event source a structure of the following type
+ * is used:
+ */
+
+typedef struct {
+    int *donePtr;		/* Pointer to flag to signal or NULL. */
+    int sequence;		/* Order of occurrence. */
+    int mask;			/* 0, or TCL_READABLE/TCL_WRITABLE. */
+    Tcl_Obj *sourceObj;		/* Name of the event source, either a
+				 * variable name or channel name. */
+} VwaitItem;
+
+/*
  * For each exit handler created with a call to Tcl_Create(Late)ExitHandler
  * there is a structure of the following type:
  */
@@ -116,6 +129,9 @@ static Tcl_ThreadCreateType NewThreadProc(void *clientData);
 static void		BgErrorDeleteProc(void *clientData,
 			    Tcl_Interp *interp);
 static void		HandleBgErrors(void *clientData);
+static void		VwaitChannelReadProc(void *clientData, int mask);
+static void		VwaitChannelWriteProc(void *clientData, int mask);
+static void		VwaitTimeoutProc(void *clientData);
 static char *		VwaitVarProc(void *clientData,
 			    Tcl_Interp *interp, const char *name1,
 			    const char *name2, int flags);
@@ -230,7 +246,7 @@ HandleBgErrors(
 
 	errPtr = assocPtr->firstBgPtr;
 
-	Tcl_ListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
+	TclListObjGetElementsM(NULL, copyObj, &prefixObjc, &prefixObjv);
 	tempObjv = (Tcl_Obj**)ckalloc((prefixObjc+2) * sizeof(Tcl_Obj *));
 	memcpy(tempObjv, prefixObjv, prefixObjc*sizeof(Tcl_Obj *));
 	tempObjv[prefixObjc] = errPtr->errorMsg;
@@ -1487,73 +1503,430 @@ Tcl_VwaitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int done, foundEvent;
-    const char *nameString;
-
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "name");
-	return TCL_ERROR;
-    }
-    nameString = Tcl_GetString(objv[1]);
-    if (Tcl_TraceVar2(interp, nameString, NULL,
-	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-	    VwaitVarProc, &done) != TCL_OK) {
-	return TCL_ERROR;
+    int i, done = 0, timedOut = 0, foundEvent, any = 1, timeout = 0;
+    int numItems = 0, extended = 0, result, mode, mask = TCL_ALL_EVENTS;
+    Tcl_InterpState saved = NULL;
+    Tcl_TimerToken timer = NULL;
+    Tcl_Time before, after;
+    Tcl_Channel chan;
+    Tcl_WideInt diff = -1;
+    VwaitItem localItems[32], *vwaitItems = localItems;
+    static const char *const vWaitOptionStrings[] = {
+	"-all",	"-extended", "-nofileevents", "-noidleevents",
+	"-notimerevents", "-nowindowevents", "-readable",
+	"-timeout", "-variable", "-writable", "--", NULL
     };
-    done = 0;
+    enum vWaitOptions {
+	OPT_ALL, OPT_EXTD, OPT_NO_FEVTS, OPT_NO_IEVTS,
+	OPT_NO_TEVTS, OPT_NO_WEVTS, OPT_READABLE,
+	OPT_TIMEOUT, OPT_VARIABLE, OPT_WRITABLE, OPT_LAST
+    } index;
+
+    if ((objc == 2) && (strcmp(Tcl_GetString(objv[1]), "--") != 0)) {
+	/*
+	 * Legacy "vwait" syntax, skip option handling.
+	 */
+	i = 1;
+	goto endOfOptionLoop;
+    }
+
+    if ((unsigned) objc - 1 > sizeof(localItems) / sizeof(localItems[0])) {
+	vwaitItems = (VwaitItem *) ckalloc(sizeof(VwaitItem) * (objc - 1));
+    }
+
+    for (i = 1; i < objc; i++) {
+	const char *name;
+
+	name = TclGetString(objv[i]);
+	if (name[0] != '-') {
+	    break;
+	}
+	if (Tcl_GetIndexFromObj(interp, objv[i], vWaitOptionStrings, "option", 0,
+		&index) != TCL_OK) {
+	    result = TCL_ERROR;
+	    goto done;
+	}
+	switch (index) {
+	case OPT_ALL:
+	    any = 0;
+	    break;
+	case OPT_EXTD:
+	    extended = 1;
+	    break;
+	case OPT_NO_FEVTS:
+	    mask &= ~TCL_FILE_EVENTS;
+	    break;
+	case OPT_NO_IEVTS:
+	    mask &= ~TCL_IDLE_EVENTS;
+	    break;
+	case OPT_NO_TEVTS:
+	    mask &= ~TCL_TIMER_EVENTS;
+	    break;
+	case OPT_NO_WEVTS:
+	    mask &= ~TCL_WINDOW_EVENTS;
+	    break;
+	case OPT_TIMEOUT:
+	    if (++i >= objc) {
+	needArg:
+		Tcl_ResetResult(interp);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"argument required for \"%s\"", vWaitOptionStrings[index]));
+		Tcl_SetErrorCode(interp, "TCL", "EVENT", "ARGUMENT", NULL);
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    if (Tcl_GetIntFromObj(interp, objv[i], &timeout) != TCL_OK) {
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    if (timeout < 0) {
+		Tcl_ResetResult(interp);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"timeout must be positive", -1));
+		Tcl_SetErrorCode(interp, "TCL", "EVENT", "NEGTIME", NULL);
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    break;
+	case OPT_LAST:
+	    i++;
+	    goto endOfOptionLoop;
+	case OPT_VARIABLE:
+	    if (++i >= objc) {
+		goto needArg;
+	    }
+	    result = Tcl_TraceVar2(interp, TclGetString(objv[i]), NULL,
+			    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+			    VwaitVarProc, &vwaitItems[numItems]);
+	    if (result != TCL_OK) {
+		goto done;
+	    }
+	    vwaitItems[numItems].donePtr = &done;
+	    vwaitItems[numItems].sequence = -1;
+	    vwaitItems[numItems].mask = 0;
+	    vwaitItems[numItems].sourceObj = objv[i];
+	    numItems++;
+	    break;
+	case OPT_READABLE:
+	    if (++i >= objc) {
+		goto needArg;
+	    }
+	    if (TclGetChannelFromObj(interp, objv[i], &chan, &mode, 0)
+		!= TCL_OK) {
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    if (!(mode & TCL_READABLE)) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"channel \"%s\" wasn't open for reading",
+			TclGetString(objv[i])));
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    Tcl_CreateChannelHandler(chan, TCL_READABLE,
+		    VwaitChannelReadProc, &vwaitItems[numItems]);
+	    vwaitItems[numItems].donePtr = &done;
+	    vwaitItems[numItems].sequence = -1;
+	    vwaitItems[numItems].mask = TCL_READABLE;
+	    vwaitItems[numItems].sourceObj = objv[i];
+	    numItems++;
+	    break;
+	case OPT_WRITABLE:
+	    if (++i >= objc) {
+		goto needArg;
+	    }
+	    if (TclGetChannelFromObj(interp, objv[i], &chan, &mode, 0)
+		!= TCL_OK) {
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    if (!(mode & TCL_WRITABLE)) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"channel \"%s\" wasn't open for writing",
+			TclGetString(objv[i])));
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    Tcl_CreateChannelHandler(chan, TCL_WRITABLE,
+		    VwaitChannelWriteProc, &vwaitItems[numItems]);
+	    vwaitItems[numItems].donePtr = &done;
+	    vwaitItems[numItems].sequence = -1;
+	    vwaitItems[numItems].mask = TCL_WRITABLE;
+	    vwaitItems[numItems].sourceObj = objv[i];
+	    numItems++;
+	    break;
+	}
+    }
+
+  endOfOptionLoop:
+    if ((mask & (TCL_FILE_EVENTS | TCL_IDLE_EVENTS |
+		 TCL_TIMER_EVENTS | TCL_WINDOW_EVENTS)) == 0) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"can't wait: would block forever", -1));
+	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", NULL);
+	result = TCL_ERROR;
+	goto done;
+    }
+
+    if ((timeout > 0) && ((mask & TCL_TIMER_EVENTS) == 0)) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"timer events disabled with timeout specified", -1));
+	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_TIME", NULL);
+	result = TCL_ERROR;
+	goto done;
+    }
+
+    for (result = TCL_OK; i < objc; i++) {
+	result = Tcl_TraceVar2(interp, TclGetString(objv[i]), NULL,
+			TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+			VwaitVarProc, &vwaitItems[numItems]);
+	if (result != TCL_OK) {
+	    break;
+	}
+	vwaitItems[numItems].donePtr = &done;
+	vwaitItems[numItems].sequence = -1;
+	vwaitItems[numItems].mask = 0;
+	vwaitItems[numItems].sourceObj = objv[i];
+	numItems++;
+    }
+    if (result != TCL_OK) {
+	result = TCL_ERROR;
+	goto done;
+    }
+
+    if (!(mask & TCL_FILE_EVENTS)) {
+	for (i = 0; i < numItems; i++) {
+	    if (vwaitItems[i].mask) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"file events disabled with channel(s) specified", -1));
+		Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_FILE_EVENT", NULL);
+		result = TCL_ERROR;
+		goto done;
+	    }
+	}
+    }
+
+    if (timeout > 0) {
+	vwaitItems[numItems].donePtr = &timedOut;
+	vwaitItems[numItems].sequence = -1;
+	vwaitItems[numItems].mask = 0;
+	vwaitItems[numItems].sourceObj = NULL;
+	timer = Tcl_CreateTimerHandler(timeout, VwaitTimeoutProc,
+			&vwaitItems[numItems]);
+	Tcl_GetTime(&before);
+    } else {
+	timeout = 0;
+    }
+
+    if ((numItems == 0) && (timeout == 0)) {
+	/*
+	 * "vwait" is equivalent to "update",
+	 * "vwait -nofileevents -notimerevents -nowindowevents"
+	 * is equivalent to "update idletasks"
+	 */
+	any = 1;
+	mask |= TCL_DONT_WAIT;
+    }
+
     foundEvent = 1;
-    while (!done && foundEvent) {
-	foundEvent = Tcl_DoOneEvent(TCL_ALL_EVENTS);
+    while (!timedOut && foundEvent &&
+	   ((!any && (done < numItems)) || (any && !done))) {
+	foundEvent = Tcl_DoOneEvent(mask);
 	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
 	    break;
 	}
 	if (Tcl_LimitExceeded(interp)) {
 	    Tcl_ResetResult(interp);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "EVENT", "LIMIT", NULL);
 	    break;
 	}
+	if ((numItems == 0) && (timeout == 0)) {
+	    /*
+	     * Behavior like "update": clear interpreter's result because
+	     * event handlers could have executed commands.
+	     */
+	    Tcl_ResetResult(interp);
+	    result = TCL_OK;
+	    goto done;
+	}
     }
-    Tcl_UntraceVar2(interp, nameString, NULL,
-	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-	    VwaitVarProc, &done);
 
     if (!foundEvent) {
 	Tcl_ResetResult(interp);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't wait for variable \"%s\": would wait forever",
-		nameString));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj((numItems == 0) ?
+		"can't wait: would wait forever" :
+		"can't wait for variable(s)/channel(s): would wait forever",
+		-1));
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", NULL);
-	return TCL_ERROR;
+	result = TCL_ERROR;
+	goto done;
     }
-    if (!done) {
+
+    if (!done && !timedOut) {
 	/*
 	 * The interpreter's result was already set to the right error message
 	 * prior to exiting the loop above.
 	 */
+	result = TCL_ERROR;
+	goto done;
+    }
 
-	return TCL_ERROR;
+    result = TCL_OK;
+    if (timeout <= 0) {
+	/*
+	 * Clear out the interpreter's result, since it may have been set
+	 * by event handlers.
+	 */
+	Tcl_ResetResult(interp);
+	goto done;
     }
 
     /*
-     * Clear out the interpreter's result, since it may have been set by event
-     * handlers.
+     * When timeout was specified, report milliseconds left or -1 on timeout.
      */
+    if (timedOut) {
+	diff = -1;
+    } else {
+	Tcl_GetTime(&after);
+	diff = after.sec * 1000 + after.usec / 1000;
+	diff -= before.sec * 1000 + before.usec / 1000;
+	diff = timeout - diff;
+	if (diff < 0) {
+	    diff = 0;
+	}
+    }
 
-    Tcl_ResetResult(interp);
-    return TCL_OK;
+  done:
+    if ((timeout > 0) && (timer != NULL)) {
+	Tcl_DeleteTimerHandler(timer);
+    }
+    if (result != TCL_OK) {
+	saved = Tcl_SaveInterpState(interp, result);
+    }
+    for (i = 0; i < numItems; i++) {
+	if (vwaitItems[i].mask & TCL_READABLE) {
+	    if (TclGetChannelFromObj(interp, vwaitItems[i].sourceObj,
+		    &chan, &mode, 0) == TCL_OK) {
+		Tcl_DeleteChannelHandler(chan, VwaitChannelReadProc,
+			&vwaitItems[i]);
+	    }
+	} else if (vwaitItems[i].mask & TCL_WRITABLE) {
+	    if (TclGetChannelFromObj(interp, vwaitItems[i].sourceObj,
+		    &chan, &mode, 0) == TCL_OK) {
+		Tcl_DeleteChannelHandler(chan, VwaitChannelWriteProc,
+			&vwaitItems[i]);
+	    }
+	} else {
+	    Tcl_UntraceVar2(interp, TclGetString(vwaitItems[i].sourceObj),
+		    NULL, TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+		    VwaitVarProc, &vwaitItems[i]);
+	}
+    }
+
+    if (result == TCL_OK) {
+	if (extended) {
+	    int k;
+	    Tcl_Obj *listObj, *keyObj;
+
+	    TclNewObj(listObj);
+	    for (k = 0; k < done; k++) {
+		for (i = 0; i < numItems; i++) {
+		    if (vwaitItems[i].sequence != k) {
+			continue;
+		    }
+		    if (vwaitItems[i].mask & TCL_READABLE) {
+			TclNewLiteralStringObj(keyObj, "readable");
+		    } else if (vwaitItems[i].mask & TCL_WRITABLE) {
+			TclNewLiteralStringObj(keyObj, "writable");
+		    } else {
+			TclNewLiteralStringObj(keyObj, "variable");
+		    }
+		    Tcl_ListObjAppendElement(NULL, listObj, keyObj);
+		    Tcl_ListObjAppendElement(NULL, listObj,
+			    vwaitItems[i].sourceObj);
+		}
+	    }
+	    if (timeout > 0) {
+		TclNewLiteralStringObj(keyObj, "timeleft");
+		Tcl_ListObjAppendElement(NULL, listObj, keyObj);
+		Tcl_ListObjAppendElement(NULL, listObj,
+			Tcl_NewWideIntObj(diff));
+	    }
+	    Tcl_SetObjResult(interp, listObj);
+	} else if (timeout > 0) {
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(diff));
+	}
+    } else {
+	result = Tcl_RestoreInterpState(interp, saved);
+    }
+    if (vwaitItems != localItems) {
+	ckfree(vwaitItems);
+    }
+    return result;
+}
+
+static void
+VwaitChannelReadProc(
+    void *clientData,		/* Pointer to vwait info record. */
+    int mask)			/* Event mask, must be TCL_READABLE. */
+{
+    VwaitItem *itemPtr = (VwaitItem *) clientData;
+
+    if (!(mask & TCL_READABLE)) {
+	return;
+    }
+    if (itemPtr->donePtr != NULL) {
+	itemPtr->sequence = itemPtr->donePtr[0];
+	itemPtr->donePtr[0] += 1;
+	itemPtr->donePtr = NULL;
+    }
+}
+
+static void
+VwaitChannelWriteProc(
+    void *clientData,		/* Pointer to vwait info record. */
+    int mask)			/* Event mask, must be TCL_WRITABLE. */
+{
+    VwaitItem *itemPtr = (VwaitItem *) clientData;
+
+    if (!(mask & TCL_WRITABLE)) {
+	return;
+    }
+    if (itemPtr->donePtr != NULL) {
+	itemPtr->sequence = itemPtr->donePtr[0];
+	itemPtr->donePtr[0] += 1;
+	itemPtr->donePtr = NULL;
+    }
+}
+
+static void
+VwaitTimeoutProc(
+    void *clientData)		/* Pointer to vwait info record. */
+{
+    VwaitItem *itemPtr = (VwaitItem *) clientData;
+
+    if (itemPtr->donePtr != NULL) {
+	itemPtr->donePtr[0] = 1;
+	itemPtr->donePtr = NULL;
+    }
 }
 
 static char *
 VwaitVarProc(
-    void *clientData,		/* Pointer to integer to set to 1. */
+    void *clientData,		/* Pointer to vwait info record. */
     Tcl_Interp *interp,		/* Interpreter containing variable. */
     const char *name1,		/* Name of variable. */
     const char *name2,		/* Second part of variable name. */
     TCL_UNUSED(int) /*flags*/)	/* Information about what happened. */
 {
-    int *donePtr = (int *)clientData;
+    VwaitItem *itemPtr = (VwaitItem *) clientData;
 
-    *donePtr = 1;
+    if (itemPtr->donePtr != NULL) {
+	itemPtr->sequence = itemPtr->donePtr[0];
+	itemPtr->donePtr[0] += 1;
+	itemPtr->donePtr = NULL;
+    }
     Tcl_UntraceVar2(interp, name1, name2, TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, clientData);
     return NULL;

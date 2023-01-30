@@ -14,6 +14,7 @@
  */
 
 #include "tclInt.h"
+#include "tclTomMath.h"
 
 /*
  * Windows has mktime. The configurators do not check.
@@ -160,39 +161,19 @@ static void		GetJulianDayFromEraYearWeekDay(TclDateFields *, int);
 static void		GetJulianDayFromEraYearMonthDay(TclDateFields *, int);
 static int		IsGregorianLeapYear(TclDateFields *);
 static int		WeekdayOnOrBefore(int, int);
-static int		ClockClicksObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockConvertlocaltoutcObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockGetdatefieldsObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockGetjuliandayfromerayearmonthdayObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockGetjuliandayfromerayearweekdayObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockGetenvObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockMicrosecondsObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockMillisecondsObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockParseformatargsObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		ClockSecondsObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ClockClicksObjCmd;
+static Tcl_ObjCmdProc ClockConvertlocaltoutcObjCmd;
+static Tcl_ObjCmdProc ClockGetdatefieldsObjCmd;
+static Tcl_ObjCmdProc ClockGetjuliandayfromerayearmonthdayObjCmd;
+static Tcl_ObjCmdProc ClockGetjuliandayfromerayearweekdayObjCmd;
+static Tcl_ObjCmdProc ClockGetenvObjCmd;
+static Tcl_ObjCmdProc ClockMicrosecondsObjCmd;
+static Tcl_ObjCmdProc ClockMillisecondsObjCmd;
+static Tcl_ObjCmdProc ClockParseformatargsObjCmd;
+static Tcl_ObjCmdProc ClockSecondsObjCmd;
 static struct tm *	ThreadSafeLocalTime(const time_t *);
 static void		TzsetIfNecessary(void);
-static void		ClockDeleteCmdProc(ClientData);
+static void		ClockDeleteCmdProc(void *);
 
 /*
  * Structure containing description of "native" clock commands to create.
@@ -331,7 +312,7 @@ TclClockInit(
 
 static int
 ClockConvertlocaltoutcObjCmd(
-    ClientData clientData,	/* Client data */
+    void *clientData,	/* Client data */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
@@ -423,7 +404,7 @@ ClockConvertlocaltoutcObjCmd(
 
 int
 ClockGetdatefieldsObjCmd(
-    ClientData clientData,	/* Opaque pointer to literal pool, etc. */
+    void *clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
@@ -577,7 +558,7 @@ FetchIntField(
 
 static int
 ClockGetjuliandayfromerayearmonthdayObjCmd(
-    ClientData clientData,	/* Opaque pointer to literal pool, etc. */
+    void *clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
@@ -661,7 +642,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 
 static int
 ClockGetjuliandayfromerayearweekdayObjCmd(
-    ClientData clientData,	/* Opaque pointer to literal pool, etc. */
+    void *clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
@@ -754,7 +735,7 @@ ConvertLocalToUTC(
      * Unpack the tz data.
      */
 
-    if (TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, tzdata, &rowc, &rowv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -819,7 +800,7 @@ ConvertLocalToUTCUsingTable(
     while (!found) {
 	row = LookupLastTransition(interp, fields->seconds, rowc, rowv);
 	if ((row == NULL)
-		|| TclListObjGetElements(interp, row, &cellc,
+		|| TclListObjGetElementsM(interp, row, &cellc,
 		    &cellv) != TCL_OK
 		|| TclGetIntFromObj(interp, cellv[1],
 		    &fields->tzOffset) != TCL_OK) {
@@ -957,7 +938,7 @@ ConvertUTCToLocal(
      * Unpack the tz data.
      */
 
-    if (TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, tzdata, &rowc, &rowv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1009,7 +990,7 @@ ConvertUTCToLocalUsingTable(
 
     row = LookupLastTransition(interp, fields->seconds, rowc, rowv);
     if (row == NULL ||
-	    TclListObjGetElements(interp, row, &cellc, &cellv) != TCL_OK ||
+	    TclListObjGetElementsM(interp, row, &cellc, &cellv) != TCL_OK ||
 	    TclGetIntFromObj(interp, cellv[1], &fields->tzOffset) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1520,9 +1501,9 @@ GetJulianDayFromEraYearMonthDay(
      * Have to make sure quotient is truncated towards 0 when negative.
      * See above bug for details. The casts are necessary.
      */
-    if (ym1 >= 0)
+    if (ym1 >= 0) {
 	ym1o4 = ym1 / 4;
-    else {
+    } else {
 	ym1o4 = - (int) (((unsigned int) -ym1) / 4);
     }
 #endif
@@ -1645,7 +1626,7 @@ WeekdayOnOrBefore(
 
 int
 ClockGetenvObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1748,7 +1729,7 @@ ThreadSafeLocalTime(
 
 int
 ClockClicksObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
@@ -1818,20 +1799,22 @@ ClockClicksObjCmd(
 
 int
 ClockMillisecondsObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
+    Tcl_Obj *timeObj;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
-	    now.sec * 1000 + now.usec / 1000));
+    TclNewUIntObj(timeObj, (Tcl_WideUInt)
+	    now.sec * 1000 + now.usec / 1000);
+    Tcl_SetObjResult(interp, timeObj);
     return TCL_OK;
 }
 
@@ -1855,7 +1838,7 @@ ClockMillisecondsObjCmd(
 
 int
 ClockMicrosecondsObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
@@ -1888,7 +1871,7 @@ ClockMicrosecondsObjCmd(
 
 static int
 ClockParseformatargsObjCmd(
-    ClientData clientData,	/* Client data containing literal pool */
+    void *clientData,	/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter vector */
@@ -2006,19 +1989,22 @@ ClockParseformatargsObjCmd(
 
 int
 ClockSecondsObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
+    Tcl_Obj *timeObj;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) now.sec));
+    TclNewUIntObj(timeObj, (Tcl_WideUInt)now.sec);
+
+    Tcl_SetObjResult(interp, timeObj);
     return TCL_OK;
 }
 
@@ -2106,7 +2092,7 @@ TzsetIfNecessary(void)
 
 static void
 ClockDeleteCmdProc(
-    ClientData clientData)	/* Opaque pointer to the client data */
+    void *clientData)	/* Opaque pointer to the client data */
 {
     ClockClientData *data = (ClockClientData *)clientData;
     int i;

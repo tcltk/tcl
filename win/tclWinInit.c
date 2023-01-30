@@ -36,48 +36,6 @@ typedef struct {
 } OemId;
 
 /*
- * The following macros are missing from some versions of winnt.h.
- */
-
-#ifndef PROCESSOR_ARCHITECTURE_INTEL
-#define PROCESSOR_ARCHITECTURE_INTEL		0
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_MIPS
-#define PROCESSOR_ARCHITECTURE_MIPS		1
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_ALPHA
-#define PROCESSOR_ARCHITECTURE_ALPHA		2
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_PPC
-#define PROCESSOR_ARCHITECTURE_PPC		3
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_SHX
-#define PROCESSOR_ARCHITECTURE_SHX		4
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_ARM
-#define PROCESSOR_ARCHITECTURE_ARM		5
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_IA64
-#define PROCESSOR_ARCHITECTURE_IA64		6
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_ALPHA64
-#define PROCESSOR_ARCHITECTURE_ALPHA64		7
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_MSIL
-#define PROCESSOR_ARCHITECTURE_MSIL		8
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_AMD64
-#define PROCESSOR_ARCHITECTURE_AMD64		9
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_IA32_ON_WIN64
-#define PROCESSOR_ARCHITECTURE_IA32_ON_WIN64	10
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_UNKNOWN
-#define PROCESSOR_ARCHITECTURE_UNKNOWN		0xFFFF
-#endif
-
-
-/*
  * The following arrays contain the human readable strings for the
  * processor values.
  */
@@ -275,7 +233,7 @@ AppendEnvironment(
     WideCharToMultiByte(CP_UTF8, 0, wBuf, -1, buf, MAX_PATH * 3, NULL, NULL);
 
     if (buf[0] != '\0') {
-	objPtr = Tcl_NewStringObj(buf, -1);
+	objPtr = Tcl_NewStringObj(buf, TCL_INDEX_NONE);
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 
 	TclWinNoBackslash(buf);
@@ -297,9 +255,9 @@ AppendEnvironment(
 	    pathv[pathc - 1] = shortlib;
 	    Tcl_DStringInit(&ds);
 	    (void) Tcl_JoinPath(pathc, pathv, &ds);
-	    objPtr = TclDStringToObj(&ds);
+	    objPtr = Tcl_DStringToObj(&ds);
 	} else {
-	    objPtr = Tcl_NewStringObj(buf, -1);
+	    objPtr = Tcl_NewStringObj(buf, TCL_INDEX_NONE);
 	}
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	ckfree(pathv);
@@ -527,6 +485,9 @@ TclpSetVariables(
 	    TCL_GLOBAL_ONLY);
     Tcl_SetVar2(interp, "tcl_platform", "os",
 	    "Windows NT", TCL_GLOBAL_ONLY);
+    if (osInfo.dwMajorVersion == 10 && osInfo.dwBuildNumber >= 22000) {
+	osInfo.dwMajorVersion = 11;
+    }
     wsprintfA(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
@@ -559,17 +520,24 @@ TclpSetVariables(
     if (ptr == NULL) {
 	ptr = Tcl_GetVar2(interp, "env", "HOMEDRIVE", TCL_GLOBAL_ONLY);
 	if (ptr != NULL) {
-	    Tcl_DStringAppend(&ds, ptr, -1);
+	    Tcl_DStringAppend(&ds, ptr, TCL_INDEX_NONE);
 	}
 	ptr = Tcl_GetVar2(interp, "env", "HOMEPATH", TCL_GLOBAL_ONLY);
 	if (ptr != NULL) {
-	    Tcl_DStringAppend(&ds, ptr, -1);
+	    Tcl_DStringAppend(&ds, ptr, TCL_INDEX_NONE);
 	}
 	if (Tcl_DStringLength(&ds) > 0) {
 	    Tcl_SetVar2(interp, "env", "HOME", Tcl_DStringValue(&ds),
 		    TCL_GLOBAL_ONLY);
 	} else {
-	    Tcl_SetVar2(interp, "env", "HOME", "c:\\", TCL_GLOBAL_ONLY);
+            /* None of HOME, HOMEDRIVE, HOMEPATH exists. Try USERPROFILE */
+            ptr = Tcl_GetVar2(interp, "env", "USERPROFILE", TCL_GLOBAL_ONLY);
+            if (ptr != NULL && ptr[0]) {
+                Tcl_SetVar2(interp, "env", "HOME", ptr, TCL_GLOBAL_ONLY);
+            } else {
+                /* Last resort */
+                Tcl_SetVar2(interp, "env", "HOME", "c:\\", TCL_GLOBAL_ONLY);
+            }
 	}
     }
 
@@ -649,7 +617,7 @@ TclpFindVariable(
 	 */
 
 	Tcl_DStringInit(&envString);
-	envUpper = Tcl_WCharToUtfDString(env, -1, &envString);
+	envUpper = Tcl_WCharToUtfDString(env, TCL_INDEX_NONE, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;

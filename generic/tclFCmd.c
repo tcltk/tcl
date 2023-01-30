@@ -1006,7 +1006,7 @@ TclFileAttrsCmd(
 	 * Use objStrings as a list object.
 	 */
 
-	if (Tcl_ListObjLength(interp, objStrings, &numObjStrings) != TCL_OK) {
+	if (TclListObjLengthM(interp, objStrings, &numObjStrings) != TCL_OK) {
 	    goto end;
 	}
 	attributeStringsAllocated = (const char **)
@@ -1646,6 +1646,82 @@ TclFileTempDirCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, dirNameObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFileHomeCmd --
+ *
+ *	This function is invoked to process the "file home" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFileHomeCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *homeDirObj;
+
+    if (objc != 1 && objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?user?");
+	return TCL_ERROR;
+    }
+    homeDirObj = TclGetHomeDirObj(interp, objc == 1 ? NULL : Tcl_GetString(objv[1]));
+    if (homeDirObj == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, homeDirObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFileTildeExpandCmd --
+ *
+ *	This function is invoked to process the "file tildeexpand" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFileTildeExpandCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *expandedPathObj;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "path");
+	return TCL_ERROR;
+    }
+    expandedPathObj = TclResolveTildePath(interp, objv[1]);
+    if (expandedPathObj == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, expandedPathObj);
     return TCL_OK;
 }
 

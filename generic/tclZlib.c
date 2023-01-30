@@ -548,7 +548,7 @@ ExtractHeader(
 
 	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->comment, -1,
 		&tmp);
-	SetValue(dictObj, "comment", TclDStringToObj(&tmp));
+	SetValue(dictObj, "comment", Tcl_DStringToObj(&tmp));
     }
     SetValue(dictObj, "crc", Tcl_NewBooleanObj(headerPtr->hcrc));
     if (headerPtr->name != Z_NULL) {
@@ -565,7 +565,7 @@ ExtractHeader(
 
 	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->name, -1,
 		&tmp);
-	SetValue(dictObj, "filename", TclDStringToObj(&tmp));
+	SetValue(dictObj, "filename", Tcl_DStringToObj(&tmp));
     }
     if (headerPtr->os != 255) {
 	SetValue(dictObj, "os", Tcl_NewWideIntObj(headerPtr->os));
@@ -1370,7 +1370,7 @@ Tcl_ZlibStreamGet(
 		Tcl_DecrRefCount(zshPtr->currentInput);
 		zshPtr->currentInput = NULL;
 	    }
-	    Tcl_ListObjLength(NULL, zshPtr->inData, &listLen);
+	    TclListObjLengthM(NULL, zshPtr->inData, &listLen);
 	    if (listLen > 0) {
 		/*
 		 * There is more input available, get it from the list and
@@ -1419,7 +1419,7 @@ Tcl_ZlibStreamGet(
 		e = inflate(&zshPtr->stream, zshPtr->flush);
 	    }
 	};
-	Tcl_ListObjLength(NULL, zshPtr->inData, &listLen);
+	TclListObjLengthM(NULL, zshPtr->inData, &listLen);
 
 	while ((zshPtr->stream.avail_out > 0)
 		&& (e == Z_OK || e == Z_BUF_ERROR) && (listLen > 0)) {
@@ -1499,7 +1499,7 @@ Tcl_ZlibStreamGet(
 	    inflateEnd(&zshPtr->stream);
 	}
     } else {
-	Tcl_ListObjLength(NULL, zshPtr->outData, &listLen);
+	TclListObjLengthM(NULL, zshPtr->outData, &listLen);
 	if (count == -1) {
 	    count = 0;
 	    for (i=0; i<listLen; i++) {
@@ -1521,7 +1521,7 @@ Tcl_ZlibStreamGet(
 	dataPtr += existing;
 
 	while ((count > dataPos) &&
-		(Tcl_ListObjLength(NULL, zshPtr->outData, &listLen) == TCL_OK)
+		(TclListObjLengthM(NULL, zshPtr->outData, &listLen) == TCL_OK)
 		&& (listLen > 0)) {
 	    /*
 	     * Get the next chunk off our list of chunks and grab the data out
@@ -4072,18 +4072,18 @@ Tcl_ZlibInflate(
 
 unsigned int
 Tcl_ZlibCRC32(
-    unsigned int crc,
-    const char *buf,
-    int len)
+    TCL_UNUSED(unsigned int),
+    TCL_UNUSED(const unsigned char *),
+    TCL_UNUSED(int))
 {
     return 0;
 }
 
 unsigned int
 Tcl_ZlibAdler32(
-    unsigned int adler,
-    const char *buf,
-    int len)
+    TCL_UNUSED(unsigned int),
+    TCL_UNUSED(const unsigned char *),
+    TCL_UNUSED(int))
 {
     return 0;
 }

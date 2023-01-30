@@ -1514,7 +1514,7 @@ TclWinOpenSerialChannel(
      */
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
+    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\x1A {}");
 
     return infoPtr->channel;
 }
@@ -1678,7 +1678,7 @@ SerialSetOptionProc(
 	    goto getStateFailed;
 	}
 	Tcl_DStringInit(&ds);
-	native = Tcl_UtfToWCharDString(value, -1, &ds);
+	native = Tcl_UtfToWCharDString(value, TCL_INDEX_NONE, &ds);
 	result = BuildCommDCBW(native, &dcb);
 	Tcl_DStringFree(&ds);
 
@@ -1779,7 +1779,7 @@ SerialSetOptionProc(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -xchar: should be a list of"
-			" two elements with each a single 8-bit character", -1));
+			" two elements with each a single 8-bit character", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", NULL);
 	    }
 	    ckfree(argv);
@@ -1852,7 +1852,7 @@ SerialSetOptionProc(
 			(DWORD) (flag ? SETDTR : CLRDTR))) {
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"can't set DTR signal", -1));
+				"can't set DTR signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", NULL);
 		    }
@@ -1864,7 +1864,7 @@ SerialSetOptionProc(
 			(DWORD) (flag ? SETRTS : CLRRTS))) {
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"can't set RTS signal", -1));
+				"can't set RTS signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", NULL);
 		    }
@@ -1876,7 +1876,7 @@ SerialSetOptionProc(
 			(DWORD) (flag ? SETBREAK : CLRBREAK))) {
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"can't set BREAK signal", -1));
+				"can't set BREAK signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", NULL);
 		    }

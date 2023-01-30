@@ -1,9 +1,12 @@
 #! /usr/bin/env tclsh
 
+# Don't overwrite tcltests facilities already present
+if {[package provide tcltests] ne {}} return
+
 package require tcltest 2.5
 namespace import ::tcltest::*
 testConstraint exec [llength [info commands exec]]
-testConstraint nodep [expr {![tcl::build-info no-deprecate]}]
+testConstraint deprecated [expr {![tcl::build-info no-deprecate]}]
 testConstraint debug [tcl::build-info debug]
 testConstraint purify [tcl::build-info purify]
 testConstraint debugpurify [

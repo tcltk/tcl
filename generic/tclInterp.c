@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include <assert.h>
 
 /*
  * A pointer to a string that holds an initialization script that if non-NULL
@@ -332,7 +333,7 @@ int
 Tcl_Init(
     Tcl_Interp *interp)		/* Interpreter to initialize. */
 {
-    PkgName pkgName = {NULL, "Tcl"};
+    PkgName pkgName = {NULL, "tcl"};
     PkgName **names = (PkgName **)TclInitPkgFiles(interp);
     int result = TCL_ERROR;
 
@@ -1822,7 +1823,7 @@ AliasNRCmd(
     int prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *listPtr;
-    List *listRep;
+    ListRep listRep;
     int flags = TCL_EVAL_INVOKE;
 
     /*
@@ -1834,10 +1835,15 @@ AliasNRCmd(
     prefv = &aliasPtr->objPtr;
     cmdc = prefc + objc - 1;
 
+    /* TODO - encapsulate this into tclListObj.c */
     listPtr = Tcl_NewListObj(cmdc, NULL);
-    listRep = ListRepPtr(listPtr);
-    listRep->elemCount = cmdc;
-    cmdv = &listRep->elements;
+    ListObjGetRep(listPtr, &listRep);
+    cmdv = ListRepElementsBase(&listRep);
+    listRep.storePtr->numUsed = cmdc;
+    if (listRep.spanPtr) {
+	listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
+	listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
+    }
 
     prefv = &aliasPtr->objPtr;
     memcpy(cmdv, prefv, prefc * sizeof(Tcl_Obj *));
@@ -2315,7 +2321,7 @@ GetInterp(
     Tcl_Interp *searchInterp;	/* Interim storage for interp. to find. */
     InterpInfo *parentInfoPtr;
 
-    if (TclListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
 
@@ -2371,7 +2377,7 @@ ChildBgerror(
     if (objc) {
 	int length;
 
-	if (TCL_ERROR == TclListObjLength(NULL, objv[0], &length)
+	if (TCL_ERROR == TclListObjLengthM(NULL, objv[0], &length)
 		|| (length < 1)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cmdPrefix must be list of length >= 1", -1));
@@ -2418,7 +2424,7 @@ ChildCreate(
     int isNew, objc;
     Tcl_Obj **objv;
 
-    if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
     if (objc < 2) {
@@ -2468,7 +2474,7 @@ ChildCreate(
 	    ((Interp *) parentInterp)->maxNestingDepth;
 
     if (safe) {
-	if (Tcl_MakeSafe(childInterp) == TCL_ERROR) {
+	if (TclMakeSafe(childInterp) == TCL_ERROR) {
 	    goto error;
 	}
     } else {
@@ -3253,7 +3259,7 @@ Tcl_IsSafe(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_MakeSafe --
+ * TclMakeSafe --
  *
  *	Makes its argument interpreter contain only functionality that is
  *	defined to be part of Safe Tcl. Unsafe commands are hidden, the env
@@ -3270,7 +3276,7 @@ Tcl_IsSafe(
  */
 
 int
-Tcl_MakeSafe(
+TclMakeSafe(
     Tcl_Interp *interp)		/* Interpreter to be made safe. */
 {
     Tcl_Channel chan;		/* Channel to remove from safe interpreter. */

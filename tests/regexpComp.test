@@ -16,7 +16,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-package require tcltests
+source [file join [file dirname [info script]] tcltests.tcl]
 
 # Procedure to evaluate a script within a proc, to test compilation
 # functionality
@@ -793,7 +793,7 @@ test regexpComp-19.1 {regsub null replacement} {
     }
 } "\0a\0hel\0a\0lo\0a\0 14"
 
-test regexpComp-20.1 {regsub shared object shimmering} nodep {
+test regexpComp-20.1 {regsub shared object shimmering} deprecated {
     evalInProc {
 	# Bug #461322
 	set a abcdefghijklmnopqurstuvwxyz

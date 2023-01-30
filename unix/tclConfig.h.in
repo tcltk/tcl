@@ -340,6 +340,9 @@
 /* Do we have fd_set? */
 #undef NO_FD_SET
 
+/* Do we have fork() */
+#undef NO_FORK
+
 /* Do we have fstatfs()? */
 #undef NO_FSTATFS
 
@@ -349,11 +352,11 @@
 /* Do we have getwd() */
 #undef NO_GETWD
 
-/* Do we have a usable 'isnan'? */
-#undef NO_ISNAN
-
 /* Do we have memmove()? */
 #undef NO_MEMMOVE
+
+/* Do we have mknod() */
+#undef NO_MKNOD
 
 /* Do we have realpath() */
 #undef NO_REALPATH
@@ -369,6 +372,9 @@
 
 /* Do we have <sys/wait.h>? */
 #undef NO_SYS_WAIT_H
+
+/* Do we have tcdrain() */
+#undef NO_TCDRAIN
 
 /* Do we have uname() */
 #undef NO_UNAME

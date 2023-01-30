@@ -6411,7 +6411,7 @@ fi
 	    LDFLAGS="$LDFLAGS -pthread"
 	    ;;
 	Darwin-*)
-	    CFLAGS_OPTIMIZE="-Os"
+	    CFLAGS_OPTIMIZE="-O2"
 	    SHLIB_CFLAGS="-fno-common"
 	    # To avoid discrepancies between what headers configure sees during
 	    # preprocessing tests and compiling tests, move any -isysroot and
@@ -6466,7 +6466,7 @@ then :
 			    do64bit_ok=yes
 
 fi;;
-		    i386)
+		    i386|x86_64)
 			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if compiler accepts -arch x86_64 flag" >&5
 printf %s "checking if compiler accepts -arch x86_64 flag... " >&6; }
 if test ${tcl_cv_cc_arch_x86_64+y}
@@ -6506,6 +6506,46 @@ then :
 			    do64bit_ok=yes
 
 fi;;
+		    arm64|arm64e)
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if compiler accepts -arch arm64e flag" >&5
+printf %s "checking if compiler accepts -arch arm64e flag... " >&6; }
+if test ${tcl_cv_cc_arch_arm64e+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+			    hold_cflags=$CFLAGS
+			    CFLAGS="$CFLAGS -arch arm64e"
+			    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  tcl_cv_cc_arch_arm64e=yes
+else $as_nop
+  tcl_cv_cc_arch_arm64e=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+			    CFLAGS=$hold_cflags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_arch_arm64e" >&5
+printf "%s\n" "$tcl_cv_cc_arch_arm64e" >&6; }
+			if test $tcl_cv_cc_arch_arm64e = yes
+then :
+
+			    CFLAGS="$CFLAGS -arch arm64e"
+			    do64bit_ok=yes
+
+fi;;
 		    *)
 			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&5
 printf "%s\n" "$as_me: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&2;};;
@@ -6514,7 +6554,7 @@ printf "%s\n" "$as_me: WARNING: Don't know how enable 64-bit on architecture \`a
 else $as_nop
 
 		# Check for combined 32-bit and 64-bit fat build
-		if echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64) ' \
+		if echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64|arm64e) ' \
 		    && echo "$CFLAGS " |grep -E -q -- '-arch (ppc|i386) '
 then :
 
@@ -6614,7 +6654,7 @@ printf "%s\n" "#define MODULE_SCOPE __private_extern__" >>confdefs.h
 fi
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
-	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
+	    LD_LIBRARY_PATH_VAR="DYLD_FALLBACK_LIBRARY_PATH"
 
 printf "%s\n" "#define MAC_OSX_TCL 1" >>confdefs.h
 
@@ -6761,11 +6801,11 @@ printf "%s\n" "#define _OE_SOCKETS 1" >>confdefs.h
 	    if test "$SHARED_BUILD" = 1
 then :
 
-	        SHLIB_LD='ld -shared -expect_unresolved "*"'
+	        SHLIB_LD='${CC} -shared'
 
 else $as_nop
 
-	        SHLIB_LD='ld -non_shared -expect_unresolved "*"'
+	        SHLIB_LD='${CC} -non_shared'
 
 fi
 	    SHLIB_SUFFIX=".so"
@@ -8195,6 +8235,36 @@ then :
 else $as_nop
 
 printf "%s\n" "#define NO_WAIT3 1" >>confdefs.h
+
+fi
+
+ac_fn_c_check_func "$LINENO" "fork" "ac_cv_func_fork"
+if test "x$ac_cv_func_fork" = xyes
+then :
+
+else $as_nop
+
+printf "%s\n" "#define NO_FORK 1" >>confdefs.h
+
+fi
+
+ac_fn_c_check_func "$LINENO" "mknod" "ac_cv_func_mknod"
+if test "x$ac_cv_func_mknod" = xyes
+then :
+
+else $as_nop
+
+printf "%s\n" "#define NO_MKNOD 1" >>confdefs.h
+
+fi
+
+ac_fn_c_check_func "$LINENO" "tcdrain" "ac_cv_func_tcdrain"
+if test "x$ac_cv_func_tcdrain" = xyes
+then :
+
+else $as_nop
+
+printf "%s\n" "#define NO_TCDRAIN 1" >>confdefs.h
 
 fi
 
@@ -10339,47 +10409,6 @@ then :
 
 fi
 
-
-#--------------------------------------------------------------------
-# Check for support of isnan() function or macro
-#--------------------------------------------------------------------
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking isnan" >&5
-printf %s "checking isnan... " >&6; }
-if test ${tcl_cv_isnan+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <math.h>
-int
-main (void)
-{
-
-isnan(0.0);			/* Generates an error if isnan is missing */
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  tcl_cv_isnan=yes
-else $as_nop
-  tcl_cv_isnan=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_isnan" >&5
-printf "%s\n" "$tcl_cv_isnan" >&6; }
-if test $tcl_cv_isnan = no; then
-
-printf "%s\n" "#define NO_ISNAN 1" >>confdefs.h
-
-fi
 
 #--------------------------------------------------------------------
 # Darwin specific API checks and defines

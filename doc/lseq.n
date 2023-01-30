@@ -1,0 +1,92 @@
+'\"
+'\" Copyright (c) 2022 Eric Taylor.  All rights reserved.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH lseq n 8.7 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lseq \- Build a numeric sequence returned as a list
+.SH SYNOPSIS
+\fBlseq \fIStart \fR?(\fB..\fR|\fBto\fR)? \fIEnd\fR ??\fBby\fR? \fIStep\fR?
+
+\fBlseq \fIStart \fBcount\fR \fICount\fR ??\fBby\fR? \fIStep\fR?
+
+\fBlseq \fICount\fR ?\fBby \fIStep\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBlseq\fR command creates a sequence of numeric values using the given
+parameters \fIStart\fR, \fIEnd\fR, and \fIStep\fR. The \fIoperation\fR
+argument ".." or "to" defines an inclusive range. The "count" option is used
+to define a count of the number of elements in the list. The short form with a
+single count value will create a range from 0 to count-1.
+
+The numeric arguments, \fIStart\fR, \fIEnd\fR, \fIStep\fR, and \fICount\fR,
+can also be a valid expression. the lseq command will evaluate the expression
+and use the numeric result, or return an error as with any invalid argument
+value. A valid expression is a valid [expr] expression, however, the result
+must be numeric; a non-numeric string will result in an error.
+
+.SH EXAMPLES
+.CS
+.\"
+
+ lseq 3
+ \(-> 0 1 2
+
+ lseq 3 0
+ \(-> 3 2 1 0
+
+ lseq 10 .. 1 by -2
+ \(-> 10 8 6 4 2
+
+ set l [lseq 0 -5]
+ \(-> 0 -1 -2 -3 -4 -5
+
+ foreach i [lseq [llength $l]] {
+   puts l($i)=[lindex $l $i]
+ }
+ \(-> l(0)=0
+    l(1)=-1
+    l(2)=-2
+    l(3)=-3
+    l(4)=-4
+    l(5)=-5
+
+ foreach i [lseq [llength $l]-1 0] {
+    puts l($i)=[lindex $l $i]
+ }
+ \(-> l(5)=-5
+    l(4)=-4
+    l(3)=-3
+    l(2)=-2
+    l(1)=-1
+    l(0)=0
+
+ set i 17
+ \(-> 17
+ if {$i in [lseq 0 50]} { # equivalent to: (0 <= $i && $i < 50)
+     puts "Ok"
+ } else {
+     puts "outside :("
+ }
+ \(-> Ok
+
+ set sqrs [lmap i [lseq 1 10] {expr $i*$i}]
+ \(-> 1 4 9 16 25 36 49 64 81 100
+.\"
+.CE
+.SH "SEE ALSO"
+foreach(n), list(n), lappend(n), lassign(n), ledit(n), lindex(n), linsert(n),
+llength(n), lmap(n), lpop(n), lrange(n), lremove(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n), lsort(n)
+.SH KEYWORDS
+element, index, list
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

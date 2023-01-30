@@ -100,7 +100,7 @@ TclpDlopen(
 
 	Tcl_DString ds;
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
 	lm = (Tcl_LibraryInitProc *) load(native, LDR_NOFLAGS);
 	Tcl_DStringFree(&ds);
     }

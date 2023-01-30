@@ -200,7 +200,7 @@ static Tcl_Var		ObjFindNamespaceVar(Tcl_Interp *interp,
 			    int flags);
 static int		ObjMakeUpvar(Tcl_Interp *interp,
 			    CallFrame *framePtr, Tcl_Obj *otherP1Ptr,
-			    const char *otherP2, const int otherFlags,
+			    const char *otherP2, int otherFlags,
 			    Tcl_Obj *myNamePtr, int myFlags, int index);
 static ArraySearch *	ParseSearchId(Tcl_Interp *interp, const Var *varPtr,
 			    Tcl_Obj *varNamePtr, Tcl_Obj *handleObj);
@@ -212,9 +212,7 @@ static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
  * TIP #508: [array default]
  */
 
-static int		ArrayDefaultCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ArrayDefaultCmd;
 static void		DeleteArrayVar(Var *arrayPtr);
 static void		SetArrayDefault(Var *arrayPtr, Tcl_Obj *defaultObj);
 
@@ -224,7 +222,7 @@ static void		SetArrayDefault(Var *arrayPtr, Tcl_Obj *defaultObj);
  */
 
 MODULE_SCOPE Var *	TclLookupSimpleVar(Tcl_Interp *interp,
-			    Tcl_Obj *varNamePtr, int flags, const int create,
+			    Tcl_Obj *varNamePtr, int flags, int create,
 			    const char **errMsgPtr, int *indexPtr);
 
 static Tcl_DupInternalRepProc	DupLocalVarName;
@@ -381,8 +379,7 @@ CleanupVar(
 {
     if (TclIsVarUndefined(varPtr) && TclIsVarInHash(varPtr)
 	    && !TclIsVarTraced(varPtr)
-	    && (VarHashRefCount(varPtr) == (unsigned)
-		    !TclIsVarDeadHash(varPtr))) {
+	    && (VarHashRefCount(varPtr) == !TclIsVarDeadHash(varPtr))) {
 	if (VarHashRefCount(varPtr) == 0) {
 	    ckfree(varPtr);
 	} else {
@@ -391,8 +388,7 @@ CleanupVar(
     }
     if (arrayPtr != NULL && TclIsVarUndefined(arrayPtr) &&
 	    TclIsVarInHash(arrayPtr) && !TclIsVarTraced(arrayPtr) &&
-	    (VarHashRefCount(arrayPtr) == (unsigned)
-		    !TclIsVarDeadHash(arrayPtr))) {
+	    (VarHashRefCount(arrayPtr) == !TclIsVarDeadHash(arrayPtr))) {
 	if (VarHashRefCount(arrayPtr) == 0) {
 	    ckfree(arrayPtr);
 	} else {
@@ -541,10 +537,10 @@ TclObjLookupVar(
     const char *msg,		/* Verb to use in error messages, e.g. "read"
 				 * or "set". Only needed if TCL_LEAVE_ERR_MSG
 				 * is set in flags. */
-    const int createPart1,	/* If 1, create hash table entry for part 1 of
+    int createPart1,	/* If 1, create hash table entry for part 1 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
-    const int createPart2,	/* If 1, create hash table entry for part 2 of
+    int createPart2,	/* If 1, create hash table entry for part 2 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
     Var **arrayPtrPtr)		/* If the name refers to an element of an
@@ -591,10 +587,10 @@ TclObjLookupVarEx(
     const char *msg,		/* Verb to use in error messages, e.g. "read"
 				 * or "set". Only needed if TCL_LEAVE_ERR_MSG
 				 * is set in flags. */
-    const int createPart1,	/* If 1, create hash table entry for part 1 of
+    int createPart1,	/* If 1, create hash table entry for part 1 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
-    const int createPart2,	/* If 1, create hash table entry for part 2 of
+    int createPart2,	/* If 1, create hash table entry for part 2 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
     Var **arrayPtrPtr)		/* If the name refers to an element of an
@@ -827,7 +823,7 @@ TclLookupSimpleVar(
     int flags,			/* Only TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_AVOID_RESOLVERS and TCL_LEAVE_ERR_MSG
 				 * bits matter. */
-    const int create,		/* If 1, create hash table entry for varname,
+    int create,		/* If 1, create hash table entry for varname,
 				 * if it doesn't already exist. If 0, return
 				 * error if it doesn't exist. */
     const char **errMsgPtr,
@@ -1062,15 +1058,15 @@ TclLookupArrayElement(
     Tcl_Obj *arrayNamePtr,	/* This is the name of the array, or NULL if
 				 * index>= 0. */
     Tcl_Obj *elNamePtr,		/* Name of element within array. */
-    const int flags,		/* Only TCL_LEAVE_ERR_MSG bit matters. */
+    int flags,		/* Only TCL_LEAVE_ERR_MSG bit matters. */
     const char *msg,		/* Verb to use in error messages, e.g. "read"
 				 * or "set". Only needed if TCL_LEAVE_ERR_MSG
 				 * is set in flags. */
-    const int createArray,	/* If 1, transform arrayName to be an array if
+    int createArray,	/* If 1, transform arrayName to be an array if
 				 * it isn't one yet and the transformation is
 				 * possible. If 0, return error if it isn't
 				 * already an array. */
-    const int createElem,	/* If 1, create hash table entry for the
+    int createElem,	/* If 1, create hash table entry for the
 				 * element, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
     Var *arrayPtr,		/* Pointer to the array's Var structure. */
@@ -1383,7 +1379,7 @@ TclPtrGetVar(
 				 * the name of a variable. */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    const int flags)		/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    int flags)		/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
     if (varPtr == NULL) {
@@ -1429,7 +1425,7 @@ TclPtrGetVarIdx(
 				 * the name of a variable. */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    const int flags,		/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    int flags,		/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
     int index)			/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
@@ -1526,7 +1522,7 @@ TclPtrGetVarIdx(
 
 int
 Tcl_SetObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1822,7 +1818,7 @@ TclPtrSetVar(
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
     Tcl_Obj *newValuePtr,	/* New value for variable. */
-    const int flags)		/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    int flags)		/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
     if (varPtr == NULL) {
@@ -2001,7 +1997,7 @@ TclPtrSetVarIdx(
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
     Tcl_Obj *newValuePtr,	/* New value for variable. */
-    const int flags,		/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    int flags,		/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
     int index)			/* Index of local var where part1 is to be
 				 * found. */
@@ -2247,7 +2243,7 @@ TclPtrIncrObjVar(
 				 * part1Ptr. */
     Tcl_Obj *incrPtr,		/* Increment value. */
 /* TODO: Which of these flag values really make sense? */
-    const int flags)		/* Various flags that tell how to incr value:
+    int flags)		/* Various flags that tell how to incr value:
 				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
@@ -2303,7 +2299,7 @@ TclPtrIncrObjVarIdx(
 				 * part1Ptr. */
     Tcl_Obj *incrPtr,		/* Increment value. */
 /* TODO: Which of these flag values really make sense? */
-    const int flags,		/* Various flags that tell how to incr value:
+    int flags,		/* Various flags that tell how to incr value:
 				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
@@ -2532,7 +2528,7 @@ TclPtrUnsetVar(
 				 * the name of a variable. */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    const int flags)		/* OR-ed combination of any of
+    int flags)		/* OR-ed combination of any of
 				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_LEAVE_ERR_MSG. */
 {
@@ -2579,7 +2575,7 @@ TclPtrUnsetVarIdx(
 				 * the name of a variable. */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    const int flags,		/* OR-ed combination of any of
+    int flags,		/* OR-ed combination of any of
 				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_LEAVE_ERR_MSG. */
     int index)			/* Index into the local variable table of the
@@ -2820,7 +2816,7 @@ UnsetVarStruct(
 
 int
 Tcl_UnsetObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2887,7 +2883,7 @@ Tcl_UnsetObjCmd(
 
 int
 Tcl_AppendObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2952,7 +2948,7 @@ Tcl_AppendObjCmd(
 
 int
 Tcl_LappendObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2981,7 +2977,7 @@ Tcl_LappendObjCmd(
 		return TCL_ERROR;
 	    }
 	} else {
-	    result = TclListObjLength(interp, newValuePtr, &numElems);
+	    result = TclListObjLengthM(interp, newValuePtr, &numElems);
 	    if (result != TCL_OK) {
 		return result;
 	    }
@@ -3039,7 +3035,7 @@ Tcl_LappendObjCmd(
 	    createdNewObj = 1;
 	}
 
-	result = TclListObjLength(interp, varValuePtr, &numElems);
+	result = TclListObjLengthM(interp, varValuePtr, &numElems);
 	if (result == TCL_OK) {
 	    result = Tcl_ListObjReplace(interp, varValuePtr, numElems, 0,
 		    (objc-2), (objv+2));
@@ -3158,7 +3154,7 @@ ArrayObjNext(
 
 static int
 ArrayForObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3168,7 +3164,7 @@ ArrayForObjCmd(
 
 static int
 ArrayForNRCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -3191,7 +3187,7 @@ ArrayForNRCmd(
      * Parse arguments.
      */
 
-    if (Tcl_ListObjLength(interp, objv[1], &numVars) != TCL_OK) {
+    if (TclListObjLengthM(interp, objv[1], &numVars) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3239,7 +3235,7 @@ ArrayForNRCmd(
 
 static int
 ArrayForLoopCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -3302,7 +3298,7 @@ ArrayForLoopCallback(
 	goto arrayfordone;
     }
 
-    Tcl_ListObjGetElements(NULL, varListObj, &varc, &varv);
+    TclListObjGetElementsM(NULL, varListObj, &varc, &varv);
     if (Tcl_ObjSetVar2(interp, varv[0], NULL, keyObj,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	result = TCL_ERROR;
@@ -3397,7 +3393,7 @@ ArrayPopulateSearch(
 
 static int
 ArrayStartSearchCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3492,7 +3488,7 @@ ArrayDoneSearch(
 
 static int
 ArrayAnyMoreCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3570,7 +3566,7 @@ ArrayAnyMoreCmd(
 
 static int
 ArrayNextElementCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3650,7 +3646,7 @@ ArrayNextElementCmd(
 
 static int
 ArrayDoneSearchCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3710,7 +3706,7 @@ ArrayDoneSearchCmd(
 
 static int
 ArrayExistsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3750,7 +3746,7 @@ ArrayExistsCmd(
 
 static int
 ArrayGetCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3842,7 +3838,7 @@ ArrayGetCmd(
      */
 
     TclNewObj(tmpResObj);
-    result = Tcl_ListObjGetElements(interp, nameLstObj, &count, &nameObjPtr);
+    result = TclListObjGetElementsM(interp, nameLstObj, &count, &nameObjPtr);
     if (result != TCL_OK) {
 	goto errorInArrayGet;
     }
@@ -3909,7 +3905,7 @@ ArrayGetCmd(
 
 static int
 ArrayNamesCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4076,7 +4072,7 @@ TclFindArrayPtrElements(
 
 static int
 ArraySetCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4165,8 +4161,7 @@ ArraySetCmd(
 	int elemLen;
 	Tcl_Obj **elemPtrs, *copyListObj;
 
-	result = TclListObjGetElements(interp, arrayElemObj,
-		&elemLen, &elemPtrs);
+	result = TclListObjLengthM(interp, arrayElemObj, &elemLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -4178,6 +4173,11 @@ ArraySetCmd(
 	}
 	if (elemLen == 0) {
 	    goto ensureArray;
+	}
+	result = TclListObjGetElementsM(interp, arrayElemObj,
+		&elemLen, &elemPtrs);
+	if (result != TCL_OK) {
+	    return result;
 	}
 
 	/*
@@ -4251,7 +4251,7 @@ ArraySetCmd(
 
 static int
 ArraySizeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4310,7 +4310,7 @@ ArraySizeCmd(
 
 static int
 ArrayStatsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4364,7 +4364,7 @@ ArrayStatsCmd(
 
 static int
 ArrayUnsetCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4373,7 +4373,7 @@ ArrayUnsetCmd(
     Tcl_Obj *varNameObj, *patternObj, *nameObj;
     Tcl_HashSearch search;
     const char *pattern;
-    const int unsetFlags = 0;	/* Should this be TCL_LEAVE_ERR_MSG? */
+    int unsetFlags = 0;	/* Should this be TCL_LEAVE_ERR_MSG? */
     int isArray;
 
     switch (objc) {
@@ -4552,7 +4552,7 @@ ObjMakeUpvar(
 				 * NULL means use global :: context. */
     Tcl_Obj *otherP1Ptr,
     const char *otherP2,	/* Two-part name of variable in framePtr. */
-    const int otherFlags,	/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
+    int otherFlags,	/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of "other" variable. */
     Tcl_Obj *myNamePtr,		/* Name of variable which will refer to
 				 * otherP1/otherP2. Must be a scalar. */
@@ -4989,7 +4989,7 @@ Tcl_GetVariableFullName(
 
 int
 Tcl_GlobalObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -5093,7 +5093,7 @@ Tcl_GlobalObjCmd(
 
 int
 Tcl_VariableObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -5226,7 +5226,7 @@ Tcl_VariableObjCmd(
 
 int
 Tcl_UpvarObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6038,7 +6038,7 @@ ObjFindNamespaceVar(
 
 int
 TclInfoVarsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6229,7 +6229,7 @@ TclInfoVarsCmd(
 
 int
 TclInfoGlobalsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6322,7 +6322,7 @@ TclInfoGlobalsCmd(
 
 int
 TclInfoLocalsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6627,7 +6627,7 @@ CompareVarKeys(
 
 static int
 ArrayDefaultCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

@@ -775,7 +775,7 @@ lexescape(
     NOTE(REG_UNONPOSIX);
     switch (c) {
     case CHR('a'):
-	RETV(PLAIN, chrnamed(v, alert, ENDOF(alert), CHR('\007')));
+	RETV(PLAIN, chrnamed(v, alert, ENDOF(alert), CHR('\x07')));
 	break;
     case CHR('A'):
 	RETV(SBEGIN, 0);
@@ -803,7 +803,7 @@ lexescape(
 	break;
     case CHR('e'):
 	NOTE(REG_UUNPORT);
-	RETV(PLAIN, chrnamed(v, esc, ENDOF(esc), CHR('\033')));
+	RETV(PLAIN, chrnamed(v, esc, ENDOF(esc), CHR('\x1B')));
 	break;
     case CHR('f'):
 	RETV(PLAIN, CHR('\f'));

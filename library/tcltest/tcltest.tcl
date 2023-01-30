@@ -22,7 +22,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.4
+    variable Version 2.5.5
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -2141,7 +2141,7 @@ proc tcltest::test {name description args} {
     if {[IsVerbose msec] || [IsVerbose usec]} {
 	set t [expr {[clock microseconds] - $timeStart}]
 	if {[IsVerbose usec]} {
-	    puts [outputChannel] "++++ $name took $t μs"
+	    puts [outputChannel] "++++ $name took $t \xB5s"
 	}
 	if {[IsVerbose msec]} {
 	    puts [outputChannel] "++++ $name took [expr {round($t/1000.)}] ms"

@@ -271,8 +271,8 @@ Tcl_RegExpRange(
 	} else {
 	    string = regexpPtr->string;
 	}
-	*startPtr = Tcl_UtfAtIndex(string, regexpPtr->matches[index].rm_so);
-	*endPtr = Tcl_UtfAtIndex(string, regexpPtr->matches[index].rm_eo);
+	*startPtr = TclUtfAtIndex(string, regexpPtr->matches[index].rm_so);
+	*endPtr = TclUtfAtIndex(string, regexpPtr->matches[index].rm_eo);
     }
 }
 
@@ -482,7 +482,7 @@ Tcl_RegExpExecObj(
     regexpPtr->string = NULL;
     regexpPtr->objPtr = textObj;
 
-    udata = Tcl_GetUnicodeFromObj(textObj, &length);
+    udata = TclGetUnicodeFromObj_(textObj, &length);
 
     if (offset > length) {
 	offset = length;
@@ -959,7 +959,7 @@ CompileRegexp(
 
     if (TclReToGlob(NULL, string, length, &stringBuf, &exact,
 	    NULL) == TCL_OK) {
-	regexpPtr->globObjPtr = TclDStringToObj(&stringBuf);
+	regexpPtr->globObjPtr = Tcl_DStringToObj(&stringBuf);
 	Tcl_IncrRefCount(regexpPtr->globObjPtr);
     } else {
 	regexpPtr->globObjPtr = NULL;

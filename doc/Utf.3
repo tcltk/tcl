@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UtfToWChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Char16ToUtfDString, Tcl_UtfToWCharDString, Tcl_UtfToChar16DString, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
+Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UtfToWChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Char16ToUtfDString, Tcl_UtfToWCharDString, Tcl_UtfToChar16DString, Tcl_WCharLen, Tcl_Char16Len, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -44,6 +44,12 @@ unsigned short *
 .sp
 wchar_t *
 \fBTcl_UtfToWCharDString\fR(\fIsrc, length, dsPtr\fR)
+.sp
+int
+\fBTcl_Char16Len\fR(\fIuniStr\fR)
+.sp
+int
+\fBTcl_WCharLen\fR(\fIuniStr\fR)
 .sp
 int
 \fBTcl_UniCharLen\fR(\fIuniStr\fR)
@@ -197,6 +203,14 @@ calculate the length.  The return value is a pointer to the Unicode
 representation of the UTF-8 string.  Storage for the return value
 is appended to the end of the \fBTcl_DString\fR.  The Unicode string
 is terminated with a Unicode null character.
+.PP
+\fBTcl_Char16Len\fR corresponds to \fBstrlen\fR for UTF-16
+characters.  It accepts a null-terminated Unicode string and returns
+the number of Unicode characters (not bytes) in that string.
+.PP
+\fBTcl_WCharLen\fR corresponds to \fBstrlen\fR for wchar_t
+characters.  It accepts a null-terminated Unicode string and returns
+the number of Unicode characters (not bytes) in that string.
 .PP
 \fBTcl_UniCharLen\fR corresponds to \fBstrlen\fR for Unicode
 characters.  It accepts a null-terminated Unicode string and returns

@@ -28,7 +28,7 @@
  * The default prompt used when the user has not overridden it.
  */
 
-#define DEFAULT_PRIMARY_PROMPT	"% "
+static const char DEFAULT_PRIMARY_PROMPT[] = "% ";
 
 /*
  * This file can be compiled on Windows in UNICODE mode, as well as on all
@@ -43,7 +43,7 @@
 #   define _tcscmp strcmp
 #endif
 
-static Tcl_Obj *
+static inline Tcl_Obj *
 NewNativeObj(
     TCHAR *string)
 {
@@ -55,7 +55,7 @@ NewNativeObj(
 #else
     Tcl_ExternalToUtfDString(NULL, (char *)string, -1, &ds);
 #endif
-    return TclDStringToObj(&ds);
+    return Tcl_DStringToObj(&ds);
 }
 
 /*
@@ -288,6 +288,7 @@ Tcl_MainEx(
 				 * but before starting to execute commands. */
     Tcl_Interp *interp)
 {
+    int i=0;			/* argv[i] index */
     Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
     const char *encodingName = NULL;
     int code, exitCode = 0;
@@ -296,7 +297,13 @@ Tcl_MainEx(
     InteractiveState is;
 
     TclpSetInitialEncodings();
-    TclpFindExecutable((const char *)argv[0]);
+    if (0 < argc) {
+	--argc;			/* "consume" argv[0] */
+	++i;
+    }
+    TclpFindExecutable ((const char *)argv [0]);	/* nb: this could be NULL
+							 * w/ (eg) an empty argv
+							 * supplied to execve() */
 
     Tcl_InitMemory(interp);
 
@@ -318,18 +325,19 @@ Tcl_MainEx(
 	 *  FILENAME
 	 */
 
-	if ((argc > 3) && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
+	/* mind argc is being adjusted as we proceed */
+	if ((argc >= 3) && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
 		&& ('-' != argv[3][0])) {
 	    Tcl_Obj *value = NewNativeObj(argv[2]);
 	    Tcl_SetStartupScript(NewNativeObj(argv[3]),
 		    Tcl_GetString(value));
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
-	    argv += 3;
-	} else if ((argc > 1) && ('-' != argv[1][0])) {
+	    i += 3;
+	} else if ((argc >= 1) && ('-' != argv[1][0])) {
 	    Tcl_SetStartupScript(NewNativeObj(argv[1]), NULL);
 	    argc--;
-	    argv++;
+	    i++;
 	}
     }
 
@@ -340,14 +348,12 @@ Tcl_MainEx(
 	appName = path;
     }
     Tcl_SetVar2Ex(interp, "argv0", NULL, appName, TCL_GLOBAL_ONLY);
-    argc--;
-    argv++;
 
     Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewWideIntObj(argc), TCL_GLOBAL_ONLY);
 
     argvPtr = Tcl_NewListObj(0, NULL);
     while (argc--) {
-	Tcl_ListObjAppendElement(NULL, argvPtr, NewNativeObj(*argv++));
+	Tcl_ListObjAppendElement(NULL, argvPtr, NewNativeObj(argv[i++]));
     }
     Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);
 
@@ -511,7 +517,7 @@ Tcl_MainEx(
 	     * error messages troubles deeper in, so lop it back off.
 	     */
 
-	    TclGetStringFromObj(is.commandPtr, &length);
+	    (void)Tcl_GetStringFromObj(is.commandPtr, &length);
 	    Tcl_SetObjLength(is.commandPtr, --length);
 	    code = Tcl_RecordAndEvalObj(interp, is.commandPtr,
 		    TCL_EVAL_GLOBAL);
@@ -528,7 +534,7 @@ Tcl_MainEx(
 	    } else if (is.tty) {
 		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(resultPtr);
-		TclGetStringFromObj(resultPtr, &length);
+		(void)Tcl_GetStringFromObj(resultPtr, &length);
 		chan = Tcl_GetStdChannel(TCL_STDOUT);
 		if ((length > 0) && chan) {
 		    Tcl_WriteObj(chan, resultPtr);
@@ -731,7 +737,8 @@ StdinProc(
     ClientData clientData,	/* The state of interactive cmd line */
     TCL_UNUSED(int) /*mask*/)
 {
-    int code, length;
+    int code;
+    int length;
     InteractiveState *isPtr = (InteractiveState *)clientData;
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
@@ -771,7 +778,7 @@ StdinProc(
 	goto prompt;
     }
     isPtr->prompt = PROMPT_START;
-    TclGetStringFromObj(commandPtr, &length);
+    (void)Tcl_GetStringFromObj(commandPtr, &length);
     Tcl_SetObjLength(commandPtr, --length);
 
     /*
@@ -803,7 +810,7 @@ StdinProc(
 	chan = Tcl_GetStdChannel(TCL_STDOUT);
 
 	Tcl_IncrRefCount(resultPtr);
-	TclGetStringFromObj(resultPtr, &length);
+	(void)Tcl_GetStringFromObj(resultPtr, &length);
 	if ((length > 0) && (chan != NULL)) {
 	    Tcl_WriteObj(chan, resultPtr);
 	    Tcl_WriteChars(chan, "\n", 1);
@@ -866,7 +873,7 @@ Prompt(
 	    chan = Tcl_GetStdChannel(TCL_STDOUT);
 	    if (chan != NULL) {
 		Tcl_WriteChars(chan, DEFAULT_PRIMARY_PROMPT,
-			strlen(DEFAULT_PRIMARY_PROMPT));
+			sizeof(DEFAULT_PRIMARY_PROMPT) - 1);
 	    }
 	}
     } else {

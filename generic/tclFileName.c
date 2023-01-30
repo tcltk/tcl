@@ -37,6 +37,17 @@ static Tcl_Obj *	SplitUnixPath(const char *path);
 static int		DoGlob(Tcl_Interp *interp, Tcl_Obj *resultPtr,
 			    const char *separators, Tcl_Obj *pathPtr, int flags,
 			    char *pattern, Tcl_GlobTypeData *types);
+static int		TclGlob(Tcl_Interp *interp, char *pattern,
+			    Tcl_Obj *pathPrefix, int globFlags,
+			    Tcl_GlobTypeData *types);
+
+/* Flag values used by TclGlob() */
+
+#ifdef TCL_NO_DEPRECATED
+#   define TCL_GLOBMODE_NO_COMPLAIN	1
+#   define TCL_GLOBMODE_DIR	4
+#   define TCL_GLOBMODE_TAILS	8
+#endif
 
 /*
  * When there is no support for getting the block size of a file in a stat()
@@ -413,7 +424,6 @@ TclpGetNativePathType(
 
 	    if (path[0] == '/') {
 		++path;
-#if defined(__CYGWIN__) || defined(__QNX__)
 		/*
 		 * Check for "//" network path prefix
 		 */
@@ -422,22 +432,10 @@ TclpGetNativePathType(
 		    while (*path && *path != '/') {
 			++path;
 		    }
-#if defined(__CYGWIN__)
-		    /* UNC paths need to be followed by a share name */
-		    if (*path++ && (*path && *path != '/')) {
-			++path;
-			while (*path && *path != '/') {
-			    ++path;
-			}
-		    } else {
-			path = origPath + 1;
-		    }
-#endif
 		}
-#endif
 		if (driveNameLengthPtr != NULL) {
 		    /*
-		     * We need this addition in case the QNX or Cygwin code was used.
+		     * We need this addition in case the "//" code was used.
 		     */
 
 		    *driveNameLengthPtr = (path - origPath);
@@ -456,7 +454,7 @@ TclpGetNativePathType(
 	    if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
 		*driveNameLengthPtr = rootEnd - path;
 		if (driveNameRef != NULL) {
-		    *driveNameRef = TclDStringToObj(&ds);
+		    *driveNameRef = Tcl_DStringToObj(&ds);
 		    Tcl_IncrRefCount(*driveNameRef);
 		}
 	    }
@@ -517,7 +515,7 @@ TclpNativeSplitPath(
      */
 
     if (lenPtr != NULL) {
-	Tcl_ListObjLength(NULL, resultPtr, lenPtr);
+	TclListObjLengthM(NULL, resultPtr, lenPtr);
     }
     return resultPtr;
 }
@@ -547,6 +545,7 @@ TclpNativeSplitPath(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SplitPath
 void
 Tcl_SplitPath(
     const char *path,		/* Pointer to string containing a path. */
@@ -655,7 +654,6 @@ SplitUnixPath(
     if (*path == '/') {
 	Tcl_Obj *rootElt;
 	++path;
-#if defined(__CYGWIN__) || defined(__QNX__)
 	/*
 	 * Check for "//" network path prefix
 	 */
@@ -664,19 +662,7 @@ SplitUnixPath(
 	    while (*path && *path != '/') {
 		++path;
 	    }
-#if defined(__CYGWIN__)
-	    /* UNC paths need to be followed by a share name */
-	    if (*path++ && (*path && *path != '/')) {
-		++path;
-		while (*path && *path != '/') {
-		    ++path;
-		}
-	    } else {
-		path = origPath + 1;
-	    }
-#endif
 	}
-#endif
 	rootElt = Tcl_NewStringObj(origPath, path - origPath);
 	Tcl_ListObjAppendElement(NULL, result, rootElt);
 	while (*path == '/') {
@@ -748,7 +734,7 @@ SplitWinPath(
      */
 
     if (p != path) {
-	Tcl_ListObjAppendElement(NULL, result, TclDStringToObj(&buf));
+	Tcl_ListObjAppendElement(NULL, result, Tcl_DStringToObj(&buf));
     }
     Tcl_DStringFree(&buf);
 
@@ -1332,7 +1318,7 @@ Tcl_GlobObjCmd(
 		return TCL_ERROR;
 	    }
 	    typePtr = objv[i+1];
-	    if (Tcl_ListObjLength(interp, typePtr, &length) != TCL_OK) {
+	    if (TclListObjLengthM(interp, typePtr, &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -1454,7 +1440,7 @@ Tcl_GlobObjCmd(
 	 * platform.
 	 */
 
-	Tcl_ListObjLength(interp, typePtr, &length);
+	TclListObjLengthM(interp, typePtr, &length);
 	if (length <= 0) {
 	    goto skipTypes;
 	}
@@ -1524,7 +1510,7 @@ Tcl_GlobObjCmd(
 	    } else {
 		Tcl_Obj *item;
 
-		if ((Tcl_ListObjLength(NULL, look, &len) == TCL_OK)
+		if ((TclListObjLengthM(NULL, look, &len) == TCL_OK)
 			&& (len == 3)) {
 		    Tcl_ListObjIndex(interp, look, 0, &item);
 		    if (!strcmp("macintosh", Tcl_GetString(item))) {
@@ -1631,7 +1617,7 @@ Tcl_GlobObjCmd(
     }
 
     if ((globFlags & TCL_GLOBMODE_NO_COMPLAIN) == 0) {
-	if (Tcl_ListObjLength(interp, Tcl_GetObjResult(interp),
+	if (TclListObjLengthM(interp, Tcl_GetObjResult(interp),
 		&length) != TCL_OK) {
 	    /*
 	     * This should never happen. Maybe we should be more dramatic.
@@ -1713,7 +1699,7 @@ Tcl_GlobObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 TclGlob(
     Tcl_Interp *interp,		/* Interpreter for returning error message or
 				 * appending list of matching file names. */
@@ -1781,7 +1767,7 @@ TclGlob(
 	    if (head != Tcl_DStringValue(&buffer)) {
 		Tcl_DStringAppend(&buffer, head, -1);
 	    }
-	    pathPrefix = TclDStringToObj(&buffer);
+	    pathPrefix = Tcl_DStringToObj(&buffer);
 	    Tcl_IncrRefCount(pathPrefix);
 	    globFlags |= TCL_GLOBMODE_DIR;
 	    if (c != '\0') {
@@ -2014,7 +2000,7 @@ TclGlob(
 	    }
 	}
 
-	Tcl_ListObjGetElements(NULL, filenamesObj, &objc, &objv);
+	TclListObjGetElementsM(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
 	    int len;
 	    const char *oldStr = TclGetStringFromObj(objv[i], &len);
@@ -2343,13 +2329,13 @@ DoGlob(
 	    int subdirc, i, repair = -1;
 	    Tcl_Obj **subdirv;
 
-	    result = Tcl_ListObjGetElements(interp, subdirsPtr,
+	    result = TclListObjGetElementsM(interp, subdirsPtr,
 		    &subdirc, &subdirv);
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
 
 		if (pathPtr == NULL && Tcl_GetString(subdirv[i])[0] == '~') {
-		    Tcl_ListObjLength(NULL, matchesObj, &repair);
+		    TclListObjLengthM(NULL, matchesObj, &repair);
 		    copy = subdirv[i];
 		    subdirv[i] = Tcl_NewStringObj("./", 2);
 		    Tcl_AppendObjToObj(subdirv[i], copy);
@@ -2362,7 +2348,7 @@ DoGlob(
 
 		    Tcl_DecrRefCount(subdirv[i]);
 		    subdirv[i] = copy;
-		    Tcl_ListObjLength(NULL, matchesObj, &end);
+		    TclListObjLengthM(NULL, matchesObj, &end);
 		    while (repair < end) {
 			const char *bytes;
 			int numBytes;
@@ -2441,7 +2427,7 @@ DoGlob(
 	 */
 
 	if (pathPtr == NULL) {
-	    joinedPtr = TclDStringToObj(&append);
+	    joinedPtr = Tcl_DStringToObj(&append);
 	} else if (flags) {
 	    joinedPtr = TclNewFSPathObj(pathPtr, Tcl_DStringValue(&append),
 		    Tcl_DStringLength(&append));

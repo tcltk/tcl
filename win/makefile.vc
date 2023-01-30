@@ -52,16 +52,16 @@
 # turn on the 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=msvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,time64bit,unchecked,utfmax,none
+#	OPTS=msvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,time64bit,unchecked,utf16,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
-#               noembed   = Without this option, the Tcl core library scripts
+# 		noembed   = Without this option, the Tcl core library scripts
 #			    are embedded into the executable if "static" is
-#                           specified in OPTS, or into the DLL otherwise. If
-#                           "noembed" is specified, the scripts are not embedded
-#                           but copied to the installation target (as in 8.6).
+#			    specified in OPTS, or into the DLL otherwise. If
+#			    "noembed" is specified, the scripts are not embedded
+#			    but copied to the installation target (as in 8.6).
 #		nomsvcrt  = Affects the static option only to switch it from
 #			    using msvcrt(d) as the C runtime [by default] to
 #			    libcmt(d). This is useful for static embedding
@@ -80,7 +80,7 @@
 #		unchecked = Allows a symbols build to not use the debug
 #			    enabled runtime (msvcrt.dll not msvcrtd.dll
 #			    or libcmt.lib not libcmtd.lib).
-#		utfmax    = Forces a build using UTF-32 representation internally.
+#		utf16     = Forces a build using UTF-16 representation internally.
 #
 #	STATS=compdbg,memdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
@@ -100,7 +100,7 @@
 #		nodep	 = Turns off compatibility macros to ensure the core
 #			    isn't being built with deprecated functions.
 #
-#	MACHINE=(ALPHA|AMD64|IA64|IX86)
+#	MACHINE=(ALPHA|AMD64|ARM64|IA64|IX86)
 #		Set the machine type used for the compiler, linker, and
 #		resource compiler.  This hook is needed to tell the tools
 #		when alternate platforms are requested.  IX86 is the default
@@ -238,6 +238,7 @@ COREOBJS = \
 	$(TMP_DIR)\regexec.obj \
 	$(TMP_DIR)\regfree.obj \
 	$(TMP_DIR)\tclAlloc.obj \
+	$(TMP_DIR)\tclArithSeries.obj \
 	$(TMP_DIR)\tclAssembly.obj \
 	$(TMP_DIR)\tclAsync.obj \
 	$(TMP_DIR)\tclBasic.obj \
@@ -378,6 +379,8 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_mul_d.obj \
 	$(TMP_DIR)\bn_mp_neg.obj \
 	$(TMP_DIR)\bn_mp_or.obj \
+	$(TMP_DIR)\bn_mp_pack.obj \
+	$(TMP_DIR)\bn_mp_pack_count.obj \
 	$(TMP_DIR)\bn_mp_radix_size.obj \
 	$(TMP_DIR)\bn_mp_radix_smap.obj \
 	$(TMP_DIR)\bn_mp_read_radix.obj \
@@ -428,6 +431,7 @@ PLATFORMOBJS = \
 	$(TMP_DIR)\tclWinThrd.obj \
 	$(TMP_DIR)\tclWinTime.obj \
 !if $(STATIC_BUILD)
+	$(TMP_DIR)\tclWinPanic.obj \
 	$(TMP_DIR)\tclWinReg.obj \
 	$(TMP_DIR)\tclWinDde.obj \
 !else
@@ -496,8 +500,8 @@ test: test-core test-pkgs
 test-core: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.4 [list load "$(TCLDDELIB:\=/)"]
-		package ifneeded registry 1.3.6 [list load "$(TCLREGLIB:\=/)"]
+		package ifneeded dde 1.4.5 [list load "$(TCLDDELIB:\=/)"]
+		package ifneeded registry 1.3.7 [list load "$(TCLREGLIB:\=/)"]
 <<
 
 runtest: setup $(TCLTEST) dlls
@@ -556,16 +560,16 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 
-!if "$(MACHINE)" == "AMD64"
-$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64\zlib1.dll
-	$(COPY) $(COMPATDIR)\zlib\win64\zlib1.dll $(OUT_DIR)\zlib1.dll
-$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64\zdll.lib
-	$(COPY) $(COMPATDIR)\zlib\win64\zdll.lib $(OUT_DIR)\zdll.lib
-$(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win64\libtommath.dll
-	$(COPY) $(TOMMATHDIR)\win64\libtommath.dll $(OUT_DIR)\libtommath.dll
-$(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
-	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
-!else
+!if "$(MACHINE)" == "ARM64"
+$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64-arm\zlib1.dll
+	$(COPY) $(COMPATDIR)\zlib\win64-arm\zlib1.dll $(OUT_DIR)\zlib1.dll
+$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64-arm\zdll.lib
+	$(COPY) $(COMPATDIR)\zlib\win64-arm\zdll.lib $(OUT_DIR)\zdll.lib
+$(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win64-arm\libtommath.dll
+	$(COPY) $(TOMMATHDIR)\win64-arm\libtommath.dll $(OUT_DIR)\libtommath.dll
+$(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64-arm\tommath.lib
+	$(COPY) $(TOMMATHDIR)\win64-arm\tommath.lib $(OUT_DIR)\tommath.lib
+!elseif "$(MACHINE)" == "IX86"
 $(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win32\zlib1.dll
 	$(COPY) $(COMPATDIR)\zlib\win32\zlib1.dll $(OUT_DIR)\zlib1.dll
 $(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win32\zdll.lib
@@ -574,6 +578,15 @@ $(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win32\libtommath.dll
 	$(COPY) $(TOMMATHDIR)\win32\libtommath.dll $(OUT_DIR)\libtommath.dll
 $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win32\tommath.lib
 	$(COPY) $(TOMMATHDIR)\win32\tommath.lib $(OUT_DIR)\tommath.lib
+!else
+$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64\zlib1.dll
+	$(COPY) $(COMPATDIR)\zlib\win64\zlib1.dll $(OUT_DIR)\zlib1.dll
+$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64\zdll.lib
+	$(COPY) $(COMPATDIR)\zlib\win64\zdll.lib $(OUT_DIR)\zdll.lib
+$(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win64\libtommath.dll
+	$(COPY) $(TOMMATHDIR)\win64\libtommath.dll $(OUT_DIR)\libtommath.dll
+$(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
+	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
 !endif
 
 $(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
@@ -594,7 +607,7 @@ $(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
 !endif
 	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
 	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
-	@cd "$(OUT_DIR)" && $(TCLSH) zipper.tcl
+	@cd "$(OUT_DIR)" && $(TCLSH_NATIVE) zipper.tcl
 
 
 pkgs:
@@ -810,7 +823,8 @@ $(TMP_DIR)\tclEvent.obj: $(GENERICDIR)\tclEvent.c $(TMP_DIR)\tclUuid.h
 	    -Fo$@ $(GENERICDIR)\tclEvent.c
 
 $(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c $(TMP_DIR)\tclUuid.h
-	$(cc32) $(appcflags) -I$(TMP_DIR) -Fo$@ $?
+	$(cc32) $(appcflags) -I$(TMP_DIR) \
+	    -Fo$@ $(GENERICDIR)\tclTest.c
 
 $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 	$(cc32) $(appcflags) -Fo$@ $?
@@ -997,6 +1011,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(WIN_DIR)\rules.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
+	@$(CPY) "$(WIN_DIR)\x86_64-w64-mingw32-nmakehlp.exe" "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
 !if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing package cookiejar $(PKG_COOKIEJAR_VER)

@@ -19,11 +19,13 @@ if {"::tcltest" ni [namespace children]} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
 
+source [file join [file dirname [info script]] tcltests.tcl]
+
 testConstraint testobj [llength [info commands testobj]]
 testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
 testConstraint wideIs64bit [expr {wide(0x8000000000000000) < 0}]
 
-test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} testobj {
+test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} {testobj deprecated} {
     set r 1
     foreach {t} {
 	bytearray

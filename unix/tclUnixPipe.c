@@ -141,7 +141,7 @@ TclpOpenFile(
     const char *native;
     Tcl_DString ds;
 
-    native = Tcl_UtfToExternalDString(NULL, fname, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, fname, TCL_INDEX_NONE, &ds);
     fd = TclOSopen(native, mode, 0666);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
     if (fd != -1) {
@@ -153,7 +153,7 @@ TclpOpenFile(
 	 */
 
 	if ((mode & O_WRONLY) && !(mode & O_APPEND)) {
-	    TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_END);
+	    TclOSseek(fd, 0, SEEK_END);
 	}
 
 	/*
@@ -198,14 +198,14 @@ TclpCreateTempFile(
 	Tcl_DString dstring;
 	char *native;
 
-	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
+	native = Tcl_UtfToExternalDString(NULL, contents, TCL_INDEX_NONE, &dstring);
 	if (write(fd, native, Tcl_DStringLength(&dstring)) == -1) {
 	    close(fd);
 	    Tcl_DStringFree(&dstring);
 	    return NULL;
 	}
 	Tcl_DStringFree(&dstring);
-	TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_SET);
+	TclOSseek(fd, 0, SEEK_SET);
     }
     return MakeFile(fd);
 }
@@ -436,7 +436,7 @@ TclpCreateProcess(
     newArgv = (char **)TclStackAlloc(interp, (argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
-	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
+	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], TCL_INDEX_NONE, &dsArray[i]);
     }
 
 #ifdef USE_VFORK

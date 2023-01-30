@@ -21,6 +21,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint testchmod       [llength [info commands testchmod]]
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testvolumetype  [llength [info commands testvolumetype]]
+testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint time64bit [expr {
     $::tcl_platform(pointerSize) >= 8 ||
     [llength [info command testsize]] && [testsize st_mtime] >= 8
@@ -178,7 +179,7 @@ test cmdAH-4.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
 } -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, or system}
 test cmdAH-4.3 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto
-} -result {wrong # args: should be "encoding convertto ?encoding? data"}
+} -result {wrong # args: should be "encoding convertto ?-strict? ?-failindex var? ?encoding? data" or "encoding convertto -nocomplain ?encoding? data"}
 test cmdAH-4.4 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto foo bar
 } -result {unknown encoding "foo"}
@@ -200,7 +201,7 @@ test cmdAH-4.6 {Tcl_EncodingObjCmd} -setup {
 } -result 8C
 test cmdAH-4.7 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertfrom
-} -result {wrong # args: should be "encoding convertfrom ?encoding? data"}
+} -result {wrong # args: should be "encoding convertfrom ?-strict? ?-failindex var? ?encoding? data" or "encoding convertfrom -nocomplain ?encoding? data"}
 test cmdAH-4.8 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertfrom foo bar
 } -result {unknown encoding "foo"}
@@ -235,12 +236,180 @@ test cmdAH-4.13 {Tcl_EncodingObjCmd} -setup {
     encoding system $system
 } -result iso8859-1
 
+test cmdAH-4.14.1 {Syntax error, -nocomplain and -failindex, no encoding} -body {
+    encoding convertfrom -nocomplain -failindex 2 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-strict? ?-failindex var? ?encoding? data" or "encoding convertfrom -nocomplain ?encoding? data"}
+test cmdAH-4.14.2 {Syntax error, -nocomplain and -failindex, no encoding} -body {
+    encoding convertto -nocomplain -failindex 2 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-strict? ?-failindex var? ?encoding? data" or "encoding convertto -nocomplain ?encoding? data"}
+test cmdAH-4.15.1 {Syntax error, -failindex and -nocomplain, no encoding} -body {
+    encoding convertfrom -failindex 2 -nocomplain ABC
+} -returnCodes 1 -result {unknown encoding "-nocomplain"}
+test cmdAH-4.15.2 {Syntax error, -failindex and -nocomplain, no encoding} -body {
+    encoding convertto -failindex 2 -nocomplain ABC
+} -returnCodes 1 -result {unknown encoding "-nocomplain"}
+test cmdAH-4.16.1 {Syntax error, -nocomplain and -failindex, encoding} -body {
+    encoding convertfrom -nocomplain -failindex 2 utf-8 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-strict? ?-failindex var? ?encoding? data" or "encoding convertfrom -nocomplain ?encoding? data"}
+test cmdAH-4.16.2 {Syntax error, -nocomplain and -failindex, encoding} -body {
+    encoding convertto -nocomplain -failindex 2 utf-8 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-strict? ?-failindex var? ?encoding? data" or "encoding convertto -nocomplain ?encoding? data"}
+test cmdAH-4.17.1 {Syntax error, -failindex and -nocomplain, encoding} -body {
+    encoding convertfrom -failindex 2 -nocomplain utf-8 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-strict? ?-failindex var? ?encoding? data" or "encoding convertfrom -nocomplain ?encoding? data"}
+test cmdAH-4.17.2 {Syntax error, -failindex and -nocomplain, encoding} -body {
+    encoding convertto -failindex 2 -nocomplain utf-8 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-strict? ?-failindex var? ?encoding? data" or "encoding convertto -nocomplain ?encoding? data"}
+test cmdAH-4.18.1 {Syntax error, -failindex with no var, no encoding} -body {
+    encoding convertfrom -failindex ABC
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertfrom -nocomplain ?encoding? data"}
+test cmdAH-4.18.2 {Syntax error, -failindex with no var, no encoding (byte compiled)} -setup {
+    proc encoding_test {} {
+        encoding convertfrom -failindex ABC
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertfrom -nocomplain ?encoding? data"} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.18.3 {Syntax error, -failindex with no var, no encoding} -body {
+    encoding convertto -failindex ABC
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertto -nocomplain ?encoding? data"}
+test cmdAH-4.18.4 {Syntax error, -failindex with no var, no encoding (byte compiled)} -setup {
+    proc encoding_test {} {
+        encoding convertto -failindex ABC
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertto -nocomplain ?encoding? data"} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.19.1 {convertrom -failindex with correct data} -body {
+    encoding convertfrom -failindex test ABC
+    set test
+} -returnCodes 0 -result -1
+test cmdAH-4.19.2 {convertrom -failindex with correct data (byt compiled)} -setup {
+    proc encoding_test {} {
+	encoding convertfrom -failindex test ABC
+	set test
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result -1 -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.19.3 {convertrom -failindex with correct data} -body {
+    encoding convertto -failindex test ABC
+    set test
+} -returnCodes 0 -result -1
+test cmdAH-4.19.4 {convertrom -failindex with correct data (byt compiled)} -setup {
+    proc encoding_test {} {
+	encoding convertto -failindex test ABC
+	set test
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result -1 -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.20.1 {convertrom -failindex with incomplete utf8} -body {
+    set x [encoding convertfrom -failindex i utf-8 A\xc3]
+    binary scan $x H* y
+    list $y $i
+} -returnCodes 0 -result {41 1}
+test cmdAH-4.20.2 {convertrom -failindex with incomplete utf8 (byte compiled)} -setup {
+    proc encoding_test {} {
+	set x [encoding convertfrom -failindex i utf-8 A\xc3]
+	binary scan $x H* y
+	list $y $i
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result {41 1} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.20.3 {convertrom -failindex with incomplete utf8} -body {
+    set x [encoding convertfrom -strict -failindex i utf-8 A\xc3]
+    binary scan $x H* y
+    list $y $i
+} -returnCodes 0 -result {41 1}
+test cmdAH-4.20.4 {convertrom -failindex with incomplete utf8 (byte compiled)} -setup {
+    proc encoding_test {} {
+	set x [encoding convertfrom -strict -failindex i utf-8 A\xc3]
+	binary scan $x H* y
+	list $y $i
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result {41 1} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.20.5 {convertrom -failindex with incomplete utf8} -body {
+    set x [encoding convertfrom -failindex i -strict utf-8 A\xc3]
+    binary scan $x H* y
+    list $y $i
+} -returnCodes 0 -result {41 1}
+test cmdAH-4.20.6 {convertrom -failindex with incomplete utf8 (byte compiled)} -setup {
+    proc encoding_test {} {
+	set x [encoding convertfrom -failindex i -strict utf-8 A\xc3]
+	binary scan $x H* y
+	list $y $i
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result {41 1} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.21.1 {convertto -failindex with wrong character} -body {
+    set x [encoding convertto -failindex i iso8859-1 A\u0141]
+    binary scan $x H* y
+    list $y $i
+} -returnCodes 0 -result {41 1}
+test cmdAH-4.21.2 {convertto -failindex with wrong character (byte compiled)} -setup {
+    proc encoding_test {} {
+    set x [encoding convertto -failindex i iso8859-1 A\u0141]
+	binary scan $x H* y
+	list $y $i
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result {41 1} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.22 {convertfrom -strict} -body {
+    encoding convertfrom -strict utf-8 A\x00B
+} -result A\x00B
+
+test cmdAH-4.23 {convertfrom -strict} -body {
+    encoding convertfrom -strict utf-8 A\xC0\x80B
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\xC0'}
+
+test cmdAH-4.24 {convertto -strict} -body {
+    encoding convertto -strict utf-8 A\x00B
+} -result A\x00B
+
+test cmdAH-4.25 {convertfrom -strict} -constraints knownBug -body {
+    encoding convertfrom -strict utf-8 A\x80B
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\x80'}
+
+test cmdAH-4.26 {convertto -strict} -constraints {testbytestring knownBug} -body {
+    encoding convertto -strict utf-8 A[testbytestring \x80]B
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\x80'}
+
 test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
     file
 } -result {wrong # args: should be "file subcommand ?arg ...?"}
 test cmdAH-5.2 {Tcl_FileObjCmd} -returnCodes error -body {
     file x
-} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, home, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, tildeexpand, type, volumes, or writable}
 test cmdAH-5.3 {Tcl_FileObjCmd} -returnCodes error -body {
     file exists
 } -result {wrong # args: should be "file exists name"}
@@ -324,19 +493,19 @@ test cmdAH-8.13 {Tcl_FileObjCmd: dirname} testsetplatform {
 test cmdAH-8.14 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname //foo
-} /
+} //foo
 test cmdAH-8.15 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname //foo/bar
-} /foo
+} //foo
 test cmdAH-8.16 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname {//foo\/bar/baz}
-} {/foo\/bar}
+} {//foo\/bar}
 test cmdAH-8.17 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname {//foo\/bar/baz/blat}
-} {/foo\/bar/baz}
+} {//foo\/bar/baz}
 test cmdAH-8.18 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname /foo//
@@ -468,7 +637,7 @@ test cmdAH-9.13 {Tcl_FileObjCmd: tail} testsetplatform {
 test cmdAH-9.14 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail //foo
-} foo
+} {}
 test cmdAH-9.15 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail //foo/bar
@@ -1079,10 +1248,10 @@ test cmdAH-22.3 {Tcl_FileObjCmd: isfile} {file isfile $dirfile} 0
 catch {file link -symbolic $linkfile $gorpfile}
 test cmdAH-23.1 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a
-} -result {wrong # args: should be "file lstat name varName"}
+} -result {could not read "a": no such file or directory}
 test cmdAH-23.2 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a b c
-} -result {wrong # args: should be "file lstat name varName"}
+} -result {wrong # args: should be "file lstat name ?varName?"}
 test cmdAH-23.3 {Tcl_FileObjCmd: lstat} -setup {
     unset -nocomplain stat
 } -constraints {unix nonPortable} -body {
@@ -1412,14 +1581,14 @@ catch {file attributes $gorpfile -permissions 0o765}
 
 # stat
 test cmdAH-28.1 {Tcl_FileObjCmd: stat} -returnCodes error -body {
-    file stat _bogus_
-} -result {wrong # args: should be "file stat name varName"}
+    file stat
+} -result {wrong # args: should be "file stat name ?varName?"}
 test cmdAH-28.2 {Tcl_FileObjCmd: stat} -returnCodes error -body {
     file stat _bogus_ a b
-} -result {wrong # args: should be "file stat name varName"}
+} -result {wrong # args: should be "file stat name ?varName?"}
 test cmdAH-28.3 {Tcl_FileObjCmd: stat} -setup {
     unset -nocomplain stat
-    set stat(blocks) [set stat(blksize) {}]
+    array set stat {blocks {} blksize {}}
 } -body {
     file stat $gorpfile stat
     unset stat(blocks) stat(blksize); # Ignore these fields; not always set
@@ -1512,6 +1681,16 @@ test cmdAH-28.13.1 {Tcl_FileObjCmd: stat (built-in Windows names)} -constraints 
     }
     set res
 } -result {0 0 -1 0 0 8630 0 0 0 characterSpecial 0}
+test cmdAH-28.14 {Tcl_FileObjCmd: stat} -setup {
+    unset -nocomplain stat
+} -body {
+    file stat $gorpfile stat
+    expr {
+		[lsort -stride 2 [array get stat]]
+		eq
+		[lsort -stride 2 [file stat $gorpfile]]
+	}
+} -result {1}
 unset -nocomplain stat
 
 # type
@@ -1571,7 +1750,7 @@ test cmdAH-29.6.1 {
 # Error conditions
 test cmdAH-30.1 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file gorp x
-} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, home, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, tildeexpand, type, volumes, or writable}
 test cmdAH-30.2 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file ex x
 } -match glob -result {unknown or ambiguous subcommand "ex": must be *}

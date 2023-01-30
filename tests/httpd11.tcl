@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcl
+package require Tcl
 
 proc ::tcl::dict::get? {dict key} {
     if {[dict exists $dict $key]} {
@@ -46,7 +46,7 @@ proc get-chunks {data {compression gzip}} {
     }
 
     set data ""
-    set chunker [make-chunk-generator $data 512]
+    set chunker [make-chunk-generator $data 671]
     while {[string length [set chunk [$chunker]]]} {
         append data $chunk
     }
@@ -60,7 +60,7 @@ proc blow-chunks {data {ochan stdout} {compression gzip}} {
         compress { set data [zlib compress $data] }
     }
 
-    set chunker [make-chunk-generator $data 512]
+    set chunker [make-chunk-generator $data 671]
     while {[string length [set chunk [$chunker]]]} {
         puts -nonewline $ochan $chunk
     }
@@ -160,6 +160,12 @@ proc Service {chan addr port} {
         if {$protocol eq "HTTP/1.1"} {
 	    foreach enc [split [dict get? $meta accept-encoding] ,] {
 		set enc [string trim $enc]
+		# The current implementation of "compress" appears to be
+		# incorrect (bug [a13b9d0ce1]).  Keep it here for
+		# experimentation only.  The tests that use it have the
+		# constraint "badCompress".  The client code in http has
+		# been removed, but can be restored from comments if
+		# experimentation is desired.
 		if {$enc in {deflate gzip compress}} {
 		    set encoding $enc
 		    break
@@ -171,6 +177,7 @@ proc Service {chan addr port} {
         }
 
         set nosendclose 0
+        set msdeflate 0
         foreach pair [split $query &] {
             if {[scan $pair {%[^=]=%s} key val] != 2} {set val ""}
             switch -exact -- $key {
@@ -178,6 +185,7 @@ proc Service {chan addr port} {
                 close        {set close 1 ; set transfer 0}
                 transfer     {set transfer $val}
                 content-type {set type $val}
+                msdeflate    {set msdeflate $val}
             }
         }
         if {$protocol eq "HTTP/1.1"} {
@@ -211,10 +219,23 @@ proc Service {chan addr port} {
         flush $chan
 
         chan configure $chan -buffering full -translation binary
+        if {$encoding eq {deflate}} {
+            # When http.tcl uses the correct decoder (bug [a13b9d0ce1]) for
+            # "accept-encoding deflate", i.e. "zlib decompress", this choice of
+            # encoding2 allows the tests to pass.  It appears to do "deflate"
+            # correctly, but this has not been verified with a non-Tcl client.
+            set encoding2 compress
+        } else {
+            set encoding2 $encoding
+        }
         if {$transfer eq "chunked"} {
-            blow-chunks $data $chan $encoding
-        } elseif {$encoding ne "identity"} {
-            puts -nonewline $chan [zlib $encoding $data]
+            blow-chunks $data $chan $encoding2
+        } elseif {$encoding2 ne "identity" && $msdeflate eq {1}} {
+            puts -nonewline $chan [string range [zlib $encoding2 $data] 2 end-4]
+            # Used in some tests of "deflate" to produce the non-RFC-compliant
+            # Microsoft version of "deflate".
+        } elseif {$encoding2 ne "identity"} {
+            puts -nonewline $chan [zlib $encoding2 $data]
         } else {
             puts -nonewline $chan $data
         }

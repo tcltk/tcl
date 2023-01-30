@@ -14,16 +14,6 @@
 #include "tcl.h"
 
 /*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    PkguaEqObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    PkguaQuoteObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static void   CommandDeleted(ClientData clientData);
-
-/*
  * In the following hash table we are going to store a struct that holds all
  * the command tokens created by Tcl_CreateObjCommand in an interpreter,
  * indexed by the interpreter. In this way, we can find which command tokens
@@ -41,7 +31,7 @@ static Tcl_ThreadDataKey dataKey;
 #define MAX_REGISTERED_COMMANDS 2
 
 static void
-CommandDeleted(ClientData clientData)
+CommandDeleted(void *clientData)
 {
     Tcl_Command *cmdToken = (Tcl_Command *)clientData;
     *cmdToken = NULL;
@@ -130,7 +120,7 @@ PkguaDeleteTokens(
 
 static int
 PkguaEqObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -175,7 +165,7 @@ PkguaEqObjCmd(
 
 static int
 PkguaQuoteObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */

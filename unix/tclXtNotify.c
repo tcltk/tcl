@@ -181,7 +181,13 @@ TclSetAppContext(
 void
 InitNotifier(void)
 {
-    Tcl_NotifierProcs np;
+    static const Tcl_NotifierProcs np =
+	SetTimer,
+	WaitForEvent,
+	CreateFileHandler,
+	DeleteFileHandler,
+	NULL, NULL, NULL, NULL
+    };
 
     /*
      * Only reinitialize if we are not in exit handling. The notifier can get
@@ -193,14 +199,6 @@ InitNotifier(void)
 	return;
     }
 
-    np.createFileHandlerProc = CreateFileHandler;
-    np.deleteFileHandlerProc = DeleteFileHandler;
-    np.setTimerProc = SetTimer;
-    np.waitForEventProc = WaitForEvent;
-    np.initNotifierProc = Tcl_InitNotifier;
-    np.finalizeNotifierProc = Tcl_FinalizeNotifier;
-    np.alertNotifierProc = Tcl_AlertNotifier;
-    np.serviceModeHookProc = Tcl_ServiceModeHook;
     Tcl_SetNotifier(&np);
 
     /*
@@ -209,7 +207,6 @@ InitNotifier(void)
      */
 
     initialized = 1;
-    memset(&np, 0, sizeof(np));
     Tcl_CreateExitHandler(NotifierExitHandler, NULL);
 }
 

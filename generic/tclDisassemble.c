@@ -301,13 +301,14 @@ DisassembleByteCodeObj(
 
 #ifdef TCL_COMPILE_STATS
     Tcl_AppendPrintfToObj(bufferObj,
-	    "  Code %lu = header %lu+inst %d+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
-	    (unsigned long) codePtr->structureSize,
-	    (unsigned long) (sizeof(ByteCode) - sizeof(size_t) - sizeof(Tcl_Time)),
+	    "  Code %" TCL_Z_MODIFIER "u = header %" TCL_Z_MODIFIER "u+inst %d+litObj %"
+	    TCL_Z_MODIFIER "u+exc %" TCL_Z_MODIFIER "u+aux %" TCL_Z_MODIFIER "u+cmdMap %d\n",
+	    codePtr->structureSize,
+	    offsetof(ByteCode, localCachePtr),
 	    codePtr->numCodeBytes,
-	    (unsigned long) (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
-	    (unsigned long) (codePtr->numExceptRanges*sizeof(ExceptionRange)),
-	    (unsigned long) (codePtr->numAuxDataItems * sizeof(AuxData)),
+	    codePtr->numLitObjects * sizeof(Tcl_Obj *),
+	    codePtr->numExceptRanges*sizeof(ExceptionRange),
+	    codePtr->numAuxDataItems * sizeof(AuxData),
 	    codePtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
 
@@ -764,7 +765,7 @@ TclGetInnerContext(
          * Reset while keeping the list internalrep as much as possible.
          */
 
-	Tcl_ListObjLength(interp, result, &len);
+	TclListObjLengthM(interp, result, &len);
         Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
     }
     Tcl_ListObjAppendElement(NULL, result, TclNewInstNameObj(*pc));
@@ -808,7 +809,7 @@ TclNewInstNameObj(
 
     TclNewObj(objPtr);
     TclInvalidateStringRep(objPtr);
-    InstNameSetInternalRep(objPtr, (long) inst);
+    InstNameSetInternalRep(objPtr, inst);
 
     return objPtr;
 }

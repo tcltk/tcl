@@ -125,6 +125,8 @@ MODULE_SCOPE mp_err	TclBN_mp_set_int(mp_int *a, unsigned long b);
 #define mp_mul_2d TclBN_mp_mul_2d
 #define mp_neg TclBN_mp_neg
 #define mp_or TclBN_mp_or
+#define mp_pack TclBN_mp_pack
+#define mp_pack_count TclBN_mp_pack_count
 #define mp_radix_size TclBN_mp_radix_size
 #define mp_read_radix TclBN_mp_read_radix
 #define mp_rshd TclBN_mp_rshd
@@ -167,11 +169,11 @@ MODULE_SCOPE mp_err	TclBN_mp_set_int(mp_int *a, unsigned long b);
 #define s_mp_toom_sqr TclBN_mp_toom_sqr
 #endif /* !TCL_WITH_EXTERNAL_TOMMATH */
 
-#define mp_init_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_init_ul") TclBN_mp_init_u64(a,(unsigned int)(b)))
-#define mp_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_u64((a),((unsigned int)(b))),MP_OKAY))
-#define mp_set_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_u64((a),(long)(b)),MP_OKAY))
-#define mp_set_long_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_u64") (TclBN_mp_set_u64((a),(b)),MP_OKAY))
-#define mp_unsigned_bin_size(mp) (MP_DEPRECATED_PRAGMA("replaced by mp_ubin_size") (int)TclBN_mp_ubin_size(mp))
+#define mp_init_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_init_ul") mp_init_u64(a,(unsigned int)(b)))
+#define mp_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (mp_set_u64((a),((unsigned int)(b))),MP_OKAY))
+#define mp_set_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (mp_set_u64((a),(long)(b)),MP_OKAY))
+#define mp_set_long_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_u64") (mp_set_u64((a),(b)),MP_OKAY))
+#define mp_unsigned_bin_size(mp) (MP_DEPRECATED_PRAGMA("replaced by mp_ubin_size") (int)mp_ubin_size(mp))
 
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
@@ -394,7 +396,11 @@ EXTERN mp_err		TclBN_mp_unpack(mp_int *rop, size_t count,
 				mp_order order, size_t size,
 				mp_endian endian, size_t nails,
 				const void *op) MP_WUR;
-/* Slot 72 is reserved */
+/* 72 */
+EXTERN mp_err		TclBN_mp_pack(void *rop, size_t maxcount,
+				size_t *written, mp_order order, size_t size,
+				mp_endian endian, size_t nails,
+				const mp_int *op) MP_WUR;
 /* 73 */
 TCL_DEPRECATED("merged with mp_and")
 mp_err			TclBN_mp_tc_and(const mp_int *a, const mp_int *b,
@@ -410,7 +416,9 @@ mp_err			TclBN_mp_tc_xor(const mp_int *a, const mp_int *b,
 /* 76 */
 EXTERN mp_err		TclBN_mp_signed_rsh(const mp_int *a, int b,
 				mp_int *c) MP_WUR;
-/* Slot 77 is reserved */
+/* 77 */
+EXTERN size_t		TclBN_mp_pack_count(const mp_int *a, size_t nails,
+				size_t size) MP_WUR;
 /* 78 */
 EXTERN int		TclBN_mp_to_ubin(const mp_int *a, unsigned char *buf,
 				size_t maxlen, size_t *written) MP_WUR;
@@ -497,12 +505,12 @@ typedef struct TclTomMathStubs {
     uint64_t (*tclBN_mp_get_mag_u64) (const mp_int *a) MP_WUR; /* 69 */
     void (*tclBN_mp_set_i64) (mp_int *a, int64_t i); /* 70 */
     mp_err (*tclBN_mp_unpack) (mp_int *rop, size_t count, mp_order order, size_t size, mp_endian endian, size_t nails, const void *op) MP_WUR; /* 71 */
-    void (*reserved72)(void);
+    mp_err (*tclBN_mp_pack) (void *rop, size_t maxcount, size_t *written, mp_order order, size_t size, mp_endian endian, size_t nails, const mp_int *op) MP_WUR; /* 72 */
     TCL_DEPRECATED_API("merged with mp_and") mp_err (*tclBN_mp_tc_and) (const mp_int *a, const mp_int *b, mp_int *c); /* 73 */
     TCL_DEPRECATED_API("merged with mp_or") mp_err (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c); /* 74 */
     TCL_DEPRECATED_API("merged with mp_xor") mp_err (*tclBN_mp_tc_xor) (const mp_int *a, const mp_int *b, mp_int *c); /* 75 */
     mp_err (*tclBN_mp_signed_rsh) (const mp_int *a, int b, mp_int *c) MP_WUR; /* 76 */
-    void (*reserved77)(void);
+    size_t (*tclBN_mp_pack_count) (const mp_int *a, size_t nails, size_t size) MP_WUR; /* 77 */
     int (*tclBN_mp_to_ubin) (const mp_int *a, unsigned char *buf, size_t maxlen, size_t *written) MP_WUR; /* 78 */
     mp_err (*tclBN_mp_div_ld) (const mp_int *a, uint64_t b, mp_int *q, uint64_t *r) MP_WUR; /* 79 */
     int (*tclBN_mp_to_radix) (const mp_int *a, char *str, size_t maxlen, size_t *written, int radix) MP_WUR; /* 80 */
@@ -664,7 +672,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_set_i64) /* 70 */
 #define TclBN_mp_unpack \
 	(tclTomMathStubsPtr->tclBN_mp_unpack) /* 71 */
-/* Slot 72 is reserved */
+#define TclBN_mp_pack \
+	(tclTomMathStubsPtr->tclBN_mp_pack) /* 72 */
 #define TclBN_mp_tc_and \
 	(tclTomMathStubsPtr->tclBN_mp_tc_and) /* 73 */
 #define TclBN_mp_tc_or \
@@ -673,7 +682,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_tc_xor) /* 75 */
 #define TclBN_mp_signed_rsh \
 	(tclTomMathStubsPtr->tclBN_mp_signed_rsh) /* 76 */
-/* Slot 77 is reserved */
+#define TclBN_mp_pack_count \
+	(tclTomMathStubsPtr->tclBN_mp_pack_count) /* 77 */
 #define TclBN_mp_to_ubin \
 	(tclTomMathStubsPtr->tclBN_mp_to_ubin) /* 78 */
 #define TclBN_mp_div_ld \

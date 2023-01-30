@@ -1369,7 +1369,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LDFLAGS="$LDFLAGS -pthread"
 	    ;;
 	Darwin-*)
-	    CFLAGS_OPTIMIZE="-Os"
+	    CFLAGS_OPTIMIZE="-O2"
 	    SHLIB_CFLAGS="-fno-common"
 	    # To avoid discrepancies between what headers configure sees during
 	    # preprocessing tests and compiling tests, move any -isysroot and
@@ -1394,7 +1394,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
 			    do64bit_ok=yes
 			]);;
-		    i386)
+		    i386|x86_64)
 			AC_CACHE_CHECK([if compiler accepts -arch x86_64 flag],
 				tcl_cv_cc_arch_x86_64, [
 			    hold_cflags=$CFLAGS
@@ -1406,12 +1406,24 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			    CFLAGS="$CFLAGS -arch x86_64"
 			    do64bit_ok=yes
 			]);;
+		    arm64|arm64e)
+			AC_CACHE_CHECK([if compiler accepts -arch arm64e flag],
+				tcl_cv_cc_arch_arm64e, [
+			    hold_cflags=$CFLAGS
+			    CFLAGS="$CFLAGS -arch arm64e"
+			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+				    [tcl_cv_cc_arch_arm64e=yes],[tcl_cv_cc_arch_arm64e=no])
+			    CFLAGS=$hold_cflags])
+			AS_IF([test $tcl_cv_cc_arch_arm64e = yes], [
+			    CFLAGS="$CFLAGS -arch arm64e"
+			    do64bit_ok=yes
+			]);;
 		    *)
 			AC_MSG_WARN([Don't know how enable 64-bit on architecture `arch`]);;
 		esac
 	    ], [
 		# Check for combined 32-bit and 64-bit fat build
-		AS_IF([echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64) ' \
+		AS_IF([echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64|arm64e) ' \
 		    && echo "$CFLAGS " |grep -E -q -- '-arch (ppc|i386) '], [
 		    fat_32_64=yes])
 	    ])
@@ -1447,7 +1459,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ])
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
-	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
+	    LD_LIBRARY_PATH_VAR="DYLD_FALLBACK_LIBRARY_PATH"
 	    AC_DEFINE(MAC_OSX_TCL, 1, [Is this a Mac I see before me?])
 	    PLAT_OBJS='${MAC_OSX_OBJS}'
 	    PLAT_SRCS='${MAC_OSX_SRCS}'
@@ -1515,9 +1527,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # Digital OSF/1
 	    SHLIB_CFLAGS=""
 	    AS_IF([test "$SHARED_BUILD" = 1], [
-	        SHLIB_LD='ld -shared -expect_unresolved "*"'
+	        SHLIB_LD='${CC} -shared'
 	    ], [
-	        SHLIB_LD='ld -non_shared -expect_unresolved "*"'
+	        SHLIB_LD='${CC} -non_shared'
 	    ])
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"

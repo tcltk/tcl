@@ -17,6 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testindexobj [llength [info commands testindexobj]]
+testConstraint testgetintforindex [llength [info commands testgetintforindex]]
 testConstraint testparseargs [llength [info commands testparseargs]]
 
 test indexObj-1.1 {exact match} testindexobj {
@@ -139,6 +140,10 @@ test indexObj-6.6 {Tcl_GetIndexFromObjStruct with NULL input} -constraints testi
     set x ""
     testgetindexfromobjstruct $x 0
 } -returnCodes error -result {ambiguous dummy "": must be a, c, or ee}
+test indexObj-6.7 {Tcl_GetIndexFromObjStruct} testindexobj {
+    set x ""
+    testgetindexfromobjstruct $x -1 32
+} "wrong # args: should be \"testgetindexfromobjstruct {} -1 32\""
 
 test indexObj-7.1 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs
@@ -165,6 +170,52 @@ test indexObj-7.7 {Tcl_ParseArgsObjv memory management} testparseargs {
     testparseargs 1 2 3 4 5 6 7 8 9 0 -bool 1 2 3 4 5 6 7 8 9 0
 } {1 21 {testparseargs 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0}}
 
+test indexObj-8.1 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex 0 0
+} 0
+test indexObj-8.2 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex -1 0
+} -1
+test indexObj-8.3 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex -2 0
+} -1
+test indexObj-8.4 {Tcl_GetIntForIndex INT_MAX} testgetintforindex {
+    testgetintforindex 2147483647 0
+} 2147483647
+test indexObj-8.5 {Tcl_GetIntForIndex INT_MAX+1} testgetintforindex {
+    testgetintforindex 2147483648 0
+} 2147483647
+test indexObj-8.6 {Tcl_GetIntForIndex end-1} testgetintforindex {
+    testgetintforindex end-1 2147483646
+} 2147483645
+test indexObj-8.7 {Tcl_GetIntForIndex end-1} testgetintforindex {
+    testgetintforindex end-1 2147483647
+} 2147483646
+test indexObj-8.8 {Tcl_GetIntForIndex end} testgetintforindex {
+    testgetintforindex end 2147483646
+} 2147483646
+test indexObj-8.9 {Tcl_GetIntForIndex end} testgetintforindex {
+    testgetintforindex end 2147483647
+} 2147483647
+test indexObj-8.10 {Tcl_GetIntForIndex end-1} testgetintforindex {
+    testgetintforindex end-1 -1
+} -2
+test indexObj-8.11 {Tcl_GetIntForIndex end-1} testgetintforindex {
+    testgetintforindex end-1 -2
+} -3
+test indexObj-8.12 {Tcl_GetIntForIndex end} testgetintforindex {
+    testgetintforindex end -1
+} -1
+test indexObj-8.13 {Tcl_GetIntForIndex end} testgetintforindex {
+    testgetintforindex end -2
+} -2
+test indexObj-8.14 {Tcl_GetIntForIndex end+1} testgetintforindex {
+    testgetintforindex end+1 -1
+} 0
+test indexObj-8.15 {Tcl_GetIntForIndex end+1} testgetintforindex {
+    testgetintforindex end+1 -2
+} -1
+
 # cleanup
 ::tcltest::cleanupTests
 return

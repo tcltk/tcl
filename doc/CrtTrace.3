@@ -10,7 +10,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_CreateTrace, Tcl_CreateObjTrace, Tcl_DeleteTrace \- arrange for command execution to be traced
+Tcl_CreateTrace, Tcl_CreateObjTrace, Tcl_CreateObjTrace2, Tcl_DeleteTrace \- arrange for command execution to be traced
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -20,6 +20,9 @@ Tcl_Trace
 .sp
 Tcl_Trace
 \fBTcl_CreateObjTrace\fR(\fIinterp, level, flags, objProc, clientData, deleteProc\fR)
+.sp
+Tcl_Trace
+\fBTcl_CreateObjTrace2\fR(\fIinterp, level, flags, objProc2, clientData, deleteProc\fR)
 .sp
 \fBTcl_DeleteTrace\fR(\fIinterp, trace\fR)
 .SH ARGUMENTS
@@ -38,11 +41,14 @@ Flags governing the trace execution.  See below for details.
 .AP Tcl_CmdObjTraceProc *objProc in
 Procedure to call for each command that is executed.  See below for
 details of the calling sequence.
+.AP Tcl_CmdObjTraceProc2 *objProc2 in
+Procedure to call for each command that is executed.  See below for
+details of the calling sequence.
 .AP Tcl_CmdTraceProc *proc in
 Procedure to call for each command that is executed.  See below for
 details on the calling sequence.
-.AP ClientData clientData in
-Arbitrary one-word value to pass to \fIobjProc\fR or \fIproc\fR.
+.AP void *clientData in
+Arbitrary one-word value to pass to \fIobjProc\fR, \fIobjProc2\fR or \fIproc\fR.
 .AP Tcl_CmdObjTraceDeleteProc *deleteProc in
 Procedure to call when the trace is deleted.  See below for details of
 the calling sequence.  A NULL pointer is permissible and results in no
@@ -66,12 +72,26 @@ interpreter.
 .PP
 .CS
 typedef int \fBTcl_CmdObjTraceProc\fR(
-        \fBClientData\fR \fIclientData\fR,
+        \fBvoid *\fR \fIclientData\fR,
         \fBTcl_Interp\fR* \fIinterp\fR,
         int \fIlevel\fR,
         const char *\fIcommand\fR,
         \fBTcl_Command\fR \fIcommandToken\fR,
         int \fIobjc\fR,
+        \fBTcl_Obj\fR *const \fIobjv\fR[]);
+.CE
+.PP
+\fIobjProc2\fR should have arguments and result that match the type,
+\fBTcl_CmdObjTraceProc2\fR:
+.PP
+.CS
+typedef int \fBTcl_CmdObjTraceProc2\fR(
+        \fBvoid *\fR \fIclientData\fR,
+        \fBTcl_Interp\fR* \fIinterp\fR,
+        size_t \fIlevel\fR,
+        const char *\fIcommand\fR,
+        \fBTcl_Command\fR \fIcommandToken\fR,
+        size_t \fIobjc\fR,
         \fBTcl_Obj\fR *const \fIobjv\fR[]);
 .CE
 .PP
@@ -99,11 +119,7 @@ the Tcl interpreter will invoke the command.  Any other return code
 is treated as if the command returned that status, and the command is
 \fInot\fR invoked.
 .PP
-The \fIobjProc\fR callback must not modify \fIobjv\fR in any way.  It
-is, however, permissible to change the command by calling
-\fBTcl_SetCommandTokenInfo\fR prior to returning.  Any such change
-takes effect immediately, and the command is invoked with the new
-information.
+The \fIobjProc\fR callback must not modify \fIobjv\fR in any way.
 .PP
 Tracing will only occur for commands at nesting level less than
 or equal to the \fIlevel\fR parameter (i.e. the \fIlevel\fR
@@ -144,7 +160,7 @@ When \fBTcl_DeleteTrace\fR is called, the interpreter invokes the
 .PP
 .CS
 typedef void \fBTcl_CmdObjTraceDeleteProc\fR(
-        \fBClientData\fR \fIclientData\fR);
+        \fBvoid *\fR \fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR parameter will be the same as the
@@ -160,12 +176,12 @@ match the type \fBTcl_CmdTraceProc\fR:
 .PP
 .CS
 typedef void \fBTcl_CmdTraceProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIlevel\fR,
         char *\fIcommand\fR,
         Tcl_CmdProc *\fIcmdProc\fR,
-        ClientData \fIcmdClientData\fR,
+        void *\fIcmdClientData\fR,
         int \fIargc\fR,
         const char *\fIargv\fR[]);
 .CE

@@ -916,9 +916,10 @@ Tcl_ScanObjCmd(
 	    }
 	    if (flags & SCAN_LONGER) {
 		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
-		    wideValue = WIDE_MAX;
 		    if (TclGetString(objPtr)[0] == '-') {
 			wideValue = WIDE_MIN;
+		    } else {
+			wideValue = WIDE_MAX;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
@@ -992,7 +993,7 @@ Tcl_ScanObjCmd(
 	     * Scan a floating point number
 	     */
 
-	    objPtr = Tcl_NewDoubleObj(0.0);
+	    TclNewDoubleObj(objPtr, 0.0);
 	    Tcl_IncrRefCount(objPtr);
 	    if (width == 0) {
 		width = ~0;
@@ -1089,7 +1090,7 @@ Tcl_ScanObjCmd(
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
-		TclNewIndexObj(objPtr, TCL_INDEX_NONE);
+		TclNewIntObj(objPtr, -1);
 	    } else {
 		if (objPtr) {
 		    Tcl_SetListObj(objPtr, 0, NULL);

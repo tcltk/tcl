@@ -54,10 +54,12 @@ Null-terminated string describing what is being looked up, such as
 .AP int flags in
 OR-ed combination of bits providing additional information for
 operation.  The only bits that are currently defined are \fBTCL_EXACT\fR
-and \fBTCL_INDEX_TEMP_TABLE\fR.
-.AP int *indexPtr out
-The index of the string in \fItablePtr\fR that matches the value of
-\fIobjPtr\fR is returned here.
+, \fBTCL_INDEX_TEMP_TABLE\fR, and \fBTCL_NULL_OK\fR.
+.AP enum|char|short|int|long *indexPtr out
+If not (int *)NULL, the index of the string in \fItablePtr\fR that
+matches the value of \fIobjPtr\fR is returned here. The variable can
+be any integer type, signed or unsigned, char, short, long or
+long long. It can also be an enum.
 .BE
 .SH DESCRIPTION
 .PP
@@ -70,8 +72,8 @@ the strings in \fItablePtr\fR to find a match.  A match occurs if
 \fItablePtr\fR, or if it is a non-empty unique abbreviation
 for exactly one of the strings in \fItablePtr\fR and the
 \fBTCL_EXACT\fR flag was not specified; in either case
-the index of the matching entry is stored at \fI*indexPtr\fR
-and \fBTCL_OK\fR is returned.
+\fBTCL_OK\fR is returned. If \fIindexPtr\fR is not NULL the index
+of the matching entry is stored at \fI*indexPtr\fR.
 .PP
 If there is no matching entry,
 \fBTCL_ERROR\fR is returned and an error message is left in \fIinterp\fR's
@@ -91,7 +93,9 @@ operation.  Note: \fBTcl_GetIndexFromObj\fR assumes that the entries
 in \fItablePtr\fR are static: they must not change between
 invocations.  This caching mechanism can be disallowed by specifying
 the \fBTCL_INDEX_TEMP_TABLE\fR flag.
-If the value of \fIobjPtr\fR is the empty string,
+If the \fBTCL_NULL_OK\fR flag was specified, objPtr is allowed
+to be NULL or the empty string. The resulting index is -1.
+Otherwise, if the value of \fIobjPtr\fR is the empty string,
 \fBTcl_GetIndexFromObj\fR will treat it as a non-matching value
 and return \fBTCL_ERROR\fR.
 .PP

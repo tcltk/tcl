@@ -95,7 +95,7 @@ typedef struct Link {
  * Forward references to functions defined later in this file:
  */
 
-static char *		LinkTraceProc(ClientData clientData,Tcl_Interp *interp,
+static char *		LinkTraceProc(void *clientData,Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
 static Tcl_Obj *	ObjValue(Link *linkPtr);
 static void		LinkFree(Link *linkPtr);
@@ -526,56 +526,14 @@ GetUWide(
     Tcl_Obj *objPtr,
     Tcl_WideUInt *uwidePtr)
 {
-    Tcl_WideInt *widePtr = (Tcl_WideInt *) uwidePtr;
-    ClientData clientData;
-    int type, intValue;
+    if (Tcl_GetWideUIntFromObj(NULL, objPtr, uwidePtr) != TCL_OK) {
+	int intValue;
 
-    if (TclGetNumberFromObj(NULL, objPtr, &clientData, &type) == TCL_OK) {
-	if (type == TCL_NUMBER_INT) {
-	    *widePtr = *((const Tcl_WideInt *) clientData);
-	    return (*widePtr < 0);
-	} else if (type == TCL_NUMBER_BIG) {
-	    mp_int *numPtr = (mp_int *)clientData;
-	    Tcl_WideUInt value = 0;
-	    union {
-		Tcl_WideUInt value;
-		unsigned char bytes[sizeof(Tcl_WideUInt)];
-	    } scratch;
-	    size_t numBytes;
-	    unsigned char *bytes = scratch.bytes;
-
-	    if (numPtr->sign || (MP_OKAY != mp_to_ubin(numPtr,
-		    bytes, sizeof(Tcl_WideUInt), &numBytes))) {
-		/*
-		 * If the sign bit is set (a negative value) or if the value
-		 * can't possibly fit in the bits of an unsigned wide, there's
-		 * no point in doing further conversion.
-		 */
-		return 1;
-	    }
-#ifdef WORDS_BIGENDIAN
-	    while (numBytes-- > 0) {
-		value = (value << CHAR_BIT) | *bytes++;
-	    }
-#else /* !WORDS_BIGENDIAN */
-	    /*
-	     * Little-endian can read the value directly.
-	     */
-	    value = scratch.value;
-#endif /* WORDS_BIGENDIAN */
-	    *uwidePtr = value;
-	    return 0;
+	if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
+	    return 1;
 	}
+	*uwidePtr = intValue;
     }
-
-    /*
-     * Evil edge case fallback.
-     */
-
-    if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
-	return 1;
-    }
-    *uwidePtr = intValue;
     return 0;
 }
 
@@ -606,7 +564,7 @@ EqualDouble(
 {
     return (a == b)
 #ifdef ACCEPT_NAN
-	|| (TclIsNaN(a) && TclIsNaN(b))
+	|| (isnan(a) && isnan(b))
 #endif /* ACCEPT_NAN */
 	;
 }
@@ -615,9 +573,9 @@ static inline int
 IsSpecial(
     double a)
 {
-    return TclIsInfinite(a)
+    return isinf(a)
 #ifdef ACCEPT_NAN
-	|| TclIsNaN(a)
+	|| isnan(a)
 #endif /* ACCEPT_NAN */
 	;
 }
@@ -633,14 +591,15 @@ SetInvalidRealFromAny(
 {
     const char *str;
     const char *endPtr;
+    int length;
 
-    str = TclGetString(objPtr);
-    if ((objPtr->length == 1) && (str[0] == '.')) {
+    str = TclGetStringFromObj(objPtr, &length);
+    if ((length == 1) && (str[0] == '.')) {
 	objPtr->typePtr = &invalidRealType;
 	objPtr->internalRep.doubleValue = 0.0;
 	return TCL_OK;
     }
-    if (TclParseNumber(NULL, objPtr, NULL, str, objPtr->length, &endPtr,
+    if (TclParseNumber(NULL, objPtr, NULL, str, length, &endPtr,
 	    TCL_PARSE_DECIMAL_ONLY) == TCL_OK) {
 	/*
 	 * If number is followed by [eE][+-]?, then it is an invalid
@@ -678,13 +637,14 @@ GetInvalidIntFromObj(
     Tcl_Obj *objPtr,
     int *intPtr)
 {
-    const char *str = TclGetString(objPtr);
+    int length;
+    const char *str = TclGetStringFromObj(objPtr, &length);
 
-    if ((objPtr->length == 0) || ((objPtr->length == 2) && (str[0] == '0')
+    if ((length == 0) || ((length == 2) && (str[0] == '0')
 	    && strchr("xXbBoOdD", str[1]))) {
 	*intPtr = 0;
 	return TCL_OK;
-    } else if ((objPtr->length == 1) && strchr("+-", str[0])) {
+    } else if ((length == 1) && strchr("+-", str[0])) {
 	*intPtr = (str[0] == '+');
 	return TCL_OK;
     }
@@ -743,7 +703,7 @@ GetInvalidDoubleFromObj(
 
 static char *
 LinkTraceProc(
-    ClientData clientData,	/* Contains information about the link. */
+    void *clientData,	/* Contains information about the link. */
     Tcl_Interp *interp,		/* Interpreter containing Tcl variable. */
     TCL_UNUSED(const char *) /*name1*/,
     TCL_UNUSED(const char *) /*name2*/,
@@ -896,8 +856,8 @@ LinkTraceProc(
 
     switch (linkPtr->type) {
     case TCL_LINK_STRING:
-	value = TclGetString(valueObj);
-	valueLength = valueObj->length + 1;
+	value = TclGetStringFromObj(valueObj, &valueLength);
+	valueLength++;		/* include end of string char */
 	pp = (char **) linkPtr->addr;
 
 	*pp = (char *)ckrealloc(*pp, valueLength);
@@ -905,7 +865,7 @@ LinkTraceProc(
 	return NULL;
 
     case TCL_LINK_CHARS:
-	value = (char *) Tcl_GetStringFromObj(valueObj, &valueLength);
+	value = (char *) TclGetStringFromObj(valueObj, &valueLength);
 	valueLength++;		/* include end of string char */
 	if (valueLength > linkPtr->bytes) {
 	    return (char *) "wrong size of char* value";
@@ -947,7 +907,7 @@ LinkTraceProc(
      */
 
     if (linkPtr->flags & LINK_ALLOC_LAST) {
-	if (Tcl_ListObjGetElements(NULL, (valueObj), &objc, &objv) == TCL_ERROR
+	if (TclListObjGetElementsM(NULL, (valueObj), &objc, &objv) == TCL_ERROR
 		|| objc != linkPtr->numElems) {
 	    return (char *) "wrong dimension";
 	}
@@ -1071,7 +1031,7 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetInt(objv[i], &valueInt)
-		        || !InRange(0, valueInt, UCHAR_MAX)) {
+		        || !InRange(0, valueInt, (int)UCHAR_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		    return (char *)
@@ -1081,7 +1041,7 @@ LinkTraceProc(
 	    }
 	} else {
 	    if (GetInt(valueObj, &valueInt)
-		    || !InRange(0, valueInt, UCHAR_MAX)) {
+		    || !InRange(0, valueInt, (int)UCHAR_MAX)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned char value";
@@ -1117,7 +1077,7 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetInt(objv[i], &valueInt)
-		        || !InRange(0, valueInt, USHRT_MAX)) {
+		        || !InRange(0, valueInt, (int)USHRT_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 	            return (char *)
@@ -1127,7 +1087,7 @@ LinkTraceProc(
 	    }
 	} else {
 	    if (GetInt(valueObj, &valueInt)
-		    || !InRange(0, valueInt, USHRT_MAX)) {
+		    || !InRange(0, valueInt, (int)USHRT_MAX)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned short value";
@@ -1141,7 +1101,7 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetWide(objv[i], &valueWide)
-			|| !InRange(0, valueWide, UINT_MAX)) {
+			|| !InRange(0, valueWide, (Tcl_WideInt)UINT_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 	            return (char *)
@@ -1151,7 +1111,7 @@ LinkTraceProc(
 	    }
 	} else {
 	    if (GetWide(valueObj, &valueWide)
-		    || !InRange(0, valueWide, UINT_MAX)) {
+		    || !InRange(0, valueWide, (Tcl_WideInt)UINT_MAX)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned int value";
@@ -1322,7 +1282,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewDoubleObj(linkPtr->lastValue.dPtr[i]);
+		TclNewDoubleObj(objv[i], linkPtr->lastValue.dPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
@@ -1441,7 +1401,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewDoubleObj(linkPtr->lastValue.fPtr[i]);
+		TclNewDoubleObj(objv[i], linkPtr->lastValue.fPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
@@ -1449,20 +1409,22 @@ ObjValue(
 	}
 	linkPtr->lastValue.f = LinkedVar(float);
 	return Tcl_NewDoubleObj(linkPtr->lastValue.f);
-    case TCL_LINK_WIDE_UINT:
+    case TCL_LINK_WIDE_UINT: {
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		TclNewIntObj(objv[i], (Tcl_WideInt)
-			linkPtr->lastValue.uwPtr[i]);
+		TclNewUIntObj(objv[i], linkPtr->lastValue.uwPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
 	    return resultObj;
 	}
 	linkPtr->lastValue.uw = LinkedVar(Tcl_WideUInt);
-	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.uw);
+	Tcl_Obj *uwObj;
+	TclNewUIntObj(uwObj, linkPtr->lastValue.uw);
+	return uwObj;
+	}
 
     case TCL_LINK_STRING:
 	p = LinkedVar(char *);
