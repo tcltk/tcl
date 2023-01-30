@@ -9919,7 +9919,7 @@ TclNRCoroutineActivateCallback(
 	    if (corPtr->yieldPtr) {
 		for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
 		    if (runPtr->data[1] == corPtr->yieldPtr) {
-			Tcl_DecrRefCount(runPtr->data[1]);
+			Tcl_DecrRefCount((Tcl_Obj *)runPtr->data[1]);
 			runPtr->data[1] = NULL;
 			corPtr->yieldPtr = NULL;
 			break;
