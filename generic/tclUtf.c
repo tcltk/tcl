@@ -231,8 +231,8 @@ Tcl_UniCharToUtf(
     }
     if (ch >= 0) {
 	if (ch <= 0x7FF) {
-	    buf[1] = (char) ((ch | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 6) | 0xC0);
+	    buf[1] = (char) (0x80 | (0x3F & ch));
+	    buf[0] = (char) (0xC0 | (ch >> 6));
 	    return 2;
 	}
 	if (ch <= 0xFFFF) {
@@ -243,10 +243,11 @@ Tcl_UniCharToUtf(
 		    ((ch & 0xF800) == 0xD800)) {
 		if (ch & 0x0400) {
 		    /* Low surrogate */
-		    if (((buf[0] & 0xC0) == 0x80) && ((buf[1] & 0xCF) == 0)) {
+		    if (   (0x80 == (0xC0 & buf[0]))
+			&& (0    == (0xCF & buf[1]))) {
 			/* Previous Tcl_UniChar was a high surrogate, so combine */
-			buf[2] = (char) ((ch & 0x3F) | 0x80);
-			buf[1] |= (char) (((ch >> 6) & 0x0F) | 0x80);
+			buf[2]  = (char) (0x80 | (0x3F & ch));
+			buf[1] |= (char) (0x80 | (0x0F & (ch >> 6)));
 			return 3;
 		    }
 		    /* Previous Tcl_UniChar was not a high surrogate, so just output */
@@ -255,38 +256,41 @@ Tcl_UniCharToUtf(
 		    ch += 0x40;
 		    /* Fill buffer with specific 3-byte (invalid) byte combination,
 		       so following low surrogate can recognize it and combine */
-		    buf[2] = (char) ((ch << 4) & 0x30);
-		    buf[1] = (char) (((ch >> 2) & 0x3F) | 0x80);
-		    buf[0] = (char) (((ch >> 8) & 0x07) | 0xF0);
+		    buf[2] = (char) (        0x03 & ch);
+		    buf[1] = (char) (0x80 | (0x3F & (ch >> 2)));
+		    buf[0] = (char) (0xF0 | (0x07 & (ch >> 8)));
 		    return 1;
 		}
 	    }
 	    goto three;
 	}
 	if (ch <= 0x10FFFF) {
-	    buf[3] = (char) ((ch | 0x80) & 0xBF);
-	    buf[2] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 12) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 18) | 0xF0);
+	    buf[3] = (char) (0x80 | (0x3F & ch));
+	    buf[2] = (char) (0xBF & (0x80 | (ch >> 6)));
+	    buf[1] = (char) (0xBF & (0x80 | (ch >> 12)));
+	    buf[0] = (char) (0xF0 |         (ch >> 18));
 	    return 4;
 	}
     } else if (ch == -1) {
-	if (((buf[0] & 0xC0) == 0x80) && ((buf[1] & 0xCF) == 0)
-		&& ((buf[-1] & 0xF8) == 0xF0)) {
-	    ch = 0xD7C0 + ((buf[-1] & 0x07) << 8) + ((buf[0] & 0x3F) << 2)
-		    + ((buf[1] & 0x30) >> 4);
-	    buf[1] = (char) ((ch | 0x80) & 0xBF);
-	    buf[0] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[-1] = (char) ((ch >> 12) | 0xE0);
+	if (   (0x80 == (0xC0 & buf[0]))
+	    && (0    == (0xCF & buf[1]))
+	    && (0xF0 == (0xF8 & buf[-1]))) {
+	    ch = 0xD7C0
+		+ ((0x07 & buf[-1]) << 8)
+		+ ((0x3F & buf[0])  << 2)
+		+ ((0x30 & buf[1])  >> 4);
+	    buf[1]  = (char) (0xBF & (0x80 | ch));
+	    buf[0]  = (char) (0xBF & (0x80 | (ch >> 6)));
+	    buf[-1] = (char) (0xE0 | (ch >> 12));
 	    return 2;
 	}
     }
 
     ch = 0xFFFD;
 three:
-    buf[2] = (char) ((ch | 0x80) & 0xBF);
-    buf[1] = (char) (((ch >> 6) | 0x80) & 0xBF);
-    buf[0] = (char) ((ch >> 12) | 0xE0);
+    buf[2] = (char) (0x80 | (0x3F & ch));
+    buf[1] = (char) (0x80 | (0x3F & (ch >> 6)));
+    buf[0] = (char) (0xE0 |         (ch >> 12));
     return 3;
 }
 
