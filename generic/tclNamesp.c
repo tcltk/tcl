@@ -417,6 +417,8 @@ Tcl_PopCallFrame(
     framePtr->nsPtr = NULL;
 
     if (framePtr->tailcallPtr) {
+	/* Reusing the existing reference count from framePtr->tailcallPtr, so
+	 * no need to Tcl_IncrRefCount(framePtr->tailcallPtr)*/
 	TclSetTailcall(interp, framePtr->tailcallPtr);
     }
 }
