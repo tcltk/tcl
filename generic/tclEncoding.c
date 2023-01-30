@@ -2505,8 +2505,14 @@ Utf32ToUtfProc(
 	} else {
 	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
-	if  ((unsigned)ch > 0x10FFFF || (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
-		&& ((ch  & ~0x7FF) == 0xD800))) {
+	if  ((unsigned)ch > 0x10FFFF) {
+	    if (STOPONERROR) {
+		result = TCL_CONVERT_SYNTAX;
+		break;
+	    }
+	    ch = 0xFFFD;
+	} else if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
+		&& ((ch  & ~0x7FF) == 0xD800)) {
 	    if (STOPONERROR) {
 		result = TCL_CONVERT_SYNTAX;
 		break;

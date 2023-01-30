@@ -586,7 +586,7 @@ EncodingConverttoObjCmd(
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if (objc > 2 && objc < 6) {
+    } else if (objc > 2 && objc < 7) {
 	int objcUnprocessed = objc;
 	data = objv[objc - 1];
 	stringPtr = Tcl_GetString(objv[1]);
