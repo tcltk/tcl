@@ -221,12 +221,6 @@ twenty-one-bit hexadecimal value for the Unicode character that will be
 inserted, in the range U+000000\(enU+10FFFF.  The parser will stop just
 before this range overflows, or when the maximum of eight digits
 is reached.  The upper bits of the Unicode character will be 0.
-.RS
-.PP
-The range U+00D800\(enU+00DFFF is reserved for surrogates, which
-are illegal on their own. Therefore, such sequences will result in
-the replacement character U+FFFD. Surrogate pairs should be
-encoded as single \e\fBU\fIhhhhhhhh\fR character.
 .RE
 .PP
 Backslash substitution is not performed on words enclosed in braces,
