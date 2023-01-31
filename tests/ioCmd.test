@@ -376,6 +376,16 @@ test iocmd-8.21 {fconfigure command / -nocomplainencoding 0 error} -constraints 
 } -body {
     fconfigure $console -nocomplainencoding 0
 } -returnCodes error -result "bad value for -nocomplainencoding: only true allowed"
+test iocmd-8.22 {fconfigure command / -nocomplainencoding 0, no error if -strictencoding already defined} -setup {
+    set console stdin
+    set oldmode [fconfigure $console -strictencoding]
+} -body {
+    fconfigure $console -strictencoding 1
+    fconfigure $console -nocomplainencoding 0
+    fconfigure $console -nocomplainencoding
+} -cleanup {
+    fconfigure $console -strictencoding $oldmode
+} -result 0
 
 
 test iocmd-9.1 {eof command} {

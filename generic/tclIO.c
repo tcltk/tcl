@@ -8354,7 +8354,7 @@ Tcl_SetChannelOption(
 #ifdef TCL_NO_DEPRECATED
 	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
 #else
-	    if (SetFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT) != CHANNEL_ENCODING_STRICT) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "bad value for -nocomplainencoding: only true allowed",
