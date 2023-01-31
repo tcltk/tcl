@@ -256,7 +256,7 @@ Tcl_UniCharToUtf(
 		    ch += 0x40;
 		    /* Fill buffer with specific 3-byte (invalid) byte combination,
 		       so following low surrogate can recognize it and combine */
-		    buf[2] = (char) (        0x03 & ch);
+		    buf[2] = (char) ((ch << 4) & 0x30);
 		    buf[1] = (char) (0x80 | (0x3F & (ch >> 2)));
 		    buf[0] = (char) (0xF0 | (0x07 & (ch >> 8)));
 		    return 1;
