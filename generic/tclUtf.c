@@ -185,17 +185,15 @@ Invalid(
  *	Stores the given Tcl_UniChar as a sequence of UTF-8 bytes in the
  *	provided buffer. Equivalent to Plan 9 runetochar().
  *
- *	Special handling of Surrogate pairs is handled as follows:
- *	When this function is called for ch being a high surrogate,
- *	the first byte of the 4-byte UTF-8 sequence is produced and
- *	the function returns 1. Calling the function again with a
- *	low surrogate, the remaining 3 bytes of the 4-byte UTF-8
- *	sequence is produced, and the function returns 3. The buffer
- *	is used to remember the high surrogate between the two calls.
+ *	Surrogate pairs are handled as follows: When ch is a high surrogate,
+ *	the first byte of the 4-byte UTF-8 sequence is stored in the buffer and
+ *	the function returns 1. If the function is called again with a low
+ *	surrogate and the same buffer, the remaining 3 bytes of the 4-byte
+ *	UTF-8 sequence are produced.
  *
  *	If no low surrogate follows the high surrogate (which is actually
  *	illegal), this can be handled reasonably by calling Tcl_UniCharToUtf
- *	again with ch = -1. This will produce a 3-byte UTF-8 sequence
+ *	again with ch = -1. This produces a 3-byte UTF-8 sequence
  *	representing the high surrogate.
  *
  * Results:
