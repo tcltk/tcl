@@ -2243,9 +2243,9 @@ BinaryProc(
  *
  * UtfToUtfProc --
  *
- *	Convert from UTF-8 to UTF-8. Note that the UTF-8 to UTF-8 translation
- *	is not a no-op, because it will turn a stream of improperly formed
- *	UTF-8 into a properly formed stream.
+ *	Converts from UTF-8 to UTF-8. Note that the UTF-8 to UTF-8 translation
+ *	is not a no-op, because it turns a stream of improperly formed
+ *	UTF-8 into a properly-formed stream.
  *
  * Results:
  *	Returns TCL_OK if conversion was successful.
