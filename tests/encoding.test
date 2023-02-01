@@ -487,6 +487,30 @@ test encoding-16.8 {Utf32ToUtfProc} -body {
     list $val [format %x [scan $val %c]]
 } -result "\uFFFD fffd"
 
+test encoding-16.8 {
+    Utf16ToUtfProc, Tcl_UniCharToUtf, surrogate pairs in utf-16
+} -body {
+    apply [list {} {
+	for {set i 0xD800} {$i < 0xDBFF} {incr i} {
+	    for {set j 0xDC00} {$j < 0xDFFF} {incr j} {
+		set string [binary format S2 [list $i $j]]
+		set status [catch {
+		    set decoded [encoding convertfrom utf-16be $string]
+		    set encoded [encoding convertto utf-16be $decoded]
+		}]
+		if {$status || ( $encoded ne $string )} {
+		    return [list [format %x $i] [format %x $j]]
+		}
+	    }
+	}
+	return done
+    } [namespace current]]
+} -result done
+
+
+
+
+
 test encoding-17.1 {UtfToUtf16Proc} -body {
     encoding convertto utf-16 "\U460DC"
 } -result "\xD8\xD8\xDC\xDC"
