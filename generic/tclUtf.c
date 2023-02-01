@@ -185,19 +185,18 @@ Invalid(
  *	Stores the given Tcl_UniChar as a sequence of UTF-8 bytes in the provided
  *	buffer. Equivalent to Plan 9 runetochar().
  *
- *	When this function is called and ch is a high surrogate,
- *	the first byte of the 4-byte UTF-8 sequence is produced, and
- *	the function returns 1. Calling the function again with a
- *	low surrogate, the remaining 3 bytes of the 4-byte UTF-8
- *	sequence is produced, and the function returns 3. The buffer
- *	is used to remember the high surrogate between the two calls.
+ *	Surrogate pairs are handled as follows: When ch is a high surrogate,
+ *	the first byte of the 4-byte UTF-8 sequence is stored in the buffer and
+ *	the function returns 1. If the function is called again with a low
+ *	surrogate and the same buffer, the remaining 3 bytes of the 4-byte
+ *	UTF-8 sequence are produced.
  *
  *	If no low surrogate follows the high surrogate (which is actually illegal),
  *	calling Tcl_UniCharToUtf again with ch being -1 produces a 3-byte UTF-8
  *	sequence representing the high surrogate.
  *
  * Results:
- *	Returns the number of bytes populated in the buffer.
+ *	Returns the number of bytes stored into the buffer.
  *
  * Side effects:
  *	None.
@@ -259,7 +258,7 @@ Tcl_UniCharToUtf(
 
 		    /* Fill buffer with specific 3-byte (invalid) byte combination,
 		       so following low surrogate can recognize it and combine */
-		    buf[2] = (char) (        0x03 & ch);
+		    buf[2] = (char) ((ch << 4) & 0x30);
 		    buf[1] = (char) (0x80 | (0x3F & (ch >> 2)));
 		    buf[0] = (char) (0xF0 | (0x07 & (ch >> 8)));
 		    return 1;
@@ -2736,7 +2735,7 @@ TclUniCharMatch(
  *
  * TclUtfToUCS4 --
  *
- *	Extract the 4-byte codepoint from the leading bytes of the
+ *	Extracts the 4-byte codepoint from the leading bytes of the
  *	Modified UTF-8 string "src".  This is a utility routine to
  *	contain the surrogate gymnastics in one place.
  *
@@ -2748,8 +2747,8 @@ TclUniCharMatch(
  *	enough bytes remain in the string.
  *
  * Results:
- *	*usc4Ptr is filled with the UCS4 code point, and the return value is
- *	the number of bytes from the UTF-8 string that were consumed.
+ *	Fills *usc4Ptr with the UCS4 code point and returns the number of bytes
+ *	consumed from the source string.
  *
  * Side effects:
  *	None.
