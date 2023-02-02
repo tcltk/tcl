@@ -683,80 +683,14 @@ EncodingConvertfromObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     int length;			/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-    int flags = TCL_ENCODING_STOPONERROR;
-#else
-    int flags = TCL_ENCODING_NOCOMPLAIN;
-#endif
+    int flags;
     int result;
-    Tcl_Obj *failVarObj = NULL;
-    static const char *const options[] = {"-profile", "-failindex", NULL};
-    enum convertfromOptions { PROFILE, FAILINDEX } optIndex;
-    enum TclEncodingProfile profile;
+    Tcl_Obj *failVarObj;
 
-    /*
-     * Possible combinations:
-     * 1) data						-> objc = 2
-     * 2) ?options? encoding data			-> objc >= 3
-     * It is intentional that specifying option forces encoding to be
-     * specified. Less prone to user error. This should have always been
-     * the case even in 8.6 imho where there were no options (ie (1)
-     * should never have been allowed)
-     */
-
-    if (objc == 1) {
-numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
-	Tcl_WrongNumArgs(
-	    interp,
-	    1,
-	    objv,
-	    "??-profile profile? ?-failindex var? ?encoding?? data");
+    if (EncodingConvertParseOptions(
+	    interp, objc, objv, 1, &encoding, &data, &flags, &failVarObj)
+	!= TCL_OK) {
 	return TCL_ERROR;
-    }
-    else if (objc == 2) {
-	encoding = Tcl_GetEncoding(interp, NULL);
-	data = objv[1];
-    } else {
-	int argIndex;
-	for (argIndex = 1; argIndex < (objc-2); ++argIndex) {
-	    if (Tcl_GetIndexFromObj(
-		    interp, objv[argIndex], options, "option", 0, &optIndex)
-		!= TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    if (++argIndex == (objc - 2)) {
-		goto numArgsError;
-	    }
-	    switch (optIndex) {
-	    case PROFILE:
-		if (TclEncodingProfileParseName(
-			interp, objv[argIndex], &profile)
-		    != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		switch (profile) {
-		case TCL_ENCODING_PROFILE_TCL8:
-		    flags = TCL_ENCODING_NOCOMPLAIN;
-		    break;
-		case TCL_ENCODING_PROFILE_STRICT:
-		    flags = TCL_ENCODING_STRICT;
-		    break;
-		case TCL_ENCODING_PROFILE_DEFAULT: /* FALLTHRU */
-		default:
-		    break;
-		}
-		break;
-	    case FAILINDEX:
-		failVarObj = objv[argIndex];
-		break;
-	    }
-	}
-	/* Get encoding after opts so no need to free it on option error */
-	if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding)
-	    != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	data = objv[objc - 1];
     }
 
     /*

@@ -718,13 +718,13 @@ test encoding-24.20 {Parse with -profile tcl8 but without providing encoding} -b
 } -result {wrong # args: should be "::tcl::encoding::convertfrom ??-profile profile? ?-failindex var? ?encoding?? data"} -returnCodes error
 test encoding-24.21 {Parse with -profile tcl8 but without providing encoding} -body {
     string length [encoding convertto -profile tcl8 "\x20"]
-} -result {::tcl::encoding::convertto ??-profile profile? ?-failindex var? ?encoding?? data} -returnCodes error
+} -result {wrong # args: should be "::tcl::encoding::convertto ??-profile profile? ?-failindex var? ?encoding?? data"} -returnCodes error
 test encoding-24.22 {Syntax error, two encodings} -body {
     encoding convertfrom iso8859-1 utf-8 "ZX\uD800"
-} -returnCodes 1 -result {::tcl::encoding::convertto ??-profile profile? ?-failindex var? ?encoding?? data}
+} -result {bad option "iso8859-1": must be -profile or -failindex} -returnCodes error
 test encoding-24.23 {Syntax error, two encodings} -body {
     encoding convertto iso8859-1 utf-8 "ZX\uD800"
-} -returnCodes 1 -result {::tcl::encoding::convertto ??-profile profile? ?-failindex var? ?encoding?? data}
+} -result {bad option "iso8859-1": must be -profile or -failindex} -returnCodes error
 test encoding-24.24 {Parse invalid utf-8 with -profile strict} -body {
     encoding convertfrom -profile strict utf-8 "\xC0\x80\x00\x00"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
