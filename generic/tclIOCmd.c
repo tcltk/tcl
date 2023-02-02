@@ -331,14 +331,16 @@ Tcl_GetsObjCmd(
 			"error reading \"%s\": %s",
 			TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	    }
+	    /*
 	    resultDictPtr = Tcl_NewDictObj();
 	    Tcl_DictObjPut(NULL, resultDictPtr, Tcl_NewStringObj("read", -1)
 	    , linePtr);
 	    returnOptsPtr = Tcl_NewDictObj();
 	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-result", -1)
 	    , resultDictPtr);
-	    code = TCL_ERROR;
 	    Tcl_SetReturnOptions(interp, returnOptsPtr);
+	    */
+	    code = TCL_ERROR;
 	    goto done;
 	}
 	lineLen = TCL_INDEX_NONE;
@@ -476,6 +478,7 @@ Tcl_ReadObjCmd(
 		    "error reading \"%s\": %s",
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
+	/*
 	resultDictPtr = Tcl_NewDictObj();
 	Tcl_DictObjPut(NULL, resultDictPtr, Tcl_NewStringObj("read", -1)
 	    , resultPtr);
@@ -485,6 +488,7 @@ Tcl_ReadObjCmd(
 	TclChannelRelease(chan);
 	Tcl_DecrRefCount(resultPtr);
 	Tcl_SetReturnOptions(interp, returnOptsPtr);
+	*/
 	return TCL_ERROR;
     }
 
