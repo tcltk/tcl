@@ -4102,20 +4102,29 @@ InitializeEncodingSearchPath(
 int
 TclEncodingProfileParseName(
     Tcl_Interp *interp,			  /* For error messages. May be NULL */
-    Tcl_Obj *profileName,		  /* Name of profile */
+    const char *profileName,		  /* Name of profile */
     enum TclEncodingProfile *profilePtr)  /* Output */
 {
     /* NOTE: Order must match enum TclEncodingProfile !!! */
     static const char *const profileNames[] = {"", "tcl8", "strict"};
     int idx;
 
-    if (Tcl_GetIndexFromObj(
-	    interp, profileName, profileNames, "profile", 0, &idx)
-	!= TCL_OK) {
-	return TCL_ERROR;
+    for (idx = 0; idx < sizeof(profileNames) / sizeof(profileNames[0]); ++idx) {
+	if (!strcmp(profileName, profileNames[idx])) {
+	    *profilePtr = (enum TclEncodingProfile)idx;
+	    return TCL_OK;
+	}
     }
-    *profilePtr = (enum TclEncodingProfile)idx;
-    return TCL_OK;
+    if (interp) {
+	Tcl_SetObjResult(
+	    interp,
+	    Tcl_ObjPrintf(
+		"bad profile \"%s\". Must be \"\", \"tcl8\" or \"strict\".",
+		profileName));
+	Tcl_SetErrorCode(
+	    interp, "TCL", "ENCODING", "PROFILE", profileName, NULL);
+    }
+    return TCL_ERROR;
 }
 
 /*

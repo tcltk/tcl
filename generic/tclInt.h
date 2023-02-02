@@ -2896,7 +2896,7 @@ enum TclEncodingProfile {
 MODULE_SCOPE Tcl_Encoding tclIdentityEncoding;
 MODULE_SCOPE int
 TclEncodingProfileParseName(Tcl_Interp *interp,
-			    Tcl_Obj *profileName,
+			    const char *profileName,
 			    enum TclEncodingProfile *profilePtr);
 
 /*

@@ -7862,7 +7862,7 @@ Tcl_BadChannelOption(
 {
     if (interp != NULL) {
 	const char *genericopt =
-		"blocking buffering buffersize encoding eofchar nocomplainencoding strictencoding translation";
+		"blocking buffering buffersize encoding encodingprofile eofchar translation";
 	const char **argv;
 	int argc, i;
 	Tcl_DString ds;
@@ -8060,27 +8060,17 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(1, "-nocomplainencoding")) {
+    if (len == 0 || HaveOpt(1, "-encodingprofile")) {
 	if (len == 0) {
-	    Tcl_DStringAppendElement(dsPtr, "-nocomplainencoding");
+	    Tcl_DStringAppendElement(dsPtr, "-encodingprofile");
 	}
-#ifdef TCL_NO_DEPRECATED
-	Tcl_DStringAppendElement(dsPtr,
-		(flags & CHANNEL_ENCODING_NOCOMPLAIN) ? "1" : "0");
-#else
-	Tcl_DStringAppendElement(dsPtr,
-		(flags & CHANNEL_ENCODING_STRICT) ? "0" : "1");
-#endif
-	if (len > 0) {
-	    return TCL_OK;
+	if (flags & CHANNEL_ENCODING_STRICT) {
+	    Tcl_DStringAppendElement(dsPtr, "strict");
+	} else if (flags & CHANNEL_ENCODING_NOCOMPLAIN) {
+	    Tcl_DStringAppendElement(dsPtr, "tcl8");
+	} else {
+	    Tcl_DStringAppendElement(dsPtr, "");
 	}
-    }
-    if (len == 0 || HaveOpt(1, "-strictencoding")) {
-	if (len == 0) {
-	    Tcl_DStringAppendElement(dsPtr, "-strictencoding");
-	}
-	Tcl_DStringAppendElement(dsPtr,
-		(flags & CHANNEL_ENCODING_STRICT) ? "1" : "0");
 	if (len > 0) {
 	    return TCL_OK;
 	}
@@ -8341,42 +8331,25 @@ Tcl_SetChannelOption(
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	return TCL_OK;
-    } else if (HaveOpt(1, "-nocomplainencoding")) {
-	int newMode;
-
-	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
+    } else if (HaveOpt(1, "-encodingprofile")) {
+	enum TclEncodingProfile profile;
+	if (TclEncodingProfileParseName(interp, newValue, &profile) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (newMode) {
+	switch (profile) {
+	case TCL_ENCODING_PROFILE_TCL8:
 	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
 	    SetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
-	} else {
-#ifdef TCL_NO_DEPRECATED
-	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
-#else
-	    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT) != CHANNEL_ENCODING_STRICT) {
-		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "bad value for -nocomplainencoding: only true allowed",
-			    TCL_INDEX_NONE));
-		}
-		return TCL_ERROR;
-	    }
-#endif
-	}
-	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
-	return TCL_OK;
-    } else if (HaveOpt(1, "-strictencoding")) {
-	int newMode;
-
-	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-	if (newMode) {
+	    break;
+	case TCL_ENCODING_PROFILE_STRICT:
 	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
 	    SetFlag(statePtr, CHANNEL_ENCODING_STRICT);
-	} else {
+	    break;
+	case TCL_ENCODING_PROFILE_DEFAULT: /* FALLTHRU */
+	default:
+	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
 	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
+	    break;
 	}
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	return TCL_OK;
