@@ -2879,7 +2879,25 @@ MODULE_SCOPE int tclFindExecutableSearchDone;
 MODULE_SCOPE char *tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
 
+/*
+ * Declarations related to internal encoding functions.
+ */
+
+/*
+ * Enum for encoding profiles that control encoding treatment of 
+ * invalid bytes. NOTE: Order must match that of encodingProfileNames in 
+ * TclEncodingProfileParseName() !!!
+ */
+enum TclEncodingProfile {
+    TCL_ENCODING_PROFILE_DEFAULT,
+    TCL_ENCODING_PROFILE_TCL8,
+    TCL_ENCODING_PROFILE_STRICT,
+};
 MODULE_SCOPE Tcl_Encoding tclIdentityEncoding;
+MODULE_SCOPE int
+TclEncodingProfileParseName(Tcl_Interp *interp,
+			    Tcl_Obj *profileName,
+			    enum TclEncodingProfile *profilePtr);
 
 /*
  * TIP #233 (Virtualized Time)
@@ -4786,6 +4804,8 @@ MODULE_SCOPE Tcl_LibraryInitProc TclObjTest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc TclThread_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
+
+
 
 /*
  *----------------------------------------------------------------
