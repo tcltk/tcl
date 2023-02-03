@@ -152,7 +152,7 @@ Example 4: detect the error location while transforming to ISO8859-1
 (ISO-Latin 1):
 .PP
 .CS
-% set s [\fBencoding convertto\fR -failindex i utf-8 "A\eu0141"]
+% set s [\fBencoding convertto\fR -failindex i iso8859-1 "A\eu0141"]
 A
 % set i
 1
@@ -161,7 +161,7 @@ A
 Example 5: replace a not representable character by the replacement character:
 .PP
 .CS
-% set s [\fBencoding convertto\fR -nocomplain utf-8 "A\eu0141"]
+% set s [\fBencoding convertto\fR -nocomplain iso8859-1 "A\eu0141"]
 A?
 .CE
 .VE "TCL8.7 TIP346, TIP607, TIP601"
