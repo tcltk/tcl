@@ -9428,7 +9428,7 @@ test io-75.14 {
     set res {} 
     set fn [makeFile {} io-75.14]
     set f [open $fn w+]
-    fconfigure $f -encoding binary
+    fconfigure $f -translation binary
     # \xc0 is invalid in utf-8
     puts -nonewline $f a\nb\xc0\nc\n
     flush $f
