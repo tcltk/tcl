@@ -554,7 +554,6 @@ EncodingConvertParseOptions (
     Tcl_Interp *interp,    /* For error messages. May be NULL */
     int objc,		   /* Number of arguments */
     Tcl_Obj *const objv[], /* Argument objects as passed to command. */
-    int isEncoder,         /* 1 -> convertto, 0 -> convertfrom */
     Tcl_Encoding *encPtr,  /* Where to store the encoding */
     Tcl_Obj **dataObjPtr,  /* Where to store ptr to Tcl_Obj containing data */
     int *flagsPtr,         /* Bit mask of encoding option flags */
@@ -567,11 +566,7 @@ EncodingConvertParseOptions (
     Tcl_Encoding encoding;
     Tcl_Obj *dataObj;
     Tcl_Obj *failVarObj;
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-    int flags = TCL_ENCODING_STOPONERROR;
-#else
-    int flags = TCL_ENCODING_NOCOMPLAIN;
-#endif
+    int flags = 0;
 
     /*
      * Possible combinations:
@@ -622,7 +617,9 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 		case TCL_ENCODING_PROFILE_STRICT:
 		    flags = TCL_ENCODING_STRICT;
 		    break;
-		case TCL_ENCODING_PROFILE_DEFAULT: /* FALLTHRU */
+		case TCL_ENCODING_PROFILE_DEFAULT:
+		    flags = TCL_ENCODING_STOPONERROR;
+		    break;
 		default:
 		    break;
 		}
@@ -640,13 +637,12 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 	dataObj = objv[objc - 1];
     }
 
-    /* -failindex forces checking*/
-    if (failVarObj != NULL && flags == TCL_ENCODING_NOCOMPLAIN) {
-	/* 
-	 * Historical, but I really don't like this mixing of defines
-	 * from two different bit mask domains - ENCODING_FAILINDEX
-	 */
-	flags = isEncoder ? TCL_ENCODING_STOPONERROR : ENCODING_FAILINDEX;
+    if (failVarObj != NULL) {
+	/* If -failvar is specified, the default profile is {}, both in Tcl 8.x and 9 */
+	if (!flags) {
+	    flags = TCL_ENCODING_STOPONERROR;
+	}
+	flags |= ENCODING_FAILINDEX;
     }
 
     *encPtr = encoding;
@@ -688,7 +684,7 @@ EncodingConvertfromObjCmd(
     Tcl_Obj *failVarObj;
 
     if (EncodingConvertParseOptions(
-	    interp, objc, objv, 1, &encoding, &data, &flags, &failVarObj)
+	    interp, objc, objv, &encoding, &data, &flags, &failVarObj)
 	!= TCL_OK) {
 	return TCL_ERROR;
     }
@@ -775,7 +771,7 @@ EncodingConverttoObjCmd(
     Tcl_Obj *failVarObj;
 
     if (EncodingConvertParseOptions(
-	    interp, objc, objv, 1, &encoding, &data, &flags, &failVarObj)
+	    interp, objc, objv, &encoding, &data, &flags, &failVarObj)
 	!= TCL_OK) {
 	return TCL_ERROR;
     }

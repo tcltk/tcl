@@ -1680,6 +1680,9 @@ Tcl_CreateChannel(
 	tmp[0] = '\0';
     }
     statePtr->channelName = tmp;
+#ifndef TCL_NO_DEPRECATED
+    mask |= CHANNEL_ENCODING_NOCOMPLAIN;
+#endif
     statePtr->flags = mask;
     statePtr->maxPerms = mask; /* Save max privileges for close callback */
 
@@ -4736,11 +4739,9 @@ Tcl_GetsObj(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
-#ifdef TCL_NO_DEPRECATED
     } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
 	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-#endif
     } else {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
@@ -5510,11 +5511,9 @@ FilterInputBytes(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
-#ifdef TCL_NO_DEPRECATED
     } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
 	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-#endif
     } else {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
@@ -6310,11 +6309,9 @@ ReadChars(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
-#ifdef TCL_NO_DEPRECATED
     } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
 	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-#endif
     } else {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
@@ -7862,7 +7859,7 @@ Tcl_BadChannelOption(
 {
     if (interp != NULL) {
 	const char *genericopt =
-		"blocking buffering buffersize encoding encodingprofile eofchar translation";
+		"blocking buffering buffersize encoding eofchar profile translation";
 	const char **argv;
 	int argc, i;
 	Tcl_DString ds;
@@ -8017,9 +8014,9 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(1, "-encodingprofile")) {
+    if (len == 0 || HaveOpt(1, "-profile")) {
 	if (len == 0) {
-	    Tcl_DStringAppendElement(dsPtr, "-encodingprofile");
+	    Tcl_DStringAppendElement(dsPtr, "-profile");
 	}
 	if (flags & CHANNEL_ENCODING_STRICT) {
 	    Tcl_DStringAppendElement(dsPtr, "strict");
@@ -8331,7 +8328,7 @@ Tcl_SetChannelOption(
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	return TCL_OK;
-    } else if (HaveOpt(1, "-encodingprofile")) {
+    } else if (HaveOpt(1, "-profile")) {
 	enum TclEncodingProfile profile;
 	if (TclEncodingProfileParseName(interp, newValue, &profile) != TCL_OK) {
 	    return TCL_ERROR;
