@@ -321,6 +321,7 @@ Tcl_GetsObjCmd(
     lineLen = Tcl_GetsObj(chan, linePtr);
     if (lineLen < 0) {
 	if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
+	    Tcl_DecrRefCount(linePtr);
 
 	    /*
 	     * TIP #219.
