@@ -4119,7 +4119,7 @@ TclEncodingProfileParseName(
 	Tcl_SetObjResult(
 	    interp,
 	    Tcl_ObjPrintf(
-		"bad profile \"%s\". Must be \"\", \"tcl8\" or \"strict\".",
+		"bad profile \"%s\": must be strict, tcl8, or \"\"",
 		profileName));
 	Tcl_SetErrorCode(
 	    interp, "TCL", "ENCODING", "PROFILE", profileName, NULL);

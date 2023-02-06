@@ -248,18 +248,18 @@ test cmdAH-4.15.1 {Syntax error, -failindex and -profile tcl8, no encoding} -bod
 test cmdAH-4.15.2 {Syntax error, -failindex and -profile tcl8, no encoding} -body {
     encoding convertto -failindex 2 -profile tcl8 ABC
 } -returnCodes 1 -result {wrong # args: should be "encoding convertto ??-profile profile? ?-failindex var? ?encoding?? data"}
-test cmdAH-4.16.1 {Syntax error, -profile tcl8 and -failindex, encoding} -body {
-    encoding convertfrom -profile tcl8 -failindex 2 utf-8 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ??-profile profile? ?-failindex var? ?encoding?? data"}
-test cmdAH-4.16.2 {Syntax error, -profile tcl8 and -failindex, encoding} -body {
-    encoding convertto -profile tcl8 -failindex 2 utf-8 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertto ??-profile profile? ?-failindex var? ?encoding?? data"}
-test cmdAH-4.17.1 {Syntax error, -failindex and -profile tcl8, encoding} -body {
-    encoding convertfrom -failindex 2 -profile tcl8 utf-8 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ??-profile profile? ?-failindex var? ?encoding?? data"}
-test cmdAH-4.17.2 {Syntax error, -failindex and -profile tcl8, encoding} -body {
-    encoding convertto -failindex 2 -profile tcl8 utf-8 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertto ??-profile profile? ?-failindex var? ?encoding?? data"}
+test cmdAH-4.16.1 {Syntax error, wrong -profile and -failindex, encoding} -body {
+    encoding convertfrom -profile tcl9 -failindex 2 utf-8 ABC
+} -returnCodes 1 -result {bad profile "tcl9": must be strict, tcl8, or ""}
+test cmdAH-4.16.2 {Syntax error, -failindex and wrong -profile, encoding} -body {
+    encoding convertto -failindex 2 -profile tcl9 utf-8 ABC
+} -returnCodes 1 -result {bad profile "tcl9": must be strict, tcl8, or ""}
+test cmdAH-4.17.1 {-failindex and -profile strict, encoding} -body {
+    encoding convertfrom -failindex 2 -profile strict utf-8 ABC
+} -result ABC
+test cmdAH-4.17.2 {-profile strict and -failindex, encoding} -body {
+    encoding convertto -profile strict -failindex 2 utf-8 ABC
+} -result ABC
 test cmdAH-4.18.1 {Syntax error, -failindex with no var, no encoding} -body {
     encoding convertfrom -failindex ABC
 } -returnCodes 1 -result {unknown encoding "-failindex"}
@@ -287,12 +287,12 @@ test cmdAH-4.18.4 {Syntax error, -failindex with no var, no encoding (byte compi
     rename encoding_test ""
 }
 test cmdAH-4.19.1 {convertrom -failindex with correct data} -body {
-    encoding convertfrom -failindex test ABC
+    encoding convertfrom -failindex test [encoding system] ABC
     set test
 } -returnCodes 0 -result -1
 test cmdAH-4.19.2 {convertrom -failindex with correct data (byt compiled)} -setup {
     proc encoding_test {} {
-	encoding convertfrom -failindex test ABC
+	encoding convertfrom -failindex test [encoding system] ABC
 	set test
     }
 } -body {
@@ -302,12 +302,12 @@ test cmdAH-4.19.2 {convertrom -failindex with correct data (byt compiled)} -setu
     rename encoding_test ""
 }
 test cmdAH-4.19.3 {convertrom -failindex with correct data} -body {
-    encoding convertto -failindex test ABC
+    encoding convertto -failindex test [encoding system] ABC
     set test
 } -returnCodes 0 -result -1
 test cmdAH-4.19.4 {convertrom -failindex with correct data (byt compiled)} -setup {
     proc encoding_test {} {
-	encoding convertto -failindex test ABC
+	encoding convertto -failindex test [encoding system] ABC
 	set test
     }
 } -body {
