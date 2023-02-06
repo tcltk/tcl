@@ -8014,21 +8014,6 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(1, "-profile")) {
-	if (len == 0) {
-	    Tcl_DStringAppendElement(dsPtr, "-profile");
-	}
-	if (flags & CHANNEL_ENCODING_STRICT) {
-	    Tcl_DStringAppendElement(dsPtr, "strict");
-	} else if (flags & CHANNEL_ENCODING_NOCOMPLAIN) {
-	    Tcl_DStringAppendElement(dsPtr, "tcl8");
-	} else {
-	    Tcl_DStringAppendElement(dsPtr, "");
-	}
-	if (len > 0) {
-	    return TCL_OK;
-	}
-    }
     if (len == 0 || HaveOpt(2, "-eofchar")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-eofchar");
@@ -8067,6 +8052,21 @@ Tcl_GetChannelOption(
 	if (((flags & (TCL_READABLE|TCL_WRITABLE)) ==
 		(TCL_READABLE|TCL_WRITABLE)) && (len == 0)) {
 	    Tcl_DStringEndSublist(dsPtr);
+	}
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
+    if (len == 0 || HaveOpt(1, "-profile")) {
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-profile");
+	}
+	if (flags & CHANNEL_ENCODING_STRICT) {
+	    Tcl_DStringAppendElement(dsPtr, "strict");
+	} else if (flags & CHANNEL_ENCODING_NOCOMPLAIN) {
+	    Tcl_DStringAppendElement(dsPtr, "tcl8");
+	} else if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "");
 	}
 	if (len > 0) {
 	    return TCL_OK;
