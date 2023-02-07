@@ -2221,7 +2221,11 @@ proc tcltest::test {name description args} {
 	if {$scriptCompare} {
 	    puts [outputChannel] "---- Error testing result: $scriptMatch"
 	} else {
-	    puts [outputChannel] "---- Result was:\n$actualAnswer"
+            try {
+                puts [outputChannel] "---- Result was:\n$actualAnswer"
+            } on error {errMsg errCode} {
+                puts [outputChannel] "---- Result was:\n<error printing result: $errMsg ($errCode)>"
+            }
 	    puts [outputChannel] "---- Result should have been\
 		    ($match matching):\n$result"
 	}
