@@ -688,7 +688,7 @@ EncodingConvertfromObjCmd(
     Tcl_Obj *failVarObj;
 
     if (EncodingConvertParseOptions(
-	    interp, objc, objv, 1, &encoding, &data, &flags, &failVarObj)
+	    interp, objc, objv, 0, &encoding, &data, &flags, &failVarObj)
 	!= TCL_OK) {
 	return TCL_ERROR;
     }
