@@ -39,9 +39,9 @@ system encoding is used.
 .VS "TCL8.7 TIP346, TIP607, TIP601"
 .PP
 .RS
-The command does not fail on encoding errors.  Instead, any not convertable bytes
-(like incomplete UTF-8  sequences, see example below) are put as byte values into
-the output stream.
+The command does not fail on encoding errors (unless \fB-strict\fR is specified).
+Instead, any not convertable bytes (like incomplete UTF-8  sequences, see example
+below) are put as byte values into the output stream.
 .PP
 If the option \fB-failindex\fR with a variable name is given, the error reporting
 is changed in the following manner:
@@ -51,9 +51,8 @@ converted characters until the first error position.
 In case of no error, the value \fI-1\fR is written to the variable.  This option
 may not be used together with \fB-nocomplain\fR.
 .PP
-The option \fB-nocomplain\fR has no effect and is available for compatibility with
-TCL 9. In TCL 9, the encoding command fails with an error on any encoding issue.
-This switch restores the TCL8.7 behaviour.
+The option \fB-nocomplain\fR has no effect, but assures to get the same result
+in Tcl 9.
 .PP
 The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
 encoder, it disallows invalid byte sequences and surrogates (which -
@@ -74,9 +73,9 @@ specified, the current system encoding is used.
 .VS "TCL8.7 TIP346, TIP607, TIP601"
 .PP
 .RS
-The command does not fail on encoding errors.  Instead, the replacement character
-\fB?\fR is output for any not representable character (like the dot \fB\\U2022\fR
-in \fBiso-8859-1\fR encoding, see example below).
+The command does not fail on encoding errors (unless \fB-strict\fR is specified).
+Instead, the replacement character \fB?\fR is output for any not representable
+character (like the dot \fB\\U2022\fR in \fBiso-8859-1\fR encoding, see example below).
 .PP
 If the option \fB-failindex\fR with a variable name is given, the error reporting
 is changed in the following manner:
@@ -86,9 +85,8 @@ converted bytes until the first error position. No error condition is raised.
 In case of no error, the value \fI-1\fR is written to the variable.  This option
 may not be used together with \fB-nocomplain\fR.
 .PP
-The option \fB-nocomplain\fR has no effect and is available for compatibility with
-TCL 9. In TCL 9, the encoding command fails with an error on any encoding issue.
-This switch restores the TCL8.7 behaviour.
+The option \fB-nocomplain\fR has no effect, but assures to get the same result
+in Tcl 9.
 .PP
 The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
 encoder, it disallows surrogates (which - otherwise - are just passed through).  This
@@ -157,7 +155,7 @@ Example 4: detect the error location while transforming to ISO8859-1
 (ISO-Latin 1):
 .PP
 .CS
-% set s [\fBencoding convertto\fR -failindex i utf-8 "A\eu0141"]
+% set s [\fBencoding convertto\fR -failindex i iso8859-1 "A\eu0141"]
 A
 % set i
 1
@@ -166,11 +164,11 @@ A
 Example 5: replace a not representable character by the replacement character:
 .PP
 .CS
-% set s [\fBencoding convertto\fR -nocomplain utf-8 "A\eu0141"]
+% set s [\fBencoding convertto\fR -nocomplain iso8859-1 "A\eu0141"]
 A?
 .CE
 The option \fB-nocomplain\fR has no effect, but assures to get the same result
-with TCL9.
+in Tcl 9.
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .PP
 .SH "SEE ALSO"

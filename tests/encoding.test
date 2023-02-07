@@ -481,8 +481,12 @@ test encoding-16.7 {Utf32ToUtfProc} -body {
     set val [encoding convertfrom utf-32be \0\0NN]
     list $val [format %x [scan $val %c]]
 } -result "乎 4e4e"
+test encoding-16.8 {Utf32ToUtfProc} -body {
+    set val [encoding convertfrom -profile tcl8 utf-32 \x41\x00\x00\x41]
+    list $val [format %x [scan $val %c]]
+} -result "\uFFFD fffd"
 
-test encoding-16.8 {
+test encoding-16.9 {
     Utf16ToUtfProc, Tcl_UniCharToUtf, surrogate pairs in utf-16
 } -body {
     apply [list {} {
@@ -930,7 +934,9 @@ test encoding-27.2 {encoding dirs basic behavior} -returnCodes error -body {
 test encoding-28.0 {all encodings load} -body {
 	set string hello
 	foreach name [encoding names] {
-		incr count
+		if {$name ne "unicode"} {
+		    incr count
+		}
 		encoding convertto -profile tcl8 $name $string
 
 		# discard the cached internal representation of Tcl_Encoding
@@ -938,7 +944,7 @@ test encoding-28.0 {all encodings load} -body {
 		llength $name
 	}
 	return $count
-} -result [expr {[info exists ::tcl_precision] ? 92 : 91}]
+} -result 91
 
 runtests
 

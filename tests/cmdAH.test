@@ -344,11 +344,11 @@ badnumargs cmdAH-4.3.4 {encoding convertfrom} {-failindex VAR -profile strict AB
 badnumargs cmdAH-4.3.5 {encoding convertfrom} {-profile strict -failindex VAR ABC}
 
 # Test that last two args always treated as ENCODING DATA
-unknownencodingtest 4.3.6 {convertfrom -failindex ABC}
-unknownencodingtest 4.3.7 {convertfrom -profile ABC}
-unknownencodingtest 4.3.8 {convertfrom nosuchencoding ABC}
-unknownencodingtest 4.3.9 {convertfrom -failindex VAR -profile ABC}
-unknownencodingtest 4.3.10 {convertfrom -profile strict -failindex ABC}
+unknownencodingtest cmdAH-4.3.6 {convertfrom -failindex ABC}
+unknownencodingtest cmdAH-4.3.7 {convertfrom -profile ABC}
+unknownencodingtest cmdAH-4.3.8 {convertfrom nosuchencoding ABC}
+unknownencodingtest cmdAH-4.3.9 {convertfrom -failindex VAR -profile ABC}
+unknownencodingtest cmdAH-4.3.10 {convertfrom -profile strict -failindex ABC}
 testconvert cmdAH-4.3.11 {
     encoding convertfrom jis0208 \x38\x43
 } \u4e4e -setup {
@@ -379,21 +379,21 @@ proc testfailindex {id converter enc data result {profile default}} {
 
 # -failindex - valid data
 foreach {enc string bytes} $encValidStrings {
-    testfailindex 4.3.13.$enc convertfrom $enc $bytes [list $string -1]
+    testfailindex cmdAH-4.3.13.$enc convertfrom $enc $bytes [list $string -1]
     if {"utf-16$endian" eq $enc} {
         # utf-16le ->utf-16, utf-32be -> utf32 etc.
         set enc [string range $enc 0 5]
-        testfailindex 4.3.13.$enc convertfrom $enc $bytes [list $string -1]
+        testfailindex cmdAH-4.3.13.$enc convertfrom $enc $bytes [list $string -1]
     }
 }
 
 # -failindex - invalid data
 foreach {enc bytes profile prefix failidx tag} $encInvalidBytes {
-    testfailindex 4.3.14.$enc.$profile.$tag convertfrom $enc $bytes [list $prefix $failidx] $profile
+    testfailindex cmdAH-4.3.14.$enc.$profile.$tag convertfrom $enc $bytes [list $prefix $failidx] $profile
     if {"utf-16$endian" eq $enc} {
         # utf-16le ->utf-16, utf-32be -> utf32 etc.
         set enc [string range $enc 0 5]
-        testfailindex 4.3.14.$enc.$profile.$tag convertfrom $enc $bytes [list $prefix $failidx] $profile
+        testfailindex cmdAH-4.3.14.$enc.$profile.$tag convertfrom $enc $bytes [list $prefix $failidx] $profile
     }
 }
 
@@ -403,11 +403,11 @@ foreach {enc bytes profile prefix failidx tag} $encInvalidBytes {
 foreach profile $encProfiles {
     set i 0
     foreach {enc string bytes} $encValidStrings {
-        testconvert 4.3.15.$enc.$profile.[incr i] [list encoding convertfrom $enc $bytes] $string
+        testconvert cmdAH-4.3.15.$enc.$profile.[incr i] [list encoding convertfrom $enc $bytes] $string
         if {"utf-16$endian" eq $enc} {
             # utf-16le ->utf-16, utf-32be -> utf32 etc.
             set enc [string range $enc 0 5]
-            testconvert 4.3.15.$enc.$profile.[incr i] [list encoding convertfrom $enc $bytes] $string
+            testconvert cmdAH-4.3.15.$enc.$profile.[incr i] [list encoding convertfrom $enc $bytes] $string
         }
     }
 }
@@ -424,18 +424,18 @@ foreach {enc bytes profile prefix failidx tag} $encInvalidBytes {
         set result [list "unexpected byte sequence starting at index $failidx: *" -returnCodes error -match glob]
     }
     if {$profile eq "default"} {
-        testconvert 4.3.15.$enc.$profile.$tag [list encoding convertfrom $enc $bytes] {*}$result
+        testconvert cmdAH-4.3.15.$enc.$profile.$tag [list encoding convertfrom $enc $bytes] {*}$result
         if {"utf-16$endian" eq $enc} {
             # utf-16le ->utf-16, utf-32be -> utf32 etc.
             set enc [string range $enc 0 5]
-            testconvert 4.3.15.$enc.$profile.$tag [list encoding convertfrom $enc $bytes] {*}$result
+            testconvert cmdAH-4.3.15.$enc.$profile.$tag [list encoding convertfrom $enc $bytes] {*}$result
         }
     } else {
-        testconvert 4.3.15.$enc.$profile.$tag [list encoding convertfrom -profile $profile $enc $bytes] {*}$result
+        testconvert cmdAH-4.3.15.$enc.$profile.$tag [list encoding convertfrom -profile $profile $enc $bytes] {*}$result
         if {"utf-16$endian" eq $enc} {
             # utf-16le ->utf-16, utf-32be -> utf32 etc.
             set enc [string range $enc 0 5]
-            testconvert 4.3.15.$enc.$profile.$tag [list encoding convertfrom -profile $profile $enc $bytes] {*}$result
+            testconvert cmdAH-4.3.15.$enc.$profile.$tag [list encoding convertfrom -profile $profile $enc $bytes] {*}$result
         }
     }
 }
@@ -450,11 +450,11 @@ badnumargs cmdAH-4.4.4 {encoding convertto} {-failindex VAR -profile strict ABC}
 badnumargs cmdAH-4.4.5 {encoding convertto} {-profile strict -failindex VAR ABC}
 
 # Test that last two args always treated as ENCODING DATA
-unknownencodingtest 4.4.6 {convertto -failindex ABC}
-unknownencodingtest 4.4.7 {convertto -profile ABC}
-unknownencodingtest 4.4.8 {convertto nosuchencoding ABC}
-unknownencodingtest 4.4.9 {convertto -failindex VAR -profile ABC}
-unknownencodingtest 4.4.10 {convertto -profile strict -failindex ABC}
+unknownencodingtest cmdAH-4.4.6 {convertto -failindex ABC}
+unknownencodingtest cmdAH-4.4.7 {convertto -profile ABC}
+unknownencodingtest cmdAH-4.4.8 {convertto nosuchencoding ABC}
+unknownencodingtest cmdAH-4.4.9 {convertto -failindex VAR -profile ABC}
+unknownencodingtest cmdAH-4.4.10 {convertto -profile strict -failindex ABC}
 testconvert cmdAH-4.4.11 {
     encoding convertto jis0208 \u4e4e
 } \x38\x43 -setup {
@@ -476,21 +476,21 @@ testconvert cmdAH-4.4.12 {
 
 # -failindex - valid data
 foreach {enc string bytes} $encValidStrings {
-    testfailindex 4.4.13.$enc convertto $enc $string [list $bytes -1]
+    testfailindex cmdAH-4.4.13.$enc convertto $enc $string [list $bytes -1]
     if {"utf-16$endian" eq $enc} {
         # utf-16le ->utf-16, utf-32be -> utf32 etc.
         set enc [string range $enc 0 5]
-        testfailindex 4.4.13.$enc convertto $enc $string [list $bytes -1]
+        testfailindex cmdAH-4.4.13.$enc convertto $enc $string [list $bytes -1]
     }
 }
 
 # -failindex - invalid data
 foreach {enc string profile bytes failidx tag} $encUnencodableStrings {
-    testfailindex 4.4.14.$enc.$profile.$tag convertto $enc $string [list $bytes $failidx] $profile
+    testfailindex cmdAH-4.4.14.$enc.$profile.$tag convertto $enc $string [list $bytes $failidx] $profile
     if {"utf-16$endian" eq $enc} {
         # utf-16le ->utf-16, utf-32be -> utf32 etc.
         set enc [string range $enc 0 5]
-        testfailindex 4.4.14.$enc.$profile.$tag convertto $enc $string [list $bytes $failidx] $profile
+        testfailindex cmdAH-4.4.14.$enc.$profile.$tag convertto $enc $string [list $bytes $failidx] $profile
     }
 }
 
@@ -500,11 +500,11 @@ foreach {enc string profile bytes failidx tag} $encUnencodableStrings {
 foreach profile $encProfiles {
     set i 0
     foreach {enc string bytes} $encValidStrings {
-        testconvert 4.4.15.$enc.$profile.[incr i] [list encoding convertto $enc $string] $bytes
+        testconvert cmdAH-4.4.15.$enc.$profile.[incr i] [list encoding convertto $enc $string] $bytes
         if {"utf-16$endian" eq $enc} {
             # utf-16le ->utf-16, utf-32be -> utf32 etc.
             set enc [string range $enc 0 5]
-            testconvert 4.4.15.$enc.$profile.[incr i] [list encoding convertto $enc $string] $bytes
+            testconvert cmdAH-4.4.15.$enc.$profile.[incr i] [list encoding convertto $enc $string] $bytes
         }
     }
 }
@@ -520,23 +520,23 @@ foreach {enc string profile bytes failidx tag} $encUnencodableStrings {
         set result [list "unexpected character at index $failidx: *" -returnCodes error -match glob]
     }
     if {$profile eq "default"} {
-        testconvert 4.4.15.$enc.$profile.$tag [list encoding convertto $enc $string] {*}$result
+        testconvert cmdAH-4.4.15.$enc.$profile.$tag [list encoding convertto $enc $string] {*}$result
         if {"utf-16$endian" eq $enc} {
             # utf-16le ->utf-16, utf-32be -> utf32 etc.
             set enc [string range $enc 0 5]
-            testconvert 4.3.15.$enc.$profile.$tag [list encoding convertto $enc $string] {*}$result
+            testconvert cmdAH-4.4.15.$enc.$profile.$tag [list encoding convertto $enc $string] {*}$result
         }
     } else {
-        testconvert 4.4.15.$enc.$profile.$tag [list encoding convertto -profile $profile $enc $string] {*}$result
+        testconvert cmdAH-4.4.15.$enc.$profile.$tag [list encoding convertto -profile $profile $enc $string] {*}$result
         if {"utf-16$endian" eq $enc} {
             # utf-16le ->utf-16, utf-32be -> utf32 etc.
             set enc [string range $enc 0 5]
-            testconvert 4.4.15.$enc.$profile.$tag [list encoding convertto -profile $profile $enc $string] {*}$result
+            testconvert cmdAH-4.4.15.$enc.$profile.$tag [list encoding convertto -profile $profile $enc $string] {*}$result
         }
     }
 }
 
-test cmdAH-4.5.1 {convertto -profile strict} -constraints {testbytestring knownBug} -body {
+test cmdAH-4.4.xx {convertto -profile strict} -constraints {testbytestring knownBug} -body {
     # TODO - what does testbytestring even test? Invalid UTF8 in the Tcl_Obj bytes field
     encoding convertto -profile strict utf-8 A[testbytestring \x80]B
 } -returnCodes error -result {unexpected byte sequence starting at index 1: '\x80'}
