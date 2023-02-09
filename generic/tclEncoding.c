@@ -2584,6 +2584,10 @@ Utf32ToUtfProc(
 	    *dst++ = (ch & 0xFF);
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
+	    if ((ch  & ~0x3FF) == 0xD800) {
+		/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
+		dst += Tcl_UniCharToUtf(-1, dst);
+	    }
 	}
 	src += sizeof(unsigned int);
     }
