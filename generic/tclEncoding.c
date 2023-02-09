@@ -542,6 +542,8 @@ TclInitEncodingSubsystem(void)
     Tcl_InitHashTable(&encodingTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&encodingMutex);
 
+    /* TODO - why is NOCOMPLAIN being hardcoded for encodings below? */
+
     /*
      * Create a few initial encodings.  UTF-8 to UTF-8 translation is not a
      * no-op because it turns a stream of improperly formed UTF-8 into a
@@ -1184,13 +1186,12 @@ Tcl_ExternalToUtfDString(
 *	The parameter flags controls the behavior, if any of the bytes in
  *	the source buffer are invalid or cannot be represented in utf-8.
  *	Possible flags values:
- *	TCL_ENCODING_STOPONERROR: don't replace invalid characters/bytes but
- *	return the first error position (Default in Tcl 9.0).
- *	TCL_ENCODING_NOCOMPLAIN: replace invalid characters/bytes by a default
- *	fallback character. Always return -1 (Default in Tcl 8.7).
- *	TCL_ENCODING_MODIFIED: convert NULL bytes to \xC0\x80 in stead of 0x00.
- *	Only valid for "utf-8" and "cesu-8". This flag may be used together
- *	with the other flags.
+ *	target encoding. It should be composed by OR-ing the following:
+ *	- *At most one* of TCL_ENCODING_PROFILE{DEFAULT,TCL8,STRICT}
+ *	- TCL_ENCODING_STOPONERROR: Backward compatibility. Sets the profile
+ *	  to TCL_ENCODING_PROFILE_STRICT overriding any specified profile flags
+ *	- TCL_ENCODING_MODIFIED: enable Tcl internal conversion mapping \xC0\x80
+ *        to 0x00. Only valid for "utf-8" and "cesu-8".
  *
  * Results:
  *	The converted bytes are stored in the DString, which is then NULL
@@ -1236,6 +1237,7 @@ Tcl_ExternalToUtfDStringEx(
 	srcLen = encodingPtr->lengthProc(src);
     }
 
+    flags = TclEncodingExternalFlagsToInternal(flags);
     flags |= TCL_ENCODING_START | TCL_ENCODING_END;
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
 	flags |= TCL_ENCODING_MODIFIED | TCL_ENCODING_UTF;
@@ -1408,7 +1410,7 @@ Tcl_UtfToExternalDString(
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    Tcl_UtfToExternalDStringEx(encoding, src, srcLen, TCL_ENCODING_NOCOMPLAIN, dstPtr);
+    Tcl_UtfToExternalDStringEx(encoding, src, srcLen, TCL_ENCODING_PROFILE_DEFAULT, dstPtr);
     return Tcl_DStringValue(dstPtr);
 }
 
@@ -1421,15 +1423,12 @@ Tcl_UtfToExternalDString(
  *	Convert a source buffer from UTF-8 to the specified encoding.
  *	The parameter flags controls the behavior, if any of the bytes in
  *	the source buffer are invalid or cannot be represented in the
- *	target encoding.
- *	Possible flags values:
- *	TCL_ENCODING_STOPONERROR: don't replace invalid characters/bytes but
- *	return the first error position (Default in Tcl 9.0).
- *	TCL_ENCODING_NOCOMPLAIN: replace invalid characters/bytes by a default
- *	fallback character. Always return -1 (Default in Tcl 8.7).
- *	TCL_ENCODING_MODIFIED: convert NULL bytes to \xC0\x80 in stead of 0x00.
- *	Only valid for "utf-8" and "cesu-8". This flag may be used together
- *	with the other flags.
+ *	target encoding. It should be composed by OR-ing the following:
+ *	- *At most one* of TCL_ENCODING_PROFILE{DEFAULT,TCL8,STRICT}
+ *	- TCL_ENCODING_STOPONERROR: Backward compatibility. Sets the profile
+ *	  to TCL_ENCODING_PROFILE_STRICT overriding any specified profile flags
+ *	- TCL_ENCODING_MODIFIED: convert NULL bytes to \xC0\x80 instead
+ *        of 0x00. Only valid for "utf-8" and "cesu-8".
  *
  * Results:
  *	The converted bytes are stored in the DString, which is then NULL
@@ -1450,7 +1449,7 @@ Tcl_UtfToExternalDStringEx(
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes, or < 0 for
 				 * strlen(). */
-    int flags,	/* Conversion control flags. */
+    int flags,			/* Conversion control flags. */
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
@@ -1474,6 +1473,7 @@ Tcl_UtfToExternalDStringEx(
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
+    flags = TclEncodingExternalFlagsToInternal(flags);
     flags |= TCL_ENCODING_START | TCL_ENCODING_END;
     while (1) {
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
@@ -4095,7 +4095,7 @@ InitializeEncodingSearchPath(
  *
  * TclEncodingProfileParseName --
  *
- *    Maps an encoding profile name to its enum value.
+ *    Maps an encoding profile name to its integer equivalent.
  *
  * Results:
  *    TCL_OK on success or TCL_ERROR on failure.
@@ -4107,17 +4107,22 @@ InitializeEncodingSearchPath(
  */
 int
 TclEncodingProfileParseName(
-    Tcl_Interp *interp,			  /* For error messages. May be NULL */
-    const char *profileName,		  /* Name of profile */
-    enum TclEncodingProfile *profilePtr)  /* Output */
+    Tcl_Interp *interp,		/* For error messages. May be NULL */
+    const char *profileName,	/* Name of profile */
+    int *profilePtr)  		/* Output */
 {
-    /* NOTE: Order must match enum TclEncodingProfile !!! */
-    static const char *const profileNames[] = {"", "tcl8", "strict"};
-    int idx;
+    /* NOTE: Order in arrays must match !!! */
+    static const char *const profileNames[] = {"", "tcl8", "strict", NULL};
+    static int profileFlags[] = {
+	TCL_ENCODING_PROFILE_DEFAULT,
+	TCL_ENCODING_PROFILE_TCL8,
+	TCL_ENCODING_PROFILE_STRICT,
+    };
+    int i;
 
-    for (idx = 0; idx < sizeof(profileNames) / sizeof(profileNames[0]); ++idx) {
-	if (!strcmp(profileName, profileNames[idx])) {
-	    *profilePtr = (enum TclEncodingProfile)idx;
+    for (i = 0; i < sizeof(profileNames) / sizeof(profileNames[0]); ++i) {
+	if (!strcmp(profileName, profileNames[i])) {
+	    *profilePtr = profileFlags[i];
 	    return TCL_OK;
 	}
     }
@@ -4131,6 +4136,63 @@ TclEncodingProfileParseName(
 	    interp, "TCL", "ENCODING", "PROFILE", profileName, NULL);
     }
     return TCL_ERROR;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclEncodingExternalFlagsToInternal --
+ *
+ *	Maps the flags supported in the encoding C API's to internal flags.
+ *
+ *	TCL_ENCODING_STRICT and TCL_ENCODING_NOCOMPLAIN are masked off
+ *	because they are for internal use only and externally specified
+ *	through TCL_ENCODING_PROFILE_* bits.
+ *
+ *	For backward compatibility reasons, TCL_ENCODING_STOPONERROR is
+ *	is mapped to the TCL_ENCODING_PROFILE_STRICT overwriting any profile
+ *	specified.
+ *
+ *	If no profile or an invalid profile is specified, it is set to 
+ *	the default.
+ *
+ * Results:
+ *    Internal encoding flag mask.
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+int TclEncodingExternalFlagsToInternal(int flags)
+{
+    flags &= ~(TCL_ENCODING_STRICT | TCL_ENCODING_NOCOMPLAIN);
+    if (flags & TCL_ENCODING_STOPONERROR) {
+	TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
+    }
+    else {
+	int profile = TCL_ENCODING_PROFILE_GET(flags);
+	switch (profile) {
+	case TCL_ENCODING_PROFILE_TCL8:
+	    flags |= TCL_ENCODING_NOCOMPLAIN;
+	    break;
+	case TCL_ENCODING_PROFILE_STRICT:
+	    flags |= TCL_ENCODING_STRICT;
+	    break;
+	default:
+	    /* TODO - clean this up once default mechanisms settled */
+	    TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_DEFAULT);
+#if TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_TCL8
+	    flags |= TCL_ENCODING_NOCOMPLAIN;
+#elif TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_STRICT
+	    flags |= TCL_ENCODING_STRICT;
+#else
+#error TCL_ENCODING_PROFILE_DEFAULT must be TCL8 or STRICT
+#endif
+	    break;
+	}
+    }
+    return flags;
 }
 
 /*

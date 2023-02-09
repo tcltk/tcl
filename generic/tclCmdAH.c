@@ -562,7 +562,7 @@ EncodingConvertParseOptions (
 {
     static const char *const options[] = {"-profile", "-failindex", NULL};
     enum convertfromOptions { PROFILE, FAILINDEX } optIndex;
-    enum TclEncodingProfile profile;
+    int profile;
     Tcl_Encoding encoding;
     Tcl_Obj *dataObj;
     Tcl_Obj *failVarObj;
@@ -614,17 +614,9 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 		    != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		switch (profile) {
-		case TCL_ENCODING_PROFILE_TCL8:
-		    flags = TCL_ENCODING_NOCOMPLAIN;
-		    break;
-		case TCL_ENCODING_PROFILE_STRICT:
-		    flags = TCL_ENCODING_STRICT;
-		    break;
-		case TCL_ENCODING_PROFILE_DEFAULT: /* FALLTHRU */
-		default:
-		    break;
-		}
+		/* TODO - next line probably not needed as the conversion
+		   functions already take care of mapping profile to flags */
+		flags = TclEncodingExternalFlagsToInternal(profile);
 		break;
 	    case FAILINDEX:
 		failVarObj = objv[argIndex];

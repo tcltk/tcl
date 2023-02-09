@@ -2883,21 +2883,12 @@ MODULE_SCOPE TclPlatformType tclPlatform;
  * Declarations related to internal encoding functions.
  */
 
-/*
- * Enum for encoding profiles that control encoding treatment of 
- * invalid bytes. NOTE: Order must match that of encodingProfileNames in 
- * TclEncodingProfileParseName() !!!
- */
-enum TclEncodingProfile {
-    TCL_ENCODING_PROFILE_DEFAULT,
-    TCL_ENCODING_PROFILE_TCL8,
-    TCL_ENCODING_PROFILE_STRICT,
-};
 MODULE_SCOPE Tcl_Encoding tclIdentityEncoding;
 MODULE_SCOPE int
 TclEncodingProfileParseName(Tcl_Interp *interp,
 			    const char *profileName,
-			    enum TclEncodingProfile *profilePtr);
+			    int *profilePtr);
+MODULE_SCOPE int TclEncodingExternalFlagsToInternal(int flags);
 
 /*
  * TIP #233 (Virtualized Time)

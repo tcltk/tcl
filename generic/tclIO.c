@@ -8379,7 +8379,7 @@ Tcl_SetChannelOption(
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	return TCL_OK;
     } else if (HaveOpt(1, "-encodingprofile")) {
-	enum TclEncodingProfile profile;
+	int profile;
 	if (TclEncodingProfileParseName(interp, newValue, &profile) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -8392,7 +8392,11 @@ Tcl_SetChannelOption(
 	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
 	    SetFlag(statePtr, CHANNEL_ENCODING_STRICT);
 	    break;
+	/* TODO - clean up this DEFAULT handling once channel flags fixed */
+#if TCL_ENCODING_PROFILE_DEFAULT != TCL_ENCODING_PROFILE_TCL8 \
+    && TCL_ENCODING_PROFILE_DEFAULT != TCL_ENCODING_PROFILE_STRICT
 	case TCL_ENCODING_PROFILE_DEFAULT: /* FALLTHRU */
+#endif
 	default:
 	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
 	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
