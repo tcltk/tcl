@@ -497,6 +497,18 @@ test encoding-16.11 {Utf32ToUtfProc} -body {
 test encoding-16.12 {Utf32ToUtfProc} -body {
     encoding convertfrom utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00
 } -result \uDC00\uD800
+test encoding-16.13 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xD8
+} -result \uD800
+test encoding-16.14 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xDC
+} -result \uDC00
+test encoding-16.15 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xD8\x00\xDC
+} -result \uD800\uDC00
+test encoding-16.16 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xDC\x00\xD8
+} -result \uDC00\uD800
 
 test encoding-16.9 {
     Utf16ToUtfProc, Tcl_UniCharToUtf, surrogate pairs in utf-16
