@@ -229,9 +229,21 @@ set encInvalidBytes {
     utf-8 A\xed\xb0\x80B   tcl8      A\uDC00B -1 Low-surrogate
     utf-8 A\xed\xb0\x80B   strict    A         1 Low-surrogate
 
-    utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00   default  A\uD800B -1 {High-surrogate}
-    utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00   tcl8     A\uD800B -1 {High-surrogate}
-    utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00   strict   A         4 {High-surrogate}
+    utf-32le \x00\xD8\x00\x00                                   default  \uD800   -1 {High-surrogate}
+    utf-32le \x00\xD8\x00\x00                                   tcl8     \uD800   -1 {High-surrogate}
+    utf-32le \x00\xD8\x00\x00                                   strict   ""        0 {High-surrogate}
+    utf-32le \x00\xDC\x00\x00                                   default  \uDC00   -1 {Low-surrogate}
+    utf-32le \x00\xDC\x00\x00                                   tcl8     \uDC00   -1 {Low-surrogate}
+    utf-32le \x00\xDC\x00\x00                                   strict   ""        0 {Low-surrogate}
+    utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00                   default  \uD800\uDC00  -1 {High-low-surrogate}
+    utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00                   tcl8     \uD800\uDC00  -1 {High-low-surrogate}
+    utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00                   strict   ""             0 {High-low-surrogate}
+    utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00                   default  \uDC00\uD800  -1 {High-low-surrogate}
+    utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00                   tcl8     \uDC00\uD800  -1 {High-low-surrogate}
+    utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00                   strict   ""             0 {High-low-surrogate}
+    utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00   default  A\uD800B -1 {High-surrogate-middle}
+    utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00   tcl8     A\uD800B -1 {High-surrogate-middle}
+    utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00   strict   A         4 {High-surrogate-middle}
 }
 
 # Strings that cannot be encoded for specific encoding / profiles
