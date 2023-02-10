@@ -275,16 +275,17 @@ typedef struct ChannelState {
 					 * encountered an encoding error */
 #define CHANNEL_RAW_MODE	(1<<16)	/* When set, notes that the Raw API is
 					 * being used. */
+#ifdef APN
 #define CHANNEL_ENCODING_NOCOMPLAIN	(1<<17)	/* set if option
 					 * -nocomplainencoding is set to 1 */
 #define CHANNEL_ENCODING_STRICT	(1<<18)	/* set if option
 					 * -strictencoding is set to 1 */
+#endif
 #define CHANNEL_INCLOSE		(1<<19)	/* Channel is currently being closed.
 					 * Its structures are still live and
 					 * usable, but it may not be closed
 					 * again from within the close
 					 * handler. */
-#define ENCODING_FAILINDEX	(1<<20) /* Internal flag, fail on Invalid bytes only */
 #define CHANNEL_CLOSEDWRITE	(1<<21)	/* Channel write side has been closed.
 					 * No further Tcl-level write IO on
 					 * the channel is allowed. */

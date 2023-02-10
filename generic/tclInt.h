@@ -2885,9 +2885,11 @@ MODULE_SCOPE TclPlatformType tclPlatform;
 
 MODULE_SCOPE Tcl_Encoding tclIdentityEncoding;
 MODULE_SCOPE int
-TclEncodingProfileParseName(Tcl_Interp *interp,
-			    const char *profileName,
-			    int *profilePtr);
+TclEncodingProfileNameToId(Tcl_Interp *interp,
+			   const char *profileName,
+			   int *profilePtr);
+MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
+						    int profileId);
 MODULE_SCOPE int TclEncodingExternalFlagsToInternal(int flags);
 
 /*

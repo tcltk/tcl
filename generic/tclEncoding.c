@@ -188,6 +188,15 @@ static Tcl_Encoding systemEncoding = NULL;
 Tcl_Encoding tclIdentityEncoding = NULL;
 
 /*
+ * Names of encoding profiles and corresponding integer values
+ */
+static struct TclEncodingProfiles {
+    const char *name;
+    int value;
+} encodingProfiles[] = {{"tcl8", TCL_ENCODING_PROFILE_TCL8},
+			{"strict", TCL_ENCODING_PROFILE_STRICT}};
+
+/*
  * The following variable is used in the sparse matrix code for a
  * TableEncoding to represent a page in the table that has no entries.
  */
@@ -1172,7 +1181,7 @@ Tcl_ExternalToUtfDString(
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    Tcl_ExternalToUtfDStringEx(encoding, src, srcLen, TCL_ENCODING_NOCOMPLAIN, dstPtr);
+    Tcl_ExternalToUtfDStringEx(encoding, src, srcLen, TCL_ENCODING_PROFILE_TCL8, dstPtr);
     return Tcl_DStringValue(dstPtr);
 }
 
@@ -2315,11 +2324,17 @@ BinaryProc(
  *-------------------------------------------------------------------------
  */
 
+#ifdef OBSOLETE
 #if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
 #   define STOPONERROR (!(flags & TCL_ENCODING_NOCOMPLAIN) || (flags & TCL_ENCODING_STOPONERROR))
 #else
 #   define STOPONERROR (flags & TCL_ENCODING_STOPONERROR)
 #endif
+#endif
+
+
+#define STRICT_PROFILE(flags_) (TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT)
+#define STOPONERROR STRICT_PROFILE(flags)
 
 static int
 UtfToUtfProc(
@@ -2386,10 +2401,11 @@ UtfToUtfProc(
 	     */
 
 	    *dst++ = *src++;
-	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
-		&& (UCHAR(src[1]) == 0x80) && (!(flags & TCL_ENCODING_MODIFIED)
-			|| ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
-			|| (flags & ENCODING_FAILINDEX))) {
+	} else if ((UCHAR(*src) == 0xC0) &&
+		   (src + 1 < srcEnd) &&
+		   (UCHAR(src[1]) == 0x80) &&
+		   (!(flags & TCL_ENCODING_MODIFIED)
+		     || (STRICT_PROFILE(flags)))) {
 	    /*
 	     * If in input mode, and -strict or -failindex is specified: This is an error.
 	     */
@@ -2403,7 +2419,8 @@ UtfToUtfProc(
 	     */
 	    *dst++ = 0;
 	    src += 2;
-	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
+	}
+	else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Always check before using TclUtfToUCS4. Not doing can so
 	     * cause it run beyond the end of the buffer! If we happen such an
@@ -2416,10 +2433,10 @@ UtfToUtfProc(
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
-	    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX)) {
-		result = TCL_CONVERT_SYNTAX;
-		break;
-	    }
+		if (STRICT_PROFILE(flags)) {
+		    result = TCL_CONVERT_SYNTAX;
+		    break;
+		}
 		ch = UCHAR(*src++);
 	    } else {
 		char chbuf[2];
@@ -2427,12 +2444,13 @@ UtfToUtfProc(
 		TclUtfToUCS4(chbuf, &ch);
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
-	} else {
+	}
+	else {
 	    int low;
 	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
 	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_MODIFIED)
-		    && (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
+		    && STRICT_PROFILE(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
@@ -2475,8 +2493,9 @@ UtfToUtfProc(
 		result = TCL_CONVERT_UNKNOWN;
 		src = saveSrc;
 		break;
-	    } else if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
-		    && (flags & TCL_ENCODING_MODIFIED) && ((ch  & ~0x7FF) == 0xD800)) {
+	    } else if (STRICT_PROFILE(flags) &&
+		       (flags & TCL_ENCODING_MODIFIED) &&
+		       ((ch & ~0x7FF) == 0xD800)) {
 		result = TCL_CONVERT_SYNTAX;
 		src = saveSrc;
 		break;
@@ -2567,8 +2586,8 @@ Utf32ToUtfProc(
 	} else {
 	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
-	if  ((unsigned)ch > 0x10FFFF || (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
-		&& ((ch  & ~0x7FF) == 0xD800))) {
+	if ((unsigned)ch > 0x10FFFF
+	    || (STRICT_PROFILE(flags) && ((ch & ~0x7FF) == 0xD800))) {
 	    if (STOPONERROR) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
@@ -4095,34 +4114,27 @@ InitializeEncodingSearchPath(
  *
  * TclEncodingProfileParseName --
  *
- *    Maps an encoding profile name to its integer equivalent.
+ *	Maps an encoding profile name to its integer equivalent.
  *
  * Results:
- *    TCL_OK on success or TCL_ERROR on failure.
+ *	TCL_OK on success or TCL_ERROR on failure.
  *
  * Side effects:
- *    Returns the profile enum value in *profilePtr
+ *	Returns the profile enum value in *profilePtr
  *
  *------------------------------------------------------------------------
  */
 int
-TclEncodingProfileParseName(
+TclEncodingProfileNameToId(
     Tcl_Interp *interp,		/* For error messages. May be NULL */
     const char *profileName,	/* Name of profile */
     int *profilePtr)  		/* Output */
 {
-    /* NOTE: Order in arrays must match !!! */
-    static const char *const profileNames[] = {"", "tcl8", "strict", NULL};
-    static int profileFlags[] = {
-	TCL_ENCODING_PROFILE_DEFAULT,
-	TCL_ENCODING_PROFILE_TCL8,
-	TCL_ENCODING_PROFILE_STRICT,
-    };
     int i;
 
-    for (i = 0; i < sizeof(profileNames) / sizeof(profileNames[0]); ++i) {
-	if (!strcmp(profileName, profileNames[i])) {
-	    *profilePtr = profileFlags[i];
+    for (i = 0; i < sizeof(encodingProfiles) / sizeof(encodingProfiles[0]); ++i) {
+	if (!strcmp(profileName, encodingProfiles[i].name)) {
+	    *profilePtr = encodingProfiles[i].value;
 	    return TCL_OK;
 	}
     }
@@ -4130,12 +4142,51 @@ TclEncodingProfileParseName(
 	Tcl_SetObjResult(
 	    interp,
 	    Tcl_ObjPrintf(
-		"bad profile \"%s\". Must be \"\", \"tcl8\" or \"strict\".",
+		"bad profile \"%s\". Must be \"tcl8\" or \"strict\".",
 		profileName));
 	Tcl_SetErrorCode(
 	    interp, "TCL", "ENCODING", "PROFILE", profileName, NULL);
     }
     return TCL_ERROR;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclEncodingProfileValueToName --
+ *
+ *	Maps an encoding profile value to its name.
+ *
+ * Results:
+ *	Pointer to the name or NULL on failure. Caller must not make
+ *	not modify the string and must make a copy to hold on to it.
+ *
+ * Side effects:
+ *	None.
+ *------------------------------------------------------------------------
+ */
+const char *
+TclEncodingProfileIdToName(
+    Tcl_Interp *interp,		/* For error messages. May be NULL */
+    int profileValue)		/* Profile #define value */
+{
+    int i;
+
+    for (i = 0; i < sizeof(encodingProfiles) / sizeof(encodingProfiles[0]); ++i) {
+	if (profileValue == encodingProfiles[i].value) {
+	    return encodingProfiles[i].name;
+	}
+    }
+    if (interp) {
+	Tcl_SetObjResult(
+	    interp,
+	    Tcl_ObjPrintf(
+		"Internal error. Bad profile id \"%d\".",
+		profileValue));
+	Tcl_SetErrorCode(
+	    interp, "TCL", "ENCODING", "PROFILEID", NULL);
+    }
+    return NULL;
 }
 
 /*
@@ -4179,6 +4230,7 @@ int TclEncodingExternalFlagsToInternal(int flags)
 	case TCL_ENCODING_PROFILE_STRICT:
 	    flags |= TCL_ENCODING_STRICT;
 	    break;
+	case 0: /* Unspecified by caller */
 	default:
 	    /* TODO - clean this up once default mechanisms settled */
 	    TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_DEFAULT);
