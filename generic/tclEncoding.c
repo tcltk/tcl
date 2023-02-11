@@ -193,8 +193,12 @@ Tcl_Encoding tclIdentityEncoding = NULL;
 static struct TclEncodingProfiles {
     const char *name;
     int value;
-} encodingProfiles[] = {{"tcl8", TCL_ENCODING_PROFILE_TCL8},
-			{"strict", TCL_ENCODING_PROFILE_STRICT}};
+} encodingProfiles[] = {
+    {"tcl8", TCL_ENCODING_PROFILE_TCL8},
+    {"strict", TCL_ENCODING_PROFILE_STRICT},
+    {"replace", TCL_ENCODING_PROFILE_REPLACE},
+};
+#define UNICODE_REPLACE_CHAR 0xFFFD
 
 /*
  * The following variable is used in the sparse matrix code for a
@@ -2336,7 +2340,7 @@ UtfToUtfProc(
     void *clientData,	/* additional flags, e.g. TCL_ENCODING_MODIFIED */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
-    int flags,			/* Conversion control flags. */
+    int flags,			/* TCL_ENCODING_* conversion control flags. */
     TCL_UNUSED(Tcl_EncodingState *),
     char *dst,			/* Output buffer in which converted string is
 				 * stored. */
@@ -2376,6 +2380,8 @@ UtfToUtfProc(
     dstEnd = dst + dstLen - ((flags & TCL_ENCODING_UTF) ? TCL_UTF_MAX : 6);
 
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
+	int profile = TCL_ENCODING_PROFILE_GET(flags);
+
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
@@ -2389,34 +2395,51 @@ UtfToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	if (UCHAR(*src) < 0x80 && !((UCHAR(*src) == 0) && (flags & TCL_ENCODING_MODIFIED))) {
+	/*
+	 * TCL_ENCODING_MODIFIED is set when the target encoding is Tcl's
+	 * internal UTF-8 modified version.
+	 */
+	if (UCHAR(*src) < 0x80
+	    && !((UCHAR(*src) == 0) && (flags & TCL_ENCODING_MODIFIED))) {
 	    /*
-	     * Copy 7bit characters, but skip null-bytes when we are in input
-	     * mode, so that they get converted to 0xC080.
+	     * Copy 7bit characters, but skip null-bytes when target encoding
+	     * is Tcl's "modified" UTF-8. These need to be converted to
+	     * \xC0\x80 as is done in a later branch.
 	     */
 
 	    *dst++ = *src++;
-	} else if ((UCHAR(*src) == 0xC0) &&
-		   (src + 1 < srcEnd) &&
-		   (UCHAR(src[1]) == 0x80) &&
-		   (!(flags & TCL_ENCODING_MODIFIED)
-		     || (STRICT_PROFILE(flags)))) {
+	}
+	else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
+		 && (UCHAR(src[1]) == 0x80)
+		 && (!(flags & TCL_ENCODING_MODIFIED)
+		     || (profile == TCL_ENCODING_PROFILE_STRICT))) {
 	    /*
-	     * If in input mode, and -strict or -failindex is specified: This is an error.
+	     *  \xC0\x80 and either strict profile or target is "real" UTF-8
+	     *     - Strict profile - error
+	     *     - Non-strict, real UTF-8 - output \x00
 	     */
 	    if (flags & TCL_ENCODING_MODIFIED) {
+		/* 
+		 * TODO - should above check not be against STRICT? 
+		 * That would probably break a convertto command that goes
+		 * from the internal UTF8 to the real UTF8. On the other
+		 * hand this means, a strict UTF8->UTF8 transform is not
+		 * possible using this function.
+		 */
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
 
 	    /*
-	     * Convert 0xC080 to real nulls when we are in output mode, with or without '-strict'.
+	     * Convert 0xC080 to real nulls when we are in output mode, 
+	     * irrespective of the profile.
 	     */
 	    *dst++ = 0;
 	    src += 2;
 	}
 	else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
+	     * Incomplete byte sequence.
 	     * Always check before using TclUtfToUCS4. Not doing can so
 	     * cause it run beyond the end of the buffer! If we happen such an
 	     * incomplete char its bytes are made to represent themselves
@@ -2424,17 +2447,39 @@ UtfToUtfProc(
 	     */
 
 	    if (flags & TCL_ENCODING_MODIFIED) {
-		if ((STOPONERROR) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
-		    result = TCL_CONVERT_MULTIBYTE;
+		/* Incomplete bytes for modified UTF-8 target */
+		if (profile == TCL_ENCODING_PROFILE_STRICT) {
+		    result = (flags & TCL_ENCODING_CHAR_LIMIT)
+			       ? TCL_CONVERT_MULTIBYTE
+			       : TCL_CONVERT_SYNTAX;
 		    break;
 		}
-		if (STRICT_PROFILE(flags)) {
-		    result = TCL_CONVERT_SYNTAX;
-		    break;
+		if (profile == TCL_ENCODING_PROFILE_REPLACE) {
+		    ch = UNICODE_REPLACE_CHAR;
+		} else {
+		    /* TCL_ENCODING_PROFILE_TCL8 */
+		    ch = UCHAR(*src);
 		}
-		ch = UCHAR(*src++);
-	    } else {
+		++src;
+	    }
+	    else {
+		/*
+		 * Incomplete bytes for real UTF-8 target.
+		 * TODO - no profile check here because did not have any
+		 * checks in the pre-profile code. Why? Is it because on
+		 * output a valid internal utf-8 stream is assumed?
+		 */
 		char chbuf[2];
+		/*
+		 * TODO - this code seems broken to me.
+		 * - it does not check profiles
+		 * - generates invalid output for real UTF-8 target
+		 *   (consider \xC2)
+		 * A possible explanation is this behavior matches the
+		 * Tcl8 decoding behavior of mapping invalid bytes to the same
+		 * code point value. Still, at least strictness checks should
+		 * be made.
+		 */
 		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
 		TclUtfToUCS4(chbuf, &ch);
 	    }
@@ -2444,11 +2489,31 @@ UtfToUtfProc(
 	    int low;
 	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
+
+	    /*
+	     * Valid single char encodings were already handled earlier.
+	     * So len==1 means an invalid byte that is magically transformed
+	     * to a code point unless it resulted from the special
+	     * \xC0\x80 sequence. Tests io-75.*
+	     * TODO - below check could be simplified to remove the MODIFIED
+	     * expression I think given the checks already made above. May be.
+	     */
+#if 0
 	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_MODIFIED)
-		    && STRICT_PROFILE(flags)) {
+		    && (profile == TCL_ENCODING_PROFILE_STRICT)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
+#else
+	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_MODIFIED)) {
+		if (profile == TCL_ENCODING_PROFILE_STRICT) {
+		    result = TCL_CONVERT_SYNTAX;
+		    break;
+		} else if (profile == TCL_ENCODING_PROFILE_REPLACE) {
+		    ch = UNICODE_REPLACE_CHAR;
+		}
+	    }
+#endif
 	    src += len;
 	    if (!(flags & TCL_ENCODING_UTF) && (ch > 0x3FF)) {
 		if (ch > 0xFFFF) {
@@ -2464,13 +2529,14 @@ UtfToUtfProc(
 		/*
 		 * A surrogate character is detected, handle especially.
 		 */
+		/* TODO - what about REPLACE profile? */
 
 		low = ch;
 		len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
 
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
 
-		    if (STOPONERROR) {
+		    if (profile == TCL_ENCODING_PROFILE_STRICT) {
 			result = TCL_CONVERT_UNKNOWN;
 			src = saveSrc;
 			break;
@@ -2484,12 +2550,14 @@ UtfToUtfProc(
 		src += len;
 		dst += Tcl_UniCharToUtf(ch, dst);
 		ch = low;
-	    } else if (STOPONERROR && !(flags & TCL_ENCODING_MODIFIED) && (((ch  & ~0x7FF) == 0xD800))) {
+	    } else if ((profile == TCL_ENCODING_PROFILE_STRICT) &&
+		       !(flags & TCL_ENCODING_MODIFIED) &&
+		       (((ch & ~0x7FF) == 0xD800))) {
 		result = TCL_CONVERT_UNKNOWN;
 		src = saveSrc;
 		break;
-	    } else if (STRICT_PROFILE(flags) &&
-		       (flags & TCL_ENCODING_MODIFIED) &&
+	    } else if ((profile == TCL_ENCODING_PROFILE_STRICT) &&
+	               (flags & TCL_ENCODING_MODIFIED) &&
 		       ((ch & ~0x7FF) == 0xD800)) {
 		result = TCL_CONVERT_SYNTAX;
 		src = saveSrc;
@@ -4216,6 +4284,7 @@ int TclEncodingExternalFlagsToInternal(int flags)
 	switch (profile) {
 	case TCL_ENCODING_PROFILE_TCL8:
 	case TCL_ENCODING_PROFILE_STRICT:
+	case TCL_ENCODING_PROFILE_REPLACE:
 	    break;
 	case 0: /* Unspecified by caller */
 	default:

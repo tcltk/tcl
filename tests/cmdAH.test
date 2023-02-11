@@ -228,6 +228,9 @@ set encInvalidBytes {
     utf-8 A\xed\xb0\x80B   default   A\uDC00B -1 Low-surrogate
     utf-8 A\xed\xb0\x80B   tcl8      A\uDC00B -1 Low-surrogate
     utf-8 A\xed\xb0\x80B   strict    A         1 Low-surrogate
+    utf-8 \xed\xa0\x80\xed\xb0\x80   default   \U00010000 -1 High-low-surrogate
+    utf-8 \xed\xa0\x80\xed\xb0\x80   tcl8      \U00010000 -1 High-low-surrogate
+    utf-8 \xed\xa0\x80\xed\xb0\x80   strict    \U00010000  0 High-low-surrogate
 
     utf-32le \x00\xD8\x00\x00                                   default  \uD800   -1 {High-surrogate}
     utf-32le \x00\xD8\x00\x00                                   tcl8     \uD800   -1 {High-surrogate}

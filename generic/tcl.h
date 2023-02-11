@@ -2140,6 +2140,7 @@ typedef struct Tcl_EncodingType {
 /* Reserve top byte for profile values (disjoint) */
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
 #define TCL_ENCODING_PROFILE_STRICT   0x02000000
+#define TCL_ENCODING_PROFILE_REPLACE  0x03000000
 #define TCL_ENCODING_PROFILE_MASK     0xFF000000
 #define TCL_ENCODING_PROFILE_GET(flags_)  ((flags_) & TCL_ENCODING_PROFILE_MASK)
 #define TCL_ENCODING_PROFILE_SET(flags_, profile_) \
@@ -2151,12 +2152,8 @@ typedef struct Tcl_EncodingType {
 #if TCL_MAJOR_VERSION < 9
 #define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
 #else
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8 /* STRICT? TODO */
+#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8 /* STRICT? REPLACE? TODO */
 #endif
-
-#define TCL_ENCODING_EXTERNAL_FLAG_MASK \
-     (TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_STOPONERROR)
-
 
 /*
  * The following definitions are the error codes returned by the conversion
