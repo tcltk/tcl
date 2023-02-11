@@ -574,7 +574,7 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 1;
     type.clientData	= INT2PTR(TCL_ENCODING_UTF);
     Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(TCL_ENCODING_NOCOMPLAIN);
+    type.clientData	= INT2PTR(0);
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
 
@@ -583,13 +583,13 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "ucs-2le";
-    type.clientData	= INT2PTR(TCL_ENCODING_LE|TCL_ENCODING_NOCOMPLAIN);
+    type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2be";
-    type.clientData	= INT2PTR(TCL_ENCODING_NOCOMPLAIN);
+    type.clientData	= INT2PTR(0);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2";
-    type.clientData	= INT2PTR(isLe.c|TCL_ENCODING_NOCOMPLAIN);
+    type.clientData	= INT2PTR(isLe.c);
     Tcl_CreateEncoding(&type);
 
     type.toUtfProc	= Utf32ToUtfProc;
@@ -2324,16 +2324,11 @@ BinaryProc(
  *-------------------------------------------------------------------------
  */
 
-#ifdef OBSOLETE
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-#   define STOPONERROR (!(flags & TCL_ENCODING_NOCOMPLAIN) || (flags & TCL_ENCODING_STOPONERROR))
-#else
-#   define STOPONERROR (flags & TCL_ENCODING_STOPONERROR)
-#endif
-#endif
+#define STRICT_PROFILE(flags_)                                         \
+    ((TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
+     || (TCL_ENCODING_PROFILE_GET(flags_) == 0                         \
+	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_STRICT))
 
-
-#define STRICT_PROFILE(flags_) (TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT)
 #define STOPONERROR STRICT_PROFILE(flags)
 
 static int
@@ -4196,10 +4191,6 @@ TclEncodingProfileIdToName(
  *
  *	Maps the flags supported in the encoding C API's to internal flags.
  *
- *	TCL_ENCODING_STRICT and TCL_ENCODING_NOCOMPLAIN are masked off
- *	because they are for internal use only and externally specified
- *	through TCL_ENCODING_PROFILE_* bits.
- *
  *	For backward compatibility reasons, TCL_ENCODING_STOPONERROR is
  *	is mapped to the TCL_ENCODING_PROFILE_STRICT overwriting any profile
  *	specified.
@@ -4217,7 +4208,6 @@ TclEncodingProfileIdToName(
  */
 int TclEncodingExternalFlagsToInternal(int flags)
 {
-    flags &= ~(TCL_ENCODING_STRICT | TCL_ENCODING_NOCOMPLAIN);
     if (flags & TCL_ENCODING_STOPONERROR) {
 	TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
     }
@@ -4225,22 +4215,11 @@ int TclEncodingExternalFlagsToInternal(int flags)
 	int profile = TCL_ENCODING_PROFILE_GET(flags);
 	switch (profile) {
 	case TCL_ENCODING_PROFILE_TCL8:
-	    flags |= TCL_ENCODING_NOCOMPLAIN;
-	    break;
 	case TCL_ENCODING_PROFILE_STRICT:
-	    flags |= TCL_ENCODING_STRICT;
 	    break;
 	case 0: /* Unspecified by caller */
 	default:
-	    /* TODO - clean this up once default mechanisms settled */
 	    TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_DEFAULT);
-#if TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_TCL8
-	    flags |= TCL_ENCODING_NOCOMPLAIN;
-#elif TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_STRICT
-	    flags |= TCL_ENCODING_STRICT;
-#else
-#error TCL_ENCODING_PROFILE_DEFAULT must be TCL8 or STRICT
-#endif
 	    break;
 	}
     }
