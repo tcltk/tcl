@@ -2891,6 +2891,7 @@ TclEncodingProfileNameToId(Tcl_Interp *interp,
 MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 						    int profileId);
 MODULE_SCOPE int TclEncodingExternalFlagsToInternal(int flags);
+MODULE_SCOPE void TclGetEncodingProfiles(Tcl_Interp *interp);
 
 /*
  * TIP #233 (Virtualized Time)

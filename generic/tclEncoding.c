@@ -208,7 +208,7 @@ static struct TclEncodingProfiles {
      || (TCL_ENCODING_PROFILE_GET(flags_) == 0                          \
 	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_REPLACE))
 
-#define UNICODE_REPLACE_CHAR 0xFFFD
+#define UNICODE_REPLACE_CHAR ((Tcl_UniChar)0xFFFD)
 #define SURROGATE(c_)      (((c_) & ~0x7FF) == 0xD800)
 #define HIGH_SURROGATE(c_) (((c_) & ~0x3FF) == 0xD800)
 #define LOW_SURROGATE(c_)  (((c_) & ~0x3FF) == 0xDC00)
@@ -547,6 +547,7 @@ FillEncodingFileMap(void)
  * TCL_ENCODING_LE is only used for  utf-16/utf-32/ucs-2. re-use the same value */
 #define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
 #define TCL_ENCODING_UTF	0x200	/* For UTF-8 encoding, allow 4-byte output sequences */
+#define TCL_ENCODING_CESU8	0x400	/* TODO - Distinguishes cesu-8 from utf-8*/
 
 void
 TclInitEncodingSubsystem(void)
@@ -592,7 +593,7 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 1;
     type.clientData	= INT2PTR(TCL_ENCODING_UTF);
     Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(0);
+    type.clientData	= INT2PTR(TCL_ENCODING_CESU8);
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
 
@@ -2505,13 +2506,6 @@ UtfToUtfProc(
 	     * TODO - below check could be simplified to remove the MODIFIED
 	     * expression I think given the checks already made above. May be.
 	     */
-#if 0
-	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_MODIFIED)
-		    && (profile == TCL_ENCODING_PROFILE_STRICT)) {
-		result = TCL_CONVERT_SYNTAX;
-		break;
-	    }
-#else
 	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_MODIFIED)) {
 		if (PROFILE_STRICT(profile)) {
 		    result = TCL_CONVERT_SYNTAX;
@@ -2520,7 +2514,7 @@ UtfToUtfProc(
 		    ch = UNICODE_REPLACE_CHAR;
 		}
 	    }
-#endif
+
 	    src += len;
 	    if (!(flags & TCL_ENCODING_UTF) && (ch > 0x3FF)) {
 		if (ch > 0xFFFF) {
@@ -2551,7 +2545,7 @@ UtfToUtfProc(
 		cesu8:
 		    *dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
 		    *dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
-		    *dst++ = (char) ((ch | 0x80) & 0xBF);
+		    *dst++ = (char)	 ((ch | 0x80) & 0xBF);
 		    continue;
 		}
 		src += len;
@@ -3205,7 +3199,11 @@ TableToUtfProc(
 	    if (prefixBytes[byte]) {
 		src--;
 	    }
-	    ch = (Tcl_UniChar)byte;
+	    if (PROFILE_REPLACE(flags)) {
+		ch = UNICODE_REPLACE_CHAR;
+	    } else {
+		ch = (Tcl_UniChar)byte;
+	    }
 	}
 
 	/*

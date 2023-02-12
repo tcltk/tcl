@@ -208,21 +208,26 @@ set encInvalidBytes {
 
     utf-8 \x41\xC0\x42     default   A\u00C0B -1 C0
     utf-8 \x41\xC0\x42     tcl8      A\u00C0B -1 C0
+    utf-8 \x41\xC0\x42     replace   A\uFFFDB -1 C0
     utf-8 \x41\xC0\x42     strict    A         1 C0
     utf-8 \x41\x80\x42     default   A\u0080B -1 80
     utf-8 \x41\x80\x42     tcl8      A\u0080B -1 80
+    utf-8 \x41\x80\x42     replace   A\uFFFDB -1 80
     utf-8 \x41\x80\x42     strict    A         1 80
     utf-8 \x41\xC0\x80\x42 default   A\u0000B -1 C080
     utf-8 \x41\xC0\x80\x42 tcl8      A\u0000B -1 C080
     utf-8 \x41\xC0\x80\x42 strict    A         1 C080
     utf-8 \x41\xC1\x42     default   A\u00C1B -1 C1
     utf-8 \x41\xC1\x42     tcl8      A\u00C1B -1 C1
+    utf-8 \x41\xC1\x42     replace   A\uFFFDB -1 C1
     utf-8 \x41\xC1\x42     strict    A         1 C1
     utf-8 \x41\xC2\x42     default   A\u00C2B -1 C2-nontrail
     utf-8 \x41\xC2\x42     tcl8      A\u00C2B -1 C2-nontrail
+    utf-8 \x41\xC2\x42     replace   A\uFFFDB -1 C2-nontrail
     utf-8 \x41\xC2\x42     strict    A         1 C2-nontrail
     utf-8 \x41\xC2         default   A\u00C2  -1 C2-incomplete
     utf-8 \x41\xC2         tcl8      A\u00C2  -1 C2-incomplete
+    utf-8 \x41\xC2         replace   A\uFFFD  -1 C2-incomplete
     utf-8 \x41\xC2         strict    A         1 C2-incomplete
     utf-8 A\xed\xa0\x80B   default   A\uD800B -1 High-surrogate
     utf-8 A\xed\xa0\x80B   tcl8      A\uD800B -1 High-surrogate
@@ -335,7 +340,7 @@ test cmdAH-4.1.1 {encoding} -returnCodes error -body {
 } -result {wrong # args: should be "encoding subcommand ?arg ...?"}
 test cmdAH-4.1.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding foo
-} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, or system}
+} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, profiles, or system}
 
 #
 # encoding system 4.2.*

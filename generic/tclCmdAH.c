@@ -51,6 +51,7 @@ static Tcl_ObjCmdProc	EncodingConvertfromObjCmd;
 static Tcl_ObjCmdProc	EncodingConverttoObjCmd;
 static Tcl_ObjCmdProc	EncodingDirsObjCmd;
 static Tcl_ObjCmdProc	EncodingNamesObjCmd;
+static Tcl_ObjCmdProc	EncodingProfilesObjCmd;
 static Tcl_ObjCmdProc	EncodingSystemObjCmd;
 static inline int	ForeachAssignments(Tcl_Interp *interp,
 			    struct ForeachState *statePtr);
@@ -519,6 +520,7 @@ TclInitEncodingCmd(
 	{"convertto",   EncodingConverttoObjCmd,   TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
 	{"dirs",        EncodingDirsObjCmd,        TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{"names",       EncodingNamesObjCmd,       TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+	{"profiles",    EncodingProfilesObjCmd,    TclCompileBasic0ArgCmd,    NULL, NULL, 0},
 	{"system",      EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{NULL,          NULL,                      NULL,                      NULL, NULL, 0}
     };
@@ -885,6 +887,34 @@ EncodingNamesObjCmd(
 	return TCL_ERROR;
     }
     Tcl_GetEncodingNames(interp);
+    return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * EncodingProfilesObjCmd --
+ *
+ *	This command returns a list of the available encoding profiles
+ *
+ * Results:
+ *	Returns a standard Tcl result
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+int
+EncodingProfilesObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp* interp,	    /* Tcl interpreter */
+    int objc,		    /* Number of command line args */
+    Tcl_Obj* const objv[])  /* Vector of command line args */
+{
+    if (objc > 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
+    }
+    TclGetEncodingProfiles(interp);
     return TCL_OK;
 }
 
