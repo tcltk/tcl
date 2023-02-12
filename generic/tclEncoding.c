@@ -198,7 +198,20 @@ static struct TclEncodingProfiles {
     {"strict", TCL_ENCODING_PROFILE_STRICT},
     {"replace", TCL_ENCODING_PROFILE_REPLACE},
 };
+#define PROFILE_STRICT(flags_)                                         \
+    ((TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
+     || (TCL_ENCODING_PROFILE_GET(flags_) == 0                         \
+	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_STRICT))
+
+#define PROFILE_REPLACE(flags_)                                         \
+    ((TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE) \
+     || (TCL_ENCODING_PROFILE_GET(flags_) == 0                          \
+	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_REPLACE))
+
 #define UNICODE_REPLACE_CHAR 0xFFFD
+#define SURROGATE(c_)      (((c_) & ~0x7FF) == 0xD800)
+#define HIGH_SURROGATE(c_) (((c_) & ~0x3FF) == 0xD800)
+#define LOW_SURROGATE(c_)  (((c_) & ~0x3FF) == 0xDC00)
 
 /*
  * The following variable is used in the sparse matrix code for a
@@ -242,6 +255,7 @@ static Tcl_EncodingConvertProc	UtfToUcs2Proc;
 static Tcl_EncodingConvertProc	UtfToUtfProc;
 static Tcl_EncodingConvertProc	Iso88591FromUtfProc;
 static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
+
 
 /*
  * A Tcl_ObjType for holding a cached Tcl_Encoding in the twoPtrValue.ptr1 field
@@ -2328,13 +2342,6 @@ BinaryProc(
  *-------------------------------------------------------------------------
  */
 
-#define STRICT_PROFILE(flags_)                                         \
-    ((TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
-     || (TCL_ENCODING_PROFILE_GET(flags_) == 0                         \
-	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_STRICT))
-
-#define STOPONERROR STRICT_PROFILE(flags)
-
 static int
 UtfToUtfProc(
     void *clientData,	/* additional flags, e.g. TCL_ENCODING_MODIFIED */
@@ -2412,7 +2419,7 @@ UtfToUtfProc(
 	else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
 		 && (UCHAR(src[1]) == 0x80)
 		 && (!(flags & TCL_ENCODING_MODIFIED)
-		     || (profile == TCL_ENCODING_PROFILE_STRICT))) {
+		     || PROFILE_STRICT(profile))) {
 	    /*
 	     *  \xC0\x80 and either strict profile or target is "real" UTF-8
 	     *     - Strict profile - error
@@ -2448,13 +2455,13 @@ UtfToUtfProc(
 
 	    if (flags & TCL_ENCODING_MODIFIED) {
 		/* Incomplete bytes for modified UTF-8 target */
-		if (profile == TCL_ENCODING_PROFILE_STRICT) {
+		if (PROFILE_STRICT(profile)) {
 		    result = (flags & TCL_ENCODING_CHAR_LIMIT)
 			       ? TCL_CONVERT_MULTIBYTE
 			       : TCL_CONVERT_SYNTAX;
 		    break;
 		}
-		if (profile == TCL_ENCODING_PROFILE_REPLACE) {
+		if (PROFILE_REPLACE(profile)) {
 		    ch = UNICODE_REPLACE_CHAR;
 		} else {
 		    /* TCL_ENCODING_PROFILE_TCL8 */
@@ -2506,10 +2513,10 @@ UtfToUtfProc(
 	    }
 #else
 	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_MODIFIED)) {
-		if (profile == TCL_ENCODING_PROFILE_STRICT) {
+		if (PROFILE_STRICT(profile)) {
 		    result = TCL_CONVERT_SYNTAX;
 		    break;
-		} else if (profile == TCL_ENCODING_PROFILE_REPLACE) {
+		} else if (PROFILE_REPLACE(profile)) {
 		    ch = UNICODE_REPLACE_CHAR;
 		}
 	    }
@@ -2534,9 +2541,9 @@ UtfToUtfProc(
 		low = ch;
 		len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
 
-		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
+		if ((!LOW_SURROGATE(low)) || (ch & 0x400)) {
 
-		    if (profile == TCL_ENCODING_PROFILE_STRICT) {
+		    if (PROFILE_STRICT(profile)) {
 			result = TCL_CONVERT_UNKNOWN;
 			src = saveSrc;
 			break;
@@ -2550,15 +2557,15 @@ UtfToUtfProc(
 		src += len;
 		dst += Tcl_UniCharToUtf(ch, dst);
 		ch = low;
-	    } else if ((profile == TCL_ENCODING_PROFILE_STRICT) &&
-		       !(flags & TCL_ENCODING_MODIFIED) &&
-		       (((ch & ~0x7FF) == 0xD800))) {
+	    } else if (PROFILE_STRICT(profile) &&
+		       (!(flags & TCL_ENCODING_MODIFIED)) &&
+		       SURROGATE(ch)) {
 		result = TCL_CONVERT_UNKNOWN;
 		src = saveSrc;
 		break;
-	    } else if ((profile == TCL_ENCODING_PROFILE_STRICT) &&
+	    } else if (PROFILE_STRICT(profile) &&
 	               (flags & TCL_ENCODING_MODIFIED) &&
-		       ((ch & ~0x7FF) == 0xD800)) {
+		       SURROGATE(ch)) {
 		result = TCL_CONVERT_SYNTAX;
 		src = saveSrc;
 		break;
@@ -2649,11 +2656,14 @@ Utf32ToUtfProc(
 	} else {
 	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
-	if ((unsigned)ch > 0x10FFFF
-	    || (STRICT_PROFILE(flags) && ((ch & ~0x7FF) == 0xD800))) {
-	    if (STOPONERROR) {
+	
+	if ((unsigned)ch > 0x10FFFF || SURROGATE(ch)) {
+	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
+	    }
+	    if (PROFILE_REPLACE(flags)) {
+		ch = UNICODE_REPLACE_CHAR;
 	    }
 	}
 
@@ -2666,7 +2676,7 @@ Utf32ToUtfProc(
 	    *dst++ = (ch & 0xFF);
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
-	    if ((ch  & ~0x3FF) == 0xD800) {
+	    if (HIGH_SURROGATE(ch)) {
 		/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 		dst += Tcl_UniCharToUtf(-1, dst);
 	    }
@@ -2750,10 +2760,13 @@ UtfToUtf32Proc(
 	    break;
 	}
 	len = TclUtfToUCS4(src, &ch);
-	if ((ch  & ~0x7FF) == 0xD800) {
-	    if (STOPONERROR) {
+	if (SURROGATE(ch)) {
+	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
+	    }
+	    if (PROFILE_REPLACE(flags)) {
+		ch = UNICODE_REPLACE_CHAR;
 	    }
 	}
 	src += len;
@@ -2952,10 +2965,13 @@ UtfToUtf16Proc(
 	    break;
 	}
 	len = TclUtfToUCS4(src, &ch);
-	if ((ch  & ~0x7FF) == 0xD800) {
-	    if (STOPONERROR) {
+	if (SURROGATE(ch)) {
+	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
+	    }
+	    if (PROFILE_REPLACE(flags)) {
+		ch = UNICODE_REPLACE_CHAR;
 	    }
 	}
 	src += len;
@@ -3059,6 +3075,9 @@ UtfToUcs2Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
+	/* TODO - there were no STRICT or NOCOMPLAIN checks here (why?)
+	 * so no profile checks either for now. */
+
 #if TCL_UTF_MAX < 4
 	src += (len = TclUtfToUniChar(src, &ch));
 	if ((ch >= 0xD800) && (len < 3)) {
@@ -3163,23 +3182,30 @@ TableToUtfProc(
 	if (prefixBytes[byte]) {
 	    src++;
 	    if (src >= srcEnd) {
+		/*
+		 * TODO - this is broken. For consistency with other 
+		 * decoders, an error should be raised only if strict.
+		 * However, doing that check cause a whole bunch of test
+		 * failures. Need to verify if those tests are in fact
+		 * correct.
+		 */
 		src--;
 		result = TCL_CONVERT_MULTIBYTE;
 		break;
 	    }
-	    ch = toUnicode[byte][*((unsigned char *) src)];
+	    ch = toUnicode[byte][*((unsigned char *)src)];
 	} else {
 	    ch = pageZero[byte];
 	}
 	if ((ch == 0) && (byte != 0)) {
-	    if (STOPONERROR) {
+	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
 	    if (prefixBytes[byte]) {
 		src--;
 	    }
-	    ch = (Tcl_UniChar) byte;
+	    ch = (Tcl_UniChar)byte;
 	}
 
 	/*
@@ -3288,11 +3314,11 @@ TableFromUtfProc(
 	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
-	    if (STOPONERROR) {
+	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
-	    word = dataPtr->fallback;
+	    word = dataPtr->fallback; /* Both profiles REPLACE and TCL8 */
 	}
 	if (prefixBytes[(word >> 8)] != 0) {
 	    if (dst + 1 > dstEnd) {
@@ -3476,7 +3502,7 @@ Iso88591FromUtfProc(
 		|| ((ch >= 0xD800) && (len < 3))
 #endif
 		) {
-	    if (STOPONERROR) {
+	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -3489,7 +3515,7 @@ Iso88591FromUtfProc(
 	     * Plunge on, using '?' as a fallback character.
 	     */
 
-	    ch = (Tcl_UniChar) '?';
+	    ch = (Tcl_UniChar) '?'; /* Profiles TCL8 and REPLACE */
 	}
 
 	if (dst > dstEnd) {
@@ -3703,9 +3729,10 @@ EscapeToUtfProc(
 
 	    if ((checked == dataPtr->numSubTables + 2)
 		    || (flags & TCL_ENCODING_END)) {
-		if (!STOPONERROR) {
+		if (!PROFILE_STRICT(flags)) {
 		    /*
-		     * Skip the unknown escape sequence.
+		     * Skip the unknown escape sequence. TODO - bug?
+		     * May be replace with UNICODE_REPLACE_CHAR?
 		     */
 
 		    src += longest;
@@ -3878,7 +3905,7 @@ EscapeFromUtfProc(
 
 	    if (word == 0) {
 		state = oldState;
-		if (STOPONERROR) {
+		if (PROFILE_STRICT(flags)) {
 		    result = TCL_CONVERT_UNKNOWN;
 		    break;
 		}

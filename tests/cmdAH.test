@@ -179,7 +179,7 @@ set "numargErrors(encoding convertfrom)" {^wrong # args: should be "(encoding |:
 set "numargErrors(encoding convertto)" {^wrong # args: should be "(encoding |::tcl::encoding::)convertto \?\?-profile profile\? \?-failindex var\? \?encoding\?\? data"$}
 set "numargErrors(encoding names)" {wrong # args: should be "encoding names"}
 
-set encProfiles {tcl8 strict}
+set encProfiles {tcl8 strict replace}
 
 # TODO - valid sequences for different encodings - shiftjis etc.
 # Note utf-16, utf-32 missing because they are automatically
