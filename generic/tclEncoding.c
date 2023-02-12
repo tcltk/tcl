@@ -547,7 +547,8 @@ FillEncodingFileMap(void)
  * TCL_ENCODING_LE is only used for  utf-16/utf-32/ucs-2. re-use the same value */
 #define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
 #define TCL_ENCODING_UTF	0x200	/* For UTF-8 encoding, allow 4-byte output sequences */
-#define TCL_ENCODING_CESU8	0x400	/* TODO - Distinguishes cesu-8 from utf-8*/
+#define TCL_ENCODING_CESU8_SOURCE 0x400	/* TODO - Distinguishes cesu-8 
+					 * *source* from utf-8 *source* */
 
 void
 TclInitEncodingSubsystem(void)
@@ -593,7 +594,7 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 1;
     type.clientData	= INT2PTR(TCL_ENCODING_UTF);
     Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(TCL_ENCODING_CESU8);
+    type.clientData	= INT2PTR(TCL_ENCODING_CESU8_SOURCE);
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
 
@@ -2370,6 +2371,7 @@ UtfToUtfProc(
     const char *dstStart, *dstEnd;
     int result, numChars, charLimit = INT_MAX;
     int ch;
+    int isCesu8;
 
     result = TCL_OK;
 
@@ -2531,6 +2533,11 @@ UtfToUtfProc(
 		 * A surrogate character is detected, handle especially.
 		 */
 		/* TODO - what about REPLACE profile? */
+		if (PROFILE_STRICT(profile) && !(flags & TCL_ENCODING_CESU8_SOURCE)) {
+		    result = TCL_CONVERT_UNKNOWN;
+		    src = saveSrc;
+		    break;
+		}
 
 		low = ch;
 		len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
