@@ -4278,7 +4278,7 @@ TclEncodingProfileIdToName(
     }
     return NULL;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -4320,6 +4320,35 @@ int TclEncodingExternalFlagsToInternal(int flags)
 	}
     }
     return flags;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclGetEncodingProfiles --
+ *
+ *	Get the list of supported encoding profiles.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The list of profile names is stored in the interpreter result.
+ *
+ *------------------------------------------------------------------------
+ */
+void
+TclGetEncodingProfiles(Tcl_Interp *interp)
+{
+    int i, n;
+    Tcl_Obj *objPtr;
+    n = sizeof(encodingProfiles) / sizeof(encodingProfiles[0]);
+    objPtr = Tcl_NewListObj(n, NULL);
+    for (i = 0; i < n; ++i) {
+	Tcl_ListObjAppendElement(
+	    interp, objPtr, Tcl_NewStringObj(encodingProfiles[i].name, -1));
+    }
+    Tcl_SetObjResult(interp, objPtr);
 }
 
 /*

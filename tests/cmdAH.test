@@ -178,6 +178,7 @@ set "numargErrors(encoding system)" {^wrong # args: should be "(encoding |::tcl:
 set "numargErrors(encoding convertfrom)" {^wrong # args: should be "(encoding |::tcl::encoding::)convertfrom \?\?-profile profile\? \?-failindex var\? \?encoding\?\? data"$}
 set "numargErrors(encoding convertto)" {^wrong # args: should be "(encoding |::tcl::encoding::)convertto \?\?-profile profile\? \?-failindex var\? \?encoding\?\? data"$}
 set "numargErrors(encoding names)" {wrong # args: should be "encoding names"}
+set "numargErrors(encoding profiles)" {wrong # args: should be "encoding profiles"}
 
 set encProfiles {tcl8 strict replace}
 
@@ -202,6 +203,7 @@ set encValidStrings {
 set encInvalidBytes {
     ascii \x41\xe9\x42 default A\u00E9B     -1 {non-ASCII}
     ascii \x41\xe9\x42 tcl8    A\u00E9B     -1 {non-ASCII}
+    ascii \x41\xe9\x42 replace A\uFFFDB     -1 {non-ASCII}
     ascii \x41\xe9\x42 strict  A             1 {non-ASCII}
 
     utf-8 \x41\xC0\x42     default   A\u00C0B -1 C0
@@ -563,6 +565,13 @@ test cmdAH-4.5.2 {encoding names should include at least utf-8 and iso8859-1 and
     set names [encoding names]
     list [expr {"utf-8" in $names}] [expr {"iso8859-1" in $names}] [expr {[llength $names] > 2}]
 } -result {1 1 1}
+
+#
+# encoding profiles 4.6.*
+badnumargs cmdAH-4.6.1 {encoding profiles} {foo}
+test cmdAH-4.6.2 {encoding profiles} -body {
+    lsort [encoding profiles]
+} -result {replace strict tcl8}
 
 #
 # file command
