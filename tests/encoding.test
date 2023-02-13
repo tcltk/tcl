@@ -485,6 +485,30 @@ test encoding-16.8 {Utf32ToUtfProc} -body {
     set val [encoding convertfrom -nocomplain utf-32 \x41\x00\x00\x41]
     list $val [format %x [scan $val %c]]
 } -result "\uFFFD fffd"
+test encoding-16.9 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32le \x00\xD8\x00\x00
+} -result \uD800
+test encoding-16.10 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32le \x00\xDC\x00\x00
+} -result \uDC00
+test encoding-16.11 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00
+} -result \uD800\uDC00
+test encoding-16.12 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00
+} -result \uDC00\uD800
+test encoding-16.13 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xD8
+} -result \uD800
+test encoding-16.14 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xDC
+} -result \uDC00
+test encoding-16.15 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xD8\x00\xDC
+} -result \uD800\uDC00
+test encoding-16.16 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xDC\x00\xD8
+} -result \uDC00\uD800
 
 test encoding-16.9 {
     Utf16ToUtfProc, Tcl_UniCharToUtf, surrogate pairs in utf-16
