@@ -2531,7 +2531,7 @@ Utf32ToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    int ch;
+    int ch = 0;
 
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
@@ -2548,6 +2548,19 @@ Utf32ToUtfProc(
 	srcLen &= -4;
     }
 
+    /*
+     * If last code point is a high surrogate, we cannot handle that yet,
+     * unless we are at the end.
+     */
+
+    if (!(flags & TCL_ENCODING_END) && (srcLen >= 4) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?3:2)] & 0xFC) == 0xD8) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?2:3)]) == 0) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?1:4)]) == 0)) {
+	result = TCL_CONVERT_MULTIBYTE;
+	srcLen-= 4;
+    }
+
     srcStart = src;
     srcEnd = src + srcLen;
 
@@ -2560,10 +2573,15 @@ Utf32ToUtfProc(
 	    break;
 	}
 
+	int prev = ch;
 	if (flags & TCL_ENCODING_LE) {
 	    ch = (src[3] & 0xFF) << 24 | (src[2] & 0xFF) << 16 | (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
 	} else {
 	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
+	}
+	if (((prev  & ~0x3FF) == 0xD800) && ((ch  & ~0x3FF) != 0xDC00)) {
+	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
+	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
 	if  ((unsigned)ch > 0x10FFFF || (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
 		&& ((ch  & ~0x7FF) == 0xD800))) {
@@ -2586,6 +2604,10 @@ Utf32ToUtfProc(
 	src += sizeof(unsigned int);
     }
 
+    if ((ch  & ~0x3FF) == 0xD800) {
+	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
+	dst += Tcl_UniCharToUtf(-1, dst);
+    }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -2730,7 +2752,7 @@ Utf16ToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    unsigned short ch;
+    unsigned short ch = 0;
 
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
@@ -2748,10 +2770,11 @@ Utf16ToUtfProc(
     }
 
     /*
-     * If last code point is a high surrogate, we cannot handle that yet.
+     * If last code point is a high surrogate, we cannot handle that yet,
+     * unless we are at the end.
      */
 
-    if ((srcLen >= 2) &&
+    if (!(flags & TCL_ENCODING_END) && (srcLen >= 2) &&
 	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?1:2)] & 0xFC) == 0xD8)) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen-= 2;
@@ -2769,10 +2792,15 @@ Utf16ToUtfProc(
 	    break;
 	}
 
+	unsigned short prev = ch;
 	if (flags & TCL_ENCODING_LE) {
 	    ch = (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
 	} else {
 	    ch = (src[0] & 0xFF) << 8 | (src[1] & 0xFF);
+	}
+	if (((prev  & ~0x3FF) == 0xD800) && ((ch  & ~0x3FF) != 0xDC00)) {
+	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
+	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
 
 	/*
@@ -2788,6 +2816,10 @@ Utf16ToUtfProc(
 	src += sizeof(unsigned short);
     }
 
+    if ((ch  & ~0x3FF) == 0xD800) {
+	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
+	dst += Tcl_UniCharToUtf(-1, dst);
+    }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
