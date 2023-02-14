@@ -7994,7 +7994,7 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(2, "-encoding")) {
+    if (len == 0 || HaveOpt(8, "-encoding")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-encoding");
 	}
@@ -8008,7 +8008,7 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(1, "-encodingprofile")) {
+    if (len == 0 || HaveOpt(9, "-encodingprofile")) {
 	int profile;
 	const char *profileName;
 	if (len == 0) {
