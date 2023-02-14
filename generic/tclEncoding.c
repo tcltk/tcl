@@ -546,7 +546,6 @@ FillEncodingFileMap(void)
 /* Since TCL_ENCODING_MODIFIED is only used for utf-8/cesu-8 and
  * TCL_ENCODING_LE is only used for  utf-16/utf-32/ucs-2. re-use the same value */
 #define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
-#define TCL_ENCODING_UTF	0x200	/* For UTF-8 encoding, allow 4-byte output sequences */
 #define TCL_ENCODING_CESU8_SOURCE 0x400	/* TODO - Distinguishes cesu-8 
 					 * *source* from utf-8 *source* */
 
@@ -592,7 +591,7 @@ TclInitEncodingSubsystem(void)
     type.fromUtfProc	= UtfToUtfProc;
     type.freeProc	= NULL;
     type.nullSize	= 1;
-    type.clientData	= INT2PTR(TCL_ENCODING_UTF);
+    type.clientData	= INT2PTR(0);
     Tcl_CreateEncoding(&type);
     type.clientData	= INT2PTR(TCL_ENCODING_CESU8_SOURCE);
     type.encodingName	= "cesu-8";
@@ -1269,7 +1268,7 @@ Tcl_ExternalToUtfDStringEx(
     flags = TclEncodingExternalFlagsToInternal(flags);
     flags |= TCL_ENCODING_START | TCL_ENCODING_END;
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
-	flags |= TCL_ENCODING_MODIFIED | TCL_ENCODING_UTF;
+	flags |= TCL_ENCODING_MODIFIED;
     }
 
     while (1) {
@@ -1386,7 +1385,7 @@ Tcl_ExternalToUtf(
 	dstLen--;
     }
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
-	flags |= TCL_ENCODING_MODIFIED | TCL_ENCODING_UTF;
+	flags |= TCL_ENCODING_MODIFIED;
     }
     do {
 	Tcl_EncodingState savedState = *statePtr;
@@ -2371,7 +2370,6 @@ UtfToUtfProc(
     const char *dstStart, *dstEnd;
     int result, numChars, charLimit = INT_MAX;
     int ch;
-    int isCesu8;
 
     result = TCL_OK;
 
@@ -2387,7 +2385,7 @@ UtfToUtfProc(
 
     dstStart = dst;
     flags |= PTR2INT(clientData);
-    dstEnd = dst + dstLen - ((flags & TCL_ENCODING_UTF) ? TCL_UTF_MAX : 6);
+    dstEnd = dst + dstLen - ((flags & TCL_ENCODING_CESU8_SOURCE) ? 6 : TCL_UTF_MAX);
 
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 	int profile = TCL_ENCODING_PROFILE_GET(flags);
@@ -2518,7 +2516,7 @@ UtfToUtfProc(
 	    }
 
 	    src += len;
-	    if (!(flags & TCL_ENCODING_UTF) && (ch > 0x3FF)) {
+	    if ((flags & TCL_ENCODING_CESU8_SOURCE) && (ch > 0x3FF)) {
 		if (ch > 0xFFFF) {
 		    /* CESU-8 6-byte sequence for chars > U+FFFF */
 		    ch -= 0x10000;
