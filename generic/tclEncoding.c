@@ -519,7 +519,8 @@ FillEncodingFileMap(void)
 /* Since TCL_ENCODING_MODIFIED is only used for utf-8/cesu-8 and
  * TCL_ENCODING_LE is only used for  utf-16/utf-32/ucs-2. re-use the same value */
 #define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
-#define TCL_ENCODING_UTF	0x200	/* For UTF-8 encoding, allow 4-byte output sequences */
+#define ENCODING_UTF	0x200	/* For UTF-8 encoding, allow 4-byte output sequences */
+#define ENCODING_INPUT	0x400 /* For UTF-8/CESU-8 encoding, means external -> internal */
 
 void
 TclInitEncodingSubsystem(void)
@@ -561,7 +562,7 @@ TclInitEncodingSubsystem(void)
     type.fromUtfProc	= UtfToUtfProc;
     type.freeProc	= NULL;
     type.nullSize	= 1;
-    type.clientData	= INT2PTR(TCL_ENCODING_UTF);
+    type.clientData	= INT2PTR(ENCODING_UTF);
     Tcl_CreateEncoding(&type);
     type.clientData	= INT2PTR(TCL_ENCODING_NOCOMPLAIN);
     type.encodingName	= "cesu-8";
@@ -1238,7 +1239,7 @@ Tcl_ExternalToUtfDStringEx(
 
     flags |= TCL_ENCODING_START | TCL_ENCODING_END;
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
-	flags |= TCL_ENCODING_MODIFIED | TCL_ENCODING_UTF;
+	flags |= ENCODING_INPUT;
     }
 
     while (1) {
@@ -1355,7 +1356,7 @@ Tcl_ExternalToUtf(
 	dstLen--;
     }
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
-	flags |= TCL_ENCODING_MODIFIED | TCL_ENCODING_UTF;
+	flags |= ENCODING_INPUT;
     }
     do {
 	Tcl_EncodingState savedState = *statePtr;
@@ -1450,7 +1451,7 @@ Tcl_UtfToExternalDStringEx(
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes, or < 0 for
 				 * strlen(). */
-    int flags,	/* Conversion control flags. */
+    int flags,			/* Conversion control flags. */
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
@@ -2363,7 +2364,7 @@ UtfToUtfProc(
 
     dstStart = dst;
     flags |= PTR2INT(clientData);
-    dstEnd = dst + dstLen - ((flags & TCL_ENCODING_UTF) ? TCL_UTF_MAX : 6);
+    dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
 
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
@@ -2435,7 +2436,7 @@ UtfToUtfProc(
 		break;
 	    }
 	    src += len;
-	    if (!(flags & TCL_ENCODING_UTF) && (ch > 0x3FF)) {
+	    if (!(flags & ENCODING_UTF) && (ch > 0x3FF)) {
 		if (ch > 0xFFFF) {
 		    /* CESU-8 6-byte sequence for chars > U+FFFF */
 		    ch -= 0x10000;
