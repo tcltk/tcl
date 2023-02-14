@@ -570,8 +570,6 @@ TclInitEncodingSubsystem(void)
     Tcl_InitHashTable(&encodingTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&encodingMutex);
 
-    /* TODO - why is NOCOMPLAIN being hardcoded for encodings below? */
-
     /*
      * Create a few initial encodings.  UTF-8 to UTF-8 translation is not a
      * no-op because it turns a stream of improperly formed UTF-8 into a
