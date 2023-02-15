@@ -2409,32 +2409,29 @@ UtfToUtfProc(
 	     */
 
 	    *dst++ = *src++;
-	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
-                   && (UCHAR(src[1]) == 0x80) && (flags & ENCODING_UTF) && (!(flags & ENCODING_INPUT)
-                                                                            || PROFILE_STRICT(profile))) {
-	    /*
-	     *  \xC0\x80 and either strict profile or target is "real" UTF-8
-	     *     - Strict profile - error
-	     *     - Non-strict, real UTF-8 - output \x00
-	     */
-	    if (flags & ENCODING_INPUT) {
-		/* 
-		 * TODO - should above check not be against STRICT? 
-		 * That would probably break a convertto command that goes
-		 * from the internal UTF8 to the real UTF8. On the other
-		 * hand this means, a strict UTF8->UTF8 transform is not
-		 * possible using this function.
-		 */
+	}
+	else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd) &&
+		 (UCHAR(src[1]) == 0x80) && (flags & ENCODING_UTF) &&
+		 (!(flags & ENCODING_INPUT) || PROFILE_STRICT(profile) ||
+		  PROFILE_REPLACE(profile))) {
+	    /* Special sequence \xC0\x80 */
+	    if (PROFILE_STRICT(profile)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
 
-	    /*
-	     * Convert 0xC080 to real nulls when we are in output mode, 
-	     * irrespective of the profile.
-	     */
-	    *dst++ = 0;
-	    src += 2;
+	    if (PROFILE_REPLACE(profile)) {
+		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+		src += 1; /* C0, 80 handled in next loop iteration
+		             since dst limit has to be checked */
+	    } else {
+		/*
+		 * Convert 0xC080 to real nulls when we are in output mode,
+		 * irrespective of the profile.
+		 */
+		*dst++ = 0;
+		src += 2;
+	    }
 	}
 	else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
