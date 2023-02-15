@@ -9065,6 +9065,7 @@ TclNRYieldToObjCmd(
      */
 
     iPtr->execEnvPtr = corPtr->callerEEPtr;
+    /* Not calling Tcl_IncrRefCount(listPtr) here because listPtr is private */
     TclSetTailcall(interp, listPtr);
     corPtr->yieldPtr = listPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
@@ -9267,8 +9268,8 @@ TclNRCoroutineActivateCallback(
 	    if (corPtr->yieldPtr) {
 		for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
 		    if (runPtr->data[1] == corPtr->yieldPtr) {
+			Tcl_DecrRefCount((Tcl_Obj *)runPtr->data[1]);
 			runPtr->data[1] = NULL;
-			Tcl_DecrRefCount(corPtr->yieldPtr);
 			corPtr->yieldPtr = NULL;
 			break;
 		    }
@@ -9869,6 +9870,7 @@ TclNRCoroutineObjCmd(
     corPtr->running.lineLABCPtr = corPtr->lineLABCPtr;
     corPtr->stackLevel = NULL;
     corPtr->auxNumLevels = 0;
+    corPtr->yieldPtr = NULL;
 
     /*
      * Create the coro's execEnv, switch to it to push the exit and coro

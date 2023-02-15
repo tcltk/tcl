@@ -2130,6 +2130,9 @@ Tcl_AppendFormatToObj(
 	    if (TclGetIntFromObj(interp, segment, &code) != TCL_OK) {
 		goto error;
 	    }
+	    if ((unsigned)code > 0x10FFFF) {
+	    	code = 0xFFFD;
+	    }
 	    length = Tcl_UniCharToUtf(code, buf);
 #if TCL_UTF_MAX < 4
 	    if ((code >= 0xD800) && (length < 3)) {

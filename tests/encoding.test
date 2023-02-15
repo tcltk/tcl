@@ -172,7 +172,7 @@ test encoding-6.2 {Tcl_CreateEncoding: replace encoding} {testencoding} {
 
 test encoding-7.1 {Tcl_ExternalToUtfDString: small buffer} {
     encoding convertfrom jis0208 8c8c8c8c
-} "吾吾吾吾"
+} 吾吾吾吾
 test encoding-7.2 {Tcl_UtfToExternalDString: big buffer} {
     set a 8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C
     append a $a
@@ -194,7 +194,7 @@ test encoding-8.1 {Tcl_ExternalToUtf} {
     close $f
     file delete [file join [temporaryDirectory] dummy]
     return $x
-} "ab乎g"
+} ab乎g
 
 test encoding-9.1 {Tcl_UtfToExternalDString: small buffer} {
     encoding convertto jis0208 "吾吾吾吾"
@@ -214,7 +214,7 @@ test encoding-9.2 {Tcl_UtfToExternalDString: big buffer} {
 test encoding-10.1 {Tcl_UtfToExternal} {
     set f [open [file join [temporaryDirectory] dummy] w]
     fconfigure $f -translation binary -encoding shiftjis
-    puts -nonewline $f "ab乎g"
+    puts -nonewline $f ab乎g
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
     fconfigure $f -translation binary -encoding iso8859-1
@@ -249,7 +249,7 @@ test encoding-11.1 {LoadEncodingFile: unknown encoding} {testencoding} {
 } {1 {unknown encoding "jis0208"} 8C}
 test encoding-11.2 {LoadEncodingFile: single-byte} {
     encoding convertfrom jis0201 \xA1
-} "｡"
+} ｡
 test encoding-11.3 {LoadEncodingFile: double-byte} {
     encoding convertfrom jis0208 8C
 } 乎
@@ -453,6 +453,24 @@ test encoding-15.24 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
     binary scan $y H* z
     list [string length $y] $z
 } {2 cfbf}
+test encoding-15.25 {UtfToUtfProc CESU-8} {
+    encoding convertfrom cesu-8 \x00
+} \x00
+test encoding-15.26 {UtfToUtfProc CESU-8} {
+    encoding convertfrom cesu-8 \xC0\x80
+} \x00
+test encoding-15.27 {UtfToUtfProc -strict CESU-8} {
+    encoding convertfrom -strict cesu-8 \xC0\x80
+} \x00
+test encoding-15.28 {UtfToUtfProc -strict CESU-8} {
+    encoding convertfrom -strict cesu-8 \xC0\x80
+} \x00
+test encoding-15.29 {UtfToUtfProc CESU-8} {
+    encoding convertto cesu-8 \x00
+} \xC0\x80
+test encoding-15.30 {UtfToUtfProc -strict CESU-8} {
+    encoding convertto -strict cesu-8 \x00
+} \xC0\x80
 
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]
@@ -482,6 +500,61 @@ test encoding-16.7 {Utf32ToUtfProc} -body {
     set val [encoding convertfrom utf-32be \0\0NN]
     list $val [format %x [scan $val %c]]
 } -result "乎 4e4e"
+test encoding-16.8 {Utf32ToUtfProc} -body {
+    set val [encoding convertfrom -nocomplain utf-32 \x41\x00\x00\x41]
+    list $val [format %x [scan $val %c]]
+} -result "\uFFFD fffd"
+test encoding-16.9 {Utf32ToUtfProc} -constraints utf32 -body {
+    encoding convertfrom utf-32le \x00\xD8\x00\x00
+} -result \uD800
+test encoding-16.10 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32le \x00\xDC\x00\x00
+} -result \uDC00
+test encoding-16.11 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00
+} -result \uD800\uDC00
+test encoding-16.12 {Utf32ToUtfProc} -constraints utf32 -body {
+    encoding convertfrom utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00
+} -result \uDC00\uD800
+test encoding-16.13 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xD8
+} -result \uD800
+test encoding-16.14 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xDC
+} -result \uDC00
+test encoding-16.15 {Utf16ToUtfProc} -constraints knownBug -body {
+    encoding convertfrom utf-16le \x00\xD8\x00\xDC
+} -result \uD800\uDC00
+test encoding-16.16 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xDC\x00\xD8
+} -result \uDC00\uD800
+test encoding-16.17 {Utf32ToUtfProc} -body {
+    list [encoding convertfrom -strict -failindex  idx utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00] [set idx]
+} -result {A 4}
+
+test encoding-16.9 {
+    Utf16ToUtfProc, Tcl_UniCharToUtf, surrogate pairs in utf-16
+} -body {
+    apply [list {} {
+	for {set i 0xD800} {$i < 0xDBFF} {incr i} {
+	    for {set j 0xDC00} {$j < 0xDFFF} {incr j} {
+		set string [binary format S2 [list $i $j]]
+		set status [catch {
+		    set decoded [encoding convertfrom utf-16be $string]
+		    set encoded [encoding convertto utf-16be $decoded]
+		}]
+		if {$status || ( $encoded ne $string )} {
+		    return [list [format %x $i] [format %x $j]]
+		}
+	    }
+	}
+	return done
+    } [namespace current]]
+} -result done
+
+
+
+
 
 test encoding-17.1 {UtfToUtf16Proc} -body {
     encoding convertto utf-16 "\U460DC"
@@ -514,11 +587,40 @@ test encoding-17.10 {Utf32ToUtfProc} -body {
     encoding convertfrom -nocomplain utf-32 "\xFF\xFF\xFF\xFF"
 } -result \uFFFD
 
-test encoding-18.1 {TableToUtfProc} {
-} {}
+test encoding-18.1 {TableToUtfProc on invalid input} -body {
+	list [catch {encoding convertto jis0208 \\} res] $res
+} -result {1 {unexpected character at index 0: 'U+00005C'}}
+test encoding-18.2 {TableToUtfProc on invalid input with -strict} -body {
+	list [catch {encoding convertto -strict jis0208 \\} res] $res
+} -result {1 {unexpected character at index 0: 'U+00005C'}}
+test encoding-18.3 {TableToUtfProc on invalid input with -strict -failindex} -body {
+	list [catch {encoding convertto -strict -failindex pos jis0208 \\} res] $res $pos
+} -result {0 {} 0}
+test encoding-18.4 {TableToUtfProc on invalid input with -failindex -strict} -body {
+	list [catch {encoding convertto -failindex pos -strict jis0208 \\} res] $res $pos
+} -result {0 {} 0}
+test encoding-18.5 {TableToUtfProc on invalid input with -failindex} -body {
+	list [catch {encoding convertto -failindex pos jis0208 \\} res] $res $pos
+} -result {0 {} 0}
+test encoding-18.6 {TableToUtfProc on invalid input with -nocomplain} -body {
+	list [catch {encoding convertto -nocomplain jis0208 \\} res] $res
+} -result {0 !)}
 
-test encoding-19.1 {TableFromUtfProc} {
-} {}
+test encoding-19.1 {TableFromUtfProc} -body {
+    encoding convertfrom ascii AÁ
+} -result AÁ
+test encoding-19.2 {TableFromUtfProc} -body {
+    encoding convertfrom -nocomplain ascii AÁ
+} -result AÁ
+test encoding-19.3 {TableFromUtfProc} -body {
+    encoding convertfrom -strict ascii AÁ
+} -returnCodes 1 -result {unexpected byte sequence starting at index 1: '\xC1'}
+test encoding-19.4 {TableFromUtfProc} -body {
+    list [encoding convertfrom -failindex idx ascii AÁ] [set idx]
+} -result {A 1}
+test encoding-19.4 {TableFromUtfProc} -body {
+    list [encoding convertfrom -failindex idx -strict ascii AÁ] [set idx]
+} -result {A 1}
 
 test encoding-20.1 {TableFreefProc} {
 } {}
@@ -737,6 +839,9 @@ test encoding-24.39 {Try to generate invalid utf-8 with -strict} -body {
 test encoding-24.40 {Try to generate invalid utf-8 with -nocomplain} -body {
     encoding convertto -nocomplain utf-8 \uD800
 } -result \xED\xA0\x80
+test encoding-24.41 {Parse invalid utf-8 with -strict} -body {
+    encoding convertfrom -strict utf-8 \xED\xA0\x80\xED\xB0\x80
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xED'}
 
 file delete [file join [temporaryDirectory] iso2022.txt]
 
@@ -917,6 +1022,7 @@ test encoding-29.0 {get encoding nul terminator lengths} -constraints {
         [testencoding nullength gb12345] \
         [testencoding nullength ksc5601]
 } -result {1 2 4 2 2}
+
 
 # cleanup
 namespace delete ::tcl::test::encoding
