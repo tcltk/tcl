@@ -452,6 +452,24 @@ test encoding-15.24 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
     binary scan $y H* z
     list [string length $y] $z
 } {2 cfbf}
+test encoding-15.25 {UtfToUtfProc CESU-8} {
+    encoding convertfrom cesu-8 \x00
+} \x00
+test encoding-15.26 {UtfToUtfProc CESU-8} {
+    encoding convertfrom cesu-8 \xC0\x80
+} \x00
+test encoding-15.27 {UtfToUtfProc -profile strict CESU-8} {
+    encoding convertfrom -profile strict cesu-8 \xC0\x80
+} \x00
+test encoding-15.28 {UtfToUtfProc -profile strict CESU-8} {
+    encoding convertfrom -profile strict cesu-8 \xC0\x80
+} \x00
+test encoding-15.29 {UtfToUtfProc CESU-8} {
+    encoding convertto cesu-8 \x00
+} \xC0\x80
+test encoding-15.30 {UtfToUtfProc -profile strict CESU-8} {
+    encoding convertto -profile strict cesu-8 \x00
+} \xC0\x80
 
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]
@@ -481,8 +499,39 @@ test encoding-16.7 {Utf32ToUtfProc} -body {
     set val [encoding convertfrom utf-32be \0\0NN]
     list $val [format %x [scan $val %c]]
 } -result "乎 4e4e"
+test encoding-16.8 {Utf32ToUtfProc} -body {
+    set val [encoding convertfrom -profile tcl8 utf-32 \x41\x00\x00\x41]
+    list $val [format %x [scan $val %c]]
+} -result "\uFFFD fffd"
+test encoding-16.9 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32le \x00\xD8\x00\x00
+} -result \uD800
+test encoding-16.10 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32le \x00\xDC\x00\x00
+} -result \uDC00
+test encoding-16.11 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00
+} -result \uD800\uDC00
+test encoding-16.12 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00
+} -result \uDC00\uD800
+test encoding-16.13 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xD8
+} -result \uD800
+test encoding-16.14 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xDC
+} -result \uDC00
+test encoding-16.15 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xD8\x00\xDC
+} -result \uD800\uDC00
+test encoding-16.16 {Utf16ToUtfProc} -body {
+    encoding convertfrom utf-16le \x00\xDC\x00\xD8
+} -result \uDC00\uD800
+test encoding-16.17 {Utf32ToUtfProc} -body {
+    list [encoding convertfrom -profile strict -failindex  idx utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00] [set idx]
+} -result {A 4}
 
-test encoding-16.8 {
+test encoding-16.9 {
     Utf16ToUtfProc, Tcl_UniCharToUtf, surrogate pairs in utf-16
 } -body {
     apply [list {} {
@@ -556,8 +605,21 @@ test encoding-18.6 {TableToUtfProc on invalid input with -profile tcl8} -body {
 	list [catch {encoding convertto -profile tcl8 jis0208 \\} res] $res
 } -result {0 !)}
 
-test encoding-19.1 {TableFromUtfProc} {
-} {}
+test encoding-19.1 {TableFromUtfProc} -body {
+    encoding convertfrom ascii AÁ
+} -result AÁ
+test encoding-19.2 {TableFromUtfProc} -body {
+    encoding convertfrom -profile tcl8 ascii AÁ
+} -result AÁ
+test encoding-19.3 {TableFromUtfProc} -body {
+    encoding convertfrom -profile strict ascii AÁ
+} -returnCodes 1 -result {unexpected byte sequence starting at index 1: '\xC1'}
+test encoding-19.4 {TableFromUtfProc} -body {
+    list [encoding convertfrom -failindex idx ascii AÁ] [set idx]
+} -result {A 1}
+test encoding-19.4 {TableFromUtfProc} -body {
+    list [encoding convertfrom -failindex idx -profile strict ascii AÁ] [set idx]
+} -result {A 1}
 
 test encoding-20.1 {TableFreefProc} {
 } {}
@@ -715,10 +777,10 @@ test encoding-24.19 {Parse valid or invalid utf-8} -constraints deprecated -body
 } -result ZX\xED\xA0\x80
 test encoding-24.20 {Parse with -profile tcl8 but without providing encoding} -body {
     encoding convertfrom -profile tcl8 "\x20"
-} -result {wrong # args: should be "::tcl::encoding::convertfrom ??-profile profile? ?-failindex var? ?encoding?? data"} -returnCodes error
+} -result {wrong # args: should be "::tcl::encoding::convertfrom ?-profile profile? ?-failindex var? encoding data" or "::tcl::encoding::convertfrom data"} -returnCodes error
 test encoding-24.21 {Parse with -profile tcl8 but without providing encoding} -body {
     string length [encoding convertto -profile tcl8 "\x20"]
-} -result {wrong # args: should be "::tcl::encoding::convertto ??-profile profile? ?-failindex var? ?encoding?? data"} -returnCodes error
+} -result {wrong # args: should be "::tcl::encoding::convertto ?-profile profile? ?-failindex var? encoding data" or "::tcl::encoding::convertto data"} -returnCodes error
 test encoding-24.22 {Syntax error, two encodings} -body {
     encoding convertfrom iso8859-1 utf-8 "ZX\uD800"
 } -result {bad option "iso8859-1": must be -profile or -failindex} -returnCodes error
@@ -776,6 +838,9 @@ test encoding-24.39 {Try to generate invalid utf-8 with -profile strict} -body {
 test encoding-24.40 {Try to generate invalid utf-8 with -profile tcl8} -body {
     encoding convertto -profile tcl8 utf-8 \uD800
 } -result \xED\xA0\x80
+test encoding-24.41 {Parse invalid utf-8 with -profile strict} -body {
+    encoding convertfrom -profile strict utf-8 \xED\xA0\x80\xED\xB0\x80
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xED'}
 
 file delete [file join [temporaryDirectory] iso2022.txt]
 
@@ -930,7 +995,9 @@ test encoding-27.2 {encoding dirs basic behavior} -returnCodes error -body {
 test encoding-28.0 {all encodings load} -body {
 	set string hello
 	foreach name [encoding names] {
-		incr count
+		if {$name ne "unicode"} {
+		    incr count
+		}
 		encoding convertto -profile tcl8 $name $string
 
 		# discard the cached internal representation of Tcl_Encoding
@@ -938,7 +1005,7 @@ test encoding-28.0 {all encodings load} -body {
 		llength $name
 	}
 	return $count
-} -result [expr {[info exists ::tcl_precision] ? 92 : 91}]
+} -result 91
 
 runtests
 
