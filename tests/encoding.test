@@ -617,8 +617,11 @@ test encoding-19.3 {TableFromUtfProc} -body {
 test encoding-19.4 {TableFromUtfProc} -body {
     list [encoding convertfrom -failindex idx ascii AÁ] [set idx]
 } -result {A 1}
-test encoding-19.4 {TableFromUtfProc} -body {
+test encoding-19.5 {TableFromUtfProc} -body {
     list [encoding convertfrom -failindex idx -strict ascii AÁ] [set idx]
+} -result {A 1}
+test encoding-19.6 {TableFromUtfProc} -body {
+    list [encoding convertfrom -failindex idx -strict ascii AÁB] [set idx]
 } -result {A 1}
 
 test encoding-20.1 {TableFreefProc} {

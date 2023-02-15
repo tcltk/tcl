@@ -2433,7 +2433,7 @@ UtfToUtfProc(
 	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
 	    if ((len < 2) && (ch != 0) && (flags & ENCODING_INPUT)
-		    && (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
+		    && (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX))) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
