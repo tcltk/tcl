@@ -9782,11 +9782,19 @@ CopyData(
 	    Tcl_SetErrno(inStatePtr->unreportedError);
 	    inStatePtr->unreportedError = 0;
 	    goto readError;
+	} else if (inStatePtr->flags & CHANNEL_ENCODING_ERROR) {
+	    Tcl_SetErrno(EILSEQ);
+	    inStatePtr->flags &= ~CHANNEL_ENCODING_ERROR;
+	    goto readError;
 	}
 	Tcl_GetChannelError(outChan, &msg);
 	if ((outStatePtr->unreportedError != 0) || (msg != NULL)) {
 	    Tcl_SetErrno(outStatePtr->unreportedError);
 	    outStatePtr->unreportedError = 0;
+	    goto writeError;
+	} else if (outStatePtr->flags & CHANNEL_ENCODING_ERROR) {
+	    Tcl_SetErrno(EILSEQ);
+	    outStatePtr->flags &= ~CHANNEL_ENCODING_ERROR;
 	    goto writeError;
 	}
 

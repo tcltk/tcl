@@ -546,8 +546,8 @@ FillEncodingFileMap(void)
 /* Since TCL_ENCODING_MODIFIED is only used for utf-8/cesu-8 and
  * TCL_ENCODING_LE is only used for  utf-16/utf-32/ucs-2. re-use the same value */
 #define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
-#define TCL_ENCODING_CESU8_SOURCE 0x400	/* TODO - Distinguishes cesu-8 
-					 * *source* from utf-8 *source* */
+#define ENCODING_UTF	0x200	/* For UTF-8 encoding, allow 4-byte output sequences */
+#define ENCODING_INPUT	0x400 /* For UTF-8/CESU-8 encoding, means external -> internal */
 
 void
 TclInitEncodingSubsystem(void)
@@ -589,9 +589,9 @@ TclInitEncodingSubsystem(void)
     type.fromUtfProc	= UtfToUtfProc;
     type.freeProc	= NULL;
     type.nullSize	= 1;
-    type.clientData	= INT2PTR(0);
+    type.clientData	= INT2PTR(ENCODING_UTF);
     Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(TCL_ENCODING_CESU8_SOURCE);
+    type.clientData	= INT2PTR(0);
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
 
@@ -1266,7 +1266,7 @@ Tcl_ExternalToUtfDStringEx(
     flags = TclEncodingExternalFlagsToInternal(flags);
     flags |= TCL_ENCODING_START | TCL_ENCODING_END;
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
-	flags |= TCL_ENCODING_MODIFIED;
+	flags |= ENCODING_INPUT;
     }
 
     while (1) {
@@ -1383,7 +1383,7 @@ Tcl_ExternalToUtf(
 	dstLen--;
     }
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
-	flags |= TCL_ENCODING_MODIFIED;
+	flags |= ENCODING_INPUT;
     }
     do {
 	Tcl_EncodingState savedState = *statePtr;
@@ -2383,7 +2383,7 @@ UtfToUtfProc(
 
     dstStart = dst;
     flags |= PTR2INT(clientData);
-    dstEnd = dst + dstLen - ((flags & TCL_ENCODING_CESU8_SOURCE) ? 6 : TCL_UTF_MAX);
+    dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
 
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 	int profile = TCL_ENCODING_PROFILE_GET(flags);
@@ -2401,12 +2401,7 @@ UtfToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	/*
-	 * TCL_ENCODING_MODIFIED is set when the target encoding is Tcl's
-	 * internal UTF-8 modified version.
-	 */
-	if (UCHAR(*src) < 0x80
-	    && !((UCHAR(*src) == 0) && (flags & TCL_ENCODING_MODIFIED))) {
+	if (UCHAR(*src) < 0x80 && !((UCHAR(*src) == 0) && (flags & ENCODING_INPUT))) {
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when target encoding
 	     * is Tcl's "modified" UTF-8. These need to be converted to
@@ -2414,17 +2409,15 @@ UtfToUtfProc(
 	     */
 
 	    *dst++ = *src++;
-	}
-	else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
-		 && (UCHAR(src[1]) == 0x80)
-		 && (!(flags & TCL_ENCODING_MODIFIED)
-		     || PROFILE_STRICT(profile))) {
+	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
+                   && (UCHAR(src[1]) == 0x80) && (flags & ENCODING_UTF) && (!(flags & ENCODING_INPUT)
+                                                                            || PROFILE_STRICT(profile))) {
 	    /*
 	     *  \xC0\x80 and either strict profile or target is "real" UTF-8
 	     *     - Strict profile - error
 	     *     - Non-strict, real UTF-8 - output \x00
 	     */
-	    if (flags & TCL_ENCODING_MODIFIED) {
+	    if (flags & ENCODING_INPUT) {
 		/* 
 		 * TODO - should above check not be against STRICT? 
 		 * That would probably break a convertto command that goes
@@ -2452,7 +2445,7 @@ UtfToUtfProc(
 	     * unless the user has explicitly asked to be told.
 	     */
 
-	    if (flags & TCL_ENCODING_MODIFIED) {
+	    if (flags & ENCODING_INPUT) {
 		/* Incomplete bytes for modified UTF-8 target */
 		if (PROFILE_STRICT(profile)) {
 		    result = (flags & TCL_ENCODING_CHAR_LIMIT)
@@ -2501,10 +2494,8 @@ UtfToUtfProc(
 	     * So len==1 means an invalid byte that is magically transformed
 	     * to a code point unless it resulted from the special
 	     * \xC0\x80 sequence. Tests io-75.*
-	     * TODO - below check could be simplified to remove the MODIFIED
-	     * expression I think given the checks already made above. May be.
 	     */
-	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_MODIFIED)) {
+	    if ((len < 2) && (ch != 0) && (flags & ENCODING_INPUT)) {
 		if (PROFILE_STRICT(profile)) {
 		    result = TCL_CONVERT_SYNTAX;
 		    break;
@@ -2514,7 +2505,7 @@ UtfToUtfProc(
 	    }
 
 	    src += len;
-	    if ((flags & TCL_ENCODING_CESU8_SOURCE) && (ch > 0x3FF)) {
+	    if (!(flags & ENCODING_UTF) && (ch > 0x3FF)) {
 		if (ch > 0xFFFF) {
 		    /* CESU-8 6-byte sequence for chars > U+FFFF */
 		    ch -= 0x10000;
@@ -2529,7 +2520,7 @@ UtfToUtfProc(
 		 * A surrogate character is detected, handle especially.
 		 */
 		/* TODO - what about REPLACE profile? */
-		if (PROFILE_STRICT(profile) && !(flags & TCL_ENCODING_CESU8_SOURCE)) {
+		if (PROFILE_STRICT(profile) && (flags & ENCODING_UTF)) {
 		    result = TCL_CONVERT_UNKNOWN;
 		    src = saveSrc;
 		    break;
@@ -2555,13 +2546,13 @@ UtfToUtfProc(
 		dst += Tcl_UniCharToUtf(ch, dst);
 		ch = low;
 	    } else if (PROFILE_STRICT(profile) &&
-		       (!(flags & TCL_ENCODING_MODIFIED)) &&
+		       (!(flags & ENCODING_INPUT)) &&
 		       SURROGATE(ch)) {
 		result = TCL_CONVERT_UNKNOWN;
 		src = saveSrc;
 		break;
 	    } else if (PROFILE_STRICT(profile) &&
-	               (flags & TCL_ENCODING_MODIFIED) &&
+	               (flags & ENCODING_INPUT) &&
 		       SURROGATE(ch)) {
 		result = TCL_CONVERT_SYNTAX;
 		src = saveSrc;
@@ -2619,7 +2610,7 @@ Utf32ToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    int ch;
+    int ch = 0;
 
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
@@ -2636,6 +2627,19 @@ Utf32ToUtfProc(
 	srcLen &= -4;
     }
 
+    /*
+     * If last code point is a high surrogate, we cannot handle that yet,
+     * unless we are at the end.
+     */
+
+    if (!(flags & TCL_ENCODING_END) && (srcLen >= 4) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?3:2)] & 0xFC) == 0xD8) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?2:3)]) == 0) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?1:4)]) == 0)) {
+	result = TCL_CONVERT_MULTIBYTE;
+	srcLen-= 4;
+    }
+
     srcStart = src;
     srcEnd = src + srcLen;
 
@@ -2648,10 +2652,15 @@ Utf32ToUtfProc(
 	    break;
 	}
 
+	int prev = ch;
 	if (flags & TCL_ENCODING_LE) {
 	    ch = (src[3] & 0xFF) << 24 | (src[2] & 0xFF) << 16 | (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
 	} else {
 	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
+	}
+	if (((prev  & ~0x3FF) == 0xD800) && ((ch  & ~0x3FF) != 0xDC00)) {
+	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
+	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
 	
 	if ((unsigned)ch > 0x10FFFF || SURROGATE(ch)) {
@@ -2673,14 +2682,14 @@ Utf32ToUtfProc(
 	    *dst++ = (ch & 0xFF);
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
-	    if (HIGH_SURROGATE(ch)) {
-		/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
-		dst += Tcl_UniCharToUtf(-1, dst);
-	    }
 	}
 	src += sizeof(unsigned int);
     }
 
+    if ((ch  & ~0x3FF) == 0xD800) {
+	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
+	dst += Tcl_UniCharToUtf(-1, dst);
+    }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -2828,7 +2837,7 @@ Utf16ToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    unsigned short ch;
+    unsigned short ch = 0;
 
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
@@ -2846,10 +2855,11 @@ Utf16ToUtfProc(
     }
 
     /*
-     * If last code point is a high surrogate, we cannot handle that yet.
+     * If last code point is a high surrogate, we cannot handle that yet,
+     * unless we are at the end.
      */
 
-    if ((srcLen >= 2) &&
+    if (!(flags & TCL_ENCODING_END) && (srcLen >= 2) &&
 	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?1:2)] & 0xFC) == 0xD8)) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen-= 2;
@@ -2867,10 +2877,15 @@ Utf16ToUtfProc(
 	    break;
 	}
 
+	unsigned short prev = ch;
 	if (flags & TCL_ENCODING_LE) {
 	    ch = (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
 	} else {
 	    ch = (src[0] & 0xFF) << 8 | (src[1] & 0xFF);
+	}
+	if (((prev  & ~0x3FF) == 0xD800) && ((ch  & ~0x3FF) != 0xDC00)) {
+	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
+	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
 
 	/*
@@ -2886,6 +2901,10 @@ Utf16ToUtfProc(
 	src += sizeof(unsigned short);
     }
 
+    if ((ch  & ~0x3FF) == 0xD800) {
+	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
+	dst += Tcl_UniCharToUtf(-1, dst);
+    }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -3180,7 +3199,7 @@ TableToUtfProc(
 	    src++;
 	    if (src >= srcEnd) {
 		/*
-		 * TODO - this is broken. For consistency with other 
+		 * TODO - this is broken. For consistency with other
 		 * decoders, an error should be raised only if strict.
 		 * However, doing that check cause a whole bunch of test
 		 * failures. Need to verify if those tests are in fact
