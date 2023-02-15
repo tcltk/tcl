@@ -2595,6 +2595,7 @@ Utf32ToUtfProc(
 		&& ((ch  & ~0x7FF) == 0xD800))) {
 	    if (STOPONERROR) {
 		result = TCL_CONVERT_SYNTAX;
+		ch = 0;
 		break;
 	    }
 	}

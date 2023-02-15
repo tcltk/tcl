@@ -527,6 +527,9 @@ test encoding-16.15 {Utf16ToUtfProc} -body {
 test encoding-16.16 {Utf16ToUtfProc} -body {
     encoding convertfrom utf-16le \x00\xDC\x00\xD8
 } -result \uDC00\uD800
+test encoding-16.17 {Utf32ToUtfProc} -body {
+    list [encoding convertfrom -strict -failindex  idx utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00] [set idx]
+} -result {A 4}
 
 test encoding-16.9 {
     Utf16ToUtfProc, Tcl_UniCharToUtf, surrogate pairs in utf-16
