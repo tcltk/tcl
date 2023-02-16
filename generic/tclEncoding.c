@@ -2368,6 +2368,7 @@ UtfToUtfProc(
     const char *dstStart, *dstEnd;
     int result, numChars, charLimit = INT_MAX;
     int ch;
+    int profile;
 
     result = TCL_OK;
 
@@ -2385,8 +2386,8 @@ UtfToUtfProc(
     flags |= PTR2INT(clientData);
     dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
 
+    profile = TCL_ENCODING_PROFILE_GET(flags);
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
-	int profile = TCL_ENCODING_PROFILE_GET(flags);
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
@@ -2415,15 +2416,15 @@ UtfToUtfProc(
 		 (!(flags & ENCODING_INPUT) || PROFILE_STRICT(profile) ||
 		  PROFILE_REPLACE(profile))) {
 	    /* Special sequence \xC0\x80 */
-	    if (PROFILE_STRICT(profile)) {
-		result = TCL_CONVERT_SYNTAX;
-		break;
-	    }
-
-	    if (PROFILE_REPLACE(profile)) {
-		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-		src += 1; /* C0, 80 handled in next loop iteration
-		             since dst limit has to be checked */
+	    if (flags & ENCODING_INPUT) {
+		if (PROFILE_REPLACE(profile)) {
+		   dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+		   src += 2;
+		} else {
+		   /* PROFILE_STRICT */
+		   result = TCL_CONVERT_SYNTAX;
+		   break;
+		}
 	    } else {
 		/*
 		 * Convert 0xC080 to real nulls when we are in output mode,
@@ -2432,6 +2433,7 @@ UtfToUtfProc(
 		*dst++ = 0;
 		src += 2;
 	    }
+
 	}
 	else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
@@ -2516,32 +2518,37 @@ UtfToUtfProc(
 		/*
 		 * A surrogate character is detected, handle especially.
 		 */
-		/* TODO - what about REPLACE profile? */
 		if (PROFILE_STRICT(profile) && (flags & ENCODING_UTF)) {
 		    result = TCL_CONVERT_UNKNOWN;
 		    src = saveSrc;
 		    break;
 		}
-
-		low = ch;
-		len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
-
-		if ((!LOW_SURROGATE(low)) || (ch & 0x400)) {
-
-		    if (PROFILE_STRICT(profile)) {
-			result = TCL_CONVERT_UNKNOWN;
-			src = saveSrc;
-			break;
-		    }
-		cesu8:
-		    *dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
-		    *dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
-		    *dst++ = (char)	 ((ch | 0x80) & 0xBF);
-		    continue;
+		if (0 && PROFILE_REPLACE(profile)) {
+		    ch = UNICODE_REPLACE_CHAR;
+		    src += len;
+		    // dst += Tcl_UniCharToUtf(ch, dst);
 		}
-		src += len;
-		dst += Tcl_UniCharToUtf(ch, dst);
-		ch = low;
+		else {
+		    low = ch;
+		    len = (src <= srcEnd - 3) ? TclUtfToUCS4(src, &low) : 0;
+
+		    if ((!LOW_SURROGATE(low)) || (ch & 0x400)) {
+
+			if (PROFILE_STRICT(profile)) {
+			    result = TCL_CONVERT_UNKNOWN;
+			    src = saveSrc;
+			    break;
+			}
+cesu8:
+			*dst++ = (char)(((ch >> 12) | 0xE0) & 0xEF);
+			*dst++ = (char)(((ch >> 6) | 0x80) & 0xBF);
+			*dst++ = (char)((ch | 0x80) & 0xBF);
+			continue;
+		    }
+		    src += len;
+		    dst += Tcl_UniCharToUtf(ch, dst);
+		    ch = low;
+		}
 	    } else if (PROFILE_STRICT(profile) &&
 		       (!(flags & ENCODING_INPUT)) &&
 		       SURROGATE(ch)) {
