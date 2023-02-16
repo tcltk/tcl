@@ -4127,49 +4127,6 @@ InitializeEncodingSearchPath(
 }
 
 /*
- *------------------------------------------------------------------------
- *
- * TclEncodingProfileParseName --
- *
- *    Maps an encoding profile name to its enum value.
- *
- * Results:
- *    TCL_OK on success or TCL_ERROR on failure.
- *
- * Side effects:
- *    Returns the profile enum value in *profilePtr
- *
- *------------------------------------------------------------------------
- */
-int
-TclEncodingProfileParseName(
-    Tcl_Interp *interp,			  /* For error messages. May be NULL */
-    const char *profileName,		  /* Name of profile */
-    enum TclEncodingProfile *profilePtr)  /* Output */
-{
-    /* NOTE: Order must match enum TclEncodingProfile !!! */
-    static const char *const profileNames[] = {"", "tcl8", "strict"};
-    int idx;
-
-    for (idx = 0; idx < sizeof(profileNames) / sizeof(profileNames[0]); ++idx) {
-	if (!strcmp(profileName, profileNames[idx])) {
-	    *profilePtr = (enum TclEncodingProfile)idx;
-	    return TCL_OK;
-	}
-    }
-    if (interp) {
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_ObjPrintf(
-		"bad profile \"%s\": must be strict, tcl8, or \"\"",
-		profileName));
-	Tcl_SetErrorCode(
-	    interp, "TCL", "ENCODING", "PROFILE", profileName, NULL);
-    }
-    return TCL_ERROR;
-}
-
-/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

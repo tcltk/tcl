@@ -8329,24 +8329,23 @@ Tcl_SetChannelOption(
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	return TCL_OK;
     } else if (HaveOpt(1, "-profile")) {
-	enum TclEncodingProfile profile;
-	if (TclEncodingProfileParseName(interp, newValue, &profile) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	switch (profile) {
-	case TCL_ENCODING_PROFILE_TCL8:
+	len = strlen(newValue);
+	if ((newValue[0] == 't') && (strncmp(newValue, "tcl8", len) == 0)) {
 	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
 	    SetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
-	    break;
-	case TCL_ENCODING_PROFILE_STRICT:
+	} else if ((newValue[0] == 's') &&
+		(strncmp(newValue, "strict", len) == 0)) {
 	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
 	    SetFlag(statePtr, CHANNEL_ENCODING_STRICT);
-	    break;
-	case TCL_ENCODING_PROFILE_DEFAULT: /* FALLTHRU */
-	default:
+	} else if ((newValue[0] == '\0') /* &&
+		(strncmp(newValue, "none", len) == 0)*/) {
 	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
 	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
-	    break;
+	} else if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "bad value for -profile: must be one of"
+		    " strict, tcl8, or \"\"", TCL_INDEX_NONE));
+	    return TCL_ERROR;
 	}
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	return TCL_OK;
@@ -9444,7 +9443,7 @@ TclCopyChannel(
 	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
 	    && inStatePtr->encoding == outStatePtr->encoding
 	    && (inStatePtr->flags & TCL_ENCODING_STRICT) != TCL_ENCODING_STRICT
-	    && outStatePtr->flags & TCL_ENCODING_NOCOMPLAIN;
+	    && (outStatePtr->flags & TCL_ENCODING_NOCOMPLAIN) == TCL_ENCODING_NOCOMPLAIN;
 
     /*
      * Allocate a new CopyState to maintain info about the current copy in
@@ -9773,7 +9772,7 @@ CopyData(
     outBinary = (outStatePtr->encoding == NULL);
     sameEncoding = inStatePtr->encoding == outStatePtr->encoding
 	    && (inStatePtr->flags & TCL_ENCODING_STRICT) != TCL_ENCODING_STRICT
-	    && outStatePtr->flags & TCL_ENCODING_NOCOMPLAIN;
+	    && (outStatePtr->flags & TCL_ENCODING_NOCOMPLAIN) == TCL_ENCODING_NOCOMPLAIN;
 
     if (!(inBinary || sameEncoding)) {
 	TclNewObj(bufObj);

@@ -562,7 +562,8 @@ EncodingConvertParseOptions (
 {
     static const char *const options[] = {"-profile", "-failindex", NULL};
     enum convertfromOptions { PROFILE, FAILINDEX } optIndex;
-    enum TclEncodingProfile profile;
+    static const char *const profileNames[] = {"strict", "tcl8", NULL};
+    enum profileOptions { PROFILE_NONE=-1, PROFILE_STRICT, PROFILE_TCL8 } profile;
     Tcl_Encoding encoding;
     Tcl_Obj *dataObj;
     Tcl_Obj *failVarObj;
@@ -604,22 +605,22 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 	    }
 	    switch (optIndex) {
 	    case PROFILE:
-		if (TclEncodingProfileParseName(
-			interp, Tcl_GetString(objv[argIndex]), &profile)
-		    != TCL_OK) {
+		if (Tcl_GetIndexFromObj(interp, objv[argIndex], profileNames, "profile",
+			TCL_NULL_OK, &profile) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		switch (profile) {
-		case TCL_ENCODING_PROFILE_TCL8:
+		case PROFILE_TCL8:
 		    flags = TCL_ENCODING_NOCOMPLAIN;
 		    break;
-		case TCL_ENCODING_PROFILE_STRICT:
+		case PROFILE_STRICT:
 		    flags = TCL_ENCODING_STRICT;
 		    break;
-		case TCL_ENCODING_PROFILE_DEFAULT:
+		case PROFILE_NONE:
 		    flags = TCL_ENCODING_STOPONERROR;
 		    break;
 		default:
+		    flags = 0;
 		    break;
 		}
 		break;
@@ -702,7 +703,7 @@ EncodingConvertfromObjCmd(
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
-    if ((!(flags & TCL_ENCODING_NOCOMPLAIN) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) && (result != TCL_INDEX_NONE)) {
+    if ((((flags & TCL_ENCODING_NOCOMPLAIN) != TCL_ENCODING_NOCOMPLAIN) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) && (result != TCL_INDEX_NONE)) {
 	if (failVarObj != NULL) {
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
@@ -782,7 +783,7 @@ EncodingConverttoObjCmd(
     stringPtr = TclGetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    flags, &ds);
-    if ((!(flags & TCL_ENCODING_NOCOMPLAIN) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) && (result != TCL_INDEX_NONE)) {
+    if ((((flags & TCL_ENCODING_NOCOMPLAIN) != TCL_ENCODING_NOCOMPLAIN)|| ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) && (result != TCL_INDEX_NONE)) {
 	if (failVarObj != NULL) {
 	    /* I hope, wide int will cover size_t data type */
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {

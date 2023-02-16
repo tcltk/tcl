@@ -2139,12 +2139,19 @@ typedef struct Tcl_EncodingType {
 
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
-#define TCL_ENCODING_STOPONERROR	0x04
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
 #define TCL_ENCODING_MODIFIED		0x20
-#define TCL_ENCODING_NOCOMPLAIN		0x40
-#define TCL_ENCODING_STRICT			0x44
+#define TCL_ENCODING_REPLACE		(0x01 << 24)
+#if TCL_MAJOR_VERSION > 8
+#   define TCL_ENCODING_STOPONERROR		0
+#   define TCL_ENCODING_STRICT			(0x02 << 24)
+#   define TCL_ENCODING_NOCOMPLAIN		(0x03 << 24)
+#else
+#   define TCL_ENCODING_STOPONERROR		0x04
+#   define TCL_ENCODING_NOCOMPLAIN		0x40
+#   define TCL_ENCODING_STRICT			0x44
+#endif
 
 /*
  * The following definitions are the error codes returned by the conversion
