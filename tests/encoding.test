@@ -459,17 +459,20 @@ test encoding-15.26 {UtfToUtfProc CESU-8} {
     encoding convertfrom cesu-8 \xC0\x80
 } \x00
 test encoding-15.27 {UtfToUtfProc -strict CESU-8} {
-    encoding convertfrom -strict cesu-8 \xC0\x80
+    encoding convertfrom -strict cesu-8 \x00
 } \x00
-test encoding-15.28 {UtfToUtfProc -strict CESU-8} {
+test encoding-15.28 {UtfToUtfProc -strict CESU-8} -body {
     encoding convertfrom -strict cesu-8 \xC0\x80
-} \x00
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
 test encoding-15.29 {UtfToUtfProc CESU-8} {
     encoding convertto cesu-8 \x00
-} \xC0\x80
+} \x00
 test encoding-15.30 {UtfToUtfProc -strict CESU-8} {
     encoding convertto -strict cesu-8 \x00
-} \xC0\x80
+} \x00
+test encoding-15.31 {UtfToUtfProc -strict CESU-8 (bytes F0-F4 are invalid)} -body {
+    encoding convertfrom -strict cesu-8 \xF1\x86\x83\x9C
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xF1'}
 
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]

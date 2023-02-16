@@ -564,7 +564,7 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 1;
     type.clientData	= INT2PTR(ENCODING_UTF);
     Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(TCL_ENCODING_NOCOMPLAIN);
+    type.clientData	= INT2PTR(0);
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
 
@@ -2388,13 +2388,13 @@ UtfToUtfProc(
 
 	    *dst++ = *src++;
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
-		&& (UCHAR(src[1]) == 0x80) && (flags & ENCODING_UTF) && (!(flags & ENCODING_INPUT)
+		&& (UCHAR(src[1]) == 0x80) && !(flags & TCL_ENCODING_MODIFIED) && (!(flags & ENCODING_INPUT)
 			|| ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
 			|| (flags & ENCODING_FAILINDEX))) {
 	    /*
 	     * If in input mode, and -strict or -failindex is specified: This is an error.
 	     */
-	    if (flags & ENCODING_INPUT) {
+	    if ((STOPONERROR) && (flags & ENCODING_INPUT)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
@@ -2430,15 +2430,21 @@ UtfToUtfProc(
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
 	    int low;
-	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
-	    if ((len < 2) && (ch != 0) && (flags & ENCODING_INPUT)
-		    && (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
-		result = TCL_CONVERT_SYNTAX;
-		break;
+	    if (flags & ENCODING_INPUT) {
+		if ((len < 2) && (ch != 0)
+			&& ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+		    result = TCL_CONVERT_SYNTAX;
+		    break;
+		} else if ((ch > 0xFFFF) && !(flags & ENCODING_UTF)
+			&& ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+		    result = TCL_CONVERT_SYNTAX;
+		    break;
+		}
 	    }
+	    const char *saveSrc = src;
 	    src += len;
-	    if (!(flags & ENCODING_UTF) && (ch > 0x3FF)) {
+	    if (!(flags & ENCODING_UTF) && !(flags & ENCODING_INPUT) && (ch > 0x3FF)) {
 		if (ch > 0xFFFF) {
 		    /* CESU-8 6-byte sequence for chars > U+FFFF */
 		    ch -= 0x10000;
