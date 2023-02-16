@@ -2421,12 +2421,10 @@ UtfToUtfProc(
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
-		ch = UCHAR(*src++);
-	    } else {
-		char chbuf[2];
-		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
-		TclUtfToUCS4(chbuf, &ch);
 	    }
+	    char chbuf[2];
+	    chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
+	    Tcl_UtfToUniChar(chbuf, &ch);
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
 	    int low;
