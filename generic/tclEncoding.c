@@ -2417,14 +2417,14 @@ UtfToUtfProc(
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
-	    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX)) {
-		result = TCL_CONVERT_SYNTAX;
-		break;
-	    }
+		if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX)) {
+		    result = TCL_CONVERT_SYNTAX;
+		    break;
+		}
 	    }
 	    char chbuf[2];
 	    chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
-	    Tcl_UtfToUniChar(chbuf, &ch);
+	    TclUtfToUCS4(chbuf, &ch);
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
 	    int low;
