@@ -459,17 +459,20 @@ test encoding-15.26 {UtfToUtfProc CESU-8} {
     encoding convertfrom cesu-8 \xC0\x80
 } \x00
 test encoding-15.27 {UtfToUtfProc -profile strict CESU-8} {
-    encoding convertfrom -profile strict cesu-8 \xC0\x80
+    encoding convertfrom -profile strict cesu-8 \x00
 } \x00
-test encoding-15.28 {UtfToUtfProc -profile strict CESU-8} {
+test encoding-15.28 {UtfToUtfProc -profile strict CESU-8} -body {
     encoding convertfrom -profile strict cesu-8 \xC0\x80
-} \x00
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
 test encoding-15.29 {UtfToUtfProc CESU-8} {
     encoding convertto cesu-8 \x00
-} \xC0\x80
+} \x00
 test encoding-15.30 {UtfToUtfProc -profile strict CESU-8} {
     encoding convertto -profile strict cesu-8 \x00
-} \xC0\x80
+} \x00
+test encoding-15.31 {UtfToUtfProc -profile strict CESU-8 (bytes F0-F4 are invalid)} -body {
+    encoding convertfrom -profile strict cesu-8 \xF1\x86\x83\x9C
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xF1'}
 
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]
@@ -527,6 +530,9 @@ test encoding-16.15 {Utf16ToUtfProc} -body {
 test encoding-16.16 {Utf16ToUtfProc} -body {
     encoding convertfrom utf-16le \x00\xDC\x00\xD8
 } -result \uDC00\uD800
+test encoding-16.17 {Utf32ToUtfProc} -body {
+    list [encoding convertfrom -profile strict -failindex  idx utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00] [set idx]
+} -result {A 4}
 
 test encoding-16.9 {
     Utf16ToUtfProc, Tcl_UniCharToUtf, surrogate pairs in utf-16
@@ -614,8 +620,11 @@ test encoding-19.3 {TableFromUtfProc} -body {
 test encoding-19.4 {TableFromUtfProc} -body {
     list [encoding convertfrom -failindex idx ascii AÁ] [set idx]
 } -result [list A\xC1 -1]
-test encoding-19.4 {TableFromUtfProc} -body {
+test encoding-19.5 {TableFromUtfProc} -body {
     list [encoding convertfrom -failindex idx -profile strict ascii A\xC1] [set idx]
+} -result {A 1}
+test encoding-19.6 {TableFromUtfProc} -body {
+    list [encoding convertfrom -failindex idx -profile strict ascii AÁB] [set idx]
 } -result {A 1}
 
 test encoding-20.1 {TableFreefProc} {

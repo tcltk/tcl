@@ -2412,11 +2412,11 @@ UtfToUtfProc(
 	    *dst++ = *src++;
 	}
 	else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd) &&
-		 (UCHAR(src[1]) == 0x80) && (flags & ENCODING_UTF) &&
+		 (UCHAR(src[1]) == 0x80) && !(flags & TCL_ENCODING_MODIFIED) &&
 		 (!(flags & ENCODING_INPUT) || PROFILE_STRICT(profile) ||
 		  PROFILE_REPLACE(profile))) {
 	    /* Special sequence \xC0\x80 */
-	    if (flags & ENCODING_INPUT) {
+            if ((PROFILE_STRICT(profile) || PROFILE_REPLACE(profile)) && (flags & ENCODING_INPUT)) {
 		if (PROFILE_REPLACE(profile)) {
 		   dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 		   src += 2;
@@ -2485,26 +2485,28 @@ UtfToUtfProc(
 	}
 	else {
 	    int low;
-	    const char *saveSrc = src;
+            int isInvalid = 0;
 	    size_t len = TclUtfToUCS4(src, &ch);
-
-	    /*
-	     * Valid single char encodings were already handled earlier.
-	     * So len==1 means an invalid byte that is magically transformed
-	     * to a code point unless it resulted from the special
-	     * \xC0\x80 sequence. Tests io-75.*
-	     */
-	    if ((len < 2) && (ch != 0) && (flags & ENCODING_INPUT)) {
-		if (PROFILE_STRICT(profile)) {
-		    result = TCL_CONVERT_SYNTAX;
-		    break;
-		} else if (PROFILE_REPLACE(profile)) {
-		    ch = UNICODE_REPLACE_CHAR;
+	    if (flags & ENCODING_INPUT) {
+		if ((len < 2) && (ch != 0)) {
+                    isInvalid = 1;
+		} else if ((ch > 0xFFFF) && !(flags & ENCODING_UTF)) {
+                    isInvalid = 1;
+		}
+		if (isInvalid) {
+		    if (PROFILE_STRICT(profile)) {
+			result = TCL_CONVERT_SYNTAX;
+			break;
+		    }
+		    else if (PROFILE_REPLACE(profile)) {
+			ch = UNICODE_REPLACE_CHAR;
+		    }
 		}
 	    }
 
+	    const char *saveSrc = src;
 	    src += len;
-	    if (!(flags & ENCODING_UTF) && (ch > 0x3FF)) {
+	    if (!(flags & ENCODING_UTF) && !(flags & ENCODING_INPUT) && (ch > 0x3FF)) {
 		if (ch > 0xFFFF) {
 		    /* CESU-8 6-byte sequence for chars > U+FFFF */
 		    ch -= 0x10000;
@@ -2670,6 +2672,7 @@ Utf32ToUtfProc(
 	if ((unsigned)ch > 0x10FFFF || SURROGATE(ch)) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
+		ch = 0;
 		break;
 	    }
 	    if (PROFILE_REPLACE(flags)) {
