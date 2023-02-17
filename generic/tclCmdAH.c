@@ -51,6 +51,7 @@ static Tcl_ObjCmdProc	EncodingConvertfromObjCmd;
 static Tcl_ObjCmdProc	EncodingConverttoObjCmd;
 static Tcl_ObjCmdProc	EncodingDirsObjCmd;
 static Tcl_ObjCmdProc	EncodingNamesObjCmd;
+static Tcl_ObjCmdProc	EncodingProfilesObjCmd;
 static Tcl_ObjCmdProc	EncodingSystemObjCmd;
 static inline int	ForeachAssignments(Tcl_Interp *interp,
 			    struct ForeachState *statePtr);
@@ -519,6 +520,7 @@ TclInitEncodingCmd(
 	{"convertto",   EncodingConverttoObjCmd,   TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
 	{"dirs",        EncodingDirsObjCmd,        TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{"names",       EncodingNamesObjCmd,       TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+	{"profiles",    EncodingProfilesObjCmd,    TclCompileBasic0ArgCmd,    NULL, NULL, 0},
 	{"system",      EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{NULL,          NULL,                      NULL,                      NULL, NULL, 0}
     };
@@ -562,8 +564,13 @@ EncodingConvertParseOptions (
 {
     static const char *const options[] = {"-profile", "-failindex", NULL};
     enum convertfromOptions { PROFILE, FAILINDEX } optIndex;
-    static const char *const profileNames[] = {"strict", "tcl8", NULL};
-    enum profileOptions { PROFILE_NONE=-1, PROFILE_STRICT, PROFILE_TCL8 } profile;
+#if TCL_MAJOR_VERSION > 8
+    static const char *const profileNames[] = {"default", "replace", "strict", "tcl8", NULL};
+    enum profileOptions { PROFILE_DEFAULT, PROFILE_REPLACE, PROFILE_STRICT, PROFILE_TCL8 } profile;
+#else
+    static const char *const profileNames[] = {"replace", "strict", "tcl8", NULL};
+    enum profileOptions { PROFILE_DEFAULT=-1, PROFILE_REPLACE, PROFILE_STRICT, PROFILE_TCL8 } profile;
+#endif
     Tcl_Encoding encoding;
     Tcl_Obj *dataObj;
     Tcl_Obj *failVarObj;
@@ -606,17 +613,20 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 	    switch (optIndex) {
 	    case PROFILE:
 		if (Tcl_GetIndexFromObj(interp, objv[argIndex], profileNames, "profile",
-			TCL_NULL_OK, &profile) != TCL_OK) {
+			0, &profile) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		switch (profile) {
 		case PROFILE_TCL8:
-		    flags = TCL_ENCODING_NOCOMPLAIN;
+		    flags = TCL_ENCODING_PROFILE_TCL8;
 		    break;
 		case PROFILE_STRICT:
-		    flags = TCL_ENCODING_STRICT;
+		    flags = TCL_ENCODING_PROFILE_STRICT;
 		    break;
-		case PROFILE_NONE:
+		case PROFILE_REPLACE:
+		    flags = TCL_ENCODING_PROFILE_REPLACE;
+		    break;
+		case PROFILE_DEFAULT:
 		    flags = TCL_ENCODING_STOPONERROR;
 		    break;
 		default:
@@ -638,7 +648,7 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
     }
 
     if (failVarObj != NULL) {
-	/* If -failvar is specified, the default profile is {}, both in Tcl 8.x and 9 */
+	/* If -failvar is specified, the default profile is PROFILE_DEFAULT, both in Tcl 8.x and 9 */
 	if (!flags) {
 	    flags = TCL_ENCODING_STOPONERROR;
 	}
@@ -896,6 +906,34 @@ EncodingNamesObjCmd(
     return TCL_OK;
 }
 
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * EncodingProfilesObjCmd --
+ *
+ *	This command returns a list of the available profiles
+ *
+ * Results:
+ *	Returns a standard Tcl result
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+int
+EncodingProfilesObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp* interp,	    /* Tcl interpreter */
+    int objc,		    /* Number of command line args */
+    Tcl_Obj* const objv[])  /* Vector of command line args */
+{
+    if (objc > 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
+    }
+    Tcl_AppendResult(interp, "replace strict tcl8", NULL);
+    return TCL_OK;
+}
+
 /*
  *-----------------------------------------------------------------------------
  *

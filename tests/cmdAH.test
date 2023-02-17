@@ -176,7 +176,7 @@ test cmdAH-4.1 {Tcl_EncodingObjCmd} -returnCodes error -body {
 } -result {wrong # args: should be "encoding subcommand ?arg ...?"}
 test cmdAH-4.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding foo
-} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, or system}
+} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, profiles, or system}
 test cmdAH-4.3 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto
 } -result {wrong # args: should be "encoding convertto ?-profile profile? ?-failindex var? encoding data" or "encoding convertto data"}
@@ -250,10 +250,10 @@ test cmdAH-4.15.2 {Syntax error, -failindex and -profile tcl8, no encoding} -bod
 } -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-profile profile? ?-failindex var? encoding data" or "encoding convertto data"}
 test cmdAH-4.16.1 {Syntax error, wrong -profile and -failindex, encoding} -body {
     encoding convertfrom -profile tcl9 -failindex 2 utf-8 ABC
-} -returnCodes 1 -result {bad profile "tcl9": must be strict, tcl8, or ""}
+} -returnCodes 1 -result {bad profile "tcl9": must be replace, strict, or tcl8}
 test cmdAH-4.16.2 {Syntax error, -failindex and wrong -profile, encoding} -body {
     encoding convertto -failindex 2 -profile tcl9 utf-8 ABC
-} -returnCodes 1 -result {bad profile "tcl9": must be strict, tcl8, or ""}
+} -returnCodes 1 -result {bad profile "tcl9": must be replace, strict, or tcl8}
 test cmdAH-4.17.1 {-failindex and -profile strict, encoding} -body {
     encoding convertfrom -failindex 2 -profile strict utf-8 ABC
 } -result ABC

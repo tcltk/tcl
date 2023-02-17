@@ -4401,15 +4401,18 @@ Write(
      */
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	statePtr->outputEncodingFlags &= ~(TCL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE);
 	statePtr->outputEncodingFlags |= TCL_ENCODING_STRICT;
-#ifdef TCL_NO_DEPRECATED
     } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->outputEncodingFlags &= ~(TCL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE);
 	statePtr->outputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-#endif
-    } else {
+    } else if (GotFlag(statePtr, TCL_ENCODING_PROFILE_REPLACE)) {
 	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->outputEncodingFlags |= TCL_ENCODING_PROFILE_REPLACE;
+    } else {
+	statePtr->outputEncodingFlags &= ~(TCL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE);
     }
+
 
     /*
      * Write the terminated escape sequence even if srcLen is 0.
@@ -4738,12 +4741,16 @@ Tcl_GetsObj(
      */
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	statePtr->inputEncodingFlags &= ~(TCL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
     } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->inputEncodingFlags &= ~(TCL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-    } else {
+    } else if (GotFlag(statePtr, TCL_ENCODING_PROFILE_REPLACE)) {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->inputEncodingFlags |= TCL_ENCODING_PROFILE_REPLACE;
+    } else {
+	statePtr->inputEncodingFlags &= ~(TCL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE);
     }
 
     /*
@@ -5510,12 +5517,16 @@ FilterInputBytes(
      */
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	statePtr->inputEncodingFlags &= ~(TCL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
     } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->inputEncodingFlags &= ~(TCL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-    } else {
+    } else if (GotFlag(statePtr, TCL_ENCODING_PROFILE_REPLACE)) {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->inputEncodingFlags |= TCL_ENCODING_PROFILE_REPLACE;
+    } else {
+	statePtr->inputEncodingFlags &= ~(TCL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE);
     }
 
     result = Tcl_ExternalToUtf(NULL, gsPtr->encoding, raw, rawLen,
@@ -6308,12 +6319,16 @@ ReadChars(
      */
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
+	statePtr->inputEncodingFlags &= ~(TCL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
     } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->inputEncodingFlags &= ~(TCL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-    } else {
+    } else if (GotFlag(statePtr, TCL_ENCODING_PROFILE_REPLACE)) {
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
+	statePtr->inputEncodingFlags |= TCL_ENCODING_PROFILE_REPLACE;
+    } else {
+	statePtr->inputEncodingFlags &= ~(TCL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE);
     }
 
     /*
@@ -8063,6 +8078,8 @@ Tcl_GetChannelOption(
 	}
 	if (flags & CHANNEL_ENCODING_STRICT) {
 	    Tcl_DStringAppendElement(dsPtr, "strict");
+	} else if (flags & TCL_ENCODING_PROFILE_REPLACE) {
+	    Tcl_DStringAppendElement(dsPtr, "replace");
 	} else if (flags & CHANNEL_ENCODING_NOCOMPLAIN) {
 	    Tcl_DStringAppendElement(dsPtr, "tcl8");
 	} else if (len == 0) {
@@ -8331,20 +8348,25 @@ Tcl_SetChannelOption(
     } else if (HaveOpt(1, "-profile")) {
 	len = strlen(newValue);
 	if ((newValue[0] == 't') && (strncmp(newValue, "tcl8", len) == 0)) {
-	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
+	    ResetFlag(statePtr, CHANNEL_PROFILE);
 	    SetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
 	} else if ((newValue[0] == 's') &&
 		(strncmp(newValue, "strict", len) == 0)) {
-	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
+	    ResetFlag(statePtr, CHANNEL_PROFILE);
 	    SetFlag(statePtr, CHANNEL_ENCODING_STRICT);
-	} else if ((newValue[0] == '\0') /* &&
-		(strncmp(newValue, "none", len) == 0)*/) {
-	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
-	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
+	} else if ((newValue[0] == 'r') &&
+		(strncmp(newValue, "replace", len) == 0)) {
+	    ResetFlag(statePtr, CHANNEL_PROFILE);
+	    SetFlag(statePtr, TCL_ENCODING_PROFILE_REPLACE);
+#if TCL_MAJOR_VERSION > 8
+	} else if ((newValue[0] == 'd') &&
+		(strncmp(newValue, "default", len) == 0)) {
+	    ResetFlag(statePtr, CHANNEL_PROFILE);
+#endif
 	} else if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "bad value for -profile: must be one of"
-		    " strict, tcl8, or \"\"", TCL_INDEX_NONE));
+		    " replace, strict, or tcl8", TCL_INDEX_NONE));
 	    return TCL_ERROR;
 	}
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);

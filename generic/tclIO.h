@@ -289,6 +289,10 @@ typedef struct ChannelState {
 					 * No further Tcl-level write IO on
 					 * the channel is allowed. */
 
+#define TCL_ENCODING_NOCOMPLAIN TCL_ENCODING_PROFILE_TCL8
+#define TCL_ENCODING_STRICT TCL_ENCODING_STOPONERROR
+#define CHANNEL_PROFILE CHANNEL_ENCODING_NOCOMPLAIN|CHANNEL_ENCODING_STRICT|TCL_ENCODING_PROFILE_REPLACE
+
 /*
  * The length of time to wait between synthetic timer events. Must be zero or
  * bad things tend to happen.
