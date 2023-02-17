@@ -181,6 +181,7 @@ set "numargErrors(encoding names)" {wrong # args: should be "encoding names"}
 set "numargErrors(encoding profiles)" {wrong # args: should be "encoding profiles"}
 
 set encProfiles {tcl8 strict replace}
+set encDefaultProfile tcl8; # Should reflect the default from implementation
 
 # TODO - valid sequences for different encodings - shiftjis etc.
 # Note utf-16, utf-32 missing because they are automatically
@@ -218,43 +219,41 @@ set encValidStrings {
 # 80-9F which is treated as cp1252.
 # This tests the TableToUtfProc code path.
 lappend encInvalidBytes {*}{
-    ascii 80 default \u20AC -1 {knownBug} {map to cp1252}
     ascii 80 tcl8    \u20AC -1 {knownBug} {map to cp1252}
     ascii 80 replace \uFFFD -1 {} {Smallest invalid byte}
     ascii 80 strict  {}      0 {} {Smallest invalid byte}
-    ascii 81 default \u0081 -1 {knownBug} {map to cp1252}
-    ascii 82 default \u201A -1 {knownBug} {map to cp1252}
-    ascii 83 default \u0192 -1 {knownBug} {map to cp1252}
-    ascii 84 default \u201E -1 {knownBug} {map to cp1252}
-    ascii 85 default \u2026 -1 {knownBug} {map to cp1252}
-    ascii 86 default \u2020 -1 {knownBug} {map to cp1252}
-    ascii 87 default \u2021 -1 {knownBug} {map to cp1252}
-    ascii 88 default \u0276 -1 {knownBug} {map to cp1252}
-    ascii 89 default \u2030 -1 {knownBug} {map to cp1252}
-    ascii 8A default \u0160 -1 {knownBug} {map to cp1252}
-    ascii 8B default \u2039 -1 {knownBug} {map to cp1252}
-    ascii 8C default \u0152 -1 {knownBug} {map to cp1252}
-    ascii 8D default \u008D -1 {knownBug} {map to cp1252}
-    ascii 8E default \u017D -1 {knownBug} {map to cp1252}
-    ascii 8F default \u008F -1 {knownBug} {map to cp1252}
-    ascii 90 default \u0090 -1 {knownBug} {map to cp1252}
-    ascii 91 default \u2018 -1 {knownBug} {map to cp1252}
-    ascii 92 default \u2019 -1 {knownBug} {map to cp1252}
-    ascii 93 default \u201C -1 {knownBug} {map to cp1252}
-    ascii 94 default \u201D -1 {knownBug} {map to cp1252}
-    ascii 95 default \u2022 -1 {knownBug} {map to cp1252}
-    ascii 96 default \u2013 -1 {knownBug} {map to cp1252}
-    ascii 97 default \u2014 -1 {knownBug} {map to cp1252}
-    ascii 98 default \u02DC -1 {knownBug} {map to cp1252}
-    ascii 99 default \u2122 -1 {knownBug} {map to cp1252}
-    ascii 9A default \u0161 -1 {knownBug} {map to cp1252}
-    ascii 9B default \u203A -1 {knownBug} {map to cp1252}
-    ascii 9C default \u0153 -1 {knownBug} {map to cp1252}
-    ascii 9D default \u009D -1 {knownBug} {map to cp1252}
-    ascii 9E default \u017E -1 {knownBug} {map to cp1252}
-    ascii 9F default \u0178 -1 {knownBug} {map to cp1252}
+    ascii 81 tcl8    \u0081 -1 {knownBug} {map to cp1252}
+    ascii 82 tcl8    \u201A -1 {knownBug} {map to cp1252}
+    ascii 83 tcl8    \u0192 -1 {knownBug} {map to cp1252}
+    ascii 84 tcl8    \u201E -1 {knownBug} {map to cp1252}
+    ascii 85 tcl8    \u2026 -1 {knownBug} {map to cp1252}
+    ascii 86 tcl8    \u2020 -1 {knownBug} {map to cp1252}
+    ascii 87 tcl8    \u2021 -1 {knownBug} {map to cp1252}
+    ascii 88 tcl8    \u0276 -1 {knownBug} {map to cp1252}
+    ascii 89 tcl8    \u2030 -1 {knownBug} {map to cp1252}
+    ascii 8A tcl8    \u0160 -1 {knownBug} {map to cp1252}
+    ascii 8B tcl8    \u2039 -1 {knownBug} {map to cp1252}
+    ascii 8C tcl8    \u0152 -1 {knownBug} {map to cp1252}
+    ascii 8D tcl8    \u008D -1 {knownBug} {map to cp1252}
+    ascii 8E tcl8    \u017D -1 {knownBug} {map to cp1252}
+    ascii 8F tcl8    \u008F -1 {knownBug} {map to cp1252}
+    ascii 90 tcl8    \u0090 -1 {knownBug} {map to cp1252}
+    ascii 91 tcl8    \u2018 -1 {knownBug} {map to cp1252}
+    ascii 92 tcl8    \u2019 -1 {knownBug} {map to cp1252}
+    ascii 93 tcl8    \u201C -1 {knownBug} {map to cp1252}
+    ascii 94 tcl8    \u201D -1 {knownBug} {map to cp1252}
+    ascii 95 tcl8    \u2022 -1 {knownBug} {map to cp1252}
+    ascii 96 tcl8    \u2013 -1 {knownBug} {map to cp1252}
+    ascii 97 tcl8    \u2014 -1 {knownBug} {map to cp1252}
+    ascii 98 tcl8    \u02DC -1 {knownBug} {map to cp1252}
+    ascii 99 tcl8    \u2122 -1 {knownBug} {map to cp1252}
+    ascii 9A tcl8    \u0161 -1 {knownBug} {map to cp1252}
+    ascii 9B tcl8    \u203A -1 {knownBug} {map to cp1252}
+    ascii 9C tcl8    \u0153 -1 {knownBug} {map to cp1252}
+    ascii 9D tcl8    \u009D -1 {knownBug} {map to cp1252}
+    ascii 9E tcl8    \u017E -1 {knownBug} {map to cp1252}
+    ascii 9F tcl8    \u0178 -1 {knownBug} {map to cp1252}
 
-    ascii FF default \u00FF -1 {} {Largest invalid byte}
     ascii FF tcl8    \u00FF -1 {} {Largest invalid byte}
     ascii FF replace \uFFFD -1 {} {Largest invalid byte}
     ascii FF strict  {}      0 {} {Largest invalid byte}
@@ -279,121 +278,188 @@ lappend encInvalidBytes {*}{
 # (UtfToUtfProc).
 # Note C0, C1, F5:FF are invalid bytes ANYWHERE. Exception is C080
 lappend encInvalidBytes {*}{
-    utf-8 80 default \u20AC -1 {knownBug} {map to cp1252}
+    utf-8 80 tcl8    \u20AC -1 {knownBug} {map to cp1252}
     utf-8 80 tcl8    \u20AC -1 {knownBug} {map to cp1252}
     utf-8 80 replace \uFFFD -1 {} {Smallest invalid byte}
     utf-8 80 strict  {}      0 {} {Smallest invalid byte}
-    utf-8 81 default \u0081 -1 {knownBug} {map to cp1252}
-    utf-8 82 default \u201A -1 {knownBug} {map to cp1252}
-    utf-8 83 default \u0192 -1 {knownBug} {map to cp1252}
-    utf-8 84 default \u201E -1 {knownBug} {map to cp1252}
-    utf-8 85 default \u2026 -1 {knownBug} {map to cp1252}
-    utf-8 86 default \u2020 -1 {knownBug} {map to cp1252}
-    utf-8 87 default \u2021 -1 {knownBug} {map to cp1252}
-    utf-8 88 default \u0276 -1 {knownBug} {map to cp1252}
-    utf-8 89 default \u2030 -1 {knownBug} {map to cp1252}
-    utf-8 8A default \u0160 -1 {knownBug} {map to cp1252}
-    utf-8 8B default \u2039 -1 {knownBug} {map to cp1252}
-    utf-8 8C default \u0152 -1 {knownBug} {map to cp1252}
-    utf-8 8D default \u008D -1 {knownBug} {map to cp1252}
-    utf-8 8E default \u017D -1 {knownBug} {map to cp1252}
-    utf-8 8F default \u008F -1 {knownBug} {map to cp1252}
-    utf-8 90 default \u0090 -1 {knownBug} {map to cp1252}
-    utf-8 91 default \u2018 -1 {knownBug} {map to cp1252}
-    utf-8 92 default \u2019 -1 {knownBug} {map to cp1252}
-    utf-8 93 default \u201C -1 {knownBug} {map to cp1252}
-    utf-8 94 default \u201D -1 {knownBug} {map to cp1252}
-    utf-8 95 default \u2022 -1 {knownBug} {map to cp1252}
-    utf-8 96 default \u2013 -1 {knownBug} {map to cp1252}
-    utf-8 97 default \u2014 -1 {knownBug} {map to cp1252}
-    utf-8 98 default \u02DC -1 {knownBug} {map to cp1252}
-    utf-8 99 default \u2122 -1 {knownBug} {map to cp1252}
-    utf-8 9A default \u0161 -1 {knownBug} {map to cp1252}
-    utf-8 9B default \u203A -1 {knownBug} {map to cp1252}
-    utf-8 9C default \u0153 -1 {knownBug} {map to cp1252}
-    utf-8 9D default \u009D -1 {knownBug} {map to cp1252}
-    utf-8 9E default \u017E -1 {knownBug} {map to cp1252}
-    utf-8 9F default \u0178 -1 {knownBug} {map to cp1252}
+    utf-8 81 tcl8    \u0081 -1 {knownBug} {map to cp1252}
+    utf-8 82 tcl8    \u201A -1 {knownBug} {map to cp1252}
+    utf-8 83 tcl8    \u0192 -1 {knownBug} {map to cp1252}
+    utf-8 84 tcl8    \u201E -1 {knownBug} {map to cp1252}
+    utf-8 85 tcl8    \u2026 -1 {knownBug} {map to cp1252}
+    utf-8 86 tcl8    \u2020 -1 {knownBug} {map to cp1252}
+    utf-8 87 tcl8    \u2021 -1 {knownBug} {map to cp1252}
+    utf-8 88 tcl8    \u0276 -1 {knownBug} {map to cp1252}
+    utf-8 89 tcl8    \u2030 -1 {knownBug} {map to cp1252}
+    utf-8 8A tcl8    \u0160 -1 {knownBug} {map to cp1252}
+    utf-8 8B tcl8    \u2039 -1 {knownBug} {map to cp1252}
+    utf-8 8C tcl8    \u0152 -1 {knownBug} {map to cp1252}
+    utf-8 8D tcl8    \u008D -1 {knownBug} {map to cp1252}
+    utf-8 8E tcl8    \u017D -1 {knownBug} {map to cp1252}
+    utf-8 8F tcl8    \u008F -1 {knownBug} {map to cp1252}
+    utf-8 90 tcl8    \u0090 -1 {knownBug} {map to cp1252}
+    utf-8 91 tcl8    \u2018 -1 {knownBug} {map to cp1252}
+    utf-8 92 tcl8    \u2019 -1 {knownBug} {map to cp1252}
+    utf-8 93 tcl8    \u201C -1 {knownBug} {map to cp1252}
+    utf-8 94 tcl8    \u201D -1 {knownBug} {map to cp1252}
+    utf-8 95 tcl8    \u2022 -1 {knownBug} {map to cp1252}
+    utf-8 96 tcl8    \u2013 -1 {knownBug} {map to cp1252}
+    utf-8 97 tcl8    \u2014 -1 {knownBug} {map to cp1252}
+    utf-8 98 tcl8    \u02DC -1 {knownBug} {map to cp1252}
+    utf-8 99 tcl8    \u2122 -1 {knownBug} {map to cp1252}
+    utf-8 9A tcl8    \u0161 -1 {knownBug} {map to cp1252}
+    utf-8 9B tcl8    \u203A -1 {knownBug} {map to cp1252}
+    utf-8 9C tcl8    \u0153 -1 {knownBug} {map to cp1252}
+    utf-8 9D tcl8    \u009D -1 {knownBug} {map to cp1252}
+    utf-8 9E tcl8    \u017E -1 {knownBug} {map to cp1252}
+    utf-8 9F tcl8    \u0178 -1 {knownBug} {map to cp1252}
 
-    utf-8 C0 default \u00C0 -1 {} {C0 is invalid anywhere}
     utf-8 C0 tcl8    \u00C0 -1 {} {C0 is invalid anywhere}
     utf-8 C0 strict  {}      0 {} {C0 is invalid anywhere}
     utf-8 C0 replace \uFFFD -1 {} {C0 is invalid anywhere}
-    utf-8 C080 default \u0000 -1 {} {C080 -> U+0 in Tcl's internal modified UTF8}
     utf-8 C080 tcl8    \u0000 -1 {} {C080 -> U+0 in Tcl's internal modified UTF8}
     utf-8 C080 strict  {}      0 {} {C080 -> invalid}
     utf-8 C080 replace \uFFFD -1 {} {C080 -> single replacement char}
-    utf-8 C1 default \u00C1 -1 {} {C1 is invalid everywhere}
     utf-8 C1 tcl8    \u00C1 -1 {} {C1 is invalid everywhere}
     utf-8 C1 replace \uFFFD -1 {} {C1 is invalid everywhere}
     utf-8 C1 strict  {}      0 {} {C1 is invalid everywhere}
 
-    utf-8 C1 default \u00C1 -1 {} {Require valid trail byte}
-    utf-8 C1 tcl8    \u00C1 -1 {} {Require valid trail byte}
-    utf-8 C1 replace \uFFFD -1 {} {Require valid trail byte}
-    utf-8 C1 strict  {}      0 {} {Require valid trail byte}
+    utf-8 C2 tcl8      \u00C2     -1 {} {Missing trail byte}
+    utf-8 C2 replace   \uFFFD     -1 {} {Missing trail byte}
+    utf-8 C2 strict    {}          0 {} {Missing trail byte}
+    utf-8 C27F tcl8    \u00C2\x7F -1 {} {Trail byte must be 80:BF}
+    utf-8 C27F replace \uFFFD\x7F -1 {} {Trail byte must be 80:BF}
+    utf-8 C27F strict  {}          0 {} {Trail byte must be 80:BF}
+    utf-8 DF tcl8      \u00DF     -1 {} {Missing trail byte}
+    utf-8 DF replace   \uFFFD     -1 {} {Missing trail byte}
+    utf-8 DF strict    {}          0 {} {Missing trail byte}
+    utf-8 DF7F tcl8    \u00DF\x7F -1 {} {Trail byte must be 80:BF}
+    utf-8 DF7F replace \uFFFD\x7F -1 {} {Trail byte must be 80:BF}
+    utf-8 DF7F strict  {}          0 {} {Trail byte must be 80:BF}
+    utf-8 DFE0A080 tcl8    \u00DF\u0800 -1 {} {Invalid trail byte is start of valid sequence}
+    utf-8 DFE0A080 replace \uFFFD\u0800 -1 {} {Invalid trail byte is start of valid sequence}
+    utf-8 DFE0A080 strict  {}            0 {} {Invalid trail byte is start of valid sequence}
 
+    utf-8 E0 tcl8      \u00E0     -1 {} {Missing trail byte}
+    utf-8 E0 replace   \uFFFD     -1 {} {Missing trail byte}
+    utf-8 E0 strict    {}          0 {} {Missing trail byte}
+    utf-8 E080 tcl8      \u00E0\u20AC   -1 {knownBug} {First trail byte must be A0:BF}
+    utf-8 E080 replace   \uFFFD\uFFFD   -1 {}         {First trail byte must be A0:BF}
+    utf-8 E080 strict    {}              0 {}         {First trail byte must be A0:BF}
+    utf-8 E09F tcl8      \u00E0\u0178   -1 {knownBug} {First trail byte must be A0:BF}
+    utf-8 E09F replace   \uFFFD\uFFFD   -1 {}         {First trail byte must be A0:BF}
+    utf-8 E09F strict    {}              0 {}         {First trail byte must be A0:BF}
+    utf-8 E0A07F tcl8    \u00E0\u00A0\x7F   -1 {}     {Second trail byte must be 80:BF}
+    utf-8 E0A07F replace \uFFFD\u7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 E0A07F strict  {}                  0 {}         {Second trail byte must be 80:BF}
+    utf-8 E0BF7F tcl8    \u00E0\u00BF\x7F   -1 {}         {Second trail byte must be 80:BF}
+    utf-8 E0BF7F replace \uFFFD\u7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 E0BF7F strict  {}                  0 {}         {Second trail byte must be 80:BF}
 
-    utf-8 F5 default \u00F5 -1 {} {F5:FF are invalid everywhere}
+    utf-8 E1 tcl8      \u00E1     -1 {} {Missing trail byte}
+    utf-8 E1 replace   \uFFFD     -1 {} {Missing trail byte}
+    utf-8 E1 strict    {}          0 {} {Missing trail byte}
+    utf-8 E17F tcl8    \u00E1\x7F -1 {} {Trail byte must be 80:BF}
+    utf-8 E17F replace \uFFFD\x7F -1 {} {Trail byte must be 80:BF}
+    utf-8 E17F strict  {}          0 {} {Trail byte must be 80:BF}
+    utf-8 E1807F tcl8    \u00E1\u20AC\x7F   -1 {knownBug} {Second trail byte must be 80:BF}
+    utf-8 E1807F replace \uFFFD\u7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 E1807F strict  {}                  0 {}         {Second trail byte must be 80:BF}
+    utf-8 E1BF7F tcl8    \u00E1\u00BF\x7F   -1 {}         {Second trail byte must be 80:BF}
+    utf-8 E1BF7F replace \uFFFD\u7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 E1BF7F strict  {}                  0 {}         {Second trail byte must be 80:BF}
+    utf-8 EC tcl8      \u00EC     -1 {} {Missing trail byte}
+    utf-8 EC replace   \uFFFD     -1 {} {Missing trail byte}
+    utf-8 EC strict    {}          0 {} {Missing trail byte}
+    utf-8 EC7F tcl8    \u00EC\x7F -1 {} {Trail byte must be 80:BF}
+    utf-8 EC7F replace \uFFFD\x7F -1 {} {Trail byte must be 80:BF}
+    utf-8 EC7F strict  {}          0 {} {Trail byte must be 80:BF}
+    utf-8 EC807F tcl8    \u00EC\u20AC\x7F   -1 {knownBug} {Second trail byte must be 80:BF}
+    utf-8 EC807F replace \uFFFD\u7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 EC807F strict  {}                  0 {}         {Second trail byte must be 80:BF}
+    utf-8 ECBF7F tcl8    \u00EC\u00BF\x7F   -1 {}         {Second trail byte must be 80:BF}
+    utf-8 ECBF7F replace \uFFFD\u7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 ECBF7F strict  {}                  0 {}         {Second trail byte must be 80:BF}
+
+    utf-8 ED tcl8      \u00ED     -1 {} {Missing trail byte}
+    utf-8 ED replace   \uFFFD     -1 {} {Missing trail byte}
+    utf-8 ED strict    {}          0 {} {Missing trail byte}
+    utf-8 ED7F tcl8      \u00ED\u7F   -1 {knownBug} {First trail byte must be 80:9F}
+    utf-8 ED7F replace   \uFFFD\u7F   -1 {}         {First trail byte must be 80:9F}
+    utf-8 ED7F strict    {}              0 {}         {First trail byte must be 80:9F}
+    utf-8 EDA0 tcl8      \u00ED\u00A0   -1 {knownBug} {First trail byte must be 80:9F}
+    utf-8 EDA0 replace   \uFFFD\uFFFD   -1 {}         {First trail byte must be 80:9F}
+    utf-8 EDA0 strict    {}              0 {}         {First trail byte must be 80:9F}
+    utf-8 ED807F tcl8    \u00ED\u20AC\x7F   -1 {knownBug} {Second trail byte must be 80:BF}
+    utf-8 ED807F replace \uFFFD\u7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 ED807F strict  {}                  0 {}         {Second trail byte must be 80:BF}
+    utf-8 ED9F7F tcl8    \u00ED\u0178\x7F   -1 {knownBug} {Second trail byte must be 80:BF}
+    utf-8 ED9F7F replace \uFFFD\u7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 ED9F7F strict  {}                  0 {}         {Second trail byte must be 80:BF}
+    utf-8 EDA080 tcl8       \uD800             -1 {}         {High surrogate}
+    utf-8 EDA080 replace    \uFFFD             -1 {}         {High surrogate}
+    utf-8 EDA080 strict     {}                  0 {}         {High surrogate}
+    utf-8 EDAFBF tcl8       \uDBFF             -1 {}         {High surrogate}
+    utf-8 EDAFBF replace    \uFFFD             -1 {}         {High surrogate}
+    utf-8 EDAFBF strict     {}                  0 {}         {High surrogate}
+    utf-8 EDB080 tcl8       \uDC00             -1 {}         {Low surrogate}
+    utf-8 EDB080 replace    \uFFFD             -1 {}         {Low surrogate}
+    utf-8 EDB080 strict     {}                  0 {}         {Low surrogate}
+    utf-8 EDBFBF tcl8       \uDFFF             -1 {}         {Low surrogate}
+    utf-8 EDBFBF replace    \uFFFD             -1 {}         {Low surrogate}
+    utf-8 EDBFBF strict     {}                  0 {}         {Low surrogate}
+    utf-8 EDA080EDB080 tcl8 \U00010000         -1 {}         {High low surrogate pair}
+    utf-8 EDA080EDB080 replace \uFFFD\uFFFD         -1 {}         {High low surrogate pair}
+    utf-8 EDA080EDB080 strict {}         0 {}         {High low surrogate pair}
+    utf-8 EDAFBFEDBFBF tcl8 \U0010FFFF           -1 {}         {High low surrogate pair}
+    utf-8 EDAFBFEDBFBF replace \uFFFD\uFFFD           -1 {}         {High low surrogate pair}
+    utf-8 EDAFBFEDBFBF strict {}           0 {}         {High low surrogate pair}
+
     utf-8 F5 tcl8    \u00F5 -1 {} {F5:FF are invalid everywhere}
     utf-8 F5 replace \uFFFD -1 {} {F5:FF are invalid everywhere}
     utf-8 F5 strict  {}      0 {} {F5:FF are invalid everywhere}
-    utf-8 FF default \u00FF -1 {} {F5:FF are invalid everywhere}
     utf-8 FF tcl8    \u00FF -1 {} {F5:FF are invalid everywhere}
     utf-8 FF replace \uFFFD -1 {} {F5:FF are invalid everywhere}
     utf-8 FF strict  {}      0 {} {F5:FF are invalid everywhere}
 
     utf-8 C0AFE080BFF0818130 replace \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\x30 -1 {} {Unicode Table 3-8}
-    utf-8 EDA080EDBFBFEDAF30 replace \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\x30 -1 {knownBug} {Unicode Table 3-9}
+    utf-8 EDA080EDBFBFEDAF30 replace \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\x30 -1 {knownW3C} {Unicode Table 3-9}
     utf-8 F4919293FF4180BF30 replace \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0041\uFFFD\uFFFD\x30 -1 {} {Unicode Table 3-10}
-    utf-8 E180E2F09192F1BF30 replace \uFFFD\uFFFD\uFFFD\uFFFD\x30                         -1 {knownBug} {Unicode Table 3.11}
+    utf-8 E180E2F09192F1BF30 replace \uFFFD\uFFFD\uFFFD\uFFFD\x30                         -1 {knownW3C} {Unicode Table 3.11}
 }
 
 set xxencInvalidBytes {
     
-    utf-8 \x41\x80\x42     default   A\u0080B -1 80
     utf-8 \x41\x80\x42     tcl8      A\u0080B -1 80
     utf-8 \x41\x80\x42     replace   A\uFFFDB -1 80
     utf-8 \x41\x80\x42     strict    A         1 80
-    utf-8 \x41\xC0\x80\x42 default   A\u0000B -1 C080
     utf-8 \x41\xC0\x80\x42 tcl8      A\u0000B -1 C080
     utf-8 \x41\xC0\x80\x42 strict    A         1 C080
-    utf-8 \x41\xC1\x42     default   A\u00C1B -1 C1
     utf-8 \x41\xC1\x42     tcl8      A\u00C1B -1 C1
     utf-8 \x41\xC1\x42     replace   A\uFFFDB -1 C1
     utf-8 \x41\xC1\x42     strict    A         1 C1
-    utf-8 \x41\xC2\x42     default   A\u00C2B -1 C2-nontrail
     utf-8 \x41\xC2\x42     tcl8      A\u00C2B -1 C2-nontrail
     utf-8 \x41\xC2\x42     replace   A\uFFFDB -1 C2-nontrail
     utf-8 \x41\xC2\x42     strict    A         1 C2-nontrail
-    utf-8 \x41\xC2         default   A\u00C2  -1 C2-incomplete
     utf-8 \x41\xC2         tcl8      A\u00C2  -1 C2-incomplete
     utf-8 \x41\xC2         replace   A\uFFFD  -1 C2-incomplete
     utf-8 \x41\xC2         strict    A         1 C2-incomplete
-    utf-8 A\xed\xa0\x80B   default   A\uD800B -1 High-surrogate
     utf-8 A\xed\xa0\x80B   tcl8      A\uD800B -1 High-surrogate
     utf-8 A\xed\xa0\x80B   strict    A         1 High-surrogate
-    utf-8 A\xed\xb0\x80B   default   A\uDC00B -1 Low-surrogate
     utf-8 A\xed\xb0\x80B   tcl8      A\uDC00B -1 Low-surrogate
     utf-8 A\xed\xb0\x80B   strict    A         1 Low-surrogate
-    utf-8 \xed\xa0\x80\xed\xb0\x80   default   \U00010000 -1 High-low-surrogate
     utf-8 \xed\xa0\x80\xed\xb0\x80   tcl8      \U00010000 -1 High-low-surrogate
     utf-8 \xed\xa0\x80\xed\xb0\x80   strict    {}          0 High-low-surrogate
 }
 set utf32-le-TODO {
-    utf-32le \x00\xD8\x00\x00                                   default  \uD800   -1 {High-surrogate}
     utf-32le \x00\xD8\x00\x00                                   tcl8     \uD800   -1 {High-surrogate}
     utf-32le \x00\xD8\x00\x00                                   strict   ""        0 {High-surrogate}
-    utf-32le \x00\xDC\x00\x00                                   default  \uDC00   -1 {Low-surrogate}
     utf-32le \x00\xDC\x00\x00                                   tcl8     \uDC00   -1 {Low-surrogate}
     utf-32le \x00\xDC\x00\x00                                   strict   ""        0 {Low-surrogate}
-    utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00                   default  \uD800\uDC00  -1 {High-low-surrogate}
     utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00                   tcl8     \uD800\uDC00  -1 {High-low-surrogate}
     utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00                   strict   ""             0 {High-low-surrogate}
-    utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00                   default  \uDC00\uD800  -1 {High-low-surrogate}
     utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00                   tcl8     \uDC00\uD800  -1 {High-low-surrogate}
     utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00                   strict   ""             0 {High-low-surrogate}
-    utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00   default  A\uD800B -1 {High-surrogate-middle}
     utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00   tcl8     A\uD800B -1 {High-surrogate-middle}
     utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00   strict   A         4 {High-surrogate-middle}
 }
@@ -416,18 +482,14 @@ set utf32-le-TODO {
 # TODO - other encodings and test cases
 # TODO - out of range code point (note cannot be generated by \U notation)
 set encUnencodableStrings {
-    ascii \u00e0 default 3f -1 {} {unencodable}
     ascii \u00e0 tcl8    3f -1 {} {unencodable}
     ascii \u00e0 strict  {}  0 {} {unencodable}
 
-    iso8859-1 \u0141 default 3f -1 {} unencodable
     iso8859-1 \u0141 tcl8    3f -1 {} unencodable
     iso8859-1 \u0141 strict  {}  0 {} unencodable
 
-    utf-8 \uD800 default eda080 -1 {} High-surrogate
     utf-8 \uD800 tcl8    eda080 -1 {} High-surrogate
     utf-8 \uD800 strict  {}      0 {} High-surrogate
-    utf-8 \uDC00 default edb080 -1 {} High-surrogate
     utf-8 \uDC00 tcl8    edb080 -1 {} High-surrogate
     utf-8 \uDC00 strict  {}      0 {} High-surrogate
 }
@@ -451,6 +513,24 @@ proc endianUtf {enc} {
         return [string range $enc 0 5]
     }
     return ""
+}
+
+# Map arbitrary strings to printable form in ASCII.
+proc printable {s} {
+    set print ""
+    foreach c [split $s ""] {
+        set i [scan $c %c]
+        if {[string is print $c] && ($i <= 127)} {
+            append print $c
+        } elseif {$i <= 0xff} {
+            append print \\x[format %02X $i]
+        } elseif {$i <= 0xffff} {
+            append print \\u[format %04X $i]
+        } else {
+            append print \\U[format %08X $i]
+        }
+    }
+    return $print
 }
 
 #
@@ -501,36 +581,45 @@ proc testconvert {id body result args} {
         {*}$args
 }
 
+# Wrapper to verify encoding convert{to,from} ?-profile?
+# Generates tests for compiled and uncompiled implementation.
+# Also generates utf-{16,32} tests if passed encoding is utf-{16,32}{le,be}
+# The enc and profile are appended to id to generate the test id
 proc testprofile {id converter enc profile data result args} {
-    if {$profile eq "default"} {
-        testconvert $id.$enc.$profile [list encoding $converter $enc $data] $result {*}$args
-        if {[set enc [endianUtf $enc]] ne ""} {
+    testconvert $id.$enc.$profile [list encoding $converter -profile $profile $enc $data] $result {*}$args
+    if {[set enc2 [endianUtf $enc]] ne ""} {
+        # If utf{16,32}-{le,be}, also do utf{16,32}
+        testconvert $id.$enc2.$profile [list encoding $converter -profile $profile $enc2 $data] $result {*}$args
+    }
+
+    # If this is the default profile, generate a test without specifying profile
+    if {$profile eq $::encDefaultProfile} {
+        testconvert $id.$enc.default [list encoding $converter $enc $data] $result {*}$args
+        if {[set enc2 [endianUtf $enc]] ne ""} {
             # If utf{16,32}-{le,be}, also do utf{16,32}
-            testconvert $id.$enc.$profile [list encoding $converter $enc $data] $result {*}$args
-        }
-    } else {
-        testconvert $id.$enc.$profile [list encoding $converter -profile $profile $enc $data] $result {*}$args
-        if {[set enc [endianUtf $enc]] ne ""} {
-            # If utf{16,32}-{le,be}, also do utf{16,32}
-            testconvert $id.$enc.$profile [list encoding $converter -profile $profile $enc $data] $result {*}$args
+            testconvert $id.$enc2.default [list encoding $converter $enc2 $data] $result {*}$args
         }
     }
 }
 
 
-# Wrapper for verifying -failindex
+# Wrapper to verify encoding convert{to,from} -failindex ?-profile?
+# Generates tests for compiled and uncompiled implementation.
+# Also generates utf-{16,32} tests if passed encoding is utf-{16,32}{le,be}
+# The enc and profile are appended to id to generate the test id
 proc testfailindex {id converter enc data result {profile default}} {
-    if {$profile eq "default"} {
-        testconvert $id.$enc.$profile "list \[encoding $converter -failindex idx $enc $data] \[set idx]" $result
-        if {[set enc [endianUtf $enc]] ne ""} {
+    testconvert $id.$enc.$profile "list \[encoding $converter -profile $profile -failindex idx $enc $data] \[set idx]" $result
+    if {[set enc2 [endianUtf $enc]] ne ""} {
+        # If utf{16,32}-{le,be}, also do utf{16,32}
+        testconvert $id.$enc2.$profile "list \[encoding $converter -profile $profile -failindex idx $enc2 $data] \[set idx]" $result
+    }
+
+    # If this is the default profile, generate a test without specifying profile
+    if {$profile eq $::encDefaultProfile} {
+        testconvert $id.$enc.default "list \[encoding $converter -failindex idx $enc $data] \[set idx]" $result
+        if {[set enc2 [endianUtf $enc]] ne ""} {
             # If utf{16,32}-{le,be}, also do utf{16,32}
-            testconvert $id.$enc.$profile "list \[encoding $converter -failindex idx $enc $data] \[set idx]" $result
-        }
-    } else {
-        testconvert $id.$enc.$profile "list \[encoding $converter -profile $profile -failindex idx $enc $data] \[set idx]" $result
-        if {[set enc [endianUtf $enc]] ne ""} {
-            # If utf{16,32}-{le,be}, also do utf{16,32}
-            testconvert $id.$enc.$profile "list \[encoding $converter -profile $profile -failindex idx $enc $data] \[set idx]" $result
+            testconvert $id.$enc2.default "list \[encoding $converter -failindex idx $enc2 $data] \[set idx]" $result
         }
     }
 }
@@ -590,9 +679,7 @@ testconvert cmdAH-4.3.12 {
     encoding system $system
 }
 
-# convertfrom, convertfrom -profile
-
-# convertfrom ?-profile? : All valid byte sequences should be accepted by all profiles
+# convertfrom ?-profile? : valid byte sequences
 foreach {enc str hex} $encValidStrings {
     set bytes [binary decode hex $hex]
     set prefix A
@@ -612,7 +699,9 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
     set bytes [binary format H* $hex]
     set prefix A
     set suffix B
-    set prefixLen [string length [encoding convertto $enc $prefix]]
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
+    set prefixLen [string length $prefix_bytes]
     set result [list $str]
     # TODO - if the bad byte is unprintable, tcltest errors out when printing a mismatch
     # so glob it out in error message pattern for now.
@@ -624,7 +713,7 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
         } else {
             set result $errorWithoutPrefix
         }
-        testprofile cmdAH-4.3.15.$hex.solo convertfrom $enc $profile $bytes {*}$result
+        testprofile cmdAH-4.3.13.$hex.solo convertfrom $enc $profile $bytes {*}$result
     }
     if {$ctrl eq {} || "lead" in $ctrl} {
         if {$failidx == -1} {
@@ -632,7 +721,7 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
         } else {
             set result $errorWithoutPrefix
         }
-        testprofile cmdAH-4.3.15.$hex.lead convertfrom $enc $profile $bytes$suffix {*}$result
+        testprofile cmdAH-4.3.13.$hex.lead convertfrom $enc $profile $bytes$suffix_bytes {*}$result
     }
     if {$ctrl eq {} || "tail" in $ctrl} {
         if {$failidx == -1} {
@@ -640,7 +729,7 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
         } else {
             set result $errorWithPrefix
         }
-        testprofile cmdAH-4.3.15.$hex.tail convertfrom $enc $profile $prefix$bytes {*}$result
+        testprofile cmdAH-4.3.13.$hex.tail convertfrom $enc $profile $prefix_bytes$bytes {*}$result
     }
     if {$ctrl eq {} || "middle" in $ctrl} {
         if {$failidx == -1} {
@@ -648,28 +737,11 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
         } else {
             set result $errorWithPrefix
         }
-        testprofile cmdAH-4.3.15.$hex.middle convertfrom $enc $profile $prefix$bytes$suffix {*}$result
+        testprofile cmdAH-4.3.13.$hex.middle convertfrom $enc $profile $prefix_bytes$bytes$suffix_bytes {*}$result
     }
 }
 
-proc printable {s} {
-    set print ""
-    foreach c [split $s ""] {
-        set i [scan $c %c]
-        if {[string is print $c] && ($i <= 127)} {
-            append print $c
-        } elseif {$i <= 0xff} {
-            append print \\x[format %02X $i]
-        } elseif {$i <= 0xffff} {
-            append print \\u[format %04X $i]
-        } else {
-            append print \\U[format %08X $i]
-        }
-    }
-    return $print
-}
-
-# convertfrom -failindex - valid data
+# convertfrom -failindex ?-profile? - valid data
 foreach {enc str hex} $encValidStrings {
     set bytes [binary decode hex $hex]
     set prefix A
@@ -677,15 +749,14 @@ foreach {enc str hex} $encValidStrings {
     set prefix_bytes [encoding convertto $enc A]
     set suffix_bytes [encoding convertto $enc B]
     foreach profile $encProfiles {
-        testfailindex cmdAH-4.3.13.$hex.solo convertfrom $enc $bytes [list $str -1] $profile
-        testfailindex cmdAH-4.3.13.$hex.lead convertfrom $enc $bytes$suffix_bytes [list $str$suffix -1] $profile
-        testfailindex cmdAH-4.3.13.$hex.tail convertfrom $enc $prefix_bytes$bytes [list $prefix$str -1] $profile
-        testfailindex cmdAH-4.3.13.$hex.middle convertfrom $enc $prefix_bytes$bytes$suffix_bytes [list $prefix$str$suffix -1] $profile
+        testfailindex cmdAH-4.3.14.$hex.solo convertfrom $enc $bytes [list $str -1] $profile
+        testfailindex cmdAH-4.3.14.$hex.lead convertfrom $enc $bytes$suffix_bytes [list $str$suffix -1] $profile
+        testfailindex cmdAH-4.3.14.$hex.tail convertfrom $enc $prefix_bytes$bytes [list $prefix$str -1] $profile
+        testfailindex cmdAH-4.3.14.$hex.middle convertfrom $enc $prefix_bytes$bytes$suffix_bytes [list $prefix$str$suffix -1] $profile
     }
 }
 
-
-# convertfrom -failindex, convertfrom -failindex -profile, invalid data
+# convertfrom -failindex ?-profile? - invalid data
 foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
     # There are multiple test cases based on location of invalid bytes
     set bytes [binary decode hex $hex]
@@ -765,19 +836,96 @@ testconvert cmdAH-4.4.12 {
     encoding system $system
 }
 
-# -failindex - valid data
-foreach {enc string bytes} $encValidStrings {
-    testfailindex cmdAH-4.4.13.$enc convertto $enc $string [list $bytes -1]
+# convertto ?-profile? : valid byte sequences
+
+foreach {enc str hex} $encValidStrings {
+    set bytes [binary decode hex $hex]
+    set printable [printable $str]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc A]
+    set suffix_bytes [encoding convertto $enc B]
+    foreach profile $encProfiles {
+        testprofile cmdAH-4.4.13.$printable.solo convertto $enc $profile $str $bytes
+        testprofile cmdAH-4.4.13.$printable.lead convertto $enc $profile $str$suffix $bytes$suffix_bytes
+        testprofile cmdAH-4.4.13.$printable.tail convertto $enc $profile $prefix$str $prefix_bytes$bytes
+        testprofile cmdAH-4.4.13.$printable.middle convertto $enc $profile $prefix$str$suffix $prefix_bytes$bytes$suffix_bytes
+    }
 }
 
-# -failindex - invalid data
-foreach {enc string profile hex failidx ctrl comment} $encUnencodableStrings {
+# convertto ?-profile? : invalid byte sequences
+foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
     set bytes [binary decode hex $hex]
+    set printable [printable $str]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
+    set prefixLen [string length $prefix_bytes]
+    set result [list $bytes]
+    # TODO - if the bad byte is unprintable, tcltest errors out when printing a mismatch
+    # so glob it out in error message pattern for now.
+    set errorWithoutPrefix [list "unexpected character at index $failidx: *" -returnCodes error -match glob]
+    set errorWithPrefix [list "unexpected character at index [expr {$failidx+$prefixLen}]: *" -returnCodes error -match glob]
+    if {$ctrl eq {} || "solo" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $bytes]
+        } else {
+            set result $errorWithoutPrefix
+        }
+        testprofile cmdAH-4.4.13.$printable.solo convertto $enc $profile $str {*}$result
+    }
+    if {$ctrl eq {} || "lead" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $bytes$suffix_bytes]
+        } else {
+            set result $errorWithoutPrefix
+        }
+        testprofile cmdAH-4.4.13.$printable.lead convertto $enc $profile $str$suffix {*}$result
+    }
+    if {$ctrl eq {} || "tail" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $prefix_bytes$bytes]
+        } else {
+            set result $errorWithPrefix
+        }
+        testprofile cmdAH-4.4.13.$printable.tail convertto $enc $profile $prefix$str {*}$result
+    }
+    if {$ctrl eq {} || "middle" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $prefix_bytes$bytes$suffix_bytes]
+        } else {
+            set result $errorWithPrefix
+        }
+        testprofile cmdAH-4.4.13.$printable.middle convertto $enc $profile $prefix$str$suffix {*}$result
+    }
+}
+
+# convertto -failindex ?-profile? - valid data
+foreach {enc str hex} $encValidStrings {
+    set bytes [binary decode hex $hex]
+    set printable [printable $str]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc A]
+    set suffix_bytes [encoding convertto $enc B]
+    foreach profile $encProfiles {
+        testfailindex cmdAH-4.4.14.$enc.$printable.solo convertto $enc $str [list $bytes -1] $profile
+        testfailindex cmdAH-4.4.14.$enc.$printable.lead convertto $enc $str$suffix [list $bytes$suffix_bytes -1] $profile
+        testfailindex cmdAH-4.4.14.$enc.$printable.tail convertto $enc $prefix$str [list $prefix_bytes$bytes -1] $profile
+        testfailindex cmdAH-4.4.14.$enc.$printable.middle convertto $enc $prefix$str$suffix [list $prefix_bytes$bytes$suffix_bytes -1] $profile
+    }
+}
+
+# convertto -failindex ?-profile? - invalid data
+foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
+    set bytes [binary decode hex $hex]
+    set printable [printable $str]
     set prefix A
     set suffix B
     set prefixLen [string length [encoding convertto $enc $prefix]]
     if {$ctrl eq {} || "solo" in $ctrl} {
-        testfailindex cmdAH-4.4.14.$string.solo convertto $enc $string [list $bytes $failidx] $profile
+        testfailindex cmdAH-4.4.14.$printable.solo convertto $enc $str [list $bytes $failidx] $profile
     }
     if {$ctrl eq {} || "lead" in $ctrl} {
         if {$failidx == -1} {
@@ -787,7 +935,7 @@ foreach {enc string profile hex failidx ctrl comment} $encUnencodableStrings {
             # Failure expected
             set result ""
         }
-        testfailindex cmdAH-4.4.14.$string.lead convertto $enc $string$suffix [list $result $failidx] $profile
+        testfailindex cmdAH-4.4.14.$printable.lead convertto $enc $str$suffix [list $result $failidx] $profile
     }
     if {$ctrl eq {} || "tail" in $ctrl} {
         set expected_failidx $failidx
@@ -799,7 +947,7 @@ foreach {enc string profile hex failidx ctrl comment} $encUnencodableStrings {
             set result $prefix
             incr expected_failidx $prefixLen
         }
-        testfailindex cmdAH-4.4.14.$string.tail convertto $enc $prefix$string [list $result $expected_failidx] $profile
+        testfailindex cmdAH-4.4.14.$printable.tail convertto $enc $prefix$str [list $result $expected_failidx] $profile
     }
     if {$ctrl eq {} || "middle" in $ctrl} {
         set expected_failidx $failidx
@@ -811,46 +959,7 @@ foreach {enc string profile hex failidx ctrl comment} $encUnencodableStrings {
             set result $prefix
             incr expected_failidx $prefixLen
         }
-        testfailindex cmdAH-4.4.14.$string.middle convertto $enc $prefix$string$suffix [list $result $expected_failidx] $profile
-    }
-}
-
-# convertto -profile
-
-# All valid byte sequences should be accepted by all profiles
-foreach profile $encProfiles {
-    set i 0
-    foreach {enc string bytes} $encValidStrings {
-        testprofile cmdAH-4.4.15 convertto $enc $profile $string $bytes
-    }
-}
-
-# Cycle through the various combinations of encodings and profiles
-# for invalid byte sequences
-foreach {enc string profile hex failidx ctrl comment} $encUnencodableStrings {
-    set bytes [binary decode hex $hex]
-    if {$failidx eq -1} {
-        set result [list $bytes]
-    } else {
-        # TODO - if the bad char is unprintable, tcltest errors out when printing a mismatch
-        # so glob it out for now.
-        set result [list "unexpected character at index $failidx: *" -returnCodes error -match glob]
-    }
-    #testprofile xx convertto $enc $profile $string {*}$result
-    if {$profile eq "default"} {
-        # testconvert cmdAH-4.4.15.$enc.$profile.$tag [list encoding convertto $enc $string] {*}$result
-        if {"utf-16$endian" eq $enc} {
-            # utf-16le ->utf-16, utf-32be -> utf32 etc.
-            set enc [string range $enc 0 5]
-          #  xxtestconvert cmdAH-4.4.15.$enc.$profile.$tag [list encoding convertto $enc $string] {*}$result
-        }
-    } else {
-        # testconvert cmdAH-4.4.15.$enc.$profile.$tag [list encoding convertto -profile $profile $enc $string] {*}$result
-        if {"utf-16$endian" eq $enc} {
-            # utf-16le ->utf-16, utf-32be -> utf32 etc.
-            set enc [string range $enc 0 5]
-          #  testconvert cmdAH-4.4.15.$enc.$profile.$tag [list encoding convertto -profile $profile $enc $string] {*}$result
-        }
+        testfailindex cmdAH-4.4.14.$printable.middle convertto $enc $prefix$str$suffix [list $result $expected_failidx] $profile
     }
 }
 

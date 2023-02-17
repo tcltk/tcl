@@ -1134,6 +1134,39 @@ proc tcltest::SafeFetch {n1 n2 op} {
     }
 }
 
+
+# tcltest::Asciify --
+#
+#       Transforms the passed string to contain only printable ascii characters.
+#       Useful for printing to terminals. Non-printables are mapped to
+#       \x, \u or \U sequences.
+#
+# Arguments:
+#       s - string to transform
+#
+# Results:
+#       The transformed strings
+#
+# Side effects:
+#       None.
+
+proc tcltest::Asciify {s} {
+    set print ""
+    foreach c [split $s ""] {
+        set i [scan $c %c]
+        if {[string is print $c] && ($i <= 127)} {
+            append print $c
+        } elseif {$i <= 0xff} {
+            append print \\x[format %02X $i]
+        } elseif {$i <= 0xffff} {
+            append print \\u[format %04X $i]
+        } else {
+            append print \\U[format %08X $i]
+        }
+    }
+    return $print
+}
+
 # tcltest::ConstraintInitializer --
 #
 #	Get or set a script that when evaluated in the tcltest namespace
@@ -2222,12 +2255,12 @@ proc tcltest::test {name description args} {
 	    puts [outputChannel] "---- Error testing result: $scriptMatch"
 	} else {
             try {
-                puts [outputChannel] "---- Result was:\n$actualAnswer"
+                puts [outputChannel] "---- Result was:\n[Asciify $actualAnswer]"
             } on error {errMsg errCode} {
                 puts [outputChannel] "---- Result was:\n<error printing result: $errMsg ($errCode)>"
             }
 	    puts [outputChannel] "---- Result should have been\
-		    ($match matching):\n$result"
+		    ($match matching):\n[Asciify $result]"
 	}
     }
     if {$errorCodeFailure} {

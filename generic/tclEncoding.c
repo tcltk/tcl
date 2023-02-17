@@ -2525,10 +2525,8 @@ UtfToUtfProc(
 		    src = saveSrc;
 		    break;
 		}
-		if (0 && PROFILE_REPLACE(profile)) {
+		if (PROFILE_REPLACE(profile)) {
 		    ch = UNICODE_REPLACE_CHAR;
-		    src += len;
-		    // dst += Tcl_UniCharToUtf(ch, dst);
 		}
 		else {
 		    low = ch;
