@@ -2454,11 +2454,14 @@ UtfToUtfProc(
 		}
 		if (PROFILE_REPLACE(profile)) {
 		    ch = UNICODE_REPLACE_CHAR;
+                    ++src;
 		} else {
 		    /* TCL_ENCODING_PROFILE_TCL8 */
 		    ch = UCHAR(*src);
+                    char chbuf[2];
+                    chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
+                    TclUtfToUCS4(chbuf, &ch);
 		}
-		++src;
 	    }
 	    else {
 		/*

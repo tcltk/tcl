@@ -525,7 +525,7 @@ lappend encInvalidBytes {*}{
     utf-8 F1D0 tcl8     \u00F1\u00D0  -1 {knownBug} {First trail byte must be 80:BF}
     utf-8 F1D0 replace  \uFFFD\uFFFD  -1 {} {First trail byte must be 80:BF}
     utf-8 F1D0 strict   {}             0 {} {First trail byte must be 80:BF}
-    utf-8 F180 tcl8      \u00F1\u0080   -1 {} {Missing second trail byte}
+    utf-8 F180 tcl8      \u00F1\u20AC   -1 {} {Missing second trail byte}
     utf-8 F180 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
     utf-8 F180 strict    {}              0 {} {Missing second trail byte}
     utf-8 F1BF tcl8      \u00F1\u00BF   -1 {} {Missing second trail byte}
@@ -558,7 +558,7 @@ lappend encInvalidBytes {*}{
     utf-8 F3D0 tcl8     \u00F3\u00D0  -1 {knownBug} {First trail byte must be 80:BF}
     utf-8 F3D0 replace  \uFFFD\uFFFD  -1 {} {First trail byte must be 80:BF}
     utf-8 F3D0 strict   {}             0 {} {First trail byte must be 80:BF}
-    utf-8 F380 tcl8      \u00F3\u0080   -1 {} {Missing second trail byte}
+    utf-8 F380 tcl8      \u00F3\u20AC   -1 {} {Missing second trail byte}
     utf-8 F380 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
     utf-8 F380 strict    {}              0 {} {Missing second trail byte}
     utf-8 F3BF tcl8      \u00F3\u00BF   -1 {} {Missing second trail byte}
@@ -592,7 +592,7 @@ lappend encInvalidBytes {*}{
     utf-8 F490 tcl8     \u00F4\u0090  -1 {knownBug} {First trail byte must be 80:8F}
     utf-8 F490 replace  \uFFFD\uFFFD  -1 {} {First trail byte must be 80:8F}
     utf-8 F490 strict   {}             0 {} {First trail byte must be 80:8F}
-    utf-8 F480 tcl8      \u00F4\u0080   -1 {} {Missing second trail byte}
+    utf-8 F480 tcl8      \u00F4\u20AC   -1 {} {Missing second trail byte}
     utf-8 F480 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
     utf-8 F480 strict    {}              0 {} {Missing second trail byte}
     utf-8 F48F tcl8      \u00F4\u008F   -1 {} {Missing second trail byte}

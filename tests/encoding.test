@@ -768,7 +768,7 @@ test encoding-24.14 {Parse valid or invalid utf-8} {
 } 1
 test encoding-24.15 {Parse valid or invalid utf-8} -constraints deprecated -body {
     encoding convertfrom utf-8 "Z\xE0\x80"
-} -result Z\xE0\x80
+} -result Z\xE0\u20AC
 test encoding-24.16 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\u4343\x80"]
 } -returnCodes 1 -result {expected byte sequence but character 1 was '䍃' (U+004343)}
@@ -847,6 +847,12 @@ test encoding-24.40 {Try to generate invalid utf-8 with -profile tcl8} -body {
 test encoding-24.41 {Parse invalid utf-8 with -profile strict} -body {
     encoding convertfrom -profile strict utf-8 \xED\xA0\x80\xED\xB0\x80
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xED'}
+test encoding-24.42 {Parse invalid utf-8, fallback to cp1252 [885c86a9a0]} -body {
+    encoding convertfrom -nocomplain utf-8 \xF0\x80\x80\x80
+} -result \xF0\u20AC\u20AC\u20AC
+test encoding-24.43 {Parse invalid utf-8, fallback to cp1252 [885c86a9a0]} -body {
+    encoding convertfrom -nocomplain utf-8 \x80
+} -result \u20AC
 
 file delete [file join [temporaryDirectory] iso2022.txt]
 
