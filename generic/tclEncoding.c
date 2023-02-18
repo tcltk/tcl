@@ -2452,38 +2452,16 @@ UtfToUtfProc(
 			       : TCL_CONVERT_SYNTAX;
 		    break;
 		}
-		if (PROFILE_REPLACE(profile)) {
-		    ch = UNICODE_REPLACE_CHAR;
-                    ++src;
-		} else {
-		    /* TCL_ENCODING_PROFILE_TCL8 */
-		    ch = UCHAR(*src);
-                    char chbuf[2];
-                    chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
-                    TclUtfToUCS4(chbuf, &ch);
-		}
-	    }
-	    else {
-		/*
-		 * Incomplete bytes for real UTF-8 target.
-		 * TODO - no profile check here because did not have any
-		 * checks in the pre-profile code. Why? Is it because on
-		 * output a valid internal utf-8 stream is assumed?
-		 */
-		char chbuf[2];
-		/*
-		 * TODO - this code seems broken to me.
-		 * - it does not check profiles
-		 * - generates invalid output for real UTF-8 target
-		 *   (consider \xC2)
-		 * A possible explanation is this behavior matches the
-		 * Tcl8 decoding behavior of mapping invalid bytes to the same
-		 * code point value. Still, at least strictness checks should
-		 * be made.
-		 */
-		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
-		TclUtfToUCS4(chbuf, &ch);
-	    }
+            }
+            if (PROFILE_REPLACE(profile)) {
+                ch = UNICODE_REPLACE_CHAR;
+                ++src;
+            } else {
+                /* TCL_ENCODING_PROFILE_TCL8 */
+                char chbuf[2];
+                chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
+                TclUtfToUCS4(chbuf, &ch);
+            }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
 	else {

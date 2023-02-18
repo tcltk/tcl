@@ -848,10 +848,10 @@ test encoding-24.41 {Parse invalid utf-8 with -profile strict} -body {
     encoding convertfrom -profile strict utf-8 \xED\xA0\x80\xED\xB0\x80
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xED'}
 test encoding-24.42 {Parse invalid utf-8, fallback to cp1252 [885c86a9a0]} -body {
-    encoding convertfrom -nocomplain utf-8 \xF0\x80\x80\x80
+    encoding convertfrom -profile tcl8 utf-8 \xF0\x80\x80\x80
 } -result \xF0\u20AC\u20AC\u20AC
 test encoding-24.43 {Parse invalid utf-8, fallback to cp1252 [885c86a9a0]} -body {
-    encoding convertfrom -nocomplain utf-8 \x80
+    encoding convertfrom -profile tcl8 utf-8 \x80
 } -result \u20AC
 
 file delete [file join [temporaryDirectory] iso2022.txt]
