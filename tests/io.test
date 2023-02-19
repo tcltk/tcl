@@ -7622,7 +7622,7 @@ test io-52.20 {TclCopyChannel & encodings} -setup {
     set out [open $path(kyrillic.txt) w]
 
     # Using "-encoding ascii" means reading the "Á" gives an error
-    fconfigure $in  -encoding ascii -strictencoding 1
+    fconfigure $in  -encoding ascii
     fconfigure $out -encoding koi8-r -translation lf
 
     fcopy $in $out
@@ -7644,7 +7644,7 @@ test io-52.21 {TclCopyChannel & encodings} -setup {
 
     # Using "-encoding ascii" means writing the "Á" gives an error
     fconfigure $in  -encoding utf-8
-    fconfigure $out -encoding ascii -translation lf -strictencoding 1
+    fconfigure $out -encoding ascii -translation lf
 
     fcopy $in $out
 } -cleanup {
@@ -7664,7 +7664,7 @@ test io-52.22 {TclCopyChannel & encodings} -setup {
     set out [open $path(kyrillic.txt) w]
 
     # Using "-encoding ascii" means reading the "Á" gives an error
-    fconfigure $in  -encoding ascii -strictencoding 1
+    fconfigure $in  -encoding ascii
     fconfigure $out -encoding koi8-r -translation lf
     proc ::xxx args {
         set ::s0 $args
@@ -7692,7 +7692,7 @@ test io-52.23 {TclCopyChannel & encodings} -setup {
 
     # Using "-encoding ascii" means writing the "Á" gives an error
     fconfigure $in  -encoding utf-8
-    fconfigure $out -encoding ascii -translation lf -strictencoding 1
+    fconfigure $out -encoding ascii -translation lf
     proc ::xxx args {
         set ::s0 $args
     }
@@ -9140,7 +9140,7 @@ test io-75.5 {invalid utf-8 encoding read is ignored (-nocomplainencoding 1)} -s
     removeFile io-75.5
 } -result 4181
 
-test io-75.6 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -setup {
+test io-75.6 {invalid utf-8 encoding read is not ignored} -setup {
     set fn [makeFile {} io-75.6]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9148,7 +9148,7 @@ test io-75.6 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -s
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -strictencoding 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9159,7 +9159,7 @@ test io-75.6 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -s
     removeFile io-75.6
 } -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
-test io-75.7 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
+test io-75.7 {invalid utf-8 encoding eof handling} -setup {
     set fn [makeFile {} io-75.7]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9167,7 +9167,7 @@ test io-75.7 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
     puts -nonewline $f A\xA1\x1A
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -strictencoding 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9182,7 +9182,7 @@ test io-75.7 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
     removeFile io-75.7
 } -match glob -result {41 0 1 {error reading "*": illegal byte sequence} ¡}
 
-test io-75.8 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
+test io-75.8 {invalid utf-8 encoding eof handling} -setup {
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9190,7 +9190,7 @@ test io-75.8 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
     puts -nonewline $f A\x1A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -strictencoding 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9205,7 +9205,7 @@ test io-75.8 {invalid utf-8 encoding eof handling (-strictencoding 1)} -setup {
 test io-75.9 {unrepresentable character write passes and is replaced by ?} -setup {
     set fn [makeFile {} io-75.9]
     set f [open $fn w+]
-    fconfigure $f -encoding iso8859-1 -strictencoding 1
+    fconfigure $f -encoding iso8859-1
 } -body {
     catch {puts -nonewline $f "A\u2022"} msg
     flush $f
@@ -9249,7 +9249,7 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
     puts -nonewline $f A\x81\xFFA
     flush $f
     seek $f 0
-    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -strictencoding 1
+    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9276,7 +9276,7 @@ test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
 } -cleanup {
     removeFile io-75.12
 } -result 4181
-test io-75.13 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -setup {
+test io-75.13 {invalid utf-8 encoding read is not ignored} -setup {
     set fn [makeFile {} io-75.13]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9284,7 +9284,7 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-strictencoding 1)} -
     puts -nonewline $f "A\x81"
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -strictencoding 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf
 } -body {
     set d [read $f]
     binary scan $d H* hd

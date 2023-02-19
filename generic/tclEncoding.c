@@ -2257,7 +2257,7 @@ BinaryProc(
  *-------------------------------------------------------------------------
  */
 
-#define STOPONERROR (!(flags & TCL_ENCODING_NOCOMPLAIN))
+#define STOPONERROR !(flags & TCL_ENCODING_NOCOMPLAIN)
 
 static int
 UtfToUtfProc(
@@ -2326,10 +2326,9 @@ UtfToUtfProc(
 	    *dst++ = *src++;
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
 		&& (UCHAR(src[1]) == 0x80) && !(flags & TCL_ENCODING_MODIFIED) && (!(flags & ENCODING_INPUT)
-			|| ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
-			|| (flags & ENCODING_FAILINDEX))) {
+			|| STOPONERROR)) {
 	    /*
-	     * If in input mode, and -strict or -failindex is specified: This is an error.
+	     * If in input mode, and -nocomplain is not specified: This is an error.
 	     */
 	    if ((STOPONERROR) && (flags & ENCODING_INPUT)) {
 		result = TCL_CONVERT_SYNTAX;
@@ -2350,11 +2349,11 @@ UtfToUtfProc(
 	     */
 
 	    if (flags & ENCODING_INPUT) {
-		if ((STOPONERROR) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
+		if (STOPONERROR && (flags & TCL_ENCODING_CHAR_LIMIT)) {
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
-		if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX)) {
+		if (STOPONERROR) {
 		    result = TCL_CONVERT_SYNTAX;
 		    break;
 		}
@@ -2367,11 +2366,11 @@ UtfToUtfProc(
 	    size_t len = TclUtfToUCS4(src, &ch);
 	    if (flags & ENCODING_INPUT) {
 		if ((len < 2) && (ch != 0)
-			&& (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX))) {
+			&& STOPONERROR) {
 		    result = TCL_CONVERT_SYNTAX;
 		    break;
 		} else if ((ch > 0xFFFF) && !(flags & ENCODING_UTF)
-			&& (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX))) {
+			&& STOPONERROR) {
 		    result = TCL_CONVERT_SYNTAX;
 		    break;
 		}
@@ -2400,7 +2399,7 @@ UtfToUtfProc(
 		 * A surrogate character is detected, handle especially.
 		 */
 
-		if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) && (flags & ENCODING_UTF)) {
+		if (STOPONERROR && (flags & ENCODING_UTF)) {
 		    result = TCL_CONVERT_UNKNOWN;
 		    src = saveSrc;
 		    break;
@@ -2425,7 +2424,7 @@ UtfToUtfProc(
 		result = TCL_CONVERT_UNKNOWN;
 		src = saveSrc;
 		break;
-	    } else if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
+	    } else if (STOPONERROR
 		    && (flags & ENCODING_INPUT) && ((ch  & ~0x7FF) == 0xD800)) {
 		result = TCL_CONVERT_SYNTAX;
 		src = saveSrc;
@@ -2523,7 +2522,7 @@ Utf32ToUtfProc(
 		break;
 	    }
 	    ch = 0xFFFD;
-	} else if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
+	} else if (STOPONERROR
 		&& ((ch  & ~0x7FF) == 0xD800)) {
 	    if (STOPONERROR) {
 		result = TCL_CONVERT_SYNTAX;
@@ -3052,8 +3051,7 @@ TableToUtfProc(
 	    ch = pageZero[byte];
 	}
 	if ((ch == 0) && (byte != 0)) {
-	    if ((flags & ENCODING_FAILINDEX)
-		    || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+	    if (STOPONERROR) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }

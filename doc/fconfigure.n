@@ -127,18 +127,6 @@ This option was introduced with TCL 8.7 and has the fix value \fItrue\fR.
 .PP
 See the \fI\-nocomplain\fR option of the \fBencoding\fR command for more information.
 .RE
-.VE "TCL9.0 TIP633"
-.VS "TCL8.7 TIP346"
-.TP
-\fB\-strictencoding\fR \fIbool\fR
-.
-Activate additional stricter encoding application rules.
-Default value is \fIfalse\fR.
-.RS
-.PP
-See the \fI\-strict\fR option of the \fBencoding\fR command for more information.
-.VE "TCL8.7 TIP346"
-.RE
 .TP
 \fB\-translation\fR \fImode\fR
 .TP

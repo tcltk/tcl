@@ -106,9 +106,7 @@ byte is converted and then to reset to an initial state.
 not return immediately upon reading a source character that does not exist in
 the target encoding, but it will substitute a default fallback character for
 all of such characters. The flag \fBTCL_ENCODING_STOPONERROR\fR has no effect,
-it only has meaning in Tcl 8.x. The flag \fBTCL_ENCODING_STRICT\fR makes the
-encoder/decoder more strict in what it considers to be an invalid byte
-sequence. The flag \fBTCL_ENCODING_MODIFIED\fR makes
+it only has meaning in Tcl 8.x. The flag \fBTCL_ENCODING_MODIFIED\fR makes
 \fBTcl_UtfToExternalDStringEx\fR and \fBTcl_UtfToExternal\fR produce the byte
 sequence \exC0\ex80 in stead of \ex00, for the utf-8/cesu-8 encoders.
 .AP Tcl_EncodingState *statePtr in/out

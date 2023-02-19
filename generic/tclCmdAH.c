@@ -448,7 +448,7 @@ EncodingConvertfromObjCmd(
 	    objcUnprocessed--;
 	} else if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
 		&& !strncmp(bytesPtr, "-strict", strlen(bytesPtr))) {
-	    flags = TCL_ENCODING_STRICT;
+	    flags = 0;
 	    objcUnprocessed--;
 		bytesPtr = Tcl_GetString(objv[2]);
 		if (bytesPtr[0] == '-' && bytesPtr[1] == 'f'
@@ -467,12 +467,11 @@ EncodingConvertfromObjCmd(
 		goto encConvFromError;
 	    }
 	    failVarObj = objv[2];
-	    flags = ENCODING_FAILINDEX;
 	    objcUnprocessed -= 2;
 		bytesPtr = Tcl_GetString(objv[3]);
 		if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
 			&& !strncmp(bytesPtr, "-strict", strlen(bytesPtr))) {
-		    flags = TCL_ENCODING_STRICT;
+		    flags = 0;
 		    objcUnprocessed --;
 		}
 	}
@@ -505,7 +504,7 @@ EncodingConvertfromObjCmd(
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
-    if ((!(flags & TCL_ENCODING_NOCOMPLAIN) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) && (result != TCL_INDEX_NONE)) {
+    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != TCL_INDEX_NONE)) {
 	if (failVarObj != NULL) {
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
@@ -596,7 +595,7 @@ EncodingConverttoObjCmd(
 	    objcUnprocessed--;
 	} else if (stringPtr[0] == '-' && stringPtr[1] == 's'
 		&& !strncmp(stringPtr, "-strict", strlen(stringPtr))) {
-	    flags = TCL_ENCODING_STRICT;
+	    flags = 0;
 	    objcUnprocessed--;
 		stringPtr = Tcl_GetString(objv[2]);
 		if (stringPtr[0] == '-' && stringPtr[1] == 'f'
@@ -620,7 +619,7 @@ EncodingConverttoObjCmd(
 		stringPtr = Tcl_GetString(objv[3]);
 		if (stringPtr[0] == '-' && stringPtr[1] == 's'
 			&& !strncmp(stringPtr, "-strict", strlen(stringPtr))) {
-		    flags = TCL_ENCODING_STRICT;
+		    flags = 0;
 		    objcUnprocessed --;
 		}
 	}
@@ -652,7 +651,7 @@ EncodingConverttoObjCmd(
     stringPtr = Tcl_GetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    flags, &ds);
-    if ((!(flags & TCL_ENCODING_NOCOMPLAIN) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) && (result != TCL_INDEX_NONE)) {
+    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != TCL_INDEX_NONE)) {
 	if (failVarObj != NULL) {
 	    /* I hope, wide int will cover size_t data type */
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {

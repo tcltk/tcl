@@ -28,7 +28,7 @@ formats.
 Performs one of several encoding related operations, depending on
 \fIoption\fR.  The legal \fIoption\fRs are:
 .TP
-\fBencoding convertfrom\fR ?\fB-strict\fR? ?\fB-failindex var\fR? ?\fIencoding\fR? \fIdata\fR
+\fBencoding convertfrom\fR ?\fB-failindex var\fR? ?\fIencoding\fR? \fIdata\fR
 \fBencoding convertfrom\fR \fB-nocomplain\fR ?\fIencoding\fR? \fIdata\fR
 .
 Convert \fIdata\fR to a Unicode string from the specified \fIencoding\fR.  The
@@ -52,15 +52,10 @@ is returned in the given variable.  The return value of the command are the
 converted characters until the first error position. No error condition is raised.
 In case of no error, the value \fI-1\fR is written to the variable.  This option
 may not be used together with \fB-nocomplain\fR.
-.PP
-The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
-encoder, it disallows invalid byte sequences and surrogates (which -
-otherwise - are just passed through).  This option may not be used together
-with \fB-nocomplain\fR.
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .RE
 .TP
-\fBencoding convertto\fR ?\fB-strict\fR? ?\fB-failindex var\fR? ?\fIencoding\fR? \fIdata\fR
+\fBencoding convertto\fR ?\fB-failindex var\fR? ?\fIencoding\fR? \fIdata\fR
 \fBencoding convertto\fR \fB-nocomplain\fR ?\fIencoding\fR? \fIdata\fR
 .
 Convert \fIstring\fR from Unicode to the specified \fIencoding\fR.
@@ -86,9 +81,6 @@ is returned in the given variable.  The return value of the command are the
 converted bytes until the first error position. No error condition is raised.
 In case of no error, the value \fI-1\fR is written to the variable.  This option
 may not be used together with \fB-nocomplain\fR.
-.PP
-The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
-encoder, it has no effect.  This option may not be used together with \fB-nocomplain\fR.
 .VE "TCL8.7 TIP346, TIP607, TIP601"
 .RE
 .TP
