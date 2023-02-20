@@ -185,15 +185,58 @@ set encDefaultProfile tcl8; # Should reflect the default from implementation
 
 # TODO - valid sequences for different encodings - shiftjis etc.
 # Note utf-16, utf-32 missing because they are automatically
-# generated based on le/be versions. Also add all ranges from Unicode standard
-# Table 3.7
+# generated based on le/be versions.
 set encValidStrings {
-    ascii    ABC                           414243
-    utf-8    A\u0000\u03A9\u8A9E\U00010384 4100CEA9E8AA9EF0908E84
-    utf-16le A\u0000\u03A9\u8A9E\U00010384 41000000A9039E8A00D884DF
-    utf-16be A\u0000\u03A9\u8A9E\U00010384 0041000003A98A9ED800DF84
-    utf-32le A\u0000\u03A9\u8A9E\U00010384 4100000000000000A90300009E8A000084030100
-    utf-32be A\u0000\u03A9\u8A9E\U00010384 0000004100000000000003A900008A9E00010384
+    ascii    \u0000 00 {} {Lowest ASCII}
+    ascii    \u007F 7F knownBug {Highest ASCII}
+
+    utf-8    \u0000 00 {} {Unicode Table 3.7 Row 1}
+    utf-8    \u007F 7F {} {Unicode Table 3.7 Row 1}
+    utf-8    \u0080 C280 {} {Unicode Table 3.7 Row 2}
+    utf-8    \u07FF DFBF {} {Unicode Table 3.7 Row 2}
+    utf-8    \u0800 E0A080 {} {Unicode Table 3.7 Row 3}
+    utf-8    \u0FFF E0BFBF {} {Unicode Table 3.7 Row 3}
+    utf-8    \u1000 E18080 {} {Unicode Table 3.7 Row 4}
+    utf-8    \uCFFF ECBFBF {} {Unicode Table 3.7 Row 4}
+    utf-8    \uD000 ED8080 {} {Unicode Table 3.7 Row 5}
+    utf-8    \uD7FF ED9FBF {} {Unicode Table 3.7 Row 5}
+    utf-8    \uE000 EE8080 {} {Unicode Table 3.7 Row 6}
+    utf-8    \uFFFF EFBFBF {} {Unicode Table 3.7 Row 6}
+    utf-8    \U10000 F0908080 {} {Unicode Table 3.7 Row 7}
+    utf-8    \U3FFFF F0BFBFBF {} {Unicode Table 3.7 Row 7}
+    utf-8    \U40000 F1808080 {} {Unicode Table 3.7 Row 8}
+    utf-8    \UFFFFF F3BFBFBF {} {Unicode Table 3.7 Row 8}
+    utf-8    \U100000 F4808080 {} {Unicode Table 3.7 Row 9}
+    utf-8    \U10FFFF F48FBFBF {} {Unicode Table 3.7 Row 9}
+    utf-8    A\u03A9\u8A9E\U00010384 41CEA9E8AA9EF0908E84 {} {Unicode 2.5}
+
+    utf-16le \u0000 0000 {} {Lowest code unit}
+    utf-16le \uD7FF FFD7 {} {Below high surrogate range}
+    utf-16le \uE000 00E0 {} {Above low surrogate range}
+    utf-16le \uFFFF FFFF {} {Highest code unit}
+    utf-16le \U010000 00D800DC {} {First surrogate pair}
+    utf-16le \U10FFFF FFDBFFDF {} {First surrogate pair}
+    utf-16le A\u03A9\u8A9E\U00010384 4100A9039E8A00D884DF {} {Unicode 2.5}
+
+    utf-16be \u0000 0000 {} {Lowest code unit}
+    utf-16be \uD7FF D7FF {} {Below high surrogate range}
+    utf-16be \uE000 E000 {} {Above low surrogate range}
+    utf-16be \uFFFF FFFF {} {Highest code unit}
+    utf-16be \U010000 D800DC00 {} {First surrogate pair}
+    utf-16be \U10FFFF DBFFDFFF {} {First surrogate pair}
+    utf-16be A\u03A9\u8A9E\U00010384 004103A98A9ED800DF84 {} {Unicode 2.5}
+
+    utf-32le \u0000 00000000 {} {Lowest code unit}
+    utf-32le \uFFFF FFFF0000 {} {Highest BMP}
+    utf-32le \U010000 00000100 {} {First supplementary}
+    utf-32le \U10FFFF ffff1000 {} {Last supplementary}
+    utf-32le A\u03A9\u8A9E\U00010384 41000000A90300009E8A000084030100 {} {Unicode 2.5}
+
+    utf-32be \u0000 00000000 {} {Lowest code unit}
+    utf-32be \uFFFF 0000FFFF {} {Highest BMP}
+    utf-32be \U010000 00010000 {} {First supplementary}
+    utf-32be \U10FFFF 0010FFFF {} {Last supplementary}
+    utf-32be A\u03A9\u8A9E\U00010384 00000041000003A900008A9E00010384 {} {Unicode 2.5}
 }
 
 # Invalid byte sequences. These are driven from a table with format
@@ -211,8 +254,7 @@ set encValidStrings {
 # If the ctrl field is empty it is treated as all of the above
 # Note if there is any other value by itself, it will cause the test to
 # be skipped. This is intentional to skip known bugs.
-
-# TODO - other encodings and test cases
+# TODO - non-UTF encodings
 
 # ascii - Any byte above 127 is invalid and is mapped
 # to the same numeric code point except for the range
@@ -616,8 +658,6 @@ lappend encInvalidBytes {*}{
     utf-8 F48FBFD0 replace   \uFFFD         -1 {knownW3C} {Third trail byte must be 80:BF}
     utf-8 F48FBFD0 strict    {}              0 {} {Third trail byte must be 80:BF}
 
-
-
     utf-8 F5 tcl8    \u00F5 -1 {} {F5:FF are invalid everywhere}
     utf-8 F5 replace \uFFFD -1 {} {F5:FF are invalid everywhere}
     utf-8 F5 strict  {}      0 {} {F5:FF are invalid everywhere}
@@ -631,41 +671,72 @@ lappend encInvalidBytes {*}{
     utf-8 E180E2F09192F1BF30 replace \uFFFD\uFFFD\uFFFD\uFFFD\x30                         -1 {knownW3C} {Unicode Table 3.11}
 }
 
-set xxencInvalidBytes {
-    
-    utf-8 \x41\x80\x42     tcl8      A\u0080B -1 80
-    utf-8 \x41\x80\x42     replace   A\uFFFDB -1 80
-    utf-8 \x41\x80\x42     strict    A         1 80
-    utf-8 \x41\xC0\x80\x42 tcl8      A\u0000B -1 C080
-    utf-8 \x41\xC0\x80\x42 strict    A         1 C080
-    utf-8 \x41\xC1\x42     tcl8      A\u00C1B -1 C1
-    utf-8 \x41\xC1\x42     replace   A\uFFFDB -1 C1
-    utf-8 \x41\xC1\x42     strict    A         1 C1
-    utf-8 \x41\xC2\x42     tcl8      A\u00C2B -1 C2-nontrail
-    utf-8 \x41\xC2\x42     replace   A\uFFFDB -1 C2-nontrail
-    utf-8 \x41\xC2\x42     strict    A         1 C2-nontrail
-    utf-8 \x41\xC2         tcl8      A\u00C2  -1 C2-incomplete
-    utf-8 \x41\xC2         replace   A\uFFFD  -1 C2-incomplete
-    utf-8 \x41\xC2         strict    A         1 C2-incomplete
-    utf-8 A\xed\xa0\x80B   tcl8      A\uD800B -1 High-surrogate
-    utf-8 A\xed\xa0\x80B   strict    A         1 High-surrogate
-    utf-8 A\xed\xb0\x80B   tcl8      A\uDC00B -1 Low-surrogate
-    utf-8 A\xed\xb0\x80B   strict    A         1 Low-surrogate
-    utf-8 \xed\xa0\x80\xed\xb0\x80   tcl8      \U00010000 -1 High-low-surrogate
-    utf-8 \xed\xa0\x80\xed\xb0\x80   strict    {}          0 High-low-surrogate
+# utf16-le and utf16-be test cases. Note utf16 cases are automatically generated
+# based on these depending on platform endianness. Note truncated tests can only
+# happen when the sequence is at the end (including by itself) Thus {solo tail}
+# in some cases.
+lappend encInvalidBytes {*}{
+    utf-16le 41      tcl8      {}  -1 {solo tail} {Truncated}
+    utf-16le 41      replace   \uFFFD  -1 {solo tail} {Truncated}
+    utf-16le 41      strict    {}   0 {solo tail} {Truncated}
+    utf-16le 00D8    tcl8      \uD800 -1 {} {Missing low surrogate}
+    utf-16le 00D8    replace   \uFFFD -1 {knownBug} {Missing low surrogate}
+    utf-16le 00D8    strict    {}      0 {knownBug} {Missing low surrogate}
+    utf-16le 00DC    tcl8      \uDC00 -1 {} {Missing high surrogate}
+    utf-16le 00DC    replace   \uFFFD -1 {knownBug} {Missing high surrogate}
+    utf-16le 00DC    strict    {}      0 {knownBug} {Missing high surrogate}
 }
-set utf32-le-TODO {
-    utf-32le \x00\xD8\x00\x00                                   tcl8     \uD800   -1 {High-surrogate}
-    utf-32le \x00\xD8\x00\x00                                   strict   ""        0 {High-surrogate}
-    utf-32le \x00\xDC\x00\x00                                   tcl8     \uDC00   -1 {Low-surrogate}
-    utf-32le \x00\xDC\x00\x00                                   strict   ""        0 {Low-surrogate}
-    utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00                   tcl8     \uD800\uDC00  -1 {High-low-surrogate}
-    utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00                   strict   ""             0 {High-low-surrogate}
-    utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00                   tcl8     \uDC00\uD800  -1 {High-low-surrogate}
-    utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00                   strict   ""             0 {High-low-surrogate}
-    utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00   tcl8     A\uD800B -1 {High-surrogate-middle}
-    utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00   strict   A         4 {High-surrogate-middle}
+
+# utf32-le and utf32-be test cases. Note utf32 cases are automatically generated
+# based on these depending on platform endianness. Note truncated tests can only
+# happen when the sequence is at the end (including by itself) Thus {solo tail}
+# in some cases.
+lappend encInvalidBytes {*}{
+    utf-32le 41      tcl8      {}  -1 {solo tail} {Truncated}
+    utf-32le 41      replace   \uFFFD  -1 {solo} {Truncated}
+    utf-32le 41      strict    {}   0 {solo tail} {Truncated}
+    utf-32le 4100    tcl8      {}  -1 {solo tail} {Truncated}
+    utf-32le 4100    replace   \uFFFD  -1 {solo} {Truncated}
+    utf-32le 4100    strict    {}   0 {solo tail} {Truncated}
+    utf-32le 410000  tcl8      {}  -1 {solo tail} {Truncated}
+    utf-32le 410000  replace   \uFFFD  -1 {solo} {Truncated}
+    utf-32le 410000  strict    {}   0 {solo tail} {Truncated}
+    utf-32le 00D80000 tcl8     \uD800   -1 {} {High-surrogate}
+    utf-32le 00D80000 replace  \uFFFD   -1 {} {High-surrogate}
+    utf-32le 00D80000 strict   {}        0 {} {High-surrogate}
+    utf-32le 00DC0000 tcl8     \uDC00   -1 {} {Low-surrogate}
+    utf-32le 00DC0000 replace  \uFFFD   -1 {} {Low-surrogate}
+    utf-32le 00DC0000 strict   {}        0 {} {Low-surrogate}
+    utf-32le 00D8000000DC0000 tcl8 \uD800\uDC00    -1 {} {High-low-surrogate-pair}
+    utf-32le 00D8000000DC0000 replace \uFFFD\uFFFD -1 {} {High-low-surrogate-pair}
+    utf-32le 00D8000000DC0000 strict  {}            0 {} {High-low-surrogate-pair}
+    utf-32le 00001100 tcl8 \UFFFD    -1 {} {Out of range}
+    utf-32le 00001100 replace \UFFFD -1 {} {Out of range}
+    utf-32le 00001100 strict {}       0 {} {Out of range}
+    utf-32le FFFFFFFF tcl8 \UFFFD    -1 {} {Out of range}
+    utf-32le FFFFFFFF replace \UFFFD -1 {} {Out of range}
+    utf-32le FFFFFFFF strict {}       0 {} {Out of range}
+
+    utf-32be 41      tcl8      {}  -1 {solo tail} {Truncated}
+    utf-32be 0041    tcl8      {}  -1 {solo tail} {Truncated}
+    utf-32be 000041  tcl8      {}  -1 {solo tail} {Truncated}
+    utf-32be 0000D800 tcl8     \uD800   -1 {} {High-surrogate}
+    utf-32be 0000D800 replace  \uFFFD   -1 {} {High-surrogate}
+    utf-32be 0000D800 strict   {}        0 {} {High-surrogate}
+    utf-32be 0000DC00 tcl8     \uDC00   -1 {} {Low-surrogate}
+    utf-32be 0000DC00 replace  \uFFFD   -1 {} {Low-surrogate}
+    utf-32be 0000DC00 strict   {}        0 {} {Low-surrogate}
+    utf-32be 0000D8000000DC00 tcl8 \uD800\uDC00    -1 {} {High-low-surrogate-pair}
+    utf-32be 0000D8000000DC00 replace \uFFFD\uFFFD -1 {} {High-low-surrogate-pair}
+    utf-32be 0000D8000000DC00 strict  {}            0 {} {High-low-surrogate-pair}
+    utf-32be 00110000 tcl8 \UFFFD    -1 {} {Out of range}
+    utf-32be 00110000 replace \UFFFD -1 {} {Out of range}
+    utf-32be 00110000 strict {}       0 {} {Out of range}
+    utf-32be FFFFFFFF tcl8 \UFFFD    -1 {} {Out of range}
+    utf-32be FFFFFFFF replace \UFFFD -1 {} {Out of range}
+    utf-32be FFFFFFFF strict {}       0 {} {Out of range}
 }
+
 
 # Strings that cannot be encoded for specific encoding / profiles
 # {encoding string profile exptedresult expectedfailindex ctrl comment}
@@ -682,7 +753,7 @@ set utf32-le-TODO {
 # If the ctrl field is empty it is treated as all of the above
 # Note if there is any other value by itself, it will cause the test to
 # be skipped. This is intentional to skip known bugs.
-# TODO - other encodings and test cases
+# TODO - other encodings
 # TODO - out of range code point (note cannot be generated by \U notation)
 set encUnencodableStrings {
     ascii \u00e0 tcl8    3f -1 {} {unencodable}
@@ -883,7 +954,8 @@ testconvert cmdAH-4.3.12 {
 }
 
 # convertfrom ?-profile? : valid byte sequences
-foreach {enc str hex} $encValidStrings {
+foreach {enc str hex ctrl comment} $encValidStrings {
+    if {"knownBug" in $ctrl} continue
     set bytes [binary decode hex $hex]
     set prefix A
     set suffix B
@@ -899,6 +971,7 @@ foreach {enc str hex} $encValidStrings {
 
 # convertfrom ?-profile? : invalid byte sequences
 foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
+    if {"knownBug" in $ctrl} continue
     set bytes [binary format H* $hex]
     set prefix A
     set suffix B
@@ -945,12 +1018,13 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
 }
 
 # convertfrom -failindex ?-profile? - valid data
-foreach {enc str hex} $encValidStrings {
+foreach {enc str hex ctrl comment} $encValidStrings {
+    if {"knownBug" in $ctrl} continue
     set bytes [binary decode hex $hex]
     set prefix A
     set suffix B
-    set prefix_bytes [encoding convertto $enc A]
-    set suffix_bytes [encoding convertto $enc B]
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
     foreach profile $encProfiles {
         testfailindex cmdAH-4.3.14.$hex.solo convertfrom $enc $bytes [list $str -1] $profile
         testfailindex cmdAH-4.3.14.$hex.lead convertfrom $enc $bytes$suffix_bytes [list $str$suffix -1] $profile
@@ -961,11 +1035,14 @@ foreach {enc str hex} $encValidStrings {
 
 # convertfrom -failindex ?-profile? - invalid data
 foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
+    if {"knownBug" in $ctrl} continue
     # There are multiple test cases based on location of invalid bytes
     set bytes [binary decode hex $hex]
     set prefix A
     set suffix B
-    set prefixLen [string length [encoding convertto $enc $prefix]]
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
+    set prefixLen [string length $prefix_bytes]
     if {$ctrl eq {} || "solo" in $ctrl} {
         testfailindex cmdAH-4.3.14.$hex.solo convertfrom $enc $bytes [list $str $failidx] $profile
     }
@@ -977,7 +1054,7 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
             # Failure expected
             set result ""
         }
-        testfailindex cmdAH-4.3.14.$hex.lead convertfrom $enc $bytes$suffix [list $result $failidx] $profile
+        testfailindex cmdAH-4.3.14.$hex.lead convertfrom $enc $bytes$suffix_bytes [list $result $failidx] $profile
     }
     if {$ctrl eq {} || "tail" in $ctrl} {
         set expected_failidx $failidx
@@ -989,7 +1066,7 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
             set result $prefix
             incr expected_failidx $prefixLen
         }
-        testfailindex cmdAH-4.3.14.$hex.tail convertfrom $enc $prefix$bytes [list $result $expected_failidx] $profile
+        testfailindex cmdAH-4.3.14.$hex.tail convertfrom $enc $prefix_bytes$bytes [list $result $expected_failidx] $profile
     }
     if {$ctrl eq {} || "middle" in $ctrl} {
         set expected_failidx $failidx
@@ -1001,7 +1078,7 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
             set result $prefix
             incr expected_failidx $prefixLen
         }
-        testfailindex cmdAH-4.3.14.$hex.middle convertfrom $enc $prefix$bytes$suffix [list $result $expected_failidx] $profile
+        testfailindex cmdAH-4.3.14.$hex.middle convertfrom $enc $prefix_bytes$bytes$suffix_bytes [list $result $expected_failidx] $profile
     }
 }
 
@@ -1041,7 +1118,8 @@ testconvert cmdAH-4.4.12 {
 
 # convertto ?-profile? : valid byte sequences
 
-foreach {enc str hex} $encValidStrings {
+foreach {enc str hex ctrl comment} $encValidStrings {
+    if {"knownBug" in $ctrl} continue
     set bytes [binary decode hex $hex]
     set printable [printable $str]
     set prefix A
@@ -1058,6 +1136,7 @@ foreach {enc str hex} $encValidStrings {
 
 # convertto ?-profile? : invalid byte sequences
 foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
+    if {"knownBug" in $ctrl} continue
     set bytes [binary decode hex $hex]
     set printable [printable $str]
     set prefix A
@@ -1105,7 +1184,8 @@ foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
 }
 
 # convertto -failindex ?-profile? - valid data
-foreach {enc str hex} $encValidStrings {
+foreach {enc str hex ctrl comment} $encValidStrings {
+    if {"knownBug" in $ctrl} continue
     set bytes [binary decode hex $hex]
     set printable [printable $str]
     set prefix A
@@ -1122,6 +1202,7 @@ foreach {enc str hex} $encValidStrings {
 
 # convertto -failindex ?-profile? - invalid data
 foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
+    if {"knownBug" in $ctrl} continue
     set bytes [binary decode hex $hex]
     set printable [printable $str]
     set prefix A
