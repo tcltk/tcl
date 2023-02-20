@@ -67,15 +67,10 @@ encodings: clean txt2enc $(EUC_ENCODINGS)
 	@for p in *.txt; do \
 	    enc=`echo $$p | sed 's/\..*$$/\.enc/'`; \
 	    echo $$enc; \
-	    ./txt2enc -e 0 -u 1 $$p > $$enc; \
+	    ./txt2enc -m $$p > $$enc; \
 	done
 	@echo
 	@echo Compiling special versions of encoding files.
-	@for p in ascii.txt; do \
-	    enc=`echo $$p | sed 's/\..*$$/\.enc/'`; \
-	    echo $$enc; \
-	    ./txt2enc -m $$p > $$enc; \
-	done
 	@for p in jis0208.txt; do \
 	    enc=`echo $$p | sed 's/\..*$$/\.enc/'`; \
 	    echo $$enc; \
