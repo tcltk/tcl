@@ -2594,7 +2594,7 @@ Utf32ToUtfProc(
 {
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
-    int result, numChars, charLimit = INT_MAX;
+    int result, extra, numChars, charLimit = INT_MAX;
     int ch = 0;
 
     flags |= PTR2INT(clientData);
@@ -2606,8 +2606,9 @@ Utf32ToUtfProc(
     /*
      * Check alignment with utf-32 (4 == sizeof(UTF-32))
      */
-
-    if ((srcLen % 4) != 0) {
+    extra = srcLen % 4;
+    if (extra != 0) {
+	/* We have a truncated code unit */
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen &= -4;
     }
@@ -2669,13 +2670,27 @@ Utf32ToUtfProc(
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
-	src += sizeof(unsigned int);
+	src += 4;
     }
 
     if ((ch  & ~0x3FF) == 0xD800) {
 	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	dst += Tcl_UniCharToUtf(-1, dst);
     }
+    /*
+     * If we had a truncated code unit at the end AND this is the last
+     * fragment AND profile is "replace", stick FFFD in its place.
+     */
+    if (extra && (flags & TCL_ENCODING_END) && PROFILE_REPLACE(flags)) {
+	src += extra; /* Go past truncated code unit */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+	    result = TCL_OK;
+	}
+    }
+
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -2822,7 +2837,7 @@ Utf16ToUtfProc(
 {
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
-    int result, numChars, charLimit = INT_MAX;
+    int result, extra, numChars, charLimit = INT_MAX;
     unsigned short ch = 0;
 
     flags |= PTR2INT(clientData);
@@ -2835,7 +2850,8 @@ Utf16ToUtfProc(
      * Check alignment with utf-16 (2 == sizeof(UTF-16))
      */
 
-    if ((srcLen % 2) != 0) {
+    extra = srcLen % 2;
+    if (extra != 0) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen--;
     }
@@ -2891,6 +2907,20 @@ Utf16ToUtfProc(
 	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	dst += Tcl_UniCharToUtf(-1, dst);
     }
+    /*
+     * If we had a truncated code unit at the end AND this is the last
+     * fragment AND profile is "replace", stick FFFD in its place.
+     */
+    if (extra && (flags & TCL_ENCODING_END) && PROFILE_REPLACE(flags)) {
+	++src;/* Go past the truncated code unit */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+	    result = TCL_OK;
+	}
+    }
+
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;

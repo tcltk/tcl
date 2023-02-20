@@ -695,7 +695,8 @@ EncodingConvertfromObjCmd(
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
-    if (result != TCL_INDEX_NONE) {
+    if (result != TCL_INDEX_NONE &&
+	TCL_ENCODING_PROFILE_GET(flags) != TCL_ENCODING_PROFILE_TCL8) {
 	if (failVarObj != NULL) {
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
@@ -776,7 +777,8 @@ EncodingConverttoObjCmd(
     stringPtr = TclGetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    flags, &ds);
-    if (result != TCL_INDEX_NONE) {
+    if (result != TCL_INDEX_NONE &&
+	TCL_ENCODING_PROFILE_GET(flags) != TCL_ENCODING_PROFILE_TCL8) {
 	if (failVarObj != NULL) {
 	    /* I hope, wide int will cover size_t data type */
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
@@ -795,8 +797,7 @@ EncodingConverttoObjCmd(
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
-    }
-    else if (failVarObj != NULL) {
+    } else if (failVarObj != NULL) {
 	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIntObj(-1), TCL_LEAVE_ERR_MSG) == NULL) {
 	    return TCL_ERROR;
 	}
