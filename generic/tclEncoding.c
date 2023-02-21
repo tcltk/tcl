@@ -2457,21 +2457,27 @@ UnicodeToUtfProc(
     }
     result = TCL_OK;
 
-    /* check alignment with utf-16 (2 == sizeof(UTF-16)) */
+    /*
+     * Check alignment with utf-16 (2 == sizeof(UTF-16))
+     */
+
     if ((srcLen % 2) != 0) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen--;
     }
 
+#if TCL_UTF_MAX > 3
     /*
-     * If last code point is a high surrogate, we cannot handle that yet.
+     * If last code point is a high surrogate, we cannot handle that yet,
+     * unless we are at the end.
      */
 
-    if ((srcLen >= 2) &&
+    if (!(flags & TCL_ENCODING_END) && (srcLen >= 2) &&
 	    ((src[srcLen - (clientData?1:2)] & 0xFC) == 0xD8)) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen-= 2;
     }
+#endif
 
     srcStart = src;
     srcEnd = src + srcLen;
@@ -2504,6 +2510,21 @@ UnicodeToUtfProc(
 	src += sizeof(unsigned short);
     }
 
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a single byte left-over at the end */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    /* destination is not full, so we really are at the end now */
+	    if (flags & TCL_ENCODING_STOPONERROR) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		dst += Tcl_UniCharToUtf(0xFFFD, dst);
+		numChars++;
+		src++;
+	    }
+	}
+    }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;

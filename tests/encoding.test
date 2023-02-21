@@ -419,6 +419,12 @@ test encoding-16.3 {UnicodeToUtfProc} -body {
     set val [encoding convertfrom unicode "\xDC\xDC"]
     list $val [format %X [scan $val %c]]
 } -result "\uDCDC DCDC"
+test encoding-16.4 {UnicodeToUtfProc, bug [d19fe0a5b]} -body {
+    encoding convertfrom unicode "\x41\x41\x41"
+} -result \u4141\uFFFD
+test encoding-16.5 {UnicodeToUtfProc, bug [d19fe0a5b]} -constraints ucs2 -body {
+    encoding convertfrom unicode "\xD8\xD8"
+} -result \uD8D8
 
 test encoding-17.1 {UtfToUnicodeProc} -constraints fullutf -body {
     encoding convertto unicode "\U460DC"
