@@ -26,7 +26,7 @@ main(int argc, char **argv)
 {
     FILE *fp;
     Rune *toUnicode[256];
-    int i, multiByte, enc, uni, hi, lo, fixmissing, used, maxEnc;
+    int i, multiByte, enc, uni, hi, lo, used, maxEnc;
     int ch, encColumn, uniColumn, fallbackKnown, width;
     char *fallbackString, *str, *rest, *dot;
     unsigned int magic, type, symbol, fallbackChar;
@@ -43,7 +43,6 @@ main(int argc, char **argv)
     fallbackKnown = 0;
     type = -1;
     symbol = 0;
-    fixmissing = 1;
 
     opterr = 0;
     while (1) {
@@ -87,10 +86,6 @@ main(int argc, char **argv)
 
 	case 's':
 	    symbol = 1;
-	    break;
-
-	case 'm':
-	    fixmissing = 0;
 	    break;
 
 	default:
@@ -206,13 +201,6 @@ main(int argc, char **argv)
 	}
 	for (i = 0; i < 0x20; i++) {
 	    toUnicode[0][i] = i;
-	}
-	if (fixmissing) {
-	    for (i = 0x7F; i < 0xA0; i++) {
-		if (toUnicode[i] == NULL && toUnicode[0][i] == 0) {
-		    toUnicode[0][i] = i;
-		}
-	    }
 	}
     }
 
