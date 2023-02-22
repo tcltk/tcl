@@ -459,17 +459,20 @@ test encoding-15.26 {UtfToUtfProc CESU-8} {
     encoding convertfrom cesu-8 \xC0\x80
 } \x00
 test encoding-15.27 {UtfToUtfProc -profile strict CESU-8} {
-    encoding convertfrom -profile strict cesu-8 \xC0\x80
+    encoding convertfrom -profile strict cesu-8 \x00
 } \x00
-test encoding-15.28 {UtfToUtfProc -profile strict CESU-8} {
+test encoding-15.28 {UtfToUtfProc -profile strict CESU-8} -body {
     encoding convertfrom -profile strict cesu-8 \xC0\x80
-} \x00
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
 test encoding-15.29 {UtfToUtfProc CESU-8} {
     encoding convertto cesu-8 \x00
-} \xC0\x80
+} \x00
 test encoding-15.30 {UtfToUtfProc -profile strict CESU-8} {
     encoding convertto -profile strict cesu-8 \x00
-} \xC0\x80
+} \x00
+test encoding-15.31 {UtfToUtfProc -profile strict CESU-8 (bytes F0-F4 are invalid)} -body {
+    encoding convertfrom -profile strict cesu-8 \xF1\x86\x83\x9C
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xF1'}
 
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]
@@ -558,7 +561,7 @@ test encoding-16.9 {
 test encoding-17.1 {UtfToUtf16Proc} -body {
     encoding convertto utf-16 "\U460DC"
 } -result "\xD8\xD8\xDC\xDC"
-test encoding-17.2 {UtfToUcs2Proc} -body {
+test encoding-17.2 {UtfToUcs2Proc, invalid testcase, see [5607d6482c]} -constraints deprecated -body {
     encoding convertfrom utf-16 [encoding convertto ucs-2 "\U460DC"]
 } -result "\uFFFD"
 test encoding-17.3 {UtfToUtf16Proc} -body {
@@ -617,8 +620,11 @@ test encoding-19.3 {TableFromUtfProc} -body {
 test encoding-19.4 {TableFromUtfProc} -body {
     list [encoding convertfrom -failindex idx ascii AÁ] [set idx]
 } -result {A 1}
-test encoding-19.4 {TableFromUtfProc} -body {
+test encoding-19.5 {TableFromUtfProc} -body {
     list [encoding convertfrom -failindex idx -profile strict ascii AÁ] [set idx]
+} -result {A 1}
+test encoding-19.6 {TableFromUtfProc} -body {
+    list [encoding convertfrom -failindex idx -profile strict ascii AÁB] [set idx]
 } -result {A 1}
 
 test encoding-20.1 {TableFreefProc} {
@@ -762,7 +768,7 @@ test encoding-24.14 {Parse valid or invalid utf-8} {
 } 1
 test encoding-24.15 {Parse valid or invalid utf-8} -constraints deprecated -body {
     encoding convertfrom utf-8 "Z\xE0\x80"
-} -result Z\xE0\x80
+} -result Z\xE0\u20AC
 test encoding-24.16 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\u4343\x80"]
 } -returnCodes 1 -result {expected byte sequence but character 1 was '䍃' (U+004343)}
@@ -841,6 +847,18 @@ test encoding-24.40 {Try to generate invalid utf-8 with -profile tcl8} -body {
 test encoding-24.41 {Parse invalid utf-8 with -profile strict} -body {
     encoding convertfrom -profile strict utf-8 \xED\xA0\x80\xED\xB0\x80
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xED'}
+test encoding-24.42 {Parse invalid utf-8, fallback to cp1252 [885c86a9a0]} -body {
+    encoding convertfrom -profile tcl8 utf-8 \xF0\x80\x80\x80
+} -result \xF0\u20AC\u20AC\u20AC
+test encoding-24.43 {Parse invalid utf-8, fallback to cp1252 [885c86a9a0]} -body {
+    encoding convertfrom -profile tcl8 utf-8 \x80
+} -result \u20AC
+test encoding-24.44 {Try to generate invalid ucs-2 with -profile strict} -body {
+    encoding convertto -profile strict ucs-2 \uD800
+} -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
+test encoding-24.45 {Try to generate invalid ucs-2 with -profile strict} -body {
+    encoding convertto -profile strict ucs-2 \U10000
+} -returnCodes 1 -result {unexpected character at index 0: 'U+010000'}
 
 file delete [file join [temporaryDirectory] iso2022.txt]
 
