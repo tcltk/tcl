@@ -534,7 +534,7 @@ test encoding-16.17 {Utf32ToUtfProc} -body {
     list [encoding convertfrom -strict -failindex  idx utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00] [set idx]
 } -result {A 4}
 
-test encoding-16.9 {
+test encoding-16.18 {
     Utf16ToUtfProc, Tcl_UniCharToUtf, surrogate pairs in utf-16
 } -body {
     apply [list {} {
@@ -553,10 +553,15 @@ test encoding-16.9 {
 	return done
     } [namespace current]]
 } -result done
-
-
-
-
+test encoding-16.19 {UnicodeToUtfProc, bug [d19fe0a5b]} -body {
+    encoding convertfrom utf-16 "\x41\x41\x41"
+} -result \u4141\uFFFD
+test encoding-16.20 {UnicodeToUtfProc, bug [d19fe0a5b]} -constraints deprecated -body {
+    encoding convertfrom utf-16 "\xD8\xD8"
+} -result \uD8D8
+test encoding-16.21 {UnicodeToUtfProc, bug [d19fe0a5b]} -body {
+    encoding convertfrom utf-32 "\x00\x00\x00\x00\x41\x41"
+} -result \x00\uFFFD
 
 test encoding-17.1 {UtfToUtf16Proc} -body {
     encoding convertto utf-16 "\U460DC"
