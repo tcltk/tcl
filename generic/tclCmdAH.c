@@ -51,6 +51,7 @@ static Tcl_ObjCmdProc	EncodingConvertfromObjCmd;
 static Tcl_ObjCmdProc	EncodingConverttoObjCmd;
 static Tcl_ObjCmdProc	EncodingDirsObjCmd;
 static Tcl_ObjCmdProc	EncodingNamesObjCmd;
+static Tcl_ObjCmdProc	EncodingProfilesObjCmd;
 static Tcl_ObjCmdProc	EncodingSystemObjCmd;
 static inline int	ForeachAssignments(Tcl_Interp *interp,
 			    struct ForeachState *statePtr);
@@ -386,6 +387,7 @@ TclInitEncodingCmd(
 	{"convertto",   EncodingConverttoObjCmd,   TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
 	{"dirs",        EncodingDirsObjCmd,        TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{"names",       EncodingNamesObjCmd,       TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+	{"profiles",    EncodingProfilesObjCmd,    TclCompileBasic0ArgCmd,    NULL, NULL, 0},
 	{"system",      EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{NULL,          NULL,                      NULL,                      NULL, NULL, 0}
     };
@@ -393,6 +395,141 @@ TclInitEncodingCmd(
     return TclMakeEnsemble(interp, "encoding", encodingImplMap);
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * EncodingConvertParseOptions --
+ *
+ *    Common routine for parsing arguments passed to encoding convertfrom
+ *    and encoding convertto.
+ *
+ * Results:
+ *    TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *    On success,
+ *    - *encPtr is set to the encoding. Must be freed with Tcl_FreeEncoding
+ *      if non-NULL
+ *    - *dataObjPtr is set to the Tcl_Obj containing the data to encode or
+ *      decode
+ *    - *flagsPtr is set to encoding error handling flags
+ *    - *failVarPtr is set to -failindex option value or NULL
+ *    On error, all of the above are uninitialized.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+EncodingConvertParseOptions (
+    Tcl_Interp *interp,    /* For error messages. May be NULL */
+    int objc,		   /* Number of arguments */
+    Tcl_Obj *const objv[], /* Argument objects as passed to command. */
+    Tcl_Encoding *encPtr,  /* Where to store the encoding */
+    Tcl_Obj **dataObjPtr,  /* Where to store ptr to Tcl_Obj containing data */
+    int *flagsPtr,         /* Bit mask of encoding option flags */
+    Tcl_Obj **failVarPtr   /* Where to store -failindex option value */
+)
+{
+    static const char *const options[] = {"-profile", "-failindex", NULL};
+    enum convertfromOptions { PROFILE, FAILINDEX } optIndex;
+#if TCL_MAJOR_VERSION > 8
+    static const char *const profileNames[] = {"default", "replace", "strict", "tcl8", NULL};
+    enum profileOptions { PROFILE_DEFAULT, PROFILE_REPLACE, PROFILE_STRICT, PROFILE_TCL8 } profile;
+#else
+    static const char *const profileNames[] = {"replace", "strict", "tcl8", NULL};
+    enum profileOptions { PROFILE_DEFAULT=-1, PROFILE_REPLACE, PROFILE_STRICT, PROFILE_TCL8 } profile;
+#endif
+    Tcl_Encoding encoding;
+    Tcl_Obj *dataObj;
+    Tcl_Obj *failVarObj;
+    int flags = 0;
+
+    /*
+     * Possible combinations:
+     * 1) data						-> objc = 2
+     * 2) ?options? encoding data			-> objc >= 3
+     * It is intentional that specifying option forces encoding to be
+     * specified. Less prone to user error. This should have always been
+     * the case even in 8.6 imho where there were no options (ie (1)
+     * should never have been allowed)
+     */
+
+    if (objc == 1) {
+numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
+	Tcl_WrongNumArgs(interp, 1, objv,
+	    "?-profile profile? ?-failindex var? encoding data");
+	((Interp *) interp)->flags |= INTERP_ALTERNATE_WRONG_ARGS;
+	Tcl_WrongNumArgs(interp, 1, objv, "data");
+	return TCL_ERROR;
+    }
+
+    failVarObj = NULL;
+    if (objc == 2) {
+	encoding = Tcl_GetEncoding(interp, NULL);
+	dataObj = objv[1];
+    } else {
+	int argIndex;
+	for (argIndex = 1; argIndex < (objc-2); ++argIndex) {
+	    if (Tcl_GetIndexFromObj(
+		    interp, objv[argIndex], options, "option", 0, &optIndex)
+		!= TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (++argIndex == (objc - 2)) {
+		goto numArgsError;
+	    }
+	    switch (optIndex) {
+	    case PROFILE:
+		if (Tcl_GetIndexFromObj(interp, objv[argIndex], profileNames, "profile",
+			TCL_NULL_OK, &profile) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		switch (profile) {
+		case PROFILE_TCL8:
+		    flags = TCL_ENCODING_PROFILE_TCL8;
+		    break;
+		case PROFILE_STRICT:
+		    flags = TCL_ENCODING_PROFILE_STRICT;
+		    break;
+		case PROFILE_REPLACE:
+		    flags = TCL_ENCODING_PROFILE_REPLACE;
+		    break;
+		case PROFILE_DEFAULT:
+		    flags = TCL_ENCODING_STOPONERROR;
+		    break;
+		default:
+		    flags = 0;
+		    break;
+		}
+		break;
+	    case FAILINDEX:
+		failVarObj = objv[argIndex];
+		break;
+	    }
+	}
+	/* Get encoding after opts so no need to free it on option error */
+	if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding)
+	    != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	dataObj = objv[objc - 1];
+    }
+
+    if (failVarObj != NULL) {
+	/* If -failvar is specified, the default profile is PROFILE_DEFAULT, both in Tcl 8.x and 9 */
+	if (!flags) {
+	    flags = TCL_ENCODING_STOPONERROR;
+	}
+	flags |= ENCODING_FAILINDEX;
+    }
+
+    *encPtr = encoding;
+    *dataObjPtr = dataObj;
+    *flagsPtr = flags;
+    *failVarPtr = failVarObj;
+
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -419,80 +556,13 @@ EncodingConvertfromObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     size_t length = 0;			/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
-    int flags = 0;
-    size_t result;
-    Tcl_Obj *failVarObj = NULL;
-    /*
-     * Decode parameters:
-     * Possible combinations:
-     * 1) data						-> objc = 2
-     * 2) encoding data					-> objc = 3
-     * 3) -nocomplain data				-> objc = 3
-     * 4) -nocomplain encoding data			-> objc = 4
-     * 5) -strict data				-> objc = 3
-     * 6) -strict encoding data			-> objc = 4
-     * 7) -failindex val data				-> objc = 4
-     * 8) -failindex val encoding data			-> objc = 5
-     */
+    int flags;
+    Tcl_Size result;
+    Tcl_Obj *failVarObj;
 
-    if (objc == 2) {
-	encoding = Tcl_GetEncoding(interp, NULL);
-	data = objv[1];
-    } else if (objc > 2 && objc < 7) {
-	int objcUnprocessed = objc;
-	data = objv[objc - 1];
-	bytesPtr = Tcl_GetString(objv[1]);
-	if (bytesPtr[0] == '-' && bytesPtr[1] == 'n'
-		&& !strncmp(bytesPtr, "-nocomplain", strlen(bytesPtr))) {
-	    flags = TCL_ENCODING_NOCOMPLAIN;
-	    objcUnprocessed--;
-	} else if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
-		&& !strncmp(bytesPtr, "-strict", strlen(bytesPtr))) {
-	    flags = TCL_ENCODING_STRICT;
-	    objcUnprocessed--;
-		bytesPtr = Tcl_GetString(objv[2]);
-		if (bytesPtr[0] == '-' && bytesPtr[1] == 'f'
-			&& !strncmp(bytesPtr, "-failindex", strlen(bytesPtr))) {
-		    /* at least two additional arguments needed */
-		    if (objc < 6) {
-			goto encConvFromError;
-		    }
-		    failVarObj = objv[3];
-		    objcUnprocessed -= 2;
-		}
-	} else if (bytesPtr[0] == '-' && bytesPtr[1] == 'f'
-		&& !strncmp(bytesPtr, "-failindex", strlen(bytesPtr))) {
-	    /* at least two additional arguments needed */
-	    if (objc < 4) {
-		goto encConvFromError;
-	    }
-	    failVarObj = objv[2];
-	    flags = ENCODING_FAILINDEX;
-	    objcUnprocessed -= 2;
-		bytesPtr = Tcl_GetString(objv[3]);
-		if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
-			&& !strncmp(bytesPtr, "-strict", strlen(bytesPtr))) {
-		    flags = TCL_ENCODING_STRICT;
-		    objcUnprocessed --;
-		}
-	}
-	switch (objcUnprocessed) {
-	    case 3:
-		if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		break;
-	    case 2:
-		encoding = Tcl_GetEncoding(interp, NULL);
-		break;
-	    default:
-		goto encConvFromError;
-	}
-    } else {
-    encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-strict? ?-failindex var? ?encoding? data");
-	((Interp *) interp)->flags |= INTERP_ALTERNATE_WRONG_ARGS;
-	Tcl_WrongNumArgs(interp, 1, objv, "-nocomplain ?encoding? data");
+    if (EncodingConvertParseOptions(
+	    interp, objc, objv, &encoding, &data, &flags, &failVarObj)
+	!= TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -505,7 +575,7 @@ EncodingConvertfromObjCmd(
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
-    if ((!(flags & TCL_ENCODING_NOCOMPLAIN) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) && (result != TCL_INDEX_NONE)) {
+    if ((((flags & TCL_ENCODING_NOCOMPLAIN) != TCL_ENCODING_NOCOMPLAIN)|| ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) && (result != TCL_INDEX_NONE)) {
 	if (failVarObj != NULL) {
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
@@ -568,80 +638,13 @@ EncodingConverttoObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     size_t length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
-    size_t result;
-    int flags = 0;
-    Tcl_Obj *failVarObj = NULL;
+    Tcl_Size result;
+    int flags;
+    Tcl_Obj *failVarObj;
 
-    /*
-     * Decode parameters:
-     * Possible combinations:
-     * 1) data						-> objc = 2
-     * 2) encoding data					-> objc = 3
-     * 3) -nocomplain data				-> objc = 3
-     * 4) -nocomplain encoding data			-> objc = 4
-     * 5) -failindex val data				-> objc = 4
-     * 6) -failindex val encoding data			-> objc = 5
-     */
-
-    if (objc == 2) {
-	encoding = Tcl_GetEncoding(interp, NULL);
-	data = objv[1];
-    } else if (objc > 2 && objc < 7) {
-	int objcUnprocessed = objc;
-	data = objv[objc - 1];
-	stringPtr = Tcl_GetString(objv[1]);
-	if (stringPtr[0] == '-' && stringPtr[1] == 'n'
-		&& !strncmp(stringPtr, "-nocomplain", strlen(stringPtr))) {
-	    flags = TCL_ENCODING_NOCOMPLAIN;
-	    objcUnprocessed--;
-	} else if (stringPtr[0] == '-' && stringPtr[1] == 's'
-		&& !strncmp(stringPtr, "-strict", strlen(stringPtr))) {
-	    flags = TCL_ENCODING_STRICT;
-	    objcUnprocessed--;
-		stringPtr = Tcl_GetString(objv[2]);
-		if (stringPtr[0] == '-' && stringPtr[1] == 'f'
-			&& !strncmp(stringPtr, "-failindex", strlen(stringPtr))) {
-		    /* at least two additional arguments needed */
-		    if (objc < 6) {
-			goto encConvToError;
-		    }
-		    failVarObj = objv[3];
-		    objcUnprocessed -= 2;
-		}
-	} else if (stringPtr[0] == '-' && stringPtr[1] == 'f'
-		&& !strncmp(stringPtr, "-failindex", strlen(stringPtr))) {
-	    /* at least two additional arguments needed */
-	    if (objc < 4) {
-		goto encConvToError;
-	    }
-	    failVarObj = objv[2];
-	    flags = TCL_ENCODING_STOPONERROR;
-	    objcUnprocessed -= 2;
-		stringPtr = Tcl_GetString(objv[3]);
-		if (stringPtr[0] == '-' && stringPtr[1] == 's'
-			&& !strncmp(stringPtr, "-strict", strlen(stringPtr))) {
-		    flags = TCL_ENCODING_STRICT;
-		    objcUnprocessed --;
-		}
-	}
-	switch (objcUnprocessed) {
-	    case 3:
-		if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		break;
-	    case 2:
-		encoding = Tcl_GetEncoding(interp, NULL);
-		break;
-	    default:
-		goto encConvToError;
-	}
-    } else {
-    encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-strict? ?-failindex var? ?encoding? data");
-	((Interp *) interp)->flags |= INTERP_ALTERNATE_WRONG_ARGS;
-	Tcl_WrongNumArgs(interp, 1, objv, "-nocomplain ?encoding? data");
-
+    if (EncodingConvertParseOptions(
+	    interp, objc, objv, &encoding, &data, &flags, &failVarObj)
+	!= TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -652,7 +655,7 @@ EncodingConverttoObjCmd(
     stringPtr = Tcl_GetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    flags, &ds);
-    if ((!(flags & TCL_ENCODING_NOCOMPLAIN) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) && (result != TCL_INDEX_NONE)) {
+    if ((((flags & TCL_ENCODING_NOCOMPLAIN) != TCL_ENCODING_NOCOMPLAIN)|| ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) && (result != TCL_INDEX_NONE)) {
 	if (failVarObj != NULL) {
 	    /* I hope, wide int will cover size_t data type */
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
@@ -765,6 +768,34 @@ EncodingNamesObjCmd(
     return TCL_OK;
 }
 
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * EncodingProfilesObjCmd --
+ *
+ *	This command returns a list of the available profiles
+ *
+ * Results:
+ *	Returns a standard Tcl result
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+int
+EncodingProfilesObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp* interp,	    /* Tcl interpreter */
+    int objc,		    /* Number of command line args */
+    Tcl_Obj* const objv[])  /* Vector of command line args */
+{
+    if (objc > 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
+    }
+    Tcl_AppendResult(interp, "replace strict tcl8", NULL);
+    return TCL_OK;
+}
+
 /*
  *-----------------------------------------------------------------------------
  *

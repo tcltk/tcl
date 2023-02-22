@@ -1071,7 +1071,7 @@ test socket_$af-7.3 {testing socket specific options} -constraints [list socket 
     close $s
     update
     llength $l
-} -result 22
+} -result 20
 test socket_$af-7.4 {testing socket specific options} -constraints [list socket supported_$af] -setup {
     set timer [after 10000 "set x timed_out"]
     set l ""

@@ -2327,6 +2327,7 @@ UtfToUtfProc(
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
 		&& (UCHAR(src[1]) == 0x80) && !(flags & TCL_ENCODING_MODIFIED) && (!(flags & ENCODING_INPUT)
 			|| ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
+			|| ((flags & TCL_ENCODING_PROFILE_REPLACE) == TCL_ENCODING_PROFILE_REPLACE)
 			|| (flags & ENCODING_FAILINDEX))) {
 	    /*
 	     * If in input mode, and -strict or -failindex is specified: This is an error.
@@ -2339,7 +2340,11 @@ UtfToUtfProc(
 	    /*
 	     * Convert 0xC080 to real nulls when we are in output mode, with or without '-strict'.
 	     */
-	    *dst++ = 0;
+	    if (!(flags & TCL_ENCODING_MODIFIED) && (flags & TCL_ENCODING_PROFILE_REPLACE) == TCL_ENCODING_PROFILE_REPLACE) {
+		dst += Tcl_UniCharToUtf(0xFFFD, dst);
+	    } else {
+		*dst++ = 0;
+	    }
 	    src += 2;
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
@@ -2359,21 +2364,29 @@ UtfToUtfProc(
 		    break;
 		}
 	    }
-	    char chbuf[2];
-	    chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
-	    TclUtfToUCS4(chbuf, &ch);
+	    if ((flags & TCL_ENCODING_PROFILE_REPLACE) == TCL_ENCODING_PROFILE_REPLACE) {
+		src++;
+		ch = 0xFFFD;
+	    } else {
+		char chbuf[2];
+		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
+		TclUtfToUCS4(chbuf, &ch);
+	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
 	    size_t len = TclUtfToUCS4(src, &ch);
 	    if (flags & ENCODING_INPUT) {
 		if ((len < 2) && (ch != 0)
 			&& (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX))) {
-		    result = TCL_CONVERT_SYNTAX;
-		    break;
+		    goto utfSyntaxError;
 		} else if ((ch > 0xFFFF) && !(flags & ENCODING_UTF)
 			&& (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX))) {
-		    result = TCL_CONVERT_SYNTAX;
-		    break;
+		utfSyntaxError:
+		    if ((flags & TCL_ENCODING_PROFILE_REPLACE) != TCL_ENCODING_PROFILE_REPLACE) {
+			result = TCL_CONVERT_SYNTAX;
+			break;
+		    }
+		    ch = 0xFFFD;
 		}
 	    }
 	    const char *saveSrc = src;
@@ -2410,7 +2423,9 @@ UtfToUtfProc(
 
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
 
-		    if (STOPONERROR) {
+		    if ((flags & TCL_ENCODING_PROFILE_REPLACE) == TCL_ENCODING_PROFILE_REPLACE) {
+			ch = 0xFFFD;
+		    } else if (STOPONERROR) {
 			result = TCL_CONVERT_UNKNOWN;
 			src = saveSrc;
 			break;
@@ -2529,6 +2544,9 @@ Utf32ToUtfProc(
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
+	    if ((flags & TCL_ENCODING_PROFILE_REPLACE) == TCL_ENCODING_PROFILE_REPLACE) {
+		ch = 0xFFFD;
+	    }
 	}
 
 	/*
@@ -2624,6 +2642,9 @@ UtfToUtf32Proc(
 	    if (STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
+	    }
+	    if ((flags & TCL_ENCODING_PROFILE_STRICT) == TCL_ENCODING_PROFILE_STRICT) {
+		ch = 0xFFFD;
 	    }
 	}
 	src += len;
@@ -2836,6 +2857,9 @@ UtfToUtf16Proc(
 	    if (STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
+	    }
+	    if ((flags & TCL_ENCODING_PROFILE_REPLACE) == TCL_ENCODING_PROFILE_REPLACE) {
+		ch = 0xFFFD;
 	    }
 	}
 	src += len;
@@ -3072,7 +3096,11 @@ TableToUtfProc(
 	    if (prefixBytes[byte]) {
 		src--;
 	    }
-	    ch = (Tcl_UniChar) byte;
+	    if ((flags & TCL_ENCODING_PROFILE_REPLACE) == TCL_ENCODING_PROFILE_REPLACE) {
+		ch = 0xFFFD;
+	    } else {
+		ch = (Tcl_UniChar)byte;
+	    }
 	}
 
 	/*
