@@ -795,6 +795,10 @@ lappend encUnencodableStrings {*}{
     utf-8 \uDC00 strict  {}      0 {} High-surrogate
 }
 
+# Generated tests comparing against ICU
+# TODO - commented out for now as generating a lot of mismatches.
+# source [file join [file dirname [info script]] icuUcmTests.tcl]
+
 # Maps utf-{16,32}{le,be} to utf-16, utf-32 and
 # others to "". Used to test utf-16, utf-32 based
 # on system endianness
