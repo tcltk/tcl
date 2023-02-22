@@ -579,13 +579,13 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "ucs-2le";
-    type.clientData	= INT2PTR(TCL_ENCODING_LE|TCL_ENCODING_NOCOMPLAIN);
+    type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2be";
-    type.clientData	= INT2PTR(TCL_ENCODING_NOCOMPLAIN);
+    type.clientData	= INT2PTR(0);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2";
-    type.clientData	= INT2PTR(isLe.c|TCL_ENCODING_NOCOMPLAIN);
+    type.clientData	= INT2PTR(isLe.c);
     Tcl_CreateEncoding(&type);
 
     type.toUtfProc	= Utf32ToUtfProc;
@@ -607,13 +607,13 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "utf-16le";
-    type.clientData	= INT2PTR(TCL_ENCODING_LE);
+    type.clientData	= INT2PTR(TCL_ENCODING_LE|ENCODING_UTF);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16be";
-    type.clientData	= INT2PTR(0);
+    type.clientData	= INT2PTR(ENCODING_UTF);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16";
-    type.clientData	= INT2PTR(isLe.c);
+    type.clientData	= INT2PTR(isLe.c|ENCODING_UTF);
     Tcl_CreateEncoding(&type);
 
 #ifndef TCL_NO_DEPRECATED
@@ -2367,10 +2367,10 @@ UtfToUtfProc(
 	    if (flags & ENCODING_INPUT) {
 		if ((len < 2) && (ch != 0)
 			&& STOPONERROR) {
-		    result = TCL_CONVERT_SYNTAX;
-		    break;
+		    goto utf8Syntax;
 		} else if ((ch > 0xFFFF) && !(flags & ENCODING_UTF)
 			&& STOPONERROR) {
+		utf8Syntax:
 		    result = TCL_CONVERT_SYNTAX;
 		    break;
 		}
@@ -2482,7 +2482,7 @@ Utf32ToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    int ch;
+    int ch, bytesLeft = srcLen % 4;
 
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
@@ -2494,9 +2494,9 @@ Utf32ToUtfProc(
      * Check alignment with utf-32 (4 == sizeof(UTF-32))
      */
 
-    if ((srcLen % 4) != 0) {
+    if (bytesLeft != 0) {
 	result = TCL_CONVERT_MULTIBYTE;
-	srcLen &= -4;
+	srcLen -= bytesLeft;
     }
 
     srcStart = src;
@@ -2543,6 +2543,22 @@ Utf32ToUtfProc(
 	src += sizeof(unsigned int);
     }
 
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a single byte left-over at the end */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    /* destination is not full, so we really are at the end now */
+	    if (STOPONERROR) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		result = TCL_OK;
+		dst += Tcl_UniCharToUtf(0xFFFD, dst);
+		numChars++;
+		src += bytesLeft;
+	    }
+	}
+    }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -2755,6 +2771,22 @@ Utf16ToUtfProc(
 	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	dst += Tcl_UniCharToUtf(-1, dst);
     }
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a single byte left-over at the end */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    /* destination is not full, so we really are at the end now */
+	    if (STOPONERROR) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		result = TCL_OK;
+		dst += Tcl_UniCharToUtf(0xFFFD, dst);
+		numChars++;
+		src++;
+	    }
+	}
+    }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -2906,10 +2938,7 @@ UtfToUcs2Proc(
 				 * output buffer. */
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
-    int result, numChars;
-#if TCL_UTF_MAX < 4
-    int len;
-#endif
+    int result, numChars, len;
     Tcl_UniChar ch = 0;
 
     flags |= PTR2INT(clientData);
@@ -2939,17 +2968,32 @@ UtfToUcs2Proc(
 	    break;
 	}
 #if TCL_UTF_MAX < 4
-	src += (len = TclUtfToUniChar(src, &ch));
+	len = TclUtfToUniChar(src, &ch);
 	if ((ch >= 0xD800) && (len < 3)) {
+	    if (STOPONERROR) {
+		result = TCL_CONVERT_UNKNOWN;
+		break;
+	    }
+	    src += len;
 	    src += TclUtfToUniChar(src, &ch);
 	    ch = 0xFFFD;
 	}
 #else
-	src += TclUtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	if (ch > 0xFFFF) {
+	    if (STOPONERROR) {
+		result = TCL_CONVERT_UNKNOWN;
+		break;
+	    }
 	    ch = 0xFFFD;
 	}
 #endif
+	if (STOPONERROR && ((ch & ~0x7FF) == 0xD800)) {
+	    result = TCL_CONVERT_SYNTAX;
+	    break;
+	}
+
+	src += len;
 
 	/*
 	 * Need to handle this in a way that won't cause misalignment by
