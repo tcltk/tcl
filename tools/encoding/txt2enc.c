@@ -26,7 +26,7 @@ main(int argc, char **argv)
 {
     FILE *fp;
     Rune *toUnicode[256];
-    int i, multiByte, enc, uni, hi, lo, used, maxEnc;
+    int i, multiByte, enc, uni, hi, lo, fixmissing, used, maxEnc;
     int ch, encColumn, uniColumn, fallbackKnown, width;
     char *fallbackString, *str, *rest, *dot;
     unsigned int magic, type, symbol, fallbackChar;
@@ -43,6 +43,7 @@ main(int argc, char **argv)
     fallbackKnown = 0;
     type = -1;
     symbol = 0;
+    fixmissing = 1;
 
     opterr = 0;
     while (1) {
@@ -88,6 +89,10 @@ main(int argc, char **argv)
 	    symbol = 1;
 	    break;
 
+	case 'm':
+	    fixmissing = 0;
+	    break;
+
 	default:
 	    goto usage;
 	}
@@ -101,7 +106,7 @@ main(int argc, char **argv)
 	fputs("    -f\tfallback character (default: QUESTION MARK)\n", stderr);
 	fputs("    -t\toverride implicit type with single, double, or multi\n", stderr);
 	fputs("    -s\tsymbol+ascii encoding\n", stderr);
-	fputs("    -m\tdon't implicitly include range 0080 to 00FF\n", stderr);
+	fputs("    -m\tdon't implicitly include 007F\n", stderr);
 	return 1;
     }
 
@@ -201,6 +206,11 @@ main(int argc, char **argv)
 	}
 	for (i = 0; i < 0x20; i++) {
 	    toUnicode[0][i] = i;
+	}
+	if (fixmissing) {
+	    if (toUnicode[0x7F] == NULL && toUnicode[0][0x7F] == 0) {
+		toUnicode[0][0x7F] = 0x7F;
+	    }
 	}
     }
 

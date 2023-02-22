@@ -151,7 +151,6 @@
 0x7C	0x275C	# HEAVY SINGLE COMMA QUOTATION MARK ORNAMENT
 0x7D	0x275D	# HEAVY DOUBLE TURNED COMMA QUOTATION MARK ORNAMENT
 0x7E	0x275E	# HEAVY DOUBLE COMMA QUOTATION MARK ORNAMENT
-0x7F	0x007F	# DELETE
 0x80	0xF8D7	# medium left parenthesis ornament
 0x81	0xF8D8	# medium right parenthesis ornament
 0x82	0xF8D9	# medium flattened left parenthesis ornament
