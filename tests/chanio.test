@@ -6802,8 +6802,8 @@ test chan-io-52.7 {TclCopyChannel} -constraints {fcopy} -setup {
 } -body {
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    chan configure $f1 -translation lf -blocking 0
-    chan configure $f2 -translation lf -blocking 0
+    chan configure $f1 -translation lf -encoding iso8859-1 -blocking 0
+    chan configure $f2 -translation lf -encoding iso8859-1 -blocking 0
     chan copy $f1 $f2
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     if {[file size $thisScript] == [file size $path(test1)]} {
