@@ -237,8 +237,13 @@ static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
  */
 
 static const Tcl_ObjType encodingType = {
-    "encoding", FreeEncodingInternalRep, DupEncodingInternalRep, NULL, NULL
+    "encoding",
+    FreeEncodingInternalRep,
+    DupEncodingInternalRep,
+    NULL,
+    NULL
 };
+
 #define EncodingSetInternalRep(objPtr, encoding)				\
     do {								\
 	Tcl_ObjInternalRep ir;						\
@@ -461,7 +466,7 @@ FillEncodingFileMap(void)
     map = Tcl_NewDictObj();
     Tcl_IncrRefCount(map);
 
-    for (i = numDirs-1; i >= 0; i--) {
+    for (i = numDirs-1; i != TCL_INDEX_NONE; i--) {
 	/*
 	 * Iterate backwards through the search path so as we overwrite
 	 * entries found, we favor files earlier on the search path.
@@ -1182,7 +1187,7 @@ Tcl_ExternalToUtfDString(
  * Tcl_ExternalToUtfDStringEx --
  *
  *	Convert a source buffer from the specified encoding into UTF-8.
-*	The parameter flags controls the behavior, if any of the bytes in
+ *	The parameter flags controls the behavior, if any of the bytes in
  *	the source buffer are invalid or cannot be represented in utf-8.
  *	Possible flags values:
  *	TCL_ENCODING_STOPONERROR: don't replace invalid characters/bytes but
@@ -1458,8 +1463,9 @@ Tcl_UtfToExternalDStringEx(
     char *dst;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
-    int dstLen, result, soFar, srcRead, dstWrote, dstChars;
+    int result, soFar, srcRead, dstWrote, dstChars;
     const char *srcStart = src;
+    int dstLen;
 
     Tcl_DStringInit(dstPtr);
     dst = Tcl_DStringValue(dstPtr);
@@ -2627,9 +2633,10 @@ Utf32ToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
 	    /* destination is not full, so we really are at the end now */
-	    if (flags & TCL_ENCODING_STOPONERROR) {
+	    if ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) {
 		result = TCL_CONVERT_SYNTAX;
 	    } else {
+		result = TCL_OK;
 		dst += Tcl_UniCharToUtf(0xFFFD, dst);
 		numChars++;
 		src += bytesLeft;
@@ -2854,9 +2861,10 @@ Utf16ToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
 	    /* destination is not full, so we really are at the end now */
-	    if (flags & TCL_ENCODING_STOPONERROR) {
+	    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
 		result = TCL_CONVERT_SYNTAX;
 	    } else {
+		result = TCL_OK;
 		dst += Tcl_UniCharToUtf(0xFFFD, dst);
 		numChars++;
 		src++;
