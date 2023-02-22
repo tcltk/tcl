@@ -561,7 +561,7 @@ test encoding-16.9 {
 test encoding-17.1 {UtfToUtf16Proc} -body {
     encoding convertto utf-16 "\U460DC"
 } -result "\xD8\xD8\xDC\xDC"
-test encoding-17.2 {UtfToUcs2Proc} -body {
+test encoding-17.2 {UtfToUcs2Proc, invalid testcase, see [5607d6482c]} -constraints deprecated -body {
     encoding convertfrom utf-16 [encoding convertto ucs-2 "\U460DC"]
 } -result "\uFFFD"
 test encoding-17.3 {UtfToUtf16Proc} -body {
@@ -853,6 +853,12 @@ test encoding-24.42 {Parse invalid utf-8, fallback to cp1252 [885c86a9a0]} -body
 test encoding-24.43 {Parse invalid utf-8, fallback to cp1252 [885c86a9a0]} -body {
     encoding convertfrom -profile tcl8 utf-8 \x80
 } -result \u20AC
+test encoding-24.44 {Try to generate invalid ucs-2 with -profile strict} -body {
+    encoding convertto -profile strict ucs-2 \uD800
+} -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
+test encoding-24.45 {Try to generate invalid ucs-2 with -profile strict} -body {
+    encoding convertto -profile strict ucs-2 \U10000
+} -returnCodes 1 -result {unexpected character at index 0: 'U+010000'}
 
 file delete [file join [temporaryDirectory] iso2022.txt]
 
