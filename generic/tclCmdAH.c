@@ -431,13 +431,8 @@ EncodingConvertParseOptions (
 {
     static const char *const options[] = {"-profile", "-failindex", NULL};
     enum convertfromOptions { PROFILE, FAILINDEX } optIndex;
-#if TCL_MAJOR_VERSION > 8
-    static const char *const profileNames[] = {"default", "replace", "strict", "tcl8", NULL};
-    enum profileOptions { PROFILE_DEFAULT, PROFILE_REPLACE, PROFILE_STRICT, PROFILE_TCL8 } profile;
-#else
     static const char *const profileNames[] = {"replace", "strict", "tcl8", NULL};
     enum profileOptions { PROFILE_DEFAULT=-1, PROFILE_REPLACE, PROFILE_STRICT, PROFILE_TCL8 } profile;
-#endif
     Tcl_Encoding encoding;
     Tcl_Obj *dataObj;
     Tcl_Obj *failVarObj;
