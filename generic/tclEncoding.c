@@ -264,8 +264,13 @@ static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
  */
 
 static const Tcl_ObjType encodingType = {
-    "encoding", FreeEncodingInternalRep, DupEncodingInternalRep, NULL, NULL
+    "encoding",
+    FreeEncodingInternalRep,
+    DupEncodingInternalRep,
+    NULL,
+    NULL
 };
+
 #define EncodingSetInternalRep(objPtr, encoding)				\
     do {								\
 	Tcl_ObjInternalRep ir;						\
@@ -488,7 +493,7 @@ FillEncodingFileMap(void)
     map = Tcl_NewDictObj();
     Tcl_IncrRefCount(map);
 
-    for (i = numDirs-1; i >= 0; i--) {
+    for (i = numDirs-1; i != TCL_INDEX_NONE; i--) {
 	/*
 	 * Iterate backwards through the search path so as we overwrite
 	 * entries found, we favor files earlier on the search path.
@@ -1209,7 +1214,7 @@ Tcl_ExternalToUtfDString(
  * Tcl_ExternalToUtfDStringEx --
  *
  *	Convert a source buffer from the specified encoding into UTF-8.
-*	The parameter flags controls the behavior, if any of the bytes in
+ *	The parameter flags controls the behavior, if any of the bytes in
  *	the source buffer are invalid or cannot be represented in utf-8.
  *	Possible flags values:
  *	target encoding. It should be composed by OR-ing the following:
@@ -1482,8 +1487,9 @@ Tcl_UtfToExternalDStringEx(
     char *dst;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
-    int dstLen, result, soFar, srcRead, dstWrote, dstChars;
+    int result, soFar, srcRead, dstWrote, dstChars;
     const char *srcStart = src;
+    int dstLen;
 
     Tcl_DStringInit(dstPtr);
     dst = Tcl_DStringValue(dstPtr);
@@ -2594,8 +2600,8 @@ Utf32ToUtfProc(
 {
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
-    int result, extra, numChars, charLimit = INT_MAX;
-    int ch = 0;
+    int result, numChars, charLimit = INT_MAX;
+    int ch = 0, bytesLeft = srcLen % 4;
 
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
@@ -2606,11 +2612,10 @@ Utf32ToUtfProc(
     /*
      * Check alignment with utf-32 (4 == sizeof(UTF-32))
      */
-    extra = srcLen % 4;
-    if (extra != 0) {
-	/* We have a truncated code unit */
+    if (bytesLeft != 0) {
+        /* We have a truncated code unit */
 	result = TCL_CONVERT_MULTIBYTE;
-	srcLen &= -4;
+	srcLen -= bytesLeft;
     }
 
     /*
@@ -2648,7 +2653,7 @@ Utf32ToUtfProc(
 	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
 	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
-	
+
 	if ((unsigned)ch > 0x10FFFF || SURROGATE(ch)) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
@@ -2679,16 +2684,22 @@ Utf32ToUtfProc(
     }
     /*
      * If we had a truncated code unit at the end AND this is the last
-     * fragment AND profile is "replace", stick FFFD in its place.
+     * fragment AND profile is not "strict", stick FFFD in its place.
      */
-    if (extra && (flags & TCL_ENCODING_END) && PROFILE_REPLACE(flags)) {
-	src += extra; /* Go past truncated code unit */
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
-	    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-	    result = TCL_OK;
-	}
+            if (PROFILE_STRICT(flags)) {
+                result = TCL_CONVERT_SYNTAX;
+            } else {
+                /* PROFILE_REPLACE or PROFILE_TCL8 */
+                result = TCL_OK;
+                dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+                numChars++;
+                src += bytesLeft; /* Go past truncated code unit */
+            }
+        }
     }
 
     *srcReadPtr = src - srcStart;
@@ -2837,7 +2848,7 @@ Utf16ToUtfProc(
 {
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
-    int result, extra, numChars, charLimit = INT_MAX;
+    int result, numChars, charLimit = INT_MAX;
     unsigned short ch = 0;
 
     flags |= PTR2INT(clientData);
@@ -2850,8 +2861,7 @@ Utf16ToUtfProc(
      * Check alignment with utf-16 (2 == sizeof(UTF-16))
      */
 
-    extra = srcLen % 2;
-    if (extra != 0) {
+    if ((srcLen % 2) != 0) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen--;
     }
@@ -2909,16 +2919,22 @@ Utf16ToUtfProc(
     }
     /*
      * If we had a truncated code unit at the end AND this is the last
-     * fragment AND profile is "replace", stick FFFD in its place.
+     * fragment AND profile is not "strict", stick FFFD in its place.
      */
-    if (extra && (flags & TCL_ENCODING_END) && PROFILE_REPLACE(flags)) {
-	++src;/* Go past the truncated code unit */
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
-	    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-	    result = TCL_OK;
-	}
+            if (PROFILE_STRICT(flags)) {
+                result = TCL_CONVERT_SYNTAX;
+            } else {
+                /* PROFILE_REPLACE or PROFILE_TCL8 */
+                result = TCL_OK;
+                dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+                numChars++;
+                src++; /* Go past truncated code unit */
+            }
+        }
     }
 
     *srcReadPtr = src - srcStart;

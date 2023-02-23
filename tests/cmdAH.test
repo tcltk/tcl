@@ -703,7 +703,7 @@ lappend encInvalidBytes {*}{
 # happen when the sequence is at the end (including by itself) Thus {solo tail}
 # in some cases.
 lappend encInvalidBytes {*}{
-    utf-16le 41      tcl8      {}  -1 {solo tail} {Truncated}
+    utf-16le 41      tcl8      \uFFFD  -1 {solo tail} {Truncated}
     utf-16le 41      replace   \uFFFD  -1 {solo tail} {Truncated}
     utf-16le 41      strict    {}   0 {solo tail} {Truncated}
     utf-16le 00D8    tcl8      \uD800 -1 {} {Missing low surrogate}
@@ -719,13 +719,13 @@ lappend encInvalidBytes {*}{
 # happen when the sequence is at the end (including by itself) Thus {solo tail}
 # in some cases.
 lappend encInvalidBytes {*}{
-    utf-32le 41      tcl8      {}  -1 {solo tail} {Truncated}
+    utf-32le 41      tcl8      \uFFFD  -1 {solo tail} {Truncated}
     utf-32le 41      replace   \uFFFD  -1 {solo} {Truncated}
     utf-32le 41      strict    {}   0 {solo tail} {Truncated}
-    utf-32le 4100    tcl8      {}  -1 {solo tail} {Truncated}
+    utf-32le 4100    tcl8      \uFFFD  -1 {solo tail} {Truncated}
     utf-32le 4100    replace   \uFFFD  -1 {solo} {Truncated}
     utf-32le 4100    strict    {}   0 {solo tail} {Truncated}
-    utf-32le 410000  tcl8      {}  -1 {solo tail} {Truncated}
+    utf-32le 410000  tcl8      \uFFFD  -1 {solo tail} {Truncated}
     utf-32le 410000  replace   \uFFFD  -1 {solo} {Truncated}
     utf-32le 410000  strict    {}   0 {solo tail} {Truncated}
     utf-32le 00D80000 tcl8     \uD800   -1 {} {High-surrogate}
@@ -744,9 +744,9 @@ lappend encInvalidBytes {*}{
     utf-32le FFFFFFFF replace \UFFFD -1 {} {Out of range}
     utf-32le FFFFFFFF strict {}       0 {} {Out of range}
 
-    utf-32be 41      tcl8      {}  -1 {solo tail} {Truncated}
-    utf-32be 0041    tcl8      {}  -1 {solo tail} {Truncated}
-    utf-32be 000041  tcl8      {}  -1 {solo tail} {Truncated}
+    utf-32be 41      tcl8      \uFFFD  -1 {solo tail} {Truncated}
+    utf-32be 0041    tcl8      \uFFFD  -1 {solo tail} {Truncated}
+    utf-32be 000041  tcl8      \uFFFD  -1 {solo tail} {Truncated}
     utf-32be 0000D800 tcl8     \uD800   -1 {} {High-surrogate}
     utf-32be 0000D800 replace  \uFFFD   -1 {} {High-surrogate}
     utf-32be 0000D800 strict   {}        0 {} {High-surrogate}
