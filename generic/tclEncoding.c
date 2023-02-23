@@ -2378,10 +2378,10 @@ UtfToUtfProc(
 	    if (flags & ENCODING_INPUT) {
 		if ((len < 2) && (ch != 0)
 			&& (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX))) {
-		    goto utfSyntaxError;
+		    goto utf8Syntax;
 		} else if ((ch > 0xFFFF) && !(flags & ENCODING_UTF)
 			&& (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX))) {
-		utfSyntaxError:
+		utf8Syntax:
 		    if ((flags & TCL_ENCODING_PROFILE_REPLACE) != TCL_ENCODING_PROFILE_REPLACE) {
 			result = TCL_CONVERT_SYNTAX;
 			break;
@@ -2498,7 +2498,7 @@ Utf32ToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    int ch;
+    int ch, bytesLeft = srcLen % 4;
 
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
@@ -2510,9 +2510,9 @@ Utf32ToUtfProc(
      * Check alignment with utf-32 (4 == sizeof(UTF-32))
      */
 
-    if ((srcLen % 4) != 0) {
+    if (bytesLeft != 0) {
 	result = TCL_CONVERT_MULTIBYTE;
-	srcLen &= -4;
+	srcLen -= bytesLeft;
     }
 
     srcStart = src;
@@ -2562,6 +2562,22 @@ Utf32ToUtfProc(
 	src += sizeof(unsigned int);
     }
 
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a single byte left-over at the end */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    /* destination is not full, so we really are at the end now */
+	    if ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		result = TCL_OK;
+		dst += Tcl_UniCharToUtf(0xFFFD, dst);
+		numChars++;
+		src += bytesLeft;
+	    }
+	}
+    }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -2777,6 +2793,22 @@ Utf16ToUtfProc(
 	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	dst += Tcl_UniCharToUtf(-1, dst);
     }
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a single byte left-over at the end */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    /* destination is not full, so we really are at the end now */
+	    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		result = TCL_OK;
+		dst += Tcl_UniCharToUtf(0xFFFD, dst);
+		numChars++;
+		src++;
+	    }
+	}
+    }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -2964,8 +2996,8 @@ UtfToUcs2Proc(
 	len = TclUtfToUniChar(src, &ch);
 	if ((ch >= 0xD800) && (len < 3)) {
 	    if (STOPONERROR) {
-			result = TCL_CONVERT_UNKNOWN;
-			break;
+		result = TCL_CONVERT_UNKNOWN;
+		break;
 	    }
 	    src += len;
 	    src += TclUtfToUniChar(src, &ch);
@@ -2975,8 +3007,8 @@ UtfToUcs2Proc(
 	len = TclUtfToUniChar(src, &ch);
 	if (ch > 0xFFFF) {
 	    if (STOPONERROR) {
-			result = TCL_CONVERT_UNKNOWN;
-			break;
+		result = TCL_CONVERT_UNKNOWN;
+		break;
 	    }
 	    ch = 0xFFFD;
 	}
