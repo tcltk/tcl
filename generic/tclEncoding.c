@@ -237,8 +237,13 @@ static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
  */
 
 static const Tcl_ObjType encodingType = {
-    "encoding", FreeEncodingInternalRep, DupEncodingInternalRep, NULL, NULL
+    "encoding",
+    FreeEncodingInternalRep,
+    DupEncodingInternalRep,
+    NULL,
+    NULL
 };
+
 #define EncodingSetInternalRep(objPtr, encoding)				\
     do {								\
 	Tcl_ObjInternalRep ir;						\
@@ -461,7 +466,7 @@ FillEncodingFileMap(void)
     map = Tcl_NewDictObj();
     Tcl_IncrRefCount(map);
 
-    for (i = numDirs-1; i >= 0; i--) {
+    for (i = numDirs-1; i != TCL_INDEX_NONE; i--) {
 	/*
 	 * Iterate backwards through the search path so as we overwrite
 	 * entries found, we favor files earlier on the search path.
@@ -1182,7 +1187,7 @@ Tcl_ExternalToUtfDString(
  * Tcl_ExternalToUtfDStringEx --
  *
  *	Convert a source buffer from the specified encoding into UTF-8.
-*	The parameter flags controls the behavior, if any of the bytes in
+ *	The parameter flags controls the behavior, if any of the bytes in
  *	the source buffer are invalid or cannot be represented in utf-8.
  *	Possible flags values:
  *	TCL_ENCODING_STOPONERROR: don't replace invalid characters/bytes but
@@ -1458,8 +1463,9 @@ Tcl_UtfToExternalDStringEx(
     char *dst;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
-    int dstLen, result, soFar, srcRead, dstWrote, dstChars;
+    int result, soFar, srcRead, dstWrote, dstChars;
     const char *srcStart = src;
+    int dstLen;
 
     Tcl_DStringInit(dstPtr);
     dst = Tcl_DStringValue(dstPtr);
@@ -2442,10 +2448,10 @@ UtfToUtfProc(
 	    if (flags & ENCODING_INPUT) {
 		if ((len < 2) && (ch != 0)
 			&& (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX))) {
-		    goto utfSyntaxError;
+		    goto utf8Syntax;
 		} else if ((ch > 0xFFFF) && !(flags & ENCODING_UTF)
 			&& (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX))) {
-		utfSyntaxError:
+		utf8Syntax:
 		    if ((flags & TCL_ENCODING_PROFILE_REPLACE) != TCL_ENCODING_PROFILE_REPLACE) {
 			result = TCL_CONVERT_SYNTAX;
 			break;
@@ -2558,7 +2564,7 @@ Utf32ToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    int ch = 0;
+    int ch = 0, bytesLeft = srcLen % 4;
 
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
@@ -2570,9 +2576,9 @@ Utf32ToUtfProc(
      * Check alignment with utf-32 (4 == sizeof(UTF-32))
      */
 
-    if ((srcLen % 4) != 0) {
+    if (bytesLeft != 0) {
 	result = TCL_CONVERT_MULTIBYTE;
-	srcLen &= -4;
+	srcLen -= bytesLeft;
     }
 
     /*
@@ -2638,6 +2644,22 @@ Utf32ToUtfProc(
     if ((ch  & ~0x3FF) == 0xD800) {
 	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	dst += Tcl_UniCharToUtf(-1, dst);
+    }
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a single byte left-over at the end */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    /* destination is not full, so we really are at the end now */
+	    if ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		result = TCL_OK;
+		dst += Tcl_UniCharToUtf(0xFFFD, dst);
+		numChars++;
+		src += bytesLeft;
+	    }
+	}
     }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
@@ -2854,6 +2876,22 @@ Utf16ToUtfProc(
 	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	dst += Tcl_UniCharToUtf(-1, dst);
     }
+    if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+	/* We have a single byte left-over at the end */
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	} else {
+	    /* destination is not full, so we really are at the end now */
+	    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		result = TCL_OK;
+		dst += Tcl_UniCharToUtf(0xFFFD, dst);
+		numChars++;
+		src++;
+	    }
+	}
+    }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -3041,8 +3079,8 @@ UtfToUcs2Proc(
 	len = TclUtfToUniChar(src, &ch);
 	if ((ch >= 0xD800) && (len < 3)) {
 	    if (STOPONERROR) {
-			result = TCL_CONVERT_UNKNOWN;
-			break;
+		result = TCL_CONVERT_UNKNOWN;
+		break;
 	    }
 	    src += len;
 	    src += TclUtfToUniChar(src, &ch);
@@ -3052,8 +3090,8 @@ UtfToUcs2Proc(
 	len = TclUtfToUniChar(src, &ch);
 	if (ch > 0xFFFF) {
 	    if (STOPONERROR) {
-			result = TCL_CONVERT_UNKNOWN;
-			break;
+		result = TCL_CONVERT_UNKNOWN;
+		break;
 	    }
 	    ch = 0xFFFD;
 	}

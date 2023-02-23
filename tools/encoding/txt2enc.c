@@ -106,7 +106,7 @@ main(int argc, char **argv)
 	fputs("    -f\tfallback character (default: QUESTION MARK)\n", stderr);
 	fputs("    -t\toverride implicit type with single, double, or multi\n", stderr);
 	fputs("    -s\tsymbol+ascii encoding\n", stderr);
-	fputs("    -m\tdon't implicitly include range 0080 to 00FF\n", stderr);
+	fputs("    -m\tdon't implicitly include 007F\n", stderr);
 	return 1;
     }
 
@@ -208,10 +208,8 @@ main(int argc, char **argv)
 	    toUnicode[0][i] = i;
 	}
 	if (fixmissing) {
-	    for (i = 0x7F; i < 0xA0; i++) {
-		if (toUnicode[i] == NULL && toUnicode[0][i] == 0) {
-		    toUnicode[0][i] = i;
-		}
+	    if (toUnicode[0x7F] == NULL && toUnicode[0][0x7F] == 0) {
+		toUnicode[0][0x7F] = 0x7F;
 	    }
 	}
     }
