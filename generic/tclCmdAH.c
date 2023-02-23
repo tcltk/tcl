@@ -671,6 +671,7 @@ EncodingConvertfromObjCmd(
     int flags;
     int result;
     Tcl_Obj *failVarObj;
+    Tcl_Size errorLocation;
 
     if (EncodingConvertParseOptions(
 	    interp, objc, objv, &encoding, &data, &flags, &failVarObj)
@@ -693,8 +694,47 @@ EncodingConvertfromObjCmd(
     if (bytesPtr == NULL) {
 	return TCL_ERROR;
     }
-    result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
-	    flags, &ds);
+    result = Tcl_ExternalToUtfDStringEx(interp, encoding, bytesPtr, length, flags,
+                                        &ds, failVarObj ? &errorLocation : NULL);
+    /* NOTE: ds must be freed beyond this point even on error */
+    switch (result) {
+    case TCL_OK:
+        errorLocation = TCL_INDEX_NONE;
+        break;
+    case TCL_ERROR:
+	/* Error in parameters. Should not happen. interp will have error */
+        Tcl_DStringFree(&ds);
+	return TCL_ERROR;
+    default:
+	/*
+	 * One of the TCL_CONVERT_* errors. If we were not interested in the
+	 * error location, interp result would already have been filled in
+	 * and we can just return the error. Otherwise, we have to return
+	 * what could be decoded and the returned error location.
+	 */
+	if (failVarObj == NULL) {
+            Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+        break;
+    }
+
+    /*
+     * TCL_OK or a TCL_CONVERT_* error where the caller wants back as much
+     * data as was converted.
+     */
+    if (failVarObj) {
+	/* I hope, wide int will cover Tcl_Size data type */
+	if (Tcl_ObjSetVar2(interp,
+			   failVarObj,
+			   NULL,
+			   Tcl_NewWideIntObj(errorLocation),
+			   TCL_LEAVE_ERR_MSG) == NULL) {
+            Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+    }
+#ifdef OBSOLETE
     if (result != TCL_INDEX_NONE &&
 	TCL_ENCODING_PROFILE_GET(flags) != TCL_ENCODING_PROFILE_TCL8) {
 	if (failVarObj != NULL) {
@@ -717,6 +757,7 @@ EncodingConvertfromObjCmd(
 	    return TCL_ERROR;
 	}
     }
+#endif
 
     /*
      * Note that we cannot use Tcl_DStringResult here because it will
@@ -725,9 +766,7 @@ EncodingConvertfromObjCmd(
 
     Tcl_SetObjResult(interp, Tcl_DStringToObj(&ds));
 
-    /*
-     * We're done with the encoding
-     */
+    /* We're done with the encoding */
 
     Tcl_FreeEncoding(encoding);
     return TCL_OK;
@@ -763,6 +802,7 @@ EncodingConverttoObjCmd(
     int result;
     int flags;
     Tcl_Obj *failVarObj;
+    Tcl_Size errorLocation;
 
     if (EncodingConvertParseOptions(
 	    interp, objc, objv, &encoding, &data, &flags, &failVarObj)
@@ -775,8 +815,47 @@ EncodingConverttoObjCmd(
      */
 
     stringPtr = TclGetStringFromObj(data, &length);
-    result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
-	    flags, &ds);
+    result = Tcl_UtfToExternalDStringEx(interp, encoding, stringPtr, length, flags,
+                                        &ds, failVarObj ? &errorLocation : NULL);
+    /* NOTE: ds must be freed beyond this point even on error */
+
+    switch (result) {
+    case TCL_OK:
+	errorLocation = TCL_INDEX_NONE;
+	break;
+    case TCL_ERROR:
+	/* Error in parameters. Should not happen. interp will have error */
+        Tcl_DStringFree(&ds);
+	return TCL_ERROR;
+    default:
+	/*
+	 * One of the TCL_CONVERT_* errors. If we were not interested in the
+	 * error location, interp result would already have been filled in
+	 * and we can just return the error. Otherwise, we have to return
+	 * what could be decoded and the returned error location.
+	 */
+	if (failVarObj == NULL) {
+            Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+        break;
+    }
+    /*
+     * TCL_OK or a TCL_CONVERT_* error where the caller wants back as much
+     * data as was converted.
+     */
+    if (failVarObj) {
+	/* I hope, wide int will cover Tcl_Size data type */
+	if (Tcl_ObjSetVar2(interp,
+			   failVarObj,
+			   NULL,
+			   Tcl_NewWideIntObj(errorLocation),
+			   TCL_LEAVE_ERR_MSG) == NULL) {
+            Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+    }
+#ifdef OBSOLETE
     if (result != TCL_INDEX_NONE &&
 	TCL_ENCODING_PROFILE_GET(flags) != TCL_ENCODING_PROFILE_TCL8) {
 	if (failVarObj != NULL) {
@@ -802,14 +881,14 @@ EncodingConverttoObjCmd(
 	    return TCL_ERROR;
 	}
     }
+#endif
+
     Tcl_SetObjResult(interp,
 		     Tcl_NewByteArrayObj((unsigned char*) Tcl_DStringValue(&ds),
 					 Tcl_DStringLength(&ds)));
     Tcl_DStringFree(&ds);
 
-    /*
-     * We're done with the encoding
-     */
+    /* We're done with the encoding */
 
     Tcl_FreeEncoding(encoding);
     return TCL_OK;

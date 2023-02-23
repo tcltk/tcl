@@ -1203,7 +1203,8 @@ Tcl_ExternalToUtfDString(
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    Tcl_ExternalToUtfDStringEx(encoding, src, srcLen, TCL_ENCODING_PROFILE_TCL8, dstPtr);
+    Tcl_ExternalToUtfDStringEx(
+	NULL, encoding, src, srcLen, TCL_ENCODING_PROFILE_TCL8, dstPtr, NULL);
     return Tcl_DStringValue(dstPtr);
 }
 
@@ -1223,29 +1224,49 @@ Tcl_ExternalToUtfDString(
  *	  to TCL_ENCODING_PROFILE_STRICT overriding any specified profile flags
  *	- TCL_ENCODING_MODIFIED: enable Tcl internal conversion mapping \xC0\x80
  *        to 0x00. Only valid for "utf-8" and "cesu-8".
+ *      Any other flag bits will cause an error to be returned (for future
+ *      compatibility)
  *
  * Results:
- *	The converted bytes are stored in the DString, which is then NULL
- *	terminated in an encoding-specific manner. The return value is
- *	the error position in the source string or -1 if no conversion error
- *	is reported.
-  *
+ *      The return value is one of
+ *        TCL_OK: success. Converted string in *dstPtr
+ *        TCL_ERROR: error in passed parameters. Error message in interp
+ *        TCL_CONVERT_MULTIBYTE: source ends in truncated multibyte sequence
+ *        TCL_CONVERT_SYNTAX: source is not conformant to encoding definition
+ *        TCL_CONVERT_UNKNOWN: source contained a character that could not
+ *            be represented in target encoding.
+ *
  * Side effects:
- *	None.
+ *
+ *      TCL_OK: The converted bytes are stored in the DString and NUL
+ *          terminated in an encoding-specific manner.
+ *      TCL_ERROR: an error, message is stored in the interp if not NULL.
+ *      TCL_CONVERT_*: if errorLocPtr is NULL, an error message is stored
+ *          in the interpreter (if not NULL). If errorLocPtr is not NULL,
+ *          no error message is stored as it is expected the caller is
+ *          interested in whatever is decoded so far and not treating this
+ *          as an error condition.
+ *
+ *      In addition, *dstPtr is always initialized and must be cleared
+ *      by the caller irrespective of the return code.
  *
  *-------------------------------------------------------------------------
  */
 
 int
 Tcl_ExternalToUtfDStringEx(
+    Tcl_Interp *interp,         /* For error messages. May be NULL. */
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
     int srcLen,			/* Source string length in bytes, or < 0 for
 				 * encoding-specific string length. */
     int flags,			/* Conversion control flags. */
-    Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
+    Tcl_DString *dstPtr,	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
+    Tcl_Size *errorLocPtr)      /* Where to store the error location
+                                   (or TCL_INDEX_NONE if no error). May
+				   be NULL. */
 {
     char *dst;
     Tcl_EncodingState state;
@@ -1253,14 +1274,14 @@ Tcl_ExternalToUtfDStringEx(
     int dstLen, result, soFar, srcRead, dstWrote, dstChars;
     const char *srcStart = src;
 
-    Tcl_DStringInit(dstPtr);
+    Tcl_DStringInit(dstPtr); /* Must always be initialized before returning */
     dst = Tcl_DStringValue(dstPtr);
     dstLen = dstPtr->spaceAvl - 1;
 
     if (encoding == NULL) {
-	encoding = systemEncoding;
+        encoding = systemEncoding;
     }
-    encodingPtr = (Encoding *) encoding;
+    encodingPtr = (Encoding *)encoding;
 
     if (src == NULL) {
 	srcLen = 0;
@@ -1275,26 +1296,53 @@ Tcl_ExternalToUtfDStringEx(
     }
 
     while (1) {
-	result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
-		flags, &state, dst, dstLen, &srcRead, &dstWrote, &dstChars);
-	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
+        result = encodingPtr->toUtfProc(encodingPtr->clientData, src,
+                                        srcLen, flags, &state, dst, dstLen,
+                                        &srcRead, &dstWrote, &dstChars);
+        soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
-	src += srcRead;
-	if (result != TCL_CONVERT_NOSPACE) {
-	    Tcl_DStringSetLength(dstPtr, soFar);
-	    return (result == TCL_OK) ? TCL_INDEX_NONE : (int)(src - srcStart);
-	}
-	flags &= ~TCL_ENCODING_START;
-	srcLen -= srcRead;
-	if (Tcl_DStringLength(dstPtr) == 0) {
-	    Tcl_DStringSetLength(dstPtr, dstLen);
-	}
-	Tcl_DStringSetLength(dstPtr, 2 * Tcl_DStringLength(dstPtr) + 1);
-	dst = Tcl_DStringValue(dstPtr) + soFar;
-	dstLen = Tcl_DStringLength(dstPtr) - soFar - 1;
+        src += srcRead;
+        if (result != TCL_CONVERT_NOSPACE) {
+            Tcl_Size nBytesProcessed = (Tcl_Size)(src - srcStart);
+
+            Tcl_DStringSetLength(dstPtr, soFar);
+            if (errorLocPtr) {
+                /*
+                 * Do not write error message into interpreter if caller
+                 * wants to know error location.
+                 */
+                *errorLocPtr = result == TCL_OK ? TCL_INDEX_NONE : nBytesProcessed;
+            }
+            else {
+                /* Caller wants error message on failure */
+                if (result != TCL_OK && interp != NULL) {
+                    char buf[TCL_INTEGER_SPACE];
+                    sprintf(buf, "%u", nBytesProcessed);
+                    Tcl_SetObjResult(
+                        interp,
+                        Tcl_ObjPrintf("unexpected byte sequence starting at index %"
+                                      "u: '\\x%X'",
+                                      nBytesProcessed,
+                                      UCHAR(srcStart[nBytesProcessed])));
+                    Tcl_SetErrorCode(
+                        interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, NULL);
+                }
+            }
+            return result;
+        }
+
+        /* Expand space and continue */
+        flags &= ~TCL_ENCODING_START;
+        srcLen -= srcRead;
+        if (Tcl_DStringLength(dstPtr) == 0) {
+            Tcl_DStringSetLength(dstPtr, dstLen);
+        }
+        Tcl_DStringSetLength(dstPtr, 2 * Tcl_DStringLength(dstPtr) + 1);
+        dst = Tcl_DStringValue(dstPtr) + soFar;
+        dstLen = Tcl_DStringLength(dstPtr) - soFar - 1;
     }
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -1441,7 +1489,8 @@ Tcl_UtfToExternalDString(
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    Tcl_UtfToExternalDStringEx(encoding, src, srcLen, TCL_ENCODING_PROFILE_DEFAULT, dstPtr);
+    Tcl_UtfToExternalDStringEx(
+	NULL, encoding, src, srcLen, TCL_ENCODING_PROFILE_DEFAULT, dstPtr, NULL);
     return Tcl_DStringValue(dstPtr);
 }
 
@@ -1462,27 +1511,45 @@ Tcl_UtfToExternalDString(
  *        of 0x00. Only valid for "utf-8" and "cesu-8".
  *
  * Results:
- *	The converted bytes are stored in the DString, which is then NULL
- *	terminated in an encoding-specific manner. The return value is
- *	the error position in the source string or -1 if no conversion error
- *	is reported.
+ *      The return value is one of
+ *        TCL_OK: success. Converted string in *dstPtr
+ *        TCL_ERROR: error in passed parameters. Error message in interp
+ *        TCL_CONVERT_MULTIBYTE: source ends in truncated multibyte sequence
+ *        TCL_CONVERT_SYNTAX: source is not conformant to encoding definition
+ *        TCL_CONVERT_UNKNOWN: source contained a character that could not
+ *            be represented in target encoding.
  *
  * Side effects:
- *	None.
+ *
+ *      TCL_OK: The converted bytes are stored in the DString and NUL
+ *          terminated in an encoding-specific manner
+ *      TCL_ERROR: an error, message is stored in the interp if not NULL.
+ *      TCL_CONVERT_*: if errorLocPtr is NULL, an error message is stored
+ *          in the interpreter (if not NULL). If errorLocPtr is not NULL,
+ *          no error message is stored as it is expected the caller is
+ *          interested in whatever is decoded so far and not treating this
+ *          as an error condition.
+ *
+ *      In addition, *dstPtr is always initialized and must be cleared
+ *      by the caller irrespective of the return code.
  *
  *-------------------------------------------------------------------------
  */
 
 int
 Tcl_UtfToExternalDStringEx(
+    Tcl_Interp *interp,         /* For error messages. May be NULL. */
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes, or < 0 for
 				 * strlen(). */
     int flags,			/* Conversion control flags. */
-    Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
+    Tcl_DString *dstPtr,	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
+    Tcl_Size *errorLocPtr)      /* Where to store the error location
+                                   (or TCL_INDEX_NONE if no error). May
+				   be NULL. */
 {
     char *dst;
     Tcl_EncodingState state;
@@ -1505,21 +1572,49 @@ Tcl_UtfToExternalDStringEx(
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
+
     flags = TclEncodingExternalFlagsToInternal(flags);
     flags |= TCL_ENCODING_START | TCL_ENCODING_END;
     while (1) {
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
-		srcLen, flags, &state, dst, dstLen,
-		&srcRead, &dstWrote, &dstChars);
+                                          srcLen, flags, &state, dst, dstLen,
+                                          &srcRead, &dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
 	src += srcRead;
 	if (result != TCL_CONVERT_NOSPACE) {
+            Tcl_Size nBytesProcessed = (Tcl_Size)(src - srcStart);
 	    int i = soFar + encodingPtr->nullSize - 1;
 	    while (i >= soFar) {
 		Tcl_DStringSetLength(dstPtr, i--);
 	    }
-	    return (result == TCL_OK) ? TCL_INDEX_NONE : (int)(src - srcStart);
+            if (errorLocPtr) {
+                /*
+                 * Do not write error message into interpreter if caller
+                 * wants to know error location.
+                 */
+                *errorLocPtr = result == TCL_OK ? TCL_INDEX_NONE : nBytesProcessed;
+            }
+            else {
+                /* Caller wants error message on failure */
+                if (result != TCL_OK && interp != NULL) {
+                    Tcl_Size pos = Tcl_NumUtfChars(srcStart, nBytesProcessed);
+                    int ucs4;
+                    char buf[TCL_INTEGER_SPACE];
+                    TclUtfToUCS4(&srcStart[nBytesProcessed], &ucs4);
+                    sprintf(buf, "%u", nBytesProcessed);
+		    Tcl_SetObjResult(
+			interp,
+			Tcl_ObjPrintf(
+			    "unexpected character at index %" TCL_Z_MODIFIER
+			    "u: 'U+%06X'",
+			    pos,
+			    ucs4));
+		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
+                                     buf, NULL);
+                }
+            }
+            return result;
 	}
 
 	flags &= ~TCL_ENCODING_START;
@@ -2682,6 +2777,8 @@ Utf32ToUtfProc(
 	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	dst += Tcl_UniCharToUtf(-1, dst);
     }
+    
+
     /*
      * If we had a truncated code unit at the end AND this is the last
      * fragment AND profile is not "strict", stick FFFD in its place.
@@ -2917,6 +3014,7 @@ Utf16ToUtfProc(
 	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	dst += Tcl_UniCharToUtf(-1, dst);
     }
+
     /*
      * If we had a truncated code unit at the end AND this is the last
      * fragment AND profile is not "strict", stick FFFD in its place.

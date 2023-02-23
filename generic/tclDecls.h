@@ -1955,13 +1955,15 @@ EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
 /* 657 */
 EXTERN int		Tcl_UniCharIsUnicode(int ch);
 /* 658 */
-EXTERN Tcl_Size		Tcl_ExternalToUtfDStringEx(Tcl_Encoding encoding,
-				const char *src, Tcl_Size srcLen, int flags,
-				Tcl_DString *dsPtr);
+EXTERN int		Tcl_ExternalToUtfDStringEx(Tcl_Interp *interp,
+				Tcl_Encoding encoding, const char *src,
+				int srcLen, int flags, Tcl_DString *dsPtr,
+				Tcl_Size *errorLocationPtr);
 /* 659 */
-EXTERN Tcl_Size		Tcl_UtfToExternalDStringEx(Tcl_Encoding encoding,
-				const char *src, Tcl_Size srcLen, int flags,
-				Tcl_DString *dsPtr);
+EXTERN int		Tcl_UtfToExternalDStringEx(Tcl_Interp *interp,
+				Tcl_Encoding encoding, const char *src,
+				int srcLen, int flags, Tcl_DString *dsPtr,
+				Tcl_Size *errorLocationPtr);
 /* 660 */
 EXTERN int		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
 				int sigNumber);
@@ -2741,8 +2743,8 @@ typedef struct TclStubs {
     const char * (*tcl_UtfNext) (const char *src); /* 655 */
     const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 656 */
     int (*tcl_UniCharIsUnicode) (int ch); /* 657 */
-    Tcl_Size (*tcl_ExternalToUtfDStringEx) (Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr); /* 658 */
-    Tcl_Size (*tcl_UtfToExternalDStringEx) (Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr); /* 659 */
+    int (*tcl_ExternalToUtfDStringEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_DString *dsPtr, Tcl_Size *errorLocationPtr); /* 658 */
+    int (*tcl_UtfToExternalDStringEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_DString *dsPtr, Tcl_Size *errorLocationPtr); /* 659 */
     int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
     int (*tclListObjGetElements) (Tcl_Interp *interp, Tcl_Obj *listPtr, size_t *objcPtr, Tcl_Obj ***objvPtr); /* 661 */
     int (*tclListObjLength) (Tcl_Interp *interp, Tcl_Obj *listPtr, size_t *lengthPtr); /* 662 */
