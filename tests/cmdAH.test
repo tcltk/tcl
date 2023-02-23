@@ -175,8 +175,8 @@ test cmdAH-3.2 {Tcl_ContinueObjCmd, success} {
 # encoding command
 
 set "numargErrors(encoding system)" {^wrong # args: should be "(encoding |::tcl::encoding::)system \?encoding\?"$}
-set "numargErrors(encoding convertfrom)" {^wrong # args: should be "(encoding |::tcl::encoding::)convertfrom \?\?-profile profile\? \?-failindex var\? \?encoding\?\? data"$}
-set "numargErrors(encoding convertto)" {^wrong # args: should be "(encoding |::tcl::encoding::)convertto \?\?-profile profile\? \?-failindex var\? \?encoding\?\? data"$}
+set "numargErrors(encoding convertfrom)" {^wrong # args: should be "(encoding |::tcl::encoding::)convertfrom \? \?-profile profile\? \?-failindex var\? encoding \? data"$}
+set "numargErrors(encoding convertto)" {^wrong # args: should be "(encoding |::tcl::encoding::)convertto \? \?-profile profile\? \?-failindex var\? encoding \? data"$}
 set "numargErrors(encoding names)" {wrong # args: should be "encoding names"}
 set "numargErrors(encoding profiles)" {wrong # args: should be "encoding profiles"}
 

@@ -4265,7 +4265,7 @@ TclEncodingProfileNameToId(
     const char *profileName,	/* Name of profile */
     int *profilePtr)  		/* Output */
 {
-    int i;
+    size_t i;
 
     for (i = 0; i < sizeof(encodingProfiles) / sizeof(encodingProfiles[0]); ++i) {
 	if (!strcmp(profileName, encodingProfiles[i].name)) {
@@ -4305,7 +4305,7 @@ TclEncodingProfileIdToName(
     Tcl_Interp *interp,		/* For error messages. May be NULL */
     int profileValue)		/* Profile #define value */
 {
-    int i;
+    size_t i;
 
     for (i = 0; i < sizeof(encodingProfiles) / sizeof(encodingProfiles[0]); ++i) {
 	if (profileValue == encodingProfiles[i].value) {

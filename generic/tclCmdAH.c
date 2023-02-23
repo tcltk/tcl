@@ -589,7 +589,7 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 	    interp,
 	    1,
 	    objv,
-	    "??-profile profile? ?-failindex var? ?encoding?? data");
+	    "? ?-profile profile? ?-failindex var? encoding ? data");
 	return TCL_ERROR;
     }
 
