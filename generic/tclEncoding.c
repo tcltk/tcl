@@ -2516,13 +2516,10 @@ UnicodeToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
 	    /* destination is not full, so we really are at the end now */
-	    if (flags & TCL_ENCODING_STOPONERROR) {
-		result = TCL_CONVERT_SYNTAX;
-	    } else {
-		dst += Tcl_UniCharToUtf(0xFFFD, dst);
-		numChars++;
-		src++;
-	    }
+	    result = TCL_OK;
+	    dst += Tcl_UniCharToUtf(0xFFFD, dst);
+	    numChars++;
+	    src++;
 	}
     }
     *srcReadPtr = src - srcStart;
