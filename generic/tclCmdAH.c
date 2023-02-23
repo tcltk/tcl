@@ -734,31 +734,6 @@ EncodingConvertfromObjCmd(
 	    return TCL_ERROR;
 	}
     }
-#ifdef OBSOLETE
-    if (result != TCL_INDEX_NONE &&
-	TCL_ENCODING_PROFILE_GET(flags) != TCL_ENCODING_PROFILE_TCL8) {
-	if (failVarObj != NULL) {
-	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
-		return TCL_ERROR;
-	    }
-	} else {
-	    char buf[TCL_INTEGER_SPACE];
-	    sprintf(buf, "%u", result);
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte sequence starting at index %"
-		    "u: '\\x%X'", result, UCHAR(bytesPtr[result])));
-	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-		    buf, NULL);
-	    Tcl_DStringFree(&ds);
-	    return TCL_ERROR;
-	}
-    }
-    else if (failVarObj != NULL) {
-	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIntObj(-1), TCL_LEAVE_ERR_MSG) == NULL) {
-	    return TCL_ERROR;
-	}
-    }
-#endif
-
     /*
      * Note that we cannot use Tcl_DStringResult here because it will
      * truncate the string at the first null byte.
@@ -855,33 +830,6 @@ EncodingConverttoObjCmd(
 	    return TCL_ERROR;
 	}
     }
-#ifdef OBSOLETE
-    if (result != TCL_INDEX_NONE &&
-	TCL_ENCODING_PROFILE_GET(flags) != TCL_ENCODING_PROFILE_TCL8) {
-	if (failVarObj != NULL) {
-	    /* I hope, wide int will cover size_t data type */
-	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
-		return TCL_ERROR;
-	    }
-	} else {
-	    size_t pos = Tcl_NumUtfChars(stringPtr, result);
-	    int ucs4;
-	    char buf[TCL_INTEGER_SPACE];
-	    TclUtfToUCS4(&stringPtr[result], &ucs4);
-	    sprintf(buf, "%u", result);
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected character at index %"
-		    TCL_Z_MODIFIER "u: 'U+%06X'", pos, ucs4));
-	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-		    buf, NULL);
-	    Tcl_DStringFree(&ds);
-	    return TCL_ERROR;
-	}
-    } else if (failVarObj != NULL) {
-	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIntObj(-1), TCL_LEAVE_ERR_MSG) == NULL) {
-	    return TCL_ERROR;
-	}
-    }
-#endif
 
     Tcl_SetObjResult(interp,
 		     Tcl_NewByteArrayObj((unsigned char*) Tcl_DStringValue(&ds),
