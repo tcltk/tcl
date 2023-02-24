@@ -1275,7 +1275,18 @@ Tcl_ExternalToUtfDStringEx(
     Tcl_Size dstLen;
     const char *srcStart = src;
 
-    Tcl_DStringInit(dstPtr); /* Must always be initialized before returning */
+    /* DO FIRST - Must always be initialized before returning */
+    Tcl_DStringInit(dstPtr);
+
+    if (flags & (TCL_ENCODING_START|TCL_ENCODING_END)) {
+	/* TODO - what other flags are illegal? - See TIP 656 */
+ 	Tcl_SetResult(interp,
+	    "Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
+	    TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
+	return TCL_ERROR;
+    }
+
     dst = Tcl_DStringValue(dstPtr);
     dstLen = dstPtr->spaceAvl - 1;
 
@@ -1559,7 +1570,18 @@ Tcl_UtfToExternalDStringEx(
     const char *srcStart = src;
     Tcl_Size dstLen;
 
+    /* DO FIRST - must always be initialized on return */
     Tcl_DStringInit(dstPtr);
+
+    if (flags & (TCL_ENCODING_START|TCL_ENCODING_END)) {
+	/* TODO - what other flags are illegal? - See TIP 656 */
+ 	Tcl_SetResult(interp,
+	    "Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
+	    TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
+	return TCL_ERROR;
+    }
+
     dst = Tcl_DStringValue(dstPtr);
     dstLen = dstPtr->spaceAvl - 1;
 
