@@ -788,10 +788,10 @@ test encoding-24.19 {Parse valid or invalid utf-8} -constraints deprecated -body
 } -result ZX\xED\xA0\x80
 test encoding-24.20 {Parse with -profile tcl8 but without providing encoding} -body {
     encoding convertfrom -profile tcl8 "\x20"
-} -result {wrong # args: should be "::tcl::encoding::convertfrom ? ?-profile profile? ?-failindex var? encoding ? data"} -returnCodes error
+} -result {wrong # args: should be "::tcl::encoding::convertfrom ?-profile profile? ?-failindex var? encoding data" or "::tcl::encoding::convertfrom data"} -returnCodes error
 test encoding-24.21 {Parse with -profile tcl8 but without providing encoding} -body {
     string length [encoding convertto -profile tcl8 "\x20"]
-} -result {wrong # args: should be "::tcl::encoding::convertto ? ?-profile profile? ?-failindex var? encoding ? data"} -returnCodes error
+} -result {wrong # args: should be "::tcl::encoding::convertto ?-profile profile? ?-failindex var? encoding data" or "::tcl::encoding::convertto data"} -returnCodes error
 test encoding-24.22 {Syntax error, two encodings} -body {
     encoding convertfrom iso8859-1 utf-8 "ZX\uD800"
 } -result {bad option "iso8859-1": must be -profile or -failindex} -returnCodes error
