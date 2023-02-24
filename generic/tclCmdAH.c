@@ -585,11 +585,12 @@ EncodingConvertParseOptions (
 
     if (objc == 1) {
 numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
-	Tcl_WrongNumArgs(
-	    interp,
-	    1,
-	    objv,
-	    "? ?-profile profile? ?-failindex var? encoding ? data");
+	Tcl_WrongNumArgs(interp,
+			 1,
+			 objv,
+			 "?-profile profile? ?-failindex var? encoding data");
+	((Interp *)interp)->flags |= INTERP_ALTERNATE_WRONG_ARGS;
+	Tcl_WrongNumArgs(interp, 1, objv, "data");
 	return TCL_ERROR;
     }
 
