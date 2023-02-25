@@ -218,7 +218,7 @@ test dstring-2.16 {appending list elements - bug [46dda6fc29] segfault} -constra
     testdstring get
 } -cleanup {
     testdstring free
-} -result {}
+} -result \\\\\\n
 test dstring-2.17 {appending list elements - bug [46dda6fc29] segfault} -constraints testdstring -setup {
     testdstring free
 } -body {
@@ -226,7 +226,7 @@ test dstring-2.17 {appending list elements - bug [46dda6fc29] segfault} -constra
     testdstring get
 } -cleanup {
     testdstring free
-} -result {}
+} -result [list [list \{]]
 test dstring-2.18 {appending list elements - bug [46dda6fc29] segfault} -constraints testdstring -setup {
     testdstring free
 } -body {
@@ -234,7 +234,7 @@ test dstring-2.18 {appending list elements - bug [46dda6fc29] segfault} -constra
     testdstring get
 } -cleanup {
     testdstring free
-} -result {}
+} -result [list [list \}]]
 test dstring-2.19 {appending list elements - bug [46dda6fc29] segfault} -constraints testdstring -setup {
     testdstring free
 } -body {
@@ -242,7 +242,7 @@ test dstring-2.19 {appending list elements - bug [46dda6fc29] segfault} -constra
     testdstring get
 } -cleanup {
     testdstring free
-} -result {}
+} -result [list [list \\]]
 
 test dstring-3.1 {nested sublists} -constraints testdstring -setup {
     testdstring free
