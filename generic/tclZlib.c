@@ -547,8 +547,8 @@ ExtractHeader(
 	    }
 	}
 
-	Tcl_ExternalToUtfDStringEx(latin1enc, (char *) headerPtr->comment, -1,
-		TCL_ENCODING_NOCOMPLAIN, &tmp);
+	Tcl_ExternalToUtfDStringEx(NULL, latin1enc, (char *) headerPtr->comment, -1,
+		TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
 	SetValue(dictObj, "comment", Tcl_DStringToObj(&tmp));
     }
     SetValue(dictObj, "crc", Tcl_NewBooleanObj(headerPtr->hcrc));
@@ -564,8 +564,8 @@ ExtractHeader(
 	    }
 	}
 
-	Tcl_ExternalToUtfDStringEx(latin1enc, (char *) headerPtr->name, -1,
-		TCL_ENCODING_NOCOMPLAIN, &tmp);
+	Tcl_ExternalToUtfDStringEx(NULL, latin1enc, (char *) headerPtr->name, -1,
+		TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
 	SetValue(dictObj, "filename", Tcl_DStringToObj(&tmp));
     }
     if (headerPtr->os != 255) {
