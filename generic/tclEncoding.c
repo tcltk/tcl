@@ -1271,16 +1271,15 @@ Tcl_ExternalToUtf(
 	srcLen = encodingPtr->lengthProc(src);
     }
     if (statePtr == NULL) {
-	flags |= TCL_ENCODING_START;
-	if (srcLen > INT_MAX) {
-	    srcLen = INT_MAX;
-	} else {
-	    flags |= TCL_ENCODING_END;
-	}
-	if (dstLen > INT_MAX) {
-	    dstLen = INT_MAX;
-	}
+	flags |= TCL_ENCODING_START | TCL_ENCODING_END;
 	statePtr = &state;
+    }
+    if (srcLen > INT_MAX) {
+	srcLen = INT_MAX;
+	flags &= ~TCL_ENCODING_END;
+    }
+    if (dstLen > INT_MAX) {
+	dstLen = INT_MAX;
     }
     if (srcReadPtr == NULL) {
 	srcReadPtr = &srcRead;
@@ -1514,16 +1513,15 @@ Tcl_UtfToExternal(
 	srcLen = strlen(src);
     }
     if (statePtr == NULL) {
-	flags |= TCL_ENCODING_START;
-	if (srcLen > INT_MAX) {
-	    srcLen = INT_MAX;
-	} else {
-	    flags |= TCL_ENCODING_END;
-	}
-	if (dstLen > INT_MAX) {
-	    dstLen = INT_MAX;
-	}
+	flags |= TCL_ENCODING_START | TCL_ENCODING_END;
 	statePtr = &state;
+    }
+    if (srcLen > INT_MAX) {
+	srcLen = INT_MAX;
+	flags &= ~TCL_ENCODING_END;
+    }
+    if (dstLen > INT_MAX) {
+	dstLen = INT_MAX;
     }
     if (srcReadPtr == NULL) {
 	srcReadPtr = &srcRead;
