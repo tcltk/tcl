@@ -1187,7 +1187,7 @@ Tcl_ExternalToUtfDStringEx(
     while (1) {
 	int srcChunkLen, srcChunkRead;
 	int dstChunkLen, dstChunkWrote, dstChunkChars;
-	
+
 	if (srcLen > INT_MAX) {
 	    srcChunkLen = INT_MAX;
 	} else {
@@ -1202,7 +1202,6 @@ Tcl_ExternalToUtfDStringEx(
 	soFar = dst + dstChunkWrote - Tcl_DStringValue(dstPtr);
 
 	src += srcChunkRead;
-	srcLen -= srcChunkRead;
 
 	/*
 	 * Keep looping in two case -
@@ -1210,7 +1209,7 @@ Tcl_ExternalToUtfDStringEx(
 	 *   - we had not passed in all the data and error indicated fragment
 	 *     of a multibyte character
 	 * In both cases we have to grow buffer, move the input source pointer
-	 * and loop. Otherwise, return the result we got. 
+	 * and loop. Otherwise, return the result we got.
 	 */
 	if ((result != TCL_CONVERT_NOSPACE) &&
 	    !(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
@@ -1219,6 +1218,7 @@ Tcl_ExternalToUtfDStringEx(
 	}
 
 	flags &= ~TCL_ENCODING_START;
+	srcLen -= srcChunkRead;
 
 	if (Tcl_DStringLength(dstPtr) == 0) {
 	    Tcl_DStringSetLength(dstPtr, dstLen);
@@ -1460,7 +1460,6 @@ Tcl_UtfToExternalDStringEx(
 
 	/* Move past the part processed in this go around */
 	src += srcChunkRead;
-	srcLen -= srcChunkRead;
 
 	/*
 	 * Keep looping in two case -
@@ -1468,7 +1467,7 @@ Tcl_UtfToExternalDStringEx(
 	 *   - we had not passed in all the data and error indicated fragment
 	 *     of a multibyte character
 	 * In both cases we have to grow buffer, move the input source pointer
-	 * and loop. Otherwise, return the result we got. 
+	 * and loop. Otherwise, return the result we got.
 	 */
 	if ((result != TCL_CONVERT_NOSPACE) &&
 	    !(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
@@ -1481,6 +1480,7 @@ Tcl_UtfToExternalDStringEx(
 	}
 
 	flags &= ~TCL_ENCODING_START;
+	srcLen -= srcChunkRead;
 
 	if (Tcl_DStringLength(dstPtr) == 0) {
 	    Tcl_DStringSetLength(dstPtr, dstLen);
