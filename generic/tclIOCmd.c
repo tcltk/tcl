@@ -163,12 +163,12 @@ Tcl_PutsObjCmd(
 
     TclChannelPreserve(chan);
     result = Tcl_WriteObj(chan, string);
-    if (result == (size_t) -1) {
+    if (result == TCL_INDEX_NONE) {
 	goto error;
     }
     if (newline != 0) {
 	result = Tcl_WriteChars(chan, "\n", 1);
-	if (result == (size_t) -1) {
+	if (result == TCL_INDEX_NONE) {
 	    goto error;
 	}
     }
