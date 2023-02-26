@@ -4238,47 +4238,38 @@ Tcl_WriteObj(
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
 	return TCL_INDEX_NONE;
     }
-    if (statePtr->encoding == NULL) {
-	size_t srcLen;
-	size_t totalWritten = 0;
 
+    size_t srcLen;
+    if (statePtr->encoding == NULL) {
 	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &srcLen);
-	/* TODO - refactor common code below */
 	if (src == NULL) {
 	    Tcl_SetErrno(EILSEQ);
-	    totalWritten = TCL_INDEX_NONE;
-	} else {
-	    int chunkSize = srcLen > INT_MAX ? INT_MAX : srcLen;
-	    int written;
-	    written = WriteBytes(chanPtr, src, chunkSize);
-	    if (written < 0) {
-		return TCL_INDEX_NONE;
-	    }
-	    totalWritten += written;
-	    srcLen -= chunkSize;
-	} while (srcLen);
-		   
-	return totalWritten;
+	    return TCL_INDEX_NONE;
+	}
     } else {
-	size_t srcLen;
-	size_t totalWritten = 0;
 	src = Tcl_GetStringFromObj(objPtr, &srcLen);
-	/*
-	 * Note original code always called WriteChars even if srcLen 0
-	 * so we will too.
-	 */
-	do {
-	    int chunkSize = srcLen > INT_MAX ? INT_MAX : srcLen;
-	    int written;
-	    written = WriteChars(chanPtr, src, chunkSize);
-	    if (written < 0) {
-		   return TCL_INDEX_NONE;
-	    }
-	    totalWritten += written;
-	    srcLen -= chunkSize;
-	} while (srcLen);
-	return totalWritten;
     }
+
+    size_t totalWritten = 0;
+    /*
+     * Note original code always called WriteChars even if srcLen 0
+     * so we will too.
+     */
+    do {
+	int chunkSize = srcLen > INT_MAX ? INT_MAX : srcLen;
+	int written;
+	if (statePtr->encoding == NULL) {
+	    written = WriteBytes(chanPtr, src, chunkSize);
+	} else {
+	    written = WriteChars(chanPtr, src, chunkSize);
+	}
+	if (written < 0) {
+	    return TCL_INDEX_NONE;
+	}
+	totalWritten += written;
+	srcLen -= chunkSize;
+    } while (srcLen);
+    return totalWritten;
 }
 
 static void

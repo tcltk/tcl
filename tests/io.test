@@ -36,6 +36,7 @@ namespace eval ::tcl::test::io {
     }
     source [file join [file dirname [info script]] tcltests.tcl]
 
+testConstraint pointerIs64bit [expr {$::tcl_platform(pointerSize) >= 8}]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testchannel      [llength [info commands testchannel]]
 testConstraint testfevent       [llength [info commands testfevent]]
@@ -194,6 +195,20 @@ test io-1.9 {Tcl_WriteChars: WriteChars} {
     set sizes
 } {19 19 19 19 19}
 
+test io-1.10 {WriteChars: large file (> INT_MAX). Bug 3d01d51bc4} -constraints {
+    pointerIs64bit
+} -setup {
+    set tmpfile [file join [temporaryDirectory] io-1.10.tmp]
+} -cleanup {
+    file delete $tmpfile
+} -body {
+    set fd [open $tmpfile w]
+    puts -nonewline $fd [string repeat A 0x80000000]
+    close $fd
+    # TODO - Should really read it back in but large reads are not currently working!
+    file size $tmpfile
+} -result 2147483648
+
 test io-2.1 {WriteBytes} {
     # loop until all bytes are written
 
@@ -235,6 +250,20 @@ test io-2.4 {WriteBytes: reset sawLF after each buffer} {
     close $f
     lappend x [contents $path(test1)]
 } [list "abcdefg\nhijklmno" "abcdefg\nhijklmnopqrstuvwxyz"]
+
+test io-2.5 {WriteBytes: large file (> INT_MAX). Bug 3d01d51bc4} -constraints {
+    pointerIs64bit
+} -setup {
+    set tmpfile [file join [temporaryDirectory] io-2.5.tmp]
+} -cleanup {
+    file delete $tmpfile
+} -body {
+    set fd [open $tmpfile wb]
+    puts -nonewline $fd [string repeat A 0x80000000]
+    close $fd
+    # TODO - Should really read it back in but large reads are not currently working!
+    file size $tmpfile
+} -result 2147483648
 
 test io-3.1 {WriteChars: compatibility with WriteBytes} {
     # loop until all bytes are written
