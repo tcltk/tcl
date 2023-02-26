@@ -1553,7 +1553,7 @@ test io-12.9 {ReadChars: multibyte chars split} -body {
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -buffersize 10
+    fconfigure $f -encoding utf-8 -nocomplainencoding 1 -buffersize 10
     set in [read $f]
     close $f
     scan [string index $in end] %c
@@ -1566,7 +1566,7 @@ test io-12.10 {ReadChars: multibyte chars split} -body {
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -buffersize 11
+    fconfigure $f -encoding utf-8 -nocomplainencoding 1 -buffersize 11
     set in [read $f]
     close $f
     scan [string index $in end] %c
@@ -7280,8 +7280,8 @@ test io-52.5 {TclCopyChannel, all} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    fconfigure $f1 -translation lf -blocking 0
-    fconfigure $f2 -translation lf -blocking 0
+    fconfigure $f1 -translation lf -encoding iso8859-1 -blocking 0
+    fconfigure $f2 -translation lf -encoding iso8859-1 -blocking 0
     fcopy $f1 $f2 -size -1 ;# -1 means 'copy all', same as if no -size specified.
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
@@ -7297,8 +7297,8 @@ test io-52.5a {TclCopyChannel, all, other negative value} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    fconfigure $f1 -translation lf -blocking 0
-    fconfigure $f2 -translation lf -blocking 0
+    fconfigure $f1 -translation lf -encoding iso8859-1 -blocking 0
+    fconfigure $f2 -translation lf -encoding iso8859-1 -blocking 0
     fcopy $f1 $f2 -size -2 ;# < 0 behaves like -1, copy all
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
@@ -7314,8 +7314,8 @@ test io-52.5b {TclCopyChannel, all, wrap to negative value} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    fconfigure $f1 -translation lf -blocking 0
-    fconfigure $f2 -translation lf -blocking 0
+    fconfigure $f1 -translation lf -encoding iso8859-1 -blocking 0
+    fconfigure $f2 -translation lf -encoding iso8859-1 -blocking 0
     fcopy $f1 $f2 -size 3221176172 ;# Wrapped to < 0, behaves like -1, copy all
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
@@ -7348,8 +7348,8 @@ test io-52.7 {TclCopyChannel} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    fconfigure $f1 -translation lf -blocking 0
-    fconfigure $f2 -translation lf -blocking 0
+    fconfigure $f1 -translation lf -encoding iso8859-1 -blocking 0
+    fconfigure $f2 -translation lf -encoding iso8859-1 -blocking 0
     fcopy $f1 $f2
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     set s1 [file size $thisScript]
@@ -9226,7 +9226,7 @@ test io-75.10 {incomplete multibyte encoding read is ignored} -setup {
     puts -nonewline $f A\xC0
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none
+    fconfigure $f -encoding utf-8 -nocomplainencoding 1 -buffering none
 } -body {
     set d [read $f]
     close $f
@@ -9267,7 +9267,7 @@ test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf
+    fconfigure $f -encoding utf-8 -nocomplainencoding 1 -buffering none -eofchar "" -translation lf
 } -body {
     set d [read $f]
     close $f
