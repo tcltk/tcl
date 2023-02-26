@@ -444,9 +444,13 @@ GenerateHeader(
 	goto error;
     } else if (value != NULL) {
 	valueStr = Tcl_GetStringFromObj(value, &length);
-	Tcl_UtfToExternal(NULL, latin1enc, valueStr, length, 0, NULL,
+	if (Tcl_UtfToExternal(NULL, latin1enc, valueStr, length, 0, NULL,
 		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
-		NULL);
+		NULL) != TCL_OK) {
+	    result = TCL_ERROR;
+	    Tcl_AppendResult(interp, "Cannot encode comment", NULL);
+	    goto error;
+	}
 	headerPtr->nativeCommentBuf[len] = '\0';
 	headerPtr->header.comment = (Bytef *) headerPtr->nativeCommentBuf;
 	if (extraSizePtr != NULL) {
@@ -465,8 +469,13 @@ GenerateHeader(
 	goto error;
     } else if (value != NULL) {
 	valueStr = Tcl_GetStringFromObj(value, &length);
-	Tcl_UtfToExternal(NULL, latin1enc, valueStr, length, 0, NULL,
-		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len, NULL);
+	if (Tcl_UtfToExternal(NULL, latin1enc, valueStr, length, 0, NULL,
+		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
+		NULL) != TCL_OK) {
+	    result = TCL_ERROR;
+	    Tcl_AppendResult(interp, "Cannot encode filename", NULL);
+	    goto error;
+	}
 	headerPtr->nativeFilenameBuf[len] = '\0';
 	headerPtr->header.name = (Bytef *) headerPtr->nativeFilenameBuf;
 	if (extraSizePtr != NULL) {
