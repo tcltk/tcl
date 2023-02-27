@@ -196,7 +196,7 @@ test io-1.9 {Tcl_WriteChars: WriteChars} {
 } {19 19 19 19 19}
 
 test io-1.10 {WriteChars: large file (> INT_MAX). Bug 3d01d51bc4} -constraints {
-    pointerIs64bit
+    pointerIs64bit perf
 } -setup {
     set tmpfile [file join [temporaryDirectory] io-1.10.tmp]
 } -cleanup {
@@ -209,7 +209,7 @@ test io-1.10 {WriteChars: large file (> INT_MAX). Bug 3d01d51bc4} -constraints {
     file size $tmpfile
 } -result 2147483648
 test io-1.11 {WriteChars: large file (> UINT_MAX). Bug 3d01d51bc4} -constraints {
-    pointerIs64bit
+    pointerIs64bit perf
 } -setup {
     set tmpfile [file join [temporaryDirectory] io-1.11.tmp]
 } -cleanup {
@@ -222,7 +222,7 @@ test io-1.11 {WriteChars: large file (> UINT_MAX). Bug 3d01d51bc4} -constraints 
     file size $tmpfile
 } -result 4294967296
 test io-1.12 {WriteChars: large file (== UINT_MAX). Bug 90ff9b7f73} -constraints {
-    pointerIs64bit
+    pointerIs64bit perf
 } -setup {
     set tmpfile [file join [temporaryDirectory] io-1.12.tmp]
 } -cleanup {
@@ -279,7 +279,7 @@ test io-2.4 {WriteBytes: reset sawLF after each buffer} {
 } [list "abcdefg\nhijklmno" "abcdefg\nhijklmnopqrstuvwxyz"]
 
 test io-2.5 {WriteBytes: large file (> INT_MAX). Bug 3d01d51bc4} -constraints {
-    pointerIs64bit
+    pointerIs64bit perf
 } -setup {
     set tmpfile [file join [temporaryDirectory] io-2.5.tmp]
 } -cleanup {
@@ -292,7 +292,7 @@ test io-2.5 {WriteBytes: large file (> INT_MAX). Bug 3d01d51bc4} -constraints {
     file size $tmpfile
 } -result 2147483648
 test io-2.6 {WriteBytes: large file (> UINT_MAX). Bug 3d01d51bc4} -constraints {
-    pointerIs64bit
+    pointerIs64bit perf
 } -setup {
     set tmpfile [file join [temporaryDirectory] io-2.6.tmp]
 } -cleanup {
@@ -305,7 +305,7 @@ test io-2.6 {WriteBytes: large file (> UINT_MAX). Bug 3d01d51bc4} -constraints {
     file size $tmpfile
 } -result 4294967296
 test io-2.7 {WriteBytes: large file (== UINT_MAX). Bug 90ff9b7f73} -constraints {
-    pointerIs64bit
+    pointerIs64bit perf
 } -setup {
     set tmpfile [file join [temporaryDirectory] io-2.7.tmp]
 } -cleanup {
