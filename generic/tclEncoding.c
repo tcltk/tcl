@@ -1473,7 +1473,7 @@ Tcl_UtfToExternalDStringEx(
 	    !(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
 	    size_t i = soFar + encodingPtr->nullSize - 1;
 	    /* Loop as DStringSetLength only stores one nul byte at a time */
-	    while (i >= soFar) {
+	    while (i+1 >= soFar+1) {
 		Tcl_DStringSetLength(dstPtr, i--);
 	    }
 	    return (result == TCL_OK) ? TCL_INDEX_NONE : (Tcl_Size)(src - srcStart);
