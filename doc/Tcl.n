@@ -92,7 +92,7 @@ result of the script.
 .IP "[8] \fBCommand substitution.\fR"
 Each pair of brackets
 .PQ [
-and 
+and
 .PQ ] ""
 encloses a script and is replaced by the result of that script.
 .IP "[9] \fBVariable substitution.\fR"
