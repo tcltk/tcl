@@ -7532,7 +7532,7 @@ Tcl_Eof(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    if (GotFlag(statePtr, CHANNEL_NONBLOCKING)
+    if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_FCOPY)
 	    && GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	return 0;
     }
@@ -9718,6 +9718,7 @@ CopyData(
      * the bottom of the stack.
      */
 
+    SetFlag(inStatePtr, CHANNEL_FCOPY);
     inBinary = (inStatePtr->encoding == NULL);
     outBinary = (outStatePtr->encoding == NULL);
     sameEncoding = inStatePtr->encoding == outStatePtr->encoding
@@ -9833,6 +9834,7 @@ CopyData(
 		    TclDecrRefCount(bufObj);
 		    bufObj = NULL;
 		}
+		ResetFlag(inStatePtr, CHANNEL_FCOPY);
 		return TCL_OK;
 	    }
 	}
@@ -9924,6 +9926,7 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
+	    ResetFlag(inStatePtr, CHANNEL_FCOPY);
 	    return TCL_OK;
 	}
 
@@ -9946,6 +9949,7 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
+	    ResetFlag(inStatePtr, CHANNEL_FCOPY);
 	    return TCL_OK;
 	}
     } /* while */
@@ -9998,6 +10002,7 @@ CopyData(
 	    }
 	}
     }
+    ResetFlag(inStatePtr, CHANNEL_FCOPY);
     return result;
 }
 
