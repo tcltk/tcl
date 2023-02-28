@@ -7552,6 +7552,10 @@ Tcl_Eof(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
+    if (GotFlag(statePtr, CHANNEL_NONBLOCKING)
+	    && GotFlag(statePtr, CHANNEL_ENCODING_ERROR) {
+	return 0;
+    }
     return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
 }
 
@@ -8223,7 +8227,7 @@ Tcl_SetChannelOption(
 	statePtr->inputEncodingFlags = TCL_ENCODING_START;
 	statePtr->outputEncodingState = NULL;
 	statePtr->outputEncodingFlags = TCL_ENCODING_START;
-	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
+	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	UpdateInterest(chanPtr);
 	return TCL_OK;
     } else if (HaveOpt(2, "-eofchar")) {
