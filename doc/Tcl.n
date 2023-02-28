@@ -156,6 +156,8 @@ special processing.
 The following table lists the backslash sequences that are
 handled specially, along with the value that replaces each sequence.
 .RS
+.RS
+.RS
 .TP 7
 \e\fBa\fR
 Audible alert (bell) (Unicode U+000007).
@@ -221,6 +223,7 @@ twenty-one-bit hexadecimal value for the Unicode character that will be
 inserted, in the range U+000000\(enU+10FFFF.  The parser will stop just
 before this range overflows, or when the maximum of eight digits
 is reached.  The upper bits of the Unicode character will be 0.
+.RE
 .RE
 .PP
 Backslash substitution is not performed on words enclosed in braces,
