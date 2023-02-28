@@ -611,11 +611,11 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 	    }
 	    switch (optIndex) {
 	    case PROFILE:
-		if (TclEncodingProfileNameToId(interp,
-					       Tcl_GetString(objv[argIndex]),
-					       &profile) != TCL_OK) {
+		if (Tcl_GetIndexFromObjStruct(interp, objv[argIndex], TclEncodingProfiles,
+			sizeof(TclEncodingProfiles[0]), "profile", 0, &profile) != TCL_OK) {
 		    return TCL_ERROR;
 		}
+		profile = TclEncodingProfiles[profile].value;
 		break;
 	    case FAILINDEX:
 		failVarObj = objv[argIndex];

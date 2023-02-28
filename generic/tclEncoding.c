@@ -190,13 +190,11 @@ Tcl_Encoding tclIdentityEncoding = NULL;
 /*
  * Names of encoding profiles and corresponding integer values
  */
-static struct TclEncodingProfiles {
-    const char *name;
-    int value;
-} encodingProfiles[] = {
-    {"tcl8", TCL_ENCODING_PROFILE_TCL8},
-    {"strict", TCL_ENCODING_PROFILE_STRICT},
+const TclEncodingProfile TclEncodingProfiles[] = {
     {"replace", TCL_ENCODING_PROFILE_REPLACE},
+    {"strict", TCL_ENCODING_PROFILE_STRICT},
+    {"tcl8", TCL_ENCODING_PROFILE_TCL8},
+    {NULL, 0},
 };
 #define PROFILE_STRICT(flags_)                                         \
     ((TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
@@ -4394,47 +4392,6 @@ InitializeEncodingSearchPath(
 /*
  *------------------------------------------------------------------------
  *
- * TclEncodingProfileParseName --
- *
- *	Maps an encoding profile name to its integer equivalent.
- *
- * Results:
- *	TCL_OK on success or TCL_ERROR on failure.
- *
- * Side effects:
- *	Returns the profile enum value in *profilePtr
- *
- *------------------------------------------------------------------------
- */
-int
-TclEncodingProfileNameToId(
-    Tcl_Interp *interp,		/* For error messages. May be NULL */
-    const char *profileName,	/* Name of profile */
-    int *profilePtr)  		/* Output */
-{
-    size_t i;
-
-    for (i = 0; i < sizeof(encodingProfiles) / sizeof(encodingProfiles[0]); ++i) {
-	if (!strcmp(profileName, encodingProfiles[i].name)) {
-	    *profilePtr = encodingProfiles[i].value;
-	    return TCL_OK;
-	}
-    }
-    if (interp) {
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_ObjPrintf(
-		"bad profile \"%s\". Must be \"tcl8\" or \"strict\".",
-		profileName));
-	Tcl_SetErrorCode(
-	    interp, "TCL", "ENCODING", "PROFILE", profileName, NULL);
-    }
-    return TCL_ERROR;
-}
-
-/*
- *------------------------------------------------------------------------
- *
  * TclEncodingProfileValueToName --
  *
  *	Maps an encoding profile value to its name.
@@ -4454,9 +4411,9 @@ TclEncodingProfileIdToName(
 {
     size_t i;
 
-    for (i = 0; i < sizeof(encodingProfiles) / sizeof(encodingProfiles[0]); ++i) {
-	if (profileValue == encodingProfiles[i].value) {
-	    return encodingProfiles[i].name;
+    for (i = 0; TclEncodingProfiles[i].name != NULL; ++i) {
+	if (profileValue == TclEncodingProfiles[i].value) {
+	    return TclEncodingProfiles[i].name;
 	}
     }
     if (interp) {
@@ -4532,13 +4489,12 @@ int TclEncodingSetProfileFlags(int flags)
 void
 TclGetEncodingProfiles(Tcl_Interp *interp)
 {
-    int i, n;
+    int i;
     Tcl_Obj *objPtr;
-    n = sizeof(encodingProfiles) / sizeof(encodingProfiles[0]);
-    objPtr = Tcl_NewListObj(n, NULL);
-    for (i = 0; i < n; ++i) {
+    objPtr = Tcl_NewListObj(0, NULL);
+    for (i = 0; TclEncodingProfiles[i].name; ++i) {
 	Tcl_ListObjAppendElement(
-	    interp, objPtr, Tcl_NewStringObj(encodingProfiles[i].name, -1));
+	    interp, objPtr, Tcl_NewStringObj(TclEncodingProfiles[i].name, -1));
     }
     Tcl_SetObjResult(interp, objPtr);
 }

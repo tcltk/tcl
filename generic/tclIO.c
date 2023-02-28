@@ -8287,9 +8287,17 @@ Tcl_SetChannelOption(
 	return TCL_OK;
     } else if (HaveOpt(1, "-encodingprofile")) {
 	int profile;
-	if (TclEncodingProfileNameToId(interp, newValue, &profile) != TCL_OK) {
+	len = strlen(newValue);
+	for (profile = 0; TclEncodingProfiles[profile].name; ++profile) {
+	    if (len > 0 && strncmp(newValue, TclEncodingProfiles[profile].name, len) == 0) {
+		break;
+	    }
+	}
+	if (TclEncodingProfiles[profile].name == NULL) {
+	    Tcl_AppendResult(interp, "bad value for -encodingprofile: must be one of replace, strict, or tcl8", NULL);
 	    return TCL_ERROR;
 	}
+	profile = TclEncodingProfiles[profile].value;
 	TCL_ENCODING_PROFILE_SET(statePtr->inputEncodingFlags, profile);
 	TCL_ENCODING_PROFILE_SET(statePtr->outputEncodingFlags, profile);
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
