@@ -88,7 +88,7 @@ proc Service {chan addr port} {
     chan event $chan readable [info coroutine]
     while {1} {
         set meta {}
-        chan configure $chan -buffering line -encoding iso8859-1 -translation crlf
+        chan configure $chan -buffering line -encoding utf-8 -translation crlf
         chan configure $chan -blocking 0
         yield
         while {[gets $chan line] < 0} {
@@ -192,7 +192,7 @@ proc Service {chan addr port} {
             set nosendclose 0
         }
 
-        chan configure $chan -buffering line -encoding iso8859-1 -translation crlf
+        chan configure $chan -buffering line -encoding utf-8 -translation crlf
         Puts $chan "$protocol $code"
         Puts $chan "content-type: $type"
         Puts $chan [format "x-crc32: %08x" [zlib crc32 $data]]
