@@ -311,10 +311,10 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
-#if TCL_MAJOR_VERSION > 8
-typedef size_t Tcl_Size;
-#else
+#if TCL_MAJOR_VERSION < 9
 typedef int Tcl_Size;
+#else
+typedef size_t Tcl_Size;
 #endif
 
 #ifdef _WIN32
@@ -452,17 +452,17 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
 
 #if TCL_MAJOR_VERSION > 8
 typedef struct Tcl_RegExpIndices {
-    size_t start;			/* Character offset of first character in
+    Tcl_Size start;			/* Character offset of first character in
 				 * match. */
-    size_t end;			/* Character offset of first character after
+    Tcl_Size end;			/* Character offset of first character after
 				 * the match. */
 } Tcl_RegExpIndices;
 
 typedef struct Tcl_RegExpInfo {
-    size_t nsubs;			/* Number of subexpressions in the compiled
+    Tcl_Size nsubs;			/* Number of subexpressions in the compiled
 				 * expression. */
     Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
-    size_t extendStart;		/* The offset at which a subsequent match
+    Tcl_Size extendStart;		/* The offset at which a subsequent match
 				 * might begin. */
 } Tcl_RegExpInfo;
 #else
