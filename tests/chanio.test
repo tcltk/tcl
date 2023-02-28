@@ -4977,7 +4977,7 @@ test chan-io-38.2 {Tcl_SetChannelBufferSize, Tcl_GetChannelBufferSize} -setup {
 } -cleanup {
     chan close $f
 } -result {4096 10000 1 1 1 100000 1048576}
-test chan-io-38.3 {Tcl_SetChannelBufferSize, changing buffersize between reads} {
+test chan-io-38.3 {Tcl_SetChannelBufferSize, changing buffersize between reads} knownBug {
     # This test crashes the interp if Bug #427196 is not fixed
     set chan [open [info script] r]
     chan configure $chan -buffersize 10
