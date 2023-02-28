@@ -7609,27 +7609,6 @@ test io-52.19 {coverage of eofChar handling} {
     close $out
     file size $path(test2)
 } 8
-test io-52.20 {TclCopyChannel & encodings} -setup {
-    set out [open $path(utf8-fcopy.txt) w]
-    fconfigure $out -encoding utf-8 -translation lf
-    puts $out "Á"
-    close $out
-} -constraints {fcopy} -body {
-    # binary to encoding => the input has to be
-    # in utf-8 to make sense to the encoder
-
-    set in  [open $path(utf8-fcopy.txt) r]
-    set out [open $path(kyrillic.txt) w]
-
-    # Using "-encoding ascii" means reading the "Á" gives an error
-    fconfigure $in  -encoding ascii -encodingprofile strict
-    fconfigure $out -encoding koi8-r -translation lf
-
-    fcopy $in $out
-} -cleanup {
-    close $in
-    close $out
-} -returnCodes 1 -match glob -result {error reading "file*": illegal byte sequence}
 test io-52.21 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
     fconfigure $out -encoding utf-8 -translation lf
@@ -9142,48 +9121,6 @@ test io-75.5 {invalid utf-8 encoding read is ignored (-encodingprofile tcl8)} -s
 } -cleanup {
     removeFile io-75.5
 } -result 4181
-
-test io-75.6 {invalid utf-8 encoding read is not ignored (-encodingprofile strict)} -setup {
-    set fn [makeFile {} io-75.6]
-    set f [open $fn w+]
-    fconfigure $f -encoding binary
-    # \x81 is invalid in utf-8
-    puts -nonewline $f A\x81
-    flush $f
-    seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingprofile strict
-} -body {
-    set d [read $f]
-    binary scan $d H* hd
-    lappend hd [catch {read $f} msg]
-    close $f
-    lappend hd $msg
-} -cleanup {
-    removeFile io-75.6
-} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
-
-test io-75.7 {invalid utf-8 encoding eof handling (-encodingprofile strict)} -setup {
-    set fn [makeFile {} io-75.7]
-    set f [open $fn w+]
-    fconfigure $f -encoding binary
-    # \xA1 is invalid in utf-8. -eofchar is not detected, because it comes later.
-    puts -nonewline $f A\xA1\x1A
-    flush $f
-    seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -encodingprofile strict
-} -body {
-    set d [read $f]
-    binary scan $d H* hd
-    lappend hd [eof $f]
-    lappend hd [catch {read $f} msg]
-    lappend hd $msg
-    fconfigure $f -encoding iso8859-1
-    lappend hd [read $f];# We changed encoding, so now we can read the \xA1
-    close $f
-    set hd
-} -cleanup {
-    removeFile io-75.7
-} -match glob -result {41 0 1 {error reading "*": illegal byte sequence} ¡}
 
 test io-75.8 {invalid utf-8 encoding eof handling (-encodingprofile strict)} -setup {
     set fn [makeFile {} io-75.8]

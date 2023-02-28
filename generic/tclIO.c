@@ -7532,7 +7532,11 @@ Tcl_Eof(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return (GotFlag(statePtr, CHANNEL_EOF) && !GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) ? 1 : 0;
+    if (GotFlag(statePtr, CHANNEL_NONBLOCKING)
+	    && GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+	return 0;
+    }
+    return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
 }
 
 /*
