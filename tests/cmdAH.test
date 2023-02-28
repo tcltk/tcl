@@ -187,7 +187,10 @@ set "numargErrors(encoding convertto)" {wrong # args: should be "(encoding |::tc
 set "numargErrors(encoding names)" {wrong # args: should be "encoding names"}
 set "numargErrors(encoding profiles)" {wrong # args: should be "encoding profiles"}
 
-source [file join [file dirname [info script]] encodingVectors.tcl]
+# TODO - encodingVectors not currently in tcl9 branch
+if {[file exists [file join [file dirname [info script]] encodingVectors.tcl]]} {
+    source [file join [file dirname [info script]] encodingVectors.tcl]
+}
 
 
 # Maps utf-{16,32}{le,be} to utf-16, utf-32 and

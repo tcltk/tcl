@@ -1497,6 +1497,23 @@ TeststringobjCmd(
 	    Tcl_AppendUnicodeToObj(varPtr[varIndex], unicode + length, size - length);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
+	case 13: /* newunicode*/
+	    unicode = (Tcl_UniChar *) ckalloc((objc - 3) * sizeof(Tcl_UniChar));
+	    for (i = 0; i < (objc - 3); ++i) {
+		int val;
+		if (Tcl_GetIntFromObj(interp, objv[i + 3], &val) != TCL_OK) {
+		    break;
+		}
+		unicode[i] = (Tcl_UniChar)val;
+	    }
+	    if (i < (objc-3)) {
+		ckfree(unicode);
+		return TCL_ERROR;
+	    }
+	    SetVarToObj(varPtr, varIndex, Tcl_NewUnicodeObj(unicode, objc - 3));
+	    Tcl_SetObjResult(interp, varPtr[varIndex]);
+	    ckfree(unicode);
+	    break;
     }
 
     return TCL_OK;
