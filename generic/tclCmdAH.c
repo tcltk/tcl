@@ -611,16 +611,11 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 	    }
 	    switch (optIndex) {
 	    case PROFILE:
-		if (TclEncodingProfileNameToId(
-			interp, Tcl_GetString(objv[argIndex]), &profile)
-		    != TCL_OK) {
+		if (TclEncodingProfileNameToId(interp,
+					       Tcl_GetString(objv[argIndex]),
+					       &profile) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-#ifdef NOTNEEDED
-		/* TODO - next line probably not needed as the conversion
-		   functions already take care of mapping profile to flags */
-		profile = TclEncodingExternalFlagsToInternal(profile);
-#endif
 		break;
 	    case FAILINDEX:
 		failVarObj = objv[argIndex];

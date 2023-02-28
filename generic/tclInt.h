@@ -2890,7 +2890,7 @@ TclEncodingProfileNameToId(Tcl_Interp *interp,
 			   int *profilePtr);
 MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 						    int profileId);
-MODULE_SCOPE int TclEncodingExternalFlagsToInternal(int flags);
+MODULE_SCOPE int TclEncodingSetProfileFlags(int flags);
 MODULE_SCOPE void TclGetEncodingProfiles(Tcl_Interp *interp);
 
 /*

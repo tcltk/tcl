@@ -1301,7 +1301,6 @@ Tcl_ExternalToUtfDStringEx(
 	srcLen = encodingPtr->lengthProc(src);
     }
 
-    flags = TclEncodingExternalFlagsToInternal(flags);
     flags |= TCL_ENCODING_START | TCL_ENCODING_END;
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
 	flags |= ENCODING_INPUT;
@@ -1596,7 +1595,6 @@ Tcl_UtfToExternalDStringEx(
 	srcLen = strlen(src);
     }
 
-    flags = TclEncodingExternalFlagsToInternal(flags);
     flags |= TCL_ENCODING_START | TCL_ENCODING_END;
     while (1) {
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
@@ -2432,6 +2430,7 @@ BinaryProc(
     if (dstLen < 0) {
 	dstLen = 0;
     }
+    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_CHAR_LIMIT) && srcLen > *dstCharsPtr) {
 	srcLen = *dstCharsPtr;
     }
@@ -2499,6 +2498,7 @@ UtfToUtfProc(
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
+    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_END) == 0) {
 	srcClose -= 6;
     }
@@ -2721,6 +2721,7 @@ Utf32ToUtfProc(
     int result, numChars, charLimit = INT_MAX;
     int ch = 0, bytesLeft = srcLen % 4;
 
+    flags = TclEncodingSetProfileFlags(flags);
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
@@ -2874,6 +2875,7 @@ UtfToUtf32Proc(
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
+    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_END) == 0) {
 	srcClose -= TCL_UTF_MAX;
     }
@@ -2971,6 +2973,7 @@ Utf16ToUtfProc(
     int result, numChars, charLimit = INT_MAX;
     unsigned short ch = 0;
 
+    flags = TclEncodingSetProfileFlags(flags);
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
@@ -3110,6 +3113,7 @@ UtfToUtf16Proc(
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
+    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_END) == 0) {
 	srcClose -= TCL_UTF_MAX;
     }
@@ -3215,6 +3219,7 @@ UtfToUcs2Proc(
     int result, numChars, len;
     Tcl_UniChar ch = 0;
 
+    flags = TclEncodingSetProfileFlags(flags);
     flags |= PTR2INT(clientData);
     srcStart = src;
     srcEnd = src + srcLen;
@@ -3337,6 +3342,7 @@ TableToUtfProc(
     const unsigned short *pageZero;
     TableEncodingData *dataPtr = (TableEncodingData *)clientData;
 
+    flags = TclEncodingSetProfileFlags(flags);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
     }
@@ -3464,6 +3470,7 @@ TableFromUtfProc(
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
+    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_END) == 0) {
 	srcClose -= TCL_UTF_MAX;
     }
@@ -3570,6 +3577,7 @@ Iso88591ToUtfProc(
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
 
+    flags = TclEncodingSetProfileFlags(flags);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
     }
@@ -3654,6 +3662,7 @@ Iso88591FromUtfProc(
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
+    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_END) == 0) {
 	srcClose -= TCL_UTF_MAX;
     }
@@ -3801,6 +3810,7 @@ EscapeToUtfProc(
     int state, result, numChars, charLimit = INT_MAX;
     const char *dstStart, *dstEnd;
 
+    flags = TclEncodingSetProfileFlags(flags);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
     }
@@ -4024,6 +4034,7 @@ EscapeFromUtfProc(
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
+    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_END) == 0) {
 	srcClose -= TCL_UTF_MAX;
     }
@@ -4463,7 +4474,7 @@ TclEncodingProfileIdToName(
 /*
  *------------------------------------------------------------------------
  *
- * TclEncodingExternalFlagsToInternal --
+ * TclEncodingSetProfileFlags --
  *
  *	Maps the flags supported in the encoding C API's to internal flags.
  *
@@ -4482,7 +4493,7 @@ TclEncodingProfileIdToName(
  *
  *------------------------------------------------------------------------
  */
-int TclEncodingExternalFlagsToInternal(int flags)
+int TclEncodingSetProfileFlags(int flags)
 {
     if (flags & TCL_ENCODING_STOPONERROR) {
 	TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
