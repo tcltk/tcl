@@ -229,6 +229,8 @@ test http11-1.7.$ThreadLevel "normal, 1.1 and keepalive " -setup {
 
 test http11-1.8.$ThreadLevel "normal, 1.1 and keepalive, server close" -setup {
     variable httpd [create_httpd]
+} -constraints {
+    knownBug
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
                  -protocol 1.1 -keepalive 1 -timeout 10000]

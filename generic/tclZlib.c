@@ -444,8 +444,8 @@ GenerateHeader(
 	goto error;
     } else if (value != NULL) {
 	Tcl_EncodingState state;
-	valueStr = Tcl_GetStringFromObj(value, &len);
-	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, len,
+	valueStr = Tcl_GetStringFromObj(value, &length);
+	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, length,
 		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_STOPONERROR, &state,
 		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
 		NULL);
@@ -476,8 +476,8 @@ GenerateHeader(
 	goto error;
     } else if (value != NULL) {
 	Tcl_EncodingState state;
-	valueStr = Tcl_GetStringFromObj(value, &len);
-	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, len,
+	valueStr = Tcl_GetStringFromObj(value, &length);
+	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, length,
 		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_STOPONERROR, &state,
 		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len,
 		NULL);
@@ -570,7 +570,7 @@ ExtractHeader(
 	    }
 	}
 
-	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->comment, -1,
+	(void)Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->comment, -1,
 		&tmp);
 	SetValue(dictObj, "comment", Tcl_DStringToObj(&tmp));
     }
@@ -587,7 +587,7 @@ ExtractHeader(
 	    }
 	}
 
-	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->name, -1,
+	(void)Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->name, -1,
 		&tmp);
 	SetValue(dictObj, "filename", Tcl_DStringToObj(&tmp));
     }
