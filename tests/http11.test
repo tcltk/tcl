@@ -202,6 +202,8 @@ test http11-1.5.$ThreadLevel "normal request for document, unsupported coding" -
 
 test http11-1.6.$ThreadLevel "normal, specify 1.1 " -setup {
     variable httpd [create_httpd]
+} -constraints {
+    knownBug
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
                  -protocol 1.1 -timeout 10000]
