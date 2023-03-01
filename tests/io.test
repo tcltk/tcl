@@ -36,6 +36,7 @@ namespace eval ::tcl::test::io {
     }
     source [file join [file dirname [info script]] tcltests.tcl]
 
+testConstraint pointerIs64bit [expr {$::tcl_platform(pointerSize) >= 8}]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testchannel      [llength [info commands testchannel]]
 testConstraint testfevent       [llength [info commands testfevent]]
@@ -194,6 +195,47 @@ test io-1.9 {Tcl_WriteChars: WriteChars} {
     set sizes
 } {19 19 19 19 19}
 
+test io-1.10 {WriteChars: large file (> INT_MAX). Bug 3d01d51bc4} -constraints {
+    pointerIs64bit perf
+} -setup {
+    set tmpfile [file join [temporaryDirectory] io-1.10.tmp]
+} -cleanup {
+    file delete $tmpfile
+} -body {
+    set fd [open $tmpfile w]
+    puts -nonewline $fd [string repeat A 0x80000000]
+    close $fd
+    # TODO - Should really read it back in but large reads are not currently working!
+    file size $tmpfile
+} -result 2147483648
+test io-1.11 {WriteChars: large file (> UINT_MAX). Bug 3d01d51bc4} -constraints {
+    pointerIs64bit perf
+} -setup {
+    set tmpfile [file join [temporaryDirectory] io-1.11.tmp]
+} -cleanup {
+    file delete $tmpfile
+} -body {
+    set fd [open $tmpfile w]
+    puts -nonewline $fd [string repeat A 0x100000000]
+    close $fd
+    # TODO - Should really read it back in but large reads are not currently working!
+    file size $tmpfile
+} -result 4294967296
+test io-1.12 {WriteChars: large file (== UINT_MAX). Bug 90ff9b7f73} -constraints {
+    pointerIs64bit perf
+} -setup {
+    set tmpfile [file join [temporaryDirectory] io-1.12.tmp]
+} -cleanup {
+    file delete $tmpfile
+} -body {
+    set fd [open $tmpfile w]
+    # *Exactly* UINT_MAX - separate bug from the general large file tests
+    puts -nonewline $fd [string repeat A 0xffffffff]
+    close $fd
+    # TODO - Should really read it back in but large reads are not currently working!
+    file size $tmpfile
+} -result 4294967295
+
 test io-2.1 {WriteBytes} {
     # loop until all bytes are written
 
@@ -235,6 +277,47 @@ test io-2.4 {WriteBytes: reset sawLF after each buffer} {
     close $f
     lappend x [contents $path(test1)]
 } [list "abcdefg\nhijklmno" "abcdefg\nhijklmnopqrstuvwxyz"]
+
+test io-2.5 {WriteBytes: large file (> INT_MAX). Bug 3d01d51bc4} -constraints {
+    pointerIs64bit perf
+} -setup {
+    set tmpfile [file join [temporaryDirectory] io-2.5.tmp]
+} -cleanup {
+    file delete $tmpfile
+} -body {
+    set fd [open $tmpfile wb]
+    puts -nonewline $fd [string repeat A 0x80000000]
+    close $fd
+    # TODO - Should really read it back in but large reads are not currently working!
+    file size $tmpfile
+} -result 2147483648
+test io-2.6 {WriteBytes: large file (> UINT_MAX). Bug 3d01d51bc4} -constraints {
+    pointerIs64bit perf
+} -setup {
+    set tmpfile [file join [temporaryDirectory] io-2.6.tmp]
+} -cleanup {
+    file delete $tmpfile
+} -body {
+    set fd [open $tmpfile wb]
+    puts -nonewline $fd [string repeat A 0x100000000]
+    close $fd
+    # TODO - Should really read it back in but large reads are not currently working!
+    file size $tmpfile
+} -result 4294967296
+test io-2.7 {WriteBytes: large file (== UINT_MAX). Bug 90ff9b7f73} -constraints {
+    pointerIs64bit perf
+} -setup {
+    set tmpfile [file join [temporaryDirectory] io-2.7.tmp]
+} -cleanup {
+    file delete $tmpfile
+} -body {
+    set fd [open $tmpfile wb]
+    # *Exactly* UINT_MAX - separate bug from the general large file tests
+    puts -nonewline $fd [string repeat A 0xffffffff]
+    close $fd
+    # TODO - Should really read it back in but large reads are not currently working!
+    file size $tmpfile
+} -result 4294967295
 
 test io-3.1 {WriteChars: compatibility with WriteBytes} {
     # loop until all bytes are written
@@ -9139,48 +9222,6 @@ test io-75.5 {invalid utf-8 encoding read is ignored (-encodingprofile tcl8)} -s
 } -cleanup {
     removeFile io-75.5
 } -result 4181
-
-test io-75.6 {invalid utf-8 encoding read is not ignored (-encodingprofile strict)} -setup {
-    set fn [makeFile {} io-75.6]
-    set f [open $fn w+]
-    fconfigure $f -encoding binary
-    # \x81 is invalid in utf-8
-    puts -nonewline $f A\x81
-    flush $f
-    seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingprofile strict
-} -body {
-    set d [read $f]
-    binary scan $d H* hd
-    lappend hd [catch {read $f} msg]
-    close $f
-    lappend hd $msg
-} -cleanup {
-    removeFile io-75.6
-} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
-
-test io-75.7 {invalid utf-8 encoding eof handling (-encodingprofile strict)} -setup {
-    set fn [makeFile {} io-75.7]
-    set f [open $fn w+]
-    fconfigure $f -encoding binary
-    # \xA1 is invalid in utf-8. -eofchar is not detected, because it comes later.
-    puts -nonewline $f A\xA1\x1A
-    flush $f
-    seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -encodingprofile strict
-} -body {
-    set d [read $f]
-    binary scan $d H* hd
-    lappend hd [eof $f]
-    lappend hd [catch {read $f} msg]
-    lappend hd $msg
-    fconfigure $f -encoding iso8859-1
-    lappend hd [read $f];# We changed encoding, so now we can read the \xA1
-    close $f
-    set hd
-} -cleanup {
-    removeFile io-75.7
-} -match glob -result {41 0 1 {error reading "*": illegal byte sequence} ¡}
 
 test io-75.8 {invalid utf-8 encoding eof handling (-encodingprofile strict)} -setup {
     set fn [makeFile {} io-75.8]

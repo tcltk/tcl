@@ -443,10 +443,21 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "comment", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
-	valueStr = Tcl_GetStringFromObj(value, &length);
-	Tcl_UtfToExternal(NULL, latin1enc, valueStr, length, 0, NULL,
+	Tcl_EncodingState state;
+	valueStr = Tcl_GetStringFromObj(value, &len);
+	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, len,
+		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_PROFILE_STRICT, &state,
 		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
 		NULL);
+	if (result != TCL_OK) {
+	    if (result == TCL_CONVERT_UNKNOWN) {
+		Tcl_AppendResult(interp, "Comment contains characters > 0xFF", NULL);
+	    } else {
+		Tcl_AppendResult(interp, "Comment too large for zip", NULL);
+	    }
+	    result = TCL_ERROR;
+	    goto error;
+	}
 	headerPtr->nativeCommentBuf[len] = '\0';
 	headerPtr->header.comment = (Bytef *) headerPtr->nativeCommentBuf;
 	if (extraSizePtr != NULL) {
@@ -464,9 +475,21 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "filename", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
-	valueStr = Tcl_GetStringFromObj(value, &length);
-	Tcl_UtfToExternal(NULL, latin1enc, valueStr, length, 0, NULL,
-		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len, NULL);
+	Tcl_EncodingState state;
+	valueStr = Tcl_GetStringFromObj(value, &len);
+	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, len,
+		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_PROFILE_STRICT, &state,
+		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len,
+		NULL);
+	if (result != TCL_OK) {
+	    if (result == TCL_CONVERT_UNKNOWN) {
+		Tcl_AppendResult(interp, "Filename contains characters > 0xFF", NULL);
+	    } else {
+		Tcl_AppendResult(interp, "Filename too large for zip", NULL);
+	    }
+	    result = TCL_ERROR;
+	    goto error;
+	}
 	headerPtr->nativeFilenameBuf[len] = '\0';
 	headerPtr->header.name = (Bytef *) headerPtr->nativeFilenameBuf;
 	if (extraSizePtr != NULL) {
@@ -547,8 +570,8 @@ ExtractHeader(
 	    }
 	}
 
-	Tcl_ExternalToUtfDStringEx(NULL, latin1enc, (char *) headerPtr->comment, -1,
-		TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
+	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->comment, -1,
+		&tmp);
 	SetValue(dictObj, "comment", Tcl_DStringToObj(&tmp));
     }
     SetValue(dictObj, "crc", Tcl_NewBooleanObj(headerPtr->hcrc));
@@ -564,8 +587,8 @@ ExtractHeader(
 	    }
 	}
 
-	Tcl_ExternalToUtfDStringEx(NULL, latin1enc, (char *) headerPtr->name, -1,
-		TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
+	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->name, -1,
+		&tmp);
 	SetValue(dictObj, "filename", Tcl_DStringToObj(&tmp));
     }
     if (headerPtr->os != 255) {
