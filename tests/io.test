@@ -7622,7 +7622,7 @@ test io-52.20 {TclCopyChannel & encodings} -setup {
     set out [open $path(kyrillic.txt) w]
 
     # Using "-encoding ascii" means reading the "Á" gives an error
-    fconfigure $in  -encoding ascii -strictencoding 1
+    fconfigure $in  -encoding ascii -encodingprofile strict
     fconfigure $out -encoding koi8-r -translation lf
 
     fcopy $in $out

@@ -390,6 +390,10 @@ test iocmd-8.22 {fconfigure command / -nocomplainencoding 0, no error if -strict
 } -result 0
 
 
+test iocmd-8.21 {fconfigure -encodingprofile badprofile} -body {
+    fconfigure stdin -encodingprofile froboz
+} -returnCodes error -result {bad profile name "froboz": must be replace, strict, or tcl8}
+
 test iocmd-9.1 {eof command} {
     list [catch {eof} msg] $msg $::errorCode
 } {1 {wrong # args: should be "eof channelId"} {TCL WRONGARGS}}
