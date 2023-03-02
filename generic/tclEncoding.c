@@ -188,15 +188,16 @@ static Tcl_Encoding systemEncoding = NULL;
 Tcl_Encoding tclIdentityEncoding = NULL;
 
 /*
- * Names of encoding profiles and corresponding integer values
+ * Names of encoding profiles and corresponding integer values.
+ * Keep alphabetical order for error messages.
  */
 static struct TclEncodingProfiles {
     const char *name;
     int value;
 } encodingProfiles[] = {
-    {"tcl8", TCL_ENCODING_PROFILE_TCL8},
-    {"strict", TCL_ENCODING_PROFILE_STRICT},
     {"replace", TCL_ENCODING_PROFILE_REPLACE},
+    {"strict", TCL_ENCODING_PROFILE_STRICT},
+    {"tcl8", TCL_ENCODING_PROFILE_TCL8},
 };
 #define PROFILE_STRICT(flags_)                                         \
     ((TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
@@ -4395,19 +4396,28 @@ TclEncodingProfileNameToId(
     int *profilePtr)  		/* Output */
 {
     size_t i;
+    size_t numProfiles = sizeof(encodingProfiles) / sizeof(encodingProfiles[0]);
 
-    for (i = 0; i < sizeof(encodingProfiles) / sizeof(encodingProfiles[0]); ++i) {
+    for (i = 0; i < numProfiles; ++i) {
 	if (!strcmp(profileName, encodingProfiles[i].name)) {
 	    *profilePtr = encodingProfiles[i].value;
 	    return TCL_OK;
 	}
     }
     if (interp) {
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_ObjPrintf(
-		"bad profile \"%s\". Must be \"tcl8\" or \"strict\".",
-		profileName));
+	Tcl_Obj *errorObj;
+	/* This code assumes at least two profiles :-) */
+	errorObj = 
+	    Tcl_ObjPrintf("bad profile name \"%s\": must be",
+		profileName);
+	for (i = 0; i < (numProfiles - 1); ++i) {
+	    Tcl_AppendStringsToObj(
+		errorObj, " ", encodingProfiles[i].name, ",", NULL);
+	}
+	Tcl_AppendStringsToObj(
+	    errorObj, " or ", encodingProfiles[numProfiles-1].name, NULL);
+
+	Tcl_SetObjResult(interp, errorObj);
 	Tcl_SetErrorCode(
 	    interp, "TCL", "ENCODING", "PROFILE", profileName, NULL);
     }

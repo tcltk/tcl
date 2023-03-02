@@ -369,6 +369,10 @@ test iocmd-8.20 {fconfigure command / win console channel} -constraints {nonPort
 # TODO: Test parsing of serial channel options (nonPortable, since requires an
 # open channel to work with).
 
+test iocmd-8.21 {fconfigure -encodingprofile badprofile} -body {
+    fconfigure stdin -encodingprofile froboz
+} -returnCodes error -result {bad profile name "froboz": must be replace, strict, or tcl8}
+
 test iocmd-9.1 {eof command} {
     list [catch {eof} msg] $msg $::errorCode
 } {1 {wrong # args: should be "eof channelId"} {TCL WRONGARGS}}
