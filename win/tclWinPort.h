@@ -518,11 +518,11 @@ typedef DWORD_PTR * PDWORD_PTR;
  */
 
 #define TclpSysAlloc(size)		((void*)HeapAlloc(GetProcessHeap(), \
-					    (DWORD)0, (DWORD)size))
+					    0, size))
 #define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
-					    (DWORD)0, (HGLOBAL)ptr))
+					    0, (HGLOBAL)ptr))
 #define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
-					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
+					    0, (LPVOID)ptr, size))
 
 /* This type is not defined in the Windows headers */
 #define socklen_t       int

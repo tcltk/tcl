@@ -106,7 +106,7 @@ Tcl_PutsObjCmd(
     Tcl_Obj *string;		/* String to write. */
     Tcl_Obj *chanObjPtr = NULL;	/* channel object. */
     int newline;		/* Add a newline at end? */
-    int result;			/* Result of puts operation. */
+    size_t result;		/* Result of puts operation. */
     int mode;			/* Mode in which channel is opened. */
 
     switch (objc) {
@@ -163,12 +163,12 @@ Tcl_PutsObjCmd(
 
     TclChannelPreserve(chan);
     result = Tcl_WriteObj(chan, string);
-    if (result == -1) {
+    if (result == TCL_INDEX_NONE) {
 	goto error;
     }
     if (newline != 0) {
 	result = Tcl_WriteChars(chan, "\n", 1);
-	if (result == -1) {
+	if (result == TCL_INDEX_NONE) {
 	    goto error;
 	}
     }

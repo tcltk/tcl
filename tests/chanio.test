@@ -50,6 +50,8 @@ namespace eval ::tcl::test::io {
     testConstraint notWinCI       [expr {
 	$::tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
     testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
+    # File permissions broken on wsl without some "exotic" wsl configuration
+    testConstraint notWsl [expr {[llength [array names ::env *WSL*]] == 0}]
     testConstraint specialfiles  [expr {[file exists /dev/zero] || [file exists NUL]}]
 
     # You need a *very* special environment to do some tests.  In particular,
@@ -5348,7 +5350,7 @@ test chan-io-40.1 {POSIX open access modes: RDWR} -setup {
 } -result {zzy abzzy}
 test chan-io-40.2 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
-} -constraints {unix} -body {
+} -constraints {unix notWsl} -body {
     set f [open $path(test3) {WRONLY CREAT} 0o600]
     file stat $path(test3) stats
     set x [format 0o%03o [expr {$stats(mode) & 0o777}]]
@@ -5361,7 +5363,7 @@ test chan-io-40.2 {POSIX open access modes: CREAT} -setup {
 } -result {0o600 {line 1}}
 test chan-io-40.3 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
-} -constraints {unix umask} -body {
+} -constraints {unix umask notWsl} -body {
     # This test only works if your umask is 2, like ouster's.
     chan close [open $path(test3) {WRONLY CREAT}]
     file stat $path(test3) stats
@@ -6731,8 +6733,8 @@ test chan-io-52.5 {TclCopyChannel, all} -constraints {fcopy} -setup {
 } -body {
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    chan configure $f1 -translation lf -blocking 0
-    chan configure $f2 -translation lf -blocking 0
+    chan configure $f1 -translation lf -encoding iso8859-1 -blocking 0
+    chan configure $f2 -translation lf -encoding iso8859-1 -blocking 0
     chan copy $f1 $f2 -size -1 ;# -1 means 'copy all', same as if no -size specified.
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     chan close $f1
@@ -6747,8 +6749,8 @@ test chan-io-52.5a {TclCopyChannel, all, other negative value} -setup {
 } -constraints {fcopy} -body {
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    chan configure $f1 -translation lf -blocking 0
-    chan configure $f2 -translation lf -blocking 0
+    chan configure $f1 -translation lf -encoding iso8859-1 -blocking 0
+    chan configure $f2 -translation lf -encoding iso8859-1 -blocking 0
     chan copy $f1 $f2 -size -2 ;# < 0 behaves like -1, copy all
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     chan close $f1
@@ -6763,8 +6765,8 @@ test chan-io-52.5b {TclCopyChannel, all, wrap to negative value} -setup {
 } -constraints {fcopy} -body {
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    chan configure $f1 -translation lf -blocking 0
-    chan configure $f2 -translation lf -blocking 0
+    chan configure $f1 -translation lf -encoding iso8859-1 -blocking 0
+    chan configure $f2 -translation lf -encoding iso8859-1 -blocking 0
     chan copy $f1 $f2 -size 3221176172 ;# Wrapped to < 0, behaves like -1, copy all
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     chan close $f1
@@ -6797,8 +6799,8 @@ test chan-io-52.7 {TclCopyChannel} -constraints {fcopy} -setup {
 } -body {
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
-    chan configure $f1 -translation lf -blocking 0
-    chan configure $f2 -translation lf -blocking 0
+    chan configure $f1 -translation lf -encoding iso8859-1 -blocking 0
+    chan configure $f2 -translation lf -encoding iso8859-1 -blocking 0
     chan copy $f1 $f2
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     if {[file size $thisScript] == [file size $path(test1)]} {
