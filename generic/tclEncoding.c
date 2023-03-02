@@ -549,11 +549,16 @@ FillEncodingFileMap(void)
  *---------------------------------------------------------------------------
  */
 
-/* Since TCL_ENCODING_MODIFIED is only used for utf-8/cesu-8 and
- * TCL_ENCODING_LE is only used for  utf-16/utf-32/ucs-2. re-use the same value */
-#define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
+/* 
+ * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS 
+ * DEFINED IN tcl.h (TCL_ENCODING_* et al). Be cognizant of this
+ * when adding bits. TODO - should really be defined in a single file.
+ * 
+ * To prevent conflicting bits, only define bits within 0xff00 mask here.
+ */
+#define TCL_ENCODING_LE	0x100   /* Used to distinguish LE/BE variants */
 #define ENCODING_UTF	0x200	/* For UTF-8 encoding, allow 4-byte output sequences */
-#define ENCODING_INPUT	0x400 /* For UTF-8/CESU-8 encoding, means external -> internal */
+#define ENCODING_INPUT	0x400   /* For UTF-8/CESU-8 encoding, means external -> internal */
 
 void
 TclInitEncodingSubsystem(void)
@@ -566,12 +571,16 @@ TclInitEncodingSubsystem(void)
         char c;
         short s;
     } isLe;
+    int leFlags;
 
     if (encodingsInitialized) {
 	return;
     }
 
-    isLe.s = TCL_ENCODING_LE;
+    /* Note: This DEPENDS on TCL_ENCODING_LE being defined in least sig byte */
+    isLe.s = 1;
+    leFlags = isLe.c ? TCL_ENCODING_LE : 0;
+
     Tcl_MutexLock(&encodingMutex);
     Tcl_InitHashTable(&encodingTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&encodingMutex);
@@ -612,7 +621,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(0);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2";
-    type.clientData	= INT2PTR(isLe.c);
+    type.clientData	= INT2PTR(leFlags);
     Tcl_CreateEncoding(&type);
 
     type.toUtfProc	= Utf32ToUtfProc;
@@ -626,7 +635,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(0);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-32";
-    type.clientData	= INT2PTR(isLe.c);
+    type.clientData	= INT2PTR(leFlags);
     Tcl_CreateEncoding(&type);
 
     type.toUtfProc	= Utf16ToUtfProc;
@@ -640,7 +649,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(ENCODING_UTF);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16";
-    type.clientData	= INT2PTR(isLe.c|ENCODING_UTF);
+    type.clientData	= INT2PTR(leFlags|ENCODING_UTF);
     Tcl_CreateEncoding(&type);
 
 #ifndef TCL_NO_DEPRECATED
@@ -1160,8 +1169,6 @@ Tcl_ExternalToUtfDString(
  *	- *At most one* of TCL_ENCODING_PROFILE{DEFAULT,TCL8,STRICT}
  *	- TCL_ENCODING_STOPONERROR: Backward compatibility. Sets the profile
  *	  to TCL_ENCODING_PROFILE_STRICT overriding any specified profile flags
- *	- TCL_ENCODING_MODIFIED: enable Tcl internal conversion mapping \xC0\x80
- *        to 0x00. Only valid for "utf-8" and "cesu-8".
  *      Any other flag bits will cause an error to be returned (for future
  *      compatibility)
  *
@@ -1484,8 +1491,6 @@ Tcl_UtfToExternalDString(
  *	- *At most one* of TCL_ENCODING_PROFILE{DEFAULT,TCL8,STRICT}
  *	- TCL_ENCODING_STOPONERROR: Backward compatibility. Sets the profile
  *	  to TCL_ENCODING_PROFILE_STRICT overriding any specified profile flags
- *	- TCL_ENCODING_MODIFIED: convert NULL bytes to \xC0\x80 instead
- *        of 0x00. Only valid for "utf-8" and "cesu-8".
  *
  * Results:
  *      The return value is one of
@@ -2462,7 +2467,7 @@ BinaryProc(
 
 static int
 UtfToUtfProc(
-    void *clientData,	/* additional flags, e.g. TCL_ENCODING_MODIFIED */
+    void *clientData,		/* additional flags */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* TCL_ENCODING_* conversion control flags. */
@@ -2531,7 +2536,7 @@ UtfToUtfProc(
 	    *dst++ = *src++;
 	}
 	else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd) &&
-		 (UCHAR(src[1]) == 0x80) && !(flags & TCL_ENCODING_MODIFIED) &&
+		 (UCHAR(src[1]) == 0x80) &&
 		 (!(flags & ENCODING_INPUT) || PROFILE_STRICT(profile) ||
 		  PROFILE_REPLACE(profile))) {
 	    /* Special sequence \xC0\x80 */
