@@ -4154,7 +4154,7 @@ TestregexpObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int i, indices, stringLength, match, about;
-    size_t ii;
+    Tcl_Size ii;
     int hasxflags, cflags, eflags;
     Tcl_RegExp regExpr;
     const char *string;
@@ -4266,7 +4266,7 @@ TestregexpObjCmd(
 	if (objc > 2 && (cflags&REG_EXPECT) && indices) {
 	    const char *varName;
 	    const char *value;
-	    size_t start, end;
+	    Tcl_Size start, end;
 	    char resinfo[TCL_INTEGER_SPACE * 2];
 
 	    varName = Tcl_GetString(objv[2]);
@@ -4306,11 +4306,11 @@ TestregexpObjCmd(
 
     Tcl_RegExpGetInfo(regExpr, &info);
     for (i = 0; i < objc; i++) {
-	size_t start, end;
+	Tcl_Size start, end;
 	Tcl_Obj *newPtr, *varPtr, *valuePtr;
 
 	varPtr = objv[i];
-	ii = ((cflags&REG_EXPECT) && i == objc-1) ? TCL_INDEX_NONE : (size_t)i;
+	ii = ((cflags&REG_EXPECT) && i == objc-1) ? TCL_INDEX_NONE : (Tcl_Size)i;
 	if (indices) {
 	    Tcl_Obj *objs[2];
 
@@ -6525,10 +6525,10 @@ static int
 TestWrongNumArgsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    size_t i, length;
+    Tcl_Size i, length;
     const char *msg;
 
     if (objc + 1 < 4) {
@@ -7236,7 +7236,7 @@ TestUtfPrevCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    size_t numBytes, offset;
+    Tcl_Size numBytes, offset;
     char *bytes;
     const char *result;
 
@@ -7277,7 +7277,7 @@ TestNumUtfCharsCmd(
     Tcl_Obj *const objv[])
 {
     if (objc > 1) {
-	size_t numBytes, len, limit = TCL_INDEX_NONE;
+	Tcl_Size numBytes, len, limit = TCL_INDEX_NONE;
 	const char *bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
 	if (objc > 2) {
@@ -7345,7 +7345,7 @@ TestGetIntForIndexCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    size_t result;
+    Tcl_Size result;
     Tcl_WideInt endvalue;
 
     if (objc != 3) {
@@ -7464,7 +7464,7 @@ TestHashSystemHashCmd(
 	Tcl_SetHashValue(hPtr, INT2PTR(i+42));
     }
 
-    if (hash.numEntries != (size_t)limit) {
+    if (hash.numEntries != (Tcl_Size)limit) {
 	Tcl_AppendResult(interp, "unexpected maximal size", NULL);
 	Tcl_DeleteHashTable(&hash);
 	return TCL_ERROR;
@@ -8224,7 +8224,7 @@ static int
 InterpCompiledVarResolver(
     TCL_UNUSED(Tcl_Interp *),
     const char *name,
-    TCL_UNUSED(size_t) /*length*/,
+    TCL_UNUSED(Tcl_Size) /*length*/,
     TCL_UNUSED(Tcl_Namespace *),
     Tcl_ResolvedVarInfo **rPtr)
 {
