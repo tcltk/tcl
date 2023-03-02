@@ -235,6 +235,8 @@ typedef struct ChannelState {
 					 * flushed after every newline. */
 #define CHANNEL_UNBUFFERED	(1<<5)	/* Output to the channel must always
 					 * be flushed immediately. */
+#define CHANNEL_FCOPY	(1<<6)	/* Channel is currently doing an fcopy
+					 * mode. */
 #define BG_FLUSH_SCHEDULED	(1<<7)	/* A background flush of the queued
 					 * output buffers has been
 					 * scheduled. */
