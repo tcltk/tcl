@@ -1288,9 +1288,11 @@ Tcl_ExternalToUtfDStringEx(
 
     if (flags & (TCL_ENCODING_START|TCL_ENCODING_END)) {
 	/* TODO - what other flags are illegal? - See TIP 656 */
- 	Tcl_SetResult(interp,
-	    "Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
-	    TCL_STATIC);
+	Tcl_SetObjResult(
+	    interp,
+	    Tcl_NewStringObj(
+		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
+		-1));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
 	return TCL_ERROR;
     }
@@ -1580,9 +1582,11 @@ Tcl_UtfToExternalDStringEx(
 
     if (flags & (TCL_ENCODING_START|TCL_ENCODING_END)) {
 	/* TODO - what other flags are illegal? - See TIP 656 */
- 	Tcl_SetResult(interp,
-	    "Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
-	    TCL_STATIC);
+	Tcl_SetObjResult(
+	    interp,
+	    Tcl_NewStringObj(
+		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
+		-1));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
 	return TCL_ERROR;
     }
@@ -1625,7 +1629,7 @@ Tcl_UtfToExternalDStringEx(
             else {
                 /* Caller wants error message on failure */
                 if (result != TCL_OK && interp != NULL) {
-                    Tcl_Size pos = Tcl_NumUtfChars(srcStart, nBytesProcessed);
+                    int pos = Tcl_NumUtfChars(srcStart, nBytesProcessed);
                     int ucs4;
                     char buf[TCL_INTEGER_SPACE];
                     TclUtfToUCS4(&srcStart[nBytesProcessed], &ucs4);
@@ -1633,8 +1637,7 @@ Tcl_UtfToExternalDStringEx(
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf(
-			    "unexpected character at index %" TCL_Z_MODIFIER
-			    "u: 'U+%06X'",
+			    "unexpected character at index %d: 'U+%06X'",
 			    pos,
 			    ucs4));
 		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",

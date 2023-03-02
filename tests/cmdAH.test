@@ -32,6 +32,8 @@ testConstraint linkDirectory [expr {
      && [lindex [file system [temporaryDirectory]] 1] eq "NTFS")
 }]
 testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
+# File permissions broken on wsl without some "exotic" wsl configuration
+testConstraint notWsl [expr {[llength [array names ::env *WSL*]] == 0}]
 
 global env
 set cmdAHwd [pwd]
@@ -1294,7 +1296,7 @@ test cmdAH-16.2 {Tcl_FileObjCmd: readable} {
     -result 	 1
 }
 test cmdAH-16.3 {Tcl_FileObjCmd: readable} {
-    -constraints {unix notRoot testchmod}
+    -constraints {unix notRoot testchmod notWsl}
     -setup  	 {testchmod 0o333 $gorpfile}
     -body   	 {file readable $gorpfile}
     -result 	 0
@@ -1327,7 +1329,7 @@ set gorpfile [makeFile abcde gorp.file]
 test cmdAH-18.1 {Tcl_FileObjCmd: executable} -returnCodes error -body {
     file executable a b
 } -result {wrong # args: should be "file executable name"}
-test cmdAH-18.2 {Tcl_FileObjCmd: executable} {notRoot} {
+test cmdAH-18.2 {Tcl_FileObjCmd: executable} {notRoot notWsl} {
     file executable $gorpfile
 } 0
 test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix testchmod} {
@@ -1875,7 +1877,7 @@ test cmdAH-28.4 {Tcl_FileObjCmd: stat} -setup {
     file stat $gorpfile stat
     list $stat(nlink) $stat(size) $stat(type)
 } -result {1 12 file}
-test cmdAH-28.5 {Tcl_FileObjCmd: stat} -constraints {unix} -setup {
+test cmdAH-28.5 {Tcl_FileObjCmd: stat} -constraints {unix notWsl} -setup {
     unset -nocomplain stat
 } -body {
     file stat $gorpfile stat
