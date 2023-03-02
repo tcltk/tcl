@@ -50,6 +50,8 @@ namespace eval ::tcl::test::io {
     testConstraint notWinCI       [expr {
 	$::tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
     testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
+    # File permissions broken on wsl without some "exotic" wsl configuration
+    testConstraint notWsl [expr {[llength [array names ::env *WSL*]] == 0}]
     testConstraint specialfiles  [expr {[file exists /dev/zero] || [file exists NUL]}]
 
     # You need a *very* special environment to do some tests.  In particular,
@@ -5348,7 +5350,7 @@ test chan-io-40.1 {POSIX open access modes: RDWR} -setup {
 } -result {zzy abzzy}
 test chan-io-40.2 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
-} -constraints {unix} -body {
+} -constraints {unix notWsl} -body {
     set f [open $path(test3) {WRONLY CREAT} 0o600]
     file stat $path(test3) stats
     set x [format 0o%03o [expr {$stats(mode) & 0o777}]]
@@ -5361,7 +5363,7 @@ test chan-io-40.2 {POSIX open access modes: CREAT} -setup {
 } -result {0o600 {line 1}}
 test chan-io-40.3 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
-} -constraints {unix umask} -body {
+} -constraints {unix umask notWsl} -body {
     # This test only works if your umask is 2, like ouster's.
     chan close [open $path(test3) {WRONLY CREAT}]
     file stat $path(test3) stats

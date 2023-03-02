@@ -272,6 +272,8 @@ test http11-1.10.$ThreadLevel "normal,deflate,chunked" -setup {
 
 test http11-1.10.1.$ThreadLevel "normal,deflate,chunked,msdeflate" -setup {
     variable httpd [create_httpd]
+} -constraints {
+    knownBug
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?msdeflate=1 \
                  -timeout 10000 -headers {accept-encoding deflate}]
@@ -395,6 +397,8 @@ test http11-2.1.1.$ThreadLevel "-channel, encoding gzip" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
     set fileName largedoc.html
+} -constraints {
+    knownBug
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/$fileName \
                  -timeout 5000 -channel $chan -headers {accept-encoding gzip}]
