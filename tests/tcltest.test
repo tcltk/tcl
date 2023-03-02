@@ -22,6 +22,9 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+# File permissions broken on wsl without some "exotic" wsl configuration
+testConstraint notWsl [expr {[llength [array names ::env *WSL*]] == 0}]
+
 namespace eval ::tcltest::test {
 
 namespace import ::tcltest::*
@@ -306,7 +309,7 @@ test tcltest-5.3 {testConstraint - constraint empty (tcltest::safeFetch)}  {
 #}
 
 test tcltest-5.5 {InitConstraints: list of built-in constraints} \
-	-constraints {!singleTestInterp} \
+	-constraints {!singleTestInterp notWsl} \
 	-setup {tcltest::InitConstraints} \
 	-body { lsort [array names ::tcltest::testConstraints] } \
 	-result [lsort {
@@ -556,7 +559,7 @@ switch -- $::tcl_platform(platform) {
     }
 }
 test tcltest-8.3 {tcltest a.tcl -tmpdir notReadableDir} {
-    -constraints {unix notRoot}
+    -constraints {unix notRoot notWsl}
     -body {
 	child msg $a -tmpdir $notReadableDir
 	return $msg
@@ -572,7 +575,7 @@ testConstraint notFAT [expr {
 }]
 # FAT/NTFS permissions are fairly hopeless; ignore this test if that FS is used
 test tcltest-8.4 {tcltest a.tcl -tmpdir notWriteableDir} {
-    -constraints {unixOrWin notRoot notFAT}
+    -constraints {unixOrWin notRoot notFAT notWsl}
     -body {
 	child msg $a -tmpdir $notWriteableDir
 	return $msg
@@ -645,7 +648,7 @@ test tcltest-8.11 {tcltest a.tcl -testdir thisdirectoryisafile} {
     -result {*not a directory*}
 }
 test tcltest-8.12 {tcltest a.tcl -testdir notReadableDir} {
-    -constraints {unix notRoot}
+    -constraints {unix notRoot notWsl}
     -body {
 	child msg $a -testdir $notReadableDir
 	return $msg
