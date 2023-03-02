@@ -18,6 +18,8 @@ if {"::tcltest" ni [namespace children]} {
 catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testchmod [llength [info commands testchmod]]
+# File permissions broken on wsl without some "exotic" wsl configuration
+testConstraint notWsl [expr {[llength [array names ::env *WSL*]] == 0}]
 
 # These tests really need to be run from a writable directory, which
 # it is assumed [temporaryDirectory] is.
@@ -94,7 +96,7 @@ if {[testConstraint unix] && [testConstraint notRoot]} {
 
 test unixFCmd-1.1 {TclpRenameFile: EACCES} -setup {
     cleanup
-} -constraints {unix notRoot} -body {
+} -constraints {unix notRoot notWsl} -body {
     file mkdir td1/td2/td3
     file attributes td1/td2 -permissions 0
     file rename td1/td2/td3 td2
@@ -135,7 +137,7 @@ test unixFCmd-1.6 {TclpRenameFile: ENOTDIR} {emptyTest unix notRoot} {
 } {}
 test unixFCmd-1.7 {TclpRenameFile: EXDEV} -setup {
     cleanup
-} -constraints {unix notRoot} -body {
+} -constraints {unix notRoot notWsl} -body {
     file mkdir foo/bar
     file attr foo -perm 0o40555
     file rename foo/bar /tmp
@@ -219,7 +221,7 @@ test unixFCmd-2.4 {TclpCopyFile: src is fifo} -setup {
 } -result {fifo fifo}
 test unixFCmd-2.5 {TclpCopyFile: copy attributes} -setup {
     cleanup
-} -constraints {unix notRoot} -body {
+} -constraints {unix notRoot notWsl} -body {
     close [open tf1 a]
     file attributes tf1 -permissions 0o472
     file copy tf1 tf2
@@ -334,7 +336,7 @@ test unixFCmd-16.3 {SetOwnerAttribute - invalid owner} -setup {
 
 test unixFCmd-17.1 {SetPermissionsAttribute} -setup {
     catch {file delete -force -- foo.test}
-} -constraints {unix notRoot} -body {
+} -constraints {unix notRoot notWsl} -body {
     close [open foo.test w]
     list [file attributes foo.test -permissions 0] \
 	[file attributes foo.test -permissions]
@@ -366,7 +368,7 @@ test unixFCmd-17.4 {SetPermissionsAttribute} -setup {
 close [open foo.test w]
 set ::i 4
 proc permcheck {testnum permList expected} {
-    test $testnum {SetPermissionsAttribute} {unix notRoot} {
+    test $testnum {SetPermissionsAttribute} {unix notRoot notWsl} {
       set result {}
       foreach permstr $permList {
 	file attributes foo.test -permissions $permstr
