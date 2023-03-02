@@ -2123,12 +2123,12 @@ typedef struct Tcl_EncodingType {
  *				content.  Otherwise, the number of chars
  *				produced is controlled only by other limiting
  *				factors.
- * TCL_ENCODING_MODIFIED -	Convert NULL bytes to \xC0\x80 in stead of
- *				0x00. Only valid for "utf-8" and "cesu-8".
- *				This flag is implicit for external -> internal conversions,
- *				optional for internal -> external conversions.
  * TCL_ENCODING_PROFILE_* -	Mutually exclusive encoding profile ids. Note
  *				these are bit masks.
+ *
+ * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS 
+ * DEFINED IN tclEncoding.c (ENCODING_INPUT et al). Be cognizant of this
+ * when adding bits.
  */
 
 #define TCL_ENCODING_START		0x01
@@ -2136,8 +2136,9 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_STOPONERROR	0x04
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
-#define TCL_ENCODING_MODIFIED		0x20
-/* Reserve top byte for profile values (disjoint) */
+/* Internal use bits, do not define bits in this space. See above comment */
+#define TCL_ENCODING_INTERNAL_USE_MASK  0xFF00
+/* Reserve top byte for profile values (disjoint, not a mask) */
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
 #define TCL_ENCODING_PROFILE_STRICT   0x02000000
 #define TCL_ENCODING_PROFILE_REPLACE  0x03000000
