@@ -2377,9 +2377,9 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define attemptckalloc Tcl_AttemptAlloc
 #   ifdef _MSC_VER
 	/* Silence invalid C4090 warnings */
-#	define ckfree(a) Tcl_Free((char *)(a))
-#	define ckrealloc(a,b) Tcl_Realloc((char *)(a),(b))
-#	define attemptckrealloc(a,b) Tcl_AttemptRealloc((char *)(a),(b))
+#	define ckfree(a) Tcl_Free((void *)(a))
+#	define ckrealloc(a,b) Tcl_Realloc((void *)(a),(b))
+#	define attemptckrealloc(a,b) Tcl_AttemptRealloc((void *)(a),(b))
 #   else
 #	define ckfree Tcl_Free
 #	define ckrealloc Tcl_Realloc
