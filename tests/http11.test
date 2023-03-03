@@ -110,7 +110,7 @@ http::config -threadlevel $ThreadLevel
 
 test http11-1.0.$ThreadLevel "normal request for document " -setup {
     variable httpd [create_httpd]
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html -timeout 10000]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] [meta $tok connection]
@@ -121,7 +121,7 @@ test http11-1.0.$ThreadLevel "normal request for document " -setup {
 
 test http11-1.1.$ThreadLevel "normal,gzip,non-chunked" -setup {
     variable httpd [create_httpd]
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
                  -timeout 10000 -headers {accept-encoding gzip}]
     http::wait $tok
@@ -135,7 +135,7 @@ test http11-1.1.$ThreadLevel "normal,gzip,non-chunked" -setup {
 
 test http11-1.2.$ThreadLevel "normal,deflated,non-chunked" -setup {
     variable httpd [create_httpd]
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
                  -timeout 10000 -headers {accept-encoding deflate}]
     http::wait $tok
@@ -148,7 +148,7 @@ test http11-1.2.$ThreadLevel "normal,deflated,non-chunked" -setup {
 
 test http11-1.2.1.$ThreadLevel "normal,deflated,non-chunked,msdeflate" -setup {
     variable httpd [create_httpd]
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1&msdeflate=1 \
                  -timeout 10000 -headers {accept-encoding deflate}]
     http::wait $tok
@@ -202,9 +202,7 @@ test http11-1.5.$ThreadLevel "normal request for document, unsupported coding" -
 
 test http11-1.6.$ThreadLevel "normal, specify 1.1 " -setup {
     variable httpd [create_httpd]
-} -constraints {
-    knownBug
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
                  -protocol 1.1 -timeout 10000]
     http::wait $tok
@@ -231,9 +229,7 @@ test http11-1.7.$ThreadLevel "normal, 1.1 and keepalive " -setup {
 
 test http11-1.8.$ThreadLevel "normal, 1.1 and keepalive, server close" -setup {
     variable httpd [create_httpd]
-} -constraints {
-    knownBug
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
                  -protocol 1.1 -keepalive 1 -timeout 10000]
     http::wait $tok
@@ -272,9 +268,7 @@ test http11-1.10.$ThreadLevel "normal,deflate,chunked" -setup {
 
 test http11-1.10.1.$ThreadLevel "normal,deflate,chunked,msdeflate" -setup {
     variable httpd [create_httpd]
-} -constraints {
-    knownBug
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?msdeflate=1 \
                  -timeout 10000 -headers {accept-encoding deflate}]
     http::wait $tok
@@ -397,9 +391,7 @@ test http11-2.1.1.$ThreadLevel "-channel, encoding gzip" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
     set fileName largedoc.html
-} -constraints {
-    knownBug
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/$fileName \
                  -timeout 5000 -channel $chan -headers {accept-encoding gzip}]
     http::wait $tok
