@@ -7016,7 +7016,7 @@ proc FcopyTestDone {bytes {error {}}} {
 	set fcopyTestDone 0
     }
 }
-test chan-io-53.5 {CopyData: error during chan copy} {socket fcopy} {
+test chan-io-53.5 {CopyData: error during chan copy} {socket fcopy strictBug} {
     variable fcopyTestDone
     set listen [socket -server [namespace code FcopyTestAccept] -myaddr 127.0.0.1 0]
     set in [open $thisScript]	;# 126 K
