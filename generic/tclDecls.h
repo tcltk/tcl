@@ -3969,7 +3969,7 @@ extern const TclStubs *tclStubsPtr;
 /* Handle Win64 tk.dll being loaded in Cygwin64. */
 #	define Tcl_GetTime(t) \
 		do { \
-		    union { \
+		    struct { \
 			Tcl_Time now; \
 			long long reserved; \
 		    } _t; \

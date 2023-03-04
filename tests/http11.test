@@ -411,7 +411,7 @@ test http11-2.1.1.$ThreadLevel "-channel, encoding gzip" -setup {
 test http11-2.2.$ThreadLevel "-channel, encoding deflate" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
                  -timeout 5000 -channel $chan -headers {accept-encoding deflate}]
     http::wait $tok
