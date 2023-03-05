@@ -751,7 +751,7 @@ GetExtension(
     if (extension == NULL) {
 	TclNewObj(ret);
     } else {
-	ret = Tcl_NewStringObj(extension, -1);
+	ret = Tcl_NewStringObj(extension, TCL_INDEX_NONE);
     }
     Tcl_IncrRefCount(ret);
     return ret;

@@ -395,7 +395,7 @@ TclGetBytesFromObj(
 
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"byte sequence length exceeds INT_MAX", -1));
+			"byte sequence length exceeds INT_MAX", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "API", "OUTDATED", NULL);
 	    }
 	    return NULL;
@@ -1003,7 +1003,7 @@ BinaryFormatCmd(
 	case 'x':
 	    if (count == BINARY_ALL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"cannot use \"*\" in format string with \"x\"", -1));
+			"cannot use \"*\" in format string with \"x\"", TCL_INDEX_NONE));
 		return TCL_ERROR;
 	    } else if (count == BINARY_NOCOUNT) {
 		count = 1;
@@ -1343,7 +1343,7 @@ BinaryFormatCmd(
     }
 
  error:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, TCL_INDEX_NONE));
     return TCL_ERROR;
 }
 
@@ -1724,7 +1724,7 @@ BinaryScanCmd(
     }
 
  error:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, TCL_INDEX_NONE));
     return TCL_ERROR;
 }
 
@@ -2654,7 +2654,7 @@ BinaryEncode64(
 	    }
 	    if (maxlen < 0) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"line length out of range", -1));
+			"line length out of range", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
 			"LINE_LENGTH", NULL);
 		return TCL_ERROR;
@@ -2782,7 +2782,7 @@ BinaryEncodeUu(
 	    }
 	    if (lineLength < 5 || lineLength > 85) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"line length out of range", -1));
+			"line length out of range", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
 			"LINE_LENGTH", NULL);
 		return TCL_ERROR;

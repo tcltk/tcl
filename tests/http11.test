@@ -349,7 +349,7 @@ proc progressPause {var token total current} {
 test http11-2.0.$ThreadLevel "-channel" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
                  -timeout 5000 -channel $chan]
     http::wait $tok
@@ -367,7 +367,7 @@ test http11-2.0.$ThreadLevel "-channel" -setup {
 test http11-2.1.$ThreadLevel "-channel, encoding gzip" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
                  -timeout 5000 -channel $chan -headers {accept-encoding gzip}]
     http::wait $tok
