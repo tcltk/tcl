@@ -1756,7 +1756,7 @@ Tcl_FSEvalFileEx(
      * Otherwise, replace them. [Bug 3466099]
      */
 
-    if (Tcl_ReadChars(chan, objPtr, -1,
+    if (Tcl_ReadChars(chan, objPtr, TCL_INDEX_NONE,
 	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1893,7 +1893,7 @@ TclNREvalFile(
      * Otherwise, replace them. [Bug 3466099]
      */
 
-    if (Tcl_ReadChars(chan, objPtr, -1,
+    if (Tcl_ReadChars(chan, objPtr, TCL_INDEX_NONE,
 	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2459,7 +2459,7 @@ TclFSFileAttrIndex(
 	 * It's a constant attribute table, so use T_GIFO.
 	 */
 
-	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, -1);
+	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, TCL_INDEX_NONE);
 	int result;
 
 	result = Tcl_GetIndexFromObj(NULL, tmpObj, attrTable, NULL, TCL_EXACT,
@@ -3292,7 +3292,7 @@ Tcl_LoadFile(
 	Tcl_DecrRefCount(copyToPtr);
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "couldn't load from current filesystem", -1));
+		    "couldn't load from current filesystem", TCL_INDEX_NONE));
 	}
 	return TCL_ERROR;
     }
@@ -4612,7 +4612,7 @@ Tcl_FSFileSystemInfo(
 
     resPtr = Tcl_NewListObj(0, NULL);
     Tcl_ListObjAppendElement(NULL, resPtr,
-	    Tcl_NewStringObj(fsPtr->typeName, -1));
+	    Tcl_NewStringObj(fsPtr->typeName, TCL_INDEX_NONE));
 
     if (fsPtr->filesystemPathTypeProc != NULL) {
 	Tcl_Obj *typePtr = fsPtr->filesystemPathTypeProc(pathPtr);
