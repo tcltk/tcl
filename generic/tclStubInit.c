@@ -343,7 +343,7 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
 	    *ptr = (int)longValue;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "integer value too large to represent", -1));
+		    "integer value too large to represent", TCL_INDEX_NONE));
 	    result = TCL_ERROR;
 	}
     }
@@ -359,7 +359,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
 	    *ptr = (int)longValue;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "integer value too large to represent", -1));
+		    "integer value too large to represent", TCL_INDEX_NONE));
 	    result = TCL_ERROR;
 	}
     }

@@ -2300,7 +2300,7 @@ PrintDictUpdateInfo(
 
     for (i=0 ; i<duiPtr->length ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    Tcl_AppendToObj(appendObj, ", ", TCL_INDEX_NONE);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u", duiPtr->varIndices[i]);
     }
@@ -2322,7 +2322,7 @@ DisassembleDictUpdateInfo(
 	Tcl_ListObjAppendElement(NULL, variables,
 		Tcl_NewWideIntObj(duiPtr->varIndices[i]));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("variables", -1),
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("variables", TCL_INDEX_NONE),
 	    variables);
 }
 
@@ -2982,11 +2982,11 @@ PrintForeachInfo(
     ForeachVarList *varsPtr;
     size_t i, j;
 
-    Tcl_AppendToObj(appendObj, "data=[", -1);
+    Tcl_AppendToObj(appendObj, "data=[", TCL_INDEX_NONE);
 
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    Tcl_AppendToObj(appendObj, ", ", TCL_INDEX_NONE);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
 		(infoPtr->firstValueTemp + i));
@@ -2995,19 +2995,19 @@ PrintForeachInfo(
 	    infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ",", -1);
+	    Tcl_AppendToObj(appendObj, ",", TCL_INDEX_NONE);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\n\t\t it%%v%" TCL_Z_MODIFIER "u\t[",
 		(infoPtr->firstValueTemp + i));
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
-		Tcl_AppendToObj(appendObj, ", ", -1);
+		Tcl_AppendToObj(appendObj, ", ", TCL_INDEX_NONE);
 	    }
 	    Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
 		    varsPtr->varIndexes[j]);
 	}
-	Tcl_AppendToObj(appendObj, "]", -1);
+	Tcl_AppendToObj(appendObj, "]", TCL_INDEX_NONE);
     }
 }
 
@@ -3026,18 +3026,18 @@ PrintNewForeachInfo(
 	    infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ",", -1);
+	    Tcl_AppendToObj(appendObj, ",", TCL_INDEX_NONE);
 	}
-	Tcl_AppendToObj(appendObj, "[", -1);
+	Tcl_AppendToObj(appendObj, "[", TCL_INDEX_NONE);
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
-		Tcl_AppendToObj(appendObj, ",", -1);
+		Tcl_AppendToObj(appendObj, ",", TCL_INDEX_NONE);
 	    }
 	    Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
 		    varsPtr->varIndexes[j]);
 	}
-	Tcl_AppendToObj(appendObj, "]", -1);
+	Tcl_AppendToObj(appendObj, "]", TCL_INDEX_NONE);
     }
 }
 
@@ -3062,13 +3062,13 @@ DisassembleForeachInfo(
 	Tcl_ListObjAppendElement(NULL, objPtr,
 		Tcl_NewWideIntObj(infoPtr->firstValueTemp + i));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("data", -1), objPtr);
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("data", TCL_INDEX_NONE), objPtr);
 
     /*
      * Loop counter.
      */
 
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("loop", -1),
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("loop", TCL_INDEX_NONE),
 	   Tcl_NewWideIntObj(infoPtr->loopCtTemp));
 
     /*
@@ -3085,7 +3085,7 @@ DisassembleForeachInfo(
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", -1), objPtr);
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", TCL_INDEX_NONE), objPtr);
 }
 
 static void
@@ -3104,7 +3104,7 @@ DisassembleNewForeachInfo(
      * Jump offset.
      */
 
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("jumpOffset", -1),
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("jumpOffset", TCL_INDEX_NONE),
 	   Tcl_NewWideIntObj(infoPtr->loopCtTemp));
 
     /*
@@ -3121,7 +3121,7 @@ DisassembleNewForeachInfo(
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", -1), objPtr);
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", TCL_INDEX_NONE), objPtr);
 }
 
 /*

@@ -317,7 +317,7 @@ Tcl_AppendResult(
 	if (bytes == NULL) {
 	    break;
 	}
-	Tcl_AppendToObj(objPtr, bytes, -1);
+	Tcl_AppendToObj(objPtr, bytes, TCL_INDEX_NONE);
     }
     Tcl_SetObjResult(interp, objPtr);
     va_end(argList);
@@ -354,7 +354,7 @@ Tcl_AppendElement(
 				 * to result. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *elementPtr = Tcl_NewStringObj(element, -1);
+    Tcl_Obj *elementPtr = Tcl_NewStringObj(element, TCL_INDEX_NONE);
     Tcl_Obj *listPtr = Tcl_NewListObj(1, &elementPtr);
     const char *bytes;
     size_t length;
@@ -511,7 +511,7 @@ Tcl_SetErrorCode(
 	if (elem == NULL) {
 	    break;
 	}
-	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, -1));
+	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, TCL_INDEX_NONE));
     }
     Tcl_SetObjErrorCode(interp, errorObj);
     va_end(argList);
