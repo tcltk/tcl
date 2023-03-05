@@ -537,7 +537,7 @@ Tcl_SplitPath(
      * Perform the splitting, using objectified, vfs-aware code.
      */
 
-    tmpPtr = Tcl_NewStringObj(path, -1);
+    tmpPtr = Tcl_NewStringObj(path, TCL_INDEX_NONE);
     Tcl_IncrRefCount(tmpPtr);
     resultPtr = Tcl_FSSplitPath(tmpPtr, argcPtr);
     Tcl_IncrRefCount(resultPtr);
@@ -943,7 +943,7 @@ Tcl_JoinPath(
     TclNewObj(listObj);
     for (i = 0; i < argc; i++) {
 	Tcl_ListObjAppendElement(NULL, listObj,
-		Tcl_NewStringObj(argv[i], -1));
+		Tcl_NewStringObj(argv[i], TCL_INDEX_NONE));
     }
 
     /*
@@ -1003,7 +1003,7 @@ Tcl_TranslateFileName(
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name. */
 {
-    Tcl_Obj *path = Tcl_NewStringObj(name, -1);
+    Tcl_Obj *path = Tcl_NewStringObj(name, TCL_INDEX_NONE);
     Tcl_Obj *transPtr;
 
     Tcl_IncrRefCount(path);
@@ -1171,7 +1171,7 @@ Tcl_GlobObjCmd(
 	case GLOB_DIR:				/* -dir */
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing argument to \"-directory\"", -1));
+			"missing argument to \"-directory\"", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		return TCL_ERROR;
 	    }
@@ -1199,7 +1199,7 @@ Tcl_GlobObjCmd(
 	case GLOB_PATH:				/* -path */
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing argument to \"-path\"", -1));
+			"missing argument to \"-path\"", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		return TCL_ERROR;
 	    }
@@ -1220,7 +1220,7 @@ Tcl_GlobObjCmd(
 	case GLOB_TYPE:				/* -types */
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing argument to \"-types\"", -1));
+			"missing argument to \"-types\"", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		return TCL_ERROR;
 	    }
@@ -1240,7 +1240,7 @@ Tcl_GlobObjCmd(
     if ((globFlags & TCL_GLOBMODE_TAILS) && (pathOrDir == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"\"-tails\" must be used with either "
-		"\"-directory\" or \"-path\"", -1));
+		"\"-directory\" or \"-path\"", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 		"BADOPTIONCOMBINATION", NULL);
 	return TCL_ERROR;
@@ -1291,7 +1291,7 @@ Tcl_GlobObjCmd(
 		 * in TclGlob requires a non-NULL pathOrDir.
 		 */
 
-		Tcl_DStringAppend(&pref, first, -1);
+		Tcl_DStringAppend(&pref, first, TCL_INDEX_NONE);
 		globFlags &= ~TCL_GLOBMODE_TAILS;
 		pathOrDir = NULL;
 	    } else {
@@ -1330,7 +1330,7 @@ Tcl_GlobObjCmd(
 		}
 	    }
 	    if (*search != '\0') {
-		Tcl_DStringAppend(&prefix, search, -1);
+		Tcl_DStringAppend(&prefix, search, TCL_INDEX_NONE);
 	    }
 	    Tcl_DStringFree(&pref);
 	}
@@ -1460,7 +1460,7 @@ Tcl_GlobObjCmd(
 	    badMacTypesArg:
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"only one MacOS type or creator argument"
-			" to \"-types\" allowed", -1));
+			" to \"-types\" allowed", TCL_INDEX_NONE));
 		result = TCL_ERROR;
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", NULL);
 		join = 0;
@@ -1642,7 +1642,7 @@ TclGlob(
 		|| (tail[0] == '\\' && tail[1] == '\\'))) {
 	    size_t driveNameLen;
 	    Tcl_Obj *driveName;
-	    Tcl_Obj *temp = Tcl_NewStringObj(tail, -1);
+	    Tcl_Obj *temp = Tcl_NewStringObj(tail, TCL_INDEX_NONE);
 	    Tcl_IncrRefCount(temp);
 
 	    switch (TclGetPathType(temp, NULL, &driveNameLen, &driveName)) {
@@ -2033,14 +2033,14 @@ DoGlob(
 		break;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unmatched open-brace in file name", -1));
+		    "unmatched open-brace in file name", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    NULL);
 	    return TCL_ERROR;
 
 	} else if (*p == '}') {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unmatched close-brace in file name", -1));
+		    "unmatched close-brace in file name", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    NULL);
 	    return TCL_ERROR;
@@ -2072,7 +2072,7 @@ DoGlob(
 	    SkipToChar(&p, ',');
 	    Tcl_DStringSetLength(&newName, baseLength);
 	    Tcl_DStringAppend(&newName, element, p-element);
-	    Tcl_DStringAppend(&newName, closeBrace+1, -1);
+	    Tcl_DStringAppend(&newName, closeBrace+1, TCL_INDEX_NONE);
 	    result = DoGlob(interp, matchesObj, separators, pathPtr, flags,
 		    Tcl_DStringValue(&newName), types);
 	    if (result != TCL_OK) {

@@ -76,7 +76,7 @@ static LRESULT CALLBACK		NotifierProc(HWND hwnd, UINT message,
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpInitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -148,7 +148,7 @@ TclpInitNotifier(void)
 
 void
 TclpFinalizeNotifier(
-    ClientData clientData)	/* Pointer to notifier data. */
+    void *clientData)	/* Pointer to notifier data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
@@ -218,7 +218,7 @@ TclpFinalizeNotifier(
 
 void
 TclpAlertNotifier(
-    ClientData clientData)	/* Pointer to thread data. */
+    void *clientData)	/* Pointer to thread data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
@@ -425,7 +425,7 @@ NotifierProc(
  *
  * TclpNotifierData --
  *
- *	This function returns a ClientData pointer to be associated
+ *	This function returns a void pointer to be associated
  *	with a Tcl_AsyncHandler.
  *
  * Results:
@@ -437,7 +437,7 @@ NotifierProc(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpNotifierData(void)
 {
     return NULL;

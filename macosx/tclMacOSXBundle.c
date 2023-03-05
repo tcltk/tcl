@@ -248,7 +248,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	     */
 
 	    CFURLGetFileSystemRepresentation(libURL, TRUE,
-		    (unsigned char *) libraryPath, maxPathLen);
+		    (unsigned char *) libraryPath, (CFIndex)maxPathLen);
 	    CFRelease(libURL);
 	}
 	if (versionedBundleRef) {

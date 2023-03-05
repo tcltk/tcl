@@ -81,7 +81,7 @@ Pkgc_UnsafeObjCmd(
     (void)objc;
     (void)objv;
 
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unsafe command invoked", -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("unsafe command invoked", TCL_INDEX_NONE));
     return TCL_OK;
 }
 

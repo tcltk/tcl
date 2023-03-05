@@ -32,7 +32,7 @@ typedef struct FileHandler {
 				 * for this file. */
     Tcl_FileProc *proc;		/* Function to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    ClientData clientData;	/* Argument to pass to proc. */
+    void *clientData;	/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
 } FileHandler;
 
@@ -214,7 +214,7 @@ static sigset_t allSigMask;
  */
 
 #if TCL_THREADS
-static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
+static TCL_NORETURN void NotifierThreadProc(void *clientData);
 #if defined(HAVE_PTHREAD_ATFORK)
 static int atForkInit = 0;
 static void		AtForkChild(void);
@@ -480,7 +480,7 @@ TclpCreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)	/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
