@@ -967,7 +967,6 @@ testresults/valgrind/%.success: testresults/valgrind/%.result
 	@status=$$(./${TCLTEST_EXE} $(TOP_DIR)/tools/valgrind_check_success \
 		file $(basename $@).result); \
 	if [ "$$status" -eq 1 ]; then exit 0; else exit 1; fi
-	
 
 valgrind_each: $(addprefix testresults/valgrind/,$(addsuffix .success,$(notdir\
 	$(wildcard $(TOP_DIR)/tests/*.test))))

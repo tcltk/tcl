@@ -1227,7 +1227,7 @@ CmdDelProc0(
 	    if (prevRefPtr != NULL) {
 		prevRefPtr->nextPtr = thisRefPtr->nextPtr;
 	    } else {
-		firstCommandTokenRef = thisRefPtr->nextPtr; 
+		firstCommandTokenRef = thisRefPtr->nextPtr;
 	    }
 	    break;
 	}
