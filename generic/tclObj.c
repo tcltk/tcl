@@ -3040,19 +3040,13 @@ Tcl_SetWideIntObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetWideIntObj");
     }
 
-    if ((wideValue >= (Tcl_WideInt) LONG_MIN)
-	    && (wideValue <= (Tcl_WideInt) LONG_MAX)) {
-	TclSetLongObj(objPtr, (long) wideValue);
-    } else {
 #ifndef TCL_WIDE_INT_IS_LONG
+    if ((wideValue < (Tcl_WideInt) LONG_MIN)
+	    || (wideValue > (Tcl_WideInt) LONG_MAX)) {
 	TclSetWideIntObj(objPtr, wideValue);
-#else
-	mp_int big;
-
-	TclBNInitBignumFromWideInt(&big, wideValue);
-	Tcl_SetBignumObj(objPtr, &big);
+    } else
 #endif
-    }
+    TclSetLongObj(objPtr, (long) wideValue);
 }
 
 /*
