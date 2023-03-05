@@ -336,19 +336,19 @@ test basic-20.1 {Tcl_GetCommandInfo, names for commands created inside namespace
     }]
     list [testcmdtoken name $x] \
          [rename ::p q] \
-         [testcmdtoken name $x][testcmdtoken free $x]
+         [testcmdtoken name $x]
 } {{p ::p} {} {q ::q}}
 test basic-20.2 {Tcl_GetCommandInfo, names for commands created outside namespaces} {testcmdtoken} {
     catch {rename q ""}
     set x [testcmdtoken create test_ns_basic::test_ns_basic2::p]
     list [testcmdtoken name $x] \
          [rename test_ns_basic::test_ns_basic2::p q] \
-         [testcmdtoken name $x][testcmdtoken free $x]
+         [testcmdtoken name $x]
 } {{p ::test_ns_basic::test_ns_basic2::p} {} {q ::q}}
 test basic-20.3 {Tcl_GetCommandInfo, #-quoting} testcmdtoken {
     catch {rename \# ""}
     set x [testcmdtoken create \#]
-    return [testcmdtoken name $x][testcmdtoken free $x]
+    return [testcmdtoken name $x]
 } {{#} ::#}
 
 test basic-21.1 {Tcl_GetCommandName} {emptyTest} {
