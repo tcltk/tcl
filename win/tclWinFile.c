@@ -1438,22 +1438,41 @@ TclpGetUserHome(
     if (domain == NULL) {
 	const char *ptr;
 
-	/*
-	 * No domain. Firstly check it's the current user
-	 */
-
+        /*
+         * Treat the current user as a special case because the general case
+         * below does not properly retrieve the path. The NetUserGetInfo
+         * call returns an empty path and the code defaults to the user's
+         * name in the profiles directory. On modern Windows systems, this
+         * is generally wrong as when the account is a Microsoft account,
+         * for example abcdefghi@outlook.com, the directory name is
+         * abcde and not abcdefghi.
+         *
+         * Note we could have just used env(USERPROFILE) here but
+         * the intent is to retrieve (as on Unix) the system's view
+         * of the home irrespective of environment settings of HOME
+         * and USERPROFILE.
+         *
+         * Fixing this for the general user needs more investigating but
+         * at least for the current user we can use a direct call.
+         */
 	ptr = TclpGetUserName(&ds);
 	if (ptr != NULL && strcasecmp(name, ptr) == 0) {
-	    /*
-	     * Try safest and fastest way to get current user home
-	     */
-
-	    ptr = TclGetEnv("HOME", &ds);
-	    if (ptr != NULL) {
-		Tcl_JoinPath(1, &ptr, bufferPtr);
-		rc = 1;
-		result = Tcl_DStringValue(bufferPtr);
-	    }
+            HANDLE hProcess;
+            WCHAR buf[MAX_PATH];
+            DWORD nChars = sizeof(buf) / sizeof(buf[0]);
+            /* Sadly GetCurrentProcessToken not in Win 7 so slightly longer */
+            hProcess = GetCurrentProcess(); /* Need not be closed */
+            if (hProcess) {
+                HANDLE hToken;
+                if (OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
+                    if (GetUserProfileDirectoryW(hToken, buf, &nChars)) {
+                        Tcl_WCharToUtfDString(buf, nChars-1, bufferPtr);
+                        result = Tcl_DStringValue(bufferPtr);
+                        rc = 1;
+                    }
+                    CloseHandle(hToken);
+                }
+            }
 	}
 	Tcl_DStringFree(&ds);
     } else {
@@ -1523,30 +1542,6 @@ TclpGetUserHome(
     }
     if (wDomain != NULL) {
 	NetApiBufferFree((void *) wDomain);
-    }
-    if (result == NULL) {
-	/*
-	 * Look in the "Password Lists" section of system.ini for the local
-	 * user. There are also entries in that section that begin with a "*"
-	 * character that are used by Windows for other purposes; ignore user
-	 * names beginning with a "*".
-	 */
-
-	char buf[MAX_PATH];
-
-	if (name[0] != '*') {
-	    if (GetPrivateProfileStringA("Password Lists", name, "", buf,
-		    MAX_PATH, "system.ini") > 0) {
-		/*
-		 * User exists, but there is no such thing as a home directory
-		 * in system.ini. Return "{Windows drive}:/".
-		 */
-
-		GetWindowsDirectoryA(buf, MAX_PATH);
-		Tcl_DStringAppend(bufferPtr, buf, 3);
-		result = Tcl_DStringValue(bufferPtr);
-	    }
-	}
     }
 
     return result;
