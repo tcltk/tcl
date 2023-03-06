@@ -430,7 +430,7 @@ test http11-2.2.$ThreadLevel "-channel, encoding deflate" -setup {
 test http11-2.2.1.$ThreadLevel "-channel, encoding deflate,msdeflate" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?msdeflate=1 \
                  -timeout 5000 -channel $chan -headers {accept-encoding deflate}]
     http::wait $tok
@@ -451,7 +451,7 @@ test http11-2.3.$ThreadLevel "-channel,encoding compress" -constraints badCompre
     # Bug [a13b9d0ce1].
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
-} -body {
+} -constraints strictBug -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
                  -timeout 5000 -channel $chan \
                  -headers {accept-encoding compress}]

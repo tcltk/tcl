@@ -1197,7 +1197,7 @@ CmdDelProc0(
 	}
 	prevRefPtr = thisRefPtr;
     }
-    ckfree(refPtr);
+    Tcl_Free(refPtr);
 }
 
 static void
