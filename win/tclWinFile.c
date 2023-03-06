@@ -1457,22 +1457,21 @@ TclpGetUserHome(
          */
 	ptr = TclpGetUserName(&ds);
 	if (ptr != NULL && strcasecmp(name, ptr) == 0) {
-            HANDLE hProcess;
-            WCHAR buf[MAX_PATH];
-            DWORD nChars = sizeof(buf) / sizeof(buf[0]);
-            /* Sadly GetCurrentProcessToken not in Win 7 so slightly longer */
-            hProcess = GetCurrentProcess(); /* Need not be closed */
-            if (hProcess) {
-                HANDLE hToken;
-                if (OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
-                    if (GetUserProfileDirectoryW(hToken, buf, &nChars)) {
-                        Tcl_WCharToUtfDString(buf, nChars-1, bufferPtr);
-                        result = Tcl_DStringValue(bufferPtr);
-                        rc = 1;
-                    }
-                    CloseHandle(hToken);
-                }
-            }
+	    HANDLE hProcess;
+	    WCHAR buf[MAX_PATH];
+	    DWORD nChars = sizeof(buf) / sizeof(buf[0]);
+	    /* Sadly GetCurrentProcessToken not in Win 7 so slightly longer */
+	    hProcess = GetCurrentProcess(); /* Need not be closed */
+	    if (hProcess) {
+		HANDLE hToken;
+		if (OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
+		    if (GetUserProfileDirectoryW(hToken, buf, &nChars)) {
+			result = Tcl_WCharToUtfDString(buf, nChars-1, (bufferPtr));
+			rc = 1;
+		    }
+		    CloseHandle(hToken);
+		}
+	    }
 	}
 	Tcl_DStringFree(&ds);
     } else {
