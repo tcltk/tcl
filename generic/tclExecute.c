@@ -2377,7 +2377,7 @@ TEBCresume(
 	if (!corPtr) {
 	    TRACE_APPEND(("ERROR: yield outside coroutine\n"));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yield can only be called in a coroutine", -1));
+		    "yield can only be called in a coroutine", TCL_INDEX_NONE));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
 		    NULL);
@@ -2408,7 +2408,7 @@ TEBCresume(
 	    TRACE(("[%.30s] => ERROR: yield outside coroutine\n",
 		    O2S(valuePtr)));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yieldto can only be called in a coroutine", -1));
+		    "yieldto can only be called in a coroutine", TCL_INDEX_NONE));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
 		    NULL);
@@ -2419,7 +2419,7 @@ TEBCresume(
 	    TRACE(("[%.30s] => ERROR: yield in deleted\n",
 		    O2S(valuePtr)));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yieldto called in deleted namespace", -1));
+		    "yieldto called in deleted namespace", TCL_INDEX_NONE));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED",
 		    NULL);
@@ -2482,7 +2482,7 @@ TEBCresume(
 	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
 	    TRACE(("%d => ERROR: tailcall in non-proc context\n", opnd));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "tailcall can only be called from a proc or lambda", -1));
+		    "tailcall can only be called from a proc or lambda", TCL_INDEX_NONE));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
 	    CACHE_STACK_INFO();
@@ -2511,7 +2511,7 @@ TEBCresume(
 	 */
 
 	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd-1));
-	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
+	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, TCL_INDEX_NONE);
 	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
 	if (iPtr->varFramePtr->tailcallPtr) {
 	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
@@ -5039,7 +5039,7 @@ TEBCresume(
 
     case INST_LREPLACE4:
 	{
-	Tcl_Size numToDelete, numNewElems;
+	size_t numToDelete, numNewElems;
 	int end_indicator;
 	int haveSecondIndex, flags;
 	Tcl_Obj *fromIdxObj, *toIdxObj;
@@ -5150,7 +5150,7 @@ TEBCresume(
 	{
 	    int checkEq = ((*pc == INST_EQ) || (*pc == INST_NEQ)
 		    || (*pc == INST_STR_EQ) || (*pc == INST_STR_NEQ));
-	    match = TclStringCmp(valuePtr, value2Ptr, checkEq, 0, -1);
+	    match = TclStringCmp(valuePtr, value2Ptr, checkEq, 0, TCL_INDEX_NONE);
 	}
 
 	/*
@@ -5844,7 +5844,7 @@ TEBCresume(
 	    case INST_RSHIFT:
 		if (w2 < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "negative shift argument", -1));
+			    "negative shift argument", TCL_INDEX_NONE));
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -5893,7 +5893,7 @@ TEBCresume(
 	    case INST_LSHIFT:
 		if (w2 < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "negative shift argument", -1));
+			    "negative shift argument", TCL_INDEX_NONE));
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -5916,7 +5916,7 @@ TEBCresume(
 		     */
 
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "integer value too large to represent", -1));
+			    "integer value too large to represent", TCL_INDEX_NONE));
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
@@ -7422,14 +7422,14 @@ TEBCresume(
 	 */
 
     divideByZero:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", TCL_INDEX_NONE));
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
 
     outOfMemory:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", TCL_INDEX_NONE));
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "ARITH", "OUTOFMEMORY", "out of memory", NULL);
 	CACHE_STACK_INFO();
@@ -7442,7 +7442,7 @@ TEBCresume(
 
     exponOfZero:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"exponentiation of zero by negative power", -1));
+		"exponentiation of zero by negative power", TCL_INDEX_NONE));
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		"exponentiation of zero by negative power", NULL);
@@ -8003,7 +8003,7 @@ ExecuteExtendedBinaryMathOp(
 	}
 	if (invalid) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "negative shift argument", -1));
+		    "negative shift argument", TCL_INDEX_NONE));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -8034,7 +8034,7 @@ ExecuteExtendedBinaryMathOp(
 		 */
 
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"integer value too large to represent", -1));
+			"integer value too large to represent", TCL_INDEX_NONE));
 		return GENERAL_ARITHMETIC_ERROR;
 	    }
 	    shift = (int)(*((const Tcl_WideInt *)ptr2));
@@ -8282,7 +8282,7 @@ ExecuteExtendedBinaryMathOp(
 
 	if (type2 != TCL_NUMBER_INT) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "exponent too large", -1));
+		    "exponent too large", TCL_INDEX_NONE));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -8362,7 +8362,7 @@ ExecuteExtendedBinaryMathOp(
 		|| (value2Ptr->typePtr != &tclIntType.objType)
 		|| (Tcl_WideUInt)w2 >= (1<<28)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "exponent too large", -1));
+		    "exponent too large", TCL_INDEX_NONE));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
@@ -9369,16 +9369,16 @@ TclExprFloatError(
 
     if ((errno == EDOM) || isnan(value)) {
 	s = "domain error: argument not in valid range";
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, NULL);
     } else if ((errno == ERANGE) || isinf(value)) {
 	if (value == 0.0) {
 	    s = "floating-point value too small to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, NULL);
 	} else {
 	    s = "floating-point value too large to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, NULL);
 	}
     } else {
