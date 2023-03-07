@@ -1161,6 +1161,7 @@ test fCmd-10.3.1 {file copy: comprehensive: dir to new name} -setup {
     file mkdir [file join td1 tdx]
     file mkdir [file join td2 tdy]
     testchmod 0o555 td2
+    testchmod 0o555 td2/tdy; # Above line removes inherited perms. So restore.
     file copy td1 td3
     file copy td2 td4
     list [lsort [glob td*]] [glob -directory td3 t*] \
@@ -1182,10 +1183,19 @@ test fCmd-10.4 {file copy: comprehensive: file to existing file} -setup {
     createfile tfd2
     createfile tfd3
     createfile tfd4
-    testchmod 0o444 tfs3
-    testchmod 0o444 tfs4
-    testchmod 0o444 tfd2
-    testchmod 0o444 tfd4
+    if {$::tcl_platform(platform) eq "windows"} {
+        # On Windows testchmode will attach an ACL which file copy cannot handle
+        # so use good old attributes which file copy does understand
+        file attribute tfs3 -readonly 1
+        file attribute tfs4 -readonly 1
+        file attribute tfd2 -readonly 1
+        file attribute tfd4 -readonly 1
+    } else {
+        testchmod 0o444 tfs3
+        testchmod 0o444 tfs4
+        testchmod 0o444 tfd2
+        testchmod 0o444 tfd4
+    }
     set msg [list [catch {file copy tf1 tf2} msg] $msg]
     file copy -force tfs1 tfd1
     file copy -force tfs2 tfd2
