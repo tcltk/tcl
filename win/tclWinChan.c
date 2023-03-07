@@ -700,7 +700,7 @@ FileInputProc(
 
     if (ReadFile(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize, &bytesRead,
 	    (LPOVERLAPPED) NULL) != FALSE) {
-	return bytesRead;
+	return (int)bytesRead;
     }
 
     Tcl_WinConvertError(GetLastError());
@@ -757,7 +757,7 @@ FileOutputProc(
 	return -1;
     }
     infoPtr->dirty = 1;
-    return bytesWritten;
+    return (int)bytesWritten;
 }
 
 /*
@@ -1572,7 +1572,7 @@ NativeIsComPort(
     const WCHAR *nativePath)	/* Path of file to access, native encoding. */
 {
     const WCHAR *p = (const WCHAR *) nativePath;
-    int i, len = wcslen(p);
+    size_t i, len = wcslen(p);
 
     /*
      * 1. Look for com[1-9]:?

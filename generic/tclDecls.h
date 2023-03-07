@@ -4324,7 +4324,7 @@ extern const TclStubs *tclStubsPtr;
 		    _t.reserved = -1; \
 		    tclStubsPtr->tcl_GetTime((&_t.now)); \
 		    if (_t.reserved != -1) { \
-			_t.now.usec = _t.reserved; \
+			_t.now.usec = (long) _t.reserved; \
 		    } \
 		    *(t) = _t.now; \
 		} while (0)
