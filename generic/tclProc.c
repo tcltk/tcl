@@ -524,9 +524,9 @@ TclCreateProc(
 	}
 	if (fieldCount > 2) {
 	    Tcl_Obj *errorObj = Tcl_NewStringObj(
-		"too many fields in argument specifier \"", -1);
+		"too many fields in argument specifier \"", TCL_INDEX_NONE);
 	    Tcl_AppendObjToObj(errorObj, argArray[i]);
-	    Tcl_AppendToObj(errorObj, "\"", -1);
+	    Tcl_AppendToObj(errorObj, "\"", TCL_INDEX_NONE);
 	    Tcl_SetObjResult(interp, errorObj);
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 		    "FORMALARGUMENTFORMAT", NULL);
@@ -534,7 +534,7 @@ TclCreateProc(
 	}
 	if ((fieldCount == 0) || (Tcl_GetCharLength(fieldValues[0]) == 0)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "argument with no name", -1));
+		    "argument with no name", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 		    "FORMALARGUMENTFORMAT", NULL);
 	    goto procError;
@@ -560,9 +560,9 @@ TclCreateProc(
 		}
 	    } else if (*argnamei == ':' && *(argnamei+1) == ':') {
 		Tcl_Obj *errorObj = Tcl_NewStringObj(
-		    "formal parameter \"", -1);
+		    "formal parameter \"", TCL_INDEX_NONE);
 		Tcl_AppendObjToObj(errorObj, fieldValues[0]);
-		Tcl_AppendToObj(errorObj, "\" is not a simple name", -1);
+		Tcl_AppendToObj(errorObj, "\" is not a simple name", TCL_INDEX_NONE);
 		Tcl_SetObjResult(interp, errorObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			"FORMALARGUMENTFORMAT", NULL);
@@ -613,7 +613,7 @@ TclCreateProc(
 			    "procedure \"%s\": formal parameter \"", procName);
 		    Tcl_AppendObjToObj(errorObj, fieldValues[0]);
 		    Tcl_AppendToObj(errorObj, "\" has "
-			"default value inconsistent with precompiled body", -1);
+			"default value inconsistent with precompiled body", TCL_INDEX_NONE);
 		    Tcl_SetObjResult(interp, errorObj);
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			    "BYTECODELIES", NULL);
@@ -1080,7 +1080,7 @@ ProcWrongNumArgs(
 	    sizeof(Tcl_Obj *) * (numArgs+1));
 
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
-	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
+	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", TCL_INDEX_NONE);
     } else {
 	desiredObjs[0] = framePtr->objv[skip-1];
     }
@@ -1941,7 +1941,7 @@ TclProcCompileProc(
 	if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
 	    if ((Interp *) *codePtr->interpHandle != iPtr) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"a precompiled script jumped interps", -1));
+			"a precompiled script jumped interps", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			"CROSSINTERPBYTECODE", NULL);
 		return TCL_ERROR;
@@ -1969,7 +1969,7 @@ TclProcCompileProc(
 	    TclNewLiteralStringObj(message, "Compiling ");
 	    Tcl_IncrRefCount(message);
 	    Tcl_AppendStringsToObj(message, description, " \"", NULL);
-	    Tcl_AppendLimitedToObj(message, procName, -1, 50, NULL);
+	    Tcl_AppendLimitedToObj(message, procName, TCL_INDEX_NONE, 50, NULL);
 	    fprintf(stdout, "%s\"\n", TclGetString(message));
 	    Tcl_DecrRefCount(message);
 	}

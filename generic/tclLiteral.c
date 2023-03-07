@@ -1057,7 +1057,7 @@ TclInvalidateCmdLiteral(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, name,
-	    strlen(name), -1, NULL, nsPtr, 0, NULL);
+	    strlen(name), TCL_INDEX_NONE, NULL, nsPtr, 0, NULL);
 
     if (literalObjPtr != NULL) {
 	if (TclHasInternalRep(literalObjPtr, &tclCmdNameType)) {

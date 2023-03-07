@@ -38,9 +38,6 @@ Pkg\u03C0_\u03A0ObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int result;
-    const char *str1, *str2;
-    int len1, len2;
     (void)dummy;
 
     if (objc != 1) {

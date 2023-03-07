@@ -197,46 +197,50 @@ test io-1.9 {Tcl_WriteChars: WriteChars} {
     set sizes
 } {19 19 19 19 19}
 
+proc testreadwrite {size {mode ""} args} {
+    set tmpfile [file join [temporaryDirectory] io-1.10.tmp]
+    set w [string repeat A $size]
+    try {
+        set fd [open $tmpfile w$mode]
+        try {
+            if {[llength $args]} {
+                fconfigure $fd {*}$args
+            }
+            puts -nonewline $fd $w
+        } finally {
+            close $fd
+        }
+        set fd [open $tmpfile r$mode]
+        try {
+            if {[llength $args]} {
+                fconfigure $fd {*}$args
+            }
+            set r [read $fd]
+        } finally {
+            close $fd
+        }
+    } finally {
+        file delete $tmpfile
+    }
+    string equal $w $r
+}
+
 test io-1.10 {WriteChars: large file (> INT_MAX). Bug 3d01d51bc4} -constraints {
     pointerIs64bit perf
-} -setup {
-    set tmpfile [file join [temporaryDirectory] io-1.10.tmp]
-} -cleanup {
-    file delete $tmpfile
 } -body {
-    set fd [open $tmpfile w]
-    puts -nonewline $fd [string repeat A 0x80000000]
-    close $fd
-    # TODO - Should really read it back in but large reads are not currently working!
-    file size $tmpfile
-} -result 2147483648
+    testreadwrite 0x80000000
+} -result 1
 test io-1.11 {WriteChars: large file (> UINT_MAX). Bug 3d01d51bc4} -constraints {
     pointerIs64bit perf
-} -setup {
-    set tmpfile [file join [temporaryDirectory] io-1.11.tmp]
-} -cleanup {
-    file delete $tmpfile
 } -body {
-    set fd [open $tmpfile w]
-    puts -nonewline $fd [string repeat A 0x100000000]
-    close $fd
-    # TODO - Should really read it back in but large reads are not currently working!
-    file size $tmpfile
-} -result 4294967296
+    testreadwrite 0x100000000 "" -buffersize 1000000
+} -result 1
 test io-1.12 {WriteChars: large file (== UINT_MAX). Bug 90ff9b7f73} -constraints {
     pointerIs64bit perf
-} -setup {
-    set tmpfile [file join [temporaryDirectory] io-1.12.tmp]
-} -cleanup {
-    file delete $tmpfile
 } -body {
-    set fd [open $tmpfile w]
     # *Exactly* UINT_MAX - separate bug from the general large file tests
-    puts -nonewline $fd [string repeat A 0xffffffff]
-    close $fd
-    # TODO - Should really read it back in but large reads are not currently working!
-    file size $tmpfile
-} -result 4294967295
+    testreadwrite 0xffffffff
+} -result 1
 
 test io-2.1 {WriteBytes} {
     # loop until all bytes are written
@@ -279,47 +283,25 @@ test io-2.4 {WriteBytes: reset sawLF after each buffer} {
     close $f
     lappend x [contents $path(test1)]
 } [list "abcdefg\nhijklmno" "abcdefg\nhijklmnopqrstuvwxyz"]
-
 test io-2.5 {WriteBytes: large file (> INT_MAX). Bug 3d01d51bc4} -constraints {
     pointerIs64bit perf
-} -setup {
-    set tmpfile [file join [temporaryDirectory] io-2.5.tmp]
-} -cleanup {
-    file delete $tmpfile
 } -body {
-    set fd [open $tmpfile wb]
-    puts -nonewline $fd [string repeat A 0x80000000]
-    close $fd
-    # TODO - Should really read it back in but large reads are not currently working!
-    file size $tmpfile
-} -result 2147483648
+    # Binary mode
+    testreadwrite 0x80000000 b
+} -result 1
 test io-2.6 {WriteBytes: large file (> UINT_MAX). Bug 3d01d51bc4} -constraints {
     pointerIs64bit perf
-} -setup {
-    set tmpfile [file join [temporaryDirectory] io-2.6.tmp]
-} -cleanup {
-    file delete $tmpfile
 } -body {
-    set fd [open $tmpfile wb]
-    puts -nonewline $fd [string repeat A 0x100000000]
-    close $fd
-    # TODO - Should really read it back in but large reads are not currently working!
-    file size $tmpfile
-} -result 4294967296
+    # Binary mode
+    testreadwrite 0x100000000 b -buffersize 1000000
+} -result 1
 test io-2.7 {WriteBytes: large file (== UINT_MAX). Bug 90ff9b7f73} -constraints {
     pointerIs64bit perf
-} -setup {
-    set tmpfile [file join [temporaryDirectory] io-2.7.tmp]
-} -cleanup {
-    file delete $tmpfile
 } -body {
-    set fd [open $tmpfile wb]
     # *Exactly* UINT_MAX - separate bug from the general large file tests
-    puts -nonewline $fd [string repeat A 0xffffffff]
-    close $fd
-    # TODO - Should really read it back in but large reads are not currently working!
-    file size $tmpfile
-} -result 4294967295
+    testreadwrite 0xffffffff b
+} -result 1
+
 
 test io-3.1 {WriteChars: compatibility with WriteBytes} {
     # loop until all bytes are written

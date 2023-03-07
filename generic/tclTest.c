@@ -62,6 +62,7 @@ static Tcl_Interp *delInterp;
 typedef struct TestCommandTokenRef {
     int id;			/* Identifier for this reference. */
     Tcl_Command token;		/* Tcl's token for the command. */
+    const char *value;
     struct TestCommandTokenRef *nextPtr;
 				/* Next in list of references. */
 } TestCommandTokenRef;
@@ -1143,6 +1144,18 @@ TestcmdinfoCmd(
 }
 
 static int
+CmdProc0(
+    void *clientData,	/* String to return. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    TCL_UNUSED(int) /*argc*/,
+    TCL_UNUSED(const char **) /*argv*/)
+{
+    TestCommandTokenRef *refPtr = (TestCommandTokenRef *) clientData;
+    Tcl_AppendResult(interp, "CmdProc1 ", refPtr->value, NULL);
+    return TCL_OK;
+}
+
+static int
 CmdProc1(
     void *clientData,	/* String to return. */
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -1153,6 +1166,7 @@ CmdProc1(
     return TCL_OK;
 }
 
+
 static int
 CmdProc2(
     void *clientData,	/* String to return. */
@@ -1162,6 +1176,28 @@ CmdProc2(
 {
     Tcl_AppendResult(interp, "CmdProc2 ", (char *) clientData, NULL);
     return TCL_OK;
+}
+
+static void
+CmdDelProc0(
+    void *clientData)	/* String to save. */
+{
+    TestCommandTokenRef *thisRefPtr, *prevRefPtr = NULL;
+    TestCommandTokenRef *refPtr = (TestCommandTokenRef *) clientData;
+    int id = refPtr->id;
+    for (thisRefPtr = firstCommandTokenRef; refPtr != NULL;
+	thisRefPtr = thisRefPtr->nextPtr) {
+	if (thisRefPtr->id == id) {
+	    if (prevRefPtr != NULL) {
+		prevRefPtr->nextPtr = thisRefPtr->nextPtr;
+	    } else {
+		firstCommandTokenRef = thisRefPtr->nextPtr;
+	    }
+	    break;
+	}
+	prevRefPtr = thisRefPtr;
+    }
+    Tcl_Free(refPtr);
 }
 
 static void
@@ -1217,17 +1253,16 @@ TestcmdtokenCmd(
     }
     if (strcmp(argv[1], "create") == 0) {
 	refPtr = (TestCommandTokenRef *)Tcl_Alloc(sizeof(TestCommandTokenRef));
-	refPtr->token = Tcl_CreateCommand(interp, argv[2], CmdProc1,
-		(void *) "original", NULL);
+	refPtr->token = Tcl_CreateCommand(interp, argv[2], CmdProc0,
+		refPtr, CmdDelProc0);
 	refPtr->id = nextCommandTokenRefId;
+	refPtr->value = "original";
 	nextCommandTokenRefId++;
 	refPtr->nextPtr = firstCommandTokenRef;
 	firstCommandTokenRef = refPtr;
 	sprintf(buf, "%d", refPtr->id);
 	Tcl_AppendResult(interp, buf, NULL);
-    } else if (strcmp(argv[1], "name") == 0) {
-	Tcl_Obj *objPtr;
-
+    } else {
 	if (sscanf(argv[2], "%d", &id) != 1) {
 	    Tcl_AppendResult(interp, "bad command token \"", argv[2],
 		    "\"", NULL);
@@ -1247,18 +1282,23 @@ TestcmdtokenCmd(
 	    return TCL_ERROR;
 	}
 
-	objPtr = Tcl_NewObj();
-	Tcl_GetCommandFullName(interp, refPtr->token, objPtr);
+	if (strcmp(argv[1], "name") == 0) {
+	    Tcl_Obj *objPtr;
 
-	Tcl_AppendElement(interp,
-		Tcl_GetCommandName(interp, refPtr->token));
-	Tcl_AppendElement(interp, Tcl_GetString(objPtr));
-	Tcl_DecrRefCount(objPtr);
-    } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create or name", NULL);
-	return TCL_ERROR;
+	    objPtr = Tcl_NewObj();
+	    Tcl_GetCommandFullName(interp, refPtr->token, objPtr);
+
+	    Tcl_AppendElement(interp,
+		    Tcl_GetCommandName(interp, refPtr->token));
+	    Tcl_AppendElement(interp, Tcl_GetString(objPtr));
+	    Tcl_DecrRefCount(objPtr);
+	} else {
+	    Tcl_AppendResult(interp, "bad option \"", argv[1],
+		    "\": must be create, name, or free", NULL);
+	    return TCL_ERROR;
+	}
     }
+
     return TCL_OK;
 }
 

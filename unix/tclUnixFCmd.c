@@ -1648,7 +1648,7 @@ SetPermissionsAttribute(
 	Tcl_Obj *modeObj;
 
 	TclNewLiteralStringObj(modeObj, "0o");
-	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, -1);
+	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, TCL_INDEX_NONE);
 	result = Tcl_GetWideIntFromObj(NULL, modeObj, &mode);
 	Tcl_DecrRefCount(modeObj);
     }
