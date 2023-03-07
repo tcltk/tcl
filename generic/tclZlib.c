@@ -449,12 +449,16 @@ GenerateHeader(
 		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
 		NULL);
 	if (result != TCL_OK) {
-	    if (result == TCL_CONVERT_UNKNOWN) {
-		Tcl_AppendResult(interp, "Comment contains characters > 0xFF", NULL);
-	    } else {
-		Tcl_AppendResult(interp, "Comment too large for zip", NULL);
+	    if (interp) {
+		if (result == TCL_CONVERT_UNKNOWN) {
+		    Tcl_AppendResult(
+			interp, "Comment contains characters > 0xFF", NULL);
+		}
+		else {
+		    Tcl_AppendResult(interp, "Comment too large for zip", NULL);
+		}
 	    }
-	    result = TCL_ERROR;
+	    result = TCL_ERROR; /* TCL_CONVERT_* -> TCL_ERROR*/
 	    goto error;
 	}
 	headerPtr->nativeCommentBuf[len] = '\0';
@@ -481,12 +485,17 @@ GenerateHeader(
 		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len,
 		NULL);
 	if (result != TCL_OK) {
-	    if (result == TCL_CONVERT_UNKNOWN) {
-		Tcl_AppendResult(interp, "Filename contains characters > 0xFF", NULL);
-	    } else {
-		Tcl_AppendResult(interp, "Filename too large for zip", NULL);
+	    if (interp) {
+		if (result == TCL_CONVERT_UNKNOWN) {
+		    Tcl_AppendResult(
+			interp, "Filename contains characters > 0xFF", NULL);
+		}
+		else {
+		    Tcl_AppendResult(
+			interp, "Filename too large for zip", NULL);
+		}
 	    }
-	    result = TCL_ERROR;
+	    result = TCL_ERROR; /* TCL_CONVERT_* -> TCL_ERROR*/
 	    goto error;
 	}
 	headerPtr->nativeFilenameBuf[len] = '\0';

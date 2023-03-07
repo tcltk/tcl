@@ -276,6 +276,16 @@ test filesystem-1.30.1 {normalisation of existing user} -body {
 test filesystem-1.30.2 {normalisation of nonexistent user specified as user@domain} -body {
     file normalize ~nonexistentuser@nonexistentdomain
 } -returnCodes error -result {user "nonexistentuser@nonexistentdomain" doesn't exist}
+test filesystem-1.30.3 {file normalization should distinguish between ~ and ~user} -setup {
+    set oldhome $::env(HOME)
+    set olduserhome [file normalize ~$::tcl_platform(user)]
+    set ::env(HOME) [file join $oldhome temp]
+} -cleanup {
+    set env(HOME) $oldhome
+} -body {
+    list [string equal [file normalize ~] $::env(HOME)] \
+        [string equal $olduserhome [file normalize ~$::tcl_platform(user)]]
+} -result {1 1}
 test filesystem-1.31 {link normalisation: link near filesystem root} {testsetplatform} {
     testsetplatform unix
     file normalize /foo/../bar
