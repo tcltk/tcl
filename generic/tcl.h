@@ -1927,8 +1927,6 @@ typedef struct Tcl_EncodingType {
  *				reset to an initial state. If the source
  *				buffer contains the entire input stream to be
  *				converted, this flag should be set.
- * TCL_ENCODING_STRICT -	Be more strict in accepting what
- *				is considered a 'invalid byte sequence'.
  * TCL_ENCODING_STOPONERROR -	Not used any more.
  * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf does not append a
  *				terminating NUL byte.  Since it does not need
@@ -1955,10 +1953,8 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
 #if TCL_MAJOR_VERSION > 8
-#   define TCL_ENCODING_STRICT			0x04
 #   define TCL_ENCODING_STOPONERROR	0x0 /* Not used any more */
 #else
-#   define TCL_ENCODING_STRICT			0x44
 #   define TCL_ENCODING_STOPONERROR	0x04
 #endif
 #define TCL_ENCODING_NO_TERMINATE	0x08
@@ -1967,8 +1963,12 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_INTERNAL_USE_MASK  0xFF00
 /* Reserve top byte for profile values (disjoint, not a mask) */
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
-#define TCL_ENCODING_PROFILE_STRICT   0x02000000
-#define TCL_ENCODING_PROFILE_REPLACE  0x03000000
+#if TCL_MAJOR_VERSION > 8
+#   define TCL_ENCODING_PROFILE_STRICT   0x00000000
+#else
+#   define TCL_ENCODING_PROFILE_STRICT   0x03000000
+#endif
+#define TCL_ENCODING_PROFILE_REPLACE  0x02000000
 #define TCL_ENCODING_PROFILE_MASK     0xFF000000
 #define TCL_ENCODING_PROFILE_GET(flags_)  ((flags_) & TCL_ENCODING_PROFILE_MASK)
 #define TCL_ENCODING_PROFILE_SET(flags_, profile_) \
@@ -1976,12 +1976,6 @@ typedef struct Tcl_EncodingType {
 	(flags_) &= ~TCL_ENCODING_PROFILE_MASK;    \
 	(flags_) |= profile_;                      \
     } while (0)
-/* Still being argued - For Tcl9, is the default strict? TODO */
-#if TCL_MAJOR_VERSION < 9
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
-#else
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8 /* STRICT? REPLACE? TODO */
-#endif
 
 /*
  * The following definitions are the error codes returned by the conversion
@@ -2002,13 +1996,10 @@ typedef struct Tcl_EncodingType {
  * TCL_CONVERT_SYNTAX -		The source stream contained an invalid
  *				character sequence. This may occur if the
  *				input stream has been damaged or if the input
- *				encoding method was misidentified. This error
- *				is reported unless if TCL_ENCODING_NOCOMPLAIN
- *				was specified.
+ *				encoding method was misidentified.
  * TCL_CONVERT_UNKNOWN -	The source string contained a character that
  *				could not be represented in the target
- *				encoding. This error is reported unless if
- *				TCL_ENCODING_NOCOMPLAIN was specified.
+ *				encoding.
  */
 
 #define TCL_CONVERT_MULTIBYTE	(-1)

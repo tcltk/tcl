@@ -102,15 +102,8 @@ converted. \fBTCL_ENCODING_END\fR signifies that the source buffer is the last
 block in a (potentially multi-block) input stream, telling the conversion
 routine to perform any finalization that needs to occur after the last
 byte is converted and then to reset to an initial state.
-\fBTCL_ENCODING_NOCOMPLAIN\fR signifies that the conversion routine should
-not return immediately upon reading a source character that does not exist in
-the target encoding, but it will substitute a default fallback character for
-all of such characters. The flag \fBTCL_ENCODING_STOPONERROR\fR has no effect,
-it only has meaning in Tcl 8.x. The flag \fBTCL_ENCODING_STRICT\fR makes the
-encoder/decoder more strict in what it considers to be an invalid byte
-sequence. The flag \fBTCL_ENCODING_MODIFIED\fR makes
-\fBTcl_UtfToExternalDStringEx\fR and \fBTcl_UtfToExternal\fR produce the byte
-sequence \exC0\ex80 in stead of \ex00, for the utf-8/cesu-8 encoders.
+The flag \fBTCL_ENCODING_STOPONERROR\fR has no effect,
+it only has meaning in Tcl 8.x.
 .AP Tcl_EncodingState *statePtr in/out
 Used when converting a (generally long or indefinite length) byte stream
 in a piece-by-piece fashion.  The conversion routine stores its current
@@ -241,7 +234,7 @@ if the input stream has been damaged or if the input encoding method was
 misidentified.
 .IP \fBTCL_CONVERT_UNKNOWN\fR 29
 The source buffer contained a character that could not be represented in
-the target encoding and \fBTCL_ENCODING_NOCOMPLAIN\fR was not specified.
+the target encoding.
 .RE
 .LP
 \fBTcl_UtfToExternalDString\fR converts a source buffer \fIsrc\fR from UTF-8

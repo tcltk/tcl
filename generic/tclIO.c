@@ -1675,12 +1675,10 @@ Tcl_CreateChannel(
     }
     statePtr->inputEncodingState  = NULL;
     statePtr->inputEncodingFlags  = TCL_ENCODING_START;
-    TCL_ENCODING_PROFILE_SET(statePtr->inputEncodingFlags,
-			     TCL_ENCODING_PROFILE_DEFAULT);
+    TCL_ENCODING_PROFILE_SET(statePtr->inputEncodingFlags, 0);
     statePtr->outputEncodingState = NULL;
     statePtr->outputEncodingFlags = TCL_ENCODING_START;
-    TCL_ENCODING_PROFILE_SET(statePtr->outputEncodingFlags,
-			     TCL_ENCODING_PROFILE_DEFAULT);
+    TCL_ENCODING_PROFILE_SET(statePtr->outputEncodingFlags, 0);
 
     /*
      * Set the channel up initially in AUTO input translation mode to accept
@@ -7499,8 +7497,7 @@ Tcl_Eof(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_FCOPY)
-	    && GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	return 0;
     }
     return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
@@ -9631,7 +9628,6 @@ CopyData(
      * the bottom of the stack.
      */
 
-    SetFlag(inStatePtr, CHANNEL_FCOPY);
     inBinary = (inStatePtr->encoding == NULL);
     outBinary = (outStatePtr->encoding == NULL);
     sameEncoding = inStatePtr->encoding == outStatePtr->encoding
@@ -9747,7 +9743,6 @@ CopyData(
 		    TclDecrRefCount(bufObj);
 		    bufObj = NULL;
 		}
-		ResetFlag(inStatePtr, CHANNEL_FCOPY);
 		return TCL_OK;
 	    }
 	}
@@ -9839,7 +9834,6 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
-	    ResetFlag(inStatePtr, CHANNEL_FCOPY);
 	    return TCL_OK;
 	}
 
@@ -9862,7 +9856,6 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
-	    ResetFlag(inStatePtr, CHANNEL_FCOPY);
 	    return TCL_OK;
 	}
     } /* while */
@@ -9915,7 +9908,6 @@ CopyData(
 	    }
 	}
     }
-    ResetFlag(inStatePtr, CHANNEL_FCOPY);
     return result;
 }
 
