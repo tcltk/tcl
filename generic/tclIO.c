@@ -4608,7 +4608,6 @@ Tcl_GetsObj(
 				/* State info for channel */
     ChannelBuffer *bufPtr;
     int inEofChar, skip, copiedTotal, oldFlags, oldRemoved;
-    int reportError = 0;
     Tcl_Size oldLength;
     Tcl_Encoding encoding;
     char *dst, *dstEnd, *eol, *eof;
@@ -4890,7 +4889,6 @@ Tcl_GetsObj(
 	     * point, if desired.
 	     */
 	    eol = dstEnd;
-	    reportError = 1;
 	    goto gotEOL;
 	}
 	dst = dstEnd;
@@ -10206,7 +10204,7 @@ DoRead(
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 	    && ((p == dst) || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
 	Tcl_SetErrno(EILSEQ);
-	if (!copied) {
+	if (p == dst) {
 		p = dst - 1;
 	}
     }
