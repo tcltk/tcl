@@ -813,7 +813,7 @@ TclpReadlink(
 {
 #ifndef DJGPP
     char link[MAXPATHLEN];
-    int length;
+    ssize_t length;
     const char *native;
     Tcl_DString ds;
 
@@ -825,7 +825,7 @@ TclpReadlink(
 	return NULL;
     }
 
-    Tcl_ExternalToUtfDStringEx(NULL, link, length, TCL_ENCODING_NOCOMPLAIN, linkPtr);
+    Tcl_ExternalToUtfDStringEx(NULL, link, (size_t)length, TCL_ENCODING_NOCOMPLAIN, linkPtr);
     return Tcl_DStringValue(linkPtr);
 #else
     return NULL;
@@ -979,7 +979,7 @@ TclpObjLink(
 	Tcl_Obj *linkPtr = NULL;
 
 	char link[MAXPATHLEN];
-	int length;
+	ssize_t length;
 	Tcl_DString ds;
 	Tcl_Obj *transPtr;
 
@@ -994,7 +994,7 @@ TclpObjLink(
 	    return NULL;
 	}
 
-	Tcl_ExternalToUtfDStringEx(NULL, link, length, TCL_ENCODING_NOCOMPLAIN, &ds);
+	Tcl_ExternalToUtfDStringEx(NULL, link, (size_t)length, TCL_ENCODING_NOCOMPLAIN, &ds);
 	linkPtr = Tcl_DStringToObj(&ds);
 	Tcl_IncrRefCount(linkPtr);
 	return linkPtr;

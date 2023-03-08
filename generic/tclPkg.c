@@ -462,7 +462,7 @@ PkgRequireCore(
     TCL_UNUSED(int))
 {
     const char *name = (const char *)data[0];
-    int reqc = PTR2INT(data[1]);
+    int reqc = (int)PTR2INT(data[1]);
     Tcl_Obj **reqv = (Tcl_Obj **)data[2];
     int code = CheckAllRequirements(interp, reqc, reqv);
     Require *reqPtr;
@@ -495,7 +495,7 @@ PkgRequireCoreStep1(
     Tcl_DString command;
     char *script;
     Require *reqPtr = (Require *)data[0];
-    int reqc = PTR2INT(data[1]);
+    int reqc = (int)PTR2INT(data[1]);
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     const char *name = reqPtr->name /* Name of desired package. */;
 
@@ -552,7 +552,7 @@ PkgRequireCoreStep2(
     int result)
 {
     Require *reqPtr = (Require *)data[0];
-    int reqc = PTR2INT(data[1]);
+    int reqc = (int)PTR2INT(data[1]);
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     const char *name = reqPtr->name; /* Name of desired package. */
 
@@ -587,7 +587,7 @@ PkgRequireCoreFinal(
     TCL_UNUSED(int))
 {
     Require *reqPtr = (Require *)data[0];
-    int reqc = PTR2INT(data[1]), satisfies;
+    int reqc = (int)PTR2INT(data[1]), satisfies;
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     char *pkgVersionI;
     void *clientDataPtr = reqPtr->clientDataPtr;
@@ -653,7 +653,7 @@ SelectPackage(
 				/* Internal rep. of versions */
     int availStable, satisfies;
     Require *reqPtr = (Require *)data[0];
-    int reqc = PTR2INT(data[1]);
+    int reqc = (int)PTR2INT(data[1]);
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     const char *name = reqPtr->name;
     Package *pkgPtr = reqPtr->pkgPtr;
@@ -852,7 +852,7 @@ SelectPackageFinal(
     int result)
 {
     Require *reqPtr = (Require *)data[0];
-    int reqc = PTR2INT(data[1]);
+    int reqc = (int)PTR2INT(data[1]);
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     const char *name = reqPtr->name;
     char *versionToProvide = reqPtr->versionToProvide;

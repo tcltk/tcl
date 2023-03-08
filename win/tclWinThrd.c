@@ -725,7 +725,7 @@ Tcl_ConditionWait(
     if (timePtr == NULL) {
 	wtime = INFINITE;
     } else {
-	wtime = timePtr->sec * 1000 + timePtr->usec / 1000;
+	wtime = (DWORD)timePtr->sec * 1000 + (unsigned long)timePtr->usec / 1000;
     }
 
     /*

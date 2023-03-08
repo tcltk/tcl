@@ -175,7 +175,7 @@ TclpDlopen(
      */
 
     handlePtr = (Tcl_LoadHandle)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
-    handlePtr->clientData = (void *) hInstance;
+    handlePtr->clientData = (void *)hInstance;
     handlePtr->findSymbolProcPtr = &FindSymbol;
     handlePtr->unloadFileProcPtr = &UnloadFile;
     *loadHandle = handlePtr;

@@ -85,7 +85,7 @@ typedef struct SerialInfo {
     int readable;		/* Flag that the channel is readable. */
     int writable;		/* Flag that the channel is writable. */
     int blockTime;		/* Maximum blocktime in msec. */
-    unsigned int lastEventTime;	/* Time in milliseconds since last readable
+    unsigned long long lastEventTime;	/* Time in milliseconds since last readable
 				 * event. */
 				/* Next readable event only after blockTime */
     DWORD error;		/* pending error code returned by
@@ -373,14 +373,14 @@ SerialBlockTime(
  *----------------------------------------------------------------------
  */
 
-static unsigned int
+static unsigned long long
 SerialGetMilliseconds(void)
 {
     Tcl_Time time;
 
     Tcl_GetTime(&time);
 
-    return (time.sec * 1000 + time.usec / 1000);
+    return ((unsigned long long)time.sec * 1000 + (unsigned long)time.usec / 1000);
 }
 
 /*
@@ -469,7 +469,7 @@ SerialCheckProc(
     int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     COMSTAT cStat;
-    unsigned int time;
+    unsigned long long time;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -519,8 +519,8 @@ SerialCheckProc(
 			    (infoPtr->error & SERIAL_READ_ERRORS)) {
 			infoPtr->readable = 1;
 			time = SerialGetMilliseconds();
-			if ((unsigned int) (time - infoPtr->lastEventTime)
-				>= (unsigned int) infoPtr->blockTime) {
+			if ((time - infoPtr->lastEventTime)
+				>= (unsigned long long) infoPtr->blockTime) {
 			    needEvent = 1;
 			    infoPtr->lastEventTime = time;
 			}
@@ -796,7 +796,7 @@ SerialBlockingWrite(
     LeaveCriticalSection(&infoPtr->csWrite);
 
     if (result == FALSE) {
-	int err = GetLastError();
+	DWORD err = GetLastError();
 
 	switch (err) {
 	case ERROR_IO_PENDING:
@@ -918,7 +918,7 @@ SerialInputProc(
     }
 
     if (bufSize == 0) {
-	return bytesRead = 0;
+	return 0;
     }
 
     /*
@@ -1255,7 +1255,7 @@ SerialGetHandleProc(
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
 
-    *handlePtr = (ClientData) infoPtr->handle;
+    *handlePtr = (void *) infoPtr->handle;
     return TCL_OK;
 }
 

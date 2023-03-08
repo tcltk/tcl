@@ -313,7 +313,7 @@ static unsigned int __stdcall	NotifierProc(void *hwnd, unsigned int message,
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpInitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -1179,7 +1179,7 @@ NotifierThreadProc(
 	 */
 
 	do {
-	    i = read(receivePipe, buf, 1);
+	    i = (int)read(receivePipe, buf, 1);
 	    if (i <= 0) {
 		break;
 	    } else if ((i == 0) || ((i == 1) && (buf[0] == 'q'))) {

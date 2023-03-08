@@ -86,11 +86,12 @@ TclOO_Class_Constructor(
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     Tcl_Obj **invoke, *nameObj;
 
-    if (objc-1 > Tcl_ObjectContextSkippedArgs(context)) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+    size_t skip = Tcl_ObjectContextSkippedArgs(context);
+    if (objc > skip + 1) {
+	Tcl_WrongNumArgs(interp, skip, objv,
 		"?definitionScript?");
 	return TCL_ERROR;
-    } else if (objc == Tcl_ObjectContextSkippedArgs(context)) {
+    } else if (objc == skip) {
 	return TCL_OK;
     }
 
@@ -204,7 +205,7 @@ TclOO_Class_Create(
      * Check we have the right number of (sensible) arguments.
      */
 
-    if (objc - Tcl_ObjectContextSkippedArgs(context) < 1) {
+    if ((size_t)objc < 1 + Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"objectName ?arg ...?");
 	return TCL_ERROR;
@@ -269,7 +270,7 @@ TclOO_Class_CreateNs(
      * Check we have the right number of (sensible) arguments.
      */
 
-    if (objc - Tcl_ObjectContextSkippedArgs(context) < 2) {
+    if ((size_t)objc + 1 < Tcl_ObjectContextSkippedArgs(context) + 3) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"objectName namespaceName ?arg ...?");
 	return TCL_ERROR;
@@ -460,7 +461,7 @@ TclOO_Object_Eval(
      * object when it decrements its refcount after eval'ing it.
      */
 
-    if (objc != skip+1) {
+    if ((size_t)objc != skip+1) {
 	scriptPtr = Tcl_ConcatObj(objc-skip, objv+skip);
 	invoker = NULL;
     } else {
@@ -542,7 +543,7 @@ TclOO_Object_Unknown(
      * name without an error).
      */
 
-    if (objc < skip+1) {
+    if ((size_t)objc < skip+1) {
 	Tcl_WrongNumArgs(interp, skip, objv, "method ?arg ...?");
 	return TCL_ERROR;
     }
@@ -654,7 +655,7 @@ TclOO_Object_LinkVar(
 	return TCL_OK;
     }
 
-    for (i=Tcl_ObjectContextSkippedArgs(context) ; i<objc ; i++) {
+    for (i = Tcl_ObjectContextSkippedArgs(context) ; i < (size_t)objc ; i++) {
 	Var *varPtr, *aryPtr;
 	const char *varName = TclGetString(objv[i]);
 
@@ -1017,7 +1018,7 @@ NextRestoreFrame(
 
     iPtr->varFramePtr = (CallFrame *)data[0];
     if (contextPtr != NULL) {
-	contextPtr->index = PTR2INT(data[2]);
+	contextPtr->index = PTR2UINT(data[2]);
     }
     return result;
 }
@@ -1091,7 +1092,7 @@ TclOOSelfObjCmd(
 	return TCL_OK;
     case SELF_NS:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		contextPtr->oPtr->namespacePtr->fullName,-1));
+		contextPtr->oPtr->namespacePtr->fullName, TCL_INDEX_NONE));
 	return TCL_OK;
     case SELF_CLASS: {
 	Class *clsPtr = CurrentlyInvoked(contextPtr).mPtr->declaringClassPtr;
