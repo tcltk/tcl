@@ -9276,14 +9276,11 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
     seek $f 0
     fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -profile strict
 } -body {
-    set d [read $f]
-    binary scan $d H* hd
-    lappend hd [catch {set d [read $f]} msg]
-    lappend hd $msg
+    read $f
 } -cleanup {
     close $f
     removeFile io-75.11
-} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
+} -match glob -returnCodes 1 -result {error reading "*": illegal byte sequence}
 
 test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
     set fn [makeFile {} io-75.12]
@@ -9311,14 +9308,10 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -se
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
 } -body {
-    set d [read $f]
-    binary scan $d H* hd
-    lappend hd [catch {read $f} msg]
-    close $f
-    lappend hd $msg
+    read $f
 } -cleanup {
     removeFile io-75.13
-} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
+} -match glob -returnCodes 1 -result {error reading "*": illegal byte sequence}
 
 # ### ### ### ######### ######### #########
 

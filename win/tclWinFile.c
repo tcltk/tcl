@@ -170,7 +170,7 @@ static int		NativeWriteReparse(const WCHAR *LinkDirectory,
 static int		NativeMatchType(int isDrive, DWORD attr,
 			    const WCHAR *nativeName, Tcl_GlobTypeData *types);
 static int		WinIsDrive(const char *name, size_t nameLen);
-static Tcl_Size		WinIsReserved(const char *path);
+static size_t		WinIsReserved(const char *path);
 static Tcl_Obj *	WinReadLink(const WCHAR *LinkSource);
 static Tcl_Obj *	WinReadLinkDirectory(const WCHAR *LinkDirectory);
 static int		WinLink(const WCHAR *LinkSource,
@@ -921,7 +921,7 @@ TclpMatchInDirectory(
 
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
-	    Tcl_Size len = 0;
+	    size_t len = 0;
 	    const char *str = Tcl_GetStringFromObj(norm, &len);
 
 	    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
@@ -943,7 +943,7 @@ TclpMatchInDirectory(
 	WIN32_FIND_DATAW data;
 	const char *dirName;	/* UTF-8 dir name, later with pattern
 				 * appended. */
-	Tcl_Size dirLength;
+	size_t dirLength;
 	int matchSpecialDots;
 	Tcl_DString ds;		/* Native encoding of dir, also used
 				 * temporarily for other things. */
@@ -1226,7 +1226,7 @@ WinIsDrive(
  * (not any trailing :).
  */
 
-static Tcl_Size
+static size_t
 WinIsReserved(
     const char *path)		/* Path in UTF-8 */
 {
@@ -2560,14 +2560,14 @@ TclpObjNormalizePath(
 		 */
 
 		if (isDrive) {
-		    Tcl_Size len = WinIsReserved(path);
+		    size_t len = WinIsReserved(path);
 
 		    if (len > 0) {
 			/*
 			 * Actually it does exist - COM1, etc.
 			 */
 
-			Tcl_Size i;
+			size_t i;
 
 			for (i=0 ; i<len ; i++) {
 			    WCHAR wc = ((WCHAR *)nativePath)[i];
@@ -2796,7 +2796,7 @@ TclpObjNormalizePath(
 	     */
 
 	    Tcl_Obj *tmpPathPtr;
-	    Tcl_Size len;
+	    size_t len;
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
@@ -2885,7 +2885,7 @@ TclWinVolumeRelativeNormalize(
 	 * also on drive C.
 	 */
 
-	Tcl_Size cwdLen;
+	size_t cwdLen;
 	const char *drive = Tcl_GetStringFromObj(useThisCwd, &cwdLen);
 	char drive_cur = path[0];
 
@@ -2959,7 +2959,7 @@ TclpNativeToNormalized(
 {
     Tcl_DString ds;
     Tcl_Obj *objPtr;
-    Tcl_Size len;
+    size_t len;
     char *copy, *p;
 
     Tcl_DStringInit(&ds);
@@ -3022,7 +3022,7 @@ TclNativeCreateNativeRep(
     WCHAR *nativePathPtr = NULL;
     const char *str;
     Tcl_Obj *validPathPtr;
-    Tcl_Size len;
+    size_t len;
     WCHAR *wp;
 
     if (TclFSCwdIsNative()) {

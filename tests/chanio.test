@@ -121,7 +121,7 @@ test chan-io-1.6 {Tcl_WriteChars: WriteBytes} {
     chan puts -nonewline $f "a\x4D\x00"
     chan close $f
     contents $path(test1)
-} "aM\x00"
+} aM\x00
 test chan-io-1.7 {Tcl_WriteChars: WriteChars} {
     set f [open $path(test1) w]
     chan configure $f -encoding shiftjis
@@ -286,7 +286,7 @@ test chan-io-3.6 {WriteChars: (stageRead + dstWrote == 0)} -body {
     # last byte of Ａ plus the all of Ｂ) appended.
     set f [open $path(test1) w]
     chan configure $f -encoding shiftjis -buffersize 16
-    chan puts -nonewline $f "12345678901234ＡＢ"
+    chan puts -nonewline $f 12345678901234ＡＢ
     set x [list [contents $path(test1)]]
     chan close $f
     lappend x [contents $path(test1)]
@@ -1218,7 +1218,7 @@ test chan-io-8.7 {PeekAhead: cleanup} -setup {
     chan puts -nonewline $f "abcdefghijklmno\r"
     # here
     lappend x [chan gets $f line] $line [testchannel queuedcr $f]
-    chan puts -nonewline $f "\x1A"
+    chan puts -nonewline $f \x1A
     lappend x [chan gets $f line] $line
 } -cleanup {
     chan close $f
@@ -1374,22 +1374,22 @@ test chan-io-12.4 {ReadChars: split-up char} -setup {
     chan configure $f -encoding shiftjis
     vwait [namespace which -variable x]
     chan configure $f -encoding binary -blocking 1
-    chan puts -nonewline $f "\x7B"
+    chan puts -nonewline $f \x7B
     after 500			;# Give the cat process time to catch up
     chan configure $f -encoding shiftjis -blocking 0
     vwait [namespace which -variable x]
     return $x
 } -cleanup {
     chan close $f
-} -result [list "123456789012345" 1 "本" 0]
+} -result [list "123456789012345" 1 本 0]
 test chan-io-12.5 {ReadChars: chan events on partial characters} -setup {
     variable x {}
 } -constraints {stdio fileevent} -body {
     set path(test1) [makeFile {
 	chan configure stdout -encoding binary -buffering none
-	chan gets stdin; chan puts -nonewline "\xE7"
-	chan gets stdin; chan puts -nonewline "\x89"
-	chan gets stdin; chan puts -nonewline "\xA6"
+	chan gets stdin; chan puts -nonewline \xE7
+	chan gets stdin; chan puts -nonewline \x89
+	chan gets stdin; chan puts -nonewline \xA6
     } test1]
     set f [openpipe r+ $path(test1)]
     chan event $f readable [namespace code {
@@ -5213,7 +5213,7 @@ test chan-io-39.17 {Tcl_SetChannelOption: -encoding, clearing CHANNEL_NEED_MORE_
 } -constraints {stdio fileevent} -body {
     set f [openpipe r+ $path(cat)]
     chan configure $f -encoding binary
-    chan puts -nonewline $f "\xE7"
+    chan puts -nonewline $f \xE7
     chan flush $f
     chan configure $f -encoding utf-8 -blocking 0
     chan event $f readable [namespace code { lappend x [chan read $f] }]
@@ -6845,7 +6845,7 @@ set path(utf8-rp.txt)    [makeFile {} utf8-rp.txt]
 # Create kyrillic file, use lf translation to avoid os eol issues
 set out [open $path(kyrillic.txt) w]
 chan configure $out -encoding koi8-r -translation lf
-chan puts       $out "АА"
+chan puts       $out АА
 chan close      $out
 test chan-io-52.9 {TclCopyChannel & encodings} {fcopy} {
     # Copy kyrillic to UTF-8, using chan copy.
@@ -6883,7 +6883,7 @@ test chan-io-52.10 {TclCopyChannel & encodings} {fcopy} {
 test chan-io-52.11 {TclCopyChannel & encodings} -setup {
     set f [open $path(utf8-fcopy.txt) w]
     fconfigure $f -encoding utf-8 -translation lf
-    puts $f "АА"
+    puts $f АА
     close $f
 } -constraints {fcopy} -body {
     # binary to encoding => the input has to be in utf-8 to make sense to the

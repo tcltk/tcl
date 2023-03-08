@@ -44,7 +44,7 @@ static void			RegisterTcpServerInterpCleanup(
 				    Tcl_Interp *interp,
 				    AcceptCallback *acceptCallbackPtr);
 static Tcl_InterpDeleteProc	TcpAcceptCallbacksDeleteProc;
-static void		TcpServerCloseProc(ClientData callbackData);
+static void		TcpServerCloseProc(void *callbackData);
 static void		UnregisterTcpServerInterpCleanupProc(
 			    Tcl_Interp *interp,
 			    AcceptCallback *acceptCallbackPtr);
@@ -1183,7 +1183,7 @@ Tcl_OpenObjCmd(
 
 static void
 TcpAcceptCallbacksDeleteProc(
-    ClientData clientData,	/* Data which was passed when the assocdata
+    void *clientData,	/* Data which was passed when the assocdata
 				 * was registered. */
     TCL_UNUSED(Tcl_Interp *))
 {
@@ -1311,7 +1311,7 @@ UnregisterTcpServerInterpCleanupProc(
 
 static void
 AcceptCallbackProc(
-    ClientData callbackData,	/* The data stored when the callback was
+    void *callbackData,	/* The data stored when the callback was
 				 * created in the call to
 				 * Tcl_OpenTcpServer. */
     Tcl_Channel chan,		/* Channel for the newly accepted
@@ -1402,7 +1402,7 @@ AcceptCallbackProc(
 
 static void
 TcpServerCloseProc(
-    ClientData callbackData)	/* The data passed in the call to
+    void *callbackData)	/* The data passed in the call to
 				 * Tcl_CreateCloseHandler. */
 {
     AcceptCallback *acceptCallbackPtr = (AcceptCallback *)callbackData;
