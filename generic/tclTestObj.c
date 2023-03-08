@@ -1514,13 +1514,13 @@ TeststringobjCmd(
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 13: /* newunicode*/
-	    unicode = (unsigned short *) ckalloc((objc - 3) * sizeof(Tcl_UniChar));
+	    unicode = (unsigned short *) ckalloc((objc - 3) * sizeof(unsigned short));
 	    for (i = 0; i < (objc - 3); ++i) {
 		int val;
 		if (Tcl_GetIntFromObj(interp, objv[i + 3], &val) != TCL_OK) {
 		    break;
 		}
-		unicode[i] = (Tcl_UniChar)val;
+		unicode[i] = (unsigned short)val;
 	    }
 	    if (i < (objc-3)) {
 		ckfree(unicode);
