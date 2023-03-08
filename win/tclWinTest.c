@@ -31,21 +31,14 @@
  * Forward declarations of functions defined later in this file:
  */
 
-static int		TesteventloopCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestvolumetypeCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		TestwinclockCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestwinsleepCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		TestSizeCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	TesteventloopCmd;
+static Tcl_ObjCmdProc	TestvolumetypeCmd;
+static Tcl_ObjCmdProc	TestwinclockCmd;
+static Tcl_ObjCmdProc	TestwinsleepCmd;
+static Tcl_ObjCmdProc	TestSizeCmd;
 static Tcl_ObjCmdProc	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
-static int		TestchmodCmd(ClientData dummy, Tcl_Interp* interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	TestchmodCmd;
 
 /*
  *----------------------------------------------------------------------
@@ -111,6 +104,7 @@ TesteventloopCmd(
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
 				 * innermost invocation of the "wait"
 				 * subcommand. */
+    (void)clientData;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
@@ -300,6 +294,7 @@ TestwinsleepCmd(
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int ms;
+    (void)clientData;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "ms");
@@ -385,6 +380,7 @@ TestExceptionCmd(
 	EXCEPTION_GUARD_PAGE, EXCEPTION_INVALID_HANDLE, CONTROL_C_EXIT
     };
     int cmd;
+    (void)dummy;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 0, objv, "<type-of-exception>");
@@ -411,7 +407,6 @@ TestExceptionCmd(
     /* SMASH! */
     RaiseException(exceptions[cmd], EXCEPTION_NONCONTINUABLE, 0, NULL);
 
-    /* NOTREACHED */
     return TCL_OK;
 }
 
@@ -451,7 +446,6 @@ TestplatformChmod(
     DWORD attr, newAclSize;
     PACL newAcl = NULL;
     int res = 0;
-    SID_IDENTIFIER_AUTHORITY worldAuthority = SECURITY_WORLD_SID_AUTHORITY;
 
     HANDLE hToken = NULL;
     int i;
@@ -483,7 +477,7 @@ TestplatformChmod(
 	GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 	goto done;
     }
-    pTokenUser = ckalloc(dw);
+    pTokenUser = (TOKEN_USER *)ckalloc(dw);
     if (!GetTokenInformation(hToken, TokenUser, pTokenUser, dw, &dw)) {
 	goto done;
     }
@@ -525,7 +519,7 @@ TestplatformChmod(
 		GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 	    goto done;
 	}
-	pTokenGroup = ckalloc(dw);
+	pTokenGroup = (TOKEN_PRIMARY_GROUP *)ckalloc(dw);
 	if (!GetTokenInformation(hToken, TokenPrimaryGroup, pTokenGroup, dw, &dw)) {
 	    ckfree(pTokenGroup);
 	    goto done;
@@ -592,7 +586,7 @@ TestplatformChmod(
 	newAclSize +=
 	    offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
     }
-    newAcl = ckalloc(newAclSize);
+    newAcl = (PACL)ckalloc(newAclSize);
     if (!InitializeAcl(newAcl, newAclSize, ACL_REVISION)) {
 	goto done;
     }
@@ -668,6 +662,7 @@ TestchmodCmd(
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int i, mode;
+    (void)dummy;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
