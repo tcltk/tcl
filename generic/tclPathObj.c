@@ -65,7 +65,7 @@ typedef struct {
 				 *  normPathPtr exists and is absolute. */
     int flags;			/* Flags to describe interpretation - see
 				 * below. */
-    ClientData nativePathPtr;	/* Native representation of this path, which
+    void *nativePathPtr;	/* Native representation of this path, which
 				 * is filesystem dependent. */
     size_t filesystemEpoch;	/* Used to ensure the path representation was
 				 * generated during the correct filesystem
@@ -1489,7 +1489,7 @@ MakePathFromNormalized(
 Tcl_Obj *
 Tcl_FSNewNativePath(
     const Tcl_Filesystem *fromFilesystem,
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_Obj *pathPtr = NULL;
     FsPath *fsPathPtr;
@@ -1927,7 +1927,7 @@ Tcl_FSGetNormalizedPath(
  *---------------------------------------------------------------------------
  */
 
-ClientData
+void *
 Tcl_FSGetInternalRep(
     Tcl_Obj *pathPtr,
     const Tcl_Filesystem *fsPtr)
@@ -2074,7 +2074,7 @@ void
 TclFSSetPathDetails(
     Tcl_Obj *pathPtr,
     const Tcl_Filesystem *fsPtr,
-    ClientData clientData)
+    void *clientData)
 {
     FsPath *srcFsPathPtr;
 
@@ -2368,7 +2368,7 @@ UpdateStringOfFsPath(
 int
 TclNativePathInFilesystem(
     Tcl_Obj *pathPtr,
-    TCL_UNUSED(ClientData *))
+    TCL_UNUSED(void **))
 {
     /*
      * A special case is required to handle the empty path "". This is a valid

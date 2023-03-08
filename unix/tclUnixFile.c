@@ -709,9 +709,9 @@ TclpObjLstat(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpGetNativeCwd(
-    ClientData clientData)
+    void *clientData)
 {
     char buffer[MAXPATHLEN+1];
 
@@ -813,7 +813,7 @@ TclpReadlink(
 {
 #ifndef DJGPP
     char link[MAXPATHLEN];
-    int length;
+    ssize_t length;
     const char *native;
     Tcl_DString ds;
 
@@ -825,7 +825,7 @@ TclpReadlink(
 	return NULL;
     }
 
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, link, length, TCL_ENCODING_PROFILE_TCL8, linkPtr, NULL);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, TCL_ENCODING_PROFILE_TCL8, linkPtr, NULL);
     return Tcl_DStringValue(linkPtr);
 #else
     return NULL;
@@ -979,7 +979,7 @@ TclpObjLink(
 	Tcl_Obj *linkPtr = NULL;
 
 	char link[MAXPATHLEN];
-	int length;
+	ssize_t length;
 	Tcl_DString ds;
 	Tcl_Obj *transPtr;
 
@@ -994,7 +994,7 @@ TclpObjLink(
 	    return NULL;
 	}
 
-	Tcl_ExternalToUtfDStringEx(NULL, NULL, link, length, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
 	linkPtr = Tcl_DStringToObj(&ds);
 	Tcl_IncrRefCount(linkPtr);
 	return linkPtr;
@@ -1055,7 +1055,7 @@ TclpFilesystemPathType(
 
 Tcl_Obj *
 TclpNativeToNormalized(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_DString ds;
 
@@ -1079,7 +1079,7 @@ TclpNativeToNormalized(
  *---------------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclNativeCreateNativeRep(
     Tcl_Obj *pathPtr)
 {
@@ -1146,9 +1146,9 @@ TclNativeCreateNativeRep(
  *---------------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclNativeDupInternalRep(
-    ClientData clientData)
+    void *clientData)
 {
     char *copy;
     size_t len;

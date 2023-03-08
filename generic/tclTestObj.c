@@ -1261,7 +1261,7 @@ TeststringobjCmd(
     static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
 	"set", "set2", "setlength", "maxchars", "range", "appendself",
-	"appendself2", NULL
+	"appendself2", "newunicode", NULL
     };
 
     if (objc < 3) {
@@ -1498,7 +1498,7 @@ TeststringobjCmd(
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 13: /* newunicode*/
-	    unicode = (Tcl_UniChar *) Tcl_Alloc((objc - 3) * sizeof(Tcl_UniChar));
+	    unicode = (Tcl_UniChar *)Tcl_Alloc((objc - 3) * sizeof(Tcl_UniChar));
 	    for (i = 0; i < (objc - 3); ++i) {
 		int val;
 		if (Tcl_GetIntFromObj(interp, objv[i + 3], &val) != TCL_OK) {
