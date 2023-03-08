@@ -4545,7 +4545,7 @@ proc http::Eot {token {reason {}}} {
 
 	    set enc [CharsetToEncoding $state(charset)]
 	    if {$enc ne "binary"} {
-		set state(body) [encoding convertfrom $enc $state(body)]
+		set state(body) [encoding convertfrom -profile tcl8 $enc $state(body)]
 	    }
 
 	    # Translate text line endings.
@@ -4628,7 +4628,7 @@ proc http::GuessType {token} {
     if {$enc eq "binary"} {
         return 0
     }
-    set state(body) [encoding convertfrom $enc $state(body)]
+    set state(body) [encoding convertfrom -profile tcl8 $enc $state(body)]
     set state(body) [string map {\r\n \n \r \n} $state(body)]
     set state(type) application/xml
     set state(binary) 0
@@ -4709,7 +4709,7 @@ proc http::quoteString {string} {
     # a pre-computed map and [string map] to do the conversion (much faster
     # than [regsub]/[subst]). [Bug 1020491]
 
-    set string [encoding convertto $http(-urlencoding) $string]
+    set string [encoding convertto -profile tcl8 $http(-urlencoding) $string]
     return [string map $formMap $string]
 }
 
