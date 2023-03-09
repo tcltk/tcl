@@ -17,9 +17,9 @@
 # interfere with the [test] doing the testing.
 #
 
-if {[catch {package require tcltest 2.1}]} {
-    puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
-    return
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.1
+    namespace import -force ::tcltest::*
 }
 
 # File permissions broken on wsl without some "exotic" wsl configuration
