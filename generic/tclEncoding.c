@@ -2712,7 +2712,7 @@ Utf32ToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    int ch, bytesLeft = srcLen % 4;
+    int ch = 0, bytesLeft = srcLen % 4;
 
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
@@ -2729,6 +2729,21 @@ Utf32ToUtfProc(
 	srcLen -= bytesLeft;
     }
 
+#if TCL_UTF_MAX < 4
+    /*
+     * If last code point is a high surrogate, we cannot handle that yet,
+     * unless we are at the end.
+     */
+
+    if (!(flags & TCL_ENCODING_END) && (srcLen >= 4) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?3:2)] & 0xFC) == 0xD8) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?2:3)]) == 0) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?1:4)]) == 0)) {
+	result = TCL_CONVERT_MULTIBYTE;
+	srcLen-= 4;
+    }
+#endif
+
     srcStart = src;
     srcEnd = src + srcLen;
 
@@ -2741,15 +2756,27 @@ Utf32ToUtfProc(
 	    break;
 	}
 
+#if TCL_UTF_MAX < 4
+	int prev = ch;
+#endif
 	if (flags & TCL_ENCODING_LE) {
 	    ch = (src[3] & 0xFF) << 24 | (src[2] & 0xFF) << 16 | (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
 	} else {
 	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
+#if TCL_UTF_MAX < 4
+	if (((prev  & ~0x3FF) == 0xD800) && ((ch  & ~0x3FF) != 0xDC00)) {
+	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
+	    dst += Tcl_UniCharToUtf(-1, dst);
+	}
+#endif
 
 	if ((unsigned)ch > 0x10FFFF || SURROGATE(ch)) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
+#if TCL_UTF_MAX < 4
+		ch = 0;
+#endif
 		break;
 	    }
 	    if (PROFILE_REPLACE(flags)) {
@@ -2770,6 +2797,12 @@ Utf32ToUtfProc(
 	src += 4;
     }
 
+#if TCL_UTF_MAX < 4
+    if ((ch  & ~0x3FF) == 0xD800) {
+	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
+	dst += Tcl_UniCharToUtf(-1, dst);
+    }
+#endif
     
 
     /*
@@ -2780,16 +2813,16 @@ Utf32ToUtfProc(
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
-            if (PROFILE_STRICT(flags)) {
-                result = TCL_CONVERT_SYNTAX;
-            } else {
-                /* PROFILE_REPLACE or PROFILE_TCL8 */
-                result = TCL_OK;
-                dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-                numChars++;
-                src += bytesLeft; /* Go past truncated code unit */
-            }
-        }
+	    if (PROFILE_STRICT(flags)) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		/* PROFILE_REPLACE or PROFILE_TCL8 */
+		result = TCL_OK;
+		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+		numChars++;
+		src += bytesLeft; /* Go past truncated code unit */
+	    }
+	}
     }
 
     *srcReadPtr = src - srcStart;

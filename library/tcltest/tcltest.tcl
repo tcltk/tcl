@@ -400,7 +400,7 @@ namespace eval tcltest {
 	    default {
 		set outputChannel [open $filename a]
 		if {[package vsatisfies [package provide Tcl] 8.7-]} {
-		    fconfigure $outputChannel -encoding utf-8
+		    fconfigure $outputChannel -profile tcl8 -encoding utf-8
 		}
 		set ChannelsWeOpened($outputChannel) 1
 
@@ -447,7 +447,7 @@ namespace eval tcltest {
 	    default {
 		set errorChannel [open $filename a]
 		if {[package vsatisfies [package provide Tcl] 8.7-]} {
-		    fconfigure $errorChannel -encoding utf-8
+		    fconfigure $errorChannel -profile tcl8 -encoding utf-8
 		}
 		set ChannelsWeOpened($errorChannel) 1
 
@@ -792,7 +792,7 @@ namespace eval tcltest {
 	if {$Option(-loadfile) eq {}} {return}
 	set tmp [open $Option(-loadfile) r]
 	if {[package vsatisfies [package provide Tcl] 8.7-]} {
-	    fconfigure $tmp -encoding utf-8
+	    fconfigure $tmp -profile tcl8 -encoding utf-8
 	}
 	loadScript [read $tmp]
 	close $tmp
@@ -1340,7 +1340,7 @@ proc tcltest::DefineConstraintInitializers {} {
 	set code 0
 	if {![catch {set f [open "|[list [interpreter]]" w]}]} {
 	    if {[package vsatisfies [package provide Tcl] 8.7-]} {
-		fconfigure $f -encoding utf-8
+		fconfigure $f -profile tcl8 -encoding utf-8
 	    }
 	    if {![catch {puts $f exit}]} {
 		if {![catch {close $f}]} {
@@ -2190,7 +2190,7 @@ proc tcltest::test {name description args} {
 	    if {[file readable $testFile]} {
 		set testFd [open $testFile r]
 		if {[package vsatisfies [package provide Tcl] 8.7-]} {
-		    fconfigure $testFd -encoding utf-8
+		    fconfigure $testFd -profile tcl8 -encoding utf-8
 		}
 		set testLine [expr {[lsearch -regexp \
 			[split [read $testFd] "\n"] \
@@ -2901,7 +2901,7 @@ proc tcltest::runAllTests { {shell ""} } {
 		incr numTestFiles
 		set pipeFd [open $cmd "r"]
 		if {[package vsatisfies [package provide Tcl] 8.7-]} {
-		    fconfigure $pipeFd -encoding utf-8
+		    fconfigure $pipeFd -profile tcl8 -encoding utf-8
 		}
 		while {[gets $pipeFd line] >= 0} {
 		    if {[regexp [join {
@@ -3101,7 +3101,7 @@ proc tcltest::makeFile {contents name {directory ""}} {
     set fd [open $fullName w]
     fconfigure $fd -translation lf
     if {[package vsatisfies [package provide Tcl] 8.7-]} {
-	fconfigure $fd -encoding utf-8
+	fconfigure $fd -profile tcl8 -encoding utf-8
     }
     if {[string index $contents end] eq "\n"} {
 	puts -nonewline $fd $contents
@@ -3252,7 +3252,7 @@ proc tcltest::viewFile {name {directory ""}} {
     set fullName [file join $directory $name]
     set f [open $fullName]
     if {[package vsatisfies [package provide Tcl] 8.7-]} {
-	fconfigure $f -encoding utf-8
+	fconfigure $f -profile tcl8 -encoding utf-8
     }
     set data [read -nonewline $f]
     close $f

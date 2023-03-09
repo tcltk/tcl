@@ -9292,10 +9292,10 @@ test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
     fconfigure $f -encoding utf-8 -profile tcl8 -buffering none -eofchar "" -translation lf
 } -body {
     set d [read $f]
-    close $f
     binary scan $d H* hd
     set hd
 } -cleanup {
+    close $f
     removeFile io-75.12
 } -result 4181
 test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -setup {
@@ -9310,6 +9310,7 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -se
 } -body {
     read $f
 } -cleanup {
+    close $f
     removeFile io-75.13
 } -match glob -returnCodes 1 -result {error reading "*": illegal byte sequence}
 
