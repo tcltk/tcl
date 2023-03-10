@@ -5677,13 +5677,23 @@ test io-39.15 {Tcl_SetChannelOption: -encoding, binary & utf-8} {
     close $f
     set x
 } 牦
-test io-39.16 {Tcl_SetChannelOption: -encoding, errors} {
+# Remove knownProfileBug constraint below post TIP656- TODO
+test io-39.16 {Tcl_SetChannelOption: -encoding (shortened to "-en"), errors} -constraints {
+    knownProfileBug
+} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
-    set result [list [catch {fconfigure $f -encoding foobar} msg] $msg]
+    fconfigure $f -en foobar
+} -cleanup {
     close $f
-    set result
-} {1 {unknown encoding "foobar"}}
+} -returnCodes 1 -result {unknown encoding "foobar"}
+test io-39.16a {Tcl_SetChannelOption: -encoding (invalid shortening to "-e"), errors} -body {
+    file delete $path(test1)
+    set f [open $path(test1) w]
+    fconfigure $f -e foobar
+} -cleanup {
+    close $f
+} -returnCodes 1 -result {bad option "-e": should be one of -blocking, -buffering, -buffersize, -encoding, -encodingprofile, -eofchar, or -translation}
 test io-39.17 {Tcl_SetChannelOption: -encoding, clearing CHANNEL_NEED_MORE_DATA} {stdio fileevent} {
     set f [open "|[list [interpreter] $path(cat)]" r+]
     fconfigure $f -encoding binary
