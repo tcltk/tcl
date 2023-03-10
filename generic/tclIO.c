@@ -8142,7 +8142,7 @@ Tcl_SetChannelOption(
 	}
 	Tcl_SetChannelBufferSize(chan, newBufferSize);
 	return TCL_OK;
-    } else if (HaveOpt(2, "-encoding")) {
+    } else if (HaveOpt(8, "-encoding")) {
 	Tcl_Encoding encoding;
 	int profile;
 
@@ -8178,6 +8178,15 @@ Tcl_SetChannelOption(
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	UpdateInterest(chanPtr);
 	return TCL_OK;
+    } else if (HaveOpt(9, "-encodingprofile")) {
+	int profile;
+	if (TclEncodingProfileNameToId(interp, newValue, &profile) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	TCL_ENCODING_PROFILE_SET(statePtr->inputEncodingFlags, profile);
+	TCL_ENCODING_PROFILE_SET(statePtr->outputEncodingFlags, profile);
+	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
+	return TCL_OK;
     } else if (HaveOpt(2, "-eofchar")) {
 	if (!newValue[0] || (!(newValue[0] & 0x80) && (!newValue[1]
 #ifndef TCL_NO_DEPRECATED
@@ -8211,15 +8220,6 @@ Tcl_SetChannelOption(
 	}
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
-	return TCL_OK;
-    } else if (HaveOpt(1, "-encodingprofile")) {
-	int profile;
-	if (TclEncodingProfileNameToId(interp, newValue, &profile) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	TCL_ENCODING_PROFILE_SET(statePtr->inputEncodingFlags, profile);
-	TCL_ENCODING_PROFILE_SET(statePtr->outputEncodingFlags, profile);
-	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {
 	const char *readMode, *writeMode;
