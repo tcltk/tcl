@@ -45,7 +45,7 @@ if {[info commands printable] eq ""} {
         return $print
     }
 }
-    
+
 
 #
 # cp1250 (generated from glibc-CP1250-2.1.2)

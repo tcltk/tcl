@@ -546,11 +546,11 @@ FillEncodingFileMap(void)
  *---------------------------------------------------------------------------
  */
 
-/* 
- * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS 
+/*
+ * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS
  * DEFINED IN tcl.h (TCL_ENCODING_* et al). Be cognizant of this
  * when adding bits. TODO - should really be defined in a single file.
- * 
+ *
  * To prevent conflicting bits, only define bits within 0xff00 mask here.
  */
 #define TCL_ENCODING_LE	0x100   /* Used to distinguish LE/BE variants */
@@ -2803,7 +2803,7 @@ Utf32ToUtfProc(
 	dst += Tcl_UniCharToUtf(-1, dst);
     }
 #endif
-    
+
 
     /*
      * If we had a truncated code unit at the end AND this is the last
@@ -4417,7 +4417,7 @@ TclEncodingProfileNameToId(
     if (interp) {
 	Tcl_Obj *errorObj;
 	/* This code assumes at least two profiles :-) */
-	errorObj = 
+	errorObj =
 	    Tcl_ObjPrintf("bad profile name \"%s\": must be",
 		profileName);
 	for (i = 0; i < (numProfiles - 1); ++i) {
