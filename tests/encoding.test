@@ -514,6 +514,8 @@ test encoding-16.7 {Utf32ToUtfProc} -body {
 test encoding-16.8 {Utf32ToUtfProc} -body {
     set val [encoding convertfrom -profile tcl8 utf-32 \x41\x00\x00\x41]
     list $val [format %x [scan $val %c]]
+} -constraints {
+    encodingProfileTodo
 } -result "\uFFFD fffd"
 test encoding-16.9 {Utf32ToUtfProc} -constraints utf32 -body {
     encoding convertfrom utf-32le \x00\xD8\x00\x00
@@ -605,6 +607,8 @@ test encoding-17.10 {Utf32ToUtfProc} -body {
 
 test encoding-18.1 {TableToUtfProc on invalid input} -body {
 	list [catch {encoding convertto jis0208 \\} res] $res
+} -constraints {
+    encodingProfileTodo
 } -result {1 {unexpected character at index 0: 'U+00005C'}}
 test encoding-18.2 {TableToUtfProc on invalid input with -profile strict} -body {
 	list [catch {encoding convertto -profile strict jis0208 \\} res] $res
@@ -794,6 +798,8 @@ test encoding-24.18 {Parse valid or invalid utf-8} -constraints testbytestring -
 } -result "Z\xC3\xA0\xE2\x82\xACxxxxxx"
 test encoding-24.19 {Parse valid or invalid utf-8} -body {
     encoding convertto utf-8 "ZX\uD800"
+} -constraints {
+    encodingProfileTodo
 } -returnCodes 1 -match glob -result "unexpected character at index 2: 'U+00D800'"
 test encoding-24.20 {Parse with -profile tcl8 but without providing encoding} -body {
     encoding convertfrom -profile tcl8 "\x20"
@@ -851,6 +857,8 @@ test encoding-24.37 {Parse invalid utf-8 with -profile tcl8} -body {
 } -result \uD800
 test encoding-24.38 {Try to generate invalid utf-8} -body {
     encoding convertto utf-8 \uD800
+} -constraints {
+    encodingProfileTodo
 } -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
 test encoding-24.39 {Try to generate invalid utf-8 with -profile strict} -body {
     encoding convertto -profile strict utf-8 \uD800

@@ -2724,7 +2724,7 @@ Utf32ToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    int ch, bytesLeft = srcLen % 4;
+    int ch = 0, bytesLeft = srcLen % 4;
 
     flags = TclEncodingSetProfileFlags(flags);
     flags |= PTR2INT(clientData);
@@ -2742,6 +2742,21 @@ Utf32ToUtfProc(
 	srcLen -= bytesLeft;
     }
 
+#if TCL_UTF_MAX < 4
+    /*
+     * If last code point is a high surrogate, we cannot handle that yet,
+     * unless we are at the end.
+     */
+
+    if (!(flags & TCL_ENCODING_END) && (srcLen >= 4) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?3:2)] & 0xFC) == 0xD8) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?2:3)]) == 0) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?1:4)]) == 0)) {
+	result = TCL_CONVERT_MULTIBYTE;
+	srcLen-= 4;
+    }
+#endif
+
     srcStart = src;
     srcEnd = src + srcLen;
 
@@ -2754,22 +2769,32 @@ Utf32ToUtfProc(
 	    break;
 	}
 
+#if TCL_UTF_MAX < 4
+	int prev = ch;
+#endif
 	if (flags & TCL_ENCODING_LE) {
 	    ch = (src[3] & 0xFF) << 24 | (src[2] & 0xFF) << 16 | (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
 	} else {
 	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
-
-	if ((unsigned)ch > 0x10FFFF || SURROGATE(ch)) {
+#if TCL_UTF_MAX < 4
+	if (((prev  & ~0x3FF) == 0xD800) && ((ch  & ~0x3FF) != 0xDC00)) {
+	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
+	    dst += Tcl_UniCharToUtf(-1, dst);
+	}
+#endif
+        if ((unsigned)ch > 0x10FFFF || SURROGATE(ch)) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
+#if TCL_UTF_MAX < 4
+		ch = 0;
+#endif
 		break;
 	    }
 	    if (PROFILE_REPLACE(flags)) {
 		ch = UNICODE_REPLACE_CHAR;
 	    }
 	}
-
 	/*
 	 * Special case for 1-byte utf chars for speed. Make sure we work with
 	 * unsigned short-size data.
@@ -2783,12 +2808,16 @@ Utf32ToUtfProc(
 	src += 4;
     }
 
-    
-
     /*
      * If we had a truncated code unit at the end AND this is the last
      * fragment AND profile is not "strict", stick FFFD in its place.
      */
+#if TCL_UTF_MAX < 4
+    if ((ch  & ~0x3FF) == 0xD800) {
+	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
+	dst += Tcl_UniCharToUtf(-1, dst);
+    }
+#endif
     if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
