@@ -7615,6 +7615,32 @@ Tcl_InputBuffered(
 
     return bytesBuffered;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_InputEncodingError --
+ *
+ *	Returns 1 if input is in an encoding error position, 0 otherwise.
+ *
+ * Results:
+ *	0 or 1, always.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_InputEncodingError(
+    Tcl_Channel chan)		/* Is this channel blocked? */
+{
+    ChannelState *statePtr = ((Channel *) chan)->state;
+				/* State of real channel structure. */
+
+    return GotFlag(statePtr, CHANNEL_ENCODING_ERROR) ? 1 : 0;
+}
 
 /*
  *----------------------------------------------------------------------
