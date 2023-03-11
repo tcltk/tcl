@@ -2016,6 +2016,156 @@ static void SpecialFree(
 }
 
 /*
+ *------------------------------------------------------------------------
+ *
+ * UtfTransformFn --
+ *
+ *    Implements a direct call into Tcl_UtfToExternal and Tcl_ExternalToUtf
+ *    as otherwise there is no script level command that directly exercises
+ *    these functions (i/o command cannot test all combinations)
+ *    The arguments at the script level are roughly those of the above
+ *    functions:
+ *        encodingname srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?
+ *
+ * Results:
+ *    TCL_OK or TCL_ERROR. This any errors running the test, NOT the
+ *    result of Tcl_UtfToExternal or Tcl_ExternalToUtf.
+ *
+ * Side effects: 
+ *    The result in the interpreter is a list of the return code from the
+ *    Tcl_UtfToExternal/Tcl_ExternalToUtf functions, the encoding state, and
+ *    the encoded binary string. If any of the srcreadvar, dstwrotevar and 
+ *    dstcharsvar are specified and not empty, they are treated as names
+ *    of variables where the *srcRead, *dstWrote and *dstChars output
+ *    from the functions are stored.
+ *------------------------------------------------------------------------
+ */
+typedef int
+UtfTransformFn(Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr,
+               char *dst, Tcl_Size dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
+static int UtfExtWrapper(
+    Tcl_Interp *interp, UtfTransformFn *transformer, int objc, Tcl_Obj *const objv[])
+{
+    Tcl_Encoding encoding;
+    int encStateValue; /* Assumes Tcl_EncodingState points to integer!!! */
+    Tcl_EncodingState encState;
+    int flags;
+    Tcl_Size srcLen, bufLen;
+    const unsigned char *bytes;
+    unsigned char *bufPtr;
+    int srcRead, dstLen, dstWrote, dstChars;
+    Tcl_Obj *srcReadVar, *dstWroteVar, *dstCharsVar;
+    int result;
+
+    if (objc < 7 || objc > 10) {
+        Tcl_WrongNumArgs(interp,
+                         2,
+                         objv,
+                         "encoding srcbytes flags state dstlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?");
+        return TCL_ERROR;
+    }
+    if (Tcl_GetEncodingFromObj(interp, objv[2], &encoding) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (Tcl_GetIntFromObj(interp, objv[4], &flags) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    /* Assumes state is integer if not "" */
+    if (Tcl_GetIntFromObj(interp, objv[5], &encStateValue) == TCL_OK) {
+        encState = (Tcl_EncodingState)&encStateValue;
+    } else if (Tcl_GetCharLength(objv[5]) == 0) {
+        encState = NULL;
+    } else {
+        return TCL_ERROR;
+    }
+    if (Tcl_GetIntFromObj(interp, objv[6], &dstLen) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    srcReadVar = NULL;
+    dstWroteVar = NULL;
+    dstCharsVar = NULL;
+    if (objc > 7) {
+	/* Has caller requested srcRead? */
+	if (Tcl_GetCharLength(objv[7])) {
+	    srcReadVar = objv[7];
+	}
+	if (objc > 8) {
+	    /* Ditto for dstWrote */
+            if (Tcl_GetCharLength(objv[8])) {
+                dstWroteVar = objv[8];
+            }
+	    if (objc > 9) {
+                if (Tcl_GetCharLength(objv[9])) {
+                    dstCharsVar = objv[9];
+                }
+	    }
+	}
+    }
+
+    bufLen = dstLen + 4; /* 4 -> overflow detection */
+    bufPtr = ckalloc(bufLen);
+    memmove(bufPtr + dstLen, "\xAB\xCD\xEF\x00", 4); /* overflow detection */
+    bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen); /* Last! to avoid shimmering */
+    result = (*transformer)(interp, encoding, bytes, srcLen, flags,
+                               &encState, bufPtr, dstLen,
+                               srcReadVar ? &srcRead : NULL,
+                               &dstWrote,
+                               dstCharsVar ? &dstChars : NULL);
+    if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\x00", 4)) {
+        Tcl_SetResult(interp,
+                      "Tcl_ExternalToUtf wrote past output buffer",
+                      TCL_STATIC);
+        result = TCL_ERROR;
+    } else {
+        Tcl_Obj *resultObjs[3];
+        switch (result) {
+        case TCL_OK:
+            resultObjs[0] = Tcl_NewStringObj("ok", -1);
+            break;
+        case TCL_CONVERT_MULTIBYTE:
+            resultObjs[0] = Tcl_NewStringObj("multibyte", -1);
+            break;
+        case TCL_CONVERT_SYNTAX:
+            resultObjs[0] = Tcl_NewStringObj("syntax", -1);
+            break;
+        case TCL_CONVERT_UNKNOWN:
+            resultObjs[0] = Tcl_NewStringObj("unknown", -1);
+            break;
+        case TCL_CONVERT_NOSPACE:
+            resultObjs[0] = Tcl_NewStringObj("nospace", -1);
+            break;
+        default:
+            resultObjs[0] = Tcl_NewIntObj(result);
+            break;
+        }
+        result = TCL_OK;
+        resultObjs[1] =
+            encState ? Tcl_NewIntObj(encStateValue) : Tcl_NewObj();
+        resultObjs[2] = Tcl_NewByteArrayObj(bufPtr, dstWrote);
+        if (srcReadVar) {
+            if (Tcl_ObjSetVar2(interp, srcReadVar, NULL, Tcl_NewIntObj(srcRead), 0) == NULL) {
+                result = TCL_ERROR;
+            }
+        }
+        if (dstWroteVar) {
+            if (Tcl_ObjSetVar2(interp, dstWroteVar, NULL, Tcl_NewIntObj(dstWrote), 0) == NULL) {
+                result = TCL_ERROR;
+            }
+        }
+        if (dstCharsVar) {
+            if (Tcl_ObjSetVar2(interp, dstCharsVar, NULL, Tcl_NewIntObj(dstChars), 0) == NULL) {
+                result = TCL_ERROR;
+            }
+        }
+        Tcl_SetObjResult(interp, Tcl_NewListObj(3, resultObjs));
+    }
+
+    ckfree(bufPtr);
+    Tcl_FreeEncoding(encoding); /* Free returned reference */
+    return result;
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * TestencodingCmd --
@@ -2044,10 +2194,10 @@ TestencodingObjCmd(
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
-	"create", "delete", "nullength", NULL
+	"create", "delete", "nullength", "Tcl_ExternalToUtf", "Tcl_UtfToExternal", NULL
     };
     enum options {
-	ENC_CREATE, ENC_DELETE, ENC_NULLENGTH
+	ENC_CREATE, ENC_DELETE, ENC_NULLENGTH, ENC_EXTTOUTF, ENC_UTFTOEXT
     };
 
     if (objc < 2) {
@@ -2116,6 +2266,11 @@ TestencodingObjCmd(
 	Tcl_SetObjResult(interp,
 			 Tcl_NewIntObj(Tcl_GetEncodingNulLength(encoding)));
 	Tcl_FreeEncoding(encoding);
+        break;
+    case ENC_EXTTOUTF:
+        return UtfExtWrapper(interp,Tcl_ExternalToUtf,objc,objv);
+    case ENC_UTFTOEXT:
+        return UtfExtWrapper(interp,Tcl_UtfToExternal,objc,objv);
     }
     return TCL_OK;
 }
