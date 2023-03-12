@@ -2067,7 +2067,7 @@ static int UtfExtWrapper(
     }
 
     bufLen = dstLen + 4; /* 4 -> overflow detection */
-    bufPtr = ckalloc(bufLen);
+    bufPtr = Tcl_Alloc(bufLen);
     memmove(bufPtr + dstLen, "\xAB\xCD\xEF\x00", 4); /* overflow detection */
     bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen); /* Last! to avoid shimmering */
     result = (*transformer)(interp, encoding, bytes, srcLen, flags,
@@ -2124,7 +2124,7 @@ static int UtfExtWrapper(
         Tcl_SetObjResult(interp, Tcl_NewListObj(3, resultObjs));
     }
 
-    ckfree(bufPtr);
+    Tcl_Free(bufPtr);
     Tcl_FreeEncoding(encoding); /* Free returned reference */
     return result;
 }

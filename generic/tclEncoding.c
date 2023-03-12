@@ -1299,7 +1299,7 @@ Tcl_ExternalToUtfDStringEx(
                     Tcl_SetObjResult(
                         interp,
                         Tcl_ObjPrintf("unexpected byte sequence starting at index %"
-                                      TCL_Z_MODIFIER "u: '\\x%X'",
+                                      TCL_Z_MODIFIER "u: '\\x%02X'",
                                       nBytesProcessed,
                                       UCHAR(srcStart[nBytesProcessed])));
                     Tcl_SetErrorCode(

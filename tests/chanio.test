@@ -4982,7 +4982,7 @@ test chan-io-38.2 {Tcl_SetChannelBufferSize, Tcl_GetChannelBufferSize} -setup {
 test chan-io-38.3 {Tcl_SetChannelBufferSize, changing buffersize between reads} {
     # This test crashes the interp if Bug #427196 is not fixed
     set chan [open [info script] r]
-    chan configure $chan -buffersize 10
+    chan configure $chan -buffersize 10 -encoding utf-8
     set var [chan read $chan 2]
     chan configure $chan -buffersize 32
     append var [chan read $chan]
