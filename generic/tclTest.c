@@ -2032,12 +2032,21 @@ static void SpecialFree(
  *    result of Tcl_UtfToExternal or Tcl_ExternalToUtf.
  *
  * Side effects: 
+ *
  *    The result in the interpreter is a list of the return code from the
  *    Tcl_UtfToExternal/Tcl_ExternalToUtf functions, the encoding state, and
- *    the encoded binary string. If any of the srcreadvar, dstwrotevar and 
+ *    an encoded binary string of length dstLen. Note the string is the
+ *    entire output buffer, not just the part containing the decoded
+ *    portion. This allows for additional checks at test script level.
+ * 
+ *    If any of the srcreadvar, dstwrotevar and 
  *    dstcharsvar are specified and not empty, they are treated as names
  *    of variables where the *srcRead, *dstWrote and *dstChars output
  *    from the functions are stored.
+ * 
+ *    The function also checks internally whether nuls are correctly
+ *    appended as requested but the TCL_ENCODING_NO_TERMINATE flag
+ *    and that no buffer overflows occur.
  *------------------------------------------------------------------------
  */
 typedef int
@@ -2049,13 +2058,15 @@ static int UtfExtWrapper(
     Tcl_Encoding encoding;
     int encStateValue; /* Assumes Tcl_EncodingState points to integer!!! */
     Tcl_EncodingState encState;
-    int flags;
     Tcl_Size srcLen, bufLen;
     const unsigned char *bytes;
     unsigned char *bufPtr;
     int srcRead, dstLen, dstWrote, dstChars;
     Tcl_Obj *srcReadVar, *dstWroteVar, *dstCharsVar;
     int result;
+    int flags;
+    Tcl_Obj **flagObjs;
+    int nflags;
 
     if (objc < 7 || objc > 10) {
         Tcl_WrongNumArgs(interp,
@@ -2067,9 +2078,48 @@ static int UtfExtWrapper(
     if (Tcl_GetEncodingFromObj(interp, objv[2], &encoding) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (Tcl_GetIntFromObj(interp, objv[4], &flags) != TCL_OK) {
-        return TCL_ERROR;
+
+    /* Flags may be specified as list of integers and keywords */
+    flags = 0;
+    if (Tcl_ListObjGetElements(interp, objv[4], &nflags, &flagObjs) != TCL_OK) {
+	return TCL_ERROR;
     }
+
+    struct {
+	const char *flagKey;
+	int flag;
+    } flagMap[] = {
+	{"start", TCL_ENCODING_START},
+	{"end", TCL_ENCODING_END},
+	{"stoponerror", TCL_ENCODING_STOPONERROR},
+	{"noterminate", TCL_ENCODING_NO_TERMINATE},
+	{"charlimit", TCL_ENCODING_CHAR_LIMIT},
+	{"profiletcl8", TCL_ENCODING_PROFILE_TCL8},
+	{"profilestrict", TCL_ENCODING_PROFILE_STRICT},
+	{"profilereplace", TCL_ENCODING_PROFILE_REPLACE},
+	{NULL, 0}
+    };
+    int i;
+    for (i = 0; i < nflags; ++i) {
+	int flag;
+	if (Tcl_GetIntFromObj(NULL, flagObjs[i], &flag) == TCL_OK) {
+	    flags |= flag;
+	}
+	else {
+	    int idx;
+	    if (Tcl_GetIndexFromObjStruct(interp,
+					  flagObjs[i],
+					  flagMap,
+					  sizeof(flagMap[0]),
+					  "flag",
+					  0,
+					  &idx) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    flags |= flagMap[idx].flag;
+	}
+    }
+
     /* Assumes state is integer if not "" */
     if (Tcl_GetIntFromObj(interp, objv[5], &encStateValue) == TCL_OK) {
         encState = (Tcl_EncodingState)&encStateValue;
@@ -2097,27 +2147,47 @@ static int UtfExtWrapper(
 	    if (objc > 9) {
                 if (Tcl_GetCharLength(objv[9])) {
                     dstCharsVar = objv[9];
-                }
+		}
 	    }
 	}
+    }
+    if (flags & TCL_ENCODING_CHAR_LIMIT) {
+	/* Caller should have specified the dest char limit */
+	Tcl_Obj *valueObj;
+	if (dstCharsVar == NULL ||
+	    (valueObj = Tcl_ObjGetVar2(interp, dstCharsVar, NULL, 0)) == NULL
+	) {
+	    Tcl_SetResult(interp,
+			 "dstCharsVar must be specified with integer value if "
+			 "TCL_ENCODING_CHAR_LIMIT set in flags.", TCL_STATIC);
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetIntFromObj(interp, dstCharsVar, &dstChars) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    } else {
+	dstChars = 0; /* Only used for output */
     }
 
     bufLen = dstLen + 4; /* 4 -> overflow detection */
     bufPtr = ckalloc(bufLen);
-    memmove(bufPtr + dstLen, "\xAB\xCD\xEF\x00", 4); /* overflow detection */
+    memset(bufPtr, 0xFF, dstLen); /* Need to check nul terminator */
+    memmove(bufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
     bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen); /* Last! to avoid shimmering */
     result = (*transformer)(interp, encoding, bytes, srcLen, flags,
                                &encState, bufPtr, dstLen,
                                srcReadVar ? &srcRead : NULL,
                                &dstWrote,
                                dstCharsVar ? &dstChars : NULL);
-    if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\x00", 4)) {
+    if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
         Tcl_SetResult(interp,
                       "Tcl_ExternalToUtf wrote past output buffer",
                       TCL_STATIC);
         result = TCL_ERROR;
-    } else {
+    } else if (result != TCL_ERROR) {
+
         Tcl_Obj *resultObjs[3];
+	
         switch (result) {
         case TCL_OK:
             resultObjs[0] = Tcl_NewStringObj("ok", -1);
@@ -2141,22 +2211,34 @@ static int UtfExtWrapper(
         result = TCL_OK;
         resultObjs[1] =
             encState ? Tcl_NewIntObj(encStateValue) : Tcl_NewObj();
-        resultObjs[2] = Tcl_NewByteArrayObj(bufPtr, dstWrote);
+        resultObjs[2] = Tcl_NewByteArrayObj(bufPtr, dstLen);
         if (srcReadVar) {
-            if (Tcl_ObjSetVar2(interp, srcReadVar, NULL, Tcl_NewIntObj(srcRead), 0) == NULL) {
-                result = TCL_ERROR;
-            }
-        }
+	    if (Tcl_ObjSetVar2(interp,
+			       srcReadVar,
+			       NULL,
+			       Tcl_NewIntObj(srcRead),
+			       TCL_LEAVE_ERR_MSG) == NULL) {
+		result = TCL_ERROR;
+	    }
+	}
         if (dstWroteVar) {
-            if (Tcl_ObjSetVar2(interp, dstWroteVar, NULL, Tcl_NewIntObj(dstWrote), 0) == NULL) {
-                result = TCL_ERROR;
-            }
-        }
+	    if (Tcl_ObjSetVar2(interp,
+			       dstWroteVar,
+			       NULL,
+			       Tcl_NewIntObj(dstWrote),
+			       TCL_LEAVE_ERR_MSG) == NULL) {
+		result = TCL_ERROR;
+	    }
+	}
         if (dstCharsVar) {
-            if (Tcl_ObjSetVar2(interp, dstCharsVar, NULL, Tcl_NewIntObj(dstChars), 0) == NULL) {
-                result = TCL_ERROR;
-            }
-        }
+	    if (Tcl_ObjSetVar2(interp,
+			       dstCharsVar,
+			       NULL,
+			       Tcl_NewIntObj(dstChars),
+			       TCL_LEAVE_ERR_MSG) == NULL) {
+		result = TCL_ERROR;
+	    }
+	}
         Tcl_SetObjResult(interp, Tcl_NewListObj(3, resultObjs));
     }
 
