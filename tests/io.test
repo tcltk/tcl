@@ -7919,6 +7919,8 @@ test io-53.5 {CopyData: error during fcopy} {socket fcopy} {
     set out [socket 127.0.0.1 [lindex [fconfigure $listen -sockname] 2]]
     catch {unset fcopyTestDone}
     close $listen	;# This means the socket open never really succeeds
+    fconfigure $in -encoding utf-8
+    fconfigure $out -encoding utf-8
     fcopy $in $out -command [namespace code FcopyTestDone]
     variable fcopyTestDone
     if {![info exists fcopyTestDone]} {
