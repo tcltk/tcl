@@ -1154,7 +1154,7 @@ proc tcltest::Asciify {s} {
     set print ""
     foreach c [split $s ""] {
         set i [scan $c %c]
-        if {[string is print $c] && ($i <= 127) && ($i > 0)} {
+        if {[string is print $c] && ($i <= 127)} {
             append print $c
         } elseif {$i <= 0xFF} {
             append print \\x[format %02X $i]
