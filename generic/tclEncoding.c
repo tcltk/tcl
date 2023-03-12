@@ -3024,6 +3024,7 @@ Utf16ToUtfProc(
 		result = TCL_CONVERT_UNKNOWN;
 		src -= 2; /* Go back to before the high surrogate */
 		dst--; /* Also undo writing a single byte too much */
+		numChars--;
 		break;
 	    }
 	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
@@ -3039,6 +3040,10 @@ Utf16ToUtfProc(
 	    *dst++ = (ch & 0xFF);
 	} else if (((prev  & ~0x3FF) == 0xD800) || ((ch  & ~0x3FF) == 0xD800)) {
 	    dst += Tcl_UniCharToUtf(ch | TCL_COMBINE, dst);
+	} else if (((ch  & ~0x3FF) == 0xDC00) && PROFILE_STRICT(flags)) {
+	    /* Lo surrogate not preceded by Hi surrogate */
+	    result = TCL_CONVERT_UNKNOWN;
+	    break;
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
@@ -3046,8 +3051,15 @@ Utf16ToUtfProc(
     }
 
     if ((ch  & ~0x3FF) == 0xD800) {
-	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
-	dst += Tcl_UniCharToUtf(-1, dst);
+	if ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) {
+	    result = TCL_CONVERT_UNKNOWN;
+	    src -= 2;
+	    dst--;
+	    numChars--;
+	} else {
+	    /* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
+	    dst += Tcl_UniCharToUtf(-1, dst);
+	}
     }
     if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
 	/* We have a single byte left-over at the end */
