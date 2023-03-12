@@ -2602,8 +2602,15 @@ Utf32ToUtfProc(
 	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
 	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
-	if  ((unsigned)ch > 0x10FFFF || (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
-		&& ((ch  & ~0x7FF) == 0xD800))) {
+
+	if ((unsigned)ch > 0x10FFFF) {
+	    ch = 0xFFFD;
+	    if (STOPONERROR) {
+		result = TCL_CONVERT_SYNTAX;
+		break;
+	    }
+	} else if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
+		&& ((ch  & ~0x7FF) == 0xD800)) {
 	    if (STOPONERROR) {
 		result = TCL_CONVERT_SYNTAX;
 		ch = 0;
@@ -2628,6 +2635,7 @@ Utf32ToUtfProc(
 	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	dst += Tcl_UniCharToUtf(-1, dst);
     }
+
     if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
 	/* We have a single byte left-over at the end */
 	if (dst > dstEnd) {
@@ -2835,6 +2843,13 @@ Utf16ToUtfProc(
 	    ch = (src[0] & 0xFF) << 8 | (src[1] & 0xFF);
 	}
 	if (((prev  & ~0x3FF) == 0xD800) && ((ch  & ~0x3FF) != 0xDC00)) {
+	    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+		result = TCL_CONVERT_UNKNOWN;
+		src -= 2; /* Go back to before the high surrogate */
+		dst--; /* Also undo writing a single byte too much */
+		numChars--;
+		break;
+	    }
 	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
 	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
@@ -2844,17 +2859,31 @@ Utf16ToUtfProc(
 	 * unsigned short-size data.
 	 */
 
-	if (ch && ch < 0x80) {
+	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (ch & 0xFF);
+	} else if (((prev  & ~0x3FF) == 0xD800) || ((ch  & ~0x3FF) == 0xD800)) {
+	    dst += Tcl_UniCharToUtf(ch, dst);
+	} else if (((ch  & ~0x3FF) == 0xDC00) && ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+	    /* Lo surrogate not preceded by Hi surrogate */
+	    result = TCL_CONVERT_UNKNOWN;
+	    break;
 	} else {
+	    *dst = 0; /* In case of lower surrogate, don't try to combine */
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
 	src += sizeof(unsigned short);
     }
 
     if ((ch  & ~0x3FF) == 0xD800) {
-	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
-	dst += Tcl_UniCharToUtf(-1, dst);
+	if ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) {
+	    result = TCL_CONVERT_UNKNOWN;
+	    src -= 2;
+	    dst--;
+	    numChars--;
+	} else {
+	    /* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
+	    dst += Tcl_UniCharToUtf(-1, dst);
+	}
     }
     if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
 	/* We have a single byte left-over at the end */
