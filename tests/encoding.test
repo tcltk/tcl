@@ -568,6 +568,12 @@ test encoding-16.22 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
 test encoding-16.23 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
     encoding convertfrom -strict utf-16le \x00\xDC
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x00'}
+test encoding-16.24 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32 "\xFF\xFF\xFF\xFF"
+} -result \uFFFD
+test encoding-16.25 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32 "\x01\x00\x00\x01"
+} -result \uFFFD
 
 test encoding-17.1 {UtfToUtf16Proc} -body {
     encoding convertto utf-16 "\U460DC"
@@ -599,6 +605,12 @@ test encoding-17.9 {Utf32ToUtfProc} -body {
 test encoding-17.10 {Utf32ToUtfProc} -body {
     encoding convertfrom -nocomplain utf-32 "\xFF\xFF\xFF\xFF"
 } -result \uFFFD
+test encoding-17.11 {Utf32ToUtfProc} -body {
+    encoding convertfrom -strict utf-32le "\x00\xD8\x00\x00"
+} -returnCodes error -result {unexpected byte sequence starting at index 0: '\x00'}
+test encoding-17.12 {Utf32ToUtfProc} -body {
+    encoding convertfrom -strict utf-32le "\x00\xDC\x00\x00"
+} -returnCodes error -result {unexpected byte sequence starting at index 0: '\x00'}
 
 test encoding-18.1 {TableToUtfProc on invalid input} -constraints deprecated -body {
 	list [catch {encoding convertto jis0208 \\} res] $res
