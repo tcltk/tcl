@@ -8551,6 +8551,7 @@ UpdateInterest(
 	    mask &= ~TCL_EXCEPTION;
 
 	    if (!statePtr->timer) {
+		TclChannelPreserve((Tcl_Channel)chanPtr);
 		statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
                         ChannelTimerProc, chanPtr);
 	    }
@@ -8584,23 +8585,28 @@ ChannelTimerProc(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
 
-    if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
-	    && (statePtr->interestMask & TCL_READABLE)
-	    && (statePtr->inQueueHead != NULL)
-	    && IsBufferReady(statePtr->inQueueHead)) {
-	/*
-	 * Restart the timer in case a channel handler reenters the event loop
-	 * before UpdateInterest gets called by Tcl_NotifyChannel.
-	 */
-
-	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-                ChannelTimerProc,chanPtr);
-	Tcl_Preserve(statePtr);
-	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
-	Tcl_Release(statePtr);
+    if (chanPtr->typePtr == NULL) {
+	TclChannelRelease((Tcl_Channel)chanPtr);
     } else {
-	statePtr->timer = NULL;
-	UpdateInterest(chanPtr);
+	if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
+		&& (statePtr->interestMask & TCL_READABLE)
+		&& (statePtr->inQueueHead != NULL)
+		&& IsBufferReady(statePtr->inQueueHead)) {
+	    /*
+	     * Restart the timer in case a channel handler reenters the event loop
+	     * before UpdateInterest gets called by Tcl_NotifyChannel.
+	     */
+
+	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+		    ChannelTimerProc,chanPtr);
+	    Tcl_Preserve(statePtr);
+	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
+	    Tcl_Release(statePtr);
+	} else {
+	    statePtr->timer = NULL;
+	    UpdateInterest(chanPtr);
+	    TclChannelRelease((Tcl_Channel)chanPtr);
+	}
     }
 }
 
