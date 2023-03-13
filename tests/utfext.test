@@ -88,6 +88,11 @@ test xx-bufferoverflow {buffer overflow Tcl_ExternalToUtf} -body {
     testencoding Tcl_UtfToExternal unicode A {start end} {} 1
 } -result {nospace {} {}}
 
+# Another bug - char limit not obeyed
+# % set cv 2
+# % testencoding Tcl_ExternalToUtf utf-8 abcdefgh {start end noterminate charlimit} {} 20 rv wv cv
+# nospace {} abcÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ
+
 ::tcltest::cleanupTests
 return
 
