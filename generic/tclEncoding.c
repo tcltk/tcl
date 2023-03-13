@@ -3051,7 +3051,7 @@ Utf16ToUtfProc(
     }
 
     if ((ch  & ~0x3FF) == 0xD800) {
-	if ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) {
+	if (PROFILE_STRICT(flags)) {
 	    result = TCL_CONVERT_UNKNOWN;
 	    src -= 2;
 	    dst--;
