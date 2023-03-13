@@ -492,7 +492,7 @@ test encoding-16.2 {Utf16ToUtfProc} -body {
     list $val [format %x [scan $val %c]]
 } -result "\U460DC 460dc"
 test encoding-16.3 {Utf16ToUtfProc} -body {
-    set val [encoding convertfrom utf-16 "\xDC\xDC"]
+    set val [encoding convertfrom -profile tcl8 utf-16 "\xDC\xDC"]
     list $val [format %x [scan $val %c]]
 } -result "\uDCDC dcdc"
 test encoding-16.4 {Ucs2ToUtfProc} -body {
@@ -528,16 +528,16 @@ test encoding-16.12 {Utf32ToUtfProc} -constraints utf32 -body {
     encoding convertfrom -profile tcl8 utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00
 } -result \uDC00\uD800
 test encoding-16.13 {Utf16ToUtfProc} -body {
-    encoding convertfrom utf-16le \x00\xD8
+    encoding convertfrom -profile tcl8 utf-16le \x00\xD8
 } -result \uD800
 test encoding-16.14 {Utf16ToUtfProc} -body {
-    encoding convertfrom utf-16le \x00\xDC
+    encoding convertfrom -profile tcl8 utf-16le \x00\xDC
 } -result \uDC00
 test encoding-16.15 {Utf16ToUtfProc} -body {
     encoding convertfrom utf-16le \x00\xD8\x00\xDC
 } -result \U010000
 test encoding-16.16 {Utf16ToUtfProc} -body {
-    encoding convertfrom utf-16le \x00\xDC\x00\xD8
+    encoding convertfrom -profile tcl8 utf-16le \x00\xDC\x00\xD8
 } -result \uDC00\uD800
 test encoding-16.17 {Utf32ToUtfProc} -body {
     list [encoding convertfrom -profile strict -failindex  idx utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00] [set idx]
