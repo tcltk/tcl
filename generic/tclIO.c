@@ -8804,6 +8804,7 @@ UpdateInterest(
 	    mask &= ~TCL_EXCEPTION;
 
 	    if (!statePtr->timer) {
+		TclChannelPreserve((Tcl_Channel)chanPtr);
 		statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
                         ChannelTimerProc, chanPtr);
 	    }
@@ -8814,6 +8815,7 @@ UpdateInterest(
 	&& mask & TCL_WRITABLE
 	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 
+	TclChannelPreserve((Tcl_Channel)chanPtr);
 	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 	    ChannelTimerProc,chanPtr);
     }
@@ -8848,44 +8850,55 @@ ChannelTimerProc(
     /* State info for channel */
     ChannelState *statePtr = chanPtr->state;
 
-	/* Preserve chanPtr to guard against deallocation in Tcl_NotifyChannel. */
-    TclChannelPreserve((Tcl_Channel)chanPtr);
-    Tcl_Preserve(statePtr);
-    statePtr->timer = NULL;
-    if (statePtr->interestMask & TCL_WRITABLE
-	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)
-	&& !GotFlag(statePtr, BG_FLUSH_SCHEDULED)
-	) {
-	/*
-	 * Restart the timer in case a channel handler reenters the event loop
-	 * before UpdateInterest gets called by Tcl_NotifyChannel.
-	 */
-	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-                ChannelTimerProc,chanPtr);
-	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_WRITABLE);
-    }
+    /* TclChannelPreserve() must be called before the current function was
+     * scheduled, is already in effect.  In this function it guards against
+     * deallocation in Tcl_NotifyChannel and also keps the channel preserved
+     * until ChannelTimerProc is later called again.
+     */
 
-    /* The channel may have just been closed from within Tcl_NotifyChannel */
-    if (!GotFlag(statePtr, CHANNEL_INCLOSE)) {
-	if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
-		&& (statePtr->interestMask & TCL_READABLE)
-		&& (statePtr->inQueueHead != NULL)
-		&& IsBufferReady(statePtr->inQueueHead)) {
+    if (chanPtr->typePtr == NULL) {
+	TclChannelRelease((Tcl_Channel)chanPtr);
+    } else {
+	Tcl_Preserve(statePtr);
+	statePtr->timer = NULL;
+	if (statePtr->interestMask & TCL_WRITABLE
+	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)
+	    && !GotFlag(statePtr, BG_FLUSH_SCHEDULED)
+	    ) {
 	    /*
 	     * Restart the timer in case a channel handler reenters the event loop
 	     * before UpdateInterest gets called by Tcl_NotifyChannel.
 	     */
-
 	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 		    ChannelTimerProc,chanPtr);
-	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
+	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_WRITABLE);
 	} else {
-	    UpdateInterest(chanPtr);
+	    /* The channel may have just been closed from within Tcl_NotifyChannel */
+	    if (!GotFlag(statePtr, CHANNEL_INCLOSE)) {
+		if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
+			&& (statePtr->interestMask & TCL_READABLE)
+			&& (statePtr->inQueueHead != NULL)
+			&& IsBufferReady(statePtr->inQueueHead)) {
+		    /*
+		     * Restart the timer in case a channel handler reenters the event loop
+		     * before UpdateInterest gets called by Tcl_NotifyChannel.
+		     */
+
+		    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+			    ChannelTimerProc,chanPtr);
+		    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
+		} else {
+		    TclChannelRelease((Tcl_Channel)chanPtr);
+		    UpdateInterest(chanPtr);
+		}
+	    } else {
+		TclChannelRelease((Tcl_Channel)chanPtr);
+	    }
 	}
+
+	Tcl_Release(statePtr);
     }
 
-    Tcl_Release(statePtr);
-    TclChannelRelease((Tcl_Channel)chanPtr);
 }
 
 /*
