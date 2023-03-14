@@ -553,10 +553,10 @@ lappend encInvalidBytes {*}{
     utf-16le 41      replace   \uFFFD -1 {solo tail} {Truncated}
     utf-16le 41      strict    {}      0 {solo tail} {Truncated}
     utf-16le 00D8    tcl8      \uD800 -1 {} {Missing low surrogate}
-    utf-16le 00D8    replace   \uFFFD -1 {knownBug} {Missing low surrogate}
+    utf-16le 00D8    replace   \uFFFD -1 {} {Missing low surrogate}
     utf-16le 00D8    strict    {}      0 {knownBug} {Missing low surrogate}
     utf-16le 00DC    tcl8      \uDC00 -1 {} {Missing high surrogate}
-    utf-16le 00DC    replace   \uFFFD -1 {knownBug} {Missing high surrogate}
+    utf-16le 00DC    replace   \uFFFD -1 {} {Missing high surrogate}
     utf-16le 00DC    strict    {}      0 {knownBug} {Missing high surrogate}
 
     utf-16be 41      tcl8      \uFFFD -1 {solo tail} {Truncated}

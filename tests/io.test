@@ -9231,7 +9231,7 @@ test io-75.6 {invalid utf-8 encoding read is not ignored (-profile strict)} -set
     } on error {result options} {
         set data [dict get $options -data]
     }
-    lappend data $result 
+    lappend data $result
 } -cleanup {
     close $f
     removeFile io-75.6
