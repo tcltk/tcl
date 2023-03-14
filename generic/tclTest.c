@@ -1995,19 +1995,19 @@ static void SpecialFree(
  *    TCL_OK or TCL_ERROR. This any errors running the test, NOT the
  *    result of Tcl_UtfToExternal or Tcl_ExternalToUtf.
  *
- * Side effects: 
+ * Side effects:
  *
  *    The result in the interpreter is a list of the return code from the
  *    Tcl_UtfToExternal/Tcl_ExternalToUtf functions, the encoding state, and
  *    an encoded binary string of length dstLen. Note the string is the
  *    entire output buffer, not just the part containing the decoded
  *    portion. This allows for additional checks at test script level.
- * 
- *    If any of the srcreadvar, dstwrotevar and 
+ *
+ *    If any of the srcreadvar, dstwrotevar and
  *    dstcharsvar are specified and not empty, they are treated as names
  *    of variables where the *srcRead, *dstWrote and *dstChars output
  *    from the functions are stored.
- * 
+ *
  *    The function also checks internally whether nuls are correctly
  *    appended as requested but the TCL_ENCODING_NO_TERMINATE flag
  *    and that no buffer overflows occur.
@@ -2134,12 +2134,12 @@ static int UtfExtWrapper(
     }
 
     bufLen = dstLen + 4; /* 4 -> overflow detection */
-    bufPtr = Tcl_Alloc(bufLen);
+    bufPtr = (unsigned char *) Tcl_Alloc(bufLen);
     memset(bufPtr, 0xFF, dstLen); /* Need to check nul terminator */
     memmove(bufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
     bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen); /* Last! to avoid shimmering */
-    result = (*transformer)(interp, encoding, bytes, srcLen, flags,
-                               &encState, bufPtr, dstLen,
+    result = (*transformer)(interp, encoding, (const char *) bytes, srcLen, flags,
+                               &encState, (char *) bufPtr, dstLen,
                                srcReadVar ? &srcRead : NULL,
                                &dstWrote,
                                dstCharsVar ? &dstChars : NULL);
@@ -2149,9 +2149,7 @@ static int UtfExtWrapper(
                       TCL_STATIC);
         result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
-
         Tcl_Obj *resultObjs[3];
-	
         switch (result) {
         case TCL_OK:
             resultObjs[0] = Tcl_NewStringObj("ok", -1);

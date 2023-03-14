@@ -86,7 +86,7 @@ foreach {enc utfhex hex} $utfExtMap {
 # Test for insufficient space
 test xx-bufferoverflow {buffer overflow Tcl_ExternalToUtf} -body {
     testencoding Tcl_UtfToExternal unicode A {start end} {} 1
-} -result {nospace {} {}}
+} -result [list nospace {} \xFF]
 
 ::tcltest::cleanupTests
 return
