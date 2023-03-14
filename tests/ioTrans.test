@@ -671,7 +671,7 @@ namespace eval inputfilter {
     proc initialize {chan mode} {
 	return {initialize finalize read}
     }
-    
+
     proc read {chan buffer} {
 	return $buffer
     }
