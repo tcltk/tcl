@@ -1033,10 +1033,10 @@ TcpGetOptionProc(
 
     if ((len == 0) || ((len > 1) && (optionName[1] == 'k') &&
 	    (strncmp(optionName, "-keepalive", len) == 0))) {
-#if defined(SO_KEEPALIVE)
-	socklen_t size;
-#endif
 	int opt = 0;
+#if defined(SO_KEEPALIVE)
+	socklen_t size = sizeof(opt);
+#endif
 
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-keepalive");
@@ -1053,10 +1053,10 @@ TcpGetOptionProc(
 
     if ((len == 0) || ((len > 1) && (optionName[1] == 'n') &&
 	    (strncmp(optionName, "-nodelay", len) == 0))) {
-#if defined(SOL_TCP) && defined(TCP_NODELAY)
-	socklen_t size;
-#endif
 	int opt = 0;
+#if defined(SOL_TCP) && defined(TCP_NODELAY)
+	socklen_t size = sizeof(opt);
+#endif
 
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-nodelay");

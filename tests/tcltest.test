@@ -555,7 +555,7 @@ switch -- $::tcl_platform(platform) {
     default {
 	# note in FAT/NTFS we won't be able to protect directory with read-only attribute...
 	catch {file attributes $notWriteableDir -readonly 1}
-	catch {testchmod 0 $notWriteableDir}
+	catch {testchmod 0o444 $notWriteableDir}
     }
 }
 test tcltest-8.3 {tcltest a.tcl -tmpdir notReadableDir} {

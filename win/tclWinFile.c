@@ -1485,7 +1485,6 @@ TclpGetUserHome(
 		HANDLE hToken;
 		if (OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
 		    if (GetUserProfileDirectoryW(hToken, buf, &nChars)) {
-			Tcl_DStringInit(bufferPtr);
 			result = Tcl_WCharToUtfDString(buf, nChars-1, (bufferPtr));
 			rc = 1;
 		    }

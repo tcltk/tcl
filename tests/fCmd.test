@@ -128,7 +128,7 @@ proc gethomedirglob {user} {
             set sid [string trim $sid]
             # Get path from the Windows registry
             set home [registry get "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\$sid" ProfileImagePath]
-            set home [string trim $home]
+            set home [string trim [string tolower $home]]
         } result]} {
             if {$home ne ""} {
                 # file join for \ -> /
@@ -139,7 +139,7 @@ proc gethomedirglob {user} {
 
     # Caller will need to use glob matching and hope user
     # name is in the home directory path
-    return *$user*
+    return *[string tolower $user]*
 }
 
 proc createfile {file {string a}} {
@@ -429,7 +429,7 @@ test fCmd-4.16 {TclFileMakeDirsCmd: TclpCreateDirectory succeeds} -setup {
 } -constraints {notRoot} -body {
     file mkdir tf1
     file exists tf1
-} -result {1}
+} -result 1
 
 test fCmd-5.1 {TclFileDeleteCmd: FileForceOption fails} -constraints {notRoot} -body {
     file delete -xyz
@@ -1065,6 +1065,7 @@ test fCmd-10.3.1 {file copy: comprehensive: dir to new name} -setup {
     file mkdir [file join td1 tdx]
     file mkdir [file join td2 tdy]
     testchmod 0o555 td2
+    testchmod 0o555 td2/tdy; # Above line removes inherited perms. So restore.
     file copy td1 td3
     file copy td2 td4
     list [lsort [glob td*]] [glob -directory td3 t*] \
@@ -1086,10 +1087,19 @@ test fCmd-10.4 {file copy: comprehensive: file to existing file} -setup {
     createfile tfd2
     createfile tfd3
     createfile tfd4
-    testchmod 0o444 tfs3
-    testchmod 0o444 tfs4
-    testchmod 0o444 tfd2
-    testchmod 0o444 tfd4
+    if {$::tcl_platform(platform) eq "windows"} {
+        # On Windows testchmode will attach an ACL which file copy cannot handle
+        # so use good old attributes which file copy does understand
+        file attribute tfs3 -readonly 1
+        file attribute tfs4 -readonly 1
+        file attribute tfd2 -readonly 1
+        file attribute tfd4 -readonly 1
+    } else {
+        testchmod 0o444 tfs3
+        testchmod 0o444 tfs4
+        testchmod 0o444 tfd2
+        testchmod 0o444 tfd4
+    }
     set msg [list [catch {file copy tf1 tf2} msg] $msg]
     file copy -force tfs1 tfd1
     file copy -force tfs2 tfd2
@@ -1239,7 +1249,7 @@ test fCmd-11.5 {TclFileRenameCmd: > 1 source & target is not a dir} -setup {
     catch {file rename tfa1 tfa2 tfa3}
 } -cleanup {
     file delete tfa1 tfa2 tfa3
-} -result {1}
+} -result 1
 test fCmd-11.6 {TclFileRenameCmd: : single file into directory} -setup {
     catch {file delete -force -- tfa1 tfad}
 } -constraints {notRoot} -body {
@@ -1284,7 +1294,7 @@ test fCmd-12.1 {renamefile: source filename translation failing} -setup {
     catch {file rename ~/tfa1 tfa2}
 } -cleanup {
     set ::env(HOME) $temp
-} -result {1}
+} -result 1
 test fCmd-12.2 {renamefile: src filename translation failing} -setup {
     set temp $::env(HOME)
 } -constraints {notRoot} -body {
@@ -1296,7 +1306,7 @@ test fCmd-12.2 {renamefile: src filename translation failing} -setup {
 } -cleanup {
     set ::env(HOME) $temp
     file delete -force tfad
-} -result {1}
+} -result 1
 test fCmd-12.3 {renamefile: stat failing on source} -setup {
     catch {file delete -force -- tfa1 tfa2}
 } -constraints {notRoot} -body {
@@ -1341,7 +1351,7 @@ test fCmd-12.7 {renamefile: renaming directory into offspring} -setup {
     catch {file rename tfad tfad/dir}
 } -cleanup {
     file delete -force tfad
-} -result {1}
+} -result 1
 test fCmd-12.8 {renamefile: generic error} -setup {
     catch {file delete -force -- tfa}
 } -constraints {unix notRoot notWsl} -body {
@@ -1352,7 +1362,7 @@ test fCmd-12.8 {renamefile: generic error} -setup {
 } -cleanup {
     catch {file attributes tfa -permissions 0o777}
     file delete -force tfa
-} -result {1}
+} -result 1
 test fCmd-12.9 {renamefile: moving a file across volumes} -setup {
     cleanup $tmpspace
 } -constraints {unix notRoot} -body {
@@ -1414,7 +1424,7 @@ test fCmd-13.5 {TclCopyFilesCmd: target filename translation failing} -setup {
     catch { file copy tfa ~/foobar }
 } -cleanup {
     set ::env(HOME) $temp
-} -result {1}
+} -result 1
 test fCmd-13.6 {TclCopyFilesCmd: > 1 source & target is not a dir} -setup {
     catch {file delete -force -- tfa1 tfa2 tfa3}
 } -constraints {notRoot} -body {
@@ -1424,7 +1434,7 @@ test fCmd-13.6 {TclCopyFilesCmd: > 1 source & target is not a dir} -setup {
     catch {file copy tfa1 tfa2 tfa3}
 } -cleanup {
     file delete tfa1 tfa2 tfa3
-} -result {1}
+} -result 1
 test fCmd-13.7 {TclCopyFilesCmd: single file into directory} -setup {
     catch {file delete -force -- tfa1 tfad}
 } -constraints {notRoot} -body {
@@ -1470,7 +1480,7 @@ test fCmd-14.1 {copyfile: source filename translation failing} -setup {
     catch {file copy ~/tfa1 tfa2}
 } -cleanup {
     set ::env(HOME) $temp
-} -result {1}
+} -result 1
 test fCmd-14.2 {copyfile: dst filename translation failing} -setup {
     set temp $::env(HOME)
 } -constraints {notRoot} -body {
@@ -1538,7 +1548,7 @@ test fCmd-14.8 {copyfile: copy directory failing} -setup {
 } -cleanup {
     file attributes tfa/dir -permissions 0o777
     file delete -force tfa tfa2
-} -result {1}
+} -result 1
 
 #
 # Coverage tests for TclMkdirCmd()
@@ -1551,7 +1561,7 @@ test fCmd-15.1 {TclMakeDirsCmd: target filename translation failing} -setup {
     catch {file mkdir ~/tfa}
 } -cleanup {
     set ::env(HOME) $temp
-} -result {1}
+} -result 1
 #
 # Can Tcl_SplitPath return argc == 0? If so them we need a test for that code.
 #
@@ -1562,7 +1572,7 @@ test fCmd-15.2 {TclMakeDirsCmd - one directory} -setup {
     file isdirectory tfa
 } -cleanup {
     file delete tfa
-} -result {1}
+} -result 1
 test fCmd-15.3 {TclMakeDirsCmd: - two directories} -setup {
     catch {file delete -force -- tfa1 tfa2}
 } -constraints {notRoot} -body {
@@ -1581,7 +1591,7 @@ test fCmd-15.4 {TclMakeDirsCmd - stat failing} -setup {
 } -cleanup {
     file attributes tfa -permissions 0o777
     file delete -force tfa
-} -result {1}
+} -result 1
 test fCmd-15.5 {TclMakeDirsCmd: - making a directory several levels deep} -setup {
     catch {file delete -force -- tfa}
 } -constraints {notRoot} -body {
@@ -1589,7 +1599,7 @@ test fCmd-15.5 {TclMakeDirsCmd: - making a directory several levels deep} -setup
     file isdir tfa/a/b/c
 } -cleanup {
     file delete -force tfa
-} -result {1}
+} -result 1
 test fCmd-15.6 {TclMakeDirsCmd: - trying to overwrite a file} -setup {
     catch {file delete -force -- tfa}
 } -constraints {notRoot} -body {
@@ -1613,7 +1623,7 @@ test fCmd-15.8 {TclFileMakeDirsCmd: trying to create an existing dir} -body {
     file isdir tfa
 } -constraints {notRoot} -cleanup {
     file delete tfa
-} -result {1}
+} -result 1
 
 # Coverage tests for TclDeleteFilesCommand()
 test fCmd-16.1 {test the -- argument} -constraints {notRoot} -setup {
@@ -1637,7 +1647,7 @@ test fCmd-16.3 {test bad option} -constraints {notRoot} -setup {
     catch {file delete -dog tfa}
 } -cleanup {
     file delete tfa
-} -result {1}
+} -result 1
 test fCmd-16.4 {accept zero files (TIP 323)} -body {
     file delete
 } -result {}
@@ -1652,7 +1662,7 @@ test fCmd-16.6 {delete: source filename translation failing} -setup {
     catch {file delete ~/tfa}
 } -cleanup {
     set ::env(HOME) $temp
-} -result {1}
+} -result 1
 test fCmd-16.7 {remove a non-empty directory without -force} -setup {
     catch {file delete -force -- tfa}
 } -constraints {notRoot} -body {
@@ -1661,7 +1671,7 @@ test fCmd-16.7 {remove a non-empty directory without -force} -setup {
     catch {file delete tfa}
 } -cleanup {
     file delete -force tfa
-} -result {1}
+} -result 1
 test fCmd-16.8 {remove a normal file} -constraints {notRoot} -setup {
     catch {file delete -force -- tfa}
 } -body {
@@ -1670,7 +1680,7 @@ test fCmd-16.8 {remove a normal file} -constraints {notRoot} -setup {
     catch {file delete tfa}
 } -cleanup {
     file delete -force tfa
-} -result {1}
+} -result 1
 test fCmd-16.9 {error while deleting file} -setup {
     catch {file delete -force -- tfa}
 } -constraints {unix notRoot notWsl} -body {
@@ -1686,7 +1696,7 @@ test fCmd-16.9 {error while deleting file} -setup {
 } -cleanup {
     file attributes tfa -permissions 0o777
     file delete -force tfa
-} -result {1}
+} -result 1
 test fCmd-16.10 {deleting multiple files} -constraints {notRoot} -setup {
     catch {file delete -force -- tfa1 tfa2}
 } -body {
@@ -1711,7 +1721,7 @@ test fCmd-17.1 {mkdir stat failing on target but not ENOENT} -setup {
 } -cleanup {
      file attributes tfa1 -permissions 0o777
      file delete -force tfa1
-} -result {1}
+} -result 1
 test fCmd-17.2 {mkdir several levels deep - relative} -setup {
     catch {file delete -force -- tfa}
 } -constraints {notRoot} -body {
@@ -1728,7 +1738,7 @@ test fCmd-17.3 {mkdir several levels deep - absolute} -setup {
     file isdir $f
 } -cleanup {
     file delete $f [file join [pwd] tfa]
-} -result {1}
+} -result 1
 
 #
 # Functionality tests for TclFileRenameCmd()
@@ -1889,7 +1899,7 @@ test fCmd-18.15 {TclFileRenameCmd : rename a file to a symlink dir} -setup {
     checkcontent tfa1/tfa2 $s
 } -cleanup {
     file delete -force tfa1 tfalink
-} -result {1}
+} -result 1
 test fCmd-18.16 {TclFileRenameCmd: rename a dangling symlink} -setup {
     catch {file delete -force -- tfa1 tfalink}
 } -constraints {unix notRoot} -body {
@@ -1922,7 +1932,7 @@ test fCmd-19.2 {rmdir error besides EEXIST} -setup {
 } -cleanup {
     file attributes tfa -permissions 0o777
     file delete -force tfa
-} -result {1}
+} -result 1
 test fCmd-19.3 {recursive remove} -constraints {notRoot} -setup {
     catch {file delete -force -- tfa}
 } -body {
@@ -1950,7 +1960,7 @@ test fCmd-20.1 {TraverseUnixTree : failure opening a subdirectory directory} -se
 } -cleanup {
     file attributes tfa/a -permissions 0o777
     file delete -force tfa
-} -result {1}
+} -result 1
 test fCmd-20.2 {TraverseUnixTree : recursive delete of large directory: Bug 1034337} -setup {
     catch {file delete -force -- tfa}
 } -constraints {unix notRoot} -body {
@@ -2003,7 +2013,7 @@ test fCmd-21.4 {copy : more than one source and target is not a directory} -setu
     catch {file copy tfa1 tfa2 tfa3}
 } -cleanup {
     file delete tfa1 tfa2 tfa3
-} -result {1}
+} -result 1
 test fCmd-21.5 {copy : multiple files into directory} -constraints {notRoot} -setup {
     catch {file delete -force -- tfa1 tfa2 tfad}
 } -body {
@@ -2128,7 +2138,7 @@ test fCmd-22.2 {TclpRenameFile: attempt to overwrite itself} -setup {
     checkcontent tfa1 $s
 } -cleanup {
     file delete tfa1
-} -result {1}
+} -result 1
 test fCmd-22.3 {TclpRenameFile: rename dir to existing dir} -setup {
     catch {file delete -force -- d1 tfad}
 } -constraints {notRoot} -body {
@@ -2588,7 +2598,7 @@ test fCmd-30.2 {file readable on 'NTUSER.DAT'} -constraints {win notWine} -body 
     expr {[info exists env(USERPROFILE)]
           && [file exists $env(USERPROFILE)/NTUSER.DAT]
           && [file readable $env(USERPROFILE)/NTUSER.DAT]}
-} -result {1}
+} -result 1
 # At least one CI environment (GitHub Actions) is set up with the page file in
 # an unusual location; skip the test if that is so.
 test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win notInCIenv} -body {
