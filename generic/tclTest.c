@@ -2186,7 +2186,7 @@ static int UtfExtWrapper(
     } else if (result != TCL_ERROR) {
 
         Tcl_Obj *resultObjs[3];
-	
+
         switch (result) {
         case TCL_OK:
             resultObjs[0] = Tcl_NewStringObj("ok", -1);
