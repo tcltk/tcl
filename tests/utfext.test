@@ -85,8 +85,8 @@ foreach {enc utfhex hex} $utfExtMap {
 
 # Test for insufficient space
 test xx-bufferoverflow {buffer overflow Tcl_ExternalToUtf} -body {
-    testencoding Tcl_UtfToExternal unicode A {start end} {} 1
-} -result {nospace {} {}}
+    testencoding Tcl_UtfToExternal ucs-2 A {start end} {} 1
+} -result [list nospace {} \xFF]
 
 # Another bug - char limit not obeyed
 # % set cv 2

@@ -22,7 +22,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.5
+    variable Version 2.5.6
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -1134,7 +1134,6 @@ proc tcltest::SafeFetch {n1 n2 op} {
     }
 }
 
-
 # tcltest::Asciify --
 #
 #       Transforms the passed string to contain only printable ascii characters.
@@ -1156,9 +1155,9 @@ proc tcltest::Asciify {s} {
         set i [scan $c %c]
         if {[string is print $c] && ($i <= 127)} {
             append print $c
-        } elseif {$i <= 0xff} {
+        } elseif {$i <= 0xFF} {
             append print \\x[format %02X $i]
-        } elseif {$i <= 0xffff} {
+        } elseif {$i <= 0xFFFF} {
             append print \\u[format %04X $i]
         } else {
             append print \\U[format %08X $i]
@@ -2254,11 +2253,7 @@ proc tcltest::test {name description args} {
 	if {$scriptCompare} {
 	    puts [outputChannel] "---- Error testing result: $scriptMatch"
 	} else {
-            try {
-                puts [outputChannel] "---- Result was:\n[Asciify $actualAnswer]"
-            } on error {errMsg errCode} {
-                puts [outputChannel] "---- Result was:\n<error printing result: $errMsg ($errCode)>"
-            }
+	    puts [outputChannel] "---- Result was:\n[Asciify $actualAnswer]"
 	    puts [outputChannel] "---- Result should have been\
 		    ($match matching):\n[Asciify $result]"
 	}

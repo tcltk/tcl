@@ -634,6 +634,58 @@ test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
         }
     }
 
+
+
+namespace eval reflector {
+    proc initialize {_ chan mode} {
+	return {initialize finalize watch read}
+    }
+
+
+    proc finalize {_ chan} {
+	namespace delete $_
+    }
+
+
+    proc read {_ chan count} {
+	namespace upvar $_ source source
+	set res [string range $source 0 $count-1]
+	set source [string range $source $count end]
+	return $res
+    }
+
+
+    proc watch {_ chan events} {
+	after 0 [list chan postevent $chan read]
+	return read
+    }
+
+    namespace ensemble create -parameters _
+    namespace export *
+}
+
+
+
+
+namespace eval inputfilter {
+    proc initialize {chan mode} {
+	return {initialize finalize read}
+    }
+
+    proc read {chan buffer} {
+	return $buffer
+    }
+
+    proc finalize chan {
+	namespace delete $chan
+    }
+
+    namespace ensemble create
+    namespace export *
+}
+
+
+
 # Channel read transform that is just the identity - pass all through
     proc idxform {cmd handle args} {
       switch -- $cmd {
@@ -2089,7 +2141,39 @@ test iortrans.tf-11.1 {origin thread of moved transform destroyed during access}
     thread::release $tidb
 } -result {Owner lost}
 
-# ### ### ### ######### ######### #########
+
+test iortrans-ea69b0258a9833cb {
+    Crash when using a channel transformation on TCP client socket
+
+    "line two" does not make it into result.  This issue should probably be
+    addressed, but it is outside the scope of this test.
+} -setup {
+    set res {}
+    set read 0
+} -body {
+    namespace eval reflector1 {
+	variable source "line one\nline two"
+	interp alias {} [namespace current]::dispatch {} [
+	    namespace parent]::reflector [namespace current]
+    }
+    set chan [chan create read [namespace which reflector1::dispatch]]
+    chan configure $chan -blocking 0
+    chan push $chan inputfilter
+    chan event $chan read [list ::apply [list chan {
+	variable res
+	variable read
+	set gets [gets $chan]
+	append res $gets
+	incr read
+    } [namespace current]] $chan]
+    vwait [namespace current]::read
+    chan pop $chan
+    vwait [namespace current]::read
+    return $res
+} -cleanup {
+    catch {unset read}
+    close $chan
+} -result {line one}
 
 cleanupTests
 return

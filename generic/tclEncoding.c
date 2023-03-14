@@ -1342,7 +1342,7 @@ Tcl_ExternalToUtfDStringEx(
                     Tcl_SetObjResult(
                         interp,
                         Tcl_ObjPrintf("unexpected byte sequence starting at index %"
-                                      "u: '\\x%X'",
+                                      "u: '\\x%02X'",
                                       nBytesProcessed,
                                       UCHAR(srcStart[nBytesProcessed])));
                     Tcl_SetErrorCode(
@@ -1447,6 +1447,9 @@ Tcl_ExternalToUtf(
     }
 
     if (!noTerminate) {
+        if (dstLen < 1) {
+            return TCL_CONVERT_NOSPACE;
+        }
 	/*
 	 * If there are any null characters in the middle of the buffer,
 	 * they will converted to the UTF-8 null character (\xC0\x80). To get
@@ -1455,6 +1458,10 @@ Tcl_ExternalToUtf(
 	 */
 
 	dstLen--;
+    } else {
+        if (dstLen < 0) {
+            return TCL_CONVERT_NOSPACE;
+        }
     }
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
 	flags |= ENCODING_INPUT;
@@ -1734,10 +1741,17 @@ Tcl_UtfToExternal(
 	dstCharsPtr = &dstChars;
     }
 
+    if (dstLen < encodingPtr->nullSize) {
+        return TCL_CONVERT_NOSPACE;
+    }
     dstLen -= encodingPtr->nullSize;
     result = encodingPtr->fromUtfProc(encodingPtr->clientData, src, srcLen,
 	    flags, statePtr, dst, dstLen, srcReadPtr,
 	    dstWrotePtr, dstCharsPtr);
+    /*
+     * Buffer is terminated irrespective of result. Not sure this is
+     * reasonable but keep for historical/compatibility reasons.
+     */
     memset(&dst[*dstWrotePtr], '\0', encodingPtr->nullSize);
 
     return result;
@@ -2782,16 +2796,19 @@ Utf32ToUtfProc(
 	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
 
-	if ((unsigned)ch > 0x10FFFF || SURROGATE(ch)) {
+	if ((unsigned)ch > 0x10FFFF) {
+	    ch = UNICODE_REPLACE_CHAR;
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
-		ch = 0;
 		break;
 	    }
-	    if (PROFILE_REPLACE(flags)) {
-		ch = UNICODE_REPLACE_CHAR;
-	    }
-	}
+	} else if (PROFILE_STRICT(flags) && SURROGATE(ch)) {
+	    result = TCL_CONVERT_SYNTAX;
+	    ch = 0;
+	    break;
+	} else if (PROFILE_REPLACE(flags) && SURROGATE(ch)) {
+	    ch = UNICODE_REPLACE_CHAR;
+	} 
 
 	/*
 	 * Special case for 1-byte utf chars for speed. Make sure we work with
@@ -2810,16 +2827,13 @@ Utf32ToUtfProc(
 	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	dst += Tcl_UniCharToUtf(-1, dst);
     }
-    
 
-    /*
-     * If we had a truncated code unit at the end AND this is the last
-     * fragment AND profile is not "strict", stick FFFD in its place.
-     */
     if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
+        /* We have a code fragment left-over at the end */
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
+	    /* destination is not full, so we really are at the end now */
             if (PROFILE_STRICT(flags)) {
                 result = TCL_CONVERT_SYNTAX;
             } else {
@@ -3028,6 +3042,13 @@ Utf16ToUtfProc(
 	    ch = (src[0] & 0xFF) << 8 | (src[1] & 0xFF);
 	}
 	if (((prev  & ~0x3FF) == 0xD800) && ((ch  & ~0x3FF) != 0xDC00)) {
+	    if (PROFILE_STRICT(flags)) {
+		result = TCL_CONVERT_UNKNOWN;
+		src -= 2; /* Go back to beginning of high surrogate */
+		dst--; /* Also undo writing a single byte too much */
+		numChars--;
+		break;
+	    }
 	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
 	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
@@ -3037,17 +3058,31 @@ Utf16ToUtfProc(
 	 * unsigned short-size data.
 	 */
 
-	if (ch && ch < 0x80) {
+	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (ch & 0xFF);
+	} else if (((prev  & ~0x3FF) == 0xD800) || ((ch  & ~0x3FF) == 0xD800)) {
+	    dst += Tcl_UniCharToUtf(ch, dst);
+	} else if (((ch  & ~0x3FF) == 0xDC00) && PROFILE_STRICT(flags)) {
+	    /* Lo surrogate not preceded by Hi surrogate */
+	    result = TCL_CONVERT_UNKNOWN;
+	    break;
 	} else {
+	    *dst = 0; /* In case of lower surrogate, don't try to combine */
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
 	src += sizeof(unsigned short);
     }
 
     if ((ch  & ~0x3FF) == 0xD800) {
-	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
-	dst += Tcl_UniCharToUtf(-1, dst);
+	if (PROFILE_STRICT(flags)) {
+	    result = TCL_CONVERT_UNKNOWN;
+	    src -= 2;
+	    dst--;
+	    numChars--;
+	} else {
+	    /* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
+	    dst += Tcl_UniCharToUtf(-1, dst);
+	}
     }
 
     /*
