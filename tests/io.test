@@ -9216,6 +9216,50 @@ test io-75.5 {invalid utf-8 encoding read is ignored (-profile tcl8)} -setup {
     removeFile io-75.5
 } -result 4181
 
+test io-75.6 {invalid utf-8 encoding read is not ignored (-profile strict)} -setup {
+    set fn [makeFile {} io-75.6]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 is invalid in utf-8
+    puts -nonewline $f A\x81
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
+} -body {
+    try {
+        read $f
+    } on error {result options} {
+        set data [dict get $options -data]
+    }
+    lappend data $result 
+} -cleanup {
+    close $f
+    removeFile io-75.6
+} -match glob -result {A {error reading "*": illegal byte sequence}}
+
+test io-75.7 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
+    set fn [makeFile {} io-75.7]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 is invalid in utf-8
+    puts -nonewline $f A\x81
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
+} -body {
+    try {
+        read $f
+    } on error {result options} {
+        set data [dict get $options -data]
+    }
+    lappend data $result
+    fconfigure $f -encoding iso8859-1
+    lappend data [read $f]
+} -cleanup {
+    close $f
+    removeFile io-75.7
+} -match glob -result "A {error reading \"*\": illegal byte sequence} \x81"
+
 test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]

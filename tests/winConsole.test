@@ -198,7 +198,7 @@ test console-fconfigure-get-1.0 {
     Console get stdin configuration
 } -constraints {win interactive} -body {
     lsort [dict keys [fconfigure stdin]]
-} -result {-blocking -buffering -buffersize -encoding -profile -eofchar -inputmode -translation}
+} -result {-blocking -buffering -buffersize -encoding -eofchar -profile -inputmode -translation}
 
 set testnum 0
 foreach {opt result} {
@@ -232,7 +232,7 @@ foreach chan {stdout stderr} major {2 3} {
         win interactive
     } -body {
         lsort [dict keys [fconfigure $chan]]
-    } -result {-blocking -buffering -buffersize -encoding -profile -eofchar -translation -winsize}
+    } -result {-blocking -buffering -buffersize -encoding -eofchar -profile -translation -winsize}
     set testnum 0
     foreach {opt result} {
         -blocking 1

@@ -5006,6 +5006,13 @@ Tcl_GetsObj(
     }
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) &&
+	    (copiedTotal == 0 || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+	Tcl_SetErrno(EILSEQ);
+	if (copiedTotal == 0) {
+	    copiedTotal = -1;
+	}
+    }
     return copiedTotal;
 }
 
@@ -6056,7 +6063,6 @@ DoReadChars(
 		 * like [read] can return an error.
 		*/
 		Tcl_SetErrno(EILSEQ);
-		copied = -1;
 		goto finish;
 	    }
 	}
@@ -10231,11 +10237,11 @@ DoRead(
 	    && ((p == dst) || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
 	Tcl_SetErrno(EILSEQ);
 	if (p == dst) {
-		p = dst - 1;
+	    p = dst - 1;
 	}
     }
     TclChannelRelease((Tcl_Channel)chanPtr);
-    return (int)(p - dst);
+    return (Tcl_Size)(p - dst);
 }
 
 /*
