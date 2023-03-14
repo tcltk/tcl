@@ -1699,6 +1699,7 @@ Tcl_CreateChannel(
     statePtr->scriptRecordPtr	= NULL;
     statePtr->bufSize		= CHANNELBUFFER_DEFAULT_SIZE;
     statePtr->timer		= NULL;
+    statePtr->timerChanPtr	= NULL;
     statePtr->csPtrR		= NULL;
     statePtr->csPtrW		= NULL;
     statePtr->outputStage	= NULL;
@@ -3093,7 +3094,13 @@ CloseChannel(
      * Cancel any outstanding timer.
      */
 
-    Tcl_DeleteTimerHandler(statePtr->timer);
+    if (statePtr->timer != NULL) {
+	Tcl_DeleteTimerHandler(statePtr->timer);
+	statePtr->timer = NULL;
+	TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
+	statePtr->timerChanPtr = NULL;
+    }
+
 
     /*
      * Mark the channel as deleted by clearing the type structure.
@@ -3912,7 +3919,12 @@ Tcl_ClearChannelHandlers(
      * Cancel any outstanding timer.
      */
 
-    Tcl_DeleteTimerHandler(statePtr->timer);
+    if (statePtr->timer != NULL) {
+	Tcl_DeleteTimerHandler(statePtr->timer);
+	statePtr->timer = NULL;
+	TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
+	statePtr->timerChanPtr = NULL;
+    }
 
     /*
      * Remove any references to channel handlers for this channel that may be
@@ -8552,8 +8564,9 @@ UpdateInterest(
 
 	    if (!statePtr->timer) {
 		TclChannelPreserve((Tcl_Channel)chanPtr);
+		statePtr->timerChanPtr = chanPtr;
 		statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-                        ChannelTimerProc, chanPtr);
+		    ChannelTimerProc, chanPtr);
 	    }
 	}
     }
@@ -8582,11 +8595,13 @@ ChannelTimerProc(
     ClientData clientData)
 {
     Channel *chanPtr = (Channel *)clientData;
+    /* State info for channel */
     ChannelState *statePtr = chanPtr->state;
-				/* State info for channel */
 
     if (chanPtr->typePtr == NULL) {
-	TclChannelRelease((Tcl_Channel)chanPtr);
+	statePtr->timer = NULL;
+	TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
+	statePtr->timerChanPtr = NULL;
     } else {
 	if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
 		&& (statePtr->interestMask & TCL_READABLE)
@@ -8598,14 +8613,15 @@ ChannelTimerProc(
 	     */
 
 	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-		    ChannelTimerProc,chanPtr);
+		ChannelTimerProc,chanPtr);
 	    Tcl_Preserve(statePtr);
 	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
 	    Tcl_Release(statePtr);
 	} else {
 	    statePtr->timer = NULL;
 	    UpdateInterest(chanPtr);
-	    TclChannelRelease((Tcl_Channel)chanPtr);
+	    TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
+	    statePtr->timerChanPtr = NULL;
 	}
     }
 }
