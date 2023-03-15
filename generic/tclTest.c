@@ -2205,7 +2205,7 @@ static int UtfExtWrapper(
         Tcl_SetObjResult(interp, Tcl_NewListObj(3, resultObjs));
     }
 
-    ckfree(bufPtr);
+    Tcl_Free(bufPtr);
     Tcl_FreeEncoding(encoding); /* Free returned reference */
     return result;
 }
