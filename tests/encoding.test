@@ -1079,9 +1079,7 @@ test encoding-bug-183a1adcc0-4 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExtern
 } -result [list 0 [list nospace {} \x00\x00\xff]]
 
 test encoding-bug-183a1adcc0-5 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExternal} -constraints {
-    testencoding
-} -constraints {
-    knownBug
+    testencoding ucs2 knownBug
 } -body {
     # The knownBug constraint is because test depends on TCL_UTF_MAX and
     # also UtfToUtf16 assumes space required in destination buffer is
