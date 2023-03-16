@@ -106,13 +106,13 @@ test encoding-3.2 {Tcl_GetEncodingName, non-null} -setup {
 } -cleanup {
     fconfigure stdout -encoding $old
 } -result {jis0208}
-test encoding-3.3 {fconfigure -encodingprofile} -setup {
-    set old [fconfigure stdout -encodingprofile]
+test encoding-3.3 {fconfigure -profile} -setup {
+    set old [fconfigure stdout -profile]
 } -body {
-    fconfigure stdout -encodingprofile replace
-    fconfigure stdout -encodingprofile
+    fconfigure stdout -profile replace
+    fconfigure stdout -profile
 } -cleanup {
-    fconfigure stdout -encodingprofile $old
+    fconfigure stdout -profile $old
 } -result replace
 
 test encoding-4.1 {Tcl_GetEncodingNames} -constraints {testencoding} -setup {

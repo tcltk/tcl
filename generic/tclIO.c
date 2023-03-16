@@ -7777,7 +7777,7 @@ Tcl_BadChannelOption(
 {
     if (interp != NULL) {
 	const char *genericopt =
-		"blocking buffering buffersize encoding encodingprofile eofchar translation";
+		"blocking buffering buffersize encoding eofchar profile translation";
 	const char **argv;
 	Tcl_Size argc, i;
 	Tcl_DString ds;
@@ -7918,7 +7918,7 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(8, "-encoding")) {
+    if (len == 0 || HaveOpt(2, "-encoding")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-encoding");
 	}
@@ -7928,23 +7928,6 @@ Tcl_GetChannelOption(
 	    Tcl_DStringAppendElement(dsPtr,
 		    Tcl_GetEncodingName(statePtr->encoding));
 	}
-	if (len > 0) {
-	    return TCL_OK;
-	}
-    }
-    if (len == 0 || HaveOpt(9, "-encodingprofile")) {
-	int profile;
-	const char *profileName;
-	if (len == 0) {
-	    Tcl_DStringAppendElement(dsPtr, "-encodingprofile");
-	}
-	/* Note currently input and output profiles are same */
-	profile = TCL_ENCODING_PROFILE_GET(statePtr->inputEncodingFlags);
-	profileName = TclEncodingProfileIdToName(interp, profile);
-	if (profileName == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_DStringAppendElement(dsPtr, profileName);
 	if (len > 0) {
 	    return TCL_OK;
 	}
@@ -7962,6 +7945,23 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
 	Tcl_DStringAppendElement(dsPtr, buf);
+    }
+    if (len == 0 || HaveOpt(1, "-profile")) {
+	int profile;
+	const char *profileName;
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-profile");
+	}
+	/* Note currently input and output profiles are same */
+	profile = TCL_ENCODING_PROFILE_GET(statePtr->inputEncodingFlags);
+	profileName = TclEncodingProfileIdToName(interp, profile);
+	if (profileName == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_DStringAppendElement(dsPtr, profileName);
+	if (len > 0) {
+	    return TCL_OK;
+	}
     }
     if (len == 0 || HaveOpt(1, "-translation")) {
 	if (len == 0) {
@@ -8142,7 +8142,7 @@ Tcl_SetChannelOption(
 	}
 	Tcl_SetChannelBufferSize(chan, newBufferSize);
 	return TCL_OK;
-    } else if (HaveOpt(8, "-encoding")) {
+    } else if (HaveOpt(2, "-encoding")) {
 	Tcl_Encoding encoding;
 	int profile;
 
@@ -8178,15 +8178,6 @@ Tcl_SetChannelOption(
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	UpdateInterest(chanPtr);
 	return TCL_OK;
-    } else if (HaveOpt(9, "-encodingprofile")) {
-	int profile;
-	if (TclEncodingProfileNameToId(interp, newValue, &profile) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	TCL_ENCODING_PROFILE_SET(statePtr->inputEncodingFlags, profile);
-	TCL_ENCODING_PROFILE_SET(statePtr->outputEncodingFlags, profile);
-	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
-	return TCL_OK;
     } else if (HaveOpt(2, "-eofchar")) {
 	if (!newValue[0] || (!(newValue[0] & 0x80) && (!newValue[1]
 #ifndef TCL_NO_DEPRECATED
@@ -8220,6 +8211,15 @@ Tcl_SetChannelOption(
 	}
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
+	return TCL_OK;
+    } else if (HaveOpt(1, "-profile")) {
+	int profile;
+	if (TclEncodingProfileNameToId(interp, newValue, &profile) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	TCL_ENCODING_PROFILE_SET(statePtr->inputEncodingFlags, profile);
+	TCL_ENCODING_PROFILE_SET(statePtr->outputEncodingFlags, profile);
+	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {
 	const char *readMode, *writeMode;

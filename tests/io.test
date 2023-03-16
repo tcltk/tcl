@@ -339,7 +339,7 @@ test io-3.4 {WriteChars: loop over stage buffer} -body {
     # stage buffer maps to more than can be queued at once.
 
     set f [open $path(test1) w]
-    fconfigure $f -encoding jis0208 -buffersize 16 -encodingprofile tcl8
+    fconfigure $f -encoding jis0208 -buffersize 16 -profile tcl8
     puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     close $f
@@ -353,7 +353,7 @@ test io-3.5 {WriteChars: saved != 0} -body {
     # requested buffersize.
 
     set f [open $path(test1) w]
-    fconfigure $f -encoding jis0208 -buffersize 17 -encodingprofile tcl8
+    fconfigure $f -encoding jis0208 -buffersize 17 -profile tcl8
     puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     close $f
@@ -386,7 +386,7 @@ test io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} -body {
     # of the next channel buffer.
 
     set f [open $path(test1) w]
-    fconfigure $f -encoding jis0208 -buffersize 17 -encodingprofile tcl8
+    fconfigure $f -encoding jis0208 -buffersize 17 -profile tcl8
     puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     close $f
@@ -7700,7 +7700,7 @@ test io-52.20 {TclCopyChannel & encodings} -setup {
     set out [open $path(kyrillic.txt) w]
 
     # Using "-encoding ascii" means reading the "Á" gives an error
-    fconfigure $in  -encoding ascii -encodingprofile strict
+    fconfigure $in  -encoding ascii -profile strict
     fconfigure $out -encoding koi8-r -translation lf
 
     fcopy $in $out
@@ -7722,7 +7722,7 @@ test io-52.21 {TclCopyChannel & encodings} -setup {
 
     # Using "-encoding ascii" means writing the "Á" gives an error
     fconfigure $in  -encoding utf-8
-    fconfigure $out -encoding ascii -translation lf -encodingprofile strict
+    fconfigure $out -encoding ascii -translation lf -profile strict
 
     fcopy $in $out
 } -cleanup {
@@ -7742,7 +7742,7 @@ test io-52.22 {TclCopyChannel & encodings} -setup {
     set out [open $path(kyrillic.txt) w]
 
     # Using "-encoding ascii" means reading the "Á" gives an error
-    fconfigure $in  -encoding ascii -encodingprofile strict
+    fconfigure $in  -encoding ascii -profile strict
     fconfigure $out -encoding koi8-r -translation lf
     proc ::xxx args {
         set ::s0 $args
@@ -7770,7 +7770,7 @@ test io-52.23 {TclCopyChannel & encodings} -setup {
 
     # Using "-encoding ascii" means writing the "Á" gives an error
     fconfigure $in  -encoding utf-8
-    fconfigure $out -encoding ascii -translation lf -encodingprofile strict
+    fconfigure $out -encoding ascii -translation lf -profile strict
     proc ::xxx args {
         set ::s0 $args
     }
@@ -9136,7 +9136,7 @@ test io-75.1 {multibyte encoding error read results in raw bytes (-nocomplainenc
     puts -nonewline $f A\xC0\x40
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -encodingprofile tcl8 -buffering none
+    fconfigure $f -encoding utf-8 -profile tcl8 -buffering none
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9146,10 +9146,10 @@ test io-75.1 {multibyte encoding error read results in raw bytes (-nocomplainenc
     removeFile io-75.1
 } -result 41c040
 
-test io-75.2 {unrepresentable character write passes and is replaced by ? (-encodingprofile tcl8)} -setup {
+test io-75.2 {unrepresentable character write passes and is replaced by ? (-profile tcl8)} -setup {
     set fn [makeFile {} io-75.2]
     set f [open $fn w+]
-    fconfigure $f -encoding iso8859-1 -encodingprofile tcl8
+    fconfigure $f -encoding iso8859-1 -profile tcl8
 } -body {
     puts -nonewline $f A\u2022
     flush $f
@@ -9163,14 +9163,14 @@ test io-75.2 {unrepresentable character write passes and is replaced by ? (-enco
 # Incomplete sequence test.
 # This error may IMHO only be detected with the close.
 # But the read already returns the incomplete sequence.
-test io-75.3 {incomplete multibyte encoding read is ignored (-encodingprofile tcl8)} -setup {
+test io-75.3 {incomplete multibyte encoding read is ignored (-profile tcl8)} -setup {
     set fn [makeFile {} io-75.3]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     puts -nonewline $f "A\xC0"
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -encodingprofile tcl8
+    fconfigure $f -encoding utf-8 -buffering none -profile tcl8
 } -body {
     set d [read $f]
     close $f
@@ -9182,7 +9182,7 @@ test io-75.3 {incomplete multibyte encoding read is ignored (-encodingprofile tc
 
 # As utf-8 has a special treatment in multi-byte decoding, also test another
 # one.
-test io-75.4 {shiftjis encoding error read results in raw bytes (-encodingprofile tcl8)} -setup {
+test io-75.4 {shiftjis encoding error read results in raw bytes (-profile tcl8)} -setup {
     set fn [makeFile {} io-75.4]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9191,7 +9191,7 @@ test io-75.4 {shiftjis encoding error read results in raw bytes (-encodingprofil
     puts -nonewline $f A\x81\xFFA
     flush $f
     seek $f 0
-    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -encodingprofile tcl8
+    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -profile tcl8
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9201,14 +9201,14 @@ test io-75.4 {shiftjis encoding error read results in raw bytes (-encodingprofil
     removeFile io-75.4
 } -result 4181ff41
 
-test io-75.5 {invalid utf-8 encoding read is ignored (-encodingprofile tcl8)} -setup {
+test io-75.5 {invalid utf-8 encoding read is ignored (-profile tcl8)} -setup {
     set fn [makeFile {} io-75.5]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingprofile tcl8
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile tcl8
 } -body {
     set d [read $f]
     close $f
@@ -9218,7 +9218,7 @@ test io-75.5 {invalid utf-8 encoding read is ignored (-encodingprofile tcl8)} -s
     removeFile io-75.5
 } -result 4181
 
-test io-75.8 {invalid utf-8 encoding eof handling (-encodingprofile strict)} -setup {
+test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9226,7 +9226,7 @@ test io-75.8 {invalid utf-8 encoding eof handling (-encodingprofile strict)} -se
     puts -nonewline $f A\x1A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -encodingprofile strict
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -profile strict
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9241,7 +9241,7 @@ test io-75.8 {invalid utf-8 encoding eof handling (-encodingprofile strict)} -se
 test io-75.9 {unrepresentable character write passes and is replaced by ?} -setup {
     set fn [makeFile {} io-75.9]
     set f [open $fn w+]
-    fconfigure $f -encoding iso8859-1 -encodingprofile strict
+    fconfigure $f -encoding iso8859-1 -profile strict
 } -body {
     catch {puts -nonewline $f "A\u2022"} msg
     flush $f
@@ -9285,7 +9285,7 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
     puts -nonewline $f A\x81\xFFA
     flush $f
     seek $f 0
-    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -encodingprofile strict
+    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -profile strict
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9312,7 +9312,7 @@ test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
 } -cleanup {
     removeFile io-75.12
 } -result 4181
-test io-75.13 {invalid utf-8 encoding read is not ignored (-encodingprofile strict)} -setup {
+test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -setup {
     set fn [makeFile {} io-75.13]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9320,7 +9320,7 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-encodingprofile stri
     puts -nonewline $f "A\x81"
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingprofile strict
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
 } -body {
     set d [read $f]
     binary scan $d H* hd
