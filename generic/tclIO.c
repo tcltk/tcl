@@ -7990,7 +7990,7 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(8, "-encoding")) {
+    if (len == 0 || HaveOpt(2, "-encoding")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-encoding");
 	}
