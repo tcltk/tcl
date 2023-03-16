@@ -59,6 +59,7 @@
 #define TclBN_mp_tc_or TclBN_mp_or
 #define TclBN_mp_tc_xor TclBN_mp_xor
 #define TclStaticPackage Tcl_StaticPackage
+#define TclMacOSXNotifierAddRunLoopMode_ TclMacOSXNotifierAddRunLoopMode
 #define TclUnusedStubEntry 0
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
@@ -138,12 +139,55 @@ static const char *TclGetStartupScriptFileName(void)
     return Tcl_GetString(path);
 }
 
+#define TclGetStringFromObj_ getStringFromObj
+static char *
+TclGetStringFromObj_(
+    Tcl_Obj *objPtr,
+    size_t *lengthPtr)
+{
+    int length;
+    char *result = Tcl_GetStringFromObj(objPtr, &length);
+    *lengthPtr = (size_t)length;
+    return result;
+}
+
+#define TclGetUnicodeFromObj_ getUnicodeFromObj
+static unsigned short *
+TclGetUnicodeFromObj_(
+    Tcl_Obj *objPtr,
+    size_t *lengthPtr)
+{
+    int length;
+    Tcl_UniChar *result = Tcl_GetUnicodeFromObj(objPtr, &length);
+    *lengthPtr = (size_t)length;
+    return result;
+}
+
+#define TclGetByteArrayFromObj_ getByteArrayFromObj
+static unsigned char *
+TclGetByteArrayFromObj_(
+    Tcl_Obj *objPtr,
+    size_t *numBytesPtr)
+{
+    int numBytes;
+    unsigned char *result = Tcl_GetByteArrayFromObj(objPtr, &numBytes);
+    *numBytesPtr = (size_t)numBytes;
+    return result;
+}
+
+
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
 #define TclWinNToHS winNToHS
 static unsigned short TclWinNToHS(unsigned short ns) {
 	return ntohs(ns);
 }
+#define TclWinConvertError_ winConvertError
+static void
+TclWinConvertError_(unsigned errCode) {
+    return TclWinConvertError(errCode);
+}
+
 #endif
 
 #define TclpCreateTempFile_ TclpCreateTempFile
@@ -865,12 +909,12 @@ static const TclPlatStubs tclPlatStubs = {
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
     0, /* 2 */
-    TclUnusedStubEntry, /* 3 */
+    TclWinConvertError_, /* 3 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
-    TclUnusedStubEntry, /* 2 */
+    TclMacOSXNotifierAddRunLoopMode_, /* 2 */
 #endif /* MACOSX */
 };
 
@@ -1644,9 +1688,9 @@ const TclStubs tclStubs = {
     0, /* 648 */
     0, /* 649 */
     0, /* 650 */
-    0, /* 651 */
-    0, /* 652 */
-    0, /* 653 */
+    TclGetStringFromObj_, /* 651 */
+    TclGetUnicodeFromObj_, /* 652 */
+    TclGetByteArrayFromObj_, /* 653 */
     0, /* 654 */
     0, /* 655 */
     0, /* 656 */

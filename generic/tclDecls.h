@@ -1835,9 +1835,15 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 /* Slot 648 is reserved */
 /* Slot 649 is reserved */
 /* Slot 650 is reserved */
-/* Slot 651 is reserved */
-/* Slot 652 is reserved */
-/* Slot 653 is reserved */
+/* 651 */
+EXTERN char *		TclGetStringFromObj_(Tcl_Obj *objPtr,
+				size_t *lengthPtr);
+/* 652 */
+EXTERN unsigned short *	 TclGetUnicodeFromObj_(Tcl_Obj *objPtr,
+				size_t *lengthPtr);
+/* 653 */
+EXTERN unsigned char *	TclGetByteArrayFromObj_(Tcl_Obj *objPtr,
+				size_t *numBytesPtr);
 /* Slot 654 is reserved */
 /* Slot 655 is reserved */
 /* Slot 656 is reserved */
@@ -2559,9 +2565,9 @@ typedef struct TclStubs {
     void (*reserved648)(void);
     void (*reserved649)(void);
     void (*reserved650)(void);
-    void (*reserved651)(void);
-    void (*reserved652)(void);
-    void (*reserved653)(void);
+    char * (*tclGetStringFromObj_) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 651 */
+    unsigned short * (*tclGetUnicodeFromObj_) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 652 */
+    unsigned char * (*tclGetByteArrayFromObj_) (Tcl_Obj *objPtr, size_t *numBytesPtr); /* 653 */
     void (*reserved654)(void);
     void (*reserved655)(void);
     void (*reserved656)(void);
@@ -3908,9 +3914,12 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 648 is reserved */
 /* Slot 649 is reserved */
 /* Slot 650 is reserved */
-/* Slot 651 is reserved */
-/* Slot 652 is reserved */
-/* Slot 653 is reserved */
+#define TclGetStringFromObj_ \
+	(tclStubsPtr->tclGetStringFromObj_) /* 651 */
+#define TclGetUnicodeFromObj_ \
+	(tclStubsPtr->tclGetUnicodeFromObj_) /* 652 */
+#define TclGetByteArrayFromObj_ \
+	(tclStubsPtr->tclGetByteArrayFromObj_) /* 653 */
 /* Slot 654 is reserved */
 /* Slot 655 is reserved */
 /* Slot 656 is reserved */
@@ -3984,6 +3993,9 @@ extern const TclStubs *tclStubsPtr;
 
 #undef Tcl_SeekOld
 #undef Tcl_TellOld
+#undef TclGetStringFromObj_
+#undef TclGetUnicodeFromObj_
+#undef TclGetByteArrayFromObj_
 
 #undef Tcl_PkgPresent
 #define Tcl_PkgPresent(interp, name, version, exact) \

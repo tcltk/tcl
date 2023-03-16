@@ -2326,6 +2326,18 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
+# TIP #481 (undocumented stub entries)
+declare 651 {
+    char *TclGetStringFromObj_(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 652 {
+    unsigned short *TclGetUnicodeFromObj_(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+# Only available in Tcl 8.x, NULL in Tcl 9.0
+declare 653 {
+    unsigned char *TclGetByteArrayFromObj_(Tcl_Obj *objPtr, size_t *numBytesPtr)
+}
+
 declare 687 {
     void TclUnusedStubEntry(void)
 }
@@ -2355,7 +2367,7 @@ declare 1 win {
     char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
 }
 declare 3 win {
-    void TclUnusedStubEntry(void)
+    void TclWinConvertError_(unsigned errCode)
 }
 
 ################################
@@ -2372,7 +2384,7 @@ declare 1 macosx {
 	    int hasResourceFile, int maxPathLen, char *libraryPath)
 }
 declare 2 macosx {
-    void TclUnusedStubEntry(void)
+    void TclMacOSXNotifierAddRunLoopMode_(const void *runLoopMode)
 }
 
 ##############################################################################
