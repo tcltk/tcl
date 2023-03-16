@@ -28,71 +28,41 @@ formats.
 Performs one of several encoding related operations, depending on
 \fIoption\fR.  The legal \fIoption\fRs are:
 .TP
-\fBencoding convertfrom\fR ?\fB-strict\fR? ?\fB-failindex var\fR? ?\fIencoding\fR? \fIdata\fR
-\fBencoding convertfrom\fR \fB-nocomplain\fR ?\fIencoding\fR? \fIdata\fR
-.
-Convert \fIdata\fR to a Unicode string from the specified \fIencoding\fR.  The
-characters in \fIdata\fR are 8 bit binary data.  The resulting
-sequence of bytes is a string created by applying the given \fIencoding\fR
-to the data. If \fIencoding\fR is not specified, the current
-system encoding is used.
-.VS "TCL8.7 TIP346, TIP607, TIP601"
-.PP
-.RS
-The command does not fail on encoding errors (unless \fB-strict\fR is specified).
-Instead, any not convertable bytes (like incomplete UTF-8  sequences, see example
-below) are put as byte values into the output stream.
-.PP
-If the option \fB-failindex\fR with a variable name is given, the error reporting
-is changed in the following manner:
-in case of a conversion error, the position of the input byte causing the error
-is returned in the given variable.  The return value of the command are the
-converted characters until the first error position.
-In case of no error, the value \fI-1\fR is written to the variable.  This option
-may not be used together with \fB-nocomplain\fR.
-.PP
-The option \fB-nocomplain\fR has no effect, but assures to get the same result
-in Tcl 9.
-.PP
-The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
-encoder, it disallows invalid byte sequences and surrogates (which -
-otherwise - are just passed through).  This option may not be used together
-with \fB-nocomplain\fR.
-.VE "TCL8.7 TIP346, TIP607, TIP601"
-.RE
+\fBencoding convertfrom\fR ?\fIencoding\fR? \fIdata\fR
 .TP
-\fBencoding convertto\fR ?\fB-strict\fR? ?\fB-failindex var\fR? ?\fIencoding\fR? \fIdata\fR
-\fBencoding convertto\fR \fB-nocomplain\fR ?\fIencoding\fR? \fIdata\fR
+\fBencoding convertfrom\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding\fR \fIdata\fR
 .
-Convert \fIstring\fR from Unicode to the specified \fIencoding\fR.
-The result is a sequence of bytes that represents the converted
-string.  Each byte is stored in the lower 8-bits of a Unicode
-character (indeed, the resulting string is a binary string as far as
-Tcl is concerned, at least initially).  If \fIencoding\fR is not
-specified, the current system encoding is used.
-.VS "TCL8.7 TIP346, TIP607, TIP601"
-.PP
-.RS
-The command does not fail on encoding errors (unless \fB-strict\fR is specified).
-Instead, the replacement character \fB?\fR is output for any not representable
-character (like the dot \fB\\U2022\fR in \fBiso-8859-1\fR encoding, see example below).
-.PP
-If the option \fB-failindex\fR with a variable name is given, the error reporting
-is changed in the following manner:
-in case of a conversion error, the position of the input character causing the error
-is returned in the given variable.  The return value of the command are the
-converted bytes until the first error position. No error condition is raised.
-In case of no error, the value \fI-1\fR is written to the variable.  This option
-may not be used together with \fB-nocomplain\fR.
-.PP
-The option \fB-nocomplain\fR has no effect, but assures to get the same result
-in Tcl 9.
-.PP
-The \fB-strict\fR option follows more strict rules in conversion.  For the \fButf-8\fR
-encoder, it disallows surrogates (which - otherwise - are just passed through).  This
-option may not be used together with \fB-nocomplain\fR.
-.VE "TCL8.7 TIP346, TIP607, TIP601"
-.RE
+Converts \fIdata\fR, which should be in binary string encoded as per
+\fIencoding\fR, to a Tcl string. If \fIencoding\fR is not specified, the current
+system encoding is used.
+
+.VS "TCL8.7 TIP607, TIP656"
+The \fB-profile\fR option determines the command behavior in the presence
+of conversion errors. See \fBPROFILES\fR for details. Any premature
+termination of processing due to errors is reported through an exception if
+the \fB-failindex\fR option is not specified.
+
+If the \fB-failindex\fR is specified, instead of an exception being raised
+on premature termination, the result of the conversion up to the point of the
+error is returned as the result of the command. In addition, the index
+of the source byte triggering the error is stored in \fBvar\fR. If no
+errors are encountered, the entire result of the conversion is returned and
+the value \fB-1\fR is stored in \fBvar\fR.
+.VE "TCL8.7 TIP607, TIP656"
+.TP
+\fBencoding convertto\fR ?\fIencoding\fR? \fIdata\fR
+.TP
+\fBencoding convertto\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding\fR \fIdata\fR
+.
+Convert \fIstring\fR to the specified \fIencoding\fR. The result is a Tcl binary
+string that contains the sequence of bytes representing the converted string in
+the specified encoding. If \fIencoding\fR is not specified, the current system
+encoding is used.
+
+.VS "TCL8.7 TIP607, TIP656"
+The \fB-profile\fR and \fB-failindex\fR options have the same effect as
+described for the \fBencoding convertfrom\fR command.
+.VE "TCL8.7 TIP607, TIP656"
 .TP
 \fBencoding dirs\fR ?\fIdirectoryList\fR?
 .
@@ -121,55 +91,140 @@ are guaranteed to be present in the list.
 Set the system encoding to \fIencoding\fR. If \fIencoding\fR is
 omitted then the command returns the current system encoding.  The
 system encoding is used whenever Tcl passes strings to system calls.
-.SH EXAMPLE
+.TP
+.VS "TCL8.7 TIP656"
+\fBencoding profiles\fR
+Returns a list of the names of encoding profiles. See \fBPROFILES\fR below.
+.VE "TCL8.7 TIP656"
+\" Do not put .VS on whole section as that messes up the bullet list alignment
+.SH PROFILES
+.PP
+.VS "TCL8.7 TIP656"
+Operations involving encoding transforms may encounter several types of
+errors such as invalid sequences in the source data, characters that
+cannot be encoded in the target encoding and so on.
+A \fIprofile\fR prescribes the strategy for dealing with such errors
+in one of two ways:
+.VE "TCL8.7 TIP656"
+.
+.IP \(bu
+.VS "TCL8.7 TIP656"
+Terminating further processing of the source data. The profile does not
+determine how this premature termination is conveyed to the caller. By default,
+this is signalled by raising an exception. If the \fB-failindex\fR option
+is specified, errors are reported through that mechanism.
+.VE "TCL8.7 TIP656"
+.IP \(bu
+.VS "TCL8.7 TIP656"
+Continue further processing of the source data using a fallback strategy such
+as replacing or discarding the offending bytes in a profile-defined manner.
+.VE "TCL8.7 TIP656"
+.PP
+The following profiles are currently implemented with \fBtcl8\fR being
+the default if the \fB-profile\fR is not specified.
+.VS "TCL8.7 TIP656"
+.TP
+\fBtcl8\fR
+.
+The \fBtcl8\fR profile always follows the first strategy above and corresponds
+to the behavior of encoding transforms in Tcl 8.6. When converting from an
+external encoding \fBother than utf-8\fR to Tcl strings with the \fBencoding
+convertfrom\fR command, invalid bytes are mapped to their numerically equivalent
+code points. For example, the byte 0x80 which is invalid in ASCII would be
+mapped to code point U+0080. When converting from \fButf-8\fR, invalid bytes
+that are defined in CP1252 are mapped to their Unicode equivalents while those
+that are not fall back to the numerical equivalents. For example, byte 0x80 is
+defined by CP1252 and is therefore mapped to its Unicode equivalent U+20AC while
+byte 0x81 which is not defined by CP1252 is mapped to U+0081. As an additional
+special case, the sequence 0xC0 0x80 is mapped to U+0000.
+
+When converting from Tcl strings to an external encoding format using
+\fBencoding convertto\fR, characters that cannot be represented in the
+target encoding are replaced by an encoding-dependent character, usually
+the question mark \fB?\fR.
+.TP
+\fBstrict\fR
+.
+The \fBstrict\fR profile always stops processing when an conversion error is
+encountered. The error is signalled via an exception or the \fB-failindex\fR
+option mechanism. The \fBstrict\fR profile implements a Unicode standard
+conformant behavior.
+.TP
+\fBreplace\fR
+.
+Like the \fBtcl8\fR profile, the \fBreplace\fR profile always continues
+processing on conversion errors but follows a Unicode standard conformant
+method for error handling.
+
+When converting an encoded byte sequence to a Tcl string using
+\fBencoding convertfrom\fR, invalid bytes
+are replaced by the U+FFFD REPLACEMENT CHARACTER code point.
+
+When encoding a Tcl string with \fBencoding convertto\fR,
+code points that cannot be represented in the
+target encoding are transformed to an encoding-specific fallback character,
+U+FFFD REPLACEMENT CHARACTER for UTF targets and generally `?` for other
+encodings.
+.VE "TCL8.7 TIP656"
+.SH EXAMPLES
+.PP
+These examples use the utility proc below that prints the Unicode code points
+comprising a Tcl string.
+.PP
+.CS
+proc codepoints {s} {join [lmap c [split $s ""] {
+    string cat U+ [format %.6X [scan $c %c]]}]
+}
+.CE
 .PP
 Example 1: convert a byte sequence in Japanese euc-jp encoding to a TCL string:
 .PP
 .CS
-set s [\fBencoding convertfrom\fR euc-jp "\exA4\exCF"]
+% codepoints [\fBencoding convertfrom\fR euc-jp "\exA4\exCF"]
+U+00306F
 .CE
 .PP
-The result is the unicode codepoint:
+The result is the unicode codepoint
 .QW "\eu306F" ,
 which is the Hiragana letter HA.
-.VS "TCL8.7 TIP346, TIP607, TIP601"
+.VS "TCL8.7 TIP607, TIP656"
 .PP
-Example 2: detect the error location in an incomplete UTF-8 sequence:
+Example 2: Error handling based on profiles:
 .PP
+The letter \fBA\fR is Unicode character U+0041 and the byte "\ex80" is invalid
+in ASCII encoding.
 .CS
-% set s [\fBencoding convertfrom\fR -failindex i utf-8 "A\exC3"]
-A
-% set i
-1
+.PP
+% codepoints [encoding convertfrom -profile tcl8 ascii A\ex80]
+U+000041 U+000080
+% codepoints [encoding convertfrom -profile replace ascii A\ex80]
+U+000041 U+00FFFD
+% codepoints [encoding convertfrom -profile strict ascii A\ex80]
+unexpected byte sequence starting at index 1: '\ex80'
 .CE
 .PP
-Example 3: return the incomplete UTF-8 sequence by raw bytes:
+Example 3: Get partial data and the error location:
 .PP
 .CS
-% set s [\fBencoding convertfrom\fR -nocomplain utf-8 "A\exC3"]
-.CE
-The result is "A" followed by the byte \exC3.  The option \fB-nocomplain\fR
-has no effect, but assures to get the same result with TCL9.
-.PP
-Example 4: detect the error location while transforming to ISO8859-1
-(ISO-Latin 1):
-.PP
-.CS
-% set s [\fBencoding convertto\fR -failindex i iso8859-1 "A\eu0141"]
-A
-% set i
-1
+% codepoints [encoding convertfrom -profile strict -failindex idx ascii AB\ex80]
+U+000041 U+000042
+% set idx
+2
 .CE
 .PP
-Example 5: replace a not representable character by the replacement character:
+Example 4: Encode a character that is not representable in ISO8859-1:
 .PP
 .CS
-% set s [\fBencoding convertto\fR -nocomplain iso8859-1 "A\eu0141"]
+% encoding convertto iso8859-1 A\eu0141
 A?
+% encoding convertto -profile strict iso8859-1 A\eu0141
+unexpected character at index 1: 'U+000141'
+% encoding convertto -profile strict -failindex idx iso8859-1 A\eu0141
+A
+% set idx
+1
 .CE
-The option \fB-nocomplain\fR has no effect, but assures to get the same result
-in Tcl 9.
-.VE "TCL8.7 TIP346, TIP607, TIP601"
+.VE "TCL8.7 TIP607, TIP656"
 .PP
 .SH "SEE ALSO"
 Tcl_GetEncoding(3), fconfigure(n)

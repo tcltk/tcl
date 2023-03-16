@@ -101,8 +101,6 @@ locale-dependent system encoding used for interfacing with the operating
 system, as returned by \fBencoding system\fR.
 .RE
 .TP
-\fB\-eofchar\fR \fIchar\fR
-.TP
 \fB\-eofchar\fR \fB{\fIchar outChar\fB}\fR
 .
 This option supports DOS file systems that use Control-z (\ex1A) as an
@@ -122,31 +120,16 @@ reading and the empty string for writing.
 The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7F;
 attempting to set \fB\-eofchar\fR to a value outside of this range will
 generate an error.
-.VS "TCL8.7 TIP633"
+.VS "TCL8.7 TIP656"
 .TP
-\fB\-nocomplainencoding\fR \fIbool\fR
+\fB\-profile\fR \fIprofile\fR
 .
-Reporting mode of encoding errors.
-If set to a \fItrue\fR value, encoding errors are resolved by a replacement
-character (output) or verbatim bytes (input). No error is thrown.
-This is the only available mode in Tcl 8.7.
-.RS
-.PP
-Starting from TCL 9.0, this value may be set to a \fIfalse\fR value to throw errors
-in case of encoding errors.
-.RE
-.VE "TCL8.7 TIP633"
-.VS "TCL8.7 TIP346"
-.TP
-\fB\-strictencoding\fR \fIbool\fR
-.
-Activate additional stricter encoding application rules.
-Default value is \fIfalse\fR.
-.RS
-.PP
-See the \fI\-strict\fR option of the \fBencoding\fR command for more information.
-.VE "TCL8.7 TIP346"
-.RE
+Specifies the encoding profile to be used on the channel. The encoding
+transforms in use for the channel's input and output will then be subject to the
+rules of that profile. Any failures will result in a channel error. See
+\fBPROFILES\fR in the \fBencoding(n)\fR documentation for details about encoding
+profiles.
+.VE "TCL8.7 TIP656"
 .TP
 \fB\-translation\fR \fImode\fR
 .TP
@@ -303,11 +286,11 @@ set data [read $f $numDataBytes]
 close $f
 .CE
 .SH "SEE ALSO"
-close(n), flush(n), gets(n), open(n), puts(n), read(n), socket(n),
+close(n), encoding(n), flush(n), gets(n), open(n), puts(n), read(n), socket(n),
 Tcl_StandardChannels(3)
 .SH KEYWORDS
 blocking, buffering, carriage return, end of line, flushing, linemode,
-newline, nonblocking, platform, translation, encoding, filter, byte array,
+newline, nonblocking, platform, profile, translation, encoding, filter, byte array,
 binary
 '\" Local Variables:
 '\" mode: nroff
