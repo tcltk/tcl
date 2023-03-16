@@ -872,10 +872,10 @@ test encoding-24.37 {Parse invalid utf-8 with -profile tcl8} -body {
 } -result \uD800
 test encoding-24.38.1 {Try to generate invalid utf-8} -body {
     encoding convertto -profile tcl8 utf-8 \uD800
-} -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
+} -result \xED\xA0\x80
 test encoding-24.38.2 {Try to generate invalid utf-8} -body {
     encoding convertto -profile strict utf-8 \uD800
-} -result \xED\xA0\x80
+} -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
 test encoding-24.39 {Try to generate invalid utf-8 with -profile strict} -body {
     encoding convertto -profile strict utf-8 \uD800
 } -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
