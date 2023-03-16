@@ -207,7 +207,7 @@ test iocmd-7.5 {close command} -setup {
 
 proc expectedOpts {got extra} {
     set basicOpts {
-	-blocking -buffering -buffersize -encoding -encodingprofile -eofchar -translation
+	-blocking -buffering -buffersize -encoding -eofchar -profile -translation
     }
     set opts [list {*}$basicOpts {*}$extra]
     lset opts end [string cat "or " [lindex $opts end]]
@@ -240,33 +240,33 @@ test iocmd-8.7 {fconfigure command} -setup {
     file delete $path(test1)
 } -body {
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {} -encoding utf-16 -encodingprofile tcl8
+    fconfigure $f1 -translation lf -eofchar {} -encoding utf-16 -profile tcl8
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
-} -result {-blocking 1 -buffering full -buffersize 4096 -encoding utf-16 -encodingprofile tcl8 -eofchar {} -translation lf}
+} -result {-blocking 1 -buffering full -buffersize 4096 -encoding utf-16 -eofchar {} -profile tcl8 -translation lf}
 test iocmd-8.8 {fconfigure command} -setup {
     file delete $path(test1)
     set x {}
 } -body {
     set f1 [open $path(test1) w]
     fconfigure $f1 -translation lf -buffering line -buffersize 3030 \
-		-eofchar {} -encoding utf-16 -encodingprofile tcl8
+		-eofchar {} -encoding utf-16 -profile tcl8
     lappend x [fconfigure $f1 -buffering]
     lappend x [fconfigure $f1]
 } -cleanup {
     catch {close $f1}
-} -result {line {-blocking 1 -buffering line -buffersize 3030 -encoding utf-16 -encodingprofile tcl8 -eofchar {} -translation lf}}
+} -result {line {-blocking 1 -buffering line -buffersize 3030 -encoding utf-16 -eofchar {} -profile tcl8 -translation lf}}
 test iocmd-8.9 {fconfigure command} -setup {
     file delete $path(test1)
 } -body {
     set f1 [open $path(test1) w]
     fconfigure $f1 -translation binary -buffering none -buffersize 4040 \
-		-eofchar {} -encoding binary -encodingprofile tcl8
+		-eofchar {} -encoding binary -profile tcl8
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
-} -result {-blocking 1 -buffering none -buffersize 4040 -encoding binary -encodingprofile tcl8 -eofchar {} -translation lf}
+} -result {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -profile tcl8 -translation lf}
 test iocmd-8.10 {fconfigure command} -returnCodes error -body {
     fconfigure a b
 } -result {can not find channel named "a"}
@@ -378,7 +378,7 @@ test iocmd-8.21 {fconfigure command / -nocomplainencoding 0 error} -constraints 
 } -returnCodes error -result "bad value for -nocomplainencoding: only true allowed"
 test iocmd-8.22 {fconfigure command / -nocomplainencoding 0, no error if -strictencoding already defined} -setup {
     set console stdin
-    set oldprofile [fconfigure $console -encodingprofile]
+    set oldprofile [fconfigure $console -profile]
 } -constraints {
     obsolete
 } -body {
@@ -390,8 +390,8 @@ test iocmd-8.22 {fconfigure command / -nocomplainencoding 0, no error if -strict
 } -result 0
 
 
-test iocmd-8.21 {fconfigure -encodingprofile badprofile} -body {
-    fconfigure stdin -encodingprofile froboz
+test iocmd-8.21 {fconfigure -profile badprofile} -body {
+    fconfigure stdin -profile froboz
 } -returnCodes error -result {bad profile name "froboz": must be replace, strict, or tcl8}
 
 test iocmd-9.1 {eof command} {
@@ -1387,7 +1387,7 @@ test iocmd-25.1 {chan configure, cgetall, standard options} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -encodingprofile * -eofchar {{} {}} -translation {auto *}}}
+} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {{} {}} -profile * -translation {auto *}}}
 test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
     set res {}
     proc foo {args} {oninit cget cgetall; onfinal; track; return ""}
@@ -1396,7 +1396,7 @@ test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -encodingprofile * -eofchar {{} {}} -translation {auto *}}}
+} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {{} {}} -profile * -translation {auto *}}}
 test iocmd-25.3 {chan configure, cgetall, regular result} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1408,7 +1408,7 @@ test iocmd-25.3 {chan configure, cgetall, regular result} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -encodingprofile * -eofchar {{} {}} -translation {auto *} -bar foo -snarf x}}
+} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {{} {}} -profile * -translation {auto *} -bar foo -snarf x}}
 test iocmd-25.4 {chan configure, cgetall, bad result, list of uneven length} -match glob -body {
     set res {}
     proc foo {args} {
