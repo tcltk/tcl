@@ -2425,7 +2425,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 # else
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, \
-	    1|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
+	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
 	    TCL_STUB_MAGIC)
 # endif
 #else
