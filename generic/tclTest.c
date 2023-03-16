@@ -2020,8 +2020,7 @@ static int UtfExtWrapper(
     Tcl_Interp *interp, UtfTransformFn *transformer, int objc, Tcl_Obj *const objv[])
 {
     Tcl_Encoding encoding;
-    int encStateValue; /* Assumes Tcl_EncodingState points to integer!!! */
-    Tcl_EncodingState encState;
+    Tcl_EncodingState encState, *encStatePtr;
     Tcl_Size srcLen, bufLen;
     const unsigned char *bytes;
     unsigned char *bufPtr;
@@ -2085,13 +2084,16 @@ static int UtfExtWrapper(
     }
 
     /* Assumes state is integer if not "" */
-    if (Tcl_GetIntFromObj(interp, objv[5], &encStateValue) == TCL_OK) {
-        encState = (Tcl_EncodingState)&encStateValue;
+    Tcl_WideInt wide;
+    if (Tcl_GetWideIntFromObj(interp, objv[5], &wide) == TCL_OK) {
+        encState = (Tcl_EncodingState) wide;
+        encStatePtr = &encState;
     } else if (Tcl_GetCharLength(objv[5]) == 0) {
-        encState = NULL;
+        encStatePtr = NULL;
     } else {
         return TCL_ERROR;
     }
+
     if (Tcl_GetIntFromObj(interp, objv[6], &dstLen) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -2126,7 +2128,7 @@ static int UtfExtWrapper(
 			 "TCL_ENCODING_CHAR_LIMIT set in flags.", TCL_STATIC);
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIntFromObj(interp, dstCharsVar, &dstChars) != TCL_OK) {
+	if (Tcl_GetIntFromObj(interp, valueObj, &dstChars) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     } else {
@@ -2138,11 +2140,11 @@ static int UtfExtWrapper(
     memset(bufPtr, 0xFF, dstLen); /* Need to check nul terminator */
     memmove(bufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
     bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen); /* Last! to avoid shimmering */
-    result = (*transformer)(interp, encoding, (const char *) bytes, srcLen, flags,
-                               &encState, (char *) bufPtr, dstLen,
-                               srcReadVar ? &srcRead : NULL,
-                               &dstWrote,
-                               dstCharsVar ? &dstChars : NULL);
+    result = (*transformer)(interp, encoding, (const char *)bytes, srcLen, flags,
+                            encStatePtr, (char *) bufPtr, dstLen,
+                            srcReadVar ? &srcRead : NULL,
+                            &dstWrote,
+                            dstCharsVar ? &dstChars : NULL);
     if (memcmp(bufPtr + bufLen - 4, "\xAB\xCD\xEF\xAB", 4)) {
         Tcl_SetResult(interp,
                       "Tcl_ExternalToUtf wrote past output buffer",
@@ -2172,7 +2174,7 @@ static int UtfExtWrapper(
         }
         result = TCL_OK;
         resultObjs[1] =
-            encState ? Tcl_NewIntObj(encStateValue) : Tcl_NewObj();
+            encStatePtr ? Tcl_NewWideIntObj((Tcl_WideInt)encState) : Tcl_NewObj();
         resultObjs[2] = Tcl_NewByteArrayObj(bufPtr, dstLen);
         if (srcReadVar) {
 	    if (Tcl_ObjSetVar2(interp,
