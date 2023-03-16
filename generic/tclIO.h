@@ -190,6 +190,9 @@ typedef struct ChannelState {
 				 * handlers ("fileevent") on this channel. */
     size_t bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
+    Channel *timerChanPtr;	/* Needed in order to decrement the refCount of
+				   the right channel when the timer is
+				   deleted. */
     struct CopyState *csPtrR;	/* State of background copy for which channel
 				 * is input, or NULL. */
     struct CopyState *csPtrW;	/* State of background copy for which channel
