@@ -2083,7 +2083,7 @@ static int UtfExtWrapper(
     /* Assumes state is integer if not "" */
     Tcl_WideInt wide;
     if (Tcl_GetWideIntFromObj(interp, objv[5], &wide) == TCL_OK) {
-        encState = (Tcl_EncodingState) wide;
+        encState = (Tcl_EncodingState)(size_t)wide;
         encStatePtr = &encState;
     } else if (Tcl_GetCharLength(objv[5]) == 0) {
         encStatePtr = NULL;
@@ -2173,7 +2173,7 @@ static int UtfExtWrapper(
         }
         result = TCL_OK;
         resultObjs[1] =
-            encStatePtr ? Tcl_NewWideIntObj((Tcl_WideInt)encState) : Tcl_NewObj();
+            encStatePtr ? Tcl_NewWideIntObj((Tcl_WideInt)(size_t)encState) : Tcl_NewObj();
         resultObjs[2] = Tcl_NewByteArrayObj(bufPtr, dstLen);
         if (srcReadVar) {
 	    if (Tcl_ObjSetVar2(interp,
