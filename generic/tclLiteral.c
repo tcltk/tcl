@@ -179,8 +179,8 @@ TclCreateLiteral(
     const char *bytes,	/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
     size_t length,		/* Number of bytes in the string. */
-    size_t hash,		/* The string's hash. If -1, it will be
-				 * computed here. */
+    size_t hash,		/* The string's hash. If the value is
+				 * TCL_INDEX_NONE, it will be computed here. */
     int *newPtr,
     Namespace *nsPtr,
     int flags,
