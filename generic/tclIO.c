@@ -4618,7 +4618,6 @@ Tcl_GetsObj(
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	UpdateInterest(chanPtr);
 	Tcl_SetErrno(EILSEQ);
-	ResetFlag(statePtr, CHANNEL_ENCODING_ERROR);
 	return TCL_INDEX_NONE;
     }
 
