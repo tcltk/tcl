@@ -165,6 +165,7 @@ static int		CheckForDeadChannel(Tcl_Interp *interp,
 static void		CheckForStdChannelsBeingClosed(Tcl_Channel chan);
 static void		CleanupChannelHandlers(Tcl_Interp *interp,
 			    Channel *chanPtr);
+static void		CleanupTimerHandler(ChannelState *statePtr);
 static int		CloseChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode);
 static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
@@ -172,6 +173,7 @@ static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
 static int		CloseWrite(Tcl_Interp *interp, Channel *chanPtr);
 static void		CommonGetsCleanup(Channel *chanPtr);
 static int		CopyData(CopyState *csPtr, int mask);
+static void		DeleteTimerHandler(ChannelState *statePtr);
 static int		MoveBytes(CopyState *csPtr);
 
 static void		MBCallback(CopyState *csPtr, Tcl_Obj *errObj);
@@ -1734,6 +1736,7 @@ Tcl_CreateChannel(
     statePtr->scriptRecordPtr	= NULL;
     statePtr->bufSize		= CHANNELBUFFER_DEFAULT_SIZE;
     statePtr->timer		= NULL;
+    statePtr->timerChanPtr	= NULL;
     statePtr->csPtrR		= NULL;
     statePtr->csPtrW		= NULL;
     statePtr->outputStage	= NULL;
@@ -3191,8 +3194,8 @@ CloseChannel(
     /*
      * Cancel any outstanding timer.
      */
+    DeleteTimerHandler(statePtr);
 
-    Tcl_DeleteTimerHandler(statePtr->timer);
 
     /*
      * Mark the channel as deleted by clearing the type structure.
@@ -3544,7 +3547,7 @@ Tcl_Close(
     /*
      * Cancel any outstanding timer.
      */
-    Tcl_DeleteTimerHandler(statePtr->timer);
+    DeleteTimerHandler(statePtr);
 
     /*
      * Invoke the registered close callbacks and delete their records.
@@ -4019,8 +4022,7 @@ Tcl_ClearChannelHandlers(
     /*
      * Cancel any outstanding timer.
      */
-
-    Tcl_DeleteTimerHandler(statePtr->timer);
+    DeleteTimerHandler(statePtr);
 
     /*
      * Remove any references to channel handlers for this channel that may be
@@ -8715,8 +8717,9 @@ UpdateInterest(
 
 	    if (!statePtr->timer) {
 		TclChannelPreserve((Tcl_Channel)chanPtr);
+		statePtr->timerChanPtr = chanPtr;
 		statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-                        ChannelTimerProc, chanPtr);
+		    ChannelTimerProc, chanPtr);
 	    }
 	}
     }
@@ -8726,6 +8729,7 @@ UpdateInterest(
 	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 
 	TclChannelPreserve((Tcl_Channel)chanPtr);
+	statePtr->timerChanPtr = chanPtr;
 	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 	    ChannelTimerProc,chanPtr);
     }
@@ -8756,7 +8760,6 @@ ChannelTimerProc(
     void *clientData)
 {
     Channel *chanPtr = (Channel *)clientData;
-
     /* State info for channel */
     ChannelState *statePtr = chanPtr->state;
 
@@ -8767,7 +8770,7 @@ ChannelTimerProc(
      */
 
     if (chanPtr->typePtr == NULL) {
-	TclChannelRelease((Tcl_Channel)chanPtr);
+	CleanupTimerHandler(statePtr);
     } else {
 	Tcl_Preserve(statePtr);
 	statePtr->timer = NULL;
@@ -8780,35 +8783,52 @@ ChannelTimerProc(
 	     * before UpdateInterest gets called by Tcl_NotifyChannel.
 	     */
 	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-		    ChannelTimerProc,chanPtr);
+		ChannelTimerProc,chanPtr);
 	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_WRITABLE);
 	} else {
 	    /* The channel may have just been closed from within Tcl_NotifyChannel */
 	    if (!GotFlag(statePtr, CHANNEL_INCLOSE)) {
 		if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
-			&& (statePtr->interestMask & TCL_READABLE)
-			&& (statePtr->inQueueHead != NULL)
-			&& IsBufferReady(statePtr->inQueueHead)) {
+		    && (statePtr->interestMask & TCL_READABLE)
+		    && (statePtr->inQueueHead != NULL)
+		    && IsBufferReady(statePtr->inQueueHead)) {
 		    /*
 		     * Restart the timer in case a channel handler reenters the event loop
 		     * before UpdateInterest gets called by Tcl_NotifyChannel.
 		     */
 
 		    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-			    ChannelTimerProc,chanPtr);
+			ChannelTimerProc,chanPtr);
 		    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
 		} else {
-		    TclChannelRelease((Tcl_Channel)chanPtr);
+		    CleanupTimerHandler(statePtr);
 		    UpdateInterest(chanPtr);
 		}
 	    } else {
-		TclChannelRelease((Tcl_Channel)chanPtr);
+		CleanupTimerHandler(statePtr);
 	    }
 	}
-
 	Tcl_Release(statePtr);
     }
-
+}
+
+static void
+DeleteTimerHandler(
+    ChannelState *statePtr
+)
+{
+    if (statePtr->timer != NULL) {
+	Tcl_DeleteTimerHandler(statePtr->timer);
+	CleanupTimerHandler(statePtr);
+    }
+}
+static void
+CleanupTimerHandler(
+    ChannelState *statePtr
+){
+    TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
+    statePtr->timer = NULL;
+    statePtr->timerChanPtr = NULL;
 }
 
 /*

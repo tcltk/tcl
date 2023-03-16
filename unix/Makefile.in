@@ -956,7 +956,8 @@ testresults/valgrind/%.result: ${TCL_EXE} ${TCLTEST_EXE}
 	@mkdir -p testresults/valgrind
 	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} \
 		$(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind \
-		-file $(basename $(notdir $@)) > $@ 2>&1
+		-file $(basename $(notdir $@)) > $@.tmp 2>&1
+	@mv $@.tmp $@
 .PRECIOUS: testresults/valgrind/%.result
 
 
@@ -966,7 +967,7 @@ testresults/valgrind/%.success: testresults/valgrind/%.result
 	@printf '\n >&2'
 	@status=$$(./${TCLTEST_EXE} $(TOP_DIR)/tools/valgrind_check_success \
 		file $(basename $@).result); \
-	if [ "$$status" -eq 1 ]; then exit 0; else exit 1; fi
+	if [ "$$status" -eq 1 ]; then touch $@; exit 0; else exit 1; fi
 
 valgrind_each: $(addprefix testresults/valgrind/,$(addsuffix .success,$(notdir\
 	$(wildcard $(TOP_DIR)/tests/*.test))))
