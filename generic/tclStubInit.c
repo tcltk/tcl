@@ -139,15 +139,17 @@ static const char *TclGetStartupScriptFileName(void)
     return Tcl_GetString(path);
 }
 
+# (unsupported in Tcl 8.6)
+
 #define TclGetStringFromObj_ getStringFromObj
 static char *
 TclGetStringFromObj_(
     Tcl_Obj *objPtr,
-    size_t *lengthPtr)
+    void *lengthPtr)
 {
     int length;
     char *result = Tcl_GetStringFromObj(objPtr, &length);
-    *lengthPtr = (size_t)length;
+    *(size_t *)lengthPtr = (size_t)length;
     return result;
 }
 
@@ -155,11 +157,11 @@ TclGetStringFromObj_(
 static unsigned short *
 TclGetUnicodeFromObj_(
     Tcl_Obj *objPtr,
-    size_t *lengthPtr)
+    void *lengthPtr)
 {
     int length;
     Tcl_UniChar *result = Tcl_GetUnicodeFromObj(objPtr, &length);
-    *lengthPtr = (size_t)length;
+    *(size_t *)lengthPtr = (size_t)length;
     return result;
 }
 
@@ -167,11 +169,11 @@ TclGetUnicodeFromObj_(
 static unsigned char *
 TclGetByteArrayFromObj_(
     Tcl_Obj *objPtr,
-    size_t *numBytesPtr)
+    void *numBytesPtr)
 {
     int numBytes;
     unsigned char *result = Tcl_GetByteArrayFromObj(objPtr, &numBytes);
-    *numBytesPtr = (size_t)numBytes;
+    *(size_t *)numBytesPtr = (size_t)numBytes;
     return result;
 }
 

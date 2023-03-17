@@ -2326,23 +2326,22 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
-# TIP #481 (undocumented stub entries)
+# (unsupported in Tcl 8.6)
 declare 651 {
-    char *TclGetStringFromObj_(Tcl_Obj *objPtr, size_t *lengthPtr)
+    char *TclGetStringFromObj_(Tcl_Obj *objPtr, void *lengthPtr)
 }
 declare 652 {
-    unsigned short *TclGetUnicodeFromObj_(Tcl_Obj *objPtr, size_t *lengthPtr)
+    unsigned short *TclGetUnicodeFromObj_(Tcl_Obj *objPtr, void *lengthPtr)
 }
-# Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 653 {
-    unsigned char *TclGetByteArrayFromObj_(Tcl_Obj *objPtr, size_t *numBytesPtr)
+    unsigned char *TclGetByteArrayFromObj_(Tcl_Obj *objPtr, void *numBytesPtr)
 }
+
+# ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
 declare 687 {
     void TclUnusedStubEntry(void)
 }
-
-# ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
 ##############################################################################
 

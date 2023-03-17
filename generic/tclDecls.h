@@ -1837,13 +1837,13 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 /* Slot 650 is reserved */
 /* 651 */
 EXTERN char *		TclGetStringFromObj_(Tcl_Obj *objPtr,
-				size_t *lengthPtr);
+				void *lengthPtr);
 /* 652 */
 EXTERN unsigned short *	 TclGetUnicodeFromObj_(Tcl_Obj *objPtr,
-				size_t *lengthPtr);
+				void *lengthPtr);
 /* 653 */
 EXTERN unsigned char *	TclGetByteArrayFromObj_(Tcl_Obj *objPtr,
-				size_t *numBytesPtr);
+				void *numBytesPtr);
 /* Slot 654 is reserved */
 /* Slot 655 is reserved */
 /* Slot 656 is reserved */
@@ -2565,9 +2565,9 @@ typedef struct TclStubs {
     void (*reserved648)(void);
     void (*reserved649)(void);
     void (*reserved650)(void);
-    char * (*tclGetStringFromObj_) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 651 */
-    unsigned short * (*tclGetUnicodeFromObj_) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 652 */
-    unsigned char * (*tclGetByteArrayFromObj_) (Tcl_Obj *objPtr, size_t *numBytesPtr); /* 653 */
+    char * (*tclGetStringFromObj_) (Tcl_Obj *objPtr, void *lengthPtr); /* 651 */
+    unsigned short * (*tclGetUnicodeFromObj_) (Tcl_Obj *objPtr, void *lengthPtr); /* 652 */
+    unsigned char * (*tclGetByteArrayFromObj_) (Tcl_Obj *objPtr, void *numBytesPtr); /* 653 */
     void (*reserved654)(void);
     void (*reserved655)(void);
     void (*reserved656)(void);
