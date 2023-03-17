@@ -187,7 +187,7 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 #define TclWinConvertError_ winConvertError
 static void
 TclWinConvertError_(unsigned errCode) {
-    return TclWinConvertError(errCode);
+    TclWinConvertError(errCode);
 }
 
 #endif
