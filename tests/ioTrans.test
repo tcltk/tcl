@@ -643,6 +643,9 @@ namespace eval reflector {
 
 
     proc finalize {_ chan} {
+	foreach id [after info] {
+	    after cancel $id
+	}
 	namespace delete $_
     }
 
