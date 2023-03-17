@@ -7631,56 +7631,6 @@ printf "%s\n" "#define _LARGEFILE64_SOURCE 1" >>confdefs.h
 	tcl_flags="$tcl_flags _LARGEFILE64_SOURCE"
     fi
 
-
-    if test ${tcl_cv_flag__largefile_source64+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/stat.h>
-int
-main (void)
-{
-char *p = (char *)open64;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  tcl_cv_flag__largefile_source64=no
-else $as_nop
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#define _LARGEFILE_SOURCE64 1
-#include <sys/stat.h>
-int
-main (void)
-{
-char *p = (char *)open64;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  tcl_cv_flag__largefile_source64=yes
-else $as_nop
-  tcl_cv_flag__largefile_source64=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-    if test "x${tcl_cv_flag__largefile_source64}" = "xyes" ; then
-
-printf "%s\n" "#define _LARGEFILE_SOURCE64 1" >>confdefs.h
-
-	tcl_flags="$tcl_flags _LARGEFILE_SOURCE64"
-    fi
-
     if test "x${tcl_flags}" = "x" ; then
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: none" >&5
 printf "%s\n" "none" >&6; }
