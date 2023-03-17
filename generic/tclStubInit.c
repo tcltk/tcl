@@ -139,7 +139,7 @@ static const char *TclGetStartupScriptFileName(void)
     return Tcl_GetString(path);
 }
 
-# (unsupported in Tcl 8.6)
+/* (unsupported in Tcl 8.6) */
 
 #define TclGetStringFromObj_ getStringFromObj
 static char *
