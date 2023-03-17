@@ -2126,7 +2126,7 @@ typedef struct Tcl_EncodingType {
  * TCL_ENCODING_PROFILE_* -	Mutually exclusive encoding profile ids. Note
  *				these are bit masks.
  *
- * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS 
+ * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS
  * DEFINED IN tclEncoding.c (ENCODING_INPUT et al). Be cognizant of this
  * when adding bits.
  */
@@ -2435,7 +2435,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 # else
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, \
-	    1|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
+	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
 	    TCL_STUB_MAGIC)
 # endif
 #else

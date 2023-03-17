@@ -2447,7 +2447,7 @@ declare 658 {
     int Tcl_ExternalToUtfDStringEx(Tcl_Interp *interp, Tcl_Encoding encoding,
         const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr,
         Tcl_Size *errorLocationPtr)
-} 
+}
 declare 659 {
     int Tcl_UtfToExternalDStringEx(Tcl_Interp *interp, Tcl_Encoding encoding,
     const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr,
