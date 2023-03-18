@@ -4644,7 +4644,7 @@ proc http::GuessType {token} {
     if {[package vsatisfies [package provide Tcl] 9.0-]} {
 	set state(body) [encoding convertfrom -profile tcl8 $enc $state(body)]
     } else {
-	set state(body) [encoding convertfrom -profile tcl8 $enc $state(body)]
+	set state(body) [encoding convertfrom $enc $state(body)]
     }
     set state(body) [string map {\r\n \n \r \n} $state(body)]
     set state(type) application/xml
