@@ -1134,7 +1134,6 @@ proc tcltest::SafeFetch {n1 n2 op} {
     }
 }
 
-
 # tcltest::Asciify --
 #
 #       Transforms the passed string to contain only printable ascii characters.
@@ -1156,9 +1155,9 @@ proc tcltest::Asciify {s} {
         set i [scan $c %c]
         if {[string is print $c] && ($i <= 127)} {
             append print $c
-        } elseif {$i <= 0xff} {
+        } elseif {$i <= 0xFF} {
             append print \\x[format %02X $i]
-        } elseif {$i <= 0xffff} {
+        } elseif {$i <= 0xFFFF} {
             append print \\u[format %04X $i]
         } else {
             append print \\U[format %08X $i]

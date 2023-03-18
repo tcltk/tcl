@@ -62,7 +62,7 @@ jobs:
           sudo chmod a+x /usr/local/bin/macher
           echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
           echo "CREATE_DMG=$(cd create-dmg;pwd)/create-dmg" >> $GITHUB_ENV
-          echo "CFLAGS=-arch x86_64 -arch arm64e" >> $GITHUB_ENV
+          echo "CFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
       - name: Configure
         run: ./configure --disable-symbols --disable-shared --enable-zipfs
         working-directory: unix
