@@ -2822,7 +2822,7 @@ Utf32ToUtfProc(
 	 * unsigned short-size data.
 	 */
 
-	if ((ch > 0) && (ch < 0x80)) {
+	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (ch & 0xFF);
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
@@ -3054,7 +3054,7 @@ Utf16ToUtfProc(
 	}
 	if (((prev  & ~0x3FF) == 0xD800) && ((ch  & ~0x3FF) != 0xDC00)) {
 	    if (PROFILE_STRICT(flags)) {
-		result = TCL_CONVERT_UNKNOWN;
+		result = TCL_CONVERT_SYNTAX;
 		src -= 2; /* Go back to beginning of high surrogate */
 		dst--; /* Also undo writing a single byte too much */
 		numChars--;
@@ -3105,7 +3105,7 @@ Utf16ToUtfProc(
 
     if ((ch  & ~0x3FF) == 0xD800) {
 	if (PROFILE_STRICT(flags)) {
-	    result = TCL_CONVERT_UNKNOWN;
+	    result = TCL_CONVERT_SYNTAX;
 	    src -= 2;
 	    dst--;
 	    numChars--;
