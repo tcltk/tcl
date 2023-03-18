@@ -5246,14 +5246,16 @@ ZipFSPathInFilesystemProc(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
+    Tcl_Obj *normPathPtr;
     int ret = -1, len;
     char *path;
 
-    pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-    if (!pathPtr) {
+    normPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+    if (!normPathPtr) {
 	return -1;
     }
-    path = Tcl_GetStringFromObj(pathPtr, &len);
+    path = Tcl_GetStringFromObj(normPathPtr, &len);
+    Tcl_DecrRefCount(normPathPtr);
     if (strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) != 0) {
 	return -1;
     }
