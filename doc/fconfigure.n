@@ -101,6 +101,8 @@ locale-dependent system encoding used for interfacing with the operating
 system, as returned by \fBencoding system\fR.
 .RE
 .TP
+\fB\-eofchar\fR \fIchar\fR
+.TP
 \fB\-eofchar\fR \fB{\fIchar outChar\fB}\fR
 .
 This option supports DOS file systems that use Control-z (\ex1A) as an
@@ -111,8 +113,8 @@ If \fIchar\fR is the empty string, then there is no special end of file
 character marker.  For read-write channels, a two-element list specifies
 the end of file marker for input and output, respectively.  As a
 convenience, when setting the end-of-file character for a read-write
-channel you can specify a single value that will apply to both reading
-and writing.  When querying the end-of-file character of a read-write
+channel you can specify a single value that will apply to reading
+only.  When querying the end-of-file character of a read-write
 channel, a two-element list will always be returned.  The default value
 for \fB\-eofchar\fR is the empty string in all cases except for files
 under Windows.  In that case the \fB\-eofchar\fR is Control-z (\ex1A) for

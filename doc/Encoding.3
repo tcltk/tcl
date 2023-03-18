@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_GetEncodingFromObj, Tcl_ExternalToUtfDString, Tcl_UtfToExternalDStringEx, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternalDStringEx, Tcl_UtfToExternal, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNameFromEnvironment, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetEncodingSearchPath, Tcl_SetEncodingSearchPath, Tcl_GetDefaultEncodingDir, Tcl_SetDefaultEncodingDir \- procedures for creating and using encodings
+Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_GetEncodingFromObj, Tcl_ExternalToUtfDString, Tcl_ExternalToUtfDStringEx, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternalDStringEx, Tcl_UtfToExternal, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNameFromEnvironment, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetEncodingSearchPath, Tcl_SetEncodingSearchPath, Tcl_GetDefaultEncodingDir, Tcl_SetDefaultEncodingDir \- procedures for creating and using encodings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -223,7 +223,6 @@ call \fBTcl_DStringFree\fR to free any information stored in \fIdstPtr\fR.
 When converting, if any of the characters in the source buffer cannot be
 represented in the target encoding, a default fallback character will be
 used.  The return value is a pointer to the value stored in the DString.
-
 .PP
 \fBTcl_ExternalToUtfDStringEx\fR is a more flexible version of older
 \fBTcl_ExternalToUtfDString\fR function. It takes three additional parameters,
@@ -235,7 +234,7 @@ into the function. On success, the function returns \fBTCL_ERROR\fR with the
 converted string stored in \fB*dstPtr\fR. For errors other than conversion
 errors, such as invalid flags, the function returns \fBTCL_OK\fR with an error
 message in \fBinterp\fR if it is not NULL.
-
+.PP
 For conversion errors, \fBTcl_ExternalToUtfDStringEx\fR returns one
 of the \fBTCL_CONVERT_*\fR errors listed below for \fBTcl_ExternalToUtf\fR.
 When one of these conversion errors is returned, an error message is
@@ -243,10 +242,9 @@ stored in \fBinterp\fR only if \fBerrorIdxPtr\fR is NULL. Otherwise, no error me
 is stored as the function expects the caller is interested whatever is
 decoded to that point and not treating this as an immediate error condition.
 The index of the error location is stored in \fB*errorIdxPtr\fR.
-
+.PP
 The caller must call \fBTcl_DStringFree\fR to free up the \fB*dstPtr\fR resources
 irrespective of the return value from the function.
-
 .PP
 \fBTcl_ExternalToUtf\fR converts a source buffer \fIsrc\fR from the specified
 \fIencoding\fR into UTF-8.  Up to \fIsrcLen\fR bytes are converted from the
@@ -626,7 +624,7 @@ with at most one of \fBTCL_ENCODING_PROFILE_TCL8\fR,
 These correspond to the \fBtcl8\fR, \fBstrict\fR and \fBreplace\fR profiles
 respectively. If none are specified, a version-dependent default profile is used.
 For Tcl 8.7, the default profile is \fBtcl8\fR.
-
+.PP
 For details about profiles, see the \fBPROFILES\fR section in
 the documentation of the \fBencoding\fR command.
 .SH "SEE ALSO"
