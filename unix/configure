@@ -6506,16 +6506,16 @@ then :
 			    do64bit_ok=yes
 
 fi;;
-		    arm64|arm64e)
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if compiler accepts -arch arm64e flag" >&5
-printf %s "checking if compiler accepts -arch arm64e flag... " >&6; }
-if test ${tcl_cv_cc_arch_arm64e+y}
+		    arm64)
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if compiler accepts -arch arm64 flag" >&5
+printf %s "checking if compiler accepts -arch arm64 flag... " >&6; }
+if test ${tcl_cv_cc_arch_arm64+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
 
 			    hold_cflags=$CFLAGS
-			    CFLAGS="$CFLAGS -arch arm64e"
+			    CFLAGS="$CFLAGS -arch arm64"
 			    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6529,20 +6529,20 @@ main (void)
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  tcl_cv_cc_arch_arm64e=yes
+  tcl_cv_cc_arch_arm64=yes
 else $as_nop
-  tcl_cv_cc_arch_arm64e=no
+  tcl_cv_cc_arch_arm64=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
 			    CFLAGS=$hold_cflags
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_arch_arm64e" >&5
-printf "%s\n" "$tcl_cv_cc_arch_arm64e" >&6; }
-			if test $tcl_cv_cc_arch_arm64e = yes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_arch_arm64" >&5
+printf "%s\n" "$tcl_cv_cc_arch_arm64" >&6; }
+			if test $tcl_cv_cc_arch_arm64 = yes
 then :
 
-			    CFLAGS="$CFLAGS -arch arm64e"
+			    CFLAGS="$CFLAGS -arch arm64"
 			    do64bit_ok=yes
 
 fi;;
@@ -6554,7 +6554,7 @@ printf "%s\n" "$as_me: WARNING: Don't know how enable 64-bit on architecture \`a
 else $as_nop
 
 		# Check for combined 32-bit and 64-bit fat build
-		if echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64|arm64e) ' \
+		if echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64|arm64) ' \
 		    && echo "$CFLAGS " |grep -E -q -- '-arch (ppc|i386) '
 then :
 
