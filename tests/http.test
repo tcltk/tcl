@@ -712,6 +712,8 @@ test http-7.3.$ThreadLevel {http::formatQuery} -setup {
 } -result {unknown encoding ""}
 test http-7.4.$ThreadLevel {http::formatQuery} -setup {
     set enc [http::config -urlencoding]
+} -constraints {
+    knownProfileBug
 } -body {
     # this would be reverting to http <=2.4 behavior w/o errors
     # with Tcl 8.x (unknown chars become '?'), generating a
