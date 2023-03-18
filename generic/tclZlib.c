@@ -445,7 +445,7 @@ GenerateHeader(
 	Tcl_EncodingState state;
 	valueStr = TclGetStringFromObj(value, &len);
 	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, len,
-		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_STOPONERROR, &state,
+		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_PROFILE_STRICT, &state,
 		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
 		NULL);
 	if (result != TCL_OK) {
@@ -481,7 +481,7 @@ GenerateHeader(
 	Tcl_EncodingState state;
 	valueStr = TclGetStringFromObj(value, &len);
 	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, len,
-		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_STOPONERROR, &state,
+		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_PROFILE_STRICT, &state,
 		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len,
 		NULL);
 	if (result != TCL_OK) {

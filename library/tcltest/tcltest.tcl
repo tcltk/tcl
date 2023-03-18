@@ -1134,7 +1134,6 @@ proc tcltest::SafeFetch {n1 n2 op} {
     }
 }
 
-
 # tcltest::Asciify --
 #
 #       Transforms the passed string to contain only printable ascii characters.

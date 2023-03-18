@@ -2123,18 +2123,12 @@ typedef struct Tcl_EncodingType {
  *				content.  Otherwise, the number of chars
  *				produced is controlled only by other limiting
  *				factors.
- * TCL_ENCODING_MODIFIED -	Convert NULL bytes to \xC0\x80 in stead of
- *				0x00. Only valid for "utf-8" and "cesu-8".
- *				This flag is implicit for external -> internal conversions,
- *				optional for internal -> external conversions.
- * TCL_ENCODING_NOCOMPLAIN -	If set, the converter
- *				substitutes the problematic character(s) with
- *				one or more "close" characters in the
- *				destination buffer and then continues to
- *				convert the source. If clear, the converter returns
- *				immediately upon encountering an invalid byte sequence
- *				or a source character that has no mapping in the
- *				target encoding. Only for Tcl 9.x.
+ * TCL_ENCODING_PROFILE_* -	Mutually exclusive encoding profile ids. Note
+ *				these are bit masks.
+ *
+ * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS
+ * DEFINED IN tclEncoding.c (ENCODING_INPUT et al). Be cognizant of this
+ * when adding bits.
  */
 
 #define TCL_ENCODING_START		0x01
@@ -2142,9 +2136,25 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_STOPONERROR	0x04
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
-#define TCL_ENCODING_MODIFIED		0x20
-#define TCL_ENCODING_NOCOMPLAIN		0x40
-#define TCL_ENCODING_STRICT			0x44
+/* Internal use bits, do not define bits in this space. See above comment */
+#define TCL_ENCODING_INTERNAL_USE_MASK  0xFF00
+/* Reserve top byte for profile values (disjoint, not a mask) */
+#define TCL_ENCODING_PROFILE_TCL8     0x01000000
+#define TCL_ENCODING_PROFILE_STRICT   0x02000000
+#define TCL_ENCODING_PROFILE_REPLACE  0x03000000
+#define TCL_ENCODING_PROFILE_MASK     0xFF000000
+#define TCL_ENCODING_PROFILE_GET(flags_)  ((flags_) & TCL_ENCODING_PROFILE_MASK)
+#define TCL_ENCODING_PROFILE_SET(flags_, profile_) \
+    do {                                           \
+	(flags_) &= ~TCL_ENCODING_PROFILE_MASK;    \
+	(flags_) |= profile_;                      \
+    } while (0)
+/* Still being argued - For Tcl9, is the default strict? TODO */
+#if TCL_MAJOR_VERSION < 9
+#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
+#else
+#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8 /* STRICT? REPLACE? TODO */
+#endif
 
 /*
  * The following definitions are the error codes returned by the conversion

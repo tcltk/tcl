@@ -1702,8 +1702,12 @@ Tcl_CreateChannel(
     }
     statePtr->inputEncodingState  = NULL;
     statePtr->inputEncodingFlags  = TCL_ENCODING_START;
+    TCL_ENCODING_PROFILE_SET(statePtr->inputEncodingFlags,
+			     TCL_ENCODING_PROFILE_DEFAULT);
     statePtr->outputEncodingState = NULL;
     statePtr->outputEncodingFlags = TCL_ENCODING_START;
+    TCL_ENCODING_PROFILE_SET(statePtr->outputEncodingFlags,
+			     TCL_ENCODING_PROFILE_DEFAULT);
 
     /*
      * Set the channel up initially in AUTO input translation mode to accept
@@ -4396,21 +4400,6 @@ Write(
     }
 
     /*
-     * Transfer encoding nocomplain/strict option to the encoding flags
-     */
-
-    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
-	statePtr->outputEncodingFlags |= TCL_ENCODING_STRICT;
-#ifdef TCL_NO_DEPRECATED
-    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
-	statePtr->outputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-#endif
-    } else {
-	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
-    }
-
-    /*
      * Write the terminated escape sequence even if srcLen is 0.
      */
 
@@ -4730,21 +4719,6 @@ Tcl_GetsObj(
 
     if (encoding == NULL) {
 	encoding = GetBinaryEncoding();
-    }
-
-    /*
-     * Transfer encoding nocomplain/strict option to the encoding flags
-     */
-
-    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
-	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
-#ifdef TCL_NO_DEPRECATED
-    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
-	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-#endif
-    } else {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
 
     /*
@@ -5505,21 +5479,6 @@ FilterInputBytes(
 	*gsPtr->dstPtr = dst;
     }
     gsPtr->state = statePtr->inputEncodingState;
-
-    /*
-     * Transfer encoding nocomplain/strict option to the encoding flags
-     */
-
-    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
-	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
-#ifdef TCL_NO_DEPRECATED
-    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
-	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-#endif
-    } else {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
-    }
 
     result = Tcl_ExternalToUtf(NULL, gsPtr->encoding, raw, rawLen,
 	    statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE,
@@ -6304,21 +6263,6 @@ ReadChars(
 	dstLimit = size - numBytes;
     } else {
 	dst = TclGetString(objPtr) + numBytes;
-    }
-
-    /*
-     * Transfer encoding nocomplain/strict option to the encoding flags
-     */
-
-    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
-	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
-#ifdef TCL_NO_DEPRECATED
-    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
-	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-#endif
-    } else {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
 
     /*
@@ -7868,7 +7812,7 @@ Tcl_BadChannelOption(
 {
     if (interp != NULL) {
 	const char *genericopt =
-		"blocking buffering buffersize encoding eofchar nocomplainencoding strictencoding translation";
+		"blocking buffering buffersize encoding eofchar profile translation";
 	const char **argv;
 	int argc, i;
 	Tcl_DString ds;
@@ -8066,27 +8010,19 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(1, "-nocomplainencoding")) {
+    if (len == 0 || HaveOpt(1, "-profile")) {
+	int profile;
+	const char *profileName;
 	if (len == 0) {
-	    Tcl_DStringAppendElement(dsPtr, "-nocomplainencoding");
+	    Tcl_DStringAppendElement(dsPtr, "-profile");
 	}
-#ifdef TCL_NO_DEPRECATED
-	Tcl_DStringAppendElement(dsPtr,
-		(flags & CHANNEL_ENCODING_NOCOMPLAIN) ? "1" : "0");
-#else
-	Tcl_DStringAppendElement(dsPtr,
-		(flags & CHANNEL_ENCODING_STRICT) ? "0" : "1");
-#endif
-	if (len > 0) {
-	    return TCL_OK;
+	/* Note currently input and output profiles are same */
+	profile = TCL_ENCODING_PROFILE_GET(statePtr->inputEncodingFlags);
+	profileName = TclEncodingProfileIdToName(interp, profile);
+	if (profileName == NULL) {
+	    return TCL_ERROR;
 	}
-    }
-    if (len == 0 || HaveOpt(1, "-strictencoding")) {
-	if (len == 0) {
-	    Tcl_DStringAppendElement(dsPtr, "-strictencoding");
-	}
-	Tcl_DStringAppendElement(dsPtr,
-		(flags & CHANNEL_ENCODING_STRICT) ? "1" : "0");
+	Tcl_DStringAppendElement(dsPtr, profileName);
 	if (len > 0) {
 	    return TCL_OK;
 	}
@@ -8262,6 +8198,7 @@ Tcl_SetChannelOption(
 	return TCL_OK;
     } else if (HaveOpt(2, "-encoding")) {
 	Tcl_Encoding encoding;
+	int profile;
 
 	if ((newValue[0] == '\0') || (strcmp(newValue, "binary") == 0)) {
 	    encoding = NULL;
@@ -8286,9 +8223,12 @@ Tcl_SetChannelOption(
 	Tcl_FreeEncoding(statePtr->encoding);
 	statePtr->encoding = encoding;
 	statePtr->inputEncodingState = NULL;
+	profile = TCL_ENCODING_PROFILE_GET(statePtr->inputEncodingFlags);
 	statePtr->inputEncodingFlags = TCL_ENCODING_START;
+	TCL_ENCODING_PROFILE_SET(statePtr->inputEncodingFlags, profile);
 	statePtr->outputEncodingState = NULL;
 	statePtr->outputEncodingFlags = TCL_ENCODING_START;
+	TCL_ENCODING_PROFILE_SET(statePtr->outputEncodingFlags, profile); /* Same as input */
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	UpdateInterest(chanPtr);
 	return TCL_OK;
@@ -8347,43 +8287,13 @@ Tcl_SetChannelOption(
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	return TCL_OK;
-    } else if (HaveOpt(1, "-nocomplainencoding")) {
-	int newMode;
-
-	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
+    } else if (HaveOpt(1, "-profile")) {
+	int profile;
+	if (TclEncodingProfileNameToId(interp, newValue, &profile) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (newMode) {
-	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
-	    SetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
-	} else {
-#ifdef TCL_NO_DEPRECATED
-	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
-#else
-	    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT) != CHANNEL_ENCODING_STRICT) {
-		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "bad value for -nocomplainencoding: only true allowed",
-			    TCL_INDEX_NONE));
-		}
-		return TCL_ERROR;
-	    }
-#endif
-	}
-	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
-	return TCL_OK;
-    } else if (HaveOpt(1, "-strictencoding")) {
-	int newMode;
-
-	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-	if (newMode) {
-	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
-	    SetFlag(statePtr, CHANNEL_ENCODING_STRICT);
-	} else {
-	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
-	}
+	TCL_ENCODING_PROFILE_SET(statePtr->inputEncodingFlags, profile);
+	TCL_ENCODING_PROFILE_SET(statePtr->outputEncodingFlags, profile);
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {
@@ -9506,12 +9416,17 @@ TclCopyChannel(
      * of the bytes themselves.
      */
 
+    /*
+     * TODO - should really only allow lossless profiles. Below reflects
+     * Tcl 8.7 alphas prior to encoding profiles
+     */
+
     moveBytes = inStatePtr->inEofChar == '\0'	/* No eofChar to stop input */
 	    && inStatePtr->inputTranslation == TCL_TRANSLATE_LF
 	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
 	    && inStatePtr->encoding == outStatePtr->encoding
-	    && (inStatePtr->flags & TCL_ENCODING_STRICT) != TCL_ENCODING_STRICT
-	    && outStatePtr->flags & TCL_ENCODING_NOCOMPLAIN;
+	    && TCL_ENCODING_PROFILE_GET(inStatePtr->flags) != TCL_ENCODING_PROFILE_STRICT
+	    && TCL_ENCODING_PROFILE_GET(outStatePtr->flags) == TCL_ENCODING_PROFILE_TCL8;
 
     /*
      * Allocate a new CopyState to maintain info about the current copy in
@@ -9840,8 +9755,8 @@ CopyData(
     inBinary = (inStatePtr->encoding == NULL);
     outBinary = (outStatePtr->encoding == NULL);
     sameEncoding = inStatePtr->encoding == outStatePtr->encoding
-	    && (inStatePtr->flags & TCL_ENCODING_STRICT) != TCL_ENCODING_STRICT
-	    && outStatePtr->flags & TCL_ENCODING_NOCOMPLAIN;
+	    && TCL_ENCODING_PROFILE_GET(inStatePtr->flags) != TCL_ENCODING_PROFILE_STRICT
+	    && TCL_ENCODING_PROFILE_GET(outStatePtr->flags) == TCL_ENCODING_PROFILE_TCL8;
 
     if (!(inBinary || sameEncoding)) {
 	TclNewObj(bufObj);

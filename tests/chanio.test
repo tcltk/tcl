@@ -254,7 +254,7 @@ test chan-io-3.3 {WriteChars: compatibility with WriteBytes: flush on line} -bod
 test chan-io-3.4 {WriteChars: loop over stage buffer} -body {
     # stage buffer maps to more than can be queued at once.
     set f [open $path(test1) w]
-    chan configure $f -encoding jis0208 -buffersize 16 -nocomplainencoding 1
+    chan configure $f -encoding jis0208 -buffersize 16 -profile tcl8
     chan puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -267,7 +267,7 @@ test chan-io-3.5 {WriteChars: saved != 0} -body {
     # be moved to beginning of next channel buffer to preserve requested
     # buffersize.
     set f [open $path(test1) w]
-    chan configure $f -encoding jis0208 -buffersize 17 -nocomplainencoding 1
+    chan configure $f -encoding jis0208 -buffersize 17 -profile tcl8
     chan puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -300,7 +300,7 @@ test chan-io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} -body {
     # on flush. The truncated bytes are moved to the beginning of the next
     # channel buffer.
     set f [open $path(test1) w]
-    chan configure $f -encoding jis0208 -buffersize 17 -nocomplainencoding 1
+    chan configure $f -encoding jis0208 -buffersize 17 -profile tcl8
     chan puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     chan close $f

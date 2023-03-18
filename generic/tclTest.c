@@ -2093,6 +2093,9 @@ static int UtfExtWrapper(
 	{"stoponerror", TCL_ENCODING_STOPONERROR},
 	{"noterminate", TCL_ENCODING_NO_TERMINATE},
 	{"charlimit", TCL_ENCODING_CHAR_LIMIT},
+	{"profiletcl8", TCL_ENCODING_PROFILE_TCL8},
+	{"profilestrict", TCL_ENCODING_PROFILE_STRICT},
+	{"profilereplace", TCL_ENCODING_PROFILE_REPLACE},
 	{NULL, 0}
     };
     int i;
@@ -2169,11 +2172,11 @@ static int UtfExtWrapper(
     }
 
     bufLen = dstLen + 4; /* 4 -> overflow detection */
-    bufPtr = (unsigned char *)Tcl_Alloc(bufLen);
+    bufPtr = (unsigned char *) ckalloc(bufLen);
     memset(bufPtr, 0xFF, dstLen); /* Need to check nul terminator */
     memmove(bufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
     bytes = Tcl_GetByteArrayFromObj(objv[3], &srcLen); /* Last! to avoid shimmering */
-    result = (*transformer)(interp, encoding, (const char *) bytes, srcLen, flags,
+    result = (*transformer)(interp, encoding, (const char *)bytes, srcLen, flags,
                             encStatePtr, (char *) bufPtr, dstLen,
                                srcReadVar ? &srcRead : NULL,
                                &dstWrote,
@@ -2184,9 +2187,7 @@ static int UtfExtWrapper(
                       TCL_STATIC);
         result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
-
         Tcl_Obj *resultObjs[3];
-
         switch (result) {
         case TCL_OK:
             resultObjs[0] = Tcl_NewStringObj("ok", -1);
@@ -2245,7 +2246,6 @@ static int UtfExtWrapper(
     Tcl_FreeEncoding(encoding); /* Free returned reference */
     return result;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -2349,7 +2349,6 @@ TestencodingObjCmd(
 			 Tcl_NewIntObj(Tcl_GetEncodingNulLength(encoding)));
 	Tcl_FreeEncoding(encoding);
         break;
-
     case ENC_EXTTOUTF:
         return UtfExtWrapper(interp,Tcl_ExternalToUtf,objc,objv);
     case ENC_UTFTOEXT:
