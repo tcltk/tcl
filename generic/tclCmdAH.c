@@ -588,7 +588,6 @@ EncodingConvertfromObjCmd(
 			   NULL,
 			   failIndex,
 			   TCL_LEAVE_ERR_MSG) == NULL) {
-	    Tcl_DecrRefCount(failIndex);
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
@@ -686,7 +685,6 @@ EncodingConverttoObjCmd(
 			   NULL,
 			   failIndex,
 			   TCL_LEAVE_ERR_MSG) == NULL) {
-	    Tcl_DecrRefCount(failIndex);
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
