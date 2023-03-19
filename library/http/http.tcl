@@ -1747,7 +1747,7 @@ proc http::OpenSocket {token DoLater} {
 	    fconfigure $sock -translation {auto crlf} \
 			     -buffersize $state(-blocksize)
 	    if {[package vsatisfies [package provide Tcl] 9.0-]} {
-		fconfigure $sock -profile tcl8 \
+		fconfigure $sock -profile tcl8
 	    }
 	    ##Log socket opened, DONE fconfigure - token $token
         }
@@ -2168,7 +2168,7 @@ proc http::Connected {token proto phost srvurl} {
     fconfigure $sock -translation [list $trRead crlf] \
 		     -buffersize $state(-blocksize)
     if {[package vsatisfies [package provide Tcl] 9.0-]} {
-	fconfigure $sock -profile tcl8 \
+	fconfigure $sock -profile tcl8
     }
 
     # The following is disallowed in safe interpreters, but the socket is
@@ -2561,7 +2561,7 @@ proc http::ReceiveResponse {token} {
     fconfigure $sock -translation [list auto $trWrite] \
 		     -buffersize $state(-blocksize)
     if {[package vsatisfies [package provide Tcl] 9.0-]} {
-	fconfigure $sock -profile tcl8 \
+	fconfigure $sock -profile tcl8
     }
     Log ^D$tk begin receiving response - token $token
 
