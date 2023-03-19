@@ -4917,7 +4917,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	if (_uw >= TCL_INDEX_NONE) {
 	    TclNewIntObj(objPtr, -1);
 	} else {
-	    TclNewUIntObj(objPtr, w);
+	    TclNewUIntObj(objPtr, _uw);
 	}
 	} while (0)
 
