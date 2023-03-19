@@ -1746,6 +1746,9 @@ proc http::OpenSocket {token DoLater} {
 	    }
 	    fconfigure $sock -translation {auto crlf} \
 			     -buffersize $state(-blocksize)
+	    if {[package vsatisfies [package provide Tcl] 9.0-]} {
+		fconfigure $sock -profile replace \
+	    }
 	    ##Log socket opened, DONE fconfigure - token $token
         }
 
@@ -2164,6 +2167,9 @@ proc http::Connected {token proto phost srvurl} {
     lassign [fconfigure $sock -translation] trRead trWrite
     fconfigure $sock -translation [list $trRead crlf] \
 		     -buffersize $state(-blocksize)
+    if {[package vsatisfies [package provide Tcl] 9.0-]} {
+	fconfigure $sock -profile replace \
+    }
 
     # The following is disallowed in safe interpreters, but the socket is
     # already in non-blocking mode in that case.
@@ -2554,6 +2560,9 @@ proc http::ReceiveResponse {token} {
     lassign [fconfigure $sock -translation] trRead trWrite
     fconfigure $sock -translation [list auto $trWrite] \
 		     -buffersize $state(-blocksize)
+    if {[package vsatisfies [package provide Tcl] 9.0-]} {
+	fconfigure $sock -profile replace \
+    }
     Log ^D$tk begin receiving response - token $token
 
     coroutine ${token}--EventCoroutine http::Event $sock $token
@@ -4717,7 +4726,11 @@ proc http::quoteString {string} {
     # a pre-computed map and [string map] to do the conversion (much faster
     # than [regsub]/[subst]). [Bug 1020491]
 
-    set string [encoding convertto $http(-urlencoding) $string]
+    if {[package vsatisfies [package provide Tcl] 9.0-]} {
+	set string [encoding convertto -profile replace $http(-urlencoding) $string]
+    } else {
+	set string [encoding convertto $http(-urlencoding) $string]
+    }
     return [string map $formMap $string]
 }
 
