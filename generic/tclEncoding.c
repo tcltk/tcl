@@ -3413,18 +3413,23 @@ TableToUtfProc(
 	if (prefixBytes[byte]) {
 	    src++;
 	    if (src >= srcEnd) {
-		/*
-		 * TODO - this is broken. For consistency with other
-		 * decoders, an error should be raised only if strict.
-		 * However, doing that check cause a whole bunch of test
-		 * failures. Need to verify if those tests are in fact
-		 * correct.
-		 */
-		src--;
-		result = TCL_CONVERT_MULTIBYTE;
-		break;
+		if (!(flags & TCL_ENCODING_END)) {
+		    src--;
+		    result = TCL_CONVERT_MULTIBYTE;
+		    break;
+		} else if (PROFILE_STRICT(flags)) {
+		    src--;
+		    result = TCL_CONVERT_SYNTAX;
+		    break;
+		} else if (PROFILE_REPLACE(flags)) {
+		    ch = UNICODE_REPLACE_CHAR;
+		} else {
+		    numChars++; /* Silently consume */
+		    break;
+		}
+	    } else {
+		ch = toUnicode[byte][*((unsigned char *)src)];
 	    }
-	    ch = toUnicode[byte][*((unsigned char *)src)];
 	} else {
 	    ch = pageZero[byte];
 	}
@@ -3447,7 +3452,7 @@ TableToUtfProc(
 	 * Special case for 1-byte utf chars for speed.
 	 */
 
-	if (ch && ch < 0x80) {
+	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (char) ch;
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
@@ -3648,7 +3653,7 @@ Iso88591ToUtfProc(
 	 * Special case for 1-byte utf chars for speed.
 	 */
 
-	if (ch && ch < 0x80) {
+	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (char) ch;
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
