@@ -9171,6 +9171,22 @@ test io-75.6 {invalid utf-8 encoding gets is not ignored (-profile strict)} -set
     removeFile io-75.6
 } -match glob -returnCodes 1 -result {error reading "*": illegal byte sequence}
 
+test io-75.7 {invalid utf-8 encoding gets is not ignored (-profile strict)} -setup {
+    set fn [makeFile {} io-75.7]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 is invalid in utf-8
+    puts -nonewline $f A\x81
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
+} -body {
+    read $f
+} -cleanup {
+    close $f
+    removeFile io-75.7
+} -match glob -returnCodes 1 -result {error reading "*": illegal byte sequence}
+
 test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]
