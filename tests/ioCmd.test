@@ -390,7 +390,7 @@ test iocmd-8.22 {fconfigure command / -nocomplainencoding 0, no error if -strict
 } -result 0
 
 
-test iocmd-8.21 {fconfigure -profile badprofile} -body {
+test iocmd-8.23 {fconfigure -profile badprofile} -body {
     fconfigure stdin -profile froboz
 } -returnCodes error -result {bad profile name "froboz": must be replace, strict, or tcl8}
 
