@@ -25,7 +25,6 @@ testConstraint testexprlong   [llength [info commands testexprlong]]
 testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
 testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
-testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 # Big test for correct ordering of data in [expr]
 
