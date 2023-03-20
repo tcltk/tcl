@@ -4914,6 +4914,19 @@ Tcl_GetsObj(
 		goto done;
 	    }
 	    goto gotEOL;
+	} else if (gs.bytesWrote == 0
+		&& GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
+		&& !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+	    /* Set eol to the position that caused the encoding error, and then
+	     * coninue to gotEOL, which stores the data that was decoded
+	     * without error to objPtr.  This allows the caller to do something
+	     * useful with the data decoded so far, and also results in the
+	     * position of the file being the first byte that was not
+	     * succesfully decoded, allowing further processing at exactly that
+	     * point, if desired.
+	     */
+	    eol = dstEnd;
+	    goto gotEOL;
 	}
 	dst = dstEnd;
     }
@@ -5030,6 +5043,11 @@ Tcl_GetsObj(
     }
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) &&
+	    (copiedTotal == 0 || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+	Tcl_SetErrno(EILSEQ);
+	copiedTotal = -1;
+    }
     return copiedTotal;
 }
 
@@ -7534,8 +7552,7 @@ Tcl_Eof(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_FCOPY)
-	    && GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	return 0;
     }
     return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
@@ -9751,7 +9768,6 @@ CopyData(
      * the bottom of the stack.
      */
 
-    SetFlag(inStatePtr, CHANNEL_FCOPY);
     inBinary = (inStatePtr->encoding == NULL);
     outBinary = (outStatePtr->encoding == NULL);
     sameEncoding = inStatePtr->encoding == outStatePtr->encoding
@@ -9867,7 +9883,6 @@ CopyData(
 		    TclDecrRefCount(bufObj);
 		    bufObj = NULL;
 		}
-		ResetFlag(inStatePtr, CHANNEL_FCOPY);
 		return TCL_OK;
 	    }
 	}
@@ -9959,7 +9974,6 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
-	    ResetFlag(inStatePtr, CHANNEL_FCOPY);
 	    return TCL_OK;
 	}
 
@@ -9982,7 +9996,6 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
-	    ResetFlag(inStatePtr, CHANNEL_FCOPY);
 	    return TCL_OK;
 	}
     } /* while */
@@ -10035,7 +10048,6 @@ CopyData(
 	    }
 	}
     }
-    ResetFlag(inStatePtr, CHANNEL_FCOPY);
     return result;
 }
 
