@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 #include "tclIO.h"
+#include "tclTomMath.h"
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
@@ -580,13 +581,14 @@ EncodingConvertfromObjCmd(
      * data as was converted.
      */
     if (failVarObj) {
-	/* I hope, wide int will cover Tcl_Size data type */
+	Tcl_Obj *failIndex;
+	TclNewIndexObj(failIndex, errorLocation);
 	if (Tcl_ObjSetVar2(interp,
 			   failVarObj,
 			   NULL,
-			   Tcl_NewWideIntObj(errorLocation),
+			   failIndex,
 			   TCL_LEAVE_ERR_MSG) == NULL) {
-            Tcl_DStringFree(&ds);
+	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
     }
@@ -676,13 +678,14 @@ EncodingConverttoObjCmd(
      * data as was converted.
      */
     if (failVarObj) {
-	/* I hope, wide int will cover Tcl_Size data type */
+	Tcl_Obj *failIndex;
+	TclNewIndexObj(failIndex, errorLocation);
 	if (Tcl_ObjSetVar2(interp,
 			   failVarObj,
 			   NULL,
-			   Tcl_NewWideIntObj(errorLocation),
+			   failIndex,
 			   TCL_LEAVE_ERR_MSG) == NULL) {
-            Tcl_DStringFree(&ds);
+	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
     }
