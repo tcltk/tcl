@@ -553,11 +553,11 @@ FillEncodingFileMap(void)
  *---------------------------------------------------------------------------
  */
 
-/* 
- * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS 
+/*
+ * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS
  * DEFINED IN tcl.h (TCL_ENCODING_* et al). Be cognizant of this
  * when adding bits. TODO - should really be defined in a single file.
- * 
+ *
  * To prevent conflicting bits, only define bits within 0xff00 mask here.
  */
 #define TCL_ENCODING_LE	0x100   /* Used to distinguish LE/BE variants */
@@ -2815,7 +2815,7 @@ Utf32ToUtfProc(
 	    break;
 	} else if (PROFILE_REPLACE(flags) && SURROGATE(ch)) {
 	    ch = UNICODE_REPLACE_CHAR;
-	} 
+	}
 
 	/*
 	 * Special case for 1-byte utf chars for speed. Make sure we work with
@@ -3060,7 +3060,7 @@ Utf16ToUtfProc(
 		numChars--;
 		break;
 	    } else if (PROFILE_REPLACE(flags)) {
-		/* 
+		/*
 		 * Previous loop wrote a single byte to mark the high surrogate.
 		 * Replace it with the replacement character. Further, restart
 		 * current loop iteration since need to recheck destination space
@@ -4509,7 +4509,7 @@ TclEncodingProfileNameToId(
     if (interp) {
 	Tcl_Obj *errorObj;
 	/* This code assumes at least two profiles :-) */
-	errorObj = 
+	errorObj =
 	    Tcl_ObjPrintf("bad profile name \"%s\": must be",
 		profileName);
 	for (i = 0; i < (numProfiles - 1); ++i) {
@@ -4576,7 +4576,7 @@ TclEncodingProfileIdToName(
  *	is mapped to the TCL_ENCODING_PROFILE_STRICT overwriting any profile
  *	specified.
  *
- *	If no profile or an invalid profile is specified, it is set to 
+ *	If no profile or an invalid profile is specified, it is set to
  *	the default.
  *
  * Results:

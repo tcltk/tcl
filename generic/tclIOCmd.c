@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include "tclTomMath.h"
 
 /*
  * Callback structure for accept callback in a TCP server.
@@ -330,7 +331,9 @@ Tcl_GetsObjCmd(
 	    code = TCL_ERROR;
 	    goto done;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(lineLen + 1U)) - 1));
+	Tcl_Obj *lineLenObj;
+	TclNewIndexObj(lineLenObj, lineLen);
+	Tcl_SetObjResult(interp, lineLenObj);
     } else {
 	Tcl_SetObjResult(interp, linePtr);
     }
