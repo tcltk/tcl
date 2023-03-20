@@ -339,6 +339,7 @@ GrowStringBuffer(
     }
     objPtr->bytes = ptr;
     stringPtr->allocated = attempt;
+    memset(ptr + objPtr->length, 0, attempt + 1U - objPtr->length);
 }
 
 static void
