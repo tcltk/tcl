@@ -720,13 +720,14 @@ EncodingConvertfromObjCmd(
      * data as was converted.
      */
     if (failVarObj) {
-	/* I hope, wide int will cover Tcl_Size data type */
+	Tcl_Obj *failIndex;
+	TclNewIndexObj(failIndex, errorLocation);
 	if (Tcl_ObjSetVar2(interp,
 			   failVarObj,
 			   NULL,
-			   Tcl_NewWideIntObj(errorLocation),
+			   failIndex,
 			   TCL_LEAVE_ERR_MSG) == NULL) {
-            Tcl_DStringFree(&ds);
+	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
     }
@@ -816,13 +817,14 @@ EncodingConverttoObjCmd(
      * data as was converted.
      */
     if (failVarObj) {
-	/* I hope, wide int will cover Tcl_Size data type */
+	Tcl_Obj *failIndex;
+	TclNewIndexObj(failIndex, errorLocation);
 	if (Tcl_ObjSetVar2(interp,
 			   failVarObj,
 			   NULL,
-			   Tcl_NewWideIntObj(errorLocation),
+			   failIndex,
 			   TCL_LEAVE_ERR_MSG) == NULL) {
-            Tcl_DStringFree(&ds);
+	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
     }
@@ -2952,7 +2954,7 @@ EachloopCmd(
 		result = TCL_ERROR;
 		goto done;
 	    }
-	    /* Don't compute values here, wait until the last momement */
+	    /* Don't compute values here, wait until the last moment */
 	    statePtr->argcList[i] = TclArithSeriesObjLength(statePtr->aCopyList[i]);
 	} else {
 	    /* List values */
