@@ -6049,6 +6049,23 @@ DoReadChars(
 		    statePtr->inQueueTail = NULL;
 		}
 	    }
+
+	    /*
+	     * If CHANNEL_ENCODING_ERROR and CHANNEL_STICKY_EOF are both set,
+	     * then CHANNEL_ENCODING_ERROR was caused by data that occurred
+	     * after the EOF character was encountered, so it doesn't count as
+	     * a real error.
+	     */
+
+	    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
+		    && !GotFlag(statePtr, CHANNEL_STICKY_EOF)
+		    && !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+		/* Channel is blocking.  Return an error so that callers
+		 * like [read] can return an error.
+		*/
+		Tcl_SetErrno(EILSEQ);
+		goto finish;
+	    }
 	}
 
 	if (copiedNow < 0) {
@@ -6079,6 +6096,7 @@ DoReadChars(
 	}
     }
 
+finish:
     /*
      * Failure to fill a channel buffer may have left channel reporting a
      * "blocked" state, but so long as we fulfilled the request here, the
@@ -6112,6 +6130,11 @@ DoReadChars(
     assert(!(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
             == (CHANNEL_EOF|CHANNEL_BLOCKED)));
     UpdateInterest(chanPtr);
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
+	    && (!copied || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+	Tcl_SetErrno(EILSEQ);
+	copied = -1;
+    }
     TclChannelRelease((Tcl_Channel)chanPtr);
     return copied;
 }
@@ -6742,11 +6765,14 @@ TranslateInputEOL(
 	 * EOF character was seen in EOL translated range. Leave current file
 	 * position pointing at the EOF character, but don't store the EOF
 	 * character in the output string.
+	 *
+	 * If CHANNEL_ENCODING_ERROR is set, it can only be because of data
+	 * encountered after the EOF character, so it is nonsense.  Unset it.
 	 */
 
 	SetFlag(statePtr, CHANNEL_EOF | CHANNEL_STICKY_EOF);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_END;
-	ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR);
+	ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR|CHANNEL_ENCODING_ERROR);
     }
 }
 
