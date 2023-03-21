@@ -3585,10 +3585,8 @@ TEBCresume(
 		}
 	    }
 	    DECACHE_STACK_INFO();
-	    Tcl_IncrRefCount(valueToAssign);
 	    objResultPtr = TclPtrSetVarIdx(interp, varPtr, arrayPtr, part1Ptr,
 		    part2Ptr, valueToAssign, TCL_LEAVE_ERR_MSG, opnd);
-	    TclDecrRefCount(valueToAssign);
 	    CACHE_STACK_INFO();
 	    if (!objResultPtr) {
 	    errorInLappendListPtr:
