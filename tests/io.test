@@ -9110,10 +9110,10 @@ test io-75.3 {incomplete multibyte encoding read is ignored (-profile tcl8)} -se
     fconfigure $f -encoding utf-8 -buffering none -profile tcl8
 } -body {
     set d [read $f]
-    close $f
     binary scan $d H* hd
     set hd
 } -cleanup {
+    close $f
     removeFile io-75.3
 } -result 41c0
 
@@ -9148,10 +9148,10 @@ test io-75.5 {invalid utf-8 encoding read is ignored (-profile tcl8)} -setup {
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile tcl8
 } -body {
     set d [read $f]
-    close $f
     binary scan $d H* hd
     set hd
 } -cleanup {
+    close $f
     removeFile io-75.5
 } -result 4181
 
@@ -9169,6 +9169,22 @@ test io-75.6 {invalid utf-8 encoding gets is not ignored (-profile strict)} -set
 } -cleanup {
     close $f
     removeFile io-75.6
+} -match glob -returnCodes 1 -result {error reading "*": illegal byte sequence}
+
+test io-75.7 {invalid utf-8 encoding gets is not ignored (-profile strict)} -setup {
+    set fn [makeFile {} io-75.7]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 is invalid in utf-8
+    puts -nonewline $f A\x81
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
+} -body {
+    read $f
+} -cleanup {
+    close $f
+    removeFile io-75.7
 } -match glob -returnCodes 1 -result {error reading "*": illegal byte sequence}
 
 test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
@@ -9218,10 +9234,10 @@ test io-75.10 {incomplete multibyte encoding read is ignored} -setup {
     fconfigure $f -encoding utf-8 -buffering none
 } -body {
     set d [read $f]
-    close $f
     binary scan $d H* hd
     set hd
 } -cleanup {
+    close $f
     removeFile io-75.10
 } -result 41c0
 # The current result returns the orphan byte as byte.
@@ -9238,7 +9254,7 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
     puts -nonewline $f A\x81\xFFA
     flush $f
     seek $f 0
-    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -profile strict
+    fconfigure $f -encoding shiftjis -blocking 0 -eofchar "" -translation lf -profile strict
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9273,7 +9289,7 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -se
     puts -nonewline $f "A\x81"
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
+    fconfigure $f -encoding utf-8 -blocking 0 -eofchar "" -translation lf -profile strict
 } -body {
     set d [read $f]
     binary scan $d H* hd
