@@ -8005,6 +8005,20 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
+    if (len == 0 || HaveOpt(2, "-eofchar")) {
+	char buf[4] = "";
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-eofchar");
+	}
+	if ((flags & TCL_READABLE) && (statePtr->inEofChar != 0)) {
+	    sprintf(buf, "%c", statePtr->inEofChar);
+	}
+	if (len > 0) {
+		Tcl_DStringAppend(dsPtr, buf, TCL_INDEX_NONE);
+	    return TCL_OK;
+	}
+	Tcl_DStringAppendElement(dsPtr, buf);
+    }
     if (len == 0 || HaveOpt(1, "-profile")) {
 	int profile;
 	const char *profileName;
@@ -8021,20 +8035,6 @@ Tcl_GetChannelOption(
 	if (len > 0) {
 	    return TCL_OK;
 	}
-    }
-    if (len == 0 || HaveOpt(2, "-eofchar")) {
-	char buf[4] = "";
-	if (len == 0) {
-	    Tcl_DStringAppendElement(dsPtr, "-eofchar");
-	}
-	if ((flags & TCL_READABLE) && (statePtr->inEofChar != 0)) {
-	    sprintf(buf, "%c", statePtr->inEofChar);
-	}
-	if (len > 0) {
-		Tcl_DStringAppend(dsPtr, buf, TCL_INDEX_NONE);
-	    return TCL_OK;
-	}
-	Tcl_DStringAppendElement(dsPtr, buf);
     }
     if (len == 0 || HaveOpt(1, "-translation")) {
 	if (len == 0) {
