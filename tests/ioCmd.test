@@ -369,7 +369,7 @@ test iocmd-8.20 {fconfigure command / win console channel} -constraints {nonPort
 # TODO: Test parsing of serial channel options (nonPortable, since requires an
 # open channel to work with).
 
-test iocmd-8.21 {fconfigure -profile badprofile} -body {
+test iocmd-8.23 {fconfigure -profile badprofile} -body {
     fconfigure stdin -profile froboz
 } -returnCodes error -result {bad profile name "froboz": must be replace, strict, or tcl8}
 

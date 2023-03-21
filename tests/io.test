@@ -9171,10 +9171,10 @@ test io-75.3 {incomplete multibyte encoding read is ignored (-profile tcl8)} -se
     fconfigure $f -encoding utf-8 -buffering none -profile tcl8
 } -body {
     set d [read $f]
-    close $f
     binary scan $d H* hd
     set hd
 } -cleanup {
+    close $f
     removeFile io-75.3
 } -result 41c0
 
@@ -9209,10 +9209,10 @@ test io-75.5 {invalid utf-8 encoding read is ignored (-profile tcl8)} -setup {
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile tcl8
 } -body {
     set d [read $f]
-    close $f
     binary scan $d H* hd
     set hd
 } -cleanup {
+    close $f
     removeFile io-75.5
 } -result 4181
 
@@ -9307,10 +9307,10 @@ test io-75.10 {incomplete multibyte encoding read is ignored} -setup {
     fconfigure $f -encoding utf-8 -profile tcl8 -buffering none
 } -body {
     set d [read $f]
-    close $f
     binary scan $d H* hd
     set hd
 } -cleanup {
+    close $f
     removeFile io-75.10
 } -result 41c0
 # The current result returns the orphan byte as byte.
