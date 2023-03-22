@@ -5279,8 +5279,7 @@ TEBCresume(
 	}
 	if (fromIdx == TCL_INDEX_NONE) {
 	    fromIdx = 0;
-	}
-	else if (fromIdx > length) {
+	} else if (fromIdx > length) {
 	    fromIdx = length;
 	}
 	numToDelete = 0;
@@ -5317,8 +5316,7 @@ TEBCresume(
 	    }
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	    NEXT_INST_V(6, opnd, 1);
-	}
-	else {
+	} else {
 	    if (Tcl_ListObjReplace(interp,
 				   valuePtr,
 				   fromIdx,

@@ -286,6 +286,13 @@ typedef struct ChannelState {
 #define CHANNEL_CLOSEDWRITE	(1<<21)	/* Channel write side has been closed.
 					 * No further Tcl-level write IO on
 					 * the channel is allowed. */
+#define CHANNEL_PROFILE_MASK     0xFF000000
+#define CHANNEL_PROFILE_GET(flags_)  ((flags_) & CHANNEL_PROFILE_MASK)
+#define CHANNEL_PROFILE_SET(flags_, profile_) \
+    do {                                           \
+	(flags_) &= ~CHANNEL_PROFILE_MASK;    \
+	(flags_) |= profile_;                      \
+    } while (0)
 
 /*
  * The length of time to wait between synthetic timer events. Must be zero or

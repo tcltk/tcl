@@ -2103,8 +2103,7 @@ static int UtfExtWrapper(
 	int flag;
 	if (Tcl_GetIntFromObj(NULL, flagObjs[i], &flag) == TCL_OK) {
 	    flags |= flag;
-	}
-	else {
+	} else {
 	    int idx;
 	    if (Tcl_GetIndexFromObjStruct(interp,
 					  flagObjs[i],

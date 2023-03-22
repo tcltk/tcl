@@ -453,8 +453,7 @@ GenerateHeader(
 		if (result == TCL_CONVERT_UNKNOWN) {
 		    Tcl_AppendResult(
 			interp, "Comment contains characters > 0xFF", NULL);
-		}
-		else {
+		} else {
 		    Tcl_AppendResult(interp, "Comment too large for zip", NULL);
 		}
 	    }
@@ -489,8 +488,7 @@ GenerateHeader(
 		if (result == TCL_CONVERT_UNKNOWN) {
 		    Tcl_AppendResult(
 			interp, "Filename contains characters > 0xFF", NULL);
-		}
-		else {
+		} else {
 		    Tcl_AppendResult(
 			interp, "Filename too large for zip", NULL);
 		}

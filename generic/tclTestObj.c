@@ -1113,8 +1113,7 @@ TestobjCmd(
 
 	    if (objv[2]->typePtr == NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj("none", -1));
-	    }
-	    else {
+	    } else {
 		typeName = objv[2]->typePtr->name;
 		if (!strcmp(typeName, "utf32string"))
 		    typeName = "string";

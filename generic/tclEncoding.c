@@ -200,10 +200,10 @@ static struct TclEncodingProfiles {
     {"tcl8", TCL_ENCODING_PROFILE_TCL8},
 };
 #define PROFILE_STRICT(flags_)                                         \
-    (TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT)
+    (CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT)
 
 #define PROFILE_REPLACE(flags_)                                         \
-    (TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE)
+    (CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE)
 
 #define UNICODE_REPLACE_CHAR ((Tcl_UniChar)0xFFFD)
 #define SURROGATE(c_)      (((c_) & ~0x7FF) == 0xD800)
@@ -2527,7 +2527,7 @@ UtfToUtfProc(
     flags |= PTR2INT(clientData);
     dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
 
-    profile = TCL_ENCODING_PROFILE_GET(flags);
+    profile = CHANNEL_PROFILE_GET(flags);
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
@@ -4545,9 +4545,9 @@ TclEncodingProfileIdToName(
 int TclEncodingSetProfileFlags(int flags)
 {
     if (flags & TCL_ENCODING_STOPONERROR) {
-	TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
+	CHANNEL_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
     } else {
-	int profile = TCL_ENCODING_PROFILE_GET(flags);
+	int profile = CHANNEL_PROFILE_GET(flags);
 	switch (profile) {
 	case TCL_ENCODING_PROFILE_TCL8:
 	case TCL_ENCODING_PROFILE_STRICT:
@@ -4555,7 +4555,7 @@ int TclEncodingSetProfileFlags(int flags)
 	    break;
 	case 0: /* Unspecified by caller */
 	default:
-	    TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_TCL8);
+	    CHANNEL_PROFILE_SET(flags, TCL_ENCODING_PROFILE_TCL8);
 	    break;
 	}
     }

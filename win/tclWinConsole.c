@@ -882,8 +882,7 @@ ConsoleCheckProc(
 	     */
 	    handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
 	    WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
-	}
-	else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
+	} else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
 	    if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
 		needEvent = 1; /* Output space available */
 	    }
