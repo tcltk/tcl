@@ -525,9 +525,9 @@ test encoding-16.13 {Utf16ToUtfProc} -body {
 test encoding-16.14 {Utf16ToUtfProc} -body {
     encoding convertfrom utf-16le \x00\xDC
 } -result \uDC00
-test encoding-16.15 {Utf16ToUtfProc} -constraints knownBug -body {
+test encoding-16.15 {Utf16ToUtfProc} -body {
     encoding convertfrom utf-16le \x00\xD8\x00\xDC
-} -result \uD800\uDC00
+} -result \U010000
 test encoding-16.16 {Utf16ToUtfProc} -body {
     encoding convertfrom utf-16le \x00\xDC\x00\xD8
 } -result \uDC00\uD800
