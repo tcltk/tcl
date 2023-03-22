@@ -43,7 +43,7 @@ if {[testConstraint win]} {
 testConstraint notInCIenv [expr {![info exists ::env(CI)] || !$::env(CI)}]
 
 # File permissions broken on wsl without some "exotic" wsl configuration
-testConstraint notInWsl [expr {[llength [array names ::env *WSL*]] == 0}]
+testConstraint notWsl [expr {[llength [array names ::env *WSL*]] == 0}]
 
 set tmpspace /tmp;# default value
 # Find a group that exists on this Unix system, or else skip tests that
@@ -452,7 +452,7 @@ test fCmd-4.10 {TclFileMakeDirsCmd: exists, is dir} -setup {
 } -result {1 1}
 test fCmd-4.11 {TclFileMakeDirsCmd: doesn't exist: errno != ENOENT} -setup {
     cleanup
-} -constraints {unix notRoot testchmod notInWsl} -returnCodes error -body {
+} -constraints {unix notRoot testchmod notWsl} -returnCodes error -body {
     file mkdir td1/td2/td3
     testchmod 0 td1/td2
     file mkdir td1/td2/td3/td4
@@ -470,7 +470,7 @@ test fCmd-4.13 {TclFileMakeDirsCmd: doesn't exist: errno == ENOENT} -setup {
 test fCmd-4.14 {TclFileMakeDirsCmd: TclpCreateDirectory fails} -setup {
     cleanup
     file delete -force foo
-} -constraints {unix notRoot notInWsl} -body {
+} -constraints {unix notRoot notWsl} -body {
     file mkdir foo
     file attr foo -perm 0o40000
     file mkdir foo/tf1
@@ -596,7 +596,7 @@ test fCmd-6.5 {CopyRenameOneFile: lstat(target) != 0} -setup {
 } -result {tf2}
 test fCmd-6.6 {CopyRenameOneFile: errno != ENOENT} -setup {
     cleanup
-} -constraints {unix notRoot testchmod notInWsl} -body {
+} -constraints {unix notRoot testchmod notWsl} -body {
     file mkdir td1
     testchmod 0 td1
     createfile tf1
@@ -715,7 +715,7 @@ test fCmd-6.22 {CopyRenameOneFile: copy/rename: !S_ISDIR(source)} -setup {
 } -result [file join $tmpspace tf1]
 test fCmd-6.23 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
     cleanup $tmpspace
-} -constraints {xdev notRoot notInWsl} -body {
+} -constraints {xdev notRoot notWsl} -body {
     file mkdir td1/td2/td3
     file attributes td1 -permissions 0
     file rename td1 $tmpspace
@@ -767,7 +767,7 @@ test fCmd-6.27 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
 } -match glob -result {error renaming "td1" to "/tmp/tcl*/td1": file already exists}
 test fCmd-6.28 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
     cleanup $tmpspace
-} -constraints {notRoot xdev notInWsl} -body {
+} -constraints {notRoot xdev notWsl} -body {
     file mkdir td1/td2/td3
     file attributes td1/td2/td3 -permissions 0
     file rename td1 $tmpspace
@@ -784,7 +784,7 @@ test fCmd-6.29 {CopyRenameOneFile: TclpCopyDirectory passed} -setup {
 } -result [file join $tmpspace td1 td2]
 test fCmd-6.30 {CopyRenameOneFile: TclpRemoveDirectory failed} -setup {
     cleanup $tmpspace
-} -constraints {unix notRoot notInWsl} -body {
+} -constraints {unix notRoot notWsl} -body {
     file mkdir foo/bar
     file attr foo -perm 0o40555
     file rename foo/bar $tmpspace
@@ -859,7 +859,7 @@ test fCmd-8.3 {file copy and path translation: ensure correct error} -body {
 
 test fCmd-9.1 {file rename: comprehensive: EACCES} -setup {
     cleanup
-} -constraints {unix notRoot notInWsl} -body {
+} -constraints {unix notRoot notWsl} -body {
     file mkdir td1
     file mkdir td2
     file attr td2 -perm 0o40000
@@ -885,7 +885,7 @@ test fCmd-9.3 {file rename: comprehensive: file to new name} -setup {
 } -result {{tf3 tf4} 1 0}
 test fCmd-9.4 {file rename: comprehensive: dir to new name} -setup {
     cleanup
-} -constraints {unix notRoot testchmod notDarwin9 notInWsl} -body {
+} -constraints {unix notRoot testchmod notDarwin9 notWsl} -body {
     file mkdir td1 td2
     testchmod 0o555 td2
     file rename td1 td3
@@ -906,7 +906,7 @@ test fCmd-9.5 {file rename: comprehensive: file to self} -setup {
 } -result {tf1 tf2 1 0}
 test fCmd-9.6 {file rename: comprehensive: dir to self} -setup {
     cleanup
-} -constraints {unix notRoot testchmod notInWsl} -body {
+} -constraints {unix notRoot testchmod notWsl} -body {
     file mkdir td1
     file mkdir td2
     testchmod 0o555 td2
@@ -1100,7 +1100,7 @@ test fCmd-10.2 {file copy: comprehensive: file to new name} -setup {
 } -result {{tf1 tf2 tf3 tf4} tf1 tf2 1 0}
 test fCmd-10.3 {file copy: comprehensive: dir to new name} -setup {
     cleanup
-} -constraints {unix notRoot testchmod notInWsl} -body {
+} -constraints {unix notRoot testchmod notWsl} -body {
     file mkdir [file join td1 tdx]
     file mkdir [file join td2 tdy]
     testchmod 0o555 td2
@@ -1177,7 +1177,7 @@ test fCmd-10.5 {file copy: comprehensive: dir to empty dir} -setup {
 } -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4 tds1 tds2 tds3 tds4} {1 {error copying "td1" to "[file join td2 td1]": file already exists}} {1 {error copying "tds1" to "[file join tdd1 tds1]": file already exists}} 1 1 1}]
 test fCmd-10.6 {file copy: comprehensive: dir to non-empty dir} -setup {
     cleanup
-} -constraints {notRoot unixOrWin testchmod notInWsl} -body {
+} -constraints {notRoot unixOrWin testchmod notWsl} -body {
     file mkdir tds1
     file mkdir tds2
     file mkdir [file join tdd1 tds1 xxx]
@@ -1201,7 +1201,7 @@ test fCmd-10.7 {file rename: comprehensive: file to new name and dir} -setup {
 } -result [subst {{tf1 tf2} {[file join td1 tf3] [file join td1 tf4]} 1 0}]
 test fCmd-10.8 {file rename: comprehensive: dir to new name and dir} -setup {
     cleanup
-} -constraints {unix notRoot testchmod notInWsl} -body {
+} -constraints {unix notRoot testchmod notWsl} -body {
     file mkdir td1
     file mkdir td2
     file mkdir td3
@@ -1398,7 +1398,7 @@ test fCmd-12.7 {renamefile: renaming directory into offspring} -setup {
 } -result {1}
 test fCmd-12.8 {renamefile: generic error} -setup {
     catch {file delete -force -- tfa}
-} -constraints {unix notRoot notInWsl} -body {
+} -constraints {unix notRoot notWsl} -body {
     file mkdir tfa
     file mkdir tfa/dir
     file attributes tfa -permissions 0o555
@@ -1585,7 +1585,7 @@ test fCmd-14.7 {copyfile: copy directory succeeding} -setup {
 } -result {1 1}
 test fCmd-14.8 {copyfile: copy directory failing} -setup {
     catch {file delete -force -- tfa}
-} -constraints {unix notRoot notInWsl} -body {
+} -constraints {unix notRoot notWsl} -body {
     file mkdir tfa/dir/a/b/c
     file attributes tfa/dir -permissions 0
     catch {file copy tfa tfa2}
@@ -1730,7 +1730,7 @@ test fCmd-16.8 {remove a normal file} -constraints {notRoot} -setup {
 } -result {1}
 test fCmd-16.9 {error while deleting file} -setup {
     catch {file delete -force -- tfa}
-} -constraints {unix notRoot notInWsl} -body {
+} -constraints {unix notRoot notWsl} -body {
     file mkdir tfa
     createfile tfa/a
     file attributes tfa -permissions 0o555
@@ -1761,7 +1761,7 @@ test fCmd-16.11 {TclFileDeleteCmd: removing a nonexistant file} -setup {
 # More coverage tests for mkpath()
 test fCmd-17.1 {mkdir stat failing on target but not ENOENT} -setup {
      catch {file delete -force -- tfa1}
-} -constraints {unix notRoot notInWsl} -body {
+} -constraints {unix notRoot notWsl} -body {
      file mkdir tfa1
      file attributes tfa1 -permissions 0o555
      catch {file mkdir tfa1/tfa2}
@@ -1971,7 +1971,7 @@ test fCmd-19.1 {remove empty directory} -constraints {notRoot} -setup {
 } -result {0}
 test fCmd-19.2 {rmdir error besides EEXIST} -setup {
     catch {file delete -force -- tfa}
-} -constraints {unix notRoot notInWsl} -body {
+} -constraints {unix notRoot notWsl} -body {
     file mkdir tfa
     file mkdir tfa/a
     file attributes tfa -permissions 0o555
@@ -1999,7 +1999,7 @@ test fCmd-19.3 {recursive remove} -constraints {notRoot} -setup {
 #
 test fCmd-20.1 {TraverseUnixTree : failure opening a subdirectory directory} -setup {
     catch {file delete -force -- tfa}
-} -constraints {unix notRoot notInWsl} -body {
+} -constraints {unix notRoot notWsl} -body {
     file mkdir tfa
     file mkdir tfa/a
     file attributes tfa/a -permissions 00000
