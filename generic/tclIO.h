@@ -287,6 +287,7 @@ typedef struct ChannelState {
 					 * No further Tcl-level write IO on
 					 * the channel is allowed. */
 #define CHANNEL_PROFILE_MASK     0xFF000000
+#define CHANNEL_PROFILE_STRICT   (TCL_ENCODING_PROFILE_STRICT & CHANNEL_PROFILE_MASK)
 #define CHANNEL_PROFILE_GET(flags_)  ((flags_) & CHANNEL_PROFILE_MASK)
 #define CHANNEL_PROFILE_SET(flags_, profile_) \
     do {                                           \

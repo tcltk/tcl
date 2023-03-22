@@ -675,7 +675,7 @@ EncodingConvertfromObjCmd(
      * Convert the string into a byte array in 'ds'.
      */
 #if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
-    if (CHANNEL_PROFILE_GET(flags) == TCL_ENCODING_PROFILE_TCL8) {
+    if (!(flags & TCL_ENCODING_STOPONERROR)) {
 	/* Permits high bits to be non-0 in byte array (Tcl 8 style) */
 	bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
     } else
