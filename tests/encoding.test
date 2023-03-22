@@ -487,7 +487,7 @@ test encoding-16.8 {Utf32ToUtfProc} -body {
     list $val [format %x [scan $val %c]]
 } -result "\uFFFD fffd"
 
-test encoding-16.8 {
+test encoding-16.9 {
     Utf16ToUtfProc, Tcl_UniCharToUtf, surrogate pairs in utf-16
 } -body {
     apply [list {} {
