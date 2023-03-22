@@ -2610,7 +2610,7 @@ declare 0 macosx {
 declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
-	    int hasResourceFile, int maxPathLen, char *libraryPath)
+	    int hasResourceFile, Tcl_Size maxPathLen, char *libraryPath)
 }
 declare 2 macosx {
     void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
