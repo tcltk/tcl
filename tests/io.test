@@ -5742,18 +5742,14 @@ test io-39.15 {Tcl_SetChannelOption: -encoding, binary & utf-8} {
     close $f
     set x
 } 牦
-test io-39.16 {Tcl_SetChannelOption: -encoding (shortened to "-en"), errors} -constraints {
-    knownProfileBug
-} -body {
+test io-39.16 {Tcl_SetChannelOption: -encoding (shortened to "-en"), errors} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -en foobar
 } -cleanup {
     close $f
 } -returnCodes 1 -result {unknown encoding "foobar"}
-test io-39.16a {Tcl_SetChannelOption: -encoding (invalid shortening to "-e"), errors} -constraints {
-    knownProfileBug
-} -body {
+test io-39.16a {Tcl_SetChannelOption: -encoding (invalid shortening to "-e"), errors} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -e foobar
