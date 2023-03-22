@@ -5541,7 +5541,7 @@ test io-38.3 {Tcl_SetChannelBufferSize, changing buffersize between reads} {
     # This test crashes the interp if Bug #427196 is not fixed
 
     set chan [open [info script] r]
-    fconfigure $chan -buffersize 10
+    fconfigure $chan -buffersize 10 -encoding utf-8
     set var [read $chan 2]
     fconfigure $chan -buffersize 32
     append var [read $chan]
