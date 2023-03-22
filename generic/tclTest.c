@@ -1263,7 +1263,7 @@ TestcmdtokenCmd(
 		    if (prevRefPtr != NULL) {
 			prevRefPtr->nextPtr = refPtr->nextPtr;
 		    }
-		    ckfree(refPtr);
+		    Tcl_Free(refPtr);
 		    break;
 		}
 		prevRefPtr = refPtr;
