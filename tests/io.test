@@ -5677,10 +5677,7 @@ test io-39.15 {Tcl_SetChannelOption: -encoding, binary & utf-8} {
     close $f
     set x
 } 牦
-# Remove knownProfileBug constraint below post TIP656- TODO
-test io-39.16 {Tcl_SetChannelOption: -encoding (shortened to "-en"), errors} -constraints {
-    knownProfileBug
-} -body {
+test io-39.16 {Tcl_SetChannelOption: -encoding (shortened to "-en"), errors} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -en foobar
