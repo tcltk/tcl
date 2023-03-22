@@ -2149,12 +2149,7 @@ typedef struct Tcl_EncodingType {
 	(flags_) &= ~TCL_ENCODING_PROFILE_MASK;    \
 	(flags_) |= profile_;                      \
     } while (0)
-/* Still being argued - For Tcl9, is the default strict? TODO */
-#if TCL_MAJOR_VERSION < 9
 #define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
-#else
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8 /* STRICT? REPLACE? TODO */
-#endif
 
 /*
  * The following definitions are the error codes returned by the conversion

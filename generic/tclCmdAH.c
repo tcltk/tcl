@@ -567,11 +567,7 @@ EncodingConvertParseOptions (
     Tcl_Encoding encoding;
     Tcl_Obj *dataObj;
     Tcl_Obj *failVarObj;
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-    int profile = TCL_ENCODING_PROFILE_TCL8; /* TODO - default for Tcl9? */
-#else
     int profile = TCL_ENCODING_PROFILE_TCL8;
-#endif
 
     /*
      * Possible combinations:

@@ -200,14 +200,10 @@ static struct TclEncodingProfiles {
     {"tcl8", TCL_ENCODING_PROFILE_TCL8},
 };
 #define PROFILE_STRICT(flags_)                                         \
-    ((TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
-     || (TCL_ENCODING_PROFILE_GET(flags_) == 0                         \
-	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_STRICT))
+    (TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT)
 
 #define PROFILE_REPLACE(flags_)                                         \
-    ((TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE) \
-     || (TCL_ENCODING_PROFILE_GET(flags_) == 0                          \
-	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_REPLACE))
+    (TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE)
 
 #define UNICODE_REPLACE_CHAR ((Tcl_UniChar)0xFFFD)
 #define SURROGATE(c_)      (((c_) & ~0x7FF) == 0xD800)
@@ -4559,7 +4555,7 @@ int TclEncodingSetProfileFlags(int flags)
 	    break;
 	case 0: /* Unspecified by caller */
 	default:
-	    TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_DEFAULT);
+	    TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_TCL8);
 	    break;
 	}
     }
