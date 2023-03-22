@@ -1051,6 +1051,46 @@ test encoding-28.0 {all encodings load} -body {
 
 runtests
 
+test encoding-bug-183a1adcc0-1 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExternal} -constraints {
+    testencoding
+} -body {
+    # Note - buffers are initialized to \xff
+    list [catch {testencoding Tcl_UtfToExternal unicode A {start end} {} 1} result] $result
+} -result [list 0 [list nospace {} \xff]]
+
+test encoding-bug-183a1adcc0-2 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExternal} -constraints {
+    testencoding
+} -body {
+    # Note - buffers are initialized to \xff
+    list [catch {testencoding Tcl_UtfToExternal unicode A {start end} {} 0} result] $result
+} -result [list 0 [list nospace {} {}]]
+
+test encoding-bug-183a1adcc0-3 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExternal} -constraints {
+    testencoding
+} -body {
+    # Note - buffers are initialized to \xff
+    list [catch {testencoding Tcl_UtfToExternal unicode A {start end} {} 2} result] $result
+} -result [list 0 [list nospace {} \x00\x00]]
+
+test encoding-bug-183a1adcc0-4 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExternal} -constraints {
+    testencoding
+} -body {
+    # Note - buffers are initialized to \xff
+    list [catch {testencoding Tcl_UtfToExternal unicode A {start end} {} 3} result] $result
+} -result [list 0 [list nospace {} \x00\x00\xff]]
+
+test encoding-bug-183a1adcc0-5 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExternal} -constraints {
+    testencoding
+} -constraints {
+    knownBug
+} -body {
+    # The knownBug constraint is because test depends on TCL_UTF_MAX and
+    # also UtfToUtf16 assumes space required in destination buffer is
+    # sizeof(Tcl_UniChar) which is incorrect when TCL_UTF_MAX==4
+    # Note - buffers are initialized to \xff
+    list [catch {testencoding Tcl_UtfToExternal unicode A {start end} {} 4} result] $result
+} -result [list 0 [list ok {} [expr {$::tcl_platform(byteOrder) eq "littleEndian" ? "\x41\x00" : "\x00\x41"}]\x00\x00]]
+
 }
 
 test encoding-29.0 {get encoding nul terminator lengths} -constraints {
