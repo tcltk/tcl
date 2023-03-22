@@ -136,7 +136,7 @@ proc gethomedirglob {user} {
             set sid [string trim $sid]
             # Get path from the Windows registry
             set home [registry get "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\$sid" ProfileImagePath]
-            set home [string trim $home]
+            set home [string trim [string tolower $home]]
         } result]} {
             if {$home ne ""} {
                 # file join for \ -> /
@@ -147,7 +147,7 @@ proc gethomedirglob {user} {
 
     # Caller will need to use glob matching and hope user
     # name is in the home directory path
-    return *$user*
+    return *[string tolower $user]*
 }
 
 proc createfile {file {string a}} {
