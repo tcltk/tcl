@@ -606,6 +606,12 @@ test encoding-17.9 {Utf32ToUtfProc} -body {
 test encoding-17.10 {Utf32ToUtfProc} -body {
     encoding convertfrom -nocomplain utf-32 "\xFF\xFF\xFF\xFF"
 } -result \uFFFD
+test encoding-17.11 {Utf32ToUtfProc} -body {
+    encoding convertfrom -strict utf-32le "\x00\xD8\x00\x00"
+} -returnCodes error -result {unexpected byte sequence starting at index 0: '\x00'}
+test encoding-17.12 {Utf32ToUtfProc} -body {
+    encoding convertfrom -strict utf-32le "\x00\xDC\x00\x00"
+} -returnCodes error -result {unexpected byte sequence starting at index 0: '\x00'}
 
 test encoding-18.1 {TableToUtfProc on invalid input} -body {
 	list [catch {encoding convertto jis0208 \\} res] $res
