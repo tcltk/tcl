@@ -153,7 +153,7 @@ TclpFindExecutable(
 #endif
     {
 	encoding = Tcl_GetEncoding(NULL, NULL);
-	Tcl_ExternalToUtfDStringEx(encoding, name, TCL_INDEX_NONE, TCL_ENCODING_NOCOMPLAIN, &utfName);
+	Tcl_ExternalToUtfDStringEx(NULL, encoding, name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
 	TclSetObjNameOfExecutable(
 		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
 	Tcl_DStringFree(&utfName);
@@ -179,8 +179,8 @@ TclpFindExecutable(
     Tcl_DStringAppend(&nameString, name, TCL_INDEX_NONE);
 
     Tcl_DStringFree(&buffer);
-    Tcl_UtfToExternalDStringEx(NULL, Tcl_DStringValue(&cwd),
-	    Tcl_DStringLength(&cwd), TCL_ENCODING_NOCOMPLAIN, &buffer);
+    Tcl_UtfToExternalDStringEx(NULL, NULL, Tcl_DStringValue(&cwd),
+	    Tcl_DStringLength(&cwd), TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
     if (Tcl_DStringValue(&cwd)[Tcl_DStringLength(&cwd) -1] != '/') {
 	TclDStringAppendLiteral(&buffer, "/");
     }
@@ -189,8 +189,8 @@ TclpFindExecutable(
     Tcl_DStringFree(&nameString);
 
     encoding = Tcl_GetEncoding(NULL, NULL);
-    Tcl_ExternalToUtfDStringEx(encoding, Tcl_DStringValue(&buffer), TCL_INDEX_NONE,
-	    TCL_ENCODING_NOCOMPLAIN, &utfName);
+    Tcl_ExternalToUtfDStringEx(NULL, encoding, Tcl_DStringValue(&buffer), TCL_INDEX_NONE,
+	    TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
     TclSetObjNameOfExecutable(
 	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
     Tcl_DStringFree(&utfName);
@@ -825,7 +825,7 @@ TclpReadlink(
 	return NULL;
     }
 
-    Tcl_ExternalToUtfDStringEx(NULL, link, (size_t)length, TCL_ENCODING_NOCOMPLAIN, linkPtr);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, TCL_ENCODING_PROFILE_TCL8, linkPtr, NULL);
     return Tcl_DStringValue(linkPtr);
 #else
     return NULL;
@@ -994,7 +994,7 @@ TclpObjLink(
 	    return NULL;
 	}
 
-	Tcl_ExternalToUtfDStringEx(NULL, link, (size_t)length, TCL_ENCODING_NOCOMPLAIN, &ds);
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
 	linkPtr = Tcl_DStringToObj(&ds);
 	Tcl_IncrRefCount(linkPtr);
 	return linkPtr;
@@ -1059,7 +1059,7 @@ TclpNativeToNormalized(
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDStringEx(NULL, (const char *) clientData, TCL_INDEX_NONE, TCL_ENCODING_NOCOMPLAIN, &ds);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
     return Tcl_DStringToObj(&ds);
 }
 
@@ -1113,7 +1113,7 @@ TclNativeCreateNativeRep(
     }
 
     str = Tcl_GetStringFromObj(validPathPtr, &len);
-    Tcl_UtfToExternalDStringEx(NULL, str, len, TCL_ENCODING_NOCOMPLAIN, &ds);
+    Tcl_UtfToExternalDStringEx(NULL, NULL, str, len, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
     len = Tcl_DStringLength(&ds) + sizeof(char);
     if (strlen(Tcl_DStringValue(&ds)) < len - sizeof(char)) {
 	/* See bug [3118489]: NUL in filenames */

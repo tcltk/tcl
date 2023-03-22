@@ -1766,13 +1766,17 @@ EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
 /* 657 */
 EXTERN int		Tcl_UniCharIsUnicode(int ch);
 /* 658 */
-EXTERN Tcl_Size		Tcl_ExternalToUtfDStringEx(Tcl_Encoding encoding,
-				const char *src, Tcl_Size srcLen, int flags,
-				Tcl_DString *dsPtr);
+EXTERN int		Tcl_ExternalToUtfDStringEx(Tcl_Interp *interp,
+				Tcl_Encoding encoding, const char *src,
+				Tcl_Size srcLen, int flags,
+				Tcl_DString *dsPtr,
+				Tcl_Size *errorLocationPtr);
 /* 659 */
-EXTERN Tcl_Size		Tcl_UtfToExternalDStringEx(Tcl_Encoding encoding,
-				const char *src, Tcl_Size srcLen, int flags,
-				Tcl_DString *dsPtr);
+EXTERN int		Tcl_UtfToExternalDStringEx(Tcl_Interp *interp,
+				Tcl_Encoding encoding, const char *src,
+				Tcl_Size srcLen, int flags,
+				Tcl_DString *dsPtr,
+				Tcl_Size *errorLocationPtr);
 /* 660 */
 EXTERN int		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
 				int sigNumber);
@@ -2529,8 +2533,8 @@ typedef struct TclStubs {
     const char * (*tcl_UtfNext) (const char *src); /* 655 */
     const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 656 */
     int (*tcl_UniCharIsUnicode) (int ch); /* 657 */
-    Tcl_Size (*tcl_ExternalToUtfDStringEx) (Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr); /* 658 */
-    Tcl_Size (*tcl_UtfToExternalDStringEx) (Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr); /* 659 */
+    int (*tcl_ExternalToUtfDStringEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr, Tcl_Size *errorLocationPtr); /* 658 */
+    int (*tcl_UtfToExternalDStringEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr, Tcl_Size *errorLocationPtr); /* 659 */
     int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
     int (*tcl_ListObjGetElements) (Tcl_Interp *interp, Tcl_Obj *listPtr, size_t *objcPtr, Tcl_Obj ***objvPtr); /* 661 */
     int (*tcl_ListObjLength) (Tcl_Interp *interp, Tcl_Obj *listPtr, size_t *lengthPtr); /* 662 */
@@ -3956,12 +3960,12 @@ extern const TclStubs *tclStubsPtr;
 
 #undef Tcl_UtfToExternalDString
 #define Tcl_UtfToExternalDString(encoding, src, len, ds) \
-	(Tcl_UtfToExternalDStringEx((encoding), (src), (len), \
-	TCL_ENCODING_NOCOMPLAIN, (ds)), Tcl_DStringValue(ds))
+	(Tcl_UtfToExternalDStringEx(NULL, (encoding), (src), (len), \
+	TCL_ENCODING_PROFILE_TCL8, (ds), NULL), Tcl_DStringValue(ds))
 #undef Tcl_ExternalToUtfDString
 #define Tcl_ExternalToUtfDString(encoding, src, len, ds) \
-	(Tcl_ExternalToUtfDStringEx((encoding), (src), (len), \
-	TCL_ENCODING_NOCOMPLAIN, (ds)), Tcl_DStringValue(ds))
+	(Tcl_ExternalToUtfDStringEx(NULL, (encoding), (src), (len), \
+	TCL_ENCODING_PROFILE_TCL8, (ds), NULL), Tcl_DStringValue(ds))
 
 #if defined(USE_TCL_STUBS)
 #   if defined(_WIN32) && defined(_WIN64)
