@@ -398,7 +398,7 @@ TestplatformChmod(
     const char *nativePath,
     int pmode)
 {
-    /* 
+    /*
      * Note FILE_DELETE_CHILD missing from dirWriteMask because we do
      * not want overriding of child's delete setting when testing
      */
@@ -406,7 +406,7 @@ TestplatformChmod(
 	FILE_WRITE_ATTRIBUTES | FILE_WRITE_EA |
 	FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY | STANDARD_RIGHTS_WRITE | DELETE |
 	SYNCHRONIZE;
-    static const DWORD dirReadMask = 
+    static const DWORD dirReadMask =
 	FILE_READ_ATTRIBUTES | FILE_READ_EA | FILE_LIST_DIRECTORY |
 	STANDARD_RIGHTS_READ | SYNCHRONIZE;
     /* Note - default user privileges allow ignoring TRAVERSE setting */
@@ -416,7 +416,7 @@ TestplatformChmod(
     static const DWORD fileWriteMask =
 	FILE_WRITE_ATTRIBUTES | FILE_WRITE_EA | FILE_WRITE_DATA |
 	FILE_APPEND_DATA | STANDARD_RIGHTS_WRITE | DELETE | SYNCHRONIZE;
-    static const DWORD fileReadMask = 
+    static const DWORD fileReadMask =
 	FILE_READ_ATTRIBUTES | FILE_READ_EA | FILE_READ_DATA |
 	STANDARD_RIGHTS_READ | SYNCHRONIZE;
     static const DWORD fileExecuteMask =
@@ -450,7 +450,7 @@ TestplatformChmod(
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) {
 	goto done;
     }
-    
+
     /* Get process SID */
     if (!GetTokenInformation(hToken, TokenUser, NULL, 0, &dw) &&
 	GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
@@ -468,7 +468,7 @@ TestplatformChmod(
 	Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
 	goto done;
     }
-    /* 
+    /*
      * Always include DACL modify rights so we don't get locked out
      */
     aceEntry[nSids].mask = READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE |
