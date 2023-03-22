@@ -453,6 +453,24 @@ test encoding-15.24 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
     binary scan $y H* z
     list [string length $y] $z
 } {2 cfbf}
+test encoding-15.25 {UtfToUtfProc CESU-8} {
+    encoding convertfrom cesu-8 \x00
+} \x00
+test encoding-15.26 {UtfToUtfProc CESU-8} {
+    encoding convertfrom cesu-8 \xC0\x80
+} \x00
+test encoding-15.27 {UtfToUtfProc -strict CESU-8} {
+    encoding convertfrom -strict cesu-8 \xC0\x80
+} \x00
+test encoding-15.28 {UtfToUtfProc -strict CESU-8} {
+    encoding convertfrom -strict cesu-8 \xC0\x80
+} \x00
+test encoding-15.29 {UtfToUtfProc CESU-8} {
+    encoding convertto cesu-8 \x00
+} \xC0\x80
+test encoding-15.30 {UtfToUtfProc -strict CESU-8} {
+    encoding convertto -strict cesu-8 \x00
+} \xC0\x80
 
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]
@@ -585,8 +603,21 @@ test encoding-18.6 {TableToUtfProc on invalid input with -nocomplain} -body {
 	list [catch {encoding convertto -nocomplain jis0208 \\} res] $res
 } -result {0 !)}
 
-test encoding-19.1 {TableFromUtfProc} {
-} {}
+test encoding-19.1 {TableFromUtfProc} -body {
+    encoding convertfrom ascii AÁ
+} -result AÁ
+test encoding-19.2 {TableFromUtfProc} -body {
+    encoding convertfrom -nocomplain ascii AÁ
+} -result AÁ
+test encoding-19.3 {TableFromUtfProc} -body {
+    encoding convertfrom -strict ascii AÁ
+} -returnCodes 1 -result {unexpected byte sequence starting at index 1: '\xC1'}
+test encoding-19.4 {TableFromUtfProc} -body {
+    list [encoding convertfrom -failindex idx ascii AÁ] [set idx]
+} -result {A 1}
+test encoding-19.4 {TableFromUtfProc} -body {
+    list [encoding convertfrom -failindex idx -strict ascii AÁ] [set idx]
+} -result {A 1}
 
 test encoding-20.1 {TableFreefProc} {
 } {}
@@ -805,6 +836,9 @@ test encoding-24.39 {Try to generate invalid utf-8 with -strict} -body {
 test encoding-24.40 {Try to generate invalid utf-8 with -nocomplain} -body {
     encoding convertto -nocomplain utf-8 \uD800
 } -result \xED\xA0\x80
+test encoding-24.41 {Parse invalid utf-8 with -strict} -body {
+    encoding convertfrom -strict utf-8 \xED\xA0\x80\xED\xB0\x80
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xED'}
 
 file delete [file join [temporaryDirectory] iso2022.txt]
 
