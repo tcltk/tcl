@@ -1253,7 +1253,7 @@ Tcl_ExternalToUtf(
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
-    Tcl_Size srcLen,		/* Source string length in bytes, or < 0 for
+    Tcl_Size srcLen,		/* Source string length in bytes, or TCL_INDEX_NONE for
 				 * encoding-specific string length. */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
@@ -1297,6 +1297,13 @@ Tcl_ExternalToUtf(
     if (statePtr == NULL) {
 	flags |= TCL_ENCODING_START | TCL_ENCODING_END;
 	statePtr = &state;
+    }
+    if (srcLen > INT_MAX) {
+	srcLen = INT_MAX;
+	flags &= ~TCL_ENCODING_END;
+    }
+    if (dstLen > INT_MAX) {
+	dstLen = INT_MAX;
     }
     if (srcReadPtr == NULL) {
 	srcReadPtr = &srcRead;
@@ -1515,7 +1522,7 @@ Tcl_UtfToExternal(
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
-    Tcl_Size srcLen,		/* Source string length in bytes, or < 0 for
+    Tcl_Size srcLen,		/* Source string length in bytes, or TCL_INDEX_NONE for
 				 * strlen(). */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
@@ -1556,6 +1563,13 @@ Tcl_UtfToExternal(
     if (statePtr == NULL) {
 	flags |= TCL_ENCODING_START | TCL_ENCODING_END;
 	statePtr = &state;
+    }
+    if (srcLen > INT_MAX) {
+	srcLen = INT_MAX;
+	flags &= ~TCL_ENCODING_END;
+    }
+    if (dstLen > INT_MAX) {
+	dstLen = INT_MAX;
     }
     if (srcReadPtr == NULL) {
 	srcReadPtr = &srcRead;
