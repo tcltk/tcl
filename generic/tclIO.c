@@ -9464,12 +9464,18 @@ TclCopyChannel(
      * Tcl 8.7 alphas prior to encoding profiles
      */
 
+#define PROFILE_STRICT(flags_)                                         \
+    ((CHANNEL_PROFILE_GET(flags_) == CHANNEL_PROFILE_STRICT)           \
+	    && ((flags_) && TCL_ENCODING_STOPONERROR))
+#define PROFILE_REPLACE(flags_)                                         \
+    (CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE)
+
     moveBytes = inStatePtr->inEofChar == '\0'	/* No eofChar to stop input */
 	    && inStatePtr->inputTranslation == TCL_TRANSLATE_LF
 	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
 	    && inStatePtr->encoding == outStatePtr->encoding
-	    && CHANNEL_PROFILE_GET(inStatePtr->flags) != TCL_ENCODING_PROFILE_STRICT
-	    && CHANNEL_PROFILE_GET(outStatePtr->flags) == TCL_ENCODING_PROFILE_TCL8;
+	    && (!PROFILE_STRICT(inStatePtr->flags) && !PROFILE_REPLACE(inStatePtr->flags))
+	    && (!PROFILE_STRICT(outStatePtr->flags) && !PROFILE_REPLACE(outStatePtr->flags));
 
     /*
      * Allocate a new CopyState to maintain info about the current copy in
@@ -9797,8 +9803,8 @@ CopyData(
     inBinary = (inStatePtr->encoding == NULL);
     outBinary = (outStatePtr->encoding == NULL);
     sameEncoding = inStatePtr->encoding == outStatePtr->encoding
-	    && CHANNEL_PROFILE_GET(inStatePtr->flags) != TCL_ENCODING_PROFILE_STRICT
-	    && CHANNEL_PROFILE_GET(outStatePtr->flags) == TCL_ENCODING_PROFILE_TCL8;
+	    && (!PROFILE_STRICT(inStatePtr->flags) && !PROFILE_REPLACE(inStatePtr->flags))
+	    && (!PROFILE_STRICT(outStatePtr->flags) && !PROFILE_REPLACE(outStatePtr->flags));
 
     if (!(inBinary || sameEncoding)) {
 	TclNewObj(bufObj);
