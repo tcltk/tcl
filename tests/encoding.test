@@ -554,15 +554,21 @@ test encoding-16.18 {
 	return done
     } [namespace current]]
 } -result done
-test encoding-16.19 {UnicodeToUtfProc, bug [d19fe0a5b]} -body {
+test encoding-16.19 {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
     encoding convertfrom utf-16 "\x41\x41\x41"
 } -result \u4141\uFFFD
-test encoding-16.20 {UnicodeToUtfProc, bug [d19fe0a5b]} -constraints deprecated -body {
+test encoding-16.20 {Utf16ToUtfProc, bug [d19fe0a5b]} -constraints deprecated -body {
     encoding convertfrom utf-16 "\xD8\xD8"
 } -result \uD8D8
-test encoding-16.21 {UnicodeToUtfProc, bug [d19fe0a5b]} -body {
+test encoding-16.21 {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
     encoding convertfrom utf-32 "\x00\x00\x00\x00\x41\x41"
 } -result \x00\uFFFD
+test encoding-16.22 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
+    encoding convertfrom -strict utf-16le \x00\xD8
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x00'}
+test encoding-16.23 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
+    encoding convertfrom -strict utf-16le \x00\xDC
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x00'}
 
 test encoding-17.1 {UtfToUtf16Proc} -body {
     encoding convertto utf-16 "\U460DC"
