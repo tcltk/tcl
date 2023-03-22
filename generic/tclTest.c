@@ -1206,7 +1206,7 @@ TestcmdtokenCmd(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-    TestCommandTokenRef *refPtr;
+    TestCommandTokenRef *refPtr, *prevRefPtr;
     char buf[30];
     int id;
 
@@ -1225,9 +1225,7 @@ TestcmdtokenCmd(
 	firstCommandTokenRef = refPtr;
 	sprintf(buf, "%d", refPtr->id);
 	Tcl_AppendResult(interp, buf, NULL);
-    } else if (strcmp(argv[1], "name") == 0) {
-	Tcl_Obj *objPtr;
-
+    } else {
 	if (sscanf(argv[2], "%d", &id) != 1) {
 	    Tcl_AppendResult(interp, "bad command token \"", argv[2],
 		    "\"", NULL);
@@ -1247,18 +1245,36 @@ TestcmdtokenCmd(
 	    return TCL_ERROR;
 	}
 
-	objPtr = Tcl_NewObj();
-	Tcl_GetCommandFullName(interp, refPtr->token, objPtr);
+	if (strcmp(argv[1], "name") == 0) {
+	    Tcl_Obj *objPtr;
 
-	Tcl_AppendElement(interp,
-		Tcl_GetCommandName(interp, refPtr->token));
-	Tcl_AppendElement(interp, Tcl_GetString(objPtr));
-	Tcl_DecrRefCount(objPtr);
-    } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create or name", NULL);
-	return TCL_ERROR;
+	    objPtr = Tcl_NewObj();
+	    Tcl_GetCommandFullName(interp, refPtr->token, objPtr);
+
+	    Tcl_AppendElement(interp,
+		    Tcl_GetCommandName(interp, refPtr->token));
+	    Tcl_AppendElement(interp, Tcl_GetString(objPtr));
+	    Tcl_DecrRefCount(objPtr);
+	} else if (strcmp(argv[1], "free") == 0) {
+	    prevRefPtr = NULL;
+	    for (refPtr = firstCommandTokenRef; refPtr != NULL;
+		    refPtr = refPtr->nextPtr) {
+		if (refPtr->id == id) {
+		    if (prevRefPtr != NULL) {
+			prevRefPtr->nextPtr = refPtr->nextPtr;
+		    }
+		    ckfree(refPtr);
+		    break;
+		}
+		prevRefPtr = refPtr;
+	    }
+	} else {
+	    Tcl_AppendResult(interp, "bad option \"", argv[1],
+		    "\": must be create, name, or free", NULL);
+	    return TCL_ERROR;
+	}
     }
+
     return TCL_OK;
 }
 
