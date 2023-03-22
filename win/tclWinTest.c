@@ -425,7 +425,6 @@ TestplatformChmod(
     DWORD attr, newAclSize;
     PACL newAcl = NULL;
     int res = 0;
-    SID_IDENTIFIER_AUTHORITY worldAuthority = SECURITY_WORLD_SID_AUTHORITY;
 
     HANDLE hToken = NULL;
     int i;
@@ -457,7 +456,7 @@ TestplatformChmod(
 	GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 	goto done;
     }
-    pTokenUser = Tcl_Alloc(dw);
+    pTokenUser = (TOKEN_USER *)Tcl_Alloc(dw);
     if (!GetTokenInformation(hToken, TokenUser, pTokenUser, dw, &dw)) {
 	goto done;
     }
@@ -499,7 +498,7 @@ TestplatformChmod(
 		GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 	    goto done;
 	}
-	pTokenGroup = Tcl_Alloc(dw);
+	pTokenGroup = (TOKEN_PRIMARY_GROUP *)Tcl_Alloc(dw);
 	if (!GetTokenInformation(hToken, TokenPrimaryGroup, pTokenGroup, dw, &dw)) {
 	    Tcl_Free(pTokenGroup);
 	    goto done;
@@ -566,7 +565,7 @@ TestplatformChmod(
 	newAclSize +=
 	    offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
     }
-    newAcl = Tcl_Alloc(newAclSize);
+    newAcl = (PACL)Tcl_Alloc(newAclSize);
     if (!InitializeAcl(newAcl, newAclSize, ACL_REVISION)) {
 	goto done;
     }
