@@ -190,6 +190,9 @@ typedef struct ChannelState {
 				 * handlers ("fileevent") on this channel. */
     size_t bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
+    Channel *timerChanPtr;	/* Needed in order to decrement the refCount of
+				   the right channel when the timer is
+				   deleted. */
     struct CopyState *csPtrR;	/* State of background copy for which channel
 				 * is input, or NULL. */
     struct CopyState *csPtrW;	/* State of background copy for which channel
@@ -277,10 +280,6 @@ typedef struct ChannelState {
 					 * encountered an encoding error */
 #define CHANNEL_RAW_MODE	(1<<16)	/* When set, notes that the Raw API is
 					 * being used. */
-#define CHANNEL_ENCODING_NOCOMPLAIN	(1<<17)	/* set if option
-					 * -nocomplainencoding is set to 1 */
-#define CHANNEL_ENCODING_STRICT	(1<<18)	/* set if option
-					 * -strictencoding is set to 1 */
 #define CHANNEL_INCLOSE		(1<<19)	/* Channel is currently being closed.
 					 * Its structures are still live and
 					 * usable, but it may not be closed
@@ -289,6 +288,13 @@ typedef struct ChannelState {
 #define CHANNEL_CLOSEDWRITE	(1<<21)	/* Channel write side has been closed.
 					 * No further Tcl-level write IO on
 					 * the channel is allowed. */
+#define CHANNEL_PROFILE_MASK     0xFF000000
+#define CHANNEL_PROFILE_GET(flags_)  ((flags_) & CHANNEL_PROFILE_MASK)
+#define CHANNEL_PROFILE_SET(flags_, profile_) \
+    do {                                           \
+	(flags_) &= ~CHANNEL_PROFILE_MASK;    \
+	(flags_) |= profile_;                      \
+    } while (0)
 
 /*
  * The length of time to wait between synthetic timer events. Must be zero or

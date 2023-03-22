@@ -301,7 +301,7 @@ TclVarHashCreateVar(
     Tcl_Obj *keyPtr;
     Var *varPtr;
 
-    keyPtr = Tcl_NewStringObj(key, -1);
+    keyPtr = Tcl_NewStringObj(key, TCL_INDEX_NONE);
     Tcl_IncrRefCount(keyPtr);
     varPtr = VarHashCreateVar(tablePtr, keyPtr, newPtr);
     Tcl_DecrRefCount(keyPtr);
@@ -469,7 +469,7 @@ TclLookupVar(
 				 * is set to NULL. */
 {
     Var *varPtr;
-    Tcl_Obj *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
 
     if (createPart1) {
 	Tcl_IncrRefCount(part1Ptr);
@@ -551,7 +551,7 @@ TclObjLookupVar(
     Var *resPtr;
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
 	if (createPart2) {
 	    Tcl_IncrRefCount(part2Ptr);
 	}
@@ -949,7 +949,7 @@ TclLookupSimpleVar(
 		return NULL;
 	    }
 	    if (tail != varName) {
-		tailPtr = Tcl_NewStringObj(tail, -1);
+		tailPtr = Tcl_NewStringObj(tail, TCL_INDEX_NONE);
 	    } else {
 		tailPtr = varNamePtr;
 	    }
@@ -1173,10 +1173,10 @@ Tcl_GetVar2(
 				 * bits. */
 {
     Tcl_Obj *resultPtr;
-    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -1226,10 +1226,10 @@ Tcl_GetVar2Ex(
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
-    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -1547,7 +1547,7 @@ Tcl_SetVar2(
 				 * TCL_LEAVE_ERR_MSG. */
 {
     Tcl_Obj *varValuePtr = Tcl_SetVar2Ex(interp, part1, part2,
-	    Tcl_NewStringObj(newValue, -1), flags);
+	    Tcl_NewStringObj(newValue, TCL_INDEX_NONE), flags);
 
     if (varValuePtr == NULL) {
 	return NULL;
@@ -1607,11 +1607,11 @@ Tcl_SetVar2Ex(
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT or
 				 * TCL_LEAVE_ERR_MSG. */
 {
-    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
 
     Tcl_IncrRefCount(part1Ptr);
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -2291,10 +2291,10 @@ Tcl_UnsetVar2(
 				 * TCL_LEAVE_ERR_MSG. */
 {
     int result;
-    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
     }
 
     /*
@@ -3070,7 +3070,7 @@ ArrayForNRCmd(
 
     if (numVars != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must have two variable names", -1));
+		"must have two variable names", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "array", "for", NULL);
 	return TCL_ERROR;
     }
@@ -3168,7 +3168,7 @@ ArrayForLoopCallback(
 	Tcl_ResetResult(interp);
 	if (done == TCL_ERROR) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "array changed during iteration", -1));
+		    "array changed during iteration", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "READ", "array", "for", NULL);
 	    varPtr->flags |= TCL_LEAVE_ERR_MSG;
 	    result = done;
@@ -4048,7 +4048,7 @@ ArraySetCmd(
 	}
 	if (elemLen & 1) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "list must have an even number of elements", -1));
+		    "list must have an even number of elements", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "FORMAT", NULL);
 	    return TCL_ERROR;
 	}
@@ -4218,10 +4218,10 @@ ArrayStatsCmd(
     stats = Tcl_HashStats((Tcl_HashTable *) varPtr->value.tablePtr);
     if (stats == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"error reading array statistics", -1));
+		"error reading array statistics", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, TCL_INDEX_NONE));
     Tcl_Free(stats);
     return TCL_OK;
 }

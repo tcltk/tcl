@@ -192,7 +192,7 @@ Tcl_LoadObjCmd(
     }
     if ((fullFileName[0] == 0) && (prefix == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must specify either file name or prefix", -1));
+		"must specify either file name or prefix", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOLIBRARY",
 		NULL);
 	code = TCL_ERROR;
@@ -232,9 +232,9 @@ Tcl_LoadObjCmd(
 	    namesMatch = 0;
 	} else {
 	    TclDStringClear(&pfx);
-	    Tcl_DStringAppend(&pfx, prefix, -1);
+	    Tcl_DStringAppend(&pfx, prefix, TCL_INDEX_NONE);
 	    TclDStringClear(&tmp);
-	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
+	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, TCL_INDEX_NONE);
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pfx)) == 0) {
 		namesMatch = 1;
@@ -307,7 +307,7 @@ Tcl_LoadObjCmd(
 	 */
 
 	if (prefix != NULL) {
-	    Tcl_DStringAppend(&pfx, prefix, -1);
+	    Tcl_DStringAppend(&pfx, prefix, TCL_INDEX_NONE);
 	} else {
 	    Tcl_Obj *splitPtr, *pkgGuessPtr;
 	    size_t pElements;
@@ -487,7 +487,7 @@ Tcl_LoadObjCmd(
 	     * this interp are incompatible in their stubs mechanisms, and
 	     * recorded the error in the oldest legacy place we have to do so.
 	     */
-	    Tcl_SetObjResult(target, Tcl_NewStringObj(iPtr->legacyResult, -1));
+	    Tcl_SetObjResult(target, Tcl_NewStringObj(iPtr->legacyResult, TCL_INDEX_NONE));
 	    iPtr->legacyResult = NULL;
 	    iPtr->legacyFreeProc = (void (*) (void))-1;
 	}
@@ -625,7 +625,7 @@ Tcl_UnloadObjCmd(
     }
     if ((fullFileName[0] == 0) && (prefix == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must specify either file name or prefix", -1));
+		"must specify either file name or prefix", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NOLIBRARY",
 		NULL);
 	code = TCL_ERROR;
@@ -665,9 +665,9 @@ Tcl_UnloadObjCmd(
 	    namesMatch = 0;
 	} else {
 	    TclDStringClear(&pfx);
-	    Tcl_DStringAppend(&pfx, prefix, -1);
+	    Tcl_DStringAppend(&pfx, prefix, TCL_INDEX_NONE);
 	    TclDStringClear(&tmp);
-	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
+	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, TCL_INDEX_NONE);
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pfx)) == 0) {
 		namesMatch = 1;
@@ -1121,8 +1121,8 @@ TclGetLoadedLibraries(
 	Tcl_MutexLock(&libraryMutex);
 	for (libraryPtr = firstLibraryPtr; libraryPtr != NULL;
 		libraryPtr = libraryPtr->nextPtr) {
-	    pkgDesc[0] = Tcl_NewStringObj(libraryPtr->fileName, -1);
-	    pkgDesc[1] = Tcl_NewStringObj(libraryPtr->prefix, -1);
+	    pkgDesc[0] = Tcl_NewStringObj(libraryPtr->fileName, TCL_INDEX_NONE);
+	    pkgDesc[1] = Tcl_NewStringObj(libraryPtr->prefix, TCL_INDEX_NONE);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewListObj(2, pkgDesc));
 	}
@@ -1147,7 +1147,7 @@ TclGetLoadedLibraries(
 	    libraryPtr = ipPtr->libraryPtr;
 
 	    if (!strcmp(prefix, libraryPtr->prefix)) {
-		resultObj = Tcl_NewStringObj(libraryPtr->fileName, -1);
+		resultObj = Tcl_NewStringObj(libraryPtr->fileName, TCL_INDEX_NONE);
 		break;
 	    }
 	}
@@ -1166,8 +1166,8 @@ TclGetLoadedLibraries(
     TclNewObj(resultObj);
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	libraryPtr = ipPtr->libraryPtr;
-	pkgDesc[0] = Tcl_NewStringObj(libraryPtr->fileName, -1);
-	pkgDesc[1] = Tcl_NewStringObj(libraryPtr->prefix, -1);
+	pkgDesc[0] = Tcl_NewStringObj(libraryPtr->fileName, TCL_INDEX_NONE);
+	pkgDesc[1] = Tcl_NewStringObj(libraryPtr->prefix, TCL_INDEX_NONE);
 	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewListObj(2, pkgDesc));
     }
     Tcl_SetObjResult(interp, resultObj);

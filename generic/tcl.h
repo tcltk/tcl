@@ -311,10 +311,10 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
-#if TCL_MAJOR_VERSION > 8
-typedef size_t Tcl_Size;
-#else
+#if TCL_MAJOR_VERSION < 9
 typedef int Tcl_Size;
+#else
+typedef size_t Tcl_Size;
 #endif
 
 #ifdef _WIN32
@@ -452,17 +452,17 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
 
 #if TCL_MAJOR_VERSION > 8
 typedef struct Tcl_RegExpIndices {
-    size_t start;			/* Character offset of first character in
+    Tcl_Size start;			/* Character offset of first character in
 				 * match. */
-    size_t end;			/* Character offset of first character after
+    Tcl_Size end;			/* Character offset of first character after
 				 * the match. */
 } Tcl_RegExpIndices;
 
 typedef struct Tcl_RegExpInfo {
-    size_t nsubs;			/* Number of subexpressions in the compiled
+    Tcl_Size nsubs;			/* Number of subexpressions in the compiled
 				 * expression. */
     Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
-    size_t extendStart;		/* The offset at which a subsequent match
+    Tcl_Size extendStart;		/* The offset at which a subsequent match
 				 * might begin. */
 } Tcl_RegExpInfo;
 #else
@@ -1944,33 +1944,35 @@ typedef struct Tcl_EncodingType {
  *				content.  Otherwise, the number of chars
  *				produced is controlled only by other limiting
  *				factors.
- * TCL_ENCODING_MODIFIED -	Convert NULL bytes to \xC0\x80 in stead of
- *				0x00. Only valid for "utf-8" and "cesu-8".
- *				This flag is implicit for external -> internal conversions,
- *				optional for internal -> external conversions.
- * TCL_ENCODING_NOCOMPLAIN -	If set, the converter
- *				substitutes the problematic character(s) with
- *				one or more "close" characters in the
- *				destination buffer and then continues to
- *				convert the source. If clear, the converter returns
- *				immediately upon encountering an invalid byte sequence
- *				or a source character that has no mapping in the
- *				target encoding. Only for Tcl 9.x.
+ * TCL_ENCODING_PROFILE_* -	Mutually exclusive encoding profile ids. Note
+ *				these are bit masks.
+ *
+ * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS
+ * DEFINED IN tclEncoding.c (ENCODING_INPUT et al). Be cognizant of this
+ * when adding bits.
  */
 
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
 #if TCL_MAJOR_VERSION > 8
-#   define TCL_ENCODING_STRICT			0x04
 #   define TCL_ENCODING_STOPONERROR	0x0 /* Not used any more */
 #else
-#   define TCL_ENCODING_STRICT			0x44
 #   define TCL_ENCODING_STOPONERROR	0x04
 #endif
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
-#define TCL_ENCODING_MODIFIED		0x20
-#define TCL_ENCODING_NOCOMPLAIN		0x40
+/* Internal use bits, do not define bits in this space. See above comment */
+#define TCL_ENCODING_INTERNAL_USE_MASK  0xFF00
+/* Reserve top byte for profile values (disjoint, not a mask) */
+#define TCL_ENCODING_PROFILE_TCL8     0x01000000
+#define TCL_ENCODING_PROFILE_STRICT   0x02000000
+#define TCL_ENCODING_PROFILE_REPLACE  0x03000000
+/* Still being argued - For Tcl9, is the default strict? TODO */
+#if TCL_MAJOR_VERSION < 9
+#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
+#else
+#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8 /* STRICT? REPLACE? TODO */
+#endif
 
 /*
  * The following definitions are the error codes returned by the conversion
@@ -2250,10 +2252,17 @@ void *			TclStubCall(void *arg);
 
 #ifdef USE_TCL_STUBS
 #if TCL_MAJOR_VERSION < 9
+# if TCL_UTF_MAX < 4
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)(interp, version, \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
 	    TCL_STUB_MAGIC)
+# else
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)(interp, "8.7.0", \
+	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
+	    TCL_STUB_MAGIC)
+# endif
 #elif TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)(interp, version, \
@@ -2377,9 +2386,9 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define attemptckalloc Tcl_AttemptAlloc
 #   ifdef _MSC_VER
 	/* Silence invalid C4090 warnings */
-#	define ckfree(a) Tcl_Free((char *)(a))
-#	define ckrealloc(a,b) Tcl_Realloc((char *)(a),(b))
-#	define attemptckrealloc(a,b) Tcl_AttemptRealloc((char *)(a),(b))
+#	define ckfree(a) Tcl_Free((void *)(a))
+#	define ckrealloc(a,b) Tcl_Realloc((void *)(a),(b))
+#	define attemptckrealloc(a,b) Tcl_AttemptRealloc((void *)(a),(b))
 #   else
 #	define ckfree Tcl_Free
 #	define ckrealloc Tcl_Realloc

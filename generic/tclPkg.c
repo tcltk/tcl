@@ -96,15 +96,15 @@ static void		AddRequirementsToResult(Tcl_Interp *interp, int reqc,
 static void		AddRequirementsToDString(Tcl_DString *dstring,
 			    int reqc, Tcl_Obj *const reqv[]);
 static Package *	FindPackage(Tcl_Interp *interp, const char *name);
-static int		PkgRequireCore(ClientData data[], Tcl_Interp *interp, int result);
-static int		PkgRequireCoreFinal(ClientData data[], Tcl_Interp *interp, int result);
-static int		PkgRequireCoreCleanup(ClientData data[], Tcl_Interp *interp, int result);
-static int		PkgRequireCoreStep1(ClientData data[], Tcl_Interp *interp, int result);
-static int		PkgRequireCoreStep2(ClientData data[], Tcl_Interp *interp, int result);
-static int		TclNRPkgRequireProc(ClientData clientData, Tcl_Interp *interp, int reqc, Tcl_Obj *const reqv[]);
-static int		SelectPackage(ClientData data[], Tcl_Interp *interp, int result);
-static int		SelectPackageFinal(ClientData data[], Tcl_Interp *interp, int result);
-static int		TclNRPackageObjCmdCleanup(ClientData data[], Tcl_Interp *interp, int result);
+static int		PkgRequireCore(void *data[], Tcl_Interp *interp, int result);
+static int		PkgRequireCoreFinal(void *data[], Tcl_Interp *interp, int result);
+static int		PkgRequireCoreCleanup(void *data[], Tcl_Interp *interp, int result);
+static int		PkgRequireCoreStep1(void *data[], Tcl_Interp *interp, int result);
+static int		PkgRequireCoreStep2(void *data[], Tcl_Interp *interp, int result);
+static int		TclNRPkgRequireProc(void *clientData, Tcl_Interp *interp, int reqc, Tcl_Obj *const reqv[]);
+static int		SelectPackage(void *data[], Tcl_Interp *interp, int result);
+static int		SelectPackageFinal(void *data[], Tcl_Interp *interp, int result);
+static int		TclNRPackageObjCmdCleanup(void *data[], Tcl_Interp *interp, int result);
 
 /*
  * Helper macros.
@@ -165,7 +165,7 @@ Tcl_PkgProvideEx(
 
     pkgPtr = FindPackage(interp, name);
     if (pkgPtr->version == NULL) {
-	pkgPtr->version = Tcl_NewStringObj(version, -1);
+	pkgPtr->version = Tcl_NewStringObj(version, TCL_INDEX_NONE);
 	Tcl_IncrRefCount(pkgPtr->version);
 	pkgPtr->clientData = clientData;
 	return TCL_OK;
@@ -225,7 +225,7 @@ Tcl_PkgProvideEx(
 
 static void
 PkgFilesCleanupProc(
-    ClientData clientData,
+    void *clientData,
     TCL_UNUSED(Tcl_Interp *))
 {
     PkgFiles *pkgFiles = (PkgFiles *) clientData;
@@ -291,7 +291,7 @@ TclPkgFileSeen(
 	} else {
 	    list = (Tcl_Obj *)Tcl_GetHashValue(entry);
 	}
-	Tcl_ListObjAppendElement(interp, list, Tcl_NewStringObj(fileName, -1));
+	Tcl_ListObjAppendElement(interp, list, Tcl_NewStringObj(fileName, TCL_INDEX_NONE));
     }
 }
 
@@ -407,7 +407,7 @@ Tcl_PkgRequireEx(
 		!= CheckVersionAndConvert(interp, version, NULL, NULL)) {
 	    return NULL;
 	}
-	ov = Tcl_NewStringObj(version, -1);
+	ov = Tcl_NewStringObj(version, TCL_INDEX_NONE);
 	if (exact) {
 	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
 	}
@@ -442,7 +442,7 @@ Tcl_PkgRequireProc(
 
 static int
 TclNRPkgRequireProc(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int reqc,
     Tcl_Obj *const reqv[])
@@ -457,12 +457,12 @@ TclNRPkgRequireProc(
 
 static int
 PkgRequireCore(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     TCL_UNUSED(int))
 {
     const char *name = (const char *)data[0];
-    int reqc = PTR2INT(data[1]);
+    int reqc = (int)PTR2INT(data[1]);
     Tcl_Obj **reqv = (Tcl_Obj **)data[2];
     int code = CheckAllRequirements(interp, reqc, reqv);
     Require *reqPtr;
@@ -488,14 +488,14 @@ PkgRequireCore(
 
 static int
 PkgRequireCoreStep1(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     TCL_UNUSED(int))
 {
     Tcl_DString command;
     char *script;
     Require *reqPtr = (Require *)data[0];
-    int reqc = PTR2INT(data[1]);
+    int reqc = (int)PTR2INT(data[1]);
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     const char *name = reqPtr->name /* Name of desired package. */;
 
@@ -531,7 +531,7 @@ PkgRequireCoreStep1(
      */
 
     Tcl_DStringInit(&command);
-    Tcl_DStringAppend(&command, script, -1);
+    Tcl_DStringAppend(&command, script, TCL_INDEX_NONE);
     Tcl_DStringAppendElement(&command, name);
     AddRequirementsToDString(&command, reqc, reqv);
 
@@ -547,12 +547,12 @@ PkgRequireCoreStep1(
 
 static int
 PkgRequireCoreStep2(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
     Require *reqPtr = (Require *)data[0];
-    int reqc = PTR2INT(data[1]);
+    int reqc = (int)PTR2INT(data[1]);
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     const char *name = reqPtr->name; /* Name of desired package. */
 
@@ -582,12 +582,12 @@ PkgRequireCoreStep2(
 
 static int
 PkgRequireCoreFinal(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     TCL_UNUSED(int))
 {
     Require *reqPtr = (Require *)data[0];
-    int reqc = PTR2INT(data[1]), satisfies;
+    int reqc = (int)PTR2INT(data[1]), satisfies;
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     char *pkgVersionI;
     void *clientDataPtr = reqPtr->clientDataPtr;
@@ -634,7 +634,7 @@ PkgRequireCoreFinal(
 
 static int
 PkgRequireCoreCleanup(
-    ClientData data[],
+    void *data[],
     TCL_UNUSED(Tcl_Interp *),
     int result)
 {
@@ -644,7 +644,7 @@ PkgRequireCoreCleanup(
 
 static int
 SelectPackage(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     TCL_UNUSED(int))
 {
@@ -653,7 +653,7 @@ SelectPackage(
 				/* Internal rep. of versions */
     int availStable, satisfies;
     Require *reqPtr = (Require *)data[0];
-    int reqc = PTR2INT(data[1]);
+    int reqc = (int)PTR2INT(data[1]);
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     const char *name = reqPtr->name;
     Package *pkgPtr = reqPtr->pkgPtr;
@@ -839,7 +839,7 @@ SelectPackage(
 	Tcl_NRAddCallback(interp,
 		SelectPackageFinal, reqPtr, INT2PTR(reqc), (void *)reqv,
 		data[3]);
-	Tcl_NREvalObj(interp, Tcl_NewStringObj(bestPtr->script, -1),
+	Tcl_NREvalObj(interp, Tcl_NewStringObj(bestPtr->script, TCL_INDEX_NONE),
 		TCL_EVAL_GLOBAL);
     }
     return TCL_OK;
@@ -847,12 +847,12 @@ SelectPackage(
 
 static int
 SelectPackageFinal(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
     Require *reqPtr = (Require *)data[0];
-    int reqc = PTR2INT(data[1]);
+    int reqc = (int)PTR2INT(data[1]);
     Tcl_Obj **const reqv = (Tcl_Obj **)data[2];
     const char *name = reqPtr->name;
     char *versionToProvide = reqPtr->versionToProvide;
@@ -1053,7 +1053,7 @@ Tcl_PkgPresentEx(
  */
 int
 Tcl_PackageObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1200,7 +1200,7 @@ TclNRPackageObjCmd(
 		if (objc == 4) {
 		    Tcl_Free(argv3i);
 		    Tcl_SetObjResult(interp,
-			    Tcl_NewStringObj(availPtr->script, -1));
+			    Tcl_NewStringObj(availPtr->script, TCL_INDEX_NONE));
 		    return TCL_OK;
 		}
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
@@ -1251,7 +1251,7 @@ TclNRPackageObjCmd(
 		pkgPtr = (Package *)Tcl_GetHashValue(hPtr);
 		if ((pkgPtr->version != NULL) || (pkgPtr->availPtr != NULL)) {
 		    Tcl_ListObjAppendElement(NULL,resultObj, Tcl_NewStringObj(
-			    (char *)Tcl_GetHashKey(tablePtr, hPtr), -1));
+			    (char *)Tcl_GetHashKey(tablePtr, hPtr), TCL_INDEX_NONE));
 		}
 	    }
 	    Tcl_SetObjResult(interp, resultObj);
@@ -1353,7 +1353,7 @@ TclNRPackageObjCmd(
 	     * Create a new-style requirement for the exact version.
 	     */
 
-	    ov = Tcl_NewStringObj(version, -1);
+	    ov = Tcl_NewStringObj(version, TCL_INDEX_NONE);
 	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
 	    version = NULL;
 	    argv3 = TclGetString(objv[3]);
@@ -1404,7 +1404,7 @@ TclNRPackageObjCmd(
 	if (objc == 2) {
 	    if (iPtr->packageUnknown != NULL) {
 		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj(iPtr->packageUnknown, -1));
+			Tcl_NewStringObj(iPtr->packageUnknown, TCL_INDEX_NONE));
 	    }
 	} else if (objc == 3) {
 	    if (iPtr->packageUnknown != NULL) {
@@ -1456,7 +1456,7 @@ TclNRPackageObjCmd(
 	 */
 
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj(pkgPreferOptions[iPtr->packagePrefer], -1));
+		Tcl_NewStringObj(pkgPreferOptions[iPtr->packagePrefer], TCL_INDEX_NONE));
 	break;
     }
     case PKG_VCOMPARE:
@@ -1503,7 +1503,7 @@ TclNRPackageObjCmd(
 		for (availPtr = pkgPtr->availPtr; availPtr != NULL;
 			availPtr = availPtr->nextPtr) {
 		    Tcl_ListObjAppendElement(NULL, resultObj,
-			    Tcl_NewStringObj(availPtr->version, -1));
+			    Tcl_NewStringObj(availPtr->version, TCL_INDEX_NONE));
 		}
 	    }
 	    Tcl_SetObjResult(interp, resultObj);
@@ -1539,7 +1539,7 @@ TclNRPackageObjCmd(
 
 static int
 TclNRPackageObjCmdCleanup(
-    ClientData data[],
+    void *data[],
     TCL_UNUSED(Tcl_Interp *),
     int result)
 {

@@ -348,7 +348,7 @@ test basic-20.2 {Tcl_GetCommandInfo, names for commands created outside namespac
 test basic-20.3 {Tcl_GetCommandInfo, #-quoting} testcmdtoken {
     catch {rename \# ""}
     set x [testcmdtoken create \#]
-    testcmdtoken name $x
+    return [testcmdtoken name $x]
 } {{#} ::#}
 
 test basic-21.1 {Tcl_GetCommandName} {emptyTest} {

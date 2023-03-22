@@ -1683,7 +1683,7 @@ AppendUtfToUnicodeRep(
 	return;
     }
 
-    ExtendUnicodeRepWithString(objPtr, bytes, numBytes, -1);
+    ExtendUnicodeRepWithString(objPtr, bytes, numBytes, TCL_INDEX_NONE);
     TclInvalidateStringRep(objPtr);
     stringPtr = GET_STRING(objPtr);
     stringPtr->allocated = 0;
@@ -1812,7 +1812,7 @@ Tcl_AppendStringsToObj(
 	if (bytes == NULL) {
 	    break;
 	}
-	Tcl_AppendToObj(objPtr, bytes, -1);
+	Tcl_AppendToObj(objPtr, bytes, TCL_INDEX_NONE);
     }
     va_end(argList);
 }
@@ -2129,6 +2129,9 @@ Tcl_AppendFormatToObj(
 
 	    if (TclGetIntFromObj(interp, segment, &code) != TCL_OK) {
 		goto error;
+	    }
+	    if ((unsigned)code > 0x10FFFF) {
+	    	code = 0xFFFD;
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
 #if TCL_UTF_MAX < 4
@@ -2585,7 +2588,7 @@ Tcl_AppendFormatToObj(
 
   errorMsg:
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", errCode, NULL);
     }
   error:
@@ -2957,13 +2960,11 @@ TclStringRepeat(
 	/* Result will be pure byte array. Pre-size it */
 	(void)Tcl_GetByteArrayFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_SMAX;
-    }
-    else if (unichar) {
+    } else if (unichar) {
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
 	(void)Tcl_GetUnicodeFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_SMAX/sizeof(Tcl_UniChar);
-    }
-    else {
+    } else {
 	/* Result will be concat of string reps. Pre-size it. */
 	(void)Tcl_GetStringFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_SMAX;
@@ -3468,9 +3469,10 @@ TclStringCmp(
     Tcl_Obj *value2Ptr,
     int checkEq,		/* comparison is only for equality */
     int nocase,			/* comparison is not case sensitive */
-    size_t reqlength)		/* requested length */
+    size_t reqlength)		/* requested length in characters;
+						 * TCL_INDEX_NONE to compare whole strings */
 {
-    char *s1, *s2;
+    const char *s1, *s2;
     int empty, match;
     size_t length, s1len = 0, s2len = 0;
     memCmpFn_t memCmpFn;
@@ -3496,10 +3498,10 @@ TclStringCmp(
 	} else if (TclHasInternalRep(value1Ptr, &tclStringType)
 		&& TclHasInternalRep(value2Ptr, &tclStringType)) {
 	    /*
-	     * Do a unicode-specific comparison if both of the args are of
-	     * String type. If the char length == byte length, we can do a
-	     * memcmp. In benchmark testing this proved the most efficient
-	     * check between the unicode and string comparison operations.
+	     * Do a Unicode-specific comparison if both of the args are of String
+	     * type. If the char length == byte length, we can do a memcmp. In
+	     * benchmark testing this proved the most efficient check between the
+	     * Unicode and string comparison operations.
 	     */
 
 	    if (nocase) {
@@ -3513,6 +3515,9 @@ TclStringCmp(
 			&& (value1Ptr->bytes != NULL)
 			&& (s2len == value2Ptr->length)
 			&& (value2Ptr->bytes != NULL)) {
+			/* each byte represents one character so s1l3n, s2l3n, and
+			 * reqlength are in both bytes and characters
+			 */
 		    s1 = value1Ptr->bytes;
 		    s2 = value2Ptr->bytes;
 		    memCmpFn = memcmp;
@@ -3529,6 +3534,9 @@ TclStringCmp(
 			memCmpFn = memcmp;
 			s1len *= sizeof(Tcl_UniChar);
 			s2len *= sizeof(Tcl_UniChar);
+			if (reqlength != TCL_INDEX_NONE) {
+			    reqlength *= sizeof(Tcl_UniChar);
+			}
 		    } else {
 			memCmpFn = (memCmpFn_t) TclUniCharNcmp;
 		    }
@@ -3570,7 +3578,7 @@ TclStringCmp(
 		s1 = Tcl_GetStringFromObj(value1Ptr, &s1len);
 		s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
 	    }
-	    if (!nocase && checkEq) {
+	    if (!nocase && checkEq && reqlength == TCL_INDEX_NONE) {
 		/*
 		 * When we have equal-length we can check only for
 		 * (in)equality. We can use memcmp in all (n)eq cases because
@@ -3598,11 +3606,15 @@ TclStringCmp(
 	    }
 	}
 
+	/* At this point s1len, s2len, and reqlength should by now have been
+	 * adjusted so that they are all in the units expected by the selected
+	 * comparison function.
+	 */
 	length = (s1len < s2len) ? s1len : s2len;
 	if (reqlength == TCL_INDEX_NONE) {
 	    /*
-	     * The requested length is negative, so we ignore it by setting it
-	     * to length + 1 so we correct the match var.
+	     * The requested length is negative, so ignore it by setting it
+	     * to length + 1 to correct the match var.
 	     */
 
 	    reqlength = length + 1;
@@ -3610,7 +3622,7 @@ TclStringCmp(
 	    length = reqlength;
 	}
 
-	if (checkEq && (s1len != s2len)) {
+	if (checkEq && reqlength == TCL_INDEX_NONE && (s1len != s2len)) {
 	    match = 1;		/* This will be reversed below. */
 	} else {
 	    /*

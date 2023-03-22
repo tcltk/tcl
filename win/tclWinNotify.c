@@ -76,7 +76,7 @@ static LRESULT CALLBACK		NotifierProc(HWND hwnd, UINT message,
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpInitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -148,7 +148,7 @@ TclpInitNotifier(void)
 
 void
 TclpFinalizeNotifier(
-    ClientData clientData)	/* Pointer to notifier data. */
+    void *clientData)	/* Pointer to notifier data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
@@ -218,7 +218,7 @@ TclpFinalizeNotifier(
 
 void
 TclpAlertNotifier(
-    ClientData clientData)	/* Pointer to thread data. */
+    void *clientData)	/* Pointer to thread data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
@@ -287,7 +287,7 @@ TclpSetTimer(
 	 * Windows seems to get confused by zero length timers.
 	 */
 
-	timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+	timeout = (UINT)timePtr->sec * 1000 + (unsigned long)timePtr->usec / 1000;
 	if (timeout == 0) {
 	    timeout = 1;
 	}
@@ -437,7 +437,7 @@ NotifierProc(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpNotifierData(void)
 {
     return NULL;
@@ -490,7 +490,7 @@ TclpWaitForEvent(
 	    TclScaleTime(&myTime);
 	}
 
-	timeout = myTime.sec * 1000 + myTime.usec / 1000;
+	timeout = (DWORD)myTime.sec * 1000 + (unsigned long)myTime.usec / 1000;
     } else {
 	timeout = INFINITE;
     }
@@ -610,7 +610,7 @@ Tcl_Sleep(
      */
 
     TclScaleTime(&vdelay);
-    sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
+    sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
 
     for (;;) {
 	SleepEx(sleepTime, TRUE);
@@ -625,7 +625,7 @@ Tcl_Sleep(
 	vdelay.usec = desired.usec - now.usec;
 
 	TclScaleTime(&vdelay);
-	sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
+	sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
     }
 }
 
