@@ -85,8 +85,8 @@ The encodings
 and
 .QW iso8859-1
 are guaranteed to be present in the list.
-.TP
 .VS "TCL8.7 TIP656"
+.TP
 \fBencoding profiles\fR
 Returns a list of the names of encoding profiles. See \fBPROFILES\fR below.
 .VE "TCL8.7 TIP656"
