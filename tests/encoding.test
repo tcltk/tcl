@@ -569,6 +569,12 @@ test encoding-16.22 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
 test encoding-16.23 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
     encoding convertfrom -strict utf-16le \x00\xDC
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x00'}
+test encoding-16.24 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32 "\xFF\xFF\xFF\xFF"
+} -result \uFFFD
+test encoding-16.25 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32 "\x01\x00\x00\x01"
+} -result \uFFFD
 
 test encoding-17.1 {UtfToUtf16Proc} -body {
     encoding convertto utf-16 "\U460DC"

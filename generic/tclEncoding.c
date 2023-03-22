@@ -2606,19 +2606,17 @@ Utf32ToUtfProc(
 
 	if ((unsigned)ch > 0x10FFFF) {
 	    ch = 0xFFFD;
-	    if (STOPONERROR) {
+	    if ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
 	} else if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
 		&& ((ch  & ~0x7FF) == 0xD800)) {
-	    if (STOPONERROR) {
-		result = TCL_CONVERT_SYNTAX;
+	    result = TCL_CONVERT_SYNTAX;
 #if TCL_UTF_MAX < 4
-		ch = 0;
+	    ch = 0;
 #endif
-		break;
-	    }
+	    break;
 	}
 
 	/*
@@ -2850,7 +2848,7 @@ Utf16ToUtfProc(
 	if (((prev  & ~0x3FF) == 0xD800) && ((ch  & ~0x3FF) != 0xDC00)) {
 	    if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
 		result = TCL_CONVERT_UNKNOWN;
-		src -= 2; /* Go back to before the high surrogate */
+		src -= 2; /* Go back to beginning of high surrogate */
 		dst--; /* Also undo writing a single byte too much */
 		numChars--;
 		break;
