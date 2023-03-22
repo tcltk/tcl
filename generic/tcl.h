@@ -1962,20 +1962,10 @@ typedef struct Tcl_EncodingType {
 /* Internal use bits, do not define bits in this space. See above comment */
 #define TCL_ENCODING_INTERNAL_USE_MASK  0xFF00
 /* Reserve top byte for profile values (disjoint, not a mask) */
+#define TCL_ENCODING_PROFILE_STRICT   TCL_ENCODING_STOPONERROR
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
-#if TCL_MAJOR_VERSION > 8
-#   define TCL_ENCODING_PROFILE_STRICT   0x00000000
-#else
-#   define TCL_ENCODING_PROFILE_STRICT   0x03000000
-#endif
 #define TCL_ENCODING_PROFILE_REPLACE  0x02000000
-#define TCL_ENCODING_PROFILE_MASK     0xFF000000
-#define TCL_ENCODING_PROFILE_GET(flags_)  ((flags_) & TCL_ENCODING_PROFILE_MASK)
-#define TCL_ENCODING_PROFILE_SET(flags_, profile_) \
-    do {                                           \
-	(flags_) &= ~TCL_ENCODING_PROFILE_MASK;    \
-	(flags_) |= profile_;                      \
-    } while (0)
+#define TCL_ENCODING_PROFILE_DEFAULT  0
 
 /*
  * The following definitions are the error codes returned by the conversion
