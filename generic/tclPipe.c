@@ -335,7 +335,7 @@ TclCleanupChildren(
 
 	    Tcl_Seek(errorChan, 0, SEEK_SET);
 	    TclNewObj(objPtr);
-	    count = Tcl_ReadChars(errorChan, objPtr, -1, 0);
+	    count = Tcl_ReadChars(errorChan, objPtr, TCL_INDEX_NONE, 0);
 	    if (count == -1) {
 		result = TCL_ERROR;
 		Tcl_DecrRefCount(objPtr);
@@ -361,7 +361,7 @@ TclCleanupChildren(
 
     if ((abnormalExit != 0) && (anyErrorInfo == 0) && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"child process exited abnormally", -1));
+		"child process exited abnormally", TCL_INDEX_NONE));
     }
     return result;
 }
@@ -512,7 +512,7 @@ TclCreatePipeline(
 	    if (*p == '\0') {
 		if ((i == (lastBar + 1)) || (i == (argc - 1))) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "illegal use of | or |& in command", -1));
+			    "illegal use of | or |& in command", TCL_INDEX_NONE));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 			    "PIPESYNTAX", NULL);
 		    goto error;
@@ -700,7 +700,7 @@ TclCreatePipeline(
 	 */
 
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"illegal use of | or |& in command", -1));
+		"illegal use of | or |& in command", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "PIPESYNTAX",
 		NULL);
 	goto error;
@@ -1054,7 +1054,7 @@ Tcl_OpenCommandChannel(
 	if ((flags & TCL_STDOUT) && (outPipe == NULL)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "can't read output from command:"
-		    " standard output was redirected", -1));
+		    " standard output was redirected", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 		    "BADREDIRECT", NULL);
 	    goto error;
@@ -1062,7 +1062,7 @@ Tcl_OpenCommandChannel(
 	if ((flags & TCL_STDIN) && (inPipe == NULL)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "can't write input to command:"
-		    " standard input was redirected", -1));
+		    " standard input was redirected", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 		    "BADREDIRECT", NULL);
 	    goto error;
@@ -1074,7 +1074,7 @@ Tcl_OpenCommandChannel(
 
     if (channel == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"pipe for command could not be created", -1));
+		"pipe for command could not be created", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "NOPIPE", NULL);
 	goto error;
     }

@@ -281,7 +281,7 @@ HandleBgErrors(
 		Tcl_DecrRefCount(keyPtr);
 
 		Tcl_WriteChars(errChannel,
-			"error in background error handler:\n", -1);
+			"error in background error handler:\n", TCL_INDEX_NONE);
 		if (valuePtr) {
 		    Tcl_WriteObj(errChannel, valuePtr);
 		} else {
@@ -343,7 +343,7 @@ TclDefaultBgErrorHandlerObjCmd(
     Tcl_DecrRefCount(keyPtr);
     if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"missing return option \"-level\"", -1));
+		"missing return option \"-level\"", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 	return TCL_ERROR;
     }
@@ -356,7 +356,7 @@ TclDefaultBgErrorHandlerObjCmd(
     Tcl_DecrRefCount(keyPtr);
     if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"missing return option \"-code\"", -1));
+		"missing return option \"-code\"", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 	return TCL_ERROR;
     }
@@ -474,17 +474,17 @@ TclDefaultBgErrorHandlerObjCmd(
 		    Tcl_RestoreInterpState(interp, saved);
 		    Tcl_WriteObj(errChannel, Tcl_GetVar2Ex(interp,
 			    "errorInfo", NULL, TCL_GLOBAL_ONLY));
-		    Tcl_WriteChars(errChannel, "\n", -1);
+		    Tcl_WriteChars(errChannel, "\n", TCL_INDEX_NONE);
 		} else {
 		    Tcl_DiscardInterpState(saved);
 		    Tcl_WriteChars(errChannel,
-			    "bgerror failed to handle background error.\n",-1);
-		    Tcl_WriteChars(errChannel, "    Original error: ", -1);
+			    "bgerror failed to handle background error.\n", TCL_INDEX_NONE);
+		    Tcl_WriteChars(errChannel, "    Original error: ", TCL_INDEX_NONE);
 		    Tcl_WriteObj(errChannel, tempObjv[1]);
-		    Tcl_WriteChars(errChannel, "\n", -1);
-		    Tcl_WriteChars(errChannel, "    Error in bgerror: ", -1);
+		    Tcl_WriteChars(errChannel, "\n", TCL_INDEX_NONE);
+		    Tcl_WriteChars(errChannel, "    Error in bgerror: ", TCL_INDEX_NONE);
 		    Tcl_WriteObj(errChannel, resultPtr);
-		    Tcl_WriteChars(errChannel, "\n", -1);
+		    Tcl_WriteChars(errChannel, "\n", TCL_INDEX_NONE);
 		}
 		Tcl_DecrRefCount(resultPtr);
 		Tcl_Flush(errChannel);
@@ -1572,7 +1572,7 @@ Tcl_VwaitObjCmd(
 	    if (timeout < 0) {
 		Tcl_ResetResult(interp);
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"timeout must be positive", -1));
+			"timeout must be positive", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "EVENT", "NEGTIME", NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -1652,7 +1652,7 @@ Tcl_VwaitObjCmd(
     if ((mask & (TCL_FILE_EVENTS | TCL_IDLE_EVENTS |
 		 TCL_TIMER_EVENTS | TCL_WINDOW_EVENTS)) == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"can't wait: would block forever", -1));
+		"can't wait: would block forever", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", NULL);
 	result = TCL_ERROR;
 	goto done;
@@ -1660,7 +1660,7 @@ Tcl_VwaitObjCmd(
 
     if ((timeout > 0) && ((mask & TCL_TIMER_EVENTS) == 0)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"timer events disabled with timeout specified", -1));
+		"timer events disabled with timeout specified", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_TIME", NULL);
 	result = TCL_ERROR;
 	goto done;
@@ -1688,7 +1688,7 @@ Tcl_VwaitObjCmd(
 	for (i = 0; i < numItems; i++) {
 	    if (vwaitItems[i].mask) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"file events disabled with channel(s) specified", -1));
+			"file events disabled with channel(s) specified", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_FILE_EVENT", NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -1727,7 +1727,7 @@ Tcl_VwaitObjCmd(
 	}
 	if (Tcl_LimitExceeded(interp)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "EVENT", "LIMIT", NULL);
 	    break;
 	}
@@ -1975,7 +1975,7 @@ Tcl_UpdateObjCmd(
 	}
 	if (Tcl_LimitExceeded(interp)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", TCL_INDEX_NONE));
 	    return TCL_ERROR;
 	}
     }
