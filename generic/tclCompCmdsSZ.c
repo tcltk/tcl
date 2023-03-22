@@ -2604,9 +2604,9 @@ PrintJumptableInfo(
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	if (i++) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    Tcl_AppendToObj(appendObj, ", ", TCL_INDEX_NONE);
 	    if (i%4==0) {
-		Tcl_AppendToObj(appendObj, "\n\t\t", -1);
+		Tcl_AppendToObj(appendObj, "\n\t\t", TCL_INDEX_NONE);
 	    }
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %" TCL_Z_MODIFIER "u",
@@ -2633,10 +2633,10 @@ DisassembleJumptableInfo(
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
 	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
-	Tcl_DictObjPut(NULL, mapping, Tcl_NewStringObj(keyPtr, -1),
+	Tcl_DictObjPut(NULL, mapping, Tcl_NewStringObj(keyPtr, TCL_INDEX_NONE),
 		Tcl_NewWideIntObj(offset));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("mapping", -1), mapping);
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("mapping", TCL_INDEX_NONE), mapping);
 }
 
 /*
@@ -4081,7 +4081,7 @@ CompileAssociativeBinaryOpCmd(
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
     if (parsePtr->numWords <= 2) {
-	PushLiteral(envPtr, identity, -1);
+	PushLiteral(envPtr, identity, TCL_INDEX_NONE);
 	words++;
     }
     if (words > 3) {
