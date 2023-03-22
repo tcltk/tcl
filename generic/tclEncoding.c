@@ -2643,7 +2643,7 @@ UtfToUtfProc(
 		*dst++ = (char) ((ch | 0x80) & 0xBF);
 		continue;
 #if TCL_UTF_MAX < 4
-	    } else if ((ch | 0x7FF) == 0xDFFF) {
+	    } else if (SURROGATE(ch)) {
 		/*
 		 * A surrogate character is detected, handle especially.
 		 */
@@ -2793,7 +2793,7 @@ Utf32ToUtfProc(
 	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
 #if TCL_UTF_MAX < 4
-	if (((prev  & ~0x3FF) == 0xD800) && ((ch  & ~0x3FF) != 0xDC00)) {
+	if (HIGH_SURROGATE(prev) && !LOW_SURROGATE(ch)) {
 	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
 	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
@@ -2833,7 +2833,7 @@ Utf32ToUtfProc(
      * fragment AND profile is not "strict", stick FFFD in its place.
      */
 #if TCL_UTF_MAX < 4
-    if ((ch  & ~0x3FF) == 0xD800) {
+    if (HIGH_SURROGATE(ch)) {
 	/* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	dst += Tcl_UniCharToUtf(-1, dst);
     }
@@ -3050,7 +3050,7 @@ Utf16ToUtfProc(
 	} else {
 	    ch = (src[0] & 0xFF) << 8 | (src[1] & 0xFF);
 	}
-	if (((prev  & ~0x3FF) == 0xD800) && ((ch  & ~0x3FF) != 0xDC00)) {
+	if (HIGH_SURROGATE(prev) && !LOW_SURROGATE(ch)) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 		src -= 2; /* Go back to beginning of high surrogate */
@@ -3083,9 +3083,9 @@ Utf16ToUtfProc(
 
 	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (ch & 0xFF);
-	} else if (((prev  & ~0x3FF) == 0xD800) || ((ch  & ~0x3FF) == 0xD800)) {
+	} else if (HIGH_SURROGATE(prev) || HIGH_SURROGATE(ch)) {
 	    dst += Tcl_UniCharToUtf(ch | TCL_COMBINE, dst);
-	} else if (((ch  & ~0x3FF) == 0xDC00) && !PROFILE_TCL8(flags)) {
+	} else if (LOW_SURROGATE(ch) && !PROFILE_TCL8(flags)) {
 	    /* Lo surrogate not preceded by Hi surrogate and not tcl8 profile */
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
@@ -3099,7 +3099,7 @@ Utf16ToUtfProc(
 	}
     }
 
-    if ((ch  & ~0x3FF) == 0xD800) {
+    if (HIGH_SURROGATE(ch)) {
 	if (PROFILE_STRICT(flags)) {
 	    result = TCL_CONVERT_SYNTAX;
 	    src -= 2;
@@ -3341,7 +3341,7 @@ UtfToUcs2Proc(
 	    ch = UNICODE_REPLACE_CHAR;
 	}
 #endif
-	if (PROFILE_STRICT(flags) && ((ch & ~0x7FF) == 0xD800)) {
+	if (PROFILE_STRICT(flags) && SURROGATE(ch)) {
 	    result = TCL_CONVERT_SYNTAX;
 	    break;
 	}
