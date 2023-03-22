@@ -5755,7 +5755,7 @@ test io-39.16a {Tcl_SetChannelOption: -encoding (invalid shortening to "-e"), er
     fconfigure $f -e foobar
 } -cleanup {
     close $f
-} -returnCodes 1 -result {bad option "-e": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}
+} -returnCodes 1 -match glob -result {bad option "-e": should be one of *}
 test io-39.17 {Tcl_SetChannelOption: -encoding, clearing CHANNEL_NEED_MORE_DATA} {stdio fileevent} {
     set f [open "|[list [interpreter] $path(cat)]" r+]
     fconfigure $f -encoding binary
