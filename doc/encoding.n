@@ -120,7 +120,7 @@ Continue further processing of the source data using a fallback strategy such
 as replacing or discarding the offending bytes in a profile-defined manner.
 .VE "TCL8.7 TIP656"
 .PP
-The following profiles are currently implemented with \fBtcl8\fR being
+The following profiles are currently implemented with \fBstrict\fR being
 the default if the \fB-profile\fR is not specified.
 .VS "TCL8.7 TIP656"
 .TP
@@ -146,7 +146,7 @@ the question mark \fB?\fR.
 \fBstrict\fR
 .
 The \fBstrict\fR profile always stops processing when an conversion error is
-encountered. The error is signalled via an exception or the \fB-failindex\fR
+encountered. The error is signaled via an exception or the \fB-failindex\fR
 option mechanism. The \fBstrict\fR profile implements a Unicode standard
 conformant behavior.
 .TP
@@ -206,7 +206,7 @@ unexpected byte sequence starting at index 1: '\ex80'
 Example 3: Get partial data and the error location:
 .PP
 .CS
-% codepoints [encoding convertfrom -profile strict -failindex idx ascii AB\ex80]
+% codepoints [encoding convertfrom -failindex idx ascii AB\ex80]
 U+000041 U+000042
 % set idx
 2
@@ -219,7 +219,7 @@ Example 4: Encode a character that is not representable in ISO8859-1:
 A?
 % encoding convertto -profile strict iso8859-1 A\eu0141
 unexpected character at index 1: 'U+000141'
-% encoding convertto -profile strict -failindex idx iso8859-1 A\eu0141
+% encoding convertto -failindex idx iso8859-1 A\eu0141
 A
 % set idx
 1
