@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 
 /*
  * A pointer to a string that holds an initialization script that if non-NULL
@@ -622,8 +623,8 @@ NRInterpCmd(
 	"children",	"create",	"debug",	"delete",
 	"eval",		"exists",	"expose",	"hide",
 	"hidden",	"issafe",	"invokehidden",
-	"limit",	"marktrusted",	"recursionlimit",
-	"share",
+	"limit",	"marktrusted",	"profile",
+	"recursionlimit", "share",
 #ifndef TCL_NO_DEPRECATED
 	"slaves",
 #endif
@@ -634,16 +635,16 @@ NRInterpCmd(
 	"children",	"create",	"debug",	"delete",
 	"eval",		"exists",	"expose",
 	"hide",		"hidden",	"issafe",
-	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
-	"share",	"target",	"transfer",
+	"invokehidden",	"limit",	"marktrusted",	"profile",
+	"recursionlimit", "share",	"target",	"transfer",
 	NULL
     };
     enum interpOptionEnum {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CANCEL,
 	OPT_CHILDREN,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
-	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,
-	OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT, OPT_SHARE,
+	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID, OPT_LIMIT,
+	OPT_MARKTRUSTED, OPT_PROFILE, OPT_RECLIMIT, OPT_SHARE,
 #ifndef TCL_NO_DEPRECATED
 	OPT_SLAVES,
 #endif
@@ -1033,6 +1034,21 @@ NRInterpCmd(
 	    return TCL_ERROR;
 	}
 	return ChildRecursionLimit(interp, childInterp, objc - 3, objv + 3);
+    case OPT_PROFILE:
+    if (objc != 2 && objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "?profile?");
+	    return TCL_ERROR;
+	}
+	Interp *iPtr = (Interp *)interp;
+	if (objc == 3) {
+	    int newProfile;
+	    if (TclEncodingProfileNameToId(interp, Tcl_GetString(objv[2]), &newProfile) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    CHANNEL_PROFILE_SET(iPtr->flags, newProfile);
+	}
+	Tcl_AppendResult(interp, TclEncodingProfileIdToName(NULL, iPtr->flags), NULL);
+	return TCL_OK;
 #ifndef TCL_NO_DEPRECATED
     case OPT_SLAVES:
 #endif

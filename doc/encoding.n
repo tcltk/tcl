@@ -121,7 +121,8 @@ as replacing or discarding the offending bytes in a profile-defined manner.
 .VE "TCL8.7 TIP656"
 .PP
 The following profiles are currently implemented with \fBstrict\fR being
-the default if the \fB-profile\fR is not specified.
+the default if the \fB-profile\fR is not specified and environment
+variable \fBTCL_PROFILE_DEFAULT\fR is not set to either "tcl8" or "replace".
 .VS "TCL8.7 TIP656"
 .TP
 \fBtcl8\fR
