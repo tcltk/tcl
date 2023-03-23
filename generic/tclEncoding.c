@@ -3455,7 +3455,8 @@ TableToUtfProc(
 		} else if (PROFILE_REPLACE(flags)) {
 		    ch = UNICODE_REPLACE_CHAR;
 		} else {
-		    numChars++; /* Silently consume */
+		    src--; /* See bug [bdcb5126c0] */
+		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
 	    } else {
