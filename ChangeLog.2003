@@ -2331,7 +2331,7 @@
 	argument, the Tcl_Interp struct loses its termOffset field and the
 	TCL_BRACKET_TERM flag in the evalFlags field, all of which were only
 	used (indirectly) by Tcl_SubstObj(). Tests subst-8.7,8.8,11.4,11.5
-	modified to accomodate the only behavior change: reporting of parse
+	modified to accommodate the only behavior change: reporting of parse
 	errors now takes precedence over [return] and [continue] exceptions.
 	All other behavior should remain compatible. [RFE 536831,684982] [Bug
 	685106]
@@ -2571,7 +2571,7 @@
 2003-02-25  Don Porter	<dgp@users.sourceforge.net>
 
 	* doc/pkgMkIndex.n:	Modified [pkg_mkIndex] to use -nocase matching
-	* library/package.tcl:	of -load patterns, to better accomodate common
+	* library/package.tcl:	of -load patterns, to better accommodate common
 	user errors due to confusion between [package names] names and [info
 	loaded] names.
 

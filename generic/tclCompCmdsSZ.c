@@ -4087,7 +4087,7 @@ CompileAssociativeBinaryOpCmd(
     if (words > 3) {
 	/*
 	 * Reverse order of arguments to get precise agreement with [expr] in
-	 * calcuations, including roundoff errors.
+	 * calculations, including roundoff errors.
 	 */
 
 	OP4(	REVERSE, words-1);
@@ -4538,7 +4538,7 @@ TclCompileMinusOpCmd(
 
     /*
      * Reverse order of arguments to get precise agreement with [expr] in
-     * calcuations, including roundoff errors.
+     * calculations, including roundoff errors.
      */
 
     TclEmitInstInt4(INST_REVERSE, words-1, envPtr);
@@ -4582,7 +4582,7 @@ TclCompileDivOpCmd(
 
     /*
      * Reverse order of arguments to get precise agreement with [expr] in
-     * calcuations, including roundoff errors.
+     * calculations, including roundoff errors.
      */
 
     TclEmitInstInt4(INST_REVERSE, words-1, envPtr);
