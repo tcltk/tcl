@@ -4912,13 +4912,13 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
     } while (0)
 
 #define TclNewIndexObj(objPtr, w) \
-    do {
-	Tcl_WideUInt _uw = (Tcl_WideUInt)w;
-	if (_uw >= TCL_INDEX_NONE) {
-	    TclNewIntObj(objPtr, -1);
-	} else {
-	    TclNewUIntObj(objPtr, _uw);
-	}
+    do { \
+	Tcl_WideUInt _uw = (Tcl_WideUInt)(w); \
+	if (_uw >= TCL_INDEX_NONE) { \
+	    TclNewIntObj(objPtr, -1); \
+	} else { \
+	    TclNewUIntObj(objPtr, _uw); \
+	} \
 	} while (0)
 
 #define TclNewDoubleObj(objPtr, d) \
