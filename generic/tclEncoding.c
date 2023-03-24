@@ -200,16 +200,16 @@ static struct TclEncodingProfiles {
     {"tcl8", TCL_ENCODING_PROFILE_TCL8},
 };
 #define PROFILE_TCL8(flags_)                                           \
-    ((TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_TCL8)   \
-     || (TCL_ENCODING_PROFILE_GET(flags_) == 0                         \
+    ((CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_TCL8)   \
+     || (CHANNEL_PROFILE_GET(flags_) == 0                         \
 	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_TCL8))
 #define PROFILE_STRICT(flags_)                                         \
-    ((TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
-     || (TCL_ENCODING_PROFILE_GET(flags_) == 0                         \
+    ((CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
+     || (CHANNEL_PROFILE_GET(flags_) == 0                         \
 	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_STRICT))
 #define PROFILE_REPLACE(flags_)                                         \
-    ((TCL_ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE) \
-     || (TCL_ENCODING_PROFILE_GET(flags_) == 0                          \
+    ((CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE) \
+     || (CHANNEL_PROFILE_GET(flags_) == 0                          \
 	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_REPLACE))
 
 #define UNICODE_REPLACE_CHAR ((Tcl_UniChar)0xFFFD)
@@ -2532,7 +2532,7 @@ UtfToUtfProc(
     flags |= PTR2INT(clientData);
     dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
 
-    profile = TCL_ENCODING_PROFILE_GET(flags);
+    profile = CHANNEL_PROFILE_GET(flags);
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
@@ -2655,8 +2655,7 @@ UtfToUtfProc(
 		if (PROFILE_REPLACE(profile)) {
 		    /* TODO - is this right for cesu8 or should we fall through below? */
 		    ch = UNICODE_REPLACE_CHAR;
-		}
-		else {
+		} else {
 		    int low = ch;
 		    len = (src <= srcEnd - 3) ? TclUtfToUCS4(src, &low) : 0;
 
@@ -3108,8 +3107,7 @@ Utf16ToUtfProc(
 	} else if (PROFILE_REPLACE(flags)) {
 	    dst--;
 	    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-	}
-	else {
+	} else {
 	    /* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
 	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
@@ -4585,9 +4583,9 @@ TclEncodingProfileIdToName(
 int TclEncodingSetProfileFlags(int flags)
 {
     if (flags & TCL_ENCODING_STOPONERROR) {
-	TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
+	CHANNEL_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
     } else {
-	int profile = TCL_ENCODING_PROFILE_GET(flags);
+	int profile = CHANNEL_PROFILE_GET(flags);
 	switch (profile) {
 	case TCL_ENCODING_PROFILE_TCL8:
 	case TCL_ENCODING_PROFILE_STRICT:
@@ -4595,7 +4593,7 @@ int TclEncodingSetProfileFlags(int flags)
 	    break;
 	case 0: /* Unspecified by caller */
 	default:
-	    TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_DEFAULT);
+	    CHANNEL_PROFILE_SET(flags, TCL_ENCODING_PROFILE_DEFAULT);
 	    break;
 	}
     }

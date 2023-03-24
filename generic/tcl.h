@@ -1967,13 +1967,6 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
 #define TCL_ENCODING_PROFILE_STRICT   0x02000000
 #define TCL_ENCODING_PROFILE_REPLACE  0x03000000
-#define TCL_ENCODING_PROFILE_MASK     0xFF000000
-#define TCL_ENCODING_PROFILE_GET(flags_)  ((flags_) & TCL_ENCODING_PROFILE_MASK)
-#define TCL_ENCODING_PROFILE_SET(flags_, profile_) \
-    do {                                           \
-	(flags_) &= ~TCL_ENCODING_PROFILE_MASK;    \
-	(flags_) |= profile_;                      \
-    } while (0)
 /* Still being argued - For Tcl9, is the default strict? TODO */
 #if TCL_MAJOR_VERSION < 9
 #define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8

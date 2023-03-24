@@ -2960,13 +2960,11 @@ TclStringRepeat(
 	/* Result will be pure byte array. Pre-size it */
 	(void)Tcl_GetByteArrayFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_SMAX;
-    }
-    else if (unichar) {
+    } else if (unichar) {
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
 	(void)Tcl_GetUnicodeFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_SMAX/sizeof(Tcl_UniChar);
-    }
-    else {
+    } else {
 	/* Result will be concat of string reps. Pre-size it. */
 	(void)Tcl_GetStringFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_SMAX;
