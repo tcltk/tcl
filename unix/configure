@@ -15109,7 +15109,7 @@ fi
 
 
 #--------------------------------------------------------------------
-#	On some systems strstr is broken: it returns a pointer even even if
+#	On some systems strstr is broken: it returns a pointer even if
 #	the original string is empty.
 #--------------------------------------------------------------------
 

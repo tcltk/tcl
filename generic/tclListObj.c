@@ -93,7 +93,7 @@ NewListInternalRep(
     List *listRepPtr;
 
     if (objc <= 0) {
-	Tcl_Panic("NewListInternalRep: expects postive element count");
+	Tcl_Panic("NewListInternalRep: expects positive element count");
     }
 
     /*

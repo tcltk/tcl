@@ -1859,7 +1859,7 @@ TclCompileObj(
  *	of course).
  *
  * Side effects:
- *	valuePtr gets the new incrmented value.
+ *	valuePtr gets the new incremented value.
  *
  *----------------------------------------------------------------------
  */
@@ -2800,7 +2800,7 @@ TEBCresume(
 	/*
 	 * If the first object is shared, we need a new obj for the result;
 	 * otherwise, we can reuse the first object. In any case, make sure it
-	 * has enough room to accomodate all the concatenated bytes. Note that
+	 * has enough room to accommodate all the concatenated bytes. Note that
 	 * if it is unshared its bytes are copied by ckrealloc, so that we set
 	 * the loop parameters to avoid copying them again: p points to the
 	 * end of the already copied bytes, currPtr to the second object.

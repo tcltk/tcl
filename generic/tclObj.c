@@ -1040,7 +1040,7 @@ TclDbDumpActiveObjects(
  *
  *	Called via the TclNewObj or TclDbNewObj macros when TCL_MEM_DEBUG is
  *	enabled. This function will initialize the members of a Tcl_Obj
- *	struct. Initilization would be done inline via the TclNewObj macro
+ *	struct. Initialization would be done inline via the TclNewObj macro
  *	when compiling without TCL_MEM_DEBUG.
  *
  * Results:
@@ -3204,7 +3204,7 @@ FreeBignum(
  *	None.
  *
  * Side effects:
- *	The destination object receies a copy of the source object
+ *	The destination object receives a copy of the source object
  *
  *----------------------------------------------------------------------
  */
@@ -3285,7 +3285,7 @@ UpdateStringOfBignum(
  *
  * Tcl_NewBignumObj --
  *
- *	Creates an initializes a bignum object.
+ *	Creates and initializes a bignum object.
  *
  * Results:
  *	Returns the newly created object.
@@ -4208,7 +4208,7 @@ Tcl_GetCommandFromObj(
  *	None.
  *
  * Side effects:
- *	The object's old internal rep is freed. It's string rep is not
+ *	The object's old internal rep is freed. Its string rep is not
  *	changed. The refcount in the Command structure is incremented to keep
  *	it from being freed if the command is later deleted until
  *	TclNRExecuteByteCode has a chance to recognize that it was deleted.
@@ -4505,7 +4505,7 @@ Tcl_RepresentationCmd(
     /*
      * This is a workaround to silence reports from `make valgrind`
      * on 64-bit systems.  The problem is that the test suite
-     * includes calling the [represenation] command on values of
+     * includes calling the [representation] command on values of
      * &tclDoubleType.  When these values are created, the "doubleValue"
      * is set, but when the "twoPtrValue" is examined, its "ptr2"
      * field has never been initialized.  Since [representation]
