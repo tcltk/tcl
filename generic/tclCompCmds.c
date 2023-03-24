@@ -3342,7 +3342,7 @@ TclCompileFormatCmd(
  * 	then return -1.
  *
  * Side effects:
- *	May add an entery into the table of compiled locals.
+ *	May add an entry into the table of compiled locals.
  *
  *----------------------------------------------------------------------
  */

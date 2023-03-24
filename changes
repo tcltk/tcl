@@ -2486,7 +2486,7 @@ interpreter. (JL)
 installing and requesting security policies, purely in Tcl code. Overloads
 the package command to also allow an interpreter to "require" a policy. The
 following new library commands are provided:
-	tcl_safeCreateInterp	-- creates a slave an initializes the
+	tcl_safeCreateInterp	-- creates a slave and initializes the
 				   policy mechanism.
 	tcl_safeInitInterp	-- initializes an existing slave with the
 				   policy mechanism.
