@@ -9554,24 +9554,25 @@ InjectHandler(
     Tcl_Obj **objv;
 
     if (!isProbe) {
-        /*
-         * If this is [coroinject], add the extra arguments now.
-         */
+	/*
+	 * If this is [coroinject], add the extra arguments now.
+	 */
 
-        if (nargs == COROUTINE_ARGUMENTS_SINGLE_OPTIONAL) {
-            Tcl_ListObjAppendElement(NULL, listPtr,
-                    Tcl_NewStringObj("yield", TCL_INDEX_NONE));
-        } else if (nargs == COROUTINE_ARGUMENTS_ARBITRARY) {
-            Tcl_ListObjAppendElement(NULL, listPtr,
-                    Tcl_NewStringObj("yieldto", TCL_INDEX_NONE));
-        } else {
-            /*
-             * I don't think this is reachable...
-             */
-
-            Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewWideIntObj((Tcl_WideInt)(nargs + 1U) - 1));
-        }
-        Tcl_ListObjAppendElement(NULL, listPtr, Tcl_GetObjResult(interp));
+	if (nargs == COROUTINE_ARGUMENTS_SINGLE_OPTIONAL) {
+	    Tcl_ListObjAppendElement(NULL, listPtr,
+		    Tcl_NewStringObj("yield", TCL_INDEX_NONE));
+	} else if (nargs == COROUTINE_ARGUMENTS_ARBITRARY) {
+	    Tcl_ListObjAppendElement(NULL, listPtr,
+		    Tcl_NewStringObj("yieldto", TCL_INDEX_NONE));
+	} else {
+	    /*
+	     * I don't think this is reachable...
+	     */
+	    Tcl_Obj *nargsObj;
+	    TclNewIndexObj(nargsObj, nargs);
+	    Tcl_ListObjAppendElement(NULL, listPtr, nargsObj);
+	}
+	Tcl_ListObjAppendElement(NULL, listPtr, Tcl_GetObjResult(interp));
     }
 
     /*

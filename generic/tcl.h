@@ -1947,7 +1947,7 @@ typedef struct Tcl_EncodingType {
  * TCL_ENCODING_PROFILE_* -	Mutually exclusive encoding profile ids. Note
  *				these are bit masks.
  *
- * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS 
+ * NOTE: THESE BIT DEFINITIONS SHOULD NOT OVERLAP WITH INTERNAL USE BITS
  * DEFINED IN tclEncoding.c (ENCODING_INPUT et al). Be cognizant of this
  * when adding bits.
  */
