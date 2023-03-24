@@ -104,7 +104,7 @@ TclpGetMicroseconds(void)
  * TclpGetClicks --
  *
  *	This procedure returns a value that represents the highest resolution
- *	clock available on the system. There are no garantees on what the
+ *	clock available on the system. There are no guarantees on what the
  *	resolution will be. In Tcl we will call this value a "click". The
  *	start time is also system dependent.
  *
