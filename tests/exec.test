@@ -437,7 +437,7 @@ close $f
 test exec-10.20.1 {errors in exec invocation} -constraints {unix exec notValgrind} -body {
     exec ~non_existent_user/foo/bar
 } -returnCodes error -result {couldn't execute "~non_existent_user/foo/bar": no such file or directory}
-test exec-10.20.1 {errors in exec invocation} -constraints {win exec notValgrind} -body {
+test exec-10.20.2 {errors in exec invocation} -constraints {win exec notValgrind} -body {
     exec ~non_existent_user/foo/bar
 } -returnCodes error -result {couldn't execute "~non_existent_user\foo\bar": no such file or directory}
 test exec-10.21.1 {errors in exec invocation} -constraints {unix exec notValgrind} -body {
