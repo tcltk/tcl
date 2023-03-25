@@ -69,7 +69,7 @@ Tcl_RecordAndEval(
 	 * Call Tcl_RecordAndEvalObj to do the actual work.
 	 */
 
-	cmdPtr = Tcl_NewStringObj(cmd, -1);
+	cmdPtr = Tcl_NewStringObj(cmd, TCL_INDEX_NONE);
 	Tcl_IncrRefCount(cmdPtr);
 	result = Tcl_RecordAndEvalObj(interp, cmdPtr, flags);
 

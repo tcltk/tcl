@@ -26,8 +26,8 @@ network sockets.
 The \fBfcopy\fR
 command transfers data from \fIinchan\fR until end of file
 or \fIsize\fR bytes or characters have been
-transferred; \fIsize\fR is in bytes if the two channels are using the
-same encoding, and is in characters otherwise.
+transferred; \fIsize\fR is in bytes if the input channel is in binary mode,
+and is in characters otherwise.
 If no \fB\-size\fR argument is given,
 then the copy goes until end of file.
 All the data read from \fIinchan\fR is copied to \fIoutchan\fR.

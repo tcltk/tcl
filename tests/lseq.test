@@ -18,6 +18,7 @@ testConstraint arithSeriesDouble 1
 testConstraint arithSeriesShimmer 1
 testConstraint arithSeriesShimmerOk 1
 testConstraint knownBug 0
+testConstraint has64BitLengths [expr {$tcl_platform(pointerSize) == 8}]
 
 ## Arg errors
 test lseq-1.1 {error cases} -body {
@@ -434,7 +435,7 @@ test lseq-4.2 {start expressions} {
 ##	lseq 1 to 10 by -2
 ##	# -> lseq: invalid step = -2 with a = 1 and b = 10
 
-test lseq-4.3 {TIP examples} {
+test lseq-4.3 {TIP examples} -body {
     set examples {# Examples from TIP-629
 	# --- Begin ---
 	lseq 10 .. 1
@@ -479,11 +480,13 @@ test lseq-4.3 {TIP examples} {
 	}
     }
     set res
-} {{10 9 8 7 6 5 4 3 2 1} {1 2 3 4 5 6 7 8 9 10} {} {10 8 6 4 2} {5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0} {5.0 10.0 15.0 20.0 25.0} {} {25.0 20.0 15.0 10.0 5.0} {1 3 5 7 9} {25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0} 5 5 5}
+} -cleanup {
+    unset res
+} -result {{10 9 8 7 6 5 4 3 2 1} {1 2 3 4 5 6 7 8 9 10} {} {10 8 6 4 2} {5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0} {5.0 10.0 15.0 20.0 25.0} {} {25.0 20.0 15.0 10.0 5.0} {1 3 5 7 9} {25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0} 5 5 5}
 
 #
 # Ticket 9933cc4d88697f05976accebd31c1e3ba6efe9c6 - lseq corner case
-test lseq-4.4 {lseq corner case} -body {
+test lseq-4.4 {lseq corner case} -constraints has64BitLengths -body {
     set tcmd {
 	set res {}
 	set s [catch {lindex [lseq 10 100] 0} e]

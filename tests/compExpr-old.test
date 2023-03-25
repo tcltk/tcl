@@ -78,9 +78,6 @@ proc testIEEE {} {
 }
 testConstraint ieeeFloatingPoint [testIEEE]
 
-testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
-testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
-
 # procedures used below
 
 proc put_hello_char {c} {

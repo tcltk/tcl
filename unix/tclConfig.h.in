@@ -489,9 +489,6 @@
 /* Add the _LARGEFILE64_SOURCE flag when building */
 #undef _LARGEFILE64_SOURCE
 
-/* Add the _LARGEFILE_SOURCE64 flag when building */
-#undef _LARGEFILE_SOURCE64
-
 /* # needed in sys/socket.h Should OS/390 do the right thing with sockets? */
 #undef _OE_SOCKETS
 

@@ -731,7 +731,7 @@ SetDictFromAny(
   missingValue:
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"missing value to go with key", -1));
+		"missing value to go with key", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
     }
   errorInFindDictElement:
@@ -2133,7 +2133,7 @@ DictInfoCmd(
     }
 
     statsStr = Tcl_HashStats(&dict->table);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(statsStr, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(statsStr, TCL_INDEX_NONE));
     Tcl_Free(statsStr);
     return TCL_OK;
 }
@@ -2495,7 +2495,7 @@ DictForNRCmd(
     }
     if (varc != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must have exactly two variable names", -1));
+		"must have exactly two variable names", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "for", NULL);
 	return TCL_ERROR;
     }
@@ -2690,7 +2690,7 @@ DictMapNRCmd(
     }
     if (varc != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must have exactly two variable names", -1));
+		"must have exactly two variable names", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "map", NULL);
 	return TCL_ERROR;
     }
@@ -3130,7 +3130,7 @@ DictFilterCmd(
 	}
 	if (varc != 2) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "must have exactly two variable names", -1));
+		    "must have exactly two variable names", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "filter", NULL);
 	    return TCL_ERROR;
 	}

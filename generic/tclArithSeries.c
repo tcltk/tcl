@@ -449,7 +449,7 @@ TclNewArithSeriesObj(
     if (TCL_MAJOR_VERSION < 9 && len > ListSizeT_MAX) {
 	Tcl_SetObjResult(
 	    interp,
-	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
+	    Tcl_NewStringObj("max length of a Tcl list exceeded", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	return TCL_ERROR;
     }
@@ -705,6 +705,95 @@ TclArithSeriesObjRange(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclArithSeriesGetElements --
+ *
+ *	This function returns an (objc,objv) array of the elements in a list
+ *	object.
+ *
+ * Results:
+ *	The return value is normally TCL_OK; in this case *objcPtr is set to
+ *	the count of list elements and *objvPtr is set to a pointer to an
+ *	array of (*objcPtr) pointers to each list element. If listPtr does not
+ *	refer to an Abstract List object and the object can not be converted
+ *	to one, TCL_ERROR is returned and an error message will be left in the
+ *	interpreter's result if interp is not NULL.
+ *
+ *	The objects referenced by the returned array should be treated as
+ *	readonly and their ref counts are _not_ incremented; the caller must
+ *	do that if it holds on to a reference. Furthermore, the pointer and
+ *	length returned by this function may change as soon as any function is
+ *	called on the list object; be careful about retaining the pointer in a
+ *	local data structure.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclArithSeriesGetElements(
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
+    Tcl_Obj *objPtr,		/* ArithSeries object for which an element
+				 * array is to be returned. */
+    Tcl_Size *objcPtr,		/* Where to store the count of objects
+				 * referenced by objv. */
+    Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
+				 * pointers to the list's objects. */
+{
+    if (TclHasInternalRep(objPtr,&arithSeriesType)) {
+	ArithSeries *arithSeriesRepPtr;
+	Tcl_Obj **objv;
+	int i, objc;
+
+        arithSeriesRepPtr = (ArithSeries *)Tcl_ObjGetConcreteRep(objPtr);
+
+	objc = arithSeriesRepPtr->len;
+	if (objc > 0) {
+	    if (arithSeriesRepPtr->elements) {
+		/* If this exists, it has already been populated */
+		objv = arithSeriesRepPtr->elements;
+	    } else {
+		/* Construct the elements array */
+		objv = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj*) * objc);
+		if (objv == NULL) {
+		    if (interp) {
+			Tcl_SetObjResult(
+			    interp,
+			    Tcl_NewStringObj("max length of a Tcl list exceeded", TCL_INDEX_NONE));
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		    }
+		    return TCL_ERROR;
+		}
+		arithSeriesRepPtr->elements = objv;
+		for (i = 0; i < objc; i++) {
+		    int status = TclArithSeriesObjIndex(interp, objPtr, i, &objv[i]);
+		    if (status) {
+			return TCL_ERROR;
+		    }
+		    Tcl_IncrRefCount(objv[i]);
+		}
+	    }
+	} else {
+	    objv = NULL;
+	}
+	*objvPtr = objv;
+	*objcPtr = objc;
+    } else {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_ObjPrintf("value is not an arithseries"));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "UNKNOWN", NULL);
+	}
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
  *  Handle ArithSeries special case - don't shimmer a series into a list
  *  just to reverse it.
  */
@@ -803,90 +892,6 @@ TclArithSeriesObjReverse(
 
     *newObjPtr = resultObj;
 
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclArithSeriesGetElements --
- *
- *	This function returns an (objc,objv) array of the elements in a list
- *	object.
- *
- * Results:
- *	The return value is normally TCL_OK; in this case *objcPtr is set to
- *	the count of list elements and *objvPtr is set to a pointer to an
- *	array of (*objcPtr) pointers to each list element. If listPtr does not
- *	refer to an Abstract List object and the object can not be converted
- *	to one, TCL_ERROR is returned and an error message will be left in the
- *	interpreter's result if interp is not NULL.
- *
- *	The objects referenced by the returned array should be treated as
- *	readonly and their ref counts are _not_ incremented; the caller must
- *	do that if it holds on to a reference. Furthermore, the pointer and
- *	length returned by this function may change as soon as any function is
- *	called on the list object; be careful about retaining the pointer in a
- *	local data structure.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclArithSeriesGetElements(
-    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *arithSeriesObjPtr,		/* ArithSeries object for which an element
-				 * array is to be returned. */
-    Tcl_Size *objcPtr,		/* Where to store the count of objects
-				 * referenced by objv. */
-    Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
-				 * pointers to the list's objects. */
-{
-    ArithSeries *arithSeriesRepPtr =
-	(ArithSeries*)Tcl_ObjGetConcreteRep(arithSeriesObjPtr);
-    Tcl_Obj **objv;
-    int i, objc;
-
-    objc = arithSeriesRepPtr->len;
-
-    if (objvPtr == NULL) {
-	if (objcPtr) {
-	    *objcPtr = objc;
-	    return TCL_OK;
-	}
-	return TCL_ERROR;
-    }
-
-    if (objc && objvPtr && arithSeriesRepPtr->elements) {
-	objv = arithSeriesRepPtr->elements;
-    } else if (objc > 0) {
-	objv = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj*) * objc);
-	if (objv == NULL) {
-	    if (interp) {
-		Tcl_SetObjResult(
-		    interp,
-		    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
-		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	    }
-	    return TCL_ERROR;
-	}
-	for (i = 0; i < objc; i++) {
-	    if (TclArithSeriesObjIndex(interp, arithSeriesObjPtr, i, &objv[i]) == TCL_OK) {
-		Tcl_IncrRefCount(objv[i]);
-	    } else {
-		// TODO: some cleanup needed here
-		return TCL_ERROR;
-	    }
-	}
-    } else {
-	objv = NULL;
-    }
-    arithSeriesRepPtr->elements = objv;
-    *objvPtr = objv;
-    *objcPtr = objc;
     return TCL_OK;
 }
 

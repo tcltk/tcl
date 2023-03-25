@@ -397,9 +397,9 @@ ValidateFormat(
 	    invalidFieldSize:
 		buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 		errorMsg = Tcl_NewStringObj(
-			"field size modifier may not be specified in %", -1);
-		Tcl_AppendToObj(errorMsg, buf, -1);
-		Tcl_AppendToObj(errorMsg, " conversion", -1);
+			"field size modifier may not be specified in %", TCL_INDEX_NONE);
+		Tcl_AppendToObj(errorMsg, buf, TCL_INDEX_NONE);
+		Tcl_AppendToObj(errorMsg, " conversion", TCL_INDEX_NONE);
 		Tcl_SetObjResult(interp, errorMsg);
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", NULL);
 		goto error;
@@ -452,15 +452,15 @@ ValidateFormat(
 	    break;
 	badSet:
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unmatched [ in format string", -1));
+		    "unmatched [ in format string", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", NULL);
 	    goto error;
 	default:
 	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 	    errorMsg = Tcl_NewStringObj(
-		    "bad scan conversion character \"", -1);
-	    Tcl_AppendToObj(errorMsg, buf, -1);
-	    Tcl_AppendToObj(errorMsg, "\"", -1);
+		    "bad scan conversion character \"", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(errorMsg, buf, TCL_INDEX_NONE);
+	    Tcl_AppendToObj(errorMsg, "\"", TCL_INDEX_NONE);
 	    Tcl_SetObjResult(interp, errorMsg);
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", NULL);
 	    goto error;
@@ -531,7 +531,7 @@ ValidateFormat(
   badIndex:
     if (gotXpg) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"\"%n$\" argument index out of range", -1));
+		"\"%n$\" argument index out of range", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", NULL);
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -926,7 +926,7 @@ Tcl_ScanObjCmd(
 		    mp_int big;
 		    if (mp_init_u64(&big, (Tcl_WideUInt)wideValue) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"insufficient memory to create bignum", -1));
+				"insufficient memory to create bignum", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 			return TCL_ERROR;
 		    } else {
@@ -953,7 +953,7 @@ Tcl_ScanObjCmd(
 			}
 			Tcl_DecrRefCount(objPtr);
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"unsigned bignum scans are invalid", -1));
+				"unsigned bignum scans are invalid", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "FORMAT",
 				"BADUNSIGNED",NULL);
 			return TCL_ERROR;
@@ -972,7 +972,7 @@ Tcl_ScanObjCmd(
 		    mp_int big;
 		    if (mp_init_u64(&big, (unsigned long)value) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"insufficient memory to create bignum", -1));
+				"insufficient memory to create bignum", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 			return TCL_ERROR;
 		    } else {
