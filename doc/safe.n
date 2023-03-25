@@ -191,7 +191,7 @@ the file was not found:
 NOTICE for child interp10 : Created
 NOTICE for child interp10 : Setting accessPath=(/foo/bar) staticsok=1 nestedok=0 deletehook=()
 NOTICE for child interp10 : auto_path in interp10 has been set to {$p(:0:)}
-ERROR for child interp10 : /foo/bar/init.tcl: no such file or directory
+ERROR for child interp10 : /foo/bar/init.tcl: No such file or directory
 .CE
 .RE
 .SS OPTIONS

@@ -45,7 +45,7 @@ foreach i [interp children] {
 if {[string match *zipfs:/* [info library]]} {
     # pkgIndex.tcl is in [info library]
     # file to be sourced is in [info library]/opt*
-    set pkgOptErrMsg {permission denied}
+    set pkgOptErrMsg {Permission denied}
 } else {
     # pkgIndex.tcl and file to be sourced are
     # both in [info library]/opt*

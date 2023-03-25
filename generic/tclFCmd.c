@@ -1225,8 +1225,8 @@ TclFileLinkCmd(
 
 	    if (errno == EEXIST) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"could not create new link \"%s\": that path already"
-			" exists", TclGetString(objv[index])));
+			"could not create new link \"%s\": File exists",
+			TclGetString(objv[index])));
 		Tcl_PosixError(interp);
 	    } else if (errno == ENOENT) {
 		/*
@@ -1245,7 +1245,7 @@ TclFileLinkCmd(
 		Tcl_DecrRefCount(dirPtr);
 		if (access != 0) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "could not create new link \"%s\": no such file"
+			    "could not create new link \"%s\": No such file"
 			    " or directory", TclGetString(objv[index])));
 		    Tcl_PosixError(interp);
 		} else {

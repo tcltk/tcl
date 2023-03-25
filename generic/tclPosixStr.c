@@ -496,447 +496,451 @@ const char *
 Tcl_ErrnoMsg(
      int err)			/* Error number (such as in errno variable). */
 {
+#ifndef _WIN32
+    return strerror(err);
+#else
     switch (err) {
 #if defined(E2BIG) && (!defined(EOVERFLOW) || (E2BIG != EOVERFLOW))
-    case E2BIG: return "argument list too long";
+    case E2BIG: return "Argument list too long";
 #endif
 #ifdef EACCES
-    case EACCES: return "permission denied";
+    case EACCES: return "Permission denied";
 #endif
 #ifdef EADDRINUSE
-    case EADDRINUSE: return "address already in use";
+    case EADDRINUSE: return "Address in use";
 #endif
 #ifdef EADDRNOTAVAIL
-    case EADDRNOTAVAIL: return "cannot assign requested address";
+    case EADDRNOTAVAIL: return "Address not available";
 #endif
 #ifdef EADV
-    case EADV: return "advertise error";
+    case EADV: return "Advertise error";
 #endif
 #ifdef EAFNOSUPPORT
-    case EAFNOSUPPORT: return "address family not supported by protocol";
+    case EAFNOSUPPORT: return "Address family not supported";
 #endif
 #ifdef EAGAIN
-    case EAGAIN: return "resource temporarily unavailable";
+    case EAGAIN: return "Resource unavailable, try again";
 #endif
 #ifdef EALIGN
     case EALIGN: return "EALIGN";
 #endif
 #if defined(EALREADY) && (!defined(EBUSY) || (EALREADY != EBUSY))
-    case EALREADY: return "operation already in progress";
+    case EALREADY: return "Connection already in progress";
 #endif
 #ifdef EBADE
-    case EBADE: return "bad exchange descriptor";
+    case EBADE: return "Bad exchange descriptor";
 #endif
 #ifdef EBADF
-    case EBADF: return "bad file number";
+    case EBADF: return "Bad file descriptor";
 #endif
 #ifdef EBADFD
-    case EBADFD: return "file descriptor in bad state";
+    case EBADFD: return "File descriptor in bad state";
 #endif
 #ifdef EBADMSG
-    case EBADMSG: return "not a data message";
-#endif
-#ifdef ECANCELED
-    case ECANCELED: return "operation canceled";
+    case EBADMSG: return "Bad message";
 #endif
 #ifdef EBADR
-    case EBADR: return "bad request descriptor";
+    case EBADR: return "Bad request descriptor";
 #endif
 #ifdef EBADRPC
     case EBADRPC: return "RPC structure is bad";
 #endif
 #ifdef EBADRQC
-    case EBADRQC: return "bad request code";
+    case EBADRQC: return "Bad request code";
 #endif
 #ifdef EBADSLT
-    case EBADSLT: return "invalid slot";
+    case EBADSLT: return "Invalid slot";
 #endif
 #ifdef EBFONT
-    case EBFONT: return "bad font file format";
+    case EBFONT: return "Bad font file format";
 #endif
 #ifdef EBUSY
-    case EBUSY: return "file busy";
+    case EBUSY: return "Device or resource busy";
+#endif
+#ifdef ECANCELED
+    case ECANCELED: return "Operation canceled";
 #endif
 #ifdef ECHILD
-    case ECHILD: return "no children";
+    case ECHILD: return "No child processes";
 #endif
 #ifdef ECHRNG
-    case ECHRNG: return "channel number out of range";
+    case ECHRNG: return "Channel number out of range";
 #endif
 #ifdef ECOMM
-    case ECOMM: return "communication error on send";
+    case ECOMM: return "Communication error on send";
 #endif
 #ifdef ECONNABORTED
-    case ECONNABORTED: return "software caused connection abort";
+    case ECONNABORTED: return "Connection aborted";
 #endif
 #ifdef ECONNREFUSED
-    case ECONNREFUSED: return "connection refused";
+    case ECONNREFUSED: return "Connection refused";
 #endif
 #ifdef ECONNRESET
-    case ECONNRESET: return "connection reset by peer";
+    case ECONNRESET: return "Connection reset";
 #endif
 #if defined(EDEADLK) && (!defined(EWOULDBLOCK) || (EDEADLK != EWOULDBLOCK))
-    case EDEADLK: return "resource deadlock avoided";
+    case EDEADLK: return "Resource deadlock would occur";
 #endif
 #if defined(EDEADLOCK) && (!defined(EDEADLK) || (EDEADLOCK != EDEADLK))
-    case EDEADLOCK: return "resource deadlock avoided";
+    case EDEADLOCK: return "Resource deadlock would occur";
 #endif
 #ifdef EDESTADDRREQ
-    case EDESTADDRREQ: return "destination address required";
+    case EDESTADDRREQ: return "Destination address required";
 #endif
 #ifdef EDIRTY
-    case EDIRTY: return "mounting a dirty fs w/o force";
+    case EDIRTY: return "Mounting a dirty fs w/o force";
 #endif
 #ifdef EDOM
-    case EDOM: return "math argument out of range";
+    case EDOM: return "Mathematics argument out of domain of function";
 #endif
 #ifdef EDOTDOT
-    case EDOTDOT: return "cross mount point";
+    case EDOTDOT: return "Cross mount point";
 #endif
 #ifdef EDQUOT
-    case EDQUOT: return "disk quota exceeded";
+    case EDQUOT: return "Disk quota exceeded";
 #endif
 #ifdef EDUPPKG
-    case EDUPPKG: return "duplicate package name";
+    case EDUPPKG: return "Duplicate package name";
 #endif
 #ifdef EEXIST
-    case EEXIST: return "file already exists";
+    case EEXIST: return "File exists";
 #endif
 #ifdef EFAULT
-    case EFAULT: return "bad address in system call argument";
+    case EFAULT: return "Bad address";
 #endif
 #ifdef EFBIG
-    case EFBIG: return "file too large";
+    case EFBIG: return "File too large";
 #endif
 #ifdef EHOSTDOWN
-    case EHOSTDOWN: return "host is down";
+    case EHOSTDOWN: return "Host is down";
 #endif
 #ifdef EHOSTUNREACH
-    case EHOSTUNREACH: return "host is unreachable";
+    case EHOSTUNREACH: return "Host is unreachable";
 #endif
 #if defined(EIDRM) && (!defined(EINPROGRESS) || (EIDRM != EINPROGRESS))
-    case EIDRM: return "identifier removed";
+    case EIDRM: return "Identifier removed";
 #endif
 #ifdef EINIT
-    case EINIT: return "initialization error";
+    case EINIT: return "Initialization error";
 #endif
 #ifdef EILSEQ
-    case EILSEQ: return "illegal byte sequence";
+    case EILSEQ: return "Invalid or incomplete multibyte or wide character";
 #endif
 #ifdef EINPROGRESS
-    case EINPROGRESS: return "operation now in progress";
+    case EINPROGRESS: return "Operation in progress";
 #endif
 #ifdef EINTR
-    case EINTR: return "interrupted system call";
+    case EINTR: return "Interrupted function";
 #endif
 #ifdef EINVAL
-    case EINVAL: return "invalid argument";
+    case EINVAL: return "Invalid argument";
 #endif
 #ifdef EIO
     case EIO: return "I/O error";
 #endif
 #ifdef EISCONN
-    case EISCONN: return "socket is already connected";
+    case EISCONN: return "Socket is connected";
 #endif
 #ifdef EISDIR
-    case EISDIR: return "illegal operation on a directory";
+    case EISDIR: return "Is a directory";
 #endif
 #ifdef EISNAME
-    case EISNAM: return "is a name file";
+    case EISNAM: return "Is a name file";
 #endif
 #ifdef ELBIN
     case ELBIN: return "ELBIN";
 #endif
 #ifdef EL2HLT
-    case EL2HLT: return "level 2 halted";
+    case EL2HLT: return "Level 2 halted";
 #endif
 #ifdef EL2NSYNC
-    case EL2NSYNC: return "level 2 not synchronized";
+    case EL2NSYNC: return "Level 2 not synchronized";
 #endif
 #ifdef EL3HLT
-    case EL3HLT: return "level 3 halted";
+    case EL3HLT: return "Level 3 halted";
 #endif
 #ifdef EL3RST
-    case EL3RST: return "level 3 reset";
+    case EL3RST: return "Level 3 reset";
 #endif
 #ifdef ELIBACC
-    case ELIBACC: return "cannot access a needed shared library";
+    case ELIBACC: return "Cannot access a needed shared library";
 #endif
 #ifdef ELIBBAD
-    case ELIBBAD: return "accessing a corrupted shared library";
+    case ELIBBAD: return "Accessing a corrupted shared library";
 #endif
 #ifdef ELIBEXEC
-    case ELIBEXEC: return "cannot exec a shared library directly";
+    case ELIBEXEC: return "Cannot exec a shared library directly";
 #endif
 #if defined(ELIBMAX) && (!defined(ECANCELED) || (ELIBMAX != ECANCELED))
     case ELIBMAX: return
-	    "attempting to link in more shared libraries than system limit";
+	    "Attempting to link in more shared libraries than system limit";
 #endif
 #ifdef ELIBSCN
     case ELIBSCN: return ".lib section in a.out corrupted";
 #endif
 #ifdef ELNRNG
-    case ELNRNG: return "link number out of range";
+    case ELNRNG: return "Link number out of range";
 #endif
 #if defined(ELOOP) && (!defined(ENOENT) || (ELOOP != ENOENT))
-    case ELOOP: return "too many levels of symbolic links";
+    case ELOOP: return "Too many levels of symbolic links";
 #endif
 #ifdef EMFILE
-    case EMFILE: return "too many open files";
+    case EMFILE: return "File descriptor value too large";
 #endif
 #ifdef EMLINK
-    case EMLINK: return "too many links";
+    case EMLINK: return "Too many links";
 #endif
 #ifdef EMSGSIZE
-    case EMSGSIZE: return "message too long";
+    case EMSGSIZE: return "Message too large";
 #endif
 #ifdef EMULTIHOP
-    case EMULTIHOP: return "multihop attempted";
+    case EMULTIHOP: return "Multihop attempted";
 #endif
 #ifdef ENAMETOOLONG
-    case ENAMETOOLONG: return "file name too long";
+    case ENAMETOOLONG: return "Filename too long";
 #endif
 #ifdef ENAVAIL
-    case ENAVAIL: return "not available";
+    case ENAVAIL: return "Not available";
 #endif
 #ifdef ENET
     case ENET: return "ENET";
 #endif
 #ifdef ENETDOWN
-    case ENETDOWN: return "network is down";
+    case ENETDOWN: return "Network is down";
 #endif
 #ifdef ENETRESET
-    case ENETRESET: return "network dropped connection on reset";
+    case ENETRESET: return "Network dropped connection on reset";
 #endif
 #ifdef ENETUNREACH
-    case ENETUNREACH: return "network is unreachable";
+    case ENETUNREACH: return "Network is unreachable";
 #endif
 #ifdef ENFILE
-    case ENFILE: return "file table overflow";
+    case ENFILE: return "Too many files open in system";
 #endif
 #ifdef ENOANO
-    case ENOANO: return "anode table overflow";
+    case ENOANO: return "Anode table overflow";
 #endif
 #if defined(ENOBUFS) && (!defined(ENOSR) || (ENOBUFS != ENOSR))
-    case ENOBUFS: return "no buffer space available";
+    case ENOBUFS: return "No buffer space available";
 #endif
 #ifdef ENOCSI
-    case ENOCSI: return "no CSI structure available";
+    case ENOCSI: return "No CSI structure available";
 #endif
 #if defined(ENODATA) && (!defined(ECONNREFUSED) || (ENODATA != ECONNREFUSED))
-    case ENODATA: return "no data available";
+    case ENODATA: return "No data available";
 #endif
 #ifdef ENODEV
-    case ENODEV: return "no such device";
+    case ENODEV: return "No such device";
 #endif
 #ifdef ENOENT
-    case ENOENT: return "no such file or directory";
+    case ENOENT: return "No such file or directory";
 #endif
 #ifdef ENOEXEC
-    case ENOEXEC: return "exec format error";
+    case ENOEXEC: return "Executable format error";
 #endif
 #ifdef ENOLCK
-    case ENOLCK: return "no locks available";
+    case ENOLCK: return "No locks available";
 #endif
 #ifdef ENOLINK
-    case ENOLINK: return "link has been severed";
+    case ENOLINK: return "Link has been severed";
 #endif
 #ifdef ENOMEM
-    case ENOMEM: return "not enough memory";
+    case ENOMEM: return "Not enough space";
 #endif
 #ifdef ENOMSG
-    case ENOMSG: return "no message of desired type";
+    case ENOMSG: return "No message of desired type";
 #endif
 #ifdef ENONET
-    case ENONET: return "machine is not on the network";
+    case ENONET: return "Machine is not on the network";
 #endif
 #ifdef ENOPKG
-    case ENOPKG: return "package not installed";
+    case ENOPKG: return "Package not installed";
 #endif
 #ifdef ENOPROTOOPT
-    case ENOPROTOOPT: return "bad protocol option";
+    case ENOPROTOOPT: return "Protocol not available";
 #endif
 #ifdef ENOSPC
-    case ENOSPC: return "no space left on device";
+    case ENOSPC: return "No space left on device";
 #endif
 #if defined(ENOSR) && (!defined(ENAMETOOLONG) || (ENAMETOOLONG != ENOSR))
-    case ENOSR: return "out of stream resources";
+    case ENOSR: return "No stream resources";
 #endif
 #if defined(ENOSTR) && (!defined(ENOTTY) || (ENOTTY != ENOSTR))
-    case ENOSTR: return "not a stream device";
+    case ENOSTR: return "Not a stream";
 #endif
 #ifdef ENOSYM
-    case ENOSYM: return "unresolved symbol name";
+    case ENOSYM: return "Unresolved symbol name";
 #endif
 #ifdef ENOSYS
-    case ENOSYS: return "function not implemented";
+    case ENOSYS: return "Functionality not supported";
 #endif
 #ifdef ENOTBLK
-    case ENOTBLK: return "block device required";
+    case ENOTBLK: return "Block device required";
 #endif
 #ifdef ENOTCONN
-    case ENOTCONN: return "socket is not connected";
+    case ENOTCONN: return "Transport endpoint is not connected";
 #endif
 #ifdef ENOTRECOVERABLE
-    case ENOTRECOVERABLE: return "state not recoverable";
+    case ENOTRECOVERABLE: return "State not recoverable";
 #endif
 #ifdef ENOTDIR
-    case ENOTDIR: return "not a directory";
+    case ENOTDIR: return "Not a directory or a symbolic link to a directory";
 #endif
 #if defined(ENOTEMPTY) && (!defined(EEXIST) || (ENOTEMPTY != EEXIST))
-    case ENOTEMPTY: return "directory not empty";
+    case ENOTEMPTY: return "Directory not empty";
 #endif
 #ifdef ENOTNAM
-    case ENOTNAM: return "not a name file";
+    case ENOTNAM: return "Not a name file";
 #endif
 #ifdef ENOTSOCK
-    case ENOTSOCK: return "socket operation on non-socket";
+    case ENOTSOCK: return "Not a socket";
 #endif
 #ifdef ENOTSUP
-    case ENOTSUP: return "operation not supported";
+    case ENOTSUP: return "Not supported";
 #endif
 #ifdef ENOTTY
-    case ENOTTY: return "inappropriate device for ioctl";
+    case ENOTTY: return "Inappropriate I/O control operation";
 #endif
 #ifdef ENOTUNIQ
-    case ENOTUNIQ: return "name not unique on network";
+    case ENOTUNIQ: return "Name not unique on network";
 #endif
 #ifdef ENXIO
-    case ENXIO: return "no such device or address";
+    case ENXIO: return "No such device or address";
 #endif
 #if defined(EOPNOTSUPP) &&  (!defined(ENOTSUP) || (ENOTSUP != EOPNOTSUPP))
-    case EOPNOTSUPP: return "operation not supported on socket";
+    case EOPNOTSUPP: return "Operation not supported on socket";
 #endif
 #ifdef EOTHER
-    case EOTHER: return "other error";
+    case EOTHER: return "Other error";
 #endif
 #if defined(EOVERFLOW) && (!defined(EFBIG) || (EOVERFLOW != EFBIG)) && (!defined(EINVAL) || (EOVERFLOW != EINVAL))
-    case EOVERFLOW: return "file too big";
+    case EOVERFLOW: return "Value too large to be stored in data type";
 #endif
 #ifdef EOWNERDEAD
-    case EOWNERDEAD: return "owner died";
+    case EOWNERDEAD: return "Previous owner died";
 #endif
 #ifdef EPERM
-    case EPERM: return "not owner";
+    case EPERM: return "Operation not permitted";
 #endif
 #if defined(EPFNOSUPPORT) && (!defined(ENOLCK) || (ENOLCK != EPFNOSUPPORT))
-    case EPFNOSUPPORT: return "protocol family not supported";
+    case EPFNOSUPPORT: return "Protocol family not supported";
 #endif
 #ifdef EPIPE
-    case EPIPE: return "broken pipe";
+    case EPIPE: return "Broken pipe";
 #endif
 #ifdef EPROCLIM
-    case EPROCLIM: return "too many processes";
+    case EPROCLIM: return "Too many processes";
 #endif
 #ifdef EPROCUNAVAIL
-    case EPROCUNAVAIL: return "bad procedure for program";
+    case EPROCUNAVAIL: return "Bad procedure for program";
 #endif
 #ifdef EPROGMISMATCH
-    case EPROGMISMATCH: return "program version wrong";
+    case EPROGMISMATCH: return "Program version wrong";
 #endif
 #ifdef EPROGUNAVAIL
     case EPROGUNAVAIL: return "RPC program not available";
 #endif
 #ifdef EPROTO
-    case EPROTO: return "protocol error";
+    case EPROTO: return "Protocol error";
 #endif
 #ifdef EPROTONOSUPPORT
-    case EPROTONOSUPPORT: return "protocol not supported";
+    case EPROTONOSUPPORT: return "Protocol not supported";
 #endif
 #ifdef EPROTOTYPE
-    case EPROTOTYPE: return "protocol wrong type for socket";
+    case EPROTOTYPE: return "Protocol wrong type for socket";
 #endif
 #ifdef ERANGE
-    case ERANGE: return "math result unrepresentable";
+    case ERANGE: return "Result too large";
 #endif
 #if defined(EREFUSED) && (!defined(ECONNREFUSED) || (EREFUSED != ECONNREFUSED))
     case EREFUSED: return "EREFUSED";
 #endif
 #ifdef EREMCHG
-    case EREMCHG: return "remote address changed";
+    case EREMCHG: return "Remote address changed";
 #endif
 #ifdef EREMDEV
-    case EREMDEV: return "remote device";
+    case EREMDEV: return "Remote device";
 #endif
 #ifdef EREMOTE
-    case EREMOTE: return "pathname hit remote file system";
+    case EREMOTE: return "Pathname hit remote file system";
 #endif
 #ifdef EREMOTEIO
-    case EREMOTEIO: return "remote i/o error";
+    case EREMOTEIO: return "Remote i/o error";
 #endif
 #ifdef EREMOTERELEASE
     case EREMOTERELEASE: return "EREMOTERELEASE";
 #endif
 #ifdef EROFS
-    case EROFS: return "read-only file system";
+    case EROFS: return "Read-only file system";
 #endif
 #ifdef ERPCMISMATCH
     case ERPCMISMATCH: return "RPC version is wrong";
 #endif
 #ifdef ERREMOTE
-    case ERREMOTE: return "object is remote";
+    case ERREMOTE: return "Object is remote";
 #endif
 #ifdef ESHUTDOWN
-    case ESHUTDOWN: return "cannot send after socket shutdown";
+    case ESHUTDOWN: return "Cannot send after socket shutdown";
 #endif
 #ifdef ESOCKTNOSUPPORT
-    case ESOCKTNOSUPPORT: return "socket type not supported";
+    case ESOCKTNOSUPPORT: return "Socket type not supported";
 #endif
 #ifdef ESPIPE
-    case ESPIPE: return "invalid seek";
+    case ESPIPE: return "Invalid seek";
 #endif
 #ifdef ESRCH
-    case ESRCH: return "no such process";
+    case ESRCH: return "No such process";
 #endif
 #ifdef ESRMNT
-    case ESRMNT: return "srmount error";
+    case ESRMNT: return "Srmount error";
 #endif
 #ifdef ESTALE
-    case ESTALE: return "stale remote file handle";
+    case ESTALE: return "Stale remote file handle";
 #endif
 #ifdef ESUCCESS
     case ESUCCESS: return "Error 0";
 #endif
 #if defined(ETIME) && (!defined(ELOOP) || (ETIME != ELOOP))
-    case ETIME: return "timer expired";
+    case ETIME: return "Timer expired";
 #endif
 #if defined(ETIMEDOUT) && (!defined(ENOSTR) || (ETIMEDOUT != ENOSTR))
-    case ETIMEDOUT: return "connection timed out";
+    case ETIMEDOUT: return "Connection timed out";
 #endif
 #ifdef ETOOMANYREFS
-    case ETOOMANYREFS: return "too many references: cannot splice";
+    case ETOOMANYREFS: return "Too many references: cannot splice";
 #endif
 #ifdef ETXTBSY
-    case ETXTBSY: return "text file or pseudo-device busy";
+    case ETXTBSY: return "Text file busy";
 #endif
 #ifdef EUCLEAN
-    case EUCLEAN: return "structure needs cleaning";
+    case EUCLEAN: return "Structure needs cleaning";
 #endif
 #ifdef EUNATCH
-    case EUNATCH: return "protocol driver not attached";
+    case EUNATCH: return "Protocol driver not attached";
 #endif
 #ifdef EUSERS
-    case EUSERS: return "too many users";
+    case EUSERS: return "Too many users";
 #endif
 #ifdef EVERSION
-    case EVERSION: return "version mismatch";
+    case EVERSION: return "Version mismatch";
 #endif
 #if defined(EWOULDBLOCK) && (!defined(EAGAIN) || (EWOULDBLOCK != EAGAIN))
-    case EWOULDBLOCK: return "operation would block";
+    case EWOULDBLOCK: return "Operation would block";
 #endif
 #ifdef EXDEV
-    case EXDEV: return "cross-domain link";
+    case EXDEV: return "Cross-domain link";
 #endif
 #ifdef EXFULL
-    case EXFULL: return "message tables full";
+    case EXFULL: return "Message tables full";
 #endif
     default:
 #ifdef NO_STRERROR
-	return "unknown POSIX error";
+	return "Unknown POSIX error";
 #else
 	return strerror(err);
 #endif
     }
+#endif
 }
 
 /*

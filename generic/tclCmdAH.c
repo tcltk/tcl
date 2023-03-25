@@ -2201,7 +2201,7 @@ PathSplitCmd(
     res = Tcl_FSSplitPath(objv[1], (int *)NULL);
     if (res == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"could not read \"%s\": no such file or directory",
+		"could not read \"%s\": No such file or directory",
 		TclGetString(objv[1])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH",
 		NULL);

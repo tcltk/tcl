@@ -2676,8 +2676,8 @@ test chan-io-29.27 {Tcl_Flush on chan closed pipeline} -setup {
     } else {
 	set x {this was supposed to fail and did not}
     }
-    string tolower $x
-} -match glob -result {1 {error flushing "*": broken pipe} {posix epipe {broken pipe}}}
+    set x
+} -match glob -result {1 {error flushing "*": Broken pipe} {POSIX EPIPE {Broken pipe}}}
 test chan-io-29.28 {Tcl_WriteChars, lf mode} -setup {
     file delete $path(test1)
 } -body {
@@ -3958,7 +3958,7 @@ test chan-io-32.3 {Tcl_Read, negative byte count} -setup {
     chan read $f -1
 } -returnCodes error -cleanup {
     chan close $f
-} -result {expected non-negative integer but got "-1"}
+} -result {Expected non-negative integer but got "-1"}
 test chan-io-32.4 {Tcl_Read, positive byte count} -body {
     set f [open $path(longfile) r]
     string length [chan read $f 1024]
@@ -4363,7 +4363,7 @@ test chan-io-34.8 {Tcl_Seek on pipes: not supported} -setup {
     chan seek $pipe 0 current
 } -returnCodes error -cleanup {
     chan close $pipe
-} -match glob -result {error during seek on "*": invalid argument}
+} -match glob -result {error during seek on "*": Invalid argument}
 test chan-io-34.9 {Tcl_Seek, testing buffered input flushing} -setup {
     file delete $path(test3)
 } -body {
@@ -5462,11 +5462,11 @@ test chan-io-40.10 {POSIX open access modes: RDONLY} -body {
 test chan-io-40.11 {POSIX open access modes: RDONLY} -match regexp -body {
     file delete $path(test3)
     open $path(test3) RDONLY
-} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+} -returnCodes error -result {(?i)couldn't open ".*test3": No such file or directory}
 test chan-io-40.12 {POSIX open access modes: WRONLY} -match regexp -body {
     file delete $path(test3)
     open $path(test3) WRONLY
-} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+} -returnCodes error -result {(?i)couldn't open ".*test3": No such file or directory}
 test chan-io-40.13 {POSIX open access modes: WRONLY} -body {
     makeFile xyzzy test3
     set f [open $path(test3) WRONLY]
@@ -5480,7 +5480,7 @@ test chan-io-40.13 {POSIX open access modes: WRONLY} -body {
 test chan-io-40.14 {POSIX open access modes: RDWR} -match regexp -body {
     file delete $path(test3)
     open $path(test3) RDWR
-} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+} -returnCodes error -result {(?i)couldn't open ".*test3": No such file or directory}
 test chan-io-40.15 {POSIX open access modes: RDWR} {
     makeFile xyzzy test3
     set f [open $path(test3) RDWR]
@@ -7585,7 +7585,7 @@ test chan-io-60.1 {writing illegal utf sequences} {fileevent testbytestring} {
     # cut of the remainder of the error stack, especially the filename
     set result [lreplace $result 3 3 [lindex [split [lindex $result 3] \n] 0]]
     list $x $result
-} {1 {gets {} catch {error writing "stdout": illegal byte sequence}}}
+} {1 {gets {} catch {error writing "stdout": Invalid or incomplete multibyte or wide character}}}
 
 test chan-io-61.1 {Reset eof state after changing the eof char} -setup {
     set datafile [makeFile {} eofchar]

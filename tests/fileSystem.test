@@ -498,19 +498,19 @@ test filesystem-5.1 {cache and ~} -constraints testfilesystem -setup {
 
 test filesystem-6.1 {empty file name} -returnCodes error -body {
     open ""
-} -result {couldn't open "": no such file or directory}
+} -result {couldn't open "": No such file or directory}
 test filesystem-6.2 {empty file name} -returnCodes error -body {
     file stat "" arr
-} -result {could not read "": no such file or directory}
+} -result {could not read "": No such file or directory}
 test filesystem-6.3 {empty file name} -returnCodes error -body {
     file atime ""
-} -result {could not read "": no such file or directory}
+} -result {could not read "": No such file or directory}
 test filesystem-6.4 {empty file name} -returnCodes error -body {
     file attributes ""
-} -result {could not read "": no such file or directory}
+} -result {could not read "": No such file or directory}
 test filesystem-6.5 {empty file name} -returnCodes error -body {
     file copy "" ""
-} -result {error copying "": no such file or directory}
+} -result {error copying "": No such file or directory}
 test filesystem-6.6 {empty file name} {file delete ""} {}
 test filesystem-6.7 {empty file name} {file dirname ""} .
 test filesystem-6.8 {empty file name} {file executable ""} 0
@@ -521,19 +521,19 @@ test filesystem-6.12 {empty file name} {file isfile ""} 0
 test filesystem-6.13 {empty file name} {file join ""} {}
 test filesystem-6.14 {empty file name} -returnCodes error -body {
     file link ""
-} -result {could not read link "": no such file or directory}
+} -result {could not read link "": No such file or directory}
 test filesystem-6.15 {empty file name} -returnCodes error -body {
     file lstat "" arr
-} -result {could not read "": no such file or directory}
+} -result {could not read "": No such file or directory}
 test filesystem-6.16 {empty file name} -returnCodes error -body {
     file mtime ""
-} -result {could not read "": no such file or directory}
+} -result {could not read "": No such file or directory}
 test filesystem-6.17 {empty file name} -returnCodes error -body {
     file mtime "" 0
-} -result {could not read "": no such file or directory}
+} -result {could not read "": No such file or directory}
 test filesystem-6.18 {empty file name} -returnCodes error -body {
     file mkdir ""
-} -result {can't create directory "": no such file or directory}
+} -result {can't create directory "": No such file or directory}
 test filesystem-6.19 {empty file name} {file nativename ""} {}
 test filesystem-6.20 {empty file name} {file normalize ""} {}
 test filesystem-6.21 {empty file name} {file owned ""} 0
@@ -541,17 +541,17 @@ test filesystem-6.22 {empty file name} {file pathtype ""} relative
 test filesystem-6.23 {empty file name} {file readable ""} 0
 test filesystem-6.24 {empty file name} -returnCodes error -body {
     file readlink ""
-} -result {could not read link "": no such file or directory}
+} -result {could not read link "": No such file or directory}
 test filesystem-6.25 {empty file name} -returnCodes error -body {
     file rename "" ""
-} -result {error renaming "": no such file or directory}
+} -result {error renaming "": No such file or directory}
 test filesystem-6.26 {empty file name} {file rootname ""} {}
 test filesystem-6.27 {empty file name} -returnCodes error -body {
     file separator ""
 } -result {unrecognised path}
 test filesystem-6.28 {empty file name} -returnCodes error -body {
     file size ""
-} -result {could not read "": no such file or directory}
+} -result {could not read "": No such file or directory}
 test filesystem-6.29 {empty file name} {file split ""} {}
 test filesystem-6.30 {empty file name} -returnCodes error -body {
     file system ""
@@ -559,7 +559,7 @@ test filesystem-6.30 {empty file name} -returnCodes error -body {
 test filesystem-6.31 {empty file name} {file tail ""} {}
 test filesystem-6.32 {empty file name} -returnCodes error -body {
     file type ""
-} -result {could not read "": no such file or directory}
+} -result {could not read "": No such file or directory}
 test filesystem-6.33 {empty file name} {file writable ""} 0
 test filesystem-6.34 {file name with (invalid) nul character} {
     list [catch "open foo\x00" msg] $msg
@@ -692,7 +692,7 @@ test filesystem-7.4 {cross-filesystem file copy with -force} -setup {
     file delete -force simplefile
     file delete -force file2
     cd $dir
-} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 {} 1}
+} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": File exists} 0 {} 1}
 test filesystem-7.5 {cross-filesystem file copy with -force} -setup {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
@@ -717,7 +717,7 @@ test filesystem-7.5 {cross-filesystem file copy with -force} -setup {
     file delete -force simplefile
     file delete -force file2
     cd $dir
-} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 {} 1}
+} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": File exists} 0 {} 1}
 test filesystem-7.6 {cross-filesystem dir copy with -force} -setup {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
@@ -745,7 +745,7 @@ test filesystem-7.6 {cross-filesystem dir copy with -force} -setup {
     file delete -force simpledir
     file delete -force dir2
     cd $dir
-} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
+} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": File exists} 0 {} 1 1}
 test filesystem-7.7 {cross-filesystem dir copy with -force} -setup {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
@@ -775,7 +775,7 @@ test filesystem-7.7 {cross-filesystem dir copy with -force} -setup {
     file delete -force simpledir
     file delete -force dir2
     cd $dir
-} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
+} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": File exists} 0 {} 1 1}
 removeFile gorp.file
 test filesystem-7.8 {vfs cd} -setup {
     set dir [pwd]

@@ -1603,7 +1603,7 @@ ConvertFileNameFormat(
     if (splitPath == NULL || pathc == 0) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "could not read \"%s\": no such file or directory",
+		    "could not read \"%s\": No such file or directory",
 		    Tcl_GetString(fileName)));
 	    errno = ENOENT;
 	    Tcl_PosixError(interp);

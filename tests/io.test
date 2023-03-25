@@ -2855,8 +2855,8 @@ test io-29.27 {Tcl_Flush on closed pipeline} stdio {
 	}
     }
     regsub {".*":} $x {"":} x
-    string tolower $x
-} {1 {error flushing "": broken pipe} {posix epipe {broken pipe}}}
+    set x
+} {1 {error flushing "": Broken pipe} {POSIX EPIPE {Broken pipe}}}
 test io-29.28 {Tcl_WriteChars, lf mode} {
     file delete $path(test1)
     set f [open $path(test1) w]
@@ -4211,7 +4211,7 @@ test io-32.3 {Tcl_Read, negative byte count} {
     set l [list [catch {read $f -1} msg] $msg]
     close $f
     set l
-} {1 {expected non-negative integer but got "-1"}}
+} {1 {Expected non-negative integer but got "-1"}}
 test io-32.4 {Tcl_Read, positive byte count} {
     set f [open $path(longfile) r]
     set x [read $f 1024]
@@ -4753,8 +4753,8 @@ test io-34.8 {Tcl_Seek on pipes: not supported} stdio {
     set x [list [catch {seek $f1 0 current} msg] $msg]
     close $f1
     regsub {".*":} $x {"":} x
-    string tolower $x
-} {1 {error during seek on "": invalid argument}}
+    set x
+} {1 {error during seek on "": Invalid argument}}
 test io-34.9 {Tcl_Seek, testing buffered input flushing} {
     file delete $path(test3)
     set f [open $path(test3) w]
@@ -5931,11 +5931,11 @@ test io-40.10 {POSIX open access modes: RDONLY} {
 test io-40.11 {POSIX open access modes: RDONLY} -match regexp -body {
     file delete $path(test3)
     open $path(test3) RDONLY
-} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+} -returnCodes error -result {(?i)couldn't open ".*test3": No such file or directory}
 test io-40.12 {POSIX open access modes: WRONLY} -match regexp -body {
     file delete $path(test3)
     open $path(test3) WRONLY
-} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+} -returnCodes error -result {(?i)couldn't open ".*test3": No such file or directory}
 test io-40.13 {POSIX open access modes: WRONLY} {
     makeFile xyzzy test3
     set f [open $path(test3) WRONLY]
@@ -5951,7 +5951,7 @@ test io-40.13 {POSIX open access modes: WRONLY} {
 test io-40.14 {POSIX open access modes: RDWR} -match regexp -body {
     file delete $path(test3)
     open $path(test3) RDWR
-} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+} -returnCodes error -result {(?i)couldn't open ".*test3": No such file or directory}
 test io-40.15 {POSIX open access modes: RDWR} {
     makeFile xyzzy test3
     set f [open $path(test3) RDWR]
@@ -7638,7 +7638,7 @@ test io-52.20 {TclCopyChannel & encodings} -setup {
 } -cleanup {
     close $in
     close $out
-} -returnCodes 1 -match glob -result {error reading "file*": illegal byte sequence}
+} -returnCodes 1 -match glob -result {error reading "file*": Invalid or incomplete multibyte or wide character}
 test io-52.21 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
     fconfigure $out -encoding utf-8 -translation lf
@@ -7659,7 +7659,7 @@ test io-52.21 {TclCopyChannel & encodings} -setup {
 } -cleanup {
     close $in
     close $out
-} -returnCodes 1 -match glob -result {error writing "file*": illegal byte sequence}
+} -returnCodes 1 -match glob -result {error writing "file*": Invalid or incomplete multibyte or wide character}
 test io-52.22 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
     fconfigure $out -encoding utf-8 -translation lf
@@ -7686,7 +7686,7 @@ test io-52.22 {TclCopyChannel & encodings} -setup {
     close $in
     close $out
     unset ::s0
-} -match glob -result {0 {error reading "file*": illegal byte sequence}}
+} -match glob -result {0 {error reading "file*": Invalid or incomplete multibyte or wide character}}
 test io-52.23 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
     fconfigure $out -encoding utf-8 -translation lf
@@ -7713,7 +7713,7 @@ test io-52.23 {TclCopyChannel & encodings} -setup {
     close $in
     close $out
     unset ::s0
-} -match glob -result {0 {error writing "file*": illegal byte sequence}}
+} -match glob -result {0 {error writing "file*": Invalid or incomplete multibyte or wide character}}
 
 
 test io-53.1 {CopyData} {fcopy} {
@@ -8696,7 +8696,7 @@ test io-60.1 {writing illegal utf sequences} {fileevent testbytestring} {
     # cut of the remainder of the error stack, especially the filename
     set result [lreplace $result 3 3 [lindex [split [lindex $result 3] \n] 0]]
     list $x $result
-} {1 {gets ABC catch {error writing "stdout": illegal byte sequence}}}
+} {1 {gets ABC catch {error writing "stdout": Invalid or incomplete multibyte or wide character}}}
 
 test io-61.1 {Reset eof state after changing the eof char} -setup {
     set datafile [makeFile {} eofchar]
@@ -9166,7 +9166,7 @@ test io-75.6 {invalid utf-8 encoding gets is not ignored (-profile strict)} -set
 } -cleanup {
     close $f
     removeFile io-75.6
-} -match glob -returnCodes 1 -result {error reading "*": illegal byte sequence}
+} -match glob -returnCodes 1 -result {error reading "*": Invalid or incomplete multibyte or wide character}
 
 test io-75.7 {invalid utf-8 encoding gets is not ignored (-profile strict)} -setup {
     set fn [makeFile {} io-75.7]
@@ -9182,7 +9182,7 @@ test io-75.7 {invalid utf-8 encoding gets is not ignored (-profile strict)} -set
 } -cleanup {
     close $f
     removeFile io-75.7
-} -match glob -returnCodes 1 -result {error reading "*": illegal byte sequence}
+} -match glob -returnCodes 1 -result {error reading "*": Invalid or incomplete multibyte or wide character}
 
 test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.8]
@@ -9216,7 +9216,7 @@ test io-75.9 {unrepresentable character write passes and is replaced by ?} -setu
 } -cleanup {
     close $f
     removeFile io-75.9
-} -match glob -result [list {A} {error writing "*": illegal byte sequence}]
+} -match glob -result [list {A} {error writing "*": Invalid or incomplete multibyte or wide character}]
 
 # Incomplete sequence test.
 # This error may IMHO only be detected with the close.
@@ -9260,7 +9260,7 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
 } -cleanup {
     close $f
     removeFile io-75.11
-} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
+} -match glob -result {41 1 {error reading "*": Invalid or incomplete multibyte or wide character}}
 
 test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
     set fn [makeFile {} io-75.12]
@@ -9295,7 +9295,7 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -se
 } -cleanup {
     close $f
     removeFile io-75.13
-} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
+} -match glob -result {41 1 {error reading "*": Invalid or incomplete multibyte or wide character}}
 
 # ### ### ### ######### ######### #########
 

@@ -286,7 +286,7 @@ then the attempt to set it back to
 is ineffective and the mode value remains
 .QW latest .
 .PP
-When passed any other value as an argument, raise an invalid argument
+When passed any other value as an argument, raise an Invalid argument
 error.
 .PP
 When an interpreter is created, its initial selection mode value is set to

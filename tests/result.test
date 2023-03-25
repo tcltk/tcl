@@ -62,7 +62,7 @@ test result-2.1 {Tcl_RestoreInterpResult} {testsaveresult} {
 
 test result-3.1 {Tcl_DiscardInterpResult} -constraints testsaveresult -body {
     testsaveresult append {cd _foobar} 1
-} -returnCodes error -result {couldn't change working directory to "_foobar": no such file or directory}
+} -returnCodes error -result {couldn't change working directory to "_foobar": No such file or directory}
 test result-3.2 {Tcl_DiscardInterpResult} {testsaveresult} {
     testsaveresult free {set x 42} 1
 } {42}

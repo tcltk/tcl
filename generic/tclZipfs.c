@@ -2569,7 +2569,7 @@ ZipAddFile(
 	Tcl_DStringFree(&zpathDs);
 #ifdef _WIN32
 	/* hopefully a directory */
-	if (strcmp("permission denied", Tcl_PosixError(interp)) == 0) {
+	if (strcmp("Permission denied", Tcl_PosixError(interp)) == 0) {
 	    Tcl_Close(interp, in);
 	    return TCL_OK;
 	}

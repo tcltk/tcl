@@ -104,8 +104,8 @@ test source-2.6 {source error conditions} -setup {
     removeFile _non_existent_
 } -body {
     source $sourcefile
-} -match glob -result {couldn't read file "*_non_existent_": no such file or directory} \
-	-errorCode {POSIX ENOENT {no such file or directory}}
+} -match glob -result {couldn't read file "*_non_existent_": No such file or directory} \
+	-errorCode {POSIX ENOENT {No such file or directory}}
 test source-2.7 {utf-8 with BOM} -setup {
     set sourcefile [makeFile {} source.file]
 } -body {

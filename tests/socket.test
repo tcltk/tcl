@@ -645,7 +645,7 @@ test socket_$af-2.9 {socket conflict} -constraints [list socket supported_$af st
     close $f
 } -returnCodes error -cleanup {
     close $s
-} -match glob -result {couldn't open socket: address already in use*}
+} -match glob -result {couldn't open socket: Address in use*}
 test socket_$af-2.10 {close on accept, accepted socket lives} -setup {
     set done 0
     set timer [after 20000 "set done timed_out"]
@@ -802,7 +802,7 @@ test socket_$af-3.1 {socket conflict} -constraints [list socket supported_$af st
 } -cleanup {
     puts $f bye
     close $f
-} -returnCodes error -result {couldn't open socket: address already in use}
+} -returnCodes error -result {couldn't open socket: Address in use}
 test socket_$af-3.2 {server with several clients} -setup {
     file delete $path(script)
     set f [open $path(script) w]
@@ -1397,7 +1397,7 @@ test socket_$af-11.6 {socket conflict} -setup {
     list [getPort $s2] [close $s2]
 } -cleanup {
     close $s1
-} -returnCodes error -result {couldn't open socket: address already in use}
+} -returnCodes error -result {couldn't open socket: Address in use}
 test socket_$af-11.7 {server with several clients} -setup {
     set port [sendCommand {
 	set server [socket -server accept 0]
@@ -2041,7 +2041,7 @@ test socket-14.1 {[socket -async] fileevent while still connecting} \
         close $client
         unset x
     } -result {{} ok}
-test socket-14.2 {[socket -async] fileevent connection refused} \
+test socket-14.2 {[socket -async] fileevent Connection refused} \
     -constraints {socket} \
     -body {
         set client [socket -async localhost [randport]]
@@ -2054,7 +2054,7 @@ test socket-14.2 {[socket -async] fileevent connection refused} \
         after cancel $after
         close $client
         unset x after client
-    } -result {ok {connection refused}}
+    } -result {ok {Connection refused}}
 test socket-14.3 {[socket -async] when server only listens on IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
@@ -2113,7 +2113,7 @@ test socket-14.5 {[socket -async] which fails before any connect() can be made} 
         socket -async -myaddr 192.0.2.42 127.0.0.1 [randport]
     } \
     -returnCodes 1 \
-    -result {couldn't open socket: cannot assign requested address}
+    -result {couldn't open socket: Cannot assign requested address}
 test socket-14.6.0 {[socket -async] with no event loop and server listening on IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
@@ -2226,7 +2226,7 @@ test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
         list $x [fconfigure $sock -error] [fconfigure $sock -error]
     } -cleanup {
         close $sock
-    } -match glob -result {{error reading "sock*": socket is not connected} {connection refused} {}}
+    } -match glob -result {{error reading "sock*": Transport endpoint is not connected} {Connection refused} {}}
 test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
@@ -2291,7 +2291,7 @@ test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener}
         list $x [fconfigure $sock -error] [fconfigure $sock -error]
     } -cleanup {
         close $sock
-    } -match glob -result {{error reading "sock*": socket is not connected} {connection refused} {}}
+    } -match glob -result {{error reading "sock*": Transport endpoint is not connected} {Connection refused} {}}
 test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
@@ -2406,7 +2406,7 @@ test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener
     } -cleanup {
         catch {close $sock}
         unset x
-    } -result {socket is not connected} -returnCodes 1
+    } -result {Transport endpoint is not connected} -returnCodes 1
 test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener, flush} \
     -constraints {socket testsocket_testflags} \
     -body {
@@ -2425,7 +2425,7 @@ test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener
     } -cleanup {
         catch {close $sock}
         catch {unset x}
-    } -result {socket is not connected} -returnCodes 1
+    } -result {Transport endpoint is not connected} -returnCodes 1
 test socket-14.12 {[socket -async] background progress triggered by [fconfigure -error]} \
     -constraints {socket} \
     -body {
@@ -2439,7 +2439,7 @@ test socket-14.12 {[socket -async] background progress triggered by [fconfigure 
     } -cleanup {
         close $s
         unset x s
-    } -result {connection refused}
+    } -result {Connection refused}
 
 test socket-14.13 {testing writable event when quick failure} \
     -constraints {socket win supported_inet notWine} \
@@ -2543,7 +2543,7 @@ set num 0
 set x {localhost {socket} 127.0.0.1 {supported_inet} ::1 {supported_inet6}}
 set resultok {-result "sock*" -match glob}
 set resulterr {
-    -result {couldn't open socket: connection refused}
+    -result {couldn't open socket: Connection refused}
     -returnCodes 1
 }
 foreach {servip sc} $x {

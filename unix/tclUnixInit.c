@@ -380,7 +380,7 @@ TclpInitPlatform(void)
     }
 
     /*
-     * The code below causes SIGPIPE (broken pipe) errors to be ignored. This
+     * The code below causes SIGPIPE (Broken pipe) errors to be ignored. This
      * is needed so that Tcl processes don't die if they create child
      * processes (e.g. using "exec" or "open") that terminate prematurely.
      * The signal handler is only set up when the first interpreter is

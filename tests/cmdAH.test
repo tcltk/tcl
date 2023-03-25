@@ -137,10 +137,10 @@ test cmdAH-2.5 {Tcl_CdObjCmd} -returnCodes error -body {
 } -result {user "~" doesn't exist}
 test cmdAH-2.6 {Tcl_CdObjCmd} -returnCodes error -body {
     cd _foobar
-} -result {couldn't change working directory to "_foobar": no such file or directory}
+} -result {couldn't change working directory to "_foobar": No such file or directory}
 test cmdAH-2.6.1 {Tcl_CdObjCmd} -returnCodes error -body {
     cd ""
-} -result {couldn't change working directory to "": no such file or directory}
+} -result {couldn't change working directory to "": No such file or directory}
 test cmdAH-2.6.2 {cd} -constraints {unix nonPortable} -setup {
     set dir [pwd]
 } -body {
@@ -1459,8 +1459,8 @@ test cmdAH-20.2 {Tcl_FileObjCmd: atime} -setup {
 	    [expr {[file atime $gorpfile] == $stat(atime)}]
 } -result {1 1}
 test cmdAH-20.3 {Tcl_FileObjCmd: atime} {
-    list [catch {file atime _bogus_} msg] [string tolower $msg] $errorCode
-} {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
+    list [catch {file atime _bogus_} msg] $msg $errorCode
+} {1 {could not read "_bogus_": No such file or directory} {POSIX ENOENT {No such file or directory}}}
 test cmdAH-20.4 {Tcl_FileObjCmd: atime} -returnCodes error -body {
     file atime $file notint
 } -result {expected integer but got "notint"}
@@ -1525,7 +1525,7 @@ test cmdAH-22.3 {Tcl_FileObjCmd: isfile} {file isfile $dirfile} 0
 catch {file link -symbolic $linkfile $gorpfile}
 test cmdAH-23.1 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a
-} -result {could not read "a": no such file or directory}
+} -result {could not read "a": No such file or directory}
 test cmdAH-23.2 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a b c
 } -result {wrong # args: should be "file lstat name ?varName?"}
@@ -1542,9 +1542,9 @@ test cmdAH-23.4 {Tcl_FileObjCmd: lstat} -setup {
     list $stat(nlink) [expr {$stat(mode) & 0o777}] $stat(type)
 } -result {1 511 link}
 test cmdAH-23.5 {Tcl_FileObjCmd: lstat errors} {nonPortable} {
-    list [catch {file lstat _bogus_ stat} msg] [string tolower $msg] \
+    list [catch {file lstat _bogus_ stat} msg] $msg \
 	$errorCode
-} {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
+} {1 {could not read "_bogus_": No such file or directory} {POSIX ENOENT {No such file or directory}}}
 test cmdAH-23.6 {Tcl_FileObjCmd: lstat errors} -setup {
     unset -nocomplain x
 } -body {
@@ -1634,8 +1634,8 @@ test cmdAH-24.3 {Tcl_FileObjCmd: mtime} -setup {
 	    [expr {[file atime $gorpfile] == $stat(atime)}]
 } -result {1 1}
 test cmdAH-24.4 {Tcl_FileObjCmd: mtime} {
-    list [catch {file mtime _bogus_} msg] [string tolower $msg] $errorCode
-} {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
+    list [catch {file mtime _bogus_} msg] $msg $errorCode
+} {1 {could not read "_bogus_": No such file or directory} {POSIX ENOENT {No such file or directory}}}
 test cmdAH-24.5 {Tcl_FileObjCmd: mtime} -setup {
     # Under Unix, use a file in /tmp to avoid clock skew due to NFS. On other
     # platforms, just use a file in the local directory.
@@ -1814,11 +1814,11 @@ test cmdAH-26.2 {Tcl_FileObjCmd: readlink} {unix nonPortable} {
     file readlink $linkfile
 } $gorpfile
 test cmdAH-26.3 {Tcl_FileObjCmd: readlink errors} {unix nonPortable} {
-    list [catch {file readlink _bogus_} msg] [string tolower $msg] $errorCode
-} {1 {could not readlink "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
+    list [catch {file readlink _bogus_} msg] $msg $errorCode
+} {1 {could not readlink "_bogus_": No such file or directory} {POSIX ENOENT {No such file or directory}}}
 test cmdAH-26.5 {Tcl_FileObjCmd: readlink errors} {win nonPortable} {
-    list [catch {file readlink _bogus_} msg] [string tolower $msg] $errorCode
-} {1 {could not readlink "_bogus_": invalid argument} {POSIX EINVAL {invalid argument}}}
+    list [catch {file readlink _bogus_} msg] $msg $errorCode
+} {1 {could not readlink "_bogus_": Invalid argument} {POSIX EINVAL {Invalid argument}}}
 
 # size
 test cmdAH-27.1 {Tcl_FileObjCmd: size} -returnCodes error -body {
@@ -1833,8 +1833,8 @@ test cmdAH-27.2 {Tcl_FileObjCmd: size} {
     expr {[file size $gorpfile] - $oldsize}
 } {10}
 test cmdAH-27.3 {Tcl_FileObjCmd: size} {
-    list [catch {file size _bogus_} msg] [string tolower $msg] $errorCode
-} {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
+    list [catch {file size _bogus_} msg] $msg $errorCode
+} {1 {could not read "_bogus_": No such file or directory} {POSIX ENOENT {No such file or directory}}}
 test cmdAH-27.4 {
     Tcl_FileObjCmd: size (built-in Windows names)
 } -constraints {win} -body {
@@ -1884,8 +1884,8 @@ test cmdAH-28.5 {Tcl_FileObjCmd: stat} -constraints {unix notWsl} -setup {
     format 0o%03o [expr {$stat(mode) & 0o777}]
 } -result 0o765
 test cmdAH-28.6 {Tcl_FileObjCmd: stat} {
-    list [catch {file stat _bogus_ stat} msg] [string tolower $msg] $errorCode
-} {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
+    list [catch {file stat _bogus_ stat} msg] $msg $errorCode
+} {1 {could not read "_bogus_": No such file or directory} {POSIX ENOENT {No such file or directory}}}
 test cmdAH-28.7 {Tcl_FileObjCmd: stat} -setup {
     unset -nocomplain x
 } -returnCodes error -body {
@@ -2006,8 +2006,8 @@ test cmdAH-29.4.1 {Tcl_FileObjCmd: type} -constraints {linkDirectory notWine} -s
     removeDirectory $tempdir
 } -result link
 test cmdAH-29.5 {Tcl_FileObjCmd: type} {
-    list [catch {file type _bogus_} msg] [string tolower $msg] $errorCode
-} {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
+    list [catch {file type _bogus_} msg] $msg $errorCode
+} {1 {could not read "_bogus_": No such file or directory} {POSIX ENOENT {No such file or directory}}}
 test cmdAH-29.6 {
     Tcl_FileObjCmd: type (built-in Windows names)
 } -constraints {win} -body {
@@ -2206,7 +2206,7 @@ test cmdAH-33.6 {file tempdir: missing parent dir} -setup {
     file tempdir $base/quux/
 } -cleanup {
     catch {file delete -force $base}
-} -result {can't create temporary directory: no such file or directory}
+} -result {can't create temporary directory: No such file or directory}
 test cmdAH-33.7 {file tempdir: missing parent dir} -setup {
     set base [file join [temporaryDirectory] gorp]
     file mkdir $base
@@ -2214,7 +2214,7 @@ test cmdAH-33.7 {file tempdir: missing parent dir} -setup {
     file tempdir $base/quux/foobar
 } -cleanup {
     catch {file delete -force $base}
-} -result {can't create temporary directory: no such file or directory}
+} -result {can't create temporary directory: No such file or directory}
 
 # This shouldn't work, but just in case a test above failed...
 catch {close $newFileId}

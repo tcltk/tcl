@@ -946,12 +946,12 @@ test winFCmd-10.1 {AttributesPosixError - get} -constraints {win} -setup {
     cleanup
 } -body {
     file attributes td1 -archive
-} -returnCodes error -result {could not read "td1": no such file or directory}
+} -returnCodes error -result {could not read "td1": No such file or directory}
 test winFCmd-10.2 {AttributesPosixError - set} -constraints {win} -setup {
     cleanup
 } -body {
     file attributes td1 -archive 0
-} -returnCodes error -result {could not read "td1": no such file or directory}
+} -returnCodes error -result {could not read "td1": No such file or directory}
 
 test winFCmd-11.1 {GetWinFileAttributes} -constraints {win} -setup {
     cleanup
@@ -1098,7 +1098,7 @@ test winFCmd-15.1 {SetWinFileAttributes} -constraints {win} -setup {
     cleanup
 } -body {
     file attributes td1 -archive 0
-} -returnCodes error -result {could not read "td1": no such file or directory}
+} -returnCodes error -result {could not read "td1": No such file or directory}
 test winFCmd-15.2 {SetWinFileAttributes - archive} -constraints {win} -setup {
     cleanup
 } -body {
@@ -1268,11 +1268,11 @@ test winFCmd-17.1 {Windows bad permissions cd} -constraints win -body {
 	regsub ".*: " $err "" err
 	set err
     } else {
-        set err "permission denied"
+        set err "Permission denied"
     }
 } -cleanup {
     cd $pwd
-} -result "permission denied"
+} -result "Permission denied"
 
 cd $pwd
 unset d dd pwd

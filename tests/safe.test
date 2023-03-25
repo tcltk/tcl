@@ -549,7 +549,7 @@ test safe-8.3 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result {1 {permission denied} {{ERROR for child a : ".": is a directory}}}
+} -result {1 {Permission denied} {{ERROR for child a : ".": is a directory}}}
 test safe-8.4 {safe source control on file} -setup {
     set i "a"
     catch {safe::interpDelete $i}
@@ -565,7 +565,7 @@ test safe-8.4 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result {1 {permission denied} {{ERROR for child a : "/abc/def": not in access_path}}}
+} -result {1 {Permission denied} {{ERROR for child a : "/abc/def": not in access_path}}}
 test safe-8.5 {safe source control on file} -setup {
     set i "a"
     catch {safe::interpDelete $i}
@@ -585,7 +585,7 @@ test safe-8.5 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result [list 1 {no such file or directory} [list "ERROR for child a : [file join [info library] blah]:no such file or directory"]]
+} -result [list 1 {No such file or directory} [list "ERROR for child a : [file join [info library] blah]:No such file or directory"]]
 test safe-8.6 {safe source control on file} -setup {
     set i "a"
     catch {safe::interpDelete $i}
@@ -603,7 +603,7 @@ test safe-8.6 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result [list 1 {no such file or directory} [list "ERROR for child a : [file join [info library] blah.tcl]:no such file or directory"]]
+} -result [list 1 {No such file or directory} [list "ERROR for child a : [file join [info library] blah.tcl]:No such file or directory"]]
 test safe-8.7 {safe source control on file} -setup {
     set i "a"
     catch {safe::interpDelete $i}
@@ -623,7 +623,7 @@ test safe-8.7 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result [list 1 {no such file or directory} [list "ERROR for child a : [file join [info library] xxxxxxxxxxx.tcl]:no such file or directory"]]
+} -result [list 1 {No such file or directory} [list "ERROR for child a : [file join [info library] xxxxxxxxxxx.tcl]:No such file or directory"]]
 test safe-8.8 {safe source forbids -rsrc} emptyTest {
     # Disabled this test.  It was only useful for long unsupported
     # Mac OS 9 systems. [Bug 860a9f1945]
@@ -1389,14 +1389,14 @@ test safe-10.2 {testing statics loading / -nostatics} -constraints tcl::test -bo
     interp eval $i {load {} Safepfx1}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {permission denied (static library)}
+} -result {Permission denied (static library)}
 test safe-10.3 {testing nested statics loading / no nested by default} -setup {
     set i [safe::interpCreate]
 } -constraints tcl::test -body {
     interp eval $i {interp create x; load {} Safepfx1 x}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {permission denied (nested load)}
+} -result {Permission denied (nested load)}
 test safe-10.4 {testing nested statics loading / -nestedloadok} -constraints tcl::test -body {
     set i [safe::interpCreate -nestedloadok]
     interp eval $i {interp create x; load {} Safepfx1 x}
@@ -1521,21 +1521,21 @@ test safe-12.1 {glob is restricted [Bug 2906841]} -setup {
     $i eval glob ../*
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result "permission denied"
+} -result "Permission denied"
 test safe-12.2 {glob is restricted [Bug 2906841]} -setup {
     set i [safe::interpCreate]
 } -body {
     $i eval glob -directory .. *
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result "permission denied"
+} -result "Permission denied"
 test safe-12.3 {glob is restricted [Bug 2906841]} -setup {
     set i [safe::interpCreate]
 } -body {
     $i eval glob -join .. *
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result "permission denied"
+} -result "Permission denied"
 test safe-12.4 {glob is restricted [Bug 2906841]} -setup {
     set i [safe::interpCreate]
 } -body {
@@ -1563,7 +1563,7 @@ test safe-12.7 {glob is restricted} -setup {
     $i eval glob *
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {permission denied}
+} -result {Permission denied}
 
 ### 13. More tests for Safe base glob, with patches @ Bug 2964715
 ###     More tests of glob in sections 12, 16.
@@ -1590,7 +1590,7 @@ test safe-13.1 {glob is restricted [Bug 2964715]} -setup {
     $i eval glob *
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {permission denied}
+} -result {Permission denied}
 test safe-13.2 {mimic the valid glob call by ::tcl::tm::UnknownHandler [Bug 2964715]} -setup {
     set i [safe::interpCreate]
     buildEnvironment deleteme.tm
@@ -1614,7 +1614,7 @@ test safe-13.3 {cf 13.2 but test glob failure when -directory is outside access 
 } -returnCodes error -cleanup {
     safe::interpDelete $i
     removeDirectory $testdir
-} -result {permission denied}
+} -result {Permission denied}
 test safe-13.4 {another valid glob call [Bug 2964715]} -setup {
     set i [safe::interpCreate]
     buildEnvironment deleteme.tm
@@ -1642,7 +1642,7 @@ test safe-13.5 {as 13.4 but test glob failure when -directory is outside access 
 } -returnCodes error -cleanup {
     safe::interpDelete $i
     removeDirectory $testdir
-} -result {permission denied}
+} -result {Permission denied}
 test safe-13.6 {as 13.4 but test silent failure when result is outside access_path [Bug 2964715]} -setup {
     set i [safe::interpCreate]
     buildEnvironment deleteme.tm

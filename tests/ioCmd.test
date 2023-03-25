@@ -138,7 +138,7 @@ test iocmd-4.8 {read command with incorrect combination of arguments} {
 } {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"} {TCL WRONGARGS}}
 test iocmd-4.9 {read command} {
     list [catch {read stdin foo} msg] $msg $::errorCode
-} {1 {expected non-negative integer but got "foo"} {TCL VALUE NUMBER}}
+} {1 {Expected non-negative integer but got "foo"} {TCL VALUE NUMBER}}
 test iocmd-4.10 {read command} {
     list [catch {read file107} msg] $msg $::errorCode
 } {1 {can not find channel named "file107"} {TCL LOOKUP CHANNEL file107}}
@@ -156,7 +156,7 @@ test iocmd-4.12 {read command} -setup {
     read $f 12z
 } -cleanup {
     close $f
-} -result {expected non-negative integer but got "12z"} -errorCode {TCL VALUE NUMBER}
+} -result {Expected non-negative integer but got "12z"} -errorCode {TCL VALUE NUMBER}
 
 test iocmd-5.1 {seek command} -returnCodes error -body {
     seek
@@ -439,7 +439,7 @@ test iocmd-11.3 {I/O to command pipelines} {unixOrWin unixExecs} {
 } {1 {can't read output from command: standard output was redirected} {TCL OPERATION EXEC BADREDIRECT}}
 test iocmd-11.4 {I/O to command pipelines} {notValgrind unixOrWin} {
     list [catch {open "| no_such_command_exists" rb} msg] $msg $::errorCode
-} {1 {couldn't execute "no_such_command_exists": no such file or directory} {POSIX ENOENT {no such file or directory}}}
+} {1 {couldn't execute "no_such_command_exists": No such file or directory} {POSIX ENOENT {No such file or directory}}}
 
 test iocmd-12.1 {POSIX open access modes: RDONLY} {
     file delete $path(test1)
@@ -456,11 +456,11 @@ test iocmd-12.1 {POSIX open access modes: RDONLY} {
 test iocmd-12.2 {POSIX open access modes: RDONLY} -match regexp -body {
     file delete $path(test3)
     open $path(test3) RDONLY
-} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+} -returnCodes error -result {(?i)couldn't open ".*test3": No such file or directory}
 test iocmd-12.3 {POSIX open access modes: WRONLY} -match regexp -body {
     file delete $path(test3)
     open $path(test3) WRONLY
-} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+} -returnCodes error -result {(?i)couldn't open ".*test3": No such file or directory}
 #
 # Test 13.4 relies on assigning the same channel name twice.
 #
@@ -486,7 +486,7 @@ test iocmd-12.4 {POSIX open access modes: WRONLY} {unix} {
 test iocmd-12.5 {POSIX open access modes: RDWR} -match regexp -body {
     file delete $path(test3)
     open $path(test3) RDWR
-} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+} -returnCodes error -result {(?i)couldn't open ".*test3": No such file or directory}
 test iocmd-12.6 {POSIX open access modes: errors} {
     concat [catch {open $path(test3) "FOO \{BAR BAZ"} msg] $msg\n$::errorInfo
 } "1 unmatched open brace in list
@@ -545,8 +545,8 @@ test iocmd-13.5 {errors in open command} {
 test iocmd-13.6 {errors in open command} {
     set msg [list [catch {open _non_existent_} msg] $msg $::errorCode]
     regsub [file join {} _non_existent_] $msg "_non_existent_" msg
-    string tolower $msg
-} {1 {couldn't open "_non_existent_": no such file or directory} {posix enoent {no such file or directory}}}
+    set msg
+} {1 {couldn't open "_non_existent_": No such file or directory} {POSIX ENOENT {No such file or directory}}}
 test iocmd-13.7 {errors in open command} {
     list [catch {open $path(test1) b} msg] $msg
 } {1 {illegal access mode "b"}}
@@ -884,7 +884,7 @@ test iocmd-21.22 {[close] in [read] segfaults} -setup {
 } -returnCodes error -cleanup {
     catch {close $ch}
     rename foo {}
-} -match glob -result {*invalid argument*}
+} -match glob -result {*Invalid argument*}
 test iocmd-21.23 {[close] in [gets] segfaults} -setup {
     proc foo {method chan args} {
 	switch -- $method initialize {
@@ -1743,7 +1743,7 @@ test iocmd-28.10 {chan seek, not supported by handler} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {1 {error during seek on "rc*": invalid argument}}
+} -result {1 {error during seek on "rc*": Invalid argument}}
 test iocmd-28.11 {chan seek, error return} -match glob -body {
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return -code error BOOM!}
@@ -3433,7 +3433,7 @@ test iocmd.tf-28.10 {chan seek, not supported by handler} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {1 {error during seek on "rc*": invalid argument}} \
+} -result {1 {error during seek on "rc*": Invalid argument}} \
     -constraints {testchannel thread}
 test iocmd.tf-28.11 {chan seek, error return} -match glob -body {
     set res {}
