@@ -442,7 +442,7 @@ Tcl_ReadObjCmd(
 	    if (strcmp(TclGetString(objv[i]), "nonewline") != 0) {
 #endif
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"Expected non-negative integer but got \"%s\"",
+			"expected non-negative integer but got \"%s\"",
 			TclGetString(objv[i])));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 		return TCL_ERROR;

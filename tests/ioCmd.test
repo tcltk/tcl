@@ -138,7 +138,7 @@ test iocmd-4.8 {read command with incorrect combination of arguments} {
 } {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"} {TCL WRONGARGS}}
 test iocmd-4.9 {read command} {
     list [catch {read stdin foo} msg] $msg $::errorCode
-} {1 {Expected non-negative integer but got "foo"} {TCL VALUE NUMBER}}
+} {1 {expected non-negative integer but got "foo"} {TCL VALUE NUMBER}}
 test iocmd-4.10 {read command} {
     list [catch {read file107} msg] $msg $::errorCode
 } {1 {can not find channel named "file107"} {TCL LOOKUP CHANNEL file107}}
@@ -156,7 +156,7 @@ test iocmd-4.12 {read command} -setup {
     read $f 12z
 } -cleanup {
     close $f
-} -result {Expected non-negative integer but got "12z"} -errorCode {TCL VALUE NUMBER}
+} -result {expected non-negative integer but got "12z"} -errorCode {TCL VALUE NUMBER}
 
 test iocmd-5.1 {seek command} -returnCodes error -body {
     seek

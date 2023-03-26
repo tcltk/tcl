@@ -697,7 +697,7 @@ Tcl_ErrnoMsg(
     case ENAMETOOLONG: return "File name too long";
 #endif
 #ifdef ENAVAIL
-    case ENAVAIL: return "No XENIX semaphores available";
+    case ENAVAIL: return "Not available";
 #endif
 #ifdef ENET
     case ENET: return "ENET";
@@ -787,7 +787,7 @@ Tcl_ErrnoMsg(
     case ENOTEMPTY: return "Directory not empty";
 #endif
 #ifdef ENOTNAM
-    case ENOTNAM: return "Not a XENIX named type file";
+    case ENOTNAM: return "Not a name file";
 #endif
 #ifdef ENOTSOCK
     case ENOTSOCK: return "Socket operation on non-socket";

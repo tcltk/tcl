@@ -1474,7 +1474,7 @@ TclMergeReturnOptions(
 	     */
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "bad -level value: Expected non-negative integer but got"
+                    "bad -level value: expected non-negative integer but got"
                     " \"%s\"", TclGetString(valuePtr)));
 	    Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_LEVEL", NULL);
 	    goto error;

@@ -4211,7 +4211,7 @@ test io-32.3 {Tcl_Read, negative byte count} {
     set l [list [catch {read $f -1} msg] $msg]
     close $f
     set l
-} {1 {Expected non-negative integer but got "-1"}}
+} {1 {expected non-negative integer but got "-1"}}
 test io-32.4 {Tcl_Read, positive byte count} {
     set f [open $path(longfile) r]
     set x [read $f 1024]

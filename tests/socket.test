@@ -645,7 +645,7 @@ test socket_$af-2.9 {socket conflict} -constraints [list socket supported_$af st
     close $f
 } -returnCodes error -cleanup {
     close $s
-} -match glob -result {couldn't open socket: Address in use*}
+} -match glob -result {couldn't open socket: Address already in use*}
 test socket_$af-2.10 {close on accept, accepted socket lives} -setup {
     set done 0
     set timer [after 20000 "set done timed_out"]
@@ -802,7 +802,7 @@ test socket_$af-3.1 {socket conflict} -constraints [list socket supported_$af st
 } -cleanup {
     puts $f bye
     close $f
-} -returnCodes error -result {couldn't open socket: Address in use}
+} -returnCodes error -result {couldn't open socket: Address already in use}
 test socket_$af-3.2 {server with several clients} -setup {
     file delete $path(script)
     set f [open $path(script) w]
@@ -1397,7 +1397,7 @@ test socket_$af-11.6 {socket conflict} -setup {
     list [getPort $s2] [close $s2]
 } -cleanup {
     close $s1
-} -returnCodes error -result {couldn't open socket: Address in use}
+} -returnCodes error -result {couldn't open socket: Address already in use}
 test socket_$af-11.7 {server with several clients} -setup {
     set port [sendCommand {
 	set server [socket -server accept 0]

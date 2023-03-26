@@ -3958,7 +3958,7 @@ test chan-io-32.3 {Tcl_Read, negative byte count} -setup {
     chan read $f -1
 } -returnCodes error -cleanup {
     chan close $f
-} -result {Expected non-negative integer but got "-1"}
+} -result {expected non-negative integer but got "-1"}
 test chan-io-32.4 {Tcl_Read, positive byte count} -body {
     set f [open $path(longfile) r]
     string length [chan read $f 1024]

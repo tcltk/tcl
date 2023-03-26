@@ -1214,7 +1214,7 @@ test interp-20.23 {interp hide vs safety} {
     lappend l $msg
     interp delete a
     set l
-} {1 {Permission denied: safe interpreter cannot hide commands}}
+} {1 {permission denied: safe interpreter cannot hide commands}}
 test interp-20.24 {interp hide vs safety} {
     catch {interp delete a}
     interp create a -safe
@@ -1224,7 +1224,7 @@ test interp-20.24 {interp hide vs safety} {
     lappend l $msg
     interp delete a
     set l
-} {1 {Permission denied: safe interpreter cannot hide commands}}
+} {1 {permission denied: safe interpreter cannot hide commands}}
 test interp-20.25 {interp hide vs safety} {
     catch {interp delete a}
     interp create a -safe
@@ -1267,7 +1267,7 @@ test interp-20.28 {interp expose vs safety} {
     lappend l $msg
     interp delete a
     set l
-} {0 {} 1 {Permission denied: safe interpreter cannot expose commands}}
+} {0 {} 1 {permission denied: safe interpreter cannot expose commands}}
 test interp-20.29 {interp expose vs safety} {
     catch {interp delete a}
     interp create a -safe
@@ -1278,7 +1278,7 @@ test interp-20.29 {interp expose vs safety} {
     lappend l $msg
     interp delete a
     set l
-} {0 {} 1 {Permission denied: safe interpreter cannot expose commands}}
+} {0 {} 1 {permission denied: safe interpreter cannot expose commands}}
 test interp-20.30 {interp expose vs safety} {
     catch {interp delete a}
     interp create a -safe
@@ -1290,7 +1290,7 @@ test interp-20.30 {interp expose vs safety} {
     lappend l $msg
     interp delete a
     set l
-} {0 {} 1 {Permission denied: safe interpreter cannot expose commands}}
+} {0 {} 1 {permission denied: safe interpreter cannot expose commands}}
 test interp-20.31 {interp expose vs safety} {
     catch {interp delete a}
     interp create a -safe
@@ -1767,7 +1767,7 @@ test interp-22.5 {testing interp marktrusted} {
     catch {a eval {interp marktrusted b}} msg
     interp delete a
     set msg
-} {Permission denied: safe interpreter cannot mark trusted}
+} {permission denied: safe interpreter cannot mark trusted}
 test interp-22.6 {testing interp marktrusted} {
     catch {interp delete a}
     interp create a -safe
@@ -1775,7 +1775,7 @@ test interp-22.6 {testing interp marktrusted} {
     catch {a eval {b marktrusted}} msg
     interp delete a
     set msg
-} {Permission denied: safe interpreter cannot mark trusted}
+} {permission denied: safe interpreter cannot mark trusted}
 test interp-22.7 {testing interp marktrusted} {
     catch {interp delete a}
     interp create a -safe
@@ -3004,7 +3004,7 @@ test interp-29.6.8 {safe interpreter recursion limit} {
     set n [catch {child eval {interp recursionlimit {} 42}} msg]
     interp delete child
     list $n $msg
-} {1 {Permission denied: safe interpreters cannot change recursion limit}}
+} {1 {permission denied: safe interpreters cannot change recursion limit}}
 test interp-29.6.9 {safe interpreter recursion limit} {
     interp create child -safe
     set result [
@@ -3018,7 +3018,7 @@ test interp-29.6.9 {safe interpreter recursion limit} {
     ]
     interp delete child
     set result
-} {1 {Permission denied: safe interpreters cannot change recursion limit}}
+} {1 {permission denied: safe interpreters cannot change recursion limit}}
 test interp-29.6.10 {safe interpreter recursion limit} {
     interp create child -safe
     set result [
@@ -3032,7 +3032,7 @@ test interp-29.6.10 {safe interpreter recursion limit} {
     ]
     interp delete child
     set result
-} {1 {Permission denied: safe interpreters cannot change recursion limit}}
+} {1 {permission denied: safe interpreters cannot change recursion limit}}
 
 
 #    # Deep recursion (into interps when the regular one fails):
