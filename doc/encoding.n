@@ -96,7 +96,7 @@ Returns a list of the names of encoding profiles. See \fBPROFILES\fR below.
 Set the system encoding to \fIencoding\fR. If \fIencoding\fR is
 omitted then the command returns the current system encoding.  The
 system encoding is used whenever Tcl passes strings to system calls.
-\" Do not put .VS on whole section as that messes up the bullet list alignment
+.\" Do not put .VS on whole section as that messes up the bullet list alignment
 .SH PROFILES
 .PP
 .VS "TCL8.7 TIP656"
@@ -172,7 +172,7 @@ These examples use the utility proc below that prints the Unicode code points
 comprising a Tcl string.
 .PP
 .CS
-proc codepoints {s} {join [lmap c [split $s ""] {
+proc codepoints s {join [lmap c [split $s {}] {
     string cat U+ [format %.6X [scan $c %c]]}]
 }
 .CE
@@ -193,8 +193,8 @@ Example 2: Error handling based on profiles:
 .PP
 The letter \fBA\fR is Unicode character U+0041 and the byte "\ex80" is invalid
 in ASCII encoding.
-.CS
 .PP
+.CS
 % codepoints [encoding convertfrom -profile tcl8 ascii A\ex80]
 U+000041 U+000080
 % codepoints [encoding convertfrom -profile replace ascii A\ex80]
