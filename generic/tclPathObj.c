@@ -2350,6 +2350,8 @@ SetFsPathFromAny(
     fsPathPtr = (FsPath *)ckalloc(sizeof(FsPath));
 
     if (transPtr == pathPtr) {
+	Tcl_GetStringFromObj(pathPtr, NULL);
+	TclFreeInternalRep(pathPtr);
         transPtr = Tcl_DuplicateObj(pathPtr);
         fsPathPtr->filesystemEpoch = 0;
     } else {
