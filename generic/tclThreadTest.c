@@ -6,8 +6,8 @@
  *	Some of this code is based on work done by Richard Hipp on behalf of
  *	Conservation Through Innovation, Limited, with their permission.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 2006-2008 Joe Mistachkin.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -119,9 +119,7 @@ static char *errorProcString;
 
 TCL_DECLARE_MUTEX(threadMutex)
 
-static int		ThreadObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ThreadObjCmd;
 static int		ThreadCreate(Tcl_Interp *interp, const char *script,
 			    int joinable);
 static int		ThreadList(Tcl_Interp *interp);
@@ -205,13 +203,12 @@ TclThread_Init(
 
 static int
 ThreadObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    int option;
     static const char *const threadOptions[] = {
 	"cancel", "create", "event", "exit", "id",
 	"join", "names", "send", "wait", "errorproc",
@@ -221,7 +218,7 @@ ThreadObjCmd(
 	THREAD_CANCEL, THREAD_CREATE, THREAD_EVENT, THREAD_EXIT,
 	THREAD_ID, THREAD_JOIN, THREAD_NAMES, THREAD_SEND,
 	THREAD_WAIT, THREAD_ERRORPROC
-    };
+    } option;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -244,7 +241,7 @@ ThreadObjCmd(
 	Tcl_MutexUnlock(&threadMutex);
     }
 
-    switch ((enum options)option) {
+    switch (option) {
     case THREAD_CANCEL: {
 	Tcl_WideInt id;
 	const char *result;
@@ -271,7 +268,7 @@ ThreadObjCmd(
 	} else {
 	    result = NULL;
 	}
-	return ThreadCancel(interp, (Tcl_ThreadId) (size_t) id, result, flags);
+	return ThreadCancel(interp, (Tcl_ThreadId) INT2PTR(id), result, flags);
     }
     case THREAD_CREATE: {
 	const char *script;
@@ -335,11 +332,11 @@ ThreadObjCmd(
 	     */
 
 	    if (objc == 2) {
-		idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t)Tcl_GetCurrentThread());
+		idObj = Tcl_NewWideIntObj((Tcl_WideInt)PTR2INT(Tcl_GetCurrentThread()));
 	    } else if (objc == 3
 		    && strcmp("-main", Tcl_GetString(objv[2])) == 0) {
 		Tcl_MutexLock(&threadMutex);
-		idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t)mainThreadId);
+		idObj = Tcl_NewWideIntObj((Tcl_WideInt)PTR2INT(mainThreadId));
 		Tcl_MutexUnlock(&threadMutex);
 	    } else {
 		Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -364,13 +361,13 @@ ThreadObjCmd(
 	    return TCL_ERROR;
 	}
 
-	result = Tcl_JoinThread((Tcl_ThreadId)(size_t)id, &status);
+	result = Tcl_JoinThread((Tcl_ThreadId)INT2PTR(id), &status);
 	if (result == TCL_OK) {
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), status);
 	} else {
-	    char buf[20];
+	    char buf[TCL_INTEGER_SPACE];
 
-	    sprintf(buf, "%" TCL_LL_MODIFIER "d", id);
+	    sprintf(buf, "%" TCL_LL_MODIFIER "d", (long long)id);
 	    Tcl_AppendResult(interp, "cannot join thread ", buf, NULL);
 	}
 	return result;
@@ -406,14 +403,14 @@ ThreadObjCmd(
 	}
 	arg++;
 	script = Tcl_GetString(objv[arg]);
-	return ThreadSend(interp, (Tcl_ThreadId)(size_t)id, script, wait);
+	return ThreadSend(interp, (Tcl_ThreadId)INT2PTR(id), script, wait);
     }
     case THREAD_EVENT: {
 	if (objc > 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 		Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT)));
 	return TCL_OK;
     }
@@ -610,7 +607,7 @@ NewTestThread(
      */
 
     Tcl_Preserve(tsdPtr->interp);
-    result = Tcl_EvalEx(tsdPtr->interp, threadEvalScript, -1, 0);
+    result = Tcl_EvalEx(tsdPtr->interp, threadEvalScript, TCL_INDEX_NONE, 0);
     if (result != TCL_OK) {
 	ThreadErrorProc(tsdPtr->interp);
     }
@@ -657,10 +654,10 @@ ThreadErrorProc(
     errorInfo = Tcl_GetVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
     if (errorProcString == NULL) {
 	errChannel = Tcl_GetStdChannel(TCL_STDERR);
-	Tcl_WriteChars(errChannel, "Error from thread ", -1);
-	Tcl_WriteChars(errChannel, buf, -1);
+	Tcl_WriteChars(errChannel, "Error from thread ", TCL_INDEX_NONE);
+	Tcl_WriteChars(errChannel, buf, TCL_INDEX_NONE);
 	Tcl_WriteChars(errChannel, "\n", 1);
-	Tcl_WriteChars(errChannel, errorInfo, -1);
+	Tcl_WriteChars(errChannel, errorInfo, TCL_INDEX_NONE);
 	Tcl_WriteChars(errChannel, "\n", 1);
     } else {
 	argv[0] = errorProcString;
@@ -878,8 +875,7 @@ ThreadSend(
 
     threadEventPtr->event.proc = ThreadEventProc;
     Tcl_ThreadQueueEvent(threadId, (Tcl_Event *) threadEventPtr,
-	    TCL_QUEUE_TAIL);
-    Tcl_ThreadAlert(threadId);
+	    TCL_QUEUE_TAIL|TCL_QUEUE_ALERT_IF_EMPTY);
 
     if (!wait) {
 	Tcl_MutexUnlock(&threadMutex);
@@ -986,7 +982,7 @@ ThreadCancel(
     Tcl_MutexUnlock(&threadMutex);
     Tcl_ResetResult(interp);
     return Tcl_CancelEval(tsdPtr->interp,
-    	(result != NULL) ? Tcl_NewStringObj(result, -1) : NULL, 0, flags);
+    	(result != NULL) ? Tcl_NewStringObj(result, TCL_INDEX_NONE) : NULL, 0, flags);
 }
 
 /*
@@ -1105,7 +1101,7 @@ ThreadFreeProc(
 static int
 ThreadDeleteEvent(
     Tcl_Event *eventPtr,	/* Really ThreadEvent */
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     if (eventPtr->proc == ThreadEventProc) {
 	Tcl_Free(((ThreadEvent *) eventPtr)->script);

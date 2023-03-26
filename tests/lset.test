@@ -6,18 +6,18 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+# Copyright © 2001 Kevin B. Kenny.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 proc failTrace {name1 name2 op} {
     error "trace failed"
@@ -412,7 +412,7 @@ test lset-14.2 {lset, not compiled, flat args, is string rep preserved?} testeva
 } "{ { 1 2 } { 3 4 } } { 3 4 }"
 
 testConstraint testobj [llength [info commands testobj]]
-test lset-15.1 {lset: shared intrep [Bug 1677512]} -setup {
+test lset-15.1 {lset: shared internalrep [Bug 1677512]} -setup {
     teststringobj set 1 {{1 2} 3}
     testobj convert 1 list
     testobj duplicate 1 2

@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
+Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_GetWideUIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -32,13 +32,16 @@ int
 \fBTcl_GetIntFromObj\fR(\fIinterp, objPtr, intPtr\fR)
 .sp
 int
-\fBTcl_GetIntForIndex\fR(\fIinterp, objPtr, endValue, intPtr\fR)
+\fBTcl_GetIntForIndex\fR(\fIinterp, objPtr, endValue, indexPtr\fR)
 .sp
 int
 \fBTcl_GetLongFromObj\fR(\fIinterp, objPtr, longPtr\fR)
 .sp
 int
 \fBTcl_GetWideIntFromObj\fR(\fIinterp, objPtr, widePtr\fR)
+.sp
+int
+\fBTcl_GetWideUIntFromObj\fR(\fIinterp, objPtr, uwidePtr\fR)
 .sp
 .sp
 \fB#include <tclTomMath.h>\fR
@@ -58,7 +61,7 @@ int
 \fBTcl_InitBignumFromDouble\fR(\fIinterp, doubleValue, bigValue\fR)
 .SH ARGUMENTS
 .AS Tcl_WideInt doubleValue in/out
-.AP int endValue in
+.AP size_t endValue in
 \fBTcl_GetIntForIndex\fR will return this when the input value is "end".
 .AP int intValue in
 Integer value used to initialize or set a Tcl value.
@@ -80,8 +83,12 @@ retrieval fails.
 Points to place to store the integer value retrieved from \fIobjPtr\fR.
 .AP long *longPtr out
 Points to place to store the long integer value retrieved from \fIobjPtr\fR.
+.AP size_t *indexPtr out
+Points to place to store the size_t value retrieved from \fIobjPtr\fR.
 .AP Tcl_WideInt *widePtr out
 Points to place to store the wide integer value retrieved from \fIobjPtr\fR.
+.AP Tcl_WideUInt *uwidePtr out
+Points to place to store the unsigned wide integer value retrieved from \fIobjPtr\fR.
 .AP mp_int *bigValue in/out
 Points to a multi-precision integer structure declared by the LibTomMath
 library.
@@ -102,7 +109,7 @@ are provided by the C language standard.  The \fBTcl_WideInt\fR type is a
 typedef defined to be whatever signed integral type covers at least the
 64-bit integer range (-9223372036854775808 to 9223372036854775807).  Depending
 on the platform and the C compiler, the actual type might be
-\fBlong long int\fR, \fB__int64\fR, or something else.
+\fBlong long int\fR, or something else.
 The \fBmp_int\fR type is a multiple-precision integer type defined
 by the LibTomMath multiple-precision integer library.
 .PP
@@ -160,6 +167,27 @@ If anything later in the caller requires
 The \fBTcl_InitBignumFromDouble\fR routine is a utility procedure
 that extracts the integer part of \fIdoubleValue\fR and stores that
 integer value in the \fBmp_int\fR value \fIbigValue\fR.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_NewIntObj\fR, \fBTcl_NewLongObj\fR, \fBTcl_NewWideIntObj\fR, and
+\fBTcl_NewBignumObj\fR always return a zero-reference object, much like
+\fBTcl_NewObj\fR.
+.PP
+\fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR, \fBTcl_SetWideIntObj\fR, and
+\fBTcl_SetBignumObj\fR do not modify the reference count of their \fIobjPtr\fR
+arguments, but do require that the object be unshared.
+.PP
+\fBTcl_GetIntFromObj\fR, \fBTcl_GetIntForIndex\fR, \fBTcl_GetLongFromObj\fR,
+\fBTcl_GetWideIntFromObj\fR, \fBTcl_GetBignumFromObj\fR, and
+\fBTcl_TakeBignumFromObj\fR do not modify the reference count of their
+\fIobjPtr\fR arguments; they only read. Note however that this function may
+set the interpreter result; if that is the only place that is holding a
+reference to the object, it will be deleted. Also note that if
+\fBTcl_TakeBignumFromObj\fR is given an unshared value, the value of that
+object may be modified; it is intended to be used when the value is
+.QW consumed
+by the operation at this point.
+
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_GetObjResult
 .SH KEYWORDS

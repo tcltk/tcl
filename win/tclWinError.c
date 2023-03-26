@@ -4,7 +4,7 @@
  *	This file contains code for converting from Win32 errors to errno
  *	errors.
  *
- * Copyright (c) 1995-1996 by Sun Microsystems, Inc.
+ * Copyright © 1995-1996 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -334,7 +334,7 @@ static const unsigned char wsaErrorTable[] = {
 /*
  *----------------------------------------------------------------------
  *
- * TclWinConvertError --
+ * Tcl_WinConvertError --
  *
  *	This routine converts a Win32 error into an errno value.
  *
@@ -348,8 +348,8 @@ static const unsigned char wsaErrorTable[] = {
  */
 
 void
-TclWinConvertError(
-    int errCode)		/* Win32 error code. */
+Tcl_WinConvertError(
+    unsigned errCode)		/* Win32 error code. */
 {
     if ((unsigned)errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
 	errCode -= WSAEWOULDBLOCK;
@@ -407,7 +407,7 @@ tclWinDebugPanic(
 	OutputDebugStringW(msgString);
     } else {
 	if (!isatty(fileno(stderr))) {
-	    fprintf(stderr, "\xef\xbb\xbf");
+	    fprintf(stderr, "\xEF\xBB\xBF");
 	}
 	vfprintf(stderr, format, argList);
 	fprintf(stderr, "\n");

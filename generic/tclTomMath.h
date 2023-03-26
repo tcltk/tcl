@@ -4,7 +4,7 @@
 #ifdef MP_NO_STDINT
 #   ifdef HAVE_STDINT_H
 #	include <stdint.h>
-#else
+#   else
 #	include "../compat/stdint.h"
 #   endif
 #endif

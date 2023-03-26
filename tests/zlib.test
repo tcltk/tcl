@@ -4,14 +4,14 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1996-1998 by Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1996-1998 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.1
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -34,7 +34,7 @@ test zlib-1.3 {zlib basics} -constraints zlib -body {
     zlib::pkgconfig list
 } -result zlibVersion
 test zlib-1.4 {zlib basics} -constraints zlib -body {
-    package present zlib
+    package present tcl::zlib
 } -result 2.0.1
 
 test zlib-2.1 {zlib compress/decompress} zlib {
@@ -140,7 +140,7 @@ test zlib-7.7 {zlib stream: Bug 25842c161} -constraints zlib -body {
 } -result ""
 # Also causes Tk Bug 10f2e7872b
 test zlib-7.8 {zlib stream: Bug b26e38a3e4} -constraints zlib -setup {
-    expr srand(12345)
+    expr {srand(12345)}
     set randdata {}
     for {set i 0} {$i<6001} {incr i} {
 	append randdata [binary format c [expr {int(256*rand())}]]
@@ -292,7 +292,7 @@ test zlib-8.6 {transformation and fconfigure} -setup {
 } -cleanup {
     catch {close $fd}
     removeFile $file
-} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf -checksum 1 -dictionary {}} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf}}
+} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -profile tcl8 -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -profile tcl8 -translation lf -checksum 1 -dictionary {}} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -profile tcl8 -translation lf}}
 test zlib-8.7 {transformation and fconfigure} -setup {
     set file [makeFile {} test.gz]
     set fd [open $file wb]
@@ -302,7 +302,7 @@ test zlib-8.7 {transformation and fconfigure} -setup {
 } -cleanup {
     catch {close $fd}
     removeFile $file
-} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf -checksum 0} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf}}
+} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -profile tcl8 -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -profile tcl8 -translation lf -checksum 0} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -profile tcl8 -translation lf}}
 # Input is headers from fetching SPDY draft
 # Dictionary is that which is proposed _in_ SPDY draft
 set spdyHeaders "HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nX-Robots-Tag: noarchive\r\nLast-Modified: Tue, 05 Jun 2012 02:43:25 GMT\r\nETag: \"1338864205129|#public|0|en|||0\"\r\nExpires: Tue, 05 Jun 2012 16:17:11 GMT\r\nDate: Tue, 05 Jun 2012 16:17:06 GMT\r\nCache-Control: public, max-age=5\r\nX-Content-Type-Options: nosniff\r\nX-XSS-Protection: 1; mode=block\r\nServer: GSE\r\n"
@@ -451,7 +451,7 @@ test zlib-8.16 {Bug 3603553: buffer transfer with large writes} -setup {
     # Actual data isn't very important; needs to be substantially larger than
     # the internal buffer (32kB) and incompressible.
     set largeData {}
-    for {set i 0;expr srand(1)} {$i < 100000} {incr i} {
+    for {set i 0;expr {srand(1)}} {$i < 100000} {incr i} {
 	append largeData [lindex "a b c d e f g h i j k l m n o p" \
 		[expr {int(16*rand())}]]
     }
@@ -486,6 +486,38 @@ test zlib-8.18 {Bug dd260aaf: fconfigure} -setup {
     catch {close $inSide}
     catch {close $outSide}
 } -result {{one two} {one two}}
+test zlib-8.19 {zlib transformation, bug f9eafc3886} -constraints zlib -setup {
+    set file [makeFile {} test.gz]
+} -body {
+    set f [zlib push gzip [open $file w] -header [list comment [string repeat A 500]]]
+} -cleanup {
+    catch {close $f}
+    removeFile $file
+} -returnCodes 1 -result {Comment too large for zip}
+test zlib-8.20 {zlib transformation, bug f9eafc3886} -constraints zlib -setup {
+    set file [makeFile {} test.gz]
+} -body {
+    set f [zlib push gzip [open $file w] -header [list filename [string repeat A 5000]]]
+} -cleanup {
+    catch {close $f}
+    removeFile $file
+} -returnCodes 1 -result {Filename too large for zip}
+test zlib-8.21 {zlib transformation, bug f9eafc3886} -constraints zlib -setup {
+    set file [makeFile {} test.gz]
+} -body {
+    set f [zlib push gzip [open $file w] -header [list comment \u100]]
+} -cleanup {
+    catch {close $f}
+    removeFile $file
+} -returnCodes 1 -result {Comment contains characters > 0xFF}
+test zlib-8.22 {zlib transformation, bug f9eafc3886} -constraints zlib -setup {
+    set file [makeFile {} test.gz]
+} -body {
+    set f [zlib push gzip [open $file w] -header [list filename \u100]]
+} -cleanup {
+    catch {close $f}
+    removeFile $file
+} -returnCodes 1 -result {Filename contains characters > 0xFF}
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]

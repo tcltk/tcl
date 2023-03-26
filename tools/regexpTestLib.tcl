@@ -4,7 +4,7 @@
 # spencer2regexp.tcl, which are programs written to convert Henry
 # Spencer's test suite to tcl test files.
 #
-# Copyright (c) 1996 by Sun Microsystems, Inc.
+# Copyright © 1996 Sun Microsystems, Inc.
 
 proc readInputFile {} {
     global inFileName
@@ -105,7 +105,7 @@ proc writeOutputFile {numLines fcn} {
     puts $fileId "# errors.  No output means no errors were found.  Setting VERBOSE to"
     puts $fileId "# -1 will run tests that are known to fail."
     puts $fileId "#"
-    puts $fileId "# Copyright (c) 1998 Sun Microsystems, Inc."
+    puts $fileId "# Copyright © 1998 Sun Microsystems, Inc."
     puts $fileId "#"
     puts $fileId "# See the file \"license.terms\" for information on usage and redistribution"
     puts $fileId "# of this file, and for a DISCLAIMER OF ALL WARRANTIES."
@@ -183,16 +183,16 @@ proc convertTestLine {currentLine len lineNum srcLineNum} {
     set noBraces 0
     if {[regexp {=|>} $flags] == 1} {
 	regsub -all {_} $currentLine {\\ } currentLine
-	regsub -all {A} $currentLine {\\007} currentLine
+	regsub -all {A} $currentLine {\\x07} currentLine
 	regsub -all {B} $currentLine {\\b} currentLine
-	regsub -all {E} $currentLine {\\033} currentLine
+	regsub -all {E} $currentLine {\\x1B} currentLine
 	regsub -all {F} $currentLine {\\f} currentLine
 	regsub -all {N} $currentLine {\\n} currentLine
 
 	# if and \r substitutions are made, do not wrap re, flags,
 	# str, and result in braces
 
-	set noBraces [regsub -all {R} $currentLine {\\\u000D} currentLine]
+	set noBraces [regsub -all {R} $currentLine {\\\x0D} currentLine]
 	regsub -all {T} $currentLine {\\t} currentLine
 	regsub -all {V} $currentLine {\\v} currentLine
 	if {[regexp {=} $flags] == 1} {

@@ -298,9 +298,9 @@ environment variables:
 .SH "SEE ALSO"
 package(n), Tcl Improvement Proposal #189
 .QW "\fITcl Modules\fR"
-(online at http://tip.tcl.tk/189.html), Tcl Improvement Proposal #190
+(online at https://tip.tcl-lang.org/189.html), Tcl Improvement Proposal #190
 .QW "\fIImplementation Choices for Tcl Modules\fR"
-(online at http://tip.tcl.tk/190.html)
+(online at https://tip.tcl-lang.org/190.html)
 .SH "KEYWORDS"
 modules, package
 .\" Local Variables:

@@ -37,14 +37,14 @@
 
 typedef struct ChannelBuffer {
     size_t refCount;		/* Current uses count */
-    int nextAdded;		/* The next position into which a character
+    size_t nextAdded;		/* The next position into which a character
 				 * will be put in the buffer. */
-    int nextRemoved;		/* Position of next byte to be removed from
+    size_t nextRemoved;		/* Position of next byte to be removed from
 				 * the buffer. */
-    int bufLength;		/* How big is the buffer? */
+    size_t bufLength;		/* How big is the buffer? */
     struct ChannelBuffer *nextPtr;
     				/* Next buffer in chain. */
-    char buf[1];		/* Placeholder for real buffer. The real
+    char buf[TCLFLEXARRAY];		/* Placeholder for real buffer. The real
 				 * buffer occuppies this space + bufSize-1
 				 * bytes. This must be the last field in the
 				 * structure. */
@@ -158,8 +158,10 @@ typedef struct ChannelState {
 				 * of line sequences in output? */
     int inEofChar;		/* If nonzero, use this as a signal of EOF on
 				 * input. */
+#if TCL_MAJOR_VERSION < 9
     int outEofChar;		/* If nonzero, append this to the channel when
-				 * it is closed if it is open for writing. */
+				 * it is closed if it is open for writing. For Tcl 8.x only */
+#endif
     int unreportedError;	/* Non-zero if an error report was deferred
 				 * because it happened in the background. The
 				 * value is the POSIX error code. */
@@ -186,8 +188,11 @@ typedef struct ChannelState {
     EventScriptRecord *scriptRecordPtr;
 				/* Chain of all scripts registered for event
 				 * handlers ("fileevent") on this channel. */
-    int bufSize;		/* What size buffers to allocate? */
+    size_t bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
+    Channel *timerChanPtr;	/* Needed in order to decrement the refCount of
+				   the right channel when the timer is
+				   deleted. */
     struct CopyState *csPtrR;	/* State of background copy for which channel
 				 * is input, or NULL. */
     struct CopyState *csPtrW;	/* State of background copy for which channel
@@ -216,6 +221,8 @@ typedef struct ChannelState {
 				 * companion to 'unreportedError'. */
     size_t epoch;		/* Used to test validity of stored channelname
 				 * lookup results. */
+    int maxPerms;		/* TIP #220: Max access privileges
+				 * the channel was created with. */
 } ChannelState;
 
 /*
@@ -269,9 +276,10 @@ typedef struct ChannelState {
 					 * delivered for buffered data until
 					 * the state of the channel
 					 * changes. */
+#define CHANNEL_ENCODING_ERROR	(1<<15)	/* set if channel
+					 * encountered an encoding error */
 #define CHANNEL_RAW_MODE	(1<<16)	/* When set, notes that the Raw API is
 					 * being used. */
-
 #define CHANNEL_INCLOSE		(1<<19)	/* Channel is currently being closed.
 					 * Its structures are still live and
 					 * usable, but it may not be closed
@@ -280,6 +288,13 @@ typedef struct ChannelState {
 #define CHANNEL_CLOSEDWRITE	(1<<21)	/* Channel write side has been closed.
 					 * No further Tcl-level write IO on
 					 * the channel is allowed. */
+#define CHANNEL_PROFILE_MASK     0xFF000000
+#define CHANNEL_PROFILE_GET(flags_)  ((flags_) & CHANNEL_PROFILE_MASK)
+#define CHANNEL_PROFILE_SET(flags_, profile_) \
+    do {                                           \
+	(flags_) &= ~CHANNEL_PROFILE_MASK;    \
+	(flags_) |= profile_;                      \
+    } while (0)
 
 /*
  * The length of time to wait between synthetic timer events. Must be zero or

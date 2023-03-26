@@ -4,15 +4,15 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994-1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -351,6 +351,13 @@ test error-9.4 {try (ok, non-empty result) with on handler} {
 test error-9.5 {try (ok, non-empty result) with on ok handler} {
     try { list a b c } on ok {} { list d e f }
 } {d e f}
+test error-9.6 {try (compilation of simple finaly token only, bug [27520c9b17])} -body {
+    set b {}; set l {}
+    try {lappend l error} finally [lappend l set b]
+    list $l $b
+} -cleanup {
+    unset -nocomplain b l
+} -result {{set b error} {}}
 
 # simple try tests - "on" handler matching
 

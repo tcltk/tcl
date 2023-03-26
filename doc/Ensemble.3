@@ -209,6 +209,27 @@ namespace whose list of exported commands is used if both the mapping
 dictionary and the subcommand list properties are NULL. May be read
 using \fBTcl_GetEnsembleNamespace\fR which returns a Tcl result code
 (\fBTCL_OK\fR, or \fBTCL_ERROR\fR if the token does not refer to an ensemble).
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_FindEnsemble\fR does not modify the reference count of its
+\fIcmdNameObj\fR argument; it only reads. Note however that this function may
+set the interpreter result; if that is the only place that is holding a
+reference to the object, it will be deleted.
+.PP
+The ensemble property getters (\fBTcl_GetEnsembleMappingDict\fR,
+\fBTcl_GetEnsembleParameterList\fR, \fBTcl_GetEnsembleSubcommandList\fR, and
+\fBTcl_GetEnsembleUnknownHandler\fR) do not manipulate the reference count of
+the values they provide out; if those are non-NULL, they will have a reference
+count of at least 1.  Note that these functions may set the interpreter
+result.
+.PP
+The ensemble property setters (\fBTcl_SetEnsembleMappingDict\fR,
+\fBTcl_SetEnsembleParameterList\fR, \fBTcl_SetEnsembleSubcommandList\fR, and
+\fBTcl_SetEnsembleUnknownHandler\fR) will increment the reference count of the
+new value of the property they are given if they succeed (and decrement the
+reference count of the old value of the property, if relevant). If the
+property setters return \fBTCL_ERROR\fR, the reference count of the Tcl_Obj
+argument is left unchanged.
 .SH "SEE ALSO"
 namespace(n), Tcl_DeleteCommandFromToken(3)
 .SH KEYWORDS

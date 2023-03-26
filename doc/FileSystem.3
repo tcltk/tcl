@@ -45,7 +45,7 @@ int
 \fBTcl_FSDeleteFile\fR(\fIpathPtr\fR)
 .sp
 int
-\fBTcl_FSRemoveDirectory\fR(\fIpathPtr, int recursive, errorPtr\fR)
+\fBTcl_FSRemoveDirectory\fR(\fIpathPtr, recursive, errorPtr\fR)
 .sp
 int
 \fBTcl_FSRenameFile\fR(\fIsrcPathPtr, destPathPtr\fR)
@@ -79,10 +79,10 @@ int
 \fBTcl_FSUtime\fR(\fIpathPtr, tval\fR)
 .sp
 int
-\fBTcl_FSFileAttrsGet\fR(\fIinterp, int index, pathPtr, objPtrRef\fR)
+\fBTcl_FSFileAttrsGet\fR(\fIinterp, index, pathPtr, objPtrRef\fR)
 .sp
 int
-\fBTcl_FSFileAttrsSet\fR(\fIinterp, int index, pathPtr, Tcl_Obj *objPtr\fR)
+\fBTcl_FSFileAttrsSet\fR(\fIinterp, index, pathPtr, objPtr\fR)
 .sp
 const char *const *
 \fBTcl_FSFileAttrStrings\fR(\fIpathPtr, objPtrRef\fR)
@@ -144,16 +144,16 @@ Tcl_Obj *
 Tcl_StatBuf *
 \fBTcl_AllocStatBuf\fR()
 .sp
-Tcl_WideInt
+long long
 \fBTcl_GetAccessTimeFromStat\fR(\fIstatPtr\fR)
 .sp
 unsigned
 \fBTcl_GetBlockSizeFromStat\fR(\fIstatPtr\fR)
 .sp
-Tcl_WideUInt
+unsigned long long
 \fBTcl_GetBlocksFromStat\fR(\fIstatPtr\fR)
 .sp
-Tcl_WideInt
+long long
 \fBTcl_GetChangeTimeFromStat\fR(\fIstatPtr\fR)
 .sp
 int
@@ -174,10 +174,10 @@ int
 unsigned
 \fBTcl_GetModeFromStat\fR(\fIstatPtr\fR)
 .sp
-Tcl_WideInt
+long long
 \fBTcl_GetModificationTimeFromStat\fR(\fIstatPtr\fR)
 .sp
-Tcl_WideUInt
+unsigned long long
 \fBTcl_GetSizeFromStat\fR(\fIstatPtr\fR)
 .sp
 int
@@ -197,6 +197,8 @@ rename operation.
 .AP Tcl_Obj *destPathPtr in
 As for \fIpathPtr\fR, but used for the destination filename for a copy or
 rename operation.
+.AP int recursive in
+Whether to remove subdirectories and their contents as well.
 .AP "const char" *encodingName in
 The encoding of the data stored in the
 file identified by \fIpathPtr\fR and to be evaluated.
@@ -218,12 +220,16 @@ The second of two path values to compare. The value may be converted
 to \fBpath\fR type.
 .AP Tcl_Obj *listObj in
 The list of path elements to operate on with a \fBjoin\fR operation.
-.AP int elements in
-If non-negative, the number of elements in the \fIlistObj\fR which should
-be joined together. If negative, then all elements are joined.
+.AP size_t elements in
+The number of elements in the \fIlistObj\fR which should
+be joined together. If TCL_INDEX_NONE, then all elements are joined.
 .AP Tcl_Obj **errorPtr out
 In the case of an error, filled with a value containing the name of
 the file which caused an error in the various copy/rename operations.
+.AP int index in
+The index of the attribute in question.
+.AP Tcl_Obj *objPtr in
+The value to set in the operation.
 .AP Tcl_Obj **objPtrRef out
 Filled with a value containing the result of the operation.
 .AP Tcl_Obj *resultPtr out
@@ -241,9 +247,9 @@ The structure that contains the result of a stat or lstat operation.
 Name of a procedure to look up in the file's symbol table
 .AP "const char" *sym2 in
 Name of a procedure to look up in the file's symbol table
-.AP Tcl_PackageInitProc **proc1Ptr out
+.AP Tcl_LibraryInitProc **proc1Ptr out
 Filled with the init function for this code.
-.AP Tcl_PackageInitProc **proc2Ptr out
+.AP Tcl_LibraryInitProc **proc2Ptr out
 Filled with the safe-init function for this code.
 .AP void **clientDataPtr out
 Filled with the clientData value to pass to this code's unload
@@ -263,11 +269,11 @@ allowed for the \fImode\fR argument to the Tcl \fBopen\fR command.
 .AP int permissions in
 POSIX-style permission flags such as 0644. If a new file is created, these
 permissions will be set on the created file.
-.AP int *lenPtr out
+.AP "size_t \&| int" *lenPtr out
 If non-NULL, filled with the number of elements in the split path.
 .AP Tcl_Obj *basePtr in
 The base path on to which to join the given elements. May be NULL.
-.AP int objc in
+.AP size_t objc in
 The number of elements in \fIobjv\fR.
 .AP "Tcl_Obj *const" objv[] in
 The elements to join to the given base path.
@@ -414,23 +420,21 @@ caller (with a reference count of 0).
 the encoding identified by \fIencodingName\fR and evaluates
 its contents as a Tcl script. It returns the same information as
 \fBTcl_EvalObjEx\fR.
-If \fIencodingName\fR is NULL, the system encoding is used for
+If \fIencodingName\fR is NULL, the utf-8 encoding is used for
 reading the file contents.
 If the file could not be read then a Tcl error is returned to describe
 why the file could not be read.
 The eofchar for files is
-.QW \e32
+.QW \ex1A
 (^Z) for all platforms.
 If you require a
 .QW ^Z
 in code for string comparison, you can use
-.QW \e032
-or
-.QW \eu001a ,
+.QW \ex1A ,
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 \fBTcl_FSEvalFile\fR is a simpler version of
-\fBTcl_FSEvalFileEx\fR that always uses the system encoding
+\fBTcl_FSEvalFileEx\fR that always uses the utf-8 encoding
 when reading the file.
 .PP
 \fBTcl_FSLoadFile\fR dynamically loads a binary code file into memory and
@@ -846,7 +850,7 @@ The \fBTcl_Filesystem\fR structure contains the following fields:
 .CS
 typedef struct Tcl_Filesystem {
     const char *\fItypeName\fR;
-    int \fIstructureLength\fR;
+    size_t \fIstructureLength\fR;
     Tcl_FSVersion \fIversion\fR;
     Tcl_FSPathInFilesystemProc *\fIpathInFilesystemProc\fR;
     Tcl_FSDupInternalRepProc *\fIdupInternalRepProc\fR;
@@ -1340,11 +1344,11 @@ is considered to be owned by the filesystem (not by Tcl's core), but
 should be given a reference count for Tcl. Tcl will use the contents of the
 list and then decrement that reference count. This allows filesystems to
 choose whether they actually want to retain a
-.QW "master list"
+.QW "global list"
 of volumes
 or not (if not, they generate the list on the fly and pass it to Tcl
 with a reference count of 1 and then forget about the list, if yes, then
-they simply increment the reference count of their master list and pass it
+they simply increment the reference count of their global list and pass it
 to Tcl which will copy the contents and then decrement the count back
 to where it was).
 .PP
@@ -1628,6 +1632,158 @@ typedef int \fBTcl_FSChdirProc\fR(
 The \fBTcl_FSChdirProc\fR changes the applications current working
 directory to the value specified in \fIpathPtr\fR. The function returns
 -1 on error or 0 on success.
+.SH "REFERENCE COUNT MANAGEMENT"
+.SS "PUBLIC API CALLS"
+.PP
+For all of these functions, \fIpathPtr\fR (including the \fIsrcPathPtr\fR and
+\fIdestPathPtr\fR arguments to \fBTcl_FSCopyFile\fR,
+\fBTcl_FSCopyDirectory\fR, and \fBTcl_FSRenameFile\fR, the \fIfirstPtr\fR and
+\fIsecondPtr\fR arguments to \fBTcl_FSEqualPaths\fR, and the \fIlinkNamePtr\fR
+and \fItoPtr\fR arguments to \fBTcl_FSLink\fR) must not be a zero reference
+count value; references may be retained in internal caches even for
+theoretically read-only operations.  These functions may also manipulate the
+interpreter result (if they take and are given a non-NULL \fIinterp\fR
+argument); you must not count on the interpreter result to hold the reference
+count of any argument value over these calls and should manage your own
+references there. However, references held by the arguments to a Tcl command
+\fIare\fR suitable for reference count management purposes for the duration of
+the implementation of that command.
+.PP
+The \fIerrorPtr\fR argument to \fBTcl_FSCopyDirectory\fR and
+\fBTcl_FSRemoveDirectory\fR is, when an object is set into it at all, set to
+an object with a non-zero reference count that should be passed to
+\fBTcl_DecrRefCount\fR when no longer needed.
+.PP
+\fBTcl_FSListVolumes\fR always returns a zero-reference object, much
+like \fBTcl_NewObj\fR.
+.PP
+\fBTcl_FSLink\fR always returns a non-zero-reference object when it is
+asked to read; you must call \fBTcl_DecrRefCount\fR on the object
+once you no longer need it.
+.PP
+\fBTcl_FSGetCwd\fR always returns a non-zero-reference object; you
+must call \fBTcl_DecrRefCount\fR on the object once you no longer need
+it.
+.PP
+\fBTcl_FSPathSeparator\fR always returns a zero-reference object, much
+like \fBTcl_NewObj\fR.
+.PP
+\fBTcl_FSJoinPath\fR always returns a zero-reference object, much
+like \fBTcl_NewObj\fR. Its \fIlistObj\fR argument can have any reference
+count; it is only read by this function.
+.PP
+\fBTcl_FSSplitPath\fR always returns a zero-reference object, much
+like \fBTcl_NewObj\fR.
+.PP
+\fBTcl_FSGetNormalizedPath\fR returns an object with a non-zero
+reference count where Tcl is the owner. You should increment its
+reference count if you want to retain it, but do not need to if you
+are just using the value immediately.
+.PP
+\fBTcl_FSJoinToPath\fR always returns a zero-reference object, much like
+\fBTcl_NewObj\fR. Its \fIbasePtr\fR argument follows the rules above for
+\fIpathPtr\fR, as do the values in the \fIobjv\fR argument.
+.PP
+\fBTcl_FSGetTranslatedPath\fR returns a non-zero-reference object (or
+NULL in the error case); you must call \fBTcl_DecrRefCount\fR on the
+object once you no longer need it.
+.PP
+\fBTcl_FSNewNativePath\fR always returns a zero-reference object (or
+NULL), much like \fBTcl_NewObj\fR.
+.PP
+\fBTcl_FSFileSystemInfo\fR always returns a zero-reference object (or
+NULL), much like \fBTcl_NewObj\fR.
+.PP
+The \fIobjPtr\fR and \fIobjPtrRef\fR arguments to \fBTcl_FSFileAttrsGet\fR,
+\fBTcl_FSFileAttrsSet\fR and \fBTcl_FSFileAttrStrings\fR are conventional Tcl
+values; the \fIobjPtr\fR argument will be read but not retained, and the
+\fIobjPtrRef\fR argument will have (on success) a zero-reference value written
+into it (as with \fBTcl_NewObj\fR). \fBTcl_FSFileAttrsGet\fR and
+\fBTcl_FSFileAttrsSet\fR may also manipulate the interpreter result.
+.PP
+The \fIresultPtr\fR argument to \fBTcl_FSMatchInDirectory\fR will not have its
+reference count manipulated, but it should have a reference count of no more
+than 1, and should not be the current interpreter result (as the function may
+overwrite that on error).
+.SS "VIRTUAL FILESYSTEM INTERFACE"
+.PP
+For all virtual filesystem implementation functions, any \fIpathPtr\fR
+arguments should not have their reference counts manipulated. If they take an
+\fIinterp\fR argument, they may set an error message in that, but must not
+manipulate the \fIpathPtr\fR afterwards. Aside from that:
+.TP
+\fIinternalToNormalizedProc\fR
+.
+This should return a zero-reference count value, as if allocated with
+\fBTcl_NewObj\fR.
+.TP
+\fInormalizePathProc\fR
+.
+Unlike with other API implementation functions, the \fIpathPtr\fR argument
+here is guaranteed to be an unshared object that should be updated. Its
+reference count should not be modified.
+.TP
+\fIfilesystemPathTypeProc\fR
+.
+The return value (if non-NULL) either has a reference count of zero or needs
+to be maintained (on a per-thread basis) by the filesystem. Tcl will increment
+the reference count of the value if it wishes to retain it.
+.TP
+\fIfilesystemSeparatorProc\fR
+.
+The return value should be a value with reference count of zero.
+.TP
+\fImatchInDirectoryProc\fR
+.
+The \fIresultPtr\fR argument should be assumed to hold a list that can be
+appended to (i.e., that has a reference count no greater than 1). No reference
+to it should be retained.
+.TP
+\fIlinkProc\fR
+.
+If \fItoPtr\fR is NULL, this should return a value with reference count 1 that
+has just been allocated and passed to \fBTcl_IncrRefCount\fR. If \fItoPtr\fR
+is not NULL, it should be returned on success.
+.TP
+\fIlistVolumesProc\fR
+.
+The result value should be a list (if non-NULL); it will have its reference
+count decremented once (with \fBTcl_DecrRefCount\fR) by Tcl once done.
+.TP
+\fIfileAttrStringsProc\fR
+.
+If the result is NULL, the \fIobjPtrRef\fR should have a list value written to
+it; that list will have its reference count both incremented (with
+\fBTcl_IncrRefCount\fR) and decremented (with \fBTcl_DecrRefCount\fR).
+.TP
+\fIfileAttrsGetProc\fR
+.
+The \fIobjPtrRef\fR argument should have (on non-error return) a zero
+reference count value written to it (allocated as if with \fBTcl_NewObj\fR).
+.TP
+\fIfileAttrsSetProc\fR
+.
+The \fIobjPtr\fR argument should either just be read or its reference count
+incremented to retain it.
+.TP
+\fIremoveDirectoryProc\fR
+.
+If an error is being reported, the problem filename reported via
+\fIerrorPtr\fR should be newly allocated (as if with \fBTcl_NewObj\fR) and
+have a reference count of 1 (i.e., have been passed to
+\fBTcl_IncrRefCount\fR).
+.TP
+\fIcopyDirectoryProc\fR
+.
+If an error is being reported, the problem filename reported via
+\fIerrorPtr\fR should be newly allocated (as if with \fBTcl_NewObj\fR) and
+have a reference count of 1 (i.e., have been passed to
+\fBTcl_IncrRefCount\fR).
+.TP
+\fIgetCwdProc\fR
+.
+The result will be passed to \fBTcl_DecrRefCount\fR by the implementation of
+\fBTcl_FSGetCwd\fR after it has been normalized.
 .SH "SEE ALSO"
 cd(n), file(n), filename(n), load(n), open(n), pwd(n), source(n), unload(n)
 .SH KEYWORDS

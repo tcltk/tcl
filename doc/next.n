@@ -12,7 +12,7 @@
 next, nextto \- invoke superclass method implementations
 .SH SYNOPSIS
 .nf
-package require TclOO
+package require tcl::oo
 
 \fBnext\fR ?\fIarg ...\fR?
 \fBnextto\fI class\fR ?\fIarg ...\fR?

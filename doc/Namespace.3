@@ -46,10 +46,10 @@ Tcl_Command
 \fBTcl_FindCommand\fR(\fIinterp, name, contextNsPtr, flags\fR)
 .sp
 Tcl_Obj *
-\fBTcl_GetNamespaceUnknownHandler(\fIinterp, nsPtr\fR)
+\fBTcl_GetNamespaceUnknownHandler\fR(\fIinterp, nsPtr\fR)
 .sp
 int
-\fBTcl_SetNamespaceUnknownHandler(\fIinterp, nsPtr, handlerPtr\fR)
+\fBTcl_SetNamespaceUnknownHandler\fR(\fIinterp, nsPtr, handlerPtr\fR)
 .SH ARGUMENTS
 .AS Tcl_NamespaceDeleteProc allowOverwrite in/out
 .AP Tcl_Interp *interp in/out
@@ -159,6 +159,18 @@ for the namespace, or NULL if none is set.
 \fBTcl_SetNamespaceUnknownHandler\fR sets the unknown command handler for
 the namespace. If \fIhandlerPtr\fR is NULL, then the handler is reset to
 its default.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The \fIobjPtr\fR argument to \fBTcl_AppendExportList\fR should be an
+unshared object, as it will be modified by this function. The
+reference count of \fIobjPtr\fR will not be altered.
+.PP
+\fBTcl_GetNamespaceUnknownHandler\fR returns a possibly shared value.
+Its reference count should be incremented if the value is to be
+retained.
+.PP
+The \fIhandlerPtr\fR argument to \fBTcl_SetNamespaceUnknownHandler\fR
+will have its reference count incremented if it is a non-empty list.
 .SH "SEE ALSO"
 Tcl_CreateCommand(3), Tcl_ListObjAppendList(3), Tcl_SetVar(3)
 .SH KEYWORDS

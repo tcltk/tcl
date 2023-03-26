@@ -2,20 +2,18 @@
 #
 # The httpd_ procedures implement a stub http server.
 #
-# Copyright (c) 1997-1998 Sun Microsystems, Inc.
-# Copyright (c) 1999-2000 Scriptics Corporation
+# Copyright © 1997-1998 Sun Microsystems, Inc.
+# Copyright © 1999-2000 Scriptics Corporation
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #set httpLog 1
 
-if {$::tcl_platform(os) eq "Darwin"} {
-    # Name resolution often a problem on OSX; not focus of HTTP package anyway
-    set HOST localhost
-} else {
-    set HOST [info hostname]
-}
+# Do not use [info hostname].
+# Name resolution is often a problem on OSX; not focus of HTTP package anyway.
+# Also a problem on other platforms for http-4.14 (test with bad port number).
+set HOST localhost
 
 proc httpd_init {{port 8015}} {
     set s [socket -server httpdAccept $port]
@@ -52,7 +50,7 @@ proc httpdAccept {newsock ipaddr port} {
     fconfigure $newsock -blocking 0 -translation {auto crlf}
     httpd_log $newsock Connect $ipaddr $port
     set data(ipaddr) $ipaddr
-    after 50 [list fileevent $newsock readable [list httpdRead $newsock]]
+    fileevent $newsock readable [list httpdRead $newsock]
 }
 
 # read data from a client request
@@ -71,6 +69,10 @@ proc httpdRead { sock } {
 		-> data(proto) data(url) data(query) data(httpversion)]} {
 	    set data(state) mime
 	    httpd_log $sock Query $line
+	    if {[regexp {(?:^|[\?&])delay=([^&]+)} $data(query) {} val]} {
+		fileevent $sock readable {}
+		after $val [list fileevent $sock readable [list httpdRead $sock]]
+	    }
 	} else {
 	    httpdError $sock 400
 	    httpd_log $sock Error "bad first line:$line"

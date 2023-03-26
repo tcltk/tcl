@@ -5,8 +5,8 @@
  *	sure that widget records and other data structures aren't reallocated
  *	when there are nested functions that depend on their existence.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1998 Sun Microsystems, Inc.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -21,7 +21,7 @@
  */
 
 typedef struct {
-    ClientData clientData;	/* Address of preserved block. */
+    void *clientData;	/* Address of preserved block. */
     size_t refCount;		/* Number of Tcl_Preserve calls in effect for
 				 * block. */
     int mustFree;		/* Non-zero means Tcl_EventuallyFree was
@@ -117,7 +117,7 @@ TclFinalizePreserve(void)
 
 void
 Tcl_Preserve(
-    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
+    void *clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
     size_t i;
@@ -180,7 +180,7 @@ Tcl_Preserve(
 
 void
 Tcl_Release(
-    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
+    void *clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
     size_t i;
@@ -259,7 +259,7 @@ Tcl_Release(
 
 void
 Tcl_EventuallyFree(
-    ClientData clientData,	/* Pointer to malloc'ed block of memory. */
+    void *clientData,	/* Pointer to malloc'ed block of memory. */
     Tcl_FreeProc *freeProc)	/* Function to actually do free. */
 {
     Reference *refPtr;

@@ -6,7 +6,7 @@
  *	This file contains procedures that are used as a 'glue' layer between
  *	Tcl and libtommath.
  *
- * Copyright (c) 2005 by Kevin B. Kenny.  All rights reserved.
+ * Copyright © 2005 Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

@@ -4,14 +4,14 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1994 The Regents of the University of California.
-# Copyright (c) 1994-1998 Sun Microsystems, Inc.
+# Copyright © 1991-1994 The Regents of the University of California.
+# Copyright © 1994-1998 Sun Microsystems, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -20,8 +20,11 @@ testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
 testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 testConstraint wideIs64bit [expr {wide(0x8000000000000000) < 0}]
 testConstraint pointerIs64bit [expr {$tcl_platform(pointerSize) >= 8}]
-testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
-
+# MSVC uses a broken libc that gets sprintf("%g") wrong. This is a pain
+# particularly in Continuous Integration, and there isn't anything much we can
+# do about it.
+testConstraint knownMsvcBug [expr {![string match msvc-* [tcl::build-info compiler]]}]
+
 test format-1.1 {integer formatting} {
     format "%*d %d %d %d" 6 34 16923 -12 -1
 } {    34 16923 -12 -1}
@@ -102,17 +105,17 @@ test format-2.4 {string formatting} {
     format "%s %s %% %c %s" abcd {This is a very long test string.} 120 x
 } {abcd This is a very long test string. % x x}
 test format-2.5 {string formatting, embedded nulls} {
-    format "%10s" abc\0def
-} "   abc\0def"
+    format "%10s" abc\x00def
+} "   abc\x00def"
 test format-2.6 {string formatting, international chars} {
-    format "%10s" abc\ufeffdef
-} "   abc\ufeffdef"
+    format "%10s" abc\uFEFFdef
+} "   abc\uFEFFdef"
 test format-2.7 {string formatting, international chars} {
-    format "%.5s" abc\ufeffdef
-} "abc\ufeffd"
+    format "%.5s" abc\uFEFFdef
+} "abc\uFEFFd"
 test format-2.8 {string formatting, international chars} {
-    format "foo\ufeffbar%s" baz
-} "foo\ufeffbarbaz"
+    format "foo\uFEFFbar%s" baz
+} "foo\uFEFFbarbaz"
 test format-2.9 {string formatting, width} {
     format "a%5sa" f
 } "a    fa"
@@ -140,13 +143,19 @@ test format-2.16 {string formatting, width and precision} {
 test format-2.17 {string formatting, width and precision} {
     format "a%5.7sa" foobarbaz
 } "afoobarba"
+test format-2.18 {string formatting, surrogates} {
+    format "\uD83D%s" \uDE02
+} \uD83D\uDE02
+test format-2.19 {string formatting, surrogates} {
+    format "%s\uDE02" \uD83D
+} \uD83D\uDE02
 
 test format-3.1 {Tcl_FormatObjCmd: character formatting} {
     format "|%c|%0c|%-1c|%1c|%-6c|%6c|%*c|%*c|" 65 65 65 65 65 65 3 65 -4 65
 } "|A|A|A|A|A     |     A|  A|A   |"
 test format-3.2 {Tcl_FormatObjCmd: international character formatting} {
-    format "|%c|%0c|%-1c|%1c|%-6c|%6c|%*c|%*c|" 0xa2 0x4e4e 0x25a 0xc3 0xff08 0 3 0x6575 -4 0x4e4f
-} "|\ua2|\u4e4e|\u25a|\uc3|\uff08     |     \0|  \u6575|\u4e4f   |"
+    format "|%c|%0c|%-1c|%1c|%-6c|%6c|%*c|%*c|" 0xA2 0x4E4E 0x25A 0xC3 0xFF08 0 3 0x6575 -4 0x4E4F
+} "|¢|乎|ɚ|Ã|（     |     \x00|  敵|乏   |"
 
 test format-4.1 {e and f formats} {eformat} {
     format "%e %e %e %e" 34.2e12 68.514 -.125 -16000. .000053
@@ -378,21 +387,24 @@ test format-8.23 {error conditions} {
 # scripts, therefore they are not documented. It's intended use is through
 # the function Tcl_AppendPrintfToObj (et al).
 test format-8.24 {Undocumented formats} -body {
-    format "%zd %td %d" [expr 2**30] [expr 2**30] [expr 2**30]
+    format "%zd %td %d" [expr {2**30}] [expr {2**30}] [expr {2**30}]
 } -result {1073741824 1073741824 1073741824}
 test format-8.25 {Undocumented formats} -constraints pointerIs64bit -body {
-    format "%zd %td %lld" [expr 2**33] [expr 2**33] [expr 2**33]
+    format "%zd %td %lld" [expr {2**33}] [expr {2**33}] [expr {2**33}]
 } -result {8589934592 8589934592 8589934592}
 # Since "%p" is equivalent to "%#llx" in 64-bit platforms and equivalent
 # to "%#x" in 32-bit platforms, it are really not useful in scripts,
 # therefore they are not documented. It's intended use is through the
 # function Tcl_AppendPrintfToObj (et al).
 test format-8.26 {Undocumented formats} -body {
-    format "%p %#x" [expr 2**31] [expr 2**31]
+    format "%p %#x" [expr {2**31}] [expr {2**31}]
 } -result {0x80000000 0x80000000}
 test format-8.27 {Undocumented formats} -constraints pointerIs64bit -body {
-    format "%p %#llx" [expr 2**33] [expr 2**33]
+    format "%p %#llx" [expr {2**33}] [expr {2**33}]
 } -result {0x200000000 0x200000000}
+test format-8.28 {Internal use of TCL_COMBINE flag should not be visiable at script level} {
+    format %c 0x10000041
+} \uFFFD
 
 test format-9.1 {long result} {
     set a {1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
@@ -466,7 +478,7 @@ test format-13.1 {tcl_precision fuzzy comparison} {
     set a 0.0000000000001
     set b 0.00000000000001
     set c 0.00000000000000001
-    set d [expr $a + $b + $c]
+    set d [expr {$a + $b + $c}]
     format {%0.10f %0.12f %0.15f %0.17f} $d $d $d $d
 } {0.0000000000 0.000000000000 0.000000000000110 0.00000000000011001}
 test format-13.2 {tcl_precision fuzzy comparison} {
@@ -477,7 +489,7 @@ test format-13.2 {tcl_precision fuzzy comparison} {
     set a 0.000000000001
     set b 0.000000000000005
     set c 0.0000000000000008
-    set d [expr $a + $b + $c]
+    set d [expr {$a + $b + $c}]
     format {%0.10f %0.12f %0.15f %0.17f} $d $d $d $d
 } {0.0000000000 0.000000000001 0.000000000001006 0.00000000000100580}
 test format-13.3 {tcl_precision fuzzy comparison} {
@@ -486,7 +498,7 @@ test format-13.3 {tcl_precision fuzzy comparison} {
     catch {unset c}
     set a 0.00000000000099
     set b 0.000000000000011
-    set c [expr $a + $b]
+    set c [expr {$a + $b}]
     format {%0.10f %0.12f %0.15f %0.17f} $c $c $c $c
 } {0.0000000000 0.000000000001 0.000000000001001 0.00000000000100100}
 test format-13.4 {tcl_precision fuzzy comparison} {
@@ -495,7 +507,7 @@ test format-13.4 {tcl_precision fuzzy comparison} {
     catch {unset c}
     set a 0.444444444444
     set b 0.33333333333333
-    set c [expr $a + $b]
+    set c [expr {$a + $b}]
     format {%0.10f %0.12f %0.15f %0.16f} $c $c $c $c
 } {0.7777777778 0.777777777777 0.777777777777330 0.7777777777773300}
 test format-13.5 {tcl_precision fuzzy comparison} {
@@ -504,7 +516,7 @@ test format-13.5 {tcl_precision fuzzy comparison} {
     catch {unset c}
     set a 0.444444444444
     set b 0.99999999999999
-    set c [expr $a + $b]
+    set c [expr {$a + $b}]
     format {%0.10f %0.12f %0.15f} $c $c $c
 } {1.4444444444 1.444444444444 1.444444444443990}
 
@@ -540,7 +552,7 @@ for {set i 0} {$i < 290} {incr i} {
     append b $a
 }
 for {set i 290} {$i < 400} {incr i} {
-    test format-16.[expr $i -289] {testing MAX_FLOAT_SIZE} {
+    test format-16.[expr {$i -289}] {testing MAX_FLOAT_SIZE} {
         format {%s} $b
     } $b
     append b "x"
@@ -611,12 +623,12 @@ test format-19.4.2 {Bug d498578df4: width overflow should cause limit exceeded} 
 } -returnCodes error -result "max size for a Tcl value exceeded"
 
 # Note that this test may fail in future versions
-test format-20.1 {Bug 2932421: plain %s caused intrep change of args} -body {
+test format-20.1 {Bug 2932421: plain %s caused internalrep change of args} -body {
     set x [dict create a b c d]
     format %s $x
     # After this, obj in $x should be a dict
     # We are testing to make sure it has not been shimmered to a
-    # different intrep when that is not necessary.
+    # different internalrep when that is not necessary.
     # Whether or not there is a string rep - we should not care!
     tcl::unsupported::representation $x
 } -match glob -result {value is a dict *}

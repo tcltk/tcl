@@ -4,8 +4,8 @@
  *	This file implements Platform independent thread operations. Most of
  *	the real work is done in the platform dependent files.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 2008 by George Peter Staplin
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 2008 George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -80,7 +80,7 @@ Tcl_GetThreadData(
     if (*keyPtr == NULL) {
 	result = Tcl_Alloc(size);
 	memset(result, 0, size);
-	*keyPtr = result;
+	*keyPtr = (Tcl_ThreadDataKey)result;
 	RememberSyncObject(keyPtr, &keyRecord);
     } else {
 	result = *keyPtr;
@@ -488,30 +488,30 @@ Tcl_ExitThread(
 #undef Tcl_ConditionWait
 void
 Tcl_ConditionWait(
-    Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
-    Tcl_Mutex *mutexPtr,	/* Really (pthread_mutex_t **) */
-    const Tcl_Time *timePtr) /* Timeout on waiting period */
+    TCL_UNUSED(Tcl_Condition *),	/* Really (pthread_cond_t **) */
+    TCL_UNUSED(Tcl_Mutex *),	/* Really (pthread_mutex_t **) */
+    TCL_UNUSED(const Tcl_Time *)) /* Timeout on waiting period */
 {
 }
 
 #undef Tcl_ConditionNotify
 void
 Tcl_ConditionNotify(
-    Tcl_Condition *condPtr)
+    TCL_UNUSED(Tcl_Condition *))
 {
 }
 
 #undef Tcl_MutexLock
 void
 Tcl_MutexLock(
-    Tcl_Mutex *mutexPtr)
+    TCL_UNUSED(Tcl_Mutex *))
 {
 }
 
 #undef Tcl_MutexUnlock
 void
 Tcl_MutexUnlock(
-    Tcl_Mutex *mutexPtr)
+    TCL_UNUSED(Tcl_Mutex *))
 {
 }
 #endif /* !TCL_THREADS */

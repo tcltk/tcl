@@ -9,14 +9,14 @@
 #
 # ------------------------------------------------------------------------
 #
-# Copyright (c) 2014 Serg G. Brester (aka sebres)
+# Copyright © 2014 Serg G. Brester (aka sebres)
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file.
 #
 
 namespace eval ::tclTestPerf {
-# warm-up interpeter compiler env, calibrate timerate measurement functionality:
+# warm-up interpreter compiler env, calibrate timerate measurement functionality:
 
 # if no timerate here - import from unsupported:
 if {[namespace which -command timerate] eq {}} {

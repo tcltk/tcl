@@ -7,14 +7,15 @@
 # and aren't using Tcl -- reg's own regression tester also knows how
 # to read this file, ignoring the Tcl-isms.)
 #
-# Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+# Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # All tests require the testregexp command, return if this
 # command doesn't exist
@@ -287,7 +288,7 @@ namespace eval RETest {
 	set infoflags [TestInfoFlags $flags]
 	set ccmd [list testregexp -about {*}$f $re]
 	set nsub [expr {[llength $args] - 1}]
-	if {$nsub == -1} {
+	if {$nsub < 0} {
 	    # didn't tell us number of subexps
 	    set ccmd "lreplace \[$ccmd\] 0 0"
 	    set info [list $infoflags]
@@ -513,8 +514,8 @@ expectMatch	9.40 eE		{a[\\]b}	"a\\b"	"a\\b"
 expectMatch	9.41 bE		{a[\\]b}	"a\\b"	"a\\b"
 expectError	9.42 -		{a[\Z]b}	EESCAPE
 expectMatch	9.43 &		{a[[b]c}	"a\[c"	"a\[c"
-expectMatch	9.44 EMP*	{a[\u00fe-\u0507][\u00ff-\u0300]b} \
-	"a\u0102\u02ffb"	"a\u0102\u02ffb"
+expectMatch	9.44 EMP*	{a[\xFE-\u0507][\xFF-\u0300]b} \
+	"a\u0102\u02FFb"	"a\u0102\u02FFb"
 
 
 doing 10 "anchors and newlines"
@@ -642,8 +643,8 @@ expectMatch	13.29 P		"a\\U0001234x"	"a\u1234x"	"a\u1234x"
 expectMatch	13.30 P		{a\U0001234x}	"a\u1234x"	"a\u1234x"
 expectMatch	13.31 P		"a\\U000012345x"	"a\u12345x"	"a\u12345x"
 expectMatch	13.32 P		{a\U000012345x}	"a\u12345x"	"a\u12345x"
-expectMatch	13.33 P		"a\\U1000000x"	"a\ufffd0x"	"a\ufffd0x"
-expectMatch	13.34 P		{a\U1000000x}	"a\ufffd0x"	"a\ufffd0x"
+expectMatch	13.33 P		"a\\U1000000x"	"a\uFFFD0x"	"a\uFFFD0x"
+expectMatch	13.34 P		{a\U1000000x}	"a\uFFFD0x"	"a\uFFFD0x"
 
 
 doing 14 "back references"
@@ -1220,6 +1221,10 @@ test reg-33.29 {} {
 test reg-33.30 {Bug 1080042} {
     regexp {(\Y)+} foo
 } 1
+test reg-33.31 {Bug 7c64aa5e1a} {
+    regexp -inline {(?b).\{1,10\}} {abcdef}
+} abcdef
+
 
 # cleanup
 ::tcltest::cleanupTests

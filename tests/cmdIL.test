@@ -2,19 +2,20 @@
 # tclCmdIL.c. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
+
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -150,17 +151,17 @@ test cmdIL-1.36 {lsort -stride and -index: Bug 2918962} {
     }
 } {{{b i g} 12345} {{d e m o} 34512} {{c o d e} 54321} {{b l a h} 94729}}
 test cmdIL-1.37 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
-    lsort -ascii [list \0 \x7f \x80 \uffff]
-} [list \0 \x7f \x80 \uffff]
+    lsort -ascii [list \x00 \x7F \x80 \uFFFF]
+} [list \x00 \x7F \x80 \uFFFF]
 test cmdIL-1.38 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
-    lsort -ascii -nocase [list \0 \x7f \x80 \uffff]
-} [list \0 \x7f \x80 \uffff]
+    lsort -ascii -nocase [list \x00 \x7F \x80 \uFFFF]
+} [list \x00 \x7F \x80 \uFFFF]
 test cmdIL-1.39 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
-    lsort -ascii [list \0 \x7f \x80 \U01ffff \uffff]
-} [list \0 \x7f \x80 \uffff \U01ffff]
+    lsort -ascii [list \x00 \x7F \x80 \U01ffff \uFFFF]
+} [list \x00 \x7F \x80 \uFFFF \U01ffff]
 test cmdIL-1.40 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
-    lsort -ascii -nocase [list \0 \x7f \x80 \U01ffff \uffff]
-} [list \0 \x7f \x80 \uffff \U01ffff]
+    lsort -ascii -nocase [list \x00 \x7F \x80 \U01ffff \uFFFF]
+} [list \x00 \x7F \x80 \uFFFF \U01FFFF]
 test cmdIL-1.41 {lsort -stride and -index} -body {
     lsort -stride 2 -index -2 {a 2 b 1}
 } -returnCodes error -result {index "-2" out of range}
@@ -176,7 +177,7 @@ test cmdIL-2.1 {MergeSort and MergeLists procedures} -setup {
     set r 1435753299
     proc rand {} {
 	global r
-	set r [expr {(16807 * $r) % (0x7fffffff)}]
+	set r [expr {(16807 * $r) % (0x7FFFFFFF)}]
     }
 } -body {
     for {set i 0} {$i < 150} {incr i} {
@@ -395,16 +396,16 @@ test cmdIL-4.23 {DictionaryCompare procedure, case} {
 } {ABcd AbCd}
 test cmdIL-4.24 {DictionaryCompare procedure, international characters} {hasIsoLocale} {
     ::tcltest::set_iso8859_1_locale
-    set result [lsort -dictionary "a b c A B C \xe3 \xc4"]
+    set result [lsort -dictionary "a b c A B C ã Ä"]
     ::tcltest::restore_locale
     set result
-} "A a B b C c \xe3 \xc4"
+} "A a B b C c ã Ä"
 test cmdIL-4.25 {DictionaryCompare procedure, international characters} {hasIsoLocale} {
     ::tcltest::set_iso8859_1_locale
-    set result [lsort -dictionary "a23\xe3 a23\xc5 a23\xe4"]
+    set result [lsort -dictionary "a23ã a23Å a23ä"]
     ::tcltest::restore_locale
     set result
-} "a23\xe3 a23\xe4 a23\xc5"
+} "a23ã a23ä a23Å"
 test cmdIL-4.26 {DefaultCompare procedure, signed characters} {
     set l [lsort [list "abc\200" "abc"]]
     set viewlist {}
@@ -471,10 +472,10 @@ test cmdIL-4.36 {SortCompare procedure, UTF-8 with -nocase option} {
     scan [lsort -ascii -nocase [list \u101 \u100]] %c%c%c
 } {257 32 256}
 test cmdIL-4.37 {SortCompare procedure, UTF-8 with -nocase option} {
-    scan [lsort -ascii -nocase [list a\u0000a a]] %c%c%c%c%c
+    scan [lsort -ascii -nocase [list a\x00a a]] %c%c%c%c%c
 } {97 32 97 0 97}
 test cmdIL-4.38 {SortCompare procedure, UTF-8 with -nocase option} {
-    scan [lsort -ascii -nocase [list a a\u0000a]] %c%c%c%c%c
+    scan [lsort -ascii -nocase [list a a\x00a]] %c%c%c%c%c
 } {97 32 97 0 97}
 
 test cmdIL-5.1 {lsort with list style index} {
@@ -513,7 +514,7 @@ test cmdIL-5.5 {lsort with list style index and sharing} -body {
 	foreach e $l {lappend n [list [expr {rand()}] $e]}
 	lindex [lsort -real -index $l $n] 1 1
     }
-    expr srand(1)
+    expr {srand(1)}
     test_lsort 0
 } -result 0 -cleanup {
     rename test_lsort ""
@@ -775,7 +776,7 @@ test cmdIL-7.6 {lreverse command - unshared object [Bug 1672585]} {
 test cmdIL-7.7 {lreverse command - empty object [Bug 1876793]} {
     lreverse [list]
 } {}
-test cmdIL-7.8 {lreverse command - shared intrep [Bug 1675044]} -setup {
+test cmdIL-7.8 {lreverse command - shared internalrep [Bug 1675044]} -setup {
     teststringobj set 1 {1 2 3}
     testobj convert 1 list
     testobj duplicate 1 2

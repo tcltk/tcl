@@ -12,7 +12,7 @@
 callback, mymethod \- generate callbacks to methods
 .SH SYNOPSIS
 .nf
-package require TclOO
+package require tcl::oo
 
 \fBcallback\fR \fImethodName\fR ?\fIarg ...\fR?
 \fBmymethod\fR \fImethodName\fR ?\fIarg ...\fR?

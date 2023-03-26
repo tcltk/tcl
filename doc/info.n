@@ -68,8 +68,6 @@ that represents an instance of \fBoo::object\fR or one of its subclasses.
 \fIcommandName\fR was created by \fBinterp create\fR.
 .IP \fBzlibStream\fR
 \fIcommandName\fR was created by \fBzlib stream\fR.
-.PP
-Other types may be also registered as well.  See \fBTcl_RegisterCommandTypeName\fR.
 .RE
 .VE TIP426
 .TP

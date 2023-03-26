@@ -4,14 +4,14 @@
 # Sourcing this file into Tcl runs the tests and generates output for errors.
 # No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.3.4
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -155,7 +155,7 @@ foreach arg [subst -nocommands -novariables {
 		error stack cannot be uniquely determined.
 		foo bar
 "}
-    {argument that contains non-ASCII character, \u20ac, and which is of such great length that it will be longer than 150 bytes so it will be truncated by the Tcl C library}
+    {argument that contains non-ASCII character, €, and which is of such great length that it will be longer than 150 bytes so it will be truncated by the Tcl C library}
 	}] {    ;# emacs needs -> "
 
     test init-4.$count.0 {::errorInfo produced by [unknown]} -setup {

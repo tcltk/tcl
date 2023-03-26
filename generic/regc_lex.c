@@ -2,7 +2,7 @@
  * lexical analyzer
  * This file is #included by regcomp.c.
  *
- * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -427,7 +427,7 @@ next(
 	    if (INCON(L_BBND) && NEXT1('}')) {
 		v->now++;
 		INTOCON(L_BRE);
-		RET('}');
+		RETV('}', 1);
 	    } else {
 		FAILW(REG_BADBR);
 	    }
@@ -775,7 +775,7 @@ lexescape(
     NOTE(REG_UNONPOSIX);
     switch (c) {
     case CHR('a'):
-	RETV(PLAIN, chrnamed(v, alert, ENDOF(alert), CHR('\007')));
+	RETV(PLAIN, chrnamed(v, alert, ENDOF(alert), CHR('\x07')));
 	break;
     case CHR('A'):
 	RETV(SBEGIN, 0);
@@ -803,7 +803,7 @@ lexescape(
 	break;
     case CHR('e'):
 	NOTE(REG_UUNPORT);
-	RETV(PLAIN, chrnamed(v, esc, ENDOF(esc), CHR('\033')));
+	RETV(PLAIN, chrnamed(v, esc, ENDOF(esc), CHR('\x1B')));
 	break;
     case CHR('f'):
 	RETV(PLAIN, CHR('\f'));
@@ -894,7 +894,7 @@ lexescape(
 	 * Ugly heuristic (first test is "exactly 1 digit?")
 	 */
 
-	if (v->now - save == 0 || ((int) c > 0 && (int)c <= v->nsubexp)) {
+	if (v->now - save == 0 || ((int) c > 0 && (size_t)c <= v->nsubexp)) {
 	    NOTE(REG_UBACKREF);
 	    RETV(BACKREF, (chr)c);
 	}
@@ -1005,7 +1005,7 @@ brenext(
 	if (LASTTYPE(EMPTY) || LASTTYPE('(') || LASTTYPE('^')) {
 	    RETV(PLAIN, c);
 	}
-	RET('*');
+	RETV('*', 1);
 	break;
     case CHR('['):
 	if (HAVE(6) &&	*(v->now+0) == CHR('[') &&

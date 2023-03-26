@@ -6,8 +6,8 @@
  *	Original version of his file (superseded long ago) provided by
  *	Wilfredo Sanchez (wsanchez@apple.com).
  *
- * Copyright (c) 1995 Apple Computer, Inc.
- * Copyright (c) 2001-2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 1995 Apple Computer, Inc.
+ * Copyright © 2001-2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -106,7 +106,7 @@ static const char *
 DyldOFIErrorMsg(
     int err)
 {
-    switch(err) {
+    switch (err) {
     case NSObjectFileImageSuccess:
 	return NULL;
     case NSObjectFileImageFailure:
@@ -185,7 +185,7 @@ TclpDlopen(
 
     nativePath = (const char *)Tcl_FSGetNativePath(pathPtr);
     nativeFileName = Tcl_UtfToExternalDString(NULL, TclGetString(pathPtr),
-	    -1, &ds);
+	    TCL_INDEX_NONE, &ds);
 
 #if TCL_DYLD_USE_DLFCN
     /*
@@ -292,10 +292,11 @@ TclpDlopen(
 	*loadHandle = newHandle;
 	result = TCL_OK;
     } else {
-	Tcl_Obj *errObj = Tcl_NewObj();
+	Tcl_Obj *errObj;
 
+	TclNewObj(errObj);
 	if (errMsg != NULL) {
-	    Tcl_AppendToObj(errObj, errMsg, -1);
+	    Tcl_AppendToObj(errObj, errMsg, TCL_INDEX_NONE);
 	}
 #if TCL_DYLD_USE_NSMODULE
 	if (objFileImageErrMsg) {
@@ -335,15 +336,15 @@ FindSymbol(
     const char *symbol)		/* Symbol name to look up. */
 {
     Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *)loadHandle->clientData;
-    Tcl_PackageInitProc *proc = NULL;
+    Tcl_LibraryInitProc *proc = NULL;
     const char *errMsg = NULL;
     Tcl_DString ds;
     const char *native;
 
-    native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, symbol, TCL_INDEX_NONE, &ds);
     if (dyldLoadHandle->dlHandle) {
 #if TCL_DYLD_USE_DLFCN
-	proc = (Tcl_PackageInitProc *)dlsym(dyldLoadHandle->dlHandle, native);
+	proc = (Tcl_LibraryInitProc *)dlsym(dyldLoadHandle->dlHandle, native);
 	if (!proc) {
 	    errMsg = dlerror();
 	}
@@ -359,7 +360,7 @@ FindSymbol(
 
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
-	native = Tcl_DStringAppend(&newName, native, -1);
+	native = Tcl_DStringAppend(&newName, native, TCL_INDEX_NONE);
 	if (dyldLoadHandle->dyldLibHeader) {
 	    nsSymbol = NSLookupSymbolInImage(dyldLoadHandle->dyldLibHeader,
 		    native, NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW |
@@ -399,7 +400,7 @@ FindSymbol(
 		    dyldLoadHandle->modulePtr->module, native);
 	}
 	if (nsSymbol) {
-	    proc = (Tcl_PackageInitProc *)NSAddressOfSymbol(nsSymbol);
+	    proc = (Tcl_LibraryInitProc *)NSAddressOfSymbol(nsSymbol);
 	}
 	Tcl_DStringFree(&newName);
 #endif /* TCL_DYLD_USE_NSMODULE */
@@ -462,34 +463,6 @@ UnloadFile(
     }
     Tcl_Free(dyldLoadHandle);
     Tcl_Free(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    TCL_UNUSED(const char *) /*fileName*/,
-    TCL_UNUSED(Tcl_DString *) /*bufPtr*/)
-{
-    return 0;
 }
 
 /*
@@ -683,7 +656,7 @@ TclpLoadMemory(
 	const char *errorName, *errMsg;
 
 	NSLinkEditError(&editError, &errorNumber, &errorName, &errMsg);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
 

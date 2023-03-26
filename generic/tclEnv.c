@@ -6,8 +6,8 @@
  *	is primarily responsible for keeping the "env" arrays in sync with the
  *	system environment variables.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1998 Sun Microsystems, Inc.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -36,6 +36,11 @@ TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 #  define techar char
 #endif
 
+
+/* MODULE_SCOPE */
+size_t TclEnvEpoch = 0;	/* Epoch of the tcl environment
+				 * (if changed with tcl-env). */
+
 static struct {
     size_t cacheSize;		/* Number of env strings in cache. */
     char **cache;		/* Array containing all of the environment
@@ -59,7 +64,7 @@ static struct {
  * Declarations for local functions defined in this file:
  */
 
-static char *		EnvTraceProc(ClientData clientData, Tcl_Interp *interp,
+static char *		EnvTraceProc(void *clientData, Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
 static void		ReplaceString(const char *oldStr, char *newStr);
 MODULE_SCOPE void	TclSetEnv(const char *name, const char *value);
@@ -180,8 +185,8 @@ TclSetupEnv(
 		p1 = "COMSPEC";
 	    }
 #endif
-	    obj1 = Tcl_NewStringObj(p1, -1);
-	    obj2 = Tcl_NewStringObj(p2, -1);
+	    obj1 = Tcl_NewStringObj(p1, TCL_INDEX_NONE);
+	    obj2 = Tcl_NewStringObj(p2, TCL_INDEX_NONE);
 	    Tcl_DStringFree(&envString);
 
 	    Tcl_IncrRefCount(obj1);
@@ -359,15 +364,6 @@ TclSetEnv(
     }
 
     Tcl_MutexUnlock(&envMutex);
-
-    if (!strcmp(name, "HOME")) {
-	/*
-	 * If the user's home directory has changed, we must invalidate the
-	 * filesystem cache, because '~' expansions will now be incorrect.
-	 */
-
-	Tcl_FSMountsChanged(NULL);
-    }
 }
 
 /*
@@ -410,13 +406,24 @@ Tcl_PutEnv(
      * name and value parts, and call TclSetEnv to do all of the real work.
      */
 
-    name = Tcl_ExternalToUtfDString(NULL, assignment, -1, &nameString);
+    name = Tcl_ExternalToUtfDString(NULL, assignment, TCL_INDEX_NONE, &nameString);
     value = (char *)strchr(name, '=');
 
     if ((value != NULL) && (value != name)) {
 	value[0] = '\0';
+#if defined(_WIN32)
+	if (tenviron == NULL) {
+	    /*
+	     * When we are started from main(), the _wenviron array could
+	     * be NULL and will be initialized by the first _wgetenv() call.
+	     */
+
+	(void) _wgetenv(L"WINDIR");
+	}
+#endif
 	TclSetEnv(name, value+1);
     }
+    TclEnvEpoch++;
 
     Tcl_DStringFree(&nameString);
     return 0;
@@ -575,7 +582,7 @@ TclGetEnv(
 	if (*result == '=') {
 	    result++;
 	    Tcl_DStringInit(valuePtr);
-	    Tcl_DStringAppend(valuePtr, result, -1);
+	    Tcl_DStringAppend(valuePtr, result, TCL_INDEX_NONE);
 	    result = Tcl_DStringValue(valuePtr);
 	} else {
 	    result = NULL;
@@ -609,7 +616,7 @@ TclGetEnv(
 
 static char *
 EnvTraceProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter whose "env" variable is being
 				 * modified. */
     const char *name1,		/* Better be "env". */
@@ -623,6 +630,7 @@ EnvTraceProc(
 
     if (flags & TCL_TRACE_ARRAY) {
 	TclSetupEnv(interp);
+	TclEnvEpoch++;
 	return NULL;
     }
 
@@ -643,6 +651,7 @@ EnvTraceProc(
 
 	value = Tcl_GetVar2(interp, "env", name2, TCL_GLOBAL_ONLY);
 	TclSetEnv(name2, value);
+	TclEnvEpoch++;
     }
 
     /*
@@ -666,6 +675,7 @@ EnvTraceProc(
 
     if (flags & TCL_TRACE_UNSETS) {
 	TclUnsetEnv(name2);
+	TclEnvEpoch++;
     }
     return NULL;
 }
@@ -772,7 +782,7 @@ TclFinalizeEnvironment(void)
 
     if (env.cache) {
 #ifdef PURIFY
-	int i;
+	size_t i;
 	for (i = 0; i < env.cacheSize; i++) {
 	    Tcl_Free(env.cache[i]);
 	}

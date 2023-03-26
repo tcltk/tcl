@@ -6,24 +6,25 @@
 # "compExpr.test". Sourcing this file into Tcl runs the tests and generates
 # output for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1994 The Regents of the University of California.
-# Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-2000 by Scriptics Corporation.
+# Copyright © 1991-1994 The Regents of the University of California.
+# Copyright © 1994-1997 Sun Microsystems, Inc.
+# Copyright © 1998-2000 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2.1
-namespace import ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testexprlong   [llength [info commands testexprlong]]
 testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
 testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
-testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 # Big test for correct ordering of data in [expr]
 
@@ -33,9 +34,9 @@ proc testIEEE {} {
     switch -exact -- $c {
 	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
 	    # little endian
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\xFF d \
 		ieeeValues(-Infinity)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\xBF d \
 		ieeeValues(-Normal)
 	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
 		ieeeValues(-Subnormal)
@@ -45,19 +46,19 @@ proc testIEEE {} {
 		ieeeValues(+0)
 	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
 		ieeeValues(+Subnormal)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\x3F d \
 		ieeeValues(+Normal)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\x7F d \
 		ieeeValues(+Infinity)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF8\x7F d \
 		ieeeValues(NaN)
 	    set ieeeValues(littleEndian) 1
 	    return 1
 	}
 	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
-	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \xFF\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Infinity)
-	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \xBF\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Normal)
 	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Subnormal)
@@ -67,11 +68,11 @@ proc testIEEE {} {
 		ieeeValues(+0)
 	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Subnormal)
-	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x3F\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Normal)
-	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x7F\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Infinity)
-	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x7F\xF8\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(NaN)
 	    set ieeeValues(littleEndian) 0
 	    return 1
@@ -522,7 +523,7 @@ test expr-old-26.10b {error conditions} ieeeFloatingPoint {
     list [catch {expr 2.0/0.0} msg] $msg
 } {0 Inf}
 test expr-old-26.11 {error conditions} -body {
-    expr 2#
+    expr 2`
 } -returnCodes error -match glob -result *
 test expr-old-26.12 {error conditions} -body {
     expr a.b
@@ -850,7 +851,7 @@ test expr-old-32.46 {math functions in expressions} -body {
 } -match glob -result {1 {too many arguments for math function*}}
 test expr-old-32.47 {math functions in expressions} -body {
     list [catch {expr srand()} msg] $msg
-} -match glob -result {1 {too few arguments for math function*}}
+} -match glob -result {1 {not enough arguments for math function*}}
 test expr-old-32.48 {math functions in expressions} -body {
     expr srand(3.79)
 } -returnCodes error -match glob -result *
@@ -907,7 +908,7 @@ test expr-old-34.6 {errors in math functions} -body {
 } -returnCodes error -match glob -result *
 test expr-old-34.7 {errors in math functions} -body {
     list [catch {expr hypot(1.0)} msg] $msg
-} -match glob -result {1 {too few arguments for math function*}}
+} -match glob -result {1 {not enough arguments for math function*}}
 test expr-old-34.8 {errors in math functions} -body {
     list [catch {expr hypot(1.0, 2.0, 3.0)} msg] $msg
 } -match glob -result {1 {too many arguments for math function*}}
@@ -1149,7 +1150,7 @@ test expr-old-40.2 {min math function} -body {
 } -result 0.0
 test expr-old-40.3 {min math function} -body {
     expr {min()}
-} -returnCodes error -result {too few arguments for math function "min"}
+} -returnCodes error -result {not enough arguments for math function "min"}
 test expr-old-40.4 {min math function} -body {
     expr {min(wide(-1) << 30, 4.5, -10)}
 } -result [expr {wide(-1) << 30}]
@@ -1174,7 +1175,7 @@ test expr-old-41.2 {max math function} -body {
 } -result 0.0
 test expr-old-41.3 {max math function} -body {
     expr {max()}
-} -returnCodes error -result {too few arguments for math function "max"}
+} -returnCodes error -result {not enough arguments for math function "max"}
 test expr-old-41.4 {max math function} -body {
     expr {max(wide(1) << 30, 4.5, -10)}
 } -result [expr {wide(1) << 30}]

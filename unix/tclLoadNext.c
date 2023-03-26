@@ -4,7 +4,7 @@
  *	This procedure provides a version of the TclLoadFile that works with
  *	NeXTs rld_* dynamic loading. This file provided by Pedja Bogdanovich.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -83,7 +83,7 @@ TclpDlopen(
 
 	Tcl_DString ds;
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
 	files = {native,NULL};
 	result = rld_load(errorStream, &header, files, NULL);
 	Tcl_DStringFree(&ds);
@@ -133,7 +133,7 @@ FindSymbol(
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
-    Tcl_PackageInitProc *proc = NULL;
+    Tcl_LibraryInitProc *proc = NULL;
 
     if (symbol) {
 	char sym[strlen(symbol) + 2];
@@ -176,36 +176,6 @@ UnloadFile(
 				 * that represents the loaded file. */
 {
     Tcl_Free(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
-{
-    return 0;
 }
 
 /*

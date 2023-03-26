@@ -4,7 +4,7 @@ dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 
 AC_INIT([tcl],[9.0])
-AC_PREREQ(2.69)
+AC_PREREQ([2.69])
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
@@ -17,15 +17,16 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
     /* Undef unused package specific autoheader defines so that we can
      * include both tclConfig.h and tkConfig.h at the same time: */
     /* override */ #undef PACKAGE_NAME
-    /* override */ #undef PACKAGE_STRING
     /* override */ #undef PACKAGE_TARNAME
+    /* override */ #undef PACKAGE_VERSION
+    /* override */ #undef PACKAGE_STRING
     #endif /* _TCLCONFIG */])
 ])
 
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="a2"
+TCL_PATCH_LEVEL="a4"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -113,7 +114,7 @@ if test -z "$no_pipe" && test -n "$GCC"; then
     AC_CACHE_CHECK([if the compiler understands -pipe],
 	tcl_cv_cc_pipe, [
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -pipe"
-	AC_TRY_COMPILE(,, tcl_cv_cc_pipe=yes, tcl_cv_cc_pipe=no)
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_cc_pipe=yes],[tcl_cv_cc_pipe=no])
 	CFLAGS=$hold_cflags])
     if test $tcl_cv_cc_pipe = yes; then
 	CFLAGS="$CFLAGS -pipe"
@@ -172,9 +173,9 @@ AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
 libtommath_ok=yes
 AC_ARG_WITH(system-libtommath,
-AC_HELP_STRING([--with-system-libtommath],
+AS_HELP_STRING([--with-system-libtommath],
 	[use external libtommath (default: true if available, false otherwise)]),
-	libtommath_ok=${withval})
+	[libtommath_ok=${withval}])
 if test x"${libtommath_ok}" = x -o x"${libtommath_ok}" != xno; then
     AC_CHECK_HEADER([tommath.h],[
 	AC_CHECK_TYPE([mp_int],[],[libtommath_ok=no],[#include <tommath.h>])],[
@@ -232,6 +233,9 @@ AC_REPLACE_FUNCS(mkstemp opendir strtol waitpid)
 AC_CHECK_FUNC(strerror, , [AC_DEFINE(NO_STRERROR, 1, [Do we have strerror()])])
 AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD, 1, [Do we have getwd()])])
 AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3, 1, [Do we have wait3()])])
+AC_CHECK_FUNC(fork, , [AC_DEFINE(NO_FORK, 1, [Do we have fork()])])
+AC_CHECK_FUNC(mknod, , [AC_DEFINE(NO_MKNOD, 1, [Do we have mknod()])])
+AC_CHECK_FUNC(tcdrain, , [AC_DEFINE(NO_TCDRAIN, 1, [Do we have tcdrain()])])
 AC_CHECK_FUNC(uname, , [AC_DEFINE(NO_UNAME, 1, [Do we have uname()])])
 
 if test "`uname -s`" = "Darwin" && \
@@ -301,8 +305,8 @@ AC_CHECK_HEADERS(sys/modem.h)
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([for fd_set in sys/types], tcl_cv_type_fd_set, [
-    AC_TRY_COMPILE([#include <sys/types.h>],[fd_set readMask, writeMask;],
-	tcl_cv_type_fd_set=yes, tcl_cv_type_fd_set=no)])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[fd_set readMask, writeMask;]])],
+	[tcl_cv_type_fd_set=yes],[tcl_cv_type_fd_set=no])])
 tcl_ok=$tcl_cv_type_fd_set
 if test $tcl_ok = no; then
     AC_CACHE_CHECK([for fd_mask in sys/select], tcl_cv_grep_fd_mask, [
@@ -315,6 +319,13 @@ if test $tcl_ok = no; then
 fi
 if test $tcl_ok = no; then
     AC_DEFINE(NO_FD_SET, 1, [Do we have fd_set?])
+fi
+
+AC_CACHE_CHECK([for pselect], tcl_cv_func_pselect, [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[void *func = pselect;]])],[tcl_cv_func_pselect=yes],[tcl_cv_func_pselect=no])])
+tcl_ok=$tcl_cv_func_pselect
+if test $tcl_ok = yes; then
+    AC_DEFINE(HAVE_PSELECT, 1, [Should we use pselect()?])
 fi
 
 #------------------------------------------------------------------------
@@ -383,7 +394,7 @@ AC_CHECK_FUNC(memmove, , [
     AC_DEFINE(NO_STRING_H, 1, [Do we have <string.h>?]) ])
 
 #--------------------------------------------------------------------
-#	On some systems strstr is broken: it returns a pointer even even if
+#	On some systems strstr is broken: it returns a pointer even if
 #	the original string is empty.
 #--------------------------------------------------------------------
 
@@ -413,47 +424,19 @@ AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
 AC_CACHE_CHECK([for socklen_t], tcl_cv_type_socklen_t, [
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	#include <sys/types.h>
 	#include <sys/socket.h>
-    ],[
+    ]], [[
     	socklen_t foo;
-    ],[tcl_cv_type_socklen_t=yes],[tcl_cv_type_socklen_t=no])])
+    ]])],[tcl_cv_type_socklen_t=yes],[tcl_cv_type_socklen_t=no])])
 if test $tcl_cv_type_socklen_t = no; then
     AC_DEFINE(socklen_t, int, [Define as int if socklen_t is not available])
 fi
 
-AC_CHECK_TYPE([intptr_t], [
-    AC_DEFINE([HAVE_INTPTR_T], 1, [Do we have the intptr_t type?])], [
-    AC_CACHE_CHECK([for pointer-size signed integer type], tcl_cv_intptr_t, [
-    for tcl_cv_intptr_t in "int" "long" "long long" none; do
-	if test "$tcl_cv_intptr_t" != none; then
-	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
-		    [[sizeof (void *) <= sizeof ($tcl_cv_intptr_t)]])],
-		[tcl_ok=yes], [tcl_ok=no])
-	    test "$tcl_ok" = yes && break; fi
-    done])
-    if test "$tcl_cv_intptr_t" != none; then
-	AC_DEFINE_UNQUOTED([intptr_t], [$tcl_cv_intptr_t], [Signed integer
-	   type wide enough to hold a pointer.])
-    fi
-])
-AC_CHECK_TYPE([uintptr_t], [
-    AC_DEFINE([HAVE_UINTPTR_T], 1, [Do we have the uintptr_t type?])], [
-    AC_CACHE_CHECK([for pointer-size unsigned integer type], tcl_cv_uintptr_t, [
-    for tcl_cv_uintptr_t in "unsigned int" "unsigned long" "unsigned long long" \
-	    none; do
-	if test "$tcl_cv_uintptr_t" != none; then
-	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
-		    [[sizeof (void *) <= sizeof ($tcl_cv_uintptr_t)]])],
-		[tcl_ok=yes], [tcl_ok=no])
-	    test "$tcl_ok" = yes && break; fi
-    done])
-    if test "$tcl_cv_uintptr_t" != none; then
-	AC_DEFINE_UNQUOTED([uintptr_t], [$tcl_cv_uintptr_t], [Unsigned integer
-	   type wide enough to hold a pointer.])
-    fi
-])
+AC_CHECK_TYPES([intptr_t, uintptr_t],,,[[
+#include <stdint.h>
+]])
 
 #--------------------------------------------------------------------
 #	If a system doesn't have an opendir function (man, that's old!)
@@ -473,12 +456,12 @@ AC_CHECK_FUNC(opendir, , [AC_DEFINE(USE_DIRENT2_H, 1, [May we include <dirent2.h
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([union wait], tcl_cv_union_wait, [
-    AC_TRY_LINK([#include <sys/types.h>
-#include <sys/wait.h>], [
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#include <sys/wait.h>]], [[
 union wait x;
 WIFEXITED(x);		/* Generates compiler error if WIFEXITED
 			 * uses an int. */
-    ], tcl_cv_union_wait=yes, tcl_cv_union_wait=no)])
+    ]])],[tcl_cv_union_wait=yes],[tcl_cv_union_wait=no])])
 if test $tcl_cv_union_wait = no; then
     AC_DEFINE(NO_UNION_WAIT, 1, [Do we have a usable 'union wait'?])
 fi
@@ -528,10 +511,10 @@ fi
 
 AC_C_CHAR_UNSIGNED
 AC_CACHE_CHECK([signed char declarations], tcl_cv_char_signed, [
-    AC_TRY_COMPILE(, [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
 	signed char *p;
 	p = 0;
-	], tcl_cv_char_signed=yes, tcl_cv_char_signed=no)])
+	]])],[tcl_cv_char_signed=yes],[tcl_cv_char_signed=no])])
 if test $tcl_cv_char_signed = yes; then
     AC_DEFINE(HAVE_SIGNED_CHAR, 1, [Are characters signed?])
 fi
@@ -541,7 +524,7 @@ fi
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([for a putenv() that copies the buffer], tcl_cv_putenv_copy, [
-    AC_TRY_RUN([
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 	#include <stdlib.h>
 	#include <string.h>
 	#define OURVAR "havecopy=yes"
@@ -560,10 +543,10 @@ AC_CACHE_CHECK([for a putenv() that copies the buffer], tcl_cv_putenv_copy, [
 		return 1;
 	    }
 	}
-    ],
-    tcl_cv_putenv_copy=no,
-    tcl_cv_putenv_copy=yes,
-    tcl_cv_putenv_copy=no)])
+    ]])],
+    [tcl_cv_putenv_copy=no],
+    [tcl_cv_putenv_copy=yes],
+    [tcl_cv_putenv_copy=no])])
 if test $tcl_cv_putenv_copy = yes; then
     AC_DEFINE(HAVE_PUTENV_THAT_COPIES, 1,
 	[Does putenv() copy strings or incorporate them by reference?])
@@ -582,18 +565,6 @@ SC_ENABLE_LANGINFO
 AC_CHECK_FUNCS(cfmakeraw chflags mkstemps)
 
 #--------------------------------------------------------------------
-# Check for support of isnan() function or macro
-#--------------------------------------------------------------------
-
-AC_CACHE_CHECK([isnan], tcl_cv_isnan, [
-    AC_TRY_LINK([#include <math.h>], [
-isnan(0.0);			/* Generates an error if isnan is missing */
-], tcl_cv_isnan=yes, tcl_cv_isnan=no)])
-if test $tcl_cv_isnan = no; then
-    AC_DEFINE(NO_ISNAN, 1, [Do we have a usable 'isnan'?])
-fi
-
-#--------------------------------------------------------------------
 # Darwin specific API checks and defines
 #--------------------------------------------------------------------
 
@@ -606,8 +577,6 @@ if test "`uname -s`" = "Darwin" ; then
 	AC_CHECK_FUNCS(OSSpinLockLock)
     fi
     AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
-    AC_DEFINE(TCL_DEFAULT_ENCODING, "utf-8",
-	[Are we to override what our default encoding is?])
     AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1,
 	[Can this platform load code from memory?])
     AC_DEFINE(TCL_WIDE_CLICKS, 1,
@@ -616,7 +585,7 @@ if test "`uname -s`" = "Darwin" ; then
     if test "$ac_cv_header_AvailabilityMacros_h" = yes; then
 	AC_CACHE_CHECK([if weak import is available], tcl_cv_cc_weak_import, [
 	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    AC_TRY_LINK([
+	    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
 		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1020
 		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1020
@@ -625,8 +594,8 @@ if test "`uname -s`" = "Darwin" ; then
 		    #error MAC_OS_X_VERSION_MIN_REQUIRED < 1020
 		    #endif
 		    int rand(void) __attribute__((weak_import));
-		], [rand();],
-		tcl_cv_cc_weak_import=yes, tcl_cv_cc_weak_import=no)
+		]], [[rand();]])],
+		[tcl_cv_cc_weak_import=yes],[tcl_cv_cc_weak_import=no])
 	    CFLAGS=$hold_cflags])
 	if test $tcl_cv_cc_weak_import = yes; then
 	    AC_DEFINE(HAVE_WEAK_IMPORT, 1, [Is weak import available?])
@@ -634,7 +603,7 @@ if test "`uname -s`" = "Darwin" ; then
 	AC_CACHE_CHECK([if Darwin SUSv3 extensions are available],
 	    tcl_cv_cc_darwin_c_source, [
 	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    AC_TRY_COMPILE([
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
 		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
 		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
@@ -644,7 +613,7 @@ if test "`uname -s`" = "Darwin" ; then
 		    #endif
 		    #define _DARWIN_C_SOURCE 1
 		    #include <sys/cdefs.h>
-		],,tcl_cv_cc_darwin_c_source=yes, tcl_cv_cc_darwin_c_source=no)
+		]], [[]])],[tcl_cv_cc_darwin_c_source=yes],[tcl_cv_cc_darwin_c_source=no])
 	    CFLAGS=$hold_cflags])
 	if test $tcl_cv_cc_darwin_c_source = yes; then
 	    AC_DEFINE(_DARWIN_C_SOURCE, 1,
@@ -664,15 +633,15 @@ fi
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([for fts], tcl_cv_api_fts, [
-    AC_TRY_LINK([
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 	    #include <sys/param.h>
 	    #include <sys/stat.h>
 	    #include <fts.h>
-	], [
+	]], [[
 	    char*const p[2] = {"/", NULL};
 	    FTS *f = fts_open(p, FTS_PHYSICAL|FTS_NOCHDIR|FTS_NOSTAT, NULL);
 	    FTSENT *e = fts_read(f); fts_close(f);
-	], tcl_cv_api_fts=yes, tcl_cv_api_fts=no)])
+	]])],[tcl_cv_api_fts=yes],[tcl_cv_api_fts=no])])
 if test $tcl_cv_api_fts = yes; then
     AC_DEFINE(HAVE_FTS, 1, [Do we have fts functions?])
 fi
@@ -689,7 +658,7 @@ SC_BLOCKING_STYLE
 
 AC_MSG_CHECKING([whether to use dll unloading])
 AC_ARG_ENABLE(dll-unloading,
-    AC_HELP_STRING([--enable-dll-unloading],
+    AS_HELP_STRING([--enable-dll-unloading],
 	[enable the 'unload' command (default: on)]),
     [tcl_ok=$enableval], [tcl_ok=yes])
 if test $tcl_ok = yes; then
@@ -705,7 +674,7 @@ AC_MSG_RESULT([$tcl_ok])
 
 AC_MSG_CHECKING([for timezone data])
 AC_ARG_WITH(tzdata,
-    AC_HELP_STRING([--with-tzdata],
+    AS_HELP_STRING([--with-tzdata],
 	[install timezone data (default: autodetect)]),
     [tcl_ok=$withval], [tcl_ok=auto])
 #
@@ -753,7 +722,7 @@ fi
 #--------------------------------------------------------------------
 
 AC_ARG_ENABLE(dtrace,
-    AC_HELP_STRING([--enable-dtrace],
+    AS_HELP_STRING([--enable-dtrace],
 	[build with DTrace support (default: off)]),
     [tcl_ok=$enableval], [tcl_ok=no])
 if test $tcl_ok = yes; then
@@ -786,57 +755,11 @@ fi
 AC_MSG_RESULT([$tcl_ok])
 
 #--------------------------------------------------------------------
-#	Zipfs support - Tip 430
-#--------------------------------------------------------------------
-AC_ARG_ENABLE(zipfs,
-    AC_HELP_STRING([--enable-zipfs],
-	[build with Zipfs support (default: on)]),
-    [tcl_ok=$enableval], [tcl_ok=yes])
-if test "$tcl_ok" = "yes" ; then
-    #
-    # Find a native compiler
-    #
-    AX_CC_FOR_BUILD
-    #
-    # Find a native zip implementation
-    #
-    SC_ZIPFS_SUPPORT
-	ZIPFS_BUILD=1
-	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
-else
-	ZIPFS_BUILD=0
-	TCL_ZIP_FILE=
-fi
-# Do checking message here to not mess up interleaved configure output
-AC_MSG_CHECKING([for building with zipfs])
-if test "${ZIPFS_BUILD}" = 1; then
-    if test "${SHARED_BUILD}" = 0; then
-       ZIPFS_BUILD=2;
-       AC_DEFINE(ZIPFS_BUILD, 2, [Are we building with zipfs enabled?])
-       INSTALL_LIBRARIES=install-libraries-zipfs-static
-       AC_MSG_RESULT([yes])
-     else
-       AC_DEFINE(ZIPFS_BUILD, 1, [Are we building with zipfs enabled?])\
-       INSTALL_LIBRARIES=install-libraries-zipfs-shared
-       AC_MSG_RESULT([yes])
-    fi
-else
-AC_MSG_RESULT([no])
-INSTALL_LIBRARIES=install-libraries
-INSTALL_MSGS=install-msgs
-fi
-AC_SUBST(ZIPFS_BUILD)
-AC_SUBST(TCL_ZIP_FILE)
-AC_SUBST(INSTALL_LIBRARIES)
-AC_SUBST(INSTALL_MSGS)
-
-
-#--------------------------------------------------------------------
 # The check below checks whether the cpuid instruction is usable.
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([whether the cpuid instruction is usable], tcl_cv_cpuid, [
-    AC_TRY_LINK(, [
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 	int index,regsPtr[4];
     __asm__ __volatile__("mov %%ebx, %%edi     \n\t"
                  "cpuid            \n\t"
@@ -844,7 +767,7 @@ AC_CACHE_CHECK([whether the cpuid instruction is usable], tcl_cv_cpuid, [
                  "mov %%edi, %%ebx  \n\t"
                  : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
                  : "a"(index) : "edi");
-    ], tcl_cv_cpuid=yes, tcl_cv_cpuid=no)])
+    ]])],[tcl_cv_cpuid=yes],[tcl_cv_cpuid=no])])
 if test $tcl_cv_cpuid = yes; then
     AC_DEFINE(HAVE_CPUID, 1, [Is the cpuid instruction usable?])
 fi
@@ -880,7 +803,6 @@ if test "`uname -s`" = "Darwin" ; then
     echo "$LDFLAGS " | grep -q -- '-prebind ' && TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -seg1addr 0xA000000'
     TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -sectcreate __TEXT __info_plist Tcl-Info.plist'
     EXTRA_TCLSH_LIBS='-sectcreate __TEXT __info_plist Tclsh-Info.plist'
-    EXTRA_APP_CC_SWITCHES='-mdynamic-no-pic'
     AC_CONFIG_FILES([Tcl-Info.plist:../macosx/Tcl-Info.plist.in Tclsh-Info.plist:../macosx/Tclsh-Info.plist.in])
     TCL_YEAR="`date +%Y`"
 fi
@@ -945,6 +867,49 @@ eval "CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
 VERSION=${TCL_VERSION}
 
 #--------------------------------------------------------------------
+#	Zipfs support - Tip 430
+#--------------------------------------------------------------------
+AC_ARG_ENABLE(zipfs,
+    AS_HELP_STRING([--enable-zipfs],
+	[build with Zipfs support (default: on)]),
+    [tcl_ok=$enableval], [tcl_ok=yes])
+if test "$tcl_ok" = "yes" -a "x$enable_framework" != "xyes"; then
+    #
+    # Find a native compiler
+    #
+    AX_CC_FOR_BUILD
+    #
+    # Find a native zip implementation
+    #
+    SC_ZIPFS_SUPPORT
+    ZIPFS_BUILD=1
+    TCL_ZIP_FILE=libtcl${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}${TCL_PATCH_LEVEL}.zip
+else
+    ZIPFS_BUILD=0
+    TCL_ZIP_FILE=
+fi
+# Do checking message here to not mess up interleaved configure output
+AC_MSG_CHECKING([for building with zipfs])
+if test "${ZIPFS_BUILD}" = 1; then
+    if test "${SHARED_BUILD}" = 0; then
+       ZIPFS_BUILD=2;
+       AC_DEFINE(ZIPFS_BUILD, 2, [Are we building with zipfs enabled?])
+     else
+       AC_DEFINE(ZIPFS_BUILD, 1, [Are we building with zipfs enabled?])\
+    fi
+    AC_MSG_RESULT([yes])
+else
+AC_MSG_RESULT([no])
+INSTALL_LIBRARIES=install-libraries
+INSTALL_MSGS=install-msgs
+fi
+AC_SUBST(ZIPFS_BUILD)
+AC_SUBST(TCL_ZIP_FILE)
+AC_SUBST(INSTALL_LIBRARIES)
+AC_SUBST(INSTALL_MSGS)
+
+
+#--------------------------------------------------------------------
 #	The statements below define the symbol TCL_PACKAGE_PATH, which
 #	gives a list of directories that may contain packages.  The list
 #	consists of one directory for machine-dependent binaries and
@@ -970,15 +935,11 @@ fi
 # Replace ${VERSION} with contents of ${TCL_VERSION}
 # double-eval to account for TCL_TRIM_DOTS.
 #
-eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
+eval "TCL_STUB_LIB_FILE=libtclstub.a"
 eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_DIR=\"${libdir}\""
 
-if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-    TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}"
-else
-    TCL_STUB_LIB_FLAG="-ltclstub`echo ${TCL_VERSION} | tr -d .`"
-fi
+TCL_STUB_LIB_FLAG="-ltclstub"
 
 TCL_BUILD_STUB_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_STUB_LIB_FLAG}"
 TCL_STUB_LIB_SPEC="-L${TCL_STUB_LIB_DIR} ${TCL_STUB_LIB_FLAG}"

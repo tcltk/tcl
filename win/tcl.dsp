@@ -34,7 +34,7 @@ CFG=tcl - Win32 Debug Static
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "Release"
 # PROP BASE Intermediate_Dir "Release\tcl_Dynamic"
-# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=none MSVCDIR=IDE"
+# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc MSVCDIR=IDE"
 # PROP BASE Rebuild_Opt "-a"
 # PROP BASE Target_File "Release\tclsh90.exe"
 # PROP BASE Bsc_Name ""
@@ -43,7 +43,7 @@ CFG=tcl - Win32 Debug Static
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release"
 # PROP Intermediate_Dir "Release\tcl_Dynamic"
-# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=threads MSVCDIR=IDE"
+# PROP Cmd_Line "nmake -nologo -f makefile.vc MSVCDIR=IDE"
 # PROP Rebuild_Opt "clean release"
 # PROP Target_File "Release\tclsh90t.exe"
 # PROP Bsc_Name ""
@@ -760,7 +760,7 @@ SOURCE=..\doc\safe.n
 # End Source File
 # Begin Source File
 
-SOURCE=..\doc\SaveResult.3
+SOURCE=..\doc\SaveInterpState.3
 # End Source File
 # Begin Source File
 
@@ -824,7 +824,7 @@ SOURCE=..\doc\SplitPath.3
 # End Source File
 # Begin Source File
 
-SOURCE=..\doc\StaticPkg.3
+SOURCE=..\doc\StaticLibrary.3
 # End Source File
 # Begin Source File
 
@@ -1288,6 +1288,14 @@ SOURCE=..\generic\tclStubLib.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\generic\tclStubCall.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\generic\tclStubLibTbl.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\generic\tclOOStubLib.c
 # End Source File
 # Begin Source File
@@ -1441,10 +1449,6 @@ SOURCE=.\rmd.bat
 # Begin Source File
 
 SOURCE=.\rules.vc
-# End Source File
-# Begin Source File
-
-SOURCE=.\tcl.hpj.in
 # End Source File
 # Begin Source File
 

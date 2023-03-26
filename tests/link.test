@@ -4,20 +4,20 @@
 # procedures. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testlink [llength [info commands testlink]]
 testConstraint testlinkarray [llength [info commands testlinkarray]]
@@ -69,9 +69,9 @@ test link-2.1 {writing C variables from Tcl} -constraints {testlink} -setup {
     set long 34543
     set ulong 567890
     set float 1.0987654321
-    set uwide 357357357357
+    set uwide 12345678901234567890
     concat [testlink get] | $int $real $bool $string $wide $char $uchar $short $ushort $uint $long $ulong $float $uwide
-} -result {465 -10.5 1 abcdef 135135 79 161 8000 40000 -1073628482 34543 567890 1.0987653732299805 357357357357 | 0o0721 -10.5 true abcdef 135135 79 161 8000 40000 0xc001babe 34543 567890 1.0987654321 357357357357}
+} -result {465 -10.5 1 abcdef 135135 79 161 8000 40000 -1073628482 34543 567890 1.0987653732299805 12345678901234567890 | 0o0721 -10.5 true abcdef 135135 79 161 8000 40000 0xc001babe 34543 567890 1.0987654321 12345678901234567890}
 test link-2.2 {writing bad values into variables} -setup {
     testlink delete
 } -constraints {testlink} -body {

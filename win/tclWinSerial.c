@@ -4,7 +4,7 @@
  *	This file implements the Windows-specific serial port functions, and
  *	the "serial" channel driver.
  *
- * Copyright (c) 1999 by Scriptics Corp.
+ * Copyright © 1999 Scriptics Corp.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -85,7 +85,7 @@ typedef struct SerialInfo {
     int readable;		/* Flag that the channel is readable. */
     int writable;		/* Flag that the channel is writable. */
     int blockTime;		/* Maximum blocktime in msec. */
-    unsigned int lastEventTime;	/* Time in milliseconds since last readable
+    unsigned long long lastEventTime;	/* Time in milliseconds since last readable
 				 * event. */
 				/* Next readable event only after blockTime */
     DWORD error;		/* pending error code returned by
@@ -165,30 +165,30 @@ static COMMTIMEOUTS no_timeout = {
  * Declarations for functions used only in this file.
  */
 
-static int		SerialBlockProc(ClientData instanceData, int mode);
-static void		SerialCheckProc(ClientData clientData, int flags);
-static int		SerialCloseProc(ClientData instanceData,
+static int		SerialBlockProc(void *instanceData, int mode);
+static void		SerialCheckProc(void *clientData, int flags);
+static int		SerialCloseProc(void *instanceData,
 			    Tcl_Interp *interp, int flags);
 static int		SerialEventProc(Tcl_Event *evPtr, int flags);
-static void		SerialExitHandler(ClientData clientData);
-static int		SerialGetHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
+static void		SerialExitHandler(void *clientData);
+static int		SerialGetHandleProc(void *instanceData,
+			    int direction, void **handlePtr);
 static ThreadSpecificData *SerialInit(void);
-static int		SerialInputProc(ClientData instanceData, char *buf,
+static int		SerialInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCode);
-static int		SerialOutputProc(ClientData instanceData,
+static int		SerialOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCode);
-static void		SerialSetupProc(ClientData clientData, int flags);
-static void		SerialWatchProc(ClientData instanceData, int mask);
-static void		ProcExitHandler(ClientData clientData);
-static int		SerialGetOptionProc(ClientData instanceData,
+static void		SerialSetupProc(void *clientData, int flags);
+static void		SerialWatchProc(void *instanceData, int mask);
+static void		ProcExitHandler(void *clientData);
+static int		SerialGetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
-static int		SerialSetOptionProc(ClientData instanceData,
+static int		SerialSetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *value);
 static DWORD WINAPI	SerialWriterThread(LPVOID arg);
-static void		SerialThreadActionProc(ClientData instanceData,
+static void		SerialThreadActionProc(void *instanceData,
 			    int action);
 static int		SerialBlockingRead(SerialInfo *infoPtr, LPVOID buf,
 			    DWORD bufSize, LPDWORD lpRead, LPOVERLAPPED osPtr);
@@ -285,7 +285,7 @@ SerialInit(void)
 
 static void
 SerialExitHandler(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     SerialInfo *infoPtr;
@@ -323,7 +323,7 @@ SerialExitHandler(
 
 static void
 ProcExitHandler(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     Tcl_MutexLock(&serialMutex);
     initialized = 0;
@@ -373,14 +373,14 @@ SerialBlockTime(
  *----------------------------------------------------------------------
  */
 
-static unsigned int
+static unsigned long long
 SerialGetMilliseconds(void)
 {
     Tcl_Time time;
 
     Tcl_GetTime(&time);
 
-    return (time.sec * 1000 + time.usec / 1000);
+    return ((unsigned long long)time.sec * 1000 + (unsigned long)time.usec / 1000);
 }
 
 /*
@@ -406,7 +406,7 @@ SerialGetMilliseconds(void)
 
 void
 SerialSetupProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     SerialInfo *infoPtr;
@@ -461,7 +461,7 @@ SerialSetupProc(
 
 static void
 SerialCheckProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     SerialInfo *infoPtr;
@@ -469,7 +469,7 @@ SerialCheckProc(
     int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     COMSTAT cStat;
-    unsigned int time;
+    unsigned long long time;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -519,8 +519,8 @@ SerialCheckProc(
 			    (infoPtr->error & SERIAL_READ_ERRORS)) {
 			infoPtr->readable = 1;
 			time = SerialGetMilliseconds();
-			if ((unsigned int) (time - infoPtr->lastEventTime)
-				>= (unsigned int) infoPtr->blockTime) {
+			if ((time - infoPtr->lastEventTime)
+				>= (unsigned long long) infoPtr->blockTime) {
 			    needEvent = 1;
 			    infoPtr->lastEventTime = time;
 			}
@@ -561,7 +561,7 @@ SerialCheckProc(
 
 static int
 SerialBlockProc(
-    ClientData instanceData,    /* Instance data for channel. */
+    void *instanceData,    /* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -600,7 +600,7 @@ SerialBlockProc(
 
 static int
 SerialCloseProc(
-    ClientData instanceData,    /* Pointer to SerialInfo structure. */
+    void *instanceData,    /* Pointer to SerialInfo structure. */
     TCL_UNUSED(Tcl_Interp *),
     int flags)
 {
@@ -645,7 +645,7 @@ SerialCloseProc(
 	    && (GetStdHandle(STD_OUTPUT_HANDLE) != serialPtr->handle)
 	    && (GetStdHandle(STD_ERROR_HANDLE) != serialPtr->handle))) {
 	if (CloseHandle(serialPtr->handle) == FALSE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    errorCode = errno;
 	}
     }
@@ -796,7 +796,7 @@ SerialBlockingWrite(
     LeaveCriticalSection(&infoPtr->csWrite);
 
     if (result == FALSE) {
-	int err = GetLastError();
+	DWORD err = GetLastError();
 
 	switch (err) {
 	case ERROR_IO_PENDING:
@@ -855,7 +855,7 @@ SerialBlockingWrite(
 
 static int
 SerialInputProc(
-    ClientData instanceData,	/* Serial state. */
+    void *instanceData,	/* Serial state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* How much space is available in the
 				 * buffer? */
@@ -918,7 +918,7 @@ SerialInputProc(
     }
 
     if (bufSize == 0) {
-	return bytesRead = 0;
+	return 0;
     }
 
     /*
@@ -928,7 +928,7 @@ SerialInputProc(
 
     if (SerialBlockingRead(infoPtr, (LPVOID) buf, (DWORD) bufSize, &bytesRead,
 	    &infoPtr->osRead) == FALSE) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	*errorCode = errno;
 	return -1;
     }
@@ -962,7 +962,7 @@ SerialInputProc(
 
 static int
 SerialOutputProc(
-    ClientData instanceData,	/* Serial state. */
+    void *instanceData,	/* Serial state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -1010,7 +1010,7 @@ SerialOutputProc(
      */
 
     if (infoPtr->writeError) {
-	TclWinConvertError(infoPtr->writeError);
+	Tcl_WinConvertError(infoPtr->writeError);
 	infoPtr->writeError = 0;
 	goto error1;
     }
@@ -1069,7 +1069,7 @@ SerialOutputProc(
     return (int) bytesWritten;
 
   writeError:
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
 
   error:
     /*
@@ -1192,7 +1192,7 @@ SerialEventProc(
 
 static void
 SerialWatchProc(
-    ClientData instanceData,	/* Serial state. */
+    void *instanceData,	/* Serial state. */
     int mask)			/* What events to watch for, OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -1249,13 +1249,13 @@ SerialWatchProc(
 
 static int
 SerialGetHandleProc(
-    ClientData instanceData,	/* The serial state. */
+    void *instanceData,	/* The serial state. */
     TCL_UNUSED(int) /*direction*/,
-    ClientData *handlePtr)	/* Where to store the handle. */
+    void **handlePtr)	/* Where to store the handle. */
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
 
-    *handlePtr = (ClientData) infoPtr->handle;
+    *handlePtr = (void *) infoPtr->handle;
     return TCL_OK;
 }
 
@@ -1508,13 +1508,7 @@ TclWinOpenSerialChannel(
 			infoPtr->evWritable), 0, NULL);
     }
 
-    /*
-     * Files have default translation of AUTO and ^Z eof char, which means
-     * that a ^Z will be accepted as EOF when reading.
-     */
-
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
 
     return infoPtr->channel;
 }
@@ -1619,7 +1613,7 @@ SerialModemStatusStr(
 
 static int
 SerialSetOptionProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Which option to set? */
     const char *value)		/* New value for option. */
@@ -1630,7 +1624,7 @@ SerialSetOptionProc(
     size_t len, vlen;
     Tcl_DString ds;
     const WCHAR *native;
-    int argc;
+    size_t argc;
     const char **argv;
 
     infoPtr = (SerialInfo *) instanceData;
@@ -1678,7 +1672,7 @@ SerialSetOptionProc(
 	    goto getStateFailed;
 	}
 	Tcl_DStringInit(&ds);
-	native = Tcl_UtfToWCharDString(value, -1, &ds);
+	native = Tcl_UtfToWCharDString(value, TCL_INDEX_NONE, &ds);
 	result = BuildCommDCBW(native, &dcb);
 	Tcl_DStringFree(&ds);
 
@@ -1779,7 +1773,7 @@ SerialSetOptionProc(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -xchar: should be a list of"
-			" two elements with each a single 8-bit character", -1));
+			" two elements with each a single 8-bit character", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", NULL);
 	    }
 	    Tcl_Free((void *)argv);
@@ -1826,7 +1820,8 @@ SerialSetOptionProc(
      */
 
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
-	int i, result = TCL_OK;
+	size_t i;
+	int res = TCL_OK;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
@@ -1844,7 +1839,7 @@ SerialSetOptionProc(
 
 	for (i = 0; i < argc - 1; i += 2) {
 	    if (Tcl_GetBoolean(interp, argv[i+1], &flag) == TCL_ERROR) {
-		result = TCL_ERROR;
+		res = TCL_ERROR;
 		break;
 	    }
 	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
@@ -1852,11 +1847,11 @@ SerialSetOptionProc(
 			(DWORD) (flag ? SETDTR : CLRDTR))) {
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"can't set DTR signal", -1));
+				"can't set DTR signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", NULL);
 		    }
-		    result = TCL_ERROR;
+		    res = TCL_ERROR;
 		    break;
 		}
 	    } else if (strncasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
@@ -1864,11 +1859,11 @@ SerialSetOptionProc(
 			(DWORD) (flag ? SETRTS : CLRRTS))) {
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"can't set RTS signal", -1));
+				"can't set RTS signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", NULL);
 		    }
-		    result = TCL_ERROR;
+		    res = TCL_ERROR;
 		    break;
 		}
 	    } else if (strncasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
@@ -1876,11 +1871,11 @@ SerialSetOptionProc(
 			(DWORD) (flag ? SETBREAK : CLRBREAK))) {
 		    if (interp != NULL) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"can't set BREAK signal", -1));
+				"can't set BREAK signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", NULL);
 		    }
-		    result = TCL_ERROR;
+		    res = TCL_ERROR;
 		    break;
 		}
 	    } else {
@@ -1891,13 +1886,13 @@ SerialSetOptionProc(
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTY_SIGNAL",
 			    NULL);
 		}
-		result = TCL_ERROR;
+		res = TCL_ERROR;
 		break;
 	    }
 	}
 
 	Tcl_Free((void *)argv);
-	return result;
+	return res;
     }
 
     /*
@@ -1936,7 +1931,7 @@ SerialSetOptionProc(
 
 	if (!SetupComm(infoPtr->handle, inSize, outSize)) {
 	    if (interp != NULL) {
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"can't setup comm buffers: %s",
 			Tcl_PosixError(interp)));
@@ -1987,7 +1982,7 @@ SerialSetOptionProc(
 	tout.ReadTotalTimeoutConstant = msec;
 	if (!SetCommTimeouts(infoPtr->handle, &tout)) {
 	    if (interp != NULL) {
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"can't set comm timeouts: %s",
 			Tcl_PosixError(interp)));
@@ -2004,7 +1999,7 @@ SerialSetOptionProc(
 
   getStateFailed:
     if (interp != NULL) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't get comm state: %s", Tcl_PosixError(interp)));
     }
@@ -2012,7 +2007,7 @@ SerialSetOptionProc(
 
   setStateFailed:
     if (interp != NULL) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't set comm state: %s", Tcl_PosixError(interp)));
     }
@@ -2042,7 +2037,7 @@ SerialSetOptionProc(
 
 static int
 SerialGetOptionProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Option to get. */
     Tcl_DString *dsPtr)		/* Where to store value(s). */
@@ -2095,7 +2090,7 @@ SerialGetOptionProc(
 
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    if (interp != NULL) {
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"can't get comm state: %s", Tcl_PosixError(interp)));
 	    }
@@ -2165,7 +2160,7 @@ SerialGetOptionProc(
 
 	if (!GetCommState(infoPtr->handle, &dcb)) {
 	    if (interp != NULL) {
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"can't get comm state: %s", Tcl_PosixError(interp)));
 	    }
@@ -2243,7 +2238,7 @@ SerialGetOptionProc(
 
 	if (!GetCommModemStatus(infoPtr->handle, &status)) {
 	    if (interp != NULL) {
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"can't get tty status: %s", Tcl_PosixError(interp)));
 	    }
@@ -2279,7 +2274,7 @@ SerialGetOptionProc(
 
 static void
 SerialThreadActionProc(
-    ClientData instanceData,
+    void *instanceData,
     int action)
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;

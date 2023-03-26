@@ -6,7 +6,7 @@
  *	name resolution rules to the Tcl language. Rules can be applied to a
  *	particular namespace, to the interpreter as a whole, or both.
  *
- * Copyright (c) 1998 Lucent Technologies, Inc.
+ * Copyright © 1998 Lucent Technologies, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

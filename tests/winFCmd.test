@@ -4,31 +4,32 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1996-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1996-1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Initialise the test constraints
 
-testConstraint winVista 0
-testConstraint winXP 0
 testConstraint testvolumetype [llength [info commands testvolumetype]]
 testConstraint testfile       [llength [info commands testfile]]
 testConstraint testchmod      [llength [info commands testchmod]]
 testConstraint cdrom 0
 testConstraint exdev 0
 testConstraint longFileNames 0
-testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+# Some things fail under all Continuous Integration systems for subtle reasons
+# such as CI often running with elevated privileges in a container.
+testConstraint notInCIenv     [expr {![info exists ::env(CI)]}]
+testConstraint knownMsvcBug [expr {![string match msvc-* [tcl::build-info compiler]]}]
 
 proc createfile {file {string a}} {
     set f [open $file w]
@@ -44,23 +45,20 @@ proc contents {file} {
     set r
 }
 
-proc cleanup {args} {
-    foreach p ". $args" {
-	set x ""
-	catch {
-	    set x [glob -directory $p tf* td*]
-	}
-	if {$x != ""} {
-	    catch {file delete -force -- {*}$x}
-	}
+proc cleanupRecurse {args} {
+    # Assumes no loops via links!
+    # Need to change permissions BEFORE deletion
+    testchmod 0o777 {*}$args
+    foreach victim $args {
+        if {[file isdirectory $victim]} {
+            cleanupRecurse {*}[glob -nocomplain -directory $victim td* tf* Test*]
+        }
+        file delete -force $victim
     }
 }
-
-if {[testConstraint win]} {
-    if {$::tcl_platform(osVersion) >= 5.0} {
-	testConstraint winVista 1
-    } else {
-	testConstraint winXP 1
+proc cleanup {args} {
+    foreach p [list [pwd] {*}$args] {
+        cleanupRecurse {*}[glob -nocomplain -directory $p tf* td*]
     }
 }
 
@@ -132,25 +130,25 @@ test winFCmd-1.1 {TclpRenameFile: errno: EACCES} -body {
 } -constraints {win cdrom testfile} -returnCodes error -result EACCES
 test winFCmd-1.2 {TclpRenameFile: errno: EEXIST} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notInCIenv} -body {
     file mkdir td1/td2/td3
     file mkdir td2
     testfile mv td2 td1/td2
 } -returnCodes error -result EEXIST
 test winFCmd-1.3 {TclpRenameFile: errno: EINVAL} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notInCIenv} -body {
     testfile mv / td1
 } -returnCodes error -result EINVAL
 test winFCmd-1.4 {TclpRenameFile: errno: EINVAL} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notInCIenv} -body {
     file mkdir td1
     testfile mv td1 td1/td2
 } -returnCodes error -result EINVAL
 test winFCmd-1.5 {TclpRenameFile: errno: EISDIR} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notInCIenv} -body {
     file mkdir td1
     createfile tf1
     testfile mv tf1 td1
@@ -203,11 +201,6 @@ test winFCmd-1.12 {TclpRenameFile: errno: EACCES} -setup {
 } -cleanup {
     catch {close $fd}
 } -returnCodes error -result EACCES
-test winFCmd-1.13 {TclpRenameFile: errno: EACCES} -setup {
-    cleanup
-} -constraints {win winXP testfile} -body {
-    testfile mv nul tf1
-} -returnCodes error -result EINVAL
 test winFCmd-1.15 {TclpRenameFile: errno: EEXIST} -setup {
     cleanup
 } -constraints {win testfile} -body {
@@ -231,11 +224,6 @@ test winFCmd-1.18 {TclpRenameFile: srcAttr == -1} -setup {
 } -constraints {win testfile} -body {
     testfile mv tf1 tf2
 } -returnCodes error -result ENOENT
-test winFCmd-1.19 {TclpRenameFile: errno == EACCES} -setup {
-    cleanup
-} -constraints {win winXP testfile} -body {
-    testfile mv nul tf1
-} -returnCodes error -result EINVAL
 test winFCmd-1.20 {TclpRenameFile: src is dir} -setup {
     cleanup
 } -constraints {win testfile} -body {
@@ -255,15 +243,16 @@ test winFCmd-1.22 {TclpRenameFile: long dst} -setup {
 } -returnCodes error -result ENAMETOOLONG
 test winFCmd-1.23 {TclpRenameFile: move dir into self} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notInCIenv} -body {
     file mkdir td1
     testfile mv [pwd]/td1 td1/td2
 } -returnCodes error -result EINVAL
 test winFCmd-1.24 {TclpRenameFile: move a root dir} -setup {
     cleanup
 } -constraints {win testfile} -body {
+    # Error code depends on Windows version
     testfile mv / c:/
-} -returnCodes error -result EINVAL
+} -returnCodes error -result {^(EINVAL|ENOENT)$} -match regexp
 test winFCmd-1.25 {TclpRenameFile: cross file systems} -setup {
     cleanup
 } -constraints {win cdrom testfile} -body {
@@ -300,21 +289,21 @@ test winFCmd-1.29 {TclpRenameFile: src is dir} -setup {
 } -returnCodes error -result ENOTDIR
 test winFCmd-1.30 {TclpRenameFile: dst is dir} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notInCIenv} -body {
     file mkdir td1
     file mkdir td2/td2
     testfile mv td1 td2
 } -returnCodes error -result EEXIST
 test winFCmd-1.31 {TclpRenameFile: TclpRemoveDirectory fails} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notInCIenv} -body {
     file mkdir td1
     file mkdir td2/td2
     testfile mv td1 td2
 } -returnCodes error -result EEXIST
 test winFCmd-1.32 {TclpRenameFile: TclpRemoveDirectory succeeds} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notInCIenv} -body {
     file mkdir td1/td2
     file mkdir td2
     testfile mv td1 td2
@@ -343,7 +332,7 @@ test winFCmd-1.34 {TclpRenameFile: src is dir, dst is not} -setup {
 } -returnCodes error -result ENOTDIR
 test winFCmd-1.35 {TclpRenameFile: src is not dir, dst is} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notInCIenv} -body {
     file mkdir td1
     createfile tf1
     testfile mv tf1 td1
@@ -384,7 +373,7 @@ proc MakeFiles {dirname} {
         set f [open $filename w]
         close $f
         file stat $filename stat
-        if {[set n [lsearch -exact -integer $inodes $stat(ino)]] != -1} {
+        if {[set n [lsearch -exact -integer $inodes $stat(ino)]] >= 0} {
             return [list [file join $dirname Test$n] $filename]
         }
         lappend inodes $stat(ino)
@@ -394,14 +383,14 @@ proc MakeFiles {dirname} {
 
 test winFCmd-1.38 {TclpRenameFile: check rename of conflicting inodes} -setup {
     cleanup
-} -constraints {win winNonZeroInodes knownMsvcBug} -body {
+} -constraints {win winNonZeroInodes knownMsvcBug notInCIenv} -body {
     file mkdir td1
-    foreach {a b} [MakeFiles td1] break
+    lassign [MakeFiles td1] a b
     file rename -force $a $b
     file exists $a
 } -cleanup {
     cleanup
-} -result {0}
+} -result 0
 
 
 test winFCmd-2.1 {TclpCopyFile: errno: EACCES} -setup {
@@ -444,11 +433,6 @@ test winFCmd-2.6 {TclpCopyFile: errno: ENOENT} -setup {
 } -cleanup {
     cleanup
 } -returnCodes error -result ENOENT
-test winFCmd-2.7 {TclpCopyFile: errno: EACCES} -setup {
-    cleanup
-} -constraints {win winXP testfile} -body {
-    testfile cp nul tf1
-} -returnCodes error -result EINVAL
 test winFCmd-2.10 {TclpCopyFile: CopyFile succeeds} -setup {
     cleanup
 } -constraints {win testfile} -body {
@@ -472,11 +456,11 @@ test winFCmd-2.12 {TclpCopyFile: CopyFile succeeds} -setup {
     cleanup
 } -constraints {win testfile} -body {
     createfile tf1 tf1
-    testchmod 0 tf1
+    file attribute tf1 -readonly 1
     testfile cp tf1 tf2
     list [contents tf2] [file writable tf2]
 } -cleanup {
-    catch {testchmod 0o666 tf1}
+    testchmod 0o660 tf1
     cleanup
 } -result {tf1 0}
 test winFCmd-2.13 {TclpCopyFile: CopyFile fails} -setup {
@@ -518,11 +502,10 @@ test winFCmd-2.17 {TclpCopyFile: dst is readonly} -setup {
 } -constraints {win testfile testchmod} -body {
     createfile tf1 tf1
     createfile tf2 tf2
-    testchmod 0 tf2
+    file attribute tf2 -readonly 1
     testfile cp tf1 tf2
     list [file writable tf2] [contents tf2]
 } -cleanup {
-    catch {testchmod 0o666 tf2}
     cleanup
 } -result {1 tf1}
 
@@ -600,7 +583,6 @@ test winFCmd-3.11 {TclpDeleteFile: still can't remove path} -setup {
     testfile rm tf1
 } -cleanup {
     close $fd
-    catch {testchmod 0o666 tf1}
     cleanup
 } -returnCodes error -result EACCES
 
@@ -639,15 +621,18 @@ test winFCmd-5.1 {TclpCopyDirectory: calls TraverseWinTree} -setup {
 
 test winFCmd-6.1 {TclpRemoveDirectory: errno: EACCES} -setup {
     cleanup
-} -constraints {winVista testfile testchmod knownMsvcBug} -body {
-    file mkdir td1
-    testchmod 0 td1
-    testfile rmdir td1
-    file exists td1
+} -constraints {win testfile testchmod notInCIenv} -body {
+    # Parent's FILE_DELETE_CHILD setting permits deletion of subdir
+    # even when subdir DELETE mask is clear. So we need an intermediate
+    # parent td0 with FILE_DELETE_CHILD turned off while allowing R/W.
+    file mkdir td0/td1
+    testchmod 0o777 td0
+    testchmod 0 td0/td1
+    testfile rmdir td0/td1
+    file exists td0/td1
 } -returnCodes error -cleanup {
-    catch {testchmod 0o666 td1}
     cleanup
-} -result {td1 EACCES}
+} -result {td0/td1 EACCES}
 # This next test has a very hokey way of matching...
 test winFCmd-6.2 {TclpRemoveDirectory: errno: EEXIST} -setup {
     cleanup
@@ -655,7 +640,7 @@ test winFCmd-6.2 {TclpRemoveDirectory: errno: EEXIST} -setup {
     file mkdir td1/td2
     list [catch {testfile rmdir td1} msg] [file tail $msg]
 } -result {1 {td1 EEXIST}}
-test winFCmd-6.3 {TclpRemoveDirectory: errno: EACCES} {win emptyTest} {
+test winFCmd-6.3 {TclpRemoveDirectory: errno: EACCES} {win emptyTest trashSystem} {
     # can't test this w/o removing everything on your hard disk first!
     # testfile rmdir /
 } {}
@@ -691,35 +676,29 @@ test winFCmd-6.8 {TclpRemoveDirectory: RemoveDirectory fails} -setup {
     createfile tf1
     list [catch {testfile rmdir tf1} msg] [file tail $msg]
 } -result {1 {tf1 ENOTDIR}}
-test winFCmd-6.9 {TclpRemoveDirectory: errno == EACCES} -setup {
-    cleanup
-} -constraints {winVista testfile testchmod knownMsvcBug} -body {
-    file mkdir td1
-    testchmod 0 td1
-    testfile rmdir td1
-    file exists td1
-} -returnCodes error -cleanup {
-    catch {testchmod 0o666 td1}
-    cleanup
-} -result {td1 EACCES}
+# winFCmd-6.9 removed - was exact dup of winFCmd-6.1
 test winFCmd-6.11 {TclpRemoveDirectory: attr == -1} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notInCIenv} -body {
     testfile rmdir /
     # WinXP returns EEXIST, WinNT seems to return EACCES.  No policy
     # decision has been made as to which is correct.
 } -returnCodes error -match regexp -result {^/ E(ACCES|EXIST)$}
 test winFCmd-6.13 {TclpRemoveDirectory: write-protected} -setup {
     cleanup
-} -constraints {winVista testfile testchmod knownMsvcBug} -body {
-    file mkdir td1
-    testchmod 0 td1
-    testfile rmdir td1
-    file exists td1
+} -constraints {win testfile testchmod notInCIenv} -body {
+    # Parent's FILE_DELETE_CHILD setting permits deletion of subdir
+    # even when subdir DELETE mask is clear. So we need an intermediate
+    # parent td0 with FILE_DELETE_CHILD turned off while allowing R/W.
+    file mkdir td0/td1
+    testchmod 0o770 td0
+    testchmod 0o444 td0/td1
+    testfile rmdir td0/td1
+    file exists td0/td1
 } -cleanup {
-    catch {testchmod 0o666 td1}
+    testchmod 0o770 td0/td1
     cleanup
-} -returnCodes error -result {td1 EACCES}
+} -returnCodes error -result {td0/td1 EACCES}
 # This next test has a very hokey way of matching...
 test winFCmd-6.15 {TclpRemoveDirectory: !recursive} -setup {
     cleanup
@@ -813,11 +792,12 @@ test winFCmd-7.11 {TraverseWinTree: call TraversalCopy: DOTREE_PRED} -setup {
 } -constraints {win testfile testchmod} -body {
     file mkdir td1
     createfile td1/tf1 tf1
-    testchmod 0 td1
+    testchmod 0o770 td1/tf1; # Else tf2 will have no ACL after td1 testchmod
+    testchmod 0o400 td1
     testfile cpdir td1 td2
     list [file exists td2] [file writable td2]
 } -cleanup {
-    catch {testchmod 0o666 td1}
+    testchmod 0o660 td1
     cleanup
 } -result {1 1}
 test winFCmd-7.12 {TraverseWinTree: call TraversalDelete: DOTREE_PRED} -setup {
@@ -884,11 +864,12 @@ test winFCmd-7.19 {TraverseWinTree: call TraversalCopy: DOTREE_POSTD} -setup {
 } -constraints {win testfile testchmod} -body {
     file mkdir td1
     createfile td1/tf1 tf1
-    testchmod 0 td1
+    testchmod 0o770 td1/tf1; # Else tf2 will have no ACL after td1 testchmod
+    testchmod 0o400 td1
     testfile cpdir td1 td2
     list [file exists td2] [file writable td2]
 } -cleanup {
-    catch {testchmod 0o666 td1}
+    testchmod 0o660 td1
     cleanup
 } -result {1 1}
 test winFCmd-7.20 {TraverseWinTree: call TraversalDelete: DOTREE_POSTD} -setup {
@@ -915,11 +896,12 @@ test winFCmd-8.2 {TraversalCopy: DOTREE_PRED} -setup {
     cleanup
 } -constraints {win testfile testchmod} -body {
     file mkdir td1/td2
-    testchmod 0 td1
+    testchmod 0o770 td1/td2; # Else td2 will have no ACL after td1 testchmod
+    testchmod 0o400 td1
     testfile cpdir td1 td2
     list [file writable td1] [file writable td1/td2]
 } -cleanup {
-    catch {testchmod 0o666 td1}
+    testchmod 0o660 td1
     cleanup
 } -result {0 1}
 test winFCmd-8.3 {TraversalCopy: DOTREE_POSTD} -setup {
@@ -940,15 +922,19 @@ test winFCmd-9.1 {TraversalDelete: DOTREE_F} -setup {
 } -result {}
 test winFCmd-9.3 {TraversalDelete: DOTREE_PRED} -setup {
     cleanup
-} -constraints {winVista testfile testchmod knownMsvcBug} -body {
-    file mkdir td1/td2
-    testchmod 0 td1
-    testfile rmdir -force td1
+} -constraints {win testfile testchmod notInCIenv} -body {
+    # Parent's FILE_DELETE_CHILD setting permits deletion of subdir
+    # even when subdir DELETE mask is clear. So we need an intermediate
+    # parent td0 with FILE_DELETE_CHILD turned off while allowing R/W.
+    file mkdir td0/td1/td2
+    testchmod 0o770 td0
+    testchmod 0o400 td0/td1
+    testfile rmdir -force td0/td1
     file exists td1
 } -cleanup {
-    catch {testchmod 0o666 td1}
+    testchmod 0o770 td0/td1
     cleanup
-} -returnCodes error -result {td1 EACCES}
+} -returnCodes error -result {td0/td1 EACCES}
 test winFCmd-9.4 {TraversalDelete: DOTREE_POSTD} -setup {
     cleanup
 } -constraints {win testfile} -body {
@@ -1053,15 +1039,7 @@ test winFCmd-12.4 {ConvertFileNameFormat} -constraints {win} -setup {
 test winFCmd-12.5 {ConvertFileNameFormat: absolute path} -body {
     list [file attributes / -longname] [file attributes \\ -longname]
 } -constraints {win} -result {/ /}
-test winFCmd-12.6 {ConvertFileNameFormat: absolute path with drive} -setup {
-    catch {file delete -force -- c:/TclTmpC.1}
-} -constraints {win winXP} -body {
-    createfile c:/TclTmpC.1 {}
-    string tolower [file attributes c:/TclTmpC.1 -longname]
-} -cleanup {
-    file delete -force -- c:/TclTmpC.1
-} -result [string tolower {c:/TclTmpC.1}]
-test winFCmd-12.6.2 {ConvertFileNameFormat: absolute path with drive (in temp folder)} -setup {
+test winFCmd-12.6 {ConvertFileNameFormat: absolute path with drive (in temp folder)} -setup {
     catch {file delete -force -- $::env(TEMP)/td1}
 } -constraints {win} -body {
     createfile $::env(TEMP)/td1 {}
@@ -1129,7 +1107,7 @@ test winFCmd-15.2 {SetWinFileAttributes - archive} -constraints {win} -setup {
 } -cleanup {
     cleanup
 } -result {{} 1}
-test winFCmd-15.3 {SetWinFileAttributes - archive} -constraints {win} -setup {
+test winFCmd-15.3 {SetWinFileAttributes - archive} -constraints {win notInCIenv} -setup {
     cleanup
 } -body {
     createfile td1 {}
@@ -1137,7 +1115,7 @@ test winFCmd-15.3 {SetWinFileAttributes - archive} -constraints {win} -setup {
 } -cleanup {
     cleanup
 } -result {{} 0}
-test winFCmd-15.4 {SetWinFileAttributes - hidden} -constraints {win} -setup {
+test winFCmd-15.4 {SetWinFileAttributes - hidden} -constraints {win notInCIenv} -setup {
     cleanup
 } -body {
     createfile td1 {}
@@ -1170,7 +1148,7 @@ test winFCmd-15.7 {SetWinFileAttributes - readonly} -setup {
 } -cleanup {
     cleanup
 } -result {{} 0}
-test winFCmd-15.8 {SetWinFileAttributes - system} -constraints {win} -setup {
+test winFCmd-15.8 {SetWinFileAttributes - system} -constraints {win notInCIenv} -setup {
     cleanup
 } -body {
     createfile td1 {}
@@ -1447,7 +1425,6 @@ test winFCmd-19.9 {Windows devices path names} -constraints win -body {
 #    }
 #}
 
-# cleanup
 cleanup
 ::tcltest::cleanupTests
 return

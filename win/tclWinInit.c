@@ -3,8 +3,8 @@
  *
  *	Contains the Windows-specific interpreter initialization functions.
  *
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  * All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -36,61 +36,14 @@ typedef struct {
 } OemId;
 
 /*
- * The following macros are missing from some versions of winnt.h.
- */
-
-#ifndef PROCESSOR_ARCHITECTURE_INTEL
-#define PROCESSOR_ARCHITECTURE_INTEL		0
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_MIPS
-#define PROCESSOR_ARCHITECTURE_MIPS		1
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_ALPHA
-#define PROCESSOR_ARCHITECTURE_ALPHA		2
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_PPC
-#define PROCESSOR_ARCHITECTURE_PPC		3
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_SHX
-#define PROCESSOR_ARCHITECTURE_SHX		4
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_ARM
-#define PROCESSOR_ARCHITECTURE_ARM		5
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_IA64
-#define PROCESSOR_ARCHITECTURE_IA64		6
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_ALPHA64
-#define PROCESSOR_ARCHITECTURE_ALPHA64		7
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_MSIL
-#define PROCESSOR_ARCHITECTURE_MSIL		8
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_AMD64
-#define PROCESSOR_ARCHITECTURE_AMD64		9
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_IA32_ON_WIN64
-#define PROCESSOR_ARCHITECTURE_IA32_ON_WIN64	10
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_UNKNOWN
-#define PROCESSOR_ARCHITECTURE_UNKNOWN		0xFFFF
-#endif
-
-
-/*
- * Windows version dependend functions
- */
-TclWinProcs tclWinProcs;
-
-/*
  * The following arrays contain the human readable strings for the
  * processor values.
  */
 
-#define NUMPROCESSORS 11
+#define NUMPROCESSORS 15
 static const char *const processors[NUMPROCESSORS] = {
     "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
-    "amd64", "ia32_on_win64"
+    "amd64", "ia32_on_win64", "neutral", "arm64", "arm32_on_win64", "ia32_on_arm64"
 };
 
 /*
@@ -131,7 +84,6 @@ TclpInitPlatform(void)
 {
     WSADATA wsaData;
     WORD wVersionRequested = MAKEWORD(2, 2);
-    HMODULE handle;
 
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
@@ -150,14 +102,6 @@ TclpInitPlatform(void)
 
     TclWinInit(GetModuleHandleW(NULL));
 #endif
-
-    /*
-     * Fill available functions depending on windows version
-     */
-    handle = GetModuleHandleW(L"KERNEL32");
-    tclWinProcs.cancelSynchronousIo =
-	    (BOOL (WINAPI *)(HANDLE))(void *)GetProcAddress(handle,
-	    "CancelSynchronousIo");
 }
 
 /*
@@ -189,7 +133,7 @@ TclpInitLibraryPath(
     const char *bytes;
     size_t length;
 
-    pathPtr = Tcl_NewObj();
+    TclNewObj(pathPtr);
 
     /*
      * Initialize the substring used when locating the script library. The
@@ -223,7 +167,7 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = TclGetStringFromObj(pathPtr, &length);
+    bytes = Tcl_GetStringFromObj(pathPtr, &length);
     *lengthPtr = length++;
     *valuePtr = (char *)Tcl_Alloc(length);
     memcpy(*valuePtr, bytes, length);
@@ -254,7 +198,7 @@ AppendEnvironment(
     Tcl_Obj *pathPtr,
     const char *lib)
 {
-    int pathc;
+    size_t pathc;
     WCHAR wBuf[MAX_PATH];
     char buf[MAX_PATH * 3];
     Tcl_Obj *objPtr;
@@ -289,7 +233,7 @@ AppendEnvironment(
     WideCharToMultiByte(CP_UTF8, 0, wBuf, -1, buf, MAX_PATH * 3, NULL, NULL);
 
     if (buf[0] != '\0') {
-	objPtr = Tcl_NewStringObj(buf, -1);
+	objPtr = Tcl_NewStringObj(buf, TCL_INDEX_NONE);
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 
 	TclWinNoBackslash(buf);
@@ -311,9 +255,9 @@ AppendEnvironment(
 	    pathv[pathc - 1] = shortlib;
 	    Tcl_DStringInit(&ds);
 	    (void) Tcl_JoinPath(pathc, pathv, &ds);
-	    objPtr = TclDStringToObj(&ds);
+	    objPtr = Tcl_DStringToObj(&ds);
 	} else {
-	    objPtr = Tcl_NewStringObj(buf, -1);
+	    objPtr = Tcl_NewStringObj(buf, TCL_INDEX_NONE);
 	}
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	Tcl_Free((void *)pathv);
@@ -348,8 +292,8 @@ InitializeDefaultLibraryDir(
     char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;
 
-    GetModuleFileNameW(hModule, wName, MAX_PATH);
-    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, MAX_PATH * 3, NULL, NULL);
+    GetModuleFileNameW(hModule, wName, sizeof(wName)/sizeof(WCHAR));
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
 
     end = strrchr(name, '\\');
     *end = '\0';
@@ -396,8 +340,8 @@ InitializeSourceLibraryDir(
     char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;
 
-    GetModuleFileNameW(hModule, wName, MAX_PATH);
-    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, MAX_PATH * 3, NULL, NULL);
+    GetModuleFileNameW(hModule, wName, sizeof(wName)/sizeof(WCHAR));
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
 
     end = strrchr(name, '\\');
     *end = '\0';
@@ -541,6 +485,9 @@ TclpSetVariables(
 	    TCL_GLOBAL_ONLY);
     Tcl_SetVar2(interp, "tcl_platform", "os",
 	    "Windows NT", TCL_GLOBAL_ONLY);
+    if (osInfo.dwMajorVersion == 10 && osInfo.dwBuildNumber >= 22000) {
+	osInfo.dwMajorVersion = 11;
+    }
     wsprintfA(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
@@ -548,19 +495,6 @@ TclpSetVariables(
 		processors[sys.oemId.wProcessorArchitecture],
 		TCL_GLOBAL_ONLY);
     }
-
-#ifndef NDEBUG
-    /*
-     * The existence of the "debug" element of the tcl_platform array
-     * indicates that this particular Tcl shell has been compiled with debug
-     * information. Using "info exists tcl_platform(debug)" a Tcl script can
-     * direct the interpreter to load debug versions of DLLs with the load
-     * command.
-     */
-
-    Tcl_SetVar2(interp, "tcl_platform", "debug", "1",
-	    TCL_GLOBAL_ONLY);
-#endif
 
     /*
      * Set up the HOME environment variable from the HOMEDRIVE & HOMEPATH
@@ -572,17 +506,24 @@ TclpSetVariables(
     if (ptr == NULL) {
 	ptr = Tcl_GetVar2(interp, "env", "HOMEDRIVE", TCL_GLOBAL_ONLY);
 	if (ptr != NULL) {
-	    Tcl_DStringAppend(&ds, ptr, -1);
+	    Tcl_DStringAppend(&ds, ptr, TCL_INDEX_NONE);
 	}
 	ptr = Tcl_GetVar2(interp, "env", "HOMEPATH", TCL_GLOBAL_ONLY);
 	if (ptr != NULL) {
-	    Tcl_DStringAppend(&ds, ptr, -1);
+	    Tcl_DStringAppend(&ds, ptr, TCL_INDEX_NONE);
 	}
 	if (Tcl_DStringLength(&ds) > 0) {
 	    Tcl_SetVar2(interp, "env", "HOME", Tcl_DStringValue(&ds),
 		    TCL_GLOBAL_ONLY);
 	} else {
-	    Tcl_SetVar2(interp, "env", "HOME", "c:\\", TCL_GLOBAL_ONLY);
+            /* None of HOME, HOMEDRIVE, HOMEPATH exists. Try USERPROFILE */
+            ptr = Tcl_GetVar2(interp, "env", "USERPROFILE", TCL_GLOBAL_ONLY);
+            if (ptr != NULL && ptr[0]) {
+                Tcl_SetVar2(interp, "env", "HOME", ptr, TCL_GLOBAL_ONLY);
+            } else {
+                /* Last resort */
+                Tcl_SetVar2(interp, "env", "HOME", "c:\\", TCL_GLOBAL_ONLY);
+            }
 	}
     }
 
@@ -614,7 +555,7 @@ TclpSetVariables(
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or TCL_IO_FAILURE if there is no such entry. The integer
+ *	"name", or TCL_INDEX_NONE if there is no such entry. The integer
  *	at *lengthPtr is filled in with the length of name (if a matching
  *	entry is found) or the length of the environ array (if no
  *	matching entry is found).
@@ -637,7 +578,7 @@ TclpFindVariable(
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    size_t i, length, result = TCL_IO_FAILURE;
+    size_t i, length, result = TCL_INDEX_NONE;
     const WCHAR *env;
     const char *p1, *p2;
     char *envUpper, *nameUpper;
@@ -663,7 +604,7 @@ TclpFindVariable(
 	 */
 
 	Tcl_DStringInit(&envString);
-	envUpper = Tcl_WCharToUtfDString(env, -1, &envString);
+	envUpper = Tcl_WCharToUtfDString(env, TCL_INDEX_NONE, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;

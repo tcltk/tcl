@@ -4,7 +4,7 @@
  *	This procedure provides a version of the TclLoadFile that works with
  *	the "dlopen" and "dlsym" library procedures for dynamic loading.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -108,7 +108,7 @@ TclpDlopen(
 	Tcl_DString ds;
 	const char *fileName = TclGetString(pathPtr);
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
 	/*
 	 * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
 	 */
@@ -179,12 +179,12 @@ FindSymbol(
      * the underscore.
      */
 
-    native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, symbol, TCL_INDEX_NONE, &ds);
     proc = dlsym(handle, native);	/* INTL: Native. */
     if (proc == NULL) {
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
-	native = Tcl_DStringAppend(&newName, native, -1);
+	native = Tcl_DStringAppend(&newName, native, TCL_INDEX_NONE);
 	proc = dlsym(handle, native);	/* INTL: Native. */
 	Tcl_DStringFree(&newName);
     }
@@ -194,8 +194,8 @@ FindSymbol(
 	sprintf(buf, "%d", (int)Tcl_DStringLength(&ds));
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "__Z");
-	Tcl_DStringAppend(&newName, buf, -1);
-	Tcl_DStringAppend(&newName, Tcl_DStringValue(&ds), -1);
+	Tcl_DStringAppend(&newName, buf, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&newName, Tcl_DStringValue(&ds), TCL_INDEX_NONE);
 	TclDStringAppendLiteral(&newName, "P10Tcl_Interp");
 	native = Tcl_DStringValue(&newName);
 	proc = dlsym(handle, native + 1);	/* INTL: Native. */
@@ -257,34 +257,6 @@ UnloadFile(
 
     dlclose(handle);
     Tcl_Free(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    TCL_UNUSED(const char *) /*fileName*/,
-    TCL_UNUSED(Tcl_DString *))
-{
-    return 0;
 }
 
 /*

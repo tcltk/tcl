@@ -5,17 +5,20 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1997 by Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2
-namespace import -force ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint exec       [llength [info commands exec]]
 testConstraint memory     [llength [info commands memory]]
@@ -201,7 +204,7 @@ test compile-4.1 {TclCompileForCmd: command substituted test expression} {
     set i 0
     set j 0
     # Should be "forever"
-    for {} [expr $i < 3] {} {
+    for {} [expr {$i < 3}] {} {
 	set j [incr i]
 	if {$j > 3} break
     }
@@ -275,7 +278,7 @@ test compile-7.1 {TclCompileWhileCmd: command substituted test expression} {
     set i 0
     set j 0
     # Should be "forever"
-    while [expr $i < 3] {
+    while [expr {$i < 3}] {
 	set j [incr i]
 	if {$j > 3} break
     }
@@ -283,10 +286,10 @@ test compile-7.1 {TclCompileWhileCmd: command substituted test expression} {
 } {4}
 
 test compile-8.1 {CollectArgInfo: binary data} {
-    list [catch "string length \000foo" msg] $msg
+    list [catch "string length \x00foo" msg] $msg
 } {0 4}
 test compile-8.2 {CollectArgInfo: binary data} {
-    list [catch "string length foo\000" msg] $msg
+    list [catch "string length foo\x00" msg] $msg
 } {0 4}
 test compile-8.3 {CollectArgInfo: handle "]" at end of command properly} {
     set x ]
@@ -334,7 +337,7 @@ test compile-11.6 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; incr}}
 } -returnCodes error -result {wrong # args: should be "incr varName ?increment?"}
 test compile-11.7 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
-    apply {{} { set r [list foobar] ; expr !a }}
+    apply {{} { set r [list foobar] ; expr [concat !a] }}
 } -returnCodes error -match glob -result *
 test compile-11.8 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; expr {!a} }}
@@ -497,7 +500,7 @@ test compile-13.2 {TclCompileScript: testing expected nested scripts compilation
     # with 1500 (1000 in debug) nested scripts (bodies). If you get SO/SF exceptions on some low-stack
     # boxes or systems, please don't decrease it (either provide a constraint)
     ti eval {foreach cmd {eval "if 1" try catch} {
-	set c [gencode [expr {![::tcl::pkgconfig get debug] ? 1500 : 1000}] $cmd]
+	set c [gencode [expr {[tcl::build-info debug] ? 1500 : 1000}] $cmd]
 	if 1 $c
     }}
     ti eval {set result}
@@ -563,7 +566,7 @@ test compile-15.5 {proper TCL_RETURN code from [return]} {
 # Do all tests once byte compiled and once with direct string evaluation
 foreach noComp {0 1} {
 
-if $noComp {
+if {$noComp} {
     interp alias {} run {} testevalex
     set constraints testevalex
 } else {
@@ -649,26 +652,26 @@ test compile-16.18.$noComp {TclCompileScript: word expansion} -body {
     llength [run "list [string repeat {{*}[LongList] } [expr {1<<10}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
-} -returnCodes ok  -result [expr {1<<20}]
+}  -result [expr {1<<20}]
 test compile-16.19.$noComp {TclCompileScript: word expansion} -body {
     proc LongList {} {return [lrepeat [expr {1<<11}] x]}
     llength [run "list [string repeat {{*}[LongList] } [expr {1<<11}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
-} -returnCodes ok  -result [expr {1<<22}]
+}  -result [expr {1<<22}]
 test compile-16.20.$noComp {TclCompileScript: word expansion} -body {
     proc LongList {} {return [lrepeat [expr {1<<12}] x]}
     llength [run "list [string repeat {{*}[LongList] } [expr {1<<12}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
-} -returnCodes ok  -result [expr {1<<24}]
+}  -result [expr {1<<24}]
 # This is the one that should cause overflow
 test compile-16.21.$noComp {TclCompileScript: word expansion} -body {
     proc LongList {} {return [lrepeat [expr {1<<16}] x]}
     llength [run "list [string repeat {{*}[LongList] } [expr {1<<16}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
-} -returnCodes ok  -result [expr {wide(1)<<32}]
+}  -result [expr {wide(1)<<32}]
 test compile-16.22.$noComp {
     Bug 845412: TclCompileScript: word expansion not mandatory
 } -body {
@@ -677,7 +680,7 @@ test compile-16.22.$noComp {
     run "ReturnResults [string repeat {x } 260]"
 } -constraints $constraints -cleanup {
     rename ReturnResults {}
-} -returnCodes ok -result [string trim [string repeat {x } 260]]
+} -result [string trim [string repeat {x } 260]]
 test compile-16.23.$noComp {
     Bug 1032805: defer parse error until run time
 } -constraints $constraints -body {
@@ -689,7 +692,7 @@ test compile-16.23.$noComp {
     }
 } -cleanup {
     namespace delete x
-} -returnCodes ok -result {syntax {}{}}
+} -result {syntax {}{}}
 test compile-16.24.$noComp {
     Bug 1638414: bad list constant as first expanded term
 } -constraints $constraints -body {

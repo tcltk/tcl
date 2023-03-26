@@ -4,8 +4,8 @@
  *	This file implements the UNIX-specific exec pipeline functions, the
  *	"pipe" channel driver, and the "pid" Tcl command.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -35,7 +35,7 @@ typedef struct {
     TclFile inFile;		/* Output from pipe. */
     TclFile outFile;		/* Input to pipe. */
     TclFile errorFile;		/* Error output from pipe. */
-    int numPids;		/* How many processes are attached to this
+    size_t numPids;		/* How many processes are attached to this
 				 * pipe? */
     Tcl_Pid *pidPtr;		/* The process IDs themselves. Allocated by
 				 * the creator of the pipe. */
@@ -141,7 +141,7 @@ TclpOpenFile(
     const char *native;
     Tcl_DString ds;
 
-    native = Tcl_UtfToExternalDString(NULL, fname, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, fname, TCL_INDEX_NONE, &ds);
     fd = TclOSopen(native, mode, 0666);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
     if (fd != -1) {
@@ -153,7 +153,7 @@ TclpOpenFile(
 	 */
 
 	if ((mode & O_WRONLY) && !(mode & O_APPEND)) {
-	    TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_END);
+	    TclOSseek(fd, 0, SEEK_END);
 	}
 
 	/*
@@ -198,14 +198,14 @@ TclpCreateTempFile(
 	Tcl_DString dstring;
 	char *native;
 
-	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
+	native = Tcl_UtfToExternalDString(NULL, contents, TCL_INDEX_NONE, &dstring);
 	if (write(fd, native, Tcl_DStringLength(&dstring)) == -1) {
 	    close(fd);
 	    Tcl_DStringFree(&dstring);
 	    return NULL;
 	}
 	Tcl_DStringFree(&dstring);
-	TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_SET);
+	TclOSseek(fd, 0, SEEK_SET);
     }
     return MakeFile(fd);
 }
@@ -229,9 +229,10 @@ TclpCreateTempFile(
 Tcl_Obj *
 TclpTempFileName(void)
 {
-    Tcl_Obj *retVal, *nameObj = Tcl_NewObj();
+    Tcl_Obj *retVal, *nameObj;
     int fd;
 
+    TclNewObj(nameObj);
     Tcl_IncrRefCount(nameObj);
     fd = TclUnixOpenTemporaryFile(NULL, NULL, NULL, nameObj);
     if (fd == -1) {
@@ -380,7 +381,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    int argc,			/* Number of arguments in following array. */
+    size_t argc,			/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings in UTF-8.
 				 * argv[0] contains the name of the executable
 				 * translated using Tcl_TranslateFileName
@@ -409,7 +410,8 @@ TclpCreateProcess(
     char errSpace[200 + TCL_INTEGER_SPACE];
     Tcl_DString *dsArray;
     char **newArgv;
-    int pid, i;
+    int pid;
+    size_t i;
 
     errPipeIn = NULL;
     errPipeOut = NULL;
@@ -435,7 +437,7 @@ TclpCreateProcess(
     newArgv = (char **)TclStackAlloc(interp, (argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
-	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
+	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], TCL_INDEX_NONE, &dsArray[i]);
     }
 
 #ifdef USE_VFORK
@@ -735,7 +737,7 @@ TclpCreateCommandChannel(
     TclFile writeFile,		/* If non-null, gives the file for writing. */
     TclFile errorFile,		/* If non-null, gives the file where errors
 				 * can be read. */
-    int numPids,		/* The number of pids in the pid array. */
+    size_t numPids,		/* The number of pids in the pid array. */
     Tcl_Pid *pidPtr)		/* An array of process identifiers. Allocated
 				 * by the caller, freed when the channel is
 				 * closed or the processes are detached (in a
@@ -857,7 +859,7 @@ TclGetAndDetachPids(
     PipeState *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
     Tcl_Obj *pidsObj;
-    int i;
+    size_t i;
 
     /*
      * Punt if the channel is not a command channel.
@@ -1249,14 +1251,14 @@ Tcl_WaitPid(
 
 int
 Tcl_PidObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Channel chan;
     PipeState *pipePtr;
-    int i;
+    size_t i;
     Tcl_Obj *resultPtr;
 
     if (objc > 2) {
@@ -1284,10 +1286,10 @@ Tcl_PidObjCmd(
 	 */
 
 	pipePtr = (PipeState *)Tcl_GetChannelInstanceData(chan);
-	resultPtr = Tcl_NewObj();
+	TclNewObj(resultPtr);
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
-		    Tcl_NewWideIntObj(PTR2INT(TclpGetPid(pipePtr->pidPtr[i]))));
+		    Tcl_NewWideIntObj(TclpGetPid(pipePtr->pidPtr[i])));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }

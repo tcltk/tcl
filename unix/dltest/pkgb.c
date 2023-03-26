@@ -1,11 +1,11 @@
 /*
  * pkgb.c --
  *
- *	This file contains a simple Tcl package "pkgb" that is intended for
+ *	This file contains a simple Tcl package "Pkgb" that is intended for
  *	testing the Tcl dynamic loading facilities. It can be used in both
  *	safe and unsafe interpreters.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
+ * Copyright © 1995 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,17 +14,6 @@
 #undef STATIC_BUILD
 #include "tcl.h"
 
-/*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    Pkgb_SubObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkgb_UnsafeObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkgb_DemoObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-
 /*
  *----------------------------------------------------------------------
  *
@@ -42,18 +31,15 @@ static int    Pkgb_DemoObjCmd(ClientData clientData,
  *----------------------------------------------------------------------
  */
 
-#ifndef Tcl_GetErrorLine
-#   define Tcl_GetErrorLine(interp) ((interp)->errorLine)
-#endif
-
 static int
 Pkgb_SubObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int first, second;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "num num");
@@ -89,31 +75,38 @@ Pkgb_SubObjCmd(
 
 static int
 Pkgb_UnsafeObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_EvalEx(interp, "list unsafe command invoked", -1, TCL_EVAL_GLOBAL);
+    (void)dummy;
+    (void)objc;
+    (void)objv;
+
+    return Tcl_EvalEx(interp, "list unsafe command invoked", TCL_INDEX_NONE, TCL_EVAL_GLOBAL);
 }
 
 static int
 Pkgb_DemoObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-#if (TCL_MAJOR_VERSION > 8) || (TCL_MINOR_VERSION > 4)
-    Tcl_Obj *first;
+    Tcl_WideInt numChars;
+    int result;
+    (void)dummy;
 
-    if (Tcl_ListObjIndex(NULL, Tcl_GetEncodingSearchPath(), 0, &first)
-	    == TCL_OK) {
-	Tcl_SetObjResult(interp, first);
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "arg1 arg2 num");
+	return TCL_ERROR;
     }
-#else
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetDefaultEncodingDir(), -1));
-#endif
+    if (Tcl_GetWideIntFromObj(interp, objv[3], &numChars) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    result = Tcl_UtfNcmp(Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), numChars);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
     return TCL_OK;
 }
 
@@ -144,7 +137,7 @@ Pkgb_Init(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgb", "2.3");
+    code = Tcl_PkgProvide(interp, "pkgb", "2.3");
     if (code != TCL_OK) {
 	return code;
     }
@@ -181,7 +174,7 @@ Pkgb_SafeInit(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgb", "2.3");
+    code = Tcl_PkgProvide(interp, "pkgb", "2.3");
     if (code != TCL_OK) {
 	return code;
     }

@@ -12,7 +12,7 @@
 my, myclass \- invoke any method of current object or its class
 .SH SYNOPSIS
 .nf
-package require TclOO
+package require tcl::oo
 
 \fBmy\fI methodName\fR ?\fIarg ...\fR?
 \fBmyclass\fI methodName\fR ?\fIarg ...\fR?

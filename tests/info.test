@@ -5,10 +5,10 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1994 The Regents of the University of California.
-# Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2006      ActiveState
+# Copyright © 1991-1994 The Regents of the University of California.
+# Copyright © 1994-1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2006 ActiveState
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -16,11 +16,11 @@
 # DO NOT DELETE THIS LINE
 
 if {{::tcltest} ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint zlib [llength [info commands zlib]]
 
 # Set up namespaces needed to test operation of "info args", "info body",
@@ -103,8 +103,8 @@ test info-2.5 {info body option, returning bytecompiled bodies} -body {
 # causing an empty string to be returned [Bug #545644]
 test info-2.6 {info body option, returning list bodies} {
     proc foo args [list subst bar]
-    list [string bytelength [info body foo]] \
-	    [foo; string bytelength [info body foo]]
+    list [string length [info body foo]] \
+	    [foo; string length [info body foo]]
 } {9 9}
 
 proc testinfocmdcount {} {
@@ -325,7 +325,7 @@ test info-9.2 {info level option} {
 } {1 {t1 146 testString}}
 test info-9.3 {info level option} {
     proc t1 {a b} {
-        t2 [expr $a*2] $b
+        t2 [expr {$a*2}] $b
     }
     proc t2 {x y} {
         list [info level] [info level 1] [info level 2] [info level -1] \
@@ -657,7 +657,7 @@ test info-19.6 {info vars: Bug 1072654} -setup {
 
 set functions {abs acos asin atan atan2 bool ceil cos cosh double entier exp floor fmod hypot int isfinite isinf isnan isnormal isqrt issubnormal isunordered log log10 max min pow rand round sin sinh sqrt srand tan tanh wide}
 # Check whether the extra testing functions are defined...
-if {!([catch {expr T1()} msg] && ($msg eq {invalid command name "tcl::mathfunc::T1"}))} {
+if {!([catch {expr {T1()}} msg] && ($msg eq {invalid command name "tcl::mathfunc::T1"}))} {
     set functions "T1 T2 T3 $functions"  ;# A lazy way of prepending!
 }
 test info-20.1 {info functions option} {info functions sin} sin

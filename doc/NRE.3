@@ -1,6 +1,6 @@
 .\"
-.\" Copyright (c) 2008 by Kevin B. Kenny.
-.\" Copyright (c) 2018 by Nathan Coulter.
+.\" Copyright (c) 2008 Kevin B. Kenny.
+.\" Copyright (c) 2018 Nathan Coulter.
 .\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NRCreateCommand, Tcl_NRCallObjProc, Tcl_NREvalObj, Tcl_NREvalObjv, Tcl_NRCmdSwap, Tcl_NRExprObj, Tcl_NRAddCallback \- Non-Recursive (stackless) evaluation of Tcl scripts.
+Tcl_NRCreateCommand, Tcl_NRCreateCommand2, Tcl_NRCallObjProc, Tcl_NRCallObjProc2, Tcl_NREvalObj, Tcl_NREvalObjv, Tcl_NRCmdSwap, Tcl_NRExprObj, Tcl_NRAddCallback \- Non-Recursive (stackless) evaluation of Tcl scripts.
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -18,8 +18,15 @@ Tcl_Command
 \fBTcl_NRCreateCommand\fR(\fIinterp, cmdName, proc, nreProc, clientData,
                     deleteProc\fR)
 .sp
+Tcl_Command
+\fBTcl_NRCreateCommand2\fR(\fIinterp, cmdName, proc2, nreProc2, clientData,
+                    deleteProc\fR)
+.sp
 int
 \fBTcl_NRCallObjProc\fR(\fIinterp, nreProc, clientData, objc, objv\fR)
+.sp
+int
+\fBTcl_NRCallObjProc2\fR(\fIinterp, nreProc2, clientData, objc, objv\fR)
 .sp
 int
 \fBTcl_NREvalObj\fR(\fIinterp, objPtr, flags\fR)
@@ -40,22 +47,29 @@ void
 .AS Tcl_CmdDeleteProc *interp in
 .AP Tcl_Interp *interp in
 The relevant Interpreter.
-.AP char *cmdName in
+.AP "const char" *cmdName in
 Name of the command to create.
 .AP Tcl_ObjCmdProc *proc in
 Called in order to evaluate a command.  Is often just a small wrapper that uses
 \fBTcl_NRCallObjProc\fR to call \fInreProc\fR using a new trampoline.  Behaves
 in the same way as the \fIproc\fR argument to \fBTcl_CreateObjCommand\fR(3)
 (\fIq.v.\fR).
+.AP Tcl_ObjCmdProc2 *proc2 in
+Called in order to evaluate a command.  Is often just a small wrapper that uses
+\fBTcl_NRCallObjProc2\fR to call \fInreProc2\fR using a new trampoline.  Behaves
+in the same way as the \fIproc2\fR argument to \fBTcl_CreateObjCommand2\fR(3)
+(\fIq.v.\fR).
 .AP Tcl_ObjCmdProc *nreProc in
 Called instead of \fIproc\fR when a trampoline is already in use.
+.AP Tcl_ObjCmdProc2 *nreProc2 in
+Called instead of \fIproc2\fR when a trampoline is already in use.
 .AP void *clientData in
 Arbitrary one-word value passed to \fIproc\fR, \fInreProc\fR, \fIdeleteProc\fR
 and \fIobjProc\fR.
 .AP Tcl_CmdDeleteProc *deleteProc in/out
 Called before \fIcmdName\fR is deleted from the interpreter, allowing for
 command-specific cleanup. May be NULL.
-.AP int objc in
+.AP size_t objc in
 Number of items in \fIobjv\fR.
 .AP Tcl_Obj **objv in
 Words in the command.
@@ -103,6 +117,9 @@ Except for a few cases noted below any existing command by the same name is
 first deleted.  If \fIinterp\fR is in the process of being deleted
 \fBTcl_NRCreateCommand\fR does not create any command, does not delete any
 command, and returns NULL.
+.PP
+\fBTcl_NRCreateCommand2\fR, is an alternative to \fBTcl_NRCreateCommand\fR
+in the same way as \fBTcl_CreateObjCommand2\fR.
 .PP
 \fBTcl_NREvalObj\fR pushes a function that is like \fBTcl_EvalObjEx\fR but
 consumes no space on the C stack.
@@ -227,10 +244,29 @@ int
 Any function comprising a routine can push other functions, making it possible
 implement looping and sequencing constructs using the function stack.
 .PP
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The first \fIobjc\fR values in the \fIobjv\fR array passed to the functions
+\fBTcl_NRCallObjProc\fR, \fBTcl_NREvalObjv\fR, and \fBTcl_NRCmdSwap\fR should
+have a reference count of at least 1; they may have additional references
+taken during the execution.
+.PP
+The \fIobjPtr\fR argument to \fBTcl_NREvalObj\fR and \fBTcl_NRExprObj\fR
+should have a reference count of at least 1, and may have additional
+references taken to it during execution.
+.PP
+The \fIresultObj\fR argument to \fBTcl_NRExprObj\fR should be an unshared
+object.
+.PP
+Use \fBTcl_NRAddCallback\fR to schedule any required final decrementing of the
+reference counts of arguments to any of the other functions on this page, as
+with any other post-processing step in the non-recursive execution engine.
+.PP
+The
 .SH "SEE ALSO"
 Tcl_CreateCommand(3), Tcl_CreateObjCommand(3), Tcl_EvalObjEx(3), Tcl_GetCommandFromObj(3), Tcl_ExprObj(3)
 .SH KEYWORDS
 stackless, nonrecursive, execute, command, global, value, result, script
 .SH COPYRIGHT
-Copyright (c) 2008 by Kevin B. Kenny.
-Copyright (c) 2018 by Nathan Coulter.
+Copyright \(co 2008 Kevin B. Kenny.
+Copyright \(co 2018 Nathan Coulter.

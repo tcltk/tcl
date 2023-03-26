@@ -13,7 +13,7 @@ Tcl_FindExecutable, Tcl_GetNameOfExecutable \- identify or return the name of th
 .nf
 \fB#include <tcl.h>\fR
 .sp
-void
+const char *
 \fBTcl_FindExecutable\fR(\fIargv0\fR)
 .sp
 const char *
@@ -34,6 +34,9 @@ The executable's path name is needed for several purposes in
 Tcl.  For example, it is needed on some platforms in the
 implementation of the \fBload\fR command.
 It is also returned by the \fBinfo nameofexecutable\fR command.
+.PP
+The result of \fBTcl_FindExecutable\fR is the full Tcl version with
+build information (e.g., \fB9.0.0+abcdef...abcdef.gcc-1002\fR).
 .PP
 On UNIX platforms this procedure is typically invoked as the very
 first thing in the application's main program;  it must be passed

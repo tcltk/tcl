@@ -65,7 +65,7 @@ its limits checked.
 .AP int type in
 The type of limit that the operation refers to.  This must be either
 \fBTCL_LIMIT_COMMANDS\fR or \fBTCL_LIMIT_TIME\fR.
-.AP int commandLimit in
+.AP size_t commandLimit in
 The maximum number of commands (as reported by \fBinfo cmdcount\fR)
 that may be executed in the interpreter.
 .AP Tcl_Time *timeLimitPtr in/out
@@ -116,7 +116,7 @@ execution of the callbacks is unspecified) execution in the limited
 interpreter is stopped by raising an error and setting a flag that
 prevents the \fBcatch\fR command in that interpreter from trapping
 that error.  It is up to the context that started execution in that
-interpreter (typically a master interpreter) to handle the error.
+interpreter (typically the main interpreter) to handle the error.
 .SH "LIMIT CHECKING API"
 .PP
 To check the resource limits for an interpreter, call

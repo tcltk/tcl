@@ -58,7 +58,7 @@ Tcl_Method
 Tcl_Object
 \fBTcl_ObjectContextObject\fR(\fIcontext\fR)
 .sp
-int
+size_t
 \fBTcl_ObjectContextSkippedArgs\fR(\fIcontext\fR)
 .SH ARGUMENTS
 .AS void *clientData in
@@ -95,11 +95,11 @@ A reference to a method to query.
 .AP Tcl_ObjectContext context in
 A reference to a method-call context. Note that client code \fImust not\fR
 retain a reference to a context.
-.AP int objc in
+.AP size_t objc in
 The number of arguments to pass to the method implementation.
 .AP "Tcl_Obj *const" *objv in
 An array of arguments to pass to the method implementation.
-.AP int skip in
+.AP size_t skip in
 The number of arguments passed to the method implementation that do not
 represent "real" arguments.
 .BE
@@ -258,8 +258,32 @@ also return TCL_ERROR; it should return TCL_OK otherwise.
 The \fIoldClientData\fR field to a Tcl_CloneProc gives the value from the
 method being copied from, and the \fInewClientDataPtr\fR field will point to
 a variable in which to write the value for the method being copied to.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The \fInameObj\fR argument to \fBTcl_NewMethod\fR and
+\fBTcl_NewInstanceMethod\fR (when non-NULL) will have its reference count
+incremented if there is no existing method with that name in that
+class/object.
+.PP
+The result of \fBTcl_MethodName\fR is a value with a reference count of at
+least one. It should not be modified without first duplicating it (with
+\fBTcl_DuplicateObj\fR).
+.PP
+The values in the first \fIobjc\fR values of the \fIobjv\fR argument to
+\fBTcl_ObjectContextInvokeNext\fR are assumed to have a reference count of at
+least 1; the containing array is assumed to endure until the next method
+implementation (see \fBnext\fR) returns. Be aware that methods may
+\fByield\fR; if any post-call actions are desired (e.g., decrementing the
+reference count of values passed in here), they must be scheduled with
+\fBTcl_NRAddCallback\fR.
+.PP
+The \fIcallProc\fR of the \fBTcl_MethodType\fR structure takes values of at
+least reference count 1 in its \fIobjv\fR argument. It may add its own
+references, but must not decrement the reference count below that level; the
+caller of the method will decrement the reference count once the method
+returns properly (and the reference will be held if the method \fByield\fRs).
 .SH "SEE ALSO"
-Class(3), oo::class(n), oo::define(n), oo::object(n)
+Class(3), NRE(3), oo::class(n), oo::define(n), oo::object(n)
 .SH KEYWORDS
 constructor, method, object
 

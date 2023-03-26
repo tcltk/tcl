@@ -212,11 +212,12 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 	    }
 	    set strip [llength [file split $path]]
 
-	    # We can't use glob in safe interps, so enclose the following in a
-	    # catch statement, where we get the module files out of the
-	    # subdirectories. In other words, Tcl Modules are not-functional
-	    # in such an interpreter. This is the same as for the command
-	    # "tclPkgUnknown", i.e. the search for regular packages.
+	    # Get the module files out of the subdirectories.
+	    # - Safe Base interpreters have a restricted "glob" command that
+	    #   works in this case.
+	    # - The "catch" was essential when there was no safe glob and every
+	    #   call in a safe interp failed; it is retained only for corner
+	    #   cases in which the eventual call to glob returns an error.
 
 	    catch {
 		# We always look for _all_ possible modules in the current
@@ -266,7 +267,7 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 		    # of the package file is the last element in the list.
 
 		    package ifneeded $pkgname $pkgversion \
-			"[::list package provide $pkgname $pkgversion];[::list source -encoding utf-8 $file]"
+			"[::list package provide $pkgname $pkgversion];[::list source $file]"
 
 		    # We abort in this unknown handler only if we got a
 		    # satisfying candidate for the requested package.
@@ -315,7 +316,7 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 proc ::tcl::tm::Defaults {} {
     global env tcl_platform
 
-    regexp {^(\d+)\.(\d+)} [package provide Tcl] - major minor
+    regexp {^(\d+)\.(\d+)} [package provide tcl] - major minor
     set exe [file normalize [info nameofexecutable]]
 
     # Note that we're using [::list], not [list] because [list] means
@@ -337,7 +338,10 @@ proc ::tcl::tm::Defaults {} {
         ] {
 	    if {![info exists env($ev)]} continue
 	    foreach p [split $env($ev) $sep] {
-		path add $p
+                # Paths relative to unresolvable home dirs are ignored
+                if {![catch {file tildeexpand $p} expanded_path]} {
+                    path add $expanded_path
+                }
 	    }
 	}
     }
@@ -358,7 +362,7 @@ proc ::tcl::tm::Defaults {} {
 #	Calls 'path add' to paths to the list of module search paths.
 
 proc ::tcl::tm::roots {paths} {
-    regexp {^(\d+)\.(\d+)} [package provide Tcl] - major minor
+    regexp {^(\d+)\.(\d+)} [package provide tcl] - major minor
     foreach pa $paths {
 	set p [file join $pa tcl$major]
 	for {set n $minor} {$n >= 0} {incr n -1} {

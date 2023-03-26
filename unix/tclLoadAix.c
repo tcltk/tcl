@@ -9,7 +9,7 @@
  *	different from the notice used elsewhere in Tcl. The file has been
  *	modified to incorporate the file dlfcn.h in-line.
  *
- *	Copyright (c) 1992,1993,1995,1996, Jens-Uwe Mager, Helios Software GmbH
+ *	Copyright © 1992,1993,1995,1996, Jens-Uwe Mager, Helios Software GmbH
  *	Not derived from licensed software.
  *
  *	Permission is granted to freely use, copy, modify, and redistribute
@@ -23,7 +23,7 @@
 
 /*
  * @(#)dlfcn.c	1.7 revision of 95/08/14  19:08:38
- * This is an unpublished work copyright (c) 1992 HELIOS Software GmbH
+ * This is an unpublished work copyright © 1992 HELIOS Software GmbH
  * 30159 Hannover, Germany
  */
 

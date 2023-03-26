@@ -4,9 +4,9 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-2000 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994-1996 Sun Microsystems, Inc.
+# Copyright © 1998-2000 Scriptics Corporation.
 # Contributions from Don Porter, NIST, 2003.  (not subject to US copyright)
 #
 # See the file "license.terms" for information on usage and redistribution
@@ -111,10 +111,10 @@ test source-2.7 {utf-8 with BOM} -setup {
 } -body {
     set out [open $sourcefile w]
     fconfigure $out -encoding utf-8
-    puts $out "\ufeffset y new-y"
+    puts $out "\uFEFFset y new-y"
     close $out
     set y old-y
-    source -encoding utf-8 $sourcefile
+    source $sourcefile
     return $y
 } -cleanup {
     removeFile $sourcefile
@@ -199,7 +199,7 @@ test source-4.1 {continuation line parsing} -setup {
 test source-6.1 {source is binary ok} -setup {
     # Note [makeFile] writes in the system encoding.
     # [source] defaults to reading in the system encoding.
-    set sourcefile [makeFile [list set x "a b\0c"] source.file]
+    set sourcefile [makeFile [list set x "a b\x00c"] source.file]
 } -body {
     set x {}
     source $sourcefile
@@ -208,7 +208,7 @@ test source-6.1 {source is binary ok} -setup {
     removeFile source.file
 } -result 5
 test source-6.2 {source skips everything after Ctrl-Z: Bug 2040} -setup {
-    set sourcefile [makeFile "set x ab\32c" source.file]
+    set sourcefile [makeFile "set x ab\x1Ac" source.file]
 } -body {
     set x {}
     source $sourcefile
@@ -222,26 +222,26 @@ test source-7.1 {source -encoding test} -setup {
     file delete $sourcefile
     set f [open $sourcefile w]
     fconfigure $f -encoding utf-8
-    puts $f "set symbol(square-root) \u221A; set x correct"
+    puts $f "set symbol(square-root) √; set x correct"
     close $f
 } -body {
     set x unset
-    source -encoding utf-8 $sourcefile
+    source $sourcefile
     set x
 } -cleanup {
     removeFile source.file
 } -result correct
 test source-7.2 {source -encoding test} -setup {
     # This tests for bad interactions between [source -encoding]
-    # and use of the Control-Z character (\u001A) as a cross-platform
+    # and use of the Control-Z character (\x1A) as a cross-platform
     # EOF character by [source].  Here we write out and the [source] a
-    # file that contains the byte \x1A, although not the character \u001A in
+    # file that contains the byte \x1A, although not the character \x1A in
     # the indicated encoding.
     set sourcefile [makeFile {} source.file]
     file delete $sourcefile
     set f [open $sourcefile w]
     fconfigure $f -encoding utf-16
-    puts $f "set symbol(square-root) \u221A; set x correct"
+    puts $f "set symbol(square-root) √; set x correct"
     close $f
 } -body {
     set x unset
@@ -266,28 +266,28 @@ test source-7.5 {source -encoding: correct operation} -setup {
     file delete $sourcefile
     set f [open $sourcefile w]
     fconfigure $f -encoding utf-8
-    puts $f "proc \u20ac {} {return foo}"
+    puts $f "proc € {} {return foo}"
     close $f
 } -body {
-    source -encoding utf-8 $sourcefile
-    \u20ac
+    source $sourcefile
+    €
 } -cleanup {
     removeFile source.file
-    rename \u20ac {}
+    rename € {}
 } -result foo
 test source-7.6 {source -encoding: mismatch encoding error} -setup {
     set sourcefile [makeFile {} source.file]
     file delete $sourcefile
     set f [open $sourcefile w]
     fconfigure $f -encoding utf-8
-    puts $f "proc \u20ac {} {return foo}"
+    puts $f "proc € {} {return foo}"
     close $f
 } -body {
-    source -encoding ascii $sourcefile
-    \u20ac
+    source -encoding iso8859-1 $sourcefile
+    €
 } -cleanup {
     removeFile source.file
-} -returnCodes error -match glob -result {invalid command name*}
+} -returnCodes error -result {invalid command name "€"}
 
 test source-8.1 {source and coroutine/yield} -setup {
     set sourcefile [makeFile {} source.file]

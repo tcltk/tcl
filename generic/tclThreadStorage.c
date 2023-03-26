@@ -4,8 +4,8 @@
  *	This file implements platform independent thread storage operations to
  *	work around system limits on the number of thread-specific variables.
  *
- * Copyright (c) 2003-2004 by Joe Mistachkin
- * Copyright (c) 2008 by George Peter Staplin
+ * Copyright © 2003-2004 Joe Mistachkin
+ * Copyright © 2008 George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -48,7 +48,7 @@ static struct {
  */
 
 typedef struct {
-    ClientData *tablePtr;	/* The table of Tcl TSDs. */
+    void **tablePtr;	/* The table of Tcl TSDs. */
     sig_atomic_t allocated;	/* The size of the table in the current
 				 * thread. */
 } TSDTable;
@@ -190,7 +190,7 @@ TclThreadStorageKeyGet(
     Tcl_ThreadDataKey *dataKeyPtr)
 {
     TSDTable *tsdTablePtr = (TSDTable *)TclpThreadGetGlobalTSD(tsdGlobal.key);
-    ClientData resultPtr = NULL;
+    void *resultPtr = NULL;
     TSDUnion *keyPtr = (TSDUnion *) dataKeyPtr;
     sig_atomic_t offset = keyPtr->offset;
 

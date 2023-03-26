@@ -6,8 +6,8 @@
  *	commands ("events") before they are executed. Commands defined in
  *	history.tcl may be used to perform history substitutions.
  *
- * Copyright (c) 1990-1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1990-1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -69,7 +69,7 @@ Tcl_RecordAndEval(
 	 * Call Tcl_RecordAndEvalObj to do the actual work.
 	 */
 
-	cmdPtr = Tcl_NewStringObj(cmd, -1);
+	cmdPtr = Tcl_NewStringObj(cmd, TCL_INDEX_NONE);
 	Tcl_IncrRefCount(cmdPtr);
 	result = Tcl_RecordAndEvalObj(interp, cmdPtr, flags);
 
@@ -203,7 +203,7 @@ Tcl_RecordAndEvalObj(
 
 static void
 DeleteHistoryObjs(
-    ClientData clientData,
+    void *clientData,
     TCL_UNUSED(Tcl_Interp *))
 {
     HistoryObjs *histObjsPtr = (HistoryObjs *)clientData;

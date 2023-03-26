@@ -376,7 +376,7 @@
 		F96D3E9108F272A6004A47F5 /* rename.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = rename.n; sourceTree = "<group>"; };
 		F96D3E9208F272A6004A47F5 /* return.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = return.n; sourceTree = "<group>"; };
 		F96D3E9308F272A6004A47F5 /* safe.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = safe.n; sourceTree = "<group>"; };
-		F96D3E9408F272A6004A47F5 /* SaveResult.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = SaveResult.3; sourceTree = "<group>"; };
+		F96D3E9408F272A6004A47F5 /* SaveInterpState.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = SaveInterpState.3; sourceTree = "<group>"; };
 		F96D3E9508F272A6004A47F5 /* scan.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = scan.n; sourceTree = "<group>"; };
 		F96D3E9608F272A6004A47F5 /* seek.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = seek.n; sourceTree = "<group>"; };
 		F96D3E9708F272A6004A47F5 /* set.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = set.n; sourceTree = "<group>"; };
@@ -393,7 +393,7 @@
 		F96D3EA208F272A7004A47F5 /* split.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = split.n; sourceTree = "<group>"; };
 		F96D3EA308F272A7004A47F5 /* SplitList.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = SplitList.3; sourceTree = "<group>"; };
 		F96D3EA408F272A7004A47F5 /* SplitPath.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = SplitPath.3; sourceTree = "<group>"; };
-		F96D3EA508F272A7004A47F5 /* StaticPkg.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = StaticPkg.3; sourceTree = "<group>"; };
+		F96D3EA508F272A7004A47F5 /* StaticLibrary.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = StaticLibrary.3; sourceTree = "<group>"; };
 		F96D3EA608F272A7004A47F5 /* StdChannels.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = StdChannels.3; sourceTree = "<group>"; };
 		F96D3EA708F272A7004A47F5 /* string.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = string.n; sourceTree = "<group>"; };
 		F96D3EA808F272A7004A47F5 /* StringObj.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = StringObj.3; sourceTree = "<group>"; };
@@ -770,15 +770,8 @@
 		F96D442908F272B8004A47F5 /* loadICU.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = loadICU.tcl; sourceTree = "<group>"; };
 		F96D442A08F272B8004A47F5 /* Makefile.in */ = {isa = PBXFileReference; explicitFileType = sourcecode.make; fileEncoding = 4; path = Makefile.in; sourceTree = "<group>"; };
 		F96D442B08F272B8004A47F5 /* makeTestCases.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = makeTestCases.tcl; sourceTree = "<group>"; };
-		F96D442C08F272B8004A47F5 /* man2help.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = man2help.tcl; sourceTree = "<group>"; };
-		F96D442D08F272B8004A47F5 /* man2help2.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = man2help2.tcl; sourceTree = "<group>"; };
-		F96D442E08F272B8004A47F5 /* man2html.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = man2html.tcl; sourceTree = "<group>"; };
-		F96D442F08F272B8004A47F5 /* man2html1.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = man2html1.tcl; sourceTree = "<group>"; };
-		F96D443008F272B8004A47F5 /* man2html2.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = man2html2.tcl; sourceTree = "<group>"; };
-		F96D443108F272B8004A47F5 /* man2tcl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = man2tcl.c; sourceTree = "<group>"; };
 		F96D443208F272B8004A47F5 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		F96D443308F272B8004A47F5 /* regexpTestLib.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = regexpTestLib.tcl; sourceTree = "<group>"; };
-		F96D443508F272B8004A47F5 /* tcl.hpj.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tcl.hpj.in; sourceTree = "<group>"; };
 		F96D443908F272B9004A47F5 /* tcltk-man2html.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = "tcltk-man2html.tcl"; sourceTree = "<group>"; };
 		F96D443A08F272B9004A47F5 /* tclZIC.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = tclZIC.tcl; sourceTree = "<group>"; };
 		F96D443B08F272B9004A47F5 /* uniClass.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = uniClass.tcl; sourceTree = "<group>"; };
@@ -838,7 +831,6 @@
 		F96D447D08F272BA004A47F5 /* stub16.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = stub16.c; sourceTree = "<group>"; };
 		F96D447E08F272BA004A47F5 /* tcl.dsp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tcl.dsp; sourceTree = "<group>"; };
 		F96D447F08F272BA004A47F5 /* tcl.dsw */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tcl.dsw; sourceTree = "<group>"; };
-		F96D448008F272BA004A47F5 /* tcl.hpj.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tcl.hpj.in; sourceTree = "<group>"; };
 		F96D448108F272BA004A47F5 /* tcl.m4 */ = {isa = PBXFileReference; explicitFileType = text.script.sh; fileEncoding = 4; path = tcl.m4; sourceTree = "<group>"; };
 		F96D448208F272BA004A47F5 /* tcl.rc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tcl.rc; sourceTree = "<group>"; };
 		F96D448308F272BA004A47F5 /* tclAppInit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclAppInit.c; sourceTree = "<group>"; };
@@ -1131,7 +1123,7 @@
 				F96D3E9108F272A6004A47F5 /* rename.n */,
 				F96D3E9208F272A6004A47F5 /* return.n */,
 				F96D3E9308F272A6004A47F5 /* safe.n */,
-				F96D3E9408F272A6004A47F5 /* SaveResult.3 */,
+				F96D3E9408F272A6004A47F5 /* SaveInterpState.3 */,
 				F96D3E9508F272A6004A47F5 /* scan.n */,
 				F96D3E9608F272A6004A47F5 /* seek.n */,
 				F93599D80DF1F98300E04F67 /* self.n */,
@@ -1149,7 +1141,7 @@
 				F96D3EA208F272A7004A47F5 /* split.n */,
 				F96D3EA308F272A7004A47F5 /* SplitList.3 */,
 				F96D3EA408F272A7004A47F5 /* SplitPath.3 */,
-				F96D3EA508F272A7004A47F5 /* StaticPkg.3 */,
+				F96D3EA508F272A7004A47F5 /* StaticLibrary.3 */,
 				F96D3EA608F272A7004A47F5 /* StdChannels.3 */,
 				F96D3EA708F272A7004A47F5 /* string.n */,
 				F96D3EA808F272A7004A47F5 /* StringObj.3 */,
@@ -1643,23 +1635,13 @@
 			isa = PBXGroup;
 			children = (
 				F96D43D108F272B8004A47F5 /* checkLibraryDoc.tcl */,
-				F96D43D208F272B8004A47F5 /* configure */,
-				F96D43D308F272B8004A47F5 /* configure.ac */,
 				F96D442508F272B8004A47F5 /* genStubs.tcl */,
 				F96D442708F272B8004A47F5 /* index.tcl */,
 				F96D442808F272B8004A47F5 /* installData.tcl */,
 				F96D442908F272B8004A47F5 /* loadICU.tcl */,
-				F96D442A08F272B8004A47F5 /* Makefile.in */,
 				F96D442B08F272B8004A47F5 /* makeTestCases.tcl */,
-				F96D442C08F272B8004A47F5 /* man2help.tcl */,
-				F96D442D08F272B8004A47F5 /* man2help2.tcl */,
-				F96D442E08F272B8004A47F5 /* man2html.tcl */,
-				F96D442F08F272B8004A47F5 /* man2html1.tcl */,
-				F96D443008F272B8004A47F5 /* man2html2.tcl */,
-				F96D443108F272B8004A47F5 /* man2tcl.c */,
 				F96D443208F272B8004A47F5 /* README */,
 				F96D443308F272B8004A47F5 /* regexpTestLib.tcl */,
-				F96D443508F272B8004A47F5 /* tcl.hpj.in */,
 				F96D443908F272B9004A47F5 /* tcltk-man2html.tcl */,
 				F96D443A08F272B9004A47F5 /* tclZIC.tcl */,
 				F92D7F100DE777240033A13A /* tsdPerf.tcl */,
@@ -1744,7 +1726,6 @@
 				F96D447D08F272BA004A47F5 /* stub16.c */,
 				F96D447E08F272BA004A47F5 /* tcl.dsp */,
 				F96D447F08F272BA004A47F5 /* tcl.dsw */,
-				F96D448008F272BA004A47F5 /* tcl.hpj.in */,
 				F96D448108F272BA004A47F5 /* tcl.m4 */,
 				F96D448208F272BA004A47F5 /* tcl.rc */,
 				F96D448308F272BA004A47F5 /* tclAppInit.c */,
@@ -1894,7 +1875,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "if [ \"${ACTION:-build}\" == \"build\" ]; then\nif [ -z \"${HOME}\" ]; then export HOME=\"$(echo ~)\"; fi\ncd \"${TARGET_TEMP_DIR}\"; rm -rf \"${DERIVED_FILE_DIR}\"; mkdir -p \"${DERIVED_FILE_DIR}\"\nprintf '%s%s%s%s%s' '\npackage require tcltest 2.2\nnamespace import tcltest::*\nconfigure -testdir [file normalize {' \"${TCL_SRCROOT}\" '/tests}]\nconfigure -tmpdir [file normalize {' \"${DERIVED_FILE_DIR}\" '}]\nconfigure -verbose [concat [configure -verbose] line]\nrunAllTests\n' | \"${TEST_RIG}\"; TEST_RIG_RESULT=$?\n[ ${TEST_RIG_RESULT} -ne 0 ] && echo \"tcltest:0: error: tcltest exited abnormally with code ${TEST_RIG_RESULT}.\"\nexit ${TEST_RIG_RESULT}\nfi";
+			shellScript = "if [ \"${ACTION:-build}\" == \"build\" ]; then\nif [ -z \"${HOME}\" ]; then export HOME=\"$(echo ~)\"; fi\ncd \"${TARGET_TEMP_DIR}\"; rm -rf \"${DERIVED_FILE_DIR}\"; mkdir -p \"${DERIVED_FILE_DIR}\"\nprintf '%s%s%s%s%s' '\npackage require tcltest 2.5\nnamespace import tcltest::*\nconfigure -testdir [file normalize {' \"${TCL_SRCROOT}\" '/tests}]\nconfigure -tmpdir [file normalize {' \"${DERIVED_FILE_DIR}\" '}]\nconfigure -verbose [concat [configure -verbose] line]\nrunAllTests\n' | \"${TEST_RIG}\"; TEST_RIG_RESULT=$?\n[ ${TEST_RIG_RESULT} -ne 0 ] && echo \"tcltest:0: error: tcltest exited abnormally with code ${TEST_RIG_RESULT}.\"\nexit ${TEST_RIG_RESULT}\nfi";
 			showEnvVarsInLog = 0;
 		};
 		F97AF02F0B665DA900310EA2 /* Build Tcl */ = {
@@ -2140,8 +2121,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CFLAGS = "-arch i386 -arch x86_64 -arch ppc $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PREBINDING = NO;
 			};
@@ -2378,44 +2359,6 @@
 			};
 			name = ReleaseUniversal;
 		};
-		F97AED1B0B660B2100310EA2 /* Debug64bit */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tclsh;
-				SKIP_INSTALL = NO;
-			};
-			name = Debug64bit;
-		};
-		F97AED1C0B660B2100310EA2 /* Debug64bit */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tcltest;
-			};
-			name = Debug64bit;
-		};
-		F97AED1D0B660B2100310EA2 /* Debug64bit */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
-				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "";
-				TCL_LIBRARY = "$(TCL_SRCROOT)/library";
-				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
-			};
-			name = Debug64bit;
-		};
-		F97AED1E0B660B2100310EA2 /* Debug64bit */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */;
-			buildSettings = {
-				ARCHS = "$(NATIVE_ARCH_64_BIT)";
-				CONFIGURE_ARGS = "--enable-64bit $(CONFIGURE_ARGS)";
-				CPPFLAGS = "-arch $(NATIVE_ARCH_64_BIT) $(CPPFLAGS)";
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				PREBINDING = NO;
-			};
-			name = Debug64bit;
-		};
 		F987512F0DE7B57E00B1C9EC /* DebugNoCF */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */;
@@ -2457,48 +2400,6 @@
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
 			name = DebugNoCF;
-		};
-		F98751330DE7B5A200B1C9EC /* DebugNoCFUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */;
-			buildSettings = {
-				ARCHS = (
-					"$(NATIVE_ARCH_64_BIT)",
-					"$(NATIVE_ARCH_32_BIT)",
-				);
-				CONFIGURE_ARGS = "$(CONFIGURE_ARGS) --disable-threads --disable-corefoundation";
-				CPPFLAGS = "-arch $(CURRENT_ARCH) $(CPPFLAGS)";
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				ONLY_ACTIVE_ARCH = YES;
-				PREBINDING = NO;
-			};
-			name = DebugNoCFUnthreaded;
-		};
-		F98751340DE7B5A200B1C9EC /* DebugNoCFUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tclsh;
-				SKIP_INSTALL = NO;
-			};
-			name = DebugNoCFUnthreaded;
-		};
-		F98751350DE7B5A200B1C9EC /* DebugNoCFUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tcltest;
-			};
-			name = DebugNoCFUnthreaded;
-		};
-		F98751360DE7B5A200B1C9EC /* DebugNoCFUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
-				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "";
-				TCL_LIBRARY = "$(TCL_SRCROOT)/library";
-				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
-			};
-			name = DebugNoCFUnthreaded;
 		};
 		F9988AB10D814C6500B6B03B /* Debug gcc40 */ = {
 			isa = XCBuildConfiguration;
@@ -2605,8 +2506,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CFLAGS = "-arch i386 -arch x86_64 -arch ppc $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				GCC_VERSION = 4.0;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PREBINDING = NO;
@@ -2643,12 +2544,11 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CFLAGS = "-arch i386 -arch x86_64 -arch ppc $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC = "llvm-gcc";
 				GCC_OPTIMIZATION_LEVEL = 4;
-				"GCC_OPTIMIZATION_LEVEL[arch=ppc]" = s;
 				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PREBINDING = NO;
@@ -2681,14 +2581,6 @@
 			};
 			name = "ReleaseUniversal llvm-gcc";
 		};
-		F99EE73B0BE835310060D4AF /* DebugUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tclsh;
-				SKIP_INSTALL = NO;
-			};
-			name = DebugUnthreaded;
-		};
 		F99EE73C0BE835310060D4AF /* DebugLeaks */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2697,30 +2589,12 @@
 			};
 			name = DebugLeaks;
 		};
-		F99EE73D0BE835310060D4AF /* DebugUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tcltest;
-			};
-			name = DebugUnthreaded;
-		};
 		F99EE73E0BE835310060D4AF /* DebugLeaks */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tcltest;
 			};
 			name = DebugLeaks;
-		};
-		F99EE73F0BE835310060D4AF /* DebugUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
-				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "";
-				TCL_LIBRARY = "$(TCL_SRCROOT)/library";
-				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
-			};
-			name = DebugUnthreaded;
 		};
 		F99EE7400BE835310060D4AF /* DebugLeaks */ = {
 			isa = XCBuildConfiguration;
@@ -2732,22 +2606,6 @@
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
 			name = DebugLeaks;
-		};
-		F99EE7410BE835310060D4AF /* DebugUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */;
-			buildSettings = {
-				ARCHS = (
-					"$(NATIVE_ARCH_64_BIT)",
-					"$(NATIVE_ARCH_32_BIT)",
-				);
-				CONFIGURE_ARGS = "$(CONFIGURE_ARGS) --disable-threads";
-				CPPFLAGS = "-arch $(CURRENT_ARCH) $(CPPFLAGS)";
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				ONLY_ACTIVE_ARCH = YES;
-				PREBINDING = NO;
-			};
-			name = DebugUnthreaded;
 		};
 		F99EE7420BE835310060D4AF /* DebugLeaks */ = {
 			isa = XCBuildConfiguration;
@@ -2826,9 +2684,8 @@
 			buildSettings = {
 				ARCHS = (
 					"$(NATIVE_ARCH_64_BIT)",
-					"$(NATIVE_ARCH_32_BIT)",
 				);
-				CFLAGS = "-arch i386 -arch x86_64 $(CFLAGS)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC = clang;
 				GCC_OPTIMIZATION_LEVEL = 4;
@@ -2894,8 +2751,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CFLAGS = "-arch i386 -arch x86_64 -arch ppc $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				CPPFLAGS = "-isysroot $(SDKROOT) $(CPPFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				PREBINDING = NO;
@@ -2914,13 +2771,10 @@
 				F9988AB60D814C7500B6B03B /* Debug llvm-gcc */,
 				F9988AB20D814C6500B6B03B /* Debug gcc40 */,
 				F95CC8AE09158F3100EA5ACE /* DebugNoFixAndContinue */,
-				F99EE73B0BE835310060D4AF /* DebugUnthreaded */,
 				F98751300DE7B57E00B1C9EC /* DebugNoCF */,
-				F98751340DE7B5A200B1C9EC /* DebugNoCFUnthreaded */,
 				F93084370BB93D2800CD0B9E /* DebugMemCompile */,
 				F99EE73C0BE835310060D4AF /* DebugLeaks */,
 				F9359B260DF212DA00E04F67 /* DebugGCov */,
-				F97AED1B0B660B2100310EA2 /* Debug64bit */,
 				F95CC8AD09158F3100EA5ACE /* Release */,
 				F91BCC4F093152310042A6BF /* ReleaseUniversal */,
 				F9A9D1F40FC77799002A2BE3 /* ReleaseUniversal clang */,
@@ -2939,13 +2793,10 @@
 				F9988AB70D814C7500B6B03B /* Debug llvm-gcc */,
 				F9988AB30D814C6500B6B03B /* Debug gcc40 */,
 				F95CC8B309158F3100EA5ACE /* DebugNoFixAndContinue */,
-				F99EE73D0BE835310060D4AF /* DebugUnthreaded */,
 				F98751310DE7B57E00B1C9EC /* DebugNoCF */,
-				F98751350DE7B5A200B1C9EC /* DebugNoCFUnthreaded */,
 				F93084380BB93D2800CD0B9E /* DebugMemCompile */,
 				F99EE73E0BE835310060D4AF /* DebugLeaks */,
 				F9359B270DF212DA00E04F67 /* DebugGCov */,
-				F97AED1C0B660B2100310EA2 /* Debug64bit */,
 				F95CC8B209158F3100EA5ACE /* Release */,
 				F91BCC50093152310042A6BF /* ReleaseUniversal */,
 				F9A9D1F50FC77799002A2BE3 /* ReleaseUniversal clang */,
@@ -2964,13 +2815,10 @@
 				F9988AB50D814C7500B6B03B /* Debug llvm-gcc */,
 				F9988AB10D814C6500B6B03B /* Debug gcc40 */,
 				F95CC8B809158F3100EA5ACE /* DebugNoFixAndContinue */,
-				F99EE7410BE835310060D4AF /* DebugUnthreaded */,
 				F987512F0DE7B57E00B1C9EC /* DebugNoCF */,
-				F98751330DE7B5A200B1C9EC /* DebugNoCFUnthreaded */,
 				F930843A0BB93D2800CD0B9E /* DebugMemCompile */,
 				F99EE7420BE835310060D4AF /* DebugLeaks */,
 				F9359B250DF212DA00E04F67 /* DebugGCov */,
-				F97AED1E0B660B2100310EA2 /* Debug64bit */,
 				F95CC8B709158F3100EA5ACE /* Release */,
 				F91BCC51093152310042A6BF /* ReleaseUniversal */,
 				F9A9D1F30FC77799002A2BE3 /* ReleaseUniversal clang */,
@@ -2989,13 +2837,10 @@
 				F9988AB80D814C7500B6B03B /* Debug llvm-gcc */,
 				F9988AB40D814C6500B6B03B /* Debug gcc40 */,
 				F97258AB0A86873D00096C78 /* DebugNoFixAndContinue */,
-				F99EE73F0BE835310060D4AF /* DebugUnthreaded */,
 				F98751320DE7B57E00B1C9EC /* DebugNoCF */,
-				F98751360DE7B5A200B1C9EC /* DebugNoCFUnthreaded */,
 				F93084390BB93D2800CD0B9E /* DebugMemCompile */,
 				F99EE7400BE835310060D4AF /* DebugLeaks */,
 				F9359B280DF212DA00E04F67 /* DebugGCov */,
-				F97AED1D0B660B2100310EA2 /* Debug64bit */,
 				F97258AA0A86873D00096C78 /* Release */,
 				F97258AC0A86873D00096C78 /* ReleaseUniversal */,
 				F9A9D1F60FC77799002A2BE3 /* ReleaseUniversal clang */,

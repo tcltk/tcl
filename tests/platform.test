@@ -4,12 +4,13 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1999 by Scriptics Corporation
+# Copyright © 1999 Scriptics Corporation
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2
+package require tcltest 2.5
+source [file join [file dirname [info script]] tcltests.tcl]
 
 namespace eval ::tcl::test::platform {
     namespace import ::tcltest::testConstraint
@@ -21,8 +22,7 @@ namespace eval ::tcl::test::platform {
     namespace upvar :: tcl_platform tcl_platform
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
-package require tcltests
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testCPUID [llength [info commands testcpuid]]
 testConstraint testlongsize [llength [info commands testlongsize]]

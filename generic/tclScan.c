@@ -3,7 +3,7 @@
  *
  *	This file contains the implementation of the "scan" command.
  *
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright © 1998 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -397,9 +397,9 @@ ValidateFormat(
 	    invalidFieldSize:
 		buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 		errorMsg = Tcl_NewStringObj(
-			"field size modifier may not be specified in %", -1);
-		Tcl_AppendToObj(errorMsg, buf, -1);
-		Tcl_AppendToObj(errorMsg, " conversion", -1);
+			"field size modifier may not be specified in %", TCL_INDEX_NONE);
+		Tcl_AppendToObj(errorMsg, buf, TCL_INDEX_NONE);
+		Tcl_AppendToObj(errorMsg, " conversion", TCL_INDEX_NONE);
 		Tcl_SetObjResult(interp, errorMsg);
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", NULL);
 		goto error;
@@ -452,15 +452,15 @@ ValidateFormat(
 	    break;
 	badSet:
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unmatched [ in format string", -1));
+		    "unmatched [ in format string", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", NULL);
 	    goto error;
 	default:
 	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 	    errorMsg = Tcl_NewStringObj(
-		    "bad scan conversion character \"", -1);
-	    Tcl_AppendToObj(errorMsg, buf, -1);
-	    Tcl_AppendToObj(errorMsg, "\"", -1);
+		    "bad scan conversion character \"", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(errorMsg, buf, TCL_INDEX_NONE);
+	    Tcl_AppendToObj(errorMsg, "\"", TCL_INDEX_NONE);
 	    Tcl_SetObjResult(interp, errorMsg);
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", NULL);
 	    goto error;
@@ -531,7 +531,7 @@ ValidateFormat(
   badIndex:
     if (gotXpg) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"\"%n$\" argument index out of range", -1));
+		"\"%n$\" argument index out of range", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", NULL);
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -564,7 +564,7 @@ ValidateFormat(
 
 int
 Tcl_ScanObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -716,7 +716,7 @@ Tcl_ScanObjCmd(
 	switch (ch) {
 	case 'n':
 	    if (!(flags & SCAN_SUPPRESS)) {
-		objPtr = Tcl_NewWideIntObj(string - baseString);
+		TclNewIntObj(objPtr, string - baseString);
 		Tcl_IncrRefCount(objPtr);
 		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
@@ -879,7 +879,7 @@ Tcl_ScanObjCmd(
 	    offset = TclUtfToUCS4(string, &i);
 	    string += offset;
 	    if (!(flags & SCAN_SUPPRESS)) {
-		objPtr = Tcl_NewWideIntObj(i);
+		TclNewIntObj(objPtr, i);
 		Tcl_IncrRefCount(objPtr);
 		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
@@ -890,7 +890,7 @@ Tcl_ScanObjCmd(
 	    /*
 	     * Scan an unsigned or signed integer.
 	     */
-	    objPtr = Tcl_NewWideIntObj(0);
+	    TclNewIntObj(objPtr, 0);
 	    Tcl_IncrRefCount(objPtr);
 	    if (width == 0) {
 		width = ~0;
@@ -916,16 +916,17 @@ Tcl_ScanObjCmd(
 	    }
 	    if (flags & SCAN_LONGER) {
 		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
-		    wideValue = WIDE_MAX;
 		    if (TclGetString(objPtr)[0] == '-') {
 			wideValue = WIDE_MIN;
+		    } else {
+			wideValue = WIDE_MAX;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
 		    mp_int big;
 		    if (mp_init_u64(&big, (Tcl_WideUInt)wideValue) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"insufficient memory to create bignum", -1));
+				"insufficient memory to create bignum", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 			return TCL_ERROR;
 		    } else {
@@ -937,22 +938,22 @@ Tcl_ScanObjCmd(
 	    } else if (flags & SCAN_BIG) {
 		if (flags & SCAN_UNSIGNED) {
 		    mp_int big;
-		    int code = Tcl_GetBignumFromObj(interp, objPtr, &big);
+		    int res = Tcl_GetBignumFromObj(interp, objPtr, &big);
 
-		    if (code == TCL_OK) {
+		    if (res == TCL_OK) {
 			if (mp_isneg(&big)) {
-			    code = TCL_ERROR;
+			    res = TCL_ERROR;
 			}
 			mp_clear(&big);
 		    }
 
-		    if (code == TCL_ERROR) {
+		    if (res == TCL_ERROR) {
 			if (objs != NULL) {
 			    Tcl_Free(objs);
 			}
 			Tcl_DecrRefCount(objPtr);
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"unsigned bignum scans are invalid", -1));
+				"unsigned bignum scans are invalid", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "FORMAT",
 				"BADUNSIGNED",NULL);
 			return TCL_ERROR;
@@ -971,7 +972,7 @@ Tcl_ScanObjCmd(
 		    mp_int big;
 		    if (mp_init_u64(&big, (unsigned long)value) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"insufficient memory to create bignum", -1));
+				"insufficient memory to create bignum", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 			return TCL_ERROR;
 		    } else {
@@ -992,7 +993,7 @@ Tcl_ScanObjCmd(
 	     * Scan a floating point number
 	     */
 
-	    objPtr = Tcl_NewDoubleObj(0.0);
+	    TclNewDoubleObj(objPtr, 0.0);
 	    Tcl_IncrRefCount(objPtr);
 	    if (width == 0) {
 		width = ~0;
@@ -1017,8 +1018,8 @@ Tcl_ScanObjCmd(
 		double dvalue;
 		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
 #ifdef ACCEPT_NAN
-		    const Tcl_ObjIntRep *irPtr
-			    = TclFetchIntRep(objPtr, &tclDoubleType);
+		    const Tcl_ObjInternalRep *irPtr
+			    = TclFetchInternalRep(objPtr, &tclDoubleType.objType);
 		    if (irPtr) {
 			dvalue = irPtr->doubleValue;
 		    } else
@@ -1068,7 +1069,7 @@ Tcl_ScanObjCmd(
 	 * Here no vars were specified, we want a list returned (inline scan)
 	 */
 
-	objPtr = Tcl_NewObj();
+	TclNewObj(objPtr);
 	for (i = 0; i < totalVars; i++) {
 	    if (objs[i] != NULL) {
 		Tcl_ListObjAppendElement(NULL, objPtr, objs[i]);
@@ -1089,16 +1090,16 @@ Tcl_ScanObjCmd(
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
-		objPtr = Tcl_NewWideIntObj(-1);
+		TclNewIntObj(objPtr, -1);
 	    } else {
 		if (objPtr) {
 		    Tcl_SetListObj(objPtr, 0, NULL);
 		} else {
-		    objPtr = Tcl_NewObj();
+		    TclNewObj(objPtr);
 		}
 	    }
 	} else if (numVars) {
-	    objPtr = Tcl_NewWideIntObj(result);
+	    TclNewIntObj(objPtr, result);
 	}
 	Tcl_SetObjResult(interp, objPtr);
     }

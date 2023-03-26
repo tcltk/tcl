@@ -3,9 +3,9 @@
  *
  *	This file implements the Windows-specific thread operations.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 1999 by Scriptics Corporation
- * Copyright (c) 2008 by George Peter Staplin
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 1999 Scriptics Corporation
+ * Copyright © 2008 George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -203,7 +203,7 @@ int
 TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread. */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread. */
-    ClientData clientData,	/* The one argument to Main(). */
+    void *clientData,	/* The one argument to Main(). */
     size_t stackSize,		/* Size of stack for the new thread. */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
@@ -222,7 +222,7 @@ TclpThreadCreate(
                  * on WIN64 sizeof void* != sizeof unsigned
 		 */
 
-#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize,
 	    (Tcl_ThreadCreateProc*) TclWinThreadStart, winThreadPtr,
 	    0, (unsigned *)idPtr);
@@ -300,7 +300,7 @@ TclpThreadExit(
     TclSignalExitThread(Tcl_GetCurrentThread(), status);
     LeaveCriticalSection(&joinLock);
 
-#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
     _endthreadex((unsigned) status);
 #else
     ExitThread((DWORD) status);
@@ -326,7 +326,7 @@ TclpThreadExit(
 Tcl_ThreadId
 Tcl_GetCurrentThread(void)
 {
-    return (Tcl_ThreadId)(size_t)GetCurrentThreadId();
+    return (Tcl_ThreadId)INT2PTR(GetCurrentThreadId());
 }
 
 /*
@@ -535,7 +535,7 @@ TclFinalizeLock(void)
 #if TCL_THREADS
 
 /* locally used prototype */
-static void		FinalizeConditionEvent(ClientData data);
+static void		FinalizeConditionEvent(void *data);
 
 /*
  *----------------------------------------------------------------------
@@ -725,7 +725,7 @@ Tcl_ConditionWait(
     if (timePtr == NULL) {
 	wtime = INFINITE;
     } else {
-	wtime = timePtr->sec * 1000 + timePtr->usec / 1000;
+	wtime = (DWORD)timePtr->sec * 1000 + (unsigned long)timePtr->usec / 1000;
     }
 
     /*
@@ -880,7 +880,7 @@ Tcl_ConditionNotify(
 
 static void
 FinalizeConditionEvent(
-    ClientData data)
+    void *data)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) data;
 

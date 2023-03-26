@@ -319,9 +319,10 @@ specified as for the \fBindex\fR method.  If \fInewstring\fR is
 specified, then it is placed in the removed character range.  If
 \fIfirst\fR is less than zero then it is treated as if it were zero,
 and if \fIlast\fR is greater than or equal to the length of the string
-then it is treated as if it were \fBend\fR.  If \fIfirst\fR is greater
-than \fIlast\fR or the length of the initial string, or \fIlast\fR is
-less than 0, then the initial string is returned untouched.
+then it is treated as if it were \fBend\fR.  The initial string is
+returned untouched, if \fIfirst\fR is greater than \fIlast\fR, or if
+\fIfirst\fR is equal to or greater than the length of the initial string,
+or \fIlast\fR is less than 0.
 .TP
 \fBstring reverse \fIstring\fR
 .
@@ -382,41 +383,7 @@ for which \fBstring is space\fR returns 1, and "\e0").
 These subcommands are currently supported, but are likely to go away in a
 future release as their functionality is either virtually never used or highly
 misleading.
-.TP
-\fBstring bytelength \fIstring\fR
-.
-Returns a decimal string giving the number of bytes used to represent
-\fIstring\fR in memory when encoded as Tcl's internal modified UTF\-8;
-Tcl may use other encodings for \fIstring\fR as well, and does not
-guarantee to only use a single encoding for a particular \fIstring\fR.
-Because UTF\-8 uses a variable number of bytes to represent Unicode
-characters, the byte length will not be the same as the character
-length in general.  The cases where a script cares about the byte
-length are rare.
 .RS
-.PP
-In almost all cases, you should use the
-\fBstring length\fR operation (including determining the length of a
-Tcl byte array value).  Refer to the \fBTcl_NumUtfChars\fR manual
-entry for more details on the UTF\-8 representation.
-.PP
-Formally, the \fBstring bytelength\fR operation returns the content of
-the \fIlength\fR field of the \fBTcl_Obj\fR structure, after calling
-\fBTcl_GetString\fR to ensure that the \fIbytes\fR field is populated.
-This is highly unlikely to be useful to Tcl scripts, as Tcl's internal
-encoding is not strict UTF\-8, but rather a modified CESU\-8 with a
-denormalized NUL (identical to that used in a number of places by
-Java's serialization mechanism) to enable basic processing with
-non-Unicode-aware C functions.  As this representation should only
-ever be used by Tcl's implementation, the number of bytes used to
-store the representation is of very low value (except to C extension
-code, which has direct access for the purpose of memory management,
-etc.)
-.PP
-\fICompatibility note:\fR it is likely that this subcommand will be
-withdrawn in a future version of Tcl. It is better to use the
-\fBencoding convertto\fR command to convert a string to a known
-encoding and then apply \fBstring length\fR to that.
 .PP
 .CS
 \fBstring length\fR [encoding convertto utf-8 $theString]

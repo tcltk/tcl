@@ -1,6 +1,6 @@
 '\"
 '\" Copyright (c) 1996 Sun Microsystems, Inc.
-'\" Copyright (c) 1998-1999 by Scriptics Corporation.
+'\" Copyright (c) 1998-1999 Scriptics Corporation.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -162,7 +162,8 @@ described below.
 .SH "CONFIGURATION OPTIONS"
 .PP
 The \fBchan configure\fR command can be used to query several readonly
-configuration options for socket channels:
+configuration options for socket channels or in some cases to set
+alternative properties on socket channels:
 .TP
 \fB\-error\fR
 .
@@ -204,6 +205,16 @@ list is identical to the address, its first element.
 \fB\-connecting\fR
 .
 This option is not supported by server sockets. For client sockets, this option returns 1 if an asyncroneous connect is still in progress, 0 otherwise.
+.TP
+\fB\-keepalive\fR
+.
+This option sets or queries the TCP keepalive option on the socket as 1 if
+keepalive is turned on, 0 otherwise.
+.TP
+\fB\-nodelay\fR
+.
+This option sets or queries the TCP nodelay option on the socket as 1 if
+nodelay is turned on, 0 otherwise.
 .PP
 .SH "EXAMPLES"
 .PP

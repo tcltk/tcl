@@ -214,6 +214,33 @@ typedef void \fBTcl_FreeProc\fR(
 .PP
 When \fIfreeProc\fR is called, its \fIblockPtr\fR will be set to
 the value of \fIresult\fR passed to \fBTcl_SetResult\fR.
+
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The interpreter result is one of the main places that owns references to
+values, along with the bytecode execution stack, argument lists, variables,
+and the list and dictionary collection values.
+.PP
+\fBTcl_SetObjResult\fR takes a value with an arbitrary reference count
+\fI(specifically including zero)\fR and guarantees to increment the reference
+count. If code wishes to continue using the value after setting it as the
+result, it should add its own reference to it with \fBTcl_IncrRefCount\fR.
+.PP
+\fBTcl_GetObjResult\fR returns the current interpreter result value. This will
+have a reference count of at least 1. If the caller wishes to keep the
+interpreter result value, it should increment its reference count.
+.PP
+\fBTcl_GetStringResult\fR does not manipulate reference counts, but the string
+it returns is owned by (and has a lifetime controlled by) the current
+interpreter result value; it should be copied instead of being relied upon to
+persist after the next Tcl API call, as most Tcl operations can modify the
+interpreter result.
+.PP
+\fBTcl_SetResult\fR, \fBTcl_AppendResult\fR, \fBTcl_AppendResultVA\fR,
+\fBTcl_AppendElement\fR, and \fBTcl_ResetResult\fR all modify the interpreter
+result. They may cause the old interpreter result to have its reference count
+decremented and a new interpreter result to be allocated. After they have been
+called, the reference count of the interpreter result is guaranteed to be 1.
 .SH "SEE ALSO"
 Tcl_AddErrorInfo, Tcl_CreateObjCommand, Tcl_SetErrorCode, Tcl_Interp,
 Tcl_GetReturnOptions

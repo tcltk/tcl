@@ -4,7 +4,7 @@
  *	Contains Unix specific versions of Tcl functions that obtain time
  *	values from the operating system.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
+ * Copyright © 1995 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -20,9 +20,9 @@
  */
 
 static void		NativeScaleTime(Tcl_Time *timebuf,
-			    ClientData clientData);
+			    void *clientData);
 static void		NativeGetTime(Tcl_Time *timebuf,
-			    ClientData clientData);
+			    void *clientData);
 
 /*
  * TIP #233 (Virtualized Time): Data for the time hooks, if any.
@@ -31,6 +31,23 @@ static void		NativeGetTime(Tcl_Time *timebuf,
 Tcl_GetTimeProc *tclGetTimeProcPtr = NativeGetTime;
 Tcl_ScaleTimeProc *tclScaleTimeProcPtr = NativeScaleTime;
 void *tclTimeClientData = NULL;
+
+/*
+ * Inlined version of Tcl_GetTime.
+ */
+
+static inline void
+GetTime(
+    Tcl_Time *timePtr)
+{
+    tclGetTimeProcPtr(timePtr, tclTimeClientData);
+}
+
+static inline int
+IsTimeNative(void)
+{
+    return tclGetTimeProcPtr == NativeGetTime;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -49,10 +66,10 @@ void *tclTimeClientData = NULL;
  *----------------------------------------------------------------------
  */
 
-Tcl_WideUInt
+unsigned long long
 TclpGetSeconds(void)
 {
-    return time(NULL);
+    return (unsigned long long) time(NULL);
 }
 
 /*
@@ -72,13 +89,13 @@ TclpGetSeconds(void)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+long long
 TclpGetMicroseconds(void)
 {
     Tcl_Time time;
 
-    tclGetTimeProcPtr(&time, tclTimeClientData);
-    return ((Tcl_WideInt)time.sec)*1000000 + time.usec;
+    GetTime(&time);
+    return ((long long)(unsigned long) time.sec)*1000000 + time.usec;
 }
 
 /*
@@ -87,7 +104,7 @@ TclpGetMicroseconds(void)
  * TclpGetClicks --
  *
  *	This procedure returns a value that represents the highest resolution
- *	clock available on the system. There are no garantees on what the
+ *	clock available on the system. There are no guarantees on what the
  *	resolution will be. In Tcl we will call this value a "click". The
  *	start time is also system dependent.
  *
@@ -100,31 +117,33 @@ TclpGetMicroseconds(void)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideUInt
+unsigned long long
 TclpGetClicks(void)
 {
-	Tcl_WideUInt now;
+    unsigned long long now;
 
 #ifdef NO_GETTOD
-    if (tclGetTimeProcPtr != NativeGetTime) {
+    if (!IsTimeNative()) {
 	Tcl_Time time;
 
-	tclGetTimeProcPtr(&time, tclTimeClientData);
-	now = (Tcl_WideUInt)time.sec*1000000 + time.usec;
+	GetTime(&time);
+	now = ((unsigned long long)(time.sec)*1000000ULL) +
+		(unsigned long long)(time.usec);
     } else {
 	/*
 	 * A semi-NativeGetTime, specialized to clicks.
 	 */
 	struct tms dummy;
 
-	now = (Tcl_WideUInt) times(&dummy);
+	now = (unsigned long long) times(&dummy);
     }
-#else
+#else /* !NO_GETTOD */
     Tcl_Time time;
 
-    tclGetTimeProcPtr(&time, tclTimeClientData);
-    now = (Tcl_WideUInt)time.sec*1000000 + time.usec;
-#endif
+    GetTime(&time);
+    now = ((unsigned long long)(time.sec)*1000000ULL) +
+	    (unsigned long long)(time.usec);
+#endif /* NO_GETTOD */
 
     return now;
 }
@@ -149,22 +168,22 @@ TclpGetClicks(void)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+long long
 TclpGetWideClicks(void)
 {
-    Tcl_WideInt now;
+    long long now;
 
-    if (tclGetTimeProcPtr != NativeGetTime) {
+    if (!IsTimeNative()) {
 	Tcl_Time time;
 
-	tclGetTimeProcPtr(&time, tclTimeClientData);
-	now = ((Tcl_WideInt)time.sec)*1000000 + time.usec;
+	GetTime(&time);
+	now = ((long long) time.sec)*1000000 + time.usec;
     } else {
 #ifdef MAC_OSX_TCL
-	now = (Tcl_WideInt) (mach_absolute_time() & INT64_MAX);
+	now = (long long) (mach_absolute_time() & INT64_MAX);
 #else
 #error Wide high-resolution clicks not implemented on this platform
-#endif
+#endif /* MAC_OSX_TCL */
     }
 
     return now;
@@ -189,11 +208,11 @@ TclpGetWideClicks(void)
 
 double
 TclpWideClicksToNanoseconds(
-    Tcl_WideInt clicks)
+    long long clicks)
 {
     double nsec;
 
-    if (tclGetTimeProcPtr != NativeGetTime) {
+    if (!IsTimeNative()) {
 	nsec = clicks * 1000;
     } else {
 #ifdef MAC_OSX_TCL
@@ -211,7 +230,7 @@ TclpWideClicksToNanoseconds(
 	}
 #else
 #error Wide high-resolution clicks not implemented on this platform
-#endif
+#endif /* MAC_OSX_TCL */
     }
 
     return nsec;
@@ -238,27 +257,25 @@ TclpWideClicksToNanoseconds(
 double
 TclpWideClickInMicrosec(void)
 {
-    if (tclGetTimeProcPtr != NativeGetTime) {
+    if (!IsTimeNative()) {
 	return 1.0;
     } else {
 #ifdef MAC_OSX_TCL
 	static int initialized = 0;
 	static double scale = 0.0;
 
-	if (initialized) {
-	    return scale;
-	} else {
+	if (!initialized) {
 	    mach_timebase_info_data_t tb;
 
 	    mach_timebase_info(&tb);
 	    /* value of tb.numer / tb.denom = 1 click in nanoseconds */
-	    scale = ((double)tb.numer) / tb.denom / 1000;
+	    scale = ((double) tb.numer) / tb.denom / 1000;
 	    initialized = 1;
-	    return scale;
 	}
+	return scale;
 #else
 #error Wide high-resolution clicks not implemented on this platform
-#endif
+#endif /* MAC_OSX_TCL */
     }
 }
 #endif /* TCL_WIDE_CLICKS */
@@ -287,7 +304,7 @@ void
 Tcl_GetTime(
     Tcl_Time *timePtr)		/* Location to store time information. */
 {
-    tclGetTimeProcPtr(timePtr, tclTimeClientData);
+    GetTime(timePtr);
 }
 
 /*
@@ -311,7 +328,7 @@ void
 Tcl_SetTimeProc(
     Tcl_GetTimeProc *getProc,
     Tcl_ScaleTimeProc *scaleProc,
-    ClientData clientData)
+    void *clientData)
 {
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
@@ -338,7 +355,7 @@ void
 Tcl_QueryTimeProc(
     Tcl_GetTimeProc **getProc,
     Tcl_ScaleTimeProc **scaleProc,
-    ClientData *clientData)
+    void **clientData)
 {
     if (getProc) {
 	*getProc = tclGetTimeProcPtr;
@@ -371,7 +388,7 @@ Tcl_QueryTimeProc(
 static void
 NativeScaleTime(
     TCL_UNUSED(Tcl_Time *),
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     /* Native scale is 1:1. Nothing is done */
 }
@@ -396,7 +413,7 @@ NativeScaleTime(
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     struct timeval tv;
 

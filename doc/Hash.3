@@ -324,5 +324,19 @@ typedef void \fBTcl_FreeHashEntryProc\fR(
 If this is NULL then \fBTcl_Free\fR is used to free the space for the entry.
 Tcl_Obj* keys use this function to decrement the reference count on the
 value.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+When a hash table is created with \fBTcl_InitCustomHashTable\fR, the
+\fBTcl_CreateHashEntry\fR function will increment the reference count of its
+\fIkey\fR argument when it creates a key (but not if there is an existing
+matching key). The reference count of the key will be decremented when the
+corresponding hash entry is deleted, whether with \fBTcl_DeleteHashEntry\fR or
+with \fBTcl_DeleteHashTable\fR. The \fBTcl_GetHashKey\fR function will return
+the key without further modifying its reference count.
+.PP
+Custom hash tables that use a Tcl_Obj* as key will generally need to do
+something similar in their \fIallocEntryProc\fR.
+.SH "SEE ALSO"
+Dict(3)
 .SH KEYWORDS
 hash table, key, lookup, search, value

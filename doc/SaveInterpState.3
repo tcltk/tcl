@@ -1,0 +1,54 @@
+'\"
+'\" Copyright (c) 1997 Sun Microsystems, Inc.
+'\" Contributions from Don Porter, NIST, 2004. (not subject to US copyright)
+'\" Copyright (c) 2018 Nathan Coulter.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_SaveInterpState 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_SaveInterpState, Tcl_RestoreInterpState, Tcl_DiscardInterpState \- Save and restore the
+state of an an interpreter.
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_InterpState
+\fBTcl_SaveInterpState\fR(\fIinterp, status\fR)
+.sp
+int
+\fBTcl_RestoreInterpState\fR(\fIinterp, state\fR)
+.sp
+\fBTcl_DiscardInterpState\fR(\fIstate\fR)
+.SH ARGUMENTS
+.AS Tcl_InterpState savedPtr
+.AP Tcl_Interp *interp in
+The interpreter for the operation.
+.AP int status in
+The return code for the state.
+.AP Tcl_InterpState state in
+A token for saved state.
+.BE
+.SH DESCRIPTION
+.PP
+These routines save the state of an interpreter before a call to a routine such
+as \fBTcl_Eval\fR, and restore the state afterwards.
+.PP
+\fBTcl_SaveInterpState\fR saves the parts of \fIinterp\fR that comprise the
+result of a script, including the resulting value, the return code passed as
+\fIstatus\fR, and any options such as \fB\-errorinfo\fR and \fB\-errorcode\fR.
+It returns a token for the saved state.  The interpreter result is not reset
+and no interpreter state is changed.
+.PP
+\fBTcl_RestoreInterpState\fR restores the state indicated by \fIstate\fR and
+returns the \fIstatus\fR originally passed in the corresponding call to
+\fBTcl_SaveInterpState\fR.
+.PP
+If a saved state is not restored, \fBTcl_DiscardInterpState\fR must be called
+to release it.  A token used to discard or restore state must not be used
+again.
+.SH KEYWORDS
+result, state, interp

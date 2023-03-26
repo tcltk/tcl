@@ -3,7 +3,7 @@
  *
  *	This file contains code to manage the interpreter result.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright © 1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -25,7 +25,7 @@ enum returnKeys {
  */
 
 static Tcl_Obj **	GetKeys(void);
-static void		ReleaseKeys(ClientData clientData);
+static void		ReleaseKeys(void *clientData);
 static void		ResetObjResult(Interp *iPtr);
 
 /*
@@ -317,7 +317,7 @@ Tcl_AppendResult(
 	if (bytes == NULL) {
 	    break;
 	}
-	Tcl_AppendToObj(objPtr, bytes, -1);
+	Tcl_AppendToObj(objPtr, bytes, TCL_INDEX_NONE);
     }
     Tcl_SetObjResult(interp, objPtr);
     va_end(argList);
@@ -354,7 +354,7 @@ Tcl_AppendElement(
 				 * to result. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *elementPtr = Tcl_NewStringObj(element, -1);
+    Tcl_Obj *elementPtr = Tcl_NewStringObj(element, TCL_INDEX_NONE);
     Tcl_Obj *listPtr = Tcl_NewListObj(1, &elementPtr);
     const char *bytes;
     size_t length;
@@ -362,7 +362,7 @@ Tcl_AppendElement(
     if (Tcl_IsShared(iPtr->objResultPtr)) {
 	Tcl_SetObjResult(interp, Tcl_DuplicateObj(iPtr->objResultPtr));
     }
-    bytes = TclGetStringFromObj(iPtr->objResultPtr, &length);
+    bytes = Tcl_GetStringFromObj(iPtr->objResultPtr, &length);
     if (TclNeedSpace(bytes, bytes + length)) {
 	Tcl_AppendToObj(iPtr->objResultPtr, " ", 1);
     }
@@ -462,7 +462,7 @@ ResetObjResult(
 	    objResultPtr->bytes = &tclEmptyString;
 	    objResultPtr->length = 0;
 	}
-	TclFreeIntRep(objResultPtr);
+	TclFreeInternalRep(objResultPtr);
     }
 }
 
@@ -511,7 +511,7 @@ Tcl_SetErrorCode(
 	if (elem == NULL) {
 	    break;
 	}
-	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, -1));
+	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, TCL_INDEX_NONE));
     }
     Tcl_SetObjErrorCode(interp, errorObj);
     va_end(argList);
@@ -659,7 +659,7 @@ GetKeys(void)
 
 static void
 ReleaseKeys(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_Obj **keys = (Tcl_Obj **)clientData;
     int i;
@@ -723,7 +723,7 @@ TclProcessReturn(
 	if (valuePtr != NULL) {
 	    size_t length;
 
-	    (void) TclGetStringFromObj(valuePtr, &length);
+	    (void) Tcl_GetStringFromObj(valuePtr, &length);
 	    if (length) {
 		iPtr->errorInfo = valuePtr;
 		Tcl_IncrRefCount(iPtr->errorInfo);
@@ -733,7 +733,7 @@ TclProcessReturn(
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORSTACK],
                 &valuePtr);
 	if (valuePtr != NULL) {
-            int len, valueObjc;
+            size_t len, valueObjc;
             Tcl_Obj **valueObjv;
 
             if (Tcl_IsShared(iPtr->errorStack)) {
@@ -750,15 +750,15 @@ TclProcessReturn(
              * if someone does [return -errorstack [info errorstack]]
              */
 
-            if (Tcl_ListObjGetElements(interp, valuePtr, &valueObjc,
+            if (TclListObjGetElementsM(interp, valuePtr, &valueObjc,
                     &valueObjv) == TCL_ERROR) {
                 return TCL_ERROR;
             }
             iPtr->resetErrorStack = 0;
-            Tcl_ListObjLength(interp, iPtr->errorStack, &len);
+            TclListObjLengthM(interp, iPtr->errorStack, &len);
 
             /*
-             * Reset while keeping the list intrep as much as possible.
+             * Reset while keeping the list internalrep as much as possible.
              */
 
             Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, valueObjc,
@@ -823,9 +823,10 @@ TclMergeReturnOptions(
     int code = TCL_OK;
     int level = 1;
     Tcl_Obj *valuePtr;
-    Tcl_Obj *returnOpts = Tcl_NewObj();
+    Tcl_Obj *returnOpts;
     Tcl_Obj **keys = GetKeys();
 
+    TclNewObj(returnOpts);
     for (;  objc > 1;  objv += 2, objc -= 2) {
 	const char *opt = TclGetString(objv[0]);
 	const char *compare = TclGetString(keys[KEY_OPTIONS]);
@@ -909,9 +910,9 @@ TclMergeReturnOptions(
 
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_ERRORCODE], &valuePtr);
     if (valuePtr != NULL) {
-	int length;
+	size_t length;
 
-	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == TclListObjLengthM(NULL, valuePtr, &length )) {
 	    /*
 	     * Value is not a list, which is illegal for -errorcode.
 	     */
@@ -931,9 +932,9 @@ TclMergeReturnOptions(
 
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_ERRORSTACK], &valuePtr);
     if (valuePtr != NULL) {
-	int length;
+	size_t length;
 
-	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == TclListObjLengthM(NULL, valuePtr, &length)) {
 	    /*
 	     * Value is not a list, which is illegal for -errorstack.
 	     */
@@ -1019,19 +1020,19 @@ Tcl_GetReturnOptions(
     if (iPtr->returnOpts) {
 	options = Tcl_DuplicateObj(iPtr->returnOpts);
     } else {
-	options = Tcl_NewObj();
+	TclNewObj(options);
     }
 
     if (result == TCL_RETURN) {
 	Tcl_DictObjPut(NULL, options, keys[KEY_CODE],
-		Tcl_NewIntObj(iPtr->returnCode));
+		Tcl_NewWideIntObj(iPtr->returnCode));
 	Tcl_DictObjPut(NULL, options, keys[KEY_LEVEL],
-		Tcl_NewIntObj(iPtr->returnLevel));
+		Tcl_NewWideIntObj(iPtr->returnLevel));
     } else {
 	Tcl_DictObjPut(NULL, options, keys[KEY_CODE],
-		Tcl_NewIntObj(result));
+		Tcl_NewWideIntObj(result));
 	Tcl_DictObjPut(NULL, options, keys[KEY_LEVEL],
-		Tcl_NewIntObj(0));
+		Tcl_NewWideIntObj(0));
     }
 
     if (result == TCL_ERROR) {
@@ -1044,7 +1045,7 @@ Tcl_GetReturnOptions(
     if (iPtr->errorInfo) {
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORINFO], iPtr->errorInfo);
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
-		Tcl_NewIntObj(iPtr->errorLine));
+		Tcl_NewWideIntObj(iPtr->errorLine));
     }
     return options;
 }
@@ -1099,11 +1100,12 @@ Tcl_SetReturnOptions(
     Tcl_Interp *interp,
     Tcl_Obj *options)
 {
-    int objc, level, code;
+    size_t objc;
+    int level, code;
     Tcl_Obj **objv, *mergedOpts;
 
     Tcl_IncrRefCount(options);
-    if (TCL_ERROR == TclListObjGetElements(interp, options, &objc, &objv)
+    if (TCL_ERROR == TclListObjGetElementsM(interp, options, &objc, &objv)
 	    || (objc % 2)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "expected dict but got \"%s\"", TclGetString(options)));

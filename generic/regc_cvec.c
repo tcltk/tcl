@@ -2,7 +2,7 @@
  * Utility functions for handling cvecs
  * This file is #included by regcomp.c.
  *
- * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -36,14 +36,14 @@
 
 /*
  - newcvec - allocate a new cvec
- ^ static struct cvec *newcvec(int, int);
+ ^ static struct cvec *newcvec(size_t, size_t);
  */
 static struct cvec *
 newcvec(
-    int nchrs,			/* to hold this many chrs... */
-    int nranges)		/* ... and this many ranges... */
+    size_t nchrs,		/* to hold this many chrs... */
+    size_t nranges)		/* ... and this many ranges... */
 {
-    size_t nc = (size_t)nchrs + (size_t)nranges*2;
+    size_t nc = nchrs + nranges*2;
     size_t n = sizeof(struct cvec) + nc*sizeof(chr);
     struct cvec *cv = (struct cvec *) MALLOC(n);
 
@@ -108,8 +108,8 @@ addrange(
 static struct cvec *
 getcvec(
     struct vars *v,		/* context */
-    int nchrs,			/* to hold this many chrs... */
-    int nranges)		/* ... and this many ranges... */
+    size_t nchrs,		/* to hold this many chrs... */
+    size_t nranges)		/* ... and this many ranges... */
 {
     if ((v->cv != NULL) && (nchrs <= v->cv->chrspace) &&
 	    (nranges <= v->cv->rangespace)) {

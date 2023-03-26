@@ -3,7 +3,7 @@
  *
  *	Contains the Windows-specific command-line panic proc.
  *
- * Copyright (c) 2013 by Jan Nijtmans.
+ * Copyright © 2013 Jan Nijtmans.
  * All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -56,10 +56,10 @@ Tcl_ConsolePanic(
     if (IsDebuggerPresent()) {
 	OutputDebugStringW(msgString);
     } else if (_isatty(2)) {
-	WriteConsoleW(handle, msgString, wcslen(msgString), &dummy, 0);
+	WriteConsoleW(handle, msgString, (DWORD)wcslen(msgString), &dummy, 0);
     } else {
 	buf[0] = '\xEF'; buf[1] = '\xBB'; buf[2] = '\xBF'; /* UTF-8 bom */
-	WriteFile(handle, buf, strlen(buf), &dummy, 0);
+	WriteFile(handle, buf, (DWORD)strlen(buf), &dummy, 0);
 	WriteFile(handle, "\n", 1, &dummy, 0);
 	FlushFileBuffers(handle);
     }

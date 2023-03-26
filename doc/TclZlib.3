@@ -262,6 +262,31 @@ file named by the \fBfilename\fR field was modified. Suitable for use with
 .
 The type of the uncompressed data (either \fBbinary\fR or \fBtext\fR) if
 known.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_ZlibDeflate\fR and \fBTcl_ZlibInflate\fR take a value with arbitrary
+reference count for their \fIdataObj\fR and \fIdictObj\fR arguments (the
+latter often being NULL instead), and set the interpreter result with their
+output value (or an error).  The existing interpreter result should not be
+passed as any argument value unless an additional reference is held.
+.PP
+\fBTcl_ZlibStreamInit\fR takes a value with arbitrary reference count for its
+\fIdictObj\fR argument; it only reads from it. The existing interpreter result
+should not be passed unless an additional reference is held.
+.PP
+\fBTcl_ZlibStreamGetCommandName\fR returns a zero reference count value, much
+like \fBTcl_NewObj\fR.
+.PP
+The \fIdataObj\fR argument to \fBTcl_ZlibStreamPut\fR is a value with
+arbitrary reference count; it is only ever read from.
+.PP
+The \fIdataObj\fR argument to \fBTcl_ZlibStreamGet\fR is an unshared value
+(see \fBTcl_IsShared\fR) that will be updated by the function.
+.PP
+The \fIcompDict\fR argument to \fBTcl_ZlibStreamSetCompressionDictionary\fR,
+if non-NULL, may be duplicated or may have its reference count incremented.
+Using a zero reference count value is not recommended.
+
 .SH "PORTABILITY NOTES"
 These functions will fail gracefully if Tcl is not linked with the zlib
 library.

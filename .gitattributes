@@ -27,6 +27,7 @@
 
 # Denote all files that are truly binary and should not be modified.
 *.a binary
+*.bmp binary
 *.dll binary
 *.exe binary
 *.gif binary

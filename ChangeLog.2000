@@ -1356,7 +1356,7 @@
 	* doc/source.n:
 	* doc/Eval.3:
 	* tests/source.test:
-	* generic/tclIOUtil.c (Tcl_EvalFile): added explicit \32 (^Z) eofchar
+	* generic/tclIOUtil.c (Tcl_EvalFile): added explicit \x1A (^Z) eofchar
 	(affects Tcl_EvalFile in C, "source" in Tcl). This was implicit on
 	Windows already, and is now cross-platform to allow for scripted
 	documents.

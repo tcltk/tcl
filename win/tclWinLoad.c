@@ -5,7 +5,7 @@
  *	the Windows "LoadLibrary" and "GetProcAddress" API for dynamic
  *	loading.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -20,7 +20,9 @@
  */
 
 static WCHAR *dllDirectoryName = NULL;
+#if TCL_THREADS
 static Tcl_Mutex dllDirectoryNameMutex;
+#endif
 
 /*
  * Static functions defined within this file.
@@ -96,7 +98,7 @@ TclpDlopen(
 		ERROR_MOD_NOT_FOUND : GetLastError();
 
 	Tcl_DStringInit(&ds);
-	nativeName = Tcl_UtfToWCharDString(TclGetString(pathPtr), -1, &ds);
+	nativeName = Tcl_UtfToWCharDString(TclGetString(pathPtr), TCL_INDEX_NONE, &ds);
 	hInstance = LoadLibraryExW(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
 	Tcl_DStringFree(&ds);
@@ -112,10 +114,11 @@ TclpDlopen(
          * first error for reporting purposes.
          */
         if (firstError == ERROR_MOD_NOT_FOUND ||
-            firstError == ERROR_DLL_NOT_FOUND)
+            firstError == ERROR_DLL_NOT_FOUND) {
             lastError = GetLastError();
-        else
+        } else {
             lastError = firstError;
+        }
 
 	errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
 		TclGetString(pathPtr));
@@ -136,31 +139,31 @@ TclpDlopen(
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_NOT_FOUND", NULL);
 	    notFoundMsg:
 		Tcl_AppendToObj(errMsg, "this library or a dependent library"
-			" could not be found in library path", -1);
+			" could not be found in library path", TCL_INDEX_NONE);
 		break;
 	    case ERROR_PROC_NOT_FOUND:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "PROC_NOT_FOUND", NULL);
 		Tcl_AppendToObj(errMsg, "A function specified in the import"
 			" table could not be resolved by the system. Windows"
-			" is not telling which one, I'm sorry.", -1);
+			" is not telling which one, I'm sorry.", TCL_INDEX_NONE);
 		break;
 	    case ERROR_INVALID_DLL:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "INVALID_DLL", NULL);
 		Tcl_AppendToObj(errMsg, "this library or a dependent library"
-			" is damaged", -1);
+			" is damaged", TCL_INDEX_NONE);
 		break;
 	    case ERROR_DLL_INIT_FAILED:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_INIT_FAILED", NULL);
 		Tcl_AppendToObj(errMsg, "the library initialization"
-			" routine failed", -1);
+			" routine failed", TCL_INDEX_NONE);
 		break;
             case ERROR_BAD_EXE_FORMAT:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "BAD_EXE_FORMAT", NULL);
-		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", -1);
+		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", TCL_INDEX_NONE);
                 break;
             default:
-		TclWinConvertError(lastError);
-		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), -1);
+		Tcl_WinConvertError(lastError);
+		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), TCL_INDEX_NONE);
 	    }
 	    Tcl_SetObjResult(interp, errMsg);
 	}
@@ -172,7 +175,7 @@ TclpDlopen(
      */
 
     handlePtr = (Tcl_LoadHandle)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
-    handlePtr->clientData = (ClientData) hInstance;
+    handlePtr->clientData = (void *)hInstance;
     handlePtr->findSymbolProcPtr = &FindSymbol;
     handlePtr->unloadFileProcPtr = &UnloadFile;
     *loadHandle = handlePtr;
@@ -217,7 +220,7 @@ FindSymbol(
 
 	Tcl_DStringInit(&ds);
 	TclDStringAppendLiteral(&ds, "_");
-	sym2 = Tcl_DStringAppend(&ds, symbol, -1);
+	sym2 = Tcl_DStringAppend(&ds, symbol, TCL_INDEX_NONE);
 	proc = (void *)GetProcAddress(hInstance, sym2);
 	Tcl_DStringFree(&ds);
     }
@@ -257,34 +260,6 @@ UnloadFile(
 
     FreeLibrary(hInstance);
     Tcl_Free(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this function is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    TCL_UNUSED(const char *),
-    TCL_UNUSED(Tcl_DString *))
-{
-    return 0;
 }
 
 /*
@@ -407,7 +382,7 @@ InitDLLDirectoryName(void)
 	id *= 16777619;
     }
 
-    TclWinConvertError(lastError);
+    Tcl_WinConvertError(lastError);
     return TCL_ERROR;
 
     /*

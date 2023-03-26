@@ -3,7 +3,7 @@
  *
  *	Common routines used by all socket based channel types.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -117,11 +117,15 @@ TclSockGetPort(
 int
 TclSockMinimumBuffers(
     void *sock,			/* Socket file descriptor */
-    int size)			/* Minimum buffer size */
+    size_t size1)			/* Minimum buffer size */
 {
     int current;
     socklen_t len;
+    int size = size1;
 
+    if ((size_t)size != size1) {
+	return TCL_ERROR;
+    }
     len = sizeof(int);
     getsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_SNDBUF,
 	    (char *) &current, &len);
@@ -313,13 +317,13 @@ Tcl_OpenTcpServer(
     int port,
     const char *host,
     Tcl_TcpAcceptProc *acceptProc,
-    ClientData callbackData)
+    void *callbackData)
 {
     char portbuf[TCL_INTEGER_SPACE];
 
     TclFormatInt(portbuf, port);
-    return Tcl_OpenTcpServerEx(interp, portbuf, host, TCL_TCPSERVER_REUSEADDR,
-	    acceptProc, callbackData);
+    return Tcl_OpenTcpServerEx(interp, portbuf, host, -1,
+	    TCL_TCPSERVER_REUSEADDR, acceptProc, callbackData);
 }
 
 /*

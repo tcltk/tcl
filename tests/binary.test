@@ -4,16 +4,19 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1997 by Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+
 testConstraint bigEndian [expr {$tcl_platform(byteOrder) eq "bigEndian"}]
 testConstraint littleEndian [expr {$tcl_platform(byteOrder) eq "littleEndian"}]
 testConstraint testbytestring [llength [info commands testbytestring]]
@@ -25,9 +28,9 @@ proc testIEEE {} {
     switch -exact -- $c {
 	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
 	    # little endian
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\xFF d \
 		ieeeValues(-Infinity)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\xBF d \
 		ieeeValues(-Normal)
 	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
 		ieeeValues(-Subnormal)
@@ -37,19 +40,19 @@ proc testIEEE {} {
 		ieeeValues(+0)
 	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
 		ieeeValues(+Subnormal)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\x3F d \
 		ieeeValues(+Normal)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\x7F d \
 		ieeeValues(+Infinity)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF8\x7F d \
 		ieeeValues(NaN)
 	    set ieeeValues(littleEndian) 1
 	    return 1
 	}
 	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
-	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \xFF\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Infinity)
-	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \xBF\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Normal)
 	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Subnormal)
@@ -59,11 +62,11 @@ proc testIEEE {} {
 		ieeeValues(+0)
 	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Subnormal)
-	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x3F\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Normal)
-	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x7F\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Infinity)
-	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x7F\xF8\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(NaN)
 	    set ieeeValues(littleEndian) 0
 	    return 1
@@ -160,16 +163,16 @@ test binary-4.3 {Tcl_BinaryObjCmd: format} {
 } \x80
 test binary-4.4 {Tcl_BinaryObjCmd: format} {
     binary format B* 010011
-} \x4c
+} \x4C
 test binary-4.5 {Tcl_BinaryObjCmd: format} {
     binary format B8 01001101
-} \x4d
+} \x4D
 test binary-4.6 {Tcl_BinaryObjCmd: format} {
     binary format A2X2B9 oo 01001101
-} \x4d\x00
+} \x4D\x00
 test binary-4.7 {Tcl_BinaryObjCmd: format} {
     binary format B9 010011011010
-} \x4d\x80
+} \x4D\x80
 test binary-4.8 {Tcl_BinaryObjCmd: format} {
     binary format B2B3 10 010
 } \x80\x40
@@ -191,16 +194,16 @@ test binary-5.4 {Tcl_BinaryObjCmd: format} {
 } 2
 test binary-5.5 {Tcl_BinaryObjCmd: format} {
     binary format b8 01001101
-} \xb2
+} \xB2
 test binary-5.6 {Tcl_BinaryObjCmd: format} {
     binary format A2X2b9 oo 01001101
-} \xb2\x00
+} \xB2\x00
 test binary-5.7 {Tcl_BinaryObjCmd: format} {
     binary format b9 010011011010
-} \xb2\x01
+} \xB2\x01
 test binary-5.8 {Tcl_BinaryObjCmd: format} {
     binary format b17 1
-} \x01\00\00
+} \x01\x00\x00
 test binary-5.9 {Tcl_BinaryObjCmd: format} {
     binary format b2b3 10 010
 } \x01\x02
@@ -219,19 +222,19 @@ test binary-6.3 {Tcl_BinaryObjCmd: format} {
 } \x01
 test binary-6.4 {Tcl_BinaryObjCmd: format} {
     binary format h c
-} \x0c
+} \x0C
 test binary-6.5 {Tcl_BinaryObjCmd: format} {
     binary format h* baadf00d
-} \xab\xda\x0f\xd0
+} \xAB\xDA\x0F\xD0
 test binary-6.6 {Tcl_BinaryObjCmd: format} {
     binary format h4 c410
-} \x4c\x01
+} \x4C\x01
 test binary-6.7 {Tcl_BinaryObjCmd: format} {
     binary format h6 c4102
-} \x4c\x01\x02
+} \x4C\x01\x02
 test binary-6.8 {Tcl_BinaryObjCmd: format} {
     binary format h5 c41020304
-} \x4c\x01\x02
+} \x4C\x01\x02
 test binary-6.9 {Tcl_BinaryObjCmd: format} {
     binary format a3X3h5 foo 2
 } \x02\x00\x00
@@ -253,19 +256,19 @@ test binary-7.3 {Tcl_BinaryObjCmd: format} {
 } \x10
 test binary-7.4 {Tcl_BinaryObjCmd: format} {
     binary format H c
-} \xc0
+} \xC0
 test binary-7.5 {Tcl_BinaryObjCmd: format} {
     binary format H* baadf00d
-} \xba\xad\xf0\x0d
+} \xBA\xAD\xF0\x0D
 test binary-7.6 {Tcl_BinaryObjCmd: format} {
     binary format H4 c410
-} \xc4\x10
+} \xC4\x10
 test binary-7.7 {Tcl_BinaryObjCmd: format} {
     binary format H6 c4102
-} \xc4\x10\x20
+} \xC4\x10\x20
 test binary-7.8 {Tcl_BinaryObjCmd: format} {
     binary format H5 c41023304
-} \xc4\x10\x20
+} \xC4\x10\x20
 test binary-7.9 {Tcl_BinaryObjCmd: format} {
     binary format a3X3H5 foo 2
 } \x20\x00\x00
@@ -485,34 +488,34 @@ test binary-13.3 {Tcl_BinaryObjCmd: format} {
 } {}
 test binary-13.4 {Tcl_BinaryObjCmd: format} bigEndian {
     binary format f 1.6
-} \x3f\xcc\xcc\xcd
+} \x3F\xCC\xCC\xCD
 test binary-13.5 {Tcl_BinaryObjCmd: format} littleEndian {
     binary format f 1.6
-} \xcd\xcc\xcc\x3f
+} \xCD\xCC\xCC\x3F
 test binary-13.6 {Tcl_BinaryObjCmd: format} bigEndian {
     binary format f* {1.6 3.4}
-} \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
+} \x3F\xCC\xCC\xCD\x40\x59\x99\x9A
 test binary-13.7 {Tcl_BinaryObjCmd: format} littleEndian {
     binary format f* {1.6 3.4}
-} \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
+} \xCD\xCC\xCC\x3F\x9A\x99\x59\x40
 test binary-13.8 {Tcl_BinaryObjCmd: format} bigEndian {
     binary format f2 {1.6 3.4}
-} \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
+} \x3F\xCC\xCC\xCD\x40\x59\x99\x9A
 test binary-13.9 {Tcl_BinaryObjCmd: format} littleEndian {
     binary format f2 {1.6 3.4}
-} \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
+} \xCD\xCC\xCC\x3F\x9A\x99\x59\x40
 test binary-13.10 {Tcl_BinaryObjCmd: format} bigEndian {
     binary format f2 {1.6 3.4 5.6}
-} \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
+} \x3F\xCC\xCC\xCD\x40\x59\x99\x9A
 test binary-13.11 {Tcl_BinaryObjCmd: format} littleEndian {
     binary format f2 {1.6 3.4 5.6}
-} \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
+} \xCD\xCC\xCC\x3F\x9A\x99\x59\x40
 test binary-13.12 {Tcl_BinaryObjCmd: float overflow} bigEndian {
     binary format f -3.402825e+38
-} \xff\x7f\xff\xff
+} \xFF\x80\x00\x00
 test binary-13.13 {Tcl_BinaryObjCmd: float overflow} littleEndian {
     binary format f -3.402825e+38
-} \xff\xff\x7f\xff
+} \x00\x00\x80\xFF
 test binary-13.14 {Tcl_BinaryObjCmd: float underflow} bigEndian {
     binary format f -3.402825e-100
 } \x80\x00\x00\x00
@@ -529,11 +532,23 @@ test binary-13.17 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
 test binary-13.18 {Tcl_BinaryObjCmd: format} bigEndian {
     set a {1.6 3.4}
     binary format f1 $a
-} \x3f\xcc\xcc\xcd
+} \x3F\xCC\xCC\xCD
 test binary-13.19 {Tcl_BinaryObjCmd: format} littleEndian {
     set a {1.6 3.4}
     binary format f1 $a
-} \xcd\xcc\xcc\x3f
+} \xCD\xCC\xCC\x3F
+test binary-13.20 {Tcl_BinaryObjCmd: format float Inf} bigEndian {
+    binary format f Inf
+} \x7F\x80\x00\x00
+test binary-13.21 {Tcl_BinaryObjCmd: format float Inf} littleEndian {
+    binary format f Inf
+} \x00\x00\x80\x7F
+test binary-13.22 {Tcl_BinaryObjCmd: format float -Inf} bigEndian {
+    binary format f -Inf
+} \xFF\x80\x00\x00
+test binary-13.23 {Tcl_BinaryObjCmd: format float -Inf} littleEndian {
+    binary format f -Inf
+} \x00\x00\x80\xFF
 
 test binary-14.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
     binary format d
@@ -546,28 +561,28 @@ test binary-14.3 {Tcl_BinaryObjCmd: format} {
 } {}
 test binary-14.4 {Tcl_BinaryObjCmd: format} bigEndian {
     binary format d 1.6
-} \x3f\xf9\x99\x99\x99\x99\x99\x9a
+} \x3F\xF9\x99\x99\x99\x99\x99\x9A
 test binary-14.5 {Tcl_BinaryObjCmd: format} littleEndian {
     binary format d 1.6
-} \x9a\x99\x99\x99\x99\x99\xf9\x3f
+} \x9A\x99\x99\x99\x99\x99\xF9\x3F
 test binary-14.6 {Tcl_BinaryObjCmd: format} bigEndian {
     binary format d* {1.6 3.4}
-} \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
+} \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33
 test binary-14.7 {Tcl_BinaryObjCmd: format} littleEndian {
     binary format d* {1.6 3.4}
-} \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
+} \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40
 test binary-14.8 {Tcl_BinaryObjCmd: format} bigEndian {
     binary format d2 {1.6 3.4}
-} \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
+} \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33
 test binary-14.9 {Tcl_BinaryObjCmd: format} littleEndian {
     binary format d2 {1.6 3.4}
-} \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
+} \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40
 test binary-14.10 {Tcl_BinaryObjCmd: format} bigEndian {
     binary format d2 {1.6 3.4 5.6}
-} \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
+} \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33
 test binary-14.11 {Tcl_BinaryObjCmd: format} littleEndian {
     binary format d2 {1.6 3.4 5.6}
-} \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
+} \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40
 test binary-14.14 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
     binary format d2 {1.6}
 } -result {number of elements in list does not match count}
@@ -578,11 +593,11 @@ test binary-14.15 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
 test binary-14.16 {Tcl_BinaryObjCmd: format} bigEndian {
     set a {1.6 3.4}
     binary format d1 $a
-} \x3f\xf9\x99\x99\x99\x99\x99\x9a
+} \x3F\xF9\x99\x99\x99\x99\x99\x9A
 test binary-14.17 {Tcl_BinaryObjCmd: format} littleEndian {
     set a {1.6 3.4}
     binary format d1 $a
-} \x9a\x99\x99\x99\x99\x99\xf9\x3f
+} \x9A\x99\x99\x99\x99\x99\xF9\x3F
 test binary-14.18 {FormatNumber: Bug 1116542} {
     binary scan [binary format d 1.25] d w
     set w
@@ -759,7 +774,16 @@ test binary-21.12 {Tcl_BinaryObjCmd: scan} -setup {
 } -body {
     list [binary scan "abc def \x00ghi  " A* arg1] $arg1
 } -result [list 1 "abc def \x00ghi"]
-
+test binary-21.13 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan "abc def \x00  " C* arg1] $arg1
+} -result {1 {abc def }}
+test binary-21.14 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan "abc def \x00ghi" C* arg1] $arg1
+} -result {1 {abc def }}
 test binary-22.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
     binary scan abc b
 } -result {not enough arguments for all format specifiers}
@@ -865,11 +889,11 @@ test binary-24.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-24.2 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 h* arg1] $arg1
+    list [binary scan \x52\xA3 h* arg1] $arg1
 } {1 253a}
 test binary-24.3 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \xc2\xa3 h arg1] $arg1
+    list [binary scan \xC2\xA3 h arg1] $arg1
 } {1 2}
 test binary-24.4 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -881,7 +905,7 @@ test binary-24.5 {Tcl_BinaryObjCmd: scan} {
 } {1 {}}
 test binary-24.6 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \xf2\x53 h2 arg1] $arg1
+    list [binary scan \xF2\x53 h2 arg1] $arg1
 } {1 2f}
 test binary-24.7 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -911,11 +935,11 @@ test binary-25.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-25.2 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 H* arg1] $arg1
+    list [binary scan \x52\xA3 H* arg1] $arg1
 } {1 52a3}
 test binary-25.3 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \xc2\xa3 H arg1] $arg1
+    list [binary scan \xC2\xA3 H arg1] $arg1
 } {1 c}
 test binary-25.4 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -927,7 +951,7 @@ test binary-25.5 {Tcl_BinaryObjCmd: scan} {
 } {1 {}}
 test binary-25.6 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \xf2\x53 H2 arg1] $arg1
+    list [binary scan \xF2\x53 H2 arg1] $arg1
 } {1 f2}
 test binary-25.7 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -956,27 +980,27 @@ test binary-26.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-26.2 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 c* arg1] $arg1
+    list [binary scan \x52\xA3 c* arg1] $arg1
 } {1 {82 -93}}
 test binary-26.3 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 c arg1] $arg1
+    list [binary scan \x52\xA3 c arg1] $arg1
 } {1 82}
 test binary-26.4 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 c1 arg1] $arg1
+    list [binary scan \x52\xA3 c1 arg1] $arg1
 } {1 82}
 test binary-26.5 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 c0 arg1] $arg1
+    list [binary scan \x52\xA3 c0 arg1] $arg1
 } {1 {}}
 test binary-26.6 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 c2 arg1] $arg1
+    list [binary scan \x52\xA3 c2 arg1] $arg1
 } {1 {82 -93}}
 test binary-26.7 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \xff c arg1] $arg1
+    list [binary scan \xFF c arg1] $arg1
 } {1 -1}
 test binary-26.8 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -997,15 +1021,15 @@ test binary-26.10 {Tcl_BinaryObjCmd: scan} {
 } {2 {112 -121} 5}
 test binary-26.11 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 cu* arg1] $arg1
+    list [binary scan \x52\xA3 cu* arg1] $arg1
 } {1 {82 163}}
 test binary-26.12 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 cu arg1] $arg1
+    list [binary scan \x52\xA3 cu arg1] $arg1
 } {1 82}
 test binary-26.13 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \xff cu arg1] $arg1
+    list [binary scan \xFF cu arg1] $arg1
 } {1 255}
 test binary-26.14 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
@@ -1025,23 +1049,23 @@ test binary-27.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-27.2 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 s* arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 s* arg1] $arg1
 } {1 {-23726 21587}}
 test binary-27.3 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 s arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 s arg1] $arg1
 } {1 -23726}
 test binary-27.4 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 s1 arg1] $arg1
+    list [binary scan \x52\xA3 s1 arg1] $arg1
 } {1 -23726}
 test binary-27.5 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 s0 arg1] $arg1
+    list [binary scan \x52\xA3 s0 arg1] $arg1
 } {1 {}}
 test binary-27.6 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 s2 arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 s2 arg1] $arg1
 } {1 {-23726 21587}}
 test binary-27.7 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -1058,23 +1082,23 @@ test binary-27.9 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x52\xa3\x53\x54\x05 s2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x52\xA3\x53\x54\x05 s2c* arg1 arg2] $arg1 $arg2
 } {2 {-23726 21587} 5}
 test binary-27.10 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 su* arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 su* arg1] $arg1
 } {1 {41810 21587}}
 test binary-27.11 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \xff\xff\xff\xff sus arg1 arg2] $arg1 $arg2
+    list [binary scan \xFF\xFF\xFF\xFF sus arg1 arg2] $arg1 $arg2
 } {2 65535 -1}
 test binary-27.12 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \xff\xff\xff\xff ssu arg1 arg2] $arg1 $arg2
+    list [binary scan \xFF\xFF\xFF\xFF ssu arg1 arg2] $arg1 $arg2
 } {2 -1 65535}
 
 test binary-28.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
@@ -1082,23 +1106,23 @@ test binary-28.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-28.2 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 S* arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 S* arg1] $arg1
 } {1 {21155 21332}}
 test binary-28.3 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 S arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 S arg1] $arg1
 } {1 21155}
 test binary-28.4 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 S1 arg1] $arg1
+    list [binary scan \x52\xA3 S1 arg1] $arg1
 } {1 21155}
 test binary-28.5 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 S0 arg1] $arg1
+    list [binary scan \x52\xA3 S0 arg1] $arg1
 } {1 {}}
 test binary-28.6 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 S2 arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 S2 arg1] $arg1
 } {1 {21155 21332}}
 test binary-28.7 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -1115,15 +1139,15 @@ test binary-28.9 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x52\xa3\x53\x54\x05 S2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x52\xA3\x53\x54\x05 S2c* arg1 arg2] $arg1 $arg2
 } {2 {21155 21332} 5}
 test binary-28.10 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 Su* arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 Su* arg1] $arg1
 } {1 {21155 21332}}
 test binary-28.11 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \xa3\x52\x54\x53 Su* arg1] $arg1
+    list [binary scan \xA3\x52\x54\x53 Su* arg1] $arg1
 } {1 {41810 21587}}
 
 test binary-29.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
@@ -1131,23 +1155,23 @@ test binary-29.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-29.2 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 i* arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04 i* arg1] $arg1
 } {1 {1414767442 67305985}}
 test binary-29.3 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 i arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04 i arg1] $arg1
 } {1 1414767442}
 test binary-29.4 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 i1 arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 i1 arg1] $arg1
 } {1 1414767442}
 test binary-29.5 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53 i0 arg1] $arg1
+    list [binary scan \x52\xA3\x53 i0 arg1] $arg1
 } {1 {}}
 test binary-29.6 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 i2 arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04 i2 arg1] $arg1
 } {1 {1414767442 67305985}}
 test binary-29.7 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -1164,15 +1188,15 @@ test binary-29.9 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 i2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04\x05 i2c* arg1 arg2] $arg1 $arg2
 } {2 {1414767442 67305985} 5}
 test binary-29.10 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
-    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff iui arg1 arg2] $arg1 $arg2
+    list [binary scan \xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF iui arg1 arg2] $arg1 $arg2
 } {2 4294967295 -1}
 test binary-29.11 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
-    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff iiu arg1 arg2] $arg1 $arg2
+    list [binary scan \xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF iiu arg1 arg2] $arg1 $arg2
 } {2 -1 4294967295}
 test binary-29.12 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
@@ -1184,23 +1208,23 @@ test binary-30.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-30.2 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 I* arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04 I* arg1] $arg1
 } {1 {1386435412 16909060}}
 test binary-30.3 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 I arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04 I arg1] $arg1
 } {1 1386435412}
 test binary-30.4 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 I1 arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 I1 arg1] $arg1
 } {1 1386435412}
 test binary-30.5 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53 I0 arg1] $arg1
+    list [binary scan \x52\xA3\x53 I0 arg1] $arg1
 } {1 {}}
 test binary-30.6 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 I2 arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04 I2 arg1] $arg1
 } {1 {1386435412 16909060}}
 test binary-30.7 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -1217,15 +1241,15 @@ test binary-30.9 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 I2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04\x05 I2c* arg1 arg2] $arg1 $arg2
 } {2 {1386435412 16909060} 5}
 test binary-30.10 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
-    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff IuI arg1 arg2] $arg1 $arg2
+    list [binary scan \xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF IuI arg1 arg2] $arg1 $arg2
 } {2 4294967295 -1}
 test binary-30.11 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
-    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff IIu arg1 arg2] $arg1 $arg2
+    list [binary scan \xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF IIu arg1 arg2] $arg1 $arg2
 } {2 -1 4294967295}
 test binary-30.12 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1 arg2
@@ -1237,43 +1261,43 @@ test binary-31.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-31.2 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a f* arg1] $arg1
+    list [binary scan \x3F\xCC\xCC\xCD\x40\x59\x99\x9A f* arg1] $arg1
 } {1 {1.600000023841858 3.4000000953674316}}
 test binary-31.3 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 f* arg1] $arg1
+    list [binary scan \xCD\xCC\xCC\x3F\x9A\x99\x59\x40 f* arg1] $arg1
 } {1 {1.600000023841858 3.4000000953674316}}
 test binary-31.4 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a f arg1] $arg1
+    list [binary scan \x3F\xCC\xCC\xCD\x40\x59\x99\x9A f arg1] $arg1
 } {1 1.600000023841858}
 test binary-31.5 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 f arg1] $arg1
+    list [binary scan \xCD\xCC\xCC\x3F\x9A\x99\x59\x40 f arg1] $arg1
 } {1 1.600000023841858}
 test binary-31.6 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xcc\xcc\xcd f1 arg1] $arg1
+    list [binary scan \x3F\xCC\xCC\xCD f1 arg1] $arg1
 } {1 1.600000023841858}
 test binary-31.7 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \xcd\xcc\xcc\x3f f1 arg1] $arg1
+    list [binary scan \xCD\xCC\xCC\x3F f1 arg1] $arg1
 } {1 1.600000023841858}
 test binary-31.8 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xcc\xcc\xcd f0 arg1] $arg1
+    list [binary scan \x3F\xCC\xCC\xCD f0 arg1] $arg1
 } {1 {}}
 test binary-31.9 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \xcd\xcc\xcc\x3f f0 arg1] $arg1
+    list [binary scan \xCD\xCC\xCC\x3F f0 arg1] $arg1
 } {1 {}}
 test binary-31.10 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a f2 arg1] $arg1
+    list [binary scan \x3F\xCC\xCC\xCD\x40\x59\x99\x9A f2 arg1] $arg1
 } {1 {1.600000023841858 3.4000000953674316}}
 test binary-31.11 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 f2 arg1] $arg1
+    list [binary scan \xCD\xCC\xCC\x3F\x9A\x99\x59\x40 f2 arg1] $arg1
 } {1 {1.600000023841858 3.4000000953674316}}
 test binary-31.12 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -1284,19 +1308,19 @@ test binary-31.13 {Tcl_BinaryObjCmd: scan} -setup {
     unset -nocomplain arg1
 } -returnCodes error -body {
     set arg1 1
-    binary scan \x3f\xcc\xcc\xcd f1 arg1(a)
+    binary scan \x3F\xCC\xCC\xCD f1 arg1(a)
 } -result {can't set "arg1(a)": variable isn't array}
 test binary-31.14 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a\x05 f2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x3F\xCC\xCC\xCD\x40\x59\x99\x9A\x05 f2c* arg1 arg2] $arg1 $arg2
 } {2 {1.600000023841858 3.4000000953674316} 5}
 test binary-31.15 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40\x05 f2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \xCD\xCC\xCC\x3F\x9A\x99\x59\x40\x05 f2c* arg1 arg2] $arg1 $arg2
 } {2 {1.600000023841858 3.4000000953674316} 5}
 
 test binary-32.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
@@ -1304,43 +1328,43 @@ test binary-32.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-32.2 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 d* arg1] $arg1
+    list [binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33 d* arg1] $arg1
 } {1 {1.6 3.4}}
 test binary-32.3 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 d* arg1] $arg1
+    list [binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40 d* arg1] $arg1
 } {1 {1.6 3.4}}
 test binary-32.4 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 d arg1] $arg1
+    list [binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33 d arg1] $arg1
 } {1 1.6}
 test binary-32.5 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 d arg1] $arg1
+    list [binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40 d arg1] $arg1
 } {1 1.6}
 test binary-32.6 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a d1 arg1] $arg1
+    list [binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A d1 arg1] $arg1
 } {1 1.6}
 test binary-32.7 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f d1 arg1] $arg1
+    list [binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F d1 arg1] $arg1
 } {1 1.6}
 test binary-32.8 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a d0 arg1] $arg1
+    list [binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A d0 arg1] $arg1
 } {1 {}}
 test binary-32.9 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f d0 arg1] $arg1
+    list [binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F d0 arg1] $arg1
 } {1 {}}
 test binary-32.10 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 d2 arg1] $arg1
+    list [binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33 d2 arg1] $arg1
 } {1 {1.6 3.4}}
 test binary-32.11 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 d2 arg1] $arg1
+    list [binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40 d2 arg1] $arg1
 } {1 {1.6 3.4}}
 test binary-32.12 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -1351,19 +1375,19 @@ test binary-32.13 {Tcl_BinaryObjCmd: scan} -setup {
     unset -nocomplain arg1
 } -returnCodes error -body {
     set arg1 1
-    binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a d1 arg1(a)
+    binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A d1 arg1(a)
 } -result {can't set "arg1(a)": variable isn't array}
 test binary-32.14 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33\x05 d2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33\x05 d2c* arg1 arg2] $arg1 $arg2
 } {2 {1.6 3.4} 5}
 test binary-32.15 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40\x05 d2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40\x05 d2c* arg1 arg2] $arg1 $arg2
 } {2 {1.6 3.4} 5}
 
 test binary-33.1 {Tcl_BinaryObjCmd: scan} {
@@ -1534,20 +1558,20 @@ test binary-38.4 {FormatNumber: word alignment} {
 } \x01\x00\x00\x00\x01
 test binary-38.5 {FormatNumber: word alignment} bigEndian {
     set x [binary format c1d1 1 1.6]
-} \x01\x3f\xf9\x99\x99\x99\x99\x99\x9a
+} \x01\x3F\xF9\x99\x99\x99\x99\x99\x9A
 test binary-38.6 {FormatNumber: word alignment} littleEndian {
     set x [binary format c1d1 1 1.6]
-} \x01\x9a\x99\x99\x99\x99\x99\xf9\x3f
+} \x01\x9A\x99\x99\x99\x99\x99\xF9\x3F
 test binary-38.7 {FormatNumber: word alignment} bigEndian {
     set x [binary format c1f1 1 1.6]
-} \x01\x3f\xcc\xcc\xcd
+} \x01\x3F\xCC\xCC\xCD
 test binary-38.8 {FormatNumber: word alignment} littleEndian {
     set x [binary format c1f1 1 1.6]
-} \x01\xcd\xcc\xcc\x3f
+} \x01\xCD\xCC\xCC\x3F
 
 test binary-39.1 {ScanNumber: sign extension} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 c2 arg1] $arg1
+    list [binary scan \x52\xA3 c2 arg1] $arg1
 } {1 {82 -93}}
 test binary-39.2 {ScanNumber: sign extension} {
     unset -nocomplain arg1
@@ -1567,7 +1591,7 @@ test binary-39.5 {ScanNumber: sign extension} {
 } {1 {16843010 -2130640639 25297153 16876033 16843137}}
 test binary-39.6 {ScanNumber: no sign extension} {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 cu2 arg1] $arg1
+    list [binary scan \x52\xA3 cu2 arg1] $arg1
 } {1 {82 163}}
 test binary-39.7 {ScanNumber: no sign extension} {
     unset -nocomplain arg1
@@ -1588,11 +1612,11 @@ test binary-39.10 {ScanNumber: no sign extension} {
 
 test binary-40.3 {ScanNumber: NaN} -body {
     unset -nocomplain arg1
-    list [binary scan \xff\xff\xff\xff f1 arg1] $arg1
+    list [binary scan \xFF\xFF\xFF\xFF f1 arg1] $arg1
 } -match glob -result {1 -NaN*}
 test binary-40.4 {ScanNumber: NaN} -body {
     unset -nocomplain arg1
-    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d arg1] $arg1
+    list [binary scan \xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF d arg1] $arg1
 } -match glob -result {1 -NaN*}
 
 test binary-41.1 {ScanNumber: word alignment} -setup {
@@ -1618,22 +1642,22 @@ test binary-41.4 {ScanNumber: word alignment} -setup {
 test binary-41.5 {ScanNumber: word alignment} -setup {
     unset -nocomplain arg1 arg2
 } -constraints bigEndian -body {
-    list [binary scan \x01\x3f\xcc\xcc\xcd c1f1 arg1 arg2] $arg1 $arg2
+    list [binary scan \x01\x3F\xCC\xCC\xCD c1f1 arg1 arg2] $arg1 $arg2
 } -result {2 1 1.600000023841858}
 test binary-41.6 {ScanNumber: word alignment} -setup {
     unset -nocomplain arg1 arg2
 } -constraints littleEndian -body {
-    list [binary scan \x01\xcd\xcc\xcc\x3f c1f1 arg1 arg2] $arg1 $arg2
+    list [binary scan \x01\xCD\xCC\xCC\x3F c1f1 arg1 arg2] $arg1 $arg2
 } -result {2 1 1.600000023841858}
 test binary-41.7 {ScanNumber: word alignment} -setup {
     unset -nocomplain arg1 arg2
 } -constraints bigEndian -body {
-    list [binary scan \x01\x3f\xf9\x99\x99\x99\x99\x99\x9a c1d1 arg1 arg2] $arg1 $arg2
+    list [binary scan \x01\x3F\xF9\x99\x99\x99\x99\x99\x9A c1d1 arg1 arg2] $arg1 $arg2
 } -result {2 1 1.6}
 test binary-41.8 {ScanNumber: word alignment} -setup {
     unset -nocomplain arg1 arg2
 } -constraints littleEndian -body {
-    list [binary scan \x01\x9a\x99\x99\x99\x99\x99\xf9\x3f c1d1 arg1 arg2] $arg1 $arg2
+    list [binary scan \x01\x9A\x99\x99\x99\x99\x99\xF9\x3F c1d1 arg1 arg2] $arg1 $arg2
 } -result {2 1 1.6}
 
 test binary-42.1 {Tcl_BinaryObjCmd: bad arguments} -constraints {} -body {
@@ -1704,26 +1728,26 @@ test binary-45.2 {Tcl_BinaryObjCmd: combined wide int handling} {
 } {66 64 0 0 0 0 127 -1 -1 -1 65 76}
 
 test binary-46.1 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
-    binary format a* \u20ac
-} \u00ac
+    binary format a* €
+} \xAC
 test binary-46.2 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
-    list [binary scan [binary format a* \u20ac\u20bd] s x] $x
+    list [binary scan [binary format a* €₽] s x] $x
 } {1 -16980}
 test binary-46.3 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
     set x {}
     set y {}
     set z {}
-    list [binary scan [binary format a* \u20ac\u20bd] aaa x y z] $x $y $z
-} "2 \u00ac \u00bd {}"
+    list [binary scan [binary format a* €₽] aaa x y z] $x $y $z
+} "2 \xAC \xBD {}"
 test binary-46.4 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
-    set x [encoding convertto iso8859-15 \u20ac]
+    set x [encoding convertto iso8859-15 €]
     set y [binary format a* $x]
     list $x $y
-} "\u00a4 \u00a4"
+} "\xA4 \xA4"
 test binary-46.5 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
-    set x [binary scan \u00a4 a* y]
+    set x [binary scan \xA4 a* y]
     list $x $y [encoding convertfrom iso8859-15 $y]
-} "1 \u00a4 \u20ac"
+} "1 \xA4 €"
 
 test binary-47.1 {Tcl_BinaryObjCmd: number cache reference count handling} {
     # This test is only reliable when memory debugging is turned on, but
@@ -1889,28 +1913,28 @@ test binary-51.3 {Tcl_BinaryObjCmd: format} {
 } {}
 test binary-51.4 {Tcl_BinaryObjCmd: format} {} {
     binary format Q 1.6
-} \x3f\xf9\x99\x99\x99\x99\x99\x9a
+} \x3F\xF9\x99\x99\x99\x99\x99\x9A
 test binary-51.5 {Tcl_BinaryObjCmd: format} {} {
     binary format q 1.6
-} \x9a\x99\x99\x99\x99\x99\xf9\x3f
+} \x9A\x99\x99\x99\x99\x99\xF9\x3F
 test binary-51.6 {Tcl_BinaryObjCmd: format} {} {
     binary format Q* {1.6 3.4}
-} \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
+} \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33
 test binary-51.7 {Tcl_BinaryObjCmd: format} {} {
     binary format q* {1.6 3.4}
-} \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
+} \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40
 test binary-51.8 {Tcl_BinaryObjCmd: format} {} {
     binary format Q2 {1.6 3.4}
-} \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
+} \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33
 test binary-51.9 {Tcl_BinaryObjCmd: format} {} {
     binary format q2 {1.6 3.4}
-} \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
+} \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40
 test binary-51.10 {Tcl_BinaryObjCmd: format} {} {
     binary format Q2 {1.6 3.4 5.6}
-} \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
+} \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33
 test binary-51.11 {Tcl_BinaryObjCmd: format} {} {
     binary format q2 {1.6 3.4 5.6}
-} \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
+} \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40
 test binary-51.14 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
     binary format q2 {1.6}
 } -result {number of elements in list does not match count}
@@ -1921,11 +1945,11 @@ test binary-51.15 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
 test binary-51.16 {Tcl_BinaryObjCmd: format} {} {
     set a {1.6 3.4}
     binary format Q1 $a
-} \x3f\xf9\x99\x99\x99\x99\x99\x9a
+} \x3F\xF9\x99\x99\x99\x99\x99\x9A
 test binary-51.17 {Tcl_BinaryObjCmd: format} {} {
     set a {1.6 3.4}
     binary format q1 $a
-} \x9a\x99\x99\x99\x99\x99\xf9\x3f
+} \x9A\x99\x99\x99\x99\x99\xF9\x3F
 
 # format R/r
 test binary-53.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
@@ -1939,34 +1963,34 @@ test binary-53.3 {Tcl_BinaryObjCmd: format} {
 } {}
 test binary-53.4 {Tcl_BinaryObjCmd: format} {} {
     binary format R 1.6
-} \x3f\xcc\xcc\xcd
+} \x3F\xCC\xCC\xCD
 test binary-53.5 {Tcl_BinaryObjCmd: format} {} {
     binary format r 1.6
-} \xcd\xcc\xcc\x3f
+} \xCD\xCC\xCC\x3F
 test binary-53.6 {Tcl_BinaryObjCmd: format} {} {
     binary format R* {1.6 3.4}
-} \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
+} \x3F\xCC\xCC\xCD\x40\x59\x99\x9A
 test binary-53.7 {Tcl_BinaryObjCmd: format} {} {
     binary format r* {1.6 3.4}
-} \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
+} \xCD\xCC\xCC\x3F\x9A\x99\x59\x40
 test binary-53.8 {Tcl_BinaryObjCmd: format} {} {
     binary format R2 {1.6 3.4}
-} \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
+} \x3F\xCC\xCC\xCD\x40\x59\x99\x9A
 test binary-53.9 {Tcl_BinaryObjCmd: format} {} {
     binary format r2 {1.6 3.4}
-} \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
+} \xCD\xCC\xCC\x3F\x9A\x99\x59\x40
 test binary-53.10 {Tcl_BinaryObjCmd: format} {} {
     binary format R2 {1.6 3.4 5.6}
-} \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
+} \x3F\xCC\xCC\xCD\x40\x59\x99\x9A
 test binary-53.11 {Tcl_BinaryObjCmd: format} {} {
     binary format r2 {1.6 3.4 5.6}
-} \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
+} \xCD\xCC\xCC\x3F\x9A\x99\x59\x40
 test binary-53.12 {Tcl_BinaryObjCmd: float overflow} {} {
     binary format R -3.402825e+38
-} \xff\x7f\xff\xff
+} \xFF\x80\x00\x00
 test binary-53.13 {Tcl_BinaryObjCmd: float overflow} {} {
     binary format r -3.402825e+38
-} \xff\xff\x7f\xff
+} \x00\x00\x80\xFF
 test binary-53.14 {Tcl_BinaryObjCmd: float underflow} {} {
     binary format R -3.402825e-100
 } \x80\x00\x00\x00
@@ -1983,11 +2007,44 @@ test binary-53.17 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
 test binary-53.18 {Tcl_BinaryObjCmd: format} {} {
     set a {1.6 3.4}
     binary format R1 $a
-} \x3f\xcc\xcc\xcd
+} \x3F\xCC\xCC\xCD
 test binary-53.19 {Tcl_BinaryObjCmd: format} {} {
     set a {1.6 3.4}
     binary format r1 $a
-} \xcd\xcc\xcc\x3f
+} \xCD\xCC\xCC\x3F
+test binary-53.20 {Tcl_BinaryObjCmd: float Inf} {} {
+    binary format R Inf
+} \x7f\x80\x00\x00
+test binary-53.21 {Tcl_BinaryObjCmd: float Inf} {} {
+    binary format r Inf
+} \x00\x00\x80\x7f
+test binary-53.22 {Binary float Inf round trip} -body {
+    binary scan [binary format R Inf] R inf
+    binary scan [binary format R -Inf] R inf_
+    list $inf $inf_
+} -result {Inf -Inf}
+test binary-53.23 {Binary float round to FLT_MAX} -body {
+    binary scan [binary format H* 7f7fffff] R fltmax
+    binary scan [binary format H* 47effffff0000000] Q round_to_fltmax
+    binary scan [binary format R $round_to_fltmax] R fltmax1
+    expr {$fltmax eq $fltmax1}
+} -result 1
+test binary-53.24 {Binary float round to -FLT_MAX} -body {
+    binary scan [binary format H* ff7fffff] R fltmax
+    binary scan [binary format H* c7effffff0000000] Q round_to_fltmax
+    binary scan [binary format R $round_to_fltmax] R fltmax1
+    expr {$fltmax eq $fltmax1}
+} -result 1
+test binary-53.25 {Binary float round to Inf} -body {
+    binary scan [binary format H* 47effffff0000001] Q round_to_inf
+    binary scan [binary format R $round_to_inf] R inf1
+    expr {$inf1 eq Inf}
+} -result 1
+test binary-53.26 {Binary float round to -Inf} -body {
+    binary scan [binary format H* c7effffff0000001] Q round_to_inf
+    binary scan [binary format R $round_to_inf] R inf1
+    expr {$inf1 eq -Inf}
+} -result 1
 
 # scan t (s)
 test binary-54.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
@@ -1995,23 +2052,23 @@ test binary-54.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-54.2 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 t* arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 t* arg1] $arg1
 } {1 {-23726 21587}}
 test binary-54.3 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 t arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 t arg1] $arg1
 } {1 -23726}
 test binary-54.4 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 t1 arg1] $arg1
+    list [binary scan \x52\xA3 t1 arg1] $arg1
 } {1 -23726}
 test binary-54.5 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 t0 arg1] $arg1
+    list [binary scan \x52\xA3 t0 arg1] $arg1
 } {1 {}}
 test binary-54.6 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 t2 arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 t2 arg1] $arg1
 } {1 {-23726 21587}}
 test binary-54.7 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
@@ -2028,7 +2085,7 @@ test binary-54.9 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x52\xa3\x53\x54\x05 t2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x52\xA3\x53\x54\x05 t2c* arg1 arg2] $arg1 $arg2
 } {2 {-23726 21587} 5}
 test binary-54.10 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1 arg2
@@ -2049,23 +2106,23 @@ test binary-55.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-55.2 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 t* arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 t* arg1] $arg1
 } {1 {21155 21332}}
 test binary-55.3 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 t arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 t arg1] $arg1
 } {1 21155}
 test binary-55.4 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 t1 arg1] $arg1
+    list [binary scan \x52\xA3 t1 arg1] $arg1
 } {1 21155}
 test binary-55.5 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3 t0 arg1] $arg1
+    list [binary scan \x52\xA3 t0 arg1] $arg1
 } {1 {}}
 test binary-55.6 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 t2 arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 t2 arg1] $arg1
 } {1 {21155 21332}}
 test binary-55.7 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
@@ -2082,7 +2139,7 @@ test binary-55.9 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x52\xa3\x53\x54\x05 t2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x52\xA3\x53\x54\x05 t2c* arg1 arg2] $arg1 $arg2
 } {2 {21155 21332} 5}
 test binary-55.10 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
@@ -2103,23 +2160,23 @@ test binary-56.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-56.2 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 n* arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04 n* arg1] $arg1
 } {1 {1414767442 67305985}}
 test binary-56.3 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 n arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04 n arg1] $arg1
 } {1 1414767442}
 test binary-56.4 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 n1 arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 n1 arg1] $arg1
 } {1 1414767442}
 test binary-56.5 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53 n0 arg1] $arg1
+    list [binary scan \x52\xA3\x53 n0 arg1] $arg1
 } {1 {}}
 test binary-56.6 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 n2 arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04 n2 arg1] $arg1
 } {1 {1414767442 67305985}}
 test binary-56.7 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
@@ -2136,7 +2193,7 @@ test binary-56.9 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 n2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04\x05 n2c* arg1 arg2] $arg1 $arg2
 } {2 {1414767442 67305985} 5}
 test binary-56.10 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1 arg2
@@ -2157,23 +2214,23 @@ test binary-57.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-57.2 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 n* arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04 n* arg1] $arg1
 } {1 {1386435412 16909060}}
 test binary-57.3 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 n arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04 n arg1] $arg1
 } {1 1386435412}
 test binary-57.4 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54 n1 arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54 n1 arg1] $arg1
 } {1 1386435412}
 test binary-57.5 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53 n0 arg1] $arg1
+    list [binary scan \x52\xA3\x53 n0 arg1] $arg1
 } {1 {}}
 test binary-57.6 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 n2 arg1] $arg1
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04 n2 arg1] $arg1
 } {1 {1386435412 16909060}}
 test binary-57.7 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
@@ -2190,7 +2247,7 @@ test binary-57.9 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 n2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x52\xA3\x53\x54\x01\x02\x03\x04\x05 n2c* arg1 arg2] $arg1 $arg2
 } {2 {1386435412 16909060} 5}
 test binary-57.10 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
@@ -2211,43 +2268,43 @@ test binary-58.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-58.2 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 Q* arg1] $arg1
+    list [binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33 Q* arg1] $arg1
 } {1 {1.6 3.4}}
 test binary-58.3 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 q* arg1] $arg1
+    list [binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40 q* arg1] $arg1
 } {1 {1.6 3.4}}
 test binary-58.4 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 Q arg1] $arg1
+    list [binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33 Q arg1] $arg1
 } {1 1.6}
 test binary-58.5 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 q arg1] $arg1
+    list [binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40 q arg1] $arg1
 } {1 1.6}
 test binary-58.6 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a Q1 arg1] $arg1
+    list [binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A Q1 arg1] $arg1
 } {1 1.6}
 test binary-58.7 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f q1 arg1] $arg1
+    list [binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F q1 arg1] $arg1
 } {1 1.6}
 test binary-58.8 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a Q0 arg1] $arg1
+    list [binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A Q0 arg1] $arg1
 } {1 {}}
 test binary-58.9 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f q0 arg1] $arg1
+    list [binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F q0 arg1] $arg1
 } {1 {}}
 test binary-58.10 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 Q2 arg1] $arg1
+    list [binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33 Q2 arg1] $arg1
 } {1 {1.6 3.4}}
 test binary-58.11 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 q2 arg1] $arg1
+    list [binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40 q2 arg1] $arg1
 } {1 {1.6 3.4}}
 test binary-58.12 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -2258,19 +2315,19 @@ test binary-58.13 {Tcl_BinaryObjCmd: scan} -setup {
     unset -nocomplain arg1
 } -returnCodes error -body {
     set arg1 1
-    binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a q1 arg1(a)
+    binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A q1 arg1(a)
 } -result {can't set "arg1(a)": variable isn't array}
 test binary-58.14 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33\x05 Q2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x3F\xF9\x99\x99\x99\x99\x99\x9A\x40\x0B\x33\x33\x33\x33\x33\x33\x05 Q2c* arg1 arg2] $arg1 $arg2
 } {2 {1.6 3.4} 5}
 test binary-58.15 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40\x05 q2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x9A\x99\x99\x99\x99\x99\xF9\x3F\x33\x33\x33\x33\x33\x33\x0B\x40\x05 q2c* arg1 arg2] $arg1 $arg2
 } {2 {1.6 3.4} 5}
 
 # scan R/r
@@ -2279,43 +2336,43 @@ test binary-59.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
 } -result {not enough arguments for all format specifiers}
 test binary-59.2 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a R* arg1] $arg1
+    list [binary scan \x3F\xCC\xCC\xCD\x40\x59\x99\x9A R* arg1] $arg1
 } {1 {1.600000023841858 3.4000000953674316}}
 test binary-59.3 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 r* arg1] $arg1
+    list [binary scan \xCD\xCC\xCC\x3F\x9A\x99\x59\x40 r* arg1] $arg1
 } {1 {1.600000023841858 3.4000000953674316}}
 test binary-59.4 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a R arg1] $arg1
+    list [binary scan \x3F\xCC\xCC\xCD\x40\x59\x99\x9A R arg1] $arg1
 } {1 1.600000023841858}
 test binary-59.5 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 r arg1] $arg1
+    list [binary scan \xCD\xCC\xCC\x3F\x9A\x99\x59\x40 r arg1] $arg1
 } {1 1.600000023841858}
 test binary-59.6 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xcc\xcc\xcd R1 arg1] $arg1
+    list [binary scan \x3F\xCC\xCC\xCD R1 arg1] $arg1
 } {1 1.600000023841858}
 test binary-59.7 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \xcd\xcc\xcc\x3f r1 arg1] $arg1
+    list [binary scan \xCD\xCC\xCC\x3F r1 arg1] $arg1
 } {1 1.600000023841858}
 test binary-59.8 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xcc\xcc\xcd R0 arg1] $arg1
+    list [binary scan \x3F\xCC\xCC\xCD R0 arg1] $arg1
 } {1 {}}
 test binary-59.9 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \xcd\xcc\xcc\x3f r0 arg1] $arg1
+    list [binary scan \xCD\xCC\xCC\x3F r0 arg1] $arg1
 } {1 {}}
 test binary-59.10 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1
-    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a R2 arg1] $arg1
+    list [binary scan \x3F\xCC\xCC\xCD\x40\x59\x99\x9A R2 arg1] $arg1
 } {1 {1.600000023841858 3.4000000953674316}}
 test binary-59.11 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1
-    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 r2 arg1] $arg1
+    list [binary scan \xCD\xCC\xCC\x3F\x9A\x99\x59\x40 r2 arg1] $arg1
 } {1 {1.600000023841858 3.4000000953674316}}
 test binary-59.12 {Tcl_BinaryObjCmd: scan} {
     unset -nocomplain arg1
@@ -2326,19 +2383,19 @@ test binary-59.13 {Tcl_BinaryObjCmd: scan} -setup {
     unset -nocomplain arg1
 } -returnCodes error -body {
     set arg1 1
-    binary scan \x3f\xcc\xcc\xcd r1 arg1(a)
+    binary scan \x3F\xCC\xCC\xCD r1 arg1(a)
 } -result {can't set "arg1(a)": variable isn't array}
 test binary-59.14 {Tcl_BinaryObjCmd: scan} bigEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a\x05 R2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \x3F\xCC\xCC\xCD\x40\x59\x99\x9A\x05 R2c* arg1 arg2] $arg1 $arg2
 } {2 {1.600000023841858 3.4000000953674316} 5}
 test binary-59.15 {Tcl_BinaryObjCmd: scan} littleEndian {
     unset -nocomplain arg1 arg2
     set arg1 foo
     set arg2 bar
-    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40\x05 r2c* arg1 arg2] $arg1 $arg2
+    list [binary scan \xCD\xCC\xCC\x3F\x9A\x99\x59\x40\x05 r2c* arg1 arg2] $arg1 $arg2
 } {2 {1.600000023841858 3.4000000953674316} 5}
 
 test binary-60.1 {[binary format] with NaN} -body {
@@ -2384,11 +2441,27 @@ test binary-62.4 {infinity} ieeeFloatingPoint {
     format 0x%016lx $w
 } 0xfff0000000000000
 test binary-62.5 {infinity} ieeeFloatingPoint {
-    binary scan [binary format w 0x7ff0000000000000] q d
+    binary scan [binary format w 0x7FF0000000000000] q d
     set d
 } Inf
 test binary-62.6 {infinity} ieeeFloatingPoint {
-    binary scan [binary format w 0xfff0000000000000] q d
+    binary scan [binary format w 0xFFF0000000000000] q d
+    set d
+} -Inf
+test binary-62.7 {infinity} ieeeFloatingPoint {
+    binary scan [binary format r Inf] iu i
+    format 0x%08x $i
+} 0x7f800000
+test binary-62.8 {infinity} ieeeFloatingPoint {
+    binary scan [binary format r -Inf] iu i
+    format 0x%08x $i
+} 0xff800000
+test binary-62.9 {infinity} ieeeFloatingPoint {
+    binary scan [binary format i 0x7F800000] r d
+    set d
+} Inf
+test binary-62.10 {infinity} ieeeFloatingPoint {
+    binary scan [binary format i 0xFF800000] r d
     set d
 } -Inf
 
@@ -2396,19 +2469,19 @@ test binary-62.6 {infinity} ieeeFloatingPoint {
 
 test binary-63.1 {NaN} ieeeFloatingPoint {
     binary scan [binary format q NaN] w w
-    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+    format 0x%016lx [expr {$w & 0xFFF3FFFFFFFFFFFF}]
 } 0x7ff0000000000000
 test binary-63.2 {NaN} ieeeFloatingPoint {
     binary scan [binary format q -NaN] w w
-    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+    format 0x%016lx [expr {$w & 0xFFF3FFFFFFFFFFFF}]
 } 0xfff0000000000000
 test binary-63.3 {NaN} ieeeFloatingPoint {
     binary scan [binary format q NaN(3123456789aBc)] w w
-    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+    format 0x%016lx [expr {$w & 0xFFF3FFFFFFFFFFFF}]
 } 0x7ff3123456789abc
 test binary-63.4 {NaN} ieeeFloatingPoint {
     binary scan [binary format q {NaN( 3123456789aBc)}] w w
-    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+    format 0x%016lx [expr {$w & 0xFFF3FFFFFFFFFFFF}]
 } 0x7ff3123456789abc
 
 # Make sure TclParseNumber() rejects invalid nan-hex formats [Bug 3402540]
@@ -2487,7 +2560,7 @@ test binary-70.4 {binary encode hex} -body {
     binary encode hex [string repeat a 20]
 } -result [string repeat 61 20]
 test binary-70.5 {binary encode hex} -body {
-    binary encode hex \0\1\2\3\4\0\1\2\3\4
+    binary encode hex \x00\x01\x02\x03\x04\x00\x01\x02\x03\x04
 } -result {00010203040001020304}
 
 test binary-71.1 {binary decode hex} -body {
@@ -2504,7 +2577,7 @@ test binary-71.4 {binary decode hex} -body {
 } -result [string repeat a 20]
 test binary-71.5 {binary decode hex} -body {
     binary decode hex 00010203040001020304
-} -result "\0\1\2\3\4\0\1\2\3\4"
+} -result "\x00\x01\x02\x03\x04\x00\x01\x02\x03\x04"
 test binary-71.6 {binary decode hex} -body {
     binary decode hex "61 61"
 } -result {aa}
@@ -2563,19 +2636,19 @@ test binary-72.4 {binary encode base64} -body {
     binary encode base64 [string repeat abc 20]
 } -result [string repeat YWJj 20]
 test binary-72.5 {binary encode base64} -body {
-    binary encode base64 \0\1\2\3\4\0\1\2\3
+    binary encode base64 \x00\x01\x02\x03\x04\x00\x01\x02\x03
 } -result {AAECAwQAAQID}
 test binary-72.6 {binary encode base64} -body {
-    binary encode base64 \0
+    binary encode base64 \x00
 } -result {AA==}
 test binary-72.7 {binary encode base64} -body {
-    binary encode base64 \0\0
+    binary encode base64 \x00\x00
 } -result {AAA=}
 test binary-72.8 {binary encode base64} -body {
-    binary encode base64 \0\0\0
+    binary encode base64 \x00\x00\x00
 } -result {AAAA}
 test binary-72.9 {binary encode base64} -body {
-    binary encode base64 \0\0\0\0
+    binary encode base64 \x00\x00\x00\x00
 } -result {AAAAAA==}
 test binary-72.10 {binary encode base64} -body {
     binary encode base64 -maxlen 0 -wrapchar : abcabcabc
@@ -2635,7 +2708,7 @@ test binary-72.28 {binary encode base64} -body {
     binary encode base64 -maxlen 6 -wrapchar 0123456789 abcabcabc
 } -result {YWJjYW0123456789JjYWJj}
 test binary-72.29 {binary encode base64} {
-    string length [binary encode base64 -maxlen 3 -wrapchar \xca abc]
+    string length [binary encode base64 -maxlen 3 -wrapchar \xCA abc]
 } 5
 
 test binary-73.1 {binary decode base64} -body {
@@ -2652,19 +2725,19 @@ test binary-73.4 {binary decode base64} -body {
 } -result [string repeat abc 20]
 test binary-73.5 {binary decode base64} -body {
     binary decode base64 AAECAwQAAQID
-} -result "\0\1\2\3\4\0\1\2\3"
+} -result "\x00\x01\x02\x03\x04\x00\x01\x02\x03"
 test binary-73.6 {binary decode base64} -body {
     binary decode base64 AA==
-} -result "\0"
+} -result "\x00"
 test binary-73.7 {binary decode base64} -body {
     binary decode base64 AAA=
-} -result "\0\0"
+} -result "\x00\x00"
 test binary-73.8 {binary decode base64} -body {
     binary decode base64 AAAA
-} -result "\0\0\0"
+} -result "\x00\x00\x00"
 test binary-73.9 {binary decode base64} -body {
     binary decode base64 AAAAAA==
-} -result "\0\0\0\0"
+} -result "\x00\x00\x00\x00"
 test binary-73.10 {binary decode base64} -body {
     set s "[string repeat YWJj 10]\n[string repeat YWJj 10]"
     binary decode base64 $s
@@ -2782,22 +2855,22 @@ test binary-74.4 {binary encode uuencode} -body {
     binary encode uuencode [string repeat abc 20]
 } -result "M[string repeat 86)C 15]\n/[string repeat 86)C 5]\n"
 test binary-74.5 {binary encode uuencode} -body {
-    binary encode uuencode \0\1\2\3\4\0\1\2\3
+    binary encode uuencode \x00\x01\x02\x03\x04\x00\x01\x02\x03
 } -result ")``\$\"`P0``0(#\n"
 test binary-74.6 {binary encode uuencode} -body {
     binary encode uuencode \0
 } -result {!``
 }
 test binary-74.7 {binary encode uuencode} -body {
-    binary encode uuencode \0\0
+    binary encode uuencode \x00\x00
 } -result "\"```
 "
 test binary-74.8 {binary encode uuencode} -body {
-    binary encode uuencode \0\0\0
+    binary encode uuencode \x00\x00\x00
 } -result {#````
 }
 test binary-74.9 {binary encode uuencode} -body {
-    binary encode uuencode \0\0\0\0
+    binary encode uuencode \x00\x00\x00\x00
 } -result {$``````
 }
 test binary-74.10 {binary encode uuencode} -returnCodes error -body {
@@ -2833,7 +2906,7 @@ test binary-75.4 {binary decode uuencode} -body {
 } -result [string repeat abc 20]
 test binary-75.5 {binary decode uuencode} -body {
     binary decode uuencode ")``\$\"`P0``0(#"
-} -result "\0\1\2\3\4\0\1\2\3"
+} -result "\x00\x01\x02\x03\x04\x00\x01\x02\x03"
 test binary-75.6 {binary decode uuencode} -body {
     string length [binary decode uuencode "`\n"]
 } -result 0
@@ -2929,7 +3002,7 @@ test binary-78.1 {unicode (out of BMP) to byte-array conversion, bug-[bd94500678
     binary encode hex \U0001f415
     binary scan \U0001f415 a* v; set v
     set str {}
-} -result {}
+} -result * -match glob -returnCodes error
 
 
 testConstraint testsetbytearraylength \
@@ -2938,20 +3011,32 @@ testConstraint testsetbytearraylength \
 test binary-79.1 {Tcl_SetByteArrayLength} testsetbytearraylength {
     testsetbytearraylength [string cat A B C] 1
 } A
-test binary-79.2 {Tcl_SetByteArrayLength} testsetbytearraylength {
-    testsetbytearraylength [string cat \u0141 B C] 1
+test binary-79.2 {Tcl_SetByteArrayLength} -body {
+    testsetbytearraylength [string cat Ł B C] 1
+} -constraints testsetbytearraylength -returnCodes error -match glob -result *
+test binary-79.3 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B \u0141] 0
+} {}
+test binary-79.4 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B \u0141] 1
 } A
+test binary-79.5 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B \u0141] 2
+} AB
+test binary-79.6 {Tcl_SetByteArrayLength} -body {
+    testsetbytearraylength [string cat A B \u0141] 3
+} -constraints testsetbytearraylength -returnCodes error -match glob -result *
 
-test binary-80.1 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
-    testbytestring "\u4E4E"
-} -result "expected byte sequence but character 0 was '\u4E4E' (U+004E4E)"
-test binary-80.2 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.1 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+    testbytestring "乎"
+} -result "expected byte sequence but character 0 was '乎' (U+004E4E)"
+test binary-80.2 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\x00\xA0\xA0\xA0\xE4\xB9\x8E"]
-} -result "expected byte sequence but character 4 was '\u4E4E' (U+004E4E)"
-test binary-80.3 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+} -result "expected byte sequence but character 4 was '乎' (U+004E4E)"
+test binary-80.3 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xE4\xB9\x8E"]
-} -result "expected byte sequence but character 4 was '\u4E4E' (U+004E4E)"
-test binary-80.4 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+} -result "expected byte sequence but character 4 was '乎' (U+004E4E)"
+test binary-80.4 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xF0\x9F\x98\x81"]
 } -result "expected byte sequence but character 4 was '\U01F601' (U+01F601)"
 

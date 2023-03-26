@@ -50,8 +50,8 @@ ORed combination of flag bits that specify additional options.
 \fBTCL_EVAL_GLOBAL\fR and \fBTCL_EVAL_DIRECT\fR are currently supported.
 .AP "const char" *fileName in
 Name of a file containing a Tcl script.
-.AP int objc in
-The number of values in the array pointed to by \fIobjPtr\fR;
+.AP size_t objc in
+The number of values in the array pointed to by \fIobjv\fR;
 this is also the number of words in the command.
 .AP Tcl_Obj **objv in
 Points to an array of pointers to values; each value holds the
@@ -62,7 +62,7 @@ null terminating character.  If \-1, then all characters up to the
 first null byte are used.
 .AP "const char" *script in
 Points to first byte of script to execute (null-terminated and UTF-8).
-.AP char *part in
+.AP "const char" *part in
 String forming part of a Tcl script.
 .BE
 
@@ -93,13 +93,11 @@ its contents as a Tcl script.  It returns the same information as
 If the file could not be read then a Tcl error is returned to describe
 why the file could not be read.
 The eofchar for files is
-.QW \e32
+.QW \ex1A
 (^Z) for all platforms. If you require a
 .QW ^Z
 in code for string comparison, you can use
-.QW \e032
-or
-.QW \eu001a ,
+.QW \ex1A ,
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 .PP
@@ -190,6 +188,20 @@ the \fBreturn\fR, \fBbreak\fR, or \fBcontinue\fR command was
 invoked in an inappropriate place.
 This means that top-level applications should never see a return code
 from \fBTcl_EvalObjEx\fR other than \fBTCL_OK\fR or \fBTCL_ERROR\fR.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_EvalObjEx\fR and \fBTcl_GlobalEvalObj\fR both increment and
+decrement the reference count of their \fIobjPtr\fR argument; you must
+not pass them any value with a reference count of zero. They also
+manipulate the interpreter result; you must not count on the
+interpreter result to hold the reference count of any value over
+these calls.
+.PP
+\fBTcl_EvalObjv\fR may increment and decrement the reference count of
+any value passed via its \fIobjv\fR argument; you must not pass any
+value with a reference count of zero. This function also manipulates
+the interpreter result; you must not count on the interpreter result
+to hold the reference count of any value over this call.
 
 .SH KEYWORDS
 execute, file, global, result, script, value

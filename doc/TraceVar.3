@@ -126,8 +126,8 @@ It should have arguments and result that match the type
 typedef char *\fBTcl_VarTraceProc\fR(
         void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
-        char *\fIname1\fR,
-        char *\fIname2\fR,
+        const char *\fIname1\fR,
+        const char *\fIname2\fR,
         int \fIflags\fR);
 .CE
 .PP
@@ -137,9 +137,11 @@ trace was created.
 \fIclientData\fR typically points to an application-specific
 data structure that describes what to do when \fIproc\fR
 is invoked.
-\fIName1\fR and \fIname2\fR give the name of the traced variable
-in the normal two-part form (see the description of \fBTcl_TraceVar2\fR
-below for details).
+\fIName1\fR and \fIname2\fR give the name of the variable that
+triggered the callback in the normal two-part form (see the description
+of \fBTcl_TraceVar2\fR below for details).  In case \fIname1\fR is an
+alias to an array element (created through facilities such as \fBupvar\fR),
+\fIname2\fR holds the index of the array element, rather than NULL.
 \fIFlags\fR is an OR-ed combination of bits providing several
 pieces of information.
 One of the bits \fBTCL_TRACE_READS\fR, \fBTCL_TRACE_WRITES\fR,
@@ -360,6 +362,14 @@ Traces on a variable are always removed whenever the variable
 is deleted;  the only time \fBTCL_TRACE_DESTROYED\fR is not set is for
 a whole-array trace invoked when only a single element of an
 array is unset.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+When a \fIproc\fR callback is invoked, and that callback was installed with
+the \fBTCL_TRACE_RESULT_OBJECT\fR flag, the result of the callback is a
+Tcl_Obj reference when there is an error. The result will have its reference
+count decremented once when no longer needed, or may have additional
+references made to it (e.g., by setting it as the interpreter result with
+\fBTcl_SetObjResult\fR).
 .SH BUGS
 .PP
 Array traces are not yet integrated with the Tcl \fBinfo exists\fR command,

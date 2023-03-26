@@ -1,6 +1,6 @@
 '\"
-'\" Copyright (c) 1997 by Sun Microsystems, Inc.
-'\" Copyright (c) 2008 by Donal K. Fellows
+'\" Copyright (c) 1997 Sun Microsystems, Inc.
+'\" Copyright (c) 2008 Donal K. Fellows
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -44,8 +44,9 @@ the range \eu0000\-\eu00FF.
 When encoding binary data as a readable string, the starting binary data is
 passed to the \fBbinary encode\fR command, together with the name of the
 encoding to use and any encoding-specific options desired. Data which has been
-encoded can be converted back to binary form using \fBbinary decode\fR. The
-following formats and options are supported.
+encoded can be converted back to binary form using \fBbinary decode\fR.
+The \fBbinary encode\fR command raises an error if the \fIdata\fR argument
+is not binary data. The following formats and options are supported.
 .TP
 \fBbase64\fR
 .
@@ -81,7 +82,9 @@ RFC 2045 calls for base64 decoders to be non-strict.
 \fBhex\fR
 .
 The \fBhex\fR binary encoding converts each byte to a pair of hexadecimal
-digits in big-endian form.
+digits that represent the byte value as a hexadecimal integer.
+When encoding, lower characters are used.
+When decoding, upper and lower characters are accepted.
 .RS
 .PP
 No options are supported during encoding. During decoding, the following
@@ -607,9 +610,9 @@ will return
 .PP
 The \fBbinary scan\fR command parses fields from a binary string,
 returning the number of conversions performed.  \fIString\fR gives the
-input bytes to be parsed (one byte per character, and characters not
-representable as a byte have their high bits chopped)
-and \fIformatString\fR indicates how to parse it.
+input bytes to be parsed and \fIformatString\fR indicates how to parse it.
+An error is raised if \fIstring\fR is anything other than a valid binary
+data value.
 Each \fIvarName\fR gives the name of a variable; when a field is
 scanned from \fIstring\fR the result is assigned to the corresponding
 variable.
@@ -761,6 +764,15 @@ high-to-low order within each byte.  For example,
 .PP
 will return \fB2\fR with \fB01110\fR stored in \fIvar1\fR and
 \fB1000011100000101\fR stored in \fIvar2\fR.
+.RE
+.IP \fBC\fR 5
+This form is similar to \fBA\fR, except that it scans the data from start
+and terminates at the first null (C string semantics). For example,
+.RS
+.CS
+\fBbinary scan\fR "abc\e000efghi" C* var1
+.CE
+will return \fB1\fR with \fBabc\fR stored in \fIvar1\fR.
 .RE
 .IP \fBH\fR 5
 The data is turned into a string of \fIcount\fR hexadecimal digits in

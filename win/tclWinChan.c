@@ -4,7 +4,7 @@
  *	Channel drivers for Windows channels based on files, command pipes and
  *	TCP sockets.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -72,27 +72,27 @@ typedef struct {
  * Static routines for this file:
  */
 
-static int		FileBlockProc(ClientData instanceData, int mode);
-static void		FileChannelExitHandler(ClientData clientData);
-static void		FileCheckProc(ClientData clientData, int flags);
-static int		FileCloseProc(ClientData instanceData,
+static int		FileBlockProc(void *instanceData, int mode);
+static void		FileChannelExitHandler(void *clientData);
+static void		FileCheckProc(void *clientData, int flags);
+static int		FileCloseProc(void *instanceData,
 			    Tcl_Interp *interp, int flags);
 static int		FileEventProc(Tcl_Event *evPtr, int flags);
-static int		FileGetHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
+static int		FileGetHandleProc(void *instanceData,
+			    int direction, void **handlePtr);
 static ThreadSpecificData *FileInit(void);
-static int		FileInputProc(ClientData instanceData, char *buf,
+static int		FileInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCode);
-static int		FileOutputProc(ClientData instanceData,
+static int		FileOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCode);
-static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCode);
-static void		FileSetupProc(ClientData clientData, int flags);
-static void		FileWatchProc(ClientData instanceData, int mask);
-static void		FileThreadActionProc(ClientData instanceData,
+static long long	FileWideSeekProc(void *instanceData,
+			    long long offset, int mode, int *errorCode);
+static void		FileSetupProc(void *clientData, int flags);
+static void		FileWatchProc(void *instanceData, int mask);
+static void		FileThreadActionProc(void *instanceData,
 			    int action);
-static int		FileTruncateProc(ClientData instanceData,
-			    Tcl_WideInt length);
+static int		FileTruncateProc(void *instanceData,
+			    long long length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const WCHAR *nativeName);
 
@@ -178,7 +178,7 @@ FileInit(void)
 
 static void
 FileChannelExitHandler(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     Tcl_DeleteEventSource(FileSetupProc, FileCheckProc, NULL);
 }
@@ -202,7 +202,7 @@ FileChannelExitHandler(
 
 void
 FileSetupProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileInfo *infoPtr;
@@ -245,7 +245,7 @@ FileSetupProc(
 
 static void
 FileCheckProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileEvent *evPtr;
@@ -344,7 +344,7 @@ FileEventProc(
 
 static int
 FileBlockProc(
-    ClientData instanceData,	/* Instance data for channel. */
+    void *instanceData,	/* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -383,7 +383,7 @@ FileBlockProc(
 
 static int
 FileCloseProc(
-    ClientData instanceData,	/* Pointer to FileInfo structure. */
+    void *instanceData,	/* Pointer to FileInfo structure. */
     TCL_UNUSED(Tcl_Interp *),
     int flags)
 {
@@ -413,7 +413,7 @@ FileCloseProc(
 	    &&  (GetStdHandle(STD_OUTPUT_HANDLE) != fileInfoPtr->handle)
 	    &&  (GetStdHandle(STD_ERROR_HANDLE) != fileInfoPtr->handle))) {
 	if (CloseHandle(fileInfoPtr->handle) == FALSE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    errorCode = errno;
 	}
     }
@@ -459,10 +459,10 @@ FileCloseProc(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 FileWideSeekProc(
-    ClientData instanceData,	/* File state. */
-    Tcl_WideInt offset,		/* Offset to seek to. */
+    void *instanceData,	/* File state. */
+    long long offset,		/* Offset to seek to. */
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
 {
@@ -486,13 +486,13 @@ FileWideSeekProc(
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
+	    Tcl_WinConvertError(winError);
 	    *errorCodePtr = errno;
 	    return -1;
 	}
     }
-    return (((Tcl_WideInt)((unsigned)newPos))
-	    | ((Tcl_WideInt)newPosHigh << 32));
+    return (((long long)((unsigned)newPos))
+	    | ((long long)newPosHigh << 32));
 }
 
 /*
@@ -513,8 +513,8 @@ FileWideSeekProc(
 
 static int
 FileTruncateProc(
-    ClientData instanceData,	/* File state. */
-    Tcl_WideInt length)		/* Length to truncate at. */
+    void *instanceData,	/* File state. */
+    long long length)		/* Length to truncate at. */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;
@@ -529,7 +529,7 @@ FileTruncateProc(
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
+	    Tcl_WinConvertError(winError);
 	    return errno;
 	}
     }
@@ -545,7 +545,7 @@ FileTruncateProc(
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
+	    Tcl_WinConvertError(winError);
 	    return errno;
 	}
     }
@@ -556,7 +556,7 @@ FileTruncateProc(
      */
 
     if (!SetEndOfFile(infoPtr->handle)) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return errno;
     }
 
@@ -589,7 +589,7 @@ FileTruncateProc(
 
 static int
 FileInputProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     char *buf,			/* Where to store data read. */
     int bufSize,		/* Num bytes available in buffer. */
     int *errorCode)		/* Where to store error code. */
@@ -613,10 +613,10 @@ FileInputProc(
 
     if (ReadFile(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize, &bytesRead,
 	    (LPOVERLAPPED) NULL) != FALSE) {
-	return bytesRead;
+	return (int)bytesRead;
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     *errorCode = errno;
     if (errno == EPIPE) {
 	return 0;
@@ -644,7 +644,7 @@ FileInputProc(
 
 static int
 FileOutputProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -665,12 +665,12 @@ FileOutputProc(
 
     if (WriteFile(infoPtr->handle, (LPVOID) buf, (DWORD) toWrite,
 	    &bytesWritten, (LPOVERLAPPED) NULL) == FALSE) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	*errorCode = errno;
 	return -1;
     }
     infoPtr->dirty = 1;
-    return bytesWritten;
+    return (int)bytesWritten;
 }
 
 /*
@@ -691,7 +691,7 @@ FileOutputProc(
 
 static void
 FileWatchProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     int mask)			/* What events to watch for; OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
@@ -730,9 +730,9 @@ FileWatchProc(
 
 static int
 FileGetHandleProc(
-    ClientData instanceData,	/* The file state. */
+    void *instanceData,	/* The file state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    ClientData *handlePtr)	/* Where to store the handle.  */
+    void **handlePtr)	/* Where to store the handle.  */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
 
@@ -740,7 +740,7 @@ FileGetHandleProc(
 	return TCL_ERROR;
     }
 
-    *handlePtr = (ClientData) infoPtr->handle;
+    *handlePtr = (void *) infoPtr->handle;
     return TCL_OK;
 }
 
@@ -840,7 +840,7 @@ TclpOpenFileChannel(
     if (NativeIsComPort(nativeName)) {
 	handle = TclWinSerialOpen(INVALID_HANDLE_VALUE, nativeName, accessMode);
 	if (handle == INVALID_HANDLE_VALUE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"couldn't open serial \"%s\": %s",
@@ -897,7 +897,7 @@ TclpOpenFileChannel(
 	    err = TEST_FLAG(mode, O_CREAT) ? ERROR_FILE_EXISTS
 		    : ERROR_FILE_NOT_FOUND;
 	}
-	TclWinConvertError(err);
+	Tcl_WinConvertError(err);
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't open \"%s\": %s",
@@ -921,7 +921,7 @@ TclpOpenFileChannel(
 
 	handle = TclWinSerialOpen(handle, nativeName, accessMode);
 	if (handle == INVALID_HANDLE_VALUE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"couldn't reopen serial \"%s\": %s",
@@ -989,7 +989,7 @@ TclpOpenFileChannel(
 
 Tcl_Channel
 Tcl_MakeFileChannel(
-    ClientData rawHandle,	/* OS level handle */
+    void *rawHandle,	/* OS level handle */
     int mode)			/* ORed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
@@ -1238,7 +1238,6 @@ TclpGetDefaultStdChannel(
      */
 
     if (Tcl_SetChannelOption(NULL,channel,"-translation","auto")!=TCL_OK ||
-	    Tcl_SetChannelOption(NULL,channel,"-eofchar","\032 {}")!=TCL_OK ||
 	    Tcl_SetChannelOption(NULL,channel,"-buffering",bufMode)!=TCL_OK) {
 	Tcl_CloseEx(NULL, channel, 0);
 	return (Tcl_Channel) NULL;
@@ -1315,7 +1314,6 @@ TclWinOpenFileChannel(
      */
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
 
     return infoPtr->channel;
 }
@@ -1377,7 +1375,7 @@ TclWinFlushDirtyChannels(void)
 
 static void
 FileThreadActionProc(
-    ClientData instanceData,
+    void *instanceData,
     int action)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -1485,7 +1483,7 @@ NativeIsComPort(
     const WCHAR *nativePath)	/* Path of file to access, native encoding. */
 {
     const WCHAR *p = (const WCHAR *) nativePath;
-    int i, len = wcslen(p);
+    size_t i, len = wcslen(p);
 
     /*
      * 1. Look for com[1-9]:?

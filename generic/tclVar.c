@@ -7,11 +7,11 @@
  *	The implementation of arrays is modelled after an initial
  *	implementation by Mark Diekhans and Karl Lehenbauer.
  *
- * Copyright (c) 1987-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
- * Copyright (c) 2007 Miguel Sofer
+ * Copyright © 1987-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
+ * Copyright © 2001 Kevin B. Kenny. All rights reserved.
+ * Copyright © 2007 Miguel Sofer
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -108,9 +108,6 @@ VarHashNextVar(
     return VarHashGetValue(hPtr);
 }
 
-#define VarHashGetKey(varPtr) \
-    (((VarInHash *)(varPtr))->entry.key.objPtr)
-
 #define VarHashDeleteTable(tablePtr) \
     Tcl_DeleteHashTable(&(tablePtr)->table)
 
@@ -119,17 +116,17 @@ VarHashNextVar(
  * access is denied.
  */
 
-static const char *noSuchVar =		"no such variable";
-static const char *isArray =		"variable is array";
-static const char *needArray =		"variable isn't array";
-static const char *noSuchElement =	"no such element in array";
-static const char *danglingElement =
+static const char NOSUCHVAR[] =		"no such variable";
+static const char ISARRAY[] =		"variable is array";
+static const char NEEDARRAY[] =		"variable isn't array";
+static const char NOSUCHELEMENT[] =	"no such element in array";
+static const char DANGLINGELEMENT[] =
 	"upvar refers to element in deleted array";
-static const char *danglingVar =
+static const char DANGLINGVAR[] =
 	"upvar refers to variable in deleted namespace";
-static const char *badNamespace =	"parent namespace doesn't exist";
-static const char *missingName =	"missing variable name";
-static const char *isArrayElement =
+static const char BADNAMESPACE[] =	"parent namespace doesn't exist";
+static const char MISSINGNAME[] =	"missing variable name";
+static const char ISARRAYELEMENT[] =
 	"name refers to an element in an array";
 
 /*
@@ -200,7 +197,7 @@ static Tcl_Var		ObjFindNamespaceVar(Tcl_Interp *interp,
 			    int flags);
 static int		ObjMakeUpvar(Tcl_Interp *interp,
 			    CallFrame *framePtr, Tcl_Obj *otherP1Ptr,
-			    const char *otherP2, const int otherFlags,
+			    const char *otherP2, int otherFlags,
 			    Tcl_Obj *myNamePtr, int myFlags, int index);
 static ArraySearch *	ParseSearchId(Tcl_Interp *interp, const Var *varPtr,
 			    Tcl_Obj *varNamePtr, Tcl_Obj *handleObj);
@@ -212,9 +209,7 @@ static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
  * TIP #508: [array default]
  */
 
-static int		ArrayDefaultCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ArrayDefaultCmd;
 static void		DeleteArrayVar(Var *arrayPtr);
 static void		SetArrayDefault(Var *arrayPtr, Tcl_Obj *defaultObj);
 
@@ -224,7 +219,7 @@ static void		SetArrayDefault(Var *arrayPtr, Tcl_Obj *defaultObj);
  */
 
 MODULE_SCOPE Var *	TclLookupSimpleVar(Tcl_Interp *interp,
-			    Tcl_Obj *varNamePtr, int flags, const int create,
+			    Tcl_Obj *varNamePtr, int flags, int create,
 			    const char **errMsgPtr, int *indexPtr);
 
 static Tcl_DupInternalRepProc	DupLocalVarName;
@@ -250,48 +245,48 @@ static Tcl_DupInternalRepProc	DupParsedVarName;
 
 static const Tcl_ObjType localVarNameType = {
     "localVarName",
-    FreeLocalVarName, DupLocalVarName, NULL, NULL
+    FreeLocalVarName, DupLocalVarName, NULL, NULL, TCL_OBJTYPE_V0
 };
 
-#define LocalSetIntRep(objPtr, index, namePtr)				\
+#define LocalSetInternalRep(objPtr, index, namePtr)				\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	Tcl_Obj *ptr = (namePtr);					\
 	if (ptr) {Tcl_IncrRefCount(ptr);}				\
 	ir.twoPtrValue.ptr1 = ptr;					\
 	ir.twoPtrValue.ptr2 = INT2PTR(index);				\
-	Tcl_StoreIntRep((objPtr), &localVarNameType, &ir);		\
+	Tcl_StoreInternalRep((objPtr), &localVarNameType, &ir);		\
     } while (0)
 
-#define LocalGetIntRep(objPtr, index, name)				\
+#define LocalGetInternalRep(objPtr, index, name)				\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), &localVarNameType);		\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), &localVarNameType);		\
 	(name) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr1 : NULL;		\
-	(index) = irPtr ? PTR2INT(irPtr->twoPtrValue.ptr2) : -1;	\
+	(index) = irPtr ? PTR2UINT(irPtr->twoPtrValue.ptr2) : TCL_INDEX_NONE;	\
     } while (0)
 
 static const Tcl_ObjType parsedVarNameType = {
     "parsedVarName",
-    FreeParsedVarName, DupParsedVarName, NULL, NULL
+    FreeParsedVarName, DupParsedVarName, NULL, NULL, TCL_OBJTYPE_V0
 };
 
-#define ParsedSetIntRep(objPtr, arrayPtr, elem)				\
+#define ParsedSetInternalRep(objPtr, arrayPtr, elem)				\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	Tcl_Obj *ptr1 = (arrayPtr);					\
 	Tcl_Obj *ptr2 = (elem);						\
 	if (ptr1) {Tcl_IncrRefCount(ptr1);}				\
 	if (ptr2) {Tcl_IncrRefCount(ptr2);}				\
 	ir.twoPtrValue.ptr1 = ptr1;					\
 	ir.twoPtrValue.ptr2 = ptr2;					\
-	Tcl_StoreIntRep((objPtr), &parsedVarNameType, &ir);		\
+	Tcl_StoreInternalRep((objPtr), &parsedVarNameType, &ir);		\
     } while (0)
 
-#define ParsedGetIntRep(objPtr, parsed, array, elem)			\
+#define ParsedGetInternalRep(objPtr, parsed, array, elem)			\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), &parsedVarNameType);		\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), &parsedVarNameType);		\
 	(parsed) = (irPtr != NULL);					\
 	(array) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr1 : NULL;		\
 	(elem) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;		\
@@ -306,7 +301,7 @@ TclVarHashCreateVar(
     Tcl_Obj *keyPtr;
     Var *varPtr;
 
-    keyPtr = Tcl_NewStringObj(key, -1);
+    keyPtr = Tcl_NewStringObj(key, TCL_INDEX_NONE);
     Tcl_IncrRefCount(keyPtr);
     varPtr = VarHashCreateVar(tablePtr, keyPtr, newPtr);
     Tcl_DecrRefCount(keyPtr);
@@ -474,7 +469,7 @@ TclLookupVar(
 				 * is set to NULL. */
 {
     Var *varPtr;
-    Tcl_Obj *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
 
     if (createPart1) {
 	Tcl_IncrRefCount(part1Ptr);
@@ -541,10 +536,10 @@ TclObjLookupVar(
     const char *msg,		/* Verb to use in error messages, e.g. "read"
 				 * or "set". Only needed if TCL_LEAVE_ERR_MSG
 				 * is set in flags. */
-    const int createPart1,	/* If 1, create hash table entry for part 1 of
+    int createPart1,	/* If 1, create hash table entry for part 1 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
-    const int createPart2,	/* If 1, create hash table entry for part 2 of
+    int createPart2,	/* If 1, create hash table entry for part 2 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
     Var **arrayPtrPtr)		/* If the name refers to an element of an
@@ -556,7 +551,7 @@ TclObjLookupVar(
     Var *resPtr;
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
 	if (createPart2) {
 	    Tcl_IncrRefCount(part2Ptr);
 	}
@@ -591,10 +586,10 @@ TclObjLookupVarEx(
     const char *msg,		/* Verb to use in error messages, e.g. "read"
 				 * or "set". Only needed if TCL_LEAVE_ERR_MSG
 				 * is set in flags. */
-    const int createPart1,	/* If 1, create hash table entry for part 1 of
+    int createPart1,	/* If 1, create hash table entry for part 1 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
-    const int createPart2,	/* If 1, create hash table entry for part 2 of
+    int createPart2,	/* If 1, create hash table entry for part 2 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
     Var **arrayPtrPtr)		/* If the name refers to an element of an
@@ -609,14 +604,14 @@ TclObjLookupVarEx(
     const char *errMsg = NULL;
     int index, parsed = 0;
 
-    int localIndex;
+    size_t localIndex;
     Tcl_Obj *namePtr, *arrayPtr, *elem;
 
     *arrayPtrPtr = NULL;
 
   restart:
-    LocalGetIntRep(part1Ptr, localIndex, namePtr);
-    if (localIndex >= 0) {
+    LocalGetInternalRep(part1Ptr, localIndex, namePtr);
+    if (localIndex != TCL_INDEX_NONE) {
 	if (HasLocalVars(varFramePtr)
 		&& !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 		&& (localIndex < varFramePtr->numCompiledLocals)) {
@@ -639,7 +634,7 @@ TclObjLookupVarEx(
      * If part1Ptr is a parsedVarNameType, retrieve the pre-parsed parts.
      */
 
-    ParsedGetIntRep(part1Ptr, parsed, arrayPtr, elem);
+    ParsedGetInternalRep(part1Ptr, parsed, arrayPtr, elem);
     if (parsed && arrayPtr) {
 	    if (part2Ptr != NULL) {
 		/*
@@ -649,7 +644,7 @@ TclObjLookupVarEx(
 
 		if (flags & TCL_LEAVE_ERR_MSG) {
 		    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
-			    noSuchVar, -1);
+			    NOSUCHVAR, -1);
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "VARNAME", NULL);
 		}
 		return NULL;
@@ -665,7 +660,7 @@ TclObjLookupVarEx(
 	 */
 
 	size_t len;
-	const char *part1 = TclGetStringFromObj(part1Ptr, &len);
+	const char *part1 = Tcl_GetStringFromObj(part1Ptr, &len);
 
 	if ((len > 1) && (part1[len - 1] == ')')) {
 	    const char *part2 = strchr(part1, '(');
@@ -674,7 +669,7 @@ TclObjLookupVarEx(
 		if (part2Ptr != NULL) {
 		    if (flags & TCL_LEAVE_ERR_MSG) {
 			TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
-				needArray, -1);
+				NEEDARRAY, -1);
 			Tcl_SetErrorCode(interp, "TCL", "VALUE", "VARNAME",
 				NULL);
 		    }
@@ -685,7 +680,7 @@ TclObjLookupVarEx(
 		part2Ptr = Tcl_NewStringObj(part2 + 1,
 			len - (part2 - part1) - 2);
 
-		ParsedSetIntRep(part1Ptr, arrayPtr, part2Ptr);
+		ParsedSetInternalRep(part1Ptr, arrayPtr, part2Ptr);
 
 		part1Ptr = arrayPtr;
 	    }
@@ -721,16 +716,16 @@ TclObjLookupVarEx(
 	Tcl_Obj *cachedNamePtr = localName(varFramePtr, index);
 
 	if (part1Ptr == cachedNamePtr) {
-	    LocalSetIntRep(part1Ptr, index, NULL);
+	    LocalSetInternalRep(part1Ptr, index, NULL);
 	} else {
 	    /*
 	     * [80304238ac] Trickiness here.  We will store and incr the
 	     * refcount on cachedNamePtr.  Trouble is that it's possible
-	     * (see test var-22.1) for cachedNamePtr to have an intrep
+	     * (see test var-22.1) for cachedNamePtr to have an internalrep
 	     * that contains a stored and refcounted part1Ptr.  This
 	     * would be a reference cycle which leads to a memory leak.
 	     *
-	     * The solution here is to wipe away all intrep(s) in
+	     * The solution here is to wipe away all internalrep(s) in
 	     * cachedNamePtr and leave it as string only.  This is
 	     * radical and destructive, so a better idea would be welcome.
 	     */
@@ -739,24 +734,24 @@ TclObjLookupVarEx(
 	     * Firstly set cached local var reference (avoid free before set,
 	     * see [45b9faf103f2])
 	     */
-	    LocalSetIntRep(part1Ptr, index, cachedNamePtr);
+	    LocalSetInternalRep(part1Ptr, index, cachedNamePtr);
 
 	    /* Then wipe it */
-	    TclFreeIntRep(cachedNamePtr);
+	    TclFreeInternalRep(cachedNamePtr);
 
 	    /*
 	     * Now go ahead and convert it the the "localVarName" type,
 	     * since we suspect at least some use of the value as a
 	     * varname and we want to resolve it quickly.
 	     */
-	    LocalSetIntRep(cachedNamePtr, index, NULL);
+	    LocalSetInternalRep(cachedNamePtr, index, NULL);
 	}
     } else {
 	/*
 	 * At least mark part1Ptr as already parsed.
 	 */
 
-	ParsedSetIntRep(part1Ptr, NULL, NULL);
+	ParsedSetInternalRep(part1Ptr, NULL, NULL);
     }
 
   donePart1:
@@ -827,7 +822,7 @@ TclLookupSimpleVar(
     int flags,			/* Only TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_AVOID_RESOLVERS and TCL_LEAVE_ERR_MSG
 				 * bits matter. */
-    const int create,		/* If 1, create hash table entry for varname,
+    int create,		/* If 1, create hash table entry for varname,
 				 * if it doesn't already exist. If 0, return
 				 * error if it doesn't exist. */
     const char **errMsgPtr,
@@ -848,7 +843,7 @@ TclLookupSimpleVar(
     ResolverScheme *resPtr;
     int isNew, i, result;
     size_t varLen;
-    const char *varName = TclGetStringFromObj(varNamePtr, &varLen);
+    const char *varName = Tcl_GetStringFromObj(varNamePtr, &varLen);
 
     varPtr = NULL;
     varNsPtr = NULL;		/* Set non-NULL if a nonlocal variable. */
@@ -936,7 +931,7 @@ TclLookupSimpleVar(
 	    Tcl_Obj *tailPtr;
 
 	    if (!create) {	/* Var wasn't found and not to create it. */
-		*errMsgPtr = noSuchVar;
+		*errMsgPtr = NOSUCHVAR;
 		return NULL;
 	    }
 
@@ -947,14 +942,14 @@ TclLookupSimpleVar(
 	    TclGetNamespaceForQualName(interp, varName, cxtNsPtr, flags,
 		    &varNsPtr, &dummy1Ptr, &dummy2Ptr, &tail);
 	    if (varNsPtr == NULL) {
-		*errMsgPtr = badNamespace;
+		*errMsgPtr = BADNAMESPACE;
 		return NULL;
 	    } else if (tail == NULL) {
-		*errMsgPtr = missingName;
+		*errMsgPtr = MISSINGNAME;
 		return NULL;
 	    }
 	    if (tail != varName) {
-		tailPtr = Tcl_NewStringObj(tail, -1);
+		tailPtr = Tcl_NewStringObj(tail, TCL_INDEX_NONE);
 	    } else {
 		tailPtr = varNamePtr;
 	    }
@@ -983,7 +978,7 @@ TclLookupSimpleVar(
 		Tcl_Obj *objPtr = *objPtrPtr;
 
 		if (objPtr) {
-		    localNameStr = TclGetStringFromObj(objPtr, &localLen);
+		    localNameStr = Tcl_GetStringFromObj(objPtr, &localLen);
 
 		    if ((varLen == localLen) && (varName[0] == localNameStr[0])
 			&& !memcmp(varName, localNameStr, varLen)) {
@@ -998,6 +993,7 @@ TclLookupSimpleVar(
 	    if (tablePtr == NULL) {
 		tablePtr = (TclVarHashTable *)Tcl_Alloc(sizeof(TclVarHashTable));
 		TclInitVarHashTable(tablePtr, NULL);
+		tablePtr->arrayPtr = varPtr;
 		varFramePtr->varTablePtr = tablePtr;
 	    }
 	    varPtr = VarHashCreateVar(tablePtr, varNamePtr, &isNew);
@@ -1007,7 +1003,7 @@ TclLookupSimpleVar(
 		varPtr = VarHashFindVar(tablePtr, varNamePtr);
 	    }
 	    if (varPtr == NULL) {
-		*errMsgPtr = noSuchVar;
+		*errMsgPtr = NOSUCHVAR;
 	    }
 	}
     }
@@ -1059,15 +1055,15 @@ TclLookupArrayElement(
     Tcl_Obj *arrayNamePtr,	/* This is the name of the array, or NULL if
 				 * index>= 0. */
     Tcl_Obj *elNamePtr,		/* Name of element within array. */
-    const int flags,		/* Only TCL_LEAVE_ERR_MSG bit matters. */
+    int flags,		/* Only TCL_LEAVE_ERR_MSG bit matters. */
     const char *msg,		/* Verb to use in error messages, e.g. "read"
 				 * or "set". Only needed if TCL_LEAVE_ERR_MSG
 				 * is set in flags. */
-    const int createArray,	/* If 1, transform arrayName to be an array if
+    int createArray,	/* If 1, transform arrayName to be an array if
 				 * it isn't one yet and the transformation is
 				 * possible. If 0, return error if it isn't
 				 * already an array. */
-    const int createElem,	/* If 1, create hash table entry for the
+    int createElem,	/* If 1, create hash table entry for the
 				 * element, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
     Var *arrayPtr,		/* Pointer to the array's Var structure. */
@@ -1085,7 +1081,7 @@ TclLookupArrayElement(
 	if (!createArray) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg,
-			noSuchVar, index);
+			NOSUCHVAR, index);
 		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
 			arrayNamePtr?TclGetString(arrayNamePtr):NULL, NULL);
 	    }
@@ -1100,7 +1096,7 @@ TclLookupArrayElement(
 	if (TclIsVarDeadHash(arrayPtr)) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg,
-			danglingVar, index);
+			DANGLINGVAR, index);
 		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
 			arrayNamePtr?TclGetString(arrayNamePtr):NULL, NULL);
 	    }
@@ -1110,7 +1106,7 @@ TclLookupArrayElement(
 	TclInitArrayVar(arrayPtr);
     } else if (!TclIsVarArray(arrayPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
-	    TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg, needArray,
+	    TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg, NEEDARRAY,
 		    index);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
 		    arrayNamePtr?TclGetString(arrayNamePtr):NULL, NULL);
@@ -1132,7 +1128,7 @@ TclLookupArrayElement(
 	if (varPtr == NULL) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg,
-			noSuchElement, index);
+			NOSUCHELEMENT, index);
 		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ELEMENT",
 			TclGetString(elNamePtr), NULL);
 	    }
@@ -1177,10 +1173,10 @@ Tcl_GetVar2(
 				 * bits. */
 {
     Tcl_Obj *resultPtr;
-    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -1230,10 +1226,10 @@ Tcl_GetVar2Ex(
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
-    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -1335,7 +1331,7 @@ TclPtrGetVar(
 				 * the name of a variable. */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    const int flags)		/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    int flags)		/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
     if (varPtr == NULL) {
@@ -1381,7 +1377,7 @@ TclPtrGetVarIdx(
 				 * the name of a variable. */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    const int flags,		/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    int flags,		/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
     int index)			/* Index into the local variable table of the
 				 * variable, or -1. Only used when part1Ptr is
@@ -1389,6 +1385,9 @@ TclPtrGetVarIdx(
 {
     Interp *iPtr = (Interp *) interp;
     const char *msg;
+    Var *initialArrayPtr = arrayPtr;
+
+    TclVarFindHiddenArray(varPtr, arrayPtr);
 
     /*
      * Invoke any read traces that have been set for the variable.
@@ -1435,13 +1434,13 @@ TclPtrGetVarIdx(
     }
 
     if (flags & TCL_LEAVE_ERR_MSG) {
-	if (TclIsVarUndefined(varPtr) && arrayPtr
-		&& !TclIsVarUndefined(arrayPtr)) {
-	    msg = noSuchElement;
+	if (TclIsVarUndefined(varPtr) && initialArrayPtr
+		&& !TclIsVarUndefined(initialArrayPtr)) {
+	    msg = NOSUCHELEMENT;
 	} else if (TclIsVarArray(varPtr)) {
-	    msg = isArray;
+	    msg = ISARRAY;
 	} else {
-	    msg = noSuchVar;
+	    msg = NOSUCHVAR;
 	}
 	TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "read", msg, index);
     }
@@ -1478,7 +1477,7 @@ TclPtrGetVarIdx(
 
 int
 Tcl_SetObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1548,7 +1547,7 @@ Tcl_SetVar2(
 				 * TCL_LEAVE_ERR_MSG. */
 {
     Tcl_Obj *varValuePtr = Tcl_SetVar2Ex(interp, part1, part2,
-	    Tcl_NewStringObj(newValue, -1), flags);
+	    Tcl_NewStringObj(newValue, TCL_INDEX_NONE), flags);
 
     if (varValuePtr == NULL) {
 	return NULL;
@@ -1608,11 +1607,11 @@ Tcl_SetVar2Ex(
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT or
 				 * TCL_LEAVE_ERR_MSG. */
 {
-    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
 
     Tcl_IncrRefCount(part1Ptr);
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -1727,7 +1726,7 @@ TclPtrSetVar(
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
     Tcl_Obj *newValuePtr,	/* New value for variable. */
-    const int flags)		/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    int flags)		/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
     if (varPtr == NULL) {
@@ -1906,7 +1905,7 @@ TclPtrSetVarIdx(
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
     Tcl_Obj *newValuePtr,	/* New value for variable. */
-    const int flags,		/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    int flags,		/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
     int index)			/* Index of local var where part1 is to be
 				 * found. */
@@ -1929,11 +1928,11 @@ TclPtrSetVarIdx(
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    if (TclIsVarArrayElement(varPtr)) {
 		TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "set",
-			danglingElement, index);
+			DANGLINGELEMENT, index);
 		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ELEMENT", NULL);
 	    } else {
 		TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "set",
-			danglingVar, index);
+			DANGLINGVAR, index);
 		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	    }
 	}
@@ -1946,11 +1945,13 @@ TclPtrSetVarIdx(
 
     if (TclIsVarArray(varPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
-	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "set", isArray,index);
+	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "set", ISARRAY,index);
 	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
 	}
 	goto earlyError;
     }
+
+    TclVarFindHiddenArray(varPtr, arrayPtr);
 
     /*
      * Invoke any read traces that have been set for the variable if it is
@@ -2152,7 +2153,7 @@ TclPtrIncrObjVar(
 				 * part1Ptr. */
     Tcl_Obj *incrPtr,		/* Increment value. */
 /* TODO: Which of these flag values really make sense? */
-    const int flags)		/* Various flags that tell how to incr value:
+    int flags)		/* Various flags that tell how to incr value:
 				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
@@ -2208,7 +2209,7 @@ TclPtrIncrObjVarIdx(
 				 * part1Ptr. */
     Tcl_Obj *incrPtr,		/* Increment value. */
 /* TODO: Which of these flag values really make sense? */
-    const int flags,		/* Various flags that tell how to incr value:
+    int flags,		/* Various flags that tell how to incr value:
 				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
@@ -2290,10 +2291,10 @@ Tcl_UnsetVar2(
 				 * TCL_LEAVE_ERR_MSG. */
 {
     int result;
-    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
+    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
+	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
     }
 
     /*
@@ -2386,7 +2387,7 @@ TclPtrUnsetVar(
 				 * the name of a variable. */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    const int flags)		/* OR-ed combination of any of
+    int flags)		/* OR-ed combination of any of
 				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_LEAVE_ERR_MSG. */
 {
@@ -2433,7 +2434,7 @@ TclPtrUnsetVarIdx(
 				 * the name of a variable. */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    const int flags,		/* OR-ed combination of any of
+    int flags,		/* OR-ed combination of any of
 				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_LEAVE_ERR_MSG. */
     int index)			/* Index into the local variable table of the
@@ -2442,6 +2443,7 @@ TclPtrUnsetVarIdx(
 {
     Interp *iPtr = (Interp *) interp;
     int result = (TclIsVarUndefined(varPtr)? TCL_ERROR : TCL_OK);
+    Var *initialArrayPtr = arrayPtr;
 
     /*
      * Keep the variable alive until we're done with it. We used to
@@ -2454,6 +2456,8 @@ TclPtrUnsetVarIdx(
 	VarHashRefCount(varPtr)++;
     }
 
+    TclVarFindHiddenArray(varPtr, arrayPtr);
+
     UnsetVarStruct(varPtr, arrayPtr, iPtr, part1Ptr, part2Ptr, flags, index);
 
     /*
@@ -2463,7 +2467,7 @@ TclPtrUnsetVarIdx(
     if (result != TCL_OK) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset",
-		    ((arrayPtr == NULL) ? noSuchVar : noSuchElement), index);
+              ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT), index);
 	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "VARNAME", NULL);
 	}
     }
@@ -2571,9 +2575,23 @@ UnsetVarStruct(
 
 	if ((dummyVar.flags & VAR_TRACED_UNSET)
 		|| (arrayPtr && (arrayPtr->flags & VAR_TRACED_UNSET))) {
+
+            /*
+             * Pass the array element name to TclObjCallVarTraces(), because
+             * it cannot be determined from dummyVar. Alternatively, indicate
+             * via flags whether the variable involved in the code that caused
+             * the trace to be triggered was an array element, for the correct
+             * formatting of error messages.
+             */
+            if (part2Ptr) {
+                flags |= VAR_ARRAY_ELEMENT;
+            } else if (TclIsVarArrayElement(varPtr)) {
+                part2Ptr = VarHashGetKey(varPtr);
+            }
+
 	    dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	    TclObjCallVarTraces(iPtr, arrayPtr, &dummyVar, part1Ptr, part2Ptr,
-		    (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
+              (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
 			    | TCL_TRACE_UNSETS,
 		    /* leaveErrMsg */ 0, index);
 
@@ -2674,7 +2692,7 @@ UnsetVarStruct(
 
 int
 Tcl_UnsetObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2741,7 +2759,7 @@ Tcl_UnsetObjCmd(
 
 int
 Tcl_AppendObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2806,15 +2824,15 @@ Tcl_AppendObjCmd(
 
 int
 Tcl_LappendObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *varValuePtr, *newValuePtr;
-    int numElems, createdNewObj;
+    size_t numElems;
     Var *varPtr, *arrayPtr;
-    int result;
+    int result, createdNewObj;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value ...?");
@@ -2835,7 +2853,7 @@ Tcl_LappendObjCmd(
 		return TCL_ERROR;
 	    }
 	} else {
-	    result = TclListObjLength(interp, newValuePtr, &numElems);
+	    result = TclListObjLengthM(interp, newValuePtr, &numElems);
 	    if (result != TCL_OK) {
 		return result;
 	    }
@@ -2893,7 +2911,7 @@ Tcl_LappendObjCmd(
 	    createdNewObj = 1;
 	}
 
-	result = TclListObjLength(interp, varValuePtr, &numElems);
+	result = TclListObjLengthM(interp, varValuePtr, &numElems);
 	if (result == TCL_OK) {
 	    result = Tcl_ListObjReplace(interp, varValuePtr, numElems, 0,
 		    (objc-2), (objv+2));
@@ -3012,7 +3030,7 @@ ArrayObjNext(
 
 static int
 ArrayForObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3022,7 +3040,7 @@ ArrayForObjCmd(
 
 static int
 ArrayForNRCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -3030,7 +3048,8 @@ ArrayForNRCmd(
     Tcl_Obj *varListObj, *arrayNameObj, *scriptObj;
     ArraySearch *searchPtr = NULL;
     Var *varPtr;
-    int isArray, numVars;
+    int isArray;
+    size_t numVars;
 
     /*
      * array for {k v} a body
@@ -3045,13 +3064,13 @@ ArrayForNRCmd(
      * Parse arguments.
      */
 
-    if (Tcl_ListObjLength(interp, objv[1], &numVars) != TCL_OK) {
+    if (TclListObjLengthM(interp, objv[1], &numVars) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     if (numVars != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must have two variable names", -1));
+		"must have two variable names", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "array", "for", NULL);
 	return TCL_ERROR;
     }
@@ -3093,7 +3112,7 @@ ArrayForNRCmd(
 
 static int
 ArrayForLoopCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -3106,7 +3125,8 @@ ArrayForLoopCallback(
     Tcl_Obj *keyObj, *valueObj;
     Var *varPtr;
     Var *arrayPtr;
-    int done, varc;
+    int done;
+    size_t varc;
 
     /*
      * Process the result from the previous execution of the script body.
@@ -3148,7 +3168,7 @@ ArrayForLoopCallback(
 	Tcl_ResetResult(interp);
 	if (done == TCL_ERROR) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "array changed during iteration", -1));
+		    "array changed during iteration", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "READ", "array", "for", NULL);
 	    varPtr->flags |= TCL_LEAVE_ERR_MSG;
 	    result = done;
@@ -3156,7 +3176,7 @@ ArrayForLoopCallback(
 	goto arrayfordone;
     }
 
-    Tcl_ListObjGetElements(NULL, varListObj, &varc, &varv);
+    TclListObjGetElementsM(NULL, varListObj, &varc, &varv);
     if (Tcl_ObjSetVar2(interp, varv[0], NULL, keyObj,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	result = TCL_ERROR;
@@ -3251,7 +3271,7 @@ ArrayPopulateSearch(
 
 static int
 ArrayStartSearchCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3346,7 +3366,7 @@ ArrayDoneSearch(
 
 static int
 ArrayAnyMoreCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3424,7 +3444,7 @@ ArrayAnyMoreCmd(
 
 static int
 ArrayNextElementCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3504,7 +3524,7 @@ ArrayNextElementCmd(
 
 static int
 ArrayDoneSearchCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3564,7 +3584,7 @@ ArrayDoneSearchCmd(
 
 static int
 ArrayExistsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3604,7 +3624,7 @@ ArrayExistsCmd(
 
 static int
 ArrayGetCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3614,7 +3634,8 @@ ArrayGetCmd(
     Tcl_Obj **nameObjPtr, *patternObj;
     Tcl_HashSearch search;
     const char *pattern;
-    int i, count, result, isArray;
+    size_t i, count;
+    int result, isArray;
 
     switch (objc) {
     case 2:
@@ -3696,7 +3717,7 @@ ArrayGetCmd(
      */
 
     TclNewObj(tmpResObj);
-    result = Tcl_ListObjGetElements(interp, nameLstObj, &count, &nameObjPtr);
+    result = TclListObjGetElementsM(interp, nameLstObj, &count, &nameObjPtr);
     if (result != TCL_OK) {
 	goto errorInArrayGet;
     }
@@ -3763,7 +3784,7 @@ ArrayGetCmd(
 
 static int
 ArrayNamesCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3771,12 +3792,12 @@ ArrayNamesCmd(
     static const char *const options[] = {
 	"-exact", "-glob", "-regexp", NULL
     };
-    enum options { OPT_EXACT, OPT_GLOB, OPT_REGEXP };
+    enum arrayNamesOptionsEnum {OPT_EXACT, OPT_GLOB, OPT_REGEXP} mode = OPT_GLOB;
     Var *varPtr, *varPtr2;
     Tcl_Obj *nameObj, *resultObj, *patternObj;
     Tcl_HashSearch search;
     const char *pattern = NULL;
-    int isArray, mode = OPT_GLOB;
+    int isArray;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?mode? ?pattern?");
@@ -3839,7 +3860,7 @@ ArrayNamesCmd(
 	    const char *name = TclGetString(nameObj);
 	    int matched = 0;
 
-	    switch ((enum options) mode) {
+	    switch (mode) {
 	    case OPT_EXACT:
 		Tcl_Panic("exact matching shouldn't get here");
 	    case OPT_GLOB:
@@ -3906,7 +3927,7 @@ TclFindArrayPtrElements(
 	    continue;
 	}
 	nameObj = VarHashGetKey(varPtr);
-	hPtr = Tcl_CreateHashEntry(tablePtr, (char *) nameObj, &dummy);
+	hPtr = Tcl_CreateHashEntry(tablePtr, nameObj, &dummy);
 	Tcl_SetHashValue(hPtr, nameObj);
     }
 }
@@ -3930,7 +3951,7 @@ TclFindArrayPtrElements(
 
 static int
 ArraySetCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3938,7 +3959,8 @@ ArraySetCmd(
     Tcl_Obj *arrayNameObj;
     Tcl_Obj *arrayElemObj;
     Var *varPtr, *arrayPtr;
-    int result, i;
+    int result;
+    size_t i;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName list");
@@ -3958,7 +3980,7 @@ ArraySetCmd(
     }
     if (arrayPtr) {
 	CleanupVar(varPtr, arrayPtr);
-	TclObjVarErrMsg(interp, arrayNameObj, NULL, "set", needArray, -1);
+	TclObjVarErrMsg(interp, arrayNameObj, NULL, "set", NEEDARRAY, -1);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
 		TclGetString(arrayNameObj), NULL);
 	return TCL_ERROR;
@@ -3969,15 +3991,16 @@ ArraySetCmd(
      */
 
     arrayElemObj = objv[2];
-    if (TclHasIntRep(arrayElemObj, &tclDictType) && arrayElemObj->bytes == NULL) {
+    if (TclHasInternalRep(arrayElemObj, &tclDictType) && arrayElemObj->bytes == NULL) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done;
+	size_t size;
 
-	if (Tcl_DictObjSize(interp, arrayElemObj, &done) != TCL_OK) {
+	if (Tcl_DictObjSize(interp, arrayElemObj, &size) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (done == 0) {
+	if (size == 0) {
 	    /*
 	     * Empty, so we'll just force the array to be properly existing
 	     * instead.
@@ -4016,22 +4039,26 @@ ArraySetCmd(
 	 * -compatibility reasons) a list.
 	 */
 
-	int elemLen;
+	size_t elemLen;
 	Tcl_Obj **elemPtrs, *copyListObj;
 
-	result = TclListObjGetElements(interp, arrayElemObj,
-		&elemLen, &elemPtrs);
+	result = TclListObjLengthM(interp, arrayElemObj, &elemLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
 	if (elemLen & 1) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "list must have an even number of elements", -1));
+		    "list must have an even number of elements", TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "FORMAT", NULL);
 	    return TCL_ERROR;
 	}
 	if (elemLen == 0) {
 	    goto ensureArray;
+	}
+	result = TclListObjGetElementsM(interp, arrayElemObj,
+		&elemLen, &elemPtrs);
+	if (result != TCL_OK) {
+	    return result;
 	}
 
 	/*
@@ -4077,7 +4104,7 @@ ArraySetCmd(
 	     */
 
 	    TclObjVarErrMsg(interp, arrayNameObj, NULL, "array set",
-		    needArray, -1);
+		    NEEDARRAY, -1);
 	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
 	    return TCL_ERROR;
 	}
@@ -4105,7 +4132,7 @@ ArraySetCmd(
 
 static int
 ArraySizeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4140,7 +4167,7 @@ ArraySizeCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(size));
     return TCL_OK;
 }
 
@@ -4164,7 +4191,7 @@ ArraySizeCmd(
 
 static int
 ArrayStatsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4191,10 +4218,10 @@ ArrayStatsCmd(
     stats = Tcl_HashStats((Tcl_HashTable *) varPtr->value.tablePtr);
     if (stats == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"error reading array statistics", -1));
+		"error reading array statistics", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, TCL_INDEX_NONE));
     Tcl_Free(stats);
     return TCL_OK;
 }
@@ -4218,7 +4245,7 @@ ArrayStatsCmd(
 
 static int
 ArrayUnsetCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4227,7 +4254,7 @@ ArrayUnsetCmd(
     Tcl_Obj *varNameObj, *patternObj, *nameObj;
     Tcl_HashSearch search;
     const char *pattern;
-    const int unsetFlags = 0;	/* Should this be TCL_LEAVE_ERR_MSG? */
+    int unsetFlags = 0;	/* Should this be TCL_LEAVE_ERR_MSG? */
     int isArray;
 
     switch (objc) {
@@ -4406,7 +4433,7 @@ ObjMakeUpvar(
 				 * NULL means use global :: context. */
     Tcl_Obj *otherP1Ptr,
     const char *otherP2,	/* Two-part name of variable in framePtr. */
-    const int otherFlags,	/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
+    int otherFlags,	/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of "other" variable. */
     Tcl_Obj *myNamePtr,		/* Name of variable which will refer to
 				 * otherP1/otherP2. Must be a scalar. */
@@ -4758,9 +4785,9 @@ Tcl_GetVariableFullName(
 	    Tcl_AppendObjToObj(objPtr, namePtr);
 	}
     } else if (iPtr->varFramePtr->procPtr) {
-	int index = varPtr - iPtr->varFramePtr->compiledLocals;
+	size_t index = varPtr - iPtr->varFramePtr->compiledLocals;
 
-	if (index >= 0 && index < iPtr->varFramePtr->numCompiledLocals) {
+	if (index < iPtr->varFramePtr->numCompiledLocals) {
 	    namePtr = localName(iPtr->varFramePtr, index);
 	    Tcl_AppendObjToObj(objPtr, namePtr);
 	}
@@ -4786,7 +4813,7 @@ Tcl_GetVariableFullName(
 
 int
 Tcl_GlobalObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4890,7 +4917,7 @@ Tcl_GlobalObjCmd(
 
 int
 Tcl_VariableObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4921,7 +4948,7 @@ Tcl_VariableObjCmd(
 	     */
 
 	    TclObjVarErrMsg(interp, varNamePtr, NULL, "define",
-		    isArrayElement, -1);
+		    ISARRAYELEMENT, -1);
 	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", NULL);
 	    return TCL_ERROR;
 	}
@@ -5023,7 +5050,7 @@ Tcl_VariableObjCmd(
 
 int
 Tcl_UpvarObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -5248,7 +5275,8 @@ TclDeleteNamespaceVars(
 
     for (varPtr = VarHashFirstVar(tablePtr, &search);  varPtr != NULL;
 	    varPtr = VarHashFirstVar(tablePtr, &search)) {
-	Tcl_Obj *objPtr = Tcl_NewObj();
+	Tcl_Obj *objPtr;
+	TclNewObj(objPtr);
 	VarHashRefCount(varPtr)++;	/* Make sure we get to remove from
 					 * hash. */
 	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
@@ -5383,7 +5411,7 @@ TclDeleteCompiledLocalVars(
 				 * assigned local variables to delete. */
 {
     Var *varPtr;
-    int numLocals, i;
+    size_t numLocals, i;
     Tcl_Obj **namePtrPtr;
 
     numLocals = framePtr->numCompiledLocals;
@@ -5581,10 +5609,10 @@ static void
 FreeLocalVarName(
     Tcl_Obj *objPtr)
 {
-    int index;
+    size_t index;
     Tcl_Obj *namePtr;
 
-    LocalGetIntRep(objPtr, index, namePtr);
+    LocalGetInternalRep(objPtr, index, namePtr);
 
     index++;	/* Compiler warning bait. */
     if (namePtr) {
@@ -5597,14 +5625,14 @@ DupLocalVarName(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    int index;
+    size_t index;
     Tcl_Obj *namePtr;
 
-    LocalGetIntRep(srcPtr, index, namePtr);
+    LocalGetInternalRep(srcPtr, index, namePtr);
     if (!namePtr) {
 	namePtr = srcPtr;
     }
-    LocalSetIntRep(dupPtr, index, namePtr);
+    LocalSetInternalRep(dupPtr, index, namePtr);
 }
 
 /*
@@ -5623,7 +5651,7 @@ FreeParsedVarName(
     Tcl_Obj *arrayPtr, *elem;
     int parsed;
 
-    ParsedGetIntRep(objPtr, parsed, arrayPtr, elem);
+    ParsedGetInternalRep(objPtr, parsed, arrayPtr, elem);
 
     parsed++;				/* Silence compiler. */
     if (arrayPtr != NULL) {
@@ -5640,10 +5668,10 @@ DupParsedVarName(
     Tcl_Obj *arrayPtr, *elem;
     int parsed;
 
-    ParsedGetIntRep(srcPtr, parsed, arrayPtr, elem);
+    ParsedGetInternalRep(srcPtr, parsed, arrayPtr, elem);
 
     parsed++;				/* Silence compiler. */
-    ParsedSetIntRep(dupPtr, arrayPtr, elem);
+    ParsedSetInternalRep(dupPtr, arrayPtr, elem);
 }
 
 /*
@@ -5838,7 +5866,7 @@ ObjFindNamespaceVar(
 
 int
 TclInfoVarsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -5921,7 +5949,7 @@ TclInfoVarsCmd(
 		if (!TclIsVarUndefined(varPtr)
 			|| TclIsVarNamespaceVar(varPtr)) {
 		    if (specificNsInPattern) {
-			elemObjPtr = Tcl_NewObj();
+			TclNewObj(elemObjPtr);
 			Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr,
 				elemObjPtr);
 		    } else {
@@ -5954,7 +5982,7 @@ TclInfoVarsCmd(
 		    if ((simplePattern == NULL)
 			    || Tcl_StringMatch(varName, simplePattern)) {
 			if (specificNsInPattern) {
-			    elemObjPtr = Tcl_NewObj();
+			    TclNewObj(elemObjPtr);
 			    Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr,
 				    elemObjPtr);
 			} else {
@@ -6029,7 +6057,7 @@ TclInfoVarsCmd(
 
 int
 TclInfoGlobalsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6122,7 +6150,7 @@ TclInfoGlobalsCmd(
 
 int
 TclInfoLocalsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6181,7 +6209,8 @@ AppendLocals(
 {
     Interp *iPtr = (Interp *) interp;
     Var *varPtr;
-    int i, localVarCt, added;
+    size_t i, localVarCt;
+    int added;
     Tcl_Obj *objNamePtr;
     const char *varName;
     TclVarHashTable *localVarTablePtr;
@@ -6333,6 +6362,7 @@ TclInitVarHashTable(
     Tcl_InitCustomHashTable(&tablePtr->table,
 	    TCL_CUSTOM_TYPE_KEYS, &tclVarHashKeyType);
     tablePtr->nsPtr = nsPtr;
+    tablePtr->arrayPtr = NULL;
 }
 
 static Tcl_HashEntry *
@@ -6427,7 +6457,7 @@ CompareVarKeys(
 
 static int
 ArrayDefaultCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6435,10 +6465,10 @@ ArrayDefaultCmd(
     static const char *const options[] = {
 	"get", "set", "exists", "unset", NULL
     };
-    enum options { OPT_GET, OPT_SET, OPT_EXISTS, OPT_UNSET };
+    enum arrayDefaultOptionsEnum { OPT_GET, OPT_SET, OPT_EXISTS, OPT_UNSET } option;
     Tcl_Obj *arrayNameObj, *defaultValueObj;
     Var *varPtr, *arrayPtr;
-    int isArray, option;
+    int isArray;
 
     /*
      * Parse arguments.
@@ -6502,7 +6532,7 @@ ArrayDefaultCmd(
 
 	    CleanupVar(varPtr, arrayPtr);
 	    TclObjVarErrMsg(interp, arrayNameObj, NULL, "array default set",
-		    needArray, -1);
+		    NEEDARRAY, -1);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
 		    TclGetString(arrayNameObj), NULL);
 	    return TCL_ERROR;
@@ -6513,7 +6543,7 @@ ArrayDefaultCmd(
 	     */
 
 	    TclObjVarErrMsg(interp, arrayNameObj, NULL, "array default set",
-		    needArray, -1);
+		    NEEDARRAY, -1);
 	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
 	    return TCL_ERROR;
 	}
@@ -6587,6 +6617,7 @@ TclInitArrayVar(
 
     arrayPtr->value.tablePtr = (TclVarHashTable *) tablePtr;
     TclInitVarHashTable(arrayPtr->value.tablePtr, TclGetVarNsPtr(arrayPtr));
+    arrayPtr->value.tablePtr->arrayPtr = arrayPtr;
 
     /*
      * Default value initialization.

@@ -12,7 +12,7 @@
 oo::abstract \- a class that does not allow direct instances of itself
 .SH SYNOPSIS
 .nf
-package require TclOO
+package require tcl::oo
 
 \fBoo::abstract\fI method \fR?\fIarg ...\fR?
 .fi

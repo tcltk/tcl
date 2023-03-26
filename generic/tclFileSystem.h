@@ -1,7 +1,7 @@
 /*
  * tclFileSystem.h --
  *
- *	This file contains the common defintions and prototypes for use by
+ *	This file contains the common definitions and prototypes for use by
  *	Tcl's filesystem and path handling layers.
  *
  * Copyright (c) 2003 Vince Darley.
@@ -48,13 +48,13 @@ MODULE_SCOPE const Tcl_Filesystem tclNativeFilesystem;
 
 MODULE_SCOPE Tcl_PathType TclFSGetPathType(Tcl_Obj *pathPtr,
 			    const Tcl_Filesystem **filesystemPtrPtr,
-			    int *driveNameLengthPtr);
+			    size_t *driveNameLengthPtr);
 MODULE_SCOPE Tcl_PathType TclFSNonnativePathType(const char *pathPtr,
-			    int pathLen, const Tcl_Filesystem **filesystemPtrPtr,
-			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
+			    size_t pathLen, const Tcl_Filesystem **filesystemPtrPtr,
+			    size_t *driveNameLengthPtr, Tcl_Obj **driveNameRef);
 MODULE_SCOPE Tcl_PathType TclGetPathType(Tcl_Obj *pathPtr,
 			    const Tcl_Filesystem **filesystemPtrPtr,
-			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
+			    size_t *driveNameLengthPtr, Tcl_Obj **driveNameRef);
 MODULE_SCOPE int	TclFSEpochOk(size_t filesystemEpoch);
 MODULE_SCOPE int	TclFSCwdIsNative(void);
 MODULE_SCOPE Tcl_Obj *	TclWinVolumeRelativeNormalize(Tcl_Interp *interp,

@@ -4,7 +4,7 @@
  *	This file implements the Windows specific portion of file manipulation
  *	subcommands of the "file" command.
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -279,7 +279,7 @@ DoRenameFile(
 	return retval;
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
 
     srcAttr = GetFileAttributesW(nativeSrc);
     dstAttr = GetFileAttributesW(nativeDst);
@@ -309,7 +309,7 @@ DoRenameFile(
 	if (srcAttr & FILE_ATTRIBUTE_DIRECTORY) {
 	    WCHAR *nativeSrcRest, *nativeDstRest;
 	    const char **srcArgv, **dstArgv;
-	    int size, srcArgc, dstArgc;
+	    size_t size, srcArgc, dstArgc;
 	    WCHAR nativeSrcPath[MAX_PATH];
 	    WCHAR nativeDstPath[MAX_PATH];
 	    Tcl_DString srcString, dstString;
@@ -330,8 +330,8 @@ DoRenameFile(
 
 	    Tcl_DStringInit(&srcString);
 	    Tcl_DStringInit(&dstString);
-	    src = Tcl_WCharToUtfDString(nativeSrcPath, -1, &srcString);
-	    dst = Tcl_WCharToUtfDString(nativeDstPath, -1, &dstString);
+	    src = Tcl_WCharToUtfDString(nativeSrcPath, TCL_INDEX_NONE, &srcString);
+	    dst = Tcl_WCharToUtfDString(nativeDstPath, TCL_INDEX_NONE, &dstString);
 
 	    /*
 	     * Check whether the destination path is actually inside the
@@ -420,7 +420,7 @@ DoRenameFile(
 		     * be, but report this one.
 		     */
 
-		    TclWinConvertError(GetLastError());
+		    Tcl_WinConvertError(GetLastError());
 		    CreateDirectoryW(nativeDst, NULL);
 		    SetFileAttributesW(nativeDst, dstAttr);
 		    if (Tcl_GetErrno() == EACCES) {
@@ -488,7 +488,7 @@ DoRenameFile(
 		     * error. Could happen if an open file refers to dst.
 		     */
 
-		    TclWinConvertError(GetLastError());
+		    Tcl_WinConvertError(GetLastError());
 		    if (Tcl_GetErrno() == EACCES) {
 			/*
 			 * Decode the EACCES to a more meaningful error.
@@ -669,7 +669,7 @@ DoCopyFile(
 	return retval;
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     if (Tcl_GetErrno() == EBADF) {
 	Tcl_SetErrno(EACCES);
 	return TCL_ERROR;
@@ -706,7 +706,7 @@ DoCopyFile(
 		 * attributes of dst.
 		 */
 
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		SetFileAttributesW(nativeDst, dstAttr);
 	    }
 	}
@@ -766,7 +766,7 @@ TclpDeleteFile(
     if (DeleteFileW(path) != FALSE) {
 	return TCL_OK;
     }
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
 
     if (Tcl_GetErrno() == EACCES) {
 	attr = GetFileAttributesW(path);
@@ -797,7 +797,7 @@ TclpDeleteFile(
 			(DeleteFileW(path) != FALSE)) {
 		    return TCL_OK;
 		}
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		if (res != 0) {
 		    SetFileAttributesW(path, attr);
 		}
@@ -866,7 +866,7 @@ DoCreateDirectory(
     if (CreateDirectoryW(nativePath, NULL) == 0) {
 	DWORD error = GetLastError();
 
-	TclWinConvertError(error);
+	Tcl_WinConvertError(error);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -915,8 +915,8 @@ TclpObjCopyDirectory(
 
     Tcl_DStringInit(&srcString);
     Tcl_DStringInit(&dstString);
-    Tcl_UtfToWCharDString(TclGetString(normSrcPtr), -1, &srcString);
-    Tcl_UtfToWCharDString(TclGetString(normDestPtr), -1, &dstString);
+    Tcl_UtfToWCharDString(TclGetString(normSrcPtr), TCL_INDEX_NONE, &srcString);
+    Tcl_UtfToWCharDString(TclGetString(normDestPtr), TCL_INDEX_NONE, &dstString);
 
     ret = TraverseWinTree(TraversalCopy, &srcString, &dstString, &ds);
 
@@ -929,7 +929,7 @@ TclpObjCopyDirectory(
 	} else if (!strcmp(Tcl_DStringValue(&ds), TclGetString(normDestPtr))) {
 	    *errorPtr = destPathPtr;
 	} else {
-	    *errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	    *errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
 	}
 	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);
@@ -989,7 +989,7 @@ TclpObjRemoveDirectory(
 	    return TCL_ERROR;
 	}
 	Tcl_DStringInit(&native);
-	Tcl_UtfToWCharDString(TclGetString(normPtr), -1, &native);
+	Tcl_UtfToWCharDString(TclGetString(normPtr), TCL_INDEX_NONE, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
     } else {
@@ -1002,7 +1002,7 @@ TclpObjRemoveDirectory(
 		    !strcmp(Tcl_DStringValue(&ds), TclGetString(normPtr))) {
 		*errorPtr = pathPtr;
 	    } else {
-		*errorPtr = TclDStringToObj(&ds);
+		*errorPtr = Tcl_DStringToObj(&ds);
 	    }
 	    Tcl_IncrRefCount(*errorPtr);
 	}
@@ -1054,7 +1054,7 @@ DoRemoveJustDirectory(
 	}
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
 
     if (Tcl_GetErrno() == EACCES) {
 	attr = GetFileAttributesW(nativePath);
@@ -1088,7 +1088,7 @@ DoRemoveJustDirectory(
 		if (RemoveDirectoryW(nativePath) != FALSE) {
 		    return TCL_OK;
 		}
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		SetFileAttributesW(nativePath,
 			attr | FILE_ATTRIBUTE_READONLY);
 	    }
@@ -1117,7 +1117,7 @@ DoRemoveJustDirectory(
 	char *p;
 
 	Tcl_DStringInit(errorPtr);
-	p = Tcl_WCharToUtfDString(nativePath, -1, errorPtr);
+	p = Tcl_WCharToUtfDString(nativePath, TCL_INDEX_NONE, errorPtr);
 	for (; *p; ++p) {
 	    if (*p == '\\') *p = '/';
 	}
@@ -1235,7 +1235,7 @@ TraverseWinTree(
 	 * Can't read directory.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	nativeErrfile = nativeSource;
 	goto end;
     }
@@ -1329,10 +1329,10 @@ TraverseWinTree(
 
   end:
     if (nativeErrfile != NULL) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	if (errorPtr != NULL) {
 	    Tcl_DStringInit(errorPtr);
-	    Tcl_WCharToUtfDString(nativeErrfile, -1, errorPtr);
+	    Tcl_WCharToUtfDString(nativeErrfile, TCL_INDEX_NONE, errorPtr);
 	}
 	result = TCL_ERROR;
     }
@@ -1384,7 +1384,7 @@ TraversalCopy(
 		    attr) != FALSE) {
 		return TCL_OK;
 	    }
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	}
 	break;
     case DOTREE_POSTD:
@@ -1398,7 +1398,7 @@ TraversalCopy(
 
     if (errorPtr != NULL) {
 	Tcl_DStringInit(errorPtr);
-	Tcl_WCharToUtfDString(nativeDst, -1, errorPtr);
+	Tcl_WCharToUtfDString(nativeDst, TCL_INDEX_NONE, errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1454,7 +1454,7 @@ TraversalDelete(
 
     if (errorPtr != NULL) {
 	Tcl_DStringInit(errorPtr);
-	Tcl_WCharToUtfDString(nativeSrc, -1, errorPtr);
+	Tcl_WCharToUtfDString(nativeSrc, TCL_INDEX_NONE, errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1482,7 +1482,7 @@ StatError(
     Tcl_Obj *fileName)		/* The name of the file which caused the
 				 * error. */
 {
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("could not read \"%s\": %s",
 	    TclGetString(fileName), Tcl_PosixError(interp)));
 }
@@ -1536,7 +1536,7 @@ GetWinFileAttributes(
 	 */
 
 	size_t len;
-	const char *str = TclGetStringFromObj(fileName, &len);
+	const char *str = Tcl_GetStringFromObj(fileName, &len);
 
 	if (len < 4) {
 	    if (len == 0) {
@@ -1560,7 +1560,7 @@ GetWinFileAttributes(
 	}
     }
 
-    *attributePtrPtr = Tcl_NewWideIntObj(attr != 0);
+    TclNewIntObj(*attributePtrPtr, attr != 0);
     return TCL_OK;
 }
 
@@ -1595,7 +1595,7 @@ ConvertFileNameFormat(
     int longShort,		/* 0 to short name, 1 to long name. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
-    int pathc, i;
+    size_t pathc, i;
     Tcl_Obj *splitPath;
     size_t length;
 
@@ -1625,7 +1625,7 @@ ConvertFileNameFormat(
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
-	pathv = TclGetStringFromObj(elt, &length);
+	pathv = Tcl_GetStringFromObj(elt, &length);
 	if ((pathv[0] == '/') || ((length == 3) && (pathv[1] == ':'))
 		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
@@ -1661,7 +1661,7 @@ ConvertFileNameFormat(
 	     * likely to lead to infinite loops.
 	     */
 
-	    tempString = TclGetStringFromObj(tempPath, &length);
+	    tempString = Tcl_GetStringFromObj(tempPath, &length);
 	    Tcl_DStringInit(&ds);
 	    nativeName = Tcl_UtfToWCharDString(tempString, length, &ds);
 	    Tcl_DecrRefCount(tempPath);
@@ -1712,27 +1712,16 @@ ConvertFileNameFormat(
 	     */
 
 	    Tcl_DStringInit(&dsTemp);
-	    Tcl_WCharToUtfDString(nativeName, -1, &dsTemp);
+	    Tcl_WCharToUtfDString(nativeName, TCL_INDEX_NONE, &dsTemp);
 	    Tcl_DStringFree(&ds);
 
-	    /*
-	     * Deal with issues of tildes being absolute.
-	     */
-
-	    if (Tcl_DStringValue(&dsTemp)[0] == '~') {
-		TclNewLiteralStringObj(tempPath, "./");
-		Tcl_AppendToObj(tempPath, Tcl_DStringValue(&dsTemp),
-			Tcl_DStringLength(&dsTemp));
-		Tcl_DStringFree(&dsTemp);
-	    } else {
-		tempPath = TclDStringToObj(&dsTemp);
-	    }
-	    Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
+            tempPath = Tcl_DStringToObj(&dsTemp);
+            Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
 	    FindClose(handle);
 	}
     }
 
-    *attributePtrPtr = Tcl_FSJoinPath(splitPath, -1);
+    *attributePtrPtr = Tcl_FSJoinPath(splitPath, TCL_INDEX_NONE);
 
     if (splitPath != NULL) {
 	/*
@@ -1926,7 +1915,7 @@ TclpObjListVolumes(void)
     int i;
     char *p;
 
-    resultPtr = Tcl_NewObj();
+    TclNewObj(resultPtr);
 
     /*
      * On Win32s:
@@ -1952,14 +1941,14 @@ TclpObjListVolumes(void)
 	    buf[0] = (char) ('a' + i);
 	    if (GetVolumeInformationA(buf, NULL, 0, NULL, NULL, NULL, NULL, 0)
 		    || (GetLastError() == ERROR_NOT_READY)) {
-		elemPtr = Tcl_NewStringObj(buf, -1);
+		elemPtr = Tcl_NewStringObj(buf, TCL_INDEX_NONE);
 		Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);
 	    }
 	}
     } else {
 	for (p = buf; *p != '\0'; p += 4) {
 	    p[2] = '/';
-	    elemPtr = Tcl_NewStringObj(p, -1);
+	    elemPtr = Tcl_NewStringObj(p, TCL_INDEX_NONE);
 	    Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);
 	}
     }
@@ -2008,9 +1997,9 @@ TclpCreateTemporaryDirectory(
 	    goto useSystemTemp;
 	}
 	Tcl_DStringInit(&base);
-	Tcl_UtfToWCharDString(Tcl_GetString(dirObj), -1, &base);
+	Tcl_UtfToWCharDString(Tcl_GetString(dirObj), TCL_INDEX_NONE, &base);
 	if (dirObj->bytes[dirObj->length - 1] != '\\') {
-	    Tcl_UtfToWCharDString("\\", -1, &base);
+	    Tcl_UtfToWCharDString("\\", TCL_INDEX_NONE, &base);
 	}
     } else {
     useSystemTemp:
@@ -2026,11 +2015,11 @@ TclpCreateTemporaryDirectory(
 #define SUFFIX_LENGTH	8
 
     if (basenameObj) {
-	Tcl_UtfToWCharDString(Tcl_GetString(basenameObj), -1, &base);
+	Tcl_UtfToWCharDString(Tcl_GetString(basenameObj), TCL_INDEX_NONE, &base);
     } else {
-	Tcl_UtfToWCharDString(DEFAULT_TEMP_DIR_PREFIX, -1, &base);
+	Tcl_UtfToWCharDString(DEFAULT_TEMP_DIR_PREFIX, TCL_INDEX_NONE, &base);
     }
-    Tcl_UtfToWCharDString("_", -1, &base);
+    Tcl_UtfToWCharDString("_", TCL_INDEX_NONE, &base);
 
     /*
      * Now we keep on trying random suffixes until we get one that works
@@ -2057,7 +2046,7 @@ TclpCreateTemporaryDirectory(
 	    tempbuf[i] = randChars[(int) (rand() % numRandChars)];
 	}
 	Tcl_DStringSetLength(&base, baseLen);
-	Tcl_UtfToWCharDString(tempbuf, -1, &base);
+	Tcl_UtfToWCharDString(tempbuf, TCL_INDEX_NONE, &base);
     } while (!CreateDirectoryW((LPCWSTR) Tcl_DStringValue(&base), NULL)
 	    && (error = GetLastError()) == ERROR_ALREADY_EXISTS);
 
@@ -2067,7 +2056,7 @@ TclpCreateTemporaryDirectory(
      */
 
     if (error != ERROR_SUCCESS) {
-	TclWinConvertError(error);
+	Tcl_WinConvertError(error);
 	Tcl_DStringFree(&base);
 	return NULL;
     }
@@ -2078,9 +2067,9 @@ TclpCreateTemporaryDirectory(
      */
 
     Tcl_DStringInit(&name);
-    Tcl_WCharToUtfDString((LPCWSTR) Tcl_DStringValue(&base), -1, &name);
+    Tcl_WCharToUtfDString((LPCWSTR) Tcl_DStringValue(&base), TCL_INDEX_NONE, &name);
     Tcl_DStringFree(&base);
-    return TclDStringToObj(&name);
+    return Tcl_DStringToObj(&name);
 }
 
 /*

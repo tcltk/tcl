@@ -4,8 +4,8 @@
  *	This file contains the DLL entry point and other low-level bit bashing
  *	code that needs inline assembly.
  *
- * Copyright (c) 1995-1996 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 Scriptics Corporation.
+ * Copyright © 1995-1996 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -23,14 +23,6 @@
  */
 
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
-
-/*
- * VC++ 5.x has no 'cpuid' assembler instruction, so we must emulate it
- */
-
-#if defined(_MSC_VER) && (_MSC_VER <= 1100) && defined (_M_IX86)
-#define cpuid	__asm __emit 0fh __asm __emit 0a2h
-#endif
 
 /*
  * The following declaration is for the VC++ DLL entry point.
@@ -185,12 +177,12 @@ TclWinInit(
     GetVersionExW(&os);
 
     /*
-     * We no longer support Win32s or Win9x or Windows CE, so just in case
-     * someone manages to get a runtime there, make sure they know that.
+     * We no longer support Win32s or Win9x or Windows CE or Windows XP, so just
+     * in case someone manages to get a runtime there, make sure they know that.
      */
 
     if (os.dwPlatformId != VER_PLATFORM_WIN32_NT) {
-	Tcl_Panic("Windows NT is the only supported platform");
+	Tcl_Panic("Windows 7 is the minimum supported platform");
     }
 }
 
@@ -387,7 +379,7 @@ TclWinDriveLetterForVolMountPoint(
 	    if (!alreadyStored) {
 		dlPtr2 = (MountPointMap *)Tcl_Alloc(sizeof(MountPointMap));
 		dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep(Target);
-		dlPtr2->driveLetter = (char) drive[0];
+		dlPtr2->driveLetter = (WCHAR) drive[0];
 		dlPtr2->nextPtr = driveLetterLookup;
 		driveLetterLookup = dlPtr2;
 	    }
@@ -413,7 +405,7 @@ TclWinDriveLetterForVolMountPoint(
 
     dlPtr2 = (MountPointMap *)Tcl_Alloc(sizeof(MountPointMap));
     dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep((void *)mountPoint);
-    dlPtr2->driveLetter = -1;
+    dlPtr2->driveLetter = (WCHAR)-1;
     dlPtr2->nextPtr = driveLetterLookup;
     driveLetterLookup = dlPtr2;
     Tcl_MutexUnlock(&mountPointMap);
@@ -445,12 +437,12 @@ TclWinCPUID(
 {
     int status = TCL_ERROR;
 
-#if defined(HAVE_INTRIN_H) && defined(_WIN64)
+#if defined(HAVE_INTRIN_H) && defined(_WIN64) && defined(HAVE_CPUID)
 
     __cpuid((int *)regsPtr, index);
     status = TCL_OK;
 
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && defined(HAVE_CPUID)
 #   if defined(_WIN64)
     /*
      * Execute the CPUID instruction with the given index, and store results
@@ -566,7 +558,7 @@ TclWinCPUID(
     status = registration.status;
 
 #   endif /* !_WIN64 */
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && defined(HAVE_CPUID)
 #   if defined(_WIN64)
 
     __cpuid(regsPtr, index);
@@ -621,6 +613,8 @@ TclWinCPUID(
 
 #   endif
 #else
+    (void)index;
+    (void)regsPtr;
     /*
      * Don't know how to do assembly code for this compiler and/or
      * architecture.

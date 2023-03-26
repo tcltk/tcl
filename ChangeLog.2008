@@ -1939,7 +1939,7 @@
 2008-07-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/FileSystem.3:		CONSTified many functions using
-	* generic/tcl.decls:		Tcl_FileSystem which all are supposed
+	* generic/tcl.decls:		Tcl_Filesystem which all are supposed
 	* generic/tclDecls.h:		to be a constant, but this was not
 	* generic/tclFileSystem.h:	reflected in the API: Tcl_FSData,
 	* generic/tclIOUtil.c:		Tcl_FSGetInternalRep, Tcl_FSRegister,

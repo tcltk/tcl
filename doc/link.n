@@ -13,7 +13,7 @@
 link \- create link from command to method of object
 .SH SYNOPSIS
 .nf
-package require TclOO
+package require tcl::oo
 
 \fBlink\fR \fImethodName\fR ?\fI...\fR?
 \fBlink\fR \fB{\fIcommandName methodName\fB}\fR ?\fI...\fR?

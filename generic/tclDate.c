@@ -76,7 +76,7 @@
  *	This file is generated from a yacc grammar defined in the file
  *	tclGetDate.y. It should not be edited directly.
  *
- * Copyright (c) 1992-1995 Karl Lehenbauer and Mark Diekhans.
+ * Copyright (c) 1992-1995 Karl Lehenbauer & Mark Diekhans.
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -185,9 +185,9 @@ typedef struct DateInfo {
 
 #define TM_YEAR_BASE	1900
 
-#define HOUR(x)		((int) (60 * x))
+#define HOUR(x)		((int) (60 * (x)))
 #define SECSPERDAY	(24L * 60L * 60L)
-#define IsLeapYear(x)	((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))
+#define IsLeapYear(x)	(((x) % 4 == 0) && ((x) % 100 != 0 || (x) % 400 == 0))
 
 /*
  * An entry in the lexical lookup table.
@@ -352,7 +352,6 @@ typedef short yytype_int16;
 # elif defined size_t
 #  define YYSIZE_T size_t
 # elif ! defined YYSIZE_T
-#  include <stddef.h> /* INFRINGES ON USER NAME SPACE */
 #  define YYSIZE_T size_t
 # else
 #  define YYSIZE_T unsigned
@@ -2746,7 +2745,7 @@ int
 TclClockOldscanObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Count of paraneters */
+    int objc,			/* Count of parameters */
     Tcl_Obj *const *objv)	/* Parameters */
 {
     Tcl_Obj *result, *resultElement;
@@ -2787,7 +2786,7 @@ TclClockOldscanObjCmd(
     yyHaveRel = 0;
     yyRelMonth = 0; yyRelDay = 0; yyRelSeconds = 0; yyRelPointer = NULL;
 
-    dateInfo.messages = Tcl_NewObj();
+    TclNewObj(dateInfo.messages);
     dateInfo.separatrix = "";
     Tcl_IncrRefCount(dateInfo.messages);
 
@@ -2844,8 +2843,8 @@ TclClockOldscanObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_NewObj();
-    resultElement = Tcl_NewObj();
+    TclNewObj(result);
+    TclNewObj(resultElement);
     if (yyHaveDate) {
 	Tcl_ListObjAppendElement(interp, resultElement,
 		Tcl_NewIntObj(yyYear));
@@ -2863,7 +2862,7 @@ TclClockOldscanObjCmd(
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewObj());
     }
 
-    resultElement = Tcl_NewObj();
+    TclNewObj(resultElement);
     if (yyHaveZone) {
 	Tcl_ListObjAppendElement(interp, resultElement,
 		Tcl_NewIntObj(-yyTimezone));
@@ -2872,7 +2871,7 @@ TclClockOldscanObjCmd(
     }
     Tcl_ListObjAppendElement(interp, result, resultElement);
 
-    resultElement = Tcl_NewObj();
+    TclNewObj(resultElement);
     if (yyHaveRel) {
 	Tcl_ListObjAppendElement(interp, resultElement,
 		Tcl_NewIntObj(yyRelMonth));
@@ -2883,7 +2882,7 @@ TclClockOldscanObjCmd(
     }
     Tcl_ListObjAppendElement(interp, result, resultElement);
 
-    resultElement = Tcl_NewObj();
+    TclNewObj(resultElement);
     if (yyHaveDay && !yyHaveDate) {
 	Tcl_ListObjAppendElement(interp, resultElement,
 		Tcl_NewIntObj(yyDayOrdinal));
@@ -2892,7 +2891,7 @@ TclClockOldscanObjCmd(
     }
     Tcl_ListObjAppendElement(interp, result, resultElement);
 
-    resultElement = Tcl_NewObj();
+    TclNewObj(resultElement);
     if (yyHaveOrdinalMonth) {
 	Tcl_ListObjAppendElement(interp, resultElement,
 		Tcl_NewIntObj(yyMonthOrdinal));

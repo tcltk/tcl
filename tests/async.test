@@ -4,23 +4,24 @@
 # library procedures.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1993 The Regents of the University of California.
-# Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1993 The Regents of the University of California.
+# Copyright © 1994-1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
+testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint testasync [llength [info commands testasync]]
-testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+testConstraint knownMsvcBug [string match msvc-* [tcl::build-info compiler]]
 
 proc async1 {result code} {
     global aresult acode
@@ -149,7 +150,7 @@ test async-3.1 {deleting handlers} testasync {
 } {3 del2 {0 0 0 del1 del2}}
 
 test async-4.1 {async interrupting bytecode sequence} -constraints {
-    testasync
+    testasync thread
 } -setup {
     set hm [testasync create async3]
     proc nothing {} {
@@ -178,7 +179,7 @@ test async-4.1 {async interrupting bytecode sequence} -constraints {
     testasync delete $hm
 }
 test async-4.2 {async interrupting straight bytecode sequence} -constraints {
-    testasync
+    testasync thread
 } -setup {
     set hm [testasync create async3]
 } -body {
@@ -203,7 +204,7 @@ test async-4.2 {async interrupting straight bytecode sequence} -constraints {
     testasync delete $hm
 }
 test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
-    testasync knownMsvcBug
+    testasync thread knownMsvcBug
 } -setup {
     set hm [testasync create async3]
 } -body {

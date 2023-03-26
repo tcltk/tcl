@@ -3,7 +3,7 @@
  *
  *	Contains commands for Xt notifier specific tests on Unix.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright © 1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -16,7 +16,6 @@
 #include "tcl.h"
 
 static Tcl_ObjCmdProc TesteventloopCmd;
-extern DLLEXPORT Tcl_PackageInitProc Tclxttest_Init;
 
 /*
  * Functions defined in tclXtNotify.c for use by users of the Xt Notifier:
@@ -44,7 +43,7 @@ extern XtAppContext	TclSetAppContext(XtAppContext ctx);
  *----------------------------------------------------------------------
  */
 
-int
+DLLEXPORT int
 Tclxttest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
@@ -78,7 +77,7 @@ Tclxttest_Init(
 
 static int
 TesteventloopCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

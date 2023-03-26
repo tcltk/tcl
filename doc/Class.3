@@ -55,6 +55,14 @@ Tcl_ObjectMapMethodNameProc
 \fBTcl_ObjectGetMethodNameMapper\fR(\fIobject\fR)
 .sp
 \fBTcl_ObjectSetMethodNameMapper\fR(\fIobject\fR, \fImethodNameMapper\fR)
+.sp
+.VS "TIP 605"
+Tcl_Class
+\fBTcl_GetClassOfObject\fR(\fIobject\fR)
+.sp
+Tcl_Obj *
+\fBTcl_GetObjectClassName\fR(\fIinterp\fR, \fIobject\fR)
+.VE "TIP 605"
 .SH ARGUMENTS
 .AS void *metadata in/out
 .AP Tcl_Interp *interp in/out
@@ -73,11 +81,11 @@ automatically selected.
 The name of the namespace to create for the object's private use, or NULL if a
 new unused name is to be automatically selected. The namespace must not
 already exist.
-.AP int objc in
+.AP size_t objc in
 The number of elements in the \fIobjv\fR array.
 .AP "Tcl_Obj *const" *objv in
 The arguments to the command to create the instance of the class.
-.AP int skip in
+.AP size_t skip in
 The number of arguments at the start of the argument array, \fIobjv\fR, that
 are not arguments to any constructors. This allows the generation of correct
 error messages even when complicated calling patterns are used (e.g., via the
@@ -114,6 +122,13 @@ function. Note that the Tcl_Obj reference returned by \fBTcl_GetObjectName\fR
 is a shared reference. You can also get whether the object has been marked for
 deletion with \fBTcl_ObjectDeleted\fR (it returns true if deletion of the
 object has begun); this can be useful during the processing of methods.
+.VS "TIP 605"
+The class of an object can be retrieved with \fBTcl_GetClassOfObject\fR, and
+the name of the class of an object with \fBTcl_GetObjectClassName\fR; note
+that these two \fImay\fR return NULL during deletion of an object (this is
+transient, and only occurs when the object is a long way through being
+deleted).
+.VE "TIP 605"
 .PP
 Instances of classes are created using \fBTcl_NewObjectInstance\fR, which
 creates an object from any class (and which is internally called by both
@@ -241,6 +256,29 @@ NULL if the whole chain is to be processed (the argument itself is never
 NULL); this variable may be updated by the callback. The \fImethodNameObj\fR
 parameter gives an unshared object containing the name of the method being
 invoked, as provided by the user; this object may be updated by the callback.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The \fIobjPtr\fR argument to \fBTcl_GetObjectFromObj\fR will not have its
+reference count manipulated, but this function may modify the interpreter
+result (to report any error) so interpreter results should not be fed into
+this without an additional reference being used.
+.PP
+The result of \fBTcl_GetObjectName\fR is a value that is owned by the object
+that is regenerated when this function is first called after the object is
+renamed.  If the value is to be retained at all, the caller should increment
+the reference count.
+.PP
+The first \fIobjc\fR values in the \fIobjv\fR argument to
+\fBTcl_NewObjectInstance\fR are the arguments to pass to the constructor. They
+must have a reference count of at least 1, and may have their reference counts
+changed during the running of the constructor. Constructors may modify the
+interpreter result, which consequently means that interpreter results should
+not be used as arguments without an additional reference being taken.
+.PP
+The \fImethodNameObj\fR argument to a Tcl_ObjectMapMethodNameProc
+implementation will be a value with a reference count of at least 1 where at
+least one reference is not held by the interpreter result. It is expected that
+method name mappers will only read their \fImethodNameObj\fR arguments.
 .SH "SEE ALSO"
 Method(3), oo::class(n), oo::copy(n), oo::define(n), oo::object(n)
 .SH KEYWORDS

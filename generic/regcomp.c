@@ -2,7 +2,7 @@
  * re_*comp and friends - compile REs
  * This file #includes several others (see the bottom).
  *
- * Copyright (c) 1998, 1999 Henry Spencer. All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer. All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -56,7 +56,7 @@ static const chr *scanplain(struct vars *);
 static void onechr(struct vars *, pchr, struct state *, struct state *);
 static void dovec(struct vars *, struct cvec *, struct state *, struct state *);
 static void wordchrs(struct vars *);
-static struct subre *subre(struct vars *, int, int, struct state *, struct state *);
+static struct subre *sub_re(struct vars *, int, int, struct state *, struct state *);
 static void freesubre(struct vars *, struct subre *);
 static void freesrnode(struct vars *, struct subre *);
 static int numst(struct subre *, int);
@@ -156,7 +156,7 @@ static void fixconstraintloops(struct nfa *, FILE *);
 static int	findconstraintloop(struct nfa *, struct state *);
 static void breakconstraintloop(struct nfa *, struct state *);
 static void clonesuccessorstates(struct nfa *, struct state *, struct state *,
-		 struct state *, struct arc *, char *, char *, int);
+		 struct state *, struct arc *, char *, char *, size_t);
 static void cleanup(struct nfa *);
 static void markreachable(struct nfa *, struct state *, struct state *, struct state *);
 static void markcanreach(struct nfa *, struct state *, struct state *, struct state *);
@@ -179,8 +179,8 @@ static void dumpcstate(int, struct cnfa *, FILE *);
 static struct cvec *clearcvec(struct cvec *);
 static void addchr(struct cvec *, pchr);
 static void addrange(struct cvec *, pchr, pchr);
-static struct cvec *newcvec(int, int);
-static struct cvec *getcvec(struct vars *, int, int);
+static struct cvec *newcvec(size_t, size_t);
+static struct cvec *getcvec(struct vars *, size_t, size_t);
 static void freecvec(struct cvec *);
 /* === regc_locale.c === */
 static celt element(struct vars *, const chr *, const chr *);
@@ -205,11 +205,11 @@ struct vars {
     int cflags;			/* copy of compile flags */
     int lasttype;		/* type of previous token */
     int nexttype;		/* type of next token */
-    int nextvalue;		/* value (if any) of next token */
+    size_t nextvalue;		/* value (if any) of next token */
     int lexcon;			/* lexical context type (see lex.c) */
-    int nsubexp;		/* subexpression count */
+    size_t nsubexp;		/* subexpression count */
     struct subre **subs;	/* subRE pointer vector */
-    int nsubs;			/* length of vector */
+    size_t nsubs;		/* length of vector */
     struct subre *sub10[10];	/* initial vector, enough for most */
     struct nfa *nfa;		/* the NFA */
     struct colormap *cm;	/* character color map */
@@ -222,7 +222,7 @@ struct vars {
     struct cvec *cv;		/* interface cvec */
     struct cvec *cv2;		/* utility cvec */
     struct subre *lacons;	/* lookahead-constraint vector */
-    int nlacons;		/* size of lacons */
+    size_t nlacons;		/* size of lacons */
     size_t spaceused;		/* approx. space used for compilation */
 };
 
@@ -287,7 +287,7 @@ compile(
 {
     AllocVars(v);
     struct guts *g;
-    int i, j;
+    size_t i, j;
     FILE *debug = (flags&REG_PROGRESS) ? stdout : NULL;
 #define	CNOERR()	{ if (ISERR()) return freev(v, v->err); }
 
@@ -410,7 +410,7 @@ compile(
     assert(v->nlacons == 0 || v->lacons != NULL);
     for (i = 1; i < v->nlacons; i++) {
 	if (debug != NULL) {
-	    fprintf(debug, "\n\n\n========= LA%d ==========\n", i);
+	    fprintf(debug, "\n\n\n========= LA%" TCL_Z_MODIFIER "u ==========\n", i);
 	}
 	nfanode(v, &v->lacons[i], debug);
     }
@@ -474,7 +474,7 @@ moresubs(
     size_t wanted)			/* want enough room for this one */
 {
     struct subre **p;
-    int n;
+    size_t n;
 
     assert(wanted > 0 && wanted >= v->nsubs);
     n = wanted * 3 / 2 + 1;
@@ -662,7 +662,7 @@ parse(
 
     assert(stopper == ')' || stopper == EOS);
 
-    branches = subre(v, '|', LONGER, init, final);
+    branches = sub_re(v, '|', LONGER, init, final);
     NOERRN();
     branch = branches;
     firstbranch = 1;
@@ -672,7 +672,7 @@ parse(
 	     * Need a place to hang the branch.
 	     */
 
-	    branch->right = subre(v, '|', LONGER, init, final);
+	    branch->right = sub_re(v, '|', LONGER, init, final);
 	    NOERRN();
 	    branch = branch->right;
 	}
@@ -743,7 +743,7 @@ parsebranch(
 
     lp = left;
     seencontent = 0;
-    t = subre(v, '=', 0, left, right);	/* op '=' is tentative */
+    t = sub_re(v, '=', 0, left, right);	/* op '=' is tentative */
     NOERRN();
     while (!SEE('|') && !SEE(stopper) && !SEE(EOS)) {
 	if (seencontent) {	/* implicit concat operator */
@@ -794,7 +794,7 @@ parseqatom(
     struct subre *t;
     int cap;			/* capturing parens? */
     int pos;			/* positive lookahead? */
-    int subno;			/* capturing-parens or backref number */
+    size_t subno;		/* capturing-parens or backref number */
     int atomtype;
     int qprefer;		/* quantifier short/long preference */
     int f;
@@ -976,7 +976,7 @@ parseqatom(
 	NOERR();
 	if (cap) {
 	    v->subs[subno] = atom;
-	    t = subre(v, '(', atom->flags|CAP, lp, rp);
+	    t = sub_re(v, '(', atom->flags|CAP, lp, rp);
 	    NOERR();
 	    t->subno = subno;
 	    t->left = atom;
@@ -994,7 +994,7 @@ parseqatom(
 	INSIST(v->subs[v->nextvalue] != NULL, REG_ESUBREG);
 	NOERR();
 	assert(v->nextvalue > 0);
-	atom = subre(v, 'b', BACKR, lp, rp);
+	atom = sub_re(v, 'b', BACKR, lp, rp);
 	NOERR();
 	subno = v->nextvalue;
 	atom->subno = subno;
@@ -1109,7 +1109,7 @@ parseqatom(
      */
 
     if (atom == NULL) {
-	atom = subre(v, '=', 0, lp, rp);
+	atom = sub_re(v, '=', 0, lp, rp);
 	NOERR();
     }
 
@@ -1146,7 +1146,7 @@ parseqatom(
      * Break remaining subRE into x{...} and what follows.
      */
 
-    t = subre(v, '.', COMBINE(qprefer, atom->flags), lp, rp);
+    t = sub_re(v, '.', COMBINE(qprefer, atom->flags), lp, rp);
     NOERR();
     t->left = atom;
     atomp = &t->left;
@@ -1160,7 +1160,7 @@ parseqatom(
      */
 
     assert(top->op == '=' && top->left == NULL && top->right == NULL);
-    top->left = subre(v, '=', top->flags, top->begin, lp);
+    top->left = sub_re(v, '=', top->flags, top->begin, lp);
     NOERR();
     top->op = '.';
     top->right = t;
@@ -1229,9 +1229,9 @@ parseqatom(
 	assert(m >= 1 && m != DUPINF && n >= 1);
 	repeat(v, s, atom->begin, m-1, (n == DUPINF) ? n : n-1);
 	f = COMBINE(qprefer, atom->flags);
-	t = subre(v, '.', f, s, atom->end);	/* prefix and atom */
+	t = sub_re(v, '.', f, s, atom->end);	/* prefix and atom */
 	NOERR();
-	t->left = subre(v, '=', PREF(f), s, atom->begin);
+	t->left = sub_re(v, '=', PREF(f), s, atom->begin);
 	NOERR();
 	t->right = atom;
 	*atomp = t;
@@ -1246,7 +1246,7 @@ parseqatom(
 	dupnfa(v->nfa, atom->begin, atom->end, s, s2);
 	repeat(v, s, s2, m, n);
 	f = COMBINE(qprefer, atom->flags);
-	t = subre(v, '*', f, s, s2);
+	t = sub_re(v, '*', f, s, s2);
 	NOERR();
 	t->min = (short) m;
 	t->max = (short) n;
@@ -1264,7 +1264,7 @@ parseqatom(
 	t->right = parsebranch(v, stopper, type, s2, rp, 1);
     } else {
 	EMPTYARC(s2, rp);
-	t->right = subre(v, '=', 0, s2, rp);
+	t->right = sub_re(v, '=', 0, s2, rp);
     }
     NOERR();
     assert(SEE('|') || SEE(stopper) || SEE(EOS));
@@ -1716,12 +1716,12 @@ wordchrs(
 }
 
 /*
- - subre - allocate a subre
- ^ static struct subre *subre(struct vars *, int, int, struct state *,
+ - sub_re - allocate a subre
+ ^ static struct subre *sub_re(struct vars *, int, int, struct state *,
  ^	struct state *);
  */
 static struct subre *
-subre(
+sub_re(
     struct vars *v,
     int op,
     int flags,
@@ -2047,7 +2047,7 @@ dump(
 {
 #ifdef REG_DEBUG
     struct guts *g;
-    int i;
+    size_t i;
 
     if (re->re_magic != REMAGIC) {
 	fprintf(f, "bad magic number (0x%x not 0x%x)\n",
@@ -2064,7 +2064,7 @@ dump(
     }
 
     fprintf(f, "\n\n\n========= DUMP ==========\n");
-    fprintf(f, "nsub %" TCL_Z_MODIFIER "d, info 0%lo, ntree %d\n",
+    fprintf(f, "nsub %" TCL_Z_MODIFIER "u, info 0%lo, ntree %" TCL_Z_MODIFIER "u\n",
 	    re->re_nsub, re->re_info, g->ntree);
 
     dumpcolors(&g->cmap, f);
@@ -2073,7 +2073,7 @@ dump(
 	dumpcnfa(&g->search, f);
     }
     for (i = 1; i < g->nlacons; i++) {
-	fprintf(f, "\nla%d (%s):\n", i,
+	fprintf(f, "\nla%" TCL_Z_MODIFIER "u (%s):\n", i,
 		(g->lacons[i].subno) ? "positive" : "negative");
 	dumpcnfa(&g->lacons[i].cnfa, f);
     }
@@ -2145,7 +2145,7 @@ stdump(
 	fprintf(f, "}");
     }
     if (nfapresent) {
-	fprintf(f, " %ld-%ld", (long)t->begin->no, (long)t->end->no);
+	fprintf(f, " %" TCL_Z_MODIFIER "u-%" TCL_Z_MODIFIER "u", t->begin->no, t->end->no);
     }
     if (t->left != NULL) {
 	fprintf(f, " L:%s", stid(t->left, idbuf, sizeof(idbuf)));

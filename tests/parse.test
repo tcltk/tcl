@@ -2,22 +2,22 @@
 # file tclParse.c.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[catch {package require tcltest 2.0.2}]} {
-    puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
-    return
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
 }
 
 namespace eval ::tcl::test::parse {
     namespace import ::tcltest::*
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testparser [llength [info commands testparser]]
 testConstraint testbytestring [llength [info commands testbytestring]]
@@ -31,7 +31,7 @@ testConstraint testevent [llength [info commands testevent]]
 testConstraint memory [llength [info commands memory]]
 
 test parse-1.1 {Tcl_ParseCommand procedure, computing string length} {testparser testbytestring} {
-    testparser [testbytestring "foo\0 bar"] -1
+    testparser [testbytestring "foo\x00 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
 test parse-1.2 {Tcl_ParseCommand procedure, computing string length} testparser {
     testparser "foo bar" -1
@@ -278,7 +278,7 @@ test parse-6.9 {ParseTokens procedure, error in command substitution} {
 } {0}
 test parse-6.10 {ParseTokens procedure, incomplete sub-command} {
     info complete {puts [
-	expr 1+1
+	expr {1+1}
 	#this is a comment ]}
 } {0}
 test parse-6.11 {ParseTokens procedure, memory allocation for big nested command} testparser {
@@ -300,8 +300,8 @@ test parse-6.15 {ParseTokens procedure, backslash-newline} testparser {
     testparser "\"b\\\nc\"" 0
 } {- \"b\\\nc\" 1 word \"b\\\nc\" 3 text b 0 backslash \\\n 0 text c 0 {}}
 test parse-6.16 {ParseTokens procedure, backslash substitution} testparser {
-    testparser {\n\a\x7f} 0
-} {- {\n\a\x7f} 1 word {\n\a\x7f} 3 backslash {\n} 0 backslash {\a} 0 backslash {\x7f} 0 {}}
+    testparser {\n\a\x7F} 0
+} {- {\n\a\x7F} 1 word {\n\a\x7F} 3 backslash {\n} 0 backslash {\a} 0 backslash {\x7F} 0 {}}
 test parse-6.17 {ParseTokens procedure, null characters} {testparser testbytestring} {
     expr {[testparser [testbytestring "foo\0zz"] 0] eq
 "- [testbytestring foo\0zz] 1 word [testbytestring foo\0zz] 3 text foo 0 text [testbytestring \0] 0 text zz 0 {}"
@@ -405,14 +405,14 @@ test parse-8.11 {Tcl_EvalObjv procedure, TCL_EVAL_INVOKE} testevalobjv {
     proc ::unknown args {lappend ::info [info level]; uplevel 1 foo}
     proc ::foo args {lappend ::info global}
     catch {rename ::noSuchCommand {}}
-    set ::slave [interp create]
-    $::slave alias bar noSuchCommand
+    set ::child [interp create]
+    $::child alias bar noSuchCommand
     set ::info {}
     namespace eval test_ns_1 {
        proc foo args {lappend ::info namespace}
-       $::slave eval bar
-       testevalobjv 1 [list $::slave eval bar]
-       uplevel #0 [list $::slave eval bar]
+       $::child eval bar
+       testevalobjv 1 [list $::child eval bar]
+       uplevel #0 [list $::child eval bar]
     }
     namespace delete test_ns_1
     rename ::foo {}
@@ -429,14 +429,14 @@ test parse-8.12 {Tcl_EvalObjv procedure, TCL_EVAL_INVOKE} {
             lappend ::info ns
         }]
     catch {rename ::noSuchCommand {}}
-    set ::slave [interp create]
-    $::slave alias bar noSuchCommand
+    set ::child [interp create]
+    $::child alias bar noSuchCommand
     set ::info {}
     namespace eval test_ns_1 {
-        $::slave eval bar
+        $::child eval bar
     }
     namespace delete test_ns_1
-    interp delete $::slave
+    interp delete $::child
     catch {rename ::noSuchCommand {}}
     set ::info
 } global
@@ -481,11 +481,11 @@ test parse-10.2 {Tcl_EvalTokens, backslash sequences} testevalex {
     testevalex {concat test\063\062test}
 } {test32test}
 test parse-10.3 {Tcl_EvalTokens, nested commands} testevalex {
-    testevalex {concat [expr 2 + 6]}
+    testevalex {concat [expr {2 + 6}]}
 } {8}
 test parse-10.4 {Tcl_EvalTokens, nested commands} testevalex {
     unset -nocomplain a
-    list [catch {testevalex {concat xxx[expr $a]}} msg] $msg
+    list [catch {testevalex {concat xxx[expr {$a}]}} msg] $msg
 } {1 {can't read "a": no such variable}}
 test parse-10.5 {Tcl_EvalTokens, simple variables} testevalex {
     set a hello
@@ -499,7 +499,7 @@ test parse-10.6 {Tcl_EvalTokens, array variables} testevalex {
 test parse-10.7 {Tcl_EvalTokens, array variables} testevalex {
     unset -nocomplain a
     set a(12) 46
-    testevalex {concat $a(1[expr 3 - 1])}
+    testevalex {concat $a(1[expr {3 - 1}])}
 } {46}
 test parse-10.8 {Tcl_EvalTokens, array variables} testevalex {
     unset -nocomplain a
@@ -518,7 +518,7 @@ test parse-10.11 {Tcl_EvalTokens, object values} testevalex {
     testevalex {concat $a$a$a}
 } {123123123}
 test parse-10.12 {Tcl_EvalTokens, object values} testevalex {
-    testevalex {concat [expr 2][expr 4][expr 6]}
+    testevalex {concat [expr {2}][expr {4}][expr {6}]}
 } {246}
 test parse-10.13 {Tcl_EvalTokens, string values} testevalex {
     testevalex {concat {a" b"}}
@@ -601,8 +601,8 @@ test parse-12.6 {Tcl_ParseVarName procedure, braced variable name} testparser {
     testparser {${..[]b}cd} 0
 } {- {${..[]b}cd} 1 word {${..[]b}cd} 3 variable {${..[]b}} 1 text {..[]b} 0 text cd 0 {}}
 test parse-12.7 {Tcl_ParseVarName procedure, braced variable name} testparser {
-    testparser "\$\{\{\} " 0
-} {- \$\{\{\}\  1 word \$\{\{\} 2 variable \$\{\{\} 1 text \{ 0 {}}
+    testparser "\$\{\{\\\\\}\} " 0
+} {- {${{\\}} } 1 word {${{\\}}} 2 variable {${{\\}}} 1 text {{\\}} 0 {}}
 test parse-12.8 {Tcl_ParseVarName procedure, missing close brace} testparser {
     list [catch {testparser "$\{abc" 0} msg] $msg $::errorInfo
 } {1 {missing close-brace for variable name} missing\ close-brace\ for\ variable\ name\n\ \ \ \ (remainder\ of\ script:\ \"\{abc\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"\$\\\{abc\"\ 0\"}
@@ -685,7 +685,7 @@ test parse-13.5 {Tcl_ParseVar procedure, error looking up variable} testparsevar
     unset -nocomplain abc
     list [catch {testparsevar {$abc([bogus x y z])}} msg] $msg
 } {1 {invalid command name "bogus"}}
-test parse-13.6 {Tcl_ParseVar memory leak} -constraints memory -setup {
+test parse-13.6 {Tcl_ParseVar memory leak} -constraints {testparsevar memory} -setup {
     proc getbytes {} {
 	return [lindex [split [memory info] \n] 3 3]
     }
@@ -707,7 +707,7 @@ test parse-13.6 {Tcl_ParseVar memory leak} -constraints memory -setup {
 } -result 0
 
 test parse-14.1 {Tcl_ParseBraces procedure, computing string length} {testparser testbytestring} {
-    testparser [testbytestring "foo\0 bar"] -1
+    testparser [testbytestring "foo\x00 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
 test parse-14.2 {Tcl_ParseBraces procedure, computing string length} testparser {
     testparser "foo bar" -1
@@ -744,7 +744,7 @@ test parse-14.12 {Tcl_ParseBraces procedure, missing close brace} testparser {
 } {1 {missing close-brace} missing\ close-brace\n\ \ \ \ (remainder\ of\ script:\ \"\{xy\\\nz\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"foo\ \\\{xy\\\\\\nz\"\ 0\"}
 
 test parse-15.1 {Tcl_ParseQuotedString procedure, computing string length} {testparser testbytestring} {
-    testparser [testbytestring "foo\0 bar"] -1
+    testparser [testbytestring "foo\x00 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
 test parse-15.2 {Tcl_ParseQuotedString procedure, computing string length} testparser {
     testparser "foo bar" -1
@@ -797,7 +797,7 @@ test parse-15.16 {CommandComplete procedure} {
 } 1
 test parse-15.17 {CommandComplete procedure} {
     info complete {a b "c $dd("}
-} 0
+} 1
 test parse-15.18 {CommandComplete procedure} {
     info complete {a b "c \"}
 } 0
@@ -910,10 +910,10 @@ test parse-15.54 {CommandComplete procedure} "
     info complete \"foo bar;# \{\"
 " 1
 test parse-15.55 {CommandComplete procedure} testbytestring {
-    info complete "set x [testbytestring \0]; puts hi"
+    info complete "set x [testbytestring \x00]; puts hi"
 } 1
 test parse-15.56 {CommandComplete procedure} testbytestring {
-    info complete "set x [testbytestring \0]; \{"
+    info complete "set x [testbytestring \x00]; \{"
 } 0
 test parse-15.57 {CommandComplete procedure} {
     info complete "# Comment should be complete command"
@@ -984,26 +984,26 @@ test parse-18.14 {Tcl_SubstObj, exception handling} {
     subst {abc,[break],def}
 } {abc,}
 test parse-18.15 {Tcl_SubstObj, exception handling} {
-    subst {abc,[continue; expr 1+2],def}
+    subst {abc,[continue; expr {1+2}],def}
 } {abc,,def}
 test parse-18.16 {Tcl_SubstObj, exception handling} {
-    subst {abc,[return foo; expr 1+2],def}
+    subst {abc,[return foo; expr {1+2}],def}
 } {abc,foo,def}
 test parse-18.17 {Tcl_SubstObj, exception handling} {
-    subst {abc,[return -code 10 foo; expr 1+2],def}
+    subst {abc,[return -code 10 foo; expr {1+2}],def}
 } {abc,foo,def}
 test parse-18.18 {Tcl_SubstObj, exception handling} {
     subst {abc,[break; set {} {}{}],def}
 } {abc,}
 test parse-18.19 {Tcl_SubstObj, exception handling} {
-    list [catch {subst {abc,[continue; expr 1+2; set {} {}{}],def}} msg] $msg
+    list [catch {subst {abc,[continue; expr {1+2}; set {} {}{}],def}} msg] $msg
 } [list 1 "extra characters after close-brace"]
 test parse-18.20 {Tcl_SubstObj, exception handling} {
-    list [catch {subst {abc,[return foo; expr 1+2; set {} {}{}],def}} msg] $msg
+    list [catch {subst {abc,[return foo; expr {1+2}; set {} {}{}],def}} msg] $msg
 } [list 1 "extra characters after close-brace"]
 test parse-18.21 {Tcl_SubstObj, exception handling} {
     list [catch {
-	subst {abc,[return -code 10 foo; expr 1+2; set {} {}{}],def}
+	subst {abc,[return -code 10 foo; expr {1+2}; set {} {}{}],def}
     } msg] $msg
 } [list 1 "extra characters after close-brace"]
 

@@ -6,13 +6,13 @@
 # built-in commands. Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
+# Copyright © 2004 Kevin B. Kenny.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -234,7 +234,7 @@ namespace eval ::testClock {
 		  Bias 300 \
 		  StandardBias 0 \
 		  DaylightBias -60 \
-		  StandardStart \x00\x00\x0b\x00\x01\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00 \
+		  StandardStart \x00\x00\x0B\x00\x01\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00 \
 		  DaylightStart \x00\x00\x03\x00\x02\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00]]
 }
 
@@ -35436,7 +35436,7 @@ test clock-32.1 {scan/format across the Gregorian change} {
 
 # clock clicks
 test clock-33.1 {clock clicks tests} {
-    expr [clock clicks]+1
+    expr {[clock clicks] + 1}
     concat {}
 } {}
 test clock-33.2 {clock clicks tests} {
@@ -35449,7 +35449,7 @@ test clock-33.3 {clock clicks tests} {
     list [catch {clock clicks foo} msg] $msg
 } {1 {bad option "foo": must be -milliseconds or -microseconds}}
 test clock-33.4 {clock clicks tests} {
-    expr [clock clicks -milliseconds]+1
+    expr {[clock clicks -milliseconds] + 1}
     concat {}
 } {}
 test clock-33.4a {clock milliseconds} {
@@ -35470,7 +35470,7 @@ test clock-33.5 {clock clicks tests, millisecond timing test} {
     expr {
 	  ($end > $start) && (($end - $start) <= 60) ?
 	  "ok" :
-	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
+	  "test should have taken 0-60 ms, actually took [expr {$end - $start}]"}
 } {ok}
 test clock-33.5a {clock tests, millisecond timing test} {
     # This test can fail on a system that is so heavily loaded that
@@ -35486,7 +35486,7 @@ test clock-33.5a {clock tests, millisecond timing test} {
     expr {
 	  ($end > $start) && (($end - $start) <= 60) ?
 	  "ok" :
-	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
+	  "test should have taken 0-60 ms, actually took [expr {$end - $start}]"}
 } {ok}
 test clock-33.6 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks ? } msg] $msg
@@ -35905,7 +35905,7 @@ test clock-34.68 {clock scan tests (merid and TZ)} {
 
 # clock seconds
 test clock-35.1 {clock seconds tests} {
-    expr [clock seconds]+1
+    expr {[clock seconds] + 1}
     concat {}
 } {}
 test clock-35.2 {clock seconds tests} {
@@ -36789,16 +36789,16 @@ test clock-58.1 {clock l10n - Japanese localisation} {*}{
     -body {
 	set trouble {}
 	foreach {date jdate} {
-	    1872-12-31 \u897f\u66a61872\u5e7412\u670831\u65e5
-	    1873-01-01 \u660e\u6cbb06\u5e7401\u670801\u65e5
-	    1912-07-29 \u660e\u6cbb45\u5e7407\u670829\u65e5
-	    1912-07-30 \u5927\u6b6301\u5e7407\u670830\u65e5
-	    1926-12-24 \u5927\u6b6315\u5e7412\u670824\u65e5
-	    1926-12-25 \u662d\u548c01\u5e7412\u670825\u65e5
-	    1989-01-07 \u662d\u548c64\u5e7401\u670807\u65e5
-	    1989-01-08 \u5e73\u621001\u5e7401\u670808\u65e5
-	    2019-04-30 \u5e73\u621031\u5e7404\u670830\u65e5
-	    2019-05-01 \u4ee4\u548c01\u5e7405\u670801\u65e5
+	    1872-12-31 西暦1872年12月31日
+	    1873-01-01 明治06年01月01日
+	    1912-07-29 明治45年07月29日
+	    1912-07-30 大正01年07月30日
+	    1926-12-24 大正15年12月24日
+	    1926-12-25 昭和01年12月25日
+	    1989-01-07 昭和64年01月07日
+	    1989-01-08 平成01年01月08日
+	    2019-04-30 平成31年04月30日
+	    2019-05-01 令和01年05月01日
 	} {
 	    set status [catch {
 		set secs [clock scan $date \
@@ -36930,10 +36930,10 @@ test clock-61.2 {overflow of a wide integer on output} {*}{
 }
 test clock-61.3 {near-miss overflow of a wide integer on output} {
     clock format 0x7fffffffffffffff -format %s -gmt true
-} [expr 0x7fffffffffffffff]
+} [expr {0x7fffffffffffffff}]
 test clock-61.4 {near-miss overflow of a wide integer on output} {
     clock format -0x8000000000000000 -format %s -gmt true
-} [expr -0x8000000000000000]
+} [expr {-0x8000000000000000}]
 
 test clock-62.1 {Bug 1902423} {*}{
     -setup {::tcl::clock::ClearCaches}

@@ -4,14 +4,16 @@
 # commands.  Sourcing this file into Tcl runs the tests and generates output
 # for errors.  No output means no errors were found.
 #
-# Copyright (c) 1997 by Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2.2
-namespace import ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 unset -nocomplain path
 catch {set oldlang $env(LANG)}
 set env(LANG) C
@@ -124,7 +126,7 @@ test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} -setup {
 	set oldlibrary $env(TCL_LIBRARY)
     }
 } -body {
-    # ((str != NULL) && (str[0] != '\0'))
+    # ((str != NULL) && (str[0] != '\x00'))
     set env(TCL_LIBRARY) sparkly
     lindex [getlibpath] 0
 } -cleanup {
@@ -156,7 +158,7 @@ test unixInit-2.4 {TclpInitLibraryPath: TCL_LIBRARY: INTL} -setup {
     }
 } -body {
     # Child process translates env variable from native encoding.
-    set env(TCL_LIBRARY) "\xa7"
+    set env(TCL_LIBRARY) "§"
     lindex [getlibpath] 0
 } -cleanup {
     unset -nocomplain env(TCL_LIBRARY) env(LANG)
@@ -164,7 +166,7 @@ test unixInit-2.4 {TclpInitLibraryPath: TCL_LIBRARY: INTL} -setup {
 	set env(TCL_LIBRARY) $oldlibrary
 	unset oldlibrary
     }
-} -result "\xa7"
+} -result "§"
 test unixInit-2.5 {TclpInitLibraryPath: compiled-in library path} {
     # cannot test
 } {}
@@ -344,7 +346,9 @@ test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
 } -match regexp -result {^(iso8859-15?|utf-8)$}
 test unixInit-3.2 {TclpSetInitialEncodings} -setup {
     catch {set oldlc_all $env(LC_ALL)}
-} -constraints {unix stdio} -body {
+    catch {set oldtcl_library $env(TCL_LIBRARY)}
+    unset -nocomplain env(TCL_LIBRARY)
+} -constraints {unix stdio knownBug} -body {
     set env(LANG) japanese
     set env(LC_ALL) japanese
     set f [open "|[list [interpreter]]" w+]
@@ -362,6 +366,7 @@ test unixInit-3.2 {TclpSetInitialEncodings} -setup {
 } -cleanup {
     unset -nocomplain env(LANG) env(LC_ALL)
     catch {set env(LC_ALL) $oldlc_all}
+    catch {set env(TCL_LIBRARY) $oldtcl_library}
 } -result 0
 
 test unixInit-4.1 {TclpSetVariables} {unix} {

@@ -19,7 +19,7 @@ Tcl_WrongNumArgs \- generate standard error message for wrong number of argument
 .AP Tcl_Interp interp in
 Interpreter in which error will be reported: error message gets stored
 in its result value.
-.AP int objc in
+.AP size_t objc in
 Number of leading arguments from \fIobjv\fR to include in error
 message.
 .AP "Tcl_Obj *const" objv[] in
@@ -73,6 +73,12 @@ is now an \fIindexObject\fR because it was passed to
 .CS
 wrong # args: should be "foo barfly fileName count"
 .CE
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The \fIobjv\fR argument to \fBTcl_WrongNumArgs\fR should be the exact
+arguments passed to the command or method implementation function that is
+calling \fBTcl_WrongNumArgs\fR. As such, all values referenced in it should
+have reference counts greater than zero; this is usually a non-issue.
 .SH "SEE ALSO"
 Tcl_GetIndexFromObj(3)
 .SH KEYWORDS

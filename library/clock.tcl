@@ -9,7 +9,7 @@
 #
 #----------------------------------------------------------------------
 #
-# Copyright (c) 2004,2005,2006,2007 by Kevin B. Kenny
+# Copyright © 2004-2007 Kevin B. Kenny
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
@@ -223,7 +223,7 @@ proc ::tcl::clock::Initialize {} {
 
     ::msgcat::mcset ru GREGORIAN_CHANGE_DATE 2421639
 
-    # Romania (Transylvania changed earler - perhaps de_RO should show the
+    # Romania (Transylvania changed earlier - perhaps de_RO should show the
     # earlier date?)
 
     ::msgcat::mcset ro GREGORIAN_CHANGE_DATE 2422063
@@ -2988,8 +2988,7 @@ proc ::tcl::clock::GetSystemTimeZone {} {
 	set timezone $result
     } elseif {[set result [getenv TZ]] ne {}} {
 	set timezone $result
-    }
-    if {![info exists timezone]} {
+    } else {
         # Cache the time zone only if it was detected by one of the
         # expensive methods.
         if { [info exists CachedSystemTimeZone] } {
@@ -3304,7 +3303,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 	return
     }
 
-    # Since an unsafe interp uses the [clock] command in the master, this code
+    # Since an unsafe interp uses the [clock] command in the parent, this code
     # is security sensitive.  Make sure that the path name cannot escape the
     # given directory.
 
@@ -3314,7 +3313,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 	    "time zone \":$fileName\" not valid"
     }
     try {
-	source -encoding utf-8 [file join $DataDir $fileName]
+	source [file join $DataDir $fileName]
     } on error {} {
 	return -code error \
 	    -errorcode [list CLOCK badTimeZone :$fileName] \
@@ -3344,7 +3343,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 proc ::tcl::clock::LoadZoneinfoFile { fileName } {
     variable ZoneinfoPaths
 
-    # Since an unsafe interp uses the [clock] command in the master, this code
+    # Since an unsafe interp uses the [clock] command in the parent, this code
     # is security sensitive.  Make sure that the path name cannot escape the
     # given directory.
 

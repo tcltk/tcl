@@ -4,15 +4,15 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1998 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1998 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -62,8 +62,8 @@ test regexpComp-1.6 {basic regexp operation} {
 test regexpComp-1.7 {regexp utf compliance} {
     # if not UTF-8 aware, result is "0 1"
     evalInProc {
-	set foo "\u4e4eb q"
-	regexp "\u4e4eb q" "a\u4e4eb qw\u5e4e\x4e wq" bar
+	set foo "乎b q"
+	regexp "乎b q" "a乎b qw幎N wq" bar
 	list [string compare $foo $bar] [regexp 4 $bar]
     }
 } {0 0}
@@ -447,8 +447,8 @@ test regexpComp-7.16 {basic regsub operation} {
 test regexpComp-7.17 {regsub utf compliance} {
     evalInProc {
 	# if not UTF-8 aware, result is "0 1"
-	set foo "xyz555ijka\u4e4ebpqr"
-	regsub a\u4e4eb xyza\u4e4ebijka\u4e4ebpqr 555 bar
+	set foo "xyz555ijka乎bpqr"
+	regsub a乎b xyza乎bijka乎bpqr 555 bar
 	list [string compare $foo $bar] [regexp 4 $bar]
     }
 } {0 0}
@@ -798,9 +798,9 @@ test regexpComp-20.1 {regsub shared object shimmering} {
 	set b $a
 	set c abcdefghijklmnopqurstuvwxyz0123456789
 	regsub $a $c $b d
-	list $d [string length $d] [string bytelength $d]
+	list $d [string length $d]
     }
-} [list abcdefghijklmnopqurstuvwxyz0123456789 37 37]
+} [list abcdefghijklmnopqurstuvwxyz0123456789 37]
 test regexpComp-20.2 {regsub shared object shimmering with -about} {
     evalInProc {
 	eval regexp -about abc
