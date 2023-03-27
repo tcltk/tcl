@@ -250,18 +250,18 @@ and \fBTcl_ObjGetVar2\fR is (if non-NULL) a value with a reference of at least
 operated upon.
 .PP
 The \fInewValuePtr\fR argument to \fBTcl_SetVar2Ex\fR and \fBTcl_ObjSetVar2\fR
-may be an arbitrary reference count value; its reference count will be
-incremented on success. However, it is recommended to not use a zero reference
-count value, as that makes correct handling of the error case tricky.
+may be an arbitrary reference count value.  Its reference count is
+incremented on success.  On failure, if is reference count is zero, it is
+decremented and freed so the caller need do nothing with it.
 .PP
-The \fIpart1\fR argument to \fBTcl_ObjSetVar2\fR and \fBTcl_ObjGetVar2\fR can
-have any reference count; these functions never modify it. It is recommended
-to not use a zero reference count for this argument.
+The \fIpart1Ptr\fR argument to \fBTcl_ObjSetVar2\fR and \fBTcl_ObjGetVar2\fR can
+have any reference count.  These functions never modify it.
 .PP
-The \fIpart2\fR argument to \fBTcl_ObjSetVar2\fR and \fBTcl_ObjGetVar2\fR, if
+The \fIpart2Ptr\fR argument to \fBTcl_ObjSetVar2\fR and \fBTcl_ObjGetVar2\fR, if
 non-NULL, should not have a zero reference count as these functions may
-retain a reference to it (particularly when it is used to create an array
-element that did not previously exist).
+retain a reference to it, particularly when it is used to create an array
+element that did not previously exist, and decrementing the reference count
+later would leave them pointing to a freed Tcl_Obj.
 
 .SH "SEE ALSO"
 Tcl_GetObjResult, Tcl_GetStringResult, Tcl_TraceVar
