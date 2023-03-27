@@ -1620,8 +1620,6 @@ apply [list {} {
 	valgrind, which is useful since Valgrind provides information about the
 	error location, but [memory] doesn't.
     } -setup {
-	makeFile {puts "In script"} script
-
 	if {[namespace which ::memory] eq {}} {
 	    set memcheckcmd [list ::apply [list script {
 		uplevel 1 $script
