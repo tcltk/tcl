@@ -2415,7 +2415,7 @@ ZipFSMkKeyObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "password");
 	return TCL_ERROR;
     }
-    pw = Tcl_GetStringFromObj(objv[1], &len);
+    pw = TclGetStringFromObj(objv[1], &len);
     if (len == 0) {
 	return TCL_OK;
     }
@@ -2942,7 +2942,7 @@ ComputeNameInArchive(
     if (directNameObj) {
 	name = Tcl_GetString(directNameObj);
     } else {
-	name = Tcl_GetStringFromObj(pathObj, &len);
+	name = TclGetStringFromObj(pathObj, &len);
 	if (slen > 0) {
 	    if ((len <= slen) || (strncmp(strip, name, slen) != 0)) {
 		/*
@@ -3028,7 +3028,7 @@ ZipFSMkZipOrImg(
 
     passBuf[0] = 0;
     if (passwordObj != NULL) {
-	pw = Tcl_GetStringFromObj(passwordObj, &pwlen);
+	pw = TclGetStringFromObj(passwordObj, &pwlen);
 	if (IsPasswordValid(interp, pw, pwlen) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3188,7 +3188,7 @@ ZipFSMkZipOrImg(
 
     Tcl_InitHashTable(&fileHash, TCL_STRING_KEYS);
     if (mappingList == NULL && stripPrefix != NULL) {
-	strip = Tcl_GetStringFromObj(stripPrefix, &slen);
+	strip = TclGetStringFromObj(stripPrefix, &slen);
 	if (!slen) {
 	    strip = NULL;
 	}
@@ -5045,13 +5045,13 @@ ZipFSMatchInDirectoryProc(
      * The prefix that gets prepended to results.
      */
 
-    prefix = Tcl_GetStringFromObj(pathPtr, &prefixLen);
+    prefix = TclGetStringFromObj(pathPtr, &prefixLen);
 
     /*
      * The (normalized) path we're searching.
      */
 
-    path = Tcl_GetStringFromObj(normPathPtr, &len);
+    path = TclGetStringFromObj(normPathPtr, &len);
 
     Tcl_DStringInit(&dsPref);
     if (strcmp(prefix, path) == 0) {
@@ -5166,7 +5166,7 @@ ZipFSMatchMountPoints(
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     int l, normLength;
-    const char *path = Tcl_GetStringFromObj(normPathPtr, &normLength);
+    const char *path = TclGetStringFromObj(normPathPtr, &normLength);
     size_t len = (size_t) normLength;
 
     if (len < 1) {
@@ -5253,7 +5253,7 @@ ZipFSPathInFilesystemProc(
     if (!pathPtr) {
 	return -1;
     }
-    path = Tcl_GetStringFromObj(pathPtr, &len);
+    path = TclGetStringFromObj(pathPtr, &len);
     if (strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) != 0) {
 	return -1;
     }
@@ -5401,7 +5401,7 @@ ZipFSFileAttrsGetProc(
     if (!pathPtr) {
 	return -1;
     }
-    path = Tcl_GetStringFromObj(pathPtr, &len);
+    path = TclGetStringFromObj(pathPtr, &len);
     ReadLock();
     z = ZipFSLookup(path);
     if (!z) {

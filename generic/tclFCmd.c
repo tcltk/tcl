@@ -1679,7 +1679,7 @@ TclFileHomeCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "?user?");
 	return TCL_ERROR;
     }
-    homeDirObj = TclGetHomeDirObj(interp, objc == 1 ? NULL : Tcl_GetString(objv[1]));
+    homeDirObj = TclGetHomeDirObj(interp, objc == 1 ? NULL : TclGetString(objv[1]));
     if (homeDirObj == NULL) {
 	return TCL_ERROR;
     }

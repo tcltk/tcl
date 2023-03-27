@@ -3187,7 +3187,7 @@ TclCompileFormatCmd(
      * the format is broken). Do the format now.
      */
 
-    tmpObj = Tcl_Format(interp, Tcl_GetString(formatObj),
+    tmpObj = Tcl_Format(interp, TclGetString(formatObj),
 	    parsePtr->numWords-2, objv);
     for (; --i>=0 ;) {
 	Tcl_DecrRefCount(objv[i]);
@@ -3231,7 +3231,7 @@ TclCompileFormatCmd(
      * Now scan through and check for non-%s and non-%% substitutions.
      */
 
-    for (bytes = Tcl_GetString(formatObj) ; *bytes ; bytes++) {
+    for (bytes = TclGetString(formatObj) ; *bytes ; bytes++) {
 	if (*bytes == '%') {
 	    bytes++;
 	    if (*bytes == 's') {
@@ -3264,7 +3264,7 @@ TclCompileFormatCmd(
     i = 0;			/* The count of things to concat. */
     j = 2;			/* The index into the argument tokens, for
 				 * TIP#280 handling. */
-    start = Tcl_GetString(formatObj);
+    start = TclGetString(formatObj);
 				/* The start of the currently-scanned literal
 				 * in the format string. */
     TclNewObj(tmpObj);	/* The buffer used to accumulate the literal

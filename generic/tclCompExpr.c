@@ -2565,7 +2565,7 @@ CompileExprTree(
 			Tcl_Obj *tableValue;
 			int numBytes;
 			const char *bytes
-				= Tcl_GetStringFromObj(objPtr, &numBytes);
+				= TclGetStringFromObj(objPtr, &numBytes);
 
 			idx = TclRegisterLiteral(envPtr, bytes, numBytes, 0);
 			tableValue = TclFetchLiteral(envPtr, idx);
