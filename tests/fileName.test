@@ -1650,6 +1650,8 @@ apply [list {} {
 	} else {
 	    set memcheckcmd ::tcltests::scriptmemcheck
 	}
+    } -cleanup {
+	removeFile script
     } -body {
 	{*}$memcheckcmd {
 	    set interp [interp create]
