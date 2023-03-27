@@ -4423,7 +4423,7 @@ InitializeEncodingSearchPath(
     if (*encodingPtr) {
 	((Encoding *)(*encodingPtr))->refCount++;
     }
-    bytes = Tcl_GetStringFromObj(searchPathObj, &numBytes);
+    bytes = TclGetStringFromObj(searchPathObj, &numBytes);
 
     *lengthPtr = numBytes;
     *valuePtr = (char *)ckalloc(numBytes + 1);

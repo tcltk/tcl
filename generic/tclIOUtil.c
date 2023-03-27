@@ -1338,7 +1338,7 @@ TclFSNormalizeToUniquePath(
      * We check these first to avoid useless calls to the native filesystem's
      * normalizePathProc.
      */
-    path = Tcl_GetStringFromObj(pathPtr, &i);
+    path = TclGetStringFromObj(pathPtr, &i);
 
     if ( (i >= 3) && ( (path[0] == '/' && path[1] == '/')
 		    || (path[0] == '\\' && path[1] == '\\') ) ) {

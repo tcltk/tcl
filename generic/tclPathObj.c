@@ -2350,7 +2350,7 @@ SetFsPathFromAny(
     fsPathPtr = (FsPath *)ckalloc(sizeof(FsPath));
 
     if (transPtr == pathPtr) {
-	(void) Tcl_GetStringFromObj(pathPtr, NULL);
+	(void)TclGetString(pathPtr);
 	TclFreeInternalRep(pathPtr);
         transPtr = Tcl_DuplicateObj(pathPtr);
         fsPathPtr->filesystemEpoch = 0;
@@ -2691,7 +2691,7 @@ TclResolveTildePath(
     int split;
     Tcl_DString resolvedPath;
 
-    path = Tcl_GetStringFromObj(pathObj, &len);
+    path = TclGetStringFromObj(pathObj, &len);
     if (path[0] != '~') {
 	return pathObj;
     }

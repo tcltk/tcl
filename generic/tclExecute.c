@@ -3788,7 +3788,7 @@ TEBCresume(
 	arrayPtr = NULL;
 	part1Ptr = part2Ptr = NULL;
 	cleanup = 0;
-	TRACE(("%u %s => ", opnd, Tcl_GetString(incrPtr)));
+	TRACE(("%u %s => ", opnd, TclGetString(incrPtr)));
 
     doIncrVar:
 	if (TclIsVarDirectModifyable2(varPtr, arrayPtr)) {

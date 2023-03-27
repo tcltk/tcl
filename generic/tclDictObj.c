@@ -635,7 +635,7 @@ SetDictFromAny(
 		 * convert back.
 		 */
 
-		(void) Tcl_GetString(objPtr);
+		(void) TclGetString(objPtr);
 
 		TclDecrRefCount(discardedValue);
 	    }
@@ -3308,7 +3308,7 @@ DictUpdateCmd(
 	}
 	if (objPtr == NULL) {
 	    /* ??? */
-	    Tcl_UnsetVar2(interp, Tcl_GetString(objv[i+1]), NULL, 0);
+	    Tcl_UnsetVar2(interp, TclGetString(objv[i+1]), NULL, 0);
 	} else if (Tcl_ObjSetVar2(interp, objv[i+1], NULL, objPtr,
 		TCL_LEAVE_ERR_MSG) == NULL) {
 	    TclDecrRefCount(dictPtr);

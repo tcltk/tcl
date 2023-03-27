@@ -1111,7 +1111,7 @@ NRInterpCmd(
 	if (hPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "alias \"%s\" in path \"%s\" not found",
-		    aliasName, Tcl_GetString(objv[2])));
+		    aliasName, TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName,
 		    NULL);
 	    return TCL_ERROR;

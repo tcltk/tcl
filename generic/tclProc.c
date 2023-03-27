@@ -538,7 +538,7 @@ TclCreateProc(
 	    goto procError;
 	}
 
-	argname = Tcl_GetStringFromObj(fieldValues[0], &nameLength);
+	argname = TclGetStringFromObj(fieldValues[0], &nameLength);
 
 	/*
 	 * Check that the formal parameter name is a scalar.
