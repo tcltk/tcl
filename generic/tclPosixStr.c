@@ -182,7 +182,7 @@ Tcl_ErrnoId(void)
 #ifdef EISDIR
     case EISDIR: return "EISDIR";
 #endif
-#ifdef EISNAME
+#ifdef EISNAM
     case EISNAM: return "EISNAM";
 #endif
 #ifdef EL2HLT
@@ -220,6 +220,9 @@ Tcl_ErrnoId(void)
 #endif
 #if defined(ELOOP) && (!defined(ENOENT) || (ELOOP != ENOENT))
     case ELOOP: return "ELOOP";
+#endif
+#ifdef EMEDIUMTYPE
+    case EMEDIUMTYPE: return "EMEDIUMTYPE";
 #endif
 #ifdef EMFILE
     case EMFILE: return "EMFILE";
@@ -412,6 +415,9 @@ Tcl_ErrnoId(void)
 #endif
 #ifdef EREMOTERELEASE
     case EREMOTERELEASE: return "EREMOTERELEASE";
+#endif
+#ifdef ERESTART
+    case ERESTART: return "ERESTART";
 #endif
 #ifdef EROFS
     case EROFS: return "EROFS";
@@ -653,8 +659,8 @@ Tcl_ErrnoMsg(
 #ifdef EISDIR
     case EISDIR: return "is a directory";
 #endif
-#ifdef EISNAME
-    case EISNAM: return "is a name file";
+#ifdef EISNAM
+    case EISNAM: return "is a named type file";
 #endif
 #ifdef EL2HLT
     case EL2HLT: return "level 2 halted";
@@ -692,6 +698,9 @@ Tcl_ErrnoMsg(
 #endif
 #if defined(ELOOP) && (!defined(ENOENT) || (ELOOP != ENOENT))
     case ELOOP: return "too many levels of symbolic links";
+#endif
+#ifdef EMEDIUMTYPE
+    case EMEDIUMTYPE: return "wrong medium type";
 #endif
 #ifdef EMFILE
     case EMFILE: return "too many open files";
@@ -757,7 +766,7 @@ Tcl_ErrnoMsg(
     case ENOMEM: return "cannot allocate memory";
 #endif
 #ifdef ENOMEDIUM
-    case ENOMEDIUM: return "no medium";
+    case ENOMEDIUM: return "no medium found";
 #endif
 #ifdef ENOMSG
     case ENOMSG: return "no message of desired type";
@@ -884,6 +893,9 @@ Tcl_ErrnoMsg(
 #endif
 #ifdef EREMOTERELEASE
     case EREMOTERELEASE: return "remote peer released connection";
+#endif
+#ifdef ERESTART
+    case ERESTART: return "interrupted system call should be restarted";
 #endif
 #ifdef EROFS
     case EROFS: return "read-only file system";
