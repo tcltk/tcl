@@ -1635,7 +1635,7 @@ apply [list {} {
 	    set interp [interp create]
 	    interp eval $interp {
 		apply [list {} {
-		    upvar 1 f f 
+		    upvar 1 f f
 
 		    # A unique name so that no internal representation of this
 		    # literal value has been picked up from any other script
@@ -1667,9 +1667,6 @@ apply [list {} {
 	}
     } -result 0
 } [namespace current]]
-    
-
-
 
 # cleanup
 catch {file delete -force C:/globTest}
