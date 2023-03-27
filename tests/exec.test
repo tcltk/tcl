@@ -333,11 +333,11 @@ test exec-8.2 {long input and output} {exec} {
 
 test exec-9.1 {commands returning errors} {exec notValgrind} {
     set x [catch {exec gorp456} msg]
-    list $x $msg $errorCode
-} {1 {couldn't execute "gorp456": No such file or directory} {POSIX ENOENT {No such file or directory}}}
+    list $x [string tolower $msg] [string tolower $errorCode]
+} {1 {couldn't execute "gorp456": no such file or directory} {posix enoent {no such file or directory}}}
 test exec-9.2 {commands returning errors} {exec notValgrind} {
-    list [catch {exec [interpreter] echo foo | foo123} msg] $msg $errorCode
-} {1 {couldn't execute "foo123": No such file or directory} {POSIX ENOENT {No such file or directory}}}
+    string tolower [list [catch {exec [interpreter] echo foo | foo123} msg] $msg $errorCode]
+} {1 {couldn't execute "foo123": no such file or directory} {posix enoent {no such file or directory}}}
 test exec-9.3 {commands returning errors} -constraints {exec stdio} -body {
     exec [interpreter] $path(sleep) 1 | [interpreter] $path(exit) 43 | [interpreter] $path(sleep) 1
 } -returnCodes error -result {child process exited abnormally}
@@ -347,7 +347,7 @@ test exec-9.4 {commands returning errors} -constraints {exec stdio} -body {
 child process exited abnormally}
 test exec-9.5 {commands returning errors} -constraints {exec stdio notValgrind} -body {
     exec gorp456 | [interpreter] echo a b c
-} -returnCodes error -result {couldn't execute "gorp456": No such file or directory}
+} -returnCodes error -result {couldn't execute "gorp456": no such file or directory}
 test exec-9.6 {commands returning errors} -constraints {exec} -body {
     exec [interpreter] $path(sh) -c "\"$path(echo)\" error msg 1>&2"
 } -returnCodes error -result {error msg}
@@ -417,13 +417,13 @@ test exec-10.14 {errors in exec invocation} -constraints {exec} -body {
 } -returnCodes error -result {can't specify "<@" as last word in command}
 test exec-10.15 {errors in exec invocation} -constraints {exec} -body {
     exec cat < a/b/c
-} -returnCodes error -result {couldn't read file "a/b/c": No such file or directory}
+} -returnCodes error -result {couldn't read file "a/b/c": no such file or directory}
 test exec-10.16 {errors in exec invocation} -constraints {exec} -body {
     exec cat << foo > a/b/c
-} -returnCodes error -result {couldn't write file "a/b/c": No such file or directory}
+} -returnCodes error -result {couldn't write file "a/b/c": no such file or directory}
 test exec-10.17 {errors in exec invocation} -constraints {exec} -body {
     exec cat << foo > a/b/c
-} -returnCodes error -result {couldn't write file "a/b/c": No such file or directory}
+} -returnCodes error -result {couldn't write file "a/b/c": no such file or directory}
 set f [open $path(gorp.file) w]
 test exec-10.18 {errors in exec invocation} -constraints {exec} -body {
     exec cat <@ $f
@@ -511,16 +511,16 @@ test exec-12.3 {reaping background processes} {exec unix nonPortable} {
 # Make sure "errorCode" is set correctly.
 
 test exec-13.1 {setting errorCode variable} {exec} {
-    list [catch {exec [interpreter] $path(cat) < a/b/c} msg] $errorCode
-} {1 {POSIX ENOENT {No such file or directory}}}
+    list [catch {exec [interpreter] $path(cat) < a/b/c} msg] [string tolower $errorCode]
+} {1 {posix enoent {no such file or directory}}}
 test exec-13.2 {setting errorCode variable} {exec} {
-    list [catch {exec [interpreter] $path(cat) > a/b/c} msg] $errorCode
-} {1 {POSIX ENOENT {No such file or directory}}}
+    list [catch {exec [interpreter] $path(cat) > a/b/c} msg] [string tolower $errorCode]
+} {1 {posix enoent {no such file or directory}}}
 test exec-13.3 {setting errorCode variable} {exec notValgrind} {
     set x [catch {exec _weird_cmd_} msg]
-    list $x $msg [lindex $errorCode 0] \
-	    [lrange $errorCode 2 end]
-} {1 {couldn't execute "_weird_cmd_": No such file or directory} POSIX {{No such file or directory}}}
+    list $x [string tolower $msg] [lindex $errorCode 0] \
+	    [string tolower [lrange $errorCode 2 end]]
+} {1 {couldn't execute "_weird_cmd_": no such file or directory} POSIX {{no such file or directory}}}
 test exec-13.4 {extended exit result codes} -setup {
     set tmp [makeFile {exit 0x00000101} tmpfile.exec-13.4]
 } -constraints {win} -body {
@@ -556,7 +556,7 @@ test exec-14.3 {unknown switch} -constraints {exec} -body {
 } -returnCodes error -result {bad option "-gorp": must be -ignorestderr, -keepnewline, or --}
 test exec-14.4 {-- switch} -constraints {exec notValgrind} -body {
     exec -- -gorp
-} -returnCodes error -result {couldn't execute "-gorp": No such file or directory}
+} -returnCodes error -result {couldn't execute "-gorp": no such file or directory}
 test exec-14.5 {-ignorestderr switch} {exec} {
     # Alas, the use of -ignorestderr is buried here :-(
     exec [interpreter] $path(sh2) -c [list $path(echo2) foo bar] 2>@1

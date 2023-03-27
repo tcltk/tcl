@@ -184,10 +184,10 @@ test event-5.1 {Tcl_BackgroundError, HandleBgErrors procedures} -setup {
 } -result {{{a simple error} {a simple error
     while executing
 "error "a simple error""
-    ("after" script)} NONE} {{couldn't open "non_existent": No such file or directory} {couldn't open "non_existent": No such file or directory
+    ("after" script)} NONE} {{couldn't open "non_existent": no such file or directory} {couldn't open "non_existent": no such file or directory
     while executing
 "open non_existent"
-    ("after" script)} {POSIX ENOENT {No such file or directory}}}}
+    ("after" script)} {POSIX ENOENT {no such file or directory}}}}
 test event-5.2 {Tcl_BackgroundError, HandleBgErrors procedures} -setup {
     catch {rename bgerror {}}
 } -body {

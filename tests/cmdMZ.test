@@ -64,7 +64,7 @@ test cmdMZ-1.4 {Tcl_PwdObjCmd: failure} -setup {
 } -returnCodes error -cleanup {
     cd $cwd
     file delete -force $foodir
-} -result {error getting working directory name: Permission denied}
+} -result {error getting working directory name: permission denied}
 
 # The tests for Tcl_RegexpObjCmd, Tcl_RegsubObjCmd are in regexp.test
 

@@ -34,7 +34,7 @@ if {[testConstraint unix] && $tcl_platform(os) eq "Darwin"} {
 test macOSXFCmd-1.1 {MacOSXGetFileAttribute - file not found} {macosxFileAttr notRoot} {
     catch {file delete -force -- foo.test}
     list [catch {file attributes foo.test -creator} msg] $msg
-} {1 {could not read "foo.test": No such file or directory}}
+} {1 {could not read "foo.test": no such file or directory}}
 test macOSXFCmd-1.2 {MacOSXGetFileAttribute - creator} {macosxFileAttr notRoot} {
     catch {file delete -force -- foo.test}
     close [open foo.test w]
@@ -63,7 +63,7 @@ test macOSXFCmd-1.5 {MacOSXGetFileAttribute - rsrclength} {macosxFileAttr notRoo
 test macOSXFCmd-2.1 {MacOSXSetFileAttribute - file not found} {macosxFileAttr notRoot} {
     catch {file delete -force -- foo.test}
     list [catch {file attributes foo.test -creator FOOC} msg] $msg
-} {1 {could not read "foo.test": No such file or directory}}
+} {1 {could not read "foo.test": no such file or directory}}
 test macOSXFCmd-2.2 {MacOSXSetFileAttribute - creator} {macosxFileAttr notRoot} {
     catch {file delete -force -- foo.test}
     close [open foo.test w]

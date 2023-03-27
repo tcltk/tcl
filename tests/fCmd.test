@@ -246,7 +246,7 @@ test fCmd-3.4 {FileCopyRename: Tcl_TranslateFileName passes} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
     file copy tf1 ~
-} -result {error copying "tf1": No such file or directory}
+} -result {error copying "tf1": no such file or directory}
 test fCmd-3.5 {FileCopyRename: target doesn't exist: stat(target) != 0} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
@@ -321,7 +321,7 @@ test fCmd-3.15 {FileCopyRename: source[0] == '\x00'} -setup {
 } -constraints {notRoot unixOrWin} -returnCodes error -body {
     file mkdir td1
     file rename / td1
-} -result {error renaming "/" to "td1": File exists}
+} -result {error renaming "/" to "td1": file exists}
 test fCmd-3.16 {FileCopyRename: break on first error} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
@@ -332,7 +332,7 @@ test fCmd-3.16 {FileCopyRename: break on first error} -setup {
     file mkdir td1
     createfile [file join td1 tf3]
     file rename tf1 tf2 tf3 tf4 td1
-} -result [subst {error renaming "tf3" to "[file join td1 tf3]": File exists}]
+} -result [subst {error renaming "tf3" to "[file join td1 tf3]": file exists}]
 
 test fCmd-4.1 {TclFileMakeDirsCmd: make each dir: 1 dir} -setup {
     cleanup
@@ -362,7 +362,7 @@ test fCmd-4.5 {TclFileMakeDirsCmd: Tcl_SplitPath returns 0: *name == '\x00'} -se
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
     file mkdir ""
-} -result {can't create directory "": No such file or directory}
+} -result {can't create directory "": no such file or directory}
 test fCmd-4.6 {TclFileMakeDirsCmd: one level deep} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -388,7 +388,7 @@ test fCmd-4.9 {TclFileMakeDirsCmd: exists, not dir} -setup {
 } -constraints {notRoot} -returnCodes error -body {
     createfile tf1
     file mkdir tf1
-} -result [subst {can't create directory "[file join tf1]": File exists}]
+} -result [subst {can't create directory "[file join tf1]": file exists}]
 test fCmd-4.10 {TclFileMakeDirsCmd: exists, is dir} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -406,7 +406,7 @@ test fCmd-4.11 {TclFileMakeDirsCmd: doesn't exist: errno != ENOENT} -setup {
 } -cleanup {
     testchmod 0o755 td1/td2
     cleanup
-} -result {can't create directory "td1/td2/td3": Permission denied}
+} -result {can't create directory "td1/td2/td3": permission denied}
 test fCmd-4.13 {TclFileMakeDirsCmd: doesn't exist: errno == ENOENT} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -423,7 +423,7 @@ test fCmd-4.14 {TclFileMakeDirsCmd: TclpCreateDirectory fails} -setup {
     file mkdir foo/tf1
 } -returnCodes error -cleanup {
     file delete -force foo
-} -result {can't create directory "foo/tf1": Permission denied}
+} -result {can't create directory "foo/tf1": permission denied}
 test fCmd-4.16 {TclFileMakeDirsCmd: TclpCreateDirectory succeeds} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -525,7 +525,7 @@ test fCmd-6.3 {CopyRenameOneFile: lstat(source) != 0} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
     file rename tf1 tf2
-} -result {error renaming "tf1": No such file or directory}
+} -result {error renaming "tf1": no such file or directory}
 test fCmd-6.4 {CopyRenameOneFile: lstat(source) == 0} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -549,7 +549,7 @@ test fCmd-6.6 {CopyRenameOneFile: errno != ENOENT} -setup {
     file rename tf1 td1
 } -returnCodes error -cleanup {
     testchmod 0o755 td1
-} -result {error renaming "tf1" to "td1/tf1": Permission denied}
+} -result {error renaming "tf1" to "td1/tf1": permission denied}
 test fCmd-6.9 {CopyRenameOneFile: errno == ENOENT} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
@@ -563,14 +563,14 @@ test fCmd-6.10 {CopyRenameOneFile: lstat(target) == 0} -setup {
     createfile tf1
     createfile tf2
     file rename tf1 tf2
-} -result {error renaming "tf1" to "tf2": File exists}
+} -result {error renaming "tf1" to "tf2": file exists}
 test fCmd-6.11 {CopyRenameOneFile: force == 0} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
     createfile tf1
     createfile tf2
     file rename tf1 tf2
-} -result {error renaming "tf1" to "tf2": File exists}
+} -result {error renaming "tf1" to "tf2": file exists}
 test fCmd-6.12 {CopyRenameOneFile: force != 0} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -668,7 +668,7 @@ test fCmd-6.23 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
 } -returnCodes error -cleanup {
     file attributes td1 -permissions 0o755
     cleanup
-} -match regexp -result {^error renaming "td1"( to "/tmp/tcl\d+/td1")?: Permission denied$}
+} -match regexp -result {^error renaming "td1"( to "/tmp/tcl\d+/td1")?: permission denied$}
 test fCmd-6.24 {CopyRenameOneFile: error uses original name} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
@@ -679,7 +679,7 @@ test fCmd-6.24 {CopyRenameOneFile: error uses original name} -setup {
 } -returnCodes error -cleanup {
     file attributes $td1name -permissions 0o755
     file delete -force ~/td1
-} -result {error copying "~/td1": Permission denied}
+} -result {error copying "~/td1": permission denied}
 test fCmd-6.25 {CopyRenameOneFile: error uses original name} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
@@ -691,7 +691,7 @@ test fCmd-6.25 {CopyRenameOneFile: error uses original name} -setup {
 } -returnCodes error -cleanup {
     file attributes $td1name -permissions 0o755
     file delete -force ~/td1
-} -result {error copying "td2" to "~/td1/td2": Permission denied}
+} -result {error copying "td2" to "~/td1/td2": permission denied}
 test fCmd-6.26 {CopyRenameOneFile: doesn't use original name} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
@@ -702,7 +702,7 @@ test fCmd-6.26 {CopyRenameOneFile: doesn't use original name} -setup {
 } -returnCodes error -cleanup {
     file attributes $td2name -permissions 0o755
     file delete -force ~/td1
-} -result "error copying \"~/td1\" to \"td1\": \"[file join $::env(HOME) td1 td2]\": Permission denied"
+} -result "error copying \"~/td1\" to \"td1\": \"[file join $::env(HOME) td1 td2]\": permission denied"
 test fCmd-6.27 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
     cleanup $tmpspace
 } -constraints {notRoot xdev} -returnCodes error -body {
@@ -710,7 +710,7 @@ test fCmd-6.27 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
     file mkdir [file join $tmpspace td1]
     createfile [file join $tmpspace td1 tf1]
     file rename -force td1 $tmpspace
-} -match glob -result {error renaming "td1" to "/tmp/tcl*/td1": File exists}
+} -match glob -result {error renaming "td1" to "/tmp/tcl*/td1": file exists}
 test fCmd-6.28 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
     cleanup $tmpspace
 } -constraints {notRoot xdev notWsl} -body {
@@ -720,7 +720,7 @@ test fCmd-6.28 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
 } -returnCodes error -cleanup {
     file attributes td1/td2/td3 -permissions 0o755
     cleanup $tmpspace
-} -match glob -result {error renaming "td1" to "/tmp/tcl*/td1": "td1/td2/td3": Permission denied}
+} -match glob -result {error renaming "td1" to "/tmp/tcl*/td1": "td1/td2/td3": permission denied}
 test fCmd-6.29 {CopyRenameOneFile: TclpCopyDirectory passed} -setup {
     cleanup $tmpspace
 } -constraints {notRoot xdev} -body {
@@ -738,7 +738,7 @@ test fCmd-6.30 {CopyRenameOneFile: TclpRemoveDirectory failed} -setup {
     catch {file delete [file join $tmpspace bar]}
     catch {file attr foo -perm 0o40777}
     catch {file delete -force foo}
-} -match glob -result {*: Permission denied}
+} -match glob -result {*: permission denied}
 test fCmd-6.31 {CopyRenameOneFile: TclpDeleteFile passed} -setup {
     cleanup $tmpspace
 } -constraints {notRoot xdev} -body {
@@ -751,7 +751,7 @@ test fCmd-6.32 {CopyRenameOneFile: copy} -constraints {notRoot} -setup {
     cleanup
 } -returnCodes error -body {
     file copy tf1 tf2
-} -result {error copying "tf1": No such file or directory}
+} -result {error copying "tf1": no such file or directory}
 
 test fCmd-7.1 {FileForceOption: none} -constraints {notRoot} -setup {
     cleanup
@@ -793,7 +793,7 @@ test fCmd-8.1 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
     file rename ~$user td1
 } -returnCodes error -cleanup {
     file delete -force td1
-} -result "error renaming \"~$user\" to \"td1/[file tail ~$user]\": Permission denied"
+} -result "error renaming \"~$user\" to \"td1/[file tail ~$user]\": permission denied"
 test fCmd-8.2 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
 	-constraints {unix notRoot} -body {
     string equal [file tail ~$user] ~$user
@@ -801,7 +801,7 @@ test fCmd-8.2 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
 test fCmd-8.3 {file copy and path translation: ensure correct error} -body {
     file copy ~ [file join this file doesnt exist]
 } -returnCodes error -result [subst \
-	{error copying "~" to "[file join this file doesnt exist]": No such file or directory}]
+	{error copying "~" to "[file join this file doesnt exist]": no such file or directory}]
 
 test fCmd-9.1 {file rename: comprehensive: EACCES} -setup {
     cleanup
@@ -813,12 +813,12 @@ test fCmd-9.1 {file rename: comprehensive: EACCES} -setup {
 } -returnCodes error -cleanup {
     file delete -force td2
     file delete -force td1
-} -result {error renaming "td1" to "td2/td1": Permission denied}
+} -result {error renaming "td1" to "td2/td1": permission denied}
 test fCmd-9.2 {file rename: comprehensive: source doesn't exist} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
     file rename tf1 tf2
-} -result {error renaming "tf1": No such file or directory}
+} -result {error renaming "tf1": no such file or directory}
 test fCmd-9.3 {file rename: comprehensive: file to new name} -setup {
     cleanup
 } -constraints {notRoot testchmod} -body {
@@ -883,7 +883,7 @@ test fCmd-9.7 {file rename: comprehensive: file to existing file} -setup {
     file rename -force tfs3 tfd3
     file rename -force tfs4 tfd4
     list [lsort [glob tf*]] $msg [file writable tfd1] [file writable tfd2] [file writable tfd3] [file writable tfd4]
-} -result {{tf1 tf2 tfd1 tfd2 tfd3 tfd4} {1 {error renaming "tf1" to "tf2": File exists}} 1 1 0 0}
+} -result {{tf1 tf2 tfd1 tfd2 tfd3 tfd4} {1 {error renaming "tf1" to "tf2": file exists}} 1 1 0 0}
 test fCmd-9.8 {file rename: comprehensive: dir to empty dir} -setup {
     cleanup
 } -constraints {notRoot testchmod notNetworkFilesystem} -body {
@@ -919,7 +919,7 @@ test fCmd-9.8 {file rename: comprehensive: dir to empty dir} -setup {
     }
     list [lsort [glob td*]] $msg [file writable [file join tdd1 tds1]] \
     [file writable [file join tdd2 tds2]] $w3 $w4
-} -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4} {1 {error renaming "td1" to "[file join td2 td1]": File exists}} 1 1 0 0}]
+} -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4} {1 {error renaming "td1" to "[file join td2 td1]": file exists}} 1 1 0 0}]
 # Test can hit EEXIST or EBUSY, depending on underlying filesystem
 test fCmd-9.9 {file rename: comprehensive: dir to non-empty dir} -setup {
     cleanup
@@ -969,7 +969,7 @@ test fCmd-9.12 {file rename: comprehensive: target exists} -setup {
 	[catch {file rename td1 td2} msg] $msg
 } -cleanup {
     testchmod 0o755 [file join td2 td1]
-} -result [subst {0 1 1 {error renaming "td1" to "[file join td2 td1]": File exists}}]
+} -result [subst {0 1 1 {error renaming "td1" to "[file join td2 td1]": file exists}}]
 # Test can hit EEXIST or EBUSY, depending on underlying filesystem
 test fCmd-9.13 {file rename: comprehensive: can't overwrite target} -setup {
     cleanup
@@ -1001,7 +1001,7 @@ test fCmd-9.14.2 {file rename: comprehensive: dir into self} -setup {
     file rename [file join .. td1] [file join .. td1x]
 } -returnCodes error -cleanup {
     cd $dir
-} -result [subst {error renaming "[file join .. td1]" to "[file join .. td1x]": Permission denied}]
+} -result [subst {error renaming "[file join .. td1]" to "[file join .. td1x]": permission denied}]
 test fCmd-9.14.3 {file rename: comprehensive: dir into self} -setup {
     cleanup
     set dir [pwd]
@@ -1033,7 +1033,7 @@ test fCmd-10.1 {file copy: comprehensive: source doesn't exist} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
     file copy tf1 tf2
-} -result {error copying "tf1": No such file or directory}
+} -result {error copying "tf1": no such file or directory}
 test fCmd-10.2 {file copy: comprehensive: file to new name} -setup {
     cleanup
 } -constraints {notRoot testchmod} -body {
@@ -1106,7 +1106,7 @@ test fCmd-10.4 {file copy: comprehensive: file to existing file} -setup {
     file copy -force tfs3 tfd3
     file copy -force tfs4 tfd4
     list [lsort [glob tf*]] $msg [file writable tfd1] [file writable tfd2] [file writable tfd3] [file writable tfd4]
-} -result {{tf1 tf2 tfd1 tfd2 tfd3 tfd4 tfs1 tfs2 tfs3 tfs4} {1 {error copying "tf1" to "tf2": File exists}} 1 1 0 0}
+} -result {{tf1 tf2 tfd1 tfd2 tfd3 tfd4 tfs1 tfs2 tfs3 tfs4} {1 {error copying "tf1" to "tf2": file exists}} 1 1 0 0}
 test fCmd-10.5 {file copy: comprehensive: dir to empty dir} -setup {
     cleanup
 } -constraints {notRoot testchmod} -body {
@@ -1130,7 +1130,7 @@ test fCmd-10.5 {file copy: comprehensive: dir to empty dir} -setup {
     set a4 [catch {file copy -force tds3 tdd3}]
     set a5 [catch {file copy -force tds4 tdd4}]
     list [lsort [glob td*]] $a1 $a2 $a3 $a4 $a5
-} -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4 tds1 tds2 tds3 tds4} {1 {error copying "td1" to "[file join td2 td1]": File exists}} {1 {error copying "tds1" to "[file join tdd1 tds1]": File exists}} 1 1 1}]
+} -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4 tds1 tds2 tds3 tds4} {1 {error copying "td1" to "[file join td2 td1]": file exists}} {1 {error copying "tds1" to "[file join tdd1 tds1]": file exists}} 1 1 1}]
 test fCmd-10.6 {file copy: comprehensive: dir to non-empty dir} -setup {
     cleanup
 } -constraints {notRoot unixOrWin testchmod notWsl} -body {
@@ -1142,7 +1142,7 @@ test fCmd-10.6 {file copy: comprehensive: dir to non-empty dir} -setup {
     set a1 [list [catch {file copy -force tds1 tdd1} msg] $msg]
     set a2 [list [catch {file copy -force tds2 tdd2} msg] $msg]
     list [lsort [glob td*]] $a1 $a2 [file writable tds1] [file writable tds2]
-} -result [subst {{tdd1 tdd2 tds1 tds2} {1 {error copying "tds1" to "[file join tdd1 tds1]": File exists}} {1 {error copying "tds2" to "[file join tdd2 tds2]": File exists}} 1 0}]
+} -result [subst {{tdd1 tdd2 tds1 tds2} {1 {error copying "tds1" to "[file join tdd1 tds1]": file exists}} {1 {error copying "tds2" to "[file join tdd2 tds2]": file exists}} 1 0}]
 test fCmd-10.7 {file rename: comprehensive: file to new name and dir} -setup {
     cleanup
 } -constraints {notRoot testchmod} -body {
@@ -1199,13 +1199,13 @@ test fCmd-10.11 {file copy: copy to empty file name} -setup {
 } -returnCodes error -body {
     createfile tf1
     file copy tf1 ""
-} -result {error copying "tf1" to "": No such file or directory}
+} -result {error copying "tf1" to "": no such file or directory}
 test fCmd-10.12 {file rename: rename to empty file name} -setup {
     cleanup
 } -returnCodes error -body {
     createfile tf1
     file rename tf1 ""
-} -result {error renaming "tf1" to "": No such file or directory}
+} -result {error renaming "tf1" to "": no such file or directory}
 cleanup
 
 # old tests
@@ -2354,21 +2354,21 @@ test fCmd-28.5 {file link: source already exists} -setup {
     file link abc.dir abc2.dir
 } -returnCodes error -cleanup {
     cd [workingDirectory]
-} -result {could not create new link "abc.dir": File exists}
+} -result {could not create new link "abc.dir": that path already exists}
 test fCmd-28.6 {file link: unsupported operation} -setup {
     cd [temporaryDirectory]
 } -constraints {linkDirectory win} -body {
     file link -hard abc.link abc.dir
 } -returnCodes error -cleanup {
     cd [workingDirectory]
-} -result {could not create new link "abc.link" pointing to "abc.dir": Is a directory}
+} -result {could not create new link "abc.link" pointing to "abc.dir": is a directory}
 test fCmd-28.7 {file link: source already exists} -setup {
     cd [temporaryDirectory]
 } -constraints {linkFile} -body {
     file link abc.file abc2.file
 } -returnCodes error -cleanup {
     cd [workingDirectory]
-} -result {could not create new link "abc.file": File exists}
+} -result {could not create new link "abc.file": that path already exists}
 # In Windows 10 developer mode, we _can_ create symbolic links to files!
 test fCmd-28.8 {file link} -constraints {linkFile winLessThan10} -setup {
     cd [temporaryDirectory]
@@ -2377,7 +2377,7 @@ test fCmd-28.8 {file link} -constraints {linkFile winLessThan10} -setup {
 } -cleanup {
     file delete -force abc.link
     cd [workingDirectory]
-} -returnCodes error -result {could not create new link "abc.link" pointing to "abc.file": Invalid argument}
+} -returnCodes error -result {could not create new link "abc.link" pointing to "abc.file": invalid argument}
 test fCmd-28.9 {file link: success with file} -constraints {linkFile} -setup {
     cd [temporaryDirectory]
     file delete -force abc.link
@@ -2416,7 +2416,7 @@ test fCmd-28.10.1 {file link: linking to nonexistent path} -setup {
     file link doesnt/abc.link abc.dir
 } -returnCodes error -cleanup {
     cd [workingDirectory]
-} -result {could not create new link "doesnt/abc.link": No such file or directory}
+} -result {could not create new link "doesnt/abc.link": no such file or directory}
 test fCmd-28.11 {file link: success with directory} -setup {
     cd [temporaryDirectory]
     file delete -force abc.link
@@ -2463,7 +2463,7 @@ test fCmd-28.13 {file link} -constraints {linkDirectory notWine} -setup {
 } -returnCodes error -cleanup {
     file delete -force abc.link
     cd [workingDirectory]
-} -result {could not create new link "abc.link": File exists}
+} -result {could not create new link "abc.link": that path already exists}
 test fCmd-28.14 {file link: deletes link not dir} -setup {
     cd [temporaryDirectory]
 } -constraints {linkDirectory} -body {

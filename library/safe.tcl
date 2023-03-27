@@ -818,7 +818,7 @@ proc ::safe::CheckFileName {child file} {
 
     if {![file exists $file]} {
 	# don't tell the file path
-	return -code error "No such file or directory"
+	return -code error "no such file or directory"
     }
 
     if {![file readable $file]} {
@@ -908,7 +908,7 @@ proc ::safe::AliasGlob {child args} {
 	} on error msg {
 	    Log $child $msg
 	    if {$got(-nocomplain)} return
-	    return -code error "Permission denied"
+	    return -code error "permission denied"
 	}
 	if {$got(--)} {
 	    set cmd [linsert $cmd end-1 -directory $dir]
@@ -921,7 +921,7 @@ proc ::safe::AliasGlob {child args} {
 	# return now and reduce the number of cases to be considered later.
 	Log $child {option -directory must be supplied}
 	if {$got(-nocomplain)} return
-	return -code error "Permission denied"
+	return -code error "permission denied"
     }
 
     # Apply the -join semantics ourselves (hence -join not copied to $cmd)
@@ -980,7 +980,7 @@ proc ::safe::AliasGlob {child args} {
 	} on error msg {
 	    Log $child $msg
 	    if {$got(-nocomplain)} continue
-	    return -code error "Permission denied"
+	    return -code error "permission denied"
 	}
 	lappend cmd $opt
     }
@@ -1034,7 +1034,7 @@ proc ::safe::AliasSource {child args} {
 	set at 2
 	if {$encoding eq "identity"} {
 	    Log $child "attempt to use the identity encoding"
-	    return -code error "Permission denied"
+	    return -code error "permission denied"
 	}
     } else {
 	set at 0
@@ -1052,7 +1052,7 @@ proc ::safe::AliasSource {child args} {
 	set realfile [TranslatePath $child $file]
     } msg]} {
 	Log $child $msg
-	return -code error "Permission denied"
+	return -code error "permission denied"
     }
 
     # check that the path is in the access path of that child
@@ -1060,7 +1060,7 @@ proc ::safe::AliasSource {child args} {
 	FileInAccessPath $child $realfile
     } msg]} {
 	Log $child $msg
-	return -code error "Permission denied"
+	return -code error "permission denied"
     }
 
     # Check that the filename exists and is readable.  If it is not, deliver
@@ -1124,7 +1124,7 @@ proc ::safe::AliasLoad {child file args} {
 	if {!$state(nestedok)} {
 	    Log $child "loading to a sub interp (nestedok)\
 			disabled (trying to load $prefix to $target)"
-	    return -code error "Permission denied (nested load)"
+	    return -code error "permission denied (nested load)"
 	}
     }
 
@@ -1139,7 +1139,7 @@ proc ::safe::AliasLoad {child file args} {
 	if {!$state(staticsok)} {
 	    Log $child "static loading disabled\
 			(trying to load $prefix to $target)"
-	    return -code error "Permission denied (static library)"
+	    return -code error "permission denied (static library)"
 	}
     } else {
 	# file loading
@@ -1149,7 +1149,7 @@ proc ::safe::AliasLoad {child file args} {
 	    set file [TranslatePath $child $file]
 	} on error msg {
 	    Log $child $msg
-	    return -code error "Permission denied"
+	    return -code error "permission denied"
 	}
 
 	# check the translated path
@@ -1157,7 +1157,7 @@ proc ::safe::AliasLoad {child file args} {
 	    FileInAccessPath $child $file
 	} on error msg {
 	    Log $child $msg
-	    return -code error "Permission denied (path)"
+	    return -code error "permission denied (path)"
 	}
     }
 

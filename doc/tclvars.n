@@ -197,7 +197,7 @@ of the error that occurred, such as \fBENOENT\fR; this will
 be one of the values defined in the include file errno.h.
 The \fImsg\fR element will be a human-readable
 message corresponding to \fIerrName\fR, such as
-.QW "No such file or directory"
+.QW "no such file or directory"
 for the \fBENOENT\fR case.
 .TP
 \fBTCL\fR ...

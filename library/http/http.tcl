@@ -1773,7 +1773,7 @@ proc http::OpenSocket {token DoLater} {
 	    set socketPlayCmd($state(socketinfo)) [list ReplayIfClose Wready {} $socketPhQueue($sockOld)]
 	    set socketPhQueue($sockOld) {}
 	}
-        if {[string range $result 0 20] eq {Proxy connect failed:}} {
+        if {[string range $result 0 20] eq {proxy connect failed:}} {
 	    # - The HTTPS proxy did not create a socket.  The pre-existing value
 	    #   (a "placeholder socket") is unchanged.
 	    # - The proxy returned a valid HTTP response to the failed CONNECT
@@ -1786,7 +1786,7 @@ proc http::OpenSocket {token DoLater} {
 	Finish $token $result
 	# Because socket creation failed, the placeholder "socket" must be
 	# "closed" and (if persistent) removed from the persistent sockets
-	# table.  In the {Proxy connect failed:} case Finish does this because
+	# table.  In the {proxy connect failed:} case Finish does this because
 	# the value of ${token}(connection) is "close". In the other cases here,
 	# it does so because $result is non-empty.
     }
@@ -3392,7 +3392,7 @@ proc http::Connect {token proto phost srvurl} {
 	    # If any other requests are in flight or pipelined/queued, they will
 	    # be discarded.
 	}
-	Finish $token "Connect failed: $err"
+	Finish $token "connect failed: $err"
     return
 }
 
@@ -5135,7 +5135,7 @@ proc http::SecureProxyConnect {args} {
             }
         }
         set state(connection) close
-        set msg "Proxy connect failed: $code"
+        set msg "proxy connect failed: $code"
 	# - This error message will be detected by http::OpenSocket and will
 	#   cause it to present the proxy's HTTP response as that of the
 	#   original $token transaction, identified only by state(proxyUsed)

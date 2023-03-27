@@ -1332,8 +1332,8 @@ unset globname
 
 catch {file attributes globTest/a1 -permissions 0}
 test filename-15.1 {unix specific globbing} {unix nonPortable} {
-    list [catch {glob globTest/a1/*} msg] $msg $errorCode
-} {1 {couldn't read directory "globtest/a1": Permission denied} {POSIX EACCES {Permission denied}}}
+    string tolower [list [catch {glob globTest/a1/*} msg] $msg $errorCode]
+} {1 {couldn't read directory "globtest/a1": permission denied} {posix eacces {permission denied}}}
 test filename-15.2 {unix specific no complain: no errors} {unix nonPortable} {
     glob -nocomplain globTest/a1/*
 } {}
