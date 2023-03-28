@@ -28,6 +28,7 @@ _CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask
 
 static CRITICAL_SECTION globalLock;
 static int initialized = 0;
+static DWORD tls_thread_id;
 
 /*
  * This is the global lock used to serialize initialization and finalization
@@ -50,15 +51,6 @@ static Tcl_Mutex allocLockPtr = &allocLock;
 static int allocOnce = 0;
 
 #endif /* TCL_THREADS */
-
-/*
- * The joinLock serializes Create- and ExitThread. This is necessary to
- * prevent a race where a new joinable thread exits before the creating thread
- * had the time to create the necessary data structures in the emulation
- * layer.
- */
-
-static CRITICAL_SECTION joinLock;
 
 /*
  * Condition variables are implemented with a combination of a per-thread
@@ -135,8 +127,50 @@ typedef struct {
   LPVOID lpParameter;		/* Original startup data */
   unsigned int fpControl;	/* Floating point control word from the
 				 * main thread */
+  HANDLE tHandle;		/* used to wait on thread completion */ 
+# if defined(_MSC_VER) || defined(__MSVCRT__)
+  unsigned
+# else
+  DWORD
+# endif
+    thread_id;		/* initialized but unused,
+			possibly useful for debugging */ 
 } WinThread;
 
+/* assuming alignment constraints result in lsb being constant 0 */
+# define	TCL_WIN_THREAD_JOIN_FLAG	((size_t) 1 << 0)
+
+# define	TCL_WIN_THREAD_ID(PTR, JOINABLE)\
+	    ((Tcl_ThreadId) ((sizeof ((PTR) - (WinThread *) 0),\
+	    (size_t) (PTR)) | ((JOINABLE)? TCL_WIN_THREAD_JOIN_FLAG: 0)))
+
+# define	TCL_WIN_THREAD_PTR(ID)\
+	    ((WinThread *) ((sizeof ((ID) == (Tcl_ThreadId) 0),\
+	    (size_t) (ID) & ~TCL_WIN_THREAD_JOIN_FLAG)))
+
+# define	TCL_WIN_THREAD_JOINABLE(ID)\
+	    (((sizeof ((ID) == (Tcl_ThreadId) 0),\
+	    (size_t) (ID) & TCL_WIN_THREAD_JOIN_FLAG)))
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinFailure --
+ *
+ *  	Call this when an unexpected WIN32 error occurs
+ *
+ * Does not return
+ *
+ *----------------------------------------------------------------------
+ */
+
+void TCL_NORETURN WINAPI
+TclWinFailure (
+    char const *const routine)
+{
+    Tcl_Panic ("%s failed, last error = %#x\n", routine, GetLastError ());
+}
 
 /*
  *----------------------------------------------------------------------
@@ -161,9 +195,8 @@ TclWinThreadStart(
     LPVOID lpParameter)		/* The WinThread structure pointer passed
 				 * from TclpThreadCreate */
 {
-    WinThread *winThreadPtr = (WinThread *) lpParameter;
-    LPTHREAD_START_ROUTINE lpOrigStartAddress;
-    LPVOID lpOrigParameter;
+    WinThread *const winThreadPtr = (WinThread *) lpParameter;
+    static DWORD result;
 
     if (!winThreadPtr) {
 	return TCL_ERROR;
@@ -175,11 +208,12 @@ TclWinThreadStart(
 #endif
     );
 
-    lpOrigStartAddress = winThreadPtr->lpStartAddress;
-    lpOrigParameter = winThreadPtr->lpParameter;
-
-    Tcl_Free(winThreadPtr);
-    return lpOrigStartAddress(lpOrigParameter);
+    if (!TlsSetValue (tls_thread_id, winThreadPtr))
+	TclWinFailure ("TlsSetValue");
+    result = winThreadPtr->lpStartAddress (winThreadPtr->lpParameter);
+    if (!winThreadPtr->tHandle)
+	TclpSysFree (winThreadPtr);
+    return result;
 }
 
 /*
@@ -211,41 +245,50 @@ TclpThreadCreate(
     WinThread *winThreadPtr;		/* Per-thread startup info */
     HANDLE tHandle;
 
-    winThreadPtr = (WinThread *)Tcl_Alloc(sizeof(WinThread));
+    winThreadPtr = (WinThread *) TclpSysAlloc (sizeof *winThreadPtr);
+    if (!winThreadPtr)
+	TclWinFailure ("memory allocation");
     winThreadPtr->lpStartAddress = (LPTHREAD_START_ROUTINE) proc;
     winThreadPtr->lpParameter = clientData;
     winThreadPtr->fpControl = _controlfp(0, 0);
 
-    EnterCriticalSection(&joinLock);
-
-    *idPtr = 0; /* must initialize as Tcl_Thread is a pointer and
-                 * on WIN64 sizeof void* != sizeof unsigned
-		 */
-
 #if defined(_MSC_VER) || defined(__MSVCRT__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize,
 	    (Tcl_ThreadCreateProc*) TclWinThreadStart, winThreadPtr,
-	    0, (unsigned *)idPtr);
+	    0 /* flags */,  &winThreadPtr->thread_id);
 #else
     tHandle = CreateThread(NULL, (DWORD) stackSize,
-	    TclWinThreadStart, winThreadPtr, 0, (LPDWORD)idPtr);
+	    TclWinThreadStart, winThreadPtr, 0 /* flags */,
+	    &winThreadPtr->thread_id);
 #endif
 
-    if (tHandle == NULL) {
-	LeaveCriticalSection(&joinLock);
+    if (!tHandle) {
+	TclpSysFree (winThreadPtr);
+# if	1
+	TclWinFailure ("CreateThread");
+# else
 	return TCL_ERROR;
+# endif
     } else {
-	if (flags & TCL_THREAD_JOINABLE) {
-	    TclRememberJoinableThread(*idPtr);
+	if (!(flags & TCL_THREAD_JOINABLE)) {
+	    /*
+	     * The only purpose of this is to decrement the reference count
+	     * so the OS resources will be reacquired when the thread closes.
+	     */
+	    if (!CloseHandle (tHandle))
+		TclWinFailure ("ClosseHandle");
+	    /* note: the WIN32 OpenHandle() can be used to open a HANDLE
+	    from the given threadID. However, if the thread
+	    terminates with a HANDLE count of zero, the kernel may clean up
+	    the thread, in particular its return status, immediately.
+	    Hence, joining the thread requires keeping a HANDLE open
+	    until the thread has been successfully joined. */ 
+
+	    tHandle = 0;
 	}
+	winThreadPtr->tHandle = tHandle;
 
-	/*
-	 * The only purpose of this is to decrement the reference count so the
-	 * OS resources will be reacquired when the thread closes.
-	 */
-
-	CloseHandle(tHandle);
-	LeaveCriticalSection(&joinLock);
+	*idPtr = TCL_WIN_THREAD_ID (winThreadPtr, 0 != tHandle);
 	return TCL_OK;
     }
 }
@@ -273,7 +316,26 @@ Tcl_JoinThread(
     int *result)		/* Reference to the storage the result of the
 				 * thread we wait upon will be written into. */
 {
-    return TclJoinThread(threadId, result);
+    if (!TCL_WIN_THREAD_JOINABLE (threadId))
+	return TCL_ERROR;
+
+    WinThread *winThreadPtr = TCL_WIN_THREAD_PTR (threadId);
+    HANDLE const tHandle = winThreadPtr->tHandle;
+    switch (WaitForSingleObject (tHandle, INFINITE)) {
+	DWORD exit_code;
+    default:
+	return TCL_ERROR;
+    case WAIT_FAILED:
+	TclWinFailure ("WaitForSingleObject");
+    case WAIT_OBJECT_0:
+	if (!GetExitCodeThread (tHandle, &exit_code))
+	    TclWinFailure ("GetExitCodeThread");
+	*result = exit_code;
+	if (!CloseHandle (tHandle))
+	    TclWinFailure ("CloseHandle");
+	TclpSysFree (winThreadPtr);
+	return TCL_OK;
+    }
 }
 
 /*
@@ -296,10 +358,11 @@ void
 TclpThreadExit(
     int status)
 {
-    EnterCriticalSection(&joinLock);
-    TclSignalExitThread(Tcl_GetCurrentThread(), status);
-    LeaveCriticalSection(&joinLock);
-
+    WinThread *winThreadPtr;
+    if (winThreadPtr = (WinThread *) TlsGetValue (tls_thread_id)) {
+	if (!winThreadPtr->tHandle)
+	    TclpSysFree (winThreadPtr);
+    }
 #if defined(_MSC_VER) || defined(__MSVCRT__)
     _endthreadex((unsigned) status);
 #else
@@ -326,7 +389,21 @@ TclpThreadExit(
 Tcl_ThreadId
 Tcl_GetCurrentThread(void)
 {
-    return (Tcl_ThreadId)INT2PTR(GetCurrentThreadId());
+    WinThread *winThreadPtr;
+    if (!(winThreadPtr = (WinThread *) TlsGetValue (tls_thread_id))) {
+	if (ERROR_SUCCESS != GetLastError ())
+	    TclWinFailure ("TlsGetValue in Tcl_GetCurrentThread");
+	/* this is an initial thread */
+	/* can't use TclAlloc, as the USE_THREAD_ALLOC per-thread allocator
+	calls Tcl_GetCurrentThread() */
+	if (!(winThreadPtr = (WinThread *) TclpSysAlloc (sizeof *winThreadPtr)))
+	    TclWinFailure ("memory allocation");
+	winThreadPtr->tHandle = 0;
+	winThreadPtr->thread_id = GetCurrentThreadId ();
+	if (!TlsSetValue (tls_thread_id, winThreadPtr))
+	    TclWinFailure ("TlsSetValue");
+    }
+    return TCL_WIN_THREAD_ID (winThreadPtr, 0 != winThreadPtr->tHandle);
 }
 
 /*
@@ -360,9 +437,9 @@ TclpInitLock(void)
 	 */
 
 	initialized = 1;
-	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&globalLock);
+	tls_thread_id = TlsAlloc ();
     }
     EnterCriticalSection(&initLock);
 }
@@ -422,9 +499,9 @@ TclpGlobalLock(void)
 	 */
 
 	initialized = 1;
-	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&globalLock);
+	tls_thread_id = TlsAlloc ();
     }
     EnterCriticalSection(&globalLock);
 }
@@ -507,7 +584,9 @@ void
 TclFinalizeLock(void)
 {
     TclpGlobalLock();
-    DeleteCriticalSection(&joinLock);
+
+    if (!TlsFree (tls_thread_id))
+	TclWinFailure ("TlsFree");
 
     /*
      * Destroy the critical section that we are holding!

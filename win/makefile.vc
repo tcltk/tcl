@@ -310,7 +310,6 @@ COREOBJS = \
 	$(TMP_DIR)\tclStubInit.obj \
 	$(TMP_DIR)\tclThread.obj \
 	$(TMP_DIR)\tclThreadAlloc.obj \
-	$(TMP_DIR)\tclThreadJoin.obj \
 	$(TMP_DIR)\tclThreadStorage.obj \
 	$(TMP_DIR)\tclTimer.obj \
 	$(TMP_DIR)\tclTomMathInterface.obj \

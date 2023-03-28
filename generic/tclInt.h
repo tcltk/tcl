@@ -3228,7 +3228,6 @@ MODULE_SCOPE Tcl_Obj *	TclGetHomeDirObj(Tcl_Interp *interp, const char *user);
 MODULE_SCOPE Tcl_Obj *	TclResolveTildePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathObj);
 MODULE_SCOPE Tcl_Obj *	TclResolveTildePathList(Tcl_Obj *pathsObj);
-MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
@@ -3356,7 +3355,6 @@ MODULE_SCOPE void	TclThreadStorageKeySet(Tcl_ThreadDataKey *keyPtr,
 			    void *data);
 MODULE_SCOPE TCL_NORETURN void TclpThreadExit(int status);
 MODULE_SCOPE void	TclRememberCondition(Tcl_Condition *mutex);
-MODULE_SCOPE void	TclRememberJoinableThread(Tcl_ThreadId id);
 MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
@@ -3375,7 +3373,6 @@ MODULE_SCOPE void	TclSetCmdNameObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
 			    Tcl_Obj *newValue, Tcl_Encoding encoding);
-MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);
 MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, size_t objc, size_t subIdx,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
