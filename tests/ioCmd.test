@@ -500,7 +500,7 @@ test iocmd-12.11 {POSIX open access modes: BINARY} -body {
     puts $f Ɉ		;# throws an exception
 } -cleanup {
     close $f
-} -returnCodes 1 -match glob -result {error writing "*": illegal byte sequence}
+} -returnCodes 1 -match glob -result {error writing "*": invalid or incomplete multibyte or wide character}
 test iocmd-12.12 {POSIX open access modes: BINARY} {
     set f [open $path(test1) {WRONLY BINARY TRUNC}]
     puts $f H
