@@ -629,7 +629,7 @@ test http-4.14.$ThreadLevel {http::Event} -body {
     lindex [http::error $token] 0
 } -cleanup {
     catch {http::cleanup $token}
-} -result {connect failed connection refused}
+} -result {connect failed: connection refused}
 
 # Bogus host
 test http-4.15.$ThreadLevel {http::Event} -body {

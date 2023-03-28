@@ -2226,7 +2226,7 @@ test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
         list $x [fconfigure $sock -error] [fconfigure $sock -error]
     } -cleanup {
         close $sock
-    } -match glob -result {{error reading "sock*": socket is not connected} {connection refused} {}}
+    } -match glob -result {{error reading "sock*": transport endpoint is not connected} {connection refused} {}}
 test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
@@ -2291,7 +2291,7 @@ test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener}
         list $x [fconfigure $sock -error] [fconfigure $sock -error]
     } -cleanup {
         close $sock
-    } -match glob -result {{error reading "sock*": socket is not connected} {connection refused} {}}
+    } -match glob -result {{error reading "sock*": transport endpoint is not connected} {connection refused} {}}
 test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
@@ -2406,7 +2406,7 @@ test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener
     } -cleanup {
         catch {close $sock}
         unset x
-    } -result {socket is not connected} -returnCodes 1
+    } -result {transport endpoint is not connected} -returnCodes 1
 test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener, flush} \
     -constraints {socket testsocket_testflags} \
     -body {
@@ -2425,7 +2425,7 @@ test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener
     } -cleanup {
         catch {close $sock}
         catch {unset x}
-    } -result {socket is not connected} -returnCodes 1
+    } -result {transport endpoint is not connected} -returnCodes 1
 test socket-14.12 {[socket -async] background progress triggered by [fconfigure -error]} \
     -constraints {socket} \
     -body {
