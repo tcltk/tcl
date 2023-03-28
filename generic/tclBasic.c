@@ -883,7 +883,26 @@ Tcl_CreateInterp(void)
     iPtr->resolverPtr = NULL;
     iPtr->evalFlags = 0;
     iPtr->scriptFile = NULL;
-    iPtr->flags = 0;
+	iPtr->flags = TCL_ENCODING_PROFILE_STRICT;
+#ifdef _WIN32
+	wchar_t *defaultProfile = getenv("TCL_PROFILE_DEFAULT");
+    if (defaultProfile != NULL) {
+	if (!wcscmp(defaultProfile, L"tcl8")) {
+	    iPtr->flags = TCL_ENCODING_PROFILE_TCL8;
+	} else if (!wcscmp(defaultProfile, L"replace")) {
+	    iPtr->flags = TCL_ENCODING_PROFILE_REPLACE;
+	}
+    }
+#else
+	char *defaultProfile = getenv("TCL_PROFILE_DEFAULT");
+    if (defaultProfile != NULL) {
+	if (!strcmp(defaultProfile, "tcl8")) {
+	    iPtr->flags = TCL_ENCODING_PROFILE_TCL8;
+	} else if (!strcmp(defaultProfile, "replace")) {
+	    iPtr->flags = TCL_ENCODING_PROFILE_REPLACE;
+	}
+    }
+#endif
     iPtr->tracePtr = NULL;
     iPtr->tracesForbiddingInline = 0;
     iPtr->activeCmdTracePtr = NULL;
