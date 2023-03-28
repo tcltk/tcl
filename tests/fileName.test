@@ -1620,8 +1620,6 @@ apply [list {} {
 	valgrind, which is useful since Valgrind provides information about the
 	error location, but [memory] doesn't.
     } -setup {
-	makeFile {puts "In script"} script
-
 	if {[namespace which ::memory] eq {}} {
 	    set memcheckcmd [list ::apply [list script {
 		uplevel 1 $script
@@ -1635,7 +1633,7 @@ apply [list {} {
 	    set interp [interp create]
 	    interp eval $interp {
 		apply [list {} {
-		    upvar 1 f f 
+		    upvar 1 f f
 
 		    # A unique name so that no internal representation of this
 		    # literal value has been picked up from any other script
@@ -1667,9 +1665,6 @@ apply [list {} {
 	}
     } -result 0
 } [namespace current]]
-    
-
-
 
 # cleanup
 catch {file delete -force C:/globTest}
