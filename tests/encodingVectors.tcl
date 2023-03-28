@@ -10,7 +10,7 @@
 
 # List of defined encoding profiles
 set encProfiles {tcl8 strict replace}
-set encDefaultProfile strict; # Should reflect the default from implementation
+set encDefaultProfile [interp profile]
 
 # encValidStrings - Table of valid strings.
 #

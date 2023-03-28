@@ -112,7 +112,8 @@ The following profiles are currently implemented.
 .TP
 \fBstrict\fR
 .
-The default profile.  The operation fails when invalid data for the encoding
+The default profile, unless the environment variable \fBTCL_PROFILE_DEFAULT\fR
+is set to either "tcl8" or "replace".  The operation fails when invalid data for the encoding
 are encountered.
 .TP
 \fBtcl8\fR
