@@ -34,6 +34,18 @@ namespace eval ::tcltests {
     }
 
 
+    # Stolen from dict.test
+    proc scriptmemcheck script {
+	set end [lindex [split [memory info] \n] 3 3]
+	for {set i 0} {$i < 5} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [lindex [split [memory info] \n] 3 3]
+	}
+	expr {$end - $tmp}
+    }
+
+
     proc tempdir_alternate {} {
 	close [file tempfile tempfile]
 	set tmpdir [file dirname $tempfile]

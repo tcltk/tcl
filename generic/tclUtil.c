@@ -3778,7 +3778,7 @@ TclIndexEncode(
 	     */
 	    idx = after;
 	} else if (wide <= (irPtr ? INT_MAX : -1)) {
-	    /* These indices always indicate "before the beginning */
+	    /* These indices always indicate "before the beginning" */
 	    idx = before;
 	} else {
 	    /* Encoded end-positive (or end+negative) are offset */

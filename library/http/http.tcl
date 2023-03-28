@@ -3392,7 +3392,7 @@ proc http::Connect {token proto phost srvurl} {
 	    # If any other requests are in flight or pipelined/queued, they will
 	    # be discarded.
 	}
-	Finish $token "connect failed $err"
+	Finish $token "connect failed: $err"
     return
 }
 

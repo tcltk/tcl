@@ -10265,13 +10265,6 @@ DoRead(
     assert(!(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
 	    == (CHANNEL_EOF|CHANNEL_BLOCKED)));
     UpdateInterest(chanPtr);
-    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
-	    && ((p == dst) || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
-	Tcl_SetErrno(EILSEQ);
-	if (p == dst) {
-	    p = dst - 1;
-	}
-    }
     TclChannelRelease((Tcl_Channel)chanPtr);
     return (Tcl_Size)(p - dst);
 }
