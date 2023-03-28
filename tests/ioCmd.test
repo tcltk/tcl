@@ -240,11 +240,11 @@ test iocmd-8.7 {fconfigure command} -setup {
     file delete $path(test1)
 } -body {
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {} -encoding utf-16 -profile tcl8
+    fconfigure $f1 -translation lf -eofchar {} -encoding utf-16
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
-} -result {-blocking 1 -buffering full -buffersize 4096 -encoding utf-16 -eofchar {} -profile tcl8 -translation lf}
+} -result {-blocking 1 -buffering full -buffersize 4096 -encoding utf-16 -eofchar {} -profile strict -translation lf}
 test iocmd-8.8 {fconfigure command} -setup {
     file delete $path(test1)
     set x {}
@@ -262,11 +262,11 @@ test iocmd-8.9 {fconfigure command} -setup {
 } -body {
     set f1 [open $path(test1) w]
     fconfigure $f1 -translation binary -buffering none -buffersize 4040 \
-		-eofchar {} -encoding binary -profile tcl8
+		-eofchar {} -encoding binary
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
-} -result {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -profile tcl8 -translation lf}
+} -result {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -profile strict -translation lf}
 test iocmd-8.10 {fconfigure command} -returnCodes error -body {
     fconfigure a b
 } -result {can not find channel named "a"}

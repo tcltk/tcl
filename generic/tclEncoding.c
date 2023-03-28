@@ -199,18 +199,11 @@ static struct TclEncodingProfiles {
     {"strict", TCL_ENCODING_PROFILE_STRICT},
     {"tcl8", TCL_ENCODING_PROFILE_TCL8},
 };
-#define PROFILE_TCL8(flags_)                                           \
-    ((CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_TCL8)   \
-     || (CHANNEL_PROFILE_GET(flags_) == 0                         \
-	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_TCL8))
 #define PROFILE_STRICT(flags_)                                         \
-    ((CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
-     || (CHANNEL_PROFILE_GET(flags_) == 0                         \
-	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_STRICT))
+    (CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT)
+
 #define PROFILE_REPLACE(flags_)                                         \
-    ((CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE) \
-     || (CHANNEL_PROFILE_GET(flags_) == 0                          \
-	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_REPLACE))
+    (CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE)
 
 #define UNICODE_REPLACE_CHAR ((Tcl_UniChar)0xFFFD)
 #define SURROGATE(c_)      (((c_) & ~0x7FF) == 0xD800)
@@ -1171,10 +1164,6 @@ Tcl_ExternalToUtfDString(
  *	Possible flags values:
  *	target encoding. It should be composed by OR-ing the following:
  *	- *At most one* of TCL_ENCODING_PROFILE{DEFAULT,TCL8,STRICT}
- *	- TCL_ENCODING_STOPONERROR: Backward compatibility. Sets the profile
- *	  to TCL_ENCODING_PROFILE_STRICT overriding any specified profile flags
- *      Any other flag bits will cause an error to be returned (for future
- *      compatibility)
  *
  * Results:
  *      The return value is one of
@@ -1501,8 +1490,6 @@ Tcl_UtfToExternalDString(
  *	the source buffer are invalid or cannot be represented in the
  *	target encoding. It should be composed by OR-ing the following:
  *	- *At most one* of TCL_ENCODING_PROFILE{DEFAULT,TCL8,STRICT}
- *	- TCL_ENCODING_STOPONERROR: Backward compatibility. Sets the profile
- *	  to TCL_ENCODING_PROFILE_STRICT overriding any specified profile flags
  *
  * Results:
  *      The return value is one of
@@ -2452,7 +2439,6 @@ BinaryProc(
     if (dstLen < 0) {
 	dstLen = 0;
     }
-    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_CHAR_LIMIT) && srcLen > *dstCharsPtr) {
 	srcLen = *dstCharsPtr;
     }
@@ -2520,7 +2506,6 @@ UtfToUtfProc(
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
-    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_END) == 0) {
 	srcClose -= 6;
     }
@@ -2740,7 +2725,6 @@ Utf32ToUtfProc(
     int result, numChars, charLimit = INT_MAX;
     int ch = 0, bytesLeft = srcLen % 4;
 
-    flags = TclEncodingSetProfileFlags(flags);
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
@@ -2906,7 +2890,6 @@ UtfToUtf32Proc(
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
-    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_END) == 0) {
 	srcClose -= TCL_UTF_MAX;
     }
@@ -3004,7 +2987,6 @@ Utf16ToUtfProc(
     int result, numChars, charLimit = INT_MAX;
     unsigned short ch = 0;
 
-    flags = TclEncodingSetProfileFlags(flags);
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
@@ -3084,7 +3066,7 @@ Utf16ToUtfProc(
 	    *dst++ = (ch & 0xFF);
 	} else if (HIGH_SURROGATE(prev) || HIGH_SURROGATE(ch)) {
 	    dst += Tcl_UniCharToUtf(ch | TCL_COMBINE, dst);
-	} else if (LOW_SURROGATE(ch) && !PROFILE_TCL8(flags)) {
+	} else if (LOW_SURROGATE(ch) && (PROFILE_STRICT(flags) || PROFILE_REPLACE(flags))) {
 	    /* Lo surrogate not preceded by Hi surrogate and not tcl8 profile */
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
@@ -3185,7 +3167,6 @@ UtfToUtf16Proc(
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
-    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_END) == 0) {
 	srcClose -= TCL_UTF_MAX;
     }
@@ -3291,7 +3272,6 @@ UtfToUcs2Proc(
     int result, numChars, len;
     Tcl_UniChar ch = 0;
 
-    flags = TclEncodingSetProfileFlags(flags);
     flags |= PTR2INT(clientData);
     srcStart = src;
     srcEnd = src + srcLen;
@@ -3414,7 +3394,6 @@ TableToUtfProc(
     const unsigned short *pageZero;
     TableEncodingData *dataPtr = (TableEncodingData *)clientData;
 
-    flags = TclEncodingSetProfileFlags(flags);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
     }
@@ -3548,7 +3527,6 @@ TableFromUtfProc(
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
-    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_END) == 0) {
 	srcClose -= TCL_UTF_MAX;
     }
@@ -3655,7 +3633,6 @@ Iso88591ToUtfProc(
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
 
-    flags = TclEncodingSetProfileFlags(flags);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
     }
@@ -3740,7 +3717,6 @@ Iso88591FromUtfProc(
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
-    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_END) == 0) {
 	srcClose -= TCL_UTF_MAX;
     }
@@ -3888,7 +3864,6 @@ EscapeToUtfProc(
     int state, result, numChars, charLimit = INT_MAX;
     const char *dstStart, *dstEnd;
 
-    flags = TclEncodingSetProfileFlags(flags);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
     }
@@ -4112,7 +4087,6 @@ EscapeFromUtfProc(
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
-    flags = TclEncodingSetProfileFlags(flags);
     if ((flags & TCL_ENCODING_END) == 0) {
 	srcClose -= TCL_UTF_MAX;
     }
@@ -4556,48 +4530,6 @@ TclEncodingProfileIdToName(
 	    interp, "TCL", "ENCODING", "PROFILEID", NULL);
     }
     return NULL;
-}
-
-/*
- *------------------------------------------------------------------------
- *
- * TclEncodingSetProfileFlags --
- *
- *	Maps the flags supported in the encoding C API's to internal flags.
- *
- *	For backward compatibility reasons, TCL_ENCODING_STOPONERROR is
- *	is mapped to the TCL_ENCODING_PROFILE_STRICT overwriting any profile
- *	specified.
- *
- *	If no profile or an invalid profile is specified, it is set to
- *	the default.
- *
- * Results:
- *    Internal encoding flag mask.
- *
- * Side effects:
- *    None.
- *
- *------------------------------------------------------------------------
- */
-int TclEncodingSetProfileFlags(int flags)
-{
-    if (flags & TCL_ENCODING_STOPONERROR) {
-	CHANNEL_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
-    } else {
-	int profile = CHANNEL_PROFILE_GET(flags);
-	switch (profile) {
-	case TCL_ENCODING_PROFILE_TCL8:
-	case TCL_ENCODING_PROFILE_STRICT:
-	case TCL_ENCODING_PROFILE_REPLACE:
-	    break;
-	case 0: /* Unspecified by caller */
-	default:
-	    CHANNEL_PROFILE_SET(flags, TCL_ENCODING_PROFILE_DEFAULT);
-	    break;
-	}
-    }
-    return flags;
 }
 
 /*
