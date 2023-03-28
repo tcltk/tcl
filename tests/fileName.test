@@ -18,6 +18,7 @@ if {"::tcltest" ni [namespace children]} {
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
+source [file join [file dirname [info script]] tcltests.tcl]
 
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testtranslatefilename [llength [info commands testtranslatefilename]]
@@ -1609,6 +1610,66 @@ test fileName-20.10 {globbing for special chars} -setup {
     removeFile fileName-20.10 $s
     removeDirectory sub [file home]
 } -result [file home]/sub/fileName-20.10
+
+
+apply [list {} {
+    test fileName-6d4e9d1af5bf5b7d {
+	memory leak in SetFsPathFromAny
+
+	Runs under both a TCL_DEBUG_MEM build and a -DPURIFY build for
+	valgrind, which is useful since Valgrind provides information about the
+	error location, but [memory] doesn't.
+    } -setup {
+	makeFile {puts "In script"} script
+
+	if {[namespace which ::memory] eq {}} {
+	    set memcheckcmd [list ::apply [list script {
+		uplevel 1 $script
+		return 0
+	    } [namespace current]]]
+	} else {
+	    set memcheckcmd ::tcltests::scriptmemcheck
+	}
+    } -body {
+	{*}$memcheckcmd {
+	    set interp [interp create]
+	    interp eval $interp {
+		apply [list {} {
+		    upvar 1 f f 
+
+		    # A unique name so that no internal representation of this
+		    # literal value has been picked up from any other script
+		    # that has alredy been sourced into this interpreter.
+		    set variableUniqueInTheEntireTclCodebase a
+		    set name variableUniqueInTheEntireTclCodebase
+
+		    # give the Tcl_Obj for "var1" an internal representation of
+		    # type 'localVarNameType'.
+		    set $name
+
+		    set f [open variableUniqueInTheEntireTclCodebase w]
+			try {
+				puts $f {some data}
+			} finally {
+				close $f
+			}
+
+		    set f [open variableUniqueInTheEntireTclCodebase]
+			try {
+				read $f
+			} finally {
+				catch {file delete variableUniqueInTheEntireTclCodebase}
+				close $f
+			}
+		} [namespace current]]
+	    }
+	    interp delete $interp
+	}
+    } -result 0
+} [namespace current]]
+    
+
+
 
 # cleanup
 catch {file delete -force C:/globTest}
