@@ -112,7 +112,7 @@ test unixFCmd-1.2 {TclpRenameFile: EEXIST} -setup {
     file rename td2 td1
 } -returnCodes error -cleanup {
     cleanup
-} -result {error renaming "td2" to "td1/td2": file already exists}
+} -result {error renaming "td2" to "td1/td2": file exists}
 test unixFCmd-1.3 {TclpRenameFile: EINVAL} -setup {
     cleanup
 } -constraints {unix notRoot} -body {

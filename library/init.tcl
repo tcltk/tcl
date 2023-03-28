@@ -726,7 +726,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    # the following code is now commented out.
 	    #
 	    # return -code error "error $action \"$src\" to\
-	    # \"$dest\": file already exists"
+	    # \"$dest\": file exists"
 	} else {
 	    # Depending on the platform, and on the current
 	    # working directory, the directories '.', '..'
@@ -738,7 +738,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    foreach s $existing {
 		if {[file tail $s] ni {. ..}} {
 		    return -code error "error $action \"$src\" to\
-		      \"$dest\": file already exists"
+		      \"$dest\": file exists"
 		}
 	    }
 	}
