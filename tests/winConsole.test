@@ -344,7 +344,7 @@ test console-fconfigure-set-3.0 {
     fconfigure stderr -winsize
 } -constraints {win interactive} -body {
     fconfigure stderr -winsize {10 30}
-} -result {bad option "-winsize": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -profile, -translation} -returnCodes error
+} -result {bad option "-winsize": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -profile, or -translation} -returnCodes error
 
 # Multiple threads
 
