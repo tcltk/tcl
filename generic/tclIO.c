@@ -4422,19 +4422,17 @@ Write(
 	 * current output encoding and strict encoding is active.
 	 */
 
-	if (result == TCL_CONVERT_UNKNOWN || result == TCL_CONVERT_SYNTAX) {
-	    encodingError = 1;
-	    result = TCL_OK;
-	}
-
-	if ((result != TCL_OK) && (srcRead + dstWrote == 0)) {
+	if (
+	    (result == TCL_CONVERT_UNKNOWN || result == TCL_CONVERT_SYNTAX)
+	    ||
 	    /*
 	     * We're reading from invalid/incomplete UTF-8.
 	     */
-
+	    ((result != TCL_OK) && (srcRead + dstWrote == 0))
+	) {
 	    encodingError = 1;
 	    result = TCL_OK;
-	}
+	} 
 
 	bufPtr->nextAdded += dstWrote;
 	src += srcRead;
