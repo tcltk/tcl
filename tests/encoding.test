@@ -539,7 +539,7 @@ test encoding-16.16 {Utf16ToUtfProc} -body {
     encoding convertfrom utf-16le \x00\xDC\x00\xD8
 } -result \uDC00\uD800
 test encoding-16.17 {Utf32ToUtfProc} -body {
-    list [encoding convertfrom -profile strict -failindex  idx utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00] [set idx]
+    list [encoding convertfrom -failindex  idx utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00] [set idx]
 } -result {A 4}
 
 test encoding-16.18 {
@@ -626,14 +626,14 @@ test encoding-18.1 {TableToUtfProc on invalid input} -constraints deprecated -bo
 test encoding-18.2 {TableToUtfProc on invalid input with -profile strict} -body {
 	list [catch {encoding convertto -profile strict jis0208 \\} res] $res
 } -result {1 {unexpected character at index 0: 'U+00005C'}}
-test encoding-18.3 {TableToUtfProc on invalid input with -profile strict -failindex} -body {
-	list [catch {encoding convertto -profile strict -failindex pos jis0208 \\} res] $res $pos
-} -result {0 {} 0}
-test encoding-18.4 {TableToUtfProc on invalid input with -failindex -profile strict} -body {
-	list [catch {encoding convertto -failindex pos -profile strict jis0208 \\} res] $res $pos
-} -result {0 {} 0}
-test encoding-18.5 {TableToUtfProc on invalid input with -failindex} -body {
+test encoding-18.3 {TableToUtfProc on invalid input with -failindex} -body {
 	list [catch {encoding convertto -failindex pos jis0208 \\} res] $res $pos
+} -result {0 {} 0}
+test encoding-18.4 {TableToUtfProc on invalid input with -profile tcl8 -failindex} -body {
+	list [catch {encoding convertto -profile tcl8 -failindex pos jis0208 \\} res] $res $pos
+} -result {0 !) -1}
+test encoding-18.5 {TableToUtfProc on invalid input with -profile replace -failindex} -body {
+	list [catch {encoding convertto -profile replace -failindex pos jis0208 \\} res] $res $pos
 } -result {0 !) -1}
 test encoding-18.6 {TableToUtfProc on invalid input with -profile tcl8} -body {
 	list [catch {encoding convertto -profile tcl8 jis0208 \\} res] $res
@@ -650,12 +650,12 @@ test encoding-19.3 {TableFromUtfProc} -body {
 } -returnCodes 1 -result {unexpected byte sequence starting at index 1: '\xC1'}
 test encoding-19.4 {TableFromUtfProc} -body {
     list [encoding convertfrom -failindex idx ascii AÁ] [set idx]
-} -result [list A\xC1 -1]
+} -result {A 1}
 test encoding-19.5 {TableFromUtfProc} -body {
-    list [encoding convertfrom -failindex idx -profile strict ascii A\xC1] [set idx]
+    list [encoding convertfrom -failindex idx ascii A\xC1] [set idx]
 } -result {A 1}
 test encoding-19.6 {TableFromUtfProc} -body {
-    list [encoding convertfrom -failindex idx -profile strict ascii AÁB] [set idx]
+    list [encoding convertfrom -failindex idx ascii AÁB] [set idx]
 } -result {A 1}
 
 test encoding-20.1 {TableFreefProc} {

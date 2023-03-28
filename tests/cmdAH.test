@@ -299,8 +299,8 @@ proc testfailindex {id converter enc data result failidx {profile default}} {
         testconvert $id.$enc2.$profile "list \[encoding $converter -profile $profile -failindex idx $enc2 [list $data]\] \[set idx]" [list $result $failidx]
     }
 
-    # If this is the default profile, generate a test without specifying profile
-    if {$profile eq $::encDefaultProfile} {
+    # If this is the "strict" profile, generate a test without specifying profile
+    if {$profile eq "strict"} {
         testconvert $id.$enc.default "list \[encoding $converter -failindex idx $enc [list $data]\] \[set idx]" [list $result $failidx]
         if {[set enc2 [endianUtf $enc]] ne ""} {
             # If utf{16,32}-{le,be}, also do utf{16,32}

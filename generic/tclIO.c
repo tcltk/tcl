@@ -5046,7 +5046,9 @@ Tcl_GetsObj(
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) &&
 	    (copiedTotal == 0 || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
 	Tcl_SetErrno(EILSEQ);
-	copiedTotal = -1;
+	if (copiedTotal == 0) {
+	    copiedTotal = -1;
+	}
     }
     return copiedTotal;
 }
@@ -6160,7 +6162,9 @@ finish:
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 	    && (!copied || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
 	Tcl_SetErrno(EILSEQ);
-	copied = -1;
+	if (!copied) {
+	    copied = -1;
+	}
     }
     TclChannelRelease((Tcl_Channel)chanPtr);
     return copied;
@@ -7652,6 +7656,32 @@ Tcl_InputBuffered(
     }
 
     return bytesBuffered;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_InputEncodingError --
+ *
+ *	Returns 1 if input is in an encoding error position, 0 otherwise.
+ *
+ * Results:
+ *	0 or 1, always.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_InputEncodingError(
+    Tcl_Channel chan)		/* Is this channel blocked? */
+{
+    ChannelState *statePtr = ((Channel *) chan)->state;
+				/* State of real channel structure. */
+
+    return GotFlag(statePtr, CHANNEL_ENCODING_ERROR) ? 1 : 0;
 }
 
 /*

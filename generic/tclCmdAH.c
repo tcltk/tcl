@@ -567,7 +567,7 @@ EncodingConvertParseOptions (
     Tcl_Encoding encoding;
     Tcl_Obj *dataObj;
     Tcl_Obj *failVarObj;
-    int profile = TCL_ENCODING_PROFILE_TCL8;
+    int profile = -1;
 
     /*
      * Possible combinations:
@@ -626,6 +626,13 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 	dataObj = objv[objc - 1];
     }
 
+    if (profile == -1) {
+	/* The default profile is "tcl8", except when "-failindex" is specified.
+	 * In that case it's "strict" (as in Tcl 9). If "-profile" is specified,
+	 * (either before or after "-failvar"), that always takes precedence.
+	 */
+	profile = (failVarObj != NULL) ? TCL_ENCODING_PROFILE_STRICT : TCL_ENCODING_PROFILE_TCL8;
+    }
     *encPtr = encoding;
     *dataObjPtr = dataObj;
     *profilePtr = profile;

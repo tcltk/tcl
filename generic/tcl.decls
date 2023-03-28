@@ -2567,6 +2567,11 @@ declare 685 {
     Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
 }
 
+# TIP 657
+declare 686 {
+    int Tcl_InputEncodingError(Tcl_Channel chan)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
 declare 687 {
