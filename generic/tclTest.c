@@ -1166,7 +1166,6 @@ CmdProc1(
     return TCL_OK;
 }
 
-
 static int
 CmdProc2(
     void *clientData,	/* String to return. */
@@ -1243,8 +1242,8 @@ TestcmdtokenCmd(
     const char **argv)		/* Argument strings. */
 {
     TestCommandTokenRef *refPtr;
-    char buf[30];
     int id;
+    char buf[30];
 
     if (argc != 3) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -2153,19 +2152,19 @@ static int UtfExtWrapper(
         Tcl_Obj *resultObjs[3];
         switch (result) {
         case TCL_OK:
-            resultObjs[0] = Tcl_NewStringObj("ok", -1);
+            resultObjs[0] = Tcl_NewStringObj("ok", TCL_INDEX_NONE);
             break;
         case TCL_CONVERT_MULTIBYTE:
-            resultObjs[0] = Tcl_NewStringObj("multibyte", -1);
+            resultObjs[0] = Tcl_NewStringObj("multibyte", TCL_INDEX_NONE);
             break;
         case TCL_CONVERT_SYNTAX:
-            resultObjs[0] = Tcl_NewStringObj("syntax", -1);
+            resultObjs[0] = Tcl_NewStringObj("syntax", TCL_INDEX_NONE);
             break;
         case TCL_CONVERT_UNKNOWN:
-            resultObjs[0] = Tcl_NewStringObj("unknown", -1);
+            resultObjs[0] = Tcl_NewStringObj("unknown", TCL_INDEX_NONE);
             break;
         case TCL_CONVERT_NOSPACE:
-            resultObjs[0] = Tcl_NewStringObj("nospace", -1);
+            resultObjs[0] = Tcl_NewStringObj("nospace", TCL_INDEX_NONE);
             break;
         default:
             resultObjs[0] = Tcl_NewIntObj(result);
