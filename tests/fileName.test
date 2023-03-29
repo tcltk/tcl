@@ -1570,7 +1570,7 @@ test fileName-20.6 {Bug 2837800} -setup {
     cd $savewd
     removeDirectory ./~ $dd
     removeDirectory isolate
-    removeFile test ~
+    removeFile test [file home]
 } -result {}
 test fileName-20.7 {Bug 2806250} -setup {
     set savewd [pwd]
