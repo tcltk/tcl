@@ -6,6 +6,7 @@
  * Copyright © 1998 Sun Microsystems, Inc.
  * Copyright © 1999 Scriptics Corporation
  * Copyright © 2008 George Peter Staplin
+ * Copyright © 2023 Konrad Schwarz
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
