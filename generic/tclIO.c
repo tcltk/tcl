@@ -4489,7 +4489,7 @@ Write(
 	     * beginning of the next buffer.
 	     */
 
-	    saved = 1 + ~SpaceLeft(bufPtr);
+	    saved = -SpaceLeft(bufPtr);
 	    memcpy(safe, dst + dstLen, saved);
 	    bufPtr->nextAdded = bufPtr->bufLength;
 	}
