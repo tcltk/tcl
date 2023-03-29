@@ -15,7 +15,7 @@ Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChanne
 \fB#include <tcl.h>\fR
 .sp
 Tcl_Channel
-\fBTcl_CreateChannel\fR(\fItypePtr, channelName, instanceData, mask\fR)
+\fBTcl_CreateChannel\fR(\fItypePtr, channelName, instanceData, flags\fR)
 .sp
 void *
 \fBTcl_GetChannelInstanceData\fR(\fIchannel\fR)
@@ -130,9 +130,11 @@ the assigned channel name will be the name of the standard channel.
 .AP void *instanceData in
 Arbitrary one-word value to be associated with this channel.  This
 value is passed to procedures in \fItypePtr\fR when they are invoked.
-.AP int mask in
+.AP int flags in
 OR-ed combination of \fBTCL_READABLE\fR and \fBTCL_WRITABLE\fR to indicate
-whether a channel is readable and writable.
+whether a channel is readable and writable. Can also be combined with
+one of \fBTCL_ENCODING_PROFILE_STRICT\fR, \fBTCL_ENCODING_PROFILE_TCL8\fR,
+or \fBTCL_ENCODING_PROFILE_REPLACE\fR. 
 .AP Tcl_Channel channel in
 The channel to operate on.
 .AP int direction in
@@ -200,7 +202,7 @@ structure to perform operations on the channel.
 .PP
 \fBTcl_CreateChannel\fR opens a new channel and associates the supplied
 \fItypePtr\fR and \fIinstanceData\fR with it. The channel is opened in the
-mode indicated by \fImask\fR.
+mode indicated by \fIflags\fR.
 For a discussion of channel drivers, their operations and the
 \fBTcl_ChannelType\fR structure, see the section \fBTCL_CHANNELTYPE\fR, below.
 .PP
