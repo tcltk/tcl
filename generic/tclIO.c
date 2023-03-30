@@ -7880,7 +7880,7 @@ Tcl_GetChannelOption(
     Tcl_DString *dsPtr)		/* Where to store value(s). */
 {
     size_t len;			/* Length of optionName string. */
-    char optionVal[128];	/* Buffer for sprintf. */
+    char optionVal[128];	/* Buffer for snprintf. */
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
@@ -7981,7 +7981,7 @@ Tcl_GetChannelOption(
 	    Tcl_DStringAppendElement(dsPtr, "-eofchar");
 	}
 	if ((flags & TCL_READABLE) && (statePtr->inEofChar != 0)) {
-	    sprintf(buf, "%c", statePtr->inEofChar);
+	    snprintf(buf, sizeof(buf), "%c", statePtr->inEofChar);
 	}
 	if (len > 0) {
 		Tcl_DStringAppend(dsPtr, buf, TCL_INDEX_NONE);

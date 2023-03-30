@@ -832,7 +832,7 @@ NRInterpCmd(
 	    for (i = 0; ; i++) {
 		Tcl_CmdInfo cmdInfo;
 
-		sprintf(buf, "interp%d", i);
+		snprintf(buf, sizeof(buf), "interp%d", i);
 		if (Tcl_GetCommandInfo(interp, buf, &cmdInfo) == 0) {
 		    break;
 		}

@@ -897,7 +897,7 @@ TclCompileStringLenCmd(
 	char buf[TCL_INTEGER_SPACE];
 	size_t len = Tcl_GetCharLength(objPtr);
 
-	len = sprintf(buf, "%" TCL_Z_MODIFIER "u", len);
+	len = snprintf(buf, sizeof(buf), "%" TCL_Z_MODIFIER "u", len);
 	PushLiteral(envPtr, buf, len);
     } else {
 	SetLineInformation(1);
@@ -3124,7 +3124,7 @@ IssueTryClausesInstructions(
 
     for (i=0 ; i<numHandlers ; i++) {
 	noError[i] = -1;
-	sprintf(buf, "%d", matchCodes[i]);
+	snprintf(buf, sizeof(buf), "%d", matchCodes[i]);
 	OP(				DUP);
 	PushLiteral(envPtr, buf, strlen(buf));
 	OP(				EQ);
@@ -3337,7 +3337,7 @@ IssueTryClausesFinallyInstructions(
 	int noTrapError, trapError;
 	const char *p;
 
-	sprintf(buf, "%d", matchCodes[i]);
+	snprintf(buf, sizeof(buf), "%d", matchCodes[i]);
 	OP(				DUP);
 	PushLiteral(envPtr, buf, strlen(buf));
 	OP(				EQ);
