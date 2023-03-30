@@ -505,6 +505,7 @@ test lseq-4.4 {lseq corner case} -constraints has64BitLengths -body {
 # Ticket 99e834bf33 - lseq, lindex end off by one
 
 test lseq-4.5 {lindex off by one} -body {
+    set res {}
     lappend res [eval {lindex [lseq 1 4] end}]
     lappend res [eval {lindex [lseq 1 4] end-1}]
 } -setup {

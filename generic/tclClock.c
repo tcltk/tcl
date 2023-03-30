@@ -143,17 +143,17 @@ TCL_DECLARE_MUTEX(clockMutex)
 static int		ConvertUTCToLocal(Tcl_Interp *,
 			    TclDateFields *, Tcl_Obj *, int);
 static int		ConvertUTCToLocalUsingTable(Tcl_Interp *,
-			    TclDateFields *, size_t, Tcl_Obj *const[]);
+			    TclDateFields *, Tcl_Size, Tcl_Obj *const[]);
 static int		ConvertUTCToLocalUsingC(Tcl_Interp *,
 			    TclDateFields *, int);
 static int		ConvertLocalToUTC(Tcl_Interp *,
 			    TclDateFields *, Tcl_Obj *, int);
 static int		ConvertLocalToUTCUsingTable(Tcl_Interp *,
-			    TclDateFields *, size_t, Tcl_Obj *const[]);
+			    TclDateFields *, Tcl_Size, Tcl_Obj *const[]);
 static int		ConvertLocalToUTCUsingC(Tcl_Interp *,
 			    TclDateFields *, int);
 static Tcl_Obj *	LookupLastTransition(Tcl_Interp *, Tcl_WideInt,
-			    size_t, Tcl_Obj *const *);
+			    Tcl_Size, Tcl_Obj *const *);
 static void		GetYearWeekDay(TclDateFields *, int);
 static void		GetGregorianEraYearDay(TclDateFields *, int);
 static void		GetMonthDay(TclDateFields *);
@@ -728,7 +728,7 @@ ConvertLocalToUTC(
     Tcl_Obj *tzdata,		/* Time zone data */
     int changeover)		/* Julian Day of the Gregorian transition */
 {
-    size_t rowc;			/* Number of rows in tzdata */
+    Tcl_Size rowc;			/* Number of rows in tzdata */
     Tcl_Obj **rowv;		/* Pointers to the rows */
 
     /*
@@ -773,11 +773,11 @@ static int
 ConvertLocalToUTCUsingTable(
     Tcl_Interp *interp,		/* Tcl interpreter */
     TclDateFields *fields,	/* Time to convert, with 'seconds' filled in */
-    size_t rowc,			/* Number of points at which time changes */
+    Tcl_Size rowc,			/* Number of points at which time changes */
     Tcl_Obj *const rowv[])	/* Points at which time changes */
 {
     Tcl_Obj *row;
-    size_t cellc;
+    Tcl_Size cellc;
     Tcl_Obj **cellv;
     int have[8];
     int nHave = 0;
@@ -931,7 +931,7 @@ ConvertUTCToLocal(
     Tcl_Obj *tzdata,		/* Time zone data */
     int changeover)		/* Julian Day of the Gregorian transition */
 {
-    size_t rowc;			/* Number of rows in tzdata */
+    Tcl_Size rowc;			/* Number of rows in tzdata */
     Tcl_Obj **rowv;		/* Pointers to the rows */
 
     /*
@@ -976,12 +976,12 @@ static int
 ConvertUTCToLocalUsingTable(
     Tcl_Interp *interp,		/* Tcl interpreter */
     TclDateFields *fields,	/* Fields of the date */
-    size_t rowc,			/* Number of rows in the conversion table
+    Tcl_Size rowc,			/* Number of rows in the conversion table
 				 * (>= 1) */
     Tcl_Obj *const rowv[])	/* Rows of the conversion table */
 {
     Tcl_Obj *row;		/* Row containing the current information */
-    size_t cellc;			/* Count of cells in the row (must be 4) */
+    Tcl_Size cellc;			/* Count of cells in the row (must be 4) */
     Tcl_Obj **cellv;		/* Pointers to the cells */
 
     /*
@@ -1116,11 +1116,11 @@ static Tcl_Obj *
 LookupLastTransition(
     Tcl_Interp *interp,		/* Interpreter for error messages */
     Tcl_WideInt tick,		/* Time from the epoch */
-    size_t rowc,			/* Number of rows of tzdata */
+    Tcl_Size rowc,			/* Number of rows of tzdata */
     Tcl_Obj *const *rowv)	/* Rows in tzdata */
 {
-    size_t l;
-    size_t u;
+    Tcl_Size l;
+    Tcl_Size u;
     Tcl_Obj *compObj;
     Tcl_WideInt compVal;
 

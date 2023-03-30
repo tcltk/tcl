@@ -179,12 +179,12 @@ FileForRedirect(
 
 void
 Tcl_DetachPids(
-    size_t numPids,		/* Number of pids to detach: gives size of
+    Tcl_Size numPids,		/* Number of pids to detach: gives size of
 				 * array pointed to by pidPtr. */
     Tcl_Pid *pidPtr)		/* Array of pids to detach. */
 {
     Detached *detPtr;
-    size_t i;
+    Tcl_Size i;
 
     Tcl_MutexLock(&pipeMutex);
     for (i = 0; i < numPids; i++) {
@@ -269,7 +269,7 @@ Tcl_ReapDetachedProcs(void)
 int
 TclCleanupChildren(
     Tcl_Interp *interp,		/* Used for error messages. */
-    size_t numPids,		/* Number of entries in pidPtr array. */
+    Tcl_Size numPids,		/* Number of entries in pidPtr array. */
     Tcl_Pid *pidPtr,		/* Array of process ids of children. */
     Tcl_Channel errorChan)	/* Channel for file containing stderr output
 				 * from pipeline. NULL means there isn't any
@@ -278,7 +278,7 @@ TclCleanupChildren(
     int result = TCL_OK;
     int code, abnormalExit, anyErrorInfo;
     TclProcessWaitStatus waitStatus;
-    size_t i;
+    Tcl_Size i;
     Tcl_Obj *msg, *error;
 
     abnormalExit = 0;
@@ -361,7 +361,7 @@ TclCleanupChildren(
 
     if ((abnormalExit != 0) && (anyErrorInfo == 0) && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"child process exited abnormally", TCL_INDEX_NONE));
+		"child process exited abnormally", -1));
     }
     return result;
 }
@@ -395,10 +395,10 @@ TclCleanupChildren(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclCreatePipeline(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
-    size_t argc,			/* Number of entries in argv. */
+    Tcl_Size argc,		/* Number of entries in argv. */
     const char **argv,		/* Array of strings describing commands in
 				 * pipeline plus I/O redirection with <, <<,
 				 * >, etc. Argv[argc] must be NULL. */
@@ -431,9 +431,9 @@ TclCreatePipeline(
 {
     Tcl_Pid *pidPtr = NULL;	/* Points to malloc-ed array holding all the
 				 * pids of child processes. */
-    size_t numPids;		/* Actual number of processes that exist at
+    Tcl_Size numPids;		/* Actual number of processes that exist at
 				 * *pidPtr right now. */
-    size_t cmdCount;		/* Count of number of distinct commands found
+    Tcl_Size cmdCount;		/* Count of number of distinct commands found
 				 * in argc/argv. */
     const char *inputLiteral = NULL;
 				/* If non-null, then this points to a string
@@ -461,7 +461,7 @@ TclCreatePipeline(
     const char *p;
     const char *nextArg;
     int skip, atOK, flags, needCmd, errorToOutput = 0;
-    size_t i, j, lastArg, lastBar;
+    Tcl_Size i, j, lastArg, lastBar;
     Tcl_DString execBuffer;
     TclFile pipeIn;
     TclFile curInFile, curOutFile, curErrFile;
@@ -497,7 +497,7 @@ TclCreatePipeline(
      * list.
      */
 
-    lastBar = TCL_INDEX_NONE;
+    lastBar = -1;
     cmdCount = 1;
     needCmd = 1;
     for (i = 0; i < argc; i++) {
@@ -512,7 +512,7 @@ TclCreatePipeline(
 	    if (*p == '\0') {
 		if ((i == (lastBar + 1)) || (i == (argc - 1))) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "illegal use of | or |& in command", TCL_INDEX_NONE));
+			    "illegal use of | or |& in command", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 			    "PIPESYNTAX", NULL);
 		    goto error;
@@ -700,7 +700,7 @@ TclCreatePipeline(
 	 */
 
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"illegal use of | or |& in command", TCL_INDEX_NONE));
+		"illegal use of | or |& in command", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "PIPESYNTAX",
 		NULL);
 	goto error;
@@ -1021,14 +1021,14 @@ Tcl_Channel
 Tcl_OpenCommandChannel(
     Tcl_Interp *interp,		/* Interpreter for error reporting. Can NOT be
 				 * NULL. */
-    size_t argc,			/* How many arguments. */
+    Tcl_Size argc,			/* How many arguments. */
     const char **argv,		/* Array of arguments for command pipe. */
     int flags)			/* Or'ed combination of TCL_STDIN, TCL_STDOUT,
 				 * TCL_STDERR, and TCL_ENFORCE_MODE. */
 {
     TclFile *inPipePtr, *outPipePtr, *errFilePtr;
     TclFile inPipe, outPipe, errFile;
-    size_t numPids;
+    Tcl_Size numPids;
     Tcl_Pid *pidPtr = NULL;
     Tcl_Channel channel;
 
@@ -1041,7 +1041,7 @@ Tcl_OpenCommandChannel(
     numPids = TclCreatePipeline(interp, argc, argv, &pidPtr, inPipePtr,
 	    outPipePtr, errFilePtr);
 
-    if (numPids == TCL_INDEX_NONE) {
+    if (numPids < 0) {
 	goto error;
     }
 
@@ -1054,7 +1054,7 @@ Tcl_OpenCommandChannel(
 	if ((flags & TCL_STDOUT) && (outPipe == NULL)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "can't read output from command:"
-		    " standard output was redirected", TCL_INDEX_NONE));
+		    " standard output was redirected", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 		    "BADREDIRECT", NULL);
 	    goto error;
@@ -1062,7 +1062,7 @@ Tcl_OpenCommandChannel(
 	if ((flags & TCL_STDIN) && (inPipe == NULL)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "can't write input to command:"
-		    " standard input was redirected", TCL_INDEX_NONE));
+		    " standard input was redirected", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
 		    "BADREDIRECT", NULL);
 	    goto error;
@@ -1074,7 +1074,7 @@ Tcl_OpenCommandChannel(
 
     if (channel == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"pipe for command could not be created", TCL_INDEX_NONE));
+		"pipe for command could not be created", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC", "NOPIPE", NULL);
 	goto error;
     }

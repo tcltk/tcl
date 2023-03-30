@@ -263,7 +263,7 @@ static const Tcl_ObjType localVarNameType = {
 	const Tcl_ObjInternalRep *irPtr;					\
 	irPtr = TclFetchInternalRep((objPtr), &localVarNameType);		\
 	(name) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr1 : NULL;		\
-	(index) = irPtr ? PTR2UINT(irPtr->twoPtrValue.ptr2) : TCL_INDEX_NONE;	\
+	(index) = irPtr ? PTR2INT(irPtr->twoPtrValue.ptr2) : TCL_INDEX_NONE;	\
     } while (0)
 
 static const Tcl_ObjType parsedVarNameType = {
@@ -301,7 +301,7 @@ TclVarHashCreateVar(
     Tcl_Obj *keyPtr;
     Var *varPtr;
 
-    keyPtr = Tcl_NewStringObj(key, TCL_INDEX_NONE);
+    keyPtr = Tcl_NewStringObj(key, -1);
     Tcl_IncrRefCount(keyPtr);
     varPtr = VarHashCreateVar(tablePtr, keyPtr, newPtr);
     Tcl_DecrRefCount(keyPtr);
@@ -469,7 +469,7 @@ TclLookupVar(
 				 * is set to NULL. */
 {
     Var *varPtr;
-    Tcl_Obj *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
+    Tcl_Obj *part1Ptr = Tcl_NewStringObj(part1, -1);
 
     if (createPart1) {
 	Tcl_IncrRefCount(part1Ptr);
@@ -551,7 +551,7 @@ TclObjLookupVar(
     Var *resPtr;
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
+	part2Ptr = Tcl_NewStringObj(part2, -1);
 	if (createPart2) {
 	    Tcl_IncrRefCount(part2Ptr);
 	}
@@ -604,14 +604,14 @@ TclObjLookupVarEx(
     const char *errMsg = NULL;
     int index, parsed = 0;
 
-    size_t localIndex;
+    Tcl_Size localIndex;
     Tcl_Obj *namePtr, *arrayPtr, *elem;
 
     *arrayPtrPtr = NULL;
 
   restart:
     LocalGetInternalRep(part1Ptr, localIndex, namePtr);
-    if (localIndex != TCL_INDEX_NONE) {
+    if (localIndex >= 0) {
 	if (HasLocalVars(varFramePtr)
 		&& !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 		&& (localIndex < varFramePtr->numCompiledLocals)) {
@@ -659,7 +659,7 @@ TclObjLookupVarEx(
 	 * part1Ptr is possibly an unparsed array element.
 	 */
 
-	size_t len;
+	Tcl_Size len;
 	const char *part1 = Tcl_GetStringFromObj(part1Ptr, &len);
 
 	if ((len > 1) && (part1[len - 1] == ')')) {
@@ -949,7 +949,7 @@ TclLookupSimpleVar(
 		return NULL;
 	    }
 	    if (tail != varName) {
-		tailPtr = Tcl_NewStringObj(tail, TCL_INDEX_NONE);
+		tailPtr = Tcl_NewStringObj(tail, -1);
 	    } else {
 		tailPtr = varNamePtr;
 	    }
@@ -1173,10 +1173,10 @@ Tcl_GetVar2(
 				 * bits. */
 {
     Tcl_Obj *resultPtr;
-    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
+    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
+	part2Ptr = Tcl_NewStringObj(part2, -1);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -1226,10 +1226,10 @@ Tcl_GetVar2Ex(
     int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
-    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
+    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
+	part2Ptr = Tcl_NewStringObj(part2, -1);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -1547,7 +1547,7 @@ Tcl_SetVar2(
 				 * TCL_LEAVE_ERR_MSG. */
 {
     Tcl_Obj *varValuePtr = Tcl_SetVar2Ex(interp, part1, part2,
-	    Tcl_NewStringObj(newValue, TCL_INDEX_NONE), flags);
+	    Tcl_NewStringObj(newValue, -1), flags);
 
     if (varValuePtr == NULL) {
 	return NULL;
@@ -1607,11 +1607,11 @@ Tcl_SetVar2Ex(
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT or
 				 * TCL_LEAVE_ERR_MSG. */
 {
-    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
+    Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
 
     Tcl_IncrRefCount(part1Ptr);
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
+	part2Ptr = Tcl_NewStringObj(part2, -1);
 	Tcl_IncrRefCount(part2Ptr);
     }
 
@@ -2291,10 +2291,10 @@ Tcl_UnsetVar2(
 				 * TCL_LEAVE_ERR_MSG. */
 {
     int result;
-    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, TCL_INDEX_NONE);
+    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
 
     if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, TCL_INDEX_NONE);
+	part2Ptr = Tcl_NewStringObj(part2, -1);
     }
 
     /*
@@ -2830,7 +2830,7 @@ Tcl_LappendObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *varValuePtr, *newValuePtr;
-    size_t numElems;
+    Tcl_Size numElems;
     Var *varPtr, *arrayPtr;
     int result, createdNewObj;
 
@@ -3049,7 +3049,7 @@ ArrayForNRCmd(
     ArraySearch *searchPtr = NULL;
     Var *varPtr;
     int isArray;
-    size_t numVars;
+    Tcl_Size numVars;
 
     /*
      * array for {k v} a body
@@ -3070,7 +3070,7 @@ ArrayForNRCmd(
 
     if (numVars != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must have two variable names", TCL_INDEX_NONE));
+		"must have two variable names", -1));
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "array", "for", NULL);
 	return TCL_ERROR;
     }
@@ -3126,7 +3126,7 @@ ArrayForLoopCallback(
     Var *varPtr;
     Var *arrayPtr;
     int done;
-    size_t varc;
+    Tcl_Size varc;
 
     /*
      * Process the result from the previous execution of the script body.
@@ -3168,7 +3168,7 @@ ArrayForLoopCallback(
 	Tcl_ResetResult(interp);
 	if (done == TCL_ERROR) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "array changed during iteration", TCL_INDEX_NONE));
+		    "array changed during iteration", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "READ", "array", "for", NULL);
 	    varPtr->flags |= TCL_LEAVE_ERR_MSG;
 	    result = done;
@@ -3634,7 +3634,7 @@ ArrayGetCmd(
     Tcl_Obj **nameObjPtr, *patternObj;
     Tcl_HashSearch search;
     const char *pattern;
-    size_t i, count;
+    Tcl_Size i, count;
     int result, isArray;
 
     switch (objc) {
@@ -3960,7 +3960,6 @@ ArraySetCmd(
     Tcl_Obj *arrayElemObj;
     Var *varPtr, *arrayPtr;
     int result;
-    size_t i;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName list");
@@ -3995,7 +3994,7 @@ ArraySetCmd(
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done;
-	size_t size;
+	Tcl_Size size;
 
 	if (Tcl_DictObjSize(interp, arrayElemObj, &size) != TCL_OK) {
 	    return TCL_ERROR;
@@ -4039,8 +4038,9 @@ ArraySetCmd(
 	 * -compatibility reasons) a list.
 	 */
 
-	size_t elemLen;
+	Tcl_Size elemLen;
 	Tcl_Obj **elemPtrs, *copyListObj;
+	Tcl_Size i;
 
 	result = TclListObjLengthM(interp, arrayElemObj, &elemLen);
 	if (result != TCL_OK) {
@@ -4048,7 +4048,7 @@ ArraySetCmd(
 	}
 	if (elemLen & 1) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "list must have an even number of elements", TCL_INDEX_NONE));
+		    "list must have an even number of elements", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "FORMAT", NULL);
 	    return TCL_ERROR;
 	}
@@ -4218,10 +4218,10 @@ ArrayStatsCmd(
     stats = Tcl_HashStats((Tcl_HashTable *) varPtr->value.tablePtr);
     if (stats == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"error reading array statistics", TCL_INDEX_NONE));
+		"error reading array statistics", -1));
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, TCL_INDEX_NONE));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, -1));
     Tcl_Free(stats);
     return TCL_OK;
 }
@@ -4785,7 +4785,7 @@ Tcl_GetVariableFullName(
 	    Tcl_AppendObjToObj(objPtr, namePtr);
 	}
     } else if (iPtr->varFramePtr->procPtr) {
-	size_t index = varPtr - iPtr->varFramePtr->compiledLocals;
+	Tcl_Size index = varPtr - iPtr->varFramePtr->compiledLocals;
 
 	if (index < iPtr->varFramePtr->numCompiledLocals) {
 	    namePtr = localName(iPtr->varFramePtr, index);
@@ -5609,7 +5609,7 @@ static void
 FreeLocalVarName(
     Tcl_Obj *objPtr)
 {
-    size_t index;
+    Tcl_Size index;
     Tcl_Obj *namePtr;
 
     LocalGetInternalRep(objPtr, index, namePtr);
@@ -5625,7 +5625,7 @@ DupLocalVarName(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    size_t index;
+    Tcl_Size index;
     Tcl_Obj *namePtr;
 
     LocalGetInternalRep(srcPtr, index, namePtr);
@@ -6209,7 +6209,7 @@ AppendLocals(
 {
     Interp *iPtr = (Interp *) interp;
     Var *varPtr;
-    size_t i, localVarCt;
+    Tcl_Size i, localVarCt;
     int added;
     Tcl_Obj *objNamePtr;
     const char *varName;

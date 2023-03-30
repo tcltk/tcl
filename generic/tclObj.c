@@ -329,12 +329,12 @@ typedef struct ResolvedCmdName {
 				 * it's possible that the cmd's containing
 				 * namespace was deleted and a new one created
 				 * at the same address). */
-    size_t refNsCmdEpoch;	/* Value of the referencing namespace's
+    Tcl_Size refNsCmdEpoch;	/* Value of the referencing namespace's
 				 * cmdRefEpoch when the pointer was cached.
 				 * Before using the cached pointer, we check
 				 * if the namespace's epoch was incremented;
 				 * if so, this cached pointer is invalid. */
-    size_t cmdEpoch;		/* Value of the command's cmdEpoch when this
+    Tcl_Size cmdEpoch;		/* Value of the command's cmdEpoch when this
 				 * pointer was cached. Before using the cached
 				 * pointer, we check if the cmd's epoch was
 				 * incremented; if so, the cmd was renamed,
@@ -848,7 +848,7 @@ Tcl_AppendAllObjTypes(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    size_t numElems;
+    Tcl_Size numElems;
 
     /*
      * Get the test for a valid list out of the way first.
@@ -867,7 +867,7 @@ Tcl_AppendAllObjTypes(
     for (hPtr = Tcl_FirstHashEntry(&typeTable, &search);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	Tcl_ListObjAppendElement(NULL, objPtr,
-		Tcl_NewStringObj((char *)Tcl_GetHashKey(&typeTable, hPtr), TCL_INDEX_NONE));
+		Tcl_NewStringObj((char *)Tcl_GetHashKey(&typeTable, hPtr), -1));
     }
     Tcl_MutexUnlock(&tableMutex);
     return TCL_OK;
@@ -1702,7 +1702,7 @@ char *
 Tcl_GetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
 				 * be returned. */
-    size_t *lengthPtr)	/* If non-NULL, the location where the string
+    Tcl_Size *lengthPtr)	/* If non-NULL, the location where the string
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {
@@ -2126,13 +2126,13 @@ TclSetBooleanFromAny(
 
   badBoolean:
     if (interp != NULL) {
-	size_t length;
+	Tcl_Size length;
 	const char *str = Tcl_GetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg;
 
 	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
 	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
-	Tcl_AppendToObj(msg, "\"", TCL_INDEX_NONE);
+	Tcl_AppendToObj(msg, "\"", -1);
 	Tcl_SetObjResult(interp, msg);
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", NULL);
     }
@@ -2145,7 +2145,7 @@ ParseBoolean(
 {
     int newBool;
     char lowerCase[6];
-    size_t i, length;
+    Tcl_Size i, length;
     const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
     if ((length == 0) || (length > 5)) {
@@ -2421,7 +2421,7 @@ Tcl_GetDoubleFromObj(
 	    if (isnan(objPtr->internalRep.doubleValue)) {
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "floating point value is Not a Number", TCL_INDEX_NONE));
+			    "floating point value is Not a Number", -1));
                     Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
                             NULL);
 		}
@@ -2553,7 +2553,7 @@ Tcl_GetIntFromObj(
 	if (interp != NULL) {
 	    const char *s =
 		    "integer value too large to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_INDEX_NONE));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}
 	return TCL_ERROR;
@@ -2718,7 +2718,7 @@ Tcl_GetLongFromObj(
 #endif
 	    if (interp != NULL) {
 		const char *s = "integer value too large to represent";
-		Tcl_Obj *msg = Tcl_NewStringObj(s, TCL_INDEX_NONE);
+		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
@@ -2953,7 +2953,7 @@ Tcl_GetWideIntFromObj(
 	    }
 	    if (interp != NULL) {
 		const char *s = "integer value too large to represent";
-		Tcl_Obj *msg = Tcl_NewStringObj(s, TCL_INDEX_NONE);
+		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
@@ -3037,7 +3037,7 @@ Tcl_GetWideUIntFromObj(
 
 	    if (interp != NULL) {
 		const char *s = "integer value too large to represent";
-		Tcl_Obj *msg = Tcl_NewStringObj(s, TCL_INDEX_NONE);
+		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
@@ -4107,7 +4107,7 @@ TclHashObjKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
-    size_t length;
+    Tcl_Size length;
     const char *string = Tcl_GetStringFromObj(objPtr, &length);
     TCL_HASH_TYPE result = 0;
 
@@ -4539,12 +4539,12 @@ Tcl_RepresentationCmd(
     }
 
     if (objv[1]->bytes) {
-        Tcl_AppendToObj(descObj, ", string representation \"", TCL_INDEX_NONE);
+        Tcl_AppendToObj(descObj, ", string representation \"", -1);
 	Tcl_AppendLimitedToObj(descObj, objv[1]->bytes, objv[1]->length,
                 16, "...");
-	Tcl_AppendToObj(descObj, "\"", TCL_INDEX_NONE);
+	Tcl_AppendToObj(descObj, "\"", -1);
     } else {
-	Tcl_AppendToObj(descObj, ", no string representation", TCL_INDEX_NONE);
+	Tcl_AppendToObj(descObj, ", no string representation", -1);
     }
 
     Tcl_SetObjResult(interp, descObj);

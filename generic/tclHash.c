@@ -438,7 +438,7 @@ Tcl_DeleteHashTable(
 {
     Tcl_HashEntry *hPtr, *nextPtr;
     const Tcl_HashKeyType *typePtr;
-    size_t i;
+    Tcl_Size i;
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -587,7 +587,7 @@ Tcl_HashStats(
     Tcl_HashTable *tablePtr)	/* Table for which to produce stats. */
 {
 #define NUM_COUNTERS 10
-    size_t i;
+    Tcl_Size i;
     TCL_HASH_TYPE count[NUM_COUNTERS], overflow, j;
     double average, tmp;
     Tcl_HashEntry *hPtr;
