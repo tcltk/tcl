@@ -7703,7 +7703,7 @@ test io-52.20 {TclCopyChannel & encodings} -setup {
 } -cleanup {
     close $in
     close $out
-} -returnCodes 1 -match glob -result {error reading "file*": illegal byte sequence}
+} -returnCodes 1 -match glob -result {error reading "file*": invalid or incomplete multibyte or wide character}
 test io-52.21 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
     fconfigure $out -encoding utf-8 -translation lf
@@ -7724,7 +7724,7 @@ test io-52.21 {TclCopyChannel & encodings} -setup {
 } -cleanup {
     close $in
     close $out
-} -returnCodes 1 -match glob -result {error writing "file*": illegal byte sequence}
+} -returnCodes 1 -match glob -result {error writing "file*": invalid or incomplete multibyte or wide character}
 test io-52.22 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
     fconfigure $out -encoding utf-8 -translation lf
@@ -7751,7 +7751,7 @@ test io-52.22 {TclCopyChannel & encodings} -setup {
     close $in
     close $out
     unset ::s0
-} -match glob -result {0 {error reading "file*": illegal byte sequence}}
+} -match glob -result {0 {error reading "file*": invalid or incomplete multibyte or wide character}}
 test io-52.23 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
     fconfigure $out -encoding utf-8 -translation lf
@@ -7778,7 +7778,7 @@ test io-52.23 {TclCopyChannel & encodings} -setup {
     close $in
     close $out
     unset ::s0
-} -match glob -result {0 {error writing "file*": illegal byte sequence}}
+} -match glob -result {0 {error writing "file*": invalid or incomplete multibyte or wide character}}
 
 
 test io-53.1 {CopyData} {fcopy} {
@@ -8761,7 +8761,7 @@ test io-60.1 {writing illegal utf sequences} {fileevent testbytestring} {
     # cut of the remainder of the error stack, especially the filename
     set result [lreplace $result 3 3 [lindex [split [lindex $result 3] \n] 0]]
     list $x $result
-} {1 {gets ABC catch {error writing "stdout": illegal byte sequence}}}
+} {1 {gets ABC catch {error writing "stdout": invalid or incomplete multibyte or wide character}}}
 
 test io-61.1 {Reset eof state after changing the eof char} -setup {
     set datafile [makeFile {} eofchar]
@@ -9228,7 +9228,7 @@ test io-75.6 {invalid utf-8 encoding gets is not ignored (-profile strict)} -set
 } -cleanup {
     close $f
     removeFile io-75.6
-} -match glob -returnCodes 1 -result {error reading "*": illegal byte sequence}
+} -match glob -returnCodes 1 -result {error reading "*": invalid or incomplete multibyte or wide character}
 
 test io-75.7 {invalid utf-8 encoding gets is not ignored (-profile strict)} -setup {
     set fn [makeFile {} io-75.7]
@@ -9244,7 +9244,7 @@ test io-75.7 {invalid utf-8 encoding gets is not ignored (-profile strict)} -set
 } -cleanup {
     close $f
     removeFile io-75.7
-} -match glob -returnCodes 1 -result {error reading "*": illegal byte sequence}
+} -match glob -returnCodes 1 -result {error reading "*": invalid or incomplete multibyte or wide character}
 
 test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.8]
@@ -9278,7 +9278,7 @@ test io-75.9 {unrepresentable character write passes and is replaced by ?} -setu
 } -cleanup {
     close $f
     removeFile io-75.9
-} -match glob -result [list {A} {error writing "*": illegal byte sequence}]
+} -match glob -result [list {A} {error writing "*": invalid or incomplete multibyte or wide character}]
 
 # Incomplete sequence test.
 # This error may IMHO only be detected with the close.
@@ -9322,7 +9322,7 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
 } -cleanup {
     close $f
     removeFile io-75.11
-} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
+} -match glob -result {41 1 {error reading "*": invalid or incomplete multibyte or wide character}}
 
 test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
     set fn [makeFile {} io-75.12]
@@ -9357,7 +9357,7 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -se
 } -cleanup {
     close $f
     removeFile io-75.13
-} -match glob -result {41 1 {error reading "*": illegal byte sequence}}
+} -match glob -result {41 1 {error reading "*": invalid or incomplete multibyte or wide character}}
 
 # ### ### ### ######### ######### #########
 

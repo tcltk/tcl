@@ -694,7 +694,7 @@ test filesystem-7.4 {cross-filesystem file copy with -force} -setup {
     file delete -force simplefile
     file delete -force file2
     cd $dir
-} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 {} 1}
+} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file exists} 0 {} 1}
 test filesystem-7.5 {cross-filesystem file copy with -force} -setup {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
@@ -719,7 +719,7 @@ test filesystem-7.5 {cross-filesystem file copy with -force} -setup {
     file delete -force simplefile
     file delete -force file2
     cd $dir
-} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 {} 1}
+} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file exists} 0 {} 1}
 test filesystem-7.6 {cross-filesystem dir copy with -force} -setup {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
@@ -747,7 +747,7 @@ test filesystem-7.6 {cross-filesystem dir copy with -force} -setup {
     file delete -force simpledir
     file delete -force dir2
     cd $dir
-} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
+} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file exists} 0 {} 1 1}
 test filesystem-7.7 {cross-filesystem dir copy with -force} -setup {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
@@ -777,7 +777,7 @@ test filesystem-7.7 {cross-filesystem dir copy with -force} -setup {
     file delete -force simpledir
     file delete -force dir2
     cd $dir
-} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
+} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file exists} 0 {} 1 1}
 removeFile gorp.file
 test filesystem-7.8 {vfs cd} -setup {
     set dir [pwd]

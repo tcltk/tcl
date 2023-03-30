@@ -2272,6 +2272,7 @@ Tcl_JoinObjCmd(
 		    return TCL_ERROR;
 		}
 		Tcl_AppendObjToObj(resObjPtr, valueObj);
+		Tcl_DecrRefCount(valueObj);
 	    }
 	} else {
 	    for (i = 0;  i < listLen;  i++) {

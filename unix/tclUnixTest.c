@@ -190,7 +190,7 @@ TestfilehandlerCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "index");
 	    return TCL_ERROR;
 	}
-	sprintf(buf, "%d %d", pipePtr->readCount, pipePtr->writeCount);
+	snprintf(buf, sizeof(buf), "%d %d", pipePtr->readCount, pipePtr->writeCount);
 	Tcl_AppendResult(interp, buf, NULL);
     } else if (strcmp(Tcl_GetString(objv[1]), "create") == 0) {
 	if (objc != 5) {

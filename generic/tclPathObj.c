@@ -2207,10 +2207,12 @@ SetFsPathFromAny(
     fsPathPtr = (FsPath *)Tcl_Alloc(sizeof(FsPath));
 
     if (transPtr == pathPtr) {
-        transPtr = Tcl_DuplicateObj(pathPtr);
-        fsPathPtr->filesystemEpoch = 0;
+	(void) Tcl_GetString(pathPtr);
+	TclFreeInternalRep(pathPtr);
+	transPtr = Tcl_DuplicateObj(pathPtr);
+	fsPathPtr->filesystemEpoch = 0;
     } else {
-        fsPathPtr->filesystemEpoch = TclFSEpoch();
+	fsPathPtr->filesystemEpoch = TclFSEpoch();
     }
     Tcl_IncrRefCount(transPtr);
     fsPathPtr->translatedPathPtr = transPtr;

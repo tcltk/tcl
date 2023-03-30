@@ -1086,12 +1086,12 @@ ConvertUTCToLocalUsingC(
     } else {
 	*buffer = '+';
     }
-    sprintf(buffer+1, "%02d", diff / 3600);
+    snprintf(buffer+1, sizeof(buffer) - 1, "%02d", diff / 3600);
     diff %= 3600;
-    sprintf(buffer+3, "%02d", diff / 60);
+    snprintf(buffer+3, sizeof(buffer) - 3, "%02d", diff / 60);
     diff %= 60;
     if (diff > 0) {
-	sprintf(buffer+5, "%02d", diff);
+	snprintf(buffer+5, sizeof(buffer) - 5, "%02d", diff);
     }
     fields->tzName = Tcl_NewStringObj(buffer, -1);
     Tcl_IncrRefCount(fields->tzName);

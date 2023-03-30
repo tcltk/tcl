@@ -957,7 +957,7 @@ Tcl_Exit(
     /*
      * Warning: this function SHOULD NOT return, as there is code that depends
      * on Tcl_Exit never returning. In fact, we will Tcl_Panic if anyone
-     * returns, so critical is this dependcy.
+     * returns, so critical is this dependency.
      *
      * If subsystems are not (yet) initialized, proper Tcl-finalization is
      * impossible, so fallback to system exit, see bug-[f8a33ce3db5d8cc2].

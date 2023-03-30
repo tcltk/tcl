@@ -394,7 +394,7 @@ AC_CHECK_FUNC(memmove, , [
     AC_DEFINE(NO_STRING_H, 1, [Do we have <string.h>?]) ])
 
 #--------------------------------------------------------------------
-#	On some systems strstr is broken: it returns a pointer even even if
+#	On some systems strstr is broken: it returns a pointer even if
 #	the original string is empty.
 #--------------------------------------------------------------------
 

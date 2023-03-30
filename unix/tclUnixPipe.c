@@ -476,7 +476,7 @@ TclpCreateProcess(
 		|| (!joinThisError && !SetupStdFile(errorFile, TCL_STDERR))
 		|| (joinThisError &&
 			((dup2(1,2) == -1) || (fcntl(2, F_SETFD, 0) != 0)))) {
-	    sprintf(errSpace,
+	    snprintf(errSpace, sizeof(errSpace),
 		    "%dforked process couldn't set up input/output", errno);
 	    len = strlen(errSpace);
 	    if (len != (size_t) write(fd, errSpace, len)) {
@@ -491,7 +491,7 @@ TclpCreateProcess(
 
 	RestoreSignals();
 	execvp(newArgv[0], newArgv);			/* INTL: Native. */
-	sprintf(errSpace, "%dcouldn't execute \"%.150s\"", errno, argv[0]);
+	snprintf(errSpace, sizeof(errSpace), "%dcouldn't execute \"%.150s\"", errno, argv[0]);
 	len = strlen(errSpace);
 	if (len != (size_t) write(fd, errSpace, len)) {
 	    Tcl_Panic("TclpCreateProcess: unable to write to errPipeOut");
@@ -783,7 +783,7 @@ TclpCreateCommandChannel(
      * natural to use "pipe%d".
      */
 
-    sprintf(channelName, "file%d", channelId);
+    snprintf(channelName, sizeof(channelName), "file%d", channelId);
     statePtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    statePtr, mode);
     return statePtr->channel;

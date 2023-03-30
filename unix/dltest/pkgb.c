@@ -13,6 +13,9 @@
 
 #undef STATIC_BUILD
 #include "tcl.h"
+#if defined(_WIN32) && defined(_MSC_VER)
+#   define snprintf _snprintf
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -48,7 +51,7 @@ Pkgb_SubObjCmd(
     if ((Tcl_GetIntFromObj(interp, objv[1], &first) != TCL_OK)
 	    || (Tcl_GetIntFromObj(interp, objv[2], &second) != TCL_OK)) {
 	char buf[TCL_INTEGER_SPACE];
-	sprintf(buf, "%d", Tcl_GetErrorLine(interp));
+	snprintf(buf, sizeof(buf), "%d", Tcl_GetErrorLine(interp));
 	Tcl_AppendResult(interp, " in line: ", buf, NULL);
 	return TCL_ERROR;
     }
