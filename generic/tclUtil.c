@@ -3115,7 +3115,7 @@ Tcl_PrintDouble(
 	    }
 	}
 
-	sprintf(dst, "e%+d", exponent);
+	snprintf(dst, TCL_DOUBLE_SPACE, "e%+d", exponent);
     } else {
 	/*
 	 * F format for others.
