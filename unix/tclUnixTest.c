@@ -202,7 +202,7 @@ TestfilehandlerCmd(
 		    argv[0], " counts index\"", NULL);
 	    return TCL_ERROR;
 	}
-	sprintf(buf, "%d %d", pipePtr->readCount, pipePtr->writeCount);
+	snprintf(buf, sizeof(buf), "%d %d", pipePtr->readCount, pipePtr->writeCount);
 	Tcl_AppendResult(interp, buf, NULL);
     } else if (strcmp(argv[1], "create") == 0) {
 	if (argc != 5) {

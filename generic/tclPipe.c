@@ -323,10 +323,10 @@ TclCleanupChildren(
 	    char msg1[TCL_INTEGER_SPACE], msg2[TCL_INTEGER_SPACE];
 
 	    result = TCL_ERROR;
-	    sprintf(msg1, "%lu", resolvedPid);
+	    snprintf(msg1, sizeof(msg1), "%lu", resolvedPid);
 	    if (WIFEXITED(waitStatus)) {
 		if (interp != NULL) {
-		    sprintf(msg2, "%u", WEXITSTATUS(waitStatus));
+		    snprintf(msg2, sizeof(msg2), "%u", WEXITSTATUS(waitStatus));
 		    Tcl_SetErrorCode(interp, "CHILDSTATUS", msg1, msg2, NULL);
 		}
 		abnormalExit = 1;

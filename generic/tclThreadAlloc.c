@@ -676,11 +676,11 @@ Tcl_GetMemoryInfo(
 	if (cachePtr == sharedPtr) {
 	    Tcl_DStringAppendElement(dsPtr, "shared");
 	} else {
-	    sprintf(buf, "thread%p", cachePtr->owner);
+	    snprintf(buf, sizeof(buf), "thread%p", cachePtr->owner);
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	for (n = 0; n < NBUCKETS; ++n) {
-	    sprintf(buf, "%lu %ld %ld %ld %ld %ld %ld",
+	    snprintf(buf, sizeof(buf), "%lu %ld %ld %ld %ld %ld %ld",
 		    (unsigned long) bucketInfo[n].blockSize,
 		    cachePtr->buckets[n].numFree,
 		    cachePtr->buckets[n].numRemoves,

@@ -371,7 +371,7 @@ ThreadObjCmd(
 	} else {
 	    char buf[20];
 
-	    sprintf(buf, "%" TCL_LL_MODIFIER "d", id);
+	    snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", id);
 	    Tcl_AppendResult(interp, "cannot join thread ", buf, NULL);
 	}
 	return result;
@@ -654,7 +654,7 @@ ThreadErrorProc(
     char *script;
     char buf[TCL_DOUBLE_SPACE+1];
 
-    sprintf(buf, "%" TCL_LL_MODIFIER "d", (Tcl_WideInt)(size_t)Tcl_GetCurrentThread());
+    snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", (Tcl_WideInt)(size_t)Tcl_GetCurrentThread());
 
     errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
     if (errorProcString == NULL) {

@@ -2877,13 +2877,13 @@ UpdateStringOfWideInt(
     Tcl_WideInt wideVal = objPtr->internalRep.wideValue;
 
     /*
-     * Note that sprintf will generate a compiler warning under Mingw claiming
+     * Note that snprintf will generate a compiler warning under Mingw claiming
      * %I64 is an unknown format specifier. Just ignore this warning. We can't
      * use %L as the format specifier since that gets printed as a 32 bit
      * value.
      */
 
-    sprintf(buffer, "%" TCL_LL_MODIFIER "d", wideVal);
+    snprintf(buffer, sizeof(buffer), "%" TCL_LL_MODIFIER "d", wideVal);
     len = strlen(buffer);
     objPtr->bytes = (char *)ckalloc(len + 1);
     memcpy(objPtr->bytes, buffer, len + 1);
@@ -4496,7 +4496,7 @@ Tcl_RepresentationCmd(
      * "1872361827361287"
      */
 
-    sprintf(ptrBuffer, "%p", (void *) objv[1]);
+    snprintf(ptrBuffer, sizeof(ptrBuffer), "%p", (void *) objv[1]);
     descObj = Tcl_ObjPrintf("value is a %s with a refcount of %d,"
             " object pointer at %s",
             objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
@@ -4521,7 +4521,7 @@ Tcl_RepresentationCmd(
 	objv[1]->internalRep.twoPtrValue.ptr2 = NULL;
     }
     if (objv[1]->typePtr) {
-	sprintf(ptrBuffer, "%p:%p",
+	snprintf(ptrBuffer, sizeof(ptrBuffer), "%p:%p",
 		(void *) objv[1]->internalRep.twoPtrValue.ptr1,
 		(void *) objv[1]->internalRep.twoPtrValue.ptr2);
 	Tcl_AppendPrintfToObj(descObj, ", internal representation %s",

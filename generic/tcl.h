@@ -393,7 +393,7 @@ typedef long LONG;
  *
  * Note on converting between Tcl_WideInt and strings. This implementation (in
  * tclObj.c) depends on the function
- * sprintf(...,"%" TCL_LL_MODIFIER "d",...).
+ * snprintf(...,"%" TCL_LL_MODIFIER "d",...).
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)

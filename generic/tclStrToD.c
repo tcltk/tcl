@@ -5145,7 +5145,7 @@ TclFormatNaN(
     *buffer++ = 'N';
     bitwhack.iv &= (((Tcl_WideUInt) 1) << 51) - 1;
     if (bitwhack.iv != 0) {
-	sprintf(buffer, "(%" TCL_LL_MODIFIER "x)", bitwhack.iv);
+	snprintf(buffer, TCL_DOUBLE_SPACE, "(%" TCL_LL_MODIFIER "x)", bitwhack.iv);
     } else {
 	*buffer = '\0';
     }

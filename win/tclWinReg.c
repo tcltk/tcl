@@ -1498,7 +1498,7 @@ AppendSystemError(
 	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *) tMsgPtrPtr,
 	    0, NULL);
     if (length == 0) {
-	sprintf(msgBuf, "unknown error: %ld", error);
+	snprintf(msgBuf, sizeof(msgBuf), "unknown error: %ld", error);
 	msg = msgBuf;
     } else {
 	char *msgPtr;
@@ -1524,7 +1524,7 @@ AppendSystemError(
 	msg = msgPtr;
     }
 
-    sprintf(id, "%ld", error);
+    snprintf(id, sizeof(id), "%ld", error);
     Tcl_SetErrorCode(interp, "WINDOWS", id, msg, NULL);
     Tcl_AppendToObj(resultPtr, msg, length);
     Tcl_SetObjResult(interp, resultPtr);
