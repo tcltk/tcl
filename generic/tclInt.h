@@ -121,6 +121,7 @@ typedef int ptrdiff_t;
 
 #if defined(_WIN32) && defined(_MSC_VER)
 #   define vsnprintf _vsnprintf
+#   define snprintf _snprintf
 #endif
 
 /*

@@ -838,7 +838,7 @@ TtyGetOptionProc(
 
 	valid = 1;
 	TtyGetAttributes(fsPtr->fd, &tty);
-	sprintf(buf, "%d,%c,%d,%d", tty.baud, tty.parity, tty.data, tty.stop);
+	snprintf(buf, sizeof(buf), "%d,%c,%d,%d", tty.baud, tty.parity, tty.data, tty.stop);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
@@ -885,9 +885,9 @@ TtyGetOptionProc(
 	inBuffered = Tcl_InputBuffered(fsPtr->channel);
 	outBuffered = Tcl_OutputBuffered(fsPtr->channel);
 
-	sprintf(buf, "%d", inBuffered+inQueue);
+	snprintf(buf, sizeof(buf), "%d", inBuffered+inQueue);
 	Tcl_DStringAppendElement(dsPtr, buf);
-	sprintf(buf, "%d", outBuffered+outQueue);
+	snprintf(buf, sizeof(buf), "%d", outBuffered+outQueue);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
@@ -1439,7 +1439,7 @@ TclpOpenFileChannel(
 
     fcntl(fd, F_SETFD, FD_CLOEXEC);
 
-    sprintf(channelName, "file%d", fd);
+    snprintf(channelName, sizeof(channelName), "file%d", fd);
 
 #ifdef SUPPORTS_TTY
     if (strcmp(native, "/dev/tty") != 0 && isatty(fd)) {
@@ -1531,7 +1531,7 @@ Tcl_MakeFileChannel(
 #ifdef SUPPORTS_TTY
     if (isatty(fd)) {
 	channelTypePtr = &ttyChannelType;
-	sprintf(channelName, "serial%d", fd);
+	snprintf(channelName, sizeof(channelName), "serial%d", fd);
     } else
 #endif /* SUPPORTS_TTY */
     if ((getsockname(fd, (struct sockaddr *)&sockaddr, &sockaddrLen) == 0)
@@ -1540,7 +1540,7 @@ Tcl_MakeFileChannel(
 	return TclpMakeTcpClientChannelMode(INT2PTR(fd), mode);
     } else {
 	channelTypePtr = &fileChannelType;
-	sprintf(channelName, "file%d", fd);
+	snprintf(channelName, sizeof(channelName), "file%d", fd);
     }
 
     fsPtr = ckalloc(sizeof(FileState));

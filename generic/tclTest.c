@@ -1110,7 +1110,7 @@ TestcmdtokenCmd(
     if (strcmp(argv[1], "create") == 0) {
 	token = Tcl_CreateCommand(interp, argv[2], CmdProc1,
 		(ClientData) "original", NULL);
-	sprintf(buf, "%p", (void *)token);
+	snprintf(buf, sizeof(buf), "%p", (void *)token);
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
     } else if (strcmp(argv[1], "name") == 0) {
 	Tcl_Obj *objPtr;
@@ -1864,6 +1864,19 @@ static int UtfExtWrapper(
     int flags;
     Tcl_Obj **flagObjs;
     int nflags;
+    static const struct {
+	const char *flagKey;
+	int flag;
+    } flagMap[] = {
+	{"start", TCL_ENCODING_START},
+	{"end", TCL_ENCODING_END},
+	{"stoponerror", TCL_ENCODING_STOPONERROR},
+	{"noterminate", TCL_ENCODING_NO_TERMINATE},
+	{"charlimit", TCL_ENCODING_CHAR_LIMIT},
+	{NULL, 0}
+    };
+    int i;
+    Tcl_WideInt wide;
 
     if (objc < 7 || objc > 10) {
         Tcl_WrongNumArgs(interp,
@@ -1882,18 +1895,6 @@ static int UtfExtWrapper(
 	return TCL_ERROR;
     }
 
-    struct {
-	const char *flagKey;
-	int flag;
-    } flagMap[] = {
-	{"start", TCL_ENCODING_START},
-	{"end", TCL_ENCODING_END},
-	{"stoponerror", TCL_ENCODING_STOPONERROR},
-	{"noterminate", TCL_ENCODING_NO_TERMINATE},
-	{"charlimit", TCL_ENCODING_CHAR_LIMIT},
-	{NULL, 0}
-    };
-    int i;
     for (i = 0; i < nflags; ++i) {
 	int flag;
 	if (Tcl_GetIntFromObj(NULL, flagObjs[i], &flag) == TCL_OK) {
@@ -1914,7 +1915,6 @@ static int UtfExtWrapper(
     }
 
     /* Assumes state is integer if not "" */
-    Tcl_WideInt wide;
     if (Tcl_GetWideIntFromObj(interp, objv[5], &wide) == TCL_OK) {
         encState = (Tcl_EncodingState)(size_t)wide;
         encStatePtr = &encState;
@@ -2538,7 +2538,7 @@ ExitProcOdd(
     char buf[16 + TCL_INTEGER_SPACE];
     int len;
 
-    sprintf(buf, "odd %d\n", (int)PTR2INT(clientData));
+    snprintf(buf, sizeof(buf), "odd %d\n", (int)PTR2INT(clientData));
     len = strlen(buf);
     if (len != (int) write(1, buf, len)) {
 	Tcl_Panic("ExitProcOdd: unable to write to stdout");
@@ -2552,7 +2552,7 @@ ExitProcEven(
     char buf[16 + TCL_INTEGER_SPACE];
     int len;
 
-    sprintf(buf, "even %d\n", (int)PTR2INT(clientData));
+    snprintf(buf, sizeof(buf), "even %d\n", (int)PTR2INT(clientData));
     len = strlen(buf);
     if (len != (int) write(1, buf, len)) {
 	Tcl_Panic("ExitProcEven: unable to write to stdout");
@@ -2597,7 +2597,7 @@ TestexprlongCmd(
     if (result != TCL_OK) {
 	return result;
     }
-    sprintf(buf, ": %ld", exprResult);
+    snprintf(buf, sizeof(buf), ": %ld", exprResult);
     Tcl_AppendResult(interp, buf, NULL);
     return TCL_OK;
 }
@@ -2639,7 +2639,7 @@ TestexprlongobjCmd(
     if (result != TCL_OK) {
 	return result;
     }
-    sprintf(buf, ": %ld", exprResult);
+    snprintf(buf, sizeof(buf), ": %ld", exprResult);
     Tcl_AppendResult(interp, buf, NULL);
     return TCL_OK;
 }
@@ -4089,7 +4089,7 @@ TestregexpObjCmd(
 
 	    varName = Tcl_GetString(objv[2]);
 	    TclRegExpRangeUniChar(regExpr, -1, &start, &end);
-	    sprintf(resinfo, "%d %d", start, end-1);
+	    snprintf(resinfo, sizeof(resinfo), "%d %d", start, end-1);
 	    value = Tcl_SetVar(interp, varName, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
@@ -4103,7 +4103,7 @@ TestregexpObjCmd(
 
 	    Tcl_RegExpGetInfo(regExpr, &info);
 	    varName = Tcl_GetString(objv[2]);
-	    sprintf(resinfo, "%ld", info.extendStart);
+	    snprintf(resinfo, sizeof(resinfo), "%ld", info.extendStart);
 	    value = Tcl_SetVar(interp, varName, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
@@ -4998,15 +4998,15 @@ GetTimesObjCmd(
     fprintf(stderr, "   %.3f usec per Tcl_GetInt of \"12345\"\n",
 	    timePer/100000);
 
-    /* sprintf 100000 times */
-    fprintf(stderr, "sprintf of 12345 100000 times\n");
+    /* snprintf 100000 times */
+    fprintf(stderr, "snprintf of 12345 100000 times\n");
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
-	sprintf(newString, "%d", 12345);
+	snprintf(newString, sizeof(newString), "%d", 12345);
     }
     Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
-    fprintf(stderr, "   %.3f usec per sprintf of 12345\n",
+    fprintf(stderr, "   %.3f usec per snprintf of 12345\n",
 	    timePer/100000);
 
     /* hashtable lookup 100000 times */
@@ -5642,7 +5642,7 @@ TestChannelCmd(
     Tcl_Channel chan;		/* The opaque type. */
     size_t len;			/* Length of subcommand string. */
     int IOQueued;		/* How much IO is queued inside channel? */
-    char buf[TCL_INTEGER_SPACE];/* For sprintf. */
+    char buf[TCL_INTEGER_SPACE];/* For snprintf. */
     int mode;			/* rw mode of the channel */
 
     if (argc < 2) {
@@ -6432,10 +6432,10 @@ TestGetIndexFromObjStructObjCmd(
     }
     if (idx != target) {
 	char buffer[64];
-	sprintf(buffer, "%d", idx);
+	snprintf(buffer, sizeof(buffer), "%d", idx);
 	Tcl_AppendResult(interp, "index value comparison failed: got ",
 		buffer, NULL);
-	sprintf(buffer, "%d", target);
+	snprintf(buffer, sizeof(buffer), "%d", target);
 	Tcl_AppendResult(interp, " when ", buffer, " expected", NULL);
 	return TCL_ERROR;
     }

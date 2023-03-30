@@ -183,7 +183,7 @@ TclDumpMemoryInfo(
     if (clientData == NULL) {
         return 0;
     }
-    sprintf(buf,
+    snprintf(buf, sizeof(buf),
 	    "total mallocs             %10d\n"
 	    "total frees               %10d\n"
 	    "current packets allocated %10d\n"

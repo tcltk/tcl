@@ -145,8 +145,8 @@ TclpObjRenameFile(
     Tcl_Obj *srcPathPtr,
     Tcl_Obj *destPathPtr)
 {
-    return DoRenameFile(Tcl_FSGetNativePath(srcPathPtr),
-	    Tcl_FSGetNativePath(destPathPtr));
+    return DoRenameFile((WCHAR *)Tcl_FSGetNativePath(srcPathPtr),
+	    (WCHAR *)Tcl_FSGetNativePath(destPathPtr));
 }
 
 static int
@@ -534,8 +534,8 @@ TclpObjCopyFile(
     Tcl_Obj *srcPathPtr,
     Tcl_Obj *destPathPtr)
 {
-    return DoCopyFile(Tcl_FSGetNativePath(srcPathPtr),
-	    Tcl_FSGetNativePath(destPathPtr));
+    return DoCopyFile((WCHAR *)Tcl_FSGetNativePath(srcPathPtr),
+	    (WCHAR *)Tcl_FSGetNativePath(destPathPtr));
 }
 
 static int
@@ -749,7 +749,7 @@ TclpDeleteFile(
     const void *nativePath)	/* Pathname of file to be removed (native). */
 {
     DWORD attr;
-    const WCHAR *path = nativePath;
+    const WCHAR *path = (const WCHAR *)nativePath;
 
     /*
      * The DeleteFile API acts differently under Win95/98 and NT WRT NULL and
@@ -854,7 +854,7 @@ int
 TclpObjCreateDirectory(
     Tcl_Obj *pathPtr)
 {
-    return DoCreateDirectory(Tcl_FSGetNativePath(pathPtr));
+    return DoCreateDirectory((WCHAR *)Tcl_FSGetNativePath(pathPtr));
 }
 
 static int
@@ -988,7 +988,7 @@ TclpObjRemoveDirectory(
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
     } else {
-	ret = DoRemoveJustDirectory(Tcl_FSGetNativePath(pathPtr), 0, &ds);
+	ret = DoRemoveJustDirectory((WCHAR *)Tcl_FSGetNativePath(pathPtr), 0, &ds);
     }
 
     if (ret != TCL_OK) {
@@ -1506,7 +1506,7 @@ GetWinFileAttributes(
     const WCHAR *nativeName;
     int attr;
 
-    nativeName = Tcl_FSGetNativePath(fileName);
+    nativeName = (WCHAR *)Tcl_FSGetNativePath(fileName);
     result = GetFileAttributesW(nativeName);
 
     if (result == 0xFFFFFFFF) {
@@ -1833,7 +1833,7 @@ SetWinFileAttributes(
     int yesNo, result;
     const WCHAR *nativeName;
 
-    nativeName = Tcl_FSGetNativePath(fileName);
+    nativeName = (WCHAR *)Tcl_FSGetNativePath(fileName);
     fileAttributes = old = GetFileAttributesW(nativeName);
 
     if (fileAttributes == 0xFFFFFFFF) {

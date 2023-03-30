@@ -267,8 +267,8 @@ DisassembleByteCodeObj(
      * Print header lines describing the ByteCode.
      */
 
-    sprintf(ptrBuf1, "%p", codePtr);
-    sprintf(ptrBuf2, "%p", iPtr);
+    snprintf(ptrBuf1, sizeof(ptrBuf1), "%p", codePtr);
+    snprintf(ptrBuf2, sizeof(ptrBuf1), "%p", iPtr);
     Tcl_AppendPrintfToObj(bufferObj,
 	    "ByteCode 0x%s, refCt %u, epoch %u, interp 0x%s (epoch %u)\n",
 	    ptrBuf1, codePtr->refCount, codePtr->compileEpoch, ptrBuf2,
@@ -314,7 +314,7 @@ DisassembleByteCodeObj(
 	Proc *procPtr = codePtr->procPtr;
 	int numCompiledLocals = procPtr->numCompiledLocals;
 
-	sprintf(ptrBuf1, "%p", procPtr);
+	snprintf(ptrBuf1, sizeof(ptrBuf1), "%p", procPtr);
 	Tcl_AppendPrintfToObj(bufferObj,
 		"  Proc 0x%s, refCt %d, args %d, compiled locals %d\n",
 		ptrBuf1, procPtr->refCount, procPtr->numArgs,
@@ -564,22 +564,22 @@ FormatInstruction(
 	case OPERAND_UINT4:
 	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if (opCode == INST_START_CMD) {
-		sprintf(suffixBuffer+strlen(suffixBuffer),
+		snprintf(suffixBuffer+strlen(suffixBuffer), sizeof(suffixBuffer) - strlen(suffixBuffer),
 			", %u cmds start here", opnd);
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
 	    break;
 	case OPERAND_OFFSET1:
 	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
-	    sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
+	    snprintf(suffixBuffer, sizeof(suffixBuffer), "pc %u", pcOffset+opnd);
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_OFFSET4:
 	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if (opCode == INST_START_CMD) {
-		sprintf(suffixBuffer, "next cmd at pc %u", pcOffset+opnd);
+		snprintf(suffixBuffer, sizeof(suffixBuffer), "next cmd at pc %u", pcOffset+opnd);
 	    } else {
-		sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
+		snprintf(suffixBuffer, sizeof(suffixBuffer), "pc %u", pcOffset+opnd);
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
@@ -625,9 +625,9 @@ FormatInstruction(
 		    localPtr = localPtr->nextPtr;
 		}
 		if (TclIsVarTemporary(localPtr)) {
-		    sprintf(suffixBuffer, "temp var %u", (unsigned) opnd);
+		    snprintf(suffixBuffer, sizeof(suffixBuffer), "temp var %u", (unsigned) opnd);
 		} else {
-		    sprintf(suffixBuffer, "var ");
+		    snprintf(suffixBuffer, sizeof(suffixBuffer), "var ");
 		    suffixSrc = localPtr->name;
 		}
 	    }
@@ -827,7 +827,7 @@ UpdateStringOfInstName(
     int len;
 
     if ((inst < 0) || (inst > LAST_INST_OPCODE)) {
-        sprintf(buf, "inst_%d", inst);
+        snprintf(buf, sizeof(buf), "inst_%d", inst);
         s = buf;
     } else {
         s = (char *) tclInstructionTable[objPtr->internalRep.longValue].name;

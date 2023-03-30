@@ -946,7 +946,7 @@ TclpMatchInDirectory(
 	    WIN32_FILE_ATTRIBUTE_DATA data;
 	    const char *str = Tcl_GetStringFromObj(norm,&len);
 
-	    native = Tcl_FSGetNativePath(pathPtr);
+	    native = (WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
 	    if (GetFileAttributesExW(native,
 		    GetFileExInfoStandard, &data) != TRUE) {

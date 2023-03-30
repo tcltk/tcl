@@ -2186,9 +2186,9 @@ stid(
 	return "unable";
     }
     if (t->id != 0) {
-	sprintf(buf, "%d", t->id);
+	snprintf(buf, bufsize, "%d", t->id);
     } else {
-	sprintf(buf, "%p", t);
+	snprintf(buf, bufsize, "%p", t);
     }
     return buf;
 }

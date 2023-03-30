@@ -3320,9 +3320,9 @@ Tcl_PrintDouble(
 	 */
 
 	if (*precisionPtr == 0) {
-	    sprintf(dst, "e%+d", exponent);
+	    snprintf(dst, TCL_DOUBLE_SPACE, "e%+d", exponent);
 	} else {
-	    sprintf(dst, "e%+03d", exponent);
+	    snprintf(dst, TCL_DOUBLE_SPACE, "e%+03d", exponent);
 	}
     } else {
 	/*

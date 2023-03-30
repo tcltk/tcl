@@ -146,14 +146,14 @@ RegisterCommand(
     char buf[128];
 
     if (cmdTablePtr->exportIt) {
-	sprintf(buf, "namespace eval %s { namespace export %s }",
+	snprintf(buf, sizeof(buf), "namespace eval %s { namespace export %s }",
 		namespace, cmdTablePtr->cmdName);
 	if (Tcl_EvalEx(interp, buf, -1, 0) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
 
-    sprintf(buf, "%s::%s", namespace, cmdTablePtr->cmdName);
+    snprintf(buf, sizeof(buf), "%s::%s", namespace, cmdTablePtr->cmdName);
     Tcl_CreateObjCommand(interp, buf, cmdTablePtr->proc, 0, 0);
     return TCL_OK;
 }

@@ -1535,7 +1535,7 @@ CheckIfVarUnset(
     if (varPtr[varIndex] == NULL) {
 	char buf[32 + TCL_INTEGER_SPACE];
 
-	sprintf(buf, "variable %d is unset (NULL)", varIndex);
+	snprintf(buf, sizeof(buf), "variable %d is unset (NULL)", varIndex);
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
 	return 1;
