@@ -1225,7 +1225,7 @@ Tcl_UnregisterChannel(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "illegal recursive call to close through close-handler"
-                    " of channel", TCL_INDEX_NONE));
+                    " of channel", -1));
 	}
 	return TCL_ERROR;
     }
@@ -2701,7 +2701,7 @@ CheckForDeadChannel(
     Tcl_SetErrno(EINVAL);
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                "unable to access channel: invalid channel", TCL_INDEX_NONE));
+                "unable to access channel: invalid channel", -1));
     }
     return 1;
 }
@@ -2899,7 +2899,7 @@ FlushChannel(
 		if (interp != NULL && !TclChanCaughtErrorBypass(interp,
 			(Tcl_Channel) chanPtr)) {
 		    Tcl_SetObjResult(interp,
-			    Tcl_NewStringObj(Tcl_PosixError(interp), TCL_INDEX_NONE));
+			    Tcl_NewStringObj(Tcl_PosixError(interp), -1));
 		}
 
 		/*
@@ -3462,7 +3462,7 @@ TclClose(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "illegal recursive call to close through close-handler"
-                    " of channel", TCL_INDEX_NONE));
+                    " of channel", -1));
 	}
 	return TCL_ERROR;
     }
@@ -3565,7 +3565,7 @@ TclClose(
 	Tcl_SetErrno(stickyError);
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp,
-			     Tcl_NewStringObj(Tcl_PosixError(interp), TCL_INDEX_NONE));
+			     Tcl_NewStringObj(Tcl_PosixError(interp), -1));
 	}
 	return TCL_ERROR;
     }
@@ -3583,7 +3583,7 @@ TclClose(
 	    && 0 == Tcl_GetCharLength(Tcl_GetObjResult(interp))) {
 	Tcl_SetErrno(result);
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj(Tcl_PosixError(interp), TCL_INDEX_NONE));
+		Tcl_NewStringObj(Tcl_PosixError(interp), -1));
     }
     if (result != 0) {
 	return TCL_ERROR;
@@ -3655,7 +3655,7 @@ Tcl_CloseEx(
 
     if (chanPtr != statePtr->topChanPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"half-close not applicable to stack of transformations", TCL_INDEX_NONE));
+		"half-close not applicable to stack of transformations", -1));
 	return TCL_ERROR;
     }
 
@@ -3688,7 +3688,7 @@ Tcl_CloseEx(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "illegal recursive call to close through close-handler"
-                    " of channel", TCL_INDEX_NONE));
+                    " of channel", -1));
 	}
 	return TCL_ERROR;
     }
@@ -6269,7 +6269,7 @@ ReadChars(
     (void) Tcl_GetStringFromObj(objPtr, &numBytes);
     Tcl_AppendToObj(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
-	size_t size;
+	Tcl_Size size;
 
 	dst = TclGetStringStorage(objPtr, &size) + numBytes;
 	dstLimit = (size - numBytes) > INT_MAX ? INT_MAX : (size - numBytes);
@@ -6565,7 +6565,7 @@ ReadChars(
 	     * precautions.
 	     */
 
-	    if (nextPtr->nextRemoved < (size_t)srcLen) {
+	    if (nextPtr->nextRemoved < srcLen) {
 		Tcl_Panic("Buffer Underflow, BUFFER_PADDING not enough");
 	    }
 
@@ -7724,7 +7724,7 @@ Tcl_SetChannelBufferSize(
      * Clip the buffer size to force it into the [1,1M] range
      */
 
-    if (sz < 1 || sz > (TCL_INDEX_NONE>>1)) {
+    if (sz < 1) {
 	sz = 1;
     } else if (sz > MAX_CHANNEL_BUFFER_SIZE) {
 	sz = MAX_CHANNEL_BUFFER_SIZE;
@@ -7827,10 +7827,10 @@ Tcl_BadChannelOption(
         Tcl_Obj *errObj;
 
 	Tcl_DStringInit(&ds);
-	Tcl_DStringAppend(&ds, genericopt, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&ds, genericopt, -1);
 	if (optionList && (*optionList)) {
 	    TclDStringAppendLiteral(&ds, " ");
-	    Tcl_DStringAppend(&ds, optionList, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(&ds, optionList, -1);
 	}
 	if (Tcl_SplitList(interp, Tcl_DStringValue(&ds),
 		&argc, &argv) != TCL_OK) {
@@ -7984,7 +7984,7 @@ Tcl_GetChannelOption(
 	    sprintf(buf, "%c", statePtr->inEofChar);
 	}
 	if (len > 0) {
-		Tcl_DStringAppend(dsPtr, buf, TCL_INDEX_NONE);
+		Tcl_DStringAppend(dsPtr, buf, -1);
 	    return TCL_OK;
 	}
 	Tcl_DStringAppendElement(dsPtr, buf);
@@ -8112,7 +8112,7 @@ Tcl_SetChannelOption(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "unable to set channel options: background copy in"
-                    " progress", TCL_INDEX_NONE));
+                    " progress", -1));
 	}
 	return TCL_ERROR;
     }
@@ -8163,7 +8163,7 @@ Tcl_SetChannelOption(
 	} else if (interp) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "bad value for -buffering: must be one of"
-                    " full, line, or none", TCL_INDEX_NONE));
+                    " full, line, or none", -1));
             return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -8234,7 +8234,7 @@ Tcl_SetChannelOption(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -eofchar: must be non-NUL ASCII"
-			" character", TCL_INDEX_NONE));
+			" character", -1));
 	    }
 	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
@@ -8281,7 +8281,7 @@ Tcl_SetChannelOption(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -translation: must be a one or two"
-			" element list", TCL_INDEX_NONE));
+			" element list", -1));
 	    }
 	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
@@ -8311,7 +8311,7 @@ Tcl_SetChannelOption(
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "bad value for -translation: must be one of "
-                            "auto, binary, cr, lf, crlf, or platform", TCL_INDEX_NONE));
+                            "auto, binary, cr, lf, crlf, or platform", -1));
 		}
 		Tcl_Free((void *)argv);
 		return TCL_ERROR;
@@ -8360,7 +8360,7 @@ Tcl_SetChannelOption(
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "bad value for -translation: must be one of "
-                            "auto, binary, cr, lf, crlf, or platform", TCL_INDEX_NONE));
+                            "auto, binary, cr, lf, crlf, or platform", -1));
 		}
 		Tcl_Free((void *)argv);
 		return TCL_ERROR;
@@ -9684,7 +9684,7 @@ CopyData(
     int result = TCL_OK;
     Tcl_Size sizeb;
     Tcl_WideInt total;
-    Tcl_WideInt size; /* TODO - be careful if total and size are made unsigned  */
+    Tcl_WideInt size;
     const char *buffer;
     int inBinary, outBinary, sameEncoding;
 				/* Encoding control */
@@ -9769,7 +9769,7 @@ CopyData(
 		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
 			0 /* No append */);
 	    }
-	    underflow = (size >= 0) && ((size_t)size < sizeb);	/* Input underflow */
+	    underflow = (size >= 0) && (size < sizeb);	/* Input underflow */
 	}
 
 	if (size < 0) {
@@ -9853,7 +9853,7 @@ CopyData(
 	 * unsuitable for updating totals and toRead.
 	 */
 
-	if (sizeb == TCL_INDEX_NONE) {
+	if (sizeb < 0) {
 	writeError:
 	    if (interp) {
 		TclNewObj(errObj);
@@ -10085,7 +10085,7 @@ DoRead(
 
 	while (!bufPtr ||			/* We got no buffer!   OR */
 		(!IsBufferFull(bufPtr) && 	/* Our buffer has room AND */
-		((size_t)BytesLeft(bufPtr) < bytesToRead))) {
+		((Tcl_Size) BytesLeft(bufPtr) < bytesToRead))) {
 						/* Not enough bytes in it yet
 						 * to fill the dst */
 	    int code;
@@ -10520,7 +10520,7 @@ Tcl_GetChannelNamesEx(
 	    && (pattern[2] == 'd'))) {
 	if ((Tcl_FindHashEntry(hTblPtr, pattern) != NULL)
 		&& (Tcl_ListObjAppendElement(interp, resultPtr,
-		Tcl_NewStringObj(pattern, TCL_INDEX_NONE)) != TCL_OK)) {
+		Tcl_NewStringObj(pattern, -1)) != TCL_OK)) {
 	    goto error;
 	}
 	goto done;
@@ -10547,7 +10547,7 @@ Tcl_GetChannelNamesEx(
 
 	if (((pattern == NULL) || Tcl_StringMatch(name, pattern)) &&
 		(Tcl_ListObjAppendElement(interp, resultPtr,
-			Tcl_NewStringObj(name, TCL_INDEX_NONE)) != TCL_OK)) {
+			Tcl_NewStringObj(name, -1)) != TCL_OK)) {
 	error:
 	    TclDecrRefCount(resultPtr);
 	    return TCL_ERROR;

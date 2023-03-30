@@ -2268,7 +2268,7 @@ TclCompileReturnCmd(
      * An even number of words means an explicit result argument is present.
      */
     int level, code, objc, status = TCL_OK;
-    size_t size;
+    Tcl_Size size;
     int numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
@@ -2478,7 +2478,7 @@ TclCompileSyntaxError(
     CompileEnv *envPtr)
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
-    size_t numBytes;
+    Tcl_Size numBytes;
     const char *bytes = Tcl_GetStringFromObj(msg, &numBytes);
 
     TclErrorStackResetIf(interp, bytes, numBytes);

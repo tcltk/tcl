@@ -280,7 +280,7 @@ Tcl_SourceRCFile(
 
 TCL_NORETURN void
 Tcl_MainEx(
-    size_t argc,			/* Number of arguments. */
+    Tcl_Size argc,			/* Number of arguments. */
     TCHAR **argv,		/* Array of argument strings. */
     Tcl_AppInitProc *appInitProc,
 				/* Application-specific initialization
@@ -288,7 +288,7 @@ Tcl_MainEx(
 				 * but before starting to execute commands. */
     Tcl_Interp *interp)
 {
-    size_t i=0;			/* argv[i] index */
+    Tcl_Size i=0;		/* argv[i] index */
     Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
     const char *encodingName = NULL;
     int code, exitCode = 0;
@@ -297,7 +297,7 @@ Tcl_MainEx(
     InteractiveState is;
 
     TclpSetInitialEncodings();
-    if (argc + 1 > 1) {
+    if (argc > 0) {
 	--argc;			/* consume argv[0] */
 	++i;
     }
@@ -326,7 +326,7 @@ Tcl_MainEx(
 	 */
 
 	/* mind argc is being adjusted as we proceed */
-	if ((argc >= 3) && argv[1] && argv[2] && argv[3] && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
+	if ((argc >= 3) && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
 		&& ('-' != argv[3][0])) {
 	    Tcl_Obj *value = NewNativeObj(argv[2]);
 	    Tcl_SetStartupScript(NewNativeObj(argv[3]),
@@ -334,7 +334,7 @@ Tcl_MainEx(
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    i += 3;
-	} else if ((argc >= 1) && argv[1] && ('-' != argv[1][0])) {
+	} else if ((argc >= 1) && ('-' != argv[1][0])) {
 	    Tcl_SetStartupScript(NewNativeObj(argv[1]), NULL);
 	    argc--;
 	    i++;
@@ -354,7 +354,7 @@ Tcl_MainEx(
     Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewWideIntObj(argc), TCL_GLOBAL_ONLY);
 
     argvPtr = Tcl_NewListObj(0, NULL);
-    while (argc-- && argv[i]) {
+    while (argc--) {
 	Tcl_ListObjAppendElement(NULL, argvPtr, NewNativeObj(argv[i++]));
     }
     Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);
@@ -454,7 +454,7 @@ Tcl_MainEx(
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
 	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
-	    size_t length;
+	    Tcl_Size length;
 
 	    if (is.tty) {
 		Prompt(interp, &is);
@@ -475,7 +475,7 @@ Tcl_MainEx(
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
 	    length = Tcl_GetsObj(is.input, is.commandPtr);
-	    if (length == TCL_INDEX_NONE) {
+	    if (length < 0) {
 		if (Tcl_InputBlocked(is.input)) {
 		    /*
 		     * This can only happen if stdin has been set to
@@ -740,7 +740,7 @@ StdinProc(
     TCL_UNUSED(int) /*mask*/)
 {
     int code;
-    size_t length;
+    Tcl_Size length;
     InteractiveState *isPtr = (InteractiveState *)clientData;
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
@@ -752,7 +752,7 @@ StdinProc(
 	Tcl_IncrRefCount(commandPtr);
     }
     length = Tcl_GetsObj(chan, commandPtr);
-    if (length == TCL_INDEX_NONE) {
+    if (length < 0) {
 	if (Tcl_InputBlocked(chan)) {
 	    return;
 	}

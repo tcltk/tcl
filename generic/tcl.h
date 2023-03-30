@@ -306,27 +306,40 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #	define TCL_Z_MODIFIER	""
 #   endif
 #endif /* !TCL_Z_MODIFIER */
+#ifndef TCL_T_MODIFIER
+#   if defined(__GNUC__) && !defined(_WIN32)
+#	define TCL_T_MODIFIER	"t"
+#   elif defined(_WIN64)
+#	define TCL_T_MODIFIER	TCL_LL_MODIFIER
+#   else
+#	define TCL_T_MODIFIER	TCL_Z_MODIFIER
+#   endif
+#endif /* !TCL_T_MODIFIER */
 #define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
 #define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
 #if TCL_MAJOR_VERSION < 9
-typedef int Tcl_Size;
+    typedef int Tcl_Size;
+#   define TCL_SIZE_MODIFIER ""
+#   define TCL_SIZE_MAX INT_MAX
 #else
-typedef size_t Tcl_Size;
-#endif
+    typedef ptrdiff_t Tcl_Size;
+#   define TCL_SIZE_MAX PTRDIFF_MAX
+#   define TCL_SIZE_MODIFIER TCL_T_MODIFIER
+#endif /* TCL_MAJOR_VERSION */
 
 #ifdef _WIN32
 #   if TCL_MAJOR_VERSION > 8 || defined(_WIN64) || defined(_USE_64BIT_TIME_T)
 	typedef struct __stat64 Tcl_StatBuf;
 #   elif defined(_USE_32BIT_TIME_T)
-	typedef struct _stati64	Tcl_StatBuf;
+	typedef struct _stati64 Tcl_StatBuf;
 #   else
 	typedef struct _stat32i64 Tcl_StatBuf;
 #   endif
 #elif defined(__CYGWIN__)
-    typedef struct {
+	typedef struct {
 	unsigned st_dev;
 	unsigned short st_ino;
 	unsigned short st_mode;
@@ -555,7 +568,7 @@ typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
-	size_t level, const char *command, Tcl_Command commandInfo, size_t objc,
+	Tcl_Size level, const char *command, Tcl_Command commandInfo, Tcl_Size objc,
 	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
@@ -580,7 +593,7 @@ typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
-	size_t objc, struct Tcl_Obj *const *objv);
+	Tcl_Size objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
@@ -2320,7 +2333,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #endif
 #   define Tcl_MainEx Tcl_MainExW
-    EXTERN TCL_NORETURN void Tcl_MainExW(size_t argc, wchar_t **argv,
+    EXTERN TCL_NORETURN void Tcl_MainExW(Tcl_Size argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 #if defined(USE_TCL_STUBS) && (TCL_MAJOR_VERSION > 8)

@@ -478,7 +478,7 @@ TclpInitLibraryPath(
 
     if ((str != NULL) && (str[0] != '\0')) {
 	Tcl_DString ds;
-	size_t pathc;
+	Tcl_Size pathc;
 	const char **pathv;
 	char installLib[LIBRARY_SIZE];
 
@@ -1002,7 +1002,7 @@ TclpSetVariables(
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or TCL_INDEX_NONE if there is no such entry. The integer at *lengthPtr is
+ *	"name", or -1 if there is no such entry. The integer at *lengthPtr is
  *	filled in with the length of name (if a matching entry is found) or
  *	the length of the environ array (if no matching entry is found).
  *
@@ -1012,16 +1012,16 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (native). */
-    size_t *lengthPtr)		/* Used to return length of name (for
+    Tcl_Size *lengthPtr)	/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    size_t i, result = TCL_INDEX_NONE;
+    Tcl_Size i, result = -1;
     const char *env, *p1, *p2;
     Tcl_DString envString;
 

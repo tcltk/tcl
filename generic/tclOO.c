@@ -352,14 +352,14 @@ InitFoundation(
     Tcl_DStringInit(&buffer);
     for (i = 0 ; defineCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::define::");
-	Tcl_DStringAppend(&buffer, defineCmds[i].name, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
     for (i = 0 ; objdefCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::objdefine::");
-	Tcl_DStringAppend(&buffer, objdefCmds[i].name, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
@@ -960,7 +960,7 @@ TclOOReleaseClassContents(
     Object *oPtr)		/* The object representing the class. */
 {
     FOREACH_HASH_DECLS;
-    size_t i;
+    Tcl_Size i;
     Class *clsPtr = oPtr->classPtr, *tmpClsPtr;
     Method *mPtr;
     Foundation *fPtr = oPtr->fPtr;
@@ -1121,7 +1121,7 @@ ObjectNamespaceDeleted(
     Tcl_Obj *filterObj, *variableObj;
     PrivateVariableMapping *privateVariable;
     Tcl_Interp *interp = oPtr->fPtr->interp;
-    size_t i;
+    Tcl_Size i;
 
     if (Destructing(oPtr)) {
 	/*
@@ -1362,7 +1362,7 @@ TclOORemoveFromInstances(
     Class *clsPtr)		/* The class (possibly) containing the
 				 * reference to the instance. */
 {
-    size_t i;
+    Tcl_Size i;
     int res = 0;
     Object *instPtr;
 
@@ -1425,7 +1425,7 @@ TclOORemoveFromMixins(
     Object *oPtr)		/* The object (possibly) containing the
 				 * reference to the mixin. */
 {
-    size_t i;
+    Tcl_Size i;
     int res = 0;
     Class *mixPtr;
 
@@ -1461,7 +1461,7 @@ TclOORemoveFromSubclasses(
     Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
-    size_t i;
+    Tcl_Size i;
     int res = 0;
     Class *subclsPtr;
 
@@ -1526,7 +1526,7 @@ TclOORemoveFromMixinSubs(
     Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
-    size_t i;
+    Tcl_Size i;
     int res = 0;
     Class *subclsPtr;
 
@@ -1667,10 +1667,10 @@ Tcl_NewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    size_t objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    size_t skip)			/* Number of arguments to _not_ pass to the
+    Tcl_Size skip)			/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
     Class *classPtr = (Class *) cls;
@@ -1735,10 +1735,10 @@ TclNRNewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    size_t objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    size_t skip,			/* Number of arguments to _not_ pass to the
+    Tcl_Size skip,			/* Number of arguments to _not_ pass to the
 				 * constructor. */
     Tcl_Object *objectPtr)	/* Place to write the object reference upon
 				 * successful allocation. */
@@ -1758,7 +1758,7 @@ TclNRNewObjectInstance(
      * object cloning only). If there aren't any constructors, we do nothing.
      */
 
-    if (objc == TCL_INDEX_NONE) {
+    if (objc < 0) {
 	*objectPtr = (Tcl_Object) oPtr;
 	return TCL_OK;
     }
@@ -1870,7 +1870,7 @@ FinalizeAlloc(
 
     if (result != TCL_ERROR && Destructing(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"object deleted in constructor", TCL_INDEX_NONE));
+		"object deleted in constructor", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
 	result = TCL_ERROR;
     }
@@ -1932,7 +1932,7 @@ Tcl_CopyObjectInstance(
     CallContext *contextPtr;
     Tcl_Obj *keyPtr, *filterObj, *variableObj, *args[3];
     PrivateVariableMapping *privateVariable;
-    size_t i;
+    Tcl_Size i;
     int result;
 
     /*
@@ -1941,7 +1941,7 @@ Tcl_CopyObjectInstance(
 
     if (IsRootClass(oPtr)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not clone the class of classes", TCL_INDEX_NONE));
+		"may not clone the class of classes", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "CLONING_CLASS", NULL);
 	return NULL;
     }
@@ -1952,7 +1952,7 @@ Tcl_CopyObjectInstance(
 
     o2Ptr = (Object *) Tcl_NewObjectInstance(interp,
 	    (Tcl_Class) oPtr->selfCls, targetName, targetNamespaceName, TCL_INDEX_NONE,
-	    NULL, TCL_INDEX_NONE);
+	    NULL, -1);
     if (o2Ptr == NULL) {
 	return NULL;
     }
@@ -2749,7 +2749,7 @@ TclOOObjectCmdCore(
 	}
 	if (contextPtr->index >= contextPtr->callPtr->numChain) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "no valid method implementation", TCL_INDEX_NONE));
+		    "no valid method implementation", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(methodNamePtr), NULL);
 	    TclOODeleteContext(contextPtr);
@@ -2799,9 +2799,9 @@ int
 Tcl_ObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv,
-    size_t skip)
+    Tcl_Size skip)
 {
     CallContext *contextPtr = (CallContext *) context;
     size_t savedIndex = contextPtr->index;
@@ -2871,9 +2871,9 @@ int
 TclNRObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv,
-    size_t skip)
+    Tcl_Size skip)
 {
     CallContext *contextPtr = (CallContext *) context;
 
@@ -3000,7 +3000,7 @@ TclOOIsReachable(
     Class *targetPtr,
     Class *startPtr)
 {
-    size_t i;
+    Tcl_Size i;
     Class *superPtr;
 
   tailRecurse:
@@ -3093,7 +3093,7 @@ Tcl_ObjectContextObject(
     return (Tcl_Object) ((CallContext *)context)->oPtr;
 }
 
-size_t
+Tcl_Size
 Tcl_ObjectContextSkippedArgs(
     Tcl_ObjectContext context)
 {

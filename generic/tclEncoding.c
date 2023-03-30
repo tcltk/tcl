@@ -1415,9 +1415,9 @@ Tcl_ExternalToUtf(
     }
 
     if (!noTerminate) {
-	if ((int) dstLen < 1) {
-	    return TCL_CONVERT_NOSPACE;
-	}
+        if (dstLen < 1) {
+            return TCL_CONVERT_NOSPACE;
+        }
 	/*
 	 * If there are any null characters in the middle of the buffer,
 	 * they will converted to the UTF-8 null character (\xC0\x80). To get
@@ -1612,9 +1612,9 @@ Tcl_UtfToExternalDStringEx(
 	if ((result != TCL_CONVERT_NOSPACE) &&
 	    !(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
 	    Tcl_Size nBytesProcessed = (src - srcStart);
-	    size_t i = soFar + encodingPtr->nullSize - 1;
+	    Tcl_Size i = soFar + encodingPtr->nullSize - 1;
 	    /* Loop as DStringSetLength only stores one nul byte at a time */
-	    while (i+1 >= soFar+1) {
+	    while (i >= soFar) {
 		Tcl_DStringSetLength(dstPtr, i--);
 	    }
 	    if (errorLocPtr) {
