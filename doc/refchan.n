@@ -53,8 +53,8 @@ here, then the \fBfinalize\fR subcommand will not be called.
 .PP
 The \fImode\fR argument tells the handler whether the channel was
 opened for reading, writing, or both. It is a list containing any of
-the strings \fBread\fR or \fBwrite\fR. The list will always
-contain at least one element.
+the strings \fBread\fR or \fBwrite\fR. The list may be empty, but
+will usually contain at least one element. 
 .PP
 The subcommand must throw an error if the chosen mode is not
 supported by the \fIcmdPrefix\fR.
