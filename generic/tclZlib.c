@@ -289,7 +289,7 @@ ConvertError(
     case Z_NEED_DICT:
 	codeStr = "NEED_DICT";
 	codeStr2 = codeStrBuf;
-	sprintf(codeStrBuf, "%lu", adler);
+	snprintf(codeStrBuf, sizeof(codeStrBuf), "%lu", adler);
 	break;
 
 	/*
@@ -310,7 +310,7 @@ ConvertError(
     default:
 	codeStr = "UNKNOWN";
 	codeStr2 = codeStrBuf;
-	sprintf(codeStrBuf, "%d", code);
+	snprintf(codeStrBuf, sizeof(codeStrBuf), "%d", code);
 	break;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(zError(code), -1));
@@ -3478,7 +3478,7 @@ ZlibTransformGetOption(
 	    crc = cd->inStream.adler;
 	}
 
-	sprintf(buf, "%lu", crc);
+	snprintf(buf, sizeof(buf), "%lu", crc);
 	if (optionName == NULL) {
 	    Tcl_DStringAppendElement(dsPtr, "-checksum");
 	    Tcl_DStringAppendElement(dsPtr, buf);

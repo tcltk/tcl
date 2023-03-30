@@ -1823,7 +1823,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    snprintf(channelName, sizeof(channelName), "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    infoPtr, infoPtr->validMask);
 
@@ -2712,7 +2712,7 @@ TclWinAddProcess(
     void *hProcess,		/* Handle to process */
     unsigned long id)		/* Global process identifier */
 {
-    ProcInfo *procPtr = (ProcInfo*)ckalloc(sizeof(ProcInfo));
+    ProcInfo *procPtr = (ProcInfo *)ckalloc(sizeof(ProcInfo));
 
     PipeInit();
 
@@ -2812,7 +2812,7 @@ WaitForRead(
 				 * or not. */
 {
     DWORD timeout, count;
-    HANDLE *handle = (HANDLE *)((WinFile *) infoPtr->readFile)->handle;
+    HANDLE handle = ((WinFile *) infoPtr->readFile)->handle;
 
     while (1) {
 	/*
@@ -3234,7 +3234,7 @@ TclpOpenTemporaryFile(
     do {
 	char number[TCL_INTEGER_SPACE + 4];
 
-	sprintf(number, "%d.TMP", counter);
+	snprintf(number, sizeof(number), "%d.TMP", counter);
 	counter = (unsigned short) (counter + 1);
 	Tcl_DStringInit(&buf);
 	Tcl_UtfToWCharDString(number, strlen(number), &buf);

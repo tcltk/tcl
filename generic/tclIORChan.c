@@ -3343,7 +3343,7 @@ ForwardProc(
 		 */
 
 		char *buf = (char *)ckalloc(200);
-		sprintf(buf,
+		snprintf(buf, 200,
 			"{Expected list with even number of elements, got %d %s instead}",
 			listc, (listc == 1 ? "element" : "elements"));
 
