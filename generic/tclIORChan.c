@@ -556,7 +556,7 @@ TclChanCreateObjCmd(
 
     /*
      * First argument is a list of modes. Allowed entries are "read", "write".
-     * Expect at least one list element. Abbreviations are ok.
+     * Empty list is uncommon, but allowed. Abbreviations are ok.
      */
 
     modeObj = objv[MODE];
@@ -930,6 +930,11 @@ TclChanPostEventObjCmd(
      */
 
     if (EncodeEventMask(interp, "event", objv[EVENT], &events) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (events == 0) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("bad event list: is empty", -1));
 	return TCL_ERROR;
     }
 
@@ -2137,10 +2142,10 @@ ReflectTruncate(
  * EncodeEventMask --
  *
  *	This function takes a list of event items and constructs the
- *	equivalent internal bitmask. The list must contain at least one
- *	element. Elements are "read", "write", or any unique abbreviation of
- *	them. Note that the bitmask is not changed if problems are
- *	encountered.
+ *	equivalent internal bitmask. The list may be empty but will usually
+ *	contain at least one element. Valid elements are "read", "write", or
+ *	any unique abbreviation of them. Note that the bitmask is not changed
+ *	if problems are encountered.
  *
  * Results:
  *	A standard Tcl error code. A bitmask where TCL_READABLE and/or
@@ -2167,12 +2172,6 @@ EncodeEventMask(
 				 * list. */
 
     if (TclListObjGetElementsM(interp, obj, &listc, &listv) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    if (listc < 1) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "bad %s list: is empty", objName));
 	return TCL_ERROR;
     }
 
