@@ -4060,7 +4060,8 @@ Tcl_Write(
 	return TCL_INDEX_NONE;
     }
 
-    if (srcLen == TCL_INDEX_NONE) {
+    if ((srcLen == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (srcLen > (size_t)INT_MIN))) {
 	srcLen = strlen(src);
     }
     if (WriteBytes(chanPtr, src, srcLen) == -1) {
@@ -4110,7 +4111,8 @@ Tcl_WriteRaw(
 	return TCL_INDEX_NONE;
     }
 
-    if (srcLen == TCL_INDEX_NONE) {
+    if ((srcLen == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (srcLen > (size_t)INT_MIN))) {
 	srcLen = strlen(src);
     }
 
@@ -4169,7 +4171,8 @@ Tcl_WriteChars(
 
     chanPtr = statePtr->topChanPtr;
 
-    if (len == TCL_INDEX_NONE) {
+    if ((len == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (len > (size_t)INT_MIN))) {
 	len = strlen(src);
     }
     if (statePtr->encoding) {

@@ -1248,7 +1248,8 @@ Tcl_ExternalToUtfDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_INDEX_NONE) {
+    } else if ((srcLen == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (srcLen > (size_t)INT_MIN))) {
 	srcLen = encodingPtr->lengthProc(src);
     }
 
@@ -1387,7 +1388,8 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_INDEX_NONE) {
+    } else if ((srcLen == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (srcLen > (size_t)INT_MIN))) {
 	srcLen = encodingPtr->lengthProc(src);
     }
     if (statePtr == NULL) {
@@ -1576,7 +1578,8 @@ Tcl_UtfToExternalDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_INDEX_NONE) {
+    } else if ((srcLen == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (srcLen > (size_t)INT_MIN))) {
 	srcLen = strlen(src);
     }
 
@@ -1716,7 +1719,8 @@ Tcl_UtfToExternal(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_INDEX_NONE) {
+    } else if ((srcLen == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (srcLen > (size_t)INT_MIN))) {
 	srcLen = strlen(src);
     }
     if (statePtr == NULL) {

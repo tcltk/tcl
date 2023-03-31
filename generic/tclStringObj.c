@@ -275,7 +275,8 @@ Tcl_NewStringObj(
 {
     Tcl_Obj *objPtr;
 
-    if (length == TCL_INDEX_NONE) {
+    if ((length == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (length > (size_t)INT_MIN))) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclNewStringObj(objPtr, bytes, length);
@@ -327,7 +328,8 @@ Tcl_DbNewStringObj(
 {
     Tcl_Obj *objPtr;
 
-    if (length == TCL_INDEX_NONE) {
+    if ((length == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (length > (size_t)INT_MIN))) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclDbNewObj(objPtr, file, line);
@@ -1183,8 +1185,9 @@ SetUnicodeObj(
 {
     String *stringPtr;
 
-    if (numChars == TCL_INDEX_NONE) {
-	numChars = UnicodeLength(unicode);
+    if ((numChars == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (numChars > (size_t)INT_MIN))) {
+    	numChars = UnicodeLength(unicode);
     }
 
     /*
@@ -1559,7 +1562,8 @@ AppendUnicodeToUnicodeRep(
     String *stringPtr;
     size_t numChars;
 
-    if (appendNumChars == TCL_INDEX_NONE) {
+    if ((appendNumChars == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (appendNumChars > (size_t)INT_MIN))) {
 	appendNumChars = UnicodeLength(unicode);
     }
     if (appendNumChars == 0) {
@@ -4408,7 +4412,8 @@ ExtendStringRepWithUnicode(
     char *dst;
     String *stringPtr = GET_STRING(objPtr);
 
-    if (numChars == TCL_INDEX_NONE) {
+    if ((numChars == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (numChars > (size_t)INT_MIN))) {
 	numChars = UnicodeLength(unicode);
     }
 

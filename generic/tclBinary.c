@@ -730,7 +730,8 @@ TclAppendBytesToByteArray(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
     }
-    if (len == TCL_INDEX_NONE) {
+    if ((len == TCL_INDEX_NONE)
+	    || ((sizeof(int) != sizeof(size_t)) && (len > (size_t)INT_MIN))) {
 	Tcl_Panic("%s must be called with definite number of bytes to append",
 		"TclAppendBytesToByteArray");
     }
