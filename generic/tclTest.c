@@ -2029,6 +2029,22 @@ static int UtfExtWrapper(
     int flags;
     Tcl_Obj **flagObjs;
     int nflags;
+    static const struct {
+	const char *flagKey;
+	int flag;
+    } flagMap[] = {
+	{"start", TCL_ENCODING_START},
+	{"end", TCL_ENCODING_END},
+	{"stoponerror", TCL_ENCODING_STOPONERROR},
+	{"noterminate", TCL_ENCODING_NO_TERMINATE},
+	{"charlimit", TCL_ENCODING_CHAR_LIMIT},
+	{"profiletcl8", TCL_ENCODING_PROFILE_TCL8},
+	{"profilestrict", TCL_ENCODING_PROFILE_STRICT},
+	{"profilereplace", TCL_ENCODING_PROFILE_REPLACE},
+	{NULL, 0}
+    };
+    int i;
+    Tcl_WideInt wide;
 
     if (objc < 7 || objc > 10) {
         Tcl_WrongNumArgs(interp,
@@ -2047,21 +2063,6 @@ static int UtfExtWrapper(
 	return TCL_ERROR;
     }
 
-    struct {
-	const char *flagKey;
-	int flag;
-    } flagMap[] = {
-	{"start", TCL_ENCODING_START},
-	{"end", TCL_ENCODING_END},
-	{"stoponerror", TCL_ENCODING_STOPONERROR},
-	{"noterminate", TCL_ENCODING_NO_TERMINATE},
-	{"charlimit", TCL_ENCODING_CHAR_LIMIT},
-	{"profiletcl8", TCL_ENCODING_PROFILE_TCL8},
-	{"profilestrict", TCL_ENCODING_PROFILE_STRICT},
-	{"profilereplace", TCL_ENCODING_PROFILE_REPLACE},
-	{NULL, 0}
-    };
-    int i;
     for (i = 0; i < nflags; ++i) {
 	int flag;
 	if (Tcl_GetIntFromObj(NULL, flagObjs[i], &flag) == TCL_OK) {
@@ -2082,7 +2083,6 @@ static int UtfExtWrapper(
     }
 
     /* Assumes state is integer if not "" */
-    Tcl_WideInt wide;
     if (Tcl_GetWideIntFromObj(interp, objv[5], &wide) == TCL_OK) {
         encState = (Tcl_EncodingState)(size_t)wide;
         encStatePtr = &encState;
@@ -2262,7 +2262,7 @@ TestencodingObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "name toutfcmd fromutfcmd");
 	    return TCL_ERROR;
 	}
-	encodingPtr = (TclEncoding*)Tcl_Alloc(sizeof(TclEncoding));
+	encodingPtr = (TclEncoding *)Tcl_Alloc(sizeof(TclEncoding));
 	encodingPtr->interp = interp;
 
 	string = Tcl_GetStringFromObj(objv[3], &length);
@@ -8265,7 +8265,7 @@ InterpCmdResolver(
     Tcl_Interp *interp,
     const char *name,
     TCL_UNUSED(Tcl_Namespace *),
-    TCL_UNUSED(int) /*flags*/,
+    TCL_UNUSED(int) /* flags */,
     Tcl_Command *rPtr)
 {
     Interp *iPtr = (Interp *) interp;
@@ -8450,7 +8450,7 @@ static int
 InterpCompiledVarResolver(
     TCL_UNUSED(Tcl_Interp *),
     const char *name,
-    TCL_UNUSED(Tcl_Size) /*length*/,
+    TCL_UNUSED(Tcl_Size) /* length */,
     TCL_UNUSED(Tcl_Namespace *),
     Tcl_ResolvedVarInfo **rPtr)
 {

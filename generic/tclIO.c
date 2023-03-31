@@ -4432,7 +4432,7 @@ Write(
 	) {
 	    encodingError = 1;
 	    result = TCL_OK;
-	} 
+	}
 
 	bufPtr->nextAdded += dstWrote;
 	src += srcRead;
