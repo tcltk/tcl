@@ -1677,12 +1677,10 @@ Tcl_CreateChannel(
     }
     statePtr->inputEncodingState  = NULL;
     statePtr->inputEncodingFlags  = TCL_ENCODING_START;
-    CHANNEL_PROFILE_SET(statePtr->inputEncodingFlags,
-			     TCL_ENCODING_PROFILE_DEFAULT);
+    CHANNEL_PROFILE_SET(statePtr->inputEncodingFlags, 0);
     statePtr->outputEncodingState = NULL;
     statePtr->outputEncodingFlags = TCL_ENCODING_START;
-    CHANNEL_PROFILE_SET(statePtr->outputEncodingFlags,
-			     TCL_ENCODING_PROFILE_DEFAULT);
+    CHANNEL_PROFILE_SET(statePtr->outputEncodingFlags, 0);
 
     /*
      * Set the channel up initially in AUTO input translation mode to accept
@@ -5010,7 +5008,9 @@ Tcl_GetsObj(
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) &&
 	    (copiedTotal == 0 || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
 	Tcl_SetErrno(EILSEQ);
-	copiedTotal = -1;
+	if (copiedTotal == 0) {
+	    copiedTotal = -1;
+	}
     }
     return copiedTotal;
 }
@@ -6131,7 +6131,9 @@ finish:
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 	    && (!copied || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
 	Tcl_SetErrno(EILSEQ);
-	copied = -1;
+	if (!copied) {
+	    copied = -1;
+	}
     }
     TclChannelRelease((Tcl_Channel)chanPtr);
     return copied;
@@ -7617,6 +7619,32 @@ Tcl_InputBuffered(
     }
 
     return bytesBuffered;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_InputEncodingError --
+ *
+ *	Returns 1 if input is in an encoding error position, 0 otherwise.
+ *
+ * Results:
+ *	0 or 1, always.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_InputEncodingError(
+    Tcl_Channel chan)		/* Is this channel blocked? */
+{
+    ChannelState *statePtr = ((Channel *) chan)->state;
+				/* State of real channel structure. */
+
+    return GotFlag(statePtr, CHANNEL_ENCODING_ERROR) ? 1 : 0;
 }
 
 /*
@@ -10004,7 +10032,8 @@ CopyData(
  *	  - EOF is reached on the channel; or
  *	  - the channel is non-blocking, and we've read all we can
  *	    without blocking.
- *	  - a channel reading error occurs (and we return TCL_INDEX_NONE)
+ *	  - a channel reading error occurs (and we return TCL_INDEX_NONE
+ *	    or - in case of encoding error - the data so far)
  *
  * Side effects:
  *	May cause input to be buffered.
@@ -10230,7 +10259,7 @@ DoRead(
 	    == (CHANNEL_EOF|CHANNEL_BLOCKED)));
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
-    return (int)(p - dst);
+    return (Tcl_Size)(p - dst);
 }
 
 /*

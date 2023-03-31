@@ -316,14 +316,22 @@ Tcl_GetsObjCmd(
 	     */
 
 	    if (!TclChanCaughtErrorBypass(interp, chan)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"error reading \"%s\": %s",
-			TclGetString(chanObjPtr), Tcl_PosixError(interp)));
+		goto getsError;
 	    }
 	    code = TCL_ERROR;
 	    goto done;
 	}
 	lineLen = TCL_IO_FAILURE;
+    } else if (Tcl_InputEncodingError(chan)) {
+	Tcl_Obj *returnOpts = Tcl_NewDictObj();
+	Tcl_DictObjPut(NULL, returnOpts, Tcl_NewStringObj("-data", TCL_INDEX_NONE), linePtr);
+	Tcl_SetReturnOptions(interp, returnOpts);
+    getsError:
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"error reading \"%s\": %s",
+		TclGetString(chanObjPtr), Tcl_PosixError(interp)));
+	code = TCL_ERROR;
+	goto done;
     }
     if (objc == 3) {
 	if (Tcl_ObjSetVar2(interp, objv[2], NULL, linePtr,
@@ -441,13 +449,24 @@ Tcl_ReadObjCmd(
 	 * regular message if nothing was found in the bypass.
 	 */
 
+	Tcl_DecrRefCount(resultPtr);
 	if (!TclChanCaughtErrorBypass(interp, chan)) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "error reading \"%s\": %s",
-		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"error reading \"%s\": %s",
+			TclGetString(chanObjPtr), Tcl_PosixError(interp)));
+	    goto readError;
 	}
 	TclChannelRelease(chan);
-	Tcl_DecrRefCount(resultPtr);
+	return TCL_ERROR;
+    } else if (Tcl_InputEncodingError(chan)) {
+	Tcl_Obj *returnOpts = Tcl_NewDictObj();
+	Tcl_DictObjPut(NULL, returnOpts, Tcl_NewStringObj("-data", TCL_INDEX_NONE), resultPtr);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"error reading \"%s\": %s",
+		TclGetString(chanObjPtr), Tcl_PosixError(interp)));
+	Tcl_SetReturnOptions(interp, returnOpts);
+    readError:
+	TclChannelRelease(chan);
 	return TCL_ERROR;
     }
 

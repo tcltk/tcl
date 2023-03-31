@@ -1927,8 +1927,6 @@ typedef struct Tcl_EncodingType {
  *				reset to an initial state. If the source
  *				buffer contains the entire input stream to be
  *				converted, this flag should be set.
- * TCL_ENCODING_STRICT -	Be more strict in accepting what
- *				is considered a 'invalid byte sequence'.
  * TCL_ENCODING_STOPONERROR -	Not used any more.
  * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf does not append a
  *				terminating NUL byte.  Since it does not need
@@ -1964,15 +1962,10 @@ typedef struct Tcl_EncodingType {
 /* Internal use bits, do not define bits in this space. See above comment */
 #define TCL_ENCODING_INTERNAL_USE_MASK  0xFF00
 /* Reserve top byte for profile values (disjoint, not a mask) */
+#define TCL_ENCODING_PROFILE_STRICT   TCL_ENCODING_STOPONERROR
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
-#define TCL_ENCODING_PROFILE_STRICT   0x02000000
-#define TCL_ENCODING_PROFILE_REPLACE  0x03000000
-/* Still being argued - For Tcl9, is the default strict? TODO */
-#if TCL_MAJOR_VERSION < 9
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
-#else
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8 /* STRICT? REPLACE? TODO */
-#endif
+#define TCL_ENCODING_PROFILE_REPLACE  0x02000000
+#define TCL_ENCODING_PROFILE_DEFAULT  0
 
 /*
  * The following definitions are the error codes returned by the conversion

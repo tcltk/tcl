@@ -465,22 +465,22 @@ test encoding-15.25 {UtfToUtfProc CESU-8} {
     encoding convertfrom cesu-8 \x00
 } \x00
 test encoding-15.26 {UtfToUtfProc CESU-8} {
+    encoding convertfrom -profile tcl8 cesu-8 \xC0\x80
+} \x00
+test encoding-15.27 {UtfToUtfProc CESU-8} {
+    encoding convertfrom cesu-8 \x00
+} \x00
+test encoding-15.28 {UtfToUtfProc CESU-8} -body {
     encoding convertfrom cesu-8 \xC0\x80
-} \x00
-test encoding-15.27 {UtfToUtfProc -profile strict CESU-8} {
-    encoding convertfrom -profile strict cesu-8 \x00
-} \x00
-test encoding-15.28 {UtfToUtfProc -profile strict CESU-8} -body {
-    encoding convertfrom -profile strict cesu-8 \xC0\x80
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
 test encoding-15.29 {UtfToUtfProc CESU-8} {
     encoding convertto cesu-8 \x00
 } \x00
-test encoding-15.30 {UtfToUtfProc -profile strict CESU-8} {
-    encoding convertto -profile strict cesu-8 \x00
+test encoding-15.30 {UtfToUtfProc CESU-8} {
+    encoding convertto cesu-8 \x00
 } \x00
-test encoding-15.31 {UtfToUtfProc -profile strict CESU-8 (bytes F0-F4 are invalid)} -body {
-    encoding convertfrom -profile strict cesu-8 \xF1\x86\x83\x9C
+test encoding-15.31 {UtfToUtfProc CESU-8 (bytes F0-F4 are invalid)} -body {
+    encoding convertfrom cesu-8 \xF1\x86\x83\x9C
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xF1'}
 
 test encoding-16.1 {Utf16ToUtfProc} -body {
@@ -492,7 +492,7 @@ test encoding-16.2 {Utf16ToUtfProc} -body {
     list $val [format %x [scan $val %c]]
 } -result "\U460DC 460dc"
 test encoding-16.3 {Utf16ToUtfProc} -body {
-    set val [encoding convertfrom utf-16 "\xDC\xDC"]
+    set val [encoding convertfrom -profile tcl8 utf-16 "\xDC\xDC"]
     list $val [format %x [scan $val %c]]
 } -result "\uDCDC dcdc"
 test encoding-16.4 {Ucs2ToUtfProc} -body {
@@ -516,31 +516,31 @@ test encoding-16.8 {Utf32ToUtfProc} -body {
     list $val [format %x [scan $val %c]]
 } -result "\uFFFD fffd"
 test encoding-16.9 {Utf32ToUtfProc} -constraints utf32 -body {
-    encoding convertfrom utf-32le \x00\xD8\x00\x00
+    encoding convertfrom -profile tcl8 utf-32le \x00\xD8\x00\x00
 } -result \uD800
 test encoding-16.10 {Utf32ToUtfProc} -body {
-    encoding convertfrom utf-32le \x00\xDC\x00\x00
+    encoding convertfrom -profile tcl8 utf-32le \x00\xDC\x00\x00
 } -result \uDC00
 test encoding-16.11 {Utf32ToUtfProc} -body {
-    encoding convertfrom utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00
+    encoding convertfrom -profile tcl8 utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00
 } -result \uD800\uDC00
 test encoding-16.12 {Utf32ToUtfProc} -constraints utf32 -body {
-    encoding convertfrom utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00
+    encoding convertfrom -profile tcl8 utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00
 } -result \uDC00\uD800
 test encoding-16.13 {Utf16ToUtfProc} -body {
-    encoding convertfrom utf-16le \x00\xD8
+    encoding convertfrom -profile tcl8 utf-16le \x00\xD8
 } -result \uD800
 test encoding-16.14 {Utf16ToUtfProc} -body {
-    encoding convertfrom utf-16le \x00\xDC
+    encoding convertfrom -profile tcl8 utf-16le \x00\xDC
 } -result \uDC00
 test encoding-16.15 {Utf16ToUtfProc} -body {
     encoding convertfrom utf-16le \x00\xD8\x00\xDC
 } -result \U010000
 test encoding-16.16 {Utf16ToUtfProc} -body {
-    encoding convertfrom utf-16le \x00\xDC\x00\xD8
+    encoding convertfrom -profile tcl8 utf-16le \x00\xDC\x00\xD8
 } -result \uDC00\uD800
 test encoding-16.17 {Utf32ToUtfProc} -body {
-    list [encoding convertfrom -profile strict -failindex  idx utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00] [set idx]
+    list [encoding convertfrom -failindex  idx utf-32le \x41\x00\x00\x00\x00\xD8\x00\x00\x42\x00\x00\x00] [set idx]
 } -result {A 4}
 
 test encoding-16.18 {
@@ -563,25 +563,25 @@ test encoding-16.18 {
     } [namespace current]]
 } -result done
 test encoding-16.19 {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
-    encoding convertfrom utf-16 "\x41\x41\x41"
+    encoding convertfrom -profile tcl8 utf-16 "\x41\x41\x41"
 } -result \u4141\uFFFD
-test encoding-16.20 {Utf16ToUtfProc, bug [d19fe0a5b]} -constraints deprecated -body {
-    encoding convertfrom utf-16 "\xD8\xD8"
+test encoding-16.20 {UnicodeToUtfProc, bug [d19fe0a5b]} -body {
+    encoding convertfrom -profile tcl8 utf-16 "\xD8\xD8"
 } -result \uD8D8
 test encoding-16.21 {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
-    encoding convertfrom utf-32 "\x00\x00\x00\x00\x41\x41"
+    encoding convertfrom -profile tcl8 utf-32 "\x00\x00\x00\x00\x41\x41"
 } -result \x00\uFFFD
 test encoding-16.22 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
-    encoding convertfrom -profile strict utf-16le \x00\xD8
+    encoding convertfrom utf-16le \x00\xD8
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x00'}
 test encoding-16.23 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
-    encoding convertfrom -profile strict utf-16le \x00\xDC
+    encoding convertfrom utf-16le \x00\xDC
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x00'}
 test encoding-16.24 {Utf32ToUtfProc} -body {
-    encoding convertfrom utf-32 "\xFF\xFF\xFF\xFF"
+    encoding convertfrom -profile tcl8 utf-32 "\xFF\xFF\xFF\xFF"
 } -result \uFFFD
 test encoding-16.25 {Utf32ToUtfProc} -body {
-    encoding convertfrom utf-32 "\x01\x00\x00\x01"
+    encoding convertfrom -profile tcl8 utf-32 "\x01\x00\x00\x01"
 } -result \uFFFD
 
 test encoding-17.1 {UtfToUtf16Proc} -body {
@@ -603,60 +603,60 @@ test encoding-17.6 {UtfToUtf16Proc} -body {
     encoding convertto utf-32be "\U460DC"
 } -result "\x00\x04\x60\xDC"
 test encoding-17.7 {UtfToUtf16Proc} -body {
-    encoding convertto -profile strict utf-16be "\uDCDC"
+    encoding convertto utf-16be "\uDCDC"
 } -returnCodes error -result {unexpected character at index 0: 'U+00DCDC'}
 test encoding-17.8 {UtfToUtf16Proc} -body {
-    encoding convertto -profile strict utf-16le "\uD8D8"
+    encoding convertto utf-16le "\uD8D8"
 } -returnCodes error -result {unexpected character at index 0: 'U+00D8D8'}
 test encoding-17.9 {Utf32ToUtfProc} -body {
-    encoding convertfrom -profile strict utf-32 "\xFF\xFF\xFF\xFF"
+    encoding convertfrom utf-32 "\xFF\xFF\xFF\xFF"
 } -returnCodes error -result {unexpected byte sequence starting at index 0: '\xFF'}
 test encoding-17.10 {Utf32ToUtfProc} -body {
     encoding convertfrom -profile tcl8 utf-32 "\xFF\xFF\xFF\xFF"
 } -result \uFFFD
 test encoding-17.11 {Utf32ToUtfProc} -body {
-    encoding convertfrom -profile strict utf-32le "\x00\xD8\x00\x00"
+    encoding convertfrom utf-32le "\x00\xD8\x00\x00"
 } -returnCodes error -result {unexpected byte sequence starting at index 0: '\x00'}
 test encoding-17.12 {Utf32ToUtfProc} -body {
-    encoding convertfrom -profile strict utf-32le "\x00\xDC\x00\x00"
+    encoding convertfrom utf-32le "\x00\xDC\x00\x00"
 } -returnCodes error -result {unexpected byte sequence starting at index 0: '\x00'}
 
 test encoding-18.1 {TableToUtfProc on invalid input} -body {
 	list [catch {encoding convertto jis0208 \\} res] $res
-} -result {0 !)}
-test encoding-18.2 {TableToUtfProc on invalid input with -profile strict} -body {
-	list [catch {encoding convertto -profile strict jis0208 \\} res] $res
 } -result {1 {unexpected character at index 0: 'U+00005C'}}
-test encoding-18.3 {TableToUtfProc on invalid input with -profile strict -failindex} -body {
-	list [catch {encoding convertto -profile strict -failindex pos jis0208 \\} res] $res $pos
+test encoding-18.2 {TableToUtfProc on invalid input with} -body {
+	list [catch {encoding convertto jis0208 \\} res] $res
+} -result {1 {unexpected character at index 0: 'U+00005C'}}
+test encoding-18.3 {TableToUtfProc on invalid input with -failindex} -body {
+	list [catch {encoding convertto -failindex pos jis0208 \\} res] $res $pos
 } -result {0 {} 0}
-test encoding-18.4 {TableToUtfProc on invalid input with -failindex -profile strict} -body {
-	list [catch {encoding convertto -failindex pos -profile strict jis0208 \\} res] $res $pos
+test encoding-18.4 {TableToUtfProc on invalid input with -failindex} -body {
+	list [catch {encoding convertto -failindex pos jis0208 \\} res] $res $pos
 } -result {0 {} 0}
 test encoding-18.5 {TableToUtfProc on invalid input with -failindex} -body {
 	list [catch {encoding convertto -failindex pos jis0208 \\} res] $res $pos
-} -result {0 !) -1}
+} -result {0 {} 0}
 test encoding-18.6 {TableToUtfProc on invalid input with -profile tcl8} -body {
 	list [catch {encoding convertto -profile tcl8 jis0208 \\} res] $res
 } -result {0 !)}
 
 test encoding-19.1 {TableFromUtfProc} -body {
-    encoding convertfrom ascii AÁ
+    encoding convertfrom -profile tcl8 ascii AÁ
 } -result AÁ
 test encoding-19.2 {TableFromUtfProc} -body {
     encoding convertfrom -profile tcl8 ascii AÁ
 } -result AÁ
 test encoding-19.3 {TableFromUtfProc} -body {
-    encoding convertfrom -profile strict ascii AÁ
+    encoding convertfrom ascii AÁ
 } -returnCodes 1 -result {unexpected byte sequence starting at index 1: '\xC1'}
 test encoding-19.4 {TableFromUtfProc} -body {
     list [encoding convertfrom -failindex idx ascii AÁ] [set idx]
-} -result [list A\xC1 -1]
+} -result {A 1}
 test encoding-19.5 {TableFromUtfProc} -body {
-    list [encoding convertfrom -failindex idx -profile strict ascii A\xC1] [set idx]
+    list [encoding convertfrom -failindex idx ascii AÁ] [set idx]
 } -result {A 1}
 test encoding-19.6 {TableFromUtfProc} -body {
-    list [encoding convertfrom -failindex idx -profile strict ascii AÁB] [set idx]
+    list [encoding convertfrom -failindex idx ascii AÁB] [set idx]
 } -result {A 1}
 
 test encoding-20.1 {TableFreefProc} {
@@ -766,7 +766,7 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
 } [list 3 "乎乞也 (\\u4E4E\\u4E5E\\u4E5F)"]
 
 test encoding-24.4 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xC0\x80"]
+    string length [encoding convertfrom -profile tcl8 utf-8 "\xC0\x80"]
 } 1
 test encoding-24.5 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom -profile tcl8 utf-8 "\xC0\x81"]
@@ -790,16 +790,16 @@ test encoding-24.11 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom -profile tcl8 utf-8 "\xEF\xBF\xBF"]
 } 1
 test encoding-24.12 {Parse valid or invalid utf-8} -body {
-    encoding convertfrom -profile strict utf-8 "\xC0\x81"
+    encoding convertfrom utf-8 "\xC0\x81"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
 test encoding-24.13 {Parse valid or invalid utf-8} -body {
-    encoding convertfrom -profile strict utf-8 "\xC1\xBF"
+    encoding convertfrom utf-8 "\xC1\xBF"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC1'}
 test encoding-24.14 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom utf-8 "\xC2\x80"]
 } 1
 test encoding-24.15 {Parse valid or invalid utf-8} -body {
-    encoding convertfrom utf-8 "Z\xE0\x80"
+    encoding convertfrom -profile tcl8 utf-8 "Z\xE0\x80"
 } -result Z\xE0\u20AC
 test encoding-24.16 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\u4343\x80"]
@@ -810,11 +810,8 @@ test encoding-24.17 {Parse valid or invalid utf-8} -constraints testbytestring -
 test encoding-24.18 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\xE0\x80xxxxxx"]
 } -result "Z\xC3\xA0\xE2\x82\xACxxxxxx"
-test encoding-24.19.1 {Parse valid or invalid utf-8} -body {
-    encoding convertto -profile tcl8 utf-8 "ZX\uD800"
-} -result ZX\xED\xA0\x80
-test encoding-24.19.2 {Parse valid or invalid utf-8} -body {
-    encoding convertto -profile strict utf-8 "ZX\uD800"
+test encoding-24.19 {Parse valid or invalid utf-8} -body {
+    encoding convertto utf-8 "ZX\uD800"
 } -returnCodes 1 -match glob -result "unexpected character at index 2: 'U+00D800'"
 test encoding-24.20 {Parse with -profile tcl8 but without providing encoding} -body {
     encoding convertfrom -profile tcl8 "\x20"
@@ -828,26 +825,26 @@ test encoding-24.22 {Syntax error, two encodings} -body {
 test encoding-24.23 {Syntax error, two encodings} -body {
     encoding convertto iso8859-1 utf-8 "ZX\uD800"
 } -result {bad option "iso8859-1": must be -profile or -failindex} -returnCodes error
-test encoding-24.24 {Parse invalid utf-8 with -profile strict} -body {
-    encoding convertfrom -profile strict utf-8 "\xC0\x80\x00\x00"
+test encoding-24.24 {Parse invalid utf-8 with} -body {
+    encoding convertfrom utf-8 "\xC0\x80\x00\x00"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
-test encoding-24.25 {Parse invalid utf-8 with -profile strict} -body {
-    encoding convertfrom -profile strict utf-8 "\x40\x80\x00\x00"
+test encoding-24.25 {Parse invalid utf-8 with} -body {
+    encoding convertfrom utf-8 "\x40\x80\x00\x00"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 1: '\x80'}
-test encoding-24.26 {Parse valid utf-8 with -profile strict} -body {
-    encoding convertfrom -profile strict utf-8 "\xF1\x80\x80\x80"
+test encoding-24.26 {Parse valid utf-8 with} -body {
+    encoding convertfrom utf-8 "\xF1\x80\x80\x80"
 } -result \U40000
-test encoding-24.27 {Parse invalid utf-8 with -profile strict} -body {
-    encoding convertfrom -profile strict utf-8 "\xF0\x80\x80\x80"
+test encoding-24.27 {Parse invalid utf-8 with} -body {
+    encoding convertfrom utf-8 "\xF0\x80\x80\x80"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xF0'}
-test encoding-24.28 {Parse invalid utf-8 with -profile strict} -body {
-    encoding convertfrom -profile strict utf-8 "\xFF\x00\x00"
+test encoding-24.28 {Parse invalid utf-8 with} -body {
+    encoding convertfrom utf-8 "\xFF\x00\x00"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xFF'}
 test encoding-24.29 {Parse invalid utf-8} -body {
     encoding convertfrom utf-8 \xEF\xBF\xBF
 } -result \uFFFF
-test encoding-24.30 {Parse noncharacter with -profile strict} -body {
-    encoding convertfrom -profile strict utf-8 \xEF\xBF\xBF
+test encoding-24.30 {Parse noncharacter with} -body {
+    encoding convertfrom utf-8 \xEF\xBF\xBF
 } -result \uFFFF
 test encoding-24.31 {Parse invalid utf-8 with -profile tcl8} -body {
     encoding convertfrom -profile tcl8 utf-8 \xEF\xBF\xBF
@@ -855,35 +852,32 @@ test encoding-24.31 {Parse invalid utf-8 with -profile tcl8} -body {
 test encoding-24.32 {Try to generate invalid utf-8} -body {
     encoding convertto utf-8 \uFFFF
 } -result \xEF\xBF\xBF
-test encoding-24.33 {Try to generate noncharacter with -profile strict} -body {
-    encoding convertto -profile strict utf-8 \uFFFF
+test encoding-24.33 {Try to generate noncharacter with} -body {
+    encoding convertto utf-8 \uFFFF
 } -result \xEF\xBF\xBF
 test encoding-24.34 {Try to generate invalid utf-8 with -profile tcl8} -body {
     encoding convertto -profile tcl8 utf-8 \uFFFF
 } -result \xEF\xBF\xBF
 test encoding-24.35 {Parse invalid utf-8} -constraints utf32 -body {
-    encoding convertfrom utf-8 \xED\xA0\x80
+    encoding convertfrom -profile tcl8 utf-8 \xED\xA0\x80
 } -result \uD800
-test encoding-24.36 {Parse invalid utf-8 with -profile strict} -body {
-    encoding convertfrom -profile strict utf-8 \xED\xA0\x80
+test encoding-24.36 {Parse invalid utf-8 with} -body {
+    encoding convertfrom utf-8 \xED\xA0\x80
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xED'}
 test encoding-24.37 {Parse invalid utf-8 with -profile tcl8} -body {
     encoding convertfrom -profile tcl8 utf-8 \xED\xA0\x80
 } -result \uD800
-test encoding-24.38.1 {Try to generate invalid utf-8} -body {
-    encoding convertto -profile tcl8 utf-8 \uD800
-} -result \xED\xA0\x80
-test encoding-24.38.2 {Try to generate invalid utf-8} -body {
-    encoding convertto -profile strict utf-8 \uD800
+test encoding-24.38 {Try to generate invalid utf-8} -body {
+    encoding convertto utf-8 \uD800
 } -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
-test encoding-24.39 {Try to generate invalid utf-8 with -profile strict} -body {
-    encoding convertto -profile strict utf-8 \uD800
+test encoding-24.39 {Try to generate invalid utf-8 with} -body {
+    encoding convertto utf-8 \uD800
 } -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
 test encoding-24.40 {Try to generate invalid utf-8 with -profile tcl8} -body {
     encoding convertto -profile tcl8 utf-8 \uD800
 } -result \xED\xA0\x80
-test encoding-24.41 {Parse invalid utf-8 with -profile strict} -body {
-    encoding convertfrom -profile strict utf-8 \xED\xA0\x80\xED\xB0\x80
+test encoding-24.41 {Parse invalid utf-8 with} -body {
+    encoding convertfrom utf-8 \xED\xA0\x80\xED\xB0\x80
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xED'}
 test encoding-24.42 {Parse invalid utf-8, fallback to cp1252 [885c86a9a0]} -body {
     encoding convertfrom -profile tcl8 utf-8 \xF0\x80\x80\x80
@@ -891,11 +885,11 @@ test encoding-24.42 {Parse invalid utf-8, fallback to cp1252 [885c86a9a0]} -body
 test encoding-24.43 {Parse invalid utf-8, fallback to cp1252 [885c86a9a0]} -body {
     encoding convertfrom -profile tcl8 utf-8 \x80
 } -result \u20AC
-test encoding-24.44 {Try to generate invalid ucs-2 with -profile strict} -body {
-    encoding convertto -profile strict ucs-2 \uD800
+test encoding-24.44 {Try to generate invalid ucs-2 with} -body {
+    encoding convertto ucs-2 \uD800
 } -returnCodes 1 -result {unexpected character at index 0: 'U+00D800'}
-test encoding-24.45 {Try to generate invalid ucs-2 with -profile strict} -body {
-    encoding convertto -profile strict ucs-2 \U10000
+test encoding-24.45 {Try to generate invalid ucs-2 with} -body {
+    encoding convertto ucs-2 \U10000
 } -returnCodes 1 -result {unexpected character at index 0: 'U+010000'}
 
 file delete [file join [temporaryDirectory] iso2022.txt]
