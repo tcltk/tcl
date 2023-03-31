@@ -9369,18 +9369,11 @@ TclCopyChannel(
      * of the bytes themselves.
      */
 
-    /*
-     * TODO - should really only allow lossless profiles. Below reflects
-     * Tcl 8.7 alphas prior to encoding profiles
-     */
-
     moveBytes = inStatePtr->inEofChar == '\0'	/* No eofChar to stop input */
 	    && inStatePtr->inputTranslation == TCL_TRANSLATE_LF
 	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
 	    && inStatePtr->encoding == outStatePtr->encoding
-	    && CHANNEL_PROFILE_GET(inStatePtr->inputEncodingFlags) != TCL_ENCODING_PROFILE_STRICT
-	    && CHANNEL_PROFILE_GET(inStatePtr->outputEncodingFlags) != TCL_ENCODING_PROFILE_STRICT
-	    && CHANNEL_PROFILE_GET(outStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
+	    && CHANNEL_PROFILE_GET(inStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
 	    && CHANNEL_PROFILE_GET(outStatePtr->outputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8;
 
     /*
@@ -9710,8 +9703,8 @@ CopyData(
     inBinary = (inStatePtr->encoding == NULL);
     outBinary = (outStatePtr->encoding == NULL);
     sameEncoding = inStatePtr->encoding == outStatePtr->encoding
-	    && CHANNEL_PROFILE_GET(inStatePtr->flags) != TCL_ENCODING_PROFILE_STRICT
-	    && CHANNEL_PROFILE_GET(outStatePtr->flags) == TCL_ENCODING_PROFILE_TCL8;
+	    && CHANNEL_PROFILE_GET(inStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
+	    && CHANNEL_PROFILE_GET(outStatePtr->outputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8;
 
     if (!(inBinary || sameEncoding)) {
 	TclNewObj(bufObj);
