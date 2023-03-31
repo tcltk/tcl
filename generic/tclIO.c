@@ -9378,8 +9378,10 @@ TclCopyChannel(
 	    && inStatePtr->inputTranslation == TCL_TRANSLATE_LF
 	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
 	    && inStatePtr->encoding == outStatePtr->encoding
-	    && CHANNEL_PROFILE_GET(inStatePtr->flags) != TCL_ENCODING_PROFILE_STRICT
-	    && CHANNEL_PROFILE_GET(outStatePtr->flags) == TCL_ENCODING_PROFILE_TCL8;
+	    && CHANNEL_PROFILE_GET(inStatePtr->inputEncodingFlags) != TCL_ENCODING_PROFILE_STRICT
+	    && CHANNEL_PROFILE_GET(inStatePtr->outputEncodingFlags) != TCL_ENCODING_PROFILE_STRICT
+	    && CHANNEL_PROFILE_GET(outStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
+	    && CHANNEL_PROFILE_GET(outStatePtr->outputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8;
 
     /*
      * Allocate a new CopyState to maintain info about the current copy in
