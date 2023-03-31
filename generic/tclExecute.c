@@ -1798,7 +1798,7 @@ TclCompileObj(
  *	of course).
  *
  * Side effects:
- *	valuePtr gets the new incrmented value.
+ *	valuePtr gets the new incremented value.
  *
  *----------------------------------------------------------------------
  */
@@ -3585,10 +3585,8 @@ TEBCresume(
 		}
 	    }
 	    DECACHE_STACK_INFO();
-	    Tcl_IncrRefCount(valueToAssign);
 	    objResultPtr = TclPtrSetVarIdx(interp, varPtr, arrayPtr, part1Ptr,
 		    part2Ptr, valueToAssign, TCL_LEAVE_ERR_MSG, opnd);
-	    TclDecrRefCount(valueToAssign);
 	    CACHE_STACK_INFO();
 	    if (!objResultPtr) {
 	    errorInLappendListPtr:
@@ -3790,7 +3788,7 @@ TEBCresume(
 	arrayPtr = NULL;
 	part1Ptr = part2Ptr = NULL;
 	cleanup = 0;
-	TRACE(("%u %s => ", opnd, Tcl_GetString(incrPtr)));
+	TRACE(("%u %s => ", opnd, TclGetString(incrPtr)));
 
     doIncrVar:
 	if (TclIsVarDirectModifyable2(varPtr, arrayPtr)) {
@@ -5281,8 +5279,7 @@ TEBCresume(
 	}
 	if (fromIdx == TCL_INDEX_NONE) {
 	    fromIdx = 0;
-	}
-	else if (fromIdx > length) {
+	} else if (fromIdx > length) {
 	    fromIdx = length;
 	}
 	numToDelete = 0;
@@ -5319,8 +5316,7 @@ TEBCresume(
 	    }
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	    NEXT_INST_V(6, opnd, 1);
-	}
-	else {
+	} else {
 	    if (Tcl_ListObjReplace(interp,
 				   valuePtr,
 				   fromIdx,

@@ -3334,9 +3334,9 @@ Tcl_PrintDouble(
 	 */
 
 	if (*precisionPtr == 0) {
-	    sprintf(dst, "e%+d", exponent);
+	    snprintf(dst, TCL_DOUBLE_SPACE, "e%+d", exponent);
 	} else {
-	    sprintf(dst, "e%+03d", exponent);
+	    snprintf(dst, TCL_DOUBLE_SPACE, "e%+03d", exponent);
 	}
     } else {
 	/*
@@ -4075,7 +4075,7 @@ TclIndexEncode(
 	     */
 	    idx = after;
 	} else if (wide <= (irPtr ? INT_MAX : TCL_INDEX_NONE)) {
-	    /* These indices always indicate "before the beginning */
+	    /* These indices always indicate "before the beginning" */
 	    idx = before;
 	} else {
 	    /* Encoded end-positive (or end+negative) are offset */

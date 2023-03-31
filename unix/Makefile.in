@@ -956,7 +956,8 @@ testresults/valgrind/%.result: ${TCL_EXE} ${TCLTEST_EXE}
 	@mkdir -p testresults/valgrind
 	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} \
 		$(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind \
-		-file $(basename $(notdir $@)) > $@ 2>&1
+		-file $(basename $(notdir $@)) > $@.tmp 2>&1
+	@mv $@.tmp $@
 .PRECIOUS: testresults/valgrind/%.result
 
 
@@ -966,7 +967,7 @@ testresults/valgrind/%.success: testresults/valgrind/%.result
 	@printf '\n >&2'
 	@status=$$(./${TCLTEST_EXE} $(TOP_DIR)/tools/valgrind_check_success \
 		file $(basename $@).result); \
-	if [ "$$status" -eq 1 ]; then exit 0; else exit 1; fi
+	if [ "$$status" -eq 1 ]; then touch $@; exit 0; else exit 1; fi
 
 valgrind_each: $(addprefix testresults/valgrind/,$(addsuffix .success,$(notdir\
 	$(wildcard $(TOP_DIR)/tests/*.test))))
@@ -1071,9 +1072,9 @@ install-libraries: libraries
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
 		"$(MODULE_INSTALL_DIR)/8.7/msgcat-1.7.1.tm"
-	@echo "Installing package tcltest 2.5.5 as a Tcl Module"
+	@echo "Installing package tcltest 2.5.6 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.5.tm"
+		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.6.tm"
 	@echo "Installing package platform 1.0.19 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
 		"$(MODULE_INSTALL_DIR)/8.4/platform-1.0.19.tm"

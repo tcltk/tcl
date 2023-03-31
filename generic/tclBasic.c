@@ -1533,7 +1533,7 @@ Tcl_CallWhenDeleted(
     AssocData *dPtr = (AssocData *)ckalloc(sizeof(AssocData));
     Tcl_HashEntry *hPtr;
 
-    sprintf(buffer, "Assoc Data Key #%d", *assocDataCounterPtr);
+    snprintf(buffer, sizeof(buffer), "Assoc Data Key #%d", *assocDataCounterPtr);
     (*assocDataCounterPtr)++;
 
     if (iPtr->assocData == NULL) {
@@ -4048,7 +4048,7 @@ TclCleanupCommand(
  *	the builtin functions. Redefining a builtin function forces all
  *	existing code to be invalidated since that code may be compiled using
  *	an instruction specific to the replaced function. In addition,
- *	redefioning a non-builtin function will force existing code to be
+ *	redefining a non-builtin function will force existing code to be
  *	invalidated if the number of arguments has changed.
  *
  *----------------------------------------------------------------------
@@ -4060,7 +4060,7 @@ Tcl_CreateMathFunc(
     Tcl_Interp *interp,		/* Interpreter in which function is to be
 				 * available. */
     const char *name,		/* Name of function (e.g. "sin"). */
-    int numArgs,		/* Nnumber of arguments required by
+    int numArgs,		/* Number of arguments required by
 				 * function. */
     Tcl_ValueType *argTypes,	/* Array of types acceptable for each
 				 * argument. */
@@ -6891,7 +6891,7 @@ ProcessUnexpectedResult(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"command returned bad code: %d", returnCode));
     }
-    sprintf(buf, "%d", returnCode);
+    snprintf(buf, sizeof(buf), "%d", returnCode);
     Tcl_SetErrorCode(interp, "TCL", "UNEXPECTED_RESULT_CODE", buf, NULL);
 }
 

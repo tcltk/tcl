@@ -69,8 +69,8 @@ test stringObj-4.2 {Tcl_SetObjLength procedure, string gets longer} {testobj dep
     testobj freeallvars
     teststringobj set 1 abcdef
     teststringobj setlength 1 10
-    list [teststringobj length 1] [teststringobj length2 1]
-} {10 10}
+    teststringobj length 1
+} 10
 test stringObj-4.3 {Tcl_SetObjLength procedure, string gets longer} {testobj utf32 deprecated} {
     testobj freeallvars
     teststringobj set 1 abcdef
@@ -78,7 +78,7 @@ test stringObj-4.3 {Tcl_SetObjLength procedure, string gets longer} {testobj utf
     list [teststringobj length 1] [teststringobj length2 1] \
 	    [teststringobj get 1]
 } {10 10 abcdefxyzq}
-test stringObj-4.4 {Tcl_SetObjLength procedure, "expty string", length 0} {testobj deprecated} {
+test stringObj-4.4 {Tcl_SetObjLength procedure, "empty string", length 0} {testobj deprecated} {
     testobj freeallvars
     testobj newobj 1
     teststringobj setlength 1 0

@@ -1826,7 +1826,7 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
     FILE *tclDTraceDebugLog = NULL;				\
     void TclDTraceOpenDebugLog(void) {				\
 	char n[35];						\
-	sprintf(n, "/tmp/tclDTraceDebug-%" TCL_Z_MODIFIER "u.log", \
+	snprintf(n, sizeof(n), "/tmp/tclDTraceDebug-%" TCL_Z_MODIFIER "u.log", \
 		(size_t) getpid());			\
 	tclDTraceDebugLog = fopen(n, "a");			\
     }

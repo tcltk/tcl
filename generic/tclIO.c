@@ -165,6 +165,7 @@ static int		CheckForDeadChannel(Tcl_Interp *interp,
 static void		CheckForStdChannelsBeingClosed(Tcl_Channel chan);
 static void		CleanupChannelHandlers(Tcl_Interp *interp,
 			    Channel *chanPtr);
+static void		CleanupTimerHandler(ChannelState *statePtr);
 static int		CloseChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode);
 static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
@@ -172,6 +173,7 @@ static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
 static int		CloseWrite(Tcl_Interp *interp, Channel *chanPtr);
 static void		CommonGetsCleanup(Channel *chanPtr);
 static int		CopyData(CopyState *csPtr, int mask);
+static void		DeleteTimerHandler(ChannelState *statePtr);
 static int		MoveBytes(CopyState *csPtr);
 
 static void		MBCallback(CopyState *csPtr, Tcl_Obj *errObj);
@@ -1700,8 +1702,12 @@ Tcl_CreateChannel(
     }
     statePtr->inputEncodingState  = NULL;
     statePtr->inputEncodingFlags  = TCL_ENCODING_START;
+    CHANNEL_PROFILE_SET(statePtr->inputEncodingFlags,
+			     TCL_ENCODING_PROFILE_TCL8);
     statePtr->outputEncodingState = NULL;
     statePtr->outputEncodingFlags = TCL_ENCODING_START;
+    CHANNEL_PROFILE_SET(statePtr->outputEncodingFlags,
+			     TCL_ENCODING_PROFILE_TCL8);
 
     /*
      * Set the channel up initially in AUTO input translation mode to accept
@@ -1730,6 +1736,7 @@ Tcl_CreateChannel(
     statePtr->scriptRecordPtr	= NULL;
     statePtr->bufSize		= CHANNELBUFFER_DEFAULT_SIZE;
     statePtr->timer		= NULL;
+    statePtr->timerChanPtr	= NULL;
     statePtr->csPtrR		= NULL;
     statePtr->csPtrW		= NULL;
     statePtr->outputStage	= NULL;
@@ -3187,8 +3194,8 @@ CloseChannel(
     /*
      * Cancel any outstanding timer.
      */
+    DeleteTimerHandler(statePtr);
 
-    Tcl_DeleteTimerHandler(statePtr->timer);
 
     /*
      * Mark the channel as deleted by clearing the type structure.
@@ -3540,7 +3547,7 @@ Tcl_Close(
     /*
      * Cancel any outstanding timer.
      */
-    Tcl_DeleteTimerHandler(statePtr->timer);
+    DeleteTimerHandler(statePtr);
 
     /*
      * Invoke the registered close callbacks and delete their records.
@@ -4015,8 +4022,7 @@ Tcl_ClearChannelHandlers(
     /*
      * Cancel any outstanding timer.
      */
-
-    Tcl_DeleteTimerHandler(statePtr->timer);
+    DeleteTimerHandler(statePtr);
 
     /*
      * Remove any references to channel handlers for this channel that may be
@@ -4394,21 +4400,6 @@ Write(
     }
 
     /*
-     * Transfer encoding nocomplain/strict option to the encoding flags
-     */
-
-    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
-	statePtr->outputEncodingFlags |= TCL_ENCODING_STRICT;
-#ifdef TCL_NO_DEPRECATED
-    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
-	statePtr->outputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-#endif
-    } else {
-	statePtr->outputEncodingFlags &= ~TCL_ENCODING_STRICT;
-    }
-
-    /*
      * Write the terminated escape sequence even if srcLen is 0.
      */
 
@@ -4731,21 +4722,6 @@ Tcl_GetsObj(
     }
 
     /*
-     * Transfer encoding nocomplain/strict option to the encoding flags
-     */
-
-    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
-	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
-#ifdef TCL_NO_DEPRECATED
-    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
-	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-#endif
-    } else {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
-    }
-
-    /*
      * Object used by FilterInputBytes to keep track of how much data has been
      * consumed from the channel buffers.
      */
@@ -4938,6 +4914,19 @@ Tcl_GetsObj(
 		goto done;
 	    }
 	    goto gotEOL;
+	} else if (gs.bytesWrote == 0
+		&& GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
+		&& !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+	    /* Set eol to the position that caused the encoding error, and then
+	     * coninue to gotEOL, which stores the data that was decoded
+	     * without error to objPtr.  This allows the caller to do something
+	     * useful with the data decoded so far, and also results in the
+	     * position of the file being the first byte that was not
+	     * succesfully decoded, allowing further processing at exactly that
+	     * point, if desired.
+	     */
+	    eol = dstEnd;
+	    goto gotEOL;
 	}
 	dst = dstEnd;
     }
@@ -5054,6 +5043,11 @@ Tcl_GetsObj(
     }
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) &&
+	    (copiedTotal == 0 || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+	Tcl_SetErrno(EILSEQ);
+	copiedTotal = -1;
+    }
     return copiedTotal;
 }
 
@@ -5503,21 +5497,6 @@ FilterInputBytes(
 	*gsPtr->dstPtr = dst;
     }
     gsPtr->state = statePtr->inputEncodingState;
-
-    /*
-     * Transfer encoding nocomplain/strict option to the encoding flags
-     */
-
-    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
-	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
-#ifdef TCL_NO_DEPRECATED
-    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
-	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-#endif
-    } else {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
-    }
 
     result = Tcl_ExternalToUtf(NULL, gsPtr->encoding, raw, rawLen,
 	    statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE,
@@ -6099,6 +6078,23 @@ DoReadChars(
 		    statePtr->inQueueTail = NULL;
 		}
 	    }
+
+	    /*
+	     * If CHANNEL_ENCODING_ERROR and CHANNEL_STICKY_EOF are both set,
+	     * then CHANNEL_ENCODING_ERROR was caused by data that occurred
+	     * after the EOF character was encountered, so it doesn't count as
+	     * a real error.
+	     */
+
+	    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
+		    && !GotFlag(statePtr, CHANNEL_STICKY_EOF)
+		    && !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+		/* Channel is blocking.  Return an error so that callers
+		 * like [read] can return an error.
+		*/
+		Tcl_SetErrno(EILSEQ);
+		goto finish;
+	    }
 	}
 
 	if (copiedNow < 0) {
@@ -6127,6 +6123,7 @@ DoReadChars(
 	}
     }
 
+finish:
     /*
      * Failure to fill a channel buffer may have left channel reporting a
      * "blocked" state, but so long as we fulfilled the request here, the
@@ -6160,6 +6157,11 @@ DoReadChars(
     assert(!(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
             == (CHANNEL_EOF|CHANNEL_BLOCKED)));
     UpdateInterest(chanPtr);
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
+	    && (!copied || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+	Tcl_SetErrno(EILSEQ);
+	copied = -1;
+    }
     TclChannelRelease((Tcl_Channel)chanPtr);
     return copied;
 }
@@ -6302,21 +6304,6 @@ ReadChars(
 	dstLimit = size - numBytes;
     } else {
 	dst = TclGetString(objPtr) + numBytes;
-    }
-
-    /*
-     * Transfer encoding nocomplain/strict option to the encoding flags
-     */
-
-    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT)) {
-	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
-#ifdef TCL_NO_DEPRECATED
-    } else if (GotFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN)) {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
-	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-#endif
-    } else {
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_STRICT;
     }
 
     /*
@@ -6805,11 +6792,14 @@ TranslateInputEOL(
 	 * EOF character was seen in EOL translated range. Leave current file
 	 * position pointing at the EOF character, but don't store the EOF
 	 * character in the output string.
+	 *
+	 * If CHANNEL_ENCODING_ERROR is set, it can only be because of data
+	 * encountered after the EOF character, so it is nonsense.  Unset it.
 	 */
 
 	SetFlag(statePtr, CHANNEL_EOF | CHANNEL_STICKY_EOF);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_END;
-	ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR);
+	ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR|CHANNEL_ENCODING_ERROR);
     }
 }
 
@@ -7588,8 +7578,7 @@ Tcl_Eof(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_FCOPY)
-	    && GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	return 0;
     }
     return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
@@ -7866,7 +7855,7 @@ Tcl_BadChannelOption(
 {
     if (interp != NULL) {
 	const char *genericopt =
-		"blocking buffering buffersize encoding eofchar nocomplainencoding strictencoding translation";
+		"blocking buffering buffersize encoding eofchar profile translation";
 	const char **argv;
 	int argc, i;
 	Tcl_DString ds;
@@ -7926,7 +7915,7 @@ Tcl_GetChannelOption(
     Tcl_DString *dsPtr)		/* Where to store value(s). */
 {
     size_t len;			/* Length of optionName string. */
-    char optionVal[128];	/* Buffer for sprintf. */
+    char optionVal[128];	/* Buffer for snprintf. */
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
@@ -8033,9 +8022,10 @@ Tcl_GetChannelOption(
 	    if (statePtr->inEofChar == 0) {
 		Tcl_DStringAppendElement(dsPtr, "");
 	    } else {
-		char buf[4];
+		char buf[2];
 
-		sprintf(buf, "%c", statePtr->inEofChar);
+		buf[1] = '\0';
+		buf[0] = statePtr->inEofChar;
 		Tcl_DStringAppendElement(dsPtr, buf);
 	    }
 	}
@@ -8043,9 +8033,10 @@ Tcl_GetChannelOption(
 	    if (statePtr->outEofChar == 0) {
 		Tcl_DStringAppendElement(dsPtr, "");
 	    } else {
-		char buf[4];
+		char buf[2];
 
-		sprintf(buf, "%c", statePtr->outEofChar);
+		buf[1] = '\0';
+		buf[0] = statePtr->outEofChar;
 		Tcl_DStringAppendElement(dsPtr, buf);
 	    }
 	}
@@ -8064,27 +8055,19 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(1, "-nocomplainencoding")) {
+    if (len == 0 || HaveOpt(1, "-profile")) {
+	int profile;
+	const char *profileName;
 	if (len == 0) {
-	    Tcl_DStringAppendElement(dsPtr, "-nocomplainencoding");
+	    Tcl_DStringAppendElement(dsPtr, "-profile");
 	}
-#ifdef TCL_NO_DEPRECATED
-	Tcl_DStringAppendElement(dsPtr,
-		(flags & CHANNEL_ENCODING_NOCOMPLAIN) ? "1" : "0");
-#else
-	Tcl_DStringAppendElement(dsPtr,
-		(flags & CHANNEL_ENCODING_STRICT) ? "0" : "1");
-#endif
-	if (len > 0) {
-	    return TCL_OK;
+	/* Note currently input and output profiles are same */
+	profile = CHANNEL_PROFILE_GET(statePtr->inputEncodingFlags);
+	profileName = TclEncodingProfileIdToName(interp, profile);
+	if (profileName == NULL) {
+	    return TCL_ERROR;
 	}
-    }
-    if (len == 0 || HaveOpt(1, "-strictencoding")) {
-	if (len == 0) {
-	    Tcl_DStringAppendElement(dsPtr, "-strictencoding");
-	}
-	Tcl_DStringAppendElement(dsPtr,
-		(flags & CHANNEL_ENCODING_STRICT) ? "1" : "0");
+	Tcl_DStringAppendElement(dsPtr, profileName);
 	if (len > 0) {
 	    return TCL_OK;
 	}
@@ -8260,6 +8243,7 @@ Tcl_SetChannelOption(
 	return TCL_OK;
     } else if (HaveOpt(2, "-encoding")) {
 	Tcl_Encoding encoding;
+	int profile;
 
 	if ((newValue[0] == '\0') || (strcmp(newValue, "binary") == 0)) {
 	    encoding = NULL;
@@ -8284,9 +8268,12 @@ Tcl_SetChannelOption(
 	Tcl_FreeEncoding(statePtr->encoding);
 	statePtr->encoding = encoding;
 	statePtr->inputEncodingState = NULL;
+	profile = CHANNEL_PROFILE_GET(statePtr->inputEncodingFlags);
 	statePtr->inputEncodingFlags = TCL_ENCODING_START;
+	CHANNEL_PROFILE_SET(statePtr->inputEncodingFlags, profile);
 	statePtr->outputEncodingState = NULL;
 	statePtr->outputEncodingFlags = TCL_ENCODING_START;
+	CHANNEL_PROFILE_SET(statePtr->outputEncodingFlags, profile); /* Same as input */
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	UpdateInterest(chanPtr);
 	return TCL_OK;
@@ -8345,43 +8332,13 @@ Tcl_SetChannelOption(
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	return TCL_OK;
-    } else if (HaveOpt(1, "-nocomplainencoding")) {
-	int newMode;
-
-	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
+    } else if (HaveOpt(1, "-profile")) {
+	int profile;
+	if (TclEncodingProfileNameToId(interp, newValue, &profile) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (newMode) {
-	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
-	    SetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
-	} else {
-#ifdef TCL_NO_DEPRECATED
-	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
-#else
-	    if (GotFlag(statePtr, CHANNEL_ENCODING_STRICT) != CHANNEL_ENCODING_STRICT) {
-		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "bad value for -nocomplainencoding: only true allowed",
-			    TCL_INDEX_NONE));
-		}
-		return TCL_ERROR;
-	    }
-#endif
-	}
-	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
-	return TCL_OK;
-    } else if (HaveOpt(1, "-strictencoding")) {
-	int newMode;
-
-	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-	if (newMode) {
-	    ResetFlag(statePtr, CHANNEL_ENCODING_NOCOMPLAIN);
-	    SetFlag(statePtr, CHANNEL_ENCODING_STRICT);
-	} else {
-	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
-	}
+	CHANNEL_PROFILE_SET(statePtr->inputEncodingFlags, profile);
+	CHANNEL_PROFILE_SET(statePtr->outputEncodingFlags, profile);
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {
@@ -8804,8 +8761,10 @@ UpdateInterest(
 	    mask &= ~TCL_EXCEPTION;
 
 	    if (!statePtr->timer) {
+		TclChannelPreserve((Tcl_Channel)chanPtr);
+		statePtr->timerChanPtr = chanPtr;
 		statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-                        ChannelTimerProc, chanPtr);
+		    ChannelTimerProc, chanPtr);
 	    }
 	}
     }
@@ -8814,6 +8773,8 @@ UpdateInterest(
 	&& mask & TCL_WRITABLE
 	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 
+	TclChannelPreserve((Tcl_Channel)chanPtr);
+	statePtr->timerChanPtr = chanPtr;
 	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
 	    ChannelTimerProc,chanPtr);
     }
@@ -8844,48 +8805,75 @@ ChannelTimerProc(
     void *clientData)
 {
     Channel *chanPtr = (Channel *)clientData;
-
     /* State info for channel */
     ChannelState *statePtr = chanPtr->state;
 
-	/* Preserve chanPtr to guard against deallocation in Tcl_NotifyChannel. */
-    TclChannelPreserve((Tcl_Channel)chanPtr);
-    Tcl_Preserve(statePtr);
-    statePtr->timer = NULL;
-    if (statePtr->interestMask & TCL_WRITABLE
-	&& GotFlag(statePtr, CHANNEL_NONBLOCKING)
-	&& !GotFlag(statePtr, BG_FLUSH_SCHEDULED)
-	) {
-	/*
-	 * Restart the timer in case a channel handler reenters the event loop
-	 * before UpdateInterest gets called by Tcl_NotifyChannel.
-	 */
-	statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-                ChannelTimerProc,chanPtr);
-	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_WRITABLE);
-    }
+    /* TclChannelPreserve() must be called before the current function was
+     * scheduled, is already in effect.  In this function it guards against
+     * deallocation in Tcl_NotifyChannel and also keps the channel preserved
+     * until ChannelTimerProc is later called again.
+     */
 
-    /* The channel may have just been closed from within Tcl_NotifyChannel */
-    if (!GotFlag(statePtr, CHANNEL_INCLOSE)) {
-	if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
-		&& (statePtr->interestMask & TCL_READABLE)
-		&& (statePtr->inQueueHead != NULL)
-		&& IsBufferReady(statePtr->inQueueHead)) {
+    if (chanPtr->typePtr == NULL) {
+	CleanupTimerHandler(statePtr);
+    } else {
+	Tcl_Preserve(statePtr);
+	statePtr->timer = NULL;
+	if (statePtr->interestMask & TCL_WRITABLE
+	    && GotFlag(statePtr, CHANNEL_NONBLOCKING)
+	    && !GotFlag(statePtr, BG_FLUSH_SCHEDULED)
+	    ) {
 	    /*
 	     * Restart the timer in case a channel handler reenters the event loop
 	     * before UpdateInterest gets called by Tcl_NotifyChannel.
 	     */
-
 	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-		    ChannelTimerProc,chanPtr);
-	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
+		ChannelTimerProc,chanPtr);
+	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_WRITABLE);
 	} else {
-	    UpdateInterest(chanPtr);
-	}
-    }
+	    /* The channel may have just been closed from within Tcl_NotifyChannel */
+	    if (!GotFlag(statePtr, CHANNEL_INCLOSE)) {
+		if (!GotFlag(statePtr, CHANNEL_NEED_MORE_DATA)
+		    && (statePtr->interestMask & TCL_READABLE)
+		    && (statePtr->inQueueHead != NULL)
+		    && IsBufferReady(statePtr->inQueueHead)) {
+		    /*
+		     * Restart the timer in case a channel handler reenters the event loop
+		     * before UpdateInterest gets called by Tcl_NotifyChannel.
+		     */
 
-    Tcl_Release(statePtr);
-    TclChannelRelease((Tcl_Channel)chanPtr);
+		    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
+			ChannelTimerProc,chanPtr);
+		    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
+		} else {
+		    CleanupTimerHandler(statePtr);
+		    UpdateInterest(chanPtr);
+		}
+	    } else {
+		CleanupTimerHandler(statePtr);
+	    }
+	}
+	Tcl_Release(statePtr);
+    }
+}
+
+static void
+DeleteTimerHandler(
+    ChannelState *statePtr
+)
+{
+    if (statePtr->timer != NULL) {
+	Tcl_DeleteTimerHandler(statePtr->timer);
+	CleanupTimerHandler(statePtr);
+    }
+}
+static void
+CleanupTimerHandler(
+    ChannelState *statePtr
+){
+    TclChannelRelease((Tcl_Channel)statePtr->timerChanPtr);
+    statePtr->timer = NULL;
+    statePtr->timerChanPtr = NULL;
 }
 
 /*
@@ -9473,12 +9461,17 @@ TclCopyChannel(
      * of the bytes themselves.
      */
 
+    /*
+     * TODO - should really only allow lossless profiles. Below reflects
+     * Tcl 8.7 alphas prior to encoding profiles
+     */
+
     moveBytes = inStatePtr->inEofChar == '\0'	/* No eofChar to stop input */
 	    && inStatePtr->inputTranslation == TCL_TRANSLATE_LF
 	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
 	    && inStatePtr->encoding == outStatePtr->encoding
-	    && (inStatePtr->flags & TCL_ENCODING_STRICT) != TCL_ENCODING_STRICT
-	    && outStatePtr->flags & TCL_ENCODING_NOCOMPLAIN;
+	    && CHANNEL_PROFILE_GET(inStatePtr->flags) != TCL_ENCODING_PROFILE_STRICT
+	    && CHANNEL_PROFILE_GET(outStatePtr->flags) == TCL_ENCODING_PROFILE_TCL8;
 
     /*
      * Allocate a new CopyState to maintain info about the current copy in
@@ -9803,12 +9796,11 @@ CopyData(
      * the bottom of the stack.
      */
 
-    SetFlag(inStatePtr, CHANNEL_FCOPY);
     inBinary = (inStatePtr->encoding == NULL);
     outBinary = (outStatePtr->encoding == NULL);
     sameEncoding = inStatePtr->encoding == outStatePtr->encoding
-	    && (inStatePtr->flags & TCL_ENCODING_STRICT) != TCL_ENCODING_STRICT
-	    && outStatePtr->flags & TCL_ENCODING_NOCOMPLAIN;
+	    && CHANNEL_PROFILE_GET(inStatePtr->flags) != TCL_ENCODING_PROFILE_STRICT
+	    && CHANNEL_PROFILE_GET(outStatePtr->flags) == TCL_ENCODING_PROFILE_TCL8;
 
     if (!(inBinary || sameEncoding)) {
 	TclNewObj(bufObj);
@@ -9919,7 +9911,6 @@ CopyData(
 		    TclDecrRefCount(bufObj);
 		    bufObj = NULL;
 		}
-		ResetFlag(inStatePtr, CHANNEL_FCOPY);
 		return TCL_OK;
 	    }
 	}
@@ -10011,7 +10002,6 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
-	    ResetFlag(inStatePtr, CHANNEL_FCOPY);
 	    return TCL_OK;
 	}
 
@@ -10034,7 +10024,6 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
-	    ResetFlag(inStatePtr, CHANNEL_FCOPY);
 	    return TCL_OK;
 	}
     } /* while */
@@ -10087,7 +10076,6 @@ CopyData(
 	    }
 	}
     }
-    ResetFlag(inStatePtr, CHANNEL_FCOPY);
     return result;
 }
 

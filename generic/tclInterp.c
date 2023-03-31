@@ -61,7 +61,7 @@ typedef struct Alias {
     Tcl_Obj *objPtr;		/* The first actual prefix object - the target
 				 * command name; this has to be at the end of
 				 * the structure, which will be extended to
-				 * accomodate the remaining objects in the
+				 * accommodate the remaining objects in the
 				 * prefix. */
 } Alias;
 
@@ -827,7 +827,7 @@ NRInterpCmd(
 	    for (i = 0; ; i++) {
 		Tcl_CmdInfo cmdInfo;
 
-		sprintf(buf, "interp%d", i);
+		snprintf(buf, sizeof(buf), "interp%d", i);
 		if (Tcl_GetCommandInfo(interp, buf, &cmdInfo) == 0) {
 		    break;
 		}
@@ -1111,7 +1111,7 @@ NRInterpCmd(
 	if (hPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "alias \"%s\" in path \"%s\" not found",
-		    aliasName, Tcl_GetString(objv[2])));
+		    aliasName, TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName,
 		    NULL);
 	    return TCL_ERROR;

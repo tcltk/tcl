@@ -1406,16 +1406,16 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			    CFLAGS="$CFLAGS -arch x86_64"
 			    do64bit_ok=yes
 			]);;
-		    arm64|arm64e)
-			AC_CACHE_CHECK([if compiler accepts -arch arm64e flag],
-				tcl_cv_cc_arch_arm64e, [
+		    arm64)
+			AC_CACHE_CHECK([if compiler accepts -arch arm64 flag],
+				tcl_cv_cc_arch_arm64, [
 			    hold_cflags=$CFLAGS
-			    CFLAGS="$CFLAGS -arch arm64e"
+			    CFLAGS="$CFLAGS -arch arm64"
 			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
-				    [tcl_cv_cc_arch_arm64e=yes],[tcl_cv_cc_arch_arm64e=no])
+				    [tcl_cv_cc_arch_arm64=yes],[tcl_cv_cc_arch_arm64=no])
 			    CFLAGS=$hold_cflags])
-			AS_IF([test $tcl_cv_cc_arch_arm64e = yes], [
-			    CFLAGS="$CFLAGS -arch arm64e"
+			AS_IF([test $tcl_cv_cc_arch_arm64 = yes], [
+			    CFLAGS="$CFLAGS -arch arm64"
 			    do64bit_ok=yes
 			]);;
 		    *)
@@ -1423,7 +1423,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		esac
 	    ], [
 		# Check for combined 32-bit and 64-bit fat build
-		AS_IF([echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64|arm64e) ' \
+		AS_IF([echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64|arm64) ' \
 		    && echo "$CFLAGS " |grep -E -q -- '-arch (ppc|i386) '], [
 		    fat_32_64=yes])
 	    ])
@@ -2329,7 +2329,6 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
 #	Might define the following vars:
 #		_ISOC99_SOURCE
 #		_LARGEFILE64_SOURCE
-#		_LARGEFILE_SOURCE64
 #
 #--------------------------------------------------------------------
 
@@ -2353,8 +2352,6 @@ AC_DEFUN([SC_TCL_EARLY_FLAGS],[
 	[char *p = (char *)strtoll; char *q = (char *)strtoull;])
     SC_TCL_EARLY_FLAG(_LARGEFILE64_SOURCE,[#include <sys/stat.h>],
 	[struct stat64 buf; int i = stat64("/", &buf);])
-    SC_TCL_EARLY_FLAG(_LARGEFILE_SOURCE64,[#include <sys/stat.h>],
-	[char *p = (char *)open64;])
     if test "x${tcl_flags}" = "x" ; then
 	AC_MSG_RESULT([none])
     else
@@ -2381,7 +2378,7 @@ AC_DEFUN([SC_TCL_EARLY_FLAGS],[
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_TCL_64BIT_FLAGS], [
-    AC_MSG_CHECKING([for 64-bit integer type])
+    AC_MSG_CHECKING([if 'long' and 'long long' have the same size (64-bit)?])
     AC_CACHE_VAL(tcl_cv_type_64bit,[
 	tcl_cv_type_64bit=none
 	# See if we could use long anyway  Note that we substitute in the
@@ -2391,9 +2388,10 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
             case 1: case (sizeof(long long)==sizeof(long)): ;
         }]])],[tcl_cv_type_64bit="long long"],[])])
     if test "${tcl_cv_type_64bit}" = none ; then
-	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, [Do 'long' and 'long long' have the same size (64-bit)?])
+	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, ['long' and 'long long' have the same size])
 	AC_MSG_RESULT([yes])
     else
+	AC_MSG_RESULT([no])
 	# Now check for auxiliary declarations
 	AC_CACHE_CHECK([for struct dirent64], tcl_cv_struct_dirent64,[
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>

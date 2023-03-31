@@ -289,7 +289,7 @@ ConvertError(
     case Z_NEED_DICT:
 	codeStr = "NEED_DICT";
 	codeStr2 = codeStrBuf;
-	sprintf(codeStrBuf, "%lu", adler);
+	snprintf(codeStrBuf, sizeof(codeStrBuf), "%lu", adler);
 	break;
 
 	/*
@@ -310,7 +310,7 @@ ConvertError(
     default:
 	codeStr = "UNKNOWN";
 	codeStr2 = codeStrBuf;
-	sprintf(codeStrBuf, "%d", code);
+	snprintf(codeStrBuf, sizeof(codeStrBuf), "%d", code);
 	break;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(zError(code), -1));
@@ -445,7 +445,7 @@ GenerateHeader(
 	Tcl_EncodingState state;
 	valueStr = TclGetStringFromObj(value, &len);
 	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, len,
-		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_STOPONERROR, &state,
+		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_PROFILE_STRICT, &state,
 		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
 		NULL);
 	if (result != TCL_OK) {
@@ -453,8 +453,7 @@ GenerateHeader(
 		if (result == TCL_CONVERT_UNKNOWN) {
 		    Tcl_AppendResult(
 			interp, "Comment contains characters > 0xFF", NULL);
-		}
-		else {
+		} else {
 		    Tcl_AppendResult(interp, "Comment too large for zip", NULL);
 		}
 	    }
@@ -481,7 +480,7 @@ GenerateHeader(
 	Tcl_EncodingState state;
 	valueStr = TclGetStringFromObj(value, &len);
 	result = Tcl_UtfToExternal(NULL, latin1enc, valueStr, len,
-		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_STOPONERROR, &state,
+		TCL_ENCODING_START|TCL_ENCODING_END|TCL_ENCODING_PROFILE_STRICT, &state,
 		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len,
 		NULL);
 	if (result != TCL_OK) {
@@ -489,8 +488,7 @@ GenerateHeader(
 		if (result == TCL_CONVERT_UNKNOWN) {
 		    Tcl_AppendResult(
 			interp, "Filename contains characters > 0xFF", NULL);
-		}
-		else {
+		} else {
 		    Tcl_AppendResult(
 			interp, "Filename too large for zip", NULL);
 		}
@@ -3480,7 +3478,7 @@ ZlibTransformGetOption(
 	    crc = cd->inStream.adler;
 	}
 
-	sprintf(buf, "%lu", crc);
+	snprintf(buf, sizeof(buf), "%lu", crc);
 	if (optionName == NULL) {
 	    Tcl_DStringAppendElement(dsPtr, "-checksum");
 	    Tcl_DStringAppendElement(dsPtr, buf);

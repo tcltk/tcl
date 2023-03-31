@@ -2335,7 +2335,7 @@ Tcl_ListObjReplace(
      */
 
     /*
-     * Calculate shifts if necessary to accomodate insertions.
+     * Calculate shifts if necessary to accommodate insertions.
      * NOTE: all indices are relative to listObjs which is not necessarily the
      * start of the ListStore storage area.
      *

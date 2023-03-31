@@ -1077,7 +1077,7 @@ TtyGetOptionProc(
 
 	valid = 1;
 	TtyGetAttributes(fsPtr->fileState.fd, &tty);
-	sprintf(buf, "%d,%c,%d,%d", tty.baud, tty.parity, tty.data, tty.stop);
+	snprintf(buf, sizeof(buf), "%d,%c,%d,%d", tty.baud, tty.parity, tty.data, tty.stop);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
@@ -1123,9 +1123,9 @@ TtyGetOptionProc(
 	inBuffered = Tcl_InputBuffered(fsPtr->fileState.channel);
 	outBuffered = Tcl_OutputBuffered(fsPtr->fileState.channel);
 
-	sprintf(buf, "%d", inBuffered+inQueue);
+	snprintf(buf, sizeof(buf), "%d", inBuffered+inQueue);
 	Tcl_DStringAppendElement(dsPtr, buf);
-	sprintf(buf, "%d", outBuffered+outQueue);
+	snprintf(buf, sizeof(buf), "%d", outBuffered+outQueue);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
@@ -1164,9 +1164,9 @@ TtyGetOptionProc(
 	    }
 	    return TCL_ERROR;
 	}
-	sprintf(buf, "%d", ws.ws_col);
+	snprintf(buf, sizeof(buf), "%d", ws.ws_col);
 	Tcl_DStringAppendElement(dsPtr, buf);
-	sprintf(buf, "%d", ws.ws_row);
+	snprintf(buf, sizeof(buf), "%d", ws.ws_row);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 #endif /* TIOCGWINSZ */
@@ -1721,13 +1721,13 @@ TclpOpenFileChannel(
 	translation = "auto crlf";
 	channelTypePtr = &ttyChannelType;
 	TtyInit(fd);
-	sprintf(channelName, "serial%d", fd);
+	snprintf(channelName, sizeof(channelName), "serial%d", fd);
     } else
 #endif	/* SUPPORTS_TTY */
     {
 	translation = NULL;
 	channelTypePtr = &fileChannelType;
-	sprintf(channelName, "file%d", fd);
+	snprintf(channelName, sizeof(channelName), "file%d", fd);
     }
 
     fsPtr = (TtyState *)ckalloc(sizeof(TtyState));
@@ -1801,7 +1801,7 @@ Tcl_MakeFileChannel(
 #ifdef SUPPORTS_TTY
     if (isatty(fd)) {
 	channelTypePtr = &ttyChannelType;
-	sprintf(channelName, "serial%d", fd);
+	snprintf(channelName, sizeof(channelName), "serial%d", fd);
     } else
 #endif /* SUPPORTS_TTY */
     if ((getsockname(fd, (struct sockaddr *) &sockaddr, &sockaddrLen) == 0)
@@ -1811,7 +1811,7 @@ Tcl_MakeFileChannel(
 	return (Tcl_Channel)TclpMakeTcpClientChannelMode(INT2PTR(fd), mode);
     } else {
 	channelTypePtr = &fileChannelType;
-	sprintf(channelName, "file%d", fd);
+	snprintf(channelName, sizeof(channelName), "file%d", fd);
     }
 
     fsPtr = (TtyState *)ckalloc(sizeof(TtyState));

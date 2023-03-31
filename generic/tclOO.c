@@ -654,7 +654,7 @@ AllocObject(
     while (1) {
 	char objName[10 + TCL_INTEGER_SPACE];
 
-	sprintf(objName, "::oo::Obj%d", ++fPtr->tsdPtr->nsCount);
+	snprintf(objName, sizeof(objName), "::oo::Obj%d", ++fPtr->tsdPtr->nsCount);
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, objName, oPtr, NULL);
 	if (oPtr->namespacePtr != NULL) {
 	    creationEpoch = fPtr->tsdPtr->nsCount;

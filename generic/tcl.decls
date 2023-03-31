@@ -2441,13 +2441,17 @@ declare 656 {
 declare 657 {
     int Tcl_UniCharIsUnicode(int ch)
 }
+
+# TIP 656
 declare 658 {
-    Tcl_Size Tcl_ExternalToUtfDStringEx(Tcl_Encoding encoding,
-	    const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr)
+    int Tcl_ExternalToUtfDStringEx(Tcl_Interp *interp, Tcl_Encoding encoding,
+        const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr,
+        Tcl_Size *errorLocationPtr)
 }
 declare 659 {
-    Tcl_Size Tcl_UtfToExternalDStringEx(Tcl_Encoding encoding,
-	    const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr)
+    int Tcl_UtfToExternalDStringEx(Tcl_Interp *interp, Tcl_Encoding encoding,
+    const char *src, Tcl_Size srcLen, int flags, Tcl_DString *dsPtr,
+    Tcl_Size *errorLocationPtr)
 }
 
 # TIP #511
@@ -2606,7 +2610,7 @@ declare 0 macosx {
 declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
-	    int hasResourceFile, int maxPathLen, char *libraryPath)
+	    int hasResourceFile, Tcl_Size maxPathLen, char *libraryPath)
 }
 declare 2 macosx {
     void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)

@@ -967,7 +967,7 @@ Tcl_Exit(
     /*
      * Warning: this function SHOULD NOT return, as there is code that depends
      * on Tcl_Exit never returning. In fact, we will Tcl_Panic if anyone
-     * returns, so critical is this dependcy.
+     * returns, so critical is this dependency.
      *
      * If subsystems are not (yet) initialized, proper Tcl-finalization is
      * impossible, so fallback to system exit, see bug-[f8a33ce3db5d8cc2].
@@ -1522,7 +1522,7 @@ Tcl_VwaitObjCmd(
 	OPT_TIMEOUT, OPT_VARIABLE, OPT_WRITABLE, OPT_LAST
     } index;
 
-    if ((objc == 2) && (strcmp(Tcl_GetString(objv[1]), "--") != 0)) {
+    if ((objc == 2) && (strcmp(TclGetString(objv[1]), "--") != 0)) {
 	/*
 	 * Legacy "vwait" syntax, skip option handling.
 	 */

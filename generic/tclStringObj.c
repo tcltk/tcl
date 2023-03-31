@@ -339,6 +339,7 @@ GrowStringBuffer(
     }
     objPtr->bytes = ptr;
     stringPtr->allocated = attempt;
+    memset(ptr + objPtr->length, 0, attempt + 1U - objPtr->length);
 }
 
 static void
@@ -2886,14 +2887,14 @@ Tcl_AppendFormatToObj(
 		*p++ = '+';
 	    }
 	    if (width) {
-		p += sprintf(p, "%d", width);
+		p += snprintf(p, TCL_INTEGER_SPACE, "%d", width);
 		if (width > length) {
 		    length = width;
 		}
 	    }
 	    if (gotPrecision) {
 		*p++ = '.';
-		p += sprintf(p, "%d", precision);
+		p += snprintf(p, TCL_INTEGER_SPACE, "%d", precision);
 		if (precision > INT_MAX - length) {
 		    msg = overflow;
 		    errCode = "OVERFLOW";
@@ -2917,7 +2918,7 @@ Tcl_AppendFormatToObj(
 		goto errorMsg;
 	    }
 	    bytes = TclGetString(segment);
-	    if (!Tcl_AttemptSetObjLength(segment, sprintf(bytes, spec, d))) {
+	    if (!Tcl_AttemptSetObjLength(segment, snprintf(bytes, segment->length, spec, d))) {
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
@@ -3367,7 +3368,7 @@ TclStringRepeat(
 	TclGetUnicodeFromObj_(objPtr, &length);
     } else {
 	/* Result will be concat of string reps. Pre-size it. */
-	Tcl_GetStringFromObj(objPtr, &length);
+	TclGetStringFromObj(objPtr, &length);
     }
 
     if (length == 0) {
@@ -3617,7 +3618,7 @@ TclStringCat(
 		    /* No string rep; Take the chance we can avoid making it */
 		    pendingPtr = objPtr;
 		} else {
-		    Tcl_GetStringFromObj(objPtr, &length); /* PANIC? */
+		    TclGetStringFromObj(objPtr, &length); /* PANIC? */
 		}
 	    } while (--oc && (length == 0) && (pendingPtr == NULL));
 
@@ -3643,14 +3644,14 @@ TclStringCat(
 
 		do {
 		    Tcl_Obj *objPtr = *ov++;
-		    Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+		    TclGetStringFromObj(objPtr, &numBytes); /* PANIC? */
 		} while (--oc && numBytes == 0 && pendingPtr->bytes == NULL);
 
 		if (numBytes) {
 		    last = objc -oc -1;
 		}
 		if (oc || numBytes) {
-		    Tcl_GetStringFromObj(pendingPtr, &length);
+		    TclGetStringFromObj(pendingPtr, &length);
 		}
 		if (length == 0) {
 		    if (numBytes) {
@@ -3669,7 +3670,7 @@ TclStringCat(
 
 	    /* assert ( length > 0 && pendingPtr == NULL )  */
 
-	    Tcl_GetStringFromObj(objPtr, &numBytes); /* PANIC? */
+	    TclGetStringFromObj(objPtr, &numBytes); /* PANIC? */
 	    if (numBytes) {
 		last = objc - oc;
 		if (numBytes > INT_MAX - length) {
@@ -3784,7 +3785,7 @@ TclStringCat(
 
 	    objResultPtr = *objv++; objc--;
 
-	    Tcl_GetStringFromObj(objResultPtr, &start);
+	    TclGetStringFromObj(objResultPtr, &start);
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3817,7 +3818,7 @@ TclStringCat(
 
 	    if ((objPtr->bytes == NULL) || (objPtr->length)) {
 		int more;
-		char *src = Tcl_GetStringFromObj(objPtr, &more);
+		char *src = TclGetStringFromObj(objPtr, &more);
 
 		memcpy(dst, src, more);
 		dst += more;
@@ -4559,7 +4560,7 @@ TclStringReplace(
  * FillUnicodeRep --
  *
  *	Populate the Unicode internal rep with the Unicode form of its string
- *	rep. The object must alread have a "String" internal rep.
+ *	rep. The object must already have a "String" internal rep.
  *
  * Results:
  *	None.
@@ -4718,7 +4719,7 @@ DupStringInternalRep(
  *	This operation always succeeds and returns TCL_OK.
  *
  * Side effects:
- *	Any old internal reputation for objPtr is freed and the internal
+ *	Any old internal representation for objPtr is freed and the internal
  *	representation is set to "String".
  *
  *----------------------------------------------------------------------
@@ -4849,6 +4850,7 @@ ExtendStringRepWithUnicode(
 
   copyBytes:
     dst = objPtr->bytes + origLength;
+    *dst = '\0';
     for (i = 0; i < numChars; i++) {
 	dst += Tcl_UniCharToUtf(unicode[i], dst);
     }

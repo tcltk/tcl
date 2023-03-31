@@ -882,8 +882,7 @@ ConsoleCheckProc(
 	     */
 	    handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
 	    WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
-	}
-	else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
+	} else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
 	    if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
 		needEvent = 1; /* Output space available */
 	    }
@@ -2123,7 +2122,7 @@ TclWinOpenConsoleChannel(
      * for instance).
      */
 
-    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) chanInfoPtr);
+    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "file%" TCL_Z_MODIFIER "x", (size_t) chanInfoPtr);
 
     if (permissions & TCL_READABLE) {
 	/*
@@ -2420,11 +2419,11 @@ ConsoleGetOptionProc(
 		return TCL_ERROR;
 	    }
 	    Tcl_DStringStartSublist(dsPtr);
-	    sprintf(buf,
+	    snprintf(buf, sizeof(buf),
 		    "%d",
 		    consoleInfo.srWindow.Right - consoleInfo.srWindow.Left + 1);
 	    Tcl_DStringAppendElement(dsPtr, buf);
-	    sprintf(buf,
+	    snprintf(buf, sizeof(buf),
 		    "%d",
 		    consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top + 1);
 	    Tcl_DStringAppendElement(dsPtr, buf);

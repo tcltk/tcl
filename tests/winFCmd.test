@@ -45,15 +45,20 @@ proc contents {file} {
     set r
 }
 
+proc cleanupRecurse {args} {
+    # Assumes no loops via links!
+    # Need to change permissions BEFORE deletion
+    testchmod 0o777 {*}$args
+    foreach victim $args {
+        if {[file isdirectory $victim]} {
+            cleanupRecurse {*}[glob -nocomplain -directory $victim td* tf* Test*]
+        }
+        file delete -force $victim
+    }
+}
 proc cleanup {args} {
-    foreach p ". $args" {
-	set x ""
-	catch {
-	    set x [glob -directory $p tf* td*]
-	}
-	if {$x != ""} {
-	    catch {file delete -force -- {*}$x}
-	}
+    foreach p [list [pwd] {*}$args] {
+        cleanupRecurse {*}[glob -nocomplain -directory $p tf* td*]
     }
 }
 
@@ -245,8 +250,9 @@ test winFCmd-1.23 {TclpRenameFile: move dir into self} -setup {
 test winFCmd-1.24 {TclpRenameFile: move a root dir} -setup {
     cleanup
 } -constraints {win testfile} -body {
+    # Error code depends on Windows version
     testfile mv / c:/
-} -returnCodes error -result EINVAL
+} -returnCodes error -result {^(EINVAL|ENOENT)$} -match regexp
 test winFCmd-1.25 {TclpRenameFile: cross file systems} -setup {
     cleanup
 } -constraints {win cdrom testfile} -body {
@@ -379,12 +385,12 @@ test winFCmd-1.38 {TclpRenameFile: check rename of conflicting inodes} -setup {
     cleanup
 } -constraints {win winNonZeroInodes knownMsvcBug notInCIenv} -body {
     file mkdir td1
-    foreach {a b} [MakeFiles td1] break
+    lassign [MakeFiles td1] a b
     file rename -force $a $b
     file exists $a
 } -cleanup {
     cleanup
-} -result {0}
+} -result 0
 
 
 test winFCmd-2.1 {TclpCopyFile: errno: EACCES} -setup {
@@ -450,11 +456,11 @@ test winFCmd-2.12 {TclpCopyFile: CopyFile succeeds} -setup {
     cleanup
 } -constraints {win testfile} -body {
     createfile tf1 tf1
-    testchmod 0 tf1
+    file attribute tf1 -readonly 1
     testfile cp tf1 tf2
     list [contents tf2] [file writable tf2]
 } -cleanup {
-    catch {testchmod 0o666 tf1}
+    testchmod 0o660 tf1
     cleanup
 } -result {tf1 0}
 test winFCmd-2.13 {TclpCopyFile: CopyFile fails} -setup {
@@ -496,11 +502,10 @@ test winFCmd-2.17 {TclpCopyFile: dst is readonly} -setup {
 } -constraints {win testfile testchmod} -body {
     createfile tf1 tf1
     createfile tf2 tf2
-    testchmod 0 tf2
+    file attribute tf2 -readonly 1
     testfile cp tf1 tf2
     list [file writable tf2] [contents tf2]
 } -cleanup {
-    catch {testchmod 0o666 tf2}
     cleanup
 } -result {1 tf1}
 
@@ -578,7 +583,6 @@ test winFCmd-3.11 {TclpDeleteFile: still can't remove path} -setup {
     testfile rm tf1
 } -cleanup {
     close $fd
-    catch {testchmod 0o666 tf1}
     cleanup
 } -returnCodes error -result EACCES
 
@@ -617,15 +621,18 @@ test winFCmd-5.1 {TclpCopyDirectory: calls TraverseWinTree} -setup {
 
 test winFCmd-6.1 {TclpRemoveDirectory: errno: EACCES} -setup {
     cleanup
-} -constraints {win testfile testchmod knownMsvcBug notInCIenv} -body {
-    file mkdir td1
-    testchmod 0 td1
-    testfile rmdir td1
-    file exists td1
+} -constraints {win testfile testchmod notInCIenv} -body {
+    # Parent's FILE_DELETE_CHILD setting permits deletion of subdir
+    # even when subdir DELETE mask is clear. So we need an intermediate
+    # parent td0 with FILE_DELETE_CHILD turned off while allowing R/W.
+    file mkdir td0/td1
+    testchmod 0o777 td0
+    testchmod 0 td0/td1
+    testfile rmdir td0/td1
+    file exists td0/td1
 } -returnCodes error -cleanup {
-    catch {testchmod 0o666 td1}
     cleanup
-} -result {td1 EACCES}
+} -result {td0/td1 EACCES}
 # This next test has a very hokey way of matching...
 test winFCmd-6.2 {TclpRemoveDirectory: errno: EEXIST} -setup {
     cleanup
@@ -633,7 +640,7 @@ test winFCmd-6.2 {TclpRemoveDirectory: errno: EEXIST} -setup {
     file mkdir td1/td2
     list [catch {testfile rmdir td1} msg] [file tail $msg]
 } -result {1 {td1 EEXIST}}
-test winFCmd-6.3 {TclpRemoveDirectory: errno: EACCES} {win emptyTest} {
+test winFCmd-6.3 {TclpRemoveDirectory: errno: EACCES} {win emptyTest trashSystem} {
     # can't test this w/o removing everything on your hard disk first!
     # testfile rmdir /
 } {}
@@ -669,17 +676,7 @@ test winFCmd-6.8 {TclpRemoveDirectory: RemoveDirectory fails} -setup {
     createfile tf1
     list [catch {testfile rmdir tf1} msg] [file tail $msg]
 } -result {1 {tf1 ENOTDIR}}
-test winFCmd-6.9 {TclpRemoveDirectory: errno == EACCES} -setup {
-    cleanup
-} -constraints {win testfile testchmod knownMsvcBug notInCIenv} -body {
-    file mkdir td1
-    testchmod 0 td1
-    testfile rmdir td1
-    file exists td1
-} -returnCodes error -cleanup {
-    catch {testchmod 0o666 td1}
-    cleanup
-} -result {td1 EACCES}
+# winFCmd-6.9 removed - was exact dup of winFCmd-6.1
 test winFCmd-6.11 {TclpRemoveDirectory: attr == -1} -setup {
     cleanup
 } -constraints {win testfile notInCIenv} -body {
@@ -689,15 +686,19 @@ test winFCmd-6.11 {TclpRemoveDirectory: attr == -1} -setup {
 } -returnCodes error -match regexp -result {^/ E(ACCES|EXIST)$}
 test winFCmd-6.13 {TclpRemoveDirectory: write-protected} -setup {
     cleanup
-} -constraints {win testfile testchmod knownMsvcBug notInCIenv} -body {
-    file mkdir td1
-    testchmod 0 td1
-    testfile rmdir td1
-    file exists td1
+} -constraints {win testfile testchmod notInCIenv} -body {
+    # Parent's FILE_DELETE_CHILD setting permits deletion of subdir
+    # even when subdir DELETE mask is clear. So we need an intermediate
+    # parent td0 with FILE_DELETE_CHILD turned off while allowing R/W.
+    file mkdir td0/td1
+    testchmod 0o770 td0
+    testchmod 0o444 td0/td1
+    testfile rmdir td0/td1
+    file exists td0/td1
 } -cleanup {
-    catch {testchmod 0o666 td1}
+    testchmod 0o770 td0/td1
     cleanup
-} -returnCodes error -result {td1 EACCES}
+} -returnCodes error -result {td0/td1 EACCES}
 # This next test has a very hokey way of matching...
 test winFCmd-6.15 {TclpRemoveDirectory: !recursive} -setup {
     cleanup
@@ -791,11 +792,12 @@ test winFCmd-7.11 {TraverseWinTree: call TraversalCopy: DOTREE_PRED} -setup {
 } -constraints {win testfile testchmod} -body {
     file mkdir td1
     createfile td1/tf1 tf1
-    testchmod 0 td1
+    testchmod 0o770 td1/tf1; # Else tf2 will have no ACL after td1 testchmod
+    testchmod 0o400 td1
     testfile cpdir td1 td2
     list [file exists td2] [file writable td2]
 } -cleanup {
-    catch {testchmod 0o666 td1}
+    testchmod 0o660 td1
     cleanup
 } -result {1 1}
 test winFCmd-7.12 {TraverseWinTree: call TraversalDelete: DOTREE_PRED} -setup {
@@ -862,11 +864,12 @@ test winFCmd-7.19 {TraverseWinTree: call TraversalCopy: DOTREE_POSTD} -setup {
 } -constraints {win testfile testchmod} -body {
     file mkdir td1
     createfile td1/tf1 tf1
-    testchmod 0 td1
+    testchmod 0o770 td1/tf1; # Else tf2 will have no ACL after td1 testchmod
+    testchmod 0o400 td1
     testfile cpdir td1 td2
     list [file exists td2] [file writable td2]
 } -cleanup {
-    catch {testchmod 0o666 td1}
+    testchmod 0o660 td1
     cleanup
 } -result {1 1}
 test winFCmd-7.20 {TraverseWinTree: call TraversalDelete: DOTREE_POSTD} -setup {
@@ -893,11 +896,12 @@ test winFCmd-8.2 {TraversalCopy: DOTREE_PRED} -setup {
     cleanup
 } -constraints {win testfile testchmod} -body {
     file mkdir td1/td2
-    testchmod 0 td1
+    testchmod 0o770 td1/td2; # Else td2 will have no ACL after td1 testchmod
+    testchmod 0o400 td1
     testfile cpdir td1 td2
     list [file writable td1] [file writable td1/td2]
 } -cleanup {
-    catch {testchmod 0o666 td1}
+    testchmod 0o660 td1
     cleanup
 } -result {0 1}
 test winFCmd-8.3 {TraversalCopy: DOTREE_POSTD} -setup {
@@ -918,15 +922,19 @@ test winFCmd-9.1 {TraversalDelete: DOTREE_F} -setup {
 } -result {}
 test winFCmd-9.3 {TraversalDelete: DOTREE_PRED} -setup {
     cleanup
-} -constraints {win testfile testchmod knownMsvcBug notInCIenv} -body {
-    file mkdir td1/td2
-    testchmod 0 td1
-    testfile rmdir -force td1
+} -constraints {win testfile testchmod notInCIenv} -body {
+    # Parent's FILE_DELETE_CHILD setting permits deletion of subdir
+    # even when subdir DELETE mask is clear. So we need an intermediate
+    # parent td0 with FILE_DELETE_CHILD turned off while allowing R/W.
+    file mkdir td0/td1/td2
+    testchmod 0o770 td0
+    testchmod 0o400 td0/td1
+    testfile rmdir -force td0/td1
     file exists td1
 } -cleanup {
-    catch {testchmod 0o666 td1}
+    testchmod 0o770 td0/td1
     cleanup
-} -returnCodes error -result {td1 EACCES}
+} -returnCodes error -result {td0/td1 EACCES}
 test winFCmd-9.4 {TraversalDelete: DOTREE_POSTD} -setup {
     cleanup
 } -constraints {win testfile} -body {
@@ -1417,7 +1425,6 @@ test winFCmd-19.9 {Windows devices path names} -constraints win -body {
 #    }
 #}
 
-# cleanup
 cleanup
 ::tcltest::cleanupTests
 return
