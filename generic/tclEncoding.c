@@ -4515,6 +4515,7 @@ TclEncodingProfileIdToName(
 {
     size_t i;
 
+    profileValue &= CHANNEL_PROFILE_MASK;
     for (i = 0; i < sizeof(encodingProfiles) / sizeof(encodingProfiles[0]); ++i) {
 	if (profileValue == encodingProfiles[i].value) {
 	    return encodingProfiles[i].name;

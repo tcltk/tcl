@@ -2329,6 +2329,7 @@ typedef struct Interp {
  *			script in progress has been canceled thereby allowing
  *			the evaluation stack for the interp to be fully
  *			unwound.
+ * Bits 24-32 are reserved to store the default encoding profile.
  *
  * WARNING: For the sake of some extensions that have made use of former
  * internal values, do not re-use the flag values 2 (formerly ERR_IN_PROGRESS)

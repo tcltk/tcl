@@ -435,11 +435,7 @@ EncodingConvertParseOptions (
     Tcl_Encoding encoding;
     Tcl_Obj *dataObj;
     Tcl_Obj *failVarObj;
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-    int profile = TCL_ENCODING_PROFILE_STRICT;
-#else
-    int profile = TCL_ENCODING_PROFILE_TCL8;
-#endif
+    int profile = -1;
 
     /*
      * Possible combinations:
@@ -498,6 +494,16 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 	dataObj = objv[objc - 1];
     }
 
+    if (profile == -1) {
+	/* The default profile is "strict", except when "-failindex" is not
+	 * specified, then it follows the current default profile.
+	 */
+	if ((failVarObj != NULL)) {
+	    profile = TCL_ENCODING_PROFILE_STRICT;
+	} else {
+	    profile = CHANNEL_PROFILE_GET(((Interp *)interp)->flags);
+	}
+    }
     *encPtr = encoding;
     *dataObjPtr = dataObj;
     *profilePtr = profile;

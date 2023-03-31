@@ -12,6 +12,7 @@
 
 #include "tclInt.h"
 #include "tclFileSystem.h"
+#include "tclIO.h"
 
 /*
  * Declarations for local functions defined in this file:
@@ -1457,6 +1458,8 @@ TclFileTemporaryCmd(
 
   makeTemporary:
     chan = TclpOpenTemporaryFile(tempDirObj,tempBaseObj,tempExtObj, nameObj);
+    CHANNEL_PROFILE_SET(((Channel *)chan)->state->inputEncodingFlags, ((Interp *)interp)->flags);
+    CHANNEL_PROFILE_SET(((Channel *)chan)->state->outputEncodingFlags, ((Interp *)interp)->flags);
 
     /*
      * If we created pieces of template, get rid of them now.

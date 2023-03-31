@@ -293,7 +293,7 @@ typedef struct ChannelState {
 #define CHANNEL_PROFILE_SET(flags_, profile_) \
     do {                                           \
 	(flags_) &= ~CHANNEL_PROFILE_MASK;    \
-	(flags_) |= profile_;                      \
+	(flags_) |= ((profile_) & CHANNEL_PROFILE_MASK);                      \
     } while (0)
 
 /*

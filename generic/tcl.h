@@ -1965,7 +1965,6 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_PROFILE_STRICT   TCL_ENCODING_STOPONERROR
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
 #define TCL_ENCODING_PROFILE_REPLACE  0x02000000
-#define TCL_ENCODING_PROFILE_DEFAULT  0
 
 /*
  * The following definitions are the error codes returned by the conversion

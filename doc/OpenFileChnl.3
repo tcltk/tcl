@@ -21,7 +21,7 @@ Tcl_Channel
 \fBTcl_OpenCommandChannel\fR(\fIinterp, argc, argv, flags\fR)
 .sp
 Tcl_Channel
-\fBTcl_MakeFileChannel\fR(\fIhandle, readOrWrite\fR)
+\fBTcl_MakeFileChannel\fR(\fIhandle, mask\fR)
 .sp
 Tcl_Channel
 \fBTcl_GetChannel\fR(\fIinterp, channelName, modePtr\fR)
@@ -140,9 +140,11 @@ is set, then such redirections cause an error.
 .AP void *handle in
 Operating system specific handle for I/O to a file. For Unix this is a
 file descriptor, for Windows it is a HANDLE.
-.AP int readOrWrite in
+.AP int mask in
 OR-ed combination of \fBTCL_READABLE\fR and \fBTCL_WRITABLE\fR to indicate
-what operations are valid on \fIhandle\fR.
+what operations are valid on \fIhandle\fR. Can also be combined with
+one of \fBTCL_ENCODING_PROFILE_STRICT\fR, \fBTCL_ENCODING_PROFILE_TCL8\fR,
+or \fBTCL_ENCODING_PROFILE_REPLACE\fR.
 .AP "const char" *channelName in
 The name of the channel.
 .AP int *modePtr out
