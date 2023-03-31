@@ -98,7 +98,7 @@ static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const WCHAR *nativeName);
-static Tcl_Channel TclWinOpenFileChannel(HANDLE handle, char *channelName,
+static Tcl_Channel OpenFileChannel(HANDLE handle, char *channelName,
 			    int permissions, int appendMode);
 
 /*
@@ -1030,7 +1030,7 @@ TclpOpenFileChannel(
     case FILE_TYPE_CHAR:
     case FILE_TYPE_DISK:
     case FILE_TYPE_UNKNOWN:
-	channel = TclWinOpenFileChannel(handle, channelName,
+	channel = OpenFileChannel(handle, channelName,
 		channelPermissions, (mode & O_APPEND) ? FILE_APPEND : 0);
 	break;
 
@@ -1107,7 +1107,7 @@ Tcl_MakeFileChannel(
 
     case FILE_TYPE_DISK:
     case FILE_TYPE_CHAR:
-	channel = TclWinOpenFileChannel(handle, channelName, mode, 0);
+	channel = OpenFileChannel(handle, channelName, mode, 0);
 	break;
 
     case FILE_TYPE_UNKNOWN:
@@ -1241,7 +1241,7 @@ Tcl_MakeFileChannel(
 	 * is valid to something.
 	 */
 
-	channel = TclWinOpenFileChannel(handle, channelName, mode, 0);
+	channel = OpenFileChannel(handle, channelName, mode, 0);
     }
 
     return channel;
@@ -1330,7 +1330,7 @@ TclpGetDefaultStdChannel(
 /*
  *----------------------------------------------------------------------
  *
- * TclWinOpenFileChannel --
+ * OpenFileChannel --
  *
  *	Constructs a File channel for the specified standard OS handle. This
  *	is a helper function to break up the construction of channels into
@@ -1347,7 +1347,7 @@ TclpGetDefaultStdChannel(
  */
 
 Tcl_Channel
-TclWinOpenFileChannel(
+OpenFileChannel(
     HANDLE handle,		/* Win32 HANDLE to swallow */
     char *channelName,		/* Buffer to receive channel name */
     int permissions,		/* OR'ed combination of TCL_READABLE,
