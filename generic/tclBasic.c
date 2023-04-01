@@ -1499,7 +1499,7 @@ Tcl_CallWhenDeleted(
     AssocData *dPtr = (AssocData *)Tcl_Alloc(sizeof(AssocData));
     Tcl_HashEntry *hPtr;
 
-    sprintf(buffer, "Assoc Data Key #%d", *assocDataCounterPtr);
+    snprintf(buffer, sizeof(buffer), "Assoc Data Key #%d", *assocDataCounterPtr);
     (*assocDataCounterPtr)++;
 
     if (iPtr->assocData == NULL) {
@@ -6369,7 +6369,7 @@ ProcessUnexpectedResult(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"command returned bad code: %d", returnCode));
     }
-    sprintf(buf, "%d", returnCode);
+    snprintf(buf, sizeof(buf), "%d", returnCode);
     Tcl_SetErrorCode(interp, "TCL", "UNEXPECTED_RESULT_CODE", buf, NULL);
 }
 

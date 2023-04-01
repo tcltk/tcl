@@ -1,7 +1,7 @@
 /*
- * pkga.c --
+ * pkgt.c --
  *
- *	This file contains a simple Tcl package "pkga" that is intended for
+ *	This file contains a simple Tcl package "pkgt" that is intended for
  *	testing the Tcl dynamic loading facilities.
  *
  * Copyright © 1995 Sun Microsystems, Inc.
@@ -13,12 +13,32 @@
 #undef STATIC_BUILD
 #include "tcl.h"
 
+static int TraceProc2 (
+    void *clientData,
+    Tcl_Interp *interp,
+	size_t level,
+    const char *command,
+    Tcl_Command commandInfo,
+    size_t objc,
+	struct Tcl_Obj *const *objv)
+{
+    (void)clientData;
+    (void)interp;
+    (void)level;
+    (void)command;
+    (void)commandInfo;
+    (void)objc;
+    (void)objv;
+
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
- * Pkga_EqObjCmd --
+ * Pkgt_EqObjCmd2 --
  *
- *	This procedure is invoked to process the "pkga_eq" Tcl command. It
+ *	This procedure is invoked to process the "pkgt_eq" Tcl command. It
  *	expects two arguments and returns 1 if they are the same, 0 if they
  *	are different.
  *
@@ -32,15 +52,15 @@
  */
 
 static int
-Pkga_EqObjCmd(
+Pkgt_EqObjCmd2(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int result;
+    Tcl_WideInt result;
     const char *str1, *str2;
-    Tcl_Size len1, len2;
+    size_t len1, len2;
     (void)dummy;
 
     if (objc != 3) {
@@ -51,52 +71,18 @@ Pkga_EqObjCmd(
     str1 = Tcl_GetStringFromObj(objv[1], &len1);
     str2 = Tcl_GetStringFromObj(objv[2], &len2);
     if (len1 == len2) {
-	result = (Tcl_UtfNcmp(str1, str2, (size_t)len1) == 0);
+	result = (Tcl_UtfNcmp(str1, str2, len1) == 0);
     } else {
 	result = 0;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
     return TCL_OK;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Pkga_QuoteObjCmd --
- *
- *	This procedure is invoked to process the "pkga_quote" Tcl command. It
- *	expects one argument, which it returns as result.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-Pkga_QuoteObjCmd(
-    void *dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument strings. */
-{
-    (void)dummy;
-
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "value");
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, objv[1]);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Pkga_Init --
+ * Pkgt_Init --
  *
  *	This is a package initialization procedure, which is called by Tcl
  *	when this package is to be added to an interpreter.
@@ -111,21 +97,20 @@ Pkga_QuoteObjCmd(
  */
 
 DLLEXPORT int
-Pkga_Init(
+Pkgt_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "pkga", "1.0");
+    code = Tcl_PkgProvide(interp, "pkgt", "1.0");
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkga_eq", Pkga_EqObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "pkga_quote", Pkga_QuoteObjCmd, NULL,
-	    NULL);
+    Tcl_CreateObjCommand2(interp, "pkgt_eq", Pkgt_EqObjCmd2, NULL, NULL);
+    Tcl_CreateObjTrace2(interp, 0, 0, TraceProc2, NULL, NULL);
     return TCL_OK;
 }

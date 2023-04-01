@@ -1977,7 +1977,7 @@ Tcl_OpenTcpClient(
 	return NULL;
     }
 
-    sprintf(channelName, SOCK_TEMPLATE, statePtr);
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, statePtr);
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    statePtr, (TCL_READABLE | TCL_WRITABLE));
@@ -2036,7 +2036,7 @@ Tcl_MakeTcpClientChannel(
     statePtr->selectEvents = FD_READ | FD_CLOSE | FD_WRITE;
     SendSelectMessage(tsdPtr, SELECT, statePtr);
 
-    sprintf(channelName, SOCK_TEMPLATE, statePtr);
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, statePtr);
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    statePtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, statePtr->channel, "-translation", "auto crlf");
@@ -2208,7 +2208,7 @@ Tcl_OpenTcpServerEx(
 
 	statePtr->acceptProc = acceptProc;
 	statePtr->acceptProcData = acceptProcData;
-	sprintf(channelName, SOCK_TEMPLATE, statePtr);
+	snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, statePtr);
 	statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 		statePtr, 0);
 	/*
@@ -2293,7 +2293,7 @@ TcpAccept(
     newInfoPtr->selectEvents = (FD_READ | FD_WRITE | FD_CLOSE);
     SendSelectMessage(tsdPtr, SELECT, newInfoPtr);
 
-    sprintf(channelName, SOCK_TEMPLATE, newInfoPtr);
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, newInfoPtr);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
