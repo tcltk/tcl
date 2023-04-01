@@ -2505,14 +2505,16 @@ Tcl_AppendFormatToObj(
 		*p++ = '+';
 	    }
 	    if (width) {
-		p += sprintf(p, "%" TCL_SIZE_MODIFIER "d", width);
+		p += snprintf(
+		    p, TCL_INTEGER_SPACE, "%" TCL_SIZE_MODIFIER "d", width);
 		if (width > length) {
 		    length = width;
 		}
 	    }
 	    if (gotPrecision) {
 		*p++ = '.';
-		p += sprintf(p, "%" TCL_SIZE_MODIFIER "d", precision);
+		p += snprintf(
+		    p, TCL_INTEGER_SPACE, "%" TCL_SIZE_MODIFIER "d", precision);
 		if (precision > TCL_SIZE_MAX - length) {
 		    msg = overflow;
 		    errCode = "OVERFLOW";
