@@ -4432,7 +4432,7 @@ Write(
 	) {
 	    encodingError = 1;
 	    result = TCL_OK;
-	} 
+	}
 
 	bufPtr->nextAdded += dstWrote;
 	src += srcRead;
@@ -7880,7 +7880,7 @@ Tcl_GetChannelOption(
     Tcl_DString *dsPtr)		/* Where to store value(s). */
 {
     size_t len;			/* Length of optionName string. */
-    char optionVal[128];	/* Buffer for sprintf. */
+    char optionVal[128];	/* Buffer for snprintf. */
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
@@ -7981,7 +7981,7 @@ Tcl_GetChannelOption(
 	    Tcl_DStringAppendElement(dsPtr, "-eofchar");
 	}
 	if ((flags & TCL_READABLE) && (statePtr->inEofChar != 0)) {
-	    sprintf(buf, "%c", statePtr->inEofChar);
+	    snprintf(buf, sizeof(buf), "%c", statePtr->inEofChar);
 	}
 	if (len > 0) {
 		Tcl_DStringAppend(dsPtr, buf, -1);
@@ -9369,17 +9369,12 @@ TclCopyChannel(
      * of the bytes themselves.
      */
 
-    /*
-     * TODO - should really only allow lossless profiles. Below reflects
-     * Tcl 8.7 alphas prior to encoding profiles
-     */
-
     moveBytes = inStatePtr->inEofChar == '\0'	/* No eofChar to stop input */
 	    && inStatePtr->inputTranslation == TCL_TRANSLATE_LF
 	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
 	    && inStatePtr->encoding == outStatePtr->encoding
-	    && CHANNEL_PROFILE_GET(inStatePtr->flags) != TCL_ENCODING_PROFILE_STRICT
-	    && CHANNEL_PROFILE_GET(outStatePtr->flags) == TCL_ENCODING_PROFILE_TCL8;
+	    && CHANNEL_PROFILE_GET(inStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
+	    && CHANNEL_PROFILE_GET(outStatePtr->outputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8;
 
     /*
      * Allocate a new CopyState to maintain info about the current copy in
@@ -9708,8 +9703,8 @@ CopyData(
     inBinary = (inStatePtr->encoding == NULL);
     outBinary = (outStatePtr->encoding == NULL);
     sameEncoding = inStatePtr->encoding == outStatePtr->encoding
-	    && CHANNEL_PROFILE_GET(inStatePtr->flags) != TCL_ENCODING_PROFILE_STRICT
-	    && CHANNEL_PROFILE_GET(outStatePtr->flags) == TCL_ENCODING_PROFILE_TCL8;
+	    && CHANNEL_PROFILE_GET(inStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
+	    && CHANNEL_PROFILE_GET(outStatePtr->outputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8;
 
     if (!(inBinary || sameEncoding)) {
 	TclNewObj(bufObj);
