@@ -25,11 +25,11 @@ LDFLAGS			= @LDFLAGS_DEFAULT@ @LDFLAGS@
 CC_SWITCHES = $(CFLAGS) -I${SRC_DIR}/../../generic -DTCL_MEM_DEBUG \
 	${SHLIB_CFLAGS} -DUSE_TCL_STUBS ${AC_FLAGS}
 
-all: pkga${SHLIB_SUFFIX} pkgb${SHLIB_SUFFIX} pkgc${SHLIB_SUFFIX} pkgd${SHLIB_SUFFIX} pkge${SHLIB_SUFFIX} pkgua${SHLIB_SUFFIX} pkgooa${SHLIB_SUFFIX}
+all: pkga${SHLIB_SUFFIX} pkgb${SHLIB_SUFFIX} pkgc${SHLIB_SUFFIX} pkgd${SHLIB_SUFFIX} pkge${SHLIB_SUFFIX} pkgt${SHLIB_SUFFIX} pkgua${SHLIB_SUFFIX} pkgooa${SHLIB_SUFFIX}
 	@if test -n "$(DLTEST_SUFFIX)"; then $(MAKE) dltest_suffix; fi
 	@touch ../dltest.marker
 
-dltest_suffix: pkga${DLTEST_SUFFIX} pkgb${DLTEST_SUFFIX} pkgc${DLTEST_SUFFIX} pkgd${DLTEST_SUFFIX} pkge${DLTEST_SUFFIX} pkgua${DLTEST_SUFFIX} pkgooa${DLTEST_SUFFIX}
+dltest_suffix: pkga${DLTEST_SUFFIX} pkgb${DLTEST_SUFFIX} pkgc${DLTEST_SUFFIX} pkgd${DLTEST_SUFFIX} pkge${DLTEST_SUFFIX} pkgt${DLTEST_SUFFIX} pkgua${DLTEST_SUFFIX} pkgooa${DLTEST_SUFFIX}
 	@touch ../dltest.marker
 
 pkga.o: $(SRC_DIR)/pkga.c
@@ -46,6 +46,9 @@ pkgd.o: $(SRC_DIR)/pkgd.c
 
 pkge.o: $(SRC_DIR)/pkge.c
 	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkge.c
+
+pkgt.o: $(SRC_DIR)/pkgt.c
+	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgt.c
 
 pkgua.o: $(SRC_DIR)/pkgua.c
 	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgua.c
@@ -68,6 +71,9 @@ pkgd${SHLIB_SUFFIX}: pkgd.o
 pkge${SHLIB_SUFFIX}: pkge.o
 	${SHLIB_LD} -o pkge${SHLIB_SUFFIX} pkge.o ${SHLIB_LD_LIBS}
 
+pkgt${SHLIB_SUFFIX}: pkgt.o
+	${SHLIB_LD} -o pkgt${SHLIB_SUFFIX} pkgt.o ${SHLIB_LD_LIBS}
+
 pkgua${SHLIB_SUFFIX}: pkgua.o
 	${SHLIB_LD} -o pkgua${SHLIB_SUFFIX} pkgua.o ${SHLIB_LD_LIBS}
 
@@ -88,6 +94,9 @@ pkgd${DLTEST_SUFFIX}: pkgd.o
 
 pkge${DLTEST_SUFFIX}: pkge.o
 	${DLTEST_LD} -o pkge${DLTEST_SUFFIX} pkge.o ${SHLIB_LD_LIBS}
+
+pkgt${DLTEST_SUFFIX}: pkgt.o
+	${DLTEST_LD} -o pkgt${DLTEST_SUFFIX} pkgt.o ${SHLIB_LD_LIBS}
 
 pkgua${DLTEST_SUFFIX}: pkgua.o
 	${DLTEST_LD} -o pkgua${DLTEST_SUFFIX} pkgua.o ${SHLIB_LD_LIBS}
