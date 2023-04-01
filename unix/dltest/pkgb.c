@@ -112,7 +112,7 @@ Pkgb_DemoObjCmd(
     if (Tcl_GetWideIntFromObj(interp, objv[3], &numChars) != TCL_OK) {
 	return TCL_ERROR;
     }
-    result = Tcl_UtfNcmp(Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), numChars);
+    result = Tcl_UtfNcmp(Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), (size_t)numChars);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
     return TCL_OK;
 }
