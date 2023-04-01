@@ -1476,7 +1476,7 @@ TclWinOpenSerialChannel(
      * are shared between multiple channels (stdin/stdout).
      */
 
-    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    infoPtr, permissions);
@@ -1564,7 +1564,7 @@ SerialErrorStr(
     if (error & ~((DWORD) (SERIAL_READ_ERRORS | SERIAL_WRITE_ERRORS))) {
 	char buf[TCL_INTEGER_SPACE + 1];
 
-	wsprintfA(buf, "%d", error);
+	snprintf(buf, sizeof(buf), "%ld", error);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 }
@@ -2110,7 +2110,7 @@ SerialGetOptionProc(
 	stop = (dcb.StopBits == ONESTOPBIT) ? "1" :
 		(dcb.StopBits == ONE5STOPBITS) ? "1.5" : "2";
 
-	wsprintfA(buf, "%d,%c,%d,%s", dcb.BaudRate, parity,
+	snprintf(buf, sizeof(buf), "%ld,%c,%d,%s", dcb.BaudRate, parity,
 		dcb.ByteSize, stop);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
@@ -2126,7 +2126,7 @@ SerialGetOptionProc(
 	char buf[TCL_INTEGER_SPACE + 1];
 
 	valid = 1;
-	wsprintfA(buf, "%d", infoPtr->blockTime);
+	snprintf(buf, sizeof(buf), "%d", infoPtr->blockTime);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
@@ -2142,9 +2142,9 @@ SerialGetOptionProc(
 	char buf[TCL_INTEGER_SPACE + 1];
 	valid = 1;
 
-	wsprintfA(buf, "%d", infoPtr->sysBufRead);
+	snprintf(buf, sizeof(buf), "%ld", infoPtr->sysBufRead);
 	Tcl_DStringAppendElement(dsPtr, buf);
-	wsprintfA(buf, "%d", infoPtr->sysBufWrite);
+	snprintf(buf, sizeof(buf), "%ld", infoPtr->sysBufWrite);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
     if (len == 0) {
@@ -2225,9 +2225,9 @@ SerialGetOptionProc(
 	count = (int) cStat.cbOutQue + infoPtr->writeQueue;
 	LeaveCriticalSection(&infoPtr->csWrite);
 
-	wsprintfA(buf, "%d", inBuffered + cStat.cbInQue);
+	snprintf(buf, sizeof(buf), "%ld", inBuffered + cStat.cbInQue);
 	Tcl_DStringAppendElement(dsPtr, buf);
-	wsprintfA(buf, "%d", outBuffered + count);
+	snprintf(buf, sizeof(buf), "%d", outBuffered + count);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 

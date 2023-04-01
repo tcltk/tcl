@@ -5341,7 +5341,7 @@ TclFormatNaN(
     *buffer++ = 'N';
     bitwhack.iv &= ((UINT64_C(1)) << 51) - 1;
     if (bitwhack.iv != 0) {
-	sprintf(buffer, "(%" PRIx64 ")", bitwhack.iv);
+	snprintf(buffer, TCL_DOUBLE_SPACE, "(%" PRIx64 ")", bitwhack.iv);
     } else {
 	*buffer = '\0';
     }

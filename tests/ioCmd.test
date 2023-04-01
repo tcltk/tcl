@@ -713,12 +713,12 @@ test iocmd-21.1 {chan create, wrong#args, too many} {
     catch {chan create a b c} msg
     set msg
 } {wrong # args: should be "chan create mode cmdprefix"}
-test iocmd-21.2 {chan create, invalid r/w mode, empty} {
-    proc foo {} {}
-    catch {chan create {} foo} msg
+test iocmd-21.2 {chan create, r/w mode empty} {
+    proc foo {cmd args} { return {initialize finalize watch} }
+    set chan [chan create {} foo]
+    close $chan
     rename foo {}
-    set msg
-} {bad mode list: is empty}
+} {}
 test iocmd-21.3 {chan create, invalid r/w mode, bad string} {
     proc foo {} {}
     catch {chan create {c} foo} msg

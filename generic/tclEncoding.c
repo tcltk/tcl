@@ -1333,7 +1333,7 @@ Tcl_ExternalToUtfDStringEx(
 		/* Caller wants error message on failure */
 		if (result != TCL_OK && interp != NULL) {
 		    char buf[TCL_INTEGER_SPACE];
-		    sprintf(buf, "%u", nBytesProcessed);
+		    snprintf(buf, sizeof(buf), "%u", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf("unexpected byte sequence starting at index %"
@@ -1634,7 +1634,7 @@ Tcl_UtfToExternalDStringEx(
 		    int ucs4;
 		    char buf[TCL_INTEGER_SPACE];
 		    TclUtfToUCS4(&srcStart[nBytesProcessed], &ucs4);
-		    sprintf(buf, "%u", nBytesProcessed);
+		    snprintf(buf, sizeof(buf), "%u", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf(

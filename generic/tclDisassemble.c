@@ -571,22 +571,22 @@ FormatInstruction(
 	case OPERAND_UINT4:
 	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if (opCode == INST_START_CMD) {
-		sprintf(suffixBuffer+strlen(suffixBuffer),
+		snprintf(suffixBuffer+strlen(suffixBuffer), sizeof(suffixBuffer) - strlen(suffixBuffer),
 			", %u cmds start here", opnd);
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
 	    break;
 	case OPERAND_OFFSET1:
 	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
-	    sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
+	    snprintf(suffixBuffer, sizeof(suffixBuffer), "pc %u", pcOffset+opnd);
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_OFFSET4:
 	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if (opCode == INST_START_CMD) {
-		sprintf(suffixBuffer, "next cmd at pc %u", pcOffset+opnd);
+		snprintf(suffixBuffer, sizeof(suffixBuffer), "next cmd at pc %u", pcOffset+opnd);
 	    } else {
-		sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
+		snprintf(suffixBuffer, sizeof(suffixBuffer), "pc %u", pcOffset+opnd);
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
@@ -632,9 +632,9 @@ FormatInstruction(
 		    localPtr = localPtr->nextPtr;
 		}
 		if (TclIsVarTemporary(localPtr)) {
-		    sprintf(suffixBuffer, "temp var %u", (unsigned) opnd);
+		    snprintf(suffixBuffer, sizeof(suffixBuffer), "temp var %u", (unsigned) opnd);
 		} else {
-		    sprintf(suffixBuffer, "var ");
+		    snprintf(suffixBuffer, sizeof(suffixBuffer), "var ");
 		    suffixSrc = localPtr->name;
 		}
 	    }
@@ -836,7 +836,7 @@ UpdateStringOfInstName(
     if (inst > LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
 	TclOOM(dst, TCL_INTEGER_SPACE + 5);
-        sprintf(dst, "inst_%" TCL_Z_MODIFIER "u", inst);
+        snprintf(dst, TCL_INTEGER_SPACE + 5, "inst_%" TCL_Z_MODIFIER "u", inst);
 	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
     } else {
 	const char *s = tclInstructionTable[inst].name;
