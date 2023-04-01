@@ -17,7 +17,7 @@ TCL_VERSION=		@TCL_VERSION@
 
 CFLAGS_DEBUG		= @CFLAGS_DEBUG@
 CFLAGS_OPTIMIZE		= @CFLAGS_OPTIMIZE@
-CFLAGS			= @CFLAGS_DEFAULT@ @CFLAGS@ -DTCL_NO_DEPRECATED=1
+CFLAGS			= @CFLAGS_DEFAULT@ @CFLAGS@ -DTCL_NO_DEPRECATED=1 -Wall -Wextra -Wc++-compat -Wconversion -Werror
 LDFLAGS_DEBUG		= @LDFLAGS_DEBUG@
 LDFLAGS_OPTIMIZE	= @LDFLAGS_OPTIMIZE@
 LDFLAGS			= @LDFLAGS_DEFAULT@ @LDFLAGS@
@@ -26,14 +26,14 @@ CC_SWITCHES = $(CFLAGS) -I${SRC_DIR}/../../generic -DTCL_MEM_DEBUG \
 	${SHLIB_CFLAGS} -DUSE_TCL_STUBS ${AC_FLAGS}
 
 all: embtest tcl9pkga${SHLIB_SUFFIX} tcl9pkgb${SHLIB_SUFFIX} tcl9pkgc${SHLIB_SUFFIX} \
-	tcl9pkgd${SHLIB_SUFFIX} tcl9pkge${SHLIB_SUFFIX} tcl9pkgua${SHLIB_SUFFIX} tcl9pkgooa${SHLIB_SUFFIX} \
-	pkga${SHLIB_SUFFIX} pkgb${SHLIB_SUFFIX} pkgc${SHLIB_SUFFIX}
+	tcl9pkgd${SHLIB_SUFFIX} tcl9pkge${SHLIB_SUFFIX} tcl9pkgt${SHLIB_SUFFIX} tcl9pkgua${SHLIB_SUFFIX} \
+	tcl9pkgooa${SHLIB_SUFFIX} pkga${SHLIB_SUFFIX} pkgb${SHLIB_SUFFIX} pkgc${SHLIB_SUFFIX}  pkgt${SHLIB_SUFFIX}
 	@if test -n "$(DLTEST_SUFFIX)"; then $(MAKE) dltest_suffix; fi
 	@touch ../dltest.marker
 
 dltest_suffix: tcl9pkga${DLTEST_SUFFIX} tcl9pkgb${DLTEST_SUFFIX} tcl9pkgc${DLTEST_SUFFIX} \
-	tcl9pkgd${DLTEST_SUFFIX} tcl9pkge${DLTEST_SUFFIX} tcl9pkgua${DLTEST_SUFFIX} tcl9pkgooa${DLTEST_SUFFIX} \
-	pkga${DLTEST_SUFFIX} pkgb${DLTEST_SUFFIX} pkgc${DLTEST_SUFFIX}
+	tcl9pkgd${DLTEST_SUFFIX} tcl9pkge${DLTEST_SUFFIX} tcl9pkgt${DLTEST_SUFFIX} tcl9pkgua${DLTEST_SUFFIX} \
+	tcl9pkgooa${DLTEST_SUFFIX} pkga${DLTEST_SUFFIX} pkgb${DLTEST_SUFFIX} pkgc${DLTEST_SUFFIX} pkgt${DLTEST_SUFFIX}
 	@touch ../dltest.marker
 
 embtest.o: $(SRC_DIR)/embtest.c
@@ -51,6 +51,9 @@ pkgb.o: $(SRC_DIR)/pkgb.c
 pkgc.o: $(SRC_DIR)/pkgc.c
 	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgc.c
 
+pkgt.o: $(SRC_DIR)/pkgt.c
+	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgt.c
+
 tcl8pkga.o: $(SRC_DIR)/pkga.c
 	$(CC) -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 $(SRC_DIR)/pkga.c
 
@@ -59,6 +62,9 @@ tcl8pkgb.o: $(SRC_DIR)/pkgb.c
 
 tcl8pkgc.o: $(SRC_DIR)/pkgc.c
 	$(CC) -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 $(SRC_DIR)/pkgc.c
+
+tcl8pkgt.o: $(SRC_DIR)/pkgt.c
+	$(CC) -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 $(SRC_DIR)/pkgt.c
 
 pkgd.o: $(SRC_DIR)/pkgd.c
 	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgd.c
@@ -87,6 +93,9 @@ tcl9pkgb${SHLIB_SUFFIX}: pkgb.o
 tcl9pkgc${SHLIB_SUFFIX}: pkgc.o
 	${SHLIB_LD} -o $@ pkgc.o ${SHLIB_LD_LIBS}
 
+tcl9pkgt${SHLIB_SUFFIX}: pkgt.o
+	${SHLIB_LD} -o $@ pkgt.o ${SHLIB_LD_LIBS}
+
 pkga${SHLIB_SUFFIX}: tcl8pkga.o
 	${SHLIB_LD} -o $@ tcl8pkga.o ${SHLIB_LD_LIBS}
 
@@ -95,6 +104,9 @@ pkgb${SHLIB_SUFFIX}: tcl8pkgb.o
 
 pkgc${SHLIB_SUFFIX}: tcl8pkgc.o
 	${SHLIB_LD} -o $@ tcl8pkgc.o ${SHLIB_LD_LIBS}
+
+pkgt${SHLIB_SUFFIX}: tcl8pkgt.o
+	${SHLIB_LD} -o $@ tcl8pkgt.o ${SHLIB_LD_LIBS}
 
 tcl9pkgd${SHLIB_SUFFIX}: pkgd.o
 	${SHLIB_LD} -o $@ pkgd.o ${SHLIB_LD_LIBS}
@@ -120,6 +132,9 @@ tcl9pkgb${DLTEST_SUFFIX}: pkgb.o
 tcl9pkgc${DLTEST_SUFFIX}: pkgc.o
 	${DLTEST_LD} -o $@ pkgc.o ${SHLIB_LD_LIBS}
 
+tcl9pkgt${DLTEST_SUFFIX}: pkgt.o
+	${DLTEST_LD} -o $@ pkgt.o ${SHLIB_LD_LIBS}
+
 pkga${DLTEST_SUFFIX}: tcl8pkga.o
 	${DLTEST_LD} -o $@ tcl8pkga.o ${SHLIB_LD_LIBS}
 
@@ -128,6 +143,9 @@ pkgb${DLTEST_SUFFIX}: tcl8pkgb.o
 
 pkgc${DLTEST_SUFFIX}: tcl8pkgc.o
 	${DLTEST_LD} -o $@ tcl8pkgc.o ${SHLIB_LD_LIBS}
+
+pkgt${DLTEST_SUFFIX}: tcl8pkgt.o
+	${DLTEST_LD} -o $@ tcl8pkgt.o ${SHLIB_LD_LIBS}
 
 tcl9pkgd${DLTEST_SUFFIX}: pkgd.o
 	${DLTEST_LD} -o $@ pkgd.o ${SHLIB_LD_LIBS}
