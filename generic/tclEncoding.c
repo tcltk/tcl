@@ -498,7 +498,7 @@ FillEncodingFileMap(void)
     map = Tcl_NewDictObj();
     Tcl_IncrRefCount(map);
 
-    for (i = numDirs-1; i != TCL_INDEX_NONE; i--) {
+    for (i = numDirs-1; !TCL_SIZE_ISNEG(i); i--) {
 	/*
 	 * Iterate backwards through the search path so as we overwrite
 	 * entries found, we favor files earlier on the search path.
@@ -1248,8 +1248,7 @@ Tcl_ExternalToUtfDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if ((srcLen == TCL_INDEX_NONE)
-	    || ((sizeof(int) != sizeof(size_t)) && (srcLen > (size_t)INT_MIN))) {
+    } else if (TCL_SIZE_ISNEG(srcLen)) {
 	srcLen = encodingPtr->lengthProc(src);
     }
 
@@ -1388,8 +1387,7 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if ((srcLen == TCL_INDEX_NONE)
-	    || ((sizeof(int) != sizeof(size_t)) && (srcLen > (size_t)INT_MIN))) {
+    } else if (TCL_SIZE_ISNEG(srcLen)) {
 	srcLen = encodingPtr->lengthProc(src);
     }
     if (statePtr == NULL) {
@@ -1578,8 +1576,7 @@ Tcl_UtfToExternalDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if ((srcLen == TCL_INDEX_NONE)
-	    || ((sizeof(int) != sizeof(size_t)) && (srcLen > (size_t)INT_MIN))) {
+    } else if (TCL_SIZE_ISNEG(srcLen)) {
 	srcLen = strlen(src);
     }
 
@@ -1719,8 +1716,7 @@ Tcl_UtfToExternal(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if ((srcLen == TCL_INDEX_NONE)
-	    || ((sizeof(int) != sizeof(size_t)) && (srcLen > (size_t)INT_MIN))) {
+    } else if (TCL_SIZE_ISNEG(srcLen)) {
 	srcLen = strlen(src);
     }
     if (statePtr == NULL) {

@@ -333,7 +333,7 @@ Tcl_UniCharToUtfDString(
     if (uniStr == NULL) {
 	return NULL;
     }
-    if (uniLength == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(uniLength)) {
 	uniLength = 0;
 	w = uniStr;
 	while (*w != '\0') {
@@ -375,7 +375,7 @@ Tcl_Char16ToUtfDString(
     if (uniStr == NULL) {
 	return NULL;
     }
-    if (uniLength == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(uniLength)) {
 
 	uniLength = 0;
 	w = uniStr;
@@ -674,7 +674,7 @@ Tcl_UtfToUniCharDString(
     if (src == NULL) {
 	return NULL;
     }
-    if (length == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(length)) {
 	length = strlen(src);
     }
 
@@ -731,7 +731,7 @@ Tcl_UtfToChar16DString(
     if (src == NULL) {
 	return NULL;
     }
-    if (length == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(length)) {
 	length = strlen(src);
     }
 
@@ -824,7 +824,7 @@ Tcl_NumUtfChars(
     Tcl_UniChar ch = 0;
     size_t i = 0;
 
-    if (length == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(length)) {
 	/* string is NUL-terminated, so TclUtfToUniChar calls are safe. */
 	while (*src != '\0') {
 	    src += TclUtfToUniChar(src, &ch);
@@ -876,7 +876,7 @@ TclNumUtfChars(
     unsigned short ch = 0;
     size_t i = 0;
 
-    if (length == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(length)) {
 	/* string is NUL-terminated, so TclUtfToUniChar calls are safe. */
 	while (*src != '\0') {
 	    src += Tcl_UtfToChar16(src, &ch);
@@ -1199,7 +1199,7 @@ Tcl_UniCharAtIndex(
     Tcl_UniChar ch = 0;
     int i = 0;
 
-    if (index == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(index)) {
 	return -1;
     }
     while (index--) {
@@ -1242,7 +1242,7 @@ Tcl_UtfAtIndex(
 {
     int ch = 0;
 
-    if (index != TCL_INDEX_NONE) {
+    if (!TCL_SIZE_ISNEG(index)) {
 	while (index--) {
 	    /* Make use of the #undef Tcl_UtfToUniChar above, which already handles UCS4. */
 	    src += Tcl_UtfToUniChar(src, &ch);
@@ -1259,7 +1259,7 @@ TclUtfAtIndex(
     unsigned short ch = 0;
     size_t len = 0;
 
-    if (index != TCL_INDEX_NONE) {
+    if (!TCL_SIZE_ISNEG(index)) {
 	while (index--) {
 	    src += (len = Tcl_UtfToChar16(src, &ch));
 	}

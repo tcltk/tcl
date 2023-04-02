@@ -4540,7 +4540,7 @@ TestregexpObjCmd(
 	if (indices) {
 	    Tcl_Obj *objs[2];
 
-	    if (ii == TCL_INDEX_NONE) {
+	    if (TCL_SIZE_ISNEG(ii)) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
 	    } else if (ii > info.nsubs) {
 		start = TCL_INDEX_NONE;
@@ -4555,7 +4555,7 @@ TestregexpObjCmd(
 	     * instead of the first character after the match.
 	     */
 
-	    if (end != TCL_INDEX_NONE) {
+	    if (!TCL_SIZE_ISNEG(end)) {
 		end--;
 	    }
 

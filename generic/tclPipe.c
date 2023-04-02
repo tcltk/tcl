@@ -1041,7 +1041,7 @@ Tcl_OpenCommandChannel(
     numPids = TclCreatePipeline(interp, argc, argv, &pidPtr, inPipePtr,
 	    outPipePtr, errFilePtr);
 
-    if (numPids == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(numPids)) {
 	goto error;
     }
 

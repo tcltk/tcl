@@ -275,7 +275,7 @@ Tcl_NewStringObj(
 {
     Tcl_Obj *objPtr;
 
-    if ((length == TCL_INDEX_NONE)
+    if (TCL_SIZE_ISNEG(length)
 	    || ((sizeof(int) != sizeof(size_t)) && (length > (size_t)INT_MIN))) {
 	length = (bytes? strlen(bytes) : 0);
     }
@@ -328,7 +328,7 @@ Tcl_DbNewStringObj(
 {
     Tcl_Obj *objPtr;
 
-    if ((length == TCL_INDEX_NONE)
+    if (TCL_SIZE_ISNEG(length)
 	    || ((sizeof(int) != sizeof(size_t)) && (length > (size_t)INT_MIN))) {
 	length = (bytes? strlen(bytes) : 0);
     }
@@ -446,7 +446,7 @@ Tcl_GetCharLength(
      * If numChars is unknown, compute it.
      */
 
-    if (numChars == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(numChars)) {
 	TclNumUtfCharsM(numChars, objPtr->bytes, objPtr->length);
 	stringPtr->numChars = numChars;
     }
@@ -587,7 +587,7 @@ Tcl_GetUniChar(
 	 * If numChars is unknown, compute it.
 	 */
 
-	if (stringPtr->numChars == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(stringPtr->numChars)) {
 	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
@@ -756,7 +756,7 @@ Tcl_GetRange(
     String *stringPtr;
     size_t length = 0;
 
-    if (first == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(first)) {
 	first = TCL_INDEX_START;
     }
 
@@ -790,7 +790,7 @@ Tcl_GetRange(
 	 * If numChars is unknown, compute it.
 	 */
 
-	if (stringPtr->numChars == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(stringPtr->numChars)) {
 	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
@@ -846,7 +846,7 @@ TclGetRange(
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     size_t length = 0;
 
-    if (first == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(first)) {
 	first = TCL_INDEX_START;
     }
 
@@ -928,7 +928,7 @@ Tcl_SetStringObj(
      */
 
     TclInvalidateStringRep(objPtr);
-    if (length == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(length)) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclInitStringRep(objPtr, bytes, length);
@@ -1168,7 +1168,7 @@ UnicodeLength(
     size_t numChars = 0;
 
     if (unicode) {
-	while ((numChars != TCL_INDEX_NONE) && (unicode[numChars] != 0)) {
+	while (!TCL_SIZE_ISNEG(numChars) && (unicode[numChars] != 0)) {
 	    numChars++;
 	}
     }
@@ -1185,8 +1185,7 @@ SetUnicodeObj(
 {
     String *stringPtr;
 
-    if ((numChars == TCL_INDEX_NONE)
-	    || ((sizeof(int) != sizeof(size_t)) && (numChars > (size_t)INT_MIN))) {
+    if (TCL_SIZE_ISNEG(numChars)) {
     	numChars = UnicodeLength(unicode);
     }
 
@@ -1244,7 +1243,7 @@ Tcl_AppendLimitedToObj(
     size_t toCopy = 0;
     size_t eLen = 0;
 
-    if (length == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(length)) {
 	length = (bytes ? strlen(bytes) : 0);
     }
     if (length == 0) {
@@ -1523,7 +1522,7 @@ Tcl_AppendObjToObj(
     bytes = Tcl_GetStringFromObj(appendObjPtr, &length);
 
     numChars = stringPtr->numChars;
-    if ((numChars != TCL_INDEX_NONE) && TclHasInternalRep(appendObjPtr, &tclStringType)) {
+    if (!TCL_SIZE_ISNEG(numChars) && TclHasInternalRep(appendObjPtr, &tclStringType)) {
 	String *appendStringPtr = GET_STRING(appendObjPtr);
 
 	appendNumChars = appendStringPtr->numChars;
@@ -1531,7 +1530,7 @@ Tcl_AppendObjToObj(
 
     AppendUtfToUtfRep(objPtr, bytes, length);
 
-    if ((numChars != TCL_INDEX_NONE) && (appendNumChars != TCL_INDEX_NONE)) {
+    if (!TCL_SIZE_ISNEG(numChars) && !TCL_SIZE_ISNEG(appendNumChars)) {
 	stringPtr->numChars = numChars + appendNumChars;
     }
 }
@@ -1562,8 +1561,7 @@ AppendUnicodeToUnicodeRep(
     String *stringPtr;
     size_t numChars;
 
-    if ((appendNumChars == TCL_INDEX_NONE)
-	    || ((sizeof(int) != sizeof(size_t)) && (appendNumChars > (size_t)INT_MIN))) {
+    if (TCL_SIZE_ISNEG(appendNumChars)) {
 	appendNumChars = UnicodeLength(unicode);
     }
     if (appendNumChars == 0) {
@@ -1604,7 +1602,7 @@ AppendUnicodeToUnicodeRep(
 	 * Relocate unicode if needed; see above.
 	 */
 
-	if (index != TCL_INDEX_NONE) {
+	if (!TCL_SIZE_ISNEG(index)) {
 	    unicode = stringPtr->unicode + index;
 	}
     }
@@ -1652,7 +1650,7 @@ AppendUnicodeToUtfRep(
 
     numChars = ExtendStringRepWithUnicode(objPtr, unicode, numChars);
 
-    if (stringPtr->numChars != TCL_INDEX_NONE) {
+    if (!TCL_SIZE_ISNEG(stringPtr->numChars)) {
 	stringPtr->numChars += numChars;
     }
 }
@@ -1761,7 +1759,7 @@ AppendUtfToUtfRep(
 	 * Relocate bytes if needed; see above.
 	 */
 
-	if (offset != TCL_INDEX_NONE) {
+	if (!TCL_SIZE_ISNEG(offset)) {
 	    bytes = objPtr->bytes + offset;
 	}
     }
@@ -3538,7 +3536,7 @@ TclStringCmp(
 			memCmpFn = memcmp;
 			s1len *= sizeof(Tcl_UniChar);
 			s2len *= sizeof(Tcl_UniChar);
-			if (reqlength != TCL_INDEX_NONE) {
+			if (!TCL_SIZE_ISNEG(reqlength)) {
 			    reqlength *= sizeof(Tcl_UniChar);
 			}
 		    } else {
@@ -3582,7 +3580,7 @@ TclStringCmp(
 		s1 = Tcl_GetStringFromObj(value1Ptr, &s1len);
 		s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
 	    }
-	    if (!nocase && checkEq && reqlength == TCL_INDEX_NONE) {
+	    if (!nocase && checkEq && TCL_SIZE_ISNEG(reqlength)) {
 		/*
 		 * When we have equal-length we can check only for
 		 * (in)equality. We can use memcmp in all (n)eq cases because
@@ -3599,7 +3597,7 @@ TclStringCmp(
 		 * length was requested.
 		 */
 
-		if ((reqlength == TCL_INDEX_NONE) && !nocase) {
+		if (TCL_SIZE_ISNEG(reqlength) && !nocase) {
 		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
 		} else {
 		    s1len = Tcl_NumUtfChars(s1, s1len);
@@ -3615,7 +3613,7 @@ TclStringCmp(
 	 * comparison function.
 	 */
 	length = (s1len < s2len) ? s1len : s2len;
-	if (reqlength == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(reqlength)) {
 	    /*
 	     * The requested length is negative, so ignore it by setting it
 	     * to length + 1 to correct the match var.
@@ -3626,7 +3624,7 @@ TclStringCmp(
 	    length = reqlength;
 	}
 
-	if (checkEq && reqlength == TCL_INDEX_NONE && (s1len != s2len)) {
+	if (checkEq && TCL_SIZE_ISNEG(reqlength) && (s1len != s2len)) {
 	    match = 1;		/* This will be reversed below. */
 	} else {
 	    /*
@@ -3674,7 +3672,7 @@ TclStringFirst(
     Tcl_UniChar *checkStr, *endStr, *uh, *un;
     Tcl_Obj *obj;
 
-    if (start == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(start)) {
 	start = 0;
     }
     if (ln == 0) {
@@ -3985,7 +3983,7 @@ TclStringReverse(
 	}
 	to = objPtr->bytes;
 
-	if ((numChars == TCL_INDEX_NONE) || (numChars < numBytes)) {
+	if (TCL_SIZE_ISNEG(numChars) || (numChars < numBytes)) {
 	    /*
 	     * Either numChars == -1 and we don't know how many chars are
 	     * represented by objPtr->bytes and we need Pass 1 just in case,
@@ -4206,7 +4204,7 @@ ExtendUnicodeRepWithString(
     if (stringPtr->hasUnicode) {
 	numOrigChars = stringPtr->numChars;
     }
-    if (numAppendChars == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(numAppendChars)) {
 	TclNumUtfCharsM(numAppendChars, bytes, numBytes);
     }
     needed = numOrigChars + numAppendChars;
@@ -4262,7 +4260,7 @@ DupStringInternalRep(
     String *srcStringPtr = GET_STRING(srcPtr);
     String *copyStringPtr = NULL;
 
-    if (srcStringPtr->numChars == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(srcStringPtr->numChars)) {
 	/*
 	 * The String struct in the source value holds zero useful data. Don't
 	 * bother copying it. Don't even bother allocating space in which to
@@ -4412,7 +4410,7 @@ ExtendStringRepWithUnicode(
     char *dst;
     String *stringPtr = GET_STRING(objPtr);
 
-    if ((numChars == TCL_INDEX_NONE)
+    if (TCL_SIZE_ISNEG(numChars)
 	    || ((sizeof(int) != sizeof(size_t)) && (numChars > (size_t)INT_MIN))) {
 	numChars = UnicodeLength(unicode);
     }

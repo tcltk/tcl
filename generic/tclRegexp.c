@@ -266,7 +266,7 @@ Tcl_RegExpRange(
 
     if (index > regexpPtr->re.re_nsub) {
 	*startPtr = *endPtr = NULL;
-    } else if (regexpPtr->matches[index].rm_so == TCL_INDEX_NONE) {
+    } else if (TCL_SIZE_ISNEG(regexpPtr->matches[index].rm_so)) {
 	*startPtr = *endPtr = NULL;
     } else {
 	if (regexpPtr->objPtr) {
@@ -374,7 +374,7 @@ TclRegExpRangeUniChar(
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
 
-    if ((regexpPtr->flags&REG_EXPECT) && (index == TCL_INDEX_NONE)) {
+    if ((regexpPtr->flags&REG_EXPECT) && TCL_SIZE_ISNEG(index)) {
 	*startPtr = regexpPtr->details.rm_extend.rm_so;
 	*endPtr = regexpPtr->details.rm_extend.rm_eo;
     } else if (index + 1 > regexpPtr->re.re_nsub + 1) {

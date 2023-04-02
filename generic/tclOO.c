@@ -1687,7 +1687,7 @@ Tcl_NewObjectInstance(
      * used for object cloning only.
      */
 
-    if (objc != TCL_INDEX_NONE) {
+    if (!TCL_SIZE_ISNEG(objc)) {
 	CallContext *contextPtr =
 		TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL, NULL, NULL);
 
@@ -1758,7 +1758,7 @@ TclNRNewObjectInstance(
      * object cloning only). If there aren't any constructors, we do nothing.
      */
 
-    if (objc == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(objc)) {
 	*objectPtr = (Tcl_Object) oPtr;
 	return TCL_OK;
     }

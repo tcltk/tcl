@@ -1500,7 +1500,7 @@ int
 TclObjBeingDeleted(
     Tcl_Obj *objPtr)
 {
-    return (objPtr->length == TCL_INDEX_NONE);
+    return (TCL_SIZE_ISNEG(objPtr->length));
 }
 
 /*
@@ -1620,7 +1620,7 @@ Tcl_GetString(
 		    objPtr->typePtr->name);
 	}
 	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL || objPtr->length == TCL_INDEX_NONE
+	if (objPtr->bytes == NULL || TCL_SIZE_ISNEG(objPtr->length)
 		|| objPtr->bytes[objPtr->length] != '\0') {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to create a valid string rep",
@@ -1680,7 +1680,7 @@ TclGetStringFromObj(
 		    objPtr->typePtr->name);
 	}
 	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL || objPtr->length == TCL_INDEX_NONE
+	if (objPtr->bytes == NULL || TCL_SIZE_ISNEG(objPtr->length)
 		|| objPtr->bytes[objPtr->length] != '\0') {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to create a valid string rep",

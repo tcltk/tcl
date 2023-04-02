@@ -4060,8 +4060,7 @@ Tcl_Write(
 	return TCL_INDEX_NONE;
     }
 
-    if ((srcLen == TCL_INDEX_NONE)
-	    || ((sizeof(int) != sizeof(size_t)) && (srcLen > (size_t)INT_MIN))) {
+    if (TCL_SIZE_ISNEG(srcLen)) {
 	srcLen = strlen(src);
     }
     if (WriteBytes(chanPtr, src, srcLen) == -1) {
@@ -4111,8 +4110,7 @@ Tcl_WriteRaw(
 	return TCL_INDEX_NONE;
     }
 
-    if ((srcLen == TCL_INDEX_NONE)
-	    || ((sizeof(int) != sizeof(size_t)) && (srcLen > (size_t)INT_MIN))) {
+    if (TCL_SIZE_ISNEG(srcLen)) {
 	srcLen = strlen(src);
     }
 
@@ -4122,7 +4120,7 @@ Tcl_WriteRaw(
      */
 
     written = ChanWrite(chanPtr, src, srcLen, &errorCode);
-    if (written == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(written)) {
 	Tcl_SetErrno(errorCode);
     }
 
@@ -4171,8 +4169,7 @@ Tcl_WriteChars(
 
     chanPtr = statePtr->topChanPtr;
 
-    if ((len == TCL_INDEX_NONE)
-	    || ((sizeof(int) != sizeof(size_t)) && (len > (size_t)INT_MIN))) {
+    if (TCL_SIZE_ISNEG(len)) {
 	len = strlen(src);
     }
     if (statePtr->encoding) {
@@ -6027,7 +6024,7 @@ DoReadChars(
     }
     ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
     statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
-    for (copied = 0; toRead > 0 || toRead == TCL_INDEX_NONE; ) {
+    for (copied = 0; toRead > 0 || TCL_SIZE_ISNEG(toRead); ) {
 	int copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
 	    if (binaryMode) {
@@ -6091,7 +6088,7 @@ DoReadChars(
 	    }
 	} else {
 	    copied += copiedNow;
-	    if (toRead != TCL_INDEX_NONE) {
+	    if (!TCL_SIZE_ISNEG(toRead)) {
 		toRead -= copiedNow; /* Only decr if not reading whole file */
 	    }
 	}
@@ -9851,7 +9848,7 @@ CopyData(
 	 * unsuitable for updating totals and toRead.
 	 */
 
-	if (sizeb == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(sizeb)) {
 	writeError:
 	    if (interp) {
 		TclNewObj(errObj);

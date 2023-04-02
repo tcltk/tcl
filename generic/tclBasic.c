@@ -5203,8 +5203,7 @@ TclEvalEx(
 	}
     }
 
-    if ((numBytes == TCL_INDEX_NONE)
-	    || ((sizeof(int) != sizeof(size_t)) && (numBytes > (size_t)INT_MIN))) {
+    if (TCL_SIZE_ISNEG(numBytes)) {
 	numBytes = strlen(script);
     }
     Tcl_ResetResult(interp);

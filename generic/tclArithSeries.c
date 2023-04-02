@@ -730,7 +730,7 @@ TclArithSeriesObjRange(
 
     ArithSeriesGetInternalRep(arithSeriesObj, arithSeriesRepPtr);
 
-    if (fromIdx == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(fromIdx)) {
 	fromIdx = 0;
     }
     if (fromIdx > toIdx) {

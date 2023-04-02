@@ -4960,7 +4960,7 @@ TclLogCommandInfo(
 	    }
 	}
 
-	if (length == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(length)) {
 	    length = strlen(command);
 	}
 	overflow = (length > (size_t)limit);

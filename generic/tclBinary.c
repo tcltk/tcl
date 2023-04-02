@@ -494,7 +494,7 @@ MakeByteArray(
     size_t length;
     const char *src = Tcl_GetStringFromObj(objPtr, &length);
     size_t numBytes
-	    = (limit != TCL_INDEX_NONE && limit < length) ? limit : length;
+	    = (!TCL_SIZE_ISNEG(limit) && limit < length) ? limit : length;
     ByteArray *byteArrayPtr = (ByteArray *)Tcl_Alloc(BYTEARRAY_SIZE(numBytes));
     unsigned char *dst = byteArrayPtr->bytes;
     unsigned char *dstEnd = dst + numBytes;
@@ -730,8 +730,7 @@ TclAppendBytesToByteArray(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
     }
-    if ((len == TCL_INDEX_NONE)
-	    || ((sizeof(int) != sizeof(size_t)) && (len > (size_t)INT_MIN))) {
+    if (TCL_SIZE_ISNEG(len)) {
 	Tcl_Panic("%s must be called with definite number of bytes to append",
 		"TclAppendBytesToByteArray");
     }
@@ -989,7 +988,7 @@ BinaryFormatCmd(
 		} else if (count > listc) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "number of elements in list does not match count",
-			    -1));
+			    TCL_INDEX_NONE));
 		    return TCL_ERROR;
 		}
 		if (TclListObjGetElementsM(interp, objv[arg], &listc,

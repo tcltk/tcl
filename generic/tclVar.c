@@ -611,7 +611,7 @@ TclObjLookupVarEx(
 
   restart:
     LocalGetInternalRep(part1Ptr, localIndex, namePtr);
-    if (localIndex != TCL_INDEX_NONE) {
+    if (!TCL_SIZE_ISNEG(localIndex)) {
 	if (HasLocalVars(varFramePtr)
 		&& !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 		&& (localIndex < varFramePtr->numCompiledLocals)) {

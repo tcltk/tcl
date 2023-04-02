@@ -267,7 +267,7 @@ TclSetEnv(
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
 
-    if (index == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(index)) {
 #ifndef USE_PUTENV
 	/*
 	 * We need to handle the case where the environment may be changed
@@ -351,7 +351,7 @@ TclSetEnv(
      * string in the cache.
      */
 
-    if ((index != TCL_INDEX_NONE) && (tenviron[index] == (techar *)p)) {
+    if (!TCL_SIZE_ISNEG(index) && (tenviron[index] == (techar *)p)) {
 	ReplaceString(oldValue, p);
 #ifdef HAVE_PUTENV_THAT_COPIES
     } else {
@@ -469,7 +469,7 @@ TclUnsetEnv(
      * needless work and to avoid recursion on the unset.
      */
 
-    if (index == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(index)) {
 	Tcl_MutexUnlock(&envMutex);
 	return;
     }
@@ -574,7 +574,7 @@ TclGetEnv(
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
     result = NULL;
-    if (index != TCL_INDEX_NONE) {
+    if (!TCL_SIZE_ISNEG(index)) {
 	Tcl_DString envStr;
 
 	result = tenviron2utfdstr(tenviron[index], -1, &envStr);

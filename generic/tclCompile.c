@@ -2356,7 +2356,7 @@ TclCompileVarSubst(
     if (localVarName != -1) {
 	localVar = TclFindCompiledLocal(name, nameBytes, localVarName, envPtr);
     }
-    if (localVar == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(localVar)) {
 	PushLiteral(envPtr, name, nameBytes);
     }
 
@@ -2368,7 +2368,7 @@ TclCompileVarSubst(
 	    tokenPtr[1].start + tokenPtr[1].size);
 
     if (tokenPtr->numComponents == 1) {
-	if (localVar == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(localVar)) {
 	    TclEmitOpcode(INST_LOAD_STK, envPtr);
 	} else if (localVar <= 255) {
 	    TclEmitInstInt1(INST_LOAD_SCALAR1, localVar, envPtr);
@@ -2377,7 +2377,7 @@ TclCompileVarSubst(
 	}
     } else {
 	TclCompileTokens(interp, tokenPtr+2, tokenPtr->numComponents-1, envPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(localVar)) {
 	    TclEmitOpcode(INST_LOAD_ARRAY_STK, envPtr);
 	} else if (localVar <= 255) {
 	    TclEmitInstInt1(INST_LOAD_ARRAY1, localVar, envPtr);
@@ -3470,7 +3470,7 @@ TclGetInnermostExceptionRange(
 	rangePtr--; i--;
 
 	if (CurrentOffset(envPtr) >= (int)rangePtr->codeOffset &&
-		(rangePtr->numCodeBytes == TCL_INDEX_NONE || CurrentOffset(envPtr) <
+		(TCL_SIZE_ISNEG(rangePtr->numCodeBytes) || CurrentOffset(envPtr) <
 			(int)rangePtr->codeOffset+(int)rangePtr->numCodeBytes) &&
 		(returnCode != TCL_CONTINUE ||
 			envPtr->exceptAuxArrayPtr[i].supportsContinue)) {
@@ -3621,7 +3621,7 @@ StartExpanding(
 	if ((int)rangePtr->codeOffset > CurrentOffset(envPtr)) {
 	    continue;
 	}
-	if (rangePtr->numCodeBytes != TCL_INDEX_NONE) {
+	if (!TCL_SIZE_ISNEG(rangePtr->numCodeBytes)) {
 	    continue;
 	}
 
@@ -3681,7 +3681,7 @@ TclFinalizeLoopExceptionRange(
     }
     for (i=0 ; i<(int)auxPtr->numContinueTargets ; i++) {
 	site = envPtr->codeStart + auxPtr->continueTargets[i];
-	if (rangePtr->continueOffset == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(rangePtr->continueOffset)) {
 	    int j;
 
 	    /*
@@ -4059,7 +4059,7 @@ TclFixupForwardJump(
 	switch (rangePtr->type) {
 	case LOOP_EXCEPTION_RANGE:
 	    rangePtr->breakOffset += 3;
-	    if (rangePtr->continueOffset != TCL_INDEX_NONE) {
+	    if (!TCL_SIZE_ISNEG(rangePtr->continueOffset)) {
 		rangePtr->continueOffset += 3;
 	    }
 	    break;
@@ -4429,7 +4429,7 @@ EncodeCmdLocMap(
     prevOffset = 0;
     for (i = 0;  i < numCmds;  i++) {
 	codeDelta = mapPtr[i].codeOffset - prevOffset;
-	if (codeDelta == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(codeDelta)) {
 	    Tcl_Panic("EncodeCmdLocMap: bad code offset");
 	} else if (codeDelta <= 127) {
 	    TclStoreInt1AtPtr(codeDelta, p);
@@ -4450,7 +4450,7 @@ EncodeCmdLocMap(
     codePtr->codeLengthStart = p;
     for (i = 0;  i < numCmds;  i++) {
 	codeLen = mapPtr[i].numCodeBytes;
-	if (codeLen == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(codeLen)) {
 	    Tcl_Panic("EncodeCmdLocMap: bad code length");
 	} else if (codeLen <= 127) {
 	    TclStoreInt1AtPtr(codeLen, p);
@@ -4490,7 +4490,7 @@ EncodeCmdLocMap(
     codePtr->srcLengthStart = p;
     for (i = 0;  i < numCmds;  i++) {
 	srcLen = mapPtr[i].numSrcBytes;
-	if (srcLen == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(srcLen)) {
 	    Tcl_Panic("EncodeCmdLocMap: bad source length");
 	} else if (srcLen <= 127) {
 	    TclStoreInt1AtPtr(srcLen, p);

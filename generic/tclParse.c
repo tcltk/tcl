@@ -221,7 +221,7 @@ Tcl_ParseCommand(
 				 * point to char after terminating one. */
     size_t scanned;
 
-    if (numBytes == TCL_INDEX_NONE && start) {
+    if (TCL_SIZE_ISNEG(numBytes) && start) {
 	numBytes = strlen(start);
     }
     TclParseInit(interp, start, numBytes, parsePtr);
@@ -1350,7 +1350,7 @@ Tcl_ParseVarName(
     int varIndex;
     unsigned array;
 
-    if (numBytes == TCL_INDEX_NONE && start) {
+    if (TCL_SIZE_ISNEG(numBytes) && start) {
 	numBytes = strlen(start);
     }
     if (!append) {
@@ -1653,7 +1653,7 @@ Tcl_ParseBraces(
     int startIndex, level;
     size_t length;
 
-    if (numBytes == TCL_INDEX_NONE && start) {
+    if (TCL_SIZE_ISNEG(numBytes) && start) {
 	numBytes = strlen(start);
     }
     if (!append) {
@@ -1850,7 +1850,7 @@ Tcl_ParseQuotedString(
 				 * the quoted string's terminating close-quote
 				 * if the parse succeeds. */
 {
-    if (numBytes == TCL_INDEX_NONE && start) {
+    if (TCL_SIZE_ISNEG(numBytes) && start) {
 	numBytes = strlen(start);
     }
     if (!append) {

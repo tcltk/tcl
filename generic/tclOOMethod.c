@@ -498,7 +498,7 @@ TclOONewProcMethod(
     method = TclOOMakeProcMethod(interp, clsPtr, flags, nameObj, procName,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
 
-    if (argsLen == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(argsLen)) {
 	Tcl_DecrRefCount(argsObj);
     }
     if (method == NULL) {

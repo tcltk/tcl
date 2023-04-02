@@ -988,7 +988,7 @@ TclOONextToObjCmd(
 	methodType = "method";
     }
 
-    for (i=contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
+    for (i=contextPtr->index ; !TCL_SIZE_ISNEG(i) ; i--) {
 	struct MInvoke *miPtr = contextPtr->callPtr->chain + i;
 
 	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {

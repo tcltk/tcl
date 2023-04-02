@@ -805,7 +805,7 @@ Tcl_FSJoinPath(
 	return NULL;
     }
 
-    elements = ((elements != TCL_INDEX_NONE) && (elements <= objc)) ? elements : objc;
+    elements = (!TCL_SIZE_ISNEG(elements) && (elements <= objc)) ? elements : objc;
     TclListObjGetElementsM(NULL, listObj, &objc, &objv);
     res = TclJoinPath(elements, objv, 0);
     return res;

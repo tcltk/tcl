@@ -4453,7 +4453,7 @@ TEBCresume(
 
 	    TRACE_APPEND(("ERROR: \"%.30s\" not on reachable chain\n",
 		    O2S(valuePtr)));
-	    for (i = contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
+	    for (i = contextPtr->index ; !TCL_SIZE_ISNEG(i) ; i--) {
 		miPtr = contextPtr->callPtr->chain + i;
 		if (miPtr->isFilter
 			|| miPtr->mPtr->declaringClassPtr != classPtr) {
@@ -5346,7 +5346,7 @@ TEBCresume(
 
 	toIdx = TclIndexDecode(toIdx, slength - 1);
 	fromIdx = TclIndexDecode(fromIdx, slength - 1);
-	if (toIdx == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(toIdx)) {
 	    TclNewObj(objResultPtr);
 	} else {
 	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
@@ -5381,7 +5381,7 @@ TEBCresume(
 	TclDecrRefCount(OBJ_AT_TOS);
 	(void) POP_OBJECT();
 
-	if ((toIdx == TCL_INDEX_NONE) ||
+	if (TCL_SIZE_ISNEG(toIdx) ||
 		(fromIdx + 1 > slength + 1) ||
 		(toIdx + 1 < fromIdx + 1)) {
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
@@ -5389,7 +5389,7 @@ TEBCresume(
 	    NEXT_INST_F(1, 0, 0);
 	}
 
-	if (fromIdx == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(fromIdx)) {
 	    fromIdx = TCL_INDEX_START;
 	}
 
@@ -7386,7 +7386,7 @@ TEBCresume(
 			rangePtr->codeOffset, rangePtr->breakOffset));
 		NEXT_INST_F(0, 0, 0);
 	    }
-	    if (rangePtr->continueOffset == TCL_INDEX_NONE) {
+	    if (TCL_SIZE_ISNEG(rangePtr->continueOffset)) {
 		TRACE_APPEND(("%s, loop w/o continue, checking for catch\n",
 			StringForResultCode(result)));
 		goto checkForCatch;
@@ -9300,7 +9300,7 @@ GetExceptRangeForPc(
 	    if (searchMode == TCL_BREAK) {
 		return rangePtr;
 	    }
-	    if (searchMode == TCL_CONTINUE && rangePtr->continueOffset != TCL_INDEX_NONE){
+	    if (searchMode == TCL_CONTINUE && !TCL_SIZE_ISNEG(rangePtr->continueOffset)){
 		return rangePtr;
 	    }
 	}
@@ -9734,7 +9734,7 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i != TCL_INDEX_NONE;  i--) {
+    for (i = 31;  !TCL_SIZE_ISNEG(i);  i--) {
 	if (statsPtr->srcCount[i] > 0) {
 	    break;		/* maxSizeDecade to consume 'i' value
 				 * below... */
@@ -9758,7 +9758,7 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i != TCL_INDEX_NONE;  i--) {
+    for (i = 31;  !TCL_SIZE_ISNEG(i);  i--) {
 	if (statsPtr->byteCodeCount[i] > 0) {
 	    break;		/* maxSizeDecade to consume 'i' value
 				 * below... */
@@ -9782,7 +9782,7 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i != TCL_INDEX_NONE;  i--) {
+    for (i = 31;  !TCL_SIZE_ISNEG(i);  i--) {
 	if (statsPtr->lifetimeCount[i] > 0) {
 	    break;		/* maxSizeDecade to consume 'i' value
 				 * below... */

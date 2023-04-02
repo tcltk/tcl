@@ -3073,10 +3073,10 @@ Tcl_LreplaceObjCmd(
 	first = listLen;
     }
 
-    if (last + 1 > listLen) {
+    if (TCL_SIZE_CMP(last, >=, listLen)) {
 	last = listLen - 1;
     }
-    if (first + 1 <= last + 1) {
+    if (TCL_SIZE_CMP(first, <=, last)) {
 	numToDelete = last - first + 1;
     } else {
 	numToDelete = 0;
@@ -3912,8 +3912,7 @@ Tcl_LsearchObjCmd(
 		TclNewIndexObj(itemPtr, i+groupOffset);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
 		    Tcl_Obj *elObj;
-		    size_t elValue = TclIndexDecode(sortInfo.indexv[j], listc);
-		    TclNewIndexObj(elObj, elValue);
+		    TclNewIndexObj(elObj, TclIndexDecode(sortInfo.indexv[j], listc));
 		    Tcl_ListObjAppendElement(interp, itemPtr, elObj);
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
@@ -3936,8 +3935,7 @@ Tcl_LsearchObjCmd(
 	    TclNewIndexObj(itemPtr, index+groupOffset);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
 		Tcl_Obj *elObj;
-		size_t elValue = TclIndexDecode(sortInfo.indexv[j], listc);
-		TclNewIndexObj(elObj, elValue);
+		TclNewIndexObj(elObj, TclIndexDecode(sortInfo.indexv[j], listc));
 		Tcl_ListObjAppendElement(interp, itemPtr, elObj);
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);

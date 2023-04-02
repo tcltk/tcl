@@ -229,7 +229,7 @@ TclCreateLiteral(
 		if (flags & LITERAL_ON_HEAP) {
 		    Tcl_Free((void *)bytes);
 		}
-		if (globalPtr->refCount != TCL_INDEX_NONE) {
+		if (!TCL_SIZE_ISNEG(globalPtr->refCount)) {
 		    globalPtr->refCount++;
 		}
 		return objPtr;
@@ -412,7 +412,7 @@ TclRegisterLiteral(
     int isNew;
     Namespace *nsPtr;
 
-    if (length == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(length)) {
 	length = (bytes ? strlen(bytes) : 0);
     }
     hash = HashString(bytes, length);
@@ -851,7 +851,7 @@ TclReleaseLiteral(
 	     * literal table entry (decrement the ref count of the object).
 	     */
 
-	    if ((entryPtr->refCount != TCL_INDEX_NONE) && (entryPtr->refCount-- <= 1)) {
+	    if (!TCL_SIZE_ISNEG((entryPtr->refCount)) && (entryPtr->refCount-- <= 1)) {
 		if (prevPtr == NULL) {
 		    globalTablePtr->buckets[index] = entryPtr->nextPtr;
 		} else {
@@ -1175,7 +1175,7 @@ TclVerifyLocalLiteralTable(
 	for (localPtr=localTablePtr->buckets[i] ; localPtr!=NULL;
 		localPtr=localPtr->nextPtr) {
 	    count++;
-	    if (localPtr->refCount != TCL_INDEX_NONE) {
+	    if (!TCL_SIZE_ISNEG(localPtr->refCount)) {
 		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
 		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "u",
 			"TclVerifyLocalLiteralTable",

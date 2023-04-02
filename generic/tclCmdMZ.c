@@ -261,7 +261,7 @@ Tcl_RegexpObjCmd(
     if (startIndex) {
 	TclGetIntForIndexM(interp, startIndex, stringLength, &offset);
 	Tcl_DecrRefCount(startIndex);
-	if (offset == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(offset)) {
 	    offset = TCL_INDEX_START;
 	}
     }
@@ -372,7 +372,7 @@ Tcl_RegexpObjCmd(
 		 * area. (Scriptics Bug 4391/SF Bug #219232)
 		 */
 
-		if (i <= (int)info.nsubs && info.matches[i].start != TCL_INDEX_NONE) {
+		if (i <= (int)info.nsubs && !TCL_SIZE_ISNEG(info.matches[i].start)) {
 		    start = offset + info.matches[i].start;
 		    end = offset + info.matches[i].end;
 
@@ -585,7 +585,7 @@ Tcl_RegsubObjCmd(
 
 	TclGetIntForIndexM(interp, startIndex, stringLength, &offset);
 	Tcl_DecrRefCount(startIndex);
-	if (offset == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(offset)) {
 	    offset = TCL_INDEX_START;
 	}
     }
@@ -784,7 +784,7 @@ Tcl_RegsubObjCmd(
 	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
-		if ((subStart != TCL_INDEX_NONE) && (subEnd != TCL_INDEX_NONE)) {
+		if (!TCL_SIZE_ISNEG(subStart) && !TCL_SIZE_ISNEG(subEnd)) {
 		    args[idx + numParts] = Tcl_NewUnicodeObj(
 			    wstring + offset + subStart, subEnd - subStart);
 		} else {
@@ -888,7 +888,7 @@ Tcl_RegsubObjCmd(
 	    if (idx <= info.nsubs) {
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
-		if ((subStart != TCL_INDEX_NONE) && (subEnd != TCL_INDEX_NONE)) {
+		if (!TCL_SIZE_ISNEG(subStart) && !TCL_SIZE_ISNEG(subEnd)) {
 		    Tcl_AppendUnicodeToObj(resultPtr,
 			    wstring + offset + subStart, subEnd - subStart);
 		}
@@ -1411,7 +1411,7 @@ StringIndexCmd(
 	return TCL_ERROR;
     }
 
-    if ((index != TCL_INDEX_NONE) && (index + 1 <= end + 1)) {
+    if (!TCL_SIZE_ISNEG(index) && (index + 1 <= end + 1)) {
 	int ch = Tcl_GetUniChar(objv[1], index);
 
 	if (ch == -1) {
@@ -1481,7 +1481,7 @@ StringInsertCmd(
 	return TCL_ERROR;
     }
 
-    if (index == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(index)) {
 	index = TCL_INDEX_START;
     }
     if (index > length) {
@@ -2307,7 +2307,7 @@ StringRangeCmd(
 	return TCL_ERROR;
     }
 
-    if (last != TCL_INDEX_NONE) {
+    if (!TCL_SIZE_ISNEG(last)) {
 	Tcl_SetObjResult(interp, Tcl_GetRange(objv[1], first, last));
     }
     return TCL_OK;
@@ -2414,7 +2414,7 @@ StringRplcCmd(
      * result is the original string.
      */
 
-    if ((last == TCL_INDEX_NONE) ||	/* Range ends before start of string */
+    if (TCL_SIZE_ISNEG(last) ||	/* Range ends before start of string */
 	    (first + 1 > end + 1) ||	/* Range begins after end of string */
 	    (last + 1 < first + 1)) {	/* Range begins after it starts */
 	/*
@@ -2427,7 +2427,7 @@ StringRplcCmd(
     } else {
 	Tcl_Obj *resultPtr;
 
-	if (first == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(first)) {
 	    first = TCL_INDEX_START;
 	}
 	if (last + 1 > end + 1) {
@@ -2526,7 +2526,7 @@ StringStartCmd(
 	p = &string[index];
 
 	(void)TclUniCharToUCS4(p, &ch);
-	for (cur = index; cur != TCL_INDEX_NONE; cur--) {
+	for (cur = index; !TCL_SIZE_ISNEG(cur); cur--) {
 	    int delta = 0;
 	    const Tcl_UniChar *next;
 
@@ -2588,7 +2588,7 @@ StringEndCmd(
     if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (index == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(index)) {
 	index = TCL_INDEX_START;
     }
     if (index + 1 <= length + 1) {
@@ -2906,7 +2906,7 @@ StringLowerCmd(
 	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (first == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(first)) {
 	    first = 0;
 	}
 	last = first;
@@ -2991,7 +2991,7 @@ StringUpperCmd(
 	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (first == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(first)) {
 	    first = TCL_INDEX_START;
 	}
 	last = first;
@@ -3076,7 +3076,7 @@ StringTitleCmd(
 	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (first == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(first)) {
 	    first = TCL_INDEX_START;
 	}
 	last = first;

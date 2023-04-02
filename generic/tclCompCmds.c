@@ -1812,7 +1812,7 @@ TclCompileDictUpdateCmd(
 	 */
 
 	duiPtr->varIndices[i] = LocalScalarFromToken(tokenPtr, envPtr);
-	if (duiPtr->varIndices[i] == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(duiPtr->varIndices[i])) {
 	    goto failedUpdateInfoAssembly;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
