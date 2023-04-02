@@ -21,54 +21,51 @@
 _CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask);
 #endif
 
-/*
- * This is the global lock used to serialize access to other serialization
- * data structures.
- */
+static struct tclWinGlobals {
+    INIT_ONCE init_once;	/* must be first member,
+		because of static initialziation */
 
-static CRITICAL_SECTION globalLock;
-static int initialized = 0;
-static DWORD tls_thread_id;
+    /*
+     * This is the global lock used to serialize access to other serialization
+     * data structures.
+     */
+    CRITICAL_SECTION globalLock;
 
-/*
- * This is the global lock used to serialize initialization and finalization
- * of Tcl as a whole.
- */
+    /*
+     * This is the global lock used to serialize initialization and finalization
+     * of Tcl as a whole.
+     */
 
-static CRITICAL_SECTION initLock;
+    CRITICAL_SECTION initLock;
 
-/*
- * allocLock is used by Tcl's version of malloc for synchronization. For
- * obvious reasons, cannot use any dyamically allocated storage.
- */
+    /* holds the TLS key for the Tcl Thread_ID */
+    DWORD tls_thread_id;
+
+    /*
+     * allocLock is used by Tcl's version of malloc for synchronization. For
+     * obvious reasons, cannot use any dyamically allocated storage.
+     */
 
 #if TCL_THREADS
 
-static struct Tcl_Mutex_ {
-    CRITICAL_SECTION crit;
-} allocLock;
-static Tcl_Mutex allocLockPtr = &allocLock;
-static int allocOnce = 0;
+    struct Tcl_Mutex_ {
+	CRITICAL_SECTION crit;
+    } allocLock;
+    Tcl_Mutex allocLockPtr;
 
+#endif /* TCL_THREADS */
 
+} TclWinGlobals = {
+    INIT_ONCE_STATIC_INIT
+};
+
+#if TCL_THREADS
 typedef struct Tcl_Condition_ {
     CONDITION_VARIABLE cv;
 } WinCondition;
 
 #endif /* TCL_THREADS */
 
-/*
- * Additions by AOL for specialized thread memory allocator.
- */
-
-#ifdef USE_THREAD_ALLOC
-static DWORD tlsKey;
-
-typedef struct {
-    Tcl_Mutex	     tlock;
-    CRITICAL_SECTION wlock;
-} allocMutex;
-#endif /* USE_THREAD_ALLOC */
 
 /*
  * The per thread data passed from TclpThreadCreate
@@ -161,7 +158,7 @@ TclWinThreadStart(
 #endif
     );
 
-    if (!TlsSetValue (tls_thread_id, winThreadPtr))
+    if (!TlsSetValue (TclWinGlobals.tls_thread_id, winThreadPtr))
 	TclWinFailure ("TlsSetValue");
     result = winThreadPtr->lpStartAddress (winThreadPtr->lpParameter);
     if (!winThreadPtr->tHandle)
@@ -312,7 +309,8 @@ TclpThreadExit(
     int status)
 {
     WinThread *winThreadPtr;
-    if (winThreadPtr = (WinThread *) TlsGetValue (tls_thread_id)) {
+    if (winThreadPtr = (WinThread *) TlsGetValue (
+	    TclWinGlobals.tls_thread_id)) {
 	if (!winThreadPtr->tHandle)
 	    TclpSysFree (winThreadPtr);
     }
@@ -343,7 +341,8 @@ Tcl_ThreadId
 Tcl_GetCurrentThread(void)
 {
     WinThread *winThreadPtr;
-    if (!(winThreadPtr = (WinThread *) TlsGetValue (tls_thread_id))) {
+    if (!(winThreadPtr = (WinThread *) TlsGetValue (
+	    TclWinGlobals.tls_thread_id))) {
 	if (ERROR_SUCCESS != GetLastError ())
 	    TclWinFailure ("TlsGetValue in Tcl_GetCurrentThread");
 	/* this is an initial thread */
@@ -353,11 +352,52 @@ Tcl_GetCurrentThread(void)
 	    TclWinFailure ("memory allocation");
 	winThreadPtr->tHandle = 0;
 	winThreadPtr->thread_id = GetCurrentThreadId ();
-	if (!TlsSetValue (tls_thread_id, winThreadPtr))
+	if (!TlsSetValue (TclWinGlobals.tls_thread_id, winThreadPtr))
 	    TclWinFailure ("TlsSetValue");
     }
     return TCL_WIN_THREAD_ID (winThreadPtr, 0 != winThreadPtr->tHandle);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinInitOnce
+ *
+ *	Perform module initialization exactly once
+ *	storage keys.
+ *
+ * Results:
+ *	None.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+static BOOL
+TclWinInitOnce (
+    INIT_ONCE *init_once,
+    void *parameter,
+    void *context)
+{
+    struct tclWinGlobals *const twg = parameter;
+
+    InitializeCriticalSection(&twg->initLock);
+    InitializeCriticalSection(&twg->globalLock);
+    twg->tls_thread_id = TlsAlloc ();
+
+#if TCL_THREADS
+    InitializeCriticalSection(&twg->allocLock.crit);
+    twg->allocLockPtr = &twg->allocLock;
+#endif /* TCL_THREADS */
+
+    return TRUE;
+}
+
+# define	TCL_WIN_INITIALIZE_ONCE()\
+	InitOnceExecuteOnce (&TclWinGlobals.init_once,\
+	    TclWinInitOnce,\
+	    &TclWinGlobals,\
+	    0)
+
 
 /*
  *----------------------------------------------------------------------
@@ -381,20 +421,9 @@ Tcl_GetCurrentThread(void)
 void
 TclpInitLock(void)
 {
-    if (!initialized) {
-	/*
-	 * There is a fundamental race here that is solved by creating the
-	 * first Tcl interpreter in a single threaded environment. Once the
-	 * interpreter has been created, it is safe to create more threads
-	 * that create interpreters in parallel.
-	 */
-
-	initialized = 1;
-	InitializeCriticalSection(&initLock);
-	InitializeCriticalSection(&globalLock);
-	tls_thread_id = TlsAlloc ();
-    }
-    EnterCriticalSection(&initLock);
+    if (!TCL_WIN_INITIALIZE_ONCE ())
+	TclWinFailure ("InitOnceExecuteOnce");
+    EnterCriticalSection(&TclWinGlobals.initLock);
 }
 
 /*
@@ -417,7 +446,7 @@ TclpInitLock(void)
 void
 TclpInitUnlock(void)
 {
-    LeaveCriticalSection(&initLock);
+    LeaveCriticalSection(&TclWinGlobals.initLock);
 }
 
 /*
@@ -443,20 +472,9 @@ TclpInitUnlock(void)
 void
 TclpGlobalLock(void)
 {
-    if (!initialized) {
-	/*
-	 * There is a fundamental race here that is solved by creating the
-	 * first Tcl interpreter in a single threaded environment. Once the
-	 * interpreter has been created, it is safe to create more threads
-	 * that create interpreters in parallel.
-	 */
-
-	initialized = 1;
-	InitializeCriticalSection(&initLock);
-	InitializeCriticalSection(&globalLock);
-	tls_thread_id = TlsAlloc ();
-    }
-    EnterCriticalSection(&globalLock);
+    if (!TCL_WIN_INITIALIZE_ONCE ())
+	TclWinFailure ("InitOnceExecuteOnce");
+    EnterCriticalSection(&TclWinGlobals.globalLock);
 }
 
 /*
@@ -479,7 +497,7 @@ TclpGlobalLock(void)
 void
 TclpGlobalUnlock(void)
 {
-    LeaveCriticalSection(&globalLock);
+    LeaveCriticalSection(&TclWinGlobals.globalLock);
 }
 
 /*
@@ -505,11 +523,9 @@ Tcl_Mutex *
 Tcl_GetAllocMutex(void)
 {
 #if TCL_THREADS
-    if (!allocOnce) {
-	InitializeCriticalSection(&allocLock.crit);
-	allocOnce = 1;
-    }
-    return &allocLockPtr;
+    if (!TCL_WIN_INITIALIZE_ONCE ())
+	TclWinFailure ("InitOnceExecuteOnce");
+    return &TclWinGlobals.allocLockPtr;
 #else
     return NULL;
 #endif
@@ -536,32 +552,32 @@ Tcl_GetAllocMutex(void)
 void
 TclFinalizeLock(void)
 {
+    struct tclWinGlobals *const twg = &TclWinGlobals;
     TclpGlobalLock();
 
-    if (!TlsFree (tls_thread_id))
+    if (!TlsFree (twg->tls_thread_id))
 	TclWinFailure ("TlsFree");
 
     /*
      * Destroy the critical section that we are holding!
      */
 
-    DeleteCriticalSection(&globalLock);
-    initialized = 0;
+    DeleteCriticalSection(&twg->globalLock);
 
 #if TCL_THREADS
-    if (allocOnce) {
-	DeleteCriticalSection(&allocLock.crit);
-	allocOnce = 0;
-    }
+    DeleteCriticalSection(&twg->allocLock.crit);
 #endif
 
-    LeaveCriticalSection(&initLock);
+    LeaveCriticalSection(&twg->initLock);
 
     /*
      * Destroy the critical section that we were holding.
      */
 
-    DeleteCriticalSection(&initLock);
+    DeleteCriticalSection(&twg->initLock);
+
+    InitOnceInitialize (&twg->init_once);	/* assuming we want to
+	re-initialize at some point -- dubious */
 }
 
 #if TCL_THREADS
@@ -682,8 +698,8 @@ TclpFinalizeMutex(
  */
 void
 Tcl_ConditionWait(
-    Tcl_Condition *const condPtr,	/* Really (WinCondition **) */
-    Tcl_Mutex *const mutexPtr,	/* Really (CRITICAL_SECTION **) */
+    Tcl_Condition *const condPtr,
+    Tcl_Mutex *const mutexPtr,
     const Tcl_Time *timePtr) /* Timeout on waiting period */
 {
 
@@ -694,8 +710,7 @@ Tcl_ConditionWait(
 	TclpGlobalLock();
 
 	if (*condPtr == NULL) {
-	    WinCondition *winCondPtr
-		    = (WinCondition *)Tcl_Alloc(sizeof *winCondPtr);
+	    WinCondition *winCondPtr = Tcl_Alloc(sizeof *winCondPtr);
 	    InitializeConditionVariable (&winCondPtr->cv);
 	    *condPtr = winCondPtr;
 	    TclRememberCondition (condPtr);
@@ -800,6 +815,13 @@ TclpFinalizeCondition(
  * Additions by AOL for specialized thread memory allocator.
  */
 #ifdef USE_THREAD_ALLOC
+
+static DWORD tlsKey;
+
+typedef struct {
+    Tcl_Mutex	     tlock;
+    CRITICAL_SECTION wlock;
+} allocMutex;
 
 Tcl_Mutex *
 TclpNewAllocMutex(void)
