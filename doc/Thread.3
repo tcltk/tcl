@@ -158,9 +158,9 @@ A condition variable is used as a signaling mechanism:
 a thread can lock a mutex and then wait on a condition variable
 with \fBTcl_ConditionWait\fR.  This atomically releases the mutex lock
 and blocks the waiting thread until another thread calls
-\fBTcl_ConditionNotify\fR.  The caller of \fBTcl_ConditionNotify\fR should
+\fBTcl_ConditionNotify\fR.  The caller of \fBTcl_ConditionNotify\fR may
 have the associated mutex held by previously calling \fBTcl_MutexLock\fR,
-but this is not enforced.  Notifying the
+but this tends to produce more thread context switches.  Notifying the
 condition variable unblocks all threads waiting on the condition variable,
 but they do not proceed until the mutex is released with \fBTcl_MutexUnlock\fR.
 The implementation of \fBTcl_ConditionWait\fR automatically locks
