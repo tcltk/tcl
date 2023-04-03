@@ -8311,7 +8311,7 @@ test io-53.12.1 {
     close $f1
     set f1 [open "|[list [info nameofexecutable] $path(output)]" r+]
     try {
-	chan configure $f1 -encoding utf-6  -buffering none
+	chan configure $f1 -encoding utf-8  -buffering none
 	puts -nonewline $f1 A
 	set ch [read $f1 1]
     } finally {
