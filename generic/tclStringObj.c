@@ -1683,7 +1683,7 @@ AppendUtfToUnicodeRep(
 	return;
     }
 
-    ExtendUnicodeRepWithString(objPtr, bytes, numBytes, -1);
+    ExtendUnicodeRepWithString(objPtr, bytes, numBytes, TCL_INDEX_NONE);
     TclInvalidateStringRep(objPtr);
     stringPtr = GET_STRING(objPtr);
     stringPtr->allocated = 0;
@@ -1812,7 +1812,7 @@ Tcl_AppendStringsToObj(
 	if (bytes == NULL) {
 	    break;
 	}
-	Tcl_AppendToObj(objPtr, bytes, -1);
+	Tcl_AppendToObj(objPtr, bytes, TCL_INDEX_NONE);
     }
     va_end(argList);
 }
@@ -2588,7 +2588,7 @@ Tcl_AppendFormatToObj(
 
   errorMsg:
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", errCode, NULL);
     }
   error:

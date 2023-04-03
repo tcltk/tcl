@@ -1080,7 +1080,7 @@ Tcl_OpenObjCmd(
 	if (objc == 4) {
 	    const char *permString = TclGetString(objv[3]);
 	    int code = TCL_ERROR;
-	    int scanned = TclParseAllWhiteSpace(permString, -1);
+	    int scanned = TclParseAllWhiteSpace(permString, TCL_INDEX_NONE);
 
 	    /*
 	     * Support legacy octal numbers.

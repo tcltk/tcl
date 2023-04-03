@@ -146,7 +146,7 @@ RegisterCommand(
     if (cmdTablePtr->exportIt) {
 	sprintf(buf, "namespace eval %s { namespace export %s }",
 		namesp, cmdTablePtr->cmdName);
-	if (Tcl_EvalEx(interp, buf, -1, 0) != TCL_OK) {
+	if (Tcl_EvalEx(interp, buf, TCL_INDEX_NONE, 0) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }

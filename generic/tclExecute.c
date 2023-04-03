@@ -5039,7 +5039,7 @@ TEBCresume(
 
     case INST_LREPLACE4:
 	{
-	Tcl_Size numToDelete, numNewElems;
+	size_t numToDelete, numNewElems;
 	int end_indicator;
 	int haveSecondIndex, flags;
 	Tcl_Obj *fromIdxObj, *toIdxObj;
