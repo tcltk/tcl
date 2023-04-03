@@ -174,6 +174,8 @@ static int		CloseWrite(Tcl_Interp *interp, Channel *chanPtr);
 static void		CommonGetsCleanup(Channel *chanPtr);
 static int		CopyData(CopyState *csPtr, int mask);
 static void		DeleteTimerHandler(ChannelState *statePtr);
+int				Lossless(ChannelState *inStatePtr,
+			    ChannelState *outStatePtr, long long toRead);
 static int		MoveBytes(CopyState *csPtr);
 
 static void		MBCallback(CopyState *csPtr, Tcl_Obj *errObj);
@@ -337,6 +339,9 @@ static const Tcl_ObjType chanObjType = {
     NULL,			/* setFromAnyProc */
     TCL_OBJTYPE_V0
 };
+
+#define GetIso88591() \
+    (binaryEncoding ? Tcl_GetEncoding(NULL, "iso8859-1") : binaryEncoding)
 
 #define ChanSetInternalRep(objPtr, resPtr)					\
     do {								\
@@ -9364,18 +9369,7 @@ TclCopyChannel(
     ResetFlag(outStatePtr, CHANNEL_LINEBUFFERED);
     SetFlag(outStatePtr, CHANNEL_UNBUFFERED);
 
-    /*
-     * Test for conditions where we know we can just move bytes from input
-     * channel to output channel with no transformation or even examination
-     * of the bytes themselves.
-     */
-
-    moveBytes = inStatePtr->inEofChar == '\0'	/* No eofChar to stop input */
-	    && inStatePtr->inputTranslation == TCL_TRANSLATE_LF
-	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
-	    && inStatePtr->encoding == outStatePtr->encoding
-	    && CHANNEL_PROFILE_GET(inStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
-	    && CHANNEL_PROFILE_GET(outStatePtr->outputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8;
+    moveBytes = Lossless(inStatePtr, outStatePtr, toRead);
 
     /*
      * Allocate a new CopyState to maintain info about the current copy in
@@ -9682,8 +9676,7 @@ CopyData(
     Tcl_WideInt total;
     Tcl_WideInt size; /* TODO - be careful if total and size are made unsigned  */
     const char *buffer;
-    int inBinary, outBinary, sameEncoding;
-				/* Encoding control */
+    int moveBytes;
     int underflow;		/* Input underflow */
 
     inChan	= (Tcl_Channel) csPtr->readPtr;
@@ -9701,13 +9694,9 @@ CopyData(
      * the bottom of the stack.
      */
 
-    inBinary = (inStatePtr->encoding == NULL);
-    outBinary = (outStatePtr->encoding == NULL);
-    sameEncoding = inStatePtr->encoding == outStatePtr->encoding
-	    && CHANNEL_PROFILE_GET(inStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
-	    && CHANNEL_PROFILE_GET(outStatePtr->outputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8;
+    moveBytes = Lossless(inStatePtr, outStatePtr, csPtr->toRead);
 
-    if (!(inBinary || sameEncoding)) {
+    if (!moveBytes) {
 	TclNewObj(bufObj);
 	Tcl_IncrRefCount(bufObj);
     }
@@ -9748,7 +9737,7 @@ CopyData(
 	    underflow = 1;
 	} else {
 	    /*
-	     * Read up to bufSize bytes.
+	     * Read up to bufSize characters.
 	     */
 
 	    if ((csPtr->toRead == (Tcl_WideInt) -1)
@@ -9758,7 +9747,7 @@ CopyData(
 		sizeb = csPtr->toRead;
 	    }
 
-	    if (inBinary || sameEncoding) {
+	    if (moveBytes) {
 		size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb,
                               !GotFlag(inStatePtr, CHANNEL_NONBLOCKING));
 	    } else {
@@ -9825,25 +9814,20 @@ CopyData(
 	 * Now write the buffer out.
 	 */
 
-	if (inBinary || sameEncoding) {
+	if (moveBytes) {
 	    buffer = csPtr->buffer;
-	    sizeb = size;
+	    sizeb = WriteBytes(outStatePtr->topChanPtr, buffer, size);
 	} else {
 	    buffer = Tcl_GetStringFromObj(bufObj, &sizeb);
-	}
-
-	if (outBinary || sameEncoding) {
-	    sizeb = WriteBytes(outStatePtr->topChanPtr, buffer, sizeb);
-	} else {
 	    sizeb = WriteChars(outStatePtr->topChanPtr, buffer, sizeb);
 	}
 
 	/*
 	 * [Bug 2895565]. At this point 'size' still contains the number of
-	 * bytes or characters which have been read. We keep this to later to
+	 * characters which have been read. We keep this to later to
 	 * update the totals and toRead information, see marker (UP) below. We
 	 * must not overwrite it with 'sizeb', which is the number of written
-	 * bytes or characters, and both EOL translation and encoding
+	 * characters, and both EOL translation and encoding
 	 * conversion may have changed this number unpredictably in relation
 	 * to 'size' (It can be smaller or larger, in the latter case able to
 	 * drive toRead below -1, causing infinite looping). Completely
@@ -9870,10 +9854,10 @@ CopyData(
 	}
 
 	/*
-	 * Update the current byte count. Do it now so the count is valid
+	 * Update the current character count. Do it now so the count is valid
 	 * before a return or break takes us out of the loop. The invariant at
 	 * the top of the loop should be that csPtr->toRead holds the number
-	 * of bytes left to copy.
+	 * of characters left to copy.
 	 */
 
 	if (csPtr->toRead != -1) {
@@ -9940,8 +9924,8 @@ CopyData(
     }
 
     /*
-     * Make the callback or return the number of bytes transferred. The local
-     * total is used because StopCopy frees csPtr.
+     * Make the callback or return the number of characters transferred. The
+     * local total is used because StopCopy frees csPtr.
      */
 
     total = csPtr->total;
@@ -10259,6 +10243,50 @@ CopyEventProc(
     int mask)
 {
     (void) CopyData((CopyState *)clientData, mask);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lossless --
+ *
+ *	Determines whether copying characters between two channel states would
+ *	be lossless, i.e. whether one byte corresponds to one character, every
+ *	character appears in the Unicode character set, there are no
+ *	translations to be performed, and no inline signals to respond to.
+ *
+ * Result:
+ *	True if copying would be lossless.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Lossless(
+    ChannelState *inStatePtr,
+    ChannelState *outStatePtr,
+    long long toRead)
+{
+    return inStatePtr->inEofChar == '\0'	/* No eofChar to stop input */
+	&& inStatePtr->inputTranslation == TCL_TRANSLATE_LF
+	&& outStatePtr->outputTranslation == TCL_TRANSLATE_LF
+	&& (
+	    (
+		(inStatePtr->encoding == NULL
+		    || inStatePtr->encoding == GetBinaryEncoding()
+		)
+		&&
+		(outStatePtr->encoding == NULL
+		    || outStatePtr->encoding == GetBinaryEncoding()
+		)
+	    )
+	    ||
+	    (
+		toRead == -1
+		&& inStatePtr->encoding == outStatePtr->encoding
+		&& CHANNEL_PROFILE_GET(inStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
+		&& CHANNEL_PROFILE_GET(outStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
+	    )
+	);
 }
 
 /*

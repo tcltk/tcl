@@ -2570,8 +2570,7 @@ UtfToUtfProc(
 		}
 	    } else {
 		/*
-		 * Convert 0xC080 to real nulls when we are in output mode,
-		 * irrespective of the profile.
+		 * For output convert 0xC080 to a real null.
 		 */
 		*dst++ = 0;
 		src += 2;
