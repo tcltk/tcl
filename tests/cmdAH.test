@@ -180,63 +180,153 @@ test cmdAH-3.2 {Tcl_ContinueObjCmd, success} {
     list [catch {continue} msg] $msg
 } {4 {}}
 
-test cmdAH-4.1 {Tcl_EncodingObjCmd} -returnCodes error -body {
+###
+# encoding command
+
+set "numargErrors(encoding system)" {^wrong # args: should be "(encoding |::tcl::encoding::)system \?encoding\?"$}
+set "numargErrors(encoding convertfrom)" {wrong # args: should be "(encoding |::tcl::encoding::)convertfrom \?-profile profile\? \?-failindex var\? encoding data" or "(encoding |::tcl::encoding::)convertfrom data"}
+set "numargErrors(encoding convertto)" {wrong # args: should be "(encoding |::tcl::encoding::)convertto \?-profile profile\? \?-failindex var\? encoding data" or "(encoding |::tcl::encoding::)convertto data"}
+set "numargErrors(encoding names)" {wrong # args: should be "encoding names"}
+set "numargErrors(encoding profiles)" {wrong # args: should be "encoding profiles"}
+
+source [file join [file dirname [info script]] encodingVectors.tcl]
+
+
+# Maps utf-{16,32}{le,be} to utf-16, utf-32 and
+# others to "". Used to test utf-16, utf-32 based
+# on system endianness
+proc endianUtf {enc} {
+    if {$::tcl_platform(byteOrder) eq "littleEndian"} {
+        set endian le
+    } else {
+        set endian be
+    }
+    if {$enc eq "utf-16$endian" || $enc eq "utf-32$endian"} {
+        return [string range $enc 0 5]
+    }
+    return ""
+}
+
+# Map arbitrary strings to printable form in ASCII.
+proc printable {s} {
+    set print ""
+    foreach c [split $s ""] {
+        set i [scan $c %c]
+        if {[string is print $c] && ($i <= 127)} {
+            append print $c
+        } elseif {$i <= 0xff} {
+            append print \\x[format %02X $i]
+        } elseif {$i <= 0xffff} {
+            append print \\u[format %04X $i]
+        } else {
+            append print \\U[format %08X $i]
+        }
+    }
+    return $print
+}
+
+#
+# Check errors for invalid number of arguments
+proc badnumargs {id cmd cmdargs} {
+    variable numargErrors
+    test $id.a "Syntax error: $cmd $cmdargs" \
+        -body [list {*}$cmd {*}$cmdargs] \
+        -result $numargErrors($cmd) \
+        -match regexp \
+        -returnCodes error
+    test $id.b "Syntax error: $cmd (byte compiled)" \
+        -setup [list proc compiled_proc {} [list {*}$cmd {*}$cmdargs]] \
+        -body {compiled_proc} \
+        -cleanup {rename compiled_proc {}} \
+        -result $numargErrors($cmd) \
+        -match regexp \
+        -returnCodes error
+}
+
+# Wraps tests resulting in unknown encoding errors
+proc unknownencodingtest {id cmd} {
+    set result "unknown encoding \"[lindex $cmd end-1]\""
+    test $id.a "Unknown encoding error: $cmd" \
+        -body [list encoding {*}$cmd] \
+        -result $result \
+        -returnCodes error
+    test $id.b "Syntax error: $cmd (byte compiled)" \
+        -setup [list proc encoding_test {} [list encoding {*}$cmd]] \
+        -body {encoding_test} \
+        -cleanup {rename encoding_test {}} \
+        -result $result \
+        -returnCodes error
+}
+
+# Wraps tests for conversion, successful or not.
+# Really more general than just for encoding conversion.
+proc testconvert {id body result args} {
+    test $id.a $body \
+        -body $body \
+        -result $result \
+        {*}$args
+    dict append args -setup \n[list proc compiled_script {} $body]
+    dict append args -cleanup "\nrename compiled_script {}"
+    test $id.b "$body (byte compiled)" \
+        -body {compiled_script} \
+        -result $result \
+        {*}$args
+}
+
+# Wrapper to verify encoding convert{to,from} ?-profile?
+# Generates tests for compiled and uncompiled implementation.
+# Also generates utf-{16,32} tests if passed encoding is utf-{16,32}{le,be}
+# The enc and profile are appended to id to generate the test id
+proc testprofile {id converter enc profile data result args} {
+    testconvert $id.$enc.$profile [list encoding $converter -profile $profile $enc $data] $result {*}$args
+    if {[set enc2 [endianUtf $enc]] ne ""} {
+        # If utf{16,32}-{le,be}, also do utf{16,32}
+        testconvert $id.$enc2.$profile [list encoding $converter -profile $profile $enc2 $data] $result {*}$args
+    }
+
+    # If this is the default profile, generate a test without specifying profile
+    if {$profile eq $::encDefaultProfile} {
+        testconvert $id.$enc.default [list encoding $converter $enc $data] $result {*}$args
+        if {[set enc2 [endianUtf $enc]] ne ""} {
+            # If utf{16,32}-{le,be}, also do utf{16,32}
+            testconvert $id.$enc2.default [list encoding $converter $enc2 $data] $result {*}$args
+        }
+    }
+}
+
+
+# Wrapper to verify encoding convert{to,from} -failindex ?-profile?
+# Generates tests for compiled and uncompiled implementation.
+# Also generates utf-{16,32} tests if passed encoding is utf-{16,32}{le,be}
+# The enc and profile are appended to id to generate the test id
+proc testfailindex {id converter enc data result failidx {profile default}} {
+    testconvert $id.$enc.$profile "list \[encoding $converter -profile $profile -failindex idx $enc [list $data]\] \[set idx\]" [list $result $failidx]
+    if {[set enc2 [endianUtf $enc]] ne ""} {
+        # If utf{16,32}-{le,be}, also do utf{16,32}
+        testconvert $id.$enc2.$profile "list \[encoding $converter -profile $profile -failindex idx $enc2 [list $data]\] \[set idx]" [list $result $failidx]
+    }
+
+    # If this is the default profile, generate a test without specifying profile
+    if {$profile eq $::encDefaultProfile} {
+        testconvert $id.$enc.default "list \[encoding $converter -failindex idx $enc [list $data]\] \[set idx]" [list $result $failidx]
+        if {[set enc2 [endianUtf $enc]] ne ""} {
+            # If utf{16,32}-{le,be}, also do utf{16,32}
+            testconvert $id.$enc2.default "list \[encoding $converter -failindex idx $enc2 [list $data]\] \[set idx]" [list $result $failidx]
+        }
+    }
+}
+
+test cmdAH-4.1.1 {encoding} -returnCodes error -body {
     encoding
 } -result {wrong # args: should be "encoding subcommand ?arg ...?"}
-test cmdAH-4.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
+test cmdAH-4.1.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding foo
-} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, or system}
-test cmdAH-4.3 {Tcl_EncodingObjCmd} -returnCodes error -body {
-    encoding convertto
-} -result {wrong # args: should be "encoding convertto ?-strict? ?-failindex var? ?encoding? data" or "encoding convertto -nocomplain ?encoding? data"}
-test cmdAH-4.4 {Tcl_EncodingObjCmd} -returnCodes error -body {
-    encoding convertto foo bar
-} -result {unknown encoding "foo"}
-test cmdAH-4.5 {Tcl_EncodingObjCmd} -setup {
-    set system [encoding system]
-} -body {
-    encoding system jis0208
-    encoding convertto 乎
-} -cleanup {
-    encoding system $system
-} -result 8C
-test cmdAH-4.6 {Tcl_EncodingObjCmd} -setup {
-    set system [encoding system]
-} -body {
-    encoding system iso8859-1
-    encoding convertto jis0208 乎
-} -cleanup {
-    encoding system $system
-} -result 8C
-test cmdAH-4.7 {Tcl_EncodingObjCmd} -returnCodes error -body {
-    encoding convertfrom
-} -result {wrong # args: should be "encoding convertfrom ?-strict? ?-failindex var? ?encoding? data" or "encoding convertfrom -nocomplain ?encoding? data"}
-test cmdAH-4.8 {Tcl_EncodingObjCmd} -returnCodes error -body {
-    encoding convertfrom foo bar
-} -result {unknown encoding "foo"}
-test cmdAH-4.9 {Tcl_EncodingObjCmd} -setup {
-    set system [encoding system]
-} -body {
-    encoding system jis0208
-    encoding convertfrom 8C
-} -cleanup {
-    encoding system $system
-} -result 乎
-test cmdAH-4.10 {Tcl_EncodingObjCmd} -setup {
-    set system [encoding system]
-} -body {
-    encoding system iso8859-1
-    encoding convertfrom jis0208 8C
-} -cleanup {
-    encoding system $system
-} -result 乎
-test cmdAH-4.11 {Tcl_EncodingObjCmd} -returnCodes error -body {
-    encoding names foo
-} -result {wrong # args: should be "encoding names"}
-test cmdAH-4.12 {Tcl_EncodingObjCmd} -returnCodes error -body {
-    encoding system foo bar
-} -result {wrong # args: should be "encoding system ?encoding?"}
-test cmdAH-4.13 {Tcl_EncodingObjCmd} -setup {
+} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, profiles, or system}
+
+#
+# encoding system 4.2.*
+badnumargs cmdAH-4.2.1 {encoding system} {ascii ascii}
+test cmdAH-4.2.2 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
     encoding system iso8859-1
@@ -245,173 +335,358 @@ test cmdAH-4.13 {Tcl_EncodingObjCmd} -setup {
     encoding system $system
 } -result iso8859-1
 
-test cmdAH-4.14.1 {Syntax error, -nocomplain and -failindex, no encoding} -body {
-    encoding convertfrom -nocomplain -failindex 2 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-strict? ?-failindex var? ?encoding? data" or "encoding convertfrom -nocomplain ?encoding? data"}
-test cmdAH-4.14.2 {Syntax error, -nocomplain and -failindex, no encoding} -body {
-    encoding convertto -nocomplain -failindex 2 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-strict? ?-failindex var? ?encoding? data" or "encoding convertto -nocomplain ?encoding? data"}
-test cmdAH-4.15.1 {Syntax error, -failindex and -nocomplain, no encoding} -body {
-    encoding convertfrom -failindex 2 -nocomplain ABC
-} -returnCodes 1 -result {unknown encoding "-nocomplain"}
-test cmdAH-4.15.2 {Syntax error, -failindex and -nocomplain, no encoding} -body {
-    encoding convertto -failindex 2 -nocomplain ABC
-} -returnCodes 1 -result {unknown encoding "-nocomplain"}
-test cmdAH-4.16.1 {Syntax error, -nocomplain and -failindex, encoding} -body {
-    encoding convertfrom -nocomplain -failindex 2 utf-8 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-strict? ?-failindex var? ?encoding? data" or "encoding convertfrom -nocomplain ?encoding? data"}
-test cmdAH-4.16.2 {Syntax error, -nocomplain and -failindex, encoding} -body {
-    encoding convertto -nocomplain -failindex 2 utf-8 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-strict? ?-failindex var? ?encoding? data" or "encoding convertto -nocomplain ?encoding? data"}
-test cmdAH-4.17.1 {Syntax error, -failindex and -nocomplain, encoding} -body {
-    encoding convertfrom -failindex 2 -nocomplain utf-8 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-strict? ?-failindex var? ?encoding? data" or "encoding convertfrom -nocomplain ?encoding? data"}
-test cmdAH-4.17.2 {Syntax error, -failindex and -nocomplain, encoding} -body {
-    encoding convertto -failindex 2 -nocomplain utf-8 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-strict? ?-failindex var? ?encoding? data" or "encoding convertto -nocomplain ?encoding? data"}
-test cmdAH-4.18.1 {Syntax error, -failindex with no var, no encoding} -body {
-    encoding convertfrom -failindex ABC
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertfrom -nocomplain ?encoding? data"}
-test cmdAH-4.18.2 {Syntax error, -failindex with no var, no encoding (byte compiled)} -setup {
-    proc encoding_test {} {
-        encoding convertfrom -failindex ABC
-    }
-} -body {
-    # Compile and execute
-    encoding_test
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertfrom -nocomplain ?encoding? data"} -cleanup {
-    rename encoding_test ""
-}
-test cmdAH-4.18.3 {Syntax error, -failindex with no var, no encoding} -body {
-    encoding convertto -failindex ABC
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertto -nocomplain ?encoding? data"}
-test cmdAH-4.18.4 {Syntax error, -failindex with no var, no encoding (byte compiled)} -setup {
-    proc encoding_test {} {
-        encoding convertto -failindex ABC
-    }
-} -body {
-    # Compile and execute
-    encoding_test
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-strict? ?-failindex var? ?encoding? data" or "::tcl::encoding::convertto -nocomplain ?encoding? data"} -cleanup {
-    rename encoding_test ""
-}
-test cmdAH-4.19.1 {convertrom -failindex with correct data} -body {
-    encoding convertfrom -failindex test ABC
-    set test
-} -returnCodes 0 -result -1
-test cmdAH-4.19.2 {convertrom -failindex with correct data (byt compiled)} -setup {
-    proc encoding_test {} {
-	encoding convertfrom -failindex test ABC
-	set test
-    }
-} -body {
-    # Compile and execute
-    encoding_test
-} -returnCodes 0 -result -1 -cleanup {
-    rename encoding_test ""
-}
-test cmdAH-4.19.3 {convertrom -failindex with correct data} -body {
-    encoding convertto -failindex test ABC
-    set test
-} -returnCodes 0 -result -1
-test cmdAH-4.19.4 {convertrom -failindex with correct data (byt compiled)} -setup {
-    proc encoding_test {} {
-	encoding convertto -failindex test ABC
-	set test
-    }
-} -body {
-    # Compile and execute
-    encoding_test
-} -returnCodes 0 -result -1 -cleanup {
-    rename encoding_test ""
-}
-test cmdAH-4.20.1 {convertrom -failindex with incomplete utf8} -body {
-    set x [encoding convertfrom -failindex i utf-8 A\xc3]
-    binary scan $x H* y
-    list $y $i
-} -returnCodes 0 -result {41 1}
-test cmdAH-4.20.2 {convertrom -failindex with incomplete utf8 (byte compiled)} -setup {
-    proc encoding_test {} {
-	set x [encoding convertfrom -failindex i utf-8 A\xc3]
-	binary scan $x H* y
-	list $y $i
-    }
-} -body {
-    # Compile and execute
-    encoding_test
-} -returnCodes 0 -result {41 1} -cleanup {
-    rename encoding_test ""
-}
-test cmdAH-4.20.3 {convertrom -failindex with incomplete utf8} -body {
-    set x [encoding convertfrom -strict -failindex i utf-8 A\xc3]
-    binary scan $x H* y
-    list $y $i
-} -returnCodes 0 -result {41 1}
-test cmdAH-4.20.4 {convertrom -failindex with incomplete utf8 (byte compiled)} -setup {
-    proc encoding_test {} {
-	set x [encoding convertfrom -strict -failindex i utf-8 A\xc3]
-	binary scan $x H* y
-	list $y $i
-    }
-} -body {
-    # Compile and execute
-    encoding_test
-} -returnCodes 0 -result {41 1} -cleanup {
-    rename encoding_test ""
-}
-test cmdAH-4.20.5 {convertrom -failindex with incomplete utf8} -body {
-    set x [encoding convertfrom -failindex i -strict utf-8 A\xc3]
-    binary scan $x H* y
-    list $y $i
-} -returnCodes 0 -result {41 1}
-test cmdAH-4.20.6 {convertrom -failindex with incomplete utf8 (byte compiled)} -setup {
-    proc encoding_test {} {
-	set x [encoding convertfrom -failindex i -strict utf-8 A\xc3]
-	binary scan $x H* y
-	list $y $i
-    }
-} -body {
-    # Compile and execute
-    encoding_test
-} -returnCodes 0 -result {41 1} -cleanup {
-    rename encoding_test ""
-}
-test cmdAH-4.21.1 {convertto -failindex with wrong character} -body {
-    set x [encoding convertto -failindex i iso8859-1 A\u0141]
-    binary scan $x H* y
-    list $y $i
-} -returnCodes 0 -result {41 1}
-test cmdAH-4.21.2 {convertto -failindex with wrong character (byte compiled)} -setup {
-    proc encoding_test {} {
-    set x [encoding convertto -failindex i iso8859-1 A\u0141]
-	binary scan $x H* y
-	list $y $i
-    }
-} -body {
-    # Compile and execute
-    encoding_test
-} -returnCodes 0 -result {41 1} -cleanup {
-    rename encoding_test ""
-}
-test cmdAH-4.22 {convertfrom -strict} -body {
-    encoding convertfrom -strict utf-8 A\x00B
-} -result A\x00B
+#
+# encoding convertfrom 4.3.*
 
-test cmdAH-4.23 {convertfrom -strict} -body {
-    encoding convertfrom -strict utf-8 A\xC0\x80B
-} -returnCodes error -result {unexpected byte sequence starting at index 1: '\xC0'}
+# Odd number of args is always invalid since last two args
+# are ENCODING DATA and all options take a value
+badnumargs cmdAH-4.3.1 {encoding convertfrom} {}
+badnumargs cmdAH-4.3.2 {encoding convertfrom} {-failindex VAR ABC}
+badnumargs cmdAH-4.3.3 {encoding convertfrom} {-profile VAR ABC}
+badnumargs cmdAH-4.3.4 {encoding convertfrom} {-failindex VAR -profile strict ABC}
+badnumargs cmdAH-4.3.5 {encoding convertfrom} {-profile strict -failindex VAR ABC}
 
-test cmdAH-4.24 {convertto -strict} -body {
-    encoding convertto -strict utf-8 A\x00B
-} -result A\x00B
+# Test that last two args always treated as ENCODING DATA
+unknownencodingtest cmdAH-4.3.6 {convertfrom -failindex ABC}
+unknownencodingtest cmdAH-4.3.7 {convertfrom -profile ABC}
+unknownencodingtest cmdAH-4.3.8 {convertfrom nosuchencoding ABC}
+unknownencodingtest cmdAH-4.3.9 {convertfrom -failindex VAR -profile ABC}
+unknownencodingtest cmdAH-4.3.10 {convertfrom -profile strict -failindex ABC}
+testconvert cmdAH-4.3.11 {
+    encoding convertfrom jis0208 \x38\x43
+} \u4e4e -setup {
+    set system [encoding system]
+    encoding system iso8859-1
+} -cleanup {
+    encoding system $system
+}
 
-test cmdAH-4.25 {convertfrom -strict} -constraints knownBug -body {
-    encoding convertfrom -strict utf-8 A\x80B
+# Verify single arg defaults to system encoding
+testconvert cmdAH-4.3.12 {
+    encoding convertfrom \x38\x43
+} \u4e4e -setup {
+    set system [encoding system]
+    encoding system jis0208
+} -cleanup {
+    encoding system $system
+}
+
+# convertfrom ?-profile? : valid byte sequences
+foreach {enc str hex ctrl comment} $encValidStrings {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary decode hex $hex]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc A]
+    set suffix_bytes [encoding convertto $enc B]
+    foreach profile $encProfiles {
+        testprofile cmdAH-4.3.13.$hex.solo convertfrom $enc $profile $bytes $str
+        testprofile cmdAH-4.3.13.$hex.lead convertfrom $enc $profile $bytes$suffix_bytes $str$suffix
+        testprofile cmdAH-4.3.13.$hex.tail convertfrom $enc $profile $prefix_bytes$bytes $prefix$str
+        testprofile cmdAH-4.3.13.$hex.middle convertfrom $enc $profile $prefix_bytes$bytes$suffix_bytes $prefix$str$suffix
+    }
+}
+
+# convertfrom ?-profile? : invalid byte sequences
+foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary format H* $hex]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
+    set prefixLen [string length $prefix_bytes]
+    set result [list $str]
+    # TODO - if the bad byte is unprintable, tcltest errors out when printing a mismatch
+    # so glob it out in error message pattern for now.
+    set errorWithoutPrefix [list "unexpected byte sequence starting at index $failidx: *" -returnCodes error -match glob]
+    set errorWithPrefix [list "unexpected byte sequence starting at index [expr {$failidx+$prefixLen}]: *" -returnCodes error -match glob]
+    if {$ctrl eq {} || "solo" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $str]
+        } else {
+            set result $errorWithoutPrefix
+        }
+        testprofile cmdAH-4.3.13.$hex.solo convertfrom $enc $profile $bytes {*}$result
+    }
+    if {$ctrl eq {} || "lead" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $str$suffix]
+        } else {
+            set result $errorWithoutPrefix
+        }
+        testprofile cmdAH-4.3.13.$hex.lead convertfrom $enc $profile $bytes$suffix_bytes {*}$result
+    }
+    if {$ctrl eq {} || "tail" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $prefix$str]
+        } else {
+            set result $errorWithPrefix
+        }
+        testprofile cmdAH-4.3.13.$hex.tail convertfrom $enc $profile $prefix_bytes$bytes {*}$result
+    }
+    if {$ctrl eq {} || "middle" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $prefix$str$suffix]
+        } else {
+            set result $errorWithPrefix
+        }
+        testprofile cmdAH-4.3.13.$hex.middle convertfrom $enc $profile $prefix_bytes$bytes$suffix_bytes {*}$result
+    }
+}
+
+# convertfrom -failindex ?-profile? - valid data
+foreach {enc str hex ctrl comment} $encValidStrings {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary decode hex $hex]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
+    foreach profile $encProfiles {
+        testfailindex cmdAH-4.3.14.$hex.solo convertfrom $enc $bytes $str -1 $profile
+        testfailindex cmdAH-4.3.14.$hex.lead convertfrom $enc $bytes$suffix_bytes $str$suffix -1 $profile
+        testfailindex cmdAH-4.3.14.$hex.tail convertfrom $enc $prefix_bytes$bytes $prefix$str -1 $profile
+        testfailindex cmdAH-4.3.14.$hex.middle convertfrom $enc $prefix_bytes$bytes$suffix_bytes $prefix$str$suffix -1 $profile
+    }
+}
+
+# convertfrom -failindex ?-profile? - invalid data
+foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
+    if {"knownBug" in $ctrl} continue
+    # There are multiple test cases based on location of invalid bytes
+    set bytes [binary decode hex $hex]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
+    set prefixLen [string length $prefix_bytes]
+    if {$ctrl eq {} || "solo" in $ctrl} {
+        testfailindex cmdAH-4.3.14.$hex.solo convertfrom $enc $bytes $str $failidx $profile
+    }
+    if {$ctrl eq {} || "lead" in $ctrl} {
+        if {$failidx == -1} {
+            # If success expected
+            set result $str$suffix
+        } else {
+            # Failure expected
+            set result ""
+        }
+        testfailindex cmdAH-4.3.14.$hex.lead convertfrom $enc $bytes$suffix_bytes $result $failidx $profile
+    }
+    if {$ctrl eq {} || "tail" in $ctrl} {
+        set expected_failidx $failidx
+        if {$failidx == -1} {
+            # If success expected
+            set result $prefix$str
+        } else {
+            # Failure expected
+            set result $prefix
+            incr expected_failidx $prefixLen
+        }
+        testfailindex cmdAH-4.3.14.$hex.tail convertfrom $enc $prefix_bytes$bytes $result $expected_failidx $profile
+    }
+    if {$ctrl eq {} || "middle" in $ctrl} {
+        set expected_failidx $failidx
+        if {$failidx == -1} {
+            # If success expected
+            set result $prefix$str$suffix
+        } else {
+            # Failure expected
+            set result $prefix
+            incr expected_failidx $prefixLen
+        }
+        testfailindex cmdAH-4.3.14.$hex.middle convertfrom $enc $prefix_bytes$bytes$suffix_bytes $result $expected_failidx $profile
+    }
+}
+
+#
+# encoding convertto 4.4.*
+
+badnumargs cmdAH-4.4.1 {encoding convertto} {}
+badnumargs cmdAH-4.4.2 {encoding convertto} {-failindex VAR ABC}
+badnumargs cmdAH-4.4.3 {encoding convertto} {-profile VAR ABC}
+badnumargs cmdAH-4.4.4 {encoding convertto} {-failindex VAR -profile strict ABC}
+badnumargs cmdAH-4.4.5 {encoding convertto} {-profile strict -failindex VAR ABC}
+
+# Test that last two args always treated as ENCODING DATA
+unknownencodingtest cmdAH-4.4.6 {convertto -failindex ABC}
+unknownencodingtest cmdAH-4.4.7 {convertto -profile ABC}
+unknownencodingtest cmdAH-4.4.8 {convertto nosuchencoding ABC}
+unknownencodingtest cmdAH-4.4.9 {convertto -failindex VAR -profile ABC}
+unknownencodingtest cmdAH-4.4.10 {convertto -profile strict -failindex ABC}
+testconvert cmdAH-4.4.11 {
+    encoding convertto jis0208 \u4e4e
+} \x38\x43 -setup {
+    set system [encoding system]
+    encoding system iso8859-1
+} -cleanup {
+    encoding system $system
+}
+
+# Verify single arg defaults to system encoding
+testconvert cmdAH-4.4.12 {
+    encoding convertto \u4e4e
+} \x38\x43 -setup {
+    set system [encoding system]
+    encoding system jis0208
+} -cleanup {
+    encoding system $system
+}
+
+# convertto ?-profile? : valid byte sequences
+
+foreach {enc str hex ctrl comment} $encValidStrings {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary decode hex $hex]
+    set printable [printable $str]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc A]
+    set suffix_bytes [encoding convertto $enc B]
+    foreach profile $encProfiles {
+        testprofile cmdAH-4.4.13.$printable.solo convertto $enc $profile $str $bytes
+        testprofile cmdAH-4.4.13.$printable.lead convertto $enc $profile $str$suffix $bytes$suffix_bytes
+        testprofile cmdAH-4.4.13.$printable.tail convertto $enc $profile $prefix$str $prefix_bytes$bytes
+        testprofile cmdAH-4.4.13.$printable.middle convertto $enc $profile $prefix$str$suffix $prefix_bytes$bytes$suffix_bytes
+    }
+}
+
+# convertto ?-profile? : invalid byte sequences
+foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary decode hex $hex]
+    set printable [printable $str]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
+    set prefixLen [string length $prefix_bytes]
+    set result [list $bytes]
+    # TODO - if the bad byte is unprintable, tcltest errors out when printing a mismatch
+    # so glob it out in error message pattern for now.
+    set errorWithoutPrefix [list "unexpected character at index $failidx: *" -returnCodes error -match glob]
+    set errorWithPrefix [list "unexpected character at index [expr {$failidx+$prefixLen}]: *" -returnCodes error -match glob]
+    if {$ctrl eq {} || "solo" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $bytes]
+        } else {
+            set result $errorWithoutPrefix
+        }
+        testprofile cmdAH-4.4.13.$printable.solo convertto $enc $profile $str {*}$result
+    }
+    if {$ctrl eq {} || "lead" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $bytes$suffix_bytes]
+        } else {
+            set result $errorWithoutPrefix
+        }
+        testprofile cmdAH-4.4.13.$printable.lead convertto $enc $profile $str$suffix {*}$result
+    }
+    if {$ctrl eq {} || "tail" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $prefix_bytes$bytes]
+        } else {
+            set result $errorWithPrefix
+        }
+        testprofile cmdAH-4.4.13.$printable.tail convertto $enc $profile $prefix$str {*}$result
+    }
+    if {$ctrl eq {} || "middle" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $prefix_bytes$bytes$suffix_bytes]
+        } else {
+            set result $errorWithPrefix
+        }
+        testprofile cmdAH-4.4.13.$printable.middle convertto $enc $profile $prefix$str$suffix {*}$result
+    }
+}
+
+# convertto -failindex ?-profile? - valid data
+foreach {enc str hex ctrl comment} $encValidStrings {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary decode hex $hex]
+    set printable [printable $str]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc A]
+    set suffix_bytes [encoding convertto $enc B]
+    foreach profile $encProfiles {
+        testfailindex cmdAH-4.4.14.$enc.$printable.solo convertto $enc $str $bytes -1 $profile
+        testfailindex cmdAH-4.4.14.$enc.$printable.lead convertto $enc $str$suffix $bytes$suffix_bytes -1 $profile
+        testfailindex cmdAH-4.4.14.$enc.$printable.tail convertto $enc $prefix$str $prefix_bytes$bytes -1 $profile
+        testfailindex cmdAH-4.4.14.$enc.$printable.middle convertto $enc $prefix$str$suffix $prefix_bytes$bytes$suffix_bytes -1 $profile
+    }
+}
+
+# convertto -failindex ?-profile? - invalid data
+foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary decode hex $hex]
+    set printable [printable $str]
+    set prefix A
+    set suffix B
+    set prefixLen [string length [encoding convertto $enc $prefix]]
+    if {$ctrl eq {} || "solo" in $ctrl} {
+        testfailindex cmdAH-4.4.14.$printable.solo convertto $enc $str $bytes $failidx $profile
+    }
+    if {$ctrl eq {} || "lead" in $ctrl} {
+        if {$failidx == -1} {
+            # If success expected
+            set result $bytes$suffix
+        } else {
+            # Failure expected
+            set result ""
+        }
+        testfailindex cmdAH-4.4.14.$printable.lead convertto $enc $str$suffix $result $failidx $profile
+    }
+    if {$ctrl eq {} || "tail" in $ctrl} {
+        set expected_failidx $failidx
+        if {$failidx == -1} {
+            # If success expected
+            set result $prefix$bytes
+        } else {
+            # Failure expected
+            set result $prefix
+            incr expected_failidx $prefixLen
+        }
+        testfailindex cmdAH-4.4.14.$printable.tail convertto $enc $prefix$str $result $expected_failidx $profile
+    }
+    if {$ctrl eq {} || "middle" in $ctrl} {
+        set expected_failidx $failidx
+        if {$failidx == -1} {
+            # If success expected
+            set result $prefix$bytes$suffix
+        } else {
+            # Failure expected
+            set result $prefix
+            incr expected_failidx $prefixLen
+        }
+        testfailindex cmdAH-4.4.14.$printable.middle convertto $enc $prefix$str$suffix $result $expected_failidx $profile
+    }
+}
+
+test cmdAH-4.4.xx {convertto -profile strict} -constraints {testbytestring knownBug} -body {
+    # TODO - what does testbytestring even test? Invalid UTF8 in the Tcl_Obj bytes field
+    encoding convertto -profile strict utf-8 A[testbytestring \x80]B
 } -returnCodes error -result {unexpected byte sequence starting at index 1: '\x80'}
 
-test cmdAH-4.26 {convertto -strict} -constraints {testbytestring knownBug} -body {
-    encoding convertto -strict utf-8 A[testbytestring \x80]B
-} -returnCodes error -result {unexpected byte sequence starting at index 1: '\x80'}
+#
+# encoding names 4.5.*
+badnumargs cmdAH-4.5.1 {encoding names} {foo}
+test cmdAH-4.5.2 {encoding names should include at least utf-8 and iso8859-1 and at least one more} -body {
+    set names [encoding names]
+    list [expr {"utf-8" in $names}] [expr {"iso8859-1" in $names}] [expr {[llength $names] > 2}]
+} -result {1 1 1}
+
+#
+# encoding profiles 4.6.*
+badnumargs cmdAH-4.6.1 {encoding profiles} {foo}
+test cmdAH-4.6.2 {encoding profiles} -body {
+    lsort [encoding profiles]
+} -result {replace strict tcl8}
+
+#
+# file command
 
 test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
     file

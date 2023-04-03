@@ -223,7 +223,7 @@ proc ::tcl::clock::Initialize {} {
 
     ::msgcat::mcset ru GREGORIAN_CHANGE_DATE 2421639
 
-    # Romania (Transylvania changed earler - perhaps de_RO should show the
+    # Romania (Transylvania changed earlier - perhaps de_RO should show the
     # earlier date?)
 
     ::msgcat::mcset ro GREGORIAN_CHANGE_DATE 2422063

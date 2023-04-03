@@ -4395,7 +4395,7 @@ ZipChannelOpen(
      * Wrap the ZipChannel into a Tcl_Channel.
      */
 
-    sprintf(cname, "zipfs_%" TCL_Z_MODIFIER "x_%d", z->offset,
+    snprintf(cname, sizeof(cname), "zipfs_%" TCL_Z_MODIFIER "x_%d", z->offset,
 	    ZipFS.idCount++);
     z->zipFilePtr->numOpen++;
     Unlock();

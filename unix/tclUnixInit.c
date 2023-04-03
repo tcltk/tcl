@@ -473,7 +473,7 @@ TclpInitLibraryPath(
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
-    Tcl_ExternalToUtfDStringEx(NULL, str, TCL_INDEX_NONE, TCL_ENCODING_NOCOMPLAIN, &buffer);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, str, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
     str = Tcl_DStringValue(&buffer);
 
     if ((str != NULL) && (str[0] != '\0')) {
@@ -490,7 +490,7 @@ TclpInitLibraryPath(
 	 * installed.
 	 */
 
-	sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+	snprintf(installLib, sizeof(installLib), "lib/tcl%s", TCL_VERSION);
 
 	/*
 	 * If TCL_LIBRARY is set, search there.
@@ -901,7 +901,7 @@ TclpSetVariables(
 	osInfo.dwMajorVersion = 11;
     }
     Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
-    sprintf(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    snprintf(buffer, sizeof(buffer), "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sysInfo.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",

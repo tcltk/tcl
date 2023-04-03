@@ -1499,7 +1499,7 @@ Tcl_CallWhenDeleted(
     AssocData *dPtr = (AssocData *)Tcl_Alloc(sizeof(AssocData));
     Tcl_HashEntry *hPtr;
 
-    sprintf(buffer, "Assoc Data Key #%d", *assocDataCounterPtr);
+    snprintf(buffer, sizeof(buffer), "Assoc Data Key #%d", *assocDataCounterPtr);
     (*assocDataCounterPtr)++;
 
     if (iPtr->assocData == NULL) {
@@ -6369,7 +6369,7 @@ ProcessUnexpectedResult(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"command returned bad code: %d", returnCode));
     }
-    sprintf(buf, "%d", returnCode);
+    snprintf(buf, sizeof(buf), "%d", returnCode);
     Tcl_SetErrorCode(interp, "TCL", "UNEXPECTED_RESULT_CODE", buf, NULL);
 }
 
@@ -9554,24 +9554,25 @@ InjectHandler(
     Tcl_Obj **objv;
 
     if (!isProbe) {
-        /*
-         * If this is [coroinject], add the extra arguments now.
-         */
+	/*
+	 * If this is [coroinject], add the extra arguments now.
+	 */
 
-        if (nargs == COROUTINE_ARGUMENTS_SINGLE_OPTIONAL) {
-            Tcl_ListObjAppendElement(NULL, listPtr,
-                    Tcl_NewStringObj("yield", TCL_INDEX_NONE));
-        } else if (nargs == COROUTINE_ARGUMENTS_ARBITRARY) {
-            Tcl_ListObjAppendElement(NULL, listPtr,
-                    Tcl_NewStringObj("yieldto", TCL_INDEX_NONE));
-        } else {
-            /*
-             * I don't think this is reachable...
-             */
-
-            Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewWideIntObj((Tcl_WideInt)(nargs + 1U) - 1));
-        }
-        Tcl_ListObjAppendElement(NULL, listPtr, Tcl_GetObjResult(interp));
+	if (nargs == COROUTINE_ARGUMENTS_SINGLE_OPTIONAL) {
+	    Tcl_ListObjAppendElement(NULL, listPtr,
+		    Tcl_NewStringObj("yield", TCL_INDEX_NONE));
+	} else if (nargs == COROUTINE_ARGUMENTS_ARBITRARY) {
+	    Tcl_ListObjAppendElement(NULL, listPtr,
+		    Tcl_NewStringObj("yieldto", TCL_INDEX_NONE));
+	} else {
+	    /*
+	     * I don't think this is reachable...
+	     */
+	    Tcl_Obj *nargsObj;
+	    TclNewIndexObj(nargsObj, nargs);
+	    Tcl_ListObjAppendElement(NULL, listPtr, nargsObj);
+	}
+	Tcl_ListObjAppendElement(NULL, listPtr, Tcl_GetObjResult(interp));
     }
 
     /*

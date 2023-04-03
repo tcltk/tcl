@@ -46,7 +46,7 @@ typedef struct Method {
 				/* The type of method. If NULL, this is a
 				 * special flag record which is just used for
 				 * the setting of the flags field. */
-    size_t refCount;
+    Tcl_Size refCount;
     void *clientData;	/* Type-specific data. */
     Tcl_Obj *namePtr;		/* Name of the method. */
     struct Object *declaringObjectPtr;
@@ -83,7 +83,7 @@ typedef struct ProcedureMethod {
 				 * includes the argument definition and the
 				 * body bytecodes. */
     int flags;			/* Flags to control features. */
-    size_t refCount;
+    Tcl_Size refCount;
     void *clientData;
     TclOO_PmCDDeleteProc *deleteClientdataProc;
     TclOO_PmCDCloneProc *cloneClientdataProc;
@@ -149,9 +149,9 @@ typedef struct {
  */
 
 #define LIST_STATIC(listType_t) \
-    struct { size_t num; listType_t *list; }
+    struct { Tcl_Size num; listType_t *list; }
 #define LIST_DYNAMIC(listType_t) \
-    struct { size_t num, size; listType_t *list; }
+    struct { Tcl_Size num, size; listType_t *list; }
 
 /*
  * These types are needed in function arguments.
@@ -184,14 +184,14 @@ typedef struct Object {
     struct Class *classPtr;	/* This is non-NULL for all classes, and NULL
 				 *  for everything else. It points to the class
 				 *  structure. */
-    size_t refCount;		/* Number of strong references to this object.
+    Tcl_Size refCount;		/* Number of strong references to this object.
 				 * Note that there may be many more weak
 				 * references; this mechanism exists to
 				 * avoid Tcl_Preserve. */
     int flags;
-    size_t creationEpoch;		/* Unique value to make comparisons of objects
+    Tcl_Size creationEpoch;		/* Unique value to make comparisons of objects
 				 * easier. */
-    size_t epoch;			/* Per-object epoch, incremented when the way
+    Tcl_Size epoch;			/* Per-object epoch, incremented when the way
 				 * an object should resolve call chains is
 				 * changed. */
     Tcl_HashTable *metadataPtr;	/* Mapping from pointers to metadata type to
@@ -329,7 +329,7 @@ typedef struct Class {
  */
 
 typedef struct ThreadLocalData {
-    size_t nsCount;		/* Epoch counter is used for keeping
+    Tcl_Size nsCount;		/* Epoch counter is used for keeping
 				 * the values used in Tcl_Obj internal
 				 * representations sane. Must be thread-local
 				 * because Tcl_Objs can cross interpreter
@@ -353,7 +353,7 @@ typedef struct Foundation {
     Tcl_Namespace *helpersNs;	/* Namespace containing the commands that are
 				 * only valid when executing inside a
 				 * procedural method. */
-    size_t epoch;			/* Used to invalidate method chains when the
+    Tcl_Size epoch;			/* Used to invalidate method chains when the
 				 * class structure changes. */
     ThreadLocalData *tsdPtr;	/* Counter so we can allocate a unique
 				 * namespace to each object. */
@@ -387,16 +387,16 @@ struct MInvoke {
 };
 
 typedef struct CallChain {
-    size_t objectCreationEpoch;	/* The object's creation epoch. Note that the
+    Tcl_Size objectCreationEpoch;	/* The object's creation epoch. Note that the
 				 * object reference is not stored in the call
 				 * chain; it is in the call context. */
-    size_t objectEpoch;		/* Local (object structure) epoch counter
+    Tcl_Size objectEpoch;		/* Local (object structure) epoch counter
 				 * snapshot. */
-    size_t epoch;			/* Global (class structure) epoch counter
+    Tcl_Size epoch;			/* Global (class structure) epoch counter
 				 * snapshot. */
     int flags;			/* Assorted flags, see below. */
-    size_t refCount;		/* Reference count. */
-    size_t numChain;		/* Size of the call chain. */
+    Tcl_Size refCount;		/* Reference count. */
+    Tcl_Size numChain;		/* Size of the call chain. */
     struct MInvoke *chain;	/* Array of call chain entries. May point to
 				 * staticChain if the number of entries is
 				 * small. */
@@ -405,9 +405,9 @@ typedef struct CallChain {
 
 typedef struct CallContext {
     Object *oPtr;		/* The object associated with this call. */
-    size_t index;			/* Index into the call chain of the currently
+    Tcl_Size index;			/* Index into the call chain of the currently
 				 * executing method implementation. */
-    size_t skip;			/* Current number of arguments to skip; can
+    Tcl_Size skip;			/* Current number of arguments to skip; can
 				 * vary depending on whether it is a direct
 				 * method call or a continuation via the
 				 * [next] command. */
@@ -578,7 +578,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 /*
  * A convenience macro for iterating through the lists used in the internal
  * memory management of objects.
- * REQUIRES DECLARATION: size_t i;
+ * REQUIRES DECLARATION: Tcl_Size i;
  */
 
 #define FOREACH(var,ary) \
@@ -590,7 +590,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
  * A variation where the array is an array of structs. There's no issue with
  * possible NULLs; every element of the array will be iterated over and the
  * varable set to a pointer to each of those elements in turn.
- * REQUIRES DECLARATION: size_t i;
+ * REQUIRES DECLARATION: Tcl_Size i;
  */
 
 #define FOREACH_STRUCT(var,ary) \
