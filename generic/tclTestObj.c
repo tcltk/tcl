@@ -1105,8 +1105,7 @@ TestobjCmd(
 
 	    if (objv[2]->typePtr == NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj("none", TCL_INDEX_NONE));
-	    }
-	    else {
+	    } else {
 		typeName = objv[2]->typePtr->name;
 		if (!strcmp(typeName, "utf32string"))
 		    typeName = "string";
@@ -1261,7 +1260,7 @@ TeststringobjCmd(
     static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
 	"set", "set2", "setlength", "maxchars", "range", "appendself",
-	"appendself2", NULL
+	"appendself2", "newunicode", NULL
     };
 
     if (objc < 3) {
@@ -1497,6 +1496,23 @@ TeststringobjCmd(
 	    Tcl_AppendUnicodeToObj(varPtr[varIndex], unicode + length, size - length);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
+	case 13: /* newunicode*/
+	    unicode = (Tcl_UniChar *)Tcl_Alloc((objc - 3) * sizeof(Tcl_UniChar));
+	    for (i = 0; i < (objc - 3); ++i) {
+		int val;
+		if (Tcl_GetIntFromObj(interp, objv[i + 3], &val) != TCL_OK) {
+		    break;
+		}
+		unicode[i] = (Tcl_UniChar)val;
+	    }
+	    if (i < (objc-3)) {
+		Tcl_Free(unicode);
+		return TCL_ERROR;
+	    }
+	    SetVarToObj(varPtr, varIndex, Tcl_NewUnicodeObj(unicode, objc - 3));
+	    Tcl_SetObjResult(interp, varPtr[varIndex]);
+	    Tcl_Free(unicode);
+	    break;
     }
 
     return TCL_OK;
@@ -1602,7 +1618,7 @@ CheckIfVarUnset(
     if (varPtr[varIndex] == NULL) {
 	char buf[32 + TCL_INTEGER_SPACE];
 
-	sprintf(buf, "variable %" TCL_Z_MODIFIER "u is unset (NULL)", varIndex);
+	snprintf(buf, sizeof(buf), "variable %" TCL_Z_MODIFIER "u is unset (NULL)", varIndex);
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, TCL_INDEX_NONE);
 	return 1;

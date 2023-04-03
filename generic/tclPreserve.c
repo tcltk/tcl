@@ -22,7 +22,7 @@
  */
 
 typedef struct {
-    ClientData clientData;	/* Address of preserved block. */
+    void *clientData;	/* Address of preserved block. */
     size_t refCount;		/* Number of Tcl_Preserve calls in effect for
 				 * block. */
     Tcl_FreeProc *freeProc;	/* Function to call to free. */
@@ -107,7 +107,7 @@ TclFinalizePreserve(void)
 
 void
 Tcl_Preserve(
-    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
+    void *clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
 
@@ -165,7 +165,7 @@ Tcl_Preserve(
 
 void
 Tcl_Release(
-    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
+    void *clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
     BP_Reference ptr;
@@ -252,7 +252,7 @@ static void Tcl_Free(void *x) {
 
 void
 Tcl_EventuallyFree(
-    ClientData clientData,	/* Pointer to malloc'ed block of memory. */
+    void *clientData,	/* Pointer to malloc'ed block of memory. */
     Tcl_FreeProc *freeProc)	/* Function to actually do free. */
 {
     Reference *refPtr;

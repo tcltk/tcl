@@ -19,7 +19,7 @@ jobs:
       - name: Build
         run: make all
         env:
-          CFLAGS: -arch x86_64 -arch arm64e
+          CFLAGS: -arch x86_64 -arch arm64
       - name: Run Tests
         run: make test styles=develop
         env:
@@ -51,13 +51,13 @@ jobs:
         # Note that macOS is always a 64 bit platform
         run: ./configure --enable-dtrace --enable-framework ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
         env:
-          CFLAGS: -arch x86_64 -arch arm64e
+          CFLAGS: -arch x86_64 -arch arm64
           CFGOPT: ${{ matrix.cfgopt }}
       - name: Build
         run: |
           make all tcltest
         env:
-          CFLAGS: -arch x86_64 -arch arm64e
+          CFLAGS: -arch x86_64 -arch arm64
       - name: Run Tests
         run: |
           make test

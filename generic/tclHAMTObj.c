@@ -60,7 +60,8 @@ const Tcl_ObjType hamtType = {
     FreeHamtInternalRep,		/* freeIntRepProc */
     DupHamtInternalRep,			/* dupIntRepProc */
     UpdateStringOfHamt,			/* updateStringProc */
-    SetHamtFromAny			/* setFromAnyProc */
+    SetHamtFromAny,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 /*
@@ -257,7 +258,7 @@ SetHamtFromAny(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr)
 {
-    int i, objc;
+    size_t i, objc;
     Tcl_Obj **objv;
     TclHAMT old, unlocked;
 

@@ -178,7 +178,7 @@ const Tcl_Filesystem tclNativeFilesystem = {
 /*
  * An initial record in the linked list for the native filesystem.  Remains at
  * the tail of the list and is never freed.  Currently the native filesystem is
- * hard-coded.  It may make sense to modify this to accomodate unconventional
+ * hard-coded.  It may make sense to modify this to accommodate unconventional
  * uses of Tcl that provide no native filesystem.
  */
 

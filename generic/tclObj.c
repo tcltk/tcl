@@ -346,6 +346,18 @@ typedef struct ResolvedCmdName {
 				 * structure can be freed when refCount
 				 * becomes zero. */
 } ResolvedCmdName;
+ 
+#ifdef TCL_MEM_DEBUG
+/* 
+ * Filler matches the value used for filling freed memory in tclCkalloc.
+ * On 32-bit systems, the ref counts do not cross 0x7fffffff. On 64-bit
+ * implementations, ref counts will never reach this value (unless explicitly
+ * incremented without actual references!)
+ */
+#define FREEDREFCOUNTFILLER \
+    (sizeof(objPtr->refCount) == 4 ? 0xe8e8e8e8 : 0xe8e8e8e8e8e8e8e8)
+#endif
+
 
 /*
  *-------------------------------------------------------------------------
@@ -1016,7 +1028,7 @@ TclDbDumpActiveObjects(
  *
  *	Called via the TclNewObj or TclDbNewObj macros when TCL_MEM_DEBUG is
  *	enabled. This function will initialize the members of a Tcl_Obj
- *	struct. Initilization would be done inline via the TclNewObj macro
+ *	struct. Initialization would be done inline via the TclNewObj macro
  *	when compiling without TCL_MEM_DEBUG.
  *
  * Results:
@@ -3157,7 +3169,7 @@ FreeBignum(
  *	None.
  *
  * Side effects:
- *	The destination object receies a copy of the source object
+ *	The destination object receives a copy of the source object
  *
  *----------------------------------------------------------------------
  */
@@ -3236,7 +3248,7 @@ UpdateStringOfBignum(
  *
  * Tcl_NewBignumObj --
  *
- *	Creates an initializes a bignum object.
+ *	Creates and initializes a bignum object.
  *
  * Results:
  *	Returns the newly created object.
@@ -3736,7 +3748,7 @@ Tcl_DbIncrRefCount(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
-    if (objPtr->refCount == 0x61616161) {
+    if (objPtr->refCount == FREEDREFCOUNTFILLER) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
 	Tcl_Panic("incrementing refCount of previously disposed object");
@@ -3809,7 +3821,7 @@ Tcl_DbDecrRefCount(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
-    if (objPtr->refCount == 0x61616161) {
+    if (objPtr->refCount == FREEDREFCOUNTFILLER) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
 	Tcl_Panic("decrementing refCount of previously disposed object");
@@ -3891,7 +3903,7 @@ Tcl_DbIsShared(
 #endif
 {
 #ifdef TCL_MEM_DEBUG
-    if (objPtr->refCount == 0x61616161) {
+    if (objPtr->refCount == FREEDREFCOUNTFILLER) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
 	Tcl_Panic("checking whether previously disposed object is shared");
@@ -4248,7 +4260,7 @@ Tcl_GetCommandFromObj(
  *	None.
  *
  * Side effects:
- *	The object's old internal rep is freed. It's string rep is not
+ *	The object's old internal rep is freed. Its string rep is not
  *	changed. The refcount in the Command structure is incremented to keep
  *	it from being freed if the command is later deleted until
  *	TclNRExecuteByteCode has a chance to recognize that it was deleted.
