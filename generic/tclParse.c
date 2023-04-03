@@ -170,7 +170,8 @@ static Tcl_ObjType tokensType = {
     FreeTokensInternalRep,              /* freeIntRepProc */
     DupTokensInternalRep,               /* dupIntRepProc */
     UpdateStringOfTokens,		/* updateStringProc */
-    SetTokensFromAny                   /* setFromAnyProc */
+    SetTokensFromAny,                  /* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 /* Structure to hold the data of the "tokens" internal rep */
@@ -564,7 +565,7 @@ ParseScript(
 	parsePtr->incomplete = 1;
 	if (parsePtr->interp != NULL) {
 	    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-		    parseErrorMsg[parsePtr->errorType], -1));
+		    parseErrorMsg[parsePtr->errorType], TCL_INDEX_NONE));
 	}
     }
 
@@ -709,7 +710,7 @@ TclParseCommand(
     if ((start == NULL) && (numBytes != 0)) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "can't parse a NULL pointer", -1));
+		    "can't parse a NULL pointer", TCL_INDEX_NONE));
 	}
 	return TCL_ERROR;
     }
@@ -770,7 +771,7 @@ TclParseCommand(
 	    }
 	    if (parsePtr->interp != NULL) {
 		Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-			parseErrorMsg[parsePtr->errorType], -1));
+			parseErrorMsg[parsePtr->errorType], TCL_INDEX_NONE));
 	    }
 	    parsePtr->term = src;
 	error:
@@ -1673,7 +1674,8 @@ ParseTokens(
 		    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 		    if (parsePtr->interp != NULL) {
 			Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-				parseErrorMsg[parsePtr->errorType], -1));
+				parseErrorMsg[parsePtr->errorType],
+				TCL_INDEX_NONE));
 		    }
 		    parsePtr->term = tokenPtr->start;
 		    parsePtr->incomplete = 1;
@@ -1978,7 +1980,7 @@ TclParseVarName(
 	    parsePtr->errorType = TCL_PARSE_MISSING_VAR_BRACE;
 	    if (parsePtr->interp != NULL) {
 		Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-			parseErrorMsg[parsePtr->errorType], -1));
+			parseErrorMsg[parsePtr->errorType], TCL_INDEX_NONE));
 	    }
 	    parsePtr->term = tokenPtr->start-1;
 	    parsePtr->incomplete = 1;
@@ -2036,7 +2038,8 @@ TclParseVarName(
 		parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
 		if (parsePtr->interp != NULL) {
     		    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-			    parseErrorMsg[parsePtr->errorType], -1));
+			    parseErrorMsg[parsePtr->errorType],
+			    TCL_INDEX_NONE));
 		}
 		parsePtr->term = src;
 		parsePtr->incomplete = 1;
@@ -2044,7 +2047,7 @@ TclParseVarName(
 	    } else if ((*parsePtr->term != ')')){
 		if (parsePtr->interp != NULL) {
 		    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-			    "invalid character in array index", -1));
+			    "invalid character in array index", TCL_INDEX_NONE));
 		}
 		parsePtr->errorType = TCL_PARSE_SYNTAX;
 		parsePtr->term = src;
@@ -2114,7 +2117,7 @@ Tcl_ParseVar(
     int code;
     Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 
-    if (TCL_OK != TclParseVarName(interp, start, -1, parsePtr,
+    if (TCL_OK != TclParseVarName(interp, start, TCL_INDEX_NONE, parsePtr,
 	    PARSE_USE_INTERNAL_TOKENS)) {
 	Tcl_FreeParse(parsePtr);
 	TclStackFree(interp, parsePtr);
@@ -2345,7 +2348,7 @@ ParseBraces(
     }
 
     Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-	    parseErrorMsg[parsePtr->errorType], -1));
+	    parseErrorMsg[parsePtr->errorType], TCL_INDEX_NONE));
 
     /*
      * Guess if the problem is due to comments by searching the source string
@@ -2368,7 +2371,7 @@ ParseBraces(
 	    case '#' :
 		if (openBrace && TclIsSpaceProcM(src[-1])) {
 		    Tcl_AppendToObj(Tcl_GetObjResult(parsePtr->interp),
-			    ": possible unbalanced brace in comment", -1);
+			    ": possible unbalanced brace in comment", TCL_INDEX_NONE);
 		    goto error;
 		}
 		break;
@@ -2469,7 +2472,7 @@ TclParseQuotedString(
 	parsePtr->errorType = TCL_PARSE_MISSING_QUOTE;
 	if (parsePtr->interp != NULL) {
 	    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-		    parseErrorMsg[parsePtr->errorType], -1));
+		    parseErrorMsg[parsePtr->errorType], TCL_INDEX_NONE));
 	}
 	parsePtr->term = start;
 	parsePtr->incomplete = 1;
