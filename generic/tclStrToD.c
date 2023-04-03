@@ -1523,7 +1523,7 @@ TclParseNumber(
 		    expected);
 
 	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
-	    Tcl_AppendToObj(msg, "\"", -1);
+	    Tcl_AppendToObj(msg, "\"", TCL_INDEX_NONE);
 	    Tcl_SetObjResult(interp, msg);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 	}
@@ -4787,7 +4787,7 @@ Tcl_InitBignumFromDouble(
 	if (interp != NULL) {
 	    const char *s = "integer value too large to represent";
 
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}
 	return TCL_ERROR;
@@ -5273,7 +5273,7 @@ TclFormatNaN(
     *buffer++ = 'N';
     bitwhack.iv &= ((UINT64_C(1)) << 51) - 1;
     if (bitwhack.iv != 0) {
-	sprintf(buffer, "(%" PRIx64 ")", bitwhack.iv);
+	snprintf(buffer, TCL_DOUBLE_SPACE, "(%" PRIx64 ")", bitwhack.iv);
     } else {
 	*buffer = '\0';
     }

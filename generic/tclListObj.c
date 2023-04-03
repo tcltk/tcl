@@ -526,7 +526,7 @@ ListLimitExceededError(Tcl_Interp *interp)
     if (interp != NULL) {
 	Tcl_SetObjResult(
 	    interp,
-	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
+	    Tcl_NewStringObj("max length of a Tcl list exceeded", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
     return TCL_ERROR;
@@ -2344,7 +2344,7 @@ Tcl_ListObjReplace(
      */
 
     /*
-     * Calculate shifts if necessary to accomodate insertions.
+     * Calculate shifts if necessary to accommodate insertions.
      * NOTE: all indices are relative to listObjs which is not necessarily the
      * start of the ListStore storage area.
      *

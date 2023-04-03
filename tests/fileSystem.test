@@ -275,6 +275,16 @@ test filesystem-1.30 {
 test filesystem-1.30.1 {normalisation of existing user} -body {
     file normalize ~$::tcl_platform(user)
 } -result [file join [pwd] ~$::tcl_platform(user)]
+test filesystem-1.30.3 {file normalization should distinguish between ~ and ~user} -setup {
+    set oldhome $::env(HOME)
+    set olduserhome [file home $::tcl_platform(user)]
+    set ::env(HOME) [file join $oldhome temp]
+} -cleanup {
+    set env(HOME) $oldhome
+} -body {
+    list [string equal [file home] $::env(HOME)] \
+        [string equal $olduserhome [file home $::tcl_platform(user)]]
+} -result {1 1}
 test filesystem-1.31 {link normalisation: link near filesystem root} {testsetplatform} {
     testsetplatform unix
     file normalize /foo/../bar
@@ -684,7 +694,7 @@ test filesystem-7.4 {cross-filesystem file copy with -force} -setup {
     file delete -force simplefile
     file delete -force file2
     cd $dir
-} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 {} 1}
+} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file exists} 0 {} 1}
 test filesystem-7.5 {cross-filesystem file copy with -force} -setup {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
@@ -709,7 +719,7 @@ test filesystem-7.5 {cross-filesystem file copy with -force} -setup {
     file delete -force simplefile
     file delete -force file2
     cd $dir
-} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 {} 1}
+} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file exists} 0 {} 1}
 test filesystem-7.6 {cross-filesystem dir copy with -force} -setup {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
@@ -737,7 +747,7 @@ test filesystem-7.6 {cross-filesystem dir copy with -force} -setup {
     file delete -force simpledir
     file delete -force dir2
     cd $dir
-} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
+} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file exists} 0 {} 1 1}
 test filesystem-7.7 {cross-filesystem dir copy with -force} -setup {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
@@ -767,7 +777,7 @@ test filesystem-7.7 {cross-filesystem dir copy with -force} -setup {
     file delete -force simpledir
     file delete -force dir2
     cd $dir
-} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
+} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file exists} 0 {} 1 1}
 removeFile gorp.file
 test filesystem-7.8 {vfs cd} -setup {
     set dir [pwd]

@@ -13,6 +13,9 @@
 
 #undef STATIC_BUILD
 #include "tcl.h"
+#if defined(_WIN32) && defined(_MSC_VER)
+#   define snprintf _snprintf
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -48,7 +51,7 @@ Pkgb_SubObjCmd(
     if ((Tcl_GetIntFromObj(interp, objv[1], &first) != TCL_OK)
 	    || (Tcl_GetIntFromObj(interp, objv[2], &second) != TCL_OK)) {
 	char buf[TCL_INTEGER_SPACE];
-	sprintf(buf, "%d", Tcl_GetErrorLine(interp));
+	snprintf(buf, sizeof(buf), "%d", Tcl_GetErrorLine(interp));
 	Tcl_AppendResult(interp, " in line: ", buf, NULL);
 	return TCL_ERROR;
     }
@@ -84,7 +87,7 @@ Pkgb_UnsafeObjCmd(
     (void)objc;
     (void)objv;
 
-    return Tcl_EvalEx(interp, "list unsafe command invoked", -1, TCL_EVAL_GLOBAL);
+    return Tcl_EvalEx(interp, "list unsafe command invoked", TCL_INDEX_NONE, TCL_EVAL_GLOBAL);
 }
 
 static int
@@ -105,7 +108,7 @@ Pkgb_DemoObjCmd(
     if (Tcl_GetWideIntFromObj(interp, objv[3], &numChars) != TCL_OK) {
 	return TCL_ERROR;
     }
-    result = Tcl_UtfNcmp(Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), numChars);
+    result = Tcl_UtfNcmp(Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), (size_t)numChars);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
     return TCL_OK;
 }

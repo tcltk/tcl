@@ -179,8 +179,8 @@ TclCreateLiteral(
     const char *bytes,	/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
     size_t length,		/* Number of bytes in the string. */
-    size_t hash,		/* The string's hash. If -1, it will be
-				 * computed here. */
+    size_t hash,		/* The string's hash. If the value is
+				 * TCL_INDEX_NONE, it will be computed here. */
     int *newPtr,
     Namespace *nsPtr,
     int flags,
@@ -1057,7 +1057,7 @@ TclInvalidateCmdLiteral(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, name,
-	    strlen(name), -1, NULL, nsPtr, 0, NULL);
+	    strlen(name), TCL_INDEX_NONE, NULL, nsPtr, 0, NULL);
 
     if (literalObjPtr != NULL) {
 	if (TclHasInternalRep(literalObjPtr, &tclCmdNameType)) {
@@ -1128,18 +1128,18 @@ TclLiteralStats(
      */
 
     result = (char *)Tcl_Alloc(NUM_COUNTERS*60 + 300);
-    sprintf(result, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
+    snprintf(result, 60, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i=0 ; i<NUM_COUNTERS ; i++) {
-	sprintf(p, "number of buckets with %" TCL_Z_MODIFIER "u entries: %" TCL_Z_MODIFIER "u\n",
+	snprintf(p, 60, "number of buckets with %" TCL_Z_MODIFIER "u entries: %" TCL_Z_MODIFIER "u\n",
 		i, count[i]);
 	p += strlen(p);
     }
-    sprintf(p, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "u\n",
+    snprintf(p, 60, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "u\n",
 	    NUM_COUNTERS, overflow);
     p += strlen(p);
-    sprintf(p, "average search distance for entry: %.1f", average);
+    snprintf(p, 60, "average search distance for entry: %.1f", average);
     return result;
 }
 #endif /*TCL_COMPILE_STATS*/

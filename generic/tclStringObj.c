@@ -1683,7 +1683,7 @@ AppendUtfToUnicodeRep(
 	return;
     }
 
-    ExtendUnicodeRepWithString(objPtr, bytes, numBytes, -1);
+    ExtendUnicodeRepWithString(objPtr, bytes, numBytes, TCL_INDEX_NONE);
     TclInvalidateStringRep(objPtr);
     stringPtr = GET_STRING(objPtr);
     stringPtr->allocated = 0;
@@ -1812,7 +1812,7 @@ Tcl_AppendStringsToObj(
 	if (bytes == NULL) {
 	    break;
 	}
-	Tcl_AppendToObj(objPtr, bytes, -1);
+	Tcl_AppendToObj(objPtr, bytes, TCL_INDEX_NONE);
     }
     va_end(argList);
 }
@@ -2481,14 +2481,14 @@ Tcl_AppendFormatToObj(
 		*p++ = '+';
 	    }
 	    if (width) {
-		p += sprintf(p, "%d", width);
+		p += snprintf(p, TCL_INTEGER_SPACE, "%d", width);
 		if (width > length) {
 		    length = width;
 		}
 	    }
 	    if (gotPrecision) {
 		*p++ = '.';
-		p += sprintf(p, "%d", precision);
+		p += snprintf(p, TCL_INTEGER_SPACE, "%d", precision);
 		if (precision > INT_MAX - length) {
 		    msg = overflow;
 		    errCode = "OVERFLOW";
@@ -2512,7 +2512,7 @@ Tcl_AppendFormatToObj(
 		goto errorMsg;
 	    }
 	    bytes = TclGetString(segment);
-	    if (!Tcl_AttemptSetObjLength(segment, sprintf(bytes, spec, d))) {
+	    if (!Tcl_AttemptSetObjLength(segment, snprintf(bytes, segment->length, spec, d))) {
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
@@ -2588,7 +2588,7 @@ Tcl_AppendFormatToObj(
 
   errorMsg:
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", errCode, NULL);
     }
   error:
@@ -2960,13 +2960,11 @@ TclStringRepeat(
 	/* Result will be pure byte array. Pre-size it */
 	(void)Tcl_GetByteArrayFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_SMAX;
-    }
-    else if (unichar) {
+    } else if (unichar) {
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
 	(void)Tcl_GetUnicodeFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_SMAX/sizeof(Tcl_UniChar);
-    }
-    else {
+    } else {
 	/* Result will be concat of string reps. Pre-size it. */
 	(void)Tcl_GetStringFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_SMAX;
@@ -4168,7 +4166,7 @@ TclStringReplace(
  * FillUnicodeRep --
  *
  *	Populate the Unicode internal rep with the Unicode form of its string
- *	rep. The object must alread have a "String" internal rep.
+ *	rep. The object must already have a "String" internal rep.
  *
  * Results:
  *	None.
@@ -4318,7 +4316,7 @@ DupStringInternalRep(
  *	This operation always succeeds and returns TCL_OK.
  *
  * Side effects:
- *	Any old internal reputation for objPtr is freed and the internal
+ *	Any old internal representation for objPtr is freed and the internal
  *	representation is set to "String".
  *
  *----------------------------------------------------------------------

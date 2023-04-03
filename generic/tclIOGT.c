@@ -19,25 +19,25 @@
  * the transformation.
  */
 
-static int		TransformBlockModeProc(ClientData instanceData,
+static int		TransformBlockModeProc(void *instanceData,
 			    int mode);
-static int		TransformCloseProc(ClientData instanceData,
+static int		TransformCloseProc(void *instanceData,
 			    Tcl_Interp *interp, int flags);
-static int		TransformInputProc(ClientData instanceData, char *buf,
+static int		TransformInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCodePtr);
-static int		TransformOutputProc(ClientData instanceData,
+static int		TransformOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCodePtr);
-static int		TransformSetOptionProc(ClientData instanceData,
+static int		TransformSetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *value);
-static int		TransformGetOptionProc(ClientData instanceData,
+static int		TransformGetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
-static void		TransformWatchProc(ClientData instanceData, int mask);
-static int		TransformGetFileHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static int		TransformNotifyProc(ClientData instanceData, int mask);
-static long long	TransformWideSeekProc(ClientData instanceData,
+static void		TransformWatchProc(void *instanceData, int mask);
+static int		TransformGetFileHandleProc(void *instanceData,
+			    int direction, void **handlePtr);
+static int		TransformNotifyProc(void *instanceData, int mask);
+static long long	TransformWideSeekProc(void *instanceData,
 			    long long offset, int mode, int *errorCodePtr);
 
 /*
@@ -45,7 +45,7 @@ static long long	TransformWideSeekProc(ClientData instanceData,
  * handling and generating fileeevents.
  */
 
-static void		TransformChannelHandlerTimer(ClientData clientData);
+static void		TransformChannelHandlerTimer(void *clientData);
 
 /*
  * Forward declarations of internal procedures. Third, helper procedures
@@ -268,7 +268,7 @@ TclChannelTransform(
 
     if (TCL_OK != TclListObjLengthM(interp, cmdObjPtr, &objc)) {
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("-command value is not a list", -1));
+		Tcl_NewStringObj("-command value is not a list", TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
 
@@ -397,7 +397,7 @@ ExecuteCallback(
     }
 
     Tcl_IncrRefCount(command);
-    Tcl_ListObjAppendElement(NULL, command, Tcl_NewStringObj((char *) op, -1));
+    Tcl_ListObjAppendElement(NULL, command, Tcl_NewStringObj((char *) op, TCL_INDEX_NONE));
 
     /*
      * Use a byte-array to prevent the misinterpretation of binary data coming
@@ -510,7 +510,7 @@ ExecuteCallback(
 
 static int
 TransformBlockModeProc(
-    ClientData instanceData,	/* State of transformation. */
+    void *instanceData,	/* State of transformation. */
     int mode)			/* New blocking mode. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
@@ -542,7 +542,7 @@ TransformBlockModeProc(
 
 static int
 TransformCloseProc(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp,
 	int flags)
 {
@@ -626,7 +626,7 @@ TransformCloseProc(
 
 static int
 TransformInputProc(
-    ClientData instanceData,
+    void *instanceData,
     char *buf,
     int toRead,
     int *errorCodePtr)
@@ -793,7 +793,7 @@ TransformInputProc(
 
 static int
 TransformOutputProc(
-    ClientData instanceData,
+    void *instanceData,
     const char *buf,
     int toWrite,
     int *errorCodePtr)
@@ -845,7 +845,7 @@ TransformOutputProc(
 
 static long long
 TransformWideSeekProc(
-    ClientData instanceData,	/* The channel to manipulate. */
+    void *instanceData,	/* The channel to manipulate. */
     long long offset,		/* Size of movement. */
     int mode,			/* How to move. */
     int *errorCodePtr)		/* Location of error flag. */
@@ -923,7 +923,7 @@ TransformWideSeekProc(
 
 static int
 TransformSetOptionProc(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp,
     const char *optionName,
     const char *value)
@@ -961,7 +961,7 @@ TransformSetOptionProc(
 
 static int
 TransformGetOptionProc(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp,
     const char *optionName,
     Tcl_DString *dsPtr)
@@ -1008,7 +1008,7 @@ TransformGetOptionProc(
 
 static void
 TransformWatchProc(
-    ClientData instanceData,	/* Channel to watch. */
+    void *instanceData,	/* Channel to watch. */
     int mask)			/* Events of interest. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
@@ -1086,9 +1086,9 @@ TransformWatchProc(
 
 static int
 TransformGetFileHandleProc(
-    ClientData instanceData,	/* Channel to query. */
+    void *instanceData,	/* Channel to query. */
     int direction,		/* Direction of interest. */
-    ClientData *handlePtr)	/* Place to store the handle into. */
+    void **handlePtr)	/* Place to store the handle into. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
@@ -1120,7 +1120,7 @@ TransformGetFileHandleProc(
 
 static int
 TransformNotifyProc(
-    ClientData clientData,	/* The state of the notified
+    void *clientData,	/* The state of the notified
 				 * transformation. */
     int mask)			/* The mask of occuring events. */
 {
@@ -1165,7 +1165,7 @@ TransformNotifyProc(
 
 static void
 TransformChannelHandlerTimer(
-    ClientData clientData)	/* Transformation to query. */
+    void *clientData)	/* Transformation to query. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)clientData;
 

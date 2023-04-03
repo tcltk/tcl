@@ -81,7 +81,7 @@ TclpLoadMemory(
 {
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("dynamic loading from memory "
-		"is not available on this system", -1));
+		"is not available on this system", TCL_INDEX_NONE));
     }
     return TCL_ERROR;
 }

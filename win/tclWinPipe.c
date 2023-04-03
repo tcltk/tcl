@@ -104,7 +104,7 @@ typedef struct PipeInfo {
     TclFile readFile;		/* Output from pipe. */
     TclFile writeFile;		/* Input from pipe. */
     TclFile errorFile;		/* Error output from pipe. */
-    Tcl_Size numPids;		/* Number of processes attached to pipe. */
+    size_t numPids;		/* Number of processes attached to pipe. */
     Tcl_Pid *pidPtr;		/* Pids of attached processes. */
     Tcl_ThreadId threadId;	/* Thread to which events should be reported.
 				 * This value is used by the reader/writer
@@ -171,7 +171,7 @@ typedef struct {
 
 static int		ApplicationType(Tcl_Interp *interp,
 			    const char *fileName, char *fullName);
-static void		BuildCommandLine(const char *executable, Tcl_Size argc,
+static void		BuildCommandLine(const char *executable, size_t argc,
 			    const char **argv, Tcl_DString *linePtr);
 static BOOL		HasConsole(void);
 static int		PipeBlockModeProc(void *instanceData, int mode);
@@ -859,7 +859,7 @@ TclpCloseFile(
  *--------------------------------------------------------------------------
  */
 
-Tcl_Size
+size_t
 TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
@@ -911,7 +911,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    Tcl_Size argc,			/* Number of arguments in following array. */
+    size_t argc,			/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings. argv[0] contains
 				 * the name of the executable converted to
 				 * native format (using the
@@ -1536,14 +1536,14 @@ static void
 BuildCommandLine(
     const char *executable,	/* Full path of executable (including
 				 * extension). Replacement for argv[0]. */
-    Tcl_Size argc,			/* Number of arguments. */
+    size_t argc,			/* Number of arguments. */
     const char **argv,		/* Argument strings in UTF. */
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
 				 * command line (WCHAR). */
 {
     const char *arg, *start, *special, *bspos;
     int quote = 0;
-    Tcl_Size i;
+    size_t i;
     Tcl_DString ds;
     static const char specMetaChars[] = "&|^<>!()%";
 				/* Characters to enclose in quotes if unpaired
@@ -1760,7 +1760,7 @@ TclpCreateCommandChannel(
     TclFile writeFile,		/* If non-null, gives the file for writing. */
     TclFile errorFile,		/* If non-null, gives the file where errors
 				 * can be read. */
-    Tcl_Size numPids,		/* The number of pids in the pid array. */
+    size_t numPids,		/* The number of pids in the pid array. */
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -1823,7 +1823,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    snprintf(channelName, sizeof(channelName), "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    infoPtr, infoPtr->validMask);
 
@@ -1900,7 +1900,7 @@ TclGetAndDetachPids(
     PipeInfo *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
     Tcl_Obj *pidsObj;
-    Tcl_Size i;
+    size_t i;
 
     /*
      * Punt if the channel is not a command channel.
@@ -2705,7 +2705,7 @@ TclWinAddProcess(
     void *hProcess,		/* Handle to process */
     size_t id)		/* Global process identifier */
 {
-    ProcInfo *procPtr = (ProcInfo*)Tcl_Alloc(sizeof(ProcInfo));
+    ProcInfo *procPtr = (ProcInfo *)Tcl_Alloc(sizeof(ProcInfo));
 
     PipeInit();
 
@@ -2744,7 +2744,7 @@ Tcl_PidObjCmd(
     Tcl_Channel chan;
     const Tcl_ChannelType *chanTypePtr;
     PipeInfo *pipePtr;
-    Tcl_Size i;
+    size_t i;
     Tcl_Obj *resultPtr;
 
     if (objc > 2) {
@@ -2805,7 +2805,7 @@ WaitForRead(
 				 * or not. */
 {
     DWORD timeout, count;
-    HANDLE *handle = (HANDLE *)((WinFile *) infoPtr->readFile)->handle;
+    HANDLE handle = ((WinFile *) infoPtr->readFile)->handle;
 
     while (1) {
 	/*
@@ -3191,7 +3191,7 @@ TclpOpenTemporaryFile(
     char *namePtr;
     HANDLE handle;
     DWORD flags = FILE_ATTRIBUTE_TEMPORARY;
-    Tcl_Size length;
+    size_t length;
     int counter, counter2;
     Tcl_DString buf;
 
@@ -3227,7 +3227,7 @@ TclpOpenTemporaryFile(
     do {
 	char number[TCL_INTEGER_SPACE + 4];
 
-	sprintf(number, "%d.TMP", counter);
+	snprintf(number, sizeof(number), "%d.TMP", counter);
 	counter = (unsigned short) (counter + 1);
 	Tcl_DStringInit(&buf);
 	Tcl_UtfToWCharDString(number, strlen(number), &buf);

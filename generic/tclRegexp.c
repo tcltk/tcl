@@ -221,9 +221,9 @@ Tcl_RegExpExec(
      */
 
     Tcl_DStringInit(&ds);
-    ustr = Tcl_UtfToUniCharDString(text, -1, &ds);
+    ustr = Tcl_UtfToUniCharDString(text, TCL_INDEX_NONE, &ds);
     numChars = Tcl_DStringLength(&ds) / sizeof(Tcl_UniChar);
-    result = RegExpExecUniChar(interp, re, ustr, numChars, -1 /* nmatches */,
+    result = RegExpExecUniChar(interp, re, ustr, numChars, TCL_INDEX_NONE /* nmatches */,
 	    flags);
     Tcl_DStringFree(&ds);
 
@@ -689,7 +689,7 @@ TclRegAbout(
     for (inf=infonames ; inf->bit != 0 ; inf++) {
 	if (regexpPtr->re.re_info & inf->bit) {
 	    Tcl_ListObjAppendElement(NULL, infoObj,
-		    Tcl_NewStringObj(inf->text, -1));
+		    Tcl_NewStringObj(inf->text, TCL_INDEX_NONE));
 	}
     }
     Tcl_ListObjAppendElement(NULL, resultObj, infoObj);
@@ -730,7 +730,7 @@ TclRegError(
     p = (n > sizeof(buf)) ? "..." : "";
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s%s%s", msg, buf, p));
 
-    sprintf(cbuf, "%d", status);
+    snprintf(cbuf, sizeof(cbuf), "%d", status);
     (void) TclReError(REG_ITOA, cbuf, sizeof(cbuf));
     Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
 }

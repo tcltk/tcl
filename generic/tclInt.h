@@ -131,6 +131,7 @@
 
 #if defined(_WIN32) && defined(_MSC_VER)
 #   define vsnprintf _vsnprintf
+#   define snprintf _snprintf
 #endif
 
 #if !defined(TCL_THREADS)
@@ -2875,7 +2876,19 @@ MODULE_SCOPE int tclFindExecutableSearchDone;
 MODULE_SCOPE char *tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
 
+/*
+ * Declarations related to internal encoding functions.
+ */
+
 MODULE_SCOPE Tcl_Encoding tclIdentityEncoding;
+MODULE_SCOPE int
+TclEncodingProfileNameToId(Tcl_Interp *interp,
+			   const char *profileName,
+			   int *profilePtr);
+MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
+						    int profileId);
+MODULE_SCOPE int TclEncodingSetProfileFlags(int flags);
+MODULE_SCOPE void TclGetEncodingProfiles(Tcl_Interp *interp);
 
 /*
  * TIP #233 (Virtualized Time)
@@ -4748,6 +4761,8 @@ MODULE_SCOPE Tcl_LibraryInitProc TclThread_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 
+
+
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to check whether a pattern has any characters
@@ -4898,7 +4913,14 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
     } while (0)
 
 #define TclNewIndexObj(objPtr, w) \
-    (objPtr) = (((Tcl_WideUInt)w) >= TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideIntObj(w)
+    do { \
+	Tcl_WideUInt _uw = (Tcl_WideUInt)(w); \
+	if (_uw >= TCL_INDEX_NONE) { \
+	    TclNewIntObj(objPtr, -1); \
+	} else { \
+	    TclNewUIntObj(objPtr, _uw); \
+	} \
+	} while (0)
 
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)

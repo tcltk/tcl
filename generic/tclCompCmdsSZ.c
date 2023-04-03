@@ -897,7 +897,7 @@ TclCompileStringLenCmd(
 	char buf[TCL_INTEGER_SPACE];
 	size_t len = Tcl_GetCharLength(objPtr);
 
-	len = sprintf(buf, "%" TCL_Z_MODIFIER "u", len);
+	len = snprintf(buf, sizeof(buf), "%" TCL_Z_MODIFIER "u", len);
 	PushLiteral(envPtr, buf, len);
     } else {
 	SetLineInformation(1);
@@ -2604,9 +2604,9 @@ PrintJumptableInfo(
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	if (i++) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
+	    Tcl_AppendToObj(appendObj, ", ", TCL_INDEX_NONE);
 	    if (i%4==0) {
-		Tcl_AppendToObj(appendObj, "\n\t\t", -1);
+		Tcl_AppendToObj(appendObj, "\n\t\t", TCL_INDEX_NONE);
 	    }
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %" TCL_Z_MODIFIER "u",
@@ -2633,10 +2633,10 @@ DisassembleJumptableInfo(
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
 	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
-	Tcl_DictObjPut(NULL, mapping, Tcl_NewStringObj(keyPtr, -1),
+	Tcl_DictObjPut(NULL, mapping, Tcl_NewStringObj(keyPtr, TCL_INDEX_NONE),
 		Tcl_NewWideIntObj(offset));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("mapping", -1), mapping);
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("mapping", TCL_INDEX_NONE), mapping);
 }
 
 /*
@@ -3124,7 +3124,7 @@ IssueTryClausesInstructions(
 
     for (i=0 ; i<numHandlers ; i++) {
 	noError[i] = -1;
-	sprintf(buf, "%d", matchCodes[i]);
+	snprintf(buf, sizeof(buf), "%d", matchCodes[i]);
 	OP(				DUP);
 	PushLiteral(envPtr, buf, strlen(buf));
 	OP(				EQ);
@@ -3337,7 +3337,7 @@ IssueTryClausesFinallyInstructions(
 	int noTrapError, trapError;
 	const char *p;
 
-	sprintf(buf, "%d", matchCodes[i]);
+	snprintf(buf, sizeof(buf), "%d", matchCodes[i]);
 	OP(				DUP);
 	PushLiteral(envPtr, buf, strlen(buf));
 	OP(				EQ);
@@ -4081,13 +4081,13 @@ CompileAssociativeBinaryOpCmd(
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
     if (parsePtr->numWords <= 2) {
-	PushLiteral(envPtr, identity, -1);
+	PushLiteral(envPtr, identity, TCL_INDEX_NONE);
 	words++;
     }
     if (words > 3) {
 	/*
 	 * Reverse order of arguments to get precise agreement with [expr] in
-	 * calcuations, including roundoff errors.
+	 * calculations, including roundoff errors.
 	 */
 
 	OP4(	REVERSE, words-1);
@@ -4538,7 +4538,7 @@ TclCompileMinusOpCmd(
 
     /*
      * Reverse order of arguments to get precise agreement with [expr] in
-     * calcuations, including roundoff errors.
+     * calculations, including roundoff errors.
      */
 
     TclEmitInstInt4(INST_REVERSE, words-1, envPtr);
@@ -4582,7 +4582,7 @@ TclCompileDivOpCmd(
 
     /*
      * Reverse order of arguments to get precise agreement with [expr] in
-     * calcuations, including roundoff errors.
+     * calculations, including roundoff errors.
      */
 
     TclEmitInstInt4(INST_REVERSE, words-1, envPtr);

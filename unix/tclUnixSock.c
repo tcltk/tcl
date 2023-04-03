@@ -1030,10 +1030,10 @@ TcpGetOptionProc(
 
     if ((len == 0) || ((len > 1) && (optionName[1] == 'k') &&
 	    (strncmp(optionName, "-keepalive", len) == 0))) {
-#if defined(SO_KEEPALIVE)
-	socklen_t size;
-#endif
 	int opt = 0;
+#if defined(SO_KEEPALIVE)
+	socklen_t size = sizeof(opt);
+#endif
 
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-keepalive");
@@ -1050,10 +1050,10 @@ TcpGetOptionProc(
 
     if ((len == 0) || ((len > 1) && (optionName[1] == 'n') &&
 	    (strncmp(optionName, "-nodelay", len) == 0))) {
-#if defined(SOL_TCP) && defined(TCP_NODELAY)
-	socklen_t size;
-#endif
 	int opt = 0;
+#if defined(SOL_TCP) && defined(TCP_NODELAY)
+	socklen_t size = sizeof(opt);
+#endif
 
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-nodelay");
@@ -1545,7 +1545,7 @@ Tcl_OpenTcpClient(
         return NULL;
     }
 
-    sprintf(channelName, SOCK_TEMPLATE, PTR2INT(statePtr));
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
             statePtr, TCL_READABLE | TCL_WRITABLE);
@@ -1612,7 +1612,7 @@ TclpMakeTcpClientChannelMode(
     statePtr->fds.fd = PTR2INT(sock);
     statePtr->flags = 0;
 
-    sprintf(channelName, SOCK_TEMPLATE, PTR2INT(statePtr));
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    statePtr, mode);
@@ -1838,7 +1838,7 @@ Tcl_OpenTcpServerEx(
             memset(statePtr, 0, sizeof(TcpState));
             statePtr->acceptProc = acceptProc;
             statePtr->acceptProcData = acceptProcData;
-            sprintf(channelName, SOCK_TEMPLATE, PTR2INT(statePtr));
+            snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
             newfds = &statePtr->fds;
         } else {
             newfds = (TcpFdList *)Tcl_Alloc(sizeof(TcpFdList));
@@ -1930,7 +1930,7 @@ TcpAccept(
     newSockState->flags = 0;
     newSockState->fds.fd = newsock;
 
-    sprintf(channelName, SOCK_TEMPLATE, PTR2INT(newSockState));
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(newSockState));
     newSockState->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newSockState, TCL_READABLE | TCL_WRITABLE);
 

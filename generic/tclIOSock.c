@@ -317,7 +317,7 @@ Tcl_OpenTcpServer(
     int port,
     const char *host,
     Tcl_TcpAcceptProc *acceptProc,
-    ClientData callbackData)
+    void *callbackData)
 {
     char portbuf[TCL_INTEGER_SPACE];
 
