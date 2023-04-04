@@ -1152,15 +1152,14 @@ proc tcltest::SafeFetch {n1 n2 op} {
 proc tcltest::Asciify {s} {
     set print ""
     foreach c [split $s ""] {
-        set i [scan $c %c]
-        if {[string is print $c] && ($i <= 127)} {
+        if {[string is print $c] && (($c <= "\x7E") || ($c == "\n"))} {
             append print $c
-        } elseif {$i <= 0xFF} {
-            append print \\x[format %02X $i]
-        } elseif {$i <= 0xFFFF} {
-            append print \\u[format %04X $i]
+        } elseif {$c <= "\xFF"} {
+            append print \\x[format %02X [scan $c %c]]
+        } elseif {$c <= "\xFFFF"} {
+            append print \\u[format %04X [scan $c %c]]
         } else {
-            append print \\U[format %08X $i]
+            append print \\U[format %08X [scan $c %c]]
         }
     }
     return $print

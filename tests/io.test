@@ -7519,26 +7519,27 @@ test io-52.10 {TclCopyChannel & encodings} {fcopy} {
 } 5
 test io-52.11 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
-    fconfigure $out -encoding utf-8 -translation lf
-    puts $out "АА"
+    fconfigure $out -encoding utf-8 -translation lf -profile strict
+    puts $out АА
     close $out
 } -constraints {fcopy} -body {
-    # binary to encoding => the input has to be
-    # in utf-8 to make sense to the encoder
-
     set in  [open $path(utf8-fcopy.txt) r]
     set out [open $path(kyrillic.txt) w]
-
     # -translation binary is also -encoding binary
     fconfigure $in  -translation binary
-    fconfigure $out -encoding koi8-r -translation lf
-
-    fcopy $in $out
-    close $in
-    close $out
-
-    file size $path(kyrillic.txt)
-} -result 3
+    fconfigure $out -encoding koi8-r -translation lf -profile strict
+    catch {fcopy $in $out} cres copts
+	return $cres
+} -cleanup {
+	if {$in in [chan names]} {
+		close $in
+	}
+	if {$out in [chan names]} {
+		close $out
+	}
+    catch {unset cres}
+} -match glob -result  {error writing "*": invalid or incomplete\
+	multibyte or wide character}
 
 test io-52.12 {coverage of -translation auto} {
     file delete $path(test1) $path(test2)
@@ -7779,6 +7780,29 @@ test io-52.23 {TclCopyChannel & encodings} -setup {
     close $out
     unset ::s0
 } -match glob -result {0 {error writing "file*": invalid or incomplete multibyte or wide character}}
+
+test io-52.24 {fcopy -size should always be characters} -setup {
+    set out [open utf8-fcopy-52.24.txt w]
+    fconfigure $out -encoding utf-8 -translation lf
+    puts $out "Á"
+    close $out
+} -constraints {fcopy} -body {
+    set in  [open utf8-fcopy-52.24.txt r]
+    set out [open utf8-fcopy-52.24.out.txt w+]
+
+    fconfigure $in  -encoding utf-8 -profile tcl8
+    fconfigure $out -encoding utf-8 -profile tcl8
+    fcopy $in $out -size 1
+	seek $out 0
+	# a result of \xc3 means that only the first byte of the utf-8 encoding of
+	# Á made it into to the output file.
+	read $out
+} -cleanup {
+    close $in
+    close $out
+	catch {file delete utf8-fcopy-52.24.txt}
+    catch {file delete utf8-fcopy-52.24.out.txt}
+} -result Á
 
 
 test io-53.1 {CopyData} {fcopy} {
@@ -8276,7 +8300,7 @@ test io-53.11 {Bug 2895565} -setup {
     removeFile out
     removeFile in
 } -result {40 bytes copied}
-test io-53.12 {CopyData: foreground short reads, aka bug 3096275} {stdio unix fcopy} {
+test io-53.12.0 {CopyData: foreground short reads, aka bug 3096275} {stdio unix fcopy} {
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
     puts -nonewline $f1 {
@@ -8295,6 +8319,32 @@ test io-53.12 {CopyData: foreground short reads, aka bug 3096275} {stdio unix fc
     close $f1
     list $::done $ch
 } {ok A}
+test io-53.12.1 {
+    Issue 9ca87e6286262a62.
+    CopyData: foreground short reads via ReadChars().
+    Related to report 3096275 for ReadBytes().
+
+    Prior to the fix this test waited forever for read() to return.
+} {stdio unix fcopy} {
+    file delete $path(output)
+    set f1 [open $path(output) w]
+    puts -nonewline $f1 {
+	chan configure stdin -encoding iso8859-1 -translation lf -buffering none
+	fcopy stdin stdout
+    }
+    close $f1
+    set f1 [open "|[list [info nameofexecutable] $path(output)]" r+]
+    try {
+	chan configure $f1 -encoding utf-8  -buffering none
+	puts -nonewline $f1 A
+	set ch [read $f1 1]
+    } finally {
+	if {$f1 in [chan names]} {
+	    close $f1
+	}
+    }
+    lindex $ch
+} A
 test io-53.13 {TclCopyChannel: read error reporting} -setup {
     proc driver {cmd args} {
         variable buffer
