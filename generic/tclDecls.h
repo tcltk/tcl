@@ -4233,7 +4233,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
 
-#if defined(TCL_SIGNED_SIZE) && !defined(BUILD_tcl) && TCL_MAJOR_VERSION > 8
+#if defined(TCL_8_COMPAT) && !defined(BUILD_tcl) && TCL_MAJOR_VERSION > 8
 #   ifdef USE_TCL_STUBS
 #	undef Tcl_Gets
 #	undef Tcl_GetsObj
