@@ -2821,6 +2821,11 @@ Utf32ToUtfProc(
 	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (ch & 0xFF);
 	} else {
+#if TCL_UTF_MAX < 4
+	    if (!HIGH_SURROGATE(prev) && LOW_SURROGATE(ch)) {
+		*dst = 0; /* In case of lower surrogate, don't try to combine */
+	    }
+#endif
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
 	src += 4;
