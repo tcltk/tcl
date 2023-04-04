@@ -8211,7 +8211,7 @@ test io-53.11 {Bug 2895565} -setup {
     removeFile out
     removeFile in
 } -result {40 bytes copied}
-test io-53.12 {CopyData: foreground short reads, aka bug 3096275} {stdio unix fcopy} {
+test io-53.12.0 {CopyData: foreground short reads, aka bug 3096275} {stdio unix fcopy} {
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
     puts -nonewline $f1 {
@@ -8230,6 +8230,32 @@ test io-53.12 {CopyData: foreground short reads, aka bug 3096275} {stdio unix fc
     close $f1
     list $::done $ch
 } {ok A}
+test io-53.12.1 {
+    Issue 9ca87e6286262a62.
+    CopyData: foreground short reads via ReadChars().
+    Related to report 3096275 for ReadBytes().
+
+    Prior to the fix this test waited forever for read() to return.
+} {stdio unix fcopy} {
+    file delete $path(output)
+    set f1 [open $path(output) w]
+    puts -nonewline $f1 {
+	chan configure stdin -encoding iso8859-1 -translation lf -buffering none
+	fcopy stdin stdout
+    }
+    close $f1
+    set f1 [open "|[list [info nameofexecutable] $path(output)]" r+]
+    try {
+	chan configure $f1 -encoding utf-8  -buffering none
+	puts -nonewline $f1 A
+	set ch [read $f1 1]
+    } finally {
+	if {$f1 in [chan names]} {
+	    close $f1
+	}
+    }
+    lindex $ch
+} A
 test io-53.13 {TclCopyChannel: read error reporting} -setup {
     proc driver {cmd args} {
         variable buffer
