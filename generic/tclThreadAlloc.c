@@ -640,11 +640,11 @@ Tcl_GetMemoryInfo(
 	if (cachePtr == sharedPtr) {
 	    Tcl_DStringAppendElement(dsPtr, "shared");
 	} else {
-	    sprintf(buf, "thread%p", cachePtr->owner);
+	    snprintf(buf, sizeof(buf), "thread%p", cachePtr->owner);
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	for (n = 0; n < NBUCKETS; ++n) {
-	    sprintf(buf, "%" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %"
+	    snprintf(buf, sizeof(buf), "%" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %"
 		    TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u",
 		    bucketInfo[n].blockSize,
 		    cachePtr->buckets[n].numFree,

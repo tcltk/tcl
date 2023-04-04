@@ -1993,13 +1993,10 @@ typedef struct Tcl_EncodingType {
  * TCL_CONVERT_SYNTAX -		The source stream contained an invalid
  *				character sequence. This may occur if the
  *				input stream has been damaged or if the input
- *				encoding method was misidentified. This error
- *				is reported unless if TCL_ENCODING_NOCOMPLAIN
- *				was specified.
+ *				encoding method was misidentified.
  * TCL_CONVERT_UNKNOWN -	The source string contained a character that
  *				could not be represented in the target
- *				encoding. This error is reported unless if
- *				TCL_ENCODING_NOCOMPLAIN was specified.
+ *				encoding.
  */
 
 #define TCL_CONVERT_MULTIBYTE	(-1)

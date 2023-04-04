@@ -36,12 +36,12 @@
  */
 
 typedef struct ChannelBuffer {
-    size_t refCount;		/* Current uses count */
-    size_t nextAdded;		/* The next position into which a character
+    Tcl_Size refCount;		/* Current uses count */
+    Tcl_Size nextAdded;		/* The next position into which a character
 				 * will be put in the buffer. */
-    size_t nextRemoved;		/* Position of next byte to be removed from
+    Tcl_Size nextRemoved;		/* Position of next byte to be removed from
 				 * the buffer. */
-    size_t bufLength;		/* How big is the buffer? */
+    Tcl_Size bufLength;		/* How big is the buffer? */
     struct ChannelBuffer *nextPtr;
     				/* Next buffer in chain. */
     char buf[TCLFLEXARRAY];		/* Placeholder for real buffer. The real
@@ -113,7 +113,7 @@ typedef struct Channel {
     ChannelBuffer *inQueueHead;	/* Points at first buffer in input queue. */
     ChannelBuffer *inQueueTail;	/* Points at last buffer in input queue. */
 
-    size_t refCount;
+    Tcl_Size refCount;
 } Channel;
 
 /*
@@ -165,7 +165,7 @@ typedef struct ChannelState {
     int unreportedError;	/* Non-zero if an error report was deferred
 				 * because it happened in the background. The
 				 * value is the POSIX error code. */
-    size_t refCount;		/* How many interpreters hold references to
+    Tcl_Size refCount;		/* How many interpreters hold references to
 				 * this IO channel? */
     struct CloseCallback *closeCbPtr;
 				/* Callbacks registered to be called when the
@@ -188,7 +188,7 @@ typedef struct ChannelState {
     EventScriptRecord *scriptRecordPtr;
 				/* Chain of all scripts registered for event
 				 * handlers ("fileevent") on this channel. */
-    size_t bufSize;		/* What size buffers to allocate? */
+    Tcl_Size bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
     Channel *timerChanPtr;	/* Needed in order to decrement the refCount of
 				   the right channel when the timer is
