@@ -68,8 +68,8 @@ declare 12 {
 }
 declare 13 {
     Tcl_Object Tcl_NewObjectInstance(Tcl_Interp *interp, Tcl_Class cls,
-	    const char *nameStr, const char *nsNameStr, size_t objc,
-	    Tcl_Obj *const *objv, size_t skip)
+	    const char *nameStr, const char *nsNameStr, Tcl_Size objc,
+	    Tcl_Obj *const *objv, Tcl_Size skip)
 }
 declare 14 {
     int Tcl_ObjectDeleted(Tcl_Object object)
@@ -84,7 +84,7 @@ declare 17 {
     Tcl_Object Tcl_ObjectContextObject(Tcl_ObjectContext context)
 }
 declare 18 {
-    size_t Tcl_ObjectContextSkippedArgs(Tcl_ObjectContext context)
+    Tcl_Size Tcl_ObjectContextSkippedArgs(Tcl_ObjectContext context)
 }
 declare 19 {
     void *Tcl_ClassGetMetadata(Tcl_Class clazz,
@@ -104,8 +104,8 @@ declare 22 {
 }
 declare 23 {
     int Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
-	    Tcl_ObjectContext context, size_t objc, Tcl_Obj *const *objv,
-	    size_t skip)
+	    Tcl_ObjectContext context, Tcl_Size objc, Tcl_Obj *const *objv,
+	    Tcl_Size skip)
 }
 declare 24 {
     Tcl_ObjectMapMethodNameProc *Tcl_ObjectGetMethodNameMapper(
@@ -184,7 +184,7 @@ declare 4 {
 	    ProcedureMethod **pmPtrPtr)
 }
 declare 5 {
-    int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, size_t objc,
+    int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, Tcl_Size objc,
 	    Tcl_Obj *const *objv, int publicOnly, Class *startCls)
 }
 declare 6 {
@@ -214,24 +214,24 @@ declare 10 {
 }
 declare 11 {
     int TclOOInvokeObject(Tcl_Interp *interp, Tcl_Object object,
-	    Tcl_Class startCls, int publicPrivate, size_t objc,
+	    Tcl_Class startCls, int publicPrivate, Tcl_Size objc,
 	    Tcl_Obj *const *objv)
 }
 declare 12 {
-    void TclOOObjectSetFilters(Object *oPtr, size_t numFilters,
+    void TclOOObjectSetFilters(Object *oPtr, Tcl_Size numFilters,
 	    Tcl_Obj *const *filters)
 }
 declare 13 {
     void TclOOClassSetFilters(Tcl_Interp *interp, Class *classPtr,
-	    size_t numFilters, Tcl_Obj *const *filters)
+	    Tcl_Size numFilters, Tcl_Obj *const *filters)
 }
 declare 14 {
-    void TclOOObjectSetMixins(Object *oPtr, size_t numMixins,
+    void TclOOObjectSetMixins(Object *oPtr, Tcl_Size numMixins,
 	    Class *const *mixins)
 }
 declare 15 {
     void TclOOClassSetMixins(Tcl_Interp *interp, Class *classPtr,
-	    size_t numMixins, Class *const *mixins)
+	    Tcl_Size numMixins, Class *const *mixins)
 }
 
 return

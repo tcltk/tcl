@@ -346,6 +346,18 @@ typedef struct ResolvedCmdName {
 				 * structure can be freed when refCount
 				 * becomes zero. */
 } ResolvedCmdName;
+ 
+#ifdef TCL_MEM_DEBUG
+/* 
+ * Filler matches the value used for filling freed memory in tclCkalloc.
+ * On 32-bit systems, the ref counts do not cross 0x7fffffff. On 64-bit
+ * implementations, ref counts will never reach this value (unless explicitly
+ * incremented without actual references!)
+ */
+#define FREEDREFCOUNTFILLER \
+    (sizeof(objPtr->refCount) == 4 ? 0xe8e8e8e8 : 0xe8e8e8e8e8e8e8e8)
+#endif
+
 
 /*
  *-------------------------------------------------------------------------
@@ -3736,7 +3748,7 @@ Tcl_DbIncrRefCount(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
-    if (objPtr->refCount == 0x61616161) {
+    if (objPtr->refCount == FREEDREFCOUNTFILLER) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
 	Tcl_Panic("incrementing refCount of previously disposed object");
@@ -3809,7 +3821,7 @@ Tcl_DbDecrRefCount(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
-    if (objPtr->refCount == 0x61616161) {
+    if (objPtr->refCount == FREEDREFCOUNTFILLER) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
 	Tcl_Panic("decrementing refCount of previously disposed object");
@@ -3891,7 +3903,7 @@ Tcl_DbIsShared(
 #endif
 {
 #ifdef TCL_MEM_DEBUG
-    if (objPtr->refCount == 0x61616161) {
+    if (objPtr->refCount == FREEDREFCOUNTFILLER) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
 	Tcl_Panic("checking whether previously disposed object is shared");
