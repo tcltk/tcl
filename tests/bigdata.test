@@ -1,0 +1,202 @@
+# Test cases for large sized data
+#
+# Copyright © 2023 Ashok P. Nadkarni
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest
+
+    namespace import -force ::tcltest::*
+}
+
+#
+# Hints:
+#
+# - To save time, when commands do not modify operands, generate the test data
+# and run multiple variants of the command in a single test.
+# - Do NOT use -setup clauses that generate large data. They seem to be run
+# irrespective of whether the test itself is run.
+
+# Wrapper to generate compiled and uncompiled cases for a test.
+# If $args does not contain a -body key, $comment is treated as the test body
+proc bigtest {id comment result args} {
+    if {[dict exists $args -body]} {
+        set body [dict get $args -body]
+        dict unset args -body
+    } else {
+        set body $comment
+    }
+    dict lappend args -constraints bigdata
+
+    uplevel 1 [list test $id.uncompiled "$comment (uncompiled)" \
+                   -body [list testevalex $body] \
+                   -result $result \
+                   {*}$args]
+
+    uplevel 1 [list test $id.compiled-script "$comment (compiled script)" \
+                   -body [list try $body] \
+                   -result $result \
+                   {*}$args]
+
+    return
+    # TODO - is this required separately from the compile-script above?
+    dict append args -setup \n[list proc testxproc {} $body]
+    dict append args -cleanup "\nrename testxproc {}"
+    uplevel 1 [list test $id.compiled-proc "$comment (compiled proc)" \
+                   -body {testxproc} \
+                   -result $result \
+                   {*}$args]
+}
+
+interp alias {} bigString {} testbigdata string
+interp alias {} bigBinary {} testbigdata bytearray
+interp alias {} bigList {} testbigdata list
+proc bigPatLen {} {
+    proc bigPatLen {} "return [string length [testbigdata string]]"
+    bigPatLen
+}
+
+# Returns list of expected elements at the indices specified
+proc bigStringIndices {indices} {
+    set pat [testbigdata string]
+    set patlen [string length $pat]
+    lmap idx $indices {
+        string index $pat [expr {$idx%$patlen}]
+    }
+}
+
+# Returns the largest multiple of the pattern length that is less than $limit
+proc bigPatlenMultiple {limit} {
+    set patlen [bigPatLen]
+    return [expr {($limit/$patlen)*$patlen}]
+}
+
+set ::bigLengths(intmax) 0x7fffffff
+set ::bigLengths(uintmax) 0xffffffff
+# Some tests are more convenient if operands are multiple of pattern length
+set ::bigLengths(patlenmultiple) [bigPatlenMultiple $::bigLengths(intmax)]
+set ::bigLengths(upatlenmultiple) [bigPatlenMultiple $::bigLengths(uintmax)]
+
+#
+# string cat
+bigtest string-cat-bigdata-1 "string cat large small result > INT_MAX" 1 -body {
+    string equal \
+        [string cat [bigString $::bigLengths(patlenmultiple)] [bigString]] \
+        [bigString [expr {[bigPatLen]+$::bigLengths(patlenmultiple)}]]
+}
+bigtest string-cat-bigdata-2 "string cat small large result > INT_MAX" 1 -body {
+    string equal \
+        [string cat [bigString] [bigString $::bigLengths(patlenmultiple)]] \
+        [bigString [expr {[bigPatLen]+$::bigLengths(patlenmultiple)}]]
+}
+bigtest string-cat-bigdata-3 "string cat result > UINT_MAX" 1 -body {
+    set s [bigString $::bigLengths(patlenmultiple)]
+    string equal \
+        [string cat $s [bigString] $s] \
+        [bigString [expr {[bigPatLen]+2*$::bigLengths(patlenmultiple)}]]
+}
+
+#
+# string compare/equal
+bigtest string-equal/compare-bigdata-1 "string compare/equal equal strings" {0 1} -cleanup {
+    unset -nocomplain s1 s2
+} -body {
+    set len [expr {$::bigLengths(intmax)+1}]
+    set s1 [bigString $len]
+    set s2 [bigString $len]; # Use separate string to avoid Tcl_Obj * being same
+    list [string compare $s1 $s2] [string equal $s1 $s2]
+}
+bigtest string-equal/compare-bigdata-2 "string compare/equal -length unequal strings" {-1 0 0 1 -1 0} -cleanup {
+    unset -nocomplain s1 s2
+} -body {
+    # Also tests lengths do not wrap
+    set len [expr {$::bigLengths(uintmax)+2}]
+    set s1 [bigString $len]
+    set s2 [bigString $len $len]; # Differs in last char
+    set result {}
+    lappend result [string compare $s1 $s2]
+    lappend result [string equal $s1 $s2]
+    # Check lengths > UINT_MAX
+    # Also that lengths do not truncate to sizeof(int)
+    lappend result [string compare -length $len $s1 $s2]
+    lappend result [string equal -length $len $s1 $s2]
+}
+
+#
+# string first
+test string-first-bigdata-0 "string first > INT_MAX" -result {2147483648 -1 2147483650 1} -cleanup {
+    unset -nocomplain s
+} -body {
+    set s [bigString 0x8000000a 0x80000000]
+    list \
+        [string first X $s] \
+        [string first Y $s] \
+        [string first 0 $s 0x80000000] \
+        [string first 1 $s end-0x80000010]
+}
+bigtest string-first-bigdata-1 "string first > INT_MAX" {2147483648 -1 2147483650 1} -cleanup {
+    unset -nocomplain s
+} -body {
+    set s [bigString 0x8000000a 0x80000000]
+    list \
+        [string first X $s] \
+        [string first Y $s] \
+        [string first 0 $s 0x80000000] \
+        [string first 1 $s end-0x80000010]
+}
+bigtest xstring-first-bigdata-2 "string first > UINT_MAX" {4294967296 -1 4294967300 1} -cleanup {
+    unset -nocomplain s
+} -body {
+    set s [bigString 0x10000000a 0x100000000]
+    list \
+        [string first X $s] \
+        [string first Y $s] \
+        [string first 0 $s 0x100000000] \
+        [string first 1 $s end-0x100000010]
+}
+
+#
+# string last
+bigtest string-last-bigdata-1 "string last > INT_MAX" {2 -1 2147483640 11} -cleanup {
+    unset -nocomplain s
+} -body {
+    set s [bigString 0x80000010 2]
+    list \
+        [string last X $s] \
+        [string last Y $s] \
+        [string last 0 $s 0x80000000] \
+        [string last 1 $s end-0x80000000]
+}
+bigtest string-first/last-bigdata-2 "string first > UINT_MAX" {4294967296 -1 4294967300 1} -cleanup {
+    unset -nocomplain s
+} -body {
+    set s [bigString 0x10000000a 0x100000000]
+    list \
+        [string first X $s] \
+        [string first Y $s] \
+        [string first 0 $s 0x100000000] \
+        [string first 1 $s end-0x100000010]
+}
+
+foreach len {0x7fffffff 0xffffffff 0x800000000} {
+    break; # Skip for now
+    set body "string length \[string repeat x $len\]"
+    bigtest lrepeat-bigdata-1-$len $body $len
+}
+
+foreach len {0x7fffffff 0xffffffff 0x800000000} {
+    break; # Skip for now
+    set body "llength \[lrepeat $len x\]"
+    bigtest lrepeat-bigdata-1-$len $body $len
+}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:
