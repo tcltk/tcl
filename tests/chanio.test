@@ -7580,7 +7580,7 @@ test chan-io-60.1 {writing illegal utf sequences} {fileevent testbytestring} {
     # cut of the remainder of the error stack, especially the filename
     set result [lreplace $result 3 3 [lindex [split [lindex $result 3] \n] 0]]
     list $x $result
-} {1 {gets {} catch {error writing "stdout": illegal byte sequence}}}
+} {1 {gets {} catch {error writing "stdout": invalid or incomplete multibyte or wide character}}}
 
 test chan-io-61.1 {Reset eof state after changing the eof char} -setup {
     set datafile [makeFile {} eofchar]

@@ -410,7 +410,7 @@ test fCmd-3.15 {FileCopyRename: source[0] == '\x00'} -setup {
 } -constraints {notRoot unixOrWin} -returnCodes error -body {
     file mkdir td1
     file rename / td1
-} -result {error renaming "/" to "td1": file already exists}
+} -result {error renaming "/" to "td1": file exists}
 test fCmd-3.16 {FileCopyRename: break on first error} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
@@ -421,7 +421,7 @@ test fCmd-3.16 {FileCopyRename: break on first error} -setup {
     file mkdir td1
     createfile [file join td1 tf3]
     file rename tf1 tf2 tf3 tf4 td1
-} -result [subst {error renaming "tf3" to "[file join td1 tf3]": file already exists}]
+} -result [subst {error renaming "tf3" to "[file join td1 tf3]": file exists}]
 
 test fCmd-4.1 {TclFileMakeDirsCmd: make each dir: 1 dir} -setup {
     cleanup
@@ -483,7 +483,7 @@ test fCmd-4.9 {TclFileMakeDirsCmd: exists, not dir} -setup {
 } -constraints {notRoot} -returnCodes error -body {
     createfile tf1
     file mkdir tf1
-} -result [subst {can't create directory "[file join tf1]": file already exists}]
+} -result [subst {can't create directory "[file join tf1]": file exists}]
 test fCmd-4.10 {TclFileMakeDirsCmd: exists, is dir} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -659,14 +659,14 @@ test fCmd-6.10 {CopyRenameOneFile: lstat(target) == 0} -setup {
     createfile tf1
     createfile tf2
     file rename tf1 tf2
-} -result {error renaming "tf1" to "tf2": file already exists}
+} -result {error renaming "tf1" to "tf2": file exists}
 test fCmd-6.11 {CopyRenameOneFile: force == 0} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
     createfile tf1
     createfile tf2
     file rename tf1 tf2
-} -result {error renaming "tf1" to "tf2": file already exists}
+} -result {error renaming "tf1" to "tf2": file exists}
 test fCmd-6.12 {CopyRenameOneFile: force != 0} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -806,7 +806,7 @@ test fCmd-6.27 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
     file mkdir [file join $tmpspace td1]
     createfile [file join $tmpspace td1 tf1]
     file rename -force td1 $tmpspace
-} -match glob -result {error renaming "td1" to "/tmp/tcl*/td1": file already exists}
+} -match glob -result {error renaming "td1" to "/tmp/tcl*/td1": file exists}
 test fCmd-6.28 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
     cleanup $tmpspace
 } -constraints {notRoot xdev notWsl} -body {
@@ -979,7 +979,7 @@ test fCmd-9.7 {file rename: comprehensive: file to existing file} -setup {
     file rename -force tfs3 tfd3
     file rename -force tfs4 tfd4
     list [lsort [glob tf*]] $msg [file writable tfd1] [file writable tfd2] [file writable tfd3] [file writable tfd4]
-} -result {{tf1 tf2 tfd1 tfd2 tfd3 tfd4} {1 {error renaming "tf1" to "tf2": file already exists}} 1 1 0 0}
+} -result {{tf1 tf2 tfd1 tfd2 tfd3 tfd4} {1 {error renaming "tf1" to "tf2": file exists}} 1 1 0 0}
 test fCmd-9.8 {file rename: comprehensive: dir to empty dir} -setup {
     cleanup
 } -constraints {notRoot testchmod notNetworkFilesystem} -body {
@@ -1015,7 +1015,7 @@ test fCmd-9.8 {file rename: comprehensive: dir to empty dir} -setup {
     }
     list [lsort [glob td*]] $msg [file writable [file join tdd1 tds1]] \
     [file writable [file join tdd2 tds2]] $w3 $w4
-} -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4} {1 {error renaming "td1" to "[file join td2 td1]": file already exists}} 1 1 0 0}]
+} -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4} {1 {error renaming "td1" to "[file join td2 td1]": file exists}} 1 1 0 0}]
 # Test can hit EEXIST or EBUSY, depending on underlying filesystem
 test fCmd-9.9 {file rename: comprehensive: dir to non-empty dir} -setup {
     cleanup
@@ -1065,7 +1065,7 @@ test fCmd-9.12 {file rename: comprehensive: target exists} -setup {
 	[catch {file rename td1 td2} msg] $msg
 } -cleanup {
     testchmod 0o755 [file join td2 td1]
-} -result [subst {0 1 1 {error renaming "td1" to "[file join td2 td1]": file already exists}}]
+} -result [subst {0 1 1 {error renaming "td1" to "[file join td2 td1]": file exists}}]
 # Test can hit EEXIST or EBUSY, depending on underlying filesystem
 test fCmd-9.13 {file rename: comprehensive: can't overwrite target} -setup {
     cleanup
@@ -1202,7 +1202,7 @@ test fCmd-10.4 {file copy: comprehensive: file to existing file} -setup {
     file copy -force tfs3 tfd3
     file copy -force tfs4 tfd4
     list [lsort [glob tf*]] $msg [file writable tfd1] [file writable tfd2] [file writable tfd3] [file writable tfd4]
-} -result {{tf1 tf2 tfd1 tfd2 tfd3 tfd4 tfs1 tfs2 tfs3 tfs4} {1 {error copying "tf1" to "tf2": file already exists}} 1 1 0 0}
+} -result {{tf1 tf2 tfd1 tfd2 tfd3 tfd4 tfs1 tfs2 tfs3 tfs4} {1 {error copying "tf1" to "tf2": file exists}} 1 1 0 0}
 test fCmd-10.5 {file copy: comprehensive: dir to empty dir} -setup {
     cleanup
 } -constraints {notRoot testchmod} -body {
@@ -1226,7 +1226,7 @@ test fCmd-10.5 {file copy: comprehensive: dir to empty dir} -setup {
     set a4 [catch {file copy -force tds3 tdd3}]
     set a5 [catch {file copy -force tds4 tdd4}]
     list [lsort [glob td*]] $a1 $a2 $a3 $a4 $a5
-} -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4 tds1 tds2 tds3 tds4} {1 {error copying "td1" to "[file join td2 td1]": file already exists}} {1 {error copying "tds1" to "[file join tdd1 tds1]": file already exists}} 1 1 1}]
+} -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4 tds1 tds2 tds3 tds4} {1 {error copying "td1" to "[file join td2 td1]": file exists}} {1 {error copying "tds1" to "[file join tdd1 tds1]": file exists}} 1 1 1}]
 test fCmd-10.6 {file copy: comprehensive: dir to non-empty dir} -setup {
     cleanup
 } -constraints {notRoot unixOrWin testchmod notWsl} -body {
@@ -1238,7 +1238,7 @@ test fCmd-10.6 {file copy: comprehensive: dir to non-empty dir} -setup {
     set a1 [list [catch {file copy -force tds1 tdd1} msg] $msg]
     set a2 [list [catch {file copy -force tds2 tdd2} msg] $msg]
     list [lsort [glob td*]] $a1 $a2 [file writable tds1] [file writable tds2]
-} -result [subst {{tdd1 tdd2 tds1 tds2} {1 {error copying "tds1" to "[file join tdd1 tds1]": file already exists}} {1 {error copying "tds2" to "[file join tdd2 tds2]": file already exists}} 1 0}]
+} -result [subst {{tdd1 tdd2 tds1 tds2} {1 {error copying "tds1" to "[file join tdd1 tds1]": file exists}} {1 {error copying "tds2" to "[file join tdd2 tds2]": file exists}} 1 0}]
 test fCmd-10.7 {file rename: comprehensive: file to new name and dir} -setup {
     cleanup
 } -constraints {notRoot testchmod} -body {
@@ -2460,7 +2460,7 @@ test fCmd-28.6 {file link: unsupported operation} -setup {
     file link -hard abc.link abc.dir
 } -returnCodes error -cleanup {
     cd [workingDirectory]
-} -result {could not create new link "abc.link" pointing to "abc.dir": illegal operation on a directory}
+} -result {could not create new link "abc.link" pointing to "abc.dir": is a directory}
 test fCmd-28.7 {file link: source already exists} -setup {
     cd [temporaryDirectory]
 } -constraints {linkFile} -body {
