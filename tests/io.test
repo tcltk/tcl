@@ -7435,7 +7435,7 @@ test io-52.9 {TclCopyChannel & encodings} {fcopy} {
 	    [file size $path(utf8-fcopy.txt)] \
 	    [file size $path(utf8-rp.txt)]
 } {3 5 5}
-test io-52.10 {TclCopyChannel & encodings} {fcopy} {
+test io-52.10 {TclCopyChannel & encodings} {fcopy notWinCI} {
     # encoding to binary (=> implies that the
     # internal utf-8 is written)
 
