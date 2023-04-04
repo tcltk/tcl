@@ -198,7 +198,7 @@ Tcl_ParseCommand(
 				 * NULL, then no error message is provided. */
     const char *start,		/* First character of string containing one or
 				 * more Tcl commands. */
-    size_t numBytes,		/* Total number of bytes in string. If -1,
+    Tcl_Size numBytes,		/* Total number of bytes in string. If TCL_INDEX_NONE,
 				 * the script consists of all bytes up to the
 				 * first null character. */
     int nested,			/* Non-zero means this is a nested command:
@@ -1335,7 +1335,7 @@ Tcl_ParseVarName(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of variable substitution string.
 				 * First character must be "$". */
-    size_t numBytes,		/* Total number of bytes in string. If -1,
+    Tcl_Size numBytes,		/* Total number of bytes in string. If TCL_INDEX_NONE,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr,	/* Structure to fill in with information about
@@ -1633,7 +1633,7 @@ Tcl_ParseBraces(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of string enclosed in braces. The
 				 * first character must be {'. */
-    size_t numBytes,		/* Total number of bytes in string. If -1,
+    Tcl_Size numBytes,		/* Total number of bytes in string. If TCL_INDEX_NONE,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr,
@@ -1651,7 +1651,7 @@ Tcl_ParseBraces(
     Tcl_Token *tokenPtr;
     const char *src;
     int startIndex, level;
-    size_t length;
+    Tcl_Size length;
 
     if (TCL_SIZE_ISNEG(numBytes) && start) {
 	numBytes = strlen(start);
@@ -1835,7 +1835,7 @@ Tcl_ParseQuotedString(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of the quoted string. The first
 				 * character must be '"'. */
-    size_t numBytes,		/* Total number of bytes in string. If -1,
+    Tcl_Size numBytes,		/* Total number of bytes in string. If TCL_INDEX_NONE,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr,

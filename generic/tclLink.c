@@ -246,7 +246,7 @@ Tcl_LinkArray(
 				 * interpreter result. */
     int type,			/* Type of C variable: TCL_LINK_INT, etc. Also
 				 * may have TCL_LINK_READ_ONLY OR'ed in. */
-    size_t size)			/* Size of C variable array, >1 if array */
+    Tcl_Size size)			/* Size of C variable array, >1 if array */
 {
     Tcl_Obj *objPtr;
     Link *linkPtr;
@@ -254,7 +254,7 @@ Tcl_LinkArray(
     const char *name;
     int code;
 
-    if (size < 1) {
+    if (TCL_SIZE_CMP(size, <, 1)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"wrong array size given", TCL_INDEX_NONE));
 	return TCL_ERROR;

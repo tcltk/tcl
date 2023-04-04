@@ -757,7 +757,7 @@ TcpInputProc(
 {
     TcpState *statePtr = (TcpState *)instanceData;
     int bytesRead;
-    DWORD error;
+    int error;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     *errorCodePtr = 0;
@@ -1262,7 +1262,7 @@ TcpGetOptionProc(
 
 		int optlen;
 		int ret;
-		DWORD err;
+		int err;
 
 		/*
 		 * Populate the err variable with a POSIX error
@@ -1606,7 +1606,7 @@ TcpConnect(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
     TcpState *statePtr)
 {
-    DWORD error;
+    int error;
     int async_connect = GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
                                 /* We are started with async connect and the
                                  * connect notification was not yet
@@ -3033,7 +3033,7 @@ SocketThread(
 
     SetEvent(tsdPtr->readyEvent);
 
-    return msg.wParam;
+    return (DWORD)msg.wParam;
 }
 
 

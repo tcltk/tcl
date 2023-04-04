@@ -613,7 +613,7 @@ static int
 buildInfoObjCmd2(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc - 1 > 1) {
@@ -3291,7 +3291,7 @@ static int
 invokeObj2Command(
     void *clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,		/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
@@ -3311,7 +3311,7 @@ invokeObj2Command(
 
 static int cmdWrapper2Proc(void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Command *cmdPtr = (Command *)clientData;
@@ -4370,7 +4370,7 @@ int
 Tcl_EvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    size_t objc,			/* Number of words in command. */
+    Tcl_Size objc,			/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags)			/* Collection of OR-ed bits that control the
@@ -4389,7 +4389,7 @@ int
 TclNREvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    size_t objc,			/* Number of words in command. */
+    Tcl_Size objc,			/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags,			/* Collection of OR-ed bits that control the
@@ -5089,7 +5089,7 @@ Tcl_EvalTokensStandard(
 				 * errors. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * evaluate and concatenate. */
-    size_t count)			/* Number of tokens to consider at tokenPtr.
+    Tcl_Size count)			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
 {
     return TclSubstTokens(interp, tokenPtr, count, /* numLeftPtr */ NULL, 1,
@@ -5122,7 +5122,7 @@ Tcl_EvalEx(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * script. Also used for error reporting. */
     const char *script,		/* First character of script to evaluate. */
-    size_t numBytes,		/* Number of bytes in script. If -1, the
+    Tcl_Size numBytes,		/* Number of bytes in script. If TCL_INDEX_NONE, the
 				 * script consists of all bytes up to the
 				 * first null character. */
     int flags)			/* Collection of OR-ed bits that control the
@@ -5137,7 +5137,7 @@ TclEvalEx(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * script. Also used for error reporting. */
     const char *script,		/* First character of script to evaluate. */
-    size_t numBytes,		/* Number of bytes in script. If -1, the
+	size_t numBytes,		/* Number of bytes in script. If TCL_INDEX_NONE, the
 				 * script consists of all bytes up to the
 				 * first NUL character. */
     int flags,			/* Collection of OR-ed bits that control the
@@ -5852,7 +5852,7 @@ TclArgumentBCEnter(
      * housekeeping, and can escape now.
      */
 
-    if (ePtr->nline != (size_t)objc) {
+    if (ePtr->nline != (Tcl_Size)objc) {
         return;
     }
 
@@ -6911,17 +6911,17 @@ Tcl_VarEval(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 Tcl_SetRecursionLimit(
     Tcl_Interp *interp,		/* Interpreter whose nesting limit is to be
 				 * set. */
-    size_t depth)			/* New value for maximimum depth. */
+    Tcl_Size depth)			/* New value for maximimum depth. */
 {
     Interp *iPtr = (Interp *) interp;
-    size_t old;
+    Tcl_Size old;
 
     old = iPtr->maxNestingDepth;
-    if (depth + 1 > 1) {
+    if (TCL_SIZE_CMP(depth, >, 0)) {
 	iPtr->maxNestingDepth = depth;
     }
     return old;
@@ -8474,7 +8474,7 @@ Tcl_NRCallObjProc(
     Tcl_Interp *interp,
     Tcl_ObjCmdProc *objProc,
     void *clientData,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     NRE_callback *rootPtr = TOP_CB(interp);
@@ -8657,7 +8657,7 @@ int
 Tcl_NREvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    size_t objc,			/* Number of words in command. */
+    Tcl_Size objc,			/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags)			/* Collection of OR-ed bits that control the
@@ -8672,7 +8672,7 @@ int
 Tcl_NRCmdSwap(
     Tcl_Interp *interp,
     Tcl_Command cmd,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[],
     int flags)
 {

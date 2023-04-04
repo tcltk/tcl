@@ -1860,7 +1860,7 @@ int
 Tcl_ParseExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *start,		/* Start of source string to parse. */
-    size_t numBytes,		/* Number of bytes in string. If -1, the
+    Tcl_Size numBytes,		/* Number of bytes in string. If -1, the
 				 * string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr)	/* Structure to fill with information about
@@ -2197,7 +2197,7 @@ void
 TclCompileExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *script,		/* The source script to compile. */
-    size_t numBytes,		/* Number of bytes in script. */
+    Tcl_Size numBytes,		/* Number of bytes in script. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int optimize)		/* 0 for one-off expressions. */
 {

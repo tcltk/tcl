@@ -187,7 +187,7 @@ Tcl_GetIndexFromObjStruct(
 				 * offset, the third plus the offset again,
 				 * etc. The last entry must be NULL and there
 				 * must not be duplicate entries. */
-    size_t offset,			/* The number of bytes between entries */
+    Tcl_Size offset,			/* The number of bytes between entries */
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
     int flags,			/* 0, TCL_EXACT, TCL_NULL_OK or TCL_INDEX_TEMP_TABLE */
@@ -202,7 +202,7 @@ Tcl_GetIndexFromObjStruct(
     const Tcl_ObjInternalRep *irPtr;
 
     /* Protect against invalid values, like TCL_INDEX_NONE or 0. */
-    if (offset+1 <= sizeof(char *)) {
+    if (TCL_SIZE_CMP(offset, <, sizeof(char *))) {
 	offset = sizeof(char *);
     }
     /*
@@ -802,7 +802,7 @@ PrefixLongestObjCmd(
 void
 Tcl_WrongNumArgs(
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments to print from objv. */
+    Tcl_Size objc,			/* Number of arguments to print from objv. */
     Tcl_Obj *const objv[],	/* Initial argument objects, which should be
 				 * included in the error message. */
     const char *message)	/* Error message to print after the leading

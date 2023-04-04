@@ -779,12 +779,12 @@ Tcl_Obj *
 TclTraceDictPath(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    size_t keyc,
+    Tcl_Size keyc,
     Tcl_Obj *const keyv[],
     int flags)
 {
     Dict *dict, *newDict;
-    size_t i;
+    Tcl_Size i;
 
     DictGetInternalRep(dictPtr, dict);
     if (dict == NULL) {
@@ -1281,7 +1281,7 @@ int
 Tcl_DictObjPutKeyList(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    size_t keyc,
+    Tcl_Size keyc,
     Tcl_Obj *const keyv[],
     Tcl_Obj *valuePtr)
 {
@@ -1292,7 +1292,7 @@ Tcl_DictObjPutKeyList(
     if (Tcl_IsShared(dictPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_DictObjPutKeyList");
     }
-    if (keyc + 1 < 2) {
+    if (TCL_SIZE_CMP(keyc, <, 1)) {
 	Tcl_Panic("%s called with empty key list", "Tcl_DictObjPutKeyList");
     }
 
@@ -1342,7 +1342,7 @@ int
 Tcl_DictObjRemoveKeyList(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    size_t keyc,
+    Tcl_Size keyc,
     Tcl_Obj *const keyv[])
 {
     Dict *dict;

@@ -124,14 +124,14 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    size_t *lengthPtr,
+    TCL_HASH_TYPE *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    64
     Tcl_Obj *pathPtr;
     char installLib[LIBRARY_SIZE];
     const char *bytes;
-    size_t length;
+    TCL_HASH_TYPE length;
 
     TclNewObj(pathPtr);
 
@@ -284,7 +284,7 @@ AppendEnvironment(
 static void
 InitializeDefaultLibraryDir(
     char **valuePtr,
-    size_t *lengthPtr,
+    TCL_HASH_TYPE *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     HMODULE hModule = (HMODULE)TclWinGetTclInstance();
@@ -332,7 +332,7 @@ InitializeDefaultLibraryDir(
 static void
 InitializeSourceLibraryDir(
     char **valuePtr,
-    size_t *lengthPtr,
+    TCL_HASH_TYPE *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     HMODULE hModule = (HMODULE)TclWinGetTclInstance();
@@ -569,16 +569,16 @@ TclpSetVariables(
 #  define tenviron2utfdstr(string, len, dsPtr) \
 		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr))
 
-size_t
+Tcl_Size
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (UTF-8). */
-    size_t *lengthPtr)		/* Used to return length of name (for
+    Tcl_Size *lengthPtr)		/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    size_t i, length, result = TCL_INDEX_NONE;
+    Tcl_Size i, length, result = TCL_INDEX_NONE;
     const WCHAR *env;
     const char *p1, *p2;
     char *envUpper, *nameUpper;

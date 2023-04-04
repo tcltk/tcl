@@ -963,7 +963,7 @@ AsyncHandlerProc(
     int code)			/* Current return code from command. */
 {
     TestAsyncHandler *asyncPtr;
-    int id = PTR2INT(clientData);
+    int id = (int)PTR2INT(clientData);
     const char *listArgv[4];
     char *cmd;
     char string[TCL_INTEGER_SPACE];
@@ -1022,7 +1022,7 @@ AsyncThreadProc(
 				 * TestAsyncHandler, defined above. */
 {
     TestAsyncHandler *asyncPtr;
-    int id = PTR2INT(clientData);
+    int id = (int)PTR2INT(clientData);
 
     Tcl_Sleep(1);
     Tcl_MutexLock(&asyncTestMutex);
@@ -1638,7 +1638,7 @@ DelCallbackProc(
     void *clientData,	/* Numerical value to append to delString. */
     Tcl_Interp *interp)		/* Interpreter being deleted. */
 {
-    int id = PTR2INT(clientData);
+    int id = (int)PTR2INT(clientData);
     char buffer[TCL_INTEGER_SPACE];
 
     TclFormatInt(buffer, id);
@@ -2234,7 +2234,7 @@ TestencodingObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Encoding encoding;
-    size_t length;
+    Tcl_Size length;
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
@@ -4122,7 +4122,7 @@ PrintParse(
     size_t i;
 
     objPtr = Tcl_GetObjResult(interp);
-    if (parsePtr->commentSize + 1 > 1) {
+    if (TCL_SIZE_CMP(parsePtr->commentSize, >, 0)) {
 	Tcl_ListObjAppendElement(NULL, objPtr,
 		Tcl_NewStringObj(parsePtr->commentStart,
 			parsePtr->commentSize));
@@ -4567,7 +4567,7 @@ TestregexpObjCmd(
 	    if (ii == TCL_INDEX_NONE) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
 		newPtr = Tcl_GetRange(objPtr, start, end);
-	    } else if (ii > info.nsubs || info.matches[ii].end + 1 <= 1) {
+	    } else if (ii > info.nsubs || TCL_SIZE_CMP(info.matches[ii].end, <=, 0)) {
 		newPtr = Tcl_NewObj();
 	    } else {
 		newPtr = Tcl_GetRange(objPtr, info.matches[ii].start,
@@ -5669,7 +5669,7 @@ TestbytestringObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    size_t n = 0;
+    Tcl_Size n = 0;
     const char *p;
 
     if (objc != 2) {
@@ -5709,7 +5709,7 @@ TestsetCmd(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-    int flags = PTR2INT(data);
+    int flags = (int)PTR2INT(data);
     const char *value;
 
     if (argc == 2) {
@@ -5741,7 +5741,7 @@ Testset2Cmd(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-    int flags = PTR2INT(data);
+    int flags = (int)PTR2INT(data);
     const char *value;
 
     if (argc == 3) {
@@ -6757,7 +6757,7 @@ TestWrongNumArgsObjCmd(
     Tcl_Size i, length;
     const char *msg;
 
-    if (objc + 1 < 4) {
+    if (TCL_SIZE_CMP(objc, <, 3)) {
 	goto insufArgs;
     }
 

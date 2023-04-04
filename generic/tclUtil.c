@@ -394,13 +394,13 @@ TclLengthOne(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclMaxListLength(
     const char *bytes,
-    size_t numBytes,
+    Tcl_Size numBytes,
     const char **endPtr)
 {
-    size_t count = 0;
+    Tcl_Size count = 0;
 
     if ((numBytes == 0) || (TCL_SIZE_ISNEG(numBytes) && (*bytes == '\0'))) {
 	/* Empty string case - quick exit */
@@ -503,13 +503,13 @@ TclFindElement(
     const char *list,		/* Points to the first byte of a string
 				 * containing a Tcl list with zero or more
 				 * elements (possibly in braces). */
-    size_t listLength,		/* Number of bytes in the list's string. */
+    Tcl_Size listLength,		/* Number of bytes in the list's string. */
     const char **elementPtr,	/* Where to put address of first significant
 				 * character in first element of list. */
     const char **nextPtr,	/* Fill in with location of character just
 				 * after all white space following end of
 				 * argument (next arg or end of list). */
-    size_t *sizePtr,		/* If non-zero, fill in with size of
+    Tcl_Size *sizePtr,		/* If non-zero, fill in with size of
 				 * element. */
     int *literalPtr)		/* If non-zero, fill in with non-zero/zero to
 				 * indicate that the substring of *sizePtr
@@ -793,21 +793,21 @@ FindElement(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclCopyAndCollapse(
-    size_t count,			/* Number of byte to copy from src. */
+    Tcl_Size count,			/* Number of byte to copy from src. */
     const char *src,		/* Copy from here... */
     char *dst)			/* ... to here. */
 {
-    size_t newCount = 0;
+    Tcl_Size newCount = 0;
 
     while (count > 0) {
 	char c = *src;
 
 	if (c == '\\') {
 	    char buf[4] = "";
-	    size_t numRead;
-	    size_t backslashCount = TclParseBackslash(src, count, &numRead, buf);
+	    Tcl_Size numRead;
+	    Tcl_Size backslashCount = TclParseBackslash(src, count, &numRead, buf);
 
 	    memcpy(dst, buf, backslashCount);
 	    dst += backslashCount;
@@ -945,7 +945,7 @@ Tcl_SplitList(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 Tcl_ScanElement(
     const char *src,	/* String to convert to list element. */
     int *flagPtr)	/* Where to store information to guide
@@ -977,15 +977,15 @@ Tcl_ScanElement(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 Tcl_ScanCountedElement(
     const char *src,		/* String to convert to Tcl list element. */
-    size_t length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
+    Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
     int *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
     char flags = CONVERT_ANY;
-    size_t numBytes = TclScanElement(src, length, &flags);
+    Tcl_Size numBytes = TclScanElement(src, length, &flags);
 
     *flagPtr = flags;
     return numBytes;
@@ -1021,15 +1021,15 @@ Tcl_ScanCountedElement(
  *----------------------------------------------------------------------
  */
 
-TCL_HASH_TYPE
+Tcl_Size
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
-    size_t length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
+    Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
     char *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
     const char *p = src;
-    size_t nestingLevel = 0;	/* Brace nesting count */
+    Tcl_Size nestingLevel = 0;	/* Brace nesting count */
     int forbidNone = 0;		/* Do not permit CONVERT_NONE mode. Something
 				 * needs protection or escape. */
     int requireEscape = 0;	/* Force use of CONVERT_ESCAPE mode.  For some
@@ -1037,7 +1037,7 @@ TclScanElement(
     int extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    TCL_HASH_TYPE bytesNeeded;		/* Buffer length computed to complete the
+    Tcl_Size bytesNeeded;		/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
@@ -1322,7 +1322,7 @@ TclScanElement(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 Tcl_ConvertElement(
     const char *src,	/* Source information for list element. */
     char *dst,		/* Place to put list-ified element. */
@@ -1352,14 +1352,14 @@ Tcl_ConvertElement(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 Tcl_ConvertCountedElement(
     const char *src,	/* Source information for list element. */
-    size_t length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
+    Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
-    size_t numBytes = TclConvertElement(src, length, dst, flags);
+    Tcl_Size numBytes = TclConvertElement(src, length, dst, flags);
     dst[numBytes] = '\0';
     return numBytes;
 }
@@ -1385,10 +1385,10 @@ Tcl_ConvertCountedElement(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclConvertElement(
     const char *src,	/* Source information for list element. */
-    size_t length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
+    Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
@@ -1568,12 +1568,12 @@ TclConvertElement(
 
 char *
 Tcl_Merge(
-    size_t argc,			/* How many strings to merge. */
+    Tcl_Size argc,			/* How many strings to merge. */
     const char *const *argv)	/* Array of string values. */
 {
 #define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    size_t i, bytesNeeded = 0;
+    Tcl_Size i, bytesNeeded = 0;
     char *result, *dst;
 
     /*
@@ -1856,10 +1856,10 @@ TclTrim(
 
 char *
 Tcl_Concat(
-    size_t argc,			/* Number of strings to concatenate. */
+    Tcl_Size argc,			/* Number of strings to concatenate. */
     const char *const *argv)	/* Array of strings to concatenate. */
 {
-    size_t i, needSpace = 0, bytesNeeded = 0;
+    Tcl_Size i, needSpace = 0, bytesNeeded = 0;
     char *result, *p;
 
     /*
@@ -1945,11 +1945,11 @@ Tcl_Concat(
 
 Tcl_Obj *
 Tcl_ConcatObj(
-    size_t objc,			/* Number of objects to concatenate. */
+    Tcl_Size objc,			/* Number of objects to concatenate. */
     Tcl_Obj *const objv[])	/* Array of objects to concatenate. */
 {
     int needSpace = 0;
-    size_t i, bytesNeeded = 0, elemLength;
+    Tcl_Size i, bytesNeeded = 0, elemLength;
     const char *element;
     Tcl_Obj *objPtr, *resPtr;
 
@@ -2578,11 +2578,11 @@ Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
     const char *bytes,		/* String to append. If length is
 				 * TCL_INDEX_NONE then this must be null-terminated. */
-    size_t length)			/* Number of bytes from "bytes" to append. If
+    Tcl_Size length)			/* Number of bytes from "bytes" to append. If
 				 * TCL_INDEX_NONE, then append all of bytes, up to null
 				 * at end. */
 {
-    size_t newSize;
+    Tcl_Size newSize;
 
     if (TCL_SIZE_ISNEG(length)) {
 	length = strlen(bytes);
@@ -2789,9 +2789,9 @@ Tcl_DStringAppendElement(
 void
 Tcl_DStringSetLength(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
-    size_t length)			/* New length for dynamic string. */
+    Tcl_Size length)			/* New length for dynamic string. */
 {
-    size_t newsize;
+    Tcl_Size newsize;
 
     if (length >= dsPtr->spaceAvl) {
 	/*
@@ -3268,7 +3268,7 @@ TclNeedSpace(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclFormatInt(
     char *buffer,		/* Points to the storage into which the
 				 * formatted characters are written. */
@@ -3402,9 +3402,9 @@ Tcl_GetIntForIndex(
 				 * errors. */
     Tcl_Obj *objPtr,		/* Points to an object containing either "end"
 				 * or an integer. */
-    size_t endValue,		/* The value to be stored at "indexPtr" if
+    Tcl_Size endValue,		/* The value to be stored at "indexPtr" if
 				 * "objPtr" holds "end". */
-    size_t *indexPtr)		/* Location filled in with an integer
+    Tcl_Size *indexPtr)		/* Location filled in with an integer
 				 * representing an index. May be NULL.*/
 {
     Tcl_WideInt wide;

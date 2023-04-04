@@ -280,7 +280,7 @@ Tcl_SourceRCFile(
 
 TCL_NORETURN void
 Tcl_MainEx(
-    size_t argc,			/* Number of arguments. */
+    Tcl_Size argc,			/* Number of arguments. */
     TCHAR **argv,		/* Array of argument strings. */
     Tcl_AppInitProc *appInitProc,
 				/* Application-specific initialization
@@ -288,7 +288,7 @@ Tcl_MainEx(
 				 * but before starting to execute commands. */
     Tcl_Interp *interp)
 {
-    size_t i=0;			/* argv[i] index */
+    Tcl_Size i=0;		/* argv[i] index */
     Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
     const char *encodingName = NULL;
     int code, exitCode = 0;
@@ -297,7 +297,7 @@ Tcl_MainEx(
     InteractiveState is;
 
     TclpSetInitialEncodings();
-    if (argc + 1 > 1) {
+    if (TCL_SIZE_CMP(argc, >, 0)) {
 	--argc;			/* consume argv[0] */
 	++i;
     }
@@ -454,7 +454,7 @@ Tcl_MainEx(
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
 	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
-	    size_t length;
+	    Tcl_Size length;
 
 	    if (is.tty) {
 		Prompt(interp, &is);
@@ -740,7 +740,7 @@ StdinProc(
     TCL_UNUSED(int) /*mask*/)
 {
     int code;
-    size_t length;
+    Tcl_Size length;
     InteractiveState *isPtr = (InteractiveState *)clientData;
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;

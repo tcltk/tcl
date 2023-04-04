@@ -1224,10 +1224,10 @@ TclStackFree(
 void *
 TclStackAlloc(
     Tcl_Interp *interp,
-    size_t numBytes)
+    Tcl_Size numBytes)
 {
     Interp *iPtr = (Interp *) interp;
-    size_t numWords;
+    Tcl_Size numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return (void *) Tcl_Alloc(numBytes);

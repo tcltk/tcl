@@ -2727,7 +2727,7 @@ Tcl_LrangeObjCmd(
 				/* Argument objects. */
 {
     int result;
-    size_t listLen, first, last;
+    Tcl_Size listLen, first, last;
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
 	return TCL_ERROR;

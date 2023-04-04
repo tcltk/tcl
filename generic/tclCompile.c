@@ -680,9 +680,9 @@ static void		DupByteCodeInternalRep(Tcl_Obj *srcPtr,
 static unsigned char *	EncodeCmdLocMap(CompileEnv *envPtr,
 			    ByteCode *codePtr, unsigned char *startPtr);
 static void		EnterCmdExtentData(CompileEnv *envPtr,
-			    size_t cmdNumber, size_t numSrcBytes, size_t numCodeBytes);
+			    Tcl_Size cmdNumber, Tcl_Size numSrcBytes, Tcl_Size numCodeBytes);
 static void		EnterCmdStartData(CompileEnv *envPtr,
-			    size_t cmdNumber, size_t srcOffset, size_t codeOffset);
+			    Tcl_Size cmdNumber, Tcl_Size srcOffset, Tcl_Size codeOffset);
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
@@ -699,9 +699,9 @@ static void		StartExpanding(CompileEnv *envPtr);
  * TIP #280: Helper for building the per-word line information of all compiled
  * commands.
  */
-static void		EnterCmdWordData(ExtCmdLoc *eclPtr, size_t srcOffset,
+static void		EnterCmdWordData(ExtCmdLoc *eclPtr, Tcl_Size srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd,
-			    size_t numWords, size_t line, int *clNext, int **lines,
+			    Tcl_Size numWords, Tcl_Size line, int *clNext, int **lines,
 			    CompileEnv *envPtr);
 static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
@@ -776,7 +776,7 @@ TclSetByteCodeFromAny(
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
-    size_t length;
+    Tcl_Size length;
     int result = TCL_OK;
     const char *stringPtr;
     Proc *procPtr = iPtr->compiledProcPtr;
@@ -1391,7 +1391,7 @@ static void
 ReleaseCmdWordData(
     ExtCmdLoc *eclPtr)
 {
-    size_t i;
+    Tcl_Size i;
 
     if (eclPtr->type == TCL_LOCATION_SOURCE) {
 	Tcl_DecrRefCount(eclPtr->path);
@@ -1553,7 +1553,7 @@ TclInitCompileEnv(
 	    pc = 1;
 	}
 
-	if ((ctxPtr->nline <= (size_t)word) || (ctxPtr->line[word] < 0)) {
+	if ((ctxPtr->nline <= (Tcl_Size)word) || (ctxPtr->line[word] < 0)) {
 	    /*
 	     * Word is not a literal, relative counting.
 	     */
@@ -1647,7 +1647,7 @@ TclFreeCompileEnv(
 	 * have transferred to it.
 	 */
 
-	size_t i;
+	Tcl_Size i;
 	LiteralEntry *entryPtr = envPtr->literalArrayPtr;
 	AuxData *auxDataPtr = envPtr->auxDataArrayPtr;
 
@@ -1748,7 +1748,7 @@ TclWordKnownAtCompileTime(
 	case TCL_TOKEN_BS:
 	    if (tempPtr != NULL) {
 		char utfBuf[4] = "";
-		size_t length = TclParseBackslash(tokenPtr->start,
+		Tcl_Size length = TclParseBackslash(tokenPtr->start,
 			tokenPtr->size, NULL, utfBuf);
 
 		Tcl_AppendToObj(tempPtr, utfBuf, length);
@@ -1812,7 +1812,7 @@ CompileCmdLiteral(
     const char *bytes;
     Command *cmdPtr;
     int cmdLitIdx, extraLiteralFlags = LITERAL_CMD_NAME;
-    size_t length;
+    Tcl_Size length;
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
     if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
@@ -2323,8 +2323,8 @@ TclCompileVarSubst(
     CompileEnv *envPtr)
 {
     const char *p, *name = tokenPtr[1].start;
-    size_t i, nameBytes = tokenPtr[1].size;
-    size_t localVar;
+    Tcl_Size i, nameBytes = tokenPtr[1].size;
+    Tcl_Size localVar;
     int localVarName = 1;
 
     /*
@@ -2400,7 +2400,7 @@ TclCompileTokens(
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[4] = "";
     int i, numObjsToConcat, adjust;
-    size_t length;
+    Tcl_Size length;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
     int isLiteral, maxNumCL, numCL;
@@ -2776,7 +2776,7 @@ PreventCycle(
     Tcl_Obj *objPtr,
     CompileEnv *envPtr)
 {
-    size_t i;
+    Tcl_Size i;
 
     for (i = 0;  i < envPtr->literalArrayNext; i++) {
 	if (objPtr == TclFetchLiteral(envPtr, i)) {
@@ -2791,7 +2791,7 @@ PreventCycle(
              * can be sure we do not have any lingering cycles hiding in
 	     * the internalrep.
 	     */
-	    size_t numBytes;
+	    Tcl_Size numBytes;
 	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
 	    Tcl_Obj *copyPtr = Tcl_NewStringObj(bytes, numBytes);
 
@@ -2993,19 +2993,19 @@ TclInitByteCodeObj(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclFindCompiledLocal(
     const char *name,	/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
-    size_t nameBytes,		/* Number of bytes in the name. */
+    Tcl_Size nameBytes,		/* Number of bytes in the name. */
     int create,			/* If 1, allocate a local frame entry for the
 				 * variable if it is new. */
     CompileEnv *envPtr)		/* Points to the current compile environment*/
 {
     CompiledLocal *localPtr;
-    size_t localVar = TCL_INDEX_NONE;
-    size_t i;
+    Tcl_Size localVar = TCL_INDEX_NONE;
+    Tcl_Size i;
     Proc *procPtr;
 
     /*
@@ -3024,7 +3024,7 @@ TclFindCompiledLocal(
 	LocalCache *cachePtr = envPtr->iPtr->varFramePtr->localCachePtr;
 	const char *localName;
 	Tcl_Obj **varNamePtr;
-	size_t len;
+	Tcl_Size len;
 
 	if (!cachePtr || !name) {
 	    return TCL_INDEX_NONE;
@@ -3043,7 +3043,7 @@ TclFindCompiledLocal(
     }
 
     if (name != NULL) {
-	size_t localCt = procPtr->numCompiledLocals;
+	Tcl_Size localCt = procPtr->numCompiledLocals;
 
 	localPtr = procPtr->firstLocalPtr;
 	for (i = 0;  i < localCt;  i++) {
@@ -3171,18 +3171,18 @@ EnterCmdStartData(
     CompileEnv *envPtr,		/* Points to the compilation environment
 				 * structure in which to enter command
 				 * location information. */
-    size_t cmdIndex,		/* Index of the command whose start data is
+    Tcl_Size cmdIndex,		/* Index of the command whose start data is
 				 * being set. */
-    size_t srcOffset,		/* Offset of first char of the command. */
-    size_t codeOffset)		/* Offset of first byte of command code. */
+    Tcl_Size srcOffset,		/* Offset of first char of the command. */
+    Tcl_Size codeOffset)		/* Offset of first byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
-    if (cmdIndex >= envPtr->numCommands) {
+    if (TCL_SIZE_ISNEG(cmdIndex) || TCL_SIZE_CMP(cmdIndex, >=, envPtr->numCommands)) {
 	Tcl_Panic("EnterCmdStartData: bad command index %" TCL_Z_MODIFIER "u", cmdIndex);
     }
 
-    if (cmdIndex >= envPtr->cmdMapEnd) {
+    if (TCL_SIZE_CMP(cmdIndex, >=, envPtr->cmdMapEnd)) {
 	/*
 	 * Expand the command location array by allocating more storage from
 	 * the heap. The currently allocated CmdLocation entries are stored
@@ -3250,14 +3250,14 @@ EnterCmdExtentData(
     CompileEnv *envPtr,		/* Points to the compilation environment
 				 * structure in which to enter command
 				 * location information. */
-    size_t cmdIndex,		/* Index of the command whose source and code
+    Tcl_Size cmdIndex,		/* Index of the command whose source and code
 				 * length data is being set. */
-    size_t numSrcBytes,		/* Number of command source chars. */
-    size_t numCodeBytes)		/* Offset of last byte of command code. */
+    Tcl_Size numSrcBytes,		/* Number of command source chars. */
+    Tcl_Size numCodeBytes)		/* Offset of last byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
-    if (cmdIndex >= envPtr->numCommands) {
+    if (TCL_SIZE_ISNEG(cmdIndex) || TCL_SIZE_CMP(cmdIndex, >=, envPtr->numCommands)) {
 	Tcl_Panic("EnterCmdExtentData: bad command index %" TCL_Z_MODIFIER "u", cmdIndex);
     }
 
@@ -3296,18 +3296,18 @@ EnterCmdWordData(
     ExtCmdLoc *eclPtr,		/* Points to the map environment structure in
 				 * which to enter command location
 				 * information. */
-    size_t srcOffset,		/* Offset of first char of the command. */
+    Tcl_Size srcOffset,		/* Offset of first char of the command. */
     Tcl_Token *tokenPtr,
     const char *cmd,
-    size_t numWords,
-    size_t line,
+    Tcl_Size numWords,
+    Tcl_Size line,
     int *clNext,
     int **wlines,
     CompileEnv *envPtr)
 {
     ECL *ePtr;
     const char *last;
-    size_t wordIdx, wordLine;
+    Tcl_Size wordIdx, wordLine;
     int *wwlines, *wordNext;
 
     if (eclPtr->nuloc >= eclPtr->nloc) {
@@ -3373,7 +3373,7 @@ EnterCmdWordData(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclCreateExceptRange(
     ExceptionRangeType type,	/* The kind of ExceptionRange desired. */
     CompileEnv *envPtr)/* Points to CompileEnv for which to create a
@@ -3381,9 +3381,9 @@ TclCreateExceptRange(
 {
     ExceptionRange *rangePtr;
     ExceptionAux *auxPtr;
-    size_t index = envPtr->exceptArrayNext;
+    Tcl_Size index = envPtr->exceptArrayNext;
 
-    if (index >= envPtr->exceptArrayEnd) {
+    if (TCL_SIZE_CMP(index, >=, envPtr->exceptArrayEnd)) {
 	/*
 	 * Expand the ExceptionRange array. The currently allocated entries
 	 * are stored between elements 0 and (envPtr->exceptArrayNext - 1)
@@ -3470,7 +3470,7 @@ TclGetInnermostExceptionRange(
 	rangePtr--; i--;
 
 	if (CurrentOffset(envPtr) >= (int)rangePtr->codeOffset &&
-		(TCL_SIZE_ISNEG(rangePtr->numCodeBytes) || CurrentOffset(envPtr) <
+		(rangePtr->numCodeBytes == TCL_INDEX_NONE || CurrentOffset(envPtr) <
 			(int)rangePtr->codeOffset+(int)rangePtr->numCodeBytes) &&
 		(returnCode != TCL_CONTINUE ||
 			envPtr->exceptAuxArrayPtr[i].supportsContinue)) {
@@ -3512,7 +3512,7 @@ TclAddLoopBreakFixup(
 	auxPtr->allocBreakTargets *= 2;
 	auxPtr->allocBreakTargets += 2;
 	if (auxPtr->breakTargets) {
-	    auxPtr->breakTargets = (size_t *)Tcl_Realloc(auxPtr->breakTargets,
+	    auxPtr->breakTargets = (TCL_HASH_TYPE *)Tcl_Realloc(auxPtr->breakTargets,
 		    sizeof(size_t) * auxPtr->allocBreakTargets);
 	} else {
 	    auxPtr->breakTargets =
@@ -3621,7 +3621,7 @@ StartExpanding(
 	if ((int)rangePtr->codeOffset > CurrentOffset(envPtr)) {
 	    continue;
 	}
-	if (!TCL_SIZE_ISNEG(rangePtr->numCodeBytes)) {
+	if (rangePtr->numCodeBytes != TCL_INDEX_NONE) {
 	    continue;
 	}
 
@@ -3681,7 +3681,7 @@ TclFinalizeLoopExceptionRange(
     }
     for (i=0 ; i<(int)auxPtr->numContinueTargets ; i++) {
 	site = envPtr->codeStart + auxPtr->continueTargets[i];
-	if (TCL_SIZE_ISNEG(rangePtr->continueOffset)) {
+	if (rangePtr->continueOffset == TCL_INDEX_NONE) {
 	    int j;
 
 	    /*
@@ -3734,7 +3734,7 @@ TclFinalizeLoopExceptionRange(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclCreateAuxData(
     void *clientData,	/* The compilation auxiliary data to store in
 				 * the new aux data record. */
@@ -3743,12 +3743,12 @@ TclCreateAuxData(
     CompileEnv *envPtr)/* Points to the CompileEnv for which a new
 				 * aux data structure is to be allocated. */
 {
-    size_t index;			/* Index for the new AuxData structure. */
+    Tcl_Size index;		/* Index for the new AuxData structure. */
     AuxData *auxDataPtr;
 				/* Points to the new AuxData structure */
 
     index = envPtr->auxDataArrayNext;
-    if (index >= envPtr->auxDataArrayEnd) {
+    if (TCL_SIZE_CMP(index, >=, envPtr->auxDataArrayEnd)) {
 	/*
 	 * Expand the AuxData array. The currently allocated entries are
 	 * stored between elements 0 and (envPtr->auxDataArrayNext - 1)
@@ -4059,7 +4059,7 @@ TclFixupForwardJump(
 	switch (rangePtr->type) {
 	case LOOP_EXCEPTION_RANGE:
 	    rangePtr->breakOffset += 3;
-	    if (!TCL_SIZE_ISNEG(rangePtr->continueOffset)) {
+	    if (rangePtr->continueOffset != TCL_INDEX_NONE) {
 		rangePtr->continueOffset += 3;
 	    }
 	    break;
@@ -4416,8 +4416,8 @@ EncodeCmdLocMap(
 				 * is to be stored. */
 {
     CmdLocation *mapPtr = envPtr->cmdMapPtr;
-    size_t i, codeDelta, codeLen, srcLen, prevOffset;
-    size_t numCmds = envPtr->numCommands;
+    Tcl_Size i, codeDelta, codeLen, srcLen, prevOffset;
+    Tcl_Size numCmds = envPtr->numCommands;
     unsigned char *p = startPtr;
     int srcDelta;
 

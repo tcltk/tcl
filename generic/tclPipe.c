@@ -179,12 +179,12 @@ FileForRedirect(
 
 void
 Tcl_DetachPids(
-    size_t numPids,		/* Number of pids to detach: gives size of
+    Tcl_Size numPids,		/* Number of pids to detach: gives size of
 				 * array pointed to by pidPtr. */
     Tcl_Pid *pidPtr)		/* Array of pids to detach. */
 {
     Detached *detPtr;
-    size_t i;
+    Tcl_Size i;
 
     Tcl_MutexLock(&pipeMutex);
     for (i = 0; i < numPids; i++) {
@@ -269,7 +269,7 @@ Tcl_ReapDetachedProcs(void)
 int
 TclCleanupChildren(
     Tcl_Interp *interp,		/* Used for error messages. */
-    size_t numPids,		/* Number of entries in pidPtr array. */
+    Tcl_Size numPids,		/* Number of entries in pidPtr array. */
     Tcl_Pid *pidPtr,		/* Array of process ids of children. */
     Tcl_Channel errorChan)	/* Channel for file containing stderr output
 				 * from pipeline. NULL means there isn't any
@@ -278,7 +278,7 @@ TclCleanupChildren(
     int result = TCL_OK;
     int code, abnormalExit, anyErrorInfo;
     TclProcessWaitStatus waitStatus;
-    size_t i;
+    Tcl_Size i;
     Tcl_Obj *msg, *error;
 
     abnormalExit = 0;
@@ -395,10 +395,10 @@ TclCleanupChildren(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclCreatePipeline(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
-    size_t argc,			/* Number of entries in argv. */
+    Tcl_Size argc,			/* Number of entries in argv. */
     const char **argv,		/* Array of strings describing commands in
 				 * pipeline plus I/O redirection with <, <<,
 				 * >, etc. Argv[argc] must be NULL. */
@@ -1021,7 +1021,7 @@ Tcl_Channel
 Tcl_OpenCommandChannel(
     Tcl_Interp *interp,		/* Interpreter for error reporting. Can NOT be
 				 * NULL. */
-    size_t argc,			/* How many arguments. */
+    Tcl_Size argc,			/* How many arguments. */
     const char **argv,		/* Array of arguments for command pipe. */
     int flags)			/* Or'ed combination of TCL_STDIN, TCL_STDOUT,
 				 * TCL_STDERR, and TCL_ENFORCE_MODE. */

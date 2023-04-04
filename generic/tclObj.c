@@ -1786,7 +1786,7 @@ char *
 Tcl_InitStringRep(
     Tcl_Obj *objPtr,	/* Object whose string rep is to be set */
     const char *bytes,
-    size_t numBytes)
+    TCL_HASH_TYPE numBytes)
 {
     assert(objPtr->bytes == NULL || bytes == NULL);
 
@@ -4107,7 +4107,7 @@ TclHashObjKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
-    size_t length;
+    Tcl_Size length;
     const char *string = Tcl_GetStringFromObj(objPtr, &length);
     TCL_HASH_TYPE result = 0;
 

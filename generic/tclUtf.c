@@ -205,7 +205,7 @@ Invalid(
  */
 
 #undef Tcl_UniCharToUtf
-size_t
+Tcl_Size
 Tcl_UniCharToUtf(
     int ch,	/* The Tcl_UniChar to be stored in the
 		 * buffer. Can be or'ed with flag TCL_COMBINE
@@ -318,7 +318,7 @@ three:
 char *
 Tcl_UniCharToUtfDString(
     const int *uniStr,	/* Unicode string to convert to UTF-8. */
-    size_t uniLength,		/* Length of Unicode string. */
+    Tcl_Size uniLength,		/* Length of Unicode string. */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
@@ -359,13 +359,13 @@ Tcl_UniCharToUtfDString(
 char *
 Tcl_Char16ToUtfDString(
     const unsigned short *uniStr,/* Utf-16 string to convert to UTF-8. */
-    size_t uniLength,		/* Length of Utf-16 string. */
+    Tcl_Size uniLength,		/* Length of Utf-16 string. */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
     const unsigned short *w, *wEnd;
     char *p, *string;
-    size_t oldLength;
+    Tcl_Size oldLength;
     int len = 1;
 
     /*
@@ -453,7 +453,7 @@ static const unsigned short cp1252[32] = {
 };
 
 #undef Tcl_UtfToUniChar
-size_t
+Tcl_Size
 Tcl_UtfToUniChar(
     const char *src,	/* The UTF-8 string. */
     int *chPtr)/* Filled with the Unicode character represented by
@@ -536,7 +536,7 @@ Tcl_UtfToUniChar(
     return 1;
 }
 
-size_t
+Tcl_Size
 Tcl_UtfToChar16(
     const char *src,	/* The UTF-8 string. */
     unsigned short *chPtr)/* Filled with the Tcl_UniChar represented by
@@ -657,7 +657,7 @@ Tcl_UtfToChar16(
 int *
 Tcl_UtfToUniCharDString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
-    size_t length,			/* Length of UTF-8 string in bytes, or -1 for
+    Tcl_Size length,			/* Length of UTF-8 string in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Unicode representation of string is
 				 * appended to this previously initialized
@@ -665,7 +665,7 @@ Tcl_UtfToUniCharDString(
 {
     int ch = 0, *w, *wString;
     const char *p;
-    size_t oldLength;
+    Tcl_Size oldLength;
     /* Pointer to the end of string. Never read endPtr[0] */
     const char *endPtr = src + length;
     /* Pointer to last byte where optimization still can be used */
@@ -714,7 +714,7 @@ Tcl_UtfToUniCharDString(
 unsigned short *
 Tcl_UtfToChar16DString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
-    size_t length,			/* Length of UTF-8 string in bytes, or -1 for
+    Tcl_Size length,			/* Length of UTF-8 string in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Unicode representation of string is
 				 * appended to this previously initialized
@@ -722,7 +722,7 @@ Tcl_UtfToChar16DString(
 {
     unsigned short ch = 0, *w, *wString;
     const char *p;
-    size_t oldLength;
+    Tcl_Size oldLength;
     /* Pointer to the end of string. Never read endPtr[0] */
     const char *endPtr = src + length;
     /* Pointer to last byte where optimization still can be used */
@@ -792,7 +792,7 @@ int
 Tcl_UtfCharComplete(
     const char *src,		/* String to check if first few bytes contain
 				 * a complete UTF-8 character. */
-    size_t length)			/* Length of above string in bytes. */
+    Tcl_Size length)			/* Length of above string in bytes. */
 {
     return length >= complete[UCHAR(*src)];
 }
@@ -815,14 +815,14 @@ Tcl_UtfCharComplete(
  *---------------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 Tcl_NumUtfChars(
     const char *src,	/* The UTF-8 string to measure. */
-    size_t length)	/* The length of the string in bytes, or
+    Tcl_Size length)	/* The length of the string in bytes, or
 			 * TCL_INDEX_NONE for strlen(src). */
 {
     Tcl_UniChar ch = 0;
-    size_t i = 0;
+    Tcl_Size i = 0;
 
     if (TCL_SIZE_ISNEG(length)) {
 	/* string is NUL-terminated, so TclUtfToUniChar calls are safe. */
@@ -867,14 +867,14 @@ Tcl_NumUtfChars(
     return i;
 }
 
-size_t
+Tcl_Size
 TclNumUtfChars(
     const char *src,	/* The UTF-8 string to measure. */
-    size_t length)	/* The length of the string in bytes, or
+    Tcl_Size length)	/* The length of the string in bytes, or
 			 * TCL_INDEX_NONE for strlen(src). */
 {
     unsigned short ch = 0;
-    size_t i = 0;
+    Tcl_Size i = 0;
 
     if (TCL_SIZE_ISNEG(length)) {
 	/* string is NUL-terminated, so TclUtfToUniChar calls are safe. */
@@ -1194,7 +1194,7 @@ Tcl_UtfPrev(
 int
 Tcl_UniCharAtIndex(
     const char *src,	/* The UTF-8 string to dereference. */
-    size_t index)		/* The position of the desired character. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
     int i = 0;
@@ -1238,7 +1238,7 @@ Tcl_UniCharAtIndex(
 const char *
 Tcl_UtfAtIndex(
     const char *src,	/* The UTF-8 string. */
-    size_t index)		/* The position of the desired character. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     int ch = 0;
 
@@ -1254,10 +1254,10 @@ Tcl_UtfAtIndex(
 const char *
 TclUtfAtIndex(
     const char *src,	/* The UTF-8 string. */
-    size_t index)		/* The position of the desired character. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     unsigned short ch = 0;
-    size_t len = 0;
+    Tcl_Size len = 0;
 
     if (!TCL_SIZE_ISNEG(index)) {
 	while (index--) {
@@ -1297,7 +1297,7 @@ TclUtfAtIndex(
  *---------------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 Tcl_UtfBackslash(
     const char *src,		/* Points to the backslash character of a
 				 * backslash sequence. */
@@ -1341,13 +1341,13 @@ Tcl_UtfBackslash(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 Tcl_UtfToUpper(
     char *str)			/* String to convert in place. */
 {
     int ch, upChar;
     char *src, *dst;
-    size_t len;
+    Tcl_Size len;
 
     /*
      * Iterate over the string until we hit the terminating null.
@@ -1394,13 +1394,13 @@ Tcl_UtfToUpper(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 Tcl_UtfToLower(
     char *str)			/* String to convert in place. */
 {
     int ch, lowChar;
     char *src, *dst;
-    size_t len;
+    Tcl_Size len;
 
     /*
      * Iterate over the string until we hit the terminating null.
@@ -1448,13 +1448,13 @@ Tcl_UtfToLower(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 Tcl_UtfToTitle(
     char *str)			/* String to convert in place. */
 {
     int ch, titleChar, lowChar;
     char *src, *dst;
-    size_t len;
+    Tcl_Size len;
 
     /*
      * Capitalize the first character and then lowercase the rest of the
@@ -1870,11 +1870,11 @@ Tcl_UniCharToTitle(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 Tcl_Char16Len(
     const unsigned short *uniStr)	/* Unicode string to find length of. */
 {
-    size_t len = 0;
+    Tcl_Size len = 0;
 
     while (*uniStr != '\0') {
 	len++;
@@ -1901,11 +1901,11 @@ Tcl_Char16Len(
  */
 
 #undef Tcl_UniCharLen
-size_t
+Tcl_Size
 Tcl_UniCharLen(
     const int *uniStr)	/* Unicode string to find length of. */
 {
-    size_t len = 0;
+    Tcl_Size len = 0;
 
     while (*uniStr != '\0') {
 	len++;
@@ -2563,10 +2563,10 @@ TclUniCharCaseMatch(
 int
 TclUniCharMatch(
     const Tcl_UniChar *string,	/* Unicode String. */
-    size_t strLen,			/* Length of String */
+    Tcl_Size strLen,			/* Length of String */
     const Tcl_UniChar *pattern,	/* Pattern, which may contain special
 				 * characters. */
-    size_t ptnLen,			/* Length of Pattern */
+    Tcl_Size ptnLen,			/* Length of Pattern */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
     const Tcl_UniChar *stringEnd, *patternEnd;

@@ -253,7 +253,7 @@ void
 Tcl_RegExpRange(
     Tcl_RegExp re,		/* Compiled regular expression that has been
 				 * passed to Tcl_RegExpExec. */
-    size_t index,			/* 0 means give the range of the entire match,
+    Tcl_Size index,			/* 0 means give the range of the entire match,
 				 * > 0 means give the range of a matching
 				 * subrange. */
     const char **startPtr,	/* Store address of first character in
@@ -363,13 +363,13 @@ void
 TclRegExpRangeUniChar(
     Tcl_RegExp re,		/* Compiled regular expression that has been
 				 * passed to Tcl_RegExpExec. */
-    size_t index,			/* 0 means give the range of the entire match,
+    Tcl_Size index,			/* 0 means give the range of the entire match,
 				 * > 0 means give the range of a matching
 				 * subrange, TCL_INDEX_NONE means the range of the
 				 * rm_extend field. */
-    size_t *startPtr,		/* Store address of first character in
+    Tcl_Size *startPtr,		/* Store address of first character in
 				 * (sub-)range here. */
-    size_t *endPtr)		/* Store address of character just after last
+    Tcl_Size *endPtr)		/* Store address of character just after last
 				 * in (sub-)range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
@@ -377,7 +377,7 @@ TclRegExpRangeUniChar(
     if ((regexpPtr->flags&REG_EXPECT) && TCL_SIZE_ISNEG(index)) {
 	*startPtr = regexpPtr->details.rm_extend.rm_so;
 	*endPtr = regexpPtr->details.rm_extend.rm_eo;
-    } else if (index + 1 > regexpPtr->re.re_nsub + 1) {
+    } else if (TCL_SIZE_CMP(index, >, regexpPtr->re.re_nsub)) {
 	*startPtr = TCL_INDEX_NONE;
 	*endPtr = TCL_INDEX_NONE;
     } else {
@@ -443,16 +443,16 @@ Tcl_RegExpExecObj(
 				 * returned by previous call to
 				 * Tcl_GetRegExpFromObj. */
     Tcl_Obj *textObj,		/* Text against which to match re. */
-    size_t offset,			/* Character index that marks where matching
+    Tcl_Size offset,			/* Character index that marks where matching
 				 * should begin. */
-    size_t nmatches,		/* How many subexpression matches (counting
+    Tcl_Size nmatches,		/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
-				 * interest. -1 means all of them. */
+				 * interest. TCL_INDEX_NONE means all of them. */
     int flags)			/* Regular expression execution flags. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
     Tcl_UniChar *udata;
-    size_t length;
+    Tcl_Size length;
     int reflags = regexpPtr->flags;
 #define TCL_REG_GLOBOK_FLAGS \
 	(TCL_REG_ADVANCED | TCL_REG_NOSUB | TCL_REG_NOCASE)

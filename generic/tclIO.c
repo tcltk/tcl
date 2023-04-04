@@ -4060,7 +4060,7 @@ Tcl_Write(
 	return TCL_INDEX_NONE;
     }
 
-    if (TCL_SIZE_ISNEG(srcLen)) {
+    if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
     if (WriteBytes(chanPtr, src, srcLen) == -1) {
@@ -4110,7 +4110,7 @@ Tcl_WriteRaw(
 	return TCL_INDEX_NONE;
     }
 
-    if (TCL_SIZE_ISNEG(srcLen)) {
+    if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
 
@@ -4120,7 +4120,7 @@ Tcl_WriteRaw(
      */
 
     written = ChanWrite(chanPtr, src, srcLen, &errorCode);
-    if (TCL_SIZE_ISNEG(written)) {
+    if (written == TCL_INDEX_NONE) {
 	Tcl_SetErrno(errorCode);
     }
 
@@ -4169,7 +4169,7 @@ Tcl_WriteChars(
 
     chanPtr = statePtr->topChanPtr;
 
-    if (TCL_SIZE_ISNEG(len)) {
+    if (len == TCL_INDEX_NONE) {
 	len = strlen(src);
     }
     if (statePtr->encoding) {
@@ -6024,7 +6024,7 @@ DoReadChars(
     }
     ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
     statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
-    for (copied = 0; toRead > 0 || TCL_SIZE_ISNEG(toRead); ) {
+    for (copied = 0; toRead > 0 || toRead == TCL_INDEX_NONE; ) {
 	int copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
 	    if (binaryMode) {
@@ -6088,7 +6088,7 @@ DoReadChars(
 	    }
 	} else {
 	    copied += copiedNow;
-	    if (!TCL_SIZE_ISNEG(toRead)) {
+	    if (toRead != TCL_INDEX_NONE) {
 		toRead -= copiedNow; /* Only decr if not reading whole file */
 	    }
 	}
@@ -6245,7 +6245,7 @@ ReadChars(
     int savedIEFlags = statePtr->inputEncodingFlags;
     int savedFlags = statePtr->flags;
     char *dst, *src = RemovePoint(bufPtr);
-    Tcl_Size numBytes;
+    TCL_HASH_TYPE numBytes;
     int srcLen = BytesLeft(bufPtr);
 
     /*
@@ -6269,7 +6269,7 @@ ReadChars(
     (void) Tcl_GetStringFromObj(objPtr, &numBytes);
     Tcl_AppendToObj(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
-	size_t size;
+	TCL_HASH_TYPE size;
 
 	dst = TclGetStringStorage(objPtr, &size) + numBytes;
 	dstLimit = (size - numBytes) > INT_MAX ? INT_MAX : (size - numBytes);
@@ -9764,7 +9764,7 @@ CopyData(
 		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
 			0 /* No append */);
 	    }
-	    underflow = (size >= 0) && ((size_t)size < sizeb);	/* Input underflow */
+	    underflow = (size >= 0) && ((Tcl_Size)size < sizeb);	/* Input underflow */
 	}
 
 	if (size < 0) {
@@ -10080,7 +10080,7 @@ DoRead(
 
 	while (!bufPtr ||			/* We got no buffer!   OR */
 		(!IsBufferFull(bufPtr) && 	/* Our buffer has room AND */
-		((size_t)BytesLeft(bufPtr) < bytesToRead))) {
+		((Tcl_Size)BytesLeft(bufPtr) < bytesToRead))) {
 						/* Not enough bytes in it yet
 						 * to fill the dst */
 	    int code;

@@ -1359,15 +1359,15 @@ int
 Tcl_ZlibStreamGet(
     Tcl_ZlibStream zshandle,	/* As obtained from Tcl_ZlibStreamInit */
     Tcl_Obj *data,		/* A place to append the data. */
-    size_t count)			/* Number of bytes to grab as a maximum, you
+    Tcl_Size count)			/* Number of bytes to grab as a maximum, you
 				 * may get less! */
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
     int e;
-    size_t listLen, i, itemLen = 0, dataPos = 0;
+    Tcl_Size listLen, i, itemLen = 0, dataPos = 0;
     Tcl_Obj *itemObj;
     unsigned char *dataPtr, *itemPtr;
-    size_t existing = 0;
+    Tcl_Size existing = 0;
 
     /*
      * Getting beyond the of stream, just return empty string.
@@ -1767,7 +1767,7 @@ Tcl_ZlibInflate(
     Tcl_Interp *interp,
     int format,
     Tcl_Obj *data,
-    size_t bufferSize,
+    Tcl_Size bufferSize,
     Tcl_Obj *gzipHeaderDictObj)
 {
     int wbits = 0, e = 0;
@@ -1956,7 +1956,7 @@ unsigned int
 Tcl_ZlibCRC32(
     unsigned int crc,
     const unsigned char *buf,
-    size_t len)
+    Tcl_Size len)
 {
     /* Nothing much to do, just wrap the crc32(). */
     return crc32(crc, (Bytef *) buf, len);
@@ -1966,7 +1966,7 @@ unsigned int
 Tcl_ZlibAdler32(
     unsigned int adler,
     const unsigned char *buf,
-    size_t len)
+    Tcl_Size len)
 {
     return adler32(adler, (Bytef *) buf, len);
 }
@@ -4081,7 +4081,7 @@ int
 Tcl_ZlibStreamGet(
     Tcl_ZlibStream zshandle,
     Tcl_Obj *data,
-    size_t count)
+    Tcl_Size count)
 {
     return TCL_OK;
 }

@@ -224,7 +224,7 @@ HandleBgErrors(
     Tcl_Preserve(interp);
     while (assocPtr->firstBgPtr != NULL) {
 	int code;
-	size_t prefixObjc;
+	Tcl_Size prefixObjc;
 	Tcl_Obj **prefixObjv, **tempObjv;
 
 	/*
@@ -2047,8 +2047,8 @@ int
 Tcl_CreateThread(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
-    void *clientData,	/* The one argument to Main() */
-    size_t stackSize,		/* Size of stack for the new thread */
+    void *clientData,		/* The one argument to Main() */
+    Tcl_Size stackSize,		/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {

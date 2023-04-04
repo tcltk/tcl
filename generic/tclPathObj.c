@@ -624,7 +624,7 @@ TclPathPart(
 		return GetExtension(fsPathPtr->normPathPtr);
 	    case TCL_PATH_ROOT: {
 		const char *fileName, *extension;
-		size_t length;
+		Tcl_Size length;
 
 		fileName = Tcl_GetStringFromObj(fsPathPtr->normPathPtr,
 			&length);
@@ -795,10 +795,10 @@ Tcl_Obj *
 Tcl_FSJoinPath(
     Tcl_Obj *listObj,		/* Path elements to join, may have a zero
 				 * reference count. */
-    size_t elements)		/* Number of elements to use (-1 = all) */
+    Tcl_Size elements)		/* Number of elements to use (TCL_INDEX_NONE = all) */
 {
     Tcl_Obj *res;
-    size_t objc;
+    Tcl_Size objc;
     Tcl_Obj **objv;
 
     if (TclListObjLengthM(NULL, listObj, &objc) != TCL_OK) {
@@ -813,13 +813,13 @@ Tcl_FSJoinPath(
 
 Tcl_Obj *
 TclJoinPath(
-    size_t elements,		/* Number of elements to use */
+    Tcl_Size elements,		/* Number of elements to use */
     Tcl_Obj * const objv[],	/* Path elements to join */
     int forceRelative)		/* If non-zero, assume all more paths are
 				 * relative (e. g. simple normalization) */
 {
     Tcl_Obj *res = NULL;
-    size_t i;
+    Tcl_Size i;
     const Tcl_Filesystem *fsPtr = NULL;
 
     if (elements == 0) {

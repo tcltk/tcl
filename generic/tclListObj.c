@@ -1660,7 +1660,7 @@ Tcl_ListObjGetElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *objPtr,		/* List object for which an element array is
 				 * to be returned. */
-    Tcl_Size *objcPtr,		/* Where to store the count of objects
+    size_t *objcPtr,		/* Where to store the count of objects
 				 * referenced by objv. */
     Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
 				 * pointers to the list's objects. */
@@ -1993,7 +1993,7 @@ int
 Tcl_ListObjLength(
     Tcl_Interp *interp,	/* Used to report errors if not NULL. */
     Tcl_Obj *listObj,	/* List object whose #elements to return. */
-    Tcl_Size *lenPtr)	/* The resulting length is stored here. */
+    size_t *lenPtr)	/* The resulting length is stored here. */
 {
     ListRep listRep;
 

@@ -1246,7 +1246,7 @@ TclParseNumber(
 	    }
 	}
 	if (endPtrPtr == NULL) {
-	    if ((len != 0) && ((numBytes + 1 > 1) || (*p != '\0'))) {
+	    if ((len != 0) && (TCL_SIZE_CMP(numBytes, >, 0) || (*p != '\0'))) {
 		status = TCL_ERROR;
 	    }
 	} else {

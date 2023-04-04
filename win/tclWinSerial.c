@@ -785,7 +785,7 @@ SerialBlockingWrite(
     ResetEvent(osPtr->hEvent);
 
     EnterCriticalSection(&infoPtr->csWrite);
-    infoPtr->writeQueue -= bufSize;
+    infoPtr->writeQueue -= (int)bufSize;
 
     /*
      * Set Offset to ZERO, otherwise NT4.0 may report an error
@@ -829,7 +829,7 @@ SerialBlockingWrite(
     }
 
     EnterCriticalSection(&infoPtr->csWrite);
-    infoPtr->writeQueue += (*lpWritten - bufSize);
+    infoPtr->writeQueue += (int)(*lpWritten - bufSize);
     LeaveCriticalSection(&infoPtr->csWrite);
 
     return TRUE;
@@ -896,7 +896,7 @@ SerialInputProc(
 
 	    if (cStat.cbInQue > 0) {
 		if ((DWORD) bufSize > cStat.cbInQue) {
-		    bufSize = cStat.cbInQue;
+		    bufSize = (int)cStat.cbInQue;
 		}
 	    } else {
 		errno = *errorCode = EWOULDBLOCK;
@@ -909,7 +909,7 @@ SerialInputProc(
 
 	    if (cStat.cbInQue > 0) {
 		if ((DWORD) bufSize > cStat.cbInQue) {
-		    bufSize = cStat.cbInQue;
+		    bufSize = (int)cStat.cbInQue;
 		}
 	    } else {
 		bufSize = 1;
@@ -932,7 +932,7 @@ SerialInputProc(
 	*errorCode = errno;
 	return -1;
     }
-    return bytesRead;
+    return (int)bytesRead;
 
   commError:
     infoPtr->lastError = infoPtr->error;
@@ -1038,9 +1038,9 @@ SerialOutputProc(
 		Tcl_Free(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = (char *)Tcl_Alloc(toWrite);
+	    infoPtr->writeBuf = (char *)Tcl_Alloc((unsigned)toWrite);
 	}
-	memcpy(infoPtr->writeBuf, buf, toWrite);
+	memcpy(infoPtr->writeBuf, buf, (unsigned)toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(infoPtr->evWritable);
 	TclPipeThreadSignal(&infoPtr->writeTI);
@@ -1297,7 +1297,7 @@ SerialWriterThread(
 	infoPtr = (SerialInfo *) pipeTI->clientData;
 
 	buf = infoPtr->writeBuf;
-	toWrite = infoPtr->toWrite;
+	toWrite = (DWORD)infoPtr->toWrite;
 
 	myWrite.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
 
@@ -1624,7 +1624,7 @@ SerialSetOptionProc(
     size_t len, vlen;
     Tcl_DString ds;
     const WCHAR *native;
-    size_t argc;
+    Tcl_Size argc;
     const char **argv;
 
     infoPtr = (SerialInfo *) instanceData;
@@ -1794,7 +1794,7 @@ SerialSetOptionProc(
 	dcb.XoffChar = argv[1][0];
 	if (argv[0][0] & 0x80 || argv[1][0] & 0x80) {
 	    Tcl_UniChar character = 0;
-	    int charLen;
+	    Tcl_Size charLen;
 
 	    charLen = Tcl_UtfToUniChar(argv[0], &character);
 	    if ((character > 0xFF) || argv[0][charLen]) {
@@ -1820,7 +1820,7 @@ SerialSetOptionProc(
      */
 
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
-	size_t i;
+	Tcl_Size i;
 	int res = TCL_OK;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
@@ -1912,7 +1912,7 @@ SerialSetOptionProc(
 	}
 	if (argc == 1) {
 	    inSize = atoi(argv[0]);
-	    outSize = infoPtr->sysBufWrite;
+	    outSize = (int)infoPtr->sysBufWrite;
 	} else if (argc == 2) {
 	    inSize  = atoi(argv[0]);
 	    outSize = atoi(argv[1]);
@@ -1929,7 +1929,7 @@ SerialSetOptionProc(
 	    return TCL_ERROR;
 	}
 
-	if (!SetupComm(infoPtr->handle, inSize, outSize)) {
+	if (!SetupComm(infoPtr->handle, (DWORD)inSize, (DWORD)outSize)) {
 	    if (interp != NULL) {
 		Tcl_WinConvertError(GetLastError());
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1938,8 +1938,8 @@ SerialSetOptionProc(
 	    }
 	    return TCL_ERROR;
 	}
-	infoPtr->sysBufRead  = inSize;
-	infoPtr->sysBufWrite = outSize;
+	infoPtr->sysBufRead  = (DWORD)inSize;
+	infoPtr->sysBufWrite = (DWORD)outSize;
 
 	/*
 	 * Adjust the handshake limits. Yes, the XonXoff limits seem to
@@ -1979,7 +1979,7 @@ SerialSetOptionProc(
 	if (Tcl_GetInt(interp, value, &msec) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	tout.ReadTotalTimeoutConstant = msec;
+	tout.ReadTotalTimeoutConstant = (DWORD)msec;
 	if (!SetCommTimeouts(infoPtr->handle, &tout)) {
 	    if (interp != NULL) {
 		Tcl_WinConvertError(GetLastError());
@@ -2220,7 +2220,7 @@ SerialGetOptionProc(
 	count = (int) cStat.cbOutQue + infoPtr->writeQueue;
 	LeaveCriticalSection(&infoPtr->csWrite);
 
-	snprintf(buf, sizeof(buf), "%ld", inBuffered + cStat.cbInQue);
+	snprintf(buf, sizeof(buf), "%ld", (DWORD)inBuffered + cStat.cbInQue);
 	Tcl_DStringAppendElement(dsPtr, buf);
 	snprintf(buf, sizeof(buf), "%d", outBuffered + count);
 	Tcl_DStringAppendElement(dsPtr, buf);
