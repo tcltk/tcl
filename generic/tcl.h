@@ -399,16 +399,31 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #	define TCL_Z_MODIFIER	""
 #   endif
 #endif /* !TCL_Z_MODIFIER */
+#ifndef TCL_T_MODIFIER
+#   if defined(__GNUC__) && !defined(_WIN32)
+#	define TCL_T_MODIFIER	"t"
+#   elif defined(_WIN64)
+#	define TCL_T_MODIFIER	TCL_LL_MODIFIER
+#   else
+#	define TCL_T_MODIFIER	TCL_Z_MODIFIER
+#   endif
+#endif /* !TCL_T_MODIFIER */
+
 #define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
 #define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
-#if TCL_MAJOR_VERSION > 8
-typedef size_t Tcl_Size;
+
+#if TCL_MAJOR_VERSION < 9
+    typedef int Tcl_Size;
+#   define TCL_SIZE_MAX INT_MAX
+#   define TCL_SIZE_MODIFIER ""
 #else
-typedef int Tcl_Size;
-#endif
+    typedef ptrdiff_t Tcl_Size;
+#   define TCL_SIZE_MAX PTRDIFF_MAX
+#   define TCL_SIZE_MODIFIER TCL_T_MODIFIER
+#endif /* TCL_MAJOR_VERSION */
 
 #ifdef _WIN32
 #   if TCL_MAJOR_VERSION > 8 || defined(_WIN64) || defined(_USE_64BIT_TIME_T)
