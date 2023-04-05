@@ -351,7 +351,7 @@ Tcl_Obj *
 TclFetchLiteral(
     CompileEnv *envPtr,		/* Points to the CompileEnv from which to
 				 * fetch the registered literal value. */
-    int index)	/* Index of the desired literal, as returned
+    Tcl_Size index)		/* Index of the desired literal, as returned
 				 * by prior call to TclRegisterLiteral() */
 {
     if (index >= envPtr->literalArrayNext) {

@@ -1022,7 +1022,7 @@ Tcl_ScanCountedElement(
  *----------------------------------------------------------------------
  */
 
-TCL_HASH_TYPE
+Tcl_Size
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
     Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
@@ -1465,7 +1465,7 @@ TclConvertElement(
 	}
 	*p = '}';
 	p++;
-	return (size_t)(p - dst);
+	return (p - dst);
     }
 
     /* conversion == CONVERT_ESCAPE or CONVERT_MASK */
@@ -1972,7 +1972,7 @@ Tcl_ConcatObj(
      */
 
     for (i = 0;  i < objc;  i++) {
-	size_t length;
+	Tcl_Size length;
 
 	objPtr = objv[i];
 	if (TclListObjIsCanonical(objPtr)) {
@@ -2331,11 +2331,11 @@ Tcl_StringCaseMatch(
 int
 TclByteArrayMatch(
     const unsigned char *string,/* String. */
-    size_t strLen,			/* Length of String */
+    Tcl_Size strLen,			/* Length of String */
     const unsigned char *pattern,
 				/* Pattern, which may contain special
 				 * characters. */
-    size_t ptnLen,			/* Length of Pattern */
+    Tcl_Size ptnLen,			/* Length of Pattern */
     TCL_UNUSED(int) /*flags*/)
 {
     const unsigned char *stringEnd, *patternEnd;
@@ -2513,7 +2513,7 @@ TclStringMatchObj(
 				 * 0. */
 {
     int match;
-    size_t length = 0, plen = 0;
+    Tcl_Size length = 0, plen = 0;
 
     /*
      * Promote based on the type of incoming object.
@@ -3353,7 +3353,7 @@ GetWideForIndex(
 				 * NULL, then no error message is left after
 				 * errors. */
     Tcl_Obj *objPtr,            /* Points to the value to be parsed */
-    Tcl_WideInt endValue,          /* The value to be stored at *widePtr if
+    Tcl_WideInt endValue,       /* The value to be stored at *widePtr if
 				 * objPtr holds "end".
                                  * NOTE: this value may be TCL_INDEX_NONE. */
     Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
@@ -3732,8 +3732,8 @@ GetEndOffsetFromObj(
  *	are possible.  The value objPtr might be parsed as an absolute
  *	index value in the Tcl_Size range.  Note that this includes
  *	index values that are integers as presented and it includes index
- *      arithmetic expressions. 
- * 
+ *      arithmetic expressions.
+ *
  *      The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
  *      This means the largest supported character length is also TCL_SIZE_MAX,
  *      and the index of the last character in a string of length TCL_SIZE_MAX
@@ -3741,8 +3741,8 @@ GetEndOffsetFromObj(
  *	directly meaningful as an index into either a list or a string are
  *	integer values in the range 0 to TCL_SIZE_MAX - 1.
  *
- *      This function however can only handle integer indices in the range 
- *      0 : INT_MAX-1. 
+ *      This function however can only handle integer indices in the range
+ *      0 : INT_MAX-1.
  *
  *      Any absolute index value parsed outside that range is encoded
  *      using the before and after values passed in by the
@@ -3808,18 +3808,18 @@ TclIndexEncode(
      * (3) 2*INT_MAX:WIDE_MAX when
      *     (a,b) as above
      *     (c) objPtr was of the form end+N
-     * (4) (2*INT_MAX)-TCL_SIZE_MAX : -1 when 
+     * (4) (2*INT_MAX)-TCL_SIZE_MAX : -1 when
      *     (a,b) as above
      *     (c) objPtr was of the form end-N where N was in the range 0:TCL_SIZE_MAX
      * (5) WIDE_MIN:(2*INT_MAX)-TCL_SIZE_MAX
      *     (a,b) as above
      *     (c) objPtr was of the form end-N where N was > TCL_SIZE_MAX
-     * 
+     *
      * For all cases (b) and (c), the internal representation of objPtr
      * will be shimmered to endOffsetType. That allows us to distinguish between
      * (for example) 1a (encodable) and 1c (not encodable) though the computed
      * index value is the same.
-     * 
+     *
      * Further note, the values TCL_SIZE_MAX < N < WIDE_MAX come into play
      * only in the 32-bit builds as TCL_SIZE_MAX == WIDE_MAX for 64-bits.
      */
@@ -3846,7 +3846,7 @@ TclIndexEncode(
 	 * error is raised. On 32-bit systems, indices in that range indicate
 	 * the position after the end and so do not raise an error.
 	 */
-	if ((sizeof(int) != sizeof(size_t)) && 
+	if ((sizeof(int) != sizeof(size_t)) &&
 	    (wide > INT_MAX) && (wide < WIDE_MAX-1)) {
 	    /* 2(a,b) on 64-bit systems*/
 	    goto rangeerror;
@@ -3876,7 +3876,7 @@ TclIndexEncode(
 	 * indices in that range indicate the position before the beginning
 	 * and so do not raise an error.
 	 */
-	if ((sizeof(int) != sizeof(size_t)) && 
+	if ((sizeof(int) != sizeof(size_t)) &&
 	    (wide > (ENDVALUE - LIST_MAX)) && (wide <= INT_MAX)) {
 	    /* 1(c), 4(a,b) on 64-bit systems */
 	    goto rangeerror;
@@ -4166,7 +4166,7 @@ TclGetProcessGlobalValue(
     Tcl_Obj *value = NULL;
     Tcl_HashTable *cacheMap;
     Tcl_HashEntry *hPtr;
-    size_t epoch = pgvPtr->epoch;
+    Tcl_Size epoch = pgvPtr->epoch;
 
     if (pgvPtr->encoding) {
 	Tcl_Encoding current = Tcl_GetEncoding(NULL, NULL);
@@ -4373,7 +4373,7 @@ int
 TclReToGlob(
     Tcl_Interp *interp,
     const char *reStr,
-    size_t reStrLen,
+    Tcl_Size reStrLen,
     Tcl_DString *dsPtr,
     int *exactPtr,
     int *quantifiersFoundPtr)

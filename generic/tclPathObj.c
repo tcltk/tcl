@@ -813,13 +813,13 @@ Tcl_FSJoinPath(
 
 Tcl_Obj *
 TclJoinPath(
-    size_t elements,		/* Number of elements to use */
+    Tcl_Size elements,		/* Number of elements to use */
     Tcl_Obj * const objv[],	/* Path elements to join */
     int forceRelative)		/* If non-zero, assume all more paths are
 				 * relative (e. g. simple normalization) */
 {
     Tcl_Obj *res = NULL;
-    size_t i;
+    Tcl_Size i;
     const Tcl_Filesystem *fsPtr = NULL;
 
     if (elements == 0) {
@@ -856,7 +856,7 @@ TclJoinPath(
 		    TclGetPathType(tailObj, NULL, NULL, NULL);
 	    if (type == TCL_PATH_RELATIVE) {
 		const char *str;
-		size_t len;
+		Tcl_Size len;
 
 		str = Tcl_GetStringFromObj(tailObj, &len);
 		if (len == 0) {
@@ -1220,7 +1220,7 @@ Tcl_Obj *
 TclNewFSPathObj(
     Tcl_Obj *dirPtr,
     const char *addStrRep,
-    size_t len)
+    Tcl_Size len)
 {
     FsPath *fsPathPtr;
     Tcl_Obj *pathPtr;
@@ -1273,7 +1273,7 @@ TclNewFSPathObj(
      * things as needing more aggressive normalization that don't actually
      * need it. No harm done.
      */
-    for (p = addStrRep; len+1 > 1; p++, len--) {
+    for (p = addStrRep; len > 0; p++, len--) {
 	switch (state) {
 	case 0:		/* So far only "." since last dirsep or start */
 	    switch (*p) {
@@ -1317,7 +1317,7 @@ AppendPath(
 {
     const char *bytes;
     Tcl_Obj *copy = Tcl_DuplicateObj(head);
-    size_t length;
+    Tcl_Size length;
 
     /*
      * This is likely buggy when dealing with virtual filesystem drivers
