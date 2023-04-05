@@ -55,8 +55,8 @@ static const Tcl_ObjType indexType = {
 
 typedef struct {
     void *tablePtr;		/* Pointer to the table of strings */
-    size_t offset;			/* Offset between table entries */
-    size_t index;			/* Selected index into table. */
+    Tcl_Size offset;	/* Offset between table entries */
+    Tcl_Size index;		/* Selected index into table. */
 } IndexRep;
 
 /*
@@ -107,7 +107,7 @@ GetIndexFromObjList(
     int *indexPtr)		/* Place to store resulting integer index. */
 {
 
-    size_t objc, t;
+    Tcl_Size objc, t;
     int result;
     Tcl_Obj **objv;
     const char **tablePtr;
@@ -193,7 +193,7 @@ Tcl_GetIndexFromObjStruct(
     int flags,			/* 0, TCL_EXACT, TCL_NULL_OK or TCL_INDEX_TEMP_TABLE */
     void *indexPtr)		/* Place to store resulting index. */
 {
-    size_t index, idx, numAbbrev;
+    Tcl_Size index, idx, numAbbrev;
     const char *key, *p1;
     const char *p2;
     const char *const *entryPtr;
@@ -505,7 +505,7 @@ PrefixMatchObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int flags = 0, result, dummy, i;
-    size_t dummyLength, errorLength;
+    Tcl_Size dummyLength, errorLength;
     Tcl_Obj *errorPtr = NULL;
     const char *message = "option";
     Tcl_Obj *tablePtr, *objPtr, *resultPtr;
@@ -629,7 +629,7 @@ PrefixAllObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
-    size_t length, elemLength, tableObjc, t;
+    Tcl_Size length, elemLength, tableObjc, t;
     const char *string, *elemString;
     Tcl_Obj **tableObjv, *resultPtr;
 
@@ -687,7 +687,7 @@ PrefixLongestObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
-    size_t i, length, elemLength, resultLength, tableObjc, t;
+    Tcl_Size i, length, elemLength, resultLength, tableObjc, t;
     const char *string, *elemString, *resultString;
     Tcl_Obj **tableObjv;
 
@@ -802,7 +802,7 @@ PrefixLongestObjCmd(
 void
 Tcl_WrongNumArgs(
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments to print from objv. */
+    Tcl_Size objc,			/* Number of arguments to print from objv. */
     Tcl_Obj *const objv[],	/* Initial argument objects, which should be
 				 * included in the error message. */
     const char *message)	/* Error message to print after the leading
@@ -810,7 +810,7 @@ Tcl_WrongNumArgs(
 				 * NULL. */
 {
     Tcl_Obj *objPtr;
-    size_t i, len, elemLen;
+    Tcl_Size i, len, elemLen;
     char flags;
     Interp *iPtr = (Interp *)interp;
     const char *elementStr;
@@ -830,8 +830,8 @@ Tcl_WrongNumArgs(
      */
 
     if (iPtr->ensembleRewrite.sourceObjs != NULL) {
-	size_t toSkip = iPtr->ensembleRewrite.numInsertedObjs;
-	size_t toPrint = iPtr->ensembleRewrite.numRemovedObjs;
+	Tcl_Size toSkip = iPtr->ensembleRewrite.numInsertedObjs;
+	Tcl_Size toPrint = iPtr->ensembleRewrite.numRemovedObjs;
 	Tcl_Obj *const *origObjv = TclEnsembleGetRewriteValues(interp);
 
 	/*
@@ -889,7 +889,7 @@ Tcl_WrongNumArgs(
 	     * moderately complex condition here).
 	     */
 
-	    if (i+1<toPrint || objc!=0 || message!=NULL) {
+	    if (i + 1 < toPrint || objc!=0 || message!=NULL) {
 		Tcl_AppendStringsToObj(objPtr, " ", NULL);
 	    }
 	}
@@ -997,7 +997,7 @@ Tcl_ParseArgsObjv(
     Tcl_Obj **leftovers;	/* Array to write back to remObjv on
 				 * successful exit. Will include the name of
 				 * the command. */
-    size_t nrem;			/* Size of leftovers.*/
+    Tcl_Size nrem;		/* Size of leftovers.*/
     const Tcl_ArgvInfo *infoPtr;
 				/* Pointer to the current entry in the table
 				 * of argument descriptions. */
@@ -1009,13 +1009,13 @@ Tcl_ParseArgsObjv(
 				 * quick check for matching; use 2nd char.
 				 * because first char. will almost always be
 				 * '-'). */
-    size_t srcIndex;		/* Location from which to read next argument
+    Tcl_Size srcIndex;	/* Location from which to read next argument
 				 * from objv. */
-    size_t dstIndex;		/* Used to keep track of current arguments
+    Tcl_Size dstIndex;	/* Used to keep track of current arguments
 				 * being processed, primarily for error
 				 * reporting. */
-    size_t objc;			/* # arguments in objv still to process. */
-    size_t length;			/* Number of characters in current argument */
+    Tcl_Size objc;		/* # arguments in objv still to process. */
+    Tcl_Size length;		/* Number of characters in current argument */
 
     if (remObjv != NULL) {
 	/*
@@ -1274,13 +1274,13 @@ PrintUsage(
 
     width = 4;
     for (infoPtr = argTable; infoPtr->type != TCL_ARGV_END; infoPtr++) {
-	size_t length;
+	Tcl_Size length;
 
 	if (infoPtr->keyStr == NULL) {
 	    continue;
 	}
 	length = strlen(infoPtr->keyStr);
-	if (length > (size_t)width) {
+	if (length > (Tcl_Size)width) {
 	    width = length;
 	}
     }
