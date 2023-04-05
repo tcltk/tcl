@@ -184,7 +184,7 @@ declare 4 {
 	    ProcedureMethod **pmPtrPtr)
 }
 declare 5 {
-    int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, size_t objc,
+    int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, Tcl_Size objc,
 	    Tcl_Obj *const *objv, int publicOnly, Class *startCls)
 }
 declare 6 {
@@ -214,7 +214,7 @@ declare 10 {
 }
 declare 11 {
     int TclOOInvokeObject(Tcl_Interp *interp, Tcl_Object object,
-	    Tcl_Class startCls, int publicPrivate, size_t objc,
+	    Tcl_Class startCls, int publicPrivate, Tcl_Size objc,
 	    Tcl_Obj *const *objv)
 }
 declare 12 {
@@ -226,12 +226,12 @@ declare 13 {
 	    Tcl_Size numFilters, Tcl_Obj *const *filters)
 }
 declare 14 {
-    void TclOOObjectSetMixins(Object *oPtr, size_t numMixins,
+    void TclOOObjectSetMixins(Object *oPtr, Tcl_Size numMixins,
 	    Class *const *mixins)
 }
 declare 15 {
     void TclOOClassSetMixins(Tcl_Interp *interp, Class *classPtr,
-	    size_t numMixins, Class *const *mixins)
+	    Tcl_Size numMixins, Class *const *mixins)
 }
 
 return

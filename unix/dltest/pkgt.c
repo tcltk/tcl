@@ -16,11 +16,11 @@
 static int TraceProc2 (
     void *clientData,
     Tcl_Interp *interp,
-	Tcl_Size level,
+    Tcl_Size level,
     const char *command,
     Tcl_Command commandInfo,
     Tcl_Size objc,
-	struct Tcl_Obj *const *objv)
+    struct Tcl_Obj *const *objv)
 {
     (void)clientData;
     (void)interp;

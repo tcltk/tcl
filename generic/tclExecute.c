@@ -1240,13 +1240,13 @@ void *
 TclStackRealloc(
     Tcl_Interp *interp,
     void *ptr,
-    size_t numBytes)
+    Tcl_Size numBytes)
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr;
     ExecStack *esPtr;
     Tcl_Obj **markerPtr;
-    size_t numWords;
+    Tcl_Size numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return Tcl_Realloc(ptr, numBytes);
