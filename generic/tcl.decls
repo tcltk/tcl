@@ -2626,6 +2626,12 @@ declare 685 {
     Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
 }
 
+# TIP 660
+declare 686 {
+    int Tcl_GetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Size *sizePtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
 declare 687 {

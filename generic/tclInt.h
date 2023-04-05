@@ -4182,7 +4182,7 @@ MODULE_SCOPE int	TclIndexInvalidError(Tcl_Interp *interp,
 /*
  *------------------------------------------------------------------------
  *
- * TclGetSizeFromObj --
+ * TclGetSizeIntFromObj --
  *
  *    Extract a Tcl_Size from a Tcl_Obj
  *
@@ -4195,7 +4195,7 @@ MODULE_SCOPE int	TclIndexInvalidError(Tcl_Interp *interp,
  *
  *------------------------------------------------------------------------
  */
-static inline int TclGetSizeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *sizePtr) {
+static inline int TclGetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *sizePtr) {
 #if TCL_SIZE_MAX == INT_MAX
     return TclGetIntFromObj(interp, objPtr, sizePtr);
 #else
