@@ -2019,7 +2019,7 @@ Tcl_AppendFormatToObj(
 		errCode = gotXpg ? "INDEXRANGE" : "FIELDVARMISMATCH";
 		goto errorMsg;
 	    }
-	    if (TclGetSizeFromObj(interp, objv[objIndex], &width) != TCL_OK) {
+	    if (TclGetSizeIntFromObj(interp, objv[objIndex], &width) != TCL_OK) {
 		goto error;
 	    }
 	    if (width < 0) {
@@ -2056,7 +2056,7 @@ Tcl_AppendFormatToObj(
 		errCode = gotXpg ? "INDEXRANGE" : "FIELDVARMISMATCH";
 		goto errorMsg;
 	    }
-	    if (TclGetSizeFromObj(interp, objv[objIndex], &precision)
+	    if (TclGetSizeIntFromObj(interp, objv[objIndex], &precision)
 		    != TCL_OK) {
 		goto error;
 	    }
