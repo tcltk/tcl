@@ -1458,7 +1458,7 @@ TclWinOpenSerialChannel(
     infoPtr = (SerialInfo *)ckalloc(sizeof(SerialInfo));
     memset(infoPtr, 0, sizeof(SerialInfo));
 
-    infoPtr->validMask = permissions;
+    infoPtr->validMask = permissions & (TCL_READABLE|TCL_WRITABLE);
     infoPtr->handle = handle;
     infoPtr->channel = (Tcl_Channel) NULL;
     infoPtr->readable = 0;
