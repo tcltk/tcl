@@ -254,7 +254,7 @@ Tcl_LinkArray(
     const char *name;
     int code;
 
-    if (TCL_SIZE_CMP(size, <, 1)) {
+    if (TCL_SIZE_ISNEG(size) || size < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"wrong array size given", TCL_INDEX_NONE));
 	return TCL_ERROR;

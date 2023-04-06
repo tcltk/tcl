@@ -275,8 +275,7 @@ Tcl_NewStringObj(
 {
     Tcl_Obj *objPtr;
 
-    if (TCL_SIZE_ISNEG(length)
-	    || ((sizeof(int) != sizeof(size_t)) && (length > (size_t)INT_MIN))) {
+    if (TCL_SIZE_ISNEG(length)) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclNewStringObj(objPtr, bytes, length);
@@ -328,8 +327,7 @@ Tcl_DbNewStringObj(
 {
     Tcl_Obj *objPtr;
 
-    if (TCL_SIZE_ISNEG(length)
-	    || ((sizeof(int) != sizeof(size_t)) && (length > (size_t)INT_MIN))) {
+    if (TCL_SIZE_ISNEG(length)) {
 	length = (bytes? strlen(bytes) : 0);
     }
     TclDbNewObj(objPtr, file, line);
@@ -695,7 +693,7 @@ TclGetUnicodeFromObj(
     if (lengthPtr != NULL) {
 	if (stringPtr->numChars > INT_MAX) {
 	    Tcl_Panic("Tcl_GetUnicodeFromObj with 'int' lengthPtr"
-		    "cannot handle such long strings. Please use 'size_t'");
+		    "cannot handle such long strings. Please use 'Tcl_Size'");
 	}
 	*lengthPtr = (int)stringPtr->numChars;
     }
@@ -771,7 +769,7 @@ Tcl_GetRange(
 	if (last >= length) {
 	    last = length - 1;
 	}
-	if (TCL_SIZE_CMP(last, <, first)) {
+	if (last + 1 < first + 1) {
 	    TclNewObj(newObjPtr);
 	    return newObjPtr;
 	}
@@ -797,7 +795,7 @@ Tcl_GetRange(
 	    if (last >= stringPtr->numChars) {
 		last = stringPtr->numChars - 1;
 	    }
-	    if (TCL_SIZE_CMP(last, <, first)) {
+	    if (last + 1 < first + 1) {
 		TclNewObj(newObjPtr);
 		return newObjPtr;
 	    }
@@ -818,13 +816,13 @@ Tcl_GetRange(
     if (last >= stringPtr->numChars) {
 	last = stringPtr->numChars - 1;
     }
-    if (TCL_SIZE_CMP(last, <, first)) {
+    if (last + 1 < first + 1) {
 	TclNewObj(newObjPtr);
 	return newObjPtr;
     }
 #if TCL_UTF_MAX < 4
     /* See: bug [11ae2be95dac9417] */
-    if (TCL_SIZE_CMP(first, >, 0) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
+    if ((first + 1 > 1) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
 	    && ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
 	++first;
     }
@@ -861,7 +859,7 @@ TclGetRange(
 	if (last >= length) {
 	    last = length - 1;
 	}
-	if (TCL_SIZE_CMP(last, <, first)) {
+	if (last + 1 < first + 1) {
 	    TclNewObj(newObjPtr);
 	    return newObjPtr;
 	}
@@ -873,7 +871,7 @@ TclGetRange(
     if (last >= numChars) {
 	last = numChars - 1;
     }
-    if (TCL_SIZE_CMP(last, <, first)) {
+    if (last + 1 < first + 1) {
 	TclNewObj(newObjPtr);
 	return newObjPtr;
     }
@@ -3793,10 +3791,10 @@ TclStringLast(
 	unsigned char *check, *bh = Tcl_GetByteArrayFromObj(haystack, &lh);
 	unsigned char *bn = Tcl_GetByteArrayFromObj(needle, &ln);
 
-	if (TCL_SIZE_CMP(last, >=, lh)) {
+	if (last + 1 >= lh + 1) {
 	    last = lh - 1;
 	}
-	if (TCL_SIZE_CMP(last, <, ln - 1)) {
+	if (last + 1 < ln) {
 	    /* Don't start the loop if there cannot be a valid answer */
 	    goto lastEnd;
 	}
@@ -3816,10 +3814,10 @@ TclStringLast(
     uh = Tcl_GetUnicodeFromObj(haystack, &lh);
     un = Tcl_GetUnicodeFromObj(needle, &ln);
 
-    if (TCL_SIZE_CMP(last, >=, lh)) {
+    if (last + 1 >= lh + 1) {
 	last = lh - 1;
     }
-    if (TCL_SIZE_CMP(last, <, ln - 1)) {
+    if (last + 1 < ln) {
 	/* Don't start the loop if there cannot be a valid answer */
 	goto lastEnd;
     }
@@ -4410,8 +4408,7 @@ ExtendStringRepWithUnicode(
     char *dst;
     String *stringPtr = GET_STRING(objPtr);
 
-    if (TCL_SIZE_ISNEG(numChars)
-	    || ((sizeof(int) != sizeof(size_t)) && (numChars > (size_t)INT_MIN))) {
+    if (TCL_SIZE_ISNEG(numChars)) {
 	numChars = UnicodeLength(unicode);
     }
 

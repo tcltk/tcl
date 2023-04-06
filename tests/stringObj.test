@@ -505,33 +505,25 @@ test stringObj-16.7 {Tcl_GetRange: first = UINT_MAX-1} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 0xFFFFFFFE 3
 } {}
-test stringObj-16.8 {Tcl_GetRange: first = SIZE_MAX+INT_MIN} {testobj} {
+test stringObj-16.8 {Tcl_GetRange: first = -2} {testobj pointerIs32bit} {
     teststringobj set 1 abcde
-    teststringobj range 1 -2147483649 3
+    teststringobj range 1 -2 3
 } {}
-test stringObj-16.9 {Tcl_GetRange: first = SIZE_MAX+INT_MIN+1} {testobj pointerIs32bit} {
-    teststringobj set 1 abcde
-    teststringobj range 1 -2147483648 3
-} {}
-test stringObj-16.10 {Tcl_GetRange: last = UINT_MAX-1} testobj {
+test stringObj-16.9 {Tcl_GetRange: last = UINT_MAX-1} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 1 0xFFFFFFFE
 } bcde
-test stringObj-16.11 {Tcl_GetRange: last = SIZE_MAX-1} testobj {
+test stringObj-16.10 {Tcl_GetRange: last = SIZE_MAX-1} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 1 -2
 } bcde
-test stringObj-16.12 {Tcl_GetRange: first = last = UINT_MAX-1} testobj {
+test stringObj-16.11 {Tcl_GetRange: first = last = UINT_MAX-1} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 0xFFFFFFFE 0xFFFFFFFE
 } {}
-test stringObj-16.13 {Tcl_GetRange: first = last = SIZE_MAX+INT_MIN} {testobj} {
+test stringObj-16.12 {Tcl_GetRange: first = last = SIZE_MAX-1} {testobj pointerIs32bit} {
     teststringobj set 1 abcde
-    teststringobj range 1 -2147483649 -2147483649
-} {}
-test stringObj-16.13 {Tcl_GetRange: first = last = SIZE_MAX+INT_MIN+1} {testobj pointerIs32bit} {
-    teststringobj set 1 abcde
-    teststringobj range 1 -2147483648 -2147483648
+    teststringobj range 1 -2 -2
 } {}
 
 if {[testConstraint testobj]} {

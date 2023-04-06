@@ -3073,10 +3073,10 @@ Tcl_LreplaceObjCmd(
 	first = listLen;
     }
 
-    if (TCL_SIZE_CMP(last, >=, listLen)) {
+    if (last + 1 > listLen) {
 	last = listLen - 1;
     }
-    if (TCL_SIZE_CMP(first, <=, last)) {
+    if (first + 1 <= last + 1) {
 	numToDelete = last - first + 1;
     } else {
 	numToDelete = 0;

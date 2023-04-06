@@ -297,7 +297,7 @@ Tcl_MainEx(
     InteractiveState is;
 
     TclpSetInitialEncodings();
-    if (TCL_SIZE_CMP(argc, >, 0)) {
+    if (argc + 1 > 1) {
 	--argc;			/* consume argv[0] */
 	++i;
     }

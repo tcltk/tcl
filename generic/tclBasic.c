@@ -6921,7 +6921,7 @@ Tcl_SetRecursionLimit(
     Tcl_Size old;
 
     old = iPtr->maxNestingDepth;
-    if (TCL_SIZE_CMP(depth, >, 0)) {
+    if (depth + 1 > 1) {
 	iPtr->maxNestingDepth = depth;
     }
     return old;

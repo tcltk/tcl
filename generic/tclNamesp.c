@@ -395,7 +395,7 @@ Tcl_PopCallFrame(
 	Tcl_Free(framePtr->varTablePtr);
 	framePtr->varTablePtr = NULL;
     }
-    if (TCL_SIZE_CMP(framePtr->numCompiledLocals, >, 0)) {
+    if (framePtr->numCompiledLocals + 1 > 1) {
 	TclDeleteCompiledLocalVars(iPtr, framePtr);
 	if (framePtr->localCachePtr->refCount-- <= 1) {
 	    TclFreeLocalCache(interp, framePtr->localCachePtr);

@@ -377,7 +377,7 @@ TclRegExpRangeUniChar(
     if ((regexpPtr->flags&REG_EXPECT) && TCL_SIZE_ISNEG(index)) {
 	*startPtr = regexpPtr->details.rm_extend.rm_so;
 	*endPtr = regexpPtr->details.rm_extend.rm_eo;
-    } else if (TCL_SIZE_CMP(index, >, regexpPtr->re.re_nsub)) {
+    } else if (index + 1 > regexpPtr->re.re_nsub + 1) {
 	*startPtr = TCL_INDEX_NONE;
 	*endPtr = TCL_INDEX_NONE;
     } else {

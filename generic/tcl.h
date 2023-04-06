@@ -313,19 +313,16 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #if TCL_MAJOR_VERSION < 9
 typedef int Tcl_Size;
-#define TCL_SIZE_CMP(a,cmp,b) ((a) cmp (b))
 #define TCL_SIZE_ISNEG(index) ((index) < 0)
 #elif defined(TCL_SIGNED_SIZE) && !defined(BUILD_tcl)
 typedef ptrdiff_t Tcl_Size;
-#define TCL_SIZE_CMP(a,cmp,b) (((size_t)(a) + 1) cmp ((size_t)(b) + 1))
 #define TCL_SIZE_ISNEG(index) (((index) == TCL_INDEX_NONE) \
-	|| ((sizeof(int) != sizeof(size_t)) && ((size_t)(index) >= (size_t)INT_MIN) \
+	|| ((sizeof(int) != sizeof(size_t)) && ((ptrdiff_t)(index) < 0) \
 	&& (Tcl_Panic("Tcl_Size overflow %s:%d", __FILE__, __LINE__), 1)))
 #else
 typedef size_t Tcl_Size;
-#define TCL_SIZE_CMP(a,cmp,b) (((a) + 1) cmp ((b) + 1))
 #define TCL_SIZE_ISNEG(index) (((index) == TCL_INDEX_NONE) \
-	|| ((sizeof(int) != sizeof(size_t)) && ((index) >= (size_t)INT_MIN) \
+	|| ((sizeof(int) != sizeof(size_t)) && ((ptrdiff_t)(index) < 0) \
 	&& (Tcl_Panic("Tcl_Size overflow %s:%d", __FILE__, __LINE__), 1)))
 #endif
 

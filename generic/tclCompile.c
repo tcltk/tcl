@@ -3178,11 +3178,11 @@ EnterCmdStartData(
 {
     CmdLocation *cmdLocPtr;
 
-    if (TCL_SIZE_ISNEG(cmdIndex) || TCL_SIZE_CMP(cmdIndex, >=, envPtr->numCommands)) {
+    if (TCL_SIZE_ISNEG(cmdIndex) || (cmdIndex >= envPtr->numCommands)) {
 	Tcl_Panic("EnterCmdStartData: bad command index %" TCL_Z_MODIFIER "u", cmdIndex);
     }
 
-    if (TCL_SIZE_CMP(cmdIndex, >=, envPtr->cmdMapEnd)) {
+    if (cmdIndex >= envPtr->cmdMapEnd) {
 	/*
 	 * Expand the command location array by allocating more storage from
 	 * the heap. The currently allocated CmdLocation entries are stored
@@ -3257,7 +3257,7 @@ EnterCmdExtentData(
 {
     CmdLocation *cmdLocPtr;
 
-    if (TCL_SIZE_ISNEG(cmdIndex) || TCL_SIZE_CMP(cmdIndex, >=, envPtr->numCommands)) {
+    if (TCL_SIZE_ISNEG(cmdIndex) || (cmdIndex >= envPtr->numCommands)) {
 	Tcl_Panic("EnterCmdExtentData: bad command index %" TCL_Z_MODIFIER "u", cmdIndex);
     }
 
@@ -3383,7 +3383,7 @@ TclCreateExceptRange(
     ExceptionAux *auxPtr;
     Tcl_Size index = envPtr->exceptArrayNext;
 
-    if (TCL_SIZE_CMP(index, >=, envPtr->exceptArrayEnd)) {
+    if (index >= envPtr->exceptArrayEnd) {
 	/*
 	 * Expand the ExceptionRange array. The currently allocated entries
 	 * are stored between elements 0 and (envPtr->exceptArrayNext - 1)
@@ -3748,7 +3748,7 @@ TclCreateAuxData(
 				/* Points to the new AuxData structure */
 
     index = envPtr->auxDataArrayNext;
-    if (TCL_SIZE_CMP(index, >=, envPtr->auxDataArrayEnd)) {
+    if (index >= envPtr->auxDataArrayEnd) {
 	/*
 	 * Expand the AuxData array. The currently allocated entries are
 	 * stored between elements 0 and (envPtr->auxDataArrayNext - 1)
