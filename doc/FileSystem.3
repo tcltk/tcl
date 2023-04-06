@@ -678,11 +678,6 @@ of zero, they will be freed when this function returns.
 \fBTcl_FSConvertToPathType\fR tries to convert the given Tcl_Obj to a valid
 Tcl path type, taking account of the fact that the cwd may have changed
 even if this value is already supposedly of the correct type.
-The filename may begin with
-.QW ~
-(to indicate current user's home directory) or
-.QW ~<user>
-(to indicate any user's home directory).
 .PP
 If the conversion succeeds (i.e.\ the value is a valid path in one of
 the current filesystems), then \fBTCL_OK\fR is returned. Otherwise
@@ -704,14 +699,7 @@ from the given Tcl_Obj.
 .PP
 If the translation succeeds (i.e.\ the value is a valid path), then it is
 returned. Otherwise NULL will be returned, and an error message may be
-left in the interpreter. A
-.QW translated
-path is one which contains no
-.QW ~
-or
-.QW ~user
-sequences (these have been expanded to their current
-representation in the filesystem). The value returned is owned by the
+left in the interpreter. The value returned is owned by the
 caller, which must store it or call \fBTcl_DecrRefCount\fR to ensure memory is
 freed. This function is of little practical use, and
 \fBTcl_FSGetNormalizedPath\fR or \fBTcl_FSGetNativePath\fR are usually
@@ -1068,9 +1056,7 @@ must have a single unique
 string representation. Depending on the filesystem,
 there may be more than one unnormalized string representation which
 refers to that path (e.g.\ a relative path, a path with different
-character case if the filesystem is case insensitive, a path contain a
-reference to a home directory such as
-.QW ~ ,
+character case if the filesystem is case insensitive,
 a path containing symbolic
 links, etc). If the very last component in the path is a symbolic
 link, it should not be converted into the value it points to (but

@@ -28,7 +28,7 @@ and all threads.
 Change to the home directory of the user \fBfred\fR:
 .PP
 .CS
-\fBcd\fR ~fred
+\fBcd\fR [file home fred]
 .CE
 .PP
 Change to the directory \fBlib\fR that is a sibling directory of the
