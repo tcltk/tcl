@@ -903,6 +903,15 @@ Tcl_WrongNumArgs(
 #   define AFTER_FIRST_WORD	(void) 0
 #endif /* AVOID_HACKS_FOR_ITCL */
 
+    if (!interp) {
+	/* We cannot do anything more, just let the caller return TCL_ERROR */
+	return;
+    }
+    if (objc < 1) {
+	/* Since we don't have objc[0], just print "wrong # args", nothing more */
+	TclNewStringObj(objPtr, "wrong # args", 12);
+	goto numargsend;
+    }
     TclNewObj(objPtr);
     if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
 	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
@@ -1046,6 +1055,7 @@ Tcl_WrongNumArgs(
 	Tcl_AppendStringsToObj(objPtr, message, NULL);
     }
     Tcl_AppendStringsToObj(objPtr, "\"", NULL);
+numargsend:
     Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
     Tcl_SetObjResult(interp, objPtr);
 #undef MAY_QUOTE_WORD
