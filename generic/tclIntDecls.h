@@ -227,7 +227,7 @@ void			TclpGetTime(Tcl_Time *time);
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
 /* 81 */
-EXTERN void *		TclpRealloc(void *ptr, unsigned int size);
+EXTERN void *		TclpRealloc(void *ptr, TCL_HASH_TYPE size);
 /* Slot 82 is reserved */
 /* Slot 83 is reserved */
 /* Slot 84 is reserved */
@@ -751,7 +751,7 @@ typedef struct TclIntStubs {
     void (*reserved78)(void);
     void (*reserved79)(void);
     void (*reserved80)(void);
-    void * (*tclpRealloc) (void *ptr, unsigned int size); /* 81 */
+    void * (*tclpRealloc) (void *ptr, TCL_HASH_TYPE size); /* 81 */
     void (*reserved82)(void);
     void (*reserved83)(void);
     void (*reserved84)(void);
