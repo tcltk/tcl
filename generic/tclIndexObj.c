@@ -187,7 +187,7 @@ Tcl_GetIndexFromObjStruct(
 				 * offset, the third plus the offset again,
 				 * etc. The last entry must be NULL and there
 				 * must not be duplicate entries. */
-    size_t offset,			/* The number of bytes between entries */
+    Tcl_Size offset,			/* The number of bytes between entries */
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
     int flags,			/* 0, TCL_EXACT, TCL_NULL_OK or TCL_INDEX_TEMP_TABLE */
@@ -202,7 +202,7 @@ Tcl_GetIndexFromObjStruct(
     const Tcl_ObjInternalRep *irPtr;
 
     /* Protect against invalid values, like TCL_INDEX_NONE or 0. */
-    if (offset+1 <= sizeof(char *)) {
+    if (offset + 1 <= sizeof(char *)) {
 	offset = sizeof(char *);
     }
     /*
@@ -815,6 +815,15 @@ Tcl_WrongNumArgs(
     Interp *iPtr = (Interp *)interp;
     const char *elementStr;
 
+    if (!interp) {
+	/* We cannot do anything more, just let the caller return TCL_ERROR */
+	return;
+    }
+    if ((objc - 1) > (INT_MAX - 1)) {
+	/* Since we don't have objc[0], just print "wrong # args", nothing more */
+	TclNewStringObj(objPtr, "wrong # args", 12);
+	goto numargsend;
+    }
     TclNewObj(objPtr);
     if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
 	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
@@ -954,6 +963,7 @@ Tcl_WrongNumArgs(
 	Tcl_AppendStringsToObj(objPtr, message, NULL);
     }
     Tcl_AppendStringsToObj(objPtr, "\"", NULL);
+numargsend:
     Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
     Tcl_SetObjResult(interp, objPtr);
 }
