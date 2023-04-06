@@ -13,6 +13,7 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
+#undef BUILD_tcl
 #include "tclInt.h"
 
 /*

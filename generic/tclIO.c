@@ -6235,7 +6235,7 @@ ReadChars(
     int savedIEFlags = statePtr->inputEncodingFlags;
     int savedFlags = statePtr->flags;
     char *dst, *src = RemovePoint(bufPtr);
-    Tcl_Size numBytes;
+    TCL_HASH_TYPE numBytes;
     int srcLen = BytesLeft(bufPtr);
 
     /*
@@ -6259,7 +6259,7 @@ ReadChars(
     (void) Tcl_GetStringFromObj(objPtr, &numBytes);
     Tcl_AppendToObj(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
-	size_t size;
+	TCL_HASH_TYPE size;
 
 	dst = TclGetStringStorage(objPtr, &size) + numBytes;
 	dstLimit = (size - numBytes) > INT_MAX ? INT_MAX : (size - numBytes);
@@ -9753,7 +9753,7 @@ CopyData(
 			!GotFlag(inStatePtr, CHANNEL_NONBLOCKING)
 			,0 /* No append */);
 	    }
-	    underflow = (size >= 0) && ((size_t)size < sizeb);	/* Input underflow */
+	    underflow = (size >= 0) && ((Tcl_Size)size < sizeb);	/* Input underflow */
 	}
 
 	if (size < 0) {
@@ -9832,7 +9832,7 @@ CopyData(
 	 * unsuitable for updating totals and toRead.
 	 */
 
-	if (sizeb == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(sizeb)) {
 	writeError:
 	    if (interp) {
 		TclNewObj(errObj);
@@ -10064,7 +10064,7 @@ DoRead(
 
 	while (!bufPtr ||			/* We got no buffer!   OR */
 		(!IsBufferFull(bufPtr) && 	/* Our buffer has room AND */
-		((size_t)BytesLeft(bufPtr) < bytesToRead))) {
+		((Tcl_Size)BytesLeft(bufPtr) < bytesToRead))) {
 						/* Not enough bytes in it yet
 						 * to fill the dst */
 	    int code;

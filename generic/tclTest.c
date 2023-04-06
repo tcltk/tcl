@@ -16,6 +16,7 @@
  */
 
 #undef STATIC_BUILD
+#undef BUILD_tcl
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
@@ -2234,7 +2235,7 @@ TestencodingObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Encoding encoding;
-    size_t length;
+    Tcl_Size length;
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
@@ -4540,7 +4541,7 @@ TestregexpObjCmd(
 	if (indices) {
 	    Tcl_Obj *objs[2];
 
-	    if (ii == TCL_INDEX_NONE) {
+	    if (TCL_SIZE_ISNEG(ii)) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
 	    } else if (ii > info.nsubs) {
 		start = TCL_INDEX_NONE;
@@ -4555,12 +4556,12 @@ TestregexpObjCmd(
 	     * instead of the first character after the match.
 	     */
 
-	    if (end != TCL_INDEX_NONE) {
+	    if (!TCL_SIZE_ISNEG(end)) {
 		end--;
 	    }
 
-	    objs[0] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(start + 1U)) - 1);
-	    objs[1] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(end + 1U)) - 1);
+	    objs[0] = Tcl_NewWideIntObj((Tcl_WideInt)start);
+	    objs[1] = Tcl_NewWideIntObj((Tcl_WideInt)end);
 
 	    newPtr = Tcl_NewListObj(2, objs);
 	} else {
@@ -5669,7 +5670,7 @@ TestbytestringObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    size_t n = 0;
+    Tcl_Size n = 0;
     const char *p;
 
     if (objc != 2) {
@@ -7836,9 +7837,9 @@ TestNRELevels(
     depth = (refDepth - &depth);
 
     levels[0] = Tcl_NewWideIntObj(depth);
-    levels[1] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(iPtr->numLevels + 1U)) - 1);
-    levels[2] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(iPtr->cmdFramePtr->level + 1U)) - 1);
-    levels[3] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(iPtr->varFramePtr->level + 1U)) - 1);
+    levels[1] = Tcl_NewWideIntObj((Tcl_WideInt)iPtr->numLevels);
+    levels[2] = Tcl_NewWideIntObj((Tcl_WideInt)iPtr->cmdFramePtr->level);
+    levels[3] = Tcl_NewWideIntObj((Tcl_WideInt)iPtr->varFramePtr->level);
     levels[4] = Tcl_NewWideIntObj(iPtr->execEnvPtr->execStackPtr->tosPtr
 	    - iPtr->execEnvPtr->execStackPtr->stackWords);
 

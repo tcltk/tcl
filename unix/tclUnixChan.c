@@ -596,7 +596,7 @@ TtySetOptionProc(
     TtyState *fsPtr = (TtyState *)instanceData;
     size_t len, vlen;
     TtyAttrs tty;
-    size_t argc;
+    Tcl_Size argc;
     const char **argv;
     struct termios iostate;
 
@@ -732,7 +732,7 @@ TtySetOptionProc(
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
 #if defined(TIOCMGET) && defined(TIOCMSET)
 	int control, flag;
-	size_t i;
+	Tcl_Size i;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;

@@ -222,7 +222,7 @@ Tcl_Obj *
 Tcl_NewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    size_t numBytes)		/* Number of bytes in the array */
+    Tcl_Size numBytes)		/* Number of bytes in the array */
 {
 #ifdef TCL_MEM_DEBUG
     return Tcl_DbNewByteArrayObj(bytes, numBytes, "unknown", 0);
@@ -265,7 +265,7 @@ Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    size_t numBytes,		/* Number of bytes in the array */
+    Tcl_Size numBytes,		/* Number of bytes in the array */
     const char *file,		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line)			/* Line number in the source file; used for
@@ -282,7 +282,7 @@ Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    size_t numBytes,		/* Number of bytes in the array */
+    Tcl_Size numBytes,		/* Number of bytes in the array */
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
@@ -313,7 +313,7 @@ Tcl_SetByteArrayObj(
     Tcl_Obj *objPtr,		/* Object to initialize as a ByteArray. */
     const unsigned char *bytes,	/* The array of bytes to use as the new value.
 				 * May be NULL even if numBytes > 0. */
-    size_t numBytes)		/* Number of bytes in the array */
+    Tcl_Size numBytes)		/* Number of bytes in the array */
 {
     ByteArray *byteArrayPtr;
     Tcl_ObjInternalRep ir;
@@ -431,7 +431,7 @@ TclGetBytesFromObj(
 unsigned char *
 Tcl_SetByteArrayLength(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    size_t numBytes)		/* Number of bytes in resized array */
+    Tcl_Size numBytes)		/* Number of bytes in resized array */
 {
     ByteArray *byteArrayPtr;
     Tcl_ObjInternalRep *irPtr;
@@ -494,7 +494,7 @@ MakeByteArray(
     size_t length;
     const char *src = Tcl_GetStringFromObj(objPtr, &length);
     size_t numBytes
-	    = (limit != TCL_INDEX_NONE && limit < length) ? limit : length;
+	    = (!TCL_SIZE_ISNEG(limit) && limit < length) ? limit : length;
     ByteArray *byteArrayPtr = (ByteArray *)Tcl_Alloc(BYTEARRAY_SIZE(numBytes));
     unsigned char *dst = byteArrayPtr->bytes;
     unsigned char *dstEnd = dst + numBytes;
@@ -730,7 +730,7 @@ TclAppendBytesToByteArray(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
     }
-    if (len == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(len)) {
 	Tcl_Panic("%s must be called with definite number of bytes to append",
 		"TclAppendBytesToByteArray");
     }
@@ -988,7 +988,7 @@ BinaryFormatCmd(
 		} else if (count > listc) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "number of elements in list does not match count",
-			    -1));
+			    TCL_INDEX_NONE));
 		    return TCL_ERROR;
 		}
 		if (TclListObjGetElementsM(interp, objv[arg], &listc,

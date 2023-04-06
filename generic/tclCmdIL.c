@@ -2727,7 +2727,7 @@ Tcl_LrangeObjCmd(
 				/* Argument objects. */
 {
     int result;
-    size_t listLen, first, last;
+    Tcl_Size listLen, first, last;
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
 	return TCL_ERROR;
@@ -3912,8 +3912,7 @@ Tcl_LsearchObjCmd(
 		TclNewIndexObj(itemPtr, i+groupOffset);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
 		    Tcl_Obj *elObj;
-		    size_t elValue = TclIndexDecode(sortInfo.indexv[j], listc);
-		    TclNewIndexObj(elObj, elValue);
+		    TclNewIndexObj(elObj, TclIndexDecode(sortInfo.indexv[j], listc));
 		    Tcl_ListObjAppendElement(interp, itemPtr, elObj);
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
@@ -3936,8 +3935,7 @@ Tcl_LsearchObjCmd(
 	    TclNewIndexObj(itemPtr, index+groupOffset);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
 		Tcl_Obj *elObj;
-		size_t elValue = TclIndexDecode(sortInfo.indexv[j], listc);
-		TclNewIndexObj(elObj, elValue);
+		TclNewIndexObj(elObj, TclIndexDecode(sortInfo.indexv[j], listc));
 		Tcl_ListObjAppendElement(interp, itemPtr, elObj);
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);

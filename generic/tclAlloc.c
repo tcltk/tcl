@@ -251,7 +251,7 @@ TclFinalizeAllocSubsystem(void)
 
 void *
 TclpAlloc(
-    size_t numBytes)	/* Number of bytes to allocate. */
+    TCL_HASH_TYPE numBytes)	/* Number of bytes to allocate. */
 {
     union overhead *overPtr;
     size_t bucket;
@@ -694,7 +694,7 @@ mstats(
 #undef TclpAlloc
 void *
 TclpAlloc(
-    size_t numBytes)	/* Number of bytes to allocate. */
+    TCL_HASH_TYPE numBytes)	/* Number of bytes to allocate. */
 {
     return malloc(numBytes);
 }

@@ -1367,7 +1367,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(localVar)) {
 	    goto cleanup;
 	}
 	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, 0);
@@ -1427,7 +1427,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(localVar)) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, opnd+1);
@@ -1444,7 +1444,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(localVar)) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, opnd);
@@ -1639,7 +1639,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(localVar)) {
 	    goto cleanup;
 	}
 	BBEmitInst1or4(assemEnvPtr, tblIdx, localVar, 0);
@@ -1651,7 +1651,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE || CheckOneByte(interp, localVar)) {
+	if (TCL_SIZE_ISNEG(localVar) || CheckOneByte(interp, localVar)) {
 	    goto cleanup;
 	}
 	BBEmitInstInt1(assemEnvPtr, tblIdx, localVar, 0);
@@ -1663,7 +1663,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE || CheckOneByte(interp, localVar)
+	if (TCL_SIZE_ISNEG(localVar) || CheckOneByte(interp, localVar)
 		|| GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
 		|| CheckSignedOneByte(interp, opnd)) {
 	    goto cleanup;
@@ -1678,7 +1678,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(localVar)) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, localVar, 0);
@@ -1742,7 +1742,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(localVar)) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, 0);
@@ -2326,7 +2326,7 @@ FindLocalVar(
     }
     localVar = TclFindCompiledLocal(varNameStr, varNameLen, 1, envPtr);
     Tcl_DecrRefCount(varNameObj);
-    if (localVar == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(localVar)) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cannot use this instruction to create a variable"

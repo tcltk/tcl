@@ -24,6 +24,7 @@ testConstraint testobj [llength [info commands testobj]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testdstring [llength [info commands testdstring]]
 testConstraint utf32 [expr {[string length \U010000] == 1}]
+testConstraint pointerIs32bit [expr {$tcl_platform(pointerSize) == 4}]
 
 test stringObj-1.1 {string type registration} testobj {
     set t [testobj types]
@@ -504,7 +505,7 @@ test stringObj-16.7 {Tcl_GetRange: first = UINT_MAX-1} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 0xFFFFFFFE 3
 } {}
-test stringObj-16.8 {Tcl_GetRange: first = SIZE_MAX-1} testobj {
+test stringObj-16.8 {Tcl_GetRange: first = -2} {testobj pointerIs32bit} {
     teststringobj set 1 abcde
     teststringobj range 1 -2 3
 } {}
@@ -520,11 +521,11 @@ test stringObj-16.11 {Tcl_GetRange: first = last = UINT_MAX-1} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 0xFFFFFFFE 0xFFFFFFFE
 } {}
-test stringObj-16.12 {Tcl_GetRange: first = last = SIZE_MAX-1} testobj {
+test stringObj-16.12 {Tcl_GetRange: first = last = SIZE_MAX-1} {testobj pointerIs32bit} {
     teststringobj set 1 abcde
     teststringobj range 1 -2 -2
 } {}
-
+
 if {[testConstraint testobj]} {
     testobj freeallvars
 }

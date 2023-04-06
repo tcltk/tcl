@@ -43,7 +43,7 @@ static void		FreeArithSeriesInternalRep (Tcl_Obj *listPtr);
 static int		SetArithSeriesFromAny (Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfArithSeries (Tcl_Obj *arithSeriesObj);
 static Tcl_Obj *ArithSeriesObjStep(Tcl_Obj *arithSeriesPtr);
-static Tcl_Size ArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
+static size_t ArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
 
 /*
  * The structure below defines the arithmetic series Tcl object type by
@@ -474,7 +474,7 @@ TclArithSeriesObjIndex(
  *
  *----------------------------------------------------------------------
  */
-Tcl_Size ArithSeriesObjLength(Tcl_Obj *arithSeriesObj)
+size_t ArithSeriesObjLength(Tcl_Obj *arithSeriesObj)
 {
     ArithSeries *arithSeriesRepPtr = (ArithSeries*)
 	    arithSeriesObj->internalRep.twoPtrValue.ptr1;
@@ -730,7 +730,7 @@ TclArithSeriesObjRange(
 
     ArithSeriesGetInternalRep(arithSeriesObj, arithSeriesRepPtr);
 
-    if (fromIdx == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(fromIdx)) {
 	fromIdx = 0;
     }
     if (fromIdx > toIdx) {

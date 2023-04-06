@@ -1197,7 +1197,7 @@ Tcl_CreateAlias(
     const char *childCmd,	/* Command to install in child. */
     Tcl_Interp *targetInterp,	/* Interpreter for target command. */
     const char *targetCmd,	/* Name of target command. */
-    size_t argc,			/* How many additional arguments? */
+    Tcl_Size argc,			/* How many additional arguments? */
     const char *const *argv)	/* These are the additional args. */
 {
     Tcl_Obj *childObjPtr, *targetObjPtr;
@@ -1252,7 +1252,7 @@ Tcl_CreateAliasObj(
     const char *childCmd,	/* Command to install in child. */
     Tcl_Interp *targetInterp,	/* Interpreter for target command. */
     const char *targetCmd,	/* Name of target command. */
-    size_t objc,			/* How many additional arguments? */
+    Tcl_Size objc,			/* How many additional arguments? */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     Tcl_Obj *childObjPtr, *targetObjPtr;
@@ -3985,7 +3985,7 @@ Tcl_LimitTypeReset(
 void
 Tcl_LimitSetCommands(
     Tcl_Interp *interp,
-    size_t commandLimit)
+    Tcl_Size commandLimit)
 {
     Interp *iPtr = (Interp *) interp;
 

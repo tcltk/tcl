@@ -455,7 +455,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    size_t *lengthPtr,
+    Tcl_Size *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
@@ -478,7 +478,7 @@ TclpInitLibraryPath(
 
     if ((str != NULL) && (str[0] != '\0')) {
 	Tcl_DString ds;
-	size_t pathc;
+	Tcl_Size pathc;
 	const char **pathv;
 	char installLib[LIBRARY_SIZE];
 
@@ -1012,16 +1012,16 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (native). */
-    size_t *lengthPtr)		/* Used to return length of name (for
+    Tcl_Size *lengthPtr)	/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    size_t i, result = TCL_INDEX_NONE;
+    Tcl_Size i, result = TCL_INDEX_NONE;
     const char *env, *p1, *p2;
     Tcl_DString envString;
 

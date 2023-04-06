@@ -17,6 +17,7 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
+#undef BUILD_tcl
 #include "tclInt.h"
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
 #   include "tommath.h"
@@ -592,7 +593,7 @@ TestindexobjCmd(
 	result = Tcl_GetIndexFromObj(NULL, objv[1],
 		tablePtr, "token", 0, &index);
 	if (result == TCL_OK) {
-	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), (Tcl_WideInt)((Tcl_WideUInt)(index + 1U)) - 1);
+	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), (Tcl_WideInt)index);
 	}
 	return result;
     }
@@ -620,7 +621,7 @@ TestindexobjCmd(
 	    &index);
     Tcl_Free((void *)argv);
     if (result == TCL_OK) {
-	Tcl_SetWideIntObj(Tcl_GetObjResult(interp), (Tcl_WideInt)((Tcl_WideUInt)(index + 1U)) - 1);
+	Tcl_SetWideIntObj(Tcl_GetObjResult(interp), (Tcl_WideInt)index);
     }
     return result;
 }
@@ -964,7 +965,7 @@ TestlistobjCmd(
 	}
 	for (i = 0; i < len; ++i) {
 	    Tcl_Obj *objP;
-	    if (Tcl_ListObjIndex(interp, varPtr[varIndex], i, &objP)
+	    if (Tcl_ListObjIndex(interp, varPtr[varIndex], (Tcl_Size)i, &objP)
 		!= TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1199,7 +1200,7 @@ TestobjCmd(
 	if (objc != 3) {
 	    goto wrongNumArgs;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(varPtr[varIndex]->refCount + 1U)) - 1));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)varPtr[varIndex]->refCount);
 	break;
     case TESTOBJ_TYPE:
 	if (objc != 3) {
@@ -1366,7 +1367,7 @@ TeststringobjCmd(
 	    } else {
 		length = TCL_INDEX_NONE;
 	    }
-	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), (Tcl_WideInt)((Tcl_WideUInt)(length + 1U)) - 1);
+	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), (Tcl_WideInt)length);
 	    break;
 	case 6:				/* set */
 	    if (objc != 4) {
@@ -1420,7 +1421,7 @@ TeststringobjCmd(
 	    } else {
 		length = TCL_INDEX_NONE;
 	    }
-	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), (Tcl_WideInt)((Tcl_WideUInt)(length + 1U)) - 1);
+	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), (Tcl_WideInt)length);
 	    break;
 	case 10: {				/* range */
 	    Tcl_Size first, last;

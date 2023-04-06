@@ -382,7 +382,7 @@ Tcl_DumpActiveMemory(
 
 void *
 Tcl_DbCkalloc(
-    size_t size,
+    TCL_HASH_TYPE size,
     const char *file,
     int line)
 {
@@ -472,7 +472,7 @@ Tcl_DbCkalloc(
 
 void *
 Tcl_AttemptDbCkalloc(
-    size_t size,
+    TCL_HASH_TYPE size,
     const char *file,
     int line)
 {
@@ -657,7 +657,7 @@ Tcl_DbCkfree(
 void *
 Tcl_DbCkrealloc(
     void *ptr,
-    size_t size,
+    TCL_HASH_TYPE size,
     const char *file,
     int line)
 {
@@ -688,7 +688,7 @@ Tcl_DbCkrealloc(
 void *
 Tcl_AttemptDbCkrealloc(
     void *ptr,
-    size_t size,
+    TCL_HASH_TYPE size,
     const char *file,
     int line)
 {
@@ -739,14 +739,14 @@ Tcl_AttemptDbCkrealloc(
 
 void *
 Tcl_Alloc(
-    size_t size)
+    TCL_HASH_TYPE size)
 {
     return Tcl_DbCkalloc(size, "unknown", 0);
 }
 
 void *
 Tcl_AttemptAlloc(
-    size_t size)
+    TCL_HASH_TYPE size)
 {
     return Tcl_AttemptDbCkalloc(size, "unknown", 0);
 }
@@ -761,14 +761,14 @@ Tcl_Free(
 void *
 Tcl_Realloc(
     void *ptr,
-    size_t size)
+    TCL_HASH_TYPE size)
 {
     return Tcl_DbCkrealloc(ptr, size, "unknown", 0);
 }
 void *
 Tcl_AttemptRealloc(
     void *ptr,
-    size_t size)
+    TCL_HASH_TYPE size)
 {
     return Tcl_AttemptDbCkrealloc(ptr, size, "unknown", 0);
 }
@@ -1032,7 +1032,7 @@ Tcl_InitMemory(
 
 void *
 Tcl_Alloc(
-    size_t size)
+    TCL_HASH_TYPE size)
 {
     void *result = TclpAlloc(size);
 
@@ -1054,7 +1054,7 @@ Tcl_Alloc(
 
 void *
 Tcl_DbCkalloc(
-    size_t size,
+    TCL_HASH_TYPE size,
     const char *file,
     int line)
 {
@@ -1081,14 +1081,14 @@ Tcl_DbCkalloc(
 
 void *
 Tcl_AttemptAlloc(
-    size_t size)
+    TCL_HASH_TYPE size)
 {
     return (char *)TclpAlloc(size);
 }
 
 void *
 Tcl_AttemptDbCkalloc(
-    size_t size,
+    TCL_HASH_TYPE size,
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
@@ -1109,7 +1109,7 @@ Tcl_AttemptDbCkalloc(
 void *
 Tcl_Realloc(
     void *ptr,
-    size_t size)
+    TCL_HASH_TYPE size)
 {
     void *result = TclpRealloc(ptr, size);
 
@@ -1122,7 +1122,7 @@ Tcl_Realloc(
 void *
 Tcl_DbCkrealloc(
     void *ptr,
-    size_t size,
+    TCL_HASH_TYPE size,
     const char *file,
     int line)
 {
@@ -1150,7 +1150,7 @@ Tcl_DbCkrealloc(
 void *
 Tcl_AttemptRealloc(
     void *ptr,
-    size_t size)
+    TCL_HASH_TYPE size)
 {
     return (char *)TclpRealloc(ptr, size);
 }
@@ -1158,7 +1158,7 @@ Tcl_AttemptRealloc(
 void *
 Tcl_AttemptDbCkrealloc(
     void *ptr,
-    size_t size,
+    TCL_HASH_TYPE size,
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {

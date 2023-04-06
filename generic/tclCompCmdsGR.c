@@ -2378,7 +2378,7 @@ TclCompileReturnCmd(
 	    ExceptionRange range = envPtr->exceptArrayPtr[index];
 
 	    if ((range.type == CATCH_EXCEPTION_RANGE)
-		    && (range.catchOffset == TCL_INDEX_NONE)) {
+		    && TCL_SIZE_ISNEG(range.catchOffset)) {
 		enclosingCatch = 1;
 		break;
 	    }

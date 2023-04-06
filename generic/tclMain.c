@@ -280,7 +280,7 @@ Tcl_SourceRCFile(
 
 TCL_NORETURN void
 Tcl_MainEx(
-    size_t argc,			/* Number of arguments. */
+    Tcl_Size argc,			/* Number of arguments. */
     TCHAR **argv,		/* Array of argument strings. */
     Tcl_AppInitProc *appInitProc,
 				/* Application-specific initialization
@@ -288,7 +288,7 @@ Tcl_MainEx(
 				 * but before starting to execute commands. */
     Tcl_Interp *interp)
 {
-    size_t i=0;			/* argv[i] index */
+    Tcl_Size i=0;		/* argv[i] index */
     Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
     const char *encodingName = NULL;
     int code, exitCode = 0;
@@ -454,7 +454,7 @@ Tcl_MainEx(
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
 	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
-	    size_t length;
+	    Tcl_Size length;
 
 	    if (is.tty) {
 		Prompt(interp, &is);
@@ -475,7 +475,7 @@ Tcl_MainEx(
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
 	    length = Tcl_GetsObj(is.input, is.commandPtr);
-	    if (length == TCL_INDEX_NONE) {
+	    if (TCL_SIZE_ISNEG(length)) {
 		if (Tcl_InputBlocked(is.input)) {
 		    /*
 		     * This can only happen if stdin has been set to
@@ -740,7 +740,7 @@ StdinProc(
     TCL_UNUSED(int) /*mask*/)
 {
     int code;
-    size_t length;
+    Tcl_Size length;
     InteractiveState *isPtr = (InteractiveState *)clientData;
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
@@ -752,7 +752,7 @@ StdinProc(
 	Tcl_IncrRefCount(commandPtr);
     }
     length = Tcl_GetsObj(chan, commandPtr);
-    if (length == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(length)) {
 	if (Tcl_InputBlocked(chan)) {
 	    return;
 	}

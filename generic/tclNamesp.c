@@ -1185,7 +1185,7 @@ TclTeardownNamespace(
     Interp *iPtr = (Interp *) nsPtr->interp;
     Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
-    size_t i;
+    Tcl_Size i;
 
     /*
      * Start by destroying the namespace's variable table, since variables
@@ -1206,7 +1206,7 @@ TclTeardownNamespace(
      */
 
     while (nsPtr->cmdTable.numEntries > 0) {
-	size_t length = nsPtr->cmdTable.numEntries;
+	Tcl_Size length = nsPtr->cmdTable.numEntries;
 	Command **cmds = (Command **)TclStackAlloc((Tcl_Interp *) iPtr,
 		sizeof(Command *) * length);
 
@@ -1396,7 +1396,7 @@ Tcl_Export(
     Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     const char *simplePattern;
     char *patternCpy;
-    size_t neededElems, len, i;
+    Tcl_Size neededElems, len, i;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -1523,7 +1523,7 @@ Tcl_AppendExportList(
 				 * export pattern list is appended. */
 {
     Namespace *nsPtr;
-    size_t i;
+    Tcl_Size i;
     int result;
 
     /*
@@ -1726,7 +1726,7 @@ DoImport(
     Namespace *importNsPtr,
     int allowOverwrite)
 {
-    size_t i = 0, exported = 0;
+    Tcl_Size i = 0, exported = 0;
     Tcl_HashEntry *found;
 
     /*
@@ -2638,7 +2638,7 @@ Tcl_FindCommand(
     cmdPtr = NULL;
     if (cxtNsPtr->commandPathLength!=0 && strncmp(name, "::", 2)
 	    && !(flags & TCL_NAMESPACE_ONLY)) {
-	size_t i;
+	Tcl_Size i;
 	Namespace *pathNsPtr, *realNsPtr, *dummyNsPtr;
 
 	(void) TclGetNamespaceForQualName(interp, name, cxtNsPtr,
@@ -4039,7 +4039,7 @@ NamespacePathCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-    size_t nsObjc, i;
+    Tcl_Size nsObjc, i;
     int result = TCL_ERROR;
     Tcl_Obj **nsObjv;
     Tcl_Namespace **namespaceList = NULL;
@@ -4123,13 +4123,13 @@ NamespacePathCmd(
 void
 TclSetNsPath(
     Namespace *nsPtr,		/* Namespace whose path is to be set. */
-    size_t pathLength,		/* Length of pathAry. */
+    Tcl_Size pathLength,		/* Length of pathAry. */
     Tcl_Namespace *pathAry[])	/* Array of namespaces that are the path. */
 {
     if (pathLength != 0) {
 	NamespacePathEntry *tmpPathArray =
 		(NamespacePathEntry *)Tcl_Alloc(sizeof(NamespacePathEntry) * pathLength);
-	size_t i;
+	Tcl_Size i;
 
 	for (i=0 ; i<pathLength ; i++) {
 	    tmpPathArray[i].nsPtr = (Namespace *) pathAry[i];
@@ -4180,7 +4180,7 @@ static void
 UnlinkNsPath(
     Namespace *nsPtr)
 {
-    size_t i;
+    Tcl_Size i;
     for (i=0 ; i<nsPtr->commandPathLength ; i++) {
 	NamespacePathEntry *nsPathPtr = &nsPtr->commandPathArray[i];
 
@@ -4431,7 +4431,7 @@ Tcl_SetNamespaceUnknownHandler(
     Tcl_Namespace *nsPtr,	/* Namespace which is being updated. */
     Tcl_Obj *handlerPtr)	/* The new handler, or NULL to reset. */
 {
-    size_t lstlen = 0;
+    Tcl_Size lstlen = 0;
     Namespace *currNsPtr = (Namespace *) nsPtr;
 
     /*
@@ -4927,7 +4927,7 @@ TclLogCommandInfo(
 				 * command (must be <= command). */
     const char *command,	/* First character in command that generated
 				 * the error. */
-    size_t length,		/* Number of bytes in command (TCL_INDEX_NONE
+    Tcl_Size length,		/* Number of bytes in command (TCL_INDEX_NONE
 				 * means use all bytes up to first null byte).
 				*/
     const unsigned char *pc,    /* Current pc of bytecode execution context */
@@ -4960,10 +4960,10 @@ TclLogCommandInfo(
 	    }
 	}
 
-	if (length == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(length)) {
 	    length = strlen(command);
 	}
-	overflow = (length > (size_t)limit);
+	overflow = (length > (Tcl_Size)limit);
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    %s\n\"%.*s%s\"", ((iPtr->errorInfo == NULL)
 		? "while executing" : "invoked from within"),
@@ -5013,7 +5013,7 @@ TclLogCommandInfo(
 	iPtr->errorStack = newObj;
     }
     if (iPtr->resetErrorStack) {
-	size_t len;
+	Tcl_Size len;
 
 	iPtr->resetErrorStack = 0;
 	TclListObjLengthM(interp, iPtr->errorStack, &len);
@@ -5085,7 +5085,7 @@ void
 TclErrorStackResetIf(
     Tcl_Interp *interp,
     const char *msg,
-    size_t length)
+    Tcl_Size length)
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -5098,7 +5098,7 @@ TclErrorStackResetIf(
 	iPtr->errorStack = newObj;
     }
     if (iPtr->resetErrorStack) {
-	size_t len;
+	Tcl_Size len;
 
 	iPtr->resetErrorStack = 0;
 	TclListObjLengthM(interp, iPtr->errorStack, &len);
@@ -5140,7 +5140,7 @@ Tcl_LogCommandInfo(
 				 * command (must be <= command). */
     const char *command,	/* First character in command that generated
 				 * the error. */
-    size_t length)		/* Number of bytes in command (-1 means use
+    Tcl_Size length)		/* Number of bytes in command (-1 means use
 				 * all bytes up to first null byte). */
 {
     TclLogCommandInfo(interp, script, command, length, NULL, NULL);

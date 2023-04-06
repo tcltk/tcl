@@ -117,13 +117,13 @@ TclSockGetPort(
 int
 TclSockMinimumBuffers(
     void *sock,			/* Socket file descriptor */
-    size_t size1)			/* Minimum buffer size */
+    Tcl_Size size1)			/* Minimum buffer size */
 {
     int current;
     socklen_t len;
     int size = size1;
 
-    if ((size_t)size != size1) {
+    if ((Tcl_Size)size != size1) {
 	return TCL_ERROR;
     }
     len = sizeof(int);

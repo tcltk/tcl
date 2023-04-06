@@ -134,7 +134,7 @@ LocateTargetAddresses(
 	} else {
 	    targetInstPtr = envPtr->codeStart + rangePtr->breakOffset;
 	    DefineTargetAddress(tablePtr, targetInstPtr);
-	    if (rangePtr->continueOffset != TCL_INDEX_NONE) {
+	    if (!TCL_SIZE_ISNEG(rangePtr->continueOffset)) {
 		targetInstPtr = envPtr->codeStart + rangePtr->continueOffset;
 		DefineTargetAddress(tablePtr, targetInstPtr);
 	    }

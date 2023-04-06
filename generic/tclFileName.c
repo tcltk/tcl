@@ -758,7 +758,7 @@ SplitWinPath(
 Tcl_Obj *
 Tcl_FSJoinToPath(
     Tcl_Obj *pathPtr,		/* Valid path or NULL. */
-    size_t objc,			/* Number of array elements to join */
+    Tcl_Size objc,			/* Number of array elements to join */
     Tcl_Obj *const objv[])	/* Path elements to join. */
 {
     if (pathPtr == NULL) {
@@ -927,11 +927,11 @@ TclpNativeJoinPath(
 
 char *
 Tcl_JoinPath(
-    size_t argc,
+    Tcl_Size argc,
     const char *const *argv,
     Tcl_DString *resultPtr)	/* Pointer to previously initialized DString */
 {
-    size_t i, len;
+    Tcl_Size i, len;
     Tcl_Obj *listObj;
     Tcl_Obj *resultObj;
     const char *resultStr;

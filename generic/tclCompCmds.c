@@ -287,7 +287,7 @@ TclCompileArraySetCmd(
     Tcl_Token *varTokenPtr, *dataTokenPtr;
     int isScalar, localIndex, code = TCL_OK;
     int isDataLiteral, isDataValid, isDataEven;
-    size_t len;
+    Tcl_Size len;
     int keyVar, valVar, infoIndex;
     int fwd, offsetBack, offsetFwd;
     Tcl_Obj *literalObj;
@@ -393,7 +393,7 @@ TclCompileArraySetCmd(
 
     infoPtr = (ForeachInfo *)Tcl_Alloc(offsetof(ForeachInfo, varLists) + sizeof(ForeachVarList *));
     infoPtr->numLists = 1;
-    infoPtr->varLists[0] = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes) + 2 * sizeof(size_t));
+    infoPtr->varLists[0] = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes) + 2 * sizeof(Tcl_Size));
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
     infoPtr->varLists[0]->varIndexes[1] = valVar;
@@ -891,7 +891,7 @@ TclCompileConcatCmd(
     if (listObj != NULL) {
 	Tcl_Obj **objs;
 	const char *bytes;
-	size_t len, slen;
+	Tcl_Size len, slen;
 
 	TclListObjGetElementsM(NULL, listObj, &len, &objs);
 	objPtr = Tcl_ConcatObj(len, objs);
@@ -1078,7 +1078,7 @@ TclCompileDictIncrCmd(
 
     if (parsePtr->numWords == 4) {
 	const char *word;
-	size_t numBytes;
+	Tcl_Size numBytes;
 	int code;
 	Tcl_Token *incrTokenPtr;
 	Tcl_Obj *intObj;
@@ -1293,7 +1293,7 @@ TclCompileDictCreateCmd(
     Tcl_Obj *keyObj, *valueObj, *dictObj;
     const char *bytes;
     int i;
-    size_t len;
+    Tcl_Size len;
 
     if ((parsePtr->numWords & 1) == 0) {
 	return TCL_ERROR;
@@ -1528,7 +1528,7 @@ CompileDictEachCmd(
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
     int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
     int infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
-    size_t numVars;
+    Tcl_Size numVars;
     int endTargetOffset;
     int collectVar = -1;	/* Index of temp var holding the result
 				 * dict. */
@@ -2293,10 +2293,10 @@ PrintDictUpdateInfo(
     void *clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(size_t))
+    TCL_UNUSED(TCL_HASH_TYPE))
 {
     DictUpdateInfo *duiPtr = (DictUpdateInfo *)clientData;
-    size_t i;
+    Tcl_Size i;
 
     for (i=0 ; i<duiPtr->length ; i++) {
 	if (i) {
@@ -2311,10 +2311,10 @@ DisassembleDictUpdateInfo(
     void *clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(size_t))
+    TCL_UNUSED(TCL_HASH_TYPE))
 {
     DictUpdateInfo *duiPtr = (DictUpdateInfo *)clientData;
-    size_t i;
+    Tcl_Size i;
     Tcl_Obj *variables;
 
     TclNewObj(variables);
@@ -2690,7 +2690,7 @@ CompileEachloopCmd(
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     int jumpBackOffset, infoIndex, range;
     int numWords, numLists, i, code = TCL_OK;
-    size_t j;
+    Tcl_Size j;
     Tcl_Obj *varListObj = NULL;
 
     /*
@@ -2742,7 +2742,7 @@ CompileEachloopCmd(
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	ForeachVarList *varListPtr;
-	size_t numVars;
+	Tcl_Size numVars;
 
 	if (i%2 != 1) {
 	    continue;
@@ -2762,7 +2762,7 @@ CompileEachloopCmd(
 	}
 
 	varListPtr = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes)
-		+ numVars * sizeof(size_t));
+		+ numVars * sizeof(Tcl_Size));
 	varListPtr->numVars = numVars;
 	infoPtr->varLists[i/2] = varListPtr;
 	infoPtr->numLists++;
@@ -2771,7 +2771,7 @@ CompileEachloopCmd(
 	    Tcl_Obj *varNameObj;
 	    const char *bytes;
 	    int varIndex;
-	    size_t length;
+	    Tcl_Size length;
 
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
@@ -2976,11 +2976,11 @@ PrintForeachInfo(
     void *clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(size_t))
+    TCL_UNUSED(TCL_HASH_TYPE))
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
-    size_t i, j;
+    Tcl_Size i, j;
 
     Tcl_AppendToObj(appendObj, "data=[", TCL_INDEX_NONE);
 
@@ -3016,11 +3016,11 @@ PrintNewForeachInfo(
     void *clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(size_t))
+    TCL_UNUSED(TCL_HASH_TYPE))
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
-    size_t i, j;
+    Tcl_Size i, j;
 
     Tcl_AppendPrintfToObj(appendObj, "jumpOffset=%+" TCL_Z_MODIFIER "d, vars=",
 	    infoPtr->loopCtTemp);
@@ -3046,11 +3046,11 @@ DisassembleForeachInfo(
     void *clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(size_t))
+    TCL_UNUSED(TCL_HASH_TYPE))
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
-    size_t i, j;
+    Tcl_Size i, j;
     Tcl_Obj *objPtr, *innerPtr;
 
     /*
@@ -3093,11 +3093,11 @@ DisassembleNewForeachInfo(
     void *clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(size_t))
+    TCL_UNUSED(TCL_HASH_TYPE))
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
-    size_t i, j;
+    Tcl_Size i, j;
     Tcl_Obj *objPtr, *innerPtr;
 
     /*

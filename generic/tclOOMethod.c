@@ -498,7 +498,7 @@ TclOONewProcMethod(
     method = TclOOMakeProcMethod(interp, clsPtr, flags, nameObj, procName,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
 
-    if (argsLen == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(argsLen)) {
 	Tcl_DecrRefCount(argsObj);
     }
     if (method == NULL) {
@@ -1188,7 +1188,7 @@ static int
 ProcedureMethodCompiledVarResolver(
     TCL_UNUSED(Tcl_Interp *),
     const char *varName,
-    size_t length,
+    Tcl_Size length,
     TCL_UNUSED(Tcl_Namespace *),
     Tcl_ResolvedVarInfo **rPtrPtr)
 {

@@ -402,7 +402,7 @@ TclMaxListLength(
 {
     Tcl_Size count = 0;
 
-    if ((numBytes == 0) || ((numBytes == TCL_INDEX_NONE) && (*bytes == '\0'))) {
+    if ((numBytes == 0) || (TCL_SIZE_ISNEG(numBytes) && (*bytes == '\0'))) {
 	/* Empty string case - quick exit */
 	goto done;
     }
@@ -418,7 +418,7 @@ TclMaxListLength(
      */
 
     while (numBytes) {
-	if ((numBytes == TCL_INDEX_NONE) && (*bytes == '\0')) {
+	if (TCL_SIZE_ISNEG(numBytes) && (*bytes == '\0')) {
 	    break;
 	}
 	if (TclIsSpaceProcM(*bytes)) {
@@ -429,9 +429,9 @@ TclMaxListLength(
 	    count++;
 	    do {
 		bytes++;
-		numBytes -= (numBytes != TCL_INDEX_NONE);
+		numBytes -= !TCL_SIZE_ISNEG(numBytes);
 	    } while (numBytes && TclIsSpaceProcM(*bytes));
-	    if ((numBytes == 0) || ((numBytes == TCL_INDEX_NONE) && (*bytes == '\0'))) {
+	    if ((numBytes == 0) || (TCL_SIZE_ISNEG(numBytes) && (*bytes == '\0'))) {
 		break;
 	    }
 
@@ -440,7 +440,7 @@ TclMaxListLength(
 	     */
 	}
 	bytes++;
-	numBytes -= (numBytes != TCL_INDEX_NONE);
+	numBytes -= !TCL_SIZE_ISNEG(numBytes);
     }
 
     /*
@@ -1037,7 +1037,7 @@ TclScanElement(
     int extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    TCL_HASH_TYPE bytesNeeded;		/* Buffer length computed to complete the
+    Tcl_Size bytesNeeded;		/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
@@ -1045,7 +1045,7 @@ TclScanElement(
     int braceCount = 0;		/* Count of all braces '{' '}' seen. */
 #endif /* COMPAT */
 
-    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == TCL_INDEX_NONE))) {
+    if ((p == NULL) || (length == 0) || ((*p == '\0') && TCL_SIZE_ISNEG(length))) {
 	/*
 	 * Empty string element must be brace quoted.
 	 */
@@ -1127,7 +1127,7 @@ TclScanElement(
 	    break;
 	case '\\':	/* TYPE_SUBS */
 	    extra++;				/* Escape '\' => '\\' */
-	    if ((length == 1) || ((length == TCL_INDEX_NONE) && (p[1] == '\0'))) {
+	    if ((length == 1) || (TCL_SIZE_ISNEG(length) && (p[1] == '\0'))) {
 		/*
 		 * Final backslash. Cannot format with brace quoting.
 		 */
@@ -1158,7 +1158,7 @@ TclScanElement(
 #endif /* COMPAT */
 	    break;
 	case '\0':	/* TYPE_SUBS */
-	    if (length == TCL_INDEX_NONE) {
+	    if (TCL_SIZE_ISNEG(length)) {
 		goto endOfString;
 	    }
 	    /* TODO: Panic on improper encoding? */
@@ -1407,7 +1407,7 @@ TclConvertElement(
      * No matter what the caller demands, empty string must be braced!
      */
 
-    if ((src == NULL) || (length == 0) || (*src == '\0' && length == TCL_INDEX_NONE)) {
+    if ((src == NULL) || (length == 0) || (*src == '\0' && TCL_SIZE_ISNEG(length))) {
 	p[0] = '{';
 	p[1] = '}';
 	return 2;
@@ -1434,7 +1434,7 @@ TclConvertElement(
      */
 
     if (conversion == CONVERT_NONE) {
-	if (length == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(length)) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1453,7 +1453,7 @@ TclConvertElement(
     if (conversion == CONVERT_BRACE) {
 	*p = '{';
 	p++;
-	if (length == TCL_INDEX_NONE) {
+	if (TCL_SIZE_ISNEG(length)) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1526,7 +1526,7 @@ TclConvertElement(
 	    p++;
 	    continue;
 	case '\0':
-	    if (length == TCL_INDEX_NONE) {
+	    if (TCL_SIZE_ISNEG(length)) {
 		return (Tcl_Size)(p - dst);
 	    }
 
@@ -2584,7 +2584,7 @@ Tcl_DStringAppend(
 {
     Tcl_Size newSize;
 
-    if (length == TCL_INDEX_NONE) {
+    if (TCL_SIZE_ISNEG(length)) {
 	length = strlen(bytes);
     }
     newSize = length + dsPtr->length;
@@ -2613,7 +2613,7 @@ Tcl_DStringAppend(
 
 	    dsPtr->string = (char *)Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 
-	    if (index != TCL_INDEX_NONE) {
+	    if (!TCL_SIZE_ISNEG(index)) {
 		bytes = dsPtr->string + index;
 	    }
 	}

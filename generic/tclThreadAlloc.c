@@ -57,7 +57,7 @@ typedef union Block {
 		unsigned char magic2;	/* Second magic number. */
 	    } s;
 	} u;
-	size_t reqSize;			/* Requested allocation size. */
+	TCL_HASH_TYPE reqSize;			/* Requested allocation size. */
     } b;
     unsigned char padding[TCL_ALLOCALIGN];
 } Block;
@@ -300,7 +300,7 @@ TclFreeAllocCache(
 
 void *
 TclpAlloc(
-    size_t reqSize)
+    TCL_HASH_TYPE reqSize)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -424,7 +424,7 @@ TclpFree(
 void *
 TclpRealloc(
     void *ptr,
-    size_t reqSize)
+    TCL_HASH_TYPE reqSize)
 {
     Cache *cachePtr;
     Block *blockPtr;
