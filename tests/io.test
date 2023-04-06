@@ -7501,9 +7501,6 @@ test io-52.9 {TclCopyChannel & encodings} {fcopy} {
 	    [file size $path(utf8-rp.txt)]
 } {3 5 5}
 test io-52.10 {TclCopyChannel & encodings} -constraints fcopy -body {
-    # encoding to binary (=> implies that the
-    # internal utf-8 is written)
-
     set in  [open $path(kyrillic.txt) r]
     set out [open $path(utf8-fcopy.txt) w]
 
