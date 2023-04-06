@@ -1005,7 +1005,7 @@ Tcl_MakeFileChannel(
     TclFile readFile = NULL, writeFile = NULL;
     BOOL result;
 
-    if (mode == 0) {
+    if ((mode & (TCL_READABLE|TCL_WRITABLE)) == 0) {
 	return NULL;
     }
 
@@ -1287,7 +1287,7 @@ OpenFileChannel(
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->handle == (HANDLE) handle) {
-	    return (permissions==infoPtr->validMask) ? infoPtr->channel : NULL;
+	    return ((permissions & (TCL_READABLE|TCL_WRITABLE|TCL_EXCEPTION))==infoPtr->validMask) ? infoPtr->channel : NULL;
 	}
     }
 
@@ -1300,7 +1300,7 @@ OpenFileChannel(
      */
 
     infoPtr->nextPtr = NULL;
-    infoPtr->validMask = permissions;
+    infoPtr->validMask = permissions & (TCL_READABLE|TCL_WRITABLE|TCL_EXCEPTION);
     infoPtr->watchMask = 0;
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;

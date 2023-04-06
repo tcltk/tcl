@@ -7500,10 +7500,7 @@ test io-52.9 {TclCopyChannel & encodings} {fcopy} {
 	    [file size $path(utf8-fcopy.txt)] \
 	    [file size $path(utf8-rp.txt)]
 } {3 5 5}
-test io-52.10 {TclCopyChannel & encodings} {fcopy} {
-    # encoding to binary (=> implies that the
-    # internal utf-8 is written)
-
+test io-52.10 {TclCopyChannel & encodings} -constraints fcopy -body {
     set in  [open $path(kyrillic.txt) r]
     set out [open $path(utf8-fcopy.txt) w]
 
@@ -7516,29 +7513,31 @@ test io-52.10 {TclCopyChannel & encodings} {fcopy} {
     close $out
 
     file size $path(utf8-fcopy.txt)
-} 5
+} -returnCodes 1 -match glob -result {error writing "*":\
+    invalid or incomplete multibyte or wide character}
 test io-52.11 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
-    fconfigure $out -encoding utf-8 -translation lf
-    puts $out "АА"
+    fconfigure $out -encoding utf-8 -translation lf -profile strict
+    puts $out АА
     close $out
 } -constraints {fcopy} -body {
-    # binary to encoding => the input has to be
-    # in utf-8 to make sense to the encoder
-
     set in  [open $path(utf8-fcopy.txt) r]
     set out [open $path(kyrillic.txt) w]
-
     # -translation binary is also -encoding binary
     fconfigure $in  -translation binary
-    fconfigure $out -encoding koi8-r -translation lf
-
-    fcopy $in $out
-    close $in
-    close $out
-
-    file size $path(kyrillic.txt)
-} -result 3
+    fconfigure $out -encoding koi8-r -translation lf -profile strict
+    catch {fcopy $in $out} cres copts
+	return $cres
+} -cleanup {
+	if {$in in [chan names]} {
+		close $in
+	}
+	if {$out in [chan names]} {
+		close $out
+	}
+    catch {unset cres}
+} -match glob -result  {error writing "*": invalid or incomplete\
+	multibyte or wide character}
 
 test io-52.12 {coverage of -translation auto} {
     file delete $path(test1) $path(test2)
@@ -7779,6 +7778,29 @@ test io-52.23 {TclCopyChannel & encodings} -setup {
     close $out
     unset ::s0
 } -match glob -result {0 {error writing "file*": invalid or incomplete multibyte or wide character}}
+
+test io-52.24 {fcopy -size should always be characters} -setup {
+    set out [open utf8-fcopy-52.24.txt w]
+    fconfigure $out -encoding utf-8 -translation lf
+    puts $out "Á"
+    close $out
+} -constraints {fcopy} -body {
+    set in  [open utf8-fcopy-52.24.txt r]
+    set out [open utf8-fcopy-52.24.out.txt w+]
+
+    fconfigure $in  -encoding utf-8 -profile tcl8
+    fconfigure $out -encoding utf-8 -profile tcl8
+    fcopy $in $out -size 1
+	seek $out 0
+	# a result of \xc3 means that only the first byte of the utf-8 encoding of
+	# Á made it into to the output file.
+	read $out
+} -cleanup {
+    close $in
+    close $out
+	catch {file delete utf8-fcopy-52.24.txt}
+    catch {file delete utf8-fcopy-52.24.out.txt}
+} -result Á
 
 
 test io-53.1 {CopyData} {fcopy} {
@@ -8276,7 +8298,7 @@ test io-53.11 {Bug 2895565} -setup {
     removeFile out
     removeFile in
 } -result {40 bytes copied}
-test io-53.12 {CopyData: foreground short reads, aka bug 3096275} {stdio unix fcopy} {
+test io-53.12.0 {CopyData: foreground short reads, aka bug 3096275} {stdio unix fcopy} {
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
     puts -nonewline $f1 {
@@ -8295,6 +8317,32 @@ test io-53.12 {CopyData: foreground short reads, aka bug 3096275} {stdio unix fc
     close $f1
     list $::done $ch
 } {ok A}
+test io-53.12.1 {
+    Issue 9ca87e6286262a62.
+    CopyData: foreground short reads via ReadChars().
+    Related to report 3096275 for ReadBytes().
+
+    Prior to the fix this test waited forever for read() to return.
+} {stdio unix fcopy} {
+    file delete $path(output)
+    set f1 [open $path(output) w]
+    puts -nonewline $f1 {
+	chan configure stdin -encoding iso8859-1 -translation lf -buffering none
+	fcopy stdin stdout
+    }
+    close $f1
+    set f1 [open "|[list [info nameofexecutable] $path(output)]" r+]
+    try {
+	chan configure $f1 -encoding utf-8  -buffering none
+	puts -nonewline $f1 A
+	set ch [read $f1 1]
+    } finally {
+	if {$f1 in [chan names]} {
+	    close $f1
+	}
+    }
+    lindex $ch
+} A
 test io-53.13 {TclCopyChannel: read error reporting} -setup {
     proc driver {cmd args} {
         variable buffer
@@ -8324,7 +8372,7 @@ test io-53.13 {TclCopyChannel: read error reporting} -setup {
     catch {close $out}
     removeFile out
     rename driver {}
-} -result {error reading "*": *} -returnCodes error -match glob
+} -result {error reading "rc*": *} -returnCodes error -match glob
 test io-53.14 {TclCopyChannel: write error reporting} -setup {
     proc driver {cmd args} {
         variable buffer
@@ -9214,7 +9262,7 @@ test io-75.5 {invalid utf-8 encoding read is ignored (-profile tcl8)} -setup {
     removeFile io-75.5
 } -result 4181
 
-test io-75.6 {invalid utf-8 encoding gets is not ignored (-profile strict)} -setup {
+test io-75.6 {invalid utf-8 encoding, gets is not ignored (-profile strict)} -setup {
     set fn [makeFile {} io-75.6]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9228,7 +9276,8 @@ test io-75.6 {invalid utf-8 encoding gets is not ignored (-profile strict)} -set
 } -cleanup {
     close $f
     removeFile io-75.6
-} -match glob -returnCodes 1 -result {error reading "*": invalid or incomplete multibyte or wide character}
+} -match glob -returnCodes 1 -result {error reading "file*":\
+	invalid or incomplete multibyte or wide character}
 
 test io-75.7 {invalid utf-8 encoding gets is not ignored (-profile strict)} -setup {
     set fn [makeFile {} io-75.7]
@@ -9244,7 +9293,8 @@ test io-75.7 {invalid utf-8 encoding gets is not ignored (-profile strict)} -set
 } -cleanup {
     close $f
     removeFile io-75.7
-} -match glob -returnCodes 1 -result {error reading "*": invalid or incomplete multibyte or wide character}
+} -match glob -returnCodes 1 -result {error reading "file*":\
+    invalid or incomplete multibyte or wide character}
 
 test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.8]
@@ -9280,10 +9330,11 @@ test io-75.9 {unrepresentable character write passes and is replaced by ?} -setu
     removeFile io-75.9
 } -match glob -result [list {A} {error writing "*": invalid or incomplete multibyte or wide character}]
 
-# Incomplete sequence test.
-# This error may IMHO only be detected with the close.
-# But the read already returns the incomplete sequence.
-test io-75.10 {incomplete multibyte encoding read is ignored} -setup {
+test io-75.10 {
+    incomplete multibyte encoding read is not ignored because "binary" sets
+    profile to strict
+} -setup {
+    set res {}
     set fn [makeFile {} io-75.10]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9292,13 +9343,21 @@ test io-75.10 {incomplete multibyte encoding read is ignored} -setup {
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none
 } -body {
+    catch {read $f} errmsg
+    lappend res $errmsg
+    seek $f 0
+    chan configure $f -profile tcl8
     set d [read $f]
     binary scan $d H* hd
-    set hd
+    lappend res $hd
+    return $res
 } -cleanup {
     close $f
     removeFile io-75.10
-} -result 41c0
+    unset result
+} -match glob -result {{error reading "file*":\
+    invalid or incomplete multibyte or wide character} 41c0}
+
 # The current result returns the orphan byte as byte.
 # This may be expected due to special utf-8 handling.
 
@@ -9322,9 +9381,14 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
 } -cleanup {
     close $f
     removeFile io-75.11
-} -match glob -result {41 1 {error reading "*": invalid or incomplete multibyte or wide character}}
+} -match glob -result {41 1 {error reading "file*":\
+    invalid or incomplete multibyte or wide character}}
 
-test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
+test io-75.12 {
+    invalid utf-8 encoding read is not ignored because setting the encoding to
+    "binary" also set the profile to strict
+} -setup {
+    set res {}
     set fn [makeFile {} io-75.12]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9333,13 +9397,20 @@ test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf
 } -body {
+    catch {read $f} errmsg
+    lappend res $errmsg
+    chan configure $f -profile tcl8
+    seek $f 0
     set d [read $f]
     binary scan $d H* hd
-    set hd
+    lappend res $hd
+    return $res
 } -cleanup {
     close $f
     removeFile io-75.12
-} -result 4181
+    unset res
+} -match glob -result {{error reading "file*":\
+    invalid or incomplete multibyte or wide character} 4181}
 test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -setup {
     set fn [makeFile {} io-75.13]
     set f [open $fn w+]
@@ -9357,7 +9428,7 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -se
 } -cleanup {
     close $f
     removeFile io-75.13
-} -match glob -result {41 1 {error reading "*": invalid or incomplete multibyte or wide character}}
+} -match glob -result {41 1 {error reading "file*": invalid or incomplete multibyte or wide character}}
 
 # ### ### ### ######### ######### #########
 
