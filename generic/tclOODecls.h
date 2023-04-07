@@ -69,8 +69,8 @@ TCLAPI Tcl_Method	Tcl_NewMethod(Tcl_Interp *interp, Tcl_Class cls,
 /* 13 */
 TCLAPI Tcl_Object	Tcl_NewObjectInstance(Tcl_Interp *interp,
 				Tcl_Class cls, const char *nameStr,
-				const char *nsNameStr, size_t objc,
-				Tcl_Obj *const *objv, size_t skip);
+				const char *nsNameStr, Tcl_Size objc,
+				Tcl_Obj *const *objv, Tcl_Size skip);
 /* 14 */
 TCLAPI int		Tcl_ObjectDeleted(Tcl_Object object);
 /* 15 */
@@ -81,7 +81,7 @@ TCLAPI Tcl_Method	Tcl_ObjectContextMethod(Tcl_ObjectContext context);
 /* 17 */
 TCLAPI Tcl_Object	Tcl_ObjectContextObject(Tcl_ObjectContext context);
 /* 18 */
-TCLAPI size_t		Tcl_ObjectContextSkippedArgs(
+TCLAPI Tcl_Size		Tcl_ObjectContextSkippedArgs(
 				Tcl_ObjectContext context);
 /* 19 */
 TCLAPI void *		Tcl_ClassGetMetadata(Tcl_Class clazz,
@@ -99,8 +99,8 @@ TCLAPI void		Tcl_ObjectSetMetadata(Tcl_Object object,
 				void *metadata);
 /* 23 */
 TCLAPI int		Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
-				Tcl_ObjectContext context, size_t objc,
-				Tcl_Obj *const *objv, size_t skip);
+				Tcl_ObjectContext context, Tcl_Size objc,
+				Tcl_Obj *const *objv, Tcl_Size skip);
 /* 24 */
 TCLAPI Tcl_ObjectMapMethodNameProc * Tcl_ObjectGetMethodNameMapper(
 				Tcl_Object object);
@@ -159,17 +159,17 @@ typedef struct TclOOStubs {
     Tcl_Obj * (*tcl_MethodName) (Tcl_Method method); /* 10 */
     Tcl_Method (*tcl_NewInstanceMethod) (Tcl_Interp *interp, Tcl_Object object, Tcl_Obj *nameObj, int flags, const Tcl_MethodType *typePtr, void *clientData); /* 11 */
     Tcl_Method (*tcl_NewMethod) (Tcl_Interp *interp, Tcl_Class cls, Tcl_Obj *nameObj, int flags, const Tcl_MethodType *typePtr, void *clientData); /* 12 */
-    Tcl_Object (*tcl_NewObjectInstance) (Tcl_Interp *interp, Tcl_Class cls, const char *nameStr, const char *nsNameStr, size_t objc, Tcl_Obj *const *objv, size_t skip); /* 13 */
+    Tcl_Object (*tcl_NewObjectInstance) (Tcl_Interp *interp, Tcl_Class cls, const char *nameStr, const char *nsNameStr, Tcl_Size objc, Tcl_Obj *const *objv, Tcl_Size skip); /* 13 */
     int (*tcl_ObjectDeleted) (Tcl_Object object); /* 14 */
     int (*tcl_ObjectContextIsFiltering) (Tcl_ObjectContext context); /* 15 */
     Tcl_Method (*tcl_ObjectContextMethod) (Tcl_ObjectContext context); /* 16 */
     Tcl_Object (*tcl_ObjectContextObject) (Tcl_ObjectContext context); /* 17 */
-    size_t (*tcl_ObjectContextSkippedArgs) (Tcl_ObjectContext context); /* 18 */
+    Tcl_Size (*tcl_ObjectContextSkippedArgs) (Tcl_ObjectContext context); /* 18 */
     void * (*tcl_ClassGetMetadata) (Tcl_Class clazz, const Tcl_ObjectMetadataType *typePtr); /* 19 */
     void (*tcl_ClassSetMetadata) (Tcl_Class clazz, const Tcl_ObjectMetadataType *typePtr, void *metadata); /* 20 */
     void * (*tcl_ObjectGetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType *typePtr); /* 21 */
     void (*tcl_ObjectSetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType *typePtr, void *metadata); /* 22 */
-    int (*tcl_ObjectContextInvokeNext) (Tcl_Interp *interp, Tcl_ObjectContext context, size_t objc, Tcl_Obj *const *objv, size_t skip); /* 23 */
+    int (*tcl_ObjectContextInvokeNext) (Tcl_Interp *interp, Tcl_ObjectContext context, Tcl_Size objc, Tcl_Obj *const *objv, Tcl_Size skip); /* 23 */
     Tcl_ObjectMapMethodNameProc * (*tcl_ObjectGetMethodNameMapper) (Tcl_Object object); /* 24 */
     void (*tcl_ObjectSetMethodNameMapper) (Tcl_Object object, Tcl_ObjectMapMethodNameProc *mapMethodNameProc); /* 25 */
     void (*tcl_ClassSetConstructor) (Tcl_Interp *interp, Tcl_Class clazz, Tcl_Method method); /* 26 */
