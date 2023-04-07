@@ -73,11 +73,11 @@ The following elements of \fBenv\fR are special to Tcl:
 \fBenv(HOME)\fR
 .
 This environment variable, if set, gives the location of the directory
-considered to be the current user's home directory, and to which a
-call of \fBcd\fR without arguments or with just
-.QW ~
-as an argument will change into. Most platforms set this correctly by
-default; it does not normally need to be set by user code.
+considered to be the current user's home directory. The value of this variable
+is returned by the \fBfile home\fR command. Most platforms set this correctly by
+default; it does not normally need to be set by user code. On Windows, if not
+already set, it is set to the value of the \fBUSERPROFILE\fR environment
+variable.
 .TP
 \fBenv(TCL_LIBRARY)\fR
 .
