@@ -41,6 +41,7 @@ proc bigtest {id comment result args} {
                    {*}$args]
 
     return
+
     # TODO - is this required separately from the compile-script above?
     dict append args -setup \n[list proc testxproc {} $body]
     dict append args -cleanup "\nrename testxproc {}"
@@ -50,7 +51,37 @@ proc bigtest {id comment result args} {
                    {*}$args]
 }
 
+# Like bigtest except that both compiled and uncompiled are combined into one
+# test using the same inout argument. This saves considerable time but for
+# obvious reasons should only be used when the input argument is not modified.
+proc bigtestRO {id comment result args} {
+    if {[dict exists $args -body]} {
+        set body [dict get $args -body]
+        dict unset args -body
+    } else {
+        set body $comment
+    }
+    dict lappend args -constraints bigdata
+
+    set wrapper ""
+    set body "{$body}"
+    append wrapper "set uncompiled_result \[testevalex $body]" \n
+    append wrapper "set compiled_result \[try $body]" \n
+    append wrapper {list $uncompiled_result $compiled_result}
+    uplevel 1 [list test $id {$comment} \
+                   -body $wrapper \
+                   -result [list $result $result] \
+                   {*}$args]
+    return
+}
+
 interp alias {} bigString {} testbigdata string
+proc xxbigString args {
+    puts bigStringEnter:$args
+    set xx [testbigdata string {*}$args]
+    puts bigStringExit
+    return $xx
+}
 interp alias {} bigBinary {} testbigdata bytearray
 interp alias {} bigList {} testbigdata list
 proc bigPatLen {} {
@@ -100,21 +131,17 @@ bigtest string-cat-bigdata-3 "string cat result > UINT_MAX" 1 -body {
 
 #
 # string compare/equal
-bigtest string-equal/compare-bigdata-1 "string compare/equal equal strings" {0 1} -cleanup {
-    unset -nocomplain s1 s2
-} -body {
+bigtestRO string-equal/compare-bigdata-1 "string compare/equal equal strings" {0 1} -body {
+    list [string compare $s1 $s2] [string equal $s1 $s2]
+} -setup {
     set len [expr {$::bigLengths(intmax)+1}]
     set s1 [bigString $len]
     set s2 [bigString $len]; # Use separate string to avoid Tcl_Obj * being same
-    list [string compare $s1 $s2] [string equal $s1 $s2]
-}
-bigtest string-equal/compare-bigdata-2 "string compare/equal -length unequal strings" {-1 0 0 1 -1 0} -cleanup {
+} -cleanup {
     unset -nocomplain s1 s2
-} -body {
+}
+bigtestRO string-equal/compare-bigdata-2 "string compare/equal -length unequal strings" {-1 0 0 1} -body {
     # Also tests lengths do not wrap
-    set len [expr {$::bigLengths(uintmax)+2}]
-    set s1 [bigString $len]
-    set s2 [bigString $len $len]; # Differs in last char
     set result {}
     lappend result [string compare $s1 $s2]
     lappend result [string equal $s1 $s2]
@@ -122,71 +149,189 @@ bigtest string-equal/compare-bigdata-2 "string compare/equal -length unequal str
     # Also that lengths do not truncate to sizeof(int)
     lappend result [string compare -length $len $s1 $s2]
     lappend result [string equal -length $len $s1 $s2]
+} -setup {
+    set len [expr {$::bigLengths(uintmax)+2}]
+    set s1 [bigString $len]
+    set s2 [bigString $len $len]; # Differs in last char
+} -cleanup {
+    unset -nocomplain s1 s2
 }
 
 #
 # string first
-test string-first-bigdata-0 "string first > INT_MAX" -result {2147483648 -1 2147483650 1} -cleanup {
-    unset -nocomplain s
-} -body {
-    set s [bigString 0x8000000a 0x80000000]
+bigtestRO string-first-bigdata-1 "string first > INT_MAX" {2147483648 -1 2147483650 1} -body {
     list \
         [string first X $s] \
         [string first Y $s] \
         [string first 0 $s 0x80000000] \
         [string first 1 $s end-0x80000010]
-}
-bigtest string-first-bigdata-1 "string first > INT_MAX" {2147483648 -1 2147483650 1} -cleanup {
-    unset -nocomplain s
-} -body {
+} -setup {
     set s [bigString 0x8000000a 0x80000000]
-    list \
-        [string first X $s] \
-        [string first Y $s] \
-        [string first 0 $s 0x80000000] \
-        [string first 1 $s end-0x80000010]
-}
-bigtest xstring-first-bigdata-2 "string first > UINT_MAX" {4294967296 -1 4294967300 1} -cleanup {
+} -cleanup {
     unset -nocomplain s
-} -body {
-    set s [bigString 0x10000000a 0x100000000]
+} -constraints bug-a814ee5bbd
+
+bigtestRO string-first-bigdata-2 "string first > UINT_MAX" {4294967296 -1 4294967300 1} -body {
     list \
         [string first X $s] \
         [string first Y $s] \
         [string first 0 $s 0x100000000] \
         [string first 1 $s end-0x100000010]
-}
+} -setup {
+    set s [bigString 0x10000000a 0x100000000]
+} -cleanup {
+    unset -nocomplain s
+} -constraints bug-a814ee5bbd
+
+bigtestRO string-first-bigdata-3 "string first - long needle" 10 -body {
+    string first $needle $s
+} -setup {
+    set s [bigString 0x10000000a 0]
+    set needle [bigString 0x100000000]
+} -cleanup {
+    unset -nocomplain s needle
+} -constraints bug-a814ee5bbd
 
 #
 # string last
-bigtest string-last-bigdata-1 "string last > INT_MAX" {2 -1 2147483640 11} -cleanup {
-    unset -nocomplain s
-} -body {
+bigtestRO string-last-bigdata-1 "string last > INT_MAX" {2 -1 2147483640 11} -body {
     set s [bigString 0x80000010 2]
     list \
         [string last X $s] \
         [string last Y $s] \
         [string last 0 $s 0x80000000] \
         [string last 1 $s end-0x80000000]
-}
-bigtest string-first/last-bigdata-2 "string first > UINT_MAX" {4294967296 -1 4294967300 1} -cleanup {
+} -setup {
+    set s [bigString 0x80000010 2]
+} -cleanup {
     unset -nocomplain s
-} -body {
-    set s [bigString 0x10000000a 0x100000000]
+} -constraints bug-a814ee5bbd
+
+bigtestRO string-last-bigdata-2 "string last > UINT_MAX" {4294967300 -1 4294967290 1} -body {
     list \
-        [string first X $s] \
-        [string first Y $s] \
-        [string first 0 $s 0x100000000] \
-        [string first 1 $s end-0x100000010]
+        [string last 0 $s] \
+        [string last Y $s] \
+        [string last 0 $s 0x100000000] \
+        [string last 1 $s end-0x100000010]
+} -setup {
+    set s [bigString 0x10000000a 2]
+} -cleanup {
+    unset -nocomplain s
+} -constraints bug-a814ee5bbd
+
+bigtestRO string-last-bigdata-3 "string last - long needle" 0 -body {
+    string last $needle $s
+} -setup {
+    set s [bigString 0x10000000a 0x10000000a]
+    set needle [bigString 0x100000000]
+} -cleanup {
+    unset -nocomplain s needle
+} -constraints bug-a814ee5bbd
+
+bigtestRO string-index-bigdata-1 "string index" {6 7 5 {} 5 4 {} 9 {}} -body {
+    list \
+        [string index $s 0x100000000] \
+        [string index $s 0x100000000+1] \
+        [string index $s 0x100000000-1] \
+        [string index $s 0x10000000a] \
+        [string index $s end] \
+        [string index $s end-1] \
+        [string index $s end+1] \
+        [string index $s end-0x100000000] \
+        [string index $s end-0x10000000a]
+} -setup {
+    set s [bigString 0x10000000a]
+} -cleanup {
+    unset -nocomplain s
 }
 
-foreach len {0x7fffffff 0xffffffff 0x800000000} {
-    break; # Skip for now
+#
+# string is
+bigtestRO string-is-bigdata-1 "string is" {1 0 0 4294967296} -body {
+    set result {}
+    unset -nocomplain failat
+    lappend result [string is alnum -failindex failat $s] [info exists failat]
+    lappend result [string is digit -failindex failat $s] $failat
+} -setup {
+    set s [bigString 0x10000000a 0x100000000]
+} -cleanup {
+    unset -nocomplain s failat
+}
+
+#
+# string length
+bigtestRO string-length-bigdata-1 {string length $s} 4294967296 -setup {
+    set s [bigString 0x100000000]
+} -cleanup {
+    unset -nocomplain s
+}
+
+#
+# string map
+bigtestRO string-map-bigdata-1 {string map} {5 0 0 5} -body {
+    set s2 [string map {0 5 5 0} $s]
+    list \
+        [string index $s2 0] \
+        [string index $s2 5] \
+        [string index $s2 end] \
+        [string index $s2 end-5]
+} -setup {
+    set s [bigString 0x100000000]
+} -cleanup {
+    unset -nocomplain s s2
+}
+
+#
+# string match
+bigtestR0 string-match-bigdata-1 {string match} {1 0 1} -body {
+    list \
+        [string match 0*5 $s] \
+        [string match 0*4 $s] \
+        [string match $s $s]
+} -setup {
+    set s [bigString 0x100000000]
+} -cleanup {
+    unset -nocomplain s pat
+}
+
+#
+# string range
+bigtestRO string-range-bigdata-1 "string range" {6 7 5 {} 5 4 {} 9 {}} -body {
+    list \
+        [string range $s 0x100000000 0x100000000] \
+        [string range $s 0x100000000+1 0x100000000+1] \
+        [string range $s 0x100000000-1 0x100000000-1] \
+        [string range $s 0x10000000a 0x10000000a] \
+        [string range $s end end] \
+        [string range $s end-1 end-1] \
+        [string range $s end+1 end+1] \
+        [string range $s end-0x100000000 end-0x100000000] \
+        [string range $s end-0x10000000a end-0x10000000a]
+} -setup {
+    set s [bigString 0x10000000a]
+} -cleanup {
+    unset -nocomplain s
+} -constraints bug-ad9361fd20f0
+# TODO - once above bug is fixed, add tests for large result range
+
+#
+# string repeat
+bigtest string-repeat-bigdata-1 "string repeat single char" {4294967296 0123456789abcdef 0123456789abcdef} -body {
+    set s [string repeat 0123456789abcdef [expr 0x100000000/16]]
+    list \
+        [string length $s] \
+        [string range $s 0 15] \
+        [string range $s end-15 end]
+} -cleanup {
+    unset -nocomplain s
+}
+
+foreach len {0x7fffffff 0xffffffff 0x100000000} {
     set body "string length \[string repeat x $len\]"
-    bigtest lrepeat-bigdata-1-$len $body $len
+    bigtest string-repeat-bigdata-1-$len $body $len
 }
 
-foreach len {0x7fffffff 0xffffffff 0x800000000} {
+foreach len {0x7fffffff 0xffffffff 0x100000000} {
     break; # Skip for now
     set body "llength \[lrepeat $len x\]"
     bigtest lrepeat-bigdata-1-$len $body $len
