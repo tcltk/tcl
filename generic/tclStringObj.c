@@ -701,7 +701,7 @@ TclGetUnicodeFromObj(
     if (lengthPtr != NULL) {
 	if (stringPtr->numChars > INT_MAX) {
 	    Tcl_Panic("Tcl_GetUnicodeFromObj with 'int' lengthPtr"
-		    "cannot handle such long strings. Please use 'Tcl_Size'");
+		    " cannot handle such long strings. Please use 'Tcl_Size'");
 	}
 	*lengthPtr = (int)stringPtr->numChars;
     }

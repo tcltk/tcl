@@ -242,10 +242,7 @@ must be relative to the actual \fIlinkName\fR's location (not to the
 cwd), but on all other platforms where relative links are not supported,
 target paths will always be converted to absolute, normalized form
 before the link is created (and therefore relative paths are interpreted
-as relative to the cwd).  Furthermore,
-.QW ~user
-paths are always expanded
-to absolute form.  When creating links on filesystems that either do not
+as relative to the cwd). When creating links on filesystems that either do not
 support any links, or do not support the specific type requested, an
 error message will be returned.  Most Unix platforms support both
 symbolic and hard links (the latter for files only). Windows
@@ -571,7 +568,7 @@ interface) but the name passed to the operating system must be in
 native format:
 .PP
 .CS
-exec {*}[auto_execok start] {} [\fBfile nativename\fR ~/example.txt]
+exec {*}[auto_execok start] {} [\fBfile nativename\fR C:/Users/fred/example.txt]
 .CE
 .SH "SEE ALSO"
 filename(n), open(n), close(n), eof(n), gets(n), tell(n), seek(n),

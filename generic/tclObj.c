@@ -1702,7 +1702,7 @@ TclGetStringFromObj(
     if (lengthPtr != NULL) {
 	if (objPtr->length > INT_MAX) {
 	    Tcl_Panic("Tcl_GetStringFromObj with 'int' lengthPtr"
-		    "cannot handle such long strings. Please use 'size_t'");
+		    " cannot handle such long strings. Please use 'size_t'");
 	}
 	*lengthPtr = (int)objPtr->length;
     }
