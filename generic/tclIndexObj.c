@@ -813,8 +813,7 @@ Tcl_WrongNumArgs(
 				 * NULL. */
 {
     Tcl_Obj *objPtr;
-    Tcl_Size i;
-    size_t len, elemLen;
+    Tcl_Size i, len, elemLen;
     char flags;
     Interp *iPtr = (Interp *)interp;
     const char *elementStr;
@@ -1277,13 +1276,13 @@ PrintUsage(
 
     width = 4;
     for (infoPtr = argTable; infoPtr->type != TCL_ARGV_END; infoPtr++) {
-	size_t length;
+	Tcl_Size length;
 
 	if (infoPtr->keyStr == NULL) {
 	    continue;
 	}
 	length = strlen(infoPtr->keyStr);
-	if (length > (size_t)width) {
+	if (length > width) {
 	    width = length;
 	}
     }

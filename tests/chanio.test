@@ -6868,8 +6868,7 @@ test chan-io-52.9 {TclCopyChannel & encodings} {fcopy} {
 	    [file size $path(utf8-fcopy.txt)] \
 	    [file size $path(utf8-rp.txt)]
 } {3 5 5}
-test chan-io-52.10 {TclCopyChannel & encodings} {fcopy notWinCI} {
-    # encoding to binary (=> implies that the internal utf-8 is written)
+test chan-io-52.10 {TclCopyChannel & encodings} -constraints {fcopy} -body {
     set in  [open $path(kyrillic.txt) r]
     set out [open $path(utf8-fcopy.txt) w]
     chan configure $in  -encoding koi8-r -translation lf
@@ -6879,7 +6878,8 @@ test chan-io-52.10 {TclCopyChannel & encodings} {fcopy notWinCI} {
     chan close $in
     chan close $out
     file size $path(utf8-fcopy.txt)
-} 5
+} -returnCodes 1 -match glob -result {error writing "*":\
+	invalid or incomplete multibyte or wide character}
 test chan-io-52.11 {TclCopyChannel & encodings} -setup {
     set f [open $path(utf8-fcopy.txt) w]
     fconfigure $f -encoding utf-8 -translation lf

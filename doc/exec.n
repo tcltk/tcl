@@ -449,7 +449,7 @@ encrypted so that only the current user can access it requires use of
 the \fICIPHER\fR command, like this:
 .PP
 .CS
-set secureDir "~/Desktop/Secure Directory"
+set secureDir [file join [file home] Desktop/SecureDirectory]
 file mkdir $secureDir
 \fBexec\fR CIPHER /e /s:[file nativename $secureDir]
 .CE
