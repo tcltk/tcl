@@ -666,6 +666,16 @@ if test $tcl_ok = yes; then
 fi
 AC_MSG_RESULT([$tcl_ok])
 
+AC_MSG_CHECKING([whether to use Tcl 8 compatibility API])
+AC_ARG_ENABLE(tcl8api,
+    AS_HELP_STRING([--enable-tcl8api],
+	[enable the Tcl 8 compatibility API (default: on)]),
+    [tcl_ok=$enableval], [tcl_ok=yes])
+if test $tcl_ok = yes; then
+    AC_DEFINE(TCL_8_API, 1, [Tcl 8 compatibility API enabled?])
+fi
+AC_MSG_RESULT([$tcl_ok])
+
 #------------------------------------------------------------------------
 #	Check whether the timezone data is supplied by the OS or has
 #	to be installed by Tcl. The default is autodetection, but can
