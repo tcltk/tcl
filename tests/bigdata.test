@@ -5,6 +5,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
+# These are very rudimentary tests for large size arguments to commands.
+# Any more substantive tests are not practical because of the run time.
+
 if {"::tcltest" ni [namespace children]} {
     package require tcltest
 
@@ -12,12 +15,12 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 #
-# Hints:
-#
-# - To save time, when commands do not modify operands, generate the test data
-# and run multiple variants of the command in a single test.
-# - Do NOT use -setup clauses that generate large data. They seem to be run
-# irrespective of whether the test itself is run.
+# bigtest and bigtestRO (RO->read only) generate compiled and uncompiled
+# versions of the given test script. The difference between the two is
+# that bigtest generates separate test instances for the two cases while
+# bigtestRO generates a single test case covering both. The latter can
+# only be used when operands are not modified and when combining tests
+# does not consume too much additional memory.
 
 # Wrapper to generate compiled and uncompiled cases for a test.
 # If $args does not contain a -body key, $comment is treated as the test body
@@ -52,7 +55,7 @@ proc bigtest {id comment result args} {
 }
 
 # Like bigtest except that both compiled and uncompiled are combined into one
-# test using the same inout argument. This saves considerable time but for
+# test using the same inout argument. This saves time but for
 # obvious reasons should only be used when the input argument is not modified.
 proc bigtestRO {id comment result args} {
     if {[dict exists $args -body]} {
@@ -76,12 +79,6 @@ proc bigtestRO {id comment result args} {
 }
 
 interp alias {} bigString {} testbigdata string
-proc xxbigString args {
-    puts bigStringEnter:$args
-    set xx [testbigdata string {*}$args]
-    puts bigStringExit
-    return $xx
-}
 interp alias {} bigBinary {} testbigdata bytearray
 interp alias {} bigList {} testbigdata list
 proc bigPatLen {} {
@@ -557,9 +554,76 @@ bigtest format-bigdata-2 "format bigstring%s" 1 -body {
 } -constraints bug-a550f9710b
 # TODO - once above bugs fixed, add tests for width and precision
 
+#
 # scan
+bigtestRO scan-bigdata-1 "scan %s" {1 1 2 1} -body {
+    # Unset explicitly before setting to save memory as bigtestRO runs the
+    # script below twice.
+    unset -nocomplain result digits
+    lappend result [string equal [scan $s %s] $s]
+    lappend result [string equal [scan $s {%[0-9X]}] $s]
+    lappend result [scan $s {%[0-9]%s} digits x] $x
+    lappend result [string equal $digits [bigString 0x100000008]]
+} -setup {
+    set s [bigString 0x10000000a 0x100000009]
+} -cleanup {
+    unset -nocomplain s digits
+} -constraints bug-d4ede611a7
+
+#
 # regexp
+bigtestRO regexp-bigdata-1 "regexp" 1 -body {
+    # Unset explicitly before setting to save memory as bigtestRO runs the
+    # script below twice.
+    unset -nocomplain result digits
+    lappend result [regexp {[[:digit:]]*X} $s]
+} -setup {
+    set s [bigString 0x100000000 0x100000000]
+} -cleanup {
+    unset -nocomplain s digits
+}
+bigtestRO regexp-bigdata-2 "regexp with capture" 1 -body {
+    # Unset explicitly before setting to save memory as bigtestRO runs the
+    # script below twice.
+    unset -nocomplain result digits match
+    lappend result [regexp {([[:digit:]])*X} $s match digits] [string equal $match $s]
+    puts B
+    unset match; # Free up memory
+    lappend result [string equal $digits [bigString 0x100000009]]
+} -setup {
+    set s [bigString 0x10000000a 0x100000009]
+} -cleanup {
+    unset -nocomplain s digits match
+} -constraints takesTooLong
+
+#
 # regsub
+bigtestRO regsub-bigdata-1 "regsub" X -body {
+    regsub -all \\d $s {}
+} -setup {
+    set s [bigString 0x100000001 0x100000000]
+} -cleanup {
+    unset -nocomplain s
+} -constraints takesTooLong
+bigtestRO regsub-bigdata-2 "regsub" 1 -body {
+    string equal [regsub -all \\d $s x] [string cat [string repeat x 0x100000000] X]
+} -setup {
+    set s [bigString 0x100000001 0x100000000]
+} -cleanup {
+    unset -nocomplain s
+} -constraints takesTooLong
+
+#
+# subst
+bigtestRO subst-bigdata-1 "subst" {1 1} -body {
+    unset -nocomplain result
+    lappend result [string equal [subst $s] $s]
+    lappend result [string equal [subst {$s}] $s]
+} -setup {
+    set s [bigString 0x10000000a]
+} -cleanup {
+    unset -nocomplain s
+}
 
 
 # cleanup
