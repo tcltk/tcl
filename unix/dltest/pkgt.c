@@ -16,10 +16,10 @@
 static int TraceProc2 (
     void *clientData,
     Tcl_Interp *interp,
-    Tcl_Size level,
+    ptrdiff_t level,
     const char *command,
     Tcl_Command commandInfo,
-    Tcl_Size objc,
+	ptrdiff_t objc,
     struct Tcl_Obj *const *objv)
 {
     (void)clientData;
@@ -55,12 +55,12 @@ static int
 Pkgt_EqObjCmd2(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,			/* Number of arguments. */
+	ptrdiff_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_WideInt result;
     const char *str1, *str2;
-    Tcl_Size len1, len2;
+    ptrdiff_t len1, len2;
     (void)dummy;
 
     if (objc != 3) {
