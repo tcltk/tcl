@@ -272,7 +272,8 @@ ThreadObjCmd(
     }
     case THREAD_CREATE: {
 	const char *script;
-	int joinable, len;
+	int joinable;
+	Tcl_Size len;
 
 	if (objc == 2) {
 	    /*
