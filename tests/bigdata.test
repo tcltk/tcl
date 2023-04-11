@@ -6,7 +6,9 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 # These are very rudimentary tests for large size arguments to commands.
-# Any more substantive tests are not practical because of the run time.
+# They do not exercise all possible options, shared/unshared Tcl_Objs,
+# literal/variable arguments etc. all of which exercise different code
+# paths. But more substantive tests are not practical because of the run time.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest
@@ -624,6 +626,130 @@ bigtestRO subst-bigdata-1 "subst" {1 1} -body {
 } -cleanup {
     unset -nocomplain s
 }
+
+#
+# binary format
+bigtestRO binary-format-bigdata-1 "binary format aN" 4294967296 -body {
+    # Unset explicitly before setting to save memory as bigtestRO runs the
+    # script below twice.
+    unset -nocomplain bin
+    set bin [binary format a4294967296 X]
+    string length $bin
+} -cleanup {
+    unset -nocomplain bin
+} -constraints bug-9369f83649
+# TODO - do string compare and add other format specifiers once above bug is fixed
+
+bigtestRO binary-format-bigdata-2 "binary format a*" 1 -body {
+    # Unset explicitly before setting to save memory as bigtestRO runs the
+    # script below twice.
+    unset -nocomplain bin2
+    set bin2 [binary format a* $bin]
+    string equal $bin $bin2
+} -setup {
+    set bin [bigBinary 4294967296]
+} -cleanup {
+    unset -nocomplain bin bin2
+}
+
+#
+# binary scan
+bigtestRO binary-scan-bigdata-1 "binary scan aN" 4294967296 -body {
+    # Unset explicitly before setting to save memory as bigtestRO runs the
+    # script below twice.
+    unset -nocomplain bin2
+    binary scan $bin a4294967296 bin2
+    string length $bin2
+} -setup {
+    set bin [bigBinary 4294967296]
+} -cleanup {
+    unset -nocomplain bin bin2
+} -constraints bug-9369f83649
+# TODO - do string compare and add other format specifiers once above bug is fixed
+
+bigtestRO binary-scan-bigdata-2 "binary scan a*" 1 -body {
+    # Unset explicitly before setting to save memory as bigtestRO runs the
+    # script below twice.
+    unset -nocomplain bin2
+    binary scan $bin a* bin2
+    string equal $bin $bin2
+} -setup {
+    set bin [bigBinary 4294967296]
+} -cleanup {
+    unset -nocomplain bin bin2
+}
+# TODO - do string compare and add other format specifiers once above bug is fixed
+
+#
+# binary encode / decode base64
+bigtestRO binary-encode/decode-base64-bigdata-1 "binary encode/decode base64" 1 -body {
+    # Unset explicitly before setting to save memory as bigtestRO runs the
+    # script below twice.
+    string equal $bin [binary decode base64 [binary encode base64 $bin]]
+} -setup {
+    set bin [bigBinary 4294967296]
+} -cleanup {
+    unset -nocomplain bin bin2
+} -constraints bug-c719fa8716
+
+#
+# binary encode / decode hex
+bigtestRO binary-encode/decode-hex-bigdata-1 "binary encode/decode hex" 1 -body {
+    # Unset explicitly before setting to save memory as bigtestRO runs the
+    # script below twice.
+    string equal $bin [binary decode hex [binary encode hex $bin]]
+} -setup {
+    set bin [bigBinary 4294967296]
+} -cleanup {
+    unset -nocomplain bin bin2
+}
+
+#
+# binary encode / decode uuencode
+bigtestRO binary-encode/decode-uuencode-bigdata-1 "binary encode/decode uuencode" 1 -body {
+    string equal $bin [binary decode uuencode [binary encode uuencode $bin]]
+} -setup {
+    set bin [bigBinary 4294967296]
+} -cleanup {
+    unset -nocomplain bin
+} -constraints bug-2e3fed53ba
+
+#
+# lassign
+bigtestRO lassign-bigdata-1 "lassign" {0 1 2 3 4 5 6 7 8 9 1} -body {
+    # Unset explicitly before setting to save memory as bigtestRO runs the
+    # script below twice.
+    set l2 [lassign $l a b c d e f g h i j]
+    list $a $b $c $d $e $f $g $h $i $j [testlutil equal $l2 [bigList 0x100000000]]
+} -setup {
+    set l [bigList 0x10000000a]
+} -cleanup {
+    unset -nocomplain l l2
+} -constraints bug-d90fee06d0
+
+#
+# TODO
+# {*}
+# concat
+# encoding convertfrom
+# encoding convertto
+# foreach
+# lassign
+# list
+# lappend
+# ledit
+# lindex
+# linsert
+# llength
+# lmap
+# lrange
+# lrepeat
+# lreplace
+# lsearch
+# lsort
+# lset
+# split
+
 
 
 # cleanup
