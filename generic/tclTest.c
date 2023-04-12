@@ -2028,7 +2028,7 @@ static int UtfExtWrapper(
     int result;
     int flags;
     Tcl_Obj **flagObjs;
-    int nflags;
+    Tcl_Size nflags;
     static const struct {
 	const char *flagKey;
 	int flag;
@@ -2043,7 +2043,7 @@ static int UtfExtWrapper(
 	{"profilereplace", TCL_ENCODING_PROFILE_REPLACE},
 	{NULL, 0}
     };
-    int i;
+    Tcl_Size i;
     Tcl_WideInt wide;
 
     if (objc < 7 || objc > 10) {
@@ -2418,7 +2418,8 @@ TestevalexObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int length, flags;
+    int flags;
+    Tcl_Size length;
     const char *script;
 
     flags = 0;
@@ -3656,7 +3657,8 @@ TestlinkarrayCmd(
 	TCL_LINK_FLOAT, TCL_LINK_DOUBLE, TCL_LINK_STRING, TCL_LINK_CHARS,
 	TCL_LINK_BINARY
     };
-    int typeIndex, readonly, i, size, length;
+    int typeIndex, readonly, i, size;
+    Tcl_Size length;
     char *name, *arg;
     Tcl_WideInt addr;
 
@@ -4001,7 +4003,8 @@ TestparserObjCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     const char *script;
-    int length, dummy;
+    Tcl_Size dummy;
+    int length;
     Tcl_Parse parse;
 
     if (objc != 3) {
@@ -4057,7 +4060,8 @@ TestexprparserObjCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     const char *script;
-    int length, dummy;
+    Tcl_Size dummy;
+    int length;
     Tcl_Parse parse;
 
     if (objc != 3) {
@@ -4246,7 +4250,8 @@ TestparsevarnameObjCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     const char *script;
-    int append, length, dummy;
+    int length, append;
+    Tcl_Size dummy;
     Tcl_Parse parse;
 
     if (objc != 4) {
@@ -4379,8 +4384,8 @@ TestregexpObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, indices, stringLength, match, about;
-    Tcl_Size ii;
+    int i, indices, match, about;
+    Tcl_Size stringLength, ii;
     int hasxflags, cflags, eflags;
     Tcl_RegExp regExpr;
     const char *string;
@@ -5533,7 +5538,7 @@ TeststringbytesObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int n;
+    Tcl_Size n;
     const unsigned char *p;
 
     if (objc != 2) {
@@ -7269,7 +7274,7 @@ static Tcl_Obj *
 SimpleRedirect(
     Tcl_Obj *pathPtr)		/* Name of file to copy. */
 {
-    int len;
+    Tcl_Size len;
     const char *str;
     Tcl_Obj *origPtr;
 

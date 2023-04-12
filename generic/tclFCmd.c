@@ -1533,7 +1533,7 @@ TclFileTempDirCmd(
     }
 
     if (objc > 1) {
-	int length;
+	Tcl_Size length;
 	Tcl_Obj *templateObj = objv[1];
 	const char *string = Tcl_GetStringFromObj(templateObj, &length);
 	const int onWindows = (tclPlatform == TCL_PLATFORM_WINDOWS);
