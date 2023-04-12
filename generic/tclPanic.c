@@ -144,7 +144,7 @@ Tcl_PanicVA(
  */
 
 /*
- * The following comment is here so that Coverity's static analizer knows that
+ * The following comment is here so that Coverity's static analyzer knows that
  * a Tcl_Panic() call can never return and avoids lots of false positives.
  */
 

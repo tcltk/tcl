@@ -184,7 +184,7 @@ declare 77 {deprecated {}} {
     void TclpGetTime(Tcl_Time *time)
 }
 declare 81 {
-    void *TclpRealloc(void *ptr, unsigned int size)
+    void *TclpRealloc(void *ptr, TCL_HASH_TYPE size)
 }
 declare 88 {deprecated {}} {
     char *TclPrecTraceProc(void *clientData, Tcl_Interp *interp,

@@ -411,7 +411,7 @@ Tcl_PutEnv(
     }
 
     /*
-     * First convert the native string to UTF. Then separate the string into
+     * First convert the native string to Utf. Then separate the string into
      * name and value parts, and call TclSetEnv to do all of the real work.
      */
 

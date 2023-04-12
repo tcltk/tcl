@@ -103,7 +103,7 @@
 	119398]
 
 	* library/init.tcl (unknown): Added specific level parameters to
-	all uplevel invokations to boost performance; didn't dare touch
+	all uplevel invocation to boost performance; didn't dare touch
 	the "namespace inscope" stuff though, since it looks sensitive
 	to me!  Should fix [Bug 123217], though testing is tricky...
 
@@ -348,7 +348,7 @@
 	makeFile/makeDirectory and removeFile/removeDirectory.
 
 	* tests/basic.test: Changed references to tcltest::tclVersion to
-	hardcoded numbers.
+	hard-coded numbers.
 	* generic/tcl.h: Changed reference to tcltest2.tcl and tcltest.tcl in
 	comments to tests/basic.test.
 
@@ -1121,7 +1121,7 @@
 
 2000-06-27  Eric Melski  <ericm@scriptics.com>
 
-	* tests/stringObj.test: Tweaked tests to avoid hardcoded high-ASCII
+	* tests/stringObj.test: Tweaked tests to avoid hard-coded high-ASCII
 	characters (which will fail in multibyte locales); instead used \uXXXX
 	syntax. [Bug: 3842].
 
@@ -1546,7 +1546,7 @@
 	* unix/mkLinks: Regen'd with new mkLinks.tcl.
 
 	* unix/mkLinks.tcl: Fixed indentation, made link setup more
-	intelligent (only do one existance test per man page, instead of one
+	intelligent (only do one existence test per man page, instead of one
 	per function).
 
 	* doc/library.n: Fixed .SH NAME macro to include each function
@@ -1641,7 +1641,7 @@
 2000-04-21  Brent Welch <welch@scriptics.com>
 
 	* library/http2.1/http.tcl: More thrashing with the "server closes
-	without reading post data" scenario. Reverted to the previous filevent
+	without reading post data" scenario. Reverted to the previous fileevent
 	configuratiuon, which seems to work better with small amounts of post
 	data.
 
@@ -2267,7 +2267,7 @@
 	* library/auto.tcl: Fixed the regular expression that performs $
 	escaping before sourcing a file to index. It was erroneously adding \
 	escapes even to $'s that were already escaped, effectively
-	"un-escaping" those $'s. (bug #2611).
+	"unescaping" those $'s. (bug #2611).
 
 2000-01-27  Eric Melski  <ericm@scriptics.com>
 
@@ -2378,7 +2378,7 @@
 
 	* generic/tclVar.c: Changed behavior of variable command when name
 	refers to an element in an array (ie, "variable foo(x)") to always
-	return an error, regardless of existance of that element in the array
+	return an error, regardless of existence of that element in the array
 	(now behavior is consistant with docs too) (bug #981).
 
 2000-01-20  Jeff Hobbs  <hobbs@scriptics.com>

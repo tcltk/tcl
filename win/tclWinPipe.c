@@ -923,12 +923,12 @@ TclpCreateProcess(
 				 * receive no standard input. */
     TclFile outputFile,		/* If non-NULL, gives the file that receives
 				 * output from the child process. If
-				 * outputFile file is not writeable or is
+				 * outputFile file is not writable or is
 				 * NULL, output from the child will be
 				 * discarded. */
     TclFile errorFile,		/* If non-NULL, gives the file that receives
 				 * errors from the child process. If errorFile
-				 * file is not writeable or is NULL, errors
+				 * file is not writable or is NULL, errors
 				 * from the child will be discarded. errorFile
 				 * may be the same as outputFile. */
     Tcl_Pid *pidPtr)		/* If this function is successful, pidPtr is
@@ -3145,7 +3145,7 @@ PipeThreadActionProc(
     /*
      * We do not access firstPipePtr in the thread structures. This is not for
      * all pipes managed by the thread, but only those we are watching.
-     * Removal of the filevent handlers before transfer thus takes care of
+     * Removal of the fileevent handlers before transfer thus takes care of
      * this structure.
      */
 

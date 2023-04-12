@@ -384,7 +384,7 @@ test appendComp-8.1 {defer error to runtime} -setup {
 # patch (no read traces run for lappend, append). The compiled tests are
 # failing for lappend (9.0/1) before the patch, showing how it invokes read
 # traces in the compiled path. The append tests are good (9.2/3). After the
-# patch the failues are gone.
+# patch the failures are gone.
 
 test appendComp-9.0 {bug 3057639, lappend compiled, read trace on non-existing array variable element} -setup {
     unset -nocomplain myvar

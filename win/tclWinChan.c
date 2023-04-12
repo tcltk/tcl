@@ -939,7 +939,7 @@ TclpOpenFileChannel(
 	}
 
 	/*
-	 * For natively named Windows serial ports we are done.
+	 * For natively-named Windows serial ports we are done.
 	 */
 
 	channel = TclWinOpenSerialChannel(handle, channelName,
@@ -1079,7 +1079,7 @@ TclpOpenFileChannel(
 Tcl_Channel
 Tcl_MakeFileChannel(
     ClientData rawHandle,	/* OS level handle */
-    int mode)			/* ORed combination of TCL_READABLE and
+    int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
 #if defined(HAVE_NO_SEH) && !defined(_WIN64) && !defined(__clang__)
@@ -1092,7 +1092,7 @@ Tcl_MakeFileChannel(
     TclFile readFile = NULL, writeFile = NULL;
     BOOL result;
 
-    if (mode == 0) {
+    if ((mode & (TCL_READABLE|TCL_WRITABLE)) == 0) {
 	return NULL;
     }
 
@@ -1375,7 +1375,7 @@ OpenFileChannel(
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->handle == (HANDLE) handle) {
-	    return (permissions==infoPtr->validMask) ? infoPtr->channel : NULL;
+	    return ((permissions & (TCL_READABLE|TCL_WRITABLE|TCL_EXCEPTION))==infoPtr->validMask) ? infoPtr->channel : NULL;
 	}
     }
 
@@ -1388,7 +1388,7 @@ OpenFileChannel(
      */
 
     infoPtr->nextPtr = NULL;
-    infoPtr->validMask = permissions;
+    infoPtr->validMask = permissions & (TCL_READABLE|TCL_WRITABLE|TCL_EXCEPTION);
     infoPtr->watchMask = 0;
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;

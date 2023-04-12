@@ -1731,7 +1731,7 @@ Tcl_ZlibDeflate(
     }
 
     /*
-     * Reduce the bytearray length to the actual data length produced by
+     * Reduce the ByteArray length to the actual data length produced by
      * deflate.
      */
 

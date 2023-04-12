@@ -3437,7 +3437,7 @@ TableToUtfProc(
 	}
 
 	/*
-	 * Special case for 1-byte utf chars for speed.
+	 * Special case for 1-byte Utf chars for speed.
 	 */
 
 	if ((unsigned)ch - 1 < 0x7F) {

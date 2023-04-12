@@ -1679,7 +1679,7 @@ NativeAccess(
 	}
 
 	/*
-	 * We cannnot verify the access fast, check it below using security
+	 * We cannot verify the access fast, check it below using security
 	 * info.
 	 */
     }
@@ -1799,7 +1799,7 @@ NativeAccess(
 	RevertToSelf();
 
 	/*
-	 * Setup desiredAccess according to the access priveleges we are
+	 * Setup desiredAccess according to the access privileges we are
 	 * checking.
 	 */
 
@@ -2056,7 +2056,7 @@ NativeStat(
      * 'getFileAttributesExProc', and if that isn't available, then on even
      * simpler routines.
      *
-     * Special consideration must be given to Windows hardcoded names like
+     * Special consideration must be given to Windows hard-coded names like
      * CON, NULL, COM1, LPT1 etc. For these, we still need to do the
      * CreateFile as some may not exist (e.g. there is no CON in wish by
      * default). However the subsequent GetFileInformationByHandle will
@@ -2347,7 +2347,7 @@ FromCTime(
  *	is either the given clientData, if the working directory hasn't
  *	changed, or a new clientData (owned by our caller), giving the new
  *	native path, or NULL if the current directory could not be determined.
- *	If NULL is returned, the caller can examine the standard posix error
+ *	If NULL is returned, the caller can examine the standard Posix error
  *	codes to determine the cause of the problem.
  *
  * Side effects:

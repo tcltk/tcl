@@ -100,7 +100,7 @@ SetResultLength(
  * Results:
  *	Returns the position in the path immediately after the root including
  *	any trailing slashes. Appends a cleaned up version of the root to the
- *	Tcl_DString at the specified offest.
+ *	Tcl_DString at the specified offset.
  *
  * Side effects:
  *	Modifies the specified Tcl_DString.
@@ -1900,7 +1900,7 @@ TclGlob(
      * To process a [glob] invocation, this function may be called multiple
      * times. Each time, the previously discovered filenames are in the
      * interpreter result. We stash that away here so the result is free for
-     * error messsages.
+     * error messages.
      */
 
     savedResultObj = Tcl_GetObjResult(interp);
