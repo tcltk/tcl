@@ -9304,12 +9304,16 @@ test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
     close $f
     removeFile io-75.12
 } -result 4181
-test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -setup {
+test io-75.13 {
+    In nonblocking mode when there is an encoding error the data that has been
+    successfully read so far is returned first and then the error is returned
+    on the next call to [read].
+} -setup {
     set fn [makeFile {} io-75.13]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     # \x81 is invalid in utf-8
-    puts -nonewline $f "A\x81"
+    puts -nonewline $f A\x81
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -blocking 0 -eofchar "" -translation lf -profile strict
