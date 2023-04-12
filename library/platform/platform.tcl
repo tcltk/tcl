@@ -265,7 +265,7 @@ proc ::platform::LibcVersion {base _->_ vv} {
 
     set libc [lindex $libclist 0]
 
-    # Try executing the library first. This should suceed
+    # Try executing the library first. This should succeed
     # for a glibc library, and return the version
     # information.
 

@@ -272,7 +272,8 @@ ThreadObjCmd(
     }
     case THREAD_CREATE: {
 	const char *script;
-	int joinable, len;
+	int joinable;
+	Tcl_Size len;
 
 	if (objc == 2) {
 	    /*
@@ -822,7 +823,7 @@ ThreadSend(
     }
 
     /*
-     * Short circut sends to ourself. Ought to do something with -async, like
+     * Short circuit sends to ourself. Ought to do something with -async, like
      * run in an idle handler.
      */
 
