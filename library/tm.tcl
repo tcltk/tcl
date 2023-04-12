@@ -22,10 +22,10 @@
 #
 #      This covers the possibility that the application asked for a package
 #      late, and the package was actually added to the installation after the
-#      application was started. It shoukld still be able to find it.
+#      application was started. It should still be able to find it.
 #
 #   2) It still is not there: Either way, you don't get it, but the rescan
-#      takes time. This is however an error case and we dont't care that much
+#      takes time. This is however an error case and we don't care that much
 #      about it
 #
 #   3) It was there the first time; but for some reason a "package forget" has
@@ -70,9 +70,9 @@ namespace eval ::tcl::tm {
 #	No result for subcommands 'add' and 'remove'. A list of paths for
 #	'list'.
 #
-# Sideeffects
+# Side effects
 #	The subcommands 'add' and 'remove' manipulate the list of paths to
-#	search for Tcl Modules. The subcommand 'list' has no sideeffects.
+#	search for Tcl Modules. The subcommand 'list' has no side effects.
 
 proc ::tcl::tm::add {args} {
     # PART OF THE ::tcl::tm::path ENSEMBLE
@@ -81,7 +81,7 @@ proc ::tcl::tm::add {args} {
     #
     # The command enforces the restriction that no path may be an ancestor
     # directory of any other path on the list. If the new path violates this
-    # restriction an error wil be raised.
+    # restriction an error will be raised.
     #
     # If the path is already present as is no error will be raised and no
     # action will be taken.
@@ -166,7 +166,7 @@ proc ::tcl::tm::list {} {
 #	name		- Name of desired package.
 #	version		- Version of desired package. Can be the
 #			  empty string.
-#	exact		- Either -exact or ommitted.
+#	exact		- Either -exact or omitted.
 #
 #	Name, version, and exact are used to determine satisfaction. The
 #	original is called iff no satisfaction was achieved. The name is also
@@ -175,7 +175,7 @@ proc ::tcl::tm::list {} {
 # Results
 #	None.
 #
-# Sideeffects
+# Side effects
 #	May populate the package ifneeded database with additional provide
 #	scripts.
 
@@ -310,7 +310,7 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 # Results
 #	None.
 #
-# Sideeffects
+# Side effects
 #	May add paths to the list of defaults.
 
 proc ::tcl::tm::Defaults {} {
@@ -355,7 +355,7 @@ proc ::tcl::tm::Defaults {} {
 # Results
 #	No result.
 #
-# Sideeffects
+# Side effects
 #	Calls 'path add' to paths to the list of module search paths.
 
 proc ::tcl::tm::roots {paths} {

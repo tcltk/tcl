@@ -335,7 +335,7 @@ ProcExitHandler(
  *
  * SerialBlockTime --
  *
- *	Wrapper to set Tcl's block time in msec
+ *	Wrapper to set Tcl's block time in msec.
  *
  * Results:
  *	None.
@@ -904,7 +904,7 @@ SerialInputProc(
 	    }
 	} else {
 	    /*
-	     * BLOCKING mode: Tcl trys to read a full buffer of 4 kBytes here.
+	     * BLOCKING mode: Tcl tries to read a full buffer of 4 kBytes here.
 	     */
 
 	    if (cStat.cbInQue > 0) {
@@ -973,9 +973,9 @@ SerialOutputProc(
     *errorCode = 0;
 
     /*
-     * At EXIT Tcl trys to flush all open channels in blocking mode. We avoid
+     * At EXIT Tcl tries to flush all open channels in blocking mode. We avoid
      * blocking output after ExitProc or CloseHandler(chan) has been called by
-     * checking the corrresponding variables.
+     * checking the corresponding variables.
      */
 
     if (!initialized || TclInExit()) {
@@ -2287,7 +2287,7 @@ SerialThreadActionProc(
     /*
      * We do not access firstSerialPtr in the thread structures. This is not
      * for all serials managed by the thread, but only those we are watching.
-     * Removal of the filevent handlers before transfer thus takes care of
+     * Removal of the fileevent handlers before transfer thus takes care of
      * this structure.
      */
 

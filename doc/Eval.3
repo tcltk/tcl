@@ -49,7 +49,7 @@ modified to hold the result or error message from the script.
 .AP Tcl_Obj *objPtr in
 A Tcl value containing the script to execute.
 .AP int flags in
-ORed combination of flag bits that specify additional options.
+OR'ed combination of flag bits that specify additional options.
 \fBTCL_EVAL_GLOBAL\fR and \fBTCL_EVAL_DIRECT\fR are currently supported.
 .AP "const char" *fileName in
 Name of a file containing a Tcl script.
@@ -107,7 +107,7 @@ in code for string comparison, you can use
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 .PP
-\fBTcl_EvalObjv\fR executes a single pre-parsed command instead of a
+\fBTcl_EvalObjv\fR executes a single preparsed command instead of a
 script.  The \fIobjc\fR and \fIobjv\fR arguments contain the values
 of the words for the Tcl command, one word in each value in
 \fIobjv\fR.  \fBTcl_EvalObjv\fR evaluates the command and returns
@@ -159,7 +159,7 @@ in practice. This function is deprecated and will be removed in Tcl 9.0.
 
 .SH "FLAG BITS"
 .PP
-Any ORed combination of the following values may be used for the
+Any OR'ed combination of the following values may be used for the
 \fIflags\fR argument to procedures such as \fBTcl_EvalObjEx\fR:
 .TP 23
 \fBTCL_EVAL_DIRECT\fR

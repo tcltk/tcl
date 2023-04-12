@@ -847,7 +847,7 @@ Changes in 1.2.1.2 (9 September 2004)
 - Add comment to DYNAMIC_CRC_TABLE to use get_crc_table() to initialize
 - Update contrib/ada [Anisimkov]
 - Update contrib/minizip [Vollant]
-- Fix configure to not hardcode directories for Darwin [Peterson]
+- Fix configure to not hard-code directories for Darwin [Peterson]
 - Fix gzio.c to not return error on empty files [Brown]
 - Fix indentation; update version in contrib/delphi/ZLib.pas and
   contrib/pascal/zlibpas.pas [Truta]

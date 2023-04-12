@@ -293,7 +293,7 @@ Tcl_Stat(
 #endif /* !TCL_WIDE_INT_IS_LONG */
 
 	/*
-	 * Copy across all supported fields, with possible type coercions on
+	 * Copy across all supported fields, with possible type coercion on
 	 * those fields that change between the normal and lf64 versions of
 	 * the stat structure (on Solaris at least). This is slow when the
 	 * structure sizes coincide, but that's what you get for using an
@@ -1304,7 +1304,7 @@ Tcl_FSData(
  *	None (beyond the memory allocation for the result).
  *
  * Special notes:
- *	If the filesystem-specific normalizePathProcs can re-introduce ../, ./
+ *	If the filesystem-specific normalizePathProcs can reintroduce ../, ./
  *	components into the pathname, this function does not return the correct
  *	result. This may be possible with symbolic links on unix.
  *
@@ -2062,8 +2062,7 @@ Tcl_PosixError(
  * Tcl_FSStat --
  *	Calls 'statProc' of the filesystem corresponding to pathPtr.
  *
- *	Replaces the standard library routines stat.
- *
+ *	Replaces the standard library "stat" routine.
  *
  * Results:
  *	See stat documentation.

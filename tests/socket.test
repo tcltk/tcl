@@ -127,7 +127,7 @@ set t2 [clock milliseconds]
 set lat1 [expr {($t2-$t1)*2}]; # doubled as a safety margin
 
 # Test the latency of failed connection attempts over the loopback
-# interface. They can take more than a second under Windowos and requres
+# interface. They can take more than a second under Windows and requires
 # additional [after]s in some tests that are not needed on systems that fail
 # immediately.
 set t1 [clock milliseconds]
@@ -1864,7 +1864,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
     set srvsock {}
     # if binding on port 0 is not possible (system related, blocked on ISPs etc):
     if {[catch {close [socket -async $::localhost $port]}]} {
-      # simplest server on random port (immediatelly closing a connect):
+      # simplest server on random port (immediately closing a connect):
       set port [randport]
       set srvsock [socket -server {apply {{ch args} {close $ch}}} -myaddr $::localhost $port]
       # socket on windows has some issues yet (e. g. bug [b6d0d8cc2c]), so we simply decrease iteration count (to 1/4):
@@ -1898,7 +1898,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
       }
       iteration first
     }
-    # parent proc commiting transfer attempt (attach) and checking acquire was successful:
+    # parent proc committing transfer attempt (attach) and checking acquire was successful:
     proc transf_parent {fd args} {
       tcltest::DebugPuts 2 "** trma / $::count ** $args **"
       thread::attach $fd
@@ -2447,7 +2447,7 @@ test socket-14.13 {testing writable event when quick failure} \
     # Test for bug 336441ed59 where a quick background fail was ignored
 
     # Test only for windows as socket -async 255.255.255.255 fails
-    # directly on unix
+    # directly on Unix
 
     # The following connect should fail very quickly
     set a1 [after 2000 {set x timeout}]

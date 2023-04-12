@@ -879,7 +879,7 @@ DoCreateDirectory(
  *
  *	Recursively copies a directory. The target directory dst must not
  *	already exist. Note that this function does not merge two directory
- *	hierarchies, even if the target directory is an an empty directory.
+ *	hierarchies, even if the target directory is an empty directory.
  *
  * Results:
  *	If the directory was successfully copied, returns TCL_OK. Otherwise

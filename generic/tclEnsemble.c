@@ -1888,7 +1888,7 @@ NsEnsembleImplementationCmdNR(
      *
      *   ((Q: That's not true if the -map option is used, is it?))
      *
-     * but don't do that because cacheing of the command object should help.
+     * but don't do that because caching of the command object should help.
      */
 
     {
