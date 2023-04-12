@@ -5,7 +5,7 @@
 # properly for different platforms.
 #
 # Copyright © 1996 Sun Microsystems, Inc.
-# Copyright © 1998 Scritpics Corporation.
+# Copyright © 1998 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.

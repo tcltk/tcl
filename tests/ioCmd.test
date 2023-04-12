@@ -689,7 +689,7 @@ test iocmd-20.1 {chan, unknown method} -body {
 } -returnCodes error -match glob -result {unknown or ambiguous subcommand "foo": must be *}
 
 # --- --- --- --------- --------- ---------
-# chan create, and method "initalize"
+# chan create, and method "initialize"
 
 test iocmd-21.0 {chan create, wrong#args, not enough} {
     catch {chan create} msg
