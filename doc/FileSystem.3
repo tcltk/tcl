@@ -231,7 +231,7 @@ the file which caused an error in the various copy/rename operations.
 .AP Tcl_Obj **objPtrRef out
 Filled with a value containing the result of the operation.
 .AP Tcl_Obj *resultPtr out
-Pre-allocated value in which to store (using
+Preallocated value in which to store (using
 \fBTcl_ListObjAppendElement\fR) the list of
 files or directories which are successfully matched.
 .AP int mode in
@@ -487,7 +487,7 @@ is a Tcl_Obj specifying the contents of the symbolic link given by
 by the caller, which should call \fBTcl_DecrRefCount\fR when the result is no
 longer needed. If the \fItoPtr\fR is not NULL, Tcl should create a link
 of one of the types passed in in the \fIlinkAction\fR flag. This flag is
-an ORed combination of \fBTCL_CREATE_SYMBOLIC_LINK\fR and \fBTCL_CREATE_HARD_LINK\fR.
+an OR'ed combination of \fBTCL_CREATE_SYMBOLIC_LINK\fR and \fBTCL_CREATE_HARD_LINK\fR.
 Where a choice exists (i.e.\ more than one flag is passed in), the Tcl
 convention is to prefer symbolic links. When a link is successfully
 created, the return value should be \fItoPtr\fR (which is therefore

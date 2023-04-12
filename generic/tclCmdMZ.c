@@ -324,7 +324,7 @@ Tcl_RegexpObjCmd(
 
 	if (match == 0) {
 	    /*
-	     * We want to set the value of the intepreter result only when
+	     * We want to set the value of the interpreter result only when
 	     * this is the first time through the loop.
 	     */
 
@@ -427,7 +427,7 @@ Tcl_RegexpObjCmd(
 	 * match. We always increment the offset by at least one to prevent
 	 * endless looping (as in the case: regexp -all {a*} a). Otherwise,
 	 * when we match the NULL string at the end of the input string, we
-	 * will loop indefinately (because the length of the match is 0, so
+	 * will loop indefinitely (because the length of the match is 0, so
 	 * offset never changes).
 	 */
 
@@ -1105,7 +1105,7 @@ Tcl_SplitObjCmd(
 
 	/*
 	 * Handle the special case of splitting on a single character. This is
-	 * only true for the one-char ASCII case, as one unicode char is > 1
+	 * only true for the one-char ASCII case, as one Unicode char is > 1
 	 * byte in length.
 	 */
 
@@ -1392,7 +1392,7 @@ StringIndexCmd(
     }
 
     /*
-     * Get the char length to calulate what 'end' means.
+     * Get the char length to calculate what 'end' means.
      */
 
     length = Tcl_GetCharLength(objv[1]);
@@ -1513,7 +1513,7 @@ StringIsCmd(
     /*
      * We get the objPtr so that we can short-cut for some classes by checking
      * the object type (int and double), but we need the string otherwise,
-     * because we don't want any conversion of type occuring (as, for example,
+     * because we don't want any conversion of type occurring (as, for example,
      * Tcl_Get*FromObj would do).
      */
 
@@ -2005,7 +2005,7 @@ StringMapCmd(
 	int *mapLens;
 
 	/*
-	 * Precompute pointers to the unicode string and length. This saves us
+	 * Precompute pointers to the Unicode string and length. This saves us
 	 * repeated function calls later, significantly speeding up the
 	 * algorithm. We only need the lowercase first char in the nocase
 	 * case.
@@ -2054,7 +2054,7 @@ StringMapCmd(
 		    ustring1 = p - 1;
 
 		    /*
-		     * Append the map value to the unicode string.
+		     * Append the map value to the Unicode string.
 		     */
 
 		    Tcl_AppendUnicodeToObj(resultPtr,

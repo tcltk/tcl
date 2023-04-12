@@ -121,7 +121,7 @@ typedef union {
 #endif
 
 /*
- * This structure describes per-instance state of a tcp based channel.
+ * This structure describes per-instance state of a tcp-based channel.
  */
 
 typedef struct TcpState TcpState;
@@ -177,7 +177,7 @@ struct TcpState {
 };
 
 /*
- * These bits may be ORed together into the "flags" field of a TcpState
+ * These bits may be OR'ed together into the "flags" field of a TcpState
  * structure.
  */
 
@@ -573,8 +573,8 @@ TcpBlockModeProc(
  *	    May return two error codes:
  *	     *	EWOULDBLOCK: if connect is still in progress
  *	     *	ENOTCONN: if connect failed. This would be the error message
- *		of a rect or sendto syscall so this is emulated here.
- *	 *  Null: Called by a backround operation. Do not block and don't
+ *		of a recv or sendto syscall so this is emulated here.
+ *	 *  Null: Called by a background operation. Do not block and don't
  *	    return any error code.
  *
  * Results:
@@ -647,7 +647,7 @@ WaitForConnect(
 
 	    /*
 	     * For blocking sockets and foreground processing, disable async
-	     * connect as we continue now synchoneously.
+	     * connect as we continue now synchronously.
 	     */
 
 	    if (errorCodePtr != NULL &&
@@ -662,7 +662,7 @@ WaitForConnect(
 	    SetEvent(tsdPtr->socketListLock);
 
 	    /*
-	     * Continue connect. If switched to synchroneous connect, the
+	     * Continue connect. If switched to synchronous connect, the
 	     * connect is terminated.
 	     */
 
@@ -675,7 +675,7 @@ WaitForConnect(
 	    (void) Tcl_SetServiceMode(oldMode);
 
 	    /*
-	     * Check for Succesfull connect or async connect restart
+	     * Check for Successful connect or async connect restart
 	     */
 
 	    if (result == TCL_OK) {
@@ -846,7 +846,7 @@ TcpInputProc(
 
 	/*
 	 * If an RST comes, then ignore the error and report an EOF just like
-	 * on unix.
+	 * on Unix.
 	 */
 
 	if (error == WSAECONNRESET) {
@@ -1296,7 +1296,7 @@ TcpGetOptionProc(
     /*
      * Go one step in async connect
      *
-     * If any error is thrown save it as backround error to report eventually
+     * If any error is thrown save it as background error to report eventually
      * below.
      */
     WaitForConnect(statePtr, NULL);
@@ -1853,7 +1853,7 @@ TcpConnect(
 
 	    if (async_connect && error == WSAEWOULDBLOCK) {
 		/*
-		 * Asynchroneous connect
+		 * Asynchronous connect
 		 *
 		 * Remember that we jump back behind this next round
 		 */
@@ -1922,7 +1922,7 @@ TcpConnect(
 
     if (Tcl_GetErrno() == 0) {
 	/*
-	 * Succesfully connected
+	 * Successfully connected
 	 *
 	 * Set up the select mask for read/write events.
 	 */
@@ -1981,7 +1981,7 @@ TcpConnect(
 	}
 
 	/*
-	 * Error message on synchroneous connect
+	 * Error message on synchronous connect
 	 */
 
 	if (interp != NULL) {
@@ -3057,7 +3057,7 @@ WaitForSocketEvent(
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 
 	/*
-	 * Check if event occured.
+	 * Check if event occurred.
 	 */
 
 	event_found = GOT_BITS(statePtr->readyEvents, events);
@@ -3069,7 +3069,7 @@ WaitForSocketEvent(
 	SetEvent(tsdPtr->socketListLock);
 
 	/*
-	 * Exit loop if event occured.
+	 * Exit loop if event occurred.
 	 */
 
 	if (event_found) {
@@ -3174,7 +3174,7 @@ SocketThread(
  *
  * Side effects:
  *	The flags for the given socket are updated to reflect the event that
- *	occured.
+ *	occurred.
  *
  *----------------------------------------------------------------------
  */
@@ -3324,7 +3324,7 @@ SocketProc(
  *
  * FindFDInList --
  *
- *	Return true, if the given file descriptior is contained in the
+ *	Return true, if the given file descriptor is contained in the
  *	file descriptor list.
  *
  * Results:

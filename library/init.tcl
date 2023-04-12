@@ -200,7 +200,7 @@ if {[namespace which -command exec] eq ""} {
     set auto_noexec 1
 }
 
-# Define a log command (which can be overwitten to log errors
+# Define a log command (which can be overwritten to log errors
 # differently, specially when stderr is not available)
 
 if {[namespace which -command tclLog] eq ""} {

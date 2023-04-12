@@ -1343,7 +1343,7 @@ catch {file attributes globTest/a1 -permissions 0o755}
 test filename-15.4 {unix specific no complain: no errors, good result} \
 	{unix nonPortable} {
     # test fails because if an error occurs, the interp's result is reset...
-    # or you don't run at scriptics where the outser and welch users exists
+    # or you don't run at scriptics where the ouster and welch users exists
     glob -nocomplain ~ouster ~foo ~welch
 } {/home/ouster /home/welch}
 test filename-15.4.1 {no complain: errors, sequencing} {

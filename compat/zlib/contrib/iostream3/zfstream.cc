@@ -138,7 +138,7 @@ gzfilebuf::open_mode(std::ios_base::openmode mode,
   bool testa = mode & std::ios_base::app;
 
   // Check for valid flag combinations - see [27.8.1.3.2] (Table 92)
-  // Original zfstream hardcoded the compression level to maximum here...
+  // Original zfstream hard-coded the compression level to maximum here...
   // Double the time for less than 1% size improvement seems
   // excessive though - keeping it at the default level
   // To change back, just append "9" to the next three mode strings

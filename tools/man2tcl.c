@@ -52,7 +52,7 @@ static int status;
 
 /*
  * The variable below is set to 1 if output should be generated. If it's 0, it
- * means we're doing a pre-pass to make sure that the file can be properly
+ * means we're doing a prepass to make sure that the file can be properly
  * parsed.
  */
 

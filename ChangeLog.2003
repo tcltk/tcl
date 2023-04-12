@@ -268,7 +268,7 @@
 	recently fixed by 2003-11-15 commit to regcomp.c by Pavel Goran. His
 	notes on the fix: This bug results from an error in code that splits
 	states into "progress" and "no-progress" ones. This error causes an
-	interesting situation with the pre-collected single-linked list of
+	interesting situation with the precollected single-linked list of
 	states to be splitted: many items were added to the list, but only
 	several of them are accessible from the list beginning, since the
 	"tmp" member of struct state (which is used here to hold a pointer to

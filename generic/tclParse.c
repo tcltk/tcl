@@ -832,7 +832,7 @@ ParseHex(
 
 int
 TclParseBackslash(
-    const char *src,		/* Points to the backslash character of a a
+    const char *src,		/* Points to the backslash character of a
 				 * backslash sequence. */
     int numBytes,		/* Max number of bytes to scan. */
     int *readPtr,		/* NULL, or points to storage where the number
@@ -2201,9 +2201,9 @@ TclSubstTokens(
      */
 
     /*
-     * For the handling of continuation lines in literals we first check if
-     * this is actually a literal. For if not we can forego the additional
-     * processing. Otherwise we pre-allocate a small table to store the
+     * For the handling of continuation lines in literals, first check if
+     * this is actually a literal. If not then forego the additional
+     * processing. Otherwise preallocate a small table to store the
      * locations of all continuation lines we find in this literal, if any.
      * The table is extended if needed.
      */

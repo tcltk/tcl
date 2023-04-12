@@ -36047,7 +36047,7 @@ test clock-42.1 {regression test - %z in :localtime when west of Greenwich } \
     } \
     -result {-0500}
 
-# 43.1 was a bad test - mktime returning -1 is an error according to posix.
+# 43.1 was a bad test - mktime returning -1 is an error according to Posix.
 
 test clock-44.1 {regression test - time zone name containing hyphen } \
     -setup {

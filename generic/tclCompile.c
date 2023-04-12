@@ -2013,7 +2013,7 @@ CompileCommandTokens(
     TclNewObj(cmdObj);
     assert (parsePtr->numWords > 0);
 
-    /* Pre-Compile */
+    /* Precompile */
 
     envPtr->numCommands++;
     EnterCmdStartData(envPtr, cmdIdx,
@@ -2381,15 +2381,15 @@ TclCompileTokens(
     int depth = TclGetStackDepth(envPtr);
 
     /*
-     * For the handling of continuation lines in literals we first check if
+     * For the handling of continuation lines in literals, first check if
      * this is actually a literal. For if not we can forego the additional
-     * processing. Otherwise we pre-allocate a small table to store the
-     * locations of all continuation lines we find in this literal, if any.
+     * processing. Otherwise preallocate a small table to store the
+     * locations of all continuation lines found in this literal, if any.
      * The table is extended if needed.
      *
      * Note: Different to the equivalent code in function 'TclSubstTokens()'
-     * (see file "tclParse.c") we do not seem to need the 'adjust' variable.
-     * We also do not seem to need code which merges continuation line
+     * (see file "tclParse.c") there seem to be no need the 'adjust' variable.
+     * There also seems to be no need for code which merges continuation line
      * information of multiple words which concat'd at runtime. Either that or
      * I have not managed to find a test case for these two possibilities yet.
      * It might be a difference between compile- versus run-time processing.

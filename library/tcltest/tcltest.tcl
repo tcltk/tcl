@@ -153,7 +153,7 @@ namespace eval tcltest {
     }
 
 ##### Initialize internal arrays of tcltest, but only if the caller
-    # has not already pre-initialized them.  This is done to support
+    # has not already preinitialized them.  This is done to support
     # compatibility with older tests that directly access internals
     # rather than go through command interfaces.
     #
@@ -163,7 +163,7 @@ namespace eval tcltest {
 	    return
 	}
 	if {[info exists $varName]} {
-	    # Pre-initialized value is a scalar: destroy it!
+	    # Preinitialized value is a scalar:  Destroy it!
 	    unset $varName
 	}
 	array set $varName $value
@@ -196,7 +196,7 @@ namespace eval tcltest {
     ArrayDefault testConstraints {}
 
 ##### Initialize internal variables of tcltest, but only if the caller
-    # has not already pre-initialized them.  This is done to support
+    # has not already preinitialized them.  This is done to support
     # compatibility with older tests that directly access internals
     # rather than go through command interfaces.
     #
@@ -229,7 +229,7 @@ namespace eval tcltest {
     # check the current working dir for files created by the tests.
     # filesMade keeps track of such files created using the makeFile and
     # makeDirectory procedures.  filesExisted stores the names of
-    # pre-existing files.
+    # preexisting files.
     #
     # Note that $filesExisted lists only those files that exist in
     # the original [temporaryDirectory].
@@ -298,7 +298,7 @@ namespace eval tcltest {
     # keep track of test level for nested test commands
     variable testLevel 0
 
-    # the variables and procs that existed when saveState was called are
+    # the variables and procedures that existed when saveState was called are
     # stored in a variable of the same name
     Default saveState {}
 
@@ -354,12 +354,12 @@ namespace eval tcltest {
 	# be kept in sync with the [configure -outfile] configuration
 	# option ( and underlying variable Option(-outfile) ).  This is
 	# accomplished with a write trace on Option(-outfile) that will
-	# update [outputChannel] whenver a new value is written.  That
+	# update [outputChannel] whenever a new value is written.  That
 	# much is easy.
 	#
 	# The trick is that in order to maintain compatibility with
 	# version 1 of tcltest, we must allow every configuration option
-	# to get its inital value from command line arguments.  This is
+	# to get its initial value from command line arguments.  This is
 	# accomplished by setting initial read traces on all the
 	# configuration options to parse the command line option the first
 	# time they are read.  These traces are cancelled whenever the
@@ -482,7 +482,7 @@ namespace eval tcltest {
 
     # Initialize the default values of the configurable options that are
     # historically associated with an exported variable.  If that variable
-    # is already set, support compatibility by accepting its pre-set value.
+    # is already set, support compatibility by accepting its preset value.
     # Use [trace] to establish ongoing connection between the deprecated
     # exported variable and the modern option kept as a true internal var.
     # Also set up usage string and value testing for the option.
@@ -761,7 +761,7 @@ namespace eval tcltest {
 		# even if the directory is not writable
 		return $directory
 	    }
-	    return -code error "\"$directory\" is not writeable"
+	    return -code error "\"$directory\" is not writable"
 	}
 	return $directory
     }
@@ -852,7 +852,7 @@ namespace eval tcltest {
 # tcltest::Debug* --
 #
 #     Internal helper procedures to write out debug information
-#     dependent on the chosen level. A test shell may overide
+#     dependent on the chosen level. A test shell may override
 #     them, f.e. to redirect the output into a different
 #     channel, or even into a GUI.
 
@@ -1758,7 +1758,7 @@ proc tcltest::SubstArguments {argList} {
     # We need to split the argList up into tokens but cannot use list
     # operations as they throw away some significant quoting, and
     # [split] ignores braces as it should.  Therefore what we do is
-    # gradually build up a string out of whitespace seperated strings.
+    # gradually build up a string out of whitespace-separated strings.
     # We cannot use [split] to split the argList into whitespace
     # separated strings as it throws away the whitespace which maybe
     # important so we have to do it all by hand.
@@ -1865,7 +1865,7 @@ proc tcltest::SubstArguments {argList} {
 #   match -             specifies type of matching to do on result,
 #                       output, errorOutput; this must be a string
 #			previously registered by a call to [customMatch].
-#			The strings exact, glob, and regexp are pre-registered
+#			The strings exact, glob, and regexp are preregistered
 #			by the tcltest package.  Default value is exact.
 #
 # Arguments:
@@ -1896,7 +1896,7 @@ proc tcltest::test {name description args} {
     FillFilesExisted
     incr testLevel
 
-    # Pre-define everything to null except output and errorOutput.  We
+    # Predefine everything to null except output and errorOutput.  We
     # determine whether or not to trap output based on whether or not
     # these variables (output & errorOutput) are defined.
     lassign {} constraints setup cleanup body result returnCodes errorCode match
@@ -2491,7 +2491,7 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 
     # Remove files and directories created by the makeFile and
     # makeDirectory procedures.  Record the names of files in
-    # workingDirectory that were not pre-existing, and associate them
+    # workingDirectory that were not preexisting, and associate them
     # with the test file that created them.
 
     if {!$calledFromAllFile} {
@@ -3449,7 +3449,7 @@ proc tcltest::threadReap {} {
 
 # Initialize the constraints and set up command line arguments
 namespace eval tcltest {
-    # Define initializers for all the built-in contraint definitions
+    # Define initializers for all the built-in constraint definitions
     DefineConstraintInitializers
 
     # Set up the constraints in the testConstraints array to be lazily
@@ -3458,7 +3458,7 @@ namespace eval tcltest {
     trace add variable testConstraints read [namespace code SafeFetch]
 
     # Only initialize constraints at package load time if an
-    # [initConstraintsHook] has been pre-defined.  This is only
+    # [initConstraintsHook] has been predefined.  This is only
     # for compatibility support.  The modern way to add a custom
     # test constraint is to just call the [testConstraint] command
     # straight away, without all this "hook" nonsense.

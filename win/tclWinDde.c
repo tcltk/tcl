@@ -868,7 +868,7 @@ DdeServerProc(
     case XTYP_EXECUTE: {
 	/*
 	 * Execute this script. The results will be saved into a list object
-	 * which will be retreived later. See ExecuteRemoteObject.
+	 * which will be retrieved later. See ExecuteRemoteObject.
 	 */
 
 	Tcl_Obj *returnPackagePtr;
@@ -891,13 +891,13 @@ DdeServerProc(
 	    /* Empty binary array. */
 	    ddeObjectPtr = Tcl_NewObj();
 	} else if ((dlen & 1) || utilString[(dlen>>1)-1]) {
-	    /* Cannot be unicode, so assume utf-8 */
+	    /* Cannot be Unicode, so assume utf-8 */
 	    if (!string[dlen-1]) {
 		dlen--;
 	    }
 	    ddeObjectPtr = Tcl_NewStringObj(string, dlen);
 	} else {
-	    /* unicode */
+	    /* Unicode */
 	    Tcl_DString dsBuf;
 
 	    Tcl_DStringInit(&dsBuf);

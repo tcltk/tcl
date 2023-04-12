@@ -59,8 +59,8 @@ test cmdMZ-1.4 {Tcl_PwdObjCmd: failure} -setup {
     file delete -force $foodir
     file mkdir $foodir
     cd $foodir
-} -constraints {unix nonPortable} -body {
-    # This test fails on various unix platforms (eg Linux) where permissions
+} -constraints {Unix nonPortable} -body {
+    # This test fails on various Unix platforms (eg Linux) where permissions
     # caching causes this to fail. The caching is strictly incorrect, but we
     # have no control over that.
     file attr . -permissions 0o000

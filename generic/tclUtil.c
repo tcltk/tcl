@@ -1228,7 +1228,7 @@ TclScanElement(
 	     * If we are quoting solely due to ] or internal " characters use
 	     * the CONVERT_MASK mode where we escape all special characters
 	     * except for braces. "extra" counted space needed to escape
-	     * braces too, so substract "braceCount" to get our actual needs.
+	     * braces too, so subtract "braceCount" to get our actual needs.
 	     */
 
 	    bytesNeeded += (extra - braceCount);
@@ -2058,7 +2058,7 @@ Tcl_ConcatObj(
      * Something cannot be determined to be safe, so build the concatenation
      * the slow way, using the string representations.
      *
-     * First try to pre-allocate the size required.
+     * First try to preallocate the size required.
      */
 
     for (i = 0;  i < objc;  i++) {

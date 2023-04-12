@@ -513,7 +513,7 @@ extern int	gettimeofday(struct timeval *tp,
 
 /*
  *---------------------------------------------------------------------------
- * Not all systems declare the errno variable in errno.h. so this file does it
+ * Not all systems declare the errno variable in errno.h, so this file does it
  * explicitly. The list of system error messages also isn't generally declared
  * in a header file anywhere.
  *---------------------------------------------------------------------------

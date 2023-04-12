@@ -1872,7 +1872,7 @@ NsEnsembleImplementationCmdNR(
      *
      *   ((Q: That's not true if the -map option is used, is it?))
      *
-     * but we don't do that (the cacheing of the command object used should
+     * but we don't do that (the caching of the command object used should
      * help with that.)
      */
 
@@ -2251,7 +2251,7 @@ TclFetchEnsembleRoot(
  *
  * EnsmebleUnknownCallback --
  *
- *	Helper for the ensemble engine that handles the procesing of unknown
+ *	Helper for the ensemble engine that handles the processing of unknown
  *	callbacks. See the user documentation of the ensemble unknown handler
  *	for details; this function is only ever called when such a function is
  *	defined, and is only ever called once per ensemble dispatch (i.e. if a

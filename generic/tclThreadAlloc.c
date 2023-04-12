@@ -973,7 +973,7 @@ GetBlocks(
     int n;
 
     /*
-     * First, atttempt to move blocks from the shared cache. Note the
+     * First, attempt to move blocks from the shared cache. Note the
      * potentially dirty read of numFree before acquiring the lock which is a
      * slight performance enhancement. The value is verified after the lock is
      * actually acquired.

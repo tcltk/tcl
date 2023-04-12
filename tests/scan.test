@@ -512,7 +512,7 @@ test scan-5.10 {integer scanning} -setup {
     list [scan "1 2 " "%hd %d %d %d" a b c d] $a $b $c $d
 } -result {2 1 2 {} {}}
 #
-# The behavior for scaning intergers larger than MAX_INT is not defined by the
+# The behavior for scanning integers larger than MAX_INT is not defined by the
 # ANSI spec.  Some implementations wrap the input (-16) some return MAX_INT.
 #
 test scan-5.11 {integer scanning} -constraints {nonPortable} -setup {

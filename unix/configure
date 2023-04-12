@@ -10165,7 +10165,7 @@ fi
 done
 
 # Nb: if getcwd uses popen and pwd(1) (like SunOS 4) we should really
-# define USEGETWD even if the posix getcwd exists. Add a test ?
+# define USEGETWD even if the Posix getcwd exists. Add a test ?
 
 
 

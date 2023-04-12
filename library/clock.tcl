@@ -2298,7 +2298,7 @@ proc ::tcl::clock::MakeParseCodeFromFields { dateFields parseActions } {
 #	Returns the locale that was previously current.
 #
 # Side effects:
-#	Does [mclocale].  If necessary, loades the designated locale's files.
+#	Does [mclocale].  If necessary, loads the designated locale's files.
 #
 #----------------------------------------------------------------------
 
@@ -2605,7 +2605,7 @@ proc ::tcl::clock::FormatStarDate { date } {
 #
 # Parameters:
 #	year - Year from the Roddenberry epoch
-#	fractYear - Fraction of a year specifiying the day of year.
+#	fractYear - Fraction of a year specifying the day of year.
 #	fractDay - Fraction of a day
 #
 # Results:
@@ -2975,7 +2975,7 @@ proc ::tcl::clock::InterpretHMS { date } {
 #	Returns the system time zone.
 #
 # Side effects:
-#	Stores the sustem time zone in the 'CachedSystemTimeZone'
+#	Stores the system time zone in the 'CachedSystemTimeZone'
 #	variable, since determining it may be an expensive process.
 #
 #----------------------------------------------------------------------
@@ -3401,7 +3401,7 @@ proc ::tcl::clock::ReadZoneinfoFile {fileName fname} {
     close $f
 
     # The file begins with a magic number, sixteen reserved bytes, and then
-    # six 4-byte integers giving counts of fileds in the file.
+    # six 4-byte integers giving counts of fields in the file.
 
     binary scan $d a4a1x15IIIIII \
 	magic version nIsGMT nIsStd nLeap nTime nType nChar

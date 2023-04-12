@@ -285,10 +285,10 @@ struct state {
 };
 
 struct nfa {
-    struct state *pre;		/* pre-initial state */
+    struct state *pre;		/* preinitial state */
     struct state *init;		/* initial state */
     struct state *final;	/* final state */
-    struct state *post;		/* post-final state */
+    struct state *post;		/* postfinal state */
     int nstates;		/* for numbering states */
     struct state *states;	/* state-chain header */
     struct state *slast;	/* tail of the chain */

@@ -596,7 +596,7 @@ TclObjLookupVarEx(
     }
 
     /*
-     * If part1Ptr is a tclParsedVarNameType, separate it into the pre-parsed
+     * If part1Ptr is a tclParsedVarNameType, separate it into the preparsed
      * parts.
      */
 
@@ -794,7 +794,7 @@ TclObjLookupVarEx(
  *	TclObjLookupVar):
  *	    -1 a global reference
  *	    -2 a reference to a namespace variable
- *	    -3 a non-cachable reference, i.e., one of:
+ *	    -3 a non-cacheable reference, i.e., one of:
  *		. non-indexed local var
  *		. a reference of unknown origin;
  *		. resolution by a namespace or interp resolver

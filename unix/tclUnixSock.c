@@ -40,7 +40,7 @@ typedef union {
 } address;
 
 /*
- * This structure describes per-instance state of a tcp based channel.
+ * This structure describes per-instance state of a tcp-based channel.
  */
 
 typedef struct TcpState TcpState;
@@ -54,7 +54,7 @@ typedef struct TcpFdList {
 struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this file. */
     TcpFdList fds;		/* The file descriptors of the sockets. */
-    int flags;			/* ORed combination of the bitfields defined
+    int flags;			/* OR'ed combination of the bitfields defined
 				 * below. */
     int interest;		/* Event types of interest */
 
@@ -81,7 +81,7 @@ struct TcpState {
 };
 
 /*
- * These bits may be ORed together into the "flags" field of a TcpState
+ * These bits may be OR'ed together into the "flags" field of a TcpState
  * structure.
  */
 
@@ -399,17 +399,17 @@ TcpBlockModeProc(
  *
  *	Check the state of an async connect process. If a connection attempt
  *	terminated, process it, which may finalize it or may start the next
- *	attempt. If a connect error occures, it is saved in
+ *	attempt. If a connect error occurs, it is saved in
  *	statePtr->connectError to be reported by 'fconfigure -error'.
  *
  *	There are two modes of operation, defined by errorCodePtr:
- *	 *  non-NULL: Called by explicite read/write command. Blocks if the
+ *	 *  non-NULL: Called by explicit read/write command. Blocks if the
  *	    socket is blocking.
  *	    May return two error codes:
  *	     *	EWOULDBLOCK: if connect is still in progress
  *	     *	ENOTCONN: if connect failed. This would be the error message
- *		of a rect or sendto syscall so this is emulated here.
- *	 *  NULL: Called by a backround operation. Do not block and do not
+ *		of a recv or sendto syscall so this is emulated here.
+ *	 *  NULL: Called by a background operation. Do not block and do not
  *	    return any error code.
  *
  * Results:
@@ -441,7 +441,7 @@ WaitForConnect(
     }
 
     /*
-     * Check if an async connect is running. If not return ok
+     * Check if an async connect is running. If not return ok.
      */
 
     if (!GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
@@ -1079,7 +1079,7 @@ TcpWatchProc(
 	 * socket file descriptor is writable when the other end of the socket
 	 * is closed.  This is in contrast to the guarantees Tcl makes that
 	 * its channels become writable and fire writable events on an error
-	 * conditon.  This has caused a leak of file descriptors in a state of
+	 * condition.  This has caused a leak of file descriptors in a state of
 	 * background flushing.  See Tcl ticket 1758a0b603.
 	 *
 	 * As a workaround, when our caller indicates an interest in writable
@@ -1484,7 +1484,7 @@ Tcl_MakeTcpClientChannel(
 void *
 TclpMakeTcpClientChannelMode(
     void *sock,		/* The socket to wrap up into a channel. */
-    int mode)			/* ORed combination of TCL_READABLE and
+    int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
     TcpState *statePtr;

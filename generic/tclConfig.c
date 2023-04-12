@@ -182,7 +182,7 @@ Tcl_RegisterConfig(
  *	configuration information embedded into a binary library.
  *
  * Results:
- *	A standard tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
  *	See the manual for what this command does.

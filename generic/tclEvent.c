@@ -579,7 +579,7 @@ TclGetBgErrorHandler(
  *
  *	This function is associated with the "tclBgError" assoc data for an
  *	interpreter; it is invoked when the interpreter is deleted in order to
- *	free the information assoicated with any pending error reports.
+ *	free the information associated with any pending error reports.
  *
  * Results:
  *	None.
@@ -1039,7 +1039,7 @@ TclInitSubsystems(void)
 
     if (subsystemsInitialized == 0) {
 	/*
-	 * Double check inside the mutex. There are definitly calls back into
+	 * Double check inside the mutex. There are definitely calls back into
 	 * this routine from some of the functions below.
 	 */
 

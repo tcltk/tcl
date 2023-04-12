@@ -575,7 +575,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #undef TclpCreateTempFile_
 #undef TclUnixWaitForFile_
-#ifndef MAC_OSX_TCL /* not accessable on Win32/UNIX */
+#ifndef MAC_OSX_TCL /* not accessible on Win32/UNIX */
 #undef TclMacOSXGetFileAttribute /* 15 */
 #undef TclMacOSXSetFileAttribute /* 16 */
 #undef TclMacOSXCopyFileAttributes /* 17 */

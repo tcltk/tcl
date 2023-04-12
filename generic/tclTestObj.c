@@ -624,7 +624,7 @@ TestindexobjCmd(
 
     /*
      * Tcl_GetIndexFromObj assumes that the table is statically-allocated so
-     * that its address is different for each index object. If we accidently
+     * that its address is different for each index object. If we accidentally
      * allocate a table at the same address as that cached in the index
      * object, clear out the object's cached state.
      */

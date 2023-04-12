@@ -783,9 +783,9 @@ Tcl_ConditionWait(
 	    timeout = 0;
 	} else {
 	    /*
-	     * When dequeuing, we can leave the tsdPtr->nextPtr and
+	     * When dequeueing, we can leave the tsdPtr->nextPtr and
 	     * tsdPtr->prevPtr with dangling pointers because they are
-	     * reinitialilzed w/out reading them when the thread is enqueued
+	     * reinitialized w/out reading them when the thread is enqueued
 	     * later.
 	     */
 

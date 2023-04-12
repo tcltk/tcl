@@ -429,7 +429,7 @@ foo
 
 # someday : add a test checking that when there is no bgerror, an error msg
 # goes to stderr ideally one would use sub interp and transfer a fake stderr
-# to it, unfortunatly the current interp tcl API does not allow that. The
+# to it, unfortunately the current interp tcl API does not allow that. The
 # other option would be to use fork a test but it then becomes more a
 # file/exec test than a bgerror test.
 

@@ -1207,7 +1207,7 @@
 	* generic/tcl.decls, doc/Ensemble.3, doc/namespace.n
 	* tests/namespace.test: Allow the handling of a (fixed) number of
 	formal parameters between an ensemble's command and subcommand at
-	invokation time. [Patch 1901783]
+	invocation time. [Patch 1901783]
 
 2008-09-28  Miguel Sofer  <msofer@users.sf.net>
 
@@ -3252,7 +3252,7 @@
 2008-03-21  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/switch.n: Clarified documentation in respect of two-argument
-	invokation. [Bug 1899962]
+	invocation. [Bug 1899962]
 
 	* tests/switch.test: Added more tests of regexp-mode compilation of
 	the [switch] command. [Bug 1854435]

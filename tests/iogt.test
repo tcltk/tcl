@@ -843,7 +843,7 @@ test iogt-6.0 {Push back} -constraints testchannel -body {
     # expect to get "xxx" from the transform because of unread "def" input to
     # transform which returns "xxx".
     #
-    # Actually the IO layer pre-read the whole file and will read "def"
+    # Actually the IO layer preread the whole file and will read "def"
     # directly from the buffer without bothering to consult the newly stacked
     # transformation. This is wrong.
     read $f 3

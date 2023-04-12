@@ -415,7 +415,7 @@ TclCompileIfCmd(
 	if (TclFixupForwardJumpToHere(envPtr,
 		jumpEndFixupArray.fixup+jumpIndex, 127)) {
 	    /*
-	     * Adjust the immediately preceeding "ifFalse" jump. We moved it's
+	     * Adjust the immediately preceding "ifFalse" jump. We moved it's
 	     * target (just after this jump) down three bytes.
 	     */
 
@@ -619,8 +619,8 @@ TclCompileInfoCommandsCmd(
     Tcl_DecrRefCount(objPtr);
 
     /*
-     * Confirmed as a literal that will not frighten the horses. Compile. Note
-     * that the result needs to be list-ified.
+     * Confirmed as a literal that will not frighten the horses. Compile.
+     * The result must be made into a list.
      */
 
     /* TODO: Just push the known value */
@@ -1430,7 +1430,7 @@ TclCompileLinsertCmd(
 	 * Second when idx < TCL_INDEX_END, indicating "end-N" indexing,
 	 * we want the first half of the split to end at index end-N and
 	 * the second half to start at index end-N+1. We accomplish this
-	 * with a pre-adjustment of the end-N value.
+	 * with a preadjustment of the end-N value.
 	 * The root of this is that the commands [lrange] and [linsert]
 	 * differ in their interpretation of the "end" index.
 	 */

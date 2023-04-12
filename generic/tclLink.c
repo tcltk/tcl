@@ -376,7 +376,7 @@ LinkTraceProc(
     /*
      * For writes, first make sure that the variable is writable. Then convert
      * the Tcl value to C if possible. If the variable isn't writable or can't
-     * be converted, then restore the varaible's old value and return an
+     * be converted, then restore the variable's old value and return an
      * error. Another tricky thing: we have to save and restore the interp's
      * result, since the variable access could occur when the result has been
      * partially set.

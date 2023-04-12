@@ -96,7 +96,7 @@ enum OperandTypes {
  *
  * The lexeme field is filled in with the lexeme of the operator that is
  * returned by the ParseLexeme() routine. Only lexemes for unary and binary
- * operators get stored in an OpNode. Other lexmes get different treatement.
+ * operators get stored in an OpNode. Other lexmes get different treatment.
  *
  * The precedence field provides a place to store the precedence of the
  * operator, so it need not be looked up again and again.
@@ -157,7 +157,7 @@ enum Marks {
 				 * BINARY_PLUS according to context. */
 #define MINUS		2	/* Ambiguous. Resolves to UNARY_MINUS or
 				 * BINARY_MINUS according to context. */
-#define BAREWORD	3	/* Ambigous. Resolves to BOOLEAN or to
+#define BAREWORD	3	/* Ambiguous. Resolves to BOOLEAN or to
 				 * FUNCTION or a parse error according to
 				 * context and value. */
 #define INCOMPLETE	4	/* A parse error. Used only when the single
@@ -566,7 +566,7 @@ ParseExpr(
 				 * we build the parse tree. */
     unsigned int nodesAvailable = 64; /* Initial size of the storage array. This
 				 * value establishes a minimum tree memory
-				 * cost of only about 1 kibyte, and is large
+				 * cost of only about 1 kilobyte, and is large
 				 * enough for most expressions to parse with
 				 * no need for array growth and
 				 * reallocation. */
@@ -1871,7 +1871,7 @@ Tcl_ParseExpr(
  *	Returns the number of bytes scanned to produce the lexeme.
  *
  * Side effects:
- *	Code identifying lexeme parsed is writen to *lexemePtr.
+ *	Code identifying lexeme parsed is written to *lexemePtr.
  *
  *----------------------------------------------------------------------
  */

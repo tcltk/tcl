@@ -935,7 +935,7 @@ TclpOpenFileChannel(
 	}
 
 	/*
-	* For natively named Windows serial ports we are done.
+	* For natively-named Windows serial ports we are done.
 	*/
 	channel = TclWinOpenSerialChannel(handle, channelName,
 		channelPermissions);
@@ -1071,7 +1071,7 @@ TclpOpenFileChannel(
 Tcl_Channel
 Tcl_MakeFileChannel(
     ClientData rawHandle,	/* OS level handle */
-    int mode)			/* ORed combination of TCL_READABLE and
+    int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
 #if defined(HAVE_NO_SEH) && !defined(_WIN64) && !defined(__clang__)

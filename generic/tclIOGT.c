@@ -406,7 +406,7 @@ ExecuteCallback(
 
     /*
      * Use a byte-array to prevent the misinterpretation of binary data coming
-     * through as UTF while at the tcl level.
+     * through as Utf while at the tcl level.
      */
 
     Tcl_ListObjAppendElement(NULL, command, Tcl_NewByteArrayObj(buf, bufLen));
@@ -414,7 +414,7 @@ ExecuteCallback(
     /*
      * Step 2, execute the command at the global level of the interpreter used
      * to create the transformation. Destroy the command afterward. If an
-     * error occured and the current interpreter is defined and not equal to
+     * error occurred and the current interpreter is defined and not equal to
      * the interpreter for the callback, then copy the error message into
      * current interpreter. Don't copy if in preservation mode.
      */
@@ -560,7 +560,7 @@ TransformCloseProc(
      * Now flush data waiting in internal buffers to output and input. The
      * input must be done despite the fact that there is no real receiver for
      * it anymore. But the scripts might have sideeffects other parts of the
-     * system rely on (f.e. signaling the close to interested parties).
+     * system rely on (f.e. signalling the close to interested parties).
      */
 
     PreserveData(dataPtr);
@@ -1097,7 +1097,7 @@ TransformWatchProc(
     Tcl_Channel downChan;
 
     /*
-     * The caller expressed interest in events occuring for this channel. We
+     * The caller expressed interest in events occurring for this channel. We
      * are forwarding the call to the underlying channel now.
      */
 
@@ -1204,12 +1204,12 @@ static int
 TransformNotifyProc(
     ClientData clientData,	/* The state of the notified
 				 * transformation. */
-    int mask)			/* The mask of occuring events. */
+    int mask)			/* The mask of occurring events. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)clientData;
 
     /*
-     * An event occured in the underlying channel. This transformation doesn't
+     * An event occurred in the underlying channel. This transformation doesn't
      * process such events thus returns the incoming mask unchanged.
      */
 
@@ -1299,7 +1299,7 @@ ResultClear(
  * ResultInit --
  *
  *	Initializes the specified buffer structure. The structure will contain
- *	valid information for an emtpy buffer.
+ *	valid information for an empty buffer.
  *
  * Side effects:
  *	See above.

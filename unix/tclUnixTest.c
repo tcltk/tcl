@@ -724,7 +724,7 @@ TestgotsigCmd(
  *
  *	Implements the "testchmod" cmd.  Used when testing "file" command.
  *	The only attribute used by the Windows platform is the user write
- *	flag; if this is not set, the file is made read-only.  Otehrwise, the
+ *	flag; if this is not set, the file is made read-only.  Otherwise, the
  *	file is made read-write.
  *
  * Results:

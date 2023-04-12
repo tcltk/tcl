@@ -242,7 +242,7 @@ TclCompileAppendCmd(
  *
  * TclCompileArray*Cmd --
  *
- *	Functions called to compile "array" sucommands.
+ *	Functions called to compile "array" subcommands.
  *
  * Results:
  *	All return TCL_OK for a successful compile, and TCL_ERROR to defer
@@ -647,7 +647,7 @@ TclCompileCatchCmd(
      * catch range so that errors in the substitution are not caught.
      * [Bug 219184]
      * The reason for duplicating the script is that EVAL_STK would otherwise
-     * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
+     * begin by underflowing the stack below the mark set by BEGIN_CATCH4.
      */
 
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
@@ -998,7 +998,7 @@ TclCompileContinueCmd(
  *
  * TclCompileDict*Cmd --
  *
- *	Functions called to compile "dict" sucommands.
+ *	Functions called to compile "dict" subcommands.
  *
  * Results:
  *	All return TCL_OK for a successful compile, and TCL_ERROR to defer
@@ -1673,7 +1673,7 @@ CompileDictEachCmd(
 
     /*
      * Error handler "finally" clause, which force-terminates the iteration
-     * and rethrows the error.
+     * and re-throws the error.
      */
 
     TclAdjustStackDepth(-1, envPtr);
@@ -1845,7 +1845,7 @@ TclCompileDictUpdateCmd(
     /*
      * Termination code for non-ok returns: stash the result and return
      * options in the stack, bring up the key list, finish the update code,
-     * and finally return with the catched return data
+     * and finally return with the caught return data
      */
 
     ExceptionRangeTarget(envPtr, range, catchOffset);
@@ -1891,7 +1891,7 @@ TclCompileDictAppendCmd(
 
     /*
      * There must be at least two argument after the command. And we impose an
-     * (arbirary) safe limit; anyone exceeding it should stop worrying about
+     * (arbitrary) safe limit; anyone exceeding it should stop worrying about
      * speed quite so much. ;-)
      */
 

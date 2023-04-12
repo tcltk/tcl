@@ -312,7 +312,7 @@ Tcl_Stat(
 #endif /* !TCL_WIDE_INT_IS_LONG */
 
 	/*
-	 * Copy across all supported fields, with possible type coercions on
+	 * Copy across all supported fields, with possible type coercion on
 	 * those fields that change between the normal and lf64 versions of
 	 * the stat structure (on Solaris at least). This is slow when the
 	 * structure sizes coincide, but that's what you get for using an
@@ -485,7 +485,7 @@ TclFSCwdIsNative(void)
  *	given.
  *
  * Results:
- *	1 (equal) or 0 (un-equal) as appropriate.
+ *	1 (equal) or 0 (unequal) as appropriate.
  *
  * Side effects:
  *	If the paths are equal, but are not the same object, this method will
@@ -1380,7 +1380,7 @@ Tcl_FSData(
  * Special notes:
  *	If the filesystem-specific normalizePathProcs can re-introduce ../, ./
  *	sequences into the path, then this function will not return the
- *	correct result. This may be possible with symbolic links on unix.
+ *	correct result. This may be possible with symbolic links on Unix.
  *
  *	Important assumption: if startAt is non-zero, it must point to a
  *	directory separator that we know exists and is already normalized (so
@@ -1401,7 +1401,7 @@ TclFSNormalizeToUniquePath(
      * Call each of the "normalise path" functions in succession. This is a
      * special case, in which if we have a native filesystem handler, we call
      * it first. This is because the root of Tcl's filesystem is always a
-     * native filesystem (i.e. '/' on unix is native).
+     * native filesystem (i.e. '/' on Unix is native).
      */
 
     firstFsRecPtr = FsGetFirstFilesystem();
@@ -2105,7 +2105,7 @@ Tcl_PosixError(
  *
  * Tcl_FSStat --
  *
- *	This function replaces the library version of stat and lsat.
+ *	This function replaces the library version of stat and lstat.
  *
  *	The appropriate function for the filesystem to which pathPtr belongs
  *	will be called.
@@ -2770,7 +2770,7 @@ Tcl_FSGetCwd(
 	 * If we do call a cwd, we must watch for errors (if the cwd returns
 	 * NULL). This ensures that, say, on Unix if the permissions of the
 	 * cwd change, 'pwd' does actually throw the correct error in Tcl.
-	 * (This is tested for in the test suite on unix).
+	 * (This is tested for in the test suite on Unix).
 	 */
 
 	if (fsPtr == NULL || fsPtr->getCwdProc == NULL) {
@@ -3968,7 +3968,7 @@ FsListMounts(
  *	an element.
  *
  * Results:
- *	Returns list object with refCount of zero. If the passed in lenPtr is
+ *	Returns list object with refCount of zero. If the passed-in lenPtr is
  *	non-NULL, we use it to return the number of elements in the returned
  *	list.
  *
@@ -4172,7 +4172,7 @@ TclFSNonnativePathType(
 	 * We want to skip the native filesystem in this loop because
 	 * otherwise we won't necessarily pass all the Tcl testsuite - this is
 	 * because some of the tests artificially change the current platform
-	 * (between win, unix) but the list of volumes we get by calling
+	 * (between Win, Unix) but the list of volumes we get by calling
 	 * fsRecPtr->fsPtr->listVolumesProc will reflect the current (real)
 	 * platform only and this may cause some tests to fail. In particular,
 	 * on Unix '/' will match the beginning of certain absolute Windows

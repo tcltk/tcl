@@ -1105,7 +1105,7 @@ ObjectNamespaceDeleted(
 
     /*
      * One rule for the teardown routines is that if an object is in the
-     * process of being deleted, nothing else may modify its bookeeping
+     * process of being deleted, nothing else may modify its bookkeeping
      * records.  This is the flag that
      */
     oPtr->flags |= OBJECT_DESTRUCTING;
@@ -1157,7 +1157,7 @@ ObjectNamespaceDeleted(
     if (((Command *) oPtr->command)->flags && CMD_IS_DELETED) {
 	/*
 	 * Something has already started the command deletion process. We can
-	 * go ahead and clean up the the namespace,
+	 * go ahead and clean up the namespace,
 	 */
     } else {
 	/*

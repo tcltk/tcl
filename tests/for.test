@@ -337,7 +337,7 @@ proc formatMail {} {
         50 {} \
         51 {Binary Releases} \
         52 {} \
-        53 {Pre-compiled releases are available for the following platforms: } \
+        53 {Precompiled releases are available for the following platforms: } \
         54 {} \
         55 {     Windows 3.1, Windows 95, and Windows NT: Fetch} \
         56 {     ftp://ftp.sunlabs.com/pub/tcl/win42b1.exe, then execute it. The file is a} \
@@ -556,7 +556,7 @@ Obtaining The Releases
 
 Binary Releases
 
-Pre-compiled releases are available for the following
+Precompiled releases are available for the following
 platforms:
 
      Windows 3.1, Windows 95, and Windows NT: Fetch

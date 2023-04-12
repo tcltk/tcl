@@ -539,7 +539,7 @@ Tcl_ListObjAppendList(
  *
  *	If 'listPtr' is not already of type 'tclListType', it is converted.
  *	The 'refCount' of 'objPtr' is incremented as it is added to 'listPtr'.
- *	Appending the new element may cause the the array of element pointers
+ *	Appending the new element may cause the array of element pointers
  *	in 'listObj' to grow.  Any preexisting string representation of
  *	'listPtr' is invalidated.
  *
@@ -707,7 +707,7 @@ Tcl_ListObjAppendElement(
  *
  * 	TCL_ERROR
  *
- * 	    'listPtr' is not a valid list. An an error message is left in the
+ * 	    'listPtr' is not a valid list. An error message is left in the
  * 	    interpreter's result if 'interp' is not NULL.
  *
  *  Effect
@@ -873,7 +873,7 @@ Tcl_ListObjReplace(
      * Note that when count == 0 and objc == 0, this routine is logically a
      * no-op, removing and adding no elements to the list. However, by flowing
      * through this routine anyway, we get the important side effect that the
-     * resulting listPtr is a list in canoncial form. This is important.
+     * resulting listPtr is a list in canonical form. This is important.
      * Resist any temptation to optimize this case.
      */
 
@@ -1312,7 +1312,7 @@ TclLsetList(
     TclListObjGetElements(NULL, indexArgPtr, &indexCount, &indices);
 
     /*
-     * Let TclLsetFlat handle the actual lset'ting.
+     * Let TclLsetFlat perform the actual lset operation.
      */
 
     retValuePtr = TclLsetFlat(interp, listPtr, indexCount, indices, valuePtr);
@@ -1925,7 +1925,7 @@ SetListFromAny(
  *
  *	Update the string representation for a list object.
  *
- *	Any previously-exising string representation is not invalidated, so
+ *	Any previously-existing string representation is not invalidated, so
  *	storage is lost if this has not been taken care of.
  *
  * Effect

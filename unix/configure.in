@@ -90,7 +90,7 @@ AC_C_INLINE
 #--------------------------------------------------------------------
 # Supply substitutes for missing POSIX header files.  Special notes:
 #	- stdlib.h doesn't define strtol, strtoul, or
-#	  strtod insome versions of SunOS
+#	  strtod in some versions of SunOS
 #	- some versions of string.h don't declare procedures such
 #	  as strstr
 # Do this early, otherwise an autoconf bug throws errors on configure
@@ -209,7 +209,7 @@ AC_C_BIGENDIAN
 # Check if Posix compliant getcwd exists, if not we'll use getwd.
 AC_CHECK_FUNCS(getcwd, , [AC_DEFINE(USEGETWD, 1, [Is getcwd Posix-compliant?])])
 # Nb: if getcwd uses popen and pwd(1) (like SunOS 4) we should really
-# define USEGETWD even if the posix getcwd exists. Add a test ?
+# define USEGETWD even if the Posix getcwd exists. Add a test ?
 
 AC_REPLACE_FUNCS(mkstemp opendir strtol waitpid)
 AC_CHECK_FUNC(strerror, , [AC_DEFINE(NO_STRERROR, 1, [Do we have strerror()])])

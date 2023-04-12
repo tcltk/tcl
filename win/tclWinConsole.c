@@ -1405,7 +1405,7 @@ ConsoleThreadActionProc(
     /*
      * We do not access firstConsolePtr in the thread structures. This is not
      * for all serials managed by the thread, but only those we are watching.
-     * Removal of the filevent handlers before transfer thus takes care of
+     * Removal of the fileevent handlers before transfer thus takes care of
      * this structure.
      */
 

@@ -60,7 +60,7 @@ static TclFile		FileForRedirect(Tcl_Interp *interp, const char *spec,
 
 static TclFile
 FileForRedirect(
-    Tcl_Interp *interp,		/* Intepreter to use for error reporting. */
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
     const char *spec,		/* Points to character just after redirection
 				 * character. */
     int atOK,			/* Non-zero means that '@' notation can be
@@ -452,7 +452,7 @@ TclCreatePipeline(
     TclFile *outPipePtr,	/* If non-NULL, output to the pipeline goes to
 				 * a pipe, unless overridden by redirection in
 				 * the command. The file id with which to read
-				 * frome this pipe is stored at *outPipePtr.
+				 * from this pipe is stored at *outPipePtr.
 				 * NULL means command specified its own output
 				 * sink. */
     TclFile *errFilePtr)	/* If non-NULL, all stderr output from the
@@ -526,7 +526,7 @@ TclCreatePipeline(
      * and remove them from the argument list in the pipeline. Count the
      * number of distinct processes (it's the number of "|" arguments plus
      * one) but don't remove the "|" arguments because they'll be used in the
-     * second pass to seperate the individual child processes. Cannot start
+     * second pass to separate the individual child processes. Cannot start
      * the child processes in this pass because the redirection symbols may
      * appear anywhere in the command line - e.g., the '<' that specifies the
      * input to the entire pipe may appear at the very end of the argument

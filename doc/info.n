@@ -180,7 +180,7 @@ means that the command is executed by \fBeval\fR or \fBuplevel\fR.
 .TP
 \fBprecompiled\fR\0\0\0\0\0\0\0\0
 .
-means that the command is found in a pre-compiled script (loadable by
+means that the command is found in a precompiled script (loadable by
 the package \fBtbcload\fR), and no further information will be
 available.
 .RE

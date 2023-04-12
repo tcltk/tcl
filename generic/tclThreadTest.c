@@ -827,7 +827,7 @@ ThreadSend(
     }
 
     /*
-     * Short circut sends to ourself. Ought to do something with -async, like
+     * Short circuit sends to ourself. Ought to do something with -async, like
      * run in an idle handler.
      */
 
