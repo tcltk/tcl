@@ -60,7 +60,7 @@ typedef struct {
 				 * the UTF string (minus 1 byte for the
 				 * termination char). */
     Tcl_Size maxChars;		/* Max number of chars that can fit in the
-				 * space allocated for the unicode array. */
+				 * space allocated for the Unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has
 				 * a Unicode representation. */
     Tcl_UniChar unicode[TCLFLEXARRAY];	/* The array of Unicode chars. The actual size
