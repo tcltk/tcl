@@ -1,7 +1,7 @@
 ########################################################################################################
 #
 # Makefile wrapper to build tcl on Mac OS X in a way compatible with the tk/macosx Xcode buildsystem
-#	uses the standard unix build system in tcl/unix (which can be used directly instead of this
+#	uses the standard Unix build system in tcl/unix (which can be used directly instead of this
 #	if you are not using the tk/macosx projects).
 #
 # Copyright (c) 2002-2008 Daniel A. Steffen <das@users.sourceforge.net>
@@ -150,7 +150,7 @@ ${objdir}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure \
 build-${PROJECT}: ${objdir}/Makefile
 	${DO_MAKE}
 ifeq (${INSTALL_BUILD},)
-# symolic link hackery to trick
+# symbolic link hackery to trick
 # 'make install INSTALL_ROOT=${OBJ_DIR}'
 # into building Tcl.framework and tclsh in ${SYMROOT}
 	@cd "${OBJ_DIR}" && mkdir -p $(dir $(subst ${space},\ ,.${LIBDIR})) $(dir $(subst ${space},\ ,.${BINDIR})) "${SYMROOT}" && \

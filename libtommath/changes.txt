@@ -412,7 +412,7 @@ v0.13  -- tons of minor speed-ups in low level add, sub, mul_2 and div_2 which p
 Jan 17th, 2003
 v0.12  -- re-wrote the majority of the makefile so its more portable and will
           install via "make install" on most *nix platforms
-       -- Re-packaged all the source as seperate files.  Means the library a single
+       -- Re-packaged all the source as separate files.  Means the library a single
           file packagage any more.  Instead of just adding "bn.c" you have to add
           libtommath.a
        -- Renamed "bn.h" to "tommath.h"

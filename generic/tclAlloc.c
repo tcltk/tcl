@@ -116,7 +116,7 @@ static struct block bigBlocks={	/* Big blocks aren't suballocated. */
 
 /*
  * The allocator is protected by a special mutex that must be explicitly
- * initialized. Futhermore, because Tcl_Alloc may be used before anything else
+ * initialized. Furthermore, because Tcl_Alloc may be used before anything else
  * in Tcl, we make this module self-initializing after all with the allocInit
  * variable.
  */
@@ -510,7 +510,7 @@ TclpFree(
 
 void *
 TclpRealloc(
-    void *oldPtr,		/* Pointer to alloced block. */
+    void *oldPtr,		/* Pointer to alloc'ed block. */
     size_t numBytes)	/* New size of memory. */
 {
     int i;
@@ -609,7 +609,7 @@ TclpRealloc(
     }
 
     /*
-     * Ok, we don't have to copy, it fits as-is
+     * No need to copy. It fits as-is.
      */
 
 #ifndef NDEBUG
