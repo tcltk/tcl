@@ -82,7 +82,7 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG)
 #CFLAGS = 		$(CFLAGS_OPTIMIZE)
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -D__USE_MINGW_ANSI_STDIO=0 -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
+CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0 -DMP_NO_STDINT
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
@@ -545,7 +545,7 @@ $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) ${TCL_ZIP_
 	tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	$(COPY) tclsh.exe.manifest $(TCLSH).manifest
 	@VC_MANIFEST_EMBED_EXE@
-	if test "${ZIPFS_BUILD}" = "2" ; then \
+	@if test "${ZIPFS_BUILD}" = "2" ; then \
 		cat ${TCL_ZIP_FILE} >> ${TCLSH}; \
 		${NATIVE_ZIP} -A ${TCLSH} \
 		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
@@ -682,6 +682,8 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		@DEPARG@ $(CC_OBJNAME)
 
 tclEvent.${OBJEXT}: tclEvent.c tclUuid.h
+
+tclTest.${OBJEXT}: tclTest.c tclUuid.h
 
 $(TOP_DIR)/manifest.uuid:
 	printf "git-" >$(TOP_DIR)/manifest.uuid
