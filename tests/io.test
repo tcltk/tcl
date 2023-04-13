@@ -9171,7 +9171,7 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
 
-test io-75.1 {multibyte encoding error read results in raw bytes (-nocomplainencoding 1)} -setup {
+test io-75.1 {multibyte encoding error read results in raw bytes (-profile tcl8)} -setup {
     set fn [makeFile {} io-75.1]
     set f [open $fn w+]
     fconfigure $f -encoding binary
