@@ -8674,7 +8674,7 @@ TestLutilCmd(
 	} else {
 	    nCmp = idx == LUTIL_EQUAL ? 0 : i;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(nCmp));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nCmp));
 	break;
     }
 
