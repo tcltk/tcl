@@ -59,13 +59,13 @@ points to the Tcl value that will be appended to \fIlistPtr\fR.
 For \fBTcl_SetListObj\fR,
 this points to the Tcl value that will be converted to a list value
 containing the \fIobjc\fR elements of the array referenced by \fIobjv\fR.
-.AP "size_t \&| int" *objcPtr in
+.AP "ptrdiff_t \&| int" *objcPtr in
 Points to location where \fBTcl_ListObjGetElements\fR
 stores the number of element values in \fIlistPtr\fR.
 .AP Tcl_Obj ***objvPtr out
 A location where \fBTcl_ListObjGetElements\fR stores a pointer to an array
 of pointers to the element values of \fIlistPtr\fR.
-.AP size_t objc in
+.AP Tcl_Size objc in
 The number of Tcl values that \fBTcl_NewListObj\fR
 will insert into a new list value,
 and \fBTcl_ListObjReplace\fR will insert into \fIlistPtr\fR.
@@ -76,21 +76,21 @@ An array of pointers to values.
 \fBTcl_NewListObj\fR will insert these values into a new list value
 and \fBTcl_ListObjReplace\fR will insert them into an existing \fIlistPtr\fR.
 Each value will become a separate list element.
-.AP "size_t \&| int" *lengthPtr out
+.AP "ptrdiff_t \&| int" *lengthPtr out
 Points to location where \fBTcl_ListObjLength\fR
 stores the length of the list.
-.AP size_t index in
+.AP Tcl_Size index in
 Index of the list element that \fBTcl_ListObjIndex\fR
 is to return.
 The first element has index 0.
 .AP Tcl_Obj **objPtrPtr out
 Points to place where \fBTcl_ListObjIndex\fR is to store
 a pointer to the resulting list element value.
-.AP size_t first in
+.AP Tcl_Size first in
 Index of the starting list element that \fBTcl_ListObjReplace\fR
 is to replace.
 The list's first element has index 0.
-.AP size_t count in
+.AP Tcl_Size count in
 The number of elements that \fBTcl_ListObjReplace\fR
 is to replace.
 .BE

@@ -1624,7 +1624,7 @@ SerialSetOptionProc(
     size_t len, vlen;
     Tcl_DString ds;
     const WCHAR *native;
-    size_t argc;
+    Tcl_Size argc;
     const char **argv;
 
     infoPtr = (SerialInfo *) instanceData;
@@ -1820,7 +1820,7 @@ SerialSetOptionProc(
      */
 
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
-	size_t i;
+	Tcl_Size i;
 	int res = TCL_OK;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {

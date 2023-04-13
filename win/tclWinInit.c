@@ -198,7 +198,7 @@ AppendEnvironment(
     Tcl_Obj *pathPtr,
     const char *lib)
 {
-    size_t pathc;
+    Tcl_Size pathc;
     WCHAR wBuf[MAX_PATH];
     char buf[MAX_PATH * 3];
     Tcl_Obj *objPtr;
