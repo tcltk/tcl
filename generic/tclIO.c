@@ -5936,32 +5936,6 @@ DoReadChars(
 #define UTF_EXPANSION_FACTOR	1024
     int factor = UTF_EXPANSION_FACTOR;
 
-    binaryMode = (encoding == GetBinaryEncoding())
-	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF)
-	    && (statePtr->inEofChar == '\0');
-
-    if (appendFlag) {
-	if (binaryMode && (NULL == Tcl_GetByteArrayFromObj(objPtr, (size_t *)NULL))) {
-	    binaryMode = 0;
-	}
-    } else {
-	if (binaryMode) {
-	    Tcl_SetByteArrayLength(objPtr, 0);
-	} else {
-	    Tcl_SetObjLength(objPtr, 0);
-
-	    /*
-	     * We're going to access objPtr->bytes directly, so we must ensure
-	     * that this is actually a string object (otherwise it might have
-	     * been pure Unicode).
-	     *
-	     * Probably not needed anymore.
-	     */
-
-	    TclGetString(objPtr);
-	}
-    }
-
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	/* TODO: We don't need this call? */
 	UpdateInterest(chanPtr);
@@ -6006,6 +5980,24 @@ DoReadChars(
     chanPtr = statePtr->topChanPtr;
     TclChannelPreserve((Tcl_Channel)chanPtr);
 
+
+    binaryMode = (encoding == GetBinaryEncoding())
+	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF)
+	    && (statePtr->inEofChar == '\0');
+
+    if (appendFlag) {
+	if (binaryMode && (NULL == Tcl_GetByteArrayFromObj(objPtr, (size_t *)NULL))) {
+	    binaryMode = 0;
+	}
+    } else {
+	if (binaryMode) {
+	    Tcl_SetByteArrayLength(objPtr, 0);
+	} else {
+	    Tcl_SetObjLength(objPtr, 0);
+	}
+    }
+
+
     /*
      * Must clear the BLOCKED|EOF flags here since we check before reading.
      */
@@ -6048,11 +6040,7 @@ DoReadChars(
 
 	    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 		    && !GotFlag(statePtr, CHANNEL_STICKY_EOF)
-		    && !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
-		/* Channel is blocking.  Return an error so that callers
-		 * like [read] can return an error.
-		*/
-		Tcl_SetErrno(EILSEQ);
+		    && (!GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
 		goto finish;
 	    }
 	}
@@ -6097,7 +6085,7 @@ finish:
     }
 
     /*
-     * Regenerate the top channel, in case it was changed due to
+     * Regenerate chanPtr in case it was changed due to
      * self-modifying reflected transforms.
      */
 
@@ -6119,8 +6107,14 @@ finish:
     assert(!(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
             == (CHANNEL_EOF|CHANNEL_BLOCKED)));
     UpdateInterest(chanPtr);
+
+    /* This must comes after UpdateInterest(), which may set errno */
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 	    && (!copied || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+	/* Channel either is blocking or is nonblocking with no data
+	 * succesfully red before the error.  Return an error so that callers
+	 * like [read] can also return an error.
+	*/
 	Tcl_SetErrno(EILSEQ);
 	copied = -1;
     }
