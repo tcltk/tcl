@@ -430,7 +430,6 @@ Tcl_ReadObjCmd(
     }
 
     TclNewObj(resultPtr);
-    Tcl_IncrRefCount(resultPtr);
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
     if (charactersRead == TCL_IO_FAILURE) {
@@ -447,7 +446,6 @@ Tcl_ReadObjCmd(
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
 	TclChannelRelease(chan);
-	Tcl_DecrRefCount(resultPtr);
 	return TCL_ERROR;
     }
 
@@ -466,7 +464,6 @@ Tcl_ReadObjCmd(
     }
     Tcl_SetObjResult(interp, resultPtr);
     TclChannelRelease(chan);
-    Tcl_DecrRefCount(resultPtr);
     return TCL_OK;
 }
 
