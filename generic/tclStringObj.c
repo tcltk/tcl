@@ -672,6 +672,7 @@ TclGetUniChar(
  */
 
 #undef Tcl_GetUnicodeFromObj
+#if !defined(TCL_NO_DEPRECATED)
 Tcl_UniChar *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the Unicode string
@@ -699,6 +700,7 @@ TclGetUnicodeFromObj(
     }
     return stringPtr->unicode;
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 Tcl_UniChar *
 Tcl_GetUnicodeFromObj(

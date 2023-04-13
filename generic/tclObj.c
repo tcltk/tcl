@@ -1665,7 +1665,7 @@ Tcl_GetString(
  *----------------------------------------------------------------------
  */
 
-#undef TclGetStringFromObj
+#if !defined(TCL_NO_DEPRECATED)
 char *
 TclGetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
@@ -1708,6 +1708,7 @@ TclGetStringFromObj(
     }
     return objPtr->bytes;
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 #undef Tcl_GetStringFromObj
 char *
