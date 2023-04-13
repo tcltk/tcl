@@ -8629,7 +8629,7 @@ TestLutilCmd(
     enum options {
 	   LUTIL_EQUAL, LUTIL_DIFFINDEX
     } idx;
-    
+
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list1 list2");
 	return TCL_ERROR;
@@ -8651,6 +8651,8 @@ TestLutilCmd(
 	goto vamoose;
     }
 
+    Tcl_Size i, nCmp;
+
     ret = TCL_OK;
     switch (idx) {
     case LUTIL_EQUAL:
@@ -8661,7 +8663,6 @@ TestLutilCmd(
 	}
 	/* FALLTHRU */
     case LUTIL_DIFFINDEX:
-	Tcl_Size i, nCmp;
 	nCmp = nL1 <= nL2 ? nL1 : nL2;
 	for (i = 0; i < nCmp; ++i) {
 	    if (strcmp(Tcl_GetString(l1Elems[i]), Tcl_GetString(l2Elems[i]))) {
