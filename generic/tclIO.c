@@ -4872,11 +4872,11 @@ Tcl_GetsObj(
 		&& GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 		&& !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 	    /* Set eol to the position that caused the encoding error, and then
-	     * coninue to gotEOL, which stores the data that was decoded
+	     * continue to gotEOL, which stores the data that was decoded
 	     * without error to objPtr.  This allows the caller to do something
 	     * useful with the data decoded so far, and also results in the
 	     * position of the file being the first byte that was not
-	     * succesfully decoded, allowing further processing at exactly that
+	     * successfully decoded, allowing further processing at exactly that
 	     * point, if desired.
 	     */
 	    eol = dstEnd;
