@@ -16,6 +16,10 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+source [file join [file dirname [info script]] tcltests.tcl]
+
 #
 # bigtest and bigtestRO (RO->read only) generate compiled and uncompiled
 # versions of the given test script. The difference between the two is
@@ -748,6 +752,7 @@ bigtestRO lindex-bigdata-1 "lindex" {6 7 5 {} 5 4 {} 9 {}} -body {
 } -cleanup {
     bigClean
 } -constraints bug-dcac54a685
+# TODO after bug fix - nested index
 
 #
 # linsert
