@@ -5980,7 +5980,6 @@ DoReadChars(
     chanPtr = statePtr->topChanPtr;
     TclChannelPreserve((Tcl_Channel)chanPtr);
 
-
     binaryMode = (encoding == GetBinaryEncoding())
 	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF)
 	    && (statePtr->inEofChar == '\0');
@@ -5996,7 +5995,6 @@ DoReadChars(
 	    Tcl_SetObjLength(objPtr, 0);
 	}
     }
-
 
     /*
      * Must clear the BLOCKED|EOF flags here since we check before reading.
