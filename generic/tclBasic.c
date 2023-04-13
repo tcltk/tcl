@@ -8505,7 +8505,7 @@ Tcl_NRCallObjProc2(
     Tcl_Interp *interp,
     Tcl_ObjCmdProc2 *objProc,
     void *clientData,
-    size_t objc,
+    ptrdiff_t objc,
     Tcl_Obj *const objv[])
 {
     if (objc > INT_MAX) {
