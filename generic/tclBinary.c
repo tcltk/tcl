@@ -26,7 +26,7 @@
 #define BINARY_NOCOUNT -2	/* No count was specified in format. */
 
 /*
- * The following flags may be ORed together and returned by GetFormatSpec
+ * The following flags may be OR'ed together and returned by GetFormatSpec
  */
 
 #define BINARY_SIGNED 0		/* Field to be read as signed data */
@@ -37,7 +37,7 @@
  * placed in the object cache by 'binary scan' before it bails out and
  * switches back to Plan A (creating a new object for each value.)
  * Theoretically, it would be possible to keep the cache about for the values
- * that are already in it, but that makes the code slower in practise when
+ * that are already in it, but that makes the code slower in practice when
  * overflow happens, and makes little odds the rest of the time (as measured
  * on my machine.) It is also slower (on the sample I tried at least) to grow
  * the cache to hold all items we might want to put in it; presumably the
@@ -381,6 +381,7 @@ Tcl_GetBytesFromObj(
     return baPtr->bytes;
 }
 
+#if !defined(TCL_NO_DEPRECATED)
 unsigned char *
 TclGetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
@@ -408,6 +409,7 @@ TclGetBytesFromObj(
     }
     return bytes;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1054,7 +1056,7 @@ BinaryFormatCmd(
     }
 
     /*
-     * Prepare the result object by preallocating the caclulated number of
+     * Prepare the result object by preallocating the calculated number of
      * bytes and filling with nulls.
      */
 
@@ -1815,7 +1817,7 @@ GetFormatSpec(
  *
  *	This routine determines, if bytes of a number need to be re-ordered,
  *	and returns a numeric code indicating the re-ordering to be done.
- *	This depends on the endiannes of the machine and the desired format.
+ *	This depends on the endianness of the machine and the desired format.
  *	It is in effect a table (whose contents depend on the endianness of
  *	the system) describing whether a value needs reversing or not. Anyone
  *	porting the code to a big-endian platform should take care to make

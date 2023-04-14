@@ -45,7 +45,7 @@ typedef struct ChannelBuffer {
     struct ChannelBuffer *nextPtr;
     				/* Next buffer in chain. */
     char buf[TCLFLEXARRAY];		/* Placeholder for real buffer. The real
-				 * buffer occuppies this space + bufSize-1
+				 * buffer occupies this space + bufSize-1
 				 * bytes. This must be the last field in the
 				 * structure. */
 } ChannelBuffer;
@@ -129,7 +129,7 @@ typedef struct ChannelState {
     char *channelName;		/* The name of the channel instance in Tcl
 				 * commands. Storage is owned by the generic
 				 * IO code, is dynamically allocated. */
-    int	flags;			/* ORed combination of the flags defined
+    int	flags;			/* OR'ed combination of the flags defined
 				 * below. */
     Tcl_Encoding encoding;	/* Encoding to apply when reading or writing
 				 * data on this channel. NULL means no
@@ -211,7 +211,7 @@ typedef struct ChannelState {
      * TIP #219 ... Info for the I/O system ...
      * Error message set by channel drivers, for the propagation of arbitrary
      * Tcl errors. This information, if present (chanMsg not NULL), takes
-     * precedence over a posix error code returned by a channel operation.
+     * precedence over a Posix error code returned by a channel operation.
      */
 
     Tcl_Obj* chanMsg;
@@ -226,7 +226,7 @@ typedef struct ChannelState {
 } ChannelState;
 
 /*
- * Values for the flags field in Channel. Any ORed combination of the
+ * Values for the flags field in Channel. Any OR'ed combination of the
  * following flags can be stored in the field. These flags record various
  * options and state bits about the channel. In addition to the flags below,
  * the channel can also have TCL_READABLE (1<<1) and TCL_WRITABLE (1<<2) set.

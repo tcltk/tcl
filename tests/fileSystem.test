@@ -297,7 +297,7 @@ test filesystem-1.33 {link normalisation: link near filesystem root} {testsetpla
     testsetplatform windows
     set res [file normalize C:/../bar]
     if {[testConstraint unix]} {
-	# Some unices go further in normalizing this -- not really a problem
+	# Some Unices go further in normalizing this -- not really a problem
 	# since this is a Windows test.
 	regexp {C:/bar$} $res res
     }

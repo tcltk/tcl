@@ -3898,7 +3898,7 @@ test io-31.13 {binary mode is synonym of lf mode} {
 } lf
 #
 # Test io-9.14 has been removed because "auto" output translation mode is
-# not supoprted.
+# not supported.
 #
 test io-31.14 {Tcl_Write mixed, Tcl_Gets auto} {
     file delete $path(test1)
@@ -5855,7 +5855,7 @@ test io-39.22a {Tcl_SetChannelOption, invariance} -constraints deprecated -body 
     set l
 } -result {O D {1 {bad value for -eofchar: must be non-NUL ASCII character}}}
 test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
-        writeable, it should still have valid -eofchar and -translation options } {
+        writable, it should still have valid -eofchar and -translation options } {
     set l [list]
     set sock [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
     lappend l [fconfigure $sock -eofchar] [fconfigure $sock -translation]
@@ -8839,7 +8839,7 @@ test io-61.1 {Reset eof state after changing the eof char} -setup {
 } -result {77 = 23431}
 
 
-# Test the cutting and splicing of channels, this is incidentially the
+# Test the cutting and splicing of channels, this is incidentally the
 # attach/detach facility of package Thread, but __without any
 # safeguards__. It can also be used to emulate transfer of channels
 # between threads, and is used for that here.
@@ -9171,7 +9171,7 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
 
-test io-75.1 {multibyte encoding error read results in raw bytes (-nocomplainencoding 1)} -setup {
+test io-75.1 {multibyte encoding error read results in raw bytes (-profile tcl8)} -setup {
     set fn [makeFile {} io-75.1]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9411,12 +9411,16 @@ test io-75.12 {
     unset res
 } -match glob -result {{error reading "file*":\
     invalid or incomplete multibyte or wide character} 4181}
-test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -setup {
+test io-75.13 {
+    In nonblocking mode when there is an encoding error the data that has been
+    successfully read so far is returned first and then the error is returned
+    on the next call to [read].
+} -setup {
     set fn [makeFile {} io-75.13]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     # \x81 is invalid in utf-8
-    puts -nonewline $f "A\x81"
+    puts -nonewline $f A\x81
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -blocking 0 -eofchar "" -translation lf -profile strict

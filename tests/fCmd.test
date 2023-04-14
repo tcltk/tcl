@@ -87,7 +87,7 @@ testConstraint notFileSharing 1
 testConstraint linkFile 1
 testConstraint linkDirectory 1
 
-# Several tests require need to match results against the unix username
+# Several tests require need to match results against the Unix username
 set user {}
 if {[testConstraint unix]} {
     catch {
@@ -883,7 +883,7 @@ test fCmd-7.5 {FileForceOption: multiple times through loop} -setup {
 
 test fCmd-8.1 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
     -constraints {unix notRoot knownBug tildeexpansion} -body {
-    # Labelled knownBug because it is dangerous [Bug: 3881]
+    # Labeled knownBug because it is dangerous [Bug: 3881]
     file mkdir td1
     file attr td1 -perm 0o40000
     file rename ~$user td1
@@ -983,7 +983,7 @@ test fCmd-9.7 {file rename: comprehensive: file to existing file} -setup {
 test fCmd-9.8 {file rename: comprehensive: dir to empty dir} -setup {
     cleanup
 } -constraints {notRoot testchmod notNetworkFilesystem} -body {
-    # Under unix, you can rename a read-only directory, but you can't move it
+    # Under Unix you can rename a read-only directory, but you can't move it
     # into another directory.
     file mkdir td1
     file mkdir [file join td2 td1]
@@ -2537,7 +2537,7 @@ test fCmd-28.12 {file link: cd into a link} -setup {
     cd $orig
     # Now '$up' should be either $orig or [file dirname abc.dir], depending on
     # whether 'cd' actually moves to the destination of a link, or simply
-    # treats the link as a directory. (On windows the former, on unix the
+    # treats the link as a directory. (On windows the former, on Unix the
     # latter, I believe)
     if {
 	([file normalize $up] ne [file normalize $orig]) &&

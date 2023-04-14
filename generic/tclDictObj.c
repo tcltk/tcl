@@ -769,7 +769,7 @@ GetDictFromObj(
  *	the chain fields of the dictionaries (for easy invalidation of string
  *	representations using InvalidateDictChain). If the flags argument has
  *	the DICT_PATH_CREATE bits set (and not the DICT_PATH_EXISTS bit),
- *	non-existant keys will be inserted with a value of an empty
+ *	non-extant keys will be inserted with a value of an empty
  *	dictionary, resulting in the path being built.
  *
  *----------------------------------------------------------------------
@@ -862,7 +862,7 @@ TclTraceDictPath(
  *
  * InvalidateDictChain --
  *
- *	Go through a dictionary chain (built by an updating invokation of
+ *	Go through a dictionary chain (built by an updating invocation of
  *	TclTraceDictPath) and invalidate the string representations of all the
  *	dictionaries on the chain.
  *
@@ -1188,7 +1188,7 @@ Tcl_DictObjNext(
     ChainEntry *cPtr;
 
     /*
-     * If the searh is done; we do no work.
+     * If the search is done; we do no work.
      */
 
     if (!searchPtr->epoch) {
@@ -3674,9 +3674,9 @@ TclDictWithFinish(
     if (pathc > 0) {
 	/*
 	 * Want to get to the dictionary which we will update; need to do
-	 * prepare-for-update de-sharing along the path *but* avoid generating
-	 * an error on a non-existant path (we'll treat that the same as a
-	 * non-existant variable. Luckily, the de-sharing operation isn't
+	 * prepare-for-update unsharing along the path *but* avoid generating
+	 * an error on a non-extant path (we'll treat that the same as a
+	 * non-extant variable. Luckily, the unsharing operation isn't
 	 * deeply damaging if we don't go on to update; it's just less than
 	 * perfectly efficient (but no memory should be leaked).
 	 */
