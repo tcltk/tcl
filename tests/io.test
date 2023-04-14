@@ -3898,7 +3898,7 @@ test io-31.13 {binary mode is synonym of lf mode} {
 } lf
 #
 # Test io-9.14 has been removed because "auto" output translation mode is
-# not supoprted.
+# not supported.
 #
 test io-31.14 {Tcl_Write mixed, Tcl_Gets auto} {
     file delete $path(test1)
@@ -5855,7 +5855,7 @@ test io-39.22a {Tcl_SetChannelOption, invariance} -constraints deprecated -body 
     set l
 } -result {O D {1 {bad value for -eofchar: must be non-NUL ASCII character}}}
 test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
-        writeable, it should still have valid -eofchar and -translation options } {
+        writable, it should still have valid -eofchar and -translation options } {
     set l [list]
     set sock [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
     lappend l [fconfigure $sock -eofchar] [fconfigure $sock -translation]
@@ -7500,10 +7500,7 @@ test io-52.9 {TclCopyChannel & encodings} {fcopy} {
 	    [file size $path(utf8-fcopy.txt)] \
 	    [file size $path(utf8-rp.txt)]
 } {3 5 5}
-test io-52.10 {TclCopyChannel & encodings} {fcopy notWinCI} {
-    # encoding to binary (=> implies that the
-    # internal utf-8 is written)
-
+test io-52.10 {TclCopyChannel & encodings} -constraints fcopy -body {
     set in  [open $path(kyrillic.txt) r]
     set out [open $path(utf8-fcopy.txt) w]
 
@@ -7516,7 +7513,8 @@ test io-52.10 {TclCopyChannel & encodings} {fcopy notWinCI} {
     close $out
 
     file size $path(utf8-fcopy.txt)
-} 5
+} -returnCodes 1 -match glob -result {error writing "*":\
+    invalid or incomplete multibyte or wide character}
 test io-52.11 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
     fconfigure $out -encoding utf-8 -translation lf -profile strict
@@ -8376,7 +8374,7 @@ test io-53.13 {TclCopyChannel: read error reporting} -setup {
     catch {close $out}
     removeFile out
     rename driver {}
-} -result {error reading "*": *} -returnCodes error -match glob
+} -result {error reading "rc*": *} -returnCodes error -match glob
 test io-53.14 {TclCopyChannel: write error reporting} -setup {
     proc driver {cmd args} {
         variable buffer
@@ -8843,7 +8841,7 @@ test io-61.1 {Reset eof state after changing the eof char} -setup {
 } -result {77 = 23431}
 
 
-# Test the cutting and splicing of channels, this is incidentially the
+# Test the cutting and splicing of channels, this is incidentally the
 # attach/detach facility of package Thread, but __without any
 # safeguards__. It can also be used to emulate transfer of channels
 # between threads, and is used for that here.
@@ -9266,7 +9264,7 @@ test io-75.5 {invalid utf-8 encoding read is ignored (-profile tcl8)} -setup {
     removeFile io-75.5
 } -result 4181
 
-test io-75.6 {invalid utf-8 encoding read is not ignored (-profile strict)} -setup {
+test io-75.6 {invalid utf-8 encoding, read is not ignored (-profile strict)} -setup {
     set fn [makeFile {} io-75.6]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9285,7 +9283,8 @@ test io-75.6 {invalid utf-8 encoding read is not ignored (-profile strict)} -set
 } -cleanup {
     close $f
     removeFile io-75.6
-} -match glob -result {A {error reading "*": invalid or incomplete multibyte or wide character}}
+} -match glob -result {A {error reading "*":\
+	invalid or incomplete multibyte or wide character}}
 
 test io-75.7 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.7]
@@ -9308,7 +9307,8 @@ test io-75.7 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
 } -cleanup {
     close $f
     removeFile io-75.7
-} -match glob -result "A {error reading \"*\": invalid or incomplete multibyte or wide character} \x81"
+} -match glob -result "A {error reading \"file*\":\
+    invalid or incomplete multibyte or wide character} \x81"
 
 test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.8]
@@ -9344,10 +9344,10 @@ test io-75.9 {unrepresentable character write passes and is replaced by ?} -setu
     removeFile io-75.9
 } -match glob -result [list {A} {error writing "*": invalid or incomplete multibyte or wide character}]
 
-# Incomplete sequence test.
-# This error may IMHO only be detected with the close.
-# But the read already returns the incomplete sequence.
-test io-75.10 {incomplete multibyte encoding read is ignored} -setup {
+test io-75.10 {
+    incomplete multibyte encoding read is not ignored because "binary" sets
+    profile to strict
+} -setup {
     set fn [makeFile {} io-75.10]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9401,12 +9401,16 @@ test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
     close $f
     removeFile io-75.12
 } -result 4181
-test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -setup {
+test io-75.13 {
+    In nonblocking mode when there is an encoding error the data that has been
+    successfully read so far is returned first and then the error is returned
+    on the next call to [read].
+} -setup {
     set fn [makeFile {} io-75.13]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     # \x81 is invalid in utf-8
-    puts -nonewline $f "A\x81"
+    puts -nonewline $f A\x81
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
@@ -9415,7 +9419,7 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -se
 } -cleanup {
     close $f
     removeFile io-75.13
-} -match glob -returnCodes 1 -result {error reading "*": invalid or incomplete multibyte or wide character}
+} -match glob -returnCodes 1 -result {error reading "file*": invalid or incomplete multibyte or wide character}
 
 # ### ### ### ######### ######### #########
 

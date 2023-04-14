@@ -180,7 +180,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 			      $basename$patch library]
 	}
     }
-    # uniquify $dirs in order
+    # make $dirs unique, preserving order
     array set seen {}
     foreach i $dirs {
 	# Make sure $i is unique under normalization. Avoid repeated [source].
@@ -380,7 +380,7 @@ namespace eval auto_mkindex_parser {
 	    $parser expose eval
 	    $parser invokehidden rename eval _%@eval
 
-	    # Install all the registered psuedo-command implementations
+	    # Install all the registered pseudo-command implementations
 
 	    foreach cmd $initCommands {
 		eval $cmd
@@ -633,7 +633,7 @@ auto_mkindex_parser::hook {
 	load {} tbcload $auto_mkindex_parser::parser
 
 	# AUTO MKINDEX:  tbcload::bcproc name arglist body
-	# Adds an entry to the auto index list for the given pre-compiled
+	# Adds an entry to the auto index list for the given precompiled
 	# procedure name.
 
 	auto_mkindex_parser::commandInit tbcload::bcproc {name args} {
@@ -688,7 +688,7 @@ auto_mkindex_parser::command namespace {op args} {
 		    }
 		    regsub -all ::+ $name :: name
 		}
-		# create artifical proc to force an entry in the tclIndex
+		# create artificial proc to force an entry in the tclIndex
 		$parser eval [list ::proc $name {} {}]
 	    }
 	}

@@ -198,7 +198,7 @@ struct LimitHandler {
 /*
  * Values for the LimitHandler flags field.
  *      LIMIT_HANDLER_ACTIVE - Whether the handler is currently being
- *              processed; handlers are never to be entered reentrantly.
+ *              processed; handlers are never to be reentered.
  *      LIMIT_HANDLER_DELETED - Whether the handler has been deleted. This
  *              should not normally be observed because when a handler is
  *              deleted it is also spliced out of the list of handlers, but
@@ -3341,7 +3341,7 @@ TclMakeSafe(
     Tcl_UnsetVar2(interp, "tcl_platform", "user", TCL_GLOBAL_ONLY);
 
     /*
-     * Unset path informations variables (the only one remaining is [info
+     * Unset path information variables (the only one remaining is [info
      * nameofexecutable])
      */
 
@@ -4305,7 +4305,7 @@ CallScriptLimitCallback(
  *	None.
  *
  * Side effects:
- *	A limit callback implemented as an invokation of a Tcl script in
+ *	A limit callback implemented as an invocation of a Tcl script in
  *	another interpreter is either installed or removed.
  *
  *----------------------------------------------------------------------

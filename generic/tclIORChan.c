@@ -10,7 +10,7 @@
  *
  *	See TIP #219 for the specification of this functionality.
  *
- * Copyright © 2004-2005 ActiveState, a divison of Sophos
+ * Copyright © 2004-2005 ActiveState, a division of Sophos
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -131,7 +131,7 @@ typedef struct {
      * data in buffers is flushed out through the generation of fake file
      * events.
      *
-     * See 'rechan', 'memchan', etc.
+     * See 'refchan', 'memchan', etc.
      *
      * A timer is used here as well in order to ensure at least on pass through
      * the event loop when a channel becomes ready. See issues 67a5eabbd3d1 and
@@ -140,7 +140,7 @@ typedef struct {
 } ReflectedChannel;
 
 /*
- * Structure of the table maping from channel handles to reflected
+ * Structure of the table mapping from channel handles to reflected
  * channels. Each interpreter which has the handler command for one or more
  * reflected channels records them in such a table, so that 'chan postevent'
  * is able to find them even if the actual channel was moved to a different
@@ -890,8 +890,8 @@ TclChanPostEventObjCmd(
      * handles of reflected channels, and only of such whose handler is
      * defined in this interpreter.
      *
-     * We keep the old checks for both, for paranioa, but abort now instead of
-     * throwing errors, as failure now means that our internal datastructures
+     * We keep the old checks for both, for paranoia, but abort now instead of
+     * throwing errors, as failure now means that our internal data structures
      * have gone seriously haywire.
      */
 
@@ -1066,7 +1066,7 @@ UnmarshallErrorResult(
      * Syntax = (option value)... ?message?
      *
      * Bad syntax causes a panic. This is OK because the other side uses
-     * Tcl_GetReturnOptions and list construction functions to marshall the
+     * Tcl_GetReturnOptions and list construction functions to marshal the
      * information; if we panic here, something has gone badly wrong already.
      */
 
@@ -1157,7 +1157,7 @@ TclChanCaughtErrorBypass(
  *	driver-specific instance data.
  *
  * Results:
- *	A posix error.
+ *	A Posix error.
  *
  * Side effects:
  *	Releases memory. Arbitrary, as it calls upon a script.
@@ -1721,7 +1721,7 @@ ReflectWatch(
  *	is required of it.
  *
  * Results:
- *	A posix error number.
+ *	A Posix error number.
  *
  * Side effects:
  *	Allocates memory. Arbitrary, as it calls upon a script.
@@ -2288,7 +2288,7 @@ NewReflectedChannel(
  *	refcount of the returned object is -- zero --.
  *
  * Side effects:
- *	May allocate memory. Mutex protected critical section locks out other
+ *	May allocate memory. Mutex-protected critical section locks out other
  *	threads for a short time.
  *
  *----------------------------------------------------------------------
@@ -2342,7 +2342,7 @@ FreeReflectedChannel(
  * InvokeTclMethod --
  *
  *	This function is used to invoke the Tcl level of a reflected channel.
- *	It handles all the command assembly, invokation, and generic state and
+ *	It handles all the command assembly, invocation, and generic state and
  *	result mgmt. It does *not* handle thread redirection; that is the
  *	responsibility of clients of this function.
  *
@@ -2370,8 +2370,8 @@ InvokeTclMethod(
 {
     Tcl_Obj *methObj = NULL;	/* Method name in object form */
     Tcl_InterpState sr;		/* State of handler interp */
-    int result;			/* Result code of method invokation */
-    Tcl_Obj *resObj = NULL;	/* Result of method invokation. */
+    int result;			/* Result code of method invocation */
+    Tcl_Obj *resObj = NULL;	/* Result of method invocation. */
     Tcl_Obj *cmd;
 
     if (rcPtr->dead) {
@@ -2590,7 +2590,7 @@ GetReflectedChannelMap(
  *
  * Side effects:
  *	Deletes the hash table of channels. May close channels. May flush
- *	output on closed channels. Removes any channeEvent handlers that were
+ *	output on closed channels. Removes any channelEvent handlers that were
  *	registered in this interpreter.
  *
  *----------------------------------------------------------------------
