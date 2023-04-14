@@ -18,7 +18,7 @@
 
 /*
  * Structure used to help delay computing names of objects or classes for
- * [info frame] until needed, making invokation faster in the normal case.
+ * [info frame] until needed, making invocation faster in the normal case.
  */
 
 struct PNI {
@@ -1286,7 +1286,7 @@ MethodErrorHandler(
 	kindName = "class";
     }
 
-    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
+    objectName = TclGetStringFromObj(TclOOObjectName(interp, declarerPtr),
 	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)",
@@ -1317,7 +1317,7 @@ ConstructorErrorHandler(
 	kindName = "class";
     }
 
-    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
+    objectName = TclGetStringFromObj(TclOOObjectName(interp, declarerPtr),
 	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" constructor line %d)", kindName,
@@ -1347,7 +1347,7 @@ DestructorErrorHandler(
 	kindName = "class";
     }
 
-    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
+    objectName = TclGetStringFromObj(TclOOObjectName(interp, declarerPtr),
 	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" destructor line %d)", kindName,

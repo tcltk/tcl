@@ -252,7 +252,7 @@ proc compressDeps {depends} {
 #	Adds a new set of path and replacement string to the global list.
 #
 # Arguments:
-#	newPathInfo	comma seperated path and replacement string
+#	newPathInfo	comma separated path and replacement string
 #
 # Results:
 #	None.
@@ -296,7 +296,7 @@ proc readInputListFile {objectListFile} {
     set fl [read $f]
     close $f
 
-    # fix native path seperator so it isn't treated as an escape.
+    # fix native path separator so it isn't treated as an escape.
     regsub -all {\\} $fl {/} fl
 
     # Treat the string as a list so filenames between double quotes are

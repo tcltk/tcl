@@ -273,7 +273,8 @@ ThreadObjCmd(
     }
     case THREAD_CREATE: {
 	const char *script;
-	int joinable, len;
+	int joinable;
+	Tcl_Size len;
 
 	if (objc == 2) {
 	    /*
@@ -368,7 +369,7 @@ ThreadObjCmd(
 	} else {
 	    char buf[TCL_INTEGER_SPACE];
 
-	    sprintf(buf, "%" TCL_LL_MODIFIER "d", (long long)id);
+	    snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", (long long)id);
 	    Tcl_AppendResult(interp, "cannot join thread ", buf, NULL);
 	}
 	return result;
@@ -608,7 +609,7 @@ NewTestThread(
      */
 
     Tcl_Preserve(tsdPtr->interp);
-    result = Tcl_EvalEx(tsdPtr->interp, threadEvalScript, -1, 0);
+    result = Tcl_EvalEx(tsdPtr->interp, threadEvalScript, TCL_INDEX_NONE, 0);
     if (result != TCL_OK) {
 	ThreadErrorProc(tsdPtr->interp);
     }
@@ -650,15 +651,15 @@ ThreadErrorProc(
     char *script;
     char buf[TCL_DOUBLE_SPACE+1];
 
-    sprintf(buf, "%p", Tcl_GetCurrentThread());
+    snprintf(buf, sizeof(buf), "%p", Tcl_GetCurrentThread());
 
     errorInfo = Tcl_GetVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
     if (errorProcString == NULL) {
 	errChannel = Tcl_GetStdChannel(TCL_STDERR);
-	Tcl_WriteChars(errChannel, "Error from thread ", -1);
-	Tcl_WriteChars(errChannel, buf, -1);
+	Tcl_WriteChars(errChannel, "Error from thread ", TCL_INDEX_NONE);
+	Tcl_WriteChars(errChannel, buf, TCL_INDEX_NONE);
 	Tcl_WriteChars(errChannel, "\n", 1);
-	Tcl_WriteChars(errChannel, errorInfo, -1);
+	Tcl_WriteChars(errChannel, errorInfo, TCL_INDEX_NONE);
 	Tcl_WriteChars(errChannel, "\n", 1);
     } else {
 	argv[0] = errorProcString;
@@ -823,7 +824,7 @@ ThreadSend(
     }
 
     /*
-     * Short circut sends to ourself. Ought to do something with -async, like
+     * Short circuit sends to ourself. Ought to do something with -async, like
      * run in an idle handler.
      */
 
@@ -983,7 +984,7 @@ ThreadCancel(
     Tcl_MutexUnlock(&threadMutex);
     Tcl_ResetResult(interp);
     return Tcl_CancelEval(tsdPtr->interp,
-    	(result != NULL) ? Tcl_NewStringObj(result, -1) : NULL, 0, flags);
+    	(result != NULL) ? Tcl_NewStringObj(result, TCL_INDEX_NONE) : NULL, 0, flags);
 }
 
 /*

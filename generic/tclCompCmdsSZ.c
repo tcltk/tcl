@@ -892,7 +892,7 @@ TclCompileStringLenCmd(
 	char buf[TCL_INTEGER_SPACE];
 	int len = TclGetCharLength(objPtr);
 
-	len = sprintf(buf, "%d", len);
+	len = snprintf(buf, sizeof(buf), "%d", len);
 	PushLiteral(envPtr, buf, len);
     } else {
 	SetLineInformation(1);
@@ -2374,7 +2374,7 @@ IssueSwitchJumpTable(
      * Compile the switch by using a jump table, which is basically a
      * hashtable that maps from literal values to match against to the offset
      * (relative to the INST_JUMP_TABLE instruction) to jump to. The jump
-     * table itself is independent of any invokation of the bytecode, and as
+     * table itself is independent of any invocation of the bytecode, and as
      * such is stored in an auxData block.
      *
      * Start by allocating the jump table itself, plus some workspace.
@@ -3114,7 +3114,7 @@ IssueTryClausesInstructions(
 
     for (i=0 ; i<numHandlers ; i++) {
 	noError[i] = -1;
-	sprintf(buf, "%d", matchCodes[i]);
+	snprintf(buf, sizeof(buf), "%d", matchCodes[i]);
 	OP(				DUP);
 	PushLiteral(envPtr, buf, strlen(buf));
 	OP(				EQ);
@@ -3326,7 +3326,7 @@ IssueTryClausesFinallyInstructions(
 	int noTrapError, trapError;
 	const char *p;
 
-	sprintf(buf, "%d", matchCodes[i]);
+	snprintf(buf, sizeof(buf), "%d", matchCodes[i]);
 	OP(				DUP);
 	PushLiteral(envPtr, buf, strlen(buf));
 	OP(				EQ);
@@ -4076,7 +4076,7 @@ CompileAssociativeBinaryOpCmd(
     if (words > 3) {
 	/*
 	 * Reverse order of arguments to get precise agreement with [expr] in
-	 * calcuations, including roundoff errors.
+	 * calculations, including roundoff errors.
 	 */
 
 	OP4(	REVERSE, words-1);
@@ -4527,7 +4527,7 @@ TclCompileMinusOpCmd(
 
     /*
      * Reverse order of arguments to get precise agreement with [expr] in
-     * calcuations, including roundoff errors.
+     * calculations, including roundoff errors.
      */
 
     TclEmitInstInt4(INST_REVERSE, words-1, envPtr);
@@ -4571,7 +4571,7 @@ TclCompileDivOpCmd(
 
     /*
      * Reverse order of arguments to get precise agreement with [expr] in
-     * calcuations, including roundoff errors.
+     * calculations, including roundoff errors.
      */
 
     TclEmitInstInt4(INST_REVERSE, words-1, envPtr);

@@ -434,7 +434,7 @@ typedef struct ByteCode {
 				 * active. This structure can be freed when
 				 * refCount becomes zero. */
     unsigned int flags;		/* flags describing state for the codebyte.
-				 * this variable holds ORed values from the
+				 * this variable holds OR'ed values from the
 				 * TCL_BYTECODE_ masks defined above */
     const char *source;		/* The source string from which this ByteCode
 				 * was compiled. Note that this pointer is not
@@ -1826,7 +1826,7 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
     FILE *tclDTraceDebugLog = NULL;				\
     void TclDTraceOpenDebugLog(void) {				\
 	char n[35];						\
-	sprintf(n, "/tmp/tclDTraceDebug-%" TCL_Z_MODIFIER "u.log", \
+	snprintf(n, sizeof(n), "/tmp/tclDTraceDebug-%" TCL_Z_MODIFIER "u.log", \
 		(size_t) getpid());			\
 	tclDTraceDebugLog = fopen(n, "a");			\
     }

@@ -100,7 +100,7 @@ SetResultLength(
  * Results:
  *	Returns the position in the path immediately after the root including
  *	any trailing slashes. Appends a cleaned up version of the root to the
- *	Tcl_DString at the specified offest.
+ *	Tcl_DString at the specified offset.
  *
  * Side effects:
  *	Modifies the specified Tcl_DString.
@@ -502,11 +502,11 @@ TclpNativeSplitPath(
 
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:
-	resultPtr = SplitUnixPath(Tcl_GetString(pathPtr));
+	resultPtr = SplitUnixPath(TclGetString(pathPtr));
 	break;
 
     case TCL_PLATFORM_WINDOWS:
-	resultPtr = SplitWinPath(Tcl_GetString(pathPtr));
+	resultPtr = SplitWinPath(TclGetString(pathPtr));
 	break;
     }
 
@@ -919,7 +919,7 @@ TclpNativeJoinPath(
 	 */
 
 	Tcl_SetObjLength(prefix, length + (int) strlen(p));
-	dest = Tcl_GetString(prefix) + length;
+	dest = TclGetString(prefix) + length;
 	for (; *p != '\0'; p++) {
 	    if ((*p == '/') || (*p == '\\')) {
 		while ((p[1] == '/') || (p[1] == '\\')) {
@@ -1900,7 +1900,7 @@ TclGlob(
      * To process a [glob] invocation, this function may be called multiple
      * times. Each time, the previously discovered filenames are in the
      * interpreter result. We stash that away here so the result is free for
-     * error messsages.
+     * error messages.
      */
 
     savedResultObj = Tcl_GetObjResult(interp);

@@ -1235,7 +1235,7 @@ TclScanElement(
 	     * If we are quoting solely due to ] or internal " characters use
 	     * the CONVERT_MASK mode where we escape all special characters
 	     * except for braces. "extra" counted space needed to escape
-	     * braces too, so substract "braceCount" to get our actual needs.
+	     * braces too, so subtract "braceCount" to get our actual needs.
 	     */
 
 	    bytesNeeded += (extra - braceCount);
@@ -2064,7 +2064,7 @@ Tcl_ConcatObj(
      * Something cannot be determined to be safe, so build the concatenation
      * the slow way, using the string representations.
      *
-     * First try to pre-allocate the size required.
+     * First try to preallocate the size required.
      */
 
     for (i = 0;  i < objc;  i++) {
@@ -3334,9 +3334,9 @@ Tcl_PrintDouble(
 	 */
 
 	if (*precisionPtr == 0) {
-	    sprintf(dst, "e%+d", exponent);
+	    snprintf(dst, TCL_DOUBLE_SPACE, "e%+d", exponent);
 	} else {
-	    sprintf(dst, "e%+03d", exponent);
+	    snprintf(dst, TCL_DOUBLE_SPACE, "e%+03d", exponent);
 	}
     } else {
 	/*
@@ -4075,7 +4075,7 @@ TclIndexEncode(
 	     */
 	    idx = after;
 	} else if (wide <= (irPtr ? INT_MAX : TCL_INDEX_NONE)) {
-	    /* These indices always indicate "before the beginning */
+	    /* These indices always indicate "before the beginning" */
 	    idx = before;
 	} else {
 	    /* Encoded end-positive (or end+negative) are offset */

@@ -1878,24 +1878,27 @@ Tcl_ListObjAppendList(
  *
  * Tcl_ListObjAppendElement --
  *
- *	This function is a special purpose version of Tcl_ListObjAppendList:
- *	it appends a single object referenced by elemObj to the list object
- *	referenced by toObj. If toObj is not already a list object, an
- *	attempt will be made to convert it to one.
+ *	Like 'Tcl_ListObjAppendList', but Appends a single value to a list.
  *
- * Results:
- *	The return value is normally TCL_OK; in this case elemObj is added to
- *	the end of toObj's list. If toObj does not refer to a list object
- *	and the object can not be converted to one, TCL_ERROR is returned and
- *	an error message will be left in the interpreter's result if interp is
- *	not NULL.
+ * Value
  *
- * Side effects:
- *	The ref count of elemObj is incremented since the list now refers to
- *	it. toObj will be converted, if necessary, to a list object. Also,
- *	appending the new element may cause listObj's array of element
- *	pointers to grow. toObj's old string representation, if any, is
- *	invalidated.
+ *	TCL_OK
+ *
+ *	    'objPtr' is appended to the elements of 'listPtr'.
+ *
+ *	TCL_ERROR
+ *
+ *	    listPtr does not refer to a list object and the object can not be
+ *	    converted to one. An error message will be left in the
+ *	    interpreter's result if interp is not NULL.
+ *
+ * Effect
+ *
+ *	If 'listPtr' is not already of type 'tclListType', it is converted.
+ *	The 'refCount' of 'objPtr' is incremented as it is added to 'listPtr'.
+ *	Appending the new element may cause the array of element pointers
+ *	in 'listObj' to grow.  Any preexisting string representation of
+ *	'listPtr' is invalidated.
  *
  *----------------------------------------------------------------------
  */
@@ -1917,23 +1920,27 @@ Tcl_ListObjAppendElement(
  *
  * Tcl_ListObjIndex --
  *
- *	This function returns a pointer to the index'th object from the list
- *	referenced by listPtr. The first element has index 0. If index is
- *	negative or greater than or equal to the number of elements in the
- *	list, a NULL is returned. If listPtr is not a list object, an attempt
- *	will be made to convert it to a list.
+ * 	Retrieve a pointer to the element of 'listPtr' at 'index'.  The index
+ * 	of the first element is 0.
  *
- * Results:
- *	The return value is normally TCL_OK; in this case objPtrPtr is set to
- *	the Tcl_Obj pointer for the index'th list element or NULL if index is
- *	out of range. This object should be treated as readonly and its ref
- *	count is _not_ incremented; the caller must do that if it holds on to
- *	the reference. If listPtr does not refer to a list and can't be
- *	converted to one, TCL_ERROR is returned and an error message is left
- *	in the interpreter's result if interp is not NULL.
+ * Value
  *
- * Side effects:
- *	listPtr will be converted, if necessary, to a list object.
+ * 	TCL_OK
+ *
+ *	    A pointer to the element at 'index' is stored in 'objPtrPtr'.  If
+ *	    'index' is out of range, NULL is stored in 'objPtrPtr'.  This
+ *	    object should be treated as readonly and its 'refCount' is _not_
+ *	    incremented. The caller must do that if it holds on to the
+ *	    reference.
+ *
+ * 	TCL_ERROR
+ *
+ * 	    'listPtr' is not a valid list. An error message is left in the
+ * 	    interpreter's result if 'interp' is not NULL.
+ *
+ *  Effect
+ *
+ * 	If 'listPtr' is not already of type 'tclListType', it is converted.
  *
  *----------------------------------------------------------------------
  */
@@ -2335,7 +2342,7 @@ Tcl_ListObjReplace(
      */
 
     /*
-     * Calculate shifts if necessary to accomodate insertions.
+     * Calculate shifts if necessary to accommodate insertions.
      * NOTE: all indices are relative to listObjs which is not necessarily the
      * start of the ListStore storage area.
      *
@@ -2769,7 +2776,7 @@ TclLsetList(
     ListObjGetElements(indexListCopy, indexCount, indices);
 
     /*
-     * Let TclLsetFlat handle the actual lset'ting.
+     * Let TclLsetFlat perform the actual lset operation.
      */
 
     retValueObj = TclLsetFlat(interp, listObj, indexCount, indices, valueObj);
@@ -3398,18 +3405,16 @@ fail:
  *
  * UpdateStringOfList --
  *
- *	Update the string representation for a list object. Note: This
- *	function does not invalidate an existing old string rep so storage
- *	will be lost if this has not already been done.
+ *	Update the string representation for a list object.
  *
- * Results:
- *	None.
+ *	Any previously-existing string representation is not invalidated, so
+ *	storage is lost if this has not been taken care of.
  *
- * Side effects:
- *	The object's string is set to a valid string that results from the
- *	list-to-string conversion. This string will be empty if the list has
- *	no elements. The list internal representation should not be NULL and
- *	we assume it is not NULL.
+ * Effect
+ *
+ *	The string representation of 'listPtr' is set to the resulting string.
+ *	This string will be empty if the list has no elements. It is assumed
+ *	that the list internal representation is not NULL.
  *
  *----------------------------------------------------------------------
  */

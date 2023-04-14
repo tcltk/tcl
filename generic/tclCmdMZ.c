@@ -427,7 +427,7 @@ Tcl_RegexpObjCmd(
 	 * match. We always increment the offset by at least one to prevent
 	 * endless looping (as in the case: regexp -all {a*} a). Otherwise,
 	 * when we match the NULL string at the end of the input string, we
-	 * will loop indefinately (because the length of the match is 0, so
+	 * will loop indefinitely (because the length of the match is 0, so
 	 * offset never changes).
 	 */
 
@@ -1239,7 +1239,7 @@ Tcl_SplitObjCmd(
 
 	/*
 	 * Handle the special case of splitting on a single character. This is
-	 * only true for the one-char ASCII case, as one unicode char is > 1
+	 * only true for the one-char ASCII case, as one Unicode char is > 1
 	 * byte in length.
 	 */
 
@@ -1588,7 +1588,7 @@ StringIsCmd(
     /*
      * We get the objPtr so that we can short-cut for some classes by checking
      * the object type (int and double), but we need the string otherwise,
-     * because we don't want any conversion of type occuring (as, for example,
+     * because we don't want any conversion of type occurring (as, for example,
      * Tcl_Get*FromObj would do).
      */
 
@@ -2122,7 +2122,7 @@ StringMapCmd(
 	int *mapLens, *u2lc = NULL;
 
 	/*
-	 * Precompute pointers to the unicode string and length. This saves us
+	 * Precompute pointers to the Unicode string and length. This saves us
 	 * repeated function calls later, significantly speeding up the
 	 * algorithm. We only need the lowercase first char in the nocase
 	 * case.
@@ -2171,7 +2171,7 @@ StringMapCmd(
 		    ustring1 = p - 1;
 
 		    /*
-		     * Append the map value to the unicode string.
+		     * Append the map value to the Unicode string.
 		     */
 
 		    TclAppendUnicodeToObj(resultPtr,
@@ -4793,7 +4793,7 @@ TclNRTryObjCmd(
 	    if (TclListObjLengthM(NULL, objv[i+1], &dummy) != TCL_OK) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad prefix '%s': must be a list",
-			Tcl_GetString(objv[i+1])));
+			TclGetString(objv[i+1])));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "TRAP",
 			"EXNFORMAT", NULL);
@@ -5333,7 +5333,7 @@ TclListLines(
     Tcl_Obj *const *elems)      /* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
-    const char *listStr = Tcl_GetString(listObj);
+    const char *listStr = TclGetString(listObj);
     const char *listHead = listStr;
     int i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;

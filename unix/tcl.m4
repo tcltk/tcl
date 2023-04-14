@@ -2378,7 +2378,7 @@ AC_DEFUN([SC_TCL_EARLY_FLAGS],[
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_TCL_64BIT_FLAGS], [
-    AC_MSG_CHECKING([for 64-bit integer type])
+    AC_MSG_CHECKING([if 'long' and 'long long' have the same size (64-bit)?])
     AC_CACHE_VAL(tcl_cv_type_64bit,[
 	tcl_cv_type_64bit=none
 	# See if we could use long anyway  Note that we substitute in the
@@ -2388,9 +2388,10 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
             case 1: case (sizeof(long long)==sizeof(long)): ;
         }]])],[tcl_cv_type_64bit="long long"],[])])
     if test "${tcl_cv_type_64bit}" = none ; then
-	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, [Do 'long' and 'long long' have the same size (64-bit)?])
+	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, ['long' and 'long long' have the same size])
 	AC_MSG_RESULT([yes])
     else
+	AC_MSG_RESULT([no])
 	# Now check for auxiliary declarations
 	AC_CACHE_CHECK([for struct dirent64], tcl_cv_struct_dirent64,[
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>

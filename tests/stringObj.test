@@ -317,7 +317,7 @@ test stringObj-9.10 {TclAppendObjToObj, integer src & mixed dest} testobj {
 test stringObj-9.11 {TclAppendObjToObj, mixed src & 1-byte dest index check} testobj {
     # bug 2678, in <=8.2.0, the second obj (the one to append) in
     # Tcl_AppendObjToObj was not correctly checked to see if it was all one
-    # byte chars, so a unicode string would be added as one byte chars.
+    # byte chars, so a Unicode string would be added as one byte chars.
     set x abcdef
     set len [string length $x]
     set y a\xFCb\xE5c\xEF
@@ -410,13 +410,13 @@ test stringObj-13.4 {Tcl_GetCharLength with mixed width chars} testobj {
 } 1
 test stringObj-13.5 {Tcl_GetCharLength with mixed width chars} testobj {
     # string length "ï¿®ï¿®"
-    # Use \uXXXX notation below instead of hardcoding the values, otherwise
+    # Use \uXXXX notation below instead of hard-coding the values, otherwise
     # the test will fail in multibyte locales.
     string length "\xEF\xBF\xAE\xEF\xBF\xAE"
 } 6
 test stringObj-13.6 {Tcl_GetCharLength with mixed width chars} testobj {
     # set a "ïa¿b®cï¿d®"
-    # Use \uXXXX notation below instead of hardcoding the values, otherwise
+    # Use \uXXXX notation below instead of hard-coding the values, otherwise
     # the test will fail in multibyte locales.
     set a "\xEFa\xBFb\xAEc\xEF\xBFd\xAE"
     list [string length $a] [string length $a]

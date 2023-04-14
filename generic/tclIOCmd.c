@@ -1033,7 +1033,7 @@ Tcl_ExecObjCmd(
  *
  * Side effects:
  *	Sets interp's result to boolean true or false depending on whether the
- *	preceeding input operation on the channel would have blocked.
+ *	preceding input operation on the channel would have blocked.
  *
  *---------------------------------------------------------------------------
  */
@@ -1485,7 +1485,7 @@ Tcl_SocketObjCmd(
     TclInitSockets();
 
     for (a = 1; a < objc; a++) {
-	const char *arg = Tcl_GetString(objv[a]);
+	const char *arg = TclGetString(objv[a]);
 
 	if (arg[0] != '-') {
 	    break;
