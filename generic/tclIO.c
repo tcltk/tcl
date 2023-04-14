@@ -4870,11 +4870,11 @@ Tcl_GetsObj(
 		&& GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 		&& !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 	    /* Set eol to the position that caused the encoding error, and then
-	     * coninue to gotEOL, which stores the data that was decoded
+	     * continue to gotEOL, which stores the data that was decoded
 	     * without error to objPtr.  This allows the caller to do something
 	     * useful with the data decoded so far, and also results in the
 	     * position of the file being the first byte that was not
-	     * succesfully decoded, allowing further processing at exactly that
+	     * successfully decoded, allowing further processing at exactly that
 	     * point, if desired.
 	     */
 	    eol = dstEnd;
@@ -5980,7 +5980,6 @@ DoReadChars(
     chanPtr = statePtr->topChanPtr;
     TclChannelPreserve((Tcl_Channel)chanPtr);
 
-
     binaryMode = (encoding == GetBinaryEncoding())
 	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF)
 	    && (statePtr->inEofChar == '\0');
@@ -5996,7 +5995,6 @@ DoReadChars(
 	    Tcl_SetObjLength(objPtr, 0);
 	}
     }
-
 
     /*
      * Must clear the BLOCKED|EOF flags here since we check before reading.
@@ -6040,11 +6038,7 @@ DoReadChars(
 
 	    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 		    && !GotFlag(statePtr, CHANNEL_STICKY_EOF)
-		    && !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
-		/* Channel is blocking.  Return an error so that callers
-		 * like [read] can return an error.
-		*/
-		Tcl_SetErrno(EILSEQ);
+		    && (!GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
 		goto finish;
 	    }
 	}
@@ -6089,7 +6083,7 @@ finish:
     }
 
     /*
-     * Regenerate the top channel, in case it was changed due to
+     * Regenerate chanPtr in case it was changed due to
      * self-modifying reflected transforms.
      */
 
@@ -6111,8 +6105,14 @@ finish:
     assert(!(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
             == (CHANNEL_EOF|CHANNEL_BLOCKED)));
     UpdateInterest(chanPtr);
+
+    /* This must comes after UpdateInterest(), which may set errno */
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 	    && (!copied || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+	/* Channel either is blocking or is nonblocking with no data
+	 * succesfully red before the error.  Return an error so that callers
+	 * like [read] can also return an error.
+	*/
 	Tcl_SetErrno(EILSEQ);
 	if (!copied) {
 	    copied = -1;
