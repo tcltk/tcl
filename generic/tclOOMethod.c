@@ -18,7 +18,7 @@
 
 /*
  * Structure used to help delay computing names of objects or classes for
- * [info frame] until needed, making invokation faster in the normal case.
+ * [info frame] until needed, making invocation faster in the normal case.
  */
 
 struct PNI {

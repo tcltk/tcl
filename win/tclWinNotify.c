@@ -14,7 +14,7 @@
 #include "tclInt.h"
 
 /*
- * The follwing static indicates whether this module has been initialized.
+ * The following static indicates whether this module has been initialized.
  */
 
 #define INTERVAL_TIMER	1	/* Handle of interval timer. */

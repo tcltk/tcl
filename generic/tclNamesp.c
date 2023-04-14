@@ -4214,7 +4214,7 @@ UnlinkNsPath(
  * Side effects:
  *	Increments the command reference epoch in each namespace whose path
  *	includes the given namespace. This causes any cached resolved names
- *	whose root cacheing context starts at that namespace to be recomputed
+ *	whose root caching context starts at that namespace to be recomputed
  *	the next time they are used.
  *
  *----------------------------------------------------------------------
@@ -4287,7 +4287,7 @@ NamespaceQualifiersCmd(
 	if ((*p == ':') && (p > name) && (*(p-1) == ':')) {
 	    p -= 2;			/* Back up over the :: */
 	    while ((p >= name) && (*p == ':')) {
-		p--;			/* Back up over the preceeding : */
+		p--;			/* Back up over the preceding : */
 	    }
 	    break;
 	}
@@ -4566,7 +4566,7 @@ NamespaceTailCmd(
  *
  * Side effects:
  *	Creates new variables in the current scope, linked to the
- *	corresponding variables in the stipulated nmamespace. If anything goes
+ *	corresponding variables in the stipulated namespace. If anything goes
  *	wrong, the result is an error message.
  *
  *----------------------------------------------------------------------

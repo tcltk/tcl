@@ -65,7 +65,7 @@ typedef struct {
     int sortMode;		/* The sort mode. One of SORTMODE_* values
 				 * defined below. */
     Tcl_Obj *compareCmdPtr;	/* The Tcl comparison command when sortMode is
-				 * SORTMODE_COMMAND. Pre-initialized to hold
+				 * SORTMODE_COMMAND. Preinitialized to hold
 				 * base of command. */
     int *indexv;		/* If the -index option was specified, this
 				 * holds an encoding of the indexes contained
@@ -4895,7 +4895,7 @@ Tcl_LsortObjCmd(
 	}
 
 	/*
-	 * Merge this element in the pre-existing sublists (and merge together
+	 * Merge this element in the preexisting sublists (and merge together
 	 * sublists when we have two of the same size).
 	 */
 
@@ -5213,7 +5213,7 @@ MergeLists(
  *	ordering between two elements.
  *
  * Results:
- *	A negative results means the the first element comes before the
+ *	A negative results means the first element comes before the
  *	second, and a positive results means that the second element should
  *	come first. A result of zero means the two elements are equal and it
  *	doesn't matter which comes first.
@@ -5415,7 +5415,7 @@ DictionaryCompare(
 
 	    /*
 	     * Convert both chars to lower for the comparison, because
-	     * dictionary sorts are case insensitve. Covert to lower, not
+	     * dictionary sorts are case-insensitive. Covert to lower, not
 	     * upper, so chars between Z and a will sort before A (where most
 	     * other interesting punctuations occur).
 	     */

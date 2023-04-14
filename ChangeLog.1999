@@ -388,7 +388,7 @@
 	the beginning of the test run
 
 	* tests/basic.test: Use version information defined in tcltest instead
-	of hardcoded version number
+	of hard-coded version number
 
 	* tests/socket.test: package require tcltest before attempting to use
 	variable defined in tcltest namespace

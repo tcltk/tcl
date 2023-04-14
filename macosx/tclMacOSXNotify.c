@@ -1350,7 +1350,7 @@ TclpNotifierData(void)
  *	polls without blocking.
  *
  * Results:
- *	Returns 0 if a tcl event or timeout ocurred and 1 if a non-tcl
+ *	Returns 0 if a tcl event or timeout occurred and 1 if a non-tcl
  *	CFRunLoop source was processed.
  *
  * Side effects:

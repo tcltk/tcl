@@ -1634,7 +1634,7 @@ TclCompileObj(
 	 * Future optimizations ...
 	 * (1) Save the location data (ExtCmdLoc) keyed by start line. In that
 	 *     case we recompile once per location of the literal, but not
-	 *     continously, because the moment we have all locations we do not
+	 *     continuously, because the moment we have all locations we do not
 	 *     need to recompile any longer.
 	 *
 	 * (2) Alternative: Do not recompile, tell the execution engine the
@@ -1732,7 +1732,7 @@ TclCompileObj(
  *
  * TclIncrObj --
  *
- *	Increment an integeral value in a Tcl_Obj by an integeral value held
+ *	Increment an integral value in a Tcl_Obj by an integral value held
  *	in another Tcl_Obj. Caller is responsible for making sure we can
  *	update the first object.
  *
@@ -3463,7 +3463,7 @@ TEBCresume(
      *	   Start of INST_INCR instructions.
      *
      * WARNING: more 'goto' here than your doctor recommended! The different
-     * instructions set the value of some variables and then jump to somme
+     * instructions set the value of some variables and then jump to some
      * common execution code.
      */
 
@@ -5262,7 +5262,7 @@ TEBCresume(
 	TRACE(("\"%.20s\" %.20s => ", O2S(valuePtr), O2S(value2Ptr)));
 
 	/*
-	 * Get char length to calulate what 'end' means.
+	 * Get char length to calculate what 'end' means.
 	 */
 
 	slength = Tcl_GetCharLength(valuePtr);
@@ -7068,7 +7068,7 @@ TEBCresume(
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), done));
 
 	/*
-	 * The INST_DICT_FIRST and INST_DICT_NEXT instructsions are always
+	 * The INST_DICT_FIRST and INST_DICT_NEXT instructions are always
 	 * followed by a conditional jump, so we can take advantage of this to
 	 * do some peephole optimization (note that we're careful to not close
 	 * out someone doing something else).

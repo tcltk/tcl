@@ -439,7 +439,7 @@ AtForkChild(void)
 
 	    /*
 	     * The tsdPtr from before the fork is copied as well. But since we
-	     * are paranoic, we don't trust its condvar and reset it.
+	     * are paranoiac, we don't trust its condvar and reset it.
 	     */
 #ifdef __CYGWIN__
 	    DestroyWindow(tsdPtr->hwnd);

@@ -269,7 +269,8 @@ Tcl_TraceObjCmd(
     case TRACE_OLD_VDELETE: {
 	Tcl_Obj *copyObjv[6];
 	Tcl_Obj *opsList;
-	int code, numFlags;
+	int code;
+	Tcl_Size numFlags;
 
 	if (objc != 5) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "name ops command");
@@ -1104,7 +1105,7 @@ Tcl_CommandTraceInfo(
  *
  * Side effects:
  *	A trace is set up on the command given by cmdName, such that future
- *	changes to the command will be intermediated by proc. See the manual
+ *	changes to the command will be mediated by proc. See the manual
  *	entry for complete details on the calling sequence for proc.
  *
  *----------------------------------------------------------------------
@@ -2930,7 +2931,7 @@ Tcl_UntraceVar2(
 				 * trace, including any of TCL_TRACE_READS,
 				 * TCL_TRACE_WRITES, TCL_TRACE_UNSETS,
 				 * TCL_GLOBAL_ONLY, and TCL_NAMESPACE_ONLY. */
-    Tcl_VarTraceProc *proc,	/* Function assocated with trace. */
+    Tcl_VarTraceProc *proc,	/* Function associated with trace. */
     void *clientData)	/* Arbitrary argument to pass to proc. */
 {
     VarTrace *tracePtr;
@@ -3058,7 +3059,7 @@ Tcl_VarTraceInfo2(
 				 * as-a-whole. */
     int flags,			/* OR-ed combination of TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY. */
-    Tcl_VarTraceProc *proc,	/* Function assocated with trace. */
+    Tcl_VarTraceProc *proc,	/* Function associated with trace. */
     void *prevClientData)	/* If non-NULL, gives last value returned by
 				 * this function, so this call will return the
 				 * next trace after that one. If NULL, this
@@ -3116,7 +3117,7 @@ Tcl_VarTraceInfo2(
  *
  * Side effects:
  *	A trace is set up on the variable given by part1 and part2, such that
- *	future references to the variable will be intermediated by proc. See
+ *	future references to the variable will be mediated by proc. See
  *	the manual entry for complete details on the calling sequence for
  *	proc. The variable's flags are updated.
  *
@@ -3169,7 +3170,7 @@ Tcl_TraceVar2(
  *
  * Side effects:
  *	A trace is set up on the variable given by part1 and part2, such that
- *	future references to the variable will be intermediated by the
+ *	future references to the variable will be mediated by the
  *	traceProc listed in tracePtr. See the manual entry for complete
  *	details on the calling sequence for proc.
  *

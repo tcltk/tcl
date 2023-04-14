@@ -1044,7 +1044,7 @@ AC_DEFUN([SC_WITH_TCL], [
 #	none
 #
 # Results
-#	Subst's the following values:
+#	Substitutes the following values:
 #		TCLSH_PROG
 #------------------------------------------------------------------------
 
@@ -1090,7 +1090,7 @@ AC_DEFUN([SC_PROG_TCLSH], [
 #	none
 #
 # Results
-#	Subst's the following values:
+#	Substitutes the following values:
 #		BUILD_TCLSH
 #------------------------------------------------------------------------
 
