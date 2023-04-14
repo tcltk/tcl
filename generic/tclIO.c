@@ -4997,8 +4997,7 @@ Tcl_GetsObj(
     }
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
-    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) &&
-	    (copiedTotal == 0 || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) && gs.bytesWrote == 0) {
 	Tcl_SetErrno(EILSEQ);
 	copiedTotal = -1;
     }
