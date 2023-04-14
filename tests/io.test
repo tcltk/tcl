@@ -9449,10 +9449,9 @@ test io-75.14 {
 
 	invalid utf-8 encoding [gets] continues in non-strict mode after error
 } -setup {
-    set fn [makeFile {} io-75.14]
-    set f [open $fn w+]
+    set chan  [file tempfile]
     fconfigure $f -encoding binary
-    # \xc0 is invalid in utf-8
+    # \xc0\n is an invalid utf-8 sequence
     puts -nonewline $f a\nb\xc0\nc\n
     flush $f
     seek $f 0
@@ -9466,11 +9465,37 @@ test io-75.14 {
     lappend res [gets $f]
     lappend res [gets $f]
     close $f
-	return $res
-} -cleanup {
-    removeFile io-75.14
+    return $res
 } -match glob -result {a 1 {error reading "*":\
     invalid or incomplete multibyte or wide character} bÀ c}
+
+test io-75.15 {
+    invalid utf-8 encoding strict gets does not hang
+    after error reconfigure and read
+} -setup {
+    set res {}
+    set chan [file tempfile]
+    fconfigure $chan -encoding binary
+    # \xc0\x40 is an invalid utf-8 sequence
+    puts $chan hello\nAB\xc0\x40CD\nEFG
+	seek $chan 0
+} -body {
+    #Now try to read it with [gets]
+    fconfigure $chan -encoding utf-8 -profile strict
+    lappend res [gets $chan]
+    set status [catch {gets $chan} cres copts]
+    lappend res $status $cres
+    set status [catch {gets $chan} cres copts]
+    lappend res $status $cres
+    chan configure $chan -encoding binary
+    foreach char [split [read $chan 6] {}] {
+	lappend res [format %x [scan $char %c]]
+    }
+    return $res
+} -cleanup {
+    close $chan
+} -match glob -result {hello 1 {error reading "*": invalid or incomplete multibyte or wide character}\
+    1 {error reading "*": invalid or incomplete multibyte or wide character} 41 42 c0 40 43 44}
 
 # ### ### ### ######### ######### #########
 
@@ -9581,7 +9606,7 @@ test io-76.9 {channel mode dropping} -setup {
 } -returnCodes error -cleanup {
     close $f
     removeFile dummy
-} -match glob -result {Tcl_RemoveChannelMode error:
+} -match glob -result {Tcl_RemoveChannelMode error:\
     Bad mode, would make channel inacessible. Channel: "*"}
 
 test io-76.10 {channel mode dropping} -setup {
