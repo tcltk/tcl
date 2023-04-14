@@ -6,9 +6,9 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 # These are very rudimentary tests for large size arguments to commands.
-# They do not exercise all possible options, shared/unshared Tcl_Objs,
-# literal/variable arguments etc. all of which exercise different code
-# paths. But more substantive tests are not practical because of the run time.
+# They do not exercise all possible code paths such as shared/unshared Tcl_Objs,
+# literal/variable arguments etc.
+# They do however test compiled and uncompiled execution.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest
@@ -51,7 +51,7 @@ proc bigtest {id comment result args} {
 
     return
 
-    # TODO - is this required separately from the compile-script above?
+    # TODO - is this proc compilation required separately from the compile-script above?
     dict append args -setup \n[list proc testxproc {} $body]
     dict append args -cleanup "\nrename testxproc {}"
     uplevel 1 [list test $id.compiled-proc "$comment (compiled proc)" \
@@ -741,13 +741,12 @@ bigtestRO foreach-bigdata-1 "foreach" 1 -body {
 
 #
 # lappend
-bigtest lappend-bigdata-1 "lappend" {0 1 2 3 4 a b c d} -body {
+bigtest lappend-bigdata-1 "lappend" {4294967300 4294967300 {0 1 2 3 4 a b c d}} -body {
+    # Do NOT initialize l in a -setup block. That requires more memory and fails.
     # Do not have enough memory for a full compare.
     # Just check end
-    lappend l a b c d
-    lrange $l end-8 end
-} -setup {
-    set l [bigList 0xFFFFFFFF]
+    set l [bigList 0x100000000]
+    list [llength [lappend l a b c d]] [llength $l] [lrange $l end-8 end]
 } -cleanup {
     bigClean
 }
@@ -776,13 +775,13 @@ bigtest ledit-bigdata-1 "ledit - small result" {{0 X Y Z 8} {0 X Y Z 8}} -body {
     bigClean
 }
 
-bigtest ledit-bigdata-2 "ledit - large result" {4294967304 4294967304 a b c d e f g 8} -body {
-    list [llength [ledit l 0x100000000 0x100000000 a b c d e f g]] [llength $l] [lrange $l 0x100000000 end]
-} -setup {
+bigtest ledit-bigdata-2 "ledit - large result" {4294967304 4294967304 {a b c d e f g 7}} -body {
+    # Do NOT initialize l in a -setup block. That requires more memory and fails.
     set l [bigList 0x100000002]
+    list [llength [ledit l 0x100000000 0x100000000 a b c d e f g]] [llength $l] [lrange $l 0x100000000 end]
 } -cleanup {
     bigClean
-} -constraints bug-outofmemorypanic
+}
 
 bigtest ledit-bigdata-3 "ledit - small -> large result" {2147483651 2147483651} -body {
     set l2 {a b c x y z}
@@ -967,12 +966,12 @@ bigtest lseq-bigdata-2 "lseq" {9223372036854775807 9223372036854775799} -body {
 #
 # lset
 bigtest lset-bigdata-1 "lset" {4294967297 4294967297 {1 2 3 4 5 X}} -body {
-    list [llength [lset l 0x100000000 X]] [llength $l] [lrange $l end-5 end]
-} -setup {
+    # Do NOT initialize l in a -setup block. That requires more memory and fails.
     set l [bigList 0x100000001]
+    list [llength [lset l 0x100000000 X]] [llength $l] [lrange $l end-5 end]
 } -cleanup {
     bigClean
-} -constraints bug-outofmemorypanic
+}
 
 #
 # lsort
