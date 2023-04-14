@@ -178,7 +178,7 @@ the start of the application.
 package require http
 \fBpackage require cookiejar\fR
 
-set cookiedb ~/.tclcookies.db
+set cookiedb [file join [file home] cookiejar]
 http::configure -cookiejar [\fBhttp::cookiejar new\fR $cookiedb]
 
 # No further explicit steps are required to use cookies
@@ -201,7 +201,7 @@ oo::class create MyCookieJar {
     }
 }
 
-set cookiedb ~/.tclcookies.db
+set cookiedb [file join [file home] cookiejar]
 http::configure -cookiejar [MyCookieJar new $cookiedb]
 
 # No further explicit steps are required to use cookies

@@ -1464,7 +1464,7 @@ TtyParseMode(
      *
      * We cannot if/else/endif the strchr arguments, it has to be the whole
      * function. On AIX this function is apparently a macro, and macros do
-     * not allow pre-processor directives in their arguments.
+     * not allow preprocessor directives in their arguments.
      */
 
     if (
@@ -1714,7 +1714,7 @@ TclpOpenFileChannel(
 Tcl_Channel
 Tcl_MakeFileChannel(
     void *handle,		/* OS level handle. */
-    int mode)			/* ORed combination of TCL_READABLE and
+    int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
     TtyState *fsPtr;

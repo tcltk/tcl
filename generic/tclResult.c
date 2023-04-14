@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include <assert.h>
 
 /*
  * Indices of the standard return options dictionary keys.
@@ -211,40 +212,36 @@ Tcl_DiscardInterpState(
  *----------------------------------------------------------------------
  *
  * Tcl_SetObjResult --
- *
- *	Arrange for objPtr to be an interpreter's result value.
+ *	Makes objPtr the interpreter's result value.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	interp->objResultPtr is left pointing to the object referenced by
- *	objPtr. The object's reference count is incremented since there is now
- *	a new reference to it. The reference count for any old objResultPtr
- *	value is decremented. Also, the string result is reset.
+ *	Stores objPtr interp->objResultPtr, increments its reference count, and
+ *	decrements the reference count of any existing interp->objResultPtr.
+ *
+ *	The string result is reset.
  *
  *----------------------------------------------------------------------
  */
 
 void
 Tcl_SetObjResult(
-    Tcl_Interp *interp,		/* Interpreter with which to associate the
-				 * return object value. */
-    Tcl_Obj *objPtr)	/* Tcl object to be returned. If NULL, the obj
-				 * result is made an empty string object. */
+    Tcl_Interp *interp,		/* Interpreter to set the result for. */
+    Tcl_Obj *objPtr)		/* The value to set as the result. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *oldObjResult = iPtr->objResultPtr;
-
-    iPtr->objResultPtr = objPtr;
-    Tcl_IncrRefCount(objPtr);	/* since interp result is a reference */
-
-    /*
-     * We wait until the end to release the old object result, in case we are
-     * setting the result to itself.
-     */
-
-    TclDecrRefCount(oldObjResult);
+    if (objPtr == oldObjResult) {
+	/* This should be impossible */
+	assert(objPtr->refCount != 0);
+	return;
+    } else {
+	iPtr->objResultPtr = objPtr;
+	Tcl_IncrRefCount(objPtr);
+	TclDecrRefCount(oldObjResult);
+    }
 }
 
 /*
