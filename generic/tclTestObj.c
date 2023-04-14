@@ -1528,8 +1528,9 @@ TeststringobjCmd(
  * TestbigdataCmd --
  *
  *    Implements the Tcl command testbigdata
- *	testbigdata string ?LEN? ?SPLIT?
- *      testbigdata bytearray ?LEN? ?SPLIT?
+ *	testbigdata string ?LEN? ?SPLIT? - returns 01234567890123...
+ *      testbigdata bytearray ?LEN? ?SPLIT? - returns {0 1 2 3 4 5 6 7 8 9 0 1 ...}
+ *      testbigdata dict ?SIZE? - returns dict mapping integers to themselves
  *    If no arguments given, returns the pattern used to generate strings.
  *    If SPLIT is specified, the character at that position is set to "X".
  *
@@ -1550,10 +1551,10 @@ TestbigdataCmd (
     Tcl_Obj *const objv[]) /* Argument objects. */
 {
     static const char *const subcmds[] = {
-	   "string", "bytearray", "list", NULL
+	   "string", "bytearray", "list", "dict", NULL
     };
     enum options {
-	   BIGDATA_STRING, BIGDATA_BYTEARRAY, BIGDATA_LIST
+	   BIGDATA_STRING, BIGDATA_BYTEARRAY, BIGDATA_LIST, BIGDATA_DICT
     } idx;
     char *s;
     unsigned char *p;
@@ -1562,9 +1563,10 @@ TestbigdataCmd (
     Tcl_Obj *objPtr;
 #define PATTERN_LEN 10
     Tcl_Obj *patternObjs[PATTERN_LEN];
+    Tcl_Obj *keyObjs[PATTERN_LEN];
 
     if (objc < 2 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "command ?len?");
+	Tcl_WrongNumArgs(interp, 1, objv, "command ?len? ?split?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "option", 0,
@@ -1644,6 +1646,14 @@ TestbigdataCmd (
 	for (i = 0; i < PATTERN_LEN; ++i) {
 	    patternObjs[i] = Tcl_NewIntObj(i);
 	    Tcl_DecrRefCount(patternObjs[i]);
+	}
+	Tcl_SetObjResult(interp, objPtr);
+	break;
+    case BIGDATA_DICT:
+	objPtr = Tcl_NewDictObj();
+	for (i = 0; i < len; ++i) {
+	    Tcl_Obj *objPtr2 = Tcl_NewWideIntObj(i);
+	    Tcl_DictObjPut(interp, objPtr, objPtr2, objPtr2);
 	}
 	Tcl_SetObjResult(interp, objPtr);
 	break;

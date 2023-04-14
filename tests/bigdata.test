@@ -948,6 +948,23 @@ bigtestRO lsearch-bigdata-1 "lsearch" {4294967300 4294967310 -1}  -body {
 } -constraints bug-a4617c8e90
 
 #
+# lseq
+bigtest lseq-bigdata-1 "lseq" {4294967297 4294967296} -body {
+    list [llength $l] [lindex $l 0x100000000]
+} -setup {
+    set l [lseq 0x100000001]
+} -cleanup {
+    bigClean
+}
+bigtest lseq-bigdata-2 "lseq" {9223372036854775807 9223372036854775799} -body {
+    list [llength $l] [lindex $l 9223372036854775800]
+} -setup {
+    set l [lseq 0x7fffffffffffffff]; llength $l
+} -cleanup {
+    bigClean
+} -constraints bug-fa00fbbbab
+
+#
 # lset
 bigtest lset-bigdata-1 "lset" {4294967297 4294967297 {1 2 3 4 5 X}} -body {
     list [llength [lset l 0x100000000 X]] [llength $l] [lrange $l end-5 end]
@@ -992,13 +1009,18 @@ bigtest split-bigdata-1 "split" {4294967296 {0 1 2 3 4} {1 2 3 4 5}} -body {
     bigClean
 } -constraints bug-takesTooLong
 
+bigtestRO concat-bigdata-1 "concat" {4294967296 {0 1 2 3 4} {6 7 0 1 2} {3 4 5 6 7}} -body {
+    unset -nocomplain l2
+    set l2 [concat $l $l]
+    list [llength $l2] [lrange $l2 0 4] [lrange $l2 0x80000000-2 0x80000000+2] [lrange $l2 end-4 end]
+} -setup {
+    set l [bigList 0x80000000]
+}
+
 #
 # TODO
-# concat
 # encoding convertfrom
 # encoding convertto
-# lseq
-# split
 # dict *
 
 
