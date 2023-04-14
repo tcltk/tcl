@@ -2037,7 +2037,7 @@ CompileCommandTokens(
 
     assert ((int)parsePtr->numWords > 0);
 
-    /* Pre-Compile */
+    /* Precompile */
 
     TclNewObj(cmdObj);
     envPtr->numCommands++;
@@ -2409,9 +2409,9 @@ TclCompileTokens(
     int count = count1;
 
     /*
-     * if this is actually a literal, handle continuation lines by
+     * If this is actually a literal, handle continuation lines by
      * preallocating a small table to store the locations of any continuation
-     * lines we find in this literal.  The table is extended if needed.
+     * lines found in this literal.  The table is extended if needed.
      *
      * Note: In contrast with the analagous code in 'TclSubstTokens()' the
      * 'adjust' variable seems unneeded here.  The code which merges

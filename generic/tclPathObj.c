@@ -816,7 +816,7 @@ TclJoinPath(
     Tcl_Size elements,		/* Number of elements to use */
     Tcl_Obj * const objv[],	/* Path elements to join */
     int forceRelative)		/* If non-zero, assume all more paths are
-				 * relative (e. g. simple normalization) */
+				 * relative (e.g. simple normalization) */
 {
     Tcl_Obj *res = NULL;
     Tcl_Size i;
@@ -870,7 +870,7 @@ TclJoinPath(
 		}
 
 		/*
-		 * If it doesn't begin with '.' and is a unix path or it a
+		 * If it doesn't begin with '.' and is a Unix path or it a
 		 * windows path without backslashes, then we can be very
 		 * efficient here. (In fact even a windows path with
 		 * backslashes can be joined efficiently, but the path object
