@@ -903,7 +903,7 @@ TestlistobjCmd(
     Tcl_Size first;			/* First index in the list */
     Tcl_Size count;			/* Count of elements in a list */
     Tcl_Obj **varPtr;
-    int i, len;
+    Tcl_Size i, len;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option arg ?arg...?");
