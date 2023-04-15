@@ -340,6 +340,40 @@ test cmdAH-4.20.2 {convertrom -failindex with incomplete utf8 (byte compiled)} -
 } -returnCodes 0 -result {41 1} -cleanup {
     rename encoding_test {} 
 }
+test cmdAH-4.20.3 {convertrom -failindex with incomplete utf8} -body {
+    set x [encoding convertfrom -strict -failindex i utf-8 A\xc3]
+    binary scan $x H* y
+    list $y $i
+} -returnCodes 0 -result {41 1}
+test cmdAH-4.20.4 {convertrom -failindex with incomplete utf8 (byte compiled)} -setup {
+    proc encoding_test {} {
+	set x [encoding convertfrom -strict -failindex i utf-8 A\xc3]
+	binary scan $x H* y
+	list $y $i
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result {41 1} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.20.5 {convertrom -failindex with incomplete utf8} -body {
+    set x [encoding convertfrom -failindex i -strict utf-8 A\xc3]
+    binary scan $x H* y
+    list $y $i
+} -returnCodes 0 -result {41 1}
+test cmdAH-4.20.6 {convertrom -failindex with incomplete utf8 (byte compiled)} -setup {
+    proc encoding_test {} {
+	set x [encoding convertfrom -failindex i -strict utf-8 A\xc3]
+	binary scan $x H* y
+	list $y $i
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result {41 1} -cleanup {
+    rename encoding_test ""
+}
 test cmdAH-4.21.1 {convertto -failindex with wrong character} -body {
     set x [encoding convertto -strict -failindex i iso8859-1 A\u0141]
     binary scan $x H* y

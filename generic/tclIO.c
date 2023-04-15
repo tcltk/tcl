@@ -8282,7 +8282,6 @@ Tcl_SetChannelOption(
 	    return TCL_ERROR;
 	}
 	if (newMode) {
-	    ResetFlag(statePtr, CHANNEL_ENCODING_STRICT);
 	} else {
 	    SetFlag(statePtr, CHANNEL_ENCODING_STRICT);
 	}

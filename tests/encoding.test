@@ -688,15 +688,15 @@ test encoding-24.17 {Parse valid or invalid utf-8} -constraints testbytestring -
 test encoding-24.18 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\xE0\x80xxxxxx"]
 } -result "Z\xC3\xA0\xE2\x82\xACxxxxxx"
-test encoding-24.19 {Parse invalid utf-8, -default} -body {
+test encoding-24.19.pass {Parse invalid utf-8, -default} -body {
     encoding convertto -pass utf-8 "ZX\uD800"
 } -returnCodes 0 -result "ZXí\xa0\x80"
-test encoding-24.19 {Parse invalid utf-8, -strict} -body {
+test encoding-24.19.strict {Parse invalid utf-8, -strict} -body {
     encoding convertto -strict utf-8 "ZX\uD800"
 } -returnCodes 1 -match glob -result "unexpected character at index 2: 'U+00D800'"
-test encoding-24.19 {Parse invalid utf-8, -pass} -body {
-    encoding convertto -pass utf-8 "ZX\uD800"
-} -returnCodes 0 -result "ZXí\xa0\x80"
+test encoding-24.19.default {Parse invalid utf-8, -pass} -body {
+    encoding convertto utf-8 "ZX\uD800"
+} -returnCodes 1 -match glob -result "unexpected character at index 2: 'U+00D800'"
 test encoding-24.20 {syntax error: Parse with -pass but without providing encoding} -body {
     string length [encoding convertfrom -pass "\x20"]
 } -returnCodes 1 -result {unknown encoding "-pass"}
