@@ -4616,6 +4616,7 @@ Tcl_GetsObj(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	UpdateInterest(chanPtr);
+	ResetFlag(statePtr, CHANNEL_ENCODING_ERROR);
 	Tcl_SetErrno(EILSEQ);
 	return TCL_INDEX_NONE;
     }
@@ -4632,7 +4633,7 @@ Tcl_GetsObj(
     if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
 	SetFlag(statePtr, CHANNEL_EOF);
 	assert(statePtr->inputEncodingFlags & TCL_ENCODING_END);
-	assert(!GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR));
+assert(!GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR));
 
 	/* TODO: Do we need this? */
 	UpdateInterest(chanPtr);
@@ -4998,9 +4999,11 @@ Tcl_GetsObj(
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) && gs.bytesWrote == 0) {
+	bufPtr->nextRemoved = oldRemoved;
 	Tcl_SetErrno(EILSEQ);
 	copiedTotal = -1;
     }
+    ResetFlag(statePtr, CHANNEL_ENCODING_ERROR);
     return copiedTotal;
 }
 
@@ -5462,6 +5465,8 @@ FilterInputBytes(
 
 	if (result == TCL_CONVERT_UNKNOWN || result == TCL_CONVERT_SYNTAX) {
 	    SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+	    ResetFlag(statePtr, CHANNEL_STICKY_EOF);
+	    ResetFlag(statePtr, CHANNEL_EOF);
 	    result = TCL_OK;
 	}
 
@@ -7589,7 +7594,7 @@ Tcl_InputBuffered(
     }
 
     /*
-     * Don't forget the bytes in the topmost pushback area.
+     * Remember the bytes in the topmost pushback area.
      */
 
     for (bufPtr = statePtr->topChanPtr->inQueueHead; bufPtr != NULL;
