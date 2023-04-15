@@ -151,8 +151,7 @@ SHELL			= @MAKEFILE_SHELL@
 # distribution, which is slower but guaranteed to work.
 
 INSTALL_STRIP_PROGRAM	= -s
-# Use --strip-unneeded instead of -x.  See issue 718de2132f487cf2
-INSTALL_STRIP_LIBRARY	= -S --strip-unneeded
+INSTALL_STRIP_LIBRARY	= -S -x
 
 INSTALL			= $(SHELL) $(UNIX_DIR)/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
