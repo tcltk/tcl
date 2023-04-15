@@ -9491,11 +9491,20 @@ test io-75.15 {
     lappend res $status $cres
     set status [catch {gets $chan} cres copts]
     lappend res $status $cres
+	chan configure $chan -translation binary
+	set data [read $chan 4]
+	foreach char [split $data {}] {
+		scan $char %c ord
+		lappend res [format %x $ord]
+	}
+    fconfigure $chan -encoding utf-8 -profile strict
+	lappend res [gets $chan]
+	lappend res [gets $chan]
     return $res
 } -cleanup {
     close $chan
 } -match glob -result {hello AB 1 {error reading "*": invalid or incomplete multibyte or wide character}\
-    1 {error reading "*": invalid or incomplete multibyte or wide character}}
+    1 {error reading "*": invalid or incomplete multibyte or wide character} 43 44 c0 40 EF GHI}
 
 # ### ### ### ######### ######### #########
 
