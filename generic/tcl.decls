@@ -2627,13 +2627,13 @@ declare 685 {
 }
 
 # TIP 657
-declare 686 {
+declare 687 {
     int Tcl_InputEncodingError(Tcl_Channel chan)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
-declare 687 {
+declare 688 {
     void TclUnusedStubEntry(void)
 }
 
