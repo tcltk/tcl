@@ -1877,7 +1877,8 @@ EXTERN unsigned char *	TclGetByteArrayFromObj_(Tcl_Obj *objPtr,
 /* Slot 684 is reserved */
 /* Slot 685 is reserved */
 /* Slot 686 is reserved */
-/* 687 */
+/* Slot 687 is reserved */
+/* 688 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2601,7 +2602,8 @@ typedef struct TclStubs {
     void (*reserved684)(void);
     void (*reserved685)(void);
     void (*reserved686)(void);
-    void (*tclUnusedStubEntry) (void); /* 687 */
+    void (*reserved687)(void);
+    void (*tclUnusedStubEntry) (void); /* 688 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3953,8 +3955,9 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 684 is reserved */
 /* Slot 685 is reserved */
 /* Slot 686 is reserved */
+/* Slot 687 is reserved */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 687 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 688 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
