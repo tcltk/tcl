@@ -2057,8 +2057,9 @@ const TclStubs tclStubs = {
     Tcl_GetEncodingNulLength, /* 683 */
     Tcl_GetWideUIntFromObj, /* 684 */
     Tcl_DStringToObj, /* 685 */
-    Tcl_InputEncodingError, /* 686 */
-    TclUnusedStubEntry, /* 687 */
+    0, /* 686 */
+    Tcl_InputEncodingError, /* 687 */
+    TclUnusedStubEntry, /* 688 */
 };
 
 /* !END!: Do not edit above this line. */
