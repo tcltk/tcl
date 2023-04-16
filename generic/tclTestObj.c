@@ -1563,7 +1563,6 @@ TestbigdataCmd (
     Tcl_Obj *objPtr;
 #define PATTERN_LEN 10
     Tcl_Obj *patternObjs[PATTERN_LEN];
-    Tcl_Obj *keyObjs[PATTERN_LEN];
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?len? ?split?");
