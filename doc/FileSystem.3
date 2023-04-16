@@ -222,7 +222,7 @@ to \fBpath\fR type.
 The list of path elements to operate on with a \fBjoin\fR operation.
 .AP Tcl_Size elements in
 The number of elements in the \fIlistObj\fR which should
-be joined together. If TCL_INDEX_NONE, then all elements are joined.
+be joined together. If negative, then all elements are joined.
 .AP Tcl_Obj **errorPtr out
 In the case of an error, filled with a value containing the name of
 the file which caused an error in the various copy/rename operations.
@@ -838,7 +838,7 @@ The \fBTcl_Filesystem\fR structure contains the following fields:
 .CS
 typedef struct Tcl_Filesystem {
     const char *\fItypeName\fR;
-    size_t \fIstructureLength\fR;
+    Tcl_Size \fIstructureLength\fR;
     Tcl_FSVersion \fIversion\fR;
     Tcl_FSPathInFilesystemProc *\fIpathInFilesystemProc\fR;
     Tcl_FSDupInternalRepProc *\fIdupInternalRepProc\fR;

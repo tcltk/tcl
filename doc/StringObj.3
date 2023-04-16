@@ -87,32 +87,32 @@ Tcl_Obj *
 Points to the first byte of an array of UTF-8-encoded bytes
 used to set or append to a string value.
 This byte array may contain embedded null characters
-unless \fInumChars\fR is \fBTCL_INDEX_NONE\fR.  (Applications needing null bytes
+unless \fInumChars\fR is negative.  (Applications needing null bytes
 should represent them as the two-byte sequence \fI\e300\e200\fR, use
 \fBTcl_ExternalToUtf\fR to convert, or \fBTcl_NewByteArrayObj\fR if
 the string is a collection of uninterpreted bytes.)
 .AP Tcl_Size length in
 The number of bytes to copy from \fIbytes\fR when
 initializing, setting, or appending to a string value.
-If \fBTCL_INDEX_NONE\fR, all bytes up to the first null are used.
+If negative, all bytes up to the first null are used.
 .AP "const Tcl_UniChar" *unicode in
 Points to the first byte of an array of Unicode characters
 used to set or append to a string value.
 This byte array may contain embedded null characters
-unless \fInumChars\fR is \fBTCL_INDEX_NONE\fR.
+unless \fInumChars\fR is negative.
 .AP Tcl_Size numChars in
 The number of Unicode characters to copy from \fIunicode\fR when
 initializing, setting, or appending to a string value.
-If \fBTCL_INDEX_NONE\fR, all characters up to the first null character are used.
+If negative, all characters up to the first null character are used.
 .AP Tcl_Size index in
 The index of the Unicode character to return.
 .AP Tcl_Size first in
 The index of the first Unicode character in the Unicode range to be
-returned as a new value. If \fBTCL_INDEX_NONE\fR, behave the same as if the
+returned as a new value. If negative, behave the same as if the
 value was 0.
 .AP Tcl_Size last in
 The index of the last Unicode character in the Unicode range to be
-returned as a new value. If \fBTCL_INDEX_NONE\fR, take all characters up to
+returned as a new value. If negative, take all characters up to
 the last one available.
 .AP Tcl_Obj *objPtr in/out
 Points to a value to manipulate.
@@ -213,8 +213,8 @@ it references a low surrogate preceded by a high surrogate, it returns -1;
 characters between \fIfirst\fR and \fIlast\fR (inclusive) in the value's
 Unicode representation.  If the value's Unicode representation
 is invalid, the Unicode representation is regenerated from the value's
-string representation.  If \fIfirst\fR == TCL_INDEX_NONE, then the returned
-string starts at the beginning of the value. If \fIlast\fR == TCL_INDEX_NONE,
+string representation.  If \fIfirst\fR is negative, then the returned
+string starts at the beginning of the value. If \fIlast\fR negative,
 then the returned string ends at the end of the value.
 .PP
 \fBTcl_GetCharLength\fR returns the number of characters (as opposed
@@ -263,7 +263,7 @@ all \fIlength\fR bytes that are available from being appended, then the
 appending is done so that the last bytes appended are from the
 string \fIellipsis\fR. This allows for an indication of the truncation
 to be left in the string.
-When \fIlength\fR is \fBTCL_INDEX_NONE\fR, all bytes up to the first zero byte are appended,
+When \fIlength\fR is negative, all bytes up to the first zero byte are appended,
 subject to the limit. When \fIellipsis\fR is NULL, the default
 string \fB...\fR is used. When \fIellipsis\fR is non-NULL, it must point
 to a zero-byte-terminated string in Tcl's internal UTF encoding.
@@ -306,7 +306,7 @@ functionality is needed.
 .CS
 char buf[SOME_SUITABLE_LENGTH];
 sprintf(buf, format, ...);
-\fBTcl_NewStringObj\fR(buf, \fBTCL_INDEX_NONE\fR);
+\fBTcl_NewStringObj\fR(buf, -1);
 .CE
 .PP
 but with greater convenience and no need to
