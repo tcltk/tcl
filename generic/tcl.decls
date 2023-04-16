@@ -2601,7 +2601,7 @@ declare 680 {
 	    void **clientDataPtr, int *typePtr)
 }
 declare 681 {
-    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, size_t numBytes,
+    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, Tcl_Size numBytes,
 	    void **clientDataPtr, int *typePtr)
 }
 

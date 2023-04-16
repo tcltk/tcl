@@ -15,16 +15,16 @@ Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UtfToWChar
 .sp
 typedef ... \fBTcl_UniChar\fR;
 .sp
-size_t
+Tcl_Size
 \fBTcl_UniCharToUtf\fR(\fIch, buf\fR)
 .sp
-size_t
+Tcl_Size
 \fBTcl_UtfToUniChar\fR(\fIsrc, chPtr\fR)
 .sp
-size_t
+Tcl_Size
 \fBTcl_UtfToChar16\fR(\fIsrc, uPtr\fR)
 .sp
-size_t
+Tcl_Size
 \fBTcl_UtfToWChar\fR(\fIsrc, wPtr\fR)
 .sp
 char *
@@ -93,7 +93,7 @@ int
 const char *
 \fBTcl_UtfAtIndex\fR(\fIsrc, index\fR)
 .sp
-size_t
+Tcl_Size
 \fBTcl_UtfBackslash\fR(\fIsrc, readPtr, dst\fR)
 .SH ARGUMENTS
 .AS "const Tcl_UniChar" *uniPattern in/out
@@ -132,16 +132,16 @@ A null-terminated utf-16 string.
 A null-terminated utf-16 string.
 .AP "const unsigned short" *utf16Pattern in
 A null-terminated utf-16 string.
-.AP size_t length in
+.AP Tcl_Size length in
 The length of the UTF-8 string in bytes (not UTF-8 characters).  If
-TCL_INDEX_NONE, all bytes up to the first null byte are used.
-.AP size_t uniLength in
+negative, all bytes up to the first null byte are used.
+.AP Tcl_Size uniLength in
 The length of the Unicode string in characters.
 .AP "Tcl_DString" *dsPtr in/out
 A pointer to a previously initialized \fBTcl_DString\fR.
 .AP "const char" *start in
 Pointer to the beginning of a UTF-8 string.
-.AP size_t index in
+.AP Tcl_Size index in
 The index of a character (not byte) in the UTF-8 string.
 .AP int *readPtr out
 If non-NULL, filled with the number of bytes in the backslash sequence,
@@ -254,7 +254,7 @@ know if a full Unicode character has been seen.
 \fBTcl_NumUtfChars\fR corresponds to \fBstrlen\fR for UTF-8 strings.  It
 returns the number of Tcl_UniChars that are represented by the UTF-8 string
 \fIsrc\fR.  The length of the source string is \fIlength\fR bytes.  If the
-length is TCL_INDEX_NONE, all bytes up to the first null byte are used.
+length is negative, all bytes up to the first null byte are used.
 .PP
 \fBTcl_UtfFindFirst\fR corresponds to \fBstrchr\fR for UTF-8 strings.  It
 returns a pointer to the first occurrence of the Unicode character \fIch\fR
@@ -299,13 +299,13 @@ byte \fIsrc[0]\fR nor the byte \fIstart[-1]\fR nor the byte
 Pascal Ord() function.  It returns the Unicode character represented at the
 specified character (not byte) \fIindex\fR in the UTF-8 string
 \fIsrc\fR.  The source string must contain at least \fIindex\fR
-characters.  If \fIindex\fR is TCL_INDEX_NONE or \fIindex\fR points
+characters.  If \fIindex\fR is negative or \fIindex\fR points
 to the second half of a surrogate pair, it returns -1.
 .PP
 \fBTcl_UtfAtIndex\fR returns a pointer to the specified character (not
 byte) \fIindex\fR in the UTF-8 string \fIsrc\fR.  The source string must
 contain at least \fIindex\fR characters.  This is equivalent to calling
-\fBTcl_UtfToUniChar\fR \fIindex\fR times.  If \fIindex\fR is TCL_INDEX_NONE,
+\fBTcl_UtfToUniChar\fR \fIindex\fR times.  If \fIindex\fR is negative,
 the return pointer points to the first character in the source string.
 .PP
 \fBTcl_UtfBackslash\fR is a utility procedure used by several of the Tcl

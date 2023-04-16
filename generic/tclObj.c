@@ -3646,7 +3646,7 @@ int
 Tcl_GetNumber(
     Tcl_Interp *interp,
     const char *bytes,
-    size_t numBytes,
+    Tcl_Size numBytes,
     void **clientDataPtr,
     int *typePtr)
 {
@@ -3660,7 +3660,7 @@ Tcl_GetNumber(
 	bytes = &tclEmptyString;
 	numBytes = 0;
     }
-    if (numBytes == (size_t)TCL_INDEX_NONE) {
+    if (numBytes < 0) {
 	numBytes = strlen(bytes);
     }
     if (numBytes > INT_MAX) {

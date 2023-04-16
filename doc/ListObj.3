@@ -184,7 +184,7 @@ if the conversion fails, it returns \fBTCL_ERROR\fR
 and leaves an error message in the interpreter's result value
 if \fIinterp\fR is not NULL.
 If the index is out of range,
-that is, \fIindex\fR is TCL_INDEX_NONE or
+that is, \fIindex\fR is negative or
 greater than or equal to the number of elements in the list,
 \fBTcl_ListObjIndex\fR stores a NULL in \fIobjPtrPtr\fR
 and returns \fBTCL_OK\fR.
@@ -203,13 +203,13 @@ and leaves an error message in the interpreter's result value
 if \fIinterp\fR is not NULL.
 Otherwise, it returns \fBTCL_OK\fR after replacing the values.
 If \fIobjv\fR is NULL, no new elements are added.
-If the argument \fIfirst\fR is zero or TCL_INDEX_NONE,
+If the argument \fIfirst\fR is zero or negative,
 it refers to the first element.
 If \fIfirst\fR is greater than or equal to the
 number of elements in the list, then no elements are deleted;
 the new elements are appended to the list.
 \fIcount\fR gives the number of elements to replace.
-If \fIcount\fR is zero or TCL_INDEX_NONE then no elements are deleted;
+If \fIcount\fR is zero or negative then no elements are deleted;
 the new elements are simply inserted before the one
 designated by \fIfirst\fR.
 \fBTcl_ListObjReplace\fR invalidates \fIlistPtr\fR's
