@@ -457,7 +457,7 @@ unsigned char *
 Tcl_GetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
-    size_t *numBytesPtr)	/* If non-NULL, write the number of bytes
+    ptrdiff_t *numBytesPtr)	/* If non-NULL, write the number of bytes
 				 * in the array here */
 {
     ByteArray *baPtr;
@@ -539,7 +539,7 @@ Tcl_GetByteArrayFromObj(
 unsigned char *
 TclGetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    size_t *numBytesPtr)	/* If non-NULL, write the number of bytes
+    ptrdiff_t *numBytesPtr)	/* If non-NULL, write the number of bytes
 				 * in the array here */
 {
     ByteArray *baPtr;

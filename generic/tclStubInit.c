@@ -138,7 +138,7 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 }
 
 int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-    size_t *objcPtr, Tcl_Obj ***objvPtr) {
+    ptrdiff_t *objcPtr, Tcl_Obj ***objvPtr) {
     int n, result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
     if ((result == TCL_OK) && objcPtr) {
 	*objcPtr = n;
@@ -146,7 +146,7 @@ int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     return result;
 }
 int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-    size_t *lengthPtr) {
+    ptrdiff_t *lengthPtr) {
     int n;
     int result = Tcl_ListObjLength(interp, listPtr, &n);
     if ((result == TCL_OK) && lengthPtr) {
@@ -155,14 +155,14 @@ int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     return result;
 }
 int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	size_t *sizePtr) {
+	ptrdiff_t *sizePtr) {
     int n, result = Tcl_DictObjSize(interp, dictPtr, &n);
     if ((result == TCL_OK) && sizePtr) {
 	*sizePtr = n;
     }
     return result;
 }
-int TclSplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
+int TclSplitList(Tcl_Interp *interp, const char *listStr, ptrdiff_t *argcPtr,
 	const char ***argvPtr) {
     int n;
     int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
@@ -171,14 +171,14 @@ int TclSplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
     }
     return result;
 }
-void TclSplitPath(const char *path, size_t *argcPtr, const char ***argvPtr) {
+void TclSplitPath(const char *path, ptrdiff_t *argcPtr, const char ***argvPtr) {
     int n;
     Tcl_SplitPath(path, &n, argvPtr);
     if (argcPtr) {
 	*argcPtr = n;
     }
 }
-Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr) {
+Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, ptrdiff_t *lenPtr) {
     int n;
     Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
     if (result && lenPtr) {
@@ -187,7 +187,7 @@ Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr) {
     return result;
 }
 int TclParseArgsObjv(Tcl_Interp *interp,
-	const Tcl_ArgvInfo *argTable, size_t *objcPtr, Tcl_Obj *const *objv,
+	const Tcl_ArgvInfo *argTable, ptrdiff_t *objcPtr, Tcl_Obj *const *objv,
 	Tcl_Obj ***remObjv) {
     int n, result;
     if (*objcPtr > INT_MAX) {

@@ -1721,7 +1721,7 @@ char *
 TclGetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
 				 * be returned. */
-    size_t *lengthPtr)	/* If non-NULL, the location where the string
+    ptrdiff_t *lengthPtr)	/* If non-NULL, the location where the string
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {
@@ -4066,7 +4066,7 @@ int
 Tcl_GetNumber(
     Tcl_Interp *interp,
     const char *bytes,
-    size_t numBytes,
+    ptrdiff_t numBytes,
     void **clientDataPtr,
     int *typePtr)
 {
@@ -4080,7 +4080,7 @@ Tcl_GetNumber(
 	bytes = &tclEmptyString;
 	numBytes = 0;
     }
-    if (numBytes == (size_t)TCL_INDEX_NONE) {
+    if (numBytes < 0) {
 	numBytes = strlen(bytes);
     }
     if (numBytes > INT_MAX) {
