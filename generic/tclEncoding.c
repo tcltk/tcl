@@ -1161,8 +1161,8 @@ Tcl_ExternalToUtfDStringEx(
     char *dst;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
-    int result, soFar, srcRead, dstWrote, dstChars;
-    Tcl_Size dstLen;
+    int result;
+    Tcl_Size dstLen, soFar;
     const char *srcStart = src;
 
     Tcl_DStringInit(dstPtr);
@@ -1180,23 +1180,47 @@ Tcl_ExternalToUtfDStringEx(
 	srcLen = encodingPtr->lengthProc(src);
     }
 
-    flags |= TCL_ENCODING_START | TCL_ENCODING_END;
+    flags |= TCL_ENCODING_START;
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
 	flags |= ENCODING_INPUT;
     }
 
     while (1) {
-	result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
-		flags, &state, dst, dstLen, &srcRead, &dstWrote, &dstChars);
-	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
+	int srcChunkLen, srcChunkRead;
+	int dstChunkLen, dstChunkWrote, dstChunkChars;
 
-	src += srcRead;
-	if (result != TCL_CONVERT_NOSPACE) {
+	if (srcLen > INT_MAX) {
+	    srcChunkLen = INT_MAX;
+	} else {
+	    srcChunkLen = srcLen;
+	    flags |= TCL_ENCODING_END; /* Last chunk */
+	}
+	dstChunkLen = dstLen > INT_MAX ? INT_MAX : dstLen;
+
+	result = encodingPtr->toUtfProc(encodingPtr->clientData, src,
+		srcChunkLen, flags, &state, dst, dstChunkLen,
+		&srcChunkRead, &dstChunkWrote, &dstChunkChars);
+	soFar = dst + dstChunkWrote - Tcl_DStringValue(dstPtr);
+
+	src += srcChunkRead;
+
+	/*
+	 * Keep looping in two case -
+	 *   - our destination buffer did not have enough room
+	 *   - we had not passed in all the data and error indicated fragment
+	 *     of a multibyte character
+	 * In both cases we have to grow buffer, move the input source pointer
+	 * and loop. Otherwise, return the result we got.
+	 */
+	if ((result != TCL_CONVERT_NOSPACE) &&
+	    !(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
 	    Tcl_DStringSetLength(dstPtr, soFar);
 	    return (result == TCL_OK) ? TCL_INDEX_NONE : (Tcl_Size)(src - srcStart);
 	}
+
 	flags &= ~TCL_ENCODING_START;
-	srcLen -= srcRead;
+	srcLen -= srcChunkRead;
+
 	if (Tcl_DStringLength(dstPtr) == 0) {
 	    Tcl_DStringSetLength(dstPtr, dstLen);
 	}
@@ -1399,9 +1423,9 @@ Tcl_UtfToExternalDStringEx(
     char *dst;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
-    int result, soFar, srcRead, dstWrote, dstChars;
+    int result;
+    Tcl_Size dstLen, soFar;
     const char *srcStart = src;
-    Tcl_Size dstLen;
 
     Tcl_DStringInit(dstPtr);
     dst = Tcl_DStringValue(dstPtr);
@@ -1417,24 +1441,48 @@ Tcl_UtfToExternalDStringEx(
     } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
-    flags |= TCL_ENCODING_START | TCL_ENCODING_END;
+    flags |= TCL_ENCODING_START;
     while (1) {
-	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
-		srcLen, flags, &state, dst, dstLen,
-		&srcRead, &dstWrote, &dstChars);
-	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
+	int srcChunkLen, srcChunkRead;
+	int dstChunkLen, dstChunkWrote, dstChunkChars;
 
-	src += srcRead;
-	if (result != TCL_CONVERT_NOSPACE) {
-	    int i = soFar + encodingPtr->nullSize - 1;
-	    while (i >= soFar) {
+	if (srcLen > INT_MAX) {
+	    srcChunkLen = INT_MAX;
+	} else {
+	    srcChunkLen = srcLen;
+	    flags |= TCL_ENCODING_END; /* Last chunk */
+	}
+	dstChunkLen = dstLen > INT_MAX ? INT_MAX : dstLen;
+
+	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
+		srcChunkLen, flags, &state, dst, dstChunkLen,
+		&srcChunkRead, &dstChunkWrote, &dstChunkChars);
+	soFar = dst + dstChunkWrote - Tcl_DStringValue(dstPtr);
+
+	/* Move past the part processed in this go around */
+	src += srcChunkRead;
+
+	/*
+	 * Keep looping in two case -
+	 *   - our destination buffer did not have enough room
+	 *   - we had not passed in all the data and error indicated fragment
+	 *     of a multibyte character
+	 * In both cases we have to grow buffer, move the input source pointer
+	 * and loop. Otherwise, return the result we got.
+	 */
+	if ((result != TCL_CONVERT_NOSPACE) &&
+	    !(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
+	    size_t i = soFar + encodingPtr->nullSize - 1;
+	    /* Loop as DStringSetLength only stores one nul byte at a time */
+	    while (i+1 >= soFar+1) {
 		Tcl_DStringSetLength(dstPtr, i--);
 	    }
 	    return (result == TCL_OK) ? TCL_INDEX_NONE : (Tcl_Size)(src - srcStart);
 	}
 
 	flags &= ~TCL_ENCODING_START;
-	srcLen -= srcRead;
+	srcLen -= srcChunkRead;
+
 	if (Tcl_DStringLength(dstPtr) == 0) {
 	    Tcl_DStringSetLength(dstPtr, dstLen);
 	}
