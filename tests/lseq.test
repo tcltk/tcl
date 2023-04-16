@@ -538,12 +538,12 @@ test lseq-4.8 {error case lrange} -body {
 } -returnCodes 1 \
     -result {bad index "fred": must be integer?[+-]integer? or end?[+-]integer?}
 
-test lseq-4.9 {error case lrange} -body {
-    set fred 7
-    set ginger 8
-    lrange [lseq 1 5] $fred $ginger
-} -returnCodes 1 \
-    -result {index 7 is out of bounds 0 to 4}
+test lseq-4.9 {lrange empty/partial sets} -body {
+    foreach {fred ginger} {7 8 4 9 0 15 9 9 4 2} {
+        lappend res [lrange [lseq 1 5] $fred $ginger]
+    }
+    set res
+} -result {{} 5 {1 2 3 4 5} {} {}}
 
 # Panic when using variable value?
 test lseq-4.10 {panic using variable index} {
@@ -551,6 +551,13 @@ test lseq-4.10 {panic using variable index} {
     lindex [lseq 10] $i
 } {0}
 
+test lseq-4.11 {bug lseq / lindex discrepancies} {
+    lindex [lseq 0x7fffffff] 0x80000000
+} {}
+
+test lseq-4.12 {bug lseq} {
+    llength [lseq 0x100000000]
+} {4294967296}
 
 # cleanup
 ::tcltest::cleanupTests
