@@ -2912,10 +2912,7 @@ UtfToUcs2Proc(
 				 * output buffer. */
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
-    int result, numChars;
-#if TCL_UTF_MAX < 4
-    int len;
-#endif
+    int result, numChars, len;
     Tcl_UniChar ch = 0;
 
     flags |= PTR2INT(clientData);
@@ -2945,17 +2942,32 @@ UtfToUcs2Proc(
 	    break;
 	}
 #if TCL_UTF_MAX < 4
-	src += (len = TclUtfToUniChar(src, &ch));
+	len = TclUtfToUniChar(src, &ch);
 	if ((ch >= 0xD800) && (len < 3)) {
+	    if (ENCODINGSTRICT) {
+			result = TCL_CONVERT_UNKNOWN;
+			break;
+	    }
+	    src += len;
 	    src += TclUtfToUniChar(src, &ch);
 	    ch = 0xFFFD;
 	}
 #else
-	src += TclUtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	if (ch > 0xFFFF) {
+	    if (ENCODINGSTRICT) {
+			result = TCL_CONVERT_UNKNOWN;
+			break;
+	    }
 	    ch = 0xFFFD;
 	}
 #endif
+	if (ENCODINGSTRICT && ((ch & ~0x7FF) == 0xD800)) {
+	    result = TCL_CONVERT_SYNTAX;
+	    break;
+	}
+
+	src += len;
 
 	/*
 	 * Need to handle this in a way that won't cause misalignment by
