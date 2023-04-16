@@ -1143,13 +1143,13 @@ TclScanElement(
 		 */
 
 		requireEscape = 1;
-		length -= (length > 0);
+		length -= (length+1 > 1);
 		p++;
 		break;
 	    }
 	    if ((p[1] == '{') || (p[1] == '}') || (p[1] == '\\')) {
 		extra++;	/* Escape sequences all one byte longer. */
-		length -= (length > 0);
+		length -= (length+1 > 1);
 		p++;
 	    }
 	    forbidNone = 1;
