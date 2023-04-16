@@ -602,7 +602,7 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 1;
     type.clientData	= INT2PTR(ENCODING_UTF);
     Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
 
@@ -614,7 +614,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2be";
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2";
     type.clientData	= INT2PTR(leFlags);
@@ -628,7 +628,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-32be";
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-32";
     type.clientData	= INT2PTR(leFlags);
@@ -639,13 +639,13 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "utf-16le";
-    type.clientData	= INT2PTR(TCL_ENCODING_LE|ENCODING_UTF);
+    type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16be";
-    type.clientData	= INT2PTR(ENCODING_UTF);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16";
-    type.clientData	= INT2PTR(leFlags|ENCODING_UTF);
+    type.clientData	= INT2PTR(leFlags);
     Tcl_CreateEncoding(&type);
 
 #ifndef TCL_NO_DEPRECATED
