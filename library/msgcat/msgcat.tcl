@@ -34,7 +34,7 @@ namespace eval msgcat {
 
     # Configuration values per Package (e.g. client namespace).
     # The dict key is of the form "<option> <namespace>" and the value is the
-    # configuration option. A nonexisting key is an unset option.
+    # configuration option. A non-existing key is an unset option.
     variable PackageConfig [dict create mcfolder {} loadcmd {} changecmd {}\
 	    unknowncmd {} loadedlocales {} loclist {}]
 
@@ -211,6 +211,7 @@ proc msgcat::mc {args} {
 #	parent namespace until the source is found.  If additional args are
 #	specified, use the format command to work them into the translated
 #	string.
+#
 #	If no catalog item is found, mcunknown is called in the caller frame
 #	and its result is returned.
 #
@@ -684,7 +685,7 @@ proc msgcat::mcpackagenamespaceget {} {
 #	mcfolder
 #	    The message catalog folder of the package.
 #	    This is automatically set by mcload.
-#	    If the value is changed using the set subcommand, an evntual
+#	    If the value is changed using the set subcommand, an eventual
 #	    loadcmd is invoked and all message files of the package locale are
 #	    loaded.
 #

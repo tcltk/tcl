@@ -194,7 +194,7 @@ proc ::safe::interpConfigure {args} {
 		    # it is most probably a set in fact but we would need
 		    # then to jump to the set part and it is not *sure*
 		    # that it is a set action that the user want, so force
-		    # it to use the unambigous -statics ?value? instead:
+		    # it to use the unambiguous -statics ?value? instead:
 		    return -code error\
 			"ambigous query (get or set -noStatics ?)\
 				use -statics instead"
@@ -249,11 +249,11 @@ proc ::safe::interpConfigure {args} {
 	    if {![::tcl::OptProcArgGiven -deleteHook]} {
 		set deleteHook $state(cleanupHook)
 	    }
-	    # we can now reconfigure :
+	    # Now reconfigure
 	    set withAutoPath [::tcl::OptProcArgGiven -autoPath]
 	    InterpSetConfig $child $accessPath $statics $nested $deleteHook $autoPath $withAutoPath
 
-	    # auto_reset the child (to completely synch the new access_path) tests safe-9.8 safe-9.9
+	    # auto_reset the child (to completely sync the new access_path) tests safe-9.8 safe-9.9
 	    if {$doreset} {
 		if {[catch {::interp eval $child {auto_reset}} msg]} {
 		    Log $child "auto_reset failed: $msg"
@@ -375,7 +375,7 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook au
 
 	set raw_auto_path $access_path
 
-	# Add 1st level sub dirs (will searched by auto loading from tcl
+	# Add 1st level subdirs (will searched by auto loading from tcl
 	# code in the child using glob and thus fail, so we add them here
 	# so by default it works the same).
 	set access_path [AddSubDirs $access_path]
@@ -695,7 +695,7 @@ proc ::safe::interpDelete {child} {
     }
 
     # If the child has a cleanup hook registered, call it.  Check the
-    # existance because we might be called to delete an interp which has
+    # existence because we might be called to delete an interp which has
     # not been registered with us at all
 
     if {[info exists state(cleanupHook)]} {
@@ -729,7 +729,7 @@ proc ::safe::interpDelete {child} {
     return
 }
 
-# Set (or get) the logging mecanism
+# Set (or get) the logging mechanism
 
 proc ::safe::setLogCmd {args} {
     variable Log

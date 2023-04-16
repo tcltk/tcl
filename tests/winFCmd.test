@@ -123,7 +123,7 @@ append longname $longname
 # Uses the "testfile" command instead of the "file" command.  The "file"
 # command provides several layers of sanity checks on the arguments and
 # it can be difficult to actually forward "insane" arguments to the
-# low-level posix emulation layer.
+# low-level Posix emulation layer.
 
 test winFCmd-1.1 {TclpRenameFile: errno: EACCES} -body {
     testfile mv $cdfile $cdrom/dummy~~.fil

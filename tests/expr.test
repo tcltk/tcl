@@ -7455,7 +7455,7 @@ test expr-62.10 {TIP 582: comments can go inside function calls} {
 # Bug e3dcab1d14
 proc do-one-test-expr-63 {e p float athreshold} {
     # e - power of 2 to test
-    # p - tcl_precision to test wuth
+    # p - tcl_precision to test with
     # float - floating point value 2**-$p
     # athreshold - tolerable absolute error (1/2 decimal digit in
     #              least significant place plus 1/2 least significant bit)
