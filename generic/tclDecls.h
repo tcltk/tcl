@@ -1864,7 +1864,8 @@ EXTERN Tcl_Obj *	Tcl_DStringToObj(Tcl_DString *dsPtr);
 /* 686 */
 EXTERN int		Tcl_GetSizeIntFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, Tcl_Size *sizePtr);
-/* 687 */
+/* Slot 687 is reserved */
+/* 688 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2564,7 +2565,8 @@ typedef struct TclStubs {
     int (*tcl_GetWideUIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideUInt *uwidePtr); /* 684 */
     Tcl_Obj * (*tcl_DStringToObj) (Tcl_DString *dsPtr); /* 685 */
     int (*tcl_GetSizeIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *sizePtr); /* 686 */
-    void (*tclUnusedStubEntry) (void); /* 687 */
+    void (*reserved687)(void);
+    void (*tclUnusedStubEntry) (void); /* 688 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3891,8 +3893,9 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DStringToObj) /* 685 */
 #define Tcl_GetSizeIntFromObj \
 	(tclStubsPtr->tcl_GetSizeIntFromObj) /* 686 */
+/* Slot 687 is reserved */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 687 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 688 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
