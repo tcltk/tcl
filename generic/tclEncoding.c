@@ -2244,9 +2244,9 @@ BinaryProc(
  *
  * UtfToUtfProc --
  *
- *	Convert from UTF-8 to UTF-8. Note that the UTF-8 to UTF-8 translation
- *	is not a no-op, because it will turn a stream of improperly formed
- *	UTF-8 into a properly formed stream.
+ *	Converts from UTF-8 to UTF-8. Note that the UTF-8 to UTF-8 translation
+ *	is not a no-op, because it turns a stream of improperly formed
+ *	UTF-8 into a properly-formed stream.
  *
  * Results:
  *	Returns TCL_OK if conversion was successful.
@@ -2511,9 +2511,15 @@ Utf32ToUtfProc(
 	} else {
 	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
-	if  ((unsigned)ch > (0x10FFFF || (((ch  & ~0x7FF) == 0xD800))) &&
-	    ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)
-	) {
+	if  ((unsigned)ch > 0x10FFFF) {
+		ch = 0xFFFD;
+		if ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) {
+			result = TCL_CONVERT_SYNTAX;
+			break;
+		}
+	} else if ((((ch  & ~0x7FF) == 0xD800)) &&
+	    ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+
 	    result = TCL_CONVERT_SYNTAX;
 	    break;
 	}
