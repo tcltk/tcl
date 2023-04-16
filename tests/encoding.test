@@ -472,6 +472,9 @@ test encoding-15.29 {UtfToUtfProc CESU-8} {
 test encoding-15.30 {UtfToUtfProc -strict CESU-8} {
     encoding convertto -strict cesu-8 \x00
 } \x00
+test encoding-15.31 {UtfToUtfProc -strict CESU-8 (bytes F0-F4 are invalid)} -body {
+    encoding convertfrom -strict cesu-8 \xF1\x86\x83\x9C
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xF1'}
 
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]
@@ -523,9 +526,9 @@ test encoding-16.13 {Utf16ToUtfProc} -body {
 test encoding-16.14 {Utf16ToUtfProc} -body {
     encoding convertfrom utf-16le \x00\xDC
 } -result \uDC00
-test encoding-16.15 {Utf16ToUtfProc} -constraints knownBug -body {
+test encoding-16.15 {Utf16ToUtfProc} -body {
     encoding convertfrom utf-16le \x00\xD8\x00\xDC
-} -result \uD800\uDC00
+} -result \U010000
 test encoding-16.16 {Utf16ToUtfProc} -body {
     encoding convertfrom utf-16le \x00\xDC\x00\xD8
 } -result \uDC00\uD800
@@ -619,8 +622,11 @@ test encoding-19.3 {TableFromUtfProc} -body {
 test encoding-19.4 {TableFromUtfProc} -body {
     list [encoding convertfrom -failindex idx ascii AÁ] [set idx]
 } -result {A 1}
-test encoding-19.4 {TableFromUtfProc} -body {
+test encoding-19.5 {TableFromUtfProc} -body {
     list [encoding convertfrom -failindex idx -strict ascii AÁ] [set idx]
+} -result {A 1}
+test encoding-19.6 {TableFromUtfProc} -body {
+    list [encoding convertfrom -failindex idx -strict ascii AÁB] [set idx]
 } -result {A 1}
 
 test encoding-20.1 {TableFreefProc} {

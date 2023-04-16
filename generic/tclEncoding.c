@@ -2372,15 +2372,21 @@ UtfToUtfProc(
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
-	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
-	    if ((len < 2) && (ch != 0) && (flags & ENCODING_INPUT)
-		    && (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
-		result = TCL_CONVERT_SYNTAX;
-		break;
+	    if (flags & ENCODING_INPUT) {
+		if ((len < 2) && (ch != 0)
+			&& (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX))) {
+		    result = TCL_CONVERT_SYNTAX;
+		    break;
+		} else if ((ch > 0xFFFF) && !(flags & ENCODING_UTF)
+			&& (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT) || (flags & ENCODING_FAILINDEX))) {
+		    result = TCL_CONVERT_SYNTAX;
+		    break;
+		}
 	    }
+	    const char *saveSrc = src;
 	    src += len;
-	    if (!(flags & ENCODING_UTF) && (ch > 0x3FF)) {
+	    if (!(flags & ENCODING_UTF) && !(flags & ENCODING_INPUT) && (ch > 0x3FF)) {
 		if (ch > 0xFFFF) {
 		    /* CESU-8 6-byte sequence for chars > U+FFFF */
 		    ch -= 0x10000;
