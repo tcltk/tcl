@@ -1058,7 +1058,7 @@ test iocmd-23.1 {chan read, regular data return} -match glob -body {
     rename foo {}
     set res
 } -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
-test iocmd-23.2 {chan read, bad data return, to much} -match glob -body {
+test iocmd-23.2 {chan read, bad data return, too much} -match glob -body {
     set res {}
     proc foo {args} {
 	oninit; onfinal; track
