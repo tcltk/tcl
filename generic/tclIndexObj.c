@@ -114,7 +114,7 @@ GetIndexFromObjList(
 
     /*
      * Use Tcl_GetIndexFromObjStruct to do the work to avoid duplicating most
-     * of the code there. This is a bit ineffiecient but simpler.
+     * of the code there. This is a bit inefficient but simpler.
      */
 
     result = TclListObjGetElementsM(interp, tableObjPtr, &objc, &objv);

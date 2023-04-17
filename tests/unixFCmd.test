@@ -26,7 +26,7 @@ testConstraint notWsl [expr {[llength [array names ::env *WSL*]] == 0}]
 set oldcwd [pwd]
 cd [temporaryDirectory]
 
-# Several tests require need to match results against the unix username
+# Several tests require need to match results against the Unix username
 set user {}
 if {[testConstraint unix]} {
     catch {set user [exec whoami]}
@@ -387,7 +387,7 @@ file delete -force -- foo.test
 test unixFCmd-18.1 {Unix pwd} -constraints {unix notRoot nonPortable} -setup {
     set cd [pwd]
 } -body {
-    # This test is nonPortable because SunOS generates a weird error
+    # This test is non-portable because SunOS generates a weird error
     # message when the current directory isn't readable.
     set nd $cd/tstdir
     file mkdir $nd

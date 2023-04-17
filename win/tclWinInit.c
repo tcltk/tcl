@@ -147,7 +147,7 @@ TclpInitLibraryPath(
      * Look for the library relative to the TCL_LIBRARY env variable. If the
      * last dirname in the TCL_LIBRARY path does not match the last dirname in
      * the installLib variable, use the last dir name of installLib in
-     * addition to the orginal TCL_LIBRARY path.
+     * addition to the original TCL_LIBRARY path.
      */
 
     AppendEnvironment(pathPtr, installLib);
@@ -225,8 +225,8 @@ AppendEnvironment(
     }
 
     /*
-     * The "L" preceeding the TCL_LIBRARY string is used to tell VC++ that
-     * this is a unicode string.
+     * The "L" preceding the TCL_LIBRARY string is used to tell VC++ that
+     * this is a Unicode string.
      */
 
     GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH);
