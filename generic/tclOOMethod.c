@@ -387,7 +387,7 @@ TclOONewBasicMethod(
 				/* Name of the method, whether it is public,
 				 * and the function to implement it. */
 {
-    Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, -1);
+    Tcl_Obj *namePtr = Tcl_NewStringObj(dcm->name, TCL_INDEX_NONE);
 
     Tcl_IncrRefCount(namePtr);
     TclNewMethod(interp, (Tcl_Class) clsPtr, namePtr,
@@ -1410,7 +1410,7 @@ CloneProcedureMethod(
 
 	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, -1));
+		    Tcl_NewStringObj(localPtr->name, TCL_INDEX_NONE));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
@@ -1481,7 +1481,7 @@ TclOONewForwardInstanceMethod(
     }
     if (prefixLen < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"method forward prefix must be non-empty", -1));
+		"method forward prefix must be non-empty", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", NULL);
 	return NULL;
     }
@@ -1520,7 +1520,7 @@ TclOONewForwardMethod(
     }
     if (prefixLen < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"method forward prefix must be non-empty", -1));
+		"method forward prefix must be non-empty", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", NULL);
 	return NULL;
     }
@@ -1707,7 +1707,7 @@ InitEnsembleRewrite(
     int *lengthPtr)		/* Where to write the resulting length of the
 				 * array of rewritten arguments. */
 {
-    unsigned len = rewriteLength + objc - toRewrite;
+    size_t len = rewriteLength + objc - toRewrite;
     Tcl_Obj **argObjs = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * len);
 
     memcpy(argObjs, rewriteObjs, rewriteLength * sizeof(Tcl_Obj *));

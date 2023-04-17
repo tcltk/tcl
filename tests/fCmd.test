@@ -27,7 +27,7 @@ testConstraint winLessThan10 0
 testConstraint notNetworkFilesystem 0
 testConstraint reg 0
 if {[testConstraint win]} {
-    catch {
+    if {[catch {
 	# Is the registry extension already static to this shell?
 	try {
 	    load {} Registry
@@ -38,8 +38,11 @@ if {[testConstraint win]} {
 	    load $::reglib Registry
 	}
 	testConstraint reg 1
+    } regError]} {
+        catch {package require registry; testConstraint reg 1}
     }
 }
+
 testConstraint notInCIenv [expr {![info exists ::env(CI)] || !$::env(CI)}]
 
 # File permissions broken on wsl without some "exotic" wsl configuration
@@ -106,6 +109,45 @@ if {[testConstraint win]} {
     if {$user eq ""} {
         set user Administrator
     }
+}
+
+# Try getting a lower case glob pattern that will match the home directory of
+# a given user to test ~user and [file tildeexpand ~user]. Note this may not
+# be the same as ~ even when "user" is current user. For example, on Unix
+# platforms ~ will return HOME envvar, but ~user will lookup password file
+# bypassing HOME. If home directory not found, returns *$user* so caller can
+# succeed by using glob matching under the hope that the path contains
+# the user name.
+proc gethomedirglob {user} {
+    if {[testConstraint unix]} {
+        if {![catch {
+            exec {*}[auto_execok sh] -c "echo ~$user"
+        } home]} {
+            set home [string trim $home]
+            if {$home ne ""} {
+                # Expect exact match (except case), no glob * added
+                return [string tolower $home]
+            }
+        }
+    } elseif {[testConstraint reg]} {
+        # Windows with registry extension loaded
+        if {![catch {
+            set sid [exec {*}[auto_execok powershell] -Command "(Get-LocalUser -Name '$user')\[0\].sid.Value"]
+            set sid [string trim $sid]
+            # Get path from the Windows registry
+            set home [registry get "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\$sid" ProfileImagePath]
+            set home [string trim $home]
+        } result]} {
+            if {$home ne ""} {
+                # file join for \ -> /
+                return [file join [string tolower $home]]
+            }
+        }
+    }
+
+    # Caller will need to use glob matching and hope user
+    # name is in the home directory path
+    return *$user*
 }
 
 proc createfile {file {string a}} {
@@ -1119,6 +1161,7 @@ test fCmd-10.3.1 {file copy: comprehensive: dir to new name} -setup {
     file mkdir [file join td1 tdx]
     file mkdir [file join td2 tdy]
     testchmod 0o555 td2
+    testchmod 0o555 td2/tdy; # Above line removes inherited perms. So restore.
     file copy td1 td3
     file copy td2 td4
     list [lsort [glob td*]] [glob -directory td3 t*] \
@@ -1140,10 +1183,19 @@ test fCmd-10.4 {file copy: comprehensive: file to existing file} -setup {
     createfile tfd2
     createfile tfd3
     createfile tfd4
-    testchmod 0o444 tfs3
-    testchmod 0o444 tfs4
-    testchmod 0o444 tfd2
-    testchmod 0o444 tfd4
+    if {$::tcl_platform(platform) eq "windows"} {
+        # On Windows testchmode will attach an ACL which file copy cannot handle
+        # so use good old attributes which file copy does understand
+        file attribute tfs3 -readonly 1
+        file attribute tfs4 -readonly 1
+        file attribute tfd2 -readonly 1
+        file attribute tfd4 -readonly 1
+    } else {
+        testchmod 0o444 tfs3
+        testchmod 0o444 tfs4
+        testchmod 0o444 tfd2
+        testchmod 0o444 tfd4
+    }
     set msg [list [catch {file copy tf1 tf2} msg] $msg]
     file copy -force tfs1 tfd1
     file copy -force tfs2 tfd2
@@ -2701,13 +2753,20 @@ test fCmd-31.6 {file home USER} -body {
     # env(HOME) even when user is current user. Assume result contains user
     # name, else not sure how to check
     string tolower [file home $::tcl_platform(user)]
-} -match glob -result [string tolower "*$::tcl_platform(user)*"]
+} -match glob -result [gethomedirglob $::tcl_platform(user)]
 test fCmd-31.7 {file home UNKNOWNUSER} -body {
     file home nosuchuser
 } -returnCodes error -result {user "nosuchuser" doesn't exist}
 test fCmd-31.8 {file home extra arg} -body {
     file home $::tcl_platform(user) arg
 } -returnCodes error -result {wrong # args: should be "file home ?user?"}
+test fCmd-31.9 {file home USER does not follow env(HOME)} -setup {
+    set ::env(HOME) [file join $::env(HOME) foo]
+} -cleanup {
+    set ::env(HOME) [file dirname $::env(HOME)]
+} -body {
+    string tolower [file home $::tcl_platform(user)]
+} -match glob -result [gethomedirglob $::tcl_platform(user)]
 
 test fCmd-32.1 {file tildeexpand ~} -body {
     file tildeexpand ~
@@ -2743,7 +2802,7 @@ test fCmd-32.5 {file tildeexpand ~USER} -body {
     # env(HOME) even when user is current user. Assume result contains user
     # name, else not sure how to check
     string tolower [file tildeexpand ~$::tcl_platform(user)]
-} -match glob -result [string tolower "*$::tcl_platform(user)*"]
+} -match glob -result [gethomedirglob $::tcl_platform(user)]
 test fCmd-32.6 {file tildeexpand ~UNKNOWNUSER} -body {
     file tildeexpand ~nosuchuser
 } -returnCodes error -result {user "nosuchuser" doesn't exist}
@@ -2758,7 +2817,7 @@ test fCmd-32.9 {file tildeexpand ~USER/bar} -body {
     # env(HOME) even when user is current user. Assume result contains user
     # name, else not sure how to check
     string tolower [file tildeexpand ~$::tcl_platform(user)/bar]
-} -match glob -result [string tolower "*$::tcl_platform(user)*/bar"]
+} -match glob -result [file join [gethomedirglob $::tcl_platform(user)] bar]
 test fCmd-32.10 {file tildeexpand ~UNKNOWNUSER} -body {
     file tildeexpand ~nosuchuser/foo
 } -returnCodes error -result {user "nosuchuser" doesn't exist}
@@ -2782,7 +2841,14 @@ test fCmd-32.16 {file tildeexpand ~USER\\bar} -body {
     # env(HOME) even when user is current user. Assume result contains user
     # name, else not sure how to check
     string tolower [file tildeexpand ~$::tcl_platform(user)\\bar]
-} -constraints win -match glob -result [string tolower "*$::tcl_platform(user)*/bar"]
+} -constraints win -match glob -result [file join [gethomedirglob $::tcl_platform(user)] bar]
+test fCmd-32.17 {file tildeexpand ~USER does not mirror HOME} -setup {
+    set ::env(HOME) [file join $::env(HOME) foo]
+} -cleanup {
+    set ::env(HOME) [file dirname $::env(HOME)]
+} -body {
+    string tolower [file tildeexpand ~$::tcl_platform(user)]
+} -match glob -result [gethomedirglob $::tcl_platform(user)]
 
 
 # cleanup

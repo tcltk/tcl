@@ -526,7 +526,7 @@ ListLimitExceededError(Tcl_Interp *interp)
     if (interp != NULL) {
 	Tcl_SetObjResult(
 	    interp,
-	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
+	    Tcl_NewStringObj("max length of a Tcl list exceeded", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
     return TCL_ERROR;
