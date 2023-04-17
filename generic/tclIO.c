@@ -395,7 +395,7 @@ ChanClose(
  * Results:
  *	The return value of the driver inputProc,
  *	  - number of bytes stored at dst, ot
- *	  - TCL_INDEX_NONE on error, with a Posix error code available to the caller by
+ *	  - -1 on error, with a Posix error code available to the caller by
  *	    calling Tcl_GetErrno().
  *
  * Side effects:
@@ -432,8 +432,8 @@ ChanRead(
     }
     ResetFlag(chanPtr->state, CHANNEL_BLOCKED | CHANNEL_EOF);
     chanPtr->state->inputEncodingFlags &= ~TCL_ENCODING_END;
-    if (WillRead(chanPtr) < 0) {
-        return TCL_INDEX_NONE;
+    if (WillRead(chanPtr) == -1) {
+        return -1;
     }
 
     bytesRead = chanPtr->typePtr->inputProc(chanPtr->instanceData,
@@ -448,7 +448,7 @@ ChanRead(
     }
     ResetFlag(chanPtr->state, CHANNEL_BLOCKED | CHANNEL_EOF);
     chanPtr->state->inputEncodingFlags &= ~TCL_ENCODING_END;
-    if (bytesRead < 0) {
+    if (bytesRead == -1) {
 	if ((result == EWOULDBLOCK) || (result == EAGAIN)) {
 	    SetFlag(chanPtr->state, CHANNEL_BLOCKED);
 	    result = EAGAIN;
@@ -488,14 +488,14 @@ ChanSeek(
 #ifndef TCL_NO_DEPRECATED
 	if (offset<LONG_MIN || offset>LONG_MAX) {
 	    *errnoPtr = EOVERFLOW;
-	    return TCL_INDEX_NONE;
+	    return -1;
 	}
 
 	return Tcl_ChannelSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
 		offset, mode, errnoPtr);
 #else
 	*errnoPtr = EINVAL;
-	return TCL_INDEX_NONE;
+	return -1;
 #endif
     }
 
@@ -4103,7 +4103,7 @@ Tcl_Size
 Tcl_Write(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* Data to queue in output buffer. */
-    Tcl_Size srcLen)			/* Length of data in bytes, or < 0 for
+    Tcl_Size srcLen)			/* Length of data in bytes, or TCL_INDEX_NONE for
 				 * strlen(). */
 {
     /*
@@ -4123,7 +4123,7 @@ Tcl_Write(
     if (srcLen < 0) {
 	srcLen = strlen(src);
     }
-    if (WriteBytes(chanPtr, src, srcLen) < 0) {
+    if (WriteBytes(chanPtr, src, srcLen) == -1) {
 	return TCL_INDEX_NONE;
     }
     return srcLen;
@@ -4180,7 +4180,7 @@ Tcl_WriteRaw(
      */
 
     written = ChanWrite(chanPtr, src, srcLen, &errorCode);
-    if (written < 0) {
+    if (written == TCL_INDEX_NONE) {
 	Tcl_SetErrno(errorCode);
     }
 
@@ -4337,7 +4337,7 @@ WillRead(
 
 	DiscardInputQueued(chanPtr->state, 0);
 	Tcl_SetErrno(EINVAL);
-	return TCL_INDEX_NONE;
+	return -1;
     }
     if (((Tcl_ChannelWideSeekProc(chanPtr->typePtr) != NULL)
 #ifndef TCL_NO_DEPRECATED
@@ -4355,7 +4355,7 @@ WillRead(
 	 */
 
 	if (FlushChannel(NULL, chanPtr, 0) != 0) {
-	return TCL_INDEX_NONE;
+	return -1;
 	}
     }
     return 0;
@@ -4538,7 +4538,7 @@ Write(
 
 	if (IsBufferFull(bufPtr)) {
 	    if (FlushChannel(NULL, chanPtr, 0) != 0) {
-		return TCL_INDEX_NONE;
+		return -1;
 	    }
 	    flushed += statePtr->bufSize;
 
@@ -4561,7 +4561,7 @@ Write(
     if (((flushed < total) && GotFlag(statePtr, CHANNEL_UNBUFFERED)) ||
 	    (needNlFlush && GotFlag(statePtr, CHANNEL_LINEBUFFERED))) {
 	if (FlushChannel(NULL, chanPtr, 0) != 0) {
-	    return TCL_INDEX_NONE;
+	    return -1;
 	}
     }
 
@@ -4569,7 +4569,7 @@ Write(
 
     if (encodingError) {
 	Tcl_SetErrno(EILSEQ);
-	return TCL_INDEX_NONE;
+	return -1;
     }
     return total;
 }
@@ -4655,6 +4655,7 @@ Tcl_GetsObj(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	UpdateInterest(chanPtr);
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED);
 	Tcl_SetErrno(EILSEQ);
 	return TCL_INDEX_NONE;
     }
@@ -4919,11 +4920,11 @@ Tcl_GetsObj(
 		&& GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 		&& !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 	    /* Set eol to the position that caused the encoding error, and then
-	     * coninue to gotEOL, which stores the data that was decoded
+	     * continue to gotEOL, which stores the data that was decoded
 	     * without error to objPtr.  This allows the caller to do something
 	     * useful with the data decoded so far, and also results in the
 	     * position of the file being the first byte that was not
-	     * succesfully decoded, allowing further processing at exactly that
+	     * successfully decoded, allowing further processing at exactly that
 	     * point, if desired.
 	     */
 	    eol = dstEnd;
@@ -5044,8 +5045,11 @@ Tcl_GetsObj(
     }
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
-    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) &&
-	    (copiedTotal == 0 || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) && gs.bytesWrote == 0) {
+	if (bufPtr->nextRemoved != oldRemoved) {
+	    bufPtr->nextRemoved = oldRemoved;
+	    ResetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+	}
 	Tcl_SetErrno(EILSEQ);
 	if (copiedTotal == 0) {
 	    copiedTotal = -1;
@@ -5222,7 +5226,7 @@ TclGetsObjBinary(
 
 		byteArray = Tcl_SetByteArrayLength(objPtr, oldLength);
 		CommonGetsCleanup(chanPtr);
-		copiedTotal = TCL_INDEX_NONE;
+		copiedTotal = -1;
 		ResetFlag(statePtr, CHANNEL_BLOCKED);
 		goto done;
 	    }
@@ -5311,7 +5315,7 @@ TclGetsObjBinary(
      */
 
     SetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
-    copiedTotal = TCL_INDEX_NONE;
+    copiedTotal = -1;
 
     /*
      * Update the notifier state so we don't block while there is still data
@@ -5508,6 +5512,7 @@ FilterInputBytes(
 
 	if (result == TCL_CONVERT_UNKNOWN || result == TCL_CONVERT_SYNTAX) {
 	    SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+	    ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF);
 	    result = TCL_OK;
 	}
 
@@ -5851,7 +5856,7 @@ Tcl_ReadRaw(
     if (bytesToRead > 0) {
 	int nread = ChanRead(chanPtr, readBuf, bytesToRead);
 
-	if (nread < 0) {
+	if (nread == -1) {
 	    /*
 	     * An error signaled.  If CHANNEL_BLOCKED, then the error is not
 	     * real, but an indication of blocked state.  In that case, retain
@@ -5982,6 +5987,7 @@ DoReadChars(
     int factor = UTF_EXPANSION_FACTOR;
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	/* TODO: We don't need this call? */
 	UpdateInterest(chanPtr);
 	Tcl_SetErrno(EILSEQ);
@@ -6166,6 +6172,7 @@ finish:
 	 * succesfully red before the error.  Return an error so that callers
 	 * like [read] can also return an error.
 	*/
+	ResetFlag(statePtr, CHANNEL_EOF);
 	Tcl_SetErrno(EILSEQ);
 	if (!copied) {
 	    copied = -1;
@@ -6412,7 +6419,7 @@ ReadChars(
 		     */
 
 		    Tcl_SetObjLength(objPtr, numBytes);
-		    return TCL_INDEX_NONE;
+		    return -1;
 		}
 
 		{
@@ -7459,7 +7466,7 @@ Tcl_TruncateChannel(
 
     WillWrite(chanPtr);
 
-    if (WillRead(chanPtr) < 0) {
+    if (WillRead(chanPtr) == TCL_INDEX_NONE) {
         return TCL_ERROR;
     }
 
@@ -7652,7 +7659,7 @@ Tcl_InputBuffered(
     }
 
     /*
-     * Don't forget the bytes in the topmost pushback area.
+     * Remember the bytes in the topmost pushback area.
      */
 
     for (bufPtr = statePtr->topChanPtr->inQueueHead; bufPtr != NULL;
@@ -9975,7 +9982,7 @@ CopyData(
 	 * unsuitable for updating totals and toRead.
 	 */
 
-	if (sizeb < 0) {
+	if (sizeb == TCL_INDEX_NONE) {
 	writeError:
 	    if (interp) {
 		TclNewObj(errObj);
