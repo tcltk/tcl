@@ -12,7 +12,7 @@ apply {{dir} {
     0 tcl::idna       1.0.1  {cookiejar idna.tcl}
     0 platform        1.0.19 {platform platform.tcl}
     0 platform::shell 1.1.4  {platform shell.tcl}
-    1 tcltest         2.5.5  {tcltest tcltest.tcl}
+    1 tcltest         2.5.6  {tcltest tcltest.tcl}
   } {
     if {$isafe && !$safe} continue
     package ifneeded $package $version  [list source [file join $dir {*}$file]]

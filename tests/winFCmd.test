@@ -250,8 +250,9 @@ test winFCmd-1.23 {TclpRenameFile: move dir into self} -setup {
 test winFCmd-1.24 {TclpRenameFile: move a root dir} -setup {
     cleanup
 } -constraints {win testfile} -body {
+    # Error code depends on Windows version
     testfile mv / c:/
-} -returnCodes error -result EINVAL
+} -returnCodes error -result {^(EINVAL|ENOENT)$} -match regexp
 test winFCmd-1.25 {TclpRenameFile: cross file systems} -setup {
     cleanup
 } -constraints {win cdrom testfile} -body {
