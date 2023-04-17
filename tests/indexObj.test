@@ -1,4 +1,4 @@
-# This file is a Tcl script to test out the the procedures in file
+# This file is a Tcl script to test out the procedures in file
 # tkIndexObj.c, which implement indexed table lookups.  The tests here are
 # organized in the standard fashion for Tcl tests.
 #

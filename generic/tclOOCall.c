@@ -1493,7 +1493,7 @@ TclOOGetStereotypeCallChain(
     /*
      * Check to see if the method has no implementation. If so, we probably
      * need to add in a call to the unknown method. Otherwise, set up the
-     * cacheing of the method implementation (if relevant).
+     * caching of the method implementation (if relevant).
      */
 
     if (count == callPtr->numChain) {

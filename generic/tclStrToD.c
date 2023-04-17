@@ -1818,7 +1818,7 @@ MakeLowPrecisionDouble(
     }
 
     /*
-     * All the easy cases have failed. Promote ths significand to bignum and
+     * All the easy cases have failed. Promote the significand to bignum and
      * call MakeHighPrecisionDouble to do it the hard way.
      */
 
@@ -2120,7 +2120,7 @@ RefineApproximation(
     /*
      * Compute twoMd as 2*M*d, where d is the exact value.
      * This is done by multiplying by 5**(M5+exponent) and then multiplying
-     * by 2**(M5+exponent+1), which is, of couse, a left shift.
+     * by 2**(M5+exponent+1), which is, of course, a left shift.
      */
 
     if (mp_init_copy(&twoMd, exactSignificand) != MP_OKAY) {
@@ -2349,7 +2349,7 @@ NormalizeRightward(
  *
  * RequiredPrecision --
  *
- *	Determines the number of bits needed to hold an intger.
+ *	Determines the number of bits needed to hold an integer.
  *
  * Results:
  *	Returns the position of the most significant bit (0 - 63).  Returns 0

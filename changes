@@ -3028,7 +3028,7 @@ in case of errors is required for proper cleanup by the user of fcopy. (BW)
 	x eval rename foo blotz
 	x alias foo {}
 The problem was that the interp code was not using the actual current name
-of the command to be deleted as a result of un-aliasing foo. (JL)
+of the command to be deleted as a result of unaliasing foo. (JL)
 
 6/19/97 (feature change) Pass interp down to the ChannelOption and
 driver specific calls so system errors can be differentiated from syntax
@@ -4167,7 +4167,7 @@ Only.)  This fix included:
 the location of the encoding files and libraries.  This fix included:
     - Adding the TclSetPerInitScript routine.
     - Modifying the Tcl_Init routines to evaluate the non-NULL
-      pre-init script.
+      preinit script.
     - Adding the Tcl_SetdefaultEncodingDir and Tcl_GetDefaultEncodingDir
       routines.
     - Modifying the TclpInitLibrary routines to append the default
@@ -6977,7 +6977,7 @@ of traced command do not fire (sofer)
 
 2007-08-16 (bug fix)[1773040] ::errorInfo trace crash (janssen,porter)
 
-2007-08-16 (performance)[1564517] pre-compile constant expressions (porter)
+2007-08-16 (performance)[1564517] precompile constant expressions (porter)
 
 2007-08-21 (bug fix)[1775878] 'puts \' in interactive tclsh failed to move to
 prompt for continuation line (porter)
@@ -8685,7 +8685,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-07-08 (bug)[a47641] [file normalize] & Windows junctions (nadkarni)
 
-2016-07-09 [ae61a6] [file] handling of Win hardcoded names (CON) (nadkarni)
+2016-07-09 [ae61a6] [file] handling of Win hard-coded names (CON) (nadkarni)
         *** POTENTIAL INCOMPATIBILITY ***
 
 2016-07-09 [3613671] [file owned] (more) useful on Win (nadkarni)

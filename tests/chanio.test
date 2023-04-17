@@ -3572,7 +3572,7 @@ test chan-io-31.13 {binary mode is synonym of lf mode} -setup {
 } -result lf
 #
 # Test chan-io-9.14 has been removed because "auto" output translation mode is
-# not supoprted.
+# not supported.
 #
 test chan-io-31.14 {Tcl_Write mixed, Tcl_Gets auto} -setup {
     file delete $path(test1)
@@ -5310,8 +5310,10 @@ test chan-io-39.22a {Tcl_SetChannelOption, invariance} -setup {
 } -cleanup {
     chan close $f1
 } -result {{O G} {D D} {1 {bad value for -eofchar: should be a list of zero, one, or two elements}}}
-test chan-io-39.23 {Tcl_GetChannelOption, server socket is not readable or\
-        writeable, it should still have valid -eofchar and -translation options} -setup {
+test chan-io-39.23 {
+	Tcl_GetChannelOption, server socket is not readable or writable, but should
+	still have valid -eofchar and -translation options.
+} -setup {
     set l [list]
 } -body {
     set sock [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
@@ -7613,7 +7615,7 @@ test chan-io-61.1 {Reset eof state after changing the eof char} -setup {
     removeFile eofchar
 } -result {77 = 23431}
 
-# Test the cutting and splicing of channels, this is incidentially the
+# Test the cutting and splicing of channels, this is incidentally the
 # attach/detach facility of package Thread, but __without any safeguards__. It
 # can also be used to emulate transfer of channels between threads, and is
 # used for that here.

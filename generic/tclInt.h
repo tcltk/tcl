@@ -232,7 +232,7 @@ typedef struct Tcl_Ensemble Tcl_Ensemble;
 typedef struct NamespacePathEntry NamespacePathEntry;
 
 /*
- * Special hashtable for variables: this is just a Tcl_HashTable with an nsPtr
+ * Special hash table for variables: this is just a Tcl_HashTable with an nsPtr
  * field added at the end: in this way variables can find their namespace
  * without having to copy a pointer in their struct: they can access it via
  * their hPtr->tablePtr.
@@ -482,7 +482,7 @@ typedef struct EnsembleConfig {
 				 * all lists, and cannot be found by scanning
 				 * the list from the namespace's ensemble
 				 * field. */
-    int flags;			/* ORed combo of TCL_ENSEMBLE_PREFIX,
+    int flags;			/* OR'ed combo of TCL_ENSEMBLE_PREFIX,
 				 * ENSEMBLE_DEAD and ENSEMBLE_COMPILE. */
 
     /* OBJECT FIELDS FOR ENSEMBLE CONFIGURATION */
@@ -509,7 +509,7 @@ typedef struct EnsembleConfig {
 				 * results passed directly back to the caller
 				 * (including the error code) unless the code
 				 * is TCL_CONTINUE in which case the
-				 * subcommand will be reparsed by the ensemble
+				 * subcommand will be re-parsed by the ensemble
 				 * core, presumably because the ensemble
 				 * itself has been updated. */
     Tcl_Obj *parameterList;	/* List of ensemble parameter names. */
@@ -653,7 +653,7 @@ typedef struct VarInHash {
     Tcl_HashEntry entry;	/* The hash table entry that refers to this
 				 * variable. This is used to find the name of
 				 * the variable and to delete it from its
-				 * hashtable if it is no longer needed. It
+				 * hash table if it is no longer needed. It
 				 * also holds the variable's name. */
 } VarInHash;
 
@@ -664,7 +664,7 @@ typedef struct VarInHash {
  *
  * VAR_ARRAY -			1 means this is an array variable rather than
  *				a scalar variable or link. The "tablePtr"
- *				field points to the array's hashtable for its
+ *				field points to the array's hash table for its
  *				elements.
  * VAR_LINK -			1 means this Var structure contains a pointer
  *				to another Var structure that either has the
@@ -677,12 +677,12 @@ typedef struct VarInHash {
  * Flags that indicate the type and status of storage; none is set for
  * compiled local variables (Var structs).
  *
- * VAR_IN_HASHTABLE -		1 means this variable is in a hashtable and
- *				the Var structure is malloced. 0 if it is a
+ * VAR_IN_HASHTABLE -		1 means this variable is in a hash table and
+ *				the Var structure is malloc'ed. 0 if it is a
  *				local variable that was assigned a slot in a
  *				procedure frame by the compiler so the Var
  *				storage is part of the call frame.
- * VAR_DEAD_HASH		1 means that this var's entry in the hashtable
+ * VAR_DEAD_HASH		1 means that this var's entry in the hash table
  *				has already been deleted.
  * VAR_ARRAY_ELEMENT -		1 means that this variable is an array
  *				element, so it is not legal for it to be an
@@ -1277,7 +1277,7 @@ typedef struct CFWordBC {
     struct CFWordBC *prevPtr;	/* Previous entry in stack for same Tcl_Obj. */
     struct CFWordBC *nextPtr;	/* Next entry for same command call. See
 				 * CmdFrame litarg field for the list start. */
-    Tcl_Obj *obj;		/* Back reference to hashtable key */
+    Tcl_Obj *obj;		/* Back reference to hash table key */
 } CFWordBC;
 
 /*
@@ -1291,7 +1291,7 @@ typedef struct CFWordBC {
  *
  * These structures are allocated and filled by both the function
  * TclSubstTokens() in the file "tclParse.c" and its caller TclEvalEx() in the
- * file "tclBasic.c", and stored in the thread-global hashtable "lineCLPtr" in
+ * file "tclBasic.c", and stored in the thread-global hash table "lineCLPtr" in
  * file "tclObj.c". They are used by the functions TclSetByteCodeFromAny() and
  * TclCompileScript(), both found in the file "tclCompile.c". Their memory is
  * released by the function TclFreeObj(), in the file "tclObj.c", and also by
@@ -5235,7 +5235,7 @@ MODULE_SCOPE size_t TclEnvEpoch;	/* Epoch of the tcl environment
 					 * (if changed with tcl-env). */
 
 #endif /* _TCLINT */
-
+
 /*
  * Local Variables:
  * mode: c

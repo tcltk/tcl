@@ -1741,7 +1741,7 @@ test cmdAH-24.14.1 {
     file mtime [file join [temporaryDirectory] CON.txt]
 } -match regexp -result {could not (?:get modification time|read)} -returnCodes error
 
-# 3155760000 is 64-bit unix time, Wed Jan 01 00:00:00 GMT 2070:
+# 3155760000 is 64-bit Unix time, Wed Jan 01 00:00:00 GMT 2070:
 test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -constraints {time64bit} -setup {
     set filename [makeFile "" foo.text]
 } -body {
@@ -2150,7 +2150,7 @@ test cmdAH-32.5 {file tempfile - templates} -constraints unix -body {
 } -cleanup {
     catch {file delete $name}
 } -result ok
-# Not portable; not all unix systems have mkstemps()
+# Not portable; not all Unix systems have mkstemps()
 test cmdAH-32.6 {file tempfile - templates} -body {
     set template [file join $dirfile foo]
     close [file tempfile name $template.bar]
