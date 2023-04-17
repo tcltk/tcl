@@ -339,7 +339,7 @@ test io-3.4 {WriteChars: loop over stage buffer} -body {
     # stage buffer maps to more than can be queued at once.
 
     set f [open $path(test1) w]
-    fconfigure $f -encoding jis0208 -buffersize 16 -encodingpass 1
+    fconfigure $f -encoding jis0208 -buffersize 16 -profile tcl8
     puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     close $f
@@ -353,7 +353,7 @@ test io-3.5 {WriteChars: saved != 0} -body {
     # requested buffersize.
 
     set f [open $path(test1) w]
-    fconfigure $f -encoding jis0208 -buffersize 17 -encodingpass 1
+    fconfigure $f -encoding jis0208 -buffersize 17 -profile tcl8
     puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     close $f
@@ -386,7 +386,7 @@ test io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} -body {
     # of the next channel buffer.
 
     set f [open $path(test1) w]
-    fconfigure $f -encoding jis0208 -buffersize 17 -encodingpass 1
+    fconfigure $f -encoding jis0208 -buffersize 17 -profile tcl8
     puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     close $f
@@ -1644,7 +1644,7 @@ apply [list {} {
 
 	# if default encoding is not currently to strict
     # foreach variant {default encodingstrict} strict {{} {-encodingstrict 1}} 
-    foreach variant {encodingstrict} strict {{-encodingstrict 1}} {
+    foreach variant {{profile strict}} strict {{-profile strict}} {
 	set script [string map [
 	    list @variant@ $variant @strict@ $strict] $template] 
 	uplevel 1 $script
@@ -1653,13 +1653,13 @@ apply [list {} {
 
 
 
-test {io-12.9 pass} {ReadChars: multibyte chars split} -body {
+test {io-12.9 profile tcl8} {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -encodingpass 1 -buffersize 10
+    fconfigure $f -encoding utf-8 -profile tcl8 -buffersize 10
     set in [read $f]
     read $f
     scan [string index $in end] %c
@@ -1668,13 +1668,13 @@ test {io-12.9 pass} {ReadChars: multibyte chars split} -body {
 } -result 194
 
 
-test io-12.10 {ReadChars: multibyte chars split} -body {
+test io-12.10.profilestrict {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -encodingstrict 1 -buffersize 11
+    fconfigure $f -encoding utf-8 -profile strict -buffersize 11
     set in [read $f]
     close $f
     scan [string index $in end] %c
@@ -1683,13 +1683,13 @@ test io-12.10 {ReadChars: multibyte chars split} -body {
 } -returnCodes 1 -match glob -result "error reading \"*\": illegal byte sequence"
 
 
-test io-12.10_encodingpass {ReadChars: multibyte chars split} -body {
+test io-12.10.profiletcl8 {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -encodingpass 1 -buffersize 11
+    fconfigure $f -encoding utf-8 -profile tcl8 -buffersize 11
     set in [read $f]
     close $f
     scan [string index $in end] %c
@@ -5798,14 +5798,18 @@ test io-39.15 {Tcl_SetChannelOption: -encoding, binary & utf-8} {
     close $f
     set x
 } 牦
-test io-39.16 {Tcl_SetChannelOption: -encoding (shortened to "-en"), errors} -body {
+test io-39.16 {Tcl_SetChannelOption: -encoding (shortened to "-en"), errors} -constraints {
+    knownProfileBug
+} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -en foobar
 } -cleanup {
     close $f
 } -returnCodes 1 -result {unknown encoding "foobar"}
-test io-39.16a {Tcl_SetChannelOption: -encoding (invalid shortening to "-e"), errors} -body {
+test io-39.16a {Tcl_SetChannelOption: -encoding (invalid shortening to "-e"), errors} -constraints {
+    knownProfileBug
+} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -e foobar
@@ -7752,7 +7756,7 @@ test io-52.20 {TclCopyChannel & encodings} -setup {
     set out [open $path(kyrillic.txt) w]
 
     # Using "-encoding ascii" means reading the "Á" gives an error
-    fconfigure $in  -encoding ascii -encodingstrict 1
+    fconfigure $in  -encoding ascii -profile strict
     fconfigure $out -encoding koi8-r -translation lf
 
     fcopy $in $out
@@ -7774,7 +7778,7 @@ test io-52.21 {TclCopyChannel & encodings} -setup {
 
     # Using "-encoding ascii" means writing the "Á" gives an error
     fconfigure $in  -encoding utf-8
-    fconfigure $out -encoding ascii -translation lf -encodingstrict 1
+    fconfigure $out -encoding ascii -translation lf -profile strict
 
     fcopy $in $out
 } -cleanup {
@@ -7794,7 +7798,7 @@ test io-52.22 {TclCopyChannel & encodings} -setup {
     set out [open $path(kyrillic.txt) w]
 
     # Using "-encoding ascii" means reading the "Á" gives an error
-    fconfigure $in  -encoding ascii -encodingstrict 1
+    fconfigure $in  -encoding ascii -profile strict
     fconfigure $out -encoding koi8-r -translation lf
     proc ::xxx args {
         set ::s0 $args
@@ -7822,7 +7826,7 @@ test io-52.23 {TclCopyChannel & encodings} -setup {
 
     # Using "-encoding ascii" means writing the "Á" gives an error
     fconfigure $in  -encoding utf-8
-    fconfigure $out -encoding ascii -translation lf -encodingstrict 1
+    fconfigure $out -encoding ascii -translation lf -profile strict
     proc ::xxx args {
         set ::s0 $args
     }
@@ -9188,7 +9192,7 @@ test io-75.1 {multibyte encoding error read results in raw bytes (-encodingpass 
     puts -nonewline $f A\xC0\x40
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -encodingpass 1 -buffering none
+    fconfigure $f -encoding utf-8 -profile tcl8 -buffering none
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9198,10 +9202,10 @@ test io-75.1 {multibyte encoding error read results in raw bytes (-encodingpass 
     removeFile io-75.1
 } -result 41c040
 
-test io-75.2 {unrepresentable character write passes and is replaced by ? (-encodingpass 1)} -setup {
+test io-75.2 {unrepresentable character write passes and is replaced by ? (-profile tcl8)} -setup {
     set fn [makeFile {} io-75.2]
     set f [open $fn w+]
-    fconfigure $f -encoding iso8859-1 -encodingpass 1
+    fconfigure $f -encoding iso8859-1 -profile tcl8
 } -body {
     puts -nonewline $f A\u2022
     flush $f
@@ -9215,14 +9219,14 @@ test io-75.2 {unrepresentable character write passes and is replaced by ? (-enco
 # Incomplete sequence test.
 # This error may IMHO only be detected with the close.
 # But the read already returns the incomplete sequence.
-test io-75.3 {incomplete multibyte encoding read is ignored (-encodingpass 1)} -setup {
+test io-75.3 {incomplete multibyte encoding read is ignored (-profile tcl8)} -setup {
     set fn [makeFile {} io-75.3]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     puts -nonewline $f "A\xC0"
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -encodingpass 1
+    fconfigure $f -encoding utf-8 -buffering none -profile tcl8
 } -body {
     set d [read $f]
     close $f
@@ -9234,7 +9238,7 @@ test io-75.3 {incomplete multibyte encoding read is ignored (-encodingpass 1)} -
 
 # As utf-8 has a special treatment in multi-byte decoding, also test another
 # one.
-test io-75.4 {shiftjis encoding error read results in raw bytes (-encodingpass 1)} -setup {
+test io-75.4 {shiftjis encoding error read results in raw bytes (-profile tcl8)} -setup {
     set fn [makeFile {} io-75.4]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9243,7 +9247,7 @@ test io-75.4 {shiftjis encoding error read results in raw bytes (-encodingpass 1
     puts -nonewline $f A\x81\xFFA
     flush $f
     seek $f 0
-    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -encodingpass 1
+    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -profile tcl8
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9253,14 +9257,14 @@ test io-75.4 {shiftjis encoding error read results in raw bytes (-encodingpass 1
     removeFile io-75.4
 } -result 4181ff41
 
-test io-75.5 {invalid utf-8 encoding read is ignored (-encodingpass 1)} -setup {
+test io-75.5 {invalid utf-8 encoding read is ignored (-profile tcl8)} -setup {
     set fn [makeFile {} io-75.5]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingpass 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile tcl8
 } -body {
     set d [read $f]
     close $f
@@ -9278,7 +9282,8 @@ test io-75.6 {invalid utf-8 encoding read is not ignored (-encodingstrict 1)} -s
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingstrict 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf \
+	-profile strict
 } -body {
     set status [catch {read $f} cres copts]
     set d [dict get $copts -result read]
@@ -9289,7 +9294,7 @@ test io-75.6 {invalid utf-8 encoding read is not ignored (-encodingstrict 1)} -s
     removeFile io-75.6
 } -match glob -result {41 1 {error reading "*": illegal byte sequence}}
 
-test io-75.7 {invalid utf-8 encoding eof handling (-encodingstrict 1)} -setup {
+test io-75.7 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.7]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9297,7 +9302,8 @@ test io-75.7 {invalid utf-8 encoding eof handling (-encodingstrict 1)} -setup {
     puts -nonewline $f A\xA1\x1A
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -encodingstrict 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A \
+	-translation lf -profile strict
 } -body {
     set status [catch {read $f} cres copts]
     set d [dict get $copts -result read]
@@ -9314,7 +9320,7 @@ test io-75.7 {invalid utf-8 encoding eof handling (-encodingstrict 1)} -setup {
 } -match glob -result {41 0 1 {error reading "*": illegal byte sequence} ¡}
 
 test io-75.8.incomplete {
-    incomplete uft-8 char after eof char is not an error (-encodingstrict 1)
+    incomplete uft-8 char after eof char is not an error (-profile strict)
 } -setup {
     set hd {}
     set fn [makeFile {} io-75.8]
@@ -9325,7 +9331,7 @@ test io-75.8.incomplete {
     puts -nonewline $f A\x1A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -encodingstrict 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -profile strict
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9349,7 +9355,8 @@ test io-75.8.invalid {invalid utf-8 after eof char is not an error  (-encodingst
     puts -nonewline $f A\x1a\xc0\x80
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -encodingstrict 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A \
+	-translation lf -profile strict
 } -body {
     set d [read $f]
     foreach char [split $d {}] {
@@ -9368,7 +9375,7 @@ test io-75.8.invalid {invalid utf-8 after eof char is not an error  (-encodingst
 test io-75.9 {unrepresentable character write passes and is replaced by ?} -setup {
     set fn [makeFile {} io-75.9]
     set f [open $fn w+]
-    fconfigure $f -encoding iso8859-1 -encodingstrict 1
+    fconfigure $f -encoding iso8859-1 -profile strict
 } -body {
     catch {puts -nonewline $f "A\u2022"} msg
     flush $f
@@ -9408,13 +9415,13 @@ apply [list {} {
     }
 	# the default encoding mode is not currently strict
     #foreach mode {default strict} option {{} {-encodingstrict 1}} 
-    foreach mode {strict} option {{-encodingstrict 1}} {
+    foreach mode {{profile strict}} option {{-profile strict}} {
 	set test [string map [
 	    list {${mode}} [list $mode] {${option}} [list $option]] $template]
 	uplevel $test
     }
 } [namespace current]]
-test {io-75.10 pass} {
+test {io-75.10 {profile tcl8}} {
 	incomplete multibyte encoding read is passed uninterpreted
 } -setup {
     set fn [makeFile {} io-75.10]
@@ -9423,7 +9430,7 @@ test {io-75.10 pass} {
     puts -nonewline $f A\xC0
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -encodingstrict 0 -buffering none
+    fconfigure $f -encoding utf-8 -profile tcl8 -buffering none
 } -body {
     set d [read $f]
     close $f
@@ -9446,7 +9453,7 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
     puts -nonewline $f A\x81\xFFA
     flush $f
     seek $f 0
-    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -encodingstrict 1
+    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -profile strict
 } -body {
     set status [catch {read $f} cres copts]
     set d [dict get $copts -result read]
@@ -9485,7 +9492,7 @@ apply [list {} {
 
 	# the default encoding mod is not currently strict
     #foreach mode {default strict} option {{} {-encodingstrict 1}} 
-    foreach mode {strict} option {{-encodingstrict 1}} {
+    foreach mode {{profile strict}} option {{-profile strict}} {
 	set test [string map [
 	    list {${mode}} [list $mode] {${option}} [list $option]] $template]
 	uplevel $test
@@ -9501,7 +9508,7 @@ test {io-75.12 pass} {invalid utf-8 encoding read is ignored} -setup {
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
-	-translation lf -encodingpass 1
+	-translation lf -profile tcl8
 } -body {
     set d [read $f]
     close $f
@@ -9510,7 +9517,7 @@ test {io-75.12 pass} {invalid utf-8 encoding read is ignored} -setup {
 } -cleanup {
     removeFile io-75.12
 } -result 4181
-test io-75.13 {invalid utf-8 encoding read is not ignored (-encodingstrict 1)} -setup {
+test io-75.13 {invalid utf-8 encoding read is not ignored (-profile strict)} -setup {
     set fn [makeFile {} io-75.13]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9518,7 +9525,7 @@ test io-75.13 {invalid utf-8 encoding read is not ignored (-encodingstrict 1)} -
     puts -nonewline $f "A\x81"
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -encodingstrict 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
 } -body {
     set status [catch {read $f} cres copts]
     set d [dict get $copts -result read]
@@ -9539,12 +9546,12 @@ test io-75.14 {invalid utf-8 encoding [gets] coninues in non-strict mode after e
     puts -nonewline $f a\nb\xc0\nc\n
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf -encodingstrict 1
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf -profile strict
 } -body {
     lappend res [gets $f]
     set status [catch {gets $f} cres copts]
     lappend res $status $cres
-    chan configure $f -encodingstrict 0
+    chan configure $f -profile tcl8 
     lappend res [gets $f]
     lappend res [gets $f]
     close $f
@@ -9565,14 +9572,14 @@ test io-75.15 {invalid utf-8 encoding strict gets should not hang} -setup {
 } -body {
     #Now try to read it with [gets]
     set chan [open $fn]
-    fconfigure $chan -encoding utf-8 -encodingstrict 1
+    fconfigure $chan -encoding utf-8 -profile strict
     lappend res [gets $chan]
     set status [catch {gets $chan} cres copts]
     lappend res $status $cres
     set status [catch {gets $chan} cres copts]
     lappend res $status $cres
 	lappend res [dict get $copts -result]
-	chan configur $chan -encoding binary
+	chan configure $chan -encoding binary
 	foreach char [split [read $chan 2] {}] {
 	    lappend res [format %x [scan $char %c]]
 	}
