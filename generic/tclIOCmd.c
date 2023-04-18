@@ -433,6 +433,7 @@ Tcl_ReadObjCmd(
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
     if (charactersRead == TCL_IO_FAILURE) {
+	Tcl_DecrRefCount(resultPtr);
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
