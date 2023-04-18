@@ -17,6 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 testConstraint arithSeriesDouble 1
 testConstraint arithSeriesShimmer 1
 testConstraint arithSeriesShimmerOk 1
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 ## Arg errors
 test lseq-1.1 {error cases} -body {
@@ -482,7 +483,7 @@ test lseq-4.3 {TIP examples} {
 
 #
 # Ticket 9933cc4d88697f05976accebd31c1e3ba6efe9c6 - lseq corner case
-test lseq-4.4 {lseq corner case} -body {
+test lseq-4.4 {lseq corner case} -constraints longIs64bit -body {
     set tcmd {
 	set res {}
 	set s [catch {lindex [lseq 10 100] 0} e]

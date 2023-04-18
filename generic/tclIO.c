@@ -4616,7 +4616,6 @@ Tcl_GetsObj(
 				/* State info for channel */
     ChannelBuffer *bufPtr;
     int inEofChar, skip, copiedTotal, oldFlags, oldRemoved;
-    int reportError = 0;
     Tcl_Size oldLength;
     Tcl_Encoding encoding;
     char *dst, *dstEnd, *eol, *eof;
@@ -4624,8 +4623,8 @@ Tcl_GetsObj(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	UpdateInterest(chanPtr);
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
 	Tcl_SetErrno(EILSEQ);
-	ResetFlag(statePtr, CHANNEL_ENCODING_ERROR);
 	return TCL_INDEX_NONE;
     }
 
@@ -4887,7 +4886,8 @@ Tcl_GetsObj(
 	    }
 	    goto gotEOL;
 	} else if (gs.bytesWrote == 0
-		&& GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+		&& GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
+		&& !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 	    /* Set eol to the position that caused the encoding error, and then
 	     * coninue to gotEOL, which stores the data that was decoded
 	     * without error to objPtr.  This allows the caller to do something
@@ -4897,7 +4897,6 @@ Tcl_GetsObj(
 	     * point, if desired.
 	     */
 	    eol = dstEnd;
-	    reportError = 1;
 	    goto gotEOL;
 	}
 	dst = dstEnd;
@@ -4942,16 +4941,7 @@ Tcl_GetsObj(
     Tcl_SetObjLength(objPtr, eol - objPtr->bytes);
     CommonGetsCleanup(chanPtr);
     ResetFlag(statePtr, CHANNEL_BLOCKED);
-    if (reportError) {
-	ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR|CHANNEL_ENCODING_ERROR);
-	/* reset CHANNEL_ENCODING_ERROR to afford a chance to reconfigure
-	 * the channel and try again
-	 */
-	Tcl_SetErrno(EILSEQ);
-	copiedTotal = -1;
-    } else {
-	copiedTotal = gs.totalChars + gs.charsWrote - skip;
-    }
+    copiedTotal = gs.totalChars + gs.charsWrote - skip;
     goto done;
 
     /*
@@ -5024,6 +5014,12 @@ Tcl_GetsObj(
     }
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) && gs.bytesWrote == 0) {
+	bufPtr->nextRemoved = oldRemoved;
+	Tcl_SetErrno(EILSEQ);
+	copiedTotal = -1;
+    }
+    ResetFlag(statePtr, CHANNEL_ENCODING_ERROR);
     return copiedTotal;
 }
 
@@ -5485,6 +5481,8 @@ FilterInputBytes(
 
 	if (result == TCL_CONVERT_UNKNOWN || result == TCL_CONVERT_SYNTAX) {
 	    SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+	    ResetFlag(statePtr, CHANNEL_STICKY_EOF);
+	    ResetFlag(statePtr, CHANNEL_EOF);
 	    result = TCL_OK;
 	}
 
@@ -7556,8 +7554,7 @@ Tcl_Eof(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_FCOPY)
-	    && GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	return 0;
     }
     return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
@@ -9719,7 +9716,6 @@ CopyData(
      * the bottom of the stack.
      */
 
-    SetFlag(inStatePtr, CHANNEL_FCOPY);
     inBinary = (inStatePtr->encoding == NULL);
     outBinary = (outStatePtr->encoding == NULL);
     sameEncoding = inStatePtr->encoding == outStatePtr->encoding
@@ -9835,7 +9831,6 @@ CopyData(
 		    TclDecrRefCount(bufObj);
 		    bufObj = NULL;
 		}
-		ResetFlag(inStatePtr, CHANNEL_FCOPY);
 		return TCL_OK;
 	    }
 	}
@@ -9927,7 +9922,6 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
-	    ResetFlag(inStatePtr, CHANNEL_FCOPY);
 	    return TCL_OK;
 	}
 
@@ -9950,7 +9944,6 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
-	    ResetFlag(inStatePtr, CHANNEL_FCOPY);
 	    return TCL_OK;
 	}
     } /* while */
@@ -10003,7 +9996,6 @@ CopyData(
 	    }
 	}
     }
-    ResetFlag(inStatePtr, CHANNEL_FCOPY);
     return result;
 }
 

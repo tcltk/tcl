@@ -21,7 +21,6 @@ if {"::tcltest" ni [namespace children]} {
 # type is a 64 bit number on this machine.
 
 testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
-testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 testConstraint wideIs64bit [expr {wide(0x8000000000000000) < 0}]
 
 # Big test for correct ordering of data in [expr]
