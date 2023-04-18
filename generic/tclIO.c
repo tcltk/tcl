@@ -4616,7 +4616,7 @@ Tcl_GetsObj(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	UpdateInterest(chanPtr);
-	ResetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
 	Tcl_SetErrno(EILSEQ);
 	return TCL_INDEX_NONE;
     }
@@ -5941,6 +5941,7 @@ DoReadChars(
     int factor = UTF_EXPANSION_FACTOR;
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	/* TODO: We don't need this call? */
 	UpdateInterest(chanPtr);
 	Tcl_SetErrno(EILSEQ);
@@ -6117,6 +6118,7 @@ finish:
 	 * succesfully red before the error.  Return an error so that callers
 	 * like [read] can also return an error.
 	*/
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
 	Tcl_SetErrno(EILSEQ);
 	copied = -1;
     }
