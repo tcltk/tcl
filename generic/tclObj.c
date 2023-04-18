@@ -1721,7 +1721,7 @@ char *
 TclGetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
 				 * be returned. */
-    size_t *lengthPtr)	/* If non-NULL, the location where the string
+    ptrdiff_t *lengthPtr)	/* If non-NULL, the location where the string
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {
@@ -1751,11 +1751,7 @@ TclGetStringFromObj(
 	}
     }
     if (lengthPtr != NULL) {
-#if TCL_MAJOR_VERSION > 8
-	*lengthPtr = objPtr->length;
-#else
-	*lengthPtr = ((size_t)(unsigned)(objPtr->length + 1)) - 1;
-#endif
+	*lengthPtr = ((ptrdiff_t)(unsigned)(objPtr->length + 1)) - 1;
     }
     return objPtr->bytes;
 }
@@ -4041,7 +4037,7 @@ int
 Tcl_GetNumber(
     Tcl_Interp *interp,
     const char *bytes,
-    size_t numBytes,
+    ptrdiff_t numBytes,
     void **clientDataPtr,
     int *typePtr)
 {
@@ -4055,10 +4051,10 @@ Tcl_GetNumber(
 	bytes = &tclEmptyString;
 	numBytes = 0;
     }
-    if (numBytes == (size_t)TCL_INDEX_NONE) {
-	numBytes = strlen(bytes);
+    if (numBytes < 0) {
+	numBytes = (ptrdiff_t)strlen(bytes);
     }
-    if (numBytes > INT_MAX) {
+    if ((size_t)numBytes > INT_MAX) {
 	if (interp) {
             Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                     "max size for a Tcl value (%d bytes) exceeded", INT_MAX));

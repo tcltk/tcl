@@ -987,7 +987,7 @@ unsigned short *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the unicode string
 				 * for. */
-    size_t *lengthPtr)		/* If non-NULL, the location where the string
+    ptrdiff_t *lengthPtr)	/* If non-NULL, the location where the string
 				 * rep's unichar length should be stored. If
 				 * NULL, no length is stored. */
 {

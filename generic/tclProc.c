@@ -1690,7 +1690,7 @@ NRInterpProc2(
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
-    size_t objc,			/* Count of number of arguments to this
+    ptrdiff_t objc,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1709,7 +1709,7 @@ ObjInterpProc2(
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
-    size_t objc,			/* Count of number of arguments to this
+    ptrdiff_t objc,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {

@@ -704,7 +704,7 @@ typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
-	size_t level, const char *command, Tcl_Command commandInfo, size_t objc,
+	ptrdiff_t level, const char *command, Tcl_Command commandInfo, ptrdiff_t objc,
 	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
@@ -731,7 +731,7 @@ typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
-	size_t objc, struct Tcl_Obj *const *objv);
+	ptrdiff_t objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
@@ -1479,7 +1479,7 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
 #if TCL_MAJOR_VERSION > 8
 #   define TCL_CLOSE2PROC		NULL
 #else
-#   define TCL_CLOSE2PROC		((void *) 1)
+#   define TCL_CLOSE2PROC		((Tcl_DriverCloseProc *)(void *)(size_t)1)
 #endif
 
 /*
