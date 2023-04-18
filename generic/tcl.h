@@ -315,6 +315,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #	define TCL_T_MODIFIER	TCL_Z_MODIFIER
 #   endif
 #endif /* !TCL_T_MODIFIER */
+
 #define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
 #define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
@@ -463,38 +464,30 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  * string.
  */
 
-#if TCL_MAJOR_VERSION > 8
 typedef struct Tcl_RegExpIndices {
+#if TCL_MAJOR_VERSION > 8
     Tcl_Size start;			/* Character offset of first character in
 				 * match. */
     Tcl_Size end;			/* Character offset of first character after
 				 * the match. */
+#else
+    long start;
+    long end;
+#endif
 } Tcl_RegExpIndices;
 
 typedef struct Tcl_RegExpInfo {
     Tcl_Size nsubs;			/* Number of subexpressions in the compiled
 				 * expression. */
     Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
+#if TCL_MAJOR_VERSION > 8
     Tcl_Size extendStart;		/* The offset at which a subsequent match
 				 * might begin. */
-} Tcl_RegExpInfo;
 #else
-typedef struct Tcl_RegExpIndices {
-    long start;			/* Character offset of first character in
-				 * match. */
-    long end;			/* Character offset of first character after
-				 * the match. */
-} Tcl_RegExpIndices;
-
-typedef struct Tcl_RegExpInfo {
-    int nsubs;			/* Number of subexpressions in the compiled
-				 * expression. */
-    Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
-    long extendStart;		/* The offset at which a subsequent match
-				 * might begin. */
+    long extendStart;
     long reserved;		/* Reserved for later use. */
-} Tcl_RegExpInfo;
 #endif
+} Tcl_RegExpInfo;
 
 /*
  * Picky compilers complain if this typdef doesn't appear before the struct's
@@ -1787,7 +1780,7 @@ typedef struct Tcl_Token {
  * TCL_TOKEN_OPERATOR -		The token describes one expression operator.
  *				An operator might be the name of a math
  *				function such as "abs". A TCL_TOKEN_OPERATOR
- *				token is always preceeded by one
+ *				token is always preceded by one
  *				TCL_TOKEN_SUB_EXPR token for the operator's
  *				subexpression, and is followed by zero or more
  *				TCL_TOKEN_SUB_EXPR tokens for the operator's
@@ -2027,11 +2020,11 @@ typedef struct Tcl_EncodingType {
  */
 
 #ifndef TCL_UTF_MAX
-#if TCL_MAJOR_VERSION > 8
-#define TCL_UTF_MAX		4
-#else
-#define TCL_UTF_MAX		3
-#endif
+#   if TCL_MAJOR_VERSION > 8
+#	define TCL_UTF_MAX		4
+#   else
+#	define TCL_UTF_MAX		3
+#   endif
 #endif
 
 /*

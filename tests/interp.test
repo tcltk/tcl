@@ -2419,13 +2419,13 @@ test interp-29.1.5 {interp recursionlimit argument checking} -body {
     set result [catch {interp recursionlimit moo 0} msg]
     interp delete moo
     list $result $msg
-} -match glob -result {1 {recursion limit must be > 0}}
+} -match glob -result {1 {recursion limit must be > 0 and < *}}
 test interp-29.1.6 {interp recursionlimit argument checking} -body {
     interp create moo
     set result [catch {interp recursionlimit moo -1} msg]
     interp delete moo
     list $result $msg
-} -match glob -result {1 {recursion limit must be > 0}}
+} -match glob -result {1 {recursion limit must be > 0 and < *}}
 test interp-29.1.7 {interp recursionlimit argument checking} {
     interp create moo
     set result [catch {interp recursionlimit moo [expr {wide(1)<<64}]} msg]
@@ -2449,13 +2449,13 @@ test interp-29.1.10 {child recursionlimit argument checking} -body {
     set result [catch {moo recursionlimit 0} msg]
     interp delete moo
     list $result $msg
-} -match glob -result {1 {recursion limit must be > 0}}
+} -match glob -result {1 {recursion limit must be > 0 and < *}}
 test interp-29.1.11 {child recursionlimit argument checking} -body {
     interp create moo
     set result [catch {moo recursionlimit -1} msg]
     interp delete moo
     list $result $msg
-} -match glob -result {1 {recursion limit must be > 0}}
+} -match glob -result {1 {recursion limit must be > 0 and < *}}
 test interp-29.1.12 {child recursionlimit argument checking} {
     interp create moo
     set result [catch {moo recursionlimit [expr {wide(1)<<64}]} msg]

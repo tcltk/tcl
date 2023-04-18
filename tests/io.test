@@ -9480,7 +9480,7 @@ test io-75.14 {
     flush $chan
     seek $chan 0
     fconfigure $chan -encoding utf-8 -buffering none -eofchar {} \
-	-translation lf -profile strict
+	-translation auto -profile strict
 } -body {
     lappend res [gets $chan]
     lappend res [gets $chan]
@@ -9520,7 +9520,7 @@ test io-75.15 {
 		scan $char %c ord
 		lappend res [format %x $ord]
 	}
-    fconfigure $chan -encoding utf-8 -profile strict
+    fconfigure $chan -encoding utf-8 -profile strict -translation auto
 	lappend res [gets $chan]
 	lappend res [gets $chan]
     return $res
