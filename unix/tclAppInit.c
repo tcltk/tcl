@@ -91,7 +91,7 @@ main(
     TclZipfs_AppHook(&argc, &argv);
 #endif
 
-    Tcl_Main((size_t)argc, argv, TCL_LOCAL_APPINIT);
+    Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
     return 0;			/* Needed only to prevent compiler warning. */
 }
 

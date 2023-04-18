@@ -107,7 +107,7 @@ Tcl_PutsObjCmd(
     Tcl_Obj *string;		/* String to write. */
     Tcl_Obj *chanObjPtr = NULL;	/* channel object. */
     int newline;		/* Add a newline at end? */
-    size_t result;		/* Result of puts operation. */
+    Tcl_Size result;	/* Result of puts operation. */
     int mode;			/* Mode in which channel is opened. */
 
     switch (objc) {
@@ -281,7 +281,7 @@ Tcl_GetsObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to read from. */
-    size_t lineLen;		/* Length of line just read. */
+    Tcl_Size lineLen;		/* Length of line just read. */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *linePtr, *chanObjPtr;
     int code = TCL_OK;
@@ -304,7 +304,7 @@ Tcl_GetsObjCmd(
     TclChannelPreserve(chan);
     TclNewObj(linePtr);
     lineLen = Tcl_GetsObj(chan, linePtr);
-    if (lineLen == TCL_IO_FAILURE) {
+    if (lineLen == TCL_INDEX_NONE) {
 	if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
 	    Tcl_DecrRefCount(linePtr);
 
@@ -316,22 +316,14 @@ Tcl_GetsObjCmd(
 	     */
 
 	    if (!TclChanCaughtErrorBypass(interp, chan)) {
-		goto getsError;
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"error reading \"%s\": %s",
+			TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	    }
 	    code = TCL_ERROR;
 	    goto done;
 	}
-	lineLen = TCL_IO_FAILURE;
-    } else if (Tcl_InputEncodingError(chan)) {
-	Tcl_Obj *returnOpts = Tcl_NewDictObj();
-	Tcl_DictObjPut(NULL, returnOpts, Tcl_NewStringObj("-data", TCL_INDEX_NONE), linePtr);
-	Tcl_SetReturnOptions(interp, returnOpts);
-    getsError:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"error reading \"%s\": %s",
-		TclGetString(chanObjPtr), Tcl_PosixError(interp)));
-	code = TCL_ERROR;
-	goto done;
+	lineLen = TCL_INDEX_NONE;
     }
     if (objc == 3) {
 	if (Tcl_ObjSetVar2(interp, objv[2], NULL, linePtr,
@@ -377,7 +369,7 @@ Tcl_ReadObjCmd(
     Tcl_Channel chan;		/* The channel to read from. */
     int newline, i;		/* Discard newline at end? */
     Tcl_WideInt toRead;			/* How many bytes to read? */
-    size_t charactersRead;		/* How many characters were read? */
+    Tcl_Size charactersRead;		/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *resultPtr, *chanObjPtr;
 
@@ -438,10 +430,10 @@ Tcl_ReadObjCmd(
     }
 
     TclNewObj(resultPtr);
-    Tcl_IncrRefCount(resultPtr);
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
-    if (charactersRead == TCL_IO_FAILURE) {
+    if (charactersRead == TCL_INDEX_NONE) {
+	Tcl_DecrRefCount(resultPtr);
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
@@ -449,15 +441,12 @@ Tcl_ReadObjCmd(
 	 * regular message if nothing was found in the bypass.
 	 */
 
-	Tcl_DecrRefCount(resultPtr);
 	if (!TclChanCaughtErrorBypass(interp, chan)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"error reading \"%s\": %s",
-			TclGetString(chanObjPtr), Tcl_PosixError(interp)));
-	    goto readError;
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "error reading \"%s\": %s",
+		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
-	TclChannelRelease(chan);
-	return TCL_ERROR;
+	goto readError;
     } else if (Tcl_InputEncodingError(chan)) {
 	Tcl_Obj *returnOpts = Tcl_NewDictObj();
 	Tcl_DictObjPut(NULL, returnOpts, Tcl_NewStringObj("-data", TCL_INDEX_NONE), resultPtr);
@@ -476,7 +465,7 @@ Tcl_ReadObjCmd(
 
     if ((charactersRead > 0) && (newline != 0)) {
 	const char *result;
-	size_t length;
+	Tcl_Size length;
 
 	result = Tcl_GetStringFromObj(resultPtr, &length);
 	if (result[length - 1] == '\n') {
@@ -485,7 +474,6 @@ Tcl_ReadObjCmd(
     }
     Tcl_SetObjResult(interp, resultPtr);
     TclChannelRelease(chan);
-    Tcl_DecrRefCount(resultPtr);
     return TCL_OK;
 }
 
@@ -879,7 +867,7 @@ Tcl_ExecObjCmd(
     const char *string;
     Tcl_Channel chan;
     int argc, background, i, index, keepNewline, result, skip, ignoreStderr;
-    size_t length;
+    Tcl_Size length;
     static const char *const options[] = {
 	"-ignorestderr", "-keepnewline", "--", NULL
     };
@@ -1140,7 +1128,7 @@ Tcl_OpenObjCmd(
 	chan = Tcl_FSOpenFileChannel(interp, objv[1], modeString, prot);
     } else {
 	int mode, seekFlag, binary;
-	size_t cmdObjc;
+	Tcl_Size cmdObjc;
 	const char **cmdArgv;
 
 	if (Tcl_SplitList(interp, what+1, &cmdObjc, &cmdArgv) != TCL_OK) {
