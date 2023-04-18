@@ -1201,7 +1201,7 @@ test io-7.3 {FilterInputBytes: split up character at EOF} {testchannel} {
     lappend x [gets $f line] $line
     close $f
     set x
-} [list 15 "1234567890123０１" 18 0 1 -1 ""]
+} [list 15 "1234567890123０１" 17 1 1 -1 ""]
 test io-7.4 {FilterInputBytes: recover from split up character} {stdio fileevent} {
     set f [open "|[list [interpreter] $path(cat)]" w+]
     fconfigure $f -encoding binary -buffering none
