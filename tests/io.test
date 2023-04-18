@@ -9350,7 +9350,8 @@ test io-75.6.gets {invalid utf-8 encoding, gets is not ignored (-profile strict)
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+	-translation lf -profile strict
 } -body {
     gets $f
 } -cleanup {
@@ -9359,7 +9360,9 @@ test io-75.6.gets {invalid utf-8 encoding, gets is not ignored (-profile strict)
 } -match glob -returnCodes 1 -result {error reading "file*":\
 	invalid or incomplete multibyte or wide character}
 
-test io-75.7.gets {invalid utf-8 encoding, gets is not ignored (-profile strict)} -setup {
+test io-75.7.gets {
+    invalid utf-8 encoding gets is not ignored (-profile strict)
+} -setup {
     set fn [makeFile {} io-75.7]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9367,7 +9370,8 @@ test io-75.7.gets {invalid utf-8 encoding, gets is not ignored (-profile strict)
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf \
+	-profile strict
 } -body {
     read $f
 } -cleanup {
@@ -9409,12 +9413,13 @@ test io-75.8.incomplete {
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]
     fconfigure $f -encoding binary
-    # \x81 is invalid and also incomplete utf-8 data, but because the eof
-    # character \x1A appears first, it's not an error.
+	# \x81 is invalid in utf-8, but since the eof character \x1A comes first,
+	# -eofchar takes precedence.
     puts -nonewline $f A\x1A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -profile strict
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A \
+	-translation lf -profile strict
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9467,7 +9472,8 @@ test io-75.9 {unrepresentable character write passes and is replaced by ?} -setu
 } -cleanup {
     close $f
     removeFile io-75.9
-} -match glob -result [list {A} {error writing "*": invalid or incomplete multibyte or wide character}]
+} -match glob -result [list {A} {error writing "*":\
+    invalid or incomplete multibyte or wide character}]
 
 apply [list {} {
     set template {
@@ -9624,9 +9630,8 @@ test {io-75.12 {profile tcl8}} {
 } -match glob -result {{error reading "file*":\
     invalid or incomplete multibyte or wide character} 4181}
 test io-75.13 {
-    In nonblocking mode when there is an encoding error the data that has been
-    successfully read so far is returned first and then the error is returned
-    on the next call to [read].
+    In blocking mode [read] produces an error and leaves the data succesfully
+    read so far in the return options dictionary.
 } -setup {
     set fn [makeFile {} io-75.13]
     set f [open $fn w+]
@@ -9669,7 +9674,36 @@ test io-75.13.nonblocking {
 } -cleanup {
     close $f
     removeFile io-75.13
-} -match glob -result {41 1 {error reading "file*": invalid or incomplete multibyte or wide character}}
+} -match glob -result {41 1 {error reading "file*":\
+    invalid or incomplete multibyte or wide character}}
+
+test io-75.14 {
+	[gets] succesfully returns lines prior to error
+
+	invalid utf-8 encoding [gets] continues in non-strict mode after error
+} -setup {
+    set fn [makeFile {} io-75.14]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \xc0 is invalid in utf-8
+    puts -nonewline $f a\nb\xc0\nc\n
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+	-translation lf -profile strict
+} -body {
+    lappend res [gets $f]
+    set status [catch {gets $f} cres copts]
+    lappend res $status $cres
+    chan configure $f -profile tcl8 
+    lappend res [gets $f]
+    lappend res [gets $f]
+    close $f
+	return $res
+} -cleanup {
+    removeFile io-75.14
+} -match glob -result {a 1 {error reading "*":\
+    invalid or incomplete multibyte or wide character} bÀ c}
 
 test io-75.14 {invalid utf-8 encoding [gets] coninues in non-strict mode after error} -setup {
     set res {}
