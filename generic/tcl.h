@@ -136,7 +136,7 @@ extern "C" {
  */
 
 #include <stdarg.h>
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#ifndef TCL_NO_DEPRECATED
 #    define TCL_VARARGS(type, name) (type name, ...)
 #    define TCL_VARARGS_DEF(type, name) (type name, ...)
 #    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
@@ -256,7 +256,7 @@ extern "C" {
  * New code should use prototypes.
  */
 
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#ifndef TCL_NO_DEPRECATED
 #   undef _ANSI_ARGS_
 #   define _ANSI_ARGS_(x)	x
 
@@ -299,7 +299,7 @@ extern "C" {
  * VOID. This block is skipped under Cygwin and Mingw.
  */
 
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#ifndef TCL_NO_DEPRECATED
 #if defined(_WIN32) && !defined(HAVE_WINNT_IGNORE_VOID)
 #ifndef VOID
 #define VOID void
@@ -317,7 +317,7 @@ typedef long LONG;
 #ifndef __VXWORKS__
 #   define VOID void
 #endif
-#endif /* !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9 */
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  * Miscellaneous declarations.
@@ -399,16 +399,30 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #	define TCL_Z_MODIFIER	""
 #   endif
 #endif /* !TCL_Z_MODIFIER */
+#ifndef TCL_T_MODIFIER
+#   if defined(__GNUC__) && !defined(_WIN32)
+#	define TCL_T_MODIFIER	"t"
+#   elif defined(_WIN64)
+#	define TCL_T_MODIFIER	TCL_LL_MODIFIER
+#   else
+#	define TCL_T_MODIFIER	TCL_Z_MODIFIER
+#   endif
+#endif /* !TCL_T_MODIFIER */
+
 #define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
 #define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
-#if TCL_MAJOR_VERSION > 8
-typedef size_t Tcl_Size;
+#if TCL_MAJOR_VERSION < 9
+    typedef int Tcl_Size;
+#   define TCL_SIZE_MODIFIER ""
+#   define TCL_SIZE_MAX INT_MAX
 #else
-typedef int Tcl_Size;
-#endif
+    typedef ptrdiff_t Tcl_Size;
+#   define TCL_SIZE_MAX PTRDIFF_MAX
+#   define TCL_SIZE_MODIFIER TCL_T_MODIFIER
+#endif /* TCL_MAJOR_VERSION */
 
 #ifdef _WIN32
 #   if TCL_MAJOR_VERSION > 8 || defined(_WIN64) || defined(_USE_64BIT_TIME_T)
@@ -461,7 +475,7 @@ typedef int Tcl_Size;
  */
 
 typedef struct Tcl_Interp
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#ifndef TCL_NO_DEPRECATED
 {
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
@@ -569,19 +583,28 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  */
 
 typedef struct Tcl_RegExpIndices {
-    long start;			/* Character offset of first character in
+#if TCL_MAJOR_VERSION > 8
+    Tcl_Size start;			/* Character offset of first character in
 				 * match. */
-    long end;			/* Character offset of first character after
+    Tcl_Size end;			/* Character offset of first character after
 				 * the match. */
+#else
+    long start;
+    long end;
+#endif
 } Tcl_RegExpIndices;
 
 typedef struct Tcl_RegExpInfo {
-    int nsubs;			/* Number of subexpressions in the compiled
+    Tcl_Size nsubs;			/* Number of subexpressions in the compiled
 				 * expression. */
     Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
-    long extendStart;		/* The offset at which a subsequent match
+#if TCL_MAJOR_VERSION > 8
+    Tcl_Size extendStart;		/* The offset at which a subsequent match
 				 * might begin. */
+#else
+    long extendStart;
     long reserved;		/* Reserved for later use. */
+#endif
 } Tcl_RegExpInfo;
 
 /*
@@ -619,7 +642,7 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
 
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#ifndef TCL_NO_DEPRECATED
 #define TCL_RESULT_SIZE		200
 #endif
 
@@ -637,7 +660,7 @@ typedef struct stat *Tcl_OldStat_;
  * Argument descriptors for math function callbacks in expressions:
  */
 
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#ifndef TCL_NO_DEPRECATED
 typedef enum {
     TCL_INT, TCL_DOUBLE, TCL_EITHER, TCL_WIDE_INT
 } Tcl_ValueType;
@@ -681,7 +704,7 @@ typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
-	size_t level, const char *command, Tcl_Command commandInfo, size_t objc,
+	ptrdiff_t level, const char *command, Tcl_Command commandInfo, ptrdiff_t objc,
 	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
@@ -708,7 +731,7 @@ typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
-	size_t objc, struct Tcl_Obj *const *objv);
+	ptrdiff_t objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
@@ -957,9 +980,9 @@ typedef struct Tcl_DString {
 
 #define Tcl_DStringLength(dsPtr) ((dsPtr)->length)
 #define Tcl_DStringValue(dsPtr) ((dsPtr)->string)
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#ifndef TCL_NO_DEPRECATED
 #   define Tcl_DStringTrunc Tcl_DStringSetLength
-#endif /* !TCL_NO_DEPRECATED */
+#endif
 
 /*
  * Definitions for the maximum number of digits of precision that may be
@@ -1081,7 +1104,7 @@ typedef struct Tcl_DString {
 #define TCL_TRACE_UNSETS	 0x40
 #define TCL_TRACE_DESTROYED	 0x80
 
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#ifndef TCL_NO_DEPRECATED
 #define TCL_INTERP_DESTROYED	 0x100
 #endif
 
@@ -1119,9 +1142,9 @@ typedef struct Tcl_DString {
  * give the flag)
  */
 
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#ifndef TCL_NO_DEPRECATED
 #   define TCL_PARSE_PART1	0x400
-#endif /* !TCL_NO_DEPRECATED */
+#endif
 
 /*
  * Types for linked variables:
@@ -1279,10 +1302,15 @@ struct Tcl_HashTable {
 				 * table. */
     Tcl_Size rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
+#if TCL_MAJOR_VERSION > 8
+    size_t mask;		/* Mask value used in hashing function. */
+#endif
     int downShift;		/* Shift count used in hashing function.
 				 * Designed to use high-order bits of
 				 * randomized keys. */
-    int mask;			/* Mask value used in hashing function. */
+#if TCL_MAJOR_VERSION < 9
+    int mask;		/* Mask value used in hashing function. */
+#endif
     int keyType;		/* Type of keys used in this table. It's
 				 * either TCL_CUSTOM_KEYS, TCL_STRING_KEYS,
 				 * TCL_ONE_WORD_KEYS, or an integer giving the
@@ -1448,7 +1476,11 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
  * interface.
  */
 
-#define TCL_CLOSE2PROC		((Tcl_DriverCloseProc *) 1)
+#if TCL_MAJOR_VERSION > 8
+#   define TCL_CLOSE2PROC		NULL
+#else
+#   define TCL_CLOSE2PROC		((Tcl_DriverCloseProc *)(void *)(size_t)1)
+#endif
 
 /*
  * Channel version tag. This was introduced in 8.3.2/8.4.
@@ -2023,6 +2055,12 @@ typedef struct Tcl_Parse {
 				 * *tokenPtr. */
     int errorType;		/* One of the parsing error types defined
 				 * above. */
+#if TCL_MAJOR_VERSION > 8
+    int incomplete;		/* This field is set to 1 by Tcl_ParseCommand
+				 * if the command appears to be incomplete.
+				 * This information is used by
+				 * Tcl_CommandComplete. */
+#endif
 
     /*
      * The fields below are intended only for the private use of the parser.
@@ -2041,10 +2079,9 @@ typedef struct Tcl_Parse {
 				 * beginning of region where the error
 				 * occurred (e.g. the open brace if the close
 				 * brace is missing). */
-    int incomplete;		/* This field is set to 1 by Tcl_ParseCommand
-				 * if the command appears to be incomplete.
-				 * This information is used by
-				 * Tcl_CommandComplete. */
+#if TCL_MAJOR_VERSION < 9
+    int incomplete;
+#endif
     Tcl_Token staticTokens[NUM_STATIC_TOKENS];
 				/* Initial space for tokens for command. This
 				 * space should be large enough to accommodate
@@ -2394,7 +2431,11 @@ typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#if TCL_MAJOR_VERSION > 8
+#   define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *))
+#else
+#   define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#endif
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2616,7 +2657,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
  * Deprecated Tcl functions:
  */
 
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#ifndef TCL_NO_DEPRECATED
 /*
  * These function have been renamed. The old names are deprecated, but we
  * define these macros for backwards compatibility.
