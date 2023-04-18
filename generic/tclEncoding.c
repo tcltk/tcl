@@ -937,7 +937,7 @@ Tcl_GetEncodingNames(
 	Encoding *encodingPtr = (Encoding *)Tcl_GetHashValue(hPtr);
 
 	Tcl_CreateHashEntry(&table,
-		Tcl_NewStringObj(encodingPtr->name, -1), &dummy);
+		Tcl_NewStringObj(encodingPtr->name, TCL_INDEX_NONE), &dummy);
     }
     Tcl_MutexUnlock(&encodingMutex);
 
@@ -1230,9 +1230,11 @@ Tcl_ExternalToUtfDStringEx(
 
     if (flags & (TCL_ENCODING_START|TCL_ENCODING_END)) {
 	/* TODO - what other flags are illegal? - See TIP 656 */
- 	Tcl_SetResult(interp,
-	    "Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
-	    TCL_STATIC);
+	Tcl_SetObjResult(
+	    interp,
+	    Tcl_NewStringObj(
+		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
+		TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
 	return TCL_ERROR;
     }
@@ -1243,7 +1245,7 @@ Tcl_ExternalToUtfDStringEx(
     if (encoding == NULL) {
 	encoding = systemEncoding;
     }
-    encodingPtr = (Encoding *) encoding;
+    encodingPtr = (Encoding *)encoding;
 
     if (src == NULL) {
 	srcLen = 0;
@@ -1285,32 +1287,31 @@ Tcl_ExternalToUtfDStringEx(
 	 */
 	if ((result != TCL_CONVERT_NOSPACE) &&
 	    !(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
-            Tcl_Size nBytesProcessed = (src - srcStart);
+	    Tcl_Size nBytesProcessed = (src - srcStart);
 
-            Tcl_DStringSetLength(dstPtr, soFar);
-            if (errorLocPtr) {
-                /*
-                 * Do not write error message into interpreter if caller
-                 * wants to know error location.
-                 */
-                *errorLocPtr = result == TCL_OK ? TCL_INDEX_NONE : nBytesProcessed;
-            }
-            else {
-                /* Caller wants error message on failure */
-                if (result != TCL_OK && interp != NULL) {
-                    char buf[TCL_INTEGER_SPACE];
-                    sprintf(buf, "%" TCL_Z_MODIFIER "u", nBytesProcessed);
-                    Tcl_SetObjResult(
-                        interp,
-                        Tcl_ObjPrintf("unexpected byte sequence starting at index %"
-                                      TCL_Z_MODIFIER "u: '\\x%02X'",
-                                      nBytesProcessed,
-                                      UCHAR(srcStart[nBytesProcessed])));
-                    Tcl_SetErrorCode(
-                        interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, NULL);
-                }
-            }
-            return result;
+	    Tcl_DStringSetLength(dstPtr, soFar);
+	    if (errorLocPtr) {
+		/*
+		 * Do not write error message into interpreter if caller
+		 * wants to know error location.
+		 */
+		*errorLocPtr = result == TCL_OK ? TCL_INDEX_NONE : nBytesProcessed;
+	    } else {
+		/* Caller wants error message on failure */
+		if (result != TCL_OK && interp != NULL) {
+		    char buf[TCL_INTEGER_SPACE];
+		    sprintf(buf, "%" TCL_Z_MODIFIER "u", nBytesProcessed);
+		    Tcl_SetObjResult(
+			interp,
+			Tcl_ObjPrintf("unexpected byte sequence starting at index %"
+				      TCL_Z_MODIFIER "u: '\\x%02X'",
+				      nBytesProcessed,
+				      UCHAR(srcStart[nBytesProcessed])));
+		    Tcl_SetErrorCode(
+			interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, NULL);
+		}
+	    }
+	    return result;
 	}
 
 	flags &= ~TCL_ENCODING_START;
@@ -1415,9 +1416,9 @@ Tcl_ExternalToUtf(
     }
 
     if (!noTerminate) {
-        if ((int) dstLen < 1) {
-            return TCL_CONVERT_NOSPACE;
-        }
+	if ((int) dstLen < 1) {
+	    return TCL_CONVERT_NOSPACE;
+	}
 	/*
 	 * If there are any null characters in the middle of the buffer,
 	 * they will converted to the UTF-8 null character (\xC0\x80). To get
@@ -1427,9 +1428,9 @@ Tcl_ExternalToUtf(
 
 	dstLen--;
     } else {
-        if (dstLen <= 0 && srcLen > 0) {
-            return TCL_CONVERT_NOSPACE;
-        }
+	if (dstLen <= 0 && srcLen > 0) {
+	    return TCL_CONVERT_NOSPACE;
+	}
     }
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
 	flags |= ENCODING_INPUT;
@@ -1486,7 +1487,7 @@ Tcl_UtfToExternalDString(
 				 * converted string is stored. */
 {
     Tcl_UtfToExternalDStringEx(
-	NULL, encoding, src, srcLen, TCL_ENCODING_PROFILE_DEFAULT, dstPtr, NULL);
+	NULL, encoding, src, srcLen, TCL_ENCODING_PROFILE_TCL8, dstPtr, NULL);
     return Tcl_DStringValue(dstPtr);
 }
 
@@ -1549,17 +1550,19 @@ Tcl_UtfToExternalDStringEx(
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
     int result;
-    Tcl_Size dstLen, soFar;
     const char *srcStart = src;
+    Tcl_Size dstLen, soFar;
 
     /* DO FIRST - must always be initialized on return */
     Tcl_DStringInit(dstPtr);
 
     if (flags & (TCL_ENCODING_START|TCL_ENCODING_END)) {
 	/* TODO - what other flags are illegal? - See TIP 656 */
- 	Tcl_SetResult(interp,
-	    "Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
-	    TCL_STATIC);
+	Tcl_SetObjResult(
+	    interp,
+	    Tcl_NewStringObj(
+		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
+		TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
 	return TCL_ERROR;
     }
@@ -1577,6 +1580,7 @@ Tcl_UtfToExternalDStringEx(
     } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
+
     flags |= TCL_ENCODING_START;
     while (1) {
 	int srcChunkLen, srcChunkRead;
@@ -1591,8 +1595,8 @@ Tcl_UtfToExternalDStringEx(
 	dstChunkLen = dstLen > INT_MAX ? INT_MAX : dstLen;
 
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
-                                          srcChunkLen, flags, &state, dst, dstChunkLen,
-                                          &srcChunkRead, &dstChunkWrote, &dstChunkChars);
+					  srcChunkLen, flags, &state, dst, dstChunkLen,
+					  &srcChunkRead, &dstChunkWrote, &dstChunkChars);
 	soFar = dst + dstChunkWrote - Tcl_DStringValue(dstPtr);
 
 	/* Move past the part processed in this go around */
@@ -1608,27 +1612,26 @@ Tcl_UtfToExternalDStringEx(
 	 */
 	if ((result != TCL_CONVERT_NOSPACE) &&
 	    !(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
-            Tcl_Size nBytesProcessed = (src - srcStart);
+	    Tcl_Size nBytesProcessed = (src - srcStart);
 	    size_t i = soFar + encodingPtr->nullSize - 1;
 	    /* Loop as DStringSetLength only stores one nul byte at a time */
 	    while (i+1 >= soFar+1) {
 		Tcl_DStringSetLength(dstPtr, i--);
 	    }
-            if (errorLocPtr) {
-                /*
-                 * Do not write error message into interpreter if caller
-                 * wants to know error location.
-                 */
-                *errorLocPtr = result == TCL_OK ? TCL_INDEX_NONE : nBytesProcessed;
-            }
-            else {
-                /* Caller wants error message on failure */
-                if (result != TCL_OK && interp != NULL) {
-                    Tcl_Size pos = Tcl_NumUtfChars(srcStart, nBytesProcessed);
-                    int ucs4;
-                    char buf[TCL_INTEGER_SPACE];
-                    TclUtfToUCS4(&srcStart[nBytesProcessed], &ucs4);
-                    sprintf(buf, "%" TCL_Z_MODIFIER "u", nBytesProcessed);
+	    if (errorLocPtr) {
+		/*
+		 * Do not write error message into interpreter if caller
+		 * wants to know error location.
+		 */
+		*errorLocPtr = result == TCL_OK ? TCL_INDEX_NONE : nBytesProcessed;
+	    } else {
+		/* Caller wants error message on failure */
+		if (result != TCL_OK && interp != NULL) {
+		    Tcl_Size pos = Tcl_NumUtfChars(srcStart, nBytesProcessed);
+		    int ucs4;
+		    char buf[TCL_INTEGER_SPACE];
+		    TclUtfToUCS4(&srcStart[nBytesProcessed], &ucs4);
+		    sprintf(buf, "%" TCL_Z_MODIFIER "u", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf(
@@ -1637,10 +1640,10 @@ Tcl_UtfToExternalDStringEx(
 			    pos,
 			    ucs4));
 		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-                                     buf, NULL);
-                }
-            }
-            return result;
+				     buf, NULL);
+		}
+	    }
+	    return result;
 	}
 
 	flags &= ~TCL_ENCODING_START;
@@ -1739,7 +1742,7 @@ Tcl_UtfToExternal(
     }
 
     if (dstLen < encodingPtr->nullSize) {
-        return TCL_CONVERT_NOSPACE;
+	return TCL_CONVERT_NOSPACE;
     }
     dstLen -= encodingPtr->nullSize;
     result = encodingPtr->fromUtfProc(encodingPtr->clientData, src, srcLen,
@@ -1808,7 +1811,7 @@ OpenEncodingFileChannel(
     const char *name)		/* The name of the encoding file on disk and
 				 * also the name for new encoding. */
 {
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
+    Tcl_Obj *nameObj = Tcl_NewStringObj(name, TCL_INDEX_NONE);
     Tcl_Obj *fileNameObj = Tcl_DuplicateObj(nameObj);
     Tcl_Obj *searchPath = Tcl_DuplicateObj(Tcl_GetEncodingSearchPath());
     Tcl_Obj *map = TclGetProcessGlobalValue(&encodingFileMap);
@@ -1818,7 +1821,7 @@ OpenEncodingFileChannel(
 
     TclListObjGetElementsM(NULL, searchPath, &numDirs, &dir);
     Tcl_IncrRefCount(nameObj);
-    Tcl_AppendToObj(fileNameObj, ".enc", -1);
+    Tcl_AppendToObj(fileNameObj, ".enc", TCL_INDEX_NONE);
     Tcl_IncrRefCount(fileNameObj);
     Tcl_DictObjGet(NULL, map, nameObj, &directory);
 
@@ -2549,17 +2552,15 @@ UtfToUtfProc(
 	if (UCHAR(*src) < 0x80 && !((UCHAR(*src) == 0) && (flags & ENCODING_INPUT))) {
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when we are in input
-	     * mode, so that they get converted to 0xC080.
+	     * mode, so that they get converted to \xC0\x80.
 	     */
-
 	    *dst++ = *src++;
-	}
-	else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd) &&
+	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd) &&
 		 (UCHAR(src[1]) == 0x80) &&
 		 (!(flags & ENCODING_INPUT) || PROFILE_STRICT(profile) ||
 		  PROFILE_REPLACE(profile))) {
 	    /* Special sequence \xC0\x80 */
-            if ((PROFILE_STRICT(profile) || PROFILE_REPLACE(profile)) && (flags & ENCODING_INPUT)) {
+	    if ((PROFILE_STRICT(profile) || PROFILE_REPLACE(profile)) && (flags & ENCODING_INPUT)) {
 		if (PROFILE_REPLACE(profile)) {
 		   dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 		   src += 2;
@@ -2577,8 +2578,7 @@ UtfToUtfProc(
 		src += 2;
 	    }
 
-	}
-	else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
+	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Incomplete byte sequence.
 	     * Always check before using TclUtfToUCS4. Not doing can so cause
@@ -2595,33 +2595,31 @@ UtfToUtfProc(
 			       : TCL_CONVERT_SYNTAX;
 		    break;
 		}
-            }
-            if (PROFILE_REPLACE(profile)) {
-                ch = UNICODE_REPLACE_CHAR;
-                ++src;
-            } else {
-                /* TCL_ENCODING_PROFILE_TCL8 */
-                char chbuf[2];
-                chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
-                TclUtfToUCS4(chbuf, &ch);
-            }
+	    }
+	    if (PROFILE_REPLACE(profile)) {
+		ch = UNICODE_REPLACE_CHAR;
+		++src;
+	    } else {
+		/* TCL_ENCODING_PROFILE_TCL8 */
+		char chbuf[2];
+		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
+		TclUtfToUCS4(chbuf, &ch);
+	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
-	}
-	else {
-            int isInvalid = 0;
+	} else {
+	    int isInvalid = 0;
 	    size_t len = TclUtfToUCS4(src, &ch);
 	    if (flags & ENCODING_INPUT) {
 		if ((len < 2) && (ch != 0)) {
-                    isInvalid = 1;
+		    isInvalid = 1;
 		} else if ((ch > 0xFFFF) && !(flags & ENCODING_UTF)) {
-                    isInvalid = 1;
+		    isInvalid = 1;
 		}
 		if (isInvalid) {
 		    if (PROFILE_STRICT(profile)) {
 			result = TCL_CONVERT_SYNTAX;
 			break;
-		    }
-		    else if (PROFILE_REPLACE(profile)) {
+		    } else if (PROFILE_REPLACE(profile)) {
 			ch = UNICODE_REPLACE_CHAR;
 		    }
 		}
@@ -2656,7 +2654,7 @@ UtfToUtfProc(
 		    break;
 		}
 		if (PROFILE_REPLACE(profile)) {
-                    /* TODO - is this right for cesu8 or should we fall through below? */
+		    /* TODO - is this right for cesu8 or should we fall through below? */
 		    ch = UNICODE_REPLACE_CHAR;
 		}
 		else {
@@ -2670,7 +2668,7 @@ UtfToUtfProc(
 			    src = saveSrc;
 			    break;
 			}
-                        goto cesu8;
+			goto cesu8;
 		    }
 		    src += len;
 		    dst += Tcl_UniCharToUtf(ch, dst);
@@ -2684,7 +2682,7 @@ UtfToUtfProc(
 		src = saveSrc;
 		break;
 	    } else if (PROFILE_STRICT(profile) &&
-	               (flags & ENCODING_INPUT) &&
+		       (flags & ENCODING_INPUT) &&
 		       SURROGATE(ch)) {
 		result = TCL_CONVERT_SYNTAX;
 		src = saveSrc;
@@ -2755,7 +2753,7 @@ Utf32ToUtfProc(
      * Check alignment with utf-32 (4 == sizeof(UTF-32))
      */
     if (bytesLeft != 0) {
-        /* We have a truncated code unit */
+	/* We have a truncated code unit */
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen -= bytesLeft;
     }
@@ -2846,16 +2844,16 @@ Utf32ToUtfProc(
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
-            if (PROFILE_STRICT(flags)) {
-                result = TCL_CONVERT_SYNTAX;
-            } else {
-                /* PROFILE_REPLACE or PROFILE_TCL8 */
-                result = TCL_OK;
-                dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-                numChars++;
-                src += bytesLeft; /* Go past truncated code unit */
-            }
-        }
+	    if (PROFILE_STRICT(flags)) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		/* PROFILE_REPLACE or PROFILE_TCL8 */
+		result = TCL_OK;
+		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+		numChars++;
+		src += bytesLeft; /* Go past truncated code unit */
+	    }
+	}
     }
 
     *srcReadPtr = src - srcStart;
@@ -3073,10 +3071,8 @@ Utf16ToUtfProc(
 		src -= 2;
 		numChars--;
 		continue;
-	    }
-	    else {
-		/* Bug [10c2c17c32]. If Hi surrogate not followed by Lo
-		 * surrogate, finish 3-byte UTF-8 */
+	    } else {
+	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
 		dst += Tcl_UniCharToUtf(-1, dst);
 	    }
 	}
@@ -3128,16 +3124,16 @@ Utf16ToUtfProc(
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
-            if (PROFILE_STRICT(flags)) {
-                result = TCL_CONVERT_SYNTAX;
-            } else {
-                /* PROFILE_REPLACE or PROFILE_TCL8 */
-                result = TCL_OK;
-                dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-                numChars++;
-                src++; /* Go past truncated code unit */
-            }
-        }
+	    if (PROFILE_STRICT(flags)) {
+		result = TCL_CONVERT_SYNTAX;
+	    } else {
+		/* PROFILE_REPLACE or PROFILE_TCL8 */
+		result = TCL_OK;
+		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+		numChars++;
+		src++; /* Go past truncated code unit */
+	    }
+	}
     }
 
     *srcReadPtr = src - srcStart;
@@ -3329,8 +3325,8 @@ UtfToUcs2Proc(
 	len = TclUtfToUniChar(src, &ch);
 	if ((ch >= 0xD800) && (len < 3)) {
 	    if (PROFILE_STRICT(flags)) {
-                result = TCL_CONVERT_UNKNOWN;
-                break;
+		result = TCL_CONVERT_UNKNOWN;
+		break;
 	    }
 	    src += len;
 	    src += TclUtfToUniChar(src, &ch);
@@ -3340,8 +3336,8 @@ UtfToUcs2Proc(
 	len = TclUtfToUniChar(src, &ch);
 	if (ch > 0xFFFF) {
 	    if (PROFILE_STRICT(flags)) {
-                result = TCL_CONVERT_UNKNOWN;
-                break;
+		result = TCL_CONVERT_UNKNOWN;
+		break;
 	    }
 	    ch = UNICODE_REPLACE_CHAR;
 	}
@@ -3463,7 +3459,6 @@ TableToUtfProc(
 	    } else {
 		ch = toUnicode[byte][*((unsigned char *)src)];
 	    }
-	    ch = toUnicode[byte][*((unsigned char *) src)];
 	} else {
 	    ch = pageZero[byte];
 	}
@@ -4592,8 +4587,7 @@ int TclEncodingSetProfileFlags(int flags)
 {
     if (flags & TCL_ENCODING_STOPONERROR) {
 	TCL_ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
-    }
-    else {
+    } else {
 	int profile = TCL_ENCODING_PROFILE_GET(flags);
 	switch (profile) {
 	case TCL_ENCODING_PROFILE_TCL8:
@@ -4627,13 +4621,13 @@ int TclEncodingSetProfileFlags(int flags)
 void
 TclGetEncodingProfiles(Tcl_Interp *interp)
 {
-    int i, n;
+    size_t i, n;
     Tcl_Obj *objPtr;
     n = sizeof(encodingProfiles) / sizeof(encodingProfiles[0]);
     objPtr = Tcl_NewListObj(n, NULL);
     for (i = 0; i < n; ++i) {
 	Tcl_ListObjAppendElement(
-	    interp, objPtr, Tcl_NewStringObj(encodingProfiles[i].name, -1));
+	    interp, objPtr, Tcl_NewStringObj(encodingProfiles[i].name, TCL_INDEX_NONE));
     }
     Tcl_SetObjResult(interp, objPtr);
 }
