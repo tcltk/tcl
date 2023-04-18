@@ -151,9 +151,9 @@ proc Service {chan addr port} {
             foreach {what type} [mime-type $path] break
             set f [open $path r]
             if {$what eq "binary"} {
-                chan configure $f -translation binary}
+                chan configure $f -translation binary
             } else {
-                chan configure $f -encoding utf-8}
+                chan configure $f -encoding utf-8
             }
             set data [read $f]
             close $f
