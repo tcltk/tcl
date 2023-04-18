@@ -150,6 +150,16 @@ the end of the data.
 
 The default value is the empty string.  The acceptable range is \ex01 -
 \ex7f.  A value outside this range results in an error.
+.VS "TCL8.7 TIP656"
+.TP
+\fB\-profile\fR \fIprofile\fR
+.
+Specifies the encoding profile to be used on the channel. The encoding
+transforms in use for the channel's input and output will then be subject to the
+rules of that profile. Any failures will result in a channel error. See
+\fBPROFILES\fR in the \fBencoding(n)\fR documentation for details about encoding
+profiles.
+.VE "TCL8.7 TIP656"
 .TP
 \fB\-translation\fR \fItranslation\fR
 .TP
