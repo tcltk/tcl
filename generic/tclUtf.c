@@ -182,8 +182,8 @@ Invalid(
  *
  * Tcl_UniCharToUtf --
  *
- *	Stores the given Tcl_UniChar as a sequence of UTF-8 bytes in the
- *	provided buffer. Equivalent to Plan 9 runetochar().
+ *	Stores the given Tcl_UniChar as a sequence of UTF-8 bytes in the provided
+ *	buffer. Equivalent to Plan 9 runetochar().
  *
  *	Surrogate pairs are handled as follows: When ch is a high surrogate,
  *	the first byte of the 4-byte UTF-8 sequence is stored in the buffer and
@@ -191,10 +191,9 @@ Invalid(
  *	surrogate and the same buffer, the remaining 3 bytes of the 4-byte
  *	UTF-8 sequence are produced.
  *
- *	If no low surrogate follows the high surrogate (which is actually
- *	illegal), this can be handled reasonably by calling Tcl_UniCharToUtf
- *	again with ch = -1. This produces a 3-byte UTF-8 sequence
- *	representing the high surrogate.
+ *	If no low surrogate follows the high surrogate (which is actually illegal),
+ *	calling Tcl_UniCharToUtf again with ch being -1 produces a 3-byte UTF-8
+ *	sequence representing the high surrogate.
  *
  * Results:
  *	Returns the number of bytes stored into the buffer.
@@ -208,12 +207,13 @@ Invalid(
 #undef Tcl_UniCharToUtf
 size_t
 Tcl_UniCharToUtf(
-    int ch,			/* The Tcl_UniChar to be stored in the
-				 * buffer. Can be or'ed with flag TCL_COMBINE */
-    char *buf)			/* Buffer in which the UTF-8 representation of
-				 * the Tcl_UniChar is stored. Buffer must be
-				 * large enough to hold the UTF-8 character
-				 * (at most 4 bytes). */
+    int ch,	/* The Tcl_UniChar to be stored in the
+		 * buffer. Can be or'ed with flag TCL_COMBINE
+		 */
+    char *buf)	/* Buffer in which the UTF-8 representation of
+		 * ch is stored. Must be large enough to hold the UTF-8
+		 * character (at most 4 bytes).
+		 */
 {
 #if TCL_UTF_MAX > 3
     int flags = ch;
@@ -250,7 +250,12 @@ Tcl_UniCharToUtf(
 		    /* Previous Tcl_UniChar was not a high surrogate, so just output */
 		} else {
 		    /* High surrogate */
+
+		    /* Add 0x10000 to the raw number encoded in the surrogate
+		     * pair in order to get the code point.
+		    */
 		    ch += 0x40;
+
 		    /* Fill buffer with specific 3-byte (invalid) byte combination,
 		       so following low surrogate can recognize it and combine */
 		    buf[2] = (char) ((ch << 4) & 0x30);
@@ -477,7 +482,7 @@ Tcl_UtfToUniChar(
 	}
 	return 1;
     } else if (byte < 0xE0) {
-	if ((src[1] & 0xC0) == 0x80) {
+	if ((byte != 0xC1) && ((src[1] & 0xC0) == 0x80)) {
 	    /*
 	     * Two-byte-character lead-byte followed by a trail-byte.
 	     */
@@ -572,7 +577,7 @@ Tcl_UtfToChar16(
 	}
 	return 1;
     } else if (byte < 0xE0) {
-	if ((src[1] & 0xC0) == 0x80) {
+	if ((byte != 0xC1) && ((src[1] & 0xC0) == 0x80)) {
 	    /*
 	     * Two-byte-character lead-byte followed by a trail-byte.
 	     */

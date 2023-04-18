@@ -2960,13 +2960,11 @@ TclStringRepeat(
 	/* Result will be pure byte array. Pre-size it */
 	(void)Tcl_GetByteArrayFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_SMAX;
-    }
-    else if (unichar) {
+    } else if (unichar) {
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
 	(void)Tcl_GetUnicodeFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_SMAX/sizeof(Tcl_UniChar);
-    }
-    else {
+    } else {
 	/* Result will be concat of string reps. Pre-size it. */
 	(void)Tcl_GetStringFromObj(objPtr, &length);
 	maxCount = TCL_SIZE_SMAX;
@@ -4168,7 +4166,7 @@ TclStringReplace(
  * FillUnicodeRep --
  *
  *	Populate the Unicode internal rep with the Unicode form of its string
- *	rep. The object must alread have a "String" internal rep.
+ *	rep. The object must already have a "String" internal rep.
  *
  * Results:
  *	None.
@@ -4318,7 +4316,7 @@ DupStringInternalRep(
  *	This operation always succeeds and returns TCL_OK.
  *
  * Side effects:
- *	Any old internal reputation for objPtr is freed and the internal
+ *	Any old internal representation for objPtr is freed and the internal
  *	representation is set to "String".
  *
  *----------------------------------------------------------------------
