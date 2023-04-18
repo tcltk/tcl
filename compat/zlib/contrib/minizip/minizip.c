@@ -66,6 +66,9 @@
 #ifdef _WIN32
         #define USEWIN32IOAPI
         #include "iowin32.h"
+#       if defined(_MSC_VER)
+#           define snprintf _snprintf
+#       endif
 #endif
 
 
@@ -375,7 +378,7 @@ void addPathToZip(zipFile zf, const char *filenameinzip, const char *password, i
         tinydir_readfile_n(&dir, &file, i);
         if(strcmp(file.name,".")==0) continue;
         if(strcmp(file.name,"..")==0) continue;
-        sprintf(newname,"%.*s/%.*s", MAXFILENAME, dir.path, MAXFILENAME, file.name);
+        snprintf(newname, sizeof(newname), "%.*s/%.*s", MAXFILENAME, dir.path, MAXFILENAME, file.name);
         if (file.is_dir)
         {
             addPathToZip(zf,newname,password,opt_exclude_path,opt_compress_level);
