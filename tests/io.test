@@ -9264,29 +9264,27 @@ test io-75.5 {invalid utf-8 encoding read is ignored (-profile tcl8)} -setup {
     removeFile io-75.5
 } -result 4181
 
-test io-75.6 {invalid utf-8 encoding, read is not ignored (-profile strict)} -setup {
+test io-75.6 {invalid utf-8 encoding, gets is not ignored (-profile strict)} -setup {
     set fn [makeFile {} io-75.6]
     set f [open $fn w+]
     fconfigure $f -encoding binary
-    # \x81 is invalid in utf-8
+    # \x81 is an incomplete byte sequence in utf-8
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+	-translation lf -profile strict
 } -body {
-    try {
-        read $f
-    } on error {result options} {
-        set data [dict get $options -data]
-    }
-    lappend data $result
+    gets $f
 } -cleanup {
     close $f
     removeFile io-75.6
-} -match glob -result {A {error reading "*":\
-	invalid or incomplete multibyte or wide character}}
+} -match glob -returnCodes 1 -result {error reading "file*":\
+	invalid or incomplete multibyte or wide character}
 
-test io-75.7 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
+test io-75.7 {
+    invalid utf-8 encoding gets is not ignored (-profile strict)
+} -setup {
     set fn [makeFile {} io-75.7]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9294,31 +9292,27 @@ test io-75.7 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf \
+	-profile strict
 } -body {
-    try {
-        read $f
-    } on error {result options} {
-        set data [dict get $options -data]
-    }
-    lappend data $result
-    fconfigure $f -encoding iso8859-1
-    lappend data [read $f]
+    read $f
 } -cleanup {
     close $f
     removeFile io-75.7
-} -match glob -result "A {error reading \"file*\":\
-    invalid or incomplete multibyte or wide character} \x81"
+} -match glob -returnCodes 1 -result {error reading "file*":\
+    invalid or incomplete multibyte or wide character}
 
 test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]
     fconfigure $f -encoding binary
-    # \x81 is invalid in utf-8, but since \x1A comes first, -eofchar takes precedence.
+    # \x81 is invalid in utf-8, but since \x1A comes first, -eofchar takes
+    # precedence.
     puts -nonewline $f A\x1A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A -translation lf -profile strict
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A \
+	-translation lf -profile strict
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9329,6 +9323,30 @@ test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
 } -cleanup {
     removeFile io-75.8
 } -result {41 1 {}}
+
+test io-75.8.eoflater {invalid utf-8 encoding eof handling (-profile strict)} -setup {
+	set res {}
+    set fn [makeFile {} io-75.8]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 is invalid in utf-8. -eofchar is not detected, because it comes later.
+    puts -nonewline $f A\x81\x1A
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A \
+	-translation lf -profile strict
+} -body {
+    after 1
+    set status [catch {read $f} cres copts]
+    lappend res $status
+    lappend res [eof $f]
+    chan configure $f -encoding iso8859-1
+    lappend res [read $f]
+    close $f
+    set res
+} -cleanup {
+    removeFile io-75.8
+} -result "1 0 \x81"
 
 test io-75.9 {unrepresentable character write passes and is replaced by ?} -setup {
     set fn [makeFile {} io-75.9]
@@ -9342,27 +9360,33 @@ test io-75.9 {unrepresentable character write passes and is replaced by ?} -setu
 } -cleanup {
     close $f
     removeFile io-75.9
-} -match glob -result [list {A} {error writing "*": invalid or incomplete multibyte or wide character}]
+} -match glob -result [list {A} {error writing "*":\
+    invalid or incomplete multibyte or wide character}]
 
 test io-75.10 {
     incomplete multibyte encoding read is not ignored because "binary" sets
     profile to strict
 } -setup {
+    set res {}
     set fn [makeFile {} io-75.10]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     puts -nonewline $f A\xC0
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -profile tcl8 -buffering none
+    fconfigure $f -encoding utf-8 -profile strict -buffering none
 } -body {
     set d [read $f]
     binary scan $d H* hd
-    set hd
+    lappend res $hd
+    return $res
 } -cleanup {
     close $f
     removeFile io-75.10
-} -result 41c0
+    unset result
+} -returnCodes 1 -match glob -result {error reading "file*":\
+    invalid or incomplete multibyte or wide character}
+
 # The current result returns the orphan byte as byte.
 # This may be expected due to special utf-8 handling.
 
@@ -9377,30 +9401,45 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
     puts -nonewline $f A\x81\xFFA
     flush $f
     seek $f 0
-    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -profile strict
+    fconfigure $f -encoding shiftjis -blocking 0 -eofchar {} -translation lf \
+	-profile tcl8
 } -body {
-    read $f
+    set d [read $f]
+    binary scan $d H* hd
+    lappend hd [catch {set d [read $f]} msg]
+    lappend hd $msg
 } -cleanup {
     close $f
     removeFile io-75.11
-} -match glob -returnCodes 1 -result {error reading "*": invalid or incomplete multibyte or wide character}
+} -match glob -result {4181ff41 0 {}}
 
-test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
+test io-75.12 {
+    invalid utf-8 encoding read is not ignored because setting the encoding to
+    "binary" also set the profile to strict
+} -setup {
+    set res {}
     set fn [makeFile {} io-75.12]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -profile tcl8 -buffering none -eofchar "" -translation lf
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf
 } -body {
+    catch {read $f} errmsg
+    lappend res $errmsg
+    chan configure $f -profile tcl8
+    seek $f 0
     set d [read $f]
     binary scan $d H* hd
-    set hd
+    lappend res $hd
+    return $res
 } -cleanup {
     close $f
     removeFile io-75.12
-} -result 4181
+    unset res
+} -match glob -result {{error reading "file*":\
+    invalid or incomplete multibyte or wide character} 4181}
 test io-75.13 {
     In nonblocking mode when there is an encoding error the data that has been
     successfully read so far is returned first and then the error is returned
@@ -9413,13 +9452,78 @@ test io-75.13 {
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -profile strict
+    fconfigure $f -encoding utf-8 -blocking 0 -eofchar {} -translation lf \
+	-profile strict
 } -body {
-    read $f
+    set d [read $f]
+    binary scan $d H* hd
+    lappend hd [catch {read $f} msg]
+    lappend hd $msg
 } -cleanup {
     close $f
     removeFile io-75.13
-} -match glob -returnCodes 1 -result {error reading "file*": invalid or incomplete multibyte or wide character}
+} -match glob -result {41 1 {error reading "file*":\
+    invalid or incomplete multibyte or wide character}}
+
+test io-75.14 {
+	[gets] succesfully returns lines prior to error
+
+	invalid utf-8 encoding [gets] continues in non-strict mode after error
+} -setup {
+    set chan [file tempfile]
+    fconfigure $chan -encoding binary
+    # \xc0\n is an invalid utf-8 sequence
+    puts -nonewline $chan a\nb\nc\xc0\nd\n
+    flush $chan
+    seek $chan 0
+    fconfigure $chan -encoding utf-8 -buffering none -eofchar {} \
+	-translation auto -profile strict
+} -body {
+    lappend res [gets $chan]
+    lappend res [gets $chan]
+    set status [catch {gets $chan} cres copts]
+    lappend res $status $cres
+    chan configure $chan -profile tcl8 
+    lappend res [gets $chan]
+    lappend res [gets $chan]
+    close $chan
+    return $res
+} -returnCodes 1 -match glob -result {error reading "*":\
+    invalid or incomplete multibyte or wide character}
+
+test io-75.15 {
+    invalid utf-8 encoding strict
+    gets does not hang
+    gets succeeds for the first two lines
+} -setup {
+    set res {}
+    set chan [file tempfile]
+    fconfigure $chan -encoding binary
+    # \xc0\x40 is an invalid utf-8 sequence
+    puts $chan hello\nAB\nCD\xc0\x40EF\nGHI
+	seek $chan 0
+} -body {
+    #Now try to read it with [gets]
+    fconfigure $chan -encoding utf-8 -profile strict
+    lappend res [gets $chan]
+    lappend res [gets $chan]
+    set status [catch {gets $chan} cres copts]
+    lappend res $status $cres
+    set status [catch {gets $chan} cres copts]
+    lappend res $status $cres
+	chan configure $chan -translation binary
+	set data [read $chan 4]
+	foreach char [split $data {}] {
+		scan $char %c ord
+		lappend res [format %x $ord]
+	}
+    fconfigure $chan -encoding utf-8 -profile strict -translation auto
+	lappend res [gets $chan]
+	lappend res [gets $chan]
+    return $res
+} -cleanup {
+    close $chan
+} -returnCodes 1 -match glob -result {error reading "*": invalid or incomplete multibyte or wide character}
 
 # ### ### ### ######### ######### #########
 
@@ -9474,7 +9578,8 @@ test io-76.4 {channel mode dropping} -setup {
 } -returnCodes error -cleanup {
     close $f
     removeFile dummy
-} -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
+} -match glob -result {Tcl_RemoveChannelMode error:\
+    Bad mode, would make channel inacessible. Channel: "*"}
 
 test io-76.5 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
@@ -9495,7 +9600,8 @@ test io-76.6 {channel mode dropping} -setup {
 } -returnCodes error -cleanup {
     close $f
     removeFile dummy
-} -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
+} -match glob -result {Tcl_RemoveChannelMode error:\
+    Bad mode, would make channel inacessible. Channel: "*"}
 
 test io-76.7 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
@@ -9528,7 +9634,8 @@ test io-76.9 {channel mode dropping} -setup {
 } -returnCodes error -cleanup {
     close $f
     removeFile dummy
-} -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
+} -match glob -result {Tcl_RemoveChannelMode error:\
+    Bad mode, would make channel inacessible. Channel: "*"}
 
 test io-76.10 {channel mode dropping} -setup {
     set datafile [makeFile {some characters} dummy]
@@ -9539,7 +9646,8 @@ test io-76.10 {channel mode dropping} -setup {
 } -returnCodes error -cleanup {
     close $f
     removeFile dummy
-} -match glob -result {Tcl_RemoveChannelMode error: Bad mode, would make channel inacessible. Channel: "*"}
+} -match glob -result {Tcl_RemoveChannelMode error:\
+    Bad mode, would make channel inacessible. Channel: "*"}
 
 # cleanup
 foreach file [list fooBar longfile script script2 output test1 pipe my_script \
