@@ -2382,7 +2382,7 @@ IssueSwitchJumpTable(
      * Compile the switch by using a jump table, which is basically a
      * hashtable that maps from literal values to match against to the offset
      * (relative to the INST_JUMP_TABLE instruction) to jump to. The jump
-     * table itself is independent of any invokation of the bytecode, and as
+     * table itself is independent of any invocation of the bytecode, and as
      * such is stored in an auxData block.
      *
      * Start by allocating the jump table itself, plus some workspace.

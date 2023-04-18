@@ -266,7 +266,7 @@ test iocmd-8.9 {fconfigure command} -setup {
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
-} -result {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -profile tcl8 -translation lf}
+} -result {-blocking 1 -buffering none -buffersize 4040 -encoding iso8859-1 -eofchar {} -profile tcl8 -translation lf}
 test iocmd-8.10 {fconfigure command} -returnCodes error -body {
     fconfigure a b
 } -result {can not find channel named "a"}
@@ -496,6 +496,7 @@ test iocmd-12.10 {POSIX open access modes: BINARY} {
     set result
 } 5
 test iocmd-12.11 {POSIX open access modes: BINARY} -body {
+    after 100
     set f [open $path(test1) {WRONLY BINARY TRUNC}]
     puts $f Ɉ		;# throws an exception
 } -cleanup {
@@ -688,7 +689,7 @@ test iocmd-20.1 {chan, unknown method} -body {
 } -returnCodes error -match glob -result {unknown or ambiguous subcommand "foo": must be *}
 
 # --- --- --- --------- --------- ---------
-# chan create, and method "initalize"
+# chan create, and method "initialize"
 
 test iocmd-21.0 {chan create, wrong#args, not enough} {
     catch {chan create} msg

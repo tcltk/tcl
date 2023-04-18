@@ -3572,7 +3572,7 @@ test chan-io-31.13 {binary mode is synonym of lf mode} -setup {
 } -result lf
 #
 # Test chan-io-9.14 has been removed because "auto" output translation mode is
-# not supoprted.
+# not supported.
 #
 test chan-io-31.14 {Tcl_Write mixed, Tcl_Gets auto} -setup {
     file delete $path(test1)
@@ -5310,8 +5310,10 @@ test chan-io-39.22a {Tcl_SetChannelOption, invariance} -constraints deprecated -
 } -cleanup {
     chan close $f1
 } -result {O D {1 {bad value for -eofchar: must be non-NUL ASCII character}}}
-test chan-io-39.23 {Tcl_GetChannelOption, server socket is not readable or\
-        writeable, it should still have valid -eofchar and -translation options} -setup {
+test chan-io-39.23 {
+	Tcl_GetChannelOption, server socket is not readable or writable, but should
+	still have valid -eofchar and -translation options.
+} -setup {
     set l [list]
 } -body {
     set sock [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
@@ -6868,8 +6870,7 @@ test chan-io-52.9 {TclCopyChannel & encodings} {fcopy} {
 	    [file size $path(utf8-fcopy.txt)] \
 	    [file size $path(utf8-rp.txt)]
 } {3 5 5}
-test chan-io-52.10 {TclCopyChannel & encodings} {fcopy} {
-    # encoding to binary (=> implies that the internal utf-8 is written)
+test chan-io-52.10 {TclCopyChannel & encodings} -constraints {fcopy} -body {
     set in  [open $path(kyrillic.txt) r]
     set out [open $path(utf8-fcopy.txt) w]
     chan configure $in  -encoding koi8-r -translation lf
@@ -6879,25 +6880,31 @@ test chan-io-52.10 {TclCopyChannel & encodings} {fcopy} {
     chan close $in
     chan close $out
     file size $path(utf8-fcopy.txt)
-} 5
+} -returnCodes 1 -match glob -result {error writing "*":\
+	invalid or incomplete multibyte or wide character}
 test chan-io-52.11 {TclCopyChannel & encodings} -setup {
     set f [open $path(utf8-fcopy.txt) w]
     fconfigure $f -encoding utf-8 -translation lf
     puts $f АА
     close $f
 } -constraints {fcopy} -body {
-    # binary to encoding => the input has to be in utf-8 to make sense to the
-    # encoder
     set in  [open $path(utf8-fcopy.txt) r]
     set out [open $path(kyrillic.txt) w]
     # -translation binary is also -encoding binary
     chan configure $in  -translation binary
-    chan configure $out -encoding koi8-r -translation lf
-    chan copy $in $out
-    chan close $in
-    chan close $out
-    file size $path(kyrillic.txt)
-} -result 3
+    chan configure $out -encoding koi8-r -translation lf -profile strict
+    catch {chan copy $in $out} cres copts
+    return $cres
+} -cleanup {
+    if {$in in [chan names]} {
+	close $in
+    }
+    if {$out in [chan names]} {
+	close $out
+    }
+    catch {unset cres}
+} -match glob -result  {error writing "*": invalid or incomplete\
+	multibyte or wide character}
 
 test chan-io-53.1 {CopyData} -setup {
     file delete $path(test1)
@@ -7608,7 +7615,7 @@ test chan-io-61.1 {Reset eof state after changing the eof char} -setup {
     removeFile eofchar
 } -result {77 = 23431}
 
-# Test the cutting and splicing of channels, this is incidentially the
+# Test the cutting and splicing of channels, this is incidentally the
 # attach/detach facility of package Thread, but __without any safeguards__. It
 # can also be used to emulate transfer of channels between threads, and is
 # used for that here.

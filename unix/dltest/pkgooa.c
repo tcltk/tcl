@@ -94,6 +94,15 @@ static TclOOStubs stubsCopy = {
 #ifdef Tcl_GetObjectClassName
     ,NULL
 #endif
+#ifdef Tcl_MethodIsType2
+    ,NULL
+#endif
+#ifdef Tcl_NewInstanceMethod2
+    ,NULL
+#endif
+#ifdef Tcl_NewMethod2
+    ,NULL
+#endif
 };
 
 DLLEXPORT int

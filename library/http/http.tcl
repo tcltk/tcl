@@ -3313,7 +3313,7 @@ proc http::postError {token} {
 #	token	The token returned from http::geturl
 #
 # Side Effects
-#	unsets the state array
+#	Unsets the state array.
 
 proc http::cleanup {token} {
     variable $token
@@ -3341,7 +3341,7 @@ proc http::cleanup {token} {
 
 # http::Connect
 #
-#	This callback is made when an asyncronous connection completes.
+#	This callback is made when an asynchronous connection completes.
 #
 # Arguments
 #	token	The token returned from http::geturl
@@ -4448,7 +4448,7 @@ proc http::CopyChunk {token chunk} {
 #
 # Arguments
 #	token	The token returned from http::geturl
-#	count	The amount transfered
+#	count	The amount transferred
 #
 # Side Effects
 #	Invokes callbacks

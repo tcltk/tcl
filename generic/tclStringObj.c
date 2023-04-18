@@ -137,7 +137,7 @@ GrowStringBuffer(
     int flag)
 {
     /*
-     * Pre-conditions:
+     * Preconditions:
      *	objPtr->typePtr == &tclStringType
      *	needed > stringPtr->allocated
      *	flag || objPtr->bytes != NULL
@@ -185,7 +185,7 @@ GrowUnicodeBuffer(
     size_t needed)
 {
     /*
-     * Pre-conditions:
+     * Preconditions:
      *	objPtr->typePtr == &tclStringType
      *	needed > stringPtr->maxChars
      */
@@ -390,7 +390,7 @@ Tcl_NewUnicodeObj(
  *	Get the length of the Unicode string from the Tcl object.
  *
  * Results:
- *	Pointer to unicode string representing the unicode object.
+ *	Pointer to Unicode string representing the Unicode object.
  *
  * Side effects:
  *	Frees old internal rep. Allocates memory for new "String" internal
@@ -559,7 +559,7 @@ Tcl_GetUniChar(
     int ch;
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object
+     * Optimize the case where we're really dealing with a ByteArray object
      * we don't need to convert to a string to perform the indexing operation.
      */
 
@@ -627,8 +627,8 @@ TclGetUniChar(
     int ch = 0;
 
     /*
-     * Optimize the case where we're really dealing with a bytearray object
-     * we don't need to convert to a string to perform the indexing operation.
+	 * Optimize the ByteArray case:  N need need to convert to a string to
+	 * perform the indexing operation.
      */
 
     if (TclIsPureByteArray(objPtr)) {
@@ -674,10 +674,10 @@ TclGetUniChar(
 #undef Tcl_GetUnicodeFromObj
 Tcl_UniChar *
 TclGetUnicodeFromObj(
-    Tcl_Obj *objPtr,		/* The object to find the unicode string
+    Tcl_Obj *objPtr,		/* The object to find the Unicode string
 				 * for. */
     int *lengthPtr)		/* If non-NULL, the location where the string
-				 * rep's unichar length should be stored. If
+				 * rep's Tcl_UniChar length should be stored. If
 				 * NULL, no length is stored. */
 {
     String *stringPtr;
@@ -693,7 +693,7 @@ TclGetUnicodeFromObj(
     if (lengthPtr != NULL) {
 	if (stringPtr->numChars > INT_MAX) {
 	    Tcl_Panic("Tcl_GetUnicodeFromObj with 'int' lengthPtr"
-		    "cannot handle such long strings. Please use 'size_t'");
+		    " cannot handle such long strings. Please use 'size_t'");
 	}
 	*lengthPtr = (int)stringPtr->numChars;
     }
@@ -1009,7 +1009,7 @@ Tcl_SetObjLength(
 	}
 
 	/*
-	 * Mark the new end of the unicode string
+	 * Mark the new end of the Unicode string
 	 */
 
 	stringPtr->numChars = length;
@@ -1093,14 +1093,14 @@ Tcl_AttemptSetObjLength(
 	objPtr->bytes[length] = 0;
 
 	/*
-	 * Invalidate the unicode data.
+	 * Invalidate the Unicode data.
 	 */
 
 	stringPtr->numChars = TCL_INDEX_NONE;
 	stringPtr->hasUnicode = 0;
     } else {
 	/*
-	 * Changing length of pure unicode string.
+	 * Changing length of pure Unicode string.
 	 */
 
 	if (length > stringPtr->maxChars) {
@@ -1113,7 +1113,7 @@ Tcl_AttemptSetObjLength(
 	}
 
 	/*
-	 * Mark the new end of the unicode string.
+	 * Mark the new end of the Unicode string.
 	 */
 
 	stringPtr->unicode[length] = 0;
@@ -1147,9 +1147,9 @@ Tcl_AttemptSetObjLength(
 void
 Tcl_SetUnicodeObj(
     Tcl_Obj *objPtr,		/* The object to set the string of. */
-    const Tcl_UniChar *unicode,	/* The unicode string used to initialize the
+    const Tcl_UniChar *unicode,	/* The Unicode string used to initialize the
 				 * object. */
-    size_t numChars)		/* Number of characters in the unicode
+    size_t numChars)		/* Number of characters in the Unicode
 				 * string. */
 {
     if (Tcl_IsShared(objPtr)) {
@@ -1176,10 +1176,9 @@ UnicodeLength(
 static void
 SetUnicodeObj(
     Tcl_Obj *objPtr,		/* The object to set the string of. */
-    const Tcl_UniChar *unicode,	/* The unicode string used to initialize the
+    const Tcl_UniChar *unicode,	/* The Unicode string used to initialize the
 				 * object. */
-    size_t numChars)		/* Number of characters in the unicode
-				 * string. */
+    size_t numChars)		/* Number of characters in unicode. */
 {
     String *stringPtr;
 
@@ -1351,9 +1350,9 @@ Tcl_AppendToObj(
 void
 Tcl_AppendUnicodeToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
-    const Tcl_UniChar *unicode,	/* The unicode string to append to the
+    const Tcl_UniChar *unicode,	/* The Unicode string to append to the
 				 * object. */
-    size_t length)		/* Number of chars in "unicode". */
+    size_t length)		/* Number of chars in unicode. */
 {
     String *stringPtr;
 
@@ -1421,7 +1420,7 @@ Tcl_AppendObjToObj(
     }
 
     /*
-     * Handle append of one bytearray object to another as a special case.
+     * Handle append of one ByteArray object to another as a special case.
      * Note that we only do this when the objects are pure so that the
      * bytearray faithfully represent the true value; Otherwise appending the
      * byte arrays together could lose information;
@@ -1538,8 +1537,8 @@ Tcl_AppendObjToObj(
  *
  * AppendUnicodeToUnicodeRep --
  *
- *	This function appends the contents of "unicode" to the Unicode rep of
- *	"objPtr". objPtr must already have a valid Unicode rep.
+ *	Appends the contents of unicode to the Unicode rep of
+ *	objPtr, which must already have a valid Unicode rep.
  *
  * Results:
  *	None.
@@ -1570,7 +1569,7 @@ AppendUnicodeToUnicodeRep(
     stringPtr = GET_STRING(objPtr);
 
     /*
-     * If not enough space has been allocated for the unicode rep, reallocate
+     * If not enough space has been allocated for the Unicode rep, reallocate
      * the internal rep object with additional space. First try to double the
      * required allocation; if that fails, try a more modest increase. See the
      * "TCL STRING GROWTH ALGORITHM" comment at the top of this file for an
@@ -1583,7 +1582,7 @@ AppendUnicodeToUnicodeRep(
 	size_t index = TCL_INDEX_NONE;
 
 	/*
-	 * Protect against case where unicode points into the existing
+	 * Protect against case where Unicode points into the existing
 	 * stringPtr->unicode array. Force it to follow any relocations due to
 	 * the reallocs below.
 	 */
@@ -1597,7 +1596,7 @@ AppendUnicodeToUnicodeRep(
 	stringPtr = GET_STRING(objPtr);
 
 	/*
-	 * Relocate unicode if needed; see above.
+	 * Relocate Unicode if needed; see above.
 	 */
 
 	if (index != TCL_INDEX_NONE) {
@@ -1642,7 +1641,7 @@ static void
 AppendUnicodeToUtfRep(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const Tcl_UniChar *unicode,	/* String to convert to UTF. */
-    size_t numChars)		/* Number of chars of "unicode" to convert. */
+    size_t numChars)		/* Number of chars of unicode to convert. */
 {
     String *stringPtr = GET_STRING(objPtr);
 
@@ -3911,8 +3910,8 @@ TclStringReverse(
 
 	if (!inPlace || Tcl_IsShared(objPtr)) {
 	    /*
-	     * Create a non-empty, pure unicode value, so we can coax
-	     * Tcl_SetObjLength into growing the unicode rep buffer.
+	     * Create a non-empty, pure Unicode value, so we can coax
+	     * Tcl_SetObjLength into growing the Unicode rep buffer.
 	     */
 
 	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
@@ -4364,7 +4363,7 @@ SetStringFromAny(
  *	None.
  *
  * Side effects:
- *	The object's string may be set by converting its Unicode represention
+ *	The object's string may be set by converting its Unicode representation
  *	to UTF format.
  *
  *----------------------------------------------------------------------
@@ -4401,7 +4400,7 @@ ExtendStringRepWithUnicode(
     size_t numChars)
 {
     /*
-     * Pre-condition: this is the "string" Tcl_ObjType.
+     * Precondition: this is the "string" Tcl_ObjType.
      */
 
     size_t i, origLength, size = 0;
