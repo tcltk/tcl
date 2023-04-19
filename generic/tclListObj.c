@@ -50,13 +50,13 @@
 #define LIST_INDEX_ASSERT(idxarg_)                                 \
     do {                                                           \
 	Tcl_Size idx_ = (idxarg_); /* To guard against ++ etc. */ \
-	LIST_ASSERT(idx_ != TCL_INDEX_NONE && idx_ < LIST_MAX);                 \
+	LIST_ASSERT(idx_ >= 0 && idx_ < LIST_MAX);                 \
     } while (0)
 /* Ditto for counts except upper limit is different */
 #define LIST_COUNT_ASSERT(countarg_)                                   \
     do {                                                               \
 	Tcl_Size count_ = (countarg_); /* To guard against ++ etc. */ \
-	LIST_ASSERT(count_ != TCL_INDEX_NONE && count_ <= LIST_MAX);                \
+	LIST_ASSERT(count_ >= 0 && count_ <= LIST_MAX);                \
     } while (0)
 
 #else
@@ -143,7 +143,7 @@ static void	DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void	FreeListInternalRep(Tcl_Obj *listPtr);
 static int	SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void	UpdateStringOfList(Tcl_Obj *listPtr);
-static size_t ListLength(Tcl_Obj *listPtr);
+static Tcl_Size ListLength(Tcl_Obj *listPtr);
 
 /*
  * The structure below defines the list Tcl object type by means of functions
@@ -526,7 +526,7 @@ ListLimitExceededError(Tcl_Interp *interp)
     if (interp != NULL) {
 	Tcl_SetObjResult(
 	    interp,
-	    Tcl_NewStringObj("max length of a Tcl list exceeded", TCL_INDEX_NONE));
+	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
     return TCL_ERROR;
@@ -1436,13 +1436,13 @@ ListRepRange(
 	ListRepFreeUnreferenced(srcRepPtr);
     } /* else T:listrep-2.{4.2,4.3,5.2,5.3,6.2,7.2,8.1} */
 
-    if (rangeStart == TCL_INDEX_NONE) {
+    if (rangeStart < 0) {
 	rangeStart = 0;
     }
-    if ((rangeEnd != TCL_INDEX_NONE) && (rangeEnd >= numSrcElems)) {
+    if (rangeEnd >= numSrcElems) {
 	rangeEnd = numSrcElems - 1;
     }
-    if (rangeStart + 1 > rangeEnd + 1) {
+    if (rangeStart > rangeEnd) {
 	/* Empty list of capacity 1. */
 	ListRepInit(1, NULL, LISTREP_PANIC_ON_FAIL, rangeRepPtr);
 	return;
@@ -1764,7 +1764,7 @@ Tcl_ListObjAppendList(
     if (TclListObjGetRep(interp, toObj, &listRep) != TCL_OK)
 	return TCL_ERROR; /* Cannot be converted to a list */
 
-    if (elemCount == 0)
+    if (elemCount <= 0)
 	return TCL_OK; /* Nothing to do. Note AFTER check for list above */
 
     ListRepElements(&listRep, toLen, toObjv);
@@ -1964,7 +1964,7 @@ Tcl_ListObjIndex(
 	!= TCL_OK) {
 	return TCL_ERROR;
     }
-    if (index >= numElems) {
+    if (index < 0 || index >= numElems) {
 	*objPtrPtr = NULL;
     } else {
 	*objPtrPtr = elemObjs[index];
@@ -2004,7 +2004,7 @@ Tcl_ListObjLength(
 {
     ListRep listRep;
 
-    size_t (*lengthProc)(Tcl_Obj *obj) =  ABSTRACTLIST_PROC(listObj, lengthProc);
+    Tcl_Size (*lengthProc)(Tcl_Obj *obj) =  ABSTRACTLIST_PROC(listObj, lengthProc);
     if (lengthProc) {
 	*lenPtr = lengthProc(listObj);
 	return TCL_OK;
@@ -2024,11 +2024,11 @@ Tcl_ListObjLength(
     return TCL_OK;
 }
 
-size_t ListLength(
-    Tcl_Obj *listPtr)
+Tcl_Size 
+ListLength(Tcl_Obj *listPtr)
 {
-	ListRep listRep;
-	ListObjGetRep(listPtr, &listRep);
+    ListRep listRep;
+    ListObjGetRep(listPtr, &listRep);
 
     return ListRepLength(&listRep);
 }
@@ -2101,13 +2101,13 @@ Tcl_ListObjReplace(
 
     /* Make limits sane */
     origListLen = ListRepLength(&listRep);
-    if (first == TCL_INDEX_NONE) {
+    if (first < 0) {
 	first = 0;
     }
     if (first > origListLen) {
 	first = origListLen;	/* So we'll insert after last element. */
     }
-    if (numToDelete == TCL_INDEX_NONE) {
+    if (numToDelete < 0) {
 	numToDelete = 0;
     } else if (first > ListSizeT_MAX - numToDelete /* Handle integer overflow */
              || origListLen < first + numToDelete) {
@@ -2640,7 +2640,7 @@ Tcl_Obj *
 TclLindexFlat(
     Tcl_Interp *interp,		/* Tcl interpreter. */
     Tcl_Obj *listObj,		/* Tcl object representing the list. */
-    Tcl_Size indexCount,		/* Count of indices. */
+    Tcl_Size indexCount,	/* Count of indices. */
     Tcl_Obj *const indexArray[])/* Array of pointers to Tcl objects that
 				 * represent the indices in the list. */
 {
@@ -2693,7 +2693,7 @@ TclLindexFlat(
 
 	if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
 		&index) == TCL_OK) {
-	    if (index >= listLen) {
+	    if (index < 0 || index >= listLen) {
 		/*
 		 * Index is out of range. Break out of loop with empty result.
 		 * First check remaining indices for validity
@@ -2921,7 +2921,7 @@ TclLsetFlat(
 	}
 	indexArray++;
 
-	if (index > elemCount
+	if (index < 0 || index > elemCount
 	    || (valueObj == NULL && index >= elemCount)) {
 	    /* ...the index points outside the sublist. */
 	    if (interp != NULL) {
