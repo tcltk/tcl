@@ -283,7 +283,7 @@ Tcl_GetsObjCmd(
     Tcl_Channel chan;		/* The channel to read from. */
     size_t lineLen;		/* Length of line just read. */
     int mode;			/* Mode in which channel is opened. */
-    Tcl_Obj *linePtr, *chanObjPtr;
+    Tcl_Obj *linePtr, *chanObjPtr, *resultDictPtr, *returnOptsPtr;
     int code = TCL_OK;
 
     if ((objc != 2) && (objc != 3)) {
@@ -306,7 +306,6 @@ Tcl_GetsObjCmd(
     lineLen = Tcl_GetsObj(chan, linePtr);
     if (lineLen == TCL_IO_FAILURE) {
 	if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
-	    Tcl_DecrRefCount(linePtr);
 
 	    /*
 	     * TIP #219.
@@ -320,7 +319,14 @@ Tcl_GetsObjCmd(
 			"error reading \"%s\": %s",
 			TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	    }
+	    resultDictPtr = Tcl_NewDictObj();
+	    Tcl_DictObjPut(NULL, resultDictPtr, Tcl_NewStringObj("read", -1)
+	    , linePtr);
+	    returnOptsPtr = Tcl_NewDictObj();
+	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-result", -1)
+	    , resultDictPtr);
 	    code = TCL_ERROR;
+	    Tcl_SetReturnOptions(interp, returnOptsPtr);
 	    goto done;
 	}
 	lineLen = TCL_IO_FAILURE;
@@ -371,7 +377,7 @@ Tcl_ReadObjCmd(
     Tcl_WideInt toRead;			/* How many bytes to read? */
     size_t charactersRead;		/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
-    Tcl_Obj *resultPtr, *chanObjPtr;
+    Tcl_Obj *resultPtr, *resultDictPtr, *returnOptsPtr, *chanObjPtr;
 
     if ((objc != 2) && (objc != 3)) {
 	Interp *iPtr;
@@ -430,7 +436,6 @@ Tcl_ReadObjCmd(
     }
 
     TclNewObj(resultPtr);
-    Tcl_IncrRefCount(resultPtr);
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
     if (charactersRead == TCL_IO_FAILURE) {
@@ -446,8 +451,14 @@ Tcl_ReadObjCmd(
 		    "error reading \"%s\": %s",
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
+	resultDictPtr = Tcl_NewDictObj();
+	Tcl_DictObjPut(NULL, resultDictPtr, Tcl_NewStringObj("read", -1)
+	    , resultPtr);
+	returnOptsPtr = Tcl_NewDictObj();
+	Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-result", -1)
+	    , resultDictPtr);
 	TclChannelRelease(chan);
-	Tcl_DecrRefCount(resultPtr);
+	Tcl_SetReturnOptions(interp, returnOptsPtr);
 	return TCL_ERROR;
     }
 
@@ -466,7 +477,6 @@ Tcl_ReadObjCmd(
     }
     Tcl_SetObjResult(interp, resultPtr);
     TclChannelRelease(chan);
-    Tcl_DecrRefCount(resultPtr);
     return TCL_OK;
 }
 

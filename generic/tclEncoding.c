@@ -610,7 +610,7 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 1;
     type.clientData	= INT2PTR(ENCODING_UTF);
     Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
 
@@ -622,7 +622,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2be";
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2";
     type.clientData	= INT2PTR(leFlags);
@@ -636,7 +636,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-32be";
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-32";
     type.clientData	= INT2PTR(leFlags);
@@ -647,13 +647,13 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "utf-16le";
-    type.clientData	= INT2PTR(TCL_ENCODING_LE|ENCODING_UTF);
+    type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16be";
-    type.clientData	= INT2PTR(ENCODING_UTF);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16";
-    type.clientData	= INT2PTR(leFlags|ENCODING_UTF);
+    type.clientData	= INT2PTR(leFlags);
     Tcl_CreateEncoding(&type);
 
 #ifndef TCL_NO_DEPRECATED
@@ -1155,7 +1155,7 @@ Tcl_ExternalToUtfDString(
 				 * converted string is stored. */
 {
     Tcl_ExternalToUtfDStringEx(
-	NULL, encoding, src, srcLen, TCL_ENCODING_PROFILE_TCL8, dstPtr, NULL);
+	NULL, encoding, src, srcLen, TCL_ENCODING_PROFILE_STRICT, dstPtr, NULL);
     return Tcl_DStringValue(dstPtr);
 }
 
@@ -1166,7 +1166,8 @@ Tcl_ExternalToUtfDString(
  * Tcl_ExternalToUtfDStringEx --
  *
  *	Convert a source buffer from the specified encoding into UTF-8.
- *	The parameter flags controls the behavior, if any of the bytes in
+ *
+ *	"flags" controls the behavior, if any of the bytes in
  *	the source buffer are invalid or cannot be represented in utf-8.
  *	Possible flags values:
  *	target encoding. It should be composed by OR-ing the following:
@@ -2579,8 +2580,8 @@ UtfToUtfProc(
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Incomplete byte sequence.
-	     * Always check before using TclUtfToUCS4. Not doing can so
-	     * cause it run beyond the end of the buffer! If we happen such an
+	     * Always check before using TclUtfToUCS4. Not doing can so cause
+	     * it to run beyond the end of the buffer! If we happen such an
 	     * incomplete char its bytes are made to represent themselves
 	     * unless the user has explicitly asked to be told.
 	     */

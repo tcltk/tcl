@@ -346,9 +346,9 @@ typedef struct ResolvedCmdName {
 				 * structure can be freed when refCount
 				 * becomes zero. */
 } ResolvedCmdName;
- 
+
 #ifdef TCL_MEM_DEBUG
-/* 
+/*
  * Filler matches the value used for filling freed memory in tclCkalloc.
  * On 32-bit systems, the ref counts do not cross 0x7fffffff. On 64-bit
  * implementations, ref counts will never reach this value (unless explicitly
@@ -1665,7 +1665,7 @@ Tcl_GetString(
  *----------------------------------------------------------------------
  */
 
-#undef TclGetStringFromObj
+#if !defined(TCL_NO_DEPRECATED)
 char *
 TclGetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
@@ -1708,6 +1708,7 @@ TclGetStringFromObj(
     }
     return objPtr->bytes;
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 #undef Tcl_GetStringFromObj
 char *

@@ -1862,7 +1862,8 @@ EXTERN int		Tcl_GetWideUIntFromObj(Tcl_Interp *interp,
 /* 685 */
 EXTERN Tcl_Obj *	Tcl_DStringToObj(Tcl_DString *dsPtr);
 /* Slot 686 is reserved */
-/* 687 */
+/* Slot 687 is reserved */
+/* 688 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2562,7 +2563,8 @@ typedef struct TclStubs {
     int (*tcl_GetWideUIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideUInt *uwidePtr); /* 684 */
     Tcl_Obj * (*tcl_DStringToObj) (Tcl_DString *dsPtr); /* 685 */
     void (*reserved686)(void);
-    void (*tclUnusedStubEntry) (void); /* 687 */
+    void (*reserved687)(void);
+    void (*tclUnusedStubEntry) (void); /* 688 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3888,8 +3890,9 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_DStringToObj \
 	(tclStubsPtr->tcl_DStringToObj) /* 685 */
 /* Slot 686 is reserved */
+/* Slot 687 is reserved */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 687 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 688 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4020,19 +4023,31 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_GetStringFromObj(objPtr, (Tcl_Size *)NULL)
 #define Tcl_GetUnicode(objPtr) \
 	Tcl_GetUnicodeFromObj(objPtr, (Tcl_Size *)NULL)
-#undef Tcl_GetBytesFromObj
+#if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
+#   undef Tcl_GetBytesFromObj
+#   undef Tcl_GetStringFromObj
+#   undef Tcl_GetUnicodeFromObj
+#endif
 #undef Tcl_GetIndexFromObjStruct
 #undef Tcl_GetBooleanFromObj
 #undef Tcl_GetBoolean
-#undef Tcl_GetStringFromObj
-#undef Tcl_GetUnicodeFromObj
 #undef TclGetByteArrayFromObj
 #undef Tcl_GetByteArrayFromObj
 #if defined(USE_TCL_STUBS)
-#define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? \
-		tclStubsPtr->tclGetBytesFromObj(interp, objPtr, (int *)(void *)(sizePtr)) : \
-		tclStubsPtr->tcl_GetBytesFromObj(interp, objPtr, (size_t *)(void *)(sizePtr)))
+#   if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
+#	define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
+		(sizeof(*(sizePtr)) <= sizeof(int) ? \
+			tclStubsPtr->tclGetBytesFromObj(interp, objPtr, (int *)(void *)(sizePtr)) : \
+			tclStubsPtr->tcl_GetBytesFromObj(interp, objPtr, (size_t *)(void *)(sizePtr)))
+#	define Tcl_GetStringFromObj(objPtr, sizePtr) \
+		(sizeof(*(sizePtr)) <= sizeof(int) ? \
+			tclStubsPtr->tclGetStringFromObj(objPtr, (int *)(void *)(sizePtr)) : \
+			tclStubsPtr->tcl_GetStringFromObj(objPtr, (size_t *)(void *)(sizePtr)))
+#	define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
+		(sizeof(*(sizePtr)) <= sizeof(int) ? \
+			tclStubsPtr->tclGetUnicodeFromObj(objPtr, (int *)(void *)(sizePtr)) : \
+			tclStubsPtr->tcl_GetUnicodeFromObj(objPtr, (size_t *)(void *)(sizePtr)))
+#   endif
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), \
 		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
@@ -4042,10 +4057,6 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetBoolean(interp, src, boolPtr) \
 	((sizeof(*(boolPtr)) == sizeof(int) && (TCL_MAJOR_VERSION == 8)) ? tclStubsPtr->tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
 	Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
-#define Tcl_GetStringFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? \
-		tclStubsPtr->tclGetStringFromObj(objPtr, (int *)(void *)(sizePtr)) : \
-		tclStubsPtr->tcl_GetStringFromObj(objPtr, (size_t *)(void *)(sizePtr)))
 #if TCL_MAJOR_VERSION > 8
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? \
@@ -4057,10 +4068,6 @@ extern const TclStubs *tclStubsPtr;
 		tclStubsPtr->tclGetByteArrayFromObj(objPtr, (int *)(void *)(sizePtr)) : \
 		tclStubsPtr->tcl_GetByteArrayFromObj(objPtr, (size_t *)(void *)(sizePtr)))
 #endif
-#define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? \
-		tclStubsPtr->tclGetUnicodeFromObj(objPtr, (int *)(void *)(sizePtr)) : \
-		tclStubsPtr->tcl_GetUnicodeFromObj(objPtr, (size_t *)(void *)(sizePtr)))
 #else
 #define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? \
@@ -4199,7 +4206,7 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (Tcl_Size (*)(wchar_t *))Tcl_UniCharLen \
 		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
-#if !defined(BUILD_tcl)
+#if !defined(BUILD_tcl) && !defined(TCL_NO_DEPRECATED)
 #   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) == sizeof(int) \
 		? TclListObjGetElements((interp), (listPtr), (int *)(void *)(objcPtr), (objvPtr)) \
 		: (Tcl_ListObjGetElements)((interp), (listPtr), (size_t *)(void *)(objcPtr), (objvPtr)))

@@ -1663,6 +1663,10 @@ Tcl_CreateChannel(
     }
     statePtr->channelName = tmp;
     statePtr->flags = mask;
+	/* uncomment this to make default encoding error handling strict */
+	/*
+    statePtr->flags |= CHANNEL_ENCODING_STRICT;
+	*/
     statePtr->maxPerms = mask; /* Save max privileges for close callback */
 
     /*
@@ -4616,6 +4620,7 @@ Tcl_GetsObj(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	UpdateInterest(chanPtr);
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
 	Tcl_SetErrno(EILSEQ);
 	return TCL_INDEX_NONE;
     }
@@ -4872,11 +4877,11 @@ Tcl_GetsObj(
 		&& GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 		&& !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 	    /* Set eol to the position that caused the encoding error, and then
-	     * coninue to gotEOL, which stores the data that was decoded
+	     * continue to gotEOL, which stores the data that was decoded
 	     * without error to objPtr.  This allows the caller to do something
 	     * useful with the data decoded so far, and also results in the
 	     * position of the file being the first byte that was not
-	     * succesfully decoded, allowing further processing at exactly that
+	     * successfully decoded, allowing further processing at exactly that
 	     * point, if desired.
 	     */
 	    eol = dstEnd;
@@ -4997,11 +5002,12 @@ Tcl_GetsObj(
     }
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
-    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) &&
-	    (copiedTotal == 0 || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) && gs.bytesWrote == 0) {
+	bufPtr->nextRemoved = oldRemoved;
 	Tcl_SetErrno(EILSEQ);
 	copiedTotal = -1;
     }
+    ResetFlag(statePtr, CHANNEL_ENCODING_ERROR);
     return copiedTotal;
 }
 
@@ -5463,6 +5469,8 @@ FilterInputBytes(
 
 	if (result == TCL_CONVERT_UNKNOWN || result == TCL_CONVERT_SYNTAX) {
 	    SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+	    ResetFlag(statePtr, CHANNEL_STICKY_EOF);
+	    ResetFlag(statePtr, CHANNEL_EOF);
 	    result = TCL_OK;
 	}
 
@@ -5937,8 +5945,10 @@ DoReadChars(
     int factor = UTF_EXPANSION_FACTOR;
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
-	/* TODO: We don't need this call? */
+	/* TODO: UpdateInterest not needed here? */
+	ResetFlag(statePtr, CHANNEL_ENCODING_ERROR|CHANNEL_EOF);
 	UpdateInterest(chanPtr);
+
 	Tcl_SetErrno(EILSEQ);
 	return -1;
     }
@@ -5954,7 +5964,7 @@ DoReadChars(
 	assert(statePtr->inputEncodingFlags & TCL_ENCODING_END);
 	assert(!GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR));
 
-	/* TODO: We don't need this call? */
+	/* TODO: UpdateInterest not needed here? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -5968,7 +5978,7 @@ DoReadChars(
 	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
-	/* TODO: We don't need this call? */
+	/* TODO: UpdateInterest not needed here? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -5979,7 +5989,6 @@ DoReadChars(
 
     chanPtr = statePtr->topChanPtr;
     TclChannelPreserve((Tcl_Channel)chanPtr);
-
 
     binaryMode = (encoding == GetBinaryEncoding())
 	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF)
@@ -5996,7 +6005,6 @@ DoReadChars(
 	    Tcl_SetObjLength(objPtr, 0);
 	}
     }
-
 
     /*
      * Must clear the BLOCKED|EOF flags here since we check before reading.
@@ -6017,7 +6025,7 @@ DoReadChars(
 	    }
 
 	    /*
-	     * If the current buffer is empty recycle it.
+	     * Recycle current buffer if empty.
 	     */
 
 	    bufPtr = statePtr->inQueueHead;
@@ -6041,6 +6049,7 @@ DoReadChars(
 	    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 		    && !GotFlag(statePtr, CHANNEL_STICKY_EOF)
 		    && (!GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+		copied = -1;
 		goto finish;
 	    }
 	}
@@ -6115,10 +6124,14 @@ finish:
 	 * succesfully red before the error.  Return an error so that callers
 	 * like [read] can also return an error.
 	*/
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
 	Tcl_SetErrno(EILSEQ);
 	copied = -1;
     }
     TclChannelRelease((Tcl_Channel)chanPtr);
+    if (copied == TCL_INDEX_NONE) {
+	ResetFlag(statePtr, CHANNEL_ENCODING_ERROR|CHANNEL_EOF);
+    }
     return copied;
 }
 
@@ -7592,7 +7605,7 @@ Tcl_InputBuffered(
     }
 
     /*
-     * Don't forget the bytes in the topmost pushback area.
+     * Remember the bytes in the topmost pushback area.
      */
 
     for (bufPtr = statePtr->topChanPtr->inQueueHead; bufPtr != NULL;

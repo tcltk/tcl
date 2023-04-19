@@ -334,7 +334,6 @@ test cmdAH-4.2.2 {Tcl_EncodingObjCmd} -setup {
 } -cleanup {
     encoding system $system
 } -result iso8859-1
-
 #
 # encoding convertfrom 4.3.*
 

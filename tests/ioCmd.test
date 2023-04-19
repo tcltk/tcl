@@ -1058,7 +1058,7 @@ test iocmd-23.1 {chan read, regular data return} -match glob -body {
     rename foo {}
     set res
 } -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
-test iocmd-23.2 {chan read, bad data return, to much} -match glob -body {
+test iocmd-23.2 {chan read, bad data return, too much} -match glob -body {
     set res {}
     proc foo {args} {
 	oninit; onfinal; track
@@ -1367,7 +1367,7 @@ test iocmd-24.15 {chan write, EAGAIN means that writing is not allowed at this t
 
 test iocmd-25.1 {chan configure, cgetall, standard options} -match glob -body {
     set res {}
-    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    proc foo args {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
     set c [chan create {r w} foo]
     note [fconfigure $c]
     close $c
@@ -1376,7 +1376,7 @@ test iocmd-25.1 {chan configure, cgetall, standard options} -match glob -body {
 } -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *}}}
 test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
     set res {}
-    proc foo {args} {oninit cget cgetall; onfinal; track; return ""}
+    proc foo args {oninit cget cgetall; onfinal; track; return {}}
     set c [chan create {r w} foo]
     note [fconfigure $c]
     close $c
@@ -1385,9 +1385,9 @@ test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
 } -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {} -profile * -translation {auto *}}}
 test iocmd-25.3 {chan configure, cgetall, regular result} -match glob -body {
     set res {}
-    proc foo {args} {
+    proc foo args {
 	oninit cget cgetall; onfinal; track
-	return "-bar foo -snarf x"
+	return {-bar foo -snarf x}
     }
     set c [chan create {r w} foo]
     note [fconfigure $c]
@@ -2369,7 +2369,7 @@ test iocmd.tf-23.1 {chan read, regular data return} -match glob -body {
     rename foo {}
     set res
 } -constraints {testchannel thread} -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
-test iocmd.tf-23.2 {chan read, bad data return, to much} -match glob -body {
+test iocmd.tf-23.2 {chan read, bad data return, too much} -match glob -body {
     set res {}
     proc foo {args} {
 	oninit; onfinal; track

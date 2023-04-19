@@ -423,10 +423,10 @@ GenerateHeader(
 {
     Tcl_Obj *value;
     int len, result = TCL_ERROR;
-    size_t length;
     Tcl_WideInt wideValue = 0;
     const char *valueStr;
     Tcl_Encoding latin1enc;
+    Tcl_Size length;
     static const char *const types[] = {
 	"binary", "text"
     };
