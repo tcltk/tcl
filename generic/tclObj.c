@@ -1751,11 +1751,7 @@ TclGetStringFromObj(
 	}
     }
     if (lengthPtr != NULL) {
-#if TCL_MAJOR_VERSION > 8
-	*lengthPtr = objPtr->length;
-#else
-	*lengthPtr = ((size_t)(unsigned)(objPtr->length + 1)) - 1;
-#endif
+	*lengthPtr = ((ptrdiff_t)(unsigned)(objPtr->length + 1)) - 1;
     }
     return objPtr->bytes;
 }
@@ -4081,7 +4077,7 @@ Tcl_GetNumber(
 	numBytes = 0;
     }
     if (numBytes < 0) {
-	numBytes = strlen(bytes);
+	numBytes = (ptrdiff_t)strlen(bytes);
     }
     if (numBytes > INT_MAX) {
 	if (interp) {

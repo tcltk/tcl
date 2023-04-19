@@ -9195,7 +9195,7 @@ Tcl_NRCallObjProc2(
     ptrdiff_t objc,
     Tcl_Obj *const objv[])
 {
-    if (objc > INT_MAX) {
+    if ((size_t)objc > INT_MAX) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
 	return TCL_ERROR;
     }
