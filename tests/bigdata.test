@@ -944,7 +944,8 @@ bigtestRO lsearch-bigdata-1 "lsearch" {4294967300 4294967310 -1}  -body {
     set l [bigList 0x100000010 4294967300]
 } -cleanup {
     bigClean
-} -constraints bug-a4617c8e90
+}
+# TODO - stride, inline, all
 
 #
 # lseq
