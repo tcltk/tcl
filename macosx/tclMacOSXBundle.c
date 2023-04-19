@@ -170,7 +170,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
     const char *bundleName,
     const char *bundleVersion,
     int hasResourceFile,
-    size_t maxPathLen,
+    Tcl_Size maxPathLen,
     char *libraryPath)
 {
 #ifdef HAVE_COREFOUNDATION
