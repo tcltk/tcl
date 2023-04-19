@@ -3551,6 +3551,31 @@ TclGetWideBitsFromObj(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_GetSizeIntFromObj --
+ *
+ *	Attempt to return a Tcl_Size from the Tcl object "objPtr".
+ *
+ * Results:
+ *  TCL_OK - the converted Tcl_Size value is stored in *sizePtr
+ *  TCL_ERROR - the error message is stored in interp
+ *
+ * Side effects:
+ *	The function may free up any existing internal representation.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Tcl_GetSizeIntFromObj(
+    Tcl_Interp *interp, /* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr,	/* The object from which to get a int. */
+    Tcl_Size *sizePtr)  /* Place to store resulting int. */
+{
+    return Tcl_GetIntFromObj(interp, objPtr, sizePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * FreeBignum --
  *
  *	This function frees the internal rep of a bignum.
@@ -4054,7 +4079,7 @@ Tcl_GetNumber(
     if (numBytes < 0) {
 	numBytes = (ptrdiff_t)strlen(bytes);
     }
-    if ((size_t)numBytes > INT_MAX) {
+    if (numBytes > INT_MAX) {
 	if (interp) {
             Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                     "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
