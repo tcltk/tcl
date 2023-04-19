@@ -165,7 +165,7 @@ Tcl_PkgProvideEx(
 
     pkgPtr = FindPackage(interp, name);
     if (pkgPtr->version == NULL) {
-	pkgPtr->version = Tcl_NewStringObj(version, TCL_INDEX_NONE);
+	pkgPtr->version = Tcl_NewStringObj(version, -1);
 	Tcl_IncrRefCount(pkgPtr->version);
 	pkgPtr->clientData = clientData;
 	return TCL_OK;
@@ -291,7 +291,7 @@ TclPkgFileSeen(
 	} else {
 	    list = (Tcl_Obj *)Tcl_GetHashValue(entry);
 	}
-	Tcl_ListObjAppendElement(interp, list, Tcl_NewStringObj(fileName, TCL_INDEX_NONE));
+	Tcl_ListObjAppendElement(interp, list, Tcl_NewStringObj(fileName, -1));
     }
 }
 
@@ -407,7 +407,7 @@ Tcl_PkgRequireEx(
 		!= CheckVersionAndConvert(interp, version, NULL, NULL)) {
 	    return NULL;
 	}
-	ov = Tcl_NewStringObj(version, TCL_INDEX_NONE);
+	ov = Tcl_NewStringObj(version, -1);
 	if (exact) {
 	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
 	}
@@ -426,7 +426,7 @@ Tcl_PkgRequireProc(
     Tcl_Interp *interp,		/* Interpreter in which package is now
 				 * available. */
     const char *name,		/* Name of desired package. */
-    size_t reqc,			/* Requirements constraining the desired
+    Tcl_Size reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[],	/* 0 means to use the latest version
 				 * available. */
@@ -531,7 +531,7 @@ PkgRequireCoreStep1(
      */
 
     Tcl_DStringInit(&command);
-    Tcl_DStringAppend(&command, script, TCL_INDEX_NONE);
+    Tcl_DStringAppend(&command, script, -1);
     Tcl_DStringAppendElement(&command, name);
     AddRequirementsToDString(&command, reqc, reqv);
 
@@ -839,7 +839,7 @@ SelectPackage(
 	Tcl_NRAddCallback(interp,
 		SelectPackageFinal, reqPtr, INT2PTR(reqc), (void *)reqv,
 		data[3]);
-	Tcl_NREvalObj(interp, Tcl_NewStringObj(bestPtr->script, TCL_INDEX_NONE),
+	Tcl_NREvalObj(interp, Tcl_NewStringObj(bestPtr->script, -1),
 		TCL_EVAL_GLOBAL);
     }
     return TCL_OK;
@@ -1080,7 +1080,7 @@ TclNRPackageObjCmd(
     } optionIndex;
     Interp *iPtr = (Interp *) interp;
     int exact, satisfies;
-    size_t i, newobjc;
+    Tcl_Size i, newobjc;
     PkgAvail *availPtr, *prevPtr;
     Package *pkgPtr;
     Tcl_HashEntry *hPtr;
@@ -1124,7 +1124,7 @@ TclNRPackageObjCmd(
 	PkgFiles *pkgFiles = (PkgFiles *)
 		Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
 
-	for (i = 2; i < (size_t)objc; i++) {
+	for (i = 2; i < objc; i++) {
 	    keyString = TclGetString(objv[i]);
 	    if (pkgFiles) {
 		hPtr = Tcl_FindHashEntry(&pkgFiles->table, keyString);
@@ -1200,7 +1200,7 @@ TclNRPackageObjCmd(
 		if (objc == 4) {
 		    Tcl_Free(argv3i);
 		    Tcl_SetObjResult(interp,
-			    Tcl_NewStringObj(availPtr->script, TCL_INDEX_NONE));
+			    Tcl_NewStringObj(availPtr->script, -1));
 		    return TCL_OK;
 		}
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
@@ -1251,7 +1251,7 @@ TclNRPackageObjCmd(
 		pkgPtr = (Package *)Tcl_GetHashValue(hPtr);
 		if ((pkgPtr->version != NULL) || (pkgPtr->availPtr != NULL)) {
 		    Tcl_ListObjAppendElement(NULL,resultObj, Tcl_NewStringObj(
-			    (char *)Tcl_GetHashKey(tablePtr, hPtr), TCL_INDEX_NONE));
+			    (char *)Tcl_GetHashKey(tablePtr, hPtr), -1));
 		}
 	    }
 	    Tcl_SetObjResult(interp, resultObj);
@@ -1353,7 +1353,7 @@ TclNRPackageObjCmd(
 	     * Create a new-style requirement for the exact version.
 	     */
 
-	    ov = Tcl_NewStringObj(version, TCL_INDEX_NONE);
+	    ov = Tcl_NewStringObj(version, -1);
 	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
 	    version = NULL;
 	    argv3 = TclGetString(objv[3]);
@@ -1404,7 +1404,7 @@ TclNRPackageObjCmd(
 	if (objc == 2) {
 	    if (iPtr->packageUnknown != NULL) {
 		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj(iPtr->packageUnknown, TCL_INDEX_NONE));
+			Tcl_NewStringObj(iPtr->packageUnknown, -1));
 	    }
 	} else if (objc == 3) {
 	    if (iPtr->packageUnknown != NULL) {
@@ -1456,7 +1456,7 @@ TclNRPackageObjCmd(
 	 */
 
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj(pkgPreferOptions[iPtr->packagePrefer], TCL_INDEX_NONE));
+		Tcl_NewStringObj(pkgPreferOptions[iPtr->packagePrefer], -1));
 	break;
     }
     case PKG_VCOMPARE:
@@ -1503,7 +1503,7 @@ TclNRPackageObjCmd(
 		for (availPtr = pkgPtr->availPtr; availPtr != NULL;
 			availPtr = availPtr->nextPtr) {
 		    Tcl_ListObjAppendElement(NULL, resultObj,
-			    Tcl_NewStringObj(availPtr->version, TCL_INDEX_NONE));
+			    Tcl_NewStringObj(availPtr->version, -1));
 		}
 	    }
 	    Tcl_SetObjResult(interp, resultObj);
