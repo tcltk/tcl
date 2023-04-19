@@ -989,15 +989,14 @@ bigtestRO lsort-bigdata-1 "lsort" [list 4294967296 [lrepeat 10 0] [lrepeat 10 9]
 
 #
 # join
-bigtestRO join-bigdata-1 "join" 1 -body {
-    puts len:[string length [join $l ""]]
-    #string equal [join $l ""] $s
+bigtestRO join-bigdata-1 "join" [list 0123456789 6789012345] -body {
+    set s [join $l ""]
+    list [string range $s 0 9] [string range $s end-9 end]
 } -setup {
     set l [bigList 0x100000000]
-    set s [bigString 0x100000000]
 } -cleanup {
     bigClean
-} -constraints bug-3c04fcdd1a
+}
 
 bigtest split-bigdata-1 "split" {4294967296 {0 1 2 3 4} {1 2 3 4 5}} -body {
     # Fill list compare needs too much memory
