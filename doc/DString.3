@@ -26,7 +26,7 @@ char *
 .sp
 \fBTcl_DStringEndSublist\fR(\fIdsPtr\fR)
 .sp
-size_t
+Tcl_Size
 \fBTcl_DStringLength\fR(\fIdsPtr\fR)
 .sp
 char *
@@ -51,10 +51,10 @@ Pointer to structure that is used to manage a dynamic string.
 Pointer to characters to append to dynamic string.
 .AP "const char" *element in
 Pointer to characters to append as list element to dynamic string.
-.AP size_t length in
-Number of bytes from \fIbytes\fR to add to dynamic string.  If TCL_INDEX_NONE,
+.AP Tcl_Size length in
+Number of bytes from \fIbytes\fR to add to dynamic string.  If negative,
 add all characters up to null terminating character.
-.AP size_t newLength in
+.AP Tcl_Size newLength in
 New length for dynamic string, not including null terminating
 character.
 .AP Tcl_Interp *interp in/out

@@ -34,7 +34,7 @@ unsigned char *
 .AP "const unsigned char" *bytes in
 The array of bytes used to initialize or set a byte-array value. May be NULL
 even if \fInumBytes\fR is non-zero.
-.AP size_t numBytes in
+.AP Tcl_Size numBytes in
 The number of bytes in the array.
 .AP Tcl_Obj *objPtr in/out
 For \fBTcl_SetByteArrayObj\fR, this points to an unshared value to be
@@ -43,7 +43,7 @@ overwritten by a byte-array value.  For \fBTcl_GetBytesFromObj\fR,
 to the value from which to extract an array of bytes.
 .AP Tcl_Interp *interp in
 Interpreter to use for error reporting.
-.AP "size_t \&| int" *numBytesPtr out
+.AP "Tcl_Size \&| int" *numBytesPtr out
 Points to space where the number of bytes in the array may be written.
 Caller may pass NULL when it does not need this information.
 .BE
@@ -134,8 +134,8 @@ and any string representation is invalidated.
 On success, both \fBTcl_GetBytesFromObj\fR and \fBTcl_GetByteArrayFromObj\fR
 write the number of bytes in the byte-array value of \fIobjPtr\fR
 to the space pointed to by \fInumBytesPtr\fR.  This space may be of type
-\fBsize_t\fR or of type \fBint\fR.  It is recommended that callers provide
-a \fBsize_t\fR space for this purpose.  If the caller provides only
+\fBTcl_Size\fR or of type \fBint\fR.  It is recommended that callers provide
+a \fBTcl_Size\fR space for this purpose.  If the caller provides only
 an \fBint\fR space and the number of bytes in the byte-array value of
 \fIobjPtr\fR is greater than \fBINT_MAX\fR, the routine will fail due
 to being unable to correctly report the byte-array size to the caller.
