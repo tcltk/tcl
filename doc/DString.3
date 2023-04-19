@@ -142,7 +142,8 @@ This saves the cost of allocating new memory and copying the string.
 an empty string.
 Since the dynamic string is reinitialized, there is no need to
 further call \fBTcl_DStringFree\fR on it and it can be reused without
-calling \fBTcl_DStringInit\fR.
+calling \fBTcl_DStringInit\fR. The caller must ensure that the dynamic
+string stored in \fIdsPtr\fR is encoded in Tcl's internal UTF-8 format.
 .PP
 \fBTcl_DStringGetResult\fR does the opposite of \fBTcl_DStringResult\fR.
 It sets the value of \fIdsPtr\fR to the result of \fIinterp\fR and
@@ -150,15 +151,15 @@ it clears \fIinterp\fR's result.
 If possible it does this by moving a pointer rather than by copying
 the string.
 .PP
-\fBTcl_DStringToObj\fR returns a \fBTcl_Obj\fR containing the value of
-the dynamic string given by \fIdsPtr\fR.  It does this by moving
-a pointer from \fIdsPtr\fR to a newly allocated \fBTcl_Obj\fR
-and reinitializing to dynamic string to an empty string.
-This saves the cost of allocating new memory and copying the string.
-Since the dynamic string is reinitialized, there is no need to
-further call \fBTcl_DStringFree\fR on it and it can be reused without
-calling \fBTcl_DStringInit\fR.
-The returned \fBTcl_Obj\fR has a reference count of 0.
+\fBTcl_DStringToObj\fR returns a \fBTcl_Obj\fR containing the value of the
+dynamic string given by \fIdsPtr\fR. It does this by moving a pointer from
+\fIdsPtr\fR to a newly allocated \fBTcl_Obj\fR and reinitializing to dynamic
+string to an empty string. This saves the cost of allocating new memory and
+copying the string. Since the dynamic string is reinitialized, there is no need
+to further call \fBTcl_DStringFree\fR on it and it can be reused without calling
+\fBTcl_DStringInit\fR. The returned \fBTcl_Obj\fR has a reference count of 0.
+The caller must ensure that the dynamic string stored in \fIdsPtr\fR is encoded
+in Tcl's internal UTF-8 format.
 
 .SH KEYWORDS
 append, dynamic string, free, result
