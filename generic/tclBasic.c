@@ -9192,10 +9192,10 @@ Tcl_NRCallObjProc2(
     Tcl_Interp *interp,
     Tcl_ObjCmdProc2 *objProc,
     void *clientData,
-    size_t objc,
+    ptrdiff_t objc,
     Tcl_Obj *const objv[])
 {
-    if (objc > INT_MAX) {
+    if ((size_t)objc > INT_MAX) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
 	return TCL_ERROR;
     }

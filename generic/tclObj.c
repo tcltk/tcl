@@ -1721,7 +1721,7 @@ char *
 TclGetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
 				 * be returned. */
-    size_t *lengthPtr)	/* If non-NULL, the location where the string
+    ptrdiff_t *lengthPtr)	/* If non-NULL, the location where the string
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {
@@ -1751,11 +1751,7 @@ TclGetStringFromObj(
 	}
     }
     if (lengthPtr != NULL) {
-#if TCL_MAJOR_VERSION > 8
-	*lengthPtr = objPtr->length;
-#else
-	*lengthPtr = ((size_t)(unsigned)(objPtr->length + 1)) - 1;
-#endif
+	*lengthPtr = ((ptrdiff_t)(unsigned)(objPtr->length + 1)) - 1;
     }
     return objPtr->bytes;
 }
@@ -3555,6 +3551,31 @@ TclGetWideBitsFromObj(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_GetSizeIntFromObj --
+ *
+ *	Attempt to return a Tcl_Size from the Tcl object "objPtr".
+ *
+ * Results:
+ *  TCL_OK - the converted Tcl_Size value is stored in *sizePtr
+ *  TCL_ERROR - the error message is stored in interp
+ *
+ * Side effects:
+ *	The function may free up any existing internal representation.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Tcl_GetSizeIntFromObj(
+    Tcl_Interp *interp, /* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr,	/* The object from which to get a int. */
+    Tcl_Size *sizePtr)  /* Place to store resulting int. */
+{
+    return Tcl_GetIntFromObj(interp, objPtr, sizePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * FreeBignum --
  *
  *	This function frees the internal rep of a bignum.
@@ -4041,7 +4062,7 @@ int
 Tcl_GetNumber(
     Tcl_Interp *interp,
     const char *bytes,
-    size_t numBytes,
+    ptrdiff_t numBytes,
     void **clientDataPtr,
     int *typePtr)
 {
@@ -4055,8 +4076,8 @@ Tcl_GetNumber(
 	bytes = &tclEmptyString;
 	numBytes = 0;
     }
-    if (numBytes == (size_t)TCL_INDEX_NONE) {
-	numBytes = strlen(bytes);
+    if (numBytes < 0) {
+	numBytes = (ptrdiff_t)strlen(bytes);
     }
     if (numBytes > INT_MAX) {
 	if (interp) {

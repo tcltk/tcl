@@ -42,7 +42,7 @@ proc readInputFile {} {
 
 #
 # strings with embedded @'s are truncated
-# unpreceeded @'s are replaced by {}
+# unpreceded @'s are replaced by {}
 #
 proc removeAts {ls} {
     set len [llength $ls]
