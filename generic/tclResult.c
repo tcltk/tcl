@@ -314,7 +314,7 @@ Tcl_AppendResult(
 	if (bytes == NULL) {
 	    break;
 	}
-	Tcl_AppendToObj(objPtr, bytes, TCL_INDEX_NONE);
+	Tcl_AppendToObj(objPtr, bytes, -1);
     }
     Tcl_SetObjResult(interp, objPtr);
     va_end(argList);
@@ -351,7 +351,7 @@ Tcl_AppendElement(
 				 * to result. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *elementPtr = Tcl_NewStringObj(element, TCL_INDEX_NONE);
+    Tcl_Obj *elementPtr = Tcl_NewStringObj(element, -1);
     Tcl_Obj *listPtr = Tcl_NewListObj(1, &elementPtr);
     const char *bytes;
     size_t length;
@@ -508,7 +508,7 @@ Tcl_SetErrorCode(
 	if (elem == NULL) {
 	    break;
 	}
-	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, TCL_INDEX_NONE));
+	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, -1));
     }
     Tcl_SetObjErrorCode(interp, errorObj);
     va_end(argList);
@@ -730,7 +730,7 @@ TclProcessReturn(
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORSTACK],
                 &valuePtr);
 	if (valuePtr != NULL) {
-            size_t len, valueObjc;
+            Tcl_Size len, valueObjc;
             Tcl_Obj **valueObjv;
 
             if (Tcl_IsShared(iPtr->errorStack)) {
@@ -907,7 +907,7 @@ TclMergeReturnOptions(
 
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_ERRORCODE], &valuePtr);
     if (valuePtr != NULL) {
-	size_t length;
+	Tcl_Size length;
 
 	if (TCL_ERROR == TclListObjLengthM(NULL, valuePtr, &length )) {
 	    /*
@@ -929,7 +929,7 @@ TclMergeReturnOptions(
 
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_ERRORSTACK], &valuePtr);
     if (valuePtr != NULL) {
-	size_t length;
+	Tcl_Size length;
 
 	if (TCL_ERROR == TclListObjLengthM(NULL, valuePtr, &length)) {
 	    /*
@@ -1097,7 +1097,7 @@ Tcl_SetReturnOptions(
     Tcl_Interp *interp,
     Tcl_Obj *options)
 {
-    size_t objc;
+    Tcl_Size objc;
     int level, code;
     Tcl_Obj **objv, *mergedOpts;
 

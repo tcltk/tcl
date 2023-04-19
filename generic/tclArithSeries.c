@@ -357,7 +357,7 @@ TclNewArithSeriesObj(
     if (TCL_MAJOR_VERSION < 9 && len > ListSizeT_MAX) {
 	Tcl_SetObjResult(
 	    interp,
-	    Tcl_NewStringObj("max length of a Tcl list exceeded", TCL_INDEX_NONE));
+	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	return TCL_ERROR;
     }
@@ -444,7 +444,7 @@ TclArithSeriesObjIndex(
 	if (interp) {
 	    Tcl_SetObjResult(interp,
 		    Tcl_ObjPrintf("index %" TCL_LL_MODIFIER "d is out of bounds 0 to %"
-			    TCL_Z_MODIFIER "d", index, (arithSeriesRepPtr->len-1)));
+			    TCL_LL_MODIFIER "d", index, (arithSeriesRepPtr->len-1)));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}
 	return NULL;
@@ -865,7 +865,7 @@ TclArithSeriesGetElements(
 		    if (interp) {
 			Tcl_SetObjResult(
 			    interp,
-			    Tcl_NewStringObj("max length of a Tcl list exceeded", TCL_INDEX_NONE));
+			    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		    }
 		    return TCL_ERROR;
