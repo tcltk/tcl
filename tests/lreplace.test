@@ -219,7 +219,7 @@ apply {{} {
     set ins     {{} A {A B}}
     set idxs    {-2 -1 0 1 2 3 end-3 end-2 end-1 end end+1 end+2}
     set lreplace lreplace
-return
+
     foreach ls $lss {
 	foreach a $idxs {
 	    foreach b $idxs {
