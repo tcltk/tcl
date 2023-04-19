@@ -4637,7 +4637,7 @@ Tcl_GetsObj(
     if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
 	SetFlag(statePtr, CHANNEL_EOF);
 	assert(statePtr->inputEncodingFlags & TCL_ENCODING_END);
-assert(!GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR));
+	assert(!GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR));
 
 	/* TODO: Do we need this? */
 	UpdateInterest(chanPtr);
@@ -6124,6 +6124,7 @@ finish:
 	 * succesfully red before the error.  Return an error so that callers
 	 * like [read] can also return an error.
 	*/
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
 	Tcl_SetErrno(EILSEQ);
 	copied = -1;
     }

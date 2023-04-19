@@ -607,10 +607,10 @@ test encoding-17.3 {UtfToUtf16Proc} -body {
 test encoding-17.4 {UtfToUtf16Proc} -body {
     encoding convertto -profile tcl8 utf-16le "\uD8D8"
 } -result "\xD8\xD8"
-test encoding-17.5 {UtfToUtf16Proc} -body {
+test encoding-17.5 {UtfToUtf32Proc} -body {
     encoding convertto utf-32le "\U460DC"
 } -result "\xDC\x60\x04\x00"
-test encoding-17.6 {UtfToUtf16Proc} -body {
+test encoding-17.6 {UtfToUtf32Proc} -body {
     encoding convertto utf-32be "\U460DC"
 } -result "\x00\x04\x60\xDC"
 test encoding-17.7 {UtfToUtf16Proc} -body {

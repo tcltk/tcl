@@ -9353,7 +9353,6 @@ test io-75.6.gets {invalid utf-8 encoding, gets is not ignored (-profile strict)
     fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
 	-translation lf -profile strict
 } -body {
-after 1
     gets $f
 } -cleanup {
     close $f
@@ -9434,7 +9433,9 @@ test io-75.8.incomplete {
 } -result {41 1 {}}
 
 
-test io-75.8.invalid {invalid utf-8 after eof char is not an error  (-encodingstrict 1)} -setup {
+test {io-75.8 {invalid after eof}} {
+	invalid utf-8 after eof char is not an error (-profile strict)
+} -setup {
     set res {}
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]
@@ -9459,6 +9460,33 @@ test io-75.8.invalid {invalid utf-8 after eof char is not an error  (-encodingst
 } -cleanup {
     removeFile io-75.8
 } -result {41 1 {}}
+
+
+test {io-75.8 {invalid before eof}} {
+	invalid utf-8 encoding eof handling (-profile strict)
+} -setup {
+	set res {}
+    set fn [makeFile {} io-75.8]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 is invalid in utf-8. -eofchar is not detected, because it comes later.
+    puts -nonewline $f A\x81\x1A
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A \
+	-translation lf -profile strict
+} -body {
+    after 1
+    set status [catch {read $f} cres copts]
+    lappend res $status
+    lappend res [eof $f]
+    chan configure $f -encoding iso8859-1
+    lappend res [read $f]
+    close $f
+    set res
+} -cleanup {
+    removeFile io-75.8
+} -result "1 0 \x81"
 
 
 test io-75.9 {unrepresentable character write passes and is replaced by ?} -setup {
@@ -9683,23 +9711,23 @@ test io-75.14 {
 
 	invalid utf-8 encoding [gets] continues in non-strict mode after error
 } -setup {
-    set chan  [file tempfile]
-    fconfigure $f -encoding binary
+    set chan [file tempfile]
+    fconfigure $chan -encoding binary
     # \xc0\n is an invalid utf-8 sequence
-    puts -nonewline $f a\nb\nc\xc0\nd\n
-    flush $f
-    seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+    puts -nonewline $chan a\nb\nc\xc0\nd\n
+    flush $chan
+    seek $chan 0
+    fconfigure $chan -encoding utf-8 -buffering none -eofchar {} \
 	-translation lf -profile strict
 } -body {
-    lappend res [gets $f]
-    lappend res [gets $f]
-    set status [catch {gets $f} cres copts]
+    lappend res [gets $chan]
+    lappend res [gets $chan]
+    set status [catch {gets $chan} cres copts]
     lappend res $status $cres
-    chan configure $f -profile tcl8 
-    lappend res [gets $f]
-    lappend res [gets $f]
-    close $f
+    chan configure $chan -profile tcl8 
+    lappend res [gets $chan]
+    lappend res [gets $chan]
+    close $chan
     return $res
 } -match glob -result {a b 1 {error reading "*":\
     invalid or incomplete multibyte or wide character} cÀ d}

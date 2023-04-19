@@ -636,7 +636,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-32be";
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-32";
     type.clientData	= INT2PTR(leFlags);
@@ -650,7 +650,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16be";
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16";
     type.clientData	= INT2PTR(leFlags);

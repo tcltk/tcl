@@ -1511,7 +1511,8 @@ const TclStubs tclStubs = {
     Tcl_GetWideUIntFromObj, /* 684 */
     Tcl_DStringToObj, /* 685 */
     0, /* 686 */
-    TclUnusedStubEntry, /* 687 */
+    0, /* 687 */
+    TclUnusedStubEntry, /* 688 */
 };
 
 /* !END!: Do not edit above this line. */
