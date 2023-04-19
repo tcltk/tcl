@@ -334,6 +334,7 @@ static Tcl_ObjCmdProc	TestFindFirstCmd;
 static Tcl_ObjCmdProc	TestFindLastCmd;
 static Tcl_ObjCmdProc	TestHashSystemHashCmd;
 static Tcl_ObjCmdProc	TestGetIntForIndexCmd;
+static Tcl_ObjCmdProc	TestLutilCmd;
 
 static Tcl_NRPostProc	NREUnwind_callback;
 static Tcl_ObjCmdProc	TestNREUnwind;
@@ -721,6 +722,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testsetencpath", TestsetencpathObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testapplylambda", TestApplyLambdaObjCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testlutil", TestLutilCmd,
 	    NULL, NULL);
 
     if (TclObjTest_Init(interp) != TCL_OK) {
@@ -8592,6 +8595,102 @@ int TestApplyLambdaObjCmd (
     Tcl_DecrRefCount(lambdaObj);
 
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestLutilCmd --
+ *
+ *	This procedure implements the "testlequal" command. It is used to
+ *	test compare two lists for equality using the string representation
+ *      of each element. Implemented in C because script level loops are
+ *	too slow for comparing large (GB count) lists.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestLutilCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    Tcl_Size nL1, nL2;
+    Tcl_Obj *l1Obj = NULL;
+    Tcl_Obj *l2Obj = NULL;
+    Tcl_Obj **l1Elems;
+    Tcl_Obj **l2Elems;
+    static const char *const subcmds[] = {
+	   "equal", "diffindex", NULL
+    };
+    enum options {
+	   LUTIL_EQUAL, LUTIL_DIFFINDEX
+    } idx;
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "list1 list2");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "option", 0,
+	    &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* Protect against shimmering, just to be safe */
+    l1Obj = Tcl_DuplicateObj(objv[2]);
+    l2Obj = Tcl_DuplicateObj(objv[3]);
+
+    int ret = TCL_ERROR;
+    if (Tcl_ListObjGetElements(interp, l1Obj, &nL1, &l1Elems) != TCL_OK) {
+	goto vamoose;
+    }
+    if (Tcl_ListObjGetElements(interp, l2Obj, &nL2, &l2Elems) != TCL_OK) {
+	goto vamoose;
+    }
+
+    Tcl_Size i, nCmp;
+
+    ret = TCL_OK;
+    switch (idx) {
+    case LUTIL_EQUAL:
+	/* Avoid the loop below if lengths differ */
+	if (nL1 != nL2) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	    break;
+	}
+	/* FALLTHRU */
+    case LUTIL_DIFFINDEX:
+	nCmp = nL1 <= nL2 ? nL1 : nL2;
+	for (i = 0; i < nCmp; ++i) {
+	    if (strcmp(Tcl_GetString(l1Elems[i]), Tcl_GetString(l2Elems[i]))) {
+		break;
+	    }
+	}
+	if (i == nCmp && nCmp == nL1 && nCmp == nL2) {
+	    nCmp = idx == LUTIL_EQUAL ? 1 : -1;
+	} else {
+	    nCmp = idx == LUTIL_EQUAL ? 0 : i;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nCmp));
+	break;
+    }
+
+vamoose:
+    if (l1Obj) {
+	Tcl_DecrRefCount(l1Obj);
+    }
+    if (l2Obj) {
+	Tcl_DecrRefCount(l2Obj);
+    }
+    return ret;
 }
 
 /*
