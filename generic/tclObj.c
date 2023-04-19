@@ -355,7 +355,7 @@ typedef struct ResolvedCmdName {
  * incremented without actual references!)
  */
 #define FREEDREFCOUNTFILLER \
-    (sizeof(objPtr->refCount) == 4 ? 0xe8e8e8e8 : 0xe8e8e8e8e8e8e8e8)
+    (Tcl_Size)(sizeof(objPtr->refCount) == 4 ? 0xe8e8e8e8 : 0xe8e8e8e8e8e8e8e8)
 #endif
 
 
@@ -1325,7 +1325,7 @@ TclFreeObj(
      * either from 1 to 0, or from 0 to -1.  Falling from -1 to -2, though,
      * and so on, is always a sign of a botch in the caller.
      */
-    if (objPtr->refCount == (size_t)-2) {
+    if (objPtr->refCount == (Tcl_Size)-2) {
 	Tcl_Panic("Reference count for %p was negative", objPtr);
     }
     /*
