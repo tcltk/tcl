@@ -1675,7 +1675,7 @@ test io-12.10.profilestrict {ReadChars: multibyte chars split} -body {
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -profile strict -buffersize 11
+    fconfigure $f -encoding utf-8 -profile strict -buffersize 10
     set in [read $f]
     close $f
     scan [string index $in end] %c
@@ -1691,7 +1691,7 @@ test io-12.10.profiletcl8 {ReadChars: multibyte chars split} -body {
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -profile tcl8 -buffersize 11
+    fconfigure $f -encoding utf-8 -profile tcl8 -buffersize 10
     set in [read $f]
     close $f
     scan [string index $in end] %c
