@@ -1852,7 +1852,7 @@ Tcl_ListObjAppendList(
 				    : LISTREP_SPACE_ONLY_BACK,
 		    &listRep)
 	!= TCL_OK) {
-	return TCL_ERROR;
+	return MemoryAllocationError(interp, finalLen);
     }
     LIST_ASSERT(listRep.storePtr->numAllocated >= finalLen);
 
