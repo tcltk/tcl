@@ -3115,23 +3115,24 @@ TclStringRepeat(
 Tcl_Obj *
 TclStringCat(
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj * const objv[],
     int flags)
 {
     Tcl_Obj *objResultPtr, * const *ov;
-    int oc, binary = 1;
+    int binary = 1;
+    Tcl_Size oc;
     Tcl_Size length = 0;
     int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
-    int first = objc - 1;	/* Index of first value possibly not empty */
-    int last = 0;		/* Index of last value possibly not empty */
+    Tcl_Size first = objc - 1;	/* Index of first value possibly not empty */
+    Tcl_Size last = 0;		/* Index of last value possibly not empty */
     int inPlace = flags & TCL_STRING_IN_PLACE;
 
     /* assert ( objc >= 0 ) */
 
     if (objc <= 1) {
-	/* Only one or no objects; return first or empty */
-	return objc ? objv[0] : Tcl_NewObj();
+	/* Negative (shouldn't be), one or no objects; return first or empty */
+	return objc == 1 ? objv[0] : Tcl_NewObj();
     }
 
     /* assert ( objc >= 2 ) */

@@ -4033,7 +4033,7 @@ MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
  * candidates for public interface.
  */
 
-MODULE_SCOPE Tcl_Obj *	TclStringCat(Tcl_Interp *interp, int objc,
+MODULE_SCOPE Tcl_Obj *	TclStringCat(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[], int flags);
 MODULE_SCOPE Tcl_Obj *	TclStringFirst(Tcl_Obj *needle, Tcl_Obj *haystack,
 			    Tcl_Size start);
