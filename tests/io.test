@@ -9346,13 +9346,14 @@ test io-75.6.gets {invalid utf-8 encoding, gets is not ignored (-profile strict)
     set fn [makeFile {} io-75.6]
     set f [open $fn w+]
     fconfigure $f -encoding binary
-    # \x81 is invalid in utf-8
+    # \x81 is an incomplete byte sequence in utf-8
     puts -nonewline $f A\x81
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
 	-translation lf -profile strict
 } -body {
+after 1
     gets $f
 } -cleanup {
     close $f
@@ -9682,16 +9683,16 @@ test io-75.14 {
 
 	invalid utf-8 encoding [gets] continues in non-strict mode after error
 } -setup {
-    set fn [makeFile {} io-75.14]
-    set f [open $fn w+]
+    set chan  [file tempfile]
     fconfigure $f -encoding binary
-    # \xc0 is invalid in utf-8
-    puts -nonewline $f a\nb\xc0\nc\n
+    # \xc0\n is an invalid utf-8 sequence
+    puts -nonewline $f a\nb\nc\xc0\nd\n
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
 	-translation lf -profile strict
 } -body {
+    lappend res [gets $f]
     lappend res [gets $f]
     set status [catch {gets $f} cres copts]
     lappend res $status $cres
@@ -9699,11 +9700,44 @@ test io-75.14 {
     lappend res [gets $f]
     lappend res [gets $f]
     close $f
-	return $res
+    return $res
+} -match glob -result {a b 1 {error reading "*":\
+    invalid or incomplete multibyte or wide character} cÀ d}
+
+test io-75.15 {
+    invalid utf-8 encoding strict
+    gets does not hang
+    gets succeeds for the first two lines
+} -setup {
+    set res {}
+    set chan [file tempfile]
+    fconfigure $chan -encoding binary
+    # \xc0\x40 is an invalid utf-8 sequence
+    puts $chan hello\nAB\nCD\xc0\x40EF\nGHI
+	seek $chan 0
+} -body {
+    #Now try to read it with [gets]
+    fconfigure $chan -encoding utf-8 -profile strict
+    lappend res [gets $chan]
+    lappend res [gets $chan]
+    set status [catch {gets $chan} cres copts]
+    lappend res $status $cres
+    set status [catch {gets $chan} cres copts]
+    lappend res $status $cres
+	chan configure $chan -translation binary
+	set data [read $chan 4]
+	foreach char [split $data {}] {
+		scan $char %c ord
+		lappend res [format %x $ord]
+	}
+    fconfigure $chan -encoding utf-8 -profile strict
+	lappend res [gets $chan]
+	lappend res [gets $chan]
+    return $res
 } -cleanup {
-    removeFile io-75.14
-} -match glob -result {a 1 {error reading "*":\
-    invalid or incomplete multibyte or wide character} bÀ c}
+    close $chan
+} -match glob -result {hello AB 1 {error reading "*": invalid or incomplete multibyte or wide character}\
+    1 {error reading "*": invalid or incomplete multibyte or wide character} 43 44 c0 40 EF GHI}
 
 test io-75.14 {invalid utf-8 encoding [gets] coninues in non-strict mode after error} -setup {
     set res {}

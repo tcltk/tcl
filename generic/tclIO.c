@@ -4637,7 +4637,7 @@ Tcl_GetsObj(
     if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
 	SetFlag(statePtr, CHANNEL_EOF);
 	assert(statePtr->inputEncodingFlags & TCL_ENCODING_END);
-	assert(!GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR));
+assert(!GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR));
 
 	/* TODO: Do we need this? */
 	UpdateInterest(chanPtr);
@@ -7604,7 +7604,7 @@ Tcl_InputBuffered(
     }
 
     /*
-     * Don't forget the bytes in the topmost pushback area.
+     * Remember the bytes in the topmost pushback area.
      */
 
     for (bufPtr = statePtr->topChanPtr->inQueueHead; bufPtr != NULL;
