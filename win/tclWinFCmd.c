@@ -309,7 +309,8 @@ DoRenameFile(
 	if (srcAttr & FILE_ATTRIBUTE_DIRECTORY) {
 	    WCHAR *nativeSrcRest, *nativeDstRest;
 	    const char **srcArgv, **dstArgv;
-	    size_t size, srcArgc, dstArgc;
+	    size_t size;
+	    Tcl_Size srcArgc, dstArgc;
 	    WCHAR nativeSrcPath[MAX_PATH];
 	    WCHAR nativeDstPath[MAX_PATH];
 	    Tcl_DString srcString, dstString;
@@ -1595,9 +1596,8 @@ ConvertFileNameFormat(
     int longShort,		/* 0 to short name, 1 to long name. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
-    size_t pathc, i;
+    Tcl_Size pathc, i, length;
     Tcl_Obj *splitPath;
-    size_t length;
 
     splitPath = Tcl_FSSplitPath(fileName, &pathc);
 

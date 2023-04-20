@@ -551,13 +551,21 @@ test lseq-4.10 {panic using variable index} {
     lindex [lseq 10] $i
 } {0}
 
-test lseq-4.11 {bug lseq / lindex discrepancies} {
+test lseq-4.11 {bug lseq / lindex discrepancies} -constraints has64BitLengths -body {
     lindex [lseq 0x7fffffff] 0x80000000
-} {}
+} -result {}
 
-test lseq-4.12 {bug lseq} {
+test lseq-4.12 {bug lseq} -constraints has64BitLengths -body {
     llength [lseq 0x100000000]
-} {4294967296}
+} -result {4294967296}
+
+test lseq-4.13 {bug lseq} -constraints has64BitLengths -body {
+    set l [lseq 0x7fffffffffffffff]
+    list \
+    [llength $l] \
+    [lindex $l end] \
+        [lindex $l 9223372036854775800]
+} -result {9223372036854775807 9223372036854775806 9223372036854775800}
 
 # cleanup
 ::tcltest::cleanupTests

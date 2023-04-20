@@ -375,10 +375,11 @@ TclNewArithSeriesObj(
 	}
     }
 
-    if (TCL_MAJOR_VERSION < 9 && ((len > ListSizeT_MAX) || (len > LIST_MAX))) {
+    if ((TCL_MAJOR_VERSION < 9 && ((len > ListSizeT_MAX))) ||
+	(len > TCL_SIZE_MAX)) {
 	Tcl_SetObjResult(
 	    interp,
-	    Tcl_NewStringObj("max length of a Tcl list exceeded", TCL_INDEX_NONE));
+	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	return TCL_ERROR;
     }
@@ -451,7 +452,7 @@ ArithSeriesObjStep(
 
 Tcl_Obj *
 TclArithSeriesObjIndex(
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *arithSeriesObj,
     Tcl_WideInt index)
 {
@@ -607,7 +608,7 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObj)
     Tcl_Obj *elemObj;
     Tcl_Size i;
     Tcl_Size length = 0;
-    size_t slen;
+    Tcl_Size slen;
 
     /*
      * Pass 1: estimate space.
@@ -624,8 +625,8 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObj)
 	    char tmp[TCL_DOUBLE_SPACE+2];
 	    tmp[0] = 0;
 	    Tcl_PrintDouble(NULL,d,tmp);
-	    if ((length + strlen(tmp)) >= TCL_SIZE_SMAX) {
-		break; //
+	    if ((length + strlen(tmp)) < 0) {
+		break; // overflow
 	    }
 	    length += strlen(tmp);
 	}
@@ -766,7 +767,7 @@ TclArithSeriesObjRange(
     if (fromIdx == TCL_INDEX_NONE) {
 	fromIdx = 0;
     }
-    
+
     if (fromIdx > toIdx ||
 	(toIdx > arithSeriesRepPtr->len-1 &&
 	 fromIdx > arithSeriesRepPtr->len-1)) {
@@ -774,7 +775,7 @@ TclArithSeriesObjRange(
 	TclNewObj(obj);
 	return obj;
     }
-    
+
     if (fromIdx < 0) {
 	fromIdx = 0;
     }
@@ -911,7 +912,7 @@ TclArithSeriesGetElements(
 		    if (interp) {
 			Tcl_SetObjResult(
 			    interp,
-			    Tcl_NewStringObj("max length of a Tcl list exceeded", TCL_INDEX_NONE));
+			    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		    }
 		    return TCL_ERROR;
