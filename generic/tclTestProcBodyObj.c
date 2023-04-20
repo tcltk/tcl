@@ -228,7 +228,7 @@ static int
 ProcBodyTestProcObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
-    size_t objc,			/* argument count */
+    Tcl_Size objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
 {
     const char *fullName;
@@ -327,7 +327,7 @@ static int
 ProcBodyTestCheckObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
-    size_t objc,			/* argument count */
+    Tcl_Size objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
 {
     const char *version;

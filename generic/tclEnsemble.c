@@ -19,10 +19,10 @@
 
 static inline Tcl_Obj *	NewNsObj(Tcl_Namespace *namespacePtr);
 static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
-			    EnsembleConfig *ensemblePtr, size_t objc,
+			    EnsembleConfig *ensemblePtr, Tcl_Size objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
 static int		NsEnsembleImplementationCmdNR(void *clientData,
-			    Tcl_Interp *interp,size_t objc,Tcl_Obj *const objv[]);
+			    Tcl_Interp *interp,Tcl_Size objc,Tcl_Obj *const objv[]);
 static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
 static int		NsEnsembleStringOrder(const void *strPtr1,
 			    const void *strPtr2);
@@ -154,7 +154,7 @@ int
 TclNamespaceEnsembleCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Namespace *namespacePtr;
@@ -1693,7 +1693,7 @@ int
 TclEnsembleImplementationCmd(
     void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     return Tcl_NRCallObjProc2(interp, NsEnsembleImplementationCmdNR,
@@ -1704,7 +1704,7 @@ static int
 NsEnsembleImplementationCmdNR(
     void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     EnsembleConfig *ensemblePtr = (EnsembleConfig *)clientData;
@@ -2119,7 +2119,7 @@ void
 TclSpellFix(
     Tcl_Interp *interp,
     Tcl_Obj *const *objv,
-    size_t objc,
+    Tcl_Size objc,
     size_t badIdx,
     Tcl_Obj *bad,
     Tcl_Obj *fix)
@@ -2244,7 +2244,7 @@ Tcl_Obj *const *
 TclFetchEnsembleRoot(
     Tcl_Interp *interp,
     Tcl_Obj *const *objv,
-    size_t objc,
+    Tcl_Size objc,
     size_t *objcPtr)
 {
     Tcl_Obj *const *sourceObjs;
@@ -2291,7 +2291,7 @@ static inline int
 EnsembleUnknownCallback(
     Tcl_Interp *interp,
     EnsembleConfig *ensemblePtr,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[],
     Tcl_Obj **prefixObjPtr)
 {

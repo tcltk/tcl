@@ -690,7 +690,7 @@ TclGetInnerContext(
     const unsigned char *pc,
     Tcl_Obj **tosPtr)
 {
-    size_t objc = 0;
+    Tcl_Size objc = 0;
     Tcl_Obj *result;
     Interp *iPtr = (Interp *) interp;
 
@@ -1270,7 +1270,7 @@ int
 Tcl_DisassembleObjCmd(
     void *clientData,	/* What type of operation. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const types[] = {

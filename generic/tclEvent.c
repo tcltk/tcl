@@ -320,7 +320,7 @@ int
 TclDefaultBgErrorHandlerObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *keyPtr, *valuePtr;
@@ -1490,7 +1490,7 @@ int
 Tcl_VwaitObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     size_t i, done = 0, numItems = 0, timedOut = 0;
@@ -1944,7 +1944,7 @@ int
 Tcl_UpdateObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int flags = 0;		/* Initialized to avoid compiler warning. */

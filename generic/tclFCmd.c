@@ -22,9 +22,9 @@ static int		CopyRenameOneFile(Tcl_Interp *interp,
 			    int copyFlag, int force);
 static Tcl_Obj *	FileBasename(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static int		FileCopyRename(Tcl_Interp *interp,
-			    size_t objc, Tcl_Obj *const objv[], int copyFlag);
+			    Tcl_Size objc, Tcl_Obj *const objv[], int copyFlag);
 static size_t		FileForceOption(Tcl_Interp *interp,
-			    size_t objc, Tcl_Obj *const objv[], int *forcePtr);
+			    Tcl_Size objc, Tcl_Obj *const objv[], int *forcePtr);
 
 /*
  *---------------------------------------------------------------------------
@@ -50,7 +50,7 @@ TclFileRenameCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interp for error reporting or recursive
 				 * calls in the case of a tricky rename. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     return FileCopyRename(interp, objc, objv, 0);
@@ -79,7 +79,7 @@ TclFileCopyCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting or recursive calls
 				 * in the case of a tricky copy. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     return FileCopyRename(interp, objc, objv, 1);
@@ -105,7 +105,7 @@ TclFileCopyCmd(
 static int
 FileCopyRename(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument strings passed to Tcl_FileCmd. */
     int copyFlag)		/* If non-zero, copy source(s). Otherwise,
 				 * rename them. */
@@ -217,7 +217,7 @@ int
 TclFileMakeDirsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting. */
-    size_t objc,			/* Number of arguments */
+    Tcl_Size objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     Tcl_Obj *errfile = NULL;
@@ -342,7 +342,7 @@ int
 TclFileDeleteCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting */
-    size_t objc,			/* Number of arguments */
+    Tcl_Size objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     int force, result;
@@ -821,7 +821,7 @@ CopyRenameOneFile(
 static size_t
 FileForceOption(
     Tcl_Interp *interp,		/* Interp, for error return. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument strings.  First command line
 				 * option, if it exists, begins at 0. */
     int *forcePtr)		/* If the "-force" was specified, *forcePtr is
@@ -877,7 +877,7 @@ FileBasename(
     TCL_UNUSED(Tcl_Interp *),	/* Interp, for error return. */
     Tcl_Obj *pathPtr)		/* Path whose basename to extract. */
 {
-    size_t objc;
+    Tcl_Size objc;
     Tcl_Obj *splitPtr;
     Tcl_Obj *resultPtr = NULL;
 
@@ -943,7 +943,7 @@ int
 TclFileAttrsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter for error reporting. */
-    size_t objc,			/* Number of command line arguments. */
+    Tcl_Size objc,			/* Number of command line arguments. */
     Tcl_Obj *const objv[])	/* The command line objects. */
 {
     int result;
@@ -1160,7 +1160,7 @@ int
 TclFileLinkCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *contents;
@@ -1311,7 +1311,7 @@ int
 TclFileReadLinkCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *contents;
@@ -1362,7 +1362,7 @@ int
 TclFileTemporaryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *nameVarObj = NULL;	/* Variable to store the name of the temporary
@@ -1521,7 +1521,7 @@ int
 TclFileTempDirCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *dirNameObj;	/* Object that will contain the directory
@@ -1666,7 +1666,7 @@ int
 TclFileHomeCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *homeDirObj;
@@ -1704,7 +1704,7 @@ int
 TclFileTildeExpandCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *expandedPathObj;

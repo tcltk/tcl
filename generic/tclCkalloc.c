@@ -799,7 +799,7 @@ static int
 MemoryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     const char *fileName;
@@ -971,7 +971,7 @@ static int
 CheckmemCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     if (objc != 2) {

@@ -86,13 +86,13 @@ static inline void	RemoveObject(Object **list, int num, int idx);
 static inline void	SquelchCachedName(Object *oPtr);
 
 static int		PublicNRObjectCmd(void *clientData,
-			    Tcl_Interp *interp, size_t objc,
+			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const *objv);
 static int		PrivateNRObjectCmd(void *clientData,
-			    Tcl_Interp *interp, size_t objc,
+			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const *objv);
 static int		MyClassNRObjCmd(void *clientData,
-			    Tcl_Interp *interp, size_t objc,
+			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const *objv);
 static void		MyClassDeleted(void *clientData);
 
@@ -1667,7 +1667,7 @@ Tcl_NewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    size_t objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
     size_t skip)			/* Number of arguments to _not_ pass to the
@@ -1735,7 +1735,7 @@ TclNRNewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    size_t objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
     size_t skip,			/* Number of arguments to _not_ pass to the
@@ -2506,7 +2506,7 @@ int
 TclOOPublicObjectCmd(
     void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     return Tcl_NRCallObjProc2(interp, PublicNRObjectCmd, clientData,objc,objv);
@@ -2516,7 +2516,7 @@ static int
 PublicNRObjectCmd(
     void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     return TclOOObjectCmdCore((Object *)clientData, interp, objc, objv, PUBLIC_METHOD,
@@ -2527,7 +2527,7 @@ int
 TclOOPrivateObjectCmd(
     void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     return Tcl_NRCallObjProc2(interp, PrivateNRObjectCmd,clientData,objc,objv);
@@ -2537,7 +2537,7 @@ static int
 PrivateNRObjectCmd(
     void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     return TclOOObjectCmdCore((Object *)clientData, interp, objc, objv, 0, NULL);
@@ -2556,7 +2556,7 @@ TclOOInvokeObject(
 				 * (PRIVATE_METHOD), or a *really* private
 				 * context (any other value; conventionally
 				 * 0). */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Array of argument objects. It is assumed
 				 * that the name of the method to invoke will
 				 * be at index 1. */
@@ -2588,7 +2588,7 @@ int
 TclOOMyClassObjCmd(
     void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     return Tcl_NRCallObjProc2(interp, MyClassNRObjCmd, clientData, objc, objv);
@@ -2598,7 +2598,7 @@ static int
 MyClassNRObjCmd(
     void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *)clientData;
@@ -2627,7 +2627,7 @@ int
 TclOOObjectCmdCore(
     Object *oPtr,		/* The object being invoked. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
-    size_t objc,			/* How many arguments are being passed in. */
+    Tcl_Size objc,			/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
     int flags,			/* Whether this is an invocation through the
 				 * public or the private command interface. */
@@ -2799,7 +2799,7 @@ int
 Tcl_ObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv,
     size_t skip)
 {
@@ -2871,7 +2871,7 @@ int
 TclNRObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv,
     size_t skip)
 {

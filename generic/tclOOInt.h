@@ -502,7 +502,7 @@ MODULE_SCOPE Tcl_Method TclNewMethod(Tcl_Interp *interp, Tcl_Class cls,
                         void *clientData);
 MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
 			    Tcl_Class cls, const char *nameStr,
-			    const char *nsNameStr, size_t objc,
+			    const char *nsNameStr, Tcl_Size objc,
 			    Tcl_Obj *const *objv, size_t skip,
 			    Tcl_Object *objectPtr);
 MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
@@ -538,10 +538,10 @@ MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
 MODULE_SCOPE int	TclOOInvokeContext(void *clientData,
-			    Tcl_Interp *interp, size_t objc,
+			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
-			    Tcl_ObjectContext context, size_t objc,
+			    Tcl_ObjectContext context, Tcl_Size objc,
 			    Tcl_Obj *const *objv, size_t skip);
 MODULE_SCOPE void	TclOONewBasicMethod(Tcl_Interp *interp, Class *clsPtr,
 			    const DeclaredClassMethod *dcm);

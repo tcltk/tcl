@@ -807,7 +807,7 @@ TclProcessReturn(
 int
 TclMergeReturnOptions(
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects. */
     Tcl_Obj **optionsPtrPtr,	/* If not NULL, points to space for a (Tcl_Obj
 				 * *) where the pointer to the merged return
@@ -1097,7 +1097,7 @@ Tcl_SetReturnOptions(
     Tcl_Interp *interp,
     Tcl_Obj *options)
 {
-    size_t objc;
+    Tcl_Size objc;
     int level, code;
     Tcl_Obj **objv, *mergedOpts;
 

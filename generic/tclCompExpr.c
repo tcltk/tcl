@@ -2218,7 +2218,7 @@ TclCompileExpr(
 	 * Valid parse; compile the tree.
 	 */
 
-	size_t objc;
+	Tcl_Size objc;
 	Tcl_Obj *const *litObjv;
 	Tcl_Obj **funcObjv;
 
@@ -2621,7 +2621,7 @@ int
 TclSingleOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
@@ -2674,7 +2674,7 @@ int
 TclSortingOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     int code = TCL_OK;
@@ -2755,7 +2755,7 @@ int
 TclVariadicOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
@@ -2875,7 +2875,7 @@ int
 TclNoIdentOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;

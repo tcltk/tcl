@@ -10,7 +10,7 @@ typedef struct {
 
 
 static int
-tsdPerfSetObjCmd(void *cdata, Tcl_Interp *interp, size_t objc, Tcl_Obj *const *objv) {
+tsdPerfSetObjCmd(void *cdata, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const *objv) {
     TsdPerf *perf = Tcl_GetThreadData(&key, sizeof(TsdPerf));
     Tcl_WideInt i;
 
@@ -29,7 +29,7 @@ tsdPerfSetObjCmd(void *cdata, Tcl_Interp *interp, size_t objc, Tcl_Obj *const *o
 }
 
 static int
-tsdPerfGetObjCmd(void *cdata, Tcl_Interp *interp, size_t objc, Tcl_Obj *const *objv) {
+tsdPerfGetObjCmd(void *cdata, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const *objv) {
     TsdPerf *perf = Tcl_GetThreadData(&key, sizeof(TsdPerf));
 
 

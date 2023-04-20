@@ -723,7 +723,7 @@ LinkTraceProc(
     Tcl_WideInt valueWide;
     Tcl_WideUInt valueUWide;
     double valueDouble;
-    size_t objc, i;
+    Tcl_Size objc, i;
     Tcl_Obj **objv;
 
     /*

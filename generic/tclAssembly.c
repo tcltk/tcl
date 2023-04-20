@@ -773,7 +773,7 @@ int
 Tcl_AssembleObjCmd(
     void *clientData,		/* clientData */
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     /*
@@ -788,7 +788,7 @@ int
 TclNRAssembleObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ByteCode *codePtr;		/* Pointer to the bytecode to execute */
@@ -1969,7 +1969,7 @@ CreateMirrorJumpTable(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Obj* jumps)		/* List of alternating keywords and labels */
 {
-    size_t objc;			/* Number of elements in the 'jumps' list */
+    Tcl_Size objc;			/* Number of elements in the 'jumps' list */
     Tcl_Obj** objv;		/* Pointers to the elements in the list */
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */

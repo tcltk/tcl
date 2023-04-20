@@ -2857,7 +2857,7 @@ TclCompileTryCmd(
 
 	for (i=0 ; i<numHandlers ; i++) {
 	    Tcl_Obj *tmpObj, **objv;
-	    size_t objc;
+	    Tcl_Size objc;
 
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		goto failedToCompile;

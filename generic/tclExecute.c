@@ -1848,7 +1848,7 @@ ArgumentBCEnter(
     ByteCode *codePtr,
     TEBCdata *tdPtr,
     const unsigned char *pc,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj **objv)
 {
     int cmd;
@@ -9024,7 +9024,7 @@ IllegalExprOperandType(
 Tcl_Obj *
 TclGetSourceFromFrame(
     CmdFrame *cfPtr,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     if (cfPtr == NULL) {
@@ -9448,7 +9448,7 @@ static int
 EvalStatsCmd(
     TCL_UNUSED(void *),		/* Unused. */
     Tcl_Interp *interp,		/* The current interpreter. */
-    size_t objc,			/* The number of arguments. */
+    Tcl_Size objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The argument strings. */
 {
     Interp *iPtr = (Interp *) interp;

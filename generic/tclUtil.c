@@ -860,7 +860,7 @@ Tcl_SplitList(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, no error message is left. */
     const char *list,		/* Pointer to string with list structure. */
-    size_t *argcPtr,		/* Pointer to location to fill in with the
+    Tcl_Size *argcPtr,		/* Pointer to location to fill in with the
 				 * number of elements in the list. */
     const char ***argvPtr)	/* Pointer to place to store pointer to array
 				 * of pointers to list elements. */

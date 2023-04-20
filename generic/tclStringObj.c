@@ -1842,7 +1842,7 @@ Tcl_AppendFormatToObj(
     Tcl_Interp *interp,
     Tcl_Obj *appendObj,
     const char *format,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     const char *span = format, *msg, *errCode;
@@ -2614,7 +2614,7 @@ Tcl_Obj *
 Tcl_Format(
     Tcl_Interp *interp,
     const char *format,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     int result;
@@ -2648,7 +2648,7 @@ AppendPrintfToObjVA(
     va_list argList)
 {
     int code;
-    size_t objc;
+    Tcl_Size objc;
     Tcl_Obj **objv, *list;
     const char *p;
 
@@ -3084,7 +3084,7 @@ TclStringRepeat(
 Tcl_Obj *
 TclStringCat(
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj * const objv[],
     int flags)
 {

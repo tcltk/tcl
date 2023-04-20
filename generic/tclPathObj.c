@@ -798,7 +798,7 @@ Tcl_FSJoinPath(
     size_t elements)		/* Number of elements to use (-1 = all) */
 {
     Tcl_Obj *res;
-    size_t objc;
+    Tcl_Size objc;
     Tcl_Obj **objv;
 
     if (TclListObjLengthM(NULL, listObj, &objc) != TCL_OK) {
@@ -2621,7 +2621,7 @@ TclResolveTildePathList(
     Tcl_Obj *pathsObj)
 {
     Tcl_Obj **objv;
-    size_t objc;
+    Tcl_Size objc;
     size_t i;
     Tcl_Obj *resolvedPaths;
     const char *path;

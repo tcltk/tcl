@@ -604,7 +604,7 @@ TclObjLookupVarEx(
     const char *errMsg = NULL;
     int index, parsed = 0;
 
-    size_t localIndex;
+    Tcl_Size localIndex;
     Tcl_Obj *namePtr, *arrayPtr, *elem;
 
     *arrayPtrPtr = NULL;
@@ -1479,7 +1479,7 @@ int
 Tcl_SetObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *varValueObj;
@@ -2694,7 +2694,7 @@ int
 Tcl_UnsetObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     size_t i;
@@ -2762,7 +2762,7 @@ int
 Tcl_AppendObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Var *varPtr, *arrayPtr;
@@ -2827,7 +2827,7 @@ int
 Tcl_LappendObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *varValuePtr, *newValuePtr;
@@ -3033,7 +3033,7 @@ static int
 ArrayForObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, ArrayForNRCmd, clientData, objc, objv);
@@ -3043,7 +3043,7 @@ static int
 ArrayForNRCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *varListObj, *arrayNameObj, *scriptObj;
@@ -3274,7 +3274,7 @@ static int
 ArrayStartSearchCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Var *varPtr;
@@ -3369,7 +3369,7 @@ static int
 ArrayAnyMoreCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
@@ -3447,7 +3447,7 @@ static int
 ArrayNextElementCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Var *varPtr;
@@ -3527,7 +3527,7 @@ static int
 ArrayDoneSearchCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
@@ -3587,7 +3587,7 @@ static int
 ArrayExistsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *)interp;
@@ -3627,7 +3627,7 @@ static int
 ArrayGetCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Var *varPtr, *varPtr2;
@@ -3787,7 +3787,7 @@ static int
 ArrayNamesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     static const char *const options[] = {
@@ -3954,7 +3954,7 @@ static int
 ArraySetCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *arrayNameObj;
@@ -4135,7 +4135,7 @@ static int
 ArraySizeCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Var *varPtr;
@@ -4194,7 +4194,7 @@ static int
 ArrayStatsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Var *varPtr;
@@ -4248,7 +4248,7 @@ static int
 ArrayUnsetCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Var *varPtr, *varPtr2, *protectedVarPtr;
@@ -4816,7 +4816,7 @@ int
 Tcl_GlobalObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -4921,7 +4921,7 @@ int
 Tcl_VariableObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -5055,7 +5055,7 @@ int
 Tcl_UpvarObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     CallFrame *framePtr;
@@ -5871,7 +5871,7 @@ int
 TclInfoVarsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -6062,7 +6062,7 @@ int
 TclInfoGlobalsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *varName, *pattern;
@@ -6155,7 +6155,7 @@ int
 TclInfoLocalsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -6462,7 +6462,7 @@ static int
 ArrayDefaultCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const options[] = {

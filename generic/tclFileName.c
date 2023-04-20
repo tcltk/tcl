@@ -758,7 +758,7 @@ SplitWinPath(
 Tcl_Obj *
 Tcl_FSJoinToPath(
     Tcl_Obj *pathPtr,		/* Valid path or NULL. */
-    size_t objc,			/* Number of array elements to join */
+    Tcl_Size objc,			/* Number of array elements to join */
     Tcl_Obj *const objv[])	/* Path elements to join. */
 {
     if (pathPtr == NULL) {
@@ -1114,7 +1114,7 @@ int
 Tcl_GlobObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int globFlags, join, dir, result;
@@ -1793,7 +1793,7 @@ TclGlob(
      */
 
     if (globFlags & TCL_GLOBMODE_TAILS) {
-	size_t objc, i;
+	Tcl_Size objc, i;
 	Tcl_Obj **objv;
 	size_t prefixLen;
 	const char *pre;

@@ -173,7 +173,7 @@ static int
 InfoObjectClassCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
@@ -230,7 +230,7 @@ static int
 InfoObjectDefnCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
@@ -304,7 +304,7 @@ static int
 InfoObjectFiltersCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     size_t i;
@@ -343,7 +343,7 @@ static int
 InfoObjectForwardCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
@@ -400,7 +400,7 @@ static int
 InfoObjectIsACmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     static const char *const categories[] = {
@@ -520,7 +520,7 @@ static int
 InfoObjectMethodsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
@@ -640,7 +640,7 @@ static int
 InfoObjectMethodTypeCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
@@ -697,7 +697,7 @@ static int
 InfoObjectMixinsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Class *mixinPtr;
@@ -740,7 +740,7 @@ static int
 InfoObjectIdCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
@@ -772,7 +772,7 @@ static int
 InfoObjectNsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
@@ -805,7 +805,7 @@ static int
 InfoObjectVariablesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
@@ -860,7 +860,7 @@ static int
 InfoObjectVarsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
@@ -921,7 +921,7 @@ static int
 InfoClassConstrCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Proc *procPtr;
@@ -982,7 +982,7 @@ static int
 InfoClassDefnCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_HashEntry *hPtr;
@@ -1050,7 +1050,7 @@ static int
 InfoClassDefnNsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     static const char *kindList[] = {
@@ -1100,7 +1100,7 @@ static int
 InfoClassDestrCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Proc *procPtr;
@@ -1144,7 +1144,7 @@ static int
 InfoClassFiltersCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     size_t i;
@@ -1182,7 +1182,7 @@ static int
 InfoClassForwardCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_HashEntry *hPtr;
@@ -1233,7 +1233,7 @@ static int
 InfoClassInstancesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
@@ -1281,7 +1281,7 @@ static int
 InfoClassMethodsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     int flag = PUBLIC_METHOD, recurse = 0, scope = -1;
@@ -1397,7 +1397,7 @@ static int
 InfoClassMethodTypeCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_HashEntry *hPtr;
@@ -1449,7 +1449,7 @@ static int
 InfoClassMixinsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Class *clsPtr, *mixinPtr;
@@ -1491,7 +1491,7 @@ static int
 InfoClassSubsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Class *clsPtr, *subclassPtr;
@@ -1546,7 +1546,7 @@ static int
 InfoClassSupersCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Class *clsPtr, *superPtr;
@@ -1585,7 +1585,7 @@ static int
 InfoClassVariablesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Class *clsPtr;
@@ -1640,7 +1640,7 @@ static int
 InfoObjectCallCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
@@ -1686,7 +1686,7 @@ static int
 InfoClassCallCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    size_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Class *clsPtr;
