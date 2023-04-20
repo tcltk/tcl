@@ -549,7 +549,7 @@ TclUnixCopyFile(
     int srcFd, dstFd;
     size_t blockSize;		/* Optimal I/O blocksize for filesystem */
     char *buffer;		/* Data buffer for copy */
-    size_t nread;
+    ssize_t nread;
 
 #ifdef DJGPP
 #define BINMODE |O_BINARY
@@ -606,18 +606,18 @@ TclUnixCopyFile(
     buffer = (char *)Tcl_Alloc(blockSize);
     while (1) {
 	nread = read(srcFd, buffer, blockSize);
-	if ((nread == TCL_IO_FAILURE) || (nread == 0)) {
+	if ((nread == -1) || (nread == 0)) {
 	    break;
 	}
-	if ((size_t) write(dstFd, buffer, nread) != nread) {
-	    nread = TCL_IO_FAILURE;
+	if (write(dstFd, buffer, nread) != nread) {
+	    nread = -1;
 	    break;
 	}
     }
 
     Tcl_Free(buffer);
     close(srcFd);
-    if ((close(dstFd) != 0) || (nread == TCL_IO_FAILURE)) {
+    if ((close(dstFd) != 0) || (nread == -1)) {
 	unlink(dst);					/* INTL: Native. */
 	return TCL_ERROR;
     }
@@ -2052,7 +2052,7 @@ TclpObjNormalizePath(
 
 	nativePath = Tcl_UtfToExternalDString(NULL, path,nextCheckpoint, &ds);
 	if (Realpath(nativePath, normPath) != NULL) {
-	    size_t newNormLen;
+	    Tcl_Size newNormLen;
 
 	wholeStringOk:
 	    newNormLen = strlen(normPath);
