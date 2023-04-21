@@ -617,7 +617,7 @@ TclContinuationsEnterDerived(
     int start,
     int *clNext)
 {
-    size_t length;
+    Tcl_Size length;
     int end, num;
     int *wordCLLast = clNext;
 
