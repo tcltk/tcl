@@ -704,6 +704,8 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 
 tclEvent.${OBJEXT}: tclEvent.c tclUuid.h
 
+tclTest.${OBJEXT}: tclTest.c tclUuid.h
+
 $(TOP_DIR)/manifest.uuid:
 	printf "git-" >$(TOP_DIR)/manifest.uuid
 	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || \
