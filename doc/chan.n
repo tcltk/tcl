@@ -124,18 +124,8 @@ returned by \fBencoding names\fR, or
 from Unicode to the encoding.
 .RS
 .PP
-\fBbinary\fR is an alias for \fBiso8859-1\fR: Each byte read from the
-channel becomes the Unicode character having the same value as that byte, and
-each character written to the channel becomes a single byte in the output,
-allowing Tcl to work seamlessly with binary data as long as each "character" in
-the data remains in the range of 0 to 255 so that there is no distinction between
-binary data and text.  For example, A JPEG image can be read from a
-\fBbinary\fR channel, manipulated, and then written back to a \fBbinary\fR
-channel.
-
-For working with binary data \fB\-translation binary\fR is usually used
-instead, as it sets the encoding to \fBbinary\fR and also disables other
-translations on the channel.
+\fBbinary\fR is an alias for \fBiso8859-1\fR.  This alone is not sufficient for
+working with binary data.  Use \fB\-translation binary\fR instead.
 .PP
 The encoding of a new channel is the value of \fBencoding system\fR,
 which returns the platform- and locale-dependent system encoding used to
@@ -196,10 +186,17 @@ platforms it is \fBcrlf\fR for both input and output.
 .TP
 \fBbinary\fR
 .
-Like \fBlf\fR, no end-of-line translation is performed, but in addition,
-\fB\-eofchar\fR is set to the empty string to disable it, and \fB\-encoding\fR
-is set to \fBbinary\fR.  With this one setting, a channel is fully configured
-for binary input and output.
+Like \fBlf\fR, no end-of-line translation is performed, but in addition, sets
+\fB\-eofchar\fR to the empty string to disable it, sets \fB\-encoding\fR to
+\fBiso8859-1\fR, and sets \fB-profile\fR to \fBstrict\fR so the the channel is
+fully configured for binary input and output:  Each byte read from the channel
+becomes the Unicode character having the same value as that byte, and each
+character written to the channel becomes a single byte in the output.  This
+makes it possible to work seamlessly with binary data as long as each character
+in the data remains in the range of 0 to 255 so that there is no distinction
+between binary data and text.  For example, A JPEG image can be read from a
+such a channel, manipulated, and then written back to such a channel.
+
 .TP
 \fBcr\fR
 .

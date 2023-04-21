@@ -542,21 +542,21 @@ test tcltest-8.2 {tcltest a.tcl -tmpdir thisdirectoryisafile} {
     -result {*not a directory*}
     -match glob
 }
-# Test non-writeable directories, non-readable directories with directory flags
+# Test non-writable directories, non-readable directories with directory flags
 set notReadableDir [file join [temporaryDirectory] notreadable]
-set notWriteableDir [file join [temporaryDirectory] notwriteable]
+set notWritableDir [file join [temporaryDirectory] notwritable]
 makeDirectory notreadable
-makeDirectory notwriteable
+makeDirectory notwritable
 
 switch -- $::tcl_platform(platform) {
     unix {
 	file attributes $notReadableDir -permissions 0o333
-	file attributes $notWriteableDir -permissions 0o555
+	file attributes $notWritableDir -permissions 0o555
     }
     default {
 	# note in FAT/NTFS we won't be able to protect directory with read-only attribute...
-	catch {file attributes $notWriteableDir -readonly 1}
-	catch {testchmod 0o444 $notWriteableDir}
+	catch {file attributes $notWritableDir -readonly 1}
+	catch {testchmod 0o444 $notWritableDir}
     }
 }
 test tcltest-8.3 {tcltest a.tcl -tmpdir notReadableDir} {
@@ -571,17 +571,17 @@ test tcltest-8.3 {tcltest a.tcl -tmpdir notReadableDir} {
 # This constraint doesn't go at the top of the file so that it doesn't
 # interfere with tcltest-5.5
 testConstraint notFAT [expr {
-       ![regexp {^(FAT\d*|NTFS)$} [lindex [file system $notWriteableDir] 1]]
+       ![regexp {^(FAT\d*|NTFS)$} [lindex [file system $notWritableDir] 1]]
     || $::tcl_platform(platform) eq "unix" || [llength [info commands testchmod]]
 }]
 # FAT/NTFS permissions are fairly hopeless; ignore this test if that FS is used
-test tcltest-8.4 {tcltest a.tcl -tmpdir notWriteableDir} {
+test tcltest-8.4 {tcltest a.tcl -tmpdir notWritableDir} {
     -constraints {unixOrWin notRoot notFAT notWsl}
     -body {
-	child msg $a -tmpdir $notWriteableDir
+	child msg $a -tmpdir $notWritableDir
 	return $msg
     }
-    -result {*not writeable*}
+    -result {*not writable*}
     -match glob
 }
 test tcltest-8.5 {tcltest a.tcl -tmpdir normaldirectory} {
@@ -721,15 +721,15 @@ test tcltest-8.60 {::workingDirectory}  {
 switch -- $::tcl_platform(platform) {
     unix {
 	file attributes $notReadableDir -permissions 0o777
-	file attributes $notWriteableDir -permissions 0o777
+	file attributes $notWritableDir -permissions 0o777
     }
     default {
-	catch {testchmod 0o777 $notWriteableDir}
-	catch {file attributes $notWriteableDir -readonly 0}
+	catch {testchmod 0o777 $notWritableDir}
+	catch {file attributes $notWritableDir -readonly 0}
     }
 }
 
-file delete -force -- $notReadableDir $notWriteableDir
+file delete -force -- $notReadableDir $notWritableDir
 removeFile a.tcl
 removeFile thisdirectoryisafile
 removeDirectory normaldirectory

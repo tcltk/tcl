@@ -61,7 +61,7 @@ declare 8 {
 	    const char *file, int line)
 }
 
-# Tcl_CreateFileHandler and Tcl_DeleteFileHandler are only available on unix,
+# Tcl_CreateFileHandler and Tcl_DeleteFileHandler are only available on Unix,
 # but they are part of the old generic interface, so we include them here for
 # compatibility reasons.
 
@@ -2630,7 +2630,7 @@ declare 685 {
 
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
-declare 687 {
+declare 688 {
     void TclUnusedStubEntry(void)
 }
 

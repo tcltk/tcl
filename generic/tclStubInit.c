@@ -84,8 +84,16 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #undef Tcl_UniCharLen
 #undef TclObjInterpProc
 #if !defined(_WIN32) && !defined(__CYGWIN__)
-#undef Tcl_WinConvertError
-#define Tcl_WinConvertError 0
+# undef Tcl_WinConvertError
+# define Tcl_WinConvertError 0
+#endif
+#if defined(TCL_NO_DEPRECATED)
+# undef TclGetStringFromObj
+# undef TclGetBytesFromObj
+# undef TclGetUnicodeFromObj
+# define TclGetStringFromObj 0
+# define TclGetBytesFromObj 0
+# define TclGetUnicodeFromObj 0
 #endif
 #undef Tcl_Close
 #define Tcl_Close 0
@@ -111,6 +119,15 @@ static void uniCodePanic() {
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
 
+#if defined(TCL_NO_DEPRECATED)
+# define TclListObjGetElements 0
+# define TclListObjLength 0
+# define TclDictObjSize 0
+# define TclSplitList 0
+# define TclSplitPath 0
+# define TclFSSplitPath 0
+# define TclParseArgsObjv 0
+#else /* !defined(TCL_NO_DEPRECATED) */
 int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     int *objcPtr, Tcl_Obj ***objvPtr) {
     size_t n = TCL_INDEX_NONE;
@@ -204,6 +221,7 @@ int TclParseArgsObjv(Tcl_Interp *interp,
     *objcPtr = (int)n;
     return result;
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
@@ -1503,7 +1521,8 @@ const TclStubs tclStubs = {
     Tcl_GetWideUIntFromObj, /* 684 */
     Tcl_DStringToObj, /* 685 */
     0, /* 686 */
-    TclUnusedStubEntry, /* 687 */
+    0, /* 687 */
+    TclUnusedStubEntry, /* 688 */
 };
 
 /* !END!: Do not edit above this line. */

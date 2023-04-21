@@ -430,10 +430,10 @@ Tcl_ReadObjCmd(
     }
 
     TclNewObj(resultPtr);
-    Tcl_IncrRefCount(resultPtr);
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
     if (charactersRead == TCL_IO_FAILURE) {
+	Tcl_DecrRefCount(resultPtr);
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
@@ -447,7 +447,6 @@ Tcl_ReadObjCmd(
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
 	TclChannelRelease(chan);
-	Tcl_DecrRefCount(resultPtr);
 	return TCL_ERROR;
     }
 
@@ -466,7 +465,6 @@ Tcl_ReadObjCmd(
     }
     Tcl_SetObjResult(interp, resultPtr);
     TclChannelRelease(chan);
-    Tcl_DecrRefCount(resultPtr);
     return TCL_OK;
 }
 
@@ -1009,7 +1007,7 @@ Tcl_ExecObjCmd(
  *
  * Side effects:
  *	Sets interp's result to boolean true or false depending on whether the
- *	preceeding input operation on the channel would have blocked.
+ *	preceding input operation on the channel would have blocked.
  *
  *---------------------------------------------------------------------------
  */
