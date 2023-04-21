@@ -27,9 +27,9 @@
 
 struct ForeachState {
     Tcl_Obj *bodyPtr;		/* The script body of the command. */
-    int bodyIdx;		/* The argument index of the body. */
-    int j, maxj;		/* Number of loop iterations. */
-    int numLists;		/* Count of value lists. */
+    Tcl_Size bodyIdx;		/* The argument index of the body. */
+    Tcl_Size j, maxj;		/* Number of loop iterations. */
+    Tcl_Size numLists;		/* Count of value lists. */
     Tcl_Size *index;		/* Array of value list indices. */
     Tcl_Size *varcList; 	/* # loop variables per list. */
     Tcl_Obj ***varvList;	/* Array of var name lists. */
@@ -2733,7 +2733,8 @@ EachloopCmd(
 {
     int numLists = (objc-2) / 2;
     struct ForeachState *statePtr;
-    int i, j, result;
+    int i, result;
+    Tcl_Size j;
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2887,8 +2888,12 @@ ForeachLoopStep(
 	break;
     case TCL_OK:
 	if (statePtr->resultList != NULL) {
-	    Tcl_ListObjAppendElement(interp, statePtr->resultList,
-		    Tcl_GetObjResult(interp));
+	    result = Tcl_ListObjAppendElement(
+		interp, statePtr->resultList, Tcl_GetObjResult(interp));
+	    if (result != TCL_OK) {
+		/* e.g. memory alloc failure on big data tests */
+		goto done;
+	    }
 	}
 	break;
     case TCL_BREAK:

@@ -625,7 +625,7 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObj)
 	    char tmp[TCL_DOUBLE_SPACE+2];
 	    tmp[0] = 0;
 	    Tcl_PrintDouble(NULL,d,tmp);
-	    if ((length + strlen(tmp)) < 0) {
+	    if ((length + strlen(tmp)) > TCL_SIZE_MAX) {
 		break; // overflow
 	    }
 	    length += strlen(tmp);

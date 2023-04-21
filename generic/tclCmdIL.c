@@ -2923,7 +2923,7 @@ Tcl_LrepeatObjCmd(
     Tcl_Obj *const objv[])
 				/* The argument objects. */
 {
-    int elementCount, i, totalElems;
+    Tcl_Size elementCount, i, totalElems;
     Tcl_Obj *listPtr, **dataArray = NULL;
 
     /*
@@ -2935,12 +2935,12 @@ Tcl_LrepeatObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "count ?value ...?");
 	return TCL_ERROR;
     }
-    if (TCL_OK != TclGetIntFromObj(interp, objv[1], &elementCount)) {
+    if (TCL_OK != TclGetSizeIntFromObj(interp, objv[1], &elementCount)) {
 	return TCL_ERROR;
     }
     if (elementCount < 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad count \"%d\": must be integer >= 0", elementCount));
+		"bad count \"%" TCL_Z_MODIFIER "d\": must be integer >= 0", elementCount));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPEAT", "NEGARG",
 		NULL);
 	return TCL_ERROR;
@@ -2997,7 +2997,7 @@ Tcl_LrepeatObjCmd(
 	    dataArray[i] = tmpPtr;
 	}
     } else {
-	int j, k = 0;
+	Tcl_Size j, k = 0;
 
 	for (i=0 ; i<elementCount ; i++) {
 	    for (j=0 ; j<objc ; j++) {
