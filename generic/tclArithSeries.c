@@ -592,7 +592,7 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObj)
     Tcl_Obj *elemObj;
     Tcl_Size i;
     Tcl_WideInt length = 0;
-    size_t slen;
+    Tcl_Size slen;
 
     /*
      * Pass 1: estimate space.
