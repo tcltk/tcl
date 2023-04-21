@@ -2940,7 +2940,7 @@ Tcl_LrepeatObjCmd(
     }
     if (elementCount < 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad count \"%d\": must be integer >= 0", elementCount));
+		"bad count \"%" TCL_SIZE_MODIFIER "d\": must be integer >= 0", elementCount));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPEAT", "NEGARG",
 		NULL);
 	return TCL_ERROR;

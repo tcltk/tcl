@@ -1437,7 +1437,7 @@ CompileExprObj(
 	 * TIP #280: No invoker (yet) - Expression compilation.
 	 */
 
-	size_t length;
+	Tcl_Size length;
 	const char *string = Tcl_GetStringFromObj(objPtr, &length);
 
 	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
