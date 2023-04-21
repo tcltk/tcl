@@ -65,7 +65,7 @@ typedef int (Tcl_MethodCallProc)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
 #endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_MethodCallProc2)(void *clientData, Tcl_Interp *interp,
-	Tcl_ObjectContext objectContext, size_t objc, Tcl_Obj *const *objv);
+	Tcl_ObjectContext objectContext, ptrdiff_t objc, Tcl_Obj *const *objv);
 typedef void (Tcl_MethodDeleteProc)(void *clientData);
 typedef int (Tcl_CloneProc)(Tcl_Interp *interp, void *oldClientData,
 	void **newClientData);

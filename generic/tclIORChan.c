@@ -266,13 +266,13 @@ typedef struct {
 struct ForwardParamInput {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     char *buf;			/* O: Where to store the read bytes */
-    size_t toRead;			/* I: #bytes to read,
+    Tcl_Size toRead;			/* I: #bytes to read,
 				 * O: #bytes actually read */
 };
 struct ForwardParamOutput {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     const char *buf;		/* I: Where the bytes to write come from */
-    int toWrite;		/* I: #bytes to write,
+    Tcl_Size toWrite;		/* I: #bytes to write,
 				 * O: #bytes actually written */
 };
 struct ForwardParamSeek {
@@ -513,7 +513,7 @@ TclChanCreateObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Channel chan;		/* Token for the new channel */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    size_t listc;			/* Result of 'initialize', and of */
+    Tcl_Size listc;			/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -1052,10 +1052,10 @@ UnmarshallErrorResult(
     Tcl_Interp *interp,
     Tcl_Obj *msgObj)
 {
-    size_t lc;
+    Tcl_Size lc;
     Tcl_Obj **lv;
     int explicitResult;
-    size_t numOptions;
+    Tcl_Size numOptions;
 
     /*
      * Process the caught message.
@@ -1331,7 +1331,7 @@ ReflectInput(
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
     Tcl_Obj *toReadObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     Tcl_Obj *resObj;		/* Result data for 'read' */
 
@@ -1393,14 +1393,14 @@ ReflectInput(
     if (bytev == NULL) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_nonbyte);
 	goto invalid;
-    } else if ((size_t)toRead < bytec) {
+    } else if (toRead < bytec) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_toomuch);
 	goto invalid;
     }
 
     *errorCodePtr = EOK;
 
-    if (bytec + 1 > 1) {
+    if (bytec > 0) {
 	memcpy(buf, bytev, bytec);
     }
 
@@ -1917,7 +1917,7 @@ ReflectGetOption(
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
     Tcl_Obj *optionObj;
     Tcl_Obj *resObj;		/* Result data for 'configure' */
-    size_t listc;
+    Tcl_Size listc;
     int result = TCL_OK;
     Tcl_Obj **listv;
     MethodName method;
@@ -2011,11 +2011,11 @@ ReflectGetOption(
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Expected list with even number of "
-		"elements, got %" TCL_Z_MODIFIER "u element%s instead", listc,
+		"elements, got %" TCL_SIZE_MODIFIER "u element%s instead", listc,
 		(listc == 1 ? "" : "s")));
         goto error;
     } else {
-	size_t len;
+	Tcl_Size len;
 	const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 	if (len) {
@@ -2140,7 +2140,7 @@ EncodeEventMask(
     int *mask)
 {
     int events;			/* Mask of events to post */
-    size_t listc;			/* #elements in eventspec list */
+    Tcl_Size listc;			/* #elements in eventspec list */
     Tcl_Obj **listv;		/* Elements of eventspec list */
     int evIndex;		/* Id of event for an element of the eventspec
 				 * list. */
@@ -2451,7 +2451,7 @@ InvokeTclMethod(
 	     */
 
 	    if (result != TCL_ERROR) {
-		size_t cmdLen;
+		Tcl_Size cmdLen;
 		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
@@ -3124,7 +3124,7 @@ ForwardProc(
 	     * Process a regular result.
 	     */
 
-	    size_t bytec = 0;		/* Number of returned bytes */
+	    Tcl_Size bytec = 0;		/* Number of returned bytes */
 	    unsigned char *bytev;	/* Array of returned bytes */
 
 	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
@@ -3136,7 +3136,7 @@ ForwardProc(
 		ForwardSetStaticError(paramPtr, msg_read_toomuch);
 		paramPtr->input.toRead = TCL_IO_FAILURE;
 	    } else {
-		if (bytec + 1 > 1) {
+		if (bytec > 0) {
 		    memcpy(paramPtr->input.buf, bytev, bytec);
 		}
 		paramPtr->input.toRead = bytec;
@@ -3306,7 +3306,7 @@ ForwardProc(
 	     * NOTE (4) as well.
 	     */
 
-	    size_t listc;
+	    Tcl_Size listc;
 	    Tcl_Obj **listv;
 
 	    if (TclListObjGetElementsM(interp, resObj, &listc,
@@ -3321,12 +3321,12 @@ ForwardProc(
 
 		char *buf = (char *)Tcl_Alloc(200);
 		snprintf(buf, 200,
-			"{Expected list with even number of elements, got %" TCL_Z_MODIFIER "u %s instead}",
+			"{Expected list with even number of elements, got %" TCL_SIZE_MODIFIER "u %s instead}",
 			listc, (listc == 1 ? "element" : "elements"));
 
 		ForwardSetDynamicError(paramPtr, buf);
 	    } else {
-		size_t len;
+		Tcl_Size len;
 		const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 		if (len) {
@@ -3438,7 +3438,7 @@ ForwardSetObjError(
     ForwardParam *paramPtr,
     Tcl_Obj *obj)
 {
-    size_t len;
+    Tcl_Size len;
     const char *msgStr = Tcl_GetStringFromObj(obj, &len);
 
     len++;

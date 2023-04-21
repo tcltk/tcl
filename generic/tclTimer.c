@@ -974,7 +974,7 @@ Tcl_AfterObjCmd(
 	    Tcl_ListObjAppendElement(interp, resultListPtr,
 		    afterPtr->commandPtr);
 	    Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
-		    (afterPtr->token == NULL) ? "idle" : "timer", TCL_INDEX_NONE));
+		    (afterPtr->token == NULL) ? "idle" : "timer", -1));
             Tcl_SetObjResult(interp, resultListPtr);
 	}
 	break;

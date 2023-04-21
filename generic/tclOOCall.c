@@ -327,7 +327,7 @@ TclOOInvokeContext(
      */
 
     if (contextPtr->index == 0) {
-	size_t i;
+	Tcl_Size i;
 
 	for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	    AddRef(contextPtr->callPtr->chain[i].mPtr);
@@ -415,7 +415,7 @@ FinalizeMethodRefs(
     int result)
 {
     CallContext *contextPtr = (CallContext *)data[0];
-    size_t i;
+    Tcl_Size i;
 
     for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);
@@ -456,7 +456,7 @@ TclOOGetSortedMethodList(
 				 * at. Is set-like in nature and keyed by
 				 * pointer to class. */
     FOREACH_HASH_DECLS;
-    size_t i, numStrings;
+    Tcl_Size i, numStrings;
     Class *mixinPtr;
     Tcl_Obj *namePtr;
     Method *mPtr;
@@ -697,7 +697,7 @@ AddClassMethodNames(
 				 * pointers to the classes, and the values are
 				 * immaterial. */
 {
-    size_t i;
+    Tcl_Size i;
 
     /*
      * If we've already started looking at this class, stop working on it now
@@ -888,7 +888,7 @@ AddSimpleChainToCallContext(
 				 * NULL, either the filter was declared by the
 				 * object or this isn't a filter. */
 {
-    size_t i;
+    Tcl_Size i;
     int foundPrivate = 0, blockedUnexported = 0;
     Tcl_HashEntry *hPtr;
     Method *mPtr;
@@ -981,7 +981,7 @@ AddMethodToCallChain(
 				 * not passed a mixin. */
 {
     CallChain *callPtr = cbPtr->callChainPtr;
-    size_t i;
+    Tcl_Size i;
 
     /*
      * Return if this is just an entry used to record whether this is a public
@@ -1161,7 +1161,7 @@ TclOOGetCallContext(
     CallContext *contextPtr;
     CallChain *callPtr;
     struct ChainBuilder cb;
-    size_t i, count;
+    Tcl_Size i, count;
     int doFilters, donePrivate = 0;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
@@ -1422,7 +1422,7 @@ TclOOGetStereotypeCallChain(
 {
     CallChain *callPtr;
     struct ChainBuilder cb;
-    size_t count;
+    Tcl_Size count;
     Foundation *fPtr = clsPtr->thisPtr->fPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
@@ -1557,7 +1557,7 @@ AddClassFiltersToCallContext(
     int flags)			/* Whether we've gone along a mixin link
 				 * yet. */
 {
-    size_t i;
+    Tcl_Size i;
     int clearedFlags =
 	    flags & ~(TRAVERSED_MIXIN|OBJECT_MIXIN|BUILDING_MIXINS);
     Class *superPtr, *mixinPtr;
@@ -1646,7 +1646,7 @@ AddPrivatesFromClassChainToCallContext(
 				 * NULL, either the filter was declared by the
 				 * object or this isn't a filter. */
 {
-    size_t i;
+    Tcl_Size i;
     Class *superPtr;
 
     /*
@@ -1724,7 +1724,7 @@ AddSimpleClassChainToCallContext(
 				 * NULL, either the filter was declared by the
 				 * object or this isn't a filter. */
 {
-    size_t i;
+    Tcl_Size i;
     int privateDanger = 0;
     Class *superPtr;
 
@@ -1810,7 +1810,7 @@ TclOORenderCallChain(
     Tcl_Obj *filterLiteral, *methodLiteral, *objectLiteral, *privateLiteral;
     Tcl_Obj *resultObj, *descObjs[4], **objv;
     Foundation *fPtr = TclOOGetFoundation(interp);
-    size_t i;
+    Tcl_Size i;
 
     /*
      * Allocate the literals (potentially) used in our description.
@@ -1838,7 +1838,7 @@ TclOORenderCallChain(
      */
 
     objv = (Tcl_Obj **)TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
-    for (i = 0 ; i < (size_t)callPtr->numChain ; i++) {
+    for (i = 0 ; i < callPtr->numChain ; i++) {
 	struct MInvoke *miPtr = &callPtr->chain[i];
 
 	descObjs[0] =
@@ -1854,7 +1854,7 @@ TclOORenderCallChain(
 		? Tcl_GetObjectName(interp,
 			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
 		: objectLiteral;
-	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name, TCL_INDEX_NONE);
+	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name, -1);
 
 	objv[i] = Tcl_NewListObj(4, descObjs);
     }
@@ -1966,7 +1966,7 @@ AddSimpleDefineNamespaces(
 				 * building. */
 {
     Class *mixinPtr;
-    size_t i;
+    Tcl_Size i;
 
     FOREACH(mixinPtr, oPtr->mixins) {
 	AddSimpleClassDefineNamespaces(mixinPtr, definePtr,
@@ -1995,7 +1995,7 @@ AddSimpleClassDefineNamespaces(
     int flags)			/* What sort of define chain are we
 				 * building. */
 {
-    size_t i;
+    Tcl_Size i;
     Class *superPtr;
 
     /*

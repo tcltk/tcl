@@ -353,7 +353,7 @@ typedef struct Foundation {
     Tcl_Namespace *helpersNs;	/* Namespace containing the commands that are
 				 * only valid when executing inside a
 				 * procedural method. */
-    Tcl_Size epoch;			/* Used to invalidate method chains when the
+    Tcl_Size epoch;		/* Used to invalidate method chains when the
 				 * class structure changes. */
     ThreadLocalData *tsdPtr;	/* Counter so we can allocate a unique
 				 * namespace to each object. */
@@ -387,12 +387,12 @@ struct MInvoke {
 };
 
 typedef struct CallChain {
-    Tcl_Size objectCreationEpoch;	/* The object's creation epoch. Note that the
+    Tcl_Size objectCreationEpoch;/* The object's creation epoch. Note that the
 				 * object reference is not stored in the call
 				 * chain; it is in the call context. */
-    Tcl_Size objectEpoch;		/* Local (object structure) epoch counter
+    Tcl_Size objectEpoch;	/* Local (object structure) epoch counter
 				 * snapshot. */
-    Tcl_Size epoch;			/* Global (class structure) epoch counter
+    Tcl_Size epoch;		/* Global (class structure) epoch counter
 				 * snapshot. */
     int flags;			/* Assorted flags, see below. */
     Tcl_Size refCount;		/* Reference count. */
@@ -405,9 +405,9 @@ typedef struct CallChain {
 
 typedef struct CallContext {
     Object *oPtr;		/* The object associated with this call. */
-    Tcl_Size index;			/* Index into the call chain of the currently
+    Tcl_Size index;		/* Index into the call chain of the currently
 				 * executing method implementation. */
-    Tcl_Size skip;			/* Current number of arguments to skip; can
+    Tcl_Size skip;		/* Current number of arguments to skip; can
 				 * vary depending on whether it is a direct
 				 * method call or a continuation via the
 				 * [next] command. */
@@ -503,7 +503,7 @@ MODULE_SCOPE Tcl_Method TclNewMethod(Tcl_Interp *interp, Tcl_Class cls,
 MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
 			    Tcl_Class cls, const char *nameStr,
 			    const char *nsNameStr, Tcl_Size objc,
-			    Tcl_Obj *const *objv, size_t skip,
+			    Tcl_Obj *const *objv, Tcl_Size skip,
 			    Tcl_Object *objectPtr);
 MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
 			    Class *classPtr,
@@ -542,7 +542,7 @@ MODULE_SCOPE int	TclOOInvokeContext(void *clientData,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
 			    Tcl_ObjectContext context, Tcl_Size objc,
-			    Tcl_Obj *const *objv, size_t skip);
+			    Tcl_Obj *const *objv, Tcl_Size skip);
 MODULE_SCOPE void	TclOONewBasicMethod(Tcl_Interp *interp, Class *clsPtr,
 			    const DeclaredClassMethod *dcm);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);

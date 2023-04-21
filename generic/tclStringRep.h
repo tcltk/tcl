@@ -68,6 +68,10 @@ typedef struct {
 				 * field above. */
 } String;
 
+/* Limit on string lengths. The -1 because limit does not include the nul */
+#define STRING_MAXCHARS \
+    ((Tcl_Size)((TCL_SIZE_MAX - offsetof(String, unicode))/sizeof(Tcl_UniChar) - 1))
+/* Memory needed to hold a string of length numChars - including NUL */
 #define STRING_SIZE(numChars) \
     (offsetof(String, unicode) + sizeof(Tcl_UniChar) + ((numChars) * sizeof(Tcl_UniChar)))
 #define stringAttemptAlloc(numChars) \

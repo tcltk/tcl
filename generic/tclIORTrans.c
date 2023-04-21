@@ -511,7 +511,7 @@ TclChanPushObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Obj *rtId;		/* Handle of the new transform (channel) */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    size_t listc;			/* Result of 'initialize', and of */
+    Tcl_Size listc;			/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -820,10 +820,10 @@ UnmarshallErrorResult(
     Tcl_Interp *interp,
     Tcl_Obj *msgObj)
 {
-    size_t lc;
+    Tcl_Size lc;
     Tcl_Obj **lv;
     int explicitResult;
-    size_t numOptions;
+    Tcl_Size numOptions;
 
     /*
      * Process the caught message.
@@ -1719,7 +1719,7 @@ NewReflectedTransform(
     Tcl_Channel parentChan)
 {
     ReflectedTransform *rtPtr;
-    size_t i, listc;
+    Tcl_Size i, listc;
     Tcl_Obj **listv;
 
     rtPtr = (ReflectedTransform *)Tcl_Alloc(sizeof(ReflectedTransform));

@@ -268,7 +268,7 @@ TclChannelTransform(
 
     if (TCL_OK != TclListObjLengthM(interp, cmdObjPtr, &objc)) {
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("-command value is not a list", TCL_INDEX_NONE));
+		Tcl_NewStringObj("-command value is not a list", -1));
 	return TCL_ERROR;
     }
 
@@ -397,7 +397,7 @@ ExecuteCallback(
     }
 
     Tcl_IncrRefCount(command);
-    Tcl_ListObjAppendElement(NULL, command, Tcl_NewStringObj((char *) op, TCL_INDEX_NONE));
+    Tcl_ListObjAppendElement(NULL, command, Tcl_NewStringObj((char *) op, -1));
 
     /*
      * Use a byte-array to prevent the misinterpretation of binary data coming

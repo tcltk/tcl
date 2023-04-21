@@ -613,7 +613,7 @@ TestchmodCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)		/* Argument strings. */
 {
-    size_t i;
+    Tcl_Size i;
     int mode;
 
     if (objc + 1 < 3) {

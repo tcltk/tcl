@@ -111,7 +111,7 @@ FileCopyRename(
 				 * rename them. */
 {
     int result, force;
-    size_t i;
+    Tcl_Size i;
     Tcl_StatBuf statBuf;
     Tcl_Obj *target;
 
@@ -222,7 +222,7 @@ TclFileMakeDirsCmd(
 {
     Tcl_Obj *errfile = NULL;
     int result;
-    size_t i, j, pobjc;
+    Tcl_Size i, j, pobjc;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
@@ -346,7 +346,7 @@ TclFileDeleteCmd(
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     int force, result;
-    size_t i;
+    Tcl_Size i;
     Tcl_Obj *errfile;
     Tcl_Obj *errorBuffer = NULL;
 
@@ -828,7 +828,7 @@ FileForceOption(
 				 * filled with 1, otherwise with 0. */
 {
     int force, idx;
-    size_t i;
+    Tcl_Size i;
     static const char *const options[] = {
 	"-force", "--", NULL
     };
@@ -950,7 +950,7 @@ TclFileAttrsCmd(
     const char *const *attributeStrings;
     const char **attributeStringsAllocated = NULL;
     Tcl_Obj *objStrings = NULL;
-    size_t numObjStrings = TCL_INDEX_NONE;
+    Tcl_Size numObjStrings = TCL_INDEX_NONE;
     Tcl_Obj *filePtr;
 
     if (objc < 2) {
@@ -974,7 +974,7 @@ TclFileAttrsCmd(
 
     attributeStrings = Tcl_FSFileAttrStrings(filePtr, &objStrings);
     if (attributeStrings == NULL) {
-	size_t index;
+	Tcl_Size index;
 	Tcl_Obj *objPtr;
 
 	if (objStrings == NULL) {
@@ -1045,7 +1045,7 @@ TclFileAttrsCmd(
 	    res = Tcl_FSFileAttrsGet(interp, index, filePtr, &objPtrAttr);
 	    if (res == TCL_OK) {
 		Tcl_Obj *objPtr =
-			Tcl_NewStringObj(attributeStrings[index], TCL_INDEX_NONE);
+			Tcl_NewStringObj(attributeStrings[index], -1);
 
 		Tcl_ListObjAppendElement(interp, listPtr, objPtr);
 		Tcl_ListObjAppendElement(interp, listPtr, objPtrAttr);
@@ -1093,7 +1093,7 @@ TclFileAttrsCmd(
 	 * Set option/value pairs.
 	 */
 
-	size_t i;
+	Tcl_Size i;
 	int index;
 
 	if (numObjStrings == 0) {
@@ -1496,7 +1496,7 @@ TclFileTemporaryCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), TCL_INDEX_NONE));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
     return TCL_OK;
 }
 

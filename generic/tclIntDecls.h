@@ -302,7 +302,7 @@ EXTERN int		TclSetByteCodeFromAny(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, CompileHookProc *hookProc,
 				void *clientData);
 /* 143 */
-EXTERN Tcl_Size		TclAddLiteralObj(struct CompileEnv *envPtr,
+EXTERN int		TclAddLiteralObj(struct CompileEnv *envPtr,
 				Tcl_Obj *objPtr, LiteralEntry **litPtrPtr);
 /* 144 */
 EXTERN void		TclHideLiteral(Tcl_Interp *interp,
@@ -535,7 +535,7 @@ EXTERN char *		TclDoubleDigits(double dv, int ndigits, int flags,
 EXTERN void		TclSetChildCancelFlags(Tcl_Interp *interp, int flags,
 				int force);
 /* 251 */
-EXTERN Tcl_Size		TclRegisterLiteral(void *envPtr, const char *bytes,
+EXTERN int		TclRegisterLiteral(void *envPtr, const char *bytes,
 				Tcl_Size length, int flags);
 /* 252 */
 EXTERN Tcl_Obj *	TclPtrGetVar(Tcl_Interp *interp, Tcl_Var varPtr,
@@ -722,7 +722,7 @@ typedef struct TclIntStubs {
     void (*reserved140)(void);
     const char * (*tclpGetCwd) (Tcl_Interp *interp, Tcl_DString *cwdPtr); /* 141 */
     int (*tclSetByteCodeFromAny) (Tcl_Interp *interp, Tcl_Obj *objPtr, CompileHookProc *hookProc, void *clientData); /* 142 */
-    Tcl_Size (*tclAddLiteralObj) (struct CompileEnv *envPtr, Tcl_Obj *objPtr, LiteralEntry **litPtrPtr); /* 143 */
+    int (*tclAddLiteralObj) (struct CompileEnv *envPtr, Tcl_Obj *objPtr, LiteralEntry **litPtrPtr); /* 143 */
     void (*tclHideLiteral) (Tcl_Interp *interp, struct CompileEnv *envPtr, int index); /* 144 */
     const struct AuxDataType * (*tclGetAuxDataType) (const char *typeName); /* 145 */
     TclHandle (*tclHandleCreate) (void *ptr); /* 146 */
@@ -830,7 +830,7 @@ typedef struct TclIntStubs {
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, long long toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetChildCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
-    Tcl_Size (*tclRegisterLiteral) (void *envPtr, const char *bytes, Tcl_Size length, int flags); /* 251 */
+    int (*tclRegisterLiteral) (void *envPtr, const char *bytes, Tcl_Size length, int flags); /* 251 */
     Tcl_Obj * (*tclPtrGetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 252 */
     Tcl_Obj * (*tclPtrSetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags); /* 253 */
     Tcl_Obj * (*tclPtrIncrObjVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags); /* 254 */

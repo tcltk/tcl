@@ -489,7 +489,7 @@ UpdateStringOfDict(
     Dict *dict;
     ChainEntry *cPtr;
     Tcl_Obj *keyPtr, *valuePtr;
-    size_t i, length;
+    Tcl_Size i, length;
     TCL_HASH_TYPE bytesNeeded = 0;
     const char *elem;
     char *dst;
@@ -499,7 +499,7 @@ UpdateStringOfDict(
      * is not exposed by any API function...
      */
 
-    size_t numElems;
+    Tcl_Size numElems;
 
     DictGetInternalRep(dictPtr, dict);
 
@@ -634,14 +634,14 @@ SetDictFromAny(
 	    Tcl_IncrRefCount(objv[i+1]); /* Since hash now holds ref to it */
 	}
     } else {
-	size_t length;
+	Tcl_Size length;
 	const char *nextElem = Tcl_GetStringFromObj(objPtr, &length);
 	const char *limit = (nextElem + length);
 
 	while (nextElem < limit) {
 	    Tcl_Obj *keyPtr, *valuePtr;
 	    const char *elemStart;
-	    size_t elemSize;
+	    Tcl_Size elemSize;
 	    int literal;
 
 	    if (TclFindDictElement(interp, nextElem, (limit - nextElem),
@@ -717,7 +717,7 @@ SetDictFromAny(
   missingValue:
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"missing value to go with key", TCL_INDEX_NONE));
+		"missing value to go with key", -1));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
     }
   errorInFindDictElement:
@@ -779,12 +779,12 @@ Tcl_Obj *
 TclTraceDictPath(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    size_t keyc,
+    Tcl_Size keyc,
     Tcl_Obj *const keyv[],
     int flags)
 {
     Dict *dict, *newDict;
-    size_t i;
+    Tcl_Size i;
 
     DictGetInternalRep(dictPtr, dict);
     if (dict == NULL) {
@@ -1068,7 +1068,7 @@ int
 Tcl_DictObjSize(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    size_t *sizePtr)
+    Tcl_Size *sizePtr)
 {
     Dict *dict;
 
@@ -1281,7 +1281,7 @@ int
 Tcl_DictObjPutKeyList(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    size_t keyc,
+    Tcl_Size keyc,
     Tcl_Obj *const keyv[],
     Tcl_Obj *valuePtr)
 {
@@ -1292,7 +1292,7 @@ Tcl_DictObjPutKeyList(
     if (Tcl_IsShared(dictPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_DictObjPutKeyList");
     }
-    if (keyc + 1 < 2) {
+    if (keyc < 1) {
 	Tcl_Panic("%s called with empty key list", "Tcl_DictObjPutKeyList");
     }
 
@@ -1342,7 +1342,7 @@ int
 Tcl_DictObjRemoveKeyList(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    size_t keyc,
+    Tcl_Size keyc,
     Tcl_Obj *const keyv[])
 {
     Dict *dict;
@@ -1495,7 +1495,7 @@ DictCreateCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictObj;
-    size_t i;
+    Tcl_Size i;
 
     /*
      * Must have an even number of arguments; note that number of preceding
@@ -1703,7 +1703,7 @@ DictReplaceCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr;
-    size_t i;
+    Tcl_Size i;
 
     if ((objc < 2) || (objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key value ...?");
@@ -1751,7 +1751,7 @@ DictRemoveCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr;
-    size_t i;
+    Tcl_Size i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...?");
@@ -1800,7 +1800,7 @@ DictMergeCmd(
 {
     Tcl_Obj *targetObj, *keyObj = NULL, *valueObj = NULL;
     int done, allocatedDict = 0;
-    size_t i;
+    Tcl_Size i;
     Tcl_DictSearch search;
 
     if (objc == 1) {
@@ -2025,7 +2025,7 @@ DictSizeCmd(
     Tcl_Obj *const *objv)
 {
     int result;
-	size_t size;
+	Tcl_Size size;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
@@ -2119,7 +2119,7 @@ DictInfoCmd(
     }
 
     statsStr = Tcl_HashStats(&dict->table);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(statsStr, TCL_INDEX_NONE));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(statsStr, -1));
     Tcl_Free(statsStr);
     return TCL_OK;
 }
@@ -2272,7 +2272,7 @@ DictLappendCmd(
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
     int allocatedDict = 0, allocatedValue = 0;
-    size_t i;
+    Tcl_Size i;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
@@ -2464,7 +2464,7 @@ DictForNRCmd(
     Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
     Tcl_Obj **varv, *keyObj, *valueObj;
     Tcl_DictSearch *searchPtr;
-    size_t varc;
+    Tcl_Size varc;
     int done;
 
     if (objc != 4) {
@@ -2482,7 +2482,7 @@ DictForNRCmd(
     }
     if (varc != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must have exactly two variable names", TCL_INDEX_NONE));
+		"must have exactly two variable names", -1));
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "for", NULL);
 	return TCL_ERROR;
     }
@@ -2659,7 +2659,7 @@ DictMapNRCmd(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj **varv, *keyObj, *valueObj;
     DictMapStorage *storagePtr;
-    size_t varc;
+    Tcl_Size varc;
     int done;
 
     if (objc != 4) {
@@ -2677,7 +2677,7 @@ DictMapNRCmd(
     }
     if (varc != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must have exactly two variable names", TCL_INDEX_NONE));
+		"must have exactly two variable names", -1));
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "map", NULL);
 	return TCL_ERROR;
     }
@@ -2999,7 +2999,7 @@ DictFilterCmd(
     Tcl_Obj **varv, *keyObj = NULL, *valueObj = NULL, *resultObj, *boolObj;
     Tcl_DictSearch search;
     int done, result, satisfied;
-    size_t varc;
+    Tcl_Size varc;
     const char *pattern;
 
     if (objc < 3) {
@@ -3059,7 +3059,7 @@ DictFilterCmd(
 
 	    resultObj = Tcl_NewDictObj();
 	    while (!done) {
-		size_t i;
+		Tcl_Size i;
 
 		for (i=3 ; i<objc ; i++) {
 		    pattern = TclGetString(objv[i]);
@@ -3085,7 +3085,7 @@ DictFilterCmd(
 	}
 	resultObj = Tcl_NewDictObj();
 	while (!done) {
-	    size_t i;
+	    Tcl_Size i;
 
 	    for (i=3 ; i<objc ; i++) {
 		pattern = TclGetString(objv[i]);
@@ -3117,7 +3117,7 @@ DictFilterCmd(
 	}
 	if (varc != 2) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "must have exactly two variable names", TCL_INDEX_NONE));
+		    "must have exactly two variable names", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "filter", NULL);
 	    return TCL_ERROR;
 	}
@@ -3276,7 +3276,7 @@ DictUpdateCmd(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *dictPtr, *objPtr;
-    size_t i, dummy;
+    Tcl_Size i, dummy;
 
     if (objc < 5 || !(objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -3329,7 +3329,7 @@ FinalizeDictUpdate(
 {
     Tcl_Obj *dictPtr, *objPtr, **objv;
     Tcl_InterpState state;
-    size_t i, objc;
+    Tcl_Size i, objc;
     Tcl_Obj *varName = (Tcl_Obj *)data[0];
     Tcl_Obj *argsObj = (Tcl_Obj *)data[1];
 
@@ -3479,7 +3479,7 @@ FinalizeDictWith(
     int result)
 {
     Tcl_Obj **pathv;
-    size_t pathc;
+    Tcl_Size pathc;
     Tcl_InterpState state;
     Tcl_Obj *varName = (Tcl_Obj *)data[0];
     Tcl_Obj *keysPtr = (Tcl_Obj *)data[1];
@@ -3556,14 +3556,14 @@ Tcl_Obj *
 TclDictWithInit(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    size_t pathc,
+    Tcl_Size pathc,
     Tcl_Obj *const pathv[])
 {
     Tcl_DictSearch s;
     Tcl_Obj *keyPtr, *valPtr, *keysPtr;
     int done;
 
-    if (pathc + 1 > 1) {
+    if (pathc > 0) {
 	dictPtr = TclTraceDictPath(interp, dictPtr, pathc, pathv,
 		DICT_PATH_READ);
 	if (dictPtr == NULL) {
@@ -3643,7 +3643,7 @@ TclDictWithFinish(
 				 * the result value from TclDictWithInit. */
 {
     Tcl_Obj *dictPtr, *leafPtr, *valPtr;
-    size_t i, allocdict, keyc;
+    Tcl_Size i, allocdict, keyc;
     Tcl_Obj **keyv;
 
     /*
