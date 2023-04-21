@@ -672,6 +672,7 @@ TclGetUniChar(
  */
 
 #undef Tcl_GetUnicodeFromObj
+#if !defined(TCL_NO_DEPRECATED)
 Tcl_UniChar *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the Unicode string
@@ -699,6 +700,7 @@ TclGetUnicodeFromObj(
     }
     return stringPtr->unicode;
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 Tcl_UniChar *
 Tcl_GetUnicodeFromObj(
@@ -937,20 +939,19 @@ Tcl_SetStringObj(
  *
  * Tcl_SetObjLength --
  *
- *	This function changes the length of the string representation of an
- *	object.
+ *	Changes the length of the string representation of objPtr.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	If the size of objPtr's string representation is greater than length,
- *	then it is reduced to length and a new terminating null byte is stored
- *	in the strength. If the length of the string representation is greater
- *	than length, the storage space is reallocated to the given length; a
- *	null byte is stored at the end, but other bytes past the end of the
- *	original string representation are undefined. The object's internal
- *	representation is changed to "expendable string".
+ *	If the size of objPtr's string representation is greater than length, a
+ *	new terminating null byte is stored in objPtr->bytes at length, and
+ *	bytes at positions past length have no meaning.  If the length of the
+ *	string representation is greater than length, the storage space is
+ *	reallocated to length+1.
+ *
+ *	The object's internal representation is changed to &tclStringType.
  *
  *----------------------------------------------------------------------
  */
@@ -996,7 +997,7 @@ Tcl_SetObjLength(
 	objPtr->bytes[length] = 0;
 
 	/*
-	 * Invalidate the unicode data.
+	 * Invalidate the Unicode data.
 	 */
 
 	stringPtr->numChars = TCL_INDEX_NONE;
@@ -4316,7 +4317,7 @@ DupStringInternalRep(
  *
  * Side effects:
  *	Any old internal representation for objPtr is freed and the internal
- *	representation is set to "String".
+ *	representation is set to &tclStringType.
  *
  *----------------------------------------------------------------------
  */

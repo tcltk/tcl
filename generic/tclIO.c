@@ -4616,6 +4616,7 @@ Tcl_GetsObj(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	UpdateInterest(chanPtr);
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
 	Tcl_SetErrno(EILSEQ);
 	return TCL_INDEX_NONE;
     }
@@ -4872,11 +4873,11 @@ Tcl_GetsObj(
 		&& GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 		&& !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 	    /* Set eol to the position that caused the encoding error, and then
-	     * coninue to gotEOL, which stores the data that was decoded
+	     * continue to gotEOL, which stores the data that was decoded
 	     * without error to objPtr.  This allows the caller to do something
 	     * useful with the data decoded so far, and also results in the
 	     * position of the file being the first byte that was not
-	     * succesfully decoded, allowing further processing at exactly that
+	     * successfully decoded, allowing further processing at exactly that
 	     * point, if desired.
 	     */
 	    eol = dstEnd;
@@ -4997,11 +4998,12 @@ Tcl_GetsObj(
     }
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
-    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) &&
-	    (copiedTotal == 0 || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR) && gs.bytesWrote == 0) {
+	bufPtr->nextRemoved = oldRemoved;
 	Tcl_SetErrno(EILSEQ);
 	copiedTotal = -1;
     }
+    ResetFlag(statePtr, CHANNEL_ENCODING_ERROR);
     return copiedTotal;
 }
 
@@ -5463,6 +5465,8 @@ FilterInputBytes(
 
 	if (result == TCL_CONVERT_UNKNOWN || result == TCL_CONVERT_SYNTAX) {
 	    SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
+	    ResetFlag(statePtr, CHANNEL_STICKY_EOF);
+	    ResetFlag(statePtr, CHANNEL_EOF);
 	    result = TCL_OK;
 	}
 
@@ -5936,33 +5940,8 @@ DoReadChars(
 #define UTF_EXPANSION_FACTOR	1024
     int factor = UTF_EXPANSION_FACTOR;
 
-    binaryMode = (encoding == GetBinaryEncoding())
-	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF)
-	    && (statePtr->inEofChar == '\0');
-
-    if (appendFlag) {
-	if (binaryMode && (NULL == Tcl_GetByteArrayFromObj(objPtr, (size_t *)NULL))) {
-	    binaryMode = 0;
-	}
-    } else {
-	if (binaryMode) {
-	    Tcl_SetByteArrayLength(objPtr, 0);
-	} else {
-	    Tcl_SetObjLength(objPtr, 0);
-
-	    /*
-	     * We're going to access objPtr->bytes directly, so we must ensure
-	     * that this is actually a string object (otherwise it might have
-	     * been pure Unicode).
-	     *
-	     * Probably not needed anymore.
-	     */
-
-	    TclGetString(objPtr);
-	}
-    }
-
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
 	/* TODO: We don't need this call? */
 	UpdateInterest(chanPtr);
 	Tcl_SetErrno(EILSEQ);
@@ -6006,6 +5985,22 @@ DoReadChars(
     chanPtr = statePtr->topChanPtr;
     TclChannelPreserve((Tcl_Channel)chanPtr);
 
+    binaryMode = (encoding == GetBinaryEncoding())
+	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF)
+	    && (statePtr->inEofChar == '\0');
+
+    if (appendFlag) {
+	if (binaryMode && (NULL == Tcl_GetByteArrayFromObj(objPtr, (size_t *)NULL))) {
+	    binaryMode = 0;
+	}
+    } else {
+	if (binaryMode) {
+	    Tcl_SetByteArrayLength(objPtr, 0);
+	} else {
+	    Tcl_SetObjLength(objPtr, 0);
+	}
+    }
+
     /*
      * Must clear the BLOCKED|EOF flags here since we check before reading.
      */
@@ -6048,11 +6043,7 @@ DoReadChars(
 
 	    if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 		    && !GotFlag(statePtr, CHANNEL_STICKY_EOF)
-		    && !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
-		/* Channel is blocking.  Return an error so that callers
-		 * like [read] can return an error.
-		*/
-		Tcl_SetErrno(EILSEQ);
+		    && (!GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
 		goto finish;
 	    }
 	}
@@ -6097,7 +6088,7 @@ finish:
     }
 
     /*
-     * Regenerate the top channel, in case it was changed due to
+     * Regenerate chanPtr in case it was changed due to
      * self-modifying reflected transforms.
      */
 
@@ -6119,8 +6110,15 @@ finish:
     assert(!(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
             == (CHANNEL_EOF|CHANNEL_BLOCKED)));
     UpdateInterest(chanPtr);
+
+    /* This must comes after UpdateInterest(), which may set errno */
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
 	    && (!copied || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
+	/* Channel either is blocking or is nonblocking with no data
+	 * succesfully red before the error.  Return an error so that callers
+	 * like [read] can also return an error.
+	*/
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
 	Tcl_SetErrno(EILSEQ);
 	copied = -1;
     }
@@ -6312,7 +6310,12 @@ ReadChars(
 		flags, &statePtr->inputEncodingState,
 		dst, dstLimit, &srcRead, &dstDecoded, &numChars);
 
-	if (code == TCL_CONVERT_UNKNOWN || code == TCL_CONVERT_SYNTAX) {
+	if (code == TCL_CONVERT_UNKNOWN || code == TCL_CONVERT_SYNTAX
+	    || (
+		code == TCL_CONVERT_MULTIBYTE
+		&& GotFlag(statePtr, CHANNEL_EOF
+	    ))
+	) {
 	    SetFlag(statePtr, CHANNEL_ENCODING_ERROR);
 	    code = TCL_OK;
 	}
@@ -7598,7 +7601,7 @@ Tcl_InputBuffered(
     }
 
     /*
-     * Don't forget the bytes in the topmost pushback area.
+     * Remember the bytes in the topmost pushback area.
      */
 
     for (bufPtr = statePtr->topChanPtr->inQueueHead; bufPtr != NULL;
