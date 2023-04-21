@@ -31,6 +31,9 @@ test stringObj-1.1 {string type registration} testobj {
     set result [expr {$first >= 0}]
 } 1
 
+set INT_MAX 0x7fffffff; # Assumes sizeof(int) == 4
+set SIZE_MAX [expr {(1 << (8*$::tcl_platform(pointerSize) - 1)) - 1}]
+
 test stringObj-2.1 {Tcl_NewStringObj} testobj {
     set result ""
     lappend result [testobj freeallvars]
@@ -500,29 +503,30 @@ test stringObj-16.6 {Tcl_GetRange: old anomaly} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 2 0
 } {}
-test stringObj-16.7 {Tcl_GetRange: first = UINT_MAX-1} testobj {
+test stringObj-16.7 {Tcl_GetRange: first = INT_MAX-1} testobj {
     teststringobj set 1 abcde
-    teststringobj range 1 0xFFFFFFFE 3
+    teststringobj range 1 [expr {$INT_MAX-1}] 3
 } {}
 test stringObj-16.8 {Tcl_GetRange: first = SIZE_MAX-1} testobj {
     teststringobj set 1 abcde
-    teststringobj range 1 -2 3
+    teststringobj range 1 [expr {$SIZE_MAX - 1}] 3
 } {}
-test stringObj-16.9 {Tcl_GetRange: last = UINT_MAX-1} testobj {
+test stringObj-16.9 {Tcl_GetRange: last = INT_MAX-1} testobj {
     teststringobj set 1 abcde
-    teststringobj range 1 1 0xFFFFFFFE
+    teststringobj range 1 1 [expr {$INT_MAX-1}]
 } bcde
 test stringObj-16.10 {Tcl_GetRange: last = SIZE_MAX-1} testobj {
     teststringobj set 1 abcde
-    teststringobj range 1 1 -2
+    teststringobj range 1 1 [expr {$SIZE_MAX - 1}]
 } bcde
-test stringObj-16.11 {Tcl_GetRange: first = last = UINT_MAX-1} testobj {
+test stringObj-16.11 {Tcl_GetRange: first = last = INT_MAX-1} testobj {
     teststringobj set 1 abcde
-    teststringobj range 1 0xFFFFFFFE 0xFFFFFFFE
+    teststringobj range 1 [expr {$INT_MAX-1}] [expr {$INT_MAX-1}]
 } {}
 test stringObj-16.12 {Tcl_GetRange: first = last = SIZE_MAX-1} testobj {
     teststringobj set 1 abcde
-    teststringobj range 1 -2 -2
+    set i [expr {$SIZE_MAX - 1}]
+    teststringobj range 1 $i $i
 } {}
 
 if {[testConstraint testobj]} {

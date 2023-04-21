@@ -989,7 +989,7 @@ Tcl_FSMatchInDirectory(
 {
     const Tcl_Filesystem *fsPtr;
     Tcl_Obj *cwd, *tmpResultPtr, **elemsPtr;
-    size_t resLength, i;
+    Tcl_Size resLength, i;
     int ret = -1;
 
     if (types != NULL && (types->type & TCL_GLOB_TYPE_MOUNT)) {
@@ -1106,7 +1106,7 @@ FsAddMountsToGlobResult(
 				 * directory flag is particularly significant.
 				 */
 {
-    size_t mLength, gLength, i;
+    Tcl_Size mLength, gLength, i;
     int dir = (types == NULL || (types->type & TCL_GLOB_TYPE_DIR));
     Tcl_Obj *mounts = FsListMounts(pathPtr, pattern);
 
@@ -1122,7 +1122,7 @@ FsAddMountsToGlobResult(
     }
     for (i=0 ; i<mLength ; i++) {
 	Tcl_Obj *mElt;
-	size_t j;
+	Tcl_Size j;
 	int found = 0;
 
 	Tcl_ListObjIndex(NULL, mounts, i, &mElt);
@@ -1146,7 +1146,7 @@ FsAddMountsToGlobResult(
 	}
 	if (!found && dir) {
 	    Tcl_Obj *norm;
-	    size_t len, mlen;
+	    Tcl_Size len, mlen;
 
 	    /*
 	     * mElt is normalized and lies inside pathPtr so
@@ -1475,7 +1475,7 @@ TclGetOpenModeEx(
 				 * operations after opening the file. */
 {
     int mode, c, gotRW;
-    size_t modeArgc, i;
+    Tcl_Size modeArgc, i;
     const char **modeArgv, *flag;
 #define RW_MODES (O_RDONLY|O_WRONLY|O_RDWR)
 
@@ -1734,7 +1734,6 @@ Tcl_FSEvalFileEx(
 	Tcl_CloseEx(interp,chan,0);
 	return result;
     }
-
     TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
 
@@ -2458,7 +2457,7 @@ TclFSFileAttrIndex(
 	 * It's a constant attribute table, so use T_GIFO.
 	 */
 
-	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, TCL_INDEX_NONE);
+	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, -1);
 	int result;
 
 	result = Tcl_GetIndexFromObj(NULL, tmpObj, attrTable, NULL, TCL_EXACT,
@@ -2473,7 +2472,7 @@ TclFSFileAttrIndex(
 	 * It's a non-constant attribute list, so do a literal search.
 	 */
 
-	size_t i, objc;
+	Tcl_Size i, objc;
 	Tcl_Obj **objv;
 
 	if (TclListObjGetElementsM(NULL, listObj, &objc, &objv) != TCL_OK) {
@@ -3291,7 +3290,7 @@ Tcl_LoadFile(
 	Tcl_DecrRefCount(copyToPtr);
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "couldn't load from current filesystem", TCL_INDEX_NONE));
+		    "couldn't load from current filesystem", -1));
 	}
 	return TCL_ERROR;
     }
@@ -3875,13 +3874,13 @@ FsListMounts(
 Tcl_Obj *
 Tcl_FSSplitPath(
     Tcl_Obj *pathPtr,		/* The pathname to split. */
-    size_t *lenPtr)		/* A place to hold the number of pathname
+    Tcl_Size *lenPtr)		/* A place to hold the number of pathname
 				 * elements. */
 {
     Tcl_Obj *result = NULL;	/* Just to squelch gcc warnings. */
     const Tcl_Filesystem *fsPtr;
     char separator = '/';
-    size_t driveNameLength;
+    Tcl_Size driveNameLength;
     const char *p;
 
     /*
@@ -3927,7 +3926,7 @@ Tcl_FSSplitPath(
 
     for (;;) {
 	const char *elementStart = p;
-	size_t length;
+	Tcl_Size length;
 
 	while ((*p != '\0') && (*p != separator)) {
 	    p++;
@@ -3972,14 +3971,14 @@ TclGetPathType(
 				/* If not NULL, a place in which to store a
 				 * pointer to the filesystem for this pathname
 				 * if it is absolute. */
-    size_t *driveNameLengthPtr,	/* If not NULL, a place in which to store the
+    Tcl_Size *driveNameLengthPtr,	/* If not NULL, a place in which to store the
 				 * length of the volume name. */
     Tcl_Obj **driveNameRef)	/* If not NULL, for an absolute pathname, a
 				 * place to store a pointer to an object with a
 				 * refCount of 1, and whose value is the name
 				 * of the volume. */
 {
-    size_t pathLen;
+    Tcl_Size pathLen;
     const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
     Tcl_PathType type;
 
@@ -4021,12 +4020,12 @@ TclGetPathType(
 Tcl_PathType
 TclFSNonnativePathType(
     const char *path,		/* Pathname to determine the type of. */
-    size_t pathLen,		/* Length of the pathname. */
+    Tcl_Size pathLen,		/* Length of the pathname. */
     const Tcl_Filesystem **filesystemPtrPtr,
 				/* If not NULL, a  place to store a pointer to
 				 * the filesystem for this pathname when it is
 				 * an absolute pathname. */
-    size_t *driveNameLengthPtr,	/* If not NULL, a place to store the length of
+    Tcl_Size *driveNameLengthPtr,/* If not NULL, a place to store the length of
 				 * the volume name if the pathname is absolute.
 				 */
     Tcl_Obj **driveNameRef)	/* If not NULL, a place to store a pointer to
@@ -4063,7 +4062,7 @@ TclFSNonnativePathType(
 
 	if ((fsRecPtr->fsPtr != &tclNativeFilesystem)
 		&& (fsRecPtr->fsPtr->listVolumesProc != NULL)) {
-	    size_t numVolumes;
+	    Tcl_Size numVolumes;
 	    Tcl_Obj *thisFsVolumes = fsRecPtr->fsPtr->listVolumesProc();
 
 	    if (thisFsVolumes != NULL) {
@@ -4080,9 +4079,9 @@ TclFSNonnativePathType(
 
 		    numVolumes = TCL_INDEX_NONE;
 		}
-		while (numVolumes + 1 > 1) {
+		while (numVolumes > 0) {
 		    Tcl_Obj *vol;
-		    size_t len;
+		    Tcl_Size len;
 		    const char *strVol;
 
 		    numVolumes--;
@@ -4429,7 +4428,7 @@ Tcl_FSRemoveDirectory(
 	Tcl_Obj *cwdPtr = Tcl_FSGetCwd(NULL);
 	if (cwdPtr != NULL) {
 	    const char *cwdStr, *normPathStr;
-	    size_t cwdLen, normLen;
+	    Tcl_Size cwdLen, normLen;
 	    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 
 	    if (normPath != NULL) {
@@ -4611,7 +4610,7 @@ Tcl_FSFileSystemInfo(
 
     resPtr = Tcl_NewListObj(0, NULL);
     Tcl_ListObjAppendElement(NULL, resPtr,
-	    Tcl_NewStringObj(fsPtr->typeName, TCL_INDEX_NONE));
+	    Tcl_NewStringObj(fsPtr->typeName, -1));
 
     if (fsPtr->filesystemPathTypeProc != NULL) {
 	Tcl_Obj *typePtr = fsPtr->filesystemPathTypeProc(pathPtr);

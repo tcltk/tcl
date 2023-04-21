@@ -107,7 +107,7 @@ Tcl_PutsObjCmd(
     Tcl_Obj *string;		/* String to write. */
     Tcl_Obj *chanObjPtr = NULL;	/* channel object. */
     int newline;		/* Add a newline at end? */
-    Tcl_Size result;	/* Result of puts operation. */
+    Tcl_Size result;		/* Result of puts operation. */
     int mode;			/* Mode in which channel is opened. */
 
     switch (objc) {
@@ -1090,7 +1090,7 @@ Tcl_OpenObjCmd(
 	if (objc == 4) {
 	    const char *permString = TclGetString(objv[3]);
 	    int code = TCL_ERROR;
-	    int scanned = TclParseAllWhiteSpace(permString, TCL_INDEX_NONE);
+	    int scanned = TclParseAllWhiteSpace(permString, -1);
 
 	    /*
 	     * Support legacy octal numbers.
