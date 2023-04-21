@@ -817,11 +817,14 @@ DOTSEPARATED=$(DOTSEPARATED:b=.)
 # _USE_64BIT_TIME_T - forces a build using 64-bit time_t for 32-bit build
 #           (CRT library should support this, not needed for Tcl 9.x)
 # TCL_UTF_MAX=3 - forces a build using UTF-16 internally (not recommended).
+# TCL_8_API - 0 -> Tcl 8 compatible API is disabled
+#             1 -> Tcl 8 API enabled (default)
 # Further, LINKERFLAGS are modified based on above.
 
 # Default values for all the above
 STATIC_BUILD	= 0
 TCL_THREADS	= 1
+TCL_8_API       = 0
 DEBUG		= 0
 SYMBOLS		= 0
 PROFILE		= 0
@@ -877,9 +880,18 @@ TCL_THREADS = 0
 USE_THREAD_ALLOC= 0
 !endif
 
+!if [nmakehlp -f $(OPTS) "tcl8api"]
+!message *** Disable Tcl 8 API compatibility macros
+TCL_8_API = 1
+!endif
+
+# NOTE: THIS MUST COME AFTER THE notcl8api CHECK ABOVE because the "-f" option
+# does *substring* checks, not exact checks so "tcl8" will match "notcl8api" as well.
+!if $(TCL_8_API)
 !if [nmakehlp -f $(OPTS) "tcl8"]
 !message *** Build for Tcl8
 TCL_BUILD_FOR = 8
+!endif
 !endif
 
 !if $(TCL_MAJOR_VERSION) == 8
@@ -1369,7 +1381,7 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 # and switches are specific to it.
 # The following macros are defined, names are for historical compatibility:
 # OPTDEFINES - /Dxxx C macro flags based on user-specified OPTS
-# COMPILERFLAGS - /Dxxx C macro flags independent of any configuration options
+# COMPILERFLAGS - /Dxxx C macro flags independent of any configuration opttions
 # crt - Compiler switch that selects the appropriate C runtime
 # cdebug - Compiler switches related to debug AND optimizations
 # cwarn - Compiler switches that set warning levels
@@ -1451,11 +1463,15 @@ OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T=1
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
 COMPILERFLAGS  = /D_ATL_XP_TARGETING
 !endif
+
 !if "$(TCL_UTF_MAX)" == "3"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_UTF_MAX=3
 !endif
 !if "$(TCL_BUILD_FOR)" == "8"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8
+!endif
+!if $(TCL_8_API)
+OPTDEFINES	= $(OPTDEFINES) /DTCL_8_API=1
 !endif
 
 # Like the TEA system only set this non empty for non-Tk extensions

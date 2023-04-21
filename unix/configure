@@ -810,6 +810,7 @@ enable_load
 enable_symbols
 enable_langinfo
 enable_dll_unloading
+enable_tcl8api
 with_tzdata
 enable_dtrace
 enable_framework
@@ -1460,6 +1461,7 @@ Optional Features:
   --enable-langinfo       use nl_langinfo if possible to determine encoding at
                           startup, otherwise use old heuristic (default: on)
   --enable-dll-unloading  enable the 'unload' command (default: on)
+  --enable-tcl8api        enable the Tcl 8 compatibility API (default: off)
   --enable-dtrace         build with DTrace support (default: off)
   --enable-framework      package shared libraries in MacOSX frameworks
                           (default: off)
@@ -10651,6 +10653,24 @@ fi
 if test $tcl_ok = yes; then
 
 printf "%s\n" "#define TCL_UNLOAD_DLLS 1" >>confdefs.h
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_ok" >&5
+printf "%s\n" "$tcl_ok" >&6; }
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to use Tcl 8 compatibility API" >&5
+printf %s "checking whether to use Tcl 8 compatibility API... " >&6; }
+# Check whether --enable-tcl8api was given.
+if test ${enable_tcl8api+y}
+then :
+  enableval=$enable_tcl8api; tcl_ok=$enableval
+else $as_nop
+  tcl_ok=no
+fi
+
+if test $tcl_ok = yes; then
+
+printf "%s\n" "#define TCL_8_API 1" >>confdefs.h
 
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_ok" >&5
