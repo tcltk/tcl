@@ -1734,6 +1734,11 @@ Tcl_FSEvalFileEx(
 	Tcl_CloseEx(interp,chan,0);
 	return result;
     }
+    if (Tcl_SetChannelOption(interp, chan, "-profile", "strict")
+	    != TCL_OK) {
+	Tcl_CloseEx(interp,chan,0);
+	return result;
+    }
 
     TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
