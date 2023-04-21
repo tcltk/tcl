@@ -477,7 +477,7 @@ Tcl_PathType
 TclFSGetPathType(
     Tcl_Obj *pathPtr,
     const Tcl_Filesystem **filesystemPtrPtr,
-    size_t *driveNameLengthPtr)
+    Tcl_Size *driveNameLengthPtr)
 {
     FsPath *fsPathPtr;
 
@@ -667,7 +667,7 @@ TclPathPart(
 	    goto standardPath;
 	}
     } else {
-	size_t splitElements;
+	Tcl_Size splitElements;
 	Tcl_Obj *splitPtr, *resultPtr;
 
     standardPath:
@@ -751,7 +751,7 @@ GetExtension(
     if (extension == NULL) {
 	TclNewObj(ret);
     } else {
-	ret = Tcl_NewStringObj(extension, TCL_INDEX_NONE);
+	ret = Tcl_NewStringObj(extension, -1);
     }
     Tcl_IncrRefCount(ret);
     return ret;
@@ -795,17 +795,17 @@ Tcl_Obj *
 Tcl_FSJoinPath(
     Tcl_Obj *listObj,		/* Path elements to join, may have a zero
 				 * reference count. */
-    size_t elements)		/* Number of elements to use (-1 = all) */
+    Tcl_Size elements)		/* Number of elements to use (-1 = all) */
 {
     Tcl_Obj *res;
-    size_t objc;
+    Tcl_Size objc;
     Tcl_Obj **objv;
 
     if (TclListObjLengthM(NULL, listObj, &objc) != TCL_OK) {
 	return NULL;
     }
 
-    elements = ((elements != TCL_INDEX_NONE) && (elements <= objc)) ? elements : objc;
+    elements = ((elements >= 0) && (elements <= objc)) ? elements : objc;
     TclListObjGetElementsM(NULL, listObj, &objc, &objv);
     res = TclJoinPath(elements, objv, 0);
     return res;
@@ -813,13 +813,13 @@ Tcl_FSJoinPath(
 
 Tcl_Obj *
 TclJoinPath(
-    size_t elements,		/* Number of elements to use */
+    Tcl_Size elements,		/* Number of elements to use */
     Tcl_Obj * const objv[],	/* Path elements to join */
     int forceRelative)		/* If non-zero, assume all more paths are
 				 * relative (e.g. simple normalization) */
 {
     Tcl_Obj *res = NULL;
-    size_t i;
+    Tcl_Size i;
     const Tcl_Filesystem *fsPtr = NULL;
 
     if (elements == 0) {
@@ -856,7 +856,7 @@ TclJoinPath(
 		    TclGetPathType(tailObj, NULL, NULL, NULL);
 	    if (type == TCL_PATH_RELATIVE) {
 		const char *str;
-		size_t len;
+		Tcl_Size len;
 
 		str = Tcl_GetStringFromObj(tailObj, &len);
 		if (len == 0) {
@@ -923,8 +923,8 @@ TclJoinPath(
     assert ( res == NULL );
 
     for (i = 0; i < elements; i++) {
-	size_t driveNameLength;
-	size_t strEltLen, length;
+	Tcl_Size driveNameLength;
+	Tcl_Size strEltLen, length;
 	Tcl_PathType type;
 	char *strElt, *ptr;
 	Tcl_Obj *driveName = NULL;
@@ -1220,7 +1220,7 @@ Tcl_Obj *
 TclNewFSPathObj(
     Tcl_Obj *dirPtr,
     const char *addStrRep,
-    size_t len)
+    Tcl_Size len)
 {
     FsPath *fsPathPtr;
     Tcl_Obj *pathPtr;
@@ -1273,7 +1273,7 @@ TclNewFSPathObj(
      * things as needing more aggressive normalization that don't actually
      * need it. No harm done.
      */
-    for (p = addStrRep; len+1 > 1; p++, len--) {
+    for (p = addStrRep; len > 0; p++, len--) {
 	switch (state) {
 	case 0:		/* So far only "." since last dirsep or start */
 	    switch (*p) {
@@ -1317,7 +1317,7 @@ AppendPath(
 {
     const char *bytes;
     Tcl_Obj *copy = Tcl_DuplicateObj(head);
-    size_t length;
+    Tcl_Size length;
 
     /*
      * This is likely buggy when dealing with virtual filesystem drivers
@@ -2621,8 +2621,8 @@ TclResolveTildePathList(
     Tcl_Obj *pathsObj)
 {
     Tcl_Obj **objv;
-    size_t objc;
-    size_t i;
+    Tcl_Size objc;
+    Tcl_Size i;
     Tcl_Obj *resolvedPaths;
     const char *path;
 

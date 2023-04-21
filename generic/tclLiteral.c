@@ -178,9 +178,9 @@ TclCreateLiteral(
     Interp *iPtr,
     const char *bytes,	/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    size_t length,		/* Number of bytes in the string. */
-    size_t hash,		/* The string's hash. If the value is
-				 * TCL_INDEX_NONE, it will be computed here. */
+    Tcl_Size length,	/* Number of bytes in the string. */
+    TCL_HASH_TYPE hash, /* The string's hash. If the value is
+				         * TCL_INDEX_NONE, it will be computed here. */
     int *newPtr,
     Namespace *nsPtr,
     int flags,
@@ -195,7 +195,7 @@ TclCreateLiteral(
      * Is it in the interpreter's global literal table?
      */
 
-    if (hash == TCL_INDEX_NONE) {
+    if (hash == (TCL_HASH_TYPE) TCL_INDEX_NONE) {
 	hash = HashString(bytes, length);
     }
     globalHash = (hash & globalTablePtr->mask);
@@ -210,7 +210,7 @@ TclCreateLiteral(
 	     * https://stackoverflow.com/q/54337750/301832
 	     */
 
-	    size_t objLength;
+	    Tcl_Size objLength;
 	    const char *objBytes = Tcl_GetStringFromObj(objPtr, &objLength);
 
 	    if ((objLength == length) && ((length == 0)
@@ -351,7 +351,7 @@ Tcl_Obj *
 TclFetchLiteral(
     CompileEnv *envPtr,		/* Points to the CompileEnv from which to
 				 * fetch the registered literal value. */
-    size_t index)		/* Index of the desired literal, as returned
+    Tcl_Size index)		/* Index of the desired literal, as returned
 				 * by prior call to TclRegisterLiteral() */
 {
     if (index >= envPtr->literalArrayNext) {
@@ -387,14 +387,14 @@ TclFetchLiteral(
  *----------------------------------------------------------------------
  */
 
-size_t
+int /* Do NOT change this type. Should not be wider than TclEmitPush operand*/
 TclRegisterLiteral(
     void *ePtr,		/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
     const char *bytes,	/* Points to string for which to find or
 				 * create an object in CompileEnv's object
 				 * array. */
-    size_t length,			/* Number of bytes in the string. If -1, the
+    Tcl_Size length,			/* Number of bytes in the string. If -1, the
 				 * string consists of all bytes up to the
 				 * first null character. */
     int flags)			/* If LITERAL_ON_HEAP then the caller already
@@ -412,7 +412,7 @@ TclRegisterLiteral(
     int isNew;
     Namespace *nsPtr;
 
-    if (length == TCL_INDEX_NONE) {
+    if (length < 0) {
 	length = (bytes ? strlen(bytes) : 0);
     }
     hash = HashString(bytes, length);
@@ -437,6 +437,9 @@ TclRegisterLiteral(
 	    TclVerifyLocalLiteralTable(envPtr);
 #endif /*TCL_COMPILE_DEBUG*/
 
+	    if (objIndex > INT_MAX) {
+		Tcl_Panic("Literal table index too large. Cannot be handled by TclEmitPush");
+	    }
 	    return objIndex;
 	}
     }
@@ -475,6 +478,10 @@ TclRegisterLiteral(
     }
     TclVerifyLocalLiteralTable(envPtr);
 #endif /*TCL_COMPILE_DEBUG*/
+    if (objIndex > INT_MAX) {
+	Tcl_Panic(
+	    "Literal table index too large. Cannot be handled by TclEmitPush");
+    }
     return objIndex;
 }
 
@@ -607,7 +614,7 @@ TclHideLiteral(
  *----------------------------------------------------------------------
  */
 
-size_t
+int
 TclAddLiteralObj(
     CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
@@ -624,6 +631,10 @@ TclAddLiteralObj(
     }
     objIndex = envPtr->literalArrayNext;
     envPtr->literalArrayNext++;
+    if (objIndex > INT_MAX) {
+	Tcl_Panic(
+	    "Literal table index too large. Cannot be handled by TclEmitPush");
+    }
 
     lPtr = &envPtr->literalArrayPtr[objIndex];
     lPtr->objPtr = objPtr;

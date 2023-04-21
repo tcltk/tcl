@@ -222,7 +222,7 @@ TclFileMakeDirsCmd(
 {
     Tcl_Obj *errfile = NULL;
     int result, i;
-    size_t j, pobjc;
+    Tcl_Size j, pobjc;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
@@ -875,7 +875,7 @@ FileBasename(
     TCL_UNUSED(Tcl_Interp *),	/* Interp, for error return. */
     Tcl_Obj *pathPtr)		/* Path whose basename to extract. */
 {
-    size_t objc;
+    Tcl_Size objc;
     Tcl_Obj *splitPtr;
     Tcl_Obj *resultPtr = NULL;
 
@@ -948,7 +948,7 @@ TclFileAttrsCmd(
     const char *const *attributeStrings;
     const char **attributeStringsAllocated = NULL;
     Tcl_Obj *objStrings = NULL;
-    size_t numObjStrings = TCL_INDEX_NONE;
+    Tcl_Size numObjStrings = TCL_INDEX_NONE;
     Tcl_Obj *filePtr;
 
     if (objc < 2) {
@@ -972,7 +972,7 @@ TclFileAttrsCmd(
 
     attributeStrings = Tcl_FSFileAttrStrings(filePtr, &objStrings);
     if (attributeStrings == NULL) {
-	size_t index;
+	Tcl_Size index;
 	Tcl_Obj *objPtr;
 
 	if (objStrings == NULL) {
@@ -1043,7 +1043,7 @@ TclFileAttrsCmd(
 	    res = Tcl_FSFileAttrsGet(interp, index, filePtr, &objPtrAttr);
 	    if (res == TCL_OK) {
 		Tcl_Obj *objPtr =
-			Tcl_NewStringObj(attributeStrings[index], TCL_INDEX_NONE);
+			Tcl_NewStringObj(attributeStrings[index], -1);
 
 		Tcl_ListObjAppendElement(interp, listPtr, objPtr);
 		Tcl_ListObjAppendElement(interp, listPtr, objPtrAttr);
@@ -1495,7 +1495,7 @@ TclFileTemporaryCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), TCL_INDEX_NONE));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
     return TCL_OK;
 }
 
