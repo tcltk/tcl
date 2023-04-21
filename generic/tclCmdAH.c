@@ -27,14 +27,14 @@
 
 struct ForeachState {
     Tcl_Obj *bodyPtr;		/* The script body of the command. */
-    int bodyIdx;		/* The argument index of the body. */
-    int j, maxj;		/* Number of loop iterations. */
-    int numLists;		/* Count of value lists. */
-    size_t *index;			/* Array of value list indices. */
-    size_t *varcList;		/* # loop variables per list. */
+    Tcl_Size bodyIdx;		/* The argument index of the body. */
+    Tcl_Size j, maxj;		/* Number of loop iterations. */
+    Tcl_Size numLists;		/* Count of value lists. */
+    Tcl_Size *index;		/* Array of value list indices. */
+    Tcl_Size *varcList; 	/* # loop variables per list. */
     Tcl_Obj ***varvList;	/* Array of var name lists. */
     Tcl_Obj **vCopyList;	/* Copies of var name list arguments. */
-    size_t *argcList;		/* Array of value list sizes. */
+    Tcl_Size *argcList;		/* Array of value list sizes. */
     Tcl_Obj ***argvList;	/* Array of value lists. */
     Tcl_Obj **aCopyList;	/* Copies of value list arguments. */
     Tcl_Obj *resultList;	/* List of result values from the loop body,
@@ -530,7 +530,7 @@ EncodingConvertfromObjCmd(
     Tcl_Obj *data;		/* Byte array to convert */
     Tcl_DString ds;		/* Buffer to hold the string */
     Tcl_Encoding encoding;	/* Encoding to use */
-    size_t length = 0;			/* Length of the byte array being converted */
+    Tcl_Size length = 0;			/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
     int flags;
     int result;
@@ -630,7 +630,7 @@ EncodingConverttoObjCmd(
     Tcl_Obj *data;		/* String to convert */
     Tcl_DString ds;		/* Buffer to hold the byte array */
     Tcl_Encoding encoding;	/* Encoding to use */
-    size_t length;			/* Length of the string being converted */
+    Tcl_Size length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
     int result;
     int flags;
@@ -2064,7 +2064,7 @@ PathSplitCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    res = Tcl_FSSplitPath(objv[1], (size_t *)NULL);
+    res = Tcl_FSSplitPath(objv[1], NULL);
     if (res == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"could not read \"%s\": no such file or directory",
@@ -2733,7 +2733,8 @@ EachloopCmd(
 {
     int numLists = (objc-2) / 2;
     struct ForeachState *statePtr;
-    int i, j, result;
+    int i, result;
+    Tcl_Size j;
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2757,16 +2758,16 @@ EachloopCmd(
      */
 
     statePtr = (struct ForeachState *)TclStackAlloc(interp,
-	    sizeof(struct ForeachState) + 3 * numLists * sizeof(size_t)
+	    sizeof(struct ForeachState) + 3 * numLists * sizeof(Tcl_Size)
 	    + 2 * numLists * (sizeof(Tcl_Obj **) + sizeof(Tcl_Obj *)));
     memset(statePtr, 0,
-	    sizeof(struct ForeachState) + 3 * numLists * sizeof(size_t)
+	    sizeof(struct ForeachState) + 3 * numLists * sizeof(Tcl_Size)
 	    + 2 * numLists * (sizeof(Tcl_Obj **) + sizeof(Tcl_Obj *)));
     statePtr->varvList = (Tcl_Obj ***) (statePtr + 1);
     statePtr->argvList = statePtr->varvList + numLists;
     statePtr->vCopyList = (Tcl_Obj **) (statePtr->argvList + numLists);
     statePtr->aCopyList = statePtr->vCopyList + numLists;
-    statePtr->index = (size_t *) (statePtr->aCopyList + numLists);
+    statePtr->index = (Tcl_Size *) (statePtr->aCopyList + numLists);
     statePtr->varcList = statePtr->index + numLists;
     statePtr->argcList = statePtr->varcList + numLists;
 
@@ -2887,8 +2888,12 @@ ForeachLoopStep(
 	break;
     case TCL_OK:
 	if (statePtr->resultList != NULL) {
-	    Tcl_ListObjAppendElement(interp, statePtr->resultList,
-		    Tcl_GetObjResult(interp));
+	    result = Tcl_ListObjAppendElement(
+		interp, statePtr->resultList, Tcl_GetObjResult(interp));
+	    if (result != TCL_OK) {
+		/* e.g. memory alloc failure on big data tests */
+		goto done;
+	    }
 	}
 	break;
     case TCL_BREAK:
@@ -2946,7 +2951,7 @@ ForeachAssignments(
     struct ForeachState *statePtr)
 {
     int i;
-    size_t v, k;
+    Tcl_Size v, k;
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
