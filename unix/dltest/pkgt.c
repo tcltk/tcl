@@ -23,12 +23,34 @@ static int TraceProc2 (
     struct Tcl_Obj *const *objv)
 {
     (void)clientData;
-    (void)interp;
     (void)level;
     (void)command;
     (void)commandInfo;
     (void)objc;
-    (void)objv;
+    int option;
+
+    /* Just put here to demonstrate bug [], will not be merged to trunk */
+    /* This is not really useful code, just a snippet from tclZlib.c */
+    enum objIndices {
+	OPT_COMPRESSION_DICTIONARY = 0,
+	OPT_GZIP_HEADER = 1,
+	OPT_COMPRESSION_LEVEL = 2,
+	OPT_END = -1
+    };
+    typedef struct {
+	const char *name;
+	enum objIndices offset;
+    } OptDescriptor;
+    static const OptDescriptor compressionOpts[] = {
+	{ "-dictionary", OPT_COMPRESSION_DICTIONARY },
+	{ "-level",	 OPT_COMPRESSION_LEVEL },
+	{ NULL, OPT_END }
+    };
+
+	if (Tcl_GetIndexFromObjStruct(interp, objv[1], compressionOpts,
+		sizeof(OptDescriptor), "option", 0, &option) != TCL_OK) {
+	    return TCL_ERROR;
+	}
 
     return TCL_OK;
 }
