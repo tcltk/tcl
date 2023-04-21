@@ -3060,7 +3060,7 @@ TestgetassocdataCmd(
  * TestgetplatformCmd --
  *
  *	This procedure implements the "testgetplatform" command. It is
- *	used to retrievel the value of the tclPlatform global variable.
+ *	used to retrieve the value of the tclPlatform global variable.
  *
  * Results:
  *	A standard Tcl result.
@@ -4872,7 +4872,7 @@ TestsetplatformCmd(
  *	A standard Tcl result.
  *
  * Side effects:
- *	When the packge given by argv[1] is loaded into an interpreter,
+ *	When the package given by argv[1] is loaded into an interpreter,
  *	variable "x" in that interpreter is set to "loaded".
  *
  *----------------------------------------------------------------------
@@ -7913,7 +7913,7 @@ TestNRELevels(
  *
  *	This procedure implements the "testconcatobj" command. It is used
  *	to test that Tcl_ConcatObj does indeed return a fresh Tcl_Obj in all
- *	cases and thet it never corrupts its arguments. In other words, that
+ *	cases and that it never corrupts its arguments. In other words, that
  *	[Bug 1447328] was fixed properly.
  *
  * Results:

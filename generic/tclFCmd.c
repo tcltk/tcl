@@ -1212,7 +1212,7 @@ TclFileLinkCmd(
 	if (contents == NULL) {
 	    /*
 	     * We handle three common error cases specially, and for all other
-	     * errors, we use the standard posix error message.
+	     * errors, we use the standard Posix error message.
 	     */
 
 	    if (errno == EEXIST) {

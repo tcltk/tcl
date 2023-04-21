@@ -433,7 +433,7 @@ TclRegisterLiteral(
     int flags)			/* If LITERAL_ON_HEAP then the caller already
 				 * malloc'd bytes and ownership is passed to
 				 * this function. If LITERAL_CMD_NAME then
-				 * the literal should not be shared accross
+				 * the literal should not be shared across
 				 * namespaces. */
 {
     CompileEnv *envPtr = (CompileEnv *)ePtr;

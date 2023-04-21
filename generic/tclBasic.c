@@ -1031,7 +1031,7 @@ Tcl_CreateInterp(void)
     /*
      * Create the core commands. Do it here, rather than calling
      * Tcl_CreateCommand, because it's faster (there's no need to check for a
-     * pre-existing command by the same name). If a command has a Tcl_CmdProc
+     * preexisting command by the same name). If a command has a Tcl_CmdProc
      * but no Tcl_ObjCmdProc, set the Tcl_ObjCmdProc to
      * TclInvokeStringCommand. This is an object-based wrapper function that
      * extracts strings, calls the string function, and creates an object for
@@ -2210,15 +2210,15 @@ Tcl_HideCommand(
     }
 
     /*
-     * NB: This code is currently 'like' a rename to a specialy set apart name
+     * NB: This code is currently 'like' a rename to a special separate name
      * table. Changes here and in TclRenameCommand must be kept in synch until
      * the common parts are actually factorized out.
      */
 
     /*
      * Remove the hash entry for the command from the interpreter command
-     * table. This is like deleting the command, so bump its command epoch;
-     * this invalidates any cached references that point to the command.
+     * table. This is like deleting the command, so bump its command epoch
+     * to invalidate any cached references that point to the command.
      */
 
     if (cmdPtr->hPtr != NULL) {
@@ -2339,7 +2339,7 @@ Tcl_ExposeCommand(
 
     if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
 	/*
-	 * This case is theoritically impossible, we might rather Tcl_Panic
+	 * This case is theoretically impossible, we might rather Tcl_Panic
 	 * than 'nicely' erroring out ?
 	 */
 
@@ -2445,7 +2445,7 @@ Tcl_ExposeCommand(
  *	In the future, when cmdName is seen as the name of a command by
  *	Tcl_Eval, proc will be called. To support the bytecode interpreter,
  *	the command is created with a wrapper Tcl_ObjCmdProc
- *	(TclInvokeStringCommand) that eventially calls proc. When the command
+ *	(TclInvokeStringCommand) that eventually calls proc. When the command
  *	is deleted from the table, deleteProc will be called. See the manual
  *	entry for details on the calling sequence.
  *
@@ -3932,7 +3932,7 @@ CallCommandTraces(
  *	The value given for the code argument.
  *
  * Side effects:
- *	Transfers a message from the cancelation message to the interpreter.
+ *	Transfers a message from the cancellation message to the interpreter.
  *
  *----------------------------------------------------------------------
  */
@@ -4855,7 +4855,7 @@ TEOV_NotFound(
 
     /*
      * Get the list of words for the unknown handler and allocate enough space
-     * to hold both the handler prefix and all words of the command invokation
+     * to hold both the handler prefix and all words of the command invocation
      * itself.
      */
 
@@ -5123,7 +5123,7 @@ TclEvalScriptTokens(
 				 * TclSubstTokens(), to properly handle
 				 * [...]-nested commands. The 'outerScript'
 				 * refers to the most-outer script containing
-				 * the embedded command, which is refered to
+				 * the embedded command, which is referred to
 				 * by 'script'. The 'clNextOuter' refers to
 				 * the current entry in the table of
 				 * continuation lines in this "main script",
@@ -5697,8 +5697,8 @@ TclArgumentEnter(
 	/*
 	 * Ignore argument words without line information (= dynamic). If they
 	 * are variables they may have location information associated with
-	 * that, either through globally recorded 'set' invokations, or
-	 * literals in bytecode. Eitehr way there is no need to record
+	 * that, either through globally recorded 'set' invocations, or
+	 * literals in bytecode. Either way there is no need to record
 	 * something here.
 	 */
 

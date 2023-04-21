@@ -405,7 +405,7 @@ TclCompileIfCmd(
     while (endFixupPtr) {
 	if (TclFixupForwardJumpToHere(envPtr, endFixupPtr, 127)) {
 	    /*
-	     * Adjust the immediately preceeding "ifFalse" jump. We moved it's
+	     * Adjust the immediately preceding "ifFalse" jump. We moved it's
 	     * target (just after this jump) down three bytes.
 	     */
 
@@ -611,8 +611,8 @@ TclCompileInfoCommandsCmd(
     Tcl_DecrRefCount(objPtr);
 
     /*
-     * Confirmed as a literal that will not frighten the horses. Compile. Note
-     * that the result needs to be list-ified.
+     * Confirmed as a literal that will not frighten the horses. Compile.
+     * The result must be made into a list.
      */
 
     /* TODO: Just push the known value */
