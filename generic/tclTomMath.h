@@ -25,14 +25,13 @@
 #   define MP_ITER       -4  /* maximum iterations reached */
 #   define MP_BUF        -5  /* buffer overflow, supplied buffer too small */
     typedef int mp_order;
-    #define MP_LSB_FIRST -1
-    #define MP_MSB_FIRST  1
+#   define MP_LSB_FIRST -1
+#   define MP_MSB_FIRST  1
     typedef int mp_endian;
-    #define MP_LITTLE_ENDIAN  -1
-    #define MP_NATIVE_ENDIAN  0
-    #define MP_BIG_ENDIAN     1
-    #endif
-    define MP_DEPRECATED_PRAGMA(s) /* nothing */
+#   define MP_LITTLE_ENDIAN  -1
+#   define MP_NATIVE_ENDIAN  0
+#   define MP_BIG_ENDIAN     1
+#   define MP_DEPRECATED_PRAGMA(s) /* nothing */
 #   define MP_WUR            /* nothing */
 #   define mp_iszero(a) ((a)->used == 0)
 #   define mp_isneg(a)  ((a)->sign != 0)
