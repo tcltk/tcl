@@ -551,8 +551,9 @@ TclCheckEmptyString(
 
 int
 Tcl_GetUniChar(
-    Tcl_Obj *objPtr,	/* The object to get the Unicode character from. */
-    Tcl_Size index)	/* Get the index'th Unicode character. */
+    Tcl_Obj *objPtr,		/* The object to get the Unicode charater
+				 * from. */
+    Tcl_Size index)		/* Get the index'th Unicode character. */
 {
     String *stringPtr;
     int ch;
@@ -562,8 +563,8 @@ Tcl_GetUniChar(
     }
 
     /*
-     * For a ByteArray object there is no need to convert to a string to
-     * perform the indexing operation.
+     * Optimize the case where we're really dealing with a ByteArray object
+     * we don't need to convert to a string to perform the indexing operation.
      */
 
     if (TclIsPureByteArray(objPtr)) {
@@ -577,7 +578,7 @@ Tcl_GetUniChar(
     }
 
     /*
-     * Must work with the object as a string.
+     * OK, need to work with the object as a string.
      */
 
     SetStringFromAny(NULL, objPtr);
@@ -623,8 +624,9 @@ Tcl_GetUniChar(
 
 int
 TclGetUniChar(
-    Tcl_Obj *objPtr,	/* The object to get the Unicode character from. */
-    Tcl_Size index)	/* Get the index'th Unicode character. */
+    Tcl_Obj *objPtr,		/* The object to get the Unicode charater
+				 * from. */
+    Tcl_Size index)		/* Get the index'th Unicode character. */
 {
     int ch = 0;
 
@@ -1403,13 +1405,17 @@ Tcl_AppendUnicodeToObj(
  *----------------------------------------------------------------------
  *
  * Tcl_AppendObjToObj --
- *	Appends the value of apppendObjPtr to objPtr, which must not be shared.
+ *
+ *	This function appends the string rep of one object to another.
+ *	"objPtr" cannot be a shared object.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	IMPORTANT: Does not and MUST NOT shimmer appendObjPtr.
+ *	The string rep of appendObjPtr is appended to the string
+ *	representation of objPtr.
+ *	IMPORTANT: This routine does not and MUST NOT shimmer appendObjPtr.
  *	Callers are counting on that.
  *
  *----------------------------------------------------------------------
@@ -1417,35 +1423,34 @@ Tcl_AppendUnicodeToObj(
 
 void
 Tcl_AppendObjToObj(
-    Tcl_Obj *objPtr,		/* Points to the value to append to. */
-    Tcl_Obj *appendObjPtr)	/* The value to append. */
+    Tcl_Obj *objPtr,		/* Points to the object to append to. */
+    Tcl_Obj *appendObjPtr)	/* Object to append. */
 {
     String *stringPtr;
     Tcl_Size length = 0, numChars;
     Tcl_Size appendNumChars = TCL_INDEX_NONE;
     const char *bytes;
 
+    /*
+     * Special case: second object is standard-empty is fast case. We know
+     * that appending nothing to anything leaves that starting anything...
+     */
+
     if (appendObjPtr->bytes == &tclEmptyString) {
 	return;
     }
 
-    if (objPtr->bytes == &tclEmptyString) {
-	TclSetDuplicateObj(objPtr, appendObjPtr);
-	return;
-    }
+    /*
+     * Handle append of one ByteArray object to another as a special case.
+     * Note that we only do this when the objects are pure so that the
+     * bytearray faithfully represent the true value; Otherwise appending the
+     * byte arrays together could lose information;
+     */
 
-    if (
-	TclIsPureByteArray(appendObjPtr)
-	&& (TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)
-    ) {
+    if ((TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)
+	    && TclIsPureByteArray(appendObjPtr)) {
 	/*
-	 * Both bytearray objects are pure.  Therefore they faithfully
-	 * represent the true values, making it safe to append the second
-	 * bytearray to the first.
-	 */
-
-	/*
-	 * One might expect the code here to be
+	 * You might expect the code here to be
 	 *
 	 *  bytes = Tcl_GetByteArrayFromObj(appendObjPtr, &length);
 	 *  TclAppendBytesToByteArray(objPtr, bytes, length);
@@ -3370,7 +3375,7 @@ TclStringCat(
 
 	    objResultPtr = *objv++; objc--;
 
-	    /* Ugly interface! Force resize of the Unicode array. */
+	    /* Ugly interface! Force resize of the unicode array. */
 	    (void)Tcl_GetUnicodeFromObj(objResultPtr, &start);
 	    Tcl_InvalidateStringRep(objResultPtr);
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
@@ -4209,7 +4214,7 @@ TclStringReplace(
 
 static void
 FillUnicodeRep(
-    Tcl_Obj *objPtr)		/* The object in which to fill the Unicode
+    Tcl_Obj *objPtr)		/* The object in which to fill the unicode
 				 * rep. */
 {
     String *stringPtr = GET_STRING(objPtr);
