@@ -390,6 +390,10 @@ TclInitObjSubsystem(void)
 #if (TCL_UTF_MAX < 4) || !defined(TCL_NO_DEPRECATED)
     Tcl_RegisterObjType(&tclStringType);
 #endif
+#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
+    /* Only registered for 8.7, not for 9.0 any more. See [] */
+    Tcl_RegisterObjType(&tclUniCharStringType);
+#endif
     Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclDictType);
     Tcl_RegisterObjType(&tclByteCodeType);
