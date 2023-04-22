@@ -551,9 +551,8 @@ TclCheckEmptyString(
 
 int
 Tcl_GetUniChar(
-    Tcl_Obj *objPtr,		/* The object to get the Unicode charater
-				 * from. */
-    Tcl_Size index)		/* Get the index'th Unicode character. */
+    Tcl_Obj *objPtr,	/* The object to get the Unicode character from. */
+    Tcl_Size index)	/* The index of the Unicode character to retrieve. */
 {
     String *stringPtr;
     int ch;
@@ -563,8 +562,8 @@ Tcl_GetUniChar(
     }
 
     /*
-     * Optimize the case where we're really dealing with a ByteArray object
-     * we don't need to convert to a string to perform the indexing operation.
+     * For a ByteArray object there is no need to convert to a string to
+     * perform the indexing operation.
      */
 
     if (TclIsPureByteArray(objPtr)) {
@@ -578,7 +577,7 @@ Tcl_GetUniChar(
     }
 
     /*
-     * OK, need to work with the object as a string.
+     * Must work with the object as a string.
      */
 
     SetStringFromAny(NULL, objPtr);
@@ -624,9 +623,8 @@ Tcl_GetUniChar(
 
 int
 TclGetUniChar(
-    Tcl_Obj *objPtr,		/* The object to get the Unicode charater
-				 * from. */
-    Tcl_Size index)		/* Get the index'th Unicode character. */
+    Tcl_Obj *objPtr,	/* The object to get the Unicode character from. */
+    Tcl_Size index)	/* The index of the Unicode character to retrieve. */
 {
     int ch = 0;
 
@@ -1405,52 +1403,58 @@ Tcl_AppendUnicodeToObj(
  *----------------------------------------------------------------------
  *
  * Tcl_AppendObjToObj --
- *
- *	This function appends the string rep of one object to another.
- *	"objPtr" cannot be a shared object.
+ *	Appends the value of appendObjPtr to objPtr, which must not be shared.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The string rep of appendObjPtr is appended to the string
- *	representation of objPtr.
- *	IMPORTANT: This routine does not and MUST NOT shimmer appendObjPtr.
- *	Callers are counting on that.
+ *	IMPORTANT: Does not and MUST NOT shimmer appendObjPtr.
  *
  *----------------------------------------------------------------------
  */
 
 void
 Tcl_AppendObjToObj(
-    Tcl_Obj *objPtr,		/* Points to the object to append to. */
-    Tcl_Obj *appendObjPtr)	/* Object to append. */
+    Tcl_Obj *objPtr,		/* Points to the value to append to. */
+    Tcl_Obj *appendObjPtr)	/* The value to append. */
 {
     String *stringPtr;
     Tcl_Size length = 0, numChars;
     Tcl_Size appendNumChars = TCL_INDEX_NONE;
     const char *bytes;
 
-    /*
-     * Special case: second object is standard-empty is fast case. We know
-     * that appending nothing to anything leaves that starting anything...
-     */
-
-    if (appendObjPtr->bytes == &tclEmptyString) {
+    if (appendObjPtr->bytes == &tclEmptyString
+	|| ((
+	    TclIsPureByteArray(appendObjPtr)
+	    && Tcl_GetCharLength(appendObjPtr) == 0)
+	)
+    ) {
 	return;
     }
 
-    /*
-     * Handle append of one ByteArray object to another as a special case.
-     * Note that we only do this when the objects are pure so that the
-     * bytearray faithfully represent the true value; Otherwise appending the
-     * byte arrays together could lose information;
-     */
+    if (objPtr->bytes == &tclEmptyString
+	|| (
+	    TclIsPureByteArray(objPtr)
+	    && Tcl_GetCharLength(objPtr) == 0
+	)
+    ) {
+	TclSetDuplicateObj(objPtr, appendObjPtr);
+	return;
+    }
 
-    if ((TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)
-	    && TclIsPureByteArray(appendObjPtr)) {
+    if (
+	TclIsPureByteArray(appendObjPtr)
+	&& (TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)
+    ) {
 	/*
-	 * You might expect the code here to be
+	 * Both bytearray objects are pure.  Therefore they faithfully
+	 * represent the true values, making it safe to append the second
+	 * bytearray to the first.
+	 */
+
+	/*
+	 * One might expect the code here to be
 	 *
 	 *  bytes = Tcl_GetByteArrayFromObj(appendObjPtr, &length);
 	 *  TclAppendBytesToByteArray(objPtr, bytes, length);
