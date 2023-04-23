@@ -752,17 +752,17 @@ bigtest lappend-bigdata-1 "lappend" {4294967300 4294967300 {1 2 3 4 5 a b c d}} 
 
 #
 # lassign
-bigtestRO lassign-bigdata-1 "lassign" {0 1 2 3 4 5 6 7 8 9 1} -body {
+bigtestRO lassign-bigdata-1 "lassign" {0 1 2 3 4 5 6 7 8 {9 0 1 2 3 4 5 6 7 8} {6 7 8 9 0 1 2 3 4 5}} -body {
     # Unset explicitly before setting to save memory as bigtestRO runs the
     # script below twice.
     unset -nocomplain l2
-    set l2 [lassign $l a b c d e f g h i j]
-    list $a $b $c $d $e $f $g $h $i $j [testlutil equal $l2 [bigList 0x100000000]]
+    set l2 [lassign $l a b c d e f g h i]
+    list $a $b $c $d $e $f $g $h $i [lrange $l2 0 9] [lrange $l2 end-9 end]
 } -setup {
     set l [bigList 0x10000000a]
 } -cleanup {
     bigClean
-} -constraints bug-d90fee06d0
+}
 
 #
 # ledit
