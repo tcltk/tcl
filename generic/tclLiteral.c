@@ -646,7 +646,7 @@ TclAddLiteralObj(
     if (litPtrPtr) {
 	*litPtrPtr = lPtr;
     }
-    
+
     return objIndex;
 }
 
