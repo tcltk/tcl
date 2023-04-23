@@ -710,7 +710,7 @@ Tcl_CloseObjCmd(
 
 	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 	const char *string;
-	size_t len;
+	Tcl_Size len;
 
 	if (Tcl_IsShared(resultPtr)) {
 	    resultPtr = Tcl_DuplicateObj(resultPtr);
@@ -870,7 +870,7 @@ Tcl_ExecObjCmd(
     const char *string;
     Tcl_Channel chan;
     int argc, background, i, index, keepNewline, result, skip, ignoreStderr;
-    size_t length;
+    Tcl_Size length;
     static const char *const options[] = {
 	"-ignorestderr", "-keepnewline", "--", NULL
     };
