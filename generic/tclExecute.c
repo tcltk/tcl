@@ -4945,12 +4945,12 @@ TEBCresume(
 
 	if (TclHasInternalRep(valuePtr,&tclArithSeriesType.objType)) {
 	    objResultPtr = TclArithSeriesObjRange(interp, valuePtr, fromIdx, toIdx);
-	    if (objResultPtr == NULL) {
-		TRACE_ERROR(interp);
-		goto gotError;
-	    }
 	} else {
-	    objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
+	    objResultPtr = TclListObjRange(interp, valuePtr, fromIdx, toIdx);
+	}
+	if (objResultPtr == NULL) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
 	}
 
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
