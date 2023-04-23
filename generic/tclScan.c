@@ -258,7 +258,7 @@ ValidateFormat(
     int *totalSubs)		/* The number of variables that will be
 				 * required. */
 {
-    int gotXpg, gotSequential, value, i, flags;
+    int gotXpg, gotSequential, i, flags;
     char *end;
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
@@ -306,27 +306,31 @@ ValidateFormat(
 	     * format string.
 	     */
 
-	    value = strtoul(format-1, &end, 10);	/* INTL: "C" locale. */
+	    long longVal = strtoul(format-1, &end, 10);	/* INTL: "C" locale. */
 	    if (*end != '$') {
 		goto notXpg;
 	    }
+	    /* assert(longVal >= 0) because of the isdigit() check above */
 	    format = end+1;
 	    format += TclUtfToUniChar(format, &ch);
 	    gotXpg = 1;
 	    if (gotSequential) {
 		goto mixedXPG;
 	    }
-	    objIndex = value - 1;
-	    if ((objIndex < 0) || (numVars && (objIndex >= numVars))) {
+	    objIndex = longVal - 1;
+	    /* INT_MAX because 9.0 does not support more than INT_MAX-1 args */
+	    if ((objIndex < 0) || objIndex >= INT_MAX ||
+		(numVars && (objIndex >= numVars))) {
 		goto badIndex;
-	    } else if (numVars == 0) {
+	    }
+	    else if (numVars == 0) {
 		/*
 		 * In the case where no vars are specified, the user can
 		 * specify %9999$ legally, so we have to consider special
-		 * rules for growing the assign array. 'value' is guaranteed
+		 * rules for growing the assign array. 'longVal' is guaranteed
 		 * to be > 0.
 		 */
-		xpgSize = (xpgSize > value) ? xpgSize : value;
+		xpgSize = (xpgSize > longVal) ? xpgSize : longVal;
 	    }
 	    goto xpgCheckDone;
 	}
@@ -348,7 +352,7 @@ ValidateFormat(
 	 */
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
-	    value = strtoul(format-1, (char **) &format, 10);	/* INTL: "C" locale. */
+	    long longVal = strtoul(format-1, (char **) &format, 10);	/* INTL: "C" locale. */
 	    flags |= SCAN_WIDTH;
 	    format += TclUtfToUniChar(format, &ch);
 	}
@@ -473,7 +477,7 @@ ValidateFormat(
 		 * guaranteed to be at least one larger than objIndex.
 		 */
 
-		value = nspace;
+		int nspaceOrig = nspace;
 		if (xpgSize) {
 		    nspace = xpgSize;
 		} else {
@@ -481,7 +485,7 @@ ValidateFormat(
 		}
 		nassign = (int *)TclStackRealloc(interp, nassign,
 			nspace * sizeof(int));
-		for (i = value; i < nspace; i++) {
+		for (i = nspaceOrig; i < nspace; i++) {
 		    nassign[i] = 0;
 		}
 	    }
@@ -575,7 +579,8 @@ Tcl_ScanObjCmd(
     long value;
     const char *string, *end, *baseString;
     char op = 0;
-    int width, underflow = 0;
+    int underflow = 0;
+    Tcl_Size width;
     Tcl_WideInt wideValue;
     Tcl_UniChar ch = 0, sch = 0;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
@@ -1067,8 +1072,11 @@ Tcl_ScanObjCmd(
     } else {
 	/*
 	 * Here no vars were specified, we want a list returned (inline scan)
+	 * We create an empty Tcl_Obj to fill missing values rather than
+	 * allocating a new Tcl_Obj every time. See test scan-bigdata-XX.
 	 */
-
+	Tcl_Obj *emptyObj = Tcl_NewObj();
+	Tcl_IncrRefCount(emptyObj);
 	TclNewObj(objPtr);
 	for (i = 0; i < totalVars; i++) {
 	    if (objs[i] != NULL) {
@@ -1080,9 +1088,10 @@ Tcl_ScanObjCmd(
 		 * empty strings for these.
 		 */
 
-		Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewObj());
+		Tcl_ListObjAppendElement(NULL, objPtr, emptyObj);
 	    }
 	}
+	Tcl_IncrRefCount(emptyObj);
     }
     if (objs != NULL) {
 	Tcl_Free(objs);
