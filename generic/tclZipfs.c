@@ -5140,7 +5140,7 @@ ZipFSMatchMountPoints(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    size_t l; 
+    size_t l;
     Tcl_Size normLength;
     const char *path = Tcl_GetStringFromObj(normPathPtr, &normLength);
     size_t len = normLength;

@@ -2025,7 +2025,7 @@ Tcl_ListObjLength(
     return TCL_OK;
 }
 
-Tcl_Size 
+Tcl_Size
 ListLength(Tcl_Obj *listPtr)
 {
     ListRep listRep;
