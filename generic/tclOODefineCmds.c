@@ -704,7 +704,7 @@ TclOOUnknownDefinition(
     Namespace *nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
-    size_t soughtLen;
+    Tcl_Size soughtLen;
     const char *soughtStr, *matchedStr = NULL;
 
     if (objc < 2) {
@@ -778,7 +778,7 @@ FindCommand(
     Tcl_Obj *stringObj,
     Tcl_Namespace *const namespacePtr)
 {
-    size_t length;
+    Tcl_Size length;
     const char *nameStr, *string = Tcl_GetStringFromObj(stringObj, &length);
     Namespace *const nsPtr = (Namespace *) namespacePtr;
     FOREACH_HASH_DECLS;
@@ -997,16 +997,16 @@ GenerateErrorInfo(
 				 * an object, class or class-as-object that
 				 * was being configured. */
 {
-    size_t length;
+    Tcl_Size length;
     Tcl_Obj *realNameObj = Tcl_ObjectDeleted((Tcl_Object) oPtr)
 	    ? savedNameObj : TclOOObjectName(interp, oPtr);
     const char *objName = Tcl_GetStringFromObj(realNameObj, &length);
-    unsigned limit = OBJNAME_LENGTH_IN_ERRORINFO_LIMIT;
+    int limit = OBJNAME_LENGTH_IN_ERRORINFO_LIMIT;
     int overflow = (length > limit);
 
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (in definition script for %s \"%.*s%s\" line %d)",
-	    typeOfSubject, (overflow ? limit : (unsigned)length), objName,
+	    typeOfSubject, (overflow ? limit : (int)length), objName,
 	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 
@@ -1534,7 +1534,7 @@ TclOODefineConstructorObjCmd(
     Object *oPtr;
     Class *clsPtr;
     Tcl_Method method;
-    size_t bodyLength;
+    Tcl_Size bodyLength;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arguments body");
@@ -1745,7 +1745,7 @@ TclOODefineDestructorObjCmd(
     Object *oPtr;
     Class *clsPtr;
     Tcl_Method method;
-    size_t bodyLength;
+    Tcl_Size bodyLength;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "body");

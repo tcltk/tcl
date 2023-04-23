@@ -4307,4 +4307,10 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_GetMaster Tcl_GetParent
 #endif
 
+/* TIP #660 for 8.7 */
+#if TCL_MAJOR_VERSION < 9
+#   undef Tcl_GetSizeIntFromObj
+#   define Tcl_GetSizeIntFromObj Tcl_GetIntFromObj
+#endif
+
 #endif /* _TCLDECLS */

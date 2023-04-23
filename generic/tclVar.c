@@ -842,7 +842,7 @@ TclLookupSimpleVar(
     Namespace *varNsPtr, *cxtNsPtr, *dummy1Ptr, *dummy2Ptr;
     ResolverScheme *resPtr;
     int isNew, i, result;
-    size_t varLen;
+    Tcl_Size varLen;
     const char *varName = Tcl_GetStringFromObj(varNamePtr, &varLen);
 
     varPtr = NULL;
@@ -972,7 +972,7 @@ TclLookupSimpleVar(
 	if (localCt > 0) {
 	    Tcl_Obj **objPtrPtr = &varFramePtr->localCachePtr->varName0;
 	    const char *localNameStr;
-	    size_t localLen;
+	    Tcl_Size localLen;
 
 	    for (i=0 ; i<localCt ; i++, objPtrPtr++) {
 		Tcl_Obj *objPtr = *objPtrPtr;

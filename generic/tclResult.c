@@ -354,7 +354,7 @@ Tcl_AppendElement(
     Tcl_Obj *elementPtr = Tcl_NewStringObj(element, -1);
     Tcl_Obj *listPtr = Tcl_NewListObj(1, &elementPtr);
     const char *bytes;
-    size_t length;
+    Tcl_Size length;
 
     if (Tcl_IsShared(iPtr->objResultPtr)) {
 	Tcl_SetObjResult(interp, Tcl_DuplicateObj(iPtr->objResultPtr));
@@ -718,7 +718,7 @@ TclProcessReturn(
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORINFO],
                 &valuePtr);
 	if (valuePtr != NULL) {
-	    size_t length;
+	    Tcl_Size length;
 
 	    (void) Tcl_GetStringFromObj(valuePtr, &length);
 	    if (length) {

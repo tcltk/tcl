@@ -92,7 +92,7 @@ typedef struct TestAsyncHandler {
 #   define Tcl_CreateObjTrace2 Tcl_CreateObjTrace
 #   define TclSizeT int
 #else
-#   define TclSizeT size_t
+#   define TclSizeT ptrdiff_t
 #endif
 
 /*
@@ -345,7 +345,7 @@ static Tcl_ObjCmdProc2	TestFindFirstCmd;
 static Tcl_ObjCmdProc2	TestFindLastCmd;
 static Tcl_ObjCmdProc2	TestHashSystemHashCmd;
 static Tcl_ObjCmdProc2	TestGetIntForIndexCmd;
-static Tcl_ObjCmdProc	TestLutilCmd;
+static Tcl_ObjCmdProc2	TestLutilCmd;
 
 static Tcl_NRPostProc	NREUnwind_callback;
 static Tcl_ObjCmdProc2	TestNREUnwind;
@@ -733,7 +733,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testapplylambda", TestApplyLambdaObjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testlutil", TestLutilCmd,
+    Tcl_CreateObjCommand2(interp, "testlutil", TestLutilCmd,
 	    NULL, NULL);
 
     if (TclObjTest_Init(interp) != TCL_OK) {
@@ -2253,7 +2253,7 @@ TestencodingObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Encoding encoding;
-    size_t length;
+    Tcl_Size length;
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
@@ -4143,7 +4143,7 @@ PrintParse(
     Tcl_Obj *objPtr;
     const char *typeString;
     Tcl_Token *tokenPtr;
-    size_t i;
+    Tcl_Size i;
 
     objPtr = Tcl_GetObjResult(interp);
     if (parsePtr->commentSize + 1 > 1) {
@@ -4157,7 +4157,7 @@ PrintParse(
 	    Tcl_NewStringObj(parsePtr->commandStart, parsePtr->commandSize));
     Tcl_ListObjAppendElement(NULL, objPtr,
 	    Tcl_NewWideIntObj(parsePtr->numWords));
-    for (i = 0; i < (size_t)parsePtr->numTokens; i++) {
+    for (i = 0; i < parsePtr->numTokens; i++) {
 	tokenPtr = &parsePtr->tokenPtr[i];
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_EXPAND_WORD:
@@ -7342,7 +7342,7 @@ SimpleMatchInDirectory(
     origPtr = SimpleRedirect(dirPtr);
     res = Tcl_FSMatchInDirectory(interp, resPtr, origPtr, pattern, types);
     if (res == TCL_OK) {
-	size_t gLength, j;
+	Tcl_Size gLength, j;
 	Tcl_ListObjLength(NULL, resPtr, &gLength);
 	for (j = 0; j < gLength; j++) {
 	    Tcl_Obj *gElt, *nElt;
@@ -7428,7 +7428,7 @@ TestUtfNextCmd(
     TclSizeT objc,
     Tcl_Obj *const objv[])
 {
-    size_t numBytes;
+    Tcl_Size numBytes;
     char *bytes;
     const char *result, *first;
     char buffer[32];
@@ -7441,7 +7441,7 @@ TestUtfNextCmd(
     }
 	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
-    if (numBytes + 4U > sizeof(buffer)) {
+    if (numBytes + 4 > (Tcl_Size) sizeof(buffer)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"testutfnext\" can only handle %" TCL_Z_MODIFIER "u bytes",
 		sizeof(buffer) - 4));
@@ -7907,7 +7907,7 @@ TestconcatobjCmd(
 {
     Tcl_Obj *list1Ptr, *list2Ptr, *emptyPtr, *concatPtr, *tmpPtr;
     int result = TCL_OK;
-    size_t len;
+    Tcl_Size len;
     Tcl_Obj *objv[3];
 
     /*
@@ -8264,7 +8264,7 @@ TestparseargsCmd(
     Tcl_Obj *const objv[])	/* Arguments. */
 {
     static int foo = 0;
-    size_t count = objc;
+    Tcl_Size count = objc;
     Tcl_Obj **remObjv, *result[3];
     Tcl_ArgvInfo argTable[] = {
         {TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},
@@ -8639,7 +8639,7 @@ static int
 TestLutilCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    TclSizeT objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Arguments. */
 {
     Tcl_Size nL1, nL2;

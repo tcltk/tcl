@@ -43,7 +43,7 @@ static Tcl_ObjCmdProc2	TestintobjCmd;
 static Tcl_ObjCmdProc2	TestlistobjCmd;
 static Tcl_ObjCmdProc2	TestobjCmd;
 static Tcl_ObjCmdProc2	TeststringobjCmd;
-static Tcl_ObjCmdProc	TestbigdataCmd;
+static Tcl_ObjCmdProc2	TestbigdataCmd;
 
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
@@ -119,7 +119,7 @@ TclObjTest_Init(
     Tcl_CreateObjCommand2(interp, "testobj", TestobjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "teststringobj", TeststringobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testbigdata", TestbigdataCmd,
+    Tcl_CreateObjCommand2(interp, "testbigdata", TestbigdataCmd,
 	    NULL, NULL);
     return TCL_OK;
 }
@@ -1548,7 +1548,7 @@ static int
 TestbigdataCmd (
     TCL_UNUSED(void *),
     Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
+    Tcl_Size objc,              /* Number of arguments. */
     Tcl_Obj *const objv[]) /* Argument objects. */
 {
     static const char *const subcmds[] = {

@@ -3145,7 +3145,7 @@ NamespaceCodeCmd(
     Namespace *currNsPtr;
     Tcl_Obj *listPtr, *objPtr;
     const char *arg;
-    size_t length;
+    Tcl_Size length;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg");

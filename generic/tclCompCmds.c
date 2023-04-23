@@ -3156,7 +3156,7 @@ TclCompileFormatCmd(
     Tcl_Obj **objv, *formatObj, *tmpObj;
     const char *bytes, *start;
     int i, j;
-    size_t len;
+    Tcl_Size len;
 
     /*
      * Don't handle any guaranteed-error cases.
