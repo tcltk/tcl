@@ -2770,9 +2770,9 @@ Utf32ToUtfProc(
 	int prev = ch;
 #endif
 	if (flags & TCL_ENCODING_LE) {
-	    ch = (src[3] & 0xFF) << 24 | (src[2] & 0xFF) << 16 | (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
+	    ch = (unsigned int)(src[3] & 0xFF) << 24 | (src[2] & 0xFF) << 16 | (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
 	} else {
-	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
+	    ch = (unsigned int)(src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
 #if TCL_UTF_MAX < 4
 	if (HIGH_SURROGATE(prev) && !LOW_SURROGATE(ch)) {

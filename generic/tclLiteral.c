@@ -560,7 +560,8 @@ TclHideLiteral(
 {
     LiteralEntry **nextPtrPtr, *entryPtr, *lPtr;
     LiteralTable *localTablePtr = &envPtr->localLitTable;
-    size_t localHash, length;
+    size_t localHash;
+    Tcl_Size length;
     const char *bytes;
     Tcl_Obj *newObjPtr;
 
@@ -837,7 +838,8 @@ TclReleaseLiteral(
     LiteralTable *globalTablePtr;
     LiteralEntry *entryPtr, *prevPtr;
     const char *bytes;
-    size_t length, index;
+    size_t index;
+    Tcl_Size length;
 
     if (iPtr == NULL) {
 	goto done;
@@ -980,7 +982,8 @@ RebuildLiteralTable(
     LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     const char *bytes;
-    size_t oldSize, count, index, length;
+    size_t oldSize, count, index;
+    Tcl_Size length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;

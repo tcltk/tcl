@@ -707,7 +707,7 @@ Tcl_CloseObjCmd(
 
 	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 	const char *string;
-	size_t len;
+	Tcl_Size len;
 
 	if (Tcl_IsShared(resultPtr)) {
 	    resultPtr = Tcl_DuplicateObj(resultPtr);
