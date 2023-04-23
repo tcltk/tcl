@@ -4273,6 +4273,7 @@ Tcl_WriteObj(
 	}
 	totalWritten += written;
 	srcLen -= chunkSize;
+        src += written;
     } while (srcLen);
     return totalWritten;
 }
