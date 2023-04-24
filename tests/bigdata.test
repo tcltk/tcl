@@ -744,7 +744,7 @@ bigtestRO binary-encode/decode-base64-bigdata-1 "binary encode/decode base64" 1 
     set bin [bigBinary 4294967296]
 } -cleanup {
     bigClean
-} -constraints bug-c719fa8716
+}
 
 #
 # binary encode / decode hex
