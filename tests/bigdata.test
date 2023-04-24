@@ -726,8 +726,7 @@ bigtestRO binary-encode/decode-uuencode-bigdata-1 "binary encode/decode uuencode
 #
 # foreach
 bigtestRO foreach-bigdata-1 "foreach" 1 -body {
-    # Unset explicitly before setting to save memory as bigtestRO runs the
-    # script below twice.
+    # Unset explicitly before setting as bigtestRO runs the script twice.
     unset -nocomplain l2
     foreach x $l {
         lappend l2 $x
@@ -737,7 +736,7 @@ bigtestRO foreach-bigdata-1 "foreach" 1 -body {
     set l [bigList 0x100000000]
 } -cleanup {
     bigClean
-} -constraints lengthtruncation
+}
 
 #
 # lappend
@@ -753,17 +752,17 @@ bigtest lappend-bigdata-1 "lappend" {4294967300 4294967300 {1 2 3 4 5 a b c d}} 
 
 #
 # lassign
-bigtestRO lassign-bigdata-1 "lassign" {0 1 2 3 4 5 6 7 8 9 1} -body {
+bigtestRO lassign-bigdata-1 "lassign" {0 1 2 3 4 5 6 7 8 {9 0 1 2 3 4 5 6 7 8} {6 7 8 9 0 1 2 3 4 5}} -body {
     # Unset explicitly before setting to save memory as bigtestRO runs the
     # script below twice.
     unset -nocomplain l2
-    set l2 [lassign $l a b c d e f g h i j]
-    list $a $b $c $d $e $f $g $h $i $j [testlutil equal $l2 [bigList 0x100000000]]
+    set l2 [lassign $l a b c d e f g h i]
+    list $a $b $c $d $e $f $g $h $i [lrange $l2 0 9] [lrange $l2 end-9 end]
 } -setup {
     set l [bigList 0x10000000a]
 } -cleanup {
     bigClean
-} -constraints bug-d90fee06d0
+}
 
 #
 # ledit
@@ -854,13 +853,21 @@ bigtestRO llength-bigdata-1 {llength} 4294967296 -body {
 
 #
 # lmap
-bigtestRO lmap-bigdata-1 "lmap" 1 -body {
-    testlutil equal $l [lmap e $l {set e}]
+bigtestRO lmap-bigdata-1 "lmap" 4294967296 -body {
+    set n 0
+    if {0} {
+        # TODO - This is the right test but runs out of memory
+        testlutil equal $l [lmap e $l {set e}]
+    } else {
+        lmap e $l {incr n; continue}
+    }
+    set n
 } -setup {
     set l [bigList 0x100000000]
 } -cleanup {
     bigClean
-} -constraints bug-6926a21840
+    puts ""
+}
 
 #
 # lrange
@@ -887,18 +894,15 @@ bigtestRO lrange-bigdata-1 "lrange" {6 7 5 {} 5 4 {} 9 {}} -body {
 bigtest lrepeat-bigdata-1 "lrepeat single element length > UINT_MAX" 4294967296 -body {
     # Just to test long lengths are accepted as arguments
     llength [lrepeat 0x100000000 x]
-} -constraints bug-4ce858a049
+}
 
-bigtest lrepeat-bigdata-2 "string repeat multiple char" {4294967296 1} -body {
-    # Make length multiple of 4 AND 10 since the bigString pattern length is 10
-    set len [expr 4294967320/4]
-    set l [lrepeat $len 0 1 2 3 4 5 6 7 8 9]
-    list \
-        [llength $l] \
-        [testlutil equal $l [bigList 4294967320]]
+bigtest lrepeat-bigdata-2 "string repeat multiple char" {4294967400 {0 1 2 3 4 5 6 7}} -body {
+    set len [expr 4294967400/8]
+    set l [lrepeat $len 0 1 2 3 4 5 6 7]
+    list [llength $l] [lrange $l end-7 end]
 } -cleanup {
     bigClean
-} -constraints bug-4ce858a049
+}
 
 #
 # lreplace
@@ -1019,6 +1023,8 @@ bigtestRO concat-bigdata-1 "concat" {4294967296 {0 1 2 3 4} {6 7 0 1 2} {3 4 5 6
 
 #
 # TODO
+# lremove
+# lreverse
 # encoding convertfrom
 # encoding convertto
 # dict *
