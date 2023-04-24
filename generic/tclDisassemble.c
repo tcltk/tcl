@@ -28,7 +28,7 @@ static int		FormatInstruction(ByteCode *codePtr,
 static void		GetLocationInformation(Proc *procPtr,
 			    Tcl_Obj **fileObjPtr, int *linePtr);
 static void		PrintSourceToObj(Tcl_Obj *appendObj,
-			    const char *stringPtr, size_t maxChars);
+			    const char *stringPtr, Tcl_Size maxChars);
 static void		UpdateStringOfInstName(Tcl_Obj *objPtr);
 
 /*
@@ -194,10 +194,10 @@ TclPrintObject(
     FILE *outFile,		/* The file to print the source to. */
     Tcl_Obj *objPtr,		/* Points to the Tcl object whose string
 				 * representation should be printed. */
-    size_t maxChars)		/* Maximum number of chars to print. */
+    Tcl_Size maxChars)		/* Maximum number of chars to print. */
 {
     char *bytes;
-    size_t length;
+    Tcl_Size length;
 
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     TclPrintSource(outFile, bytes, TclMin(length, maxChars));
@@ -225,7 +225,7 @@ void
 TclPrintSource(
     FILE *outFile,		/* The file to print the source to. */
     const char *stringPtr,	/* The string to print. */
-    size_t maxChars)		/* Maximum number of chars to print. */
+    Tcl_Size maxChars)		/* Maximum number of chars to print. */
 {
     Tcl_Obj *bufferObj;
 
@@ -280,7 +280,7 @@ DisassembleByteCodeObj(
     Tcl_AppendPrintfToObj(bufferObj,
 	    "ByteCode %p, refCt %" TCL_Z_MODIFIER "u, epoch %" TCL_Z_MODIFIER "u, interp %p (epoch %" TCL_Z_MODIFIER "u)\n",
 	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr, iPtr->compileEpoch);
-    Tcl_AppendToObj(bufferObj, "  Source ", TCL_INDEX_NONE);
+    Tcl_AppendToObj(bufferObj, "  Source ", -1);
     PrintSourceToObj(bufferObj, codePtr->source,
 	    TclMin(codePtr->numSrcBytes, 55));
     GetLocationInformation(codePtr->procPtr, &fileObj, &line);
@@ -339,7 +339,7 @@ DisassembleByteCodeObj(
 			(localPtr->flags & VAR_TEMPORARY) ? ", temp" : "",
 			(localPtr->flags & VAR_RESOLVED) ? ", resolved" : "");
 		if (TclIsVarTemporary(localPtr)) {
-		    Tcl_AppendToObj(bufferObj, "\n", TCL_INDEX_NONE);
+		    Tcl_AppendToObj(bufferObj, "\n", -1);
 		} else {
 		    Tcl_AppendPrintfToObj(bufferObj, ", \"%s\"\n",
 			    localPtr->name);
@@ -389,7 +389,7 @@ DisassembleByteCodeObj(
     if (numCmds == 0) {
 	pc = codeStart;
 	while (pc < codeLimit) {
-	    Tcl_AppendToObj(bufferObj, "    ", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(bufferObj, "    ", -1);
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}
 	return bufferObj;
@@ -451,7 +451,7 @@ DisassembleByteCodeObj(
 		srcOffset, (srcOffset + srcLen - 1));
     }
     if (numCmds > 0) {
-	Tcl_AppendToObj(bufferObj, "\n", TCL_INDEX_NONE);
+	Tcl_AppendToObj(bufferObj, "\n", -1);
     }
 
     /*
@@ -500,14 +500,14 @@ DisassembleByteCodeObj(
 	 */
 
 	while ((pc-codeStart) < codeOffset) {
-	    Tcl_AppendToObj(bufferObj, "    ", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(bufferObj, "    ", -1);
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}
 
 	Tcl_AppendPrintfToObj(bufferObj, "  Command %d: ", i+1);
 	PrintSourceToObj(bufferObj, (codePtr->source + srcOffset),
 		TclMin(srcLen, 55));
-	Tcl_AppendToObj(bufferObj, "\n", TCL_INDEX_NONE);
+	Tcl_AppendToObj(bufferObj, "\n", -1);
     }
     if (pc < codeLimit) {
 	/*
@@ -515,7 +515,7 @@ DisassembleByteCodeObj(
 	 */
 
 	while (pc < codeLimit) {
-	    Tcl_AppendToObj(bufferObj, "    ", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(bufferObj, "    ", -1);
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}
     }
@@ -652,9 +652,9 @@ FormatInstruction(
     }
     if (suffixObj) {
 	const char *bytes;
-	size_t length;
+	Tcl_Size length;
 
-	Tcl_AppendToObj(bufferObj, "\t# ", TCL_INDEX_NONE);
+	Tcl_AppendToObj(bufferObj, "\t# ", -1);
 	bytes = Tcl_GetStringFromObj(codePtr->objArrayPtr[opnd], &length);
 	PrintSourceToObj(bufferObj, bytes, TclMin(length, 40));
     } else if (suffixBuffer[0]) {
@@ -663,12 +663,12 @@ FormatInstruction(
 	    PrintSourceToObj(bufferObj, suffixSrc, 40);
 	}
     }
-    Tcl_AppendToObj(bufferObj, "\n", TCL_INDEX_NONE);
+    Tcl_AppendToObj(bufferObj, "\n", -1);
     if (auxPtr && auxPtr->type->printProc) {
-	Tcl_AppendToObj(bufferObj, "\t\t[", TCL_INDEX_NONE);
+	Tcl_AppendToObj(bufferObj, "\t\t[", -1);
 	auxPtr->type->printProc(auxPtr->clientData, bufferObj, codePtr,
 		pcOffset);
-	Tcl_AppendToObj(bufferObj, "]\n", TCL_INDEX_NONE);
+	Tcl_AppendToObj(bufferObj, "]\n", -1);
     }
     return numBytes;
 }
@@ -690,7 +690,7 @@ TclGetInnerContext(
     const unsigned char *pc,
     Tcl_Obj **tosPtr)
 {
-    size_t objc = 0;
+    Tcl_Size objc = 0;
     Tcl_Obj *result;
     Interp *iPtr = (Interp *) interp;
 
@@ -759,7 +759,7 @@ TclGetInnerContext(
         iPtr->innerContext = result = Tcl_NewListObj(objc + 1, NULL);
         Tcl_IncrRefCount(result);
     } else {
-        size_t len;
+        Tcl_Size len;
 
         /*
          * Reset while keeping the list internalrep as much as possible.
@@ -860,17 +860,17 @@ static void
 PrintSourceToObj(
     Tcl_Obj *appendObj,		/* The object to print the source to. */
     const char *stringPtr,	/* The string to print. */
-    size_t maxChars)		/* Maximum number of chars to print. */
+    Tcl_Size maxChars)		/* Maximum number of chars to print. */
 {
     const char *p;
-    size_t i = 0, len;
+    Tcl_Size i = 0, len;
 
     if (stringPtr == NULL) {
-	Tcl_AppendToObj(appendObj, "\"\"", TCL_INDEX_NONE);
+	Tcl_AppendToObj(appendObj, "\"\"", -1);
 	return;
     }
 
-    Tcl_AppendToObj(appendObj, "\"", TCL_INDEX_NONE);
+    Tcl_AppendToObj(appendObj, "\"", -1);
     p = stringPtr;
     for (;  (*p != '\0') && (i < maxChars);  p+=len) {
 	int ucs4;
@@ -878,27 +878,27 @@ PrintSourceToObj(
 	len = TclUtfToUCS4(p, &ucs4);
 	switch (ucs4) {
 	case '"':
-	    Tcl_AppendToObj(appendObj, "\\\"", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(appendObj, "\\\"", -1);
 	    i += 2;
 	    continue;
 	case '\f':
-	    Tcl_AppendToObj(appendObj, "\\f", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(appendObj, "\\f", -1);
 	    i += 2;
 	    continue;
 	case '\n':
-	    Tcl_AppendToObj(appendObj, "\\n", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(appendObj, "\\n", -1);
 	    i += 2;
 	    continue;
 	case '\r':
-	    Tcl_AppendToObj(appendObj, "\\r", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(appendObj, "\\r", -1);
 	    i += 2;
 	    continue;
 	case '\t':
-	    Tcl_AppendToObj(appendObj, "\\t", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(appendObj, "\\t", -1);
 	    i += 2;
 	    continue;
 	case '\v':
-	    Tcl_AppendToObj(appendObj, "\\v", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(appendObj, "\\v", -1);
 	    i += 2;
 	    continue;
 	default:
@@ -916,9 +916,9 @@ PrintSourceToObj(
 	}
     }
     if (*p != '\0') {
-	Tcl_AppendToObj(appendObj, "...", TCL_INDEX_NONE);
+	Tcl_AppendToObj(appendObj, "...", -1);
     }
-    Tcl_AppendToObj(appendObj, "\"", TCL_INDEX_NONE);
+    Tcl_AppendToObj(appendObj, "\"", -1);
 }
 
 /*
@@ -972,33 +972,33 @@ DisassembleByteCodeAsDicts(
 	    TclNewObj(descriptor[0]);
 	    if (!(localPtr->flags & (VAR_ARRAY|VAR_LINK))) {
 		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("scalar", TCL_INDEX_NONE));
+			Tcl_NewStringObj("scalar", -1));
 	    }
 	    if (localPtr->flags & VAR_ARRAY) {
 		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("array", TCL_INDEX_NONE));
+			Tcl_NewStringObj("array", -1));
 	    }
 	    if (localPtr->flags & VAR_LINK) {
 		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("link", TCL_INDEX_NONE));
+			Tcl_NewStringObj("link", -1));
 	    }
 	    if (localPtr->flags & VAR_ARGUMENT) {
 		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("arg", TCL_INDEX_NONE));
+			Tcl_NewStringObj("arg", -1));
 	    }
 	    if (localPtr->flags & VAR_TEMPORARY) {
 		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("temp", TCL_INDEX_NONE));
+			Tcl_NewStringObj("temp", -1));
 	    }
 	    if (localPtr->flags & VAR_RESOLVED) {
 		Tcl_ListObjAppendElement(NULL, descriptor[0],
-			Tcl_NewStringObj("resolved", TCL_INDEX_NONE));
+			Tcl_NewStringObj("resolved", -1));
 	    }
 	    if (localPtr->flags & VAR_TEMPORARY) {
 		Tcl_ListObjAppendElement(NULL, variables,
 			Tcl_NewListObj(1, descriptor));
 	    } else {
-		descriptor[1] = Tcl_NewStringObj(localPtr->name, TCL_INDEX_NONE);
+		descriptor[1] = Tcl_NewStringObj(localPtr->name, -1);
 		Tcl_ListObjAppendElement(NULL, variables,
 			Tcl_NewListObj(2, descriptor));
 	    }
@@ -1016,7 +1016,7 @@ DisassembleByteCodeAsDicts(
 
 	TclNewObj(inst);
 	Tcl_ListObjAppendElement(NULL, inst, Tcl_NewStringObj(
-		instDesc->name, TCL_INDEX_NONE));
+		instDesc->name, -1));
 	opnd = pc + 1;
 	for (i=0 ; i<instDesc->numOperands ; i++) {
 	    switch (instDesc->opTypes[i]) {
@@ -1082,7 +1082,7 @@ DisassembleByteCodeAsDicts(
 			    ".%d", val));
 		} else if (val == -2) {
 		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewStringObj(
-			    ".end", TCL_INDEX_NONE));
+			    ".end", -1));
 		} else {
 		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
 			    ".end-%d", -2-val));
@@ -1118,15 +1118,14 @@ DisassembleByteCodeAsDicts(
 	AuxData *auxData = BA_AuxData_First(codePtr->auxData, &ptr);
 
 	while (auxData) {
-	    Tcl_Obj *auxDesc =
-		    Tcl_NewStringObj(auxData->type->name, TCL_INDEX_NONE);
+	    Tcl_Obj *auxDesc = Tcl_NewStringObj(auxData->type->name, -1);
 
 	    if (auxData->type->disassembleProc) {
 		Tcl_Obj *desc;
 
 		TclNewObj(desc);
 		Tcl_DictObjPut(NULL, desc,
-			Tcl_NewStringObj("name", TCL_INDEX_NONE), auxDesc);
+			Tcl_NewStringObj("name", -1), auxDesc);
 		auxDesc = desc;
 		auxData->type->disassembleProc(auxData->clientData, auxDesc,
 			codePtr, 0);
@@ -1195,9 +1194,9 @@ DisassembleByteCodeAsDicts(
 	sourceOffset += Decode(srcOffPtr);
 	sourceLength = Decode(srcLenPtr);
 	TclNewObj(cmd);
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("codefrom", TCL_INDEX_NONE),
+	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("codefrom", -1),
 		Tcl_NewWideIntObj(codeOffset));
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("codeto", TCL_INDEX_NONE),
+	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("codeto", -1),
 		Tcl_NewWideIntObj(codeOffset + codeLength - 1));
 
 	/*
@@ -1205,13 +1204,13 @@ DisassembleByteCodeAsDicts(
 	 * characters are present in the source!
 	 */
 
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptfrom", TCL_INDEX_NONE),
+	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptfrom", -1),
 		Tcl_NewWideIntObj(Tcl_NumUtfChars(codePtr->source,
 			sourceOffset)));
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptto", TCL_INDEX_NONE),
+	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptto", -1),
 		Tcl_NewWideIntObj(Tcl_NumUtfChars(codePtr->source,
 			sourceOffset + sourceLength - 1)));
-	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("script", TCL_INDEX_NONE),
+	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("script", -1),
 		Tcl_NewStringObj(codePtr->source+sourceOffset, sourceLength));
 	Tcl_ListObjAppendElement(NULL, commands, cmd);
     }
@@ -1230,32 +1229,32 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(description);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("literals", TCL_INDEX_NONE),
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("literals", -1),
 	    literals);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("variables", TCL_INDEX_NONE),
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("variables", -1),
 	    variables);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exception", TCL_INDEX_NONE), exn);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("instructions", TCL_INDEX_NONE),
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exception", -1), exn);
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("instructions", -1),
 	    instructions);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("auxiliary", TCL_INDEX_NONE), aux);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("commands", TCL_INDEX_NONE),
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("auxiliary", -1), aux);
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("commands", -1),
 	    commands);
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("script", TCL_INDEX_NONE),
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("script", -1),
 	    Tcl_NewStringObj(codePtr->source, codePtr->numSrcBytes));
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("namespace", TCL_INDEX_NONE),
-	    Tcl_NewStringObj(codePtr->nsPtr->fullName, TCL_INDEX_NONE));
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("stackdepth", TCL_INDEX_NONE),
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("namespace", -1),
+	    Tcl_NewStringObj(codePtr->nsPtr->fullName, -1));
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("stackdepth", -1),
 	    Tcl_NewWideIntObj(codePtr->maxStackDepth));
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exceptdepth", TCL_INDEX_NONE),
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exceptdepth", -1),
 	    Tcl_NewWideIntObj(codePtr->maxExceptDepth));
     if (line >= 0) {
 	Tcl_DictObjPut(NULL, description,
-		Tcl_NewStringObj("initiallinenumber", TCL_INDEX_NONE),
+		Tcl_NewStringObj("initiallinenumber", -1),
 		Tcl_NewWideIntObj(line));
     }
     if (file) {
 	Tcl_DictObjPut(NULL, description,
-		Tcl_NewStringObj("sourcefile", TCL_INDEX_NONE), file);
+		Tcl_NewStringObj("sourcefile", -1), file);
     }
     return description;
 }
@@ -1417,7 +1416,7 @@ Tcl_DisassembleObjCmd(
 	procPtr = TclOOGetProcFromMethod(methodPtr);
 	if (procPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "body not available for this kind of constructor", TCL_INDEX_NONE));
+		    "body not available for this kind of constructor", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "METHODTYPE", NULL);
 	    return TCL_ERROR;
@@ -1482,7 +1481,7 @@ Tcl_DisassembleObjCmd(
 	procPtr = TclOOGetProcFromMethod(methodPtr);
 	if (procPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "body not available for this kind of destructor", TCL_INDEX_NONE));
+		    "body not available for this kind of destructor", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "METHODTYPE", NULL);
 	    return TCL_ERROR;
@@ -1572,7 +1571,7 @@ Tcl_DisassembleObjCmd(
 	procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
 	if (procPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "body not available for this kind of method", TCL_INDEX_NONE));
+		    "body not available for this kind of method", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "METHODTYPE", NULL);
 	    return TCL_ERROR;
@@ -1609,7 +1608,7 @@ Tcl_DisassembleObjCmd(
 
     if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not disassemble prebuilt bytecode", TCL_INDEX_NONE));
+		"may not disassemble prebuilt bytecode", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		"BYTECODE", NULL);
 	return TCL_ERROR;

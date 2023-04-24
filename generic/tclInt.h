@@ -109,7 +109,7 @@
  * Maximum *signed* value that can be stored in a Tcl_Size type. This is
  * primarily used for checking overflows in dynamically allocating memory.
  */
-#define TCL_SIZE_SMAX ((((Tcl_Size) 1) << ((8*sizeof(Tcl_Size)) - 1)) - 1)
+#define TCL_SIZE_SMAX ((((Tcl_Size) 1) << ((8*(Tcl_Size)sizeof(Tcl_Size)) - 1)) - 1)
 
 /*
  * Macros used to cast between pointers and integers (e.g. when storing an int
@@ -1097,7 +1097,7 @@ typedef struct ActiveInterpTrace {
 typedef struct {  /* For internal core use only */
     Tcl_ObjType objType;
     struct {
-	size_t (*lengthProc)(Tcl_Obj *obj);
+	Tcl_Size (*lengthProc)(Tcl_Obj *obj);
     } abstractList;
 } TclObjTypeWithAbstractList;
 #define TCL_OBJTYPE_V0_1(lengthProc) (sizeof(TclObjTypeWithAbstractList)) \
@@ -1106,7 +1106,7 @@ typedef struct {  /* For internal core use only */
 	&& ((objPtr)->typePtr->version > offsetof(TclObjTypeWithAbstractList, abstractList.proc))) ? \
 	((const TclObjTypeWithAbstractList *)(objPtr)->typePtr)->abstractList.proc : NULL)
 
-MODULE_SCOPE size_t TclLengthOne(Tcl_Obj *);
+MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
 
 /*
  * The structure below defines an entry in the assocData hash table which is
@@ -1250,7 +1250,7 @@ typedef struct CmdFrame {
     int type;			/* Values see below. */
     int level;			/* Number of frames in stack, prevent O(n)
 				 * scan of list. */
-    int *line;			/* Lines the words of the command start on. */
+    Tcl_Size *line;		/* Lines the words of the command start on. */
     Tcl_Size nline;
     CallFrame *framePtr;	/* Procedure activation record, may be
 				 * NULL. */
@@ -2503,11 +2503,10 @@ typedef struct ListStore {
 
 /* Max number of elements that can be contained in a list */
 #define LIST_MAX                                               \
-    ((ListSizeT_MAX - offsetof(ListStore, slots)) \
-		   / sizeof(Tcl_Obj *))
+    ((Tcl_Size)((ListSizeT_MAX - offsetof(ListStore, slots)) / sizeof(Tcl_Obj *)))
 /* Memory size needed for a ListStore to hold numSlots_ elements */
 #define LIST_SIZE(numSlots_) \
-	(offsetof(ListStore, slots) + ((numSlots_) * sizeof(Tcl_Obj *)))
+	((Tcl_Size)(offsetof(ListStore, slots) + ((numSlots_) * sizeof(Tcl_Obj *))))
 
 /*
  * ListSpan --
@@ -2516,7 +2515,7 @@ typedef struct ListStore {
 typedef struct ListSpan {
     Tcl_Size spanStart;    /* Starting index of the span */
     Tcl_Size spanLength;   /* Number of elements in the span */
-    size_t refCount;     /* Count of references to this span record */
+    Tcl_Size refCount;     /* Count of references to this span record */
 } ListSpan;
 #ifndef LIST_SPAN_THRESHOLD /* May be set on build line */
 #define LIST_SPAN_THRESHOLD 101
@@ -2702,7 +2701,7 @@ typedef struct ListRep {
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
     ((((objPtr)->typePtr == &tclIntType.objType) && ((objPtr)->internalRep.wideValue >= 0) \
-	    && ((Tcl_WideUInt)(objPtr)->internalRep.wideValue <= (Tcl_WideUInt)(endValue + 1))) \
+	    && ((objPtr)->internalRep.wideValue <= endValue)) \
 	    ? ((*(idxPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
@@ -3199,8 +3198,8 @@ MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    Tcl_Size numBytes, int flags, Tcl_Size line,
 			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE int	TclEvalScriptTokens(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, size_t length, int flags,
-			    size_t line, int* clNextOuter,
+			    Tcl_Token *tokenPtr, Tcl_Size length, int flags,
+			    Tcl_Size line, int* clNextOuter,
 			    const char* outerScript);
 MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileCopyCmd;
@@ -3326,7 +3325,7 @@ MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Size indexCount, Tcl_Obj *const indexArray[]);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, Tcl_Size line, int n,
-			    int *lines, Tcl_Obj *const *elems);
+			    Tcl_Size *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
 			    Tcl_Obj *toObj, Tcl_Size elemCount,
@@ -3341,7 +3340,7 @@ MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
 MODULE_SCOPE int TclMakeSafe(Tcl_Interp *interp);
-MODULE_SCOPE Tcl_Size TclMaxListLength(const char *bytes, Tcl_Size numBytes,
+MODULE_SCOPE Tcl_Size	TclMaxListLength(const char *bytes, Tcl_Size numBytes,
 			    const char **endPtr);
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
@@ -3371,17 +3370,18 @@ MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 			    Tcl_Size numBytes, Tcl_Parse *parsePtr);
 
 MODULE_SCOPE int	TclParseQuotedString(Tcl_Interp *interp,
-			    const char *start, size_t numBytes,
+			    const char *start, Tcl_Size numBytes,
 			    Tcl_Parse *parsePtr, int flags,
 			    const char **termPtr);
 MODULE_SCOPE Tcl_Token *TclParseScript(Tcl_Interp *interp, const char *script,
-			    size_t numBytes, int flags,
+			    Tcl_Size numBytes, int flags,
 			    Tcl_Token **lastTokenPtrPtr, const char **termPtr);
-MODULE_SCOPE int	TclParseScriptSubst(const char *src, size_t numBytes,
+MODULE_SCOPE int	TclParseScriptSubst(const char *src, Tcl_Size numBytes,
 			    Tcl_Parse *parsePtr, int flags);
 MODULE_SCOPE int	TclParseVarName(Tcl_Interp *interp, const char *start,
-			    size_t numBytes, Tcl_Parse *parsePtr, int flags);
-MODULE_SCOPE size_t	TclParseAllWhiteSpace(const char *src, Tcl_Size numBytes);
+			    Tcl_Size numBytes, Tcl_Parse *parsePtr, int flags);
+MODULE_SCOPE Tcl_Size	TclParseAllWhiteSpace(const char *src,
+			    Tcl_Size numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
@@ -3415,10 +3415,10 @@ MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 			    const char **errorMsgPtr);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, void *clientData,
-			    Tcl_Size stackSize, int flags);
-MODULE_SCOPE Tcl_Size TclpFindVariable(const char *name, Tcl_Size *lengthPtr);
+			    size_t stackSize, int flags);
+MODULE_SCOPE Tcl_Size	TclpFindVariable(const char *name, Tcl_Size *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
-			    Tcl_Size *lengthPtr, Tcl_Encoding *encodingPtr);
+			    TCL_HASH_TYPE *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
 MODULE_SCOPE void *TclpInitNotifier(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
@@ -3466,7 +3466,7 @@ MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
 			    Tcl_Size reStrLen, Tcl_DString *dsPtr, int *flagsPtr,
 			    int *quantifiersFoundPtr);
-MODULE_SCOPE Tcl_Size TclScanElement(const char *string, Tcl_Size length,
+MODULE_SCOPE Tcl_Size	TclScanElement(const char *string, Tcl_Size length,
 			    char *flagPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
@@ -3519,7 +3519,7 @@ MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    const char *nameStr);
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
-MODULE_SCOPE Tcl_Size	TclUtfCount(int ch);
+MODULE_SCOPE int	TclUtfCount(int ch);
 #if TCL_UTF_MAX > 3
 #   define TclUtfToUCS4 Tcl_UtfToUniChar
 #   define TclUniCharToUCS4(src, ptr) (*ptr = *(src),1)
@@ -4275,13 +4275,45 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
  */
 
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Tcl_Size before, Tcl_Size after, int *indexPtr);
+			    int before, int after, int *indexPtr);
 MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
+MODULE_SCOPE int	TclIndexInvalidError(Tcl_Interp *interp,
+			    const char *idxType, Tcl_Size idx);
 #endif /* TCL_MAJOR_VERSION > 8 */
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           ((Tcl_Size)-2)
 #define TCL_INDEX_START         ((Tcl_Size)0)
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclGetSizeIntFromObj --
+ *
+ *    Extract a Tcl_Size from a Tcl_Obj
+ *
+ * Results:
+ *    TCL_OK / TCL_ERROR
+ *
+ * Side effects:
+ *    On success, the integer value is stored in *sizePtr. On error,
+ *    an error message in interp it it is not NULL.
+ *
+ *------------------------------------------------------------------------
+ */
+static inline int TclGetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *sizePtr) {
+#if TCL_SIZE_MAX == INT_MAX
+    return TclGetIntFromObj(interp, objPtr, sizePtr);
+#else
+    Tcl_WideInt wide;
+    if (TclGetWideIntFromObj(interp, objPtr, &wide) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    *sizePtr = (Tcl_Size)wide;
+    return TCL_OK;
+#endif
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -4704,11 +4736,12 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 #define TCL_MIN_TOKEN_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Token)
 #endif
 
+/* TODO - code below does not check for integer overflow */
 #define TclGrowTokenArray(tokenPtr, used, available, append, staticPtr)	\
     do {								\
-	size_t _needed = (used) + (append);					\
+	Tcl_Size _needed = (used) + (append);				\
 	if (_needed > (available)) {					\
-	    size_t allocated = 2 * _needed;					\
+	    Tcl_Size allocated = 2 * _needed;				\
 	    Tcl_Token *oldPtr = (tokenPtr);				\
 	    Tcl_Token *newPtr;						\
 	    if (oldPtr == (staticPtr)) {				\
@@ -4766,16 +4799,17 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  * of counting along a string of all one-byte characters.  The ANSI C
  * "prototype" for this macro is:
  *
- * MODULE_SCOPE void	TclNumUtfCharsM(int numChars, const char *bytes,
- *				int numBytes);
+ * MODULE_SCOPE void	TclNumUtfCharsM(Tcl_Size numChars, const char *bytes,
+ *				Tcl_Size numBytes);
+ * numBytes must be >= 0
  *----------------------------------------------------------------
  */
 
 #define TclNumUtfCharsM(numChars, bytes, numBytes) \
     do { \
-	size_t _count, _i = (numBytes); \
+	Tcl_Size _count = 0, _i = (numBytes); \
 	unsigned char *_str = (unsigned char *) (bytes); \
-	while (_i && (*_str < 0xC0)) { _i--; _str++; } \
+	while (_i > 0 && (*_str < 0xC0)) { _i--; _str++; } \
 	_count = (numBytes) - _i; \
 	if (_i) { \
 	    _count += Tcl_NumUtfChars((bytes) + _count, _i); \
@@ -4955,27 +4989,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
     } while (0)
 
 #define TclNewIndexObj(objPtr, uw) \
-    do {						\
-	TclIncrObjsAllocated();				\
-	TclAllocObjStorage(objPtr);			\
-	(objPtr)->refCount = 0;				\
-	(objPtr)->bytes = NULL;				\
-	Tcl_WideUInt uw_ = (uw);		\
-	if (uw_ >= TCL_INDEX_NONE) {			\
-	    (objPtr)->internalRep.wideValue = -1; \
-	    (objPtr)->typePtr = &tclIntType.objType;		\
-	} else if (uw_ > WIDE_MAX) {			\
-	    mp_int bignumValue_;		\
-	    if (mp_init_u64(&bignumValue_, uw_) != MP_OKAY) {	\
-		Tcl_Panic("%s: memory overflow", "TclNewUIntObj");	\
-	    }	\
-	    TclSetBignumInternalRep((objPtr), &bignumValue_);	\
-	} else {	\
-	    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(uw_); \
-	    (objPtr)->typePtr = &tclIntType.objType;		\
-	}	\
-	TCL_DTRACE_OBJ_CREATE(objPtr);			\
-    } while (0)
+    TclNewIntObj(objPtr, uw)
 
 #define TclNewDoubleObj(objPtr, d) \
     do {							\

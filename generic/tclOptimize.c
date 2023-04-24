@@ -55,7 +55,7 @@ LocateTargetAddresses(
 {
     unsigned char *currentInstPtr, *targetInstPtr;
     int isNew;
-    size_t i;
+    Tcl_Size i;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
 

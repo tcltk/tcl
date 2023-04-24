@@ -484,7 +484,7 @@ TclParseNumber(
 				 * ("integer", "boolean value", etc.). */
     const char *bytes,		/* Pointer to the start of the string to
 				 * scan. */
-    size_t numBytes,		/* Maximum number of bytes to scan, see
+    Tcl_Size numBytes,		/* Maximum number of bytes to scan, see
 				 * above. */
     const char **endPtrPtr,	/* Place to store pointer to the character
 				 * that terminated the scan. */
@@ -529,10 +529,10 @@ TclParseNumber(
 				 * number. */
     long exponent = 0;		/* Exponent of a floating point number. */
     const char *p;		/* Pointer to next character to scan. */
-    size_t len;			/* Number of characters remaining after p. */
+    Tcl_Size len;		/* Number of characters remaining after p. */
     const char *acceptPoint;	/* Pointer to position after last character in
 				 * an acceptable number. */
-    size_t acceptLen;		/* Number of characters following that
+    Tcl_Size acceptLen;		/* Number of characters following that
 				 * point. */
     int status = TCL_OK;	/* Status to return to caller. */
     char d = 0;			/* Last hexadecimal digit scanned; initialized
@@ -556,7 +556,7 @@ TclParseNumber(
 		return TCL_ERROR;
 	    }
 	    if (TclHasInternalRep(objPtr, &tclListType.objType)) {
-		size_t length;
+		Tcl_Size length;
 		/* A list can only be a (single) number if its length == 1 */
 		TclListObjLengthM(NULL, objPtr, &length);
 		if (length != 1) {
@@ -1523,7 +1523,7 @@ TclParseNumber(
 		    expected);
 
 	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
-	    Tcl_AppendToObj(msg, "\"", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(msg, "\"", -1);
 	    Tcl_SetObjResult(interp, msg);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 	}
@@ -4795,7 +4795,7 @@ Tcl_InitBignumFromDouble(
 	if (interp != NULL) {
 	    const char *s = "integer value too large to represent";
 
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_INDEX_NONE));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}
 	return TCL_ERROR;

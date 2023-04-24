@@ -167,8 +167,8 @@ typedef struct ExceptionAux {
 
 typedef struct {
     Tcl_Size srcOffset;		/* Command location to find the entry. */
-    Tcl_Size nline;			/* Number of words in the command */
-    int *line;			/* Line information for all words in the
+    Tcl_Size nline;		/* Number of words in the command */
+    Tcl_Size *line;		/* Line information for all words in the
 				 * command. */
     int **next;			/* Transient information used by the compiler
 				 * for tracking of hidden continuation
@@ -1045,23 +1045,23 @@ MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void *	TclCmdStartAddress(CompileEnv *envPtr, int i);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, size_t count,
+			    Tcl_Token *tokenPtr, Tcl_Size count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
 			    Tcl_Size numBytes, CompileEnv *envPtr, int optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, size_t numWords,
+			    Tcl_Token *tokenPtr, Tcl_Size numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE Tcl_Token *TclCompileInvocation(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, size_t numWords,
-			    CompileEnv *envPtr);
+			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj,
+			    Tcl_Size numWords, CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
-			    const char *script, size_t numBytes,
+			    const char *script, Tcl_Size numBytes,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, size_t count,
+			    Tcl_Token *tokenPtr, Tcl_Size count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
@@ -1071,11 +1071,12 @@ MODULE_SCOPE Tcl_Size	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, size_t size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
-			    size_t length);
+			    Tcl_Size length);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
 MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
-MODULE_SCOPE void	TclDisposeFailedCompile(CompileEnv *envPtr, size_t num);
+MODULE_SCOPE void	TclDisposeFailedCompile(CompileEnv *envPtr,
+			    Tcl_Size num);
 MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
 			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
 MODULE_SCOPE void	TclEmitInvoke(CompileEnv *envPtr, int opcode, ...);
@@ -1085,8 +1086,9 @@ MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE void *TclFetchAuxData(CompileEnv *envPtr, TCL_HASH_TYPE index);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, Tcl_Size index);
-MODULE_SCOPE size_t	TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
-			    int create, CompileEnv *envPtr);
+MODULE_SCOPE Tcl_Size	TclFindCompiledLocal(const char *name,
+			    Tcl_Size nameChars, int create,
+			    CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
 			    int distThreshold);
@@ -1098,7 +1100,8 @@ MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
-			    size_t numBytes, const CmdFrame *invoker, int word);
+			    Tcl_Size numBytes, const CmdFrame *invoker,
+			    int word);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
 			    int returnCode, ExceptionAux **auxPtrPtr);
@@ -1144,7 +1147,7 @@ MODULE_SCOPE Tcl_ObjCmdProc	TclNoIdentOpCmd;
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 #endif
-MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
+MODULE_SCOPE Tcl_Size	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 			    const char *script, const char *command,

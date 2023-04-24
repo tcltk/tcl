@@ -28,11 +28,11 @@
  * Function prototypes for static functions in this file:
  */
 
-static Tcl_Obj *	CreateLiteral(Interp *iPtr, const char *bytes, size_t length,
-			    int *newPtr, Namespace *nsPtr, int flags,
-			    LiteralEntry **globalPtrPtr);
+static Tcl_Obj *	CreateLiteral(Interp *iPtr, const char *bytes,
+			    Tcl_Size length, int *newPtr, Namespace *nsPtr,
+			    int flags, LiteralEntry **globalPtrPtr);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
-static size_t		HashString(const char *string, size_t length);
+static size_t		HashString(const char *string, Tcl_Size length);
 #ifdef TCL_COMPILE_DEBUG
 static LiteralEntry *	LookupLiteralEntry(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -178,7 +178,7 @@ TclCreateLiteral(
     Interp *iPtr,
     const char *bytes,	/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    size_t length)		/* Number of bytes in the string. */
+    Tcl_Size length)		/* Number of bytes in the string. */
 {
     int isNew;
     return CreateLiteral(iPtr, bytes, length, &isNew, NULL, 0, NULL);
@@ -189,7 +189,7 @@ CreateLiteral(
     Interp *iPtr,
     const char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    size_t length,		/* Number of bytes in the string. */
+    Tcl_Size length,		/* Number of bytes in the string. */
     int *newPtr,
     Namespace *nsPtr,
     int flags,
@@ -204,7 +204,7 @@ CreateLiteral(
      * Is it in the interpreter's global literal table?
      */
 
-    if (length == TCL_INDEX_NONE) {
+    if (length == -1) {
 	length = strlen(bytes);
     }
 
@@ -235,7 +235,7 @@ CreateLiteral(
 	     * https://stackoverflow.com/q/54337750/301832
 	     */
 
-	    size_t objLength;
+	    Tcl_Size objLength;
 	    const char *objBytes = Tcl_GetStringFromObj(objPtr, &objLength);
 
 	    if ((objLength == length) && ((length == 0)
@@ -334,7 +334,7 @@ CreateLiteral(
     {
 	LiteralEntry *entryPtr;
 	int found;
-	size_t i;
+	Tcl_Size i;
 
 	found = 0;
 	for (i=0 ; i<globalTablePtr->numBuckets ; i++) {
@@ -384,7 +384,7 @@ Tcl_Obj *
 TclFetchLiteral(
     CompileEnv *envPtr,		/* Points to the CompileEnv from which to
 				 * fetch the registered literal value. */
-    size_t index)		/* Index of the desired literal, as returned
+    Tcl_Size index)		/* Index of the desired literal, as returned
 				 * by prior call to TclRegisterLiteral() */
 {
     if (index >= envPtr->literalArrayNext) {
@@ -420,16 +420,16 @@ TclFetchLiteral(
  *----------------------------------------------------------------------
  */
 
-size_t
+int /* Do NOT change this type. Should not be wider than TclEmitPush operand*/
 TclRegisterLiteral(
     void *ePtr,		/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
     const char *bytes,	/* Points to string for which to find or
 				 * create an object in CompileEnv's object
 				 * array. */
-    size_t length,		/* Number of bytes in the string. If
-				 * TCL_INDEX_NONE, the string consists of
-				 * all bytes up to the first null character. */
+    Tcl_Size length,		/* Number of bytes in the string. If -1, the
+				 * string consists of all bytes up to the
+				 * first null character. */
     int flags)			/* If LITERAL_ON_HEAP then the caller already
 				 * malloc'd bytes and ownership is passed to
 				 * this function. If LITERAL_CMD_NAME then
@@ -456,6 +456,10 @@ TclRegisterLiteral(
 	}
     } else {
 	objIndex = PTR2INT(Tcl_GetHashValue(hePtr));
+    }
+    if (objIndex > INT_MAX) {
+	Tcl_Panic(
+	    "Literal table index too large. Cannot be handled by TclEmitPush");
     }
     return objIndex;
 }
@@ -490,7 +494,8 @@ LookupLiteralEntry(
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *entryPtr;
     const char *bytes;
-    size_t globalHash, length;
+    size_t globalHash;
+    Tcl_Size length;
 
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     globalHash = (HashString(bytes, length) & globalTablePtr->mask);
@@ -576,7 +581,7 @@ TclHideLiteral(
  *----------------------------------------------------------------------
  */
 
-size_t
+int
 TclAddLiteralObj(
     CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
@@ -585,17 +590,21 @@ TclAddLiteralObj(
 				 * in the internal stubs table, and use by
 				 * tclcompiler. */
 {
-    size_t objIndex;
+    Tcl_Size objIndex;
 
     if (envPtr->literalArrayNext >= envPtr->literalArrayEnd) {
 	ExpandLocalLiteralArray(envPtr);
     }
     objIndex = envPtr->literalArrayNext;
     envPtr->literalArrayNext++;
+    if (objIndex > INT_MAX) {
+	Tcl_Panic(
+	    "Literal table index too large. Cannot be handled by TclEmitPush");
+    }
 
     envPtr->literalArrayPtr[objIndex] = objPtr;
     Tcl_IncrRefCount(objPtr);
-
+    
     return objIndex;
 
     (void)litPtrPtr;
@@ -631,11 +640,11 @@ ExpandLocalLiteralArray(
      * 0 and (envPtr->literalArrayNext - 1) [inclusive].
      */
 
-    size_t currElems = envPtr->literalArrayNext;
-    size_t currBytes = (currElems * sizeof(Tcl_Obj *));
+    Tcl_Size currElems = envPtr->literalArrayNext;
+    Tcl_Size currBytes = (currElems * sizeof(Tcl_Obj *));
     Tcl_Obj **currArrayPtr = envPtr->literalArrayPtr;
     Tcl_Obj **newArrayPtr;
-    size_t newSize = (currBytes <= UINT_MAX / 2) ? 2*currBytes : UINT_MAX;
+    Tcl_Size newSize = (currBytes <= UINT_MAX / 2) ? 2*currBytes : UINT_MAX;
 
     if (currBytes == newSize) {
 	Tcl_Panic("max size of Tcl literal array (%" TCL_Z_MODIFIER "u literals) exceeded",
@@ -692,7 +701,8 @@ TclReleaseLiteral(
     LiteralTable *globalTablePtr;
     LiteralEntry *entryPtr, *prevPtr;
     const char *bytes;
-    size_t length, index;
+    Tcl_Size length;
+    size_t index;
 
     if (iPtr == NULL) {
 	goto done;
@@ -764,7 +774,7 @@ TclReleaseLiteral(
 static size_t
 HashString(
     const char *string,	/* String for which to compute hash value. */
-    size_t length)			/* Number of bytes in the string. */
+    Tcl_Size length)			/* Number of bytes in the string. */
 {
     size_t result = 0;
 
@@ -835,7 +845,8 @@ RebuildLiteralTable(
     LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     const char *bytes;
-    size_t oldSize, count, index, length;
+    Tcl_Size count, length;
+    size_t oldSize, index;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;
@@ -954,7 +965,7 @@ TclLiteralStats(
     LiteralTable *tablePtr)	/* Table for which to produce stats. */
 {
 #define NUM_COUNTERS 10
-    size_t count[NUM_COUNTERS], overflow, i, j;
+    Tcl_Size count[NUM_COUNTERS], overflow, i, j;
     double average, tmp;
     LiteralEntry *entryPtr;
     char *result, *p;
@@ -980,6 +991,7 @@ TclLiteralStats(
 	} else {
 	    overflow++;
 	}
+	/* TODO: This is going to be trouble for large enough j */
 	tmp = j;
 	average += (tmp+1.0)*(tmp/tablePtr->numEntries)/2.0;
     }
@@ -1066,7 +1078,7 @@ TclVerifyGlobalLiteralTable(
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *globalPtr;
     char *bytes;
-    size_t i, length, count = 0;
+    Tcl_Size i, length, count = 0;
 
     for (i=0 ; i<globalTablePtr->numBuckets ; i++) {
 	for (globalPtr=globalTablePtr->buckets[i] ; globalPtr!=NULL;

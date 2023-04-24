@@ -71,7 +71,7 @@ struct BrodnikArray_ ## T {						\
 									\
 scope	BA_ ## T *	BA_ ## T ## _Create();				\
 scope	void		BA_ ## T ## _Destroy(BA_ ## T *a);		\
-scope	size_t		BA_ ## T ## _Size(BA_ ## T *a);			\
+scope	Tcl_Size	BA_ ## T ## _Size(BA_ ## T *a);			\
 scope	void		BA_ ## T ## _Copy(T *p,	BA_ ## T *a);		\
 scope	T *		BA_ ## T ## _Append(BA_ ## T *a);		\
 scope	T *		BA_ ## T ## _Detach(BA_ ## T *a);		\
@@ -120,7 +120,7 @@ BA_ ## T ## _Destroy(							\
     Tcl_Free(a);							\
 }									\
 									\
-scope size_t								\
+scope Tcl_Size 								\
 BA_ ## T ## _Size(							\
     BA_ ## T *a)							\
 {									\
