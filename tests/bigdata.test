@@ -766,7 +766,7 @@ bigtestRO binary-encode/decode-uuencode-bigdata-1 "binary encode/decode uuencode
     set bin [bigBinary 4294967296]
 } -cleanup {
     bigClean
-} -constraints bug-2e3fed53ba
+}
 
 ################################################################
 # List commands
