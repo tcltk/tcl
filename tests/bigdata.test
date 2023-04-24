@@ -550,7 +550,7 @@ bigtestRO format-bigdata-1 "format %s" 1 -body {
     set s [bigString 0x100000000]
 } -cleanup {
     bigClean
-} -constraints bug-a550f9710b
+}
 bigtest format-bigdata-2 "format bigstring%s" 1 -body {
     set s [format $s X]
     string equal $s [bigString 0x100000001 0x100000000]
@@ -559,8 +559,53 @@ bigtest format-bigdata-2 "format bigstring%s" 1 -body {
     append s %s
 } -cleanup {
     bigClean
-} -constraints bug-a550f9710b
-# TODO - once above bugs fixed, add tests for width and precision
+}
+bigtest format-bigdata-3 "format big width" {4294967300 {    } {   a}} -body {
+    set s [format %4294967300s a]
+    list [string length $s] [string range $s 0 3] [string range $s end-3 end]
+} -cleanup {
+    bigClean
+}
+bigtest format-bigdata-4 "format big negative width" {4294967300 {a   } {    }} -body {
+    set s [format %-4294967300s a]
+    list [string length $s] [string range $s 0 3] [string range $s end-3 end]
+} -cleanup {
+    bigClean
+}
+bigtest format-bigdata-5 "format big * width" {4294967300 {    } {   a}} -body {
+    set s [format %*s 4294967300 a]
+    list [string length $s] [string range $s 0 3] [string range $s end-3 end]
+} -cleanup {
+    bigClean
+}
+bigtest format-bigdata-6 "format big negative * width" {4294967300 {a   } {    }} -body {
+    set s [format %*s -4294967300 a]
+    list [string length $s] [string range $s 0 3] [string range $s end-3 end]
+} -cleanup {
+    bigClean
+}
+bigtestRO format-bigdata-7 "format big precision" {4294967300 0123 6789} -body {
+    # Unset explicitly before setting to save memory as bigtestRO runs the
+    # script below twice.
+    unset -nocomplain s2
+    set s2 [format %.4294967300s $s]
+    list [string length $s2] [string range $s2 0 3] [string range $s2 end-3 end]
+} -setup {
+    set s [testbigdata string 4294967310]
+} -cleanup {
+    bigClean
+}
+bigtestRO format-bigdata-8 "format big * precision" {4294967300 0123 6789} -body {
+    # Unset explicitly before setting to save memory as bigtestRO runs the
+    # script below twice.
+    unset -nocomplain s2
+    set s2 [format %.*s 4294967300 $s]
+    list [string length $s2] [string range $s2 0 3] [string range $s2 end-3 end]
+} -setup {
+    set s [testbigdata string 4294967310]
+} -cleanup {
+    bigClean
+}
 
 #
 # scan
