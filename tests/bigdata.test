@@ -609,19 +609,21 @@ bigtestRO format-bigdata-8 "format big * precision" {4294967300 0123 6789} -body
 
 #
 # scan
-bigtestRO scan-bigdata-1 "scan %s" {1 1 2 1} -body {
+bigtestRO scan-bigdata-1 "scan %s" {1 1 2 X 1 2 4294967300 01234X} -body {
     # Unset explicitly before setting to save memory as bigtestRO runs the
     # script below twice.
-    unset -nocomplain result digits
+    unset -nocomplain result digits x
     lappend result [string equal [scan $s %s] $s]
     lappend result [string equal [scan $s {%[0-9X]}] $s]
     lappend result [scan $s {%[0-9]%s} digits x] $x
-    lappend result [string equal $digits [bigString 0x100000008]]
+    lappend result [string equal $digits [bigString 0x100000009]]
+    lappend result [scan $s %4294967300s%s x y]
+    lappend result [string length $x] $y
 } -setup {
     set s [bigString 0x10000000a 0x100000009]
 } -cleanup {
     bigClean digits
-} -constraints bug-d4ede611a7
+}
 
 #
 # regexp
