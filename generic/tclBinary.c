@@ -2764,12 +2764,12 @@ BinaryEncodeUu(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
-    int rawLength, i, bits, index;
+    int i, bits, index;
     unsigned int n;
     int lineLength = 61;
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
-    Tcl_Size j, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
+    Tcl_Size j, rawLength, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2859,7 +2859,7 @@ BinaryEncodeUu(
      */
 
     while (offset < count) {
-	int lineLen = count - offset;
+	Tcl_Size lineLen = count - offset;
 
 	if (lineLen > rawLength) {
 	    lineLen = rawLength;
