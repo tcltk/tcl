@@ -2326,6 +2326,7 @@ Tcl_LassignObjCmd(
     Tcl_Obj *listCopyPtr;
     Tcl_Obj **listObjv;		/* The contents of the list. */
     Tcl_Size listObjc;		/* The length of the list. */
+    Tcl_Size origListObjc;	/* Original length */
     int code = TCL_OK;
 
     if (objc < 2) {
@@ -2337,8 +2338,10 @@ Tcl_LassignObjCmd(
     if (listCopyPtr == NULL) {
 	return TCL_ERROR;
     }
+    Tcl_IncrRefCount(listCopyPtr); /* Important! fs */
 
     TclListObjGetElementsM(NULL, listCopyPtr, &listObjc, &listObjv);
+    origListObjc = listObjc;
 
     objc -= 2;
     objv += 2;
@@ -2366,7 +2369,13 @@ Tcl_LassignObjCmd(
     }
 
     if (code == TCL_OK && listObjc > 0) {
-	Tcl_SetObjResult(interp, Tcl_NewListObj(listObjc, listObjv));
+	Tcl_Obj *resultObjPtr = TclListObjRange(
+	    interp, listCopyPtr, origListObjc - listObjc, origListObjc - 1);
+	if (resultObjPtr == NULL) {
+	    code = TCL_ERROR;
+	} else {
+	    Tcl_SetObjResult(interp, resultObjPtr);
+	}
     }
 
     Tcl_DecrRefCount(listCopyPtr);
@@ -2759,7 +2768,11 @@ Tcl_LrangeObjCmd(
 	    return TCL_ERROR;
 	}
     } else {
-	Tcl_SetObjResult(interp, TclListObjRange(objv[1], first, last));
+	Tcl_Obj *resultObj = TclListObjRange(interp, objv[1], first, last);
+	if (resultObj == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, resultObj);
     }
     return TCL_OK;
 }
@@ -2923,7 +2936,7 @@ Tcl_LrepeatObjCmd(
     Tcl_Obj *const objv[])
 				/* The argument objects. */
 {
-    int elementCount, i, totalElems;
+    Tcl_Size elementCount, i, totalElems;
     Tcl_Obj *listPtr, **dataArray = NULL;
 
     /*
@@ -2935,12 +2948,12 @@ Tcl_LrepeatObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "count ?value ...?");
 	return TCL_ERROR;
     }
-    if (TCL_OK != TclGetIntFromObj(interp, objv[1], &elementCount)) {
+    if (TCL_OK != TclGetSizeIntFromObj(interp, objv[1], &elementCount)) {
 	return TCL_ERROR;
     }
     if (elementCount < 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad count \"%d\": must be integer >= 0", elementCount));
+		"bad count \"%" TCL_SIZE_MODIFIER "d\": must be integer >= 0", elementCount));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPEAT", "NEGARG",
 		NULL);
 	return TCL_ERROR;
@@ -2997,7 +3010,7 @@ Tcl_LrepeatObjCmd(
 	    dataArray[i] = tmpPtr;
 	}
     } else {
-	int j, k = 0;
+	Tcl_Size j, k = 0;
 
 	for (i=0 ; i<elementCount ; i++) {
 	    for (j=0 ; j<objc ; j++) {
@@ -3243,8 +3256,9 @@ Tcl_LsearchObjCmd(
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     const char *bytes, *patternBytes;
-    int match, index, result=TCL_OK, bisect;
-    Tcl_Size i, length = 0, listc, elemLen, start, groupSize, groupOffset, lower, upper;
+    int match, result=TCL_OK, bisect;
+    Tcl_Size i, length = 0, listc, elemLen, start, index;
+    Tcl_Size groupSize, groupOffset, lower, upper;
     int allocatedIndexVector = 0;
     int isIncreasing;
     Tcl_WideInt patWide, objWide, wide;

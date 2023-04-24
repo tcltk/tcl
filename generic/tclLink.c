@@ -584,7 +584,7 @@ SetInvalidRealFromAny(
 {
     const char *str;
     const char *endPtr;
-    size_t length;
+    Tcl_Size length;
 
     str = Tcl_GetStringFromObj(objPtr, &length);
     if ((length == 1) && (str[0] == '.')) {
@@ -630,7 +630,7 @@ GetInvalidIntFromObj(
     Tcl_Obj *objPtr,
     int *intPtr)
 {
-    size_t length;
+    Tcl_Size length;
     const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
     if ((length == 0) || ((length == 2) && (str[0] == '0')

@@ -1119,7 +1119,7 @@ TclNRPackageObjCmd(
 	break;
     }
     case PKG_IFNEEDED: {
-	size_t length;
+	Tcl_Size length;
 	int res;
 	char *argv3i, *avi;
 
@@ -1358,7 +1358,7 @@ TclNRPackageObjCmd(
 	}
 	break;
     case PKG_UNKNOWN: {
-	size_t length;
+	Tcl_Size length;
 
 	if (objc == 2) {
 	    if (iPtr->packageUnknown != NULL) {
@@ -2031,7 +2031,7 @@ AddRequirementsToResult(
 {
     Tcl_Obj *result = Tcl_GetObjResult(interp);
     int i;
-    size_t length;
+    Tcl_Size length;
 
     for (i = 0; i < reqc; i++) {
 	const char *v = Tcl_GetStringFromObj(reqv[i], &length);

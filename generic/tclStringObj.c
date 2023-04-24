@@ -2006,12 +2006,16 @@ Tcl_AppendFormatToObj(
 
 	width = 0;
 	if (isdigit(UCHAR(ch))) {
-	    width = strtoul(format, &end, 10);
-	    if (width < 0) {
+	    /* Note ull will be >= 0 because of isdigit check above */
+	    unsigned long long ull;
+	    ull = strtoull(format, &end, 10);
+	    /* Comparison is >=, not >, to leave room for nul */
+	    if (ull >= TCL_SIZE_MAX) {
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
+	    width = (Tcl_Size)ull;
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
@@ -2048,7 +2052,16 @@ Tcl_AppendFormatToObj(
 	    step = TclUtfToUniChar(format, &ch);
 	}
 	if (isdigit(UCHAR(ch))) {
-	    precision = strtoul(format, &end, 10);
+	    /* Note ull will be >= 0 because of isdigit check above */
+	    unsigned long long ull;
+	    ull = strtoull(format, &end, 10);
+	    /* Comparison is >=, not >, to leave room for nul */
+	    if (ull >= TCL_SIZE_MAX) {
+		msg = overflow;
+		errCode = "OVERFLOW";
+		goto errorMsg;
+	    }
+	    precision = (Tcl_Size)ull;
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
@@ -3115,23 +3128,24 @@ TclStringRepeat(
 Tcl_Obj *
 TclStringCat(
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj * const objv[],
     int flags)
 {
     Tcl_Obj *objResultPtr, * const *ov;
-    int oc, binary = 1;
+    int binary = 1;
+    Tcl_Size oc;
     Tcl_Size length = 0;
     int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
-    int first = objc - 1;	/* Index of first value possibly not empty */
-    int last = 0;		/* Index of last value possibly not empty */
+    Tcl_Size first = objc - 1;	/* Index of first value possibly not empty */
+    Tcl_Size last = 0;		/* Index of last value possibly not empty */
     int inPlace = flags & TCL_STRING_IN_PLACE;
 
     /* assert ( objc >= 0 ) */
 
     if (objc <= 1) {
-	/* Only one or no objects; return first or empty */
-	return objc ? objv[0] : Tcl_NewObj();
+	/* Negative (shouldn't be), one or no objects; return first or empty */
+	return objc == 1 ? objv[0] : Tcl_NewObj();
     }
 
     /* assert ( objc >= 2 ) */

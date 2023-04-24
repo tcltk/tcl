@@ -252,7 +252,7 @@ TclCompileStringCatCmd(
 	} else {
 	    Tcl_DecrRefCount(obj);
 	    if (folded) {
-		size_t len;
+		Tcl_Size len;
 		const char *bytes = Tcl_GetStringFromObj(folded, &len);
 
 		PushLiteral(envPtr, bytes, len);
@@ -270,7 +270,7 @@ TclCompileStringCatCmd(
 	wordTokenPtr = TokenAfter(wordTokenPtr);
     }
     if (folded) {
-	size_t len;
+	Tcl_Size len;
 	const char *bytes = Tcl_GetStringFromObj(folded, &len);
 
 	PushLiteral(envPtr, bytes, len);

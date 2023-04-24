@@ -93,7 +93,9 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 # undef TclGetUnicodeFromObj
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
-# define TclGetUnicodeFromObj 0
+# if TCL_UTF_MAX > 3
+#   define TclGetUnicodeFromObj 0
+# endif
 #endif
 #undef Tcl_Close
 #define Tcl_Close 0

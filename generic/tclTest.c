@@ -334,6 +334,7 @@ static Tcl_ObjCmdProc	TestFindFirstCmd;
 static Tcl_ObjCmdProc	TestFindLastCmd;
 static Tcl_ObjCmdProc	TestHashSystemHashCmd;
 static Tcl_ObjCmdProc	TestGetIntForIndexCmd;
+static Tcl_ObjCmdProc	TestLutilCmd;
 
 static Tcl_NRPostProc	NREUnwind_callback;
 static Tcl_ObjCmdProc	TestNREUnwind;
@@ -721,6 +722,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testsetencpath", TestsetencpathObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testapplylambda", TestApplyLambdaObjCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testlutil", TestLutilCmd,
 	    NULL, NULL);
 
     if (TclObjTest_Init(interp) != TCL_OK) {
@@ -2234,7 +2237,7 @@ TestencodingObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Encoding encoding;
-    size_t length;
+    Tcl_Size length;
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
@@ -4123,7 +4126,7 @@ PrintParse(
     Tcl_Obj *objPtr;
     const char *typeString;
     Tcl_Token *tokenPtr;
-    size_t i;
+    Tcl_Size i;
 
     objPtr = Tcl_GetObjResult(interp);
     if (parsePtr->commentSize + 1 > 1) {
@@ -4137,7 +4140,7 @@ PrintParse(
 	    Tcl_NewStringObj(parsePtr->commandStart, parsePtr->commandSize));
     Tcl_ListObjAppendElement(NULL, objPtr,
 	    Tcl_NewWideIntObj(parsePtr->numWords));
-    for (i = 0; i < (size_t)parsePtr->numTokens; i++) {
+    for (i = 0; i < parsePtr->numTokens; i++) {
 	tokenPtr = &parsePtr->tokenPtr[i];
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_EXPAND_WORD:
@@ -7320,7 +7323,7 @@ SimpleMatchInDirectory(
     origPtr = SimpleRedirect(dirPtr);
     res = Tcl_FSMatchInDirectory(interp, resPtr, origPtr, pattern, types);
     if (res == TCL_OK) {
-	size_t gLength, j;
+	Tcl_Size gLength, j;
 	Tcl_ListObjLength(NULL, resPtr, &gLength);
 	for (j = 0; j < gLength; j++) {
 	    Tcl_Obj *gElt, *nElt;
@@ -7406,7 +7409,7 @@ TestUtfNextCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    size_t numBytes;
+    Tcl_Size numBytes;
     char *bytes;
     const char *result, *first;
     char buffer[32];
@@ -7419,7 +7422,7 @@ TestUtfNextCmd(
     }
 	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
-    if (numBytes + 4U > sizeof(buffer)) {
+    if (numBytes + 4 > (Tcl_Size) sizeof(buffer)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"testutfnext\" can only handle %" TCL_Z_MODIFIER "u bytes",
 		sizeof(buffer) - 4));
@@ -7885,7 +7888,7 @@ TestconcatobjCmd(
 {
     Tcl_Obj *list1Ptr, *list2Ptr, *emptyPtr, *concatPtr, *tmpPtr;
     int result = TCL_OK;
-    size_t len;
+    Tcl_Size len;
     Tcl_Obj *objv[3];
 
     /*
@@ -8242,7 +8245,7 @@ TestparseargsCmd(
     Tcl_Obj *const objv[])	/* Arguments. */
 {
     static int foo = 0;
-    size_t count = objc;
+    Tcl_Size count = objc;
     Tcl_Obj **remObjv, *result[3];
     Tcl_ArgvInfo argTable[] = {
         {TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},
@@ -8592,6 +8595,102 @@ int TestApplyLambdaObjCmd (
     Tcl_DecrRefCount(lambdaObj);
 
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestLutilCmd --
+ *
+ *	This procedure implements the "testlequal" command. It is used to
+ *	test compare two lists for equality using the string representation
+ *      of each element. Implemented in C because script level loops are
+ *	too slow for comparing large (GB count) lists.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestLutilCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    Tcl_Size nL1, nL2;
+    Tcl_Obj *l1Obj = NULL;
+    Tcl_Obj *l2Obj = NULL;
+    Tcl_Obj **l1Elems;
+    Tcl_Obj **l2Elems;
+    static const char *const subcmds[] = {
+	   "equal", "diffindex", NULL
+    };
+    enum options {
+	   LUTIL_EQUAL, LUTIL_DIFFINDEX
+    } idx;
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "list1 list2");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "option", 0,
+	    &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* Protect against shimmering, just to be safe */
+    l1Obj = Tcl_DuplicateObj(objv[2]);
+    l2Obj = Tcl_DuplicateObj(objv[3]);
+
+    int ret = TCL_ERROR;
+    if (Tcl_ListObjGetElements(interp, l1Obj, &nL1, &l1Elems) != TCL_OK) {
+	goto vamoose;
+    }
+    if (Tcl_ListObjGetElements(interp, l2Obj, &nL2, &l2Elems) != TCL_OK) {
+	goto vamoose;
+    }
+
+    Tcl_Size i, nCmp;
+
+    ret = TCL_OK;
+    switch (idx) {
+    case LUTIL_EQUAL:
+	/* Avoid the loop below if lengths differ */
+	if (nL1 != nL2) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	    break;
+	}
+	/* FALLTHRU */
+    case LUTIL_DIFFINDEX:
+	nCmp = nL1 <= nL2 ? nL1 : nL2;
+	for (i = 0; i < nCmp; ++i) {
+	    if (strcmp(Tcl_GetString(l1Elems[i]), Tcl_GetString(l2Elems[i]))) {
+		break;
+	    }
+	}
+	if (i == nCmp && nCmp == nL1 && nCmp == nL2) {
+	    nCmp = idx == LUTIL_EQUAL ? 1 : -1;
+	} else {
+	    nCmp = idx == LUTIL_EQUAL ? 0 : i;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nCmp));
+	break;
+    }
+
+vamoose:
+    if (l1Obj) {
+	Tcl_DecrRefCount(l1Obj);
+    }
+    if (l2Obj) {
+	Tcl_DecrRefCount(l2Obj);
+    }
+    return ret;
 }
 
 /*
