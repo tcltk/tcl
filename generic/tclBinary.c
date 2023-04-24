@@ -870,7 +870,7 @@ BinaryFormatCmd(
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
-    Tcl_Size count;			/* Count associated with current format
+    Tcl_Size count;		/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
     const char *format;		/* Pointer to current position in format
@@ -1383,7 +1383,7 @@ BinaryScanCmd(
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
-    Tcl_Size count;			/* Count associated with current format
+    Tcl_Size count;		/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
     const char *format;		/* Pointer to current position in format
@@ -1795,14 +1795,14 @@ GetFormatSpec(
 	(*formatPtr)++;
 	*countPtr = BINARY_ALL;
     } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
-	unsigned long count;
+	unsigned long long count;
 
 	errno = 0;
-	count = strtoul(*formatPtr, (char **) formatPtr, 10);
-	if (errno || (count > (unsigned long) INT_MAX)) {
-	    *countPtr = INT_MAX;
+	count = strtoull(*formatPtr, (char **) formatPtr, 10);
+	if (errno || (count > TCL_SIZE_MAX)) {
+	    *countPtr = TCL_SIZE_MAX;
 	} else {
-	    *countPtr = (int) count;
+	    *countPtr = count;
 	}
     } else {
 	*countPtr = BINARY_NOCOUNT;

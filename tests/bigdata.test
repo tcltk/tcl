@@ -681,16 +681,17 @@ bigtestRO subst-bigdata-1 "subst" {1 1} -body {
 
 #
 # binary format
-bigtestRO binary-format-bigdata-1 "binary format aN" 4294967296 -body {
+bigtestRO binary-format-bigdata-1 "binary format aN" [list 4294967296  X\0\0\0 \0\0\0\0] -body {
     # Unset explicitly before setting to save memory as bigtestRO runs the
     # script below twice.
     unset -nocomplain bin
     set bin [binary format a4294967296 X]
-    string length $bin
+    list [string length $bin] [string range $bin 0 3] [string range $bin end-3 end]
 } -cleanup {
     bigClean
-} -constraints bug-9369f83649
-# TODO - do string compare and add other format specifiers once above bug is fixed
+} 
+# -constraints bug-9369f83649
+# TODO - do string compare and add other format specifiers
 
 bigtestRO binary-format-bigdata-2 "binary format a*" 1 -body {
     # Unset explicitly before setting to save memory as bigtestRO runs the
@@ -706,17 +707,18 @@ bigtestRO binary-format-bigdata-2 "binary format a*" 1 -body {
 
 #
 # binary scan
-bigtestRO binary-scan-bigdata-1 "binary scan aN" 4294967296 -body {
+bigtestRO binary-scan-bigdata-1 "binary scan aN" {4294967296 0123 2345} -body {
     # Unset explicitly before setting to save memory as bigtestRO runs the
     # script below twice.
     unset -nocomplain bin2
     binary scan $bin a4294967296 bin2
-    string length $bin2
+    list [string length $bin2] [string range $bin2 0 3] [string range $bin2 end-3 end]
 } -setup {
     set bin [bigBinary 4294967296]
 } -cleanup {
     bigClean
-} -constraints bug-9369f83649
+}
+# -constraints bug-9369f83649
 # TODO - do string compare and add other format specifiers once above bug is fixed
 
 bigtestRO binary-scan-bigdata-2 "binary scan a*" 1 -body {
