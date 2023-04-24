@@ -807,7 +807,7 @@ TclpNativeJoinPath(
     const char *joining)
 {
     int needsSep;
-    size_t length;
+    Tcl_Size length;
     char *dest;
     const char *p;
     const char *start;
@@ -848,7 +848,7 @@ TclpNativeJoinPath(
 	 * Append the element, eliminating duplicate and trailing slashes.
 	 */
 
-	Tcl_SetObjLength(prefix, length + (int) strlen(p));
+	Tcl_SetObjLength(prefix, length + strlen(p));
 
 	dest = TclGetString(prefix) + length;
 	for (; *p != '\0'; p++) {
@@ -1358,7 +1358,7 @@ Tcl_GlobObjCmd(
 	globTypes->macCreator = NULL;
 
 	while (length-- > 0) {
-	    size_t len;
+	    Tcl_Size len;
 	    const char *str;
 
 	    Tcl_ListObjIndex(interp, typePtr, length, &look);
@@ -2188,7 +2188,7 @@ DoGlob(
      */
 
     if (*p == '\0') {
-	size_t length;
+	Tcl_Size length;
 	Tcl_DString append;
 
 	/*
@@ -2252,7 +2252,7 @@ DoGlob(
 		 * The current prefix must end in a separator.
 		 */
 
-		size_t len;
+		Tcl_Size len;
 		const char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
 
 		if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
@@ -2289,7 +2289,7 @@ DoGlob(
 	     * This behaviour is not currently tested for in the test suite.
 	     */
 
-	    size_t len;
+	    Tcl_Size len;
 	    const char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
 
 	    if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {

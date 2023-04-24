@@ -946,7 +946,7 @@ TclpObjLink(
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    Tcl_DString ds;
 	    Tcl_Obj *transPtr;
-	    size_t length;
+	    Tcl_Size length;
 
 	    /*
 	     * Now we don't want to link to the absolute, normalized path.
@@ -1087,7 +1087,7 @@ TclNativeCreateNativeRep(
     const char *str;
     Tcl_DString ds;
     Tcl_Obj *validPathPtr;
-    size_t len;
+    Tcl_Size len;
 
     if (TclFSCwdIsNative()) {
 	/*

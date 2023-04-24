@@ -521,7 +521,7 @@ TclFSCwdPointerEquals(
     if (tsdPtr->cwdPathPtr == *pathPtrPtr) {
 	return 1;
     } else {
-	size_t len1, len2;
+	Tcl_Size len1, len2;
 	const char *str1, *str2;
 
 	str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
@@ -663,7 +663,7 @@ FsUpdateCwd(
     Tcl_Obj *cwdObj,
     void *clientData)
 {
-    size_t len = 0;
+    Tcl_Size len = 0;
     const char *str = NULL;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
@@ -1324,7 +1324,7 @@ TclFSNormalizeToUniquePath(
 {
     FilesystemRecord *fsRecPtr, *firstFsRecPtr;
 
-    size_t i;
+    Tcl_Size i;
     int isVfsPath = 0;
     const char *path;
 
@@ -1686,7 +1686,7 @@ Tcl_FSEvalFileEx(
     const char *encodingName)	/* Either the name of an encoding or NULL to
 				   use the utf-8 encoding. */
 {
-    size_t length;
+    Tcl_Size length;
 	int result = TCL_ERROR;
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile;
@@ -1730,11 +1730,6 @@ Tcl_FSEvalFileEx(
 	encodingName = "utf-8";
     }
     if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
-	    != TCL_OK) {
-	Tcl_CloseEx(interp,chan,0);
-	return result;
-    }
-    if (Tcl_SetChannelOption(interp, chan, "-profile", "strict")
 	    != TCL_OK) {
 	Tcl_CloseEx(interp,chan,0);
 	return result;
@@ -1957,7 +1952,7 @@ EvalFileCallback(
 	 * Record information about where the error occurred.
 	 */
 
-	size_t length;
+	Tcl_Size length;
 	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
 	const unsigned int limit = 150;
 	int overflow = (length > limit);
@@ -2799,7 +2794,7 @@ Tcl_FSGetCwd(
 	     * infinite loop bug when trying to normalize tsdPtr->cwdPathPtr.
 	     */
 
-	    size_t len1, len2;
+	    Tcl_Size len1, len2;
 	    const char *str1, *str2;
 
 	    str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);

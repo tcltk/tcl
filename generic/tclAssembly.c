@@ -857,7 +857,7 @@ CompileAssembleObj(
 				 * names in the bytecode resolve */
     int status;			/* Status return from Tcl_AssembleCode */
     const char* source;		/* String representation of the source code */
-    size_t sourceLen;		/* Length of the source code in bytes */
+    Tcl_Size sourceLen;		/* Length of the source code in bytes */
 
     /*
      * Get the expression ByteCode from the object. If it exists, make sure it

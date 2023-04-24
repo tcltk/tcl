@@ -2280,7 +2280,7 @@ ZipFSMountBufferObjCmd(
 {
     const char *mountPoint;	/* Mount point path. */
     unsigned char *data;
-    size_t length;
+    Tcl_Size length;
 
     if (objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? ?data?");
@@ -2391,7 +2391,7 @@ ZipFSMkKeyObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    size_t len, i = 0;
+    Tcl_Size len, i = 0;
     const char *pw;
     Tcl_Obj *passObj;
     unsigned char *passBuf;
@@ -2409,7 +2409,7 @@ ZipFSMkKeyObjCmd(
     }
 
     passObj = Tcl_NewByteArrayObj(NULL, 264);
-    passBuf = Tcl_GetByteArrayFromObj(passObj, (size_t *)NULL);
+    passBuf = Tcl_GetByteArrayFromObj(passObj, (Tcl_Size *)NULL);
     while (len > 0) {
 	int ch = pw[len - 1];
 
@@ -2516,7 +2516,8 @@ ZipAddFile(
 				 * UTF-8). */
     const char *zpathTcl;	/* Filename in Tcl's internal encoding. */
     int crc, flush, zpathlen;
-    size_t nbyte, nbytecompr, len, olen, align = 0;
+    size_t nbyte, nbytecompr;
+    Tcl_Size len, olen, align = 0;
     long long headerStartOffset, dataStartOffset, dataEndOffset;
     int mtime = 0, isNew, compMeth;
     unsigned long keys[3], keys0[3];
@@ -2540,7 +2541,7 @@ ZipAddFile(
      * crazy enough to embed NULs in filenames, they deserve what they get!
      */
 
-    zpathExt = Tcl_UtfToExternalDString(ZipFS.utf8, zpathTcl, TCL_INDEX_NONE, &zpathDs);
+    zpathExt = Tcl_UtfToExternalDString(ZipFS.utf8, zpathTcl, -1, &zpathDs);
     zpathlen = strlen(zpathExt);
     if (zpathlen + ZIP_CENTRAL_HEADER_LEN > bufsize) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2578,7 +2579,7 @@ ZipAddFile(
     nbyte = nbytecompr = 0;
     while (1) {
 	len = Tcl_Read(in, buf, bufsize);
-	if (len == (size_t) TCL_INDEX_NONE) {
+	if (len < 0) {
 	    Tcl_DStringFree(&zpathDs);
 	    if (nbyte == 0 && errno == EISDIR) {
 		Tcl_Close(interp, in);
@@ -2619,7 +2620,7 @@ ZipAddFile(
     memset(buf, '\0', ZIP_LOCAL_HEADER_LEN);
     memcpy(buf + ZIP_LOCAL_HEADER_LEN, zpathExt, zpathlen);
     len = zpathlen + ZIP_LOCAL_HEADER_LEN;
-    if ((size_t) Tcl_Write(out, buf, len) != len) {
+    if (Tcl_Write(out, buf, len) != len) {
     writeErrorWithChannelOpen:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"write error on \"%s\": %s",
@@ -2643,7 +2644,7 @@ ZipAddFile(
 	ZipWriteShort(astart, aend, abuf, 0xffff);
 	ZipWriteShort(astart, aend, abuf + 2, align - 4);
 	ZipWriteInt(astart, aend, abuf + 4, 0x03020100);
-	if ((size_t) Tcl_Write(out, (const char *) abuf, align) != align) {
+	if (Tcl_Write(out, (const char *) abuf, align) != align) {
 	    goto writeErrorWithChannelOpen;
 	}
     }
@@ -2708,7 +2709,7 @@ ZipAddFile(
 
     do {
 	len = Tcl_Read(in, buf, bufsize);
-	if (len == (size_t) TCL_INDEX_NONE) {
+	if (len < 0) {
 	    deflateEnd(&stream);
 	    goto readErrorWithChannelOpen;
 	}
@@ -2719,7 +2720,7 @@ ZipAddFile(
 	    stream.avail_out = sizeof(obuf);
 	    stream.next_out = (unsigned char *) obuf;
 	    len = deflate(&stream, flush);
-	    if (len == (size_t) Z_STREAM_ERROR) {
+	    if (len == Z_STREAM_ERROR) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"deflate error on \"%s\"", TclGetString(pathObj)));
 		ZIPFS_ERROR_CODE(interp, "DEFLATE");
@@ -2730,14 +2731,14 @@ ZipAddFile(
 	    }
 	    olen = sizeof(obuf) - stream.avail_out;
 	    if (passwd) {
-		size_t i;
+		Tcl_Size i;
 		int tmp;
 
 		for (i = 0; i < olen; i++) {
 		    obuf[i] = (char) zencode(keys, crc32tab, obuf[i], tmp);
 		}
 	    }
-	    if (olen && ((size_t) Tcl_Write(out, obuf, olen) != olen)) {
+	    if (olen && (Tcl_Write(out, obuf, olen) != olen)) {
 		deflateEnd(&stream);
 		goto writeErrorWithChannelOpen;
 	    }
@@ -2772,20 +2773,20 @@ ZipAddFile(
 	nbytecompr = (passwd ? 12 : 0);
 	while (1) {
 	    len = Tcl_Read(in, buf, bufsize);
-	    if (len == (size_t) TCL_INDEX_NONE) {
+	    if (len < 0) {
 		goto readErrorWithChannelOpen;
 	    } else if (len == 0) {
 		break;
 	    }
 	    if (passwd) {
-		size_t i;
+		Tcl_Size i;
 		int tmp;
 
 		for (i = 0; i < len; i++) {
 		    buf[i] = (char) zencode(keys0, crc32tab, buf[i], tmp);
 		}
 	    }
-	    if ((size_t) Tcl_Write(out, buf, len) != len) {
+	    if (Tcl_Write(out, buf, len) != len) {
 		goto writeErrorWithChannelOpen;
 	    }
 	    nbytecompr += len;
@@ -2918,11 +2919,11 @@ ComputeNameInArchive(
 				 * archive */
     const char *strip,		/* A prefix to strip; may be NULL if no
 				 * stripping need be done. */
-    size_t slen)			/* The length of the prefix; must be 0 if no
+    Tcl_Size slen)			/* The length of the prefix; must be 0 if no
 				 * stripping need be done. */
 {
     const char *name;
-    size_t len;
+    Tcl_Size len;
 
     if (directNameObj) {
 	name = TclGetString(directNameObj);
@@ -2991,7 +2992,7 @@ ZipFSMkZipOrImg(
 {
     Tcl_Channel out;
     int count, ret = TCL_ERROR;
-    size_t pwlen = 0, slen = 0, len, i = 0;
+    Tcl_Size pwlen = 0, slen = 0, len, i = 0;
     Tcl_Size lobjc;
     long long directoryStartOffset;
     /* The overall file offset of the start of the
@@ -3178,7 +3179,7 @@ ZipFSMkZipOrImg(
 	    strip = NULL;
 	}
     }
-    for (i = 0; i < (size_t) lobjc; i += (mappingList ? 2 : 1)) {
+    for (i = 0; i < lobjc; i += (mappingList ? 2 : 1)) {
 	Tcl_Obj *pathObj = lobjv[i];
 	const char *name = ComputeNameInArchive(pathObj,
 		(mappingList ? lobjv[i + 1] : NULL), strip, slen);
@@ -3198,7 +3199,7 @@ ZipFSMkZipOrImg(
 
     directoryStartOffset = Tcl_Tell(out);
     count = 0;
-    for (i = 0; i < (size_t) lobjc; i += (mappingList ? 2 : 1)) {
+    for (i = 0; i < lobjc; i += (mappingList ? 2 : 1)) {
 	const char *name = ComputeNameInArchive(lobjv[i],
 		(mappingList ? lobjv[i + 1] : NULL), strip, slen);
 	Tcl_DString ds;
@@ -3215,7 +3216,7 @@ ZipFSMkZipOrImg(
 		z, len);
 	if ((Tcl_Write(out, buf, ZIP_CENTRAL_HEADER_LEN)
 		!= ZIP_CENTRAL_HEADER_LEN)
-		|| ((size_t) Tcl_Write(out, name, len) != len)) {
+		|| (Tcl_Write(out, name, len) != len)) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "write error: %s", Tcl_PosixError(interp)));
 	    Tcl_DStringFree(&ds);
@@ -3282,8 +3283,8 @@ CopyImageFile(
     Tcl_Channel out)		/* Where to copy to; already open for writing
 				 * binary data. */
 {
-    size_t i, k;
-    int m, n;
+    Tcl_WideInt i, k;
+    Tcl_Size m, n;
     Tcl_Channel in;
     char buf[4096];
     const char *errMsg;
@@ -3299,7 +3300,7 @@ CopyImageFile(
      */
 
     i = Tcl_Seek(in, 0, SEEK_END);
-    if (i == (size_t) TCL_INDEX_NONE) {
+    if (i == -1) {
 	errMsg = "seek error";
 	goto copyError;
     }
@@ -3312,8 +3313,8 @@ CopyImageFile(
 
     for (k = 0; k < i; k += m) {
 	m = i - k;
-	if (m > (int) sizeof(buf)) {
-	    m = (int) sizeof(buf);
+	if (m > (Tcl_Size) sizeof(buf)) {
+	    m = sizeof(buf);
 	}
 	n = Tcl_Read(in, buf, m);
 	if (n == -1) {
@@ -5002,8 +5003,8 @@ ZipFSMatchInDirectoryProc(
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_Obj *normPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-    int scnt, l, dirOnly = -1, strip = 0, mounts = 0;
-    size_t prefixLen, len;
+    int scnt, l, dirOnly = -1, mounts = 0;
+    Tcl_Size prefixLen, len, strip = 0;
     char *pat, *prefix, *path;
     Tcl_DString dsPref, *prefixBuf = NULL;
 
@@ -5139,7 +5140,8 @@ ZipFSMatchMountPoints(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    size_t l, normLength;
+    size_t l;
+    Tcl_Size normLength;
     const char *path = Tcl_GetStringFromObj(normPathPtr, &normLength);
     size_t len = normLength;
 
@@ -5221,7 +5223,7 @@ ZipFSPathInFilesystemProc(
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     int ret = -1;
-    size_t len;
+    Tcl_Size len;
     char *path;
 
     pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
@@ -5248,9 +5250,9 @@ ZipFSPathInFilesystemProc(
 	    ZipEntry *z;
 
 	    for (z = zf->topEnts; z != NULL; z = z->tnext) {
-		size_t lenz = strlen(z->name);
+		Tcl_Size lenz = strlen(z->name);
 
-		if (((size_t) len >= lenz) &&
+		if ((len >= lenz) &&
 			(strncmp(path, z->name, lenz) == 0)) {
 		    ret = TCL_OK;
 		    goto endloop;
@@ -5368,7 +5370,7 @@ ZipFSFileAttrsGetProc(
     Tcl_Obj *pathPtr,
     Tcl_Obj **objPtrRef)
 {
-    size_t len;
+    Tcl_Size len;
     int ret = TCL_OK;
     char *path;
     ZipEntry *z;

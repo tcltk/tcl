@@ -4168,6 +4168,7 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (Tcl_Size (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
 		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
+#if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
 #   undef Tcl_ListObjGetElements
 #   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) == sizeof(int) \
 		? tclStubsPtr->tclListObjGetElements((interp), (listPtr), (int *)(void *)(objcPtr), (objvPtr)) \
@@ -4196,6 +4197,7 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_ParseArgsObjv(interp, argTable, objcPtr, objv, remObjv) (sizeof(*(objcPtr)) == sizeof(int) \
 		? tclStubsPtr->tclParseArgsObjv((interp), (argTable), (int *)(void *)(objcPtr), (objv), (remObjv)) \
 		: tclStubsPtr->tcl_ParseArgsObjv((interp), (argTable), (Tcl_Size *)(void *)(objcPtr), (objv), (remObjv)))
+#endif /* TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED) */
 #else
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
 		? (char *(*)(const wchar_t *, Tcl_Size, Tcl_DString *))Tcl_UniCharToUtfDString \
@@ -4243,42 +4245,6 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
 
-#if defined(TCL_8_COMPAT) && !defined(BUILD_tcl) && TCL_MAJOR_VERSION > 8
-#   ifdef USE_TCL_STUBS
-#	undef Tcl_Gets
-#	undef Tcl_GetsObj
-#	undef Tcl_Read
-#	undef Tcl_Ungets
-#	undef Tcl_Write
-#	undef Tcl_ReadChars
-#	undef Tcl_WriteChars
-#	undef Tcl_WriteObj
-#	undef Tcl_ReadRaw
-#	undef Tcl_WriteRaw
-#	define Tcl_Gets(chan, dsPtr) (((Tcl_WideInt)((tclStubsPtr->tcl_Gets)(chan, dsPtr)+1))-1)
-#	define Tcl_GetsObj(chan, objPtr) (((Tcl_WideInt)((tclStubsPtr->tcl_GetsObj)(chan, objPtr)+1))-1)
-#	define Tcl_Read(chan, bufPtr, toRead) (((Tcl_WideInt)((tclStubsPtr->tcl_Read)(chan, bufPtr, toRead)+1))-1)
-#	define Tcl_Ungets(chan, str, len, atHead) (((Tcl_WideInt)((tclStubsPtr->tcl_Ungets)(chan, str, len, atHead)+1))-1)
-#	define Tcl_Write(chan, s, slen) (((Tcl_WideInt)((tclStubsPtr->tcl_Write)(chan, s, slen)+1))-1)
-#	define Tcl_ReadChars(channel, objPtr, charsToRead, appendFlag) (((Tcl_WideInt)((tclStubsPtr->tcl_ReadChars)(channel, objPtr, charsToRead, appendFlag)+1))-1)
-#	define Tcl_WriteChars(chan, src, srcLen) (((Tcl_WideInt)((tclStubsPtr->tcl_WriteChars)(chan, src, srcLen)+1))-1)
-#	define Tcl_WriteObj(chan, objPtr) (((Tcl_WideInt)((tclStubsPtr->tcl_WriteObj)(chan, objPtr)+1))-1)
-#	define Tcl_ReadRaw(chan, dst, bytesToRead) (((Tcl_WideInt)((tclStubsPtr->tcl_ReadRaw)(chan, dst, bytesToRead)+1))-1)
-#	define Tcl_WriteRaw(chan, src, srcLen) (((Tcl_WideInt)((tclStubsPtr->tcl_WriteRaw()(chan, src, srcLen)+1))-1)
-#   else
-#	define Tcl_Gets(chan, dsPtr) (((Tcl_WideInt)((Tcl_Gets)(chan, dsPtr)+1))-1)
-#	define Tcl_GetsObj(chan, objPtr) (((Tcl_WideInt)((Tcl_GetsObj)(chan, objPtr)+1))-1)
-#	define Tcl_Read(chan, bufPtr, toRead) (((Tcl_WideInt)((Tcl_Read)(chan, bufPtr, toRead)+1))-1)
-#	define Tcl_Ungets(chan, str, len, atHead) (((Tcl_WideInt)((Tcl_Ungets)(chan, str, len, atHead)+1))-1)
-#	define Tcl_Write(chan, s, slen) (((Tcl_WideInt)((Tcl_Write)(chan, s, slen)+1))-1)
-#	define Tcl_ReadChars(channel, objPtr, charsToRead, appendFlag) (((Tcl_WideInt)((Tcl_ReadChars)(channel, objPtr, charsToRead, appendFlag)+1))-1)
-#	define Tcl_WriteChars(chan, src, srcLen) (((Tcl_WideInt)((Tcl_WriteChars)(chan, src, srcLen)+1))-1)
-#	define Tcl_WriteObj(chan, objPtr) (((Tcl_WideInt)((Tcl_WriteObj)(chan, objPtr)+1))-1)
-#	define Tcl_ReadRaw(chan, dst, bytesToRead) (((Tcl_WideInt)((Tcl_ReadRaw)(chan, dst, bytesToRead)+1))-1)
-#	define Tcl_WriteRaw(chan, src, srcLen) (((Tcl_WideInt)((Tcl_WriteRaw()(chan, src, srcLen)+1))-1)
-#   endif
-#endif
-
 #if TCL_MAJOR_VERSION > 8
 #   undef Tcl_Close
 #   define Tcl_Close(interp, chan) Tcl_CloseEx(interp, chan, 0)
@@ -4291,6 +4257,12 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_CreateSlave Tcl_CreateChild
 #   define Tcl_GetSlave Tcl_GetChild
 #   define Tcl_GetMaster Tcl_GetParent
+#endif
+
+/* TIP #660 for 8.7 */
+#if TCL_MAJOR_VERSION < 9
+#   undef Tcl_GetSizeIntFromObj
+#   define Tcl_GetSizeIntFromObj Tcl_GetIntFromObj
 #endif
 
 #endif /* _TCLDECLS */

@@ -774,7 +774,7 @@ TclAppendBytesToByteArray(
 	 */
 
 	Tcl_Size attempt;
-	
+
 	/* Make sure we do not wrap when doubling */
 	if (needed <= (BYTEARRAY_MAX_LEN - needed)) {
 	    attempt = 2 * needed;
