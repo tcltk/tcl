@@ -353,15 +353,17 @@ ValidateFormat(
 	 */
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
-	    Tcl_WideInt wide;
-	    wide  = strtoll(format-1, (char **) &format, 10); /* INTL: "C" locale. */
-	    /* Note wide >= 0 because of isdigit check above */
-	    if (wide >= TCL_SIZE_MAX) {
+	    /* Note ull >= 0 because of isdigit check above */
+	    unsigned long long ull;
+	    ull = strtoull(
+		format - 1, (char **)&format, 10); /* INTL: "C" locale. */
+	    /* Note >=, not >, to leave room for a nul */
+	    if (ull >= TCL_SIZE_MAX) {
 		Tcl_SetObjResult(
 		    interp,
 		    Tcl_ObjPrintf("specified field width %" TCL_LL_MODIFIER
-				  "d exceeds limit %" TCL_SIZE_MODIFIER "d.",
-				  wide,
+				  "u exceeds limit %" TCL_SIZE_MODIFIER "d.",
+				  ull,
 				  (Tcl_Size)TCL_SIZE_MAX-1));
 		Tcl_SetErrorCode(
 		    interp, "TCL", "FORMAT", "WIDTHLIMIT", NULL);
@@ -703,10 +705,10 @@ Tcl_ScanObjCmd(
 	 */
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
-	    Tcl_WideInt wide;
-	    wide  = strtoll(format-1, (char **) &format, 10); /* INTL: "C" locale. */
-	    assert(wide <= TCL_SIZE_MAX); /* Else ValidateFormat should've error'ed */
-	    width = (Tcl_Size)wide;
+	    unsigned long long ull;
+	    ull  = strtoull(format-1, (char **) &format, 10); /* INTL: "C" locale. */
+	    assert(ull <= TCL_SIZE_MAX); /* Else ValidateFormat should've error'ed */
+	    width = (Tcl_Size)ull;
 	    format += TclUtfToUniChar(format, &ch);
 	} else {
 	    width = 0;
