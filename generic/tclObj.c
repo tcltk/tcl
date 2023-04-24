@@ -390,6 +390,11 @@ TclInitObjSubsystem(void)
 #if (TCL_UTF_MAX < 4) || !defined(TCL_NO_DEPRECATED)
     Tcl_RegisterObjType(&tclStringType);
 #endif
+#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
+    /* Only registered for 8.7, not for 9.0 any more.
+     * See [https://core.tcl-lang.org/tk/tktview/6b49149b4e] */
+    Tcl_RegisterObjType(&tclUniCharStringType);
+#endif
     Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclDictType);
     Tcl_RegisterObjType(&tclByteCodeType);
@@ -3546,31 +3551,6 @@ TclGetWideBitsFromObj(
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_GetSizeIntFromObj --
- *
- *	Attempt to return a Tcl_Size from the Tcl object "objPtr".
- *
- * Results:
- *  TCL_OK - the converted Tcl_Size value is stored in *sizePtr
- *  TCL_ERROR - the error message is stored in interp
- *
- * Side effects:
- *	The function may free up any existing internal representation.
- *
- *----------------------------------------------------------------------
- */
-int
-Tcl_GetSizeIntFromObj(
-    Tcl_Interp *interp, /* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr,	/* The object from which to get a int. */
-    Tcl_Size *sizePtr)  /* Place to store resulting int. */
-{
-    return Tcl_GetIntFromObj(interp, objPtr, sizePtr);
 }
 
 /*
