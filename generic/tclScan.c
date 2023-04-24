@@ -11,6 +11,7 @@
 
 #include "tclInt.h"
 #include "tclTomMath.h"
+#include <assert.h>
 
 /*
  * Flag values used by Tcl_ScanObjCmd.
@@ -352,7 +353,20 @@ ValidateFormat(
 	 */
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
-	    long longVal = strtoul(format-1, (char **) &format, 10);	/* INTL: "C" locale. */
+	    Tcl_WideInt wide;
+	    wide  = strtoll(format-1, (char **) &format, 10); /* INTL: "C" locale. */
+	    /* Note wide >= 0 because of isdigit check above */
+	    if (wide >= TCL_SIZE_MAX) {
+		Tcl_SetObjResult(
+		    interp,
+		    Tcl_ObjPrintf("specified field width %" TCL_LL_MODIFIER
+				  "d exceeds limit %" TCL_SIZE_MODIFIER "d.",
+				  wide,
+				  (Tcl_Size)TCL_SIZE_MAX-1));
+		Tcl_SetErrorCode(
+		    interp, "TCL", "FORMAT", "WIDTHLIMIT", NULL);
+		goto error;
+	    }
 	    flags |= SCAN_WIDTH;
 	    format += TclUtfToUniChar(format, &ch);
 	}
@@ -675,6 +689,7 @@ Tcl_ScanObjCmd(
 	    format += TclUtfToUniChar(format, &ch);
 	} else if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
 	    char *formatEnd;
+	    /* Note currently XPG3 range limited to INT_MAX to match type of objc */
 	    value = strtoul(format-1, &formatEnd, 10);/* INTL: "C" locale. */
 	    if (*formatEnd == '$') {
 		format = formatEnd+1;
@@ -688,7 +703,10 @@ Tcl_ScanObjCmd(
 	 */
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
-	    width = (int) strtoul(format-1, (char **) &format, 10);/* INTL: "C" locale. */
+	    Tcl_WideInt wide;
+	    wide  = strtoll(format-1, (char **) &format, 10); /* INTL: "C" locale. */
+	    assert(wide <= TCL_SIZE_MAX); /* Else ValidateFormat should've error'ed */
+	    width = (Tcl_Size)wide;
 	    format += TclUtfToUniChar(format, &ch);
 	} else {
 	    width = 0;
@@ -1078,9 +1096,9 @@ Tcl_ScanObjCmd(
 	Tcl_Obj *emptyObj = Tcl_NewObj();
 	Tcl_IncrRefCount(emptyObj);
 	TclNewObj(objPtr);
-	for (i = 0; i < totalVars; i++) {
+	for (i = 0; code == TCL_OK && i < totalVars; i++) {
 	    if (objs[i] != NULL) {
-		Tcl_ListObjAppendElement(NULL, objPtr, objs[i]);
+		code = Tcl_ListObjAppendElement(interp, objPtr, objs[i]);
 		Tcl_DecrRefCount(objs[i]);
 	    } else {
 		/*
@@ -1088,10 +1106,20 @@ Tcl_ScanObjCmd(
 		 * empty strings for these.
 		 */
 
-		Tcl_ListObjAppendElement(NULL, objPtr, emptyObj);
+		code = Tcl_ListObjAppendElement(interp, objPtr, emptyObj);
 	    }
 	}
-	Tcl_IncrRefCount(emptyObj);
+	Tcl_DecrRefCount(emptyObj);
+	if (code != TCL_OK) {
+	    /* If error'ed out, free up remaining. i contains last index freed */
+	    while (++i < totalVars) {
+		if (objs[i] != NULL) {
+		    Tcl_DecrRefCount(objs[i]);
+		}
+	    }
+	    Tcl_DecrRefCount(objPtr);
+	    objPtr = NULL;
+	}
     }
     if (objs != NULL) {
 	Tcl_Free(objs);
