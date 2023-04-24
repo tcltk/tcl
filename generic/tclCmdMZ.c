@@ -2642,8 +2642,8 @@ StringEqualCmd(
      */
 
     const char *string2;
-    int i, match, nocase = 0, reqlength = -1;
-    Tcl_Size length;
+    int i, match, nocase = 0;
+    Tcl_Size length, reqlength = -1;
 
     if (objc < 3 || objc > 6) {
     str_cmp_args:
@@ -2662,7 +2662,7 @@ StringEqualCmd(
 		goto str_cmp_args;
 	    }
 	    i++;
-	    if (TclGetIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
+	    if (TclGetSizeIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	} else {
@@ -2717,7 +2717,8 @@ StringCmpCmd(
      * the expr string comparison in INST_EQ/INST_NEQ/INST_LT/...).
      */
 
-    int match, nocase, reqlength, status;
+    int match, nocase, status;
+    Tcl_Size reqlength;
 
     status = TclStringCmpOpts(interp, objc, objv, &nocase, &reqlength);
     if (status != TCL_OK) {
@@ -2736,7 +2737,7 @@ TclStringCmpOpts(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects. */
     int *nocase,
-    int *reqlength)
+    Tcl_Size *reqlength)
 {
     int i;
     Tcl_Size length;
@@ -2761,7 +2762,7 @@ TclStringCmpOpts(
 		goto str_cmp_args;
 	    }
 	    i++;
-	    if (TclGetIntFromObj(interp, objv[i], reqlength) != TCL_OK) {
+	    if (TclGetSizeIntFromObj(interp, objv[i], reqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	} else {

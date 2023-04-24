@@ -1504,7 +1504,7 @@ SetGroupAttribute(
 	Tcl_DString ds;
 	struct group *groupPtr = NULL;
 	const char *string;
-	size_t length;
+	Tcl_Size length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 
@@ -1571,7 +1571,7 @@ SetOwnerAttribute(
 	Tcl_DString ds;
 	struct passwd *pwPtr = NULL;
 	const char *string;
-	size_t length;
+	Tcl_Size length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 
@@ -1947,7 +1947,7 @@ TclpObjNormalizePath(
 {
     const char *currentPathEndPosition;
     char cur;
-    size_t pathLen;
+    Tcl_Size pathLen;
     const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
     Tcl_DString ds;
     const char *nativePath;
@@ -2171,7 +2171,7 @@ TclUnixOpenTemporaryFile(
     Tcl_DString templ, tmp;
     const char *string;
     int fd;
-    size_t length;
+    Tcl_Size length;
 
     /*
      * We should also check against making more then TMP_MAX of these.

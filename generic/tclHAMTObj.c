@@ -258,7 +258,7 @@ SetHamtFromAny(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr)
 {
-    size_t i, objc;
+    Tcl_Size i, objc;
     Tcl_Obj **objv;
     TclHAMT old, unlocked;
 

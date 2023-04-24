@@ -850,7 +850,19 @@ ListStoreReallocate (ListStore *storePtr, Tcl_Size numSlots)
     newCapacity = ListStoreUpSize(numSlots);
     newStorePtr =
 	(ListStore *)Tcl_AttemptRealloc(storePtr, LIST_SIZE(newCapacity));
+    
+    /*
+     * In case above failed keep looping reducing the requested extra space
+     * by half every time.
+     */
+    while (newStorePtr == NULL && (newCapacity > (numSlots+1))) {
+	/* Because of loop condition newCapacity can't overflow */
+	newCapacity = numSlots + ((newCapacity - numSlots) / 2);
+	newStorePtr =
+	    (ListStore *)Tcl_AttemptRealloc(storePtr, LIST_SIZE(newCapacity));
+    }
     if (newStorePtr == NULL) {
+	/* Last resort - allcate what was asked */
 	newCapacity = numSlots;
 	newStorePtr = (ListStore *)Tcl_AttemptRealloc(storePtr,
 						    LIST_SIZE(newCapacity));
@@ -1601,6 +1613,7 @@ ListRepRange(
 
 Tcl_Obj *
 TclListObjRange(
+    Tcl_Interp *interp,		/* May be NULL. Used for error messages */
     Tcl_Obj *listObj,		/* List object to take a range from. */
     Tcl_Size rangeStart,	/* Index of first element to include. */
     Tcl_Size rangeEnd)		/* Index of last element to include. */
@@ -1609,7 +1622,7 @@ TclListObjRange(
     ListRep resultRep;
 
     int isShared;
-    if (TclListObjGetRep(NULL, listObj, &listRep) != TCL_OK)
+    if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK)
 	return NULL;
 
     isShared = Tcl_IsShared(listObj);
@@ -1852,7 +1865,7 @@ Tcl_ListObjAppendList(
 				    : LISTREP_SPACE_ONLY_BACK,
 		    &listRep)
 	!= TCL_OK) {
-	return TCL_ERROR;
+	return MemoryAllocationError(interp, finalLen);
     }
     LIST_ASSERT(listRep.storePtr->numAllocated >= finalLen);
 
@@ -2024,7 +2037,7 @@ Tcl_ListObjLength(
     return TCL_OK;
 }
 
-Tcl_Size 
+Tcl_Size
 ListLength(Tcl_Obj *listPtr)
 {
     ListRep listRep;

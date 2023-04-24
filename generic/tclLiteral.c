@@ -604,7 +604,7 @@ TclAddLiteralObj(
 
     envPtr->literalArrayPtr[objIndex] = objPtr;
     Tcl_IncrRefCount(objPtr);
-    
+
     return objIndex;
 
     (void)litPtrPtr;
@@ -701,8 +701,8 @@ TclReleaseLiteral(
     LiteralTable *globalTablePtr;
     LiteralEntry *entryPtr, *prevPtr;
     const char *bytes;
-    Tcl_Size length;
     size_t index;
+    Tcl_Size length;
 
     if (iPtr == NULL) {
 	goto done;
@@ -845,8 +845,8 @@ RebuildLiteralTable(
     LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     const char *bytes;
-    Tcl_Size count, length;
-    size_t oldSize, index;
+    size_t oldSize, count, index;
+    Tcl_Size length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;

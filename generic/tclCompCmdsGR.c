@@ -2105,7 +2105,7 @@ TclCompileRegsubCmd(
     Tcl_DString pattern;
     const char *bytes;
     int exact, quantified, result = TCL_ERROR;
-    size_t len;
+    Tcl_Size len;
 
     if ((int)parsePtr->numWords < 5 || (int)parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -2697,7 +2697,7 @@ IndexTailVarIfKnown(
     Tcl_Obj *tailPtr;
     const char *tailName, *p;
     int n = varTokenPtr->numComponents;
-    size_t len;
+    Tcl_Size len;
     Tcl_Token *lastTokenPtr;
     int full, localIndex;
 

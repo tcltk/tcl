@@ -2006,12 +2006,16 @@ Tcl_AppendFormatToObj(
 
 	width = 0;
 	if (isdigit(UCHAR(ch))) {
-	    width = strtoul(format, &end, 10);
-	    if (width < 0) {
+	    /* Note ull will be >= 0 because of isdigit check above */
+	    unsigned long long ull;
+	    ull = strtoull(format, &end, 10);
+	    /* Comparison is >=, not >, to leave room for nul */
+	    if (ull >= TCL_SIZE_MAX) {
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
+	    width = (Tcl_Size)ull;
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
@@ -2048,7 +2052,16 @@ Tcl_AppendFormatToObj(
 	    step = TclUtfToUniChar(format, &ch);
 	}
 	if (isdigit(UCHAR(ch))) {
-	    precision = strtoul(format, &end, 10);
+	    /* Note ull will be >= 0 because of isdigit check above */
+	    unsigned long long ull;
+	    ull = strtoull(format, &end, 10);
+	    /* Comparison is >=, not >, to leave room for nul */
+	    if (ull >= TCL_SIZE_MAX) {
+		msg = overflow;
+		errCode = "OVERFLOW";
+		goto errorMsg;
+	    }
+	    precision = (Tcl_Size)ull;
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
@@ -3115,23 +3128,24 @@ TclStringRepeat(
 Tcl_Obj *
 TclStringCat(
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj * const objv[],
     int flags)
 {
     Tcl_Obj *objResultPtr, * const *ov;
-    int oc, binary = 1;
+    int binary = 1;
+    Tcl_Size oc;
     Tcl_Size length = 0;
     int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
-    int first = objc - 1;	/* Index of first value possibly not empty */
-    int last = 0;		/* Index of last value possibly not empty */
+    Tcl_Size first = objc - 1;	/* Index of first value possibly not empty */
+    Tcl_Size last = 0;		/* Index of last value possibly not empty */
     int inPlace = flags & TCL_STRING_IN_PLACE;
 
     /* assert ( objc >= 0 ) */
 
     if (objc <= 1) {
-	/* Only one or no objects; return first or empty */
-	return objc ? objv[0] : Tcl_NewObj();
+	/* Negative (shouldn't be), one or no objects; return first or empty */
+	return objc == 1 ? objv[0] : Tcl_NewObj();
     }
 
     /* assert ( objc >= 2 ) */
@@ -3511,6 +3525,7 @@ TclStringCmp(
     if ((reqlength == 0) || (value1Ptr == value2Ptr)) {
 	/*
 	 * Always match at 0 chars of if it is the same obj.
+	 * Note: as documented reqlength negative means it is ignored
 	 */
 	match = 0;
     } else {
@@ -3565,7 +3580,7 @@ TclStringCmp(
 			memCmpFn = memcmp;
 			s1len *= sizeof(Tcl_UniChar);
 			s2len *= sizeof(Tcl_UniChar);
-			if (reqlength != TCL_INDEX_NONE) {
+			if (reqlength > 0) {
 			    reqlength *= sizeof(Tcl_UniChar);
 			}
 		    } else {
@@ -3609,7 +3624,7 @@ TclStringCmp(
 		s1 = Tcl_GetStringFromObj(value1Ptr, &s1len);
 		s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
 	    }
-	    if (!nocase && checkEq && reqlength == TCL_INDEX_NONE) {
+	    if (!nocase && checkEq && reqlength < 0) {
 		/*
 		 * When we have equal-length we can check only for
 		 * (in)equality. We can use memcmp in all (n)eq cases because
@@ -3626,7 +3641,7 @@ TclStringCmp(
 		 * length was requested.
 		 */
 
-		if ((reqlength == TCL_INDEX_NONE) && !nocase) {
+		if ((reqlength < 0) && !nocase) {
 		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
 		} else {
 		    s1len = Tcl_NumUtfChars(s1, s1len);
@@ -3642,7 +3657,7 @@ TclStringCmp(
 	 * comparison function.
 	 */
 	length = (s1len < s2len) ? s1len : s2len;
-	if (reqlength == TCL_INDEX_NONE) {
+	if (reqlength < 0) {
 	    /*
 	     * The requested length is negative, so ignore it by setting it
 	     * to length + 1 to correct the match var.
@@ -3653,7 +3668,7 @@ TclStringCmp(
 	    length = reqlength;
 	}
 
-	if (checkEq && reqlength == TCL_INDEX_NONE && (s1len != s2len)) {
+	if (checkEq && reqlength < 0 && (s1len != s2len)) {
 	    match = 1;		/* This will be reversed below. */
 	} else {
 	    /*
