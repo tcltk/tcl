@@ -291,7 +291,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #   define TCL_SIZE_MODIFIER ""
 #   define TCL_SIZE_MAX INT_MAX
 #else
-    typedef size_t Tcl_Size;
+    typedef ptrdiff_t Tcl_Size;
 #   define TCL_SIZE_MAX PTRDIFF_MAX
 #   define TCL_SIZE_MODIFIER TCL_T_MODIFIER
 #endif /* TCL_MAJOR_VERSION */
@@ -526,7 +526,7 @@ typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
-	size_t level, const char *command, Tcl_Command commandInfo, size_t objc,
+	ptrdiff_t level, const char *command, Tcl_Command commandInfo, ptrdiff_t objc,
 	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
@@ -551,7 +551,7 @@ typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
-	size_t objc, struct Tcl_Obj *const *objv);
+	ptrdiff_t objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
@@ -2291,7 +2291,7 @@ TCLAPI const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #endif
 #   define Tcl_MainEx Tcl_MainExW
-    TCLAPI TCL_NORETURN void Tcl_MainExW(size_t argc, wchar_t **argv,
+    TCLAPI TCL_NORETURN void Tcl_MainExW(Tcl_Size argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 #if defined(USE_TCL_STUBS) && (TCL_MAJOR_VERSION > 8)
@@ -2304,7 +2304,7 @@ TCLAPI const char *TclZipfs_AppHook(int *argc, char ***argv);
 #define TclZipfs_AppHook(argcp, argvp) \
 	TclInitStubTable(((const char *(*)(int *, void *))TclStubCall((void *)3))(argcp, argvp))
 #define Tcl_MainExW(argc, argv, appInitProc, interp) \
-	(void)((const char *(*)(size_t, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	(void)((const char *(*)(Tcl_Size, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
 	TclStubCall((void *)4))(argc, argv, appInitProc, interp)
 #if !defined(_WIN32) || !defined(UNICODE)
 #define Tcl_MainEx(argc, argv, appInitProc, interp) \

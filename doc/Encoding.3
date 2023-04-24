@@ -25,13 +25,13 @@ int
 char *
 \fBTcl_ExternalToUtfDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
 .sp
-size_t
+int
 \fBTcl_ExternalToUtfDStringEx\fR(\fIinterp, encoding, src, srcLen, flags, dstPtr, errorIdxPtr\fR)
 .sp
 char *
 \fBTcl_UtfToExternalDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
 .sp
-size_t
+int
 \fBTcl_UtfToExternalDStringEx\fR(\fIinterp, encoding, src, srcLen, flags, dstPtr, errorIdxPtr\fR)
 .sp
 int
@@ -45,7 +45,7 @@ int
 const char *
 \fBTcl_GetEncodingName\fR(\fIencoding\fR)
 .sp
-size_t
+Tcl_Size
 \fBTcl_GetEncodingNulLength\fR(\fIencoding\fR)
 .sp
 int
@@ -86,7 +86,7 @@ specified encoding that are to be converted to UTF-8.  For the
 UTF-8 characters to be converted to the specified encoding.
 .AP "const TCHAR" *tsrc in
 An array of Windows TCHAR characters to convert to UTF-8.
-.AP size_t srcLen in
+.AP Tcl_Size srcLen in
 Length of \fIsrc\fR or \fItsrc\fR in bytes.  If the length is negative, the
 encoding-specific length of the string is used.
 .AP Tcl_DString *dstPtr out
@@ -347,7 +347,7 @@ typedef struct Tcl_EncodingType {
     Tcl_EncodingConvertProc *\fIfromUtfProc\fR;
     Tcl_EncodingFreeProc *\fIfreeProc\fR;
     void *\fIclientData\fR;
-    size_t \fInullSize\fR;
+    Tcl_Size \fInullSize\fR;
 } \fBTcl_EncodingType\fR;
 .CE
 .PP

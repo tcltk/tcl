@@ -120,10 +120,10 @@ TclOOInitInfo(
     infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
     if (infoCmd) {
 	Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
-	Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("object", TCL_INDEX_NONE),
-		Tcl_NewStringObj("::oo::InfoObject", TCL_INDEX_NONE));
-	Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("class", TCL_INDEX_NONE),
-		Tcl_NewStringObj("::oo::InfoClass", TCL_INDEX_NONE));
+	Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("object", -1),
+		Tcl_NewStringObj("::oo::InfoObject", -1));
+	Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("class", -1),
+		Tcl_NewStringObj("::oo::InfoClass", -1));
 	Tcl_SetEnsembleMappingDict(interp, infoCmd, mapDict);
     }
 }
@@ -194,7 +194,7 @@ InfoObjectClassCmd(
 	return TCL_OK;
     } else {
 	Class *mixinPtr, *o2clsPtr;
-	size_t i;
+	Tcl_Size i;
 
 	o2clsPtr = GetClassFromObj(interp, objv[2]);
 	if (o2clsPtr == NULL) {
@@ -264,7 +264,7 @@ InfoObjectDefnCmd(
     procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method", TCL_INDEX_NONE));
+		"definition not available for this kind of method", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
@@ -278,7 +278,7 @@ InfoObjectDefnCmd(
 
 	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, TCL_INDEX_NONE));
+		    Tcl_NewStringObj(localPtr->name, -1));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
@@ -307,7 +307,7 @@ InfoObjectFiltersCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    size_t i;
+    Tcl_Size i;
     Tcl_Obj *filterObj, *resultObj;
     Object *oPtr;
 
@@ -411,7 +411,7 @@ InfoObjectIsACmd(
     } idx;
     Object *oPtr, *o2Ptr;
     int result = 0;
-    size_t i;
+    Tcl_Size i;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "category objName ?arg ...?");
@@ -610,7 +610,7 @@ InfoObjectMethodsCmd(
 
 	for (i=0 ; i<numNames ; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(names[i], TCL_INDEX_NONE));
+		    Tcl_NewStringObj(names[i], -1));
 	}
 	if (numNames > 0) {
 	    Tcl_Free((void *)names);
@@ -679,7 +679,7 @@ InfoObjectMethodTypeCmd(
 	goto unknownMethod;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(mPtr->typePtr->name, TCL_INDEX_NONE));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(mPtr->typePtr->name, -1));
     return TCL_OK;
 }
 
@@ -703,7 +703,7 @@ InfoObjectMixinsCmd(
     Class *mixinPtr;
     Object *oPtr;
     Tcl_Obj *resultObj;
-    size_t i;
+    Tcl_Size i;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName");
@@ -787,7 +787,7 @@ InfoObjectNsCmd(
     }
 
     Tcl_SetObjResult(interp,
-	    Tcl_NewStringObj(oPtr->namespacePtr->fullName, TCL_INDEX_NONE));
+	    Tcl_NewStringObj(oPtr->namespacePtr->fullName, -1));
     return TCL_OK;
 }
 
@@ -810,7 +810,7 @@ InfoObjectVariablesCmd(
 {
     Object *oPtr;
     Tcl_Obj *resultObj;
-    size_t i;
+    Tcl_Size i;
     int isPrivate = 0;
 
     if (objc != 2 && objc != 3) {
@@ -943,7 +943,7 @@ InfoClassConstrCmd(
     procPtr = TclOOGetProcFromMethod(clsPtr->constructorPtr);
     if (procPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method", TCL_INDEX_NONE));
+		"definition not available for this kind of method", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "METHOD_TYPE", NULL);
 	return TCL_ERROR;
     }
@@ -956,7 +956,7 @@ InfoClassConstrCmd(
 
 	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, TCL_INDEX_NONE));
+		    Tcl_NewStringObj(localPtr->name, -1));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
@@ -1010,7 +1010,7 @@ InfoClassDefnCmd(
     procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method", TCL_INDEX_NONE));
+		"definition not available for this kind of method", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		TclGetString(objv[2]), NULL);
 	return TCL_ERROR;
@@ -1024,7 +1024,7 @@ InfoClassDefnCmd(
 
 	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
-		    Tcl_NewStringObj(localPtr->name, TCL_INDEX_NONE));
+		    Tcl_NewStringObj(localPtr->name, -1));
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
@@ -1121,7 +1121,7 @@ InfoClassDestrCmd(
     procPtr = TclOOGetProcFromMethod(clsPtr->destructorPtr);
     if (procPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method", TCL_INDEX_NONE));
+		"definition not available for this kind of method", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "METHOD_TYPE", NULL);
 	return TCL_ERROR;
     }
@@ -1147,7 +1147,7 @@ InfoClassFiltersCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    size_t i;
+    Tcl_Size i;
     Tcl_Obj *filterObj, *resultObj;
     Class *clsPtr;
 
@@ -1238,7 +1238,7 @@ InfoClassInstancesCmd(
 {
     Object *oPtr;
     Class *clsPtr;
-    size_t i;
+    Tcl_Size i;
     const char *pattern = NULL;
     Tcl_Obj *resultObj;
 
@@ -1361,11 +1361,11 @@ InfoClassMethodsCmd(
     TclNewObj(resultObj);
     if (recurse) {
 	const char **names;
-	size_t i, numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
+	Tcl_Size i, numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
 
 	for (i=0 ; i<numNames ; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(names[i], TCL_INDEX_NONE));
+		    Tcl_NewStringObj(names[i], -1));
 	}
 	if (numNames > 0) {
 	    Tcl_Free((void *)names);
@@ -1431,7 +1431,7 @@ InfoClassMethodTypeCmd(
 
 	goto unknownMethod;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(mPtr->typePtr->name, TCL_INDEX_NONE));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(mPtr->typePtr->name, -1));
     return TCL_OK;
 }
 
@@ -1454,7 +1454,7 @@ InfoClassMixinsCmd(
 {
     Class *clsPtr, *mixinPtr;
     Tcl_Obj *resultObj;
-    size_t i;
+    Tcl_Size i;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className");
@@ -1496,7 +1496,7 @@ InfoClassSubsCmd(
 {
     Class *clsPtr, *subclassPtr;
     Tcl_Obj *resultObj;
-    size_t i;
+    Tcl_Size i;
     const char *pattern = NULL;
 
     if (objc != 2 && objc != 3) {
@@ -1551,7 +1551,7 @@ InfoClassSupersCmd(
 {
     Class *clsPtr, *superPtr;
     Tcl_Obj *resultObj;
-    size_t i;
+    Tcl_Size i;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className");
@@ -1590,7 +1590,7 @@ InfoClassVariablesCmd(
 {
     Class *clsPtr;
     Tcl_Obj *resultObj;
-    size_t i;
+    Tcl_Size i;
     int isPrivate = 0;
 
     if (objc != 2 && objc != 3) {
@@ -1663,7 +1663,7 @@ InfoObjectCallCmd(
 	    NULL);
     if (contextPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"cannot construct any call chain", TCL_INDEX_NONE));
+		"cannot construct any call chain", -1));
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp,
@@ -1708,7 +1708,7 @@ InfoClassCallCmd(
     callPtr = TclOOGetStereotypeCallChain(clsPtr, objv[2], PUBLIC_METHOD);
     if (callPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"cannot construct any call chain", TCL_INDEX_NONE));
+		"cannot construct any call chain", -1));
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, TclOORenderCallChain(interp, callPtr));

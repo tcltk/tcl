@@ -382,8 +382,8 @@ Tcl_GetPathType(
 Tcl_PathType
 TclpGetNativePathType(
     Tcl_Obj *pathPtr,		/* Native path of interest */
-    size_t *driveNameLengthPtr,	/* Returns length of drive, if non-NULL and
-				 * path was absolute */
+    Tcl_Size *driveNameLengthPtr, /* Returns length of drive, if non-NULL and
+				   * path was absolute */
     Tcl_Obj **driveNameRef)
 {
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
@@ -466,7 +466,7 @@ TclpGetNativePathType(
 Tcl_Obj *
 TclpNativeSplitPath(
     Tcl_Obj *pathPtr,		/* Path to split. */
-    size_t *lenPtr)		/* int to store number of path elements. */
+    Tcl_Size *lenPtr)		/* int to store number of path elements. */
 {
     Tcl_Obj *resultPtr = NULL;	/* Needed only to prevent gcc warnings. */
 
@@ -523,14 +523,14 @@ TclpNativeSplitPath(
 void
 Tcl_SplitPath(
     const char *path,		/* Pointer to string containing a path. */
-    size_t *argcPtr,		/* Pointer to location to fill in with the
+    Tcl_Size *argcPtr,		/* Pointer to location to fill in with the
 				 * number of elements in the path. */
     const char ***argvPtr)	/* Pointer to place to store pointer to array
 				 * of pointers to path elements. */
 {
     Tcl_Obj *resultPtr = NULL;	/* Needed only to prevent gcc warnings. */
     Tcl_Obj *tmpPtr, *eltPtr;
-    size_t i, size, len;
+    Tcl_Size i, size, len;
     char *p;
     const char *str;
 
@@ -538,7 +538,7 @@ Tcl_SplitPath(
      * Perform the splitting, using objectified, vfs-aware code.
      */
 
-    tmpPtr = Tcl_NewStringObj(path, TCL_INDEX_NONE);
+    tmpPtr = Tcl_NewStringObj(path, -1);
     Tcl_IncrRefCount(tmpPtr);
     resultPtr = Tcl_FSSplitPath(tmpPtr, argcPtr);
     Tcl_IncrRefCount(resultPtr);
@@ -759,7 +759,7 @@ SplitWinPath(
 Tcl_Obj *
 Tcl_FSJoinToPath(
     Tcl_Obj *pathPtr,		/* Valid path or NULL. */
-    size_t objc,			/* Number of array elements to join */
+    Tcl_Size objc,		/* Number of array elements to join */
     Tcl_Obj *const objv[])	/* Path elements to join. */
 {
     if (pathPtr == NULL) {
@@ -775,7 +775,7 @@ Tcl_FSJoinToPath(
 	pair[1] = objv[0];
 	return TclJoinPath(2, pair, 0);
     } else {
-	size_t elemc = objc + 1;
+	Tcl_Size elemc = objc + 1;
 	Tcl_Obj *ret, **elemv = (Tcl_Obj**)Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
 
 	elemv[0] = pathPtr;
@@ -928,11 +928,11 @@ TclpNativeJoinPath(
 
 char *
 Tcl_JoinPath(
-    size_t argc,
+    Tcl_Size argc,
     const char *const *argv,
     Tcl_DString *resultPtr)	/* Pointer to previously initialized DString */
 {
-    size_t i, len;
+    Tcl_Size i, len;
     Tcl_Obj *listObj;
     Tcl_Obj *resultObj;
     const char *resultStr;
@@ -944,7 +944,7 @@ Tcl_JoinPath(
     TclNewObj(listObj);
     for (i = 0; i < argc; i++) {
 	Tcl_ListObjAppendElement(NULL, listObj,
-		Tcl_NewStringObj(argv[i], TCL_INDEX_NONE));
+		Tcl_NewStringObj(argv[i], -1));
     }
 
     /*
@@ -1004,7 +1004,7 @@ Tcl_TranslateFileName(
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name. */
 {
-    Tcl_Obj *path = Tcl_NewStringObj(name, TCL_INDEX_NONE);
+    Tcl_Obj *path = Tcl_NewStringObj(name, -1);
     Tcl_Obj *transPtr;
 
     Tcl_IncrRefCount(path);
@@ -1119,7 +1119,7 @@ Tcl_GlobObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int i, globFlags, join, dir, result;
-    size_t length;
+    Tcl_Size length;
     char *string;
     const char *separators;
     Tcl_Obj *typePtr, *look;
@@ -1172,7 +1172,7 @@ Tcl_GlobObjCmd(
 	case GLOB_DIR:				/* -dir */
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing argument to \"-directory\"", TCL_INDEX_NONE));
+			"missing argument to \"-directory\"", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		return TCL_ERROR;
 	    }
@@ -1200,7 +1200,7 @@ Tcl_GlobObjCmd(
 	case GLOB_PATH:				/* -path */
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing argument to \"-path\"", TCL_INDEX_NONE));
+			"missing argument to \"-path\"", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		return TCL_ERROR;
 	    }
@@ -1221,7 +1221,7 @@ Tcl_GlobObjCmd(
 	case GLOB_TYPE:				/* -types */
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing argument to \"-types\"", TCL_INDEX_NONE));
+			"missing argument to \"-types\"", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		return TCL_ERROR;
 	    }
@@ -1241,7 +1241,7 @@ Tcl_GlobObjCmd(
     if ((globFlags & TCL_GLOBMODE_TAILS) && (pathOrDir == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"\"-tails\" must be used with either "
-		"\"-directory\" or \"-path\"", TCL_INDEX_NONE));
+		"\"-directory\" or \"-path\"", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 		"BADOPTIONCOMBINATION", NULL);
 	return TCL_ERROR;
@@ -1258,7 +1258,7 @@ Tcl_GlobObjCmd(
     }
 
     if (dir == PATH_GENERAL) {
-	size_t pathlength;
+	Tcl_Size pathlength;
 	const char *last;
 	const char *first = Tcl_GetStringFromObj(pathOrDir,&pathlength);
 
@@ -1292,7 +1292,7 @@ Tcl_GlobObjCmd(
 		 * in TclGlob requires a non-NULL pathOrDir.
 		 */
 
-		Tcl_DStringAppend(&pref, first, TCL_INDEX_NONE);
+		Tcl_DStringAppend(&pref, first, -1);
 		globFlags &= ~TCL_GLOBMODE_TAILS;
 		pathOrDir = NULL;
 	    } else {
@@ -1331,7 +1331,7 @@ Tcl_GlobObjCmd(
 		}
 	    }
 	    if (*search != '\0') {
-		Tcl_DStringAppend(&prefix, search, TCL_INDEX_NONE);
+		Tcl_DStringAppend(&prefix, search, -1);
 	    }
 	    Tcl_DStringFree(&pref);
 	}
@@ -1417,7 +1417,7 @@ Tcl_GlobObjCmd(
 
 	    } else {
 		Tcl_Obj *item;
-		size_t llen;
+		Tcl_Size llen;
 
 		if ((TclListObjLengthM(NULL, look, &llen) == TCL_OK)
 			&& (llen == 3)) {
@@ -1461,7 +1461,7 @@ Tcl_GlobObjCmd(
 	    badMacTypesArg:
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"only one MacOS type or creator argument"
-			" to \"-types\" allowed", TCL_INDEX_NONE));
+			" to \"-types\" allowed", -1));
 		result = TCL_ERROR;
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", NULL);
 		join = 0;
@@ -1641,9 +1641,9 @@ TclGlob(
 	    Tcl_IncrRefCount(pathPrefix);
 	} else if (pathPrefix == NULL && (tail[0] == '/'
 		|| (tail[0] == '\\' && tail[1] == '\\'))) {
-	    size_t driveNameLen;
+	    Tcl_Size driveNameLen;
 	    Tcl_Obj *driveName;
-	    Tcl_Obj *temp = Tcl_NewStringObj(tail, TCL_INDEX_NONE);
+	    Tcl_Obj *temp = Tcl_NewStringObj(tail, -1);
 	    Tcl_IncrRefCount(temp);
 
 	    switch (TclGetPathType(temp, NULL, &driveNameLen, &driveName)) {
@@ -1709,7 +1709,7 @@ TclGlob(
      */
 
     if (pathPrefix == NULL) {
-	size_t driveNameLen;
+	Tcl_Size driveNameLen;
 	Tcl_Obj *driveName;
 	if (TclFSNonnativePathType(tail, strlen(tail), NULL,
 		&driveNameLen, &driveName) == TCL_PATH_ABSOLUTE) {
@@ -1794,9 +1794,9 @@ TclGlob(
      */
 
     if (globFlags & TCL_GLOBMODE_TAILS) {
-	size_t objc, i;
+	Tcl_Size objc, i;
 	Tcl_Obj **objv;
-	size_t prefixLen;
+	Tcl_Size prefixLen;
 	const char *pre;
 
 	/*
@@ -1824,7 +1824,7 @@ TclGlob(
 
 	TclListObjGetElementsM(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
-	    size_t len;
+	    Tcl_Size len;
 	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
 	    Tcl_Obj *elem;
 
@@ -2034,14 +2034,14 @@ DoGlob(
 		break;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unmatched open-brace in file name", TCL_INDEX_NONE));
+		    "unmatched open-brace in file name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    NULL);
 	    return TCL_ERROR;
 
 	} else if (*p == '}') {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unmatched close-brace in file name", TCL_INDEX_NONE));
+		    "unmatched close-brace in file name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    NULL);
 	    return TCL_ERROR;
@@ -2073,7 +2073,7 @@ DoGlob(
 	    SkipToChar(&p, ',');
 	    Tcl_DStringSetLength(&newName, baseLength);
 	    Tcl_DStringAppend(&newName, element, p-element);
-	    Tcl_DStringAppend(&newName, closeBrace+1, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(&newName, closeBrace+1, -1);
 	    result = DoGlob(interp, matchesObj, separators, pathPtr, flags,
 		    Tcl_DStringValue(&newName), types);
 	    if (result != TCL_OK) {
@@ -2148,7 +2148,7 @@ DoGlob(
 		pattern, &dirOnly);
 	*p = save;
 	if (result == TCL_OK) {
-	    size_t i, subdirc, repair = TCL_INDEX_NONE;
+	    Tcl_Size i, subdirc, repair = -1;
 	    Tcl_Obj **subdirv;
 
 	    result = TclListObjGetElementsM(interp, subdirsPtr,
@@ -2159,14 +2159,14 @@ DoGlob(
 		result = DoGlob(interp, matchesObj, separators, subdirv[i],
 			1, p+1, types);
 		if (copy) {
-		    size_t end;
+		    Tcl_Size end;
 
 		    Tcl_DecrRefCount(subdirv[i]);
 		    subdirv[i] = copy;
 		    TclListObjLengthM(NULL, matchesObj, &end);
-		    while (repair + 1 <= end) {
+		    while (repair < end) {
 			const char *bytes;
-			size_t numBytes;
+			Tcl_Size numBytes;
 			Tcl_Obj *fixme, *newObj;
 
 			Tcl_ListObjIndex(NULL, matchesObj, repair, &fixme);

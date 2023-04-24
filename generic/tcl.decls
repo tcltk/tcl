@@ -2474,19 +2474,19 @@ declare 649 {
 }
 declare 650 {
     unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    size_t *numBytesPtr)
+	    Tcl_Size *numBytesPtr)
 }
 
 # TIP #481
 declare 651 {
-    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
 declare 652 {
-    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
 # Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 653 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, Tcl_Size *numBytesPtr)
 }
 
 # TIP #575
@@ -2523,28 +2523,28 @@ declare 660 {
 # TIP #616
 declare 661 {
     int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    size_t *objcPtr, Tcl_Obj ***objvPtr)
+	    Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 662 {
     int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    size_t *lengthPtr)
+	    Tcl_Size *lengthPtr)
 }
 declare 663 {
-    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, size_t *sizePtr)
+    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Size *sizePtr)
 }
 declare 664 {
-    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
+    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, Tcl_Size *argcPtr,
 	    const char ***argvPtr)
 }
 declare 665 {
-    void Tcl_SplitPath(const char *path, size_t *argcPtr, const char ***argvPtr)
+    void Tcl_SplitPath(const char *path, Tcl_Size *argcPtr, const char ***argvPtr)
 }
 declare 666 {
-    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr)
+    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, Tcl_Size *lenPtr)
 }
 declare 667 {
     int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
-	    size_t *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
+	    Tcl_Size *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
 # TIP #617
@@ -2594,7 +2594,7 @@ declare 678 {
 }
 declare 679 {
     int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2,
-	    void *clientData, size_t objc, Tcl_Obj *const objv[])
+	    void *clientData, ptrdiff_t objc, Tcl_Obj *const objv[])
 }
 
 # TIP #638.
@@ -2603,7 +2603,7 @@ declare 680 {
 	    void **clientDataPtr, int *typePtr)
 }
 declare 681 {
-    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, size_t numBytes,
+    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, Tcl_Size numBytes,
 	    void **clientDataPtr, int *typePtr)
 }
 
@@ -2626,6 +2626,12 @@ declare 684 {
 # TIP 651
 declare 685 {
     Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
+}
+
+# TIP 660
+declare 686 {
+    int Tcl_GetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Size *sizePtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
