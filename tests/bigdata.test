@@ -139,9 +139,8 @@ bigtest string-cat-bigdata-3 "string cat result > UINT_MAX" 1 -body {
 bigtestRO string-equal/compare-bigdata-1 "string compare/equal equal strings" {0 1} -body {
     list [string compare $s1 $s2] [string equal $s1 $s2]
 } -setup {
-    set len [expr {$::bigLengths(intmax)+1}]
-    set s1 [bigString $len]
-    set s2 [bigString $len]; # Use separate string to avoid Tcl_Obj * being same
+    set s1 [bigString 0x100000000]
+    set s2 [bigString 0x100000000]; # Separate so Tcl_Obj is not the same
 } -cleanup {
     bigClean
 }
@@ -152,15 +151,15 @@ bigtestRO string-equal/compare-bigdata-2 "string compare/equal -length unequal s
     lappend result [string equal $s1 $s2]
     # Check lengths > UINT_MAX
     # Also that lengths do not truncate to sizeof(int)
-    lappend result [string compare -length $len $s1 $s2]
-    lappend result [string equal -length $len $s1 $s2]
+    lappend result [string compare -length 0x100000000 $s1 $s2]
+    lappend result [string equal -length 0x100000000 $s1 $s2]
 } -setup {
-    set len [expr {$::bigLengths(uintmax)+2}]
-    set s1 [bigString $len]
-    set s2 [bigString $len $len]; # Differs in last char
+    set s1 [bigString 0x100000001]
+    set s2 [bigString 0x100000001 0x100000000]; # Differs in last char
 } -cleanup {
     bigClean
-} -constraints bug-a814ee5bbd
+}
+# -constraints bug-a814ee5bbd
 
 #
 # string first
