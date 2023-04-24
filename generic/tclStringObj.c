@@ -2006,12 +2006,16 @@ Tcl_AppendFormatToObj(
 
 	width = 0;
 	if (isdigit(UCHAR(ch))) {
-	    width = strtoul(format, &end, 10);
-	    if (width < 0) {
+	    /* Note ull will be >= 0 because of isdigit check above */
+	    unsigned long long ull;
+	    ull = strtoull(format, &end, 10);
+	    /* Comparison is >=, not >, to leave room for nul */
+	    if (ull >= TCL_SIZE_MAX) {
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
+	    width = (Tcl_Size)ull;
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
@@ -2048,7 +2052,16 @@ Tcl_AppendFormatToObj(
 	    step = TclUtfToUniChar(format, &ch);
 	}
 	if (isdigit(UCHAR(ch))) {
-	    precision = strtoul(format, &end, 10);
+	    /* Note ull will be >= 0 because of isdigit check above */
+	    unsigned long long ull;
+	    ull = strtoull(format, &end, 10);
+	    /* Comparison is >=, not >, to leave room for nul */
+	    if (ull >= TCL_SIZE_MAX) {
+		msg = overflow;
+		errCode = "OVERFLOW";
+		goto errorMsg;
+	    }
+	    precision = (Tcl_Size)ull;
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
