@@ -3845,7 +3845,6 @@ TclIndexEncode(
 	 * valid indices but are not in the encodable range. Thus an
 	 * error is raised. On 32-bit systems, indices in that range indicate
 	 * the position after the end and so do not raise an error.
-	 * However, an encoded index is limited to int (4 bytes).
 	 */
 	if ((sizeof(int) != sizeof(size_t)) &&
 	    (wide > INT_MAX) && (wide < WIDE_MAX-1)) {
