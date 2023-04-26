@@ -2004,7 +2004,7 @@ InvokeTclMethod(
 	     */
 	    if (result != TCL_ERROR) {
 		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rtPtr->argv);
-		size_t cmdLen;
+		Tcl_Size cmdLen;
 		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
@@ -2770,7 +2770,7 @@ ForwardSetObjError(
     ForwardParam *paramPtr,
     Tcl_Obj *obj)
 {
-    size_t len;
+    Tcl_Size len;
     const char *msgStr = Tcl_GetStringFromObj(obj, &len);
 
     len++;

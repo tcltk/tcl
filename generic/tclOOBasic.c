@@ -185,7 +185,7 @@ TclOO_Class_Create(
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     const char *objName;
-    size_t len;
+    Tcl_Size len;
 
     /*
      * Sanity check; should not be possible to invoke this method on a
@@ -250,7 +250,7 @@ TclOO_Class_CreateNs(
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     const char *objName, *nsName;
-    size_t len;
+    Tcl_Size len;
 
     /*
      * Sanity check; should not be possible to invoke this method on a

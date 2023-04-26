@@ -776,7 +776,7 @@ TclSetByteCodeFromAny(
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
-    size_t length;
+    Tcl_Size length;
     int result = TCL_OK;
     const char *stringPtr;
     Proc *procPtr = iPtr->compiledProcPtr;
@@ -1328,7 +1328,7 @@ CompileSubstObj(
     }
     if (codePtr == NULL) {
 	CompileEnv compEnv;
-	size_t numBytes;
+	Tcl_Size numBytes;
 	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
 
 	/* TODO: Check for more TIP 280 */
@@ -1812,7 +1812,7 @@ CompileCmdLiteral(
     const char *bytes;
     Command *cmdPtr;
     int cmdLitIdx, extraLiteralFlags = LITERAL_CMD_NAME;
-    size_t length;
+    Tcl_Size length;
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
     if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
@@ -2136,7 +2136,7 @@ TclCompileScript(
 				 * serves as context for finding and compiling
 				 * commands. May not be NULL. */
     const char *script,		/* The source script to compile. */
-    size_t numBytes,		/* Number of bytes in script. If -1, the
+    Tcl_Size numBytes,		/* Number of bytes in script. If -1, the
 				 * script consists of all bytes up to the
 				 * first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
@@ -2169,7 +2169,7 @@ TclCompileScript(
 
     /* Each iteration compiles one command from the script. */
 
-    if (numBytes + 1 > 1) {
+    if (numBytes > 0) {
       /*
        * Don't use system stack (size of Tcl_Parse is ca. 400 bytes), so
        * many nested compilations (body enclosed in body) can cause abnormal

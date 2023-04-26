@@ -27,8 +27,8 @@
  * - ArithSeriesGetInternalRep -- Return the internal rep from a Tcl_Obj
  * - Precision -- determine the number of factional digits for the given
  *   double value
- * - setPrecision -- Using the value in the given arithSeries, determine and
- *   set the percision in the arithSeries
+ * - maxPrecision -- Using the values provide, determine the longest percision
+ *   in the arithSeries
  */
 static inline double
 ArithRound(double d, unsigned int n) {
@@ -81,16 +81,16 @@ Precision(double d)
     off = strchr(tmp, '.');
     return (off ? strlen(off+1) : 0);
 }
-static inline void
-setPrecision(ArithSeriesDbl *arithSeriesRepPtr)
+static inline int
+maxPrecision(double start, double end, double step)
 {
-	// Find longest number of digits after the decimal point.
-    int dp = Precision(arithSeriesRepPtr->step);
-    int i  = Precision(arithSeriesRepPtr->start);
+    // Find longest number of digits after the decimal point.
+    int dp = Precision(step);
+    int i  = Precision(start);
     dp = i>dp ? i : dp;
-    i  = Precision(arithSeriesRepPtr->end);
+    i  = Precision(end);
     dp = i>dp ? i : dp;
-    arithSeriesRepPtr->precision = dp;
+    return dp;
 }
 
 /*
@@ -215,7 +215,7 @@ NewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_Wide
     Tcl_Obj *arithSeriesObj;
     ArithSeries *arithSeriesRepPtr;
 
-    length = len>=0 ? len : (step == 0) ? 0 : ArithSeriesLenInt(start, end, step);
+    length = len>=0 ? len : -1;
     if (length < 0) length = -1;
 
     TclNewObj(arithSeriesObj);
@@ -267,7 +267,7 @@ NewArithSeriesDbl(double start, double end, double step, Tcl_WideInt len)
     Tcl_Obj *arithSeriesObj;
     ArithSeriesDbl *arithSeriesRepPtr;
 
-    length = len>=0 ? len : ArithSeriesLenDbl(start, end, step);
+    length = len>=0 ? len : -1;
     if (length < 0) {
 	length = -1;
     }
@@ -285,7 +285,7 @@ NewArithSeriesDbl(double start, double end, double step, Tcl_WideInt len)
     arithSeriesRepPtr->step = step;
     arithSeriesRepPtr->len = length;
     arithSeriesRepPtr->elements = NULL;
-    setPrecision(arithSeriesRepPtr);
+    arithSeriesRepPtr->precision = maxPrecision(start,end,step);
     arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
     arithSeriesObj->typePtr = &tclArithSeriesType.objType;
@@ -378,7 +378,7 @@ TclNewArithSeriesObj(
 {
     double dstart, dend, dstep;
     Tcl_WideInt start, end, step;
-    Tcl_WideInt len;
+    Tcl_WideInt len = -1;
 
     if (startObj) {
 	assignNumber(useDoubles, &start, &dstart, startObj);
@@ -420,9 +420,9 @@ TclNewArithSeriesObj(
 	assert(dstep!=0);
 	if (!lenObj) {
 	    if (useDoubles) {
-		len = (dend - dstart + dstep)/dstep;
+		len = ArithSeriesLenDbl(dstart, dend, dstep);
 	    } else {
-		len = (end - start + step)/step;
+		len = ArithSeriesLenInt(start, end, step);
 	    }
 	}
     }
@@ -905,9 +905,9 @@ TclArithSeriesObjRange(
 	arithSeriesDblRepPtr->start = start;
 	arithSeriesDblRepPtr->end = end;
 	arithSeriesDblRepPtr->step = step;
+	arithSeriesDblRepPtr->precision = maxPrecision(start, end, step);
 	arithSeriesDblRepPtr->len = ArithSeriesLenDbl(start, end, step);
 	arithSeriesDblRepPtr->elements = NULL;
-	setPrecision(arithSeriesDblRepPtr);
 
     } else {
 	Tcl_WideInt start, end, step;
@@ -1096,7 +1096,6 @@ TclArithSeriesObjReverse(
 	    arithSeriesDblRepPtr->start = dstart;
 	    arithSeriesDblRepPtr->end = dend;
 	    arithSeriesDblRepPtr->step = dstep;
-	    setPrecision(arithSeriesDblRepPtr);
 	} else {
 	    arithSeriesRepPtr->start = start;
 	    arithSeriesRepPtr->end = end;

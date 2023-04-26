@@ -544,9 +544,17 @@ TclpInitLibraryPath(
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    str = Tcl_GetStringFromObj(pathPtr, lengthPtr);
-    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
-    memcpy(*valuePtr, str, *lengthPtr + 1);
+
+    /*
+     * Note lengthPtr is (TCL_HASH_TYPE *) which is unsigned so cannot 
+     * pass directly to Tcl_GetStringFromObj. 
+     * TODO - why is the type TCL_HASH_TYPE anyways?
+     */
+    Tcl_Size length;
+    str = Tcl_GetStringFromObj(pathPtr, &length);
+    *lengthPtr = length;
+    *valuePtr = (char *)Tcl_Alloc(length + 1);
+    memcpy(*valuePtr, str, length + 1);
     Tcl_DecrRefCount(pathPtr);
 }
 
