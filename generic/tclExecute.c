@@ -981,10 +981,10 @@ GrowEvaluationStack(
 {
     ExecStack *esPtr = eePtr->execStackPtr, *oldPtr = NULL;
     size_t newBytes;
-    int growth = growth1;
-    int newElems, currElems, needed = growth - (esPtr->endPtr - esPtr->tosPtr);
+    Tcl_Size growth = growth1;
+    Tcl_Size newElems, currElems, needed = growth - (esPtr->endPtr - esPtr->tosPtr);
     Tcl_Obj **markerPtr = esPtr->markerPtr, **memStart;
-    int moveWords = 0;
+    Tcl_Size moveWords = 0;
 
     if (move) {
 	if (!markerPtr) {
@@ -2825,8 +2825,20 @@ TEBCresume(
 
 	pc += pcAdjustment;
 	TEBC_YIELD();
-	return TclNREvalObjv(interp, objc, objv,
+	if (objc > INT_MAX) {
+	    if (interp) {
+		Tcl_SetObjResult(
+		    interp,
+		    Tcl_ObjPrintf("Argument count %" TCL_SIZE_MODIFIER
+				  "d exceeds limit %d.",
+				  objc,
+				  (int)INT_MAX));
+	    }
+	    return TCL_ERROR;
+	} else {
+	    return TclNREvalObjv(interp, objc, objv,
 		TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);
+	}
 
     case INST_INVOKE_REPLACE:
 	objc = TclGetUInt4AtPtr(pc+1);
