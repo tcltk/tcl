@@ -2237,7 +2237,7 @@ TestencodingObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Encoding encoding;
-    size_t length;
+    Tcl_Size length;
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
@@ -4126,7 +4126,7 @@ PrintParse(
     Tcl_Obj *objPtr;
     const char *typeString;
     Tcl_Token *tokenPtr;
-    size_t i;
+    Tcl_Size i;
 
     objPtr = Tcl_GetObjResult(interp);
     if (parsePtr->commentSize + 1 > 1) {
@@ -4140,7 +4140,7 @@ PrintParse(
 	    Tcl_NewStringObj(parsePtr->commandStart, parsePtr->commandSize));
     Tcl_ListObjAppendElement(NULL, objPtr,
 	    Tcl_NewWideIntObj(parsePtr->numWords));
-    for (i = 0; i < (size_t)parsePtr->numTokens; i++) {
+    for (i = 0; i < parsePtr->numTokens; i++) {
 	tokenPtr = &parsePtr->tokenPtr[i];
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_EXPAND_WORD:
@@ -7323,7 +7323,7 @@ SimpleMatchInDirectory(
     origPtr = SimpleRedirect(dirPtr);
     res = Tcl_FSMatchInDirectory(interp, resPtr, origPtr, pattern, types);
     if (res == TCL_OK) {
-	size_t gLength, j;
+	Tcl_Size gLength, j;
 	Tcl_ListObjLength(NULL, resPtr, &gLength);
 	for (j = 0; j < gLength; j++) {
 	    Tcl_Obj *gElt, *nElt;
@@ -7409,7 +7409,7 @@ TestUtfNextCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    size_t numBytes;
+    Tcl_Size numBytes;
     char *bytes;
     const char *result, *first;
     char buffer[32];
@@ -7422,7 +7422,7 @@ TestUtfNextCmd(
     }
 	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
-    if (numBytes + 4U > sizeof(buffer)) {
+    if (numBytes + 4 > (Tcl_Size) sizeof(buffer)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"testutfnext\" can only handle %" TCL_Z_MODIFIER "u bytes",
 		sizeof(buffer) - 4));
@@ -7888,7 +7888,7 @@ TestconcatobjCmd(
 {
     Tcl_Obj *list1Ptr, *list2Ptr, *emptyPtr, *concatPtr, *tmpPtr;
     int result = TCL_OK;
-    size_t len;
+    Tcl_Size len;
     Tcl_Obj *objv[3];
 
     /*
@@ -8245,7 +8245,7 @@ TestparseargsCmd(
     Tcl_Obj *const objv[])	/* Arguments. */
 {
     static int foo = 0;
-    size_t count = objc;
+    Tcl_Size count = objc;
     Tcl_Obj **remObjv, *result[3];
     Tcl_ArgvInfo argTable[] = {
         {TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},

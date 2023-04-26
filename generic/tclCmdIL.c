@@ -2326,6 +2326,7 @@ Tcl_LassignObjCmd(
     Tcl_Obj *listCopyPtr;
     Tcl_Obj **listObjv;		/* The contents of the list. */
     Tcl_Size listObjc;		/* The length of the list. */
+    Tcl_Size origListObjc;	/* Original length */
     int code = TCL_OK;
 
     if (objc < 2) {
@@ -2337,8 +2338,10 @@ Tcl_LassignObjCmd(
     if (listCopyPtr == NULL) {
 	return TCL_ERROR;
     }
+    Tcl_IncrRefCount(listCopyPtr); /* Important! fs */
 
     TclListObjGetElementsM(NULL, listCopyPtr, &listObjc, &listObjv);
+    origListObjc = listObjc;
 
     objc -= 2;
     objv += 2;
@@ -2366,7 +2369,13 @@ Tcl_LassignObjCmd(
     }
 
     if (code == TCL_OK && listObjc > 0) {
-	Tcl_SetObjResult(interp, Tcl_NewListObj(listObjc, listObjv));
+	Tcl_Obj *resultObjPtr = TclListObjRange(
+	    interp, listCopyPtr, origListObjc - listObjc, origListObjc - 1);
+	if (resultObjPtr == NULL) {
+	    code = TCL_ERROR;
+	} else {
+	    Tcl_SetObjResult(interp, resultObjPtr);
+	}
     }
 
     Tcl_DecrRefCount(listCopyPtr);
@@ -2759,7 +2768,11 @@ Tcl_LrangeObjCmd(
 	    return TCL_ERROR;
 	}
     } else {
-	Tcl_SetObjResult(interp, TclListObjRange(objv[1], first, last));
+	Tcl_Obj *resultObj = TclListObjRange(interp, objv[1], first, last);
+	if (resultObj == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, resultObj);
     }
     return TCL_OK;
 }
@@ -2940,7 +2953,7 @@ Tcl_LrepeatObjCmd(
     }
     if (elementCount < 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad count \"%" TCL_Z_MODIFIER "d\": must be integer >= 0", elementCount));
+		"bad count \"%" TCL_SIZE_MODIFIER "d\": must be integer >= 0", elementCount));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPEAT", "NEGARG",
 		NULL);
 	return TCL_ERROR;
