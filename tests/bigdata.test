@@ -139,9 +139,8 @@ bigtest string-cat-bigdata-3 "string cat result > UINT_MAX" 1 -body {
 bigtestRO string-equal/compare-bigdata-1 "string compare/equal equal strings" {0 1} -body {
     list [string compare $s1 $s2] [string equal $s1 $s2]
 } -setup {
-    set len [expr {$::bigLengths(intmax)+1}]
-    set s1 [bigString $len]
-    set s2 [bigString $len]; # Use separate string to avoid Tcl_Obj * being same
+    set s1 [bigString 0x100000000]
+    set s2 [bigString 0x100000000]; # Separate so Tcl_Obj is not the same
 } -cleanup {
     bigClean
 }
@@ -152,15 +151,15 @@ bigtestRO string-equal/compare-bigdata-2 "string compare/equal -length unequal s
     lappend result [string equal $s1 $s2]
     # Check lengths > UINT_MAX
     # Also that lengths do not truncate to sizeof(int)
-    lappend result [string compare -length $len $s1 $s2]
-    lappend result [string equal -length $len $s1 $s2]
+    lappend result [string compare -length 0x100000000 $s1 $s2]
+    lappend result [string equal -length 0x100000000 $s1 $s2]
 } -setup {
-    set len [expr {$::bigLengths(uintmax)+2}]
-    set s1 [bigString $len]
-    set s2 [bigString $len $len]; # Differs in last char
+    set s1 [bigString 0x100000001]
+    set s2 [bigString 0x100000001 0x100000000]; # Differs in last char
 } -cleanup {
     bigClean
-} -constraints bug-a814ee5bbd
+}
+# -constraints bug-a814ee5bbd
 
 #
 # string first
@@ -609,19 +608,21 @@ bigtestRO format-bigdata-8 "format big * precision" {4294967300 0123 6789} -body
 
 #
 # scan
-bigtestRO scan-bigdata-1 "scan %s" {1 1 2 1} -body {
+bigtestRO scan-bigdata-1 "scan %s" {1 1 2 X 1 2 4294967300 01234X} -body {
     # Unset explicitly before setting to save memory as bigtestRO runs the
     # script below twice.
-    unset -nocomplain result digits
+    unset -nocomplain result digits x
     lappend result [string equal [scan $s %s] $s]
     lappend result [string equal [scan $s {%[0-9X]}] $s]
     lappend result [scan $s {%[0-9]%s} digits x] $x
-    lappend result [string equal $digits [bigString 0x100000008]]
+    lappend result [string equal $digits [bigString 0x100000009]]
+    lappend result [scan $s %4294967300s%s x y]
+    lappend result [string length $x] $y
 } -setup {
     set s [bigString 0x10000000a 0x100000009]
 } -cleanup {
     bigClean digits
-} -constraints bug-d4ede611a7
+}
 
 #
 # regexp
@@ -680,16 +681,17 @@ bigtestRO subst-bigdata-1 "subst" {1 1} -body {
 
 #
 # binary format
-bigtestRO binary-format-bigdata-1 "binary format aN" 4294967296 -body {
+bigtestRO binary-format-bigdata-1 "binary format aN" [list 4294967296  X\0\0\0 \0\0\0\0] -body {
     # Unset explicitly before setting to save memory as bigtestRO runs the
     # script below twice.
     unset -nocomplain bin
     set bin [binary format a4294967296 X]
-    string length $bin
+    list [string length $bin] [string range $bin 0 3] [string range $bin end-3 end]
 } -cleanup {
     bigClean
-} -constraints bug-9369f83649
-# TODO - do string compare and add other format specifiers once above bug is fixed
+} 
+# -constraints bug-9369f83649
+# TODO - do string compare and add other format specifiers
 
 bigtestRO binary-format-bigdata-2 "binary format a*" 1 -body {
     # Unset explicitly before setting to save memory as bigtestRO runs the
@@ -705,17 +707,18 @@ bigtestRO binary-format-bigdata-2 "binary format a*" 1 -body {
 
 #
 # binary scan
-bigtestRO binary-scan-bigdata-1 "binary scan aN" 4294967296 -body {
+bigtestRO binary-scan-bigdata-1 "binary scan aN" {4294967296 0123 2345} -body {
     # Unset explicitly before setting to save memory as bigtestRO runs the
     # script below twice.
     unset -nocomplain bin2
     binary scan $bin a4294967296 bin2
-    string length $bin2
+    list [string length $bin2] [string range $bin2 0 3] [string range $bin2 end-3 end]
 } -setup {
     set bin [bigBinary 4294967296]
 } -cleanup {
     bigClean
-} -constraints bug-9369f83649
+}
+# -constraints bug-9369f83649
 # TODO - do string compare and add other format specifiers once above bug is fixed
 
 bigtestRO binary-scan-bigdata-2 "binary scan a*" 1 -body {
@@ -741,7 +744,7 @@ bigtestRO binary-encode/decode-base64-bigdata-1 "binary encode/decode base64" 1 
     set bin [bigBinary 4294967296]
 } -cleanup {
     bigClean
-} -constraints bug-c719fa8716
+}
 
 #
 # binary encode / decode hex
@@ -763,7 +766,7 @@ bigtestRO binary-encode/decode-uuencode-bigdata-1 "binary encode/decode uuencode
     set bin [bigBinary 4294967296]
 } -cleanup {
     bigClean
-} -constraints bug-2e3fed53ba
+}
 
 ################################################################
 # List commands
