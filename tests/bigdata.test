@@ -362,8 +362,8 @@ bigtestRO string-replace-bigdata-1 "string replace" {789012345 012345678 XYZ7890
     set s [bigString 0x10000000a]
 } -cleanup {
     bigClean
-} -constraints bug-ad9361fd20f0
-# TODO - once above bug is fixed, add tests for large result range:
+}
+# TODO - 
 # - replacements string is large
 # - replace in the middle - string length grows, shrinks
 # - last < first
