@@ -1,8 +1,6 @@
 ## Super aggressive EOL-fixer!
 ##
 ##  Will even understand screwed up ones like CRCRLF.
-##  (found in bad CVS repositories, caused by spacey developers
-##   abusing CVS)
 ##
 ##  davygrvy@pobox.com    3:41 PM 10/12/2001
 ##

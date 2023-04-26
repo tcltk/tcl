@@ -137,8 +137,6 @@ Detailed Instructions for building with macosx/GNUmakefile
 (where ${ver} is a shell variable containing the Tcl version number e.g. '8.6').
 Setup this shell variable as follows:
 	ver="8.6"
-If you are building from CVS, omit this step (CVS source tree names usually do
-not contain a version number).
 
 - Setup environment variables as desired, e.g. for a universal build on 10.5:
 	CFLAGS="-arch i386 -arch x86_64 -arch ppc -mmacosx-version-min=10.5"
