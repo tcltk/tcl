@@ -685,7 +685,7 @@ Tcl_UniChar *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the Unicode string
 				 * for. */
-    int *lengthPtr)		/* If non-NULL, the location where the string
+    void *lengthPtr)		/* If non-NULL, the location where the string
 				 * rep's Tcl_UniChar length should be stored. If
 				 * NULL, no length is stored. */
 {
@@ -704,7 +704,7 @@ TclGetUnicodeFromObj(
 	    Tcl_Panic("Tcl_GetUnicodeFromObj with 'int' lengthPtr"
 		    " cannot handle such long strings. Please use 'Tcl_Size'");
 	}
-	*lengthPtr = (int)stringPtr->numChars;
+	*(int *)lengthPtr = (int)stringPtr->numChars;
     }
     return stringPtr->unicode;
 }
