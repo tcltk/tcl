@@ -988,7 +988,7 @@ unsigned short *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the unicode string
 				 * for. */
-    ptrdiff_t *lengthPtr)	/* If non-NULL, the location where the string
+    void *lengthPtr)	/* If non-NULL, the location where the string
 				 * rep's unichar length should be stored. If
 				 * NULL, no length is stored. */
 {
@@ -1002,7 +1002,7 @@ TclGetUnicodeFromObj(
     stringPtr = GET_STRING(objPtr);
 
     if (lengthPtr != NULL) {
-	*lengthPtr = stringPtr->numChars;
+	*(ptrdiff_t *)lengthPtr = stringPtr->numChars;
     }
     return stringPtr->unicode;
 }

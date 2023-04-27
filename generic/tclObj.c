@@ -1726,7 +1726,7 @@ char *
 TclGetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
 				 * be returned. */
-    ptrdiff_t *lengthPtr)	/* If non-NULL, the location where the string
+    void *lengthPtr)	/* If non-NULL, the location where the string
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {
@@ -1756,7 +1756,7 @@ TclGetStringFromObj(
 	}
     }
     if (lengthPtr != NULL) {
-	*lengthPtr = ((ptrdiff_t)(unsigned)(objPtr->length + 1)) - 1;
+	*(ptrdiff_t *)lengthPtr = ((ptrdiff_t)(unsigned)(objPtr->length + 1)) - 1;
     }
     return objPtr->bytes;
 }
