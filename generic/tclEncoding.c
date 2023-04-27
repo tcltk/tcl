@@ -2538,7 +2538,7 @@ UtfToUtfProc(
      * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
      * prior non-stateful nature, this call to memset can also be removed.
      */
-    memset(dst, 0, dstLen);
+    memset(dst, 0xff, dstLen);
 
     profile = CHANNEL_PROFILE_GET(flags);
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
@@ -2759,7 +2759,7 @@ Utf32ToUtfProc(
      * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
      * prior non-stateful nature, this call to memset can also be removed.
      */
-    memset(dst, 0, dstLen);
+    memset(dst, 0xff, dstLen);
 
     /*
      * Check alignment with utf-32 (4 == sizeof(UTF-32))
@@ -3035,7 +3035,7 @@ Utf16ToUtfProc(
      * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
      * prior non-stateful nature, this call to memset can also be removed.
      */
-    memset(dst, 0, dstLen);
+    memset(dst, 0xff, dstLen);
 
     /*
      * Check alignment with utf-16 (2 == sizeof(UTF-16))
@@ -3455,7 +3455,7 @@ TableToUtfProc(
      * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
      * prior non-stateful nature, this call to memset can also be removed.
      */
-    memset(dst, 0, dstLen);
+    memset(dst, 0xff, dstLen);
 
     toUnicode = (const unsigned short *const *) dataPtr->toUnicode;
     prefixBytes = dataPtr->prefixBytes;
@@ -3703,7 +3703,7 @@ Iso88591ToUtfProc(
      * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
      * prior non-stateful nature, this call to memset can also be removed.
      */
-    memset(dst, 0, dstLen);
+    memset(dst, 0xff, dstLen);
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
@@ -3949,7 +3949,7 @@ EscapeToUtfProc(
      * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
      * prior non-stateful nature, this call to memset can also be removed.
      */
-    memset(dst, 0, dstLen);
+    memset(dst, 0xff, dstLen);
 
     state = PTR2INT(*statePtr);
     if (flags & TCL_ENCODING_START) {

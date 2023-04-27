@@ -354,7 +354,7 @@ Tcl_UniCharToUtfDString(
      * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
      * prior non-stateful nature, this call to memset can also be removed.
      */
-    memset(p, 0, Tcl_DStringLength(dsPtr) - oldLength);
+    memset(p, 0xff, Tcl_DStringLength(dsPtr) - oldLength);
 
     for (w = uniStr; w < wEnd; ) {
 	p += Tcl_UniCharToUtf(*w, p);
@@ -405,7 +405,7 @@ Tcl_Char16ToUtfDString(
 	 * Because TCL_COMBINE is used here, memset() is required even when
 	 * TCL_UTF_MAX == 4.
      */
-    memset(p, 0, Tcl_DStringLength(dsPtr) - oldLength);
+    memset(p, 0xff, Tcl_DStringLength(dsPtr) - oldLength);
 
     for (w = uniStr; w < wEnd; ) {
 	if (!len && ((*w & 0xFC00) != 0xDC00)) {
