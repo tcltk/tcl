@@ -2472,19 +2472,19 @@ declare 649 {
 }
 declare 650 {
     unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    Tcl_Size *numBytesPtr)
+	    TclSize *numBytesPtr)
 }
 
 # TIP #481
 declare 651 {
-    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
+    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, TclSize *lengthPtr)
 }
 declare 652 {
-    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
+    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, TclSize *lengthPtr)
 }
 # Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 653 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, Tcl_Size *numBytesPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, TclSize *numBytesPtr)
 }
 
 # TIP #575
@@ -2521,28 +2521,28 @@ declare 660 {
 # TIP #616
 declare 661 {
     int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
+	    TclSize *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 662 {
     int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    Tcl_Size *lengthPtr)
+	    TclSize *lengthPtr)
 }
 declare 663 {
-    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Size *sizePtr)
+    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, TclSize *sizePtr)
 }
 declare 664 {
-    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, Tcl_Size *argcPtr,
+    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, TclSize *argcPtr,
 	    const char ***argvPtr)
 }
 declare 665 {
-    void Tcl_SplitPath(const char *path, Tcl_Size *argcPtr, const char ***argvPtr)
+    void Tcl_SplitPath(const char *path, TclSize *argcPtr, const char ***argvPtr)
 }
 declare 666 {
-    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, Tcl_Size *lenPtr)
+    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, TclSize *lenPtr)
 }
 declare 667 {
     int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
-	    Tcl_Size *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
+	    TclSize *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
 # TIP #617
