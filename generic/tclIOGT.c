@@ -375,7 +375,7 @@ ExecuteCallback(
 				 * interpreters. */
 {
     Tcl_Obj *resObj;		/* See below, switch (transmit). */
-    size_t resLen = 0;
+    Tcl_Size resLen = 0;
     unsigned char *resBuf;
     Tcl_InterpState state = NULL;
     int res = TCL_OK;
