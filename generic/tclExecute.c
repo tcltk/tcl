@@ -2826,15 +2826,7 @@ TEBCresume(
 	pc += pcAdjustment;
 	TEBC_YIELD();
 	if (objc > INT_MAX) {
-	    if (interp) {
-		Tcl_SetObjResult(
-		    interp,
-		    Tcl_ObjPrintf("Argument count %" TCL_SIZE_MODIFIER
-				  "d exceeds limit %d.",
-				  objc,
-				  (int)INT_MAX));
-	    }
-	    return TCL_ERROR;
+	    return TclCommandWordLimitError(interp, objc);
 	} else {
 	    return TclNREvalObjv(interp, objc, objv,
 		TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);
