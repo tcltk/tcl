@@ -3679,8 +3679,8 @@ GetEndOffsetFromObj(
     offset = irPtr->wideValue;
 
     if (offset == WIDE_MAX) {
-	/* 
-	 * Encodes end+1. This is distinguished from end+n as noted above 
+	/*
+	 * Encodes end+1. This is distinguished from end+n as noted above
 	 * NOTE: this may wrap around if the caller passes (as lset does)
 	 * listLen-1 as endValue and and listLen is 0. The -1 will be
 	 * interpreted as FF...FF and adding 1 will result in 0 which

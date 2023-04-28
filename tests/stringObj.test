@@ -517,7 +517,7 @@ test stringObj-16.9 {Tcl_GetRange: last = INT_MAX-1} testobj {
 } bcde
 test stringObj-16.10 {Tcl_GetRange: last = SIZE_MAX-1} testobj {
     teststringobj set 1 abcde
-    teststringobj range 1 1 [expr {$SIZE_MAX - 1}] 
+    teststringobj range 1 1 [expr {$SIZE_MAX - 1}]
 } bcde
 test stringObj-16.11 {Tcl_GetRange: first = last = INT_MAX-1} testobj {
     teststringobj set 1 abcde

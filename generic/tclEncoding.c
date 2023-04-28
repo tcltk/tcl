@@ -2533,6 +2533,16 @@ UtfToUtfProc(
     flags |= PTR2INT(clientData);
     dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
 
+
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, dstLen);
+#endif
+
     profile = CHANNEL_PROFILE_GET(flags);
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 
@@ -2746,6 +2756,15 @@ Utf32ToUtfProc(
 	charLimit = *dstCharsPtr;
     }
     result = TCL_OK;
+
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, dstLen);
+#endif
 
     /*
      * Check alignment with utf-32 (4 == sizeof(UTF-32))
@@ -3015,6 +3034,15 @@ Utf16ToUtfProc(
 	charLimit = *dstCharsPtr;
     }
     result = TCL_OK;
+
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, dstLen);
+#endif
 
     /*
      * Check alignment with utf-16 (2 == sizeof(UTF-16))
@@ -3429,6 +3457,15 @@ TableToUtfProc(
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, dstLen);
+#endif
+
     toUnicode = (const unsigned short *const *) dataPtr->toUnicode;
     prefixBytes = dataPtr->prefixBytes;
     pageZero = toUnicode[0];
@@ -3670,6 +3707,15 @@ Iso88591ToUtfProc(
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, dstLen);
+#endif
+
     result = TCL_OK;
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 	Tcl_UniChar ch = 0;
@@ -3908,6 +3954,15 @@ EscapeToUtfProc(
 
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
+
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, dstLen);
+#endif
 
     state = PTR2INT(*statePtr);
     if (flags & TCL_ENCODING_START) {

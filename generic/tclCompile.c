@@ -2136,7 +2136,7 @@ TclCompileScript(
 				 * serves as context for finding and compiling
 				 * commands. May not be NULL. */
     const char *script,		/* The source script to compile. */
-    size_t numBytes,		/* Number of bytes in script. If -1, the
+    Tcl_Size numBytes,		/* Number of bytes in script. If -1, the
 				 * script consists of all bytes up to the
 				 * first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
@@ -2169,7 +2169,7 @@ TclCompileScript(
 
     /* Each iteration compiles one command from the script. */
 
-    if (numBytes + 1 > 1) {
+    if (numBytes > 0) {
       /*
        * Don't use system stack (size of Tcl_Parse is ca. 400 bytes), so
        * many nested compilations (body enclosed in body) can cause abnormal
