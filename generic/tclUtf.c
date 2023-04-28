@@ -349,12 +349,14 @@ Tcl_UniCharToUtfDString(
     p = string;
     wEnd = uniStr + uniLength;
 
+#if TCL_UTF_MAX < 4
     /* Initialize the buffer so that some random data doesn't trick
      * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
      * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
      * prior non-stateful nature, this call to memset can also be removed.
      */
     memset(p, 0xff, Tcl_DStringLength(dsPtr) - oldLength);
+#endif
 
     for (w = uniStr; w < wEnd; ) {
 	p += Tcl_UniCharToUtf(*w, p);
@@ -400,12 +402,14 @@ Tcl_Char16ToUtfDString(
     p = string;
     wEnd = uniStr + uniLength;
 
+#if TCL_UTF_MAX < 4
     /* Initialize the buffer so that some random data doesn't trick
      * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
 	 * Because TCL_COMBINE is used here, memset() is required even when
 	 * TCL_UTF_MAX == 4.
      */
     memset(p, 0xff, Tcl_DStringLength(dsPtr) - oldLength);
+#endif
 
     for (w = uniStr; w < wEnd; ) {
 	if (!len && ((*w & 0xFC00) != 0xDC00)) {

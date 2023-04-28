@@ -4504,12 +4504,14 @@ ExtendStringRepWithUnicode(
 
   copyBytes:
     dst = objPtr->bytes + origLength;
+#if TCL_UTF_MAX < 4
     /* Initialize the buffer so that some random data doesn't trick
      * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
      * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
      * prior non-stateful nature, this call to memset can also be removed.
      */
     memset(dst, 0xff, stringPtr->allocated - origLength);
+#endif
     for (i = 0; i < numChars; i++) {
 	dst += Tcl_UniCharToUtf(unicode[i], dst);
     }
