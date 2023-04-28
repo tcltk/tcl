@@ -5500,7 +5500,7 @@ TEBCresume(
 	    int ch;
 	    end = ustring1 + slength;
 	    for (p=ustring1 ; p<end ; ) {
-		p += TclUniCharToUCS4(p, &ch);
+		ch = *p++;
 		if (!tclStringClassTable[opnd].comparator(ch)) {
 		    match = 0;
 		    break;

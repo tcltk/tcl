@@ -3415,9 +3415,6 @@ MODULE_SCOPE void	TclRegisterCommandTypeName(
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
-# define TclUtfToUCS4 Tcl_UtfToUniChar
-# define TclUniCharToUCS4(src, ptr) (*ptr = *(src),1)
-# define TclUCS4Prev(src, ptr) (((src) > (ptr)) ? ((src) - 1) : (src))
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(void *clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
