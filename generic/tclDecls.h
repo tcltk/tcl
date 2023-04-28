@@ -4126,36 +4126,6 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_BackgroundError(interp)	Tcl_BackgroundException((interp), TCL_ERROR)
 #define Tcl_StringMatch(str, pattern) Tcl_StringCaseMatch((str), (pattern), 0)
 
-#if TCL_UTF_MAX < 4
-#   undef Tcl_UniCharToUtfDString
-#   define Tcl_UniCharToUtfDString Tcl_Char16ToUtfDString
-#   undef Tcl_UtfToUniCharDString
-#   define Tcl_UtfToUniCharDString Tcl_UtfToChar16DString
-#   undef Tcl_UtfToUniChar
-#   define Tcl_UtfToUniChar Tcl_UtfToChar16
-#   undef Tcl_UniCharLen
-#   define Tcl_UniCharLen Tcl_Char16Len
-#   undef Tcl_UniCharToUtf
-#   if defined(USE_TCL_STUBS)
-#	define Tcl_UniCharToUtf(c, p) \
-		(tclStubsPtr->tcl_UniCharToUtf((c)|TCL_COMBINE, (p)))
-#   else
-#	define Tcl_UniCharToUtf(c, p) \
-		((Tcl_UniCharToUtf)((c)|TCL_COMBINE, (p)))
-#   endif
-#if !defined(BUILD_tcl)
-#   undef Tcl_NumUtfChars
-#   define Tcl_NumUtfChars TclNumUtfChars
-#   undef Tcl_GetCharLength
-#   define Tcl_GetCharLength TclGetCharLength
-#   undef Tcl_UtfAtIndex
-#   define Tcl_UtfAtIndex TclUtfAtIndex
-#   undef Tcl_GetRange
-#   define Tcl_GetRange TclGetRange
-#   undef Tcl_GetUniChar
-#   define Tcl_GetUniChar TclGetUniChar
-#endif
-#endif
 #if defined(USE_TCL_STUBS)
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
 		? (char *(*)(const wchar_t *, Tcl_Size, Tcl_DString *))tclStubsPtr->tcl_UniCharToUtfDString \

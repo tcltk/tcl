@@ -3415,15 +3415,9 @@ MODULE_SCOPE void	TclRegisterCommandTypeName(
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
-#if TCL_UTF_MAX > 3
-#   define TclUtfToUCS4 Tcl_UtfToUniChar
-#   define TclUniCharToUCS4(src, ptr) (*ptr = *(src),1)
-#   define TclUCS4Prev(src, ptr) (((src) > (ptr)) ? ((src) - 1) : (src))
-#else
-    MODULE_SCOPE int	TclUtfToUCS4(const char *, int *);
-    MODULE_SCOPE int	TclUniCharToUCS4(const Tcl_UniChar *, int *);
-    MODULE_SCOPE const Tcl_UniChar *TclUCS4Prev(const Tcl_UniChar *, const Tcl_UniChar *);
-#endif
+# define TclUtfToUCS4 Tcl_UtfToUniChar
+# define TclUniCharToUCS4(src, ptr) (*ptr = *(src),1)
+# define TclUCS4Prev(src, ptr) (((src) > (ptr)) ? ((src) - 1) : (src))
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(void *clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -4674,17 +4668,10 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  *----------------------------------------------------------------
  */
 
-#if TCL_UTF_MAX > 3
 #define TclUtfToUniChar(str, chPtr) \
 	(((UCHAR(*(str))) < 0x80) ?		\
 	    ((*(chPtr) = UCHAR(*(str))), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
-#else
-#define TclUtfToUniChar(str, chPtr) \
-	(((UCHAR(*(str))) < 0x80) ?		\
-	    ((*(chPtr) = UCHAR(*(str))), 1)	\
-	    : Tcl_UtfToChar16(str, chPtr))
-#endif
 
 /*
  *----------------------------------------------------------------
@@ -4747,7 +4734,7 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
  *----------------------------------------------------------------
  */
 
-#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
+#if defined(WORDS_BIGENDIAN)
 #   define TclUniCharNcmp(cs,ct,n) memcmp((cs),(ct),(n)*sizeof(Tcl_UniChar))
 #endif /* WORDS_BIGENDIAN */
 

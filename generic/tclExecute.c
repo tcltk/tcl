@@ -5289,11 +5289,6 @@ TEBCresume(
 		TclNewObj(objResultPtr);
 	    } else {
 		slength = Tcl_UniCharToUtf(ch, buf);
-#if TCL_UTF_MAX < 4
-		if ((ch >= 0xD800) && (slength < 3)) {
-		    slength += Tcl_UniCharToUtf(-1, buf + slength);
-		}
-#endif
 		objResultPtr = Tcl_NewStringObj(buf, slength);
 	    }
 	}

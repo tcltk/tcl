@@ -1431,11 +1431,6 @@ StringIndexCmd(
 	    char buf[4] = "";
 
 	    end = Tcl_UniCharToUtf(ch, buf);
-#if TCL_UTF_MAX < 4
-	    if ((ch >= 0xD800) && (end < 3)) {
-		end += Tcl_UniCharToUtf(-1, buf + end);
-	    }
-#endif
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, end));
 	}
     }

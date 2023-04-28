@@ -124,28 +124,11 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj, REGSAM mode);
 
-#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
-# if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
-#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
-# else
-#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
-#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
-# endif
-#define Tcl_Size int
-#define TCL_INDEX_NONE -1
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 DLLEXPORT int		Registry_Init(Tcl_Interp *interp);
 DLLEXPORT int		Registry_Unload(Tcl_Interp *interp, int flags);
-#if TCL_MAJOR_VERSION < 9
-/* With those additional entries, "load registry13.dll" works without 3th argument */
-DLLEXPORT int		Tclregistry_Init(Tcl_Interp *interp);
-DLLEXPORT int		Tclregistry_Unload(Tcl_Interp *interp, int flags);
-#endif
 #ifdef __cplusplus
 }
 #endif

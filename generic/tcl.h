@@ -2019,11 +2019,7 @@ typedef struct Tcl_EncodingType {
  */
 
 #ifndef TCL_UTF_MAX
-#   if TCL_MAJOR_VERSION > 8
 #	define TCL_UTF_MAX		4
-#   else
-#	define TCL_UTF_MAX		3
-#   endif
 #endif
 
 /*
@@ -2031,16 +2027,12 @@ typedef struct Tcl_EncodingType {
  * reflected in regcustom.h.
  */
 
-#if TCL_UTF_MAX > 3
-    /*
-     * int isn't 100% accurate as it should be a strict 4-byte value
-     * (perhaps int32_t). ILP64/SILP64 systems may have troubles. The
-     * size of this value must be reflected correctly in regcustom.h.
-     */
+/*
+ * int isn't 100% accurate as it should be a strict 4-byte value
+ * (perhaps int32_t). ILP64/SILP64 systems may have troubles. The
+ * size of this value must be reflected correctly in regcustom.h.
+ */
 typedef int Tcl_UniChar;
-#else
-typedef unsigned short Tcl_UniChar;
-#endif
 
 /*
  *----------------------------------------------------------------------------
@@ -2254,17 +2246,10 @@ void *			TclStubCall(void *arg);
 
 #ifdef USE_TCL_STUBS
 #if TCL_MAJOR_VERSION < 9
-# if TCL_UTF_MAX < 4
-#   define Tcl_InitStubs(interp, version, exact) \
-	(Tcl_InitStubs)(interp, version, \
-	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
-	    TCL_STUB_MAGIC)
-# else
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)(interp, "8.7.0", \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
 	    TCL_STUB_MAGIC)
-# endif
 #elif TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)(interp, version, \
