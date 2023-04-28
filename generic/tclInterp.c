@@ -624,9 +624,7 @@ NRInterpCmd(
 	"hidden",	"issafe",	"invokehidden",
 	"limit",	"marktrusted",	"recursionlimit",
 	"share",
-#ifndef TCL_NO_DEPRECATED
 	"slaves",
-#endif
 	"target",	"transfer",	NULL
     };
     static const char *const optionsNoSlaves[] = {
@@ -644,9 +642,7 @@ NRInterpCmd(
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
 	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,
 	OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT, OPT_SHARE,
-#ifndef TCL_NO_DEPRECATED
 	OPT_SLAVES,
-#endif
 	OPT_TARGET,	OPT_TRANSFER
     } index;
 
@@ -1033,9 +1029,7 @@ NRInterpCmd(
 	    return TCL_ERROR;
 	}
 	return ChildRecursionLimit(interp, childInterp, objc - 3, objv + 3);
-#ifndef TCL_NO_DEPRECATED
     case OPT_SLAVES:
-#endif
     case OPT_CHILDREN: {
 	InterpInfo *iiPtr;
 	Tcl_Obj *resultPtr;

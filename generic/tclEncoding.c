@@ -656,11 +656,6 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(leFlags);
     Tcl_CreateEncoding(&type);
 
-#ifndef TCL_NO_DEPRECATED
-    type.encodingName   = "unicode";
-    Tcl_CreateEncoding(&type);
-#endif
-
     /*
      * Need the iso8859-1 encoding in order to process binary data, so force
      * it to always be embedded. Note that this encoding *must* be a proper

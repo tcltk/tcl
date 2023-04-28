@@ -26,7 +26,6 @@ jobs:
       compiler: gcc
       env:
         - BUILD_DIR=unix
-        - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
     - name: "Linux/GCC/Static"
       os: linux
       dist: focal
@@ -294,13 +293,6 @@ jobs:
         - touch generic/tclStubInit.c generic/tclOOStubInit.c generic/tclOOScript.h
         - choco install -y make zip
         - cd ${BUILD_DIR}
-    - name: "Windows/GCC/Shared: NO_DEPRECATED"
-      os: windows
-      compiler: gcc
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
-      before_install: *makepreinst
     - name: "Windows/GCC/Static"
       os: windows
       compiler: gcc
@@ -328,13 +320,6 @@ jobs:
       compiler: gcc
       env:
         - BUILD_DIR=win
-      before_install: *makepreinst
-    - name: "Windows/GCC-x86/Shared: NO_DEPRECATED"
-      os: windows
-      compiler: gcc
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
       before_install: *makepreinst
     - name: "Windows/GCC-x86/Static"
       os: windows

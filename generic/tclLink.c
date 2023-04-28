@@ -179,14 +179,6 @@ Tcl_LinkVar(
     Tcl_IncrRefCount(linkPtr->varName);
     linkPtr->addr = addr;
     linkPtr->type = type & ~TCL_LINK_READ_ONLY;
-#if !defined(TCL_NO_DEPRECATED) && (defined(TCL_WIDE_INT_IS_LONG) \
-	|| defined(_WIN32) || defined(__CYGWIN__))
-    if (linkPtr->type == 11 /* legacy TCL_LINK_LONG */) {
-	linkPtr->type = TCL_LINK_LONG;
-    } else if (linkPtr->type == 12 /* legacy TCL_LINK_ULONG */) {
-	linkPtr->type = TCL_LINK_ULONG;
-    }
-#endif
     if (type & TCL_LINK_READ_ONLY) {
 	linkPtr->flags = LINK_READ_ONLY;
     } else {
@@ -262,14 +254,6 @@ Tcl_LinkArray(
 
     linkPtr = (Link *)Tcl_Alloc(sizeof(Link));
     linkPtr->type = type & ~TCL_LINK_READ_ONLY;
-#if !defined(TCL_NO_DEPRECATED) && (defined(TCL_WIDE_INT_IS_LONG) \
-	|| defined(_WIN32) || defined(__CYGWIN__))
-    if (linkPtr->type == 11 /* legacy TCL_LINK_LONG */) {
-	linkPtr->type = TCL_LINK_LONG;
-    } else if (linkPtr->type == 12 /* legacy TCL_LINK_ULONG */) {
-	linkPtr->type = TCL_LINK_ULONG;
-    }
-#endif
     linkPtr->numElems = size;
     if (type & TCL_LINK_READ_ONLY) {
 	linkPtr->flags = LINK_READ_ONLY;

@@ -663,36 +663,6 @@ TclGetUniChar(
  */
 
 #undef Tcl_GetUnicodeFromObj
-#if !defined(TCL_NO_DEPRECATED)
-Tcl_UniChar *
-TclGetUnicodeFromObj(
-    Tcl_Obj *objPtr,		/* The object to find the Unicode string
-				 * for. */
-    void *lengthPtr)		/* If non-NULL, the location where the string
-				 * rep's Tcl_UniChar length should be stored. If
-				 * NULL, no length is stored. */
-{
-    String *stringPtr;
-
-    SetStringFromAny(NULL, objPtr);
-    stringPtr = GET_STRING(objPtr);
-
-    if (stringPtr->hasUnicode == 0) {
-	FillUnicodeRep(objPtr);
-	stringPtr = GET_STRING(objPtr);
-    }
-
-    if (lengthPtr != NULL) {
-	if (stringPtr->numChars > INT_MAX) {
-	    Tcl_Panic("Tcl_GetUnicodeFromObj with 'int' lengthPtr"
-		    " cannot handle such long strings. Please use 'Tcl_Size'");
-	}
-	*(int *)lengthPtr = (int)stringPtr->numChars;
-    }
-    return stringPtr->unicode;
-}
-#endif /* !defined(TCL_NO_DEPRECATED) */
-
 Tcl_UniChar *
 Tcl_GetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the unicode string

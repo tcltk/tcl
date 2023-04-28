@@ -1665,52 +1665,7 @@ Tcl_GetString(
  *----------------------------------------------------------------------
  */
 
-#if !defined(TCL_NO_DEPRECATED)
-char *
-TclGetStringFromObj(
-    Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
-				 * be returned. */
-    void *lengthPtr)	/* If non-NULL, the location where the string
-				 * rep's byte array length should * be stored.
-				 * If NULL, no length is stored. */
-{
-    if (objPtr->bytes == NULL) {
-	/*
-	 * Note we do not check for objPtr->typePtr == NULL.  An invariant
-	 * of a properly maintained Tcl_Obj is that at least  one of
-	 * objPtr->bytes and objPtr->typePtr must not be NULL.  If broken
-	 * extensions fail to maintain that invariant, we can crash here.
-	 */
 
-	if (objPtr->typePtr->updateStringProc == NULL) {
-	    /*
-	     * Those Tcl_ObjTypes which choose not to define an
-	     * updateStringProc must be written in such a way that
-	     * (objPtr->bytes) never becomes NULL.
-	     */
-	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
-		    objPtr->typePtr->name);
-	}
-	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL || objPtr->length == TCL_INDEX_NONE
-		|| objPtr->bytes[objPtr->length] != '\0') {
-	    Tcl_Panic("UpdateStringProc for type '%s' "
-		    "failed to create a valid string rep",
-		    objPtr->typePtr->name);
-	}
-    }
-    if (lengthPtr != NULL) {
-	if (objPtr->length > INT_MAX) {
-	    Tcl_Panic("Tcl_GetStringFromObj with 'int' lengthPtr"
-		    " cannot handle such long strings. Please use 'Tcl_Size'");
-	}
-	*(int *)lengthPtr = (int)objPtr->length;
-    }
-    return objPtr->bytes;
-}
-#endif /* !defined(TCL_NO_DEPRECATED) */
-
-#undef Tcl_GetStringFromObj
 char *
 Tcl_GetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
@@ -2005,7 +1960,6 @@ Tcl_FreeInternalRep(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_GetBoolFromObj
 int
 Tcl_GetBoolFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
@@ -2075,7 +2029,6 @@ Tcl_GetBoolFromObj(
     return TCL_ERROR;
 }
 
-#undef Tcl_GetBooleanFromObj
 int
 Tcl_GetBooleanFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
@@ -2292,7 +2245,6 @@ ParseBoolean(
  */
 
 #ifdef TCL_MEM_DEBUG
-#undef Tcl_NewDoubleObj
 
 Tcl_Obj *
 Tcl_NewDoubleObj(
@@ -2769,7 +2721,6 @@ Tcl_GetLongFromObj(
  */
 
 #ifdef TCL_MEM_DEBUG
-#undef Tcl_NewWideIntObj
 
 Tcl_Obj *
 Tcl_NewWideIntObj(
@@ -3286,7 +3237,6 @@ UpdateStringOfBignum(
  */
 
 #ifdef TCL_MEM_DEBUG
-#undef Tcl_NewBignumObj
 
 Tcl_Obj *
 Tcl_NewBignumObj(

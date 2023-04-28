@@ -79,14 +79,12 @@
 # undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
 #endif
-#if defined(TCL_NO_DEPRECATED)
 # undef TclGetStringFromObj
 # undef TclGetBytesFromObj
 # undef TclGetUnicodeFromObj
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
-#endif
 #undef Tcl_Close
 #define Tcl_Close 0
 #undef TclGetByteArrayFromObj
@@ -99,7 +97,6 @@
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
 
-#if defined(TCL_NO_DEPRECATED)
 # define TclListObjGetElements 0
 # define TclListObjLength 0
 # define TclDictObjSize 0
@@ -107,101 +104,6 @@
 # define TclSplitPath 0
 # define TclFSSplitPath 0
 # define TclParseArgsObjv 0
-#else /* !defined(TCL_NO_DEPRECATED) */
-int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-    void *objcPtr, Tcl_Obj ***objvPtr) {
-    Tcl_Size n = TCL_INDEX_NONE;
-    int result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
-    if (objcPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
-	    if (interp) {
-		Tcl_AppendResult(interp, "List too large to be processed", NULL);
-	    }
-	    return TCL_ERROR;
-	}
-	*(int *)objcPtr = (int)n;
-    }
-    return result;
-}
-int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-    void *lengthPtr) {
-    Tcl_Size n = TCL_INDEX_NONE;
-    int result = Tcl_ListObjLength(interp, listPtr, &n);
-    if (lengthPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
-	    if (interp) {
-		Tcl_AppendResult(interp, "List too large to be processed", NULL);
-	    }
-	    return TCL_ERROR;
-	}
-	*(int *)lengthPtr = (int)n;
-    }
-    return result;
-}
-int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-    void *sizePtr) {
-    Tcl_Size n = TCL_INDEX_NONE;
-    int result = Tcl_DictObjSize(interp, dictPtr, &n);
-    if (sizePtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
-	    if (interp) {
-		Tcl_AppendResult(interp, "Dict too large to be processed", NULL);
-	    }
-	    return TCL_ERROR;
-	}
-	*(int *)sizePtr = (int)n;
-    }
-    return result;
-}
-int TclSplitList(Tcl_Interp *interp, const char *listStr, void *argcPtr,
-	const char ***argvPtr) {
-    Tcl_Size n = TCL_INDEX_NONE;
-    int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
-    if (argcPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
-	    if (interp) {
-		Tcl_AppendResult(interp, "List too large to be processed", NULL);
-	    }
-	    Tcl_Free((void *)*argvPtr);
-	    return TCL_ERROR;
-	}
-	*(int *)argcPtr = (int)n;
-    }
-    return result;
-}
-void TclSplitPath(const char *path, void *argcPtr, const char ***argvPtr) {
-    Tcl_Size n = TCL_INDEX_NONE;
-    Tcl_SplitPath(path, &n, argvPtr);
-    if (argcPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && (n > INT_MAX)) {
-	    n = TCL_INDEX_NONE; /* No other way to return an error-situation */
-	    Tcl_Free((void *)*argvPtr);
-	    *argvPtr = NULL;
-	}
-	*(int *)argcPtr = (int)n;
-    }
-}
-Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, void *lenPtr) {
-    Tcl_Size n = TCL_INDEX_NONE;
-    Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
-    if (lenPtr) {
-	if ((sizeof(int) != sizeof(size_t)) && result && (n > INT_MAX)) {
-	    Tcl_DecrRefCount(result);
-	    return NULL;
-	}
-	*(int *)lenPtr = (int)n;
-    }
-    return result;
-}
-int TclParseArgsObjv(Tcl_Interp *interp,
-	const Tcl_ArgvInfo *argTable, void *objcPtr, Tcl_Obj *const *objv,
-	Tcl_Obj ***remObjv) {
-    Tcl_Size n = (*(int *)objcPtr < 0) ? TCL_INDEX_NONE: (Tcl_Size)*(int *)objcPtr ;
-    int result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
-    *(int *)objcPtr = (int)n;
-    return result;
-}
-#endif /* !defined(TCL_NO_DEPRECATED) */
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d

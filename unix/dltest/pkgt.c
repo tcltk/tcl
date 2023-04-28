@@ -60,7 +60,7 @@ Pkgt_EqObjCmd2(
 {
     Tcl_WideInt result;
     const char *str1, *str2;
-    ptrdiff_t len1, len2;
+    Tcl_Size len1, len2;
     (void)dummy;
 
     if (objc != 3) {

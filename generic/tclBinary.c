@@ -381,35 +381,6 @@ Tcl_GetBytesFromObj(
     return baPtr->bytes;
 }
 
-#if !defined(TCL_NO_DEPRECATED)
-unsigned char *
-TclGetBytesFromObj(
-    Tcl_Interp *interp,		/* For error reporting */
-    Tcl_Obj *objPtr,		/* Value to extract from */
-    void *numBytesPtr)		/* If non-NULL, write the number of bytes
-				 * in the array here */
-{
-    Tcl_Size numBytes = 0;
-    unsigned char *bytes = Tcl_GetBytesFromObj(interp, objPtr, &numBytes);
-
-    if (bytes && numBytesPtr) {
-	if (numBytes > INT_MAX) {
-	    /* Caller asked for numBytes to be written to an int, but the
-	     * value is outside the int range. */
-
-	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"byte sequence length exceeds INT_MAX", -1));
-		Tcl_SetErrorCode(interp, "TCL", "API", "OUTDATED", NULL);
-	    }
-	    return NULL;
-	} else {
-	    *(int *)numBytesPtr = (int) numBytes;
-	}
-    }
-    return bytes;
-}
-#endif
 
 /*
  *----------------------------------------------------------------------

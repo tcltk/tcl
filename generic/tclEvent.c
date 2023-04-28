@@ -1084,9 +1084,6 @@ static const struct {
 #ifdef USE_NMAKE
 	    ".nmake"
 #endif
-#ifdef TCL_NO_DEPRECATED
-	    ".no-deprecate"
-#endif
 #if !TCL_THREADS
 	    ".no-thread"
 #endif

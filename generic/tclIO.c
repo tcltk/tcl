@@ -8227,9 +8227,7 @@ Tcl_SetChannelOption(
 	return TCL_OK;
     } else if (HaveOpt(2, "-eofchar")) {
 	if (!newValue[0] || (!(newValue[0] & 0x80) && (!newValue[1]
-#ifndef TCL_NO_DEPRECATED
 		|| !strcmp(newValue+1, " {}")
-#endif
 		))) {
 	    if (GotFlag(statePtr, TCL_READABLE)) {
 		statePtr->inEofChar = newValue[0];

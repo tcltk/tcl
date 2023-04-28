@@ -1005,18 +1005,13 @@ TCL_COMPILE_DEBUG   = 0
 # 9. Parse the CHECKS macro to configure additional compiler checks
 # The following macros are set by this section:
 # WARNINGS - compiler switches that control the warnings level
-# TCL_NO_DEPRECATED - 1 -> disable support for deprecated functions
-#                     0 -> enable deprecated functions
-
 # Defaults - Permit deprecated functions and warning level 3
-TCL_NO_DEPRECATED	    = 0
 WARNINGS		    = -W3
 
 !if "$(CHECKS)" != "" && ![nmakehlp -f "$(CHECKS)" "none"]
 
 !if [nmakehlp -f $(CHECKS) "nodep"]
 !message *** Doing nodep check
-TCL_NO_DEPRECATED	    = 1
 !endif
 
 !if [nmakehlp -f $(CHECKS) "fullwarn"]
@@ -1407,9 +1402,7 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_WITH_EXTERNAL_TOMMATH
 OPTDEFINES	= $(OPTDEFINES) /DMP_64BIT
 !endif
 !endif
-!if $(TCL_NO_DEPRECATED)
-OPTDEFINES	= $(OPTDEFINES) /DTCL_NO_DEPRECATED
-!endif
+OPTDEFINES	= $(OPTDEFINES)
 
 !if $(USE_STUBS)
 # Note we do not define USE_TCL_STUBS even when building tk since some

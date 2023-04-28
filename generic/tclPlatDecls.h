@@ -213,8 +213,7 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 #   undef Tcl_MacOSXNotifierAddRunLoopMode
 #endif
 
-#if defined(USE_TCL_STUBS) && (defined(_WIN32) || defined(__CYGWIN__))\
-	&& (defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8)
+#if defined(USE_TCL_STUBS) && (defined(_WIN32) || defined(__CYGWIN__))
 #undef Tcl_WinUtfToTChar
 #undef Tcl_WinTCharToUtf
 #ifdef _WIN32

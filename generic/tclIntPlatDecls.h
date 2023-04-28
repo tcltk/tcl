@@ -739,10 +739,6 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #undef TclpGmtime_unix
 #undef TclWinConvertWSAError
 #define TclWinConvertWSAError TclWinConvertError
-#if !defined(TCL_USE_STUBS) && !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-#   undef TclWinConvertError
-#   define TclWinConvertError Tcl_WinConvertError
-#endif
 
 #undef TclpInetNtoa
 #define TclpInetNtoa inet_ntoa
@@ -782,15 +778,6 @@ MODULE_SCOPE int TclMacOSXMatchType(Tcl_Interp *interp,
 #   undef TclWinGetPlatformId
 #   undef TclWinResetInterfaces
 #   undef TclWinSetInterfaces
-#   if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-#	define TclWinNToHS ntohs
-#	define TclWinGetServByName getservbyname
-#	define TclWinGetSockOpt getsockopt
-#	define TclWinSetSockOpt setsockopt
-#	define TclWinGetPlatformId() (2) /* VER_PLATFORM_WIN32_NT */
-#	define TclWinResetInterfaces() /* nop */
-#	define TclWinSetInterfaces(dummy) /* nop */
-#   endif /* TCL_NO_DEPRECATED */
 #else
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((size_t)(pid))

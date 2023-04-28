@@ -27,10 +27,8 @@
 
 #if !defined(BUILD_tcl)
 # define TCL_DEPRECATED(msg) EXTERN TCL_DEPRECATED_API(msg)
-#elif defined(TCL_NO_DEPRECATED)
-# define TCL_DEPRECATED(msg) MODULE_SCOPE
 #else
-# define TCL_DEPRECATED(msg) EXTERN
+# define TCL_DEPRECATED(msg) MODULE_SCOPE
 #endif
 
 
@@ -4027,31 +4025,12 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_GetStringFromObj(objPtr, (Tcl_Size *)NULL)
 #define Tcl_GetUnicode(objPtr) \
 	Tcl_GetUnicodeFromObj(objPtr, (Tcl_Size *)NULL)
-#if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
-#   undef Tcl_GetBytesFromObj
-#   undef Tcl_GetStringFromObj
-#   undef Tcl_GetUnicodeFromObj
-#endif
 #undef Tcl_GetIndexFromObjStruct
 #undef Tcl_GetBooleanFromObj
 #undef Tcl_GetBoolean
 #undef TclGetByteArrayFromObj
 #undef Tcl_GetByteArrayFromObj
 #if defined(USE_TCL_STUBS)
-#   if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
-#	define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
-		(sizeof(*(sizePtr)) <= sizeof(int) ? \
-			tclStubsPtr->tclGetBytesFromObj(interp, objPtr, (sizePtr)) : \
-			tclStubsPtr->tcl_GetBytesFromObj(interp, objPtr, (Tcl_Size *)(void *)(sizePtr)))
-#	define Tcl_GetStringFromObj(objPtr, sizePtr) \
-		(sizeof(*(sizePtr)) <= sizeof(int) ? \
-			tclStubsPtr->tclGetStringFromObj(objPtr, (sizePtr)) : \
-			tclStubsPtr->tcl_GetStringFromObj(objPtr, (Tcl_Size *)(void *)(sizePtr)))
-#	define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
-		(sizeof(*(sizePtr)) <= sizeof(int) ? \
-			tclStubsPtr->tclGetUnicodeFromObj(objPtr, (sizePtr)) : \
-			tclStubsPtr->tcl_GetUnicodeFromObj(objPtr, (Tcl_Size *)(void *)(sizePtr)))
-#   endif
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), \
 		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
@@ -4073,31 +4052,8 @@ extern const TclStubs *tclStubsPtr;
 		tclStubsPtr->tcl_GetByteArrayFromObj(objPtr, (Tcl_Size *)(void *)(sizePtr)))
 #endif
 #else
-#define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? \
-		TclGetBytesFromObj(interp, objPtr, (sizePtr)) : \
-		(Tcl_GetBytesFromObj)(interp, objPtr, (Tcl_Size *)(void *)(sizePtr)))
-#define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
-	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), \
-		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
-#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
-	((sizeof(*(boolPtr)) == sizeof(int) && (TCL_MAJOR_VERSION == 8)) ? Tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : \
-	Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
-#define Tcl_GetBoolean(interp, src, boolPtr) \
-	((sizeof(*(boolPtr)) == sizeof(int) && (TCL_MAJOR_VERSION == 8)) ? Tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
-	Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
-#define Tcl_GetStringFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? \
-		TclGetStringFromObj(objPtr, (sizePtr)) : \
-		(Tcl_GetStringFromObj)(objPtr, (Tcl_Size *)(void *)(sizePtr)))
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? \
-		TclGetBytesFromObj(NULL, objPtr, (sizePtr)) : \
-		(Tcl_GetBytesFromObj)(NULL, objPtr, (Tcl_Size *)(void *)(sizePtr)))
-#define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? \
-		TclGetUnicodeFromObj(objPtr, (sizePtr)) : \
-		(Tcl_GetUnicodeFromObj)(objPtr, (Tcl_Size *)(void *)(sizePtr)))
+	(Tcl_GetBytesFromObj)(NULL, objPtr, (Tcl_Size *)(void *)(sizePtr))
 #endif
 
 #ifdef TCL_MEM_DEBUG
@@ -4139,36 +4095,6 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (Tcl_Size (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
 		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
-#if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
-#   undef Tcl_ListObjGetElements
-#   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) == sizeof(int) \
-		? tclStubsPtr->tclListObjGetElements((interp), (listPtr), (int *)(void *)(objcPtr), (objvPtr)) \
-		: tclStubsPtr->tcl_ListObjGetElements((interp), (listPtr), (Tcl_Size *)(void *)(objcPtr), (objvPtr)))
-#   undef Tcl_ListObjLength
-#   define Tcl_ListObjLength(interp, listPtr, lengthPtr) (sizeof(*(lengthPtr)) == sizeof(int) \
-		? tclStubsPtr->tclListObjLength((interp), (listPtr), (int *)(void *)(lengthPtr)) \
-		: tclStubsPtr->tcl_ListObjLength((interp), (listPtr), (Tcl_Size *)(void *)(lengthPtr)))
-#   undef Tcl_DictObjSize
-#   define Tcl_DictObjSize(interp, dictPtr, sizePtr) (sizeof(*(sizePtr)) == sizeof(int) \
-		? tclStubsPtr->tclDictObjSize((interp), (dictPtr), (int *)(void *)(sizePtr)) \
-		: tclStubsPtr->tcl_DictObjSize((interp), (dictPtr), (Tcl_Size *)(void *)(sizePtr)))
-#   undef Tcl_SplitList
-#   define Tcl_SplitList(interp, listStr, argcPtr, argvPtr) (sizeof(*(argcPtr)) == sizeof(int) \
-		? tclStubsPtr->tclSplitList((interp), (listStr), (int *)(void *)(argcPtr), (argvPtr)) \
-		: tclStubsPtr->tcl_SplitList((interp), (listStr), (Tcl_Size *)(void *)(argcPtr), (argvPtr)))
-#   undef Tcl_SplitPath
-#   define Tcl_SplitPath(path, argcPtr, argvPtr) (sizeof(*(argcPtr)) == sizeof(int) \
-		? tclStubsPtr->tclSplitPath((path), (int *)(void *)(argcPtr), (argvPtr)) \
-		: tclStubsPtr->tcl_SplitPath((path), (Tcl_Size *)(void *)(argcPtr), (argvPtr)))
-#   undef Tcl_FSSplitPath
-#   define Tcl_FSSplitPath(pathPtr, lenPtr) (sizeof(*(lenPtr)) == sizeof(int) \
-		? tclStubsPtr->tclFSSplitPath((pathPtr), (int *)(void *)(lenPtr)) \
-		: tclStubsPtr->tcl_FSSplitPath((pathPtr), (Tcl_Size *)(void *)(lenPtr)))
-#   undef Tcl_ParseArgsObjv
-#   define Tcl_ParseArgsObjv(interp, argTable, objcPtr, objv, remObjv) (sizeof(*(objcPtr)) == sizeof(int) \
-		? tclStubsPtr->tclParseArgsObjv((interp), (argTable), (int *)(void *)(objcPtr), (objv), (remObjv)) \
-		: tclStubsPtr->tcl_ParseArgsObjv((interp), (argTable), (Tcl_Size *)(void *)(objcPtr), (objv), (remObjv)))
-#endif /* TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED) */
 #else
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
 		? (char *(*)(const wchar_t *, Tcl_Size, Tcl_DString *))Tcl_UniCharToUtfDString \
@@ -4182,29 +4108,6 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (Tcl_Size (*)(wchar_t *))Tcl_UniCharLen \
 		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
-#if !defined(BUILD_tcl) && !defined(TCL_NO_DEPRECATED)
-#   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) == sizeof(int) \
-		? TclListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)) \
-		: (Tcl_ListObjGetElements)((interp), (listPtr), (Tcl_Size *)(void *)(objcPtr), (objvPtr)))
-#   define Tcl_ListObjLength(interp, listPtr, lengthPtr) (sizeof(*(lengthPtr)) == sizeof(int) \
-		? TclListObjLength((interp), (listPtr), (lengthPtr)) \
-		: (Tcl_ListObjLength)((interp), (listPtr), (Tcl_Size *)(void *)(lengthPtr)))
-#   define Tcl_DictObjSize(interp, dictPtr, sizePtr) (sizeof(*(sizePtr)) == sizeof(int) \
-		? TclDictObjSize((interp), (dictPtr), (sizePtr)) \
-		: (Tcl_DictObjSize)((interp), (dictPtr), (Tcl_Size *)(void *)(sizePtr)))
-#   define Tcl_SplitList(interp, listStr, argcPtr, argvPtr) (sizeof(*(argcPtr)) == sizeof(int) \
-		? TclSplitList((interp), (listStr), (argcPtr), (argvPtr)) \
-		: (Tcl_SplitList)((interp), (listStr), (Tcl_Size *)(void *)(argcPtr), (argvPtr)))
-#   define Tcl_SplitPath(path, argcPtr, argvPtr) (sizeof(*(argcPtr)) == sizeof(int) \
-		? TclSplitPath((path), (argcPtr), (argvPtr)) \
-		: (Tcl_SplitPath)((path), (Tcl_Size *)(void *)(argcPtr), (argvPtr)))
-#   define Tcl_FSSplitPath(pathPtr, lenPtr) (sizeof(*(lenPtr)) == sizeof(int) \
-		? TclFSSplitPath((pathPtr), (lenPtr)) \
-		: (Tcl_FSSplitPath)((pathPtr), (Tcl_Size *)(void *)(lenPtr)))
-#   define Tcl_ParseArgsObjv(interp, argTable, objcPtr, objv, remObjv) (sizeof(*(objcPtr)) == sizeof(int) \
-		? TclParseArgsObjv((interp), (argTable), (objcPtr), (objv), (remObjv)) \
-		: (Tcl_ParseArgsObjv)((interp), (argTable), (Tcl_Size *)(void *)(objcPtr), (objv), (remObjv)))
-#endif /* !defined(BUILD_tcl) */
 #endif
 
 /*
@@ -4224,11 +4127,6 @@ extern const TclStubs *tclStubsPtr;
 #undef TclUtfCharComplete
 #undef TclUtfNext
 #undef TclUtfPrev
-#ifndef TCL_NO_DEPRECATED
-#   define Tcl_CreateSlave Tcl_CreateChild
-#   define Tcl_GetSlave Tcl_GetChild
-#   define Tcl_GetMaster Tcl_GetParent
-#endif
 
 /* TIP #660 for 8.7 */
 #if TCL_MAJOR_VERSION < 9

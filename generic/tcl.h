@@ -208,10 +208,6 @@ extern "C" {
 #   endif
 #endif
 
-#if !defined(CONST86) && !defined(TCL_NO_DEPRECATED)
-#      define CONST86 const
-#endif
-
 /*
  * Make sure EXTERN isn't defined elsewhere.
  */
@@ -608,10 +604,6 @@ typedef void *(Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
-#ifndef TCL_NO_DEPRECATED
-#   define Tcl_PackageInitProc Tcl_LibraryInitProc
-#   define Tcl_PackageUnloadProc Tcl_LibraryUnloadProc
-#endif
 
 /*
  *----------------------------------------------------------------------------
@@ -2296,9 +2288,6 @@ EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 			    const char *prefix,
 			    Tcl_LibraryInitProc *initProc,
 			    Tcl_LibraryInitProc *safeInitProc);
-#ifndef TCL_NO_DEPRECATED
-#   define Tcl_StaticPackage Tcl_StaticLibrary
-#endif
 EXTERN Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
 #ifdef _WIN32
 EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
