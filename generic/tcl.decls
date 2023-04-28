@@ -2413,19 +2413,19 @@ declare 649 {
 }
 declare 650 {
     unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    ptrdiff_t *numBytesPtr)
+	    void *numBytesPtr)
 }
 
 # TIP #481
 declare 651 {
-    char *TclGetStringFromObj(Tcl_Obj *objPtr, ptrdiff_t *lengthPtr)
+    char *TclGetStringFromObj(Tcl_Obj *objPtr, void *lengthPtr)
 }
 declare 652 {
-    unsigned short *TclGetUnicodeFromObj(Tcl_Obj *objPtr, ptrdiff_t *lengthPtr)
+    unsigned short *TclGetUnicodeFromObj(Tcl_Obj *objPtr, void *lengthPtr)
 }
 # Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 653 {
-    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, ptrdiff_t *numBytesPtr)
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, void *numBytesPtr)
 }
 
 # TIP #575
@@ -2462,28 +2462,28 @@ declare 660 {
 # TIP #616
 declare 661 {
     int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    ptrdiff_t *objcPtr, Tcl_Obj ***objvPtr)
+	    void *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 662 {
     int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    ptrdiff_t *lengthPtr)
+	    void *lengthPtr)
 }
 declare 663 {
-    int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, ptrdiff_t *sizePtr)
+    int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, void *sizePtr)
 }
 declare 664 {
-    int TclSplitList(Tcl_Interp *interp, const char *listStr, ptrdiff_t *argcPtr,
+    int TclSplitList(Tcl_Interp *interp, const char *listStr, void *argcPtr,
 	    const char ***argvPtr)
 }
 declare 665 {
-    void TclSplitPath(const char *path, ptrdiff_t *argcPtr, const char ***argvPtr)
+    void TclSplitPath(const char *path, void *argcPtr, const char ***argvPtr)
 }
 declare 666 {
-    Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, ptrdiff_t *lenPtr)
+    Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, void *lenPtr)
 }
 declare 667 {
     int TclParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
-	    ptrdiff_t *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
+	    void *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
 # TIP #617
