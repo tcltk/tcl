@@ -546,8 +546,8 @@ TclpInitLibraryPath(
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
 
     /*
-     * Note lengthPtr is (TCL_HASH_TYPE *) which is unsigned so cannot 
-     * pass directly to Tcl_GetStringFromObj. 
+     * Note lengthPtr is (TCL_HASH_TYPE *) which is unsigned so cannot
+     * pass directly to Tcl_GetStringFromObj.
      * TODO - why is the type TCL_HASH_TYPE anyways?
      */
     Tcl_Size length;
