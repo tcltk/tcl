@@ -695,7 +695,8 @@ TCLAPI void		Tcl_UpdateLinkedVar(Tcl_Interp *interp,
 TCLAPI int		Tcl_UpVar2(Tcl_Interp *interp, const char *frameName,
 				const char *part1, const char *part2,
 				const char *localName, int flags);
-/* Slot 260 is reserved */
+/* 260 */
+TCLAPI int		Tcl_VarEval(Tcl_Interp *interp, ...);
 /* Slot 261 is reserved */
 /* 262 */
 TCLAPI void *		Tcl_VarTraceInfo2(Tcl_Interp *interp,
@@ -2128,7 +2129,7 @@ typedef struct TclStubs {
     void (*tcl_UpdateLinkedVar) (Tcl_Interp *interp, const char *varName); /* 257 */
     void (*reserved258)(void);
     int (*tcl_UpVar2) (Tcl_Interp *interp, const char *frameName, const char *part1, const char *part2, const char *localName, int flags); /* 259 */
-    void (*reserved260)(void);
+    int (*tcl_VarEval) (Tcl_Interp *interp, ...); /* 260 */
     void (*reserved261)(void);
     void * (*tcl_VarTraceInfo2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *procPtr, void *prevClientData); /* 262 */
     Tcl_Size (*tcl_Write) (Tcl_Channel chan, const char *s, Tcl_Size slen); /* 263 */
@@ -3056,7 +3057,8 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 258 is reserved */
 #define Tcl_UpVar2 \
 	(tclStubsPtr->tcl_UpVar2) /* 259 */
-/* Slot 260 is reserved */
+#define Tcl_VarEval \
+	(tclStubsPtr->tcl_VarEval) /* 260 */
 /* Slot 261 is reserved */
 #define Tcl_VarTraceInfo2 \
 	(tclStubsPtr->tcl_VarTraceInfo2) /* 262 */

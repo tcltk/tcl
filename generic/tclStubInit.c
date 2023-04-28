@@ -1096,7 +1096,7 @@ const TclStubs tclStubs = {
     Tcl_UpdateLinkedVar, /* 257 */
     0, /* 258 */
     Tcl_UpVar2, /* 259 */
-    0, /* 260 */
+    Tcl_VarEval, /* 260 */
     0, /* 261 */
     Tcl_VarTraceInfo2, /* 262 */
     Tcl_Write, /* 263 */

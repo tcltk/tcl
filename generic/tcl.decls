@@ -955,10 +955,9 @@ declare 259 {
     int Tcl_UpVar2(Tcl_Interp *interp, const char *frameName, const char *part1,
 	    const char *part2, const char *localName, int flags)
 }
-# Removed in 9.0, replaced by macro.
-#declare 260 {
-#    int Tcl_VarEval(Tcl_Interp *interp, ...)
-#}
+declare 260 {
+    int Tcl_VarEval(Tcl_Interp *interp, ...)
+}
 # Removed in 9.0, replaced by macro.
 #declare 261 {
 #    void *Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
