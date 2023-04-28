@@ -4653,7 +4653,7 @@ Tcl_GetsObj(
     if (statePtr->encoding == GetBinaryEncoding()
 	    && ((statePtr->inputTranslation == TCL_TRANSLATE_LF)
 		    || (statePtr->inputTranslation == TCL_TRANSLATE_CR))
-	    && Tcl_GetByteArrayFromObj(objPtr, (size_t *)NULL) != NULL) {
+	    && Tcl_GetByteArrayFromObj(objPtr, (Tcl_Size *)NULL) != NULL) {
 	return TclGetsObjBinary(chan, objPtr);
     }
 
@@ -5995,7 +5995,7 @@ DoReadChars(
 	    && (statePtr->inEofChar == '\0');
 
     if (appendFlag) {
-	if (binaryMode && (NULL == Tcl_GetByteArrayFromObj(objPtr, (size_t *)NULL))) {
+	if (binaryMode && (NULL == Tcl_GetByteArrayFromObj(objPtr, (Tcl_Size *)NULL))) {
 	    binaryMode = 0;
 	}
     } else {
