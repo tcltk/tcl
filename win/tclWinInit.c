@@ -131,7 +131,7 @@ TclpInitLibraryPath(
     Tcl_Obj *pathPtr;
     char installLib[LIBRARY_SIZE];
     const char *bytes;
-    size_t length;
+    Tcl_Size length;
 
     TclNewObj(pathPtr);
 

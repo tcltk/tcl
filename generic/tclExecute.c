@@ -5272,7 +5272,7 @@ TEBCresume(
 	    TclNewObj(objResultPtr);
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
-		    Tcl_GetByteArrayFromObj(valuePtr, (size_t *)NULL)+index, 1);
+		    Tcl_GetByteArrayFromObj(valuePtr, (Tcl_Size *)NULL)+index, 1);
 	} else if (valuePtr->bytes && slength == valuePtr->length) {
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
@@ -5536,7 +5536,7 @@ TEBCresume(
 		    nocase);
 	} else if (TclIsPureByteArray(valuePtr) && TclIsPureByteArray(value2Ptr) && !nocase) {
 	    unsigned char *bytes1, *bytes2;
-	    size_t wlen1 = 0, wlen2 = 0;
+	    Tcl_Size wlen1 = 0, wlen2 = 0;
 
 	    bytes1 = Tcl_GetByteArrayFromObj(valuePtr, &wlen1);
 	    bytes2 = Tcl_GetByteArrayFromObj(value2Ptr, &wlen2);
