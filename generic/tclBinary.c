@@ -386,7 +386,7 @@ unsigned char *
 TclGetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
-    int *numBytesPtr)		/* If non-NULL, write the number of bytes
+    void *numBytesPtr)		/* If non-NULL, write the number of bytes
 				 * in the array here */
 {
     Tcl_Size numBytes = 0;
@@ -404,7 +404,7 @@ TclGetBytesFromObj(
 	    }
 	    return NULL;
 	} else {
-	    *numBytesPtr = (int) numBytes;
+	    *(int *)numBytesPtr = (int) numBytes;
 	}
     }
     return bytes;
