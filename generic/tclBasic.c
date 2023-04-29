@@ -3298,7 +3298,11 @@ invokeObj2Command(
     Command *cmdPtr = (Command *) clientData;
 
     if (objc > INT_MAX) {
-	objc = TCL_INDEX_NONE; /* TODO - why? Should error, not truncate */
+	/* Since TCL_INDEX_NONE is an invalid value for objc,
+	 * calling cmdPtr->objProc or cmdPtr->nreProc will
+	 * eventually result in a Tcl_WrongNumArgs() call.
+	 * That's exactly what we want to happen. */
+	objc = TCL_INDEX_NONE;
     }
     if (cmdPtr->objProc != NULL) {
 	result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
