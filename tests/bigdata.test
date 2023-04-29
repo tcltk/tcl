@@ -362,8 +362,8 @@ bigtestRO string-replace-bigdata-1 "string replace" {789012345 012345678 XYZ7890
     set s [bigString 0x10000000a]
 } -cleanup {
     bigClean
-} -constraints bug-ad9361fd20f0
-# TODO - once above bug is fixed, add tests for large result range:
+}
+# TODO - 
 # - replacements string is large
 # - replace in the middle - string length grows, shrinks
 # - last < first
@@ -1069,8 +1069,8 @@ bigtestRO concat-bigdata-1 "concat" {4294967296 {0 1 2 3 4} {6 7 0 1 2} {3 4 5 6
     set l [bigList 0x80000000]
 }
 
-tcltest::test puts-bigdata-1 "puts" -setup {
-    set fpath [tcltest::makeFile {} bug-0306a5563.data]
+test puts-bigdata-1 "puts" -setup {
+    set fpath [makeFile {} bug-0306a5563.data]
 } -constraints {
     bug0306a5563
     bigdata
@@ -1085,7 +1085,7 @@ tcltest::test puts-bigdata-1 "puts" -setup {
     set written
 } -result {2345678}
 
-tcltest::test puts-bigdata-2 "puts" -setup {
+test puts-bigdata-2 "puts" -setup {
     set fpath [tcltest::makeFile {} bug-0306a5563.data]
 } -constraints {
     bug0306a5563
@@ -1097,7 +1097,7 @@ tcltest::test puts-bigdata-2 "puts" -setup {
     # The character to append in the next line is EM DASH, 
     # code point 0x2014 (decimal 8212, UTF-8 #xE2 #x80 #x94) 
     append s —
-    puts -nonewline$fd $s
+    puts -nonewline $fd $s
     close $fd
     set fd [open $fpath]
     seek $fd 0x7FFFFFFA

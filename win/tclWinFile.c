@@ -921,7 +921,7 @@ TclpMatchInDirectory(
 
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
-	    size_t len = 0;
+	    Tcl_Size len = 0;
 	    const char *str = Tcl_GetStringFromObj(norm, &len);
 
 	    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
@@ -943,7 +943,7 @@ TclpMatchInDirectory(
 	WIN32_FIND_DATAW data;
 	const char *dirName;	/* UTF-8 dir name, later with pattern
 				 * appended. */
-	size_t dirLength;
+	Tcl_Size dirLength;
 	int matchSpecialDots;
 	Tcl_DString ds;		/* Native encoding of dir, also used
 				 * temporarily for other things. */
@@ -2796,7 +2796,7 @@ TclpObjNormalizePath(
 	     */
 
 	    Tcl_Obj *tmpPathPtr;
-	    size_t len;
+	    Tcl_Size len;
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
@@ -2885,7 +2885,7 @@ TclWinVolumeRelativeNormalize(
 	 * also on drive C.
 	 */
 
-	size_t cwdLen;
+	Tcl_Size cwdLen;
 	const char *drive = Tcl_GetStringFromObj(useThisCwd, &cwdLen);
 	char drive_cur = path[0];
 
@@ -3022,7 +3022,7 @@ TclNativeCreateNativeRep(
     WCHAR *nativePathPtr = NULL;
     const char *str;
     Tcl_Obj *validPathPtr;
-    size_t len;
+    Tcl_Size len;
     WCHAR *wp;
 
     if (TclFSCwdIsNative()) {

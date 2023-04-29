@@ -850,7 +850,7 @@ ListStoreReallocate (ListStore *storePtr, Tcl_Size numSlots)
     newCapacity = ListStoreUpSize(numSlots);
     newStorePtr =
 	(ListStore *)Tcl_AttemptRealloc(storePtr, LIST_SIZE(newCapacity));
-    
+
     /*
      * In case above failed keep looping reducing the requested extra space
      * by half every time.

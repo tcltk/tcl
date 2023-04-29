@@ -1536,7 +1536,7 @@ GetWinFileAttributes(
 	 * We test for, and fix that case, here.
 	 */
 
-	size_t len;
+	Tcl_Size len;
 	const char *str = Tcl_GetStringFromObj(fileName, &len);
 
 	if (len < 4) {
