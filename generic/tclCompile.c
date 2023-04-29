@@ -2136,7 +2136,7 @@ TclCompileScript(
 				 * serves as context for finding and compiling
 				 * commands. May not be NULL. */
     const char *script,		/* The source script to compile. */
-    Tcl_Size numBytes,		/* Number of bytes in script. If -1, the
+    Tcl_Size numBytes,		/* Number of bytes in script. If < 0, the
 				 * script consists of all bytes up to the
 				 * first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
@@ -2167,9 +2167,26 @@ TclCompileScript(
 	return;
     }
 
+    if (numBytes < 0) {
+	numBytes = strlen(script);
+    }
+
     /* Each iteration compiles one command from the script. */
 
     if (numBytes > 0) {
+      if (numBytes >= INT_MAX) {
+	/*
+	 * Note this gets -errorline as 1. Not worth figuring out which line
+	 * crosses the limit to get -errorline for this error case.
+	 */
+	Tcl_SetObjResult(interp,
+	  Tcl_ObjPrintf("Script length %" TCL_SIZE_MODIFIER
+			   "d exceeds max permitted length %d.",
+			   numBytes, (int)INT_MAX-1));
+	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH", NULL);
+	    TclCompileSyntaxError(interp, envPtr);
+	    return;
+      }
       /*
        * Don't use system stack (size of Tcl_Parse is ca. 400 bytes), so
        * many nested compilations (body enclosed in body) can cause abnormal
