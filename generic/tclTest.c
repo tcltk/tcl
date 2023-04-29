@@ -5677,7 +5677,10 @@ TestbytestringObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    Tcl_Size n = 0;
+    struct {
+	int n; /* On purpose, not Tcl_Size, in order to demonstrate what happens */
+	int m; /* This variable should not be overwritten */
+    } x = {0, 1};
     const char *p;
 
     if (objc != 2) {
@@ -5685,11 +5688,15 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
 
-    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &n);
+    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &x.n);
     if (p == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
+    if (x.m != 1) {
+	Tcl_AppendResult(interp, "Tcl_GetBytesFromObj() overwrites variable", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, x.n));
     return TCL_OK;
 }
 
