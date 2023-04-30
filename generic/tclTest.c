@@ -5678,7 +5678,11 @@ TestbytestringObjCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     struct {
+#if !defined(TCL_NO_DEPRECATED)
 	int n; /* On purpose, not Tcl_Size, in order to demonstrate what happens */
+#else
+	Tcl_Size n;
+#endif
 	int m; /* This variable should not be overwritten */
     } x = {0, 1};
     const char *p;
