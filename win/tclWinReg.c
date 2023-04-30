@@ -164,14 +164,6 @@ Registry_Init(
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
     return Tcl_PkgProvideEx(interp, "registry", "1.3.7", NULL);
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tclregistry_Init(
-    Tcl_Interp *interp)
-{
-    return Registry_Init(interp);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -218,15 +210,6 @@ Registry_Unload(
 
     return TCL_OK;
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tclregistry_Unload(
-    Tcl_Interp *interp,
-    int flags)
-{
-    return Registry_Unload(interp, flags);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------

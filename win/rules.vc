@@ -859,9 +859,6 @@ MSVCRT		= 0
 !if [nmakehlp -f $(OPTS) "msvcrt"]
 !message *** Doing msvcrt
 !else
-!if $(TCL_MAJOR_VERSION) == 8 && $(TCL_MINOR_VERSION) < 7 && $(STATIC_BUILD)
-MSVCRT		= 0
-!endif
 !endif
 !endif # [nmakehlp -f $(OPTS) "nomsvcrt"]
 
@@ -879,14 +876,6 @@ USE_THREAD_ALLOC= 0
 !if [nmakehlp -f $(OPTS) "tcl8"]
 !message *** Build for Tcl8
 TCL_BUILD_FOR = 8
-!endif
-
-!if $(TCL_MAJOR_VERSION) == 8
-!if [nmakehlp -f $(OPTS) "time64bit"]
-!message *** Force 64-bit time_t
-_USE_64BIT_TIME_T = 1
-!endif
-
 !endif
 
 # Yes, it's weird that the "symbols" option controls DEBUG and
@@ -1141,11 +1130,7 @@ TCLLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
 TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
 TCLSCRIPTZIP    = $(OUT_DIR)\$(TCLSCRIPTZIPNAME)
 
-!if $(TCL_MAJOR_VERSION) == 8
-TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
-!else
 TCLSTUBLIBNAME	= $(STUBPREFIX).lib
-!endif
 TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
 TCL_INCLUDES    = -I"$(WIN_DIR)" -I"$(GENERICDIR)"
 
@@ -1161,11 +1146,7 @@ TCLSH		= $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX:t=).exe
 TCLSH           = $(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
 
-!if $(TCL_MAJOR_VERSION) == 8
-TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib
-!else
 TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub.lib
-!endif
 TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX:t=).lib
 # When building extensions, may be linking against Tcl that does not add
 # "t" suffix (e.g. 8.5 or 8.7). If lib not found check for that possibility.
@@ -1185,11 +1166,7 @@ TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX:t=).exe
 !if !exist($(TCLSH))
 TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
-!if $(TCL_MAJOR_VERSION) == 8
-TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib
-!else
 TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub.lib
-!endif
 TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX:t=).lib
 # When building extensions, may be linking against Tcl that does not add
 # "t" suffix (e.g. 8.5 or 8.7). If lib not found check for that possibility.
@@ -1229,7 +1206,7 @@ WISHNAMEPREFIX = wish
 WISHNAME = $(WISHNAMEPREFIX)$(TK_VERSION)$(SUFX).exe
 TKLIBNAME8	= tk$(TK_VERSION)$(SUFX).$(EXT)
 TKLIBNAME9	= tcl9tk$(TK_VERSION)$(SUFX).$(EXT)
-!if $(TCL_MAJOR_VERSION) == 8 || "$(TCL_BUILD_FOR)" == "8"
+!if $("$(TCL_BUILD_FOR)" == "8"
 TKLIBNAME	= tk$(TK_VERSION)$(SUFX).$(EXT)
 TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX).lib
 !else
@@ -1286,18 +1263,14 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 PRJLIBNAME8	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
 PRJLIBNAME9	= tcl9$(PROJECT)$(VERSION)$(SUFX).$(EXT)
-!if $(TCL_MAJOR_VERSION) == 8 || "$(TCL_BUILD_FOR)" == "8"
+!if $("$(TCL_BUILD_FOR)" == "8"
 PRJLIBNAME	= $(PRJLIBNAME8)
 !else
 PRJLIBNAME	= $(PRJLIBNAME9)
 !endif
 PRJLIB		= $(OUT_DIR)\$(PRJLIBNAME)
 
-!if $(TCL_MAJOR_VERSION) == 8
-PRJSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
-!else
 PRJSTUBLIBNAME	= $(STUBPREFIX).lib
-!endif
 PRJSTUBLIB	= $(OUT_DIR)\$(PRJSTUBLIBNAME)
 
 # If extension parent makefile has not defined a resource definition file,
@@ -1431,14 +1404,6 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_DO64BIT
 OPTDEFINES	= $(OPTDEFINES) /DNO_STRTOI64=1
 !endif
 
-!if $(TCL_MAJOR_VERSION) == 8
-!if "$(_USE_64BIT_TIME_T)" == "1"
-OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T=1
-!endif
-
-# _ATL_XP_TARGETING - Newer SDK's need this to build for XP
-COMPILERFLAGS  = /D_ATL_XP_TARGETING
-!endif
 !if "$(TCL_BUILD_FOR)" == "8"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8
 !endif

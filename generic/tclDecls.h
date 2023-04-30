@@ -4031,26 +4031,20 @@ extern const TclStubs *tclStubsPtr;
 #undef TclGetByteArrayFromObj
 #undef Tcl_GetByteArrayFromObj
 #if defined(USE_TCL_STUBS)
-#define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
-	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), \
+#define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg,\
+	flags, indexPtr) \
+	(tclStubsPtr->tcl_GetIndexFromObjStruct(\
+	    (interp), (objPtr), (tablePtr), (offset), (msg), \
 		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
 #define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
-	((sizeof(*(boolPtr)) == sizeof(int) && (TCL_MAJOR_VERSION == 8)) ? tclStubsPtr->tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : \
-	Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
+	(Tcl_GetBoolFromObj(interp, objPtr,\
+	     (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
 #define Tcl_GetBoolean(interp, src, boolPtr) \
-	((sizeof(*(boolPtr)) == sizeof(int) && (TCL_MAJOR_VERSION == 8)) ? tclStubsPtr->tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
-	Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
-#if TCL_MAJOR_VERSION > 8
+	(Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof(\
+	    (*(boolPtr))), (char *)(boolPtr)))
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? \
-		tclStubsPtr->tclGetBytesFromObj(NULL, objPtr, (sizePtr)) : \
-		tclStubsPtr->tcl_GetBytesFromObj(NULL, objPtr, (Tcl_Size *)(void *)(sizePtr)))
-#else
-#define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? \
-		tclStubsPtr->tclGetByteArrayFromObj(objPtr, (sizePtr)) : \
-		tclStubsPtr->tcl_GetByteArrayFromObj(objPtr, (Tcl_Size *)(void *)(sizePtr)))
-#endif
+	(tclStubsPtr->tcl_GetBytesFromObj(\
+	    NULL, objPtr, (Tcl_Size *)(void *)(sizePtr)))
 #else
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
 	(Tcl_GetBytesFromObj)(NULL, objPtr, (Tcl_Size *)(void *)(sizePtr))
@@ -4119,19 +4113,11 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL)
 
-#if TCL_MAJOR_VERSION > 8
-#   undef Tcl_Close
-#   define Tcl_Close(interp, chan) Tcl_CloseEx(interp, chan, 0)
-#endif
+# undef Tcl_Close
+# define Tcl_Close(interp, chan) Tcl_CloseEx(interp, chan, 0)
 
 #undef TclUtfCharComplete
 #undef TclUtfNext
 #undef TclUtfPrev
-
-/* TIP #660 for 8.7 */
-#if TCL_MAJOR_VERSION < 9
-#   undef Tcl_GetSizeIntFromObj
-#   define Tcl_GetSizeIntFromObj Tcl_GetIntFromObj
-#endif
 
 #endif /* _TCLDECLS */

@@ -316,10 +316,8 @@ typedef struct CompileEnv {
 				 * array byte. */
     int mallocedCodeArray;	/* Set 1 if code array was expanded and
 				 * codeStart points into the heap.*/
-#if TCL_MAJOR_VERSION > 8
     int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
 				 * exceptArrayPtr points in heap, else 0. */
-#endif
     LiteralEntry *literalArrayPtr;
     				/* Points to start of LiteralEntry array. */
     Tcl_Size literalArrayNext;	/* Index of next free object array entry. */
@@ -335,9 +333,6 @@ typedef struct CompileEnv {
 				 * current range's array entry. */
     Tcl_Size exceptArrayEnd;		/* Index after the last ExceptionRange array
 				 * entry. */
-#if TCL_MAJOR_VERSION < 9
-    int mallocedExceptArray;
-#endif
     ExceptionAux *exceptAuxArrayPtr;
 				/* Array of information used to restore the
 				 * state when processing BREAK/CONTINUE
@@ -350,19 +345,14 @@ typedef struct CompileEnv {
     Tcl_Size cmdMapEnd;		/* Index after last CmdLocation entry. */
     int mallocedCmdMap;		/* 1 if command map array was expanded and
 				 * cmdMapPtr points in the heap, else 0. */
-#if TCL_MAJOR_VERSION > 8
     int mallocedAuxDataArray;	/* 1 if aux data array was expanded and
 				 * auxDataArrayPtr points in heap else 0. */
-#endif
     AuxData *auxDataArrayPtr;	/* Points to auxiliary data array start. */
     Tcl_Size auxDataArrayNext;	/* Next free compile aux data array index.
 				 * auxDataArrayNext is the number of aux data
 				 * items and (auxDataArrayNext-1) is index of
 				 * current aux data array entry. */
     Tcl_Size auxDataArrayEnd;	/* Index after last aux data array entry. */
-#if TCL_MAJOR_VERSION < 9
-    int mallocedAuxDataArray;
-#endif
     unsigned char staticCodeSpace[COMPILEENV_INIT_CODE_BYTES];
 				/* Initial storage for code. */
     LiteralEntry staticLiteralSpace[COMPILEENV_INIT_NUM_OBJECTS];
@@ -1064,7 +1054,6 @@ typedef struct {
  *----------------------------------------------------------------
  */
 
-#if TCL_MAJOR_VERSION > 8
 MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
 
 /*
@@ -1203,7 +1192,6 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[], int isLambda);
-#endif /* TCL_MAJOR_VERSION > 8 */
 
 
 /*

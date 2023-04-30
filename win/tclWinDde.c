@@ -122,11 +122,6 @@ extern "C" {
 #endif
 DLLEXPORT int		Dde_Init(Tcl_Interp *interp);
 DLLEXPORT int		Dde_SafeInit(Tcl_Interp *interp);
-#if TCL_MAJOR_VERSION < 9
-/* With those additional entries, "load dde14.dll" works without 3th argument */
-DLLEXPORT int		Tcldde_Init(Tcl_Interp *interp);
-DLLEXPORT int		Tcldde_SafeInit(Tcl_Interp *interp);
-#endif
 #ifdef __cplusplus
 }
 #endif
@@ -159,14 +154,6 @@ Dde_Init(
     Tcl_CreateExitHandler(DdeExitProc, NULL);
     return Tcl_PkgProvideEx(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION, NULL);
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tcldde_Init(
-    Tcl_Interp *interp)
-{
-    return Dde_Init(interp);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -194,14 +181,6 @@ Dde_SafeInit(
     }
     return result;
 }
-#if TCL_MAJOR_VERSION < 9
-int
-Tcldde_SafeInit(
-    Tcl_Interp *interp)
-{
-    return Dde_SafeInit(interp);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------

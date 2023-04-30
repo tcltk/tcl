@@ -437,8 +437,7 @@ TclNewArithSeriesObj(
 	}
     }
 
-    if ((TCL_MAJOR_VERSION < 9 && ((len > ListSizeT_MAX))) ||
-	(len > TCL_SIZE_MAX)) {
+    if ((len > TCL_SIZE_MAX)) {
 	Tcl_SetObjResult(
 	    interp,
 	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
