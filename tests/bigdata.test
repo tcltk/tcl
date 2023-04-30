@@ -116,6 +116,26 @@ set ::bigLengths(patlenmultiple) [bigPatlenMultiple $::bigLengths(intmax)]
 set ::bigLengths(upatlenmultiple) [bigPatlenMultiple $::bigLengths(uintmax)]
 
 #
+# script limits
+bigtestRO script-length-bigdata-1 {Test script length limit} b -body {
+    try [string cat [string repeat " " 0x7ffffff7] "set a b"]
+}
+# TODO - different behaviour between compiled and uncompiled
+test script-length-bigdata-2.compiled {Test script length limit} -body {
+    try [string cat [string repeat " " 0x7ffffff8] "set a b"]
+} -result {Script length 2147483647 exceeds max permitted length 2147483646.} -returnCodes error
+test script-length-bigdata-2.uncompiled {Test script length limit} -body {
+    testevalex [string cat [string repeat " " 0x7ffffff8] "set a b"]
+} -result b
+test script-bytecode-length-bigdata-1 {Test bytecode length limit} -body {
+    # Note we need to exceed bytecode limit without exceeding script char limit
+    set s [string repeat {{*}$x;} [expr 0x7fffffff/6]]
+    catch $s r e
+} -cleanup {
+    bigClean
+} -constraints panic-in-EnterCmdStartData
+
+#
 # string cat
 bigtest string-cat-bigdata-1 "string cat large small result > INT_MAX" 1 -body {
     string equal \
@@ -159,7 +179,6 @@ bigtestRO string-equal/compare-bigdata-2 "string compare/equal -length unequal s
 } -cleanup {
     bigClean
 }
-# -constraints bug-a814ee5bbd
 
 #
 # string first
