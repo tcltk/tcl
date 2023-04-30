@@ -2101,12 +2101,12 @@ Tcl_ListObjReplace(
     }
     if (numToDelete < 0) {
 	numToDelete = 0;
-    } else if (first > ListSizeT_MAX - numToDelete /* Handle integer overflow */
+    } else if (first > LIST_MAX - numToDelete /* Handle integer overflow */
              || origListLen < first + numToDelete) {
 	numToDelete = origListLen - first;
     }
 
-    if (numToInsert > ListSizeT_MAX - (origListLen - numToDelete)) {
+    if (numToInsert > LIST_MAX - (origListLen - numToDelete)) {
 	return ListLimitExceededError(interp);
     }
 
@@ -2567,7 +2567,7 @@ TclLindexList(
      * see TIP#22 and TIP#33 for the details.
      */
     if (!TclHasInternalRep(argObj, &tclListType)
-	&& TclGetIntForIndexM(NULL, argObj, ListSizeT_MAX - 1, &index)
+	&& TclGetIntForIndexM(NULL, argObj, TCL_SIZE_MAX - 1, &index)
 	       == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
@@ -2693,7 +2693,7 @@ TclLindexFlat(
 
 		while (++i < indexCount) {
 		    if (TclGetIntForIndexM(
-			    interp, indexArray[i], ListSizeT_MAX - 1, &index)
+			    interp, indexArray[i], TCL_SIZE_MAX - 1, &index)
 			!= TCL_OK) {
 			Tcl_DecrRefCount(sublistCopy);
 			return NULL;
@@ -2758,7 +2758,7 @@ TclLsetList(
      */
 
     if (!TclHasInternalRep(indexArgObj, &tclListType)
-	&& TclGetIntForIndexM(NULL, indexArgObj, ListSizeT_MAX - 1, &index)
+	&& TclGetIntForIndexM(NULL, indexArgObj, TCL_SIZE_MAX - 1, &index)
 	       == TCL_OK) {
 	/* indexArgPtr designates a single index. */
         /* T:listrep-1.{2.1,12.1,15.1,19.1},2.{2.3,9.3,10.1,13.1,16.1}, 3.{4,5,6}.3 */
