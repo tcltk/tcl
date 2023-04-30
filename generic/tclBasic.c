@@ -3319,6 +3319,9 @@ static int cmdWrapper2Proc(void *clientData,
     Tcl_Obj *const objv[])
 {
     Command *cmdPtr = (Command *)clientData;
+    if (objc > INT_MAX) {
+	return TclCommandWordLimitError(interp, objc);
+    }
     return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
 }
 
