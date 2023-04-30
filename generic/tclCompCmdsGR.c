@@ -416,7 +416,7 @@ TclCompileIfCmd(
 	if (TclFixupForwardJumpToHere(envPtr,
 		jumpEndFixupArray.fixup + jumpIndex, 127)) {
 	    /*
-	     * Adjust the immediately preceeding "ifFalse" jump. We moved it's
+	     * Adjust the immediately preceding "ifFalse" jump. We moved it's
 	     * target (just after this jump) down three bytes.
 	     */
 
@@ -619,8 +619,8 @@ TclCompileInfoCommandsCmd(
     Tcl_DecrRefCount(objPtr);
 
     /*
-     * Confirmed as a literal that will not frighten the horses. Compile. Note
-     * that the result needs to be list-ified.
+     * Confirmed as a literal that will not frighten the horses. Compile.
+     * The result must be made into a list.
      */
 
     /* TODO: Just push the known value */
@@ -2113,7 +2113,7 @@ TclCompileRegsubCmd(
     Tcl_DString pattern;
     const char *bytes;
     int exact, quantified, result = TCL_ERROR;
-    size_t len;
+    Tcl_Size len;
 
     if ((int)parsePtr->numWords < 5 || (int)parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -2268,7 +2268,7 @@ TclCompileReturnCmd(
      * An even number of words means an explicit result argument is present.
      */
     int level, code, objc, status = TCL_OK;
-    size_t size;
+    Tcl_Size size;
     int numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
@@ -2478,7 +2478,7 @@ TclCompileSyntaxError(
     CompileEnv *envPtr)
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
-    size_t numBytes;
+    Tcl_Size numBytes;
     const char *bytes = Tcl_GetStringFromObj(msg, &numBytes);
 
     TclErrorStackResetIf(interp, bytes, numBytes);
@@ -2705,7 +2705,7 @@ IndexTailVarIfKnown(
     Tcl_Obj *tailPtr;
     const char *tailName, *p;
     int n = varTokenPtr->numComponents;
-    size_t len;
+    Tcl_Size len;
     Tcl_Token *lastTokenPtr;
     int full, localIndex;
 

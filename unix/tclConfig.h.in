@@ -444,7 +444,7 @@
 /* Does this platform have wide high-resolution clicks? */
 #undef TCL_WIDE_CLICKS
 
-/* Do 'long' and 'long long' have the same size (64-bit)? */
+/* 'long' and 'long long' have the same size */
 #undef TCL_WIDE_INT_IS_LONG
 
 /* Tcl with external libtommath */

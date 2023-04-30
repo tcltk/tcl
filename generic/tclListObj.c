@@ -49,13 +49,13 @@
 #define LIST_INDEX_ASSERT(idxarg_)                                 \
     do {                                                           \
 	Tcl_Size idx_ = (idxarg_); /* To guard against ++ etc. */ \
-	LIST_ASSERT(idx_ != TCL_INDEX_NONE && idx_ < LIST_MAX);                 \
+	LIST_ASSERT(idx_ >= 0 && idx_ < LIST_MAX);                 \
     } while (0)
 /* Ditto for counts except upper limit is different */
 #define LIST_COUNT_ASSERT(countarg_)                                   \
     do {                                                               \
 	Tcl_Size count_ = (countarg_); /* To guard against ++ etc. */ \
-	LIST_ASSERT(count_ != TCL_INDEX_NONE && count_ <= LIST_MAX);                \
+	LIST_ASSERT(count_ >= 0 && count_ <= LIST_MAX);                \
     } while (0)
 
 #else
@@ -142,7 +142,7 @@ static void	DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void	FreeListInternalRep(Tcl_Obj *listPtr);
 static int	SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void	UpdateStringOfList(Tcl_Obj *listPtr);
-static size_t ListLength(Tcl_Obj *listPtr);
+static Tcl_Size ListLength(Tcl_Obj *listPtr);
 
 /*
  * The structure below defines the list Tcl object type by means of functions
@@ -532,7 +532,7 @@ ListLimitExceededError(Tcl_Interp *interp)
     if (interp != NULL) {
 	Tcl_SetObjResult(
 	    interp,
-	    Tcl_NewStringObj("max length of a Tcl list exceeded", TCL_INDEX_NONE));
+	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
     return TCL_ERROR;
@@ -856,7 +856,19 @@ ListStoreReallocate (ListStore *storePtr, Tcl_Size numSlots)
     newCapacity = ListStoreUpSize(numSlots);
     newStorePtr =
 	(ListStore *)Tcl_AttemptRealloc(storePtr, LIST_SIZE(newCapacity));
+    
+    /*
+     * In case above failed keep looping reducing the requested extra space
+     * by half every time.
+     */
+    while (newStorePtr == NULL && (newCapacity > (numSlots+1))) {
+	/* Because of loop condition newCapacity can't overflow */
+	newCapacity = numSlots + ((newCapacity - numSlots) / 2);
+	newStorePtr =
+	    (ListStore *)Tcl_AttemptRealloc(storePtr, LIST_SIZE(newCapacity));
+    }
     if (newStorePtr == NULL) {
+	/* Last resort - allcate what was asked */
 	newCapacity = numSlots;
 	newStorePtr = (ListStore *)Tcl_AttemptRealloc(storePtr,
 						    LIST_SIZE(newCapacity));
@@ -1443,13 +1455,13 @@ ListRepRange(
 	ListRepFreeUnreferenced(srcRepPtr);
     } /* else T:listrep-2.{4.2,4.3,5.2,5.3,6.2,7.2,8.1} */
 
-    if (rangeStart == TCL_INDEX_NONE) {
+    if (rangeStart < 0) {
 	rangeStart = 0;
     }
-    if ((rangeEnd != TCL_INDEX_NONE) && (rangeEnd >= numSrcElems)) {
+    if (rangeEnd >= numSrcElems) {
 	rangeEnd = numSrcElems - 1;
     }
-    if (rangeStart + 1 > rangeEnd + 1) {
+    if (rangeStart > rangeEnd) {
 	/* Empty list of capacity 1. */
 	ListRepInit(1, NULL, LISTREP_PANIC_ON_FAIL, rangeRepPtr);
 	return;
@@ -1608,6 +1620,7 @@ ListRepRange(
 
 Tcl_Obj *
 TclListObjRange(
+    Tcl_Interp *interp,		/* May be NULL. Used for error messages */
     Tcl_Obj *listObj,		/* List object to take a range from. */
     Tcl_Size rangeStart,	/* Index of first element to include. */
     Tcl_Size rangeEnd)		/* Index of last element to include. */
@@ -1616,7 +1629,7 @@ TclListObjRange(
     ListRep resultRep;
 
     int isShared;
-    if (TclListObjGetRep(NULL, listObj, &listRep) != TCL_OK)
+    if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK)
 	return NULL;
 
     isShared = Tcl_IsShared(listObj);
@@ -1778,7 +1791,7 @@ Tcl_ListObjAppendList(
     if (TclListObjGetRep(interp, toObj, &listRep) != TCL_OK)
 	return TCL_ERROR; /* Cannot be converted to a list */
 
-    if (elemCount == 0)
+    if (elemCount <= 0)
 	return TCL_OK; /* Nothing to do. Note AFTER check for list above */
 
     ListRepElements(&listRep, toLen, toObjv);
@@ -1866,7 +1879,7 @@ Tcl_ListObjAppendList(
 				    : LISTREP_SPACE_ONLY_BACK,
 		    &listRep)
 	!= TCL_OK) {
-	return TCL_ERROR;
+	return MemoryAllocationError(interp, finalLen);
     }
     LIST_ASSERT(listRep.storePtr->numAllocated >= finalLen);
 
@@ -1891,24 +1904,27 @@ Tcl_ListObjAppendList(
  *
  * Tcl_ListObjAppendElement --
  *
- *	This function is a special purpose version of Tcl_ListObjAppendList:
- *	it appends a single object referenced by elemObj to the list object
- *	referenced by toObj. If toObj is not already a list object, an
- *	attempt will be made to convert it to one.
+ *	Like 'Tcl_ListObjAppendList', but Appends a single value to a list.
  *
- * Results:
- *	The return value is normally TCL_OK; in this case elemObj is added to
- *	the end of toObj's list. If toObj does not refer to a list object
- *	and the object can not be converted to one, TCL_ERROR is returned and
- *	an error message will be left in the interpreter's result if interp is
- *	not NULL.
+ * Value
  *
- * Side effects:
- *	The ref count of elemObj is incremented since the list now refers to
- *	it. toObj will be converted, if necessary, to a list object. Also,
- *	appending the new element may cause listObj's array of element
- *	pointers to grow. toObj's old string representation, if any, is
- *	invalidated.
+ *	TCL_OK
+ *
+ *	    'objPtr' is appended to the elements of 'listPtr'.
+ *
+ *	TCL_ERROR
+ *
+ *	    listPtr does not refer to a list object and the object can not be
+ *	    converted to one. An error message will be left in the
+ *	    interpreter's result if interp is not NULL.
+ *
+ * Effect
+ *
+ *	If 'listPtr' is not already of type 'tclListType', it is converted.
+ *	The 'refCount' of 'objPtr' is incremented as it is added to 'listPtr'.
+ *	Appending the new element may cause the array of element pointers
+ *	in 'listObj' to grow.  Any preexisting string representation of
+ *	'listPtr' is invalidated.
  *
  *----------------------------------------------------------------------
  */
@@ -1930,23 +1946,27 @@ Tcl_ListObjAppendElement(
  *
  * Tcl_ListObjIndex --
  *
- *	This function returns a pointer to the index'th object from the list
- *	referenced by listPtr. The first element has index 0. If index is
- *	negative or greater than or equal to the number of elements in the
- *	list, a NULL is returned. If listPtr is not a list object, an attempt
- *	will be made to convert it to a list.
+ * 	Retrieve a pointer to the element of 'listPtr' at 'index'.  The index
+ * 	of the first element is 0.
  *
- * Results:
- *	The return value is normally TCL_OK; in this case objPtrPtr is set to
- *	the Tcl_Obj pointer for the index'th list element or NULL if index is
- *	out of range. This object should be treated as readonly and its ref
- *	count is _not_ incremented; the caller must do that if it holds on to
- *	the reference. If listPtr does not refer to a list and can't be
- *	converted to one, TCL_ERROR is returned and an error message is left
- *	in the interpreter's result if interp is not NULL.
+ * Value
  *
- * Side effects:
- *	listPtr will be converted, if necessary, to a list object.
+ * 	TCL_OK
+ *
+ *	    A pointer to the element at 'index' is stored in 'objPtrPtr'.  If
+ *	    'index' is out of range, NULL is stored in 'objPtrPtr'.  This
+ *	    object should be treated as readonly and its 'refCount' is _not_
+ *	    incremented. The caller must do that if it holds on to the
+ *	    reference.
+ *
+ * 	TCL_ERROR
+ *
+ * 	    'listPtr' is not a valid list. An error message is left in the
+ * 	    interpreter's result if 'interp' is not NULL.
+ *
+ *  Effect
+ *
+ * 	If 'listPtr' is not already of type 'tclListType', it is converted.
  *
  *----------------------------------------------------------------------
  */
@@ -1971,7 +1991,7 @@ Tcl_ListObjIndex(
 	!= TCL_OK) {
 	return TCL_ERROR;
     }
-    if (index >= numElems) {
+    if (index < 0 || index >= numElems) {
 	*objPtrPtr = NULL;
     } else {
 	*objPtrPtr = elemObjs[index];
@@ -2011,7 +2031,7 @@ Tcl_ListObjLength(
 {
     ListRep listRep;
 
-    size_t (*lengthProc)(Tcl_Obj *obj) =  ABSTRACTLIST_PROC(listObj, lengthProc);
+    Tcl_Size (*lengthProc)(Tcl_Obj *obj) =  ABSTRACTLIST_PROC(listObj, lengthProc);
     if (lengthProc) {
 	*lenPtr = lengthProc(listObj);
 	return TCL_OK;
@@ -2031,11 +2051,11 @@ Tcl_ListObjLength(
     return TCL_OK;
 }
 
-size_t ListLength(
-    Tcl_Obj *listPtr)
+Tcl_Size
+ListLength(Tcl_Obj *listPtr)
 {
-	ListRep listRep;
-	ListObjGetRep(listPtr, &listRep);
+    ListRep listRep;
+    ListObjGetRep(listPtr, &listRep);
 
     return ListRepLength(&listRep);
 }
@@ -2113,13 +2133,13 @@ Tcl_ListObjReplace(
 
     /* Make limits sane */
     origListLen = ListRepLength(&listRep);
-    if (first == TCL_INDEX_NONE) {
+    if (first < 0) {
 	first = 0;
     }
     if (first > origListLen) {
 	first = origListLen;	/* So we'll insert after last element. */
     }
-    if (numToDelete == TCL_INDEX_NONE) {
+    if (numToDelete < 0) {
 	numToDelete = 0;
     } else if (first > ListSizeT_MAX - numToDelete /* Handle integer overflow */
              || origListLen < first + numToDelete) {
@@ -2363,7 +2383,7 @@ Tcl_ListObjReplace(
      */
 
     /*
-     * Calculate shifts if necessary to accomodate insertions.
+     * Calculate shifts if necessary to accommodate insertions.
      * NOTE: all indices are relative to listObjs which is not necessarily the
      * start of the ListStore storage area.
      *
@@ -2652,7 +2672,7 @@ Tcl_Obj *
 TclLindexFlat(
     Tcl_Interp *interp,		/* Tcl interpreter. */
     Tcl_Obj *listObj,		/* Tcl object representing the list. */
-    Tcl_Size indexCount,		/* Count of indices. */
+    Tcl_Size indexCount,	/* Count of indices. */
     Tcl_Obj *const indexArray[])/* Array of pointers to Tcl objects that
 				 * represent the indices in the list. */
 {
@@ -2707,7 +2727,7 @@ TclLindexFlat(
 
 	if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
 		&index) == TCL_OK) {
-	    if (index >= listLen) {
+	    if (index < 0 || index >= listLen) {
 		/*
 		 * Index is out of range. Break out of loop with empty result.
 		 * First check remaining indices for validity
@@ -2954,7 +2974,7 @@ TclLsetFlat(
 	}
 	indexArray++;
 
-	if (index > elemCount
+	if (index < 0 || index > elemCount
 	    || (valueObj == NULL && index >= elemCount)) {
 	    /* ...the index points outside the sublist. */
 	    if (interp != NULL) {
@@ -3445,18 +3465,16 @@ fail:
  *
  * UpdateStringOfList --
  *
- *	Update the string representation for a list object. Note: This
- *	function does not invalidate an existing old string rep so storage
- *	will be lost if this has not already been done.
+ *	Update the string representation for a list object.
  *
- * Results:
- *	None.
+ *	Any previously-existing string representation is not invalidated, so
+ *	storage is lost if this has not been taken care of.
  *
- * Side effects:
- *	The object's string is set to a valid string that results from the
- *	list-to-string conversion. This string will be empty if the list has
- *	no elements. The list internal representation should not be NULL and
- *	we assume it is not NULL.
+ * Effect
+ *
+ *	The string representation of 'listPtr' is set to the resulting string.
+ *	This string will be empty if the list has no elements. It is assumed
+ *	that the list internal representation is not NULL.
  *
  *----------------------------------------------------------------------
  */

@@ -782,7 +782,7 @@ GetValue(
      * length to TCL_DSTRING_STATIC_SIZE, but this should be safer if the
      * implementation of Dstrings changes.
      *
-     * This allows short values to be read from the registy in one call.
+     * This allows short values to be read from the registry in one call.
      * Longer values need a second call with an expanded DString.
      */
 
@@ -876,7 +876,7 @@ GetValue(
  *
  * GetValueNames --
  *
- *	This function enumerates the values of the a given key. If the
+ *	This function enumerates the values of the given key. If the
  *	optional pattern is supplied, then only value names that match the
  *	pattern will be returned.
  *
@@ -1012,7 +1012,7 @@ OpenKey(
  *
  * OpenSubKey --
  *
- *	This function opens a given subkey of a root key on the specified
+ *	Opens a given subkey of the given root key on the specified
  *	host.
  *
  * Results:
@@ -1097,7 +1097,7 @@ OpenSubKey(
  *
  * ParseKeyName --
  *
- *	This function parses a key name into the host, root, and subkey parts.
+ *	Parses a key name into the host, root, and subkey parts.
  *
  * Results:
  *	The pointers to the start of the host and subkey names are returned in
@@ -1329,7 +1329,7 @@ SetValue(
 		(DWORD) type, (BYTE *) &value, sizeof(DWORD));
     } else if (type == REG_MULTI_SZ) {
 	Tcl_DString data, buf;
-	int objc, i;
+	Tcl_Size objc, i;
 	Tcl_Obj **objv;
 
 	if (Tcl_ListObjGetElements(interp, dataObj, &objc, &objv) != TCL_OK) {
@@ -1476,7 +1476,7 @@ BroadcastValue(
  *
  * AppendSystemError --
  *
- *	This routine formats a Windows system error message and places it into
+ *	Formats a Windows system error message and places it into
  *	the interpreter result.
  *
  * Results:
@@ -1508,7 +1508,7 @@ AppendSystemError(
 	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *) tMsgPtrPtr,
 	    0, NULL);
     if (length == 0) {
-	sprintf(msgBuf, "unknown error: %ld", error);
+	snprintf(msgBuf, sizeof(msgBuf), "unknown error: %ld", error);
 	msg = msgBuf;
     } else {
 	char *msgPtr;
@@ -1534,7 +1534,7 @@ AppendSystemError(
 	msg = msgPtr;
     }
 
-    sprintf(id, "%ld", error);
+    snprintf(id, sizeof(id), "%ld", error);
     Tcl_SetErrorCode(interp, "WINDOWS", id, msg, NULL);
     Tcl_AppendToObj(resultPtr, msg, length);
     Tcl_SetObjResult(interp, resultPtr);
@@ -1549,7 +1549,7 @@ AppendSystemError(
  *
  * ConvertDWORD --
  *
- *	This function determines whether a DWORD needs to be byte swapped, and
+ *	Determines whether a DWORD needs to be byte swapped, and
  *	returns the appropriately swapped value.
  *
  * Results:

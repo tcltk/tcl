@@ -292,7 +292,7 @@ test zlib-8.6 {transformation and fconfigure} -setup {
 } -cleanup {
     catch {close $fd}
     removeFile $file
-} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -profile tcl8 -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -profile tcl8 -translation lf -checksum 1 -dictionary {}} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -profile tcl8 -translation lf}}
+} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding iso8859-1 -eofchar {} -profile strict -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding iso8859-1 -eofchar {} -profile strict -translation lf -checksum 1 -dictionary {}} {-blocking 1 -buffering full -buffersize 4096 -encoding iso8859-1 -eofchar {} -profile strict -translation lf}}
 test zlib-8.7 {transformation and fconfigure} -setup {
     set file [makeFile {} test.gz]
     set fd [open $file wb]
@@ -302,7 +302,7 @@ test zlib-8.7 {transformation and fconfigure} -setup {
 } -cleanup {
     catch {close $fd}
     removeFile $file
-} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -profile tcl8 -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -profile tcl8 -translation lf -checksum 0} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -profile tcl8 -translation lf}}
+} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding iso8859-1 -eofchar {} -profile strict -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding iso8859-1 -eofchar {} -profile strict -translation lf -checksum 0} {-blocking 1 -buffering full -buffersize 4096 -encoding iso8859-1 -eofchar {} -profile strict -translation lf}}
 # Input is headers from fetching SPDY draft
 # Dictionary is that which is proposed _in_ SPDY draft
 set spdyHeaders "HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nX-Robots-Tag: noarchive\r\nLast-Modified: Tue, 05 Jun 2012 02:43:25 GMT\r\nETag: \"1338864205129|#public|0|en|||0\"\r\nExpires: Tue, 05 Jun 2012 16:17:11 GMT\r\nDate: Tue, 05 Jun 2012 16:17:06 GMT\r\nCache-Control: public, max-age=5\r\nX-Content-Type-Options: nosniff\r\nX-XSS-Protection: 1; mode=block\r\nServer: GSE\r\n"

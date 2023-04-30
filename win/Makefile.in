@@ -613,7 +613,7 @@ ${TEST_EXE_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS} tclTestMain.${OBJEXT}
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	$(COPY) tclsh.exe.manifest ${TEST_EXE_FILE}.manifest
 
-# use pre-built zlib1.dll
+# use prebuilt zlib1.dll
 ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
 	@if test "@ZLIB_LIBS@set" = "${ZLIB_DIR_NATIVE}/win64-arm/zdll.libset" ; then \
 		$(COPY) $(ZLIB_DIR)/win64-arm/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
@@ -701,6 +701,8 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		@DEPARG@ $(CC_OBJNAME)
 
 tclEvent.${OBJEXT}: tclEvent.c tclUuid.h
+
+tclTest.${OBJEXT}: tclTest.c tclUuid.h
 
 $(TOP_DIR)/manifest.uuid:
 	printf "git-" >$(TOP_DIR)/manifest.uuid

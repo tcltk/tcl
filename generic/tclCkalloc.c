@@ -172,7 +172,7 @@ TclDumpMemoryInfo(
     if (clientData == NULL) {
         return 0;
     }
-    sprintf(buf,
+    snprintf(buf, sizeof(buf),
 	    "total mallocs             %10" TCL_Z_MODIFIER "u\n"
 	    "total frees               %10" TCL_Z_MODIFIER "u\n"
 	    "current packets allocated %10" TCL_Z_MODIFIER "u\n"
@@ -189,7 +189,7 @@ TclDumpMemoryInfo(
 	fprintf((FILE *)clientData, "%s", buf);
     } else {
 	/* Assume objPtr to append to */
-	Tcl_AppendToObj((Tcl_Obj *) clientData, buf, TCL_INDEX_NONE);
+	Tcl_AppendToObj((Tcl_Obj *) clientData, buf, -1);
     }
     return 1;
 }

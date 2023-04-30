@@ -230,7 +230,7 @@ TclCompileAppendCmd(
  *
  * TclCompileArray*Cmd --
  *
- *	Functions called to compile "array" sucommands.
+ *	Functions called to compile "array" subcommands.
  *
  * Results:
  *	All return TCL_OK for a successful compile, and TCL_ERROR to defer
@@ -287,7 +287,7 @@ TclCompileArraySetCmd(
     Tcl_Token *varTokenPtr, *dataTokenPtr;
     int isScalar, localIndex, code = TCL_OK;
     int isDataLiteral, isDataValid, isDataEven;
-    size_t len;
+    Tcl_Size len;
     int keyVar, valVar, infoIndex;
     int fwd, offsetBack, offsetFwd;
     Tcl_Obj *literalObj;
@@ -393,7 +393,7 @@ TclCompileArraySetCmd(
 
     infoPtr = (ForeachInfo *)Tcl_Alloc(offsetof(ForeachInfo, varLists) + sizeof(ForeachVarList *));
     infoPtr->numLists = 1;
-    infoPtr->varLists[0] = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes) + 2 * sizeof(size_t));
+    infoPtr->varLists[0] = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes) + 2 * sizeof(Tcl_Size));
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
     infoPtr->varLists[0]->varIndexes[1] = valVar;
@@ -635,7 +635,7 @@ TclCompileCatchCmd(
      * catch range so that errors in the substitution are not caught.
      * [Bug 219184]
      * The reason for duplicating the script is that EVAL_STK would otherwise
-     * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
+     * begin by underflowing the stack below the mark set by BEGIN_CATCH4.
      */
 
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
@@ -891,7 +891,7 @@ TclCompileConcatCmd(
     if (listObj != NULL) {
 	Tcl_Obj **objs;
 	const char *bytes;
-	size_t len, slen;
+	Tcl_Size len, slen;
 
 	TclListObjGetElementsM(NULL, listObj, &len, &objs);
 	objPtr = Tcl_ConcatObj(len, objs);
@@ -983,7 +983,7 @@ TclCompileContinueCmd(
  *
  * TclCompileDict*Cmd --
  *
- *	Functions called to compile "dict" sucommands.
+ *	Functions called to compile "dict" subcommands.
  *
  * Results:
  *	All return TCL_OK for a successful compile, and TCL_ERROR to defer
@@ -1078,7 +1078,7 @@ TclCompileDictIncrCmd(
 
     if (parsePtr->numWords == 4) {
 	const char *word;
-	size_t numBytes;
+	Tcl_Size numBytes;
 	int code;
 	Tcl_Token *incrTokenPtr;
 	Tcl_Obj *intObj;
@@ -1293,7 +1293,7 @@ TclCompileDictCreateCmd(
     Tcl_Obj *keyObj, *valueObj, *dictObj;
     const char *bytes;
     int i;
-    size_t len;
+    Tcl_Size len;
 
     if ((parsePtr->numWords & 1) == 0) {
 	return TCL_ERROR;
@@ -1528,7 +1528,7 @@ CompileDictEachCmd(
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
     int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
     int infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
-    size_t numVars;
+    Tcl_Size numVars;
     int endTargetOffset;
     int collectVar = -1;	/* Index of temp var holding the result
 				 * dict. */
@@ -1690,7 +1690,7 @@ CompileDictEachCmd(
 
     /*
      * Error handler "finally" clause, which force-terminates the iteration
-     * and rethrows the error.
+     * and re-throws the error.
      */
 
     TclAdjustStackDepth(-1, envPtr);
@@ -1862,7 +1862,7 @@ TclCompileDictUpdateCmd(
     /*
      * Termination code for non-ok returns: stash the result and return
      * options in the stack, bring up the key list, finish the update code,
-     * and finally return with the catched return data
+     * and finally return with the caught return data
      */
 
     ExceptionRangeTarget(envPtr, range, catchOffset);
@@ -1908,7 +1908,7 @@ TclCompileDictAppendCmd(
 
     /*
      * There must be at least two argument after the command. And we impose an
-     * (arbirary) safe limit; anyone exceeding it should stop worrying about
+     * (arbitrary) safe limit; anyone exceeding it should stop worrying about
      * speed quite so much. ;-)
      */
 
@@ -2296,11 +2296,11 @@ PrintDictUpdateInfo(
     TCL_UNUSED(size_t))
 {
     DictUpdateInfo *duiPtr = (DictUpdateInfo *)clientData;
-    size_t i;
+    Tcl_Size i;
 
     for (i=0 ; i<duiPtr->length ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(appendObj, ", ", -1);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u", duiPtr->varIndices[i]);
     }
@@ -2314,7 +2314,7 @@ DisassembleDictUpdateInfo(
     TCL_UNUSED(size_t))
 {
     DictUpdateInfo *duiPtr = (DictUpdateInfo *)clientData;
-    size_t i;
+    Tcl_Size i;
     Tcl_Obj *variables;
 
     TclNewObj(variables);
@@ -2322,7 +2322,7 @@ DisassembleDictUpdateInfo(
 	Tcl_ListObjAppendElement(NULL, variables,
 		Tcl_NewWideIntObj(duiPtr->varIndices[i]));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("variables", TCL_INDEX_NONE),
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("variables", -1),
 	    variables);
 }
 
@@ -2690,7 +2690,7 @@ CompileEachloopCmd(
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     int jumpBackOffset, infoIndex, range;
     int numWords, numLists, i, code = TCL_OK;
-    size_t j;
+    Tcl_Size j;
     Tcl_Obj *varListObj = NULL;
 
     /*
@@ -2742,7 +2742,7 @@ CompileEachloopCmd(
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	ForeachVarList *varListPtr;
-	size_t numVars;
+	Tcl_Size numVars;
 
 	if (i%2 != 1) {
 	    continue;
@@ -2762,7 +2762,7 @@ CompileEachloopCmd(
 	}
 
 	varListPtr = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes)
-		+ numVars * sizeof(size_t));
+		+ numVars * sizeof(varListPtr->varIndexes[0]));
 	varListPtr->numVars = numVars;
 	infoPtr->varLists[i/2] = varListPtr;
 	infoPtr->numLists++;
@@ -2771,7 +2771,7 @@ CompileEachloopCmd(
 	    Tcl_Obj *varNameObj;
 	    const char *bytes;
 	    int varIndex;
-	    size_t length;
+	    Tcl_Size length;
 
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
@@ -2980,13 +2980,13 @@ PrintForeachInfo(
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
-    size_t i, j;
+    Tcl_Size i, j;
 
-    Tcl_AppendToObj(appendObj, "data=[", TCL_INDEX_NONE);
+    Tcl_AppendToObj(appendObj, "data=[", -1);
 
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(appendObj, ", ", -1);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
 		(infoPtr->firstValueTemp + i));
@@ -2995,19 +2995,19 @@ PrintForeachInfo(
 	    infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ",", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(appendObj, ",", -1);
 	}
 	Tcl_AppendPrintfToObj(appendObj, "\n\t\t it%%v%" TCL_Z_MODIFIER "u\t[",
 		(infoPtr->firstValueTemp + i));
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
-		Tcl_AppendToObj(appendObj, ", ", TCL_INDEX_NONE);
+		Tcl_AppendToObj(appendObj, ", ", -1);
 	    }
 	    Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
 		    varsPtr->varIndexes[j]);
 	}
-	Tcl_AppendToObj(appendObj, "]", TCL_INDEX_NONE);
+	Tcl_AppendToObj(appendObj, "]", -1);
     }
 }
 
@@ -3020,24 +3020,24 @@ PrintNewForeachInfo(
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
-    size_t i, j;
+    Tcl_Size i, j;
 
     Tcl_AppendPrintfToObj(appendObj, "jumpOffset=%+" TCL_Z_MODIFIER "d, vars=",
 	    infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    Tcl_AppendToObj(appendObj, ",", TCL_INDEX_NONE);
+	    Tcl_AppendToObj(appendObj, ",", -1);
 	}
-	Tcl_AppendToObj(appendObj, "[", TCL_INDEX_NONE);
+	Tcl_AppendToObj(appendObj, "[", -1);
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
-		Tcl_AppendToObj(appendObj, ",", TCL_INDEX_NONE);
+		Tcl_AppendToObj(appendObj, ",", -1);
 	    }
 	    Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
 		    varsPtr->varIndexes[j]);
 	}
-	Tcl_AppendToObj(appendObj, "]", TCL_INDEX_NONE);
+	Tcl_AppendToObj(appendObj, "]", -1);
     }
 }
 
@@ -3050,7 +3050,7 @@ DisassembleForeachInfo(
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
-    size_t i, j;
+    Tcl_Size i, j;
     Tcl_Obj *objPtr, *innerPtr;
 
     /*
@@ -3062,13 +3062,13 @@ DisassembleForeachInfo(
 	Tcl_ListObjAppendElement(NULL, objPtr,
 		Tcl_NewWideIntObj(infoPtr->firstValueTemp + i));
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("data", TCL_INDEX_NONE), objPtr);
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("data", -1), objPtr);
 
     /*
      * Loop counter.
      */
 
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("loop", TCL_INDEX_NONE),
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("loop", -1),
 	   Tcl_NewWideIntObj(infoPtr->loopCtTemp));
 
     /*
@@ -3085,7 +3085,7 @@ DisassembleForeachInfo(
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", TCL_INDEX_NONE), objPtr);
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", -1), objPtr);
 }
 
 static void
@@ -3097,14 +3097,14 @@ DisassembleNewForeachInfo(
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
-    size_t i, j;
+    Tcl_Size i, j;
     Tcl_Obj *objPtr, *innerPtr;
 
     /*
      * Jump offset.
      */
 
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("jumpOffset", TCL_INDEX_NONE),
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("jumpOffset", -1),
 	   Tcl_NewWideIntObj(infoPtr->loopCtTemp));
 
     /*
@@ -3121,7 +3121,7 @@ DisassembleNewForeachInfo(
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", TCL_INDEX_NONE), objPtr);
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", -1), objPtr);
 }
 
 /*
@@ -3156,7 +3156,7 @@ TclCompileFormatCmd(
     Tcl_Obj **objv, *formatObj, *tmpObj;
     const char *bytes, *start;
     int i, j;
-    size_t len;
+    Tcl_Size len;
 
     /*
      * Don't handle any guaranteed-error cases.

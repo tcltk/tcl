@@ -85,7 +85,7 @@ Tcl_RegisterConfig(
     } else {
 	cdPtr->encoding = NULL;
     }
-    cdPtr->pkg = Tcl_NewStringObj(pkgName, TCL_INDEX_NONE);
+    cdPtr->pkg = Tcl_NewStringObj(pkgName, -1);
 
     /*
      * Phase I: Adding the provided information to the internal database of
@@ -127,7 +127,7 @@ Tcl_RegisterConfig(
      */
 
     for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
-	Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, TCL_INDEX_NONE),
+	Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, -1),
 		Tcl_NewByteArrayObj((unsigned char *)cfg->value, strlen(cfg->value)));
     }
 
@@ -144,7 +144,7 @@ Tcl_RegisterConfig(
 
     Tcl_DStringInit(&cmdName);
     TclDStringAppendLiteral(&cmdName, "::");
-    Tcl_DStringAppend(&cmdName, pkgName, TCL_INDEX_NONE);
+    Tcl_DStringAppend(&cmdName, pkgName, -1);
 
     /*
      * The incomplete command name is the name of the namespace to place it
@@ -181,7 +181,7 @@ Tcl_RegisterConfig(
  *	configuration information embedded into a library.
  *
  * Results:
- *	A standard tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
  *	See the manual for what this command does.
@@ -199,7 +199,7 @@ QueryConfigObjCmd(
     QCCD *cdPtr = (QCCD *)clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
-    size_t m, n = 0;
+    Tcl_Size m, n = 0;
     static const char *const subcmdStrings[] = {
 	"get", "list", NULL
     };
@@ -227,7 +227,7 @@ QueryConfigObjCmd(
 	 * present.
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known", TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known", -1));
 	Tcl_SetErrorCode(interp, "TCL", "FATAL", "PKGCFG_BASE",
 		TclGetString(pkgName), NULL);
 	return TCL_ERROR;
@@ -242,7 +242,7 @@ QueryConfigObjCmd(
 
 	if (Tcl_DictObjGet(interp, pkgDict, objv[2], &val) != TCL_OK
 		|| val == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("key not known", TCL_INDEX_NONE));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("key not known", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONFIG",
 		    TclGetString(objv[2]), NULL);
 	    return TCL_ERROR;
@@ -279,7 +279,7 @@ QueryConfigObjCmd(
 
 	if (!listPtr) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "insufficient memory to create list", TCL_INDEX_NONE));
+		    "insufficient memory to create list", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	    return TCL_ERROR;
 	}

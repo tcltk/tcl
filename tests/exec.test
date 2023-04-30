@@ -25,7 +25,7 @@ testConstraint noosxCI [expr {![info exists ::env(MAC_CI)]}]
 
 unset -nocomplain path
 
-# Utilities that are like bourne shell stalwarts, but cross-platform.
+# Utilities that are like Bourne shell stalwarts, but cross-platform.
 set path(echo) [makeFile {
     puts -nonewline [lindex $argv 0]
     foreach str [lrange $argv 1 end] {
@@ -437,7 +437,7 @@ close $f
 test exec-10.20.1 {errors in exec invocation} -constraints {unix exec notValgrind} -body {
     exec ~non_existent_user/foo/bar
 } -returnCodes error -result {couldn't execute "~non_existent_user/foo/bar": no such file or directory}
-test exec-10.20.1 {errors in exec invocation} -constraints {win exec notValgrind} -body {
+test exec-10.20.2 {errors in exec invocation} -constraints {win exec notValgrind} -body {
     exec ~non_existent_user/foo/bar
 } -returnCodes error -result {couldn't execute "~non_existent_user\foo\bar": no such file or directory}
 test exec-10.21.1 {errors in exec invocation} -constraints {unix exec notValgrind} -body {

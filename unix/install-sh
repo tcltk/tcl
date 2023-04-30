@@ -329,7 +329,7 @@ do
 	' 0
 
 	# Because "mkdir -p" follows existing symlinks and we likely work
-	# directly in world-writeable /tmp, make sure that the '$tmpdir'
+	# directly in world-writable /tmp, make sure that the '$tmpdir'
 	# directory is successfully created first before we actually test
 	# 'mkdir -p'.
 	if (umask $mkdir_umask &&

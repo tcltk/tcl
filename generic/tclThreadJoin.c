@@ -211,8 +211,8 @@ TclJoinThread(
  *
  * TclRememberJoinableThread --
  *
- *	This procedure remebers a thread as joinable. Only a call to
- *	TclJoinThread will remove the structre created (and initialized) here.
+ *	This procedure remembers a thread as joinable. Only a call to
+ *	TclJoinThread will remove the structure created (and initialized) here.
  *	IOW, not waiting upon a joinable thread will cause memory leaks.
  *
  * Results:

@@ -268,7 +268,7 @@
 	recently fixed by 2003-11-15 commit to regcomp.c by Pavel Goran. His
 	notes on the fix: This bug results from an error in code that splits
 	states into "progress" and "no-progress" ones. This error causes an
-	interesting situation with the pre-collected single-linked list of
+	interesting situation with the precollected single-linked list of
 	states to be splitted: many items were added to the list, but only
 	several of them are accessible from the list beginning, since the
 	"tmp" member of struct state (which is used here to hold a pointer to
@@ -2331,7 +2331,7 @@
 	argument, the Tcl_Interp struct loses its termOffset field and the
 	TCL_BRACKET_TERM flag in the evalFlags field, all of which were only
 	used (indirectly) by Tcl_SubstObj(). Tests subst-8.7,8.8,11.4,11.5
-	modified to accomodate the only behavior change: reporting of parse
+	modified to accommodate the only behavior change: reporting of parse
 	errors now takes precedence over [return] and [continue] exceptions.
 	All other behavior should remain compatible. [RFE 536831,684982] [Bug
 	685106]
@@ -2571,7 +2571,7 @@
 2003-02-25  Don Porter	<dgp@users.sourceforge.net>
 
 	* doc/pkgMkIndex.n:	Modified [pkg_mkIndex] to use -nocase matching
-	* library/package.tcl:	of -load patterns, to better accomodate common
+	* library/package.tcl:	of -load patterns, to better accommodate common
 	user errors due to confusion between [package names] names and [info
 	loaded] names.
 

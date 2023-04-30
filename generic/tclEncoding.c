@@ -610,7 +610,7 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 1;
     type.clientData	= INT2PTR(ENCODING_UTF);
     Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
 
@@ -622,7 +622,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2be";
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2";
     type.clientData	= INT2PTR(leFlags);
@@ -636,7 +636,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-32be";
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-32";
     type.clientData	= INT2PTR(leFlags);
@@ -647,13 +647,13 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "utf-16le";
-    type.clientData	= INT2PTR(TCL_ENCODING_LE|ENCODING_UTF);
+    type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16be";
-    type.clientData	= INT2PTR(ENCODING_UTF);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16";
-    type.clientData	= INT2PTR(leFlags|ENCODING_UTF);
+    type.clientData	= INT2PTR(leFlags);
     Tcl_CreateEncoding(&type);
 
 #ifndef TCL_NO_DEPRECATED
@@ -1299,7 +1299,7 @@ Tcl_ExternalToUtfDStringEx(
 		/* Caller wants error message on failure */
 		if (result != TCL_OK && interp != NULL) {
 		    char buf[TCL_INTEGER_SPACE];
-		    sprintf(buf, "%" TCL_Z_MODIFIER "u", nBytesProcessed);
+		    snprintf(buf, sizeof(buf), "%" TCL_Z_MODIFIER "u", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf("unexpected byte sequence starting at index %"
@@ -1415,9 +1415,9 @@ Tcl_ExternalToUtf(
     }
 
     if (!noTerminate) {
-	if ((int) dstLen < 1) {
-	    return TCL_CONVERT_NOSPACE;
-	}
+        if (dstLen < 1) {
+            return TCL_CONVERT_NOSPACE;
+        }
 	/*
 	 * If there are any null characters in the middle of the buffer,
 	 * they will converted to the UTF-8 null character (\xC0\x80). To get
@@ -1612,9 +1612,9 @@ Tcl_UtfToExternalDStringEx(
 	if ((result != TCL_CONVERT_NOSPACE) &&
 	    !(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
 	    Tcl_Size nBytesProcessed = (src - srcStart);
-	    size_t i = soFar + encodingPtr->nullSize - 1;
+	    Tcl_Size i = soFar + encodingPtr->nullSize - 1;
 	    /* Loop as DStringSetLength only stores one nul byte at a time */
-	    while (i+1 >= soFar+1) {
+	    while (i >= soFar) {
 		Tcl_DStringSetLength(dstPtr, i--);
 	    }
 	    if (errorLocPtr) {
@@ -1630,7 +1630,7 @@ Tcl_UtfToExternalDStringEx(
 		    int ucs4;
 		    char buf[TCL_INTEGER_SPACE];
 		    TclUtfToUCS4(&srcStart[nBytesProcessed], &ucs4);
-		    sprintf(buf, "%" TCL_Z_MODIFIER "u", nBytesProcessed);
+		    snprintf(buf, sizeof(buf), "%" TCL_Z_MODIFIER "u", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf(
@@ -2570,8 +2570,7 @@ UtfToUtfProc(
 		}
 	    } else {
 		/*
-		 * Convert 0xC080 to real nulls when we are in output mode,
-		 * irrespective of the profile.
+		 * For output convert 0xC080 to a real null.
 		 */
 		*dst++ = 0;
 		src += 2;
@@ -2787,9 +2786,9 @@ Utf32ToUtfProc(
 	int prev = ch;
 #endif
 	if (flags & TCL_ENCODING_LE) {
-	    ch = (src[3] & 0xFF) << 24 | (src[2] & 0xFF) << 16 | (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
+	    ch = (unsigned int)(src[3] & 0xFF) << 24 | (src[2] & 0xFF) << 16 | (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
 	} else {
-	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
+	    ch = (unsigned int)(src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
 #if TCL_UTF_MAX < 4
 	if (HIGH_SURROGATE(prev) && !LOW_SURROGATE(ch)) {
@@ -2822,6 +2821,11 @@ Utf32ToUtfProc(
 	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (ch & 0xFF);
 	} else {
+#if TCL_UTF_MAX < 4
+	    if (!HIGH_SURROGATE(prev) && LOW_SURROGATE(ch)) {
+		*dst = 0; /* In case of lower surrogate, don't try to combine */
+	    }
+#endif
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
 	src += 4;
@@ -3475,7 +3479,7 @@ TableToUtfProc(
 	}
 
 	/*
-	 * Special case for 1-byte utf chars for speed.
+	 * Special case for 1-byte Utf chars for speed.
 	 */
 
 	if ((unsigned)ch - 1 < 0x7F) {

@@ -124,7 +124,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    size_t *lengthPtr,
+    TCL_HASH_TYPE *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    64
@@ -141,13 +141,13 @@ TclpInitLibraryPath(
      * installed DLL.
      */
 
-    sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+    snprintf(installLib, sizeof(installLib), "lib/tcl%s", TCL_VERSION);
 
     /*
      * Look for the library relative to the TCL_LIBRARY env variable. If the
      * last dirname in the TCL_LIBRARY path does not match the last dirname in
      * the installLib variable, use the last dir name of installLib in
-     * addition to the orginal TCL_LIBRARY path.
+     * addition to the original TCL_LIBRARY path.
      */
 
     AppendEnvironment(pathPtr, installLib);
@@ -198,7 +198,7 @@ AppendEnvironment(
     Tcl_Obj *pathPtr,
     const char *lib)
 {
-    size_t pathc;
+    Tcl_Size pathc;
     WCHAR wBuf[MAX_PATH];
     char buf[MAX_PATH * 3];
     Tcl_Obj *objPtr;
@@ -225,8 +225,8 @@ AppendEnvironment(
     }
 
     /*
-     * The "L" preceeding the TCL_LIBRARY string is used to tell VC++ that
-     * this is a unicode string.
+     * The "L" preceding the TCL_LIBRARY string is used to tell VC++ that
+     * this is a Unicode string.
      */
 
     GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH);
@@ -304,7 +304,7 @@ InitializeDefaultLibraryDir(
     *end = '\\';
 
     TclWinNoBackslash(name);
-    sprintf(end + 1, "lib/tcl%s", TCL_VERSION);
+    snprintf(end + 1, LIBRARY_SIZE, "lib/tcl%s", TCL_VERSION);
     *lengthPtr = strlen(name);
     *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
@@ -352,7 +352,7 @@ InitializeSourceLibraryDir(
     *end = '\\';
 
     TclWinNoBackslash(name);
-    sprintf(end + 1, "../library");
+    snprintf(end + 1, LIBRARY_SIZE, "../library");
     *lengthPtr = strlen(name);
     *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
@@ -404,7 +404,7 @@ Tcl_GetEncodingNameFromEnvironment(
 	Tcl_DStringAppend(bufPtr, "utf-8", 5);
     } else {
 	Tcl_DStringSetLength(bufPtr, 2+TCL_INTEGER_SPACE);
-	wsprintfA(Tcl_DStringValue(bufPtr), "cp%d", GetACP());
+	snprintf(Tcl_DStringValue(bufPtr), 2+TCL_INTEGER_SPACE, "cp%d", GetACP());
 	Tcl_DStringSetLength(bufPtr, strlen(Tcl_DStringValue(bufPtr)));
     }
     return Tcl_DStringValue(bufPtr);
@@ -488,7 +488,7 @@ TclpSetVariables(
     if (osInfo.dwMajorVersion == 10 && osInfo.dwBuildNumber >= 22000) {
 	osInfo.dwMajorVersion = 11;
     }
-    wsprintfA(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    snprintf(buffer, sizeof(buffer), "%ld.%ld", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",
@@ -555,7 +555,7 @@ TclpSetVariables(
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or TCL_INDEX_NONE if there is no such entry. The integer
+ *	"name", or -1 if there is no such entry. The integer
  *	at *lengthPtr is filled in with the length of name (if a matching
  *	entry is found) or the length of the environ array (if no
  *	matching entry is found).
@@ -569,16 +569,16 @@ TclpSetVariables(
 #  define tenviron2utfdstr(string, len, dsPtr) \
 		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr))
 
-size_t
+Tcl_Size
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (UTF-8). */
-    size_t *lengthPtr)		/* Used to return length of name (for
+    Tcl_Size *lengthPtr)		/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    size_t i, length, result = TCL_INDEX_NONE;
+    Tcl_Size i, length, result = -1;
     const WCHAR *env;
     const char *p1, *p2;
     char *envUpper, *nameUpper;
@@ -604,7 +604,7 @@ TclpFindVariable(
 	 */
 
 	Tcl_DStringInit(&envString);
-	envUpper = Tcl_WCharToUtfDString(env, TCL_INDEX_NONE, &envString);
+	envUpper = Tcl_WCharToUtfDString(env, -1, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;

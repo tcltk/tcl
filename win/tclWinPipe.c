@@ -923,12 +923,12 @@ TclpCreateProcess(
 				 * receive no standard input. */
     TclFile outputFile,		/* If non-NULL, gives the file that receives
 				 * output from the child process. If
-				 * outputFile file is not writeable or is
+				 * outputFile file is not writable or is
 				 * NULL, output from the child will be
 				 * discarded. */
     TclFile errorFile,		/* If non-NULL, gives the file that receives
 				 * errors from the child process. If errorFile
-				 * file is not writeable or is NULL, errors
+				 * file is not writable or is NULL, errors
 				 * from the child will be discarded. errorFile
 				 * may be the same as outputFile. */
     Tcl_Pid *pidPtr)		/* If this function is successful, pidPtr is
@@ -1823,7 +1823,7 @@ TclpCreateCommandChannel(
      * unique, in case channels share handles (stdin/stdout).
      */
 
-    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    snprintf(channelName, sizeof(channelName), "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    infoPtr, infoPtr->validMask);
 
@@ -2705,7 +2705,7 @@ TclWinAddProcess(
     void *hProcess,		/* Handle to process */
     size_t id)		/* Global process identifier */
 {
-    ProcInfo *procPtr = (ProcInfo*)Tcl_Alloc(sizeof(ProcInfo));
+    ProcInfo *procPtr = (ProcInfo *)Tcl_Alloc(sizeof(ProcInfo));
 
     PipeInit();
 
@@ -2805,7 +2805,7 @@ WaitForRead(
 				 * or not. */
 {
     DWORD timeout, count;
-    HANDLE *handle = (HANDLE *)((WinFile *) infoPtr->readFile)->handle;
+    HANDLE handle = ((WinFile *) infoPtr->readFile)->handle;
 
     while (1) {
 	/*
@@ -3138,7 +3138,7 @@ PipeThreadActionProc(
     /*
      * We do not access firstPipePtr in the thread structures. This is not for
      * all pipes managed by the thread, but only those we are watching.
-     * Removal of the filevent handlers before transfer thus takes care of
+     * Removal of the fileevent handlers before transfer thus takes care of
      * this structure.
      */
 
@@ -3227,7 +3227,7 @@ TclpOpenTemporaryFile(
     do {
 	char number[TCL_INTEGER_SPACE + 4];
 
-	sprintf(number, "%d.TMP", counter);
+	snprintf(number, sizeof(number), "%d.TMP", counter);
 	counter = (unsigned short) (counter + 1);
 	Tcl_DStringInit(&buf);
 	Tcl_UtfToWCharDString(number, strlen(number), &buf);

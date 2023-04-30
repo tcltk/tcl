@@ -634,7 +634,7 @@ static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
 static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
-			    ByteCode *codePtr, size_t *lengthPtr,
+			    ByteCode *codePtr, Tcl_Size *lengthPtr,
 			    const unsigned char **pcBeg, int *cmdIdxPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, size_t growth,
 			    int move);
@@ -1224,10 +1224,10 @@ TclStackFree(
 void *
 TclStackAlloc(
     Tcl_Interp *interp,
-    size_t numBytes)
+    Tcl_Size numBytes)
 {
     Interp *iPtr = (Interp *) interp;
-    size_t numWords;
+    Tcl_Size numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return (void *) Tcl_Alloc(numBytes);
@@ -1240,13 +1240,13 @@ void *
 TclStackRealloc(
     Tcl_Interp *interp,
     void *ptr,
-    size_t numBytes)
+    Tcl_Size numBytes)
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr;
     ExecStack *esPtr;
     Tcl_Obj **markerPtr;
-    size_t numWords;
+    Tcl_Size numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return Tcl_Realloc(ptr, numBytes);
@@ -1437,7 +1437,7 @@ CompileExprObj(
 	 * TIP #280: No invoker (yet) - Expression compilation.
 	 */
 
-	size_t length;
+	Tcl_Size length;
 	const char *string = Tcl_GetStringFromObj(objPtr, &length);
 
 	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
@@ -1634,7 +1634,7 @@ TclCompileObj(
 	 * Future optimizations ...
 	 * (1) Save the location data (ExtCmdLoc) keyed by start line. In that
 	 *     case we recompile once per location of the literal, but not
-	 *     continously, because the moment we have all locations we do not
+	 *     continuously, because the moment we have all locations we do not
 	 *     need to recompile any longer.
 	 *
 	 * (2) Alternative: Do not recompile, tell the execution engine the
@@ -1680,7 +1680,7 @@ TclCompileObj(
 		}
 	    }
 
-	    if ((size_t)word < ctxCopyPtr->nline) {
+	    if (word < ctxCopyPtr->nline) {
 		/*
 		 * Note: We do not care if the line[word] is -1. This is a
 		 * difference and requires a recompile (location changed from
@@ -1732,7 +1732,7 @@ TclCompileObj(
  *
  * TclIncrObj --
  *
- *	Increment an integeral value in a Tcl_Obj by an integeral value held
+ *	Increment an integral value in a Tcl_Obj by an integral value held
  *	in another Tcl_Obj. Caller is responsible for making sure we can
  *	update the first object.
  *
@@ -1742,7 +1742,7 @@ TclCompileObj(
  *	of course).
  *
  * Side effects:
- *	valuePtr gets the new incrmented value.
+ *	valuePtr gets the new incremented value.
  *
  *----------------------------------------------------------------------
  */
@@ -2049,7 +2049,7 @@ TEBCresume(
 
     Tcl_Obj *objPtr, *valuePtr, *value2Ptr, *part1Ptr, *part2Ptr, *tmpPtr;
     Tcl_Obj **objv = NULL;
-    size_t length, objc = 0;
+    Tcl_Size length, objc = 0;
     int opnd, pcAdjustment;
     Var *varPtr, *arrayPtr;
 #ifdef TCL_COMPILE_DEBUG
@@ -2377,7 +2377,7 @@ TEBCresume(
 	if (!corPtr) {
 	    TRACE_APPEND(("ERROR: yield outside coroutine\n"));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yield can only be called in a coroutine", TCL_INDEX_NONE));
+		    "yield can only be called in a coroutine", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
 		    NULL);
@@ -2390,8 +2390,8 @@ TEBCresume(
 	    if (traceInstructions) {
 		TRACE_APPEND(("YIELD...\n"));
 	    } else {
-		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) yielding value \"%.30s\"\n",
-			iPtr->numLevels, (size_t)(pc - codePtr->codeStart),
+		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_T_MODIFIER "u) yielding value \"%.30s\"\n",
+			iPtr->numLevels, (pc - codePtr->codeStart),
 			Tcl_GetString(OBJ_AT_TOS));
 	    }
 	    fflush(stdout);
@@ -2408,7 +2408,7 @@ TEBCresume(
 	    TRACE(("[%.30s] => ERROR: yield outside coroutine\n",
 		    O2S(valuePtr)));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yieldto can only be called in a coroutine", TCL_INDEX_NONE));
+		    "yieldto can only be called in a coroutine", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
 		    NULL);
@@ -2419,7 +2419,7 @@ TEBCresume(
 	    TRACE(("[%.30s] => ERROR: yield in deleted\n",
 		    O2S(valuePtr)));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "yieldto called in deleted namespace", TCL_INDEX_NONE));
+		    "yieldto called in deleted namespace", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED",
 		    NULL);
@@ -2433,8 +2433,8 @@ TEBCresume(
 		TRACE(("[%.30s] => YIELD...\n", O2S(valuePtr)));
 	    } else {
 		/* FIXME: What is the right thing to trace? */
-		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) yielding to [%.30s]\n",
-			iPtr->numLevels, (size_t)(pc - codePtr->codeStart),
+		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_T_MODIFIER "u) yielding to [%.30s]\n",
+			iPtr->numLevels, (pc - codePtr->codeStart),
 			TclGetString(valuePtr));
 	    }
 	    fflush(stdout);
@@ -2482,7 +2482,7 @@ TEBCresume(
 	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
 	    TRACE(("%d => ERROR: tailcall in non-proc context\n", opnd));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "tailcall can only be called from a proc or lambda", TCL_INDEX_NONE));
+		    "tailcall can only be called from a proc or lambda", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
 	    CACHE_STACK_INFO();
@@ -2511,7 +2511,7 @@ TEBCresume(
 	 */
 
 	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd-1));
-	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, TCL_INDEX_NONE);
+	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
 	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
 	if (iPtr->varFramePtr->tailcallPtr) {
 	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
@@ -2662,7 +2662,7 @@ TEBCresume(
 	NEXT_INST_V(1, objc, 0);
 
     case INST_EXPAND_STKTOP: {
-	size_t i;
+	Tcl_Size i;
 	TEBCdata *newTD;
 	ptrdiff_t oldCatchTopOff, oldTosPtrOff;
 
@@ -2789,14 +2789,14 @@ TEBCresume(
 
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceExec >= 2) {
-	    size_t i;
+	    Tcl_Size i;
 
 	    if (traceInstructions) {
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 		TRACE(("%" TCL_Z_MODIFIER "u => call ", objc));
 	    } else {
-		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) invoking ", iPtr->numLevels,
-			(size_t)(pc - codePtr->codeStart));
+		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_T_MODIFIER "u) invoking ", iPtr->numLevels,
+			(pc - codePtr->codeStart));
 	    }
 	    for (i = 0;  i < objc;  i++) {
 		TclPrintObject(stdout, objv[i], 15);
@@ -2836,19 +2836,19 @@ TEBCresume(
 	cleanup = objc;
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceExec >= 2) {
-	    size_t i;
+	    Tcl_Size i;
 
 	    if (traceInstructions) {
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 		TRACE(("%" TCL_Z_MODIFIER "u => call (implementation %s) ", objc, O2S(objPtr)));
 	    } else {
 		fprintf(stdout,
-			"%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) invoking (using implementation %s) ",
-			iPtr->numLevels, (size_t)(pc - codePtr->codeStart),
+			"%" TCL_Z_MODIFIER "d: (%" TCL_T_MODIFIER "u) invoking (using implementation %s) ",
+			iPtr->numLevels, (pc - codePtr->codeStart),
 			O2S(objPtr));
 	    }
 	    for (i = 0;  i < objc;  i++) {
-		if (i < (size_t)opnd) {
+		if (i < opnd) {
 		    fprintf(stdout, "<");
 		    TclPrintObject(stdout, objv[i], 15);
 		    fprintf(stdout, ">");
@@ -3047,7 +3047,7 @@ TEBCresume(
 
     {
 	int storeFlags;
-	size_t len;
+	Tcl_Size len;
 
     case INST_STORE_ARRAY4:
 	opnd = TclGetUInt4AtPtr(pc+1);
@@ -3463,7 +3463,7 @@ TEBCresume(
      *	   Start of INST_INCR instructions.
      *
      * WARNING: more 'goto' here than your doctor recommended! The different
-     * instructions set the value of some variables and then jump to somme
+     * instructions set the value of some variables and then jump to some
      * common execution code.
      */
 
@@ -4352,7 +4352,7 @@ TEBCresume(
 	Object *oPtr;
 	CallFrame *framePtr;
 	CallContext *contextPtr;
-	size_t skip, newDepth;
+	Tcl_Size skip, newDepth;
 
     case INST_TCLOO_SELF:
 	framePtr = iPtr->varFramePtr;
@@ -4404,7 +4404,7 @@ TEBCresume(
 	} else {
 	    Class *classPtr = oPtr->classPtr;
 	    struct MInvoke *miPtr;
-	    size_t i;
+	    Tcl_Size i;
 	    const char *methodType;
 
 	    if (classPtr == NULL) {
@@ -4431,7 +4431,7 @@ TEBCresume(
 				    iPtr->numLevels,
 				    (size_t)(pc - codePtr->codeStart));
 			}
-			for (i = 0;  i < (size_t)opnd;  i++) {
+			for (i = 0;  i < opnd;  i++) {
 			    TclPrintObject(stdout, objv[i], 15);
 			    fprintf(stdout, " ");
 			}
@@ -4627,7 +4627,7 @@ TEBCresume(
 
     {
 	int numIndices, nocase, match, cflags;
-	size_t slength, length2, fromIdx, toIdx, index, s1len, s2len;
+	Tcl_Size slength, length2, fromIdx, toIdx, index, s1len, s2len;
 	const char *s1, *s2;
 
     case INST_LIST:
@@ -4755,7 +4755,7 @@ TEBCresume(
 	pcAdjustment = 5;
 
     lindexFastPath:
-	if (index < (size_t)objc) {
+	if (index >= 0 && index < objc) {
 	    objResultPtr = objv[index];
 	} else {
 	    TclNewObj(objResultPtr);
@@ -4929,11 +4929,11 @@ TEBCresume(
 	toIdx = TclIndexDecode(toIdx, objc - 1);
 	if (toIdx == TCL_INDEX_NONE) {
 	    goto emptyList;
-	} else if (toIdx + 1 >= (size_t)objc + 1) {
+	} else if (toIdx >= objc) {
 	    toIdx = objc - 1;
 	}
 
-	assert (toIdx < (size_t)objc);
+	assert (toIdx >= 0 && toIdx < objc);
 	/*
 	assert ( fromIdx != TCL_INDEX_NONE );
 	 *
@@ -4947,11 +4947,14 @@ TEBCresume(
 
 	if (ABSTRACTLIST_PROC(valuePtr, sliceProc)) {
 	    if (Tcl_ObjTypeSlice(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
-		TRACE_ERROR(interp);
-		goto gotError;
+		objResultPtr = NULL;
 	    }
 	} else {
-	    objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
+	    objResultPtr = TclListObjRange(interp, valuePtr, fromIdx, toIdx);
+	}
+	if (objResultPtr == NULL) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
 	}
 
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
@@ -4970,7 +4973,7 @@ TEBCresume(
 	}
 	match = 0;
 	if (length > 0) {
-	    size_t i = 0;
+	    Tcl_Size i = 0;
 	    Tcl_Obj *o;
 	    int isAbstractList = ABSTRACTLIST_PROC(value2Ptr,indexProc) != NULL;
 
@@ -5151,7 +5154,7 @@ TEBCresume(
 	{
 	    int checkEq = ((*pc == INST_EQ) || (*pc == INST_NEQ)
 		    || (*pc == INST_STR_EQ) || (*pc == INST_STR_NEQ));
-	    match = TclStringCmp(valuePtr, value2Ptr, checkEq, 0, TCL_INDEX_NONE);
+	    match = TclStringCmp(valuePtr, value2Ptr, checkEq, 0, -1);
 	}
 
 	/*
@@ -5261,7 +5264,7 @@ TEBCresume(
 	TRACE(("\"%.20s\" %.20s => ", O2S(valuePtr), O2S(value2Ptr)));
 
 	/*
-	 * Get char length to calulate what 'end' means.
+	 * Get char length to calculate what 'end' means.
 	 */
 
 	slength = Tcl_GetCharLength(valuePtr);
@@ -5273,7 +5276,7 @@ TEBCresume(
 	}
 	CACHE_STACK_INFO();
 
-	if (index >= slength) {
+	if (index < 0 || index >= slength) {
 	    TclNewObj(objResultPtr);
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
@@ -5361,7 +5364,7 @@ TEBCresume(
 
     {
 	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;
-	size_t length3;
+	Tcl_Size length3;
 	Tcl_Obj *value3Ptr;
 
     case INST_STR_REPLACE:
@@ -5386,23 +5389,23 @@ TEBCresume(
 	TclDecrRefCount(OBJ_AT_TOS);
 	(void) POP_OBJECT();
 
-	if ((toIdx == TCL_INDEX_NONE) ||
-		(fromIdx + 1 > slength + 1) ||
-		(toIdx + 1 < fromIdx + 1)) {
+	if ((toIdx < 0) ||
+		(fromIdx > slength) ||
+		(toIdx < fromIdx)) {
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
 	    TclDecrRefCount(value3Ptr);
 	    NEXT_INST_F(1, 0, 0);
 	}
 
-	if (fromIdx == TCL_INDEX_NONE) {
-	    fromIdx = TCL_INDEX_START;
+	if (fromIdx < 0) {
+	    fromIdx = 0;
 	}
 
-	if (toIdx + 1 > slength + 1) {
+	if (toIdx > slength) {
 	    toIdx = slength;
 	}
 
-	if ((fromIdx == TCL_INDEX_START) && (toIdx == slength)) {
+	if ((fromIdx == 0) && (toIdx == slength)) {
 	    TclDecrRefCount(OBJ_AT_TOS);
 	    OBJ_AT_TOS = value3Ptr;
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(value3Ptr)));
@@ -5459,7 +5462,7 @@ TEBCresume(
 	for (; ustring1 < end; ustring1++) {
 	    if ((*ustring1 == *ustring2) &&
 		/* Fix bug [69218ab7b]: restrict max compare length. */
-		((size_t)(end-ustring1) >= length2) && (length2==1 ||
+		((end-ustring1) >= length2) && (length2==1 ||
 		    memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length2)
 			    == 0)) {
 		if (p != ustring1) {
@@ -5566,7 +5569,7 @@ TEBCresume(
 
     {
 	const char *string1, *string2;
-	size_t trim1, trim2;
+	Tcl_Size trim1, trim2;
 
     case INST_STR_TRIM_LEFT:
 	valuePtr = OBJ_UNDER_TOS;	/* String */
@@ -5845,7 +5848,7 @@ TEBCresume(
 	    case INST_RSHIFT:
 		if (w2 < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "negative shift argument", TCL_INDEX_NONE));
+			    "negative shift argument", -1));
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -5894,7 +5897,7 @@ TEBCresume(
 	    case INST_LSHIFT:
 		if (w2 < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "negative shift argument", TCL_INDEX_NONE));
+			    "negative shift argument", -1));
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -5917,7 +5920,7 @@ TEBCresume(
 		     */
 
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "integer value too large to represent", TCL_INDEX_NONE));
+			    "integer value too large to represent", -1));
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
@@ -6376,9 +6379,9 @@ TEBCresume(
 	ForeachInfo *infoPtr;
 	Tcl_Obj *listPtr, **elements;
 	ForeachVarList *varListPtr;
-	size_t numLists, listLen, numVars, listTmpDepth;
-	size_t iterNum, iterMax, iterTmp;
-	size_t varIndex, valIndex, i, j;
+	Tcl_Size numLists, listLen, numVars, listTmpDepth;
+	Tcl_Size iterNum, iterMax, iterTmp;
+	Tcl_Size varIndex, valIndex, i, j;
 
     case INST_FOREACH_START:
 	/*
@@ -6641,14 +6644,14 @@ TEBCresume(
 
     {
 	int opnd2, allocateDict, done, allocdict;
-	size_t i;
+	Tcl_Size i;
 	Tcl_Obj *dictPtr, *statePtr, *keyPtr, *listPtr, *varNamePtr, *keysPtr;
 	Tcl_Obj *emptyPtr, **keyPtrPtr;
 	Tcl_DictSearch *searchPtr;
 	DictUpdateInfo *duiPtr;
 
     case INST_DICT_VERIFY: {
-	size_t size;
+	Tcl_Size size;
 	dictPtr = OBJ_AT_TOS;
 	TRACE(("\"%.30s\" => ", O2S(dictPtr)));
 	if (Tcl_DictObjSize(interp, dictPtr, &size) != TCL_OK) {
@@ -7067,7 +7070,7 @@ TEBCresume(
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), done));
 
 	/*
-	 * The INST_DICT_FIRST and INST_DICT_NEXT instructsions are always
+	 * The INST_DICT_FIRST and INST_DICT_NEXT instructions are always
 	 * followed by a conditional jump, so we can take advantage of this to
 	 * do some peephole optimization (note that we're careful to not close
 	 * out someone doing something else).
@@ -7423,14 +7426,14 @@ TEBCresume(
 	 */
 
     divideByZero:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
 
     outOfMemory:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "ARITH", "OUTOFMEMORY", "out of memory", NULL);
 	CACHE_STACK_INFO();
@@ -7443,7 +7446,7 @@ TEBCresume(
 
     exponOfZero:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"exponentiation of zero by negative power", TCL_INDEX_NONE));
+		"exponentiation of zero by negative power", -1));
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		"exponentiation of zero by negative power", NULL);
@@ -7471,7 +7474,7 @@ TEBCresume(
 	}
 	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	    const unsigned char *pcBeg;
-	    size_t xxx1length;
+	    Tcl_Size xxx1length;
 
 	    bytes = GetSrcInfoForPc(pc, codePtr, &xxx1length, &pcBeg, NULL);
 	    DECACHE_STACK_INFO();
@@ -7638,7 +7641,7 @@ TEBCresume(
 	instStartCmdFailed:
 	{
 	    const char *bytes;
-	    size_t xxx1length;
+	    Tcl_Size xxx1length;
 
 	    xxx1length = 0;
 
@@ -8004,7 +8007,7 @@ ExecuteExtendedBinaryMathOp(
 	}
 	if (invalid) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "negative shift argument", TCL_INDEX_NONE));
+		    "negative shift argument", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -8035,7 +8038,7 @@ ExecuteExtendedBinaryMathOp(
 		 */
 
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"integer value too large to represent", TCL_INDEX_NONE));
+			"integer value too large to represent", -1));
 		return GENERAL_ARITHMETIC_ERROR;
 	    }
 	    shift = (int)(*((const Tcl_WideInt *)ptr2));
@@ -8283,7 +8286,7 @@ ExecuteExtendedBinaryMathOp(
 
 	if (type2 != TCL_NUMBER_INT) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "exponent too large", TCL_INDEX_NONE));
+		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -8363,7 +8366,7 @@ ExecuteExtendedBinaryMathOp(
 		|| (value2Ptr->typePtr != &tclIntType)
 		|| (Tcl_WideUInt)w2 >= (1<<28)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "exponent too large", TCL_INDEX_NONE));
+		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
@@ -9069,7 +9072,7 @@ TclGetSrcInfoForPc(
 
 	ExtCmdLoc *eclPtr;
 	ECL *locPtr = NULL;
-	size_t srcOffset;
+	Tcl_Size srcOffset;
 	int i;
 	Interp *iPtr = (Interp *) *codePtr->interpHandle;
 	Tcl_HashEntry *hePtr =
@@ -9116,7 +9119,7 @@ GetSrcInfoForPc(
 				 * in codePtr's code. */
     ByteCode *codePtr,		/* The bytecode sequence in which to look up
 				 * the command source for the pc. */
-    size_t *lengthPtr,		/* If non-NULL, the location where the length
+    Tcl_Size *lengthPtr,	/* If non-NULL, the location where the length
 				 * of the command's source should be stored.
 				 * If NULL, no length is stored. */
     const unsigned char **pcBeg,/* If non-NULL, the bytecode location
@@ -9126,11 +9129,11 @@ GetSrcInfoForPc(
 				 * of the command containing the pc should
 				 * be stored. */
 {
-    size_t pcOffset = (size_t)(pc - codePtr->codeStart);
-    size_t numCmds = codePtr->numCommands;
+    Tcl_Size pcOffset = pc - codePtr->codeStart;
+    Tcl_Size numCmds = codePtr->numCommands;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
-    size_t codeOffset, codeLen, codeEnd, srcOffset, srcLen, delta, i;
+    Tcl_Size codeOffset, codeLen, codeEnd, srcOffset, srcLen, delta, i;
     int bestDist = INT_MAX;	/* Distance of pc to best cmd's start pc. */
     int bestSrcOffset = -1;	/* Initialized to avoid compiler warning. */
     int bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
@@ -9370,16 +9373,16 @@ TclExprFloatError(
 
     if ((errno == EDOM) || isnan(value)) {
 	s = "domain error: argument not in valid range";
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, NULL);
     } else if ((errno == ERANGE) || isinf(value)) {
 	if (value == 0.0) {
 	    s = "floating-point value too small to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_INDEX_NONE));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, NULL);
 	} else {
 	    s = "floating-point value too large to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, TCL_INDEX_NONE));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, NULL);
 	}
     } else {

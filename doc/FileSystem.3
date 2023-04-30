@@ -220,9 +220,9 @@ The second of two path values to compare. The value may be converted
 to \fBpath\fR type.
 .AP Tcl_Obj *listObj in
 The list of path elements to operate on with a \fBjoin\fR operation.
-.AP size_t elements in
+.AP Tcl_Size elements in
 The number of elements in the \fIlistObj\fR which should
-be joined together. If TCL_INDEX_NONE, then all elements are joined.
+be joined together. If negative, then all elements are joined.
 .AP Tcl_Obj **errorPtr out
 In the case of an error, filled with a value containing the name of
 the file which caused an error in the various copy/rename operations.
@@ -233,7 +233,7 @@ The value to set in the operation.
 .AP Tcl_Obj **objPtrRef out
 Filled with a value containing the result of the operation.
 .AP Tcl_Obj *resultPtr out
-Pre-allocated value in which to store (using
+Preallocated value in which to store (using
 \fBTcl_ListObjAppendElement\fR) the list of
 files or directories which are successfully matched.
 .AP int mode in
@@ -269,11 +269,11 @@ allowed for the \fImode\fR argument to the Tcl \fBopen\fR command.
 .AP int permissions in
 POSIX-style permission flags such as 0644. If a new file is created, these
 permissions will be set on the created file.
-.AP "size_t \&| int" *lenPtr out
+.AP "Tcl_Size \&| int" *lenPtr out
 If non-NULL, filled with the number of elements in the split path.
 .AP Tcl_Obj *basePtr in
 The base path on to which to join the given elements. May be NULL.
-.AP size_t objc in
+.AP Tcl_Size objc in
 The number of elements in \fIobjv\fR.
 .AP "Tcl_Obj *const" objv[] in
 The elements to join to the given base path.
@@ -483,7 +483,7 @@ is a Tcl_Obj specifying the contents of the symbolic link given by
 by the caller, which should call \fBTcl_DecrRefCount\fR when the result is no
 longer needed. If the \fItoPtr\fR is not NULL, Tcl should create a link
 of one of the types passed in in the \fIlinkAction\fR flag. This flag is
-an ORed combination of \fBTCL_CREATE_SYMBOLIC_LINK\fR and \fBTCL_CREATE_HARD_LINK\fR.
+an OR'ed combination of \fBTCL_CREATE_SYMBOLIC_LINK\fR and \fBTCL_CREATE_HARD_LINK\fR.
 Where a choice exists (i.e.\ more than one flag is passed in), the Tcl
 convention is to prefer symbolic links. When a link is successfully
 created, the return value should be \fItoPtr\fR (which is therefore
@@ -678,11 +678,6 @@ of zero, they will be freed when this function returns.
 \fBTcl_FSConvertToPathType\fR tries to convert the given Tcl_Obj to a valid
 Tcl path type, taking account of the fact that the cwd may have changed
 even if this value is already supposedly of the correct type.
-The filename may begin with
-.QW ~
-(to indicate current user's home directory) or
-.QW ~<user>
-(to indicate any user's home directory).
 .PP
 If the conversion succeeds (i.e.\ the value is a valid path in one of
 the current filesystems), then \fBTCL_OK\fR is returned. Otherwise
@@ -704,14 +699,7 @@ from the given Tcl_Obj.
 .PP
 If the translation succeeds (i.e.\ the value is a valid path), then it is
 returned. Otherwise NULL will be returned, and an error message may be
-left in the interpreter. A
-.QW translated
-path is one which contains no
-.QW ~
-or
-.QW ~user
-sequences (these have been expanded to their current
-representation in the filesystem). The value returned is owned by the
+left in the interpreter. The value returned is owned by the
 caller, which must store it or call \fBTcl_DecrRefCount\fR to ensure memory is
 freed. This function is of little practical use, and
 \fBTcl_FSGetNormalizedPath\fR or \fBTcl_FSGetNativePath\fR are usually
@@ -850,7 +838,7 @@ The \fBTcl_Filesystem\fR structure contains the following fields:
 .CS
 typedef struct Tcl_Filesystem {
     const char *\fItypeName\fR;
-    size_t \fIstructureLength\fR;
+    Tcl_Size \fIstructureLength\fR;
     Tcl_FSVersion \fIversion\fR;
     Tcl_FSPathInFilesystemProc *\fIpathInFilesystemProc\fR;
     Tcl_FSDupInternalRepProc *\fIdupInternalRepProc\fR;
@@ -1068,9 +1056,7 @@ must have a single unique
 string representation. Depending on the filesystem,
 there may be more than one unnormalized string representation which
 refers to that path (e.g.\ a relative path, a path with different
-character case if the filesystem is case insensitive, a path contain a
-reference to a home directory such as
-.QW ~ ,
+character case if the filesystem is case insensitive,
 a path containing symbolic
 links, etc). If the very last component in the path is a symbolic
 link, it should not be converted into the value it points to (but

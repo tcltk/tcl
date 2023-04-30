@@ -221,7 +221,7 @@ TclFileMakeDirsCmd(
 {
     Tcl_Obj *errfile = NULL;
     int result, i;
-    size_t j, pobjc;
+    Tcl_Size j, pobjc;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
@@ -426,7 +426,7 @@ TclFileDeleteCmd(
     if (result != TCL_OK) {
 	if (errfile == NULL) {
 	    /*
-	     * We try to accomodate poor error results from our Tcl_FS calls.
+	     * We try to accommodate poor error results from our Tcl_FS calls.
 	     */
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -874,7 +874,7 @@ FileBasename(
     TCL_UNUSED(Tcl_Interp *),	/* Interp, for error return. */
     Tcl_Obj *pathPtr)		/* Path whose basename to extract. */
 {
-    size_t objc;
+    Tcl_Size objc;
     Tcl_Obj *splitPtr;
     Tcl_Obj *resultPtr = NULL;
 
@@ -947,7 +947,7 @@ TclFileAttrsCmd(
     const char *const *attributeStrings;
     const char **attributeStringsAllocated = NULL;
     Tcl_Obj *objStrings = NULL;
-    size_t numObjStrings = TCL_INDEX_NONE;
+    Tcl_Size numObjStrings = TCL_INDEX_NONE;
     Tcl_Obj *filePtr;
 
     if (objc < 2) {
@@ -971,7 +971,7 @@ TclFileAttrsCmd(
 
     attributeStrings = Tcl_FSFileAttrStrings(filePtr, &objStrings);
     if (attributeStrings == NULL) {
-	size_t index;
+	Tcl_Size index;
 	Tcl_Obj *objPtr;
 
 	if (objStrings == NULL) {
@@ -1042,7 +1042,7 @@ TclFileAttrsCmd(
 	    res = Tcl_FSFileAttrsGet(interp, index, filePtr, &objPtrAttr);
 	    if (res == TCL_OK) {
 		Tcl_Obj *objPtr =
-			Tcl_NewStringObj(attributeStrings[index], TCL_INDEX_NONE);
+			Tcl_NewStringObj(attributeStrings[index], -1);
 
 		Tcl_ListObjAppendElement(interp, listPtr, objPtr);
 		Tcl_ListObjAppendElement(interp, listPtr, objPtrAttr);
@@ -1212,7 +1212,7 @@ TclFileLinkCmd(
 	if (contents == NULL) {
 	    /*
 	     * We handle three common error cases specially, and for all other
-	     * errors, we use the standard posix error message.
+	     * errors, we use the standard Posix error message.
 	     */
 
 	    if (errno == EEXIST) {
@@ -1381,7 +1381,7 @@ TclFileTemporaryCmd(
 	TclNewObj(nameObj);
     }
     if (objc > 2) {
-	size_t length;
+	Tcl_Size length;
 	Tcl_Obj *templateObj = objv[2];
 	const char *string = Tcl_GetStringFromObj(templateObj, &length);
 
@@ -1492,7 +1492,7 @@ TclFileTemporaryCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), TCL_INDEX_NONE));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
     return TCL_OK;
 }
 
@@ -1533,7 +1533,7 @@ TclFileTempDirCmd(
     }
 
     if (objc > 1) {
-	int length;
+	Tcl_Size length;
 	Tcl_Obj *templateObj = objv[1];
 	const char *string = Tcl_GetStringFromObj(templateObj, &length);
 	const int onWindows = (tclPlatform == TCL_PLATFORM_WINDOWS);
