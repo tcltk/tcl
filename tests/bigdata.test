@@ -123,10 +123,14 @@ bigtestRO script-length-bigdata-1 {Test script length limit} b -body {
 # TODO - different behaviour between compiled and uncompiled
 test script-length-bigdata-2.compiled {Test script length limit} -body {
     try [string cat [string repeat " " 0x7ffffff8] "set a b"]
+} -constraints {
+    bigdata
 } -result {Script length 2147483647 exceeds max permitted length 2147483646.} -returnCodes error
 test script-length-bigdata-2.uncompiled {Test script length limit} -body {
     testevalex [string cat [string repeat " " 0x7ffffff8] "set a b"]
-} -result b
+} -constraints {
+    bigdata
+ } -result b
 test script-bytecode-length-bigdata-1 {Test bytecode length limit} -body {
     # Note we need to exceed bytecode limit without exceeding script char limit
     set s [string repeat {{*}$x;} [expr 0x7fffffff/6]]
