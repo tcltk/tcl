@@ -116,6 +116,26 @@ set ::bigLengths(patlenmultiple) [bigPatlenMultiple $::bigLengths(intmax)]
 set ::bigLengths(upatlenmultiple) [bigPatlenMultiple $::bigLengths(uintmax)]
 
 #
+# script limits
+bigtestRO script-length-bigdata-1 {Test script length limit} b -body {
+    try [string cat [string repeat " " 0x7ffffff7] "set a b"]
+}
+# TODO - different behaviour between compiled and uncompiled
+test script-length-bigdata-2.compiled {Test script length limit} -body {
+    try [string cat [string repeat " " 0x7ffffff8] "set a b"]
+} -result {Script length 2147483647 exceeds max permitted length 2147483646.} -returnCodes error
+test script-length-bigdata-2.uncompiled {Test script length limit} -body {
+    testevalex [string cat [string repeat " " 0x7ffffff8] "set a b"]
+} -result b
+test script-bytecode-length-bigdata-1 {Test bytecode length limit} -body {
+    # Note we need to exceed bytecode limit without exceeding script char limit
+    set s [string repeat {{*}$x;} [expr 0x7fffffff/6]]
+    catch $s r e
+} -cleanup {
+    bigClean
+} -constraints panic-in-EnterCmdStartData
+
+#
 # string cat
 bigtest string-cat-bigdata-1 "string cat large small result > INT_MAX" 1 -body {
     string equal \
@@ -159,7 +179,6 @@ bigtestRO string-equal/compare-bigdata-2 "string compare/equal -length unequal s
 } -cleanup {
     bigClean
 }
-# -constraints bug-a814ee5bbd
 
 #
 # string first
@@ -879,15 +898,25 @@ bigtest linsert-bigdata-1 "linsert" {4294967330 1} -body {
 
 #
 # list and {*}
-bigtestRO list-bigdata-1 {list {*} } {4294967296 0 4294967295} -body {
-    unset -nocomplain l2
-    set l2 [list {*}$l]
-    list [llength $l2] [lindex $l2 0] [lindex $l2 end]
-} -setup {
+# TODO - compiled and uncompiled behave differently so tested separately
+test list-bigdata-1.compiled {list {*}}  -body {
     set l [bigList 0x100000000]
+    set l2 [list {*}$l]
+    unset l
+    list [llength $l2] [lindex $l2 0] [lindex $l2 end]
 } -cleanup {
     bigClean
-} -constraints bug-7cddd2845c
+} -constraints {
+    bigdata
+} -result {4294967296 0 5}
+test list-bigdata-1.uncompiled {list {*}}  -body {
+    set l [bigList 0x7fffffff]
+    testevalex {set l2 [list {*}$l]}
+} -cleanup {
+    bigClean
+} -constraints {
+    bigdata
+} -result {Number of words in command exceeds limit 2147483647.} -returnCodes error
 
 #
 # llength

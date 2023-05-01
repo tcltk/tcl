@@ -3298,7 +3298,11 @@ invokeObj2Command(
     Command *cmdPtr = (Command *) clientData;
 
     if (objc > INT_MAX) {
-	objc = TCL_INDEX_NONE; /* TODO - why? Should error, not truncate */
+	/* Since TCL_INDEX_NONE is an invalid value for objc,
+	 * calling cmdPtr->objProc or cmdPtr->nreProc will
+	 * eventually result in a Tcl_WrongNumArgs() call.
+	 * That's exactly what we want to happen. */
+	objc = TCL_INDEX_NONE;
     }
     if (cmdPtr->objProc != NULL) {
 	result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
@@ -5164,17 +5168,17 @@ TclEvalEx(
 {
     Interp *iPtr = (Interp *) interp;
     const char *p, *next;
-    const unsigned int minObjs = 20;
+    const int minObjs = 20;
     Tcl_Obj **objv, **objvSpace;
     int *expand, *lines, *lineSpace;
     Tcl_Token *tokenPtr;
-    int bytesLeft, expandRequested, code = TCL_OK;
-    Tcl_Size commandLength;
+    int expandRequested, code = TCL_OK;
+    Tcl_Size bytesLeft, commandLength;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
     int gotParse = 0;
-    TCL_HASH_TYPE i, objectsUsed = 0;
+    Tcl_Size i, objectsUsed = 0;
 				/* These variables keep track of how much
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed
@@ -5312,8 +5316,8 @@ TclEvalEx(
 	    Tcl_Size wordLine = line;
 	    const char *wordStart = parsePtr->commandStart;
 	    int *wordCLNext = clNext;
-	    unsigned int objectsNeeded = 0;
-	    unsigned int numWords = parsePtr->numWords;
+	    Tcl_Size objectsNeeded = 0;
+	    Tcl_Size numWords = parsePtr->numWords;
 
 	    /*
 	     * Generate an array of objects for the words of the command.
@@ -5332,6 +5336,8 @@ TclEvalEx(
 	    for (objectsUsed = 0, tokenPtr = parsePtr->tokenPtr;
 		    objectsUsed < numWords;
 		    objectsUsed++, tokenPtr += tokenPtr->numComponents+1) {
+		Tcl_Size additionalObjsCount;
+
 		/*
 		 * TIP #280. Track lines to current word. Save the information
 		 * on a per-word basis, signaling dynamic words as needed.
@@ -5381,11 +5387,21 @@ TclEvalEx(
 		    expandRequested = 1;
 		    expand[objectsUsed] = 1;
 
-		    objectsNeeded += (numElements ? numElements : 1);
+		    additionalObjsCount = (numElements ? numElements : 1);
+		    
 		} else {
 		    expand[objectsUsed] = 0;
-		    objectsNeeded++;
+		    additionalObjsCount = 1;
 		}
+		
+		/* Currently max command words in INT_MAX */
+		if (additionalObjsCount > INT_MAX ||
+		    objectsNeeded > (INT_MAX - additionalObjsCount)) {
+		    code = TclCommandWordLimitError(interp, -1);
+		    Tcl_DecrRefCount(objv[objectsUsed]);
+		    break;
+		}
+		objectsNeeded += additionalObjsCount;
 
 		if (wordCLNext) {
 		    TclContinuationsEnterDerived(objv[objectsUsed],
