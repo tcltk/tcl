@@ -875,7 +875,7 @@ PrintSourceToObj(
     for (;  (*p != '\0') && (i < maxChars);  p+=len) {
 	int ucs4;
 
-	len = TclUtfToUCS4(p, &ucs4);
+	len = Tcl_UtfToUniChar(p, &ucs4);
 	switch (ucs4) {
 	case '"':
 	    Tcl_AppendToObj(appendObj, "\\\"", -1);

@@ -72,7 +72,7 @@ static Tcl_Size		UnicodeLength(const Tcl_UniChar *unicode);
 static int		UTF16Length(const unsigned short *unicode);
 #endif
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
-#if (TCL_UTF_MAX) > 3 && !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
 static void		DupUTF16StringInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static int		SetUTF16StringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -88,30 +88,6 @@ static void		UpdateStringOfUTF16String(Tcl_Obj *objPtr);
  * The structure below defines the string Tcl object type by means of
  * functions that can be invoked by generic object code.
  */
-
-#if TCL_UTF_MAX < 4
-
-#define tclUniCharStringType tclStringType
-#define GET_UNICHAR_STRING GET_STRING
-#define UniCharString String
-#define UNICHAR_STRING_MAXCHARS STRING_MAXCHARS
-#define uniCharStringAlloc stringAlloc
-#define uniCharStringRealloc stringRealloc
-#define uniCharStringAttemptAlloc stringAttemptAlloc
-#define uniCharStringAttemptRealloc stringAttemptRealloc
-#define uniCharStringCheckLimits stringCheckLimits
-#define SET_UNICHAR_STRING SET_STRING
-#define UNICHAR_STRING_SIZE STRING_SIZE
-
-const Tcl_ObjType tclStringType = {
-    "string",			/* name */
-    FreeStringInternalRep,	/* freeIntRepPro */
-    DupStringInternalRep,	/* dupIntRepProc */
-    UpdateStringOfString,	/* updateStringProc */
-    SetStringFromAny		/* setFromAnyProc */
-};
-
-#else
 
 #ifndef TCL_NO_DEPRECATED
 const Tcl_ObjType tclStringType = {
@@ -249,8 +225,6 @@ UpdateStringOfUTF16String(
 	objPtr->length = Tcl_DStringLength(&ds);
 	Tcl_DStringFree(&ds);
 }
-#endif
-
 #endif
 
 /*
@@ -552,7 +526,7 @@ TclNewUnicodeObj(
     return objPtr;
 }
 
-#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
 Tcl_Obj *
 Tcl_NewUnicodeObj(
     const unsigned short *unicode,	/* The unicode string used to initialize the
@@ -656,7 +630,7 @@ TclGetCharLength(
     return numChars;
 }
 
-#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
 #undef Tcl_GetCharLength
 int
 Tcl_GetCharLength(
@@ -756,7 +730,7 @@ TclCheckEmptyString(
  *----------------------------------------------------------------------
  */
 
-#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
 #undef Tcl_GetUniChar
 int
 Tcl_GetUniChar(
@@ -869,22 +843,6 @@ TclGetUniChar(
 	return -1;
     }
     ch = stringPtr->unicode[index];
-#if TCL_UTF_MAX < 4
-    /* See: bug [11ae2be95dac9417] */
-    if ((ch & 0xF800) == 0xD800) {
-	if (ch & 0x400) {
-	    if ((index > 0)
-		    && ((stringPtr->unicode[index-1] & 0xFC00) == 0xD800)) {
-		ch = -1; /* low surrogate preceded by high surrogate */
-	    }
-	} else if ((++index < stringPtr->numChars)
-		&& ((stringPtr->unicode[index] & 0xFC00) == 0xDC00)) {
-	    /* high surrogate followed by low surrogate */
-	    ch = (((ch & 0x3FF) << 10) |
-			(stringPtr->unicode[index] & 0x3FF)) + 0x10000;
-	}
-    }
-#endif
     return ch;
 }
 
@@ -962,7 +920,7 @@ TclGetUnicodeFromObj_(
     return stringPtr->unicode;
 }
 
-#if TCL_UTF_MAX > 3 && !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
 unsigned short *
 Tcl_GetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the Unicode string
@@ -994,11 +952,7 @@ TclGetUnicodeFromObj(
 {
     String *stringPtr;
 
-#if TCL_UTF_MAX > 3
     SetUTF16StringFromAny(NULL, objPtr);
-#else
-    SetStringFromAny(NULL, objPtr);
-#endif
     stringPtr = GET_STRING(objPtr);
 
     if (lengthPtr != NULL) {
@@ -1028,7 +982,7 @@ TclGetUnicodeFromObj(
  *----------------------------------------------------------------------
  */
 
-#if TCL_UTF_MAX > 3 && !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
 #undef Tcl_GetRange
 Tcl_Obj *
 Tcl_GetRange(
@@ -1152,18 +1106,6 @@ TclGetRange(
 	TclNewObj(newObjPtr);
 	return newObjPtr;
     }
-#if TCL_UTF_MAX < 4
-    /* See: bug [11ae2be95dac9417] */
-    if ((first > 0) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
-	    && ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
-	++first;
-    }
-    if ((last + 1 < stringPtr->numChars)
-	    && ((stringPtr->unicode[last+1] & 0xFC00) == 0xDC00)
-	    && ((stringPtr->unicode[last] & 0xFC00) == 0xD800)) {
-	++last;
-    }
-#endif
     return TclNewUnicodeObj(stringPtr->unicode + first, last - first + 1);
 }
 
@@ -1722,7 +1664,7 @@ TclAppendUnicodeToObj(
     }
 }
 
-#if TCL_UTF_MAX > 3 && !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
 void
 Tcl_AppendUnicodeToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
@@ -3920,7 +3862,7 @@ TclStringCmp(
 		    s1 = (char *) TclGetUnicodeFromObj_(value1Ptr, NULL);
 		    s2 = (char *) TclGetUnicodeFromObj_(value2Ptr, NULL);
 		    if (
-#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
+#if defined(WORDS_BIGENDIAN)
 			    1
 #else
 			    checkEq
@@ -4280,9 +4222,6 @@ TclStringReverse(
     UniCharString *stringPtr;
     Tcl_UniChar ch = 0;
     int inPlace = flags & TCL_STRING_IN_PLACE;
-#if TCL_UTF_MAX < 4
-    int needFlip = 0;
-#endif
 
     if (TclIsPureByteArray(objPtr)) {
 	Tcl_Size numBytes;
@@ -4315,54 +4254,19 @@ TclStringReverse(
 	    to = TclGetUnicodeFromObj_(objPtr, NULL);
 	    stringPtr = GET_UNICHAR_STRING(objPtr);
 	    while (--src >= from) {
-#if TCL_UTF_MAX < 4
-		ch = *src;
-		if ((ch & 0xF800) == 0xD800) {
-		    needFlip = 1;
-		}
-		*to++ = ch;
-#else
 		*to++ = *src;
-#endif
 	    }
 	} else {
 	    /*
 	     * Reversing in place.
 	     */
 
-#if TCL_UTF_MAX < 4
-	    to = src;
-#endif
 	    while (--src > from) {
 		ch = *src;
-#if TCL_UTF_MAX < 4
-		if ((ch & 0xF800) == 0xD800) {
-		    needFlip = 1;
-		}
-#endif
 		*src = *from;
 		*from++ = ch;
 	    }
 	}
-#if TCL_UTF_MAX < 4
-	if (needFlip) {
-	    /*
-	     * Flip back surrogate pairs.
-	     */
-
-	    from = to - stringPtr->numChars;
-	    while (--to >= from) {
-		ch = *to;
-		if ((ch & 0xFC00) == 0xD800) {
-		    if ((to-1 >= from) && ((to[-1] & 0xFC00) == 0xDC00)) {
-			to[0] = to[-1];
-			to[-1] = ch;
-			--to;
-		    }
-		}
-	    }
-	}
-#endif
     }
 
     if (objPtr->bytes) {
@@ -4396,7 +4300,7 @@ TclStringReverse(
 		 * skip calling Tcl_UtfCharComplete() here.
 		 */
 
-		int bytesInChar = TclUtfToUCS4(from, &chw);
+		int bytesInChar = Tcl_UtfToUniChar(from, &chw);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
 			bytesInChar);
@@ -4621,14 +4525,12 @@ ExtendUnicodeRepWithString(
     dst = stringPtr->unicode + numOrigChars;
     if (numAppendChars-- > 0) {
 	bytes += TclUtfToUniChar(bytes, &unichar);
-#if TCL_UTF_MAX > 3
 	/* join upper/lower surrogate */
 	if (bytes && (stringPtr->unicode[numOrigChars - 1] | 0x3FF) == 0xDBFF && (unichar | 0x3FF) == 0xDFFF) {
 		stringPtr->numChars--;
 		unichar = ((stringPtr->unicode[numOrigChars - 1] & 0x3FF) << 10) + (unichar & 0x3FF) + 0x10000;
 		dst--;
 	}
-#endif
 	*dst++ = unichar;
 	while (numAppendChars-- > 0) {
 	    bytes += TclUtfToUniChar(bytes, &unichar);

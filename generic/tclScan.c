@@ -876,7 +876,7 @@ Tcl_ScanObjCmd(
 	     * Scan a single Unicode character.
 	     */
 
-	    offset = TclUtfToUCS4(string, &i);
+	    offset = Tcl_UtfToUniChar(string, &i);
 	    string += offset;
 	    if (!(flags & SCAN_SUPPRESS)) {
 		TclNewIntObj(objPtr, i);
