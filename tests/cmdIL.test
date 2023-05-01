@@ -137,7 +137,7 @@ test cmdIL-1.32 {lsort -stride errors} -returnCodes error -body {
 } -result {expected integer but got "foo"}
 test cmdIL-1.33 {lsort -stride errors} -returnCodes error -body {
     lsort -stride 1 bar
-} -result {stride length must be at least 2}
+} -match glob -result {stride length must be between 2 and *}
 test cmdIL-1.34 {lsort -stride errors} -returnCodes error -body {
     lsort -stride 2 {a b c}
 } -result {list size must be a multiple of the stride length}
@@ -168,6 +168,9 @@ test cmdIL-1.41 {lsort -stride and -index} -body {
 test cmdIL-1.42 {lsort -stride and-index} -body {
     lsort -stride 2 -index -1-1 {a 2 b 1}
 } -returnCodes error -result {index "-1-1" out of range}
+test cmdIL-1.43 {lsort -stride errors} -returnCodes error -body {
+    lsort -stride 4294967296 bar
+} -match glob -result {stride length must be between 2 and *}
 
 # Can't think of any good tests for the MergeSort and MergeLists procedures,
 # except a bunch of random lists to sort.

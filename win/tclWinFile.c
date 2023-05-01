@@ -170,7 +170,7 @@ static int		NativeWriteReparse(const WCHAR *LinkDirectory,
 static int		NativeMatchType(int isDrive, DWORD attr,
 			    const WCHAR *nativeName, Tcl_GlobTypeData *types);
 static int		WinIsDrive(const char *name, size_t nameLen);
-static int		WinIsReserved(const char *path);
+static Tcl_Size		WinIsReserved(const char *path);
 static Tcl_Obj *	WinReadLink(const WCHAR *LinkSource);
 static Tcl_Obj *	WinReadLinkDirectory(const WCHAR *LinkDirectory);
 static int		WinLink(const WCHAR *LinkSource,
@@ -938,9 +938,9 @@ TclpMatchInDirectory(
 	     * Match a single file directly.
 	     */
 
-	    int len;
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
+	    Tcl_Size len = 0;
 	    const char *str = TclGetStringFromObj(norm, &len);
 
 	    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
@@ -951,7 +951,7 @@ TclpMatchInDirectory(
 	    }
 	    attr = data.dwFileAttributes;
 
-	    if (NativeMatchType(WinIsDrive(str,len), attr, native, types)) {
+	    if (NativeMatchType(WinIsDrive(str, len), attr, native, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	    }
 	}
@@ -962,7 +962,7 @@ TclpMatchInDirectory(
 	WIN32_FIND_DATAW data;
 	const char *dirName;	/* UTF-8 dir name, later with pattern
 				 * appended. */
-	int dirLength;
+	Tcl_Size dirLength;
 	int matchSpecialDots;
 	Tcl_DString ds;		/* Native encoding of dir, also used
 				 * temporarily for other things. */
@@ -1030,7 +1030,7 @@ TclpMatchInDirectory(
 	}
 
 	Tcl_DStringInit(&ds);
-	native = Tcl_UtfToWCharDString(dirName, -1, &ds);
+	native = Tcl_UtfToWCharDString(dirName, TCL_INDEX_NONE, &ds);
 	if ((types == NULL) || (types->type != TCL_GLOB_TYPE_DIR)) {
 	    handle = FindFirstFileW(native, &data);
 	} else {
@@ -1245,7 +1245,7 @@ WinIsDrive(
  * (not any trailing :).
  */
 
-static int
+static Tcl_Size
 WinIsReserved(
     const char *path)		/* Path in UTF-8 */
 {
@@ -1457,27 +1457,45 @@ TclpGetUserHome(
     if (domain == NULL) {
 	const char *ptr;
 
-	/*
-	 * No domain. Firstly check it's the current user
-	 */
-
+        /*
+         * Treat the current user as a special case because the general case
+         * below does not properly retrieve the path. The NetUserGetInfo
+         * call returns an empty path and the code defaults to the user's
+         * name in the profiles directory. On modern Windows systems, this
+         * is generally wrong as when the account is a Microsoft account,
+         * for example abcdefghi@outlook.com, the directory name is
+         * abcde and not abcdefghi.
+         *
+         * Note we could have just used env(USERPROFILE) here but
+         * the intent is to retrieve (as on Unix) the system's view
+         * of the home irrespective of environment settings of HOME
+         * and USERPROFILE.
+         *
+         * Fixing this for the general user needs more investigating but
+         * at least for the current user we can use a direct call.
+         */
 	ptr = TclpGetUserName(&ds);
 	if (ptr != NULL && strcasecmp(name, ptr) == 0) {
-	    /*
-	     * Try safest and fastest way to get current user home
-	     */
-
-	    ptr = TclGetEnv("HOME", &ds);
-	    if (ptr != NULL) {
-		Tcl_JoinPath(1, &ptr, bufferPtr);
-		rc = 1;
-		result = Tcl_DStringValue(bufferPtr);
+	    HANDLE hProcess;
+	    WCHAR buf[MAX_PATH];
+	    DWORD nChars = sizeof(buf) / sizeof(buf[0]);
+	    /* Sadly GetCurrentProcessToken not in Win 7 so slightly longer */
+	    hProcess = GetCurrentProcess(); /* Need not be closed */
+	    if (hProcess) {
+		HANDLE hToken;
+		if (OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
+		    if (GetUserProfileDirectoryW(hToken, buf, &nChars)) {
+			result = Tcl_WCharToUtfDString(buf, nChars-1, (bufferPtr));
+			rc = 1;
+		    }
+		    CloseHandle(hToken);
+		}
 	    }
 	}
 	Tcl_DStringFree(&ds);
     } else {
 	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToWCharDString(domain + 1, -1, &ds);
+	wName = Tcl_UtfToWCharDString(domain + 1, TCL_INDEX_NONE, &ds);
 	rc = NetGetDCName(NULL, wName, (LPBYTE *) &wDomain);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
@@ -1542,30 +1560,6 @@ TclpGetUserHome(
     }
     if (wDomain != NULL) {
 	NetApiBufferFree((void *) wDomain);
-    }
-    if (result == NULL) {
-	/*
-	 * Look in the "Password Lists" section of system.ini for the local
-	 * user. There are also entries in that section that begin with a "*"
-	 * character that are used by Windows for other purposes; ignore user
-	 * names beginning with a "*".
-	 */
-
-	char buf[MAX_PATH];
-
-	if (name[0] != '*') {
-	    if (GetPrivateProfileStringA("Password Lists", name, "", buf,
-		    MAX_PATH, "system.ini") > 0) {
-		/*
-		 * User exists, but there is no such thing as a home directory
-		 * in system.ini. Return "{Windows drive}:/".
-		 */
-
-		GetWindowsDirectoryA(buf, MAX_PATH);
-		Tcl_DStringAppend(bufferPtr, buf, 3);
-		result = Tcl_DStringValue(bufferPtr);
-	    }
-	}
     }
 
     return result;
@@ -1685,7 +1679,7 @@ NativeAccess(
 	}
 
 	/*
-	 * We cannnot verify the access fast, check it below using security
+	 * We cannot verify the access fast, check it below using security
 	 * info.
 	 */
     }
@@ -1805,7 +1799,7 @@ NativeAccess(
 	RevertToSelf();
 
 	/*
-	 * Setup desiredAccess according to the access priveleges we are
+	 * Setup desiredAccess according to the access privileges we are
 	 * checking.
 	 */
 
@@ -2062,7 +2056,7 @@ NativeStat(
      * 'getFileAttributesExProc', and if that isn't available, then on even
      * simpler routines.
      *
-     * Special consideration must be given to Windows hardcoded names like
+     * Special consideration must be given to Windows hard-coded names like
      * CON, NULL, COM1, LPT1 etc. For these, we still need to do the
      * CreateFile as some may not exist (e.g. there is no CON in wish by
      * default). However the subsequent GetFileInformationByHandle will
@@ -2353,7 +2347,7 @@ FromCTime(
  *	is either the given clientData, if the working directory hasn't
  *	changed, or a new clientData (owned by our caller), giving the new
  *	native path, or NULL if the current directory could not be determined.
- *	If NULL is returned, the caller can examine the standard posix error
+ *	If NULL is returned, the caller can examine the standard Posix error
  *	codes to determine the cause of the problem.
  *
  * Side effects:
@@ -2362,9 +2356,9 @@ FromCTime(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpGetNativeCwd(
-    ClientData clientData)
+    void *clientData)
 {
     WCHAR buffer[MAX_PATH];
 
@@ -2502,7 +2496,7 @@ TclpFilesystemPathType(
 
 	Tcl_DStringInit(&ds);
 	Tcl_WCharToUtfDString(volType, TCL_INDEX_NONE, &ds);
-	return TclDStringToObj(&ds);
+	return Tcl_DStringToObj(&ds);
     }
 #undef VOL_BUF_SIZE
 }
@@ -2585,17 +2579,17 @@ TclpObjNormalizePath(
 		 */
 
 		if (isDrive) {
-		    int len = WinIsReserved(path);
+		    Tcl_Size len = WinIsReserved(path);
 
 		    if (len > 0) {
 			/*
 			 * Actually it does exist - COM1, etc.
 			 */
 
-			int i;
+			Tcl_Size i;
 
 			for (i=0 ; i<len ; i++) {
-			    WCHAR wc = ((WCHAR *) nativePath)[i];
+			    WCHAR wc = ((WCHAR *)nativePath)[i];
 
 			    if (wc >= 'a') {
 				wc -= ('a' - 'A');
@@ -2604,7 +2598,7 @@ TclpObjNormalizePath(
 			}
 			Tcl_DStringAppend(&dsNorm,
 				(const char *)nativePath,
-				(int)(sizeof(WCHAR) * len));
+				sizeof(WCHAR) * len);
 			lastValidPathEnd = currentPathEndPosition;
 		    } else if (nextCheckpoint == 0) {
 			/*
@@ -2820,8 +2814,8 @@ TclpObjNormalizePath(
 	     * Not the end of the string.
 	     */
 
-	    int len;
 	    Tcl_Obj *tmpPathPtr;
+	    Tcl_Size len;
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
@@ -2910,7 +2904,7 @@ TclWinVolumeRelativeNormalize(
 	 * also on drive C.
 	 */
 
-	int cwdLen;
+	Tcl_Size cwdLen;
 	const char *drive = TclGetStringFromObj(useThisCwd, &cwdLen);
 	char drive_cur = path[0];
 
@@ -2980,11 +2974,11 @@ TclWinVolumeRelativeNormalize(
 
 Tcl_Obj *
 TclpNativeToNormalized(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_DString ds;
     Tcl_Obj *objPtr;
-    int len;
+    Tcl_Size len;
     char *copy, *p;
 
     Tcl_DStringInit(&ds);
@@ -3040,14 +3034,14 @@ TclpNativeToNormalized(
  *---------------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclNativeCreateNativeRep(
     Tcl_Obj *pathPtr)
 {
     WCHAR *nativePathPtr = NULL;
     const char *str;
     Tcl_Obj *validPathPtr;
-    size_t len;
+    Tcl_Size len;
     WCHAR *wp;
 
     if (TclFSCwdIsNative()) {
@@ -3084,10 +3078,9 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = Tcl_GetString(validPathPtr);
-    len = validPathPtr->length;
+    str = TclGetStringFromObj(validPathPtr, &len);
 
-    if (strlen(str) != len) {
+    if (strlen(str) != (size_t)len) {
 	/*
 	 * String contains NUL-bytes. This is invalid.
 	 */
@@ -3202,9 +3195,9 @@ TclNativeCreateNativeRep(
  *---------------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclNativeDupInternalRep(
-    ClientData clientData)
+    void *clientData)
 {
     char *copy;
     size_t len;

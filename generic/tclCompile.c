@@ -675,6 +675,13 @@ InstructionDesc const tclInstructionTable[] = {
 	/* String Less or equal:	push (stknext <= stktop) */
     {"strge",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* String Greater or equal:	push (stknext >= stktop) */
+    {"lreplace4",	  6,   INT_MIN,    2,	{OPERAND_UINT4, OPERAND_UINT1}},
+	/* Operands: number of arguments, flags
+	 * flags: Combination of TCL_LREPLACE4_* flags
+	 * Stack: ... listobj index1 ?index2? new1 ... newN => ... newlistobj
+	 * where index2 is present only if TCL_LREPLACE_SINGLE_INDEX is not
+	 * set in flags.
+	 */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -2046,7 +2053,7 @@ CompileCommandTokens(
 
     assert (parsePtr->numWords > 0);
 
-    /* Pre-Compile */
+    /* Precompile */
 
     TclNewObj(cmdObj);
     envPtr->numCommands++;
@@ -2416,9 +2423,9 @@ TclCompileTokens(
     int depth = TclGetStackDepth(envPtr);
 
     /*
-     * if this is actually a literal, handle continuation lines by
+     * If this is actually a literal, handle continuation lines by
      * preallocating a small table to store the locations of any continuation
-     * lines we find in this literal.  The table is extended if needed.
+     * lines found in this literal.  The table is extended if needed.
      *
      * Note: In contrast with the analagous code in 'TclSubstTokens()' the
      * 'adjust' variable seems unneeded here.  The code which merges

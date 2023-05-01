@@ -99,6 +99,8 @@ static int		FileTruncateProc(ClientData instanceData,
 			    long long length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const WCHAR *nativeName);
+static Tcl_Channel OpenFileChannel(HANDLE handle, char *channelName,
+			    int permissions, int appendMode);
 
 /*
  * This structure describes the channel type structure for file based IO.
@@ -700,7 +702,7 @@ FileInputProc(
 
     if (ReadFile(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize, &bytesRead,
 	    (LPOVERLAPPED) NULL) != FALSE) {
-	return bytesRead;
+	return (int)bytesRead;
     }
 
     Tcl_WinConvertError(GetLastError());
@@ -757,7 +759,7 @@ FileOutputProc(
 	return -1;
     }
     infoPtr->dirty = 1;
-    return bytesWritten;
+    return (int)bytesWritten;
 }
 
 /*
@@ -937,7 +939,7 @@ TclpOpenFileChannel(
 	}
 
 	/*
-	 * For natively named Windows serial ports we are done.
+	 * For natively-named Windows serial ports we are done.
 	 */
 
 	channel = TclWinOpenSerialChannel(handle, channelName,
@@ -1035,7 +1037,7 @@ TclpOpenFileChannel(
     case FILE_TYPE_CHAR:
     case FILE_TYPE_DISK:
     case FILE_TYPE_UNKNOWN:
-	channel = TclWinOpenFileChannel(handle, channelName,
+	channel = OpenFileChannel(handle, channelName,
 		channelPermissions,
 		TEST_FLAG(mode, O_APPEND) ? FILE_APPEND : 0);
 	break;
@@ -1077,7 +1079,7 @@ TclpOpenFileChannel(
 Tcl_Channel
 Tcl_MakeFileChannel(
     ClientData rawHandle,	/* OS level handle */
-    int mode)			/* ORed combination of TCL_READABLE and
+    int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
 #if defined(HAVE_NO_SEH) && !defined(_WIN64) && !defined(__clang__)
@@ -1090,7 +1092,7 @@ Tcl_MakeFileChannel(
     TclFile readFile = NULL, writeFile = NULL;
     BOOL result;
 
-    if (mode == 0) {
+    if ((mode & (TCL_READABLE|TCL_WRITABLE)) == 0) {
 	return NULL;
     }
 
@@ -1113,7 +1115,7 @@ Tcl_MakeFileChannel(
 
     case FILE_TYPE_DISK:
     case FILE_TYPE_CHAR:
-	channel = TclWinOpenFileChannel(handle, channelName, mode, 0);
+	channel = OpenFileChannel(handle, channelName, mode, 0);
 	break;
 
     case FILE_TYPE_UNKNOWN:
@@ -1247,7 +1249,7 @@ Tcl_MakeFileChannel(
 	 * is valid to something.
 	 */
 
-	channel = TclWinOpenFileChannel(handle, channelName, mode, 0);
+	channel = OpenFileChannel(handle, channelName, mode, 0);
     }
 
     return channel;
@@ -1325,7 +1327,7 @@ TclpGetDefaultStdChannel(
      */
 
     if (Tcl_SetChannelOption(NULL,channel,"-translation","auto")!=TCL_OK ||
-	    Tcl_SetChannelOption(NULL,channel,"-eofchar","\032 {}")!=TCL_OK ||
+	    Tcl_SetChannelOption(NULL,channel,"-eofchar","\x1A {}")!=TCL_OK ||
 	    Tcl_SetChannelOption(NULL,channel,"-buffering",bufMode)!=TCL_OK) {
 	Tcl_Close(NULL, channel);
 	return (Tcl_Channel) NULL;
@@ -1336,7 +1338,7 @@ TclpGetDefaultStdChannel(
 /*
  *----------------------------------------------------------------------
  *
- * TclWinOpenFileChannel --
+ * OpenFileChannel --
  *
  *	Constructs a File channel for the specified standard OS handle. This
  *	is a helper function to break up the construction of channels into
@@ -1353,7 +1355,7 @@ TclpGetDefaultStdChannel(
  */
 
 Tcl_Channel
-TclWinOpenFileChannel(
+OpenFileChannel(
     HANDLE handle,		/* Win32 HANDLE to swallow */
     char *channelName,		/* Buffer to receive channel name */
     int permissions,		/* OR'ed combination of TCL_READABLE,
@@ -1373,7 +1375,7 @@ TclWinOpenFileChannel(
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->handle == (HANDLE) handle) {
-	    return (permissions==infoPtr->validMask) ? infoPtr->channel : NULL;
+	    return ((permissions & (TCL_READABLE|TCL_WRITABLE|TCL_EXCEPTION))==infoPtr->validMask) ? infoPtr->channel : NULL;
 	}
     }
 
@@ -1386,12 +1388,12 @@ TclWinOpenFileChannel(
      */
 
     infoPtr->nextPtr = NULL;
-    infoPtr->validMask = permissions;
+    infoPtr->validMask = permissions & (TCL_READABLE|TCL_WRITABLE|TCL_EXCEPTION);
     infoPtr->watchMask = 0;
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
     infoPtr->dirty = 0;
-    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    infoPtr, permissions);
@@ -1402,7 +1404,7 @@ TclWinOpenFileChannel(
      */
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
+    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\x1A {}");
 
     return infoPtr->channel;
 }
@@ -1572,7 +1574,7 @@ NativeIsComPort(
     const WCHAR *nativePath)	/* Path of file to access, native encoding. */
 {
     const WCHAR *p = (const WCHAR *) nativePath;
-    int i, len = wcslen(p);
+    size_t i, len = wcslen(p);
 
     /*
      * 1. Look for com[1-9]:?

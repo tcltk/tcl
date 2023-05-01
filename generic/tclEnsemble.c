@@ -562,8 +562,8 @@ TclNamespaceEnsembleCmd(
 			continue;
 		    }
 		    do {
-			if (TclListObjGetElementsM(interp, listObj, &len,
-				&listv) != TCL_OK) {
+			if (TclListObjLengthM(interp, listObj, &len
+				) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
 				Tcl_DecrRefCount(patchedDict);
@@ -576,6 +576,14 @@ TclNamespaceEnsembleCmd(
 				    "must be non-empty lists", -1));
 			    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE",
 				    "EMPTY_TARGET", NULL);
+			    Tcl_DictObjDone(&search);
+			    if (patchedDict) {
+				Tcl_DecrRefCount(patchedDict);
+			    }
+			    goto freeMapAndError;
+			}
+			if (TclListObjGetElementsM(interp, listObj, &len,
+				&listv) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
 				Tcl_DecrRefCount(patchedDict);
@@ -1880,7 +1888,7 @@ NsEnsembleImplementationCmdNR(
      *
      *   ((Q: That's not true if the -map option is used, is it?))
      *
-     * but don't do that because cacheing of the command object should help.
+     * but don't do that because caching of the command object should help.
      */
 
     {
@@ -2903,7 +2911,7 @@ TclCompileEnsemble(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3460,7 +3468,7 @@ CompileBasicNArgCommand(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3480,7 +3488,7 @@ TclCompileBasic0ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3502,7 +3510,7 @@ TclCompileBasic1ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3524,7 +3532,7 @@ TclCompileBasic2ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3546,7 +3554,7 @@ TclCompileBasic3ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3568,7 +3576,7 @@ TclCompileBasic0Or1ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3590,7 +3598,7 @@ TclCompileBasic1Or2ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3612,7 +3620,7 @@ TclCompileBasic2Or3ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3634,7 +3642,7 @@ TclCompileBasic0To2ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3656,7 +3664,7 @@ TclCompileBasic1To3ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3678,7 +3686,7 @@ TclCompileBasicMin0ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3700,7 +3708,7 @@ TclCompileBasicMin1ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3722,7 +3730,7 @@ TclCompileBasicMin2ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {

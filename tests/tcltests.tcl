@@ -1,5 +1,8 @@
 #! /usr/bin/env tclsh
 
+# Don't overwrite tcltests facilities already present
+if {[package provide tcltests] ne {}} return
+
 package require tcltest 2.5
 namespace import ::tcltest::*
 testConstraint exec [llength [info commands exec]]
@@ -28,6 +31,18 @@ namespace eval ::tcltests {
 	} else {
 	    interp alias {} [namespace current]::tempdir {} ::tcl::file::tempdir
 	}
+    }
+
+
+    # Stolen from dict.test
+    proc scriptmemcheck script {
+	set end [lindex [split [memory info] \n] 3 3]
+	for {set i 0} {$i < 5} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [lindex [split [memory info] \n] 3 3]
+	}
+	expr {$end - $tmp}
     }
 
 

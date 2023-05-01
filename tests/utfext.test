@@ -1,0 +1,101 @@
+# This file contains a collection of tests for Tcl_UtfToExternal and
+# Tcl_UtfToExternal. Sourcing this file into Tcl runs the tests and generates
+# errors. No output means no errors found.
+#
+# Copyright (c) 2023 Ashok P. Nadkarni
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+
+testConstraint testbytestring [llength [info commands testbytestring]]
+testConstraint testencoding [llength [info commands testencoding]]
+
+# Maps encoded bytes string to utf-8 equivalents, both in hex
+# encoding utf-8 encdata
+lappend utfExtMap {*}{
+    ascii 414243 414243
+}
+
+if {[info commands printable] eq ""} {
+    proc printable {s} {
+        set print ""
+        foreach c [split $s ""] {
+            set i [scan $c %c]
+            if {[string is print $c] && ($i <= 127)} {
+                append print $c
+            } elseif {$i <= 0xff} {
+                append print \\x[format %02X $i]
+            } elseif {$i <= 0xffff} {
+                append print \\u[format %04X $i]
+            } else {
+                append print \\U[format %08X $i]
+            }
+        }
+        return $print
+    }
+}
+
+# Simple test with basic flags
+proc testbasic {direction enc hexin hexout {flags {start end}}} {
+    if {$direction eq "toutf"} {
+        set cmd Tcl_ExternalToUtf
+    } else {
+        set cmd Tcl_UtfToExternal
+    }
+    set in [binary decode hex $hexin]
+    set out [binary decode hex $hexout]
+    set dstlen 40 ;# Should be enough for all encoding tests
+
+    # The C wrapper fills entire destination buffer with FF.
+    # Anything beyond expected output should have FF's
+    set filler [string repeat \xFF $dstlen]
+    set result [string range "$out$filler" 0 $dstlen-1]
+    test $cmd-$enc-$hexin-[join $flags -] "$cmd - $enc - $hexin - $flags" -body \
+        [list testencoding $cmd $enc $in $flags {} $dstlen] \
+        -result [list ok {} $result]
+    foreach profile [encoding profiles] {
+        set flags2 [linsert $flags end profile$profile]
+        test $cmd-$enc-$hexin-[join $flags2 -] "$cmd - $enc - $hexin - $flags" -body \
+            [list testencoding $cmd $enc $in $flags2 {} $dstlen] \
+            -result [list ok {} $result]
+    }
+}
+
+#
+# Basic tests
+foreach {enc utfhex hex} $utfExtMap {
+    # Basic test - TCL_ENCODING_START|TCL_ENCODING_END
+    # Note by default output should be terminated with \0
+    testbasic toutf $enc $hex ${utfhex}00 {start end}
+    testbasic fromutf $enc $utfhex ${hex}00 {start end}
+
+    # Test TCL_ENCODING_NO_TERMINATE
+    testbasic toutf $enc $hex $utfhex {start end noterminate}
+    # knownBug - noterminate not obeyed by fromutf
+    # testbasic fromutf $enc $utfhex $hex {start end noterminate}
+}
+
+# Test for insufficient space
+test xx-bufferoverflow {buffer overflow Tcl_ExternalToUtf} -body {
+    testencoding Tcl_UtfToExternal ucs-2 A {start end} {} 1
+} -result [list nospace {} \xFF]
+
+# Another bug - char limit not obeyed
+# % set cv 2
+# % testencoding Tcl_ExternalToUtf utf-8 abcdefgh {start end noterminate charlimit} {} 20 rv wv cv
+# nospace {} abcÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ
+
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

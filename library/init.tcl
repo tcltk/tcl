@@ -132,7 +132,7 @@ if {[namespace which -command exec] eq ""} {
     set auto_noexec 1
 }
 
-# Define a log command (which can be overwitten to log errors
+# Define a log command (which can be overwritten to log errors
 # differently, specially when stderr is not available)
 
 if {[namespace which -command tclLog] eq ""} {
@@ -442,7 +442,7 @@ proc auto_load_index {} {
 	    continue
 	} else {
 	    set error [catch {
-		fconfigure $f -encoding utf-8 -eofchar "\032 {}"
+		fconfigure $f -encoding utf-8 -eofchar "\x1A {}"
 		set id [gets $f]
 		if {$id eq "# Tcl autoload index file, version 2.0"} {
 		    eval [read $f]
@@ -726,7 +726,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    # the following code is now commented out.
 	    #
 	    # return -code error "error $action \"$src\" to\
-	    # \"$dest\": file already exists"
+	    # \"$dest\": file exists"
 	} else {
 	    # Depending on the platform, and on the current
 	    # working directory, the directories '.', '..'
@@ -738,7 +738,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    foreach s $existing {
 		if {[file tail $s] ni {. ..}} {
 		    return -code error "error $action \"$src\" to\
-		      \"$dest\": file already exists"
+		      \"$dest\": file exists"
 		}
 	    }
 	}

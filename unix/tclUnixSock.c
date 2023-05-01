@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include <netinet/tcp.h>
 
 /*
  * Helper macros to make parts of this file clearer. The macros do exactly
@@ -40,7 +41,7 @@ typedef union {
 } address;
 
 /*
- * This structure describes per-instance state of a tcp based channel.
+ * This structure describes per-instance state of a tcp-based channel.
  */
 
 typedef struct TcpState TcpState;
@@ -53,7 +54,7 @@ typedef struct TcpFdList {
 
 struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this file. */
-    int flags;			/* ORed combination of the bitfields defined
+    int flags;			/* OR'ed combination of the bitfields defined
 				 * below. */
     TcpFdList fds;		/* The file descriptors of the sockets. */
     int interest;		/* Event types of interest */
@@ -81,7 +82,7 @@ struct TcpState {
 };
 
 /*
- * These bits may be ORed together into the "flags" field of a TcpState
+ * These bits may be OR'ed together into the "flags" field of a TcpState
  * structure.
  */
 
@@ -139,6 +140,9 @@ static int		TcpInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		TcpOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCode);
+static int		TcpSetOptionProc(void *instanceData,
+			    Tcl_Interp *interp, const char *optionName,
+			    const char *value);
 static void		TcpThreadActionProc(void *instanceData, int action);
 static void		TcpWatchProc(void *instanceData, int mask);
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
@@ -160,7 +164,7 @@ static const Tcl_ChannelType tcpChannelType = {
     TcpInputProc,		/* Input proc. */
     TcpOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
-    NULL,			/* Set option proc. */
+    TcpSetOptionProc,		/* Set option proc. */
     TcpGetOptionProc,		/* Get option proc. */
     TcpWatchProc,		/* Initialize notifier. */
     TcpGetHandleProc,		/* Get OS handles out of channel. */
@@ -318,29 +322,6 @@ Tcl_GetHostName(void)
 /*
  * ----------------------------------------------------------------------
  *
- * TclpHasSockets --
- *
- *	Detect if sockets are available on this platform.
- *
- * Results:
- *	Returns TCL_OK.
- *
- * Side effects:
- *	None.
- *
- * ----------------------------------------------------------------------
- */
-
-int
-TclpHasSockets(
-    TCL_UNUSED(Tcl_Interp *))
-{
-    return TCL_OK;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
  * TclpFinalizeSockets --
  *
  *	Performs per-thread socket subsystem finalization.
@@ -408,17 +389,17 @@ TcpBlockModeProc(
  *
  *	Check the state of an async connect process. If a connection attempt
  *	terminated, process it, which may finalize it or may start the next
- *	attempt. If a connect error occures, it is saved in
+ *	attempt. If a connect error occurs, it is saved in
  *	statePtr->connectError to be reported by 'fconfigure -error'.
  *
  *	There are two modes of operation, defined by errorCodePtr:
- *	 *  non-NULL: Called by explicite read/write command. Blocks if the
+ *	 *  non-NULL: Called by explicit read/write command. Blocks if the
  *	    socket is blocking.
  *	    May return two error codes:
  *	     *	EWOULDBLOCK: if connect is still in progress
  *	     *	ENOTCONN: if connect failed. This would be the error message
- *		of a rect or sendto syscall so this is emulated here.
- *	 *  NULL: Called by a backround operation. Do not block and do not
+ *		of a recv or sendto syscall so this is emulated here.
+ *	 *  NULL: Called by a background operation. Do not block and do not
  *	    return any error code.
  *
  * Results:
@@ -450,7 +431,7 @@ WaitForConnect(
     }
 
     /*
-     * Check if an async connect is running. If not return ok
+     * Check if an async connect is running. If not return ok.
      */
 
     if (!GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)) {
@@ -537,7 +518,7 @@ TcpInputProc(
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
-    bytesRead = recv(statePtr->fds.fd, buf, (size_t) bufSize, 0);
+    bytesRead = recv(statePtr->fds.fd, buf, bufSize, 0);
     if (bytesRead >= 0) {
 	return bytesRead;
     }
@@ -587,7 +568,7 @@ TcpOutputProc(
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
-    written = send(statePtr->fds.fd, buf, (size_t) toWrite, 0);
+    written = send(statePtr->fds.fd, buf, toWrite, 0);
 
     if (written >= 0) {
 	return written;
@@ -808,6 +789,87 @@ TcpHostPortList(
 /*
  *----------------------------------------------------------------------
  *
+ * TcpSetOptionProc --
+ *
+ *	Sets TCP channel specific options.
+ *
+ * Results:
+ *	None, unless an error happens.
+ *
+ * Side effects:
+ *	Changes attributes of the socket at the system level.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TcpSetOptionProc(
+    void *instanceData,		/* Socket state. */
+    Tcl_Interp *interp,		/* For error reporting - can be NULL. */
+    const char *optionName,	/* Name of the option to set. */
+    const char *value)		/* New value for option. */
+{
+    TcpState *statePtr = (TcpState *)instanceData;
+    size_t len = 0;
+
+    if (optionName != NULL) {
+	len = strlen(optionName);
+    }
+
+    if ((len > 1) && (optionName[1] == 'k') &&
+	    (strncmp(optionName, "-keepalive", len) == 0)) {
+	int val = 0, ret;
+
+	if (Tcl_GetBoolean(interp, value, &val) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+#if defined(SO_KEEPALIVE)
+	ret = setsockopt(statePtr->fds.fd, SOL_SOCKET, SO_KEEPALIVE,
+		(const char *) &val, sizeof(int));
+#else
+	ret = -1;
+	Tcl_SetErrno(ENOTSUP);
+#endif
+	if (ret < 0) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't set socket option: %s",
+			Tcl_PosixError(interp)));
+	    }
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
+    }
+    if ((len > 1) && (optionName[1] == 'n') &&
+	    (strncmp(optionName, "-nodelay", len) == 0)) {
+	int val = 0, ret;
+
+	if (Tcl_GetBoolean(interp, value, &val) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+#if defined(SOL_TCP) && defined(TCP_NODELAY)
+	ret = setsockopt(statePtr->fds.fd, SOL_TCP, TCP_NODELAY,
+		(const char *) &val, sizeof(int));
+#else
+	ret = -1;
+	Tcl_SetErrno(ENOTSUP);
+#endif
+	if (ret < 0) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't set socket option: %s",
+			Tcl_PosixError(interp)));
+	    }
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
+    }
+    return Tcl_BadChannelOption(interp, optionName, "keepalive nodelay");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TcpGetOptionProc --
  *
  *	Computes an option value for a TCP socket based channel, or a list of
@@ -828,7 +890,7 @@ TcpHostPortList(
 
 static int
 TcpGetOptionProc(
-    void *instanceData,	/* Socket state. */
+    void *instanceData,		/* Socket state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Name of the option to retrieve the value
 				 * for, or NULL to get all options and their
@@ -839,8 +901,6 @@ TcpGetOptionProc(
     TcpState *statePtr = (TcpState *)instanceData;
     size_t len = 0;
 
-    WaitForConnect(statePtr, NULL);
-
     if (optionName != NULL) {
 	len = strlen(optionName);
     }
@@ -849,6 +909,7 @@ TcpGetOptionProc(
 	    (strncmp(optionName, "-error", len) == 0)) {
 	socklen_t optlen = sizeof(int);
 
+	WaitForConnect(statePtr, NULL);
         if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
             /*
              * Suppress errors as long as we are not done.
@@ -873,6 +934,7 @@ TcpGetOptionProc(
 
     if ((len > 1) && (optionName[1] == 'c') &&
 	    (strncmp(optionName, "-connecting", len) == 0)) {
+	WaitForConnect(statePtr, NULL);
 	Tcl_DStringAppend(dsPtr,
 		GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT) ? "1" : "0", TCL_INDEX_NONE);
         return TCL_OK;
@@ -883,6 +945,7 @@ TcpGetOptionProc(
         address peername;
         socklen_t size = sizeof(peername);
 
+	WaitForConnect(statePtr, NULL);
 	if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
 	    /*
 	     * In async connect output an empty string
@@ -930,10 +993,11 @@ TcpGetOptionProc(
     if ((len == 0) || ((len > 1) && (optionName[1] == 's') &&
 	    (strncmp(optionName, "-sockname", len) == 0))) {
 	TcpFdList *fds;
-        address sockname;
-        socklen_t size;
+	address sockname;
+	socklen_t size;
 	int found = 0;
 
+	WaitForConnect(statePtr, NULL);
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-sockname");
 	    Tcl_DStringStartSublist(dsPtr);
@@ -967,9 +1031,49 @@ TcpGetOptionProc(
 	}
     }
 
+    if ((len == 0) || ((len > 1) && (optionName[1] == 'k') &&
+	    (strncmp(optionName, "-keepalive", len) == 0))) {
+	int opt = 0;
+#if defined(SO_KEEPALIVE)
+	socklen_t size = sizeof(opt);
+#endif
+
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-keepalive");
+	}
+#if defined(SO_KEEPALIVE)
+	getsockopt(statePtr->fds.fd, SOL_SOCKET, SO_KEEPALIVE,
+		(char *) &opt, &size);
+#endif
+	Tcl_DStringAppendElement(dsPtr, opt ? "1" : "0");
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
+
+    if ((len == 0) || ((len > 1) && (optionName[1] == 'n') &&
+	    (strncmp(optionName, "-nodelay", len) == 0))) {
+	int opt = 0;
+#if defined(SOL_TCP) && defined(TCP_NODELAY)
+	socklen_t size = sizeof(opt);
+#endif
+
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-nodelay");
+	}
+#if defined(SOL_TCP) && defined(TCP_NODELAY)
+	getsockopt(statePtr->fds.fd, SOL_TCP, TCP_NODELAY,
+		(char *) &opt, &size);
+#endif
+	Tcl_DStringAppendElement(dsPtr, opt ? "1" : "0");
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
+
     if (len > 0) {
 	return Tcl_BadChannelOption(interp, optionName,
-                "connecting peername sockname");
+                "connecting keepalive nodelay peername sockname");
     }
 
     return TCL_OK;
@@ -1100,7 +1204,7 @@ TcpWatchProc(
 	 * socket file descriptor is writable when the other end of the socket
 	 * is closed.  This is in contrast to the guarantees Tcl makes that
 	 * its channels become writable and fire writable events on an error
-	 * conditon.  This has caused a leak of file descriptors in a state of
+	 * condition.  This has caused a leak of file descriptors in a state of
 	 * background flushing.  See Tcl ticket 1758a0b603.
 	 *
 	 * As a workaround, when our caller indicates an interest in writable
@@ -1444,7 +1548,7 @@ Tcl_OpenTcpClient(
         return NULL;
     }
 
-    sprintf(channelName, SOCK_TEMPLATE, PTR2INT(statePtr));
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
             statePtr, TCL_READABLE | TCL_WRITABLE);
@@ -1500,7 +1604,7 @@ Tcl_MakeTcpClientChannel(
 void *
 TclpMakeTcpClientChannelMode(
     void *sock,		/* The socket to wrap up into a channel. */
-    int mode)			/* ORed combination of TCL_READABLE and
+    int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
     TcpState *statePtr;
@@ -1511,7 +1615,7 @@ TclpMakeTcpClientChannelMode(
     statePtr->fds.fd = PTR2INT(sock);
     statePtr->flags = 0;
 
-    sprintf(channelName, SOCK_TEMPLATE, PTR2INT(statePtr));
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    statePtr, mode);
@@ -1546,6 +1650,7 @@ Tcl_OpenTcpServerEx(
     const char *service,	/* Port number to open. */
     const char *myHost,		/* Name of local host. */
     unsigned int flags,		/* Flags. */
+    int backlog,                /* Length of OS listen backlog queue. */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */
@@ -1711,7 +1816,10 @@ Tcl_OpenTcpServerEx(
                 chosenport = ntohs(sockname.sa4.sin_port);
             }
         }
-        status = listen(sock, SOMAXCONN);
+        if (backlog < 0) {
+            backlog = SOMAXCONN;
+        }
+        status = listen(sock, backlog);
         if (status < 0) {
 	    if (howfar < LISTEN) {
 		howfar = LISTEN;
@@ -1733,7 +1841,7 @@ Tcl_OpenTcpServerEx(
             memset(statePtr, 0, sizeof(TcpState));
             statePtr->acceptProc = acceptProc;
             statePtr->acceptProcData = acceptProcData;
-            sprintf(channelName, SOCK_TEMPLATE, PTR2INT(statePtr));
+            snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
             newfds = &statePtr->fds;
         } else {
             newfds = (TcpFdList *)ckalloc(sizeof(TcpFdList));
@@ -1825,7 +1933,7 @@ TcpAccept(
     newSockState->flags = 0;
     newSockState->fds.fd = newsock;
 
-    sprintf(channelName, SOCK_TEMPLATE, PTR2INT(newSockState));
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(newSockState));
     newSockState->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newSockState, TCL_READABLE | TCL_WRITABLE);
 

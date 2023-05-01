@@ -400,7 +400,7 @@ TclRegisterLiteral(
     int flags)			/* If LITERAL_ON_HEAP then the caller already
 				 * malloc'd bytes and ownership is passed to
 				 * this function. If LITERAL_CMD_NAME then
-				 * the literal should not be shared accross
+				 * the literal should not be shared across
 				 * namespaces. */
 {
     CompileEnv *envPtr = (CompileEnv *)ePtr;
@@ -444,7 +444,7 @@ TclRegisterLiteral(
 
     /*
      * The literal is new to this CompileEnv. If it is a command name, avoid
-     * sharing it accross namespaces, and try not to share it with non-cmd
+     * sharing it across namespaces, and try not to share it with non-cmd
      * literals. Note that FQ command names can be shared, so that we register
      * the namespace as the interp's global NS.
      */
@@ -1134,18 +1134,18 @@ TclLiteralStats(
      */
 
     result = (char *)ckalloc(NUM_COUNTERS*60 + 300);
-    sprintf(result, "%d entries in table, %d buckets\n",
+    snprintf(result, 60, "%d entries in table, %d buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i=0 ; i<NUM_COUNTERS ; i++) {
-	sprintf(p, "number of buckets with %" TCL_Z_MODIFIER "u entries: %" TCL_Z_MODIFIER "u\n",
+	snprintf(p, 60, "number of buckets with %" TCL_Z_MODIFIER "u entries: %" TCL_Z_MODIFIER "u\n",
 		i, count[i]);
 	p += strlen(p);
     }
-    sprintf(p, "number of buckets with %d or more entries: %d\n",
+    snprintf(p, 60, "number of buckets with %d or more entries: %d\n",
 	    NUM_COUNTERS, overflow);
     p += strlen(p);
-    sprintf(p, "average search distance for entry: %.1f", average);
+    snprintf(p, 60, "average search distance for entry: %.1f", average);
     return result;
 }
 #endif /*TCL_COMPILE_STATS*/

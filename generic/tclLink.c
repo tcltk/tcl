@@ -526,56 +526,14 @@ GetUWide(
     Tcl_Obj *objPtr,
     Tcl_WideUInt *uwidePtr)
 {
-    Tcl_WideInt *widePtr = (Tcl_WideInt *) uwidePtr;
-    void *clientData;
-    int type, intValue;
+    if (Tcl_GetWideUIntFromObj(NULL, objPtr, uwidePtr) != TCL_OK) {
+	int intValue;
 
-    if (TclGetNumberFromObj(NULL, objPtr, &clientData, &type) == TCL_OK) {
-	if (type == TCL_NUMBER_INT) {
-	    *widePtr = *((const Tcl_WideInt *) clientData);
-	    return (*widePtr < 0);
-	} else if (type == TCL_NUMBER_BIG) {
-	    mp_int *numPtr = (mp_int *)clientData;
-	    Tcl_WideUInt value = 0;
-	    union {
-		Tcl_WideUInt value;
-		unsigned char bytes[sizeof(Tcl_WideUInt)];
-	    } scratch;
-	    size_t numBytes;
-	    unsigned char *bytes = scratch.bytes;
-
-	    if (numPtr->sign || (MP_OKAY != mp_to_ubin(numPtr,
-		    bytes, sizeof(Tcl_WideUInt), &numBytes))) {
-		/*
-		 * If the sign bit is set (a negative value) or if the value
-		 * can't possibly fit in the bits of an unsigned wide, there's
-		 * no point in doing further conversion.
-		 */
-		return 1;
-	    }
-#ifdef WORDS_BIGENDIAN
-	    while (numBytes-- > 0) {
-		value = (value << CHAR_BIT) | *bytes++;
-	    }
-#else /* !WORDS_BIGENDIAN */
-	    /*
-	     * Little-endian can read the value directly.
-	     */
-	    value = scratch.value;
-#endif /* WORDS_BIGENDIAN */
-	    *uwidePtr = value;
-	    return 0;
+	if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
+	    return 1;
 	}
+	*uwidePtr = intValue;
     }
-
-    /*
-     * Evil edge case fallback.
-     */
-
-    if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {
-	return 1;
-    }
-    *uwidePtr = intValue;
     return 0;
 }
 
@@ -872,7 +830,7 @@ LinkTraceProc(
     /*
      * For writes, first make sure that the variable is writable. Then convert
      * the Tcl value to C if possible. If the variable isn't writable or can't
-     * be converted, then restore the varaible's old value and return an
+     * be converted, then restore the variable's old value and return an
      * error. Another tricky thing: we have to save and restore the interp's
      * result, since the variable access could occur when the result has been
      * partially set.
@@ -1324,7 +1282,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewDoubleObj(linkPtr->lastValue.dPtr[i]);
+		TclNewDoubleObj(objv[i], linkPtr->lastValue.dPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
@@ -1443,7 +1401,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewDoubleObj(linkPtr->lastValue.fPtr[i]);
+		TclNewDoubleObj(objv[i], linkPtr->lastValue.fPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
@@ -1451,20 +1409,22 @@ ObjValue(
 	}
 	linkPtr->lastValue.f = LinkedVar(float);
 	return Tcl_NewDoubleObj(linkPtr->lastValue.f);
-    case TCL_LINK_WIDE_UINT:
+    case TCL_LINK_WIDE_UINT: {
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		TclNewIntObj(objv[i], (Tcl_WideInt)
-			linkPtr->lastValue.uwPtr[i]);
+		TclNewUIntObj(objv[i], linkPtr->lastValue.uwPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
 	    return resultObj;
 	}
 	linkPtr->lastValue.uw = LinkedVar(Tcl_WideUInt);
-	return Tcl_NewWideIntObj((Tcl_WideInt) linkPtr->lastValue.uw);
+	Tcl_Obj *uwObj;
+	TclNewUIntObj(uwObj, linkPtr->lastValue.uw);
+	return uwObj;
+	}
 
     case TCL_LINK_STRING:
 	p = LinkedVar(char *);

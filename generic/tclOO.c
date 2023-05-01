@@ -655,7 +655,7 @@ AllocObject(
     while (1) {
 	char objName[10 + TCL_INTEGER_SPACE];
 
-	sprintf(objName, "::oo::Obj%d", ++fPtr->tsdPtr->nsCount);
+	snprintf(objName, sizeof(objName), "::oo::Obj%d", ++fPtr->tsdPtr->nsCount);
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, objName, oPtr, NULL);
 	if (oPtr->namespacePtr != NULL) {
 	    creationEpoch = fPtr->tsdPtr->nsCount;
@@ -1158,7 +1158,7 @@ ObjectNamespaceDeleted(
 
     /*
      * One rule for the teardown routines is that if an object is in the
-     * process of being deleted, nothing else may modify its bookeeping
+     * process of being deleted, nothing else may modify its bookkeeping
      * records.  This is the flag that
      */
 
@@ -1211,7 +1211,7 @@ ObjectNamespaceDeleted(
     if (((Command *) oPtr->command)->flags && CMD_DYING) {
 	/*
 	 * Something has already started the command deletion process. We can
-	 * go ahead and clean up the the namespace,
+	 * go ahead and clean up the namespace,
 	 */
     } else {
 	/*

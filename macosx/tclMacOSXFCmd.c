@@ -491,7 +491,7 @@ TclMacOSXCopyFileAttributes(
  *
  * Results:
  *	The return value is 1, 0 or -1 indicating whether the file matches the
- *	given criteria, does not match them, or an error occurred (in wich
+ *	given criteria, does not match them, or an error occurred (in which
  *	case an error is left in interp).
  *
  * Side effects:
@@ -708,7 +708,7 @@ UpdateStringOfOSType(
     src[4] = '\0';
 
     encoding = Tcl_GetEncoding(NULL, "macRoman");
-    Tcl_ExternalToUtf(NULL, encoding, src, -1, /* flags */ 0,
+    Tcl_ExternalToUtf(NULL, encoding, src, TCL_INDEX_NONE, /* flags */ 0,
 	    /* statePtr */ NULL, dst, size, /* srcReadPtr */ NULL,
 	    /* dstWrotePtr */ &written, /* dstCharsPtr */ NULL);
     Tcl_FreeEncoding(encoding);

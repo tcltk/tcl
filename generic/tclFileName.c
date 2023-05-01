@@ -37,6 +37,17 @@ static Tcl_Obj *	SplitUnixPath(const char *path);
 static int		DoGlob(Tcl_Interp *interp, Tcl_Obj *resultPtr,
 			    const char *separators, Tcl_Obj *pathPtr, int flags,
 			    char *pattern, Tcl_GlobTypeData *types);
+static int		TclGlob(Tcl_Interp *interp, char *pattern,
+			    Tcl_Obj *pathPrefix, int globFlags,
+			    Tcl_GlobTypeData *types);
+
+/* Flag values used by TclGlob() */
+
+#ifdef TCL_NO_DEPRECATED
+#   define TCL_GLOBMODE_NO_COMPLAIN	1
+#   define TCL_GLOBMODE_DIR	4
+#   define TCL_GLOBMODE_TAILS	8
+#endif
 
 /*
  * When there is no support for getting the block size of a file in a stat()
@@ -89,7 +100,7 @@ SetResultLength(
  * Results:
  *	Returns the position in the path immediately after the root including
  *	any trailing slashes. Appends a cleaned up version of the root to the
- *	Tcl_DString at the specified offest.
+ *	Tcl_DString at the specified offset.
  *
  * Side effects:
  *	Modifies the specified Tcl_DString.
@@ -413,7 +424,6 @@ TclpGetNativePathType(
 
 	    if (path[0] == '/') {
 		++path;
-#if defined(__CYGWIN__) || defined(__QNX__)
 		/*
 		 * Check for "//" network path prefix
 		 */
@@ -422,22 +432,10 @@ TclpGetNativePathType(
 		    while (*path && *path != '/') {
 			++path;
 		    }
-#if defined(__CYGWIN__)
-		    /* UNC paths need to be followed by a share name */
-		    if (*path++ && (*path && *path != '/')) {
-			++path;
-			while (*path && *path != '/') {
-			    ++path;
-			}
-		    } else {
-			path = origPath + 1;
-		    }
-#endif
 		}
-#endif
 		if (driveNameLengthPtr != NULL) {
 		    /*
-		     * We need this addition in case the QNX or Cygwin code was used.
+		     * We need this addition in case the "//" code was used.
 		     */
 
 		    *driveNameLengthPtr = (path - origPath);
@@ -456,7 +454,7 @@ TclpGetNativePathType(
 	    if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
 		*driveNameLengthPtr = rootEnd - path;
 		if (driveNameRef != NULL) {
-		    *driveNameRef = TclDStringToObj(&ds);
+		    *driveNameRef = Tcl_DStringToObj(&ds);
 		    Tcl_IncrRefCount(*driveNameRef);
 		}
 	    }
@@ -504,11 +502,11 @@ TclpNativeSplitPath(
 
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:
-	resultPtr = SplitUnixPath(Tcl_GetString(pathPtr));
+	resultPtr = SplitUnixPath(TclGetString(pathPtr));
 	break;
 
     case TCL_PLATFORM_WINDOWS:
-	resultPtr = SplitWinPath(Tcl_GetString(pathPtr));
+	resultPtr = SplitWinPath(TclGetString(pathPtr));
 	break;
     }
 
@@ -656,7 +654,6 @@ SplitUnixPath(
     if (*path == '/') {
 	Tcl_Obj *rootElt;
 	++path;
-#if defined(__CYGWIN__) || defined(__QNX__)
 	/*
 	 * Check for "//" network path prefix
 	 */
@@ -665,19 +662,7 @@ SplitUnixPath(
 	    while (*path && *path != '/') {
 		++path;
 	    }
-#if defined(__CYGWIN__)
-	    /* UNC paths need to be followed by a share name */
-	    if (*path++ && (*path && *path != '/')) {
-		++path;
-		while (*path && *path != '/') {
-		    ++path;
-		}
-	    } else {
-		path = origPath + 1;
-	    }
-#endif
 	}
-#endif
 	rootElt = Tcl_NewStringObj(origPath, path - origPath);
 	Tcl_ListObjAppendElement(NULL, result, rootElt);
 	while (*path == '/') {
@@ -749,7 +734,7 @@ SplitWinPath(
      */
 
     if (p != path) {
-	Tcl_ListObjAppendElement(NULL, result, TclDStringToObj(&buf));
+	Tcl_ListObjAppendElement(NULL, result, Tcl_DStringToObj(&buf));
     }
     Tcl_DStringFree(&buf);
 
@@ -934,7 +919,7 @@ TclpNativeJoinPath(
 	 */
 
 	Tcl_SetObjLength(prefix, length + (int) strlen(p));
-	dest = Tcl_GetString(prefix) + length;
+	dest = TclGetString(prefix) + length;
 	for (; *p != '\0'; p++) {
 	    if ((*p == '/') || (*p == '\\')) {
 		while ((p[1] == '/') || (p[1] == '\\')) {
@@ -1714,7 +1699,7 @@ Tcl_GlobObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 TclGlob(
     Tcl_Interp *interp,		/* Interpreter for returning error message or
 				 * appending list of matching file names. */
@@ -1782,7 +1767,7 @@ TclGlob(
 	    if (head != Tcl_DStringValue(&buffer)) {
 		Tcl_DStringAppend(&buffer, head, -1);
 	    }
-	    pathPrefix = TclDStringToObj(&buffer);
+	    pathPrefix = Tcl_DStringToObj(&buffer);
 	    Tcl_IncrRefCount(pathPrefix);
 	    globFlags |= TCL_GLOBMODE_DIR;
 	    if (c != '\0') {
@@ -1915,7 +1900,7 @@ TclGlob(
      * To process a [glob] invocation, this function may be called multiple
      * times. Each time, the previously discovered filenames are in the
      * interpreter result. We stash that away here so the result is free for
-     * error messsages.
+     * error messages.
      */
 
     savedResultObj = Tcl_GetObjResult(interp);
@@ -2442,7 +2427,7 @@ DoGlob(
 	 */
 
 	if (pathPtr == NULL) {
-	    joinedPtr = TclDStringToObj(&append);
+	    joinedPtr = Tcl_DStringToObj(&append);
 	} else if (flags) {
 	    joinedPtr = TclNewFSPathObj(pathPtr, Tcl_DStringValue(&append),
 		    Tcl_DStringLength(&append));

@@ -310,6 +310,7 @@ static const CmdInfo builtInCmds[] = {
     {"join",		Tcl_JoinObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	NULL,	CMD_IS_SAFE},
     {"lassign",		Tcl_LassignObjCmd,	TclCompileLassignCmd,	NULL,	CMD_IS_SAFE},
+    {"ledit",		Tcl_LeditObjCmd,	NULL,	NULL,	CMD_IS_SAFE},
     {"lindex",		Tcl_LindexObjCmd,	TclCompileLindexCmd,	NULL,	CMD_IS_SAFE},
     {"linsert",		Tcl_LinsertObjCmd,	TclCompileLinsertCmd,	NULL,	CMD_IS_SAFE},
     {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	NULL,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
@@ -322,10 +323,9 @@ static const CmdInfo builtInCmds[] = {
     {"lreplace",	Tcl_LreplaceObjCmd,	TclCompileLreplaceCmd,	NULL,	CMD_IS_SAFE},
     {"lreverse",	Tcl_LreverseObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lsearch",		Tcl_LsearchObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
-    {"lseq",            Tcl_LseqObjCmd,         NULL,                   NULL,   CMD_IS_SAFE},
+    {"lseq",		Tcl_LseqObjCmd,         NULL,                   NULL,   CMD_IS_SAFE},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
-    {"ledit",		Tcl_LeditObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"package",		Tcl_PackageObjCmd,	NULL,			TclNRPackageObjCmd,	CMD_IS_SAFE},
     {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
@@ -1053,7 +1053,7 @@ Tcl_CreateInterp(void)
     /*
      * Create the core commands. Do it here, rather than calling
      * Tcl_CreateCommand, because it's faster (there's no need to check for a
-     * pre-existing command by the same name). If a command has a Tcl_CmdProc
+     * preexisting command by the same name). If a command has a Tcl_CmdProc
      * but no Tcl_ObjCmdProc, set the Tcl_ObjCmdProc to
      * TclInvokeStringCommand. This is an object-based wrapper function that
      * extracts strings, calls the string function, and creates an object for
@@ -1533,7 +1533,7 @@ Tcl_CallWhenDeleted(
     AssocData *dPtr = (AssocData *)ckalloc(sizeof(AssocData));
     Tcl_HashEntry *hPtr;
 
-    sprintf(buffer, "Assoc Data Key #%d", *assocDataCounterPtr);
+    snprintf(buffer, sizeof(buffer), "Assoc Data Key #%d", *assocDataCounterPtr);
     (*assocDataCounterPtr)++;
 
     if (iPtr->assocData == NULL) {
@@ -2253,15 +2253,15 @@ Tcl_HideCommand(
     }
 
     /*
-     * NB: This code is currently 'like' a rename to a specialy set apart name
+     * NB: This code is currently 'like' a rename to a special separate name
      * table. Changes here and in TclRenameCommand must be kept in synch until
      * the common parts are actually factorized out.
      */
 
     /*
      * Remove the hash entry for the command from the interpreter command
-     * table. This is like deleting the command, so bump its command epoch;
-     * this invalidates any cached references that point to the command.
+     * table. This is like deleting the command, so bump its command epoch
+     * to invalidate any cached references that point to the command.
      */
 
     if (cmdPtr->hPtr != NULL) {
@@ -2382,7 +2382,7 @@ Tcl_ExposeCommand(
 
     if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
 	/*
-	 * This case is theoritically impossible, we might rather Tcl_Panic
+	 * This case is theoretically impossible, we might rather Tcl_Panic
 	 * than 'nicely' erroring out ?
 	 */
 
@@ -2488,7 +2488,7 @@ Tcl_ExposeCommand(
  *	In the future, when cmdName is seen as the name of a command by
  *	Tcl_Eval, proc will be called. To support the bytecode interpreter,
  *	the command is created with a wrapper Tcl_ObjCmdProc
- *	(TclInvokeStringCommand) that eventially calls proc. When the command
+ *	(TclInvokeStringCommand) that eventually calls proc. When the command
  *	is deleted from the table, deleteProc will be called. See the manual
  *	entry for details on the calling sequence.
  *
@@ -3939,7 +3939,7 @@ CallCommandTraces(
  *	The value given for the code argument.
  *
  * Side effects:
- *	Transfers a message from the cancelation message to the interpreter.
+ *	Transfers a message from the cancellation message to the interpreter.
  *
  *----------------------------------------------------------------------
  */
@@ -4048,7 +4048,7 @@ TclCleanupCommand(
  *	the builtin functions. Redefining a builtin function forces all
  *	existing code to be invalidated since that code may be compiled using
  *	an instruction specific to the replaced function. In addition,
- *	redefioning a non-builtin function will force existing code to be
+ *	redefining a non-builtin function will force existing code to be
  *	invalidated if the number of arguments has changed.
  *
  *----------------------------------------------------------------------
@@ -4060,7 +4060,7 @@ Tcl_CreateMathFunc(
     Tcl_Interp *interp,		/* Interpreter in which function is to be
 				 * available. */
     const char *name,		/* Name of function (e.g. "sin"). */
-    int numArgs,		/* Nnumber of arguments required by
+    int numArgs,		/* Number of arguments required by
 				 * function. */
     Tcl_ValueType *argTypes,	/* Array of types acceptable for each
 				 * argument. */
@@ -4135,7 +4135,7 @@ OldMathFuncProc(
 
     args = (Tcl_Value *)ckalloc(dataPtr->numArgs * sizeof(Tcl_Value));
     for (j = 1, k = 0; j < objc; ++j, ++k) {
-	/* TODO: Convert to TclGetNumberFromObj? */
+	/* TODO: Convert to Tcl_GetNumberFromObj? */
 	valuePtr = objv[j];
 	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
 #ifdef ACCEPT_NAN
@@ -5249,7 +5249,7 @@ TEOV_NotFound(
 
     /*
      * Get the list of words for the unknown handler and allocate enough space
-     * to hold both the handler prefix and all words of the command invokation
+     * to hold both the handler prefix and all words of the command invocation
      * itself.
      */
 
@@ -5594,7 +5594,7 @@ TclEvalEx(
 				 * TclSubstTokens(), to properly handle
 				 * [...]-nested commands. The 'outerScript'
 				 * refers to the most-outer script containing
-				 * the embedded command, which is refered to
+				 * the embedded command, which is referred to
 				 * by 'script'. The 'clNextOuter' refers to
 				 * the current entry in the table of
 				 * continuation lines in this "main script",
@@ -6160,8 +6160,8 @@ TclArgumentEnter(
 	/*
 	 * Ignore argument words without line information (= dynamic). If they
 	 * are variables they may have location information associated with
-	 * that, either through globally recorded 'set' invokations, or
-	 * literals in bytecode. Eitehr way there is no need to record
+	 * that, either through globally recorded 'set' invocations, or
+	 * literals in bytecode. Either way there is no need to record
 	 * something here.
 	 */
 
@@ -6891,7 +6891,7 @@ ProcessUnexpectedResult(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"command returned bad code: %d", returnCode));
     }
-    sprintf(buf, "%d", returnCode);
+    snprintf(buf, sizeof(buf), "%d", returnCode);
     Tcl_SetErrorCode(interp, "TCL", "UNEXPECTED_RESULT_CODE", buf, NULL);
 }
 
@@ -7043,7 +7043,7 @@ Tcl_ExprLongObj(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type)!=TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, resultPtr, &internalPtr, &type)!=TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -7089,7 +7089,7 @@ Tcl_ExprDoubleObj(
 	return TCL_ERROR;
     }
 
-    result = TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type);
+    result = Tcl_GetNumberFromObj(interp, resultPtr, &internalPtr, &type);
     if (result == TCL_OK) {
 	switch (type) {
 	case TCL_NUMBER_NAN:
@@ -7605,7 +7605,7 @@ int
 Tcl_SetRecursionLimit(
     Tcl_Interp *interp,		/* Interpreter whose nesting limit is to be
 				 * set. */
-    int depth)			/* New value for maximimum depth. */
+    int depth)			/* New value for maximum depth. */
 {
     Interp *iPtr = (Interp *) interp;
     int old;
@@ -7810,7 +7810,7 @@ ExprIsqrtFunc(
      * Make sure that the arg is a number.
      */
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8073,7 +8073,7 @@ ExprAbsFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8228,7 +8228,7 @@ ExprIntFunc(
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8309,7 +8309,7 @@ ExprMaxMinFunc(
     }
     res = objv[1];
     for (i = 1; i < objc; i++) {
-        if (TclGetNumberFromObj(interp, objv[i], &ptr, &type) != TCL_OK) {
+        if (Tcl_GetNumberFromObj(interp, objv[i], &ptr, &type) != TCL_OK) {
             return TCL_ERROR;
         }
         if (type == TCL_NUMBER_NAN) {
@@ -8461,7 +8461,7 @@ ExprRoundFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -8729,7 +8729,7 @@ ExprIsFiniteFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type != TCL_NUMBER_NAN) {
@@ -8760,7 +8760,7 @@ ExprIsInfinityFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type != TCL_NUMBER_NAN) {
@@ -8790,7 +8790,7 @@ ExprIsNaNFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type != TCL_NUMBER_NAN) {
@@ -8820,7 +8820,7 @@ ExprIsNormalFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type != TCL_NUMBER_NAN) {
@@ -8850,7 +8850,7 @@ ExprIsSubnormalFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type != TCL_NUMBER_NAN) {
@@ -8880,7 +8880,7 @@ ExprIsUnorderedFunc(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type == TCL_NUMBER_NAN) {
@@ -8890,7 +8890,7 @@ ExprIsUnorderedFunc(
         result = (ClassifyDouble(d) == FP_NAN);
     }
 
-    if (TclGetNumberFromObj(interp, objv[2], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[2], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type == TCL_NUMBER_NAN) {
@@ -8922,7 +8922,7 @@ FloatClassifyObjCmd(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+    if (Tcl_GetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
         return TCL_ERROR;
     }
     if (type == TCL_NUMBER_NAN) {
@@ -9192,10 +9192,10 @@ Tcl_NRCallObjProc2(
     Tcl_Interp *interp,
     Tcl_ObjCmdProc2 *objProc,
     void *clientData,
-    size_t objc,
+    ptrdiff_t objc,
     Tcl_Obj *const objv[])
 {
-    if (objc > INT_MAX) {
+    if ((size_t)objc > INT_MAX) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
 	return TCL_ERROR;
     }
@@ -9716,6 +9716,7 @@ TclNRYieldToObjCmd(
      */
 
     iPtr->execEnvPtr = corPtr->callerEEPtr;
+    /* Not calling Tcl_IncrRefCount(listPtr) here because listPtr is private */
     TclSetTailcall(interp, listPtr);
     corPtr->yieldPtr = listPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
@@ -9918,8 +9919,8 @@ TclNRCoroutineActivateCallback(
 	    if (corPtr->yieldPtr) {
 		for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
 		    if (runPtr->data[1] == corPtr->yieldPtr) {
+			Tcl_DecrRefCount((Tcl_Obj *)runPtr->data[1]);
 			runPtr->data[1] = NULL;
-			Tcl_DecrRefCount(corPtr->yieldPtr);
 			corPtr->yieldPtr = NULL;
 			break;
 		    }
@@ -10520,6 +10521,7 @@ TclNRCoroutineObjCmd(
     corPtr->running.lineLABCPtr = corPtr->lineLABCPtr;
     corPtr->stackLevel = NULL;
     corPtr->auxNumLevels = 0;
+    corPtr->yieldPtr = NULL;
 
     /*
      * Create the coro's execEnv, switch to it to push the exit and coro

@@ -212,9 +212,7 @@ static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
  * TIP #508: [array default]
  */
 
-static int		ArrayDefaultCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ArrayDefaultCmd;
 static void		DeleteArrayVar(Var *arrayPtr);
 static void		SetArrayDefault(Var *arrayPtr, Tcl_Obj *defaultObj);
 
@@ -634,7 +632,7 @@ TclObjLookupVarEx(
     }
 
     /*
-     * If part1Ptr is a parsedVarNameType, retrieve the pre-parsed parts.
+     * If part1Ptr is a parsedVarNameType, retrieve the preparsed parts.
      */
 
     ParsedGetInternalRep(part1Ptr, parsed, arrayPtr, elem);
@@ -795,7 +793,7 @@ TclObjLookupVarEx(
  *	TclObjLookupVar):
  *	    -1 a global reference
  *	    -2 a reference to a namespace variable
- *	    -3 a non-cachable reference, i.e., one of:
+ *	    -3 a non-cacheable reference, i.e., one of:
  *		. non-indexed local var
  *		. a reference of unknown origin;
  *		. resolution by a namespace or interp resolver
@@ -1524,7 +1522,7 @@ TclPtrGetVarIdx(
 
 int
 Tcl_SetObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2818,7 +2816,7 @@ UnsetVarStruct(
 
 int
 Tcl_UnsetObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2885,7 +2883,7 @@ Tcl_UnsetObjCmd(
 
 int
 Tcl_AppendObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2950,7 +2948,7 @@ Tcl_AppendObjCmd(
 
 int
 Tcl_LappendObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3156,7 +3154,7 @@ ArrayObjNext(
 
 static int
 ArrayForObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3166,7 +3164,7 @@ ArrayForObjCmd(
 
 static int
 ArrayForNRCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -3237,7 +3235,7 @@ ArrayForNRCmd(
 
 static int
 ArrayForLoopCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -3395,7 +3393,7 @@ ArrayPopulateSearch(
 
 static int
 ArrayStartSearchCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3490,7 +3488,7 @@ ArrayDoneSearch(
 
 static int
 ArrayAnyMoreCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3568,7 +3566,7 @@ ArrayAnyMoreCmd(
 
 static int
 ArrayNextElementCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3648,7 +3646,7 @@ ArrayNextElementCmd(
 
 static int
 ArrayDoneSearchCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3708,7 +3706,7 @@ ArrayDoneSearchCmd(
 
 static int
 ArrayExistsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3748,7 +3746,7 @@ ArrayExistsCmd(
 
 static int
 ArrayGetCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3907,7 +3905,7 @@ ArrayGetCmd(
 
 static int
 ArrayNamesCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4074,7 +4072,7 @@ TclFindArrayPtrElements(
 
 static int
 ArraySetCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4163,8 +4161,7 @@ ArraySetCmd(
 	int elemLen;
 	Tcl_Obj **elemPtrs, *copyListObj;
 
-	result = TclListObjGetElementsM(interp, arrayElemObj,
-		&elemLen, &elemPtrs);
+	result = TclListObjLengthM(interp, arrayElemObj, &elemLen);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -4176,6 +4173,11 @@ ArraySetCmd(
 	}
 	if (elemLen == 0) {
 	    goto ensureArray;
+	}
+	result = TclListObjGetElementsM(interp, arrayElemObj,
+		&elemLen, &elemPtrs);
+	if (result != TCL_OK) {
+	    return result;
 	}
 
 	/*
@@ -4249,7 +4251,7 @@ ArraySetCmd(
 
 static int
 ArraySizeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4308,7 +4310,7 @@ ArraySizeCmd(
 
 static int
 ArrayStatsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4362,7 +4364,7 @@ ArrayStatsCmd(
 
 static int
 ArrayUnsetCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4987,7 +4989,7 @@ Tcl_GetVariableFullName(
 
 int
 Tcl_GlobalObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -5091,7 +5093,7 @@ Tcl_GlobalObjCmd(
 
 int
 Tcl_VariableObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -5224,7 +5226,7 @@ Tcl_VariableObjCmd(
 
 int
 Tcl_UpvarObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6036,7 +6038,7 @@ ObjFindNamespaceVar(
 
 int
 TclInfoVarsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6227,7 +6229,7 @@ TclInfoVarsCmd(
 
 int
 TclInfoGlobalsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6320,7 +6322,7 @@ TclInfoGlobalsCmd(
 
 int
 TclInfoLocalsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -6625,7 +6627,7 @@ CompareVarKeys(
 
 static int
 ArrayDefaultCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

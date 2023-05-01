@@ -335,7 +335,7 @@ ProcExitHandler(
  *
  * SerialBlockTime --
  *
- *	Wrapper to set Tcl's block time in msec
+ *	Wrapper to set Tcl's block time in msec.
  *
  * Results:
  *	None.
@@ -904,7 +904,7 @@ SerialInputProc(
 	    }
 	} else {
 	    /*
-	     * BLOCKING mode: Tcl trys to read a full buffer of 4 kBytes here.
+	     * BLOCKING mode: Tcl tries to read a full buffer of 4 kBytes here.
 	     */
 
 	    if (cStat.cbInQue > 0) {
@@ -973,9 +973,9 @@ SerialOutputProc(
     *errorCode = 0;
 
     /*
-     * At EXIT Tcl trys to flush all open channels in blocking mode. We avoid
+     * At EXIT Tcl tries to flush all open channels in blocking mode. We avoid
      * blocking output after ExitProc or CloseHandler(chan) has been called by
-     * checking the corrresponding variables.
+     * checking the corresponding variables.
      */
 
     if (!initialized || TclInExit()) {
@@ -1458,7 +1458,7 @@ TclWinOpenSerialChannel(
     infoPtr = (SerialInfo *)ckalloc(sizeof(SerialInfo));
     memset(infoPtr, 0, sizeof(SerialInfo));
 
-    infoPtr->validMask = permissions;
+    infoPtr->validMask = permissions & (TCL_READABLE|TCL_WRITABLE);
     infoPtr->handle = handle;
     infoPtr->channel = (Tcl_Channel) NULL;
     infoPtr->readable = 0;
@@ -1476,7 +1476,7 @@ TclWinOpenSerialChannel(
      * are shared between multiple channels (stdin/stdout).
      */
 
-    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    infoPtr, permissions);
@@ -1514,7 +1514,7 @@ TclWinOpenSerialChannel(
      */
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
+    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\x1A {}");
 
     return infoPtr->channel;
 }
@@ -1564,7 +1564,7 @@ SerialErrorStr(
     if (error & ~((DWORD) (SERIAL_READ_ERRORS | SERIAL_WRITE_ERRORS))) {
 	char buf[TCL_INTEGER_SPACE + 1];
 
-	wsprintfA(buf, "%d", error);
+	snprintf(buf, sizeof(buf), "%ld", error);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 }
@@ -2110,7 +2110,7 @@ SerialGetOptionProc(
 	stop = (dcb.StopBits == ONESTOPBIT) ? "1" :
 		(dcb.StopBits == ONE5STOPBITS) ? "1.5" : "2";
 
-	wsprintfA(buf, "%d,%c,%d,%s", dcb.BaudRate, parity,
+	snprintf(buf, sizeof(buf), "%ld,%c,%d,%s", dcb.BaudRate, parity,
 		dcb.ByteSize, stop);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
@@ -2126,7 +2126,7 @@ SerialGetOptionProc(
 	char buf[TCL_INTEGER_SPACE + 1];
 
 	valid = 1;
-	wsprintfA(buf, "%d", infoPtr->blockTime);
+	snprintf(buf, sizeof(buf), "%d", infoPtr->blockTime);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
@@ -2142,9 +2142,9 @@ SerialGetOptionProc(
 	char buf[TCL_INTEGER_SPACE + 1];
 	valid = 1;
 
-	wsprintfA(buf, "%d", infoPtr->sysBufRead);
+	snprintf(buf, sizeof(buf), "%ld", infoPtr->sysBufRead);
 	Tcl_DStringAppendElement(dsPtr, buf);
-	wsprintfA(buf, "%d", infoPtr->sysBufWrite);
+	snprintf(buf, sizeof(buf), "%ld", infoPtr->sysBufWrite);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
     if (len == 0) {
@@ -2225,9 +2225,9 @@ SerialGetOptionProc(
 	count = (int) cStat.cbOutQue + infoPtr->writeQueue;
 	LeaveCriticalSection(&infoPtr->csWrite);
 
-	wsprintfA(buf, "%d", inBuffered + cStat.cbInQue);
+	snprintf(buf, sizeof(buf), "%ld", inBuffered + cStat.cbInQue);
 	Tcl_DStringAppendElement(dsPtr, buf);
-	wsprintfA(buf, "%d", outBuffered + count);
+	snprintf(buf, sizeof(buf), "%d", outBuffered + count);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
@@ -2287,7 +2287,7 @@ SerialThreadActionProc(
     /*
      * We do not access firstSerialPtr in the thread structures. This is not
      * for all serials managed by the thread, but only those we are watching.
-     * Removal of the filevent handlers before transfer thus takes care of
+     * Removal of the fileevent handlers before transfer thus takes care of
      * this structure.
      */
 

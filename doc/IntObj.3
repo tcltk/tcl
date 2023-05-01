@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
+Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_GetWideUIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -39,6 +39,9 @@ int
 .sp
 int
 \fBTcl_GetWideIntFromObj\fR(\fIinterp, objPtr, widePtr\fR)
+.sp
+int
+\fBTcl_GetWideUIntFromObj\fR(\fIinterp, objPtr, uwidePtr\fR)
 .sp
 .sp
 \fB#include <tclTomMath.h>\fR
@@ -82,6 +85,8 @@ Points to place to store the integer value retrieved from \fIobjPtr\fR.
 Points to place to store the long integer value retrieved from \fIobjPtr\fR.
 .AP Tcl_WideInt *widePtr out
 Points to place to store the wide integer value retrieved from \fIobjPtr\fR.
+.AP Tcl_WideUInt *uwidePtr out
+Points to place to store the unsigned wide integer value retrieved from \fIobjPtr\fR.
 .AP mp_int *bigValue in/out
 Points to a multi-precision integer structure declared by the LibTomMath
 library.

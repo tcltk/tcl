@@ -184,7 +184,7 @@ declare 77 {deprecated {}} {
     void TclpGetTime(Tcl_Time *time)
 }
 declare 81 {
-    void *TclpRealloc(void *ptr, unsigned int size)
+    void *TclpRealloc(void *ptr, TCL_HASH_TYPE size)
 }
 declare 88 {deprecated {}} {
     char *TclPrecTraceProc(void *clientData, Tcl_Interp *interp,
@@ -321,7 +321,7 @@ declare 131 {
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc,
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-declare 132 {
+declare 132 {deprecated {}} {
     int TclpHasSockets(Tcl_Interp *interp)
 }
 declare 133 {deprecated {}} {
@@ -701,7 +701,7 @@ declare 258 {
 
 # TIP 625: for unit testing - create list objects with span
 declare 260 {
-    Tcl_Obj *TclListTestObj(int length, int leadingSpace, int endSpace)
+    Tcl_Obj *TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
 }
 
 # TIP 625: for unit testing - check list invariants

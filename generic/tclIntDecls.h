@@ -227,7 +227,7 @@ void			TclpGetTime(Tcl_Time *time);
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
 /* 81 */
-EXTERN void *		TclpRealloc(void *ptr, unsigned int size);
+EXTERN void *		TclpRealloc(void *ptr, TCL_HASH_TYPE size);
 /* Slot 82 is reserved */
 /* Slot 83 is reserved */
 /* Slot 84 is reserved */
@@ -354,7 +354,8 @@ EXTERN void		Tcl_SetNamespaceResolvers(
 				Tcl_ResolveVarProc *varProc,
 				Tcl_ResolveCompiledVarProc *compiledVarProc);
 /* 132 */
-EXTERN int		TclpHasSockets(Tcl_Interp *interp);
+TCL_DEPRECATED("")
+int			TclpHasSockets(Tcl_Interp *interp);
 /* 133 */
 TCL_DEPRECATED("")
 struct tm *		TclpGetDate(const time_t *time, int useGMT);
@@ -659,8 +660,8 @@ EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj);
 /* Slot 259 is reserved */
 /* 260 */
-EXTERN Tcl_Obj *	TclListTestObj(int length, int leadingSpace,
-				int endSpace);
+EXTERN Tcl_Obj *	TclListTestObj(size_t length, size_t leadingSpace,
+				size_t endSpace);
 /* 261 */
 EXTERN void		TclListObjValidate(Tcl_Interp *interp,
 				Tcl_Obj *listObj);
@@ -750,7 +751,7 @@ typedef struct TclIntStubs {
     void (*reserved78)(void);
     void (*reserved79)(void);
     void (*reserved80)(void);
-    void * (*tclpRealloc) (void *ptr, unsigned int size); /* 81 */
+    void * (*tclpRealloc) (void *ptr, TCL_HASH_TYPE size); /* 81 */
     void (*reserved82)(void);
     void (*reserved83)(void);
     void (*reserved84)(void);
@@ -801,7 +802,7 @@ typedef struct TclIntStubs {
     int (*tcl_PushCallFrame) (Tcl_Interp *interp, Tcl_CallFrame *framePtr, Tcl_Namespace *nsPtr, int isProcCallFrame); /* 129 */
     int (*tcl_RemoveInterpResolvers) (Tcl_Interp *interp, const char *name); /* 130 */
     void (*tcl_SetNamespaceResolvers) (Tcl_Namespace *namespacePtr, Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, Tcl_ResolveCompiledVarProc *compiledVarProc); /* 131 */
-    int (*tclpHasSockets) (Tcl_Interp *interp); /* 132 */
+    TCL_DEPRECATED_API("") int (*tclpHasSockets) (Tcl_Interp *interp); /* 132 */
     TCL_DEPRECATED_API("") struct tm * (*tclpGetDate) (const time_t *time, int useGMT); /* 133 */
     void (*reserved134)(void);
     void (*reserved135)(void);
@@ -929,7 +930,7 @@ typedef struct TclIntStubs {
     void (*tclStaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc); /* 257 */
     Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
     void (*reserved259)(void);
-    Tcl_Obj * (*tclListTestObj) (int length, int leadingSpace, int endSpace); /* 260 */
+    Tcl_Obj * (*tclListTestObj) (size_t length, size_t leadingSpace, size_t endSpace); /* 260 */
     void (*tclListObjValidate) (Tcl_Interp *interp, Tcl_Obj *listObj); /* 261 */
 } TclIntStubs;
 

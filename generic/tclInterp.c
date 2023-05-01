@@ -61,7 +61,7 @@ typedef struct Alias {
     Tcl_Obj *objPtr;		/* The first actual prefix object - the target
 				 * command name; this has to be at the end of
 				 * the structure, which will be extended to
-				 * accomodate the remaining objects in the
+				 * accommodate the remaining objects in the
 				 * prefix. */
 } Alias;
 
@@ -198,7 +198,7 @@ struct LimitHandler {
 /*
  * Values for the LimitHandler flags field.
  *      LIMIT_HANDLER_ACTIVE - Whether the handler is currently being
- *              processed; handlers are never to be entered reentrantly.
+ *              processed; handlers are never to be reentered.
  *      LIMIT_HANDLER_DELETED - Whether the handler has been deleted. This
  *              should not normally be observed because when a handler is
  *              deleted it is also spliced out of the list of handlers, but
@@ -333,7 +333,7 @@ int
 Tcl_Init(
     Tcl_Interp *interp)		/* Interpreter to initialize. */
 {
-    PkgName pkgName = {NULL, "Tcl"};
+    PkgName pkgName = {NULL, "tcl"};
     PkgName **names = (PkgName **)TclInitPkgFiles(interp);
     int result = TCL_ERROR;
 
@@ -827,7 +827,7 @@ NRInterpCmd(
 	    for (i = 0; ; i++) {
 		Tcl_CmdInfo cmdInfo;
 
-		sprintf(buf, "interp%d", i);
+		snprintf(buf, sizeof(buf), "interp%d", i);
 		if (Tcl_GetCommandInfo(interp, buf, &cmdInfo) == 0) {
 		    break;
 		}
@@ -1111,7 +1111,7 @@ NRInterpCmd(
 	if (hPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "alias \"%s\" in path \"%s\" not found",
-		    aliasName, Tcl_GetString(objv[2])));
+		    aliasName, TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName,
 		    NULL);
 	    return TCL_ERROR;
@@ -3320,7 +3320,7 @@ TclMakeSafe(
     Tcl_UnsetVar2(interp, "tcl_platform", "user", TCL_GLOBAL_ONLY);
 
     /*
-     * Unset path informations variables (the only one remaining is [info
+     * Unset path information variables (the only one remaining is [info
      * nameofexecutable])
      */
 
@@ -4284,7 +4284,7 @@ CallScriptLimitCallback(
  *	None.
  *
  * Side effects:
- *	A limit callback implemented as an invokation of a Tcl script in
+ *	A limit callback implemented as an invocation of a Tcl script in
  *	another interpreter is either installed or removed.
  *
  *----------------------------------------------------------------------

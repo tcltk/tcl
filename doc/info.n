@@ -172,7 +172,7 @@ The body of a script provided to \fBeval\fR or \fBuplevel\fR.
 .TP
 \fBprecompiled\fR\0\0\0\0\0\0\0\0
 .
-A pre-compiled script (loadable by the package
+A precompiled script (loadable by the package
 \fBtbcload\fR), and no further information is available.
 .RE
 .TP

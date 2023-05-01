@@ -182,25 +182,22 @@ Invalid(
  *
  * Tcl_UniCharToUtf --
  *
- *	Store the given Tcl_UniChar as a sequence of UTF-8 bytes in the
+ *	Stores the given Tcl_UniChar as a sequence of UTF-8 bytes in the
  *	provided buffer. Equivalent to Plan 9 runetochar().
  *
- *	Special handling of Surrogate pairs is handled as follows:
- *	When this function is called for ch being a high surrogate,
- *	the first byte of the 4-byte UTF-8 sequence is produced and
- *	the function returns 1. Calling the function again with a
- *	low surrogate, the remaining 3 bytes of the 4-byte UTF-8
- *	sequence is produced, and the function returns 3. The buffer
- *	is used to remember the high surrogate between the two calls.
+ *	Surrogate pairs are handled as follows: When ch is a high surrogate,
+ *	the first byte of the 4-byte UTF-8 sequence is stored in the buffer and
+ *	the function returns 1. If the function is called again with a low
+ *	surrogate and the same buffer, the remaining 3 bytes of the 4-byte
+ *	UTF-8 sequence are produced.
  *
  *	If no low surrogate follows the high surrogate (which is actually
  *	illegal), this can be handled reasonably by calling Tcl_UniCharToUtf
- *	again with ch = -1. This will produce a 3-byte UTF-8 sequence
+ *	again with ch = -1. This produces a 3-byte UTF-8 sequence
  *	representing the high surrogate.
  *
  * Results:
- *	The return values is the number of bytes in the buffer that were
- *	consumed.
+ *	Returns the number of bytes stored into the buffer.
  *
  * Side effects:
  *	None.
@@ -223,18 +220,19 @@ Tcl_UniCharToUtf(
     }
     if (ch >= 0) {
 	if (ch <= 0x7FF) {
-	    buf[1] = (char) ((ch | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 6) | 0xC0);
+	    buf[1] = (char) (0x80 | (0x3F & ch));
+	    buf[0] = (char) (0xC0 | (ch >> 6));
 	    return 2;
 	}
 	if (ch <= 0xFFFF) {
 	    if ((ch & 0xF800) == 0xD800) {
 		if (ch & 0x0400) {
 		    /* Low surrogate */
-		    if (((buf[0] & 0xC0) == 0x80) && ((buf[1] & 0xCF) == 0)) {
+		    if (   (0x80 == (0xC0 & buf[0]))
+			&& (0    == (0xCF & buf[1]))) {
 			/* Previous Tcl_UniChar was a high surrogate, so combine */
-			buf[2] = (char) ((ch & 0x3F) | 0x80);
-			buf[1] |= (char) (((ch >> 6) & 0x0F) | 0x80);
+			buf[2]  = (char) (0x80 | (0x3F & ch));
+			buf[1] |= (char) (0x80 | (0x0F & (ch >> 6)));
 			return 3;
 		    }
 		    /* Previous Tcl_UniChar was not a high surrogate, so just output */
@@ -244,37 +242,40 @@ Tcl_UniCharToUtf(
 		    /* Fill buffer with specific 3-byte (invalid) byte combination,
 		       so following low surrogate can recognize it and combine */
 		    buf[2] = (char) ((ch << 4) & 0x30);
-		    buf[1] = (char) (((ch >> 2) & 0x3F) | 0x80);
-		    buf[0] = (char) (((ch >> 8) & 0x07) | 0xF0);
+		    buf[1] = (char) (0x80 | (0x3F & (ch >> 2)));
+		    buf[0] = (char) (0xF0 | (0x07 & (ch >> 8)));
 		    return 1;
 		}
 	    }
 	    goto three;
 	}
 	if (ch <= 0x10FFFF) {
-	    buf[3] = (char) ((ch | 0x80) & 0xBF);
-	    buf[2] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 12) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 18) | 0xF0);
+	    buf[3] = (char) (0x80 | (0x3F & ch));
+	    buf[2] = (char) (0x80 | (0x3F & (ch >> 6)));
+	    buf[1] = (char) (0x80 | (0x3F & (ch >> 12)));
+	    buf[0] = (char) (0xF0 |         (ch >> 18));
 	    return 4;
 	}
     } else if (ch == -1) {
-	if (((buf[0] & 0xC0) == 0x80) && ((buf[1] & 0xCF) == 0)
-		&& ((buf[-1] & 0xF8) == 0xF0)) {
-	    ch = 0xD7C0 + ((buf[-1] & 0x07) << 8) + ((buf[0] & 0x3F) << 2)
-		    + ((buf[1] & 0x30) >> 4);
-	    buf[1] = (char) ((ch | 0x80) & 0xBF);
-	    buf[0] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[-1] = (char) ((ch >> 12) | 0xE0);
+	if (   (0x80 == (0xC0 & buf[0]))
+	    && (0    == (0xCF & buf[1]))
+	    && (0xF0 == (0xF8 & buf[-1]))) {
+	    ch = 0xD7C0
+		+ ((0x07 & buf[-1]) << 8)
+		+ ((0x3F & buf[0])  << 2)
+		+ ((0x30 & buf[1])  >> 4);
+	    buf[1]  = (char) (0x80 | (0x3F & ch));
+	    buf[0]  = (char) (0x80 | (0x3F & (ch >> 6)));
+	    buf[-1] = (char) (0xE0 | (ch >> 12));
 	    return 2;
 	}
     }
 
     ch = 0xFFFD;
 three:
-    buf[2] = (char) ((ch | 0x80) & 0xBF);
-    buf[1] = (char) (((ch >> 6) | 0x80) & 0xBF);
-    buf[0] = (char) ((ch >> 12) | 0xE0);
+    buf[2] = (char) (0x80 | (0x3F & ch));
+    buf[1] = (char) (0x80 | (0x3F & (ch >> 6)));
+    buf[0] = (char) (0xE0 |         (ch >> 12));
     return 3;
 }
 
@@ -463,7 +464,7 @@ Tcl_UtfToUniChar(
 	}
 	return 1;
     } else if (byte < 0xE0) {
-	if ((src[1] & 0xC0) == 0x80) {
+	if ((byte != 0xC1) && ((src[1] & 0xC0) == 0x80)) {
 	    /*
 	     * Two-byte-character lead-byte followed by a trail-byte.
 	     */
@@ -558,7 +559,7 @@ Tcl_UtfToChar16(
 	}
 	return 1;
     } else if (byte < 0xE0) {
-	if ((src[1] & 0xC0) == 0x80) {
+	if ((byte != 0xC1) && ((src[1] & 0xC0) == 0x80)) {
 	    /*
 	     * Two-byte-character lead-byte followed by a trail-byte.
 	     */
@@ -2011,7 +2012,7 @@ int
 TclUniCharNcasecmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    unsigned long numChars)	/* Number of unichars to compare. */
+    unsigned long numChars)	/* Number of Unichars to compare. */
 {
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
 	if (*ucs != *uct) {
@@ -2948,7 +2949,7 @@ TclUniCharMatch(
  *
  * TclUtfToUCS4 --
  *
- *	Extract the 4-byte codepoint from the leading bytes of the
+ *	Extracts the 4-byte codepoint from the leading bytes of the
  *	Modified UTF-8 string "src".  This is a utility routine to
  *	contain the surrogate gymnastics in one place.
  *
@@ -2960,8 +2961,8 @@ TclUniCharMatch(
  *	enough bytes remain in the string.
  *
  * Results:
- *	*usc4Ptr is filled with the UCS4 code point, and the return value is
- *	the number of bytes from the UTF-8 string that were consumed.
+ *	Fills *usc4Ptr with the UCS4 code point and returns the number of bytes
+ *	consumed from the source string.
  *
  * Side effects:
  *	None.

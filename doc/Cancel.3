@@ -26,7 +26,7 @@ Error message to use in the cancellation, or NULL to use a default message. If
 not NULL, this object will have its reference count decremented before
 \fBTcl_CancelEval\fR returns.
 .AP int flags in
-ORed combination of flag bits that specify additional options.
+OR'ed combination of flag bits that specify additional options.
 For \fBTcl_CancelEval\fR, only \fBTCL_CANCEL_UNWIND\fR is currently
 supported.  For \fBTcl_Canceled\fR, only \fBTCL_LEAVE_ERR_MSG\fR and
 \fBTCL_CANCEL_UNWIND\fR are currently supported.
@@ -47,7 +47,7 @@ Extensions can use this function to check to see if they should abort a long
 running command.  This function is thread sensitive and may only be called
 from the thread the interpreter was created in.
 .SS "FLAG BITS"
-Any ORed combination of the following values may be used for the
+Any OR'ed combination of the following values may be used for the
 \fIflags\fR argument to procedures such as \fBTcl_CancelEval\fR:
 .TP 20
 \fBTCL_CANCEL_UNWIND\fR

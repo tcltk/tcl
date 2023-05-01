@@ -650,7 +650,7 @@ NativeGetMicroseconds(void)
 
 	if (curCounter.QuadPart <= perfCounterLastCall) {
 	    /*
-	     * Calibrated file-time is saved from posix in 100-ns ticks
+	     * Calibrated file-time is saved from Posix in 100-ns ticks
 	     */
 
 	    return fileTimeLastCall / 10;
@@ -669,7 +669,7 @@ NativeGetMicroseconds(void)
 	if (curCounter.QuadPart - perfCounterLastCall <
 		11 * curCounterFreq * timeInfo.calibrationInterv / 10) {
 	    /*
-	     * Calibrated file-time is saved from posix in 100-ns ticks.
+	     * Calibrated file-time is saved from Posix in 100-ns ticks.
 	     */
 
 	    return NativeCalc100NsTicks(fileTimeLastCall,
@@ -791,14 +791,14 @@ TclpGetDate(
 {
     struct tm *tmPtr;
     time_t time;
-#if defined(_WIN64) || (defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400))
+#if defined(_WIN64) || defined(_USE_64BIT_TIME_T)
 #   define t2 *t		/* no need to cripple time to 32-bit */
 #else
     time_t t2 = *(__time32_t *) t;
 #endif
 
     if (!useGMT) {
-#if defined(_MSC_VER) && (_MSC_VER >= 1900)
+#if defined(_MSC_VER)
 #	undef timezone /* prevent conflict with timezone() function */
 	long timezone = 0;
 #endif
@@ -815,7 +815,7 @@ TclpGetDate(
 	    return TclpLocaltime(&t2);
 	}
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1900)
+#if defined(_MSC_VER)
 	_get_timezone(&timezone);
 #endif
 
@@ -1029,7 +1029,7 @@ CalibrationThread(
     timeInfo.fileTimeLastCall.HighPart = curFileTime.dwHighDateTime;
 
     /*
-     * Calibrated file-time will be saved from posix in 100-ns ticks.
+     * Calibrated file-time will be saved from Posix in 100-ns ticks.
      */
 
     timeInfo.fileTimeLastCall.QuadPart -= timeInfo.posixEpoch.QuadPart;
@@ -1104,7 +1104,7 @@ UpdateTimeEachSecond(void)
 				 * step over 1 second. */
 
     /*
-     * Sample performance counter and system time (from posix epoch).
+     * Sample performance counter and system time (from Posix epoch).
      */
 
     GetSystemTimeAsFileTime(&curSysTime);
@@ -1129,7 +1129,7 @@ UpdateTimeEachSecond(void)
     lastFileTime.QuadPart = curFileTime.QuadPart;
 
     /*
-     * We devide by timeInfo.curCounterFreq.QuadPart in several places. That
+     * We divide by timeInfo.curCounterFreq.QuadPart in several places. That
      * value should always be positive on a correctly functioning system. But
      * it is good to be defensive about such matters. So if something goes
      * wrong and the value does goes to zero, we clear the
@@ -1451,11 +1451,11 @@ TclpGmtime(
      * Posix gmtime_r function.
      */
 
-#if defined(_WIN64) || defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400)
+#if defined(_WIN64) || defined(_USE_64BIT_TIME_T)
     return gmtime(timePtr);
 #else
     return _gmtime32((const __time32_t *) timePtr);
-#endif /* _WIN64 || _USE_64BIT_TIME_T || _MSC_VER < 1400 */
+#endif /* _WIN64 || _USE_64BIT_TIME_T */
 }
 
 /*
@@ -1486,11 +1486,11 @@ TclpLocaltime(
      * provide a Posix localtime_r function.
      */
 
-#if defined(_WIN64) || defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400)
+#if defined(_WIN64) || defined(_USE_64BIT_TIME_T)
     return localtime(timePtr);
 #else
     return _localtime32((const __time32_t *) timePtr);
-#endif /* _WIN64 || _USE_64BIT_TIME_T || _MSC_VER < 1400 */
+#endif /* _WIN64 || _USE_64BIT_TIME_T */
 }
 #endif /* TCL_NO_DEPRECATED */
 

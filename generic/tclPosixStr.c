@@ -62,6 +62,9 @@ Tcl_ErrnoId(void)
 #if defined(EALREADY) && (!defined(EBUSY) || (EALREADY != EBUSY))
     case EALREADY: return "EALREADY";
 #endif
+#ifdef EBADCAT
+    case EBADCAT: return "EBADCAT";
+#endif
 #ifdef EBADE
     case EBADE: return "EBADE";
 #endif
@@ -73,9 +76,6 @@ Tcl_ErrnoId(void)
 #endif
 #ifdef EBADMSG
     case EBADMSG: return "EBADMSG";
-#endif
-#ifdef ECANCELED
-    case ECANCELED: return "ECANCELED";
 #endif
 #ifdef EBADR
     case EBADR: return "EBADR";
@@ -94,6 +94,12 @@ Tcl_ErrnoId(void)
 #endif
 #ifdef EBUSY
     case EBUSY: return "EBUSY";
+#endif
+#ifdef ECANCELED
+    case ECANCELED: return "ECANCELED";
+#endif
+#ifdef ECASECLASH
+    case ECASECLASH: return "ECASECLASH";
 #endif
 #ifdef ECHILD
     case ECHILD: return "ECHILD";
@@ -140,11 +146,17 @@ Tcl_ErrnoId(void)
 #ifdef EEXIST
     case EEXIST: return "EEXIST";
 #endif
+#ifdef EFAIL
+    case EFAIL: return "EFAIL";
+#endif
 #ifdef EFAULT
     case EFAULT: return "EFAULT";
 #endif
 #ifdef EFBIG
     case EFBIG: return "EFBIG";
+#endif
+#ifdef EFTYPE
+    case EFTYPE: return "EFTYPE";
 #endif
 #ifdef EHOSTDOWN
     case EHOSTDOWN: return "EHOSTDOWN";
@@ -160,6 +172,9 @@ Tcl_ErrnoId(void)
 #endif
 #ifdef EILSEQ
     case EILSEQ: return "EILSEQ";
+#endif
+#ifdef EINPROG
+    case EINPROG: return "EINPROG";
 #endif
 #ifdef EINPROGRESS
     case EINPROGRESS: return "EINPROGRESS";
@@ -179,11 +194,8 @@ Tcl_ErrnoId(void)
 #ifdef EISDIR
     case EISDIR: return "EISDIR";
 #endif
-#ifdef EISNAME
+#ifdef EISNAM
     case EISNAM: return "EISNAM";
-#endif
-#ifdef ELBIN
-    case ELBIN: return "ELBIN";
 #endif
 #ifdef EL2HLT
     case EL2HLT: return "EL2HLT";
@@ -196,6 +208,9 @@ Tcl_ErrnoId(void)
 #endif
 #ifdef EL3RST
     case EL3RST: return "EL3RST";
+#endif
+#ifdef ELBIN
+    case ELBIN: return "ELBIN";
 #endif
 #ifdef ELIBACC
     case ELIBACC: return "ELIBACC";
@@ -218,6 +233,9 @@ Tcl_ErrnoId(void)
 #if defined(ELOOP) && (!defined(ENOENT) || (ELOOP != ENOENT))
     case ELOOP: return "ELOOP";
 #endif
+#ifdef EMEDIUMTYPE
+    case EMEDIUMTYPE: return "EMEDIUMTYPE";
+#endif
 #ifdef EMFILE
     case EMFILE: return "EMFILE";
 #endif
@@ -236,9 +254,6 @@ Tcl_ErrnoId(void)
 #ifdef ENAVAIL
     case ENAVAIL: return "ENAVAIL";
 #endif
-#ifdef ENET
-    case ENET: return "ENET";
-#endif
 #ifdef ENETDOWN
     case ENETDOWN: return "ENETDOWN";
 #endif
@@ -250,6 +265,9 @@ Tcl_ErrnoId(void)
 #endif
 #ifdef ENFILE
     case ENFILE: return "ENFILE";
+#endif
+#ifdef ENMFILE
+    case ENMFILE: return "ENMFILE";
 #endif
 #ifdef ENOANO
     case ENOANO: return "ENOANO";
@@ -281,6 +299,9 @@ Tcl_ErrnoId(void)
 #ifdef ENOMEM
     case ENOMEM: return "ENOMEM";
 #endif
+#ifdef ENOMEDIUM
+    case ENOMEDIUM: return "ENOMEDIUM";
+#endif
 #ifdef ENOMSG
     case ENOMSG: return "ENOMSG";
 #endif
@@ -292,6 +313,9 @@ Tcl_ErrnoId(void)
 #endif
 #ifdef ENOPROTOOPT
     case ENOPROTOOPT: return "ENOPROTOOPT";
+#endif
+#ifdef ENOSHARE
+    case ENOSHARE: return "ENOSHARE";
 #endif
 #ifdef ENOSPC
     case ENOSPC: return "ENOSPC";
@@ -337,6 +361,9 @@ Tcl_ErrnoId(void)
 #endif
 #ifdef ENOTUNIQ
     case ENOTUNIQ: return "ENOTUNIQ";
+#endif
+#ifdef ENWAIT
+    case ENWAIT: return "ENWAIT";
 #endif
 #ifdef ENXIO
     case ENXIO: return "ENXIO";
@@ -403,6 +430,9 @@ Tcl_ErrnoId(void)
 #endif
 #ifdef EREMOTERELEASE
     case EREMOTERELEASE: return "EREMOTERELEASE";
+#endif
+#ifdef ERESTART
+    case ERESTART: return "ERESTART";
 #endif
 #ifdef EROFS
     case EROFS: return "EROFS";
@@ -519,34 +549,34 @@ Tcl_ErrnoMsg(
     case EAGAIN: return "resource temporarily unavailable";
 #endif
 #ifdef EALIGN
-    case EALIGN: return "EALIGN";
+    case EALIGN: return "alignment error";
 #endif
 #if defined(EALREADY) && (!defined(EBUSY) || (EALREADY != EBUSY))
     case EALREADY: return "operation already in progress";
 #endif
+#ifdef EBADCAT
+    case EBADCAT: return "bad message catalogue format";
+#endif
 #ifdef EBADE
-    case EBADE: return "bad exchange descriptor";
+    case EBADE: return "invalid exchange";
 #endif
 #ifdef EBADF
-    case EBADF: return "bad file number";
+    case EBADF: return "bad file descriptor";
 #endif
 #ifdef EBADFD
     case EBADFD: return "file descriptor in bad state";
 #endif
 #ifdef EBADMSG
-    case EBADMSG: return "not a data message";
-#endif
-#ifdef ECANCELED
-    case ECANCELED: return "operation canceled";
+    case EBADMSG: return "bad message";
 #endif
 #ifdef EBADR
-    case EBADR: return "bad request descriptor";
+    case EBADR: return "invalid request descriptor";
 #endif
 #ifdef EBADRPC
     case EBADRPC: return "RPC structure is bad";
 #endif
 #ifdef EBADRQC
-    case EBADRQC: return "bad request code";
+    case EBADRQC: return "invalid request code";
 #endif
 #ifdef EBADSLT
     case EBADSLT: return "invalid slot";
@@ -555,10 +585,16 @@ Tcl_ErrnoMsg(
     case EBFONT: return "bad font file format";
 #endif
 #ifdef EBUSY
-    case EBUSY: return "file busy";
+    case EBUSY: return "device or resource busy";
+#endif
+#ifdef ECANCELED
+    case ECANCELED: return "operation canceled";
+#endif
+#ifdef ECASECLASH
+    case ECASECLASH: return "filename exists with different case";
 #endif
 #ifdef ECHILD
-    case ECHILD: return "no children";
+    case ECHILD: return "no child processes";
 #endif
 #ifdef ECHRNG
     case ECHRNG: return "channel number out of range";
@@ -588,7 +624,7 @@ Tcl_ErrnoMsg(
     case EDIRTY: return "mounting a dirty fs w/o force";
 #endif
 #ifdef EDOM
-    case EDOM: return "math argument out of range";
+    case EDOM: return "numerical argument out of domain";
 #endif
 #ifdef EDOTDOT
     case EDOTDOT: return "cross mount point";
@@ -600,19 +636,25 @@ Tcl_ErrnoMsg(
     case EDUPPKG: return "duplicate package name";
 #endif
 #ifdef EEXIST
-    case EEXIST: return "file already exists";
+    case EEXIST: return "file exists";
+#endif
+#ifdef EFAIL
+    case EFAIL: return "cannot start operation";
 #endif
 #ifdef EFAULT
-    case EFAULT: return "bad address in system call argument";
+    case EFAULT: return "bad address";
 #endif
 #ifdef EFBIG
     case EFBIG: return "file too large";
+#endif
+#ifdef EFTYPE
+    case EFTYPE: return "inappropriate file type or format";
 #endif
 #ifdef EHOSTDOWN
     case EHOSTDOWN: return "host is down";
 #endif
 #ifdef EHOSTUNREACH
-    case EHOSTUNREACH: return "host is unreachable";
+    case EHOSTUNREACH: return "no route to host";
 #endif
 #if defined(EIDRM) && (!defined(EINPROGRESS) || (EIDRM != EINPROGRESS))
     case EIDRM: return "identifier removed";
@@ -621,7 +663,10 @@ Tcl_ErrnoMsg(
     case EINIT: return "initialization error";
 #endif
 #ifdef EILSEQ
-    case EILSEQ: return "illegal byte sequence";
+    case EILSEQ: return "invalid or incomplete multibyte or wide character";
+#endif
+#ifdef EINPROG
+    case EINPROG: return "asynchronous operation in progress";
 #endif
 #ifdef EINPROGRESS
     case EINPROGRESS: return "operation now in progress";
@@ -633,19 +678,16 @@ Tcl_ErrnoMsg(
     case EINVAL: return "invalid argument";
 #endif
 #ifdef EIO
-    case EIO: return "I/O error";
+    case EIO: return "input/output error";
 #endif
 #ifdef EISCONN
-    case EISCONN: return "socket is already connected";
+    case EISCONN: return "transport endpoint is already connected";
 #endif
 #ifdef EISDIR
-    case EISDIR: return "illegal operation on a directory";
+    case EISDIR: return "is a directory";
 #endif
-#ifdef EISNAME
-    case EISNAM: return "is a name file";
-#endif
-#ifdef ELBIN
-    case ELBIN: return "ELBIN";
+#ifdef EISNAM
+    case EISNAM: return "is a named type file";
 #endif
 #ifdef EL2HLT
     case EL2HLT: return "level 2 halted";
@@ -659,8 +701,11 @@ Tcl_ErrnoMsg(
 #ifdef EL3RST
     case EL3RST: return "level 3 reset";
 #endif
+#ifdef ELBIN
+    case ELBIN: return "inode is remote";
+#endif
 #ifdef ELIBACC
-    case ELIBACC: return "cannot access a needed shared library";
+    case ELIBACC: return "can not access a needed shared library";
 #endif
 #ifdef ELIBBAD
     case ELIBBAD: return "accessing a corrupted shared library";
@@ -670,7 +715,7 @@ Tcl_ErrnoMsg(
 #endif
 #if defined(ELIBMAX) && (!defined(ECANCELED) || (ELIBMAX != ECANCELED))
     case ELIBMAX: return
-	    "attempting to link in more shared libraries than system limit";
+	    "attempting to link in too many shared libraries";
 #endif
 #ifdef ELIBSCN
     case ELIBSCN: return ".lib section in a.out corrupted";
@@ -680,6 +725,9 @@ Tcl_ErrnoMsg(
 #endif
 #if defined(ELOOP) && (!defined(ENOENT) || (ELOOP != ENOENT))
     case ELOOP: return "too many levels of symbolic links";
+#endif
+#ifdef EMEDIUMTYPE
+    case EMEDIUMTYPE: return "wrong medium type";
 #endif
 #ifdef EMFILE
     case EMFILE: return "too many open files";
@@ -699,9 +747,6 @@ Tcl_ErrnoMsg(
 #ifdef ENAVAIL
     case ENAVAIL: return "not available";
 #endif
-#ifdef ENET
-    case ENET: return "ENET";
-#endif
 #ifdef ENETDOWN
     case ENETDOWN: return "network is down";
 #endif
@@ -712,10 +757,13 @@ Tcl_ErrnoMsg(
     case ENETUNREACH: return "network is unreachable";
 #endif
 #ifdef ENFILE
-    case ENFILE: return "file table overflow";
+    case ENFILE: return "too many open files in system";
+#endif
+#ifdef ENMFILE
+    case ENMFILE: return "no more files";
 #endif
 #ifdef ENOANO
-    case ENOANO: return "anode table overflow";
+    case ENOANO: return "no anode";
 #endif
 #if defined(ENOBUFS) && (!defined(ENOSR) || (ENOBUFS != ENOSR))
     case ENOBUFS: return "no buffer space available";
@@ -742,7 +790,10 @@ Tcl_ErrnoMsg(
     case ENOLINK: return "link has been severed";
 #endif
 #ifdef ENOMEM
-    case ENOMEM: return "not enough memory";
+    case ENOMEM: return "cannot allocate memory";
+#endif
+#ifdef ENOMEDIUM
+    case ENOMEDIUM: return "no medium found";
 #endif
 #ifdef ENOMSG
     case ENOMSG: return "no message of desired type";
@@ -754,16 +805,19 @@ Tcl_ErrnoMsg(
     case ENOPKG: return "package not installed";
 #endif
 #ifdef ENOPROTOOPT
-    case ENOPROTOOPT: return "bad protocol option";
+    case ENOPROTOOPT: return "protocol not available";
+#endif
+#ifdef ENOSHARE
+    case ENOSHARE: return "no such host or network path";
 #endif
 #ifdef ENOSPC
     case ENOSPC: return "no space left on device";
 #endif
 #if defined(ENOSR) && (!defined(ENAMETOOLONG) || (ENAMETOOLONG != ENOSR))
-    case ENOSR: return "out of stream resources";
+    case ENOSR: return "out of streams resources";
 #endif
 #if defined(ENOSTR) && (!defined(ENOTTY) || (ENOTTY != ENOSTR))
-    case ENOSTR: return "not a stream device";
+    case ENOSTR: return "device not a stream";
 #endif
 #ifdef ENOSYM
     case ENOSYM: return "unresolved symbol name";
@@ -775,10 +829,7 @@ Tcl_ErrnoMsg(
     case ENOTBLK: return "block device required";
 #endif
 #ifdef ENOTCONN
-    case ENOTCONN: return "socket is not connected";
-#endif
-#ifdef ENOTRECOVERABLE
-    case ENOTRECOVERABLE: return "state not recoverable";
+    case ENOTCONN: return "transport endpoint is not connected";
 #endif
 #ifdef ENOTDIR
     case ENOTDIR: return "not a directory";
@@ -789,6 +840,9 @@ Tcl_ErrnoMsg(
 #ifdef ENOTNAM
     case ENOTNAM: return "not a name file";
 #endif
+#ifdef ENOTRECOVERABLE
+    case ENOTRECOVERABLE: return "state not recoverable";
+#endif
 #ifdef ENOTSOCK
     case ENOTSOCK: return "socket operation on non-socket";
 #endif
@@ -796,10 +850,13 @@ Tcl_ErrnoMsg(
     case ENOTSUP: return "operation not supported";
 #endif
 #ifdef ENOTTY
-    case ENOTTY: return "inappropriate device for ioctl";
+    case ENOTTY: return "inappropriate ioctl for device";
 #endif
 #ifdef ENOTUNIQ
     case ENOTUNIQ: return "name not unique on network";
+#endif
+#ifdef ENWAIT
+    case ENWAIT: return "No waiting processes";
 #endif
 #ifdef ENXIO
     case ENXIO: return "no such device or address";
@@ -811,13 +868,13 @@ Tcl_ErrnoMsg(
     case EOTHER: return "other error";
 #endif
 #if defined(EOVERFLOW) && (!defined(EFBIG) || (EOVERFLOW != EFBIG)) && (!defined(EINVAL) || (EOVERFLOW != EINVAL))
-    case EOVERFLOW: return "file too big";
+    case EOVERFLOW: return "value too large for defined data type";
 #endif
 #ifdef EOWNERDEAD
     case EOWNERDEAD: return "owner died";
 #endif
 #ifdef EPERM
-    case EPERM: return "not owner";
+    case EPERM: return "operation not permitted";
 #endif
 #if defined(EPFNOSUPPORT) && (!defined(ENOLCK) || (ENOLCK != EPFNOSUPPORT))
     case EPFNOSUPPORT: return "protocol family not supported";
@@ -847,10 +904,10 @@ Tcl_ErrnoMsg(
     case EPROTOTYPE: return "protocol wrong type for socket";
 #endif
 #ifdef ERANGE
-    case ERANGE: return "math result unrepresentable";
+    case ERANGE: return "numerical result out of range";
 #endif
 #if defined(EREFUSED) && (!defined(ECONNREFUSED) || (EREFUSED != ECONNREFUSED))
-    case EREFUSED: return "EREFUSED";
+    case EREFUSED: return "connection refused";
 #endif
 #ifdef EREMCHG
     case EREMCHG: return "remote address changed";
@@ -859,13 +916,16 @@ Tcl_ErrnoMsg(
     case EREMDEV: return "remote device";
 #endif
 #ifdef EREMOTE
-    case EREMOTE: return "pathname hit remote file system";
+    case EREMOTE: return "object is remote";
 #endif
 #ifdef EREMOTEIO
-    case EREMOTEIO: return "remote i/o error";
+    case EREMOTEIO: return "remote I/O error";
 #endif
 #ifdef EREMOTERELEASE
-    case EREMOTERELEASE: return "EREMOTERELEASE";
+    case EREMOTERELEASE: return "remote peer released connection";
+#endif
+#ifdef ERESTART
+    case ERESTART: return "interrupted system call should be restarted";
 #endif
 #ifdef EROFS
     case EROFS: return "read-only file system";
@@ -877,13 +937,13 @@ Tcl_ErrnoMsg(
     case ERREMOTE: return "object is remote";
 #endif
 #ifdef ESHUTDOWN
-    case ESHUTDOWN: return "cannot send after socket shutdown";
+    case ESHUTDOWN: return "cannot send after transport endpoint shutdown";
 #endif
 #ifdef ESOCKTNOSUPPORT
     case ESOCKTNOSUPPORT: return "socket type not supported";
 #endif
 #ifdef ESPIPE
-    case ESPIPE: return "invalid seek";
+    case ESPIPE: return "illegal seek";
 #endif
 #ifdef ESRCH
     case ESRCH: return "no such process";
@@ -892,10 +952,13 @@ Tcl_ErrnoMsg(
     case ESRMNT: return "srmount error";
 #endif
 #ifdef ESTALE
-    case ESTALE: return "stale remote file handle";
+    case ESTALE: return "stale file handle";
+#endif
+#ifdef ESTRPIPE
+    case ESTRPIPE: return "streams pipe error";
 #endif
 #ifdef ESUCCESS
-    case ESUCCESS: return "Error 0";
+    case ESUCCESS: return "success";
 #endif
 #if defined(ETIME) && (!defined(ELOOP) || (ETIME != ELOOP))
     case ETIME: return "timer expired";
@@ -907,7 +970,7 @@ Tcl_ErrnoMsg(
     case ETOOMANYREFS: return "too many references: cannot splice";
 #endif
 #ifdef ETXTBSY
-    case ETXTBSY: return "text file or pseudo-device busy";
+    case ETXTBSY: return "text file busy";
 #endif
 #ifdef EUCLEAN
     case EUCLEAN: return "structure needs cleaning";
@@ -925,10 +988,10 @@ Tcl_ErrnoMsg(
     case EWOULDBLOCK: return "operation would block";
 #endif
 #ifdef EXDEV
-    case EXDEV: return "cross-domain link";
+    case EXDEV: return "invalid cross-device link";
 #endif
 #ifdef EXFULL
-    case EXFULL: return "message tables full";
+    case EXFULL: return "exchange full";
 #endif
     default:
 #ifdef NO_STRERROR

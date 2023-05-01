@@ -736,7 +736,7 @@ CopyGrp(
  *
  * CopyHostent --
  *
- *      Copies string fields of the hostnent structure to the private buffer,
+ *      Copies string fields of the hostent structure to the private buffer,
  *      honouring the size of the buffer.
  *
  * Results:

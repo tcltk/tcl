@@ -552,7 +552,7 @@ test lsearch-23.1 {lsearch -stride option, errors} -body {
 } -returnCodes error -result {"-stride" option must be followed by stride length}
 test lsearch-23.2 {lsearch -stride option, errors} -body {
     lsearch -stride 0 {a b} a
-} -returnCodes error -result {stride length must be at least 1}
+} -returnCodes error -match glob -result {stride length must be between 1 and *}
 test lsearch-23.3 {lsearch -stride option, errors} -body {
     lsearch -stride 2 {a b c} a
 } -returnCodes error -result {list size must be a multiple of the stride length}
@@ -688,6 +688,9 @@ test lsearch-28.8 {lsearch -sorted with -stride} -body {
 test lsearch-28.9 {lsearch -sorted with -stride} -body {
     lsearch -sorted -stride 2 -index 1 -subindices -inline {3 5 8 7 2 9} 9
 } -result 9
+test lsearch-28.10 {lsearch -sorted with -stride} -body {
+    lsearch -sorted -stride 4294967296 -index 1 -subindices -inline {3 5 8 7 2 9} 9
+} -returnCodes 1 -match glob -result {stride length must be between 1 and *}
 
 
 # cleanup
