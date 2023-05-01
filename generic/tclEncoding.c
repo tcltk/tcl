@@ -1630,7 +1630,7 @@ Tcl_UtfToExternalDStringEx(
 	    } else {
 		/* Caller wants error message on failure */
 		if (result != TCL_OK && interp != NULL) {
-		    int pos = Tcl_NumUtfChars(srcStart, nBytesProcessed);
+		    int pos = TclNumUtfChars(srcStart, nBytesProcessed);
 		    int ucs4;
 		    char buf[TCL_INTEGER_SPACE];
 		    Tcl_UtfToUniChar(&srcStart[nBytesProcessed], &ucs4);

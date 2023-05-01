@@ -164,9 +164,9 @@ test utf-4.10 {Tcl_NumUtfChars: #x00, calc len, overcomplete} {testnumutfchars t
 test utf-4.11 {Tcl_NumUtfChars: 3 bytes of 4-byte UTF-8 characater} {testnumutfchars testbytestring} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end-1
 } 3
-test utf-4.12 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring} {
+test utf-4.12 {Tcl_NumUtfChars: #4-byte UTF-8 character} {testnumutfchars testbytestring deprecated} {
     testnumutfchars [testbytestring \xF0\x9F\x92\xA9] end
-} 1
+} 2
 test utf-4.13 {Tcl_NumUtfChars: end of string} {testnumutfchars testbytestring} {
     testnumutfchars foobar[testbytestring \xF2\xC2\xA0] end
 } 8

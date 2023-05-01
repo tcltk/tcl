@@ -3461,17 +3461,6 @@ MODULE_SCOPE void TclAppendUnicodeToObj(Tcl_Obj *, const int *, int);
 MODULE_SCOPE int TclUniCharNcasecmp(const int *, const int *, unsigned long);
 MODULE_SCOPE int TclUniCharCaseMatch(const int *, const int *, int);
 MODULE_SCOPE int TclUniCharNcmp(const int *, const int *, unsigned long);
-#undef Tcl_NumUtfChars
-#define Tcl_NumUtfChars TclNumUtfChars
-#undef Tcl_GetCharLength
-#define Tcl_GetCharLength TclGetCharLength
-#undef Tcl_UtfAtIndex
-#define Tcl_UtfAtIndex TclUtfAtIndex
-#undef Tcl_GetRange
-#define Tcl_GetRange TclGetRange
-#undef Tcl_GetUniChar
-#define Tcl_GetUniChar TclGetUniChar
-
 
 /*
  * Many parsing tasks need a common definition of whitespace.

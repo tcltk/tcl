@@ -48,8 +48,6 @@
 #undef Tcl_UniCharCaseMatch
 #undef Tcl_UniCharLen
 #undef Tcl_UniCharNcmp
-#undef Tcl_GetRange
-#undef Tcl_GetUniChar
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
@@ -78,11 +76,6 @@
 #undef Tcl_MacOSXOpenBundleResources
 #undef TclWinConvertWSAError
 #undef TclWinConvertError
-#undef Tcl_NumUtfChars
-#undef Tcl_GetCharLength
-#undef Tcl_UtfAtIndex
-#undef Tcl_GetRange
-#undef Tcl_GetUniChar
 #undef TclObjInterpProc
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -97,7 +90,7 @@ static void uniCodePanic(void) {
 }
 #   define Tcl_GetUnicode (unsigned short *(*)(Tcl_Obj *))(void *)uniCodePanic
 #   define Tcl_GetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, int *))(void *)uniCodePanic
-#   define TclGetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, ptrdiff_t *))(void *)uniCodePanic
+#   define TclGetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, void *))(void *)uniCodePanic
 #   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const unsigned short *, int))(void *)uniCodePanic
 #   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const unsigned short *, int))(void *)uniCodePanic
 #   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const unsigned short *, int))(void *)uniCodePanic

@@ -2932,7 +2932,7 @@ StringLowerCmd(
 	const char *start, *end;
 	Tcl_Obj *resultPtr;
 
-	length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	length1 = TclNumUtfChars(string1, length1) - 1;
 	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3017,7 +3017,7 @@ StringUpperCmd(
 	const char *start, *end;
 	Tcl_Obj *resultPtr;
 
-	length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	length1 = TclNumUtfChars(string1, length1) - 1;
 	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3102,7 +3102,7 @@ StringTitleCmd(
 	const char *start, *end;
 	Tcl_Obj *resultPtr;
 
-	length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	length1 = TclNumUtfChars(string1, length1) - 1;
 	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}

@@ -850,7 +850,6 @@ TclNumUtfChars(
 }
 
 #if !defined(TCL_NO_DEPRECATED)
-#undef Tcl_NumUtfChars
 int
 Tcl_NumUtfChars(
     const char *src,	/* The UTF-8 string to measure. */
@@ -1232,7 +1231,6 @@ TclUtfAtIndex(
 }
 
 #if !defined(TCL_NO_DEPRECATED)
-#undef Tcl_UtfAtIndex
 const char *
 Tcl_UtfAtIndex(
     const char *src,	/* The UTF-8 string. */

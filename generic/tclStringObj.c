@@ -631,7 +631,6 @@ TclGetCharLength(
 }
 
 #if !defined(TCL_NO_DEPRECATED)
-#undef Tcl_GetCharLength
 int
 Tcl_GetCharLength(
     Tcl_Obj *objPtr)		/* The String object to get the num chars
@@ -664,7 +663,7 @@ Tcl_GetCharLength(
 	(void) Tcl_GetByteArrayFromObj(objPtr, &numChars);
     } else {
 	Tcl_GetString(objPtr);
-	numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+	numChars = TclNumUtfChars(objPtr->bytes, objPtr->length);
     }
     return numChars;
 }
@@ -731,7 +730,6 @@ TclCheckEmptyString(
  */
 
 #if !defined(TCL_NO_DEPRECATED)
-#undef Tcl_GetUniChar
 int
 Tcl_GetUniChar(
     Tcl_Obj *objPtr,		/* The object to get the Unicode charater
@@ -983,7 +981,6 @@ TclGetUnicodeFromObj(
  */
 
 #if !defined(TCL_NO_DEPRECATED)
-#undef Tcl_GetRange
 Tcl_Obj *
 Tcl_GetRange(
     Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */
@@ -1015,7 +1012,7 @@ Tcl_GetRange(
 	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
     }
 
-    int numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+    int numChars = TclNumUtfChars(objPtr->bytes, objPtr->length);
 
     if (last < 0 || last >= numChars) {
 	last = numChars - 1;
@@ -1024,8 +1021,8 @@ Tcl_GetRange(
 	TclNewObj(newObjPtr);
 	return newObjPtr;
     }
-    const char *begin = Tcl_UtfAtIndex(objPtr->bytes, first);
-    const char *end = Tcl_UtfAtIndex(objPtr->bytes, last + 1);
+    const char *begin = TclUtfAtIndex(objPtr->bytes, first);
+    const char *end = TclUtfAtIndex(objPtr->bytes, last + 1);
     return Tcl_NewStringObj(begin, end - begin);
 }
 #endif
@@ -3935,8 +3932,8 @@ TclStringCmp(
 		if ((reqlength < 0) && !nocase) {
 		    memCmpFn = (memCmpFn_t)(void *)TclpUtfNcmp2;
 		} else {
-		    s1len = Tcl_NumUtfChars(s1, s1len);
-		    s2len = Tcl_NumUtfChars(s2, s2len);
+		    s1len = TclNumUtfChars(s1, s1len);
+		    s2len = TclNumUtfChars(s2, s2len);
 		    memCmpFn = (memCmpFn_t)(void *)
 			    (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
 		}
