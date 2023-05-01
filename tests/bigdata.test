@@ -889,8 +889,8 @@ bigtestRO lindex-bigdata-1 "lindex" {6 7 5 {} 5 4 {} 9 {}} -body {
     set l [bigList 0x10000000a]
 } -cleanup {
     bigClean
-} -constraints bug-dcac54a685
-# TODO after bug fix - nested index
+}
+# TODO nested index
 
 #
 # linsert
@@ -962,9 +962,10 @@ bigtestRO lmap-bigdata-1 "lmap" 4294967296 -body {
 
 #
 # lrange
-bigtestRO lrange-bigdata-1 "lrange" {6 7 5 {} 5 4 {} 9 {}} -body {
+bigtestRO lrange-bigdata-1 "lrange" {6 {6 7} 7 5 {} 5 4 {} 9 {8 9} {}} -body {
     list \
         [lrange $l 0x100000000 0x100000000] \
+        [lrange $l 0x100000000 0x100000001] \
         [lrange $l 0x100000000+1 0x100000000+1] \
         [lrange $l 0x100000000-1 0x100000000-1] \
         [lrange $l 0x10000000a 0x10000000a] \
@@ -972,13 +973,14 @@ bigtestRO lrange-bigdata-1 "lrange" {6 7 5 {} 5 4 {} 9 {}} -body {
         [lrange $l end-1 end-1] \
         [lrange $l end+1 end+1] \
         [lrange $l end-0x100000000 end-0x100000000] \
+        [lrange $l end-0x100000001 end-0x100000000] \
         [lrange $l end-0x10000000a end-0x10000000a]
 } -setup {
     set l [bigList 0x10000000a]
 } -cleanup {
     bigClean
-} -constraints bug-dcac54a685
-# TODO - once above bug is fixed, add tests for large result range
+}
+# TODO - add tests for large result range
 
 #
 # lrepeat - use bigtest, not bigtestRO !!
