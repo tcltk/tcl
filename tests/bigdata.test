@@ -353,8 +353,18 @@ bigtestRO string-range-bigdata-1 "string range" {6 7 5 {} 5 4 {} 9 {}} -body {
     set s [bigString 0x10000000a]
 } -cleanup {
     bigClean
-} -constraints bug-ad9361fd20f0
-# TODO - once above bug is fixed, add tests for large result range
+}
+bigtestRO string-range-bigdata-2 "bug ad9361fd20 case 1" aXaaaa -body {
+    string range [string insert [string repeat a 0x80000000] end-0x7fffffff X] 0 5
+}
+bigtestRO string-range-bigdata-3 "bug ad9361fd20 case 2" 2 -body {
+    string length [string range $s end-0x7fffffff end-0x7ffffffe]
+} -setup {
+    set s [string repeat a 0xffffffff]
+} -cleanup {
+    bigClean
+}
+# TODO - add tests for large result range
 
 #
 # string repeat - use bigtest, not bigtestRO !!
