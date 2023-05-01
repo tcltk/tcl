@@ -62,7 +62,7 @@ If passed no additional arguments, the \fBconfigure\fR method returns an
 alphabetically sorted dictionary of all \fIreadable\fR and \fIread-write\fR
 properties and their current values.
 .PP
-If passed a single addiional argument, that argument to the \fBconfigure\fR
+If passed a single additional argument, that argument to the \fBconfigure\fR
 method must be the name of a property to read (or an unambiguous prefix
 thereof); its value is returned.
 .PP

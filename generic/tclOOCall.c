@@ -2110,11 +2110,24 @@ AddDefinitionNamespaceToChain(
     definePtr->num++;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * FindClassProps --
+ *
+ *	Discover the properties known to a class and its superclasses.
+ *	The property names become the keys in the accumulator hash table
+ *	(which is used as a set).
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static void
 FindClassProps(
-    Class *clsPtr,
-    int writable,
-    Tcl_HashTable *accumulator)
+    Class *clsPtr,		/* The object to inspect. Must exist. */
+    int writable,		/* Whether we're after the readable or writable
+				 * property set. */
+    Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
     int i, dummy;
     Tcl_Obj *propName;
@@ -2148,11 +2161,24 @@ FindClassProps(
     }
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * FindObjectProps --
+ *
+ *	Discover the properties known to an object and all its classes.
+ *	The property names become the keys in the accumulator hash table
+ *	(which is used as a set).
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static void
 FindObjectProps(
-    Object *oPtr,
-    int writable,
-    Tcl_HashTable *accumulator)
+    Object *oPtr,		/* The object to inspect. Must exist. */
+    int writable,		/* Whether we're after the readable or writable
+				 * property set. */
+    Tcl_HashTable *accumulator)	/* Where to gather the names. */
 {
     int i, dummy;
     Tcl_Obj *propName;
@@ -2173,11 +2199,27 @@ FindObjectProps(
     FindClassProps(oPtr->selfCls, writable, accumulator);
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOGetAllClassProperties --
+ *
+ *	Get the list of all properties known to a class, including to its
+ *	superclasses. Manages a cache so this operation is usually cheap.
+ *	The order of properties in the resulting list is undefined.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 Tcl_Obj *
 TclOOGetAllClassProperties(
-    Class *clsPtr,
-    int writable,
-    int *allocated)
+    Class *clsPtr,		/* The class to inspect. Must exist. */
+    int writable,		/* Whether to get writable properties. If
+				 * false, readable properties will be returned
+				 * instead. */
+    int *allocated)		/* Address of variable to set to true if a
+				 * Tcl_Obj was allocated and may be safely
+				 * modified by the caller. */
 {
     Tcl_HashTable hashTable;
     FOREACH_HASH_DECLS;
@@ -2239,11 +2281,27 @@ TclOOGetAllClassProperties(
     return result;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOGetAllObjectProperties --
+ *
+ *	Get the list of all properties known to a object, including to its
+ *	classes. Manages a cache so this operation is usually cheap.
+ *	The order of properties in the resulting list is undefined.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 Tcl_Obj *
 TclOOGetAllObjectProperties(
-    Object *oPtr,
-    int writable,
-    int *allocated)
+    Object *oPtr,		/* The object to inspect. Must exist. */
+    int writable,		/* Whether to get writable properties. If
+				 * false, readable properties will be returned
+				 * instead. */
+    int *allocated)		/* Address of variable to set to true if a
+				 * Tcl_Obj was allocated and may be safely
+				 * modified by the caller. */
 {
     Tcl_HashTable hashTable;
     FOREACH_HASH_DECLS;
