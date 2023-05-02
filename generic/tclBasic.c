@@ -3299,7 +3299,7 @@ invokeObj2Command(
     Command *cmdPtr = (Command *) clientData;
 
     if (objc > INT_MAX) {
-	objc = TCL_INDEX_NONE; /* TODO - why? Should error, not truncate */
+	return TclCommandWordLimitError(interp, objc);
     }
     if (cmdPtr->objProc != NULL) {
 	result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
@@ -3316,6 +3316,9 @@ static int cmdWrapper2Proc(void *clientData,
     Tcl_Obj *const objv[])
 {
     Command *cmdPtr = (Command *)clientData;
+    if (objc > INT_MAX) {
+	return TclCommandWordLimitError(interp, objc);
+    }
     return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
 }
 
@@ -5140,7 +5143,7 @@ TclEvalScriptTokens(
     Tcl_Token *scriptTokenPtr = tokenPtr;
     Interp *iPtr = (Interp *) interp;
     int code = TCL_OK;
-    unsigned int objLength = 20;
+    Tcl_Size objLength = 20;
     int *expand, *expandStack; 
     Tcl_Size *lines, *lineSpace, *linesStack;
     Tcl_Obj **objvSpace, **stackObjArray;
@@ -5251,8 +5254,8 @@ TclEvalScriptTokens(
 	    TclStackAlloc(interp, objLength * sizeof(Tcl_Size));
     while (numCommands-- && (code == TCL_OK)) {
 	int expandRequested = 0;
-	size_t objc, objectsNeeded = 0;
-        size_t numWords = tokenPtr->numComponents;
+	Tcl_Size objc, objectsNeeded = 0;
+        Tcl_Size numWords = tokenPtr->numComponents;
 	Tcl_Obj **objv;
         Tcl_Token *commandTokenPtr = tokenPtr;
 

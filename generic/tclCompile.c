@@ -889,6 +889,18 @@ TclSetByteCodeFromAny(
     }
 
     /*
+     * After optimization is all done, check that byte code length limits
+     * are not exceeded. Bug [27b3ce2997].
+     */
+    if ((compEnv.codeNext - compEnv.codeStart) > INT_MAX) {
+	/*
+	 * Cannot just return TCL_ERROR as callers ignore return value.
+	 * TODO - May be use TclCompileSyntaxError here?
+	 */
+	Tcl_Panic("Maximum byte code length %d exceeded.", INT_MAX);
+    }
+
+    /*
      * Change the object into a ByteCode object. Ownership of the literal
      * objects and aux data items passes to the ByteCode object.
      */
@@ -2188,7 +2200,7 @@ TclCompileScript(
 				 * serves as context for finding and compiling
 				 * commands. May not be NULL. */
     const char *script,		/* The source script to compile. */
-    Tcl_Size numBytes,		/* Number of bytes in script. If -1, the
+    Tcl_Size numBytes,		/* Number of bytes in script. If < 0, the
 				 * script consists of all bytes up to the
 				 * first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
