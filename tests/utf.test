@@ -95,11 +95,11 @@ test utf-1.15 {Tcl_UniCharToUtf: surrogate pairs from concat} {
 test utf-1.16 {Tcl_UniCharToUtf: \xC0 + \x80} testbytestring {
     set lo [testbytestring \x80]
     string length [testbytestring \xC0]$lo
-} 2
+} 1
 test utf-1.17 {Tcl_UniCharToUtf: \xC0 + \x80} testbytestring {
     set hi [testbytestring \xC0]
     string length $hi[testbytestring \x80]
-} 2
+} 1
 test utf-1.18 {Tcl_UniCharToUtf: surrogate pairs from concat} {
     string cat \uD83D \uDE02
 } \uD83D\uDE02

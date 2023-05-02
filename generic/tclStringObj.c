@@ -69,9 +69,6 @@ static void		SetUnicodeObj(Tcl_Obj *objPtr,
 static Tcl_Size		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 
-#define ISCONTINUATION(bytes) (\
-	((bytes)[0] & 0xC0) == 0x80)
-
 
 /*
  * The structure below defines the string Tcl object type by means of
@@ -1238,12 +1235,6 @@ Tcl_AppendLimitedToObj(
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
-    /* If appended string starts with a continuation byte or a lower surrogate,
-     * force objPtr to unicode representation. See [7f1162a867] */
-    if (bytes && ISCONTINUATION(bytes)) {
-	Tcl_GetUnicode(objPtr);
-	stringPtr = GET_STRING(objPtr);
-    }
     if (stringPtr->hasUnicode && (stringPtr->numChars+1) > 1) {
 	AppendUtfToUnicodeRep(objPtr, bytes, toCopy);
     } else {
@@ -1443,13 +1434,6 @@ Tcl_AppendObjToObj(
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
-    /* If appended string starts with a continuation byte or a lower surrogate,
-     * force objPtr to unicode representation. See [7f1162a867]
-     * This fixes append-3.4, append-3.7 and utf-1.18 testcases. */
-    if (ISCONTINUATION(TclGetString(appendObjPtr))) {
-	Tcl_GetUnicode(objPtr);
-	stringPtr = GET_STRING(objPtr);
-    }
     /*
      * If objPtr has a valid Unicode rep, then get a Unicode string from
      * appendObjPtr and append it.
@@ -3107,9 +3091,7 @@ TclStringCat(
 		 */
 
 	 	binary = 0;
-	 	if (ov > objv+1 && ISCONTINUATION(TclGetString(objPtr))) {
-	 	    forceUniChar = 1;
-	 	} else if ((objPtr->typePtr) && (objPtr->typePtr != &tclStringType)) {
+	 	if ((objPtr->typePtr) && (objPtr->typePtr != &tclStringType)) {
 		    /* Prevent shimmer of non-string types. */
 		    allowUniChar = 0;
 		}
