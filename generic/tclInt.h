@@ -2451,16 +2451,6 @@ typedef enum TclEolTranslation {
 #define TCL_INVOKE_NO_UNKNOWN	(1<<1)
 #define TCL_INVOKE_NO_TRACEBACK	(1<<2)
 
-#if TCL_MAJOR_VERSION > 8
-/*
- * SSIZE_MAX, NOT SIZE_MAX as negative differences need to be expressed
- * between values of the Tcl_Size type so limit the range to signed
- */
-#   define ListSizeT_MAX ((Tcl_Size)PTRDIFF_MAX)
-#else
-#   define ListSizeT_MAX INT_MAX
-#endif
-
 /*
  * ListStore --
  *
@@ -2501,7 +2491,8 @@ typedef struct ListStore {
 
 /* Max number of elements that can be contained in a list */
 #define LIST_MAX                                               \
-    ((Tcl_Size)((ListSizeT_MAX - offsetof(ListStore, slots)) / sizeof(Tcl_Obj *)))
+    ((Tcl_Size)(((size_t)TCL_SIZE_MAX - offsetof(ListStore, slots)) \
+		   / sizeof(Tcl_Obj *)))
 /* Memory size needed for a ListStore to hold numSlots_ elements */
 #define LIST_SIZE(numSlots_) \
 	((Tcl_Size)(offsetof(ListStore, slots) + ((numSlots_) * sizeof(Tcl_Obj *))))
@@ -4173,6 +4164,12 @@ MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
 MODULE_SCOPE int	TclIndexInvalidError(Tcl_Interp *interp,
 			    const char *idxType, Tcl_Size idx);
+
+/*
+ * Error message utility functions
+ */
+MODULE_SCOPE int TclCommandWordLimitError(Tcl_Interp *interp, Tcl_Size count);
+
 #endif /* TCL_MAJOR_VERSION > 8 */
 
 /* Constants used in index value encoding routines. */

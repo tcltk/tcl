@@ -307,31 +307,33 @@ ValidateFormat(
 	     * format string.
 	     */
 
-	    long longVal = strtoul(format-1, &end, 10);	/* INTL: "C" locale. */
+	    /* assert(value is >= 0) because of the isdigit() check above */
+	    unsigned long long ull = strtoull(format-1, &end, 10);	/* INTL: "C" locale. */
 	    if (*end != '$') {
 		goto notXpg;
 	    }
-	    /* assert(longVal >= 0) because of the isdigit() check above */
 	    format = end+1;
 	    format += TclUtfToUniChar(format, &ch);
 	    gotXpg = 1;
 	    if (gotSequential) {
 		goto mixedXPG;
 	    }
-	    objIndex = longVal - 1;
-	    /* INT_MAX because 9.0 does not support more than INT_MAX-1 args */
-	    if ((objIndex < 0) || objIndex >= INT_MAX ||
-		(numVars && (objIndex >= numVars))) {
+	    /* >=INT_MAX because 9.0 does not support more than INT_MAX-1 args */
+	    if (ull == 0 || ull >= INT_MAX) {
+		goto badIndex;
+	    }
+	    objIndex = (int) ull - 1;
+	    if (numVars && (objIndex >= numVars)) {
 		goto badIndex;
 	    }
 	    else if (numVars == 0) {
 		/*
 		 * In the case where no vars are specified, the user can
 		 * specify %9999$ legally, so we have to consider special
-		 * rules for growing the assign array. 'longVal' is guaranteed
-		 * to be > 0.
+		 * rules for growing the assign array. 'ull' is guaranteed
+		 * to be > 0 and < INT_MAX as per checks above.
 		 */
-		xpgSize = (xpgSize > longVal) ? xpgSize : longVal;
+		xpgSize = (xpgSize > (int)ull) ? xpgSize : (int)ull;
 	    }
 	    goto xpgCheckDone;
 	}
