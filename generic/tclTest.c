@@ -15,6 +15,10 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#if defined(_MSC_VER) && !defined(NDEBUG)
+#   pragma warning(disable:4133)
+#endif
+
 #undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
