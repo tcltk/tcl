@@ -196,7 +196,7 @@ bigtestRO string-first-bigdata-1 "string first > INT_MAX" {2147483648 -1 2147483
     set s [bigString 0x8000000a 0x80000000]
 } -cleanup {
     bigClean
-} -constraints bug-a814ee5bbd
+}
 
 bigtestRO string-first-bigdata-2 "string first > UINT_MAX" {4294967296 -1 4294967300 1} -body {
     list \
@@ -208,7 +208,7 @@ bigtestRO string-first-bigdata-2 "string first > UINT_MAX" {4294967296 -1 429496
     set s [bigString 0x10000000a 0x100000000]
 } -cleanup {
     bigClean
-} -constraints bug-a814ee5bbd
+}
 
 bigtestRO string-first-bigdata-3 "string first - long needle" 10 -body {
     string first $needle $s
@@ -217,7 +217,7 @@ bigtestRO string-first-bigdata-3 "string first - long needle" 10 -body {
     set needle [bigString 0x100000000]
 } -cleanup {
    bigClean needle
-} -constraints bug-a814ee5bbd
+}
 
 #
 # string index
@@ -274,8 +274,7 @@ bigtestRO string-last-bigdata-1 "string last > INT_MAX" {2 -1 2147483640 11} -bo
     set s [bigString 0x80000010 2]
 } -cleanup {
     bigClean
-} -constraints bug-a814ee5bbd
-
+}
 bigtestRO string-last-bigdata-2 "string last > UINT_MAX" {4294967300 -1 4294967290 1} -body {
     list \
         [string last 0 $s] \
@@ -286,8 +285,7 @@ bigtestRO string-last-bigdata-2 "string last > UINT_MAX" {4294967300 -1 42949672
     set s [bigString 0x10000000a 2]
 } -cleanup {
     bigClean
-} -constraints bug-a814ee5bbd
-
+}
 bigtestRO string-last-bigdata-3 "string last - long needle" 0 -body {
     string last $needle $s
 } -setup {
@@ -295,7 +293,7 @@ bigtestRO string-last-bigdata-3 "string last - long needle" 0 -body {
     set needle [bigString 0x100000000]
 } -cleanup {
     bigClean needle
-} -constraints bug-a814ee5bbd
+}
 
 #
 # string length
@@ -723,7 +721,6 @@ bigtestRO binary-format-bigdata-1 "binary format aN" [list 4294967296  X\0\0\0 \
 } -cleanup {
     bigClean
 } 
-# -constraints bug-9369f83649
 # TODO - do string compare and add other format specifiers
 
 bigtestRO binary-format-bigdata-2 "binary format a*" 1 -body {
@@ -751,7 +748,6 @@ bigtestRO binary-scan-bigdata-1 "binary scan aN" {4294967296 0123 2345} -body {
 } -cleanup {
     bigClean
 }
-# -constraints bug-9369f83649
 # TODO - do string compare and add other format specifiers once above bug is fixed
 
 bigtestRO binary-scan-bigdata-2 "binary scan a*" 1 -body {
@@ -863,14 +859,15 @@ bigtest ledit-bigdata-2 "ledit - large result" {4294967304 4294967304 {a b c d e
     bigClean
 }
 
-bigtest ledit-bigdata-3 "ledit - small -> large result" {2147483651 2147483651} -body {
-    set l2 {a b c x y z}
-    list [llength [ledit l2 2 3 {*}$l]] [llength $l2]
+bigtest ledit-bigdata-3 "ledit - small -> large result" {2147483650 2147483650 {a b 0 1 2 3 4 5} {0 1 e f g h i j}} -body {
+    set l2 {a b c d e f g h i j}
+    list [llength [ledit l2 2 3 {*}$l]] [llength $l2] [lrange $l2 0 7] [lrange $l2 end-7 end]
 } -setup {
-    set l [bigList 2147483647]
+    # Note total number of arguments has to be less than INT_MAX
+    set l [bigList 2147483642]
 } -cleanup {
     bigClean
-} -constraints bug-7cddd2845c
+} -constraints memory-allocation-panic
 
 #
 # lindex
