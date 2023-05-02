@@ -1090,13 +1090,12 @@ test puts-bigdata-2 "puts" -setup {
 } -constraints {
     bug0306a5563
     bigdata
-    knownBug
 } -body {
     set fd [open $fpath w]
     set s [testbigdata string 0x7FFFFFFE]
-    # The character to append in the next line is EM DASH, 
+    # The character to append in the next line is —, EM DASH, 
     # code point 0x2014 (decimal 8212, UTF-8 #xE2 #x80 #x94) 
-    append s —
+    append s \u2014
     puts -nonewline $fd $s
     close $fd
     set fd [open $fpath]
@@ -1104,7 +1103,7 @@ test puts-bigdata-2 "puts" -setup {
     set written [read $fd]
     close $fd
     set written
-} -result {23456—}
+} -result {2345—}
 
 #
 # TODO
