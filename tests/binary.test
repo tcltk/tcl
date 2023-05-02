@@ -3042,9 +3042,6 @@ test binary-80.3 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 
 test binary-80.4 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xF0\x9F\x98\x81"]
 } -result "expected byte sequence but character 4 was '\U01F601' (U+01F601)"
-test binary-80.5 {Tcl_GetBytesFromObj} -constraints testbytestring -constraints {pointerIs64bit deprecated} -body {
-    testbytestring [string repeat A [expr 2**31]]
-} -returnCodes 1 -result "byte sequence length exceeds INT_MAX"
 
 # ----------------------------------------------------------------------
 # cleanup

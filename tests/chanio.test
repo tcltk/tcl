@@ -5287,7 +5287,7 @@ test chan-io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
 test chan-io-39.22 {Tcl_SetChannelOption, invariance} -setup {
     file delete $path(test1)
     set l ""
-} -constraints {unix deprecated} -body {
+} -constraints unix -body {
     set f1 [open $path(test1) w+]
     lappend l [chan configure $f1 -eofchar]
     chan configure $f1 -eofchar {O {}}
@@ -5297,7 +5297,7 @@ test chan-io-39.22 {Tcl_SetChannelOption, invariance} -setup {
 } -cleanup {
     chan close $f1
 } -result {{} O D}
-test chan-io-39.22a {Tcl_SetChannelOption, invariance} -constraints deprecated -setup {
+test chan-io-39.22a {Tcl_SetChannelOption, invariance} -setup {
     file delete $path(test1)
     set l [list]
 } -body {

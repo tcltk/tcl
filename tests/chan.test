@@ -56,7 +56,7 @@ test chan-4.2 {chan command: [Bug 800753]} -body {
 test chan-4.3 {chan command: [Bug 800753]} -body {
     chan configure stdout -eofchar \x00
 } -returnCodes error -result {bad value for -eofchar: must be non-NUL ASCII character}
-test chan-4.4 {chan command: check valid inValue, no outValue} -constraints deprecated -body {
+test chan-4.4 {chan command: check valid inValue, no outValue} -body {
     chan configure stdout -eofchar [list \x27 {}]
 } -result {}
 test chan-4.5 {chan command: check valid inValue, invalid outValue} -body {
