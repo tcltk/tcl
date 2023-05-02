@@ -2414,12 +2414,6 @@ typedef enum TclEolTranslation {
 #define TCL_INVOKE_NO_TRACEBACK	(1<<2)
 
 /*
- * SSIZE_MAX, NOT SIZE_MAX as negative differences need to be expressed
- * between values of the Tcl_Size type so limit the range to signed
- */
-#   define ListSizeT_MAX ((Tcl_Size)PTRDIFF_MAX)
-
-/*
  * ListStore --
  *
  * A Tcl list's internal representation is defined through three structures.
@@ -2459,7 +2453,8 @@ typedef struct ListStore {
 
 /* Max number of elements that can be contained in a list */
 #define LIST_MAX                                               \
-    ((Tcl_Size)((ListSizeT_MAX - offsetof(ListStore, slots)) / sizeof(Tcl_Obj *)))
+    ((Tcl_Size)(((size_t)TCL_SIZE_MAX - offsetof(ListStore, slots)) \
+		   / sizeof(Tcl_Obj *)))
 /* Memory size needed for a ListStore to hold numSlots_ elements */
 #define LIST_SIZE(numSlots_) \
 	((Tcl_Size)(offsetof(ListStore, slots) + ((numSlots_) * sizeof(Tcl_Obj *))))

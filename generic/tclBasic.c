@@ -3298,11 +3298,7 @@ invokeObj2Command(
     Command *cmdPtr = (Command *) clientData;
 
     if (objc > INT_MAX) {
-	/* Since TCL_INDEX_NONE is an invalid value for objc,
-	 * calling cmdPtr->objProc or cmdPtr->nreProc will
-	 * eventually result in a Tcl_WrongNumArgs() call.
-	 * That's exactly what we want to happen. */
-	objc = TCL_INDEX_NONE;
+	return TclCommandWordLimitError(interp, objc);
     }
     if (cmdPtr->objProc != NULL) {
 	result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
@@ -3319,6 +3315,9 @@ static int cmdWrapper2Proc(void *clientData,
     Tcl_Obj *const objv[])
 {
     Command *cmdPtr = (Command *)clientData;
+    if (objc > INT_MAX) {
+	return TclCommandWordLimitError(interp, objc);
+    }
     return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
 }
 
