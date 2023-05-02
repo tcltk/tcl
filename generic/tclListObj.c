@@ -68,7 +68,8 @@
 #endif
 
 /* Checks for when caller should have already converted to internal list type */
-#define LIST_ASSERT_TYPE(listObj_) LIST_ASSERT(INTREP_IS_LISTREP(listObj_))
+#define LIST_ASSERT_TYPE(listObj_) \
+    LIST_ASSERT(TclHasInternalRep((listObj_), &tclListType.objType))
 
 /*
  * If ENABLE_LIST_INVARIANTS is enabled (-DENABLE_LIST_INVARIANTS from the
