@@ -1702,11 +1702,11 @@ Tcl_CreateChannel(
     }
     statePtr->inputEncodingState  = NULL;
     statePtr->inputEncodingFlags  = TCL_ENCODING_START;
-    CHANNEL_PROFILE_SET(statePtr->inputEncodingFlags,
+    ENCODING_PROFILE_SET(statePtr->inputEncodingFlags,
 			     TCL_ENCODING_PROFILE_TCL8);
     statePtr->outputEncodingState = NULL;
     statePtr->outputEncodingFlags = TCL_ENCODING_START;
-    CHANNEL_PROFILE_SET(statePtr->outputEncodingFlags,
+    ENCODING_PROFILE_SET(statePtr->outputEncodingFlags,
 			     TCL_ENCODING_PROFILE_TCL8);
 
     /*
@@ -8067,7 +8067,7 @@ Tcl_GetChannelOption(
 	    Tcl_DStringAppendElement(dsPtr, "-profile");
 	}
 	/* Note currently input and output profiles are same */
-	profile = CHANNEL_PROFILE_GET(statePtr->inputEncodingFlags);
+	profile = ENCODING_PROFILE_GET(statePtr->inputEncodingFlags);
 	profileName = TclEncodingProfileIdToName(interp, profile);
 	if (profileName == NULL) {
 	    return TCL_ERROR;
@@ -8273,12 +8273,12 @@ Tcl_SetChannelOption(
 	Tcl_FreeEncoding(statePtr->encoding);
 	statePtr->encoding = encoding;
 	statePtr->inputEncodingState = NULL;
-	profile = CHANNEL_PROFILE_GET(statePtr->inputEncodingFlags);
+	profile = ENCODING_PROFILE_GET(statePtr->inputEncodingFlags);
 	statePtr->inputEncodingFlags = TCL_ENCODING_START;
-	CHANNEL_PROFILE_SET(statePtr->inputEncodingFlags, profile);
+	ENCODING_PROFILE_SET(statePtr->inputEncodingFlags, profile);
 	statePtr->outputEncodingState = NULL;
 	statePtr->outputEncodingFlags = TCL_ENCODING_START;
-	CHANNEL_PROFILE_SET(statePtr->outputEncodingFlags, profile); /* Same as input */
+	ENCODING_PROFILE_SET(statePtr->outputEncodingFlags, profile); /* Same as input */
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	UpdateInterest(chanPtr);
 	return TCL_OK;
@@ -8342,8 +8342,8 @@ Tcl_SetChannelOption(
 	if (TclEncodingProfileNameToId(interp, newValue, &profile) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	CHANNEL_PROFILE_SET(statePtr->inputEncodingFlags, profile);
-	CHANNEL_PROFILE_SET(statePtr->outputEncodingFlags, profile);
+	ENCODING_PROFILE_SET(statePtr->inputEncodingFlags, profile);
+	ENCODING_PROFILE_SET(statePtr->outputEncodingFlags, profile);
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA|CHANNEL_ENCODING_ERROR);
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {
@@ -9470,8 +9470,8 @@ TclCopyChannel(
 	    && inStatePtr->inputTranslation == TCL_TRANSLATE_LF
 	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
 	    && inStatePtr->encoding == outStatePtr->encoding
-	    && CHANNEL_PROFILE_GET(inStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
-	    && CHANNEL_PROFILE_GET(outStatePtr->outputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8;
+	    && ENCODING_PROFILE_GET(inStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
+	    && ENCODING_PROFILE_GET(outStatePtr->outputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8;
 
     /*
      * Allocate a new CopyState to maintain info about the current copy in
@@ -9799,8 +9799,8 @@ CopyData(
     inBinary = (inStatePtr->encoding == NULL);
     outBinary = (outStatePtr->encoding == NULL);
     sameEncoding = inStatePtr->encoding == outStatePtr->encoding
-	    && CHANNEL_PROFILE_GET(inStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
-	    && CHANNEL_PROFILE_GET(outStatePtr->outputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8;
+	    && ENCODING_PROFILE_GET(inStatePtr->inputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8
+	    && ENCODING_PROFILE_GET(outStatePtr->outputEncodingFlags) == TCL_ENCODING_PROFILE_TCL8;
 
     if (!(inBinary || sameEncoding)) {
 	TclNewObj(bufObj);
