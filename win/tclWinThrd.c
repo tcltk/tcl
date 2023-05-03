@@ -696,40 +696,150 @@ TclpFinalizeMutex(
  *
  *----------------------------------------------------------------------
  */
+
 void
 Tcl_ConditionWait(
-    Tcl_Condition *const condPtr,
-    Tcl_Mutex *const mutexPtr,
+    Tcl_Condition *condPtr,	/* Really (WinCondition **) */
+    Tcl_Mutex *mutexPtr,	/* Really (CRITICAL_SECTION **) */
     const Tcl_Time *timePtr) /* Timeout on waiting period */
 {
+    WinCondition *winCondPtr;	/* Per-condition queue head */
+    CRITICAL_SECTION *csPtr;	/* Caller's Mutex, after casting */
+    DWORD wtime;		/* Windows time value */
+    int timeout;		/* True if we got a timeout */
+    int doExit = 0;		/* True if we need to do exit setup */
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    /* BROKEN API: double-checked locking, which is broken, but needs changes
-    the Tcl C API to fix
-    "correct" double-checked locking needs an import memory barrier here */
+    /*
+     * Self initialize the two parts of the condition. The per-condition and
+     * per-thread parts need to be handled independently.
+     */
+
+    if (tsdPtr->flags == WIN_THREAD_UNINIT) {
+	TclpGlobalLock();
+
+	/*
+	 * Create the per-thread event and queue pointers.
+	 */
+
+	if (tsdPtr->flags == WIN_THREAD_UNINIT) {
+	    tsdPtr->condEvent = CreateEventW(NULL, TRUE /* manual reset */,
+		    FALSE /* non signaled */, NULL);
+	    tsdPtr->nextPtr = NULL;
+	    tsdPtr->prevPtr = NULL;
+	    tsdPtr->flags = WIN_THREAD_RUNNING;
+	    doExit = 1;
+	}
+	TclpGlobalUnlock();
+
+	if (doExit) {
+	    /*
+	     * Create a per-thread exit handler to clean up the condEvent. We
+	     * must be careful to do this outside the Global Lock because
+	     * Tcl_CreateThreadExitHandler uses its own ThreadSpecificData,
+	     * and initializing that may drop back into the Global Lock.
+	     */
+
+	    Tcl_CreateThreadExitHandler(FinalizeConditionEvent, tsdPtr);
+	}
+    }
+
     if (*condPtr == NULL) {
 	TclpGlobalLock();
 
+	/*
+	 * Initialize the per-condition queue pointers and Mutex.
+	 */
+
 	if (*condPtr == NULL) {
-	    WinCondition *winCondPtr = Tcl_Alloc(sizeof *winCondPtr);
-	    InitializeConditionVariable (&winCondPtr->cv);
-	    *condPtr = winCondPtr;
-	    TclRememberCondition (condPtr);
+	    winCondPtr = (WinCondition *)Tcl_Alloc(sizeof(WinCondition));
+	    InitializeCriticalSection(&winCondPtr->condLock);
+	    winCondPtr->firstPtr = NULL;
+	    winCondPtr->lastPtr = NULL;
+	    *condPtr = (Tcl_Condition) winCondPtr;
+	    TclRememberCondition(condPtr);
 	}
 	TclpGlobalUnlock();
     }
-    /* mutexPtr is not checkd for lazy initialization,
-    but the caller is supposed to be holding it */
+    csPtr = *((CRITICAL_SECTION **)mutexPtr);
+    winCondPtr = *((WinCondition **)condPtr);
+    if (timePtr == NULL) {
+	wtime = INFINITE;
+    } else {
+	wtime = (DWORD)timePtr->sec * 1000 + (unsigned long)timePtr->usec / 1000;
+    }
 
-    if (!SleepConditionVariableCS (&(*condPtr)->cv, &(*mutexPtr)->crit,
-	    !timePtr? INFINITE: timePtr->sec * 1000 + timePtr->usec / 1000)) {
-	switch (GetLastError ()) {
-	default:
-	    TclWinFailure ("SleepConditionVariableCS");
-	case ERROR_TIMEOUT:
-	    /* the TCL Thread API does not report timeouts */
-	    EnterCriticalSection (&(*mutexPtr)->crit);
+    /*
+     * Queue the thread on the condition, using the per-condition lock for
+     * serialization.
+     */
+
+    tsdPtr->flags = WIN_THREAD_BLOCKED;
+    tsdPtr->nextPtr = NULL;
+    EnterCriticalSection(&winCondPtr->condLock);
+    tsdPtr->prevPtr = winCondPtr->lastPtr;		/* A: */
+    winCondPtr->lastPtr = tsdPtr;
+    if (tsdPtr->prevPtr != NULL) {
+	tsdPtr->prevPtr->nextPtr = tsdPtr;
+    }
+    if (winCondPtr->firstPtr == NULL) {
+	winCondPtr->firstPtr = tsdPtr;
+    }
+
+    /*
+     * Unlock the caller's mutex and wait for the condition, or a timeout.
+     * There is a minor issue here in that we don't count down the timeout if
+     * we get notified, but another thread grabs the condition before we do.
+     * In that race condition we'll wait again for the full timeout. Timed
+     * waits are dubious anyway. Either you have the locking protocol wrong
+     * and are masking a deadlock, or you are using conditions to pause your
+     * thread.
+     */
+
+    LeaveCriticalSection(csPtr);
+    timeout = 0;
+    while (!timeout && (tsdPtr->flags & WIN_THREAD_BLOCKED)) {
+	ResetEvent(tsdPtr->condEvent);
+	LeaveCriticalSection(&winCondPtr->condLock);
+	if (WaitForSingleObjectEx(tsdPtr->condEvent, wtime,
+		TRUE) == WAIT_TIMEOUT) {
+	    timeout = 1;
+	}
+	EnterCriticalSection(&winCondPtr->condLock);
+    }
+
+    /*
+     * Be careful on timeouts because the signal might arrive right around the
+     * time limit and someone else could have taken us off the queue.
+     */
+
+    if (timeout) {
+	if (tsdPtr->flags & WIN_THREAD_RUNNING) {
+	    timeout = 0;
+	} else {
+	    /*
+	     * When dequeueing, we can leave the tsdPtr->nextPtr and
+	     * tsdPtr->prevPtr with dangling pointers because they are
+	     * reinitialized w/out reading them when the thread is enqueued
+	     * later.
+	     */
+
+	    if (winCondPtr->firstPtr == tsdPtr) {
+		winCondPtr->firstPtr = tsdPtr->nextPtr;
+	    } else {
+		tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
+	    }
+	    if (winCondPtr->lastPtr == tsdPtr) {
+		winCondPtr->lastPtr = tsdPtr->prevPtr;
+	    } else {
+		tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
+	    }
+	    tsdPtr->flags = WIN_THREAD_RUNNING;
 	}
     }
+
+    LeaveCriticalSection(&winCondPtr->condLock);
+    EnterCriticalSection(csPtr);
 }
 
 /*

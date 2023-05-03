@@ -55,7 +55,7 @@ LocateTargetAddresses(
 {
     unsigned char *currentInstPtr, *targetInstPtr;
     int isNew;
-    size_t i;
+    Tcl_Size i;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
 
@@ -232,7 +232,7 @@ ConvertZeroEffectToNOP(
 		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
 			TclGetUInt1AtPtr(currentInstPtr + 1));
-		size_t numBytes;
+		Tcl_Size numBytes;
 
 		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
 		if (numBytes == 0) {
@@ -247,7 +247,7 @@ ConvertZeroEffectToNOP(
 		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
 			TclGetUInt4AtPtr(currentInstPtr + 1));
-		size_t numBytes;
+		Tcl_Size numBytes;
 
 		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
 		if (numBytes == 0) {

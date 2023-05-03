@@ -107,7 +107,7 @@ Tcl_PutsObjCmd(
     Tcl_Obj *string;		/* String to write. */
     Tcl_Obj *chanObjPtr = NULL;	/* channel object. */
     int newline;		/* Add a newline at end? */
-    size_t result;		/* Result of puts operation. */
+    Tcl_Size result;		/* Result of puts operation. */
     int mode;			/* Mode in which channel is opened. */
 
     switch (objc) {
@@ -281,7 +281,7 @@ Tcl_GetsObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to read from. */
-    size_t lineLen;		/* Length of line just read. */
+    Tcl_Size lineLen;		/* Length of line just read. */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *linePtr, *chanObjPtr;
     int code = TCL_OK;
@@ -369,7 +369,7 @@ Tcl_ReadObjCmd(
     Tcl_Channel chan;		/* The channel to read from. */
     int newline, i;		/* Discard newline at end? */
     Tcl_WideInt toRead;			/* How many bytes to read? */
-    size_t charactersRead;		/* How many characters were read? */
+    Tcl_Size charactersRead;		/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *resultPtr, *chanObjPtr;
 
@@ -430,10 +430,10 @@ Tcl_ReadObjCmd(
     }
 
     TclNewObj(resultPtr);
-    Tcl_IncrRefCount(resultPtr);
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
     if (charactersRead == TCL_IO_FAILURE) {
+	Tcl_DecrRefCount(resultPtr);
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
@@ -447,7 +447,6 @@ Tcl_ReadObjCmd(
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
 	TclChannelRelease(chan);
-	Tcl_DecrRefCount(resultPtr);
 	return TCL_ERROR;
     }
 
@@ -457,7 +456,7 @@ Tcl_ReadObjCmd(
 
     if ((charactersRead > 0) && (newline != 0)) {
 	const char *result;
-	size_t length;
+	Tcl_Size length;
 
 	result = Tcl_GetStringFromObj(resultPtr, &length);
 	if (result[length - 1] == '\n') {
@@ -466,7 +465,6 @@ Tcl_ReadObjCmd(
     }
     Tcl_SetObjResult(interp, resultPtr);
     TclChannelRelease(chan);
-    Tcl_DecrRefCount(resultPtr);
     return TCL_OK;
 }
 
@@ -700,7 +698,7 @@ Tcl_CloseObjCmd(
 
 	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 	const char *string;
-	size_t len;
+	Tcl_Size len;
 
 	if (Tcl_IsShared(resultPtr)) {
 	    resultPtr = Tcl_DuplicateObj(resultPtr);
@@ -860,7 +858,7 @@ Tcl_ExecObjCmd(
     const char *string;
     Tcl_Channel chan;
     int argc, background, i, index, keepNewline, result, skip, ignoreStderr;
-    size_t length;
+    Tcl_Size length;
     static const char *const options[] = {
 	"-ignorestderr", "-keepnewline", "--", NULL
     };
@@ -1009,7 +1007,7 @@ Tcl_ExecObjCmd(
  *
  * Side effects:
  *	Sets interp's result to boolean true or false depending on whether the
- *	preceeding input operation on the channel would have blocked.
+ *	preceding input operation on the channel would have blocked.
  *
  *---------------------------------------------------------------------------
  */
@@ -1083,7 +1081,7 @@ Tcl_OpenObjCmd(
 	if (objc == 4) {
 	    const char *permString = TclGetString(objv[3]);
 	    int code = TCL_ERROR;
-	    int scanned = TclParseAllWhiteSpace(permString, TCL_INDEX_NONE);
+	    int scanned = TclParseAllWhiteSpace(permString, -1);
 
 	    /*
 	     * Support legacy octal numbers.
@@ -1121,7 +1119,7 @@ Tcl_OpenObjCmd(
 	chan = Tcl_FSOpenFileChannel(interp, objv[1], modeString, prot);
     } else {
 	int mode, seekFlag, binary;
-	size_t cmdObjc;
+	Tcl_Size cmdObjc;
 	const char **cmdArgv;
 
 	if (Tcl_SplitList(interp, what+1, &cmdObjc, &cmdArgv) != TCL_OK) {

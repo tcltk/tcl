@@ -455,7 +455,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    size_t *lengthPtr,
+    TCL_HASH_TYPE *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
@@ -469,7 +469,7 @@ TclpInitLibraryPath(
      * Look for the library relative to the TCL_LIBRARY env variable. If the
      * last dirname in the TCL_LIBRARY path does not match the last dirname in
      * the installLib variable, use the last dir name of installLib in
-     * addition to the orginal TCL_LIBRARY path.
+     * addition to the original TCL_LIBRARY path.
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
@@ -478,7 +478,7 @@ TclpInitLibraryPath(
 
     if ((str != NULL) && (str[0] != '\0')) {
 	Tcl_DString ds;
-	size_t pathc;
+	Tcl_Size pathc;
 	const char **pathv;
 	char installLib[LIBRARY_SIZE];
 
@@ -490,7 +490,7 @@ TclpInitLibraryPath(
 	 * installed.
 	 */
 
-	sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+	snprintf(installLib, sizeof(installLib), "lib/tcl%s", TCL_VERSION);
 
 	/*
 	 * If TCL_LIBRARY is set, search there.
@@ -544,9 +544,17 @@ TclpInitLibraryPath(
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    str = Tcl_GetStringFromObj(pathPtr, lengthPtr);
-    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
-    memcpy(*valuePtr, str, *lengthPtr + 1);
+
+    /*
+     * Note lengthPtr is (TCL_HASH_TYPE *) which is unsigned so cannot
+     * pass directly to Tcl_GetStringFromObj.
+     * TODO - why is the type TCL_HASH_TYPE anyways?
+     */
+    Tcl_Size length;
+    str = Tcl_GetStringFromObj(pathPtr, &length);
+    *lengthPtr = length;
+    *valuePtr = (char *)Tcl_Alloc(length + 1);
+    memcpy(*valuePtr, str, length + 1);
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -901,7 +909,7 @@ TclpSetVariables(
 	osInfo.dwMajorVersion = 11;
     }
     Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
-    sprintf(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    snprintf(buffer, sizeof(buffer), "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sysInfo.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",
@@ -998,11 +1006,11 @@ TclpSetVariables(
  * TclpFindVariable --
  *
  *	Locate the entry in environ for a given name. On Unix this routine is
- *	case sensetive, on Windows this matches mixed case.
+ *	case sensitive, on Windows this matches mixed case.
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or TCL_INDEX_NONE if there is no such entry. The integer at *lengthPtr is
+ *	"name", or -1 if there is no such entry. The integer at *lengthPtr is
  *	filled in with the length of name (if a matching entry is found) or
  *	the length of the environ array (if no matching entry is found).
  *
@@ -1012,16 +1020,16 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (native). */
-    size_t *lengthPtr)		/* Used to return length of name (for
+    Tcl_Size *lengthPtr)	/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    size_t i, result = TCL_INDEX_NONE;
+    Tcl_Size i, result = -1;
     const char *env, *p1, *p2;
     Tcl_DString envString;
 

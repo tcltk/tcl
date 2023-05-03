@@ -268,7 +268,7 @@ proc ::tcl::HistIndex {event} {
 	return -code error "event \"$event\" is too far in the past"
     }
     if {$i > $history(nextid)} {
-	return -code error "event \"$event\" hasn't occured yet"
+	return -code error "event \"$event\" hasn't occurred yet"
     }
     return $i
 }

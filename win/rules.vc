@@ -887,11 +887,11 @@ TCL_BUILD_FOR = 8
 !message *** Force 64-bit time_t
 _USE_64BIT_TIME_T = 1
 !endif
+!endif
 
 !if [nmakehlp -f $(OPTS) "utf16"]
 !message *** Force UTF-16 internally
 TCL_UTF_MAX = 3
-!endif
 !endif
 
 # Yes, it's weird that the "symbols" option controls DEBUG and
@@ -1369,7 +1369,7 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 # and switches are specific to it.
 # The following macros are defined, names are for historical compatibility:
 # OPTDEFINES - /Dxxx C macro flags based on user-specified OPTS
-# COMPILERFLAGS - /Dxxx C macro flags independent of any configuration opttions
+# COMPILERFLAGS - /Dxxx C macro flags independent of any configuration options
 # crt - Compiler switch that selects the appropriate C runtime
 # cdebug - Compiler switches related to debug AND optimizations
 # cwarn - Compiler switches that set warning levels

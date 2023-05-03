@@ -314,7 +314,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclPreserve.o tclProc.o tclProcess.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o \
 	tclStrToD.o tclThread.o \
-	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
+	tclThreadAlloc.o tclThreadStorage.o tclStubInit.o \
 	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
 	tclTomMathInterface.o tclZipfs.o
 
@@ -472,7 +472,6 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclTestProcBodyObj.c \
 	$(GENERIC_DIR)/tclThread.c \
 	$(GENERIC_DIR)/tclThreadAlloc.c \
-	$(GENERIC_DIR)/tclThreadJoin.c \
 	$(GENERIC_DIR)/tclThreadStorage.c \
 	$(GENERIC_DIR)/tclTimer.c \
 	$(GENERIC_DIR)/tclTrace.c \
@@ -955,6 +954,27 @@ valgrind: ${TCL_EXE} ${TCLTEST_EXE}
 	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} \
 		$(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind \
 		$(TESTFLAGS)
+
+testresults/valgrind/%.result: ${TCL_EXE} ${TCLTEST_EXE}
+	@mkdir -p testresults/valgrind
+	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} \
+		$(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind \
+		-file $(basename $(notdir $@)) > $@.tmp 2>&1
+	@mv $@.tmp $@
+.PRECIOUS: testresults/valgrind/%.result
+
+
+testresults/valgrind/%.success: testresults/valgrind/%.result
+	@printf '%s' valgrind >&2
+	@printf ' %s' $(basename $(notdir $@)) >&2
+	@printf '\n >&2'
+	@status=$$(./${TCLTEST_EXE} $(TOP_DIR)/tools/valgrind_check_success \
+		file $(basename $@).result); \
+	if [ "$$status" -eq 1 ]; then touch $@; exit 0; else exit 1; fi
+
+valgrind_each: $(addprefix testresults/valgrind/,$(addsuffix .success,$(notdir\
+	$(wildcard $(TOP_DIR)/tests/*.test))))
+
 
 valgrindshell: ${TCL_EXE}
 	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCL_EXE} $(SCRIPT)
@@ -1552,9 +1572,6 @@ tclThread.o: $(GENERIC_DIR)/tclThread.c
 
 tclThreadAlloc.o: $(GENERIC_DIR)/tclThreadAlloc.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadAlloc.c
-
-tclThreadJoin.o: $(GENERIC_DIR)/tclThreadJoin.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadJoin.c
 
 tclThreadStorage.o: $(GENERIC_DIR)/tclThreadStorage.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadStorage.c

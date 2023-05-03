@@ -253,7 +253,7 @@ void
 Tcl_RegExpRange(
     Tcl_RegExp re,		/* Compiled regular expression that has been
 				 * passed to Tcl_RegExpExec. */
-    size_t index,			/* 0 means give the range of the entire match,
+    Tcl_Size index,		/* 0 means give the range of the entire match,
 				 * > 0 means give the range of a matching
 				 * subrange. */
     const char **startPtr,	/* Store address of first character in
@@ -264,9 +264,9 @@ Tcl_RegExpRange(
     TclRegexp *regexpPtr = (TclRegexp *) re;
     const char *string;
 
-    if (index > regexpPtr->re.re_nsub) {
+    if (index < 0 || (size_t) index > regexpPtr->re.re_nsub) {
 	*startPtr = *endPtr = NULL;
-    } else if (regexpPtr->matches[index].rm_so == TCL_INDEX_NONE) {
+    } else if (regexpPtr->matches[index].rm_so == (size_t) -1) {
 	*startPtr = *endPtr = NULL;
     } else {
 	if (regexpPtr->objPtr) {
@@ -363,23 +363,23 @@ void
 TclRegExpRangeUniChar(
     Tcl_RegExp re,		/* Compiled regular expression that has been
 				 * passed to Tcl_RegExpExec. */
-    size_t index,			/* 0 means give the range of the entire match,
+    Tcl_Size index,		/* 0 means give the range of the entire match,
 				 * > 0 means give the range of a matching
-				 * subrange, TCL_INDEX_NONE means the range of the
+				 * subrange, -1 means the range of the
 				 * rm_extend field. */
-    size_t *startPtr,		/* Store address of first character in
+    Tcl_Size *startPtr,	/* Store address of first character in
 				 * (sub-)range here. */
-    size_t *endPtr)		/* Store address of character just after last
+    Tcl_Size *endPtr)	/* Store address of character just after last
 				 * in (sub-)range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
 
-    if ((regexpPtr->flags&REG_EXPECT) && (index == TCL_INDEX_NONE)) {
+    if ((regexpPtr->flags&REG_EXPECT) && (index == -1)) {
 	*startPtr = regexpPtr->details.rm_extend.rm_so;
 	*endPtr = regexpPtr->details.rm_extend.rm_eo;
-    } else if (index + 1 > regexpPtr->re.re_nsub + 1) {
-	*startPtr = TCL_INDEX_NONE;
-	*endPtr = TCL_INDEX_NONE;
+    } else if (index < 0 || (size_t) index > regexpPtr->re.re_nsub + 1) {
+	*startPtr = -1;
+	*endPtr = -1;
     } else {
 	*startPtr = regexpPtr->matches[index].rm_so;
 	*endPtr = regexpPtr->matches[index].rm_eo;
@@ -443,16 +443,16 @@ Tcl_RegExpExecObj(
 				 * returned by previous call to
 				 * Tcl_GetRegExpFromObj. */
     Tcl_Obj *textObj,		/* Text against which to match re. */
-    size_t offset,			/* Character index that marks where matching
+    Tcl_Size offset,		/* Character index that marks where matching
 				 * should begin. */
-    size_t nmatches,		/* How many subexpression matches (counting
+    Tcl_Size nmatches,	/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
 				 * interest. -1 means all of them. */
     int flags)			/* Regular expression execution flags. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
     Tcl_UniChar *udata;
-    size_t length;
+    Tcl_Size length;
     int reflags = regexpPtr->flags;
 #define TCL_REG_GLOBOK_FLAGS \
 	(TCL_REG_ADVANCED | TCL_REG_NOSUB | TCL_REG_NOCASE)
@@ -595,7 +595,7 @@ Tcl_GetRegExpFromObj(
 				 * expression. */
     int flags)			/* Regular expression compilation flags. */
 {
-    size_t length;
+    Tcl_Size length;
     TclRegexp *regexpPtr;
     const char *pattern;
 
@@ -689,7 +689,7 @@ TclRegAbout(
     for (inf=infonames ; inf->bit != 0 ; inf++) {
 	if (regexpPtr->re.re_info & inf->bit) {
 	    Tcl_ListObjAppendElement(NULL, infoObj,
-		    Tcl_NewStringObj(inf->text, TCL_INDEX_NONE));
+		    Tcl_NewStringObj(inf->text, -1));
 	}
     }
     Tcl_ListObjAppendElement(NULL, resultObj, infoObj);
@@ -730,7 +730,7 @@ TclRegError(
     p = (n > sizeof(buf)) ? "..." : "";
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s%s%s", msg, buf, p));
 
-    sprintf(cbuf, "%d", status);
+    snprintf(cbuf, sizeof(cbuf), "%d", status);
     (void) TclReError(REG_ITOA, cbuf, sizeof(cbuf));
     Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
 }

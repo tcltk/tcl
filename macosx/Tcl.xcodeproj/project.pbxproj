@@ -86,7 +86,6 @@
 		F96D45C808F272BC004A47F5 /* tclTestProcBodyObj.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F2908F272A7004A47F5 /* tclTestProcBodyObj.c */; };
 		F96D45C908F272BC004A47F5 /* tclThread.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F2A08F272A7004A47F5 /* tclThread.c */; };
 		F96D45CA08F272BC004A47F5 /* tclThreadAlloc.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F2B08F272A7004A47F5 /* tclThreadAlloc.c */; };
-		F96D45CB08F272BC004A47F5 /* tclThreadJoin.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F2C08F272A7004A47F5 /* tclThreadJoin.c */; };
 		F96D45CC08F272BC004A47F5 /* tclThreadStorage.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F2D08F272A7004A47F5 /* tclThreadStorage.c */; };
 		F96D45CD08F272BC004A47F5 /* tclThreadTest.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F2E08F272A7004A47F5 /* tclThreadTest.c */; };
 		F96D45CE08F272BC004A47F5 /* tclTimer.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F2F08F272A7004A47F5 /* tclTimer.c */; };
@@ -522,7 +521,6 @@
 		F96D3F2908F272A7004A47F5 /* tclTestProcBodyObj.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclTestProcBodyObj.c; sourceTree = "<group>"; };
 		F96D3F2A08F272A7004A47F5 /* tclThread.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclThread.c; sourceTree = "<group>"; };
 		F96D3F2B08F272A7004A47F5 /* tclThreadAlloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclThreadAlloc.c; sourceTree = "<group>"; };
-		F96D3F2C08F272A7004A47F5 /* tclThreadJoin.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclThreadJoin.c; sourceTree = "<group>"; };
 		F96D3F2D08F272A7004A47F5 /* tclThreadStorage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclThreadStorage.c; sourceTree = "<group>"; };
 		F96D3F2E08F272A7004A47F5 /* tclThreadTest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclThreadTest.c; sourceTree = "<group>"; };
 		F96D3F2F08F272A7004A47F5 /* tclTimer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclTimer.c; sourceTree = "<group>"; };
@@ -1297,7 +1295,6 @@
 				F96D3F2908F272A7004A47F5 /* tclTestProcBodyObj.c */,
 				F96D3F2A08F272A7004A47F5 /* tclThread.c */,
 				F96D3F2B08F272A7004A47F5 /* tclThreadAlloc.c */,
-				F96D3F2C08F272A7004A47F5 /* tclThreadJoin.c */,
 				F96D3F2D08F272A7004A47F5 /* tclThreadStorage.c */,
 				F96D3F2E08F272A7004A47F5 /* tclThreadTest.c */,
 				F96D3F2F08F272A7004A47F5 /* tclTimer.c */,
@@ -2000,7 +1997,6 @@
 				F96D45C808F272BC004A47F5 /* tclTestProcBodyObj.c in Sources */,
 				F96D45C908F272BC004A47F5 /* tclThread.c in Sources */,
 				F96D45CA08F272BC004A47F5 /* tclThreadAlloc.c in Sources */,
-				F96D45CB08F272BC004A47F5 /* tclThreadJoin.c in Sources */,
 				F96D45CC08F272BC004A47F5 /* tclThreadStorage.c in Sources */,
 				F96D45CD08F272BC004A47F5 /* tclThreadTest.c in Sources */,
 				F96D45CE08F272BC004A47F5 /* tclTimer.c in Sources */,

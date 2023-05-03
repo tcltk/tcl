@@ -266,7 +266,7 @@ test iocmd-8.9 {fconfigure command} -setup {
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
-} -result {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -profile tcl8 -translation lf}
+} -result {-blocking 1 -buffering none -buffersize 4040 -encoding iso8859-1 -eofchar {} -profile tcl8 -translation lf}
 test iocmd-8.10 {fconfigure command} -returnCodes error -body {
     fconfigure a b
 } -result {can not find channel named "a"}
@@ -496,11 +496,12 @@ test iocmd-12.10 {POSIX open access modes: BINARY} {
     set result
 } 5
 test iocmd-12.11 {POSIX open access modes: BINARY} -body {
+    after 100
     set f [open $path(test1) {WRONLY BINARY TRUNC}]
     puts $f Ɉ		;# throws an exception
 } -cleanup {
     close $f
-} -returnCodes 1 -match glob -result {error writing "*": illegal byte sequence}
+} -returnCodes 1 -match glob -result {error writing "*": invalid or incomplete multibyte or wide character}
 test iocmd-12.12 {POSIX open access modes: BINARY} {
     set f [open $path(test1) {WRONLY BINARY TRUNC}]
     puts $f H
@@ -688,7 +689,7 @@ test iocmd-20.1 {chan, unknown method} -body {
 } -returnCodes error -match glob -result {unknown or ambiguous subcommand "foo": must be *}
 
 # --- --- --- --------- --------- ---------
-# chan create, and method "initalize"
+# chan create, and method "initialize"
 
 test iocmd-21.0 {chan create, wrong#args, not enough} {
     catch {chan create} msg
@@ -698,12 +699,12 @@ test iocmd-21.1 {chan create, wrong#args, too many} {
     catch {chan create a b c} msg
     set msg
 } {wrong # args: should be "chan create mode cmdprefix"}
-test iocmd-21.2 {chan create, invalid r/w mode, empty} {
-    proc foo {} {}
-    catch {chan create {} foo} msg
+test iocmd-21.2 {chan create, r/w mode empty} {
+    proc foo {cmd args} { return {initialize finalize watch} }
+    set chan [chan create {} foo]
+    close $chan
     rename foo {}
-    set msg
-} {bad mode list: is empty}
+} {}
 test iocmd-21.3 {chan create, invalid r/w mode, bad string} {
     proc foo {} {}
     catch {chan create {c} foo} msg
@@ -1057,7 +1058,7 @@ test iocmd-23.1 {chan read, regular data return} -match glob -body {
     rename foo {}
     set res
 } -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
-test iocmd-23.2 {chan read, bad data return, to much} -match glob -body {
+test iocmd-23.2 {chan read, bad data return, too much} -match glob -body {
     set res {}
     proc foo {args} {
 	oninit; onfinal; track
@@ -2368,7 +2369,7 @@ test iocmd.tf-23.1 {chan read, regular data return} -match glob -body {
     rename foo {}
     set res
 } -constraints {testchannel thread} -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
-test iocmd.tf-23.2 {chan read, bad data return, to much} -match glob -body {
+test iocmd.tf-23.2 {chan read, bad data return, too much} -match glob -body {
     set res {}
     proc foo {args} {
 	oninit; onfinal; track

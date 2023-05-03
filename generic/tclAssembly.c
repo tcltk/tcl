@@ -222,7 +222,7 @@ typedef struct AssemblyEnv {
     Tcl_HashTable labelHash;	/* Hash table whose keys are labels and whose
 				 * values are 'label' objects storing the code
 				 * offsets of the labels. */
-    size_t cmdLine;		/* Current line number within the assembly
+    Tcl_Size cmdLine;	/* Current line number within the assembly
 				 * code */
     int* clNext;		/* Invisible continuation line for
 				 * [info frame] */
@@ -857,7 +857,7 @@ CompileAssembleObj(
 				 * names in the bytecode resolve */
     int status;			/* Status return from Tcl_AssembleCode */
     const char* source;		/* String representation of the source code */
-    size_t sourceLen;		/* Length of the source code in bytes */
+    Tcl_Size sourceLen;		/* Length of the source code in bytes */
 
     /*
      * Get the expression ByteCode from the object. If it exists, make sure it
@@ -1269,10 +1269,10 @@ AssembleOneLine(
     Tcl_Obj* operand1Obj = NULL;
 				/* First operand to the instruction */
     const char* operand1;	/* String rep of the operand */
-    size_t operand1Len;		/* String length of the operand */
+    Tcl_Size operand1Len;	/* String length of the operand */
     int opnd;			/* Integer representation of an operand */
     int litIndex;		/* Literal pool index of a constant */
-    size_t localVar;		/* LVT index of a local variable */
+    Tcl_Size localVar;	/* LVT index of a local variable */
     int flags;			/* Flags for a basic block */
     JumptableInfo* jtPtr;	/* Pointer to a jumptable */
     int infoIndex;		/* Index of the jumptable in auxdata */
@@ -1367,7 +1367,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (localVar < 0) {
 	    goto cleanup;
 	}
 	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, 0);
@@ -1384,7 +1384,7 @@ AssembleOneLine(
 	}
 	if (opnd < 0 || opnd > 3) {
 	    Tcl_SetObjResult(interp,
-			     Tcl_NewStringObj("operand must be [0..3]", TCL_INDEX_NONE));
+			     Tcl_NewStringObj("operand must be [0..3]", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND<0,>3", NULL);
 	    goto cleanup;
 	}
@@ -1427,7 +1427,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (localVar < 0) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, opnd+1);
@@ -1444,7 +1444,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (localVar < 0) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, opnd);
@@ -1625,7 +1625,7 @@ AssembleOneLine(
 	if (opnd < 2) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("operand must be >=2", TCL_INDEX_NONE));
+			Tcl_NewStringObj("operand must be >=2", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND>=2", NULL);
 	    }
 	    goto cleanup;
@@ -1639,7 +1639,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (localVar < 0) {
 	    goto cleanup;
 	}
 	BBEmitInst1or4(assemEnvPtr, tblIdx, localVar, 0);
@@ -1651,7 +1651,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE || CheckOneByte(interp, localVar)) {
+	if (localVar < 0 || CheckOneByte(interp, localVar)) {
 	    goto cleanup;
 	}
 	BBEmitInstInt1(assemEnvPtr, tblIdx, localVar, 0);
@@ -1663,7 +1663,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE || CheckOneByte(interp, localVar)
+	if (localVar < 0 || CheckOneByte(interp, localVar)
 		|| GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
 		|| CheckSignedOneByte(interp, opnd)) {
 	    goto cleanup;
@@ -1678,7 +1678,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (localVar < 0) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, localVar, 0);
@@ -1742,7 +1742,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar == TCL_INDEX_NONE) {
+	if (localVar < 0) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, 0);
@@ -1969,7 +1969,7 @@ CreateMirrorJumpTable(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Obj* jumps)		/* List of alternating keywords and labels */
 {
-    size_t objc;			/* Number of elements in the 'jumps' list */
+    Tcl_Size objc;			/* Number of elements in the 'jumps' list */
     Tcl_Obj** objv;		/* Pointers to the elements in the list */
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
@@ -1982,7 +1982,7 @@ CreateMirrorJumpTable(
     Tcl_HashEntry* hashEntry;	/* Entry for a key in the hashtable */
     int isNew;			/* Flag==1 if the key is not yet in the
 				 * table. */
-    size_t i;
+    Tcl_Size i;
 
     if (TclListObjLengthM(interp, jumps, &objc) != TCL_OK) {
 	return TCL_ERROR;
@@ -2107,7 +2107,7 @@ GetNextOperand(
 	Tcl_DecrRefCount(operandObj);
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "assembly code may not contain substitutions", TCL_INDEX_NONE));
+		    "assembly code may not contain substitutions", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NOSUBST", NULL);
 	}
 	return TCL_ERROR;
@@ -2313,8 +2313,8 @@ FindLocalVar(
 				 * source code. */
     Tcl_Obj* varNameObj;	/* Name of the variable */
     const char* varNameStr;
-    size_t varNameLen;
-    size_t localVar;		/* Index of the variable in the LVT */
+    Tcl_Size varNameLen;
+    Tcl_Size localVar;		/* Index of the variable in the LVT */
 
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {
 	return TCL_INDEX_NONE;
@@ -2326,11 +2326,11 @@ FindLocalVar(
     }
     localVar = TclFindCompiledLocal(varNameStr, varNameLen, 1, envPtr);
     Tcl_DecrRefCount(varNameObj);
-    if (localVar == TCL_INDEX_NONE) {
+    if (localVar < 0) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cannot use this instruction to create a variable"
-		    " in a non-proc context", TCL_INDEX_NONE));
+		    " in a non-proc context", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "LVT", NULL);
 	}
 	return TCL_INDEX_NONE;
@@ -2400,7 +2400,7 @@ CheckOneByte(
     Tcl_Obj* result;		/* Error message */
 
     if (value < 0 || value > 0xFF) {
-	result = Tcl_NewStringObj("operand does not fit in one byte", TCL_INDEX_NONE);
+	result = Tcl_NewStringObj("operand does not fit in one byte", -1);
 	Tcl_SetObjResult(interp, result);
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "1BYTE", NULL);
 	return TCL_ERROR;
@@ -2435,7 +2435,7 @@ CheckSignedOneByte(
     Tcl_Obj* result;		/* Error message */
 
     if (value > 0x7F || value < -0x80) {
-	result = Tcl_NewStringObj("operand does not fit in one byte", TCL_INDEX_NONE);
+	result = Tcl_NewStringObj("operand does not fit in one byte", -1);
 	Tcl_SetObjResult(interp, result);
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "1BYTE", NULL);
 	return TCL_ERROR;
@@ -2468,7 +2468,7 @@ CheckNonNegative(
     Tcl_Obj* result;		/* Error message */
 
     if (value < 0) {
-	result = Tcl_NewStringObj("operand must be nonnegative", TCL_INDEX_NONE);
+	result = Tcl_NewStringObj("operand must be nonnegative", -1);
 	Tcl_SetObjResult(interp, result);
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NONNEGATIVE", NULL);
 	return TCL_ERROR;
@@ -2501,7 +2501,7 @@ CheckStrictlyPositive(
     Tcl_Obj* result;		/* Error message */
 
     if (value <= 0) {
-	result = Tcl_NewStringObj("operand must be positive", TCL_INDEX_NONE);
+	result = Tcl_NewStringObj("operand must be positive", -1);
 	Tcl_SetObjResult(interp, result);
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "POSITIVE", NULL);
 	return TCL_ERROR;
@@ -3321,7 +3321,7 @@ CheckStack(
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    size_t maxDepth;		/* Maximum stack depth overall */
+    Tcl_Size maxDepth;		/* Maximum stack depth overall */
 
     /*
      * Checking the head block will check all the other blocks recursively.
@@ -3414,7 +3414,7 @@ StackCheckBasicBlock(
 	}
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "inconsistent stack depths on two execution paths", TCL_INDEX_NONE));
+		    "inconsistent stack depths on two execution paths", -1));
 
 	    /*
 	     * TODO - add execution trace of both paths
@@ -3443,7 +3443,7 @@ StackCheckBasicBlock(
 
     if (initialStackDepth + blockPtr->minStackDepth < 0) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("stack underflow", TCL_INDEX_NONE));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("stack underflow", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACK", NULL);
 	    AddBasicBlockRangeToErrorInfo(assemEnvPtr, blockPtr);
 	    Tcl_SetErrorLine(interp, blockPtr->startLine);
@@ -3462,8 +3462,8 @@ StackCheckBasicBlock(
 		+ blockPtr->enclosingCatch->finalStackDepth)) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "code pops stack below level of enclosing catch", TCL_INDEX_NONE));
-	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACKINCATCH", TCL_INDEX_NONE);
+		    "code pops stack below level of enclosing catch", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADSTACKINCATCH", -1);
 	    AddBasicBlockRangeToErrorInfo(assemEnvPtr, blockPtr);
 	    Tcl_SetErrorLine(interp, blockPtr->startLine);
 	}
@@ -3734,7 +3734,7 @@ ProcessCatchesInBasicBlock(
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "execution reaches an instruction in inconsistent "
-		    "exception contexts", TCL_INDEX_NONE));
+		    "exception contexts", -1));
 	    Tcl_SetErrorLine(interp, bbPtr->startLine);
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADCATCH", NULL);
 	}
@@ -3793,7 +3793,7 @@ ProcessCatchesInBasicBlock(
 	if (enclosing == NULL) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"endCatch without a corresponding beginCatch", TCL_INDEX_NONE));
+			"endCatch without a corresponding beginCatch", -1));
 		Tcl_SetErrorLine(interp, bbPtr->startLine);
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADENDCATCH", NULL);
 	    }
@@ -3868,7 +3868,7 @@ CheckForUnclosedCatches(
     if (assemEnvPtr->curr_bb->catchState >= BBCS_INCATCH) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "catch still active on exit from assembly code", TCL_INDEX_NONE));
+		    "catch still active on exit from assembly code", -1));
 	    Tcl_SetErrorLine(interp,
 		    assemEnvPtr->curr_bb->enclosingCatch->startLine);
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "UNCLOSEDCATCH", NULL);

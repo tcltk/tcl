@@ -306,16 +306,30 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #	define TCL_Z_MODIFIER	""
 #   endif
 #endif /* !TCL_Z_MODIFIER */
+#ifndef TCL_T_MODIFIER
+#   if defined(__GNUC__) && !defined(_WIN32)
+#	define TCL_T_MODIFIER	"t"
+#   elif defined(_WIN64)
+#	define TCL_T_MODIFIER	TCL_LL_MODIFIER
+#   else
+#	define TCL_T_MODIFIER	TCL_Z_MODIFIER
+#   endif
+#endif /* !TCL_T_MODIFIER */
+
 #define Tcl_WideAsLong(val)	((long)((Tcl_WideInt)(val)))
 #define Tcl_LongAsWide(val)	((Tcl_WideInt)((long)(val)))
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
 #if TCL_MAJOR_VERSION < 9
-typedef int Tcl_Size;
+    typedef int Tcl_Size;
+#   define TCL_SIZE_MODIFIER ""
+#   define TCL_SIZE_MAX INT_MAX
 #else
-typedef size_t Tcl_Size;
-#endif
+    typedef ptrdiff_t Tcl_Size;
+#   define TCL_SIZE_MAX PTRDIFF_MAX
+#   define TCL_SIZE_MODIFIER TCL_T_MODIFIER
+#endif /* TCL_MAJOR_VERSION */
 
 #ifdef _WIN32
 #   if TCL_MAJOR_VERSION > 8 || defined(_WIN64) || defined(_USE_64BIT_TIME_T)
@@ -450,38 +464,30 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  * string.
  */
 
-#if TCL_MAJOR_VERSION > 8
 typedef struct Tcl_RegExpIndices {
+#if TCL_MAJOR_VERSION > 8
     Tcl_Size start;			/* Character offset of first character in
 				 * match. */
     Tcl_Size end;			/* Character offset of first character after
 				 * the match. */
+#else
+    long start;
+    long end;
+#endif
 } Tcl_RegExpIndices;
 
 typedef struct Tcl_RegExpInfo {
     Tcl_Size nsubs;			/* Number of subexpressions in the compiled
 				 * expression. */
     Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
+#if TCL_MAJOR_VERSION > 8
     Tcl_Size extendStart;		/* The offset at which a subsequent match
 				 * might begin. */
-} Tcl_RegExpInfo;
 #else
-typedef struct Tcl_RegExpIndices {
-    long start;			/* Character offset of first character in
-				 * match. */
-    long end;			/* Character offset of first character after
-				 * the match. */
-} Tcl_RegExpIndices;
-
-typedef struct Tcl_RegExpInfo {
-    int nsubs;			/* Number of subexpressions in the compiled
-				 * expression. */
-    Tcl_RegExpIndices *matches;	/* Array of nsubs match offset pairs. */
-    long extendStart;		/* The offset at which a subsequent match
-				 * might begin. */
+    long extendStart;
     long reserved;		/* Reserved for later use. */
-} Tcl_RegExpInfo;
 #endif
+} Tcl_RegExpInfo;
 
 /*
  * Picky compilers complain if this typdef doesn't appear before the struct's
@@ -555,7 +561,7 @@ typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
-	size_t level, const char *command, Tcl_Command commandInfo, size_t objc,
+	Tcl_Size level, const char *command, Tcl_Command commandInfo, Tcl_Size objc,
 	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
@@ -580,7 +586,7 @@ typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
-	size_t objc, struct Tcl_Obj *const *objv);
+	Tcl_Size objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
@@ -1774,7 +1780,7 @@ typedef struct Tcl_Token {
  * TCL_TOKEN_OPERATOR -		The token describes one expression operator.
  *				An operator might be the name of a math
  *				function such as "abs". A TCL_TOKEN_OPERATOR
- *				token is always preceeded by one
+ *				token is always preceded by one
  *				TCL_TOKEN_SUB_EXPR token for the operator's
  *				subexpression, and is followed by zero or more
  *				TCL_TOKEN_SUB_EXPR tokens for the operator's
@@ -1963,15 +1969,18 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_CHAR_LIMIT		0x10
 /* Internal use bits, do not define bits in this space. See above comment */
 #define TCL_ENCODING_INTERNAL_USE_MASK  0xFF00
-/* Reserve top byte for profile values (disjoint, not a mask) */
+/*
+ * Reserve top byte for profile values (disjoint, not a mask). In case of
+ * changes, ensure ENCODING_PROFILE_* macros in tclInt.h are modified if
+ * necessary.
+ */
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
 #define TCL_ENCODING_PROFILE_STRICT   0x02000000
 #define TCL_ENCODING_PROFILE_REPLACE  0x03000000
-/* Still being argued - For Tcl9, is the default strict? TODO */
 #if TCL_MAJOR_VERSION < 9
 #define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
 #else
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8 /* STRICT? REPLACE? TODO */
+#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
 #endif
 
 /*
@@ -1993,13 +2002,10 @@ typedef struct Tcl_EncodingType {
  * TCL_CONVERT_SYNTAX -		The source stream contained an invalid
  *				character sequence. This may occur if the
  *				input stream has been damaged or if the input
- *				encoding method was misidentified. This error
- *				is reported unless if TCL_ENCODING_NOCOMPLAIN
- *				was specified.
+ *				encoding method was misidentified.
  * TCL_CONVERT_UNKNOWN -	The source string contained a character that
  *				could not be represented in the target
- *				encoding. This error is reported unless if
- *				TCL_ENCODING_NOCOMPLAIN was specified.
+ *				encoding.
  */
 
 #define TCL_CONVERT_MULTIBYTE	(-1)
@@ -2017,11 +2023,11 @@ typedef struct Tcl_EncodingType {
  */
 
 #ifndef TCL_UTF_MAX
-#if TCL_MAJOR_VERSION > 8
-#define TCL_UTF_MAX		4
-#else
-#define TCL_UTF_MAX		3
-#endif
+#   if TCL_MAJOR_VERSION > 8
+#	define TCL_UTF_MAX		4
+#   else
+#	define TCL_UTF_MAX		3
+#   endif
 #endif
 
 /*
@@ -2323,7 +2329,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #endif
 #   define Tcl_MainEx Tcl_MainExW
-    EXTERN TCL_NORETURN void Tcl_MainExW(size_t argc, wchar_t **argv,
+    EXTERN TCL_NORETURN void Tcl_MainExW(Tcl_Size argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 #if defined(USE_TCL_STUBS) && (TCL_MAJOR_VERSION > 8)
@@ -2336,7 +2342,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #define TclZipfs_AppHook(argcp, argvp) \
 	TclInitStubTable(((const char *(*)(int *, void *))TclStubCall((void *)3))(argcp, argvp))
 #define Tcl_MainExW(argc, argv, appInitProc, interp) \
-	(void)((const char *(*)(size_t, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	(void)((const char *(*)(Tcl_Size, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
 	TclStubCall((void *)4))(argc, argv, appInitProc, interp)
 #if !defined(_WIN32) || !defined(UNICODE)
 #define Tcl_MainEx(argc, argv, appInitProc, interp) \

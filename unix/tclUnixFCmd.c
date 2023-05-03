@@ -1,7 +1,7 @@
 /*
  * tclUnixFCmd.c
  *
- *	This file implements the unix specific portion of file manipulation
+ *	This file implements the Unix specific portion of file manipulation
  *	subcommands of the "file" command. All filename arguments should
  *	already be translated to native format.
  *
@@ -343,7 +343,7 @@ DoRenameFile(
     }
 
     /*
-     * IRIX returns EIO when you attept to move a directory into itself. We
+     * IRIX returns EIO when you attempt to move a directory into itself. We
      * just map EIO to EINVAL get the right message on SGI. Most platforms
      * don't return EIO except in really strange cases.
      */
@@ -549,7 +549,7 @@ TclUnixCopyFile(
     int srcFd, dstFd;
     size_t blockSize;		/* Optimal I/O blocksize for filesystem */
     char *buffer;		/* Data buffer for copy */
-    size_t nread;
+    ssize_t nread;
 
 #ifdef DJGPP
 #define BINMODE |O_BINARY
@@ -606,18 +606,18 @@ TclUnixCopyFile(
     buffer = (char *)Tcl_Alloc(blockSize);
     while (1) {
 	nread = read(srcFd, buffer, blockSize);
-	if ((nread == TCL_IO_FAILURE) || (nread == 0)) {
+	if ((nread == -1) || (nread == 0)) {
 	    break;
 	}
-	if ((size_t) write(dstFd, buffer, nread) != nread) {
-	    nread = TCL_IO_FAILURE;
+	if (write(dstFd, buffer, nread) != nread) {
+	    nread = -1;
 	    break;
 	}
     }
 
     Tcl_Free(buffer);
     close(srcFd);
-    if ((close(dstFd) != 0) || (nread == TCL_IO_FAILURE)) {
+    if ((close(dstFd) != 0) || (nread == -1)) {
 	unlink(dst);					/* INTL: Native. */
 	return TCL_ERROR;
     }
@@ -733,7 +733,7 @@ DoCreateDirectory(
  *
  *	Recursively copies a directory. The target directory dst must not
  *	already exist. Note that this function does not merge two directory
- *	hierarchies, even if the target directory is an an empty directory.
+ *	hierarchies, even if the target directory is an empty directory.
  *
  * Results:
  *	If the directory was successfully copied, returns TCL_OK. Otherwise
@@ -1504,7 +1504,7 @@ SetGroupAttribute(
 	Tcl_DString ds;
 	struct group *groupPtr = NULL;
 	const char *string;
-	size_t length;
+	Tcl_Size length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 
@@ -1571,7 +1571,7 @@ SetOwnerAttribute(
 	Tcl_DString ds;
 	struct passwd *pwPtr = NULL;
 	const char *string;
-	size_t length;
+	Tcl_Size length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 
@@ -1947,7 +1947,7 @@ TclpObjNormalizePath(
 {
     const char *currentPathEndPosition;
     char cur;
-    size_t pathLen;
+    Tcl_Size pathLen;
     const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
     Tcl_DString ds;
     const char *nativePath;
@@ -2052,7 +2052,7 @@ TclpObjNormalizePath(
 
 	nativePath = Tcl_UtfToExternalDString(NULL, path,nextCheckpoint, &ds);
 	if (Realpath(nativePath, normPath) != NULL) {
-	    size_t newNormLen;
+	    Tcl_Size newNormLen;
 
 	wholeStringOk:
 	    newNormLen = strlen(normPath);
@@ -2171,7 +2171,7 @@ TclUnixOpenTemporaryFile(
     Tcl_DString templ, tmp;
     const char *string;
     int fd;
-    size_t length;
+    Tcl_Size length;
 
     /*
      * We should also check against making more then TMP_MAX of these.

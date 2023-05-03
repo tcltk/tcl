@@ -84,18 +84,11 @@ static int gInitialized = 0;
  * Ring buffer for storing data. Actual data is from bufPtr[start]:bufPtr[size-1]
  * and bufPtr[0]:bufPtr[length - (size-start)].
  */
-#if TCL_MAJOR_VERSION > 8
-typedef ptrdiff_t RingSizeT; /* Tcl9 TODO */
-#define RingSizeT_MAX PTRDIFF_MAX
-#else
-typedef int RingSizeT;
-#define RingSizeT_MAX INT_MAX
-#endif
 typedef struct RingBuffer {
     char *bufPtr;	/* Pointer to buffer storage */
-    RingSizeT capacity;	/* Size of the buffer in RingBufferChar */
-    RingSizeT start;	/* Start of the data within the buffer. */
-    RingSizeT length;	/* Number of RingBufferChar*/
+    Tcl_Size capacity;	/* Size of the buffer in RingBufferChar */
+    Tcl_Size start;	/* Start of the data within the buffer. */
+    Tcl_Size length;	/* Number of RingBufferChar*/
 } RingBuffer;
 #define RingBufferLength(ringPtr_) ((ringPtr_)->length)
 #define RingBufferHasFreeSpace(ringPtr_) ((ringPtr_)->length < (ringPtr_)->capacity)
@@ -234,16 +227,16 @@ static void	ConsoleWatchProc(void *instanceData, int mask);
 static void	ProcExitHandler(void *clientData);
 static void	ConsoleThreadActionProc(void *instanceData, int action);
 static DWORD	ReadConsoleChars(HANDLE hConsole, WCHAR *lpBuffer,
-		    RingSizeT nChars, RingSizeT *nCharsReadPtr);
+		    Tcl_Size nChars, Tcl_Size *nCharsReadPtr);
 static DWORD	WriteConsoleChars(HANDLE hConsole,
-		    const WCHAR *lpBuffer, RingSizeT nChars,
-		    RingSizeT *nCharsWritten);
-static void	RingBufferInit(RingBuffer *ringPtr, RingSizeT capacity);
+		    const WCHAR *lpBuffer, Tcl_Size nChars,
+		    Tcl_Size *nCharsWritten);
+static void	RingBufferInit(RingBuffer *ringPtr, Tcl_Size capacity);
 static void	RingBufferClear(RingBuffer *ringPtr);
-static RingSizeT	RingBufferIn(RingBuffer *ringPtr, const char *srcPtr,
-			    RingSizeT srcLen, int partialCopyOk);
-static RingSizeT	RingBufferOut(RingBuffer *ringPtr, char *dstPtr,
-			    RingSizeT dstCapacity, int partialCopyOk);
+static Tcl_Size	RingBufferIn(RingBuffer *ringPtr, const char *srcPtr,
+			    Tcl_Size srcLen, int partialCopyOk);
+static Tcl_Size	RingBufferOut(RingBuffer *ringPtr, char *dstPtr,
+			    Tcl_Size dstCapacity, int partialCopyOk);
 static ConsoleHandleInfo *AllocateConsoleHandleInfo(HANDLE consoleHandle,
 			    int permissions);
 static ConsoleHandleInfo *FindConsoleInfo(const ConsoleChannelInfo *);
@@ -331,9 +324,9 @@ static const Tcl_ChannelType consoleChannelType = {
  *------------------------------------------------------------------------
  */
 static void
-RingBufferInit(RingBuffer *ringPtr, RingSizeT capacity)
+RingBufferInit(RingBuffer *ringPtr, Tcl_Size capacity)
 {
-    if (capacity <= 0 || capacity > RingSizeT_MAX) {
+    if (capacity <= 0 || capacity > TCL_SIZE_MAX) {
 	Tcl_Panic("Internal error: invalid ring buffer capacity requested.");
     }
     ringPtr->bufPtr = (char *)Tcl_Alloc(capacity);
@@ -384,15 +377,15 @@ RingBufferClear(RingBuffer *ringPtr)
  *
  *------------------------------------------------------------------------
  */
-static RingSizeT
+static Tcl_Size
 RingBufferIn(
     RingBuffer *ringPtr,
     const char *srcPtr, /* Source to be copied */
-    RingSizeT srcLen,	  /* Length of source */
+    Tcl_Size srcLen,	  /* Length of source */
     int partialCopyOk 		  /* If true, partial copy is permitted */
     )
 {
-    RingSizeT freeSpace;
+    Tcl_Size freeSpace;
 
     RINGBUFFER_ASSERT(ringPtr);
 
@@ -407,8 +400,8 @@ RingBufferIn(
 
     if (ringPtr->capacity - ringPtr->start > ringPtr->length) {
 	/* There is room at the back */
-	RingSizeT endSpaceStart = ringPtr->start + ringPtr->length;
-	RingSizeT endSpace      = ringPtr->capacity - endSpaceStart;
+	Tcl_Size endSpaceStart = ringPtr->start + ringPtr->length;
+	Tcl_Size endSpace      = ringPtr->capacity - endSpaceStart;
 	if (endSpace >= srcLen) {
 	    /* Everything fits at the back */
 	    memmove(endSpaceStart + ringPtr->bufPtr, srcPtr, srcLen);
@@ -419,7 +412,7 @@ RingBufferIn(
 	}
     } else {
 	/* No room at the back. Existing data wrap to front. */
-	RingSizeT wrapLen =
+	Tcl_Size wrapLen =
 	    ringPtr->start + ringPtr->length - ringPtr->capacity;
 	memmove(wrapLen + ringPtr->bufPtr, srcPtr, srcLen);
     }
@@ -447,13 +440,13 @@ RingBufferIn(
  *
  *------------------------------------------------------------------------
  */
-static RingSizeT
+static Tcl_Size
 RingBufferOut(RingBuffer *ringPtr,
 	      char *dstPtr,	      /* Buffer for output data. May be NULL */
-	      RingSizeT dstCapacity,  /* Size of buffer */
+	      Tcl_Size dstCapacity,  /* Size of buffer */
 	      int partialCopyOk)      /* If true, return what's available */
 {
-    RingSizeT leadLen;
+    Tcl_Size leadLen;
 
     RINGBUFFER_ASSERT(ringPtr);
 
@@ -477,7 +470,7 @@ RingBufferOut(RingBuffer *ringPtr,
 	}
 	ringPtr->start += dstCapacity;
     } else {
-	RingSizeT wrapLen = dstCapacity - leadLen;
+	Tcl_Size wrapLen = dstCapacity - leadLen;
 	if (dstPtr) {
 	    memmove(dstPtr,
 		    ringPtr->start + ringPtr->bufPtr,
@@ -529,8 +522,8 @@ static DWORD
 ReadConsoleChars(
     HANDLE hConsole,
     WCHAR *lpBuffer,
-    RingSizeT nChars,
-    RingSizeT *nCharsReadPtr)
+    Tcl_Size nChars,
+    Tcl_Size *nCharsReadPtr)
 {
     DWORD nRead;
     BOOL result;
@@ -589,8 +582,8 @@ static DWORD
 WriteConsoleChars(
     HANDLE hConsole,
     const WCHAR *lpBuffer,
-    RingSizeT nChars,
-    RingSizeT *nCharsWrittenPtr)
+    Tcl_Size nChars,
+    Tcl_Size *nCharsWrittenPtr)
 {
     DWORD nCharsWritten;
     BOOL result;
@@ -1090,7 +1083,7 @@ ConsoleInputProc(
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
     ConsoleHandleInfo *handleInfoPtr;
-    RingSizeT numRead;
+    Tcl_Size numRead;
 
     if (chanInfoPtr->handle == INVALID_HANDLE_VALUE) {
 	return 0; /* EOF */
@@ -1160,7 +1153,7 @@ ConsoleInputProc(
 	    && bufSize > 1         /* Not single byte read */
 	) {
 	    DWORD lastError;
-	    RingSizeT numChars;
+	    Tcl_Size numChars;
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
 	    lastError = ReadConsoleChars(chanInfoPtr->handle,
 					 (WCHAR *)bufPtr,
@@ -1242,7 +1235,7 @@ ConsoleOutputProc(
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
     ConsoleHandleInfo *handleInfoPtr;
-    RingSizeT numWritten;
+    Tcl_Size numWritten;
 
     *errorCode = 0;
 
@@ -1638,8 +1631,8 @@ ConsoleReaderThread(
     ConsoleHandleInfo *handleInfoPtr = (ConsoleHandleInfo *) arg;
     ConsoleHandleInfo **iterator;
     char inputChars[200]; /* Temporary buffer */
-    RingSizeT inputLen = 0;
-    RingSizeT inputOffset = 0;
+    Tcl_Size inputLen = 0;
+    Tcl_Size inputOffset = 0;
 
     /*
      * Keep looping until one of the following happens.
@@ -1670,7 +1663,7 @@ ConsoleReaderThread(
 	    HANDLE consoleHandle;
 	    if (inputLen > 0) {
 		/* Private buffer has data. Copy it over. */
-		RingSizeT nStored;
+		Tcl_Size nStored;
 
 		assert((inputLen - inputOffset) > 0);
 
@@ -1833,7 +1826,7 @@ ConsoleWriterThread(LPVOID arg)
     ConsoleHandleInfo *handleInfoPtr = (ConsoleHandleInfo *) arg;
     ConsoleHandleInfo **iterator;
     BOOL success;
-    RingSizeT numBytes;
+    Tcl_Size numBytes;
     /*
      * This buffer size has no relation really with the size of the shared
      * buffer. Could be bigger or smaller. Make larger as multiple threads
@@ -1904,7 +1897,7 @@ ConsoleWriterThread(LPVOID arg)
 	ReleaseSRWLockExclusive(&handleInfoPtr->lock);
 	offset = 0;
 	while (numBytes > 0) {
-	    RingSizeT numWChars = numBytes / sizeof(WCHAR);
+	    Tcl_Size numWChars = numBytes / sizeof(WCHAR);
 	    DWORD status;
 	    status = WriteConsoleChars(handleInfoPtr->console,
 				       (WCHAR *)(offset + buffer),
@@ -2123,7 +2116,7 @@ TclWinOpenConsoleChannel(
      * for instance).
      */
 
-    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) chanInfoPtr);
+    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "file%" TCL_Z_MODIFIER "x", (size_t) chanInfoPtr);
 
     if (permissions & TCL_READABLE) {
 	/*
@@ -2419,11 +2412,11 @@ ConsoleGetOptionProc(
 		return TCL_ERROR;
 	    }
 	    Tcl_DStringStartSublist(dsPtr);
-	    sprintf(buf,
+	    snprintf(buf, sizeof(buf),
 		    "%d",
 		    consoleInfo.srWindow.Right - consoleInfo.srWindow.Left + 1);
 	    Tcl_DStringAppendElement(dsPtr, buf);
-	    sprintf(buf,
+	    snprintf(buf, sizeof(buf),
 		    "%d",
 		    consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top + 1);
 	    Tcl_DStringAppendElement(dsPtr, buf);

@@ -700,7 +700,7 @@ TclpObjLstat(
  *	is either the given clientData, if the working directory hasn't
  *	changed, or a new clientData (owned by our caller), giving the new
  *	native path, or NULL if the current directory could not be determined.
- *	If NULL is returned, the caller can examine the standard posix error
+ *	If NULL is returned, the caller can examine the standard Posix error
  *	codes to determine the cause of the problem.
  *
  * Side effects:
@@ -946,7 +946,7 @@ TclpObjLink(
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    Tcl_DString ds;
 	    Tcl_Obj *transPtr;
-	    size_t length;
+	    Tcl_Size length;
 
 	    /*
 	     * Now we don't want to link to the absolute, normalized path.
@@ -1087,7 +1087,7 @@ TclNativeCreateNativeRep(
     const char *str;
     Tcl_DString ds;
     Tcl_Obj *validPathPtr;
-    size_t len;
+    Tcl_Size len;
 
     if (TclFSCwdIsNative()) {
 	/*

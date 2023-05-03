@@ -54,30 +54,27 @@ For \fBTcl_AddObjErrorInfo\fR,
 this points to the first byte of an array of \fIlength\fR bytes
 containing a string to append to the \fB\-errorinfo\fR return option.
 This byte array may contain embedded null bytes
-unless \fIlength\fR is TCL_INDEX_NONE.
+unless \fIlength\fR is negative.
 .AP Tcl_Obj *objPtr in
 A message to be appended to the \fB\-errorinfo\fR return option
 in the form of a Tcl_Obj value.
-.AP size_t length in
+.AP Tcl_Size length in
 The number of bytes to copy from \fImessage\fR when
 appending to the \fB\-errorinfo\fR return option.
-If TCL_INDEX_NONE, all bytes up to the first null byte are used.
+If negative, all bytes up to the first null byte are used.
 .AP Tcl_Obj *errorObjPtr in
 The \fB\-errorcode\fR return option will be set to this value.
 .AP "const char" *element in
 String to record as one element of the \fB\-errorcode\fR return option.
 Last \fIelement\fR argument must be NULL.
-.AP va_list argList in
-An argument list which must have been initialized using
-\fBva_start\fR, and cleared using \fBva_end\fR.
 .AP int lineNum
 The line number of a script where an error occurred.
 .AP "const char" *script in
 Pointer to first character in script containing command (must be <= command)
 .AP "const char" *command in
 Pointer to first character in command that generated the error
-.AP size_t commandLength in
-Number of bytes in command; TCL_INDEX_NONE means use all bytes up to first null byte
+.AP Tcl_Size commandLength in
+Number of bytes in command; a negative value means use all bytes up to first null byte
 .BE
 .SH DESCRIPTION
 .PP
@@ -227,7 +224,7 @@ embedded null bytes.  This is essentially never a good idea.
 If the \fImessage\fR needs to contain the null character \fBU+0000\fR,
 Tcl's usual internal encoding rules should be used to avoid
 the need for a null byte.  If the \fBTcl_AddObjErrorInfo\fR
-interface is used at all, it should be with a TCL_INDEX_NONE \fIlength\fR value.
+interface is used at all, it should be with a negative \fIlength\fR value.
 .PP
 The procedure \fBTcl_SetObjErrorCode\fR is used to set the
 \fB\-errorcode\fR return option to the list value \fIerrorObjPtr\fR

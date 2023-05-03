@@ -59,7 +59,7 @@ declare 8 {
 	    const char *file, int line)
 }
 
-# Tcl_CreateFileHandler and Tcl_DeleteFileHandler are only available on unix,
+# Tcl_CreateFileHandler and Tcl_DeleteFileHandler are only available on Unix,
 # but they are part of the old generic interface, so we include them here for
 # compatibility reasons.
 
@@ -146,7 +146,7 @@ declare 32 {
 }
 # Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 33 {
-    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, void *numBytesPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -173,7 +173,7 @@ declare 40 {
     const Tcl_ObjType *Tcl_GetObjType(const char *typeName)
 }
 declare 41 {
-    char *TclGetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    char *TclGetStringFromObj(Tcl_Obj *objPtr, void *lengthPtr)
 }
 declare 42 {
     void Tcl_InvalidateStringRep(Tcl_Obj *objPtr)
@@ -188,7 +188,7 @@ declare 44 {
 }
 declare 45 {
     int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    int *objcPtr, Tcl_Obj ***objvPtr)
+	    void *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 46 {
     int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size index,
@@ -196,7 +196,7 @@ declare 46 {
 }
 declare 47 {
     int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    int *lengthPtr)
+	    void *lengthPtr)
 }
 declare 48 {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size first,
@@ -881,12 +881,12 @@ declare 241 {
     void Tcl_SourceRCFile(Tcl_Interp *interp)
 }
 declare 242 {
-    int TclSplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
+    int TclSplitList(Tcl_Interp *interp, const char *listStr, void *argcPtr,
 	    const char ***argvPtr)
 }
 # Obsolete, use Tcl_FSSplitPath
 declare 243 {
-    void TclSplitPath(const char *path, int *argcPtr, const char ***argvPtr)
+    void TclSplitPath(const char *path, void *argcPtr, const char ***argvPtr)
 }
 # Removed in 9.0 (stub entry only)
 #declare 244  {
@@ -1601,7 +1601,7 @@ declare 433 {
 
 # introduced in 8.4a3
 declare 434 {
-    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, void *lengthPtr)
 }
 
 # TIP#15 (math function introspection) dkf
@@ -1702,7 +1702,7 @@ declare 460 {
     Tcl_Obj *Tcl_FSJoinPath(Tcl_Obj *listObj, Tcl_Size elements)
 }
 declare 461 {
-    Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, int *lenPtr)
+    Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, void *lenPtr)
 }
 declare 462 {
     int Tcl_FSEqualPaths(Tcl_Obj *firstPtr, Tcl_Obj *secondPtr)
@@ -1841,7 +1841,7 @@ declare 496 {
 	    Tcl_Obj *keyPtr)
 }
 declare 497 {
-    int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, int *sizePtr)
+    int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, void *sizePtr)
 }
 declare 498 {
     int Tcl_DictObjFirst(Tcl_Interp *interp, Tcl_Obj *dictPtr,
@@ -2270,7 +2270,7 @@ declare 603 {
 # TIP#265 (option parser) dkf for Sam Bromley
 declare 604 {
     int TclParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
-	    int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
+	    void *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
 # TIP#336 (manipulate the error line) dgp
@@ -2468,23 +2468,23 @@ declare 648 {
 # TIP #568
 declare 649 {
     unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *numBytesPtr)
+	    void *numBytesPtr)
 }
 declare 650 {
     unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    size_t *numBytesPtr)
+	    Tcl_Size *numBytesPtr)
 }
 
 # TIP #481
 declare 651 {
-    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
 declare 652 {
-    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
 # Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 653 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, Tcl_Size *numBytesPtr)
 }
 
 # TIP #575
@@ -2521,28 +2521,28 @@ declare 660 {
 # TIP #616
 declare 661 {
     int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    size_t *objcPtr, Tcl_Obj ***objvPtr)
+	    Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 662 {
     int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    size_t *lengthPtr)
+	    Tcl_Size *lengthPtr)
 }
 declare 663 {
-    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, size_t *sizePtr)
+    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Size *sizePtr)
 }
 declare 664 {
-    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
+    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, Tcl_Size *argcPtr,
 	    const char ***argvPtr)
 }
 declare 665 {
-    void Tcl_SplitPath(const char *path, size_t *argcPtr, const char ***argvPtr)
+    void Tcl_SplitPath(const char *path, Tcl_Size *argcPtr, const char ***argvPtr)
 }
 declare 666 {
-    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr)
+    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, Tcl_Size *lenPtr)
 }
 declare 667 {
     int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
-	    size_t *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
+	    Tcl_Size *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
 # TIP #617
@@ -2592,7 +2592,7 @@ declare 678 {
 }
 declare 679 {
     int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2,
-	    void *clientData, size_t objc, Tcl_Obj *const objv[])
+	    void *clientData, ptrdiff_t objc, Tcl_Obj *const objv[])
 }
 
 # TIP #638.
@@ -2601,7 +2601,7 @@ declare 680 {
 	    void **clientDataPtr, int *typePtr)
 }
 declare 681 {
-    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, size_t numBytes,
+    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, Tcl_Size numBytes,
 	    void **clientDataPtr, int *typePtr)
 }
 
@@ -2626,9 +2626,15 @@ declare 685 {
     Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
 }
 
+# TIP 660
+declare 686 {
+    int Tcl_GetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Size *sizePtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
-declare 687 {
+declare 688 {
     void TclUnusedStubEntry(void)
 }
 

@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include <assert.h>
 
 /*
  * Indices of the standard return options dictionary keys.
@@ -211,40 +212,36 @@ Tcl_DiscardInterpState(
  *----------------------------------------------------------------------
  *
  * Tcl_SetObjResult --
- *
- *	Arrange for objPtr to be an interpreter's result value.
+ *	Makes objPtr the interpreter's result value.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	interp->objResultPtr is left pointing to the object referenced by
- *	objPtr. The object's reference count is incremented since there is now
- *	a new reference to it. The reference count for any old objResultPtr
- *	value is decremented. Also, the string result is reset.
+ *	Stores objPtr interp->objResultPtr, increments its reference count, and
+ *	decrements the reference count of any existing interp->objResultPtr.
+ *
+ *	The string result is reset.
  *
  *----------------------------------------------------------------------
  */
 
 void
 Tcl_SetObjResult(
-    Tcl_Interp *interp,		/* Interpreter with which to associate the
-				 * return object value. */
-    Tcl_Obj *objPtr)	/* Tcl object to be returned. If NULL, the obj
-				 * result is made an empty string object. */
+    Tcl_Interp *interp,		/* Interpreter to set the result for. */
+    Tcl_Obj *objPtr)		/* The value to set as the result. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *oldObjResult = iPtr->objResultPtr;
-
-    iPtr->objResultPtr = objPtr;
-    Tcl_IncrRefCount(objPtr);	/* since interp result is a reference */
-
-    /*
-     * We wait until the end to release the old object result, in case we are
-     * setting the result to itself.
-     */
-
-    TclDecrRefCount(oldObjResult);
+    if (objPtr == oldObjResult) {
+	/* This should be impossible */
+	assert(objPtr->refCount != 0);
+	return;
+    } else {
+	iPtr->objResultPtr = objPtr;
+	Tcl_IncrRefCount(objPtr);
+	TclDecrRefCount(oldObjResult);
+    }
 }
 
 /*
@@ -317,7 +314,7 @@ Tcl_AppendResult(
 	if (bytes == NULL) {
 	    break;
 	}
-	Tcl_AppendToObj(objPtr, bytes, TCL_INDEX_NONE);
+	Tcl_AppendToObj(objPtr, bytes, -1);
     }
     Tcl_SetObjResult(interp, objPtr);
     va_end(argList);
@@ -354,10 +351,10 @@ Tcl_AppendElement(
 				 * to result. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *elementPtr = Tcl_NewStringObj(element, TCL_INDEX_NONE);
+    Tcl_Obj *elementPtr = Tcl_NewStringObj(element, -1);
     Tcl_Obj *listPtr = Tcl_NewListObj(1, &elementPtr);
     const char *bytes;
-    size_t length;
+    Tcl_Size length;
 
     if (Tcl_IsShared(iPtr->objResultPtr)) {
 	Tcl_SetObjResult(interp, Tcl_DuplicateObj(iPtr->objResultPtr));
@@ -511,7 +508,7 @@ Tcl_SetErrorCode(
 	if (elem == NULL) {
 	    break;
 	}
-	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, TCL_INDEX_NONE));
+	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, -1));
     }
     Tcl_SetObjErrorCode(interp, errorObj);
     va_end(argList);
@@ -721,7 +718,7 @@ TclProcessReturn(
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORINFO],
                 &valuePtr);
 	if (valuePtr != NULL) {
-	    size_t length;
+	    Tcl_Size length;
 
 	    (void) Tcl_GetStringFromObj(valuePtr, &length);
 	    if (length) {
@@ -733,7 +730,7 @@ TclProcessReturn(
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORSTACK],
                 &valuePtr);
 	if (valuePtr != NULL) {
-            size_t len, valueObjc;
+            Tcl_Size len, valueObjc;
             Tcl_Obj **valueObjv;
 
             if (Tcl_IsShared(iPtr->errorStack)) {
@@ -910,7 +907,7 @@ TclMergeReturnOptions(
 
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_ERRORCODE], &valuePtr);
     if (valuePtr != NULL) {
-	size_t length;
+	Tcl_Size length;
 
 	if (TCL_ERROR == TclListObjLengthM(NULL, valuePtr, &length )) {
 	    /*
@@ -932,7 +929,7 @@ TclMergeReturnOptions(
 
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_ERRORSTACK], &valuePtr);
     if (valuePtr != NULL) {
-	size_t length;
+	Tcl_Size length;
 
 	if (TCL_ERROR == TclListObjLengthM(NULL, valuePtr, &length)) {
 	    /*
@@ -1100,7 +1097,7 @@ Tcl_SetReturnOptions(
     Tcl_Interp *interp,
     Tcl_Obj *options)
 {
-    size_t objc;
+    Tcl_Size objc;
     int level, code;
     Tcl_Obj **objv, *mergedOpts;
 

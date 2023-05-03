@@ -76,8 +76,18 @@
 #undef Tcl_UniCharLen
 #undef TclObjInterpProc
 #if !defined(_WIN32) && !defined(__CYGWIN__)
-#undef Tcl_WinConvertError
-#define Tcl_WinConvertError 0
+# undef Tcl_WinConvertError
+# define Tcl_WinConvertError 0
+#endif
+#if defined(TCL_NO_DEPRECATED)
+# undef TclGetStringFromObj
+# undef TclGetBytesFromObj
+# undef TclGetUnicodeFromObj
+# define TclGetStringFromObj 0
+# define TclGetBytesFromObj 0
+# if TCL_UTF_MAX > 3
+#   define TclGetUnicodeFromObj 0
+# endif
 #endif
 #undef Tcl_Close
 #define Tcl_Close 0
@@ -92,20 +102,29 @@
 static void uniCodePanic() {
     Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
 }
-#   define Tcl_GetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, size_t *))(void *)uniCodePanic
+#   define Tcl_GetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, Tcl_Size *))(void *)uniCodePanic
 #   define TclGetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, int *))(void *)uniCodePanic
-#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const Tcl_UniChar *, size_t))(void *)uniCodePanic
-#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, size_t))(void *)uniCodePanic
-#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, size_t))(void *)uniCodePanic
+#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const Tcl_UniChar *, Tcl_Size))(void *)uniCodePanic
+#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, Tcl_Size))(void *)uniCodePanic
+#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, Tcl_Size))(void *)uniCodePanic
 #endif
 
 #define TclUtfCharComplete Tcl_UtfCharComplete
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
 
+#if defined(TCL_NO_DEPRECATED)
+# define TclListObjGetElements 0
+# define TclListObjLength 0
+# define TclDictObjSize 0
+# define TclSplitList 0
+# define TclSplitPath 0
+# define TclFSSplitPath 0
+# define TclParseArgsObjv 0
+#else /* !defined(TCL_NO_DEPRECATED) */
 int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-    int *objcPtr, Tcl_Obj ***objvPtr) {
-    size_t n = TCL_INDEX_NONE;
+    void *objcPtr, Tcl_Obj ***objvPtr) {
+    Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
     if (objcPtr) {
 	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
@@ -114,13 +133,13 @@ int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    }
 	    return TCL_ERROR;
 	}
-	*objcPtr = n;
+	*(int *)objcPtr = (int)n;
     }
     return result;
 }
 int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-    int *lengthPtr) {
-    size_t n = TCL_INDEX_NONE;
+    void *lengthPtr) {
+    Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_ListObjLength(interp, listPtr, &n);
     if (lengthPtr) {
 	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
@@ -129,13 +148,13 @@ int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    }
 	    return TCL_ERROR;
 	}
-	*lengthPtr = n;
+	*(int *)lengthPtr = (int)n;
     }
     return result;
 }
 int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-    int *sizePtr) {
-    size_t n = TCL_INDEX_NONE;
+    void *sizePtr) {
+    Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_DictObjSize(interp, dictPtr, &n);
     if (sizePtr) {
 	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
@@ -144,13 +163,13 @@ int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 	    }
 	    return TCL_ERROR;
 	}
-	*sizePtr = n;
+	*(int *)sizePtr = (int)n;
     }
     return result;
 }
-int TclSplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
+int TclSplitList(Tcl_Interp *interp, const char *listStr, void *argcPtr,
 	const char ***argvPtr) {
-    size_t n = TCL_INDEX_NONE;
+    Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
     if (argcPtr) {
 	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
@@ -160,12 +179,12 @@ int TclSplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
 	    Tcl_Free((void *)*argvPtr);
 	    return TCL_ERROR;
 	}
-	*argcPtr = n;
+	*(int *)argcPtr = (int)n;
     }
     return result;
 }
-void TclSplitPath(const char *path, int *argcPtr, const char ***argvPtr) {
-    size_t n = TCL_INDEX_NONE;
+void TclSplitPath(const char *path, void *argcPtr, const char ***argvPtr) {
+    Tcl_Size n = TCL_INDEX_NONE;
     Tcl_SplitPath(path, &n, argvPtr);
     if (argcPtr) {
 	if ((sizeof(int) != sizeof(size_t)) && (n > INT_MAX)) {
@@ -173,29 +192,30 @@ void TclSplitPath(const char *path, int *argcPtr, const char ***argvPtr) {
 	    Tcl_Free((void *)*argvPtr);
 	    *argvPtr = NULL;
 	}
-	*argcPtr = n;
+	*(int *)argcPtr = (int)n;
     }
 }
-Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, int *lenPtr) {
-    size_t n = TCL_INDEX_NONE;
+Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, void *lenPtr) {
+    Tcl_Size n = TCL_INDEX_NONE;
     Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
     if (lenPtr) {
 	if ((sizeof(int) != sizeof(size_t)) && result && (n > INT_MAX)) {
 	    Tcl_DecrRefCount(result);
 	    return NULL;
 	}
-	*lenPtr = n;
+	*(int *)lenPtr = (int)n;
     }
     return result;
 }
 int TclParseArgsObjv(Tcl_Interp *interp,
-	const Tcl_ArgvInfo *argTable, int *objcPtr, Tcl_Obj *const *objv,
+	const Tcl_ArgvInfo *argTable, void *objcPtr, Tcl_Obj *const *objv,
 	Tcl_Obj ***remObjv) {
-    size_t n = (*objcPtr < 0) ? TCL_INDEX_NONE: (size_t)*objcPtr ;
+    Tcl_Size n = (*(int *)objcPtr < 0) ? TCL_INDEX_NONE: (Tcl_Size)*(int *)objcPtr ;
     int result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
-    *objcPtr = (int)n;
+    *(int *)objcPtr = (int)n;
     return result;
 }
+#endif /* !defined(TCL_NO_DEPRECATED) */
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
@@ -337,7 +357,7 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
 	    *ptr = (int)longValue;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "integer value too large to represent", TCL_INDEX_NONE));
+		    "integer value too large to represent", -1));
 	    result = TCL_ERROR;
 	}
     }
@@ -353,7 +373,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
 	    *ptr = (int)longValue;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "integer value too large to represent", TCL_INDEX_NONE));
+		    "integer value too large to represent", -1));
 	    result = TCL_ERROR;
 	}
     }
@@ -1492,8 +1512,9 @@ const TclStubs tclStubs = {
     Tcl_GetEncodingNulLength, /* 683 */
     Tcl_GetWideUIntFromObj, /* 684 */
     Tcl_DStringToObj, /* 685 */
-    0, /* 686 */
-    TclUnusedStubEntry, /* 687 */
+    Tcl_GetSizeIntFromObj, /* 686 */
+    0, /* 687 */
+    TclUnusedStubEntry, /* 688 */
 };
 
 /* !END!: Do not edit above this line. */

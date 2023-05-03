@@ -191,7 +191,7 @@ FindSymbol(
 #ifdef __cplusplus
     if (proc == NULL) {
 	char buf[32];
-	sprintf(buf, "%d", (int)Tcl_DStringLength(&ds));
+	snprintf(buf, sizeof(buf), "%d", (int)Tcl_DStringLength(&ds));
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "__Z");
 	Tcl_DStringAppend(&newName, buf, TCL_INDEX_NONE);

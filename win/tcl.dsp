@@ -1320,10 +1320,6 @@ SOURCE=..\generic\tclThread.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\generic\tclThreadJoin.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\generic\tclThreadTest.c
 # End Source File
 # Begin Source File

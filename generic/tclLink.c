@@ -33,10 +33,10 @@ typedef struct {
 				 * actual variable may be aliased at that time
 				 * via upvar. */
     void *addr;			/* Location of C variable. */
-    size_t bytes;		/* Size of C variable array. This is 0 when
+    Tcl_Size bytes;		/* Size of C variable array. This is 0 when
 				 * single variables, and >0 used for array
 				 * variables. */
-    size_t numElems;	/* Number of elements in C variable array.
+    Tcl_Size numElems;	/* Number of elements in C variable array.
 				 * Zero for single variables. */
     int type;			/* Type of link (TCL_LINK_INT, etc.). */
     union {
@@ -175,7 +175,7 @@ Tcl_LinkVar(
     linkPtr = (Link *)Tcl_Alloc(sizeof(Link));
     linkPtr->interp = interp;
     linkPtr->nsPtr = NULL;
-    linkPtr->varName = Tcl_NewStringObj(varName, TCL_INDEX_NONE);
+    linkPtr->varName = Tcl_NewStringObj(varName, -1);
     Tcl_IncrRefCount(linkPtr->varName);
     linkPtr->addr = addr;
     linkPtr->type = type & ~TCL_LINK_READ_ONLY;
@@ -246,7 +246,7 @@ Tcl_LinkArray(
 				 * interpreter result. */
     int type,			/* Type of C variable: TCL_LINK_INT, etc. Also
 				 * may have TCL_LINK_READ_ONLY OR'ed in. */
-    size_t size)			/* Size of C variable array, >1 if array */
+    Tcl_Size size)		/* Size of C variable array, >1 if array */
 {
     Tcl_Obj *objPtr;
     Link *linkPtr;
@@ -256,7 +256,7 @@ Tcl_LinkArray(
 
     if (size < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"wrong array size given", TCL_INDEX_NONE));
+		"wrong array size given", -1));
 	return TCL_ERROR;
     }
 
@@ -340,7 +340,7 @@ Tcl_LinkArray(
     default:
 	LinkFree(linkPtr);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"bad linked array variable type", TCL_INDEX_NONE));
+		"bad linked array variable type", -1));
 	return TCL_ERROR;
     }
 
@@ -380,7 +380,7 @@ Tcl_LinkArray(
      */
 
     linkPtr->interp = interp;
-    linkPtr->varName = Tcl_NewStringObj(varName, TCL_INDEX_NONE);
+    linkPtr->varName = Tcl_NewStringObj(varName, -1);
     Tcl_IncrRefCount(linkPtr->varName);
 
     TclGetNamespaceForQualName(interp, varName, NULL, TCL_GLOBAL_ONLY,
@@ -592,7 +592,7 @@ SetInvalidRealFromAny(
 {
     const char *str;
     const char *endPtr;
-    size_t length;
+    Tcl_Size length;
 
     str = Tcl_GetStringFromObj(objPtr, &length);
     if ((length == 1) && (str[0] == '.')) {
@@ -638,7 +638,7 @@ GetInvalidIntFromObj(
     Tcl_Obj *objPtr,
     int *intPtr)
 {
-    size_t length;
+    Tcl_Size length;
     const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
     if ((length == 0) || ((length == 2) && (str[0] == '0')
@@ -715,7 +715,7 @@ LinkTraceProc(
 {
     Link *linkPtr = (Link *)clientData;
     int changed;
-    size_t valueLength = 0;
+    Tcl_Size valueLength = 0;
     const char *value;
     char **pp;
     Tcl_Obj *valueObj;
@@ -723,7 +723,7 @@ LinkTraceProc(
     Tcl_WideInt valueWide;
     Tcl_WideUInt valueUWide;
     double valueDouble;
-    size_t objc, i;
+    Tcl_Size objc, i;
     Tcl_Obj **objv;
 
     /*
@@ -830,7 +830,7 @@ LinkTraceProc(
     /*
      * For writes, first make sure that the variable is writable. Then convert
      * the Tcl value to C if possible. If the variable isn't writable or can't
-     * be converted, then restore the varaible's old value and return an
+     * be converted, then restore the variable's old value and return an
      * error. Another tricky thing: we have to save and restore the interp's
      * result, since the variable access could occur when the result has been
      * partially set.
@@ -1249,7 +1249,7 @@ ObjValue(
 {
     char *p;
     Tcl_Obj *resultObj, **objv;
-    size_t i;
+    Tcl_Size i;
 
     switch (linkPtr->type) {
     case TCL_LINK_INT:
@@ -1433,7 +1433,7 @@ ObjValue(
 	    TclNewLiteralStringObj(resultObj, "NULL");
 	    return resultObj;
 	}
-	return Tcl_NewStringObj(p, TCL_INDEX_NONE);
+	return Tcl_NewStringObj(p, -1);
 
     case TCL_LINK_CHARS:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {

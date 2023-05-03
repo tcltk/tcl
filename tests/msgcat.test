@@ -1055,7 +1055,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
     variable locale
     if {![info exist locale]} { set locale [mclocale] }
 
-	test msgcat-14.1 {invokation loadcmd} -setup {
+	test msgcat-14.1 {invocation loadcmd} -setup {
 	    mcforgetpackage
     	    mclocale $locale
 	    mclocale ""
@@ -1069,7 +1069,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 	    lsort $resultvariable
 	} -result {foo foo_bar}
 
-	test msgcat-14.2 {invokation failed in loadcmd} -setup {
+	test msgcat-14.2 {invocation failed in loadcmd} -setup {
 	    mcforgetpackage
     	    mclocale $locale
 	    mclocale ""
@@ -1087,7 +1087,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 	    list $err [dict get $errdict -code]
 	} -result {fail 1}
 
-	test msgcat-14.3 {invokation changecmd} -setup {
+	test msgcat-14.3 {invocation changecmd} -setup {
 	    mcforgetpackage
     	    mclocale $locale
 	    mclocale ""
@@ -1100,7 +1100,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 	    set resultvariable
 	} -result {foo_bar foo {}}
 
-	test msgcat-14.4 {invokation unknowncmd} -setup {
+	test msgcat-14.4 {invocation unknowncmd} -setup {
 	    mcforgetpackage
     	    mclocale $locale
 	    mclocale ""

@@ -309,7 +309,8 @@ DoRenameFile(
 	if (srcAttr & FILE_ATTRIBUTE_DIRECTORY) {
 	    WCHAR *nativeSrcRest, *nativeDstRest;
 	    const char **srcArgv, **dstArgv;
-	    size_t size, srcArgc, dstArgc;
+	    size_t size;
+	    Tcl_Size srcArgc, dstArgc;
 	    WCHAR nativeSrcPath[MAX_PATH];
 	    WCHAR nativeDstPath[MAX_PATH];
 	    Tcl_DString srcString, dstString;
@@ -879,7 +880,7 @@ DoCreateDirectory(
  *
  *	Recursively copies a directory. The target directory dst must not
  *	already exist. Note that this function does not merge two directory
- *	hierarchies, even if the target directory is an an empty directory.
+ *	hierarchies, even if the target directory is an empty directory.
  *
  * Results:
  *	If the directory was successfully copied, returns TCL_OK. Otherwise
@@ -1535,7 +1536,7 @@ GetWinFileAttributes(
 	 * We test for, and fix that case, here.
 	 */
 
-	size_t len;
+	Tcl_Size len;
 	const char *str = Tcl_GetStringFromObj(fileName, &len);
 
 	if (len < 4) {
@@ -1595,9 +1596,8 @@ ConvertFileNameFormat(
     int longShort,		/* 0 to short name, 1 to long name. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
-    size_t pathc, i;
+    Tcl_Size pathc, i, length;
     Tcl_Obj *splitPath;
-    size_t length;
 
     splitPath = Tcl_FSSplitPath(fileName, &pathc);
 

@@ -10,7 +10,6 @@
  */
 
 #include "tclInt.h"
-#include "tclIO.h"
 
 typedef size_t (LengthProc)(const char *src);
 
@@ -200,16 +199,16 @@ static struct TclEncodingProfiles {
     {"tcl8", TCL_ENCODING_PROFILE_TCL8},
 };
 #define PROFILE_TCL8(flags_)                                           \
-    ((CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_TCL8)   \
-     || (CHANNEL_PROFILE_GET(flags_) == 0                         \
+    ((ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_TCL8)   \
+     || (ENCODING_PROFILE_GET(flags_) == 0                         \
 	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_TCL8))
 #define PROFILE_STRICT(flags_)                                         \
-    ((CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
-     || (CHANNEL_PROFILE_GET(flags_) == 0                         \
+    ((ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
+     || (ENCODING_PROFILE_GET(flags_) == 0                         \
 	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_STRICT))
 #define PROFILE_REPLACE(flags_)                                         \
-    ((CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE) \
-     || (CHANNEL_PROFILE_GET(flags_) == 0                          \
+    ((ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE) \
+     || (ENCODING_PROFILE_GET(flags_) == 0                          \
 	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_REPLACE))
 
 #define UNICODE_REPLACE_CHAR ((Tcl_UniChar)0xFFFD)
@@ -610,7 +609,7 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 1;
     type.clientData	= INT2PTR(ENCODING_UTF);
     Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
 
@@ -622,7 +621,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2be";
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2";
     type.clientData	= INT2PTR(leFlags);
@@ -636,7 +635,7 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-32be";
-    type.clientData	= INT2PTR(0);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-32";
     type.clientData	= INT2PTR(leFlags);
@@ -647,13 +646,13 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "utf-16le";
-    type.clientData	= INT2PTR(TCL_ENCODING_LE|ENCODING_UTF);
+    type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16be";
-    type.clientData	= INT2PTR(ENCODING_UTF);
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16";
-    type.clientData	= INT2PTR(leFlags|ENCODING_UTF);
+    type.clientData	= INT2PTR(leFlags);
     Tcl_CreateEncoding(&type);
 
 #ifndef TCL_NO_DEPRECATED
@@ -1299,7 +1298,7 @@ Tcl_ExternalToUtfDStringEx(
 		/* Caller wants error message on failure */
 		if (result != TCL_OK && interp != NULL) {
 		    char buf[TCL_INTEGER_SPACE];
-		    sprintf(buf, "%" TCL_Z_MODIFIER "u", nBytesProcessed);
+		    snprintf(buf, sizeof(buf), "%" TCL_Z_MODIFIER "u", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf("unexpected byte sequence starting at index %"
@@ -1415,9 +1414,9 @@ Tcl_ExternalToUtf(
     }
 
     if (!noTerminate) {
-	if ((int) dstLen < 1) {
-	    return TCL_CONVERT_NOSPACE;
-	}
+        if (dstLen < 1) {
+            return TCL_CONVERT_NOSPACE;
+        }
 	/*
 	 * If there are any null characters in the middle of the buffer,
 	 * they will converted to the UTF-8 null character (\xC0\x80). To get
@@ -1612,9 +1611,9 @@ Tcl_UtfToExternalDStringEx(
 	if ((result != TCL_CONVERT_NOSPACE) &&
 	    !(result == TCL_CONVERT_MULTIBYTE && (flags & TCL_ENCODING_END))) {
 	    Tcl_Size nBytesProcessed = (src - srcStart);
-	    size_t i = soFar + encodingPtr->nullSize - 1;
+	    Tcl_Size i = soFar + encodingPtr->nullSize - 1;
 	    /* Loop as DStringSetLength only stores one nul byte at a time */
-	    while (i+1 >= soFar+1) {
+	    while (i >= soFar) {
 		Tcl_DStringSetLength(dstPtr, i--);
 	    }
 	    if (errorLocPtr) {
@@ -1630,7 +1629,7 @@ Tcl_UtfToExternalDStringEx(
 		    int ucs4;
 		    char buf[TCL_INTEGER_SPACE];
 		    TclUtfToUCS4(&srcStart[nBytesProcessed], &ucs4);
-		    sprintf(buf, "%" TCL_Z_MODIFIER "u", nBytesProcessed);
+		    snprintf(buf, sizeof(buf), "%" TCL_Z_MODIFIER "u", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf(
@@ -2532,7 +2531,17 @@ UtfToUtfProc(
     flags |= PTR2INT(clientData);
     dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
 
-    profile = CHANNEL_PROFILE_GET(flags);
+
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, dstLen);
+#endif
+
+    profile = ENCODING_PROFILE_GET(flags);
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
@@ -2570,8 +2579,7 @@ UtfToUtfProc(
 		}
 	    } else {
 		/*
-		 * Convert 0xC080 to real nulls when we are in output mode,
-		 * irrespective of the profile.
+		 * For output convert 0xC080 to a real null.
 		 */
 		*dst++ = 0;
 		src += 2;
@@ -2747,6 +2755,15 @@ Utf32ToUtfProc(
     }
     result = TCL_OK;
 
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, dstLen);
+#endif
+
     /*
      * Check alignment with utf-32 (4 == sizeof(UTF-32))
      */
@@ -2787,9 +2804,9 @@ Utf32ToUtfProc(
 	int prev = ch;
 #endif
 	if (flags & TCL_ENCODING_LE) {
-	    ch = (src[3] & 0xFF) << 24 | (src[2] & 0xFF) << 16 | (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
+	    ch = (unsigned int)(src[3] & 0xFF) << 24 | (src[2] & 0xFF) << 16 | (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
 	} else {
-	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
+	    ch = (unsigned int)(src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
 	}
 #if TCL_UTF_MAX < 4
 	if (HIGH_SURROGATE(prev) && !LOW_SURROGATE(ch)) {
@@ -2822,6 +2839,11 @@ Utf32ToUtfProc(
 	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (ch & 0xFF);
 	} else {
+#if TCL_UTF_MAX < 4
+	    if (!HIGH_SURROGATE(prev) && LOW_SURROGATE(ch)) {
+		*dst = 0; /* In case of lower surrogate, don't try to combine */
+	    }
+#endif
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
 	src += 4;
@@ -3010,6 +3032,15 @@ Utf16ToUtfProc(
 	charLimit = *dstCharsPtr;
     }
     result = TCL_OK;
+
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, dstLen);
+#endif
 
     /*
      * Check alignment with utf-16 (2 == sizeof(UTF-16))
@@ -3424,6 +3455,15 @@ TableToUtfProc(
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, dstLen);
+#endif
+
     toUnicode = (const unsigned short *const *) dataPtr->toUnicode;
     prefixBytes = dataPtr->prefixBytes;
     pageZero = toUnicode[0];
@@ -3475,7 +3515,7 @@ TableToUtfProc(
 	}
 
 	/*
-	 * Special case for 1-byte utf chars for speed.
+	 * Special case for 1-byte Utf chars for speed.
 	 */
 
 	if ((unsigned)ch - 1 < 0x7F) {
@@ -3664,6 +3704,15 @@ Iso88591ToUtfProc(
 
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
+
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, dstLen);
+#endif
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
@@ -3903,6 +3952,15 @@ EscapeToUtfProc(
 
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
+
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, dstLen);
+#endif
 
     state = PTR2INT(*statePtr);
     if (flags & TCL_ENCODING_START) {
@@ -4583,9 +4641,9 @@ TclEncodingProfileIdToName(
 int TclEncodingSetProfileFlags(int flags)
 {
     if (flags & TCL_ENCODING_STOPONERROR) {
-	CHANNEL_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
+	ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
     } else {
-	int profile = CHANNEL_PROFILE_GET(flags);
+	int profile = ENCODING_PROFILE_GET(flags);
 	switch (profile) {
 	case TCL_ENCODING_PROFILE_TCL8:
 	case TCL_ENCODING_PROFILE_STRICT:
@@ -4593,7 +4651,7 @@ int TclEncodingSetProfileFlags(int flags)
 	    break;
 	case 0: /* Unspecified by caller */
 	default:
-	    CHANNEL_PROFILE_SET(flags, TCL_ENCODING_PROFILE_DEFAULT);
+	    ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_DEFAULT);
 	    break;
 	}
     }

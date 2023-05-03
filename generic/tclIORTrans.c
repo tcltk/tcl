@@ -264,7 +264,7 @@ struct ForwardParamTransform {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     char *buf;			/* I: Bytes to transform,
 				 * O: Bytes in transform result */
-    size_t size;		/* I: #bytes to transform,
+    Tcl_Size size;		/* I: #bytes to transform,
 				 * O: #bytes in the transform result */
 };
 struct ForwardParamLimit {
@@ -511,7 +511,7 @@ TclChanPushObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Obj *rtId;		/* Handle of the new transform (channel) */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    size_t listc;			/* Result of 'initialize', and of */
+    Tcl_Size listc;			/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -634,7 +634,7 @@ TclChanPushObjCmd(
     /*
      * Mode tell us what the parent channel supports. The methods tell us what
      * the handler supports. We remove the non-supported bits from the mode
-     * and check that the channel is not completely inacessible. Afterward the
+     * and check that the channel is not completely inaccessible. Afterward the
      * mode tells us which methods are still required, and these methods will
      * also be supported by the handler, by design of the check.
      */
@@ -820,10 +820,10 @@ UnmarshallErrorResult(
     Tcl_Interp *interp,
     Tcl_Obj *msgObj)
 {
-    size_t lc;
+    Tcl_Size lc;
     Tcl_Obj **lv;
     int explicitResult;
-    size_t numOptions;
+    Tcl_Size numOptions;
 
     /*
      * Process the caught message.
@@ -866,7 +866,7 @@ UnmarshallErrorResult(
  *	driver specific instance data.
  *
  * Results:
- *	A posix error.
+ *	A Posix error.
  *
  * Side effects:
  *	Releases memory. Arbitrary, as it calls upon a script.
@@ -985,7 +985,7 @@ ReflectClose(
 #endif /* TCL_THREADS */
 
     /*
-     * Do the actual invokation of "finalize" now; we're in the right thread.
+     * Do the actual invocation of "finalize" now; we're in the right thread.
      */
 
     result = InvokeTclMethod(rtPtr, "finalize", NULL, NULL, &resObj);
@@ -1449,7 +1449,7 @@ ReflectWatch(
  *	is required of it.
  *
  * Results:
- *	A posix error number.
+ *	A Posix error number.
  *
  * Side effects:
  *	Allocates memory. Arbitrary, as it calls upon a script.
@@ -1536,7 +1536,7 @@ static int
 ReflectGetOption(
     void *clientData,	/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
-    const char *optionName,	/* Name of reuqested option */
+    const char *optionName,	/* Name of requested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
 {
     ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
@@ -1591,7 +1591,7 @@ ReflectHandle(
 
     /*
      * Transformations have no handle of their own. As such we simply query
-     * the parent channel for it. This way the qery will ripple down through
+     * the parent channel for it. This way the query will ripple down through
      * all transformations until reaches the base channel. Which then returns
      * its handle, or fails. The former will then ripple up the stack.
      *
@@ -1625,7 +1625,7 @@ ReflectNotify(
     ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
 
     /*
-     * An event occured in the underlying channel.
+     * An event occurred in the underlying channel.
      *
      * We delete our timer. It was not fired, yet we are here, so the channel
      * below generated such an event and we don't have to. The renewal of the
@@ -1719,7 +1719,7 @@ NewReflectedTransform(
     Tcl_Channel parentChan)
 {
     ReflectedTransform *rtPtr;
-    size_t i, listc;
+    Tcl_Size i, listc;
     Tcl_Obj **listv;
 
     rtPtr = (ReflectedTransform *)Tcl_Alloc(sizeof(ReflectedTransform));
@@ -1887,7 +1887,7 @@ FreeReflectedTransform(
  * InvokeTclMethod --
  *
  *	This function is used to invoke the Tcl level of a reflected channel.
- *	It handles all the command assembly, invokation, and generic state and
+ *	It handles all the command assembly, invocation, and generic state and
  *	result mgmt. It does *not* handle thread redirection; that is the
  *	responsibility of clients of this function.
  *
@@ -1919,8 +1919,8 @@ InvokeTclMethod(
     int cmdc;			/* #words in constructed command */
     Tcl_Obj *methObj = NULL;	/* Method name in object form */
     Tcl_InterpState sr;		/* State of handler interp */
-    int result;			/* Result code of method invokation */
-    Tcl_Obj *resObj = NULL;	/* Result of method invokation. */
+    int result;			/* Result code of method invocation */
+    Tcl_Obj *resObj = NULL;	/* Result of method invocation. */
 
     if (rtPtr->dead) {
 	/*
@@ -1944,7 +1944,7 @@ InvokeTclMethod(
      */
 
     /*
-     * Insert method into the pre-allocated area, after the command prefix,
+     * Insert method into the preallocated area, after the command prefix,
      * before the channel id.
      */
 
@@ -1971,7 +1971,7 @@ InvokeTclMethod(
     }
 
     /*
-     * And run the handler... This is done in auch a manner which leaves any
+     * And run the handler... This is done in a manner which leaves any
      * existing state intact.
      */
 
@@ -2004,7 +2004,7 @@ InvokeTclMethod(
 	     */
 	    if (result != TCL_ERROR) {
 		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rtPtr->argv);
-		size_t cmdLen;
+		Tcl_Size cmdLen;
 		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
@@ -2562,7 +2562,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec = 0;	/* Number of returned bytes */
+	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
@@ -2596,7 +2596,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec = 0;	/* Number of returned bytes */
+	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
@@ -2626,7 +2626,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec = 0;	/* Number of returned bytes */
+	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev; /* Array of returned bytes */
 
 	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
@@ -2652,7 +2652,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec = 0;	/* Number of returned bytes */
+	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
@@ -2770,7 +2770,7 @@ ForwardSetObjError(
     ForwardParam *paramPtr,
     Tcl_Obj *obj)
 {
-    size_t len;
+    Tcl_Size len;
     const char *msgStr = Tcl_GetStringFromObj(obj, &len);
 
     len++;
@@ -2873,7 +2873,7 @@ TimerRun(
  * ResultInit --
  *
  *	Initializes the specified buffer structure. The structure will contain
- *	valid information for an emtpy buffer.
+ *	valid information for an empty buffer.
  *
  * Side effects:
  *	See above.
@@ -3045,7 +3045,7 @@ TransformRead(
     Tcl_Obj *bufObj)
 {
     Tcl_Obj *resObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
 
     /*
@@ -3100,7 +3100,7 @@ TransformWrite(
 {
     Tcl_Obj *bufObj;
     Tcl_Obj *resObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     int res;
 
@@ -3167,7 +3167,7 @@ TransformDrain(
     int *errorCodePtr)
 {
     Tcl_Obj *resObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
 
     /*
@@ -3216,7 +3216,7 @@ TransformFlush(
     int op)
 {
     Tcl_Obj *resObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     int res;
 
