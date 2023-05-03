@@ -131,8 +131,8 @@ const Tcl_ObjType tclStringType = {
 static void
 GrowStringBuffer(
     Tcl_Obj *objPtr,
-    size_t needed,
-    int flag)
+    size_t needed, /* Not including terminating nul */
+    int flag)      /* If 0, try to overallocate */
 {
     /*
      * Preconditions:
@@ -145,11 +145,18 @@ GrowStringBuffer(
     char *ptr = NULL;
     size_t attempt;
 
+    assert(needed <= TCL_SIZE_MAX - 1);
+
     if (objPtr->bytes == &tclEmptyString) {
 	objPtr->bytes = NULL;
     }
     if (flag == 0 || stringPtr->allocated > 0) {
-	attempt = 2 * needed;
+	if (needed <= (TCL_SIZE_MAX - needed - 1)) {
+	    /* Doubling space will not overflow */
+	    attempt = 2 * needed;
+	} else {
+	    attempt = TCL_SIZE_MAX - 1;
+	}
 	ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1U);
 	if (ptr == NULL) {
 	    /*
@@ -157,11 +164,11 @@ GrowStringBuffer(
 	     * overflow into invalid argument values for attempt.
 	     */
 
-	    size_t limit = INT_MAX - needed;
-	    size_t extra = needed - objPtr->length + TCL_MIN_GROWTH;
-	    size_t growth = (extra > limit) ? limit : extra;
-
-	    attempt = needed + growth;
+	    if (needed < (TCL_SIZE_MAX - TCL_MIN_GROWTH - 1)) {
+		attempt = needed + TCL_MIN_GROWTH;
+	    } else {
+		attempt = TCL_SIZE_MAX - 1;
+	    }
 	    ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1U);
 	}
     }
@@ -190,32 +197,37 @@ GrowUnicodeBuffer(
 
     String *ptr = NULL, *stringPtr = GET_STRING(objPtr);
     size_t attempt;
+    size_t bytesNeeded; /* Actual storage including header */
 
+    /* Note STRING_MAXCHARS already takes into account space for nul */
+    if (needed > STRING_MAXCHARS) {
+	Tcl_Panic("max size for a Tcl unicode rep (%" TCL_Z_MODIFIER "d bytes) exceeded",
+		  STRING_MAXCHARS);
+    }
     if (stringPtr->maxChars > 0) {
-	/*
-	 * Subsequent appends - apply the growth algorithm.
-	 */
-
-	attempt = 2 * needed;
+	/* Subsequent appends - apply the growth algorithm. */
+	if (needed <= (STRING_MAXCHARS - needed)) {
+	    /* Doubling space will not overflow */
+	    attempt = 2 * needed;
+	} else {
+	    attempt = STRING_MAXCHARS;
+	}
 	ptr = stringAttemptRealloc(stringPtr, attempt);
 	if (ptr == NULL) {
 	    /*
 	     * Take care computing the amount of modest growth to avoid
 	     * overflow into invalid argument values for attempt.
 	     */
-
-	    size_t extra = needed - stringPtr->numChars
-		    + TCL_MIN_UNICHAR_GROWTH;
-
-	    attempt = needed + extra;
+	    if (needed < (STRING_MAXCHARS - TCL_MIN_GROWTH)) {
+		attempt = needed + TCL_MIN_GROWTH;
+	    } else {
+		attempt = STRING_MAXCHARS;
+	    }
 	    ptr = stringAttemptRealloc(stringPtr, attempt);
 	}
     }
     if (ptr == NULL) {
-	/*
-	 * First allocation - just big enough; or last chance fallback.
-	 */
-
+	/* First allocation - just big enough; or last chance fallback. */
 	attempt = needed;
 	ptr = stringRealloc(stringPtr, attempt);
     }
