@@ -394,7 +394,7 @@ bigtestRO string-replace-bigdata-1 "string replace" {789012345 012345678 XYZ7890
 } -cleanup {
     bigClean
 }
-# TODO - 
+# TODO -
 # - replacements string is large
 # - replace in the middle - string length grows, shrinks
 # - last < first
@@ -720,7 +720,7 @@ bigtestRO binary-format-bigdata-1 "binary format aN" [list 4294967296  X\0\0\0 \
     list [string length $bin] [string range $bin 0 3] [string range $bin end-3 end]
 } -cleanup {
     bigClean
-} 
+}
 # TODO - do string compare and add other format specifiers
 
 bigtestRO binary-format-bigdata-2 "binary format a*" 1 -body {
@@ -1116,7 +1116,7 @@ test puts-bigdata-1 "puts" -setup {
 } -constraints {
     bigdata
 } -body {
-    set fd [open $fpath w]    
+    set fd [open $fpath w]
     puts -nonewline $fd [testbigdata string 0x80000001]
     close $fd
     set fd [open $fpath]
@@ -1133,8 +1133,8 @@ test puts-bigdata-2 "puts" -setup {
 } -body {
     set fd [open $fpath w]
     set s [testbigdata string 0x7FFFFFFE]
-    # The character to append in the next line is —, EM DASH, 
-    # code point 0x2014 (decimal 8212, UTF-8 #xE2 #x80 #x94) 
+    # The character to append in the next line is —, EM DASH,
+    # code point 0x2014 (decimal 8212, UTF-8 #xE2 #x80 #x94)
     append s \u2014
     puts -nonewline $fd $s
     close $fd

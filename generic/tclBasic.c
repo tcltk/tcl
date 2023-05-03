@@ -5387,12 +5387,12 @@ TclEvalEx(
 		    expand[objectsUsed] = 1;
 
 		    additionalObjsCount = (numElements ? numElements : 1);
-		    
+
 		} else {
 		    expand[objectsUsed] = 0;
 		    additionalObjsCount = 1;
 		}
-		
+
 		/* Currently max command words in INT_MAX */
 		if (additionalObjsCount > INT_MAX ||
 		    objectsNeeded > (INT_MAX - additionalObjsCount)) {
