@@ -3052,7 +3052,7 @@ TclStringCat(
     int binary = 1;
     Tcl_Size oc;
     Tcl_Size length = 0;
-    int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
+    int allowUniChar = 1, requestUniChar = 0;
     Tcl_Size first = objc - 1;	/* Index of first value possibly not empty */
     Tcl_Size last = 0;		/* Index of last value possibly not empty */
     int inPlace = (flags & TCL_STRING_IN_PLACE) && !Tcl_IsShared(*objv);
@@ -3138,7 +3138,7 @@ TclStringCat(
 		}
 	    }
 	} while (--oc);
-    } else if ((allowUniChar && requestUniChar) || forceUniChar) {
+    } else if ((allowUniChar && requestUniChar)) {
 	/*
 	 * Result will be pure Tcl_UniChar array. Pre-size it.
 	 */
@@ -3295,7 +3295,7 @@ TclStringCat(
 		dst += more;
 	    }
 	}
-    } else if ((allowUniChar && requestUniChar) || forceUniChar) {
+    } else if ((allowUniChar && requestUniChar)) {
 	/* Efficiently produce a pure Tcl_UniChar array result */
 	Tcl_UniChar *dst;
 
