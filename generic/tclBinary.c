@@ -386,7 +386,7 @@ unsigned char *
 TclGetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
-    int *numBytesPtr)		/* If non-NULL, write the number of bytes
+    void *numBytesPtr)		/* If non-NULL, write the number of bytes
 				 * in the array here */
 {
     Tcl_Size numBytes = 0;
@@ -404,7 +404,7 @@ TclGetBytesFromObj(
 	    }
 	    return NULL;
 	} else {
-	    *numBytesPtr = (int) numBytes;
+	    *(int *)numBytesPtr = (int) numBytes;
 	}
     }
     return bytes;
@@ -870,7 +870,7 @@ BinaryFormatCmd(
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
-    Tcl_Size count;			/* Count associated with current format
+    Tcl_Size count;		/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
     const char *format;		/* Pointer to current position in format
@@ -1383,7 +1383,7 @@ BinaryScanCmd(
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
-    Tcl_Size count;			/* Count associated with current format
+    Tcl_Size count;		/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
     const char *format;		/* Pointer to current position in format
@@ -1795,14 +1795,14 @@ GetFormatSpec(
 	(*formatPtr)++;
 	*countPtr = BINARY_ALL;
     } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
-	unsigned long count;
+	unsigned long long count;
 
 	errno = 0;
-	count = strtoul(*formatPtr, (char **) formatPtr, 10);
-	if (errno || (count > (unsigned long) INT_MAX)) {
-	    *countPtr = INT_MAX;
+	count = strtoull(*formatPtr, (char **) formatPtr, 10);
+	if (errno || (count > TCL_SIZE_MAX)) {
+	    *countPtr = TCL_SIZE_MAX;
 	} else {
-	    *countPtr = (int) count;
+	    *countPtr = count;
 	}
     } else {
 	*countPtr = BINARY_NOCOUNT;
@@ -2638,11 +2638,11 @@ BinaryEncode64(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *limit;
-    int maxlen = 0;
+    Tcl_Size maxlen = 0;
     const char *wrapchar = "\n";
     Tcl_Size wrapcharlen = 1;
-    int i, index, size, outindex = 0, purewrap = 1;
-    Tcl_Size offset, count = 0;
+    int index, purewrap = 1;
+    Tcl_Size i, offset, size, outindex = 0, count = 0;
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2658,7 +2658,7 @@ BinaryEncode64(
 	}
 	switch (index) {
 	case OPT_MAXLEN:
-	    if (Tcl_GetIntFromObj(interp, objv[i + 1], &maxlen) != TCL_OK) {
+	    if (Tcl_GetSizeIntFromObj(interp, objv[i + 1], &maxlen) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (maxlen < 0) {
@@ -2764,12 +2764,12 @@ BinaryEncodeUu(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
-    int rawLength, i, bits, index;
+    int i, bits, index;
     unsigned int n;
     int lineLength = 61;
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
-    Tcl_Size j, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
+    Tcl_Size j, rawLength, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2859,7 +2859,7 @@ BinaryEncodeUu(
      */
 
     while (offset < count) {
-	int lineLen = count - offset;
+	Tcl_Size lineLen = count - offset;
 
 	if (lineLen > rawLength) {
 	    lineLen = rawLength;

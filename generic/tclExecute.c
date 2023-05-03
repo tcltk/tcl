@@ -981,10 +981,10 @@ GrowEvaluationStack(
 {
     ExecStack *esPtr = eePtr->execStackPtr, *oldPtr = NULL;
     size_t newBytes;
-    int growth = growth1;
-    int newElems, currElems, needed = growth - (esPtr->endPtr - esPtr->tosPtr);
+    Tcl_Size growth = growth1;
+    Tcl_Size newElems, currElems, needed = growth - (esPtr->endPtr - esPtr->tosPtr);
     Tcl_Obj **markerPtr = esPtr->markerPtr, **memStart;
-    int moveWords = 0;
+    Tcl_Size moveWords = 0;
 
     if (move) {
 	if (!markerPtr) {
@@ -2825,8 +2825,12 @@ TEBCresume(
 
 	pc += pcAdjustment;
 	TEBC_YIELD();
-	return TclNREvalObjv(interp, objc, objv,
+	if (objc > INT_MAX) {
+	    return TclCommandWordLimitError(interp, objc);
+	} else {
+	    return TclNREvalObjv(interp, objc, objv,
 		TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);
+	}
 
     case INST_INVOKE_REPLACE:
 	objc = TclGetUInt4AtPtr(pc+1);
@@ -5272,7 +5276,7 @@ TEBCresume(
 	    TclNewObj(objResultPtr);
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
-		    Tcl_GetByteArrayFromObj(valuePtr, (size_t *)NULL)+index, 1);
+		    Tcl_GetByteArrayFromObj(valuePtr, (Tcl_Size *)NULL)+index, 1);
 	} else if (valuePtr->bytes && slength == valuePtr->length) {
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
@@ -5488,7 +5492,7 @@ TEBCresume(
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_FIND_LAST:
-	objResultPtr = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, INT_MAX - 1);
+	objResultPtr = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, TCL_SIZE_MAX - 1);
 
 	TRACE(("%.20s %.20s => %s\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(objResultPtr)));
@@ -5536,7 +5540,7 @@ TEBCresume(
 		    nocase);
 	} else if (TclIsPureByteArray(valuePtr) && TclIsPureByteArray(value2Ptr) && !nocase) {
 	    unsigned char *bytes1, *bytes2;
-	    size_t wlen1 = 0, wlen2 = 0;
+	    Tcl_Size wlen1 = 0, wlen2 = 0;
 
 	    bytes1 = Tcl_GetByteArrayFromObj(valuePtr, &wlen1);
 	    bytes2 = Tcl_GetByteArrayFromObj(value2Ptr, &wlen2);

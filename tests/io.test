@@ -9509,7 +9509,7 @@ test io-75.14 {
     lappend res [gets $chan]
     set status [catch {gets $chan} cres copts]
     lappend res $status $cres
-    chan configure $chan -profile tcl8 
+    chan configure $chan -profile tcl8
     lappend res [gets $chan]
     lappend res [gets $chan]
     close $chan
