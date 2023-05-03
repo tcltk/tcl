@@ -1672,23 +1672,6 @@ Tcl_MethodName(
 }
 
 int
-TclMethodIsType(
-    Tcl_Method method,
-    const Tcl_MethodType *typePtr,
-    void **clientDataPtr)
-{
-    Method *mPtr = (Method *) method;
-
-    if (mPtr->typePtr == typePtr) {
-	if (clientDataPtr != NULL) {
-	    *clientDataPtr = mPtr->clientData;
-	}
-	return 1;
-    }
-    return 0;
-}
-
-int
 Tcl_MethodIsType(
     Tcl_Method method,
     const Tcl_MethodType *typePtr,
