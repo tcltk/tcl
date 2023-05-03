@@ -10,7 +10,6 @@
  */
 
 #include "tclInt.h"
-#include "tclIO.h"
 
 typedef size_t (LengthProc)(const char *src);
 
@@ -200,16 +199,16 @@ static struct TclEncodingProfiles {
     {"tcl8", TCL_ENCODING_PROFILE_TCL8},
 };
 #define PROFILE_TCL8(flags_)                                           \
-    ((CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_TCL8)   \
-     || (CHANNEL_PROFILE_GET(flags_) == 0                         \
+    ((ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_TCL8)   \
+     || (ENCODING_PROFILE_GET(flags_) == 0                         \
 	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_TCL8))
 #define PROFILE_STRICT(flags_)                                         \
-    ((CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
-     || (CHANNEL_PROFILE_GET(flags_) == 0                         \
+    ((ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_STRICT) \
+     || (ENCODING_PROFILE_GET(flags_) == 0                         \
 	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_STRICT))
 #define PROFILE_REPLACE(flags_)                                         \
-    ((CHANNEL_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE) \
-     || (CHANNEL_PROFILE_GET(flags_) == 0                          \
+    ((ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE) \
+     || (ENCODING_PROFILE_GET(flags_) == 0                          \
 	 && TCL_ENCODING_PROFILE_DEFAULT == TCL_ENCODING_PROFILE_REPLACE))
 
 #define UNICODE_REPLACE_CHAR ((Tcl_UniChar)0xFFFD)
@@ -2528,7 +2527,7 @@ UtfToUtfProc(
     flags |= PTR2INT(clientData);
     dstEnd = dst + dstLen - ((flags & ENCODING_UTF) ? TCL_UTF_MAX : 6);
 
-    profile = CHANNEL_PROFILE_GET(flags);
+    profile = ENCODING_PROFILE_GET(flags);
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
@@ -4483,9 +4482,9 @@ TclEncodingProfileIdToName(
 int TclEncodingSetProfileFlags(int flags)
 {
     if (flags & TCL_ENCODING_STOPONERROR) {
-	CHANNEL_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
+	ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_STRICT);
     } else {
-	int profile = CHANNEL_PROFILE_GET(flags);
+	int profile = ENCODING_PROFILE_GET(flags);
 	switch (profile) {
 	case TCL_ENCODING_PROFILE_TCL8:
 	case TCL_ENCODING_PROFILE_STRICT:
@@ -4493,7 +4492,7 @@ int TclEncodingSetProfileFlags(int flags)
 	    break;
 	case 0: /* Unspecified by caller */
 	default:
-	    CHANNEL_PROFILE_SET(flags, TCL_ENCODING_PROFILE_DEFAULT);
+	    ENCODING_PROFILE_SET(flags, TCL_ENCODING_PROFILE_DEFAULT);
 	    break;
 	}
     }
