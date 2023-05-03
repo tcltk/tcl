@@ -94,6 +94,7 @@ static TclOOStubs stubsCopy = {
 #ifdef Tcl_GetObjectClassName
     ,NULL
 #endif
+#if TCL_MAJOR_VERSION > 8
 #ifdef Tcl_MethodIsType2
     ,NULL
 #endif
@@ -102,6 +103,7 @@ static TclOOStubs stubsCopy = {
 #endif
 #ifdef Tcl_NewMethod2
     ,NULL
+#endif
 #endif
 };
 

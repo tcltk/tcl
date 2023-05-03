@@ -2009,33 +2009,17 @@ EXTERN int		Tcl_GetBool(Tcl_Interp *interp, const char *src,
 /* 675 */
 EXTERN int		Tcl_GetBoolFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, int flags, char *charPtr);
-/* 676 */
-EXTERN Tcl_Command	Tcl_CreateObjCommand2(Tcl_Interp *interp,
-				const char *cmdName, Tcl_ObjCmdProc2 *proc2,
-				void *clientData,
-				Tcl_CmdDeleteProc *deleteProc);
-/* 677 */
-EXTERN Tcl_Trace	Tcl_CreateObjTrace2(Tcl_Interp *interp,
-				Tcl_Size level, int flags,
-				Tcl_CmdObjTraceProc2 *objProc2,
-				void *clientData,
-				Tcl_CmdObjTraceDeleteProc *delProc);
-/* 678 */
-EXTERN Tcl_Command	Tcl_NRCreateCommand2(Tcl_Interp *interp,
-				const char *cmdName, Tcl_ObjCmdProc2 *proc,
-				Tcl_ObjCmdProc2 *nreProc2, void *clientData,
-				Tcl_CmdDeleteProc *deleteProc);
-/* 679 */
-EXTERN int		Tcl_NRCallObjProc2(Tcl_Interp *interp,
-				Tcl_ObjCmdProc2 *objProc2, void *clientData,
-				ptrdiff_t objc, Tcl_Obj *const objv[]);
+/* Slot 676 is reserved */
+/* Slot 677 is reserved */
+/* Slot 678 is reserved */
+/* Slot 679 is reserved */
 /* 680 */
 EXTERN int		Tcl_GetNumberFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, void **clientDataPtr,
 				int *typePtr);
 /* 681 */
 EXTERN int		Tcl_GetNumber(Tcl_Interp *interp, const char *bytes,
-				ptrdiff_t numBytes, void **clientDataPtr,
+				Tcl_Size numBytes, void **clientDataPtr,
 				int *typePtr);
 /* 682 */
 EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
@@ -2762,12 +2746,12 @@ typedef struct TclStubs {
     int (*tclGetUniChar) (Tcl_Obj *objPtr, Tcl_Size index); /* 673 */
     int (*tcl_GetBool) (Tcl_Interp *interp, const char *src, int flags, char *charPtr); /* 674 */
     int (*tcl_GetBoolFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, char *charPtr); /* 675 */
-    Tcl_Command (*tcl_CreateObjCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 676 */
-    Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, Tcl_Size level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
-    Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 678 */
-    int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2, void *clientData, ptrdiff_t objc, Tcl_Obj *const objv[]); /* 679 */
+    void (*reserved676)(void);
+    void (*reserved677)(void);
+    void (*reserved678)(void);
+    void (*reserved679)(void);
     int (*tcl_GetNumberFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, void **clientDataPtr, int *typePtr); /* 680 */
-    int (*tcl_GetNumber) (Tcl_Interp *interp, const char *bytes, ptrdiff_t numBytes, void **clientDataPtr, int *typePtr); /* 681 */
+    int (*tcl_GetNumber) (Tcl_Interp *interp, const char *bytes, Tcl_Size numBytes, void **clientDataPtr, int *typePtr); /* 681 */
     int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
     Tcl_Size (*tcl_GetEncodingNulLength) (Tcl_Encoding encoding); /* 683 */
     int (*tcl_GetWideUIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideUInt *uwidePtr); /* 684 */
@@ -4157,14 +4141,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetBool) /* 674 */
 #define Tcl_GetBoolFromObj \
 	(tclStubsPtr->tcl_GetBoolFromObj) /* 675 */
-#define Tcl_CreateObjCommand2 \
-	(tclStubsPtr->tcl_CreateObjCommand2) /* 676 */
-#define Tcl_CreateObjTrace2 \
-	(tclStubsPtr->tcl_CreateObjTrace2) /* 677 */
-#define Tcl_NRCreateCommand2 \
-	(tclStubsPtr->tcl_NRCreateCommand2) /* 678 */
-#define Tcl_NRCallObjProc2 \
-	(tclStubsPtr->tcl_NRCallObjProc2) /* 679 */
+/* Slot 676 is reserved */
+/* Slot 677 is reserved */
+/* Slot 678 is reserved */
+/* Slot 679 is reserved */
 #define Tcl_GetNumberFromObj \
 	(tclStubsPtr->tcl_GetNumberFromObj) /* 680 */
 #define Tcl_GetNumber \
@@ -4580,6 +4560,11 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_CreateSlave Tcl_CreateChild
 #define Tcl_GetSlave Tcl_GetChild
 #define Tcl_GetMaster Tcl_GetParent
+
+#define Tcl_NRCallObjProc2 Tcl_NRCallObjProc
+#define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
+#define Tcl_CreateObjTrace2 Tcl_CreateObjTrace
+#define Tcl_NRCreateCommand2 Tcl_NRCreateCommand
 
 /* TIP #660 */
 #define Tcl_GetSizeIntFromObj Tcl_GetIntFromObj
