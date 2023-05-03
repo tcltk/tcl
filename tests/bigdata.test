@@ -1114,7 +1114,6 @@ bigtestRO concat-bigdata-1 "concat" {4294967296 {0 1 2 3 4} {6 7 0 1 2} {3 4 5 6
 test puts-bigdata-1 "puts" -setup {
     set fpath [makeFile {} bug-0306a5563.data]
 } -constraints {
-    bug0306a5563
     bigdata
 } -body {
     set fd [open $fpath w]    
@@ -1130,7 +1129,6 @@ test puts-bigdata-1 "puts" -setup {
 test puts-bigdata-2 "puts" -setup {
     set fpath [tcltest::makeFile {} bug-0306a5563.data]
 } -constraints {
-    bug0306a5563
     bigdata
 } -body {
     set fd [open $fpath w]
