@@ -1,29 +1,12 @@
 /*
  * tclStringRep.h --
  *
- *	This file contains the definition of the Unicode string internal
- *	representation and macros to access it.
+ *  This file contains the definition of internal representations of a string
+ *  and macros to access it.
  *
- *	A Unicode string is an internationalized string. Conceptually, a
- *	Unicode string is an array of 16-bit quantities organized as a
- *	sequence of properly formed UTF-8 characters. There is a one-to-one
- *	map between Unicode and UTF characters. Because Unicode characters
- *	have a fixed width, operations such as indexing operate on Unicode
- *	data. The String object is optimized for the case where each UTF char
- *	in a string is only one byte. In this case, we store the value of
- *	numChars, but we don't store the Unicode data (unless Tcl_GetUnicode
- *	is explicitly called).
- *
- *	The String object type stores one or both formats. The default
- *	behavior is to store UTF. Once Unicode is calculated by a function, it
- *	is stored in the internal rep for future access (without an additional
- *	O(n) cost).
- *
- *	To allow many appends to be done to an object without constantly
- *	reallocating the space for the string or Unicode representation, we
- *	allocate double the space for the string or Unicode and use the
- *	internal representation to keep track of how much space is used vs.
- *	allocated.
+ *  Conceptually, a string is a sequence of Unicode code points. Internally
+ *  it may be stored in an encoding form such as a modified version of UTF-8
+ *  or UTF-16 (when TCL_UTF_MAX=3) or UTF-32.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation.
@@ -39,10 +22,10 @@
 /*
  * The following structure is the internal rep for a String object. It keeps
  * track of how much memory has been used and how much has been allocated for
- * the Unicode and UTF string to enable growing and shrinking of the UTF and
- * Unicode reps of the String object with fewer mallocs. To optimize string
+ * the various representations to enable growing and shrinking of 
+ * the String object with fewer mallocs. To optimize string
  * length and indexing operations, this structure also stores the number of
- * characters (same of UTF and Unicode!) once that value has been computed.
+ * code points (independent of encoding form) once that value has been computed.
  */
 
 typedef struct {
@@ -52,17 +35,18 @@ typedef struct {
 				 * Unicode rep, or that the number of UTF bytes ==
 				 * the number of chars. */
     Tcl_Size allocated;		/* The amount of space actually allocated for
-				 * the UTF string (minus 1 byte for the
+				 * the UTF-8 string (minus 1 byte for the
 				 * termination char). */
     Tcl_Size maxChars;		/* Max number of chars that can fit in the
 				 * space allocated for the Unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has
-				 * a Unicode representation. */
-    unsigned short unicode[TCLFLEXARRAY];	/* The array of Unicode chars. The actual size
-				 * of this field depends on the 'maxChars'
-				 * field above. */
+				 * a Tcl_UniChar representation. */
+    unsigned short unicode[TCLFLEXARRAY];	/* The array of Tcl_UniChar units.
+				 * The actual size of this field depends on
+				 * the maxChars field above. */
 } String;
 
+/* Limit on string lengths. The -1 because limit does not include the nul */
 #define STRING_MAXCHARS \
     (int)(((size_t)UINT_MAX - offsetof(String, unicode))/sizeof(unsigned short) - 1)
 #define STRING_SIZE(numChars) \
