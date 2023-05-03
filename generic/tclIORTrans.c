@@ -264,7 +264,7 @@ struct ForwardParamTransform {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     char *buf;			/* I: Bytes to transform,
 				 * O: Bytes in transform result */
-    size_t size;		/* I: #bytes to transform,
+    Tcl_Size size;		/* I: #bytes to transform,
 				 * O: #bytes in the transform result */
 };
 struct ForwardParamLimit {
@@ -2562,7 +2562,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec = 0;	/* Number of returned bytes */
+	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
@@ -2596,7 +2596,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec = 0;	/* Number of returned bytes */
+	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
@@ -2626,7 +2626,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec = 0;	/* Number of returned bytes */
+	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev; /* Array of returned bytes */
 
 	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
@@ -2652,7 +2652,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec = 0;	/* Number of returned bytes */
+	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
@@ -3045,7 +3045,7 @@ TransformRead(
     Tcl_Obj *bufObj)
 {
     Tcl_Obj *resObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
 
     /*
@@ -3100,7 +3100,7 @@ TransformWrite(
 {
     Tcl_Obj *bufObj;
     Tcl_Obj *resObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     int res;
 
@@ -3167,7 +3167,7 @@ TransformDrain(
     int *errorCodePtr)
 {
     Tcl_Obj *resObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
 
     /*
@@ -3216,7 +3216,7 @@ TransformFlush(
     int op)
 {
     Tcl_Obj *resObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     int res;
 

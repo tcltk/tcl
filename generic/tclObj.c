@@ -1707,7 +1707,7 @@ char *
 TclGetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
 				 * be returned. */
-    int *lengthPtr)	/* If non-NULL, the location where the string
+    void *lengthPtr)	/* If non-NULL, the location where the string
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {
@@ -1739,9 +1739,9 @@ TclGetStringFromObj(
     if (lengthPtr != NULL) {
 	if (objPtr->length > INT_MAX) {
 	    Tcl_Panic("Tcl_GetStringFromObj with 'int' lengthPtr"
-		    " cannot handle such long strings. Please use 'size_t'");
+		    " cannot handle such long strings. Please use 'Tcl_Size'");
 	}
-	*lengthPtr = (int)objPtr->length;
+	*(int *)lengthPtr = (int)objPtr->length;
     }
     return objPtr->bytes;
 }
