@@ -3191,7 +3191,7 @@ TclpOpenTemporaryFile(
     char *namePtr;
     HANDLE handle;
     DWORD flags = FILE_ATTRIBUTE_TEMPORARY;
-    size_t length;
+    Tcl_Size length;
     int counter, counter2;
     Tcl_DString buf;
 

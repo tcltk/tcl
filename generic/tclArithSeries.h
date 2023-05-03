@@ -30,6 +30,7 @@ typedef struct {
     double start;
     double end;
     double step;
+    int precision;
 } ArithSeriesDbl;
 
 

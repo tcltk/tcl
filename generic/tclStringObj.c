@@ -515,6 +515,11 @@ TclCheckEmptyString(
 	return TCL_EMPTYSTRING_YES;
     }
 
+    if (TclIsPureByteArray(objPtr)
+	&& Tcl_GetCharLength(objPtr) == 0) {
+	return TCL_EMPTYSTRING_YES;
+    }
+
     if (TclListObjIsCanonical(objPtr)) {
 	TclListObjLengthM(NULL, objPtr, &length);
 	return length == 0;
@@ -685,7 +690,7 @@ Tcl_UniChar *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the Unicode string
 				 * for. */
-    int *lengthPtr)		/* If non-NULL, the location where the string
+    void *lengthPtr)		/* If non-NULL, the location where the string
 				 * rep's Tcl_UniChar length should be stored. If
 				 * NULL, no length is stored. */
 {
@@ -704,7 +709,7 @@ TclGetUnicodeFromObj(
 	    Tcl_Panic("Tcl_GetUnicodeFromObj with 'int' lengthPtr"
 		    " cannot handle such long strings. Please use 'Tcl_Size'");
 	}
-	*lengthPtr = (int)stringPtr->numChars;
+	*(int *)lengthPtr = (int)stringPtr->numChars;
     }
     return stringPtr->unicode;
 }
@@ -1431,26 +1436,26 @@ Tcl_AppendObjToObj(
     Tcl_Size appendNumChars = TCL_INDEX_NONE;
     const char *bytes;
 
-    /*
-     * Special case: second object is standard-empty is fast case. We know
-     * that appending nothing to anything leaves that starting anything...
-     */
-
-    if (appendObjPtr->bytes == &tclEmptyString) {
+    if (TclCheckEmptyString(appendObjPtr) == TCL_EMPTYSTRING_YES) {
 	return;
     }
 
-    /*
-     * Handle append of one ByteArray object to another as a special case.
-     * Note that we only do this when the objects are pure so that the
-     * bytearray faithfully represent the true value; Otherwise appending the
-     * byte arrays together could lose information;
-     */
+    if (TclCheckEmptyString(objPtr) == TCL_EMPTYSTRING_YES) {
+	TclSetDuplicateObj(objPtr, appendObjPtr);
+	return;
+    }
 
-    if ((TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)
-	    && TclIsPureByteArray(appendObjPtr)) {
+    if (
+	TclIsPureByteArray(appendObjPtr)
+	&& (TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)
+    ) {
 	/*
-	 * You might expect the code here to be
+	 * Both bytearray objects are pure, so the second internal bytearray value
+	 * can be appended to the first, with no need to modify the "bytes" field.
+	 */
+
+	/*
+	 * One might expect the code here to be
 	 *
 	 *  bytes = Tcl_GetByteArrayFromObj(appendObjPtr, &length);
 	 *  TclAppendBytesToByteArray(objPtr, bytes, length);
@@ -3139,7 +3144,7 @@ TclStringCat(
     int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
     Tcl_Size first = objc - 1;	/* Index of first value possibly not empty */
     Tcl_Size last = 0;		/* Index of last value possibly not empty */
-    int inPlace = flags & TCL_STRING_IN_PLACE;
+    int inPlace = (flags & TCL_STRING_IN_PLACE) && !Tcl_IsShared(*objv);
 
     /* assert ( objc >= 0 ) */
 
@@ -3267,7 +3272,8 @@ TclStringCat(
 
 		Tcl_Obj *objPtr = *ov++;
 
-		if (objPtr->bytes == NULL) {
+		if (objPtr->bytes == NULL
+		    && TclCheckEmptyString(objPtr) != TCL_EMPTYSTRING_YES) {
 		    /* No string rep; Take the chance we can avoid making it */
 		    pendingPtr = objPtr;
 		} else {
@@ -3343,6 +3349,7 @@ TclStringCat(
     }
 
     objv += first; objc = (last - first + 1);
+    inPlace = (flags & TCL_STRING_IN_PLACE) && !Tcl_IsShared(*objv);
 
     if (binary) {
 	/* Efficiently produce a pure byte array result */
@@ -3353,7 +3360,7 @@ TclStringCat(
 	 * failure to allocate enough space. Following stanza may panic.
 	 */
 
-	if (inPlace && !Tcl_IsShared(*objv)) {
+	if (inPlace) {
 	    Tcl_Size start = 0;
 
 	    objResultPtr = *objv++; objc--;
@@ -3383,7 +3390,7 @@ TclStringCat(
 	/* Efficiently produce a pure Tcl_UniChar array result */
 	Tcl_UniChar *dst;
 
-	if (inPlace && !Tcl_IsShared(*objv)) {
+	if (inPlace) {
 	    Tcl_Size start;
 
 	    objResultPtr = *objv++; objc--;
@@ -3434,7 +3441,7 @@ TclStringCat(
 	/* Efficiently concatenate string reps */
 	char *dst;
 
-	if (inPlace && !Tcl_IsShared(*objv)) {
+	if (inPlace) {
 	    Tcl_Size start;
 
 	    objResultPtr = *objv++; objc--;
@@ -4497,6 +4504,14 @@ ExtendStringRepWithUnicode(
 
   copyBytes:
     dst = objPtr->bytes + origLength;
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, stringPtr->allocated - origLength);
+#endif
     for (i = 0; i < numChars; i++) {
 	dst += Tcl_UniCharToUtf(unicode[i], dst);
     }

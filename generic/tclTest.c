@@ -235,7 +235,7 @@ static Tcl_ObjCmdProc2	TestbytestringObjCmd;
 static Tcl_ObjCmdProc2	TestsetbytearraylengthObjCmd;
 static Tcl_ObjCmdProc2	TestpurebytesobjObjCmd;
 static Tcl_ObjCmdProc2	TeststringbytesObjCmd;
-static Tcl_CmdProc	TestcmdinfoCmd;
+static Tcl_ObjCmdProc2	TestcmdinfoObjCmd;
 static Tcl_CmdProc	TestcmdtokenCmd;
 static Tcl_CmdProc	TestcmdtraceCmd;
 static Tcl_CmdProc	TestconcatobjCmd;
@@ -596,7 +596,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testcmdtoken", TestcmdtokenCmd, NULL,
 	    NULL);
-    Tcl_CreateCommand(interp, "testcmdinfo", TestcmdinfoCmd, NULL,
+    Tcl_CreateObjCommand(interp, "testcmdinfo", TestcmdinfoObjCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testcmdtrace", TestcmdtraceCmd,
 	    NULL, NULL);
@@ -1070,7 +1070,7 @@ TestbumpinterpepochObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestcmdinfoCmd --
+ * TestcmdinfoObjCmd --
  *
  *	This procedure implements the "testcmdinfo" command.  It is used to
  *	test Tcl_GetCommandInfo, Tcl_SetCommandInfo, and command creation and
@@ -1086,28 +1086,44 @@ TestbumpinterpepochObjCmd(
  */
 
 static int
-TestcmdinfoCmd(
+TestcmdinfoObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    TclSizeT objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])      /* Argument objects. */
 {
+    static const char *const subcmds[] = {
+	   "create", "delete", "get", "modify", NULL
+    };
+    enum options {
+	CMDINFO_CREATE,
+	CMDINFO_DELETE, CMDINFO_GET, CMDINFO_MODIFY
+    } idx;
     Tcl_CmdInfo info;
 
-    if (argc != 3) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" option cmdName\"", NULL);
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command arg");
 	return TCL_ERROR;
     }
-    if (strcmp(argv[1], "create") == 0) {
-	Tcl_CreateCommand(interp, argv[2], CmdProc1, (void *) "original",
-		CmdDelProc1);
-    } else if (strcmp(argv[1], "delete") == 0) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "option", 0,
+	    &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    switch (idx) {
+    case CMDINFO_CREATE:
+	Tcl_CreateCommand(interp,
+			  Tcl_GetString(objv[2]),
+			  CmdProc1,
+			  (void *)"original",
+			  CmdDelProc1);
+	break;
+    case CMDINFO_DELETE:
 	Tcl_DStringInit(&delString);
-	Tcl_DeleteCommand(interp, argv[2]);
+	Tcl_DeleteCommand(interp, Tcl_GetString(objv[2]));
 	Tcl_DStringResult(interp, &delString);
-    } else if (strcmp(argv[1], "get") == 0) {
-	if (Tcl_GetCommandInfo(interp, argv[2], &info) ==0) {
+	break;
+    case CMDINFO_GET:
+	if (Tcl_GetCommandInfo(interp, Tcl_GetString(objv[2]), &info) ==0) {
 	    Tcl_AppendResult(interp, "??", NULL);
 	    return TCL_OK;
 	}
@@ -1130,35 +1146,35 @@ TestcmdinfoCmd(
 	    Tcl_AppendResult(interp, " unknown", NULL);
 	}
 	Tcl_AppendResult(interp, " ", info.namespacePtr->fullName, NULL);
-	if (info.isNativeObjectProc == 2) {
-	    Tcl_AppendResult(interp, " nativeObjectProc2", NULL);
-	} else if (info.isNativeObjectProc == 0) {
+	if (info.isNativeObjectProc == 0) {
 	    Tcl_AppendResult(interp, " stringProc", NULL);
-	} else {
+	} else if (info.isNativeObjectProc == 1) {
 	    Tcl_AppendResult(interp, " nativeObjectProc", NULL);
+	} else if (info.isNativeObjectProc == 2) {
+	    Tcl_AppendResult(interp, " nativeObjectProc2", NULL);
+	} else {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_ObjPrintf("Invalid isNativeObjectProc value %d",
+			      info.isNativeObjectProc));
+	    return TCL_ERROR;
 	}
-    } else if (strcmp(argv[1], "modify") == 0) {
+	break;
+    case CMDINFO_MODIFY:
 	info.proc = CmdProc2;
 	info.clientData = (void *) "new_command_data";
-#if TCL_MAJOR_VERSION > 8
-	info.objProc2 = NULL;
-	info.objClientData2 = NULL;
-#else
 	info.objProc = NULL;
 	info.objClientData = NULL;
-#endif
 	info.deleteProc = CmdDelProc2;
 	info.deleteData = (void *) "new_delete_data";
-	if (Tcl_SetCommandInfo(interp, argv[2], &info) == 0) {
+	if (Tcl_SetCommandInfo(interp, Tcl_GetString(objv[2]), &info) == 0) {
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(1));
 	}
-    } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create, delete, get, or modify", NULL);
-	return TCL_ERROR;
+	break;
     }
+
     return TCL_OK;
 }
 
@@ -4406,7 +4422,7 @@ TestregexpObjCmd(
 {
     int indices, match, about;
     TclSizeT i;
-    Tcl_Size ii, stringLength;
+    Tcl_Size stringLength, ii;
     int hasxflags, cflags, eflags;
     Tcl_RegExp regExpr;
     const char *string;
@@ -5177,7 +5193,7 @@ TestfileCmd(
     const char *subcmd;
     TclSizeT j;
 
-    if (argc + 1 < 4) {
+    if (argc < 3) {
 	return TCL_ERROR;
     }
 
@@ -5696,7 +5712,14 @@ TestbytestringObjCmd(
     TclSizeT objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    Tcl_Size n = 0;
+    struct {
+#if !defined(TCL_NO_DEPRECATED)
+	int n; /* On purpose, not Tcl_Size, in order to demonstrate what happens */
+#else
+	Tcl_Size n;
+#endif
+	int m; /* This variable should not be overwritten */
+    } x = {0, 1};
     const char *p;
 
     if (objc != 2) {
@@ -5704,11 +5727,15 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
 
-    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &n);
+    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &x.n);
     if (p == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
+    if (x.m != 1) {
+	Tcl_AppendResult(interp, "Tcl_GetBytesFromObj() overwrites variable", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, x.n));
     return TCL_OK;
 }
 
@@ -6784,7 +6811,7 @@ TestWrongNumArgsObjCmd(
     Tcl_Size i, length;
     const char *msg;
 
-    if (objc + 1 < 4) {
+    if (objc < 3) {
 	goto insufArgs;
     }
 

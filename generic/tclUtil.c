@@ -3848,6 +3848,76 @@ TclIndexDecode(
 }
 
 /*
+ *------------------------------------------------------------------------
+ *
+ * TclIndexInvalidError --
+ *
+ *    Generates an error message including the invalid index.
+ *
+ * Results:
+ *    Always return TCL_ERROR.
+ *
+ * Side effects:
+ *    If interp is not-NULL, an error message is stored in it.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclIndexInvalidError (
+    Tcl_Interp *interp,   /* May be NULL */
+    const char *idxType,  /* The descriptive string for idx. Defaults to "index" */
+    Tcl_Size idx)         /* Invalid index value */
+{
+    if (interp) {
+	Tcl_SetObjResult(interp,
+			 Tcl_ObjPrintf("Invalid %s value %" TCL_SIZE_MODIFIER "d.",
+				       idxType ? idxType : "index",
+				       idx));
+    }
+    return TCL_ERROR; /* Always */
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclCommandWordLimitErrpr --
+ *
+ *    Generates an error message limit on number of command words exceeded.
+ *
+ * Results:
+ *    Always return TCL_ERROR.
+ *
+ * Side effects:
+ *    If interp is not-NULL, an error message is stored in it.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclCommandWordLimitError (
+    Tcl_Interp *interp,   /* May be NULL */
+    Tcl_Size count)       /* If <= 0, "unknown" */
+{
+    if (interp) {
+	if (count > 0) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_ObjPrintf("Number of words (%" TCL_SIZE_MODIFIER
+			      "d) in command exceeds limit %" TCL_SIZE_MODIFIER
+			      "d.",
+			      count,
+			      (Tcl_Size)INT_MAX));
+	}
+	else {
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("Number of words in command exceeds "
+					   "limit %" TCL_SIZE_MODIFIER "d.",
+					   (Tcl_Size)INT_MAX));
+	}
+    }
+    return TCL_ERROR; /* Always */
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * ClearHash --

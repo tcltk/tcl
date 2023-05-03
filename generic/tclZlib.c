@@ -3762,7 +3762,7 @@ ZlibStackChannelTransform(
     if (compDictObj != NULL) {
 	cd->compDictObj = Tcl_DuplicateObj(compDictObj);
 	Tcl_IncrRefCount(cd->compDictObj);
-	Tcl_GetByteArrayFromObj(cd->compDictObj, (size_t *)NULL);
+	Tcl_GetByteArrayFromObj(cd->compDictObj, (Tcl_Size *)NULL);
     }
 
     if (format == TCL_ZLIB_FORMAT_RAW) {
