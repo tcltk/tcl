@@ -249,7 +249,7 @@ UpdateStringOfUTF16String(
 #endif
 
 #endif
-
+
 /*
  * TCL STRING GROWTH ALGORITHM
  *
@@ -3130,12 +3130,16 @@ AppendPrintfToObjVA(
 
 		break;
 	    }
+	    case 'p':
+		if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
+		    size = 2;
+		}
+		/* FALLTHRU */
 	    case 'c':
 	    case 'i':
 	    case 'u':
 	    case 'd':
 	    case 'o':
-	    case 'p':
 	    case 'x':
 	    case 'X':
 		seekingConversion = 0;
