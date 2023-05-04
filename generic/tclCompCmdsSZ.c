@@ -2675,7 +2675,7 @@ TclCompileTailcallCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     int i;
 
-    if (parsePtr->numWords < 2 || parsePtr->numWords > 256
+    if (parsePtr->numWords < 2 || parsePtr->numWords >= 256
 	    || envPtr->procPtr == NULL) {
 	return TCL_ERROR;
     }
