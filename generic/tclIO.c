@@ -7612,7 +7612,7 @@ Tcl_InputBuffered(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InputEncodingError --
+ * TclInputEncodingError --
  *
  *	Returns 1 if input is in an encoding error position, 0 otherwise.
  *
@@ -7626,7 +7626,7 @@ Tcl_InputBuffered(
  */
 
 int
-Tcl_InputEncodingError(
+TclInputEncodingError(
     Tcl_Channel chan)		/* Is this channel blocked? */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;

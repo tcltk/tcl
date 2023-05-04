@@ -447,7 +447,7 @@ Tcl_ReadObjCmd(
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
 	goto readError;
-    } else if (Tcl_InputEncodingError(chan)) {
+    } else if (TclInputEncodingError(chan)) {
 	Tcl_Obj *returnOpts = Tcl_NewDictObj();
 	Tcl_DictObjPut(NULL, returnOpts, Tcl_NewStringObj("-data", TCL_INDEX_NONE), resultPtr);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
