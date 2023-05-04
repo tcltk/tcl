@@ -708,6 +708,13 @@ test tailcall-14.1-bc {{in a deleted namespace} {byte compiled}} -body {
     }
 } -returnCodes 1 -result {namespace "::ns" not found}
 
+test tailcall-bug-784befb0ba {tailcall crash with 254 args} -body {
+    proc tccrash args {llength $args}
+    # Must be EXACTLY 254 for crash
+    proc p {} [list tailcall tccrash {*}[lrepeat 254 x]]
+    p
+} -result 254
+
 # cleanup
 ::tcltest::cleanupTests
 

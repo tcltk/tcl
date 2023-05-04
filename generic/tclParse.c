@@ -214,7 +214,7 @@ Tcl_ParseCommand(
 				 * command. */
     char type;			/* Result returned by CHAR_TYPE(*src). */
     Tcl_Token *tokenPtr;	/* Pointer to token being filled in. */
-    int wordIndex;		/* Index of word token for current word. */
+    Tcl_Size wordIndex;		/* Index of word token for current word. */
     int terminators;		/* CHAR_TYPE bits that indicate the end of a
 				 * command. */
     const char *termPtr;	/* Set by Tcl_ParseBraces/QuotedString to
@@ -327,7 +327,7 @@ Tcl_ParseCommand(
 	    src = termPtr;
 	    numBytes = parsePtr->end - src;
 	} else if (*src == '{') {
-	    int expIdx = wordIndex + 1;
+	    Tcl_Size expIdx = wordIndex + 1;
 	    Tcl_Token *expPtr;
 
 	    if (Tcl_ParseBraces(interp, src, numBytes, parsePtr, 1,
@@ -345,7 +345,7 @@ Tcl_ParseCommand(
 	    expPtr = &parsePtr->tokenPtr[expIdx];
 	    if ((0 == expandWord)
 		    /* Haven't seen prefix already */
-		    && (expIdx + 1 == (int)parsePtr->numTokens)
+		    && (expIdx + 1 == parsePtr->numTokens)
 		    /* Only one token */
 		    && (((1 == expPtr->size)
 			    /* Same length as prefix */
@@ -380,7 +380,7 @@ Tcl_ParseCommand(
 
 	tokenPtr = &parsePtr->tokenPtr[wordIndex];
 	tokenPtr->size = src - tokenPtr->start;
-	tokenPtr->numComponents = (int)parsePtr->numTokens - (wordIndex + 1);
+	tokenPtr->numComponents = parsePtr->numTokens - (wordIndex + 1);
 	if (expandWord) {
 	    Tcl_Size i;
 	    int isLiteral = 1;
@@ -407,7 +407,8 @@ Tcl_ParseCommand(
 	    }
 
 	    if (isLiteral) {
-		int elemCount = 0, code = TCL_OK, literal = 1;
+		Tcl_Size elemCount = 0;
+		int code = TCL_OK, literal = 1;
 		const char *nextElem, *listEnd, *elemStart;
 
 		/*
@@ -471,8 +472,8 @@ Tcl_ParseCommand(
 		     */
 
 		    const char *listStart;
-		    int growthNeeded = wordIndex + 2*elemCount
-			    - (int)parsePtr->numTokens;
+		    Tcl_Size growthNeeded = wordIndex + 2*elemCount
+			    - parsePtr->numTokens;
 
 		    parsePtr->numWords += elemCount - 1;
 		    if (growthNeeded > 0) {
