@@ -198,7 +198,7 @@ test console-fconfigure-get-1.0 {
     Console get stdin configuration
 } -constraints {win interactive} -body {
     lsort [dict keys [fconfigure stdin]]
-} -result {-blocking -buffering -buffersize -encoding -eofchar -inputmode -profile -translation}
+} -result {-blocking -buffering -buffersize -encoding -eofchar -profile -inputmode -translation}
 
 set testnum 0
 foreach {opt result} {

@@ -1513,7 +1513,7 @@ const TclStubs tclStubs = {
     Tcl_GetWideUIntFromObj, /* 684 */
     Tcl_DStringToObj, /* 685 */
     Tcl_GetSizeIntFromObj, /* 686 */
-    0, /* 687 */
+    Tcl_InputEncodingError, /* 687 */
     TclUnusedStubEntry, /* 688 */
 };
 

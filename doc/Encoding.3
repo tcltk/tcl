@@ -105,9 +105,9 @@ byte is converted and then to reset to an initial state. The
 \fBTCL_PROFILE_*\fR bits defined in the \fBPROFILES\fR section below
 control the encoding profile to be used for dealing with invalid data or
 other errors in the encoding transform.
-\fBTCL_ENCODING_STOPONERROR\fR is present for backward compatibility with
-Tcl 8.6 and forces the encoding profile to \fBstrict\fR.
-
+The flag \fBTCL_ENCODING_STOPONERROR\fR has no effect,
+it only has meaning in Tcl 8.x.
+.PP
 Some flags bits may not be usable with some functions as noted in the
 function descriptions below.
 .AP Tcl_EncodingState *statePtr in/out
@@ -590,7 +590,7 @@ with at most one of \fBTCL_ENCODING_PROFILE_TCL8\fR,
 \fBTCL_ENCODING_PROFILE_STRICT\fR or \fBTCL_ENCODING_PROFILE_REPLACE\fR.
 These correspond to the \fBtcl8\fR, \fBstrict\fR and \fBreplace\fR profiles
 respectively. If none are specified, a version-dependent default profile is used.
-For Tcl 8.7, the default profile is \fBtcl8\fR.
+For Tcl 9.0, the default profile is \fBstrict\fR.
 .PP
 For details about profiles, see the \fBPROFILES\fR section in
 the documentation of the \fBencoding\fR command.

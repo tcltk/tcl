@@ -1195,7 +1195,7 @@ test io-7.3 {FilterInputBytes: split up character at EOF} {testchannel} {
     puts -nonewline $f "1234567890123\x82\x4F\x82\x50\x82"
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding shiftjis
+    fconfigure $f -encoding shiftjis -profile tcl8
     set x [list [gets $f line] $line]
     lappend x [tell $f] [testchannel inputbuffered $f] [eof $f]
     lappend x [gets $f line] $line
@@ -1633,7 +1633,7 @@ test io-12.10 {ReadChars: multibyte chars split} -body {
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -buffersize 11
+    fconfigure $f -encoding utf-8 -profile tcl8 -buffersize 11
     set in [read $f]
     close $f
     scan [string index $in end] %c
@@ -7948,6 +7948,8 @@ test io-53.5 {CopyData: error during fcopy} {socket fcopy} {
     set out [socket 127.0.0.1 [lindex [fconfigure $listen -sockname] 2]]
     catch {unset fcopyTestDone}
     close $listen	;# This means the socket open never really succeeds
+    fconfigure $in -encoding utf-8
+    fconfigure $out -encoding utf-8
     fcopy $in $out -command [namespace code FcopyTestDone]
     variable fcopyTestDone
     if {![info exists fcopyTestDone]} {
@@ -9398,12 +9400,8 @@ test io-75.10 {
     puts -nonewline $f A\xC0
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none
+    fconfigure $f -encoding utf-8 -profile strict -buffering none
 } -body {
-    catch {read $f} errmsg
-    lappend res $errmsg
-    seek $f 0
-    chan configure $f -profile tcl8
     set d [read $f]
     binary scan $d H* hd
     lappend res $hd
@@ -9412,8 +9410,8 @@ test io-75.10 {
     close $f
     removeFile io-75.10
     unset result
-} -match glob -result {{error reading "file*":\
-    invalid or incomplete multibyte or wide character} 41c0}
+} -returnCodes 1 -match glob -result {error reading "file*":\
+    invalid or incomplete multibyte or wide character}
 
 # The current result returns the orphan byte as byte.
 # This may be expected due to special utf-8 handling.
@@ -9430,7 +9428,7 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
     flush $f
     seek $f 0
     fconfigure $f -encoding shiftjis -blocking 0 -eofchar {} -translation lf \
-	-profile strict
+	-profile tcl8
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9439,8 +9437,7 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
 } -cleanup {
     close $f
     removeFile io-75.11
-} -match glob -result {41 1 {error reading "file*":\
-    invalid or incomplete multibyte or wide character}}
+} -match glob -result {4181ff41 0 {}}
 
 test io-75.12 {
     invalid utf-8 encoding read is not ignored because setting the encoding to
@@ -9517,8 +9514,8 @@ test io-75.14 {
     lappend res [gets $chan]
     close $chan
     return $res
-} -match glob -result {a b 1 {error reading "*":\
-    invalid or incomplete multibyte or wide character} cÀ d}
+} -returnCodes 1 -match glob -result {error reading "*":\
+    invalid or incomplete multibyte or wide character}
 
 test io-75.15 {
     invalid utf-8 encoding strict
@@ -9552,8 +9549,7 @@ test io-75.15 {
     return $res
 } -cleanup {
     close $chan
-} -match glob -result {hello AB 1 {error reading "*": invalid or incomplete multibyte or wide character}\
-    1 {error reading "*": invalid or incomplete multibyte or wide character} 43 44 c0 40 EF GHI}
+} -returnCodes 1 -match glob -result {error reading "*": invalid or incomplete multibyte or wide character}
 
 # ### ### ### ######### ######### #########
 

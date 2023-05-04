@@ -1865,7 +1865,8 @@ EXTERN Tcl_Obj *	Tcl_DStringToObj(Tcl_DString *dsPtr);
 /* 686 */
 EXTERN int		Tcl_GetSizeIntFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, Tcl_Size *sizePtr);
-/* Slot 687 is reserved */
+/* 687 */
+EXTERN int		Tcl_InputEncodingError(Tcl_Channel chan);
 /* 688 */
 EXTERN void		TclUnusedStubEntry(void);
 
@@ -2566,7 +2567,7 @@ typedef struct TclStubs {
     int (*tcl_GetWideUIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideUInt *uwidePtr); /* 684 */
     Tcl_Obj * (*tcl_DStringToObj) (Tcl_DString *dsPtr); /* 685 */
     int (*tcl_GetSizeIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *sizePtr); /* 686 */
-    void (*reserved687)(void);
+    int (*tcl_InputEncodingError) (Tcl_Channel chan); /* 687 */
     void (*tclUnusedStubEntry) (void); /* 688 */
 } TclStubs;
 
@@ -3894,7 +3895,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DStringToObj) /* 685 */
 #define Tcl_GetSizeIntFromObj \
 	(tclStubsPtr->tcl_GetSizeIntFromObj) /* 686 */
-/* Slot 687 is reserved */
+#define Tcl_InputEncodingError \
+	(tclStubsPtr->tcl_InputEncodingError) /* 687 */
 #define TclUnusedStubEntry \
 	(tclStubsPtr->tclUnusedStubEntry) /* 688 */
 

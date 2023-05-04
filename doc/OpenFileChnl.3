@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_DetachChannel, Tcl_IsStandardChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_TruncateChannel, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_OutputBuffered, Tcl_Ungets, Tcl_ReadRaw, Tcl_WriteRaw \- buffered I/O facilities using channels
+Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_DetachChannel, Tcl_IsStandardChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_TruncateChannel, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_InputEncodingError, Tcl_OutputBuffered, Tcl_Ungets, Tcl_ReadRaw, Tcl_WriteRaw \- buffered I/O facilities using channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -88,6 +88,9 @@ int
 .sp
 int
 \fBTcl_InputBuffered\fR(\fIchannel\fR)
+.sp
+int
+\fBTcl_InputEncodingError\fR(\fIchannel\fR)
 .sp
 int
 \fBTcl_OutputBuffered\fR(\fIchannel\fR)
@@ -481,6 +484,14 @@ if no data was available or the data that was available did not contain an
 end-of-line character.  When -1 is returned, the \fBTcl_InputBlocked\fR
 procedure may be invoked to determine if the channel is blocked because
 of input unavailability.
+.PP
+If the channel is in blocking mode, it might be that there is data available
+but - at the same time - an encoding error occurred. In that case, the
+POSIX error EILSEQ will be recorded, but - since \fBTcl_Gets\fR/\fBTcl_Read\fR
+didn't return TCL_INDEX_NONE we cannot be sure if the POSIX error
+maybe was a left-over from an earlier error. The only way to be sure
+is calling the \fBTcl_InputEncodingError\fR procedure, it will
+return 1 if the channel is at an encoding error position.
 .PP
 \fBTcl_Gets\fR is the same as \fBTcl_GetsObj\fR except the resulting
 characters are appended to the dynamic string given by
