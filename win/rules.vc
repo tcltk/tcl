@@ -887,11 +887,11 @@ TCL_BUILD_FOR = 8
 !message *** Force 64-bit time_t
 _USE_64BIT_TIME_T = 1
 !endif
+!endif
 
 !if [nmakehlp -f $(OPTS) "utf16"]
 !message *** Force UTF-16 internally
 TCL_UTF_MAX = 3
-!endif
 !endif
 
 # Yes, it's weird that the "symbols" option controls DEBUG and

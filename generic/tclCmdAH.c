@@ -501,7 +501,7 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 	if ((failVarObj != NULL)) {
 	    profile = TCL_ENCODING_PROFILE_STRICT;
 	} else {
-	    profile = CHANNEL_PROFILE_GET(((Interp *)interp)->flags);
+	    profile = ENCODING_PROFILE_GET(((Interp *)interp)->flags);
 	}
     }
     *encPtr = encoding;

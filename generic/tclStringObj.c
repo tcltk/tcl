@@ -1,29 +1,27 @@
 /*
  * tclStringObj.c --
  *
- *	This file contains functions that implement string operations on Tcl
- *	objects. Some string operations work with UTF strings and others
- *	require Unicode format. Functions that require knowledge of the width
- *	of each character, such as indexing, operate on Unicode data.
+ *      This file contains functions that implement string operations on Tcl
+ *      objects. Some string operations work with UTF-8 encoding forms.
+ *      Functions that require knowledge of the width of each character,
+ * 	such as indexing, operate on fixed width encoding forms such as UTF-32.
  *
- *	A Unicode string is an internationalized string. Conceptually, a
- *	Unicode string is an array of 16-bit quantities organized as a
- *	sequence of properly formed UTF-8 characters. There is a one-to-one
- *	map between Unicode and UTF characters. Because Unicode characters
- *	have a fixed width, operations such as indexing operate on Unicode
- *	data. The String object is optimized for the case where each UTF char
+ * 	Conceptually, a string is a sequence of Unicode code points. Internally
+ * 	it may be stored in an encoding form such as a modified version of
+ * 	UTF-8 or UTF-16 (when TCL_UTF_MAX=3) or UTF-32.
+ *
+ *	The String object is optimized for the case where each UTF char
  *	in a string is only one byte. In this case, we store the value of
- *	numChars, but we don't store the Unicode data (unless Tcl_GetUnicode
- *	is explicitly called).
+ *	numChars, but we don't store the fixed form encoding (unless
+ * 	Tcl_GetUnicode is explicitly called).
  *
- *	The String object type stores one or both formats. The default
- *	behavior is to store UTF. Once Unicode is calculated by a function, it
- *	is stored in the internal rep for future access (without an additional
- *	O(n) cost).
+ *      The String object type stores one or both formats. The default
+ *      behavior is to store UTF-8. Once UTF-16/UTF32 is calculated, it is
+ *      stored in the internal rep for future access (without an additional
+ *      O(n) cost).
  *
  *	To allow many appends to be done to an object without constantly
- *	reallocating the space for the string or Unicode representation, we
- *	allocate double the space for the string or Unicode and use the
+ *	reallocating space, we allocate double the space and use the
  *	internal representation to keep track of how much space is used vs.
  *	allocated.
  *
@@ -515,6 +513,11 @@ TclCheckEmptyString(
 	return TCL_EMPTYSTRING_YES;
     }
 
+    if (TclIsPureByteArray(objPtr)
+	&& Tcl_GetCharLength(objPtr) == 0) {
+	return TCL_EMPTYSTRING_YES;
+    }
+
     if (TclListObjIsCanonical(objPtr)) {
 	TclListObjLengthM(NULL, objPtr, &length);
 	return length == 0;
@@ -685,7 +688,7 @@ Tcl_UniChar *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the Unicode string
 				 * for. */
-    int *lengthPtr)		/* If non-NULL, the location where the string
+    void *lengthPtr)		/* If non-NULL, the location where the string
 				 * rep's Tcl_UniChar length should be stored. If
 				 * NULL, no length is stored. */
 {
@@ -704,7 +707,7 @@ TclGetUnicodeFromObj(
 	    Tcl_Panic("Tcl_GetUnicodeFromObj with 'int' lengthPtr"
 		    " cannot handle such long strings. Please use 'Tcl_Size'");
 	}
-	*lengthPtr = (int)stringPtr->numChars;
+	*(int *)lengthPtr = (int)stringPtr->numChars;
     }
     return stringPtr->unicode;
 }
@@ -1431,26 +1434,26 @@ Tcl_AppendObjToObj(
     Tcl_Size appendNumChars = TCL_INDEX_NONE;
     const char *bytes;
 
-    /*
-     * Special case: second object is standard-empty is fast case. We know
-     * that appending nothing to anything leaves that starting anything...
-     */
-
-    if (appendObjPtr->bytes == &tclEmptyString) {
+    if (TclCheckEmptyString(appendObjPtr) == TCL_EMPTYSTRING_YES) {
 	return;
     }
 
-    /*
-     * Handle append of one ByteArray object to another as a special case.
-     * Note that we only do this when the objects are pure so that the
-     * bytearray faithfully represent the true value; Otherwise appending the
-     * byte arrays together could lose information;
-     */
+    if (TclCheckEmptyString(objPtr) == TCL_EMPTYSTRING_YES) {
+	TclSetDuplicateObj(objPtr, appendObjPtr);
+	return;
+    }
 
-    if ((TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)
-	    && TclIsPureByteArray(appendObjPtr)) {
+    if (
+	TclIsPureByteArray(appendObjPtr)
+	&& (TclIsPureByteArray(objPtr) || objPtr->bytes == &tclEmptyString)
+    ) {
 	/*
-	 * You might expect the code here to be
+	 * Both bytearray objects are pure, so the second internal bytearray value
+	 * can be appended to the first, with no need to modify the "bytes" field.
+	 */
+
+	/*
+	 * One might expect the code here to be
 	 *
 	 *  bytes = Tcl_GetByteArrayFromObj(appendObjPtr, &length);
 	 *  TclAppendBytesToByteArray(objPtr, bytes, length);
@@ -2006,12 +2009,16 @@ Tcl_AppendFormatToObj(
 
 	width = 0;
 	if (isdigit(UCHAR(ch))) {
-	    width = strtoul(format, &end, 10);
-	    if (width < 0) {
+	    /* Note ull will be >= 0 because of isdigit check above */
+	    unsigned long long ull;
+	    ull = strtoull(format, &end, 10);
+	    /* Comparison is >=, not >, to leave room for nul */
+	    if (ull >= TCL_SIZE_MAX) {
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
+	    width = (Tcl_Size)ull;
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
@@ -2048,7 +2055,16 @@ Tcl_AppendFormatToObj(
 	    step = TclUtfToUniChar(format, &ch);
 	}
 	if (isdigit(UCHAR(ch))) {
-	    precision = strtoul(format, &end, 10);
+	    /* Note ull will be >= 0 because of isdigit check above */
+	    unsigned long long ull;
+	    ull = strtoull(format, &end, 10);
+	    /* Comparison is >=, not >, to leave room for nul */
+	    if (ull >= TCL_SIZE_MAX) {
+		msg = overflow;
+		errCode = "OVERFLOW";
+		goto errorMsg;
+	    }
+	    precision = (Tcl_Size)ull;
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
@@ -2735,12 +2751,16 @@ AppendPrintfToObjVA(
 
 		break;
 	    }
+	    case 'p':
+		if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
+		    size = 2;
+		}
+		/* FALLTHRU */
 	    case 'c':
 	    case 'i':
 	    case 'u':
 	    case 'd':
 	    case 'o':
-	    case 'p':
 	    case 'x':
 	    case 'X':
 		seekingConversion = 0;
@@ -3121,12 +3141,11 @@ TclStringCat(
 {
     Tcl_Obj *objResultPtr, * const *ov;
     int binary = 1;
-    Tcl_Size oc;
-    Tcl_Size length = 0;
+    Tcl_Size oc, length = 0;
     int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
     Tcl_Size first = objc - 1;	/* Index of first value possibly not empty */
     Tcl_Size last = 0;		/* Index of last value possibly not empty */
-    int inPlace = flags & TCL_STRING_IN_PLACE;
+    int inPlace = (flags & TCL_STRING_IN_PLACE) && !Tcl_IsShared(*objv);
 
     /* assert ( objc >= 0 ) */
 
@@ -3254,7 +3273,8 @@ TclStringCat(
 
 		Tcl_Obj *objPtr = *ov++;
 
-		if (objPtr->bytes == NULL) {
+		if (objPtr->bytes == NULL
+		    && TclCheckEmptyString(objPtr) != TCL_EMPTYSTRING_YES) {
 		    /* No string rep; Take the chance we can avoid making it */
 		    pendingPtr = objPtr;
 		} else {
@@ -3330,6 +3350,7 @@ TclStringCat(
     }
 
     objv += first; objc = (last - first + 1);
+    inPlace = (flags & TCL_STRING_IN_PLACE) && !Tcl_IsShared(*objv);
 
     if (binary) {
 	/* Efficiently produce a pure byte array result */
@@ -3340,7 +3361,7 @@ TclStringCat(
 	 * failure to allocate enough space. Following stanza may panic.
 	 */
 
-	if (inPlace && !Tcl_IsShared(*objv)) {
+	if (inPlace) {
 	    Tcl_Size start = 0;
 
 	    objResultPtr = *objv++; objc--;
@@ -3370,7 +3391,7 @@ TclStringCat(
 	/* Efficiently produce a pure Tcl_UniChar array result */
 	Tcl_UniChar *dst;
 
-	if (inPlace && !Tcl_IsShared(*objv)) {
+	if (inPlace) {
 	    Tcl_Size start;
 
 	    objResultPtr = *objv++; objc--;
@@ -3421,7 +3442,7 @@ TclStringCat(
 	/* Efficiently concatenate string reps */
 	char *dst;
 
-	if (inPlace && !Tcl_IsShared(*objv)) {
+	if (inPlace) {
 	    Tcl_Size start;
 
 	    objResultPtr = *objv++; objc--;
@@ -3512,6 +3533,7 @@ TclStringCmp(
     if ((reqlength == 0) || (value1Ptr == value2Ptr)) {
 	/*
 	 * Always match at 0 chars of if it is the same obj.
+	 * Note: as documented reqlength negative means it is ignored
 	 */
 	match = 0;
     } else {
@@ -3566,7 +3588,7 @@ TclStringCmp(
 			memCmpFn = memcmp;
 			s1len *= sizeof(Tcl_UniChar);
 			s2len *= sizeof(Tcl_UniChar);
-			if (reqlength != TCL_INDEX_NONE) {
+			if (reqlength > 0) {
 			    reqlength *= sizeof(Tcl_UniChar);
 			}
 		    } else {
@@ -3610,7 +3632,7 @@ TclStringCmp(
 		s1 = Tcl_GetStringFromObj(value1Ptr, &s1len);
 		s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
 	    }
-	    if (!nocase && checkEq && reqlength == TCL_INDEX_NONE) {
+	    if (!nocase && checkEq && reqlength < 0) {
 		/*
 		 * When we have equal-length we can check only for
 		 * (in)equality. We can use memcmp in all (n)eq cases because
@@ -3627,7 +3649,7 @@ TclStringCmp(
 		 * length was requested.
 		 */
 
-		if ((reqlength == TCL_INDEX_NONE) && !nocase) {
+		if ((reqlength < 0) && !nocase) {
 		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
 		} else {
 		    s1len = Tcl_NumUtfChars(s1, s1len);
@@ -3643,7 +3665,7 @@ TclStringCmp(
 	 * comparison function.
 	 */
 	length = (s1len < s2len) ? s1len : s2len;
-	if (reqlength == TCL_INDEX_NONE) {
+	if (reqlength < 0) {
 	    /*
 	     * The requested length is negative, so ignore it by setting it
 	     * to length + 1 to correct the match var.
@@ -3654,7 +3676,7 @@ TclStringCmp(
 	    length = reqlength;
 	}
 
-	if (checkEq && reqlength == TCL_INDEX_NONE && (s1len != s2len)) {
+	if (checkEq && reqlength < 0 && (s1len != s2len)) {
 	    match = 1;		/* This will be reversed below. */
 	} else {
 	    /*
@@ -4483,6 +4505,14 @@ ExtendStringRepWithUnicode(
 
   copyBytes:
     dst = objPtr->bytes + origLength;
+#if TCL_UTF_MAX < 4
+    /* Initialize the buffer so that some random data doesn't trick
+     * Tcl_UniCharToUtf() into thinking it should combine surrogate pairs.
+     * Once TCL_UTF_MAX == 3 is removed and Tcl_UniCharToUtf restored to its
+     * prior non-stateful nature, this call to memset can also be removed.
+     */
+    memset(dst, 0xff, stringPtr->allocated - origLength);
+#endif
     for (i = 0; i < numChars; i++) {
 	dst += Tcl_UniCharToUtf(unicode[i], dst);
     }

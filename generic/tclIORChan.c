@@ -682,8 +682,8 @@ TclChanCreateObjCmd(
     TclChannelPreserve(chan);
     chanPtr = (Channel *) chan;
 
-    CHANNEL_PROFILE_SET(chanPtr->state->inputEncodingFlags, ((Interp *)interp)->flags);
-    CHANNEL_PROFILE_SET(chanPtr->state->outputEncodingFlags, ((Interp *)interp)->flags);
+    ENCODING_PROFILE_SET(chanPtr->state->inputEncodingFlags, ((Interp *)interp)->flags);
+    ENCODING_PROFILE_SET(chanPtr->state->outputEncodingFlags, ((Interp *)interp)->flags);
 
     if ((methods & NULLABLE_METHODS) != NULLABLE_METHODS) {
 	/*

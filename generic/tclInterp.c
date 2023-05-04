@@ -1045,7 +1045,7 @@ NRInterpCmd(
 	    if (TclEncodingProfileNameToId(interp, Tcl_GetString(objv[2]), &newProfile) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    CHANNEL_PROFILE_SET(iPtr->flags, newProfile);
+	    ENCODING_PROFILE_SET(iPtr->flags, newProfile);
 	}
 	Tcl_AppendResult(interp, TclEncodingProfileIdToName(NULL, iPtr->flags), NULL);
 	return TCL_OK;
