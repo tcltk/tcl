@@ -495,14 +495,7 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
     }
 
     if (profile == -1) {
-	/* The default profile is "strict", except when "-failindex" is not
-	 * specified, then it follows the current default profile.
-	 */
-	if ((failVarObj != NULL)) {
-	    profile = TCL_ENCODING_PROFILE_STRICT;
-	} else {
-	    profile = ENCODING_PROFILE_GET(((Interp *)interp)->flags);
-	}
+	profile = ENCODING_PROFILE_GET(((Interp *)interp)->flags);
     }
     *encPtr = encoding;
     *dataObjPtr = dataObj;
