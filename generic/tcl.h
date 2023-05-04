@@ -563,7 +563,7 @@ typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	struct Tcl_Obj *const *objv);
 #endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
-	ptrdiff_t level, const char *command, Tcl_Command commandInfo, ptrdiff_t objc,
+	Tcl_Size level, const char *command, Tcl_Command commandInfo, Tcl_Size objc,
 	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
@@ -590,7 +590,7 @@ typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
 #endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
-	ptrdiff_t objc, struct Tcl_Obj *const *objv);
+	Tcl_Size objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
@@ -1978,7 +1978,7 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_CHAR_LIMIT		0x10
 /* Internal use bits, do not define bits in this space. See above comment */
 #define TCL_ENCODING_INTERNAL_USE_MASK  0xFF00
-/* 
+/*
  * Reserve top byte for profile values (disjoint, not a mask). In case of
  * changes, ensure ENCODING_PROFILE_* macros in tclInt.h are modified if
  * necessary.

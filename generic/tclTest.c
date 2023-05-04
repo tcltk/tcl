@@ -222,7 +222,7 @@ static void		MainLoop(void);
 static Tcl_CmdProc	NoopCmd;
 static Tcl_ObjCmdProc2	NoopObjCmd;
 static int		ObjTraceProc(void *clientData,
-			    Tcl_Interp *interp, int level, const char *command,
+			    Tcl_Interp *interp, TclSizeT level, const char *command,
 			    Tcl_Command commandToken, TclSizeT objc,
 			    Tcl_Obj *const objv[]);
 static void		ObjTraceDeleteProc(void *clientData);
@@ -1163,8 +1163,8 @@ TestcmdinfoObjCmd(
     case CMDINFO_MODIFY:
 	info.proc = CmdProc2;
 	info.clientData = (void *) "new_command_data";
-	info.objProc = NULL;
-	info.objClientData = NULL;
+	info.objProc2 = NULL;
+	info.objClientData2 = NULL;
 	info.deleteProc = CmdDelProc2;
 	info.deleteData = (void *) "new_delete_data";
 	if (Tcl_SetCommandInfo(interp, Tcl_GetString(objv[2]), &info) == 0) {
@@ -1493,7 +1493,7 @@ static int
 ObjTraceProc(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    TCL_UNUSED(int) /*level*/,
+    TCL_UNUSED(TclSizeT) /*level*/,
     const char *command,
     TCL_UNUSED(Tcl_Command),
     TCL_UNUSED(TclSizeT) /*objc*/,

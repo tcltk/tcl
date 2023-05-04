@@ -4347,7 +4347,7 @@ Write(
     Tcl_Size saved = 0, total = 0, flushed = 0;
     char safe[BUFFER_PADDING];
     int encodingError = 0;
-    
+
     if (srcLen) {
         WillWrite(chanPtr);
     }
