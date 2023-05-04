@@ -768,37 +768,21 @@ TclAppendBytesToByteArray(
     needed = byteArrayPtr->used + len;
     if (needed > byteArrayPtr->allocated) {
 	ByteArray *ptr = NULL;
-
-        /*
-	 * Try to allocate double the total space that is needed.
-	 */
-
 	Tcl_Size attempt;
 
-	/* Make sure we do not wrap when doubling */
-	if (needed <= (BYTEARRAY_MAX_LEN - needed)) {
-	    attempt = 2 * needed;
-	    ptr = (ByteArray *) Tcl_AttemptRealloc(byteArrayPtr,
-		    BYTEARRAY_SIZE(attempt));
+        /* First try to overallocate, reducing overallocation on each fail */
+	attempt =
+	    TclUpsizeAlloc(byteArrayPtr->allocated, needed, BYTEARRAY_MAX_LEN);
+	while (attempt > needed) {
+	    ptr = (ByteArray *)Tcl_AttemptRealloc(byteArrayPtr,
+						  BYTEARRAY_SIZE(attempt));
+	    if (ptr)
+		break;
+	    attempt = TclUpsizeRetry(needed, attempt);
 	}
 
 	if (ptr == NULL) {
-	    /*
-	     * Try to allocate double the increment that is needed.
-	     * (Originally TCL_MIN_GROWTH was added as well but that would
-	     * need one more separate overflow check so forget it.)
-	     */
-	    if (len <= (BYTEARRAY_MAX_LEN - needed)) {
-		attempt = needed + len;
-		ptr = (ByteArray *)Tcl_AttemptRealloc(byteArrayPtr,
-						      BYTEARRAY_SIZE(attempt));
-	    }
-	}
-	if (ptr == NULL) {
-	    /*
-	     * Last chance: Try to allocate exactly what is needed.
-	     */
-
+	    /* Last chance: Try to allocate exactly what is needed. */
 	    attempt = needed;
 	    ptr = (ByteArray *)Tcl_Realloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}

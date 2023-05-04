@@ -2872,6 +2872,49 @@ typedef struct ProcessGlobalValue {
     } while (0)
 
 /*
+ *----------------------------------------------------------------------
+ * Common functions for growing allocations. Trivial but allows for
+ * experimenting with growth factors without having to change code in
+ * multiple places. Usage example:
+ *
+ * allocated = TclUpsizeAlloc(oldSize, needed, TCL_SIZE_MAX);
+ * while (allocated > needed) {
+ *     ptr = Tcl_AttemptRealloc(oldPtr, allocated);
+ *     if (ptr)
+ *         break;
+ *     allocated = TclUpsizeRetry(needed, allocated);
+ * }
+ * if (ptr == NULL) {
+ *     // Last resort - exact size
+ *     allocated = needed; 
+ *     ptr = Tcl_Realloc(oldPtr, allocated);
+ * }
+ * ptr now points to an allocation of size 'allocated'
+ *----------------------------------------------------------------------
+ */
+static inline Tcl_Size
+TclUpsizeAlloc(TCL_UNUSED(Tcl_Size) /*oldSize*/,
+	       Tcl_Size needed,
+	       Tcl_Size limit)
+{
+    /* assert (oldCapacity < needed <= limit) */
+    if (needed < (limit - needed)) {
+	return 2 * needed;
+    } else {
+	return limit;
+    }
+}
+static inline Tcl_Size TclUpsizeRetry(Tcl_Size needed, Tcl_Size lastAttempt) {
+	/* assert (needed < lastAttempt) */
+    if (needed < lastAttempt - 1) {
+	/* (needed+lastAttempt)/2 but that formula may overflow Tcl_Size */
+	return needed + (lastAttempt - needed) / 2;
+    } else {
+	return needed;
+    }
+}
+
+/*
  *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
  *----------------------------------------------------------------
