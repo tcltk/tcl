@@ -544,9 +544,6 @@ static const char version[] = TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
 #ifdef STATIC_BUILD
 	    ".static"
 #endif
-#if TCL_UTF_MAX < 4
-	    ".utf-16"
-#endif
 ;
 
 int
