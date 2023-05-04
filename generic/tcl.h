@@ -1969,7 +1969,7 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_CHAR_LIMIT		0x10
 /* Internal use bits, do not define bits in this space. See above comment */
 #define TCL_ENCODING_INTERNAL_USE_MASK  0xFF00
-/* 
+/*
  * Reserve top byte for profile values (disjoint, not a mask). In case of
  * changes, ensure ENCODING_PROFILE_* macros in tclInt.h are modified if
  * necessary.
