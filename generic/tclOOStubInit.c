@@ -76,9 +76,6 @@ const TclOOStubs tclOOStubs = {
     Tcl_MethodIsPrivate, /* 29 */
     Tcl_GetClassOfObject, /* 30 */
     Tcl_GetObjectClassName, /* 31 */
-    Tcl_MethodIsType2, /* 32 */
-    Tcl_NewInstanceMethod2, /* 33 */
-    Tcl_NewMethod2, /* 34 */
 };
 
 /* !END!: Do not edit above this line. */

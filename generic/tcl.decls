@@ -2514,35 +2514,13 @@ declare 675 {
     int Tcl_GetBoolFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int flags, char *charPtr)
 }
-declare 676 {
-    Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
-	    const char *cmdName,
-	    Tcl_ObjCmdProc2 *proc2, void *clientData,
-	    Tcl_CmdDeleteProc *deleteProc)
-}
-declare 677 {
-    Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, Tcl_Size level, int flags,
-	    Tcl_CmdObjTraceProc2 *objProc2, void *clientData,
-	    Tcl_CmdObjTraceDeleteProc *delProc)
-}
-declare 678 {
-    Tcl_Command Tcl_NRCreateCommand2(Tcl_Interp *interp,
-	    const char *cmdName, Tcl_ObjCmdProc2 *proc,
-	    Tcl_ObjCmdProc2 *nreProc2, void *clientData,
-	    Tcl_CmdDeleteProc *deleteProc)
-}
-declare 679 {
-    int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2,
-	    void *clientData, ptrdiff_t objc, Tcl_Obj *const objv[])
-}
-
 # TIP #638.
 declare 680 {
     int Tcl_GetNumberFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    void **clientDataPtr, int *typePtr)
 }
 declare 681 {
-    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, ptrdiff_t numBytes,
+    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, Tcl_Size numBytes,
 	    void **clientDataPtr, int *typePtr)
 }
 

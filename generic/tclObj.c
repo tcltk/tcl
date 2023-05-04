@@ -4042,7 +4042,7 @@ int
 Tcl_GetNumber(
     Tcl_Interp *interp,
     const char *bytes,
-    ptrdiff_t numBytes,
+    int numBytes,
     void **clientDataPtr,
     int *typePtr)
 {
@@ -4057,15 +4057,7 @@ Tcl_GetNumber(
 	numBytes = 0;
     }
     if (numBytes < 0) {
-	numBytes = (ptrdiff_t)strlen(bytes);
-    }
-    if (numBytes > INT_MAX) {
-	if (interp) {
-            Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
-	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	}
-	return TCL_ERROR;
+	numBytes = (int)strlen(bytes);
     }
 
     objPtr->bytes = (char *) bytes;

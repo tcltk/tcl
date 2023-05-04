@@ -911,7 +911,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetOpenMode, /* 40 */
     TclGetOriginalCommand, /* 41 */
     TclpGetUserHome, /* 42 */
-    TclGetObjInterpProc2, /* 43 */
+    0, /* 43 */
     TclGuessPackageName, /* 44 */
     TclHideUnsafeCommands, /* 45 */
     TclInExit, /* 46 */
@@ -2047,10 +2047,10 @@ const TclStubs tclStubs = {
     TclGetUniChar, /* 673 */
     Tcl_GetBool, /* 674 */
     Tcl_GetBoolFromObj, /* 675 */
-    Tcl_CreateObjCommand2, /* 676 */
-    Tcl_CreateObjTrace2, /* 677 */
-    Tcl_NRCreateCommand2, /* 678 */
-    Tcl_NRCallObjProc2, /* 679 */
+    0, /* 676 */
+    0, /* 677 */
+    0, /* 678 */
+    0, /* 679 */
     Tcl_GetNumberFromObj, /* 680 */
     Tcl_GetNumber, /* 681 */
     Tcl_RemoveChannelMode, /* 682 */
