@@ -482,10 +482,6 @@ end-of-line character.  When -1 is returned, the \fBTcl_InputBlocked\fR
 procedure may be invoked to determine if the channel is blocked because
 of input unavailability.
 .PP
-If the channel is in blocking mode, it might be that there is data available
-but - at the same time - an encoding error occurred. In that case, the
-POSIX error EILSEQ will be recorded.
-.PP
 \fBTcl_Gets\fR is the same as \fBTcl_GetsObj\fR except the resulting
 characters are appended to the dynamic string given by
 \fIlineRead\fR rather than a Tcl value.

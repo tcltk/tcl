@@ -304,7 +304,7 @@ Tcl_GetsObjCmd(
     TclChannelPreserve(chan);
     TclNewObj(linePtr);
     lineLen = Tcl_GetsObj(chan, linePtr);
-    if (lineLen == TCL_INDEX_NONE) {
+    if (lineLen == TCL_IO_FAILURE) {
 	if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
 	    Tcl_DecrRefCount(linePtr);
 
@@ -323,7 +323,7 @@ Tcl_GetsObjCmd(
 	    code = TCL_ERROR;
 	    goto done;
 	}
-	lineLen = TCL_INDEX_NONE;
+	lineLen = TCL_IO_FAILURE;
     }
     if (objc == 3) {
 	if (Tcl_ObjSetVar2(interp, objv[2], NULL, linePtr,
@@ -432,7 +432,7 @@ Tcl_ReadObjCmd(
     TclNewObj(resultPtr);
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
-    if (charactersRead == TCL_INDEX_NONE) {
+    if (charactersRead == TCL_IO_FAILURE) {
 	Tcl_DecrRefCount(resultPtr);
 	/*
 	 * TIP #219.
@@ -446,15 +446,6 @@ Tcl_ReadObjCmd(
 		    "error reading \"%s\": %s",
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
-	goto readError;
-    } else if (TclInputEncodingError(chan)) {
-	Tcl_Obj *returnOpts = Tcl_NewDictObj();
-	Tcl_DictObjPut(NULL, returnOpts, Tcl_NewStringObj("-data", TCL_INDEX_NONE), resultPtr);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"error reading \"%s\": %s",
-		TclGetString(chanObjPtr), Tcl_PosixError(interp)));
-	Tcl_SetReturnOptions(interp, returnOpts);
-    readError:
 	TclChannelRelease(chan);
 	return TCL_ERROR;
     }
