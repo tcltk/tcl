@@ -1366,7 +1366,7 @@ TclListObjCopy(
 
     if (!TclHasInternalRep(listObj, &tclListType.objType)) {
 	if (TclHasInternalRep(listObj,&tclArithSeriesType.objType)) {
-	    return TclArithSeriesObjCopy(interp, listObj);
+	    return Tcl_DuplicateObj(listObj);
 	}
 	if (SetListFromAny(interp, listObj) != TCL_OK) {
 	    return NULL;
