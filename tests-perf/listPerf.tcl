@@ -3,8 +3,9 @@
 #
 # listPerf.tcl --
 #
-#  This file provides performance tests for list operations.
-#
+#  This file provides performance tests for list operations. Run
+#     tclsh listPerf.tcl help
+#  for options.
 # ------------------------------------------------------------------------
 #
 # See the file "license.terms" for information on usage and redistribution
@@ -77,7 +78,9 @@ namespace eval perf::list {
                     break
                 }
                 --* {
-                    error "Unknown option $arg"
+                    puts stderr "Unknown option $arg"
+                    print_usage
+                    exit 1
                 }
                 default {
                     # Remaining will be passed back to the caller
@@ -383,6 +386,8 @@ namespace eval perf::list {
             comment Create a list from two lists - real test of expansion speed
             perf measure [list_describe $len "from a {*}list {*}list"] {list {*}$L {*}$L} [list len [expr {$len/2}]]
         }
+
+        perf destroy
     }
 
     proc lappend_describe {share_mode len num iters} {
@@ -1217,7 +1222,7 @@ namespace eval perf::list {
             set commands [lmap sel $selections {
                 if {$sel eq "help"} {
                     print_usage
-                    continue
+                    exit 0
                 }
                 set cmd ::perf::list::${sel}_perf
                 if {$cmd ni [info commands ::perf::list::*_perf]} {
