@@ -760,52 +760,6 @@ SetArithSeriesFromAny(
 /*
  *----------------------------------------------------------------------
  *
- * TclArithSeriesObjCopy --
- *
- *	Makes a "pure arithSeries" copy of an ArithSeries value. This provides for the C
- *	level a counterpart of the [lrange $list 0 end] command, while using
- *	internals details to be as efficient as possible.
- *
- * Results:
- *
- *	Normally returns a pointer to a new Tcl_Obj, that contains the same
- *	arithSeries value as *arithSeriesObj does. The returned Tcl_Obj has a
- *	refCount of zero. If *arithSeriesObj does not hold an arithSeries,
- *	NULL is returned, and if interp is non-NULL, an error message is
- *	recorded there.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclArithSeriesObjCopy(
-    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *arithSeriesObj)	/* List object for which an element array is
-				 * to be returned. */
-{
-    Tcl_Obj *copyPtr;
-    ArithSeries *arithSeriesRepPtr;
-
-    arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
-    if (NULL == arithSeriesRepPtr) {
-	if (SetArithSeriesFromAny(interp, arithSeriesObj) != TCL_OK) {
-	    /* We know this is going to panic, but it's the message we want */
-	    return NULL;
-	}
-    }
-
-    TclNewObj(copyPtr);
-    TclInvalidateStringRep(copyPtr);
-    DupArithSeriesInternalRep(arithSeriesObj, copyPtr);
-    return copyPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclArithSeriesObjRange --
  *
  *	Makes a slice of an ArithSeries value.
