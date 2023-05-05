@@ -22,7 +22,7 @@
 /*
  * The following structure is the internal rep for a String object. It keeps
  * track of how much memory has been used and how much has been allocated for
- * the various representations to enable growing and shrinking of 
+ * the various representations to enable growing and shrinking of
  * the String object with fewer mallocs. To optimize string
  * length and indexing operations, this structure also stores the number of
  * code points (independent of encoding form) once that value has been computed.
