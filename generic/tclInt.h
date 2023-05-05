@@ -2898,9 +2898,10 @@ TclUpsizeAlloc(TCL_UNUSED(Tcl_Size) /*oldSize*/,
 	       Tcl_Size limit)
 {
     /* assert (oldCapacity < needed <= limit) */
-    if (needed < (limit - needed)) {
-	return 2 * needed;
-    } else {
+    if (needed < (limit - needed/2)) {
+	return needed + needed / 2;
+    }
+    else {
 	return limit;
     }
 }

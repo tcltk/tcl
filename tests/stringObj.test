@@ -78,7 +78,7 @@ test stringObj-4.3 {Tcl_SetObjLength procedure, string gets longer} testobj {
     teststringobj append 1 xyzq -1
     list [teststringobj length 1] [teststringobj length2 1] \
 	    [teststringobj get 1]
-} {10 21 abcdefxyzq}
+} {10 15 abcdefxyzq}
 test stringObj-4.4 {Tcl_SetObjLength procedure, "empty string", length 0} testobj {
     testobj freeallvars
     testobj newobj 1
@@ -111,7 +111,7 @@ test stringObj-5.3 {Tcl_AppendToObj procedure, reallocating space} testobj {
     teststringobj append 1 abcdef -1
     lappend result [teststringobj length 1] [teststringobj length2 1] \
 	    [teststringobj get 1]
-} {15 15 16 33 xy12345678abcdef}
+} {15 15 16 24 xy12345678abcdef}
 
 test stringObj-6.1 {Tcl_AppendStringsToObj procedure, type conversion} testobj {
     testobj freeallvars
@@ -142,7 +142,7 @@ test stringObj-6.5 {Tcl_AppendStringsToObj procedure, don't double space if init
     testobj newobj 1
     teststringobj appendstrings 1 123 abcdefg
     list [teststringobj length 1] [teststringobj length2 1] [teststringobj get 1]
-} {10 21 123abcdefg}
+} {10 15 123abcdefg}
 test stringObj-6.6 {Tcl_AppendStringsToObj procedure, space reallocation} testobj {
     testobj freeallvars
     teststringobj set 1 abc
@@ -160,7 +160,7 @@ test stringObj-6.7 {Tcl_AppendStringsToObj procedure, space reallocation} testob
     teststringobj appendstrings 1 34567890x
     list [teststringobj length 1] [teststringobj length2 1] \
 	    [teststringobj get 1]
-} {11 23 ab34567890x}
+} {11 17 ab34567890x}
 test stringObj-6.8 {Tcl_AppendStringsToObj procedure, object totally empty} testobj {
     testobj freeallvars
     testobj newobj 1
@@ -180,7 +180,7 @@ test stringObj-7.1 {SetStringFromAny procedure} testobj {
     teststringobj append 1 x -1
     list [teststringobj length 1] [teststringobj length2 1] \
 	    [teststringobj get 1]
-} {4 9 {a bx}}
+} {4 6 {a bx}}
 test stringObj-7.2 {SetStringFromAny procedure, null object} testobj {
     testobj freeallvars
     testobj newobj 1
@@ -208,7 +208,7 @@ test stringObj-8.1 {DupStringInternalRep procedure} testobj {
 	    [teststringobj maxchars 1] [teststringobj get 1] \
 	    [teststringobj length 2] [teststringobj length2 2] \
 	    [teststringobj maxchars 2] [teststringobj get 2]
-} {5 11 0 abcde 5 5 0 abcde}
+} {5 8 0 abcde 5 5 0 abcde}
 test stringObj-8.2 {DupUnicodeInternalRep, mixed width chars} testobj {
     set x abc\xEF\xBF\xAEghi
     string length $x
