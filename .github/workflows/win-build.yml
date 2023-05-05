@@ -1,9 +1,8 @@
 name: Windows
-on: 
+on:
   push:
     branches:
     - "main"
-    - "trunk"
     - "core-8-branch"
     tags:
     - "core-**"
