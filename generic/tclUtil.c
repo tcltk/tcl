@@ -2808,6 +2808,9 @@ Tcl_DStringSetLength(
 {
     Tcl_Size newsize;
 
+    if (length < 0) {
+	length = 0;
+    }
     if (length >= dsPtr->spaceAvl) {
 	/*
 	 * There are two interesting cases here. In the first case, the user
