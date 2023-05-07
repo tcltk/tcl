@@ -1165,7 +1165,7 @@ Tcl_ExternalToUtfDString(
  * Tcl_ExternalToUtfDStringEx --
  *
  *	Convert a source buffer from the specified encoding into UTF-8.
- *	The parameter flags controls the behavior, if any of the bytes in
+ *	"flags" controls the behavior if any of the bytes in
  *	the source buffer are invalid or cannot be represented in utf-8.
  *	Possible flags values:
  *	target encoding. It should be composed by OR-ing the following:
@@ -2588,10 +2588,10 @@ UtfToUtfProc(
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Incomplete byte sequence.
-	     * Always check before using TclUtfToUCS4. Not doing can so
-	     * cause it run beyond the end of the buffer! If we happen such an
-	     * incomplete char its bytes are made to represent themselves
-	     * unless the user has explicitly asked to be told.
+		 * Always check before using TclUtfToUCS4. Not doing so can cause it
+		 * run beyond the end of the buffer! If we happen on such an incomplete
+		 * char its bytes are made to represent themselves unless the user has
+		 * explicitly asked to be told.
 	     */
 
 	    if (flags & ENCODING_INPUT) {

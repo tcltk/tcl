@@ -113,9 +113,8 @@ typedef struct {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
     Tcl_Obj **catchTop;		/* These fields are used on return TO this */
-    Tcl_Obj *auxObjList;	/* this level: they record the state when a */
-    CmdFrame cmdFrame;		/* new codePtr was received for NR */
-                                /* execution. */
+    Tcl_Obj *auxObjList;	/* level: they record the state when a new */
+    CmdFrame cmdFrame;		/* codePtr was received for NR execution. */
     Tcl_Obj *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
 				 * necessary */

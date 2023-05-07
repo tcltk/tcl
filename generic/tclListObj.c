@@ -304,8 +304,8 @@ ListSpanMerited(
     Tcl_Size allocatedStorageLength) /* Length of the currently allocation */
 {
     /*
-     * Possible optimizations for future consideration 
-     * - heuristic LIST_SPAN_THRESHOLD 
+     * Possible optimizations for future consideration
+     * - heuristic LIST_SPAN_THRESHOLD
      * - currently, information about the sharing (ref count) of existing
      * storage is not passed. Perhaps it should be. For example if the
      * existing storage has a "large" ref count, then it might make sense
@@ -828,7 +828,7 @@ ListStoreNew(
  *
  * ListStoreReallocate --
  *
- *    Reallocates the memory for a ListStore allocating extra for 
+ *    Reallocates the memory for a ListStore allocating extra for
  *    possible future growth.
  *
  * Results:
@@ -1386,7 +1386,7 @@ TclListObjCopy(
 
     if (!TclHasInternalRep(listObj, &tclListType.objType)) {
 	if (TclHasInternalRep(listObj,&tclArithSeriesType.objType)) {
-	    return TclArithSeriesObjCopy(interp, listObj);
+	    return Tcl_DuplicateObj(listObj);
 	}
 	if (SetListFromAny(interp, listObj) != TCL_OK) {
 	    return NULL;

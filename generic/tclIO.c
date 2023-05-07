@@ -5931,7 +5931,7 @@ DoReadChars(
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
-	/* TODO: We don't need this call? */
+	/* TODO: UpdateInterest not needed here? */
 	UpdateInterest(chanPtr);
 	Tcl_SetErrno(EILSEQ);
 	return -1;
@@ -5948,7 +5948,7 @@ DoReadChars(
 	assert(statePtr->inputEncodingFlags & TCL_ENCODING_END);
 	assert(!GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR));
 
-	/* TODO: We don't need this call? */
+	/* TODO: UpdateInterest not needed here? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -5962,7 +5962,7 @@ DoReadChars(
 	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
-	/* TODO: We don't need this call? */
+	/* TODO: UpdateInterest not needed here? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -6009,7 +6009,7 @@ DoReadChars(
 	    }
 
 	    /*
-	     * If the current buffer is empty recycle it.
+	     * Recycle current buffer if empty.
 	     */
 
 	    bufPtr = statePtr->inQueueHead;
