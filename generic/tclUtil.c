@@ -3799,8 +3799,8 @@ TclIndexEncode(
     }
     /*
      * We passed 2*INT_MAX as the "end value" to GetWideForIndex. The computed
-     * index will in one of the following ranges that need to be distinguished
-     * for encoding purposes in the following code.
+     * index will be in one of the following ranges that need to be
+     * distinguished for encoding purposes in the following code.
      * (1) 0:INT_MAX when
      *     (a) objPtr was a pure non-negative numeric value in that range
      *     (b) objPtr was a numeric computation M+/-N with a result in that range
