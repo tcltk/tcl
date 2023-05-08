@@ -3849,7 +3849,7 @@ TclIndexEncode(
 	 * error is raised. On 32-bit systems, indices in that range indicate
 	 * the position after the end and so do not raise an error.
 	 */
-	if ((sizeof(int) != sizeof(size_t)) &&
+	if ((sizeof(int) != sizeof(Tcl_Size)) &&
 	    (wide > INT_MAX) && (wide < WIDE_MAX-1)) {
 	    /* 2(a,b) on 64-bit systems*/
 	    goto rangeerror;
@@ -3879,7 +3879,7 @@ TclIndexEncode(
 	 * indices in that range indicate the position before the beginning
 	 * and so do not raise an error.
 	 */
-	if ((sizeof(int) != sizeof(size_t)) &&
+	if ((sizeof(int) != sizeof(Tcl_Size)) &&
 	    (wide > (ENDVALUE - LIST_MAX)) && (wide <= INT_MAX)) {
 	    /* 1(c), 4(a,b) on 64-bit systems */
 	    goto rangeerror;
