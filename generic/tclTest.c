@@ -596,7 +596,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testcmdtoken", TestcmdtokenCmd, NULL,
 	    NULL);
-    Tcl_CreateObjCommand(interp, "testcmdinfo", TestcmdinfoObjCmd, NULL,
+    Tcl_CreateObjCommand2(interp, "testcmdinfo", TestcmdinfoObjCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testcmdtrace", TestcmdtraceCmd,
 	    NULL, NULL);
