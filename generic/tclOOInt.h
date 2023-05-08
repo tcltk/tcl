@@ -589,12 +589,12 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 /*
  * A variation where the array is an array of structs. There's no issue with
  * possible NULLs; every element of the array will be iterated over and the
- * varable set to a pointer to each of those elements in turn.
+ * variable set to a pointer to each of those elements in turn.
  * REQUIRES DECLARATION: int i;
  */
 
 #define FOREACH_STRUCT(var,ary) \
-    for(i=0 ; var=&((ary).list[i]), i<(ary).num; i++)
+    if ((ary).num > 0) for(i=0; var=&((ary).list[i]), i<(ary).num; i++)
 
 /*
  * Convenience macros for iterating through hash tables. FOREACH_HASH_DECLS
