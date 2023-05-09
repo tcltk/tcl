@@ -2809,7 +2809,6 @@ EachloopCmd(
 
 	/* Values */
 	if (!TclHasInternalRep(objv[2+i*2], &tclListType) &&
-	    ABSTRACTLIST_PROC(objv[2+i*2],dupIntRepProc) &&
 	    ABSTRACTLIST_PROC(objv[2+i*2],indexProc)) {
 	    /* Special case for AbstractList */
 	    statePtr->aCopyList[i] = Tcl_DuplicateObj(objv[2+i*2]);

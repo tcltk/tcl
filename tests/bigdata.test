@@ -1114,10 +1114,9 @@ bigtestRO concat-bigdata-1 "concat" {4294967296 {0 1 2 3 4} {6 7 0 1 2} {3 4 5 6
 test puts-bigdata-1 "puts" -setup {
     set fpath [makeFile {} bug-0306a5563.data]
 } -constraints {
-    bug0306a5563
     bigdata
 } -body {
-    set fd [open $fpath w]    
+    set fd [open $fpath w]
     puts -nonewline $fd [testbigdata string 0x80000001]
     close $fd
     set fd [open $fpath]
@@ -1130,13 +1129,12 @@ test puts-bigdata-1 "puts" -setup {
 test puts-bigdata-2 "puts" -setup {
     set fpath [tcltest::makeFile {} bug-0306a5563.data]
 } -constraints {
-    bug0306a5563
     bigdata
 } -body {
     set fd [open $fpath w]
     set s [testbigdata string 0x7FFFFFFE]
-    # The character to append in the next line is —, EM DASH, 
-    # code point 0x2014 (decimal 8212, UTF-8 #xE2 #x80 #x94) 
+    # The character to append in the next line is —, EM DASH,
+    # code point 0x2014 (decimal 8212, UTF-8 #xE2 #x80 #x94)
     append s \u2014
     puts -nonewline $fd $s
     close $fd

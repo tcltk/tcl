@@ -1,29 +1,27 @@
 /*
  * tclStringObj.c --
  *
- *	This file contains functions that implement string operations on Tcl
- *	objects. Some string operations work with UTF strings and others
- *	require Unicode format. Functions that require knowledge of the width
- *	of each character, such as indexing, operate on Unicode data.
+ *      This file contains functions that implement string operations on Tcl
+ *      objects. Some string operations work with UTF-8 encoding forms.
+ *      Functions that require knowledge of the width of each character,
+ * 	such as indexing, operate on fixed width encoding forms such as UTF-32.
  *
- *	A Unicode string is an internationalized string. Conceptually, a
- *	Unicode string is an array of 16-bit quantities organized as a
- *	sequence of properly formed UTF-8 characters. There is a one-to-one
- *	map between Unicode and UTF characters. Because Unicode characters
- *	have a fixed width, operations such as indexing operate on Unicode
- *	data. The String object is optimized for the case where each UTF char
+ * 	Conceptually, a string is a sequence of Unicode code points. Internally
+ * 	it may be stored in an encoding form such as a modified version of
+ * 	UTF-8 or UTF-16 (when TCL_UTF_MAX=3) or UTF-32.
+ *
+ *	The String object is optimized for the case where each UTF char
  *	in a string is only one byte. In this case, we store the value of
- *	numChars, but we don't store the Unicode data (unless Tcl_GetUnicode
- *	is explicitly called).
+ *	numChars, but we don't store the fixed form encoding (unless
+ * 	Tcl_GetUnicode is explicitly called).
  *
- *	The String object type stores one or both formats. The default
- *	behavior is to store UTF. Once Unicode is calculated by a function, it
- *	is stored in the internal rep for future access (without an additional
- *	O(n) cost).
+ *      The String object type stores one or both formats. The default
+ *      behavior is to store UTF-8. Once UTF-16/UTF32 is calculated, it is
+ *      stored in the internal rep for future access (without an additional
+ *      O(n) cost).
  *
  *	To allow many appends to be done to an object without constantly
- *	reallocating the space for the string or Unicode representation, we
- *	allocate double the space for the string or Unicode and use the
+ *	reallocating space, we allocate double the space and use the
  *	internal representation to keep track of how much space is used vs.
  *	allocated.
  *
@@ -2753,12 +2751,16 @@ AppendPrintfToObjVA(
 
 		break;
 	    }
+	    case 'p':
+		if (sizeof(size_t) == sizeof(Tcl_WideInt)) {
+		    size = 2;
+		}
+		/* FALLTHRU */
 	    case 'c':
 	    case 'i':
 	    case 'u':
 	    case 'd':
 	    case 'o':
-	    case 'p':
 	    case 'x':
 	    case 'X':
 		seekingConversion = 0;
@@ -3139,8 +3141,7 @@ TclStringCat(
 {
     Tcl_Obj *objResultPtr, * const *ov;
     int binary = 1;
-    Tcl_Size oc;
-    Tcl_Size length = 0;
+    Tcl_Size oc, length = 0;
     int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
     Tcl_Size first = objc - 1;	/* Index of first value possibly not empty */
     Tcl_Size last = 0;		/* Index of last value possibly not empty */

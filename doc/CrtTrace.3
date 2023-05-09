@@ -88,10 +88,10 @@ typedef int \fBTcl_CmdObjTraceProc\fR(
 typedef int \fBTcl_CmdObjTraceProc2\fR(
         \fBvoid *\fR \fIclientData\fR,
         \fBTcl_Interp\fR* \fIinterp\fR,
-        ptrdiff_t \fIlevel\fR,
+        Tcl_Size \fIlevel\fR,
         const char *\fIcommand\fR,
         \fBTcl_Command\fR \fIcommandToken\fR,
-        ptrdiff_t \fIobjc\fR,
+        Tcl_Size \fIobjc\fR,
         \fBTcl_Obj\fR *const \fIobjv\fR[]);
 .CE
 .PP
