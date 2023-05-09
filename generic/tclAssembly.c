@@ -2248,7 +2248,7 @@ static int
 GetListIndexOperand(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Token** tokenPtrPtr,	/* Current token from the parser */
-    int* result)		/* OUTPUT: Integer extracted from the token */
+    int* result)		/* OUTPUT: encoded index derived from the token */
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */

@@ -739,8 +739,8 @@ const Tcl_ObjType tclByteCodeType = {
 };
 
 /*
- * subtCodeType provides the standard type managemnt procedures for the
- * substcode type, which represents substiution within a Tcl value.
+ * substCodeType provides the standard type management procedures for the
+ * substcode type, which represents substitution within a Tcl value.
  */
 
 static const Tcl_ObjType substCodeType = {
