@@ -34,8 +34,6 @@ typedef struct {
 } ArithSeriesDbl;
 
 
-MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjCopy(Tcl_Interp *interp,
-			    Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE  Tcl_Obj *TclArithSeriesObjIndex(Tcl_Interp *, Tcl_Obj *,
 			    Tcl_WideInt index);
 MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjRange(Tcl_Interp *interp,

@@ -1184,7 +1184,7 @@ test io-7.2 {FilterInputBytes: split up character in middle of buffer} {
     puts -nonewline $f "1234567890\n123\x82\x4F\x82\x50\x82"
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding shiftjis
+    fconfigure $f -encoding shiftjis -profile tcl8
     set x [list [gets $f line] $line [eof $f]]
     close $f
     set x
@@ -1539,67 +1539,67 @@ test io-12.5 {ReadChars: fileevents on partial characters} {stdio fileevent} {
 } "{} timeout {} timeout 牦 {} eof 0 {}"
 test io-12.6 {ReadChars: too many chars read} {
     proc driver {cmd args} {
-        variable buffer
-        variable index
-        set chan [lindex $args 0]
-        switch -- $cmd {
-            initialize {
-                set index($chan) 0
-                set buffer($chan) [encoding convertto utf-8 \
-                        [string repeat 뻯 20][string repeat . 20]]
-                return {initialize finalize watch read}
-            }
-            finalize {
-                unset index($chan) buffer($chan)
-                return
-            }
-            watch {}
-            read {
-                set n [lindex $args 1]
-                set new [expr {$index($chan) + $n}]
-                set result [string range $buffer($chan) $index($chan) $new-1]
-                set index($chan) $new
-                return $result
-            }
-        }
+	variable buffer
+	variable index
+	set chan [lindex $args 0]
+	switch -- $cmd {
+	    initialize {
+		set index($chan) 0
+		set buffer($chan) [encoding convertto utf-8 \
+			[string repeat 뻯 20][string repeat . 20]]
+		return {initialize finalize watch read}
+	    }
+	    finalize {
+		unset index($chan) buffer($chan)
+		return
+	    }
+	    watch {}
+	    read {
+		set n [lindex $args 1]
+		set new [expr {$index($chan) + $n}]
+		set result [string range $buffer($chan) $index($chan) $new-1]
+		set index($chan) $new
+		return $result
+	    }
+	}
     }
     set c [chan create read [namespace which driver]]
     chan configure $c -encoding utf-8
     while {![eof $c]} {
-        read $c 15
+	read $c 15
     }
     close $c
 } {}
 test io-12.7 {ReadChars: too many chars read [bc5b790099]} {
     proc driver {cmd args} {
-        variable buffer
-        variable index
-        set chan [lindex $args 0]
-        switch -- $cmd {
-            initialize {
-                set index($chan) 0
-                set buffer($chan) [encoding convertto utf-8 \
-                        [string repeat 뻯 10]....뻯]
-                return {initialize finalize watch read}
-            }
-            finalize {
-                unset index($chan) buffer($chan)
-                return
-            }
-            watch {}
-            read {
-                set n [lindex $args 1]
-                set new [expr {$index($chan) + $n}]
-                set result [string range $buffer($chan) $index($chan) $new-1]
-                set index($chan) $new
-                return $result
-            }
-        }
+	variable buffer
+	variable index
+	set chan [lindex $args 0]
+	switch -- $cmd {
+	    initialize {
+		set index($chan) 0
+		set buffer($chan) [encoding convertto utf-8 \
+			[string repeat 뻯 10]....뻯]
+		return {initialize finalize watch read}
+	    }
+	    finalize {
+		unset index($chan) buffer($chan)
+		return
+	    }
+	    watch {}
+	    read {
+		set n [lindex $args 1]
+		set new [expr {$index($chan) + $n}]
+		set result [string range $buffer($chan) $index($chan) $new-1]
+		set index($chan) $new
+		return $result
+	    }
+	}
     }
     set c [chan create read [namespace which driver]]
     chan configure $c -encoding utf-8
     while {![eof $c]} {
-        read $c 7
+	read $c 7
     }
     close $c
 } {}
@@ -1614,7 +1614,7 @@ test io-12.8 {ReadChars: multibyte chars split} {
     close $f
     scan [string index $in end] %c
 } 160
-test io-12.9 {ReadChars: multibyte chars split} -body {
+test {io-12.9 profile tcl8} {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
@@ -1622,18 +1622,34 @@ test io-12.9 {ReadChars: multibyte chars split} -body {
     set f [open $path(test1)]
     fconfigure $f -encoding utf-8 -profile tcl8 -buffersize 10
     set in [read $f]
-    close $f
+    read $f
     scan [string index $in end] %c
 } -cleanup {
     catch {close $f}
 } -result 194
-test io-12.10 {ReadChars: multibyte chars split} -body {
+test {io-12.10 strict} {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -profile tcl8 -buffersize 11
+    fconfigure $f -encoding utf-8 -profile strict -buffersize 10
+    set in [read $f]
+    close $f
+    scan [string index $in end] %c
+} -cleanup {
+    catch {close $f}
+} -returnCodes 1 -match glob -result {error reading "file*":\
+	invalid or incomplete multibyte or wide character}
+
+
+test {io-12.10 tcl8} {ReadChars: multibyte chars split} -body {
+    set f [open $path(test1) w]
+    fconfigure $f -translation binary
+    puts -nonewline $f [string repeat a 9]\xC2
+    close $f
+    set f [open $path(test1)]
+    fconfigure $f -encoding utf-8 -profile tcl8 -buffersize 10
     set in [read $f]
     close $f
     scan [string index $in end] %c
@@ -1990,7 +2006,7 @@ test io-14.9 {reuse of stdio special channels} {stdio fileevent} {
     file delete $path(test1)
     set f [open $path(script) w]
     puts $f {
-        array set path [lindex $argv 0]
+	array set path [lindex $argv 0]
 	set f [open $path(test1) w]
 	puts $f hello
 	close $f
@@ -2337,7 +2353,7 @@ test io-27.6 {FlushChannel, async flushing, async close} \
     close $f
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
-        set x "$x$x"
+	set x "$x$x"
     }
     set f [open $path(output) w]
     close $f
@@ -2351,9 +2367,9 @@ test io-27.6 {FlushChannel, async flushing, async close} \
 	vwait [namespace which -variable counter]
     }
     if {$counter == 1000} {
-        set result "file size only [file size $path(output)]"
+	set result "file size only [file size $path(output)]"
     } else {
-        set result ok
+	set result ok
     }
 } ok
 
@@ -2427,9 +2443,9 @@ test io-28.3 {CloseChannel, not called before output queue is empty} \
 	vwait [namespace which -variable counter]
     }
     if {$counter == 1000} {
-        set result probably_broken
+	set result probably_broken
     } else {
-        set result ok
+	set result ok
     }
 } ok
 test io-28.4 Tcl_Close testchannel {
@@ -4651,29 +4667,29 @@ test io-33.11 {TclGetsObjBinary, [10dc6daa37]} -setup {
 } -result {{} {} {} .......}
 test io-33.12 {Tcl_GetsObj, [10dc6daa37]} -setup {
     proc driver {cmd args} {
-        variable buffer
-        variable index
-        set chan [lindex $args 0]
-        switch -- $cmd {
-            initialize {
-                set index($chan) 0
-                set buffer($chan) .......
-                return {initialize finalize watch read}
-            }
-            finalize {
-                unset index($chan) buffer($chan)
-                return
-            }
-            watch {}
-            read {
-                set n [lindex $args 1]
+	variable buffer
+	variable index
+	set chan [lindex $args 0]
+	switch -- $cmd {
+	    initialize {
+		set index($chan) 0
+		set buffer($chan) .......
+		return {initialize finalize watch read}
+	    }
+	    finalize {
+		unset index($chan) buffer($chan)
+		return
+	    }
+	    watch {}
+	    read {
+		set n [lindex $args 1]
 		if {$n > 3} {set n 3}
-                set new [expr {$index($chan) + $n}]
-                set result [string range $buffer($chan) $index($chan) $new-1]
-                set index($chan) $new
-                return $result
-            }
-        }
+		set new [expr {$index($chan) + $n}]
+		set result [string range $buffer($chan) $index($chan) $new-1]
+		set index($chan) $new
+		return $result
+	    }
+	}
     }
 } -body {
     set c [chan create read [namespace which driver]]
@@ -4685,30 +4701,30 @@ test io-33.12 {Tcl_GetsObj, [10dc6daa37]} -setup {
 } -result {{} {} {} .......}
 test io-33.13 {Tcl_GetsObj, [10dc6daa37]} -setup {
     proc driver {cmd args} {
-        variable buffer
-        variable index
-        set chan [lindex $args 0]
-        switch -- $cmd {
-            initialize {
-                set index($chan) 0
-                set buffer($chan) [string repeat \
-                        [string repeat . 64]\n[string repeat . 25] 2]
-                return {initialize finalize watch read}
-            }
-            finalize {
-                unset index($chan) buffer($chan)
-                return
-            }
-            watch {}
-            read {
-                set n [lindex $args 1]
-                if {$n > 65} {set n 65}
-                set new [expr {$index($chan) + $n}]
-                set result [string range $buffer($chan) $index($chan) $new-1]
-                set index($chan) $new
-                return $result
-            }
-        }
+	variable buffer
+	variable index
+	set chan [lindex $args 0]
+	switch -- $cmd {
+	    initialize {
+		set index($chan) 0
+		set buffer($chan) [string repeat \
+			[string repeat . 64]\n[string repeat . 25] 2]
+		return {initialize finalize watch read}
+	    }
+	    finalize {
+		unset index($chan) buffer($chan)
+		return
+	    }
+	    watch {}
+	    read {
+		set n [lindex $args 1]
+		if {$n > 65} {set n 65}
+		set new [expr {$index($chan) + $n}]
+		set result [string range $buffer($chan) $index($chan) $new-1]
+		set index($chan) $new
+		return $result
+	    }
+	}
     }
 } -body {
     set c [chan create read [namespace which driver]]
@@ -5429,8 +5445,8 @@ test io-36.3 {Tcl_InputBlocked vs files, short read} {
 } {0 abc 0 defghijklmnop 0 1}
 test io-36.4 {Tcl_InputBlocked vs files, event driven read} {fileevent} {
     proc in {f} {
-        variable l
-        variable x
+	variable l
+	variable x
 	lappend l [read $f 3]
 	if {[eof $f]} {lappend l eof; close $f; set x done}
     }
@@ -5465,8 +5481,8 @@ test io-36.5 {Tcl_InputBlocked vs files, short read, nonblocking} {nonBlockFiles
 } {0 abc 0 defghijklmnop 0 1}
 test io-36.6 {Tcl_InputBlocked vs files, event driven read} {nonBlockFiles fileevent} {
     proc in {f} {
-        variable l
-        variable x
+	variable l
+	variable x
 	lappend l [read $f 3]
 	if {[eof $f]} {lappend l eof; close $f; set x done}
     }
@@ -5863,7 +5879,7 @@ test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
     set l
 } {{} auto}
 test io-39.24 {Tcl_SetChannelOption, server socket is not readable or
-        writable so we can't change -eofchar or -translation } {
+    writable so we can't change -eofchar or -translation } {
     set l [list]
     set sock [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
     fconfigure $sock -eofchar D -translation lf
@@ -6361,23 +6377,23 @@ test io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileevent not
 test io-46.2 {Tcl event loop vs multiple interpreters} testfevent {
     testfevent create
     testfevent cmd {
-        variable x 0
-        after 100 {set x triggered}
-        vwait [namespace which -variable x]
-        set x
+	variable x 0
+	after 100 {set x triggered}
+	vwait [namespace which -variable x]
+	set x
     }
 } {triggered}
 test io-46.3 {Tcl event loop vs multiple interpreters} testfevent {
     testfevent create
     testfevent cmd {
-        set x 0
-        after 10 {lappend x timer}
-        after 30
-        set result $x
-        update idletasks
-        lappend result $x
-        update
-        lappend result $x
+	set x 0
+	after 10 {lappend x timer}
+	after 30
+	set result $x
+	update idletasks
+	lappend result $x
+	update
+	lappend result $x
     }
 } {0 0 {0 timer}}
 
@@ -6394,7 +6410,7 @@ test io-47.1 {fileevent vs multiple interpreters} {testfevent fileevent} {
     lappend x [fileevent $f2 readable]
     testfevent delete
     lappend x [fileevent $f readable] [fileevent $f2 readable] \
-        [fileevent $f3 readable]
+	[fileevent $f3 readable]
     close $f
     close $f2
     close $f3
@@ -6410,11 +6426,11 @@ test io-47.2 {deleting fileevent on interpreter delete} {testfevent fileevent} {
     testfevent share $f2
     testfevent share $f3
     testfevent cmd "fileevent $f2 readable {script 2}
-        fileevent $f3 readable {script 3}"
+	fileevent $f3 readable {script 3}"
     fileevent $f4 readable {script 4}
     testfevent delete
     set x [list [fileevent $f readable] [fileevent $f2 readable] \
-                [fileevent $f3 readable] [fileevent $f4 readable]]
+		[fileevent $f3 readable] [fileevent $f4 readable]]
     close $f
     close $f2
     close $f3
@@ -6432,7 +6448,7 @@ test io-47.3 {deleting fileevent on interpreter delete} {testfevent fileevent} {
     fileevent $f readable {script 1}
     fileevent $f2 readable {script 2}
     testfevent cmd "fileevent $f3 readable {script 3}
-      fileevent $f4 readable {script 4}"
+	fileevent $f4 readable {script 4}"
     testfevent delete
     set x [list [fileevent $f readable] [fileevent $f2 readable] \
                 [fileevent $f3 readable] [fileevent $f4 readable]]
@@ -6451,8 +6467,8 @@ test io-47.4 {file events on shared files and multiple interpreters} {testfevent
     fileevent $f readable {script 2}
     fileevent $f2 readable {script 3}
     set x [list [fileevent $f2 readable] \
-                [testfevent cmd "fileevent $f readable"] \
-                [fileevent $f readable]]
+		[testfevent cmd "fileevent $f readable"] \
+		[fileevent $f readable]]
     testfevent delete
     close $f
     close $f2
@@ -6466,7 +6482,7 @@ test io-47.5 {file events on shared files, deleting file events} {testfevent fil
     fileevent $f readable {script 2}
     testfevent cmd "fileevent $f readable {}"
     set x [list [testfevent cmd "fileevent $f readable"] \
-                [fileevent $f readable]]
+		[fileevent $f readable]]
     testfevent delete
     close $f
     set x
@@ -7322,7 +7338,7 @@ test io-52.3 {TclCopyChannel} {fcopy} {
     set s1 [file size $thisScript]
     set s2 [file size $path(test1)]
     if {("$s1" == "$s2") && ($s0 == $s1)} {
-        lappend result ok
+	lappend result ok
     }
     set result
 } {0 0 ok}
@@ -7363,7 +7379,7 @@ test io-52.5 {TclCopyChannel, all} {fcopy} {
     set s1 [file size $thisScript]
     set s2 [file size $path(test1)]
     if {"$s1" == "$s2"} {
-        lappend result ok
+	lappend result ok
     }
     set result
 } {0 0 ok}
@@ -7380,7 +7396,7 @@ test io-52.5a {TclCopyChannel, all, other negative value} {fcopy} {
     set s1 [file size $thisScript]
     set s2 [file size $path(test1)]
     if {"$s1" == "$s2"} {
-        lappend result ok
+	lappend result ok
     }
     set result
 } {0 0 ok}
@@ -7397,7 +7413,7 @@ test io-52.5b {TclCopyChannel, all, wrap to negative value} {fcopy} {
     set s1 [file size $thisScript]
     set s2 [file size $path(test1)]
     if {"$s1" == "$s2"} {
-        lappend result ok
+	lappend result ok
     }
     set result
 } {0 0 ok}
@@ -7414,7 +7430,7 @@ test io-52.6 {TclCopyChannel} {fcopy} {
     set s1 [file size $thisScript]
     set s2 [file size $path(test1)]
     if {("$s1" == "$s2") && ($s0 == $s1)} {
-        lappend result ok
+	lappend result ok
     }
     set result
 } {0 0 ok}
@@ -7431,7 +7447,7 @@ test io-52.7 {TclCopyChannel} {fcopy} {
     close $f1
     close $f2
     if {"$s1" == "$s2"} {
-        lappend result ok
+	lappend result ok
     }
     set result
 } {0 0 ok}
@@ -7987,8 +8003,8 @@ proc doFcopy {in out {bytes 0} {error {}}} {
     } elseif {[eof $in]} {
 	set fcopyTestDone 0
     } else {
-        # Delay next fcopy to wait for size>0 input bytes
-        after 100 [list fcopy $in $out -size 1000 \
+	# Delay next fcopy to wait for size>0 input bytes
+	after 100 [list fcopy $in $out -size 1000 \
 		-command [namespace code [list doFcopy $in $out]]]
     }
 }
@@ -8003,9 +8019,9 @@ test io-53.7 {CopyData: Flooding fcopy from pipe} {stdio fcopy} {
 	proc Write {count} {
 	    puts -nonewline "1234567890"
 	    if {[incr count -1]} {
-	        after 10 [list Write $count]
+		after 10 [list Write $count]
 	    } else {
-	        set ::ready 1
+		set ::ready 1
 	    }
 	}
 	fconfigure stdout -buffering none
@@ -8347,21 +8363,21 @@ test io-53.12.1 {
 } A
 test io-53.13 {TclCopyChannel: read error reporting} -setup {
     proc driver {cmd args} {
-        variable buffer
-        variable index
-        set chan [lindex $args 0]
-        switch -- $cmd {
-            initialize {
-                return {initialize finalize watch read}
-            }
-            finalize {
-                return
-            }
-            watch {}
-            read {
+	variable buffer
+	variable index
+	set chan [lindex $args 0]
+	switch -- $cmd {
+	    initialize {
+		return {initialize finalize watch read}
+	    }
+	    finalize {
+		return
+	    }
+	    watch {}
+	    read {
 		error FAIL
-            }
-        }
+	    }
+	}
     }
     set outFile [makeFile {} out]
 } -body {
@@ -8377,21 +8393,21 @@ test io-53.13 {TclCopyChannel: read error reporting} -setup {
 } -result {error reading "rc*": *} -returnCodes error -match glob
 test io-53.14 {TclCopyChannel: write error reporting} -setup {
     proc driver {cmd args} {
-        variable buffer
-        variable index
-        set chan [lindex $args 0]
-        switch -- $cmd {
-            initialize {
-                return {initialize finalize watch write}
-            }
-            finalize {
-                return
-            }
-            watch {}
-            write {
-                error FAIL
-            }
-        }
+	variable buffer
+	variable index
+	set chan [lindex $args 0]
+	switch -- $cmd {
+	    initialize {
+		return {initialize finalize watch write}
+	    }
+	    finalize {
+		return
+	    }
+	    watch {}
+	    write {
+		error FAIL
+	    }
+	}
     }
     set inFile [makeFile {aaa} in]
 } -body {
@@ -8407,35 +8423,35 @@ test io-53.14 {TclCopyChannel: write error reporting} -setup {
 } -result {error writing "*": *} -returnCodes error -match glob
 test io-53.15 {[ed29c4da21] DoRead: fblocked seen as error} -setup {
     proc driver {cmd args} {
-        variable buffer
-        variable index
-        variable blocked
-        set chan [lindex $args 0]
-        switch -- $cmd {
-            initialize {
-                set index($chan) 0
-                set buffer($chan) [encoding convertto utf-8 \
-                        [string repeat a 100]]
-                set blocked($chan) 1
-                return {initialize finalize watch read}
-            }
-            finalize {
-                unset index($chan) buffer($chan) blocked($chan)
-                return
-            }
-            watch {}
-            read {
-                if {$blocked($chan)} {
-                    set blocked($chan) [expr {!$blocked($chan)}]
-                    return -code error EAGAIN
-                }
-                set n [lindex $args 1]
-                set new [expr {$index($chan) + $n}]
-                set result [string range $buffer($chan) $index($chan) $new-1]
-                set index($chan) $new
-                return $result
-            }
-        }
+	variable buffer
+	variable index
+	variable blocked
+	set chan [lindex $args 0]
+	switch -- $cmd {
+	    initialize {
+		set index($chan) 0
+		set buffer($chan) [encoding convertto utf-8 \
+			[string repeat a 100]]
+		set blocked($chan) 1
+		return {initialize finalize watch read}
+	    }
+	    finalize {
+		unset index($chan) buffer($chan) blocked($chan)
+		return
+	    }
+	    watch {}
+	    read {
+		if {$blocked($chan)} {
+		    set blocked($chan) [expr {!$blocked($chan)}]
+		    return -code error EAGAIN
+		}
+		set n [lindex $args 1]
+		set new [expr {$index($chan) + $n}]
+		set result [string range $buffer($chan) $index($chan) $new-1]
+		set index($chan) $new
+		return $result
+	    }
+	}
     }
     set c [chan create read [namespace which driver]]
     chan configure $c -encoding utf-8
@@ -8451,35 +8467,35 @@ test io-53.15 {[ed29c4da21] DoRead: fblocked seen as error} -setup {
 } -result 100
 test io-53.16 {[ed29c4da21] MBRead: fblocked seen as error} -setup {
     proc driver {cmd args} {
-        variable buffer
-        variable index
-        variable blocked
-        set chan [lindex $args 0]
-        switch -- $cmd {
-            initialize {
-                set index($chan) 0
-                set buffer($chan) [encoding convertto utf-8 \
-                        [string repeat a 100]]
-                set blocked($chan) 1
-                return {initialize finalize watch read}
-            }
-            finalize {
-                unset index($chan) buffer($chan) blocked($chan)
-                return
-            }
-            watch {}
-            read {
-                if {$blocked($chan)} {
-                    set blocked($chan) [expr {!$blocked($chan)}]
-                    return -code error EAGAIN
-                }
-                set n [lindex $args 1]
-                set new [expr {$index($chan) + $n}]
-                set result [string range $buffer($chan) $index($chan) $new-1]
-                set index($chan) $new
-                return $result
-            }
-        }
+	variable buffer
+	variable index
+	variable blocked
+	set chan [lindex $args 0]
+	switch -- $cmd {
+	    initialize {
+		set index($chan) 0
+		set buffer($chan) [encoding convertto utf-8 \
+			[string repeat a 100]]
+		set blocked($chan) 1
+		return {initialize finalize watch read}
+	    }
+	    finalize {
+		unset index($chan) buffer($chan) blocked($chan)
+		return
+	    }
+	    watch {}
+	    read {
+		if {$blocked($chan)} {
+		    set blocked($chan) [expr {!$blocked($chan)}]
+		    return -code error EAGAIN
+		}
+		set n [lindex $args 1]
+		set new [expr {$index($chan) + $n}]
+		set result [string range $buffer($chan) $index($chan) $new-1]
+		set index($chan) $new
+		return $result
+	    }
+	}
     }
     set c [chan create read [namespace which driver]]
     chan configure $c -encoding utf-8 -translation lf
@@ -8495,29 +8511,29 @@ test io-53.16 {[ed29c4da21] MBRead: fblocked seen as error} -setup {
 } -result 100
 test io-53.17 {[7c187a3773] MBWrite: proper inQueueTail handling} -setup {
     proc driver {cmd args} {
-        variable buffer
-        variable index
-        set chan [lindex $args 0]
-        switch -- $cmd {
-            initialize {
-                set index($chan) 0
-                set buffer($chan) [encoding convertto utf-8 \
-                        line\n[string repeat a 100]line\n]
-                return {initialize finalize watch read}
-            }
-            finalize {
-                unset index($chan) buffer($chan)
-                return
-            }
-            watch {}
-            read {
-                set n [lindex $args 1]
-                set new [expr {$index($chan) + $n}]
-                set result [string range $buffer($chan) $index($chan) $new-1]
-                set index($chan) $new
-                return $result
-            }
-        }
+	variable buffer
+	variable index
+	set chan [lindex $args 0]
+	switch -- $cmd {
+	    initialize {
+		set index($chan) 0
+		set buffer($chan) [encoding convertto utf-8 \
+			line\n[string repeat a 100]line\n]
+		return {initialize finalize watch read}
+	    }
+	    finalize {
+		unset index($chan) buffer($chan)
+		return
+	    }
+	    watch {}
+	    read {
+		set n [lindex $args 1]
+		set new [expr {$index($chan) + $n}]
+		set result [string range $buffer($chan) $index($chan) $new-1]
+		set index($chan) $new
+		return $result
+	    }
+	}
     }
     set c [chan create read [namespace which driver]]
     chan configure $c -encoding utf-8 -translation lf -buffersize 107
@@ -9400,8 +9416,12 @@ test io-75.10 {
     puts -nonewline $f A\xC0
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -profile strict -buffering none
+    fconfigure $f -encoding utf-8 -buffering none
 } -body {
+    catch {read $f} errmsg
+    lappend res $errmsg
+    seek $f 0
+    chan configure $f -profile tcl8
     set d [read $f]
     binary scan $d H* hd
     lappend res $hd
@@ -9410,8 +9430,8 @@ test io-75.10 {
     close $f
     removeFile io-75.10
     unset result
-} -returnCodes 1 -match glob -result {error reading "file*":\
-    invalid or incomplete multibyte or wide character}
+} -match glob -result {{error reading "file*":\
+    invalid or incomplete multibyte or wide character} 41c0}
 
 # The current result returns the orphan byte as byte.
 # This may be expected due to special utf-8 handling.
@@ -9428,7 +9448,7 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
     flush $f
     seek $f 0
     fconfigure $f -encoding shiftjis -blocking 0 -eofchar {} -translation lf \
-	-profile tcl8
+	-profile strict
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9437,7 +9457,8 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
 } -cleanup {
     close $f
     removeFile io-75.11
-} -match glob -result {4181ff41 0 {}}
+} -match glob -result {41 1 {error reading "file*":\
+    invalid or incomplete multibyte or wide character}}
 
 test io-75.12 {
     invalid utf-8 encoding read is not ignored because setting the encoding to
@@ -9514,8 +9535,8 @@ test io-75.14 {
     lappend res [gets $chan]
     close $chan
     return $res
-} -returnCodes 1 -match glob -result {error reading "*":\
-    invalid or incomplete multibyte or wide character}
+} -match glob -result {a b 1 {error reading "*":\
+    invalid or incomplete multibyte or wide character} cÀ d}
 
 test io-75.15 {
     invalid utf-8 encoding strict
@@ -9549,7 +9570,8 @@ test io-75.15 {
     return $res
 } -cleanup {
     close $chan
-} -returnCodes 1 -match glob -result {error reading "*": invalid or incomplete multibyte or wide character}
+} -match glob -result {hello AB 1 {error reading "*": invalid or incomplete multibyte or wide character}\
+    1 {error reading "*": invalid or incomplete multibyte or wide character} 43 44 c0 40 EF GHI}
 
 # ### ### ### ######### ######### #########
 
