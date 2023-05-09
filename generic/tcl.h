@@ -2339,7 +2339,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 	TclStubCall((void *)4))(argc, argv, appInitProc, interp)
 #if !defined(_WIN32) || !defined(UNICODE)
 #define Tcl_MainEx(argc, argv, appInitProc, interp) \
-	(void)((const char *(*)(size_t, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	(void)((const char *(*)(Tcl_Size, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
 	TclStubCall((void *)5))(argc, argv, appInitProc, interp)
 #endif
 #define Tcl_StaticLibrary(interp, pkgName, initProc, safeInitProc) \
