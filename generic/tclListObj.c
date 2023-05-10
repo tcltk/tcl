@@ -2656,7 +2656,6 @@ TclLindexFlat(
     Tcl_Obj *const indexArray[])/* Array of pointers to Tcl objects that
 				 * represent the indices in the list. */
 {
-    int status;
     Tcl_Size i;
 
     /* Handle ArithSeries as special case */
@@ -2685,13 +2684,24 @@ TclLindexFlat(
 
     for (i=0 ; i<indexCount && listObj ; i++) {
 	Tcl_Size index, listLen = 0;
-	Tcl_Obj **elemPtrs = NULL;
+	Tcl_Obj **elemPtrs = NULL, *sublistCopy;
 
-	status = Tcl_ListObjLength(interp, listObj, &listLen);
-	if (status != TCL_OK) {
-	    Tcl_DecrRefCount(listObj);
-	    return NULL;
+	/*
+	 * Here we make a private copy of the current sublist, so we avoid any
+	 * shimmering issues that might invalidate the elemPtr array below
+	 * while we are still using it. See test lindex-8.4.
+	 */
+
+	sublistCopy = TclListObjCopy(interp, listObj);
+	Tcl_DecrRefCount(listObj);
+	listObj = NULL;
+
+	if (sublistCopy == NULL) {
+	    /* The sublist is not a list at all => error.  */
+	    break;
 	}
+	LIST_ASSERT_TYPE(sublistCopy);
+	ListObjGetElements(sublistCopy, listLen, elemPtrs);
 
 	if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
 		&index) == TCL_OK) {
@@ -2705,43 +2715,20 @@ TclLindexFlat(
 		    if (TclGetIntForIndexM(
 			    interp, indexArray[i], TCL_SIZE_MAX - 1, &index)
 			!= TCL_OK) {
-			Tcl_DecrRefCount(listObj);
+			Tcl_DecrRefCount(sublistCopy);
 			return NULL;
 		    }
 		}
-		Tcl_DecrRefCount(listObj);
 		TclNewObj(listObj);
-		Tcl_IncrRefCount(listObj);
 	    } else {
-		Tcl_Obj *itemObj;
-		/*
-		 * Must set the internal rep again because it may have been
-		 * changed by TclGetIntForIndexM. See test lindex-8.4.
-		 */
-		if (!TclHasInternalRep(listObj, &tclListType.objType)) {
-		    status = SetListFromAny(interp, listObj);
-		    if (status != TCL_OK) {
-			/* The list is not a list at all => error.  */
-			Tcl_DecrRefCount(listObj);
-			return NULL;
-		    }
-		}
-
-		ListObjGetElements(listObj, listLen, elemPtrs);
-		/* increment this reference count first before decrementing
-		 * just in case they are the same Tcl_Obj
-		 */
-		itemObj = elemPtrs[index];
-		Tcl_IncrRefCount(itemObj);
-		Tcl_DecrRefCount(listObj);
 		/* Extract the pointer to the appropriate element. */
-		listObj = itemObj;
+		listObj = elemPtrs[index];
 	    }
-	} else {
-	    Tcl_DecrRefCount(listObj);
-	    listObj = NULL;
+	    Tcl_IncrRefCount(listObj);
 	}
+	Tcl_DecrRefCount(sublistCopy);
     }
+
     return listObj;
 }
 
