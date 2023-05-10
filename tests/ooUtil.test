@@ -429,7 +429,7 @@ test ooUtil-5.1 {TIP 478: abstract} -setup {
     parent destroy
 } -result {1 1 1 123 456 ::y}
 
-test ooUtil-6.1 {TIP 478: classvarable} -setup {
+test ooUtil-6.1 {TIP 478: classvariable} -setup {
     oo::class create parent
 } -body {
     oo::class create xyz {
@@ -459,7 +459,7 @@ test ooUtil-6.1 {TIP 478: classvarable} -setup {
 } -cleanup {
     parent destroy
 } -result {{1 2} {1 2} {2 3}}
-test ooUtil-6.2 {TIP 478: classvarable error case} -setup {
+test ooUtil-6.2 {TIP 478: classvariable error case} -setup {
     oo::class create parent
 } -body {
     oo::class create xyz {
@@ -475,7 +475,7 @@ test ooUtil-6.2 {TIP 478: classvarable error case} -setup {
 } -returnCodes error -cleanup {
     parent destroy
 } -result {bad variable name "x(1)": can't create a scalar variable that looks like an array element}
-test ooUtil-6.3 {TIP 478: classvarable error case} -setup {
+test ooUtil-6.3 {TIP 478: classvariable error case} -setup {
     oo::class create parent
 } -body {
     oo::class create xyz {
