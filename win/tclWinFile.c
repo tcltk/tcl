@@ -170,7 +170,7 @@ static int		NativeWriteReparse(const WCHAR *LinkDirectory,
 static int		NativeMatchType(int isDrive, DWORD attr,
 			    const WCHAR *nativeName, Tcl_GlobTypeData *types);
 static int		WinIsDrive(const char *name, size_t nameLen);
-static Tcl_Size		WinIsReserved(const char *path);
+static size_t		WinIsReserved(const char *path);
 static Tcl_Obj *	WinReadLink(const WCHAR *LinkSource);
 static Tcl_Obj *	WinReadLinkDirectory(const WCHAR *LinkDirectory);
 static int		WinLink(const WCHAR *LinkSource,
@@ -1245,7 +1245,7 @@ WinIsDrive(
  * (not any trailing :).
  */
 
-static Tcl_Size
+static size_t
 WinIsReserved(
     const char *path)		/* Path in UTF-8 */
 {
@@ -2579,14 +2579,14 @@ TclpObjNormalizePath(
 		 */
 
 		if (isDrive) {
-		    Tcl_Size len = WinIsReserved(path);
+		    size_t len = WinIsReserved(path);
 
 		    if (len > 0) {
 			/*
 			 * Actually it does exist - COM1, etc.
 			 */
 
-			Tcl_Size i;
+			size_t i;
 
 			for (i=0 ; i<len ; i++) {
 			    WCHAR wc = ((WCHAR *)nativePath)[i];
@@ -2744,7 +2744,7 @@ TclpObjNormalizePath(
 				sizeof(WCHAR));
 			Tcl_DStringAppend(&dsNorm,
 				(const char *) nativeName,
-				(int) (wcslen(nativeName)*sizeof(WCHAR)));
+				wcslen(nativeName)*sizeof(WCHAR));
 		    }
 		}
 	    }
