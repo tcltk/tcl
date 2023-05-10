@@ -1684,42 +1684,6 @@ TclNRInterpProc(
     return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
 }
 
-static int
-NRInterpProc2(
-    void *clientData,	/* Record describing procedure to be
-				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
-				 * invoked. */
-    ptrdiff_t objc,			/* Count of number of arguments to this
-				 * procedure. */
-    Tcl_Obj *const objv[])	/* Argument value objects. */
-{
-    int result = TclPushProcCallFrame(clientData, interp, objc, objv,
-	    /*isLambda*/ 0);
-
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
-    return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
-}
-
-static int
-ObjInterpProc2(
-    void *clientData,	/* Record describing procedure to be
-				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
-				 * invoked. */
-    ptrdiff_t objc,			/* Count of number of arguments to this
-				 * procedure. */
-    Tcl_Obj *const objv[])	/* Argument value objects. */
-{
-    /*
-     * Not used much in the core; external interface for iTcl
-     */
-
-    return Tcl_NRCallObjProc2(interp, NRInterpProc2, clientData, objc, objv);
-}
-
 
 /*
  *----------------------------------------------------------------------
@@ -2312,15 +2276,15 @@ TclUpdateReturnInfo(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetObjInterpProc/TclGetObjInterpProc2 --
+ * TclGetObjInterpProc --
  *
- *	Returns a pointer to the TclObjInterpProc/ObjInterpProc2 functions;
+ *	Returns a pointer to the TclObjInterpProc functions;
  *	this is different from the value obtained from the TclObjInterpProc
  *	reference on systems like Windows where import and export versions
  *	of a function exported by a DLL exist.
  *
  * Results:
- *	Returns the internal address of the TclObjInterpProc/ObjInterpProc2
+ *	Returns the internal address of the TclObjInterpProc
  *	functions.
  *
  * Side effects:
@@ -2333,12 +2297,6 @@ Tcl_ObjCmdProc *
 TclGetObjInterpProc(void)
 {
     return TclObjInterpProc;
-}
-
-Tcl_ObjCmdProc2 *
-TclGetObjInterpProc2(void)
-{
-    return ObjInterpProc2;
 }
 
 /*

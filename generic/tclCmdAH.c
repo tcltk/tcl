@@ -680,7 +680,7 @@ EncodingConvertfromObjCmd(
 	bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
     } else
 #endif
-	bytesPtr = (char *) TclGetBytesFromObj(interp, data, &length);
+	bytesPtr = (char *) Tcl_GetBytesFromObj(interp, data, &length);
 
     if (bytesPtr == NULL) {
 	return TCL_ERROR;

@@ -2286,12 +2286,12 @@ TclOODefineSlots(
 	if (slotObject == NULL) {
 	    continue;
 	}
-	TclNewInstanceMethod(fPtr->interp, slotObject, getName, 0,
+	Tcl_NewInstanceMethod(fPtr->interp, slotObject, getName, 0,
 		&slotInfoPtr->getterType, NULL);
-	TclNewInstanceMethod(fPtr->interp, slotObject, setName, 0,
+	Tcl_NewInstanceMethod(fPtr->interp, slotObject, setName, 0,
 		&slotInfoPtr->setterType, NULL);
 	if (slotInfoPtr->resolverType.callProc) {
-	    TclNewInstanceMethod(fPtr->interp, slotObject, resolveName, 0,
+	    Tcl_NewInstanceMethod(fPtr->interp, slotObject, resolveName, 0,
 		    &slotInfoPtr->resolverType, NULL);
 	}
     }
