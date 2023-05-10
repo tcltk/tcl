@@ -2602,32 +2602,56 @@ Tcl_DStringAppend(
     if (length < 0) {
 	length = strlen(bytes);
     }
-    newSize = length + dsPtr->length;
 
-    /*
-     * Allocate a larger buffer for the string if the current one isn't large
-     * enough. Allocate extra space in the new buffer so that there will be
-     * room to grow before we have to allocate again.
-     */
+    if (length > (TCL_SIZE_MAX - dsPtr->length - 1)) {
+	Tcl_Panic("max size for a Tcl value (%" TCL_SIZE_MODIFIER
+		  "d bytes) exceeded",
+		  TCL_SIZE_MAX);
+	return NULL; /* NOTREACHED */
+    }
+    newSize = length + dsPtr->length + 1;
 
-    if (newSize >= dsPtr->spaceAvl) {
-	dsPtr->spaceAvl = newSize * 2;
+
+    if (newSize > dsPtr->spaceAvl) {
+	/* Current allocation not enough */
+	char *newString;
+	dsPtr->spaceAvl =
+	    TclUpsizeAlloc(dsPtr->spaceAvl, newSize, TCL_SIZE_MAX);
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = (char *)Tcl_Alloc(dsPtr->spaceAvl);
-
+	    while (dsPtr->spaceAvl > newSize) {
+		newString = (char *)Tcl_AttemptAlloc(dsPtr->spaceAvl);
+		if (newString)
+		    break;
+		dsPtr->spaceAvl = TclUpsizeRetry(newSize, dsPtr->spaceAvl);
+	    }
+	    if (newString == NULL) {
+		dsPtr->spaceAvl = newSize;
+		newString = Tcl_Alloc(dsPtr->spaceAvl);
+	    }
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    Tcl_Size index = TCL_INDEX_NONE;
+	    Tcl_Size index = -1;
 
 	    /* See [16896d49fd] */
 	    if (bytes >= dsPtr->string
 		    && bytes <= dsPtr->string + dsPtr->length) {
+		/* Source string is within this DString. Note offset */
 		index = bytes - dsPtr->string;
 	    }
 
-	    dsPtr->string = (char *)Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
+	    while (dsPtr->spaceAvl > newSize) {
+		newString = (char *)Tcl_AttemptRealloc(dsPtr->string, dsPtr->spaceAvl);
+		if (newString)
+		    break;
+		dsPtr->spaceAvl = TclUpsizeRetry(newSize, dsPtr->spaceAvl);
+	    }
+	    if (newString == NULL) {
+		dsPtr->spaceAvl = newSize;
+		newString = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
+	    }
 
+	    dsPtr->string = newString;
 	    if (index >= 0) {
 		bytes = dsPtr->string + index;
 	    }
