@@ -133,7 +133,7 @@ is true.
 .PP
 \fBTcl_Import\fR imports commands matching a pattern into a
 namespace.  Note that the pattern must include the name of the
-namespace to import from.  This function returns an error if
+namespace to import from.  This function returns TCL_ERROR if
 an attempt to import a command over an existing command is made,
 unless the \fIallowOverwrite\fR flag has been set.
 .PP
