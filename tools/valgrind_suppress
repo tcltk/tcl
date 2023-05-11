@@ -47,6 +47,7 @@
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:malloc
+   ...
    fun:decompose_rpath
    ...
    fun:dlopen_doit
