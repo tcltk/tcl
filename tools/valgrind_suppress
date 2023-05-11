@@ -181,6 +181,17 @@
 }
 
 {
+    TclpGetGrGid/getgrgid_r/tls_get_addr_tail
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:malloc
+    ...
+    fun:tls_get_addr_tail
+    ...
+    fun:TclpGetGrGid
+}
+
+{
     TclpGetGrGid/getgrgid_r/module_load
     Memcheck:Leak
     match-leak-kinds: reachable
