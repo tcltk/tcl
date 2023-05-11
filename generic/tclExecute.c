@@ -113,9 +113,8 @@ typedef struct {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
     Tcl_Obj **catchTop;		/* These fields are used on return TO this */
-    Tcl_Obj *auxObjList;	/* this level: they record the state when a */
-    CmdFrame cmdFrame;		/* new codePtr was received for NR */
-                                /* execution. */
+    Tcl_Obj *auxObjList;	/* level: they record the state when a new */
+    CmdFrame cmdFrame;		/* codePtr was received for NR execution. */
     Tcl_Obj *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
 				 * necessary */
@@ -4683,21 +4682,25 @@ TEBCresume(
 	 * Extract the desired list element.
 	 */
 
-	if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& !TclHasInternalRep(value2Ptr, &tclListType.objType)) {
-	    int code;
+	{
+	    Tcl_Obj *scalarObj;
+	    if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
+		    && (scalarObj = TclObjGetScalar(value2Ptr))) {
+		int code;
 
-	    DECACHE_STACK_INFO();
-	    code = TclGetIntForIndexM(interp, value2Ptr, objc-1, &index);
-	    CACHE_STACK_INFO();
-	    if (code == TCL_OK) {
-		TclDecrRefCount(value2Ptr);
-		tosPtr--;
-		pcAdjustment = 1;
-		goto lindexFastPath;
+		DECACHE_STACK_INFO();
+		code = TclGetIntForIndexM(interp, scalarObj, objc-1, &index);
+		CACHE_STACK_INFO();
+		if (code == TCL_OK) {
+		    TclDecrRefCount(value2Ptr);
+		    tosPtr--;
+		    pcAdjustment = 1;
+		    goto lindexFastPath;
+		}
+		Tcl_ResetResult(interp);
 	    }
-	    Tcl_ResetResult(interp);
 	}
+
 
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
 

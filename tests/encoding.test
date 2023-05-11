@@ -565,7 +565,10 @@ test encoding-16.18 {
 	return done
     } [namespace current]]
 } -result done
-test encoding-16.19 {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
+test {encoding-16.19 strict} {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
+    encoding convertfrom -profile strict utf-16 "\x41\x41\x41"
+} -returnCodes 1 -result {unexpected byte sequence starting at index 2: '\x41'}
+test {encoding-16.19 tcl8} {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
     encoding convertfrom -profile strict utf-16 "\x41\x41\x41"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 2: '\x41'}
 test encoding-16.19.tcl8 {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
@@ -590,9 +593,12 @@ test encoding-16.22 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
 test encoding-16.23 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
     encoding convertfrom -profile strict utf-16le \x00\xDC
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x00'}
-test encoding-16.24 {Utf32ToUtfProc} -body {
-    encoding convertfrom -profile tcl8 utf-32 "\xFF\xFF\xFF\xFF"
-} -result \uFFFD
+test {encoding-24.4 utf-8 invalid strict} {Parse invalid utf-8, strict} -body {
+    string length [encoding convertfrom -profile strict utf-8 "\xC0\x80"]
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
+test {encoding-24.4 utf-8 invalid tcl8} {UtfToUtfProc utf-8} {
+    encoding convertfrom -profile tcl8 utf-8 \xC0\x80
+} \x00
 test encoding-16.25 {Utf32ToUtfProc} -body {
     encoding convertfrom -profile tcl8 utf-32 "\x01\x00\x00\x01"
 } -result \uFFFD
@@ -880,7 +886,7 @@ test encoding-24.31 {Parse invalid utf-8 with -profile tcl8} -body {
 test encoding-24.33 {Try to generate invalid utf-8} -body {
     encoding convertto utf-8 \uFFFF
 } -result \xEF\xBF\xBF
-test encoding-24.33 {Try to generate noncharacter with -profile strict} -body {
+test encoding-24.33 {Try to generate invalid utf-8} -body {
     encoding convertto -profile strict utf-8 \uFFFF
 } -result \xEF\xBF\xBF
 test encoding-24.34 {Try to generate invalid utf-8 with -profile tcl8} -body {

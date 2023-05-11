@@ -3725,7 +3725,7 @@ TestlinkarrayCmd(
     static const char *LinkOption[] = {
         "update", "remove", "create", NULL
     };
-    enum LinkOptionEnum {LINK_UPDATE, LINK_REMOVE, LINK_CREATE} optionIndex;
+    enum LinkOptionEnum { LINK_UPDATE, LINK_REMOVE, LINK_CREATE } optionIndex;
     static const char *LinkType[] = {
 	"char", "uchar", "short", "ushort", "int", "uint", "long", "ulong",
 	"wide", "uwide", "float", "double", "string", "char*", "binary", NULL
@@ -4207,7 +4207,7 @@ PrintParse(
     Tcl_Size i;
 
     objPtr = Tcl_GetObjResult(interp);
-    if (parsePtr->commentSize + 1 > 1) {
+    if (parsePtr->commentSize > 0) {
 	Tcl_ListObjAppendElement(NULL, objPtr,
 		Tcl_NewStringObj(parsePtr->commentStart,
 			parsePtr->commentSize));
@@ -4645,15 +4645,15 @@ TestregexpObjCmd(
 		end--;
 	    }
 
-	    objs[0] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(start + 1U)) - 1);
-	    objs[1] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(end + 1U)) - 1);
+	    objs[0] = Tcl_NewWideIntObj(start);
+	    objs[1] = Tcl_NewWideIntObj(end);
 
 	    newPtr = Tcl_NewListObj(2, objs);
 	} else {
 	    if (ii == TCL_INDEX_NONE) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
 		newPtr = Tcl_GetRange(objPtr, start, end);
-	    } else if (ii > info.nsubs || info.matches[ii].end + 1 <= 1) {
+	    } else if (ii > info.nsubs || info.matches[ii].end <= 0) {
 		newPtr = Tcl_NewObj();
 	    } else {
 		newPtr = Tcl_GetRange(objPtr, info.matches[ii].start,
@@ -7507,7 +7507,7 @@ TestUtfNextCmd(
     }
 	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
-    if (numBytes + 4 > (Tcl_Size) sizeof(buffer)) {
+    if ((size_t)numBytes > sizeof(buffer) - 4) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"testutfnext\" can only handle %" TCL_Z_MODIFIER "u bytes",
 		sizeof(buffer) - 4));
@@ -7678,8 +7678,7 @@ TestGetIntForIndexCmd(
     if (Tcl_GetIntForIndex(interp, objv[1], endvalue, &result) != TCL_OK) {
 	return TCL_ERROR;
     }
-    /* Make sure that (size_t)-2 is output as "-2" and (size_t)-3 as "-3", even for 32-bit */
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(result + 3U)) - 3));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
     return TCL_OK;
 }
 
@@ -7919,7 +7918,7 @@ TestNRELevels(
     static ptrdiff_t *refDepth = NULL;
     ptrdiff_t depth;
     Tcl_Obj *levels[6];
-    size_t i = 0;
+    Tcl_Size i = 0;
     NRE_callback *cbPtr = iPtr->execEnvPtr->callbackPtr;
 
     if (refDepth == NULL) {
@@ -7929,9 +7928,9 @@ TestNRELevels(
     depth = (refDepth - &depth);
 
     levels[0] = Tcl_NewWideIntObj(depth);
-    levels[1] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(iPtr->numLevels + 1U)) - 1);
-    levels[2] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(iPtr->cmdFramePtr->level + 1U)) - 1);
-    levels[3] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(iPtr->varFramePtr->level + 1U)) - 1);
+    levels[1] = Tcl_NewWideIntObj(iPtr->numLevels);
+    levels[2] = Tcl_NewWideIntObj(iPtr->cmdFramePtr->level);
+    levels[3] = Tcl_NewWideIntObj(iPtr->varFramePtr->level);
     levels[4] = Tcl_NewWideIntObj(iPtr->execEnvPtr->execStackPtr->tosPtr
 	    - iPtr->execEnvPtr->execStackPtr->stackWords);
 

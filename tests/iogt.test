@@ -549,8 +549,8 @@ test iogt-2.3 {basic I/O, mixed trail} {testchannel unix} {
     set trail [list]
     audit_flow trail -attach $fin
     audit_flow trail -attach $fout
-    fconfigure $fin -buffersize 20
-    fconfigure $fout -buffersize 10
+    fconfigure $fin -buffersize 20 -profile tcl8
+    fconfigure $fout -buffersize 10 -profile tcl8
     fcopy $fin $fout
     close $fin
     close $fout
