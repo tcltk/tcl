@@ -5764,9 +5764,6 @@ TestbytestringObjCmd(
 {
     struct {
 #if !defined(TCL_NO_DEPRECATED)
-#   if defined(_MSC_VER) && !defined(NDEBUG)
-#	pragma warning(disable:4133)
-#   endif
 	int n; /* On purpose, not Tcl_Size, in order to demonstrate what happens */
 #else
 	Tcl_Size n;
@@ -7521,7 +7518,7 @@ TestUtfNextCmd(
     }
 	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
-    if (numBytes + 4U > sizeof(buffer)) {
+    if ((size_t)numBytes > sizeof(buffer) - 4) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"testutfnext\" can only handle %" TCL_Z_MODIFIER "u bytes",
 		sizeof(buffer) - 4));
