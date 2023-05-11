@@ -2094,12 +2094,12 @@ Tcl_ListObjReplace(
 {
     ListRep listRep;
     Tcl_Size origListLen;
-    ptrdiff_t lenChange;
-    ptrdiff_t leadSegmentLen;
-    ptrdiff_t tailSegmentLen;
+    Tcl_Size lenChange;
+    Tcl_Size leadSegmentLen;
+    Tcl_Size tailSegmentLen;
     Tcl_Size numFreeSlots;
-    ptrdiff_t leadShift;
-    ptrdiff_t tailShift;
+    Tcl_Size leadShift;
+    Tcl_Size tailShift;
     Tcl_Obj **listObjs;
     int favor;
 
@@ -2109,8 +2109,6 @@ Tcl_ListObjReplace(
 
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK)
 	return TCL_ERROR; /* Cannot be converted to a list */
-
-    /* TODO - will need modification if Tcl9 sticks to unsigned indices */
 
     /* Make limits sane */
     origListLen = ListRepLength(&listRep);
@@ -2260,7 +2258,7 @@ Tcl_ListObjReplace(
      * be an explicit alloc and memmove which would let us redistribute
      * free space.
      */
-    if ((ptrdiff_t)numFreeSlots < lenChange && !ListRepIsShared(&listRep)) {
+    if (numFreeSlots < lenChange && !ListRepIsShared(&listRep)) {
 	/* T:listrep-1.{1,3,14,18,21},3.{3,10,11,14,27,32,41} */
 	ListStore *newStorePtr =
 	    ListStoreReallocate(listRep.storePtr, origListLen + lenChange);
@@ -2287,7 +2285,7 @@ Tcl_ListObjReplace(
      * TODO - for unshared case ONLY, consider a "move" based implementation
      */
     if (ListRepIsShared(&listRep) || /* 3a */
-	(ptrdiff_t)numFreeSlots < lenChange ||  /* 3b */
+	numFreeSlots < lenChange ||  /* 3b */
 	(origListLen + lenChange) < (listRep.storePtr->numAllocated / 4) /* 3c */
     ) {
 	ListRep newRep;
@@ -2402,9 +2400,9 @@ Tcl_ListObjReplace(
 	 * or need to shift both. In the former case, favor shifting the
 	 * smaller segment.
 	 */
-	ptrdiff_t leadSpace = ListRepNumFreeHead(&listRep);
-	ptrdiff_t tailSpace = ListRepNumFreeTail(&listRep);
-	ptrdiff_t finalFreeSpace = leadSpace + tailSpace - lenChange;
+	Tcl_Size leadSpace = ListRepNumFreeHead(&listRep);
+	Tcl_Size tailSpace = ListRepNumFreeTail(&listRep);
+	Tcl_Size finalFreeSpace = leadSpace + tailSpace - lenChange;
 
 	LIST_ASSERT((leadSpace + tailSpace) >= lenChange);
 	if (leadSpace >= lenChange
@@ -2421,7 +2419,7 @@ Tcl_ListObjReplace(
 	     * insertions.
 	     */
 	    if (finalFreeSpace > 1 && (tailSpace == 0 || tailSegmentLen == 0)) {
-		ptrdiff_t postShiftLeadSpace = leadSpace - lenChange;
+		Tcl_Size postShiftLeadSpace = leadSpace - lenChange;
 		if (postShiftLeadSpace > (finalFreeSpace/2)) {
 		    Tcl_Size extraShift = postShiftLeadSpace - (finalFreeSpace / 2);
 		    leadShift -= extraShift;
@@ -2438,7 +2436,7 @@ Tcl_ListObjReplace(
 	     * See comments above. This is analogous.
 	     */
 	    if (finalFreeSpace > 1 && (leadSpace == 0 || leadSegmentLen == 0)) {
-		ptrdiff_t postShiftTailSpace = tailSpace - lenChange;
+		Tcl_Size postShiftTailSpace = tailSpace - lenChange;
 		if (postShiftTailSpace > (finalFreeSpace/2)) {
 		    /* T:listrep-1.{1,3,14,18,21},3.{2,3,26,27} */
 		    Tcl_Size extraShift = postShiftTailSpace - (finalFreeSpace / 2);
