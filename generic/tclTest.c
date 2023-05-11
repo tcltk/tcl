@@ -5764,6 +5764,9 @@ TestbytestringObjCmd(
 {
     struct {
 #if !defined(TCL_NO_DEPRECATED)
+#   if defined(_MSC_VER) && !defined(NDEBUG)
+#	pragma warning(disable:4133)
+#   endif
 	int n; /* On purpose, not Tcl_Size, in order to demonstrate what happens */
 #else
 	Tcl_Size n;
