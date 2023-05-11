@@ -950,105 +950,11 @@ Tcl_SetStringObj(
  *
  * Tcl_SetObjLength --
  *
- *	Changes the length of the string representation of objPtr.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If the size of objPtr's string representation is greater than length, a
- *	new terminating null byte is stored in objPtr->bytes at length, and
- *	bytes at positions past length have no meaning.  If the length of the
- *	string representation is greater than length, the storage space is
- *	reallocated to length+1.
- *
- *	The object's internal representation is changed to &tclStringType.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_SetObjLength(
-    Tcl_Obj *objPtr,		/* Pointer to object. This object must not
-				 * currently be shared. */
-    Tcl_Size length)		/* Number of bytes desired for string
-				 * representation of object, not including
-				 * terminating null byte. */
-{
-    String *stringPtr;
-
-    if (length < 0) {
-	Tcl_Panic("Tcl_SetObjLength: length requested is negative: "
-		"%" TCL_SIZE_MODIFIER "d (integer overflow?)", length);
-    }
-    if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "Tcl_SetObjLength");
-    }
-
-    if (objPtr->bytes && objPtr->length == length) {
-	return;
-    }
-
-    SetStringFromAny(NULL, objPtr);
-    stringPtr = GET_STRING(objPtr);
-
-    if (objPtr->bytes != NULL) {
-	/*
-	 * Change length of an existing string rep.
-	 */
-	if (length > stringPtr->allocated) {
-	    /*
-	     * Need to enlarge the buffer.
-	     */
-	    if (objPtr->bytes == &tclEmptyString) {
-		objPtr->bytes = (char *)Tcl_Alloc(length + 1);
-	    } else {
-		objPtr->bytes = (char *)Tcl_Realloc(objPtr->bytes, length + 1);
-	    }
-	    stringPtr->allocated = length;
-	}
-
-	objPtr->length = length;
-	objPtr->bytes[length] = 0;
-
-	/*
-	 * Invalidate the Unicode data.
-	 */
-
-	stringPtr->numChars = TCL_INDEX_NONE;
-	stringPtr->hasUnicode = 0;
-    } else {
-	if (length > stringPtr->maxChars) {
-	    stringPtr = stringRealloc(stringPtr, length);
-	    SET_STRING(objPtr, stringPtr);
-	    stringPtr->maxChars = length;
-	}
-
-	/*
-	 * Mark the new end of the Unicode string
-	 */
-
-	stringPtr->numChars = length;
-	stringPtr->unicode[length] = 0;
-	stringPtr->hasUnicode = 1;
-
-	/*
-	 * Can only get here when objPtr->bytes == NULL. No need to invalidate
-	 * the string rep.
-	 */
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_AttemptSetObjLength --
- *
  *	This function changes the length of the string representation of an
- *	object. It uses the attempt* (non-panic'ing) memory allocators.
+ *	object.
  *
  * Results:
- *	1 if the requested memory was allocated, 0 otherwise.
+ *	!= NULL if the requested memory was allocated, NULL otherwise.
  *
  * Side effects:
  *	If the size of objPtr's string representation is greater than length,
@@ -1062,8 +968,8 @@ Tcl_SetObjLength(
  *----------------------------------------------------------------------
  */
 
-int
-Tcl_AttemptSetObjLength(
+char *
+Tcl_SetObjLength(
     Tcl_Obj *objPtr,		/* Pointer to object. This object must not
 				 * currently be shared. */
     Tcl_Size length)		/* Number of bytes desired for string
@@ -1074,14 +980,14 @@ Tcl_AttemptSetObjLength(
 
     if (length < 0) {
 	/* Negative lengths => most likely integer overflow */
-	return 0;
+	return NULL;
     }
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_AttemptSetObjLength");
     }
     if (objPtr->bytes && objPtr->length == length) {
-	return 1;
+	return objPtr->bytes;
     }
 
     SetStringFromAny(NULL, objPtr);
@@ -1104,7 +1010,7 @@ Tcl_AttemptSetObjLength(
 		newBytes = (char *)Tcl_AttemptRealloc(objPtr->bytes, length + 1);
 	    }
 	    if (newBytes == NULL) {
-		return 0;
+		return NULL;
 	    }
 	    objPtr->bytes = newBytes;
 	    stringPtr->allocated = length;
@@ -1146,7 +1052,7 @@ Tcl_AttemptSetObjLength(
 	 * the string rep.
 	 */
     }
-    return 1;
+    return (char *)INT2PTR(-1);
 }
 
 /*
@@ -4370,7 +4276,8 @@ DupStringInternalRep(
  *	Create an internal representation of type "String" for an object.
  *
  * Results:
- *	This operation always succeeds and returns TCL_OK.
+ *	This operation always succeeds and returns TCL_OK, except when
+ *	not enough memory can be allocated.
  *
  * Side effects:
  *	Any old internal representation for objPtr is freed and the internal
@@ -4381,17 +4288,23 @@ DupStringInternalRep(
 
 static int
 SetStringFromAny(
-    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Interp *interp,
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
     if (!TclHasInternalRep(objPtr, &tclStringType)) {
-	String *stringPtr = stringAlloc(0);
 
 	/*
 	 * Convert whatever we have into an untyped value. Just A String.
 	 */
 
-	(void) TclGetString(objPtr);
+	if (TclGetString(objPtr) == NULL) {
+	    if (interp != NULL) {
+		Tcl_AppendResult( interp,
+		    "Cannot allocate string", -1);
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    return TCL_ERROR;
+	}
 	TclFreeInternalRep(objPtr);
 
 	/*
@@ -4399,6 +4312,7 @@ SetStringFromAny(
 	 * already in place at objPtr->bytes.
 	 */
 
+	String *stringPtr = stringAlloc(0);
 	stringPtr->numChars = -1;
 	stringPtr->allocated = objPtr->length;
 	stringPtr->maxChars = 0;

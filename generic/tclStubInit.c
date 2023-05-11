@@ -113,6 +113,19 @@ static void uniCodePanic() {
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
 
+/* Those entries can be removed before Tcl 9.0 final.
+ * It's not done now, because _ALL_ extensions then
+ * need to be re-compiled, they will break otherwise.
+ * Suggestions: remove those just after the 9.0b1
+ * official release, many people will re-compile
+ * their extensions then anyway.
+ */
+#define Tcl_Alloc_ Tcl_Alloc
+#define Tcl_Realloc_ Tcl_Realloc
+#define Tcl_DbCkalloc_ Tcl_DbCkalloc
+#define Tcl_DbCkrealloc_ Tcl_DbCkrealloc
+#define Tcl_SetObjLength_ Tcl_SetObjLength
+
 #if defined(TCL_NO_DEPRECATED)
 # define TclListObjGetElements 0
 # define TclListObjLength 0
@@ -829,12 +842,12 @@ const TclStubs tclStubs = {
     Tcl_PkgProvideEx, /* 0 */
     Tcl_PkgRequireEx, /* 1 */
     Tcl_Panic, /* 2 */
-    Tcl_Alloc, /* 3 */
+    Tcl_Alloc_, /* 3 */
     Tcl_Free, /* 4 */
-    Tcl_Realloc, /* 5 */
-    Tcl_DbCkalloc, /* 6 */
+    Tcl_Realloc_, /* 5 */
+    Tcl_DbCkalloc_, /* 6 */
     Tcl_DbCkfree, /* 7 */
-    Tcl_DbCkrealloc, /* 8 */
+    Tcl_DbCkrealloc_, /* 8 */
     Tcl_CreateFileHandler, /* 9 */
     Tcl_DeleteFileHandler, /* 10 */
     Tcl_SetTimer, /* 11 */
@@ -890,7 +903,7 @@ const TclStubs tclStubs = {
     0, /* 61 */
     Tcl_SetListObj, /* 62 */
     0, /* 63 */
-    Tcl_SetObjLength, /* 64 */
+    Tcl_SetObjLength_, /* 64 */
     Tcl_SetStringObj, /* 65 */
     0, /* 66 */
     0, /* 67 */
@@ -1254,11 +1267,11 @@ const TclStubs tclStubs = {
     Tcl_CommandTraceInfo, /* 425 */
     Tcl_TraceCommand, /* 426 */
     Tcl_UntraceCommand, /* 427 */
-    Tcl_AttemptAlloc, /* 428 */
-    Tcl_AttemptDbCkalloc, /* 429 */
-    Tcl_AttemptRealloc, /* 430 */
-    Tcl_AttemptDbCkrealloc, /* 431 */
-    Tcl_AttemptSetObjLength, /* 432 */
+    Tcl_Alloc, /* 428 */
+    Tcl_DbCkalloc, /* 429 */
+    Tcl_Realloc, /* 430 */
+    Tcl_DbCkrealloc, /* 431 */
+    Tcl_SetObjLength, /* 432 */
     Tcl_GetChannelThread, /* 433 */
     TclGetUnicodeFromObj, /* 434 */
     0, /* 435 */

@@ -40,22 +40,22 @@ declare 2 {
     TCL_NORETURN void Tcl_Panic(const char *format, ...)
 }
 declare 3 {
-    void *Tcl_Alloc(TCL_HASH_TYPE size)
+    void *Tcl_Alloc_(TCL_HASH_TYPE size)
 }
 declare 4 {
     void Tcl_Free(void *ptr)
 }
 declare 5 {
-    void *Tcl_Realloc(void *ptr, TCL_HASH_TYPE size)
+    void *Tcl_Realloc_(void *ptr, TCL_HASH_TYPE size)
 }
 declare 6 {
-    void *Tcl_DbCkalloc(TCL_HASH_TYPE size, const char *file, int line)
+    void *Tcl_DbCkalloc_(TCL_HASH_TYPE size, const char *file, int line)
 }
 declare 7 {
     void Tcl_DbCkfree(void *ptr, const char *file, int line)
 }
 declare 8 {
-    void *Tcl_DbCkrealloc(void *ptr, TCL_HASH_TYPE size,
+    void *Tcl_DbCkrealloc_(void *ptr, TCL_HASH_TYPE size,
 	    const char *file, int line)
 }
 
@@ -255,7 +255,7 @@ declare 62 {
 #    void Tcl_SetLongObj(Tcl_Obj *objPtr, long longValue)
 #}
 declare 64 {
-    void Tcl_SetObjLength(Tcl_Obj *objPtr, Tcl_Size length)
+    char *Tcl_SetObjLength_(Tcl_Obj *objPtr, Tcl_Size length)
 }
 declare 65 {
     void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, Tcl_Size length)
@@ -1578,20 +1578,20 @@ declare 427 {
 	    int flags, Tcl_CommandTraceProc *proc, void *clientData)
 }
 declare 428 {
-    void *Tcl_AttemptAlloc(TCL_HASH_TYPE size)
+    void *Tcl_Alloc(TCL_HASH_TYPE size)
 }
 declare 429 {
-    void *Tcl_AttemptDbCkalloc(TCL_HASH_TYPE size, const char *file, int line)
+    void *Tcl_DbCkalloc(TCL_HASH_TYPE size, const char *file, int line)
 }
 declare 430 {
-    void *Tcl_AttemptRealloc(void *ptr, TCL_HASH_TYPE size)
+    void *Tcl_Realloc(void *ptr, TCL_HASH_TYPE size)
 }
 declare 431 {
-    void *Tcl_AttemptDbCkrealloc(void *ptr, TCL_HASH_TYPE size,
+    void *Tcl_DbCkrealloc(void *ptr, TCL_HASH_TYPE size,
 	    const char *file, int line)
 }
 declare 432 {
-    int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, Tcl_Size length)
+    char *Tcl_SetObjLength(Tcl_Obj *objPtr, Tcl_Size length)
 }
 
 # TIP#10 (thread-aware channels) akupries

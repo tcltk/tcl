@@ -4654,7 +4654,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	    if (oldPtr == (staticPtr)) {				\
 		oldPtr = NULL;						\
 	    }								\
-	    newPtr = (Tcl_Token *)Tcl_AttemptRealloc((char *) oldPtr,	\
+	    newPtr = (Tcl_Token *)Tcl_Realloc((char *) oldPtr,	\
 		    allocated * sizeof(Tcl_Token));	\
 	    if (newPtr == NULL) {					\
 		allocated = _needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
@@ -5180,8 +5180,8 @@ typedef struct NRE_callback {
 #include "tclIntPlatDecls.h"
 
 #if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
-#define Tcl_AttemptAlloc        TclpAlloc
-#define Tcl_AttemptRealloc      TclpRealloc
+#define Tcl_Alloc               TclpAlloc
+#define Tcl_Realloc             TclpRealloc
 #define Tcl_Free                TclpFree
 #endif
 
