@@ -1394,7 +1394,7 @@ declare 378 {
     Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, Tcl_Size numChars)
 }
 declare 379 {
-    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
+    Tcl_UniChar * Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
 	    Tcl_Size numChars)
 }
 declare 380 {
@@ -1411,7 +1411,7 @@ declare 383 {
     Tcl_Obj *TclGetRange(Tcl_Obj *objPtr, Tcl_Size first, Tcl_Size last)
 }
 declare 384 {
-    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
+    Tcl_UniChar *Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
 	    Tcl_Size length)
 }
 declare 385 {

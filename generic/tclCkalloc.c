@@ -20,8 +20,8 @@
 #define FALSE	0
 #define TRUE	1
 
-#undef Tcl_Free
 #undef Tcl_Alloc
+#undef Tcl_Free
 #undef Tcl_Realloc
 
 #ifdef TCL_MEM_DEBUG
@@ -360,6 +360,24 @@ Tcl_DumpActiveMemory(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DbCkalloc - debugging Tcl_Alloc
+ *
+ *	Allocate the requested amount of space plus some extra for guard bands
+ *	at both ends of the request, plus a size, panicking if there isn't
+ *	enough space, then write in the guard bands and return the address of
+ *	the space in the middle that the user asked for.
+ *
+ *	The second and third arguments are file and line, these contain the
+ *	filename and line number corresponding to the caller. These are sent
+ *	by the Tcl_Alloc macro; it uses the preprocessor autodefines __FILE__
+ *	and __LINE__.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void *
 Tcl_DbCkalloc(
     size_t size,

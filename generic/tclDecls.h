@@ -999,7 +999,7 @@ EXTERN void		Tcl_RegExpGetInfo(Tcl_RegExp regexp,
 EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const Tcl_UniChar *unicode,
 				Tcl_Size numChars);
 /* 379 */
-EXTERN void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
+EXTERN Tcl_UniChar *	Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
 				const Tcl_UniChar *unicode,
 				Tcl_Size numChars);
 /* 380 */
@@ -1011,7 +1011,7 @@ EXTERN int		TclGetUniChar(Tcl_Obj *objPtr, Tcl_Size index);
 EXTERN Tcl_Obj *	TclGetRange(Tcl_Obj *objPtr, Tcl_Size first,
 				Tcl_Size last);
 /* 384 */
-EXTERN void		Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr,
+EXTERN Tcl_UniChar *	Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr,
 				const Tcl_UniChar *unicode, Tcl_Size length);
 /* 385 */
 EXTERN int		Tcl_RegExpMatchObj(Tcl_Interp *interp,
@@ -2257,12 +2257,12 @@ typedef struct TclStubs {
     int (*tcl_RegExpExecObj) (Tcl_Interp *interp, Tcl_RegExp regexp, Tcl_Obj *textObj, Tcl_Size offset, Tcl_Size nmatches, int flags); /* 376 */
     void (*tcl_RegExpGetInfo) (Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr); /* 377 */
     Tcl_Obj * (*tcl_NewUnicodeObj) (const Tcl_UniChar *unicode, Tcl_Size numChars); /* 378 */
-    void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, Tcl_Size numChars); /* 379 */
+    Tcl_UniChar * (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, Tcl_Size numChars); /* 379 */
     Tcl_Size (*tclGetCharLength) (Tcl_Obj *objPtr); /* 380 */
     int (*tclGetUniChar) (Tcl_Obj *objPtr, Tcl_Size index); /* 381 */
     void (*reserved382)(void);
     Tcl_Obj * (*tclGetRange) (Tcl_Obj *objPtr, Tcl_Size first, Tcl_Size last); /* 383 */
-    void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, Tcl_Size length); /* 384 */
+    Tcl_UniChar * (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, Tcl_Size length); /* 384 */
     int (*tcl_RegExpMatchObj) (Tcl_Interp *interp, Tcl_Obj *textObj, Tcl_Obj *patternObj); /* 385 */
     void (*tcl_SetNotifier) (const Tcl_NotifierProcs *notifierProcPtr); /* 386 */
     Tcl_Mutex * (*tcl_GetAllocMutex) (void); /* 387 */
@@ -4104,12 +4104,12 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_AttemptSetObjLength Tcl_SetObjLength
 
 #ifdef TCL_MEM_DEBUG
-#   undef Tcl_Free
-#   define Tcl_Free(x) \
-    Tcl_DbCkfree((x), __FILE__, __LINE__)
 #   undef Tcl_Alloc
 #   define Tcl_Alloc(x) \
     (Tcl_DbCkalloc((x), __FILE__, __LINE__))
+#   undef Tcl_Free
+#   define Tcl_Free(x) \
+    Tcl_DbCkfree((x), __FILE__, __LINE__)
 #   undef Tcl_Realloc
 #   define Tcl_Realloc(x,y) \
     (Tcl_DbCkrealloc((x), (y), __FILE__, __LINE__))

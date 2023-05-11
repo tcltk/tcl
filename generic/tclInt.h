@@ -4654,7 +4654,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	    if (oldPtr == (staticPtr)) {				\
 		oldPtr = NULL;						\
 	    }								\
-	    newPtr = (Tcl_Token *)Tcl_Realloc((char *) oldPtr,	\
+	    newPtr = (Tcl_Token *)Tcl_AttemptRealloc((char *) oldPtr,	\
 		    allocated * sizeof(Tcl_Token));	\
 	    if (newPtr == NULL) {					\
 		allocated = _needed + (append) + TCL_MIN_TOKEN_GROWTH;	\

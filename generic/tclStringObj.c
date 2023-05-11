@@ -62,7 +62,7 @@ static void		FreeStringInternalRep(Tcl_Obj *objPtr);
 static void		GrowStringBuffer(Tcl_Obj *objPtr, size_t needed, int flag);
 static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, size_t needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static void		SetUnicodeObj(Tcl_Obj *objPtr,
+static Tcl_UniChar *SetUnicodeObj(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, Tcl_Size numChars);
 static Tcl_Size		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
@@ -376,7 +376,10 @@ Tcl_NewUnicodeObj(
     Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
-    SetUnicodeObj(objPtr, unicode, numChars);
+    if (!SetUnicodeObj(objPtr, unicode, numChars)) {
+	Tcl_DecrRefCount(objPtr);
+	return NULL;
+    }
     return objPtr;
 }
 
@@ -1071,7 +1074,7 @@ Tcl_SetObjLength(
  *---------------------------------------------------------------------------
  */
 
-void
+Tcl_UniChar *
 Tcl_SetUnicodeObj(
     Tcl_Obj *objPtr,		/* The object to set the string of. */
     const Tcl_UniChar *unicode,	/* The Unicode string used to initialize the
@@ -1083,7 +1086,7 @@ Tcl_SetUnicodeObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetUnicodeObj");
     }
     TclFreeInternalRep(objPtr);
-    SetUnicodeObj(objPtr, unicode, numChars);
+    return SetUnicodeObj(objPtr, unicode, numChars);
 }
 
 static Tcl_Size
@@ -1101,7 +1104,7 @@ UnicodeLength(
     return numChars;
 }
 
-static void
+static Tcl_UniChar *
 SetUnicodeObj(
     Tcl_Obj *objPtr,		/* The object to set the string of. */
     const Tcl_UniChar *unicode,	/* The Unicode string used to initialize the
@@ -1120,6 +1123,9 @@ SetUnicodeObj(
      */
 
     stringPtr = stringAlloc(numChars);
+    if (!stringPtr) {
+	return NULL;
+    }
     SET_STRING(objPtr, stringPtr);
     objPtr->typePtr = &tclStringType;
 
@@ -1131,6 +1137,7 @@ SetUnicodeObj(
 
     TclInvalidateStringRep(objPtr);
     stringPtr->allocated = 0;
+    return stringPtr->unicode;
 }
 
 /*
@@ -1276,7 +1283,7 @@ Tcl_AppendToObj(
  *----------------------------------------------------------------------
  */
 
-void
+Tcl_UniChar *
 Tcl_AppendUnicodeToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const Tcl_UniChar *unicode,	/* The Unicode string to append to the
@@ -1291,7 +1298,7 @@ Tcl_AppendUnicodeToObj(
     }
 
     if (length == 0) {
-	return;
+	return NULL;
     }
 
     SetStringFromAny(NULL, objPtr);
@@ -1305,8 +1312,10 @@ Tcl_AppendUnicodeToObj(
 
     if (stringPtr->hasUnicode) {
 	AppendUnicodeToUnicodeRep(objPtr, unicode, length);
+	return stringPtr->unicode;
     } else {
 	AppendUnicodeToUtfRep(objPtr, unicode, length);
+	return (Tcl_UniChar *)INT2PTR(-1);
     }
 }
 
