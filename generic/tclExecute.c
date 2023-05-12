@@ -4698,7 +4698,9 @@ TEBCresume(
 	    Tcl_ResetResult(interp);
 	}
 
+	DECACHE_STACK_INFO();
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
+	CACHE_STACK_INFO();
 
     lindexDone:
 	if (!objResultPtr) {
