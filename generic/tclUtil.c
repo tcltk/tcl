@@ -2808,6 +2808,9 @@ Tcl_DStringSetLength(
 {
     Tcl_Size newsize;
 
+    if (length < 0) {
+	length = 0;
+    }
     if (length >= dsPtr->spaceAvl) {
 	/*
 	 * There are two interesting cases here. In the first case, the user
@@ -3353,13 +3356,12 @@ GetWideForIndex(
 				 * NULL, then no error message is left after
 				 * errors. */
     Tcl_Obj *objPtr,            /* Points to the value to be parsed */
-    Tcl_Size endValue1,            /* The value to be stored at *widePtr if
+    Tcl_Size endValue,            /* The value to be stored at *widePtr if
 				 * objPtr holds "end".
                                  * NOTE: this value may be TCL_INDEX_NONE. */
     Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
                                  * representing an index. */
 {
-    size_t endValue = endValue1;
     int numType;
     void *cd;
     int code = Tcl_GetNumberFromObj(NULL, objPtr, &cd, &numType);
@@ -3424,23 +3426,22 @@ Tcl_GetIntForIndex(
 				 * errors. */
     Tcl_Obj *objPtr,		/* Points to an object containing either "end"
 				 * or an integer. */
-    Tcl_Size endValue1,		/* The value corresponding to the "end" index */
+    Tcl_Size endValue,		/* The value corresponding to the "end" index */
     Tcl_Size *indexPtr)		/* Location filled in with an integer
 				 * representing an index. May be NULL.*/
 {
     Tcl_WideInt wide;
-    size_t endValue = endValue1;
 
     if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
     if (indexPtr != NULL) {
-	if ((wide < 0) && (endValue < (size_t)TCL_INDEX_END)) {
+	if ((wide < 0) && ((size_t)endValue < (size_t)TCL_INDEX_END)) {
 	    *indexPtr = TCL_INDEX_NONE;
-	} else if ((Tcl_WideUInt)wide > (size_t)TCL_INDEX_END && (endValue < (size_t)TCL_INDEX_END)) {
+	} else if ((Tcl_WideUInt)wide > (size_t)TCL_INDEX_END && ((size_t)endValue < (size_t)TCL_INDEX_END)) {
 	    *indexPtr = TCL_INDEX_END;
 	} else {
-	    *indexPtr = (Tcl_Size) wide;
+	    *indexPtr = (Tcl_Size)wide;
 	}
     }
     return TCL_OK;
@@ -3478,7 +3479,7 @@ static int
 GetEndOffsetFromObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,            /* Pointer to the object to parse */
-    Tcl_Size endValue1,          /* The value to be stored at "widePtr" if
+    Tcl_Size endValue,          /* The value to be stored at "widePtr" if
                                  * "objPtr" holds "end". */
     Tcl_WideInt *widePtr)       /* Location filled in with an integer
                                  * representing an index. */
@@ -3486,7 +3487,6 @@ GetEndOffsetFromObj(
     Tcl_ObjInternalRep *irPtr;
     Tcl_WideInt offset = -1;	/* Offset in the "end-offset" expression - 1 */
     void *cd;
-    size_t endValue = endValue1;
 
     while ((irPtr = TclFetchInternalRep(objPtr, &endOffsetType.objType)) == NULL) {
 	Tcl_ObjInternalRep ir;
@@ -3680,12 +3680,12 @@ GetEndOffsetFromObj(
     offset = irPtr->wideValue;
 
     if (offset == WIDE_MAX) {
-	*widePtr = endValue + 1;
+	*widePtr = (size_t)endValue + 1;
     } else if (offset == WIDE_MIN) {
 	*widePtr = -1;
     } else if (offset < 0) {
 	/* Different signs, sum cannot overflow */
-	*widePtr = endValue + offset + 1;
+	*widePtr = (size_t)endValue + offset + 1;
     } else if (offset < WIDE_MAX) {
 	*widePtr = offset;
     } else {
@@ -3835,14 +3835,13 @@ TclIndexEncode(
 Tcl_Size
 TclIndexDecode(
     int encoded,	/* Value to decode */
-    Tcl_Size endValue1)	/* Meaning of "end" to use, > TCL_INDEX_END */
+    Tcl_Size endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
 {
-    size_t endValue = endValue1;
     if (encoded > (int)TCL_INDEX_END) {
 	return encoded;
     }
-    if (endValue >= (size_t)TCL_INDEX_END - encoded) {
-	return endValue + encoded - TCL_INDEX_END;
+    if ((size_t)endValue >= (size_t)TCL_INDEX_END - encoded) {
+	return (size_t)endValue + encoded - TCL_INDEX_END;
     }
     return TCL_INDEX_NONE;
 }
@@ -4507,7 +4506,7 @@ TclReToGlob(
 
   invalidGlob:
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
 	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, NULL);
     }
     Tcl_DStringFree(dsPtr);
