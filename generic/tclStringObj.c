@@ -2555,7 +2555,7 @@ Tcl_AppendFormatToObj(
 		goto errorMsg;
 	    }
 	    bytes = TclGetString(segment);
-	    if (!Tcl_AttemptSetObjLength(segment, sprintf(bytes, spec, d))) {
+	    if (!Tcl_AttemptSetObjLength(segment, snprintf(bytes, length, spec, d))) {
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
