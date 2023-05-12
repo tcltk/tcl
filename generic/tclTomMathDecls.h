@@ -35,22 +35,22 @@
 /* Define custom memory allocation for libtommath */
 
 /* MODULE_SCOPE void* TclBNAlloc( size_t ); */
-#define TclBNAlloc(s) ((void*)Tcl_Alloc(s))
+#define TclBNAlloc(s) Tcl_AttemptAlloc((size_t)(s))
 /* MODULE_SCOPE void* TclBNCalloc( size_t, size_t ); */
-#define TclBNCalloc(m,s) memset(Tcl_Alloc((size_t)(m)*(size_t)(s)),0,(size_t)(m)*(size_t)(s))
+#define TclBNCalloc(m,s) memset(Tcl_AttemptAlloc((size_t)(m)*(size_t)(s)),0,(size_t)(m)*(size_t)(s))
 /* MODULE_SCOPE void* TclBNRealloc( void*, size_t ); */
-#define TclBNRealloc(x,s) ((void*)Tcl_Realloc((char*)(x),(size_t)(s)))
+#define TclBNRealloc(x,s) Tcl_AttemptRealloc((x),(size_t)(s))
 /* MODULE_SCOPE void  TclBNFree( void* ); */
-#define TclBNFree(x) (Tcl_Free((char*)(x)))
+#define TclBNFree(x) Tcl_Free(x)
 
 #undef MP_MALLOC
 #undef MP_CALLOC
 #undef MP_REALLOC
 #undef MP_FREE
 #define MP_MALLOC(size)                   TclBNAlloc(size)
-#define MP_CALLOC(nmemb, size)            TclBNCalloc(nmemb, size)
-#define MP_REALLOC(mem, oldsize, newsize) TclBNRealloc(mem, newsize)
-#define MP_FREE(mem, size)                TclBNFree(mem)
+#define MP_CALLOC(nmemb, size)            TclBNCalloc((nmemb), (size))
+#define MP_REALLOC(mem, oldsize, newsize) TclBNRealloc((mem), ((void)(oldsize), (newsize)))
+#define MP_FREE(mem, size)                TclBNFree(((void)(size), (mem)))
 
 #ifndef MODULE_SCOPE
 #   ifdef __cplusplus
