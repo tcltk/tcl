@@ -2725,7 +2725,7 @@ TclpObjNormalizePath(
 				sizeof(WCHAR));
 			Tcl_DStringAppend(&dsNorm,
 				(const char *) nativeName,
-				(int) (wcslen(nativeName)*sizeof(WCHAR)));
+				wcslen(nativeName)*sizeof(WCHAR));
 		    }
 		}
 	    }
