@@ -1642,6 +1642,29 @@ TclListObjRange(
 /*
  *----------------------------------------------------------------------
  *
+ * TclListObjGetElement --
+ *
+ *	Returns a single element from the array of the elements in a list
+ *	object, without doing doing any bounds checking.  Caller must ensure
+ *	that ObjPtr of of type 'tclListType' and that  index is valid for the
+ *	list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclListObjGetElement(
+    Tcl_Obj *objPtr,		/* List object for which an element array is
+				 * to be returned. */
+    Tcl_Size index
+)
+{
+    return ListObjStorePtr(objPtr)->slots[ListObjStart(objPtr) + index];
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_ListObjGetElements --
  *
  *	This function returns an (objc,objv) array of the elements in a list

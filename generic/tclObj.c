@@ -3707,7 +3707,7 @@ Tcl_IncrRefCount(
  *	Decrements the reference count of the object.
  *
  * Results:
- *	None.
+ *	The storage for objPtr may be freed.
  *
  *----------------------------------------------------------------------
  */
@@ -3719,6 +3719,28 @@ Tcl_DecrRefCount(
 {
     if (objPtr->refCount-- <= 1) {
 	TclFreeObj(objPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclRelaxRefCount --
+ *
+ *	Decrement the refCount of objPtr without causing it to be freed if it
+ *	drops from 1 to 0.  This allows a function increment a refCount but
+ *	then decrement it and still be able to pass return it to a caller,
+ *	possibly with a refCount of 0.  The caller must have previously
+ *	incremented the refCount.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+TclRelaxRefCount(
+    Tcl_Obj *objPtr)	/* The object we are releasing a reference to. */
+{
+    if (objPtr->refCount > 0) {
+	--objPtr->refCount;
     }
 }
 
