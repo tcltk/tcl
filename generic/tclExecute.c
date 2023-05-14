@@ -4697,7 +4697,7 @@ TEBCresume(
 		) {
 		int code;
 
-		/* increment the refCount of value2Ptr because TclListObjGetElemen may
+		/* increment the refCount of value2Ptr because TclListObjGetElement may
 		 * have just extracted it from a list in the condition for this block.
 		 */
 		Tcl_IncrRefCount(value2Ptr);
