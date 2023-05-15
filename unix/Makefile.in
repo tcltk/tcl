@@ -2293,9 +2293,8 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	cp -p $(GENERIC_DIR)/*.decls $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/README $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/tclGetDate.y $(DISTDIR)/generic
-	cp -p $(TOP_DIR)/changes $(TOP_DIR)/ChangeLog $(TOP_DIR)/README.md \
-		$(TOP_DIR)/ChangeLog.[12]??? $(TOP_DIR)/license.terms \
-		$(DISTDIR)
+	cp -p $(TOP_DIR)/changes $(TOP_DIR)/README.md \
+		$(TOP_DIR)/license.terms $(DISTDIR)
 	@mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/manifest.txt \
