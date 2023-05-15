@@ -2613,7 +2613,6 @@ Tcl_DStringAppend(
 
 
     if (newSize > dsPtr->spaceAvl) {
-	/* Current allocation not enough */
 	char *newString;
 	dsPtr->spaceAvl =
 	    TclUpsizeAlloc(dsPtr->spaceAvl, newSize, TCL_SIZE_MAX);
@@ -2626,18 +2625,18 @@ Tcl_DStringAppend(
 	    }
 	    if (newString == NULL) {
 		dsPtr->spaceAvl = newSize;
-		newString = Tcl_Alloc(dsPtr->spaceAvl);
+		newString = (char *) Tcl_Alloc(dsPtr->spaceAvl);
 	    }
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    Tcl_Size index = -1;
+	    Tcl_Size offset = -1;
 
 	    /* See [16896d49fd] */
 	    if (bytes >= dsPtr->string
 		    && bytes <= dsPtr->string + dsPtr->length) {
 		/* Source string is within this DString. Note offset */
-		index = bytes - dsPtr->string;
+		offset = bytes - dsPtr->string;
 	    }
 
 	    while (dsPtr->spaceAvl > newSize) {
@@ -2648,12 +2647,12 @@ Tcl_DStringAppend(
 	    }
 	    if (newString == NULL) {
 		dsPtr->spaceAvl = newSize;
-		newString = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
+		newString = (char *) Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 	    }
 
 	    dsPtr->string = newString;
-	    if (index >= 0) {
-		bytes = dsPtr->string + index;
+	    if (offset >= 0) {
+		bytes = dsPtr->string + offset;
 	    }
 	}
     }
@@ -2765,12 +2764,22 @@ Tcl_DStringAppendElement(
      * memcpy, not strcpy, to copy the string to a larger buffer, since there
      * may be embedded NULLs in the string in some cases.
      */
-
-    if (newSize >= dsPtr->spaceAvl) {
-	dsPtr->spaceAvl = newSize * 2;
+    newSize += 1; /* For terminating nul */
+    if (newSize > dsPtr->spaceAvl) {
+	char *newString;
+	dsPtr->spaceAvl =
+	    TclUpsizeAlloc(dsPtr->spaceAvl, newSize, TCL_SIZE_MAX);
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = (char *)Tcl_Alloc(dsPtr->spaceAvl);
-
+	    while (dsPtr->spaceAvl > newSize) {
+		newString = (char *)Tcl_AttemptAlloc(dsPtr->spaceAvl);
+		if (newString)
+		    break;
+		dsPtr->spaceAvl = TclUpsizeRetry(newSize, dsPtr->spaceAvl);
+	    }
+	    if (newString == NULL) {
+		dsPtr->spaceAvl = newSize;
+		newString = (char *) Tcl_Alloc(dsPtr->spaceAvl);
+	    }
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
@@ -2779,11 +2788,21 @@ Tcl_DStringAppendElement(
 	    /* See [16896d49fd] */
 	    if (element >= dsPtr->string
 		    && element <= dsPtr->string + dsPtr->length) {
+		/* Source string is within this DString. Note offset */
 		offset = element - dsPtr->string;
 	    }
+	    while (dsPtr->spaceAvl > newSize) {
+		newString = (char *)Tcl_AttemptRealloc(dsPtr->string, dsPtr->spaceAvl);
+		if (newString)
+		    break;
+		dsPtr->spaceAvl = TclUpsizeRetry(newSize, dsPtr->spaceAvl);
+	    }
+	    if (newString == NULL) {
+		dsPtr->spaceAvl = newSize;
+		newString = (char *) Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
+	    }
 
-	    dsPtr->string = (char *)Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
-
+	    dsPtr->string = newString;
 	    if (offset >= 0) {
 		element = dsPtr->string + offset;
 	    }
