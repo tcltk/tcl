@@ -1631,7 +1631,7 @@ CheckIfVarUnset(
     Tcl_Obj ** varPtr,
     Tcl_Size varIndex)		/* Index of the test variable to check. */
 {
-    if (varPtr[varIndex] == NULL) {
+    if (varIndex < 0 || varPtr[varIndex] == NULL) {
 	char buf[32 + TCL_INTEGER_SPACE];
 
 	snprintf(buf, sizeof(buf), "variable %" TCL_SIZE_MODIFIER "d is unset (NULL)", varIndex);

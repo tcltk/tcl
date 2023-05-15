@@ -35,7 +35,7 @@ static const char checkCommand[] = "check";
  * procs
  */
 
-typedef struct CmdTable {
+typedef struct {
     const char *cmdName;		/* command name */
     Tcl_ObjCmdProc *proc;	/* command proc */
     int exportIt;		/* if 1, export the command */
@@ -188,7 +188,7 @@ ProcBodyTestInitInternal(
 	}
     }
 
-    return Tcl_PkgProvide(interp, packageName, packageVersion);
+    return Tcl_PkgProvideEx(interp, packageName, packageVersion, NULL);
 }
 
 /*
@@ -337,7 +337,7 @@ ProcBodyTestCheckObjCmd(
 	return TCL_ERROR;
     }
 
-    version = Tcl_PkgPresent(interp, packageName, packageVersion, 1);
+    version = Tcl_PkgPresentEx(interp, packageName, packageVersion, 1, NULL);
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
 	    strcmp(version, packageVersion) == 0));
     return TCL_OK;
