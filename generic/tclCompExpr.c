@@ -2091,9 +2091,9 @@ ParseLexeme(
 	if (end < start + numBytes && !TclIsBareword(*end)) {
 
 	number:
-	    TclInitStringRep(literal, start, end-start);
 	    *lexemePtr = NUMBER;
 	    if (literalPtr) {
+		TclInitStringRep(literal, start, end-start);
 		*literalPtr = literal;
 	    } else {
 		Tcl_DecrRefCount(literal);
@@ -2165,7 +2165,7 @@ ParseLexeme(
     }
     *lexemePtr = BAREWORD;
     if (literalPtr) {
-	Tcl_SetStringObj(literal, start, (int) (end-start));
+	Tcl_SetStringObj(literal, start, end-start);
 	*literalPtr = literal;
     } else {
 	Tcl_DecrRefCount(literal);
