@@ -156,7 +156,11 @@ waitpid(
 		goto waitAgain;
 	    }
 	}
-	waitPtr = (WaitInfo *) ckalloc(sizeof(WaitInfo));
+	waitPtr = (WaitInfo *) attemptckalloc(sizeof(WaitInfo));
+	if (!waitPtr) {
+	    errno = ENOMEM;
+	    return -1;
+	}
 	waitPtr->pid = result;
 	waitPtr->status = status;
 	waitPtr->nextPtr = deadList;
