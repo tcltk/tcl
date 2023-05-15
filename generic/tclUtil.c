@@ -2613,20 +2613,9 @@ Tcl_DStringAppend(
 
 
     if (newSize > dsPtr->spaceAvl) {
-	char *newString;
-	dsPtr->spaceAvl =
-	    TclUpsizeAlloc(dsPtr->spaceAvl, newSize, TCL_SIZE_MAX);
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    while (dsPtr->spaceAvl > newSize) {
-		newString = (char *)Tcl_AttemptAlloc(dsPtr->spaceAvl);
-		if (newString)
-		    break;
-		dsPtr->spaceAvl = TclUpsizeRetry(newSize, dsPtr->spaceAvl);
-	    }
-	    if (newString == NULL) {
-		dsPtr->spaceAvl = newSize;
-		newString = (char *) Tcl_Alloc(dsPtr->spaceAvl);
-	    }
+	    char *newString;
+	    newString = (char *) TclOverAlloc(newSize, &dsPtr->spaceAvl);
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
@@ -2638,19 +2627,8 @@ Tcl_DStringAppend(
 		/* Source string is within this DString. Note offset */
 		offset = bytes - dsPtr->string;
 	    }
-
-	    while (dsPtr->spaceAvl > newSize) {
-		newString = (char *)Tcl_AttemptRealloc(dsPtr->string, dsPtr->spaceAvl);
-		if (newString)
-		    break;
-		dsPtr->spaceAvl = TclUpsizeRetry(newSize, dsPtr->spaceAvl);
-	    }
-	    if (newString == NULL) {
-		dsPtr->spaceAvl = newSize;
-		newString = (char *) Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
-	    }
-
-	    dsPtr->string = newString;
+	    dsPtr->string = (char *) TclOverRealloc(
+		newSize, dsPtr->string, dsPtr->spaceAvl, &dsPtr->spaceAvl);
 	    if (offset >= 0) {
 		bytes = dsPtr->string + offset;
 	    }
@@ -2766,20 +2744,9 @@ Tcl_DStringAppendElement(
      */
     newSize += 1; /* For terminating nul */
     if (newSize > dsPtr->spaceAvl) {
-	char *newString;
-	dsPtr->spaceAvl =
-	    TclUpsizeAlloc(dsPtr->spaceAvl, newSize, TCL_SIZE_MAX);
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    while (dsPtr->spaceAvl > newSize) {
-		newString = (char *)Tcl_AttemptAlloc(dsPtr->spaceAvl);
-		if (newString)
-		    break;
-		dsPtr->spaceAvl = TclUpsizeRetry(newSize, dsPtr->spaceAvl);
-	    }
-	    if (newString == NULL) {
-		dsPtr->spaceAvl = newSize;
-		newString = (char *) Tcl_Alloc(dsPtr->spaceAvl);
-	    }
+	    char *newString;
+	    newString = (char *) TclOverAlloc(newSize, &dsPtr->spaceAvl);
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
@@ -2791,18 +2758,8 @@ Tcl_DStringAppendElement(
 		/* Source string is within this DString. Note offset */
 		offset = element - dsPtr->string;
 	    }
-	    while (dsPtr->spaceAvl > newSize) {
-		newString = (char *)Tcl_AttemptRealloc(dsPtr->string, dsPtr->spaceAvl);
-		if (newString)
-		    break;
-		dsPtr->spaceAvl = TclUpsizeRetry(newSize, dsPtr->spaceAvl);
-	    }
-	    if (newString == NULL) {
-		dsPtr->spaceAvl = newSize;
-		newString = (char *) Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
-	    }
-
-	    dsPtr->string = newString;
+	    dsPtr->string = (char *) TclOverRealloc(
+		newSize, dsPtr->string, dsPtr->spaceAvl, &dsPtr->spaceAvl);
 	    if (offset >= 0) {
 		element = dsPtr->string + offset;
 	    }
@@ -2861,13 +2818,16 @@ Tcl_DStringSetLength(
 	 * would be wasteful to overallocate that buffer, so we just allocate
 	 * enough for the requested size plus the trailing null byte. In the
 	 * second case, we are growing the buffer incrementally, so we need
-	 * behavior similar to Tcl_DStringAppend. The requested length will
-	 * usually be a small delta above the current spaceAvl, so we'll end
-	 * up doubling the old size. This won't grow the buffer quite as
-	 * quickly, but it should be close enough.
+	 * behavior similar to Tcl_DStringAppend.
+	 * TODO - the above makes no sense to me. How does the code below
+	 * translate into distinguishing the two cases above? IMO, if caller
+	 * specifically sets the length, there is no cause for overallocation.
 	 */
 
-	newsize = dsPtr->spaceAvl * 2;
+	if (length >= TCL_SIZE_MAX) {
+	    Tcl_Panic("Tcl_Concat: max size of Tcl value exceeded");
+	}
+	newsize = TclUpsizeAlloc(dsPtr->spaceAvl, length + 1, TCL_SIZE_MAX);
 	if (length < newsize) {
 	    dsPtr->spaceAvl = newsize;
 	} else {

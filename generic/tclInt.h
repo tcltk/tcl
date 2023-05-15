@@ -2875,21 +2875,12 @@ typedef struct ProcessGlobalValue {
  *----------------------------------------------------------------------
  * Common functions for growing allocations. Trivial but allows for
  * experimenting with growth factors without having to change code in
- * multiple places. Usage example:
+ * multiple places. See TclAttemptOverAlloc and TclAttemptOverRealloc for
+ * usage examples. Best to use those functions if allocating in bytes.
+ * Direct use of TclUpsizeAlloc / TclResizeAlloc is needed if allocating in other 
+ * units (say Tcl_UniChar), if there is a fixed size header involved or if
+ * the max limit is something other than TCL_SIZE_MAX.
  *
- * allocated = TclUpsizeAlloc(oldSize, needed, TCL_SIZE_MAX);
- * while (allocated > needed) {
- *     ptr = Tcl_AttemptRealloc(oldPtr, allocated);
- *     if (ptr)
- *         break;
- *     allocated = TclUpsizeRetry(needed, allocated);
- * }
- * if (ptr == NULL) {
- *     // Last resort - exact size
- *     allocated = needed; 
- *     ptr = Tcl_Realloc(oldPtr, allocated);
- * }
- * ptr now points to an allocation of size 'allocated'
  *----------------------------------------------------------------------
  */
 static inline Tcl_Size
@@ -2914,6 +2905,12 @@ static inline Tcl_Size TclUpsizeRetry(Tcl_Size needed, Tcl_Size lastAttempt) {
 	return needed;
     }
 }
+MODULE_SCOPE void *TclOverAlloc(Tcl_Size needed, Tcl_Size *allocatedPtr);
+MODULE_SCOPE void *TclAttemptOverAlloc(Tcl_Size needed, Tcl_Size *allocatedPtr);
+MODULE_SCOPE void *TclOverRealloc(Tcl_Size needed, void *oldPtr,
+			Tcl_Size oldSize, Tcl_Size *allocatedPtr);
+MODULE_SCOPE void *TclAttemptOverRealloc(Tcl_Size needed, void *oldPtr,
+			Tcl_Size oldSize, Tcl_Size *allocatedPtr);
 
 /*
  *----------------------------------------------------------------
