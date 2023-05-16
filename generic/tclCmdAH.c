@@ -2784,13 +2784,13 @@ EachloopCmd(
     for (i=0 ; i<numLists ; i++) {
 	/* List */
 	/* Variables */
-	statePtr->vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
-	if (statePtr->vCopyList[i] == NULL) {
+	statePtr->vCopyList[i] = TclDuplicatePureObj(objv[1+i*2]);
+	result = TclListObjLengthM(interp, statePtr->vCopyList[i],
+	    &statePtr->varcList[i]);
+	if (result != TCL_OK) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjLengthM(NULL, statePtr->vCopyList[i],
-	    &statePtr->varcList[i]);
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s varlist is empty",
@@ -2816,13 +2816,12 @@ EachloopCmd(
 	    statePtr->argcList[i] = ABSTRACTLIST_PROC(statePtr->aCopyList[i], lengthProc)(statePtr->aCopyList[i]);
 	} else {
 	    /* List values */
-	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
-	    if (statePtr->aCopyList[i] == NULL) {
-		result = TCL_ERROR;
+	    statePtr->aCopyList[i] = TclDuplicatePureObj(objv[2+i*2]);
+	    result = TclListObjGetElementsM(interp, statePtr->aCopyList[i],
+		&statePtr->argcList[i], &statePtr->argvList[i]);
+	    if (result != TCL_OK) {
 		goto done;
 	    }
-	    TclListObjGetElementsM(NULL, statePtr->aCopyList[i],
-		&statePtr->argcList[i], &statePtr->argvList[i]);
 	}
 	/* account for variable <> value mismatch */
 	j = statePtr->argcList[i] / statePtr->varcList[i];

@@ -2004,7 +2004,7 @@ Tcl_ConcatObj(
 		    goto slow;
 		}
 	    } else {
-		resPtr = TclListObjCopy(NULL, objPtr);
+		resPtr = TclDuplicatePureObj(objPtr);
 	    }
 	}
 	if (!resPtr) {

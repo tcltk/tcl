@@ -6152,7 +6152,7 @@ TclNREvalObjEx(
 	 */
 
 	Tcl_IncrRefCount(objPtr);
-	listPtr = TclListObjCopy(interp, objPtr);
+	listPtr = TclDuplicatePureObj(objPtr);
 	Tcl_IncrRefCount(listPtr);
 
 	if (word != INT_MIN) {
