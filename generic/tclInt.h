@@ -232,9 +232,9 @@ typedef struct Tcl_Ensemble Tcl_Ensemble;
 typedef struct NamespacePathEntry NamespacePathEntry;
 
 /*
- * Special hash table for variables: this is just a Tcl_HashTable with an nsPtr
- * field added at the end: in this way variables can find their namespace
- * without having to copy a pointer in their struct: they can access it via
+ * Special hashtable for variables:  This is just a Tcl_HashTable with a nsPtr
+ * field added at the end, so that variables can find their namespace
+ * without having to copy a pointer in their struct by accessing them via
  * their hPtr->tablePtr.
  */
 
@@ -881,19 +881,22 @@ typedef struct VarInHash {
  * Macros for direct variable access by TEBC.
  */
 
-#define TclIsVarDirectReadable(varPtr) \
-    (   !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_READ)) \
-    &&  (varPtr)->value.objPtr)
+#define TclIsVarTricky(varPtr,trickyFlags)				\
+    ((varPtr)->flags & (VAR_ARRAY|VAR_LINK|trickyFlags))
+
+#define TclIsVarDirectReadable(varPtr)					\
+    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ))			\
+          && (varPtr)->value.objPtr)
 
 #define TclIsVarDirectWritable(varPtr) \
-    !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_WRITE|VAR_DEAD_HASH))
+    (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH))
 
 #define TclIsVarDirectUnsettable(varPtr) \
-    !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH))
+    (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH))
 
 #define TclIsVarDirectModifyable(varPtr) \
-    (   !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_READ|VAR_TRACED_WRITE)) \
-    &&  (varPtr)->value.objPtr)
+    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE))	\
+          &&  (varPtr)->value.objPtr)
 
 #define TclIsVarDirectReadable2(varPtr, arrayPtr) \
     (TclIsVarDirectReadable(varPtr) &&\
@@ -2484,7 +2487,7 @@ typedef struct ListStore {
 		   / sizeof(Tcl_Obj *)))
 /* Memory size needed for a ListStore to hold numSlots_ elements */
 #define LIST_SIZE(numSlots_) \
-	((int)(offsetof(ListStore, slots) + ((numSlots_) * sizeof(Tcl_Obj *))))
+	((Tcl_Size)(offsetof(ListStore, slots) + ((numSlots_) * sizeof(Tcl_Obj *))))
 
 /*
  * ListSpan --
@@ -2572,6 +2575,7 @@ typedef struct ListRep {
 #define ListObjGetElements(listObj_, objc_, objv_) \
     (((objv_) = &ListObjStorePtr(listObj_)->slots[ListObjStart(listObj_)]), \
      (ListObjLength(listObj_, (objc_))))
+
 
 /*
  * Returns 1/0 whether the internal representation (not the Tcl_Obj itself)
@@ -2859,6 +2863,7 @@ typedef struct ProcessGlobalValue {
 #define TCL_PARSE_NO_UNDERSCORE	128
 				/* Reject underscore digit separator */
 
+
 /*
  *----------------------------------------------------------------------
  * Internal convenience macros for manipulating encoding flags. See
@@ -3064,12 +3069,12 @@ struct Tcl_LoadHandle_ {
  */
 
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
-			    const unsigned char *bytes, int len);
+			    const unsigned char *bytes, Tcl_Size len);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
-MODULE_SCOPE void	TclAdvanceContinuations(int *line, int **next,
+MODULE_SCOPE void	TclAdvanceContinuations(Tcl_Size *line, int **next,
 			    int loc);
-MODULE_SCOPE void	TclAdvanceLines(int *line, const char *start,
+MODULE_SCOPE void	TclAdvanceLines(Tcl_Size *line, const char *start,
 			    const char *end);
 MODULE_SCOPE void	TclArgumentEnter(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc, CmdFrame *cf);
@@ -3077,7 +3082,7 @@ MODULE_SCOPE void	TclArgumentRelease(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc);
 MODULE_SCOPE void	TclArgumentBCEnter(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc,
-			    void *codePtr, CmdFrame *cfPtr, int cmd, int pc);
+			    void *codePtr, CmdFrame *cfPtr, int cmd, Tcl_Size pc);
 MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
@@ -3087,8 +3092,8 @@ MODULE_SCOPE int	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
 MODULE_SCOPE void	TclAsyncMarkFromNotifier(void);
 MODULE_SCOPE double	TclBignumToDouble(const void *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
-			    int strLen, const unsigned char *pattern,
-			    int ptnLen, int flags);
+			    Tcl_Size strLen, const unsigned char *pattern,
+			    Tcl_Size ptnLen, int flags);
 MODULE_SCOPE double	TclCeil(const void *a);
 MODULE_SCOPE void	TclChannelPreserve(Tcl_Channel chan);
 MODULE_SCOPE void	TclChannelRelease(Tcl_Channel chan);
@@ -3103,14 +3108,14 @@ MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
 MODULE_SCOPE Tcl_NRPostProc TclClearRootEnsemble;
 MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
 			    Tcl_Obj *value2Ptr);
-MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, int num,
+MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, Tcl_Size num,
 			    int *loc);
 MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
 			    int start, int *clNext);
 MODULE_SCOPE ContLineLoc *TclContinuationsGet(Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 			    Tcl_Obj *originObjPtr);
-MODULE_SCOPE int	TclConvertElement(const char *src, int length,
+MODULE_SCOPE Tcl_Size	TclConvertElement(const char *src, Tcl_Size length,
 			    char *dst, int flags);
 MODULE_SCOPE Tcl_Command TclCreateObjCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
@@ -3122,12 +3127,12 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
-			    const char *dict, int dictLength,
+			    const char *dict, Tcl_Size dictLength,
 			    const char **elementPtr, const char **nextPtr,
-			    int *sizePtr, int *literalPtr);
+			    Tcl_Size *sizePtr, int *literalPtr);
 /* TIP #280 - Modified token based evaluation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
-			    int numBytes, int flags, int line,
+			    Tcl_Size numBytes, int flags, Tcl_Size line,
 			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileCopyCmd;
@@ -3149,7 +3154,7 @@ MODULE_SCOPE char *	TclDStringAppendObj(Tcl_DString *dsPtr,
 MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 			    Tcl_DString *toAppendPtr);
 MODULE_SCOPE Tcl_Obj *const *TclFetchEnsembleRoot(Tcl_Interp *interp,
-			    Tcl_Obj *const *objv, int objc, int *objcPtr);
+			    Tcl_Obj *const *objv, Tcl_Size objc, Tcl_Size *objcPtr);
 MODULE_SCOPE Tcl_Obj *const *TclEnsembleGetRewriteValues(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Namespace *TclEnsureNamespace(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr);
@@ -3233,7 +3238,7 @@ MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsDigitProc(int byte);
 MODULE_SCOPE int	TclIsBareword(int byte);
-MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[],
+MODULE_SCOPE Tcl_Obj *	TclJoinPath(Tcl_Size elements, Tcl_Obj * const objv[],
 			    int forceRelative);
 MODULE_SCOPE int	MakeTildeRelativePath(Tcl_Interp *interp, const char *user,
 			    const char *subPath, Tcl_DString *dsPtr);
@@ -3246,25 +3251,25 @@ MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    int indexCount, Tcl_Obj *const indexArray[]);
+			    Tcl_Size indexCount, Tcl_Obj *const indexArray[]);
 /* TIP #280 */
-MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
+MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, Tcl_Size line, int n,
 			    int *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
-			    Tcl_Obj *toObj, int elemCount,
+			    Tcl_Obj *toObj, Tcl_Size elemCount,
 			    Tcl_Obj *const elemObjv[]);
 MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    int fromIdx, int toIdx);
+			    Tcl_Size fromIdx, Tcl_Size toIdx);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    int indexCount, Tcl_Obj *const indexArray[],
+			    Tcl_Size indexCount, Tcl_Obj *const indexArray[],
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
 MODULE_SCOPE int TclMakeSafe(Tcl_Interp *interp);
-MODULE_SCOPE int	TclMaxListLength(const char *bytes, int numBytes,
+MODULE_SCOPE Tcl_Size	TclMaxListLength(const char *bytes, Tcl_Size numBytes,
 			    const char **endPtr);
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
@@ -3282,15 +3287,15 @@ MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
 MODULE_SCOPE int	TclParseBackslash(const char *src,
-			    int numBytes, int *readPtr, char *dst);
-MODULE_SCOPE int	TclParseHex(const char *src, int numBytes,
+			    Tcl_Size numBytes, Tcl_Size *readPtr, char *dst);
+MODULE_SCOPE int	TclParseHex(const char *src, Tcl_Size numBytes,
 			    int *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    const char *expected, const char *bytes,
-			    int numBytes, const char **endPtrPtr, int flags);
+			    Tcl_Size numBytes, const char **endPtrPtr, int flags);
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
-			    int numBytes, Tcl_Parse *parsePtr);
-MODULE_SCOPE int	TclParseAllWhiteSpace(const char *src, int numBytes);
+			    Tcl_Size numBytes, Tcl_Parse *parsePtr);
+MODULE_SCOPE Tcl_Size	TclParseAllWhiteSpace(const char *src, Tcl_Size numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
@@ -3298,7 +3303,7 @@ MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp,
 			    Tcl_Obj* pathPtr);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
-			    int len);
+			    Tcl_Size len);
 MODULE_SCOPE void	TclpAlertNotifier(void *clientData);
 MODULE_SCOPE void *TclpNotifierData(void);
 MODULE_SCOPE void	TclpServiceModeHook(int mode);
@@ -3325,7 +3330,7 @@ MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, void *clientData,
 			    int stackSize, int flags);
-MODULE_SCOPE int	TclpFindVariable(const char *name, int *lengthPtr);
+MODULE_SCOPE Tcl_Size	TclpFindVariable(const char *name, Tcl_Size *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    TCL_HASH_TYPE *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
@@ -3340,15 +3345,15 @@ MODULE_SCOPE int	TclpMatchFiles(Tcl_Interp *interp, char *separators,
 MODULE_SCOPE int	TclpObjNormalizePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, int nextCheckpoint);
 MODULE_SCOPE void	TclpNativeJoinPath(Tcl_Obj *prefix, const char *joining);
-MODULE_SCOPE Tcl_Obj *	TclpNativeSplitPath(Tcl_Obj *pathPtr, int *lenPtr);
+MODULE_SCOPE Tcl_Obj *	TclpNativeSplitPath(Tcl_Obj *pathPtr, Tcl_Size *lenPtr);
 MODULE_SCOPE Tcl_PathType TclpGetNativePathType(Tcl_Obj *pathPtr,
-			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
+			    Tcl_Size *driveNameLengthPtr, Tcl_Obj **driveNameRef);
 MODULE_SCOPE int	TclCrossFilesystemCopy(Tcl_Interp *interp,
 			    Tcl_Obj *source, Tcl_Obj *target);
 MODULE_SCOPE int	TclpMatchInDirectory(Tcl_Interp *interp,
 			    Tcl_Obj *resultPtr, Tcl_Obj *pathPtr,
 			    const char *pattern, Tcl_GlobTypeData *types);
-MODULE_SCOPE void *TclpGetNativeCwd(void *clientData);
+MODULE_SCOPE void	*TclpGetNativeCwd(void *clientData);
 MODULE_SCOPE Tcl_FSDupInternalRepProc TclNativeDupInternalRep;
 MODULE_SCOPE Tcl_Obj *	TclpObjLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
 			    int linkType);
@@ -3373,9 +3378,9 @@ MODULE_SCOPE void	TclRememberJoinableThread(Tcl_ThreadId id);
 MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
-			    int reStrLen, Tcl_DString *dsPtr, int *flagsPtr,
+			    Tcl_Size reStrLen, Tcl_DString *dsPtr, int *flagsPtr,
 			    int *quantifiersFoundPtr);
-MODULE_SCOPE TCL_HASH_TYPE TclScanElement(const char *string, int length,
+MODULE_SCOPE TCL_HASH_TYPE TclScanElement(const char *string, Tcl_Size length,
 			    char *flagPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
@@ -3390,37 +3395,37 @@ MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
 			    Tcl_Obj *newValue, Tcl_Encoding encoding);
 MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);
 MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
-			    Tcl_Obj *const *objv, int objc, int subIdx,
+			    Tcl_Obj *const *objv, Tcl_Size objc, Tcl_Size subIdx,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
-			    int numBytes);
+			    Tcl_Size numBytes);
 typedef int (*memCmpFn_t)(const void*, const void*, size_t);
 MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
-			    int checkEq, int nocase, int reqlength);
+			    int checkEq, int nocase, Tcl_Size reqlength);
 MODULE_SCOPE int	TclStringCmpOpts(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int *nocase,
-			    int *reqlength);
-MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
+			    Tcl_Size *reqlength);
+MODULE_SCOPE int	TclStringMatch(const char *str, Tcl_Size strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 			    Tcl_Obj *patternObj, int flags);
 MODULE_SCOPE void	TclSubstCompile(Tcl_Interp *interp, const char *bytes,
-			    int numBytes, int flags, int line,
+			    Tcl_Size numBytes, int flags, Tcl_Size line,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE int	TclSubstOptions(Tcl_Interp *interp, int numOpts,
+MODULE_SCOPE int	TclSubstOptions(Tcl_Interp *interp, Tcl_Size numOpts,
 			    Tcl_Obj *const opts[], int *flagPtr);
 MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
-			    int numBytes, int flags, Tcl_Parse *parsePtr,
+			    Tcl_Size numBytes, int flags, Tcl_Parse *parsePtr,
 			    Tcl_InterpState *statePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-			    int count, int *tokensLeftPtr, int line,
+			    Tcl_Size count, int *tokensLeftPtr, Tcl_Size line,
 			    int *clNextOuter, const char *outerScript);
-MODULE_SCOPE int	TclTrim(const char *bytes, int numBytes,
-			    const char *trim, int numTrim, int *trimRight);
-MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
-			    const char *trim, int numTrim);
-MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
-			    const char *trim, int numTrim);
+MODULE_SCOPE Tcl_Size	TclTrim(const char *bytes, Tcl_Size numBytes,
+			    const char *trim, Tcl_Size numTrim, Tcl_Size *trimRight);
+MODULE_SCOPE Tcl_Size	TclTrimLeft(const char *bytes, Tcl_Size numBytes,
+			    const char *trim, Tcl_Size numTrim);
+MODULE_SCOPE Tcl_Size	TclTrimRight(const char *bytes, Tcl_Size numBytes,
+			    const char *trim, Tcl_Size numTrim);
 MODULE_SCOPE const char*TclGetCommandTypeName(Tcl_Command command);
 MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    Tcl_ObjCmdProc *implementationProc,
@@ -3474,7 +3479,7 @@ MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void	TclpThreadSetGlobalTSD(void *tsdKeyPtr, void *ptr);
 MODULE_SCOPE void *	TclpThreadGetGlobalTSD(void *tsdKeyPtr);
 MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
-			    const char *msg, int length);
+			    const char *msg, Tcl_Size length);
 /* Tip 430 */
 MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
 
@@ -3564,7 +3569,7 @@ MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *part2Ptr, int index, int pathc,
 			    Tcl_Obj *const pathv[], Tcl_Obj *keysPtr);
 MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-			    int pathc, Tcl_Obj *const pathv[]);
+			    Tcl_Size pathc, Tcl_Obj *const pathv[]);
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_DisassembleObjCmd;
 
 /* Assemble command function */
@@ -4087,16 +4092,16 @@ MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
  * candidates for public interface.
  */
 
-MODULE_SCOPE Tcl_Obj *	TclStringCat(Tcl_Interp *interp, int objc,
+MODULE_SCOPE Tcl_Obj *	TclStringCat(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[], int flags);
 MODULE_SCOPE Tcl_Obj *	TclStringFirst(Tcl_Obj *needle, Tcl_Obj *haystack,
-			    int start);
+			    Tcl_Size start);
 MODULE_SCOPE Tcl_Obj *	TclStringLast(Tcl_Obj *needle, Tcl_Obj *haystack,
-			    int last);
+			    Tcl_Size last);
 MODULE_SCOPE Tcl_Obj *	TclStringRepeat(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    int count, int flags);
+			    Tcl_Size count, int flags);
 MODULE_SCOPE Tcl_Obj *	TclStringReplace(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    int first, int count, Tcl_Obj *insertPtr,
+			    Tcl_Size first, Tcl_Size count, Tcl_Obj *insertPtr,
 			    int flags);
 MODULE_SCOPE Tcl_Obj *	TclStringReverse(Tcl_Obj *objPtr, int flags);
 
@@ -4211,7 +4216,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
 
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int before, int after, int *indexPtr);
-MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
+MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           ((Tcl_Size)-2)
@@ -4463,9 +4468,6 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 # define TclDecrRefCount(objPtr) \
     Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
-
-# define TclNewListObjDirect(objc, objv) \
-    TclDbNewListObjDirect(objc, objv, __FILE__, __LINE__)
 
 #undef USE_THREAD_ALLOC
 #endif /* TCL_MEM_DEBUG */
@@ -5191,7 +5193,7 @@ typedef struct NRE_callback {
 #define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
 #else
 #define TCLNR_ALLOC(interp, ptr) \
-    ((ptr) = ((void *)ckalloc(sizeof(NRE_callback))))
+    ((ptr) = (void *)ckalloc(sizeof(NRE_callback)))
 #define TCLNR_FREE(interp, ptr)  ckfree(ptr)
 #endif
 
@@ -5204,11 +5206,10 @@ typedef struct NRE_callback {
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
 
-
 #if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
-#define Tcl_AttemptAlloc(size)        TclpAlloc(size)
-#define Tcl_AttemptRealloc(ptr, size) TclpRealloc((ptr), (size))
-#define Tcl_Free(ptr)                 TclpFree(ptr)
+#define Tcl_AttemptAlloc        TclpAlloc
+#define Tcl_AttemptRealloc      TclpRealloc
+#define Tcl_Free                TclpFree
 #endif
 
 /*

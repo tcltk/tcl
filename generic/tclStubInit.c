@@ -28,6 +28,8 @@
  */
 
 #undef Tcl_Alloc
+#undef Tcl_AttemptAlloc
+#undef Tcl_AttemptRealloc
 #undef Tcl_Free
 #undef Tcl_Realloc
 #undef Tcl_NewBooleanObj
