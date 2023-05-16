@@ -1524,7 +1524,7 @@ TclObjBeingDeleted(
  *	Create and return a new object that is a duplicate of the argument
  *	object.
  *
- * Tcl_DuplicatePureObj --
+ * TclDuplicatePureObj --
  *	Like Tcl_DuplicateObj, except that it does not duplicate the 'bytes'
  *	field unless it is necessary, i.e. the duplicated Tcl_Obj provides no
  *	updateStringProc.  This can avoid an expensive memory allocation since
