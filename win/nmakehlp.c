@@ -21,6 +21,15 @@
 #include <stdio.h>
 #include <math.h>
 
+/*
+ * This library is required for x64 builds with _some_ versions of MSVC
+ */
+#if defined(_M_IA64) || defined(_M_AMD64)
+#if _MSC_VER >= 1400 && _MSC_VER < 1500
+#pragma comment(lib, "bufferoverflowU")
+#endif
+#endif
+
 /* ISO hack for dumb VC++ */
 #if defined(_WIN32) && defined(_MSC_VER) && _MSC_VER < 1900
 #define   snprintf	_snprintf
@@ -722,7 +731,7 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
 	return 2; /* Have no real error reporting mechanism into nmake */
     }
     dirlen = strlen(dir);
-    if ((dirlen + 3) > sizeof(path)) {
+    if (dirlen > sizeof(path) - 3) {
 	return 2;
     }
     strncpy(path, dir, dirlen);
