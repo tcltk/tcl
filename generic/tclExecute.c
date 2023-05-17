@@ -4684,23 +4684,45 @@ TEBCresume(
 	 * Extract the desired list element.
 	 */
 
-	if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& !TclHasInternalRep(value2Ptr, &tclListType.objType)) {
-	    int code;
+	{
+	    Tcl_Size value2Length;
+	    Tcl_Obj *indexListPtr = value2Ptr;
+	    if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
+		&& (
+		    !TclHasInternalRep(value2Ptr, &tclListType.objType)
+		    || 
+		    ((Tcl_ListObjLength(interp,value2Ptr,&value2Length),
+			value2Length == 1
+			    ? (indexListPtr = TclListObjGetElement(value2Ptr, 0), 1)
+			    : 0
+		    ))
+		)
+	    ) {
+		int code;
 
-	    DECACHE_STACK_INFO();
-	    code = TclGetIntForIndexM(interp, value2Ptr, objc-1, &index);
-	    CACHE_STACK_INFO();
-	    if (code == TCL_OK) {
-		TclDecrRefCount(value2Ptr);
-		tosPtr--;
-		pcAdjustment = 1;
-		goto lindexFastPath;
+		/* increment the refCount of value2Ptr because TclListObjGetElement may
+		 * have just extracted it from a list in the condition for this block.
+		 */
+		Tcl_IncrRefCount(indexListPtr);
+
+		DECACHE_STACK_INFO();
+		code = TclGetIntForIndexM(interp, indexListPtr, objc-1, &index);
+		TclDecrRefCount(indexListPtr);
+		CACHE_STACK_INFO();
+		if (code == TCL_OK) {
+		    Tcl_DecrRefCount(value2Ptr);
+		    tosPtr--;
+		    pcAdjustment = 1;
+		    goto lindexFastPath;
+		}
+		Tcl_ResetResult(interp);
 	    }
-	    Tcl_ResetResult(interp);
 	}
 
+
+	DECACHE_STACK_INFO();
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
+	CACHE_STACK_INFO();
 
     lindexDone:
 	if (!objResultPtr) {
