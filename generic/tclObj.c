@@ -3780,28 +3780,6 @@ Tcl_DecrRefCount(
 /*
  *----------------------------------------------------------------------
  *
- * TclUndoRefCount --
- *
- *	Decrement the refCount of objPtr without causing it to be freed if it
- *	drops from 1 to 0.  This allows a function increment a refCount but
- *	then decrement it and still be able to pass return it to a caller,
- *	possibly with a refCount of 0.  The caller must have previously
- *	incremented the refCount.
- *
- *----------------------------------------------------------------------
- */
-void
-TclUndoRefCount(
-    Tcl_Obj *objPtr)	/* The object we are releasing a reference to. */
-{
-    if (objPtr->refCount > 0) {
-	--objPtr->refCount;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_IsShared --
  *
  *	Tests if the object has a ref count greater than one.
