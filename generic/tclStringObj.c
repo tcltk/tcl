@@ -4321,6 +4321,7 @@ DupStringInternalRep(
 	 * bother copying it. Don't even bother allocating space in which to
 	 * copy it. Just let the copy be untyped.
 	 */
+
 	return;
     }
 

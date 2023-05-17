@@ -2004,11 +2004,7 @@ Tcl_ConcatObj(
 		    goto slow;
 		}
 	    } else {
-		resPtr = TclDuplicatePureObj(
-		    NULL, objPtr, &tclListType.objType);
-		if (!resPtr) {
-		    return NULL;
-		}
+		resPtr = TclListObjCopy(NULL, objPtr);
 	    }
 	}
 	if (!resPtr) {
