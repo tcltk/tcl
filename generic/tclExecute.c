@@ -3370,7 +3370,12 @@ TEBCresume(
 	    goto gotError;
 	}
 	if (Tcl_IsShared(objResultPtr)) {
-	    Tcl_Obj *newValue = Tcl_DuplicateObj(objResultPtr);
+	    Tcl_Obj *newValue = TclDuplicatePureObj(
+		    interp, objResultPtr, &tclListType.objType);
+	    if (!newValue) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
 
 	    TclDecrRefCount(objResultPtr);
 	    varPtr->value.objPtr = objResultPtr = newValue;
@@ -3429,7 +3434,11 @@ TEBCresume(
 		goto gotError;
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
-		    valueToAssign = Tcl_DuplicateObj(objResultPtr);
+		    valueToAssign = TclDuplicatePureObj(
+			interp, objResultPtr, &tclListType.objType);
+		    if (!valueToAssign) {
+			goto errorInLappendListPtr;
+		    }
 		    createdNewObj = 1;
 		} else {
 		    valueToAssign = objResultPtr;
@@ -6429,7 +6438,11 @@ TEBCresume(
 		goto gotError;
 	    }
 	    if (Tcl_IsShared(listPtr)) {
-		objPtr = TclListObjCopy(NULL, listPtr);
+		objPtr = TclDuplicatePureObj(
+		    interp, listPtr, &tclListType.objType);
+		if (!objPtr) {
+		    goto gotError;
+		}
 		Tcl_IncrRefCount(objPtr);
 		Tcl_DecrRefCount(listPtr);
 		OBJ_AT_DEPTH(listTmpDepth) = objPtr;
@@ -6491,6 +6504,7 @@ TEBCresume(
 	 */
 
 	if (iterNum < iterMax) {
+	    int status;
 	    /*
 	     * Set the variables and jump back to run the body
 	     */
@@ -6504,7 +6518,12 @@ TEBCresume(
 		numVars = varListPtr->numVars;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
-		TclListObjGetElementsM(interp, listPtr, &listLen, &elements);
+		status = TclListObjGetElementsM(
+		    interp, listPtr, &listLen, &elements);
+		if (status != TCL_OK) {
+		    goto gotError;
+		}
+
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
