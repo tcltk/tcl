@@ -2330,15 +2330,10 @@ UpdateStringOfFsPath(
     Tcl_Obj *copy;
 
     if (PATHFLAGS(pathPtr) == 0 || fsPathPtr->cwdPtr == NULL) {
-	if (fsPathPtr->translatedPathPtr == NULL) {
-	    Tcl_Panic("Called UpdateStringOfFsPath with invalid object");
-	} else {
-	    copy = Tcl_DuplicateObj(fsPathPtr->translatedPathPtr);
-	}
-    } else {
-	    copy = AppendPath(fsPathPtr->cwdPtr, fsPathPtr->normPathPtr);
+	Tcl_Panic("Called UpdateStringOfFsPath with invalid object");
     }
 
+    copy = AppendPath(fsPathPtr->cwdPtr, fsPathPtr->normPathPtr);
     if (Tcl_IsShared(copy)) {
 	copy = Tcl_DuplicateObj(copy);
     }

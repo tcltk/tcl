@@ -2356,6 +2356,8 @@ StoreStatData(
     }
 
     /*
+     * Assume Tcl_ObjSetVar2() does not keep a copy of the field name!
+     *
      * Might be a better idea to call Tcl_SetVar2Ex() instead, except we want
      * to have an object (i.e. possibly cached) array variable name but a
      * string element name, so no API exists. Messy.
@@ -2782,18 +2784,13 @@ EachloopCmd(
     for (i=0 ; i<numLists ; i++) {
 	/* List */
 	/* Variables */
-	statePtr->vCopyList[i] = TclDuplicatePureObj(
-	    interp, objv[1+i*2], &tclListType.objType);
-	if (!statePtr->vCopyList[i]) {
+	statePtr->vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
+	if (statePtr->vCopyList[i] == NULL) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	result = TclListObjLengthM(interp, statePtr->vCopyList[i],
+	TclListObjLengthM(NULL, statePtr->vCopyList[i],
 	    &statePtr->varcList[i]);
-	if (result != TCL_OK) {
-	    result = TCL_ERROR;
-	    goto done;
-	}
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s varlist is empty",
@@ -2819,17 +2816,13 @@ EachloopCmd(
 	    statePtr->argcList[i] = ABSTRACTLIST_PROC(statePtr->aCopyList[i], lengthProc)(statePtr->aCopyList[i]);
 	} else {
 	    /* List values */
-	    statePtr->aCopyList[i] = TclDuplicatePureObj(
-		interp, objv[2+i*2], &tclListType.objType);
-	    if (!statePtr->aCopyList[i]) {
+	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
+	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;
 	    }
-	    result = TclListObjGetElementsM(interp, statePtr->aCopyList[i],
+	    TclListObjGetElementsM(NULL, statePtr->aCopyList[i],
 		&statePtr->argcList[i], &statePtr->argvList[i]);
-	    if (result != TCL_OK) {
-		goto done;
-	    }
 	}
 	/* account for variable <> value mismatch */
 	j = statePtr->argcList[i] / statePtr->varcList[i];
