@@ -1981,6 +1981,7 @@ Tcl_ListObjIndex(
 {
     Tcl_Obj **elemObjs;
     Tcl_Size numElems;
+    int hasAbstractList = ABSTRACTLIST_PROC(listObj,indexProc) != 0;
 
     /* Empty string => empty list. Avoid unnecessary shimmering */
     if (listObj->bytes == &tclEmptyString) {
@@ -1988,6 +1989,9 @@ Tcl_ListObjIndex(
 	return TCL_OK;
     }
 
+    if (hasAbstractList) {
+	return Tcl_ObjTypeIndex(interp, listObj, index, objPtrPtr);
+    }
     if (TclListObjGetElementsM(interp, listObj, &numElems, &elemObjs)
 	!= TCL_OK) {
 	return TCL_ERROR;

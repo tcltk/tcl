@@ -1982,7 +1982,8 @@ Tcl_ConcatObj(
 	Tcl_Size length;
 
 	objPtr = objv[i];
-	if (TclListObjIsCanonical(objPtr)) {
+	if (TclListObjIsCanonical(objPtr) ||
+            ABSTRACTLIST_PROC(objPtr,indexProc)) {
 	    continue;
 	}
 	(void)Tcl_GetStringFromObj(objPtr, &length);
@@ -1994,7 +1995,8 @@ Tcl_ConcatObj(
 	resPtr = NULL;
 	for (i = 0;  i < objc;  i++) {
 	    objPtr = objv[i];
-	    if (!TclListObjIsCanonical(objPtr)) {
+	    if (!TclListObjIsCanonical(objPtr) &&
+		!ABSTRACTLIST_PROC(objPtr,indexProc)) {
 		continue;
 	    }
 	    if (resPtr) {

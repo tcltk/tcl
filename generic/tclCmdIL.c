@@ -3243,7 +3243,7 @@ Tcl_LsearchObjCmd(
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
     SortInfo sortInfo;
-    Tcl_Obj *patObj, **listv, *listPtr, *startPtr, *itemPtr;
+    Tcl_Obj *patObj, **listv, *listPtr, *startPtr, *itemPtr = NULL;
     SortStrCmpFn_t strCmpFn = TclUtfCmp;
     Tcl_RegExp regexp = NULL;
     static const char *const options[] = {
@@ -3688,9 +3688,14 @@ Tcl_LsearchObjCmd(
 
 	lower = start - groupSize;
 	upper = listc;
+	itemPtr = NULL;
 	while (lower + groupSize != upper && sortInfo.resultCode == TCL_OK) {
 	    i = (lower + upper)/2;
 	    i -= i % groupSize;
+
+	    Tcl_BumpObj(itemPtr);
+	    itemPtr = NULL;
+
 	    if (sortInfo.indexc != 0) {
 		itemPtr = SelectObjFromSublist(listv[i+groupOffset], &sortInfo);
 		if (sortInfo.resultCode != TCL_OK) {
@@ -3789,6 +3794,9 @@ Tcl_LsearchObjCmd(
 	}
 	for (i = start; i < listc; i += groupSize) {
 	    match = 0;
+	    Tcl_BumpObj(itemPtr);
+	    itemPtr = NULL;
+
 	    if (sortInfo.indexc != 0) {
 		itemPtr = SelectObjFromSublist(listv[i+groupOffset], &sortInfo);
 		if (sortInfo.resultCode != TCL_OK) {
@@ -3914,6 +3922,9 @@ Tcl_LsearchObjCmd(
 	    }
 	}
     }
+
+    Tcl_BumpObj(itemPtr);
+    itemPtr = NULL;
 
     /*
      * Return everything or a single value.
@@ -5481,7 +5492,7 @@ SelectObjFromSublist(
     for (i=0 ; i<infoPtr->indexc ; i++) {
 	Tcl_Size listLen;
 	int index;
-	Tcl_Obj *currentObj;
+	Tcl_Obj *currentObj, *lastObj=NULL;
 
 	if (TclListObjLengthM(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
 	    infoPtr->resultCode = TCL_ERROR;
@@ -5512,6 +5523,8 @@ SelectObjFromSublist(
 	    return NULL;
 	}
 	objPtr = currentObj;
+	Tcl_BumpObj(lastObj);
+	lastObj = currentObj;
     }
     return objPtr;
 }

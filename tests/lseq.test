@@ -421,6 +421,21 @@ test lseq-3.31 {lreverse inplace with doubles} {arithSeriesDouble has64BitLength
     lreverse [lseq 1.1 29.9 0.3]
 } {29.9 29.6 29.3 29.0 28.7 28.4 28.1 27.8 27.5 27.2 26.9 26.6 26.3 26.0 25.7 25.4 25.1 24.8 24.5 24.2 23.9 23.6 23.3 23.0 22.7 22.4 22.1 21.8 21.5 21.2 20.9 20.6 20.3 20.0 19.7 19.4 19.1 18.8 18.5 18.2 17.9 17.6 17.3 17.0 16.7 16.4 16.1 15.8 15.5 15.2 14.9 14.6 14.3 14.0 13.7 13.4 13.1 12.8 12.5 12.2 11.9 11.6 11.3 11.0 10.7 10.4 10.1 9.8 9.5 9.2 8.9 8.6 8.3 8.0 7.7 7.4 7.1 6.8 6.5 6.2 5.9 5.6 5.3 5.0 4.7 4.4 4.1 3.8 3.5 3.2 2.9 2.6 2.3 2.0 1.7 1.4 1.1}
 
+# lsearch -
+#  -- should not shimmer lseq  list
+#  -- should not leak lseq elements
+test lseq-3.32 {lsearch nested lists of lseq} arithSeriesShimmer {
+    set srchlist {}
+    for {set i 5} {$i < 25} {incr i} {
+	lappend srchlist [lseq $i count 7 by 3]
+    }
+    set a [lsearch -all -inline -index 1 $srchlist 23]
+    set b [lmap i $a {lindex [tcl::unsupported::representation $i] 3}]
+    list [lindex [tcl::unsupported::representation $a] 3] $a $b \
+        [lindex [tcl::unsupported::representation [lindex $srchlist 15]] 3]
+} {list {{20 23 26 29 32 35 38}} arithseries arithseries}
+
+
 test lseq-4.1 {end expressions} {
     set start 7
     lseq $start $start+11
@@ -465,7 +480,7 @@ test lseq-4.3 {TIP examples} -body {
 	lseq 5 5 -2
 	# -> 5
     }
-
+    set res {}
     foreach {cmd expect} [split $examples \n] {
 	if {[string trim $cmd] ne ""} {
 	    set cmd [string trimleft $cmd]
@@ -584,6 +599,36 @@ test lseq-4.16 {bug lseq - inconsistent rounding} {
     lappend res [lseq 4.07 6 0.1]
     lappend res [lseq 4.03 4.208 0.013]
 } {{4.07 4.17 4.27 4.37 4.47 4.57 4.67 4.77 4.87 4.97 5.07 5.17 5.27 5.37 5.47 5.57 5.67 5.77 5.87 5.97} {4.03 4.043 4.056 4.069 4.082 4.095 4.108 4.121 4.134 4.147 4.16 4.173 4.186 4.199}}
+
+# Test abstract list in a concat
+#  -- lseq list should not shimmer
+#  -- lseq elements should not leak
+test lseq-4.17 {concat?} {
+    set rng [lseq 8 15 2]
+    set pre [list A b C]
+    set pst [list x Y z]
+    concat $pre $rng $pst
+} {A b C 8 10 12 14 x Y z}
+
+test lseq-4.18 {concat?} {
+    set rng [lseq 8 15 2]
+    set pre [list A b C]
+    set pst [list x Y z]
+    concat $rng $pre $pst
+} {8 10 12 14 A b C x Y z}
+
+# Test lseq elements as var names
+test lseq-4.19 {varnames} {
+set plist {}
+    foreach v [info proc auto_*] {
+	lappend plist proc $v [info args $v] [info body $v]
+    }
+    set res {}
+    foreach [lseq 1 to 4] $plist {
+	lappend res $2 [llength $3]
+    }
+    set res
+} {auto_import 1 auto_execok 1 auto_load_index 0 auto_qualify 2 auto_load 2}
 
 # cleanup
 ::tcltest::cleanupTests
