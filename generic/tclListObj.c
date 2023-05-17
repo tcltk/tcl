@@ -1362,51 +1362,6 @@ Tcl_SetListObj(
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclListObjCopy --
- *
- *	Makes a "pure list" copy of a list value. This provides for the C
- *	level a counterpart of the [lrange $list 0 end] command, while using
- *	internals details to be as efficient as possible.
- *
- * Results:
- *	Normally returns a pointer to a new Tcl_Obj, that contains the same
- *	list value as *listPtr does. The returned Tcl_Obj has a refCount of
- *	zero. If *listPtr does not hold a list, NULL is returned, and if
- *	interp is non-NULL, an error message is recorded there.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclListObjCopy(
-    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *listObj)		/* List object for which an element array is
-				 * to be returned. */
-{
-    Tcl_Obj *copyObj;
-
-    if (!TclHasInternalRep(listObj, &tclListType)) {
-	if (ABSTRACTLIST_PROC(listObj,dupIntRepProc) &&
-	    ABSTRACTLIST_PROC(listObj,indexProc)) {
-	    return Tcl_DuplicateObj(listObj);
-	}
-	if (SetListFromAny(interp, listObj) != TCL_OK) {
-	    return NULL;
-	}
-    }
-
-    TclNewObj(copyObj);
-    TclInvalidateStringRep(copyObj);
-    DupListInternalRep(listObj, copyObj);
-    return copyObj;
-}
-
-/*
  *------------------------------------------------------------------------
  *
  * ListRepRange --
@@ -1644,6 +1599,29 @@ TclListObjRange(
     } /* T:listrep-1.{4.3,5.1,5.2} */
     ListObjReplaceRepAndInvalidate(listObj, &resultRep);
     return listObj;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclListObjGetElement --
+ *
+ *	Returns a single element from the array of the elements in a list
+ *	object, without doing doing any bounds checking.  Caller must ensure
+ *	that ObjPtr of of type 'tclListType' and that  index is valid for the
+ *	list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclListObjGetElement(
+    Tcl_Obj *objPtr,		/* List object for which an element array is
+				 * to be returned. */
+    Tcl_Size index
+)
+{
+    return ListObjStorePtr(objPtr)->slots[ListObjStart(objPtr) + index];
 }
 
 /*
@@ -2602,6 +2580,7 @@ TclLindexList(
     Tcl_Obj *indexListCopy;
     Tcl_Obj **indexObjs;
     Tcl_Size numIndexObjs;
+    int status;
 
     /*
      * Determine whether argPtr designates a list or a single index. We have
@@ -2630,8 +2609,11 @@ TclLindexList(
      * implementation does not.
      */
 
-    indexListCopy = TclListObjCopy(NULL, argObj);
-    if (indexListCopy == NULL) {
+    indexListCopy = Tcl_DuplicateObj(argObj);
+    status = TclListObjGetElementsM(
+	interp, indexListCopy, &numIndexObjs, &indexObjs);
+    if (status != TCL_OK) {
+	Tcl_DecrRefCount(indexListCopy);
 	/*
 	 * The argument is neither an index nor a well-formed list.
 	 * Report the error via TclLindexFlat.
@@ -2639,8 +2621,6 @@ TclLindexList(
 	 */
 	return TclLindexFlat(interp, listObj, 1, &argObj);
     }
-
-    ListObjGetElements(indexListCopy, numIndexObjs, indexObjs);
     listObj = TclLindexFlat(interp, listObj, numIndexObjs, indexObjs);
     Tcl_DecrRefCount(indexListCopy);
     return listObj;
@@ -2833,29 +2813,22 @@ TclLsetList(
 
     }
 
-    /*
-     * Make copy to not shimmer index argument
-     */
-    indexListCopy = TclListObjCopy(NULL, indexArgObj);
-
-    if (indexListCopy == NULL) {
+    indexListCopy = TclDuplicatePureObj(indexArgObj);
+    if (TCL_OK != TclListObjGetElementsM(
+	interp, indexListCopy, &indexCount, &indices)) {
+	Tcl_DecrRefCount(indexListCopy);
 	/*
 	 * indexArgPtr designates something that is neither an index nor a
 	 * well formed list. Report the error via TclLsetFlat.
 	 */
-	indexCount = 1;
-	indices = &indexArgObj;
-
-    } else {
-	/*
-	 * Expand list into indicies array
-	 */
-	LIST_ASSERT_TYPE(indexListCopy);
-	ListObjGetElements(indexListCopy, indexCount, indices);
+	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
     }
 
-    retValueObj = TclLsetFlat(interp, listObj, indexCount, indices, valueObj);
+    /*
+     * Let TclLsetFlat perform the actual lset operation.
+     */
 
+    retValueObj = TclLsetFlat(interp, listObj, indexCount, indices, valueObj);
     if (indexListCopy) {
 	Tcl_DecrRefCount(indexListCopy);
     }
@@ -2930,7 +2903,6 @@ TclLsetFlat(
 
     /*
      * If the list is shared, make a copy we can modify (copy-on-write).  We
-     * use Tcl_DuplicateObj() instead of TclListObjCopy() for a few reasons:
      * 1) we have not yet confirmed listObj is actually a list; 2) We make a
      * verbatim copy of any existing string rep, and when we combine that with
      * the delayed invalidation of string reps of modified Tcl_Obj's

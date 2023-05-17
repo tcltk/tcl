@@ -434,11 +434,7 @@ EncodingConvertParseOptions (
     Tcl_Encoding encoding;
     Tcl_Obj *dataObj;
     Tcl_Obj *failVarObj;
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-    int profile = TCL_ENCODING_PROFILE_TCL8; /* TODO - default for Tcl9? */
-#else
     int profile = TCL_ENCODING_PROFILE_TCL8;
-#endif
 
     /*
      * Possible combinations:
@@ -2787,13 +2783,13 @@ EachloopCmd(
     for (i=0 ; i<numLists ; i++) {
 	/* List */
 	/* Variables */
-	statePtr->vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
-	if (statePtr->vCopyList[i] == NULL) {
+	statePtr->vCopyList[i] = TclDuplicatePureObj(objv[1+i*2]);
+	result = TclListObjLengthM(interp, statePtr->vCopyList[i],
+	    &statePtr->varcList[i]);
+	if (result != TCL_OK) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjLengthM(NULL, statePtr->vCopyList[i],
-	    &statePtr->varcList[i]);
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s varlist is empty",
@@ -2819,13 +2815,12 @@ EachloopCmd(
 	    /* Don't compute values here, wait until the last moment */
 	    statePtr->argcList[i] = ABSTRACTLIST_PROC(statePtr->aCopyList[i], lengthProc)(statePtr->aCopyList[i]);
 	} else {
-	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
-	    if (statePtr->aCopyList[i] == NULL) {
-		result = TCL_ERROR;
+	    statePtr->aCopyList[i] = TclDuplicatePureObj(objv[2+i*2]);
+	    result = TclListObjGetElementsM(interp, statePtr->aCopyList[i],
+		&statePtr->argcList[i], &statePtr->argvList[i]);
+	    if (result != TCL_OK) {
 		goto done;
 	    }
-	    TclListObjGetElementsM(NULL, statePtr->aCopyList[i],
-		    &statePtr->argcList[i], &statePtr->argvList[i]);
 	}
 	/* account for variable <> value mismatch */
 	j = statePtr->argcList[i] / statePtr->varcList[i];

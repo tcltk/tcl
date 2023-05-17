@@ -379,7 +379,7 @@ ExecuteCallback(
     unsigned char *resBuf;
     Tcl_InterpState state = NULL;
     int res = TCL_OK;
-    Tcl_Obj *command = TclListObjCopy(NULL, dataPtr->command);
+    Tcl_Obj *command = TclDuplicatePureObj(dataPtr->command);
     Tcl_Interp *eval = dataPtr->interp;
 
     Tcl_Preserve(eval);
@@ -397,7 +397,12 @@ ExecuteCallback(
     }
 
     Tcl_IncrRefCount(command);
-    Tcl_ListObjAppendElement(NULL, command, Tcl_NewStringObj((char *) op, -1));
+    res = Tcl_ListObjAppendElement(NULL, command, Tcl_NewStringObj((char *) op, -1));
+    if (res != TCL_OK) {
+	Tcl_DecrRefCount(command);
+	Tcl_Release(eval);
+	return res;
+    }
 
     /*
      * Use a byte-array to prevent the misinterpretation of binary data coming

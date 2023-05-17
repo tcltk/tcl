@@ -4680,24 +4680,45 @@ TEBCresume(
 	 * Extract the desired list element.
 	 */
 
-	/* TODO: handle AbstractList here? */
-	if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& !TclHasInternalRep(value2Ptr, &tclListType)) {
-	    int code;
+	{
+	    Tcl_Size value2Length;
+	    Tcl_Obj *indexListPtr = value2Ptr;
+	    if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
+		&& (
+		    !TclHasInternalRep(value2Ptr, &tclListType)
+		    ||
+		    ((Tcl_ListObjLength(interp,value2Ptr,&value2Length),
+			value2Length == 1
+			    ? (indexListPtr = TclListObjGetElement(value2Ptr, 0), 1)
+			    : 0
+		    ))
+		)
+	    ) {
+		int code;
 
-	    DECACHE_STACK_INFO();
-	    code = TclGetIntForIndexM(interp, value2Ptr, objc-1, &index);
-	    CACHE_STACK_INFO();
-	    if (code == TCL_OK) {
-		TclDecrRefCount(value2Ptr);
-		tosPtr--;
-		pcAdjustment = 1;
-		goto lindexFastPath;
+		/* increment the refCount of value2Ptr because TclListObjGetElement may
+		 * have just extracted it from a list in the condition for this block.
+		 */
+		Tcl_IncrRefCount(indexListPtr);
+
+		DECACHE_STACK_INFO();
+		code = TclGetIntForIndexM(interp, indexListPtr, objc-1, &index);
+		TclDecrRefCount(indexListPtr);
+		CACHE_STACK_INFO();
+		if (code == TCL_OK) {
+		    Tcl_DecrRefCount(value2Ptr);
+		    tosPtr--;
+		    pcAdjustment = 1;
+		    goto lindexFastPath;
+		}
+		Tcl_ResetResult(interp);
 	    }
-	    Tcl_ResetResult(interp);
 	}
 
+
+	DECACHE_STACK_INFO();
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
+	CACHE_STACK_INFO();
 
     lindexDone:
 	if (!objResultPtr) {
@@ -6413,7 +6434,7 @@ TEBCresume(
 		goto gotError;
 	    }
 	    if (Tcl_IsShared(listPtr)) {
-		objPtr = TclListObjCopy(NULL, listPtr);
+		objPtr = TclDuplicatePureObj(listPtr);
 		Tcl_IncrRefCount(objPtr);
 		Tcl_DecrRefCount(listPtr);
 		OBJ_AT_DEPTH(listTmpDepth) = objPtr;
@@ -6475,6 +6496,7 @@ TEBCresume(
 	 */
 
 	if (iterNum < iterMax) {
+	    int status;
 	    /*
 	     * Set the variables and jump back to run the body
 	     */
@@ -6488,7 +6510,12 @@ TEBCresume(
 		numVars = varListPtr->numVars;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
-		TclListObjGetElementsM(interp, listPtr, &listLen, &elements);
+		status = TclListObjGetElementsM(
+		    interp, listPtr, &listLen, &elements);
+		if (status != TCL_OK) {
+		    goto gotError;
+		}
+
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {

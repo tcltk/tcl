@@ -156,7 +156,11 @@ waitpid(
 		goto waitAgain;
 	    }
 	}
-	waitPtr = (WaitInfo *) Tcl_Alloc(sizeof(WaitInfo));
+	waitPtr = (WaitInfo *) Tcl_AttemptAlloc(sizeof(WaitInfo));
+	if (!waitPtr) {
+	    errno = ENOMEM;
+	    return -1;
+	}
 	waitPtr->pid = result;
 	waitPtr->status = status;
 	waitPtr->nextPtr = deadList;

@@ -2259,7 +2259,7 @@ NewReflectedChannel(
     rcPtr->interest = 0;		/* Initially no interest registered */
 
     /* ASSERT: cmdpfxObj is a Tcl List */
-    rcPtr->cmd = TclListObjCopy(NULL, cmdpfxObj);
+    rcPtr->cmd = TclDuplicatePureObj(cmdpfxObj);
     Tcl_IncrRefCount(rcPtr->cmd);
     rcPtr->methods = Tcl_NewListObj(METH_WRITE + 1, NULL);
     while (mn <= (int)METH_WRITE) {
@@ -2396,7 +2396,7 @@ InvokeTclMethod(
      * before the channel id.
      */
 
-    cmd = TclListObjCopy(NULL, rcPtr->cmd);
+    cmd = TclDuplicatePureObj(rcPtr->cmd);
 
     Tcl_ListObjIndex(NULL, rcPtr->methods, method, &methObj);
     Tcl_ListObjAppendElement(NULL, cmd, methObj);
