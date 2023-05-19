@@ -61,7 +61,7 @@ typedef struct {
 
 typedef struct ProcInfo {
     HANDLE hProcess;
-    DWORD dwProcessId;
+    TCL_HASH_TYPE dwProcessId;
     struct ProcInfo *nextPtr;
 } ProcInfo;
 
@@ -104,7 +104,7 @@ typedef struct PipeInfo {
     TclFile readFile;		/* Output from pipe. */
     TclFile writeFile;		/* Input from pipe. */
     TclFile errorFile;		/* Error output from pipe. */
-    Tcl_Size numPids;		/* Number of processes attached to pipe. */
+    TCL_HASH_TYPE numPids;		/* Number of processes attached to pipe. */
     Tcl_Pid *pidPtr;		/* Pids of attached processes. */
     Tcl_ThreadId threadId;	/* Thread to which events should be reported.
 				 * This value is used by the reader/writer
@@ -869,7 +869,7 @@ TclpGetPid(
 
     Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->dwProcessId == (DWORD)(size_t)pid) {
+	if (infoPtr->dwProcessId == PTR2INT(pid)) {
 	    Tcl_MutexUnlock(&pipeMutex);
 	    return infoPtr->dwProcessId;
 	}
@@ -1163,7 +1163,7 @@ TclpCreateProcess(
     WaitForInputIdle(procInfo.hProcess, 5000);
     CloseHandle(procInfo.hThread);
 
-    *pidPtr = (Tcl_Pid) (size_t) procInfo.dwProcessId;
+    *pidPtr = (Tcl_Pid)UINT2PTR(procInfo.dwProcessId);
     if (*pidPtr != 0) {
 	TclWinAddProcess(procInfo.hProcess, procInfo.dwProcessId);
     }
@@ -1906,8 +1906,8 @@ TclGetAndDetachPids(
 {
     PipeInfo *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
-    Tcl_Obj *pidsObj;
-    Tcl_Size i;
+    Tcl_Obj *pidsObj, *elemPtr;
+    TCL_HASH_TYPE i;
 
     /*
      * Punt if the channel is not a command channel.
@@ -1921,9 +1921,8 @@ TclGetAndDetachPids(
     pipePtr = (PipeInfo *)Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
-	Tcl_ListObjAppendElement(NULL, pidsObj,
-		Tcl_NewWideIntObj((unsigned)
-			TclpGetPid(pipePtr->pidPtr[i])));
+	TclNewIntObj(elemPtr, TclpGetPid(pipePtr->pidPtr[i]));
+	Tcl_ListObjAppendElement(NULL, pidsObj, elemPtr);
 	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);
     }
     Tcl_SetObjResult(interp, pidsObj);
@@ -2566,7 +2565,7 @@ Tcl_WaitPid(
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
-	 if (infoPtr->dwProcessId == (DWORD) (size_t) pid) {
+	 if (infoPtr->dwProcessId == PTR2INT(pid)) {
 	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}
@@ -2710,7 +2709,7 @@ Tcl_WaitPid(
 void
 TclWinAddProcess(
     void *hProcess,		/* Handle to process */
-    unsigned long id)		/* Global process identifier */
+    Tcl_Size id)		/* Global process identifier */
 {
     ProcInfo *procPtr = (ProcInfo *)ckalloc(sizeof(ProcInfo));
 
@@ -2751,15 +2750,16 @@ Tcl_PidObjCmd(
     Tcl_Channel chan;
     const Tcl_ChannelType *chanTypePtr;
     PipeInfo *pipePtr;
-    Tcl_Size i;
-    Tcl_Obj *resultPtr;
+    TCL_HASH_TYPE i;
+    Tcl_Obj *resultPtr, *elemPtr;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((unsigned) getpid()));
+	TclNewIntObj(elemPtr, getpid());
+	Tcl_SetObjResult(interp, elemPtr);
     } else {
 	chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]),
 		NULL);
@@ -2774,9 +2774,8 @@ Tcl_PidObjCmd(
 	pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
 	TclNewObj(resultPtr);
 	for (i = 0; i < pipePtr->numPids; i++) {
-	    Tcl_ListObjAppendElement(/*interp*/ NULL, resultPtr,
-		    Tcl_NewWideIntObj((unsigned)
-			    TclpGetPid(pipePtr->pidPtr[i])));
+	    TclNewIntObj(elemPtr, TclpGetPid(pipePtr->pidPtr[i]));
+	    Tcl_ListObjAppendElement(/*interp*/ NULL, resultPtr, elemPtr);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }
