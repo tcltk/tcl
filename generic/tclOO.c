@@ -3,7 +3,7 @@
  *
  *	This file contains the object-system core (NB: not Tcl_Obj, but ::oo)
  *
- * Copyright © 2005-2012 Donal K. Fellows
+ * Copyright © 2005-2019 Donal K. Fellows
  * Copyright © 2017 Nathan Coulter
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -327,6 +327,7 @@ InitFoundation(
 	    DeletedObjdefNamespace);
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", fPtr,
 	    DeletedHelpersNamespace);
+    Tcl_CreateNamespace(interp, "::oo::configuresupport", NULL, NULL);
     fPtr->epoch = 1;
     fPtr->tsdPtr = tsdPtr;
     TclNewLiteralStringObj(fPtr->unknownMethodNameObj, "unknown");
@@ -964,7 +965,7 @@ TclOOReleaseClassContents(
     Class *clsPtr = oPtr->classPtr, *tmpClsPtr;
     Method *mPtr;
     Foundation *fPtr = oPtr->fPtr;
-    Tcl_Obj *variableObj;
+    Tcl_Obj *variableObj, *propertyObj;
     PrivateVariableMapping *privateVariable;
 
     /*
@@ -1015,6 +1016,29 @@ TclOOReleaseClassContents(
 	Tcl_DeleteHashTable(clsPtr->classChainCache);
 	Tcl_Free(clsPtr->classChainCache);
 	clsPtr->classChainCache = NULL;
+    }
+
+    /*
+     * Squelch the property lists.
+     */
+
+    if (clsPtr->properties.allReadableCache) {
+	Tcl_DecrRefCount(clsPtr->properties.allReadableCache);
+    }
+    if (clsPtr->properties.allWritableCache) {
+	Tcl_DecrRefCount(clsPtr->properties.allWritableCache);
+    }
+    if (clsPtr->properties.readable.num) {
+	FOREACH(propertyObj, clsPtr->properties.readable) {
+	    Tcl_DecrRefCount(propertyObj);
+	}
+	ckfree(clsPtr->properties.readable.list);
+    }
+    if (clsPtr->properties.writable.num) {
+	FOREACH(propertyObj, clsPtr->properties.writable) {
+	    Tcl_DecrRefCount(propertyObj);
+	}
+	ckfree(clsPtr->properties.writable.list);
     }
 
     /*
@@ -1118,7 +1142,7 @@ ObjectNamespaceDeleted(
     FOREACH_HASH_DECLS;
     Class *mixinPtr;
     Method *mPtr;
-    Tcl_Obj *filterObj, *variableObj;
+    Tcl_Obj *filterObj, *variableObj, *propertyObj;
     PrivateVariableMapping *privateVariable;
     Tcl_Interp *interp = oPtr->fPtr->interp;
     Tcl_Size i;
@@ -1269,6 +1293,29 @@ ObjectNamespaceDeleted(
 	Tcl_DeleteHashTable(oPtr->metadataPtr);
 	Tcl_Free(oPtr->metadataPtr);
 	oPtr->metadataPtr = NULL;
+    }
+
+    /*
+     * Squelch the property lists.
+     */
+
+    if (oPtr->properties.allReadableCache) {
+	Tcl_DecrRefCount(oPtr->properties.allReadableCache);
+    }
+    if (oPtr->properties.allWritableCache) {
+	Tcl_DecrRefCount(oPtr->properties.allWritableCache);
+    }
+    if (oPtr->properties.readable.num) {
+	FOREACH(propertyObj, oPtr->properties.readable) {
+	    Tcl_DecrRefCount(propertyObj);
+	}
+	ckfree(oPtr->properties.readable.list);
+    }
+    if (oPtr->properties.writable.num) {
+	FOREACH(propertyObj, oPtr->properties.writable) {
+	    Tcl_DecrRefCount(propertyObj);
+	}
+	ckfree(oPtr->properties.writable.list);
     }
 
     /*
