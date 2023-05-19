@@ -14,15 +14,6 @@
 #include "tcl.h"
 
 /*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    Pkga_EqObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkga_QuoteObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-
-/*
  *----------------------------------------------------------------------
  *
  * Pkga_EqObjCmd --
@@ -42,14 +33,14 @@ static int    Pkga_QuoteObjCmd(ClientData clientData,
 
 static int
 Pkga_EqObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
     const char *str1, *str2;
-    int len1, len2;
+    Tcl_Size len1, len2;
     (void)dummy;
 
     if (objc != 3) {
@@ -60,7 +51,7 @@ Pkga_EqObjCmd(
     str1 = Tcl_GetStringFromObj(objv[1], &len1);
     str2 = Tcl_GetStringFromObj(objv[2], &len2);
     if (len1 == len2) {
-	result = (Tcl_UtfNcmp(str1, str2, len1) == 0);
+	result = (Tcl_UtfNcmp(str1, str2, (size_t)len1) == 0);
     } else {
 	result = 0;
     }
@@ -87,7 +78,7 @@ Pkga_EqObjCmd(
 
 static int
 Pkga_QuoteObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */

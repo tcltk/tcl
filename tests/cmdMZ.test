@@ -55,8 +55,8 @@ test cmdMZ-1.4 {Tcl_PwdObjCmd: failure} -setup {
     file delete -force $foodir
     file mkdir $foodir
     cd $foodir
-} -constraints {unix nonPortable} -body {
-    # This test fails on various unix platforms (eg Linux) where permissions
+} -constraints {Unix nonPortable} -body {
+    # This test fails on various Unix platforms (eg Linux) where permissions
     # caching causes this to fail. The caching is strictly incorrect, but we
     # have no control over that.
     file attr . -permissions 0
@@ -158,7 +158,7 @@ test cmdMZ-return-2.11 {return option handling} {
 } {3 {-code 3 -level 0}}
 test cmdMZ-return-2.12 {return option handling} -body {
     return -level 0 -code error -options {-code ok}
-} -returnCodes ok -result {}
+} -result {}
 test cmdMZ-return-2.13 {return option handling} -body {
     return -level 0 -code error -options {-code err}
 } -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}

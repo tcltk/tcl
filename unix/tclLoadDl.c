@@ -108,7 +108,7 @@ TclpDlopen(
 	Tcl_DString ds;
 	const char *fileName = TclGetString(pathPtr);
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
 	/*
 	 * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
 	 */
@@ -179,23 +179,23 @@ FindSymbol(
      * the underscore.
      */
 
-    native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, symbol, TCL_INDEX_NONE, &ds);
     proc = dlsym(handle, native);	/* INTL: Native. */
     if (proc == NULL) {
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
-	native = Tcl_DStringAppend(&newName, native, -1);
+	native = Tcl_DStringAppend(&newName, native, TCL_INDEX_NONE);
 	proc = dlsym(handle, native);	/* INTL: Native. */
 	Tcl_DStringFree(&newName);
     }
 #ifdef __cplusplus
     if (proc == NULL) {
 	char buf[32];
-	sprintf(buf, "%d", (int)Tcl_DStringLength(&ds));
+	snprintf(buf, sizeof(buf), "%d", (int)Tcl_DStringLength(&ds));
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "__Z");
-	Tcl_DStringAppend(&newName, buf, -1);
-	Tcl_DStringAppend(&newName, Tcl_DStringValue(&ds), -1);
+	Tcl_DStringAppend(&newName, buf, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&newName, Tcl_DStringValue(&ds), TCL_INDEX_NONE);
 	TclDStringAppendLiteral(&newName, "P10Tcl_Interp");
 	native = Tcl_DStringValue(&newName);
 	proc = dlsym(handle, native + 1);	/* INTL: Native. */

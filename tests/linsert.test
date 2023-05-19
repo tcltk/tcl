@@ -40,7 +40,7 @@ variable tests {
 		@linsert@ [newlist {1 2 3 4 5}] 0 a
 	    } {a 1 2 3 4 5}
 	    test linsert-1.2-@mode@ {linsert command} {
-		@linsert@ [newlist {1 2 3 4 5}] 1 a
+		@linsert@ [after 1;newlist {1 2 3 4 5}] 1 a
 	    } {1 a 2 3 4 5}
 	    test linsert-1.3-@mode@ {linsert command} {
 		@linsert@ [newlist {1 2 3 4 5}] 2 a

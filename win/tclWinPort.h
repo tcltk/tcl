@@ -458,6 +458,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif /* _MSC_VER || __MSVCRT__ */
 
 #if defined(_MSC_VER)
+#   pragma warning(disable:4090) /* see: https://developercommunity.visualstudio.com/t/c-compiler-incorrect-propagation-of-const-qualifie/390711 */
 #   pragma warning(disable:4146)
 #   pragma warning(disable:4244)
 #if !defined(_WIN64)
@@ -517,11 +518,11 @@ typedef DWORD_PTR * PDWORD_PTR;
  */
 
 #define TclpSysAlloc(size)		((void*)HeapAlloc(GetProcessHeap(), \
-					    (DWORD)0, (DWORD)size))
+					    0, size))
 #define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
-					    (DWORD)0, (HGLOBAL)ptr))
+					    0, (HGLOBAL)ptr))
 #define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
-					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
+					    0, (LPVOID)ptr, size))
 
 /* This type is not defined in the Windows headers */
 #define socklen_t       int

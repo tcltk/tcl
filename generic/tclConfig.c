@@ -181,7 +181,7 @@ Tcl_RegisterConfig(
  *	configuration information embedded into a library.
  *
  * Results:
- *	A standard tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
  *	See the manual for what this command does.
@@ -191,22 +191,21 @@ Tcl_RegisterConfig(
 
 static int
 QueryConfigObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
-    struct Tcl_Obj *const *objv)
+    Tcl_Obj *const *objv)
 {
     QCCD *cdPtr = (QCCD *)clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
-    size_t n = 0;
-    int index, m;
+    Tcl_Size m, n = 0;
     static const char *const subcmdStrings[] = {
 	"get", "list", NULL
     };
     enum subcmds {
 	CFG_GET, CFG_LIST
-    };
+    } index;
     Tcl_DString conv;
     Tcl_Encoding venc = NULL;
     const char *value;
@@ -234,7 +233,7 @@ QueryConfigObjCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum subcmds) index) {
+    switch (index) {
     case CFG_GET:
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "key");
@@ -259,7 +258,10 @@ QueryConfigObjCmd(
 	 * Value is stored as-is in a byte array, see Bug [9b2e636361],
 	 * so we have to decode it first.
 	 */
-	value = (const char *) Tcl_GetByteArrayFromObj(val, &n);
+	value = (const char *) Tcl_GetBytesFromObj(interp, val, &n);
+	if (value == NULL) {
+	    return TCL_ERROR;
+	}
 	value = Tcl_ExternalToUtfDString(venc, value, n, &conv);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(value,
 		Tcl_DStringLength(&conv)));
@@ -322,7 +324,7 @@ QueryConfigObjCmd(
 
 static void
 QueryConfigDelete(
-    ClientData clientData)
+    void *clientData)
 {
     QCCD *cdPtr = (QCCD *)clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
@@ -389,7 +391,7 @@ GetConfigDict(
 
 static void
 ConfigDictDeleteProc(
-    ClientData clientData,	/* Pointer to Tcl_Obj. */
+    void *clientData,	/* Pointer to Tcl_Obj. */
     TCL_UNUSED(Tcl_Interp *))
 {
     Tcl_DecrRefCount((Tcl_Obj *)clientData);

@@ -15,18 +15,6 @@
  */
 
 #include "tcl.h"
-#define WIN32_LEAN_AND_MEAN
-#define STRICT			/* See MSDN Article Q83456 */
-#include <windows.h>
-#undef STRICT
-#undef WIN32_LEAN_AND_MEAN
-#include <locale.h>
-#include <stdlib.h>
-#include <tchar.h>
-#if TCL_MAJOR_VERSION < 9 && TCL_MINOR_VERSION < 7
-#   define Tcl_LibraryInitProc Tcl_PackageInitProc
-#   define Tcl_StaticLibrary Tcl_StaticPackage
-#endif
 
 #ifdef TCL_TEST
 extern Tcl_LibraryInitProc Tcltest_Init;
@@ -39,6 +27,14 @@ extern Tcl_LibraryInitProc Dde_Init;
 extern Tcl_LibraryInitProc Dde_SafeInit;
 #endif
 
+#define WIN32_LEAN_AND_MEAN
+#define STRICT			/* See MSDN Article Q83456 */
+#include <windows.h>
+#undef STRICT
+#undef WIN32_LEAN_AND_MEAN
+#include <locale.h>
+#include <stdlib.h>
+#include <tchar.h>
 #if defined(__GNUC__) || defined(TCL_BROKEN_MAINARGS)
 int _CRT_glob = 0;
 #endif /* __GNUC__ || TCL_BROKEN_MAINARGS */
@@ -91,18 +87,17 @@ MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 int
 main(
     int argc,			/* Number of command-line arguments. */
-    char **argv1)
+    char **argv1)		/* Not used. */
 {
     TCHAR **argv;
-    TCHAR *p;
 #else
 int
 _tmain(
     int argc,			/* Number of command-line arguments. */
     TCHAR *argv[])		/* Values of command-line arguments. */
 {
-    TCHAR *p;
 #endif
+    TCHAR *p;
 
     /*
      * Set up the default locale to be standard "C" locale so parsing is
@@ -132,8 +127,8 @@ _tmain(
 
 #ifdef TCL_LOCAL_MAIN_HOOK
     TCL_LOCAL_MAIN_HOOK(&argc, &argv);
-#elif !defined(_WIN32) || defined(UNICODE)
-    /* This doesn't work on Windows without UNICODE */
+#elif (!defined(_WIN32) || defined(UNICODE))
+    /* New in Tcl 8.7. This doesn't work on Windows without UNICODE */
     TclZipfs_AppHook(&argc, &argv);
 #endif
 
@@ -164,7 +159,7 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if ((Tcl_Init)(interp) == TCL_ERROR) {
+    if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -211,8 +206,11 @@ Tcl_AppInit(
      * user-specific startup file will be run under any conditions.
      */
 
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
-	    Tcl_NewStringObj("~/tclshrc.tcl", -1), TCL_GLOBAL_ONLY);
+    (void)Tcl_EvalEx(interp,
+		     "set tcl_rcFileName [file tildeexpand ~/tclshrc.tcl]",
+		     -1,
+		     TCL_EVAL_GLOBAL);
+
     return TCL_OK;
 }
 

@@ -23,13 +23,16 @@ catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint testobj [llength [info commands testobj]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testdstring [llength [info commands testdstring]]
-testConstraint fullutf [expr {[string length \U010000] == 1}]
+testConstraint utf32 [expr {[string length \U010000] == 1}]
 
 test stringObj-1.1 {string type registration} testobj {
     set t [testobj types]
     set first [string first "string" $t]
     set result [expr {$first >= 0}]
 } 1
+
+set INT_MAX 0x7fffffff; # Assumes sizeof(int) == 4
+set SIZE_MAX [expr {(1 << (8*$::tcl_platform(pointerSize) - 1)) - 1}]
 
 test stringObj-2.1 {Tcl_NewStringObj} testobj {
     set result ""
@@ -67,8 +70,8 @@ test stringObj-4.2 {Tcl_SetObjLength procedure, string gets longer} testobj {
     testobj freeallvars
     teststringobj set 1 abcdef
     teststringobj setlength 1 10
-    list [teststringobj length 1] [teststringobj length2 1]
-} {10 10}
+    teststringobj length 1
+} 10
 test stringObj-4.3 {Tcl_SetObjLength procedure, string gets longer} testobj {
     testobj freeallvars
     teststringobj set 1 abcdef
@@ -76,7 +79,7 @@ test stringObj-4.3 {Tcl_SetObjLength procedure, string gets longer} testobj {
     list [teststringobj length 1] [teststringobj length2 1] \
 	    [teststringobj get 1]
 } {10 20 abcdefxyzq}
-test stringObj-4.4 {Tcl_SetObjLength procedure, "expty string", length 0} testobj {
+test stringObj-4.4 {Tcl_SetObjLength procedure, "empty string", length 0} testobj {
     testobj freeallvars
     testobj newobj 1
     teststringobj setlength 1 0
@@ -315,7 +318,7 @@ test stringObj-9.10 {TclAppendObjToObj, integer src & mixed dest} testobj {
 test stringObj-9.11 {TclAppendObjToObj, mixed src & 1-byte dest index check} testobj {
     # bug 2678, in <=8.2.0, the second obj (the one to append) in
     # Tcl_AppendObjToObj was not correctly checked to see if it was all one
-    # byte chars, so a unicode string would be added as one byte chars.
+    # byte chars, so a Unicode string would be added as one byte chars.
     set x abcdef
     set len [string length $x]
     set y a\xFCb\xE5c\xEF
@@ -408,13 +411,13 @@ test stringObj-13.4 {Tcl_GetCharLength with mixed width chars} testobj {
 } 1
 test stringObj-13.5 {Tcl_GetCharLength with mixed width chars} testobj {
     # string length "ï¿®ï¿®"
-    # Use \uXXXX notation below instead of hardcoding the values, otherwise
+    # Use \uXXXX notation below instead of hard-coding the values, otherwise
     # the test will fail in multibyte locales.
     string length "\xEF\xBF\xAE\xEF\xBF\xAE"
 } 6
 test stringObj-13.6 {Tcl_GetCharLength with mixed width chars} testobj {
     # set a "ïa¿b®cï¿d®"
-    # Use \uXXXX notation below instead of hardcoding the values, otherwise
+    # Use \uXXXX notation below instead of hard-coding the values, otherwise
     # the test will fail in multibyte locales.
     set a "\xEFa\xBFb\xAEc\xEF\xBFd\xAE"
     list [string length $a] [string length $a]
@@ -454,22 +457,77 @@ test stringObj-15.4 {Tcl_Append*ToObj: self appends} testobj {
     teststringobj set 1 foo
     teststringobj appendself 1 3
 } foo
-test stringObj-15.5 {Tcl_Append*ToObj: self appends} {testobj fullutf} {
+test stringObj-15.5 {Tcl_Append*ToObj: self appends} {testobj utf32} {
     teststringobj set 1 foo
     teststringobj appendself2 1 0
 } foofoo
-test stringObj-15.6 {Tcl_Append*ToObj: self appends} {testobj fullutf} {
+test stringObj-15.6 {Tcl_Append*ToObj: self appends} {testobj utf32} {
     teststringobj set 1 foo
     teststringobj appendself2 1 1
 } foooo
-test stringObj-15.7 {Tcl_Append*ToObj: self appends} {testobj fullutf} {
+test stringObj-15.7 {Tcl_Append*ToObj: self appends} {testobj utf32} {
     teststringobj set 1 foo
     teststringobj appendself2 1 2
 } fooo
-test stringObj-15.8 {Tcl_Append*ToObj: self appends} {testobj fullutf} {
+test stringObj-15.8 {Tcl_Append*ToObj: self appends} {testobj utf32} {
     teststringobj set 1 foo
     teststringobj appendself2 1 3
 } foo
+
+test stringObj-16.0 {Tcl_GetRange: normal case} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 1 3
+} bcd
+test stringObj-16.1 {Tcl_GetRange: first > end} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 10 5
+} {}
+test stringObj-16.2 {Tcl_GetRange: last > end} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 3 13
+} de
+test stringObj-16.3 {Tcl_GetRange: first = TCL_INDEX_NONE} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 -1 3
+} abcd
+test stringObj-16.4 {Tcl_GetRange: last = TCL_INDEX_NONE} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 1 -1
+} bcde
+test stringObj-16.5 {Tcl_GetRange: first = last = TCL_INDEX_NONE} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 -1 -1
+} abcde
+test stringObj-16.6 {Tcl_GetRange: old anomaly} testobj {
+    # Older implementations could return "cde"
+    teststringobj set 1 abcde
+    teststringobj range 1 2 0
+} {}
+test stringObj-16.7 {Tcl_GetRange: first = INT_MAX-1} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 [expr {$INT_MAX-1}] 3
+} {}
+test stringObj-16.8 {Tcl_GetRange: first = SIZE_MAX-1} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 [expr {$SIZE_MAX - 1}] 3
+} {}
+test stringObj-16.9 {Tcl_GetRange: last = INT_MAX-1} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 1 [expr {$INT_MAX-1}]
+} bcde
+test stringObj-16.10 {Tcl_GetRange: last = SIZE_MAX-1} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 1 [expr {$SIZE_MAX - 1}]
+} bcde
+test stringObj-16.11 {Tcl_GetRange: first = last = INT_MAX-1} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 [expr {$INT_MAX-1}] [expr {$INT_MAX-1}]
+} {}
+test stringObj-16.12 {Tcl_GetRange: first = last = SIZE_MAX-1} testobj {
+    teststringobj set 1 abcde
+    set i [expr {$SIZE_MAX - 1}]
+    teststringobj range 1 $i $i
+} {}
 
 if {[testConstraint testobj]} {
     testobj freeallvars

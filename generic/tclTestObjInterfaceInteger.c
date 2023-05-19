@@ -19,7 +19,7 @@
  * Prototypes for functions defined later in this file:
  */
 int TestListInteger (
-    ClientData, Tcl_Interp *interp, int argc, Tcl_Obj *const objv[]);
+    ClientData, Tcl_Interp *interp, Tcl_Size argc, Tcl_Obj *const objv[]);
 static Tcl_Obj* NewTestListInteger();
 static void	DupTestListIntegerInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 
@@ -29,9 +29,11 @@ static void	UpdateStringOfTestListInteger(Tcl_Obj *listPtr);
 
 static int ListIntegerListStringIndex (tclObjTypeInterfaceArgsStringIndex);
 static int ListIntegerListStringIndexEnd(tclObjTypeInterfaceArgsStringIndexEnd);
-static size_t ListIntegerListStringLength(tclObjTypeInterfaceArgsStringLength);
+static Tcl_Size ListIntegerListStringLength(tclObjTypeInterfaceArgsStringLength);
+/*
 static int ListIntegerStringListIndexFromStringIndex(
-    int *index, size_t *itemchars, size_t *totalitems);
+    Tcl_Size *index, Tcl_Size *itemchars, Tcl_Size *totalitems);
+*/
 static Tcl_Obj* ListIntegerListStringRange(tclObjTypeInterfaceArgsStringRange);
 static Tcl_Obj* ListIntegerListStringRangeEnd(tclObjTypeInterfaceArgsStringRangeEnd);
 
@@ -73,6 +75,7 @@ ObjInterface ListIntegerInterface = {
 	&ListIntegerListObjRangeEnd,
 	&ListIntegerListObjReplace,
 	&ListIntegerListObjReplaceList,
+	NULL,
 	&ListIntegerListObjSetElement,
 	&ListIntegerLsetFlat
     }
@@ -93,13 +96,12 @@ static ListInteger* ListGetInternalRep(Tcl_Obj *listPtr);
 static void ListIntegerDecrRefCount(ListInteger *listIntegerPtr);
 
 const ObjectType testListIntegerType = {
-    (char *)&TclObjectTypeType0,
+    "testListInteger",
     FreeTestListIntegerInternalRep,	/* freeIntRepProc */
     DupTestListIntegerInternalRep,		/* dupIntRepProc */
     UpdateStringOfTestListInteger,		/* updateStringProc */
     SetTestListIntegerFromAny,		/* setFromAnyProc */
     2,
-    "testListInteger",
     (Tcl_ObjInterface *)&ListIntegerInterface
 };
 
@@ -108,14 +110,14 @@ const Tcl_ObjType *testListIntegerTypePtr = (Tcl_ObjType *)&testListIntegerType;
 
 
 int TcltestObjectInterfaceListIntegerInit(Tcl_Interp *interp) {
-    Tcl_CreateObjCommand(interp, "testlistinteger", TestListInteger, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testlistinteger", TestListInteger, NULL, NULL);
     return TCL_OK;
 }
 
 int TestListInteger(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int argc,
+    Tcl_Size argc,
     Tcl_Obj *const objv[])
 {
     int status;
@@ -176,7 +178,8 @@ static void FreeTestListIntegerInternalRep(Tcl_Obj *listPtr) {
 }
 
 static int SetTestListIntegerFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
-    int i, length, status;
+    int status;
+    Tcl_Size i, length;
     Tcl_Obj *itemPtr, *listPtr;
     Tcl_ObjInternalRep intrep;
     ListInteger *listRepPtr;
@@ -247,38 +250,72 @@ static void ListIntegerDecrRefCount(ListInteger *listIntegerPtr) {
     return;
 }
 
-static int ListIntegerListStringIndex (tclObjTypeInterfaceArgsStringIndex) {
+static int ListIntegerListStringIndex (
+    TCL_UNUSED(Tcl_Interp *),/* Used to report errors if not NULL. */ \
+    TCL_UNUSED(Tcl_Obj *),	/* List object to index into. */ \
+    TCL_UNUSED(Tcl_Size),	/* Index of element to return. */ \
+    TCL_UNUSED(Tcl_Obj **)/* The resulting Tcl_Obj* is stored here. */
+)
+{
     return TCL_ERROR;
 }
 
-static int ListIntegerListStringIndexEnd(tclObjTypeInterfaceArgsStringIndexEnd) {
+static int ListIntegerListStringIndexEnd(
+    TCL_UNUSED(Tcl_Interp *),/* Used to report errors if not NULL. */ \
+    TCL_UNUSED(Tcl_Obj *),/* List object to index into. */ \
+    TCL_UNUSED(Tcl_Size),/* Index of element to return. */ \
+    TCL_UNUSED(Tcl_Obj **)/* The resulting Tcl_Obj* is stored here. */
+) {
     return TCL_ERROR;
 }
 
-static size_t ListIntegerListStringLength(tclObjTypeInterfaceArgsStringLength) {
+static Tcl_Size ListIntegerListStringLength(
+    TCL_UNUSED(Tcl_Obj *);
+) {
     return TCL_ERROR;
 }
 
+/*
 static int ListIntegerStringListIndexFromStringIndex(
-    int *index, size_t *itemchars, size_t *totalitems) {
+    TCL_UNUSEDVAR(Tcl_Size *index),
+    TCL_UNUSEDVAR(Tcl_Size *itemchars),
+    TCL_UNUSEDVAR(Tcl_Size *totalitems)
+) {
     return TCL_ERROR;
 }
+*/
 
-static Tcl_Obj* ListIntegerListStringRange(tclObjTypeInterfaceArgsStringRange) {
+static Tcl_Obj* ListIntegerListStringRange(
+    TCL_UNUSEDVAR(Tcl_Obj *objPtr),	/* The Tcl object to find the range of. */
+    TCL_UNUSEDVAR(Tcl_Size first),	/* First index of the range. */
+    TCL_UNUSEDVAR(Tcl_Size last)	/* Last index of the range. */
+) {
     return NULL;
 }
 
 static Tcl_Obj* ListIntegerListStringRangeEnd(
-    tclObjTypeInterfaceArgsStringRangeEnd) {
+    TCL_UNUSED(Tcl_Obj *),/* The Tcl object to find the range of. */
+    TCL_UNUSED(Tcl_Size),/* First index of the range. */
+    TCL_UNUSED(Tcl_Size) /* Last index of the range. */
+) {
     return NULL;
 }
 
-static int ListIntegerListObjGetElements(tclObjTypeInterfaceArgsListAll) {
+static int ListIntegerListObjGetElements(
+    TCL_UNUSEDVAR(Tcl_Interp *interp),	/* Used to report errors if not NULL. */
+    TCL_UNUSEDVAR(Tcl_Obj *listPtr),	/* List object for which an element array
+					 * is to be returned. */
+    TCL_UNUSEDVAR(Tcl_Size *objcPtr),	/* Where to store the count of objects
+					 * referenced by objv. */
+    TCL_UNUSEDVAR(Tcl_Obj ***objvPtr)	/* Where to store the pointer to an
+					 * array of */
+) {
     return TCL_ERROR;
 }
 
 static int ListIntegerListObjAppendElement(tclObjTypeInterfaceArgsListAppend) {
-    int length, status;
+    int status;
+    Tcl_Size length;
     status = Tcl_ListObjLength(interp, listPtr, &length);
     if (status != TCL_OK) {
 	return TCL_ERROR;
@@ -286,52 +323,74 @@ static int ListIntegerListObjAppendElement(tclObjTypeInterfaceArgsListAppend) {
     return ListIntegerListObjReplace(interp, listPtr, length, 0, 1, &objPtr);
 }
 
-static int ListIntegerListObjAppendList(tclObjTypeInterfaceArgsListAppendList) {
+static int ListIntegerListObjAppendList(
+    TCL_UNUSEDVAR(Tcl_Interp *interp),	    /* Used to report errors if not NULL. */ \
+    TCL_UNUSEDVAR(Tcl_Obj *listPtr),	    /* List object to append elements to. */ \
+    TCL_UNUSEDVAR(Tcl_Obj *elemListPtr)    /* List obj with elements to append. */
+) {
     return TCL_ERROR;
 }
 
-static int ListIntegerListObjIndex(tclObjTypeInterfaceArgsListIndex) {
-    ListInteger *listRepPtr = ListGetInternalRep(listPtr);
-    int num;
+static int ListIntegerListObjIndex(
+    TCL_UNUSED(Tcl_Interp *),/* Used to report errors if not NULL. */ \
+    Tcl_Obj * listObj,/* List object to index into. */ \
+    Tcl_Size index,	/* Index of element to return. */ \
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+) {
+    ListInteger *listRepPtr = ListGetInternalRep(listObj);
+    Tcl_Size num;
     if (index >= 0 && index < listRepPtr->used) {
 	num = listRepPtr->values[index];
-	*objPtrPtr = Tcl_NewIntObj(num);
+	*objPtrPtr = Tcl_NewLongObj(num);
     } else {
 	*objPtrPtr = NULL;
     }
     return TCL_OK;
 }
 
-static int ListIntegerListObjIndexEnd(tclObjTypeInterfaceArgsListIndexEnd) {
+static int ListIntegerListObjIndexEnd(
+    TCL_UNUSED(Tcl_Interp *),/* Used to report errors if not NULL. */ \
+    TCL_UNUSED(Tcl_Obj *),/* List object to index into. */ \
+    TCL_UNUSED(Tcl_Size),/* Index of element to return. */ \
+    TCL_UNUSED(Tcl_Obj **)/* The resulting Tcl_Obj* is stored here. */
+) {
     return TCL_ERROR;
 }
 
-static int ListIntegerListObjIsSorted(tclObjTypeInterfaceArgsListIsSorted) {
+static int ListIntegerListObjIsSorted(
+    TCL_UNUSED(Tcl_Interp *), /* Used to report errors */
+    TCL_UNUSED(Tcl_Obj *),	/* The list in question */
+    TCL_UNUSED(size_t) /* flags */
+) {
     return TCL_ERROR;
 }
 
-static int ListIntegerListObjLength(tclObjTypeInterfaceArgsListLength) {
-    ListInteger *listRepPtr = ListGetInternalRep(listPtr);
-    *intPtr = listRepPtr->used;
+static int ListIntegerListObjLength(
+    TCL_UNUSED(Tcl_Interp *),	/* Used to report errors if not NULL. */
+    Tcl_Obj * listObj,	/* List object whose #elements to return. */
+    Tcl_Size *lenPtr		/* The resulting length is stored here. */
+) {
+    ListInteger *listRepPtr = ListGetInternalRep(listObj);
+    *lenPtr = listRepPtr->used;
     return TCL_OK;
 }
 
 static Tcl_Obj* ListIntegerListObjRange(tclObjTypeInterfaceArgsListRange) {
-    ListInteger *listRepPtr = ListGetInternalRep(listPtr);
-    int i, j, num, used = listRepPtr->used;
+    ListInteger *listRepPtr = ListGetInternalRep(listObj);
+    Tcl_Size i, j, num, used = listRepPtr->used;
     Tcl_Obj *numObjPtr, *resPtr;
 
-    if ((fromIdx == 0 && toIdx >= used - 1) || used == 0) {
-	return listPtr;
+    if ((rangeStart == 0 && rangeEnd >= used - 1) || used == 0) {
+	return listObj;
     }
 
-    if (Tcl_IsShared(listPtr) ||
-	((ListRepPtr(listPtr)->refCount > 1))) {
-	if (fromIdx >= used || toIdx < fromIdx) {
+    if (Tcl_IsShared(listObj) ||
+	((listRepPtr->refCount > 1))) {
+	if (rangeStart >= used || rangeEnd < rangeStart) {
 	    return Tcl_NewObj();
 	} else {
 	    resPtr = NewTestListInteger();
-	    for (i = fromIdx, j = 0; i <= toIdx; i++, j++) {
+	    for (i = rangeStart, j = 0; i <= rangeEnd; i++, j++) {
 		num = listRepPtr->values[i];
 		numObjPtr = Tcl_NewIntObj(num);
 		Tcl_IncrRefCount(numObjPtr);
@@ -346,10 +405,18 @@ static Tcl_Obj* ListIntegerListObjRange(tclObjTypeInterfaceArgsListRange) {
 	    return resPtr;
 	}
     }
+    return NULL;
 }
 
 
-static Tcl_Obj* ListIntegerListObjRangeEnd(tclObjTypeInterfaceArgsListRangeEnd) {
+static Tcl_Obj* ListIntegerListObjRangeEnd(
+    TCL_UNUSEDVAR(Tcl_Interp * interp), /* Used to report errors */ \
+    TCL_UNUSEDVAR(Tcl_Obj *listPtr),	/* List object to take a range from. */ \
+    TCL_UNUSEDVAR(Tcl_Size fromAnchor),/* 0 for start and 1 for end */ \
+    TCL_UNUSEDVAR(Tcl_Size fromIdx),	/* Index of first element to include. */ \
+    TCL_UNUSEDVAR(Tcl_Size toAnchor),	/* 0 for start and 1 for end */  \
+    TCL_UNUSEDVAR(Tcl_Size toIdx)	/* Index of last element to include. */
+) {
     return NULL;
 }
 
@@ -358,15 +425,15 @@ static int ListIntegerListObjReplace(tclObjTypeInterfaceArgsListReplace) {
     int i, status;
     Tcl_Obj *tmpListPtr = Tcl_NewObj();
     Tcl_IncrRefCount(tmpListPtr);
-    for (i = 0; i < objc; i++) {
-	status = Tcl_ListObjAppendElement(interp, tmpListPtr, objv[i]);
+    for (i = 0; i < numToInsert; i++) {
+	status = Tcl_ListObjAppendElement(interp, tmpListPtr, insertObjs[i]);
 	if (status != TCL_OK) {
 	    Tcl_DecrRefCount(tmpListPtr);
 	    return status;
 	}
     }
     status = ListIntegerListObjReplaceList(
-	interp, listPtr, first, count, tmpListPtr);
+	interp, listObj, first, numToDelete, tmpListPtr);
     Tcl_DecrRefCount(tmpListPtr);
     return status;
 }
@@ -375,10 +442,10 @@ static int ListIntegerListObjReplace(tclObjTypeInterfaceArgsListReplace) {
 static int ListIntegerListObjReplaceList(tclObjTypeInterfaceArgsListReplaceList) {
     ListInteger *listRepPtr = ListGetInternalRep(listPtr);
     ListInteger *newListRepPtr;
-    int changed = 0, i, index, itemInt, newmemsize, itemsLength, j, newsize,
-	newtailindex, newused, size, status, status2, newtailend,
-	tailindex, tailsize, used;
-    size_t structsize;
+    int changed = 0, itemInt, status;
+    Tcl_Size i, index, newmemsize, itemsLength, j, newsize,
+	     newtailindex, newused, size, newtailend, tailindex, tailsize,
+	     used;
     Tcl_Obj *itemPtr;
     size = listRepPtr->size;
     used = listRepPtr->used;
@@ -457,7 +524,7 @@ static int ListIntegerListObjReplaceList(tclObjTypeInterfaceArgsListReplaceList)
 	/* copy only the structure and the head of the old array */
 	int movsize = sizeof(ListInteger)
 	    + ((first + 1)  * sizeof(int) - sizeof(int));
-	newListRepPtr = Tcl_Alloc(newmemsize);
+	newListRepPtr = (ListInteger *)Tcl_Alloc(newmemsize);
 	memmove(newListRepPtr, listRepPtr, movsize);
 	newListRepPtr->size = newsize;
 	newListRepPtr->refCount = 1;
@@ -469,7 +536,7 @@ static int ListIntegerListObjReplaceList(tclObjTypeInterfaceArgsListReplaceList)
 	Tcl_StoreInternalRep(listPtr, testListIntegerTypePtr, &intrep);
     } else {
 	if (newsize > size && newused > 1) {
-	    newListRepPtr = Tcl_Realloc(listRepPtr, newmemsize);
+	    newListRepPtr = (ListInteger *)Tcl_Realloc(listRepPtr, newmemsize);
 	} else {
 	    newListRepPtr = listRepPtr;
 	}
@@ -578,12 +645,26 @@ static int ListIntegerListObjReplaceList(tclObjTypeInterfaceArgsListReplaceList)
 }
 
 
-static int ListIntegerListObjSetElement(tclObjTypeInterfaceArgsListSet) {
+static int ListIntegerListObjSetElement(
+    TCL_UNUSED(Tcl_Interp *),	/* Tcl interpreter; used for error reporting
+				 * if not NULL. */
+    TCL_UNUSED(Tcl_Obj *),	/* List object in which element should be
+				 * stored. */
+    TCL_UNUSED(Tcl_Size), 	/* Index of element to store. */
+    TCL_UNUSED(Tcl_Obj *)	/* Tcl object to store in the designated list 
+				 * element. */
+) {
     return TCL_ERROR;
 }
 
 
-static Tcl_Obj * ListIntegerLsetFlat(tclObjTypeInterfaceArgsListSetList) {
+static Tcl_Obj * ListIntegerLsetFlat(
+    TCL_UNUSED(Tcl_Interp *),	    /* Tcl interpreter. */ \
+    TCL_UNUSED(Tcl_Obj *),	    /* Pointer to the list being modified. */ \
+    TCL_UNUSED(Tcl_Size),    /* Number of index args. */ \
+    TCL_UNUSEDVAR(Tcl_Obj *const indexArray[]),    /* Index args. */ \
+    TCL_UNUSED(Tcl_Obj *)/* Value arg to 'lset' or NULL to 'lpop'. */
+) {
     return NULL;
 }
 
@@ -591,7 +672,7 @@ static Tcl_Obj * ListIntegerLsetFlat(tclObjTypeInterfaceArgsListSetList) {
 static int ErrorMaxElementsExceeded(Tcl_Interp *interp) {
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "max length of a Tcl list (%d elements) exceeded",
+	    "max length of a Tcl list (%" TCL_T_MODIFIER "d elements) exceeded",
 	    LIST_MAX));
     }
     return TCL_ERROR;

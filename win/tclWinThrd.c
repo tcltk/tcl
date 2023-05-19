@@ -203,7 +203,7 @@ int
 TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread. */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread. */
-    ClientData clientData,	/* The one argument to Main(). */
+    void *clientData,	/* The one argument to Main(). */
     size_t stackSize,		/* Size of stack for the new thread. */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
@@ -326,7 +326,7 @@ TclpThreadExit(
 Tcl_ThreadId
 Tcl_GetCurrentThread(void)
 {
-    return (Tcl_ThreadId)(size_t)GetCurrentThreadId();
+    return (Tcl_ThreadId)INT2PTR(GetCurrentThreadId());
 }
 
 /*
@@ -535,7 +535,7 @@ TclFinalizeLock(void)
 #if TCL_THREADS
 
 /* locally used prototype */
-static void		FinalizeConditionEvent(ClientData data);
+static void		FinalizeConditionEvent(void *data);
 
 /*
  *----------------------------------------------------------------------
@@ -725,7 +725,7 @@ Tcl_ConditionWait(
     if (timePtr == NULL) {
 	wtime = INFINITE;
     } else {
-	wtime = timePtr->sec * 1000 + timePtr->usec / 1000;
+	wtime = (DWORD)timePtr->sec * 1000 + (unsigned long)timePtr->usec / 1000;
     }
 
     /*
@@ -777,9 +777,9 @@ Tcl_ConditionWait(
 	    timeout = 0;
 	} else {
 	    /*
-	     * When dequeuing, we can leave the tsdPtr->nextPtr and
+	     * When dequeueing, we can leave the tsdPtr->nextPtr and
 	     * tsdPtr->prevPtr with dangling pointers because they are
-	     * reinitialilzed w/out reading them when the thread is enqueued
+	     * reinitialized w/out reading them when the thread is enqueued
 	     * later.
 	     */
 
@@ -880,7 +880,7 @@ Tcl_ConditionNotify(
 
 static void
 FinalizeConditionEvent(
-    ClientData data)
+    void *data)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) data;
 

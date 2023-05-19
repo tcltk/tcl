@@ -21,7 +21,7 @@
 typedef struct TimerHandler {
     Tcl_Time time;		/* When timer is to fire. */
     Tcl_TimerProc *proc;	/* Function to call. */
-    ClientData clientData;	/* Argument to pass to proc. */
+    void *clientData;	/* Argument to pass to proc. */
     Tcl_TimerToken token;	/* Identifies handler so it can be deleted. */
     struct TimerHandler *nextPtr;
 				/* Next event in queue, or NULL for end of
@@ -73,7 +73,7 @@ typedef struct AfterAssocData {
 
 typedef struct IdleHandler {
     Tcl_IdleProc *proc;		/* Function to call. */
-    ClientData clientData;	/* Value to pass to proc. */
+    void *clientData;	/* Value to pass to proc. */
     int generation;		/* Used to distinguish older handlers from
 				 * recently-created ones. */
     struct IdleHandler *nextPtr;/* Next in list of active handlers. */
@@ -150,18 +150,18 @@ static Tcl_ThreadDataKey dataKey;
  * Prototypes for functions referenced only in this file:
  */
 
-static void		AfterCleanupProc(ClientData clientData,
+static void		AfterCleanupProc(void *clientData,
 			    Tcl_Interp *interp);
 static int		AfterDelay(Tcl_Interp *interp, Tcl_WideInt ms);
-static void		AfterProc(ClientData clientData);
+static void		AfterProc(void *clientData);
 static void		FreeAfterPtr(AfterInfo *afterPtr);
 static AfterInfo *	GetAfterEvent(AfterAssocData *assocPtr,
 			    Tcl_Obj *commandPtr);
 static ThreadSpecificData *InitTimer(void);
-static void		TimerExitProc(ClientData clientData);
+static void		TimerExitProc(void *clientData);
 static int		TimerHandlerEventProc(Tcl_Event *evPtr, int flags);
-static void		TimerCheckProc(ClientData clientData, int flags);
-static void		TimerSetupProc(ClientData clientData, int flags);
+static void		TimerCheckProc(void *clientData, int flags);
+static void		TimerSetupProc(void *clientData, int flags);
 
 /*
  *----------------------------------------------------------------------
@@ -211,7 +211,7 @@ InitTimer(void)
 
 static void
 TimerExitProc(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
@@ -251,7 +251,7 @@ Tcl_CreateTimerHandler(
     int milliseconds,		/* How many milliseconds to wait before
 				 * invoking proc. */
     Tcl_TimerProc *proc,	/* Function to invoke. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)	/* Arbitrary data to pass to proc. */
 {
     Tcl_Time time;
 
@@ -292,7 +292,7 @@ Tcl_TimerToken
 TclCreateAbsoluteTimerHandler(
     Tcl_Time *timePtr,
     Tcl_TimerProc *proc,
-    ClientData clientData)
+    void *clientData)
 {
     TimerHandler *timerHandlerPtr, *tPtr2, *prevPtr;
     ThreadSpecificData *tsdPtr = InitTimer();
@@ -398,7 +398,7 @@ Tcl_DeleteTimerHandler(
 
 static void
 TimerSetupProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     Tcl_Time blockTime;
@@ -456,7 +456,7 @@ TimerSetupProc(
 
 static void
 TimerCheckProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     Tcl_Event *timerEvPtr;
@@ -619,7 +619,7 @@ TimerHandlerEventProc(
 void
 Tcl_DoWhenIdle(
     Tcl_IdleProc *proc,		/* Function to invoke. */
-    ClientData clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)	/* Arbitrary value to pass to proc. */
 {
     IdleHandler *idlePtr;
     Tcl_Time blockTime;
@@ -663,7 +663,7 @@ Tcl_DoWhenIdle(
 void
 Tcl_CancelIdleCall(
     Tcl_IdleProc *proc,		/* Function that was previously registered. */
-    ClientData clientData)	/* Arbitrary value to pass to proc. */
+    void *clientData)	/* Arbitrary value to pass to proc. */
 {
     IdleHandler *idlePtr, *prevPtr;
     IdleHandler *nextPtr;
@@ -778,7 +778,7 @@ TclServiceIdle(void)
 
 int
 Tcl_AfterObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -787,7 +787,7 @@ Tcl_AfterObjCmd(
     Tcl_Time wakeup;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr;
-    size_t length;
+    Tcl_Size length;
     int index = -1;
     static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
@@ -820,7 +820,7 @@ Tcl_AfterObjCmd(
     if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
 	if (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0, &index)
 		!= TCL_OK) {
-            const char *arg = TclGetString(objv[1]);
+	    const char *arg = TclGetString(objv[1]);
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                     "bad argument \"%s\": must be"
@@ -882,7 +882,7 @@ Tcl_AfterObjCmd(
     case AFTER_CANCEL: {
 	Tcl_Obj *commandPtr;
 	const char *command, *tempCommand;
-	size_t tempLength;
+	Tcl_Size tempLength;
 
 	if (objc < 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "id|command");
@@ -948,8 +948,8 @@ Tcl_AfterObjCmd(
 	    for (afterPtr = assocPtr->firstAfterPtr; afterPtr != NULL;
 		    afterPtr = afterPtr->nextPtr) {
 		if (assocPtr->interp == interp) {
-                    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_ObjPrintf(
-                            "after#%d", afterPtr->id));
+		    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_ObjPrintf(
+			    "after#%d", afterPtr->id));
 		}
 	    }
             Tcl_SetObjResult(interp, resultObj);
@@ -968,15 +968,15 @@ Tcl_AfterObjCmd(
             Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, NULL);
 	    return TCL_ERROR;
 	} else {
-            Tcl_Obj *resultListPtr;
+	    Tcl_Obj *resultListPtr;
 
-            TclNewObj(resultListPtr);
-            Tcl_ListObjAppendElement(interp, resultListPtr,
-                    afterPtr->commandPtr);
-            Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
+	    TclNewObj(resultListPtr);
+	    Tcl_ListObjAppendElement(interp, resultListPtr,
+		    afterPtr->commandPtr);
+	    Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
 		    (afterPtr->token == NULL) ? "idle" : "timer", -1));
             Tcl_SetObjResult(interp, resultListPtr);
-        }
+	}
 	break;
     default:
 	Tcl_Panic("Tcl_AfterObjCmd: bad subcommand index to afterSubCmds");
@@ -1149,7 +1149,7 @@ GetAfterEvent(
 
 static void
 AfterProc(
-    ClientData clientData)	/* Describes command to execute. */
+    void *clientData)	/* Describes command to execute. */
 {
     AfterInfo *afterPtr = (AfterInfo *)clientData;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
@@ -1251,7 +1251,7 @@ FreeAfterPtr(
 
 static void
 AfterCleanupProc(
-    ClientData clientData,	/* Points to AfterAssocData for the
+    void *clientData,	/* Points to AfterAssocData for the
 				 * interpreter. */
     TCL_UNUSED(Tcl_Interp *))
 {

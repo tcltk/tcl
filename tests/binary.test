@@ -15,11 +15,14 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 ::tcltest::loadTestedCommands
+source [file join [file dirname [info script]] tcltests.tcl]
+
 catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint bigEndian [expr {$tcl_platform(byteOrder) eq "bigEndian"}]
 testConstraint littleEndian [expr {$tcl_platform(byteOrder) eq "littleEndian"}]
 testConstraint testbytestring [llength [info commands testbytestring]]
+testConstraint pointerIs64bit [expr {$tcl_platform(pointerSize) >= 8}]
 
 # Big test for correct ordering of data in [expr]
 proc testIEEE {} {
@@ -512,10 +515,10 @@ test binary-13.11 {Tcl_BinaryObjCmd: format} littleEndian {
 } \xCD\xCC\xCC\x3F\x9A\x99\x59\x40
 test binary-13.12 {Tcl_BinaryObjCmd: float overflow} bigEndian {
     binary format f -3.402825e+38
-} \xFF\x7F\xFF\xFF
+} \xFF\x80\x00\x00
 test binary-13.13 {Tcl_BinaryObjCmd: float overflow} littleEndian {
     binary format f -3.402825e+38
-} \xFF\xFF\x7F\xFF
+} \x00\x00\x80\xFF
 test binary-13.14 {Tcl_BinaryObjCmd: float underflow} bigEndian {
     binary format f -3.402825e-100
 } \x80\x00\x00\x00
@@ -537,6 +540,18 @@ test binary-13.19 {Tcl_BinaryObjCmd: format} littleEndian {
     set a {1.6 3.4}
     binary format f1 $a
 } \xCD\xCC\xCC\x3F
+test binary-13.20 {Tcl_BinaryObjCmd: format float Inf} bigEndian {
+    binary format f Inf
+} \x7F\x80\x00\x00
+test binary-13.21 {Tcl_BinaryObjCmd: format float Inf} littleEndian {
+    binary format f Inf
+} \x00\x00\x80\x7F
+test binary-13.22 {Tcl_BinaryObjCmd: format float -Inf} bigEndian {
+    binary format f -Inf
+} \xFF\x80\x00\x00
+test binary-13.23 {Tcl_BinaryObjCmd: format float -Inf} littleEndian {
+    binary format f -Inf
+} \x00\x00\x80\xFF
 
 test binary-14.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
     binary format d
@@ -767,7 +782,7 @@ test binary-21.13 {Tcl_BinaryObjCmd: scan} -setup {
 } -body {
     list [binary scan "abc def \x00  " C* arg1] $arg1
 } -result {1 {abc def }}
-test binary-21.12 {Tcl_BinaryObjCmd: scan} -setup {
+test binary-21.14 {Tcl_BinaryObjCmd: scan} -setup {
     unset -nocomplain arg1
 } -body {
     list [binary scan "abc def \x00ghi" C* arg1] $arg1
@@ -1975,10 +1990,10 @@ test binary-53.11 {Tcl_BinaryObjCmd: format} {} {
 } \xCD\xCC\xCC\x3F\x9A\x99\x59\x40
 test binary-53.12 {Tcl_BinaryObjCmd: float overflow} {} {
     binary format R -3.402825e+38
-} \xFF\x7F\xFF\xFF
+} \xFF\x80\x00\x00
 test binary-53.13 {Tcl_BinaryObjCmd: float overflow} {} {
     binary format r -3.402825e+38
-} \xFF\xFF\x7F\xFF
+} \x00\x00\x80\xFF
 test binary-53.14 {Tcl_BinaryObjCmd: float underflow} {} {
     binary format R -3.402825e-100
 } \x80\x00\x00\x00
@@ -2000,6 +2015,39 @@ test binary-53.19 {Tcl_BinaryObjCmd: format} {} {
     set a {1.6 3.4}
     binary format r1 $a
 } \xCD\xCC\xCC\x3F
+test binary-53.20 {Tcl_BinaryObjCmd: float Inf} {} {
+    binary format R Inf
+} \x7f\x80\x00\x00
+test binary-53.21 {Tcl_BinaryObjCmd: float Inf} {} {
+    binary format r Inf
+} \x00\x00\x80\x7f
+test binary-53.22 {Binary float Inf round trip} -body {
+    binary scan [binary format R Inf] R inf
+    binary scan [binary format R -Inf] R inf_
+    list $inf $inf_
+} -result {Inf -Inf}
+test binary-53.23 {Binary float round to FLT_MAX} -body {
+    binary scan [binary format H* 7f7fffff] R fltmax
+    binary scan [binary format H* 47effffff0000000] Q round_to_fltmax
+    binary scan [binary format R $round_to_fltmax] R fltmax1
+    expr {$fltmax eq $fltmax1}
+} -result 1
+test binary-53.24 {Binary float round to -FLT_MAX} -body {
+    binary scan [binary format H* ff7fffff] R fltmax
+    binary scan [binary format H* c7effffff0000000] Q round_to_fltmax
+    binary scan [binary format R $round_to_fltmax] R fltmax1
+    expr {$fltmax eq $fltmax1}
+} -result 1
+test binary-53.25 {Binary float round to Inf} -body {
+    binary scan [binary format H* 47effffff0000001] Q round_to_inf
+    binary scan [binary format R $round_to_inf] R inf1
+    expr {$inf1 eq Inf}
+} -result 1
+test binary-53.26 {Binary float round to -Inf} -body {
+    binary scan [binary format H* c7effffff0000001] Q round_to_inf
+    binary scan [binary format R $round_to_inf] R inf1
+    expr {$inf1 eq -Inf}
+} -result 1
 
 # scan t (s)
 test binary-54.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
@@ -2396,11 +2444,27 @@ test binary-62.4 {infinity} ieeeFloatingPoint {
     format 0x%016lx $w
 } 0xfff0000000000000
 test binary-62.5 {infinity} ieeeFloatingPoint {
-    binary scan [binary format w 0x7ff0000000000000] q d
+    binary scan [binary format w 0x7FF0000000000000] q d
     set d
 } Inf
 test binary-62.6 {infinity} ieeeFloatingPoint {
-    binary scan [binary format w 0xfff0000000000000] q d
+    binary scan [binary format w 0xFFF0000000000000] q d
+    set d
+} -Inf
+test binary-62.7 {infinity} ieeeFloatingPoint {
+    binary scan [binary format r Inf] iu i
+    format 0x%08x $i
+} 0x7f800000
+test binary-62.8 {infinity} ieeeFloatingPoint {
+    binary scan [binary format r -Inf] iu i
+    format 0x%08x $i
+} 0xff800000
+test binary-62.9 {infinity} ieeeFloatingPoint {
+    binary scan [binary format i 0x7F800000] r d
+    set d
+} Inf
+test binary-62.10 {infinity} ieeeFloatingPoint {
+    binary scan [binary format i 0xFF800000] r d
     set d
 } -Inf
 
@@ -2408,19 +2472,19 @@ test binary-62.6 {infinity} ieeeFloatingPoint {
 
 test binary-63.1 {NaN} ieeeFloatingPoint {
     binary scan [binary format q NaN] w w
-    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+    format 0x%016lx [expr {$w & 0xFFF3FFFFFFFFFFFF}]
 } 0x7ff0000000000000
 test binary-63.2 {NaN} ieeeFloatingPoint {
     binary scan [binary format q -NaN] w w
-    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+    format 0x%016lx [expr {$w & 0xFFF3FFFFFFFFFFFF}]
 } 0xfff0000000000000
 test binary-63.3 {NaN} ieeeFloatingPoint {
     binary scan [binary format q NaN(3123456789aBc)] w w
-    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+    format 0x%016lx [expr {$w & 0xFFF3FFFFFFFFFFFF}]
 } 0x7ff3123456789abc
 test binary-63.4 {NaN} ieeeFloatingPoint {
     binary scan [binary format q {NaN( 3123456789aBc)}] w w
-    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+    format 0x%016lx [expr {$w & 0xFFF3FFFFFFFFFFFF}]
 } 0x7ff3123456789abc
 
 # Make sure TclParseNumber() rejects invalid nan-hex formats [Bug 3402540]
@@ -2941,7 +3005,7 @@ test binary-78.1 {unicode (out of BMP) to byte-array conversion, bug-[bd94500678
     binary encode hex \U0001f415
     binary scan \U0001f415 a* v; set v
     set str {}
-} -result {}
+} -result * -match glob -returnCodes error
 
 
 testConstraint testsetbytearraylength \
@@ -2950,20 +3014,32 @@ testConstraint testsetbytearraylength \
 test binary-79.1 {Tcl_SetByteArrayLength} testsetbytearraylength {
     testsetbytearraylength [string cat A B C] 1
 } A
-test binary-79.2 {Tcl_SetByteArrayLength} testsetbytearraylength {
+test binary-79.2 {Tcl_SetByteArrayLength} -body {
     testsetbytearraylength [string cat Ł B C] 1
+} -constraints testsetbytearraylength -returnCodes error -match glob -result *
+test binary-79.3 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B \u0141] 0
+} {}
+test binary-79.4 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B \u0141] 1
 } A
+test binary-79.5 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B \u0141] 2
+} AB
+test binary-79.6 {Tcl_SetByteArrayLength} -body {
+    testsetbytearraylength [string cat A B \u0141] 3
+} -constraints testsetbytearraylength -returnCodes error -match glob -result *
 
-test binary-80.1 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.1 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring "乎"
 } -result "expected byte sequence but character 0 was '乎' (U+004E4E)"
-test binary-80.2 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.2 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\x00\xA0\xA0\xA0\xE4\xB9\x8E"]
 } -result "expected byte sequence but character 4 was '乎' (U+004E4E)"
-test binary-80.3 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.3 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xE4\xB9\x8E"]
 } -result "expected byte sequence but character 4 was '乎' (U+004E4E)"
-test binary-80.4 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.4 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xF0\x9F\x98\x81"]
 } -result "expected byte sequence but character 4 was '\U01F601' (U+01F601)"
 

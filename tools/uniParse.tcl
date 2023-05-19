@@ -212,7 +212,6 @@ static const unsigned short pageMap\[\] = {"
 	    puts $f $line
 	    set lastpage [expr {[lindex $line end] >> $shift}]
 	    puts stdout "lastpage: $lastpage"
-	    puts $f "#if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6"
 	    set line "    ,"
 	}
 	append line [lindex $pMap $i]
@@ -225,7 +224,6 @@ static const unsigned short pageMap\[\] = {"
 	}
     }
     puts $f $line
-    puts $f "#endif /* TCL_UTF_MAX > 3 */"
     puts $f "};
 
 /*
@@ -242,7 +240,6 @@ static const unsigned char groupMap\[\] = {"
 	set lastj [expr {[llength $page] - 1}]
 	if {$i == ($lastpage + 1)} {
 	    puts $f [string trimright $line " \t,"]
-	    puts $f "#if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6"
 	    set line "    ,"
 	}
 	for {set j 0} {$j <= $lastj} {incr j} {
@@ -257,7 +254,6 @@ static const unsigned char groupMap\[\] = {"
 	}
     }
     puts $f $line
-    puts $f "#endif /* TCL_UTF_MAX > 3 */"
     puts $f "};
 
 /*
@@ -342,11 +338,7 @@ static const int groups\[\] = {"
     puts $f $line
     puts -nonewline $f "};
 
-#if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6
-#   define UNICODE_OUT_OF_RANGE(ch) (((ch) & 0x1FFFFF) >= [format 0x%X $next])
-#else
-#   define UNICODE_OUT_OF_RANGE(ch) (((ch) & 0x1F0000) != 0)
-#endif
+#define UNICODE_OUT_OF_RANGE(ch) (((ch) & 0x1FFFFF) >= [format 0x%X $next])
 
 /*
  * The following constants are used to determine the category of a
@@ -401,11 +393,7 @@ enum {
  * Unicode character tables.
  */
 
-#if TCL_UTF_MAX > 3 || TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6
-#   define GetUniCharInfo(ch) (groups\[groupMap\[pageMap\[((ch) & 0x1FFFFF) >> OFFSET_BITS\] | ((ch) & ((1 << OFFSET_BITS)-1))\]\])
-#else
-#   define GetUniCharInfo(ch) (groups\[groupMap\[pageMap\[((ch) & 0xFFFF) >> OFFSET_BITS\] | ((ch) & ((1 << OFFSET_BITS)-1))\]\])
-#endif
+#define GetUniCharInfo(ch) (groups\[groupMap\[pageMap\[((ch) & 0x1FFFFF) >> OFFSET_BITS\] | ((ch) & ((1 << OFFSET_BITS)-1))\]\])
 "
 
     close $f

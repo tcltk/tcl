@@ -21,12 +21,15 @@ catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint testchmod       [llength [info commands testchmod]]
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testvolumetype  [llength [info commands testvolumetype]]
+testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint linkDirectory [expr {
     ![testConstraint win] ||
     ($::tcl_platform(osVersion) >= 5.0
      && [lindex [file system [temporaryDirectory]] 1] eq "NTFS")
 }]
 testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
+# File permissions broken on wsl without some "exotic" wsl configuration
+testConstraint notWsl [expr {[llength [array names ::env *WSL*]] == 0}]
 
 global env
 set cmdAHwd [pwd]
@@ -100,7 +103,7 @@ test cmdAH-2.3 {Tcl_CdObjCmd} -setup {
     set env(HOME) $oldpwd
     file mkdir $foodir
     cd $foodir
-    cd ~
+    cd [file home]
     string equal [pwd] $oldpwd
 } -cleanup {
     cd $oldpwd
@@ -124,8 +127,21 @@ test cmdAH-2.4 {Tcl_CdObjCmd} -setup {
     set env(HOME) $temp
 } -result 1
 test cmdAH-2.5 {Tcl_CdObjCmd} -returnCodes error -body {
-    cd ~~
-} -result {user "~" doesn't exist}
+    cd ~
+} -result {couldn't change working directory to "~": no such file or directory}
+test cmdAH-2.5.1 {Tcl_CdObjCmd} -setup {
+    set oldpwd [pwd]
+    cd [temporaryDirectory]
+    file delete ./~
+    file mkdir ~
+} -body {
+    cd ~
+    pwd
+} -cleanup {
+    cd [temporaryDirectory]
+    file delete ./~
+    cd $oldpwd
+} -result [file join [temporaryDirectory] ~]
 test cmdAH-2.6 {Tcl_CdObjCmd} -returnCodes error -body {
     cd _foobar
 } -result {couldn't change working directory to "_foobar": no such file or directory}
@@ -164,63 +180,153 @@ test cmdAH-3.2 {Tcl_ContinueObjCmd, success} {
     list [catch {continue} msg] $msg
 } {4 {}}
 
-test cmdAH-4.1 {Tcl_EncodingObjCmd} -returnCodes error -body {
+###
+# encoding command
+
+set "numargErrors(encoding system)" {^wrong # args: should be "(encoding |::tcl::encoding::)system \?encoding\?"$}
+set "numargErrors(encoding convertfrom)" {wrong # args: should be "(encoding |::tcl::encoding::)convertfrom \?-profile profile\? \?-failindex var\? encoding data" or "(encoding |::tcl::encoding::)convertfrom data"}
+set "numargErrors(encoding convertto)" {wrong # args: should be "(encoding |::tcl::encoding::)convertto \?-profile profile\? \?-failindex var\? encoding data" or "(encoding |::tcl::encoding::)convertto data"}
+set "numargErrors(encoding names)" {wrong # args: should be "encoding names"}
+set "numargErrors(encoding profiles)" {wrong # args: should be "encoding profiles"}
+
+source [file join [file dirname [info script]] encodingVectors.tcl]
+
+
+# Maps utf-{16,32}{le,be} to utf-16, utf-32 and
+# others to "". Used to test utf-16, utf-32 based
+# on system endianness
+proc endianUtf {enc} {
+    if {$::tcl_platform(byteOrder) eq "littleEndian"} {
+        set endian le
+    } else {
+        set endian be
+    }
+    if {$enc eq "utf-16$endian" || $enc eq "utf-32$endian"} {
+        return [string range $enc 0 5]
+    }
+    return ""
+}
+
+# Map arbitrary strings to printable form in ASCII.
+proc printable {s} {
+    set print ""
+    foreach c [split $s ""] {
+        set i [scan $c %c]
+        if {[string is print $c] && ($i <= 127)} {
+            append print $c
+        } elseif {$i <= 0xff} {
+            append print \\x[format %02X $i]
+        } elseif {$i <= 0xffff} {
+            append print \\u[format %04X $i]
+        } else {
+            append print \\U[format %08X $i]
+        }
+    }
+    return $print
+}
+
+#
+# Check errors for invalid number of arguments
+proc badnumargs {id cmd cmdargs} {
+    variable numargErrors
+    test $id.a "Syntax error: $cmd $cmdargs" \
+        -body [list {*}$cmd {*}$cmdargs] \
+        -result $numargErrors($cmd) \
+        -match regexp \
+        -returnCodes error
+    test $id.b "Syntax error: $cmd (byte compiled)" \
+        -setup [list proc compiled_proc {} [list {*}$cmd {*}$cmdargs]] \
+        -body {compiled_proc} \
+        -cleanup {rename compiled_proc {}} \
+        -result $numargErrors($cmd) \
+        -match regexp \
+        -returnCodes error
+}
+
+# Wraps tests resulting in unknown encoding errors
+proc unknownencodingtest {id cmd} {
+    set result "unknown encoding \"[lindex $cmd end-1]\""
+    test $id.a "Unknown encoding error: $cmd" \
+        -body [list encoding {*}$cmd] \
+        -result $result \
+        -returnCodes error
+    test $id.b "Syntax error: $cmd (byte compiled)" \
+        -setup [list proc encoding_test {} [list encoding {*}$cmd]] \
+        -body {encoding_test} \
+        -cleanup {rename encoding_test {}} \
+        -result $result \
+        -returnCodes error
+}
+
+# Wraps tests for conversion, successful or not.
+# Really more general than just for encoding conversion.
+proc testconvert {id body result args} {
+    test $id.a $body \
+        -body $body \
+        -result $result \
+        {*}$args
+    dict append args -setup \n[list proc compiled_script {} $body]
+    dict append args -cleanup "\nrename compiled_script {}"
+    test $id.b "$body (byte compiled)" \
+        -body {compiled_script} \
+        -result $result \
+        {*}$args
+}
+
+# Wrapper to verify encoding convert{to,from} ?-profile?
+# Generates tests for compiled and uncompiled implementation.
+# Also generates utf-{16,32} tests if passed encoding is utf-{16,32}{le,be}
+# The enc and profile are appended to id to generate the test id
+proc testprofile {id converter enc profile data result args} {
+    testconvert $id.$enc.$profile [list encoding $converter -profile $profile $enc $data] $result {*}$args
+    if {[set enc2 [endianUtf $enc]] ne ""} {
+        # If utf{16,32}-{le,be}, also do utf{16,32}
+        testconvert $id.$enc2.$profile [list encoding $converter -profile $profile $enc2 $data] $result {*}$args
+    }
+
+    # If this is the default profile, generate a test without specifying profile
+    if {$profile eq $::encDefaultProfile} {
+        testconvert $id.$enc.default [list encoding $converter $enc $data] $result {*}$args
+        if {[set enc2 [endianUtf $enc]] ne ""} {
+            # If utf{16,32}-{le,be}, also do utf{16,32}
+            testconvert $id.$enc2.default [list encoding $converter $enc2 $data] $result {*}$args
+        }
+    }
+}
+
+
+# Wrapper to verify encoding convert{to,from} -failindex ?-profile?
+# Generates tests for compiled and uncompiled implementation.
+# Also generates utf-{16,32} tests if passed encoding is utf-{16,32}{le,be}
+# The enc and profile are appended to id to generate the test id
+proc testfailindex {id converter enc data result failidx {profile default}} {
+    testconvert $id.$enc.$profile "list \[encoding $converter -profile $profile -failindex idx $enc [list $data]\] \[set idx\]" [list $result $failidx]
+    if {[set enc2 [endianUtf $enc]] ne ""} {
+        # If utf{16,32}-{le,be}, also do utf{16,32}
+        testconvert $id.$enc2.$profile "list \[encoding $converter -profile $profile -failindex idx $enc2 [list $data]\] \[set idx]" [list $result $failidx]
+    }
+
+    # If this is the default profile, generate a test without specifying profile
+    if {$profile eq $::encDefaultProfile} {
+        testconvert $id.$enc.default "list \[encoding $converter -failindex idx $enc [list $data]\] \[set idx]" [list $result $failidx]
+        if {[set enc2 [endianUtf $enc]] ne ""} {
+            # If utf{16,32}-{le,be}, also do utf{16,32}
+            testconvert $id.$enc2.default "list \[encoding $converter -failindex idx $enc2 [list $data]\] \[set idx]" [list $result $failidx]
+        }
+    }
+}
+
+test cmdAH-4.1.1 {encoding} -returnCodes error -body {
     encoding
 } -result {wrong # args: should be "encoding subcommand ?arg ...?"}
-test cmdAH-4.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
+test cmdAH-4.1.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding foo
-} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, or system}
-test cmdAH-4.3 {Tcl_EncodingObjCmd} -returnCodes error -body {
-    encoding convertto
-} -result {wrong # args: should be "encoding convertto ?encoding? data"}
-test cmdAH-4.4 {Tcl_EncodingObjCmd} -returnCodes error -body {
-    encoding convertto foo bar
-} -result {unknown encoding "foo"}
-test cmdAH-4.5 {Tcl_EncodingObjCmd} -setup {
-    set system [encoding system]
-} -body {
-    encoding system jis0208
-    encoding convertto 乎
-} -cleanup {
-    encoding system $system
-} -result 8C
-test cmdAH-4.6 {Tcl_EncodingObjCmd} -setup {
-    set system [encoding system]
-} -body {
-    encoding system iso8859-1
-    encoding convertto jis0208 乎
-} -cleanup {
-    encoding system $system
-} -result 8C
-test cmdAH-4.7 {Tcl_EncodingObjCmd} -returnCodes error -body {
-    encoding convertfrom
-} -result {wrong # args: should be "encoding convertfrom ?encoding? data"}
-test cmdAH-4.8 {Tcl_EncodingObjCmd} -returnCodes error -body {
-    encoding convertfrom foo bar
-} -result {unknown encoding "foo"}
-test cmdAH-4.9 {Tcl_EncodingObjCmd} -setup {
-    set system [encoding system]
-} -body {
-    encoding system jis0208
-    encoding convertfrom 8C
-} -cleanup {
-    encoding system $system
-} -result 乎
-test cmdAH-4.10 {Tcl_EncodingObjCmd} -setup {
-    set system [encoding system]
-} -body {
-    encoding system iso8859-1
-    encoding convertfrom jis0208 8C
-} -cleanup {
-    encoding system $system
-} -result 乎
-test cmdAH-4.11 {Tcl_EncodingObjCmd} -returnCodes error -body {
-    encoding names foo
-} -result {wrong # args: should be "encoding names"}
-test cmdAH-4.12 {Tcl_EncodingObjCmd} -returnCodes error -body {
-    encoding system foo bar
-} -result {wrong # args: should be "encoding system ?encoding?"}
-test cmdAH-4.13 {Tcl_EncodingObjCmd} -setup {
+} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, profiles, or system}
+
+#
+# encoding system 4.2.*
+badnumargs cmdAH-4.2.1 {encoding system} {ascii ascii}
+test cmdAH-4.2.2 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
     encoding system iso8859-1
@@ -228,13 +334,365 @@ test cmdAH-4.13 {Tcl_EncodingObjCmd} -setup {
 } -cleanup {
     encoding system $system
 } -result iso8859-1
+#
+# encoding convertfrom 4.3.*
+
+# Odd number of args is always invalid since last two args
+# are ENCODING DATA and all options take a value
+badnumargs cmdAH-4.3.1 {encoding convertfrom} {}
+badnumargs cmdAH-4.3.2 {encoding convertfrom} {-failindex VAR ABC}
+badnumargs cmdAH-4.3.3 {encoding convertfrom} {-profile VAR ABC}
+badnumargs cmdAH-4.3.4 {encoding convertfrom} {-failindex VAR -profile strict ABC}
+badnumargs cmdAH-4.3.5 {encoding convertfrom} {-profile strict -failindex VAR ABC}
+
+# Test that last two args always treated as ENCODING DATA
+unknownencodingtest cmdAH-4.3.6 {convertfrom -failindex ABC}
+unknownencodingtest cmdAH-4.3.7 {convertfrom -profile ABC}
+unknownencodingtest cmdAH-4.3.8 {convertfrom nosuchencoding ABC}
+unknownencodingtest cmdAH-4.3.9 {convertfrom -failindex VAR -profile ABC}
+unknownencodingtest cmdAH-4.3.10 {convertfrom -profile strict -failindex ABC}
+testconvert cmdAH-4.3.11 {
+    encoding convertfrom jis0208 \x38\x43
+} \u4e4e -setup {
+    set system [encoding system]
+    encoding system iso8859-1
+} -cleanup {
+    encoding system $system
+}
+
+# Verify single arg defaults to system encoding
+testconvert cmdAH-4.3.12 {
+    encoding convertfrom \x38\x43
+} \u4e4e -setup {
+    set system [encoding system]
+    encoding system jis0208
+} -cleanup {
+    encoding system $system
+}
+
+# convertfrom ?-profile? : valid byte sequences
+foreach {enc str hex ctrl comment} $encValidStrings {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary decode hex $hex]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc A]
+    set suffix_bytes [encoding convertto $enc B]
+    foreach profile $encProfiles {
+        testprofile cmdAH-4.3.13.$hex.solo convertfrom $enc $profile $bytes $str
+        testprofile cmdAH-4.3.13.$hex.lead convertfrom $enc $profile $bytes$suffix_bytes $str$suffix
+        testprofile cmdAH-4.3.13.$hex.tail convertfrom $enc $profile $prefix_bytes$bytes $prefix$str
+        testprofile cmdAH-4.3.13.$hex.middle convertfrom $enc $profile $prefix_bytes$bytes$suffix_bytes $prefix$str$suffix
+    }
+}
+
+# convertfrom ?-profile? : invalid byte sequences
+foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary format H* $hex]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
+    set prefixLen [string length $prefix_bytes]
+    set result [list $str]
+    # TODO - if the bad byte is unprintable, tcltest errors out when printing a mismatch
+    # so glob it out in error message pattern for now.
+    set errorWithoutPrefix [list "unexpected byte sequence starting at index $failidx: *" -returnCodes error -match glob]
+    set errorWithPrefix [list "unexpected byte sequence starting at index [expr {$failidx+$prefixLen}]: *" -returnCodes error -match glob]
+    if {$ctrl eq {} || "solo" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $str]
+        } else {
+            set result $errorWithoutPrefix
+        }
+        testprofile cmdAH-4.3.13.$hex.solo convertfrom $enc $profile $bytes {*}$result
+    }
+    if {$ctrl eq {} || "lead" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $str$suffix]
+        } else {
+            set result $errorWithoutPrefix
+        }
+        testprofile cmdAH-4.3.13.$hex.lead convertfrom $enc $profile $bytes$suffix_bytes {*}$result
+    }
+    if {$ctrl eq {} || "tail" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $prefix$str]
+        } else {
+            set result $errorWithPrefix
+        }
+        testprofile cmdAH-4.3.13.$hex.tail convertfrom $enc $profile $prefix_bytes$bytes {*}$result
+    }
+    if {$ctrl eq {} || "middle" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $prefix$str$suffix]
+        } else {
+            set result $errorWithPrefix
+        }
+        testprofile cmdAH-4.3.13.$hex.middle convertfrom $enc $profile $prefix_bytes$bytes$suffix_bytes {*}$result
+    }
+}
+
+# convertfrom -failindex ?-profile? - valid data
+foreach {enc str hex ctrl comment} $encValidStrings {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary decode hex $hex]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
+    foreach profile $encProfiles {
+        testfailindex cmdAH-4.3.14.$hex.solo convertfrom $enc $bytes $str -1 $profile
+        testfailindex cmdAH-4.3.14.$hex.lead convertfrom $enc $bytes$suffix_bytes $str$suffix -1 $profile
+        testfailindex cmdAH-4.3.14.$hex.tail convertfrom $enc $prefix_bytes$bytes $prefix$str -1 $profile
+        testfailindex cmdAH-4.3.14.$hex.middle convertfrom $enc $prefix_bytes$bytes$suffix_bytes $prefix$str$suffix -1 $profile
+    }
+}
+
+# convertfrom -failindex ?-profile? - invalid data
+foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
+    if {"knownBug" in $ctrl} continue
+    # There are multiple test cases based on location of invalid bytes
+    set bytes [binary decode hex $hex]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
+    set prefixLen [string length $prefix_bytes]
+    if {$ctrl eq {} || "solo" in $ctrl} {
+        testfailindex cmdAH-4.3.14.$hex.solo convertfrom $enc $bytes $str $failidx $profile
+    }
+    if {$ctrl eq {} || "lead" in $ctrl} {
+        if {$failidx == -1} {
+            # If success expected
+            set result $str$suffix
+        } else {
+            # Failure expected
+            set result ""
+        }
+        testfailindex cmdAH-4.3.14.$hex.lead convertfrom $enc $bytes$suffix_bytes $result $failidx $profile
+    }
+    if {$ctrl eq {} || "tail" in $ctrl} {
+        set expected_failidx $failidx
+        if {$failidx == -1} {
+            # If success expected
+            set result $prefix$str
+        } else {
+            # Failure expected
+            set result $prefix
+            incr expected_failidx $prefixLen
+        }
+        testfailindex cmdAH-4.3.14.$hex.tail convertfrom $enc $prefix_bytes$bytes $result $expected_failidx $profile
+    }
+    if {$ctrl eq {} || "middle" in $ctrl} {
+        set expected_failidx $failidx
+        if {$failidx == -1} {
+            # If success expected
+            set result $prefix$str$suffix
+        } else {
+            # Failure expected
+            set result $prefix
+            incr expected_failidx $prefixLen
+        }
+        testfailindex cmdAH-4.3.14.$hex.middle convertfrom $enc $prefix_bytes$bytes$suffix_bytes $result $expected_failidx $profile
+    }
+}
+
+#
+# encoding convertto 4.4.*
+
+badnumargs cmdAH-4.4.1 {encoding convertto} {}
+badnumargs cmdAH-4.4.2 {encoding convertto} {-failindex VAR ABC}
+badnumargs cmdAH-4.4.3 {encoding convertto} {-profile VAR ABC}
+badnumargs cmdAH-4.4.4 {encoding convertto} {-failindex VAR -profile strict ABC}
+badnumargs cmdAH-4.4.5 {encoding convertto} {-profile strict -failindex VAR ABC}
+
+# Test that last two args always treated as ENCODING DATA
+unknownencodingtest cmdAH-4.4.6 {convertto -failindex ABC}
+unknownencodingtest cmdAH-4.4.7 {convertto -profile ABC}
+unknownencodingtest cmdAH-4.4.8 {convertto nosuchencoding ABC}
+unknownencodingtest cmdAH-4.4.9 {convertto -failindex VAR -profile ABC}
+unknownencodingtest cmdAH-4.4.10 {convertto -profile strict -failindex ABC}
+testconvert cmdAH-4.4.11 {
+    encoding convertto jis0208 \u4e4e
+} \x38\x43 -setup {
+    set system [encoding system]
+    encoding system iso8859-1
+} -cleanup {
+    encoding system $system
+}
+
+# Verify single arg defaults to system encoding
+testconvert cmdAH-4.4.12 {
+    encoding convertto \u4e4e
+} \x38\x43 -setup {
+    set system [encoding system]
+    encoding system jis0208
+} -cleanup {
+    encoding system $system
+}
+
+# convertto ?-profile? : valid byte sequences
+
+foreach {enc str hex ctrl comment} $encValidStrings {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary decode hex $hex]
+    set printable [printable $str]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc A]
+    set suffix_bytes [encoding convertto $enc B]
+    foreach profile $encProfiles {
+        testprofile cmdAH-4.4.13.$printable.solo convertto $enc $profile $str $bytes
+        testprofile cmdAH-4.4.13.$printable.lead convertto $enc $profile $str$suffix $bytes$suffix_bytes
+        testprofile cmdAH-4.4.13.$printable.tail convertto $enc $profile $prefix$str $prefix_bytes$bytes
+        testprofile cmdAH-4.4.13.$printable.middle convertto $enc $profile $prefix$str$suffix $prefix_bytes$bytes$suffix_bytes
+    }
+}
+
+# convertto ?-profile? : invalid byte sequences
+foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary decode hex $hex]
+    set printable [printable $str]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
+    set prefixLen [string length $prefix_bytes]
+    set result [list $bytes]
+    # TODO - if the bad byte is unprintable, tcltest errors out when printing a mismatch
+    # so glob it out in error message pattern for now.
+    set errorWithoutPrefix [list "unexpected character at index $failidx: *" -returnCodes error -match glob]
+    set errorWithPrefix [list "unexpected character at index [expr {$failidx+$prefixLen}]: *" -returnCodes error -match glob]
+    if {$ctrl eq {} || "solo" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $bytes]
+        } else {
+            set result $errorWithoutPrefix
+        }
+        testprofile cmdAH-4.4.13.$printable.solo convertto $enc $profile $str {*}$result
+    }
+    if {$ctrl eq {} || "lead" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $bytes$suffix_bytes]
+        } else {
+            set result $errorWithoutPrefix
+        }
+        testprofile cmdAH-4.4.13.$printable.lead convertto $enc $profile $str$suffix {*}$result
+    }
+    if {$ctrl eq {} || "tail" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $prefix_bytes$bytes]
+        } else {
+            set result $errorWithPrefix
+        }
+        testprofile cmdAH-4.4.13.$printable.tail convertto $enc $profile $prefix$str {*}$result
+    }
+    if {$ctrl eq {} || "middle" in $ctrl} {
+        if {$failidx == -1} {
+            set result [list $prefix_bytes$bytes$suffix_bytes]
+        } else {
+            set result $errorWithPrefix
+        }
+        testprofile cmdAH-4.4.13.$printable.middle convertto $enc $profile $prefix$str$suffix {*}$result
+    }
+}
+
+# convertto -failindex ?-profile? - valid data
+foreach {enc str hex ctrl comment} $encValidStrings {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary decode hex $hex]
+    set printable [printable $str]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc A]
+    set suffix_bytes [encoding convertto $enc B]
+    foreach profile $encProfiles {
+        testfailindex cmdAH-4.4.14.$enc.$printable.solo convertto $enc $str $bytes -1 $profile
+        testfailindex cmdAH-4.4.14.$enc.$printable.lead convertto $enc $str$suffix $bytes$suffix_bytes -1 $profile
+        testfailindex cmdAH-4.4.14.$enc.$printable.tail convertto $enc $prefix$str $prefix_bytes$bytes -1 $profile
+        testfailindex cmdAH-4.4.14.$enc.$printable.middle convertto $enc $prefix$str$suffix $prefix_bytes$bytes$suffix_bytes -1 $profile
+    }
+}
+
+# convertto -failindex ?-profile? - invalid data
+foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
+    if {"knownBug" in $ctrl} continue
+    set bytes [binary decode hex $hex]
+    set printable [printable $str]
+    set prefix A
+    set suffix B
+    set prefixLen [string length [encoding convertto $enc $prefix]]
+    if {$ctrl eq {} || "solo" in $ctrl} {
+        testfailindex cmdAH-4.4.14.$printable.solo convertto $enc $str $bytes $failidx $profile
+    }
+    if {$ctrl eq {} || "lead" in $ctrl} {
+        if {$failidx == -1} {
+            # If success expected
+            set result $bytes$suffix
+        } else {
+            # Failure expected
+            set result ""
+        }
+        testfailindex cmdAH-4.4.14.$printable.lead convertto $enc $str$suffix $result $failidx $profile
+    }
+    if {$ctrl eq {} || "tail" in $ctrl} {
+        set expected_failidx $failidx
+        if {$failidx == -1} {
+            # If success expected
+            set result $prefix$bytes
+        } else {
+            # Failure expected
+            set result $prefix
+            incr expected_failidx $prefixLen
+        }
+        testfailindex cmdAH-4.4.14.$printable.tail convertto $enc $prefix$str $result $expected_failidx $profile
+    }
+    if {$ctrl eq {} || "middle" in $ctrl} {
+        set expected_failidx $failidx
+        if {$failidx == -1} {
+            # If success expected
+            set result $prefix$bytes$suffix
+        } else {
+            # Failure expected
+            set result $prefix
+            incr expected_failidx $prefixLen
+        }
+        testfailindex cmdAH-4.4.14.$printable.middle convertto $enc $prefix$str$suffix $result $expected_failidx $profile
+    }
+}
+
+test cmdAH-4.4.xx {convertto -profile strict} -constraints {testbytestring knownBug} -body {
+    # TODO - what does testbytestring even test? Invalid UTF8 in the Tcl_Obj bytes field
+    encoding convertto -profile strict utf-8 A[testbytestring \x80]B
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\x80'}
+
+#
+# encoding names 4.5.*
+badnumargs cmdAH-4.5.1 {encoding names} {foo}
+test cmdAH-4.5.2 {encoding names should include at least utf-8 and iso8859-1 and at least one more} -body {
+    set names [encoding names]
+    list [expr {"utf-8" in $names}] [expr {"iso8859-1" in $names}] [expr {[llength $names] > 2}]
+} -result {1 1 1}
+
+#
+# encoding profiles 4.6.*
+badnumargs cmdAH-4.6.1 {encoding profiles} {foo}
+test cmdAH-4.6.2 {encoding profiles} -body {
+    lsort [encoding profiles]
+} -result {replace strict tcl8}
+
+#
+# file command
 
 test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
     file
 } -result {wrong # args: should be "file subcommand ?arg ...?"}
 test cmdAH-5.2 {Tcl_FileObjCmd} -returnCodes error -body {
     file x
-} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, home, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, tildeexpand, type, volumes, or writable}
 test cmdAH-5.3 {Tcl_FileObjCmd} -returnCodes error -body {
     file exists
 } -result {wrong # args: should be "file exists name"}
@@ -318,19 +776,19 @@ test cmdAH-8.13 {Tcl_FileObjCmd: dirname} testsetplatform {
 test cmdAH-8.14 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname //foo
-} /
+} //foo
 test cmdAH-8.15 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname //foo/bar
-} /foo
+} //foo
 test cmdAH-8.16 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname {//foo\/bar/baz}
-} {/foo\/bar}
+} {//foo\/bar}
 test cmdAH-8.17 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname {//foo\/bar/baz/blat}
-} {/foo\/bar/baz}
+} {//foo\/bar/baz}
 test cmdAH-8.18 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname /foo//
@@ -381,7 +839,7 @@ test cmdAH-8.43 {Tcl_FileObjCmd: dirname} -setup {
 } -constraints testsetplatform -body {
     set env(HOME) "/homewontexist/test"
     testsetplatform unix
-    file dirname ~
+    file dirname [file home]
 } -cleanup {
     set env(HOME) $temp
 } -result /homewontexist
@@ -391,19 +849,13 @@ test cmdAH-8.44 {Tcl_FileObjCmd: dirname} -setup {
 } -constraints testsetplatform -body {
     set env(HOME) "~"
     testsetplatform unix
-    file dirname ~
+    file dirname [file home]
 } -cleanup {
     set env(HOME) $temp
-} -result ~
-test cmdAH-8.45 {Tcl_FileObjCmd: dirname} -setup {
-    set temp $::env(HOME)
-} -constraints {win testsetplatform} -match regexp -body {
-    set ::env(HOME) "/homewontexist/test"
-    testsetplatform windows
+} -result .
+test cmdAH-8.45 {Tcl_FileObjCmd: dirname ~} -body {
     file dirname ~
-} -cleanup {
-    set ::env(HOME) $temp
-} -result {([a-zA-Z]:?)/homewontexist}
+} -result .
 test cmdAH-8.46 {Tcl_FileObjCmd: dirname} {
     set f [file normalize [info nameof]]
     file exists $f
@@ -462,7 +914,7 @@ test cmdAH-9.13 {Tcl_FileObjCmd: tail} testsetplatform {
 test cmdAH-9.14 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail //foo
-} foo
+} {}
 test cmdAH-9.15 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail //foo/bar
@@ -511,36 +963,19 @@ test cmdAH-9.26 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform windows
     file tail {//foo/bar}
 } {}
-test cmdAH-9.42 {Tcl_FileObjCmd: tail} -constraints testsetplatform -setup {
-    global env
-    set temp $env(HOME)
-} -body {
-    set env(HOME) "/home/test"
-    testsetplatform unix
+test cmdAH-9.42 {Tcl_FileObjCmd: tail ~} -body {
     file tail ~
-} -cleanup {
-    set env(HOME) $temp
-} -result test
+} -result ~
 test cmdAH-9.43 {Tcl_FileObjCmd: tail} -constraints testsetplatform -setup {
     global env
     set temp $env(HOME)
 } -body {
     set env(HOME) "~"
     testsetplatform unix
-    file tail ~
+    file tail [file home]
 } -cleanup {
     set env(HOME) $temp
-} -result {}
-test cmdAH-9.44 {Tcl_FileObjCmd: tail} -constraints testsetplatform -setup {
-    global env
-    set temp $env(HOME)
-} -body {
-    set env(HOME) "/home/test"
-    testsetplatform windows
-    file tail ~
-} -cleanup {
-    set env(HOME) $temp
-} -result test
+} -result ~
 test cmdAH-9.46 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail {f.oo\bar/baz.bat}
@@ -571,7 +1006,7 @@ test cmdAH-9.52 {Tcl_FileObjCmd: tail / normalize, bug 7a9dc52b29} {
 	[file tail {~/test/~foo}] \
 	[file tail [file normalize {~/~foo}]] \
 	[file tail [file normalize {~/test/~foo}]]
-} [lrepeat 4 ./~foo]
+} [lrepeat 4 ~foo]
 
 # rootname
 test cmdAH-10.1 {Tcl_FileObjCmd: rootname} -returnCodes error -body {
@@ -825,7 +1260,7 @@ test cmdAH-14.3 {Tcl_FileObjCmd: join} testsetplatform {
 test cmdAH-15.1 {Tcl_FileObjCmd} -constraints testsetplatform -body {
     testsetplatform unix
     file atime ~_bad_user
-} -returnCodes error -result {user "_bad_user" doesn't exist}
+} -returnCodes error -result {could not read "~_bad_user": no such file or directory}
 
 catch {testsetplatform $platform}
 
@@ -844,7 +1279,7 @@ test cmdAH-16.2 {Tcl_FileObjCmd: readable} {
     -result 	 1
 }
 test cmdAH-16.3 {Tcl_FileObjCmd: readable} {
-    -constraints {unix notRoot testchmod}
+    -constraints {unix notRoot testchmod notWsl}
     -setup  	 {testchmod 0o333 $gorpfile}
     -body   	 {file readable $gorpfile}
     -result 	 0
@@ -877,7 +1312,7 @@ set gorpfile [makeFile abcde gorp.file]
 test cmdAH-18.1 {Tcl_FileObjCmd: executable} -returnCodes error -body {
     file executable a b
 } -result {wrong # args: should be "file executable name"}
-test cmdAH-18.2 {Tcl_FileObjCmd: executable} {notRoot} {
+test cmdAH-18.2 {Tcl_FileObjCmd: executable} {notRoot notWsl} {
     file executable $gorpfile
 } 0
 test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix testchmod} {
@@ -948,9 +1383,8 @@ test cmdAH-19.9 {Tcl_FileObjCmd: ~ : exists} {
     file exists ~nOsUcHuSeR
 } 0
 test cmdAH-19.10 {Tcl_FileObjCmd: ~ : nativename} -body {
-    # should probably be a non-error in fact...
     file nativename ~nOsUcHuSeR
-} -returnCodes error -match glob -result *
+} -result ~nOsUcHuSeR
 # The test below has to be done in /tmp rather than the current directory in
 # order to guarantee (?) a local file system: some NFS file systems won't do
 # the stuff below correctly.
@@ -1073,10 +1507,10 @@ test cmdAH-22.3 {Tcl_FileObjCmd: isfile} {file isfile $dirfile} 0
 catch {file link -symbolic $linkfile $gorpfile}
 test cmdAH-23.1 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a
-} -result {wrong # args: should be "file lstat name varName"}
+} -result {could not read "a": no such file or directory}
 test cmdAH-23.2 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a b c
-} -result {wrong # args: should be "file lstat name varName"}
+} -result {wrong # args: should be "file lstat name ?varName?"}
 test cmdAH-23.3 {Tcl_FileObjCmd: lstat} -setup {
     unset -nocomplain stat
 } -constraints {unix nonPortable} -body {
@@ -1289,7 +1723,7 @@ test cmdAH-24.14.1 {
     file mtime [file join [temporaryDirectory] CON.txt]
 } -match regexp -result {could not (?:get modification time|read)} -returnCodes error
 
-# 3155760000 is 64-bit unix time, Wed Jan 01 00:00:00 GMT 2070:
+# 3155760000 is 64-bit Unix time, Wed Jan 01 00:00:00 GMT 2070:
 test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -setup {
     set filename [makeFile "" foo.text]
 } -body {
@@ -1406,14 +1840,14 @@ catch {file attributes $gorpfile -permissions 0o765}
 
 # stat
 test cmdAH-28.1 {Tcl_FileObjCmd: stat} -returnCodes error -body {
-    file stat _bogus_
-} -result {wrong # args: should be "file stat name varName"}
+    file stat
+} -result {wrong # args: should be "file stat name ?varName?"}
 test cmdAH-28.2 {Tcl_FileObjCmd: stat} -returnCodes error -body {
     file stat _bogus_ a b
-} -result {wrong # args: should be "file stat name varName"}
+} -result {wrong # args: should be "file stat name ?varName?"}
 test cmdAH-28.3 {Tcl_FileObjCmd: stat} -setup {
     unset -nocomplain stat
-    set stat(blocks) [set stat(blksize) {}]
+    array set stat {blocks {} blksize {}}
 } -body {
     file stat $gorpfile stat
     unset stat(blocks) stat(blksize); # Ignore these fields; not always set
@@ -1425,7 +1859,7 @@ test cmdAH-28.4 {Tcl_FileObjCmd: stat} -setup {
     file stat $gorpfile stat
     list $stat(nlink) $stat(size) $stat(type)
 } -result {1 12 file}
-test cmdAH-28.5 {Tcl_FileObjCmd: stat} -constraints {unix} -setup {
+test cmdAH-28.5 {Tcl_FileObjCmd: stat} -constraints {unix notWsl} -setup {
     unset -nocomplain stat
 } -body {
     file stat $gorpfile stat
@@ -1506,6 +1940,16 @@ test cmdAH-28.13.1 {Tcl_FileObjCmd: stat (built-in Windows names)} -constraints 
     }
     set res
 } -result {0 0 -1 0 0 8630 0 0 0 characterSpecial 0}
+test cmdAH-28.14 {Tcl_FileObjCmd: stat} -setup {
+    unset -nocomplain stat
+} -body {
+    file stat $gorpfile stat
+    expr {
+		[lsort -stride 2 [array get stat]]
+		eq
+		[lsort -stride 2 [file stat $gorpfile]]
+	}
+} -result {1}
 unset -nocomplain stat
 
 # type
@@ -1565,7 +2009,7 @@ test cmdAH-29.6.1 {
 # Error conditions
 test cmdAH-30.1 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file gorp x
-} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, home, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempdir, tempfile, tildeexpand, type, volumes, or writable}
 test cmdAH-30.2 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file ex x
 } -match glob -result {unknown or ambiguous subcommand "ex": must be *}
@@ -1584,9 +2028,6 @@ test cmdAH-30.6 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
 test cmdAH-30.7 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file t x
 } -match glob -result {unknown or ambiguous subcommand "t": must be *}
-test cmdAH-30.8 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
-    file dirname ~woohgy
-} -result {user "woohgy" doesn't exist}
 
 # channels
 # In testing 'file channels', we need to make sure that a channel created in
@@ -1688,7 +2129,7 @@ test cmdAH-32.5 {file tempfile - templates} -constraints unix -body {
 } -cleanup {
     catch {file delete $name}
 } -result ok
-# Not portable; not all unix systems have mkstemps()
+# Not portable; not all Unix systems have mkstemps()
 test cmdAH-32.6 {file tempfile - templates} -body {
     set template [file join $dirfile foo]
     close [file tempfile name $template.bar]

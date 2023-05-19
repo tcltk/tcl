@@ -90,7 +90,7 @@ typedef struct InterpLibrary {
  * Prototypes for functions that are private to this file:
  */
 
-static void	LoadCleanupProc(ClientData clientData,
+static void	LoadCleanupProc(void *clientData,
 		    Tcl_Interp *interp);
 static int	IsStatic (LoadedLibrary *libraryPtr);
 static int	UnloadLibrary(Tcl_Interp *interp, Tcl_Interp *target,
@@ -141,14 +141,14 @@ Tcl_LoadObjCmd(
     Tcl_LoadHandle loadHandle;
     Tcl_UniChar ch = 0;
     size_t len;
-    int index, flags = 0;
+    int flags = 0;
     Tcl_Obj *const *savedobjv = objv;
     static const char *const options[] = {
 	"-global",		"-lazy",		"--",	NULL
     };
     enum loadOptionsEnum {
 	LOAD_GLOBAL,	LOAD_LAZY,	LOAD_LAST
-    };
+    } index;
 
     while (objc > 2) {
 	if (TclGetString(objv[1])[0] != '-') {
@@ -159,9 +159,9 @@ Tcl_LoadObjCmd(
 	    return TCL_ERROR;
 	}
 	++objv; --objc;
-	if (LOAD_GLOBAL == (enum loadOptionsEnum) index) {
+	if (LOAD_GLOBAL == index) {
 	    flags |= TCL_LOAD_GLOBAL;
-	} else if (LOAD_LAZY == (enum loadOptionsEnum) index) {
+	} else if (LOAD_LAZY == index) {
 	    flags |= TCL_LOAD_LAZY;
 	} else {
 		break;
@@ -310,7 +310,7 @@ Tcl_LoadObjCmd(
 	    Tcl_DStringAppend(&pfx, prefix, -1);
 	} else {
 	    Tcl_Obj *splitPtr, *pkgGuessPtr;
-	    int pElements;
+	    Tcl_Size pElements;
 	    const char *pkgGuess;
 
 	    /*
@@ -536,7 +536,7 @@ Tcl_LoadObjCmd(
  *
  * Tcl_UnloadObjCmd --
  *
- *	This function is invoked to process the "unload" Tcl command. See the
+ *	Implements the the "unload" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -559,7 +559,7 @@ Tcl_UnloadObjCmd(
     LoadedLibrary *libraryPtr;
     Tcl_DString pfx, tmp;
     InterpLibrary *ipFirstPtr, *ipPtr;
-    int i, index, code, complain = 1, keepLibrary = 0;
+    int i, code, complain = 1, keepLibrary = 0;
     const char *fullFileName = "";
     const char *prefix;
     static const char *const options[] = {
@@ -567,7 +567,7 @@ Tcl_UnloadObjCmd(
     };
     enum unloadOptionsEnum {
 	UNLOAD_NOCOMPLAIN, UNLOAD_KEEPLIB, UNLOAD_LAST
-    };
+    } index;
 
     for (i = 1; i < objc; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
@@ -590,7 +590,7 @@ Tcl_UnloadObjCmd(
 		break;
 	    }
 	}
-	switch ((enum unloadOptionsEnum)index) {
+	switch (index) {
 	case UNLOAD_NOCOMPLAIN:		/* -nocomplain */
 	    complain = 0;
 	    break;
@@ -754,6 +754,23 @@ Tcl_UnloadObjCmd(
     return code;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UnloadLibrary --
+ *
+ *	Unloads a library from an interpreter, and also from the process if it
+ *	is unloadable, i.e. if it provides an "unload" function.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See description.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 UnloadLibrary(
 	Tcl_Interp *interp,
@@ -874,10 +891,8 @@ UnloadLibrary(
     }
 
     /*
-     * The unload function executed fine. Examine the reference count to see
-     * if we unload the DLL.
+     * The unload function was called succesfully.
      */
-
 
     Tcl_MutexLock(&libraryMutex);
     if (Tcl_IsSafe(target)) {
@@ -907,7 +922,7 @@ UnloadLibrary(
 
     code = TCL_OK;
     if (libraryPtr->safeInterpRefCount <= 0 && libraryPtr->interpRefCount <= 0
-	    && !keepLibrary) {
+	    && (unloadProc != NULL) && !keepLibrary) {
 	/*
 	 * Unload the shared library from the application memory...
 	 */
@@ -1179,7 +1194,7 @@ TclGetLoadedLibraries(
 
 static void
 LoadCleanupProc(
-    TCL_UNUSED(ClientData),	/* Pointer to first InterpLibrary structure
+    TCL_UNUSED(void *),	/* Pointer to first InterpLibrary structure
 				 * for interp. */
     Tcl_Interp *interp)
 {

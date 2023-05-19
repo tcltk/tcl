@@ -43,7 +43,7 @@ proc getversion {tclh {name {}}} {
 	# highlighting straight in some editors
 	if {[regexp -lineanchor \
 	    [string map [list @name@ $name] \
-		{^#define\s+@name@_VERSION\s+\"([^.])+\.([^.\"]+)}] \
+		{^#\s*define\s+@name@_VERSION\s+\"([^.])+\.([^.\"]+)}] \
 	    $data -> major minor]} {
 		return [list $major $minor]
 	}
@@ -293,14 +293,14 @@ proc css-stylesheet {} {
 	font-size: 11px;
     }
     css-style ".keylist dt" ".arguments dt" {
-	width: 20em;
+	width: 25em;
 	float: left;
 	padding: 2px;
 	border-top: 1px solid #999999;
     }
     css-style ".keylist dt" { font-weight: bold; }
     css-style ".keylist dd" ".arguments dd" {
-	margin-left: 20em;
+	margin-left: 25em;
 	padding: 2px;
 	border-top: 1px solid #999999;
     }
@@ -682,7 +682,7 @@ array set exclude_refs_map {
     ttk_scale.n		{variable}
     ttk_scrollbar.n	{set}
     ttk_spinbox.n	{format}
-    ttk_treeview.n	{text open}
+    ttk_treeview.n	{text open focus selection}
     ttk_widget.n	{image text variable}
     TclZlib.3		{binary flush filename text}
 }

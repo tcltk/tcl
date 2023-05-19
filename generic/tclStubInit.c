@@ -55,6 +55,13 @@
 #undef TclSockMinimumBuffers
 #undef Tcl_SetIntObj
 #undef Tcl_SetLongObj
+#undef Tcl_ListObjGetElements
+#undef Tcl_ListObjLength
+#undef Tcl_DictObjSize
+#undef Tcl_SplitList
+#undef Tcl_SplitPath
+#undef Tcl_FSSplitPath
+#undef Tcl_ParseArgsObjv
 #undef TclpInetNtoa
 #undef TclWinGetServByName
 #undef TclWinGetSockOpt
@@ -66,26 +73,37 @@
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
+#undef Tcl_UniCharLen
+#undef TclObjInterpProc
 #if !defined(_WIN32) && !defined(__CYGWIN__)
-#undef Tcl_WinConvertError
-#define Tcl_WinConvertError 0
+# undef Tcl_WinConvertError
+# define Tcl_WinConvertError 0
 #endif
-
-
-#if TCL_UTF_MAX <= 3
-static void uniCodePanic() {
-    Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
-}
-#   define Tcl_GetUnicode (int *(*)(Tcl_Obj *))(void *)uniCodePanic
-#   define Tcl_GetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, size_t *))(void *)uniCodePanic
-#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const Tcl_UniChar *, size_t))(void *)uniCodePanic
-#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, size_t))(void *)uniCodePanic
-#endif
+# undef TclGetStringFromObj
+# undef TclGetBytesFromObj
+# undef TclGetUnicodeFromObj
+# define TclGetStringFromObj 0
+# define TclGetBytesFromObj 0
+# define TclGetUnicodeFromObj 0
+#undef Tcl_Close
+#define Tcl_Close 0
+#undef TclGetByteArrayFromObj
+#define TclGetByteArrayFromObj 0
+#undef Tcl_GetByteArrayFromObj
+#define Tcl_GetByteArrayFromObj 0
+#define TclUnusedStubEntry 0
 
 #define TclUtfCharComplete Tcl_UtfCharComplete
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
 
+# define TclListObjGetElements 0
+# define TclListObjLength 0
+# define TclDictObjSize 0
+# define TclSplitList 0
+# define TclSplitPath 0
+# define TclFSSplitPath 0
+# define TclParseArgsObjv 0
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
@@ -123,6 +141,8 @@ static void uniCodePanic() {
 #define TclBN_mp_mul_2d mp_mul_2d
 #define TclBN_mp_neg mp_neg
 #define TclBN_mp_or mp_or
+#define TclBN_mp_pack mp_pack
+#define TclBN_mp_pack_count mp_pack_count
 #define TclBN_mp_radix_size mp_radix_size
 #define TclBN_mp_read_radix mp_read_radix
 #define TclBN_mp_rshd mp_rshd
@@ -225,7 +245,7 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
 	    *ptr = (int)longValue;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "integer value too large to represent as non-long integer", -1));
+		    "integer value too large to represent", -1));
 	    result = TCL_ERROR;
 	}
     }
@@ -241,7 +261,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
 	    *ptr = (int)longValue;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "integer value too large to represent as non-long integer", -1));
+		    "integer value too large to represent", -1));
 	    result = TCL_ERROR;
 	}
     }
@@ -333,7 +353,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetOpenMode, /* 40 */
     TclGetOriginalCommand, /* 41 */
     TclpGetUserHome, /* 42 */
-    0, /* 43 */
+    TclGetObjInterpProc2, /* 43 */
     0, /* 44 */
     TclHideUnsafeCommands, /* 45 */
     TclInExit, /* 46 */
@@ -422,7 +442,7 @@ static const TclIntStubs tclIntStubs = {
     Tcl_PushCallFrame, /* 129 */
     Tcl_RemoveInterpResolvers, /* 130 */
     Tcl_SetNamespaceResolvers, /* 131 */
-    TclpHasSockets, /* 132 */
+    0, /* 132 */
     0, /* 133 */
     0, /* 134 */
     0, /* 135 */
@@ -526,7 +546,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetSrcInfoForPc, /* 233 */
     TclVarHashCreateVar, /* 234 */
     TclInitVarHashTable, /* 235 */
-    TclAppendUnicodeToObj, /* 236 */
+    0, /* 236 */
     TclResetCancellation, /* 237 */
     TclNRInterpProc, /* 238 */
     TclNRInterpProcCore, /* 239 */
@@ -549,7 +569,9 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
-    TclGetBytesFromObj, /* 259 */
+    0, /* 259 */
+    TclListTestObj, /* 260 */
+    TclListObjValidate, /* 261 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -672,12 +694,12 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_get_mag_u64, /* 69 */
     TclBN_mp_set_i64, /* 70 */
     TclBN_mp_unpack, /* 71 */
-    0, /* 72 */
+    TclBN_mp_pack, /* 72 */
     0, /* 73 */
     0, /* 74 */
     0, /* 75 */
     TclBN_mp_signed_rsh, /* 76 */
-    0, /* 77 */
+    TclBN_mp_pack_count, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
     0, /* 79 */
     TclBN_mp_to_radix, /* 80 */
@@ -737,9 +759,9 @@ const TclStubs tclStubs = {
     Tcl_InvalidateStringRep, /* 42 */
     Tcl_ListObjAppendList, /* 43 */
     Tcl_ListObjAppendElement, /* 44 */
-    Tcl_ListObjGetElements, /* 45 */
+    TclListObjGetElements, /* 45 */
     Tcl_ListObjIndex, /* 46 */
-    Tcl_ListObjLength, /* 47 */
+    TclListObjLength, /* 47 */
     Tcl_ListObjReplace, /* 48 */
     0, /* 49 */
     Tcl_NewByteArrayObj, /* 50 */
@@ -773,7 +795,7 @@ const TclStubs tclStubs = {
     Tcl_BadChannelOption, /* 78 */
     Tcl_CallWhenDeleted, /* 79 */
     Tcl_CancelIdleCall, /* 80 */
-    0, /* 81 */
+    Tcl_Close, /* 81 */
     Tcl_CommandComplete, /* 82 */
     Tcl_Concat, /* 83 */
     Tcl_ConvertElement, /* 84 */
@@ -882,7 +904,7 @@ const TclStubs tclStubs = {
     Tcl_LinkVar, /* 187 */
     0, /* 188 */
     Tcl_MakeFileChannel, /* 189 */
-    Tcl_MakeSafe, /* 190 */
+    0, /* 190 */
     Tcl_MakeTcpClientChannel, /* 191 */
     Tcl_Merge, /* 192 */
     Tcl_NextHashEntry, /* 193 */
@@ -934,8 +956,8 @@ const TclStubs tclStubs = {
     Tcl_SignalId, /* 239 */
     Tcl_SignalMsg, /* 240 */
     Tcl_SourceRCFile, /* 241 */
-    Tcl_SplitList, /* 242 */
-    Tcl_SplitPath, /* 243 */
+    TclSplitList, /* 242 */
+    TclSplitPath, /* 243 */
     0, /* 244 */
     0, /* 245 */
     0, /* 246 */
@@ -1004,7 +1026,7 @@ const TclStubs tclStubs = {
     Tcl_MutexUnlock, /* 309 */
     Tcl_ConditionNotify, /* 310 */
     Tcl_ConditionWait, /* 311 */
-    Tcl_NumUtfChars, /* 312 */
+    TclNumUtfChars, /* 312 */
     Tcl_ReadChars, /* 313 */
     0, /* 314 */
     0, /* 315 */
@@ -1017,7 +1039,7 @@ const TclStubs tclStubs = {
     Tcl_UniCharToTitle, /* 322 */
     Tcl_UniCharToUpper, /* 323 */
     Tcl_UniCharToUtf, /* 324 */
-    Tcl_UtfAtIndex, /* 325 */
+    TclUtfAtIndex, /* 325 */
     TclUtfCharComplete, /* 326 */
     Tcl_UtfBackslash, /* 327 */
     Tcl_UtfFindFirst, /* 328 */
@@ -1044,7 +1066,7 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsSpace, /* 349 */
     Tcl_UniCharIsUpper, /* 350 */
     Tcl_UniCharIsWordChar, /* 351 */
-    0, /* 352 */
+    Tcl_Char16Len, /* 352 */
     0, /* 353 */
     Tcl_Char16ToUtfDString, /* 354 */
     Tcl_UtfToChar16DString, /* 355 */
@@ -1072,11 +1094,11 @@ const TclStubs tclStubs = {
     Tcl_RegExpGetInfo, /* 377 */
     Tcl_NewUnicodeObj, /* 378 */
     Tcl_SetUnicodeObj, /* 379 */
-    Tcl_GetCharLength, /* 380 */
-    Tcl_GetUniChar, /* 381 */
+    TclGetCharLength, /* 380 */
+    TclGetUniChar, /* 381 */
     0, /* 382 */
-    Tcl_GetRange, /* 383 */
-    0, /* 384 */
+    TclGetRange, /* 383 */
+    Tcl_AppendUnicodeToObj, /* 384 */
     Tcl_RegExpMatchObj, /* 385 */
     Tcl_SetNotifier, /* 386 */
     Tcl_GetAllocMutex, /* 387 */
@@ -1153,7 +1175,7 @@ const TclStubs tclStubs = {
     Tcl_FSChdir, /* 458 */
     Tcl_FSConvertToPathType, /* 459 */
     Tcl_FSJoinPath, /* 460 */
-    Tcl_FSSplitPath, /* 461 */
+    TclFSSplitPath, /* 461 */
     Tcl_FSEqualPaths, /* 462 */
     Tcl_FSGetNormalizedPath, /* 463 */
     Tcl_FSJoinToPath, /* 464 */
@@ -1189,7 +1211,7 @@ const TclStubs tclStubs = {
     Tcl_DictObjPut, /* 494 */
     Tcl_DictObjGet, /* 495 */
     Tcl_DictObjRemove, /* 496 */
-    Tcl_DictObjSize, /* 497 */
+    TclDictObjSize, /* 497 */
     Tcl_DictObjFirst, /* 498 */
     Tcl_DictObjNext, /* 499 */
     Tcl_DictObjDone, /* 500 */
@@ -1296,7 +1318,7 @@ const TclStubs tclStubs = {
     Tcl_GetBlockSizeFromStat, /* 601 */
     Tcl_SetEnsembleParameterList, /* 602 */
     Tcl_GetEnsembleParameterList, /* 603 */
-    Tcl_ParseArgsObjv, /* 604 */
+    TclParseArgsObjv, /* 604 */
     Tcl_GetErrorLine, /* 605 */
     Tcl_SetErrorLine, /* 606 */
     Tcl_TransferResult, /* 607 */
@@ -1341,8 +1363,8 @@ const TclStubs tclStubs = {
     Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
-    0, /* 649 */
-    0, /* 650 */
+    TclGetBytesFromObj, /* 649 */
+    Tcl_GetBytesFromObj, /* 650 */
     Tcl_GetStringFromObj, /* 651 */
     Tcl_GetUnicodeFromObj, /* 652 */
     Tcl_GetByteArrayFromObj, /* 653 */
@@ -1350,9 +1372,37 @@ const TclStubs tclStubs = {
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
     Tcl_UniCharIsUnicode, /* 657 */
-    0, /* 658 */
-    0, /* 659 */
+    Tcl_ExternalToUtfDStringEx, /* 658 */
+    Tcl_UtfToExternalDStringEx, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
+    Tcl_ListObjGetElements, /* 661 */
+    Tcl_ListObjLength, /* 662 */
+    Tcl_DictObjSize, /* 663 */
+    Tcl_SplitList, /* 664 */
+    Tcl_SplitPath, /* 665 */
+    Tcl_FSSplitPath, /* 666 */
+    Tcl_ParseArgsObjv, /* 667 */
+    Tcl_UniCharLen, /* 668 */
+    Tcl_NumUtfChars, /* 669 */
+    Tcl_GetCharLength, /* 670 */
+    Tcl_UtfAtIndex, /* 671 */
+    Tcl_GetRange, /* 672 */
+    Tcl_GetUniChar, /* 673 */
+    Tcl_GetBool, /* 674 */
+    Tcl_GetBoolFromObj, /* 675 */
+    Tcl_CreateObjCommand2, /* 676 */
+    Tcl_CreateObjTrace2, /* 677 */
+    Tcl_NRCreateCommand2, /* 678 */
+    Tcl_NRCallObjProc2, /* 679 */
+    Tcl_GetNumberFromObj, /* 680 */
+    Tcl_GetNumber, /* 681 */
+    Tcl_RemoveChannelMode, /* 682 */
+    Tcl_GetEncodingNulLength, /* 683 */
+    Tcl_GetWideUIntFromObj, /* 684 */
+    Tcl_DStringToObj, /* 685 */
+    Tcl_GetSizeIntFromObj, /* 686 */
+    0, /* 687 */
+    TclUnusedStubEntry, /* 688 */
 };
 
 /* !END!: Do not edit above this line. */

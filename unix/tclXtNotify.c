@@ -17,7 +17,7 @@
 #include "tclInt.h"
 
 /*
- * This structure is used to keep track of the notifier info for a a
+ * This structure is used to keep track of the notifier info for a
  * registered file.
  */
 
@@ -33,7 +33,7 @@ typedef struct FileHandler {
     XtInputId except;		/* Xt exception callback handle. */
     Tcl_FileProc *proc;		/* Procedure to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    ClientData clientData;	/* Argument to pass to proc. */
+    void *clientData;	/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
 } FileHandler;
 
@@ -79,10 +79,10 @@ static int initialized = 0;
 static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 static void		FileProc(XtPointer clientData, int *source,
 			    XtInputId *id);
-static void		NotifierExitHandler(ClientData clientData);
+static void		NotifierExitHandler(void *clientData);
 static void		TimerProc(XtPointer clientData, XtIntervalId *id);
 static void		CreateFileHandler(int fd, int mask,
-			    Tcl_FileProc *proc, ClientData clientData);
+			    Tcl_FileProc *proc, void *clientData);
 static void		DeleteFileHandler(int fd);
 static void		SetTimer(const Tcl_Time * timePtr);
 static int		WaitForEvent(const Tcl_Time * timePtr);
@@ -181,7 +181,13 @@ TclSetAppContext(
 void
 InitNotifier(void)
 {
-    Tcl_NotifierProcs np;
+    static const Tcl_NotifierProcs np =
+	SetTimer,
+	WaitForEvent,
+	CreateFileHandler,
+	DeleteFileHandler,
+	NULL, NULL, NULL, NULL
+    };
 
     /*
      * Only reinitialize if we are not in exit handling. The notifier can get
@@ -193,14 +199,6 @@ InitNotifier(void)
 	return;
     }
 
-    np.createFileHandlerProc = CreateFileHandler;
-    np.deleteFileHandlerProc = DeleteFileHandler;
-    np.setTimerProc = SetTimer;
-    np.waitForEventProc = WaitForEvent;
-    np.initNotifierProc = Tcl_InitNotifier;
-    np.finalizeNotifierProc = Tcl_FinalizeNotifier;
-    np.alertNotifierProc = Tcl_AlertNotifier;
-    np.serviceModeHookProc = Tcl_ServiceModeHook;
     Tcl_SetNotifier(&np);
 
     /*
@@ -209,7 +207,6 @@ InitNotifier(void)
      */
 
     initialized = 1;
-    memset(&np, 0, sizeof(np));
     Tcl_CreateExitHandler(NotifierExitHandler, NULL);
 }
 
@@ -232,7 +229,7 @@ InitNotifier(void)
 
 static void
 NotifierExitHandler(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     if (notifier.currentTimeout != 0) {
 	XtRemoveTimeOut(notifier.currentTimeout);
@@ -342,7 +339,7 @@ CreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Procedure to call for each selected
 				 * event. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)	/* Arbitrary data to pass to proc. */
 {
     FileHandler *filePtr;
 

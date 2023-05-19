@@ -13,10 +13,6 @@
  */
 
 #include "tcl.h"
-#if TCL_MAJOR_VERSION < 9 && TCL_MINOR_VERSION < 7
-#   define Tcl_LibraryInitProc Tcl_PackageInitProc
-#   define Tcl_StaticLibrary Tcl_StaticPackage
-#endif
 
 #ifdef TCL_TEST
 extern Tcl_LibraryInitProc Tcltest_Init;
@@ -82,7 +78,7 @@ main(
 #ifdef TCL_LOCAL_MAIN_HOOK
     TCL_LOCAL_MAIN_HOOK(&argc, &argv);
 #elif !defined(_WIN32) || defined(UNICODE)
-    /* This doesn't work on Windows without UNICODE */
+    /* New in Tcl 8.7. This doesn't work on Windows without UNICODE */
     TclZipfs_AppHook(&argc, &argv);
 #endif
 
@@ -113,7 +109,7 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if ((Tcl_Init)(interp) == TCL_ERROR) {
+    if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -153,15 +149,16 @@ Tcl_AppInit(
      * is the name of the application. If this line is deleted then no
      * user-specific startup file will be run under any conditions.
      */
-
 #ifdef DJGPP
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
-	    Tcl_NewStringObj("~/tclsh.rc", -1), TCL_GLOBAL_ONLY);
+#define INITFILENAME "tclshrc.tcl"
 #else
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
-	    Tcl_NewStringObj("~/.tclshrc", -1), TCL_GLOBAL_ONLY);
+#define INITFILENAME ".tclshrc"
 #endif
 
+    (void)Tcl_EvalEx(interp,
+		     "set tcl_rcFileName [file tildeexpand ~/" INITFILENAME "]",
+		     -1,
+		     TCL_EVAL_GLOBAL);
     return TCL_OK;
 }
 

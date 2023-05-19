@@ -222,7 +222,7 @@ typedef struct AssemblyEnv {
     Tcl_HashTable labelHash;	/* Hash table whose keys are labels and whose
 				 * values are 'label' objects storing the code
 				 * offsets of the labels. */
-    int cmdLine;		/* Current line number within the assembly
+    Tcl_Size cmdLine;	/* Current line number within the assembly
 				 * code */
     int* clNext;		/* Invisible continuation line for
 				 * [info frame] */
@@ -277,7 +277,7 @@ static void		DeleteMirrorJumpTable(JumptableInfo* jtPtr);
 static void		FillInJumpOffsets(AssemblyEnv*);
 static int		CreateMirrorJumpTable(AssemblyEnv* assemEnvPtr,
 			    Tcl_Obj* jumpTable);
-static int		FindLocalVar(AssemblyEnv* envPtr,
+static size_t	FindLocalVar(AssemblyEnv* envPtr,
 			    Tcl_Token** tokenPtrPtr);
 static int		FinishAssembly(AssemblyEnv*);
 static void		FreeAssemblyEnv(AssemblyEnv*);
@@ -325,7 +325,8 @@ static const Tcl_ObjType assembleCodeType = {
     FreeAssembleCodeInternalRep, /* freeIntRepProc */
     DupAssembleCodeInternalRep,	 /* dupIntRepProc */
     NULL,			 /* updateStringProc */
-    NULL			 /* setFromAnyProc */
+    NULL,			 /* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 /*
@@ -856,7 +857,7 @@ CompileAssembleObj(
 				 * names in the bytecode resolve */
     int status;			/* Status return from Tcl_AssembleCode */
     const char* source;		/* String representation of the source code */
-    size_t sourceLen;		/* Length of the source code in bytes */
+    Tcl_Size sourceLen;		/* Length of the source code in bytes */
 
     /*
      * Get the expression ByteCode from the object. If it exists, make sure it
@@ -963,9 +964,9 @@ TclCompileAssembleCmd(
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
 
-    int numCommands = envPtr->numCommands;
+    size_t numCommands = envPtr->numCommands;
     int offset = envPtr->codeNext - envPtr->codeStart;
-    int depth = envPtr->currStackDepth;
+    size_t depth = envPtr->currStackDepth;
     /*
      * Make sure that the command has a single arg that is a simple word.
      */
@@ -1268,10 +1269,10 @@ AssembleOneLine(
     Tcl_Obj* operand1Obj = NULL;
 				/* First operand to the instruction */
     const char* operand1;	/* String rep of the operand */
-    size_t operand1Len;		/* String length of the operand */
+    Tcl_Size operand1Len;	/* String length of the operand */
     int opnd;			/* Integer representation of an operand */
     int litIndex;		/* Literal pool index of a constant */
-    int localVar;		/* LVT index of a local variable */
+    Tcl_Size localVar;	/* LVT index of a local variable */
     int flags;			/* Flags for a basic block */
     JumptableInfo* jtPtr;	/* Pointer to a jumptable */
     int infoIndex;		/* Index of the jumptable in auxdata */
@@ -1811,15 +1812,15 @@ CompileEmbeddedScript(
      * code.
      */
 
-    int savedStackDepth = envPtr->currStackDepth;
-    int savedMaxStackDepth = envPtr->maxStackDepth;
+    size_t savedStackDepth = envPtr->currStackDepth;
+    size_t savedMaxStackDepth = envPtr->maxStackDepth;
     int savedExceptArrayNext = envPtr->exceptArrayNext;
 
     envPtr->currStackDepth = 0;
     envPtr->maxStackDepth = 0;
 
     StartBasicBlock(assemEnvPtr, BB_FALLTHRU, NULL);
-    switch(instPtr->tclInstCode) {
+    switch (instPtr->tclInstCode) {
     case INST_EVAL_STK:
 	TclCompileScript(interp, tokenPtr->start, tokenPtr->size, envPtr);
 	break;
@@ -1968,7 +1969,7 @@ CreateMirrorJumpTable(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Obj* jumps)		/* List of alternating keywords and labels */
 {
-    int objc;			/* Number of elements in the 'jumps' list */
+    Tcl_Size objc;			/* Number of elements in the 'jumps' list */
     Tcl_Obj** objv;		/* Pointers to the elements in the list */
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
@@ -1981,9 +1982,9 @@ CreateMirrorJumpTable(
     Tcl_HashEntry* hashEntry;	/* Entry for a key in the hashtable */
     int isNew;			/* Flag==1 if the key is not yet in the
 				 * table. */
-    int i;
+    Tcl_Size i;
 
-    if (Tcl_ListObjGetElements(interp, jumps, &objc, &objv) != TCL_OK) {
+    if (TclListObjLengthM(interp, jumps, &objc) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (objc % 2 != 0) {
@@ -1993,6 +1994,9 @@ CreateMirrorJumpTable(
 		    -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADJUMPTABLE", NULL);
 	}
+	return TCL_ERROR;
+    }
+    if (TclListObjGetElementsM(interp, jumps, &objc, &objv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2295,7 +2299,7 @@ GetListIndexOperand(
  *-----------------------------------------------------------------------------
  */
 
-static int
+static size_t
 FindLocalVar(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Token** tokenPtrPtr)
@@ -2309,27 +2313,27 @@ FindLocalVar(
 				 * source code. */
     Tcl_Obj* varNameObj;	/* Name of the variable */
     const char* varNameStr;
-    size_t varNameLen;
-    int localVar;		/* Index of the variable in the LVT */
+    Tcl_Size varNameLen;
+    Tcl_Size localVar;		/* Index of the variable in the LVT */
 
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {
-	return -1;
+	return TCL_INDEX_NONE;
     }
     varNameStr = Tcl_GetStringFromObj(varNameObj, &varNameLen);
     if (CheckNamespaceQualifiers(interp, varNameStr, varNameLen)) {
 	Tcl_DecrRefCount(varNameObj);
-	return -1;
+	return TCL_INDEX_NONE;
     }
     localVar = TclFindCompiledLocal(varNameStr, varNameLen, 1, envPtr);
     Tcl_DecrRefCount(varNameObj);
-    if (localVar == -1) {
+    if (localVar < 0) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cannot use this instruction to create a variable"
 		    " in a non-proc context", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "LVT", NULL);
 	}
-	return -1;
+	return TCL_INDEX_NONE;
     }
     *tokenPtrPtr = TokenAfter(tokenPtr);
     return localVar;
@@ -3317,7 +3321,7 @@ CheckStack(
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    int maxDepth;		/* Maximum stack depth overall */
+    Tcl_Size maxDepth;		/* Maximum stack depth overall */
 
     /*
      * Checking the head block will check all the other blocks recursively.
@@ -4126,7 +4130,7 @@ StackFreshCatches(
 		    TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 	    range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
 	    range->nestingLevel = envPtr->exceptDepth + catchDepth;
-	    envPtr->maxExceptDepth =
+	    envPtr->maxExceptDepth=
 		    TclMax(range->nestingLevel + 1, envPtr->maxExceptDepth);
 	    range->codeOffset = bbPtr->startOffset;
 
@@ -4163,7 +4167,7 @@ RestoreEmbeddedExceptionRanges(
     BasicBlock* bbPtr;		/* Current basic block */
     int rangeBase;		/* Base of the foreign exception ranges when
 				 * they are reinstalled */
-    int rangeIndex;		/* Index of the current foreign exception
+    size_t rangeIndex;		/* Index of the current foreign exception
 				 * range as reinstalled */
     ExceptionRange* range;	/* Current foreign exception range */
     unsigned char opcode;	/* Current instruction's opcode */
@@ -4190,7 +4194,7 @@ RestoreEmbeddedExceptionRanges(
 		range->nestingLevel += envPtr->exceptDepth + bbPtr->catchDepth;
 		memcpy(envPtr->exceptArrayPtr + rangeIndex, range,
 			sizeof(ExceptionRange));
-		if (range->nestingLevel >= envPtr->maxExceptDepth) {
+		if (range->nestingLevel + 1 >= envPtr->maxExceptDepth + 1) {
 		    envPtr->maxExceptDepth = range->nestingLevel + 1;
 		}
 	    }

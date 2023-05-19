@@ -36,16 +36,16 @@
  */
 
 typedef struct ChannelBuffer {
-    size_t refCount;		/* Current uses count */
-    int nextAdded;		/* The next position into which a character
+    Tcl_Size refCount;		/* Current uses count */
+    Tcl_Size nextAdded;		/* The next position into which a character
 				 * will be put in the buffer. */
-    int nextRemoved;		/* Position of next byte to be removed from
+    Tcl_Size nextRemoved;		/* Position of next byte to be removed from
 				 * the buffer. */
-    int bufLength;		/* How big is the buffer? */
+    Tcl_Size bufLength;		/* How big is the buffer? */
     struct ChannelBuffer *nextPtr;
     				/* Next buffer in chain. */
     char buf[TCLFLEXARRAY];		/* Placeholder for real buffer. The real
-				 * buffer occuppies this space + bufSize-1
+				 * buffer occupies this space + bufSize-1
 				 * bytes. This must be the last field in the
 				 * structure. */
 } ChannelBuffer;
@@ -113,7 +113,7 @@ typedef struct Channel {
     ChannelBuffer *inQueueHead;	/* Points at first buffer in input queue. */
     ChannelBuffer *inQueueTail;	/* Points at last buffer in input queue. */
 
-    size_t refCount;
+    Tcl_Size refCount;
 } Channel;
 
 /*
@@ -129,7 +129,7 @@ typedef struct ChannelState {
     char *channelName;		/* The name of the channel instance in Tcl
 				 * commands. Storage is owned by the generic
 				 * IO code, is dynamically allocated. */
-    int	flags;			/* ORed combination of the flags defined
+    int	flags;			/* OR'ed combination of the flags defined
 				 * below. */
     Tcl_Encoding encoding;	/* Encoding to apply when reading or writing
 				 * data on this channel. NULL means no
@@ -158,12 +158,10 @@ typedef struct ChannelState {
 				 * of line sequences in output? */
     int inEofChar;		/* If nonzero, use this as a signal of EOF on
 				 * input. */
-    int outEofChar;		/* If nonzero, append this to the channel when
-				 * it is closed if it is open for writing. */
     int unreportedError;	/* Non-zero if an error report was deferred
 				 * because it happened in the background. The
 				 * value is the POSIX error code. */
-    size_t refCount;		/* How many interpreters hold references to
+    Tcl_Size refCount;		/* How many interpreters hold references to
 				 * this IO channel? */
     struct CloseCallback *closeCbPtr;
 				/* Callbacks registered to be called when the
@@ -186,8 +184,11 @@ typedef struct ChannelState {
     EventScriptRecord *scriptRecordPtr;
 				/* Chain of all scripts registered for event
 				 * handlers ("fileevent") on this channel. */
-    int bufSize;		/* What size buffers to allocate? */
+    Tcl_Size bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
+    Channel *timerChanPtr;	/* Needed in order to decrement the refCount of
+				   the right channel when the timer is
+				   deleted. */
     struct CopyState *csPtrR;	/* State of background copy for which channel
 				 * is input, or NULL. */
     struct CopyState *csPtrW;	/* State of background copy for which channel
@@ -206,7 +207,7 @@ typedef struct ChannelState {
      * TIP #219 ... Info for the I/O system ...
      * Error message set by channel drivers, for the propagation of arbitrary
      * Tcl errors. This information, if present (chanMsg not NULL), takes
-     * precedence over a posix error code returned by a channel operation.
+     * precedence over a Posix error code returned by a channel operation.
      */
 
     Tcl_Obj* chanMsg;
@@ -216,10 +217,12 @@ typedef struct ChannelState {
 				 * companion to 'unreportedError'. */
     size_t epoch;		/* Used to test validity of stored channelname
 				 * lookup results. */
+    int maxPerms;		/* TIP #220: Max access privileges
+				 * the channel was created with. */
 } ChannelState;
 
 /*
- * Values for the flags field in Channel. Any ORed combination of the
+ * Values for the flags field in Channel. Any OR'ed combination of the
  * following flags can be stored in the field. These flags record various
  * options and state bits about the channel. In addition to the flags below,
  * the channel can also have TCL_READABLE (1<<1) and TCL_WRITABLE (1<<2) set.
@@ -269,9 +272,10 @@ typedef struct ChannelState {
 					 * delivered for buffered data until
 					 * the state of the channel
 					 * changes. */
+#define CHANNEL_ENCODING_ERROR	(1<<15)	/* set if channel
+					 * encountered an encoding error */
 #define CHANNEL_RAW_MODE	(1<<16)	/* When set, notes that the Raw API is
 					 * being used. */
-
 #define CHANNEL_INCLOSE		(1<<19)	/* Channel is currently being closed.
 					 * Its structures are still live and
 					 * usable, but it may not be closed

@@ -79,7 +79,6 @@ testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 # Some tests require the Thread package or exec command
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint exec [llength [info commands exec]]
-testConstraint knownMsvcBug [expr {![info exists ::env(CI_BUILD_WITH_MSVC)]}]
 testConstraint notWinCI [expr {
      $tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
 
@@ -128,7 +127,7 @@ set t2 [clock milliseconds]
 set lat1 [expr {($t2-$t1)*2}]; # doubled as a safety margin
 
 # Test the latency of failed connection attempts over the loopback
-# interface. They can take more than a second under Windowos and requres
+# interface. They can take more than a second under Windows and requires
 # additional [after]s in some tests that are not needed on systems that fail
 # immediately.
 set t1 [clock milliseconds]
@@ -309,13 +308,13 @@ test socket_$af-1.1 {arg parsing for socket command} -constraints [list socket s
 } -returnCodes error -result {no argument given for -server option}
 test socket_$af-1.2 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -server foo
-} -returnCodes error -result {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-reuseaddr boolean? ?-reuseport boolean? ?-myaddr addr? port"}
+} -returnCodes error -result {wrong # args: should be "socket ?-async? ?-myaddr addr? ?-myport myport? host port" or "socket -server command ?-backlog count? ?-myaddr addr? ?-reuseaddr boolean? ?-reuseport boolean? port"}
 test socket_$af-1.3 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -myaddr
 } -returnCodes error -result {no argument given for -myaddr option}
 test socket_$af-1.4 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -myaddr $localhost
-} -returnCodes error -result {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-reuseaddr boolean? ?-reuseport boolean? ?-myaddr addr? port"}
+} -returnCodes error -result {wrong # args: should be "socket ?-async? ?-myaddr addr? ?-myport myport? host port" or "socket -server command ?-backlog count? ?-myaddr addr? ?-reuseaddr boolean? ?-reuseport boolean? port"}
 test socket_$af-1.5 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -myport
 } -returnCodes error -result {no argument given for -myport option}
@@ -324,19 +323,19 @@ test socket_$af-1.6 {arg parsing for socket command} -constraints [list socket s
 } -returnCodes error -result {expected integer but got "xxxx"}
 test socket_$af-1.7 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -myport 2522
-} -returnCodes error -result {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-reuseaddr boolean? ?-reuseport boolean? ?-myaddr addr? port"}
+} -returnCodes error -result {wrong # args: should be "socket ?-async? ?-myaddr addr? ?-myport myport? host port" or "socket -server command ?-backlog count? ?-myaddr addr? ?-reuseaddr boolean? ?-reuseport boolean? port"}
 test socket_$af-1.8 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -froboz
-} -returnCodes error -result {bad option "-froboz": must be -async, -myaddr, -myport, -reuseaddr, -reuseport, or -server}
+} -returnCodes error -result {bad option "-froboz": must be -async, -backlog, -myaddr, -myport, -reuseaddr, -reuseport, or -server}
 test socket_$af-1.9 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -server foo -myport 2521 3333
 } -returnCodes error -result {option -myport is not valid for servers}
 test socket_$af-1.10 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket host 2528 -junk
-} -returnCodes error -result {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-reuseaddr boolean? ?-reuseport boolean? ?-myaddr addr? port"}
+} -returnCodes error -result {wrong # args: should be "socket ?-async? ?-myaddr addr? ?-myport myport? host port" or "socket -server command ?-backlog count? ?-myaddr addr? ?-reuseaddr boolean? ?-reuseport boolean? port"}
 test socket_$af-1.11 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -server callback 2520 --
-} -returnCodes error -result {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-reuseaddr boolean? ?-reuseport boolean? ?-myaddr addr? port"}
+} -returnCodes error -result {wrong # args: should be "socket ?-async? ?-myaddr addr? ?-myport myport? host port" or "socket -server command ?-backlog count? ?-myaddr addr? ?-reuseaddr boolean? ?-reuseport boolean? port"}
 test socket_$af-1.12 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket foo badport
 } -returnCodes error -result {expected integer but got "badport"}
@@ -348,19 +347,19 @@ test socket_$af-1.14 {arg parsing for socket command} -constraints [list socket 
 } -returnCodes error -result {cannot set -async option for server sockets}
 test socket_$af-1.15 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseaddr yes 4242
-} -returnCodes error -result {options -reuseaddr and -reuseport are only valid for servers}
+} -returnCodes error -result {options -backlog, -reuseaddr, and -reuseport are only valid for servers}
 test socket_$af-1.16 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseaddr no 4242
-} -returnCodes error -result {options -reuseaddr and -reuseport are only valid for servers}
+} -returnCodes error -result {options -backlog, -reuseaddr, and -reuseport are only valid for servers}
 test socket_$af-1.17 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseaddr
 } -returnCodes error -result {no argument given for -reuseaddr option}
 test socket_$af-1.18 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseport yes 4242
-} -returnCodes error -result {options -reuseaddr and -reuseport are only valid for servers}
+} -returnCodes error -result {options -backlog, -reuseaddr, and -reuseport are only valid for servers}
 test socket_$af-1.19 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseport no 4242
-} -returnCodes error -result {options -reuseaddr and -reuseport are only valid for servers}
+} -returnCodes error -result {options -backlog, -reuseaddr, and -reuseport are only valid for servers}
 test socket_$af-1.20 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -reuseport
 } -returnCodes error -result {no argument given for -reuseport option}
@@ -1072,7 +1071,7 @@ test socket_$af-7.3 {testing socket specific options} -constraints [list socket 
     close $s
     update
     llength $l
-} -result 14
+} -result 20
 test socket_$af-7.4 {testing socket specific options} -constraints [list socket supported_$af] -setup {
     set timer [after 10000 "set x timed_out"]
     set l ""
@@ -1865,7 +1864,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
     set srvsock {}
     # if binding on port 0 is not possible (system related, blocked on ISPs etc):
     if {[catch {close [socket -async $::localhost $port]}]} {
-      # simplest server on random port (immediatelly closing a connect):
+      # simplest server on random port (immediately closing a connect):
       set port [randport]
       set srvsock [socket -server {apply {{ch args} {close $ch}}} -myaddr $::localhost $port]
       # socket on windows has some issues yet (e. g. bug [b6d0d8cc2c]), so we simply decrease iteration count (to 1/4):
@@ -1899,7 +1898,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
       }
       iteration first
     }
-    # parent proc commiting transfer attempt (attach) and checking acquire was successful:
+    # parent proc committing transfer attempt (attach) and checking acquire was successful:
     proc transf_parent {fd args} {
       tcltest::DebugPuts 2 "** trma / $::count ** $args **"
       thread::attach $fd
@@ -2227,7 +2226,7 @@ test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
         list $x [fconfigure $sock -error] [fconfigure $sock -error]
     } -cleanup {
         close $sock
-    } -match glob -result {{error reading "sock*": socket is not connected} {connection refused} {}}
+    } -match glob -result {{error reading "sock*": transport endpoint is not connected} {connection refused} {}}
 test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
@@ -2292,7 +2291,7 @@ test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener}
         list $x [fconfigure $sock -error] [fconfigure $sock -error]
     } -cleanup {
         close $sock
-    } -match glob -result {{error reading "sock*": socket is not connected} {connection refused} {}}
+    } -match glob -result {{error reading "sock*": transport endpoint is not connected} {connection refused} {}}
 test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
@@ -2407,7 +2406,7 @@ test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener
     } -cleanup {
         catch {close $sock}
         unset x
-    } -result {socket is not connected} -returnCodes 1
+    } -result {transport endpoint is not connected} -returnCodes 1
 test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener, flush} \
     -constraints {socket testsocket_testflags} \
     -body {
@@ -2426,7 +2425,7 @@ test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener
     } -cleanup {
         catch {close $sock}
         catch {unset x}
-    } -result {socket is not connected} -returnCodes 1
+    } -result {transport endpoint is not connected} -returnCodes 1
 test socket-14.12 {[socket -async] background progress triggered by [fconfigure -error]} \
     -constraints {socket} \
     -body {
@@ -2448,7 +2447,7 @@ test socket-14.13 {testing writable event when quick failure} \
     # Test for bug 336441ed59 where a quick background fail was ignored
 
     # Test only for windows as socket -async 255.255.255.255 fails
-    # directly on unix
+    # directly on Unix
 
     # The following connect should fail very quickly
     set a1 [after 2000 {set x timeout}]

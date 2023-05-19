@@ -153,7 +153,7 @@ namespace eval ::tcl::test::main {
 	puts -nonewline $f {puts [string equal \u20ac }
 	puts $f "€]"
 	close $f
-	catch {set f [open "|[list [interpreter] -encoding ascii script]" r]}
+	catch {set f [open "|[list [interpreter] -encoding iso8859-1 script]" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -606,7 +606,7 @@ namespace eval ::tcl::test::main {
 	catch {set f [open "|[list [interpreter]]" w+]}
 	catch {chan configure $f -blocking 0}
     } -body {
-	type $f "chan configure stdin -eofchar \"\\x1A {}\"
+	type $f "chan configure stdin -eofchar \\x1A
 	    if 1 \{\n\x1A"
 	variable wait
 	chan event $f readable \

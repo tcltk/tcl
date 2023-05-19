@@ -88,7 +88,8 @@ static const Tcl_ObjType tclOSTypeType = {
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     UpdateStringOfOSType,		/* updateStringProc */
-    SetOSTypeFromAny			/* setFromAnyProc */
+    SetOSTypeFromAny,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 enum {
@@ -202,7 +203,7 @@ TclMacOSXGetFileAttribute(
     return TCL_OK;
 #else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "Mac OS X file attributes not supported", -1));
+	    "Mac OS X file attributes not supported", TCL_INDEX_NONE));
     Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);
     return TCL_ERROR;
 #endif /* HAVE_GETATTRLIST */
@@ -334,7 +335,7 @@ TclMacOSXSetFileAttribute(
 
 	    if (newRsrcForkSize != 0) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"setting nonzero rsrclength not supported", -1));
+			"setting nonzero rsrclength not supported", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);
 		return TCL_ERROR;
 	    }
@@ -344,8 +345,8 @@ TclMacOSXSetFileAttribute(
 	     */
 
 	    Tcl_DStringInit(&ds);
-	    Tcl_DStringAppend(&ds, native, -1);
-	    Tcl_DStringAppend(&ds, _PATH_RSRCFORKSPEC, -1);
+	    Tcl_DStringAppend(&ds, native, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(&ds, _PATH_RSRCFORKSPEC, TCL_INDEX_NONE);
 
 	    result = truncate(Tcl_DStringValue(&ds), 0);
 	    if (result != 0) {
@@ -375,7 +376,7 @@ TclMacOSXSetFileAttribute(
     return TCL_OK;
 #else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "Mac OS X file attributes not supported", -1));
+	    "Mac OS X file attributes not supported", TCL_INDEX_NONE));
     Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);
     return TCL_ERROR;
 #endif
@@ -459,11 +460,11 @@ TclMacOSXCopyFileAttributes(
 	 */
 
 	Tcl_DStringInit(&srcBuf);
-	Tcl_DStringAppend(&srcBuf, src, -1);
-	Tcl_DStringAppend(&srcBuf, _PATH_RSRCFORKSPEC, -1);
+	Tcl_DStringAppend(&srcBuf, src, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&srcBuf, _PATH_RSRCFORKSPEC, TCL_INDEX_NONE);
 	Tcl_DStringInit(&dstBuf);
-	Tcl_DStringAppend(&dstBuf, dst, -1);
-	Tcl_DStringAppend(&dstBuf, _PATH_RSRCFORKSPEC, -1);
+	Tcl_DStringAppend(&dstBuf, dst, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&dstBuf, _PATH_RSRCFORKSPEC, TCL_INDEX_NONE);
 
 	/*
 	 * Do the copy.
@@ -491,7 +492,7 @@ TclMacOSXCopyFileAttributes(
  *
  * Results:
  *	The return value is 1, 0 or -1 indicating whether the file matches the
- *	given criteria, does not match them, or an error occurred (in wich
+ *	given criteria, does not match them, or an error occurred (in which
  *	case an error is left in interp).
  *
  * Side effects:
@@ -642,7 +643,7 @@ SetOSTypeFromAny(
     size_t length;
 
     string = Tcl_GetStringFromObj(objPtr, &length);
-    Tcl_UtfToExternalDString(encoding, string, length, &ds);
+    Tcl_UtfToExternalDStringEx(NULL, encoding, string, length, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
 
     if (Tcl_DStringLength(&ds) > 4) {
 	if (interp) {
@@ -709,7 +710,7 @@ UpdateStringOfOSType(
     src[4] = '\0';
 
     encoding = Tcl_GetEncoding(NULL, "macRoman");
-    Tcl_ExternalToUtf(NULL, encoding, src, -1, /* flags */ 0,
+    Tcl_ExternalToUtf(NULL, encoding, src, TCL_INDEX_NONE, /* flags */ 0,
 	    /* statePtr */ NULL, dst, size, /* srcReadPtr */ NULL,
 	    /* dstWrotePtr */ &written, /* dstCharsPtr */ NULL);
     Tcl_FreeEncoding(encoding);

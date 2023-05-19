@@ -98,11 +98,9 @@ trace variable originalVar w \fItraceproc\fR
 \fIsetByUpvar\fR originalVar 2
 .CE
 .PP
-If \fIotherVar\fR refers to an element of an array, then variable
-traces set for the entire array will not be invoked when \fImyVar\fR
-is accessed (but traces on the particular element will still be
-invoked).  In particular, if the array is \fBenv\fR, then changes
-made to \fImyVar\fR will not be passed to subprocesses correctly.
+If \fIotherVar\fR refers to an element of an array, then the element
+name is passed as the second argument to the trace procedure. This
+may be important information in case of traces set on an entire array.
 .SH EXAMPLE
 A \fBdecr\fR command that works like \fBincr\fR except it subtracts
 the value from the variable instead of adding it:

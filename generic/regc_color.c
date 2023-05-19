@@ -759,9 +759,9 @@ dumpcolors(
     struct colordesc *end;
     color co;
     chr c;
-    char *has;
+    const char *has;
 
-    fprintf(f, "max %ld\n", (long) cm->max);
+    fprintf(f, "max %" TCL_Z_MODIFIER "u\n", cm->max);
     if (NBYTS > 1) {
 	fillcheck(cm, cm->tree, 0, f);
     }

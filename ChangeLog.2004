@@ -377,7 +377,7 @@
 	strstr, strtoul and strtod.
 	* unix/tcl.m4 (SC_TCL_CHECK_BROKEN_FUNC): Split a complex stanza out
 	of configure.in into its own function. Also force it to do the right
-	thing with cacheing of results of AC_TRY_RUN to deal with issue raised
+	thing with caching of results of AC_TRY_RUN to deal with issue raised
 	in [Patch 1073524]
 
 	* doc/foreach.n: Added simple example. [FRQ 1073334]
@@ -1975,7 +1975,7 @@
 	* doc/FileSystem.3:
 	* generic/tclIOUtil.c: Clarified documentation regarding ability of a
 	filesystem to say that it doesn't support a given operation using the
-	EXDEV posix error code (copyFileProc, renameFileProc, etc), and
+	EXDEV Posix error code (copyFileProc, renameFileProc, etc), and
 	updated one piece of code to ensure correct behaviour when an
 	operation is not supported [Bug 1017072]
 
@@ -2277,7 +2277,7 @@
 	with vfs [Bug 991420].
 	* tests/fileSystem.test: added test for above bug.
 
-	* doc/FileSystem.3: clarified documentation of posix error codes in
+	* doc/FileSystem.3: clarified documentation of Posix error codes in
 	'remove directory' FS proc - 'EEXIST' is used to signify a non-empty
 	directory error (bug reported against tclvfs).
 
@@ -4339,7 +4339,7 @@
 	provided by the c-runtime. [Bug 672938]
 
 	* win/nmakehlp.c: defensive techniques to avoid static buffer
-	overflows and a couple envars upsetting invokations of cl.exe and
+	overflows and a couple envars upsetting invocations of cl.exe and
 	link.exe. [Bug 885537]
 
 	* tests/winPipe.test: Added proof that BuildCommandLine() is not doing
@@ -4548,7 +4548,7 @@
 	dictionary is computed at compile time (when it is fully known). The
 	dictionary is pushed on the stack along with the result, and the code
 	and level values are included in the bytecode as operands. Also
-	supports optimized compilation of un-[catch]ed [return]s from procs
+	supports optimized compilation of un[catch]ed [return]s from procs
 	with default options into the INST_DONE instruction.
 
 	* generic/tclExecute.c: Rewrote INST_RETURN instruction to retrieve

@@ -12,6 +12,7 @@
          Copyright (C) 2009-2010 Mathias Svensson ( http://result42.com )
 */
 
+
 #if (!defined(_WIN32)) && (!defined(WIN32)) && (!defined(__APPLE__))
         #ifndef __USE_FILE_OFFSET64
                 #define __USE_FILE_OFFSET64
@@ -65,6 +66,9 @@
 #ifdef _WIN32
         #define USEWIN32IOAPI
         #include "iowin32.h"
+#       if defined(_MSC_VER)
+#           define snprintf _snprintf
+#       endif
 #endif
 
 
@@ -73,9 +77,9 @@
 #define MAXFILENAME (256)
 
 #ifdef _WIN32
-uLong filetime(f, tmzip, dt)
-    const char *f;         /* name of file to get info on */
-    tm_zip *tmzip;         /* return value: access, modific. and creation times */
+static int filetime(f, tmzip, dt)
+    const char *f;          /* name of file to get info on */
+    tm_zip *tmzip;             /* return value: access, modific. and creation times */
     uLong *dt;             /* dostime */
 {
   int ret = 0;
@@ -97,11 +101,12 @@ uLong filetime(f, tmzip, dt)
 }
 #else
 #if defined(unix) || defined(__APPLE__)
-uLong filetime(f, tmzip, dt)
+static int filetime(f, tmzip, dt)
     const char *f;         /* name of file to get info on */
     tm_zip *tmzip;         /* return value: access, modific. and creation times */
     uLong *dt;             /* dostime */
 {
+  (void)dt;
   int ret=0;
   struct stat s;        /* results of stat() */
   struct tm* filedate;
@@ -110,7 +115,7 @@ uLong filetime(f, tmzip, dt)
   if (strcmp(f,"-")!=0)
   {
     char name[MAXFILENAME+1];
-    int len = strlen(f);
+    size_t len = strlen(f);
     if (len > MAXFILENAME)
       len = MAXFILENAME;
 
@@ -139,9 +144,9 @@ uLong filetime(f, tmzip, dt)
   return ret;
 }
 #else
-uLong filetime(f, tmzip, dt)
-    const char *f;         /* name of file to get info on */
-    tm_zip *tmzip;         /* return value: access, modific. and creation times */
+static int filetime(f, tmzip, dt)
+    const char *f;          /* name of file to get info on */
+    tm_zip *tmzip;             /* return value: access, modific. and creation times */
     uLong *dt;             /* dostime */
 {
     return 0;
@@ -152,7 +157,7 @@ uLong filetime(f, tmzip, dt)
 
 
 
-int check_exist_file(filename)
+static int check_exist_file(filename)
     const char* filename;
 {
     FILE* ftestexist;
@@ -165,13 +170,13 @@ int check_exist_file(filename)
     return ret;
 }
 
-void do_banner()
+static void do_banner()
 {
     printf("MiniZip 1.1, demo of zLib + MiniZip64 package, written by Gilles Vollant\n");
     printf("more info on MiniZip at http://www.winimage.com/zLibDll/minizip.html\n\n");
 }
 
-void do_help()
+static void do_help()
 {
     printf("Usage : minizip [-o] [-a] [-0 to -9] [-p password] [-j] file.zip [files_to_add]\n\n" \
            "  -r  Scan directories recursively\n" \
@@ -185,7 +190,7 @@ void do_help()
 
 /* calculate the CRC32 of a file,
    because to encrypt a file, we need known the CRC32 of the file before */
-int getFileCrc(const char* filenameinzip,void*buf,unsigned long size_buf,unsigned long* result_crc)
+static int getFileCrc(const char* filenameinzip,void*buf,unsigned long size_buf,unsigned long* result_crc)
 {
    unsigned long calculate_crc=0;
    int err=ZIP_OK;
@@ -202,7 +207,7 @@ int getFileCrc(const char* filenameinzip,void*buf,unsigned long size_buf,unsigne
         do
         {
             err = ZIP_OK;
-            size_read = (int)fread(buf,1,size_buf,fin);
+            size_read = fread(buf,1,size_buf,fin);
             if (size_read < size_buf)
                 if (feof(fin)==0)
             {
@@ -211,7 +216,7 @@ int getFileCrc(const char* filenameinzip,void*buf,unsigned long size_buf,unsigne
             }
 
             if (size_read>0)
-                calculate_crc = crc32(calculate_crc,buf,size_read);
+                calculate_crc = crc32_z(calculate_crc,buf,size_read);
             total_read += size_read;
 
         } while ((err == ZIP_OK) && (size_read>0));
@@ -224,7 +229,7 @@ int getFileCrc(const char* filenameinzip,void*buf,unsigned long size_buf,unsigne
     return err;
 }
 
-int isLargeFile(const char* filename)
+static int isLargeFile(const char* filename)
 {
   int largeFile = 0;
   ZPOS64_T pos = 0;
@@ -232,8 +237,8 @@ int isLargeFile(const char* filename)
 
   if(pFile != NULL)
   {
-    int n = FSEEKO_FUNC(pFile, 0, SEEK_END);
-    pos = FTELLO_FUNC(pFile);
+    FSEEKO_FUNC(pFile, 0, SEEK_END);
+    pos = (ZPOS64_T)FTELLO_FUNC(pFile);
 
                 printf("File : %s is %lld bytes\n", filename, pos);
 
@@ -363,7 +368,7 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
 void addPathToZip(zipFile zf, const char *filenameinzip, const char *password, int opt_exclude_path,int opt_compress_level) {
     tinydir_dir dir;
     int i;
-    char newname[512];
+    char newname[MAXFILENAME+1+MAXFILENAME+1];
 
     tinydir_open_sorted(&dir, filenameinzip);
 
@@ -373,7 +378,7 @@ void addPathToZip(zipFile zf, const char *filenameinzip, const char *password, i
         tinydir_readfile_n(&dir, &file, i);
         if(strcmp(file.name,".")==0) continue;
         if(strcmp(file.name,"..")==0) continue;
-        sprintf(newname,"%s/%s",dir.path,file.name);
+        snprintf(newname, sizeof(newname), "%.*s/%.*s", MAXFILENAME, dir.path, MAXFILENAME, file.name);
         if (file.is_dir)
         {
             addPathToZip(zf,newname,password,opt_exclude_path,opt_compress_level);
@@ -399,7 +404,7 @@ int main(argc,argv)
     char filename_try[MAXFILENAME+16];
     int zipok;
     int err=0;
-    int size_buf=0;
+    size_t size_buf=0;
     void* buf=NULL;
     const char* password=NULL;
 
@@ -431,6 +436,7 @@ int main(argc,argv)
                         opt_exclude_path = 1;
                     if ((c=='r') || (c=='R'))
                         opt_recursive = 1;
+
                     if (((c=='p') || (c=='P')) && (i+1<argc))
                     {
                         password=argv[i+1];

@@ -116,10 +116,10 @@ static int		CopyString(const char *src, char *buf, int buflen);
 #endif
 
 #ifdef NEED_PW_CLEANER
-static void		FreePwBuf(ClientData dummy);
+static void		FreePwBuf(void *dummy);
 #endif
 #ifdef NEED_GR_CLEANER
-static void		FreeGrBuf(ClientData dummy);
+static void		FreeGrBuf(void *dummy);
 #endif
 #endif /* TCL_THREADS */
 
@@ -334,7 +334,7 @@ TclpGetPwUid(
 #ifdef NEED_PW_CLEANER
 static void
 FreePwBuf(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -517,7 +517,7 @@ TclpGetGrGid(
 #ifdef NEED_GR_CLEANER
 static void
 FreeGrBuf(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -734,7 +734,7 @@ CopyGrp(
  *
  * CopyHostent --
  *
- *      Copies string fields of the hostnent structure to the private buffer,
+ *      Copies string fields of the hostent structure to the private buffer,
  *      honouring the size of the buffer.
  *
  * Results:
@@ -992,20 +992,19 @@ TclWinCPUID(
     int status = TCL_ERROR;
 
     /* See: <http://en.wikipedia.org/wiki/CPUID> */
-#if defined(HAVE_CPUID)
 #if defined(__x86_64__) || defined(_M_AMD64) || defined (_M_X64)
     __asm__ __volatile__("movq %%rbx, %%rsi     \n\t" /* save %rbx */
                  "cpuid            \n\t"
                  "xchgq %%rsi, %%rbx   \n\t" /* restore the old %rbx */
                  : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
                  : "a"(index));
-#else
+    status = TCL_OK;
+#elif defined(__i386__) || defined(_M_IX86)
     __asm__ __volatile__("mov %%ebx, %%esi     \n\t" /* save %ebx */
                  "cpuid            \n\t"
                  "xchg %%esi, %%ebx   \n\t" /* restore the old %ebx */
                  : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
                  : "a"(index));
-#endif
     status = TCL_OK;
 #else
     (void)index;

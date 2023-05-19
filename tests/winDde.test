@@ -13,13 +13,13 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+source [file join [file dirname [info script]] tcltests.tcl]
 
-testConstraint debug [::tcl::pkgconfig get debug]
 testConstraint dde 0
 if {[testConstraint win]} {
     if {![catch {
 	    ::tcltest::loadTestedCommands
-	    set ::ddever [package require dde 1.4.4]
+	    set ::ddever [package require dde 1.4.5]
 	    set ::ddelib [info loaded {} Dde]}]} {
 	testConstraint dde 1
     }
@@ -105,7 +105,7 @@ proc createChildProcess {ddeServerName args} {
 # -------------------------------------------------------------------------
 test winDde-1.0 {check if we are testing the right dll} {win dde} {
     set ::ddever
-} {1.4.4}
+} {1.4.5}
 
 test winDde-1.1 {Settings the server's topic name} -constraints dde -body {
     list [dde servername foobar] [dde servername] [dde servername self]
@@ -154,15 +154,15 @@ test winDde-3.5 {DDE request locally} -constraints dde -body {
     dde execute TclEval self [list set \xe1 foo]
     dde request -binary TclEval self \xe1
 } -result "foo\x00"
-# Set variable a to A with diaeresis (unicode C4) by relying on the fact
+# Set variable a to A with diaeresis (Unicode C4) by relying on the fact
 # that utf-8 is sent (e.g. "c3 84" on the wire)
 test winDde-3.6 {DDE request utf-8} -constraints dde -body {
     set \xe1 "not set"
     dde execute TclEval self "set \xe1 \xc4"
     scan [set \xe1] %c
 } -result 196
-# Set variable a to A with diaeresis (unicode C4) using binary execute
-# and compose utf-8 (e.g. "c3 84" ) manualy
+# Set variable a to A with diaeresis (Unicode C4) using binary execute
+# and compose utf-8 (e.g. "c3 84" ) manually
 test winDde-3.7 {DDE request binary} -constraints {dde notWine} -body {
     set \xe1 "not set"
     dde execute -binary TclEval self [list set \xc3\xa1 \xc3\x84\x00]

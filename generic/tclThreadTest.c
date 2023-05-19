@@ -119,9 +119,7 @@ static char *errorProcString;
 
 TCL_DECLARE_MUTEX(threadMutex)
 
-static int		ThreadObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ThreadObjCmd;
 static int		ThreadCreate(Tcl_Interp *interp, const char *script,
 			    int joinable);
 static int		ThreadList(Tcl_Interp *interp);
@@ -211,7 +209,6 @@ ThreadObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    int option;
     static const char *const threadOptions[] = {
 	"cancel", "create", "event", "exit", "id",
 	"join", "names", "send", "wait", "errorproc",
@@ -221,7 +218,7 @@ ThreadObjCmd(
 	THREAD_CANCEL, THREAD_CREATE, THREAD_EVENT, THREAD_EXIT,
 	THREAD_ID, THREAD_JOIN, THREAD_NAMES, THREAD_SEND,
 	THREAD_WAIT, THREAD_ERRORPROC
-    };
+    } option;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -244,7 +241,7 @@ ThreadObjCmd(
 	Tcl_MutexUnlock(&threadMutex);
     }
 
-    switch ((enum options)option) {
+    switch (option) {
     case THREAD_CANCEL: {
 	Tcl_WideInt id;
 	const char *result;
@@ -271,11 +268,12 @@ ThreadObjCmd(
 	} else {
 	    result = NULL;
 	}
-	return ThreadCancel(interp, (Tcl_ThreadId) (size_t) id, result, flags);
+	return ThreadCancel(interp, (Tcl_ThreadId) INT2PTR(id), result, flags);
     }
     case THREAD_CREATE: {
 	const char *script;
-	int joinable, len;
+	int joinable;
+	Tcl_Size len;
 
 	if (objc == 2) {
 	    /*
@@ -335,11 +333,11 @@ ThreadObjCmd(
 	     */
 
 	    if (objc == 2) {
-		idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t)Tcl_GetCurrentThread());
+		idObj = Tcl_NewWideIntObj((Tcl_WideInt)PTR2INT(Tcl_GetCurrentThread()));
 	    } else if (objc == 3
 		    && strcmp("-main", Tcl_GetString(objv[2])) == 0) {
 		Tcl_MutexLock(&threadMutex);
-		idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t)mainThreadId);
+		idObj = Tcl_NewWideIntObj((Tcl_WideInt)PTR2INT(mainThreadId));
 		Tcl_MutexUnlock(&threadMutex);
 	    } else {
 		Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -364,13 +362,13 @@ ThreadObjCmd(
 	    return TCL_ERROR;
 	}
 
-	result = Tcl_JoinThread((Tcl_ThreadId)(size_t)id, &status);
+	result = Tcl_JoinThread((Tcl_ThreadId)INT2PTR(id), &status);
 	if (result == TCL_OK) {
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), status);
 	} else {
 	    char buf[TCL_INTEGER_SPACE];
 
-	    sprintf(buf, "%" TCL_LL_MODIFIER "d", (long long)id);
+	    snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", (long long)id);
 	    Tcl_AppendResult(interp, "cannot join thread ", buf, NULL);
 	}
 	return result;
@@ -406,7 +404,7 @@ ThreadObjCmd(
 	}
 	arg++;
 	script = Tcl_GetString(objv[arg]);
-	return ThreadSend(interp, (Tcl_ThreadId)(size_t)id, script, wait);
+	return ThreadSend(interp, (Tcl_ThreadId)INT2PTR(id), script, wait);
     }
     case THREAD_EVENT: {
 	if (objc > 2) {
@@ -610,7 +608,7 @@ NewTestThread(
      */
 
     Tcl_Preserve(tsdPtr->interp);
-    result = Tcl_EvalEx(tsdPtr->interp, threadEvalScript, -1, 0);
+    result = Tcl_EvalEx(tsdPtr->interp, threadEvalScript, TCL_INDEX_NONE, 0);
     if (result != TCL_OK) {
 	ThreadErrorProc(tsdPtr->interp);
     }
@@ -652,7 +650,7 @@ ThreadErrorProc(
     char *script;
     char buf[TCL_DOUBLE_SPACE+1];
 
-    sprintf(buf, "%p", Tcl_GetCurrentThread());
+    snprintf(buf, sizeof(buf), "%p", Tcl_GetCurrentThread());
 
     errorInfo = Tcl_GetVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
     if (errorProcString == NULL) {
@@ -825,7 +823,7 @@ ThreadSend(
     }
 
     /*
-     * Short circut sends to ourself. Ought to do something with -async, like
+     * Short circuit sends to ourself. Ought to do something with -async, like
      * run in an idle handler.
      */
 
@@ -878,8 +876,7 @@ ThreadSend(
 
     threadEventPtr->event.proc = ThreadEventProc;
     Tcl_ThreadQueueEvent(threadId, (Tcl_Event *) threadEventPtr,
-	    TCL_QUEUE_TAIL);
-    Tcl_ThreadAlert(threadId);
+	    TCL_QUEUE_TAIL|TCL_QUEUE_ALERT_IF_EMPTY);
 
     if (!wait) {
 	Tcl_MutexUnlock(&threadMutex);

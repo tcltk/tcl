@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
+Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetIntForIndex, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_GetWideUIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -32,13 +32,19 @@ int
 \fBTcl_GetIntFromObj\fR(\fIinterp, objPtr, intPtr\fR)
 .sp
 int
-\fBTcl_GetIntForIndex\fR(\fIinterp, objPtr, endValue, intPtr\fR)
+\fBTcl_GetIntForIndex\fR(\fIinterp, objPtr, endValue, indexPtr\fR)
 .sp
 int
 \fBTcl_GetLongFromObj\fR(\fIinterp, objPtr, longPtr\fR)
 .sp
 int
 \fBTcl_GetWideIntFromObj\fR(\fIinterp, objPtr, widePtr\fR)
+.sp
+int
+\fBTcl_GetWideUIntFromObj\fR(\fIinterp, objPtr, uwidePtr\fR)
+.sp
+int
+\fBTcl_GetSizeIntFromObj\fR(\fIinterp, objPtr, sizePtr\fR)
 .sp
 .sp
 \fB#include <tclTomMath.h>\fR
@@ -58,7 +64,7 @@ int
 \fBTcl_InitBignumFromDouble\fR(\fIinterp, doubleValue, bigValue\fR)
 .SH ARGUMENTS
 .AS Tcl_WideInt doubleValue in/out
-.AP int endValue in
+.AP Tcl_Size endValue in
 \fBTcl_GetIntForIndex\fR will return this when the input value is "end".
 .AP int intValue in
 Integer value used to initialize or set a Tcl value.
@@ -80,8 +86,14 @@ retrieval fails.
 Points to place to store the integer value retrieved from \fIobjPtr\fR.
 .AP long *longPtr out
 Points to place to store the long integer value retrieved from \fIobjPtr\fR.
+.AP Tcl_Size *indexPtr out
+Points to place to store the Tcl_Size value retrieved from \fIobjPtr\fR.
 .AP Tcl_WideInt *widePtr out
 Points to place to store the wide integer value retrieved from \fIobjPtr\fR.
+.AP Tcl_WideUInt *uwidePtr out
+Points to place to store the unsigned wide integer value retrieved from \fIobjPtr\fR.
+.AP Tcl_Size *sizePtr out
+Points to place to store the \fBTcl_Size\fR integer value retrieved from \fIobjPtr\fR.
 .AP mp_int *bigValue in/out
 Points to a multi-precision integer structure declared by the LibTomMath
 library.
@@ -131,7 +143,8 @@ of \fIobjPtr\fR may be changed to make subsequent calls to the
 same routine more efficient.
 .PP
 The \fBTcl_GetIntFromObj\fR, \fBTcl_GetLongFromObj\fR,
-\fBTcl_GetWideIntFromObj\fR, \fBTcl_GetBignumFromObj\fR, and
+\fBTcl_GetWideIntFromObj\fR, \fBTcl_GetSizeIntFromObj\fR,
+\fBTcl_GetBignumFromObj\fR, and
 \fBTcl_TakeBignumFromObj\fR routines attempt to retrieve an integral
 value of the appropriate type from the Tcl value \fIobjPtr\fR.  If the
 attempt succeeds, then \fBTCL_OK\fR is returned, and the value is

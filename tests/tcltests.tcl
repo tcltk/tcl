@@ -1,25 +1,22 @@
 #! /usr/bin/env tclsh
 
+# Don't overwrite tcltests facilities already present
+if {[package provide tcltests] ne {}} return
+
 package require tcltest 2.5
 namespace import ::tcltest::*
-testConstraint exec          [llength [info commands exec]]
-if {[namespace which testdebug] ne {}} {
-	testConstraint debug         [testdebug]
-	testConstraint purify        [testpurify]
-	testConstraint debugpurify   [
-		expr {
-		![testConstraint memory]
-		&&
-		[testConstraint debug]
-		&&
-		[testConstraint purify]
-	}]
-}
-testConstraint nodep         [info exists tcl_precision]
+testConstraint exec [llength [info commands exec]]
+testConstraint debug [tcl::build-info debug]
+testConstraint purify [tcl::build-info purify]
+testConstraint debugpurify [
+    expr {
+	![tcl::build-info memdebug]
+	&& [testConstraint debug]
+	&& [testConstraint purify]
+    }]
 testConstraint fcopy         [llength [info commands fcopy]]
 testConstraint fileevent     [llength [info commands fileevent]]
-testConstraint thread        [
-    expr {0 == [catch {package require Thread 2.7-}]}]
+testConstraint thread        [expr {![catch {package require Thread 2.7-}]}]
 testConstraint notValgrind   [expr {![testConstraint valgrind]}]
 
 
@@ -33,6 +30,18 @@ namespace eval ::tcltests {
 	} else {
 	    interp alias {} [namespace current]::tempdir {} ::tcl::file::tempdir
 	}
+    }
+
+
+    # Stolen from dict.test
+    proc scriptmemcheck script {
+	set end [lindex [split [memory info] \n] 3 3]
+	for {set i 0} {$i < 5} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [lindex [split [memory info] \n] 3 3]
+	}
+	expr {$end - $tmp}
     }
 
 

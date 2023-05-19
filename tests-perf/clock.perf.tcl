@@ -32,7 +32,7 @@ namespace path {::tclTestPerf}
 ## set testing defaults:
 set ::env(TCL_TZ) :CET
 
-# warm-up interpeter compiler env, clock platform-related features:
+# warm-up interpreter compiler env, clock platform-related features:
 
 ## warm-up test-related features (load clock.tcl, system zones, locales, etc.):
 clock scan "" -gmt 1

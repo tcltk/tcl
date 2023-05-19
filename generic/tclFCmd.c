@@ -47,7 +47,7 @@ static int		FileForceOption(Tcl_Interp *interp,
 
 int
 TclFileRenameCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interp for error reporting or recursive
 				 * calls in the case of a tricky rename. */
     int objc,			/* Number of arguments. */
@@ -76,7 +76,7 @@ TclFileRenameCmd(
 
 int
 TclFileCopyCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting or recursive calls
 				 * in the case of a tricky copy. */
     int objc,			/* Number of arguments. */
@@ -214,13 +214,14 @@ FileCopyRename(
 
 int
 TclFileMakeDirsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting. */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     Tcl_Obj *errfile = NULL;
-    int result, i, j, pobjc;
+    int result, i;
+    Tcl_Size j, pobjc;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
@@ -338,7 +339,7 @@ TclFileMakeDirsCmd(
 
 int
 TclFileDeleteCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
@@ -425,7 +426,7 @@ TclFileDeleteCmd(
     if (result != TCL_OK) {
 	if (errfile == NULL) {
 	    /*
-	     * We try to accomodate poor error results from our Tcl_FS calls.
+	     * We try to accommodate poor error results from our Tcl_FS calls.
 	     */
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -870,10 +871,10 @@ FileForceOption(
 
 static Tcl_Obj *
 FileBasename(
-    Tcl_Interp *interp,		/* Interp, for error return. */
+    TCL_UNUSED(Tcl_Interp *),	/* Interp, for error return. */
     Tcl_Obj *pathPtr)		/* Path whose basename to extract. */
 {
-    int objc;
+    Tcl_Size objc;
     Tcl_Obj *splitPtr;
     Tcl_Obj *resultPtr = NULL;
 
@@ -881,17 +882,8 @@ FileBasename(
     Tcl_IncrRefCount(splitPtr);
 
     if (objc != 0) {
-	if ((objc == 1) && (*TclGetString(pathPtr) == '~')) {
-	    Tcl_DecrRefCount(splitPtr);
-	    if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
-		return NULL;
-	    }
-	    splitPtr = Tcl_FSSplitPath(pathPtr, &objc);
-	    Tcl_IncrRefCount(splitPtr);
-	}
-
-	/*
-	 * Return the last component, unless it is the only component, and it
+        /*
+         * Return the last component, unless it is the only component, and it
 	 * is the root of an absolute path.
 	 */
 
@@ -946,7 +938,7 @@ FileBasename(
 
 int
 TclFileAttrsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter for error reporting. */
     int objc,			/* Number of command line arguments. */
     Tcl_Obj *const objv[])	/* The command line objects. */
@@ -955,7 +947,7 @@ TclFileAttrsCmd(
     const char *const *attributeStrings;
     const char **attributeStringsAllocated = NULL;
     Tcl_Obj *objStrings = NULL;
-    int numObjStrings = -1;
+    Tcl_Size numObjStrings = TCL_INDEX_NONE;
     Tcl_Obj *filePtr;
 
     if (objc < 2) {
@@ -979,7 +971,7 @@ TclFileAttrsCmd(
 
     attributeStrings = Tcl_FSFileAttrStrings(filePtr, &objStrings);
     if (attributeStrings == NULL) {
-	int index;
+	Tcl_Size index;
 	Tcl_Obj *objPtr;
 
 	if (objStrings == NULL) {
@@ -1006,7 +998,7 @@ TclFileAttrsCmd(
 	 * Use objStrings as a list object.
 	 */
 
-	if (Tcl_ListObjLength(interp, objStrings, &numObjStrings) != TCL_OK) {
+	if (TclListObjLengthM(interp, objStrings, &numObjStrings) != TCL_OK) {
 	    goto end;
 	}
 	attributeStringsAllocated = (const char **)
@@ -1162,7 +1154,7 @@ TclFileAttrsCmd(
 
 int
 TclFileLinkCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1220,7 +1212,7 @@ TclFileLinkCmd(
 	if (contents == NULL) {
 	    /*
 	     * We handle three common error cases specially, and for all other
-	     * errors, we use the standard posix error message.
+	     * errors, we use the standard Posix error message.
 	     */
 
 	    if (errno == EEXIST) {
@@ -1313,7 +1305,7 @@ TclFileLinkCmd(
 
 int
 TclFileReadLinkCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1364,7 +1356,7 @@ TclFileReadLinkCmd(
 
 int
 TclFileTemporaryCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1389,7 +1381,7 @@ TclFileTemporaryCmd(
 	TclNewObj(nameObj);
     }
     if (objc > 2) {
-	size_t length;
+	Tcl_Size length;
 	Tcl_Obj *templateObj = objv[2];
 	const char *string = Tcl_GetStringFromObj(templateObj, &length);
 
@@ -1523,7 +1515,7 @@ TclFileTemporaryCmd(
 
 int
 TclFileTempDirCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1541,7 +1533,7 @@ TclFileTempDirCmd(
     }
 
     if (objc > 1) {
-	int length;
+	Tcl_Size length;
 	Tcl_Obj *templateObj = objv[1];
 	const char *string = Tcl_GetStringFromObj(templateObj, &length);
 	const int onWindows = (tclPlatform == TCL_PLATFORM_WINDOWS);
@@ -1646,6 +1638,82 @@ TclFileTempDirCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, dirNameObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFileHomeCmd --
+ *
+ *	This function is invoked to process the "file home" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFileHomeCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *homeDirObj;
+
+    if (objc != 1 && objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?user?");
+	return TCL_ERROR;
+    }
+    homeDirObj = TclGetHomeDirObj(interp, objc == 1 ? NULL : Tcl_GetString(objv[1]));
+    if (homeDirObj == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, homeDirObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFileTildeExpandCmd --
+ *
+ *	This function is invoked to process the "file tildeexpand" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFileTildeExpandCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *expandedPathObj;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "path");
+	return TCL_ERROR;
+    }
+    expandedPathObj = TclResolveTildePath(interp, objv[1]);
+    if (expandedPathObj == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, expandedPathObj);
     return TCL_OK;
 }
 

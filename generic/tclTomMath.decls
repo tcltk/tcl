@@ -74,7 +74,7 @@ declare 16 {
     mp_err MP_WUR TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q, mp_int *r)
 }
 # Removed in 9.0
-#declare 17 {deprecated {is private function in libtommath}} {
+#declare 17 {
 #    mp_err TclBN_mp_div_3(const mp_int *a, mp_int *q, mp_digit *r)
 #}
 declare 18 {
@@ -141,7 +141,7 @@ declare 38 {
     mp_err MP_WUR TclBN_mp_shrink(mp_int *a)
 }
 # Removed in 9.0
-#declare 39 {deprecated {macro calling mp_set_u64}} {
+#declare 39 {
 #    void TclBN_mp_set(mp_int *a, unsigned int b)
 #}
 # Removed in 9.0
@@ -180,18 +180,18 @@ declare 49 {
     void TclBN_mp_zero(mp_int *a)
 }
 # Removed in 9.0
-#declare 61 {deprecated {macro calling mp_init_u64}} {
+#declare 61 {
 #    mp_err TclBN_mp_init_ul(mp_int *a, unsigned long i)
 #}
 # Removed in 9.0
-#declare 62 {deprecated {macro calling mp_set_u64}} {
+#declare 62 {
 #    void TclBN_mp_set_ul(mp_int *a, unsigned long i)
 #}
 declare 63 {
     int MP_WUR TclBN_mp_cnt_lsb(const mp_int *a)
 }
 # Removed in 9.0
-#declare 64 {deprecated {macro calling mp_init_i64}} {
+#declare 64 {
 #    int TclBN_mp_init_l(mp_int *bignum, long initVal)
 #}
 declare 65 {
@@ -219,6 +219,10 @@ declare 71 {
     mp_err MP_WUR TclBN_mp_unpack(mp_int *rop, size_t count, mp_order order, size_t size,
 	    mp_endian endian, size_t nails, const void *op)
 }
+declare 72 {
+    mp_err MP_WUR TclBN_mp_pack(void *rop, size_t maxcount, size_t *written, mp_order order,
+	    size_t size, mp_endian endian, size_t nails, const mp_int *op)
+}
 
 # Added in libtommath 1.1.0
 # No longer in use: replaced by mp_and()
@@ -235,6 +239,9 @@ declare 71 {
 #}
 declare 76 {
     mp_err MP_WUR TclBN_mp_signed_rsh(const mp_int *a, int b, mp_int *c)
+}
+declare 77 {
+    size_t MP_WUR TclBN_mp_pack_count(const mp_int *a, size_t nails, size_t size)
 }
 
 # Added in libtommath 1.2.0

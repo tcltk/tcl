@@ -210,13 +210,13 @@ CheckForCompilerFeature(
     sa.bInheritHandle = FALSE;
 
     /*
-     * Create a non-inheritible pipe.
+     * Create a non-inheritable pipe.
      */
 
     CreatePipe(&Out.pipe, &h, &sa, 0);
 
     /*
-     * Dupe the write side, make it inheritible, and close the original.
+     * Dupe the write side, make it inheritable, and close the original.
      */
 
     DuplicateHandle(hProcess, h, hProcess, &si.hStdOutput, 0, TRUE,
@@ -352,7 +352,7 @@ CheckForLinkerFeature(
     CreatePipe(&Out.pipe, &h, &sa, 0);
 
     /*
-     * Dupe the write side, make it inheritible, and close the original.
+     * Dupe the write side, make it inheritable, and close the original.
      */
 
     DuplicateHandle(hProcess, h, hProcess, &si.hStdOutput, 0, TRUE,
@@ -584,7 +584,7 @@ list_free(list_item_t **listPtrPtr)
  * SubstituteFile --
  *	As windows doesn't provide anything useful like sed and it's unreliable
  *	to use the tclsh you are building against (consider x-platform builds -
- *	eg compiling AMD64 target from IX86) we provide a simple substitution
+ *	e.g. compiling AMD64 target from IX86) we provide a simple substitution
  *	option here to handle autoconf style substitutions.
  *	The substitution file is whitespace and line delimited. The file should
  *	consist of lines matching the regular expression:
@@ -610,7 +610,7 @@ SubstituteFile(
     if (fp != NULL) {
 
 	/*
-	 * Build a list of substutitions from the first filename
+	 * Build a list of substitutions from the first filename
 	 */
 
 	sp = fopen(substitutions, "rt");
@@ -718,11 +718,13 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
     int keylen, ret;
     WIN32_FIND_DATA finfo;
 
-    if (dir == NULL || keypath == NULL)
+    if (dir == NULL || keypath == NULL) {
 	return 2; /* Have no real error reporting mechanism into nmake */
+    }
     dirlen = strlen(dir);
-    if ((dirlen + 3) > sizeof(path))
+    if ((dirlen + 3) > sizeof(path)) {
 	return 2;
+    }
     strncpy(path, dir, dirlen);
     strncpy(path+dirlen, "\\*", 3);	/* Including terminating \0 */
     keylen = strlen(keypath);
@@ -788,8 +790,9 @@ static int LocateDependency(const char *keypath)
 
     for (i = 0; i < (sizeof(paths)/sizeof(paths[0])); ++i) {
 	ret = LocateDependencyHelper(paths[i], keypath);
-	if (ret == 0)
+	if (ret == 0) {
 	    return ret;
+	}
     }
     return ret;
 }

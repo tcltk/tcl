@@ -106,7 +106,7 @@ static const char *
 DyldOFIErrorMsg(
     int err)
 {
-    switch(err) {
+    switch (err) {
     case NSObjectFileImageSuccess:
 	return NULL;
     case NSObjectFileImageFailure:
@@ -185,7 +185,7 @@ TclpDlopen(
 
     nativePath = (const char *)Tcl_FSGetNativePath(pathPtr);
     nativeFileName = Tcl_UtfToExternalDString(NULL, TclGetString(pathPtr),
-	    -1, &ds);
+	    TCL_INDEX_NONE, &ds);
 
 #if TCL_DYLD_USE_DLFCN
     /*
@@ -296,7 +296,7 @@ TclpDlopen(
 
 	TclNewObj(errObj);
 	if (errMsg != NULL) {
-	    Tcl_AppendToObj(errObj, errMsg, -1);
+	    Tcl_AppendToObj(errObj, errMsg, TCL_INDEX_NONE);
 	}
 #if TCL_DYLD_USE_NSMODULE
 	if (objFileImageErrMsg) {
@@ -341,7 +341,7 @@ FindSymbol(
     Tcl_DString ds;
     const char *native;
 
-    native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, symbol, TCL_INDEX_NONE, &ds);
     if (dyldLoadHandle->dlHandle) {
 #if TCL_DYLD_USE_DLFCN
 	proc = (Tcl_LibraryInitProc *)dlsym(dyldLoadHandle->dlHandle, native);
@@ -360,7 +360,7 @@ FindSymbol(
 
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
-	native = Tcl_DStringAppend(&newName, native, -1);
+	native = Tcl_DStringAppend(&newName, native, TCL_INDEX_NONE);
 	if (dyldLoadHandle->dyldLibHeader) {
 	    nsSymbol = NSLookupSymbolInImage(dyldLoadHandle->dyldLibHeader,
 		    native, NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW |
@@ -656,7 +656,7 @@ TclpLoadMemory(
 	const char *errorName, *errMsg;
 
 	NSLinkEditError(&editError, &errorNumber, &errorName, &errMsg);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, TCL_INDEX_NONE));
 	return TCL_ERROR;
     }
 

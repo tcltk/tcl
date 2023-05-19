@@ -20,9 +20,9 @@
  */
 
 static void		NativeScaleTime(Tcl_Time *timebuf,
-			    ClientData clientData);
+			    void *clientData);
 static void		NativeGetTime(Tcl_Time *timebuf,
-			    ClientData clientData);
+			    void *clientData);
 
 /*
  * TIP #233 (Virtualized Time): Data for the time hooks, if any.
@@ -104,7 +104,7 @@ TclpGetMicroseconds(void)
  * TclpGetClicks --
  *
  *	This procedure returns a value that represents the highest resolution
- *	clock available on the system. There are no garantees on what the
+ *	clock available on the system. There are no guarantees on what the
  *	resolution will be. In Tcl we will call this value a "click". The
  *	start time is also system dependent.
  *
@@ -127,8 +127,8 @@ TclpGetClicks(void)
 	Tcl_Time time;
 
 	GetTime(&time);
-	now = ((unsigned long long)(unsigned long) time.sec)*1000000 +
-	        time.usec;
+	now = ((unsigned long long)(time.sec)*1000000ULL) +
+		(unsigned long long)(time.usec);
     } else {
 	/*
 	 * A semi-NativeGetTime, specialized to clicks.
@@ -141,7 +141,8 @@ TclpGetClicks(void)
     Tcl_Time time;
 
     GetTime(&time);
-    now = ((unsigned long long) time.sec)*1000000 + time.usec;
+    now = ((unsigned long long)(time.sec)*1000000ULL) +
+	    (unsigned long long)(time.usec);
 #endif /* NO_GETTOD */
 
     return now;
@@ -327,7 +328,7 @@ void
 Tcl_SetTimeProc(
     Tcl_GetTimeProc *getProc,
     Tcl_ScaleTimeProc *scaleProc,
-    ClientData clientData)
+    void *clientData)
 {
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
@@ -354,7 +355,7 @@ void
 Tcl_QueryTimeProc(
     Tcl_GetTimeProc **getProc,
     Tcl_ScaleTimeProc **scaleProc,
-    ClientData *clientData)
+    void **clientData)
 {
     if (getProc) {
 	*getProc = tclGetTimeProcPtr;
@@ -387,7 +388,7 @@ Tcl_QueryTimeProc(
 static void
 NativeScaleTime(
     TCL_UNUSED(Tcl_Time *),
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     /* Native scale is 1:1. Nothing is done */
 }
@@ -412,7 +413,7 @@ NativeScaleTime(
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     struct timeval tv;
 

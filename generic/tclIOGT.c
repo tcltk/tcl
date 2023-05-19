@@ -19,25 +19,25 @@
  * the transformation.
  */
 
-static int		TransformBlockModeProc(ClientData instanceData,
+static int		TransformBlockModeProc(void *instanceData,
 			    int mode);
-static int		TransformCloseProc(ClientData instanceData,
+static int		TransformCloseProc(void *instanceData,
 			    Tcl_Interp *interp, int flags);
-static int		TransformInputProc(ClientData instanceData, char *buf,
+static int		TransformInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCodePtr);
-static int		TransformOutputProc(ClientData instanceData,
+static int		TransformOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCodePtr);
-static int		TransformSetOptionProc(ClientData instanceData,
+static int		TransformSetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *value);
-static int		TransformGetOptionProc(ClientData instanceData,
+static int		TransformGetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
-static void		TransformWatchProc(ClientData instanceData, int mask);
-static int		TransformGetFileHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static int		TransformNotifyProc(ClientData instanceData, int mask);
-static long long	TransformWideSeekProc(ClientData instanceData,
+static void		TransformWatchProc(void *instanceData, int mask);
+static int		TransformGetFileHandleProc(void *instanceData,
+			    int direction, void **handlePtr);
+static int		TransformNotifyProc(void *instanceData, int mask);
+static long long	TransformWideSeekProc(void *instanceData,
 			    long long offset, int mode, int *errorCodePtr);
 
 /*
@@ -45,7 +45,7 @@ static long long	TransformWideSeekProc(ClientData instanceData,
  * handling and generating fileeevents.
  */
 
-static void		TransformChannelHandlerTimer(ClientData clientData);
+static void		TransformChannelHandlerTimer(void *clientData);
 
 /*
  * Forward declarations of internal procedures. Third, helper procedures
@@ -104,7 +104,7 @@ typedef struct ResultBuffer ResultBuffer;
 static inline void	ResultClear(ResultBuffer *r);
 static inline void	ResultInit(ResultBuffer *r);
 static inline int	ResultEmpty(ResultBuffer *r);
-static inline int	ResultCopy(ResultBuffer *r, unsigned char *buf,
+static inline size_t	ResultCopy(ResultBuffer *r, unsigned char *buf,
 			    size_t toRead);
 static inline void	ResultAdd(ResultBuffer *r, unsigned char *buf,
 			    size_t toWrite);
@@ -258,7 +258,7 @@ TclChannelTransform(
     Channel *chanPtr;		/* The actual channel. */
     ChannelState *statePtr;	/* State info for channel. */
     int mode;			/* Read/write mode of the channel. */
-    int objc;
+    Tcl_Size objc;
     TransformChannelData *dataPtr;
     Tcl_DString ds;
 
@@ -266,7 +266,7 @@ TclChannelTransform(
 	return TCL_ERROR;
     }
 
-    if (TCL_OK != Tcl_ListObjLength(interp, cmdObjPtr, &objc)) {
+    if (TCL_OK != TclListObjLengthM(interp, cmdObjPtr, &objc)) {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("-command value is not a list", -1));
 	return TCL_ERROR;
@@ -375,7 +375,7 @@ ExecuteCallback(
 				 * interpreters. */
 {
     Tcl_Obj *resObj;		/* See below, switch (transmit). */
-    size_t resLen = 0;
+    Tcl_Size resLen = 0;
     unsigned char *resBuf;
     Tcl_InterpState state = NULL;
     int res = TCL_OK;
@@ -401,7 +401,7 @@ ExecuteCallback(
 
     /*
      * Use a byte-array to prevent the misinterpretation of binary data coming
-     * through as UTF while at the tcl level.
+     * through as Utf while at the tcl level.
      */
 
     Tcl_ListObjAppendElement(NULL, command, Tcl_NewByteArrayObj(buf, bufLen));
@@ -409,7 +409,7 @@ ExecuteCallback(
     /*
      * Step 2, execute the command at the global level of the interpreter used
      * to create the transformation. Destroy the command afterward. If an
-     * error occured and the current interpreter is defined and not equal to
+     * error occurred and the current interpreter is defined and not equal to
      * the interpreter for the callback, then copy the error message into
      * current interpreter. Don't copy if in preservation mode.
      */
@@ -441,9 +441,12 @@ ExecuteCallback(
 	}
 	resObj = Tcl_GetObjResult(eval);
 	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
-	Tcl_WriteRaw(Tcl_GetStackedChannel(dataPtr->self), (char *) resBuf,
-		resLen);
-	break;
+	if (resBuf) {
+	    Tcl_WriteRaw(Tcl_GetStackedChannel(dataPtr->self),
+		    (char *) resBuf, resLen);
+	    break;
+	}
+	goto nonBytes;
 
     case TRANSMIT_SELF:
 	if (dataPtr->self == NULL) {
@@ -451,14 +454,24 @@ ExecuteCallback(
 	}
 	resObj = Tcl_GetObjResult(eval);
 	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
-	Tcl_WriteRaw(dataPtr->self, (char *) resBuf, resLen);
-	break;
+	if (resBuf) {
+	    Tcl_WriteRaw(dataPtr->self, (char *) resBuf, resLen);
+	    break;
+	}
+	goto nonBytes;
 
     case TRANSMIT_IBUF:
 	resObj = Tcl_GetObjResult(eval);
 	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
-	ResultAdd(&dataPtr->result, resBuf, resLen);
-	break;
+	if (resBuf) {
+	    ResultAdd(&dataPtr->result, resBuf, resLen);
+	    break;
+	}
+	nonBytes:
+	Tcl_AppendResult(interp, "chan transform callback received non-bytes",
+		NULL);
+	Tcl_Release(eval);
+	return TCL_ERROR;
 
     case TRANSMIT_NUM:
 	/*
@@ -497,7 +510,7 @@ ExecuteCallback(
 
 static int
 TransformBlockModeProc(
-    ClientData instanceData,	/* State of transformation. */
+    void *instanceData,	/* State of transformation. */
     int mode)			/* New blocking mode. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
@@ -529,7 +542,7 @@ TransformBlockModeProc(
 
 static int
 TransformCloseProc(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp,
 	int flags)
 {
@@ -560,7 +573,7 @@ TransformCloseProc(
      * Now flush data waiting in internal buffers to output and input. The
      * input must be done despite the fact that there is no real receiver for
      * it anymore. But the scripts might have sideeffects other parts of the
-     * system rely on (f.e. signaling the close to interested parties).
+     * system rely on (f.e. signalling the close to interested parties).
      */
 
     PreserveData(dataPtr);
@@ -613,7 +626,7 @@ TransformCloseProc(
 
 static int
 TransformInputProc(
-    ClientData instanceData,
+    void *instanceData,
     char *buf,
     int toRead,
     int *errorCodePtr)
@@ -780,7 +793,7 @@ TransformInputProc(
 
 static int
 TransformOutputProc(
-    ClientData instanceData,
+    void *instanceData,
     const char *buf,
     int toWrite,
     int *errorCodePtr)
@@ -832,7 +845,7 @@ TransformOutputProc(
 
 static long long
 TransformWideSeekProc(
-    ClientData instanceData,	/* The channel to manipulate. */
+    void *instanceData,	/* The channel to manipulate. */
     long long offset,		/* Size of movement. */
     int mode,			/* How to move. */
     int *errorCodePtr)		/* Location of error flag. */
@@ -910,7 +923,7 @@ TransformWideSeekProc(
 
 static int
 TransformSetOptionProc(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp,
     const char *optionName,
     const char *value)
@@ -948,7 +961,7 @@ TransformSetOptionProc(
 
 static int
 TransformGetOptionProc(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp,
     const char *optionName,
     Tcl_DString *dsPtr)
@@ -995,14 +1008,14 @@ TransformGetOptionProc(
 
 static void
 TransformWatchProc(
-    ClientData instanceData,	/* Channel to watch. */
+    void *instanceData,	/* Channel to watch. */
     int mask)			/* Events of interest. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
     Tcl_Channel downChan;
 
     /*
-     * The caller expressed interest in events occuring for this channel. We
+     * The caller expressed interest in events occurring for this channel. We
      * are forwarding the call to the underlying channel now.
      */
 
@@ -1073,9 +1086,9 @@ TransformWatchProc(
 
 static int
 TransformGetFileHandleProc(
-    ClientData instanceData,	/* Channel to query. */
+    void *instanceData,	/* Channel to query. */
     int direction,		/* Direction of interest. */
-    ClientData *handlePtr)	/* Place to store the handle into. */
+    void **handlePtr)	/* Place to store the handle into. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)instanceData;
 
@@ -1107,14 +1120,14 @@ TransformGetFileHandleProc(
 
 static int
 TransformNotifyProc(
-    ClientData clientData,	/* The state of the notified
+    void *clientData,	/* The state of the notified
 				 * transformation. */
-    int mask)			/* The mask of occuring events. */
+    int mask)			/* The mask of occurring events. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)clientData;
 
     /*
-     * An event occured in the underlying channel. This transformation doesn't
+     * An event occurred in the underlying channel. This transformation doesn't
      * process such events thus returns the incoming mask unchanged.
      */
 
@@ -1152,7 +1165,7 @@ TransformNotifyProc(
 
 static void
 TransformChannelHandlerTimer(
-    ClientData clientData)	/* Transformation to query. */
+    void *clientData)	/* Transformation to query. */
 {
     TransformChannelData *dataPtr = (TransformChannelData *)clientData;
 
@@ -1204,7 +1217,7 @@ ResultClear(
  * ResultInit --
  *
  *	Initializes the specified buffer structure. The structure will contain
- *	valid information for an emtpy buffer.
+ *	valid information for an empty buffer.
  *
  * Side effects:
  *	See above.
@@ -1266,13 +1279,13 @@ ResultEmpty(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline size_t
 ResultCopy(
     ResultBuffer *r,		/* The buffer to read from. */
     unsigned char *buf,		/* The buffer to copy into. */
     size_t toRead)		/* Number of requested bytes. */
 {
-    if (r->used == 0) {
+    if (ResultEmpty(r)) {
 	/*
 	 * Nothing to copy in the case of an empty buffer.
 	 */
@@ -1329,7 +1342,7 @@ ResultAdd(
     unsigned char *buf,		/* The buffer to read from. */
     size_t toWrite)		/* The number of bytes in 'buf'. */
 {
-    if (r->used + toWrite > r->allocated) {
+    if ((r->used + toWrite + 1) > r->allocated) {
 	/*
 	 * Extension of the internal buffer is required.
 	 */

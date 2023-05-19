@@ -369,13 +369,13 @@ TclpInitPlatform(void)
      * Make sure, that the standard FDs exist. [Bug 772288]
      */
 
-    if (TclOSseek(0, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(0, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_RDONLY);
     }
-    if (TclOSseek(1, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(1, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_WRONLY);
     }
-    if (TclOSseek(2, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(2, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_WRONLY);
     }
 
@@ -455,7 +455,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    size_t *lengthPtr,
+    TCL_HASH_TYPE *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
@@ -469,16 +469,16 @@ TclpInitLibraryPath(
      * Look for the library relative to the TCL_LIBRARY env variable. If the
      * last dirname in the TCL_LIBRARY path does not match the last dirname in
      * the installLib variable, use the last dir name of installLib in
-     * addition to the orginal TCL_LIBRARY path.
+     * addition to the original TCL_LIBRARY path.
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
-    Tcl_ExternalToUtfDString(NULL, str, -1, &buffer);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, str, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
     str = Tcl_DStringValue(&buffer);
 
     if ((str != NULL) && (str[0] != '\0')) {
 	Tcl_DString ds;
-	int pathc;
+	Tcl_Size pathc;
 	const char **pathv;
 	char installLib[LIBRARY_SIZE];
 
@@ -490,13 +490,13 @@ TclpInitLibraryPath(
 	 * installed.
 	 */
 
-	sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+	snprintf(installLib, sizeof(installLib), "lib/tcl%s", TCL_VERSION);
 
 	/*
 	 * If TCL_LIBRARY is set, search there.
 	 */
 
-	Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(str, -1));
+	Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(str, TCL_INDEX_NONE));
 
 	Tcl_SplitPath(str, &pathc, &pathv);
 	if ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc-1]) != 0)) {
@@ -510,7 +510,7 @@ TclpInitLibraryPath(
 
 	    pathv[pathc - 1] = installLib + 4;
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
-	    Tcl_ListObjAppendElement(NULL, pathPtr, TclDStringToObj(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_DStringToObj(&ds));
 	}
 	Tcl_Free(pathv);
     }
@@ -537,16 +537,24 @@ TclpInitLibraryPath(
 	    str = defaultLibraryDir;
 	}
 	if (str[0] != '\0') {
-	    objPtr = Tcl_NewStringObj(str, -1);
+	    objPtr = Tcl_NewStringObj(str, TCL_INDEX_NONE);
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	}
     }
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    str = Tcl_GetStringFromObj(pathPtr, lengthPtr);
-    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
-    memcpy(*valuePtr, str, *lengthPtr + 1);
+
+    /*
+     * Note lengthPtr is (TCL_HASH_TYPE *) which is unsigned so cannot
+     * pass directly to Tcl_GetStringFromObj.
+     * TODO - why is the type TCL_HASH_TYPE anyways?
+     */
+    Tcl_Size length;
+    str = Tcl_GetStringFromObj(pathPtr, &length);
+    *lengthPtr = length;
+    *valuePtr = (char *)Tcl_Alloc(length + 1);
+    memcpy(*valuePtr, str, length + 1);
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -634,13 +642,13 @@ Tcl_GetEncodingNameFromEnvironment(
 	 */
 
 	Tcl_DStringInit(&ds);
-	encoding = Tcl_DStringAppend(&ds, nl_langinfo(CODESET), -1);
+	encoding = Tcl_DStringAppend(&ds, nl_langinfo(CODESET), TCL_INDEX_NONE);
 	Tcl_UtfToLower(Tcl_DStringValue(&ds));
 	knownEncoding = SearchKnownEncodings(encoding);
 	if (knownEncoding != NULL) {
-	    Tcl_DStringAppend(bufPtr, knownEncoding, -1);
+	    Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
 	} else if (NULL != Tcl_GetEncoding(NULL, encoding)) {
-	    Tcl_DStringAppend(bufPtr, encoding, -1);
+	    Tcl_DStringAppend(bufPtr, encoding, TCL_INDEX_NONE);
 	}
 	Tcl_DStringFree(&ds);
 	if (Tcl_DStringLength(bufPtr)) {
@@ -672,14 +680,14 @@ Tcl_GetEncodingNameFromEnvironment(
 
 	Tcl_DStringInit(&ds);
 	p = encoding;
-	encoding = Tcl_DStringAppend(&ds, p, -1);
+	encoding = Tcl_DStringAppend(&ds, p, TCL_INDEX_NONE);
 	Tcl_UtfToLower(Tcl_DStringValue(&ds));
 
 	knownEncoding = SearchKnownEncodings(encoding);
 	if (knownEncoding != NULL) {
-	    Tcl_DStringAppend(bufPtr, knownEncoding, -1);
+	    Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
 	} else if (NULL != Tcl_GetEncoding(NULL, encoding)) {
-	    Tcl_DStringAppend(bufPtr, encoding, -1);
+	    Tcl_DStringAppend(bufPtr, encoding, TCL_INDEX_NONE);
 	}
 	if (Tcl_DStringLength(bufPtr)) {
 	    Tcl_DStringFree(&ds);
@@ -700,9 +708,9 @@ Tcl_GetEncodingNameFromEnvironment(
 	if (*p != '\0') {
 	    knownEncoding = SearchKnownEncodings(p);
 	    if (knownEncoding != NULL) {
-		Tcl_DStringAppend(bufPtr, knownEncoding, -1);
+		Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
 	    } else if (NULL != Tcl_GetEncoding(NULL, p)) {
-		Tcl_DStringAppend(bufPtr, p, -1);
+		Tcl_DStringAppend(bufPtr, p, TCL_INDEX_NONE);
 	    }
 	}
 	Tcl_DStringFree(&ds);
@@ -710,7 +718,7 @@ Tcl_GetEncodingNameFromEnvironment(
 	    return Tcl_DStringValue(bufPtr);
 	}
     }
-    return Tcl_DStringAppend(bufPtr, TCL_DEFAULT_ENCODING, -1);
+    return Tcl_DStringAppend(bufPtr, TCL_DEFAULT_ENCODING, TCL_INDEX_NONE);
 }
 
 /*
@@ -863,6 +871,18 @@ TclpSetVariables(
 	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath, TCL_GLOBAL_ONLY);
     }
 
+    {
+        /* Some platforms build configure scripts expect ~ expansion so do that */
+        Tcl_Obj *origPaths;
+        Tcl_Obj *resolvedPaths;
+        origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
+        resolvedPaths = TclResolveTildePathList(origPaths);
+        if (resolvedPaths != origPaths && resolvedPaths != NULL) {
+            Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL,
+		resolvedPaths, TCL_GLOBAL_ONLY);
+        }
+    }
+
 #ifdef DJGPP
     Tcl_SetVar2(interp, "tcl_platform", "platform", "dos", TCL_GLOBAL_ONLY);
 #else
@@ -885,8 +905,11 @@ TclpSetVariables(
 
     GetSystemInfo(&sysInfo);
 
+    if (osInfo.dwMajorVersion == 10 && osInfo.dwBuildNumber >= 22000) {
+	osInfo.dwMajorVersion = 11;
+    }
     Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
-    sprintf(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    snprintf(buffer, sizeof(buffer), "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sysInfo.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",
@@ -900,7 +923,7 @@ TclpSetVariables(
 
 	unameOK = 1;
 
-	native = Tcl_ExternalToUtfDString(NULL, name.sysname, -1, &ds);
+	native = Tcl_ExternalToUtfDString(NULL, name.sysname, TCL_INDEX_NONE, &ds);
 	Tcl_SetVar2(interp, "tcl_platform", "os", native, TCL_GLOBAL_ONLY);
 	Tcl_DStringFree(&ds);
 
@@ -963,7 +986,7 @@ TclpSetVariables(
 	    user = "";
 	    Tcl_DStringInit(&ds);	/* ensure cleanliness */
 	} else {
-	    user = Tcl_ExternalToUtfDString(NULL, pwEnt->pw_name, -1, &ds);
+	    user = Tcl_ExternalToUtfDString(NULL, pwEnt->pw_name, TCL_INDEX_NONE, &ds);
 	}
 
 	Tcl_SetVar2(interp, "tcl_platform", "user", user, TCL_GLOBAL_ONLY);
@@ -983,11 +1006,11 @@ TclpSetVariables(
  * TclpFindVariable --
  *
  *	Locate the entry in environ for a given name. On Unix this routine is
- *	case sensetive, on Windows this matches mixed case.
+ *	case sensitive, on Windows this matches mixed case.
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or TCL_INDEX_NONE if there is no such entry. The integer at *lengthPtr is
+ *	"name", or -1 if there is no such entry. The integer at *lengthPtr is
  *	filled in with the length of name (if a matching entry is found) or
  *	the length of the environ array (if no matching entry is found).
  *
@@ -997,22 +1020,22 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (native). */
-    size_t *lengthPtr)		/* Used to return length of name (for
+    Tcl_Size *lengthPtr)	/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    size_t i, result = TCL_INDEX_NONE;
+    Tcl_Size i, result = -1;
     const char *env, *p1, *p2;
     Tcl_DString envString;
 
     Tcl_DStringInit(&envString);
     for (i = 0, env = environ[i]; env != NULL; i++, env = environ[i]) {
-	p1 = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
+	p1 = Tcl_ExternalToUtfDString(NULL, env, TCL_INDEX_NONE, &envString);
 	p2 = name;
 
 	for (; *p2 == *p1; p1++, p2++) {

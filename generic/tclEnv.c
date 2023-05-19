@@ -50,7 +50,7 @@ static struct {
 				 * need to track this in case another
 				 * subsystem swaps around the environ array
 				 * like we do. */
-    size_t ourEnvironSize;		/* Non-zero means that the environ array was
+    Tcl_Size ourEnvironSize;	/* Non-zero means that the environ array was
 				 * malloced and has this many total entries
 				 * allocated to it (not all may be in use at
 				 * once). Zero means that the environment
@@ -64,7 +64,7 @@ static struct {
  * Declarations for local functions defined in this file:
  */
 
-static char *		EnvTraceProc(ClientData clientData, Tcl_Interp *interp,
+static char *		EnvTraceProc(void *clientData, Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
 static void		ReplaceString(const char *oldStr, char *newStr);
 MODULE_SCOPE void	TclSetEnv(const char *name, const char *value);
@@ -253,8 +253,8 @@ TclSetEnv(
     const char *value)		/* New value for variable (UTF-8). */
 {
     Tcl_DString envString;
-    size_t nameLength, valueLength;
-    size_t index, length;
+    Tcl_Size nameLength, valueLength;
+    Tcl_Size index, length;
     char *p, *oldValue;
     const techar *p2;
 
@@ -364,15 +364,6 @@ TclSetEnv(
     }
 
     Tcl_MutexUnlock(&envMutex);
-
-    if (!strcmp(name, "HOME")) {
-	/*
-	 * If the user's home directory has changed, we must invalidate the
-	 * filesystem cache, because '~' expansions will now be incorrect.
-	 */
-
-	Tcl_FSMountsChanged(NULL);
-    }
 }
 
 /*
@@ -411,11 +402,11 @@ Tcl_PutEnv(
     }
 
     /*
-     * First convert the native string to UTF. Then separate the string into
+     * First convert the native string to Utf. Then separate the string into
      * name and value parts, and call TclSetEnv to do all of the real work.
      */
 
-    name = Tcl_ExternalToUtfDString(NULL, assignment, -1, &nameString);
+    name = Tcl_ExternalToUtfDString(NULL, assignment, TCL_INDEX_NONE, &nameString);
     value = (char *)strchr(name, '=');
 
     if ((value != NULL) && (value != name)) {
@@ -462,7 +453,7 @@ TclUnsetEnv(
     const char *name)		/* Name of variable to remove (UTF-8). */
 {
     char *oldValue;
-    size_t length, index;
+    Tcl_Size length, index;
 #ifdef USE_PUTENV_FOR_UNSET
     Tcl_DString envString;
     char *string;
@@ -478,7 +469,7 @@ TclUnsetEnv(
      * needless work and to avoid recursion on the unset.
      */
 
-    if (index == TCL_INDEX_NONE) {
+    if (index == -1) {
 	Tcl_MutexUnlock(&envMutex);
 	return;
     }
@@ -577,13 +568,13 @@ TclGetEnv(
 				 * value of the environment variable is
 				 * stored. */
 {
-    size_t length, index;
+    Tcl_Size length, index;
     const char *result;
 
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
     result = NULL;
-    if (index != TCL_INDEX_NONE) {
+    if (index != -1) {
 	Tcl_DString envStr;
 
 	result = tenviron2utfdstr(tenviron[index], -1, &envStr);
@@ -625,7 +616,7 @@ TclGetEnv(
 
 static char *
 EnvTraceProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter whose "env" variable is being
 				 * modified. */
     const char *name1,		/* Better be "env". */

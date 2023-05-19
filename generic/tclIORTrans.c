@@ -31,25 +31,25 @@
  * Signatures of all functions used in the C layer of the reflection.
  */
 
-static int		ReflectClose(ClientData clientData,
+static int		ReflectClose(void *clientData,
 			    Tcl_Interp *interp, int flags);
-static int		ReflectInput(ClientData clientData, char *buf,
+static int		ReflectInput(void *clientData, char *buf,
 			    int toRead, int *errorCodePtr);
-static int		ReflectOutput(ClientData clientData, const char *buf,
+static int		ReflectOutput(void *clientData, const char *buf,
 			    int toWrite, int *errorCodePtr);
-static void		ReflectWatch(ClientData clientData, int mask);
-static int		ReflectBlock(ClientData clientData, int mode);
-static long long	ReflectSeekWide(ClientData clientData,
+static void		ReflectWatch(void *clientData, int mask);
+static int		ReflectBlock(void *clientData, int mode);
+static long long	ReflectSeekWide(void *clientData,
 			    long long offset, int mode, int *errorCodePtr);
-static int		ReflectGetOption(ClientData clientData,
+static int		ReflectGetOption(void *clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
-static int		ReflectSetOption(ClientData clientData,
+static int		ReflectSetOption(void *clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *newValue);
-static int		ReflectHandle(ClientData clientData, int direction,
-			    ClientData *handle);
-static int		ReflectNotify(ClientData clientData, int mask);
+static int		ReflectHandle(void *clientData, int direction,
+			    void **handle);
+static int		ReflectNotify(void *clientData, int mask);
 
 /*
  * The C layer channel type/driver definition used by the reflection.
@@ -91,12 +91,12 @@ typedef struct {
 #define ResultLength(r) ((r)->used)
 /* static int		ResultLength(ResultBuffer *r); */
 
-static void		ResultClear(ResultBuffer *r);
-static void		ResultInit(ResultBuffer *r);
-static void		ResultAdd(ResultBuffer *r, unsigned char *buf,
-			    int toWrite);
-static int		ResultCopy(ResultBuffer *r, unsigned char *buf,
-			    int toRead);
+static inline void		ResultClear(ResultBuffer *r);
+static inline void		ResultInit(ResultBuffer *r);
+static inline void ResultAdd(ResultBuffer *r, unsigned char *buf,
+			    size_t toWrite);
+static inline size_t	ResultCopy(ResultBuffer *r, unsigned char *buf,
+			    size_t toRead);
 
 #define RB_INCREMENT (512)
 
@@ -212,7 +212,7 @@ typedef enum {
 
 #define IMPLIES(a,b)	((!(a)) || (b))
 #define NEGIMPL(a,b)
-#define HAS(x,f)	(x & FLAG(f))
+#define HAS(x,f)	((x) & FLAG(f))
 
 #if TCL_THREADS
 /*
@@ -264,7 +264,7 @@ struct ForwardParamTransform {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     char *buf;			/* I: Bytes to transform,
 				 * O: Bytes in transform result */
-    size_t size;		/* I: #bytes to transform,
+    Tcl_Size size;		/* I: #bytes to transform,
 				 * O: #bytes in the transform result */
 };
 struct ForwardParamLimit {
@@ -355,7 +355,7 @@ TCL_DECLARE_MUTEX(rtForwardMutex)
 static void		ForwardOpToOwnerThread(ReflectedTransform *rtPtr,
 			    ForwardedOperation op, const void *param);
 static int		ForwardProc(Tcl_Event *evPtr, int mask);
-static void		SrcExitProc(ClientData clientData);
+static void		SrcExitProc(void *clientData);
 
 #define FreeReceivedError(p) \
 	do {								\
@@ -394,7 +394,7 @@ static void		ForwardSetObjError(ForwardParam *p,
 			    Tcl_Obj *objPtr);
 static ReflectedTransformMap *	GetThreadReflectedTransformMap(void);
 static void		DeleteThreadReflectedTransformMap(
-			    ClientData clientData);
+			    void *clientData);
 #endif /* TCL_THREADS */
 
 #define SetChannelErrorStr(c,msgStr) \
@@ -420,7 +420,7 @@ static int		InvokeTclMethod(ReflectedTransform *rtPtr,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
 
 static ReflectedTransformMap *	GetReflectedTransformMap(Tcl_Interp *interp);
-static void		DeleteReflectedTransformMap(ClientData clientData,
+static void		DeleteReflectedTransformMap(void *clientData,
 			    Tcl_Interp *interp);
 
 /*
@@ -450,7 +450,7 @@ static const char *msg_dstlost =
 
 static void		TimerKill(ReflectedTransform *rtPtr);
 static void		TimerSetup(ReflectedTransform *rtPtr);
-static void		TimerRun(ClientData clientData);
+static void		TimerRun(void *clientData);
 static int		TransformRead(ReflectedTransform *rtPtr,
 			    int *errorCodePtr, Tcl_Obj *bufObj);
 static int		TransformWrite(ReflectedTransform *rtPtr,
@@ -495,7 +495,7 @@ static int		TransformLimit(ReflectedTransform *rtPtr,
 
 int
 TclChanPushObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -511,7 +511,7 @@ TclChanPushObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Obj *rtId;		/* Handle of the new transform (channel) */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    int listc;			/* Result of 'initialize', and of */
+    Tcl_Size listc;			/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -599,7 +599,7 @@ TclChanPushObjCmd(
      *   through the mask. Compare open mode against optional r/w.
      */
 
-    if (Tcl_ListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElementsM(NULL, resObj, &listc, &listv) != TCL_OK) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "chan handler \"%s initialize\" returned non-list: %s",
                 TclGetString(cmdObj), TclGetString(resObj)));
@@ -634,7 +634,7 @@ TclChanPushObjCmd(
     /*
      * Mode tell us what the parent channel supports. The methods tell us what
      * the handler supports. We remove the non-supported bits from the mode
-     * and check that the channel is not completely inacessible. Afterward the
+     * and check that the channel is not completely inaccessible. Afterward the
      * mode tells us which methods are still required, and these methods will
      * also be supported by the handler, by design of the check.
      */
@@ -740,7 +740,7 @@ TclChanPushObjCmd(
 
 int
 TclChanPopObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -820,10 +820,10 @@ UnmarshallErrorResult(
     Tcl_Interp *interp,
     Tcl_Obj *msgObj)
 {
-    int lc;
+    Tcl_Size lc;
     Tcl_Obj **lv;
     int explicitResult;
-    int numOptions;
+    Tcl_Size numOptions;
 
     /*
      * Process the caught message.
@@ -835,7 +835,7 @@ UnmarshallErrorResult(
      * information; if we panic here, something has gone badly wrong already.
      */
 
-    if (Tcl_ListObjGetElements(interp, msgObj, &lc, &lv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, msgObj, &lc, &lv) != TCL_OK) {
 	Tcl_Panic("TclChanCaughtErrorBypass: Bad syntax of caught result");
     }
     if (interp == NULL) {
@@ -866,7 +866,7 @@ UnmarshallErrorResult(
  *	driver specific instance data.
  *
  * Results:
- *	A posix error.
+ *	A Posix error.
  *
  * Side effects:
  *	Releases memory. Arbitrary, as it calls upon a script.
@@ -876,7 +876,7 @@ UnmarshallErrorResult(
 
 static int
 ReflectClose(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int flags)
 {
@@ -985,7 +985,7 @@ ReflectClose(
 #endif /* TCL_THREADS */
 
     /*
-     * Do the actual invokation of "finalize" now; we're in the right thread.
+     * Do the actual invocation of "finalize" now; we're in the right thread.
      */
 
     result = InvokeTclMethod(rtPtr, "finalize", NULL, NULL, &resObj);
@@ -1055,7 +1055,7 @@ ReflectClose(
 
 static int
 ReflectInput(
-    ClientData clientData,
+    void *clientData,
     char *buf,
     int toRead,
     int *errorCodePtr)
@@ -1248,7 +1248,7 @@ ReflectInput(
 
 static int
 ReflectOutput(
-    ClientData clientData,
+    void *clientData,
     const char *buf,
     int toWrite,
     int *errorCodePtr)
@@ -1321,7 +1321,7 @@ ReflectOutput(
 
 static long long
 ReflectSeekWide(
-    ClientData clientData,
+    void *clientData,
     long long offset,
     int seekMode,
     int *errorCodePtr)
@@ -1408,7 +1408,7 @@ ReflectSeekWide(
 
 static void
 ReflectWatch(
-    ClientData clientData,
+    void *clientData,
     int mask)
 {
     ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
@@ -1449,7 +1449,7 @@ ReflectWatch(
  *	is required of it.
  *
  * Results:
- *	A posix error number.
+ *	A Posix error number.
  *
  * Side effects:
  *	Allocates memory. Arbitrary, as it calls upon a script.
@@ -1459,7 +1459,7 @@ ReflectWatch(
 
 static int
 ReflectBlock(
-    ClientData clientData,
+    void *clientData,
     int nonblocking)
 {
     ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
@@ -1492,7 +1492,7 @@ ReflectBlock(
 
 static int
 ReflectSetOption(
-    ClientData clientData,	/* Channel to query */
+    void *clientData,	/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     const char *newValue)	/* The new value */
@@ -1534,9 +1534,9 @@ ReflectSetOption(
 
 static int
 ReflectGetOption(
-    ClientData clientData,	/* Channel to query */
+    void *clientData,	/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
-    const char *optionName,	/* Name of reuqested option */
+    const char *optionName,	/* Name of requested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
 {
     ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
@@ -1583,15 +1583,15 @@ ReflectGetOption(
 
 static int
 ReflectHandle(
-    ClientData clientData,
+    void *clientData,
     int direction,
-    ClientData *handlePtr)
+    void **handlePtr)
 {
     ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
 
     /*
      * Transformations have no handle of their own. As such we simply query
-     * the parent channel for it. This way the qery will ripple down through
+     * the parent channel for it. This way the query will ripple down through
      * all transformations until reaches the base channel. Which then returns
      * its handle, or fails. The former will then ripple up the stack.
      *
@@ -1619,13 +1619,13 @@ ReflectHandle(
 
 static int
 ReflectNotify(
-    ClientData clientData,
+    void *clientData,
     int mask)
 {
     ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
 
     /*
-     * An event occured in the underlying channel.
+     * An event occurred in the underlying channel.
      *
      * We delete our timer. It was not fired, yet we are here, so the channel
      * below generated such an event and we don't have to. The renewal of the
@@ -1719,9 +1719,8 @@ NewReflectedTransform(
     Tcl_Channel parentChan)
 {
     ReflectedTransform *rtPtr;
-    int listc;
+    Tcl_Size i, listc;
     Tcl_Obj **listv;
-    int i;
 
     rtPtr = (ReflectedTransform *)Tcl_Alloc(sizeof(ReflectedTransform));
 
@@ -1757,7 +1756,7 @@ NewReflectedTransform(
 
     /* ASSERT: cmdpfxObj is a Tcl List */
 
-    Tcl_ListObjGetElements(interp, cmdpfxObj, &listc, &listv);
+    TclListObjGetElementsM(interp, cmdpfxObj, &listc, &listv);
 
     /*
      * See [==] as well.
@@ -1888,7 +1887,7 @@ FreeReflectedTransform(
  * InvokeTclMethod --
  *
  *	This function is used to invoke the Tcl level of a reflected channel.
- *	It handles all the command assembly, invokation, and generic state and
+ *	It handles all the command assembly, invocation, and generic state and
  *	result mgmt. It does *not* handle thread redirection; that is the
  *	responsibility of clients of this function.
  *
@@ -1920,8 +1919,8 @@ InvokeTclMethod(
     int cmdc;			/* #words in constructed command */
     Tcl_Obj *methObj = NULL;	/* Method name in object form */
     Tcl_InterpState sr;		/* State of handler interp */
-    int result;			/* Result code of method invokation */
-    Tcl_Obj *resObj = NULL;	/* Result of method invokation. */
+    int result;			/* Result code of method invocation */
+    Tcl_Obj *resObj = NULL;	/* Result of method invocation. */
 
     if (rtPtr->dead) {
 	/*
@@ -1945,7 +1944,7 @@ InvokeTclMethod(
      */
 
     /*
-     * Insert method into the pre-allocated area, after the command prefix,
+     * Insert method into the preallocated area, after the command prefix,
      * before the channel id.
      */
 
@@ -1972,7 +1971,7 @@ InvokeTclMethod(
     }
 
     /*
-     * And run the handler... This is done in auch a manner which leaves any
+     * And run the handler... This is done in a manner which leaves any
      * existing state intact.
      */
 
@@ -2005,7 +2004,7 @@ InvokeTclMethod(
 	     */
 	    if (result != TCL_ERROR) {
 		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rtPtr->argv);
-		size_t cmdLen;
+		Tcl_Size cmdLen;
 		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
@@ -2108,7 +2107,7 @@ GetReflectedTransformMap(
 
 static void
 DeleteReflectedTransformMap(
-    ClientData clientData,	/* The per-interpreter data structure. */
+    void *clientData,	/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedTransformMap *rtmPtr; /* The map */
@@ -2271,7 +2270,7 @@ GetThreadReflectedTransformMap(void)
 
 static void
 DeleteThreadReflectedTransformMap(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     Tcl_HashSearch hSearch;	 /* Search variable. */
     Tcl_HashEntry *hPtr;	 /* Search variable. */
@@ -2415,8 +2414,8 @@ ForwardOpToOwnerThread(
      * Queue the event and poke the other thread's notifier.
      */
 
-    Tcl_ThreadQueueEvent(dst, (Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
-    Tcl_ThreadAlert(dst);
+    Tcl_ThreadQueueEvent(dst, (Tcl_Event *) evPtr,
+	    TCL_QUEUE_TAIL|TCL_QUEUE_ALERT_IF_EMPTY);
 
     /*
      * (*) Block until the other thread has either processed the transfer or
@@ -2563,7 +2562,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec = 0;	/* Number of returned bytes */
+	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
@@ -2597,7 +2596,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec = 0;	/* Number of returned bytes */
+	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
@@ -2627,7 +2626,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec = 0;	/* Number of returned bytes */
+	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev; /* Array of returned bytes */
 
 	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
@@ -2653,7 +2652,7 @@ ForwardProc(
 	     * Sent it back to the request originator.
 	     */
 
-	    size_t bytec = 0;	/* Number of returned bytes */
+	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
@@ -2720,7 +2719,7 @@ ForwardProc(
 
 static void
 SrcExitProc(
-    ClientData clientData)
+    void *clientData)
 {
     ForwardingEvent *evPtr = (ForwardingEvent *)clientData;
     ForwardingResult *resultPtr;
@@ -2771,7 +2770,7 @@ ForwardSetObjError(
     ForwardParam *paramPtr,
     Tcl_Obj *obj)
 {
-    size_t len;
+    Tcl_Size len;
     const char *msgStr = Tcl_GetStringFromObj(obj, &len);
 
     len++;
@@ -2860,7 +2859,7 @@ TimerSetup(
 
 static void
 TimerRun(
-    ClientData clientData)
+    void *clientData)
 {
     ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
 
@@ -2874,7 +2873,7 @@ TimerRun(
  * ResultInit --
  *
  *	Initializes the specified buffer structure. The structure will contain
- *	valid information for an emtpy buffer.
+ *	valid information for an empty buffer.
  *
  * Side effects:
  *	See above.
@@ -2885,7 +2884,7 @@ TimerRun(
  *----------------------------------------------------------------------
  */
 
-static void
+static inline void
 ResultInit(
     ResultBuffer *rPtr)		/* Reference to the structure to
 				 * initialize. */
@@ -2910,7 +2909,7 @@ ResultInit(
  *----------------------------------------------------------------------
  */
 
-static void
+static inline void
 ResultClear(
     ResultBuffer *rPtr)		/* Reference to the buffer to clear out */
 {
@@ -2941,11 +2940,11 @@ ResultClear(
  *----------------------------------------------------------------------
  */
 
-static void
+static inline void
 ResultAdd(
     ResultBuffer *rPtr,		/* The buffer to extend */
     unsigned char *buf,		/* The buffer to read from */
-    int toWrite)		/* The number of bytes in 'buf' */
+    size_t toWrite)		/* The number of bytes in 'buf' */
 {
     if ((rPtr->used + toWrite + 1) > rPtr->allocated) {
 	/*
@@ -2989,11 +2988,11 @@ ResultAdd(
  *----------------------------------------------------------------------
  */
 
-static int
+static inline size_t
 ResultCopy(
     ResultBuffer *rPtr,		/* The buffer to read from */
     unsigned char *buf,		/* The buffer to copy into */
-    int toRead)			/* Number of requested bytes */
+    size_t toRead)			/* Number of requested bytes */
 {
     int copied;
 
@@ -3046,7 +3045,7 @@ TransformRead(
     Tcl_Obj *bufObj)
 {
     Tcl_Obj *resObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
 
     /*
@@ -3101,7 +3100,7 @@ TransformWrite(
 {
     Tcl_Obj *bufObj;
     Tcl_Obj *resObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     int res;
 
@@ -3168,7 +3167,7 @@ TransformDrain(
     int *errorCodePtr)
 {
     Tcl_Obj *resObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
 
     /*
@@ -3217,7 +3216,7 @@ TransformFlush(
     int op)
 {
     Tcl_Obj *resObj;
-    size_t bytec = 0;		/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     int res;
 

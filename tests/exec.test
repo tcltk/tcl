@@ -18,20 +18,14 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+source [file join [file dirname [info script]] tcltests.tcl]
 
-loadTestedCommands
-catch [list package require -exact tcl::test [info patchlevel]]
-package require tcltests
-
-# All tests require the "exec" command.
-# Skip them if exec is not defined.
-testConstraint exec [llength [info commands exec]]
 # Some skips when running in a macOS CI environment
 testConstraint noosxCI [expr {![info exists ::env(MAC_CI)]}]
 
 unset -nocomplain path
 
-# Utilities that are like bourne shell stalwarts, but cross-platform.
+# Utilities that are like Bourne shell stalwarts, but cross-platform.
 set path(echo) [makeFile {
     puts -nonewline [lindex $argv 0]
     foreach str [lrange $argv 1 end] {
@@ -440,15 +434,21 @@ test exec-10.19 {errors in exec invocation} -constraints {exec} -body {
     exec cat >@ $f
 } -returnCodes error -result "channel \"$f\" wasn't opened for writing"
 close $f
-test exec-10.20 {errors in exec invocation} -constraints {exec notValgrind} -body {
+test exec-10.20.1 {errors in exec invocation} -constraints {unix exec notValgrind} -body {
     exec ~non_existent_user/foo/bar
-} -returnCodes error -result {user "non_existent_user" doesn't exist}
-test exec-10.21 {errors in exec invocation} -constraints {exec notValgrind} -body {
+} -returnCodes error -result {couldn't execute "~non_existent_user/foo/bar": no such file or directory}
+test exec-10.20.2 {errors in exec invocation} -constraints {win exec notValgrind} -body {
+    exec ~non_existent_user/foo/bar
+} -returnCodes error -result {couldn't execute "~non_existent_user\foo\bar": no such file or directory}
+test exec-10.21.1 {errors in exec invocation} -constraints {unix exec notValgrind} -body {
     exec [interpreter] true | ~xyzzy_bad_user/x | false
-} -returnCodes error -result {user "xyzzy_bad_user" doesn't exist}
+} -returnCodes error -result {couldn't execute "~xyzzy_bad_user/x": no such file or directory}
+test exec-10.21.2 {errors in exec invocation} -constraints {win exec notValgrind} -body {
+    exec [interpreter] true | ~xyzzy_bad_user/x | false
+} -returnCodes error -result {couldn't execute "~xyzzy_bad_user\x": no such file or directory}
 test exec-10.22 {errors in exec invocation} -constraints {exec notValgrind} -body {
     exec echo test > ~non_existent_user/foo/bar
-} -returnCodes error -result {user "non_existent_user" doesn't exist}
+} -returnCodes error -result {couldn't write file "~non_existent_user/foo/bar": no such file or directory}
 # Commands in background.
 
 test exec-11.1 {commands in background} {exec} {

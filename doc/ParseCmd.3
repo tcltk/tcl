@@ -45,7 +45,7 @@ For \fBTcl_EvalTokensStandard\fR, determines the context for evaluating
 the script and also is used for error reporting; must not be NULL.
 .AP "const char" *start in
 Pointer to first character in string to parse.
-.AP int numBytes in
+.AP Tcl_Size numBytes in
 Number of bytes in string to parse, not including any terminating null
 character.  If less than 0 then the script consists of all characters
 following \fIstart\fR up to the first null character.
@@ -196,20 +196,20 @@ return parse information in two data structures, Tcl_Parse and Tcl_Token:
 .CS
 typedef struct Tcl_Parse {
     const char *\fIcommentStart\fR;
-    int \fIcommentSize\fR;
+    Tcl_Size \fIcommentSize\fR;
     const char *\fIcommandStart\fR;
-    int \fIcommandSize\fR;
-    int \fInumWords\fR;
+    Tcl_Size \fIcommandSize\fR;
+    Tcl_Size \fInumWords\fR;
     Tcl_Token *\fItokenPtr\fR;
-    int \fInumTokens\fR;
+    Tcl_Size \fInumTokens\fR;
     ...
 } \fBTcl_Parse\fR;
 
 typedef struct Tcl_Token {
     int \fItype\fR;
     const char *\fIstart\fR;
-    size_t \fIsize\fR;
-    size_t \fInumComponents\fR;
+    Tcl_Size \fIsize\fR;
+    Tcl_Size \fInumComponents\fR;
 } \fBTcl_Token\fR;
 .CE
 .PP

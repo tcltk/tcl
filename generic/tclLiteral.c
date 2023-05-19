@@ -28,7 +28,7 @@
  * Function prototypes for static functions in this file:
  */
 
-static int		AddLocalLiteralEntry(CompileEnv *envPtr,
+static size_t		AddLocalLiteralEntry(CompileEnv *envPtr,
 			    Tcl_Obj *objPtr, int localHash);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
 static size_t		HashString(const char *string, size_t length);
@@ -178,9 +178,9 @@ TclCreateLiteral(
     Interp *iPtr,
     const char *bytes,	/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    size_t length,		/* Number of bytes in the string. */
-    size_t hash,		/* The string's hash. If -1, it will be
-				 * computed here. */
+    Tcl_Size length,	/* Number of bytes in the string. */
+    TCL_HASH_TYPE hash, /* The string's hash. If the value is
+				         * TCL_INDEX_NONE, it will be computed here. */
     int *newPtr,
     Namespace *nsPtr,
     int flags,
@@ -195,7 +195,7 @@ TclCreateLiteral(
      * Is it in the interpreter's global literal table?
      */
 
-    if (hash == TCL_INDEX_NONE) {
+    if (hash == (TCL_HASH_TYPE) TCL_INDEX_NONE) {
 	hash = HashString(bytes, length);
     }
     globalHash = (hash & globalTablePtr->mask);
@@ -210,7 +210,7 @@ TclCreateLiteral(
 	     * https://stackoverflow.com/q/54337750/301832
 	     */
 
-	    size_t objLength;
+	    Tcl_Size objLength;
 	    const char *objBytes = Tcl_GetStringFromObj(objPtr, &objLength);
 
 	    if ((objLength == length) && ((length == 0)
@@ -351,10 +351,10 @@ Tcl_Obj *
 TclFetchLiteral(
     CompileEnv *envPtr,		/* Points to the CompileEnv from which to
 				 * fetch the registered literal value. */
-    size_t index)		/* Index of the desired literal, as returned
+    Tcl_Size index)		/* Index of the desired literal, as returned
 				 * by prior call to TclRegisterLiteral() */
 {
-    if (index >= (size_t) envPtr->literalArrayNext) {
+    if (index >= envPtr->literalArrayNext) {
 	return NULL;
     }
     return envPtr->literalArrayPtr[index].objPtr;
@@ -387,20 +387,20 @@ TclFetchLiteral(
  *----------------------------------------------------------------------
  */
 
-int
+int /* Do NOT change this type. Should not be wider than TclEmitPush operand*/
 TclRegisterLiteral(
     void *ePtr,		/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
     const char *bytes,	/* Points to string for which to find or
 				 * create an object in CompileEnv's object
 				 * array. */
-    size_t length,			/* Number of bytes in the string. If -1, the
+    Tcl_Size length,			/* Number of bytes in the string. If -1, the
 				 * string consists of all bytes up to the
 				 * first null character. */
     int flags)			/* If LITERAL_ON_HEAP then the caller already
 				 * malloc'd bytes and ownership is passed to
 				 * this function. If LITERAL_CMD_NAME then
-				 * the literal should not be shared accross
+				 * the literal should not be shared across
 				 * namespaces. */
 {
     CompileEnv *envPtr = (CompileEnv *)ePtr;
@@ -412,7 +412,7 @@ TclRegisterLiteral(
     int isNew;
     Namespace *nsPtr;
 
-    if (length == TCL_INDEX_NONE) {
+    if (length < 0) {
 	length = (bytes ? strlen(bytes) : 0);
     }
     hash = HashString(bytes, length);
@@ -437,13 +437,16 @@ TclRegisterLiteral(
 	    TclVerifyLocalLiteralTable(envPtr);
 #endif /*TCL_COMPILE_DEBUG*/
 
+	    if (objIndex > INT_MAX) {
+		Tcl_Panic("Literal table index too large. Cannot be handled by TclEmitPush");
+	    }
 	    return objIndex;
 	}
     }
 
     /*
      * The literal is new to this CompileEnv. If it is a command name, avoid
-     * sharing it accross namespaces, and try not to share it with non-cmd
+     * sharing it across namespaces, and try not to share it with non-cmd
      * literals. Note that FQ command names can be shared, so that we register
      * the namespace as the interp's global NS.
      */
@@ -475,6 +478,10 @@ TclRegisterLiteral(
     }
     TclVerifyLocalLiteralTable(envPtr);
 #endif /*TCL_COMPILE_DEBUG*/
+    if (objIndex > INT_MAX) {
+	Tcl_Panic(
+	    "Literal table index too large. Cannot be handled by TclEmitPush");
+    }
     return objIndex;
 }
 
@@ -553,7 +560,8 @@ TclHideLiteral(
 {
     LiteralEntry **nextPtrPtr, *entryPtr, *lPtr;
     LiteralTable *localTablePtr = &envPtr->localLitTable;
-    size_t localHash, length;
+    size_t localHash;
+    Tcl_Size length;
     const char *bytes;
     Tcl_Obj *newObjPtr;
 
@@ -617,13 +625,17 @@ TclAddLiteralObj(
 				 * NULL. */
 {
     LiteralEntry *lPtr;
-    int objIndex;
+    size_t objIndex;
 
     if (envPtr->literalArrayNext >= envPtr->literalArrayEnd) {
 	ExpandLocalLiteralArray(envPtr);
     }
     objIndex = envPtr->literalArrayNext;
     envPtr->literalArrayNext++;
+    if (objIndex > INT_MAX) {
+	Tcl_Panic(
+	    "Literal table index too large. Cannot be handled by TclEmitPush");
+    }
 
     lPtr = &envPtr->literalArrayPtr[objIndex];
     lPtr->objPtr = objPtr;
@@ -656,7 +668,7 @@ TclAddLiteralObj(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 AddLocalLiteralEntry(
     CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
@@ -665,7 +677,7 @@ AddLocalLiteralEntry(
 {
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *localPtr;
-    int objIndex;
+    size_t objIndex;
 
     objIndex = TclAddLiteralObj(envPtr, objPtr, &localPtr);
 
@@ -826,7 +838,8 @@ TclReleaseLiteral(
     LiteralTable *globalTablePtr;
     LiteralEntry *entryPtr, *prevPtr;
     const char *bytes;
-    size_t length, index;
+    size_t index;
+    Tcl_Size length;
 
     if (iPtr == NULL) {
 	goto done;
@@ -969,7 +982,8 @@ RebuildLiteralTable(
     LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     const char *bytes;
-    size_t oldSize, count, index, length;
+    size_t oldSize, count, index;
+    Tcl_Size length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;
@@ -1057,7 +1071,7 @@ TclInvalidateCmdLiteral(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, name,
-	    strlen(name), -1, NULL, nsPtr, 0, NULL);
+	    strlen(name), TCL_INDEX_NONE, NULL, nsPtr, 0, NULL);
 
     if (literalObjPtr != NULL) {
 	if (TclHasInternalRep(literalObjPtr, &tclCmdNameType)) {
@@ -1128,18 +1142,18 @@ TclLiteralStats(
      */
 
     result = (char *)Tcl_Alloc(NUM_COUNTERS*60 + 300);
-    sprintf(result, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
+    snprintf(result, 60, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i=0 ; i<NUM_COUNTERS ; i++) {
-	sprintf(p, "number of buckets with %" TCL_Z_MODIFIER "u entries: %" TCL_Z_MODIFIER "u\n",
+	snprintf(p, 60, "number of buckets with %" TCL_Z_MODIFIER "u entries: %" TCL_Z_MODIFIER "u\n",
 		i, count[i]);
 	p += strlen(p);
     }
-    sprintf(p, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "u\n",
+    snprintf(p, 60, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "u\n",
 	    NUM_COUNTERS, overflow);
     p += strlen(p);
-    sprintf(p, "average search distance for entry: %.1f", average);
+    snprintf(p, 60, "average search distance for entry: %.1f", average);
     return result;
 }
 #endif /*TCL_COMPILE_STATS*/

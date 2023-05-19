@@ -80,7 +80,6 @@ select based notifier).
 
 - It is also possible to build with the Xcode IDE via the projects in
 tcl/macosx, take care to use the project matching your DevTools and OS version:
-	Tcl.xcode: 		    for Xcode 3.1 on 10.5
 	Tcl.xcodeproj:		    for Xcode 3.2 on 10.6
 These have the following targets:
 	Tcl:			    calls through to tcl/macosx/GNUMakefile.
@@ -93,14 +92,10 @@ The following build configurations are available:
 	Debug llvm-gcc:		    use llvm-gcc compiler.
 	Debug gcc40:		    use gcc 4.0 compiler.
 	DebugNoFixAndContinue:      disable Fix & Continue.
-	DebugUnthreaded:	    disable threading.
 	DebugNoCF:		    disable corefoundation.
-	DebugNoCFUnthreaded:	    disable corefoundation an threading.
 	DebugMemCompile:	    enable memory and bytecode debugging.
 	DebugLeaks:		    define PURIFY.
 	DebugGCov:		    enable generation of gcov data files.
-	Debug64bit:		    configure with --enable-64bit (requires
-				    building on a 64bit capable processor).
 	Release:		    release build for the active architecture.
 	ReleaseUniversal:	    32/64-bit universal build.
 	ReleaseUniversal clang:	    use clang compiler.
@@ -109,7 +104,7 @@ The following build configurations are available:
 	ReleaseUniversal10.5SDK:    build against the 10.5 SDK (with 10.5
 				    deployment target).
 	Note that the non-SDK configurations have their deployment target set to
-	10.5 (Tcl.xcode) resp. 10.6 (Tcl.xcodeproj).
+	10.6 (Tcl.xcodeproj).
 The Xcode projects refer to the toplevel tcl source directory via the
 TCL_SRCROOT user build setting, by default this is set to the project-relative
 path '../../tcl', if your tcl source directory is named differently, e.g.
@@ -118,13 +113,10 @@ your ${USER}.pbxuser file (located inside the Tcl.xcodeproj bundle directory)
 with a text editor.
 
 - To build universal binaries outside of the Xcode IDE, set CFLAGS as follows:
-	export CFLAGS="-arch i386 -arch x86_64 -arch ppc"
-This requires Mac OS X 10.4 and Xcode 2.4 (or Xcode 2.2 if -arch x86_64 is
-omitted, but _not_ Xcode 2.1) and will work on any architecture (on PowerPC
-Tiger you need to add "-isysroot /Developer/SDKs/MacOSX10.4u.sdk").
+	export CFLAGS="-arch x86_64 -arch arm64"
+This requires Mac OS X 10.6 and Xcode 10.2 and will work on any architecture.
 Note that configure requires CFLAGS to contain a least one architecture that can
-be run on the build machine (i.e. ppc on G3/G4, ppc or ppc64 on G5, ppc or i386
-on Core and ppc, i386 or x86_64 on Core2/Xeon).
+be run on the build machine (i.e. x86_64 on Core2/Xeon).
 Universal builds of Tcl TEA extensions are also possible with CFLAGS set as
 above, they will be [load]able by universal as well as thin binaries of Tcl.
 
@@ -137,11 +129,9 @@ Detailed Instructions for building with macosx/GNUmakefile
 (where ${ver} is a shell variable containing the Tcl version number e.g. '9.0').
 Setup this shell variable as follows:
 	ver="9.0"
-If you are building from CVS, omit this step (CVS source tree names usually do
-not contain a version number).
 
 - Setup environment variables as desired, e.g. for a universal build on 10.5:
-	CFLAGS="-arch i386 -arch x86_64 -arch ppc -mmacosx-version-min=10.5"
+	CFLAGS="-arch x86_64 -arch arm64 -mmacosx-version-min=10.5"
 	export CFLAGS
 
 - Change to the directory containing the Tcl source tree and build:

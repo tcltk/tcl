@@ -46,7 +46,7 @@ EXTERN int		TclpCloseFile(TclFile file);
 /* 2 */
 EXTERN Tcl_Channel	TclpCreateCommandChannel(TclFile readFile,
 				TclFile writeFile, TclFile errorFile,
-				int numPids, Tcl_Pid *pidPtr);
+				size_t numPids, Tcl_Pid *pidPtr);
 /* 3 */
 EXTERN int		TclpCreatePipe(TclFile *readPipe, TclFile *writePipe);
 /* 4 */
@@ -69,7 +69,7 @@ EXTERN void		TclGetAndDetachPids(Tcl_Interp *interp,
 /* Slot 13 is reserved */
 /* Slot 14 is reserved */
 /* 15 */
-EXTERN int		TclpCreateProcess(Tcl_Interp *interp, int argc,
+EXTERN int		TclpCreateProcess(Tcl_Interp *interp, size_t argc,
 				const char **argv, TclFile inputFile,
 				TclFile outputFile, TclFile errorFile,
 				Tcl_Pid *pidPtr);
@@ -106,7 +106,7 @@ typedef struct TclIntPlatStubs {
 
     void (*reserved0)(void);
     int (*tclpCloseFile) (TclFile file); /* 1 */
-    Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
+    Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, size_t numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
     void * (*tclWinGetTclInstance) (void); /* 4 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 5 */
@@ -119,7 +119,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved12)(void);
     void (*reserved13)(void);
     void (*reserved14)(void);
-    int (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 15 */
+    int (*tclpCreateProcess) (Tcl_Interp *interp, size_t argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 15 */
     int (*tclpIsAtty) (int fd); /* 16 */
     int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 17 */
     void (*reserved18)(void);
@@ -205,9 +205,16 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
-#define TclWinConvertWSAError Tcl_WinConvertError
-#define TclWinConvertError Tcl_WinConvertError
+#undef TclpLocaltime_unix
+#undef TclpGmtime_unix
+#undef TclWinConvertWSAError
+#define TclWinConvertWSAError TclWinConvertError
 
+#undef TclpInetNtoa
+#define TclpInetNtoa inet_ntoa
+
+#undef TclpCreateTempFile_
+#undef TclUnixWaitForFile_
 #ifdef MAC_OSX_TCL /* not accessable on Win32/UNIX */
 MODULE_SCOPE int TclMacOSXGetFileAttribute(Tcl_Interp *interp,
 	int objIndex, Tcl_Obj *fileName,
@@ -225,9 +232,23 @@ MODULE_SCOPE int TclMacOSXMatchType(Tcl_Interp *interp,
 	const char *pathName, const char *fileName,
 	Tcl_StatBuf *statBufPtr,
 	Tcl_GlobTypeData *types);
+#else
+#undef TclMacOSXGetFileAttribute /* 15 */
+#undef TclMacOSXSetFileAttribute /* 16 */
+#undef TclMacOSXCopyFileAttributes /* 17 */
+#undef TclMacOSXMatchType /* 18 */
+#undef TclMacOSXNotifierAddRunLoopMode /* 19 */
 #endif
 
-#if !defined(_WIN32)
+#if defined(_WIN32)
+#   undef TclWinNToHS
+#   undef TclWinGetServByName
+#   undef TclWinGetSockOpt
+#   undef TclWinSetSockOpt
+#   undef TclWinGetPlatformId
+#   undef TclWinResetInterfaces
+#   undef TclWinSetInterfaces
+#else
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((size_t)(pid))
 #endif

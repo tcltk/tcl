@@ -21,7 +21,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint testasync [llength [info commands testasync]]
-testConstraint knownMsvcBug [expr {![info exists ::env(CI_BUILD_WITH_MSVC)]}]
+testConstraint knownMsvcBug [string match msvc-* [tcl::build-info compiler]]
 
 proc async1 {result code} {
     global aresult acode

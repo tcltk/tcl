@@ -24,7 +24,8 @@
 */versions.vc
 */version.vc
 */libtcl.vfs
-*/libtcl_*.zip
+*/libtcl*.zip
+*/tclUuid.h
 html
 libtommath/bn.ilg
 libtommath/bn.ind

@@ -72,15 +72,15 @@ test append-3.6 {append surrogates} -body {
 test append-3.7 {append \xC0 \x80} -constraints testbytestring -body {
     set x [testbytestring \xC0]
     string length [append x [testbytestring \x80]]
-} -result 2
+} -result 1
 test append-3.8 {append \xC0 \x80} -constraints testbytestring -body {
     set x [testbytestring \xC0]
     string length $x[testbytestring \x80]
-} -result 2
+} -result 1
 test append-3.9 {append \xC0 \x80} -constraints testbytestring -body {
     set x [testbytestring \x80]
     string length [testbytestring \xC0]$x
-} -result 2
+} -result 1
 test append-3.10 {append surrogates} -body {
     set x \uD83D
     string range $x 0 end

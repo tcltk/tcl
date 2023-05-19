@@ -376,7 +376,7 @@
 		F96D3E9108F272A6004A47F5 /* rename.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = rename.n; sourceTree = "<group>"; };
 		F96D3E9208F272A6004A47F5 /* return.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = return.n; sourceTree = "<group>"; };
 		F96D3E9308F272A6004A47F5 /* safe.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = safe.n; sourceTree = "<group>"; };
-		F96D3E9408F272A6004A47F5 /* SaveResult.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = SaveResult.3; sourceTree = "<group>"; };
+		F96D3E9408F272A6004A47F5 /* SaveInterpState.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = SaveInterpState.3; sourceTree = "<group>"; };
 		F96D3E9508F272A6004A47F5 /* scan.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = scan.n; sourceTree = "<group>"; };
 		F96D3E9608F272A6004A47F5 /* seek.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = seek.n; sourceTree = "<group>"; };
 		F96D3E9708F272A6004A47F5 /* set.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = set.n; sourceTree = "<group>"; };
@@ -1123,7 +1123,7 @@
 				F96D3E9108F272A6004A47F5 /* rename.n */,
 				F96D3E9208F272A6004A47F5 /* return.n */,
 				F96D3E9308F272A6004A47F5 /* safe.n */,
-				F96D3E9408F272A6004A47F5 /* SaveResult.3 */,
+				F96D3E9408F272A6004A47F5 /* SaveInterpState.3 */,
 				F96D3E9508F272A6004A47F5 /* scan.n */,
 				F96D3E9608F272A6004A47F5 /* seek.n */,
 				F93599D80DF1F98300E04F67 /* self.n */,
@@ -2121,8 +2121,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CFLAGS = "-arch i386 -arch x86_64 -arch ppc $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PREBINDING = NO;
 			};
@@ -2359,44 +2359,6 @@
 			};
 			name = ReleaseUniversal;
 		};
-		F97AED1B0B660B2100310EA2 /* Debug64bit */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tclsh;
-				SKIP_INSTALL = NO;
-			};
-			name = Debug64bit;
-		};
-		F97AED1C0B660B2100310EA2 /* Debug64bit */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tcltest;
-			};
-			name = Debug64bit;
-		};
-		F97AED1D0B660B2100310EA2 /* Debug64bit */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
-				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "";
-				TCL_LIBRARY = "$(TCL_SRCROOT)/library";
-				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
-			};
-			name = Debug64bit;
-		};
-		F97AED1E0B660B2100310EA2 /* Debug64bit */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */;
-			buildSettings = {
-				ARCHS = "$(NATIVE_ARCH_64_BIT)";
-				CONFIGURE_ARGS = "--enable-64bit $(CONFIGURE_ARGS)";
-				CPPFLAGS = "-arch $(NATIVE_ARCH_64_BIT) $(CPPFLAGS)";
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				PREBINDING = NO;
-			};
-			name = Debug64bit;
-		};
 		F987512F0DE7B57E00B1C9EC /* DebugNoCF */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */;
@@ -2438,48 +2400,6 @@
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
 			name = DebugNoCF;
-		};
-		F98751330DE7B5A200B1C9EC /* DebugNoCFUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */;
-			buildSettings = {
-				ARCHS = (
-					"$(NATIVE_ARCH_64_BIT)",
-					"$(NATIVE_ARCH_32_BIT)",
-				);
-				CONFIGURE_ARGS = "$(CONFIGURE_ARGS) --disable-threads --disable-corefoundation";
-				CPPFLAGS = "-arch $(CURRENT_ARCH) $(CPPFLAGS)";
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				ONLY_ACTIVE_ARCH = YES;
-				PREBINDING = NO;
-			};
-			name = DebugNoCFUnthreaded;
-		};
-		F98751340DE7B5A200B1C9EC /* DebugNoCFUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tclsh;
-				SKIP_INSTALL = NO;
-			};
-			name = DebugNoCFUnthreaded;
-		};
-		F98751350DE7B5A200B1C9EC /* DebugNoCFUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tcltest;
-			};
-			name = DebugNoCFUnthreaded;
-		};
-		F98751360DE7B5A200B1C9EC /* DebugNoCFUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
-				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "";
-				TCL_LIBRARY = "$(TCL_SRCROOT)/library";
-				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
-			};
-			name = DebugNoCFUnthreaded;
 		};
 		F9988AB10D814C6500B6B03B /* Debug gcc40 */ = {
 			isa = XCBuildConfiguration;
@@ -2586,8 +2506,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CFLAGS = "-arch i386 -arch x86_64 -arch ppc $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				GCC_VERSION = 4.0;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PREBINDING = NO;
@@ -2624,12 +2544,11 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CFLAGS = "-arch i386 -arch x86_64 -arch ppc $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC = "llvm-gcc";
 				GCC_OPTIMIZATION_LEVEL = 4;
-				"GCC_OPTIMIZATION_LEVEL[arch=ppc]" = s;
 				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PREBINDING = NO;
@@ -2662,14 +2581,6 @@
 			};
 			name = "ReleaseUniversal llvm-gcc";
 		};
-		F99EE73B0BE835310060D4AF /* DebugUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tclsh;
-				SKIP_INSTALL = NO;
-			};
-			name = DebugUnthreaded;
-		};
 		F99EE73C0BE835310060D4AF /* DebugLeaks */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2678,30 +2589,12 @@
 			};
 			name = DebugLeaks;
 		};
-		F99EE73D0BE835310060D4AF /* DebugUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tcltest;
-			};
-			name = DebugUnthreaded;
-		};
 		F99EE73E0BE835310060D4AF /* DebugLeaks */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tcltest;
 			};
 			name = DebugLeaks;
-		};
-		F99EE73F0BE835310060D4AF /* DebugUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
-				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "";
-				TCL_LIBRARY = "$(TCL_SRCROOT)/library";
-				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
-			};
-			name = DebugUnthreaded;
 		};
 		F99EE7400BE835310060D4AF /* DebugLeaks */ = {
 			isa = XCBuildConfiguration;
@@ -2713,22 +2606,6 @@
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
 			name = DebugLeaks;
-		};
-		F99EE7410BE835310060D4AF /* DebugUnthreaded */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */;
-			buildSettings = {
-				ARCHS = (
-					"$(NATIVE_ARCH_64_BIT)",
-					"$(NATIVE_ARCH_32_BIT)",
-				);
-				CONFIGURE_ARGS = "$(CONFIGURE_ARGS) --disable-threads";
-				CPPFLAGS = "-arch $(CURRENT_ARCH) $(CPPFLAGS)";
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				ONLY_ACTIVE_ARCH = YES;
-				PREBINDING = NO;
-			};
-			name = DebugUnthreaded;
 		};
 		F99EE7420BE835310060D4AF /* DebugLeaks */ = {
 			isa = XCBuildConfiguration;
@@ -2807,9 +2684,8 @@
 			buildSettings = {
 				ARCHS = (
 					"$(NATIVE_ARCH_64_BIT)",
-					"$(NATIVE_ARCH_32_BIT)",
 				);
-				CFLAGS = "-arch i386 -arch x86_64 $(CFLAGS)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC = clang;
 				GCC_OPTIMIZATION_LEVEL = 4;
@@ -2875,8 +2751,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CFLAGS = "-arch i386 -arch x86_64 -arch ppc $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				CPPFLAGS = "-isysroot $(SDKROOT) $(CPPFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				PREBINDING = NO;
@@ -2895,13 +2771,10 @@
 				F9988AB60D814C7500B6B03B /* Debug llvm-gcc */,
 				F9988AB20D814C6500B6B03B /* Debug gcc40 */,
 				F95CC8AE09158F3100EA5ACE /* DebugNoFixAndContinue */,
-				F99EE73B0BE835310060D4AF /* DebugUnthreaded */,
 				F98751300DE7B57E00B1C9EC /* DebugNoCF */,
-				F98751340DE7B5A200B1C9EC /* DebugNoCFUnthreaded */,
 				F93084370BB93D2800CD0B9E /* DebugMemCompile */,
 				F99EE73C0BE835310060D4AF /* DebugLeaks */,
 				F9359B260DF212DA00E04F67 /* DebugGCov */,
-				F97AED1B0B660B2100310EA2 /* Debug64bit */,
 				F95CC8AD09158F3100EA5ACE /* Release */,
 				F91BCC4F093152310042A6BF /* ReleaseUniversal */,
 				F9A9D1F40FC77799002A2BE3 /* ReleaseUniversal clang */,
@@ -2920,13 +2793,10 @@
 				F9988AB70D814C7500B6B03B /* Debug llvm-gcc */,
 				F9988AB30D814C6500B6B03B /* Debug gcc40 */,
 				F95CC8B309158F3100EA5ACE /* DebugNoFixAndContinue */,
-				F99EE73D0BE835310060D4AF /* DebugUnthreaded */,
 				F98751310DE7B57E00B1C9EC /* DebugNoCF */,
-				F98751350DE7B5A200B1C9EC /* DebugNoCFUnthreaded */,
 				F93084380BB93D2800CD0B9E /* DebugMemCompile */,
 				F99EE73E0BE835310060D4AF /* DebugLeaks */,
 				F9359B270DF212DA00E04F67 /* DebugGCov */,
-				F97AED1C0B660B2100310EA2 /* Debug64bit */,
 				F95CC8B209158F3100EA5ACE /* Release */,
 				F91BCC50093152310042A6BF /* ReleaseUniversal */,
 				F9A9D1F50FC77799002A2BE3 /* ReleaseUniversal clang */,
@@ -2945,13 +2815,10 @@
 				F9988AB50D814C7500B6B03B /* Debug llvm-gcc */,
 				F9988AB10D814C6500B6B03B /* Debug gcc40 */,
 				F95CC8B809158F3100EA5ACE /* DebugNoFixAndContinue */,
-				F99EE7410BE835310060D4AF /* DebugUnthreaded */,
 				F987512F0DE7B57E00B1C9EC /* DebugNoCF */,
-				F98751330DE7B5A200B1C9EC /* DebugNoCFUnthreaded */,
 				F930843A0BB93D2800CD0B9E /* DebugMemCompile */,
 				F99EE7420BE835310060D4AF /* DebugLeaks */,
 				F9359B250DF212DA00E04F67 /* DebugGCov */,
-				F97AED1E0B660B2100310EA2 /* Debug64bit */,
 				F95CC8B709158F3100EA5ACE /* Release */,
 				F91BCC51093152310042A6BF /* ReleaseUniversal */,
 				F9A9D1F30FC77799002A2BE3 /* ReleaseUniversal clang */,
@@ -2970,13 +2837,10 @@
 				F9988AB80D814C7500B6B03B /* Debug llvm-gcc */,
 				F9988AB40D814C6500B6B03B /* Debug gcc40 */,
 				F97258AB0A86873D00096C78 /* DebugNoFixAndContinue */,
-				F99EE73F0BE835310060D4AF /* DebugUnthreaded */,
 				F98751320DE7B57E00B1C9EC /* DebugNoCF */,
-				F98751360DE7B5A200B1C9EC /* DebugNoCFUnthreaded */,
 				F93084390BB93D2800CD0B9E /* DebugMemCompile */,
 				F99EE7400BE835310060D4AF /* DebugLeaks */,
 				F9359B280DF212DA00E04F67 /* DebugGCov */,
-				F97AED1D0B660B2100310EA2 /* Debug64bit */,
 				F97258AA0A86873D00096C78 /* Release */,
 				F97258AC0A86873D00096C78 /* ReleaseUniversal */,
 				F9A9D1F60FC77799002A2BE3 /* ReleaseUniversal clang */,

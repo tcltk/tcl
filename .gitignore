@@ -26,11 +26,12 @@ manifest.uuid
 _FOSSIL_
 */tclConfig.sh
 */tclsh*
-*/tcltest*
+*/tcltest
 */versions.vc
 */version.vc
 */libtcl.vfs
-*/libtcl_*.zip
+*/libtcl*.zip
+*/tclUuid.h
 libtommath/bn.ilg
 libtommath/bn.ind
 libtommath/pretty.build

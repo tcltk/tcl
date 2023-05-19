@@ -108,7 +108,7 @@ static struct {
  * Declarations for functions defined later in this file.
  */
 
-static void		StopCalibration(ClientData clientData);
+static void		StopCalibration(void *clientData);
 static DWORD WINAPI	CalibrationThread(LPVOID arg);
 static void 		UpdateTimeEachSecond(void);
 static void		ResetCounterSamples(unsigned long long fileTime,
@@ -116,10 +116,10 @@ static void		ResetCounterSamples(unsigned long long fileTime,
 static long long	AccumulateSample(long long perfCounter,
 			    unsigned long long fileTime);
 static void		NativeScaleTime(Tcl_Time* timebuf,
-			    ClientData clientData);
+			    void *clientData);
 static long long	NativeGetMicroseconds(void);
 static void		NativeGetTime(Tcl_Time* timebuf,
-			    ClientData clientData);
+			    void *clientData);
 
 /*
  * TIP #233 (Virtualized Time): Data for the time hooks, if any.
@@ -127,7 +127,7 @@ static void		NativeGetTime(Tcl_Time* timebuf,
 
 Tcl_GetTimeProc *tclGetTimeProcPtr = NativeGetTime;
 Tcl_ScaleTimeProc *tclScaleTimeProcPtr = NativeScaleTime;
-ClientData tclTimeClientData = NULL;
+void *tclTimeClientData = NULL;
 
 /*
  * Inlined version of Tcl_GetTime.
@@ -221,8 +221,8 @@ TclpGetClicks(void)
 	Tcl_Time now;		/* Current Tcl time */
 
 	GetTime(&now);
-	return ((unsigned long long)(unsigned long) now.sec * 1000000ULL) +
-		now.usec;
+	return ((unsigned long long)(now.sec)*1000000ULL) +
+		(unsigned long long)(now.usec);
     }
 }
 
@@ -411,7 +411,7 @@ Tcl_GetTime(
 static void
 NativeScaleTime(
     TCL_UNUSED(Tcl_Time *),
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     /*
      * Native scale is 1:1. Nothing is done.
@@ -622,7 +622,7 @@ NativeGetMicroseconds(void)
 
 	if (curCounter.QuadPart <= perfCounterLastCall) {
 	    /*
-	     * Calibrated file-time is saved from posix in 100-ns ticks
+	     * Calibrated file-time is saved from Posix in 100-ns ticks
 	     */
 
 	    return fileTimeLastCall / 10;
@@ -641,7 +641,7 @@ NativeGetMicroseconds(void)
 	if (curCounter.QuadPart - perfCounterLastCall <
 		11 * curCounterFreq * timeInfo.calibrationInterv / 10) {
 	    /*
-	     * Calibrated file-time is saved from posix in 100-ns ticks.
+	     * Calibrated file-time is saved from Posix in 100-ns ticks.
 	     */
 
 	    return NativeCalc100NsTicks(fileTimeLastCall,
@@ -677,7 +677,7 @@ NativeGetMicroseconds(void)
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     long long usecSincePosixEpoch;
 
@@ -724,7 +724,7 @@ void TclWinResetTimerResolution(void);
 
 static void
 StopCalibration(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     SetEvent(timeInfo.exitEvent);
 
@@ -782,7 +782,7 @@ CalibrationThread(
     timeInfo.fileTimeLastCall.HighPart = curFileTime.dwHighDateTime;
 
     /*
-     * Calibrated file-time will be saved from posix in 100-ns ticks.
+     * Calibrated file-time will be saved from Posix in 100-ns ticks.
      */
 
     timeInfo.fileTimeLastCall.QuadPart -= timeInfo.posixEpoch.QuadPart;
@@ -857,7 +857,7 @@ UpdateTimeEachSecond(void)
 				 * step over 1 second. */
 
     /*
-     * Sample performance counter and system time (from posix epoch).
+     * Sample performance counter and system time (from Posix epoch).
      */
 
     GetSystemTimeAsFileTime(&curSysTime);
@@ -882,7 +882,7 @@ UpdateTimeEachSecond(void)
     lastFileTime.QuadPart = curFileTime.QuadPart;
 
     /*
-     * We devide by timeInfo.curCounterFreq.QuadPart in several places. That
+     * We divide by timeInfo.curCounterFreq.QuadPart in several places. That
      * value should always be positive on a correctly functioning system. But
      * it is good to be defensive about such matters. So if something goes
      * wrong and the value does goes to zero, we clear the
@@ -1198,7 +1198,7 @@ void
 Tcl_SetTimeProc(
     Tcl_GetTimeProc *getProc,
     Tcl_ScaleTimeProc *scaleProc,
-    ClientData clientData)
+    void *clientData)
 {
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
@@ -1225,7 +1225,7 @@ void
 Tcl_QueryTimeProc(
     Tcl_GetTimeProc **getProc,
     Tcl_ScaleTimeProc **scaleProc,
-    ClientData *clientData)
+    void **clientData)
 {
     if (getProc) {
 	*getProc = tclGetTimeProcPtr;

@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 #include "tclRegexp.h"
+#include "tclTomMath.h"
 #include <assert.h>
 
 /*
@@ -88,7 +89,7 @@ static TclRegexp *	CompileRegexp(Tcl_Interp *interp, const char *pattern,
 			    size_t length, int flags);
 static void		DupRegexpInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
-static void		FinalizeRegexp(ClientData clientData);
+static void		FinalizeRegexp(void *clientData);
 static void		FreeRegexp(TclRegexp *regexpPtr);
 static void		FreeRegexpInternalRep(Tcl_Obj *objPtr);
 static int		RegExpExecUniChar(Tcl_Interp *interp, Tcl_RegExp re,
@@ -106,7 +107,8 @@ const Tcl_ObjType tclRegexpType = {
     FreeRegexpInternalRep,		/* freeIntRepProc */
     DupRegexpInternalRep,		/* dupIntRepProc */
     NULL,				/* updateStringProc */
-    SetRegexpFromAny			/* setFromAnyProc */
+    SetRegexpFromAny,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 #define RegexpSetInternalRep(objPtr, rePtr)					\
@@ -155,7 +157,7 @@ Tcl_RegExpCompile(
     const char *pattern)	/* String for which to produce compiled
 				 * regular expression. */
 {
-    return (Tcl_RegExp) CompileRegexp(interp, pattern, (int) strlen(pattern),
+    return (Tcl_RegExp) CompileRegexp(interp, pattern, strlen(pattern),
 	    REG_ADVANCED);
 }
 
@@ -219,9 +221,9 @@ Tcl_RegExpExec(
      */
 
     Tcl_DStringInit(&ds);
-    ustr = Tcl_UtfToUniCharDString(text, -1, &ds);
+    ustr = Tcl_UtfToUniCharDString(text, TCL_INDEX_NONE, &ds);
     numChars = Tcl_DStringLength(&ds) / sizeof(Tcl_UniChar);
-    result = RegExpExecUniChar(interp, re, ustr, numChars, -1 /* nmatches */,
+    result = RegExpExecUniChar(interp, re, ustr, numChars, TCL_INDEX_NONE /* nmatches */,
 	    flags);
     Tcl_DStringFree(&ds);
 
@@ -251,7 +253,7 @@ void
 Tcl_RegExpRange(
     Tcl_RegExp re,		/* Compiled regular expression that has been
 				 * passed to Tcl_RegExpExec. */
-    size_t index,			/* 0 means give the range of the entire match,
+    Tcl_Size index,		/* 0 means give the range of the entire match,
 				 * > 0 means give the range of a matching
 				 * subrange. */
     const char **startPtr,	/* Store address of first character in
@@ -262,9 +264,9 @@ Tcl_RegExpRange(
     TclRegexp *regexpPtr = (TclRegexp *) re;
     const char *string;
 
-    if (index > regexpPtr->re.re_nsub) {
+    if (index < 0 || (size_t) index > regexpPtr->re.re_nsub) {
 	*startPtr = *endPtr = NULL;
-    } else if (regexpPtr->matches[index].rm_so == TCL_INDEX_NONE) {
+    } else if (regexpPtr->matches[index].rm_so == (size_t) -1) {
 	*startPtr = *endPtr = NULL;
     } else {
 	if (regexpPtr->objPtr) {
@@ -361,23 +363,23 @@ void
 TclRegExpRangeUniChar(
     Tcl_RegExp re,		/* Compiled regular expression that has been
 				 * passed to Tcl_RegExpExec. */
-    size_t index,			/* 0 means give the range of the entire match,
+    Tcl_Size index,		/* 0 means give the range of the entire match,
 				 * > 0 means give the range of a matching
-				 * subrange, TCL_INDEX_NONE means the range of the
+				 * subrange, -1 means the range of the
 				 * rm_extend field. */
-    size_t *startPtr,		/* Store address of first character in
+    Tcl_Size *startPtr,	/* Store address of first character in
 				 * (sub-)range here. */
-    size_t *endPtr)		/* Store address of character just after last
+    Tcl_Size *endPtr)	/* Store address of character just after last
 				 * in (sub-)range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
 
-    if ((regexpPtr->flags&REG_EXPECT) && (index == TCL_INDEX_NONE)) {
+    if ((regexpPtr->flags&REG_EXPECT) && (index == -1)) {
 	*startPtr = regexpPtr->details.rm_extend.rm_so;
 	*endPtr = regexpPtr->details.rm_extend.rm_eo;
-    } else if (index + 1 > regexpPtr->re.re_nsub + 1) {
-	*startPtr = TCL_INDEX_NONE;
-	*endPtr = TCL_INDEX_NONE;
+    } else if (index < 0 || (size_t) index > regexpPtr->re.re_nsub + 1) {
+	*startPtr = -1;
+	*endPtr = -1;
     } else {
 	*startPtr = regexpPtr->matches[index].rm_so;
 	*endPtr = regexpPtr->matches[index].rm_eo;
@@ -441,16 +443,16 @@ Tcl_RegExpExecObj(
 				 * returned by previous call to
 				 * Tcl_GetRegExpFromObj. */
     Tcl_Obj *textObj,		/* Text against which to match re. */
-    size_t offset,			/* Character index that marks where matching
+    Tcl_Size offset,		/* Character index that marks where matching
 				 * should begin. */
-    size_t nmatches,		/* How many subexpression matches (counting
+    Tcl_Size nmatches,	/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
 				 * interest. -1 means all of them. */
     int flags)			/* Regular expression execution flags. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
     Tcl_UniChar *udata;
-    size_t length;
+    Tcl_Size length;
     int reflags = regexpPtr->flags;
 #define TCL_REG_GLOBOK_FLAGS \
 	(TCL_REG_ADVANCED | TCL_REG_NOSUB | TCL_REG_NOCASE)
@@ -593,7 +595,7 @@ Tcl_GetRegExpFromObj(
 				 * expression. */
     int flags)			/* Regular expression compilation flags. */
 {
-    size_t length;
+    Tcl_Size length;
     TclRegexp *regexpPtr;
     const char *pattern;
 
@@ -728,7 +730,7 @@ TclRegError(
     p = (n > sizeof(buf)) ? "..." : "";
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s%s%s", msg, buf, p));
 
-    sprintf(cbuf, "%d", status);
+    snprintf(cbuf, sizeof(cbuf), "%d", status);
     (void) TclReError(REG_ITOA, cbuf, sizeof(cbuf));
     Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
 }
@@ -918,8 +920,8 @@ CompileRegexp(
     regexpPtr = (TclRegexp*)Tcl_Alloc(sizeof(TclRegexp));
     regexpPtr->objPtr = NULL;
     regexpPtr->string = NULL;
-    regexpPtr->details.rm_extend.rm_so = -1;
-    regexpPtr->details.rm_extend.rm_eo = -1;
+    regexpPtr->details.rm_extend.rm_so = TCL_INDEX_NONE;
+    regexpPtr->details.rm_extend.rm_eo = TCL_INDEX_NONE;
 
     /*
      * Get the up-to-date string representation and map to unicode.
@@ -958,7 +960,7 @@ CompileRegexp(
 
     if (TclReToGlob(NULL, string, length, &stringBuf, &exact,
 	    NULL) == TCL_OK) {
-	regexpPtr->globObjPtr = TclDStringToObj(&stringBuf);
+	regexpPtr->globObjPtr = Tcl_DStringToObj(&stringBuf);
 	Tcl_IncrRefCount(regexpPtr->globObjPtr);
     } else {
 	regexpPtr->globObjPtr = NULL;

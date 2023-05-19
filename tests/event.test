@@ -427,7 +427,7 @@ foo
 
 # someday : add a test checking that when there is no bgerror, an error msg
 # goes to stderr ideally one would use sub interp and transfer a fake stderr
-# to it, unfortunatly the current interp tcl API does not allow that. The
+# to it, unfortunately the current interp tcl API does not allow that. The
 # other option would be to use fork a test but it then becomes more a
 # file/exec test than a bgerror test.
 
@@ -509,12 +509,9 @@ test event-10.1 {Tcl_Exit procedure} {stdio} {
         [lindex $::errorCode 2]
 } {1 {child process exited abnormally} CHILDSTATUS 3}
 
-test event-11.1 {Tcl_VwaitCmd procedure} -returnCodes error -body {
+test event-11.1 {Tcl_VwaitCmd procedure} -body {
     vwait
-} -result {wrong # args: should be "vwait name"}
-test event-11.2 {Tcl_VwaitCmd procedure} -returnCodes error -body {
-    vwait a b
-} -result {wrong # args: should be "vwait name"}
+} -result {}
 test event-11.3 {Tcl_VwaitCmd procedure} -setup {
     catch {unset x}
 } -body {

@@ -68,8 +68,8 @@ declare 12 {
 }
 declare 13 {
     Tcl_Object Tcl_NewObjectInstance(Tcl_Interp *interp, Tcl_Class cls,
-	    const char *nameStr, const char *nsNameStr, int objc,
-	    Tcl_Obj *const *objv, int skip)
+	    const char *nameStr, const char *nsNameStr, Tcl_Size objc,
+	    Tcl_Obj *const *objv, Tcl_Size skip)
 }
 declare 14 {
     int Tcl_ObjectDeleted(Tcl_Object object)
@@ -84,7 +84,7 @@ declare 17 {
     Tcl_Object Tcl_ObjectContextObject(Tcl_ObjectContext context)
 }
 declare 18 {
-    int Tcl_ObjectContextSkippedArgs(Tcl_ObjectContext context)
+    Tcl_Size Tcl_ObjectContextSkippedArgs(Tcl_ObjectContext context)
 }
 declare 19 {
     void *Tcl_ClassGetMetadata(Tcl_Class clazz,
@@ -104,8 +104,8 @@ declare 22 {
 }
 declare 23 {
     int Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
-	    Tcl_ObjectContext context, int objc, Tcl_Obj *const *objv,
-	    int skip)
+	    Tcl_ObjectContext context, Tcl_Size objc, Tcl_Obj *const *objv,
+	    Tcl_Size skip)
 }
 declare 24 {
     Tcl_ObjectMapMethodNameProc *Tcl_ObjectGetMethodNameMapper(
@@ -134,6 +134,20 @@ declare 30 {
 }
 declare 31 {
     Tcl_Obj *Tcl_GetObjectClassName(Tcl_Interp *interp, Tcl_Object object)
+}
+declare 32 {
+    int Tcl_MethodIsType2(Tcl_Method method, const Tcl_MethodType2 *typePtr,
+	    void **clientDataPtr)
+}
+declare 33 {
+    Tcl_Method Tcl_NewInstanceMethod2(Tcl_Interp *interp, Tcl_Object object,
+	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType2 *typePtr,
+	    void *clientData)
+}
+declare 34 {
+    Tcl_Method Tcl_NewMethod2(Tcl_Interp *interp, Tcl_Class cls,
+	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType2 *typePtr,
+	    void *clientData)
 }
 
 ######################################################################
@@ -170,7 +184,7 @@ declare 4 {
 	    ProcedureMethod **pmPtrPtr)
 }
 declare 5 {
-    int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, int objc,
+    int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, Tcl_Size objc,
 	    Tcl_Obj *const *objv, int publicOnly, Class *startCls)
 }
 declare 6 {
@@ -200,24 +214,24 @@ declare 10 {
 }
 declare 11 {
     int TclOOInvokeObject(Tcl_Interp *interp, Tcl_Object object,
-	    Tcl_Class startCls, int publicPrivate, int objc,
+	    Tcl_Class startCls, int publicPrivate, Tcl_Size objc,
 	    Tcl_Obj *const *objv)
 }
 declare 12 {
-    void TclOOObjectSetFilters(Object *oPtr, int numFilters,
+    void TclOOObjectSetFilters(Object *oPtr, Tcl_Size numFilters,
 	    Tcl_Obj *const *filters)
 }
 declare 13 {
     void TclOOClassSetFilters(Tcl_Interp *interp, Class *classPtr,
-	    int numFilters, Tcl_Obj *const *filters)
+	    Tcl_Size numFilters, Tcl_Obj *const *filters)
 }
 declare 14 {
-    void TclOOObjectSetMixins(Object *oPtr, int numMixins,
+    void TclOOObjectSetMixins(Object *oPtr, Tcl_Size numMixins,
 	    Class *const *mixins)
 }
 declare 15 {
     void TclOOClassSetMixins(Tcl_Interp *interp, Class *classPtr,
-	    int numMixins, Class *const *mixins)
+	    Tcl_Size numMixins, Class *const *mixins)
 }
 
 return

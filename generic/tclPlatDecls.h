@@ -48,6 +48,7 @@
 #   endif
 #endif
 
+
 /* !BEGIN!: Do not edit below this line. */
 
 #ifdef __cplusplus
@@ -63,7 +64,7 @@ extern "C" {
 EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
 				Tcl_Interp *interp, const char *bundleName,
 				const char *bundleVersion,
-				int hasResourceFile, size_t maxPathLen,
+				int hasResourceFile, Tcl_Size maxPathLen,
 				char *libraryPath);
 /* 2 */
 EXTERN void		Tcl_MacOSXNotifierAddRunLoopMode(
@@ -76,7 +77,7 @@ typedef struct TclPlatStubs {
     void *hooks;
 
     void (*reserved0)(void);
-    int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, size_t maxPathLen, char *libraryPath); /* 1 */
+    int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, Tcl_Size maxPathLen, char *libraryPath); /* 1 */
     void (*tcl_MacOSXNotifierAddRunLoopMode) (const void *runLoopMode); /* 2 */
     void (*tcl_WinConvertError) (unsigned errCode); /* 3 */
 } TclPlatStubs;
@@ -105,6 +106,12 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+
+#ifdef MAC_OSX_TCL /* MACOSX */
+#undef Tcl_MacOSXOpenBundleResources
+#define Tcl_MacOSXOpenBundleResources(a,b,c,d,e) Tcl_MacOSXOpenVersionedBundleResources(a,b,NULL,c,d,e)
+#endif
+
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
@@ -118,11 +125,15 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 #   undef Tcl_MacOSXNotifierAddRunLoopMode
 #endif
 
-#if defined(USE_TCL_STUBS) && defined(_WIN32) && !defined(TCL_NO_DEPRECATED)
+#if defined(USE_TCL_STUBS) && (defined(_WIN32) || defined(__CYGWIN__))
+#undef Tcl_WinUtfToTChar
+#undef Tcl_WinTCharToUtf
+#ifdef _WIN32
 #define Tcl_WinUtfToTChar(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
 		(TCHAR *)Tcl_UtfToChar16DString((string), (len), (dsPtr)))
 #define Tcl_WinTCharToUtf(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
 		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr)))
+#endif
 #endif
 
 #endif /* _TCLPLATDECLS */
