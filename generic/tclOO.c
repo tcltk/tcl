@@ -1032,13 +1032,13 @@ TclOOReleaseClassContents(
 	FOREACH(propertyObj, clsPtr->properties.readable) {
 	    Tcl_DecrRefCount(propertyObj);
 	}
-	ckfree(clsPtr->properties.readable.list);
+	Tcl_Free(clsPtr->properties.readable.list);
     }
     if (clsPtr->properties.writable.num) {
 	FOREACH(propertyObj, clsPtr->properties.writable) {
 	    Tcl_DecrRefCount(propertyObj);
 	}
-	ckfree(clsPtr->properties.writable.list);
+	Tcl_Free(clsPtr->properties.writable.list);
     }
 
     /*
@@ -1309,13 +1309,13 @@ ObjectNamespaceDeleted(
 	FOREACH(propertyObj, oPtr->properties.readable) {
 	    Tcl_DecrRefCount(propertyObj);
 	}
-	ckfree(oPtr->properties.readable.list);
+	Tcl_Free(oPtr->properties.readable.list);
     }
     if (oPtr->properties.writable.num) {
 	FOREACH(propertyObj, oPtr->properties.writable) {
 	    Tcl_DecrRefCount(propertyObj);
 	}
-	ckfree(oPtr->properties.writable.list);
+	Tcl_Free(oPtr->properties.writable.list);
     }
 
     /*

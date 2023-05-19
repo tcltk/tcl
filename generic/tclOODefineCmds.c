@@ -3169,12 +3169,12 @@ InstallReadableProps(
     }
     if (i != objc) {
 	if (objc == 0) {
-	    ckfree(props->readable.list);
+	    Tcl_Free(props->readable.list);
 	} else if (i) {
-	    props->readable.list = (Tcl_Obj **)ckrealloc(props->readable.list,
+	    props->readable.list = (Tcl_Obj **)Tcl_Realloc(props->readable.list,
 		    sizeof(Tcl_Obj *) * objc);
 	} else {
-	    props->readable.list = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj *) * objc);
+	    props->readable.list = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
 	}
     }
     props->readable.num = 0;
@@ -3195,7 +3195,7 @@ InstallReadableProps(
 	 */
 
 	if (n != objc) {
-	    props->readable.list = (Tcl_Obj **)ckrealloc(props->readable.list,
+	    props->readable.list = (Tcl_Obj **)Tcl_Realloc(props->readable.list,
 		    sizeof(Tcl_Obj *) * n);
 	}
 	Tcl_DeleteHashTable(&uniqueTable);
@@ -3365,12 +3365,12 @@ InstallWritableProps(
     }
     if (i != objc) {
 	if (objc == 0) {
-	    ckfree(props->writable.list);
+	    Tcl_Free(props->writable.list);
 	} else if (i) {
-	    props->writable.list = (Tcl_Obj **)ckrealloc(props->writable.list,
+	    props->writable.list = (Tcl_Obj **)Tcl_Realloc(props->writable.list,
 		    sizeof(Tcl_Obj *) * objc);
 	} else {
-	    props->writable.list = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj *) * objc);
+	    props->writable.list = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
 	}
     }
     props->writable.num = 0;
@@ -3391,7 +3391,7 @@ InstallWritableProps(
 	 */
 
 	if (n != objc) {
-	    props->writable.list = (Tcl_Obj **)ckrealloc(props->writable.list,
+	    props->writable.list = (Tcl_Obj **)Tcl_Realloc(props->writable.list,
 		    sizeof(Tcl_Obj *) * n);
 	}
 	Tcl_DeleteHashTable(&uniqueTable);
