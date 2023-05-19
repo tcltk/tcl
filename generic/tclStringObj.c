@@ -2536,7 +2536,7 @@ Tcl_AppendFormatToObj(
 		goto errorMsg;
 	    }
 	    bytes = TclGetString(segment);
-	    if (!Tcl_AttemptSetObjLength(segment, sprintf(bytes, spec, d))) {
+	    if (!Tcl_AttemptSetObjLength(segment, snprintf(bytes, length, spec, d))) {
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
@@ -4302,7 +4302,6 @@ DupStringInternalRep(
 	 * bother copying it. Don't even bother allocating space in which to
 	 * copy it. Just let the copy be untyped.
 	 */
-
 	return;
     }
 

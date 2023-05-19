@@ -585,6 +585,12 @@ test lseq-4.16 {bug lseq - inconsistent rounding} {
     lappend res [lseq 4.03 4.208 0.013]
 } {{4.07 4.17 4.27 4.37 4.47 4.57 4.67 4.77 4.87 4.97 5.07 5.17 5.27 5.37 5.47 5.57 5.67 5.77 5.87 5.97} {4.03 4.043 4.056 4.069 4.082 4.095 4.108 4.121 4.134 4.147 4.16 4.173 4.186 4.199}}
 
+test lseq-convertToList {does not result in a memory error} {
+	trace add variable var1 write [list ::apply [list args {
+		error {this is an error}
+	} [namespace current]]]
+	list [catch {set var1 [lindex [lreplace [lseq 1 2] 1 1 hello] 0]} cres] $cres
+} {1 {can't set "var1": this is an error}}
 # cleanup
 ::tcltest::cleanupTests
 

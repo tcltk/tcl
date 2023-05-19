@@ -3374,7 +3374,12 @@ TEBCresume(
 	    goto gotError;
 	}
 	if (Tcl_IsShared(objResultPtr)) {
-	    Tcl_Obj *newValue = Tcl_DuplicateObj(objResultPtr);
+	    Tcl_Obj *newValue = TclDuplicatePureObj(
+		    interp, objResultPtr, &tclListType.objType);
+	    if (!newValue) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
 
 	    TclDecrRefCount(objResultPtr);
 	    varPtr->value.objPtr = objResultPtr = newValue;
@@ -3433,7 +3438,11 @@ TEBCresume(
 		goto gotError;
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
-		    valueToAssign = Tcl_DuplicateObj(objResultPtr);
+		    valueToAssign = TclDuplicatePureObj(
+			interp, objResultPtr, &tclListType.objType);
+		    if (!valueToAssign) {
+			goto errorInLappendListPtr;
+		    }
 		    createdNewObj = 1;
 		} else {
 		    valueToAssign = objResultPtr;
@@ -4682,23 +4691,45 @@ TEBCresume(
 	 * Extract the desired list element.
 	 */
 
-	if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& !TclHasInternalRep(value2Ptr, &tclListType.objType)) {
-	    int code;
+	{
+	    Tcl_Size value2Length;
+	    Tcl_Obj *indexListPtr = value2Ptr;
+	    if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
+		&& (
+		    !TclHasInternalRep(value2Ptr, &tclListType.objType)
+		    || 
+		    ((Tcl_ListObjLength(interp,value2Ptr,&value2Length),
+			value2Length == 1
+			    ? (indexListPtr = TclListObjGetElement(value2Ptr, 0), 1)
+			    : 0
+		    ))
+		)
+	    ) {
+		int code;
 
-	    DECACHE_STACK_INFO();
-	    code = TclGetIntForIndexM(interp, value2Ptr, objc-1, &index);
-	    CACHE_STACK_INFO();
-	    if (code == TCL_OK) {
-		TclDecrRefCount(value2Ptr);
-		tosPtr--;
-		pcAdjustment = 1;
-		goto lindexFastPath;
+		/* increment the refCount of value2Ptr because TclListObjGetElement may
+		 * have just extracted it from a list in the condition for this block.
+		 */
+		Tcl_IncrRefCount(indexListPtr);
+
+		DECACHE_STACK_INFO();
+		code = TclGetIntForIndexM(interp, indexListPtr, objc-1, &index);
+		TclDecrRefCount(indexListPtr);
+		CACHE_STACK_INFO();
+		if (code == TCL_OK) {
+		    Tcl_DecrRefCount(value2Ptr);
+		    tosPtr--;
+		    pcAdjustment = 1;
+		    goto lindexFastPath;
+		}
+		Tcl_ResetResult(interp);
 	    }
-	    Tcl_ResetResult(interp);
 	}
 
+
+	DECACHE_STACK_INFO();
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
+	CACHE_STACK_INFO();
 
     lindexDone:
 	if (!objResultPtr) {
@@ -6405,7 +6436,11 @@ TEBCresume(
 		goto gotError;
 	    }
 	    if (Tcl_IsShared(listPtr)) {
-		objPtr = TclListObjCopy(NULL, listPtr);
+		objPtr = TclDuplicatePureObj(
+		    interp, listPtr, &tclListType.objType);
+		if (!objPtr) {
+		    goto gotError;
+		}
 		Tcl_IncrRefCount(objPtr);
 		Tcl_DecrRefCount(listPtr);
 		OBJ_AT_DEPTH(listTmpDepth) = objPtr;
@@ -6467,6 +6502,7 @@ TEBCresume(
 	 */
 
 	if (iterNum < iterMax) {
+	    int status;
 	    /*
 	     * Set the variables and jump back to run the body
 	     */
@@ -6480,7 +6516,12 @@ TEBCresume(
 		numVars = varListPtr->numVars;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
-		TclListObjGetElementsM(interp, listPtr, &listLen, &elements);
+		status = TclListObjGetElementsM(
+		    interp, listPtr, &listLen, &elements);
+		if (status != TCL_OK) {
+		    goto gotError;
+		}
+
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
