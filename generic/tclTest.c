@@ -1019,7 +1019,7 @@ AsyncHandlerProc(
 
     TclFormatInt(string, code);
     listArgv[0] = asyncPtr->command;
-    listArgv[1] = Tcl_GetString(Tcl_GetObjResult(interp));
+    listArgv[1] = Tcl_GetStringResult(interp);
     listArgv[2] = string;
     listArgv[3] = NULL;
     cmd = Tcl_Merge(3, listArgv);
@@ -1115,6 +1115,12 @@ TestcmdinfoCmd(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
+    static const char *const subcmds[] = {
+	   "create", "delete", "get", "modify", NULL
+    };
+    enum options {
+	CMDINFO_CREATE, CMDINFO_DELETE, CMDINFO_GET, CMDINFO_MODIFY
+    } idx;
     Tcl_CmdInfo info;
 
     if (argc != 3) {
@@ -1122,15 +1128,22 @@ TestcmdinfoCmd(
 		" option cmdName\"", NULL);
 	return TCL_ERROR;
     }
-    if (strcmp(argv[1], "create") == 0) {
-	Tcl_CreateCommand(interp, argv[2], CmdProc1, (void *) "original",
-		CmdDelProc1);
-    } else if (strcmp(argv[1], "delete") == 0) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "option", 0,
+	    &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    switch (idx) {
+    case CMDINFO_CREATE:
+	Tcl_CreateCommand(interp, Tcl_GetString(objv[2]), CmdProc1,
+		(void *)"original", CmdDelProc1);
+	break;
+    case CMDINFO_DELETE:
 	Tcl_DStringInit(&delString);
 	Tcl_DeleteCommand(interp, argv[2]);
 	Tcl_DStringResult(interp, &delString);
-    } else if (strcmp(argv[1], "get") == 0) {
-	if (Tcl_GetCommandInfo(interp, argv[2], &info) ==0) {
+	break;
+    case CMDINFO_GET:
+	if (Tcl_GetCommandInfo(interp, Tcl_GetString(objv[2]), &info) ==0) {
 	    Tcl_AppendResult(interp, "??", NULL);
 	    return TCL_OK;
 	}
@@ -1153,12 +1166,17 @@ TestcmdinfoCmd(
 	    Tcl_AppendResult(interp, " unknown", NULL);
 	}
 	Tcl_AppendResult(interp, " ", info.namespacePtr->fullName, NULL);
-	if (info.isNativeObjectProc) {
+	if (info.isNativeObjectProc == 0) {
+	    Tcl_AppendResult(interp, " stringProc", NULL);
+	} else if (info.isNativeObjectProc == 1) {
 	    Tcl_AppendResult(interp, " nativeObjectProc", NULL);
 	} else {
-	    Tcl_AppendResult(interp, " stringProc", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("Invalid isNativeObjectProc value %d",
+		    info.isNativeObjectProc));
+	    return TCL_ERROR;
 	}
-    } else if (strcmp(argv[1], "modify") == 0) {
+	break;
+    case CMDINFO_MODIFY:
 	info.proc = CmdProc2;
 	info.clientData = (void *) "new_command_data";
 	info.objProc = NULL;
@@ -1170,10 +1188,7 @@ TestcmdinfoCmd(
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(1));
 	}
-    } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create, delete, get, or modify", NULL);
-	return TCL_ERROR;
+	break;
     }
     return TCL_OK;
 }
@@ -7625,7 +7640,7 @@ TestUtfNextCmd(
     }
 	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
-    if (numBytes + 4U > sizeof(buffer)) {
+    if ((size_t)numBytes > sizeof(buffer) - 4) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"testutfnext\" can only handle %" TCL_Z_MODIFIER "u bytes",
 		sizeof(buffer) - 4));
