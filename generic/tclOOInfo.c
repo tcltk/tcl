@@ -1892,7 +1892,7 @@ static void
 SortPropList(
     Tcl_Obj *list)
 {
-    int ec;
+    Tcl_Size ec;
     Tcl_Obj **ev;
 
     Tcl_ListObjGetElements(NULL, list, &ec, &ev);
