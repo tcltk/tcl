@@ -2873,18 +2873,19 @@ typedef struct ProcessGlobalValue {
 
 /*
  *----------------------------------------------------------------------
- * Common functions for growing allocations. Trivial but allows for
+ * Common functions for calculating overallocation. Trivial but allows for
  * experimenting with growth factors without having to change code in
- * multiple places. See TclAttemptOverAlloc and TclAttemptOverRealloc for
- * usage examples. Best to use those functions if allocating in bytes.
- * Direct use of TclUpsizeAlloc / TclResizeAlloc is needed if allocating in other 
- * units (say Tcl_UniChar), if there is a fixed size header involved or if
- * the max limit is something other than TCL_SIZE_MAX.
+ * multiple places. See TclAttemptAllocElemsEx and similar for usage
+ * examples. Best to use those functions. Direct use of TclUpsizeAlloc /
+ * TclResizeAlloc is needed in special cases such as when total size of
+ * memory block is limited to less than TCL_SIZE_MAX.
  *
  *----------------------------------------------------------------------
  */
 static inline Tcl_Size
-TclUpsizeAlloc(TCL_UNUSED(Tcl_Size) /*oldSize*/,
+TclUpsizeAlloc(TCL_UNUSED(Tcl_Size) /* oldSize. For future experiments with
+				     * some growth algorithms that use this
+				     * information. */,
 	       Tcl_Size needed,
 	       Tcl_Size limit)
 {
@@ -2905,12 +2906,28 @@ static inline Tcl_Size TclUpsizeRetry(Tcl_Size needed, Tcl_Size lastAttempt) {
 	return needed;
     }
 }
-MODULE_SCOPE void *TclOverAlloc(Tcl_Size needed, Tcl_Size *allocatedPtr);
-MODULE_SCOPE void *TclAttemptOverAlloc(Tcl_Size needed, Tcl_Size *allocatedPtr);
-MODULE_SCOPE void *TclOverRealloc(Tcl_Size needed, void *oldPtr,
-			Tcl_Size oldSize, Tcl_Size *allocatedPtr);
-MODULE_SCOPE void *TclAttemptOverRealloc(Tcl_Size needed, void *oldPtr,
-			Tcl_Size oldSize, Tcl_Size *allocatedPtr);
+MODULE_SCOPE void *TclAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
+			Tcl_Size leadSize, Tcl_Size *capacityPtr);
+MODULE_SCOPE void *TclAttemptAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
+			Tcl_Size leadSize, Tcl_Size *capacityPtr);
+MODULE_SCOPE void *TclReallocElemsEx(void *oldPtr, Tcl_Size elemCount,
+			Tcl_Size elemSize, Tcl_Size leadSize, 
+			Tcl_Size *capacityPtr);
+MODULE_SCOPE void *TclAttemptReallocElemsEx(void *oldPtr,
+			Tcl_Size elemCount, Tcl_Size elemSize,
+			Tcl_Size leadSize, Tcl_Size *capacityPtr);
+static inline void *TclAllocEx(Tcl_Size numBytes, Tcl_Size *capacityPtr) {
+    return TclAllocElemsEx(numBytes, 1, 0, capacityPtr);
+}
+static inline void *TclAttemptAllocEx(Tcl_Size numBytes, Tcl_Size *capacityPtr) {
+    return TclAttemptAllocElemsEx(numBytes, 1, 0, capacityPtr);
+}
+static inline void *TclReallocEx(void *oldPtr, Tcl_Size numBytes, Tcl_Size *capacityPtr) {
+    return TclReallocElemsEx(oldPtr, numBytes, 1, 0, capacityPtr);
+}
+static inline void *TclAttemptReallocEx(void *oldPtr, Tcl_Size numBytes, Tcl_Size *capacityPtr) {
+    return TclAttemptReallocElemsEx(oldPtr, numBytes, 1, 0, capacityPtr);
+}
 
 /*
  *----------------------------------------------------------------

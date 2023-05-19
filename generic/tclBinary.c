@@ -767,27 +767,14 @@ TclAppendBytesToByteArray(
     }
     needed = byteArrayPtr->used + len;
     if (needed > byteArrayPtr->allocated) {
-	ByteArray *ptr = NULL;
-	Tcl_Size attempt;
-
-        /* First try to overallocate, reducing overallocation on each fail */
-	attempt =
-	    TclUpsizeAlloc(byteArrayPtr->allocated, needed, BYTEARRAY_MAX_LEN);
-	while (attempt > needed) {
-	    ptr = (ByteArray *)Tcl_AttemptRealloc(byteArrayPtr,
-						  BYTEARRAY_SIZE(attempt));
-	    if (ptr)
-		break;
-	    attempt = TclUpsizeRetry(needed, attempt);
-	}
-
-	if (ptr == NULL) {
-	    /* Last chance: Try to allocate exactly what is needed. */
-	    attempt = needed;
-	    ptr = (ByteArray *)Tcl_Realloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
-	}
-	byteArrayPtr = ptr;
-	byteArrayPtr->allocated = attempt;
+	Tcl_Size newCapacity;
+	byteArrayPtr =
+	    (ByteArray *)TclReallocElemsEx(byteArrayPtr,
+					   needed,
+					   1,
+					   offsetof(ByteArray, bytes),
+					   &newCapacity);
+	byteArrayPtr->allocated = newCapacity;
 	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
 

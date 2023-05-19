@@ -2615,7 +2615,7 @@ Tcl_DStringAppend(
     if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString;
-	    newString = (char *) TclOverAlloc(newSize, &dsPtr->spaceAvl);
+	    newString = (char *) TclAllocEx(newSize, &dsPtr->spaceAvl);
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
@@ -2627,8 +2627,8 @@ Tcl_DStringAppend(
 		/* Source string is within this DString. Note offset */
 		offset = bytes - dsPtr->string;
 	    }
-	    dsPtr->string = (char *) TclOverRealloc(
-		newSize, dsPtr->string, dsPtr->spaceAvl, &dsPtr->spaceAvl);
+	    dsPtr->string =
+		(char *)TclReallocEx(dsPtr->string, newSize, &dsPtr->spaceAvl);
 	    if (offset >= 0) {
 		bytes = dsPtr->string + offset;
 	    }
@@ -2746,7 +2746,7 @@ Tcl_DStringAppendElement(
     if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString;
-	    newString = (char *) TclOverAlloc(newSize, &dsPtr->spaceAvl);
+	    newString = (char *) TclAllocEx(newSize, &dsPtr->spaceAvl);
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
@@ -2758,8 +2758,8 @@ Tcl_DStringAppendElement(
 		/* Source string is within this DString. Note offset */
 		offset = element - dsPtr->string;
 	    }
-	    dsPtr->string = (char *) TclOverRealloc(
-		newSize, dsPtr->string, dsPtr->spaceAvl, &dsPtr->spaceAvl);
+	    dsPtr->string =
+		(char *)TclReallocEx(dsPtr->string, newSize, &dsPtr->spaceAvl);
 	    if (offset >= 0) {
 		element = dsPtr->string + offset;
 	    }

@@ -143,7 +143,7 @@ GrowStringBuffer(
 
     String *stringPtr = GET_STRING(objPtr);
     char *ptr;
-    Tcl_Size attempt;
+    Tcl_Size capacity;
 
     assert(needed <= TCL_SIZE_MAX - 1);
     needed += 1; /* Include terminating nul */
@@ -152,27 +152,20 @@ GrowStringBuffer(
 	objPtr->bytes = NULL;
     }
     /* 
-     * In code below, note 'attempt' and 'needed' include terminating nul,
+     * In code below, note 'capacity' and 'needed' include terminating nul,
      * while stringPtr->allocated does not.
      */
-    ptr = NULL;
     if (flag == 0 || stringPtr->allocated > 0) {
-	attempt =
-	    TclUpsizeAlloc(stringPtr->allocated + 1, needed, TCL_SIZE_MAX);
-	while (attempt > needed) {
-	    ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt);
-	    if (ptr)
-		break;
-	    attempt = TclUpsizeRetry(needed, attempt);
-	}
+	ptr = (char *)TclReallocEx(objPtr->bytes, needed, &capacity);
     }
-    if (ptr == NULL) {
-	/* First allocation - just big enough; or last chance fallback. */
-	attempt = needed;
-	ptr = (char *)Tcl_Realloc(objPtr->bytes, attempt);
+    else {
+	/* Allocate exact size */
+	ptr = (char *)Tcl_Realloc(objPtr->bytes, needed);
+	capacity = needed;
     }
+
     objPtr->bytes = ptr;
-    stringPtr->allocated = attempt - 1; /* Does not include slot for end nul */
+    stringPtr->allocated = capacity - 1; /* Does not include slot for end nul */
 }
 
 static void
@@ -186,32 +179,29 @@ GrowUnicodeBuffer(
      *	needed > stringPtr->maxChars
      */
 
-    String *ptr, *stringPtr = GET_STRING(objPtr);
-    Tcl_Size attempt;
+    String *stringPtr = GET_STRING(objPtr);
+    Tcl_Size maxChars;
 
     /* Note STRING_MAXCHARS already takes into account space for nul */
     if (needed > STRING_MAXCHARS) {
 	Tcl_Panic("max size for a Tcl unicode rep (%" TCL_Z_MODIFIER "d bytes) exceeded",
 		  STRING_MAXCHARS);
     }
-    ptr = NULL;
     if (stringPtr->maxChars > 0) {
-	/* Subsequent appends - apply the growth algorithm. */
-	attempt = TclUpsizeAlloc(stringPtr->maxChars, needed, STRING_MAXCHARS);
-	while (attempt > needed) {
-	    ptr = (String *)Tcl_AttemptRealloc(stringPtr, STRING_SIZE(attempt));
-	    if (ptr)
-		break;
-	    attempt = TclUpsizeRetry(needed, attempt);
-	}
+	/* Expansion - try allocating extra space */
+	stringPtr = (String *)TclReallocElemsEx(stringPtr,
+						needed + 1, /* +1 for nul */
+						sizeof(Tcl_UniChar),
+						offsetof(String, unicode),
+						&maxChars);
+	maxChars -= 1; /* End nul not included */
     }
-    if (ptr == NULL) {
-	/* First allocation - just big enough; or last chance fallback. */
-	attempt = needed;
-	ptr = (String *)Tcl_Realloc(stringPtr, STRING_SIZE(attempt));
+    else {
+	/* First allocation - just big enough */
+	stringPtr = (String *)Tcl_Realloc(stringPtr, STRING_SIZE(needed));
+	maxChars = needed;
     }
-    stringPtr = ptr;
-    stringPtr->maxChars = attempt;
+    stringPtr->maxChars = maxChars;
     SET_STRING(objPtr, stringPtr);
 }
 

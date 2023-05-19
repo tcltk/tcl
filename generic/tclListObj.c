@@ -748,29 +748,20 @@ ListStoreNew(
     storePtr = NULL;
     if (flags & LISTREP_SPACE_FLAGS) {
 	/* Caller requests extra space front, back or both */
-	capacity = TclUpsizeAlloc(0, objc, LIST_MAX);
-	while (capacity > objc) {
-	    storePtr = (ListStore *)Tcl_AttemptAlloc(LIST_SIZE(capacity));
-	    if (storePtr)
-		break;
-	    capacity = TclUpsizeRetry(0, capacity);
-	}
+	storePtr = (ListStore *)TclAttemptAllocElemsEx(
+	    objc, sizeof(Tcl_Obj *), offsetof(ListStore, slots), &capacity);
     } else {
 	/* Exact allocation */
 	capacity = objc;
+	storePtr = (ListStore *)Tcl_AttemptAlloc(LIST_SIZE(capacity));
     }
     if (storePtr == NULL) {
-	/* Either overallocation failed or exact allocation */
-	storePtr = (ListStore *)Tcl_AttemptAlloc(LIST_SIZE(capacity));
-	if (storePtr == NULL) {
-	    if (flags & LISTREP_PANIC_ON_FAIL) {
-		Tcl_Panic(
-		    "list creation failed: unable to alloc %" TCL_Z_MODIFIER
-		    "u bytes",
-		    LIST_SIZE(objc));
-	    }
-	    return NULL;
+	if (flags & LISTREP_PANIC_ON_FAIL) {
+	    Tcl_Panic("list creation failed: unable to alloc %" TCL_Z_MODIFIER
+		      "u bytes",
+		      LIST_SIZE(objc));
 	}
+	return NULL;
     }
 
     storePtr->refCount = 0;
@@ -829,33 +820,23 @@ ListStoreNew(
 ListStore *
 ListStoreReallocate (ListStore *storePtr, Tcl_Size needed)
 {
-    Tcl_Size attempt;
-    ListStore *newStorePtr;
+    Tcl_Size capacity;
 
-    /* First try to overallocate, reducing overallocation on each fail */
-    newStorePtr = NULL;
-    attempt = TclUpsizeAlloc(storePtr->numAllocated, needed, LIST_MAX);
-    while (attempt > needed) {
-	newStorePtr =
-	    (ListStore *)Tcl_AttemptRealloc(storePtr, LIST_SIZE(attempt));
-	if (newStorePtr)
-	    break;
-	attempt = TclUpsizeRetry(needed, attempt);
+    if (needed > LIST_MAX) {
+	return NULL;
     }
-
-    if (newStorePtr == NULL) {
-	/* Last resort - allcate what was asked */
-	attempt = needed;
-	newStorePtr = (ListStore *)Tcl_AttemptRealloc(storePtr,
-						    LIST_SIZE(attempt));
-	if (newStorePtr == NULL)
-	    return NULL;
-    }
+    storePtr = (ListStore *)TclAttemptReallocElemsEx(storePtr,
+						     needed,
+						     sizeof(Tcl_Obj *),
+						     offsetof(ListStore, slots),
+						     &capacity);
     /* Only the capacity has changed, fix it in the header */
-    newStorePtr->numAllocated = attempt;
-    return newStorePtr;
+    if (storePtr) {
+	storePtr->numAllocated = capacity;
+    }
+    return storePtr;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *

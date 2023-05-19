@@ -16,6 +16,7 @@
  */
 
 #include "tclInt.h"
+#include <assert.h>
 
 #define FALSE	0
 #define TRUE	1
@@ -1194,147 +1195,6 @@ Tcl_DbCkfree(
 }
 
 /*
- *------------------------------------------------------------------------
- *
- * TclAttemptOverAlloc --
- *
- *    Attempts to allocates memory of the requested size plus some more for
- *    future growth.
- *
- * Results:
- *    Pointer to allocated memory block which is at least as large
- *    as the requested size or NULL if allocation failed.
- *
- *------------------------------------------------------------------------
- */
-void *
-TclAttemptOverAlloc(
-	Tcl_Size needed,	/* Requested size */
-	Tcl_Size *allocatedPtr) /* OUTPUT: Actual allocation size is stored
-				   here if non-NULL. Only modified on success */
-{
-    void *ptr;
-    Tcl_Size attempt = TclUpsizeAlloc(0, needed, TCL_SIZE_MAX);
-    while (attempt > needed) {
-	ptr = Tcl_AttemptAlloc(attempt);
-	if (ptr)
-	    break;
-	attempt = TclUpsizeRetry(needed, attempt);
-    }
-    if (ptr == NULL) {
-	/* Try exact size as a last resort */
-	attempt = needed;
-	ptr = Tcl_AttemptAlloc(attempt);
-    }
-    if (ptr && allocatedPtr) {
-	*allocatedPtr = attempt;
-    }
-    return ptr;
-}
-
-/*
- *------------------------------------------------------------------------
- *
- * TclOverAlloc --
- *
- *    Allocates memory of the requested size plus some more for future
- *    growth.
- *
- * Results:
- *    Non-NULL pointer to allocated memory block which is at least as large
- *    as the requested size.
- *
- * Side effects:
- *    Panics if memory of at least the requested size could not be
- *    allocated.
- *
- *------------------------------------------------------------------------
- */
-void *
-TclOverAlloc(Tcl_Size needed, Tcl_Size *allocatedPtr)
-{
-    void *ptr = TclAttemptOverAlloc(needed, allocatedPtr);
-    if (ptr == NULL) {
-	Tcl_Panic("Failed to allocate %" TCL_SIZE_MODIFIER "d bytes.", needed);
-    }
-    return ptr;
-}
-
-/*
- *------------------------------------------------------------------------
- *
- * TclAttemptOverRealloc --
- *
- *    Attempts to reallocate memory of the requested size plus some more for
- *    future growth.
- *
- * Results:
- *    Pointer to allocated memory block which is at least as large
- *    as the requested size or NULL if allocation failed.
- *
- *------------------------------------------------------------------------
- */
-void *
-TclAttemptOverRealloc(
-    Tcl_Size needed,        /* Requested size */
-    void *oldPtr,	    /* Pointer to memory block to reallocate */
-    Tcl_Size oldSize,       /* Old size if known, or 0 if unknown */
-    Tcl_Size *allocatedPtr) /* OUTPUT: Actual allocation size is stored
-			       here if non-NULL. Only modified on success */
-{
-    void *ptr;
-    Tcl_Size attempt = TclUpsizeAlloc(oldSize, needed, TCL_SIZE_MAX);
-    while (attempt > needed) {
-	ptr = Tcl_AttemptRealloc(oldPtr, attempt);
-	if (ptr)
-	    break;
-	attempt = TclUpsizeRetry(needed, attempt);
-    }
-    if (ptr == NULL) {
-	/* Try exact size as a last resort */
-	attempt = needed;
-	ptr = Tcl_AttemptRealloc(oldPtr, attempt);
-    }
-    if (ptr && allocatedPtr) {
-	*allocatedPtr = attempt;
-    }
-    return ptr;
-}
-
-/*
- *------------------------------------------------------------------------
- *
- * TclOverRealloc --
- *
- *    Reallocates memory of the requested size plus some more for future
- *    growth.
- *
- * Results:
- *    Non-NULL pointer to allocated memory block which is at least as large
- *    as the requested size.
- *
- * Side effects:
- *    Panics if memory of at least the requested size could not be
- *    allocated.
- *
- *------------------------------------------------------------------------
- */
-void *
-TclOverRealloc(
-    Tcl_Size needed,        /* Requested size */
-    void *oldPtr,	    /* Pointer to memory block to reallocate */
-    Tcl_Size oldSize,       /* Old size if known, or 0 if unknown */
-    Tcl_Size *allocatedPtr) /* OUTPUT: Actual allocation size is stored
-			       here if non-NULL. Only modified on success */
-{
-    void *ptr = TclAttemptOverRealloc(needed, oldPtr, oldSize, allocatedPtr);
-    if (ptr == NULL) {
-	Tcl_Panic("Failed to reallocate %" TCL_SIZE_MODIFIER "d bytes.", needed);
-    }
-    return ptr;
-}
-
-/*
  *----------------------------------------------------------------------
  *
  * Tcl_InitMemory --
@@ -1373,6 +1233,196 @@ TclDumpMemoryInfo(
 }
 
 #endif	/* TCL_MEM_DEBUG */
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclAttemptAllocElemsEx --
+ *
+ *    Attempts to allocate memory of the requested size plus some more for
+ *    future growth. The amount of allocation is adjusted depending on
+ *    on failure.
+ *
+ * Results:
+ *    Pointer to allocated memory block which is at least large enough
+ *    to hold elemCount elements or NULL if allocation failed.
+ *
+ *------------------------------------------------------------------------
+ */
+void *
+TclAttemptAllocElemsEx(
+    Tcl_Size elemCount,     /* Allocation will store at least these many... */
+    Tcl_Size elemSize,	    /* ...elements of this size */
+    Tcl_Size leadSize,      /* Additional leading space in bytes */
+    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
+			       here if non-NULL. Only modified on success */
+{
+    void *ptr;
+    Tcl_Size limit;
+    Tcl_Size attempt;
+
+    assert(elemCount > 0);
+    assert(elemSize > 0);
+    assert(elemSize < TCL_SIZE_MAX);
+    assert(leadSize > 0);
+    assert(leadSize < TCL_SIZE_MAX);
+
+    limit = (TCL_SIZE_MAX - leadSize) / elemSize;
+    if (elemCount > limit) {
+	return NULL;
+    }
+    /* Loop trying for extra space, reducing request each time */
+    attempt = TclUpsizeAlloc(0, elemCount, limit);
+    ptr = NULL;
+    while (attempt > elemCount) {
+	ptr = Tcl_AttemptAlloc(leadSize + attempt*elemSize);
+	if (ptr) {
+	    break;
+	}
+	attempt = TclUpsizeRetry(elemCount, attempt);
+    }
+    /* Try exact size as a last resort */
+    if (ptr == NULL) {
+	attempt = elemCount;
+	ptr = Tcl_AttemptAlloc(leadSize + attempt*elemSize);
+    }
+    if (ptr && capacityPtr) {
+	*capacityPtr = attempt;
+    }
+    return ptr;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclAllocElemsEx --
+ *
+ *    See TclAttemptAllocElemsEx. This function differs in that it panics
+ *    on failure.
+ *
+ * Results:
+ *    Non-NULL pointer to allocated memory block.
+ *
+ * Side effects:
+ *    Panics if memory of at least the requested size could not be
+ *    allocated.
+ *
+ *------------------------------------------------------------------------
+ */
+void *
+TclAllocElemsEx(
+    Tcl_Size elemCount,     /* Allocation will store at least these many... */
+    Tcl_Size elemSize,	    /* ...elements of this size */
+    Tcl_Size leadSize,      /* Additional leading space in bytes */
+    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
+			       here if non-NULL. Only modified on success */
+{
+    void *ptr = TclAttemptAllocElemsEx(
+	elemCount, elemSize, leadSize, capacityPtr);
+    if (ptr == NULL) {
+	Tcl_Panic("Failed to allocate %" TCL_SIZE_MODIFIER
+		  "d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
+		  elemCount,
+		  elemSize);
+    }
+    return ptr;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclAttemptReallocElemsEx --
+ *
+ *    Attempts to reallocate memory of the requested size plus some more for
+ *    future growth. The amount of reallocation is adjusted depending on
+ *    on failure.
+ *
+ * Results:
+ *    Pointer to allocated memory block which is at least as large
+ *    as the requested size or NULL if allocation failed.
+ *
+ *------------------------------------------------------------------------
+ */
+void *
+TclAttemptReallocElemsEx(
+    void *oldPtr,	    /* Pointer to memory block to reallocate */
+    Tcl_Size elemCount,     /* Allocation will store at least these many... */
+    Tcl_Size elemSize,	    /* ...elements of this size */
+    Tcl_Size leadSize,      /* Additional leading space in bytes */
+    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
+			       here if non-NULL. Only modified on success */
+{
+    void *ptr;
+    Tcl_Size limit;
+    Tcl_Size attempt;
+
+    assert(elemCount > 0);
+    assert(elemSize > 0);
+    assert(elemSize < TCL_SIZE_MAX);
+    assert(leadSize > 0);
+    assert(leadSize < TCL_SIZE_MAX);
+
+    limit = (TCL_SIZE_MAX - leadSize) / elemSize;
+    if (elemCount > limit) {
+	return NULL;
+    }
+    /* Loop trying for extra space, reducing request each time */
+    attempt = TclUpsizeAlloc(0, elemCount, limit);
+    ptr = NULL;
+    while (attempt > elemCount) {
+	ptr = Tcl_AttemptRealloc(oldPtr, leadSize + attempt*elemSize);
+	if (ptr) {
+	    break;
+	}
+	attempt = TclUpsizeRetry(elemCount, attempt);
+    }
+    /* Try exact size as a last resort */
+    if (ptr == NULL) {
+	attempt = elemCount;
+	ptr = Tcl_AttemptRealloc(oldPtr, leadSize + attempt*elemSize);
+    }
+    if (ptr && capacityPtr) {
+	*capacityPtr = attempt;
+    }
+    return ptr;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclReallocElemsEx --
+ *
+ *    See TclAttemptReallocElemsEx. This function differs in that it panics
+ *    on failure.
+ *
+ * Results:
+ *    Non-NULL pointer to allocated memory block.
+ *
+ * Side effects:
+ *    Panics if memory of at least the requested size could not be
+ *    allocated.
+ *
+ *------------------------------------------------------------------------
+ */
+void *
+TclReallocElemsEx(
+    void *oldPtr,	    /* Pointer to memory block to reallocate */
+    Tcl_Size elemCount,     /* Allocation will store at least these many... */
+    Tcl_Size elemSize,	    /* ...elements of this size */
+    Tcl_Size leadSize,      /* Additional leading space in bytes */
+    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
+			       here if non-NULL. Only modified on success */
+{
+    void *ptr = TclAttemptReallocElemsEx(
+	oldPtr, elemCount, elemSize, leadSize, capacityPtr);
+    if (ptr == NULL) {
+	Tcl_Panic("Failed to reallocate %" TCL_SIZE_MODIFIER
+		  "d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
+		  elemCount,
+		  elemSize);
+    }
+    return ptr;
+}
 
 /*
  *---------------------------------------------------------------------------
