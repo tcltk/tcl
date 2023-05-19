@@ -4683,16 +4683,30 @@ TEBCresume(
 	 */
 
 	{
-	    Tcl_Obj *scalarObj;
+		Tcl_Size value2Length;
 	    if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
-		    && (scalarObj = TclObjGetScalar(value2Ptr))) {
+		    && (
+				!TclHasInternalRep(value2Ptr, &tclListType.objType)
+				|| 
+				((Tcl_ListObjLength(interp,value2Ptr,&value2Length),
+					value2Length == 1
+						? (value2Ptr = TclListObjGetElement(value2Ptr, 0), 1)
+						: 0
+				))
+			)
+		) {
 		int code;
 
+		/* increment the refCount of value2Ptr because TclListObjGetElement may
+		 * have just extracted it from a list in the condition for this block.
+		 */
+		Tcl_IncrRefCount(value2Ptr);
+
 		DECACHE_STACK_INFO();
-		code = TclGetIntForIndexM(interp, scalarObj, objc-1, &index);
+		code = TclGetIntForIndexM(interp, value2Ptr, objc-1, &index);
+		TclDecrRefCount(value2Ptr);
 		CACHE_STACK_INFO();
 		if (code == TCL_OK) {
-		    TclDecrRefCount(value2Ptr);
 		    tosPtr--;
 		    pcAdjustment = 1;
 		    goto lindexFastPath;
@@ -4701,8 +4715,9 @@ TEBCresume(
 	    }
 	}
 
-
+	DECACHE_STACK_INFO();
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
+	CACHE_STACK_INFO();
 
     lindexDone:
 	if (!objResultPtr) {
