@@ -2674,7 +2674,7 @@ typedef struct ListStore {
 typedef struct ListSpan {
     Tcl_Size spanStart;    /* Starting index of the span */
     Tcl_Size spanLength;   /* Number of elements in the span */
-    Tcl_Size refCount;     /* Count of references to this span record */
+    size_t refCount;     /* Count of references to this span record */
 } ListSpan;
 #ifndef LIST_SPAN_THRESHOLD /* May be set on build line */
 #define LIST_SPAN_THRESHOLD 101
@@ -2753,6 +2753,7 @@ typedef struct ListRep {
 #define ListObjGetElements(listObj_, objc_, objv_) \
     (((objv_) = &ListObjStorePtr(listObj_)->slots[ListObjStart(listObj_)]), \
      (ListObjLength(listObj_, (objc_))))
+
 
 /*
  * Returns 1/0 whether the internal representation (not the Tcl_Obj itself)
@@ -3277,6 +3278,9 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 			    Tcl_Namespace *ensembleNamespacePtr, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
+MODULE_SCOPE Tcl_Size	TclDictGetSize(Tcl_Obj *dictPtr);
+MODULE_SCOPE Tcl_Obj*	TclDuplicatePureObj(Tcl_Interp *interp,
+			    Tcl_Obj * objPtr, const Tcl_ObjType *typPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, Tcl_Size dictLength,
 			    const char **elementPtr, const char **nextPtr,
@@ -3410,8 +3414,6 @@ MODULE_SCOPE int	Tcl_LengthIsFinite(Tcl_Size length);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, Tcl_Size line, int n,
 			    int *lines, Tcl_Obj *const *elems);
-
-MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE int	(*TclObjInterfaceGetListIndex (Tcl_Obj *objPtr))
 			    (tclObjTypeInterfaceArgsListIndex);
 MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
@@ -3437,7 +3439,7 @@ MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
 MODULE_SCOPE Tcl_Obj *	TclObjGetScalar(Tcl_Obj *objPtr);
-MODULE_SCOPE const char *	TclObjTypeName(const Tcl_ObjType *typePtr);
+MODULE_SCOPE const char *   TclObjTypeName(const Tcl_ObjType *typePtr);
 MODULE_SCOPE int	 TclObjTypeVersion (const Tcl_ObjType *typePtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
@@ -3459,6 +3461,7 @@ MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 MODULE_SCOPE Tcl_Size	TclParseAllWhiteSpace(const char *src, Tcl_Size numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
+MODULE_SCOPE void 	TclUndoRefCount(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp,
@@ -4634,9 +4637,6 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 # define TclDecrRefCount(objPtr) \
     Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
-
-# define TclNewListObjDirect(objc, objv) \
-    TclDbNewListObjDirect(objc, objv, __FILE__, __LINE__)
 
 #undef USE_THREAD_ALLOC
 #endif /* TCL_MEM_DEBUG */

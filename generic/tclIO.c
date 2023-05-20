@@ -205,7 +205,7 @@ static int		FlushChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int calledFromAsyncFlush);
 static int		TclGetsObjBinary(Tcl_Channel chan, Tcl_Obj *objPtr);
 static Tcl_Encoding	GetBinaryEncoding(void);
-static Tcl_ExitProc	FreeBinaryEncoding;
+static void		FreeBinaryEncoding(void);
 static Tcl_HashTable *	GetChannelTable(Tcl_Interp *interp);
 static int		GetInput(Channel *chanPtr);
 static void		PeekAhead(Channel *chanPtr, char **dstEndPtr,
@@ -695,6 +695,7 @@ TclFinalizeIOSubsystem(void)
 	}
     }
 
+    FreeBinaryEncoding();
     TclpFinalizeSockets();
     TclpFinalizePipes();
 }
@@ -4351,7 +4352,7 @@ Write(
     Tcl_Size saved = 0, total = 0, flushed = 0;
     char safe[BUFFER_PADDING];
     int encodingError = 0;
-    
+
     if (srcLen) {
         WillWrite(chanPtr);
     }
@@ -5294,8 +5295,7 @@ TclGetsObjBinary(
  */
 
 static void
-FreeBinaryEncoding(
-    TCL_UNUSED(void *))
+FreeBinaryEncoding(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -5312,7 +5312,6 @@ GetBinaryEncoding(void)
 
     if (tsdPtr->binaryEncoding == NULL) {
 	tsdPtr->binaryEncoding = Tcl_GetEncoding(NULL, "iso8859-1");
-	Tcl_CreateThreadExitHandler(FreeBinaryEncoding, NULL);
     }
     if (tsdPtr->binaryEncoding == NULL) {
 	Tcl_Panic("binary encoding is not available");
@@ -5934,8 +5933,8 @@ DoReadChars(
     int factor = UTF_EXPANSION_FACTOR;
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
 	/* TODO: UpdateInterest not needed here? */
-	ResetFlag(statePtr, CHANNEL_ENCODING_ERROR|CHANNEL_EOF);
 	UpdateInterest(chanPtr);
 
 	Tcl_SetErrno(EILSEQ);
@@ -10213,7 +10212,7 @@ DoRead(
 	    == (CHANNEL_EOF|CHANNEL_BLOCKED)));
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
-    return (int)(p - dst);
+    return (Tcl_Size)(p - dst);
 }
 
 /*

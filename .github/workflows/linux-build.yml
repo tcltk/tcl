@@ -1,5 +1,11 @@
 name: Linux
-on: [push]
+on:
+  push:
+    branches:
+    - "main"
+    - "core-8-branch"
+    tags:
+    - "core-**"
 permissions:
   contents: read
 jobs:

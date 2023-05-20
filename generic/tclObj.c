@@ -208,6 +208,9 @@ static void		DupBignum(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		UpdateStringOfBignum(Tcl_Obj *objPtr);
 static int		GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int copy, mp_int *bignumValue);
+static int		SetDuplicatePureObj(Tcl_Interp *interp,
+			    Tcl_Obj *dupPtr, Tcl_Obj *objPtr,
+			    const Tcl_ObjType *typePtr);
 
 /*
  * Prototypes for the array hash key methods.
@@ -1583,6 +1586,14 @@ TclObjBeingDeleted(
  *	Create and return a new object that is a duplicate of the argument
  *	object.
  *
+ * TclDuplicatePureObj --
+ *	Like Tcl_DuplicateObj, except that it converts the duplicate to the
+ *	specifid typ, does not duplicate the 'bytes'
+ *	field unless it is necessary, i.e. the duplicated Tcl_Obj provides no
+ *	updateStringProc.  This can avoid an expensive memory allocation since
+ *	the data in the 'bytes' field of each Tcl_Obj must reside in allocated
+ *	memory.
+ *
  * Results:
  *	The return value is a pointer to a newly created Tcl_Obj. This object
  *	has reference count 0 and the same type, if any, as the source object
@@ -1634,6 +1645,104 @@ Tcl_DuplicateObj(
     return dupPtr;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DuplicatePureObj --
+ *
+ *	Duplicates a Tcl_Obj and converts the internal representation of the
+ *	duplicate to the given type, changing neither the 'bytes' field
+ *	nor the internal representation of the original object, and without
+ *	duplicating the bytes field unless necessary, i.e. unless the
+ *	duplicate provides no updateStringProc after conversion.  This can
+ *	avoid an expensive memory allocation since the data in the 'bytes'
+ *	field of each Tcl_Obj must reside in allocated memory.
+ *
+ * Results:
+ *	A pointer to a newly-created Tcl_Obj or NULL if there was an error.
+ *	This object has reference count 0.  Also:
+ *
+ *----------------------------------------------------------------------
+ */
+int SetDuplicatePureObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *dupPtr,
+    Tcl_Obj *objPtr,
+    const Tcl_ObjType *typePtr)
+{
+    char *bytes = objPtr->bytes;
+    int status = TCL_OK;
+
+    TclInvalidateStringRep(dupPtr);
+    assert(dupPtr->typePtr == NULL);
+
+    if (objPtr->typePtr && objPtr->typePtr->dupIntRepProc) {
+	objPtr->typePtr->dupIntRepProc(objPtr, dupPtr);
+    } else {
+	dupPtr->internalRep = objPtr->internalRep;
+	dupPtr->typePtr = objPtr->typePtr;
+    }
+
+    if (typePtr != NULL && dupPtr->typePtr != typePtr) {
+	if (bytes) {
+	    dupPtr->bytes = bytes;
+	    dupPtr->length = objPtr->length;
+	}
+	/* borrow bytes from original object */
+	status = Tcl_ConvertToType(interp, dupPtr, typePtr);
+	if (bytes) {
+	    dupPtr->bytes = NULL;
+	    dupPtr->length = 0;
+	}
+	if (status != TCL_OK) {
+	    return status;
+	}
+    }
+
+    /* tclStringType is treated as a special case because a Tcl_Obj having this
+     * type can not always update the string representation.  This happens, for
+     * example, when Tcl_GetCharLength() converts the internal representation
+     * to tclStringType in order to store the number of characters, but does
+     * not store enough information to generate the string representation.
+     *
+     * Perhaps in the future this can be remedied and this special treatment
+     * removed.
+     */
+
+
+    if (bytes && (dupPtr->typePtr == NULL
+	|| dupPtr->typePtr->updateStringProc == NULL
+	|| typePtr == &tclStringType
+	)
+    ) {
+	TclInitStringRep(dupPtr, bytes, objPtr->length);
+    }
+    return status;
+}
+
+Tcl_Obj *
+TclDuplicatePureObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    const Tcl_ObjType *typePtr
+)		/* The object to duplicate. */
+{
+    int status;
+    Tcl_Obj *dupPtr;
+
+    TclNewObj(dupPtr);
+    status = SetDuplicatePureObj(interp, dupPtr, objPtr, typePtr);
+    if (status == TCL_OK) {
+	return dupPtr;
+    } else {
+	Tcl_DecrRefCount(dupPtr);
+	return NULL;
+    }
+}
+
+
+
 void
 TclSetDuplicateObj(
     Tcl_Obj *dupPtr,
@@ -1645,6 +1754,80 @@ TclSetDuplicateObj(
     TclInvalidateStringRep(dupPtr);
     TclFreeInternalRep(dupPtr);
     SetDuplicateObj(dupPtr, objPtr);
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclObjGetScaler --
+ *
+ *	Without perturbing any existing internal represenation, returns objPtr
+ *	itself if it has an internal scalar type, is the empty list, or if the
+ *	Tcl_Obj is list a containing only one scalar element, tries to returns
+ *	scalar Tcl_Obj from that one item.
+ *
+ *	Returns NULL if the Tcl_Obj is not scalar.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclObjGetScalar(Tcl_Obj *objPtr)
+{
+    Tcl_ObjType const *typePtr = objPtr->typePtr;
+    if (typePtr == &tclDictType) {
+	if (TclDictGetSize(objPtr) == 0) {
+	    return objPtr;
+	} else {
+	    return NULL;
+	}
+    }
+    if (TclHasInternalRep(objPtr, NULL) && objPtr->bytes != &tclEmptyString) {
+	void *ClientDataPtr;
+	int numTypePtr;
+	
+	if (Tcl_GetNumberFromObj(NULL, objPtr, &ClientDataPtr, &numTypePtr) != TCL_OK) {
+	    Tcl_Size length;
+	    /* convert to list */
+	    Tcl_ListObjLength(NULL, objPtr, &length);
+	}
+    }
+    if (typePtr == &tclIntType.objType
+	|| typePtr == &tclDoubleType.objType
+	|| typePtr == &tclBignumType.objType
+    ) {
+	return objPtr;
+    }
+    if (typePtr == &tclListType.objType) {
+	if (TclListObjIsCanonical(objPtr)) {
+	    Tcl_Size objc;
+	    TclListObjLengthM(NULL, objPtr, &objc);
+	    if (objc == 1) {
+		Tcl_Obj *elem, *elem2;
+		Tcl_IncrRefCount(objPtr);
+		elem = TclListObjGetElement(objPtr,  0);
+		Tcl_IncrRefCount(elem);
+		Tcl_DecrRefCount(objPtr);
+		elem2 = TclObjGetScalar(elem);
+		if (elem2) {
+		    Tcl_IncrRefCount(elem2);
+		    Tcl_DecrRefCount(elem);
+		    TclUndoRefCount(elem2);
+		} else {
+		    Tcl_DecrRefCount(elem);
+		}
+		return elem2;
+	    } else if (objc == 0) {
+		return objPtr;
+	    }
+	} else {
+	    return NULL;
+	}
+    }
+    if (TclCheckEmptyString(objPtr)) {
+	return objPtr;
+    }
+    return NULL;
 }
 
 /*
@@ -3762,7 +3945,7 @@ Tcl_IncrRefCount(
  *	Decrements the reference count of the object.
  *
  * Results:
- *	None.
+ *	The storage for objPtr may be freed.
  *
  *----------------------------------------------------------------------
  */
@@ -3774,6 +3957,28 @@ Tcl_DecrRefCount(
 {
     if (objPtr->refCount-- <= 1) {
 	TclFreeObj(objPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclUndoRefCount --
+ *
+ *	Decrement the refCount of objPtr without causing it to be freed if it
+ *	drops from 1 to 0.  This allows a function increment a refCount but
+ *	then decrement it and still be able to pass return it to a caller,
+ *	possibly with a refCount of 0.  The caller must have previously
+ *	incremented the refCount.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+TclUndoRefCount(
+    Tcl_Obj *objPtr)	/* The object we are releasing a reference to. */
+{
+    if (objPtr->refCount > 0) {
+	--objPtr->refCount;
     }
 }
 

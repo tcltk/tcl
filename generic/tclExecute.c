@@ -113,9 +113,8 @@ typedef struct {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
     Tcl_Obj **catchTop;		/* These fields are used on return TO this */
-    Tcl_Obj *auxObjList;	/* this level: they record the state when a */
-    CmdFrame cmdFrame;		/* new codePtr was received for NR */
-                                /* execution. */
+    Tcl_Obj *auxObjList;	/* level: they record the state when a new */
+    CmdFrame cmdFrame;		/* codePtr was received for NR execution. */
     Tcl_Obj *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
 				 * necessary */
@@ -3375,7 +3374,12 @@ TEBCresume(
 	    goto gotError;
 	}
 	if (Tcl_IsShared(objResultPtr)) {
-	    Tcl_Obj *newValue = Tcl_DuplicateObj(objResultPtr);
+	    Tcl_Obj *newValue = TclDuplicatePureObj(
+		    interp, objResultPtr, &tclListType.objType);
+	    if (!newValue) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
 
 	    TclDecrRefCount(objResultPtr);
 	    varPtr->value.objPtr = objResultPtr = newValue;
@@ -3434,7 +3438,11 @@ TEBCresume(
 		goto gotError;
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
-		    valueToAssign = Tcl_DuplicateObj(objResultPtr);
+		    valueToAssign = TclDuplicatePureObj(
+			interp, objResultPtr, &tclListType.objType);
+		    if (!valueToAssign) {
+			goto errorInLappendListPtr;
+		    }
 		    createdNewObj = 1;
 		} else {
 		    valueToAssign = objResultPtr;
@@ -4734,6 +4742,7 @@ TEBCresume(
 	 * Extract the desired list element.
 	 */
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
+	CACHE_STACK_INFO();
 
     lindexDone:
 	if (!objResultPtr) {
@@ -6552,7 +6561,11 @@ TEBCresume(
 		goto gotError;
 	    }
 	    if (Tcl_IsShared(listPtr)) {
-		objPtr = TclListObjCopy(NULL, listPtr);
+		objPtr = TclDuplicatePureObj(
+		    interp, listPtr, &tclListType.objType);
+		if (!objPtr) {
+		    goto gotError;
+		}
 		Tcl_IncrRefCount(objPtr);
 		Tcl_DecrRefCount(listPtr);
 		OBJ_AT_DEPTH(listTmpDepth) = objPtr;
@@ -6614,6 +6627,7 @@ TEBCresume(
 	 */
 
 	if (iterNum < iterMax) {
+	    int status;
 	    /*
 	     * Set the variables and jump back to run the body
 	     */
@@ -6628,7 +6642,8 @@ TEBCresume(
 		numVars = varListPtr->numVars;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
-		status =status =  TclListObjGetElementsM(interp, listPtr, &listLen, &elements);
+		status = TclListObjGetElementsM(
+		    interp, listPtr, &listLen, &elements);
 		if (status != TCL_OK) {
 		    goto gotError;
 		}

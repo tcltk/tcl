@@ -1889,7 +1889,6 @@ typedef struct Tcl_EncodingType {
  *				reset to an initial state. If the source
  *				buffer contains the entire input stream to be
  *				converted, this flag should be set.
- * TCL_ENCODING_STRICT -	Invalid encoded data is an error.
  * TCL_ENCODING_STOPONERROR -	Obsolete.
  * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf does not append a
  *				terminating NUL byte.  Since it does not need
@@ -1920,7 +1919,7 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_CHAR_LIMIT		0x10
 /* Internal use bits, do not define bits in this space. See above comment */
 #define TCL_ENCODING_INTERNAL_USE_MASK  0xFF00
-/* 
+/*
  * Reserve top byte for profile values (disjoint, not a mask). In case of
  * changes, ensure ENCODING_PROFILE_* macros in tclInt.h are modified if
  * necessary.
@@ -2265,7 +2264,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 	TclStubCall((void *)4))(argc, argv, appInitProc, interp)
 #if !defined(_WIN32) || !defined(UNICODE)
 #define Tcl_MainEx(argc, argv, appInitProc, interp) \
-	(void)((const char *(*)(size_t, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	(void)((const char *(*)(Tcl_Size, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
 	TclStubCall((void *)5))(argc, argv, appInitProc, interp)
 #endif
 #define Tcl_StaticLibrary(interp, pkgName, initProc, safeInitProc) \

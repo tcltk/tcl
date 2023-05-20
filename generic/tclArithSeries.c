@@ -790,7 +790,7 @@ SetArithSeriesFromAny(
 /*
  *----------------------------------------------------------------------
  *
- * ArithSeriesObjRange --
+ * TclArithSeriesObjRange --
  *
  *	Makes a slice of an ArithSeries value.
  *      *arithSeriesObj must be known to be a valid list.

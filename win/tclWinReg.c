@@ -770,7 +770,7 @@ GetValue(
 	 */
 
 	length = Tcl_DStringLength(&data) * (2 / sizeof(WCHAR));
-	Tcl_DStringSetLength(&data, (int) length * sizeof(WCHAR));
+	Tcl_DStringSetLength(&data, length * sizeof(WCHAR));
 	result = RegQueryValueExW(key, nativeValue,
 		NULL, &type, (BYTE *) Tcl_DStringValue(&data), &length);
     }
@@ -831,7 +831,7 @@ GetValue(
 	 */
 
 	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
-		(BYTE *) Tcl_DStringValue(&data), (int) length));
+		(BYTE *) Tcl_DStringValue(&data), length));
     }
     Tcl_DStringFree(&data);
     return result;
@@ -880,7 +880,7 @@ GetValueNames(
 
     resultPtr = Tcl_NewObj();
     Tcl_DStringInit(&buffer);
-    Tcl_DStringSetLength(&buffer, (int) (MAX_KEY_LENGTH * sizeof(WCHAR)));
+    Tcl_DStringSetLength(&buffer, MAX_KEY_LENGTH * sizeof(WCHAR));
     index = 0;
     result = TCL_OK;
 
@@ -1187,7 +1187,7 @@ RecursiveDeleteKey(
     }
 
     Tcl_DStringInit(&subkey);
-    Tcl_DStringSetLength(&subkey, (int) (MAX_KEY_LENGTH * sizeof(WCHAR)));
+    Tcl_DStringSetLength(&subkey, MAX_KEY_LENGTH * sizeof(WCHAR));
 
     mode = saveMode;
     while (result == ERROR_SUCCESS) {

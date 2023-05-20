@@ -1160,8 +1160,7 @@ Tcl_ExternalToUtfDString(
  * Tcl_ExternalToUtfDStringEx --
  *
  *	Convert a source buffer from the specified encoding into UTF-8.
- *
- *	"flags" controls the behavior, if any of the bytes in
+ *	"flags" controls the behavior if any of the bytes in
  *	the source buffer are invalid or cannot be represented in utf-8.
  *	Possible flags values:
  *	target encoding. It should be composed by OR-ing the following:

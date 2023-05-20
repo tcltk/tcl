@@ -5387,12 +5387,12 @@ TclEvalEx(
 		    expand[objectsUsed] = 1;
 
 		    additionalObjsCount = (numElements ? numElements : 1);
-		    
+
 		} else {
 		    expand[objectsUsed] = 0;
 		    additionalObjsCount = 1;
 		}
-		
+
 		/* Currently max command words in INT_MAX */
 		if (additionalObjsCount > INT_MAX ||
 		    objectsNeeded > (INT_MAX - additionalObjsCount)) {
@@ -6152,7 +6152,11 @@ TclNREvalObjEx(
 	 */
 
 	Tcl_IncrRefCount(objPtr);
-	listPtr = TclListObjCopy(interp, objPtr);
+	listPtr = TclDuplicatePureObj(interp, objPtr, &tclListType.objType);
+	if (!listPtr) {
+	    Tcl_DecrRefCount(objPtr);
+	    return TCL_ERROR;
+	}
 	Tcl_IncrRefCount(listPtr);
 
 	if (word != INT_MIN) {

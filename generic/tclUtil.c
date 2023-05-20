@@ -1996,7 +1996,11 @@ Tcl_ConcatObj(
 		    goto slow;
 		}
 	    } else {
-		resPtr = TclListObjCopy(NULL, objPtr);
+		resPtr = TclDuplicatePureObj(
+		    NULL, objPtr, &tclListType.objType);
+		if (!resPtr) {
+		    return NULL;
+		}
 	    }
 	}
 	if (!resPtr) {
@@ -2800,6 +2804,9 @@ Tcl_DStringSetLength(
 {
     Tcl_Size newsize;
 
+    if (length < 0) {
+	length = 0;
+    }
     if (length >= dsPtr->spaceAvl) {
 	/*
 	 * There are two interesting cases here. In the first case, the user
@@ -3786,8 +3793,8 @@ TclIndexEncode(
     }
     /*
      * We passed 2*INT_MAX as the "end value" to GetWideForIndex. The computed
-     * index will in one of the following ranges that need to be distinguished
-     * for encoding purposes in the following code.
+     * index will be in one of the following ranges that need to be
+     * distinguished for encoding purposes in the following code.
      * (1) 0:INT_MAX when
      *     (a) objPtr was a pure non-negative numeric value in that range
      *     (b) objPtr was a numeric computation M+/-N with a result in that range
@@ -3836,7 +3843,7 @@ TclIndexEncode(
 	 * error is raised. On 32-bit systems, indices in that range indicate
 	 * the position after the end and so do not raise an error.
 	 */
-	if ((sizeof(int) != sizeof(size_t)) &&
+	if ((sizeof(int) != sizeof(Tcl_Size)) &&
 	    (wide > INT_MAX) && (wide < WIDE_MAX-1)) {
 	    /* 2(a,b) on 64-bit systems*/
 	    goto rangeerror;
@@ -3866,7 +3873,7 @@ TclIndexEncode(
 	 * indices in that range indicate the position before the beginning
 	 * and so do not raise an error.
 	 */
-	if ((sizeof(int) != sizeof(size_t)) &&
+	if ((sizeof(int) != sizeof(Tcl_Size)) &&
 	    (wide > (ENDVALUE - LIST_MAX)) && (wide <= INT_MAX)) {
 	    /* 1(c), 4(a,b) on 64-bit systems */
 	    goto rangeerror;
