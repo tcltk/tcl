@@ -161,6 +161,26 @@ typedef LIST_STATIC(Tcl_Obj *) VariableNameList;
 typedef LIST_STATIC(PrivateVariableMapping) PrivateVariableList;
 
 /*
+ * This type is used in various places.
+ */
+
+typedef struct {
+    LIST_STATIC(Tcl_Obj *) readable;
+				/* The readable properties slot. */
+    LIST_STATIC(Tcl_Obj *) writable;
+				/* The writable properties slot. */
+    Tcl_Obj *allReadableCache;	/* The cache of all readable properties
+				 * exposed by this object or class (in its
+				 * stereotypical instancs). Contains a sorted
+				 * unique list if not NULL. */
+    Tcl_Obj *allWritableCache;	/* The cache of all writable properties
+				 * exposed by this object or class (in its
+				 * stereotypical instances). Contains a sorted
+				 * unique list if not NULL. */
+    int epoch;			/* The epoch that the caches are valid for. */
+} PropertyStorage;
+
+/*
  * Now, the definition of what an object actually is.
  */
 
@@ -182,8 +202,8 @@ typedef struct Object {
     LIST_STATIC(Tcl_Obj *) filters;
 				/* List of filter names. */
     struct Class *classPtr;	/* This is non-NULL for all classes, and NULL
-				 *  for everything else. It points to the class
-				 *  structure. */
+				 * for everything else. It points to the class
+				 * structure. */
     Tcl_Size refCount;		/* Number of strong references to this object.
 				 * Note that there may be many more weak
 				 * references; this mechanism exists to
@@ -211,12 +231,15 @@ typedef struct Object {
 				 * used inside methods. */
     Tcl_Command myclassCommand;	/* Reference to this object's class dispatcher
 				 * command. */
+    PropertyStorage properties;	/* Information relating to the lists of
+				 * properties that this object *claims* to
+				 * support. */
 } Object;
 
-#define OBJECT_DESTRUCTING	1	/* Indicates that an object is being or has
-								 *  been destroyed  */
-#define DESTRUCTOR_CALLED 2	/* Indicates that evaluation of destructor script for the
-							   object has began */
+#define OBJECT_DESTRUCTING 1	/* Indicates that an object is being or has
+				 *  been destroyed  */
+#define DESTRUCTOR_CALLED 2	/* Indicates that evaluation of destructor
+				 * script for the object has began */
 #define OO_UNUSED_4	4	/* No longer used.  */
 #define ROOT_OBJECT 0x1000	/* Flag to say that this object is the root of
 				 * the class hierarchy and should be treated
@@ -319,6 +342,9 @@ typedef struct Class {
 				 * namespace is defined but doesn't exist; we
 				 * also check at setting time but don't check
 				 * between times. */
+    PropertyStorage properties;	/* Information relating to the lists of
+				 * properties that this class *claims* to
+				 * support. */
 } Class;
 
 /*
@@ -521,6 +547,10 @@ MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
 MODULE_SCOPE void	TclOODeleteDescendants(Tcl_Interp *interp,
 			    Object *oPtr);
 MODULE_SCOPE void	TclOODelMethodRef(Method *method);
+MODULE_SCOPE Tcl_Obj *	TclOOGetAllClassProperties(Class *clsPtr,
+			    int writable, int *allocated);
+MODULE_SCOPE Tcl_Obj *	TclOOGetAllObjectProperties(Object *oPtr,
+			    int writable, int *allocated);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, int flags,
 			    Object *contextObjPtr, Class *contextClsPtr,
