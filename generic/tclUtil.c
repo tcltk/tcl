@@ -1997,7 +1997,7 @@ Tcl_ConcatObj(
 		}
 	    } else {
 		resPtr = TclDuplicatePureObj(
-		    NULL, objPtr, &tclListType.objType);
+		    NULL, objPtr, tclListType);
 		if (!resPtr) {
 		    return NULL;
 		}

@@ -607,7 +607,7 @@ TclNamespaceEnsembleCmd(
 			cmd = TclGetString(listv[0]);
 			if (!(cmd[0] == ':' && cmd[1] == ':')) {
 			    Tcl_Obj *newList = TclDuplicatePureObj(
-				interp, listObj, &tclListType.objType);
+				interp, listObj, tclListType);
 			    if (!newList) {
 				if (patchedDict) {
 				    Tcl_DecrRefCount(patchedDict);
@@ -624,7 +624,7 @@ TclNamespaceEnsembleCmd(
 				    &newCmd);
 			    if (patchedDict == NULL) {
 				patchedDict = TclDuplicatePureObj(
-				    interp, objv[1], &tclListType.objType);
+				    interp, objv[1], tclListType);
 				if (!patchedDict) {
 				    goto freeMapAndError;
 				}
@@ -1926,7 +1926,7 @@ NsEnsembleImplementationCmdNR(
 
 	if (objc == 2) {
 	    copyPtr = TclDuplicatePureObj(
-		interp, prefixObj, &tclListType.objType);
+		interp, prefixObj, tclListType);
 	    if (!copyPtr) {
 		return TCL_ERROR;
 	    }
@@ -2330,7 +2330,7 @@ EnsembleUnknownCallback(
      */
 
     unknownCmd = TclDuplicatePureObj(
-	interp, ensemblePtr->unknownHandler, &tclListType.objType);
+	interp, ensemblePtr->unknownHandler, tclListType);
     if (!unknownCmd) {
 	return TCL_ERROR;
     }

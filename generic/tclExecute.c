@@ -3375,7 +3375,7 @@ TEBCresume(
 	}
 	if (Tcl_IsShared(objResultPtr)) {
 	    Tcl_Obj *newValue = TclDuplicatePureObj(
-		    interp, objResultPtr, &tclListType.objType);
+		    interp, objResultPtr, tclListType);
 	    if (!newValue) {
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -3439,7 +3439,7 @@ TEBCresume(
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
 		    valueToAssign = TclDuplicatePureObj(
-			interp, objResultPtr, &tclListType.objType);
+			interp, objResultPtr, tclListType);
 		    if (!valueToAssign) {
 			goto errorInLappendListPtr;
 		    }
@@ -6562,7 +6562,7 @@ TEBCresume(
 	    }
 	    if (Tcl_IsShared(listPtr)) {
 		objPtr = TclDuplicatePureObj(
-		    interp, listPtr, &tclListType.objType);
+		    interp, listPtr, tclListType);
 		if (!objPtr) {
 		    goto gotError;
 		}
@@ -6637,7 +6637,6 @@ TEBCresume(
 	    listTmpDepth = numLists + 1;
 
 	    for (i = 0;  i < numLists;  i++) {
-		int status;
 		varListPtr = infoPtr->varLists[i];
 		numVars = varListPtr->numVars;
 

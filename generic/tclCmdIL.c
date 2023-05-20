@@ -2356,7 +2356,7 @@ Tcl_LassignObjCmd(
 	return TCL_ERROR;
     }
 
-    listCopyPtr = TclDuplicatePureObj(interp, objv[1], &tclListType.objType);
+    listCopyPtr = TclDuplicatePureObj(interp, objv[1], tclListType);
     if (!listCopyPtr) {
 	return TCL_ERROR;
     }
@@ -2493,7 +2493,7 @@ Tcl_LinsertObjCmd(
 {
     Tcl_Obj *listPtr;
     Tcl_Size len, index;
-    int copied = 0, result, status;
+    int copied = 0, result;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list index ?element ...?");
@@ -2526,7 +2526,7 @@ Tcl_LinsertObjCmd(
 
     listPtr = objv[1];
     if (Tcl_IsShared(listPtr)) {
-	listPtr = TclDuplicatePureObj(interp, listPtr, &tclListType.objType);
+	listPtr = TclDuplicatePureObj(interp, listPtr, tclListType);
 	if (!listPtr) {
 	    return TCL_ERROR;
 	}
@@ -2726,7 +2726,7 @@ Tcl_LpopObjCmd(
 
     if (objc == 2) {
 	if (Tcl_IsShared(listPtr)) {
-	    listPtr = TclDuplicatePureObj(interp, listPtr, &tclListType.objType);
+	    listPtr = TclDuplicatePureObj(interp, listPtr, tclListType);
 	    if (!listPtr) {
 		return TCL_ERROR;
 	    }
@@ -2934,7 +2934,7 @@ Tcl_LremoveObjCmd(
      */
 
     if (Tcl_IsShared(listObj)) {
-	listObj = TclDuplicatePureObj(interp, listObj, &tclListType.objType);
+	listObj = TclDuplicatePureObj(interp, listObj, tclListType);
 	if (!listObj) {
 	    status = TCL_ERROR;
 	    goto done;
@@ -3189,7 +3189,7 @@ Tcl_LreplaceObjCmd(
 
     listPtr = objv[1];
     if (Tcl_IsShared(listPtr)) {
-	listPtr = TclDuplicatePureObj(interp, listPtr, &tclListType.objType);
+	listPtr = TclDuplicatePureObj(interp, listPtr, tclListType);
 	if (!listPtr) {
 	    return TCL_ERROR;
 	}
@@ -4919,7 +4919,7 @@ Tcl_LsortObjCmd(
 	 * 1675116]
 	 */
 
-	listObj = TclDuplicatePureObj(interp ,listObj, &tclListType.objType);
+	listObj = TclDuplicatePureObj(interp ,listObj, tclListType);
 	if (listObj == NULL) {
 	    sortInfo.resultCode = TCL_ERROR;
 	    goto done;
@@ -5276,7 +5276,7 @@ Tcl_LeditObjCmd(
     }
 
     if (Tcl_IsShared(listPtr)) {
-	listPtr = TclDuplicatePureObj(interp, listPtr, &tclListType.objType);
+	listPtr = TclDuplicatePureObj(interp, listPtr, tclListType);
 	if (!listPtr) {
 	    return TCL_ERROR;
 	}

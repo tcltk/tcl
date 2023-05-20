@@ -69,7 +69,7 @@
 
 /* Checks for when caller should have already converted to internal list type */
 #define LIST_ASSERT_TYPE(listObj_) \
-    LIST_ASSERT(TclHasInternalRep((listObj_), &tclListType.objType))
+    LIST_ASSERT(TclHasInternalRep((listObj_), tclListType))
 
 /*
  * If ENABLE_LIST_INVARIANTS is enabled (-DENABLE_LIST_INVARIANTS from the
@@ -2092,7 +2092,7 @@ ListObjIndex(tclObjTypeInterfaceArgsListIndex) {
     Tcl_Size numElems;
 
     /* Empty string => empty list. Avoid unnecessary shimmering */
-    if (listObj->bytes == &tclEmptyString) {
+    if (listPtr->bytes == &tclEmptyString) {
 	*objPtrPtr = NULL;
 	return TCL_OK;
     }
@@ -2755,7 +2755,7 @@ TclLindexList(
      * does not.
      */
 
-    indexListCopy = TclDuplicatePureObj(interp, argObj, &tclListType.objType);
+    indexListCopy = TclDuplicatePureObj(interp, argObj, tclListType);
     if (!indexListCopy) {
 	/*
 	 * The argument is neither an index nor a well-formed list.
@@ -2961,7 +2961,7 @@ TclLsetList(
     }
 
     indexListCopy = TclDuplicatePureObj(
-	    interp, indexArgObj, &tclListType.objType);
+	    interp, indexArgObj, tclListType);
     if (!indexListCopy) {
 	/*
 	 * indexArgPtr designates something that is neither an index nor a
@@ -3061,7 +3061,7 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
      */
 
     subListObj = Tcl_IsShared(listObj)
-	? TclDuplicatePureObj(interp, listObj, &tclListType.objType) : listObj;
+	? TclDuplicatePureObj(interp, listObj, tclListType) : listObj;
     if (!subListObj) {
 	return NULL;
     }
@@ -3148,7 +3148,7 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
 	    }
 	    if (Tcl_IsShared(subListObj)) {
 		subListObj = TclDuplicatePureObj(
-		    interp, subListObj, &tclListType.objType);
+		    interp, subListObj, tclListType);
 		if (!subListObj) {
 		    return NULL;
 		}
@@ -3172,7 +3172,7 @@ LsetFlat(tclObjTypeInterfaceArgsListSetList)
 	    if (Tcl_IsShared(subListObj)) {
 		Tcl_Obj * newSubListObj;
 		newSubListObj = TclDuplicatePureObj(
-		    interp, subListObj, &tclListType.objType);
+		    interp, subListObj, tclListType);
 		if (copied) {
 		    Tcl_DecrRefCount(subListObj);
 		}

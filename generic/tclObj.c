@@ -1755,80 +1755,6 @@ TclSetDuplicateObj(
     TclFreeInternalRep(dupPtr);
     SetDuplicateObj(dupPtr, objPtr);
 }
-/*
- *----------------------------------------------------------------------
- *
- * TclObjGetScaler --
- *
- *	Without perturbing any existing internal represenation, returns objPtr
- *	itself if it has an internal scalar type, is the empty list, or if the
- *	Tcl_Obj is list a containing only one scalar element, tries to returns
- *	scalar Tcl_Obj from that one item.
- *
- *	Returns NULL if the Tcl_Obj is not scalar.
- *
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclObjGetScalar(Tcl_Obj *objPtr)
-{
-    Tcl_ObjType const *typePtr = objPtr->typePtr;
-    if (typePtr == &tclDictType) {
-	if (TclDictGetSize(objPtr) == 0) {
-	    return objPtr;
-	} else {
-	    return NULL;
-	}
-    }
-    if (TclHasInternalRep(objPtr, NULL) && objPtr->bytes != &tclEmptyString) {
-	void *ClientDataPtr;
-	int numTypePtr;
-	
-	if (Tcl_GetNumberFromObj(NULL, objPtr, &ClientDataPtr, &numTypePtr) != TCL_OK) {
-	    Tcl_Size length;
-	    /* convert to list */
-	    Tcl_ListObjLength(NULL, objPtr, &length);
-	}
-    }
-    if (typePtr == &tclIntType.objType
-	|| typePtr == &tclDoubleType.objType
-	|| typePtr == &tclBignumType.objType
-    ) {
-	return objPtr;
-    }
-    if (typePtr == &tclListType.objType) {
-	if (TclListObjIsCanonical(objPtr)) {
-	    Tcl_Size objc;
-	    TclListObjLengthM(NULL, objPtr, &objc);
-	    if (objc == 1) {
-		Tcl_Obj *elem, *elem2;
-		Tcl_IncrRefCount(objPtr);
-		elem = TclListObjGetElement(objPtr,  0);
-		Tcl_IncrRefCount(elem);
-		Tcl_DecrRefCount(objPtr);
-		elem2 = TclObjGetScalar(elem);
-		if (elem2) {
-		    Tcl_IncrRefCount(elem2);
-		    Tcl_DecrRefCount(elem);
-		    TclUndoRefCount(elem2);
-		} else {
-		    Tcl_DecrRefCount(elem);
-		}
-		return elem2;
-	    } else if (objc == 0) {
-		return objPtr;
-	    }
-	} else {
-	    return NULL;
-	}
-    }
-    if (TclCheckEmptyString(objPtr)) {
-	return objPtr;
-    }
-    return NULL;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -3904,15 +3830,6 @@ TclBounceRefCount(
 {
     if (objPtr->refCount < 1) {
 	TclFreeObj(objPtr);
-    }
-}
-
-void
-TclUndoRefCount(
-    Tcl_Obj *objPtr
-) {
-    if (objPtr->refCount > 0) {
-	objPtr->refCount--;
     }
 }
 
