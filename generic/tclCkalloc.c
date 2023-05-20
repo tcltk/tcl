@@ -1278,7 +1278,7 @@ TclAllocElemsEx(
  *    Attempts to allocate (oldPtr == NULL) or reallocate memory of the
  *    requested size plus some more for future growth. The amount of
  *    reallocation is adjusted depending on on failure.
- * 
+ *
  *
  * Results:
  *    Pointer to allocated memory block which is at least as large
@@ -1288,7 +1288,7 @@ TclAllocElemsEx(
  */
 void *
 TclAttemptReallocElemsEx(
-    void *oldPtr,	    /* Pointer to memory block to reallocate or 
+    void *oldPtr,	    /* Pointer to memory block to reallocate or
 			     * NULL to indicate this is a new allocation */
     Tcl_Size elemCount,     /* Allocation will store at least these many... */
     Tcl_Size elemSize,	    /* ...elements of this size */
@@ -1303,7 +1303,7 @@ TclAttemptReallocElemsEx(
     assert(elemCount > 0);
     assert(elemSize > 0);
     assert(elemSize < TCL_SIZE_MAX);
-    assert(leadSize > 0);
+    assert(leadSize >= 0);
     assert(leadSize < TCL_SIZE_MAX);
 
     limit = (TCL_SIZE_MAX - leadSize) / elemSize;

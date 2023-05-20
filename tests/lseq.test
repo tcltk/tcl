@@ -31,11 +31,13 @@ test lseq-1.2 {step magnitude} {
     lseq 10 .. 1 by -2 ;# or this could be an error - or not
 } {10 8 6 4 2}
 
-test lseq-1.3 {synergy between int and double} {
+test lseq-1.3 {synergy between int and double} -body {
     set rl [lseq 25. to 5. by -5]
     set il [lseq 25  to 5  by -5]
     lmap r $rl i $il { if {$r ne "" && $i ne ""} {expr {int($r) == $i}} else {list $r $i} }
-} {1 1 1 1 1}
+} -cleanup {
+    unset rl il
+} -result {1 1 1 1 1}
 
 test lseq-1.4 {integer decreasing} {
     lseq 10 .. 1
@@ -207,7 +209,7 @@ test lseq-2.18 {signs} {
 
 } {{-10 -8 -6 -4 -2} {} {} {10 6 2} {-10 -7 -4 -1} {10 5}}
 
-test lseq-3.1 {experiement} {
+test lseq-3.1 {experiement} -body {
     set ans {}
     foreach factor [lseq 2.0 10.0] {
 	set start 1
@@ -224,10 +226,10 @@ test lseq-3.1 {experiement} {
     if {$ans eq {}} {
 	set ans OK
     }
-    unset factor
-    unset l
     set ans
-} {OK}
+} -cleanup {
+    unset ans step end start factor l
+} -result {OK}
 
 test lseq-3.2 {error case} -body {
     lseq foo
@@ -241,39 +243,43 @@ test lseq-3.4 {error case} -body {
     lseq 25 or 6
 } -returnCodes 1 -result {bad operation "or": must be .., to, count, or by}
 
-test lseq-3.5 {simple count and step arguments} {
+test lseq-3.5 {simple count and step arguments} -body {
     set s [lseq 25 by 6]
     list $s length=[llength $s]
-} {{0 6 12 18 24 30 36 42 48 54 60 66 72 78 84 90 96 102 108 114 120 126 132 138 144} length=25}
+} -cleanup {
+    unset s
+} -result {{0 6 12 18 24 30 36 42 48 54 60 66 72 78 84 90 96 102 108 114 120 126 132 138 144} length=25}
 
 test lseq-3.6 {error case} -body {
     lseq 1 7 or 3
 } -returnCodes 1  -result {bad operation "or": must be .., to, count, or by}
 
-test lseq-3.7 {lmap lseq} {
+test lseq-3.7 {lmap lseq} -body {
     lmap x [lseq 5] { expr {$x * $x} }
-} {0 1 4 9 16}
+} -cleanup {unset x} -result {0 1 4 9 16}
 
-test lseq-3.8 {lrange lseq} {
+test lseq-3.8 {lrange lseq} -body {
     set r [lrange [lseq 1 100] 10 20]
     set empty [lrange [lseq 1 100] 20 10]
     list $r $empty [lindex [tcl::unsupported::representation $r] 3]
-} {{11 12 13 14 15 16 17 18 19 20 21} {} arithseries}
+} -cleanup {
+    unset r empty
+} -result {{11 12 13 14 15 16 17 18 19 20 21} {} arithseries}
 
-test lseq-3.9 {lassign lseq} arithSeriesShimmer {
+test lseq-3.9 {lassign lseq} -constraints arithSeriesShimmer -body {
     set r [lseq 15]
     set r2 [lassign $r a b]
     list [lindex [tcl::unsupported::representation $r] 3] $a $b \
 	[lindex [tcl::unsupported::representation $r2] 3]
-} {arithseries 0 1 arithseries}
+} -cleanup {unset r r2 a b} -result {arithseries 0 1 arithseries}
 
-test lseq-3.10 {lsearch lseq must shimmer?} arithSeriesShimmer {
+test lseq-3.10 {lsearch lseq must shimmer?} -constraints arithSeriesShimmer -body {
     set r [lseq 15 0]
     set a [lsearch $r 9]
     list [lindex [tcl::unsupported::representation $r] 3] $a
-} {arithseries 6}
+} -cleanup {unset r a} -result {arithseries 6}
 
-test lseq-3.11 {lreverse lseq} {
+test lseq-3.11 {lreverse lseq} -body {
     set r [lseq 15 0]
     set a [lreverse $r]
     join [list \
@@ -281,30 +287,34 @@ test lseq-3.11 {lreverse lseq} {
 	      $r \
 	      [lindex [tcl::unsupported::representation $a] 3] \
 	      $a] \n
-} {arithseries
+} -cleanup {unset r a} -result {arithseries
 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
 arithseries
 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15}
 
-test lseq-3.12 {in operator} {
+test lseq-3.12 {in operator} -body {
     set r [lseq 9]
     set i [expr {7 in $r}]
     set j [expr {10 ni $r}]
     set k [expr {-1 in $r}]
     set l [expr {4 ni $r}]
     list $i $j $k $l [lindex [tcl::unsupported::representation $r] 3]
-} {1 1 0 0 arithseries}
+} -cleanup {
+    unset r i j k l
+} -result {1 1 0 0 arithseries}
 
-test lseq-3.13 {lmap lseq shimmer} arithSeriesShimmer {
+test lseq-3.13 {lmap lseq shimmer} -constraints arithSeriesShimmer -body {
     set r [lseq 15]
     set rep-before [lindex [tcl::unsupported::representation $r] 3]
     set m [lmap i $r { expr {$i * 7} }]
     set rep-after [lindex [tcl::unsupported::representation $r] 3]
     set rep-m [lindex [tcl::unsupported::representation $m] 3]
     list $r ${rep-before} ${rep-after} ${rep-m} $m
-} {{0 1 2 3 4 5 6 7 8 9 10 11 12 13 14} arithseries arithseries list {0 7 14 21 28 35 42 49 56 63 70 77 84 91 98}}
+} -cleanup {
+    unset r rep-before m rep-after rep-m
+} -result {{0 1 2 3 4 5 6 7 8 9 10 11 12 13 14} arithseries arithseries list {0 7 14 21 28 35 42 49 56 63 70 77 84 91 98}}
 
-test lseq-3.14 {array for shimmer} arithSeriesShimmerOk {
+test lseq-3.14 {array for shimmer} -constraints arithSeriesShimmerOk -body {
     array set testarray {a Test for This great Function}
     set vars [lseq 2]
     set vars-rep [lindex [tcl::unsupported::representation $vars] 3]
@@ -317,15 +327,19 @@ test lseq-3.14 {array for shimmer} arithSeriesShimmerOk {
     set valv [lmap v $vals {expr {$v in {Test This Function}}}]
     set vars-after [lindex [tcl::unsupported::representation $vars] 3]
     list ${vars-rep} $valk $valv ${vars-after}
-} {arithseries {1 1 1} {1 1 1} arithseries}
+} -cleanup {
+    unset testarray vars vars-rep 0 valk k  valv v vars-after
+} -result {arithseries {1 1 1} {1 1 1} arithseries}
 
-test lseq-3.15 {join for shimmer} arithSeriesShimmer {
+test lseq-3.15 {join for shimmer} -constraints arithSeriesShimmer -body {
     set r [lseq 3]
     set rep-before [lindex [tcl::unsupported::representation $r] 3]
     set str [join $r :]
     set rep-after [lindex [tcl::unsupported::representation $r] 3]
     list ${rep-before} $str ${rep-after}
-} {arithseries 0:1:2 arithseries}
+} -cleanup {
+    unset r rep-before str rep-after
+} -result {arithseries 0:1:2 arithseries}
 
 test lseq-3.16 {error case} -body {
     lseq 16 to
@@ -372,13 +386,15 @@ test lseq-3.25 {edge case} {
     llength [lseq 1 to 1 by 1]
 } {1}
 
-test lseq-3.26 {lsort shimmer} arithSeriesShimmer {
+test lseq-3.26 {lsort shimmer} -constraints arithSeriesShimmer -body {
     set r [lseq 15 0]
     set rep-before [lindex [tcl::unsupported::representation $r] 3]
     set lexical_sort [lsort $r]
     set rep-after [lindex [tcl::unsupported::representation $r] 3]
     list ${rep-before} $lexical_sort ${rep-after}
-} {arithseries {0 1 10 11 12 13 14 15 2 3 4 5 6 7 8 9} arithseries}
+} -cleanup {
+    unset r rep-before lexical_sort rep-after
+} -result {arithseries {0 1 10 11 12 13 14 15 2 3 4 5 6 7 8 9} arithseries}
 
 test lseq-3.27 {lreplace shimmer} -constraints arithSeriesShimmer -body {
     set r [lseq 15 0]
@@ -393,17 +409,19 @@ test lseq-3.27 {lreplace shimmer} -constraints arithSeriesShimmer -body {
     unset rep-after
 } -result {arithseries {15 14 13 A B C 9 8 7 6 5 4 3 2 1 0} arithseries}
 
-test lseq-3.28 {lreverse bug in ArithSeries} {} {
+test lseq-3.28 {lreverse bug in ArithSeries} -body {
     set r [lseq -5 17 3]
     set rr [lreverse $r]
     list $r $rr [string equal $r [lreverse $rr]]
-} {{-5 -2 1 4 7 10 13 16} {16 13 10 7 4 1 -2 -5} 1}
+} -cleanup {
+    unset r rr
+} -result {{-5 -2 1 4 7 10 13 16} {16 13 10 7 4 1 -2 -5} 1}
 
 test lseq-3.29 {edge case: negative count} {
     lseq -15
 } {}
 
-test lseq-3.30 {lreverse with double values} arithSeriesDouble {
+test lseq-3.30 {lreverse with double values} -constraints arithSeriesDouble -body {
     set r [lseq 3.5 18.5 1.5]
     set a [lreverse $r]
     join [list \
@@ -411,7 +429,9 @@ test lseq-3.30 {lreverse with double values} arithSeriesDouble {
 	      $r \
 	      [lindex [tcl::unsupported::representation $a] 3] \
 	      $a] \n
-} {arithseries
+} -cleanup {
+    unset r a
+} -result {arithseries
 3.5 5.0 6.5 8.0 9.5 11.0 12.5 14.0 15.5 17.0 18.5
 arithseries
 18.5 17.0 15.5 14.0 12.5 11.0 9.5 8.0 6.5 5.0 3.5}
@@ -420,21 +440,37 @@ test lseq-3.31 {lreverse inplace with doubles} {arithSeriesDouble has64BitLength
     lreverse [lseq 1.1 29.9 0.3]
 } {29.9 29.6 29.3 29.0 28.7 28.4 28.1 27.8 27.5 27.2 26.9 26.6 26.3 26.0 25.7 25.4 25.1 24.8 24.5 24.2 23.9 23.6 23.3 23.0 22.7 22.4 22.1 21.8 21.5 21.2 20.9 20.6 20.3 20.0 19.7 19.4 19.1 18.8 18.5 18.2 17.9 17.6 17.3 17.0 16.7 16.4 16.1 15.8 15.5 15.2 14.9 14.6 14.3 14.0 13.7 13.4 13.1 12.8 12.5 12.2 11.9 11.6 11.3 11.0 10.7 10.4 10.1 9.8 9.5 9.2 8.9 8.6 8.3 8.0 7.7 7.4 7.1 6.8 6.5 6.2 5.9 5.6 5.3 5.0 4.7 4.4 4.1 3.8 3.5 3.2 2.9 2.6 2.3 2.0 1.7 1.4 1.1}
 
-test lseq-4.1 {end expressions} {
+# lsearch -
+#  -- should not shimmer lseq  list
+#  -- should not leak lseq elements
+test lseq-3.32 {lsearch nested lists of lseq} -constraints arithSeriesShimmer -body {
+    set srchlist {}
+    for {set i 5} {$i < 25} {incr i} {
+	lappend srchlist [lseq $i count 7 by 3]
+    }
+    set a [lsearch -all -inline -index 1 $srchlist 23]
+    set b [lmap i $a {lindex [tcl::unsupported::representation $i] 3}]
+    list [lindex [tcl::unsupported::representation $a] 3] $a $b \
+        [lindex [tcl::unsupported::representation [lindex $srchlist 15]] 3]
+} -cleanup {
+    unset srchlist i a b
+} -result {list {{20 23 26 29 32 35 38}} arithseries arithseries}
+
+test lseq-4.1 {end expressions} -body {
     set start 7
     lseq $start $start+11
-} {7 8 9 10 11 12 13 14 15 16 17 18}
+} -cleanup {unset start} -result {7 8 9 10 11 12 13 14 15 16 17 18}
 
-test lseq-4.2 {start expressions} {
+test lseq-4.2 {start expressions} -body {
     set base [clock seconds]
     set tl [lseq $base-60 $base 10]
     lmap t $tl {expr {$t - $base + 60}}
-} {0 10 20 30 40 50 60}
+} -cleanup {unset base tl t} -result {0 10 20 30 40 50 60}
 
 ##	lseq 1 to 10 by -2
 ##	# -> lseq: invalid step = -2 with a = 1 and b = 10
 
-test lseq-4.3 {TIP examples} {
+test lseq-4.3 {TIP examples} -body {
     set examples {# Examples from TIP-629
 	# --- Begin ---
 	lseq 10 .. 1
@@ -464,7 +500,7 @@ test lseq-4.3 {TIP examples} {
 	lseq 5 5 -2
 	# -> 5
     }
-
+    set res {}
     foreach {cmd expect} [split $examples \n] {
 	if {[string trim $cmd] ne ""} {
 	    set cmd [string trimleft $cmd]
@@ -479,7 +515,9 @@ test lseq-4.3 {TIP examples} {
 	}
     }
     set res
-} {{10 9 8 7 6 5 4 3 2 1} {1 2 3 4 5 6 7 8 9 10} {} {10 8 6 4 2} {5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0} {5.0 10.0 15.0 20.0 25.0} {} {25.0 20.0 15.0 10.0 5.0} {1 3 5 7 9} {25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0} 5 5 5}
+} -cleanup {
+    unset res cmd status ans expect expected examples
+} -result {{10 9 8 7 6 5 4 3 2 1} {1 2 3 4 5 6 7 8 9 10} {} {10 8 6 4 2} {5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0} {5.0 10.0 15.0 20.0 25.0} {} {25.0 20.0 15.0 10.0 5.0} {1 3 5 7 9} {25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0} 5 5 5}
 
 #
 # Ticket 9933cc4d88697f05976accebd31c1e3ba6efe9c6 - lseq corner case
@@ -499,7 +537,7 @@ test lseq-4.4 {lseq corner case} -constraints has64BitLengths -body {
     }
     eval $tcmd
 } -cleanup {
-    unset res
+    unset res s e tcmd
 } -result {0 10 0 10 0 9223372036854774991 0 10 0 2147483638}
 
 # Ticket 99e834bf33 - lseq, lindex end off by one
@@ -525,8 +563,7 @@ test lseq-4.6 {lindex flat} -body {
     set f [$cmd [lseq 2 10] $i]
     list $c $d $e $f
 } -cleanup {
-    unset l
-    unset e
+    unset l cmd i c d e f
 } -result [lrepeat 4 6]
 
 test lseq-4.7 {empty list} {
@@ -535,21 +572,23 @@ test lseq-4.7 {empty list} {
 
 test lseq-4.8 {error case lrange} -body {
     lrange [lseq 1 5] fred ginger
-} -returnCodes 1 \
-    -result {bad index "fred": must be integer?[+-]integer? or end?[+-]integer?}
+} -cleanup {
+    unset -nocomplain fred ginger
+} -returnCodes 1 -result {bad index "fred": must be integer?[+-]integer? or end?[+-]integer?}
 
 test lseq-4.9 {lrange empty/partial sets} -body {
+    set res {}
     foreach {fred ginger} {7 8 4 9 0 15 9 9 4 2} {
         lappend res [lrange [lseq 1 5] $fred $ginger]
     }
     set res
-} -result {{} 5 {1 2 3 4 5} {} {}}
+} -cleanup {unset res fred ginger} -result {{} 5 {1 2 3 4 5} {} {}}
 
 # Panic when using variable value?
-test lseq-4.10 {panic using variable index} {
+test lseq-4.10 {panic using variable index} -body {
     set i 0
     lindex [lseq 10] $i
-} {0}
+} -cleanup {unset i} -result {0}
 
 test lseq-4.11 {bug lseq / lindex discrepancies} -constraints has64BitLengths -body {
     lindex [lseq 0x7fffffff] 0x80000000
@@ -565,7 +604,7 @@ test lseq-4.13 {bug lseq} -constraints has64BitLengths -body {
     [llength $l] \
     [lindex $l end] \
         [lindex $l 9223372036854775800]
-} -result {9223372036854775807 9223372036854775806 9223372036854775800}
+} -cleanup {unset l} -result {9223372036854775807 9223372036854775806 9223372036854775800}
 
 
 test lseq-4.14 {bug lseq - inconsistent rounding} has64BitLengths {
@@ -585,12 +624,52 @@ test lseq-4.16 {bug lseq - inconsistent rounding} {
     lappend res [lseq 4.03 4.208 0.013]
 } {{4.07 4.17 4.27 4.37 4.47 4.57 4.67 4.77 4.87 4.97 5.07 5.17 5.27 5.37 5.47 5.57 5.67 5.77 5.87 5.97} {4.03 4.043 4.056 4.069 4.082 4.095 4.108 4.121 4.134 4.147 4.16 4.173 4.186 4.199}}
 
-test lseq-convertToList {does not result in a memory error} {
+# Test abstract list in a concat
+#  -- lseq list should not shimmer
+#  -- lseq elements should not leak
+test lseq-4.17 {concat shimmer} -body {
+    set rng [lseq 8 15 2]
+    set pre [list A b C]
+    set pst [list x Y z]
+    list [concat $pre $rng $pst] \
+         [lindex [tcl::unsupported::representation $pre] 3] \
+         [lindex [tcl::unsupported::representation $rng] 3] \
+         [lindex [tcl::unsupported::representation $pst] 3]
+} -cleanup {unset rng pre pst} -result  {{A b C 8 10 12 14 x Y z} list arithseries list}
+
+test lseq-4.18 {concat shimmer} -body {
+    set rng [lseq 8 15 2]
+    set pre [list A b C]
+    set pst [list x Y z]
+    list [concat $rng $pre $pst] \
+         [lindex [tcl::unsupported::representation $rng] 3] \
+         [lindex [tcl::unsupported::representation $pre] 3] \
+         [lindex [tcl::unsupported::representation $pst] 3]
+} -cleanup {unset rng pre pst} -result {{8 10 12 14 A b C x Y z} arithseries list list}
+
+# Test lseq elements as var names
+test lseq-4.19 {varnames} -body {
+    set plist {}
+    foreach v [info proc auto_*] {
+	lappend plist proc $v [info args $v] [info body $v]
+    }
+    set res {}
+    set varlist [lseq 1 to 4]
+    foreach $varlist $plist {
+	lappend res $2 [llength $3]
+    }
+    lappend res [lindex [tcl::unsupported::representation $varlist] 3]
+} -cleanup {
+    unset {*}$varlist res varlist v plist
+} -result {auto_import 1 auto_execok 1 auto_load_index 0 auto_qualify 2 auto_load 2 arithseries}
+
+test lseq-convertToList {does not result in a memory error} -body {
 	trace add variable var1 write [list ::apply [list args {
 		error {this is an error}
 	} [namespace current]]]
 	list [catch {set var1 [lindex [lreplace [lseq 1 2] 1 1 hello] 0]} cres] $cres
-} {1 {can't set "var1": this is an error}}
+} -cleanup {unset var1 cres} -result {1 {can't set "var1": this is an error}}
+
 # cleanup
 ::tcltest::cleanupTests
 
