@@ -7866,8 +7866,8 @@ TEBCresume(
 
 	while (auxObjList) {
 	    if ((catchTop != initCatchTop)
-		    && (PTR2UINT(*catchTop) >
-			PTR2UINT(auxObjList->internalRep.twoPtrValue.ptr2))) {
+		    && (PTR2INT(*catchTop) >
+			PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2))) {
 		break;
 	    }
 	    POP_TAUX_OBJ();
@@ -7948,10 +7948,10 @@ TEBCresume(
 	}
 #ifdef TCL_COMPILE_DEBUG
 	if (traceInstructions) {
-	    fprintf(stdout, "  ... found catch at %d, catchTop=%" TCL_Z_MODIFIER "u, "
-		    "unwound to %" TCL_Z_MODIFIER "u, new pc %" TCL_Z_MODIFIER "u\n",
-		    rangePtr->codeOffset, (size_t)(catchTop - initCatchTop - 1),
-		    PTR2UINT(*catchTop), (size_t)rangePtr->catchOffset);
+	    fprintf(stdout, "  ... found catch at %d, catchTop=%" TCL_T_MODIFIER "d, "
+		    "unwound to %" TCL_T_MODIFIER "d, new pc %" TCL_T_MODIFIER "d\n",
+		    rangePtr->codeOffset, (catchTop - initCatchTop - 1),
+		    PTR2INT(*catchTop), rangePtr->catchOffset);
 	}
 #endif
 	pc = (codePtr->codeStart + rangePtr->catchOffset);

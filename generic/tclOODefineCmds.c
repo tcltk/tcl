@@ -3109,11 +3109,12 @@ ResolveClass(
 static void
 InstallReadableProps(
     PropertyStorage *props,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *propObj;
-    int i, n, created;
+    Tcl_Size i, n;
+    int created;
     Tcl_HashTable uniqueTable;
 
     if (props->allReadableCache) {
@@ -3205,7 +3206,7 @@ ClassRPropsSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int varc;
+    Tcl_Size varc;
     Tcl_Obj **varv;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
@@ -3270,7 +3271,7 @@ ObjRPropsSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int varc;
+    Tcl_Size varc;
     Tcl_Obj **varv;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
@@ -3305,11 +3306,12 @@ ObjRPropsSet(
 static void
 InstallWritableProps(
     PropertyStorage *props,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *propObj;
-    int i, n, created;
+    Tcl_Size i, n;
+    int created;
     Tcl_HashTable uniqueTable;
 
     if (props->allWritableCache) {
@@ -3401,7 +3403,7 @@ ClassWPropsSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int varc;
+    Tcl_Size varc;
     Tcl_Obj **varv;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
@@ -3466,7 +3468,7 @@ ObjWPropsSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int varc;
+    Tcl_Size varc;
     Tcl_Obj **varv;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
