@@ -157,8 +157,7 @@ GrowStringBuffer(
      */
     if (flag == 0 || stringPtr->allocated > 0) {
 	ptr = (char *)TclReallocEx(objPtr->bytes, needed, &capacity);
-    }
-    else {
+    } else {
 	/* Allocate exact size */
 	ptr = (char *)Tcl_Realloc(objPtr->bytes, needed);
 	capacity = needed;
@@ -197,7 +196,10 @@ GrowUnicodeBuffer(
 	maxChars -= 1; /* End nul not included */
     }
     else {
-	/* First allocation - just big enough */
+	/* 
+	 * First allocation - just big enough. Note needed does
+	 * not include terminating nul but STRING_SIZE does
+	 */
 	stringPtr = (String *)Tcl_Realloc(stringPtr, STRING_SIZE(needed));
 	maxChars = needed;
     }

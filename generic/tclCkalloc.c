@@ -1237,64 +1237,6 @@ TclDumpMemoryInfo(
 /*
  *------------------------------------------------------------------------
  *
- * TclAttemptAllocElemsEx --
- *
- *    Attempts to allocate memory of the requested size plus some more for
- *    future growth. The amount of allocation is adjusted depending on
- *    on failure.
- *
- * Results:
- *    Pointer to allocated memory block which is at least large enough
- *    to hold elemCount elements or NULL if allocation failed.
- *
- *------------------------------------------------------------------------
- */
-void *
-TclAttemptAllocElemsEx(
-    Tcl_Size elemCount,     /* Allocation will store at least these many... */
-    Tcl_Size elemSize,	    /* ...elements of this size */
-    Tcl_Size leadSize,      /* Additional leading space in bytes */
-    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
-			       here if non-NULL. Only modified on success */
-{
-    void *ptr;
-    Tcl_Size limit;
-    Tcl_Size attempt;
-
-    assert(elemCount > 0);
-    assert(elemSize > 0);
-    assert(elemSize < TCL_SIZE_MAX);
-    assert(leadSize > 0);
-    assert(leadSize < TCL_SIZE_MAX);
-
-    limit = (TCL_SIZE_MAX - leadSize) / elemSize;
-    if (elemCount > limit) {
-	return NULL;
-    }
-    /* Loop trying for extra space, reducing request each time */
-    attempt = TclUpsizeAlloc(0, elemCount, limit);
-    ptr = NULL;
-    while (attempt > elemCount) {
-	ptr = Tcl_AttemptAlloc(leadSize + attempt*elemSize);
-	if (ptr) {
-	    break;
-	}
-	attempt = TclUpsizeRetry(elemCount, attempt);
-    }
-    /* Try exact size as a last resort */
-    if (ptr == NULL) {
-	attempt = elemCount;
-	ptr = Tcl_AttemptAlloc(leadSize + attempt*elemSize);
-    }
-    if (ptr && capacityPtr) {
-	*capacityPtr = attempt;
-    }
-    return ptr;
-}
-
-/*
- *------------------------------------------------------------------------
- *
  * TclAllocElemsEx --
  *
  *    See TclAttemptAllocElemsEx. This function differs in that it panics
@@ -1317,8 +1259,8 @@ TclAllocElemsEx(
     Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
 			       here if non-NULL. Only modified on success */
 {
-    void *ptr = TclAttemptAllocElemsEx(
-	elemCount, elemSize, leadSize, capacityPtr);
+    void *ptr = TclAttemptReallocElemsEx(
+	NULL, elemCount, elemSize, leadSize, capacityPtr);
     if (ptr == NULL) {
 	Tcl_Panic("Failed to allocate %" TCL_SIZE_MODIFIER
 		  "d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
@@ -1333,9 +1275,10 @@ TclAllocElemsEx(
  *
  * TclAttemptReallocElemsEx --
  *
- *    Attempts to reallocate memory of the requested size plus some more for
- *    future growth. The amount of reallocation is adjusted depending on
- *    on failure.
+ *    Attempts to allocate (oldPtr == NULL) or reallocate memory of the
+ *    requested size plus some more for future growth. The amount of
+ *    reallocation is adjusted depending on on failure.
+ * 
  *
  * Results:
  *    Pointer to allocated memory block which is at least as large
@@ -1345,7 +1288,8 @@ TclAllocElemsEx(
  */
 void *
 TclAttemptReallocElemsEx(
-    void *oldPtr,	    /* Pointer to memory block to reallocate */
+    void *oldPtr,	    /* Pointer to memory block to reallocate or 
+			     * NULL to indicate this is a new allocation */
     Tcl_Size elemCount,     /* Allocation will store at least these many... */
     Tcl_Size elemSize,	    /* ...elements of this size */
     Tcl_Size leadSize,      /* Additional leading space in bytes */
@@ -1370,7 +1314,11 @@ TclAttemptReallocElemsEx(
     attempt = TclUpsizeAlloc(0, elemCount, limit);
     ptr = NULL;
     while (attempt > elemCount) {
-	ptr = Tcl_AttemptRealloc(oldPtr, leadSize + attempt*elemSize);
+	if (oldPtr) {
+	    ptr = Tcl_AttemptRealloc(oldPtr, leadSize + attempt * elemSize);
+	} else {
+	    ptr = Tcl_AttemptAlloc(leadSize + attempt * elemSize);
+	}
 	if (ptr) {
 	    break;
 	}
@@ -1379,7 +1327,11 @@ TclAttemptReallocElemsEx(
     /* Try exact size as a last resort */
     if (ptr == NULL) {
 	attempt = elemCount;
-	ptr = Tcl_AttemptRealloc(oldPtr, leadSize + attempt*elemSize);
+	if (oldPtr) {
+	    ptr = Tcl_AttemptRealloc(oldPtr, leadSize + attempt * elemSize);
+	} else {
+	    ptr = Tcl_AttemptAlloc(leadSize + attempt * elemSize);
+	}
     }
     if (ptr && capacityPtr) {
 	*capacityPtr = attempt;
