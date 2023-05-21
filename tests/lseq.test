@@ -650,7 +650,7 @@ test lseq-4.18 {concat shimmer} -body {
 # Test lseq elements as var names
 test lseq-4.19 {varnames} -body {
     set plist {}
-    foreach v [info proc auto_*] {
+    foreach v {auto_execok auto_load auto_qualify} {
 	lappend plist proc $v [info args $v] [info body $v]
     }
     set res {}
@@ -661,7 +661,7 @@ test lseq-4.19 {varnames} -body {
     lappend res [lindex [tcl::unsupported::representation $varlist] 3]
 } -cleanup {
     unset {*}$varlist res varlist v plist
-} -result {auto_import 1 auto_execok 1 auto_load_index 0 auto_qualify 2 auto_load 2 arithseries}
+} -result {auto_execok 1 auto_load 2 auto_qualify 2 arithseries}
 
 test lseq-convertToList {does not result in a memory error} -body {
 	trace add variable var1 write [list ::apply [list args {
