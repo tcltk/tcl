@@ -52,11 +52,11 @@ oo::class create ABC {
 
     constructor {} {
         \fBlink\fR Foo
-        # The method foo is now directly accessible as foo here
+        # The method Foo is now directly accessible as Foo here
         \fBlink\fR {bar Foo}
-        # The method foo is now directly accessible as bar
+        # The method Foo is now directly accessible as bar
         \fBlink\fR {::ExternalCall Foo}
-        # The method foo is now directly accessible in the global
+        # The method Foo is now directly accessible in the global
         # namespace as ExternalCall
     }
 
@@ -71,13 +71,13 @@ oo::class create ABC {
 ABC create abc
 abc grill
         \fI\(-> Step 1:\fR
-        \fI\(-> This is foo in ::abc\fR
+        \fI\(-> This is Foo in ::abc\fR
         \fI\(-> Step 2:\fR
-        \fI\(-> This is foo in ::abc\fR
+        \fI\(-> This is Foo in ::abc\fR
 # Direct access via the linked command
 puts "Step 3:"; ExternalCall
         \fI\(-> Step 3:\fR
-        \fI\(-> This is foo in ::abc\fR
+        \fI\(-> This is Foo in ::abc\fR
 .CE
 .PP
 This example shows that multiple linked commands can be made in a call to
@@ -88,7 +88,7 @@ oo::class create Ex {
     constructor {} {
         \fBlink\fR a b c
         # The methods a, b, and c (defined below) are all now
-        # directly acessible within methods under their own names.
+        # directly accessible within methods under their own names.
     }
 
     method a {} {
