@@ -1173,7 +1173,7 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 #
 #	Inputs a count of seconds since the Posix Epoch as a time of day.
 #
-# The 'clock format' command scans times of day on input.  Refer to the user
+# The 'clock scan' command scans times of day on input.  Refer to the user
 # documentation to see what it does.
 #
 #----------------------------------------------------------------------
@@ -1207,21 +1207,24 @@ proc ::tcl::clock::scan { args } {
     # Pick up command line options.
 
     foreach { flag value } [lreplace $args 0 0] {
-	set saw($flag) {}
 	switch -exact -- $flag {
 	    -b - -ba - -bas - -base {
 		set base $value
 	    }
 	    -f - -fo - -for - -form - -forma - -format {
+                set saw(-format) {}
 		set format $value
 	    }
 	    -g - -gm - -gmt {
+                set saw(-gmt) {}
 		set gmt $value
 	    }
 	    -l - -lo - -loc - -loca - -local - -locale {
+                set saw(-locale) {}
 		set locale [string tolower $value]
 	    }
 	    -t - -ti - -tim - -time - -timez - -timezo - -timezon - -timezone {
+                set saw(-timezone) {}
 		set timezone $value
 	    }
 	    default {
@@ -4261,6 +4264,7 @@ proc ::tcl::clock::add { clockval args } {
 	} else {
 	    switch -exact -- $a {
 		-g - -gm - -gmt {
+                    set saw(-gmt) {}
 		    set gmt $b
 		}
 		-l - -lo - -loc - -loca - -local - -locale {
@@ -4268,6 +4272,7 @@ proc ::tcl::clock::add { clockval args } {
 		}
 		-t - -ti - -tim - -time - -timez - -timezo - -timezon -
 		-timezone {
+                    set saw(-timezone) {}
 		    set timezone $b
 		}
 		default {
