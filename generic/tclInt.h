@@ -2910,7 +2910,7 @@ static inline Tcl_Size TclUpsizeRetry(Tcl_Size needed, Tcl_Size lastAttempt) {
 MODULE_SCOPE void *TclAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
 			Tcl_Size leadSize, Tcl_Size *capacityPtr);
 MODULE_SCOPE void *TclReallocElemsEx(void *oldPtr, Tcl_Size elemCount,
-			Tcl_Size elemSize, Tcl_Size leadSize, 
+			Tcl_Size elemSize, Tcl_Size leadSize,
 			Tcl_Size *capacityPtr);
 MODULE_SCOPE void *TclAttemptReallocElemsEx(void *oldPtr,
 			Tcl_Size elemCount, Tcl_Size elemSize,

@@ -4697,7 +4697,7 @@ TEBCresume(
 	    if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
 		&& (
 		    !TclHasInternalRep(value2Ptr, &tclListType.objType)
-		    || 
+		    ||
 		    ((Tcl_ListObjLength(interp,value2Ptr,&value2Length),
 			value2Length == 1
 			    ? (indexListPtr = TclListObjGetElement(value2Ptr, 0), 1)

@@ -151,7 +151,7 @@ GrowStringBuffer(
     if (objPtr->bytes == &tclEmptyString) {
 	objPtr->bytes = NULL;
     }
-    /* 
+    /*
      * In code below, note 'capacity' and 'needed' include terminating nul,
      * while stringPtr->allocated does not.
      */
@@ -196,7 +196,7 @@ GrowUnicodeBuffer(
 	maxChars -= 1; /* End nul not included */
     }
     else {
-	/* 
+	/*
 	 * First allocation - just big enough. Note needed does
 	 * not include terminating nul but STRING_SIZE does
 	 */
