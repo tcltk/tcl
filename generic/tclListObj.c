@@ -334,30 +334,6 @@ ListSpanMerited(
 /*
  *------------------------------------------------------------------------
  *
- * ListStoreUpSize --
- *
- *    For reasons of efficiency, extra space is allocated for a ListStore
- *    compared to what was requested. This function calculates how many
- *    slots should actually be allocated for a given request size.
- *
- * Results:
- *    Number of slots to allocate.
- *
- * Side effects:
- *    None.
- *
- *------------------------------------------------------------------------
- */
-static inline Tcl_Size
-ListStoreUpSize(Tcl_Size numSlotsRequested) {
-    /* TODO -how much extra? May be double only for smaller requests? */
-    return numSlotsRequested < (LIST_MAX / 2) ? 2 * numSlotsRequested
-						 : LIST_MAX;
-}
-
-/*
- *------------------------------------------------------------------------
- *
  * ListRepFreeUnreferenced --
  *
  *    Inline wrapper for ListRepUnsharedFreeUnreferenced that does quick checks
@@ -775,23 +751,21 @@ ListStoreNew(
 	return NULL;
     }
 
+    storePtr = NULL;
     if (flags & LISTREP_SPACE_FLAGS) {
 	/* Caller requests extra space front, back or both */
-	capacity = ListStoreUpSize(objc);
+	storePtr = (ListStore *)TclAttemptAllocElemsEx(
+	    objc, sizeof(Tcl_Obj *), offsetof(ListStore, slots), &capacity);
     } else {
+	/* Exact allocation */
 	capacity = objc;
-    }
-
-    storePtr = (ListStore *)Tcl_AttemptAlloc(LIST_SIZE(capacity));
-    while (storePtr == NULL && (capacity > (objc+1))) {
-	/* Because of loop condition capacity won't overflow */
-	capacity = objc + ((capacity - objc) / 2);
 	storePtr = (ListStore *)Tcl_AttemptAlloc(LIST_SIZE(capacity));
     }
     if (storePtr == NULL) {
 	if (flags & LISTREP_PANIC_ON_FAIL) {
-	    Tcl_Panic("list creation failed: unable to alloc %" TCL_Z_MODIFIER "u bytes",
-		    LIST_SIZE(objc));
+	    Tcl_Panic("list creation failed: unable to alloc %" TCL_Z_MODIFIER
+		      "u bytes",
+		      LIST_SIZE(objc));
 	}
 	return NULL;
     }
@@ -850,38 +824,25 @@ ListStoreNew(
  *------------------------------------------------------------------------
  */
 ListStore *
-ListStoreReallocate (ListStore *storePtr, Tcl_Size numSlots)
+ListStoreReallocate (ListStore *storePtr, Tcl_Size needed)
 {
-    Tcl_Size newCapacity;
-    ListStore *newStorePtr;
+    Tcl_Size capacity;
 
-    newCapacity = ListStoreUpSize(numSlots);
-    newStorePtr =
-	(ListStore *)Tcl_AttemptRealloc(storePtr, LIST_SIZE(newCapacity));
-
-    /*
-     * In case above failed keep looping reducing the requested extra space
-     * by half every time.
-     */
-    while (newStorePtr == NULL && (newCapacity > (numSlots+1))) {
-	/* Because of loop condition newCapacity won't overflow */
-	newCapacity = numSlots + ((newCapacity - numSlots) / 2);
-	newStorePtr =
-	    (ListStore *)Tcl_AttemptRealloc(storePtr, LIST_SIZE(newCapacity));
+    if (needed > LIST_MAX) {
+	return NULL;
     }
-    if (newStorePtr == NULL) {
-	/* Last resort - allcate what was asked */
-	newCapacity = numSlots;
-	newStorePtr = (ListStore *)Tcl_AttemptRealloc(storePtr,
-						    LIST_SIZE(newCapacity));
-	if (newStorePtr == NULL)
-	    return NULL;
-    }
+    storePtr = (ListStore *)TclAttemptReallocElemsEx(storePtr,
+						     needed,
+						     sizeof(Tcl_Obj *),
+						     offsetof(ListStore, slots),
+						     &capacity);
     /* Only the capacity has changed, fix it in the header */
-    newStorePtr->numAllocated = newCapacity;
-    return newStorePtr;
+    if (storePtr) {
+	storePtr->numAllocated = capacity;
+    }
+    return storePtr;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2598,18 +2559,26 @@ TclLindexList(
     }
 
     /*
-     * Here we make a private copy of the index list argument to avoid any
-     * shimmering issues that might invalidate the indices array below while
-     * we are still using it. This is probably unnecessary. It does not appear
-     * that any damaging shimmering is possible, and no test has been devised
-     * to show any error when this private copy is not made. But it's cheap,
-     * and it offers some future-proofing insurance in case the TclLindexFlat
-     * implementation changes in some unexpected way, or some new form of
-     * trace or callback permits things to happen that the current
-     * implementation does not.
+     * Make a private copy of the index list argument to keep the internal
+     * representation of th indices array unchanged while it is in use.  This
+     * is probably unnecessary. It does not appear that any damaging change to
+     * the internal representation is possible, and no test has been devised to
+     * show any error when this private copy is not made, But it's cheap, and
+     * it offers some future-proofing insurance in case the TclLindexFlat
+     * implementation changes in some unexpected way, or some new form of trace
+     * or callback permits things to happen that the current implementation
+     * does not.
      */
 
-    indexListCopy = Tcl_DuplicateObj(argObj);
+    indexListCopy = TclDuplicatePureObj(interp, argObj, &tclListType);
+    if (!indexListCopy) {
+	/*
+	 * The argument is neither an index nor a well-formed list.
+	 * Report the error via TclLindexFlat.
+	 * TODO - This is as original code. why not directly return an error?
+	 */
+	return TclLindexFlat(interp, listObj, 1, &argObj);
+    }
     status = TclListObjGetElementsM(
 	interp, indexListCopy, &numIndexObjs, &indexObjs);
     if (status != TCL_OK) {
@@ -2813,7 +2782,15 @@ TclLsetList(
 
     }
 
-    indexListCopy = TclDuplicatePureObj(indexArgObj);
+    indexListCopy = TclDuplicatePureObj(
+	    interp, indexArgObj, &tclListType);
+    if (!indexListCopy) {
+	/*
+	 * indexArgPtr designates something that is neither an index nor a
+	 * well formed list. Report the error via TclLsetFlat.
+	 */
+	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
+    }
     if (TCL_OK != TclListObjGetElementsM(
 	interp, indexListCopy, &indexCount, &indices)) {
 	Tcl_DecrRefCount(indexListCopy);
@@ -2882,7 +2859,7 @@ TclLsetFlat(
     Tcl_Obj *valueObj)		/* Value arg to 'lset' or NULL to 'lpop'. */
 {
     Tcl_Size index, len;
-    int result;
+    int copied = 0, result;
     Tcl_Obj *subListObj, *retValueObj;
     Tcl_Obj *pendingInvalidates[10];
     Tcl_Obj **pendingInvalidatesPtr = pendingInvalidates;
@@ -2902,16 +2879,15 @@ TclLsetFlat(
     }
 
     /*
-     * If the list is shared, make a copy we can modify (copy-on-write).  We
-     * 1) we have not yet confirmed listObj is actually a list; 2) We make a
-     * verbatim copy of any existing string rep, and when we combine that with
-     * the delayed invalidation of string reps of modified Tcl_Obj's
-     * implemented below, the outcome is that any error condition that causes
-     * this routine to return NULL, will leave the string rep of listObj and
-     * all elements to be unchanged.
+     * If the list is shared, make a copy to modify (copy-on-write). The string
+     * representation and internal representation of listObj remains unchanged.
      */
 
-    subListObj = Tcl_IsShared(listObj) ? Tcl_DuplicateObj(listObj) : listObj;
+    subListObj = Tcl_IsShared(listObj)
+	? TclDuplicatePureObj(interp, listObj, &tclListType) : listObj;
+    if (!subListObj) {
+	return NULL;
+    }
 
     /*
      * Anchor the linked list of Tcl_Obj's whose string reps must be
@@ -2981,10 +2957,9 @@ TclLsetFlat(
 	}
 
 	/*
-	 * No error conditions.  As long as we're not yet on the last index,
-	 * determine the next sublist for the next pass through the loop,
-	 * and take steps to make sure it is an unshared copy, as we intend
-	 * to modify it.
+	 * No error conditions.  If this is not the last index, determine the
+	 * next sublist for the next pass through the loop, and take steps to
+	 * make sure it is unshared in order to modify it.
 	 */
 
 	if (--indexCount) {
@@ -2995,7 +2970,12 @@ TclLsetFlat(
 		subListObj = elemPtrs[index];
 	    }
 	    if (Tcl_IsShared(subListObj)) {
-		subListObj = Tcl_DuplicateObj(subListObj);
+		subListObj = TclDuplicatePureObj(
+		    interp, subListObj, &tclListType);
+		if (!subListObj) {
+		    return NULL;
+		}
+		copied = 1;
 	    }
 
 	    /*
@@ -3013,7 +2993,17 @@ TclLsetFlat(
 		TclListObjSetElement(NULL, parentList, index, subListObj);
 	    }
 	    if (Tcl_IsShared(subListObj)) {
-		subListObj = Tcl_DuplicateObj(subListObj);
+		Tcl_Obj * newSubListObj;
+		newSubListObj = TclDuplicatePureObj(
+		    interp, subListObj, &tclListType);
+		if (copied) {
+		    Tcl_DecrRefCount(subListObj);
+		}
+		if (newSubListObj) {
+		    subListObj = newSubListObj;
+		} else {
+		    return NULL;
+		}
 		TclListObjSetElement(NULL, parentList, index, subListObj);
 	    }
 

@@ -59,8 +59,8 @@ static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
 			    Tcl_Size numAppendChars);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
-static void		GrowStringBuffer(Tcl_Obj *objPtr, size_t needed, int flag);
-static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, size_t needed);
+static void		GrowStringBuffer(Tcl_Obj *objPtr, Tcl_Size needed, int flag);
+static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, Tcl_Size needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		SetUnicodeObj(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, Tcl_Size numChars);
@@ -131,8 +131,8 @@ const Tcl_ObjType tclStringType = {
 static void
 GrowStringBuffer(
     Tcl_Obj *objPtr,
-    size_t needed,
-    int flag)
+    Tcl_Size needed, /* Not including terminating nul */
+    int flag)      /* If 0, try to overallocate */
 {
     /*
      * Preconditions:
@@ -142,45 +142,35 @@ GrowStringBuffer(
      */
 
     String *stringPtr = GET_STRING(objPtr);
-    char *ptr = NULL;
-    size_t attempt;
+    char *ptr;
+    Tcl_Size capacity;
+
+    assert(needed <= TCL_SIZE_MAX - 1);
+    needed += 1; /* Include terminating nul */
 
     if (objPtr->bytes == &tclEmptyString) {
 	objPtr->bytes = NULL;
     }
+    /* 
+     * In code below, note 'capacity' and 'needed' include terminating nul,
+     * while stringPtr->allocated does not.
+     */
     if (flag == 0 || stringPtr->allocated > 0) {
-	attempt = 2 * needed;
-	ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1U);
-	if (ptr == NULL) {
-	    /*
-	     * Take care computing the amount of modest growth to avoid
-	     * overflow into invalid argument values for attempt.
-	     */
-
-	    size_t limit = INT_MAX - needed;
-	    size_t extra = needed - objPtr->length + TCL_MIN_GROWTH;
-	    size_t growth = (extra > limit) ? limit : extra;
-
-	    attempt = needed + growth;
-	    ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1U);
-	}
+	ptr = (char *)TclReallocEx(objPtr->bytes, needed, &capacity);
+    } else {
+	/* Allocate exact size */
+	ptr = (char *)Tcl_Realloc(objPtr->bytes, needed);
+	capacity = needed;
     }
-    if (ptr == NULL) {
-	/*
-	 * First allocation - just big enough; or last chance fallback.
-	 */
 
-	attempt = needed;
-	ptr = (char *)Tcl_Realloc(objPtr->bytes, attempt + 1U);
-    }
     objPtr->bytes = ptr;
-    stringPtr->allocated = attempt;
+    stringPtr->allocated = capacity - 1; /* Does not include slot for end nul */
 }
 
 static void
 GrowUnicodeBuffer(
     Tcl_Obj *objPtr,
-    size_t needed)
+    Tcl_Size needed)
 {
     /*
      * Preconditions:
@@ -188,39 +178,32 @@ GrowUnicodeBuffer(
      *	needed > stringPtr->maxChars
      */
 
-    String *ptr = NULL, *stringPtr = GET_STRING(objPtr);
-    size_t attempt;
+    String *stringPtr = GET_STRING(objPtr);
+    Tcl_Size maxChars;
 
+    /* Note STRING_MAXCHARS already takes into account space for nul */
+    if (needed > STRING_MAXCHARS) {
+	Tcl_Panic("max size for a Tcl unicode rep (%" TCL_Z_MODIFIER "d bytes) exceeded",
+		  STRING_MAXCHARS);
+    }
     if (stringPtr->maxChars > 0) {
-	/*
-	 * Subsequent appends - apply the growth algorithm.
-	 */
-
-	attempt = 2 * needed;
-	ptr = stringAttemptRealloc(stringPtr, attempt);
-	if (ptr == NULL) {
-	    /*
-	     * Take care computing the amount of modest growth to avoid
-	     * overflow into invalid argument values for attempt.
-	     */
-
-	    size_t extra = needed - stringPtr->numChars
-		    + TCL_MIN_UNICHAR_GROWTH;
-
-	    attempt = needed + extra;
-	    ptr = stringAttemptRealloc(stringPtr, attempt);
-	}
+	/* Expansion - try allocating extra space */
+	stringPtr = (String *)TclReallocElemsEx(stringPtr,
+						needed + 1, /* +1 for nul */
+						sizeof(Tcl_UniChar),
+						offsetof(String, unicode),
+						&maxChars);
+	maxChars -= 1; /* End nul not included */
     }
-    if (ptr == NULL) {
-	/*
-	 * First allocation - just big enough; or last chance fallback.
+    else {
+	/* 
+	 * First allocation - just big enough. Note needed does
+	 * not include terminating nul but STRING_SIZE does
 	 */
-
-	attempt = needed;
-	ptr = stringRealloc(stringPtr, attempt);
+	stringPtr = (String *)Tcl_Realloc(stringPtr, STRING_SIZE(needed));
+	maxChars = needed;
     }
-    stringPtr = ptr;
-    stringPtr->maxChars = attempt;
+    stringPtr->maxChars = maxChars;
     SET_STRING(objPtr, stringPtr);
 }
 

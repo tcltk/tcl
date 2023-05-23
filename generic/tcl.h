@@ -858,8 +858,8 @@ typedef struct {
 typedef struct Tcl_DString {
     char *string;		/* Points to beginning of string: either
 				 * staticSpace below or a malloced array. */
-    Tcl_Size length;		/* Number of non-NULL characters in the
-				 * string. */
+    Tcl_Size length;		/* Number of bytes in string excluding
+				 * terminating nul */
     Tcl_Size spaceAvl;		/* Total number of bytes available for the
 				 * string and its terminating NULL char. */
     char staticSpace[TCL_DSTRING_STATIC_SIZE];

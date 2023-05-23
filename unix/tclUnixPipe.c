@@ -549,7 +549,7 @@ TclpCreateProcess(
 	 * here, since this is the error case. [Bug: 6148]
 	 */
 
-	Tcl_WaitPid((Tcl_Pid) INT2PTR(pid), &status, 0);
+	Tcl_WaitPid((Tcl_Pid)INT2PTR(pid), &status, 0);
     }
 
     if (errPipeIn) {

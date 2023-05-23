@@ -202,7 +202,9 @@ static void		DupBignum(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		UpdateStringOfBignum(Tcl_Obj *objPtr);
 static int		GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int copy, mp_int *bignumValue);
-static void		SetDuplicatePureObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
+static int		SetDuplicatePureObj(Tcl_Interp *interp,
+			    Tcl_Obj *dupPtr, Tcl_Obj *objPtr,
+			    const Tcl_ObjType *typePtr);
 
 /*
  * Prototypes for the array hash key methods.
@@ -1562,7 +1564,8 @@ TclObjBeingDeleted(
  *	object.
  *
  * TclDuplicatePureObj --
- *	Like Tcl_DuplicateObj, except that it does not duplicate the 'bytes'
+ *	Like Tcl_DuplicateObj, except that it converts the duplicate to the
+ *	specifid typ, does not duplicate the 'bytes'
  *	field unless it is necessary, i.e. the duplicated Tcl_Obj provides no
  *	updateStringProc.  This can avoid an expensive memory allocation since
  *	the data in the 'bytes' field of each Tcl_Obj must reside in allocated
@@ -1608,39 +1611,6 @@ TclObjBeingDeleted(
 	}								\
     }
 
-void SetDuplicatePureObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr) 
-{
-    const Tcl_ObjType *typePtr = objPtr->typePtr;		
-    const char *bytes = objPtr->bytes;
-
-    /* Unfortunately, it is not documented that dupIntRepProc() must assign
-     * null to Tcl_Obj.typePtr if it does not assign any other value, so it
-     * must be done here.  Maybe in the future it can be documented, and this
-     * assignment deleted */
-    dupPtr->typePtr = NULL;
-
-    if (typePtr) {
-	if (typePtr->dupIntRepProc) {
-	    typePtr->dupIntRepProc(objPtr, dupPtr);
-	} else {
-	    dupPtr->internalRep = objPtr->internalRep;
-	    dupPtr->typePtr = typePtr;
-	}
-	if (bytes && (
-	    dupPtr->typePtr == NULL
-	    || dupPtr->typePtr->updateStringProc == NULL)
-	) {
-	    TclInitStringRep(dupPtr, bytes, objPtr->length);
-	} else {
-	    dupPtr->bytes = NULL;
-	}
-    } else if (bytes) {
-	TclInitStringRep(dupPtr, bytes, objPtr->length);
-    }
-    return;
-}
-
-
 Tcl_Obj *
 Tcl_DuplicateObj(
     Tcl_Obj *objPtr)		/* The object to duplicate. */
@@ -1652,16 +1622,102 @@ Tcl_DuplicateObj(
     return dupPtr;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DuplicatePureObj --
+ *
+ *	Duplicates a Tcl_Obj and converts the internal representation of the
+ *	duplicate to the given type, changing neither the 'bytes' field
+ *	nor the internal representation of the original object, and without
+ *	duplicating the bytes field unless necessary, i.e. unless the
+ *	duplicate provides no updateStringProc after conversion.  This can
+ *	avoid an expensive memory allocation since the data in the 'bytes'
+ *	field of each Tcl_Obj must reside in allocated memory.
+ *
+ * Results:
+ *	A pointer to a newly-created Tcl_Obj or NULL if there was an error.
+ *	This object has reference count 0.  Also:
+ *
+ *----------------------------------------------------------------------
+ */
+int SetDuplicatePureObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *dupPtr,
+    Tcl_Obj *objPtr,
+    const Tcl_ObjType *typePtr)
+{
+    char *bytes = objPtr->bytes;
+    int status = TCL_OK;
+    const Tcl_ObjType *useTypePtr =
+        objPtr->typePtr ? objPtr->typePtr : typePtr;
+        
+    TclInvalidateStringRep(dupPtr);
+    assert(dupPtr->typePtr == NULL);
+
+    if (objPtr->typePtr && objPtr->typePtr->dupIntRepProc) {
+	objPtr->typePtr->dupIntRepProc(objPtr, dupPtr);
+    } else {
+	dupPtr->internalRep = objPtr->internalRep;
+	dupPtr->typePtr = objPtr->typePtr;
+    }
+
+    if (typePtr != NULL && dupPtr->typePtr != useTypePtr) {
+	if (bytes) {
+	    dupPtr->bytes = bytes;
+	    dupPtr->length = objPtr->length;
+	}
+	/* borrow bytes from original object */
+	status = Tcl_ConvertToType(interp, dupPtr, useTypePtr);
+	if (bytes) {
+	    dupPtr->bytes = NULL;
+	    dupPtr->length = 0;
+	}
+	if (status != TCL_OK) {
+	    return status;
+	}
+    }
+
+    /* tclStringType is treated as a special case because a Tcl_Obj having this
+     * type can not always update the string representation.  This happens, for
+     * example, when Tcl_GetCharLength() converts the internal representation
+     * to tclStringType in order to store the number of characters, but does
+     * not store enough information to generate the string representation.
+     *
+     * Perhaps in the future this can be remedied and this special treatment
+     * removed.
+     */
+
+
+    if (bytes && (dupPtr->typePtr == NULL
+	|| dupPtr->typePtr->updateStringProc == NULL
+	|| useTypePtr == &tclStringType
+	)
+    ) {
+	TclInitStringRep(dupPtr, bytes, objPtr->length);
+    }
+    return status;
+}
 
 Tcl_Obj *
 TclDuplicatePureObj(
-    Tcl_Obj *objPtr)		/* The object to duplicate. */
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    const Tcl_ObjType *typePtr
+)		/* The object to duplicate. */
 {
+    int status;
     Tcl_Obj *dupPtr;
 
     TclNewObj(dupPtr);
-    SetDuplicatePureObj(dupPtr, objPtr);
-    return dupPtr;
+    status = SetDuplicatePureObj(interp, dupPtr, objPtr, typePtr);
+    if (status == TCL_OK) {
+	return dupPtr;
+    } else {
+	Tcl_DecrRefCount(dupPtr);
+	return NULL;
+    }
 }
 
 

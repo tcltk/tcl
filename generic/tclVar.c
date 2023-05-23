@@ -3099,7 +3099,10 @@ ArrayForNRCmd(
      * loop) don't vanish.
      */
 
-    varListObj = TclDuplicatePureObj(objv[1]);
+    varListObj = TclDuplicatePureObj(interp, objv[1], &tclListType);
+    if (!varListObj) {
+	return TCL_ERROR;
+    }
     scriptObj = objv[3];
     Tcl_IncrRefCount(scriptObj);
 
@@ -4072,7 +4075,11 @@ ArraySetCmd(
 	 * the loop and return an error.
 	 */
 
-	copyListObj = TclDuplicatePureObj(arrayElemObj);
+	copyListObj =
+	    TclDuplicatePureObj(interp, arrayElemObj, &tclListType);
+	if (!copyListObj) {
+	    return TCL_ERROR;
+	}
 	for (i=0 ; i<elemLen ; i+=2) {
 	    Var *elemVarPtr = TclLookupArrayElement(interp, arrayNameObj,
 		    elemPtrs[i], TCL_LEAVE_ERR_MSG, "set", 1, 1, varPtr, -1);
