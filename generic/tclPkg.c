@@ -40,7 +40,7 @@ typedef struct PkgAvail {
 typedef struct PkgName {
     struct PkgName *nextPtr;	/* Next in list of package names being
 				 * initialized. */
-    char name[1];
+    char name[TCLFLEXARRAY];
 } PkgName;
 
 typedef struct PkgFiles {
@@ -828,7 +828,7 @@ SelectPackage(
 	 * Push "ifneeded" package name in "tclPkgFiles" assocdata.
 	 */
 
-	pkgName = (PkgName *)ckalloc(sizeof(PkgName) + strlen(name));
+	pkgName = (PkgName *)ckalloc(offsetof(PkgName, name) + 1 + strlen(name));
 	pkgName->nextPtr = pkgFiles->names;
 	strcpy(pkgName->name, name);
 	pkgFiles->names = pkgName;
@@ -1782,7 +1782,7 @@ CompareVersions(
 				 * of version numbers). */
     int *isMajorPtr)		/* If non-null, the word pointed to is filled
 				 * in with a 0/1 value. 1 means that the
-				 * difference occured in the first element. */
+				 * difference occurred in the first element. */
 {
     int thisIsMajor, res, flip;
     char *s1, *e1, *s2, *e2, o1, o2;
@@ -2235,7 +2235,7 @@ RequirementSatisfied(
 
     /*
      * We have both min and max, and generate their internal reps. When
-     * identical we compare as is, otherwise we pad with 'a0' to ove the range
+     * identical we compare as is, otherwise we pad with 'a0' to over the range
      * a bit.
      */
 

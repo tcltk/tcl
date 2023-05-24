@@ -35,7 +35,7 @@ static const char checkCommand[] = "check";
  * procs
  */
 
-typedef struct CmdTable {
+typedef struct {
     const char *cmdName;		/* command name */
     Tcl_ObjCmdProc *proc;	/* command proc */
     int exportIt;		/* if 1, export the command */
@@ -45,10 +45,8 @@ typedef struct CmdTable {
  * Declarations for functions defined in this file.
  */
 
-static int	ProcBodyTestProcObjCmd(void *dummy,
-			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int	ProcBodyTestCheckObjCmd(void *dummy,
-			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc ProcBodyTestProcObjCmd;
+static Tcl_ObjCmdProc ProcBodyTestCheckObjCmd;
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
 			const char *namesp, const CmdTable *cmdTablePtr);
@@ -146,14 +144,14 @@ RegisterCommand(
     char buf[128];
 
     if (cmdTablePtr->exportIt) {
-	sprintf(buf, "namespace eval %s { namespace export %s }",
+	snprintf(buf, sizeof(buf), "namespace eval %s { namespace export %s }",
 		namesp, cmdTablePtr->cmdName);
 	if (Tcl_EvalEx(interp, buf, -1, 0) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
 
-    sprintf(buf, "%s::%s", namesp, cmdTablePtr->cmdName);
+    snprintf(buf, sizeof(buf), "%s::%s", namesp, cmdTablePtr->cmdName);
     Tcl_CreateObjCommand(interp, buf, cmdTablePtr->proc, 0, 0);
     return TCL_OK;
 }
@@ -190,7 +188,7 @@ ProcBodyTestInitInternal(
 	}
     }
 
-    return Tcl_PkgProvide(interp, packageName, packageVersion);
+    return Tcl_PkgProvideEx(interp, packageName, packageVersion, NULL);
 }
 
 /*
@@ -339,8 +337,8 @@ ProcBodyTestCheckObjCmd(
 	return TCL_ERROR;
     }
 
-    version = Tcl_PkgPresent(interp, packageName, packageVersion, 1);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+    version = Tcl_PkgPresentEx(interp, packageName, packageVersion, 1, NULL);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
 	    strcmp(version, packageVersion) == 0));
     return TCL_OK;
 }

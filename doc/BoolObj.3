@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewBooleanObj, Tcl_SetBooleanObj, Tcl_GetBooleanFromObj \- store/retrieve boolean value in a Tcl_Obj
+Tcl_NewBooleanObj, Tcl_SetBooleanObj, Tcl_GetBooleanFromObj, Tcl_GetBoolFromObj \- store/retrieve boolean value in a Tcl_Obj
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -20,7 +20,10 @@ Tcl_Obj *
 \fBTcl_SetBooleanObj\fR(\fIobjPtr, intValue\fR)
 .sp
 int
-\fBTcl_GetBooleanFromObj\fR(\fIinterp, objPtr, intPtr\fR)
+\fBTcl_GetBooleanFromObj\fR(\fIinterp, objPtr, boolPtr\fR)
+.sp
+int
+\fBTcl_GetBoolFromObj\fR(\fIinterp, objPtr, flags. charPtr\fR)
 .SH ARGUMENTS
 .AS Tcl_Interp intValue in/out
 .AP int intValue in
@@ -32,9 +35,16 @@ retrieve a boolean value.
 If a boolean value cannot be retrieved,
 an error message is left in the interpreter's result value
 unless \fIinterp\fR is NULL.
-.AP int *intPtr out
+.AP "bool \&| int" *boolPtr out
 Points to place where \fBTcl_GetBooleanFromObj\fR
 stores the boolean value (0 or 1) obtained from \fIobjPtr\fR.
+.AP char *charPtr out
+Points to place where \fBTcl_GetBoolFromObj\fR
+stores the boolean value (0 or 1) obtained from \fIobjPtr\fR.
+.AP int flags in
+0 or TCL_NULL_OK. If TCL_NULL_OK
+is used, then the empty string or NULL will result in \fBTcl_GetBoolFromObj\fR
+return TCL_OK, the *charPtr filled with the value \fB'\exFF'\fR;
 .BE
 
 .SH DESCRIPTION
@@ -61,13 +71,13 @@ any former value stored in \fI*objPtr\fR.
 from the value stored in \fI*objPtr\fR.
 If \fIobjPtr\fR holds a string value recognized by \fBTcl_GetBoolean\fR,
 then the recognized boolean value is written at the address given
-by \fIintPtr\fR.
+by \fIboolPtr\fR.
 If \fIobjPtr\fR holds any value recognized as
 a number by Tcl, then if that value is zero a 0 is written at
-the address given by \fIintPtr\fR and if that
-value is non-zero a 1 is written at the address given by \fIintPtr\fR.
+the address given by \fIboolPtr\fR and if that
+value is non-zero a 1 is written at the address given by \fIboolPtr\fR.
 In all cases where a value is written at the address given
-by \fIintPtr\fR, \fBTcl_GetBooleanFromObj\fR returns \fBTCL_OK\fR.
+by \fIboolPtr\fR, \fBTcl_GetBooleanFromObj\fR returns \fBTCL_OK\fR.
 If the value of \fIobjPtr\fR does not meet any of the conditions
 above, then \fBTCL_ERROR\fR is returned and an error message is
 left in the interpreter's result unless \fIinterp\fR is NULL.
@@ -75,6 +85,11 @@ left in the interpreter's result unless \fIinterp\fR is NULL.
 fields of \fI*objPtr\fR so that future calls to
 \fBTcl_GetBooleanFromObj\fR on the same \fIobjPtr\fR can be
 performed more efficiently.
+.PP
+\fBTcl_GetBoolFromObj\fR functions almost the same as
+\fBTcl_GetBooleanFromObj\fR, but it has an additional parameter
+\fBflags\fR, which can be used to specify whether the empty
+string or NULL is accepted as valid.
 .PP
 Note that the routines \fBTcl_GetBooleanFromObj\fR and
 \fBTcl_GetBoolean\fR are not functional equivalents.

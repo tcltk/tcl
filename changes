@@ -2486,7 +2486,7 @@ interpreter. (JL)
 installing and requesting security policies, purely in Tcl code. Overloads
 the package command to also allow an interpreter to "require" a policy. The
 following new library commands are provided:
-	tcl_safeCreateInterp	-- creates a slave an initializes the
+	tcl_safeCreateInterp	-- creates a slave and initializes the
 				   policy mechanism.
 	tcl_safeInitInterp	-- initializes an existing slave with the
 				   policy mechanism.
@@ -3028,7 +3028,7 @@ in case of errors is required for proper cleanup by the user of fcopy. (BW)
 	x eval rename foo blotz
 	x alias foo {}
 The problem was that the interp code was not using the actual current name
-of the command to be deleted as a result of un-aliasing foo. (JL)
+of the command to be deleted as a result of unaliasing foo. (JL)
 
 6/19/97 (feature change) Pass interp down to the ChannelOption and
 driver specific calls so system errors can be differentiated from syntax
@@ -4167,7 +4167,7 @@ Only.)  This fix included:
 the location of the encoding files and libraries.  This fix included:
     - Adding the TclSetPerInitScript routine.
     - Modifying the Tcl_Init routines to evaluate the non-NULL
-      pre-init script.
+      preinit script.
     - Adding the Tcl_SetdefaultEncodingDir and Tcl_GetDefaultEncodingDir
       routines.
     - Modifying the TclpInitLibrary routines to append the default
@@ -4650,7 +4650,7 @@ threading may still cause problems on AIX. (hobbs)
 9/21/99 (bug fix) fixed bug when setting array in non-existent
 namespace. [Bug: 2613] (hobbs)
 
---- Released 8.2.1, October 04, 1999 --- See ChangeLog for details ---
+--- Released 8.2.1, October 04, 1999
 
 10/30/99 (feature enhancement) new regexp engine from Henry Spencer
 was patched in - should greatly reduce stack space usage. (spencer)
@@ -4680,7 +4680,7 @@ when indexing into one (test case string-5.16) [Bug: 2871] (hobbs)
 
 10/30/99 (bug fix) fixes for mac UTF filename handling (ingham)
 
---- Released 8.2.2, November 04, 1999 --- See ChangeLog for details ---
+--- Released 8.2.2, November 04, 1999
 
 11/19/99 (feature enhancement) bug fixes for http package as well as
 patch required by TLS (SSL) extension that adds http::(un)register
@@ -4705,7 +4705,7 @@ atexit handlers.
 12/07/99 (bug fix) fixes for 'expr + {[incr]}' and 'expr + {[error]}'
 cases (different causes).
 
---- Released 8.2.3, December 16, 1999 --- See ChangeLog for details ---
+--- Released 8.2.3, December 16, 1999
 
 1999-09-14 (feature enhancement) added -start switch to regexp and regsub.
 
@@ -4762,7 +4762,7 @@ ExitThread to _endthreadex to prevent 4K mem leak (gravereaux)
 
 1999-12-21 (bug fix) changed thread ids to longs (for 64bit systems)
 
---- Released 8.3b1, December 22, 1999 --- See ChangeLog for details ---
+--- Released 8.3b1, December 22, 1999
 
 2000-01-10 (feature enhancement) clock scan now supports the common
 ISO 8601 date/time formats.  See docs for details. (melski)
@@ -4788,7 +4788,7 @@ symbolicly (like chmod) in [file attributes $file -permissions ...] (schoebel)
 2000-01-13 (bug fix) fixed lsort -dictionary problem when sorting
 characters between 'Z' and 'a' (flawed upper/lower comparison logic) (melski)
 
---- Released 8.3b2, January 13, 2000 --- See ChangeLog for details ---
+--- Released 8.3b2, January 13, 2000
 
 2000-01-14 (feature enhancement) clock format %Q added, clock scan updated
 
@@ -4827,7 +4827,7 @@ mac panic from an error when closing an async socket (steffen, ingham)
 2000-02-10 (feature enhancement) improved error reporting for failed
 loads on Windows (dejong, hobbs)
 
---- Released 8.3.0, February 10, 2000 --- See ChangeLog for details ---
+--- Released 8.3.0, February 10, 2000
 
 2000-03 (bug fixes, feature enhancement) overhaul of http package for
 proper handling of async callbacks (new options), version is now at 2.3
@@ -4870,7 +4870,7 @@ tclLoadDyld.c dl type. (sanchez)
 2000-04-24 (bug fix) fixed hang in threaded Unix case when backgrounded
 exec process was running (dejong)
 
---- Released 8.3.1, April 26, 2000 --- See ChangeLog for details ---
+--- Released 8.3.1, April 26, 2000
 
 2000-04-26 (doc fix) updated/added documentation for many API's and
 commands (melski)
@@ -4920,7 +4920,7 @@ pattern matching for [array names] (gazetta)
 2000-05-31 (feature enhancement) added -nocomplain and -- flags to
 [unset] to allow for silent unset operation (hobbs)
 
---- Released 8.4a1, June 6, 2000 --- See ChangeLog for details ---
+--- Released 8.4a1, June 6, 2000
 
 2000-05-29 (bug fix) corrected resource cleanup in http error cases.
 Improved handling of error cases in http. (tamhankar)
@@ -4959,7 +4959,7 @@ sections. (english)
 2000-08-07 (bug fix) new man pages memory.n, TCL_MEM_DEBUG.3, Init.3 and
 DumpActiveMemory.3. (melski)
 
---- Released 8.3.2, August 9, 2000 --- See ChangeLog for details ---
+--- Released 8.3.2, August 9, 2000
 
 2000-06 thru 2000-11 (build improvements) Added support for mingw (gcc on
 Windows), AIX-5 and Win64 builds (dejong, hobbs)
@@ -5018,7 +5018,7 @@ environment (gravereaux)
 2000-11-03 (new feature) Tcl_SetMainLoop enables defining an event loop for
 tclsh.  This enables Tk as a truly loadable package. (hobbs)
 
---- Released 8.4a2, November 3, 2000 --- See ChangeLog for details ---
+--- Released 8.4a2, November 3, 2000
 
 2000-09-27 (bug fix) fixed a bug introduced by a partial fix in 8.3.2 that
 didn't set nonBlocking correctly when resetting the flags for the write
@@ -5076,7 +5076,7 @@ Update of READMEs.
 Corrected IRIX-5* configure (english).  Added support for AIX-5 (hobbs).
 Added support for Win64 (hobbs).
 
---- Released 8.3.3, April 6, 2001 --- See ChangeLog for details ---
+--- Released 8.3.3, April 6, 2001
 
 2000-11-23 (new feature)[TIP 7] higher resolution timer on Windows (kenny)
 
@@ -5150,7 +5150,7 @@ system.  This includes the addition of 'file normalize', 'file system',
 
  * corrected several minor errors noted by Purify (hobbs)
 
---- Released 8.4a3, August 6, 2001 --- See ChangeLog for details ---
+--- Released 8.4a3, August 6, 2001
 
 2001-06-27 (bug fix)[217987] corrected backslash substitution of non-ASCII
 characters.  (hobbs, riefenstahl)
@@ -5256,7 +5256,7 @@ bundles to standard .dylib dynamic libraries like on other unices.
 2001-10-18 (bug fix) corrected off-by-one-day error in clock scan with
 relative months and years during swing hours. (lavana)
 
---- Released 8.3.4, October 19, 2001 --- See ChangeLog for details ---
+--- Released 8.3.4, October 19, 2001
 
 2001-08-21 (bug fix)[219184] overagressive compilation of [catch] (sofer)
 
@@ -5281,8 +5281,6 @@ avoid any specific C-runtime library dependence. (gravereaux)
 compiles to 0 bytecodes (sofer)
 
 2001-09-13 (new feature)[TIP 56] Tcl_EvalTokensStandard API (sofer)
-
-2001-09-13 (new feature) Old ChangeLog entries => ChangeLog.1999 (hobbs)
 
 2001-09-17 (new feature) compiling with TCL_COMPILE_DEBUG now required to
 enable all compile and execution tracing (sofer)
@@ -5368,8 +5366,6 @@ of the Host: header value
 2002-01-25 (new feature)[496733] socket options -eofchar and -translation
 return read-only values (dejong)
 
-2002-01-28 (new feature) Old ChangeLog entries => ChangeLog.20900 (hobbs)
-
 2002-01-28 (performance enhancement) bytecompiled [regexp] for trivial cases
 that amount to string matching.  Also -nocase and --. (hobbs)
 
@@ -5394,7 +5390,7 @@ errored out. (kupries, sofer)
 
 2002-02-15 (new feature)[TIP 72] support for 64-bit integer values on
 32-bit platforms and ability to work with >2GiB files.  Extends many
-commands.  See ChangeLog and TIP for details.
+commands.  See TIP for details.
 	*** POTENTIAL INCOMPATIBILITY ***
 
 2002-02-22 (bug fix)[476537] Fix panic when loading shared library without
@@ -5435,7 +5431,7 @@ of prior Tcl releases.  Others will need to be reconciled.
 related to the handling of iso2022 text and finalization of escape-based
 encodings. (taguchi, takahashi, hobbs)
 
---- Released 8.4a4, March 5, 2002 --- See ChangeLog for details ---
+--- Released 8.4a4, March 5, 2002
 
 2002-03-06 (new feature)[TIP 80] expanded [lsearch] options (wilkason, fellows)
 
@@ -5545,7 +5541,7 @@ options to configure (max)
 
 2002-07-03 (bug fix)[577015] [catch] catches even compile errors (sofer)
 
---- Released 8.4b1, July 5, 2002 --- See ChangeLog for details ---
+--- Released 8.4b1, July 5, 2002
 
 2002-07-08 (bug fix) restored compatibility of [viewFile] in tcltest (porter)
 
@@ -5583,7 +5579,7 @@ options to configure (max)
 Many internal bugs fixed.
 Considerable cleanup of the test suite.
 
---- Released 8.4b2, August 9, 2002 --- See ChangeLog for details ---
+--- Released 8.4b2, August 9, 2002
 
 2002-08-20 (new feature) --enable-memdebug configure option (kupries)
 
@@ -5598,7 +5594,7 @@ Considerable cleanup of the test suite.
 
 2002-09-02 (platfrom support) 64-bit compile on HP-11 (martin)
 
---- Released 8.4.0, September 10, 2002 --- See ChangeLog for details ---
+--- Released 8.4.0, September 10, 2002
 
 2002-09-18 (platform support) Updated support for compiling with Cygwin and
 either mingw or gcc. (khan, howell, dejong)
@@ -5661,7 +5657,7 @@ dirs to tcl_pkgPath: @executable_path/../Frameworks and
 @executable_path/../PrivateFrameworks (if they exist), as well as the dirs
 in DYLD_FRAMEWORK_PATH (if set). (steffen)
 
---- Released 8.4.1, October 22, 2002 --- See ChangeLog for details ---
+--- Released 8.4.1, October 22, 2002
 
 2002-10-28 (bug fix)[627660] [package unknown] chaining for platform specifics
 
@@ -5754,7 +5750,7 @@ packages in multiple interps.
 
 2003-02-27 (bug fix)[694232] stop [lsearch -start 0 {} x] segfault
 
---- Released 8.4.2, March 3, 2003 --- See ChangeLog for details ---
+--- Released 8.4.2, March 3, 2003
 
 2003-03-06 (bug fix)[699042] Correct case-insensitive unicode string
 comparison in Tcl_UniCharNcasecmp
@@ -5836,7 +5832,7 @@ encoding for the original.  Most uses of gb2312 really mean euc-cn.
 2003-05-14 (bug fix)[736421] Corrected another putenv() copy behavior
 problem when compiling on Windows and using Microsoft's runtime.
 
---- Released 8.4.3, May 20, 2003 --- See ChangeLog for details ---
+--- Released 8.4.3, May 20, 2003
 
 2003-05-23 (bug fix)[726018] reverted internals change to the
 'cmdName' Tcl_ObjType that broke several extensions (TclBlend, e4graph...)
@@ -5877,7 +5873,7 @@ Improved documentation, new tests, and some code cleanup.
 [655300, 720634, 735364, 748700, 756112, 756744, 756951, 758488, 760768,
 763312, 769895, 771539, 771840, 771947, 771949, 772333]
 
---- Released 8.4.4, July 22, 2003 --- See ChangeLog for details ---
+--- Released 8.4.4, July 22, 2003
 
 2003-07-23 (bug fix)[775976] fix registry compilation for VC7.
 
@@ -5923,7 +5919,7 @@ asked for writable events by the generic layer.
 2003-11-17 (bug fix)[230589, 504785, 505048, 703709, 840258] fixes to
 various odd regexp "can't happen" bugs.
 
---- Released 8.4.5, November 20, 2003 --- See ChangeLog for details ---
+--- Released 8.4.5, November 20, 2003
 
 2003-12-02 (bug fix)[851747] object sharing fix in [binary scan]
 
@@ -5960,7 +5956,7 @@ various odd regexp "can't happen" bugs.
 
 2004-03-01 (platform support)[218561] Allow 64-bit configure on IRIX64-6.5*
 
---- Released 8.4.6, March 1, 2004 --- See ChangeLog for details ---
+--- Released 8.4.6, March 1, 2004
 
 Changes to 8.5a1 include all changes to the 8.4 line through 8.4.6,
 plus the following, which focuses on the high-level feature changes
@@ -6046,7 +6042,7 @@ in this changeset (new minor version) rather than bug fixes:
  * [TIP #157] leading {expand} syntax on words to cause argument expansion.
    This is a safer/cleaner alternative to the use of 'eval'.
 
---- Released 8.5a1, March 3, 2004 --- See ChangeLog for details ---
+--- Released 8.5a1, March 3, 2004
 
 2004-03-04 (new feature) registry package is [unload]able (thoyts)
 => registry 1.1.4
@@ -6070,7 +6066,7 @@ each command/interp validity before executing. (sofer)
 
 2004-04-06 (clean up) refactored Tcl header file #include order.  Might
 create need for changes in extensions that #include private headers.
-Changed source code files should work with older Tcl as well.  See ChangeLog.
+Changed source code files should work with older Tcl as well.
      *** POTENTIAL INCOMPATIBILITY ***
 
 2004-04-07 (bug fix)[920667] install into any Unicode path on Win (hobbs)
@@ -6346,7 +6342,7 @@ Doc improvements [759545,926590,935853,1017072,1018486,1022527,1027849,
 	1032243,1047928,1048005,1058446,1062647,1065732,1073334,etc.]
 Test suite expansion [1036649,1001997,etc.]
 
---- Released 8.5a2, December 7, 2004 --- See ChangeLog for details ---
+--- Released 8.5a2, December 7, 2004
 
 2004-12-13 (bug fix)[1083082] encoding memory leaks (ade,porter)
 
@@ -6490,7 +6486,7 @@ Can support [load] from memory as well (steffen)
 
 Documentation improvements [1075433,1085127,1117017,1124160,1149605,etc.]
 
---- Released 8.5a3, June 4, 2005 --- See ChangeLog for details ---
+--- Released 8.5a3, June 4, 2005
 
 2005-06-06 (bug fix)[1213678] Windows/gcc: crash in stack.test (kenny)
 
@@ -6741,7 +6737,7 @@ removed (steffen)
 Documentation improvements [1211078,1190891,1292427,1277503,1104682,1359183,
 1415725,666770]
 
---- Released 8.5a4, April 27, 2006 --- See ChangeLog for details ---
+--- Released 8.5a4, April 27, 2006
 
 2006-05-04 (bug fix)[1480509] srand() accept wide input (porter,afredd)
 
@@ -6837,7 +6833,7 @@ URL validity checking against RFC 2986 (hobbs)
 
 2006-10-13 (platform support) get stack size on Darwin (steffen)
 
---- Released 8.5a5, October 20, 2006 --- See ChangeLog for details ---
+--- Released 8.5a5, October 20, 2006
 
 2006-10-20 (configure change) Added autodetection for OS-supplied timezone
 files (max)
@@ -6919,7 +6915,7 @@ upvar and namespace upvar (sofer)
 
 2007-04-23 (bug fix) fts_open() crash on 64bit Darwin 8 or earlier (steffen)
 
---- Released 8.5a6, April 25, 2007 --- See ChangeLog for details ---
+--- Released 8.5a6, April 25, 2007
 
 2007-04-30 (bug fix)[1705778] many valgrind-detected leaks corrected
 
@@ -6977,7 +6973,7 @@ of traced command do not fire (sofer)
 
 2007-08-16 (bug fix)[1773040] ::errorInfo trace crash (janssen,porter)
 
-2007-08-16 (performance)[1564517] pre-compile constant expressions (porter)
+2007-08-16 (performance)[1564517] precompile constant expressions (porter)
 
 2007-08-21 (bug fix)[1775878] 'puts \' in interactive tclsh failed to move to
 prompt for continuation line (porter)
@@ -7022,7 +7018,7 @@ project for Xcode 3.0 (steffen)
 (bug fix)[1066755] Several stack efficiency efforts increases recursion limit
 on Windows to be larger than the default [interp recursionlimit] value
 
---- Released 8.5b1, September 26, 2007 --- See ChangeLog for details ---
+--- Released 8.5b1, September 26, 2007
 
 2007-10-02 (bug fix)[1806422] proper [tcl::tm::path] autoload (porter)
 
@@ -7034,7 +7030,7 @@ on Windows to be larger than the default [interp recursionlimit] value
 
 2007-10-25 (bug fix)[1726873] intermittent crash in threads (vasiljevic)
 
---- Released 8.5b2, October 26, 2007 --- See ChangeLog for details ---
+--- Released 8.5b2, October 26, 2007
 
 2007-10-27 (bug fix)[1821159] fixed broken compile on x86_64 (sofer)
 
@@ -7070,7 +7066,7 @@ on Windows to be larger than the default [interp recursionlimit] value
 
 Many significant documentation improvements (fellows, sofer)
 
---- Released 8.5b3, November 19, 2007 --- See ChangeLog for details ---
+--- Released 8.5b3, November 19, 2007
 
 2007-11-20 (enhancement) string rep of dict has stable order (fellows)
 
@@ -7104,7 +7100,7 @@ over-consumption of resources (drewry,lane,ormandy,fellows)
 
 Several documentation and release notes improvements
 
---- Released 8.5.0, December 20, 2007 --- See ChangeLog for details ---
+--- Released 8.5.0, December 20, 2007
 
 2007-12-23 (bug fix)[1857126] restore backref support to regexps (hobbs)
 
@@ -7126,7 +7122,7 @@ Several documentation and release notes improvements
 
 Several documentation and release notes improvements
 
---- Released 8.5.1, February 5, 2008 --- See ChangeLog for details ---
+--- Released 8.5.1, February 5, 2008
 
 2008-02-06 (enhancement) [clock format] performance (kenny)
 
@@ -7187,7 +7183,7 @@ variables without "." added to customization hooks (kupries)
 
 2008-03-27 clock tzdata updated to Olson's tzdata2008b (kenny)
 
---- Released 8.5.2, March 28, 2008 --- See ChangeLog for details ---
+--- Released 8.5.2, March 28, 2008
 
 2008-03-30 (bug fix)[1783544] more robust TclIsNaN() (kenny,teterin)
 
@@ -7242,7 +7238,7 @@ variables without "." added to customization hooks (kupries)
 
 2008-06-25 (bug fix)[1999119] Support TM packages in Safe Base (kupries)
 
---- Released 8.6a1, June 25, 2008 --- See ChangeLog for details ---
+--- Released 8.6a1, June 25, 2008
 
 2008-06-29 (bug fix)[2004480] plug memory leaks (ade,porter,steffen)
 
@@ -7295,7 +7291,7 @@ in a deleted interp. (porter)
 
 2008-08-21 (bug fix)[2065115] Restored ***= regexp functioning (hobbs,porter)
 
---- Released 8.6a2, August 25, 2008 --- See ChangeLog for details ---
+--- Released 8.6a2, August 25, 2008
 
 2008-08-29 (bug fix)[2082299] Install TclOO header files (fellows)
 
@@ -7376,7 +7372,7 @@ Tcl_FSFileAttrStringsProc prototype. (nijtmans)
 
 2008-10-10 (bug fix)[2155658] crash in oo method export (fellows)
 
---- Released 8.6a3, October 10, 2008 --- See ChangeLog for details ---
+--- Released 8.6a3, October 10, 2008
 
 2008-10-13 (bug fix) Fix ability to join threads on 64-bit Windows (thoyts)
 
@@ -7446,7 +7442,7 @@ evaluation in extensions (sofer,kenny)
 
 2008-12-18 (bug fix)[2444274] panic in long commands from {*} (goth,porter)
 
---- Released 8.6b1, December 19, 2008 --- See ChangeLog for details ---
+--- Released 8.6b1, December 19, 2008
 
 2008-12-27 [TIP 234] Tcl_Zlib* interface revisions (fellows)
 	*** INCOMPATIBILITY with interface of 8.6b1 ***
@@ -7954,7 +7950,7 @@ memory with buffer backup (ferrieux)
 
 Many more Tcl built-in command errors now set an -errorcode.
 
---- Released 8.6b2, August 8, 2011 --- See ChangeLog for details ---
+--- Released 8.6b2, August 8, 2011
 
 2011-07-02 (bug fix)[3349507] correct double(1[string repeat 0 23]) (kenny)
 
@@ -8115,7 +8111,7 @@ Many revisions to better support a Cygwin environment (nijtmans)
 
 Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
---- Released 8.6b3, September 18, 2012 --- See ChangeLog for details ---
+--- Released 8.6b3, September 18, 2012
 
 2012-09-20 (enhancement) full Unicode support (nijtmans)
 => dde 1.4.0
@@ -8162,7 +8158,7 @@ Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
 2012-12-13 (bug fix) crash: [zlib gunzip $data -header noSuchNs::var] (porter)
 
---- Released 8.6.0, December 20, 2012 --- See ChangeLog for details ---
+--- Released 8.6.0, December 20, 2012
 
 2012-12-22 (bug fix)[3598150] DString to Tcl_Obj memleak (afredd)
 
@@ -8685,7 +8681,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-07-08 (bug)[a47641] [file normalize] & Windows junctions (nadkarni)
 
-2016-07-09 [ae61a6] [file] handling of Win hardcoded names (CON) (nadkarni)
+2016-07-09 [ae61a6] [file] handling of Win hard-coded names (CON) (nadkarni)
         *** POTENTIAL INCOMPATIBILITY ***
 
 2016-07-09 [3613671] [file owned] (more) useful on Win (nadkarni)
@@ -9232,7 +9228,7 @@ See RFC 2045
 2020-09-17 (bug)[835c93] Support TIP 525 exit code for -singleproc 1 (nijtmans)
 => tcltest 2.5.3
 
-2020-09-25 (new) force -eofchar \032 when evaluating library scripts (nijtmans)
+2020-09-25 (new) force -eofchar \x1A when evaluating library scripts (nijtmans)
         *** POTENTIAL INCOMPATIBILITY ***
 
 2020-09-29 (bug)[0063cb] http::geturl -headers must be dict (oehlmann,nijtmans)
@@ -9375,3 +9371,54 @@ in this changeset (new minor version) rather than bug fixes:
 2021-10-27 tzdata updated to Olson's tzdata2021e (nijtmans)
 
 - Released 8.6.12, Nov 5, 2021 - details at https://core.tcl-lang.org/tcl/ -
+
+2021-12-08 (update) tcltest package to version 2.5.4
+
+2022-01-13 (bug)[26f132] Crash when sizeof(int) < sizeof(void *) (Plan 9 port)
+
+2022-01-19 (TIP 623)[e9a271] Tcl_GetRange index args < 0 (petasis,nijtmans)
+
+2022-03-08 (bug) test string-5.22 (porter)
+
+2022-03-11 (bug)[8a7ec8] fat binary compile on Mac M1 (davis, nijtmans)
+
+2022-04-04 (bug)[e5ed1b] numeric IPv6 in URLs (nijtmans)
+=> http 2.9.6
+
+2022-04-26 (bug)[27520c] test error-9.6 (goth,sebres)
+
+2022-05-04 (bug)[8eb64b] http package tolerant again invalid reply header
+
+2022-05-11 (bug)[6898f9] http package failed detection of shiftjis charset
+
+2022-05-25 (bug)[76ad7a] tests string-6.13[23] (mistachkin, nijtmans)
+
+2022-06-20 (bug)[55bf73] Avoid connection reuse after response code 101.
+=> http 2.9.8
+
+2022-07-22 (bug)[713653] FP rounding exposed by x86 musl (rubicon,sebres)
+
+2022-07-22 More portable notation of microseconds in verbose output (sebres)
+=> tcltest 2.5.5
+
+2022-07-27 (bug)[b3977d] Process CR-LF split across packets (nadkarni,sebres)
+
+2022-07-29 (bug)[4eb3a1] crash due to undetected bytecode invalidity (nadkarni)
+
+2022-08-23 (new)[371080] Portability to CHERI-enabled Morello processor (jrtc27)
+
+2022-09-06 (bug)[55a02f] Fallback init env(HOME) from USERPROFILE (nadkarni)
+
+2022-09-13 (bug)[1073da] crash writing invalid utf-8 (nijtmans)
+
+2022-09-14 (new) Update to Unicode-15 (nijtmans)
+
+2022-10-14 tzdata updated to Olson's tzdata2022e (nijtmans)
+
+Update bundled zlib to 1.2.13
+
+Update bundled libtommath
+
+Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
+
+- Released 8.6.13, Nov 22, 2022 - details at https://core.tcl-lang.org/tcl/ -

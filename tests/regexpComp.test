@@ -16,7 +16,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-package require tcltests
+source [file join [file dirname [info script]] tcltests.tcl]
 
 # Procedure to evaluate a script within a proc, to test compilation
 # functionality

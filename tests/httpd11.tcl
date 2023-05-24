@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcl
+package require Tcl
 
 proc ::tcl::dict::get? {dict key} {
     if {[dict exists $dict $key]} {
@@ -150,7 +150,11 @@ proc Service {chan addr port} {
         if {[file exists $path] && [file isfile $path]} {
             foreach {what type} [mime-type $path] break
             set f [open $path r]
-            if {$what eq "binary"} {chan configure $f -translation binary}
+            if {$what eq "binary"} {
+                chan configure $f -translation binary
+            } else {
+                chan configure $f -encoding utf-8
+            }
             set data [read $f]
             close $f
             set code "200 OK"

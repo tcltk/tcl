@@ -172,7 +172,7 @@ The body of a script provided to \fBeval\fR or \fBuplevel\fR.
 .TP
 \fBprecompiled\fR\0\0\0\0\0\0\0\0
 .
-A pre-compiled script (loadable by the package
+A precompiled script (loadable by the package
 \fBtbcload\fR), and no further information is available.
 .RE
 .TP
@@ -490,6 +490,29 @@ be discovered with \fBinfo class forward\fR.
 This subcommand returns a list of all classes that have been mixed into the
 class named \fIclass\fR.
 .TP
+\fBinfo class properties\fI class\fR ?\fIoptions...\fR
+.VS "TIP 558"
+This subcommand returns a sorted list of properties defined on the class named
+\fIclass\fR. The \fIoptions\fR define exactly which properties are returned:
+.RS
+.TP
+\fB\-all\fR
+.
+With this option, the properties from the superclasses and mixins of the class
+are also returned.
+.TP
+\fB\-readable\fR
+.
+This option (the default behavior) asks for the readable properties to be
+returned. Only readable or writable properties are returned, not both.
+.TP
+\fB\-writable\fR
+.
+This option asks for the writable properties to be returned.  Only readable or
+writable properties are returned, not both.
+.RE
+.VE "TIP 558"
+.TP
 \fBinfo class subclasses\fI class\fR ?\fIpattern\fR?
 .
 This subcommand returns a list of direct subclasses of class \fIclass\fR. If
@@ -678,6 +701,30 @@ object named \fIobject\fR.
 .
 This subcommand returns the name of the internal namespace of the object named
 \fIobject\fR.
+.TP
+\fBinfo object properties\fI object\fR ?\fIoptions...\fR
+.VS "TIP 558"
+This subcommand returns a sorted list of properties defined on the object
+named \fIobject\fR. The \fIoptions\fR define exactly which properties are
+returned:
+.RS
+.TP
+\fB\-all\fR
+.
+With this option, the properties from the class, superclasses and mixins of
+the object are also returned.
+.TP
+\fB\-readable\fR
+.
+This option (the default behavior) asks for the readable properties to be
+returned. Only readable or writable properties are returned, not both.
+.TP
+\fB\-writable\fR
+.
+This option asks for the writable properties to be returned. Only readable or
+writable properties are returned, not both.
+.RE
+.VE "TIP 558"
 .TP
 \fBinfo object variables\fI object\fRR ?\fB\-private\fR?
 .

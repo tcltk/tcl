@@ -28,6 +28,8 @@
  */
 
 #undef Tcl_Alloc
+#undef Tcl_AttemptAlloc
+#undef Tcl_AttemptRealloc
 #undef Tcl_Free
 #undef Tcl_Realloc
 #undef Tcl_NewBooleanObj
@@ -97,7 +99,7 @@ static void uniCodePanic(void) {
 }
 #   define Tcl_GetUnicode (unsigned short *(*)(Tcl_Obj *))(void *)uniCodePanic
 #   define Tcl_GetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, int *))(void *)uniCodePanic
-#   define TclGetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, size_t *))(void *)uniCodePanic
+#   define TclGetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, ptrdiff_t *))(void *)uniCodePanic
 #   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const unsigned short *, int))(void *)uniCodePanic
 #   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const unsigned short *, int))(void *)uniCodePanic
 #   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const unsigned short *, int))(void *)uniCodePanic
@@ -138,67 +140,67 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 }
 
 int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-    size_t *objcPtr, Tcl_Obj ***objvPtr) {
+    void *objcPtr, Tcl_Obj ***objvPtr) {
     int n, result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
     if ((result == TCL_OK) && objcPtr) {
-	*objcPtr = n;
+	*(ptrdiff_t *)objcPtr = n;
     }
     return result;
 }
 int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-    size_t *lengthPtr) {
+    void *lengthPtr) {
     int n;
     int result = Tcl_ListObjLength(interp, listPtr, &n);
     if ((result == TCL_OK) && lengthPtr) {
-	*lengthPtr = n;
+	*(ptrdiff_t *)lengthPtr = n;
     }
     return result;
 }
 int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	size_t *sizePtr) {
+	void *sizePtr) {
     int n, result = Tcl_DictObjSize(interp, dictPtr, &n);
     if ((result == TCL_OK) && sizePtr) {
-	*sizePtr = n;
+	*(ptrdiff_t *)sizePtr = n;
     }
     return result;
 }
-int TclSplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
+int TclSplitList(Tcl_Interp *interp, const char *listStr, void *argcPtr,
 	const char ***argvPtr) {
     int n;
     int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
     if ((result == TCL_OK) && argcPtr) {
-	*argcPtr = n;
+	*(ptrdiff_t *)argcPtr = n;
     }
     return result;
 }
-void TclSplitPath(const char *path, size_t *argcPtr, const char ***argvPtr) {
+void TclSplitPath(const char *path, void *argcPtr, const char ***argvPtr) {
     int n;
     Tcl_SplitPath(path, &n, argvPtr);
     if (argcPtr) {
-	*argcPtr = n;
+	*(ptrdiff_t *)argcPtr = n;
     }
 }
-Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr) {
+Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, void *lenPtr) {
     int n;
     Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
     if (result && lenPtr) {
-	*lenPtr = n;
+	*(ptrdiff_t *)lenPtr = n;
     }
     return result;
 }
 int TclParseArgsObjv(Tcl_Interp *interp,
-	const Tcl_ArgvInfo *argTable, size_t *objcPtr, Tcl_Obj *const *objv,
+	const Tcl_ArgvInfo *argTable, void *objcPtr, Tcl_Obj *const *objv,
 	Tcl_Obj ***remObjv) {
     int n, result;
-    if (*objcPtr > INT_MAX) {
+    if (*(ptrdiff_t *)objcPtr > INT_MAX) {
 	if (interp) {
 	    Tcl_AppendResult(interp, "Tcl_ParseArgsObjv cannot handle *objcPtr > INT_MAX", NULL);
 	}
 	return TCL_ERROR;
     }
-    n = (int)*objcPtr;
+    n = *(ptrdiff_t *)objcPtr;
     result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
-    *objcPtr = n;
+    *(ptrdiff_t *)objcPtr = n;
     return result;
 }
 
@@ -232,6 +234,8 @@ int TclParseArgsObjv(Tcl_Interp *interp,
 #define TclBN_mp_mul_2d mp_mul_2d
 #define TclBN_mp_neg mp_neg
 #define TclBN_mp_or mp_or
+#define TclBN_mp_pack mp_pack
+#define TclBN_mp_pack_count mp_pack_count
 #define TclBN_mp_radix_size mp_radix_size
 #define TclBN_mp_reverse mp_reverse
 #define TclBN_mp_read_radix mp_read_radix
@@ -380,6 +384,7 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define TclGetLoadedPackages 0
 #   undef TclSetPreInitScript
 #   define TclSetPreInitScript 0
+#   define TclInitCompiledLocals 0
 #else
 
 #define TclGuessPackageName guessPackageName
@@ -536,7 +541,7 @@ doNothing(void)
     /* dummy implementation, no need to do anything */
 }
 #endif
-#   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
+#   define TclWinAddProcess (void (*) (void *, Tcl_Size)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
@@ -589,7 +594,7 @@ void *TclWinGetTclInstance()
 int
 TclpGetPid(Tcl_Pid pid)
 {
-    return (int)(size_t)pid;
+    return (TCL_HASH_TYPE)(size_t)pid;
 }
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
@@ -794,6 +799,7 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   undef TclBN_s_mp_sub
 #   define TclBN_s_mp_sub 0
 #   define Tcl_MakeSafe 0
+#   define TclpHasSockets 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
@@ -816,6 +822,8 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
 #   define Tcl_MakeSafe TclMakeSafe
+
+int TclpHasSockets(TCL_UNUSED(Tcl_Interp *)) {return TCL_OK;}
 
 static int
 seekOld(
@@ -1321,12 +1329,12 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_get_mag_u64, /* 69 */
     TclBN_mp_set_i64, /* 70 */
     TclBN_mp_unpack, /* 71 */
-    0, /* 72 */
+    TclBN_mp_pack, /* 72 */
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
     TclBN_mp_tc_xor, /* 75 */
     TclBN_mp_signed_rsh, /* 76 */
-    0, /* 77 */
+    TclBN_mp_pack_count, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
     TclBN_mp_div_ld, /* 79 */
     TclBN_mp_to_radix, /* 80 */
@@ -2039,12 +2047,21 @@ const TclStubs tclStubs = {
     TclUtfAtIndex, /* 671 */
     TclGetRange, /* 672 */
     TclGetUniChar, /* 673 */
-    0, /* 674 */
-    0, /* 675 */
+    Tcl_GetBool, /* 674 */
+    Tcl_GetBoolFromObj, /* 675 */
     Tcl_CreateObjCommand2, /* 676 */
     Tcl_CreateObjTrace2, /* 677 */
     Tcl_NRCreateCommand2, /* 678 */
     Tcl_NRCallObjProc2, /* 679 */
+    Tcl_GetNumberFromObj, /* 680 */
+    Tcl_GetNumber, /* 681 */
+    Tcl_RemoveChannelMode, /* 682 */
+    Tcl_GetEncodingNulLength, /* 683 */
+    Tcl_GetWideUIntFromObj, /* 684 */
+    Tcl_DStringToObj, /* 685 */
+    0, /* 686 */
+    0, /* 687 */
+    TclUnusedStubEntry, /* 688 */
 };
 
 /* !END!: Do not edit above this line. */

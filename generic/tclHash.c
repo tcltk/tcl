@@ -649,18 +649,18 @@ Tcl_HashStats(
      */
 
     result = (char *)ckalloc((NUM_COUNTERS * 60) + 300);
-    sprintf(result, "%u entries in table, %u buckets\n",
+    snprintf(result, 60, "%u entries in table, %u buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i = 0; i < NUM_COUNTERS; i++) {
-	sprintf(p, "number of buckets with %u entries: %u\n",
+	snprintf(p, 60, "number of buckets with %u entries: %u\n",
 		i, count[i]);
 	p += strlen(p);
     }
-    sprintf(p, "number of buckets with %u or more entries: %u\n",
+    snprintf(p, 60, "number of buckets with %u or more entries: %u\n",
 	    NUM_COUNTERS, overflow);
     p += strlen(p);
-    sprintf(p, "average search distance for entry: %.1f", average);
+    snprintf(p, 60, "average search distance for entry: %.1f", average);
     return result;
 }
 

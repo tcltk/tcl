@@ -497,7 +497,7 @@ TclCompileStringIsCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -788,7 +788,7 @@ TclCompileStringMatchCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -892,7 +892,7 @@ TclCompileStringLenCmd(
 	char buf[TCL_INTEGER_SPACE];
 	int len = TclGetCharLength(objPtr);
 
-	len = sprintf(buf, "%d", len);
+	len = snprintf(buf, sizeof(buf), "%d", len);
 	PushLiteral(envPtr, buf, len);
     } else {
 	SetLineInformation(1);
@@ -908,7 +908,7 @@ TclCompileStringMapCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1325,7 +1325,7 @@ TclCompileStringToUpperCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1347,7 +1347,7 @@ TclCompileStringToLowerCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -1369,7 +1369,7 @@ TclCompileStringToTitleCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -2374,7 +2374,7 @@ IssueSwitchJumpTable(
      * Compile the switch by using a jump table, which is basically a
      * hashtable that maps from literal values to match against to the offset
      * (relative to the INST_JUMP_TABLE instruction) to jump to. The jump
-     * table itself is independent of any invokation of the bytecode, and as
+     * table itself is independent of any invocation of the bytecode, and as
      * such is stored in an auxData block.
      *
      * Start by allocating the jump table itself, plus some workspace.
@@ -2547,9 +2547,9 @@ IssueSwitchJumpTable(
  *----------------------------------------------------------------------
  */
 
-static ClientData
+static void *
 DupJumptableInfo(
-    ClientData clientData)
+    void *clientData)
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
     JumptableInfo *newJtPtr = (JumptableInfo *)ckalloc(sizeof(JumptableInfo));
@@ -2569,7 +2569,7 @@ DupJumptableInfo(
 
 static void
 FreeJumptableInfo(
-    ClientData clientData)
+    void *clientData)
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
 
@@ -2579,7 +2579,7 @@ FreeJumptableInfo(
 
 static void
 PrintJumptableInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
     unsigned int pcOffset)
@@ -2608,7 +2608,7 @@ PrintJumptableInfo(
 
 static void
 DisassembleJumptableInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(unsigned int))
@@ -2661,7 +2661,7 @@ TclCompileTailcallCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     int i;
 
-    if (parsePtr->numWords < 2 || parsePtr->numWords > 256
+    if (parsePtr->numWords < 2 || parsePtr->numWords >= 256
 	    || envPtr->procPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -3114,7 +3114,7 @@ IssueTryClausesInstructions(
 
     for (i=0 ; i<numHandlers ; i++) {
 	noError[i] = -1;
-	sprintf(buf, "%d", matchCodes[i]);
+	snprintf(buf, sizeof(buf), "%d", matchCodes[i]);
 	OP(				DUP);
 	PushLiteral(envPtr, buf, strlen(buf));
 	OP(				EQ);
@@ -3326,7 +3326,7 @@ IssueTryClausesFinallyInstructions(
 	int noTrapError, trapError;
 	const char *p;
 
-	sprintf(buf, "%d", matchCodes[i]);
+	snprintf(buf, sizeof(buf), "%d", matchCodes[i]);
 	OP(				DUP);
 	PushLiteral(envPtr, buf, strlen(buf));
 	OP(				EQ);
@@ -4076,7 +4076,7 @@ CompileAssociativeBinaryOpCmd(
     if (words > 3) {
 	/*
 	 * Reverse order of arguments to get precise agreement with [expr] in
-	 * calcuations, including roundoff errors.
+	 * calculations, including roundoff errors.
 	 */
 
 	OP4(	REVERSE, words-1);
@@ -4527,7 +4527,7 @@ TclCompileMinusOpCmd(
 
     /*
      * Reverse order of arguments to get precise agreement with [expr] in
-     * calcuations, including roundoff errors.
+     * calculations, including roundoff errors.
      */
 
     TclEmitInstInt4(INST_REVERSE, words-1, envPtr);
@@ -4571,7 +4571,7 @@ TclCompileDivOpCmd(
 
     /*
      * Reverse order of arguments to get precise agreement with [expr] in
-     * calcuations, including roundoff errors.
+     * calculations, including roundoff errors.
      */
 
     TclEmitInstInt4(INST_REVERSE, words-1, envPtr);

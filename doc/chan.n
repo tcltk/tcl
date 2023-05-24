@@ -55,7 +55,9 @@ channel is flushed in the background before finally being closed.
 .PP
 \fBchan close\fR may return an error if an error occurs while flushing
 output.  If a process in a command pipeline created by \fBopen\fR returns an
-error, \fBchan close\fR generates an error in the same manner as \fBexec\fR.
+error (either by returning a non-zero exit code or writing to its standard
+error file descriptor), \fBchan close\fR generates an error in the same
+manner as \fBexec\fR.
 .PP
 Closing one side of a socket or command pipeline may lead to the shutdown() or
 close() of the underlying system resource, leading to a reaction from whatever
@@ -70,6 +72,17 @@ description of channel sharing.
 .PP
 When the last interpreter sharing a channel is destroyed, the channel is
 switched to blocking mode and fully flushed and then closed.
+.PP
+Channels are automatically closed when an interpreter is destroyed and
+when the process exits.
+From 8.6 on (TIP#398), nonblocking channels are no longer switched to
+blocking mode when exiting; this guarantees a timely exit even when the
+peer or a communication channel is stalled. To ensure proper flushing of
+stalled nonblocking channels on exit, one must now either (a) actively
+switch them back to blocking or (b) use the environment variable
+\fBTCL_FLUSH_NONBLOCKING_ON_EXIT\fR, which when set and not equal to
+.QW \fB0\fR
+restores the previous behavior.
 .RE
 .TP
 \fBchan configure \fIchannelName\fR ?\fIoptionName\fR? ?\fIvalue\fR? ?\fIoptionName value\fR?...
@@ -144,19 +157,28 @@ interface with the operating system,
 .TP
 \fB\-eofchar\fR \fIchar\fR
 .TP
-\fB\-eofchar\fR \fB{\fIinChar outChar\fB}\fR
+\fB\-eofchar\fR \fB{\fIchar outChar\fB}\fR
 .
 \fIchar\fR signals the end of the data when it is encountered in the input.
-For output, the character is added when the channel is closed.  If \fIchar\fR
+For output, \fIoutChar\fR is added when the channel is closed.  If \fIchar\fR
 is the empty string, there is no special character that marks the end of the
 data.  For read-write channels, one end-of-file character for input and another
 for output may be given.  When only one end-of-file character is given it is
-applied to both input and output.  For a read-write channel two values are
-returned even if they are are identical.
+applied to input only.
 
 The default value is the empty string, except that under Windows the default
 value for reading is Control-z (\ex1A).  The acceptable range is \ex01 -
 \ex7f.  A value outside this range results in an error.
+.VS "TCL8.7 TIP656"
+.TP
+\fB\-profile\fR \fIprofile\fR
+.
+Specifies the encoding profile to be used on the channel. The encoding
+transforms in use for the channel's input and output will then be subject to the
+rules of that profile. Any failures will result in a channel error. See
+\fBPROFILES\fR in the \fBencoding(n)\fR documentation for details about encoding
+profiles.
+.VE "TCL8.7 TIP656"
 .TP
 \fB\-translation\fR \fItranslation\fR
 .TP
@@ -279,8 +301,8 @@ first words of a command that provides the interface for a \fBrefchan\fR.
 \fBImode\fR is a list of one or more of the strings
 .QW \fBread\fR
 or
-.QW \fBwrite\fR
-, indicating whether the channel is a read channel, a write channel, or both.
+.QW \fBwrite\fR ,
+indicating whether the channel is a read channel, a write channel, or both.
 It is an error if the handler does not support the chosen mode.
 .PP
 The handler is called as needed from the global namespace at the top level, and

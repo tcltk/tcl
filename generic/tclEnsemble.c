@@ -105,7 +105,7 @@ static const Tcl_ObjType ensembleCmdType = {
  */
 
 typedef struct {
-    int epoch;                  /* Used to confirm when the data in this
+    Tcl_Size epoch;               /* Used to confirm when the data in this
                                  * really structure matches up with the
                                  * ensemble. */
     Command *token;             /* Reference to the command for which this
@@ -188,7 +188,7 @@ TclNamespaceEnsembleCmd(
     switch ((enum EnsSubcmds) index) {
     case ENS_CREATE: {
 	const char *name;
-	int len;
+	Tcl_Size len;
 	int allocatedMapFlag = 0;
 	/*
 	 * Defaults
@@ -500,7 +500,7 @@ TclNamespaceEnsembleCmd(
 
 	    Tcl_SetObjResult(interp, resultObj);
 	} else {
-	    int len;
+	    Tcl_Size len;
 	    int allocatedMapFlag = 0;
 	    Tcl_Obj *subcmdObj = NULL, *mapObj = NULL, *paramObj = NULL,
 		    *unknownObj = NULL; /* Defaults, silence gcc 4 warnings */
@@ -562,8 +562,8 @@ TclNamespaceEnsembleCmd(
 			continue;
 		    }
 		    do {
-			if (TclListObjGetElementsM(interp, listObj, &len,
-				&listv) != TCL_OK) {
+			if (TclListObjLengthM(interp, listObj, &len
+				) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
 				Tcl_DecrRefCount(patchedDict);
@@ -576,6 +576,14 @@ TclNamespaceEnsembleCmd(
 				    "must be non-empty lists", -1));
 			    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE",
 				    "EMPTY_TARGET", NULL);
+			    Tcl_DictObjDone(&search);
+			    if (patchedDict) {
+				Tcl_DecrRefCount(patchedDict);
+			    }
+			    goto freeMapAndError;
+			}
+			if (TclListObjGetElementsM(interp, listObj, &len,
+				&listv) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
 				Tcl_DecrRefCount(patchedDict);
@@ -791,7 +799,7 @@ Tcl_SetEnsembleSubcommandList(
 	return TCL_ERROR;
     }
     if (subcmdList != NULL) {
-	int length;
+	Tcl_Size length;
 
 	if (TclListObjLengthM(interp, subcmdList, &length) != TCL_OK) {
 	    return TCL_ERROR;
@@ -858,7 +866,7 @@ Tcl_SetEnsembleParameterList(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
     Tcl_Obj *oldList;
-    int length;
+    Tcl_Size length;
 
     if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -943,7 +951,7 @@ Tcl_SetEnsembleMappingDict(
 	return TCL_ERROR;
     }
     if (mapDict != NULL) {
-	int size;
+	Tcl_Size size;
 	int done;
 	Tcl_DictSearch search;
 	Tcl_Obj *valuePtr;
@@ -1043,7 +1051,7 @@ Tcl_SetEnsembleUnknownHandler(
 	return TCL_ERROR;
     }
     if (unknownList != NULL) {
-	int length;
+	Tcl_Size length;
 
 	if (TclListObjLengthM(interp, unknownList, &length) != TCL_OK) {
 	    return TCL_ERROR;
@@ -1527,7 +1535,7 @@ TclMakeEnsemble(
     Tcl_DString buf, hiddenBuf;
     const char **nameParts = NULL;
     const char *cmdName = NULL;
-    int i, nameCount = 0;
+    Tcl_Size i, nameCount = 0;
     int ensembleFlags = 0, hiddenLen;
 
     /*
@@ -1629,7 +1637,7 @@ TclMakeEnsemble(
 		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
 		    if (Tcl_HideCommand(interp, "___tmp",
 			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
-			Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+			Tcl_Panic("%s", Tcl_GetStringResult(interp));
 		    }
 		} else {
 		    /*
@@ -1706,7 +1714,7 @@ NsEnsembleImplementationCmdNR(
     int reparseCount = 0;	/* Number of reparses. */
     Tcl_Obj *errorObj;		/* Used for building error messages. */
     Tcl_Obj *subObj;
-    int subIdx;
+    Tcl_Size subIdx;
 
     /*
      * Must recheck objc since numParameters might have changed. See test
@@ -1809,8 +1817,8 @@ NsEnsembleImplementationCmdNR(
 				 * it (a non-unique prefix produces an error).
 				 */
 	char *fullName = NULL;	/* Full name of the subcommand. */
-	int stringLength, i;
-	int tableLength = ensemblePtr->subcommandTable.numEntries;
+	Tcl_Size stringLength, i;
+	Tcl_Size tableLength = ensemblePtr->subcommandTable.numEntries;
 	Tcl_Obj *fix;
 
 	subcmdName = TclGetStringFromObj(subObj, &stringLength);
@@ -1880,14 +1888,14 @@ NsEnsembleImplementationCmdNR(
      *
      *   ((Q: That's not true if the -map option is used, is it?))
      *
-     * but don't do that because cacheing of the command object should help.
+     * but don't do that because caching of the command object should help.
      */
 
     {
 	Tcl_Obj *copyPtr;	/* The list of words to dispatch on.
 				 * Will be freed by the dispatch engine. */
 	Tcl_Obj **copyObjv;
-	int copyObjc, prefixObjc;
+	Tcl_Size copyObjc, prefixObjc;
 
 	TclListObjLengthM(NULL, prefixObj, &prefixObjc);
 
@@ -1970,7 +1978,7 @@ NsEnsembleImplementationCmdNR(
     if (ensemblePtr->subcommandTable.numEntries == 1) {
 	Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[0], -1);
     } else {
-	int i;
+	Tcl_Size i;
 
 	for (i=0 ; i<ensemblePtr->subcommandTable.numEntries-1 ; i++) {
 	    Tcl_AppendToObj(errorObj, ensemblePtr->subcommandArrayPtr[i], -1);
@@ -2015,8 +2023,8 @@ TclClearRootEnsemble(
 int
 TclInitRewriteEnsemble(
     Tcl_Interp *interp,
-    int numRemoved,
-    int numInserted,
+    Tcl_Size numRemoved,
+    Tcl_Size numInserted,
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
@@ -2028,7 +2036,7 @@ TclInitRewriteEnsemble(
 	iPtr->ensembleRewrite.numRemovedObjs = numRemoved;
 	iPtr->ensembleRewrite.numInsertedObjs = numInserted;
     } else {
-	int numIns = iPtr->ensembleRewrite.numInsertedObjs;
+	Tcl_Size numIns = iPtr->ensembleRewrite.numInsertedObjs;
 
 	if (numIns < numRemoved) {
 	    iPtr->ensembleRewrite.numRemovedObjs += numRemoved - numIns;
@@ -2107,16 +2115,16 @@ void
 TclSpellFix(
     Tcl_Interp *interp,
     Tcl_Obj *const *objv,
-    int objc,
-    int badIdx,
+    Tcl_Size objc,
+    Tcl_Size badIdx,
     Tcl_Obj *bad,
     Tcl_Obj *fix)
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *const *search;
     Tcl_Obj **store;
-    int idx;
-    int size;
+    Tcl_Size idx;
+    Tcl_Size size;
 
     if (iPtr->ensembleRewrite.sourceObjs == NULL) {
 	iPtr->ensembleRewrite.sourceObjs = objv;
@@ -2232,8 +2240,8 @@ Tcl_Obj *const *
 TclFetchEnsembleRoot(
     Tcl_Interp *interp,
     Tcl_Obj *const *objv,
-    int objc,
-    int *objcPtr)
+    Tcl_Size objc,
+    Tcl_Size *objcPtr)
 {
     Tcl_Obj *const *sourceObjs;
     Interp *iPtr = (Interp *) interp;
@@ -2283,8 +2291,9 @@ EnsembleUnknownCallback(
     Tcl_Obj *const objv[],
     Tcl_Obj **prefixObjPtr)
 {
-    int paramc, i, prefixObjc;
+    Tcl_Size paramc;
     int result;
+    Tcl_Size i, prefixObjc;
     Tcl_Obj **paramv, *unknownCmd, *ensObj;
 
     /*
@@ -2572,7 +2581,7 @@ BuildEnsembleConfig(
 {
     Tcl_HashSearch search;	/* Used for scanning the commands in
 				 * the namespace for this ensemble. */
-    int i, j;
+    Tcl_Size i, j;
     int isNew;
     Tcl_HashTable *hash = &ensemblePtr->subcommandTable;
     Tcl_HashEntry *hPtr;
@@ -2583,7 +2592,7 @@ BuildEnsembleConfig(
     Tcl_InitHashTable(hash, TCL_STRING_KEYS);
 
     if (subList) {
-        int subc;
+        Tcl_Size subc;
         Tcl_Obj **subv, *target, *cmdObj, *cmdPrefixObj;
         const char *name;
 
@@ -2730,7 +2739,7 @@ BuildEnsembleConfig(
     }
 
     /*
-     * Create a sorted array of all subcommands in the ensemble; hash tables
+     * Create a sorted array of all subcommands in the ensemble.  Hash tables
      * are all very well for a quick look for an exact match, but they can't
      * determine things like whether a string is a prefix of another, at least
      * not without a lot of preparation, and they're not useful for generating
@@ -2903,7 +2912,7 @@ TclCompileEnsemble(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -2915,7 +2924,7 @@ TclCompileEnsemble(
     Command *oldCmdPtr = cmdPtr, *newCmdPtr;
     int result, flags = 0, depth = 1, invokeAnyway = 0;
     int ourResult = TCL_ERROR;
-    int i, len;
+    Tcl_Size i, len;
     TCL_HASH_TYPE numBytes;
     const char *word;
 
@@ -2986,7 +2995,7 @@ TclCompileEnsemble(
 
     (void) Tcl_GetEnsembleSubcommandList(NULL, ensemble, &listObj);
     if (listObj != NULL) {
-	int sclen;
+	Tcl_Size sclen;
 	const char *str;
 	Tcl_Obj *matchObj = NULL;
 
@@ -3243,20 +3252,20 @@ int
 TclAttemptCompileProc(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    int depth,
+    Tcl_Size depth,
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;
     int result;
-    int i;
+    Tcl_Size i;
     Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
-    int savedStackDepth = envPtr->currStackDepth;
+    Tcl_Size savedStackDepth = envPtr->currStackDepth;
     TCL_HASH_TYPE savedCodeNext = envPtr->codeNext - envPtr->codeStart;
-    int savedAuxDataArrayNext = envPtr->auxDataArrayNext;
-    int savedExceptArrayNext = envPtr->exceptArrayNext;
+    Tcl_Size savedAuxDataArrayNext = envPtr->auxDataArrayNext;
+    Tcl_Size savedExceptArrayNext = envPtr->exceptArrayNext;
 #ifdef TCL_COMPILE_DEBUG
-    int savedExceptDepth = envPtr->exceptDepth;
+    Tcl_Size savedExceptDepth = envPtr->exceptDepth;
 #endif
 
     if (cmdPtr->compileProc == NULL) {
@@ -3386,7 +3395,7 @@ CompileToInvokedCommand(
     Tcl_Obj *objPtr, **words;
     const char *bytes;
     int cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
-    int i, numWords, length;
+    Tcl_Size i, numWords, length;
 
     /*
      * Push the words of the command. Take care; the command words may be
@@ -3460,7 +3469,7 @@ CompileBasicNArgCommand(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3480,7 +3489,7 @@ TclCompileBasic0ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3502,7 +3511,7 @@ TclCompileBasic1ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3524,7 +3533,7 @@ TclCompileBasic2ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3546,7 +3555,7 @@ TclCompileBasic3ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3568,7 +3577,7 @@ TclCompileBasic0Or1ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3590,7 +3599,7 @@ TclCompileBasic1Or2ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3612,7 +3621,7 @@ TclCompileBasic2Or3ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3634,7 +3643,7 @@ TclCompileBasic0To2ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3656,7 +3665,7 @@ TclCompileBasic1To3ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3678,7 +3687,7 @@ TclCompileBasicMin0ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3700,7 +3709,7 @@ TclCompileBasicMin1ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3722,7 +3731,7 @@ TclCompileBasicMin2ArgCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {

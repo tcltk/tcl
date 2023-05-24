@@ -19,7 +19,8 @@ if {"::tcltest" ni [namespace children]} {
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
-package require tcltests
+source [file join [file dirname [info script]] tcltests.tcl]
+
 
 # Helper commands to test various optimizations, code paths, and special cases.
 proc makeByteArray {s} {binary format a* $s}
@@ -133,7 +134,7 @@ test string-2.11.3.$noComp {string compare, unicode} {
     run {string compare ÜÜÜüü ÜÜÜÜÜ}
 } 1
 test string-2.12.$noComp {string compare, high bit} {
-    # This test will fail if the underlying comparison
+    # This test fails if the underlying comparison
     # is using signed chars instead of unsigned chars.
     # (like SunOS's default memcmp thus the compat/memcmp.c)
     run {string compare "\x80" "@"}
@@ -197,10 +198,10 @@ test string-2.26.$noComp {string compare -nocase, null strings} {
 test string-2.27.$noComp {string compare -nocase, null strings} {
     run {string compare -nocase foo ""}
 } 1
-test string-2.28.$noComp {string compare with length, unequal strings} {
+test string-2.28.$noComp {string compare with length, unequal strings, partial first string} {
     run {string compare -length 2 abc abde}
 } 0
-test string-2.29.$noComp {string compare with length, unequal strings} {
+test string-2.29.$noComp {string compare with length, unequal strings 2, full first string} {
     run {string compare -length 2 ab abde}
 } 0
 test string-2.30.$noComp {string compare with NUL character vs. other ASCII} {
@@ -288,7 +289,7 @@ test string-3.19.$noComp {string equal, unicode} {
     run {string equal ÜÜÜüü ÜÜÜÜÜ}
 } 0
 test string-3.20.$noComp {string equal, high bit} {
-    # This test will fail if the underlying comparison
+    # This test fails if the underlying comparison
     # is using signed chars instead of unsigned chars.
     # (like SunOS's default memcmp thus the compat/memcmp.c)
     run {string equal "\x80" "@"}

@@ -94,6 +94,15 @@ static TclOOStubs stubsCopy = {
 #ifdef Tcl_GetObjectClassName
     ,NULL
 #endif
+#ifdef Tcl_MethodIsType2
+    ,NULL
+#endif
+#ifdef Tcl_NewInstanceMethod2
+    ,NULL
+#endif
+#ifdef Tcl_NewMethod2
+    ,NULL
+#endif
 };
 
 DLLEXPORT int
@@ -116,18 +125,18 @@ Pkgooa_Init(
     }
     if (tclStubsPtr == NULL) {
 	Tcl_AppendResult(interp, "Tcl stubs are not initialized, "
-		"did you compile using -DUSE_TCL_STUBS? ");
+		"did you compile using -DUSE_TCL_STUBS? ", NULL);
 	return TCL_ERROR;
     }
     if (Tcl_OOInitStubs(interp) == NULL) {
 	return TCL_ERROR;
     }
     if (tclOOStubsPtr == NULL) {
-	Tcl_AppendResult(interp, "TclOO stubs are not initialized");
+	Tcl_AppendResult(interp, "TclOO stubs are not initialized", NULL);
 	return TCL_ERROR;
     }
     if (tclOOIntStubsPtr == NULL) {
-	Tcl_AppendResult(interp, "TclOO internal stubs are not initialized");
+	Tcl_AppendResult(interp, "TclOO internal stubs are not initialized", NULL);
 	return TCL_ERROR;
     }
 

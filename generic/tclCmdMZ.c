@@ -427,7 +427,7 @@ Tcl_RegexpObjCmd(
 	 * match. We always increment the offset by at least one to prevent
 	 * endless looping (as in the case: regexp -all {a*} a). Otherwise,
 	 * when we match the NULL string at the end of the input string, we
-	 * will loop indefinately (because the length of the match is 0, so
+	 * will loop indefinitely (because the length of the match is 0, so
 	 * offset never changes).
 	 */
 
@@ -1239,7 +1239,7 @@ Tcl_SplitObjCmd(
 
 	/*
 	 * Handle the special case of splitting on a single character. This is
-	 * only true for the one-char ASCII case, as one unicode char is > 1
+	 * only true for the one-char ASCII case, as one Unicode char is > 1
 	 * byte in length.
 	 */
 
@@ -1588,7 +1588,7 @@ StringIsCmd(
     /*
      * We get the objPtr so that we can short-cut for some classes by checking
      * the object type (int and double), but we need the string otherwise,
-     * because we don't want any conversion of type occuring (as, for example,
+     * because we don't want any conversion of type occurring (as, for example,
      * Tcl_Get*FromObj would do).
      */
 
@@ -2122,7 +2122,7 @@ StringMapCmd(
 	int *mapLens, *u2lc = NULL;
 
 	/*
-	 * Precompute pointers to the unicode string and length. This saves us
+	 * Precompute pointers to the Unicode string and length. This saves us
 	 * repeated function calls later, significantly speeding up the
 	 * algorithm. We only need the lowercase first char in the nocase
 	 * case.
@@ -2171,7 +2171,7 @@ StringMapCmd(
 		    ustring1 = p - 1;
 
 		    /*
-		     * Append the map value to the unicode string.
+		     * Append the map value to the Unicode string.
 		     */
 
 		    TclAppendUnicodeToObj(resultPtr,
@@ -2673,7 +2673,7 @@ StringEqualCmd(
      */
 
     objv += objc-2;
-    match = TclStringCmp(objv[0], objv[1], 0, nocase, reqlength);
+    match = TclStringCmp(objv[0], objv[1], 1, nocase, reqlength);
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
     return TCL_OK;
 }
@@ -3610,7 +3610,7 @@ TclNRSwitchObjCmd(
 	Tcl_Obj **listv;
 
 	blist = objv[0];
-	if (TclListObjGetElementsM(interp, objv[0], &objc, &listv) != TCL_OK) {
+	if (TclListObjLengthM(interp, objv[0], &objc) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -3621,6 +3621,9 @@ TclNRSwitchObjCmd(
 	if (objc < 1) {
 	    Tcl_WrongNumArgs(interp, 1, savedObjv,
 		    "?-option ...? string {?pattern body ...? ?default body?}");
+	    return TCL_ERROR;
+	}
+	if (TclListObjGetElementsM(interp, objv[0], &objc, &listv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	objv = listv;
@@ -3775,7 +3778,7 @@ TclNRSwitchObjCmd(
 		    TclNewIndexObj(rangeObjAry[0], info.matches[j].start);
 		    TclNewIndexObj(rangeObjAry[1], info.matches[j].end-1);
 		} else {
-		    TclNewIndexObj(rangeObjAry[1], TCL_INDEX_NONE);
+		    TclNewIntObj(rangeObjAry[1], -1);
 		    rangeObjAry[0] = rangeObjAry[1];
 		}
 
@@ -4099,9 +4102,9 @@ Tcl_TimeObjCmd(
 	 * Use int obj since we know time is not fractional. [Bug 1202178]
 	 */
 
-	objs[0] = Tcl_NewWideIntObj((count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
+	TclNewIntObj(objs[0], (count <= 0) ? 0 : (Tcl_WideInt)totalMicroSec);
     } else {
-	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
+	TclNewDoubleObj(objs[0], totalMicroSec/count);
     }
 
     /*
@@ -4586,7 +4589,7 @@ Tcl_TimeRateObjCmd(
 	    if (measureOverhead > ((double) usec) / count) {
 		measureOverhead = ((double) usec) / count;
 	    }
-	    objs[0] = Tcl_NewDoubleObj(measureOverhead);
+	    TclNewDoubleObj(objs[0], measureOverhead);
 	    TclNewLiteralStringObj(objs[1], "\xC2\xB5s/#-overhead"); /* mics */
 	    objs += 2;
 	}
@@ -4790,7 +4793,7 @@ TclNRTryObjCmd(
 	    if (TclListObjLengthM(NULL, objv[i+1], &dummy) != TCL_OK) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad prefix '%s': must be a list",
-			Tcl_GetString(objv[i+1])));
+			TclGetString(objv[i+1])));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "TRAP",
 			"EXNFORMAT", NULL);
@@ -5330,7 +5333,7 @@ TclListLines(
     Tcl_Obj *const *elems)      /* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
-    const char *listStr = Tcl_GetString(listObj);
+    const char *listStr = TclGetString(listObj);
     const char *listHead = listStr;
     int i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;

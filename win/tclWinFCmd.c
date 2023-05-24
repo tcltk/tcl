@@ -309,7 +309,7 @@ DoRenameFile(
 	if (srcAttr & FILE_ATTRIBUTE_DIRECTORY) {
 	    WCHAR *nativeSrcRest, *nativeDstRest;
 	    const char **srcArgv, **dstArgv;
-	    int size, srcArgc, dstArgc;
+	    Tcl_Size size, srcArgc, dstArgc;
 	    WCHAR nativeSrcPath[MAX_PATH];
 	    WCHAR nativeDstPath[MAX_PATH];
 	    Tcl_DString srcString, dstString;
@@ -317,7 +317,7 @@ DoRenameFile(
 
 	    size = GetFullPathNameW(nativeSrc, MAX_PATH,
 		    nativeSrcPath, &nativeSrcRest);
-	    if ((size == 0) || (size > MAX_PATH)) {
+	    if ((size <= 0) || (size > MAX_PATH)) {
 		return TCL_ERROR;
 	    }
 	    size = GetFullPathNameW(nativeDst, MAX_PATH,
@@ -879,7 +879,7 @@ DoCreateDirectory(
  *
  *	Recursively copies a directory. The target directory dst must not
  *	already exist. Note that this function does not merge two directory
- *	hierarchies, even if the target directory is an an empty directory.
+ *	hierarchies, even if the target directory is an empty directory.
  *
  * Results:
  *	If the directory was successfully copied, returns TCL_OK. Otherwise
@@ -915,8 +915,8 @@ TclpObjCopyDirectory(
 
     Tcl_DStringInit(&srcString);
     Tcl_DStringInit(&dstString);
-    Tcl_UtfToWCharDString(Tcl_GetString(normSrcPtr), -1, &srcString);
-    Tcl_UtfToWCharDString(Tcl_GetString(normDestPtr), -1, &dstString);
+    Tcl_UtfToWCharDString(TclGetString(normSrcPtr), TCL_INDEX_NONE, &srcString);
+    Tcl_UtfToWCharDString(TclGetString(normDestPtr), TCL_INDEX_NONE, &dstString);
 
     ret = TraverseWinTree(TraversalCopy, &srcString, &dstString, &ds);
 
@@ -989,7 +989,7 @@ TclpObjRemoveDirectory(
 	    return TCL_ERROR;
 	}
 	Tcl_DStringInit(&native);
-	Tcl_UtfToWCharDString(Tcl_GetString(normPtr), -1, &native);
+	Tcl_UtfToWCharDString(TclGetString(normPtr), TCL_INDEX_NONE, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
     } else {
@@ -1002,7 +1002,7 @@ TclpObjRemoveDirectory(
 		    !strcmp(Tcl_DStringValue(&ds), TclGetString(normPtr))) {
 		*errorPtr = pathPtr;
 	    } else {
-		*errorPtr = TclDStringToObj(&ds);
+		*errorPtr = Tcl_DStringToObj(&ds);
 	    }
 	    Tcl_IncrRefCount(*errorPtr);
 	}
@@ -1535,7 +1535,7 @@ GetWinFileAttributes(
 	 * We test for, and fix that case, here.
 	 */
 
-	int len;
+	Tcl_Size len;
 	const char *str = TclGetStringFromObj(fileName, &len);
 
 	if (len < 4) {
@@ -1595,7 +1595,7 @@ ConvertFileNameFormat(
     int longShort,		/* 0 to short name, 1 to long name. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
-    int pathc, i;
+    Tcl_Size pathc, i, length;
     Tcl_Obj *splitPath;
 
     splitPath = Tcl_FSSplitPath(fileName, &pathc);
@@ -1621,7 +1621,6 @@ ConvertFileNameFormat(
     for (i = 0; i < pathc; i++) {
 	Tcl_Obj *elt;
 	char *pathv;
-	int length;
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
@@ -1725,14 +1724,14 @@ ConvertFileNameFormat(
 			Tcl_DStringLength(&dsTemp));
 		Tcl_DStringFree(&dsTemp);
 	    } else {
-		tempPath = TclDStringToObj(&dsTemp);
+		tempPath = Tcl_DStringToObj(&dsTemp);
 	    }
 	    Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
 	    FindClose(handle);
 	}
     }
 
-    *attributePtrPtr = Tcl_FSJoinPath(splitPath, -1);
+    *attributePtrPtr = Tcl_FSJoinPath(splitPath, TCL_INDEX_NONE);
 
     if (splitPath != NULL) {
 	/*
@@ -2008,9 +2007,9 @@ TclpCreateTemporaryDirectory(
 	    goto useSystemTemp;
 	}
 	Tcl_DStringInit(&base);
-	Tcl_UtfToWCharDString(Tcl_GetString(dirObj), -1, &base);
+	Tcl_UtfToWCharDString(Tcl_GetString(dirObj), TCL_INDEX_NONE, &base);
 	if (dirObj->bytes[dirObj->length - 1] != '\\') {
-	    Tcl_UtfToWCharDString("\\", -1, &base);
+	    Tcl_UtfToWCharDString("\\", TCL_INDEX_NONE, &base);
 	}
     } else {
     useSystemTemp:
@@ -2026,11 +2025,11 @@ TclpCreateTemporaryDirectory(
 #define SUFFIX_LENGTH	8
 
     if (basenameObj) {
-	Tcl_UtfToWCharDString(Tcl_GetString(basenameObj), -1, &base);
+	Tcl_UtfToWCharDString(Tcl_GetString(basenameObj), TCL_INDEX_NONE, &base);
     } else {
-	Tcl_UtfToWCharDString(DEFAULT_TEMP_DIR_PREFIX, -1, &base);
+	Tcl_UtfToWCharDString(DEFAULT_TEMP_DIR_PREFIX, TCL_INDEX_NONE, &base);
     }
-    Tcl_UtfToWCharDString("_", -1, &base);
+    Tcl_UtfToWCharDString("_", TCL_INDEX_NONE, &base);
 
     /*
      * Now we keep on trying random suffixes until we get one that works
@@ -2057,7 +2056,7 @@ TclpCreateTemporaryDirectory(
 	    tempbuf[i] = randChars[(int) (rand() % numRandChars)];
 	}
 	Tcl_DStringSetLength(&base, baseLen);
-	Tcl_UtfToWCharDString(tempbuf, -1, &base);
+	Tcl_UtfToWCharDString(tempbuf, TCL_INDEX_NONE, &base);
     } while (!CreateDirectoryW((LPCWSTR) Tcl_DStringValue(&base), NULL)
 	    && (error = GetLastError()) == ERROR_ALREADY_EXISTS);
 
@@ -2080,7 +2079,7 @@ TclpCreateTemporaryDirectory(
     Tcl_DStringInit(&name);
     Tcl_WCharToUtfDString((LPCWSTR) Tcl_DStringValue(&base), TCL_INDEX_NONE, &name);
     Tcl_DStringFree(&base);
-    return TclDStringToObj(&name);
+    return Tcl_DStringToObj(&name);
 }
 
 /*

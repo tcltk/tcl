@@ -103,7 +103,7 @@ system, as returned by \fBencoding system\fR.
 .TP
 \fB\-eofchar\fR \fIchar\fR
 .TP
-\fB\-eofchar\fR \fB{\fIinChar outChar\fB}\fR
+\fB\-eofchar\fR \fB{\fIchar outChar\fB}\fR
 .
 This option supports DOS file systems that use Control-z (\ex1A) as an
 end of file marker.  If \fIchar\fR is not an empty string, then this
@@ -113,8 +113,8 @@ If \fIchar\fR is the empty string, then there is no special end of file
 character marker.  For read-write channels, a two-element list specifies
 the end of file marker for input and output, respectively.  As a
 convenience, when setting the end-of-file character for a read-write
-channel you can specify a single value that will apply to both reading
-and writing.  When querying the end-of-file character of a read-write
+channel you can specify a single value that will apply to reading
+only.  When querying the end-of-file character of a read-write
 channel, a two-element list will always be returned.  The default value
 for \fB\-eofchar\fR is the empty string in all cases except for files
 under Windows.  In that case the \fB\-eofchar\fR is Control-z (\ex1A) for
@@ -122,6 +122,16 @@ reading and the empty string for writing.
 The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7F;
 attempting to set \fB\-eofchar\fR to a value outside of this range will
 generate an error.
+.VS "TCL8.7 TIP656"
+.TP
+\fB\-profile\fR \fIprofile\fR
+.
+Specifies the encoding profile to be used on the channel. The encoding
+transforms in use for the channel's input and output will then be subject to the
+rules of that profile. Any failures will result in a channel error. See
+\fBPROFILES\fR in the \fBencoding(n)\fR documentation for details about encoding
+profiles.
+.VE "TCL8.7 TIP656"
 .TP
 \fB\-translation\fR \fImode\fR
 .TP
@@ -278,11 +288,11 @@ set data [read $f $numDataBytes]
 close $f
 .CE
 .SH "SEE ALSO"
-close(n), flush(n), gets(n), open(n), puts(n), read(n), socket(n),
+close(n), encoding(n), flush(n), gets(n), open(n), puts(n), read(n), socket(n),
 Tcl_StandardChannels(3)
 .SH KEYWORDS
 blocking, buffering, carriage return, end of line, flushing, linemode,
-newline, nonblocking, platform, translation, encoding, filter, byte array,
+newline, nonblocking, platform, profile, translation, encoding, filter, byte array,
 binary
 '\" Local Variables:
 '\" mode: nroff

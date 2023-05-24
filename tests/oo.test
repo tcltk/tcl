@@ -376,7 +376,7 @@ test oo-1.21 {basic test of OO functionality: default relations} -setup {
     }] {lsort [lsearch -all -not -inline $x *::delegate]}
 } -cleanup {
     interp delete $fresh
-} -result {{} {::oo::Slot ::oo::abstract ::oo::class ::oo::object ::oo::singleton} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {::oo::abstract ::oo::singleton} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
+} -result {{} {::oo::Slot ::oo::abstract ::oo::class ::oo::configurable ::oo::configuresupport::configurable ::oo::object ::oo::singleton} {::oo::configuresupport::objreadableproperties ::oo::configuresupport::objwritableproperties ::oo::configuresupport::readableproperties ::oo::configuresupport::writableproperties ::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class ::oo::configuresupport::configurable} {::oo::abstract ::oo::configurable ::oo::singleton} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -2458,7 +2458,7 @@ test oo-16.2 {OO: object introspection} -body {
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
     info object gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, class, creationid, definition, filters, forward, isa, methods, methodtype, mixins, namespace, variables, or vars}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, class, creationid, definition, filters, forward, isa, methods, methodtype, mixins, namespace, properties, variables, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
     [meta create instance1] create instance2
@@ -2677,7 +2677,7 @@ test oo-17.3 {OO: class introspection} -setup {
 } -result {"foo" is not a class}
 test oo-17.4 {OO: class introspection} -body {
     info class gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, constructor, definition, definitionnamespace, destructor, filters, forward, instances, methods, methodtype, mixins, subclasses, superclasses, or variables}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, constructor, definition, definitionnamespace, destructor, filters, forward, instances, methods, methodtype, mixins, properties, subclasses, superclasses, or variables}
 test oo-17.5 {OO: class introspection} -setup {
     oo::class create testClass
 } -body {
@@ -4197,7 +4197,7 @@ test oo-33.4 {TIP 380: slots - errors} -setup [SampleSlotSetup {
 } -returnCodes error -cleanup [SampleSlotCleanup {
     rename $s {}
 }] -result \
-    {unknown method "-grill": must be -append, -clear, -prepend, -remove, -set, contents or ops}
+    {unknown method "-grill": must be -append, -appendifnew, -clear, -prepend, -remove, -set, contents or ops}
 
 test oo-34.1 {TIP 380: slots - presence} -setup {
     set obj [oo::object new]
@@ -4220,32 +4220,32 @@ test oo-34.1 {TIP 380: slots - presence} -setup {
 } -result {::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot ::oo::Slot}
 test oo-34.2 {TIP 380: slots - presence} {
     lsort [info class instances oo::Slot]
-} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable}
+} {::oo::configuresupport::objreadableproperties ::oo::configuresupport::objwritableproperties ::oo::configuresupport::readableproperties ::oo::configuresupport::writableproperties ::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable}
 proc getMethods obj {
     list [lsort [info object methods $obj -all]] \
 	[lsort [info object methods $obj -private]]
 }
 test oo-34.3 {TIP 380: slots - presence} {
     getMethods oo::define::filter
-} {{-append -clear -prepend -remove -set} {Get Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {Get Set}}
 test oo-34.4 {TIP 380: slots - presence} {
     getMethods oo::define::mixin
-} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.5 {TIP 380: slots - presence} {
     getMethods oo::define::superclass
-} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.6 {TIP 380: slots - presence} {
     getMethods oo::define::variable
-} {{-append -clear -prepend -remove -set} {Get Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {Get Set}}
 test oo-34.7 {TIP 380: slots - presence} {
     getMethods oo::objdefine::filter
-} {{-append -clear -prepend -remove -set} {Get Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {Get Set}}
 test oo-34.8 {TIP 380: slots - presence} {
     getMethods oo::objdefine::mixin
-} {{-append -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {--default-operation Get Resolve Set}}
 test oo-34.9 {TIP 380: slots - presence} {
     getMethods oo::objdefine::variable
-} {{-append -clear -prepend -remove -set} {Get Set}}
+} {{-append -appendifnew -clear -prepend -remove -set} {Get Set}}
 test oo-34.10 {TIP 516: slots - resolution} -setup {
     oo::class create parent
     set result {}

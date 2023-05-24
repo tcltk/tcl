@@ -257,7 +257,7 @@ proc genStubs::rewriteFile {file text} {
 	return
     }
     set in [open ${file} r]
-    fconfigure $in -eofchar "\032 {}" -encoding utf-8
+    fconfigure $in -eofchar "\x1A {}" -encoding utf-8
     set out [open ${file}.new w]
     fconfigure $out -translation lf -encoding utf-8
 

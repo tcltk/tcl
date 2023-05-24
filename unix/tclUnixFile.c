@@ -39,8 +39,7 @@ void
 TclpFindExecutable(
     TCL_UNUSED(const char *) /*argv0*/)
 {
-    Tcl_Encoding encoding;
-    int length;
+    size_t length;
     wchar_t buf[PATH_MAX] = L"";
     char name[PATH_MAX * 3 + 1];
 
@@ -51,9 +50,8 @@ TclpFindExecutable(
 	/* Strip '.exe' part. */
 	length -= 4;
     }
-    encoding = Tcl_GetEncoding(NULL, NULL);
     TclSetObjNameOfExecutable(
-	    Tcl_NewStringObj(name, length), encoding);
+	    Tcl_NewStringObj(name, length), NULL);
 }
 #else
 void
@@ -703,7 +701,7 @@ TclpObjLstat(
  *	is either the given clientData, if the working directory hasn't
  *	changed, or a new clientData (owned by our caller), giving the new
  *	native path, or NULL if the current directory could not be determined.
- *	If NULL is returned, the caller can examine the standard posix error
+ *	If NULL is returned, the caller can examine the standard Posix error
  *	codes to determine the cause of the problem.
  *
  * Side effects:
@@ -997,7 +995,7 @@ TclpObjLink(
 	}
 
 	Tcl_ExternalToUtfDString(NULL, link, length, &ds);
-	linkPtr = TclDStringToObj(&ds);
+	linkPtr = Tcl_DStringToObj(&ds);
 	Tcl_IncrRefCount(linkPtr);
 	return linkPtr;
     }
@@ -1062,7 +1060,7 @@ TclpNativeToNormalized(
     Tcl_DString ds;
 
     Tcl_ExternalToUtfDString(NULL, (const char *) clientData, TCL_INDEX_NONE, &ds);
-    return TclDStringToObj(&ds);
+    return Tcl_DStringToObj(&ds);
 }
 
 /*

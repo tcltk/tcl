@@ -223,7 +223,6 @@
 		F96437C90EF0D4B2003F468E /* tclZlib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclZlib.c; sourceTree = "<group>"; };
 		F96437E60EF0D652003F468E /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = /usr/lib/libz.dylib; sourceTree = "<absolute>"; };
 		F966C07408F2820D005CB29B /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = /System/Library/Frameworks/CoreFoundation.framework; sourceTree = "<absolute>"; };
-		F96D3DFA08F272A4004A47F5 /* ChangeLog */ = {isa = PBXFileReference; explicitFileType = text; fileEncoding = 4; path = ChangeLog; sourceTree = "<group>"; };
 		F96D3DFB08F272A4004A47F5 /* changes */ = {isa = PBXFileReference; explicitFileType = text; fileEncoding = 4; path = changes; sourceTree = "<group>"; };
 		F96D3DFD08F272A4004A47F5 /* Access.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = Access.3; sourceTree = "<group>"; };
 		F96D3DFE08F272A4004A47F5 /* AddErrInfo.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = AddErrInfo.3; sourceTree = "<group>"; };
@@ -376,7 +375,7 @@
 		F96D3E9108F272A6004A47F5 /* rename.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = rename.n; sourceTree = "<group>"; };
 		F96D3E9208F272A6004A47F5 /* return.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = return.n; sourceTree = "<group>"; };
 		F96D3E9308F272A6004A47F5 /* safe.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = safe.n; sourceTree = "<group>"; };
-		F96D3E9408F272A6004A47F5 /* SaveResult.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = SaveResult.3; sourceTree = "<group>"; };
+		F96D3E9408F272A6004A47F5 /* SaveInterpState.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = SaveInterpState.3; sourceTree = "<group>"; };
 		F96D3E9508F272A6004A47F5 /* scan.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = scan.n; sourceTree = "<group>"; };
 		F96D3E9608F272A6004A47F5 /* seek.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = seek.n; sourceTree = "<group>"; };
 		F96D3E9708F272A6004A47F5 /* set.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = set.n; sourceTree = "<group>"; };
@@ -950,7 +949,6 @@
 				F96D3DFC08F272A4004A47F5 /* doc */,
 				F96D43D008F272B8004A47F5 /* tools */,
 				F9183E690EFC81560030B814 /* pkgs */,
-				F96D3DFA08F272A4004A47F5 /* ChangeLog */,
 				F96D3DFB08F272A4004A47F5 /* changes */,
 				F96D434308F272B5004A47F5 /* README */,
 				F96D432B08F272B4004A47F5 /* license.terms */,
@@ -1123,7 +1121,7 @@
 				F96D3E9108F272A6004A47F5 /* rename.n */,
 				F96D3E9208F272A6004A47F5 /* return.n */,
 				F96D3E9308F272A6004A47F5 /* safe.n */,
-				F96D3E9408F272A6004A47F5 /* SaveResult.3 */,
+				F96D3E9408F272A6004A47F5 /* SaveInterpState.3 */,
 				F96D3E9508F272A6004A47F5 /* scan.n */,
 				F96D3E9608F272A6004A47F5 /* seek.n */,
 				F93599D80DF1F98300E04F67 /* self.n */,
@@ -2132,7 +2130,7 @@
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CFLAGS = "-arch x86_64 -arch arm64e $(CFLAGS)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PREBINDING = NO;
 			};
@@ -2517,7 +2515,7 @@
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CFLAGS = "-arch x86_64 -arch arm64e $(CFLAGS)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				GCC_VERSION = 4.0;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PREBINDING = NO;
@@ -2555,7 +2553,7 @@
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CFLAGS = "-arch x86_64 -arch arm64e $(CFLAGS)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC = "llvm-gcc";
 				GCC_OPTIMIZATION_LEVEL = 4;
@@ -2695,7 +2693,7 @@
 				ARCHS = (
 					"$(NATIVE_ARCH_64_BIT)",
 				);
-				CFLAGS = "-arch x86_64 -arch arm64e $(CFLAGS)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC = clang;
 				GCC_OPTIMIZATION_LEVEL = 4;
@@ -2762,7 +2760,7 @@
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CFLAGS = "-arch x86_64 -arch arm64e $(CFLAGS)";
+				CFLAGS = "-arch x86_64 -arch arm64 $(CFLAGS)";
 				CPPFLAGS = "-isysroot $(SDKROOT) $(CPPFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				PREBINDING = NO;

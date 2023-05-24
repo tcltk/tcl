@@ -1,7 +1,7 @@
 /*
  * tclUnixFCmd.c
  *
- *	This file implements the unix specific portion of file manipulation
+ *	This file implements the Unix specific portion of file manipulation
  *	subcommands of the "file" command. All filename arguments should
  *	already be translated to native format.
  *
@@ -340,7 +340,7 @@ DoRenameFile(
     }
 
     /*
-     * IRIX returns EIO when you attept to move a directory into itself. We
+     * IRIX returns EIO when you attempt to move a directory into itself. We
      * just map EIO to EINVAL get the right message on SGI. Most platforms
      * don't return EIO except in really strange cases.
      */
@@ -730,7 +730,7 @@ DoCreateDirectory(
  *
  *	Recursively copies a directory. The target directory dst must not
  *	already exist. Note that this function does not merge two directory
- *	hierarchies, even if the target directory is an an empty directory.
+ *	hierarchies, even if the target directory is an empty directory.
  *
  * Results:
  *	If the directory was successfully copied, returns TCL_OK. Otherwise
@@ -1422,7 +1422,7 @@ GetOwnerAttribute(
 	Tcl_DString ds;
 
 	(void) Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, TCL_INDEX_NONE, &ds);
-	*attributePtrPtr = TclDStringToObj(&ds);
+	*attributePtrPtr = Tcl_DStringToObj(&ds);
     }
     return TCL_OK;
 }
@@ -2339,7 +2339,7 @@ TclpCreateTemporaryDirectory(
     Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&templ),
 	    Tcl_DStringLength(&templ), &tmp);
     Tcl_DStringFree(&templ);
-    return TclDStringToObj(&tmp);
+    return Tcl_DStringToObj(&tmp);
 }
 
 #if defined(__CYGWIN__)

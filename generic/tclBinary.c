@@ -2,7 +2,7 @@
  * tclBinary.c --
  *
  *	This file contains the implementation of the "binary" Tcl built-in
- *	command and the Tcl value internal representation for binary data.
+ *	command and the Tcl binary data object.
  *
  * Copyright © 1997 Sun Microsystems, Inc.
  * Copyright © 1998-1999 Scriptics Corporation.
@@ -26,7 +26,7 @@
 #define BINARY_NOCOUNT -2	/* No count was specified in format. */
 
 /*
- * The following flags may be ORed together and returned by GetFormatSpec
+ * The following flags may be OR'ed together and returned by GetFormatSpec
  */
 
 #define BINARY_SIGNED 0		/* Field to be read as signed data */
@@ -37,7 +37,7 @@
  * placed in the object cache by 'binary scan' before it bails out and
  * switches back to Plan A (creating a new object for each value.)
  * Theoretically, it would be possible to keep the cache about for the values
- * that are already in it, but that makes the code slower in practise when
+ * that are already in it, but that makes the code slower in practice when
  * overflow happens, and makes little odds the rest of the time (as measured
  * on my machine.) It is also slower (on the sample I tried at least) to grow
  * the cache to hold all items we might want to put in it; presumably the
@@ -64,7 +64,7 @@ static int		FormatNumber(Tcl_Interp *interp, int type,
 static void		FreeByteArrayInternalRep(Tcl_Obj *objPtr);
 static void		FreeProperByteArrayInternalRep(Tcl_Obj *objPtr);
 static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
-			    int *countPtr, int *flagsPtr);
+			    Tcl_Size *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
 			    int flags, Tcl_HashTable **numberCachePtr);
 static int		SetByteArrayFromAny(Tcl_Interp *interp,
@@ -143,7 +143,7 @@ static const EnsembleImplMap decodeMap[] = {
 };
 
 /*
- * The following object types represent an array of bytes. The intent is to
+ * The following Tcl_ObjType represents an array of bytes. The intent is to
  * allow arbitrary binary data to pass through Tcl as a Tcl value without loss
  * or damage. Such values are useful for things like encoded strings or Tk
  * images to name just two.
@@ -457,7 +457,7 @@ unsigned char *
 Tcl_GetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
-    size_t *numBytesPtr)	/* If non-NULL, write the number of bytes
+    void *numBytesPtr)	/* If non-NULL, write the number of bytes
 				 * in the array here */
 {
     ByteArray *baPtr;
@@ -487,7 +487,7 @@ Tcl_GetBytesFromObj(
     baPtr = GET_BYTEARRAY(irPtr);
 
     if (numBytesPtr != NULL) {
-	*numBytesPtr = baPtr->used;
+	*(ptrdiff_t *)numBytesPtr = baPtr->used;
     }
     return baPtr->bytes;
 }
@@ -539,7 +539,7 @@ Tcl_GetByteArrayFromObj(
 unsigned char *
 TclGetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    size_t *numBytesPtr)	/* If non-NULL, write the number of bytes
+    void *numBytesPtr)	/* If non-NULL, write the number of bytes
 				 * in the array here */
 {
     ByteArray *baPtr;
@@ -556,8 +556,8 @@ TclGetByteArrayFromObj(
     baPtr = GET_BYTEARRAY(irPtr);
 
     if (numBytesPtr != NULL) {
-	/* Make sure we return a value between 0 and UINT_MAX-1, or (size_t)-1 */
-	*numBytesPtr = ((size_t)(unsigned int)(baPtr->used + 1)) - 1;
+	/* Make sure we return a value between 0 and UINT_MAX-1, or (ptrdiff_t)-1 */
+	*(ptrdiff_t *)numBytesPtr = ((ptrdiff_t)(unsigned int)(baPtr->used + 1)) - 1;
     }
     return baPtr->bytes;
 }
@@ -1125,11 +1125,10 @@ BinaryFormatCmd(
 		 * The macro evals its args more than once: avoid arg++
 		 */
 
-		if (TclListObjGetElementsM(interp, objv[arg], &listc,
-			&listv) != TCL_OK) {
+		if (TclListObjLengthM(interp, objv[arg], &listc
+			) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		arg++;
 
 		if (count == BINARY_ALL) {
 		    count = listc;
@@ -1139,6 +1138,11 @@ BinaryFormatCmd(
 			    -1));
 		    return TCL_ERROR;
 		}
+		if (TclListObjGetElementsM(interp, objv[arg], &listc,
+			&listv) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		arg++;
 	    }
 	    offset += count*size;
 	    break;
@@ -1190,7 +1194,7 @@ BinaryFormatCmd(
     }
 
     /*
-     * Prepare the result object by preallocating the caclulated number of
+     * Prepare the result object by preallocating the calculated number of
      * bytes and filling with nulls.
      */
 
@@ -1946,7 +1950,7 @@ GetFormatSpec(
  *
  *	This routine determines, if bytes of a number need to be re-ordered,
  *	and returns a numeric code indicating the re-ordering to be done.
- *	This depends on the endiannes of the machine and the desired format.
+ *	This depends on the endianness of the machine and the desired format.
  *	It is in effect a table (whose contents depend on the endianness of
  *	the system) describing whether a value needs reversing or not. Anyone
  *	porting the code to a big-endian platform should take care to make
@@ -2194,7 +2198,11 @@ FormatNumber(
 	 */
 
 	if (fabs(dvalue) > (double) FLT_MAX) {
+	    if (fabs(dvalue) > (FLT_MAX + pow(2, (FLT_MAX_EXP - FLT_MANT_DIG - 1)))) {
+		fvalue = (dvalue >= 0.0) ? INFINITY : -INFINITY;	// c99
+	    } else {
 	    fvalue = (dvalue >= 0.0) ? FLT_MAX : -FLT_MAX;
+	    }
 	} else {
 	    fvalue = (float) dvalue;
 	}

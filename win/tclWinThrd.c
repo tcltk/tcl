@@ -204,7 +204,7 @@ TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread. */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread. */
     ClientData clientData,	/* The one argument to Main(). */
-    int stackSize,		/* Size of stack for the new thread. */
+	TCL_HASH_TYPE stackSize,	/* Size of stack for the new thread. */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
@@ -223,11 +223,11 @@ TclpThreadCreate(
 		 */
 
 #if defined(_MSC_VER) || defined(__MSVCRT__)
-    tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize,
+    tHandle = (HANDLE) _beginthreadex(NULL, (unsigned)stackSize,
 	    (Tcl_ThreadCreateProc*) TclWinThreadStart, winThreadPtr,
 	    0, (unsigned *)idPtr);
 #else
-    tHandle = CreateThread(NULL, (DWORD) stackSize,
+    tHandle = CreateThread(NULL, (DWORD)stackSize,
 	    TclWinThreadStart, winThreadPtr, 0, (LPDWORD)idPtr);
 #endif
 
@@ -725,7 +725,7 @@ Tcl_ConditionWait(
     if (timePtr == NULL) {
 	wtime = INFINITE;
     } else {
-	wtime = timePtr->sec * 1000 + timePtr->usec / 1000;
+	wtime = (DWORD)timePtr->sec * 1000 + (DWORD)timePtr->usec / 1000;
     }
 
     /*
@@ -777,9 +777,9 @@ Tcl_ConditionWait(
 	    timeout = 0;
 	} else {
 	    /*
-	     * When dequeuing, we can leave the tsdPtr->nextPtr and
+	     * When dequeueing, we can leave the tsdPtr->nextPtr and
 	     * tsdPtr->prevPtr with dangling pointers because they are
-	     * reinitialilzed w/out reading them when the thread is enqueued
+	     * reinitialized w/out reading them when the thread is enqueued
 	     * later.
 	     */
 

@@ -85,7 +85,7 @@ typedef struct SerialInfo {
     int readable;		/* Flag that the channel is readable. */
     int writable;		/* Flag that the channel is writable. */
     int blockTime;		/* Maximum blocktime in msec. */
-    unsigned int lastEventTime;	/* Time in milliseconds since last readable
+    unsigned long long lastEventTime;	/* Time in milliseconds since last readable
 				 * event. */
 				/* Next readable event only after blockTime */
     DWORD error;		/* pending error code returned by
@@ -335,7 +335,7 @@ ProcExitHandler(
  *
  * SerialBlockTime --
  *
- *	Wrapper to set Tcl's block time in msec
+ *	Wrapper to set Tcl's block time in msec.
  *
  * Results:
  *	None.
@@ -373,14 +373,14 @@ SerialBlockTime(
  *----------------------------------------------------------------------
  */
 
-static unsigned int
+static unsigned long long
 SerialGetMilliseconds(void)
 {
     Tcl_Time time;
 
     Tcl_GetTime(&time);
 
-    return (time.sec * 1000 + time.usec / 1000);
+    return ((unsigned long long)time.sec * 1000 + (unsigned long)time.usec / 1000);
 }
 
 /*
@@ -469,7 +469,7 @@ SerialCheckProc(
     int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     COMSTAT cStat;
-    unsigned int time;
+    unsigned long long time;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -519,8 +519,8 @@ SerialCheckProc(
 			    (infoPtr->error & SERIAL_READ_ERRORS)) {
 			infoPtr->readable = 1;
 			time = SerialGetMilliseconds();
-			if ((unsigned int) (time - infoPtr->lastEventTime)
-				>= (unsigned int) infoPtr->blockTime) {
+			if ((time - infoPtr->lastEventTime)
+				>= (unsigned long long) infoPtr->blockTime) {
 			    needEvent = 1;
 			    infoPtr->lastEventTime = time;
 			}
@@ -904,7 +904,7 @@ SerialInputProc(
 	    }
 	} else {
 	    /*
-	     * BLOCKING mode: Tcl trys to read a full buffer of 4 kBytes here.
+	     * BLOCKING mode: Tcl tries to read a full buffer of 4 kBytes here.
 	     */
 
 	    if (cStat.cbInQue > 0) {
@@ -918,7 +918,7 @@ SerialInputProc(
     }
 
     if (bufSize == 0) {
-	return bytesRead = 0;
+	return 0;
     }
 
     /*
@@ -973,9 +973,9 @@ SerialOutputProc(
     *errorCode = 0;
 
     /*
-     * At EXIT Tcl trys to flush all open channels in blocking mode. We avoid
+     * At EXIT Tcl tries to flush all open channels in blocking mode. We avoid
      * blocking output after ExitProc or CloseHandler(chan) has been called by
-     * checking the corrresponding variables.
+     * checking the corresponding variables.
      */
 
     if (!initialized || TclInExit()) {
@@ -1458,7 +1458,7 @@ TclWinOpenSerialChannel(
     infoPtr = (SerialInfo *)ckalloc(sizeof(SerialInfo));
     memset(infoPtr, 0, sizeof(SerialInfo));
 
-    infoPtr->validMask = permissions;
+    infoPtr->validMask = permissions & (TCL_READABLE|TCL_WRITABLE);
     infoPtr->handle = handle;
     infoPtr->channel = (Tcl_Channel) NULL;
     infoPtr->readable = 0;
@@ -1476,7 +1476,7 @@ TclWinOpenSerialChannel(
      * are shared between multiple channels (stdin/stdout).
      */
 
-    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
+    snprintf(channelName, 16 + TCL_INTEGER_SPACE, "file%" TCL_Z_MODIFIER "x", (size_t) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    infoPtr, permissions);
@@ -1514,7 +1514,7 @@ TclWinOpenSerialChannel(
      */
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
+    Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\x1A {}");
 
     return infoPtr->channel;
 }
@@ -1564,7 +1564,7 @@ SerialErrorStr(
     if (error & ~((DWORD) (SERIAL_READ_ERRORS | SERIAL_WRITE_ERRORS))) {
 	char buf[TCL_INTEGER_SPACE + 1];
 
-	wsprintfA(buf, "%d", error);
+	snprintf(buf, sizeof(buf), "%ld", error);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 }
@@ -1630,7 +1630,7 @@ SerialSetOptionProc(
     size_t len, vlen;
     Tcl_DString ds;
     const WCHAR *native;
-    int argc;
+    Tcl_Size argc;
     const char **argv;
 
     infoPtr = (SerialInfo *) instanceData;
@@ -1826,7 +1826,8 @@ SerialSetOptionProc(
      */
 
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
-	int i, res = TCL_OK;
+	Tcl_Size i;
+	int res = TCL_OK;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
@@ -2110,7 +2111,7 @@ SerialGetOptionProc(
 	stop = (dcb.StopBits == ONESTOPBIT) ? "1" :
 		(dcb.StopBits == ONE5STOPBITS) ? "1.5" : "2";
 
-	wsprintfA(buf, "%d,%c,%d,%s", dcb.BaudRate, parity,
+	snprintf(buf, sizeof(buf), "%ld,%c,%d,%s", dcb.BaudRate, parity,
 		dcb.ByteSize, stop);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
@@ -2126,7 +2127,7 @@ SerialGetOptionProc(
 	char buf[TCL_INTEGER_SPACE + 1];
 
 	valid = 1;
-	wsprintfA(buf, "%d", infoPtr->blockTime);
+	snprintf(buf, sizeof(buf), "%d", infoPtr->blockTime);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
@@ -2142,9 +2143,9 @@ SerialGetOptionProc(
 	char buf[TCL_INTEGER_SPACE + 1];
 	valid = 1;
 
-	wsprintfA(buf, "%d", infoPtr->sysBufRead);
+	snprintf(buf, sizeof(buf), "%ld", infoPtr->sysBufRead);
 	Tcl_DStringAppendElement(dsPtr, buf);
-	wsprintfA(buf, "%d", infoPtr->sysBufWrite);
+	snprintf(buf, sizeof(buf), "%ld", infoPtr->sysBufWrite);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
     if (len == 0) {
@@ -2225,9 +2226,9 @@ SerialGetOptionProc(
 	count = (int) cStat.cbOutQue + infoPtr->writeQueue;
 	LeaveCriticalSection(&infoPtr->csWrite);
 
-	wsprintfA(buf, "%d", inBuffered + cStat.cbInQue);
+	snprintf(buf, sizeof(buf), "%ld", inBuffered + cStat.cbInQue);
 	Tcl_DStringAppendElement(dsPtr, buf);
-	wsprintfA(buf, "%d", outBuffered + count);
+	snprintf(buf, sizeof(buf), "%d", outBuffered + count);
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
@@ -2287,7 +2288,7 @@ SerialThreadActionProc(
     /*
      * We do not access firstSerialPtr in the thread structures. This is not
      * for all serials managed by the thread, but only those we are watching.
-     * Removal of the filevent handlers before transfer thus takes care of
+     * Removal of the fileevent handlers before transfer thus takes care of
      * this structure.
      */
 

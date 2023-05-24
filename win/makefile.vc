@@ -112,7 +112,7 @@
 #		Hooks to allow the intermediate and output directories to be
 #		changed.  $(OUT_DIR) is assumed to be
 #		$(BINROOT)\(Release|Debug) based on if symbols are requested.
-#		$(TMP_DIR) will de $(OUT_DIR)\<buildtype> by default.
+#		$(TMP_DIR) will be $(OUT_DIR)\<buildtype> by default.
 #
 #	TESTPAT=<file>
 #		Reads the tests requested to be run from this file.
@@ -379,6 +379,8 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_mul_d.obj \
 	$(TMP_DIR)\bn_mp_neg.obj \
 	$(TMP_DIR)\bn_mp_or.obj \
+	$(TMP_DIR)\bn_mp_pack.obj \
+	$(TMP_DIR)\bn_mp_pack_count.obj \
 	$(TMP_DIR)\bn_mp_radix_size.obj \
 	$(TMP_DIR)\bn_mp_radix_smap.obj \
 	$(TMP_DIR)\bn_mp_read_radix.obj \
@@ -498,8 +500,8 @@ test: test-core test-pkgs
 test-core: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.4 [list load "$(TCLDDELIB:\=/)"]
-		package ifneeded registry 1.3.6 [list load "$(TCLREGLIB:\=/)"]
+		package ifneeded dde 1.4.5 [list load "$(TCLDDELIB:\=/)"]
+		package ifneeded registry 1.3.7 [list load "$(TCLREGLIB:\=/)"]
 <<
 
 runtest: setup $(TCLTEST) dlls
@@ -674,7 +676,7 @@ CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
 htmlhelp: chmsetup $(CHMFILE)
 
 $(CHMFILE): $(DOCDIR)\*
-	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
+	@$(TCLSH) -encoding utf-8 $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
 	@echo Compiling HTML help project
 	-"$(HHC)" <<$(HHPFILE) >NUL
 [OPTIONS]

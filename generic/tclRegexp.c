@@ -729,7 +729,7 @@ TclRegError(
     p = (n > sizeof(buf)) ? "..." : "";
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s%s%s", msg, buf, p));
 
-    sprintf(cbuf, "%d", status);
+    snprintf(cbuf, sizeof(cbuf), "%d", status);
     (void) TclReError(REG_ITOA, cbuf, sizeof(cbuf));
     Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
 }
@@ -959,7 +959,7 @@ CompileRegexp(
 
     if (TclReToGlob(NULL, string, length, &stringBuf, &exact,
 	    NULL) == TCL_OK) {
-	regexpPtr->globObjPtr = TclDStringToObj(&stringBuf);
+	regexpPtr->globObjPtr = Tcl_DStringToObj(&stringBuf);
 	Tcl_IncrRefCount(regexpPtr->globObjPtr);
     } else {
 	regexpPtr->globObjPtr = NULL;
