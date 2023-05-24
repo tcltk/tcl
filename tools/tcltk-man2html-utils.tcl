@@ -1271,7 +1271,7 @@ proc output-directive {line} {
 ##
 proc merge-copyrights {l1 l2} {
     set merge {}
-    set re1 {^Copyright +(?:\(c\)|\\\(©|co|&copy;) +(\w.*?)(?:all rights reserved)?(?:\. )*$}
+    set re1 {^Copyright +(?:\(c\)|\\\(co|©|&copy;) +(\w.*?)(?:all rights reserved)?(?:\. )*$}
     set re2 {^(\d+) +(?:by +)?(\w.*)$}         ;# date who
     set re3 {^(\d+)-(\d+) +(?:by +)?(\w.*)$}   ;# from to who
     set re4 {^(\d+), *(\d+) +(?:by +)?(\w.*)$} ;# date1 date2 who
