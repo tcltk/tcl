@@ -124,6 +124,9 @@ static int		FileCloseProc(void *instanceData,
 			    Tcl_Interp *interp, int flags);
 static int		FileGetHandleProc(void *instanceData,
 			    int direction, void **handlePtr);
+static int		FileGetOptionProc(void *instanceData,
+			    Tcl_Interp *interp, const char *optionName,
+			    Tcl_DString *dsPtr);
 static int		FileInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		FileOutputProc(void *instanceData,
@@ -172,7 +175,7 @@ static const Tcl_ChannelType fileChannelType = {
 	NULL,
 #endif
     NULL,			/* Set option proc. */
-    NULL,			/* Get option proc. */
+    FileGetOptionProc,		/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
     FileCloseProc,		/* close2proc. */
@@ -601,6 +604,176 @@ FileGetHandleProc(
 	return TCL_OK;
     }
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileGetOptionProc --
+ *
+ *	Gets an option associated with an open file. If the optionName arg is
+ *	non-NULL, retrieves the value of that option. If the optionName arg is
+ *	NULL, retrieves a list of alternating option names and values for the
+ *	given channel.
+ *
+ * Results:
+ *	A standard Tcl result. Also sets the supplied DString to the string
+ *	value of the option(s) returned.  Sets error message if needed
+ *	(by calling Tcl_BadChannelOption).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline void
+StoreElementInDict(
+    Tcl_Obj *dictObj,
+    const char *name,
+    Tcl_Obj *valueObj)
+{
+    /*
+     * We assume that the dict is being built fresh and that there's never any
+     * duplicate keys.
+     */
+
+    Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
+    Tcl_DictObjPut(NULL, dictObj, nameObj, valueObj);
+}
+
+static inline const char *
+GetTypeFromMode(
+    int mode)
+{
+    /*
+     * TODO: deduplicate with tclCmdAH.c
+     */
+
+    if (S_ISREG(mode)) {
+	return "file";
+    } else if (S_ISDIR(mode)) {
+	return "directory";
+    } else if (S_ISCHR(mode)) {
+	return "characterSpecial";
+    } else if (S_ISBLK(mode)) {
+	return "blockSpecial";
+    } else if (S_ISFIFO(mode)) {
+	return "fifo";
+#ifdef S_ISLNK
+    } else if (S_ISLNK(mode)) {
+	return "link";
+#endif
+#ifdef S_ISSOCK
+    } else if (S_ISSOCK(mode)) {
+	return "socket";
+#endif
+    }
+    return "unknown";
+}
+
+static Tcl_Obj *
+StatOpenFile(
+    FileState *fsPtr)
+{
+    Tcl_StatBuf statBuf;	/* Not allocated on heap; we're definitely
+				 * API-synchronized with how Tcl is built! */
+    Tcl_Obj *dictObj;
+    unsigned short mode;
+
+    if (TclOSfstat(fsPtr->fd, &statBuf) < 0) {
+	return NULL;
+    }
+
+    /*
+     * TODO: merge with TIP 594 implementation (it's silly to have a
+     * duplicate!)
+     */
+
+    dictObj = Tcl_NewObj();
+#define STORE_ELEM(name, value) StoreElementInDict(dictObj, name, value)
+
+    STORE_ELEM("dev",     Tcl_NewWideIntObj((long) statBuf.st_dev));
+    STORE_ELEM("ino",     Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_ino));
+    STORE_ELEM("nlink",   Tcl_NewWideIntObj((long) statBuf.st_nlink));
+    STORE_ELEM("uid",     Tcl_NewWideIntObj((long) statBuf.st_uid));
+    STORE_ELEM("gid",     Tcl_NewWideIntObj((long) statBuf.st_gid));
+    STORE_ELEM("size",    Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_size));
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
+    STORE_ELEM("blocks",  Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_blocks));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    STORE_ELEM("blksize", Tcl_NewWideIntObj((long) statBuf.st_blksize));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_RDEV
+    if (S_ISCHR(statBuf.st_mode) || S_ISBLK(statBuf.st_mode)) {
+	STORE_ELEM("rdev", Tcl_NewWideIntObj((long) statBuf.st_rdev));
+    }
+#endif
+    STORE_ELEM("atime",   Tcl_NewWideIntObj(
+	    Tcl_GetAccessTimeFromStat(&statBuf)));
+    STORE_ELEM("mtime",   Tcl_NewWideIntObj(
+	    Tcl_GetModificationTimeFromStat(&statBuf)));
+    STORE_ELEM("ctime",   Tcl_NewWideIntObj(
+	    Tcl_GetChangeTimeFromStat(&statBuf)));
+    mode = (unsigned short) statBuf.st_mode;
+    STORE_ELEM("mode",    Tcl_NewWideIntObj(mode));
+    STORE_ELEM("type",    Tcl_NewStringObj(GetTypeFromMode(mode), -1));
+#undef STORE_ELEM
+
+    return dictObj;
+}
+
+static int
+FileGetOptionProc(
+    void *instanceData,
+    Tcl_Interp *interp,
+    const char *optionName,
+    Tcl_DString *dsPtr)
+{
+    FileState *fsPtr = (FileState *)instanceData;
+    int valid = 0;		/* Flag if valid option parsed. */
+    int len;
+
+    if (optionName == NULL) {
+	len = 0;
+	valid = 1;
+    } else {
+	len = strlen(optionName);
+    }
+
+    /*
+     * Get option -stat
+     * Option is readonly and returned by [fconfigure chan -stat] but not
+     * returned by [fconfigure chan] without explicit option name.
+     */
+
+    if ((len > 1) && (strncmp(optionName, "-stat", len) == 0)) {
+	Tcl_Obj *dictObj = StatOpenFile(fsPtr);
+	const char *dictContents;
+	int dictLength;
+
+	if (dictObj == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't read file channel status: %s",
+		    Tcl_PosixError(interp)));
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Transfer dictionary to the DString. Note that we don't do this as
+	 * an element as this is an option that can't be retrieved with a
+	 * general probe.
+	 */
+
+	dictContents = Tcl_GetStringFromObj(dictObj, &dictLength);
+	Tcl_DStringAppend(dsPtr, dictContents, dictLength);
+	Tcl_DecrRefCount(dictObj);
+	return TCL_OK;
+    }
+
+    if (valid) {
+	return TCL_OK;
+    }
+    return Tcl_BadChannelOption(interp, optionName,
+		"stat");
 }
 
 #ifdef SUPPORTS_TTY

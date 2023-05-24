@@ -2528,8 +2528,14 @@ StoreStatData(
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     STORE_ARY("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
 #endif
+#ifdef HAVE_STRUCT_STAT_ST_RDEV
+    if (S_ISCHR(statPtr->st_mode) || S_ISBLK(statPtr->st_mode)) {
+	STORE_ARY("rdev", Tcl_NewWideIntObj((long) statPtr->st_rdev));
+    }
+#endif
     STORE_ARY("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
-    STORE_ARY("mtime",	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
+    STORE_ARY("mtime",	Tcl_NewWideIntObj(
+	    Tcl_GetModificationTimeFromStat(statPtr)));
     STORE_ARY("ctime",	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
     mode = (unsigned short) statPtr->st_mode;
     STORE_ARY("mode",	Tcl_NewWideIntObj(mode));
