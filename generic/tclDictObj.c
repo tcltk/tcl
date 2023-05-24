@@ -1071,7 +1071,7 @@ Tcl_DictObjRemove(
  *----------------------------------------------------------------------
  */
 
-Tcl_Size 
+Tcl_Size
 TclDictGetSize(Tcl_Obj *dictPtr)
 {
     Dict *dict;

@@ -11,85 +11,109 @@
 .SH NAME
 lseq \- Build a numeric sequence returned as a list
 .SH SYNOPSIS
-\fBlseq \fIStart \fR?(\fB..\fR|\fBto\fR)? \fIEnd\fR ??\fBby\fR? \fIStep\fR?
+\fBlseq \fIstart \fR?(\fB..\fR|\fBto\fR)? \fIend\fR ??\fBby\fR? \fIstep\fR?
 
-\fBlseq \fIStart \fBcount\fR \fICount\fR ??\fBby\fR? \fIStep\fR?
+\fBlseq \fIstart \fBcount\fR \fIcount\fR ??\fBby\fR? \fIstep\fR?
 
-\fBlseq \fICount\fR ?\fBby \fIStep\fR?
+\fBlseq \fIcount\fR ?\fBby \fIstep\fR?
 .BE
 .SH DESCRIPTION
 .PP
 The \fBlseq\fR command creates a sequence of numeric values using the given
-parameters \fIStart\fR, \fIEnd\fR, and \fIStep\fR. The \fIoperation\fR
-argument ".." or "to" defines the range. The "count" option is used
-to define a count of the number of elements in the list. A short form use of
-the command, with a
-single count value, will create a range from 0 to count-1.
+parameters \fIstart\fR, \fIend\fR, and \fIstep\fR. The \fIoperation\fR
+argument "\fB..\fR" or "\fBto\fR" defines the range. The "\fBcount\fR" option
+is used to define a count of the number of elements in the list. A short form
+use of the command, with a single count value, will create a range from 0 to
+count-1.
 
-The \fBlseq\fR command can produce both increasing and decreasing sequences. When
-both Start and End are provided without a Step value, then if Start <= End,
-the sequence will be increasing and if Start > End it will be decreasing. If a
-Step vale is included, it's sign should agree with the direction of the
+The \fBlseq\fR command can produce both increasing and decreasing
+sequences. When both \fIstart\fR and \fIend\fR are provided without a
+\fIstep\fR value, then if \fIstart\fR <= \fIend\fR, the sequence will be
+increasing and if \fIstart\fR > \fIend\fR it will be decreasing. If a
+\fIstep\fR vale is included, it's sign should agree with the direction of the
 sequence (descending -> negative and ascending -> positive), otherwise an
 empty list is returned.  For example:
 
 .CS \"
-    % lseq 1 to 5    ;# increasing
-    1 2 3 4 5
+% \fBlseq\fR 1 to 5    ;# increasing
+\fI\(-> 1 2 3 4 5
 
-    % lseq 5 to 1    ;# decreasing
-    5 4 3 2 1
+% \fBlseq\fR 5 to 1    ;# decreasing
+\fI\(-> 5 4 3 2 1
 
-    % lseq 6 to 1 by 2   ;# decreasing, step wrong sign, empty list
+% \fBlseq\fR 6 to 1 by 2   ;# decreasing, step wrong sign, empty list
 
-    % lseq 1 to 5 by 0   ;# all step sizes of 0 produce an empty list
-
+% \fBlseq\fR 1 to 5 by 0   ;# all step sizes of 0 produce an empty list
 .\"
 .CE
 
-The numeric arguments, \fIStart\fR, \fIEnd\fR, \fIStep\fR, and \fICount\fR,
-may also be a valid expression. The expression will be evaluate and the
-numeric result be used.  An expression that does not evaluate to a number will
-produce an invalid argument error.
+The numeric arguments, \fIstart\fR, \fIend\fR, \fIstep\fR, and \fIcount\fR,
+may also be a valid expression. The expression will be evaluated and the
+numeric result will be used.  An expression that does not evaluate to a number
+will produce an invalid argument error.
+.PP
+\fIStart\fR defines the initial value and \fIend\fR defines the limit, not
+necessarily the last value. \fBlseq\fR produces a list with \fIcount\fR
+elements, and if \fIcount\fR is not supplied, it is computed as
+
+.CS \"
+    \fIcount\fR = int( (\fIend\fR - \fIstart\fR + \fIstep\fR) / \fIstep\fR )
+.\"
+.CE
+
+.PP
+The numeric arguments, \fIstart\fR, \fIend\fR, \fIstep\fR, and \fIcount\fR,
+can also be a valid expression. the \fBlseq\fR command will evaluate the
+expression (as if with \fBexpr\fR)
+and use the numeric result, or return an error as with any invalid argument
+value; a non-numeric expression result will result in an error.
 
 .SH EXAMPLES
 .CS
 .\"
+\fBlseq\fR 3
+\fI\(-> 0 1 2\fR
 
- lseq 3
- \(-> 0 1 2
+\fBlseq\fR 3 0
+\fI\(-> 3 2 1 0\fR
 
- lseq 3 0
- \(-> 3 2 1 0
+\fBlseq\fR 10 .. 1 by -2
+\fI\(-> 10 8 6 4 2\fR
 
- lseq 10 .. 1 by -2
- \(-> 10 8 6 4 2
+set l [\fBlseq\fR 0 -5]
+\fI\(-> 0 -1 -2 -3 -4 -5\fR
 
- set l [lseq 0 -5]
- \(-> 0 -1 -2 -3 -4 -5
-
- foreach i [lseq [llength $l]] {
-   puts l($i)=[lindex $l $i]
- }
- \(-> l(0)=0
-    l(1)=-1
-    l(2)=-2
-    l(3)=-3
-    l(4)=-4
-    l(5)=-5
-
- foreach i [lseq [llength $l]-1 0] {
+foreach i [\fBlseq\fR [llength $l]] {
     puts l($i)=[lindex $l $i]
- }
- \(-> l(5)=-5
-    l(4)=-4
-    l(3)=-3
-    l(2)=-2
-    l(1)=-1
-    l(0)=0
+}
+\fI\(-> l(0)=0\fR
+\fI\(-> l(1)=-1\fR
+\fI\(-> l(2)=-2\fR
+\fI\(-> l(3)=-3\fR
+\fI\(-> l(4)=-4\fR
+\fI\(-> l(5)=-5\fR
 
- set sqrs [lmap i [lseq 1 10] {expr $i*$i}]
- \(-> 1 4 9 16 25 36 49 64 81 100
+foreach i [\fBlseq\fR {[llength $l]-1} 0] {
+    puts l($i)=[lindex $l $i]
+}
+\fI\(-> l(5)=-5\fR
+\fI\(-> l(4)=-4\fR
+\fI\(-> l(3)=-3\fR
+\fI\(-> l(2)=-2\fR
+\fI\(-> l(1)=-1\fR
+\fI\(-> l(0)=0\fR
+
+set i 17
+         \fI\(-> 17\fR
+if {$i in [\fBlseq\fR 0 50]} { # equivalent to: (0 <= $i && $i <= 50)
+    puts "Ok"
+} else {
+    puts "outside :("
+}
+\fI\(-> Ok\fR
+
+set sqrs [lmap i [\fBlseq\fR 1 10] { expr {$i*$i} }]
+\fI\(-> 1 4 9 16 25 36 49 64 81 100\fR
 .\"
 .CE
 .SH "SEE ALSO"

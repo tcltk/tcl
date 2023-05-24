@@ -105,12 +105,6 @@
 #endif
 
 /*
- * Maximum *signed* value that can be stored in a Tcl_Size type. This is
- * primarily used for checking overflows in dynamically allocating memory.
- */
-#define TCL_SIZE_SMAX ((((Tcl_Size) 1) << ((8*(Tcl_Size)sizeof(Tcl_Size)) - 1)) - 1)
-
-/*
  * Macros used to cast between pointers and integers (e.g. when storing an int
  * in ClientData), on 64-bit architectures they avoid gcc warning about "cast
  * to/from pointer from/to integer of different size".
@@ -3423,7 +3417,7 @@ MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 			    const char **errorMsgPtr);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, void *clientData,
-			    size_t stackSize, int flags);
+			    TCL_HASH_TYPE stackSize, int flags);
 MODULE_SCOPE Tcl_Size	TclpFindVariable(const char *name, Tcl_Size *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    TCL_HASH_TYPE *lengthPtr, Tcl_Encoding *encodingPtr);
@@ -3492,7 +3486,7 @@ MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, Tcl_Size objc, Tcl_Size subIdx,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
-			    Tcl_Size numBytes);
+			    TCL_HASH_TYPE numBytes);
 typedef int (*memCmpFn_t)(const void*, const void*, size_t);
 MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
 			    int checkEq, int nocase, Tcl_Size reqlength);

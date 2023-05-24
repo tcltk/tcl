@@ -12,11 +12,12 @@
 .SH NAME
 close \- Close an open channel
 .SH SYNOPSIS
-\fBclose \fIchannelId\fR ?r(ead)|w(rite)?
+\fBclose \fIchannelId\fR ?\fBr\fR(\fBead\fR)|\fBw\fR(\fBrite\fR)?
 .BE
 .SH DESCRIPTION
 .PP
-Closes or half-closes the channel given by \fIchannelId\fR.
+Closes or half-closes the channel given by \fIchannelId\fR. \fBchan close\fR
+is another name for this command.
 .PP
 \fIChannelId\fR must be an identifier for an open channel such as a
 Tcl standard channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR),
@@ -49,12 +50,20 @@ When the last interpreter in which the channel is registered invokes
 .PP
 Channels are automatically closed when an interpreter is destroyed and
 when the process exits.
-From 8.6 on (TIP#398), nonblocking channels are no longer switched to blocking mode when exiting; this guarantees a timely exit even when the peer or a communication channel is stalled. To ensure proper flushing of stalled nonblocking channels on exit, one must now either (a) actively switch them back to blocking or (b) use the environment variable TCL_FLUSH_NONBLOCKING_ON_EXIT,  which when set and not equal to "0" restores the previous behavior.
+From 8.6 on (TIP#398), nonblocking channels are no longer switched to
+blocking mode when exiting; this guarantees a timely exit even when the
+peer or a communication channel is stalled. To ensure proper flushing of
+stalled nonblocking channels on exit, one must now either (a) actively
+switch them back to blocking or (b) use the environment variable
+\fBTCL_FLUSH_NONBLOCKING_ON_EXIT\fR, which when set and not equal to
+.QW \fB0\fR
+restores the previous behavior.
 .PP
 The command returns an empty string, and may generate an error if
 an error occurs while flushing output.  If a command in a command
-pipeline created with \fBopen\fR returns an error, \fBclose\fR
-generates an error (similar to the \fBexec\fR command.)
+pipeline created with \fBopen\fR returns an error (either by returning a
+non-zero exit code or writing to its standard error file descriptor),
+\fBclose\fR generates an error (similar to the \fBexec\fR command.)
 .PP
 The two-argument form is a
 .QW "half-close" :
@@ -95,7 +104,7 @@ proc withOpenFile {filename channelVar script} {
 }
 .CE
 .SH "SEE ALSO"
-file(n), open(n), socket(n), eof(n), Tcl_StandardChannels(3)
+chan(n), file(n), open(n), socket(n), eof(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 blocking, channel, close, nonblocking, half-close
 '\" Local Variables:
