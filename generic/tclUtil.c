@@ -1035,10 +1035,10 @@ TclScanElement(
 				 * needs protection or escape. */
     int requireEscape = 0;	/* Force use of CONVERT_ESCAPE mode.  For some
 				 * reason bare or brace-quoted form fails. */
-    int extra = 0;		/* Count of number of extra bytes needed for
+    Tcl_Size extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    TCL_HASH_TYPE bytesNeeded;		/* Buffer length computed to complete the
+    Tcl_Size bytesNeeded;		/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
