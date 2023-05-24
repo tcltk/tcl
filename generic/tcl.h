@@ -679,19 +679,19 @@ typedef struct Tcl_ObjType {
 } Tcl_ObjType;
 
 #define TCL_OBJTYPE_V0 0, /* Pre-Tcl 9 */ \
-    NULL,		    \
-    NULL,		    \
-    NULL,		    \
-    NULL,		    \
-    NULL,		    \
-    NULL,		    \
-    NULL,		    \
-    NULL,		    \
+    NULL,				  \
+    NULL,				  \
+    NULL,				  \
+    NULL,				  \
+    NULL,				  \
+    NULL,				  \
+    NULL,				  \
+    NULL,				  \
     NULL
-#define TCL_OBJTYPE_CURRENT sizeof(Tcl_ObjType)
-#define TCL_OBJTYPE_V1(a,b,c,d,e,f,g,h,i)          \
-	TCL_OBJTYPE_CURRENT, \
-            a,b,c,d,e,f,g,h,i /* Tcl 9 - AbstractLists */
+#define TCL_OBJTYPE_CURRENT 1
+#define TCL_OBJTYPE_V1(a,b,c,d,e,f,g,h,i)		\
+    TCL_OBJTYPE_CURRENT,				\
+	a,b,c,d,e,f,g,h,i /* Tcl 9 - AbstractLists */
 
 /*
  * The following structure stores an internal representation (internalrep) for

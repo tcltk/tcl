@@ -1092,18 +1092,10 @@ typedef struct ActiveInterpTrace {
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
 
-typedef struct {  /* For internal core use only */
-    Tcl_ObjType objType;
-    struct {
-	Tcl_Size (*lengthProc)(Tcl_Obj *obj);
-    } abstractList;
-} TclObjTypeWithAbstractList;
-#define TCL_OBJTYPE_V0_1(lengthProc) (sizeof(TclObjTypeWithAbstractList)) \
-	}, {lengthProc /* For internal core use only */
-#define ABSTRACTLIST_PROC(objPtr, proc) (((objPtr)->typePtr \
-	&& ((offsetof(Tcl_ObjType, proc) < offsetof(Tcl_ObjType, version)) \
-	|| ((objPtr)->typePtr->version > offsetof(Tcl_ObjType, proc)))) ? \
-	((objPtr)->typePtr)->proc : NULL)
+#define ABSTRACTLIST_PROC(objPtr, proc)			      \
+    (((objPtr)->typePtr					      \
+      && (objPtr)->typePtr->version == TCL_OBJTYPE_CURRENT) ? \
+     ((objPtr)->typePtr)->proc : NULL)
 
 MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
 
@@ -2947,7 +2939,7 @@ static inline Tcl_Size TclUpsizeRetry(Tcl_Size needed, Tcl_Size lastAttempt) {
 MODULE_SCOPE void *TclAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
 			Tcl_Size leadSize, Tcl_Size *capacityPtr);
 MODULE_SCOPE void *TclReallocElemsEx(void *oldPtr, Tcl_Size elemCount,
-			Tcl_Size elemSize, Tcl_Size leadSize, 
+			Tcl_Size elemSize, Tcl_Size leadSize,
 			Tcl_Size *capacityPtr);
 MODULE_SCOPE void *TclAttemptReallocElemsEx(void *oldPtr,
 			Tcl_Size elemCount, Tcl_Size elemSize,
