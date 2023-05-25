@@ -913,8 +913,21 @@ TclArithSeriesGetElements(
 }
 
 /*
- *  Handle ArithSeries special case - don't shimmer a series into a list
- *  just to reverse it.
+ *----------------------------------------------------------------------
+ *
+ * TclArithSeriesObjReverse --
+ *
+ *	Reverse the order of the ArithSeries value. The arithSeriesObj is
+ *	assumed to be a valid ArithSeries. The new Obj has the Start and End
+ *	values appropriately swapped and the Step value sign is changed.
+ *
+ * Results:
+ *      The result will be an ArithSeries in the reverse order.
+ *
+ * Side effects:
+ *      The ogiginal obj will be modified and returned if it is not Shared.
+ *
+ *----------------------------------------------------------------------
  */
 int
 TclArithSeriesObjReverse(
@@ -960,10 +973,6 @@ TclArithSeriesObjReverse(
 	step = -step;
 	TclSetIntObj(stepObj, step);
     }
-
-    Tcl_IncrRefCount(startObj);
-    Tcl_IncrRefCount(endObj);
-    Tcl_IncrRefCount(stepObj);
 
     if (Tcl_IsShared(arithSeriesObj) ||
 	    ((arithSeriesObj->refCount > 1))) {

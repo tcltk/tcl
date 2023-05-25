@@ -119,8 +119,10 @@ TclObjTest_Init(
     Tcl_CreateObjCommand(interp, "testobj", TestobjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringobj", TeststringobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testbigdata", TestbigdataCmd,
-	    NULL, NULL);
+    if (sizeof(Tcl_Size) == sizeof(Tcl_WideInt)) {
+	Tcl_CreateObjCommand(interp, "testbigdata", TestbigdataCmd,
+		NULL, NULL);
+    }
     return TCL_OK;
 }
 

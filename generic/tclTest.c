@@ -5765,6 +5765,9 @@ TestbytestringObjCmd(
 #if !defined(TCL_NO_DEPRECATED)
 #   if defined(_MSC_VER) && !defined(NDEBUG)
 #	pragma warning(disable:4133)
+#   elif defined(__clang__)
+#	pragma clang diagnostic push
+#	pragma clang diagnostic ignored "-Wincompatible-pointer-types"
 #   endif
 	int n; /* On purpose, not Tcl_Size, in order to demonstrate what happens */
 #else
@@ -5783,6 +5786,10 @@ TestbytestringObjCmd(
     if (p == NULL) {
 	return TCL_ERROR;
     }
+#if !defined(TCL_NO_DEPRECATED) && defined(__clang__)
+#   pragma clang diagnostic pop
+#endif
+
     if (x.m != 1) {
 	Tcl_AppendResult(interp, "Tcl_GetBytesFromObj() overwrites variable", NULL);
 	return TCL_ERROR;
