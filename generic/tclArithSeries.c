@@ -288,17 +288,18 @@ DupArithSeriesInternalRep(
 static void
 FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesObjPtr)  /* Free any allocated memory */
 {
-    ArithSeries *arithSeriesObj = (ArithSeries*)Tcl_ObjGetConcreteRep(arithSeriesObjPtr);
-    if (arithSeriesObj) {
-	if (arithSeriesObj->elements) {
-	    Tcl_WideInt i, len = arithSeriesObj->len;
+    ArithSeries *arithSeriesRepPtr = (ArithSeries*)arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
+
+    if (arithSeriesRepPtr) {
+	if (arithSeriesRepPtr->elements) {
+	    Tcl_WideInt i, len = arithSeriesRepPtr->len;
 	    for (i=0; i<len; i++) {
-		Tcl_DecrRefCount(arithSeriesObj->elements[i]);
+		Tcl_DecrRefCount(arithSeriesRepPtr->elements[i]);
 	    }
-	    Tcl_Free((char*)arithSeriesObj->elements);
-	    arithSeriesObj->elements = NULL;
+	    Tcl_Free((char*)arithSeriesRepPtr->elements);
+	    arithSeriesRepPtr->elements = NULL;
 	}
-	Tcl_Free((char*)arithSeriesObj);
+	Tcl_Free((char*)arithSeriesRepPtr);
     }
 }
 
@@ -1044,7 +1045,7 @@ TclArithSeriesObjReverse(
 static void
 UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr)
 {
-    ArithSeries *arithSeriesRepPtr = (ArithSeries*)Tcl_ObjGetConcreteRep(arithSeriesObjPtr);
+    ArithSeries *arithSeriesRepPtr = (ArithSeries*)arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
     char *p;
     Tcl_Obj *eleObj;
     Tcl_Size i, bytlen = 0;

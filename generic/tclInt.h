@@ -1120,16 +1120,6 @@ MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
 
 
 /*
- * Return the internal rep for the Obj.
- * Note: Caller is responsible for confirming and casting returned value.
- */
-static inline void* Tcl_ObjGetConcreteRep(
-    Tcl_Obj *objPtr)         /* Object of type AbstractList */
-{
-    return objPtr->internalRep.twoPtrValue.ptr1;
-}
-
-/*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function
  * to call when the interpreter is deleted, and a pointer to a user-defined
