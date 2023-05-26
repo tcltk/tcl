@@ -1086,10 +1086,11 @@ typedef struct ActiveInterpTrace {
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
 
-#define ABSTRACTLIST_PROC(objPtr, proc)			      \
+#define TclObjTypeHasProc(objPtr, proc)			      \
     (((objPtr)->typePtr					      \
       && (objPtr)->typePtr->version == TCL_OBJTYPE_CURRENT) ? \
      ((objPtr)->typePtr)->proc : NULL)
+
 
 MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
 

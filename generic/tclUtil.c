@@ -129,16 +129,7 @@ static const Tcl_ObjType endOffsetType = {
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
     NULL,				/* setFromAnyProc */
-    TCL_OBJTYPE_V1(
-    TclLengthOne,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL)
+    TCL_OBJTYPE_V1(TclLengthOne)
 };
 
 Tcl_Size
@@ -1983,7 +1974,7 @@ Tcl_ConcatObj(
 
 	objPtr = objv[i];
 	if (TclListObjIsCanonical(objPtr) ||
-            ABSTRACTLIST_PROC(objPtr,indexProc)) {
+            TclObjTypeHasProc(objPtr,indexProc)) {
 	    continue;
 	}
 	(void)Tcl_GetStringFromObj(objPtr, &length);
@@ -1996,7 +1987,7 @@ Tcl_ConcatObj(
 	for (i = 0;  i < objc;  i++) {
 	    objPtr = objv[i];
 	    if (!TclListObjIsCanonical(objPtr) &&
-		!ABSTRACTLIST_PROC(objPtr,indexProc)) {
+		!TclObjTypeHasProc(objPtr,indexProc)) {
 		continue;
 	    }
 	    if (resPtr) {

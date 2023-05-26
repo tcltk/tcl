@@ -64,9 +64,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
-	TCL_OBJTYPE_V1(
+	TCL_OBJTYPE_V2(
 	    my_LStringObjLength,   /* Length */
-	    NULL,                  /* RESERVED */
 	    my_LStringObjIndex,    /* Index */
 	    my_LStringObjRange,    /* Slice */
 	    my_LStringObjReverse,  /* Reverse */
@@ -81,9 +80,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
-	TCL_OBJTYPE_V1(
+	TCL_OBJTYPE_V2(
 	    NULL,   /* Length */
-	    NULL,                  /* RESERVED */
 	    my_LStringObjIndex,    /* Index */
 	    my_LStringObjRange,    /* Slice */
 	    my_LStringObjReverse,  /* Reverse */
@@ -98,9 +96,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
-	TCL_OBJTYPE_V1(
+	TCL_OBJTYPE_V2(
 	    my_LStringObjLength,   /* Length */
-	    NULL,                  /* RESERVED */
 	    NULL,                  /* Index */
 	    my_LStringObjRange,    /* Slice */
 	    my_LStringObjReverse,  /* Reverse */
@@ -115,9 +112,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
-	TCL_OBJTYPE_V1(
+	TCL_OBJTYPE_V2(
 	    my_LStringObjLength,   /* Length */
-	    NULL,                  /* RESERVED */
 	    my_LStringObjIndex,    /* Index */
 	    NULL,                  /* Slice */
 	    my_LStringObjReverse,  /* Reverse */
@@ -132,9 +128,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
-	TCL_OBJTYPE_V1(
+	TCL_OBJTYPE_V2(
 	    my_LStringObjLength,   /* Length */
-	    NULL,                  /* RESERVED */
 	    my_LStringObjIndex,    /* Index */
 	    my_LStringObjRange,    /* Slice */
 	    NULL,                  /* Reverse */
@@ -149,9 +144,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
-	TCL_OBJTYPE_V1(
+	TCL_OBJTYPE_V2(
 	    my_LStringObjLength,   /* Length */
-	    NULL,                  /* RESERVED */
 	    my_LStringObjIndex,    /* Index */
 	    my_LStringObjRange,    /* Slice */
 	    my_LStringObjReverse,  /* Reverse */
@@ -166,9 +160,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
-	TCL_OBJTYPE_V1(
+	TCL_OBJTYPE_V2(
 	    my_LStringObjLength,   /* Length */
-	    NULL,                  /* RESERVED */
 	    my_LStringObjIndex,    /* Index */
 	    my_LStringObjRange,    /* Slice */
 	    my_LStringObjReverse,  /* Reverse */
@@ -183,9 +176,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
-	TCL_OBJTYPE_V1(
+	TCL_OBJTYPE_V2(
 	    my_LStringObjLength,   /* Length */
-	    NULL,                  /* RESERVED */
 	    my_LStringObjIndex,    /* Index */
 	    my_LStringObjRange,    /* Slice */
 	    my_LStringObjReverse,  /* Reverse */
@@ -200,9 +192,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
-	TCL_OBJTYPE_V1(
+	TCL_OBJTYPE_V2(
 	    my_LStringObjLength,   /* Length */
-	    NULL,                  /* RESERVED */
 	    my_LStringObjIndex,    /* Index */
 	    my_LStringObjRange,    /* Slice */
 	    my_LStringObjReverse,  /* Reverse */
@@ -217,9 +208,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
-	TCL_OBJTYPE_V1(
+	TCL_OBJTYPE_V2(
 	    my_LStringObjLength,   /* Length */
-	    NULL,                  /* RESERVED */
 	    my_LStringObjIndex,    /* Index */
 	    my_LStringObjRange,    /* Slice */
 	    my_LStringObjReverse,  /* Reverse */
@@ -234,9 +224,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	DupLStringRep,
 	UpdateStringOfLString,
 	NULL,
-	TCL_OBJTYPE_V1(
+	TCL_OBJTYPE_V2(
 	    my_LStringObjLength,   /* Length */
-	    NULL,                  /* RESERVED */
 	    my_LStringObjIndex,    /* Index */
 	    my_LStringObjRange,    /* Slice */
 	    my_LStringObjReverse,  /* Reverse */

@@ -233,17 +233,8 @@ const Tcl_ObjType tclBooleanType= {
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    TclSetBooleanFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V1(
-    TclLengthOne,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL)
+    TclSetBooleanFromAny,	/* setFromAnyProc */
+    TCL_OBJTYPE_V1(TclLengthOne)
 };
 const Tcl_ObjType tclDoubleType= {
     "double",			/* name */
@@ -251,16 +242,7 @@ const Tcl_ObjType tclDoubleType= {
     NULL,			/* dupIntRepProc */
     UpdateStringOfDouble,	/* updateStringProc */
     SetDoubleFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V1(
-    TclLengthOne,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL)
+    TCL_OBJTYPE_V1(TclLengthOne)
 };
 const Tcl_ObjType tclIntType = {
     "int",			/* name */
@@ -268,16 +250,7 @@ const Tcl_ObjType tclIntType = {
     NULL,			/* dupIntRepProc */
     UpdateStringOfInt,		/* updateStringProc */
     SetIntFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V1(
-    TclLengthOne,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL)
+    TCL_OBJTYPE_V1(TclLengthOne)
 };
 const Tcl_ObjType tclBignumType = {
     "bignum",			/* name */
@@ -285,16 +258,7 @@ const Tcl_ObjType tclBignumType = {
     DupBignum,			/* dupIntRepProc */
     UpdateStringOfBignum,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
-    TCL_OBJTYPE_V1(
-    TclLengthOne,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL)
+    TCL_OBJTYPE_V1(TclLengthOne)
 };
 
 /*
@@ -1652,7 +1616,7 @@ int SetDuplicatePureObj(
     int status = TCL_OK;
     const Tcl_ObjType *useTypePtr =
         objPtr->typePtr ? objPtr->typePtr : typePtr;
-        
+
     TclInvalidateStringRep(dupPtr);
     assert(dupPtr->typePtr == NULL);
 
@@ -2578,7 +2542,7 @@ Tcl_GetDoubleFromObj(
     double *dblPtr)	/* Place to store resulting double. */
 {
     do {
-	Tcl_ALGetDblProc *dblProc = ABSTRACTLIST_PROC(objPtr, getDoubleProc);
+	Tcl_ObjTypeGetDblProc *dblProc = TclObjTypeHasProc(objPtr, getDoubleProc);
 	if (dblProc) {
 	    return dblProc(interp, objPtr, dblPtr);
 	}

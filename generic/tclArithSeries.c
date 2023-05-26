@@ -87,9 +87,8 @@ static const Tcl_ObjType arithSeriesType = {
     DupArithSeriesInternalRep,		/* dupIntRepProc */
     UpdateStringOfArithSeries,		/* updateStringProc */
     SetArithSeriesFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V1(
+    TCL_OBJTYPE_V2(
     ArithSeriesObjLength,
-    NULL,
     TclArithSeriesObjIndex,
     TclArithSeriesObjRange,
     TclArithSeriesObjReverse,

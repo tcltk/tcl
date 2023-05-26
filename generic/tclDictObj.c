@@ -61,8 +61,8 @@ static Tcl_ObjCmdProc		DictForNRCmd;
 static Tcl_ObjCmdProc		DictMapNRCmd;
 static Tcl_NRPostProc		DictForLoopCallback;
 static Tcl_NRPostProc		DictMapLoopCallback;
-static Tcl_ALLengthProc         DictAsListLength;
-static Tcl_ALIndexProc          DictAsListIndex;
+static Tcl_ObjTypeLengthProc    DictAsListLength;
+static Tcl_ObjTypeIndexProc     DictAsListIndex;
 
 /*
  * Table of dict subcommand names and implementations.
@@ -149,10 +149,9 @@ const Tcl_ObjType tclDictType = {
     DupDictInternalRep,		/* dupIntRepProc */
     UpdateStringOfDict,		/* updateStringProc */
     SetDictFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V1(		/* Extended type for AbstractLists */
+    TCL_OBJTYPE_V2(		/* Extended type for AbstractLists */
     DictAsListLength,		/* return "list" length of dict value w/o
 				 * shimmering */
-    NULL,
     DictAsListIndex,		/* return key or value at "list" index
 				 * location.  (keysare at even indicies,
 				 * values at odd indicies) */

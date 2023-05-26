@@ -609,25 +609,25 @@ typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
 /* Abstract List functions */
-typedef	      Tcl_Size	(Tcl_ALLengthProc)  (struct Tcl_Obj *listPtr);
-typedef		   int	(Tcl_ALIndexProc)   (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+typedef	      Tcl_Size	(Tcl_ObjTypeLengthProc)  (struct Tcl_Obj *listPtr);
+typedef		   int	(Tcl_ObjTypeIndexProc)   (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
                                              Tcl_Size index, struct Tcl_Obj** elemObj);
-typedef		   int	(Tcl_ALSliceProc)   (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+typedef		   int	(Tcl_ObjTypeSliceProc)   (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
                                              Tcl_Size fromIdx, Tcl_Size toIdx,
                                              struct Tcl_Obj **newObjPtr);
-typedef		   int	(Tcl_ALReverseProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+typedef		   int	(Tcl_ObjTypeReverseProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
 					     struct Tcl_Obj **newObjPtr);
-typedef		   int	(Tcl_ALGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+typedef		   int	(Tcl_ObjTypeGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
 					     Tcl_Size *objcptr, struct Tcl_Obj ***objvptr);
-typedef	struct Tcl_Obj*	(Tcl_ALSetElement)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+typedef	struct Tcl_Obj*	(Tcl_ObjTypeSetElement)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
                                              Tcl_Size indexCount,
                                              struct Tcl_Obj *const indexArray[],
                                              struct Tcl_Obj *valueObj);
-typedef            int  (Tcl_ALReplaceProc) (Tcl_Interp *interp, struct Tcl_Obj *listObj,
+typedef            int  (Tcl_ObjTypeReplaceProc) (Tcl_Interp *interp, struct Tcl_Obj *listObj,
                                              Tcl_Size first, Tcl_Size numToDelete,
                                              Tcl_Size numToInsert,
                                              struct Tcl_Obj *const insertObjs[]);
-typedef             int (Tcl_ALGetDblProc)  (Tcl_Interp *interp, struct Tcl_Obj *objPtr,
+typedef             int (Tcl_ObjTypeGetDblProc)  (Tcl_Interp *interp, struct Tcl_Obj *objPtr,
                                              double *doublePtr);
 
 #ifndef TCL_NO_DEPRECATED
@@ -661,37 +661,30 @@ typedef struct Tcl_ObjType {
     size_t version;
 
     /* List emulation functions - ObjType Version 1 */
-    Tcl_ALLengthProc *lengthProc;	/* Return the [llength] of the
-					** AbstractList */
-    void *reserved;
-    Tcl_ALIndexProc *indexProc;		/* Return a value (Tcl_Obj) for
-					** [lindex $al $index] */
-    Tcl_ALSliceProc *sliceProc;		/* Return an AbstractList for
-					** [lrange $al $start $end] */
-    Tcl_ALReverseProc *reverseProc;	/* Return an AbstractList for
-					** [lreverse $al] */
-    Tcl_ALGetElements *getElementsProc; /* Return an objv[] of all elements in
-					** the list */
-    Tcl_ALSetElement *setElementProc;   /* Replace the element at the indicie
-					** with the given valueObj. */
-    Tcl_ALReplaceProc *replaceProc;     /* Replace subset with subset */
-    Tcl_ALGetDblProc *getDoubleProc;    /* GetDouble from internal rep */
+    Tcl_ObjTypeLengthProc *lengthProc;	     /* Return the [llength] of the
+					     ** AbstractList */
+    Tcl_ObjTypeIndexProc *indexProc;	     /* Return a value (Tcl_Obj) for
+					     ** [lindex $al $index] */
+    Tcl_ObjTypeSliceProc *sliceProc;	     /* Return an AbstractList for
+					     ** [lrange $al $start $end] */
+    Tcl_ObjTypeReverseProc *reverseProc;     /* Return an AbstractList for
+					     ** [lreverse $al] */
+    Tcl_ObjTypeGetElements *getElementsProc; /* Return an objv[] of all elements in
+					     ** the list */
+    Tcl_ObjTypeSetElement *setElementProc;   /* Replace the element at the indicie
+					     ** with the given valueObj. */
+    Tcl_ObjTypeReplaceProc *replaceProc;     /* Replace subset with subset */
+    Tcl_ObjTypeGetDblProc *getDoubleProc;    /* GetDouble from internal rep */
 } Tcl_ObjType;
 
-#define TCL_OBJTYPE_V0 0, /* Pre-Tcl 9 */ \
-    NULL,				  \
-    NULL,				  \
-    NULL,				  \
-    NULL,				  \
-    NULL,				  \
-    NULL,				  \
-    NULL,				  \
-    NULL,				  \
-    NULL
-#define TCL_OBJTYPE_CURRENT 1
-#define TCL_OBJTYPE_V1(a,b,c,d,e,f,g,h,i)		\
-    TCL_OBJTYPE_CURRENT,				\
-	a,b,c,d,e,f,g,h,i /* Tcl 9 - AbstractLists */
+#define TCL_OBJTYPE_V0 0,0,0,0,0,0,0,0,0 /* Pre-Tcl 9 */
+#define TCL_OBJTYPE_V1(a) 1,a,0,0,0,0,0,0,0 /* Tcl 9 Version 1 */
+
+#define TCL_OBJTYPE_V2(a,b,c,d,e,f,g,h)	 2, \
+    a,b,c,d,e,f,g,h /* Tcl 9 - AbstractLists */
+
+#define TCL_OBJTYPE_CURRENT 2
+
 
 /*
  * The following structure stores an internal representation (internalrep) for
