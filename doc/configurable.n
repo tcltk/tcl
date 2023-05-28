@@ -14,7 +14,7 @@ oo::configurable, configure, property \- class that makes configurable classes a
 .nf
 package require TclOO
 
-\fBoo::configurable create \fIclass\fR \fR?\fIdefinitionScript\fR?
+\fBoo::configurable create \fIclass\fR ?\fIdefinitionScript\fR?
 
 \fBoo::define \fIclass\fB {\fR
     \fBproperty \fIpropName\fR ?\fIoptions...\fR? ?\fIpropName\fR ?\fIoptions...\fR?...?
@@ -26,7 +26,7 @@ package require TclOO
 
 \fIobjectName \fBconfigure\fR
 \fIobjectName \fBconfigure\fR \fI\-prop\fR
-\fIobjectName \fBconfigure\fR \fI\-prop value\fR ?\fI\-prop value\fR...\fR
+\fIobjectName \fBconfigure\fR \fI\-prop value\fR ?\fI\-prop value\fR...
 .fi
 .SH "CLASS HIERARCHY"
 .nf
@@ -157,12 +157,11 @@ class constructors under normal circumstances), as described above in
 \fBPROPERTY DEFINITIONS\fR. It \fBnamespace export\fRs its \fBproperty\fR
 command so that it may be used easily in user definition dialects.
 .TP
-.
 \fBoo::configuresupport::configurableobject\fR
 .
 This is a namespace that contains the definition dialect that provides the
 \fBproperty\fR declaration for use in instance objects (i.e., via
-\fBoo::objdefine\fR, and the\fB self\R declaration in \fBoo::define), as
+\fBoo::objdefine\fR, and the \fBself\fR declaration in \fBoo::define\fR), as
 described above in \fBPROPERTY DEFINITIONS\fR. It \fBnamespace export\fRs its
 \fBproperty\fR command so that it may be used easily in user definition
 dialects.
