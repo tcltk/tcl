@@ -19,7 +19,7 @@
 /*
  * The scripted part of the definitions of TclOO.
  *
- * Compiled from generic/tclOOScript.tcl by tools/makeHeader.tcl, which
+ * Compiled from tools/tclOOScript.tcl by tools/makeHeader.tcl, which
  * contains the commented version of everything; *this* file is automatically
  * generated.
  */

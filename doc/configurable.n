@@ -146,7 +146,7 @@ so that they can be used by other code:
 .TP
 \fBoo::configuresupport::configurable\fR
 .
-This is a class that provids the implementation of the \fBconfigure\fR method
+This is a class that provides the implementation of the \fBconfigure\fR method
 (described above in \fBCONFIGURE METHOD\fR).
 .TP
 \fBoo::configuresupport::configurableclass\fR
