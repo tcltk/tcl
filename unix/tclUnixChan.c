@@ -286,7 +286,7 @@ FileInputProc(
      */
 
     do {
-	bytesRead = read(fsPtr->fd, buf, (size_t) toRead);
+	bytesRead = read(fsPtr->fd, buf, (size_t)toRead);
     } while ((bytesRead < 0) && (errno == EINTR));
 
     if (bytesRead < 0) {
@@ -335,7 +335,7 @@ FileOutputProc(
 
 	return 0;
     }
-    written = write(fsPtr->fd, buf, (size_t) toWrite);
+    written = write(fsPtr->fd, buf, (size_t)toWrite);
     if (written >= 0) {
 	return written;
     }
@@ -748,7 +748,7 @@ FileGetOptionProc(
     if ((len > 1) && (strncmp(optionName, "-stat", len) == 0)) {
 	Tcl_Obj *dictObj = StatOpenFile(fsPtr);
 	const char *dictContents;
-	int dictLength;
+	Tcl_Size dictLength;
 
 	if (dictObj == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -836,9 +836,9 @@ TtySetOptionProc(
     const char *value)		/* New value for option. */
 {
     TtyState *fsPtr = (TtyState *)instanceData;
-    unsigned int len, vlen;
+    size_t len, vlen;
     TtyAttrs tty;
-    int argc;
+    Tcl_Size argc;
     const char **argv;
     struct termios iostate;
 
@@ -973,7 +973,8 @@ TtySetOptionProc(
 
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
 #if defined(TIOCMGET) && defined(TIOCMSET)
-	int i, control, flag;
+	int control, flag;
+	Tcl_Size i;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
@@ -1175,7 +1176,7 @@ TtyGetOptionProc(
     Tcl_DString *dsPtr)		/* Where to store value(s). */
 {
     TtyState *fsPtr = (TtyState *)instanceData;
-    unsigned int len;
+    size_t len;
     char buf[3*TCL_INTEGER_SPACE + 16];
     int valid = 0;		/* Flag if valid option parsed. */
     struct termios iostate;

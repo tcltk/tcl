@@ -1010,7 +1010,7 @@ FileGetOptionProc(
     if (valid) {
 	Tcl_Obj *dictObj = StatOpenFile(infoPtr);
 	const char *dictContents;
-	int dictLength;
+	Tcl_Size dictLength;
 
 	if (dictObj == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
