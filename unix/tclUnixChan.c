@@ -278,7 +278,7 @@ FileInputProc(
      */
 
     do {
-	bytesRead = read(fsPtr->fd, buf, toRead);
+	bytesRead = read(fsPtr->fd, buf, (size_t)toRead);
     } while ((bytesRead < 0) && (errno == EINTR));
 
     if (bytesRead < 0) {
@@ -327,7 +327,7 @@ FileOutputProc(
 
 	return 0;
     }
-    written = write(fsPtr->fd, buf, toWrite);
+    written = write(fsPtr->fd, buf, (size_t)toWrite);
     if (written >= 0) {
 	return written;
     }
@@ -679,7 +679,7 @@ FileGetOptionProc(
     if ((len > 1) && (strncmp(optionName, "-stat", len) == 0)) {
 	Tcl_Obj *dictObj = StatOpenFile(fsPtr);
 	const char *dictContents;
-	int dictLength;
+	Tcl_Size dictLength;
 
 	if (dictObj == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
