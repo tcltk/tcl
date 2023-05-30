@@ -188,7 +188,7 @@ is used to initialize the compression engine rather than leaving it to create
 it on the fly from the data being compressed. Setting a compression dictionary
 allows for more efficient compression in the case where the start of the data
 is highly regular, but it does require both the compressor and the
-decompressor to agreee on the value to use. Compression dictionaries are only
+decompressor to agree on the value to use. Compression dictionaries are only
 fully supported for zlib-format data; on compression, they must be set before
 any data is sent in with \fBTcl_ZlibStreamPut\fR, and on decompression they
 should be set when \fBTcl_ZlibStreamGet\fR produces an \fBerror\fR with its
