@@ -1164,11 +1164,8 @@ TestcmdinfoObjCmd(
 	    return info.objProc2(info.objClientData2, interp, cmdObjc, cmdObjv);
 	}
     case CMDINFO_CREATE:
-	Tcl_CreateCommand(interp,
-			  Tcl_GetString(objv[2]),
-			  CmdProc1,
-			  (void *)"original",
-			  CmdDelProc1);
+	Tcl_CreateCommand(interp, Tcl_GetString(objv[2]), CmdProc1,
+		(void *)"original", CmdDelProc1);
 	break;
     case CMDINFO_DELETE:
 	Tcl_DStringInit(&delString);
@@ -1206,10 +1203,8 @@ TestcmdinfoObjCmd(
 	} else if (info.isNativeObjectProc == 2) {
 	    Tcl_AppendResult(interp, " nativeObjectProc2", NULL);
 	} else {
-	    Tcl_SetObjResult(
-		interp,
-		Tcl_ObjPrintf("Invalid isNativeObjectProc value %d",
-			      info.isNativeObjectProc));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("Invalid isNativeObjectProc value %d",
+		    info.isNativeObjectProc));
 	    return TCL_ERROR;
 	}
 	break;
@@ -5766,6 +5761,9 @@ TestbytestringObjCmd(
 #if !defined(TCL_NO_DEPRECATED)
 #   if defined(_MSC_VER) && !defined(NDEBUG)
 #	pragma warning(disable:4133)
+#   elif defined(__clang__)
+#	pragma clang diagnostic push
+#	pragma clang diagnostic ignored "-Wincompatible-pointer-types"
 #   endif
 	int n; /* On purpose, not Tcl_Size, in order to demonstrate what happens */
 #else
@@ -5784,6 +5782,10 @@ TestbytestringObjCmd(
     if (p == NULL) {
 	return TCL_ERROR;
     }
+#if !defined(TCL_NO_DEPRECATED) && defined(__clang__)
+#   pragma clang diagnostic pop
+#endif
+
     if (x.m != 1) {
 	Tcl_AppendResult(interp, "Tcl_GetBytesFromObj() overwrites variable", NULL);
 	return TCL_ERROR;

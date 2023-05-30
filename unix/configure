@@ -9506,6 +9506,14 @@ printf "%s\n" "#define HAVE_STRUCT_STAT_ST_BLKSIZE 1" >>confdefs.h
 
 
 fi
+ac_fn_c_check_member "$LINENO" "struct stat" "st_rdev" "ac_cv_member_struct_stat_st_rdev" "$ac_includes_default"
+if test "x$ac_cv_member_struct_stat_st_rdev" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STAT_ST_RDEV 1" >>confdefs.h
+
+
+fi
 
 fi
 ac_fn_c_check_type "$LINENO" "blkcnt_t" "ac_cv_type_blkcnt_t" "$ac_includes_default"

@@ -1036,7 +1036,7 @@ EXTERN void		Tcl_MutexFinalize(Tcl_Mutex *mutex);
 /* 393 */
 EXTERN int		Tcl_CreateThread(Tcl_ThreadId *idPtr,
 				Tcl_ThreadCreateProc *proc, void *clientData,
-				Tcl_Size stackSize, int flags);
+				TCL_HASH_TYPE stackSize, int flags);
 /* 394 */
 EXTERN Tcl_Size		Tcl_ReadRaw(Tcl_Channel chan, char *dst,
 				Tcl_Size bytesToRead);
@@ -2272,7 +2272,7 @@ typedef struct TclStubs {
     int (*tcl_ProcObjCmd) (void *clientData, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[]); /* 390 */
     void (*tcl_ConditionFinalize) (Tcl_Condition *condPtr); /* 391 */
     void (*tcl_MutexFinalize) (Tcl_Mutex *mutex); /* 392 */
-    int (*tcl_CreateThread) (Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc, void *clientData, Tcl_Size stackSize, int flags); /* 393 */
+    int (*tcl_CreateThread) (Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc, void *clientData, TCL_HASH_TYPE stackSize, int flags); /* 393 */
     Tcl_Size (*tcl_ReadRaw) (Tcl_Channel chan, char *dst, Tcl_Size bytesToRead); /* 394 */
     Tcl_Size (*tcl_WriteRaw) (Tcl_Channel chan, const char *src, Tcl_Size srcLen); /* 395 */
     Tcl_Channel (*tcl_GetTopChannel) (Tcl_Channel chan); /* 396 */

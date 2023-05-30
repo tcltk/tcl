@@ -11,7 +11,20 @@
 .SH NAME
 refchan \- command handler API of reflected channels
 .SH SYNOPSIS
-\fBcmdPrefix \fIoption\fR ?\fIarg arg ...\fR?
+.nf
+\fBchan create \fImode cmdPrefix\fR
+
+\fIcmdPrefix \fBblocking\fR \fIchannelId mode\fR
+\fIcmdPrefix \fBcget\fR \fIchannelId option\fR
+\fIcmdPrefix \fBcgetall\fR \fIchannelId\fR
+\fIcmdPrefix \fBconfigure\fR \fIchannelId option value\fR
+\fIcmdPrefix \fBfinalize\fR \fIchannelId\fR
+\fIcmdPrefix \fBinitialize\fR \fIchannelId mode\fR
+\fIcmdPrefix \fBread\fR \fIchannelId count\fR
+\fIcmdPrefix \fBseek\fR \fIchannelId offset base\fR
+\fIcmdPrefix \fBwatch\fR \fIchannelId eventspec\fR
+\fIcmdPrefix \fBwrite\fR \fIchannelId data\fR
+.fi
 .BE
 .SH DESCRIPTION
 .PP
