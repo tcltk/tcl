@@ -16,6 +16,9 @@ proc foreachLine {filename varName body} {
 	while {[gets $f line] >= 0} {
 	    uplevel 1 $body
 	}
+    } on return {msg opt} {
+	dict incr opt -level
+	return -options $opt $msg
     } finally {
 	close $f
     }
