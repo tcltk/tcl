@@ -28,14 +28,14 @@ declare 3 {
     void TclAllocateFreeObjects(void)
 }
 declare 5 {
-    int TclCleanupChildren(Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr,
+    int TclCleanupChildren(Tcl_Interp *interp, Tcl_Size numPids, Tcl_Pid *pidPtr,
 	    Tcl_Channel errorChan)
 }
 declare 6 {
     void TclCleanupCommand(Command *cmdPtr)
 }
 declare 7 {
-    int TclCopyAndCollapse(int count, const char *src, char *dst)
+    Tcl_Size TclCopyAndCollapse(Tcl_Size count, const char *src, char *dst)
 }
 declare 8 {deprecated {}} {
     int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
@@ -43,9 +43,8 @@ declare 8 {deprecated {}} {
 }
 
 # TclCreatePipeline unofficially exported for use by BLT.
-
 declare 9 {
-    int TclCreatePipeline(Tcl_Interp *interp, int argc, const char **argv,
+    Tcl_Size TclCreatePipeline(Tcl_Interp *interp, Tcl_Size argc, const char **argv,
 	    Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr,
 	    TclFile *errFilePtr)
 }
@@ -68,15 +67,15 @@ declare 16 {
 }
 declare 22 {
     int TclFindElement(Tcl_Interp *interp, const char *listStr,
-	    int listLength, const char **elementPtr, const char **nextPtr,
-	    int *sizePtr, int *bracePtr)
+	    Tcl_Size listLength, const char **elementPtr, const char **nextPtr,
+	    Tcl_Size *sizePtr, int *bracePtr)
 }
 declare 23 {
     Proc *TclFindProc(Interp *iPtr, const char *procName)
 }
 # Replaced with macro (see tclInt.h) in Tcl 8.5.0, restored in 8.5.10
 declare 24 {
-    int TclFormatInt(char *buffer, Tcl_WideInt n)
+    Tcl_Size TclFormatInt(char *buffer, Tcl_WideInt n)
 }
 declare 25 {
     void TclFreePackageInfo(Interp *iPtr)
@@ -169,7 +168,7 @@ declare 64 {
 	    int flags)
 }
 declare 69 {
-    void *TclpAlloc(unsigned int size)
+    void *TclpAlloc(TCL_HASH_TYPE size)
 }
 declare 74 {
     void TclpFree(void *ptr)
@@ -235,7 +234,7 @@ declare 109 {
     int TclUpdateReturnInfo(Interp *iPtr)
 }
 declare 110 {
-    int TclSockMinimumBuffers(void *sock, int size)
+    int TclSockMinimumBuffers(void *sock, Tcl_Size size)
 }
 
 # Procedures used in conjunction with Tcl namespaces. They are
@@ -365,8 +364,8 @@ declare 150 {
     int TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re)
 }
 declare 151 {
-    void TclRegExpRangeUniChar(Tcl_RegExp re, int index, int *startPtr,
-	    int *endPtr)
+    void TclRegExpRangeUniChar(Tcl_RegExp re, Tcl_Size index, Tcl_Size *startPtr,
+	    Tcl_Size *endPtr)
 }
 declare 152 {
     void TclSetLibraryPath(Tcl_Obj *pathPtr)
@@ -421,7 +420,7 @@ declare 165 {
 # New function due to TIP #33
 declare 166 {
     int TclListObjSetElement(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    int index, Tcl_Obj *valuePtr)
+	    Tcl_Size index, Tcl_Obj *valuePtr)
 }
 
 declare 167 {deprecated {use public Tcl_SetStartupScript()}} {
@@ -436,20 +435,20 @@ declare 169 {
 }
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
-	    int numChars, Command *cmdPtr, int result, int traceFlags,
-	    int objc, Tcl_Obj *const objv[])
+	    Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags,
+	    Tcl_Size objc, Tcl_Obj *const objv[])
 }
 declare 171 {
     int TclCheckExecutionTraces(Tcl_Interp *interp, const char *command,
-	    int numChars, Command *cmdPtr, int result, int traceFlags,
-	    int objc, Tcl_Obj *const objv[])
+	    Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags,
+	    Tcl_Size objc, Tcl_Obj *const objv[])
 }
 declare 172 {
     int TclInThreadExit(void)
 }
 declare 173 {
-    int TclUniCharMatch(const Tcl_UniChar *string, int strLen,
-	    const Tcl_UniChar *pattern, int ptnLen, int flags)
+    int TclUniCharMatch(const Tcl_UniChar *string, Tcl_Size strLen,
+	    const Tcl_UniChar *pattern, Tcl_Size ptnLen, int flags)
 }
 declare 175 {
     int TclCallVarTraces(Interp *iPtr, Var *arrayPtr, Var *varPtr,
@@ -532,7 +531,7 @@ declare 214 {
     void TclSetObjNameOfExecutable(Tcl_Obj *name, Tcl_Encoding encoding)
 }
 declare 215 {
-    void *TclStackAlloc(Tcl_Interp *interp, int numBytes)
+    void *TclStackAlloc(Tcl_Interp *interp, TCL_HASH_TYPE numBytes)
 }
 declare 216 {
     void TclStackFree(Tcl_Interp *interp, void *freePtr)
@@ -551,13 +550,13 @@ declare 224 {
 }
 declare 225 {
     Tcl_Obj *TclTraceDictPath(Tcl_Interp *interp, Tcl_Obj *rootPtr,
-	    int keyc, Tcl_Obj *const keyv[], int flags)
+	    Tcl_Size keyc, Tcl_Obj *const keyv[], int flags)
 }
 declare 226 {
     int TclObjBeingDeleted(Tcl_Obj *objPtr)
 }
 declare 227 {
-    void TclSetNsPath(Namespace *nsPtr, int pathLength,
+    void TclSetNsPath(Namespace *nsPtr, Tcl_Size pathLength,
             Tcl_Namespace *pathAry[])
 }
 declare 229 {
@@ -608,7 +607,7 @@ declare 238 {
 }
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
-			    int skip, ProcErrorProc *errorProc)
+	    Tcl_Size skip, ProcErrorProc *errorProc)
 }
 declare 240 {
     int TclNRRunCallbacks(Tcl_Interp *interp, int result,
@@ -619,7 +618,7 @@ declare 241 {
 	    const CmdFrame *invoker, int word)
 }
 declare 242 {
-    int TclNREvalObjv(Tcl_Interp *interp, int objc,
+    int TclNREvalObjv(Tcl_Interp *interp, Tcl_Size objc,
 	      Tcl_Obj *const objv[], int flags, Command *cmdPtr)
 }
 
@@ -636,8 +635,8 @@ declare 245 {
     Tcl_HashTable *TclGetNamespaceCommandTable(Tcl_Namespace *nsPtr)
 }
 declare 246 {
-    int TclInitRewriteEnsemble(Tcl_Interp *interp, int numRemoved,
-	    int numInserted, Tcl_Obj *const *objv)
+    int TclInitRewriteEnsemble(Tcl_Interp *interp, Tcl_Size numRemoved,
+	    Tcl_Size numInserted, Tcl_Obj *const *objv)
 }
 declare 247 {
     void TclResetRewriteEnsemble(Tcl_Interp *interp, int isRootEnsemble)
@@ -660,7 +659,7 @@ declare 250 {
 # Allow extensions for optimization
 declare 251 {
     int TclRegisterLiteral(void *envPtr,
-	    const char *bytes, int length, int flags)
+	    const char *bytes, Tcl_Size length, int flags)
 }
 
 # Exporting of the internal API to variables.
@@ -747,7 +746,7 @@ declare 7 win {
 	    const char *optval, int optlen)
 }
 declare 8 win {
-    int TclpGetPid(Tcl_Pid pid)
+    Tcl_Size TclpGetPid(Tcl_Pid pid)
 }
 declare 9 win {
     int TclWinGetPlatformId(void)
@@ -790,7 +789,7 @@ declare 19 win {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 20 win {
-    void TclWinAddProcess(HANDLE hProcess, DWORD id)
+    void TclWinAddProcess(void *hProcess, Tcl_Size id)
 }
 declare 21 win {
     char *TclpInetNtoa(struct in_addr addr)

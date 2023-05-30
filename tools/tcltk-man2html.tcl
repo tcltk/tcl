@@ -29,7 +29,7 @@ set ::CSSFILE "docs.css"
 ## Source the utility functions that provide most of the
 ## implementation of the transformation from nroff to html.
 ##
-source [file join [file dirname [info script]] tcltk-man2html-utils.tcl]
+source -encoding utf-8 [file join [file dirname [info script]] tcltk-man2html-utils.tcl]
 
 proc getversion {tclh {name {}}} {
     if {[file exists $tclh]} {

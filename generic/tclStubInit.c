@@ -28,6 +28,8 @@
  */
 
 #undef Tcl_Alloc
+#undef Tcl_AttemptAlloc
+#undef Tcl_AttemptRealloc
 #undef Tcl_Free
 #undef Tcl_Realloc
 #undef Tcl_NewBooleanObj
@@ -539,7 +541,7 @@ doNothing(void)
     /* dummy implementation, no need to do anything */
 }
 #endif
-#   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
+#   define TclWinAddProcess (void (*) (void *, Tcl_Size)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
@@ -592,7 +594,7 @@ void *TclWinGetTclInstance()
 int
 TclpGetPid(Tcl_Pid pid)
 {
-    return (int)(size_t)pid;
+    return (TCL_HASH_TYPE)(size_t)pid;
 }
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9

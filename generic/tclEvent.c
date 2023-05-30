@@ -234,7 +234,8 @@ HandleBgErrors(
     Tcl_Preserve(assocPtr);
     Tcl_Preserve(interp);
     while (assocPtr->firstBgPtr != NULL) {
-	int code, prefixObjc;
+	int code;
+	Tcl_Size prefixObjc;
 	Tcl_Obj **prefixObjv, **tempObjv;
 
 	/*
@@ -488,7 +489,7 @@ TclDefaultBgErrorHandlerObjCmd(
 		} else {
 		    Tcl_DiscardInterpState(saved);
 		    Tcl_WriteChars(errChannel,
-			    "bgerror failed to handle background error.\n",-1);
+			    "bgerror failed to handle background error.\n", -1);
 		    Tcl_WriteChars(errChannel, "    Original error: ", -1);
 		    Tcl_WriteObj(errChannel, tempObjv[1]);
 		    Tcl_WriteChars(errChannel, "\n", -1);
@@ -1956,10 +1957,10 @@ Tcl_UpdateObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int optionIndex;
     int flags = 0;		/* Initialized to avoid compiler warning. */
     static const char *const updateOptions[] = {"idletasks", NULL};
     enum updateOptionsEnum {OPT_IDLETASKS};
+    int optionIndex;
 
     if (objc == 1) {
 	flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
@@ -2058,8 +2059,8 @@ int
 Tcl_CreateThread(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
-    void *clientData,	/* The one argument to Main() */
-    int stackSize,		/* Size of stack for the new thread */
+    void *clientData,		/* The one argument to Main() */
+    TCL_HASH_TYPE stackSize,	/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {

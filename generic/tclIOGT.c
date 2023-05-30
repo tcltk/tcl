@@ -266,7 +266,7 @@ TclChannelTransform(
     Channel *chanPtr;		/* The actual channel. */
     ChannelState *statePtr;	/* State info for channel. */
     int mode;			/* Read/write mode of the channel. */
-    int objc;
+    Tcl_Size objc;
     TransformChannelData *dataPtr;
     Tcl_DString ds;
 
@@ -383,7 +383,7 @@ ExecuteCallback(
 				 * interpreters. */
 {
     Tcl_Obj *resObj;		/* See below, switch (transmit). */
-    int resLen;
+    Tcl_Size resLen;
     unsigned char *resBuf;
     Tcl_InterpState state = NULL;
     int res = TCL_OK;

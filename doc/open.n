@@ -128,6 +128,28 @@ If a new file is created as part of opening it, \fIpermissions\fR
 (an integer) is used to set the permissions for the new file in
 conjunction with the process's file mode creation mask.
 \fIPermissions\fR defaults to 0666.
+.PP
+.VS "8.7, TIP 603"
+When the file opened is an ordinary disk file, the \fBchan configure\fR and
+\fBfconfigure\fR commands can be used to query this additional configuration
+option:
+.TP
+\fB\-stat\fR
+.
+This option, when read, returns a dictionary of values much as is obtained
+from the \fBfile stat\fR command, where that stat information relates to the
+real opened file. Keys in the dictionary may include \fBatime\fR, \fBctime\fR,
+\fBdev\fR, \fBgid\fR, \fBino\fR, \fBmode\fR, \fBmtime\fR, \fBnlink\fR,
+\fBsize\fR, \fBtype\fR, and \fBuid\fR among others; the \fBmtime\fR,
+\fBsize\fR and \fBtype\fR fields are guaranteed to be present and meaningful
+on all platforms; other keys may be present too.
+.RS
+.PP
+\fIImplementation note:\fR This option maps to a call to \fBfstat()\fR on
+POSIX platforms, and to a call to \fBGetFileInformationByHandle()\fR on
+Windows; the information reported is what those system calls produce.
+.RE
+.VE "8.7, TIP 603"
 .SH "COMMAND PIPELINES"
 .PP
 If the first character of \fIfileName\fR is

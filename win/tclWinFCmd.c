@@ -309,7 +309,7 @@ DoRenameFile(
 	if (srcAttr & FILE_ATTRIBUTE_DIRECTORY) {
 	    WCHAR *nativeSrcRest, *nativeDstRest;
 	    const char **srcArgv, **dstArgv;
-	    int size, srcArgc, dstArgc;
+	    Tcl_Size size, srcArgc, dstArgc;
 	    WCHAR nativeSrcPath[MAX_PATH];
 	    WCHAR nativeDstPath[MAX_PATH];
 	    Tcl_DString srcString, dstString;
@@ -317,7 +317,7 @@ DoRenameFile(
 
 	    size = GetFullPathNameW(nativeSrc, MAX_PATH,
 		    nativeSrcPath, &nativeSrcRest);
-	    if ((size == 0) || (size > MAX_PATH)) {
+	    if ((size <= 0) || (size > MAX_PATH)) {
 		return TCL_ERROR;
 	    }
 	    size = GetFullPathNameW(nativeDst, MAX_PATH,
@@ -1535,7 +1535,7 @@ GetWinFileAttributes(
 	 * We test for, and fix that case, here.
 	 */
 
-	int len;
+	Tcl_Size len;
 	const char *str = TclGetStringFromObj(fileName, &len);
 
 	if (len < 4) {
@@ -1595,7 +1595,7 @@ ConvertFileNameFormat(
     int longShort,		/* 0 to short name, 1 to long name. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
-    int pathc, i;
+    Tcl_Size pathc, i, length;
     Tcl_Obj *splitPath;
 
     splitPath = Tcl_FSSplitPath(fileName, &pathc);
@@ -1621,7 +1621,6 @@ ConvertFileNameFormat(
     for (i = 0; i < pathc; i++) {
 	Tcl_Obj *elt;
 	char *pathv;
-	int length;
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
