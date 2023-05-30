@@ -16,7 +16,7 @@ lremove \- Remove elements from a list by index
 .SH DESCRIPTION
 .PP
 \fBlremove\fR returns a new list formed by simultaneously removing zero or
-more elements of \fIlist\fR at each of the indices given by an arbirary number
+more elements of \fIlist\fR at each of the indices given by an arbitrary number
 of \fIindex\fR arguments. The indices may be in any order and may be repeated;
 the element at index will only be removed once.  The index values are
 interpreted the same as index values for the command \fBstring index\fR,
