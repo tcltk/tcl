@@ -4109,7 +4109,7 @@ test iocmd.foreachLine-2.5 "foreachLine procedure: behaviour" -setup {
     set f [makeFile foreachLine25.txt "a\nbb\nccc\ndd\ne"]
 } -body {
     apply {filename {
-	    set lines {}
+	set lines {}
 	foreachLine $filename v {
 	    if {[string length $v] > 2} {
 		error "line too long"
