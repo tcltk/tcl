@@ -25,6 +25,11 @@ auto_execok, auto_import, auto_load, auto_mkindex, auto_qualify, auto_reset, tcl
 \fBtcl_startOfPreviousWord \fIstr start\fR
 \fBtcl_wordBreakAfter \fIstr start\fR
 \fBtcl_wordBreakBefore \fIstr start\fR
+.VS "Tcl 8.7, TIP 670"
+\fBforeachLine \fIfilename varName body\fR
+\fBreadFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR?
+\fBwriteFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR? \fIcontents\fR
+.VE "Tcl 8.7, TIP 670"
 .BE
 .SH INTRODUCTION
 .PP
@@ -240,6 +245,38 @@ Returns the index of the first word boundary before the starting index
 boundaries before the starting point in the given string.  The index
 returned refers to the second character of the pair that comprises a
 boundary.
+.TP
+\fBforeachLine \fIfilename varName body\fR
+.VS "Tcl 8.7, TIP 670"
+This reads in the text file named \fIfilename\fR one line at a time
+(using system defaults for reading text files). It writes that line to the
+variable named by \fIvarName\fR and then executes \fIbody\fR for that line.
+The result value of \fIbody\fR is ignored, but \fBerror\fR, \fBreturn\fR,
+\fBbreak\fR and \fBcontinue\fR may be used within it.
+The overall result of \fBforeachLine\fR is the empty string; the file will be
+closed prior to the procedure returning.
+.VE "Tcl 8.7, TIP 670"
+.TP
+\fBreadFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR?
+.VS "Tcl 8.7, TIP 670"
+Reads in the file named in \fIfilename\fR and returns its contents.
+The second argument says how to read in the file, either as \fBtext\fR
+(using the system defaults for reading text files) or as \fBbinary\fR
+(as uninterpreted bytes). The default is \fBtext\fR. When read as text, this
+will include any trailing newline.
+The file will be closed prior to the procedure returning.
+.VE "Tcl 8.7, TIP 670"
+.TP
+\fBwriteFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR? \fIcontents\fR
+.VS "Tcl 8.7, TIP 670"
+Writes the \fIcontents\fR to the file named in \fIfilename\fR.
+The optional second argument says how to write to the file, either as
+\fBtext\fR (using the system defaults for writing text files) or as
+\fBbinary\fR (as uninterpreted bytes). The default is \fBtext\fR.
+If a trailing newline is required, it will need to be provided in
+\fIcontents\fR. The result of this command is the empty string; the file will
+be closed prior to the procedure returning.
+.VE "Tcl 8.7, TIP 670"
 .SH "VARIABLES"
 .PP
 The following global variables are defined or used by the procedures in
