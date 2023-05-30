@@ -105,12 +105,6 @@
 #endif
 
 /*
- * Maximum *signed* value that can be stored in a Tcl_Size type. This is
- * primarily used for checking overflows in dynamically allocating memory.
- */
-#define TCL_SIZE_SMAX ((((Tcl_Size) 1) << ((8*(Tcl_Size)sizeof(Tcl_Size)) - 1)) - 1)
-
-/*
  * Macros used to cast between pointers and integers (e.g. when storing an int
  * in ClientData), on 64-bit architectures they avoid gcc warning about "cast
  * to/from pointer from/to integer of different size".
@@ -2504,7 +2498,7 @@ typedef struct ListStore {
 typedef struct ListSpan {
     Tcl_Size spanStart;    /* Starting index of the span */
     Tcl_Size spanLength;   /* Number of elements in the span */
-    Tcl_Size refCount;     /* Count of references to this span record */
+    size_t refCount;     /* Count of references to this span record */
 } ListSpan;
 #ifndef LIST_SPAN_THRESHOLD /* May be set on build line */
 #define LIST_SPAN_THRESHOLD 101
@@ -2873,6 +2867,75 @@ typedef struct ProcessGlobalValue {
     } while (0)
 
 /*
+ *----------------------------------------------------------------------
+ * Common functions for calculating overallocation. Trivial but allows for
+ * experimenting with growth factors without having to change code in
+ * multiple places. See TclAttemptAllocElemsEx and similar for usage
+ * examples. Best to use those functions. Direct use of TclUpsizeAlloc /
+ * TclResizeAlloc is needed in special cases such as when total size of
+ * memory block is limited to less than TCL_SIZE_MAX.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline Tcl_Size
+TclUpsizeAlloc(TCL_UNUSED(Tcl_Size) /* oldSize. For future experiments with
+				     * some growth algorithms that use this
+				     * information. */,
+	       Tcl_Size needed,
+	       Tcl_Size limit)
+{
+    /* assert (oldCapacity < needed <= limit) */
+    if (needed < (limit - needed/2)) {
+	return needed + needed / 2;
+    }
+    else {
+	return limit;
+    }
+}
+static inline Tcl_Size TclUpsizeRetry(Tcl_Size needed, Tcl_Size lastAttempt) {
+	/* assert (needed < lastAttempt) */
+    if (needed < lastAttempt - 1) {
+	/* (needed+lastAttempt)/2 but that formula may overflow Tcl_Size */
+	return needed + (lastAttempt - needed) / 2;
+    } else {
+	return needed;
+    }
+}
+MODULE_SCOPE void *TclAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
+			Tcl_Size leadSize, Tcl_Size *capacityPtr);
+MODULE_SCOPE void *TclReallocElemsEx(void *oldPtr, Tcl_Size elemCount,
+			Tcl_Size elemSize, Tcl_Size leadSize,
+			Tcl_Size *capacityPtr);
+MODULE_SCOPE void *TclAttemptReallocElemsEx(void *oldPtr,
+			Tcl_Size elemCount, Tcl_Size elemSize,
+			Tcl_Size leadSize, Tcl_Size *capacityPtr);
+/* Alloc elemCount elements of size elemSize with leadSize header
+ * returning actual capacity (in elements) in *capacityPtr. */
+static inline void *TclAttemptAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
+			Tcl_Size leadSize, Tcl_Size *capacityPtr) {
+    return TclAttemptReallocElemsEx(
+	NULL, elemCount, elemSize, leadSize, capacityPtr);
+}
+/* Alloc numByte bytes, returning actual capacity in *capacityPtr. */
+static inline void *TclAllocEx(Tcl_Size numBytes, Tcl_Size *capacityPtr) {
+    return TclAllocElemsEx(numBytes, 1, 0, capacityPtr);
+}
+/* Alloc numByte bytes, returning actual capacity in *capacityPtr. */
+static inline void *
+TclAttemptAllocEx(Tcl_Size numBytes, Tcl_Size *capacityPtr)
+{
+    return TclAttemptAllocElemsEx(numBytes, 1, 0, capacityPtr);
+}
+/* Realloc numByte bytes, returning actual capacity in *capacityPtr. */
+static inline void *TclReallocEx(void *oldPtr, Tcl_Size numBytes, Tcl_Size *capacityPtr) {
+    return TclReallocElemsEx(oldPtr, numBytes, 1, 0, capacityPtr);
+}
+/* Realloc numByte bytes, returning actual capacity in *capacityPtr. */
+static inline void *TclAttemptReallocEx(void *oldPtr, Tcl_Size numBytes, Tcl_Size *capacityPtr) {
+    return TclAttemptReallocElemsEx(oldPtr, numBytes, 1, 0, capacityPtr);
+}
+
+/*
  *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
  *----------------------------------------------------------------
@@ -3117,6 +3180,8 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
 MODULE_SCOPE Tcl_Size	TclDictGetSize(Tcl_Obj *dictPtr);
+MODULE_SCOPE Tcl_Obj*	TclDuplicatePureObj(Tcl_Interp *interp,
+			    Tcl_Obj * objPtr, const Tcl_ObjType *typPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, Tcl_Size dictLength,
 			    const char **elementPtr, const char **nextPtr,
@@ -3243,13 +3308,10 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Size indexCount, Tcl_Obj *const indexArray[]);
-
-
 MODULE_SCOPE Tcl_Obj *	TclListObjGetElement(Tcl_Obj *listObj, Tcl_Size index);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, Tcl_Size line, int n,
 			    int *lines, Tcl_Obj *const *elems);
-MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
 			    Tcl_Obj *toObj, Tcl_Size elemCount,
 			    Tcl_Obj *const elemObjv[]);
@@ -3324,7 +3386,7 @@ MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 			    const char **errorMsgPtr);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, void *clientData,
-			    size_t stackSize, int flags);
+			    TCL_HASH_TYPE stackSize, int flags);
 MODULE_SCOPE Tcl_Size	TclpFindVariable(const char *name, Tcl_Size *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    TCL_HASH_TYPE *lengthPtr, Tcl_Encoding *encodingPtr);
@@ -3393,7 +3455,7 @@ MODULE_SCOPE void	TclSpellFix(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, Tcl_Size objc, Tcl_Size subIdx,
 			    Tcl_Obj *bad, Tcl_Obj *fix);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
-			    Tcl_Size numBytes);
+			    TCL_HASH_TYPE numBytes);
 typedef int (*memCmpFn_t)(const void*, const void*, size_t);
 MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
 			    int checkEq, int nocase, Tcl_Size reqlength);
@@ -4474,9 +4536,6 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 # define TclDecrRefCount(objPtr) \
     Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
-
-# define TclNewListObjDirect(objc, objv) \
-    TclDbNewListObjDirect(objc, objv, __FILE__, __LINE__)
 
 #undef USE_THREAD_ALLOC
 #endif /* TCL_MEM_DEBUG */

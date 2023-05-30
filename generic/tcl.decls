@@ -1444,7 +1444,7 @@ declare 392 {
 }
 declare 393 {
     int Tcl_CreateThread(Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc,
-	    void *clientData, Tcl_Size stackSize, int flags)
+	    void *clientData, TCL_HASH_TYPE stackSize, int flags)
 }
 
 # Introduced in 8.3.2

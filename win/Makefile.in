@@ -1005,7 +1005,7 @@ runtest: tcltest
 # `make shell SCRIPT=foo.tcl`
 shell: binaries
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	$(WINE) ./$(TCLSH) $(SCRIPT)
+	$(WINE) ./$(TCLSH) -encoding utf-8 $(SCRIPT)
 
 # This target can be used to run tclsh inside either gdb or insight
 gdb: binaries

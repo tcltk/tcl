@@ -80,6 +80,9 @@ static int		FileCloseProc(void *instanceData,
 static int		FileEventProc(Tcl_Event *evPtr, int flags);
 static int		FileGetHandleProc(void *instanceData,
 			    int direction, void **handlePtr);
+static int		FileGetOptionProc(ClientData instanceData,
+			    Tcl_Interp *interp, const char *optionName,
+			    Tcl_DString *dsPtr);
 static ThreadSpecificData *FileInit(void);
 static int		FileInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCode);
@@ -110,7 +113,7 @@ static const Tcl_ChannelType fileChannelType = {
     FileOutputProc,		/* Output proc. */
 	NULL,
     NULL,			/* Set option proc. */
-    NULL,			/* Get option proc. */
+    FileGetOptionProc,		/* Get option proc. */
     FileWatchProc,		/* Set up the notifier to watch the channel. */
     FileGetHandleProc,		/* Get an OS handle from channel. */
     FileCloseProc,		/* close2proc. */
@@ -129,6 +132,15 @@ static const Tcl_ChannelType fileChannelType = {
 #define SET_FLAG(var, flag)	((var) |= (flag))
 #define CLEAR_FLAG(var, flag)	((var) &= ~(flag))
 #define TEST_FLAG(value, flag)	(((value) & (flag)) != 0)
+
+/*
+ * The number of 100-ns intervals between the Windows system epoch (1601-01-01
+ * on the proleptic Gregorian calendar) and the Posix epoch (1970-01-01).
+ */
+
+#define POSIX_EPOCH_AS_FILETIME	\
+	((long long) 116444736 * (long long) 1000000000)
+
 
 /*
  *----------------------------------------------------------------------
@@ -744,6 +756,195 @@ FileGetHandleProc(
 
     *handlePtr = (void *) infoPtr->handle;
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileGetOptionProc --
+ *
+ *	Gets an option associated with an open file. If the optionName arg is
+ *	non-NULL, retrieves the value of that option. If the optionName arg is
+ *	NULL, retrieves a list of alternating option names and values for the
+ *	given channel.
+ *
+ * Results:
+ *	A standard Tcl result. Also sets the supplied DString to the string
+ *	value of the option(s) returned.  Sets error message if needed
+ *	(by calling Tcl_BadChannelOption).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline ULONGLONG
+CombineDwords(
+    DWORD hi,
+    DWORD lo)
+{
+    ULARGE_INTEGER converter;
+
+    converter.LowPart = lo;
+    converter.HighPart = hi;
+    return converter.QuadPart;
+}
+
+static inline void
+StoreElementInDict(
+    Tcl_Obj *dictObj,
+    const char *name,
+    Tcl_Obj *valueObj)
+{
+    /*
+     * We assume that the dict is being built fresh and that there's never any
+     * duplicate keys.
+     */
+
+    Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
+    Tcl_DictObjPut(NULL, dictObj, nameObj, valueObj);
+}
+
+static inline time_t
+ToCTime(
+    FILETIME fileTime)		/* UTC time */
+{
+    LARGE_INTEGER convertedTime;
+
+    convertedTime.LowPart = fileTime.dwLowDateTime;
+    convertedTime.HighPart = (LONG) fileTime.dwHighDateTime;
+
+    return (time_t) ((convertedTime.QuadPart -
+	    (long long) POSIX_EPOCH_AS_FILETIME) / (long long) 10000000);
+}
+
+static Tcl_Obj *
+StatOpenFile(
+    FileInfo *infoPtr)
+{
+    DWORD attr;
+    int dev, nlink = 1;
+    unsigned short mode;
+    unsigned long long size, inode;
+    long long atime, ctime, mtime;
+    BY_HANDLE_FILE_INFORMATION data;
+    Tcl_Obj *dictObj;
+
+    if (GetFileInformationByHandle(infoPtr->handle, &data) != TRUE) {
+	Tcl_SetErrno(ENOENT);
+	return NULL;
+    }
+
+    atime = ToCTime(data.ftLastAccessTime);
+    mtime = ToCTime(data.ftLastWriteTime);
+    ctime = ToCTime(data.ftCreationTime);
+    attr = data.dwFileAttributes;
+    size = CombineDwords(data.nFileSizeHigh, data.nFileSizeLow);
+    nlink = data.nNumberOfLinks;
+
+    /*
+     * Unfortunately our stat definition's inode field (unsigned short) will
+     * throw away most of the precision we have here, which means we can't
+     * rely on inode as a unique identifier of a file. We'd really like to do
+     * something like how we handle 'st_size'.
+     */
+
+    inode = CombineDwords(data.nFileIndexHigh, data.nFileIndexLow);
+
+    dev = data.dwVolumeSerialNumber;
+
+    /*
+     * Note that this code has no idea whether the file can be executed.
+     */
+
+    mode = (attr & FILE_ATTRIBUTE_DIRECTORY) ? S_IFDIR|S_IEXEC : S_IFREG;
+    mode |= (attr & FILE_ATTRIBUTE_READONLY) ? S_IREAD : S_IREAD|S_IWRITE;
+    mode |= (mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 3;
+    mode |= (mode & (S_IREAD|S_IWRITE|S_IEXEC)) >> 6;
+
+    /*
+     * We don't construct a Tcl_StatBuf; we're using the info immediately.
+     */
+
+    dictObj = Tcl_NewObj();
+#define STORE_ELEM(name, value) StoreElementInDict(dictObj, name, value)
+
+    STORE_ELEM("dev",      Tcl_NewWideIntObj((long) dev));
+    STORE_ELEM("ino",      Tcl_NewWideIntObj((long long) inode));
+    STORE_ELEM("nlink",    Tcl_NewIntObj(nlink));
+    STORE_ELEM("uid",      Tcl_NewIntObj(0));
+    STORE_ELEM("gid",      Tcl_NewIntObj(0));
+    STORE_ELEM("size",     Tcl_NewWideIntObj((long long) size));
+    STORE_ELEM("atime",    Tcl_NewWideIntObj(atime));
+    STORE_ELEM("mtime",    Tcl_NewWideIntObj(mtime));
+    STORE_ELEM("ctime",    Tcl_NewWideIntObj(ctime));
+    STORE_ELEM("mode",     Tcl_NewWideIntObj(mode));
+
+    /*
+     * Windows only has files and directories, as far as we're concerned.
+     * Anything else and we definitely couldn't have got here anyway.
+     */
+    if (attr & FILE_ATTRIBUTE_DIRECTORY) {
+	STORE_ELEM("type", Tcl_NewStringObj("directory", -1));
+    } else {
+	STORE_ELEM("type", Tcl_NewStringObj("file", -1));
+    }
+#undef STORE_ELEM
+
+    return dictObj;
+}
+
+static int
+FileGetOptionProc(
+    ClientData instanceData,	/* The file state. */
+    Tcl_Interp *interp,		/* For error reporting. */
+    const char *optionName,	/* What option to read, or NULL for all. */
+    Tcl_DString *dsPtr)		/* Where to write the value read. */
+{
+    FileInfo *infoPtr = (FileInfo *)instanceData;
+    int valid = 0;		/* Flag if valid option parsed. */
+    int len;
+
+    if (optionName == NULL) {
+	len = 0;
+	valid = 1;
+    } else {
+	len = strlen(optionName);
+    }
+
+    /*
+     * Get option -stat
+     * Option is readonly and returned by [fconfigure chan -stat] but not
+     * returned by [fconfigure chan] without explicit option name.
+     */
+
+    if ((len > 1) && (strncmp(optionName, "-stat", len) == 0)) {
+	return TCL_OK;
+    }
+
+    if (valid) {
+	Tcl_Obj *dictObj = StatOpenFile(infoPtr);
+	const char *dictContents;
+	Tcl_Size dictLength;
+
+	if (dictObj == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't read file channel status: %s",
+		    Tcl_PosixError(interp)));
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Transfer dictionary to the DString. Note that we don't do this as
+	 * an element as this is an option that can't be retrieved with a
+	 * general probe.
+	 */
+
+	dictContents = Tcl_GetStringFromObj(dictObj, &dictLength);
+	Tcl_DStringAppend(dsPtr, dictContents, dictLength);
+	Tcl_DecrRefCount(dictObj);
+	return TCL_OK;
+    }
+    return Tcl_BadChannelOption(interp, optionName,
+		"stat");
 }
 
 /*

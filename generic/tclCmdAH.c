@@ -2356,8 +2356,6 @@ StoreStatData(
     }
 
     /*
-     * Assume Tcl_ObjSetVar2() does not keep a copy of the field name!
-     *
      * Might be a better idea to call Tcl_SetVar2Ex() instead, except we want
      * to have an object (i.e. possibly cached) array variable name but a
      * string element name, so no API exists. Messy.
@@ -2390,8 +2388,14 @@ StoreStatData(
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     STORE_ARY("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
 #endif
+#ifdef HAVE_STRUCT_STAT_ST_RDEV
+    if (S_ISCHR(statPtr->st_mode) || S_ISBLK(statPtr->st_mode)) {
+	STORE_ARY("rdev", Tcl_NewWideIntObj((long) statPtr->st_rdev));
+    }
+#endif
     STORE_ARY("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
-    STORE_ARY("mtime",	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
+    STORE_ARY("mtime",	Tcl_NewWideIntObj(
+	    Tcl_GetModificationTimeFromStat(statPtr)));
     STORE_ARY("ctime",	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
     mode = (unsigned short) statPtr->st_mode;
     STORE_ARY("mode",	Tcl_NewWideIntObj(mode));
@@ -2784,13 +2788,18 @@ EachloopCmd(
     for (i=0 ; i<numLists ; i++) {
 	/* List */
 	/* Variables */
-	statePtr->vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
-	if (statePtr->vCopyList[i] == NULL) {
+	statePtr->vCopyList[i] = TclDuplicatePureObj(
+	    interp, objv[1+i*2], &tclListType.objType);
+	if (!statePtr->vCopyList[i]) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjLengthM(NULL, statePtr->vCopyList[i],
+	result = TclListObjLengthM(interp, statePtr->vCopyList[i],
 	    &statePtr->varcList[i]);
+	if (result != TCL_OK) {
+	    result = TCL_ERROR;
+	    goto done;
+	}
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%s varlist is empty",
@@ -2816,13 +2825,17 @@ EachloopCmd(
 	    statePtr->argcList[i] = ABSTRACTLIST_PROC(statePtr->aCopyList[i], lengthProc)(statePtr->aCopyList[i]);
 	} else {
 	    /* List values */
-	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
-	    if (statePtr->aCopyList[i] == NULL) {
+	    statePtr->aCopyList[i] = TclDuplicatePureObj(
+		interp, objv[2+i*2], &tclListType.objType);
+	    if (!statePtr->aCopyList[i]) {
 		result = TCL_ERROR;
 		goto done;
 	    }
-	    TclListObjGetElementsM(NULL, statePtr->aCopyList[i],
+	    result = TclListObjGetElementsM(interp, statePtr->aCopyList[i],
 		&statePtr->argcList[i], &statePtr->argvList[i]);
+	    if (result != TCL_OK) {
+		goto done;
+	    }
 	}
 	/* account for variable <> value mismatch */
 	j = statePtr->argcList[i] / statePtr->varcList[i];

@@ -5282,8 +5282,6 @@ compiles to 0 bytecodes (sofer)
 
 2001-09-13 (new feature)[TIP 56] Tcl_EvalTokensStandard API (sofer)
 
-2001-09-13 (new feature) Old ChangeLog entries => ChangeLog.1999 (hobbs)
-
 2001-09-17 (new feature) compiling with TCL_COMPILE_DEBUG now required to
 enable all compile and execution tracing (sofer)
         *** POTENTIAL INCOMPATIBILITY ***
@@ -5368,8 +5366,6 @@ of the Host: header value
 2002-01-25 (new feature)[496733] socket options -eofchar and -translation
 return read-only values (dejong)
 
-2002-01-28 (new feature) Old ChangeLog entries => ChangeLog.20900 (hobbs)
-
 2002-01-28 (performance enhancement) bytecompiled [regexp] for trivial cases
 that amount to string matching.  Also -nocase and --. (hobbs)
 
@@ -5394,7 +5390,7 @@ errored out. (kupries, sofer)
 
 2002-02-15 (new feature)[TIP 72] support for 64-bit integer values on
 32-bit platforms and ability to work with >2GiB files.  Extends many
-commands.  See ChangeLog and TIP for details.
+commands.  See TIP for details.
 	*** POTENTIAL INCOMPATIBILITY ***
 
 2002-02-22 (bug fix)[476537] Fix panic when loading shared library without
@@ -6070,7 +6066,7 @@ each command/interp validity before executing. (sofer)
 
 2004-04-06 (clean up) refactored Tcl header file #include order.  Might
 create need for changes in extensions that #include private headers.
-Changed source code files should work with older Tcl as well.  See ChangeLog.
+Changed source code files should work with older Tcl as well.
      *** POTENTIAL INCOMPATIBILITY ***
 
 2004-04-07 (bug fix)[920667] install into any Unicode path on Win (hobbs)
