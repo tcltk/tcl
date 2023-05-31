@@ -14,7 +14,7 @@ proc readFile {filename {mode text}} {
     set mode [tcl::prefix match -message "mode" -error $ERR $MODES $mode]
 
     # Read the file
-    set f [open $filename [expr {$mode eq "text" ? "r" : "rb"}]]
+    set f [open $filename [dict get {text r binary rb} $mode]]
     try {
 	return [read $f]
     } finally {

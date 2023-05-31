@@ -246,14 +246,17 @@ boundaries before the starting point in the given string.  The index
 returned refers to the second character of the pair that comprises a
 boundary.
 .TP
-\fBforeachLine \fIfilename varName body\fR
+\fBforeachLine \fIvarName filename body\fR
 .VS "Tcl 8.7, TIP 670"
 This reads in the text file named \fIfilename\fR one line at a time
 (using system defaults for reading text files). It writes that line to the
 variable named by \fIvarName\fR and then executes \fIbody\fR for that line.
 The result value of \fIbody\fR is ignored, but \fBerror\fR, \fBreturn\fR,
-\fBbreak\fR and \fBcontinue\fR may be used within it.
-The overall result of \fBforeachLine\fR is the empty string; the file will be
+\fBbreak\fR and \fBcontinue\fR may be used within it to produce an error,
+return from the calling context, stop the loop, or go to the next line
+respectively.
+The overall result of \fBforeachLine\fR is the empty string (assuming no
+errors from I/O or from evaluating the body of the loop); the file will be
 closed prior to the procedure returning.
 .VE "Tcl 8.7, TIP 670"
 .TP

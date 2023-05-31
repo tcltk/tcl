@@ -21,13 +21,14 @@ proc writeFile {args} {
 	    set mode [tcl::prefix match -message "mode" -error $ERR $MODES $mode]
 	}
 	default {
+	    set COMMAND [lindex [info level 0] 0]
 	    return -code error -errorcode {TCL WRONGARGS} \
-		"wrong # args: should be \"[lindex [info level 0] 0] filename ?mode? data\""
+		"wrong # args: should be \"$COMMAND filename ?mode? data\""
 	}
     }
 
     # Write the file
-    set f [open $filename [expr {$mode eq "text" ? "w" : "wb"}]]
+    set f [open $filename [dict get {text w binary wb} $mode]]
     try {
 	puts -nonewline $f $data
     } finally {

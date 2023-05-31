@@ -9,7 +9,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-proc foreachLine {filename varName body} {
+proc foreachLine {varName filename body} {
     upvar 1 $varName line
     set f [open $filename "r"]
     try {
