@@ -2285,8 +2285,10 @@ NewReflectedChannel(
     rcPtr->mode = mode;
     rcPtr->interest = 0;		/* Initially no interest registered */
 
-    /* ASSERT: cmdpfxObj is a Tcl List */
-    rcPtr->cmd = TclListObjCopy(NULL, cmdpfxObj);
+    rcPtr->cmd = TclDuplicatePureObj(interp, cmdpfxObj, &tclListType);
+    if (!rcPtr->cmd) {
+	return NULL;
+    }
     Tcl_IncrRefCount(rcPtr->cmd);
     rcPtr->methods = Tcl_NewListObj(METH_WRITE + 1, NULL);
     while (mn <= (int)METH_WRITE) {
@@ -2423,8 +2425,10 @@ InvokeTclMethod(
      * before the channel id.
      */
 
-    cmd = TclListObjCopy(NULL, rcPtr->cmd);
-
+    cmd = TclDuplicatePureObj(NULL, rcPtr->cmd, &tclListType);
+    if (!cmd) {
+	return TCL_ERROR;
+    }
     Tcl_ListObjIndex(NULL, rcPtr->methods, method, &methObj);
     Tcl_ListObjAppendElement(NULL, cmd, methObj);
     Tcl_ListObjAppendElement(NULL, cmd, rcPtr->name);
@@ -3145,7 +3149,7 @@ ForwardProc(
 	    } else {
 		ForwardSetObjError(paramPtr, resObj);
 	    }
-	    paramPtr->input.toRead = -1;
+	    paramPtr->input.toRead = TCL_IO_FAILURE;
 	} else {
 	    /*
 	     * Process a regular result.

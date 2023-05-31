@@ -40,7 +40,7 @@
 
 #ifdef ENABLE_LIST_ASSERTS
 
-#define LIST_ASSERT(cond_) assert(cond_) /* TODO - is there a Tcl-specific one? */
+#define LIST_ASSERT(cond_) assert(cond_)
 /*
  * LIST_INDEX_ASSERT is to catch errors with negative indices and counts
  * being passed AFTER validation. On Tcl9 length types are unsigned hence
@@ -782,7 +782,8 @@ ListStoreNew(
     }
     if (storePtr == NULL) {
 	if (flags & LISTREP_PANIC_ON_FAIL) {
-	    Tcl_Panic("list creation failed: unable to alloc %u bytes",
+	    Tcl_Panic("list creation failed: unable to alloc %" TCL_SIZE_MODIFIER
+		    "d bytes",
 		    LIST_SIZE(objc));
 	}
 	return NULL;
@@ -826,7 +827,8 @@ ListStoreNew(
  *
  * ListStoreReallocate --
  *
- *    Reallocates the memory for a ListStore.
+ *    Reallocates the memory for a ListStore allocating extra for
+ *    possible future growth.
  *
  * Results:
  *    Pointer to the ListStore which may be the same as storePtr or pointer
@@ -841,23 +843,23 @@ ListStoreNew(
  *------------------------------------------------------------------------
  */
 ListStore *
-ListStoreReallocate (ListStore *storePtr, Tcl_Size numSlots)
+ListStoreReallocate (ListStore *storePtr, Tcl_Size needed)
 {
-    Tcl_Size newCapacity;
+    Tcl_Size capacity;
     ListStore *newStorePtr;
 
-    newCapacity = ListStoreUpSize(numSlots);
+    capacity = ListStoreUpSize(needed);
     newStorePtr =
-	(ListStore *)attemptckrealloc(storePtr, LIST_SIZE(newCapacity));
+	(ListStore *)attemptckrealloc(storePtr, LIST_SIZE(capacity));
     if (newStorePtr == NULL) {
-	newCapacity = numSlots;
+	capacity = needed;
 	newStorePtr = (ListStore *)attemptckrealloc(storePtr,
-						    LIST_SIZE(newCapacity));
+						    LIST_SIZE(capacity));
 	if (newStorePtr == NULL)
 	    return NULL;
     }
     /* Only the capacity has changed, fix it in the header */
-    newStorePtr->numAllocated = newCapacity;
+    newStorePtr->numAllocated = capacity;
     return newStorePtr;
 }
 
@@ -1338,50 +1340,6 @@ Tcl_SetListObj(
 	TclInvalidateStringRep(objPtr);
 	Tcl_InitStringRep(objPtr, NULL, 0);
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclListObjCopy --
- *
- *	Makes a "pure list" copy of a list value. This provides for the C
- *	level a counterpart of the [lrange $list 0 end] command, while using
- *	internals details to be as efficient as possible.
- *
- * Results:
- *	Normally returns a pointer to a new Tcl_Obj, that contains the same
- *	list value as *listPtr does. The returned Tcl_Obj has a refCount of
- *	zero. If *listPtr does not hold a list, NULL is returned, and if
- *	interp is non-NULL, an error message is recorded there.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclListObjCopy(
-    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *listObj)		/* List object for which an element array is
-				 * to be returned. */
-{
-    Tcl_Obj *copyObj;
-
-    if (!TclHasInternalRep(listObj, &tclListType)) {
-	if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
-	    return TclArithSeriesObjCopy(interp, listObj);
-	}
-	if (SetListFromAny(interp, listObj) != TCL_OK) {
-	    return NULL;
-	}
-    }
-
-    TclNewObj(copyObj);
-    TclInvalidateStringRep(copyObj);
-    DupListInternalRep(listObj, copyObj);
-    return copyObj;
 }
 
 /*
@@ -2587,7 +2545,7 @@ TclLindexList(
      * implementation does not.
      */
 
-    indexListCopy = TclListObjCopy(NULL, argObj);
+    indexListCopy = TclDuplicatePureObj(NULL, argObj, &tclListType);
     if (indexListCopy == NULL) {
 	/*
 	 * The argument is neither an index nor a well-formed list.
@@ -2672,7 +2630,7 @@ TclLindexFlat(
 	 * while we are still using it. See test lindex-8.4.
 	 */
 
-	sublistCopy = TclListObjCopy(interp, listObj);
+	sublistCopy = TclDuplicatePureObj(interp, listObj, &tclListType);
 	Tcl_DecrRefCount(listObj);
 	listObj = NULL;
 
@@ -2765,7 +2723,7 @@ TclLsetList(
 	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
     }
 
-    indexListCopy = TclListObjCopy(NULL, indexArgObj);
+    indexListCopy = TclDuplicatePureObj(NULL, indexArgObj, &tclListType);
     if (indexListCopy == NULL) {
 	/*
 	 * indexArgPtr designates something that is neither an index nor a

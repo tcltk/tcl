@@ -4481,7 +4481,7 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
     break;
     case INST_INFO_LEVEL_ARGS: {
-	Tcl_Size level;
+	int level;
 	CallFrame *framePtr = iPtr->varFramePtr;
 	CallFrame *rootFramePtr = iPtr->rootFramePtr;
 
@@ -5580,7 +5580,7 @@ TEBCresume(
 
     {
 	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;
-	int length3, endIdx;
+	Tcl_Size length3, endIdx;
 	Tcl_Obj *value3Ptr;
 
     case INST_STR_REPLACE:
@@ -5678,7 +5678,7 @@ TEBCresume(
 	for (; ustring1 < end; ustring1++) {
 	    if ((*ustring1 == *ustring2) &&
 		/* Fix bug [69218ab7b]: restrict max compare length. */
-		(end-ustring1 >= length2) && (length2==1 ||
+		((end-ustring1) >= length2) && (length2==1 ||
 		    memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length2)
 			    == 0)) {
 		if (p != ustring1) {
@@ -6693,7 +6693,7 @@ TEBCresume(
 		numVars = varListPtr->numVars;
 
 		listVarPtr = LOCAL(listTmpIndex);
-		listPtr = TclListObjCopy(NULL, listVarPtr->value.objPtr);
+		listPtr = TclDuplicatePureObj(NULL, listVarPtr->value.objPtr, &tclListType);
 		TclListObjGetElementsM(interp, listPtr, &listLen, &elements);
 
 		valIndex = (iterNum * numVars);
@@ -6790,7 +6790,11 @@ TEBCresume(
 		goto gotError;
 	    }
 	    if (Tcl_IsShared(listPtr)) {
-		objPtr = TclListObjCopy(NULL, listPtr);
+		objPtr = TclDuplicatePureObj(
+		    interp, listPtr, &tclListType);
+		if (!objPtr) {
+		    goto gotError;
+		}
 		Tcl_IncrRefCount(objPtr);
 		Tcl_DecrRefCount(listPtr);
 		OBJ_AT_DEPTH(listTmpDepth) = objPtr;
@@ -6852,6 +6856,7 @@ TEBCresume(
 	 */
 
 	if (iterNum < iterMax) {
+	    int status;
 	    /*
 	     * Set the variables and jump back to run the body
 	     */
@@ -6865,7 +6870,12 @@ TEBCresume(
 		numVars = varListPtr->numVars;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
-		TclListObjGetElementsM(interp, listPtr, &listLen, &elements);
+		status = TclListObjGetElementsM(
+		    interp, listPtr, &listLen, &elements);
+		if (status != TCL_OK) {
+		    goto gotError;
+		}
+
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
@@ -9358,7 +9368,7 @@ IllegalExprOperandType(
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
-	int numBytes;
+	Tcl_Size numBytes;
 	const char *bytes = TclGetStringFromObj(opndPtr, &numBytes);
 
 	if (numBytes == 0) {
