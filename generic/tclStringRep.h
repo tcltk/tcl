@@ -34,9 +34,10 @@ typedef struct {
 				 * calculated. Any other means that there is a valid
 				 * Unicode rep, or that the number of UTF bytes ==
 				 * the number of chars. */
-    Tcl_Size allocated;		/* The amount of space actually allocated for
-				 * the UTF-8 string (minus 1 byte for the
-				 * termination char). */
+    Tcl_Size allocated;		/* The amount of space allocated for
+				 * the UTF-8 string. Does not include nul
+				 * terminator so actual allocation is
+				 * (allocated+1). */
     Tcl_Size maxChars;		/* Max number of chars that can fit in the
 				 * space allocated for the Unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has

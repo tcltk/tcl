@@ -1790,9 +1790,9 @@ ChanPendingObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
-    int mode;
     static const char *const options[] = {"input", "output", NULL};
     enum pendingOptionsEnum {PENDING_INPUT, PENDING_OUTPUT} index;
+    int mode;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode channelId");

@@ -4,7 +4,7 @@
  *	This file contains the implementation of the ::oo-related [info]
  *	subcommands.
  *
- * Copyright © 2006-2011 Donal K. Fellows
+ * Copyright © 2006-2019 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -17,6 +17,7 @@
 #include "tclOOInt.h"
 
 static inline Class *	GetClassFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static void		SortPropList(Tcl_Obj *list);
 static Tcl_ObjCmdProc2 InfoObjectCallCmd;
 static Tcl_ObjCmdProc2 InfoObjectClassCmd;
 static Tcl_ObjCmdProc2 InfoObjectDefnCmd;
@@ -28,6 +29,7 @@ static Tcl_ObjCmdProc2 InfoObjectMethodsCmd;
 static Tcl_ObjCmdProc2 InfoObjectMethodTypeCmd;
 static Tcl_ObjCmdProc2 InfoObjectMixinsCmd;
 static Tcl_ObjCmdProc2 InfoObjectNsCmd;
+static Tcl_ObjCmdProc2 InfoObjectPropCmd;
 static Tcl_ObjCmdProc2 InfoObjectVarsCmd;
 static Tcl_ObjCmdProc2 InfoObjectVariablesCmd;
 static Tcl_ObjCmdProc2 InfoClassCallCmd;
@@ -41,6 +43,7 @@ static Tcl_ObjCmdProc2 InfoClassInstancesCmd;
 static Tcl_ObjCmdProc2 InfoClassMethodsCmd;
 static Tcl_ObjCmdProc2 InfoClassMethodTypeCmd;
 static Tcl_ObjCmdProc2 InfoClassMixinsCmd;
+static Tcl_ObjCmdProc2 InfoClassPropCmd;
 static Tcl_ObjCmdProc2 InfoClassSubsCmd;
 static Tcl_ObjCmdProc2 InfoClassSupersCmd;
 static Tcl_ObjCmdProc2 InfoClassVariablesCmd;
@@ -61,6 +64,7 @@ static const EnsembleImplMap infoObjectCmds[] = {
     {"methodtype", InfoObjectMethodTypeCmd, TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"mixins",	   InfoObjectMixinsCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"namespace",  InfoObjectNsCmd,	    TclCompileInfoObjectNamespaceCmd, NULL, NULL, 0},
+    {"properties", InfoObjectPropCmd,	    TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
     {"variables",  InfoObjectVariablesCmd,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {"vars",	   InfoObjectVarsCmd,	    TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
@@ -82,6 +86,7 @@ static const EnsembleImplMap infoClassCmds[] = {
     {"methods",	     InfoClassMethodsCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
     {"methodtype",   InfoClassMethodTypeCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"mixins",	     InfoClassMixinsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"properties",   InfoClassPropCmd,		TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
     {"subclasses",   InfoClassSubsCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {"superclasses", InfoClassSupersCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"variables",    InfoClassVariablesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
@@ -1714,6 +1719,186 @@ InfoClassCallCmd(
     Tcl_SetObjResult(interp, TclOORenderCallChain(interp, callPtr));
     TclOODeleteChain(callPtr);
     return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassPropCmd, InfoObjectPropCmd --
+ *
+ *	Implements [info class properties $clsName ?$option...?] and
+ *	[info object properties $objName ?$option...?]
+ *
+ * ----------------------------------------------------------------------
+ */
+
+enum PropOpt {
+    PROP_ALL, PROP_READABLE, PROP_WRITABLE
+};
+static const char *const propOptNames[] = {
+    "-all", "-readable", "-writable",
+    NULL
+};
+
+static int
+InfoClassPropCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_Size objc,
+    Tcl_Obj *const objv[])
+{
+    Class *clsPtr;
+    Tcl_Size i;
+    int idx, all = 0, writable = 0, allocated = 0;
+    Tcl_Obj *result, *propObj;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className ?options...?");
+	return TCL_ERROR;
+    }
+    clsPtr = GetClassFromObj(interp, objv[1]);
+    if (clsPtr == NULL) {
+	return TCL_ERROR;
+    }
+    for (i = 2; i < objc; i++) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], propOptNames, "option", 0,
+		&idx) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch (idx) {
+	case PROP_ALL:
+	    all = 1;
+	    break;
+	case PROP_READABLE:
+	    writable = 0;
+	    break;
+	case PROP_WRITABLE:
+	    writable = 1;
+	    break;
+	}
+    }
+
+    /*
+     * Get the properties.
+     */
+
+    if (all) {
+	result = TclOOGetAllClassProperties(clsPtr, writable, &allocated);
+	if (allocated) {
+	    SortPropList(result);
+	}
+    } else {
+	result = Tcl_NewObj();
+	if (writable) {
+	    FOREACH(propObj, clsPtr->properties.writable) {
+		Tcl_ListObjAppendElement(NULL, result, propObj);
+	    }
+	} else {
+	    FOREACH(propObj, clsPtr->properties.readable) {
+		Tcl_ListObjAppendElement(NULL, result, propObj);
+	    }
+	}
+	SortPropList(result);
+    }
+    Tcl_SetObjResult(interp, result);
+    return TCL_OK;
+}
+
+static int
+InfoObjectPropCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_Size objc,
+    Tcl_Obj *const objv[])
+{
+    Object *oPtr;
+    Tcl_Size i;
+    int idx, all = 0, writable = 0, allocated = 0;
+    Tcl_Obj *result, *propObj;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName ?options...?");
+	return TCL_ERROR;
+    }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    for (i = 2; i < objc; i++) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], propOptNames, "option", 0,
+		&idx) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch (idx) {
+	case PROP_ALL:
+	    all = 1;
+	    break;
+	case PROP_READABLE:
+	    writable = 0;
+	    break;
+	case PROP_WRITABLE:
+	    writable = 1;
+	    break;
+	}
+    }
+
+    /*
+     * Get the properties.
+     */
+
+    if (all) {
+	result = TclOOGetAllObjectProperties(oPtr, writable, &allocated);
+	if (allocated) {
+	    SortPropList(result);
+	}
+    } else {
+	result = Tcl_NewObj();
+	if (writable) {
+	    FOREACH(propObj, oPtr->properties.writable) {
+		Tcl_ListObjAppendElement(NULL, result, propObj);
+	    }
+	} else {
+	    FOREACH(propObj, oPtr->properties.readable) {
+		Tcl_ListObjAppendElement(NULL, result, propObj);
+	    }
+	}
+	SortPropList(result);
+    }
+    Tcl_SetObjResult(interp, result);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * SortPropList --
+ *	Sort a list of names of properties. Simple support function. Assumes
+ *	that the list Tcl_Obj is unshared and doesn't have a string
+ *	representation.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+PropNameCompare(
+    const void *a,
+    const void *b)
+{
+    Tcl_Obj *first = *(Tcl_Obj **) a;
+    Tcl_Obj *second = *(Tcl_Obj **) b;
+
+    return strcmp(Tcl_GetString(first), Tcl_GetString(second));
+}
+
+static void
+SortPropList(
+    Tcl_Obj *list)
+{
+    Tcl_Size ec;
+    Tcl_Obj **ev;
+
+    Tcl_ListObjGetElements(NULL, list, &ec, &ev);
+    qsort(ev, ec, sizeof(Tcl_Obj *), PropNameCompare);
 }
 
 /*

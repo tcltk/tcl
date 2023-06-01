@@ -540,7 +540,7 @@ declare 214 {
     void TclSetObjNameOfExecutable(Tcl_Obj *name, Tcl_Encoding encoding)
 }
 declare 215 {
-    void *TclStackAlloc(Tcl_Interp *interp, Tcl_Size numBytes)
+    void *TclStackAlloc(Tcl_Interp *interp, TCL_HASH_TYPE numBytes)
 }
 declare 216 {
     void TclStackFree(Tcl_Interp *interp, void *freePtr)

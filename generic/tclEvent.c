@@ -2053,7 +2053,7 @@ Tcl_CreateThread(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
     void *clientData,		/* The one argument to Main() */
-    Tcl_Size stackSize,		/* Size of stack for the new thread */
+    TCL_HASH_TYPE stackSize,	/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {

@@ -35,10 +35,10 @@ if \fItime\fR is not specified.
 .sp
 The parameter \fImax-count\fR could additionally impose a further restriction
 by the maximal number of iterations to evaluate the script.
-If \fImax-count\fR is specified, the evalution will stop either this count of
+If \fImax-count\fR is specified, the evaluation will stop either this count of
 iterations is reached or the time is exceeded.
 .sp
-It will then return a canonical tcl-list of the form:
+It will then return a canonical Tcl-list of the form:
 .PP
 .CS
 \fB0.095977 \(mcs/# 52095836 # 10419167 #/sec 5000.000 net-ms\fR
@@ -85,7 +85,7 @@ used to measure the cost of \fBTcl_EvalObjEx\fR, of the invocation of canonical
 lists, and of the uncompiled versions of bytecoded commands.
 .PP
 As opposed to the \fBtime\fR commmand, which runs the tested script for a fixed
-number of iterations, the timerate command runs it for a fixed time.
+number of iterations, the \fBtimerate\fR command runs it for a fixed time.
 Additionally, the compiled variant of the script will be used during the entire
 measurement, as if the script were part of a compiled procedure, if the \fB\-direct\fR
 option is not specified. The fixed time period and possibility of compilation allow

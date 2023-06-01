@@ -214,7 +214,7 @@ TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
     void *clientData,	/* The one argument to Main() */
-    size_t stackSize,		/* Size of stack for the new thread */
+    TCL_HASH_TYPE stackSize,	/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
@@ -228,7 +228,7 @@ TclpThreadCreate(
 
 #ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
     if (stackSize != TCL_THREAD_STACK_DEFAULT) {
-	pthread_attr_setstacksize(&attr, stackSize);
+	pthread_attr_setstacksize(&attr, (size_t)stackSize);
 #ifdef TCL_THREAD_STACK_MIN
     } else {
 	/*
@@ -247,7 +247,7 @@ TclpThreadCreate(
 
 	result = pthread_attr_getstacksize(&attr, &size);
 	if (!result && (size < TCL_THREAD_STACK_MIN)) {
-	    pthread_attr_setstacksize(&attr, (size_t) TCL_THREAD_STACK_MIN);
+	    pthread_attr_setstacksize(&attr, (size_t)TCL_THREAD_STACK_MIN);
 	}
 #endif /* TCL_THREAD_STACK_MIN */
     }

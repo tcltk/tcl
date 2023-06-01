@@ -221,7 +221,7 @@ test listrep-1.2 {
     set l [linsert [freeSpaceNone] $end 99]
     validate $l
     list $l [leadSpace $l] [tailSpace $l]
-} -result [list {0 1 2 3 4 5 6 7 99} 0 9]
+} -result [list {0 1 2 3 4 5 6 7 99} 0 4]
 
 test listrep-1.2.1 {
     Inserts at back of unshared list with no free space should allocate all
@@ -231,7 +231,7 @@ test listrep-1.2.1 {
     lset l $end+1 99
     validate $l
     list $l [leadSpace $l] [tailSpace $l]
-} -result [list {0 1 2 3 4 5 6 7 99} 0 9]
+} -result [list {0 1 2 3 4 5 6 7 99} 0 4]
 
 test listrep-1.2.2 {
     Inserts at back of unshared list with no free space should allocate all
@@ -241,7 +241,7 @@ test listrep-1.2.2 {
     lappend l 99
     validate $l
     list $l [leadSpace $l] [tailSpace $l]
-} -result [list {0 1 2 3 4 5 6 7 99} 0 9]
+} -result [list {0 1 2 3 4 5 6 7 99} 0 4]
 
 test listrep-1.3 {
     Inserts in middle of unshared list with no free space should reallocate with
@@ -1160,7 +1160,7 @@ test listrep-3.3 {
     set l [linsert [freeSpaceBoth 8 1 1] $zero -3 -2 -1]
     validate $l
     list $l [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
-} -result [list [irange -3 7] 6 5 1]
+} -result [list [irange -3 7] 3 2 1]
 
 test listrep-3.3.1 {
     Inserts in front of unshared spanned list with insufficient total freespace
@@ -1169,7 +1169,7 @@ test listrep-3.3.1 {
     set l [lreplace [freeSpaceBoth 8 1 1] $zero -1 -3 -2 -1]
     validate $l
     list $l [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
-} -result [list [irange -3 7] 6 5 1]
+} -result [list [irange -3 7] 3 2 1]
 
 test listrep-3.4 {
     Inserts at back of unshared spanned list with room at back should not
@@ -1255,7 +1255,7 @@ test listrep-3.6 {
     set l [linsert [freeSpaceBoth 8 1 1] $end 8 9 10]
     validate $l
     list $l [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
-} -result [list [irange 0 10] 1 10 1]
+} -result [list [irange 0 10] 1 4 1]
 
 test listrep-3.6.1 {
     Inserts in back of unshared spanned list with insufficient total freespace
@@ -1265,7 +1265,7 @@ test listrep-3.6.1 {
     set l [lreplace [freeSpaceBoth 8 1 1] $end+1 $end+1 8 9 10]
     validate $l
     list $l [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
-} -result [list [irange 0 10] 1 10 1]
+} -result [list [irange 0 10] 1 4 1]
 
 test listrep-3.6.2 {
     Inserts in back of unshared spanned list with insufficient total freespace
@@ -1276,7 +1276,7 @@ test listrep-3.6.2 {
     lappend l 8 9 10
     validate $l
     list $l [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
-} -result [list [irange 0 10] 1 10 1]
+} -result [list [irange 0 10] 1 4 1]
 
 test listrep-3.6.3 {
     Inserts in back of unshared spanned list with insufficient total freespace
@@ -1287,7 +1287,7 @@ test listrep-3.6.3 {
     lset l $end+1 8
     validate $l
     list $l [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
-} -result [list [irange 0 8] 0 9 1]
+} -result [list [irange 0 8] 0 4 1]
 
 test listrep-3.7 {
     Inserts in front half of unshared spanned list with room in front should not
@@ -1341,7 +1341,7 @@ test listrep-3.10 {
     set l [linsert [freeSpaceBoth 8 1 1] $one -3 -2 -1]
     validate $l
     list $l [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
-} -result [list {0 -3 -2 -1 1 2 3 4 5 6 7} 1 10 1]
+} -result [list {0 -3 -2 -1 1 2 3 4 5 6 7} 1 4 1]
 
 test listrep-3.10.1 {
     Inserts in front half of unshared spanned list with insufficient total space.
@@ -1350,7 +1350,7 @@ test listrep-3.10.1 {
     set l [lreplace [freeSpaceBoth 8 1 1] $one -1 -3 -2 -1]
     validate $l
     list $l [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
-} -result [list {0 -3 -2 -1 1 2 3 4 5 6 7} 1 10 1]
+} -result [list {0 -3 -2 -1 1 2 3 4 5 6 7} 1 4 1]
 
 test listrep-3.11 {
     Inserts in back half of unshared spanned list with room in back should not
@@ -1414,7 +1414,7 @@ test listrep-3.14 {
     set l [linsert [freeSpaceBoth 8 1 1] $end-$one 8 9 10]
     validate $l
     list $l [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
-} -result [list {0 1 2 3 4 5 6 8 9 10 7} 1 10 1]
+} -result [list {0 1 2 3 4 5 6 8 9 10 7} 1 4 1]
 
 test listrep-3.14.1 {
     Inserts in back half of unshared spanned list with insufficient
@@ -1424,7 +1424,7 @@ test listrep-3.14.1 {
     set l [lreplace [freeSpaceBoth 8 1 1] $end -1 8 9 10]
     validate $l
     list $l [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
-} -result [list {0 1 2 3 4 5 6 8 9 10 7} 1 10 1]
+} -result [list {0 1 2 3 4 5 6 8 9 10 7} 1 4 1]
 
 test listrep-3.15 {
     Deletes from front of small unshared span list results in elements
@@ -1714,7 +1714,7 @@ test listrep-3.27 {
     set l [lreplace [freeSpaceBoth 8 1 1] $zero $one 10 11 12 13 14]
     validate $l
     list $l [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
-} -result [list {10 11 12 13 14 2 3 4 5 6 7} 6 5 1]
+} -result [list {10 11 12 13 14 2 3 4 5 6 7} 3 2 1]
 
 test listrep-3.28 {
     Replacement of elements at back with same number of elements in unshared
@@ -1770,7 +1770,7 @@ test listrep-3.32 {
     set l [lreplace [freeSpaceBoth 8 1 1] $end-1 $end 10 11 12 13 14]
     validate $l
     list $l [leadSpace $l] [tailSpace $l]
-} -result [list {0 1 2 3 4 5 10 11 12 13 14} 1 10]
+} -result [list {0 1 2 3 4 5 10 11 12 13 14} 1 4]
 
 test listrep-3.33 {
     Replacement of elements in the middle in an unshared spanned list with
@@ -1864,7 +1864,7 @@ test listrep-3.41 {
     set l [lreplace [freeSpaceBoth 8 1 1] $one $one 8 9 10 11 12]
     validate $l
     list $l [leadSpace $l] [tailSpace $l]
-} -result [list {0 8 9 10 11 12 2 3 4 5 6 7} 1 11]
+} -result [list {0 8 9 10 11 12 2 3 4 5 6 7} 1 5]
 
 #
 # 4.* - tests on shared spanned lists

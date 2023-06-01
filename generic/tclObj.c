@@ -2272,8 +2272,8 @@ ParseBoolean(
 
     if ((length == 0) || (length > 5)) {
 	/*
-         * Longest valid boolean string rep. is "false".
-         */
+	 * Longest valid boolean string rep. is "false".
+	 */
 
 	return TCL_ERROR;
     }

@@ -24,7 +24,7 @@ Arguments \fIfirst\fR and \fIlast\fR are index values specifying the first and
 last elements of the range to replace. They are interpreted
 the same as index values for the command \fBstring index\fR,
 supporting simple index arithmetic and indices relative to the
-end of the list. The index 0 refers to the first element of the
+end of the list. The index \fB0\fR refers to the first element of the
 list, and \fBend\fR refers to the last element of the list.
 .PP
 If either \fIfirst\fR or \fIlast\fR is less than zero, it is considered to
@@ -49,33 +49,33 @@ between \fIfirst\fR and \fIlast\fR are simply deleted.
 Prepend to a list.
 .PP
 .CS
-% set lst {c d e f g}
-c d e f g
-% ledit lst -1 -1 a b
-a b c d e f g
+set lst {c d e f g}
+      \fI\(-> c d e f g\fR
+\fBledit\fR lst -1 -1 a b
+      \fI\(-> a b c d e f g\fR
 .CE
 .PP
 Append to the list.
 .PP
 .CS
-% ledit lst end+1 end+1 h i
-a b c d e f g h i
+\fBledit\fR lst end+1 end+1 h i
+      \fI\(-> a b c d e f g h i\fR
 .CE
 .PP
 Delete third and fourth elements.
 .PP
 .CS
-% ledit lst 2 3
-a b e f g h i
+\fBledit\fR lst 2 3
+      \fI\(-> a b e f g h i\fR
 .CE
 .PP
 Replace two elements with three.
 .PP
 .CS
-% ledit lst 2 3 x y z
-a b x y z g h i
-% set lst
-a b x y z g h i
+\fBledit\fR lst 2 3 x y z
+      \fI\(-> a b x y z g h i\fR
+set lst
+      \fI\(-> a b x y z g h i\fR
 .CE
 .PP
 .SH "SEE ALSO"
