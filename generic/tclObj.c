@@ -1657,10 +1657,10 @@ int SetDuplicatePureObj(
 	}
     }
 
-    /* tclStringType is treated as a special case because a Tcl_Obj having this
+    /* tclUniCharStringType is treated as a special case because a Tcl_Obj having this
      * type can not always update the string representation.  This happens, for
      * example, when Tcl_GetCharLength() converts the internal representation
-     * to tclStringType in order to store the number of characters, but does
+     * to tclUniCharStringType in order to store the number of characters, but does
      * not store enough information to generate the string representation.
      *
      * Perhaps in the future this can be remedied and this special treatment
@@ -1670,7 +1670,7 @@ int SetDuplicatePureObj(
 
     if (bytes && (dupPtr->typePtr == NULL
 	|| dupPtr->typePtr->updateStringProc == NULL
-	|| typePtr == &tclStringType
+	|| typePtr == &tclUniCharStringType
 	)
     ) {
 	TclInitStringRep(dupPtr, bytes, objPtr->length);
@@ -2431,12 +2431,12 @@ ParseBoolean(
     int newBool;
     char lowerCase[6];
     Tcl_Size i, length;
-    const char *str = TclGetStringFromObj(objPtr, &length);
+    const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
     if ((length == 0) || (length > 5)) {
 	/*
-         * Longest valid boolean string rep. is "false".
-         */
+	 * Longest valid boolean string rep. is "false".
+	 */
 
 	return TCL_ERROR;
     }
