@@ -864,7 +864,7 @@ StatOpenFile(
      * We don't construct a Tcl_StatBuf; we're using the info immediately.
      */
 
-    dictObj = Tcl_NewObj();
+    TclNewObj(dictObj);
 #define STORE_ELEM(name, value) StoreElementInDict(dictObj, name, value)
 
     STORE_ELEM("dev",      Tcl_NewWideIntObj((long) dev));
@@ -917,10 +917,6 @@ FileGetOptionProc(
      */
 
     if ((len > 1) && (strncmp(optionName, "-stat", len) == 0)) {
-	return TCL_OK;
-    }
-
-    if (valid) {
 	Tcl_Obj *dictObj = StatOpenFile(infoPtr);
 	const char *dictContents;
 	Tcl_Size dictLength;
@@ -941,6 +937,10 @@ FileGetOptionProc(
 	dictContents = Tcl_GetStringFromObj(dictObj, &dictLength);
 	Tcl_DStringAppend(dsPtr, dictContents, dictLength);
 	Tcl_DecrRefCount(dictObj);
+	return TCL_OK;
+    }
+
+    if (valid) {
 	return TCL_OK;
     }
     return Tcl_BadChannelOption(interp, optionName,
