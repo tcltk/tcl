@@ -3517,8 +3517,14 @@ TclStringCat(
     /* assert ( objc >= 0 ) */
 
     if (objc <= 1) {
-	/* Negative (shouldn't be), one or no objects; return first or empty */
-	return objc == 1 ? objv[0] : Tcl_NewObj();
+	if (objc != 1) {
+	    /* Negative (shouldn't be) no objects; return empty */
+	    Tcl_Obj *obj;
+	    TclNewObj(obj);
+	    return obj;
+	}
+	/* One object; return first */
+	return objv[0];
     }
 
     /* assert ( objc >= 2 ) */
@@ -4816,7 +4822,7 @@ UpdateStringOfString(
     stringPtr->allocated = 0;
 
     if (stringPtr->numChars == 0) {
-	TclInitStringRep(objPtr, NULL, 0);
+	TclInitEmptyStringRep(objPtr);
     } else {
 	(void) ExtendStringRepWithUnicode(objPtr, stringPtr->unicode,
 		stringPtr->numChars);

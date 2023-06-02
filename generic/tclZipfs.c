@@ -1917,7 +1917,7 @@ ListMountPoints(
 	return (ZipFS.zipHash.numEntries ? TCL_OK : TCL_BREAK);
     }
 
-    resultList = Tcl_NewObj();
+    TclNewObj(resultList);
     for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	zf = (ZipFile *) Tcl_GetHashValue(hPtr);

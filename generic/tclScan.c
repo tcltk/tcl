@@ -1078,12 +1078,14 @@ Tcl_ScanObjCmd(
 		Tcl_ListObjAppendElement(NULL, objPtr, objs[i]);
 		Tcl_DecrRefCount(objs[i]);
 	    } else {
+		Tcl_Obj *obj;
 		/*
 		 * More %-specifiers than matching chars, so we just spit out
 		 * empty strings for these.
 		 */
 
-		Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewObj());
+		TclNewObj(obj);
+		Tcl_ListObjAppendElement(NULL, objPtr, obj);
 	    }
 	}
     }

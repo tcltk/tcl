@@ -1075,7 +1075,8 @@ TclClockOldscanObjCmd(
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj((int)
 		ToSeconds(yyHour, yyMinutes, yySeconds, (MERIDIAN)yyMeridian)));
     } else {
-	Tcl_ListObjAppendElement(interp, result, Tcl_NewObj());
+	TclNewObj(resultElement);
+	Tcl_ListObjAppendElement(interp, result, resultElement);
     }
 
     TclNewObj(resultElement);

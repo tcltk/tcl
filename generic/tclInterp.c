@@ -2275,7 +2275,7 @@ Tcl_GetInterpPath(
     InterpInfo *iiPtr;
 
     if (targetInterp == interp) {
-	Tcl_SetObjResult(interp, Tcl_NewObj());
+	Tcl_ResetResult(interp);
 	return TCL_OK;
     }
     if (targetInterp == NULL) {

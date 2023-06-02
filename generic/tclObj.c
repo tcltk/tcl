@@ -58,7 +58,7 @@ char tclEmptyString = '\0';
  * for sanity checking purposes.
  */
 
-typedef struct ObjData {
+typedef struct {
     Tcl_Obj *objPtr;		/* The pointer to the allocated Tcl_Obj. */
     const char *file;		/* The name of the source file calling this
 				 * function; used for debugging. */
@@ -205,6 +205,9 @@ static void		DupBignum(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		UpdateStringOfBignum(Tcl_Obj *objPtr);
 static int		GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int copy, mp_int *bignumValue);
+static int		SetDuplicatePureObj(Tcl_Interp *interp,
+			    Tcl_Obj *dupPtr, Tcl_Obj *objPtr,
+			    const Tcl_ObjType *typePtr);
 
 /*
  * Prototypes for the array hash key methods.
@@ -341,12 +344,12 @@ typedef struct ResolvedCmdName {
 				 * it's possible that the cmd's containing
 				 * namespace was deleted and a new one created
 				 * at the same address). */
-    int refNsCmdEpoch;		/* Value of the referencing namespace's
+    Tcl_Size refNsCmdEpoch;	/* Value of the referencing namespace's
 				 * cmdRefEpoch when the pointer was cached.
 				 * Before using the cached pointer, we check
 				 * if the namespace's epoch was incremented;
 				 * if so, this cached pointer is invalid. */
-    int cmdEpoch;		/* Value of the command's cmdEpoch when this
+    Tcl_Size cmdEpoch;		/* Value of the command's cmdEpoch when this
 				 * pointer was cached. Before using the cached
 				 * pointer, we check if the cmd's epoch was
 				 * incremented; if so, the cmd was renamed,
@@ -567,7 +570,7 @@ TclGetContLineTable(void)
 ContLineLoc *
 TclContinuationsEnter(
     Tcl_Obj *objPtr,
-    int num,
+    Tcl_Size num,
     int *loc)
 {
     int newEntry;
@@ -634,7 +637,8 @@ TclContinuationsEnterDerived(
     int start,
     int *clNext)
 {
-    int length, end, num;
+    Tcl_Size length;
+    int end, num;
     int *wordCLLast = clNext;
 
     /*
@@ -876,7 +880,7 @@ Tcl_AppendAllObjTypes(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int numElems;
+    Tcl_Size numElems;
 
     /*
      * Get the test for a valid list out of the way first.
@@ -1012,7 +1016,7 @@ TclDbDumpActiveObjects(
     tablePtr = tsdPtr->objThreadMap;
 
     if (tablePtr != NULL) {
-	fprintf(outFile, "total objects: %d\n", tablePtr->numEntries);
+	fprintf(outFile, "total objects: %" TCL_SIZE_MODIFIER "d\n", tablePtr->numEntries);
 	for (hPtr = Tcl_FirstHashEntry(tablePtr, &hSearch); hPtr != NULL;
 		hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    ObjData *objData = (ObjData *)Tcl_GetHashValue(hPtr);
@@ -1066,7 +1070,7 @@ TclDbInitNewObj(
 {
     objPtr->refCount = 0;
     objPtr->typePtr = NULL;
-    TclInitStringRep(objPtr, NULL, 0);
+    TclInitEmptyStringRep(objPtr);
 
 #if TCL_THREADS
     /*
@@ -1208,7 +1212,9 @@ Tcl_DbNewObj(
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
-    return Tcl_NewObj();
+    Tcl_Obj *objPtr;
+    TclNewObj(objPtr);
+    return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
 
@@ -1349,16 +1355,16 @@ TclFreeObj(
      * sure we do not accept a second free when falling from 0 to -1.
      * Skip that possibility so any double free will trigger the panic.
      */
-    objPtr->refCount = -1;
+    objPtr->refCount = TCL_INDEX_NONE;
 
     /*
      * Invalidate the string rep first so we can use the bytes value for our
      * pointer chain, and signal an obj deletion (as opposed to shimmering)
-     * with 'length == -1'.
+     * with 'length == TCL_INDEX_NONE'.
      */
 
     TclInvalidateStringRep(objPtr);
-    objPtr->length = -1;
+    objPtr->length = TCL_INDEX_NONE;
 
     if (ObjDeletePending(context)) {
 	PushObjToDelete(context, objPtr);
@@ -1426,7 +1432,7 @@ TclFreeObj(
      */
 
     TclInvalidateStringRep(objPtr);
-    objPtr->length = -1;
+    objPtr->length = TCL_INDEX_NONE;
 
     if (!objPtr->typePtr || !objPtr->typePtr->freeIntRepProc) {
 	/*
@@ -1528,7 +1534,7 @@ int
 TclObjBeingDeleted(
     Tcl_Obj *objPtr)
 {
-    return (objPtr->length == -1);
+    return (objPtr->length == TCL_INDEX_NONE);
 }
 
 /*
@@ -1538,6 +1544,14 @@ TclObjBeingDeleted(
  *
  *	Create and return a new object that is a duplicate of the argument
  *	object.
+ *
+ * TclDuplicatePureObj --
+ *	Like Tcl_DuplicateObj, except that it converts the duplicate to the
+ *	specifid typ, does not duplicate the 'bytes'
+ *	field unless it is necessary, i.e. the duplicated Tcl_Obj provides no
+ *	updateStringProc.  This can avoid an expensive memory allocation since
+ *	the data in the 'bytes' field of each Tcl_Obj must reside in allocated
+ *	memory.
  *
  * Results:
  *	The return value is a pointer to a newly created Tcl_Obj. This object
@@ -1565,7 +1579,7 @@ TclObjBeingDeleted(
 	const Tcl_ObjType *typePtr = (objPtr)->typePtr;			\
 	const char *bytes = (objPtr)->bytes;				\
 	if (bytes) {							\
-	    TclInitStringRep((dupPtr), bytes, (objPtr)->length);	\
+	    (void)TclAttemptInitStringRep((dupPtr), bytes, (objPtr)->length);	\
 	} else {							\
 	    (dupPtr)->bytes = NULL;					\
 	}								\
@@ -1589,6 +1603,111 @@ Tcl_DuplicateObj(
     SetDuplicateObj(dupPtr, objPtr);
     return dupPtr;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDuplicatePureObj --
+ *
+ *	Duplicates a Tcl_Obj and converts the internal representation of the
+ *	duplicate to the given type, changing neither the 'bytes' field
+ *	nor the internal representation of the original object, and without
+ *	duplicating the bytes field unless necessary, i.e. unless the
+ *	duplicate provides no updateStringProc after conversion.  This can
+ *	avoid an expensive memory allocation since the data in the 'bytes'
+ *	field of each Tcl_Obj must reside in allocated memory.
+ *
+ * Results:
+ *	A pointer to a newly-created Tcl_Obj or NULL if there was an error.
+ *	This object has reference count 0.  Also:
+ *
+ *----------------------------------------------------------------------
+ */
+int SetDuplicatePureObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *dupPtr,
+    Tcl_Obj *objPtr,
+    const Tcl_ObjType *typePtr)
+{
+    char *bytes = objPtr->bytes;
+    int status = TCL_OK;
+
+    TclInvalidateStringRep(dupPtr);
+    assert(dupPtr->typePtr == NULL);
+
+    if (objPtr->typePtr && objPtr->typePtr->dupIntRepProc) {
+	objPtr->typePtr->dupIntRepProc(objPtr, dupPtr);
+    } else {
+	dupPtr->internalRep = objPtr->internalRep;
+	dupPtr->typePtr = objPtr->typePtr;
+    }
+
+    if (typePtr != NULL && dupPtr->typePtr != typePtr) {
+	if (bytes) {
+	    dupPtr->bytes = bytes;
+	    dupPtr->length = objPtr->length;
+	}
+	/* borrow bytes from original object */
+	status = Tcl_ConvertToType(interp, dupPtr, typePtr);
+	if (bytes) {
+	    dupPtr->bytes = NULL;
+	    dupPtr->length = 0;
+	}
+	if (status != TCL_OK) {
+	    return status;
+	}
+    }
+
+    /* tclUniCharStringType is treated as a special case because a Tcl_Obj having this
+     * type can not always update the string representation.  This happens, for
+     * example, when Tcl_GetCharLength() converts the internal representation
+     * to tclUniCharStringType in order to store the number of characters, but does
+     * not store enough information to generate the string representation.
+     *
+     * Perhaps in the future this can be remedied and this special treatment
+     * removed.
+     */
+
+
+    if (bytes && (dupPtr->typePtr == NULL
+	|| dupPtr->typePtr->updateStringProc == NULL
+	|| typePtr == &tclUniCharStringType
+	)
+    ) {
+	if (!TclAttemptInitStringRep(dupPtr, bytes, objPtr->length)) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"insufficient memory to initialize string", -1));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    status = TCL_ERROR;
+	}
+    }
+    return status;
+}
+
+Tcl_Obj *
+TclDuplicatePureObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    const Tcl_ObjType *typePtr
+)		/* The object to duplicate. */
+{
+    int status;
+    Tcl_Obj *dupPtr;
+
+    TclNewObj(dupPtr);
+    status = SetDuplicatePureObj(interp, dupPtr, objPtr, typePtr);
+    if (status == TCL_OK) {
+	return dupPtr;
+    } else {
+	Tcl_DecrRefCount(dupPtr);
+	return NULL;
+    }
+}
+
+
 
 void
 TclSetDuplicateObj(
@@ -1821,7 +1940,7 @@ Tcl_InitStringRep(
     if (objPtr->bytes == NULL) {
 	/* Start with no string rep */
 	if (numBytes == 0) {
-	    TclInitStringRep(objPtr, NULL, 0);
+	    TclInitEmptyStringRep(objPtr);
 	    return objPtr->bytes;
 	} else {
 	    objPtr->bytes = (char *)attemptckalloc(numBytes + 1);
@@ -1848,7 +1967,7 @@ Tcl_InitStringRep(
 	/* Start with non-empty string rep (allocated) */
 	if (numBytes == 0) {
 	    ckfree(objPtr->bytes);
-	    TclInitStringRep(objPtr, NULL, 0);
+	    TclInitEmptyStringRep(objPtr);
 	    return objPtr->bytes;
 	} else {
 	    objPtr->bytes = (char *)attemptckrealloc(objPtr->bytes,
@@ -1913,8 +2032,8 @@ Tcl_HasStringRep(
  *
  * Tcl_StoreInternalRep --
  *
- *	This function is called to set the object's internal
- *	representation to match a particular type.
+ *	Called to set the object's internal representation to match a
+ *	particular type.
  *
  *	It is the caller's responsibility to guarantee that
  *	the value of the submitted internalrep is in agreement with
@@ -2175,7 +2294,7 @@ Tcl_GetBoolFromObj(
 	if (interp) {
 	    TclNewObj(objPtr);
 	    TclParseNumber(interp, objPtr, (flags & TCL_NULL_OK)
-		    ? "boolean value or \"\"" : "boolean value", NULL, -1, NULL, 0);
+		    ? "boolean value or \"\"" : "boolean value", NULL, TCL_INDEX_NONE, NULL, 0);
 	    Tcl_DecrRefCount(objPtr);
 	}
 	return TCL_ERROR;
@@ -2301,7 +2420,7 @@ TclSetBooleanFromAny(
 
   badBoolean:
     if (interp != NULL) {
-	int length;
+	Tcl_Size length;
 	const char *str = Tcl_GetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg;
 
@@ -2320,13 +2439,13 @@ ParseBoolean(
 {
     int newBool;
     char lowerCase[6];
-    const char *str = TclGetString(objPtr);
-    size_t i, length = objPtr->length;
+    Tcl_Size i, length;
+    const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
     if ((length == 0) || (length > 5)) {
 	/*
-         * Longest valid boolean string rep. is "false".
-         */
+	 * Longest valid boolean string rep. is "false".
+	 */
 
 	return TCL_ERROR;
     }
@@ -3794,7 +3913,7 @@ GetBignumFromObj(
 		 * bignum values are converted to empty string.
 		 */
 		if (objPtr->bytes == NULL) {
-		    TclInitStringRep(objPtr, NULL, 0);
+		    TclInitEmptyStringRep(objPtr);
 		}
 	    }
 	    return TCL_OK;
@@ -4103,7 +4222,7 @@ Tcl_IncrRefCount(
  *	Decrements the reference count of the object.
  *
  * Results:
- *	None.
+ *	The storage for objPtr may be freed.
  *
  *----------------------------------------------------------------------
  */
@@ -4452,7 +4571,7 @@ TclCompareObjKeys(
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
     Tcl_Obj *objPtr1 = (Tcl_Obj *)keyPtr;
-    Tcl_Obj *objPtr2 = (Tcl_Obj *) hPtr->key.oneWordValue;
+    Tcl_Obj *objPtr2 = (Tcl_Obj *)hPtr->key.oneWordValue;
     const char *p1, *p2;
     size_t l1, l2;
 
@@ -4541,7 +4660,7 @@ TclHashObjKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
-    int length;
+    Tcl_Size length;
     const char *string = Tcl_GetStringFromObj(objPtr, &length);
     TCL_HASH_TYPE result = 0;
 
@@ -4956,7 +5075,7 @@ Tcl_RepresentationCmd(
      * "1872361827361287"
      */
 
-    descObj = Tcl_ObjPrintf("value is a %s with a refcount of %d,"
+    descObj = Tcl_ObjPrintf("value is a %s with a refcount of %" TCL_SIZE_MODIFIER "d,"
 	    " object pointer at %p",
 	    objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
 	    objv[1]->refCount, objv[1]);
