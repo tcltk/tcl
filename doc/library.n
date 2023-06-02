@@ -58,6 +58,7 @@ the auto-load mechanism defined below.
 The following procedures are provided in the Tcl library:
 .TP
 \fBauto_execok \fIcmd\fR
+.
 Determines whether there is an executable file or shell builtin
 by the name \fIcmd\fR.  If so, it returns a list of arguments to be
 passed to \fBexec\fR to execute the executable file or shell builtin
@@ -70,8 +71,30 @@ remembers information about previous searches in an array named
 \fBauto_execs\fR;  this avoids the path search in future calls for the
 same \fIcmd\fR.  The command \fBauto_reset\fR may be used to force
 \fBauto_execok\fR to forget its cached information.
+.RS
+.PP
+For example, to run the \fIumask\fR shell builtin on Linux, you would do:
+.PP
+.CS
+exec {*}[\fBauto_execok\fR umask]
+.CE
+.PP
+To run the \fIDIR\fR shell builtin on Windows, you would do:
+.PP
+.CS
+exec {*}[\fBauto_execok\fR dir]
+.CE
+.PP
+To discover if there is a \fIfrobnicate\fR binary on the user's PATH,
+you would do:
+.PP
+.CS
+set mayFrob [expr {[llength [\fBauto_execok\fR frobnicate]] > 0}]
+.CE
+.RE
 .TP
 \fBauto_import \fIpattern\fR
+.
 \fBAuto_import\fR is invoked during \fBnamespace import\fR to see if
 the imported commands specified by \fIpattern\fR reside in an
 autoloaded library.  If so, the commands are loaded so that they will
@@ -79,13 +102,18 @@ be available to the interpreter for creating the import links.  If the
 commands do not reside in an autoloaded library, \fBauto_import\fR
 does nothing.  The pattern matching is performed according to the
 matching rules of \fBnamespace import\fR.
+.RS
+.PP
+It is not normally necessary to call this command directly.
+.RE
 .TP
 \fBauto_load \fIcmd\fR
+.
 This command attempts to load the definition for a Tcl command named
 \fIcmd\fR.  To do this, it searches an \fIauto-load path\fR, which is
 a list of one or more directories.  The auto-load path is given by the
 global variable \fBauto_path\fR if it exists.  If there is no
-\fBauto_path\fR variable, then the TCLLIBPATH environment variable is
+\fBauto_path\fR variable, then the \fBTCLLIBPATH\fR environment variable is
 used, if it exists.  Otherwise the auto-load path consists of just the
 Tcl library directory.  Within each directory in the auto-load path
 there must be a file \fBtclIndex\fR that describes one or more
@@ -104,6 +132,11 @@ the array \fBauto_index\fR;  future calls to \fBauto_load\fR check for
 cached index information may be deleted with the command
 \fBauto_reset\fR.  This will force the next \fBauto_load\fR command to
 reload the index database from disk.
+.RS
+.PP
+It is not normally necessary to call this command directly; the
+default \fBunknown\fR handler will do so.
+.RE
 .TP
 \fBauto_mkindex \fIdir pattern pattern ...\fR
 .
@@ -156,6 +189,7 @@ listed in the auto-load index, so that fresh copies of them will be
 loaded the next time that they are used.
 .TP
 \fBauto_qualify \fIcommand namespace\fR
+.
 Computes a list of fully qualified names for \fIcommand\fR.  This list
 mirrors the path a standard Tcl interpreter follows for command
 lookups:  first it looks for the command in the current namespace, and
@@ -175,6 +209,7 @@ performing the actual auto-loading of functions at runtime.
 .RE
 .TP
 \fBtcl_findLibrary \fIbasename version patch initScript enVarName varName\fR
+.
 This is a standard search procedure for use by extensions during
 their initialization.  They call this procedure to look for their
 script library in several standard directories.
@@ -197,14 +232,25 @@ relative to the executable file in the current build tree;
 relative to the executable file in a parallel build tree.
 .TP
 \fBparray \fIarrayName\fR ?\fIpattern\fR?
+.
 Prints on standard output the names and values of all the elements in the
 array \fIarrayName\fR, or just the names that match \fIpattern\fR (using the
 matching rules of \fBstring match\fR) and their values if \fIpattern\fR is
 given.
 \fIArrayName\fR must be an array accessible to the caller of \fBparray\fR.
 It may be either local or global.
+The result of this command is the empty string.
+.RS
+.PP
+For example, to print the contents of the \fBtcl_platform\fR array, do:
+.PP
+.CS
+\fBparray\fR tcl_platform
+.CE
+.RE
 .TP
 \fBtcl_endOfWord \fIstr start\fR
+.
 Returns the index of the first end-of-word location that occurs after
 a starting index \fIstart\fR in the string \fIstr\fR.  An end-of-word
 location is defined to be the first non-word character following the
@@ -215,6 +261,7 @@ for more details on how Tcl determines which characters are word
 characters.
 .TP
 \fBtcl_startOfNextWord \fIstr start\fR
+.
 Returns the index of the first start-of-word location that occurs
 after a starting index \fIstart\fR in the string \fIstr\fR.  A
 start-of-word location is defined to be the first word character
@@ -222,12 +269,14 @@ following a non-word character.  Returns \-1 if there are no more
 start-of-word locations after the starting point.
 .TP
 \fBtcl_startOfPreviousWord \fIstr start\fR
+.
 Returns the index of the first start-of-word location that occurs
 before a starting index \fIstart\fR in the string \fIstr\fR.  Returns
 \-1 if there are no more start-of-word locations before the starting
 point.
 .TP
 \fBtcl_wordBreakAfter \fIstr start\fR
+.
 Returns the index of the first word boundary after the starting index
 \fIstart\fR in the string \fIstr\fR.  Returns \-1 if there are no more
 boundaries after the starting point in the given string.  The index
@@ -235,6 +284,7 @@ returned refers to the second character of the pair that comprises a
 boundary.
 .TP
 \fBtcl_wordBreakBefore \fIstr start\fR
+.
 Returns the index of the first word boundary before the starting index
 \fIstart\fR in the string \fIstr\fR.  Returns \-1 if there are no more
 boundaries before the starting point in the given string.  The index
@@ -248,18 +298,22 @@ commands and packages, and determining what are words.
 .SS "AUTOLOADING AND PACKAGE MANAGEMENT VARIABLES"
 .TP
 \fBauto_execs\fR
+.
 Used by \fBauto_execok\fR to record information about whether
 particular commands exist as executable files.
 .TP
 \fBauto_index\fR
+.
 Used by \fBauto_load\fR to save the index information read from
 disk.
 .TP
 \fBauto_noexec\fR
+.
 If set to any value, then \fBunknown\fR will not attempt to auto-exec
 any commands.
 .TP
 \fBauto_noload\fR
+.
 If set to any value, then \fBunknown\fR will not attempt to auto-load
 any commands.
 .TP
@@ -275,8 +329,21 @@ the parent directory of \fBtcl_library\fR,
 the directories listed in the \fBtcl_pkgPath\fR variable.
 Additional locations to look for files and package indices should
 normally be added to this variable using \fBlappend\fR.
+.RS
+.PP
+For example, to add the \fIlib\fR directory next to the running
+script, you would do:
+.PP
+.CS
+lappend \fBauto_path\fR [file dirname [info script]]/lib
+.CE
+.PP
+Note that if the script uses \fBcd\fR, it is advisable to ensure that
+entries on the \fBauto_path\fR are \fBfile normalize\fRd.
+.RE
 .TP
 \fBenv(TCL_LIBRARY)\fR
+.
 If set, then it specifies the location of the directory containing
 library scripts (the value of this variable will be
 assigned to the \fBtcl_library\fR variable and therefore returned by
@@ -284,6 +351,7 @@ the command \fBinfo library\fR).  If this variable is not set then
 a default value is used.
 .TP
 \fBenv(TCLLIBPATH)\fR
+.
 If set, then it must contain a valid Tcl list giving directories to
 search during auto-load operations.  Directories must be specified in
 Tcl format, using
@@ -296,16 +364,20 @@ These variables are only used in the \fBtcl_endOfWord\fR,
 \fBtcl_wordBreakAfter\fR, and \fBtcl_wordBreakBefore\fR commands.
 .TP
 \fBtcl_nonwordchars\fR
+.
 This variable contains a regular expression that is used by routines
 like \fBtcl_endOfWord\fR to identify whether a character is part of a
 word or not.  If the pattern matches a character, the character is
-considered to be a non-word character. The default is "\\W".
+considered to be a non-word character. The default value is
+.QW "\\W" .
 .TP
 \fBtcl_wordchars\fR
+.
 This variable contains a regular expression that is used by routines
 like \fBtcl_endOfWord\fR to identify whether a character is part of a
 word or not.  If the pattern matches a character, the character is
-considered to be a word character. The default is "\\w".
+considered to be a word character. The default value is
+.QW "\\w" .
 .SH "SEE ALSO"
 env(n), info(n), re_syntax(n)
 .SH KEYWORDS

@@ -4542,7 +4542,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 /*
  *----------------------------------------------------------------
- * Macro used by the Tcl core to set a Tcl_Obj's string representation to a
+ * Macros used by the Tcl core to set a Tcl_Obj's string representation to a
  * copy of the "len" bytes starting at "bytePtr". The value of "len" must
  * not be negative.  When "len" is 0, then it is acceptable to pass
  * "bytePtr" = NULL.  When "len" > 0, "bytePtr" must not be NULL, and it
@@ -4555,23 +4555,38 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * Because "len" is referenced multiple times, take care that it is an
  * expression with the same value each use.
  *
- * The ANSI C "prototype" for this macro is:
+ * The ANSI C "prototypes" for these macros are:
  *
+ * MODULE_SCOPE void TclInitEmptyStringRep(Tcl_Obj *objPtr);
  * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
+ * MODULE_SCOPE void TclAttemptInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
  *
  *----------------------------------------------------------------
  */
 
+#define TclInitEmptyStringRep(objPtr) \
+	((objPtr)->length = (((objPtr)->bytes = &tclEmptyString), 0))
+
+
 #define TclInitStringRep(objPtr, bytePtr, len) \
     if ((len) == 0) { \
-	(objPtr)->bytes	 = &tclEmptyString; \
-	(objPtr)->length = 0; \
+	TclInitEmptyStringRep(objPtr); \
     } else { \
 	(objPtr)->bytes = (char *)Tcl_Alloc((len) + 1U); \
 	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
     }
+
+#define TclAttemptInitStringRep(objPtr, bytePtr, len) \
+    ((((len) == 0) ? ( \
+	TclInitEmptyStringRep(objPtr) \
+    ) : ( \
+	(objPtr)->bytes = (char *)Tcl_AttemptAlloc((len) + 1U), \
+	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)), \
+	(objPtr)->bytes[len] = '\0', \
+	(objPtr)->length = (len) \
+    )), (objPtr)->bytes)
 
 /*
  *----------------------------------------------------------------
