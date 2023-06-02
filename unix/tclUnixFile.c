@@ -138,7 +138,9 @@ TclpFindExecutable(
 	    p++;
 	}
     }
-    TclSetObjNameOfExecutable(Tcl_NewObj(), NULL);
+	Tcl_Obj *obj;
+	TclNewObj(obj);
+    TclSetObjNameOfExecutable(obj, NULL);
     goto done;
 
     /*
@@ -161,7 +163,9 @@ TclpFindExecutable(
     }
 
     if (TclpGetCwd(NULL, &cwd) == NULL) {
-	TclSetObjNameOfExecutable(Tcl_NewObj(), NULL);
+	Tcl_Obj *obj;
+	TclNewObj(obj);
+	TclSetObjNameOfExecutable(obj, NULL);
 	goto done;
     }
 
@@ -604,8 +608,7 @@ TclpGetUserHome(
     if (pwPtr == NULL) {
 	return NULL;
     }
-    Tcl_ExternalToUtfDString(NULL, pwPtr->pw_dir, TCL_INDEX_NONE, bufferPtr);
-    return Tcl_DStringValue(bufferPtr);
+    return Tcl_ExternalToUtfDString(NULL, pwPtr->pw_dir, TCL_INDEX_NONE, bufferPtr);
 }
 
 /*
@@ -727,7 +730,7 @@ TclpGetNativeCwd(
 #endif /* USEGETWD */
 
     if ((clientData == NULL) || strcmp(buffer, (const char *) clientData)) {
-	char *newCd = (char*)ckalloc(strlen(buffer) + 1);
+	char *newCd = (char *)ckalloc(strlen(buffer) + 1);
 
 	strcpy(newCd, buffer);
 	return newCd;
@@ -814,7 +817,7 @@ TclpReadlink(
 {
 #ifndef DJGPP
     char link[MAXPATHLEN];
-    int length;
+    Tcl_Size length;
     const char *native;
     Tcl_DString ds;
 
@@ -947,6 +950,7 @@ TclpObjLink(
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    Tcl_DString ds;
 	    Tcl_Obj *transPtr;
+	    Tcl_Size length;
 
 	    /*
 	     * Now we don't want to link to the absolute, normalized path.
@@ -958,8 +962,8 @@ TclpObjLink(
 	    if (transPtr == NULL) {
 		return NULL;
 	    }
-	    target = TclGetString(transPtr);
-	    target = Tcl_UtfToExternalDString(NULL, target, transPtr->length, &ds);
+	    target = TclGetStringFromObj(transPtr, &length);
+	    target = Tcl_UtfToExternalDString(NULL, target, length, &ds);
 	    Tcl_DecrRefCount(transPtr);
 
 	    if (symlink(target, src) != 0) {
@@ -979,7 +983,7 @@ TclpObjLink(
 	Tcl_Obj *linkPtr = NULL;
 
 	char link[MAXPATHLEN];
-	int length;
+	Tcl_Size length;
 	Tcl_DString ds;
 	Tcl_Obj *transPtr;
 
@@ -1087,7 +1091,7 @@ TclNativeCreateNativeRep(
     const char *str;
     Tcl_DString ds;
     Tcl_Obj *validPathPtr;
-    size_t len;
+    Tcl_Size len;
 
     if (TclFSCwdIsNative()) {
 	/*
@@ -1112,8 +1116,7 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = TclGetString(validPathPtr);
-    len = validPathPtr->length;
+    str = TclGetStringFromObj(validPathPtr, &len);
     Tcl_UtfToExternalDString(NULL, str, len, &ds);
     len = Tcl_DStringLength(&ds) + sizeof(char);
     if (strlen(Tcl_DStringValue(&ds)) < len - sizeof(char)) {

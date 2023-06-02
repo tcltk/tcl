@@ -1070,7 +1070,7 @@ TclDbInitNewObj(
 {
     objPtr->refCount = 0;
     objPtr->typePtr = NULL;
-    TclInitStringRep(objPtr, NULL, 0);
+    TclInitEmptyStringRep(objPtr);
 
 #if TCL_THREADS
     /*
@@ -1212,7 +1212,9 @@ Tcl_DbNewObj(
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
-    return Tcl_NewObj();
+    Tcl_Obj *objPtr;
+    TclNewObj(objPtr);
+    return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
 
@@ -1577,7 +1579,7 @@ TclObjBeingDeleted(
 	const Tcl_ObjType *typePtr = (objPtr)->typePtr;			\
 	const char *bytes = (objPtr)->bytes;				\
 	if (bytes) {							\
-	    TclInitStringRep((dupPtr), bytes, (objPtr)->length);	\
+	    (void)TclAttemptInitStringRep((dupPtr), bytes, (objPtr)->length);	\
 	} else {							\
 	    (dupPtr)->bytes = NULL;					\
 	}								\
@@ -1606,7 +1608,7 @@ Tcl_DuplicateObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_DuplicatePureObj --
+ * TclDuplicatePureObj --
  *
  *	Duplicates a Tcl_Obj and converts the internal representation of the
  *	duplicate to the given type, changing neither the 'bytes' field
@@ -1673,7 +1675,14 @@ int SetDuplicatePureObj(
 	|| typePtr == &tclUniCharStringType
 	)
     ) {
-	TclInitStringRep(dupPtr, bytes, objPtr->length);
+	if (!TclAttemptInitStringRep(dupPtr, bytes, objPtr->length)) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"insufficient memory to initialize string", -1));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    status = TCL_ERROR;
+	}
     }
     return status;
 }
@@ -1931,7 +1940,7 @@ Tcl_InitStringRep(
     if (objPtr->bytes == NULL) {
 	/* Start with no string rep */
 	if (numBytes == 0) {
-	    TclInitStringRep(objPtr, NULL, 0);
+	    TclInitEmptyStringRep(objPtr);
 	    return objPtr->bytes;
 	} else {
 	    objPtr->bytes = (char *)attemptckalloc(numBytes + 1);
@@ -1958,7 +1967,7 @@ Tcl_InitStringRep(
 	/* Start with non-empty string rep (allocated) */
 	if (numBytes == 0) {
 	    ckfree(objPtr->bytes);
-	    TclInitStringRep(objPtr, NULL, 0);
+	    TclInitEmptyStringRep(objPtr);
 	    return objPtr->bytes;
 	} else {
 	    objPtr->bytes = (char *)attemptckrealloc(objPtr->bytes,
@@ -3904,7 +3913,7 @@ GetBignumFromObj(
 		 * bignum values are converted to empty string.
 		 */
 		if (objPtr->bytes == NULL) {
-		    TclInitStringRep(objPtr, NULL, 0);
+		    TclInitEmptyStringRep(objPtr);
 		}
 	    }
 	    return TCL_OK;

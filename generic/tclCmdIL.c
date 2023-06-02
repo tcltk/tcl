@@ -3989,7 +3989,7 @@ Tcl_LsearchObjCmd(
 	 * default...
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewObj());
+	Tcl_ResetResult(interp);
     } else {
 	if (returnSubindices) {
 	    Tcl_SetObjResult(interp, SelectObjFromSublist(listv[i+groupOffset],
@@ -4767,7 +4767,8 @@ Tcl_LsortObjCmd(
 	    sortInfo.resultCode = TCL_ERROR;
 	    goto done;
 	}
-	Tcl_ListObjAppendElement(interp, newCommandPtr, Tcl_NewObj());
+	TclNewObj(newObjPtr);
+	Tcl_ListObjAppendElement(interp, newCommandPtr, newObjPtr);
 	sortInfo.compareCmdPtr = newCommandPtr;
     }
 

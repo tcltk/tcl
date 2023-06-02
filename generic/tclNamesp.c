@@ -544,8 +544,10 @@ ErrorCodeRead(
 	return NULL;
     }
     if (NULL == Tcl_ObjGetVar2(interp, iPtr->ecVar, NULL, TCL_GLOBAL_ONLY)) {
+	Tcl_Obj *objPtr;
+	TclNewObj(objPtr);
 	Tcl_ObjSetVar2(interp, iPtr->ecVar, NULL,
-		Tcl_NewObj(), TCL_GLOBAL_ONLY);
+		objPtr, TCL_GLOBAL_ONLY);
     }
     return NULL;
 }
@@ -618,8 +620,10 @@ ErrorInfoRead(
 	return NULL;
     }
     if (NULL == Tcl_ObjGetVar2(interp, iPtr->eiVar, NULL, TCL_GLOBAL_ONLY)) {
+	Tcl_Obj *objPtr;
+	TclNewObj(objPtr);
 	Tcl_ObjSetVar2(interp, iPtr->eiVar, NULL,
-		Tcl_NewObj(), TCL_GLOBAL_ONLY);
+		objPtr, TCL_GLOBAL_ONLY);
     }
     return NULL;
 }

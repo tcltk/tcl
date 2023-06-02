@@ -687,7 +687,7 @@ StatOpenFile(
      * duplicate!)
      */
 
-    dictObj = Tcl_NewObj();
+    TclNewObj(dictObj);
 #define STORE_ELEM(name, value) StoreElementInDict(dictObj, name, value)
 
     STORE_ELEM("dev",     Tcl_NewWideIntObj((long) statBuf.st_dev));

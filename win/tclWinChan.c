@@ -951,7 +951,7 @@ StatOpenFile(
      * We don't construct a Tcl_StatBuf; we're using the info immediately.
      */
 
-    dictObj = Tcl_NewObj();
+    TclNewObj(dictObj);
 #define STORE_ELEM(name, value) StoreElementInDict(dictObj, name, value)
 
     STORE_ELEM("dev",      Tcl_NewWideIntObj((long) dev));

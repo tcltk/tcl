@@ -355,8 +355,9 @@ BuildProcessStatusObj(
 	/*
 	 * Process still running, return empty obj.
 	 */
-
-	return Tcl_NewObj();
+	Tcl_Obj *obj;
+	TclNewObj(obj);
+	return obj;
     }
     if (info->status == TCL_PROCESS_EXITED && info->code == 0) {
 	/*

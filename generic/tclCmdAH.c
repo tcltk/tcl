@@ -2463,7 +2463,7 @@ StoreStatData(
     unsigned short mode;
 
     if (varName == NULL) {
-        result = Tcl_NewObj();
+        TclNewObj(result);
         Tcl_IncrRefCount(result);
 #define DOBJPUT(key, objValue)                  \
         Tcl_DictObjPut(NULL, result,            \
