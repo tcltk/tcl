@@ -63,6 +63,7 @@ TclpFindExecutable(
     const char *name, *p;
     Tcl_StatBuf statBuf;
     Tcl_DString buffer, nameString, cwd, utfName;
+    Tcl_Obj *obj;
 
     if (argv0 == NULL) {
 	return;
@@ -138,8 +139,7 @@ TclpFindExecutable(
 	    p++;
 	}
     }
-	Tcl_Obj *obj;
-	TclNewObj(obj);
+    TclNewObj(obj);
     TclSetObjNameOfExecutable(obj, NULL);
     goto done;
 
@@ -163,7 +163,6 @@ TclpFindExecutable(
     }
 
     if (TclpGetCwd(NULL, &cwd) == NULL) {
-	Tcl_Obj *obj;
 	TclNewObj(obj);
 	TclSetObjNameOfExecutable(obj, NULL);
 	goto done;
