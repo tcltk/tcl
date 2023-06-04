@@ -36772,9 +36772,8 @@ test clock-57.2 {clock scan - not -gmt and -timezone in the same call} {
     catch {clock scan 1970-01-01 -format %Y-%m-%d -gmt true -timezone :Europe/Berlin}
 } 1
 
-# Bug af3ebc5fafe009
 test clock-57.3 {clock scan - not -g and -timezone in the same call} {
-    catch {clock scan 1970-01-01 -format %Y-%m-%d -gmt true -timezone :Europe/Berlin}
+    catch {clock scan 1970-01-01 -format %Y-%m-%d -g true -timezone :Europe/Berlin}
 } 1
 
 test clock-58.1 {clock l10n - Japanese localisation} {*}{
