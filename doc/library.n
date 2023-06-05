@@ -267,6 +267,19 @@ after a starting index \fIstart\fR in the string \fIstr\fR.  A
 start-of-word location is defined to be the first word character
 following a non-word character.  Returns \-1 if there are no more
 start-of-word locations after the starting point.
+.RS
+.PP
+For example, to print the indices of the starts of each word in a
+string according to platform rules:
+.PP
+.CS
+set theString "The quick brown fox"
+for {set idx 0} {$idx >= 0} {
+        set idx [\fBtcl_startOfNextWord\fR $theString $idx]} {
+    puts "Word start index: $idx"
+}
+.CE
+.RE
 .TP
 \fBtcl_startOfPreviousWord \fIstr start\fR
 .
@@ -301,11 +314,19 @@ commands and packages, and determining what are words.
 .
 Used by \fBauto_execok\fR to record information about whether
 particular commands exist as executable files.
+.RS
+.PP
+Not normally usefully accessed directly by user code.
+.RE
 .TP
 \fBauto_index\fR
 .
 Used by \fBauto_load\fR to save the index information read from
 disk.
+.RS
+.PP
+Not normally usefully accessed directly by user code.
+.RE
 .TP
 \fBauto_noexec\fR
 .
@@ -349,6 +370,12 @@ library scripts (the value of this variable will be
 assigned to the \fBtcl_library\fR variable and therefore returned by
 the command \fBinfo library\fR).  If this variable is not set then
 a default value is used.
+.RS
+.PP
+Use of this environment variable is not recommended outside of testing.
+Tcl installations should already know where to find their own script
+files, as the value is baked in during the build or installation.
+.RE
 .TP
 \fBenv(TCLLIBPATH)\fR
 .
@@ -358,6 +385,15 @@ Tcl format, using
 .QW /
 as the path separator, regardless of platform.
 This variable is only used when initializing the \fBauto_path\fR variable.
+.RS
+.PP
+A key consequence of this variable is that it gives a way to let the user
+of a script specify the list of places where that script may use
+\fBpackage require\fR to read packages from. It is not normally usefully
+settable within a Tcl script itself \fIexcept\fR to influence where other
+interpreters load from (whether made with \fBinterp create\fR or launched
+as their own threads or subprocesses).
+.RE
 .SS "WORD BOUNDARY DETERMINATION VARIABLES"
 These variables are only used in the \fBtcl_endOfWord\fR,
 \fBtcl_startOfNextWord\fR, \fBtcl_startOfPreviousWord\fR,
