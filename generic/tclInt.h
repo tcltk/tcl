@@ -4583,9 +4583,9 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	TclInitEmptyStringRep(objPtr) \
     ) : ( \
 	(objPtr)->bytes = (char *)Tcl_AttemptAlloc((len) + 1U), \
-	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)), \
-	(objPtr)->bytes[len] = '\0', \
-	(objPtr)->length = (len) \
+	(objPtr)->length = ((objPtr)->bytes) ? \
+		(memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)), \
+		(objPtr)->bytes[len] = '\0', (len)) : (-1) \
     )), (objPtr)->bytes)
 
 /*
