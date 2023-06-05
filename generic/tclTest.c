@@ -2124,6 +2124,7 @@ static int UtfExtWrapper(
 	{"profiletcl8", TCL_ENCODING_PROFILE_TCL8},
 	{"profilestrict", TCL_ENCODING_PROFILE_STRICT},
 	{"profilereplace", TCL_ENCODING_PROFILE_REPLACE},
+	{"profilelossless", TCL_ENCODING_PROFILE_LOSSLESS},
 	{NULL, 0}
     };
     Tcl_Size i;

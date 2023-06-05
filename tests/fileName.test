@@ -1610,7 +1610,27 @@ test fileName-20.10 {globbing for special chars} -setup {
     removeFile fileName-20.10 $s
     removeDirectory sub [file home]
 } -result [file home]/sub/fileName-20.10
-
+test fileName-20.11 {glob dir with undecodable file names} -setup {
+    # Specifically use /tmp as on WSL [temporaryDirectory]
+    # on NTFS prevents creation of arbitrary byte sequences in names.
+    set prevDir [pwd]
+    set testDir /tmp/tcltest/fileName-20.11
+    file delete -force $testDir; # Clear it
+    file mkdir $testDir
+    cd $testDir
+    set prevEnc [encoding system]
+    # Create a file name that is invalid if interpreted as utf-8
+    encoding system iso8859-1
+    close [open \xe9 w]
+} -cleanup {
+    encoding system $prevEnc
+    cd $prevDir
+    file delete -force $testDir
+} -constraints {unix} -body {
+    set result [file exists [lindex [glob *] 0]]
+    encoding system utf-8
+    lappend result [file exists [lindex [glob *] 0]]
+} -result {1 1}
 
 apply [list {} {
     test fileName-6d4e9d1af5bf5b7d {

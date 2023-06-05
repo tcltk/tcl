@@ -683,7 +683,7 @@ test cmdAH-4.5.2 {encoding names should include at least utf-8 and iso8859-1 and
 badnumargs cmdAH-4.6.1 {encoding profiles} {foo}
 test cmdAH-4.6.2 {encoding profiles} -body {
     lsort [encoding profiles]
-} -result {replace strict tcl8}
+} -result {lossless replace strict tcl8}
 
 #
 # file command
