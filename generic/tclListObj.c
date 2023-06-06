@@ -2770,46 +2770,49 @@ TclLsetList(
 
 	if (TclObjTypeHasProc(listObj, setElementProc)) {
 	    indices = &indexArgObj;
-	    Tcl_Obj *returnValue =
+	    retValueObj =
 		Tcl_ObjTypeSetElement(interp, listObj, 1, indices, valueObj);
-	    if (returnValue) Tcl_IncrRefCount(returnValue);
-	    return returnValue;
+	    if (retValueObj) Tcl_IncrRefCount(retValueObj);
+	} else {
+
+	    /* indexArgPtr designates a single index. */
+	    /* T:listrep-1.{2.1,12.1,15.1,19.1},2.{2.3,9.3,10.1,13.1,16.1}, 3.{4,5,6}.3 */
+	    retValueObj = TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
 	}
 
-	/* indexArgPtr designates a single index. */
-	/* T:listrep-1.{2.1,12.1,15.1,19.1},2.{2.3,9.3,10.1,13.1,16.1}, 3.{4,5,6}.3 */
-	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
+    } else {
 
-    }
-
-    indexListCopy = TclDuplicatePureObj(
+	indexListCopy = TclDuplicatePureObj(
 	    interp, indexArgObj, &tclListType);
-    if (!indexListCopy) {
-	/*
-	 * indexArgPtr designates something that is neither an index nor a
-	 * well formed list. Report the error via TclLsetFlat.
-	 */
-	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
-    }
-    if (TCL_OK != TclListObjGetElementsM(
-	interp, indexListCopy, &indexCount, &indices)) {
-	Tcl_DecrRefCount(indexListCopy);
-	/*
-	 * indexArgPtr designates something that is neither an index nor a
-	 * well formed list. Report the error via TclLsetFlat.
-	 */
-	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
-    }
+	if (!indexListCopy) {
+	    /*
+	     * indexArgPtr designates something that is neither an index nor a
+	     * well formed list. Report the error via TclLsetFlat.
+	     */
+	    retValueObj = TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
+	} else {
+	    if (TCL_OK != TclListObjGetElementsM(
+		    interp, indexListCopy, &indexCount, &indices)) {
+		Tcl_DecrRefCount(indexListCopy);
+		/*
+		 * indexArgPtr designates something that is neither an index nor a
+		 * well formed list. Report the error via TclLsetFlat.
+		 */
+		retValueObj = TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
+	    } else {
 
-    /*
-     * Let TclLsetFlat perform the actual lset operation.
-     */
+		/*
+		 * Let TclLsetFlat perform the actual lset operation.
+		 */
 
-    retValueObj = TclLsetFlat(interp, listObj, indexCount, indices, valueObj);
-    if (indexListCopy) {
-	Tcl_DecrRefCount(indexListCopy);
+		retValueObj = TclLsetFlat(interp, listObj, indexCount, indices, valueObj);
+		if (indexListCopy) {
+		    Tcl_DecrRefCount(indexListCopy);
+		}
+	    }
+	}
     }
-
+    assert (retValueObj==NULL || retValueObj->typePtr || retValueObj->bytes);
     return retValueObj;
 }
 

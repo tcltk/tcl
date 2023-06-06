@@ -327,7 +327,8 @@ test abstractlist-3.10 {shimmer lreverse} {
 test abstractlist-3.11 {shimmer lset} {
     set l [lstring -not SLICE Inconceivable]
     set l-isa [testobj objtype $l]
-    set m [lset l 2 k]
+    set four 4
+    set m [lset l $four-2 k]
     set m-isa [testobj objtype $m]
     list $l ${l-isa} $m ${m-isa} [value-cmp l m]
 } {{I n k o n c e i v a b l e} lstring {I n k o n c e i v a b l e} lstring 0}
@@ -430,7 +431,7 @@ test abstractlist-$not-4.6 {no shimmer ledit} {SetelementShimmer ReplaceShimmer}
     list ${l-isa} $e ${e-isa}
 } {lstring {V i z z i n i : { } S H E { } D I D N ' T { } F A L L ? { } I N C O N C E I V A B L E . { } I n i g o { } M o n t o y a : { } Y o u { } k e e p { } u s i n g { } t h a t { } w o r d . { } I { } d o { } n o t { } t h i n k { } i t { } m e a n s { } w h a t { } y o u { } t h i n k { } i t { } m e a n s .} lstring}
 
-test abstractlist-$not-4.7 {no shimmer linsert} ReplaceShimmer {
+test abstractlist-$not-4.7 {no shimmer linsert} {ReplaceShimmer GetelementsShimmer}  {
     # "ledit m 9 8 S"
     set l [lstring {*}$options $str2]
     set l-isa [testobj objtype $l]
@@ -441,7 +442,7 @@ test abstractlist-$not-4.7 {no shimmer linsert} ReplaceShimmer {
     set p-isa [testobj objtype $p]
     set i-isa2 [testobj objtype $i]
     lappend res $p ${p-isa} $i ${i-isa2}
-} {lstring {V i z z i n i : { } H E { } a l m o s t { } D I D N ' T { } F A L L ? { } I N C O N C E I V A B L E . { } I n i g o { } M o n t o y a : { } Y o u { } k e e p { } u s i n g { } t h a t { } w o r d . { } I { } d o { } n o t { } t h i n k { } i t { } m e a n s { } w h a t { } y o u { } t h i n k { } i t { } m e a n s .} lstring ' none {V i z z i n i : { } H E { } a l m o s t { } D I D N T { } F A L L ? { } I N C O N C E I V A B L E . { } I n i g o { } M o n t o y a : { } Y o u { } k e e p { } u s i n g { } t h a t { } w o r d . { } I { } d o { } n o t { } t h i n k { } i t { } m e a n s { } w h a t { } y o u { } t h i n k { } i t { } m e a n s .} list}
+} {lstring {V i z z i n i : { } H E { } a l m o s t { } D I D N ' T { } F A L L ? { } I N C O N C E I V A B L E . { } I n i g o { } M o n t o y a : { } Y o u { } k e e p { } u s i n g { } t h a t { } w o r d . { } I { } d o { } n o t { } t h i n k { } i t { } m e a n s { } w h a t { } y o u { } t h i n k { } i t { } m e a n s .} lstring ' none {V i z z i n i : { } H E { } a l m o s t { } D I D N T { } F A L L ? { } I N C O N C E I V A B L E . { } I n i g o { } M o n t o y a : { } Y o u { } k e e p { } u s i n g { } t h a t { } w o r d . { } I { } d o { } n o t { } t h i n k { } i t { } m e a n s { } w h a t { } y o u { } t h i n k { } i t { } m e a n s .} lstring}
 
 # lassign probably uses lrange internally
 test abstractlist-$not-4.8 {shimmer lassign} RangeShimmer {
