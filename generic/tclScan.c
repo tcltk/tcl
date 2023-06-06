@@ -1097,7 +1097,8 @@ Tcl_ScanObjCmd(
 	 * We create an empty Tcl_Obj to fill missing values rather than
 	 * allocating a new Tcl_Obj every time. See test scan-bigdata-XX.
 	 */
-	Tcl_Obj *emptyObj = Tcl_NewObj();
+	Tcl_Obj *emptyObj;
+	TclNewObj(emptyObj);
 	Tcl_IncrRefCount(emptyObj);
 	TclNewObj(objPtr);
 	for (i = 0; code == TCL_OK && i < totalVars; i++) {

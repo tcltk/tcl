@@ -508,7 +508,7 @@ TclNewArithSeriesObj(
 	    dstep = step;
 	}
 	if (dstep == 0) {
-	    *arithSeriesObj = Tcl_NewObj();
+	    TclNewObj(*arithSeriesObj);
 	    return TCL_OK;
 	}
     }
