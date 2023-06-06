@@ -1625,7 +1625,7 @@ test fileName-20.11 {glob dir with undecodable file names} -setup {
 } -cleanup {
     encoding system $prevEnc
     cd $prevDir
-    file delete -force $testDir
+    #file delete -force $testDir
 } -constraints {unix} -body {
     set result [file exists [lindex [glob *] 0]]
     encoding system utf-8

@@ -2781,6 +2781,11 @@ typedef enum Tcl_PathPart {
 } Tcl_PathPart;
 
 /*
+ * Encoding profile to use for file names.
+ */
+#define TCL_FILENAME_ENCODING_PROFILE TCL_ENCODING_PROFILE_LOSSLESS
+
+/*
  *----------------------------------------------------------------
  * Data structures related to obsolete filesystem hooks
  *----------------------------------------------------------------
