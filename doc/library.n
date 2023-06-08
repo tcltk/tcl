@@ -203,6 +203,9 @@ matching rules of \fBstring match\fR) and their values if \fIpattern\fR is
 given.
 \fIArrayName\fR must be an array accessible to the caller of \fBparray\fR.
 It may be either local or global.
+.SS "WORD BOUNDARY HELPERS"
+.PP
+These procedures are mainly used internally by Tk.
 .TP
 \fBtcl_endOfWord \fIstr start\fR
 Returns the index of the first end-of-word location that occurs after
