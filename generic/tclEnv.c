@@ -19,20 +19,33 @@ TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
 #if defined(_WIN32)
 #  define tenviron _wenviron
-#  define tenviron2utfdstr(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
-		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr)))
-#  define utf2tenvirondstr(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
-		(const WCHAR *)Tcl_UtfToChar16DString((string), (len), (dsPtr)))
+static inline char *tenviron2utfdstr(const WCHAR *str, Tcl_DString *dsPtr) {
+    Tcl_DStringInit(dsPtr);
+    return Tcl_Char16ToUtfDString(str, -1, dsPtr);
+}
+static inline WCHAR *utf2tenvirondstr(const char *str, Tcl_DString *dsPtr) {
+    Tcl_DStringInit(dsPtr);
+    return Tcl_UtfToChar16DString(str, -1, dsPtr);
+}
 #  define techar WCHAR
 #  ifdef USE_PUTENV
 #    define putenv(env) _wputenv((const wchar_t *)env)
 #  endif
 #else
 #  define tenviron environ
-#  define tenviron2utfdstr(tenvstr, len, dstr) \
-		Tcl_ExternalToUtfDString(NULL, tenvstr, len, dstr)
-#  define utf2tenvirondstr(str, len, dstr) \
-		Tcl_UtfToExternalDString(NULL, str, len, dstr)
+static inline char *tenviron2utfdstr(const char *str, Tcl_DString *dsPtr) {
+    if (TclSystemToInternalEncoding(NULL,str,-1,dsPtr) == TCL_OK) {
+        return Tcl_DStringValue(dsPtr);
+    }
+    return NULL;
+}
+static inline char *utf2tenvirondstr(const char *str, Tcl_DString *dsPtr) {
+    Tcl_DStringInit(dsPtr);
+    if (TclInternalToSystemEncoding(NULL,str,-1,dsPtr) == TCL_OK) {
+        return Tcl_DStringValue(dsPtr);
+    }
+    return NULL;
+}
 #  define techar char
 #endif
 
@@ -159,7 +172,11 @@ TclSetupEnv(
 	    const char *p1;
 	    char *p2;
 
-	    p1 = tenviron2utfdstr(tenviron[i], -1, &envString);
+	    p1 = tenviron2utfdstr(tenviron[i], &envString);
+            if (p1 == NULL) {
+                /* Ignore what cannot be decoded (should not happen) */
+                continue;
+            }
 	    p2 = (char *)strchr(p1, '=');
 	    if (p2 == NULL) {
 		/*
@@ -301,9 +318,9 @@ TclSetEnv(
 	 * interpreters.
 	 */
 
-	oldEnv = tenviron2utfdstr(tenviron[index], -1, &envString);
-	if (strcmp(value, oldEnv + (length + 1)) == 0) {
-	    Tcl_DStringFree(&envString);
+	oldEnv = tenviron2utfdstr(tenviron[index], &envString);
+	if (oldEnv == NULL || strcmp(value, oldEnv + (length + 1)) == 0) {
+	    Tcl_DStringFree(&envString); /* OK even if oldEnv is NULL */
 	    Tcl_MutexUnlock(&envMutex);
 	    return;
 	}
@@ -324,7 +341,13 @@ TclSetEnv(
     memcpy(p, name, nameLength);
     p[nameLength] = '=';
     memcpy(p+nameLength+1, value, valueLength+1);
-    p2 = utf2tenvirondstr(p, -1, &envString);
+    p2 = utf2tenvirondstr(p, &envString);
+    if (p2 == NULL) {
+        /* No way to signal error from here :-( but should not happen */
+        Tcl_Free(p);
+        Tcl_MutexUnlock(&envMutex);
+        return;
+    }
 
     /*
      * Copy the native string to heap memory.
@@ -502,7 +525,11 @@ TclUnsetEnv(
     string[length] = '\0';
 #endif /* _WIN32 */
 
-    utf2tenvirondstr(string, -1, &envString);
+    if (utf2tenvirondstr(string, &envString) == NULL) {
+        /* Should not happen except memory alloc fail. */
+        Tcl_MutexUnlock(&envMutex);
+        return;
+    }
     string = (char *)Tcl_Realloc(string, Tcl_DStringLength(&envString) + tNTL);
     memcpy(string, Tcl_DStringValue(&envString),
 	    Tcl_DStringLength(&envString) + tNTL);
@@ -577,17 +604,19 @@ TclGetEnv(
     if (index != -1) {
 	Tcl_DString envStr;
 
-	result = tenviron2utfdstr(tenviron[index], -1, &envStr);
-	result += length;
-	if (*result == '=') {
-	    result++;
-	    Tcl_DStringInit(valuePtr);
-	    Tcl_DStringAppend(valuePtr, result, -1);
-	    result = Tcl_DStringValue(valuePtr);
-	} else {
-	    result = NULL;
-	}
-	Tcl_DStringFree(&envStr);
+	result = tenviron2utfdstr(tenviron[index], &envStr);
+        if (result) {
+            result += length;
+            if (*result == '=') {
+                result++;
+                Tcl_DStringInit(valuePtr);
+                Tcl_DStringAppend(valuePtr, result, -1);
+                result = Tcl_DStringValue(valuePtr);
+            } else {
+                result = NULL;
+            }
+            Tcl_DStringFree(&envStr);
+        }
     }
     Tcl_MutexUnlock(&envMutex);
     return result;
