@@ -4856,6 +4856,92 @@ TclGetEncodingProfiles(Tcl_Interp *interp)
 }
 
 /*
+ *------------------------------------------------------------------------
+ *
+ * TclSystemToInternalEncoding --
+ *
+ *    Converts a string encoded in the system encoding to Tcl's internal UTF8
+ *    using the lossless profile.
+ *
+ * Results:
+ *    Tcl_OK / TCL_ERROR
+ *
+ * Side effects:
+ *    On success *dsPtr holds the converted string. On error, *dsPtr is
+ *    cleared, an error message is stored in interp (if not NULL), and a
+ *    POSIX error code stored in errno.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclSystemToInternalEncoding(
+    Tcl_Interp *interp, /* For error messages, may be NULL */
+    const char *src,    /* String in system encoding */
+    Tcl_Size srcLen,    /* Number of bytes passed in */
+    Tcl_DString *dsPtr) /* Pointer to uninitialized or cleared Tcl_DString. */
+{
+    Tcl_Size errorLoc;
+    int ret;
+    ret = Tcl_ExternalToUtfDStringEx(interp,
+				     NULL,
+				     src,
+				     srcLen,
+				     TCL_ENCODING_PROFILE_LOSSLESS,
+				     dsPtr,
+				     &errorLoc);
+    /* On TCL_OK, caller owns *dsPtr. On failure we have to free it. */
+    if (ret != TCL_OK) {
+	Tcl_DStringFree(dsPtr);
+	errno = ret == TCL_CONVERT_NOSPACE ? ENOMEM : EILSEQ;
+	ret = TCL_ERROR; /* Map TCL_CONVERT_* to TCL_ERROR */
+    }
+    return ret;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclInternalToSystemEncoding --
+ *
+ *    Converts a string to the system encoding using the lossless profile
+ *
+ * Results:
+ *    Tcl_OK / TCL_ERROR
+ *
+ * Side effects:
+ *    On success *dsPtr holds the converted string. On error, *dsPtr is
+ *    cleared, an error message is stored in interp (if not NULL), and a
+ *    POSIX error code stored in errno.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclInternalToSystemEncoding(
+    Tcl_Interp *interp, /* For error messages, may be NULL */
+    const char *src,    /* String in system encoding */
+    Tcl_Size srcLen,    /* Number of bytes passed in */
+    Tcl_DString *dsPtr) /* Pointer to uninitialized or cleared Tcl_DString. */
+{
+    Tcl_Size errorLoc;
+    int ret;
+    ret = Tcl_UtfToExternalDStringEx(interp,
+				     NULL,
+				     src,
+				     srcLen,
+				     TCL_ENCODING_PROFILE_LOSSLESS,
+				     dsPtr,
+				     &errorLoc);
+    /* On TCL_OK, caller owns *dsPtr. On failure we have to free it. */
+    if (ret != TCL_OK) {
+	Tcl_DStringFree(dsPtr);
+	errno = ret == TCL_CONVERT_NOSPACE ? ENOMEM : EILSEQ;
+	ret = TCL_ERROR; /* Map TCL_CONVERT_* to TCL_ERROR */
+    }
+    return ret;
+}
+
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

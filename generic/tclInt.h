@@ -2781,11 +2781,6 @@ typedef enum Tcl_PathPart {
 } Tcl_PathPart;
 
 /*
- * Encoding profile to use for file names.
- */
-#define TCL_FILENAME_ENCODING_PROFILE TCL_ENCODING_PROFILE_LOSSLESS
-
-/*
  *----------------------------------------------------------------
  * Data structures related to obsolete filesystem hooks
  *----------------------------------------------------------------
@@ -2964,6 +2959,10 @@ MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 						    int profileId);
 MODULE_SCOPE int TclEncodingSetProfileFlags(int flags);
 MODULE_SCOPE void TclGetEncodingProfiles(Tcl_Interp *interp);
+MODULE_SCOPE int TclInternalToSystemEncoding(Tcl_Interp *interp,
+			const char *src, Tcl_Size srcLen, Tcl_DString *dsPtr);
+MODULE_SCOPE int TclSystemToInternalEncoding(Tcl_Interp *interp,
+			const char *src, Tcl_Size srcLen, Tcl_DString *dsPtr);
 
 /*
  * TIP #233 (Virtualized Time)
