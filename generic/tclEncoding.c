@@ -316,7 +316,8 @@ static const Tcl_ObjType encodingType = {
  *
  * ToLosslessUtf8 --
  *
- *    Converts a string of bytes to their lossless utf-8 representation.
+ *    Converts an entire string of bytes to their lossless utf-8 representation.
+ *    Caller has to ensure the entire string is to be treated as invalid encoding.
  *
  * Results:
  *    Number of bytes in converted utf-8 output or a negative value if
@@ -2687,14 +2688,9 @@ UtfToUtfProc(
 		dst += Tcl_UniCharToUtf(ch, dst);
 	    } else {
 		assert(PROFILE_LOSSLESS(profile));
-		Tcl_Size len = ToLosslessUtf8(
-		    src, srcEnd - src, dst, dstLen - (dst - dstStart));
-		if (len < 0) {
-		    result = TCL_CONVERT_NOSPACE;
-		    break;
-		}
-		dst += len;
-		src += srcEnd - src;
+                ch = ToLossless(UCHAR(*src));
+		dst += Tcl_UniCharToUtf(ch, dst);
+		src += 1;
 	    }
 	} else {
 	    int isInvalid = 0;
@@ -3254,7 +3250,8 @@ Utf16ToUtfProc(
 
     /*
      * If we had a truncated code unit at the end AND this is the last
-     * fragment AND profile is not "strict", stick FFFD in its place.
+     * fragment AND profile is not "strict", use the appropriate replacement
+     * strategy.
      */
     if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
 	if (dst > dstEnd) {
