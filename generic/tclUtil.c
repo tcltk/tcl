@@ -4233,9 +4233,9 @@ TclGetProcessGlobalValue(
 	    Tcl_MutexLock(&pgvPtr->mutex);
 	    epoch = ++pgvPtr->epoch;
 	    Tcl_UtfToExternalDStringEx(NULL, pgvPtr->encoding, pgvPtr->value,
-		pgvPtr->numBytes, TCL_ENCODING_PROFILE_TCL8, &native, NULL);
+		pgvPtr->numBytes, TCL_ENCODING_PROFILE_LOSSLESS, &native, NULL);
 	    Tcl_ExternalToUtfDStringEx(NULL, current, Tcl_DStringValue(&native),
-		Tcl_DStringLength(&native), TCL_ENCODING_PROFILE_TCL8,
+		Tcl_DStringLength(&native), TCL_ENCODING_PROFILE_LOSSLESS,
 		&newValue, NULL);
 	    Tcl_DStringFree(&native);
 	    Tcl_Free(pgvPtr->value);

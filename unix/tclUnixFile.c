@@ -1000,7 +1000,8 @@ TclpObjLink(
 		return NULL;
 	    }
 	    target = Tcl_GetStringFromObj(transPtr, &length);
-	    target = Tcl_UtfToExternalDString(NULL, target, length, &ds);
+            TclInternalToSystemEncoding(NULL, target, length, &ds);
+            target = Tcl_DStringValue(&ds);
 	    Tcl_DecrRefCount(transPtr);
 
 	    if (symlink(target, src) != 0) {
