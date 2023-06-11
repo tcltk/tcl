@@ -1184,7 +1184,7 @@ test io-7.2 {FilterInputBytes: split up character in middle of buffer} {
     puts -nonewline $f "1234567890\n123\x82\x4F\x82\x50\x82"
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding shiftjis
+    fconfigure $f -encoding shiftjis -profile tcl8
     set x [list [gets $f line] $line [eof $f]]
     close $f
     set x
@@ -1668,8 +1668,7 @@ test {io-12.9 profile tcl8} {ReadChars: multibyte chars split} -body {
     catch {close $f}
 } -result 194
 
-
-test io-12.10.profilestrict {ReadChars: multibyte chars split} -body {
+test {io-12.10 strict} {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
@@ -1685,7 +1684,7 @@ test io-12.10.profilestrict {ReadChars: multibyte chars split} -body {
 	invalid or incomplete multibyte or wide character}
 
 
-test io-12.10.profiletcl8 {ReadChars: multibyte chars split} -body {
+test {io-12.10 tcl8} {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
@@ -6490,7 +6489,7 @@ test io-47.3 {deleting fileevent on interpreter delete} {testfevent fileevent} {
     fileevent $f readable {script 1}
     fileevent $f2 readable {script 2}
     testfevent cmd "fileevent $f3 readable {script 3}
-      fileevent $f4 readable {script 4}"
+	fileevent $f4 readable {script 4}"
     testfevent delete
     set x [list [fileevent $f readable] [fileevent $f2 readable] \
 		[fileevent $f3 readable] [fileevent $f4 readable]]

@@ -58,9 +58,8 @@ Tcl_RecordAndEval(
     const char *cmd,		/* Command to record. */
     int flags)			/* Additional flags. TCL_NO_EVAL means only
 				 * record: don't execute command.
-				 * TCL_EVAL_GLOBAL means evaluate the script
-				 * in global variable context instead of the
-				 * current procedure. */
+				 * TCL_EVAL_GLOBAL means use Tcl_GlobalEval
+				 * instead of Tcl_Eval. */
 {
     Tcl_Obj *cmdPtr;
     int result;

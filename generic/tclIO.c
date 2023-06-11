@@ -5934,8 +5934,8 @@ DoReadChars(
     int factor = UTF_EXPANSION_FACTOR;
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
 	/* TODO: UpdateInterest not needed here? */
-	ResetFlag(statePtr, CHANNEL_ENCODING_ERROR|CHANNEL_EOF);
 	UpdateInterest(chanPtr);
 
 	Tcl_SetErrno(EILSEQ);
