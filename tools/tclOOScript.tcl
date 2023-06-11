@@ -4,7 +4,7 @@
 # 	that the code can be definitely run even in safe interpreters; TclOO's
 # 	core setup is safe.
 #
-# Copyright © 2012-2018 Donal K. Fellows
+# Copyright © 2012-2019 Donal K. Fellows
 # Copyright © 2013 Andreas Kupries
 # Copyright © 2017 Gerald Lester
 #
@@ -18,7 +18,7 @@
     # Commands that are made available to objects by default.
     #
     namespace eval Helpers {
-	::namespace path {}
+	namespace path {}
 
 	# ------------------------------------------------------------------
 	#
@@ -153,9 +153,9 @@
 	    if {![info object isa class $d]} {
 		continue
 	    }
-	    define $delegate ::oo::define::superclass -append $d
+	    define $delegate ::oo::define::superclass -appendifnew $d
 	}
-	objdefine $class ::oo::objdefine::mixin -append $delegate
+	objdefine $class ::oo::objdefine::mixin -appendifnew $delegate
     }
 
     # ----------------------------------------------------------------------
@@ -257,7 +257,7 @@
 	#
 	# ------------------------------------------------------------------
 
-	method Get {} {
+	method Get -unexport {} {
 	    return -code error -errorcode {TCLOO ABSTRACT_SLOT} "unimplemented"
 	}
 
@@ -270,7 +270,7 @@
 	#
 	# ------------------------------------------------------------------
 
-	method Set list {
+	method Set -unexport list {
 	    return -code error -errorcode {TCLOO ABSTRACT_SLOT} "unimplemented"
 	}
 
@@ -284,7 +284,7 @@
 	#
 	# ------------------------------------------------------------------
 
-	method Resolve list {
+	method Resolve -unexport list {
 	    return $list
 	}
 
@@ -297,25 +297,36 @@
 	#
 	# ------------------------------------------------------------------
 
-	method -set args {
+	method -set -export args {
 	    set my [namespace which my]
 	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
 	    tailcall my Set $args
 	}
-	method -append args {
+	method -append -export args {
 	    set my [namespace which my]
 	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
 	    set current [uplevel 1 [list $my Get]]
 	    tailcall my Set [list {*}$current {*}$args]
 	}
-	method -clear {} {tailcall my Set {}}
-	method -prepend args {
+	method -appendifnew -export args {
+	    set my [namespace which my]
+	    set current [uplevel 1 [list $my Get]]
+	    foreach a $args {
+		set a [uplevel 1 [list $my Resolve $a]]
+		if {$a ni $current} {
+		    lappend current $a
+		}
+	    }
+	    tailcall my Set $current
+	}
+	method -clear -export {} {tailcall my Set {}}
+	method -prepend -export args {
 	    set my [namespace which my]
 	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
 	    set current [uplevel 1 [list $my Get]]
 	    tailcall my Set [list {*}$args {*}$current]
 	}
-	method -remove args {
+	method -remove -export args {
 	    set my [namespace which my]
 	    set args [lmap a $args {uplevel 1 [list $my Resolve $a]}]
 	    set current [uplevel 1 [list $my Get]]
@@ -326,7 +337,7 @@
 
 	# Default handling
 	forward --default-operation my -append
-	method unknown {args} {
+	method unknown -unexport {args} {
 	    set def --default-operation
 	    if {[llength $args] == 0} {
 		tailcall my $def
@@ -336,9 +347,8 @@
 	    next {*}$args
 	}
 
-	# Set up what is exported and what isn't
-	export -set -append -clear -prepend -remove
-	unexport unknown destroy
+	# Hide destroy
+	unexport destroy
     }
 
     # Set the default operation differently for these slots
@@ -356,7 +366,7 @@
     #
     # ----------------------------------------------------------------------
 
-    define object method <cloned> {originObject} {
+    define object method <cloned> -unexport {originObject} {
 	# Copy over the procedures from the original namespace
 	foreach p [info procs [info object namespace $originObject]::*] {
 	    set args [info args $p]
@@ -397,7 +407,7 @@
     #
     # ----------------------------------------------------------------------
 
-    define class method <cloned> {originObject} {
+    define class method <cloned> -unexport {originObject} {
 	next $originObject
 	# Rebuild the class inheritance delegation class
 	::oo::UpdateClassDelegatesAfterClone $originObject [self]
@@ -424,7 +434,7 @@
 			::return -code error -errorcode {TCLOO SINGLETON} \
 			    "may not destroy a singleton object"
 		    }
-		    method <cloned> {originObject} {
+		    method <cloned> -unexport {originObject} {
 			::return -code error -errorcode {TCLOO SINGLETON} \
 			    "may not clone a singleton object"
 		    }
@@ -446,6 +456,338 @@
     class create abstract {
 	superclass class
 	unexport create createWithNamespace new
+    }
+
+    # ----------------------------------------------------------------------
+    #
+    # oo::configuresupport --
+    #
+    #	Namespace that holds all the implementation details of TIP #558.
+    #	Also includes the commands:
+    #
+    #	 * readableproperties
+    #	 * writableproperties
+    #	 * objreadableproperties
+    #	 * objwritableproperties
+    #
+    #	Those are all slot implementations that provide access to the C layer
+    #	of property support (i.e., very fast cached lookup of property names).
+    #
+    # ----------------------------------------------------------------------
+
+    ::namespace eval configuresupport {
+	namespace path ::tcl
+
+	# ------------------------------------------------------------------
+	#
+	# oo::configuresupport --
+	#
+	#	A metaclass that is used to make classes that can be configured.
+	#
+	# ------------------------------------------------------------------
+
+	proc PropertyImpl {readslot writeslot args} {
+	    for {set i 0} {$i < [llength $args]} {incr i} {
+		# Parse the property name
+		set prop [lindex $args $i]
+		if {[string match "-*" $prop]} {
+		    return -code error -level 2 \
+			-errorcode {TCLOO PROPERTY_FORMAT} \
+			"bad property name \"$prop\": must not begin with -"
+		}
+		if {$prop ne [list $prop]} {
+		    return -code error -level 2 \
+			-errorcode {TCLOO PROPERTY_FORMAT} \
+			"bad property name \"$prop\": must be a simple word"
+		}
+		if {[string first "::" $prop] != -1} {
+		    return -code error -level 2 \
+			-errorcode {TCLOO PROPERTY_FORMAT} \
+			"bad property name \"$prop\": must not contain namespace separators"
+		}
+		if {[string match {*[()]*} $prop]} {
+		    return -code error -level 2 \
+			-errorcode {TCLOO PROPERTY_FORMAT} \
+			"bad property name \"$prop\": must not contain parentheses"
+		}
+		set realprop [string cat "-" $prop]
+		set getter [format {::set [my varname %s]} $prop]
+		set setter [format {::set [my varname %s] $value} $prop]
+		set kind readwrite
+
+		# Parse the extra options
+		while {[set next [lindex $args [expr {$i + 1}]]
+			string match "-*" $next]} {
+		    set arg [lindex $args [incr i 2]]
+		    switch [prefix match -error [list -level 2 -errorcode \
+			    [list TCL LOOKUP INDEX option $next]] {-get -kind -set} $next] {
+			-get {
+			    if {$i >= [llength $args]} {
+				return -code error -level 2 \
+				    -errorcode {TCL WRONGARGS} \
+				    "missing body to go with -get option"
+			    }
+			    set getter $arg
+			}
+			-set {
+			    if {$i >= [llength $args]} {
+				return -code error -level 2 \
+				    -errorcode {TCL WRONGARGS} \
+				    "missing body to go with -set option"
+			    }
+			    set setter $arg
+			}
+			-kind {
+			    if {$i >= [llength $args]} {
+				return -code error -level 2\
+				    -errorcode {TCL WRONGARGS} \
+				    "missing kind value to go with -kind option"
+			    }
+			    set kind [prefix match -message "kind" -error [list \
+				    -level 2 \
+				    -errorcode [list TCL LOOKUP INDEX kind $arg]] {
+				readable readwrite writable
+			    } $arg]
+			}
+		    }
+		}
+
+		# Install the option
+		set reader <ReadProp$realprop>
+		set writer <WriteProp$realprop>
+		switch $kind {
+		    readable {
+			uplevel 2 [list $readslot -append $realprop]
+			uplevel 2 [list $writeslot -remove $realprop]
+			uplevel 2 [list method $reader -unexport {} $getter]
+		    }
+		    writable {
+			uplevel 2 [list $readslot -remove $realprop]
+			uplevel 2 [list $writeslot -append $realprop]
+			uplevel 2 [list method $writer -unexport {value} $setter]
+		    }
+		    readwrite {
+			uplevel 2 [list $readslot -append $realprop]
+			uplevel 2 [list $writeslot -append $realprop]
+			uplevel 2 [list method $reader -unexport {} $getter]
+			uplevel 2 [list method $writer -unexport {value} $setter]
+		    }
+		}
+	    }
+	}
+
+	# ------------------------------------------------------------------
+	#
+	# oo::configuresupport::configurableclass,
+	# oo::configuresupport::configurableobject --
+	#
+	#	Namespaces used as implementation vectors for oo::define and
+	#	oo::objdefine when the class/instance is configurable.
+	#
+	# ------------------------------------------------------------------
+
+	namespace eval configurableclass {
+	    ::proc property args {
+		::oo::configuresupport::PropertyImpl \
+		    ::oo::configuresupport::readableproperties \
+		    ::oo::configuresupport::writableproperties {*}$args
+	    }
+	    # Plural alias just in case; deliberately NOT documented!
+	    ::proc properties args {::tailcall property {*}$args}
+	    ::namespace path ::oo::define
+	    ::namespace export property
+	}
+
+	namespace eval configurableobject {
+	    ::proc property args {
+		::oo::configuresupport::PropertyImpl \
+		    ::oo::configuresupport::objreadableproperties \
+		    ::oo::configuresupport::objwritableproperties {*}$args
+	    }
+	    # Plural alias just in case; deliberately NOT documented!
+	    ::proc properties args {::tailcall property {*}$args}
+	    ::namespace path ::oo::objdefine
+	    ::namespace export property
+	}
+
+	# ------------------------------------------------------------------
+	#
+	# oo::configuresupport::ReadAll --
+	#
+	#	The implementation of [$o configure] with no extra arguments.
+	#
+	# ------------------------------------------------------------------
+
+	proc ReadAll {object my} {
+	    set result {}
+	    foreach prop [info object properties $object -all -readable] {
+		try {
+		    dict set result $prop [$my <ReadProp$prop>]
+		} on error {msg opt} {
+		    dict set opt -level 2
+		    return -options $opt $msg
+		} on return {msg opt} {
+		    dict incr opt -level 2
+		    return -options $opt $msg
+		} on break {} {
+		    return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+			"property getter for $prop did a break"
+		} on continue {} {
+		    return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+			"property getter for $prop did a continue"
+		}
+	    }
+	    return $result
+	}
+
+	# ------------------------------------------------------------------
+	#
+	# oo::configuresupport::ReadOne --
+	#
+	#	The implementation of [$o configure -prop] with that single
+	#	extra argument.
+	#
+	# ------------------------------------------------------------------
+
+	proc ReadOne {object my propertyName} {
+	    set props [info object properties $object -all -readable]
+	    try {
+		set prop [prefix match -message "property" $props $propertyName]
+	    } on error {msg} {
+		catch {
+		    set wps [info object properties $object -all -writable]
+		    set wprop [prefix match $wps $propertyName]
+		    set msg "property \"$wprop\" is write only"
+		}
+		return -code error -level 2 -errorcode [list \
+			TCL LOOKUP INDEX property $propertyName] $msg
+	    }
+	    try {
+		set value [$my <ReadProp$prop>]
+	    } on error {msg opt} {
+		dict set opt -level 2
+		return -options $opt $msg
+	    } on return {msg opt} {
+		dict incr opt -level 2
+		return -options $opt $msg
+	    } on break {} {
+		return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+		    "property getter for $prop did a break"
+	    } on continue {} {
+		return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+		    "property getter for $prop did a continue"
+	    }
+	    return $value
+	}
+
+	# ------------------------------------------------------------------
+	#
+	# oo::configuresupport::WriteMany --
+	#
+	#	The implementation of [$o configure -prop val ?-prop val...?].
+	#
+	# ------------------------------------------------------------------
+
+	proc WriteMany {object my setterMap} {
+	    set props [info object properties $object -all -writable]
+	    foreach {prop value} $setterMap {
+		try {
+		    set prop [prefix match -message "property" $props $prop]
+		} on error {msg} {
+		    catch {
+			set rps [info object properties $object -all -readable]
+			set rprop [prefix match $rps $prop]
+			set msg "property \"$rprop\" is read only"
+		    }
+		    return -code error -level 2 -errorcode [list \
+			    TCL LOOKUP INDEX property $prop] $msg
+		}
+		try {
+		    $my <WriteProp$prop> $value
+		} on error {msg opt} {
+		    dict set opt -level 2
+		    return -options $opt $msg
+		} on return {msg opt} {
+		    dict incr opt -level 2
+		    return -options $opt $msg
+		} on break {} {
+		    return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+			"property setter for $prop did a break"
+		} on continue {} {
+		    return -code error -level 2 -errorcode {TCLOO SHENANIGANS} \
+			"property setter for $prop did a continue"
+		}
+	    }
+	    return
+	}
+
+	# ------------------------------------------------------------------
+	#
+	# oo::configuresupport::configurable --
+	#
+	#	The class that contains the implementation of the actual
+	#	'configure' method (mixed into actually configurable classes).
+	#	Great care needs to be taken in these methods as they are
+	#	potentially used in classes where the current namespace is set
+	#	up very strangely.
+	#
+	# ------------------------------------------------------------------
+
+	::oo::class create configurable {
+	    private variable my
+	    #
+	    # configure --
+	    #	Method for providing client access to the property mechanism.
+	    #	Has a user-facing API similar to that of [chan configure].
+	    #
+	    method configure -export args {
+		::if {![::info exists my]} {
+		    ::set my [::namespace which my]
+		}
+		::if {[::llength $args] == 0} {
+		    # Read all properties
+		    ::oo::configuresupport::ReadAll [self] $my
+		} elseif {[::llength $args] == 1} {
+		    # Read a single property
+		    ::oo::configuresupport::ReadOne [self] $my \
+			[::lindex $args 0]
+		} elseif {[::llength $args] % 2 == 0} {
+		    # Set properties, one or several
+		    ::oo::configuresupport::WriteMany [self] $my $args
+		} else {
+		    # Invalid call
+		    ::return -code error -errorcode {TCL WRONGARGS} \
+			[::format {wrong # args: should be "%s"} \
+			    "[self] configure ?-option value ...?"]
+		}
+	    }
+
+	    definitionnamespace -instance configurableobject
+	    definitionnamespace -class configurableclass
+	}
+    }
+
+    # ----------------------------------------------------------------------
+    #
+    # oo::configurable --
+    #
+    #	A metaclass that is used to make classes that can be configured in
+    #	their creation phase (and later too). All the metaclass itself does is
+    #	arrange for the class created to have a 'configure' method and for
+    #	oo::define and oo::objdefine (on the class and its instances) to have
+    #	a property definition for setting things up for 'configure'.
+    #
+    # ----------------------------------------------------------------------
+
+    class create configurable {
+	superclass class
+
+	constructor {{definitionScript ""}} {
+	    next {mixin ::oo::configuresupport::configurable}
+	    next $definitionScript
+	}
+
+	definitionnamespace -class configuresupport::configurableclass
     }
 }
 

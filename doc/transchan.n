@@ -11,7 +11,18 @@
 .SH NAME
 transchan \- command handler API of channel transforms
 .SH SYNOPSIS
-\fBcmdPrefix \fIoption\fR ?\fIarg arg ...\fR?
+.nf
+\fBchan push \fIchannelName cmdPrefix\fR
+
+\fIcmdPrefix \fBclear \fIhandle\fR
+\fIcmdPrefix \fBdrain \fIhandle\fR
+\fIcmdPrefix \fBfinalize \fIhandle\fR
+\fIcmdPrefix \fBflush \fIhandle\fR
+\fIcmdPrefix \fBinitialize \fIhandle mode\fR
+\fIcmdPrefix \fBlimit? \fIhandle\fR
+\fIcmdPrefix \fBread \fIhandle buffer\fR
+\fIcmdPrefix \fBwrite \fIhandle buffer\fR
+.fi
 .BE
 .SH DESCRIPTION
 .PP

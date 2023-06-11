@@ -1164,11 +1164,8 @@ TestcmdinfoObjCmd(
 	    return info.objProc2(info.objClientData2, interp, cmdObjc, cmdObjv);
 	}
     case CMDINFO_CREATE:
-	Tcl_CreateCommand(interp,
-			  Tcl_GetString(objv[2]),
-			  CmdProc1,
-			  (void *)"original",
-			  CmdDelProc1);
+	Tcl_CreateCommand(interp, Tcl_GetString(objv[2]), CmdProc1,
+		(void *)"original", CmdDelProc1);
 	break;
     case CMDINFO_DELETE:
 	Tcl_DStringInit(&delString);
@@ -1206,10 +1203,8 @@ TestcmdinfoObjCmd(
 	} else if (info.isNativeObjectProc == 2) {
 	    Tcl_AppendResult(interp, " nativeObjectProc2", NULL);
 	} else {
-	    Tcl_SetObjResult(
-		interp,
-		Tcl_ObjPrintf("Invalid isNativeObjectProc value %d",
-			      info.isNativeObjectProc));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("Invalid isNativeObjectProc value %d",
+		    info.isNativeObjectProc));
 	    return TCL_ERROR;
 	}
 	break;

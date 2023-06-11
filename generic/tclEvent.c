@@ -232,7 +232,11 @@ HandleBgErrors(
 	 * support one handler setting another handler.
 	 */
 
-	Tcl_Obj *copyObj = TclListObjCopy(NULL, assocPtr->cmdPrefix);
+	Tcl_Obj *copyObj = TclDuplicatePureObj(
+	    interp, assocPtr->cmdPrefix, &tclListType.objType);
+	if (!copyObj) {
+	    return;
+	}
 
 	errPtr = assocPtr->firstBgPtr;
 
