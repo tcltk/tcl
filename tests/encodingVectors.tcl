@@ -396,7 +396,7 @@ lappend encInvalidBytes {*}{
     utf-8 EDA080EDB080 strict {}             0 {}  {High low surrogate pair}
     utf-8 EDAFBFEDBFBF tcl8 \U0010FFFF      -1 {knownBug}  {High low surrogate pair}
     utf-8 EDAFBFEDBFBF replace \uFFFD\uFFFD -1 {knownBug}  {High low surrogate pair}
-    utf-8 EDAFBFEDBFBF lossless \uDCED\uDCAF\uDCBF\uDCED\uDCBF\uDCBF  -1 {knownBug}  {High low surrogate pair}
+    utf-8 EDAFBFEDBFBF lossless \uDCED\uDCAF\uDCBF\uDCED\uDCBF\uDCBF  -1 {}  {High low surrogate pair}
     utf-8 EDAFBFEDBFBF strict {}             0 {}  {High low surrogate pair}
 
     utf-8 EE tcl8       \u00EE        -1 {} {Missing trail byte}
