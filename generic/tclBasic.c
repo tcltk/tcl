@@ -3298,7 +3298,7 @@ invokeObj2Command(
     Command *cmdPtr = (Command *) clientData;
 
     if (objc > INT_MAX) {
-	objc = TCL_INDEX_NONE; /* TODO - why? Should error, not truncate */
+	return TclCommandWordLimitError(interp, objc);
     }
     if (cmdPtr->objProc != NULL) {
 	result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
@@ -3315,6 +3315,9 @@ static int cmdWrapper2Proc(void *clientData,
     Tcl_Obj *const objv[])
 {
     Command *cmdPtr = (Command *)clientData;
+    if (objc > INT_MAX) {
+	return TclCommandWordLimitError(interp, objc);
+    }
     return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
 }
 
@@ -5384,12 +5387,12 @@ TclEvalEx(
 		    expand[objectsUsed] = 1;
 
 		    additionalObjsCount = (numElements ? numElements : 1);
-		    
+
 		} else {
 		    expand[objectsUsed] = 0;
 		    additionalObjsCount = 1;
 		}
-		
+
 		/* Currently max command words in INT_MAX */
 		if (additionalObjsCount > INT_MAX ||
 		    objectsNeeded > (INT_MAX - additionalObjsCount)) {
