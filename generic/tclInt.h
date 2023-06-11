@@ -4173,6 +4173,12 @@ MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
 MODULE_SCOPE int	TclIndexInvalidError(Tcl_Interp *interp,
 			    const char *idxType, Tcl_Size idx);
+
+/*
+ * Error message utility functions
+ */
+MODULE_SCOPE int TclCommandWordLimitError(Tcl_Interp *interp, Tcl_Size count);
+
 #endif /* TCL_MAJOR_VERSION > 8 */
 
 /* Constants used in index value encoding routines. */

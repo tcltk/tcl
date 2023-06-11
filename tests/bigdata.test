@@ -879,15 +879,25 @@ bigtest linsert-bigdata-1 "linsert" {4294967330 1} -body {
 
 #
 # list and {*}
-bigtestRO list-bigdata-1 {list {*} } {4294967296 0 4294967295} -body {
-    unset -nocomplain l2
-    set l2 [list {*}$l]
-    list [llength $l2] [lindex $l2 0] [lindex $l2 end]
-} -setup {
+# TODO - compiled and uncompiled behave differently so tested separately
+test list-bigdata-1.compiled {list {*}}  -body {
     set l [bigList 0x100000000]
+    set l2 [list {*}$l]
+    unset l
+    list [llength $l2] [lindex $l2 0] [lindex $l2 end]
 } -cleanup {
     bigClean
-} -constraints bug-7cddd2845c
+} -constraints {
+    bigdata
+} -result {4294967296 0 5}
+test list-bigdata-1.uncompiled {list {*}}  -body {
+    set l [bigList 0x7fffffff]
+    testevalex {set l2 [list {*}$l]}
+} -cleanup {
+    bigClean
+} -constraints {
+    bigdata
+} -result {Number of words in command exceeds limit 2147483647.} -returnCodes error
 
 #
 # llength
