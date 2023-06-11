@@ -47,6 +47,7 @@
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:malloc
+   ...
    fun:decompose_rpath
    ...
    fun:dlopen_doit
@@ -178,6 +179,17 @@
    fun:_nss_systemd_getpwnam_r
    ...
    fun:TclpGetPwNam
+}
+
+{
+    TclpGetGrGid/getgrgid_r/tls_get_addr_tail
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:malloc
+    ...
+    fun:tls_get_addr_tail
+    ...
+    fun:TclpGetGrGid
 }
 
 {
