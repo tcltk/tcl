@@ -205,7 +205,7 @@ static int		FlushChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int calledFromAsyncFlush);
 static int		TclGetsObjBinary(Tcl_Channel chan, Tcl_Obj *objPtr);
 static Tcl_Encoding	GetBinaryEncoding(void);
-static Tcl_ExitProc	FreeBinaryEncoding;
+static void		FreeBinaryEncoding(void);
 static Tcl_HashTable *	GetChannelTable(Tcl_Interp *interp);
 static int		GetInput(Channel *chanPtr);
 static void		PeekAhead(Channel *chanPtr, char **dstEndPtr,
@@ -659,7 +659,7 @@ TclFinalizeIOSubsystem(void)
 		statePtr->refCount--;
 	    }
 
-	    if (statePtr->refCount + 1 <= 1) {
+	    if (statePtr->refCount <= 0) {
 		/*
 		 * Close it only if the refcount indicates that the channel is
 		 * not referenced from any interpreter. If it is, that
@@ -695,6 +695,7 @@ TclFinalizeIOSubsystem(void)
 	}
     }
 
+    FreeBinaryEncoding();
     TclpFinalizeSockets();
     TclpFinalizePipes();
 }
@@ -1077,7 +1078,7 @@ CheckForStdChannelsBeingClosed(
     if (tsdPtr->stdinInitialized == 1
 	    && tsdPtr->stdinChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stdinChannel)->state) {
-	if (statePtr->refCount + 1 < 3) {
+	if (statePtr->refCount < 2) {
 	    statePtr->refCount = 0;
 	    tsdPtr->stdinChannel = NULL;
 	    return;
@@ -1085,7 +1086,7 @@ CheckForStdChannelsBeingClosed(
     } else if (tsdPtr->stdoutInitialized == 1
 	    && tsdPtr->stdoutChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stdoutChannel)->state) {
-	if (statePtr->refCount + 1 < 3) {
+	if (statePtr->refCount < 2) {
 	    statePtr->refCount = 0;
 	    tsdPtr->stdoutChannel = NULL;
 	    return;
@@ -1093,7 +1094,7 @@ CheckForStdChannelsBeingClosed(
     } else if (tsdPtr->stderrInitialized == 1
 	    && tsdPtr->stderrChannel != NULL
 	    && statePtr == ((Channel *)tsdPtr->stderrChannel)->state) {
-	if (statePtr->refCount + 1 < 3) {
+	if (statePtr->refCount < 2) {
 	    statePtr->refCount = 0;
 	    tsdPtr->stderrChannel = NULL;
 	    return;
@@ -1255,7 +1256,7 @@ Tcl_UnregisterChannel(
      * If the refCount reached zero, close the actual channel.
      */
 
-    if (statePtr->refCount + 1 <= 1) {
+    if (statePtr->refCount <= 0) {
 	Tcl_Preserve(statePtr);
 	if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 	    /*
@@ -1679,10 +1680,8 @@ Tcl_CreateChannel(
     statePtr->encoding = Tcl_GetEncoding(NULL, name);
     statePtr->inputEncodingState  = NULL;
     statePtr->inputEncodingFlags  = TCL_ENCODING_START;
-    ENCODING_PROFILE_SET(statePtr->inputEncodingFlags, 0);
     statePtr->outputEncodingState = NULL;
     statePtr->outputEncodingFlags = TCL_ENCODING_START;
-    ENCODING_PROFILE_SET(statePtr->outputEncodingFlags, 0);
 
     /*
      * Set the channel up initially in AUTO input translation mode to accept
@@ -2001,7 +2000,7 @@ static void
 ChannelFree(
     Channel *chanPtr)
 {
-    if (!chanPtr->refCount) {
+    if (chanPtr->refCount == 0) {
 	Tcl_Free(chanPtr);
 	return;
     }
@@ -2176,7 +2175,7 @@ Tcl_UnstackChannel(
 	 * necessary.
 	 */
 
-	if (statePtr->refCount + 1 <= 1) {
+	if (statePtr->refCount <= 0) {
 	    if (Tcl_CloseEx(interp, chan, 0) != TCL_OK) {
 		/*
 		 * TIP #219, Tcl Channel Reflection API.
@@ -2544,7 +2543,7 @@ static int
 IsShared(
     ChannelBuffer *bufPtr)
 {
-    return bufPtr->refCount + 1 > 2;
+    return bufPtr->refCount > 1;
 }
 
 /*
@@ -2993,7 +2992,7 @@ FlushChannel(
      * current output buffer.
      */
 
-    if (GotFlag(statePtr, CHANNEL_CLOSED) && (statePtr->refCount + 1 <= 1) &&
+    if (GotFlag(statePtr, CHANNEL_CLOSED) && (statePtr->refCount <= 0) &&
 	    (statePtr->outQueueHead == NULL) &&
 	    ((statePtr->curOutPtr == NULL) ||
 	    IsBufferEmpty(statePtr->curOutPtr))) {
@@ -3454,7 +3453,7 @@ TclClose(
     statePtr = chanPtr->state;
     chanPtr = statePtr->topChanPtr;
 
-    if (statePtr->refCount + 1 > 1) {
+    if (statePtr->refCount > 0) {
 	Tcl_Panic("called Tcl_Close on channel with refCount > 0");
     }
 
@@ -4189,7 +4188,6 @@ Tcl_WriteChars(
     }
 
     objPtr = Tcl_NewStringObj(src, len);
-    Tcl_IncrRefCount(objPtr);
     src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
     if (src == NULL) {
 	Tcl_SetErrno(EILSEQ);
@@ -4363,8 +4361,8 @@ Write(
     while (srcLen + saved + endEncoding > 0 && !encodingError) {
 	ChannelBuffer *bufPtr;
 	char *dst;
-        int result, srcRead, dstLen, dstWrote;
-        Tcl_Size srcLimit = srcLen;
+	int result, srcRead, dstLen, dstWrote;
+	Tcl_Size srcLimit = srcLen;
 
 	if (nextNewLine) {
 	    srcLimit = nextNewLine - src;
@@ -4554,7 +4552,7 @@ Tcl_Gets(
 
     TclNewObj(objPtr);
     charsStored = Tcl_GetsObj(chan, objPtr);
-    if (charsStored + 1 > 1) {
+    if (charsStored > 0) {
 	TclDStringAppendObj(lineRead, objPtr);
     }
     TclDecrRefCount(objPtr);
@@ -5288,8 +5286,7 @@ TclGetsObjBinary(
  */
 
 static void
-FreeBinaryEncoding(
-    TCL_UNUSED(void *))
+FreeBinaryEncoding(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -5306,7 +5303,6 @@ GetBinaryEncoding(void)
 
     if (tsdPtr->binaryEncoding == NULL) {
 	tsdPtr->binaryEncoding = Tcl_GetEncoding(NULL, "iso8859-1");
-	Tcl_CreateThreadExitHandler(FreeBinaryEncoding, NULL);
     }
     if (tsdPtr->binaryEncoding == NULL) {
 	Tcl_Panic("binary encoding is not available");
@@ -5997,7 +5993,7 @@ DoReadChars(
     }
     ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
     statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
-    for (copied = 0; toRead > 0 || toRead == TCL_INDEX_NONE; ) {
+    for (copied = 0; toRead != 0 ; ) {
 	int copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
 	    if (binaryMode) {
@@ -8167,12 +8163,6 @@ Tcl_SetChannelOption(
 
 	if ((newValue[0] == '\0') || (strcmp(newValue, "binary") == 0)) {
 	    encoding = Tcl_GetEncoding(NULL, "iso8859-1");
-	    ENCODING_PROFILE_SET(statePtr->inputEncodingFlags
-		    ,ENCODING_PROFILE_GET(statePtr->inputEncodingFlags)
-			|TCL_ENCODING_PROFILE_STRICT);
-	    ENCODING_PROFILE_SET(statePtr->outputEncodingFlags
-		    ,ENCODING_PROFILE_GET(statePtr->outputEncodingFlags)
-			|TCL_ENCODING_PROFILE_STRICT);
 	} else {
 	    encoding = Tcl_GetEncoding(interp, newValue);
 	    if (encoding == NULL) {
@@ -8216,7 +8206,7 @@ Tcl_SetChannelOption(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -eofchar: must be non-NUL ASCII"
-			" character", -1));
+			" character", TCL_INDEX_NONE));
 	    }
 	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
@@ -8281,12 +8271,6 @@ Tcl_SetChannelOption(
 		statePtr->inEofChar = 0;
 		Tcl_FreeEncoding(statePtr->encoding);
 		statePtr->encoding = Tcl_GetEncoding(NULL, "iso8859-1");
-		ENCODING_PROFILE_SET(statePtr->inputEncodingFlags
-			,ENCODING_PROFILE_GET(statePtr->inputEncodingFlags)
-			    |TCL_ENCODING_PROFILE_STRICT);
-		ENCODING_PROFILE_SET(statePtr->outputEncodingFlags
-			,ENCODING_PROFILE_GET(statePtr->outputEncodingFlags)
-			    |TCL_ENCODING_PROFILE_STRICT);
 	    } else if (strcmp(readMode, "lf") == 0) {
 		translation = TCL_TRANSLATE_LF;
 	    } else if (strcmp(readMode, "cr") == 0) {
@@ -8336,12 +8320,6 @@ Tcl_SetChannelOption(
 		statePtr->outputTranslation = TCL_TRANSLATE_LF;
 		Tcl_FreeEncoding(statePtr->encoding);
 		statePtr->encoding = Tcl_GetEncoding(NULL, "iso8859-1");
-		ENCODING_PROFILE_SET(statePtr->inputEncodingFlags
-			,ENCODING_PROFILE_GET(statePtr->inputEncodingFlags)
-			    |TCL_ENCODING_PROFILE_STRICT);
-		ENCODING_PROFILE_SET(statePtr->outputEncodingFlags
-			,ENCODING_PROFILE_GET(statePtr->outputEncodingFlags)
-			    |TCL_ENCODING_PROFILE_STRICT);
 	    } else if (strcmp(writeMode, "lf") == 0) {
 		statePtr->outputTranslation = TCL_TRANSLATE_LF;
 	    } else if (strcmp(writeMode, "cr") == 0) {
@@ -10641,7 +10619,7 @@ Tcl_IsChannelShared(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return ((statePtr->refCount + 1 > 2) ? 1 : 0);
+    return ((statePtr->refCount > 1) ? 1 : 0);
 }
 
 /*

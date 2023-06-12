@@ -1035,10 +1035,10 @@ TclScanElement(
 				 * needs protection or escape. */
     int requireEscape = 0;	/* Force use of CONVERT_ESCAPE mode.  For some
 				 * reason bare or brace-quoted form fails. */
-    int extra = 0;		/* Count of number of extra bytes needed for
+    Tcl_Size extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    TCL_HASH_TYPE bytesNeeded;		/* Buffer length computed to complete the
+    Tcl_Size bytesNeeded;		/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
@@ -2004,7 +2004,11 @@ Tcl_ConcatObj(
 		    goto slow;
 		}
 	    } else {
-		resPtr = TclListObjCopy(NULL, objPtr);
+		resPtr = TclDuplicatePureObj(
+		    NULL, objPtr, &tclListType.objType);
+		if (!resPtr) {
+		    return NULL;
+		}
 	    }
 	}
 	if (!resPtr) {
@@ -2602,34 +2606,35 @@ Tcl_DStringAppend(
     if (length < 0) {
 	length = strlen(bytes);
     }
-    newSize = length + dsPtr->length;
 
-    /*
-     * Allocate a larger buffer for the string if the current one isn't large
-     * enough. Allocate extra space in the new buffer so that there will be
-     * room to grow before we have to allocate again.
-     */
+    if (length > (TCL_SIZE_MAX - dsPtr->length - 1)) {
+	Tcl_Panic("max size for a Tcl value (%" TCL_SIZE_MODIFIER
+		  "d bytes) exceeded",
+		  TCL_SIZE_MAX);
+	return NULL; /* NOTREACHED */
+    }
+    newSize = length + dsPtr->length + 1;
 
-    if (newSize >= dsPtr->spaceAvl) {
-	dsPtr->spaceAvl = newSize * 2;
+
+    if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = (char *)Tcl_Alloc(dsPtr->spaceAvl);
-
+	    char *newString;
+	    newString = (char *) TclAllocEx(newSize, &dsPtr->spaceAvl);
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    Tcl_Size index = TCL_INDEX_NONE;
+	    Tcl_Size offset = -1;
 
 	    /* See [16896d49fd] */
 	    if (bytes >= dsPtr->string
 		    && bytes <= dsPtr->string + dsPtr->length) {
-		index = bytes - dsPtr->string;
+		/* Source string is within this DString. Note offset */
+		offset = bytes - dsPtr->string;
 	    }
-
-	    dsPtr->string = (char *)Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
-
-	    if (index >= 0) {
-		bytes = dsPtr->string + index;
+	    dsPtr->string =
+		(char *)TclReallocEx(dsPtr->string, newSize, &dsPtr->spaceAvl);
+	    if (offset >= 0) {
+		bytes = dsPtr->string + offset;
 	    }
 	}
     }
@@ -2741,12 +2746,11 @@ Tcl_DStringAppendElement(
      * memcpy, not strcpy, to copy the string to a larger buffer, since there
      * may be embedded NULLs in the string in some cases.
      */
-
-    if (newSize >= dsPtr->spaceAvl) {
-	dsPtr->spaceAvl = newSize * 2;
+    newSize += 1; /* For terminating nul */
+    if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = (char *)Tcl_Alloc(dsPtr->spaceAvl);
-
+	    char *newString;
+	    newString = (char *) TclAllocEx(newSize, &dsPtr->spaceAvl);
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
@@ -2755,11 +2759,11 @@ Tcl_DStringAppendElement(
 	    /* See [16896d49fd] */
 	    if (element >= dsPtr->string
 		    && element <= dsPtr->string + dsPtr->length) {
+		/* Source string is within this DString. Note offset */
 		offset = element - dsPtr->string;
 	    }
-
-	    dsPtr->string = (char *)Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
-
+	    dsPtr->string =
+		(char *)TclReallocEx(dsPtr->string, newSize, &dsPtr->spaceAvl);
 	    if (offset >= 0) {
 		element = dsPtr->string + offset;
 	    }
@@ -2818,13 +2822,16 @@ Tcl_DStringSetLength(
 	 * would be wasteful to overallocate that buffer, so we just allocate
 	 * enough for the requested size plus the trailing null byte. In the
 	 * second case, we are growing the buffer incrementally, so we need
-	 * behavior similar to Tcl_DStringAppend. The requested length will
-	 * usually be a small delta above the current spaceAvl, so we'll end
-	 * up doubling the old size. This won't grow the buffer quite as
-	 * quickly, but it should be close enough.
+	 * behavior similar to Tcl_DStringAppend.
+	 * TODO - the above makes no sense to me. How does the code below
+	 * translate into distinguishing the two cases above? IMO, if caller
+	 * specifically sets the length, there is no cause for overallocation.
 	 */
 
-	newsize = dsPtr->spaceAvl * 2;
+	if (length >= TCL_SIZE_MAX) {
+	    Tcl_Panic("Tcl_Concat: max size of Tcl value exceeded");
+	}
+	newsize = TclUpsizeAlloc(dsPtr->spaceAvl, length + 1, TCL_SIZE_MAX);
 	if (length < newsize) {
 	    dsPtr->spaceAvl = newsize;
 	} else {

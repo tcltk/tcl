@@ -1048,6 +1048,26 @@ Tcl_DictObjRemove(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_DictGetSize
+ *
+ *	Returns the size of dictPtr.  Caller must ensure that dictPtr has type
+ *	'tclDicttype'.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Size
+TclDictGetSize(Tcl_Obj *dictPtr)
+{
+    Dict *dict;
+    DictGetInternalRep(dictPtr, dict);
+    return dict->table.numEntries;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_DictObjSize --
  *
  *	How many key,value pairs are there in the dictionary?

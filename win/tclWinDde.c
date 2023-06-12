@@ -313,12 +313,12 @@ DdeSetServerName(
     Tcl_Obj *handlerPtr)	/* Name of the optional proc/command to handle
 				 * incoming Dde eval's */
 {
-    int suffix, offset;
+    int suffix;
     RegisteredInterp *riPtr, *prevPtr;
     Tcl_DString dString;
     const WCHAR *actualName;
     Tcl_Obj *srvListPtr = NULL, **srvPtrPtr = NULL;
-    Tcl_Size n, srvCount = 0;
+    Tcl_Size n, srvCount = 0, offset;
     int lastSuffix, r = TCL_OK;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -942,8 +942,8 @@ DdeServerProc(
 	 */
 
 	HSZPAIR *returnPtr;
-	int i;
-	int numItems;
+	Tcl_Size i;
+	DWORD numItems;
 
 	for (i = 0, riPtr = tsdPtr->interpListPtr; riPtr != NULL;
 		i++, riPtr = riPtr->nextPtr) {
@@ -952,12 +952,15 @@ DdeServerProc(
 	     */
 	}
 
-	numItems = i;
+	if ((size_t)i >= UINT_MAX/sizeof(HSZPAIR)) {
+	    return NULL;
+	}
+	numItems = (DWORD)i;
 	ddeReturn = DdeCreateDataHandle(ddeInstance, NULL,
-		(numItems + 1) * sizeof(HSZPAIR), 0, 0, 0, 0);
+		(numItems + 1) * (DWORD)sizeof(HSZPAIR), 0, 0, 0, 0);
 	returnPtr = (HSZPAIR *) DdeAccessData(ddeReturn, &dlen);
 	len = dlen;
-	for (i = 0, riPtr = tsdPtr->interpListPtr; i < numItems;
+	for (i = 0, riPtr = tsdPtr->interpListPtr; i < (Tcl_Size)numItems;
 		i++, riPtr = riPtr->nextPtr) {
 	    returnPtr[i].hszSvc = DdeCreateStringHandleW(ddeInstance,
 		    TCL_DDE_SERVICE_NAME, CP_WINUNICODE);
@@ -1645,7 +1648,7 @@ DdeObjCmd(
 
 			if ((tmp >= sizeof(WCHAR))
 				&& !dataString[tmp / sizeof(WCHAR) - 1]) {
-			    tmp -= sizeof(WCHAR);
+			    tmp -= (DWORD)sizeof(WCHAR);
 			}
 			Tcl_DStringInit(&dsBuf);
 			Tcl_WCharToUtfDString(dataString, tmp>>1, &dsBuf);

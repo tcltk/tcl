@@ -805,7 +805,7 @@ Tcl_CreateInterp(void)
     iPtr->legacyFreeProc = (void (*) (void))-1;
     iPtr->errorLine = 0;
     iPtr->stubTable = &tclStubs;
-    iPtr->objResultPtr = Tcl_NewObj();
+    TclNewObj(iPtr->objResultPtr);
     Tcl_IncrRefCount(iPtr->objResultPtr);
     iPtr->handle = TclHandleCreate(iPtr);
     iPtr->globalNsPtr = NULL;
@@ -890,7 +890,7 @@ Tcl_CreateInterp(void)
     iPtr->activeInterpTracePtr = NULL;
     iPtr->assocData = NULL;
     iPtr->execEnvPtr = NULL;	/* Set after namespaces initialized. */
-    iPtr->emptyObjPtr = Tcl_NewObj();
+    TclNewObj(iPtr->emptyObjPtr);
 				/* Another empty object. */
     Tcl_IncrRefCount(iPtr->emptyObjPtr);
     iPtr->threadId = Tcl_GetCurrentThread();
@@ -954,7 +954,7 @@ Tcl_CreateInterp(void)
      * TIP #285, Script cancellation support.
      */
 
-    iPtr->asyncCancelMsg = Tcl_NewObj();
+    TclNewObj(iPtr->asyncCancelMsg);
 
     cancelInfo = (CancelInfo *)Tcl_Alloc(sizeof(CancelInfo));
     cancelInfo->interp = interp;
@@ -6152,7 +6152,11 @@ TclNREvalObjEx(
 	 */
 
 	Tcl_IncrRefCount(objPtr);
-	listPtr = TclListObjCopy(interp, objPtr);
+	listPtr = TclDuplicatePureObj(interp, objPtr, &tclListType.objType);
+	if (!listPtr) {
+	    Tcl_DecrRefCount(objPtr);
+	    return TCL_ERROR;
+	}
 	Tcl_IncrRefCount(listPtr);
 
 	if (word != INT_MIN) {
