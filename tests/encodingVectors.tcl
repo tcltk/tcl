@@ -283,19 +283,19 @@ lappend encInvalidBytes {*}{
     utf-8 E09F strict    {}              0 {} {First trail byte must be A0:BF}
     utf-8 E0A0 tcl8      \u00E0\u00A0   -1 {} {Missing second trail byte}
     utf-8 E0A0 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
-    utf-8 E0A0 lossless  \uDCE0\uDCA0   -1 {knownW3C} {Missing second trail byte}
+    utf-8 E0A0 lossless  \uDCE0\uDCA0   -1 {} {Missing second trail byte}
     utf-8 E0A0 strict    {}              0 {} {Missing second trail byte}
     utf-8 E0BF tcl8      \u00E0\u00BF   -1 {} {Missing second trail byte}
     utf-8 E0BF replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
-    utf-8 E0BF lossless  \uDCE0\uDCBF   -1 {knownW3C} {Missing second trail byte}
+    utf-8 E0BF lossless  \uDCE0\uDCBF   -1 {} {Missing second trail byte}
     utf-8 E0BF strict    {}              0 {} {Missing second trail byte}
     utf-8 E0A07F tcl8    \u00E0\u00A0\x7F   -1 {}     {Second trail byte must be 80:BF}
     utf-8 E0A07F replace \uFFFD\x7F         -1 {knownW3C} {Second trail byte must be 80:BF}
-    utf-8 E0A07F lossless \uDCE0\uDCA0\x7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 E0A07F lossless \uDCE0\uDCA0\x7F  -1 {} {Second trail byte must be 80:BF}
     utf-8 E0A07F strict  {}                  0 {}         {Second trail byte must be 80:BF}
     utf-8 E0BF7F tcl8    \u00E0\u00BF\x7F   -1 {}         {Second trail byte must be 80:BF}
     utf-8 E0BF7F replace \uFFFD\x7F         -1 {knownW3C} {Second trail byte must be 80:BF}
-    utf-8 E0BF7F lossless \uDCE0\uDCBF\x7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 E0BF7F lossless \uDCE0\uDCBF\x7F  -1 {} {Second trail byte must be 80:BF}
     utf-8 E0BF7F strict  {}                  0 {}         {Second trail byte must be 80:BF}
 
     utf-8 E1 tcl8      \u00E1     -1 {} {Missing trail byte}
@@ -308,19 +308,19 @@ lappend encInvalidBytes {*}{
     utf-8 E17F strict  {}          0 {} {Trail byte must be 80:BF}
     utf-8 E181 tcl8      \u00E1\u0081   -1 {} {Missing second trail byte}
     utf-8 E181 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
-    utf-8 E181 lossless  \uDCE1\uDC81   -1 {knownW3C} {Missing second trail byte}
+    utf-8 E181 lossless  \uDCE1\uDC81   -1 {} {Missing second trail byte}
     utf-8 E181 strict    {}              0 {} {Missing second trail byte}
     utf-8 E1BF tcl8      \u00E1\u00BF   -1 {} {Missing second trail byte}
     utf-8 E1BF replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
-    utf-8 E1BF lossless   \uDCE1\uDCBF  -1 {knownW3C} {Missing second trail byte}
+    utf-8 E1BF lossless   \uDCE1\uDCBF  -1 {} {Missing second trail byte}
     utf-8 E1BF strict    {}              0 {} {Missing second trail byte}
     utf-8 E1807F tcl8    \u00E1\u20AC\x7F   -1 {} {Second trail byte must be 80:BF}
     utf-8 E1807F replace \uFFFD\x7F         -1 {knownW3C} {Second trail byte must be 80:BF}
-    utf-8 E1807F lossless \uDCE1\uDC80\x7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 E1807F lossless \uDCE1\uDC80\x7F  -1 {} {Second trail byte must be 80:BF}
     utf-8 E1807F strict  {}                  0 {}         {Second trail byte must be 80:BF}
     utf-8 E1BF7F tcl8    \u00E1\u00BF\x7F   -1 {}         {Second trail byte must be 80:BF}
     utf-8 E1BF7F replace \uFFFD\x7F         -1 {knownW3C} {Second trail byte must be 80:BF}
-    utf-8 E1BF7F lossless \uDCE1\uDCBF\x7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 E1BF7F lossless \uDCE1\uDCBF\x7F  -1 {} {Second trail byte must be 80:BF}
     utf-8 E1BF7F strict  {}                  0 {}         {Second trail byte must be 80:BF}
     utf-8 EC tcl8      \u00EC     -1 {} {Missing trail byte}
     utf-8 EC replace   \uFFFD     -1 {} {Missing trail byte}
@@ -332,19 +332,19 @@ lappend encInvalidBytes {*}{
     utf-8 EC7F strict  {}          0 {} {Trail byte must be 80:BF}
     utf-8 EC81 tcl8      \u00EC\u0081   -1 {} {Missing second trail byte}
     utf-8 EC81 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
-    utf-8 EC81 lossless   \uDCEC\uDC81  -1 {knownW3C} {Missing second trail byte}
+    utf-8 EC81 lossless   \uDCEC\uDC81  -1 {} {Missing second trail byte}
     utf-8 EC81 strict    {}              0 {} {Missing second trail byte}
     utf-8 ECBF tcl8      \u00EC\u00BF   -1 {} {Missing second trail byte}
     utf-8 ECBF replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
-    utf-8 ECBF lossless   \uDCEC\uDCBF  -1 {knownW3C} {Missing second trail byte}
+    utf-8 ECBF lossless   \uDCEC\uDCBF  -1 {} {Missing second trail byte}
     utf-8 ECBF strict    {}              0 {} {Missing second trail byte}
     utf-8 EC807F tcl8    \u00EC\u20AC\x7F   -1 {} {Second trail byte must be 80:BF}
     utf-8 EC807F replace \uFFFD\x7F         -1 {knownW3C} {Second trail byte must be 80:BF}
-    utf-8 EC807F lossless \uDCEC\uDC80\x7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 EC807F lossless \uDCEC\uDC80\x7F  -1 {} {Second trail byte must be 80:BF}
     utf-8 EC807F strict  {}                  0 {}         {Second trail byte must be 80:BF}
     utf-8 ECBF7F tcl8    \u00EC\u00BF\x7F   -1 {}         {Second trail byte must be 80:BF}
     utf-8 ECBF7F replace \uFFFD\x7F         -1 {knownW3C} {Second trail byte must be 80:BF}
-    utf-8 ECBF7F lossless \uDCEC\uDCBF\x7F         -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 ECBF7F lossless \uDCEC\uDCBF\x7F  -1 {} {Second trail byte must be 80:BF}
     utf-8 ECBF7F strict  {}                  0 {}         {Second trail byte must be 80:BF}
 
     utf-8 ED tcl8       \u00ED        -1 {} {Missing trail byte}
@@ -360,19 +360,19 @@ lappend encInvalidBytes {*}{
     utf-8 EDA0 strict   {}             0 {} {First trail byte must be 80:9F}
     utf-8 ED81 tcl8      \u00ED\u0081   -1 {} {Missing second trail byte}
     utf-8 ED81 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
-    utf-8 ED81 lossless   \uDCED\uDC81  -1 {knownW3C} {Missing second trail byte}
+    utf-8 ED81 lossless   \uDCED\uDC81  -1 {} {Missing second trail byte}
     utf-8 ED81 strict    {}              0 {} {Missing second trail byte}
     utf-8 EDBF tcl8      \u00ED\u00BF   -1 {} {Missing second trail byte}
     utf-8 EDBF replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
-    utf-8 EDBF lossless   \uDCED\uDCBF  -1 {knownW3C} {Missing second trail byte}
+    utf-8 EDBF lossless   \uDCED\uDCBF  -1 {} {Missing second trail byte}
     utf-8 EDBF strict    {}              0 {} {Missing second trail byte}
     utf-8 ED807F tcl8      \u00ED\u20AC\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 ED807F replace   \uFFFD\x7F       -1 {knownW3C} {Second trail byte must be 80:BF}
-    utf-8 ED807F lossless   \uDCED\uDC80\x7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 ED807F lossless   \uDCED\uDC80\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 ED807F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 ED9F7F tcl8      \u00ED\u0178\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 ED9F7F replace   \uFFFD\x7F       -1 {knownW3C} {Second trail byte must be 80:BF}
-    utf-8 ED9F7F lossless   \uDCED\uDC9F\x7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 ED9F7F lossless   \uDCED\uDC9F\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 ED9F7F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 EDA080 tcl8       \uD800          -1 {}  {High surrogate}
     utf-8 EDA080 replace    \uFFFD          -1 {knownBug}  {High surrogate}
@@ -401,196 +401,261 @@ lappend encInvalidBytes {*}{
 
     utf-8 EE tcl8       \u00EE        -1 {} {Missing trail byte}
     utf-8 EE replace    \uFFFD        -1 {} {Missing trail byte}
+    utf-8 EE lossless    \uDCEE       -1 {} {Missing trail byte}
     utf-8 EE strict     {}             0 {} {Missing trail byte}
-    utf-8 EE7F tcl8     \u00EE\u7F    -1 {} {First trail byte must be 80:BF}
-    utf-8 EE7F replace  \uFFFD\u7F    -1 {} {First trail byte must be 80:BF}
+    utf-8 EE7F tcl8     \u00EE\x7F    -1 {} {First trail byte must be 80:BF}
+    utf-8 EE7F replace  \uFFFD\x7F    -1 {} {First trail byte must be 80:BF}
+    utf-8 EE7F lossless  \uDCEE\x7F     -1 {} {First trail byte must be 80:BF}
     utf-8 EE7F strict   {}             0 {} {First trail byte must be 80:BF}
     utf-8 EED0 tcl8     \u00EE\u00D0  -1 {} {First trail byte must be 80:BF}
     utf-8 EED0 replace  \uFFFD\uFFFD  -1 {} {First trail byte must be 80:BF}
+    utf-8 EED0 lossless  \uDCEE\uDCD0   -1 {} {First trail byte must be 80:BF}
     utf-8 EED0 strict   {}             0 {} {First trail byte must be 80:BF}
     utf-8 EE81 tcl8      \u00EE\u0081   -1 {} {Missing second trail byte}
     utf-8 EE81 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
+    utf-8 EE81 lossless   \uDCEE\uDC81  -1 {} {Missing second trail byte}
     utf-8 EE81 strict    {}              0 {} {Missing second trail byte}
     utf-8 EEBF tcl8      \u00EE\u00BF   -1 {} {Missing second trail byte}
     utf-8 EEBF replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
+    utf-8 EEBF lossless   \uDCEE\uDCBF  -1 {} {Missing second trail byte}
     utf-8 EEBF strict    {}              0 {} {Missing second trail byte}
     utf-8 EE807F tcl8      \u00EE\u20AC\x7F -1 {} {Second trail byte must be 80:BF}
-    utf-8 EE807F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 EE807F replace   \uFFFD\x7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 EE807F lossless  \uDCEE\uDC80\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 EE807F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 EEBF7F tcl8      \u00EE\u00BF\x7F -1 {} {Second trail byte must be 80:BF}
-    utf-8 EEBF7F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 EEBF7F replace   \uFFFD\x7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 EEBF7F lossless  \uDCEE\uDCBF\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 EEBF7F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 EF tcl8       \u00EF        -1 {} {Missing trail byte}
     utf-8 EF replace    \uFFFD        -1 {} {Missing trail byte}
+    utf-8 EF lossless    \uDCEF       -1 {} {Missing trail byte}
     utf-8 EF strict     {}             0 {} {Missing trail byte}
     utf-8 EF7F tcl8     \u00EF\u7F    -1 {} {First trail byte must be 80:BF}
     utf-8 EF7F replace  \uFFFD\u7F    -1 {} {First trail byte must be 80:BF}
+    utf-8 EF7F lossless  \uDCEF\x7F -1 {} {First trail byte must be 80:BF}
     utf-8 EF7F strict   {}             0 {} {First trail byte must be 80:BF}
     utf-8 EFD0 tcl8     \u00EF\u00D0  -1 {} {First trail byte must be 80:BF}
     utf-8 EFD0 replace  \uFFFD\uFFFD  -1 {} {First trail byte must be 80:BF}
+    utf-8 EFD0 lossless  \uDCEF\uDCD0 -1 {} {First trail byte must be 80:BF}
     utf-8 EFD0 strict   {}             0 {} {First trail byte must be 80:BF}
     utf-8 EF81 tcl8      \u00EF\u0081   -1 {} {Missing second trail byte}
     utf-8 EF81 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
+    utf-8 EF81 lossless  \uDCEF\uDC81   -1 {} {Missing second trail byte}
     utf-8 EF81 strict    {}              0 {} {Missing second trail byte}
     utf-8 EFBF tcl8      \u00EF\u00BF   -1 {} {Missing second trail byte}
     utf-8 EFBF replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
+    utf-8 EFBF lossless  \uDCEF\uDCBF   -1 {} {Missing second trail byte}
     utf-8 EFBF strict    {}              0 {} {Missing second trail byte}
     utf-8 EF807F tcl8      \u00EF\u20AC\x7F -1 {} {Second trail byte must be 80:BF}
-    utf-8 EF807F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 EF807F replace   \uFFFD\x7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 EF807F lossless  \uDCEF\uDC80\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 EF807F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 EFBF7F tcl8      \u00EF\u00BF\x7F -1 {} {Second trail byte must be 80:BF}
-    utf-8 EFBF7F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 EFBF7F replace   \uFFFD\x7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 EFBF7F lossless  \uDCEF\uDCBF\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 EFBF7F strict    {}                0 {}  {Second trail byte must be 80:BF}
 
     utf-8 F0 tcl8       \u00F0        -1 {} {Missing trail byte}
     utf-8 F0 replace    \uFFFD        -1 {} {Missing trail byte}
+    utf-8 F0 lossless   \uDCF0       -1 {} {Missing trail byte}
     utf-8 F0 strict     {}             0 {} {Missing trail byte}
     utf-8 F080 tcl8     \u00F0\u20AC  -1 {} {First trail byte must be 90:BF}
     utf-8 F080 replace  \uFFFD        -1 {knownW3C} {First trail byte must be 90:BF}
+    utf-8 F080 lossless \uDCF0\uDC80 -1 {} {First trail byte must be 90:BF}
     utf-8 F080 strict   {}             0 {} {First trail byte must be 90:BF}
     utf-8 F08F tcl8     \u00F0\u8F    -1 {} {First trail byte must be 90:BF}
     utf-8 F08F replace  \uFFFD        -1 {knownW3C} {First trail byte must be 90:BF}
+    utf-8 F08F lossless \uDCF0\uDC8F -1 {} {First trail byte must be 90:BF}
     utf-8 F08F strict   {}             0 {} {First trail byte must be 90:BF}
     utf-8 F0D0 tcl8     \u00F0\u00D0  -1 {} {First trail byte must be 90:BF}
     utf-8 F0D0 replace  \uFFFD\uFFFD  -1 {} {First trail byte must be 90:BF}
+    utf-8 F0D0 lossless \uDCF0\uDCD0 -1 {} {First trail byte must be 90:BF}
     utf-8 F0D0 strict   {}             0 {} {First trail byte must be 90:BF}
     utf-8 F090 tcl8      \u00F0\u0090   -1 {} {Missing second trail byte}
     utf-8 F090 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
+    utf-8 F090 lossless  \uDCF0\uDC90   -1 {} {Missing second trail byte}
     utf-8 F090 strict    {}              0 {} {Missing second trail byte}
     utf-8 F0BF tcl8      \u00F0\u00BF   -1 {} {Missing second trail byte}
     utf-8 F0BF replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
+    utf-8 F0BF lossless   \uDCF0\uDCBF  -1 {} {Missing second trail byte}
     utf-8 F0BF strict    {}              0 {} {Missing second trail byte}
     utf-8 F0907F tcl8      \u00F0\u0090\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F0907F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 F0907F lossless   \uDCF0\uDC90\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F0907F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 F0BF7F tcl8      \u00F0\u00BF\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F0BF7F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 F0BF7F lossless  \uDCF0\uDCBF\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F0BF7F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 F090BF tcl8      \u00F0\u0090\u00BF   -1 {} {Missing third trail byte}
     utf-8 F090BF replace   \uFFFD         -1 {knownW3C} {Missing third trail byte}
+    utf-8 F090BF lossless  \uDCF0\uDC90\uDCBF  -1 {} {Missing third trail byte}
     utf-8 F090BF strict    {}              0 {} {Missing third trail byte}
     utf-8 F0BF81 tcl8      \u00F0\u00BF\u0081   -1 {} {Missing third trail byte}
     utf-8 F0BF81 replace   \uFFFD         -1 {knownW3C} {Missing third trail byte}
+    utf-8 F0BF81 lossless  \uDCF0\uDCBF\uDC81  -1 {} {Missing third trail byte}
     utf-8 F0BF81 strict    {}              0 {} {Missing third trail byte}
     utf-8 F0BF807F tcl8      \u00F0\u00BF\u20AC\x7F   -1 {} {Third trail byte must be 80:BF}
     utf-8 F0BF817F replace   \uFFFD\x7F           -1 {knownW3C} {Third trail byte must be 80:BF}
+    utf-8 F0BF817F lossless   \uDCF0\uDCBF\uDC81\x7F -1 {} {Third trail byte must be 80:BF}
     utf-8 F0BF817F strict    {}              0 {} {Third trail byte must be 80:BF}
     utf-8 F090BFD0 tcl8      \u00F0\u0090\u00BF\u00D0   -1 {} {Third trail byte must be 80:BF}
     utf-8 F090BFD0 replace   \uFFFD         -1 {knownW3C} {Third trail byte must be 80:BF}
+    utf-8 F090BFD0 lossless   \uDCF0\uDC90\uDCBF\uDCD0 -1 {} {Third trail byte must be 80:BF}
     utf-8 F090BFD0 strict    {}              0 {} {Third trail byte must be 80:BF}
 
     utf-8 F1 tcl8       \u00F1        -1 {} {Missing trail byte}
     utf-8 F1 replace    \uFFFD        -1 {} {Missing trail byte}
+    utf-8 F1 lossless    \uDCF1       -1 {} {Missing trail byte}
     utf-8 F1 strict     {}             0 {} {Missing trail byte}
     utf-8 F17F tcl8     \u00F1\u7F    -1 {} {First trail byte must be 80:BF}
     utf-8 F17F replace  \uFFFD        -1 {knownW3C} {First trail byte must be 80:BF}
+    utf-8 F17F lossless  \uDCF1\x7F -1 {} {First trail byte must be 80:BF}
     utf-8 F17F strict   {}             0 {} {First trail byte must be 80:BF}
     utf-8 F1D0 tcl8     \u00F1\u00D0  -1 {} {First trail byte must be 80:BF}
     utf-8 F1D0 replace  \uFFFD\uFFFD  -1 {} {First trail byte must be 80:BF}
+    utf-8 F1D0 lossless  \uDCF1\uDCD0 -1 {} {First trail byte must be 80:BF}
     utf-8 F1D0 strict   {}             0 {} {First trail byte must be 80:BF}
     utf-8 F180 tcl8      \u00F1\u20AC   -1 {} {Missing second trail byte}
     utf-8 F180 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
+    utf-8 F180 lossless   \uDCF1\uDC80  -1 {} {Missing second trail byte}
     utf-8 F180 strict    {}              0 {} {Missing second trail byte}
     utf-8 F1BF tcl8      \u00F1\u00BF   -1 {} {Missing second trail byte}
     utf-8 F1BF replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
+    utf-8 F1BF lossless   \uDCF1\uDCBF  -1 {} {Missing second trail byte}
     utf-8 F1BF strict    {}              0 {} {Missing second trail byte}
     utf-8 F1807F tcl8      \u00F1\u20AC\x7F -1 {} {Second trail byte must be 80:BF}
-    utf-8 F1807F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 F1807F replace   \uFFFD\x7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 F1807F lossless   \uDCF1\uDC80\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F1807F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 F1BF7F tcl8      \u00F1\u00BF\x7F -1 {} {Second trail byte must be 80:BF}
-    utf-8 F1BF7F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 F1BF7F replace   \uFFFD\x7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 F1BF7F lossless   \uDCF1\uDCBF\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F1BF7F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 F180BF tcl8      \u00F1\u20AC\u00BF   -1 {} {Missing third trail byte}
     utf-8 F180BF replace   \uFFFD         -1 {knownW3C} {Missing third trail byte}
+    utf-8 F180BF lossless   \uDCF1\uDC80\uDCBF -1 {} {Missing third trail byte}
     utf-8 F180BF strict    {}              0 {} {Missing third trail byte}
     utf-8 F1BF81 tcl8      \u00F1\u00BF\u0081   -1 {} {Missing third trail byte}
     utf-8 F1BF81 replace   \uFFFD         -1 {knownW3C} {Missing third trail byte}
+    utf-8 F1BF81 lossless   \uDCF1\uDCBF\uDC81  -1 {} {Missing third trail byte}
     utf-8 F1BF81 strict    {}              0 {} {Missing third trail byte}
-    utf-8 F1BF807F tcl8      \u00F1\u00BF\u20AC\x7F   -1 {} {Third trail byte must be 80:BF}
+    utf-8 F1BF807F tcl8      \u00F1\u00BF\u20AC\x7F  -1 {} {Third trail byte must be 80:BF}
     utf-8 F1BF817F replace   \uFFFD\x7F           -1 {knownW3C} {Third trail byte must be 80:BF}
+    utf-8 F1BF817F lossless   \uDCF1\uDCBF\uDC81\x7F -1 {} {Third trail byte must be 80:BF}
     utf-8 F1BF817F strict    {}              0 {} {Third trail byte must be 80:BF}
     utf-8 F180BFD0 tcl8      \u00F1\u20AC\u00BF\u00D0   -1 {} {Third trail byte must be 80:BF}
     utf-8 F180BFD0 replace   \uFFFD         -1 {knownW3C} {Third trail byte must be 80:BF}
+    utf-8 F180BFD0 lossless   \uDCF1\uDC80\uDCBF\uDCD0 -1 {} {Third trail byte must be 80:BF}
     utf-8 F180BFD0 strict    {}              0 {} {Third trail byte must be 80:BF}
     utf-8 F3 tcl8       \u00F3        -1 {} {Missing trail byte}
     utf-8 F3 replace    \uFFFD        -1 {} {Missing trail byte}
+    utf-8 F3 lossless    \uDCF3       -1 {} {Missing trail byte}
     utf-8 F3 strict     {}             0 {} {Missing trail byte}
     utf-8 F37F tcl8     \u00F3\x7F    -1 {} {First trail byte must be 80:BF}
     utf-8 F37F replace  \uFFFD        -1 {knownW3C} {First trail byte must be 80:BF}
+    utf-8 F37F lossless  \uDCF3\x7F   -1 {} {First trail byte must be 80:BF}
     utf-8 F37F strict   {}             0 {} {First trail byte must be 80:BF}
     utf-8 F3D0 tcl8     \u00F3\u00D0  -1 {} {First trail byte must be 80:BF}
     utf-8 F3D0 replace  \uFFFD\uFFFD  -1 {} {First trail byte must be 80:BF}
+    utf-8 F3D0 lossless  \uDCF3\uDCD0 -1 {} {First trail byte must be 80:BF}
     utf-8 F3D0 strict   {}             0 {} {First trail byte must be 80:BF}
     utf-8 F380 tcl8      \u00F3\u20AC   -1 {} {Missing second trail byte}
     utf-8 F380 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
+    utf-8 F380 lossless   \uDCF3\uDC80  -1 {} {Missing second trail byte}
     utf-8 F380 strict    {}              0 {} {Missing second trail byte}
     utf-8 F3BF tcl8      \u00F3\u00BF   -1 {} {Missing second trail byte}
     utf-8 F3BF replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
+    utf-8 F3BF lossless   \uDCF3\uDCBF  -1 {} {Missing second trail byte}
     utf-8 F3BF strict    {}              0 {} {Missing second trail byte}
-    utf-8 F3807F tcl8      \u00F3\u20AC\x7F -1 {} {Second trail byte must be 80:BF}
-    utf-8 F3807F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 F3807F tcl8     \u00F3\u20AC\x7F -1 {} {Second trail byte must be 80:BF}
+    utf-8 F3807F replace  \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 F3807F lossless  \uDCF3\uDC80\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F3807F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 F3BF7F tcl8      \u00F3\u00BF\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F3BF7F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 F3BF7F lossless   \uDCF3\uDCBF\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F3BF7F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 F380BF tcl8      \u00F3\u20AC\u00BF   -1 {} {Missing third trail byte}
     utf-8 F380BF replace   \uFFFD         -1 {knownW3C} {Missing third trail byte}
+    utf-8 F380BF lossless   \uDCF3\uDC80\uDCBF -1 {} {Missing third trail byte}
     utf-8 F380BF strict    {}              0 {} {Missing third trail byte}
     utf-8 F3BF81 tcl8      \u00F3\u00BF\u0081   -1 {} {Missing third trail byte}
     utf-8 F3BF81 replace   \uFFFD         -1 {knownW3C} {Missing third trail byte}
+    utf-8 F3BF81 lossless   \uDCF3\uDCBF\uDC81 -1 {} {Missing third trail byte}
     utf-8 F3BF81 strict    {}              0 {} {Missing third trail byte}
     utf-8 F3BF807F tcl8      \u00F3\u00BF\u20AC\x7F   -1 {} {Third trail byte must be 80:BF}
     utf-8 F3BF817F replace   \uFFFD\x7F           -1 {knownW3C} {Third trail byte must be 80:BF}
+    utf-8 F3BF817F lossless   \uDCF3\uDCBF\uDC81\x7F -1 {} {Third trail byte must be 80:BF}
     utf-8 F3BF817F strict    {}              0 {} {Third trail byte must be 80:BF}
     utf-8 F380BFD0 tcl8      \u00F3\u20AC\u00BF\u00D0   -1 {} {Third trail byte must be 80:BF}
     utf-8 F380BFD0 replace   \uFFFD         -1 {knownW3C} {Third trail byte must be 80:BF}
+    utf-8 F380BFD0 lossless   \uDCF3\uDC80\uDCBF\uDCD0 -1 {} {Third trail byte must be 80:BF}
     utf-8 F380BFD0 strict    {}              0 {} {Third trail byte must be 80:BF}
 
     utf-8 F4 tcl8       \u00F4        -1 {} {Missing trail byte}
     utf-8 F4 replace    \uFFFD        -1 {} {Missing trail byte}
+    utf-8 F4 lossless    \uDCF4       -1 {} {Missing trail byte}
     utf-8 F4 strict     {}             0 {} {Missing trail byte}
     utf-8 F47F tcl8     \u00F4\u7F    -1 {} {First trail byte must be 80:8F}
     utf-8 F47F replace  \uFFFD\u7F    -1 {knownW3C} {First trail byte must be 80:8F}
+    utf-8 F47F lossless  \uDCF4\x7F -1 {} {First trail byte must be 80:8F}
     utf-8 F47F strict   {}             0 {} {First trail byte must be 80:8F}
     utf-8 F490 tcl8     \u00F4\u0090  -1 {} {First trail byte must be 80:8F}
     utf-8 F490 replace  \uFFFD\uFFFD  -1 {} {First trail byte must be 80:8F}
+    utf-8 F490 lossless  \uDCF4\uDC90 -1 {} {First trail byte must be 80:8F}
     utf-8 F490 strict   {}             0 {} {First trail byte must be 80:8F}
     utf-8 F480 tcl8      \u00F4\u20AC   -1 {} {Missing second trail byte}
     utf-8 F480 replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
+    utf-8 F480 lossless   \uDCF4\uDC80  -1 {} {Missing second trail byte}
     utf-8 F480 strict    {}              0 {} {Missing second trail byte}
     utf-8 F48F tcl8      \u00F4\u008F   -1 {} {Missing second trail byte}
     utf-8 F48F replace   \uFFFD         -1 {knownW3C} {Missing second trail byte}
+    utf-8 F48F lossless   \uDCF4\uDC8F  -1 {} {Missing second trail byte}
     utf-8 F48F strict    {}              0 {} {Missing second trail byte}
     utf-8 F4807F tcl8      \u00F4\u20AC\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F4807F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 F4807F lossless   \uDCF4\uDC80\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F4807F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 F48F7F tcl8      \u00F4\u008F\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F48F7F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
+    utf-8 F48F7F lossless   \uDCF4\uDC8F\x7F -1 {} {Second trail byte must be 80:BF}
     utf-8 F48F7F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 F48081 tcl8      \u00F4\u20AC\u0081   -1 {} {Missing third trail byte}
     utf-8 F48081 replace   \uFFFD         -1 {knownW3C} {Missing third trail byte}
+    utf-8 F48081 lossless   \uDCF4\uDC80\uDC81  -1 {} {Missing third trail byte}
     utf-8 F48081 strict    {}              0 {} {Missing third trail byte}
     utf-8 F48F81 tcl8      \u00F4\u008F\u0081   -1 {} {Missing third trail byte}
     utf-8 F48F81 replace   \uFFFD         -1 {knownW3C} {Missing third trail byte}
+    utf-8 F48F81 lossless   \uDCF4\uDC8F\uDC81  -1 {} {Missing third trail byte}
     utf-8 F48F81 strict    {}              0 {} {Missing third trail byte}
     utf-8 F481817F tcl8      \u00F4\u0081\u0081\x7F   -1 {} {Third trail byte must be 80:BF}
     utf-8 F480817F replace   \uFFFD\x7F           -1 {knownW3C} {Third trail byte must be 80:BF}
+    utf-8 F480817F lossless   \uDCF4\uDC80\uDC81\x7F -1 {} {Third trail byte must be 80:BF}
     utf-8 F480817F strict    {}              0 {} {Third trail byte must be 80:BF}
     utf-8 F48FBFD0 tcl8      \u00F4\u008F\u00BF\u00D0   -1 {} {Third trail byte must be 80:BF}
     utf-8 F48FBFD0 replace   \uFFFD         -1 {knownW3C} {Third trail byte must be 80:BF}
+    utf-8 F48FBFD0 lossless   \uDCF4\uDC8F\uDCBF\uDCD0 -1 {} {Third trail byte must be 80:BF}
     utf-8 F48FBFD0 strict    {}              0 {} {Third trail byte must be 80:BF}
 
     utf-8 F5 tcl8    \u00F5 -1 {} {F5:FF are invalid everywhere}
     utf-8 F5 replace \uFFFD -1 {} {F5:FF are invalid everywhere}
+    utf-8 F5 lossless \uDCF5 -1 {} {F5:FF are invalid everywhere}
     utf-8 F5 strict  {}      0 {} {F5:FF are invalid everywhere}
     utf-8 FF tcl8    \u00FF -1 {} {F5:FF are invalid everywhere}
     utf-8 FF replace \uFFFD -1 {} {F5:FF are invalid everywhere}
+    utf-8 FF lossless \uDCFF -1 {} {F5:FF are invalid everywhere}
     utf-8 FF strict  {}      0 {} {F5:FF are invalid everywhere}
 
     utf-8 C0AFE080BFF0818130 replace \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\x30 -1 {} {Unicode Table 3-8}
+    utf-8 C0AFE080BFF0818130 lossless \uDCC0\uDCAF\uDCE0\uDC80\uDCBF\uDCF0\uDC81\uDC81\x30 -1 {} {Unicode Table 3-8}
     utf-8 EDA080EDBFBFEDAF30 replace \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\x30 -1 {knownW3C} {Unicode Table 3-9}
+    utf-8 EDA080EDBFBFEDAF30 lossless \uD800\uDFFF\uDCED\uDCAF0 -1 {} {Unicode Table 3-9 - TODO assumes surrogates permitted in utf-8 lossless}
     utf-8 F4919293FF4180BF30 replace \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\u0041\uFFFD\uFFFD\x30 -1 {} {Unicode Table 3-10}
+    utf-8 F4919293FF4180BF30 lossless \uDCF4\uDC91\uDC92\uDC93\uDCFF\u0041\uDC80\uDCBF\x30 -1 {} {Unicode Table 3-10}
     utf-8 E180E2F09192F1BF30 replace \uFFFD\uFFFD\uFFFD\uFFFD\x30                         -1 {knownW3C} {Unicode Table 3.11}
+    utf-8 E180E2F09192F1BF30 lossless \uDCE1\uDC80\uDCE2\uDCF0\uDC91\uDC92\uDCF1\uDCBF\x30 -1 {} {Unicode Table 3.11}
 }
 
 # utf16-le and utf16-be test cases. Note utf16 cases are automatically generated
@@ -601,21 +666,29 @@ lappend encInvalidBytes {*}{
     utf-16le 41      tcl8      \uFFFD -1 {solo tail} {Truncated}
     utf-16le 41      replace   \uFFFD -1 {solo tail} {Truncated}
     utf-16le 41      strict    {}      0 {solo tail} {Truncated}
+    utf-16le 41      lossless  \uFFFD -1 {solo tail} {Truncated - byte < 0x80}
+    utf-16le 80      lossless  \uFFFD -1 {solo tail} {Truncated - byte >= 0x80}
     utf-16le 00D8    tcl8      \uD800 -1 {} {Missing low surrogate}
     utf-16le 00D8    replace   \uFFFD -1 {} {Missing low surrogate}
+    utf-16le 00D8    lossless  \uFFFD -1 {} {Missing low surrogate}
     utf-16le 00D8    strict    {}      0 {knownBug} {Missing low surrogate}
     utf-16le 00DC    tcl8      \uDC00 -1 {} {Missing high surrogate}
     utf-16le 00DC    replace   \uFFFD -1 {} {Missing high surrogate}
+    utf-16le 00DC    lossless  \uFFFD -1 {} {Missing high surrogate}
     utf-16le 00DC    strict    {}      0 {knownBug} {Missing high surrogate}
 
     utf-16be 41      tcl8      \uFFFD -1 {solo tail} {Truncated}
     utf-16be 41      replace   \uFFFD -1 {solo tail} {Truncated}
     utf-16be 41      strict    {}      0 {solo tail} {Truncated}
+    utf-16be 41      lossless  \uFFFD -1 {solo tail} {Truncated - byte < 0x80}
+    utf-16be 80      lossless  \uFFFD -1 {solo tail} {Truncated - byte >= 0x80}
     utf-16be D800    tcl8      \uD800 -1 {} {Missing low surrogate}
     utf-16be D800    replace   \uFFFD -1 {knownBug} {Missing low surrogate}
+    utf-16be D800    lossless  \uFFFD -1 {knownBug} {Missing low surrogate}
     utf-16be D800    strict    {}      0 {knownBug} {Missing low surrogate}
     utf-16be DC00    tcl8      \uDC00 -1 {} {Missing high surrogate}
     utf-16be DC00    replace   \uFFFD -1 {knownBug} {Missing high surrogate}
+    utf-16be DC00    lossless  \uFFFD -1 {knownBug} {Missing high surrogate}
     utf-16be DC00    strict    {}      0 {knownBug} {Missing high surrogate}
 }
 
@@ -626,53 +699,74 @@ lappend encInvalidBytes {*}{
 lappend encInvalidBytes {*}{
     utf-32le 41      tcl8      \uFFFD  -1 {solo tail} {Truncated}
     utf-32le 41      replace   \uFFFD  -1 {solo} {Truncated}
+    utf-32le 41      lossless  \uFFFD  -1 {solo} {Truncated}
     utf-32le 41      strict    {}   0 {solo tail} {Truncated}
     utf-32le 4100    tcl8      \uFFFD  -1 {solo tail} {Truncated}
     utf-32le 4100    replace   \uFFFD  -1 {solo} {Truncated}
+    utf-32le 4100    lossless  \uFFFD  -1 {solo} {Truncated}
     utf-32le 4100    strict    {}   0 {solo tail} {Truncated}
     utf-32le 410000  tcl8      \uFFFD  -1 {solo tail} {Truncated}
     utf-32le 410000  replace   \uFFFD  -1 {solo} {Truncated}
+    utf-32le 410000  lossless  \uFFFD  -1 {solo} {Truncated}
     utf-32le 410000  strict    {}       0 {solo tail} {Truncated}
     utf-32le 00D80000 tcl8     \uD800   -1 {} {High-surrogate}
     utf-32le 00D80000 replace  \uFFFD   -1 {} {High-surrogate}
+    utf-32le 00D80000 lossless \uFFFD   -1 {} {High-surrogate}
     utf-32le 00D80000 strict   {}        0 {} {High-surrogate}
     utf-32le 00DC0000 tcl8     \uDC00   -1 {} {Low-surrogate}
     utf-32le 00DC0000 replace  \uFFFD   -1 {} {Low-surrogate}
+    utf-32le 00DC0000 lossless \uFFFD   -1 {} {Low-surrogate}
     utf-32le 00DC0000 strict   {}        0 {} {Low-surrogate}
     utf-32le 00D8000000DC0000 tcl8 \uD800\uDC00    -1 {} {High-low-surrogate-pair}
-    utf-32le 00D8000000DC0000 replace \uFFFD\uFFFD -1 {} {High-low-surrogate-pair}
+    utf-32le 00D8000000DC0000 replace  \uFFFD\uFFFD -1 {} {High-low-surrogate-pair}
+    utf-32le 00D8000000DC0000 lossless \uFFFD\uFFFD -1 {} {High-low-surrogate-pair}
     utf-32le 00D8000000DC0000 strict  {}            0 {} {High-low-surrogate-pair}
     utf-32le 00001100 tcl8 \UFFFD    -1 {} {Out of range}
-    utf-32le 00001100 replace \UFFFD -1 {} {Out of range}
+    utf-32le 00001100 replace  \UFFFD -1 {} {Out of range}
+    utf-32le 00001100 lossless \UFFFD -1 {} {Out of range}
     utf-32le 00001100 strict {}       0 {} {Out of range}
     utf-32le FFFFFFFF tcl8 \UFFFD    -1 {} {Out of range}
-    utf-32le FFFFFFFF replace \UFFFD -1 {} {Out of range}
+    utf-32le FFFFFFFF replace  \UFFFD -1 {} {Out of range}
+    utf-32le FFFFFFFF lossless \UFFFD -1 {} {Out of range}
     utf-32le FFFFFFFF strict {}       0 {} {Out of range}
 
     utf-32be 41      tcl8      \uFFFD  -1 {solo tail} {Truncated}
     utf-32be 41      replace   \uFFFD  -1 {solo tail} {Truncated}
+    utf-32be 41      lossless  \uFFFD  -1 {solo tail} {Truncated}
     utf-32be 41      strict    {}       0 {solo tail} {Truncated}
     utf-32be 0041    tcl8      \uFFFD  -1 {solo tail} {Truncated}
     utf-32be 0041    replace   \uFFFD  -1 {solo} {Truncated}
+    utf-32be 0041    lossless  \uFFFD  -1 {solo} {Truncated}
     utf-32be 0041    strict    {}   0 {solo tail} {Truncated}
     utf-32be 000041  tcl8      \uFFFD  -1 {solo tail} {Truncated}
     utf-32be 000041  replace   \uFFFD  -1 {solo} {Truncated}
+    utf-32be 000041  lossless  \uFFFD  -1 {solo} {Truncated}
     utf-32be 000041  strict    {}       0 {solo tail} {Truncated}
     utf-32be 0000D800 tcl8     \uD800   -1 {} {High-surrogate}
     utf-32be 0000D800 replace  \uFFFD   -1 {} {High-surrogate}
+    utf-32be 0000D800 lossless \uFFFD   -1 {} {High-surrogate}
     utf-32be 0000D800 strict   {}        0 {} {High-surrogate}
     utf-32be 0000DC00 tcl8     \uDC00   -1 {} {Low-surrogate}
     utf-32be 0000DC00 replace  \uFFFD   -1 {} {Low-surrogate}
+    utf-32be 0000DC00 lossless \uFFFD   -1 {} {Low-surrogate}
     utf-32be 0000DC00 strict   {}        0 {} {Low-surrogate}
     utf-32be 0000D8000000DC00 tcl8 \uD800\uDC00    -1 {} {High-low-surrogate-pair}
-    utf-32be 0000D8000000DC00 replace \uFFFD\uFFFD -1 {} {High-low-surrogate-pair}
+    utf-32be 0000D8000000DC00 replace  \uFFFD\uFFFD -1 {} {High-low-surrogate-pair}
+    utf-32be 0000D8000000DC00 lossless \uFFFD\uFFFD -1 {} {High-low-surrogate-pair}
     utf-32be 0000D8000000DC00 strict  {}            0 {} {High-low-surrogate-pair}
     utf-32be 00110000 tcl8 \UFFFD    -1 {} {Out of range}
-    utf-32be 00110000 replace \UFFFD -1 {} {Out of range}
+    utf-32be 00110000 replace  \UFFFD -1 {} {Out of range}
+    utf-32be 00110000 lossless \UFFFD -1 {} {Out of range}
     utf-32be 00110000 strict {}       0 {} {Out of range}
     utf-32be FFFFFFFF tcl8 \UFFFD    -1 {} {Out of range}
-    utf-32be FFFFFFFF replace \UFFFD -1 {} {Out of range}
+    utf-32be FFFFFFFF replace  \UFFFD -1 {} {Out of range}
+    utf-32be FFFFFFFF lossless \UFFFD -1 {} {Out of range}
     utf-32be FFFFFFFF strict {}       0 {} {Out of range}
+}
+
+# escape tables - TODO
+# This tests the EscapeToUtf code path.
+lappend encInvalidBytes {*}{
 }
 
 # Strings that cannot be encoded for specific encoding / profiles
@@ -680,8 +774,6 @@ lappend encInvalidBytes {*}{
 # <ENCODING,STRING,PROFILE> should be unique for test ids to be unique.
 # See earlier comments about CTRL field.
 #
-# Note utf-16, utf-32 missing because they are automatically
-# generated based on le/be versions.
 # TODO - out of range code point (note cannot be generated by \U notation)
 lappend encUnencodableStrings {*}{
     ascii \u00e0 tcl8    3f -1 {} {unencodable}

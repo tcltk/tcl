@@ -267,7 +267,7 @@ static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
 
 /* Return 1/0 if unich is a lossless wrapper */
 static inline int IsLosslessWrapper(Tcl_UniChar unich) {
-    return (unich >= 0xDC80 && unich <= 0xDCFF);
+    return (unich >= 0xDC00 && unich <= 0xDCFF);
 }
 /* Convert a byte to internal lossless representation */
 static inline Tcl_UniChar ToLossless(char ch) {
@@ -2916,7 +2916,8 @@ Utf32ToUtfProc(
 	    ch = 0;
 #endif
 	    break;
-	} else if (PROFILE_REPLACE(flags) && SURROGATE(ch)) {
+	} else if ((! PROFILE_TCL8(flags)) && SURROGATE(ch)) {
+            /* PROFILE_REPLACE | PROFILE_LOSSLESS */
 	    ch = UNICODE_REPLACE_CHAR;
 	}
 
@@ -2955,18 +2956,8 @@ Utf32ToUtfProc(
 	} else {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
-	    } else if (PROFILE_LOSSLESS(flags)) {
-		Tcl_Size n = ToLosslessUtf8(src, bytesLeft, dst, dstEnd - dst);
-		if (n < 0) {
-		    result = TCL_CONVERT_NOSPACE;
-		} else {
-		    result = TCL_OK;
-		    dst += n;
-		    numChars++;
-		    src += bytesLeft; /* Go past truncated code unit */
-		}
 	    } else {
-		/* PROFILE_REPLACE or PROFILE_TCL8 */
+		/* PROFILE_REPLACE | PROFILE_LOSSLESS | PROFILE_TCL8 */
 		result = TCL_OK;
 		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 		numChars++;
@@ -3056,13 +3047,8 @@ UtfToUtf32Proc(
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
-	    } else if (PROFILE_LOSSLESS(flags)) {
-		if (IsLosslessWrapper(ch)) {
-		    *dst++ = FromLossless(ch); /* Invalid UTF32 by design! */
-		    src += len;
-		    continue;
-		} /* else take normal path */
-	    } else if (PROFILE_REPLACE(flags)) {
+	    } else if (! PROFILE_TCL8(flags)) {
+                /* PROFILE_REPLACE | PROFILE_LOSSLESS */
 		ch = UNICODE_REPLACE_CHAR;
 	    }
 	}
@@ -3191,7 +3177,10 @@ Utf16ToUtfProc(
 		dst--; /* Also undo writing a single byte too much */
 		numChars--;
 		break;
-	    } else if (PROFILE_REPLACE(flags)) {
+	    } else if (PROFILE_TCL8(flags)) {
+                /* Bug [10c2c17c32]. Hi surrogate not followed by Lo: finish 3-byte UTF-8 */
+		dst += Tcl_UniCharToUtf(-1, dst);
+	    } else {
 		/*
 		 * Previous loop wrote a single byte to mark the high surrogate.
 		 * Replace it with the replacement character. Further, restart
@@ -3204,9 +3193,6 @@ Utf16ToUtfProc(
 		src -= 2;
 		numChars--;
 		continue;
-	    } else {
-	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
-		dst += Tcl_UniCharToUtf(-1, dst);
 	    }
 	}
 
@@ -3219,15 +3205,20 @@ Utf16ToUtfProc(
 	    *dst++ = (ch & 0xFF);
 	} else if (HIGH_SURROGATE(prev) || HIGH_SURROGATE(ch)) {
 	    dst += Tcl_UniCharToUtf(ch | TCL_COMBINE, dst);
-	} else if (LOW_SURROGATE(ch) && !PROFILE_TCL8(flags)) {
+	} else if (LOW_SURROGATE(ch)) {
 	    /* Lo surrogate not preceded by Hi surrogate and not tcl8 profile */
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
+	    } else if (PROFILE_TCL8(flags)) {
+                dst += Tcl_UniCharToUtf(ch, dst);
 	    } else {
-		/* PROFILE_REPLACE */
+                /*
+                 * PROFILE_REPLACE | PROFILE_LOSSLESS. LOSSLESS treated like
+                 * REPLACE for UTF16 - see TIP 671
+                 */
 		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-	    }
+            }
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
@@ -3239,12 +3230,12 @@ Utf16ToUtfProc(
 	    src -= 2;
 	    dst--;
 	    numChars--;
-	} else if (PROFILE_REPLACE(flags)) {
+	} else if (PROFILE_TCL8(flags)) {
+	    dst += Tcl_UniCharToUtf(-1, dst);
+	} else {
+            /* PROFILE_REPLACE | PROFILE_LOSSLESS */
 	    dst--;
 	    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-	} else {
-	    /* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
-	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
     }
 
@@ -3259,18 +3250,8 @@ Utf16ToUtfProc(
 	} else {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
-	    } else if (PROFILE_LOSSLESS(flags)) {
-		Tcl_Size n = ToLosslessUtf8(src, 1, dst, dstEnd - dst);
-		if (n < 0) {
-		    result = TCL_CONVERT_NOSPACE;
-		} else {
-		    result = TCL_OK;
-		    dst += n;
-		    numChars++;
-		    src++; /* Go past truncated code unit */
-		}
 	    } else {
-		/* PROFILE_REPLACE or PROFILE_TCL8 */
+		/* PROFILE_REPLACE | PROFILE_TCL8 | PROFILE_LOSSLESS */
 		result = TCL_OK;
 		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 		numChars++;
@@ -3360,13 +3341,8 @@ UtfToUtf16Proc(
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
-	    } else if (PROFILE_LOSSLESS(flags)) {
-		if (IsLosslessWrapper(ch)) {
-		    *dst++ = FromLossless(ch); /* Invalid UTF16 by design! */
-		    src += len;
-		    continue;
-		} /* else take normal path */
-	    } else if (PROFILE_REPLACE(flags)) {
+	    } else if (! PROFILE_TCL8(flags)) {
+                /* PROFILE_REPLACE | PROFILE_LOSSLESS */
 		ch = UNICODE_REPLACE_CHAR;
 	    }
 	}
@@ -3494,12 +3470,10 @@ UtfToUcs2Proc(
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
-	    }
-	    if (PROFILE_LOSSLESS(flags) && IsLosslessWrapper(ch)) {
-		*dst++ = FromLossless(ch); /* Invalid UCS by design! */
-		src += len;
-		continue;
-	    }
+	    } else if (!PROFILE_TCL8(flags)) {
+                /* PROFILE_REPLACE | PROFILE_LOSSLESS */
+                ch = UNICODE_REPLACE_CHAR;
+            }
 	}
 
 	src += len;

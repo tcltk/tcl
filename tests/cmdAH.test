@@ -665,6 +665,37 @@ foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
     }
 }
 
+#
+# Roundtrip tests for lossless profile
+foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
+    if {"knownBug" in $ctrl} continue
+    if {$profile ne "lossless"} continue
+    if {$enc in {utf-16 utf-16le utf-16be utf-32 utf-32le utf-32be}} {
+        # These do not implement lossless behaviors
+        continue
+    }
+    # There are multiple test cases based on location of invalid bytes
+    set bytes [binary decode hex $hex]
+    set prefix A
+    set suffix B
+    set prefix_bytes [encoding convertto $enc $prefix]
+    set suffix_bytes [encoding convertto $enc $suffix]
+    set prefixLen [string length $prefix_bytes]
+    if {$ctrl eq {} || "solo" in $ctrl} {
+        test cmdAH-4.4.15.$hex.solo.$enc "Roundtrip $hex for $enc" -body {
+            puts $enc,$hex,$profile
+            set decoded [encoding convertfrom -profile lossless $enc $bytes]
+            string equal $bytes [encoding convertto -profile lossless $enc $decoded]
+        } -result 1
+    }
+    if {$ctrl eq {} || "lead" in $ctrl} {
+    }
+    if {$ctrl eq {} || "tail" in $ctrl} {
+    }
+    if {$ctrl eq {} || "middle" in $ctrl} {
+    }
+}
+
 test cmdAH-4.4.xx {convertto -profile strict} -constraints {testbytestring knownBug} -body {
     # TODO - what does testbytestring even test? Invalid UTF8 in the Tcl_Obj bytes field
     encoding convertto -profile strict utf-8 A[testbytestring \x80]B
