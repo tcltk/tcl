@@ -151,7 +151,7 @@ GrowStringBuffer(
     if (objPtr->bytes == &tclEmptyString) {
 	objPtr->bytes = NULL;
     }
-    /* 
+    /*
      * In code below, note 'capacity' and 'needed' include terminating nul,
      * while stringPtr->allocated does not.
      */
@@ -196,7 +196,7 @@ GrowUnicodeBuffer(
 	maxChars -= 1; /* End nul not included */
     }
     else {
-	/* 
+	/*
 	 * First allocation - just big enough. Note needed does
 	 * not include terminating nul but STRING_SIZE does
 	 */
@@ -610,7 +610,7 @@ Tcl_GetUniChar(
 
 int
 TclGetUniChar(
-    Tcl_Obj *objPtr,		/* The object to get the Unicode charater
+    Tcl_Obj *objPtr,		/* The object to get the Unicode character
 				 * from. */
     Tcl_Size index)		/* Get the index'th Unicode character. */
 {
@@ -751,7 +751,7 @@ Tcl_GetRange(
     Tcl_Size length = 0;
 
     if (first < 0) {
-	first = TCL_INDEX_START;
+	first = 0;
     }
 
     /*
@@ -1082,9 +1082,9 @@ Tcl_AttemptSetObjLength(
 	    char *newBytes;
 
 	    if (objPtr->bytes == &tclEmptyString) {
-		newBytes = (char *)Tcl_AttemptAlloc(length + 1);
+		newBytes = (char *)Tcl_AttemptAlloc(length + 1U);
 	    } else {
-		newBytes = (char *)Tcl_AttemptRealloc(objPtr->bytes, length + 1);
+		newBytes = (char *)Tcl_AttemptRealloc(objPtr->bytes, length + 1U);
 	    }
 	    if (newBytes == NULL) {
 		return 0;
@@ -1289,7 +1289,7 @@ Tcl_AppendLimitedToObj(
 	Tcl_GetUnicode(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-    if (stringPtr->hasUnicode && (stringPtr->numChars+1) > 1) {
+    if (stringPtr->hasUnicode && (stringPtr->numChars) > 0) {
 	AppendUtfToUnicodeRep(objPtr, bytes, toCopy);
     } else {
 	AppendUtfToUtfRep(objPtr, bytes, toCopy);
@@ -1300,7 +1300,7 @@ Tcl_AppendLimitedToObj(
     }
 
     stringPtr = GET_STRING(objPtr);
-    if (stringPtr->hasUnicode && (stringPtr->numChars+1) > 1) {
+    if (stringPtr->hasUnicode && (stringPtr->numChars) > 0) {
 	AppendUtfToUnicodeRep(objPtr, ellipsis, eLen);
     } else {
 	AppendUtfToUtfRep(objPtr, ellipsis, eLen);
@@ -1949,7 +1949,7 @@ Tcl_AppendFormatToObj(
 	    }
 	    gotSequential = 1;
 	}
-	if (objIndex < 0 || objIndex >= objc) {
+	if ((objIndex < 0) || (objIndex >= objc)) {
 	    msg = badIndex[gotXpg];
 	    errCode = gotXpg ? "INDEXRANGE" : "FIELDVARMISMATCH";
 	    goto errorMsg;
@@ -2538,7 +2538,7 @@ Tcl_AppendFormatToObj(
 		goto errorMsg;
 	    }
 	    bytes = TclGetString(segment);
-	    if (!Tcl_AttemptSetObjLength(segment, snprintf(bytes, length, spec, d))) {
+	    if (!Tcl_AttemptSetObjLength(segment, snprintf(bytes, segment->length, spec, d))) {
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
@@ -3095,7 +3095,6 @@ TclStringRepeat(
 		(count - done) * length);
     }
     return objResultPtr;
-
 }
 
 /*
@@ -3133,8 +3132,14 @@ TclStringCat(
     /* assert ( objc >= 0 ) */
 
     if (objc <= 1) {
-	/* Negative (shouldn't be), one or no objects; return first or empty */
-	return objc == 1 ? objv[0] : Tcl_NewObj();
+	if (objc != 1) {
+	    /* Negative (shouldn't be) no objects; return empty */
+	    Tcl_Obj *obj;
+	    TclNewObj(obj);
+	    return obj;
+	}
+	/* One object; return first */
+	return objv[0];
     }
 
     /* assert ( objc >= 2 ) */
@@ -3434,7 +3439,7 @@ TclStringCat(
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %" TCL_Z_MODIFIER "u bytes",
+		    	"concatenation failed: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
 			length));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
@@ -3450,7 +3455,7 @@ TclStringCat(
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    	"concatenation failed: unable to alloc %" TCL_Z_MODIFIER "u bytes",
+		    	"concatenation failed: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
 			length));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
@@ -3575,7 +3580,7 @@ TclStringCmp(
 			    reqlength *= sizeof(Tcl_UniChar);
 			}
 		    } else {
-			memCmpFn = (memCmpFn_t) TclUniCharNcmp;
+			memCmpFn = (memCmpFn_t)(void *)TclUniCharNcmp;
 		    }
 		}
 	    }
@@ -3633,11 +3638,11 @@ TclStringCmp(
 		 */
 
 		if ((reqlength < 0) && !nocase) {
-		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
+		    memCmpFn = (memCmpFn_t)(void *)TclpUtfNcmp2;
 		} else {
 		    s1len = Tcl_NumUtfChars(s1, s1len);
 		    s2len = Tcl_NumUtfChars(s2, s2len);
-		    memCmpFn = (memCmpFn_t)
+		    memCmpFn = (memCmpFn_t)(void *)
 			    (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
 		}
 	    }
@@ -4426,7 +4431,7 @@ UpdateStringOfString(
     stringPtr->allocated = 0;
 
     if (stringPtr->numChars == 0) {
-	TclInitStringRep(objPtr, NULL, 0);
+	TclInitEmptyStringRep(objPtr);
     } else {
 	(void) ExtendStringRepWithUnicode(objPtr, stringPtr->unicode,
 		stringPtr->numChars);

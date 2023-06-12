@@ -6489,7 +6489,7 @@ test io-47.3 {deleting fileevent on interpreter delete} {testfevent fileevent} {
     fileevent $f readable {script 1}
     fileevent $f2 readable {script 2}
     testfevent cmd "fileevent $f3 readable {script 3}
-	fileevent $f4 readable {script 4}"
+    fileevent $f4 readable {script 4}"
     testfevent delete
     set x [list [fileevent $f readable] [fileevent $f2 readable] \
 		[fileevent $f3 readable] [fileevent $f4 readable]]
@@ -7797,7 +7797,7 @@ test io-52.22 {TclCopyChannel & encodings} -setup {
     fconfigure $in  -encoding ascii -profile strict
     fconfigure $out -encoding koi8-r -translation lf
     proc ::xxx args {
-        set ::s0 $args
+	set ::s0 $args
     }
 
     fcopy $in $out -command ::xxx
@@ -7824,7 +7824,7 @@ test io-52.23 {TclCopyChannel & encodings} -setup {
     fconfigure $in  -encoding utf-8
     fconfigure $out -encoding ascii -translation lf -profile strict
     proc ::xxx args {
-        set ::s0 $args
+	set ::s0 $args
     }
 
     fcopy $in $out -command ::xxx
@@ -9352,7 +9352,7 @@ test io-75.6.gets {invalid utf-8 encoding, gets is not ignored (-profile strict)
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
-	-translation lf -profile strict
+	    -translation lf -profile strict
 } -body {
     gets $f
 } -cleanup {
@@ -9372,14 +9372,14 @@ test io-75.7.gets {
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf \
-	-profile strict
+	    -profile strict
 } -body {
-    read $f
+    list [catch {read $f} msg] $msg
 } -cleanup {
     close $f
     removeFile io-75.7
-} -match glob -returnCodes 1 -result {error reading "file*":\
-	invalid or incomplete multibyte or wide character}
+} -match glob -result {1 {error reading "file*":\
+    invalid or incomplete multibyte or wide character}}
 
 test io-75.7.read {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.7]
@@ -9466,7 +9466,6 @@ test {io-75.8 {invalid after eof}} {
 test {io-75.8 {invalid before eof}} {
 	invalid utf-8 encoding eof handling (-profile strict)
 } -setup {
-	set res {}
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]
     # This also configures the channel encoding profile as strict.
@@ -9478,9 +9477,7 @@ test {io-75.8 {invalid before eof}} {
     fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A \
 	-translation lf -profile strict
 } -body {
-    set status [catch {read $f} cres copts]
-    lappend res $status
-    lappend res [eof $f]
+    set res [list [catch {read $f} cres] [eof $f]]
     chan configure $f -encoding iso8859-1
     lappend res [read $f 1]
     chan configure $f -encoding utf-8
@@ -9507,8 +9504,7 @@ test io-strict-multibyte-eof {
     seek $chan 0
     chan configure $chan -encoding utf-8 -profile strict
 } -body {
-    set status [catch {read $chan 1} cres]
-    lappend res $status $cres
+    list [catch {read $chan 1} cres] $cres
 } -cleanup {
     close $chan
     unset res
@@ -9613,8 +9609,7 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
 } -body {
     set d [read $f]
     binary scan $d H* hd
-    lappend hd [catch {set d [read $f]} msg]
-    lappend hd $msg
+    lappend hd [catch {set d [read $f]} msg] $msg
 } -cleanup {
     close $f
     removeFile io-75.11
@@ -9725,8 +9720,7 @@ test io-75.13.nonblocking {
 } -body {
     set d [read $f]
     binary scan $d H* hd
-    lappend hd [catch {read $f} msg]
-    lappend hd $msg
+    lappend hd [catch {read $f} msg] $msg
 } -cleanup {
     close $f
     removeFile io-75.13
@@ -9740,8 +9734,8 @@ test io-75.14 {
 } -setup {
     set chan [file tempfile]
     fconfigure $chan -encoding binary
-    # \xc0\n is an invalid utf-8 sequence
-    puts -nonewline $chan a\nb\nc\xc0\nd\n
+    # \xC0\n is an invalid utf-8 sequence
+    puts -nonewline $chan a\nb\nc\xC0\nd\n
     flush $chan
     seek $chan 0
     fconfigure $chan -encoding utf-8 -buffering none -eofchar {} \
@@ -9749,8 +9743,7 @@ test io-75.14 {
 } -body {
     lappend res [gets $chan]
     lappend res [gets $chan]
-    set status [catch {gets $chan} cres copts]
-    lappend res $status $cres
+    lappend res [catch {gets $chan} cres] $cres
     chan configure $chan -profile tcl8
     lappend res [gets $chan]
     lappend res [gets $chan]
@@ -9767,18 +9760,16 @@ test io-75.15 {
     set res {}
     set chan [file tempfile]
     fconfigure $chan -encoding binary
-    # \xc0\x40 is an invalid utf-8 sequence
-    puts $chan hello\nAB\nCD\xc0\x40EF\nGHI
+    # \xC0\x40 is an invalid utf-8 sequence
+    puts $chan hello\nAB\nCD\xC0\x40EF\nGHI
 	seek $chan 0
 } -body {
     #Now try to read it with [gets]
     fconfigure $chan -encoding utf-8 -profile strict
     lappend res [gets $chan]
     lappend res [gets $chan]
-    set status [catch {gets $chan} cres copts]
-    lappend res $status $cres
-    set status [catch {gets $chan} cres copts]
-    lappend res $status $cres
+    lappend res [catch {gets $chan} cres] $cres
+    lappend res [catch {gets $chan} cres] $cres
 	chan configure $chan -translation binary
 	set data [read $chan 4]
 	foreach char [split $data {}] {

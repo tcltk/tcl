@@ -105,12 +105,6 @@
 #endif
 
 /*
- * Maximum *signed* value that can be stored in a Tcl_Size type. This is
- * primarily used for checking overflows in dynamically allocating memory.
- */
-#define TCL_SIZE_SMAX ((((Tcl_Size) 1) << ((8*(Tcl_Size)sizeof(Tcl_Size)) - 1)) - 1)
-
-/*
  * Macros used to cast between pointers and integers (e.g. when storing an int
  * in ClientData), on 64-bit architectures they avoid gcc warning about "cast
  * to/from pointer from/to integer of different size".
@@ -2910,7 +2904,7 @@ static inline Tcl_Size TclUpsizeRetry(Tcl_Size needed, Tcl_Size lastAttempt) {
 MODULE_SCOPE void *TclAllocElemsEx(Tcl_Size elemCount, Tcl_Size elemSize,
 			Tcl_Size leadSize, Tcl_Size *capacityPtr);
 MODULE_SCOPE void *TclReallocElemsEx(void *oldPtr, Tcl_Size elemCount,
-			Tcl_Size elemSize, Tcl_Size leadSize, 
+			Tcl_Size elemSize, Tcl_Size leadSize,
 			Tcl_Size *capacityPtr);
 MODULE_SCOPE void *TclAttemptReallocElemsEx(void *oldPtr,
 			Tcl_Size elemCount, Tcl_Size elemSize,
@@ -3392,7 +3386,7 @@ MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
 			    const char **errorMsgPtr);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, void *clientData,
-			    size_t stackSize, int flags);
+			    TCL_HASH_TYPE stackSize, int flags);
 MODULE_SCOPE Tcl_Size	TclpFindVariable(const char *name, Tcl_Size *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    TCL_HASH_TYPE *lengthPtr, Tcl_Encoding *encodingPtr);
@@ -4548,7 +4542,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 /*
  *----------------------------------------------------------------
- * Macro used by the Tcl core to set a Tcl_Obj's string representation to a
+ * Macros used by the Tcl core to set a Tcl_Obj's string representation to a
  * copy of the "len" bytes starting at "bytePtr". The value of "len" must
  * not be negative.  When "len" is 0, then it is acceptable to pass
  * "bytePtr" = NULL.  When "len" > 0, "bytePtr" must not be NULL, and it
@@ -4561,23 +4555,38 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * Because "len" is referenced multiple times, take care that it is an
  * expression with the same value each use.
  *
- * The ANSI C "prototype" for this macro is:
+ * The ANSI C "prototypes" for these macros are:
  *
+ * MODULE_SCOPE void TclInitEmptyStringRep(Tcl_Obj *objPtr);
  * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
+ * MODULE_SCOPE void TclAttemptInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
  *
  *----------------------------------------------------------------
  */
 
+#define TclInitEmptyStringRep(objPtr) \
+	((objPtr)->length = (((objPtr)->bytes = &tclEmptyString), 0))
+
+
 #define TclInitStringRep(objPtr, bytePtr, len) \
     if ((len) == 0) { \
-	(objPtr)->bytes	 = &tclEmptyString; \
-	(objPtr)->length = 0; \
+	TclInitEmptyStringRep(objPtr); \
     } else { \
 	(objPtr)->bytes = (char *)Tcl_Alloc((len) + 1U); \
 	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
     }
+
+#define TclAttemptInitStringRep(objPtr, bytePtr, len) \
+    ((((len) == 0) ? ( \
+	TclInitEmptyStringRep(objPtr) \
+    ) : ( \
+	(objPtr)->bytes = (char *)Tcl_AttemptAlloc((len) + 1U), \
+	(objPtr)->length = ((objPtr)->bytes) ? \
+		(memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)), \
+		(objPtr)->bytes[len] = '\0', (len)) : (-1) \
+    )), (objPtr)->bytes)
 
 /*
  *----------------------------------------------------------------
