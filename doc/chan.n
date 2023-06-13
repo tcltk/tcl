@@ -200,16 +200,15 @@ platforms it is \fBcrlf\fR for both input and output.
 \fBbinary\fR
 .
 Like \fBlf\fR, no end-of-line translation is performed, but in addition, sets
-\fB\-eofchar\fR to the empty string to disable it, sets \fB\-encoding\fR to
-\fBiso8859-1\fR, and sets \fB-profile\fR to \fBstrict\fR so the the channel is
-fully configured for binary input and output:  Each byte read from the channel
+\fB\-eofchar\fR to the empty string to disable it, and sets \fB\-encoding\fR
+to \fBiso8859-1\fR.  With this one setting, a channel is fully configured
+for binary input and output:  Each byte read from the channel
 becomes the Unicode character having the same value as that byte, and each
 character written to the channel becomes a single byte in the output.  This
 makes it possible to work seamlessly with binary data as long as each character
 in the data remains in the range of 0 to 255 so that there is no distinction
 between binary data and text.  For example, A JPEG image can be read from a
 such a channel, manipulated, and then written back to such a channel.
-
 .TP
 \fBcr\fR
 .
@@ -245,7 +244,7 @@ files to slow destinations like network sockets.
 .PP
 \fB\-size\fR limits the number of characters copied.
 .PP
-If \fB\-command\fR is gviven, \fBchan copy\fR returns immediately, works in the
+If \fB\-command\fR is given, \fBchan copy\fR returns immediately, works in the
 background, and calls \fIcallback\fR when the copy completes, providing as an
 additional argument the number of characters written to \fIoutputChan\fR.  If
 an error occurres during the background copy, another argument provides message
