@@ -2550,10 +2550,6 @@ Tcl_GetDoubleFromObj(
     double *dblPtr)	/* Place to store resulting double. */
 {
     do {
-	Tcl_ObjTypeGetDblProc *dblProc = TclObjTypeHasProc(objPtr, getDoubleProc);
-	if (dblProc) {
-	    return dblProc(interp, objPtr, dblPtr);
-	}
 	if (objPtr->typePtr == &tclDoubleType) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
 		if (interp != NULL) {

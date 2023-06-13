@@ -1116,8 +1116,6 @@ MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
     (objPtr)->typePtr->setElementProc((interp), (objPtr), (indexCount), (indexArray), (valueObj))
 #define Tcl_ObjTypeReplace(interp, objPtr, first, numToDelete, numToInsert, insertObjs) \
     (objPtr)->typePtr->replaceProc((interp), (objPtr), (first), (numToDelete), (numToInsert), (insertObjs))
-#define Tcl_ObjTypeGetDouble(interp, objPtr, doublePtr) \
-    (objPtr)->typePtr->getDoubleProc((interp), (objPtr), (doublePtr))
 
 
 /*

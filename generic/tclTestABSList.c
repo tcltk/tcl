@@ -71,8 +71,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)                  /* getDouble */
+	    my_LStringReplace)     /* Replace */
     },
     {/*1*/
 	"lstring",
@@ -87,8 +86,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)                  /* getDouble */
+	    my_LStringReplace)     /* Replace */
     },
     {/*2*/
 	"lstring",
@@ -103,8 +101,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)                  /* getDouble */
+	    my_LStringReplace)     /* Replace */
     },
     {/*3*/
 	"lstring",
@@ -119,8 +116,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)                  /* getDouble */
+	    my_LStringReplace)     /* Replace */
     },
     {/*4*/
 	"lstring",
@@ -135,8 +131,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    NULL,                  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)                  /* getDouble */
+	    my_LStringReplace)     /* Replace */
     },
     {/*5*/
 	"lstring",
@@ -151,8 +146,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    NULL,                  /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)                  /* getDouble */
+	    my_LStringReplace)     /* Replace */
     },
     {/*6*/
 	"lstring",
@@ -167,8 +161,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    NULL,                  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)                  /* getDouble */
+	    my_LStringReplace)     /* Replace */
     },
     {/*7*/
 	"lstring",
@@ -183,8 +176,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    NULL,                  /* Replace */
-	    NULL)                  /* getDouble */
+	    NULL)                  /* Replace */
     },
     {/*8*/
 	"lstring",
@@ -199,8 +191,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)                  /* getDouble */
+	    my_LStringReplace)     /* Replace */
     },
     {/*9*/
 	"lstring",
@@ -215,8 +206,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)                  /* getDouble */
+	    my_LStringReplace)     /* Replace */
     },
     {/*10*/
 	"lstring",
@@ -231,8 +221,7 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace,     /* Replace */
-	    NULL)                  /* getDouble */
+	    my_LStringReplace)     /* Replace */
     }
 };
 

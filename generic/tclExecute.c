@@ -5033,7 +5033,7 @@ TEBCresume(
 		}
 
 		/* Could be an ephemeral abstract obj */
-		TclBumpObj(o);
+		Tcl_BumpObj(o);
 
 		i++;
 	    } while (i < length && match == 0);

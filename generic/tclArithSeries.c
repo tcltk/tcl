@@ -94,8 +94,7 @@ static const Tcl_ObjType arithSeriesType = {
     TclArithSeriesObjReverse,
     TclArithSeriesGetElements,
     NULL, // SetElement
-    NULL, // Replace
-    NULL)  // GetDouble
+    NULL) // Replace
 };
 
 /*

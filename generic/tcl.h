@@ -627,8 +627,6 @@ typedef            int  (Tcl_ObjTypeReplaceProc) (Tcl_Interp *interp, struct Tcl
                                              Tcl_Size first, Tcl_Size numToDelete,
                                              Tcl_Size numToInsert,
                                              struct Tcl_Obj *const insertObjs[]);
-typedef             int (Tcl_ObjTypeGetDblProc)  (Tcl_Interp *interp, struct Tcl_Obj *objPtr,
-                                             double *doublePtr);
 
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_PackageInitProc Tcl_LibraryInitProc
@@ -674,14 +672,13 @@ typedef struct Tcl_ObjType {
     Tcl_ObjTypeSetElement *setElementProc;   /* Replace the element at the indicie
 					     ** with the given valueObj. */
     Tcl_ObjTypeReplaceProc *replaceProc;     /* Replace subset with subset */
-    Tcl_ObjTypeGetDblProc *getDoubleProc;    /* GetDouble from internal rep */
 } Tcl_ObjType;
 
-#define TCL_OBJTYPE_V0 0,0,0,0,0,0,0,0,0 /* Pre-Tcl 9 */
-#define TCL_OBJTYPE_V1(a) 1,a,0,0,0,0,0,0,0 /* Tcl 9 Version 1 */
+#define TCL_OBJTYPE_V0 0,0,0,0,0,0,0,0 /* Pre-Tcl 9 */
+#define TCL_OBJTYPE_V1(a) 1,a,0,0,0,0,0,0 /* Tcl 9 Version 1 */
 
-#define TCL_OBJTYPE_V2(a,b,c,d,e,f,g,h)	 2, \
-    a,b,c,d,e,f,g,h /* Tcl 9 - AbstractLists */
+#define TCL_OBJTYPE_V2(a,b,c,d,e,f,g)	 2, \
+    a,b,c,d,e,f,g /* Tcl 9 - AbstractLists */
 
 #define TCL_OBJTYPE_CURRENT 2
 
