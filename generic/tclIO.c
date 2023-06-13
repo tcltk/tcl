@@ -1681,11 +1681,11 @@ Tcl_CreateChannel(
     statePtr->inputEncodingState  = NULL;
     statePtr->inputEncodingFlags  = TCL_ENCODING_START;
     ENCODING_PROFILE_SET(statePtr->inputEncodingFlags,
-			     TCL_ENCODING_PROFILE_TCL8);
+			     TCL_ENCODING_PROFILE_DEFAULT);
     statePtr->outputEncodingState = NULL;
     statePtr->outputEncodingFlags = TCL_ENCODING_START;
     ENCODING_PROFILE_SET(statePtr->outputEncodingFlags,
-			     TCL_ENCODING_PROFILE_TCL8);
+			     TCL_ENCODING_PROFILE_DEFAULT);
 
     /*
      * Set the channel up initially in AUTO input translation mode to accept
