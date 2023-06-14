@@ -780,7 +780,7 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
 } [list 3 "乎乞也 (\\u4E4E\\u4E5E\\u4E5F)"]
 
 test encoding-24.4 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xC0\x80"]
+    string length [encoding convertfrom -profile tcl8 utf-8 "\xC0\x80"]
 } 1
 test encoding-24.5 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom -profile tcl8 utf-8 "\xC0\x81"]
