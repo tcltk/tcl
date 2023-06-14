@@ -683,7 +683,6 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
     set prefixLen [string length $prefix_bytes]
     if {$ctrl eq {} || "solo" in $ctrl} {
         test cmdAH-4.4.15.$hex.solo.$enc "Roundtrip $hex for $enc" -body {
-            puts $enc,$hex,$profile
             set decoded [encoding convertfrom -profile lossless $enc $bytes]
             string equal $bytes [encoding convertto -profile lossless $enc $decoded]
         } -result 1
