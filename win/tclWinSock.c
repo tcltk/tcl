@@ -374,7 +374,7 @@ InitializeHostName(
 	if (gethostname(Tcl_DStringValue(&inDs),
 		Tcl_DStringLength(&inDs)) == 0) {
 	    Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(&inDs),
-		    TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+                -1, TCL_ENCODING_PROFILE_LOSSLESS, &ds, NULL);
 	}
 	Tcl_DStringFree(&inDs);
     }
