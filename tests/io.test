@@ -9208,12 +9208,13 @@ test io-75.7 {
     fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf \
 	    -profile strict
 } -body {
-    list [catch {read $f} msg] $msg
+    list [catch {read $f} msg data] $msg [dict get $data -data]
 } -cleanup {
     close $f
     removeFile io-75.7
+    unset msg data
 } -match glob -result {1 {error reading "file*":\
-    invalid or incomplete multibyte or wide character}}
+    invalid or incomplete multibyte or wide character} A}
 
 test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.8]
@@ -9249,18 +9250,17 @@ test io-75.8.eoflater {invalid utf-8 encoding eof handling (-profile strict)} -s
     fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A \
 	-translation lf -profile strict
 } -body {
-    set res [list [catch {read $f} cres] [eof $f]]
+    set res [list [catch {read $f} msg data] [eof $f] [dict get $data -data]]
     chan configure $f -encoding iso8859-1
     lappend res [read $f 1]
     chan configure $f -encoding utf-8
-    catch {read $f 1} cres
-    lappend res $cres
+    lappend res [catch {read $f 1} msg data] $msg [dict get $data -data]
     close $f
     set res
 } -cleanup {
     removeFile io-75.8
-} -match glob -result "1 0 \x81 {error reading \"*\":\
-    invalid or incomplete multibyte or wide character}"
+} -match glob -result "1 0 A \x81 1 {error reading \"*\":\
+    invalid or incomplete multibyte or wide character} {}"
 
 
 test io-strict-multibyte-eof {
@@ -9268,7 +9268,6 @@ test io-strict-multibyte-eof {
 
     See issue 25cdcb7e8fb381fb
 } -setup {
-    set res {}
     set chan [file tempfile];
     fconfigure $chan -encoding binary
     puts -nonewline $chan \x81\x1A
@@ -9276,12 +9275,12 @@ test io-strict-multibyte-eof {
     seek $chan 0
     chan configure $chan -encoding utf-8 -profile strict
 } -body {
-    list [catch {read $chan 1} cres] $cres
+    list [catch {read $chan 1} msg data] $msg [dict get $data -data]
 } -cleanup {
     close $chan
-    unset res
+    unset msg data
 } -match glob -result {1 {error reading "*":\
-    invalid or incomplete multibyte or wide character}}
+    invalid or incomplete multibyte or wide character} {}}
 
 test io-75.9 {unrepresentable character write passes and is replaced by ?} -setup {
     set fn [makeFile {} io-75.9]
@@ -9336,12 +9335,13 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
 } -body {
     set d [read $f]
     binary scan $d H* hd
-    lappend hd [catch {set d [read $f]} msg] $msg
+    lappend hd [catch {set d [read $f]} msg data] $msg [dict get $data -data]
 } -cleanup {
     close $f
     removeFile io-75.11
+    unset d hd msg data
 } -match glob -result {41 1 {error reading "file*":\
-    invalid or incomplete multibyte or wide character}}
+    invalid or incomplete multibyte or wide character} {}}
 
 test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
     set fn [makeFile {} io-75.12]
@@ -9376,12 +9376,13 @@ test io-75.13 {
 } -body {
     set d [read $f]
     binary scan $d H* hd
-    lappend hd [catch {read $f} msg] $msg
+    lappend hd [catch {read $f} msg data] $msg [dict get $data -data]
 } -cleanup {
     close $f
     removeFile io-75.13
+    unset d hd msg data
 } -match glob -result {41 1 {error reading "file*":\
-    invalid or incomplete multibyte or wide character}}
+    invalid or incomplete multibyte or wide character} {}}
 
 test io-75.14 {
 	[gets] succesfully returns lines prior to error
@@ -9397,7 +9398,7 @@ test io-75.14 {
     fconfigure $chan -encoding utf-8 -buffering none -eofchar {} \
 	-translation auto -profile strict
 } -body {
-    lappend res [gets $chan]
+    set res [gets $chan]
     lappend res [gets $chan]
     lappend res [catch {gets $chan} cres] $cres
     chan configure $chan -profile tcl8
