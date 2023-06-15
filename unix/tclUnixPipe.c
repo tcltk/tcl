@@ -553,8 +553,13 @@ TclpCreateProcess(
     TclStackFree(interp, dsArray);
 
     if (pid == -1) {
+#ifdef USE_POSIX_SPAWN
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't execute \"%s\": %s", argv[0], Tcl_PosixError(interp)));
+#else
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't fork child process: %s", Tcl_PosixError(interp)));
+#endif
 	goto error;
     }
 
