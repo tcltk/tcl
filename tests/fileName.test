@@ -1685,6 +1685,129 @@ apply [list {} {
 	}
     } -result 0
 } [namespace current]]
+
+# Helpers for TIP 671 tests for invalid encoding in system API
+# Specifically use /tmp for tests because on WSL [temporaryDirectory]
+# on NTFS prevents creation of arbitrary byte sequences in names.
+testConstraint utf8system [string equal [encoding system] utf-8]
+if {[llength [auto_execok bash]]} {
+    testConstraint haveBash 1
+}
+
+set dir671 /tmp/tip-671-test
+proc clean671 {} {
+    file delete -force $::dir671
+}
+proc mkfile671 {{content ""}} {
+    clean671
+    file mkdir $::dir671
+    exec {*}[auto_execok bash] -c "echo -n '$content' > [file join $::dir671 {$'\xe8'.$'\xe9'}]"
+    # Return the path as retrieved from the system
+    return [lindex [glob $::dir671/*] 0]
+}
+proc mkdir671 {args} {
+    clean671
+    file mkdir $::dir671
+    exec {*}[auto_execok bash] -c "mkdir [file join $::dir671 {$'\xe7'}]"
+    # Return the path as retrieved from the system
+    set dir [lindex [glob $::dir671/*] 0]
+    if {[llength $args] == 0} {
+        return $dir
+    }
+    return [lmap arg $args {
+        set fn [file join $dir $arg]
+        close [open $fn w]
+        set fn
+    }]
+}
+proc test-tip671 {id comment body result args} {
+    test tip671-$id "TIP 671 $comment" \
+        -constraints {unix haveBash} \
+        -setup {
+            set oldEnc [encoding system]
+            # The invalid bytes file name assumes utf-8
+            encoding system utf-8
+        } -cleanup {
+            clean671
+            encoding system $oldEnc
+        } \
+        -body $body \
+        -result $result \
+        {*}$args
+}
+# TODO - home, join, link, lstat, mkdir, nativename, readlink, tildeexpand,
+
+# These tests are really only intended to verify that path names
+# containing TIP 671 mappings are passed correctly to the system
+# and don't raise a file not found error. They are not intended
+# to really test the commands themselves.
+test-tip671 basic-file "Mapping of bytes" {mkfile671} /tmp/tip-671-test/\uDCE8.\uDCE9
+test-tip671 basic-dir "Mapping of bytes" {mkdir671} /tmp/tip-671-test/\uDCE7
+test-tip671 file-atime "file atime" {
+    expr {[file atime [mkfile671]] - [clock seconds] <= 1}
+} 1
+test-tip671 file-attributes "file attributes" {
+    lsort [dict keys [file attributes [mkfile671]]]
+} {-group -owner -permissions}
+test-tip671 file-copy-from "file copy source" {
+    set tofile [makeFile "" file-copy-671]
+    file copy -force [mkfile671 abc] $tofile
+    viewFile $tofile
+} abc
+test-tip671 file-copy-to "file copy destination" {
+    set tofile [mkfile671]
+    file copy -force [makeFile "xyz" file-copy-671] $tofile
+    viewFile $tofile
+} xyz
+test-tip671 file-delete "file delete" {
+    set fn [mkfile671]
+    list [file exists $fn] [file delete $fn] [file exists $fn]
+} {1 {} 0}
+test-tip671 file-dirname "file dirname" {
+    file isdirectory [file dirname [lindex [mkdir671 x] 0]]
+} 1
+test-tip671 file-executable "file executable" {file executable [mkfile671]} 0
+test-tip671 file-exists "file exists" {file exists [mkfile671]} 1
+test-tip671 file-extension "file extension" {file extension [mkfile671]} .\uDCE9
+test-tip671 file-isdirectory "file isdirectory" {file isdirectory [mkdir671]} 1
+test-tip671 file-isfile "file isfile" {file isfile [mkfile671]} 1
+test-tip671 file-mtime "file mtime" {
+    expr {[file mtime [mkfile671]] - [clock seconds] <= 1}
+} 1
+test-tip671 file-normalize "file normalize" {
+    set path [mkdir671 f]
+    set cwd [pwd]
+    cd [file dirname $path]
+    set norm [file normalize f]
+    cd $cwd
+    string equal $path $norm
+} 1
+test-tip671 file-pathtype "file pathtype" {file pathtype [mkfile671]} absolute
+test-tip671 file-owned "file owned" {file owned [mkfile671]} 1
+test-tip671 file-readable "file readable" {file readable [mkfile671]} 1
+test-tip671 file-rename-from "file rename source" {
+    set tofile [makeFile "" file-rename-671]
+    file rename -force [mkfile671 abc] $tofile
+    viewFile $tofile
+} abc
+test-tip671 file-rename-to "file rename destination" {
+    set tofile [mkfile671]
+    file rename -force [makeFile "xyz" file-copy-671] $tofile
+    viewFile $tofile
+} xyz
+test-tip671 file-rootname "file rootname" {file rootname [mkfile671]} /tmp/tip-671-test/\uDCE8
+test-tip671 file-size "file size" {file size [mkfile671 abc]} 3
+test-tip671 file-split "file split" {
+    file split [mkfile671]
+} [list / tmp tip-671-test \uDCE8.\uDCE9]
+test-tip671 file-stat "file stat" {dict get [file stat [mkfile671 abc]] size} 3
+test-tip671 file-system "file system" {file system [mkfile671 abc]} native
+test-tip671 file-tail "file tail" {file tail [mkfile671]} \uDCE8.\uDCE9
+test-tip671 file-type "file type" {file type [mkfile671]} file
+test-tip671 file-writable "file writable" {file writable [mkfile671]} 1
+
+
+
 
 # cleanup
 catch {file delete -force C:/globTest}
