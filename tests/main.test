@@ -11,6 +11,10 @@ namespace eval ::tcl::test::main {
     # Is [exec] defined?
     testConstraint exec [llength [info commands exec]]
 
+    if {[llength [auto_execok bash]]} {
+        testConstraint haveBash 1
+    }
+
     # Is the tcl::test package loaded?
     testConstraint tcl::test [expr {
 	[llength [package provide tcl::test]]
@@ -1283,6 +1287,25 @@ namespace eval ::tcl::test::main {
 	close $f
 	file delete result
     } -result "1\nfoo\n"
+
+    test Tcl_Main-10.1 {
+        Invalidly encoded bytes in arguments - TIP 671
+    } -constraints {unix haveBash} -setup {
+        set tclScript [makeFile {
+            lassign $::argv a b
+            # a should be \udce9 (lossless map ofe9) b should be \ue9
+            puts [list [format %x [scan $a %c]] [format %x [scan $b %c]]]
+        } tclScript]
+        # Note following requires bash, not sh! Dunno the equivalent in sh
+        set shellCode [string cat "[info nameofexecutable] $tclScript" { $'\351'} { $'\303\251'} \n]
+        set shScript [makeFile $shellCode shScript]
+        set oldEnc [encoding system]
+        encoding system utf-8
+    } -cleanup {
+        encoding system $oldEnc
+    } -body {
+        exec {*}[auto_execok bash] $shScript
+    } -result {dce9 e9}
 
     cd [workingDirectory]
 

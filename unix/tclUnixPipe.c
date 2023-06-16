@@ -437,7 +437,15 @@ TclpCreateProcess(
     newArgv = (char **)TclStackAlloc(interp, (argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
-	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], TCL_INDEX_NONE, &dsArray[i]);
+	if (TclInternalToSystemEncoding(interp, argv[i], -1, &dsArray[i]) != TCL_OK) {
+	    while (i-- > 0) {
+		Tcl_DStringFree(&dsArray[i]);
+	    }
+	    TclStackFree(interp, newArgv);
+	    TclStackFree(interp, dsArray);
+	    goto error;
+	}
+	newArgv[i] = Tcl_DStringValue(&dsArray[i]);
     }
 
 #ifdef USE_VFORK

@@ -1699,14 +1699,12 @@ proc clean671 {} {
     file delete -force $::dir671
 }
 proc mkfile671 {{content ""}} {
-    clean671
     file mkdir $::dir671
     exec {*}[auto_execok bash] -c "echo -n '$content' > [file join $::dir671 {$'\xe8'.$'\xe9'}]"
     # Return the path as retrieved from the system
     return [lindex [glob $::dir671/*] 0]
 }
 proc mkdir671 {args} {
-    clean671
     file mkdir $::dir671
     exec {*}[auto_execok bash] -c "mkdir [file join $::dir671 {$'\xe7'}]"
     # Return the path as retrieved from the system
@@ -1721,28 +1719,37 @@ proc mkdir671 {args} {
     }]
 }
 proc test-tip671 {id comment body result args} {
+    set setup {
+        clean671; # In case left over from manual testing
+        set oldEnc [encoding system]
+        # The invalid bytes file name assumes utf-8
+        encoding system utf-8
+    }
+    set cleanup {
+        clean671
+        encoding system $oldEnc
+    }
+    if {[dict exists $args -setup]} {
+        append setup "\n[dict get $args -setup]"
+    }
+    if {[dict exists $args -cleanup]} {
+        set cleanup "[dict get $args -cleanup]\n$cleanup"
+    }
     test tip671-$id "TIP 671 $comment" \
         -constraints {unix haveBash} \
-        -setup {
-            set oldEnc [encoding system]
-            # The invalid bytes file name assumes utf-8
-            encoding system utf-8
-        } -cleanup {
-            clean671
-            encoding system $oldEnc
-        } \
+        -setup $setup \
+        -cleanup $cleanup \
         -body $body \
         -result $result \
         {*}$args
 }
-# TODO - home, join, link, lstat, mkdir, nativename, readlink, tildeexpand,
 
 # These tests are really only intended to verify that path names
 # containing TIP 671 mappings are passed correctly to the system
 # and don't raise a file not found error. They are not intended
 # to really test the commands themselves.
-test-tip671 basic-file "Mapping of bytes" {mkfile671} /tmp/tip-671-test/\uDCE8.\uDCE9
-test-tip671 basic-dir "Mapping of bytes" {mkdir671} /tmp/tip-671-test/\uDCE7
+test-tip671 basic-file "Mapping of bytes" {mkfile671} $::dir671/\uDCE8.\uDCE9
+test-tip671 basic-dir "Mapping of bytes" {mkdir671} $::dir671/\uDCE7
 test-tip671 file-atime "file atime" {
     expr {[file atime [mkfile671]] - [clock seconds] <= 1}
 } 1
@@ -1769,11 +1776,48 @@ test-tip671 file-dirname "file dirname" {
 test-tip671 file-executable "file executable" {file executable [mkfile671]} 0
 test-tip671 file-exists "file exists" {file exists [mkfile671]} 1
 test-tip671 file-extension "file extension" {file extension [mkfile671]} .\uDCE9
+test-tip671 file-home "file home" {
+    file home
+} $::dir671/\uDCE7 -setup {
+    set oldHome $::env(HOME)
+    set ::env(HOME) [mkdir671]
+} -cleanup {
+    set ::env(HOME) $oldHome
+}
 test-tip671 file-isdirectory "file isdirectory" {file isdirectory [mkdir671]} 1
 test-tip671 file-isfile "file isfile" {file isfile [mkfile671]} 1
+test-tip671 file-link-symlink "file link (symbolic)" {
+    set dir [mkdir671]
+    set target [mkfile671 abc]
+    set lnk [file join $dir lnk]
+    file link -symbolic $lnk $target
+    list [viewFile $lnk] [file readlink $lnk]
+} [list abc $::dir671/\uDCE8.\uDCE9]
+test-tip671 file-link-hard "file link (hard)" {
+    set dir [mkdir671]
+    set target [mkfile671 abc]
+    set lnk [file join $dir lnk]
+    file link -hard $lnk $target
+    viewFile $lnk
+} abc
+test-tip671 file-lstat "file lstat (symbolic)" {
+    set dir [mkdir671]
+    set target [mkfile671 abc]
+    set lnk [file join $dir lnk]
+    file link -symbolic $lnk $target
+    dict get [file lstat $lnk] type
+} link
+test-tip671 file-mkdir "file mkdir" {
+    set dir [mkdir671]
+    file delete $dir
+    list [file exists $dir] [file mkdir $dir] [file exists $dir]
+} {0 {} 1}
 test-tip671 file-mtime "file mtime" {
     expr {[file mtime [mkfile671]] - [clock seconds] <= 1}
 } 1
+test-tip671 file-nativename "file nativename" {
+    file nativename [mkdir671 f]
+} $::dir671/\uDCE7/f
 test-tip671 file-normalize "file normalize" {
     set path [mkdir671 f]
     set cwd [pwd]
@@ -1795,7 +1839,7 @@ test-tip671 file-rename-to "file rename destination" {
     file rename -force [makeFile "xyz" file-copy-671] $tofile
     viewFile $tofile
 } xyz
-test-tip671 file-rootname "file rootname" {file rootname [mkfile671]} /tmp/tip-671-test/\uDCE8
+test-tip671 file-rootname "file rootname" {file rootname [mkfile671]} $::dir671/\uDCE8
 test-tip671 file-size "file size" {file size [mkfile671 abc]} 3
 test-tip671 file-split "file split" {
     file split [mkfile671]
@@ -1803,10 +1847,44 @@ test-tip671 file-split "file split" {
 test-tip671 file-stat "file stat" {dict get [file stat [mkfile671 abc]] size} 3
 test-tip671 file-system "file system" {file system [mkfile671 abc]} native
 test-tip671 file-tail "file tail" {file tail [mkfile671]} \uDCE8.\uDCE9
+test-tip671 file-tildeexpand "file tildeexpand" {
+    file tildeexpand ~/f
+} $::dir671/\uDCE7/f -setup {
+    set oldHome $::env(HOME)
+    set ::env(HOME) [mkdir671]
+} -cleanup {
+    set ::env(HOME) $oldHome
+}
 test-tip671 file-type "file type" {file type [mkfile671]} file
 test-tip671 file-writable "file writable" {file writable [mkfile671]} 1
-
-
+test-tip671 open "open" {
+    set fd [open [mkfile671 abc]]
+    set content [read $fd]
+    close $fd
+    set content
+} abc
+test-tip671 open-pipe "open pipe" {
+    # Tests both program name as well as argument being invalid chars
+    set script "#!/bin/sh\necho \$1 | od -t x1\n"
+    set exe [mkfile671 $script]
+    file attributes $exe -permissions u+x
+    set fd [open |[list $exe [file tail $exe]]]
+    set result [read $fd]
+    close $fd
+    set result
+} {* e8 2e e9 0a*} -match glob
+test-tip671 cd,pwd "cd and pwd" {
+    set dir [mkdir671]
+    cd $dir
+    pwd
+} $::dir671/\uDCE7
+test-tip671 exec "exec" {
+    # Tests both program name as well as argument being invalid chars
+    set script "#!/bin/sh\necho \$1 | od -t x1\n"
+    set exe [mkfile671 $script]
+    file attributes $exe -permissions u+x
+    exec $exe [file tail $exe]
+} {* e8 2e e9 0a*} -match glob
 
 
 # cleanup
