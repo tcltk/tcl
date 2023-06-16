@@ -289,7 +289,7 @@ that the object can often be given to a function like
 \fBTcl_SetObjResult\fR, \fBTcl_ListObjAppendElement\fR, or
 \fBTcl_DictObjPut\fR (as a value) without explicit reference
 management, all of which are common use cases. (The latter two require
-that the the target list or dictionary be well-formed, but that is
+that the target list or dictionary be well-formed, but that is
 often easy to arrange when the value is being initially constructed.)
 The macro \fBTcl_IncrRefCount\fR increments the reference count when a
 new reference to the value is created.
