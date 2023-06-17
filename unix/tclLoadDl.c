@@ -108,7 +108,10 @@ TclpDlopen(
 	Tcl_DString ds;
 	const char *fileName = TclGetString(pathPtr);
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
+	if (TclInternalToSystemEncoding(interp, fileName, -1, &ds) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	native = Tcl_DStringValue(&ds);
 	/*
 	 * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
 	 */
