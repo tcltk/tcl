@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH configurable n 0.1 TclOO "TclOO Commands"
+.TH configurable n 0.4 TclOO "TclOO Commands"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
@@ -14,7 +14,7 @@ oo::configurable, configure, property \- class that makes configurable classes a
 .nf
 package require TclOO
 
-\fBoo::configurable create \fIclass\fR \fR?\fIdefinitionScript\fR?
+\fBoo::configurable create \fIclass\fR ?\fIdefinitionScript\fR?
 
 \fBoo::define \fIclass\fB {\fR
     \fBproperty \fIpropName\fR ?\fIoptions...\fR? ?\fIpropName\fR ?\fIoptions...\fR?...?
@@ -26,7 +26,7 @@ package require TclOO
 
 \fIobjectName \fBconfigure\fR
 \fIobjectName \fBconfigure\fR \fI\-prop\fR
-\fIobjectName \fBconfigure\fR \fI\-prop value\fR ?\fI\-prop value\fR...\fR
+\fIobjectName \fBconfigure\fR \fI\-prop value\fR ?\fI\-prop value\fR...
 .fi
 .SH "CLASS HIERARCHY"
 .nf
@@ -146,7 +146,7 @@ so that they can be used by other code:
 .TP
 \fBoo::configuresupport::configurable\fR
 .
-This is a class that provids the implementation of the \fBconfigure\fR method
+This is a class that provides the implementation of the \fBconfigure\fR method
 (described above in \fBCONFIGURE METHOD\fR).
 .TP
 \fBoo::configuresupport::configurableclass\fR
@@ -157,12 +157,11 @@ class constructors under normal circumstances), as described above in
 \fBPROPERTY DEFINITIONS\fR. It \fBnamespace export\fRs its \fBproperty\fR
 command so that it may be used easily in user definition dialects.
 .TP
-.
 \fBoo::configuresupport::configurableobject\fR
 .
 This is a namespace that contains the definition dialect that provides the
 \fBproperty\fR declaration for use in instance objects (i.e., via
-\fBoo::objdefine\fR, and the\fB self\R declaration in \fBoo::define), as
+\fBoo::objdefine\fR, and the \fBself\fR declaration in \fBoo::define\fR), as
 described above in \fBPROPERTY DEFINITIONS\fR. It \fBnamespace export\fRs its
 \fBproperty\fR command so that it may be used easily in user definition
 dialects.
