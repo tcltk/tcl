@@ -376,7 +376,7 @@ CleanupVar(
 {
     if (TclIsVarUndefined(varPtr) && TclIsVarInHash(varPtr)
 	    && !TclIsVarTraced(varPtr)
-	    && (VarHashRefCount(varPtr) == (unsigned)
+	    && (VarHashRefCount(varPtr) == (Tcl_Size)
 		    !TclIsVarDeadHash(varPtr))) {
 	if (VarHashRefCount(varPtr) == 0) {
 	    Tcl_Free(varPtr);
@@ -386,7 +386,7 @@ CleanupVar(
     }
     if (arrayPtr != NULL && TclIsVarUndefined(arrayPtr) &&
 	    TclIsVarInHash(arrayPtr) && !TclIsVarTraced(arrayPtr) &&
-	    (VarHashRefCount(arrayPtr) == (unsigned)
+	    (VarHashRefCount(arrayPtr) == (Tcl_Size)
 		    !TclIsVarDeadHash(arrayPtr))) {
 	if (VarHashRefCount(arrayPtr) == 0) {
 	    Tcl_Free(arrayPtr);
