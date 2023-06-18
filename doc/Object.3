@@ -330,8 +330,8 @@ references to the value. When retaining a pointer to a value in a data
 structure the procedure must be careful to increment its reference
 count since the retained pointer is a new reference. Examples of
 procedures that return new values are \fBTcl_NewIntObj\fR, and
-commands like \fBlseq\fR, which creates an Abstract List, and may
-return a new Obj with a refCount of 0.
+commands like \fBlseq\fR, which creates an Abstract List, and an
+lindex on this list may return a new Obj with a refCount of 0.
 
 .PP
 Command procedures that directly modify values
