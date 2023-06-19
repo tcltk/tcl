@@ -8145,22 +8145,23 @@ test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
 	}
 	puts stderr SRV
 	set l {}
-	set srv [socket -server new 9999]
+	set srv [socket -server new -myaddr 127.0.0.1 0]
+        set port [lindex [fconfigure $srv -sockname] 2]
 	puts stderr WAITING
 	fileevent stdin readable bye
-	puts OK
+	puts "OK $port"
 	vwait forever
     }
     # wait for OK from server.
-    gets $pipe
+    lassign [gets $pipe] ok port
     # Now the two clients.
     proc ::done {sock} {
 	if {[eof $sock]} { close $sock ; return }
 	lappend ::forever [gets $sock]
 	return
     }
-    set a [socket 127.0.0.1 9999]
-    set b [socket 127.0.0.1 9999]
+    set a [socket 127.0.0.1 $port]
+    set b [socket 127.0.0.1 $port]
     fconfigure $a -translation binary -buffering none
     fconfigure $b -translation binary -buffering none
     fileevent  $a readable [list ::done $a]
