@@ -2961,7 +2961,8 @@ Tcl_LrepeatObjCmd(
     Tcl_Obj *const objv[])
 				/* The argument objects. */
 {
-    Tcl_Size elementCount, i, totalElems;
+    Tcl_WideInt elementCount, i;
+    Tcl_Size totalElems;
     Tcl_Obj *listPtr, **dataArray = NULL;
 
     /*
@@ -2973,12 +2974,12 @@ Tcl_LrepeatObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "count ?value ...?");
 	return TCL_ERROR;
     }
-    if (TCL_OK != TclGetSizeIntFromObj(interp, objv[1], &elementCount)) {
+    if (TCL_OK != TclGetWideIntFromObj(interp, objv[1], &elementCount)) {
 	return TCL_ERROR;
     }
     if (elementCount < 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad count \"%" TCL_SIZE_MODIFIER "d\": must be integer >= 0", elementCount));
+		"bad count \"%" TCL_LL_MODIFIER "d\": must be integer >= 0", elementCount));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPEAT", "NEGARG",
 		NULL);
 	return TCL_ERROR;
@@ -3285,10 +3286,10 @@ Tcl_LsearchObjCmd(
     const char *bytes, *patternBytes;
     int match, result=TCL_OK, bisect;
     Tcl_Size i, length = 0, listc, elemLen, start, index;
-    Tcl_Size groupSize, groupOffset, lower, upper;
+    Tcl_Size groupOffset, lower, upper;
     int allocatedIndexVector = 0;
     int isIncreasing;
-    Tcl_WideInt patWide, objWide, wide;
+    Tcl_WideInt patWide, objWide, wide, groupSize;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
     SortInfo sortInfo;
@@ -4541,8 +4542,8 @@ Tcl_LsortObjCmd(
     int indices, nocase = 0, indexc;
     int sortMode = SORTMODE_ASCII;
     int group, allocatedIndexVector = 0;
-    Tcl_Size j, idx, groupSize, groupOffset, length;
-    Tcl_WideInt wide;
+    Tcl_Size j, idx, groupOffset, length;
+    Tcl_WideInt wide, groupSize;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     Tcl_Size i, elmArrSize;
     SortElement *elementArray = NULL, *elementPtr;
