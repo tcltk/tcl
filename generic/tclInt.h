@@ -3180,7 +3180,7 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
 MODULE_SCOPE Tcl_Size	TclDictGetSize(Tcl_Obj *dictPtr);
-MODULE_SCOPE Tcl_Obj*	TclDuplicatePureObj(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Obj *TclDuplicatePureObj(Tcl_Interp *interp,
 			    Tcl_Obj * objPtr, const Tcl_ObjType *typPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, Tcl_Size dictLength,
@@ -4231,6 +4231,7 @@ MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
 			    int *codePtr, Tcl_Obj **msgObjPtr,
 			    Tcl_Obj **errorObjPtr);
 MODULE_SCOPE int TclClose(Tcl_Interp *,	Tcl_Channel chan);
+
 /*
  * TIP #508: [array default]
  */
@@ -4937,7 +4938,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
  *
  * MODULE_SCOPE void	TclNewIntObj(Tcl_Obj *objPtr, Tcl_WideInt w);
  * MODULE_SCOPE void	TclNewDoubleObj(Tcl_Obj *objPtr, double d);
- * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, size_t len);
+ * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, Tcl_Size len);
  * MODULE_SCOPE void	TclNewLiteralStringObj(Tcl_Obj*objPtr, const char *sLiteral);
  *
  *----------------------------------------------------------------
@@ -4975,8 +4976,8 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
-#define TclNewIndexObj(objPtr, uw) \
-    TclNewIntObj(objPtr, uw)
+#define TclNewIndexObj(objPtr, w) \
+    TclNewIntObj(objPtr, w)
 
 #define TclNewDoubleObj(objPtr, d) \
     do {							\
@@ -5246,7 +5247,7 @@ typedef struct NRE_callback {
 #define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
 #else
 #define TCLNR_ALLOC(interp, ptr) \
-    (ptr = (Tcl_Alloc(sizeof(NRE_callback))))
+    ((ptr) = Tcl_Alloc(sizeof(NRE_callback)))
 #define TCLNR_FREE(interp, ptr)  Tcl_Free(ptr)
 #endif
 
