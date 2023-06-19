@@ -48,6 +48,8 @@ testConstraint testservicemode  [llength [info commands testservicemode]]
 testConstraint notWinCI [expr {
     $::tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
 testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
+# File permissions broken on wsl without some "exotic" wsl configuration
+testConstraint notWsl [expr {[llength [array names ::env *WSL*]] == 0}]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -5752,7 +5754,7 @@ test io-40.1 {POSIX open access modes: RDWR} {
     close $f
     set x
 } {zzy abzzy}
-test io-40.2 {POSIX open access modes: CREAT} {unix} {
+test io-40.2 {POSIX open access modes: CREAT} {unix notWsl} {
     file delete $path(test3)
     set f [open $path(test3) {WRONLY CREAT} 0o600]
     file stat $path(test3) stats
@@ -5764,7 +5766,7 @@ test io-40.2 {POSIX open access modes: CREAT} {unix} {
     close $f
     set x
 } {0o600 {line 1}}
-test io-40.3 {POSIX open access modes: CREAT} {unix umask} {
+test io-40.3 {POSIX open access modes: CREAT} {unix umask notWsl} {
     # This test only works if your umask is 2, like ouster's.
     file delete $path(test3)
     set f [open $path(test3) {WRONLY CREAT}]
@@ -7912,22 +7914,23 @@ test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
 	}
 	puts stderr SRV
 	set l {}
-	set srv [socket -server new 9999]
+	set srv [socket -server new -myaddr 127.0.0.1 0]
+        set port [lindex [fconfigure $srv -sockname] 2]
 	puts stderr WAITING
 	fileevent stdin readable bye
-	puts OK
+	puts "OK $port"
 	vwait forever
     }
     # wait for OK from server.
-    gets $pipe
+    lassign [gets $pipe] ok port
     # Now the two clients.
     proc ::done {sock} {
 	if {[eof $sock]} { close $sock ; return }
 	lappend ::forever [gets $sock]
 	return
     }
-    set a [socket 127.0.0.1 9999]
-    set b [socket 127.0.0.1 9999]
+    set a [socket 127.0.0.1 $port]
+    set b [socket 127.0.0.1 $port]
     fconfigure $a -translation binary -buffering none
     fconfigure $b -translation binary -buffering none
     fileevent  $a readable [list ::done $a]
