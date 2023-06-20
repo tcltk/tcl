@@ -2598,13 +2598,16 @@ TEBCresume(
     case INST_STR_CONCAT1:
 
 	opnd = TclGetUInt1AtPtr(pc+1);
+	DECACHE_STACK_INFO();
 	objResultPtr = TclStringCat(interp, opnd, &OBJ_AT_DEPTH(opnd-1),
 		TCL_STRING_IN_PLACE);
 	if (objResultPtr == NULL) {
+	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
 
+	CACHE_STACK_INFO();
 	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	NEXT_INST_V(2, opnd, 1);
     break;
@@ -4670,6 +4673,7 @@ TEBCresume(
 
 	/* special case for AbstractList */
 	if (TclObjTypeHasProc(valuePtr,indexProc)) {
+	    DECACHE_STACK_INFO();
 	    length = TclObjTypeHasProc(valuePtr, lengthProc)(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
@@ -4765,11 +4769,13 @@ TEBCresume(
 	    index = TclIndexDecode(opnd, length-1);
 
 	    /* Compute value @ index */
+	    DECACHE_STACK_INFO();
 	    if (Tcl_ObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
+	    CACHE_STACK_INFO();
 
 	    pcAdjustment = 5;
 	    goto lindexFastPath2;
@@ -4850,6 +4856,7 @@ TEBCresume(
 
 	if (TclObjTypeHasProc(valuePtr, setElementProc)) {
 
+	    DECACHE_STACK_INFO();
 	    objResultPtr = Tcl_ObjTypeSetElement(interp,
 		valuePtr, numIndices,
 	        &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
@@ -4858,6 +4865,7 @@ TEBCresume(
 		&OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
 	}
 	if (!objResultPtr) {
+	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -4865,7 +4873,7 @@ TEBCresume(
 	/*
 	 * Set result.
 	 */
-
+	CACHE_STACK_INFO();
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_V(5, numIndices+1, -1);
 
@@ -4978,6 +4986,7 @@ TEBCresume(
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
 	if (TclObjTypeHasProc(valuePtr, sliceProc)) {
+	    DECACHE_STACK_INFO();
 	    if (Tcl_ObjTypeSlice(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
 		objResultPtr = NULL;
 	    }
@@ -4985,10 +4994,12 @@ TEBCresume(
 	    objResultPtr = TclListObjRange(interp, valuePtr, fromIdx, toIdx);
 	}
 	if (objResultPtr == NULL) {
+	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
 
+	CACHE_STACK_INFO();
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
 
@@ -5015,10 +5026,13 @@ TEBCresume(
 
 	    do {
 		if (isAbstractList) {
+		    DECACHE_STACK_INFO();
 		    if (Tcl_ObjTypeIndex(interp, value2Ptr, i, &o) != TCL_OK) {
+			CACHE_STACK_INFO();
 			TRACE_ERROR(interp);
 			goto gotError;
 		    }
+		    CACHE_STACK_INFO();
 		} else {
 		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		}
@@ -6488,7 +6502,7 @@ TEBCresume(
 
 	pc += 5 - infoPtr->loopCtTemp;
 
-    case INST_FOREACH_STEP:
+    case INST_FOREACH_STEP: /* TODO: address abstract list indexing here! */
 	/*
 	 * "Step" a foreach loop (i.e., begin its next iteration) by assigning
 	 * the next value list element to each loop var.
