@@ -493,8 +493,8 @@ TclCreateProc(
     if (precompiled) {
 	if (numArgs > procPtr->numArgs) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "procedure \"%s\": arg list contains %d entries, "
-		    "precompiled header expects %d", procName, numArgs,
+		    "procedure \"%s\": arg list contains %" TCL_SIZE_MODIFIER "u entries, "
+		    "precompiled header expects %" TCL_SIZE_MODIFIER "u", procName, numArgs,
 		    procPtr->numArgs));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 		    "BYTECODELIES", NULL);
@@ -588,7 +588,7 @@ TclCreateProc(
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
 		    || (localPtr->defValuePtr != NULL && fieldCount != 2)) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"procedure \"%s\": formal parameter %d is "
+			"procedure \"%s\": formal parameter %" TCL_SIZE_MODIFIER "u is "
 			"inconsistent with precompiled body", procName, i));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			"BYTECODELIES", NULL);
@@ -1065,7 +1065,7 @@ ProcWrongNumArgs(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     Proc *procPtr = framePtr->procPtr;
-    int localCt = procPtr->numCompiledLocals, numArgs, i;
+    Tcl_Size localCt = procPtr->numCompiledLocals, numArgs, i;
     Tcl_Obj **desiredObjs;
     const char *final = NULL;
 
@@ -1400,7 +1400,7 @@ InitArgsAndLocals(
     Proc *procPtr = framePtr->procPtr;
     ByteCode *codePtr;
     Var *varPtr, *defPtr;
-    int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
+    Tcl_Size localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
 
     ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
@@ -1559,7 +1559,7 @@ TclPushProcCallFrame(
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
-    Tcl_Size objc,			/* Count of number of arguments to this
+    Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[],	/* Argument value objects. */
     int isLambda)		/* 1 if this is a call by ApplyObjCmd: it
@@ -1686,9 +1686,9 @@ TclNRInterpProc(
 
 static int
 NRInterpProc2(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp, 	/* Interpreter in which procedure was
 				 * invoked. */
     ptrdiff_t objc,			/* Count of number of arguments to this
 				 * procedure. */
@@ -1705,9 +1705,9 @@ NRInterpProc2(
 
 static int
 ObjInterpProc2(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     ptrdiff_t objc,			/* Count of number of arguments to this
 				 * procedure. */
@@ -2021,7 +2021,7 @@ TclProcCompileProc(
 	    TclNewLiteralStringObj(message, "Compiling ");
 	    Tcl_IncrRefCount(message);
 	    Tcl_AppendStringsToObj(message, description, " \"", NULL);
-	    Tcl_AppendLimitedToObj(message, procName, -1, 50, NULL);
+	    Tcl_AppendLimitedToObj(message, procName, TCL_INDEX_NONE, 50, NULL);
 	    fprintf(stdout, "%s\"\n", TclGetString(message));
 	    Tcl_DecrRefCount(message);
 	}

@@ -877,6 +877,9 @@ typedef struct VarInHash {
 #define VarHashRefCount(varPtr) \
     ((VarInHash *) (varPtr))->refCount
 
+#define VarHashGetKey(varPtr) \
+    (((VarInHash *)(varPtr))->entry.key.objPtr)
+
 /*
  * Macros for direct variable access by TEBC.
  */
@@ -2676,7 +2679,7 @@ typedef struct ListRep {
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
     ((((objPtr)->typePtr == &tclIntType) && ((objPtr)->internalRep.wideValue >= 0) \
 	    && ((Tcl_WideUInt)(objPtr)->internalRep.wideValue <= (Tcl_WideUInt)(endValue + 1))) \
-	    ? ((*(idxPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
+	    ? ((*(idxPtr) = (Tcl_Size)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
 /*
@@ -4739,16 +4742,17 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  * of counting along a string of all one-byte characters.  The ANSI C
  * "prototype" for this macro is:
  *
- * MODULE_SCOPE void	TclNumUtfCharsM(int numChars, const char *bytes,
- *				int numBytes);
+ * MODULE_SCOPE void	TclNumUtfCharsM(Tcl_Size numChars, const char *bytes,
+ *				Tcl_Size numBytes);
+ * numBytes must be >= 0
  *----------------------------------------------------------------
  */
 
 #define TclNumUtfCharsM(numChars, bytes, numBytes) \
     do { \
-	int _count, _i = (numBytes); \
+	Tcl_Size _count, _i = (numBytes); \
 	unsigned char *_str = (unsigned char *) (bytes); \
-	while (_i && (*_str < 0xC0)) { _i--; _str++; } \
+	while (_i > 0 && (*_str < 0xC0)) { _i--; _str++; } \
 	_count = (numBytes) - _i; \
 	if (_i) { \
 	    _count += TclNumUtfChars((bytes) + _count, _i); \
@@ -4873,7 +4877,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
  *
  * MODULE_SCOPE void	TclNewIntObj(Tcl_Obj *objPtr, Tcl_WideInt w);
  * MODULE_SCOPE void	TclNewDoubleObj(Tcl_Obj *objPtr, double d);
- * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, int len);
+ * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, Tcl_Size len);
  * MODULE_SCOPE void	TclNewLiteralStringObj(Tcl_Obj*objPtr, const char *sLiteral);
  *
  *----------------------------------------------------------------
