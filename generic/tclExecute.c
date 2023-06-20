@@ -6451,7 +6451,9 @@ TEBCresume(
 	    varListPtr = infoPtr->varLists[i];
 	    numVars = varListPtr->numVars;
 	    listPtr = OBJ_AT_DEPTH(listTmpDepth);
+	    DECACHE_STACK_INFO();
 	    if (TclListObjLengthM(interp, listPtr, &listLen) != TCL_OK) {
+		CACHE_STACK_INFO();
 		TRACE_APPEND(("ERROR converting list %" TCL_Z_MODIFIER "d, \"%s\": %s",
 			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
 		goto gotError;
@@ -6537,11 +6539,14 @@ TEBCresume(
 		numVars = varListPtr->numVars;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
+		DECACHE_STACK_INFO();
 		status = TclListObjGetElementsM(
 		    interp, listPtr, &listLen, &elements);
 		if (status != TCL_OK) {
+		    CACHE_STACK_INFO();
 		    goto gotError;
 		}
+		CACHE_STACK_INFO();
 
 
 		valIndex = (iterNum * numVars);
