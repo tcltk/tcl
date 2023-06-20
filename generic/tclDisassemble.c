@@ -256,7 +256,8 @@ DisassembleByteCodeObj(
     unsigned char *codeStart, *codeLimit, *pc;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
-    int codeOffset, codeLen, srcOffset, srcLen, numCmds, delta, i, line;
+    int codeOffset, codeLen, srcOffset, srcLen, numCmds, delta, line;
+    Tcl_Size i;
     Interp *iPtr;
     Tcl_Obj *bufferObj, *fileObj;
 
@@ -320,10 +321,10 @@ DisassembleByteCodeObj(
 
     if (codePtr->procPtr != NULL) {
 	Proc *procPtr = codePtr->procPtr;
-	int numCompiledLocals = procPtr->numCompiledLocals;
+	Tcl_Size numCompiledLocals = procPtr->numCompiledLocals;
 
 	Tcl_AppendPrintfToObj(bufferObj,
-		"  Proc %p, refCt %" TCL_Z_MODIFIER "u, args %" TCL_Z_MODIFIER "u, compiled locals %d\n",
+		"  Proc %p, refCt %" TCL_Z_MODIFIER "u, args %" TCL_Z_MODIFIER "u, compiled locals %" TCL_SIZE_MODIFIER "u\n",
 		procPtr, procPtr->refCount, procPtr->numArgs,
 		numCompiledLocals);
 	if (numCompiledLocals > 0) {
@@ -331,7 +332,7 @@ DisassembleByteCodeObj(
 
 	    for (i = 0;  i < numCompiledLocals;  i++) {
 		Tcl_AppendPrintfToObj(bufferObj,
-			"      slot %d%s%s%s%s%s%s", i,
+			"      slot %" TCL_SIZE_MODIFIER "u%s%s%s%s%s%s", i,
 			(localPtr->flags & (VAR_ARRAY|VAR_LINK)) ? "" : ", scalar",
 			(localPtr->flags & VAR_ARRAY) ? ", array" : "",
 			(localPtr->flags & VAR_LINK) ? ", link" : "",
@@ -360,7 +361,7 @@ DisassembleByteCodeObj(
 	    ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
 
 	    Tcl_AppendPrintfToObj(bufferObj,
-		    "      %d: level %" TCL_Z_MODIFIER "u, %s, pc %" TCL_Z_MODIFIER "u-%" TCL_Z_MODIFIER "u, ",
+		    "      %" TCL_SIZE_MODIFIER "u: level %" TCL_Z_MODIFIER "u, %s, pc %" TCL_Z_MODIFIER "u-%" TCL_Z_MODIFIER "u, ",
 		    i, rangePtr->nestingLevel,
 		    (rangePtr->type==LOOP_EXCEPTION_RANGE ? "loop" : "catch"),
 		    rangePtr->codeOffset,
@@ -445,7 +446,7 @@ DisassembleByteCodeObj(
 	    srcLengthNext++;
 	}
 
-	Tcl_AppendPrintfToObj(bufferObj, "%s%4d: pc %d-%d, src %d-%d",
+	Tcl_AppendPrintfToObj(bufferObj, "%s%4" TCL_SIZE_MODIFIER "u: pc %d-%d, src %d-%d",
 		((i % 2)? "     " : "\n   "),
 		(i+1), codeOffset, (codeOffset + codeLen - 1),
 		srcOffset, (srcOffset + srcLen - 1));
@@ -504,7 +505,7 @@ DisassembleByteCodeObj(
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}
 
-	Tcl_AppendPrintfToObj(bufferObj, "  Command %d: ", i+1);
+	Tcl_AppendPrintfToObj(bufferObj, "  Command %" TCL_SIZE_MODIFIER "u: ", i+1);
 	PrintSourceToObj(bufferObj, (codePtr->source + srcOffset),
 		TclMin(srcLen, 55));
 	Tcl_AppendToObj(bufferObj, "\n", -1);
@@ -544,7 +545,7 @@ FormatInstruction(
     unsigned char *codeStart = codePtr->codeStart;
     unsigned pcOffset = pc - codeStart;
     int opnd = 0, i, j, numBytes = 1;
-    int localCt = procPtr ? (int)procPtr->numCompiledLocals : 0;
+    Tcl_Size localCt = procPtr ? procPtr->numCompiledLocals : 0;
     CompiledLocal *localPtr = procPtr ? procPtr->firstLocalPtr : NULL;
     char suffixBuffer[128];	/* Additional info to print after main opcode
 				 * and immediates. */
@@ -625,7 +626,7 @@ FormatInstruction(
 	printLVTindex:
 	    if (localPtr != NULL) {
 		if (opnd >= localCt) {
-		    Tcl_Panic("FormatInstruction: bad local var index %u (%u locals)",
+		    Tcl_Panic("FormatInstruction: bad local var index %u (%" TCL_SIZE_MODIFIER "u locals)",
 			    opnd, localCt);
 		}
 		for (j = 0;  j < opnd;  j++) {
@@ -943,8 +944,8 @@ DisassembleByteCodeAsDicts(
     Tcl_Obj *description, *literals, *variables, *instructions, *inst;
     Tcl_Obj *aux, *exn, *commands, *file;
     unsigned char *pc, *opnd, *codeOffPtr, *codeLenPtr, *srcOffPtr, *srcLenPtr;
-    int codeOffset, codeLength, sourceOffset, sourceLength;
-    int i, val, line;
+    int codeOffset, codeLength, sourceOffset, sourceLength, val, line;
+    Tcl_Size i;
 
     ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
 
@@ -953,7 +954,7 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(literals);
-    for (i=0 ; i<(int)codePtr->numLitObjects ; i++) {
+    for (i=0 ; i<codePtr->numLitObjects ; i++) {
 	Tcl_ListObjAppendElement(NULL, literals, codePtr->objArrayPtr[i]);
     }
 
@@ -963,7 +964,7 @@ DisassembleByteCodeAsDicts(
 
     TclNewObj(variables);
     if (codePtr->procPtr) {
-	int localCount = codePtr->procPtr->numCompiledLocals;
+	Tcl_Size localCount = codePtr->procPtr->numCompiledLocals;
 	CompiledLocal *localPtr = codePtr->procPtr->firstLocalPtr;
 
 	for (i=0 ; i<localCount ; i++,localPtr=localPtr->nextPtr) {
