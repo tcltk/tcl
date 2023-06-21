@@ -357,7 +357,7 @@ Tcl_RegexpObjCmd(
 
 	    objc = info.nsubs + 1;
 	    if (all <= 1) {
-		resultPtr = Tcl_NewObj();
+		TclNewObj(resultPtr);
 	    }
 	}
 	for (i = 0; i < objc; i++) {
@@ -399,7 +399,7 @@ Tcl_RegexpObjCmd(
 			    offset + info.matches[i].start,
 			    offset + info.matches[i].end - 1);
 		} else {
-		    newPtr = Tcl_NewObj();
+		    TclNewObj(newPtr);
 		}
 	    }
 	    if (doinline) {
@@ -1194,7 +1194,7 @@ Tcl_SplitObjCmd(
 
     stringPtr = Tcl_GetStringFromObj(objv[1], &stringLen);
     end = stringPtr + stringLen;
-    listPtr = Tcl_NewObj();
+    TclNewObj(listPtr);
 
     if (stringLen == 0) {
 	/*
@@ -4702,7 +4702,7 @@ TclNRTryObjCmd(
 	return TCL_ERROR;
     }
     bodyObj = objv[1];
-    handlersObj = Tcl_NewObj();
+    TclNewObj(handlersObj);
     bodyShared = 0;
     haveHandlers = 0;
     for (i=2 ; i<objc ; i++) {

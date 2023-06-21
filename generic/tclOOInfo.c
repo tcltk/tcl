@@ -1788,7 +1788,7 @@ InfoClassPropCmd(
 	    SortPropList(result);
 	}
     } else {
-	result = Tcl_NewObj();
+	TclNewObj(result);
 	if (writable) {
 	    FOREACH(propObj, clsPtr->properties.writable) {
 		Tcl_ListObjAppendElement(NULL, result, propObj);
@@ -1852,7 +1852,7 @@ InfoObjectPropCmd(
 	    SortPropList(result);
 	}
     } else {
-	result = Tcl_NewObj();
+	TclNewObj(result);
 	if (writable) {
 	    FOREACH(propObj, oPtr->properties.writable) {
 		Tcl_ListObjAppendElement(NULL, result, propObj);

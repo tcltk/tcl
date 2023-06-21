@@ -3231,7 +3231,7 @@ ClassRPropsGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(propNameObj, oPtr->classPtr->properties.readable) {
 	Tcl_ListObjAppendElement(NULL, resultObj, propNameObj);
     }
@@ -3296,7 +3296,7 @@ ObjRPropsGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(propNameObj, oPtr->properties.readable) {
 	Tcl_ListObjAppendElement(NULL, resultObj, propNameObj);
     }
@@ -3428,7 +3428,7 @@ ClassWPropsGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(propNameObj, oPtr->classPtr->properties.writable) {
 	Tcl_ListObjAppendElement(NULL, resultObj, propNameObj);
     }
@@ -3493,7 +3493,7 @@ ObjWPropsGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(propNameObj, oPtr->properties.writable) {
 	Tcl_ListObjAppendElement(NULL, resultObj, propNameObj);
     }

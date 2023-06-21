@@ -712,7 +712,7 @@ InfoCommandsCmd(
 	if (entryPtr != NULL) {
 	    if (specificNsInPattern) {
 		cmd = (Tcl_Command)Tcl_GetHashValue(entryPtr);
-		elemObjPtr = Tcl_NewObj();
+		TclNewObj(elemObjPtr);
 		Tcl_GetCommandFullName(interp, cmd, elemObjPtr);
 	    } else {
 		cmdName = (const char *)Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
@@ -763,7 +763,7 @@ InfoCommandsCmd(
 		    || Tcl_StringMatch(cmdName, simplePattern)) {
 		if (specificNsInPattern) {
 		    cmd = (Tcl_Command)Tcl_GetHashValue(entryPtr);
-		    elemObjPtr = Tcl_NewObj();
+		    TclNewObj(elemObjPtr);
 		    Tcl_GetCommandFullName(interp, cmd, elemObjPtr);
 		} else {
 		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
@@ -990,7 +990,8 @@ InfoDefaultCmd(
 		}
 		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(1));
 	    } else {
-		Tcl_Obj *nullObjPtr = Tcl_NewObj();
+		Tcl_Obj *nullObjPtr;
+		TclNewObj(nullObjPtr);
 
 		valueObjPtr = Tcl_ObjSetVar2(interp, objv[3], NULL,
 			nullObjPtr, TCL_LEAVE_ERR_MSG);
@@ -1906,7 +1907,7 @@ InfoProcsCmd(
 	    } else {
 	    simpleProcOK:
 		if (specificNsInPattern) {
-		    elemObjPtr = Tcl_NewObj();
+		    TclNewObj(elemObjPtr);
 		    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
 			    elemObjPtr);
 		} else {
@@ -1934,7 +1935,7 @@ InfoProcsCmd(
 		} else {
 		procOK:
 		    if (specificNsInPattern) {
-			elemObjPtr = Tcl_NewObj();
+			TclNewObj(elemObjPtr);
 			Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
 				elemObjPtr);
 		    } else {
@@ -2252,7 +2253,7 @@ Tcl_JoinObjCmd(
     } else {
 	Tcl_Size i;
 
-	resObjPtr = Tcl_NewObj();
+	TclNewObj(resObjPtr);
 	if (isArithSeries) {
 	    Tcl_Obj *valueObj;
 	    for (i = 0;  i < listLen;  i++) {
@@ -2980,7 +2981,8 @@ Tcl_LrepeatObjCmd(
     Tcl_Obj *const objv[])
 				/* The argument objects. */
 {
-    Tcl_Size elementCount, i, totalElems;
+    Tcl_WideInt elementCount, i;
+    Tcl_Size totalElems;
     Tcl_Obj *listPtr, **dataArray = NULL;
 
     /*
@@ -2992,12 +2994,12 @@ Tcl_LrepeatObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "count ?value ...?");
 	return TCL_ERROR;
     }
-    if (TCL_OK != TclGetSizeIntFromObj(interp, objv[1], &elementCount)) {
+    if (TCL_OK != TclGetWideIntFromObj(interp, objv[1], &elementCount)) {
 	return TCL_ERROR;
     }
     if (elementCount < 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad count \"%" TCL_SIZE_MODIFIER "d\": must be integer >= 0", elementCount));
+		"bad count \"%" TCL_LL_MODIFIER "d\": must be integer >= 0", elementCount));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPEAT", "NEGARG",
 		NULL);
 	return TCL_ERROR;
@@ -3306,10 +3308,10 @@ Tcl_LsearchObjCmd(
     const char *bytes, *patternBytes;
     int match, result=TCL_OK, bisect;
     Tcl_Size i, length = 0, listc, elemLen, start, index;
-    Tcl_Size groupSize, groupOffset, lower, upper;
+    Tcl_Size groupOffset, lower, upper;
     int allocatedIndexVector = 0;
     int isIncreasing;
-    Tcl_WideInt patWide, objWide, wide;
+    Tcl_WideInt patWide, objWide, wide, groupSize;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
     SortInfo sortInfo;
@@ -4554,8 +4556,8 @@ Tcl_LsortObjCmd(
     int indices, nocase = 0, indexc;
     int sortMode = SORTMODE_ASCII;
     int group, allocatedIndexVector = 0;
-    Tcl_Size j, idx, groupSize, groupOffset, length;
-    Tcl_WideInt wide;
+    Tcl_Size j, idx, groupOffset, length;
+    Tcl_WideInt wide, groupSize;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     Tcl_Size i, elmArrSize;
     SortElement *elementArray = NULL, *elementPtr;

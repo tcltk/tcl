@@ -3180,7 +3180,7 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
 MODULE_SCOPE Tcl_Size	TclDictGetSize(Tcl_Obj *dictPtr);
-MODULE_SCOPE Tcl_Obj*	TclDuplicatePureObj(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Obj *TclDuplicatePureObj(Tcl_Interp *interp,
 			    Tcl_Obj * objPtr, const Tcl_ObjType *typPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, Tcl_Size dictLength,
@@ -4241,6 +4241,7 @@ MODULE_SCOPE TclProcessWaitStatus TclProcessWait(Tcl_Pid pid, int options,
 			    int *codePtr, Tcl_Obj **msgObjPtr,
 			    Tcl_Obj **errorObjPtr);
 MODULE_SCOPE int TclClose(Tcl_Interp *,	Tcl_Channel chan);
+
 /*
  * TIP #508: [array default]
  */
@@ -4550,7 +4551,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 /*
  *----------------------------------------------------------------
- * Macro used by the Tcl core to set a Tcl_Obj's string representation to a
+ * Macros used by the Tcl core to set a Tcl_Obj's string representation to a
  * copy of the "len" bytes starting at "bytePtr". The value of "len" must
  * not be negative.  When "len" is 0, then it is acceptable to pass
  * "bytePtr" = NULL.  When "len" > 0, "bytePtr" must not be NULL, and it
@@ -4563,23 +4564,38 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * Because "len" is referenced multiple times, take care that it is an
  * expression with the same value each use.
  *
- * The ANSI C "prototype" for this macro is:
+ * The ANSI C "prototypes" for these macros are:
  *
+ * MODULE_SCOPE void TclInitEmptyStringRep(Tcl_Obj *objPtr);
  * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
+ * MODULE_SCOPE void TclAttemptInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
  *
  *----------------------------------------------------------------
  */
 
+#define TclInitEmptyStringRep(objPtr) \
+	((objPtr)->length = (((objPtr)->bytes = &tclEmptyString), 0))
+
+
 #define TclInitStringRep(objPtr, bytePtr, len) \
     if ((len) == 0) { \
-	(objPtr)->bytes	 = &tclEmptyString; \
-	(objPtr)->length = 0; \
+	TclInitEmptyStringRep(objPtr); \
     } else { \
 	(objPtr)->bytes = (char *)Tcl_Alloc((len) + 1U); \
 	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
     }
+
+#define TclAttemptInitStringRep(objPtr, bytePtr, len) \
+    ((((len) == 0) ? ( \
+	TclInitEmptyStringRep(objPtr) \
+    ) : ( \
+	(objPtr)->bytes = (char *)Tcl_AttemptAlloc((len) + 1U), \
+	(objPtr)->length = ((objPtr)->bytes) ? \
+		(memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)), \
+		(objPtr)->bytes[len] = '\0', (len)) : (-1) \
+    )), (objPtr)->bytes)
 
 /*
  *----------------------------------------------------------------
@@ -4930,7 +4946,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
  *
  * MODULE_SCOPE void	TclNewIntObj(Tcl_Obj *objPtr, Tcl_WideInt w);
  * MODULE_SCOPE void	TclNewDoubleObj(Tcl_Obj *objPtr, double d);
- * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, size_t len);
+ * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, Tcl_Size len);
  * MODULE_SCOPE void	TclNewLiteralStringObj(Tcl_Obj*objPtr, const char *sLiteral);
  *
  *----------------------------------------------------------------
@@ -4968,8 +4984,8 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
-#define TclNewIndexObj(objPtr, uw) \
-    TclNewIntObj(objPtr, uw)
+#define TclNewIndexObj(objPtr, w) \
+    TclNewIntObj(objPtr, w)
 
 #define TclNewDoubleObj(objPtr, d) \
     do {							\
@@ -5239,7 +5255,7 @@ typedef struct NRE_callback {
 #define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
 #else
 #define TCLNR_ALLOC(interp, ptr) \
-    (ptr = (Tcl_Alloc(sizeof(NRE_callback))))
+    ((ptr) = Tcl_Alloc(sizeof(NRE_callback)))
 #define TCLNR_FREE(interp, ptr)  Tcl_Free(ptr)
 #endif
 

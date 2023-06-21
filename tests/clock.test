@@ -36768,6 +36768,14 @@ test clock-57.1 {clock scan - abbreviated options} {
     clock scan 1970-01-01 -f %Y-%m-%d -g true
 } 0
 
+test clock-57.2 {clock scan - not -gmt and -timezone in the same call} {
+    catch {clock scan 1970-01-01 -format %Y-%m-%d -gmt true -timezone :Europe/Berlin}
+} 1
+
+test clock-57.3 {clock scan - not -g and -timezone in the same call} {
+    catch {clock scan 1970-01-01 -format %Y-%m-%d -g true -timezone :Europe/Berlin}
+} 1
+
 test clock-58.1 {clock l10n - Japanese localisation} {*}{
     -setup {
 	proc backslashify { string } {
@@ -36978,6 +36986,15 @@ test clock-65.1 {clock add, bad option [Bug 2481670]} {*}{
     -match glob
     -returnCodes error
     -result {bad option "-foo"*}
+}
+
+test clock-65.2 {clock add with both -timezone and -gmt} {*}{
+    -body {
+	clock add 0 1 year -timezone :CET -gmt true
+    }
+    -match glob
+    -returnCodes error
+    -result {cannot use -gmt and -timezone in same call}
 }
 
 test clock-66.1 {clock scan, no date, never-before-seen timezone} {*}{

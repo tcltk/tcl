@@ -495,7 +495,7 @@ Tcl_SetErrorCode(
      */
 
     va_start(argList, interp);
-    errorObj = Tcl_NewObj();
+    TclNewObj(errorObj);
 
     /*
      * Scan through the arguments one at a time, appending them to the

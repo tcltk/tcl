@@ -2261,7 +2261,7 @@ TclOOGetAllClassProperties(
     *allocated = 1;
     Tcl_InitObjHashTable(&hashTable);
     FindClassProps(clsPtr, writable, &hashTable);
-    result = Tcl_NewObj();
+    TclNewObj(result);
     FOREACH_HASH(propName, dummy, &hashTable) {
 	Tcl_ListObjAppendElement(NULL, result, propName);
     }
@@ -2343,7 +2343,7 @@ TclOOGetAllObjectProperties(
     *allocated = 1;
     Tcl_InitObjHashTable(&hashTable);
     FindObjectProps(oPtr, writable, &hashTable);
-    result = Tcl_NewObj();
+    TclNewObj(result);
     FOREACH_HASH(propName, dummy, &hashTable) {
 	Tcl_ListObjAppendElement(NULL, result, propName);
     }
