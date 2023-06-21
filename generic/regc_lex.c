@@ -630,6 +630,7 @@ next(
 	    case CHR(':'):	/* non-capturing paren */
 		RETV('(', 0);
 		break;
+#if 0
 	    case CHR('#'):	/* comment */
 		while (!ATEOS() && *v->now != CHR(')')) {
 		    v->now++;
@@ -640,6 +641,7 @@ next(
 		assert(v->nexttype == v->lasttype);
 		return next(v);
 		break;
+#endif
 	    case CHR('='):	/* positive lookahead */
 		NOTE(REG_ULOOKAHEAD);
 		RETV(LACON, 1);
