@@ -635,13 +635,13 @@ test namespace-old-8.1 {traces work across namespace boundaries} {
             variable status
             lappend status "$op: $name1"
         }
-        trace variable foo::x rwu [namespace code monitor]
+        trace add variable foo::x {read write unset} [namespace code monitor]
     }
     set test_ns_trace::foo::x "yes!"
     set test_ns_trace::foo::x
     unset test_ns_trace::foo::x
     namespace eval test_ns_trace { set status }
-} {{w: test_ns_trace::foo::x} {r: test_ns_trace::foo::x} {u: test_ns_trace::foo::x}}
+} {{write: test_ns_trace::foo::x} {read: test_ns_trace::foo::x} {unset: test_ns_trace::foo::x}}
 
 # -----------------------------------------------------------------------
 # TEST: imported commands
