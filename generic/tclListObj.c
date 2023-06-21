@@ -2871,6 +2871,9 @@ TclLsetFlat(
 	}
 	indexArray++;
 
+	if ((index == INT_MAX) && (elemCount == 0)) {
+	    index = 0;
+	}
 	if (index < 0 || index > elemCount
 	    || (valueObj == NULL && index >= elemCount)) {
 	    /* ...the index points outside the sublist. */
