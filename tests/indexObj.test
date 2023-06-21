@@ -211,10 +211,16 @@ test indexObj-8.13 {Tcl_GetIntForIndex end} testgetintforindex {
 } -2
 test indexObj-8.14 {Tcl_GetIntForIndex end+1} testgetintforindex {
     testgetintforindex end+1 -1
-} 0
+} 2147483647
 test indexObj-8.15 {Tcl_GetIntForIndex end+1} testgetintforindex {
     testgetintforindex end+1 -2
 } -1
+test indexObj-8.16 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex -1 -1
+} -2147483648
+test indexObj-8.17 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex -2 -1
+} -2147483648
 
 # cleanup
 ::tcltest::cleanupTests

@@ -3660,6 +3660,9 @@ GetWideForIndex(
 	if (numType == TCL_NUMBER_INT) {
 	    /* objPtr holds an integer in the signed wide range */
 	    *widePtr = *(Tcl_WideInt *)cd;
+	    if ((*widePtr < 0)) {
+		*widePtr = WIDE_MIN;
+	    }
 	    return TCL_OK;
 	}
 	if (numType == TCL_NUMBER_BIG) {
@@ -3966,7 +3969,7 @@ GetEndOffsetFromObj(
     offset = irPtr->wideValue;
 
     if (offset == WIDE_MAX) {
-	*widePtr = endValue + 1;
+	*widePtr = (endValue == (size_t)-1) ? WIDE_MAX : endValue + 1;
     } else if (offset == WIDE_MIN) {
 	*widePtr = -1;
     } else if (endValue == (size_t)-1) {
