@@ -238,7 +238,7 @@ if an entire array is being deleted and the trace was registered
 on the overall array, rather than a single element, then \fIname1\fR
 gives the array name and \fIname2\fR is an empty string.
 \fIName1\fR and \fIname2\fR are not necessarily the same as the
-name used in the \fBtrace variable\fR command:  the \fBupvar\fR
+name used in the \fBtrace add variable\fR command:  the \fBupvar\fR
 command allows a procedure to reference a variable under a
 different name.
 \fIOp\fR indicates what operation is being performed on the
