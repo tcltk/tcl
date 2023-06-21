@@ -108,9 +108,6 @@ VarHashNextVar(
     return VarHashGetValue(hPtr);
 }
 
-#define VarHashGetKey(varPtr) \
-    (((VarInHash *)(varPtr))->entry.key.objPtr)
-
 #define VarHashDeleteTable(tablePtr) \
     Tcl_DeleteHashTable(&(tablePtr)->table)
 
@@ -379,7 +376,8 @@ CleanupVar(
 {
     if (TclIsVarUndefined(varPtr) && TclIsVarInHash(varPtr)
 	    && !TclIsVarTraced(varPtr)
-	    && (VarHashRefCount(varPtr) == !TclIsVarDeadHash(varPtr))) {
+	    && (VarHashRefCount(varPtr) == (Tcl_Size)
+		    !TclIsVarDeadHash(varPtr))) {
 	if (VarHashRefCount(varPtr) == 0) {
 	    ckfree(varPtr);
 	} else {
@@ -388,7 +386,8 @@ CleanupVar(
     }
     if (arrayPtr != NULL && TclIsVarUndefined(arrayPtr) &&
 	    TclIsVarInHash(arrayPtr) && !TclIsVarTraced(arrayPtr) &&
-	    (VarHashRefCount(arrayPtr) == !TclIsVarDeadHash(arrayPtr))) {
+	    (VarHashRefCount(arrayPtr) == (Tcl_Size)
+		    !TclIsVarDeadHash(arrayPtr))) {
 	if (VarHashRefCount(arrayPtr) == 0) {
 	    ckfree(arrayPtr);
 	} else {
@@ -842,8 +841,8 @@ TclLookupSimpleVar(
 				 * the variable. */
     Namespace *varNsPtr, *cxtNsPtr, *dummy1Ptr, *dummy2Ptr;
     ResolverScheme *resPtr;
-    int isNew, i, result;
-    Tcl_Size varLen;
+    int isNew, result;
+    Tcl_Size i, varLen;
     const char *varName = TclGetStringFromObj(varNamePtr, &varLen);
 
     varPtr = NULL;
@@ -972,7 +971,7 @@ TclLookupSimpleVar(
 	    }
 	}
     } else {			/* Local var: look in frame varFramePtr. */
-	int localCt = varFramePtr->numCompiledLocals;
+	Tcl_Size localCt = varFramePtr->numCompiledLocals;
 
 	if (localCt > 0) {
 	    Tcl_Obj **objPtrPtr = &varFramePtr->localCachePtr->varName0;
@@ -5602,7 +5601,7 @@ TclDeleteCompiledLocalVars(
 				 * assigned local variables to delete. */
 {
     Var *varPtr;
-    size_t numLocals, i;
+    Tcl_Size numLocals, i;
     Tcl_Obj **namePtrPtr;
 
     numLocals = framePtr->numCompiledLocals;
