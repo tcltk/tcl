@@ -200,22 +200,28 @@ test indexObj-8.9 {Tcl_GetIntForIndex end} testgetintforindex {
 } 2147483647
 test indexObj-8.10 {Tcl_GetIntForIndex end-1} testgetintforindex {
     testgetintforindex end-1 -1
-} -1
+} -2
 test indexObj-8.11 {Tcl_GetIntForIndex end-1} testgetintforindex {
     testgetintforindex end-1 -2
-} -1
+} -3
 test indexObj-8.12 {Tcl_GetIntForIndex end} testgetintforindex {
     testgetintforindex end -1
 } -1
 test indexObj-8.13 {Tcl_GetIntForIndex end} testgetintforindex {
     testgetintforindex end -2
-} -1
+} -2
 test indexObj-8.14 {Tcl_GetIntForIndex end+1} testgetintforindex {
     testgetintforindex end+1 -1
-} 0
+} [expr {[testConstraint has64BitLengths] ? 9223372036854775807 : 2147483647}]
 test indexObj-8.15 {Tcl_GetIntForIndex end+1} testgetintforindex {
     testgetintforindex end+1 -2
 } -1
+test indexObj-8.16 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex -1 -1
+} [expr {[testConstraint has64BitLengths] ? -9223372036854775808 : -2147483648}]
+test indexObj-8.17 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex -2 -1
+} [expr {[testConstraint has64BitLengths] ? -9223372036854775808 : -2147483648}]
 
 # cleanup
 ::tcltest::cleanupTests
