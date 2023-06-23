@@ -4219,7 +4219,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
  */
 
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    int before, int after, int *indexPtr);
+			    Tcl_Size before, Tcl_Size after, int *indexPtr);
 MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
 
 /* Constants used in index value encoding routines. */
