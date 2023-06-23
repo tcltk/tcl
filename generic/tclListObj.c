@@ -1629,14 +1629,8 @@ Tcl_ListObjGetElements(
     if (TclObjTypeHasProc(objPtr, getElementsProc) &&
 	objPtr->typePtr->getElementsProc(interp, objPtr, objcPtr, objvPtr) == TCL_OK) {
 	return TCL_OK;
-    } else if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
-	int length;
-	(void) Tcl_GetStringFromObj(objPtr, &length);
-	if (length == 0) {
-	    *objcPtr = 0;
-	    *objvPtr = NULL;
-	    return TCL_OK;
-	}
+    }
+    if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
     	return TCL_ERROR;
     }
     ListRepElements(&listRep, *objcPtr, *objvPtr);
