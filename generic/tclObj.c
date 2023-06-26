@@ -1059,7 +1059,7 @@ TclDbDumpActiveObjects(
     tablePtr = tsdPtr->objThreadMap;
 
     if (tablePtr != NULL) {
-	fprintf(outFile, "total objects: %" TCL_Z_MODIFIER "u\n", tablePtr->numEntries);
+	fprintf(outFile, "total objects: %" TCL_SIZE_MODIFIER "d\n", tablePtr->numEntries);
 	for (hPtr = Tcl_FirstHashEntry(tablePtr, &hSearch); hPtr != NULL;
 		hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    ObjData *objData = (ObjData *)Tcl_GetHashValue(hPtr);
@@ -1113,7 +1113,7 @@ TclDbInitNewObj(
 {
     objPtr->refCount = 0;
     objPtr->typePtr = NULL;
-    TclInitStringRep(objPtr, NULL, 0);
+    TclInitEmptyStringRep(objPtr);
 
 #if TCL_THREADS
     /*
@@ -1255,7 +1255,9 @@ Tcl_DbNewObj(
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
-    return Tcl_NewObj();
+    Tcl_Obj *objPtr;
+    TclNewObj(objPtr);
+    return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
 
@@ -1649,7 +1651,7 @@ Tcl_DuplicateObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_DuplicatePureObj --
+ * TclDuplicatePureObj --
  *
  *	Duplicates a Tcl_Obj and converts the internal representation of the
  *	duplicate to the given type, changing neither the 'bytes' field
@@ -1716,7 +1718,14 @@ int SetDuplicatePureObj(
 	|| typePtr == &tclStringType
 	)
     ) {
-	TclInitStringRep(dupPtr, bytes, objPtr->length);
+	if (!TclAttemptInitStringRep(dupPtr, bytes, objPtr->length)) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"insufficient memory to initialize string", -1));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    status = TCL_ERROR;
+	}
     }
     return status;
 }
@@ -1930,7 +1939,7 @@ Tcl_InitStringRep(
     if (objPtr->bytes == NULL) {
 	/* Start with no string rep */
 	if (numBytes == 0) {
-	    TclInitStringRep(objPtr, NULL, 0);
+	    TclInitEmptyStringRep(objPtr);
 	    return objPtr->bytes;
 	} else {
 	    objPtr->bytes = (char *)Tcl_AttemptAlloc(numBytes + 1);
@@ -1957,7 +1966,7 @@ Tcl_InitStringRep(
 	/* Start with non-empty string rep (allocated) */
 	if (numBytes == 0) {
 	    Tcl_Free(objPtr->bytes);
-	    TclInitStringRep(objPtr, NULL, 0);
+	    TclInitEmptyStringRep(objPtr);
 	    return objPtr->bytes;
 	} else {
 	    objPtr->bytes = (char *)Tcl_AttemptRealloc(objPtr->bytes,
@@ -2025,8 +2034,9 @@ Tcl_HasStringRep(
  *	Called to set the object's internal representation to match a
  *	particular type.
  *
- *	It is the caller's resonsibility to ensure that the given IntRep is
- *	appropriate for the existing string.
+ *	It is the caller's responsibility to guarantee that
+ *	the value of the submitted internalrep is in agreement with
+ *	the value of any existing string rep.
  *
  * Results:
  *	None.
@@ -2042,16 +2052,14 @@ void
 Tcl_StoreInternalRep(
     Tcl_Obj *objPtr,		/* Object whose internal rep should be set. */
     const Tcl_ObjType *typePtr,	/* New type for the object */
-    const Tcl_ObjInternalRep *irPtr)	/* New IntRep for the object */
+    const Tcl_ObjInternalRep *irPtr)	/* New internalrep for the object */
 {
-    /* Clear out any existing IntRep.  This is the point where shimmering, i.e.
-     * repeated alteration of the type of the internal representation, may
-     * occur. */
+    /* Clear out any existing internalrep ( "shimmer" ) */
     TclFreeInternalRep(objPtr);
 
-    /* When irPtr == NULL, just leave objPtr with no IntRep for typePtr */
+    /* When irPtr == NULL, just leave objPtr with no internalrep for typePtr */
     if (irPtr) {
-	/* Copy the new IntRep into place */
+	/* Copy the new internalrep into place */
 	objPtr->internalRep = *irPtr;
 
 	/* Set the type to match */
@@ -2285,8 +2293,8 @@ ParseBoolean(
 
     if ((length == 0) || (length > 5)) {
 	/*
-         * Longest valid boolean string rep. is "false".
-         */
+	 * Longest valid boolean string rep. is "false".
+	 */
 
 	return TCL_ERROR;
     }
@@ -3531,7 +3539,7 @@ GetBignumFromObj(
 		 * bignum values are converted to empty string.
 		 */
 		if (objPtr->bytes == NULL) {
-		    TclInitStringRep(objPtr, NULL, 0);
+		    TclInitEmptyStringRep(objPtr);
 		}
 	    }
 	    return TCL_OK;
@@ -3917,7 +3925,7 @@ int
 Tcl_IsShared(
     Tcl_Obj *objPtr)	/* The object to test for being shared. */
 {
-    return ((objPtr)->refCount + 1 > 2);
+    return ((objPtr)->refCount > 1);
 }
 
 /*
@@ -4360,7 +4368,7 @@ TclHashObjKey(
      * See [tcl-Feature Request #2958832]
      */
 
-    if (length) {
+    if (length > 0) {
 	result = UCHAR(*string);
 	while (--length) {
 	    result += (result << 3) + UCHAR(*++string);

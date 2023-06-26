@@ -310,7 +310,11 @@ static int ListIntegerListObjGetElements(
     TCL_UNUSEDVAR(Tcl_Obj ***objvPtr)	/* Where to store the pointer to an
 					 * array of */
 ) {
-    return TCL_ERROR;
+    ListInteger *listRepPtr;
+    listRepPtr = ListGetInternalRep(listPtr);
+    *objcPtr = listRepPtr->used;
+    *objvPtr = listRepPtr->values;
+    return TCL_OK;
 }
 
 static int ListIntegerListObjAppendElement(tclObjTypeInterfaceArgsListAppend) {

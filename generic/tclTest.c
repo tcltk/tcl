@@ -5771,6 +5771,10 @@ TestbytestringObjCmd(
     if (p == NULL) {
 	return TCL_ERROR;
     }
+#if !defined(TCL_NO_DEPRECATED) && defined(__clang__)
+#   pragma clang diagnostic pop
+#endif
+
     if (x.m != 1) {
 	Tcl_AppendResult(interp, "Tcl_GetBytesFromObj() overwrites variable", NULL);
 	return TCL_ERROR;

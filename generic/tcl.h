@@ -787,8 +787,8 @@ typedef struct {
 typedef struct Tcl_DString {
     char *string;		/* Points to beginning of string: either
 				 * staticSpace below or a malloced array. */
-    Tcl_Size length;		/* Number of non-NULL characters in the
-				 * string. */
+    Tcl_Size length;		/* Number of bytes in string excluding
+				 * terminating nul */
     Tcl_Size spaceAvl;		/* Total number of bytes available for the
 				 * string and its terminating NULL char. */
     char staticSpace[TCL_DSTRING_STATIC_SIZE];
@@ -1927,7 +1927,7 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
 #define TCL_ENCODING_PROFILE_STRICT   0x02000000
 #define TCL_ENCODING_PROFILE_REPLACE  0x03000000
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_STRICT /* STRICT? REPLACE? TODO */
+#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_STRICT
 
 /*
  * The following definitions are the error codes returned by the conversion

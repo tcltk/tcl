@@ -204,7 +204,7 @@ TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread. */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread. */
     void *clientData,	/* The one argument to Main(). */
-    size_t stackSize,		/* Size of stack for the new thread. */
+    TCL_HASH_TYPE stackSize,	/* Size of stack for the new thread. */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
@@ -223,11 +223,11 @@ TclpThreadCreate(
 		 */
 
 #if defined(_MSC_VER) || defined(__MSVCRT__)
-    tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize,
+    tHandle = (HANDLE) _beginthreadex(NULL, (unsigned)stackSize,
 	    (Tcl_ThreadCreateProc*) TclWinThreadStart, winThreadPtr,
 	    0, (unsigned *)idPtr);
 #else
-    tHandle = CreateThread(NULL, (DWORD) stackSize,
+    tHandle = CreateThread(NULL, (DWORD)stackSize,
 	    TclWinThreadStart, winThreadPtr, 0, (LPDWORD)idPtr);
 #endif
 
@@ -725,7 +725,7 @@ Tcl_ConditionWait(
     if (timePtr == NULL) {
 	wtime = INFINITE;
     } else {
-	wtime = (DWORD)timePtr->sec * 1000 + (unsigned long)timePtr->usec / 1000;
+	wtime = (DWORD)timePtr->sec * 1000 + (DWORD)timePtr->usec / 1000;
     }
 
     /*

@@ -158,7 +158,7 @@ const Tcl_ObjType tclDictType = {
         Tcl_StoreInternalRep((objPtr), &tclDictType, &ir);                   \
     } while (0)
 
-#define DictGetIntRep(objPtr, dictRepPtr)				\
+#define DictGetInternalRep(objPtr, dictRepPtr)				\
     do {                                                                \
         const Tcl_ObjInternalRep *irPtr;                                     \
         irPtr = TclFetchInternalRep((objPtr), &tclDictType);                \
@@ -363,7 +363,7 @@ DupDictInternalRep(
     Dict *oldDict, *newDict = (Dict *)Tcl_Alloc(sizeof(Dict));
     ChainEntry *cPtr;
 
-    DictGetIntRep(srcPtr, oldDict);
+    DictGetInternalRep(srcPtr, oldDict);
 
     /*
      * Copy values across from the old hash table.
@@ -423,7 +423,7 @@ FreeDictInternalRep(
 {
     Dict *dict;
 
-    DictGetIntRep(dictPtr, dict);
+    DictGetInternalRep(dictPtr, dict);
 
     if (dict->refCount-- <= 1) {
 	DeleteDict(dict);
@@ -501,7 +501,7 @@ UpdateStringOfDict(
 
     Tcl_Size numElems;
 
-    DictGetIntRep(dictPtr, dict);
+    DictGetInternalRep(dictPtr, dict);
 
     assert (dict != NULL);
 
@@ -733,12 +733,12 @@ GetDictFromObj(
 {
     Dict *dict;
 
-    DictGetIntRep(dictPtr, dict);
+    DictGetInternalRep(dictPtr, dict);
     if (dict == NULL) {
 	if (SetDictFromAny(interp, dictPtr) != TCL_OK) {
 	    return NULL;
 	}
-	DictGetIntRep(dictPtr, dict);
+	DictGetInternalRep(dictPtr, dict);
     }
     return dict;
 }
@@ -786,12 +786,12 @@ TclTraceDictPath(
     Dict *dict, *newDict;
     Tcl_Size i;
 
-    DictGetIntRep(dictPtr, dict);
+    DictGetInternalRep(dictPtr, dict);
     if (dict == NULL) {
 	if (SetDictFromAny(interp, dictPtr) != TCL_OK) {
 	    return NULL;
 	}
-	DictGetIntRep(dictPtr, dict);
+	DictGetInternalRep(dictPtr, dict);
     }
     if (flags & DICT_PATH_UPDATE) {
 	dict->chain = NULL;
@@ -829,7 +829,7 @@ TclTraceDictPath(
 	} else {
 	    tmpObj = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
-	    DictGetIntRep(tmpObj, newDict);
+	    DictGetInternalRep(tmpObj, newDict);
 
 	    if (newDict == NULL) {
 		if (SetDictFromAny(interp, tmpObj) != TCL_OK) {
@@ -838,7 +838,7 @@ TclTraceDictPath(
 	    }
 	}
 
-	DictGetIntRep(tmpObj, newDict);
+	DictGetInternalRep(tmpObj, newDict);
 	if (flags & DICT_PATH_UPDATE) {
 	    if (Tcl_IsShared(tmpObj)) {
 		TclDecrRefCount(tmpObj);
@@ -846,7 +846,7 @@ TclTraceDictPath(
 		Tcl_IncrRefCount(tmpObj);
 		Tcl_SetHashValue(hPtr, tmpObj);
 		dict->epoch++;
-		DictGetIntRep(tmpObj, newDict);
+		DictGetInternalRep(tmpObj, newDict);
 	    }
 
 	    newDict->chain = dictPtr;
@@ -883,7 +883,7 @@ InvalidateDictChain(
 {
     Dict *dict;
 
-    DictGetIntRep(dictObj, dict);
+    DictGetInternalRep(dictObj, dict);
     assert( dict != NULL);
 
     do {
@@ -898,7 +898,7 @@ InvalidateDictChain(
 	    break;
 	}
 	dict->chain = NULL;
-	DictGetIntRep(dictObj, dict);
+	DictGetInternalRep(dictObj, dict);
     } while (dict != NULL);
 }
 
@@ -1043,6 +1043,26 @@ Tcl_DictObjRemove(
 	dict->epoch++;
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DictGetSize
+ *
+ *	Returns the size of dictPtr.  Caller must ensure that dictPtr has type
+ *	'tclDicttype'.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Size
+TclDictGetSize(Tcl_Obj *dictPtr)
+{
+    Dict *dict;
+    DictGetInternalRep(dictPtr, dict);
+    return dict->table.numEntries;
 }
 
 /*
@@ -1301,7 +1321,7 @@ Tcl_DictObjPutKeyList(
 	return TCL_ERROR;
     }
 
-    DictGetIntRep(dictPtr, dict);
+    DictGetInternalRep(dictPtr, dict);
     assert(dict != NULL);
     hPtr = CreateChainEntry(dict, keyv[keyc-1], &isNew);
     Tcl_IncrRefCount(valuePtr);
@@ -1359,7 +1379,7 @@ Tcl_DictObjRemoveKeyList(
 	return TCL_ERROR;
     }
 
-    DictGetIntRep(dictPtr, dict);
+    DictGetInternalRep(dictPtr, dict);
     assert(dict != NULL);
     DeleteChainEntry(dict, keyv[keyc-1]);
     InvalidateDictChain(dictPtr);

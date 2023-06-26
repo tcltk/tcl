@@ -371,7 +371,7 @@ SC_TIME_HANDLER
 #--------------------------------------------------------------------
 
 if test "$ac_cv_cygwin" != "yes"; then
-    AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize])
+    AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize, struct stat.st_rdev])
 fi
 AC_CHECK_TYPES([blkcnt_t])
 AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS, 1, [Do we have fstatfs()?])])

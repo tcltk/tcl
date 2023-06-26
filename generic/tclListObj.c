@@ -385,30 +385,6 @@ ListSpanMerited(
 /*
  *------------------------------------------------------------------------
  *
- * ListStoreUpSize --
- *
- *    For reasons of efficiency, extra space is allocated for a ListStore
- *    compared to what was requested. This function calculates how many
- *    slots should actually be allocated for a given request size.
- *
- * Results:
- *    Number of slots to allocate.
- *
- * Side effects:
- *    None.
- *
- *------------------------------------------------------------------------
- */
-static inline Tcl_Size
-ListStoreUpSize(Tcl_Size numSlotsRequested) {
-    /* TODO -how much extra? May be double only for smaller requests? */
-    return numSlotsRequested < (LIST_MAX / 2) ? 2 * numSlotsRequested
-						 : LIST_MAX;
-}
-
-/*
- *------------------------------------------------------------------------
- *
  * ListRepFreeUnreferenced --
  *
  *    Inline wrapper for ListRepUnsharedFreeUnreferenced that does quick checks
@@ -826,23 +802,21 @@ ListStoreNew(
 	return NULL;
     }
 
+    storePtr = NULL;
     if (flags & LISTREP_SPACE_FLAGS) {
 	/* Caller requests extra space front, back or both */
-	capacity = ListStoreUpSize(objc);
+	storePtr = (ListStore *)TclAttemptAllocElemsEx(
+	    objc, sizeof(Tcl_Obj *), offsetof(ListStore, slots), &capacity);
     } else {
+	/* Exact allocation */
 	capacity = objc;
-    }
-
-    storePtr = (ListStore *)Tcl_AttemptAlloc(LIST_SIZE(capacity));
-    while (storePtr == NULL && (capacity > (objc+1))) {
-	/* Because of loop condition capacity won't overflow */
-	capacity = objc + ((capacity - objc) / 2);
 	storePtr = (ListStore *)Tcl_AttemptAlloc(LIST_SIZE(capacity));
     }
     if (storePtr == NULL) {
 	if (flags & LISTREP_PANIC_ON_FAIL) {
-	    Tcl_Panic("list creation failed: unable to alloc %" TCL_Z_MODIFIER "u bytes",
-		    LIST_SIZE(objc));
+	    Tcl_Panic("list creation failed: unable to alloc %" TCL_Z_MODIFIER
+		      "u bytes",
+		      LIST_SIZE(objc));
 	}
 	return NULL;
     }
@@ -901,38 +875,25 @@ ListStoreNew(
  *------------------------------------------------------------------------
  */
 ListStore *
-ListStoreReallocate (ListStore *storePtr, Tcl_Size numSlots)
+ListStoreReallocate (ListStore *storePtr, Tcl_Size needed)
 {
-    Tcl_Size newCapacity;
-    ListStore *newStorePtr;
+    Tcl_Size capacity;
 
-    newCapacity = ListStoreUpSize(numSlots);
-    newStorePtr =
-	(ListStore *)Tcl_AttemptRealloc(storePtr, LIST_SIZE(newCapacity));
-
-    /*
-     * In case above failed keep looping reducing the requested extra space
-     * by half every time.
-     */
-    while (newStorePtr == NULL && (newCapacity > (numSlots+1))) {
-	/* Because of loop condition newCapacity won't overflow */
-	newCapacity = numSlots + ((newCapacity - numSlots) / 2);
-	newStorePtr =
-	    (ListStore *)Tcl_AttemptRealloc(storePtr, LIST_SIZE(newCapacity));
+    if (needed > LIST_MAX) {
+	return NULL;
     }
-    if (newStorePtr == NULL) {
-	/* Last resort - allcate what was asked */
-	newCapacity = numSlots;
-	newStorePtr = (ListStore *)Tcl_AttemptRealloc(storePtr,
-						    LIST_SIZE(newCapacity));
-	if (newStorePtr == NULL)
-	    return NULL;
-    }
+    storePtr = (ListStore *)TclAttemptReallocElemsEx(storePtr,
+						     needed,
+						     sizeof(Tcl_Obj *),
+						     offsetof(ListStore, slots),
+						     &capacity);
     /* Only the capacity has changed, fix it in the header */
-    newStorePtr->numAllocated = newCapacity;
-    return newStorePtr;
+    if (storePtr) {
+	storePtr->numAllocated = capacity;
+    }
+    return storePtr;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
