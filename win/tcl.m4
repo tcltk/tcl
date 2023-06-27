@@ -938,30 +938,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		[Defined when cygwin/mingw does not support EXCEPTION DISPOSITION])
 	fi
 
-	# Check to see if winnt.h defines CHAR, SHORT, and LONG
-	# even if VOID has already been #defined. The win32api
-	# used by mingw and cygwin is known to do this.
-
-	AC_CACHE_CHECK(for winnt.h that ignores VOID define,
-	    tcl_cv_winnt_ignore_void,
-	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-		#define VOID void
-		#define WIN32_LEAN_AND_MEAN
-		#include <windows.h>
-		#undef WIN32_LEAN_AND_MEAN
-	    ]], [[
-		CHAR c;
-		SHORT s;
-		LONG l;
-	    ]])],
-	    [tcl_cv_winnt_ignore_void=yes],
-	    [tcl_cv_winnt_ignore_void=no])
-	)
-	if test "$tcl_cv_winnt_ignore_void" = "yes" ; then
-	    AC_DEFINE(HAVE_WINNT_IGNORE_VOID, 1,
-		    [Defined when cygwin/mingw ignores VOID define in winnt.h])
-	fi
-
 	AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
 
 	# See if the compiler supports casting to a union type.

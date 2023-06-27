@@ -79,11 +79,8 @@
 #include <stdio.h>
 
 #include <ctype.h>
-#ifdef NO_STDLIB_H
-#   include "../compat/stdlib.h"
-#else
-#   include <stdlib.h>
-#endif
+#include <stdlib.h>
+#include <stdint.h>
 #ifdef NO_STRING_H
 #include "../compat/string.h"
 #else

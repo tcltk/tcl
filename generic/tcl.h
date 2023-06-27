@@ -301,14 +301,14 @@ extern "C" {
  */
 
 #ifndef TCL_NO_DEPRECATED
-#if defined(_WIN32) && !defined(HAVE_WINNT_IGNORE_VOID)
+#if defined(_WIN32)
 #ifndef VOID
 #define VOID void
 typedef char CHAR;
 typedef short SHORT;
 typedef long LONG;
 #endif
-#endif /* _WIN32 && !HAVE_WINNT_IGNORE_VOID */
+#endif /* _WIN32 */
 
 /*
  * Macro to use instead of "void" for arguments that must have type "void *"

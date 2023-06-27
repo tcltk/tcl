@@ -4801,53 +4801,6 @@ printf "%s\n" "#define EXCEPTION_DISPOSITION int" >>confdefs.h
 
 	fi
 
-	# Check to see if winnt.h defines CHAR, SHORT, and LONG
-	# even if VOID has already been #defined. The win32api
-	# used by mingw and cygwin is known to do this.
-
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for winnt.h that ignores VOID define" >&5
-printf %s "checking for winnt.h that ignores VOID define... " >&6; }
-if test ${tcl_cv_winnt_ignore_void+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-		#define VOID void
-		#define WIN32_LEAN_AND_MEAN
-		#include <windows.h>
-		#undef WIN32_LEAN_AND_MEAN
-
-int
-main (void)
-{
-
-		CHAR c;
-		SHORT s;
-		LONG l;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  tcl_cv_winnt_ignore_void=yes
-else $as_nop
-  tcl_cv_winnt_ignore_void=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_winnt_ignore_void" >&5
-printf "%s\n" "$tcl_cv_winnt_ignore_void" >&6; }
-	if test "$tcl_cv_winnt_ignore_void" = "yes" ; then
-
-printf "%s\n" "#define HAVE_WINNT_IGNORE_VOID 1" >>confdefs.h
-
-	fi
-
 	ac_fn_c_check_header_compile "$LINENO" "stdbool.h" "ac_cv_header_stdbool_h" "$ac_includes_default"
 if test "x$ac_cv_header_stdbool_h" = xyes
 then :
