@@ -229,7 +229,7 @@ AC_CHECK_FUNCS(getcwd, , [AC_DEFINE(USEGETWD, 1, [Is getcwd Posix-compliant?])])
 # Nb: if getcwd uses popen and pwd(1) (like SunOS 4) we should really
 # define USEGETWD even if the posix getcwd exists. Add a test ?
 
-AC_REPLACE_FUNCS(mkstemp opendir strtol waitpid)
+AC_REPLACE_FUNCS(mkstemp waitpid)
 AC_CHECK_FUNC(strerror, , [AC_DEFINE(NO_STRERROR, 1, [Do we have strerror()])])
 AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD, 1, [Do we have getwd()])])
 AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3, 1, [Do we have wait3()])])
@@ -377,13 +377,6 @@ AC_CHECK_TYPES([blkcnt_t])
 AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS, 1, [Do we have fstatfs()?])])
 
 #--------------------------------------------------------------------
-#       Some system have no memcmp or it does not work with 8 bit data, this
-#       checks it and add memcmp.o to LIBOBJS if needed
-#--------------------------------------------------------------------
-
-AC_FUNC_MEMCMP
-
-#--------------------------------------------------------------------
 #       Some system like SunOS 4 and other BSD like systems have no memmove
 #       (we assume they have bcopy instead). {The replacement define is in
 #       compat/string.h}
@@ -392,26 +385,6 @@ AC_FUNC_MEMCMP
 AC_CHECK_FUNC(memmove, , [
     AC_DEFINE(NO_MEMMOVE, 1, [Do we have memmove()?])
     AC_DEFINE(NO_STRING_H, 1, [Do we have <string.h>?]) ])
-
-#--------------------------------------------------------------------
-#	On some systems strstr is broken: it returns a pointer even if
-#	the original string is empty.
-#--------------------------------------------------------------------
-
-SC_TCL_CHECK_BROKEN_FUNC(strstr, [
-    exit(strstr("\0test", "test") ? 1 : 0);
-])
-
-#--------------------------------------------------------------------
-#	Check for strtoul function.  This is tricky because under some
-#	versions of AIX strtoul returns an incorrect terminator
-#	pointer for the string "0".
-#--------------------------------------------------------------------
-
-SC_TCL_CHECK_BROKEN_FUNC(strtoul, [
-    char *term, *string = "0";
-    exit(strtoul(string,&term,0) != 0 || term != string+1);
-])
 
 #--------------------------------------------------------------------
 #	Check for various typedefs and provide substitutes if
@@ -437,15 +410,6 @@ fi
 AC_CHECK_TYPES([intptr_t, uintptr_t],,,[[
 #include <stdint.h>
 ]])
-
-#--------------------------------------------------------------------
-#	If a system doesn't have an opendir function (man, that's old!)
-#	then we have to supply a different version of dirent.h which
-#	is compatible with the substitute version of opendir that's
-#	provided.  This version only works with V7-style directories.
-#--------------------------------------------------------------------
-
-AC_CHECK_FUNC(opendir, , [AC_DEFINE(USE_DIRENT2_H, 1, [May we include <dirent2.h>?])])
 
 #--------------------------------------------------------------------
 #	The check below checks whether <sys/wait.h> defines the type

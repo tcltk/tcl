@@ -1881,26 +1881,11 @@ tclXtTest.o: $(UNIX_DIR)/tclXtTest.c
 # relocatable.
 #--------------------------------------------------------------------------
 
-opendir.o: $(COMPAT_DIR)/opendir.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/opendir.c
-
 mkstemp.o: $(COMPAT_DIR)/mkstemp.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/mkstemp.c
 
-memcmp.o: $(COMPAT_DIR)/memcmp.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/memcmp.c
-
 strncasecmp.o: $(COMPAT_DIR)/strncasecmp.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strncasecmp.c
-
-strstr.o: $(COMPAT_DIR)/strstr.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strstr.c
-
-strtol.o: $(COMPAT_DIR)/strtol.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtol.c
-
-strtoul.o: $(COMPAT_DIR)/strtoul.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtoul.c
 
 waitpid.o: $(COMPAT_DIR)/waitpid.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/waitpid.c
