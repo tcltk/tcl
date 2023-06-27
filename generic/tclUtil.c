@@ -103,10 +103,10 @@ static void		ClearHash(Tcl_HashTable *tablePtr);
 static void		FreeProcessGlobalValue(void *clientData);
 static void		FreeThreadHash(void *clientData);
 static int		GetEndOffsetFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Tcl_Size endValue, Tcl_WideInt *indexPtr);
+			    Tcl_WideInt endValue, Tcl_WideInt *indexPtr);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		GetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Tcl_Size endValue, Tcl_WideInt *widePtr);
+			    Tcl_WideInt endValue, Tcl_WideInt *widePtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    Tcl_Size stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
@@ -3366,7 +3366,7 @@ GetWideForIndex(
 				 * NULL, then no error message is left after
 				 * errors. */
     Tcl_Obj *objPtr,            /* Points to the value to be parsed */
-    Tcl_Size endValue,            /* The value to be stored at *widePtr if
+    Tcl_WideInt endValue,       /* The value to be stored at *widePtr if
 				 * objPtr holds "end".
                                  * NOTE: this value may be TCL_INDEX_NONE. */
     Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
@@ -3381,14 +3381,14 @@ GetWideForIndex(
 	    /* objPtr holds an integer in the signed wide range */
 	    *widePtr = *(Tcl_WideInt *)cd;
 	    if ((*widePtr < 0)) {
-		*widePtr = WIDE_MIN;
+		*widePtr = (endValue == -1) ? WIDE_MIN : -1;
 	    }
 	    return TCL_OK;
 	}
 	if (numType == TCL_NUMBER_BIG) {
 	    /* objPtr holds an integer outside the signed wide range */
 	    /* Truncate to the signed wide range. */
-	    *widePtr = ((mp_isneg((mp_int *)cd)) ? WIDE_MIN : WIDE_MAX);
+	    *widePtr = ((mp_isneg((mp_int *)cd)) ? ((endValue == -1) ? WIDE_MIN : -1) : WIDE_MAX);
 	    return TCL_OK;
 	}
     }
@@ -3410,14 +3410,12 @@ GetWideForIndex(
  *	(0..TCL_SIZE_MAX) it is returned. Higher values are returned as
  *	TCL_SIZE_MAX. Negative values are returned as TCL_INDEX_NONE (-1).
  *
- *	Callers should pass reasonable values for endValue - one in the
- *      valid index range or TCL_INDEX_NONE (-1), for example for an empty
- *	list.
  *
  * Results:
  * 	TCL_OK
  *
- * 	    The index is stored at the address given by by 'indexPtr'.
+ * 	    The index is stored at the address given by by 'indexPtr'. If
+ * 	    'objPtr' has the value "end", the value stored is 'endValue'.
  *
  * 	TCL_ERROR
  *
@@ -3425,9 +3423,10 @@ GetWideForIndex(
  * 	    'interp' is non-NULL, an error message is left in the interpreter's
  * 	    result object.
  *
- * Side effects:
+ * Effect
  *
- * 	The internal representation contained within objPtr may shimmer.
+ * 	The object referenced by 'objPtr' is converted, as needed, to an
+ * 	integer, wide integer, or end-based-index object.
  *
  *----------------------------------------------------------------------
  */
@@ -3495,7 +3494,7 @@ static int
 GetEndOffsetFromObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,            /* Pointer to the object to parse */
-    Tcl_Size endValue,          /* The value to be stored at "widePtr" if
+    Tcl_WideInt endValue,       /* The value to be stored at "widePtr" if
                                  * "objPtr" holds "end". */
     Tcl_WideInt *widePtr)       /* Location filled in with an integer
                                  * representing an index. */
@@ -3699,6 +3698,8 @@ GetEndOffsetFromObj(
 	*widePtr = (endValue == -1) ? WIDE_MAX : endValue + 1;
     } else if (offset == WIDE_MIN) {
 	*widePtr = -1;
+    } else if (endValue == -1) {
+	*widePtr = offset;
     } else if (offset < 0) {
 	/* Different signs, sum cannot overflow */
 	*widePtr = (size_t)endValue + offset + 1;
@@ -3784,14 +3785,12 @@ int
 TclIndexEncode(
     Tcl_Interp *interp,	/* For error reporting, may be NULL */
     Tcl_Obj *objPtr,	/* Index value to parse */
-    Tcl_Size before1,		/* Value to return for index before beginning */
-    Tcl_Size after1,		/* Value to return for index after end */
+    int before,	/* Value to return for index before beginning */
+    int after,		/* Value to return for index after end */
     int *indexPtr)	/* Where to write the encoded answer, not NULL */
 {
     Tcl_WideInt wide;
     int idx;
-    size_t before = before1;
-    size_t after = after1;
 
     if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
 	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &endOffsetType.objType);

@@ -203,13 +203,13 @@ test indexObj-8.10 {Tcl_GetIntForIndex end-1} testgetintforindex {
 } -2
 test indexObj-8.11 {Tcl_GetIntForIndex end-1} testgetintforindex {
     testgetintforindex end-1 -2
-} -3
+} [expr {[testConstraint has64BitLengths] ? -3 : 2147483647}]
 test indexObj-8.12 {Tcl_GetIntForIndex end} testgetintforindex {
     testgetintforindex end -1
 } -1
 test indexObj-8.13 {Tcl_GetIntForIndex end} testgetintforindex {
     testgetintforindex end -2
-} -2
+} [expr {[testConstraint has64BitLengths] ? -2 : 2147483647}]
 test indexObj-8.14 {Tcl_GetIntForIndex end+1} testgetintforindex {
     testgetintforindex end+1 -1
 } [expr {[testConstraint has64BitLengths] ? 9223372036854775807 : 2147483647}]

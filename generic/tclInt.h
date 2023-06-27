@@ -66,11 +66,8 @@
 
 #include <ctype.h>
 #include <stdarg.h>
-#ifdef NO_STDLIB_H
-#   include "../compat/stdlib.h"
-#else
-#   include <stdlib.h>
-#endif
+#include <stdlib.h>
+#include <stdint.h>
 #ifdef NO_STRING_H
 #include "../compat/string.h"
 #else
@@ -4245,7 +4242,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
  */
 
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Tcl_Size before, Tcl_Size after, int *indexPtr);
+			    int before, int after, int *indexPtr);
 MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
 MODULE_SCOPE int	TclIndexInvalidError(Tcl_Interp *interp,
 			    const char *idxType, Tcl_Size idx);
