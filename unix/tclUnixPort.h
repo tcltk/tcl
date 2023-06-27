@@ -155,11 +155,6 @@ extern "C" {
 #   include <inttypes.h>
 #endif
 #include <limits.h>
-#ifdef HAVE_STDINT_H
-#   include <stdint.h>
-#else
-#   include "../compat/stdint.h"
-#endif
 #include <unistd.h>
 
 MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
