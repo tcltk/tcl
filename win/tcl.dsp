@@ -136,14 +136,6 @@ CFG=tcl - Win32 Debug Static
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\compat\dirent.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\compat\dirent2.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\compat\dlfcn.h
 # End Source File
 # Begin Source File
@@ -156,47 +148,11 @@ SOURCE=..\compat\limits.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\compat\memcmp.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\compat\opendir.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\compat\README
 # End Source File
 # Begin Source File
 
-SOURCE=..\compat\stdlib.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\compat\string.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\compat\strncasecmp.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\compat\strstr.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\compat\strtol.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\compat\strtoul.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\compat\tclErrno.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\compat\waitpid.c
 # End Source File
 # End Group
 # Begin Group "doc"
