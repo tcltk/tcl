@@ -3274,6 +3274,7 @@ SetListFromAny(
 	    if (elemPtrs[j] == NULL) {
 		return TCL_ERROR;
 	    }
+	    Tcl_IncrRefCount(elemPtrs[j]);
 	}
 
     } else {

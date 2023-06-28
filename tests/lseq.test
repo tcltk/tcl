@@ -542,6 +542,12 @@ test lseq-4.9 {error case lrange} -body {
 } -returnCodes 1 \
     -result {index 7 is out of bounds 0 to 4}
 
+test lseq-convertToList {does not result in a memory error} {
+	trace add variable var1 write [list ::apply [list args {
+		error {this is an error}
+	} [namespace current]]]
+	list [catch {set var1 [lindex [lreplace [lseq 1 2] 1 1 hello] 0]} cres] $cres
+} {1 {can't set "var1": this is an error}}
 # cleanup
 ::tcltest::cleanupTests
 
