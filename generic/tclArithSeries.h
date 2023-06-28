@@ -16,7 +16,7 @@
  * but it's faster to cache it inside the internal representation.
  */
 typedef struct {
-    Tcl_Size len;
+    Tcl_WideInt len;
     Tcl_Obj **elements;
     int isDouble;
     Tcl_WideInt start;
@@ -24,19 +24,18 @@ typedef struct {
     Tcl_WideInt step;
 } ArithSeries;
 typedef struct {
-    Tcl_Size len;
+    Tcl_WideInt len;
     Tcl_Obj **elements;
     int isDouble;
     double start;
     double end;
     double step;
+    int precision;
 } ArithSeriesDbl;
 
 
-MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjCopy(Tcl_Interp *interp,
-			    Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE  Tcl_Obj *TclArithSeriesObjIndex(Tcl_Interp *, Tcl_Obj *,
-			    Tcl_Size index);
+			    Tcl_WideInt index);
 MODULE_SCOPE Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjRange(Tcl_Interp *interp,
 			    Tcl_Obj *arithSeriesPtr, Tcl_Size fromIdx, Tcl_Size toIdx);

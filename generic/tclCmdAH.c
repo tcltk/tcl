@@ -2956,7 +2956,7 @@ EachloopCmd(
 	/* Values */
 	if (TclHasInternalRep(objv[2+i*2],&tclArithSeriesType)) {
 	    /* Special case for Arith Series */
-	    statePtr->aCopyList[i] = TclArithSeriesObjCopy(interp, objv[2+i*2]);
+	    statePtr->aCopyList[i] = Tcl_DuplicateObj(objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;
