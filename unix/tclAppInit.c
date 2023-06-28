@@ -158,15 +158,16 @@ Tcl_AppInit(
      * is the name of the application. If this line is deleted then no
      * user-specific startup file will be run under any conditions.
      */
-
 #ifdef DJGPP
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", TCL_INDEX_NONE), NULL,
-	    Tcl_NewStringObj("~/tclsh.rc", TCL_INDEX_NONE), TCL_GLOBAL_ONLY);
+#define INITFILENAME "tclshrc.tcl"
 #else
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", TCL_INDEX_NONE), NULL,
-	    Tcl_NewStringObj("~/.tclshrc", TCL_INDEX_NONE), TCL_GLOBAL_ONLY);
+#define INITFILENAME ".tclshrc"
 #endif
 
+    (void)Tcl_EvalEx(interp,
+		     "set tcl_rcFileName [file tildeexpand ~/" INITFILENAME "]",
+		     -1,
+		     TCL_EVAL_GLOBAL);
     return TCL_OK;
 }
 

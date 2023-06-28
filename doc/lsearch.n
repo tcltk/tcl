@@ -65,8 +65,8 @@ These options may be given with all matching styles.
 .
 Changes the result to be the list of all matching indices (or all matching
 values if \fB\-inline\fR is specified as well.) If indices are returned, the
-indices will be in numeric order. If values are returned, the order of the
-values will be the order of those values within the input \fIlist\fR.
+indices will be in ascending numeric order. If values are returned, the order
+of the values will be the order of those values within the input \fIlist\fR.
 .TP
 \fB\-inline\fR
 .

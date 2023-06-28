@@ -126,10 +126,10 @@ namespace eval ::testmathop {
     } -result {can't use non-numeric floating-point value "nan" as operand of "+"}
     test mathop-1.15 {compiled +: errors} -returnCodes error -body {
 	+ 0o8 0
-    } -result {can't use invalid octal number "0o8" as operand of "+"}
+    } -result {can't use non-numeric string "0o8" as operand of "+"}
     test mathop-1.16 {compiled +: errors} -returnCodes error -body {
 	+ 0 0o8
-    } -result {can't use invalid octal number "0o8" as operand of "+"}
+    } -result {can't use non-numeric string "0o8" as operand of "+"}
     test mathop-1.17 {compiled +: errors} -returnCodes error -body {
 	+ 0 [error expectedError]
     } -result expectedError
@@ -164,10 +164,10 @@ namespace eval ::testmathop {
     } -result {can't use non-numeric floating-point value "nan" as operand of "+"}
     test mathop-1.33 {interpreted +: errors} -returnCodes error -body {
 	$op 0o8 0
-    } -result {can't use invalid octal number "0o8" as operand of "+"}
+    } -result {can't use non-numeric string "0o8" as operand of "+"}
     test mathop-1.34 {interpreted +: errors} -returnCodes error -body {
 	$op 0 0o8
-    } -result {can't use invalid octal number "0o8" as operand of "+"}
+    } -result {can't use non-numeric string "0o8" as operand of "+"}
     test mathop-1.35 {interpreted +: errors} -returnCodes error -body {
 	$op 0 [error expectedError]
     } -result expectedError
@@ -201,10 +201,10 @@ namespace eval ::testmathop {
     } -result {can't use non-numeric floating-point value "nan" as operand of "*"}
     test mathop-2.15 {compiled *: errors} -returnCodes error -body {
 	* 0o8 0
-    } -result {can't use invalid octal number "0o8" as operand of "*"}
+    } -result {can't use non-numeric string "0o8" as operand of "*"}
     test mathop-2.16 {compiled *: errors} -returnCodes error -body {
 	* 0 0o8
-    } -result {can't use invalid octal number "0o8" as operand of "*"}
+    } -result {can't use non-numeric string "0o8" as operand of "*"}
     test mathop-2.17 {compiled *: errors} -returnCodes error -body {
 	* 0 [error expectedError]
     } -result expectedError
@@ -239,10 +239,10 @@ namespace eval ::testmathop {
     } -result {can't use non-numeric floating-point value "nan" as operand of "*"}
     test mathop-2.33 {interpreted *: errors} -returnCodes error -body {
 	$op 0o8 0
-    } -result {can't use invalid octal number "0o8" as operand of "*"}
+    } -result {can't use non-numeric string "0o8" as operand of "*"}
     test mathop-2.34 {interpreted *: errors} -returnCodes error -body {
 	$op 0 0o8
-    } -result {can't use invalid octal number "0o8" as operand of "*"}
+    } -result {can't use non-numeric string "0o8" as operand of "*"}
     test mathop-2.35 {interpreted *: errors} -returnCodes error -body {
 	$op 0 [error expectedError]
     } -result expectedError
@@ -399,10 +399,10 @@ namespace eval ::testmathop {
     } -result {can't use non-numeric floating-point value "nan" as operand of "&"}
     test mathop-6.15 {compiled &: errors} -returnCodes error -body {
 	& 0o8 0
-    } -result {can't use invalid octal number "0o8" as operand of "&"}
+    } -result {can't use non-numeric string "0o8" as operand of "&"}
     test mathop-6.16 {compiled &: errors} -returnCodes error -body {
 	& 0 0o8
-    } -result {can't use invalid octal number "0o8" as operand of "&"}
+    } -result {can't use non-numeric string "0o8" as operand of "&"}
     test mathop-6.17 {compiled &: errors} -returnCodes error -body {
 	& 0 [error expectedError]
     } -result expectedError
@@ -441,10 +441,10 @@ namespace eval ::testmathop {
     } -result {can't use non-numeric floating-point value "nan" as operand of "&"}
     test mathop-6.33 {interpreted &: errors} -returnCodes error -body {
 	$op 0o8 0
-    } -result {can't use invalid octal number "0o8" as operand of "&"}
+    } -result {can't use non-numeric string "0o8" as operand of "&"}
     test mathop-6.34 {interpreted &: errors} -returnCodes error -body {
 	$op 0 0o8
-    } -result {can't use invalid octal number "0o8" as operand of "&"}
+    } -result {can't use non-numeric string "0o8" as operand of "&"}
     test mathop-6.35 {interpreted &: errors} -returnCodes error -body {
 	$op 0 [error expectedError]
     } -result expectedError
@@ -509,10 +509,10 @@ namespace eval ::testmathop {
     } -result {can't use non-numeric floating-point value "nan" as operand of "|"}
     test mathop-7.15 {compiled |: errors} -returnCodes error -body {
 	| 0o8 0
-    } -result {can't use invalid octal number "0o8" as operand of "|"}
+    } -result {can't use non-numeric string "0o8" as operand of "|"}
     test mathop-7.16 {compiled |: errors} -returnCodes error -body {
 	| 0 0o8
-    } -result {can't use invalid octal number "0o8" as operand of "|"}
+    } -result {can't use non-numeric string "0o8" as operand of "|"}
     test mathop-7.17 {compiled |: errors} -returnCodes error -body {
 	| 0 [error expectedError]
     } -result expectedError
@@ -551,10 +551,10 @@ namespace eval ::testmathop {
     } -result {can't use non-numeric floating-point value "nan" as operand of "|"}
     test mathop-7.33 {interpreted |: errors} -returnCodes error -body {
 	$op 0o8 0
-    } -result {can't use invalid octal number "0o8" as operand of "|"}
+    } -result {can't use non-numeric string "0o8" as operand of "|"}
     test mathop-7.34 {interpreted |: errors} -returnCodes error -body {
 	$op 0 0o8
-    } -result {can't use invalid octal number "0o8" as operand of "|"}
+    } -result {can't use non-numeric string "0o8" as operand of "|"}
     test mathop-7.35 {interpreted |: errors} -returnCodes error -body {
 	$op 0 [error expectedError]
     } -result expectedError
@@ -619,10 +619,10 @@ namespace eval ::testmathop {
     } -result {can't use non-numeric floating-point value "nan" as operand of "^"}
     test mathop-8.15 {compiled ^: errors} -returnCodes error -body {
 	^ 0o8 0
-    } -result {can't use invalid octal number "0o8" as operand of "^"}
+    } -result {can't use non-numeric string "0o8" as operand of "^"}
     test mathop-8.16 {compiled ^: errors} -returnCodes error -body {
 	^ 0 0o8
-    } -result {can't use invalid octal number "0o8" as operand of "^"}
+    } -result {can't use non-numeric string "0o8" as operand of "^"}
     test mathop-8.17 {compiled ^: errors} -returnCodes error -body {
 	^ 0 [error expectedError]
     } -result expectedError
@@ -661,10 +661,10 @@ namespace eval ::testmathop {
     } -result {can't use non-numeric floating-point value "nan" as operand of "^"}
     test mathop-8.33 {interpreted ^: errors} -returnCodes error -body {
 	$op 0o8 0
-    } -result {can't use invalid octal number "0o8" as operand of "^"}
+    } -result {can't use non-numeric string "0o8" as operand of "^"}
     test mathop-8.34 {interpreted ^: errors} -returnCodes error -body {
 	$op 0 0o8
-    } -result {can't use invalid octal number "0o8" as operand of "^"}
+    } -result {can't use non-numeric string "0o8" as operand of "^"}
     test mathop-8.35 {interpreted ^: errors} -returnCodes error -body {
 	$op 0 [error expectedError]
     } -result expectedError

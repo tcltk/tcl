@@ -210,7 +210,7 @@ GetCache(void)
 
     cachePtr = (Cache*)TclpGetAllocCache();
     if (cachePtr == NULL) {
-	cachePtr = (Cache*)TclpSysAlloc(sizeof(Cache), 0);
+	cachePtr = (Cache*)TclpSysAlloc(sizeof(Cache));
 	if (cachePtr == NULL) {
 	    Tcl_Panic("alloc: could not allocate new cache");
 	}
@@ -300,25 +300,12 @@ TclFreeAllocCache(
 
 void *
 TclpAlloc(
-    unsigned int reqSize)
+    size_t reqSize)
 {
     Cache *cachePtr;
     Block *blockPtr;
     int bucket;
     size_t size;
-
-#ifndef __LP64__
-    if (sizeof(int) >= sizeof(size_t)) {
-	/* An unsigned int overflow can also be a size_t overflow */
-	const size_t zero = 0;
-	const size_t max = ~zero;
-
-	if (((size_t) reqSize) > max - sizeof(Block) - RCHECK) {
-	    /* Requested allocation exceeds memory */
-	    return NULL;
-	}
-    }
-#endif
 
     GETCACHE(cachePtr);
 
@@ -336,7 +323,7 @@ TclpAlloc(
 #endif
     if (size > MAXALLOC) {
 	bucket = NBUCKETS;
-	blockPtr = (Block *)TclpSysAlloc(size, 0);
+	blockPtr = (Block *)TclpSysAlloc(size);
 	if (blockPtr != NULL) {
 	    cachePtr->totalAssigned += reqSize;
 	}
@@ -437,7 +424,7 @@ TclpFree(
 void *
 TclpRealloc(
     void *ptr,
-    unsigned int reqSize)
+    size_t reqSize)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -448,19 +435,6 @@ TclpRealloc(
     if (ptr == NULL) {
 	return TclpAlloc(reqSize);
     }
-
-#ifndef __LP64__
-    if (sizeof(int) >= sizeof(size_t)) {
-	/* An unsigned int overflow can also be a size_t overflow */
-	const size_t zero = 0;
-	const size_t max = ~zero;
-
-	if (((size_t) reqSize) > max - sizeof(Block) - RCHECK) {
-	    /* Requested allocation exceeds memory */
-	    return NULL;
-	}
-    }
-#endif
 
     GETCACHE(cachePtr);
 
@@ -562,7 +536,7 @@ TclThreadAllocObj(void)
 	    Tcl_Obj *newObjsPtr;
 
 	    cachePtr->numObjects = numMove = NOBJALLOC;
-	    newObjsPtr = (Tcl_Obj *)TclpSysAlloc(sizeof(Tcl_Obj) * numMove, 0);
+	    newObjsPtr = (Tcl_Obj *)TclpSysAlloc(sizeof(Tcl_Obj) * numMove);
 	    if (newObjsPtr == NULL) {
 		Tcl_Panic("alloc: could not allocate %" TCL_Z_MODIFIER "u new objects", numMove);
 	    }
@@ -1031,7 +1005,7 @@ GetBlocks(
 
 	if (blockPtr == NULL) {
 	    size = MAXALLOC;
-	    blockPtr = (Block*)TclpSysAlloc(size, 0);
+	    blockPtr = (Block*)TclpSysAlloc(size);
 	    if (blockPtr == NULL) {
 		return 0;
 	    }

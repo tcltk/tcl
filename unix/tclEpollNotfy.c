@@ -42,7 +42,7 @@ typedef struct FileHandler {
 				 * for this file. */
     Tcl_FileProc *proc;		/* Function to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    ClientData clientData;	/* Argument to pass to proc. */
+    void *clientData;	/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
     LIST_ENTRY(FileHandler) readyNode;
 				/* Next/previous in list of FileHandlers asso-
@@ -150,7 +150,7 @@ static int		PlatformEventsWait(struct epoll_event *events,
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpInitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -208,7 +208,7 @@ PlatformEventsControl(
     }
     if (isNew) {
         newPedPtr = (struct PlatformEventData *)
-		ckalloc(sizeof(struct PlatformEventData));
+		Tcl_Alloc(sizeof(struct PlatformEventData));
         newPedPtr->filePtr = filePtr;
         newPedPtr->tsdPtr = tsdPtr;
 	filePtr->pedPtr = newPedPtr;
@@ -275,7 +275,7 @@ PlatformEventsControl(
 
 void
 TclpFinalizeNotifier(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -295,14 +295,14 @@ TclpFinalizeNotifier(
 	tsdPtr->triggerPipe[1] = -1;
     }
 #endif /* HAVE_EVENTFD */
-    ckfree(tsdPtr->triggerFilePtr->pedPtr);
-    ckfree(tsdPtr->triggerFilePtr);
+    Tcl_Free(tsdPtr->triggerFilePtr->pedPtr);
+    Tcl_Free(tsdPtr->triggerFilePtr);
     if (tsdPtr->eventsFd > 0) {
 	close(tsdPtr->eventsFd);
 	tsdPtr->eventsFd = 0;
     }
     if (tsdPtr->readyEvents) {
-	ckfree(tsdPtr->readyEvents);
+	Tcl_Free(tsdPtr->readyEvents);
 	tsdPtr->maxReadyEvents = 0;
     }
     pthread_mutex_unlock(&tsdPtr->notifierMutex);
@@ -347,7 +347,7 @@ PlatformEventsInit(void)
     if (errno) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create mutex");
     }
-    filePtr = (FileHandler *) ckalloc(sizeof(FileHandler));
+    filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
 #ifdef HAVE_EVENTFD
     tsdPtr->triggerEventFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
     if (tsdPtr->triggerEventFd <= 0) {
@@ -368,7 +368,7 @@ PlatformEventsInit(void)
     PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, 1);
     if (!tsdPtr->readyEvents) {
         tsdPtr->maxReadyEvents = 512;
-	tsdPtr->readyEvents = (struct epoll_event *) ckalloc(
+	tsdPtr->readyEvents = (struct epoll_event *) Tcl_Alloc(
 		tsdPtr->maxReadyEvents * sizeof(tsdPtr->readyEvents[0]));
     }
     LIST_INIT(&tsdPtr->firstReadyFileHandlerPtr);
@@ -513,14 +513,14 @@ TclpCreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)	/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
     int isNew = (filePtr == NULL);
 
     if (isNew) {
-	filePtr = (FileHandler *) ckalloc(sizeof(FileHandler));
+	filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->readyMask = 0;
 	filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
@@ -577,7 +577,7 @@ TclpDeleteFileHandler(
 
     PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_DEL, 0);
     if (filePtr->pedPtr) {
-	ckfree(filePtr->pedPtr);
+	Tcl_Free(filePtr->pedPtr);
     }
 
     /*
@@ -589,7 +589,7 @@ TclpDeleteFileHandler(
     } else {
 	prevPtr->nextPtr = filePtr->nextPtr;
     }
-    ckfree(filePtr);
+    Tcl_Free(filePtr);
 }
 
 /*
@@ -683,7 +683,7 @@ TclpWaitForEvent(
 
 	if (filePtr->readyMask == 0) {
 	    FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
-		    ckalloc(sizeof(FileHandlerEvent));
+		    Tcl_Alloc(sizeof(FileHandlerEvent));
 
 	    fileEvPtr->header.proc = FileHandlerEventProc;
 	    fileEvPtr->fd = filePtr->fd;
@@ -759,7 +759,7 @@ TclpWaitForEvent(
 
 	if (filePtr->readyMask == 0) {
 	    FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
-		    ckalloc(sizeof(FileHandlerEvent));
+		    Tcl_Alloc(sizeof(FileHandlerEvent));
 
 	    fileEvPtr->header.proc = FileHandlerEventProc;
 	    fileEvPtr->fd = filePtr->fd;
@@ -791,7 +791,7 @@ int
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     Tcl_ThreadId threadId,	/* Target thread. */
-    ClientData clientData,	/* Notifier data. */
+    void *clientData,	/* Notifier data. */
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
 {

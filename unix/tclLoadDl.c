@@ -106,7 +106,7 @@ TclpDlopen(
 	 */
 
 	Tcl_DString ds;
-	const char *fileName = Tcl_GetString(pathPtr);
+	const char *fileName = TclGetString(pathPtr);
 
 	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
 	/*
@@ -127,11 +127,11 @@ TclpDlopen(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't load file \"%s\": %s",
-		    Tcl_GetString(pathPtr), errorStr));
+		    TclGetString(pathPtr), errorStr));
 	}
 	return TCL_ERROR;
     }
-    newHandle = (Tcl_LoadHandle)ckalloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(*newHandle));
     newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
@@ -191,7 +191,7 @@ FindSymbol(
 #ifdef __cplusplus
     if (proc == NULL) {
 	char buf[32];
-	snprintf(buf, sizeof(buf), "%d", Tcl_DStringLength(&ds));
+	snprintf(buf, sizeof(buf), "%d", (int)Tcl_DStringLength(&ds));
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "__Z");
 	Tcl_DStringAppend(&newName, buf, TCL_INDEX_NONE);
@@ -256,7 +256,7 @@ UnloadFile(
     void *handle = loadHandle->clientData;
 
     dlclose(handle);
-    ckfree(loadHandle);
+    Tcl_Free(loadHandle);
 }
 
 /*

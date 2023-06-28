@@ -88,7 +88,8 @@ static const Tcl_ObjType tclOSTypeType = {
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     UpdateStringOfOSType,		/* updateStringProc */
-    SetOSTypeFromAny			/* setFromAnyProc */
+    SetOSTypeFromAny,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 enum {
@@ -202,7 +203,7 @@ TclMacOSXGetFileAttribute(
     return TCL_OK;
 #else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "Mac OS X file attributes not supported", -1));
+	    "Mac OS X file attributes not supported", TCL_INDEX_NONE));
     Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);
     return TCL_ERROR;
 #endif /* HAVE_GETATTRLIST */
@@ -334,7 +335,7 @@ TclMacOSXSetFileAttribute(
 
 	    if (newRsrcForkSize != 0) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"setting nonzero rsrclength not supported", -1));
+			"setting nonzero rsrclength not supported", TCL_INDEX_NONE));
 		Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);
 		return TCL_ERROR;
 	    }
@@ -375,7 +376,7 @@ TclMacOSXSetFileAttribute(
     return TCL_OK;
 #else
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "Mac OS X file attributes not supported", -1));
+	    "Mac OS X file attributes not supported", TCL_INDEX_NONE));
     Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", NULL);
     return TCL_ERROR;
 #endif
@@ -639,9 +640,10 @@ SetOSTypeFromAny(
     int result = TCL_OK;
     Tcl_DString ds;
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
+    Tcl_Size length;
 
-    string = TclGetString(objPtr);
-    Tcl_UtfToExternalDString(encoding, string, objPtr->length, &ds);
+    string = Tcl_GetStringFromObj(objPtr, &length);
+    Tcl_UtfToExternalDStringEx(NULL, encoding, string, length, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
 
     if (Tcl_DStringLength(&ds) > 4) {
 	if (interp) {
@@ -692,7 +694,7 @@ UpdateStringOfOSType(
     Tcl_Obj *objPtr)	/* OSType object whose string rep to
 				 * update. */
 {
-    const int size = TCL_UTF_MAX * 4;
+    const size_t size = TCL_UTF_MAX * 4;
     char *dst = Tcl_InitStringRep(objPtr, NULL, size);
     OSType osType = (OSType) objPtr->internalRep.wideValue;
     int written = 0;

@@ -15,7 +15,6 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
-source [file join [file dirname [info script]] tcltests.tcl]
 
 package require http 2.10
 
@@ -711,8 +710,10 @@ test http-7.3.$ThreadLevel {http::formatQuery} -setup {
 } -cleanup {
     http::config -urlencoding $enc
 } -result {unknown encoding ""}
-test http-7.4.$ThreadLevel {http::formatQuery} -constraints deprecated -setup {
+test http-7.4.$ThreadLevel {http::formatQuery} -setup {
     set enc [http::config -urlencoding]
+} -constraints {
+    knownProfileBug
 } -body {
     # this would be reverting to http <=2.4 behavior w/o errors
     # with Tcl 8.x (unknown chars become '?'), generating a
@@ -721,7 +722,7 @@ test http-7.4.$ThreadLevel {http::formatQuery} -constraints deprecated -setup {
     http::mapReply "∈"
 } -cleanup {
     http::config -urlencoding $enc
-} -result {%3F}
+} -errorCode {TCL ENCODING ILLEGALSEQUENCE 0} -result {unexpected character at index 0: 'U+002208'}
 
 package require tcl::idna 1.0
 

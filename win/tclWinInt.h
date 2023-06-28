@@ -79,7 +79,7 @@ typedef struct TclPipeThreadInfo {
 } TclPipeThreadInfo;
 
 
-/* If pipe-workers will use some tcl subsystem, we can use ckalloc without
+/* If pipe-workers will use some tcl subsystem, we can use Tcl_Alloc without
  * more overhead for finalize thread (should be executed anyway)
  *
  * #define _PTI_USE_CKALLOC 1

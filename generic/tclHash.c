@@ -14,13 +14,6 @@
 #include "tclInt.h"
 
 /*
- * Prevent macros from clashing with function definitions.
- */
-
-#undef Tcl_FindHashEntry
-#undef Tcl_CreateHashEntry
-
-/*
  * When there are this many entries per bucket, on average, rebuild the hash
  * table to make it larger.
  */
@@ -35,7 +28,7 @@
  */
 
 #define RANDOM_INDEX(tablePtr, i) \
-    ((((i)*1103515245UL) >> (tablePtr)->downShift) & (tablePtr)->mask)
+    ((((i)*(size_t)1103515245) >> (tablePtr)->downShift) & (tablePtr)->mask)
 
 /*
  * Prototypes for the array hash key methods.
@@ -200,7 +193,7 @@ Tcl_InitCustomHashTable(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_FindHashEntry --
+ * FindHashEntry --
  *
  *	Given a hash table find the entry with a matching key.
  *
@@ -214,14 +207,6 @@ Tcl_InitCustomHashTable(
  *----------------------------------------------------------------------
  */
 
-Tcl_HashEntry *
-Tcl_FindHashEntry(
-    Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
-    const void *key)		/* Key to use to find matching entry. */
-{
-    return (*((tablePtr)->findProc))(tablePtr, (const char *)key);
-}
-
 static Tcl_HashEntry *
 FindHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
@@ -234,7 +219,7 @@ FindHashEntry(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CreateHashEntry --
+ * CreateHashEntry --
  *
  *	Given a hash table with string keys, and a string key, find the entry
  *	with a matching key. If there is no matching entry, then create a new
@@ -251,17 +236,6 @@ FindHashEntry(
  *
  *----------------------------------------------------------------------
  */
-
-Tcl_HashEntry *
-Tcl_CreateHashEntry(
-    Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
-    const void *key,		/* Key to use to find or create matching
-				 * entry. */
-    int *newPtr)		/* Store info here telling whether a new entry
-				 * was created. */
-{
-    return (*((tablePtr)->createProc))(tablePtr, (const char *)key, newPtr);
-}
 
 static Tcl_HashEntry *
 CreateHashEntry(
@@ -307,7 +281,7 @@ CreateHashEntry(
 
 	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
 		hPtr = hPtr->nextPtr) {
-	    if (hash != PTR2UINT(hPtr->hash)) {
+	    if (hash != hPtr->hash) {
 		continue;
 	    }
 	    /* if keys pointers or values are equal */
@@ -323,7 +297,7 @@ CreateHashEntry(
     } else {
 	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
 		hPtr = hPtr->nextPtr) {
-	    if (hash != PTR2UINT(hPtr->hash)) {
+	    if (hash != hPtr->hash) {
 		continue;
 	    }
 	    if (key == hPtr->key.oneWordValue) {
@@ -347,13 +321,13 @@ CreateHashEntry(
     if (typePtr->allocEntryProc) {
 	hPtr = typePtr->allocEntryProc(tablePtr, (void *) key);
     } else {
-	hPtr = (Tcl_HashEntry *)ckalloc(sizeof(Tcl_HashEntry));
+	hPtr = (Tcl_HashEntry *)Tcl_Alloc(sizeof(Tcl_HashEntry));
 	hPtr->key.oneWordValue = (char *) key;
 	Tcl_SetHashValue(hPtr, NULL);
     }
 
     hPtr->tablePtr = tablePtr;
-    hPtr->hash = UINT2PTR(hash);
+    hPtr->hash = hash;
     hPtr->nextPtr = tablePtr->buckets[index];
     tablePtr->buckets[index] = hPtr;
     tablePtr->numEntries++;
@@ -412,9 +386,9 @@ Tcl_DeleteHashEntry(
 
     if (typePtr->hashKeyProc == NULL
 	    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-	index = RANDOM_INDEX(tablePtr, PTR2UINT(entryPtr->hash));
+	index = RANDOM_INDEX(tablePtr, entryPtr->hash);
     } else {
-	index = PTR2UINT(entryPtr->hash) & tablePtr->mask;
+	index = entryPtr->hash & tablePtr->mask;
     }
 
     bucketPtr = &tablePtr->buckets[index];
@@ -437,7 +411,7 @@ Tcl_DeleteHashEntry(
     if (typePtr->freeEntryProc) {
 	typePtr->freeEntryProc(entryPtr);
     } else {
-	ckfree(entryPtr);
+	Tcl_Free(entryPtr);
     }
 }
 
@@ -464,7 +438,7 @@ Tcl_DeleteHashTable(
 {
     Tcl_HashEntry *hPtr, *nextPtr;
     const Tcl_HashKeyType *typePtr;
-    int i;
+    Tcl_Size i;
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -488,7 +462,7 @@ Tcl_DeleteHashTable(
 	    if (typePtr->freeEntryProc) {
 		typePtr->freeEntryProc(hPtr);
 	    } else {
-		ckfree(hPtr);
+		Tcl_Free(hPtr);
 	    }
 	    hPtr = nextPtr;
 	}
@@ -502,7 +476,7 @@ Tcl_DeleteHashTable(
 	if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
 	    TclpSysFree((char *) tablePtr->buckets);
 	} else {
-	    ckfree(tablePtr->buckets);
+	    Tcl_Free(tablePtr->buckets);
 	}
     }
 
@@ -613,7 +587,7 @@ Tcl_HashStats(
     Tcl_HashTable *tablePtr)	/* Table for which to produce stats. */
 {
 #define NUM_COUNTERS 10
-    int i;
+    Tcl_Size i;
     TCL_HASH_TYPE count[NUM_COUNTERS], overflow, j;
     double average, tmp;
     Tcl_HashEntry *hPtr;
@@ -648,16 +622,16 @@ Tcl_HashStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = (char *)ckalloc((NUM_COUNTERS * 60) + 300);
-    snprintf(result, 60, "%u entries in table, %u buckets\n",
+    result = (char *)Tcl_Alloc((NUM_COUNTERS * 60) + 300);
+    snprintf(result, 60, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i = 0; i < NUM_COUNTERS; i++) {
-	snprintf(p, 60, "number of buckets with %u entries: %u\n",
+	snprintf(p, 60, "number of buckets with %" TCL_Z_MODIFIER "u entries: %" TCL_Z_MODIFIER "u\n",
 		i, count[i]);
 	p += strlen(p);
     }
-    snprintf(p, 60, "number of buckets with %u or more entries: %u\n",
+    snprintf(p, 60, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "u\n",
 	    NUM_COUNTERS, overflow);
     p += strlen(p);
     snprintf(p, 60, "average search distance for entry: %.1f", average);
@@ -692,7 +666,7 @@ AllocArrayEntry(
     if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
     }
-    hPtr = (Tcl_HashEntry *)ckalloc(size);
+    hPtr = (Tcl_HashEntry *)Tcl_Alloc(size);
 
     memcpy(hPtr->key.string, keyPtr, count);
     Tcl_SetHashValue(hPtr, NULL);
@@ -790,7 +764,7 @@ AllocStringEntry(
     if (size < sizeof(hPtr->key)) {
 	allocsize = sizeof(hPtr->key);
     }
-    hPtr = (Tcl_HashEntry *)ckalloc(offsetof(Tcl_HashEntry, key) + allocsize);
+    hPtr = (Tcl_HashEntry *)Tcl_Alloc(offsetof(Tcl_HashEntry, key) + allocsize);
     memset(hPtr, 0, offsetof(Tcl_HashEntry, key) + allocsize);
     memcpy(hPtr->key.string, string, size);
     Tcl_SetHashValue(hPtr, NULL);
@@ -994,10 +968,10 @@ RebuildTable(
     tablePtr->numBuckets *= 4;
     if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
 	tablePtr->buckets = (Tcl_HashEntry **)TclpSysAlloc(
-		tablePtr->numBuckets * sizeof(Tcl_HashEntry *), 0);
+		tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
     } else {
 	tablePtr->buckets =
-		(Tcl_HashEntry **)ckalloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
+		(Tcl_HashEntry **)Tcl_Alloc(tablePtr->numBuckets * sizeof(Tcl_HashEntry *));
     }
     for (count = tablePtr->numBuckets, newChainPtr = tablePtr->buckets;
 	    count > 0; count--, newChainPtr++) {
@@ -1018,9 +992,9 @@ RebuildTable(
 	    *oldChainPtr = hPtr->nextPtr;
 	    if (typePtr->hashKeyProc == NULL
 		    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-		index = RANDOM_INDEX(tablePtr, PTR2UINT(hPtr->hash));
+		index = RANDOM_INDEX(tablePtr, hPtr->hash);
 	    } else {
-		index = PTR2UINT(hPtr->hash) & tablePtr->mask;
+		index = hPtr->hash & tablePtr->mask;
 	    }
 	    hPtr->nextPtr = tablePtr->buckets[index];
 	    tablePtr->buckets[index] = hPtr;
@@ -1035,7 +1009,7 @@ RebuildTable(
 	if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
 	    TclpSysFree((char *) oldBuckets);
 	} else {
-	    ckfree(oldBuckets);
+	    Tcl_Free(oldBuckets);
 	}
     }
 }

@@ -15,11 +15,14 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 ::tcltest::loadTestedCommands
+source [file join [file dirname [info script]] tcltests.tcl]
+
 catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint bigEndian [expr {$tcl_platform(byteOrder) eq "bigEndian"}]
 testConstraint littleEndian [expr {$tcl_platform(byteOrder) eq "littleEndian"}]
 testConstraint testbytestring [llength [info commands testbytestring]]
+testConstraint pointerIs64bit [expr {$tcl_platform(pointerSize) >= 8}]
 
 # Big test for correct ordering of data in [expr]
 proc testIEEE {} {
@@ -3002,7 +3005,7 @@ test binary-78.1 {unicode (out of BMP) to byte-array conversion, bug-[bd94500678
     binary encode hex \U0001f415
     binary scan \U0001f415 a* v; set v
     set str {}
-} -result {}
+} -result * -match glob -returnCodes error
 
 
 testConstraint testsetbytearraylength \
@@ -3011,22 +3014,37 @@ testConstraint testsetbytearraylength \
 test binary-79.1 {Tcl_SetByteArrayLength} testsetbytearraylength {
     testsetbytearraylength [string cat A B C] 1
 } A
-test binary-79.2 {Tcl_SetByteArrayLength} testsetbytearraylength {
+test binary-79.2 {Tcl_SetByteArrayLength} -body {
     testsetbytearraylength [string cat Ł B C] 1
+} -constraints testsetbytearraylength -returnCodes error -match glob -result *
+test binary-79.3 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B \u0141] 0
+} {}
+test binary-79.4 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B \u0141] 1
 } A
+test binary-79.5 {Tcl_SetByteArrayLength} testsetbytearraylength {
+    testsetbytearraylength [string cat A B \u0141] 2
+} AB
+test binary-79.6 {Tcl_SetByteArrayLength} -body {
+    testsetbytearraylength [string cat A B \u0141] 3
+} -constraints testsetbytearraylength -returnCodes error -match glob -result *
 
-test binary-80.1 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.1 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring "乎"
 } -result "expected byte sequence but character 0 was '乎' (U+004E4E)"
-test binary-80.2 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.2 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\x00\xA0\xA0\xA0\xE4\xB9\x8E"]
 } -result "expected byte sequence but character 4 was '乎' (U+004E4E)"
-test binary-80.3 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.3 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xE4\xB9\x8E"]
 } -result "expected byte sequence but character 4 was '乎' (U+004E4E)"
-test binary-80.4 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.4 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xF0\x9F\x98\x81"]
 } -result "expected byte sequence but character 4 was '\U01F601' (U+01F601)"
+test binary-80.5 {Tcl_GetBytesFromObj} -constraints testbytestring -constraints {pointerIs64bit deprecated} -body {
+    testbytestring [string repeat A [expr 2**31]]
+} -returnCodes 1 -result "byte sequence length exceeds INT_MAX"
 
 # ----------------------------------------------------------------------
 # cleanup

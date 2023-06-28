@@ -183,9 +183,9 @@ proc convertTestLine {currentLine len lineNum srcLineNum} {
     set noBraces 0
     if {[regexp {=|>} $flags] == 1} {
 	regsub -all {_} $currentLine {\\ } currentLine
-	regsub -all {A} $currentLine {\\007} currentLine
+	regsub -all {A} $currentLine {\\x07} currentLine
 	regsub -all {B} $currentLine {\\b} currentLine
-	regsub -all {E} $currentLine {\\033} currentLine
+	regsub -all {E} $currentLine {\\x1B} currentLine
 	regsub -all {F} $currentLine {\\f} currentLine
 	regsub -all {N} $currentLine {\\n} currentLine
 

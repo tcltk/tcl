@@ -28,10 +28,10 @@
  * Function prototypes for static functions in this file:
  */
 
-static int		AddLocalLiteralEntry(CompileEnv *envPtr,
+static size_t		AddLocalLiteralEntry(CompileEnv *envPtr,
 			    Tcl_Obj *objPtr, int localHash);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
-static unsigned		HashString(const char *string, int length);
+static size_t		HashString(const char *string, size_t length);
 #ifdef TCL_COMPILE_DEBUG
 static LiteralEntry *	LookupLiteralEntry(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -133,7 +133,7 @@ TclDeleteLiteralTable(
 	    objPtr = entryPtr->objPtr;
 	    TclDecrRefCount(objPtr);
 	    nextPtr = entryPtr->nextPtr;
-	    ckfree(entryPtr);
+	    Tcl_Free(entryPtr);
 	    entryPtr = nextPtr;
 	}
     }
@@ -143,7 +143,7 @@ TclDeleteLiteralTable(
      */
 
     if (tablePtr->buckets != tablePtr->staticBuckets) {
-	ckfree(tablePtr->buckets);
+	Tcl_Free(tablePtr->buckets);
     }
 }
 
@@ -178,9 +178,9 @@ TclCreateLiteral(
     Interp *iPtr,
     const char *bytes,	/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
-    int length,			/* Number of bytes in the string. */
-    unsigned hash,		/* The string's hash. If -1, it will be
-				 * computed here. */
+    Tcl_Size length,	/* Number of bytes in the string. */
+    TCL_HASH_TYPE hash, /* The string's hash. If the value is
+				         * TCL_INDEX_NONE, it will be computed here. */
     int *newPtr,
     Namespace *nsPtr,
     int flags,
@@ -188,14 +188,14 @@ TclCreateLiteral(
 {
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *globalPtr;
-    unsigned int globalHash;
+    size_t globalHash;
     Tcl_Obj *objPtr;
 
     /*
      * Is it in the interpreter's global literal table?
      */
 
-    if (hash == (unsigned) -1) {
+    if (hash == (TCL_HASH_TYPE) TCL_INDEX_NONE) {
 	hash = HashString(bytes, length);
     }
     globalHash = (hash & globalTablePtr->mask);
@@ -210,8 +210,8 @@ TclCreateLiteral(
 	     * https://stackoverflow.com/q/54337750/301832
 	     */
 
-	    int objLength;
-	    const char *objBytes = TclGetStringFromObj(objPtr, &objLength);
+	    Tcl_Size objLength;
+	    const char *objBytes = Tcl_GetStringFromObj(objPtr, &objLength);
 
 	    if ((objLength == length) && ((length == 0)
 		    || ((objBytes[0] == bytes[0])
@@ -227,7 +227,7 @@ TclCreateLiteral(
 		    *globalPtrPtr = globalPtr;
 		}
 		if (flags & LITERAL_ON_HEAP) {
-		    ckfree(bytes);
+		    Tcl_Free((void *)bytes);
 		}
 		if (globalPtr->refCount != TCL_INDEX_NONE) {
 		    globalPtr->refCount++;
@@ -238,7 +238,7 @@ TclCreateLiteral(
     }
     if (!newPtr) {
 	if ((flags & LITERAL_ON_HEAP)) {
-	    ckfree(bytes);
+	    Tcl_Free((void *)bytes);
 	}
 	return NULL;
     }
@@ -274,11 +274,11 @@ TclCreateLiteral(
 #ifdef TCL_COMPILE_DEBUG
     if (LookupLiteralEntry((Tcl_Interp *) iPtr, objPtr) != NULL) {
 	Tcl_Panic("%s: literal \"%.*s\" found globally but shouldn't be",
-		"TclRegisterLiteral", (length>60? 60 : length), bytes);
+		"TclRegisterLiteral", (length>60? 60 : (int)length), bytes);
     }
 #endif
 
-    globalPtr = (LiteralEntry *)ckalloc(sizeof(LiteralEntry));
+    globalPtr = (LiteralEntry *)Tcl_Alloc(sizeof(LiteralEntry));
     globalPtr->objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
     globalPtr->refCount = 1;
@@ -314,7 +314,7 @@ TclCreateLiteral(
 	}
 	if (!found) {
 	    Tcl_Panic("%s: literal \"%.*s\" wasn't global",
-		    "TclRegisterLiteral", (length>60? 60 : length), bytes);
+		    "TclRegisterLiteral", (length>60? 60 : (int)length), bytes);
 	}
     }
 #endif /*TCL_COMPILE_DEBUG*/
@@ -351,10 +351,10 @@ Tcl_Obj *
 TclFetchLiteral(
     CompileEnv *envPtr,		/* Points to the CompileEnv from which to
 				 * fetch the registered literal value. */
-    unsigned int index)		/* Index of the desired literal, as returned
+    Tcl_Size index)		/* Index of the desired literal, as returned
 				 * by prior call to TclRegisterLiteral() */
 {
-    if (index >= (unsigned int) envPtr->literalArrayNext) {
+    if (index >= envPtr->literalArrayNext) {
 	return NULL;
     }
     return envPtr->literalArrayPtr[index].objPtr;
@@ -387,14 +387,14 @@ TclFetchLiteral(
  *----------------------------------------------------------------------
  */
 
-int
+int /* Do NOT change this type. Should not be wider than TclEmitPush operand*/
 TclRegisterLiteral(
     void *ePtr,		/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
     const char *bytes,	/* Points to string for which to find or
 				 * create an object in CompileEnv's object
 				 * array. */
-    int length,			/* Number of bytes in the string. If < 0, the
+    Tcl_Size length,			/* Number of bytes in the string. If -1, the
 				 * string consists of all bytes up to the
 				 * first null character. */
     int flags)			/* If LITERAL_ON_HEAP then the caller already
@@ -408,9 +408,8 @@ TclRegisterLiteral(
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *globalPtr, *localPtr;
     Tcl_Obj *objPtr;
-    unsigned hash;
-    unsigned int localHash;
-    int objIndex, isNew;
+    size_t hash, localHash, objIndex;
+    int isNew;
     Namespace *nsPtr;
 
     if (length < 0) {
@@ -431,13 +430,16 @@ TclRegisterLiteral(
 		|| ((objPtr->bytes[0] == bytes[0])
 		&& (memcmp(objPtr->bytes, bytes, length) == 0)))) {
 	    if ((flags & LITERAL_ON_HEAP)) {
-		ckfree(bytes);
+		Tcl_Free((void *)bytes);
 	    }
 	    objIndex = (localPtr - envPtr->literalArrayPtr);
 #ifdef TCL_COMPILE_DEBUG
 	    TclVerifyLocalLiteralTable(envPtr);
 #endif /*TCL_COMPILE_DEBUG*/
 
+	    if (objIndex > INT_MAX) {
+		Tcl_Panic("Literal table index too large. Cannot be handled by TclEmitPush");
+	    }
 	    return objIndex;
 	}
     }
@@ -469,13 +471,17 @@ TclRegisterLiteral(
     objIndex = AddLocalLiteralEntry(envPtr, objPtr, localHash);
 
 #ifdef TCL_COMPILE_DEBUG
-    if (globalPtr != NULL && globalPtr->refCount + 1 < 2) {
-	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
-		"TclRegisterLiteral", (length>60? 60 : length), bytes,
+    if (globalPtr != NULL && (globalPtr->refCount + 1 < 2)) {
+	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "u",
+		"TclRegisterLiteral", (length>60? 60 : (int)length), bytes,
 		globalPtr->refCount);
     }
     TclVerifyLocalLiteralTable(envPtr);
 #endif /*TCL_COMPILE_DEBUG*/
+    if (objIndex > INT_MAX) {
+	Tcl_Panic(
+	    "Literal table index too large. Cannot be handled by TclEmitPush");
+    }
     return objIndex;
 }
 
@@ -509,9 +515,9 @@ LookupLiteralEntry(
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *entryPtr;
     const char *bytes;
-    int length, globalHash;
+    size_t globalHash, length;
 
-    bytes = TclGetStringFromObj(objPtr, &length);
+    bytes = Tcl_GetStringFromObj(objPtr, &length);
     globalHash = (HashString(bytes, length) & globalTablePtr->mask);
     for (entryPtr=globalTablePtr->buckets[globalHash] ; entryPtr!=NULL;
 	    entryPtr=entryPtr->nextPtr) {
@@ -554,8 +560,8 @@ TclHideLiteral(
 {
     LiteralEntry **nextPtrPtr, *entryPtr, *lPtr;
     LiteralTable *localTablePtr = &envPtr->localLitTable;
-    unsigned int localHash;
-    int length;
+    size_t localHash;
+    Tcl_Size length;
     const char *bytes;
     Tcl_Obj *newObjPtr;
 
@@ -573,7 +579,7 @@ TclHideLiteral(
     TclReleaseLiteral(interp, lPtr->objPtr);
     lPtr->objPtr = newObjPtr;
 
-    bytes = TclGetStringFromObj(newObjPtr, &length);
+    bytes = Tcl_GetStringFromObj(newObjPtr, &length);
     localHash = HashString(bytes, length) & localTablePtr->mask;
     nextPtrPtr = &localTablePtr->buckets[localHash];
 
@@ -619,13 +625,17 @@ TclAddLiteralObj(
 				 * NULL. */
 {
     LiteralEntry *lPtr;
-    int objIndex;
+    size_t objIndex;
 
     if (envPtr->literalArrayNext >= envPtr->literalArrayEnd) {
 	ExpandLocalLiteralArray(envPtr);
     }
     objIndex = envPtr->literalArrayNext;
     envPtr->literalArrayNext++;
+    if (objIndex > INT_MAX) {
+	Tcl_Panic(
+	    "Literal table index too large. Cannot be handled by TclEmitPush");
+    }
 
     lPtr = &envPtr->literalArrayPtr[objIndex];
     lPtr->objPtr = objPtr;
@@ -658,7 +668,7 @@ TclAddLiteralObj(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 AddLocalLiteralEntry(
     CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
@@ -667,7 +677,7 @@ AddLocalLiteralEntry(
 {
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *localPtr;
-    int objIndex;
+    size_t objIndex;
 
     objIndex = TclAddLiteralObj(envPtr, objPtr, &localPtr);
 
@@ -692,8 +702,8 @@ AddLocalLiteralEntry(
     TclVerifyLocalLiteralTable(envPtr);
     {
 	char *bytes;
-	int length, found;
-	size_t i;
+	int found;
+	size_t length, i;
 
 	found = 0;
 	for (i=0 ; i<localTablePtr->numBuckets ; i++) {
@@ -706,9 +716,9 @@ AddLocalLiteralEntry(
 	}
 
 	if (!found) {
-	    bytes = TclGetStringFromObj(objPtr, &length);
+	    bytes = Tcl_GetStringFromObj(objPtr, &length);
 	    Tcl_Panic("%s: literal \"%.*s\" wasn't found locally",
-		    "AddLocalLiteralEntry", (length>60? 60 : length), bytes);
+		    "AddLocalLiteralEntry", (length>60? 60 : (int)length), bytes);
 	}
     }
 #endif /*TCL_COMPILE_DEBUG*/
@@ -760,14 +770,14 @@ ExpandLocalLiteralArray(
     }
 
     if (envPtr->mallocedLiteralArray) {
-	newArrayPtr = (LiteralEntry *)ckrealloc(currArrayPtr, newSize);
+	newArrayPtr = (LiteralEntry *)Tcl_Realloc(currArrayPtr, newSize);
     } else {
 	/*
-	 * envPtr->literalArrayPtr isn't a ckalloc'd pointer, so we must
-	 * code a ckrealloc equivalent for ourselves.
+	 * envPtr->literalArrayPtr isn't a Tcl_Alloc'd pointer, so we must
+	 * code a Tcl_Realloc equivalent for ourselves.
 	 */
 
-	newArrayPtr = (LiteralEntry *)ckalloc(newSize);
+	newArrayPtr = (LiteralEntry *)Tcl_Alloc(newSize);
 	memcpy(newArrayPtr, currArrayPtr, currBytes);
 	envPtr->mallocedLiteralArray = 1;
     }
@@ -828,16 +838,16 @@ TclReleaseLiteral(
     LiteralTable *globalTablePtr;
     LiteralEntry *entryPtr, *prevPtr;
     const char *bytes;
-    int length;
-    unsigned int index;
+    size_t index;
+    Tcl_Size length;
 
     if (iPtr == NULL) {
 	goto done;
     }
 
     globalTablePtr = &iPtr->literalTable;
-    bytes = TclGetStringFromObj(objPtr, &length);
-    index = (HashString(bytes, length) & globalTablePtr->mask);
+    bytes = Tcl_GetStringFromObj(objPtr, &length);
+    index = HashString(bytes, length) & globalTablePtr->mask;
 
     /*
      * Check to see if the object is in the global literal table and remove
@@ -860,7 +870,7 @@ TclReleaseLiteral(
 		} else {
 		    prevPtr->nextPtr = entryPtr->nextPtr;
 		}
-		ckfree(entryPtr);
+		Tcl_Free(entryPtr);
 		globalTablePtr->numEntries--;
 
 		TclDecrRefCount(objPtr);
@@ -898,12 +908,12 @@ TclReleaseLiteral(
  *----------------------------------------------------------------------
  */
 
-static unsigned
+static size_t
 HashString(
     const char *string,	/* String for which to compute hash value. */
-    int length)			/* Number of bytes in the string. */
+    size_t length)			/* Number of bytes in the string. */
 {
-    unsigned int result = 0;
+    size_t result = 0;
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -972,8 +982,8 @@ RebuildLiteralTable(
     LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     const char *bytes;
-    unsigned int oldSize, index;
-    int count, length;
+    size_t oldSize, count, index;
+    Tcl_Size length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;
@@ -994,7 +1004,7 @@ RebuildLiteralTable(
     }
 
     tablePtr->numBuckets *= 4;
-    tablePtr->buckets = (LiteralEntry **)ckalloc(
+    tablePtr->buckets = (LiteralEntry **)Tcl_Alloc(
 	    tablePtr->numBuckets * sizeof(LiteralEntry*));
     for (count=tablePtr->numBuckets, newChainPtr=tablePtr->buckets;
 	    count>0 ; count--, newChainPtr++) {
@@ -1009,7 +1019,7 @@ RebuildLiteralTable(
 
     for (oldChainPtr=oldBuckets ; oldSize>0 ; oldSize--,oldChainPtr++) {
 	for (entryPtr=*oldChainPtr ; entryPtr!=NULL ; entryPtr=*oldChainPtr) {
-	    bytes = TclGetStringFromObj(entryPtr->objPtr, &length);
+	    bytes = Tcl_GetStringFromObj(entryPtr->objPtr, &length);
 	    index = (HashString(bytes, length) & tablePtr->mask);
 
 	    *oldChainPtr = entryPtr->nextPtr;
@@ -1024,7 +1034,7 @@ RebuildLiteralTable(
      */
 
     if (oldBuckets != tablePtr->staticBuckets) {
-	ckfree(oldBuckets);
+	Tcl_Free(oldBuckets);
     }
 }
 
@@ -1061,7 +1071,7 @@ TclInvalidateCmdLiteral(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, name,
-	    strlen(name), -1, NULL, nsPtr, 0, NULL);
+	    strlen(name), TCL_INDEX_NONE, NULL, nsPtr, 0, NULL);
 
     if (literalObjPtr != NULL) {
 	if (TclHasInternalRep(literalObjPtr, &tclCmdNameType)) {
@@ -1097,9 +1107,7 @@ TclLiteralStats(
     LiteralTable *tablePtr)	/* Table for which to produce stats. */
 {
 #define NUM_COUNTERS 10
-    size_t count[NUM_COUNTERS];
-    int overflow;
-    size_t i, j;
+    size_t count[NUM_COUNTERS], overflow, i, j;
     double average, tmp;
     LiteralEntry *entryPtr;
     char *result, *p;
@@ -1133,8 +1141,8 @@ TclLiteralStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = (char *)ckalloc(NUM_COUNTERS*60 + 300);
-    snprintf(result, 60, "%d entries in table, %d buckets\n",
+    result = (char *)Tcl_Alloc(NUM_COUNTERS*60 + 300);
+    snprintf(result, 60, "%" TCL_Z_MODIFIER "u entries in table, %" TCL_Z_MODIFIER "u buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i=0 ; i<NUM_COUNTERS ; i++) {
@@ -1142,7 +1150,7 @@ TclLiteralStats(
 		i, count[i]);
 	p += strlen(p);
     }
-    snprintf(p, 60, "number of buckets with %d or more entries: %d\n",
+    snprintf(p, 60, "number of buckets with %d or more entries: %" TCL_Z_MODIFIER "u\n",
 	    NUM_COUNTERS, overflow);
     p += strlen(p);
     snprintf(p, 60, "average search distance for entry: %.1f", average);
@@ -1175,19 +1183,17 @@ TclVerifyLocalLiteralTable(
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *localPtr;
     char *bytes;
-    size_t i, count;
-    int length;
+    size_t i, length, count = 0;
 
-    count = 0;
     for (i=0 ; i<localTablePtr->numBuckets ; i++) {
 	for (localPtr=localTablePtr->buckets[i] ; localPtr!=NULL;
 		localPtr=localPtr->nextPtr) {
 	    count++;
 	    if (localPtr->refCount != TCL_INDEX_NONE) {
-		bytes = TclGetStringFromObj(localPtr->objPtr, &length);
-		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %u",
+		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
+		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "u",
 			"TclVerifyLocalLiteralTable",
-			(length>60? 60 : length), bytes, localPtr->refCount);
+			(length>60? 60 : (int) length), bytes, localPtr->refCount);
 	    }
 	    if (localPtr->objPtr->bytes == NULL) {
 		Tcl_Panic("%s: literal has NULL string rep",
@@ -1196,7 +1202,7 @@ TclVerifyLocalLiteralTable(
 	}
     }
     if (count != localTablePtr->numEntries) {
-	Tcl_Panic("%s: local literal table had %" TCL_Z_MODIFIER "u entries, should be %u",
+	Tcl_Panic("%s: local literal table had %" TCL_Z_MODIFIER "u entries, should be %" TCL_Z_MODIFIER "u",
 		"TclVerifyLocalLiteralTable", count,
 		localTablePtr->numEntries);
     }
@@ -1226,19 +1232,17 @@ TclVerifyGlobalLiteralTable(
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *globalPtr;
     char *bytes;
-    size_t i, count;
-    int length;
+    size_t i, length, count = 0;
 
-    count = 0;
     for (i=0 ; i<globalTablePtr->numBuckets ; i++) {
 	for (globalPtr=globalTablePtr->buckets[i] ; globalPtr!=NULL;
 		globalPtr=globalPtr->nextPtr) {
 	    count++;
 	    if (globalPtr->refCount + 1 < 2) {
-		bytes = TclGetStringFromObj(globalPtr->objPtr, &length);
-		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
+		bytes = Tcl_GetStringFromObj(globalPtr->objPtr, &length);
+		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "u",
 			"TclVerifyGlobalLiteralTable",
-			(length>60? 60 : length), bytes, globalPtr->refCount);
+			(length>60? 60 : (int)length), bytes, globalPtr->refCount);
 	    }
 	    if (globalPtr->objPtr->bytes == NULL) {
 		Tcl_Panic("%s: literal has NULL string rep",
@@ -1247,7 +1251,7 @@ TclVerifyGlobalLiteralTable(
 	}
     }
     if (count != globalTablePtr->numEntries) {
-	Tcl_Panic("%s: global literal table had %" TCL_Z_MODIFIER "u entries, should be %u",
+	Tcl_Panic("%s: global literal table had %" TCL_Z_MODIFIER "u entries, should be %" TCL_Z_MODIFIER "u",
 		"TclVerifyGlobalLiteralTable", count,
 		globalTablePtr->numEntries);
     }

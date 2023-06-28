@@ -27,9 +27,9 @@ When non-NULL, error information is recorded here when the value is not
 in any of the numeric formats recognized by Tcl.
 .AP "const char" *bytes in
 Points to first byte of the string value to be examined.
-.AP ptrdiff_t numBytes in
+.AP Tcl_Size numBytes in
 The number of bytes, starting at \fIbytes\fR, that should be examined.
-If the value \fBTCL_INDEX_NONE\fR is provided, then all bytes should
+If \fBnumBytes\fR is negative, then all bytes should
 be examined until the first \fBNUL\fR byte terminates examination.
 .AP "void *" *clientDataPtr out
 Points to space where a pointer value may be written through which a numeric
@@ -63,7 +63,7 @@ the same function.  They differ only in how the arguments present the Tcl
 value to be examined.  \fBTcl_GetNumber\fR accepts a counted string
 value in the arguments \fIbytes\fR and \fInumBytes\fR (or a
 \fBNUL\fR-terminated string value when \fInumBytes\fR is
-\fBTCL_INDEX_NONE\fR).  \fBTcl_GetNumberFromObj\fR accepts the Tcl value
+negative).  \fBTcl_GetNumberFromObj\fR accepts the Tcl value
 in \fIobjPtr\fR.
 .PP
 Both routines examine the Tcl value and determine whether Tcl recognizes

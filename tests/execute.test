@@ -34,7 +34,6 @@ testConstraint testobj [expr {
     && [llength [info commands teststringobj]]
 }]
 
-testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
 testConstraint testexprlongobj [llength [info commands testexprlongobj]]
 
 
@@ -463,10 +462,6 @@ test execute-3.71 {TclExecuteByteCode, INST_LNOT, op is non-numeric} {testobj} {
     set x [teststringobj set 1 foo]
     list [catch {expr {! $x}} msg] $msg
 } {1 {can't use non-numeric string "foo" as operand of "!"}}
-
-# INST_BITNOT not tested
-# INST_CALL_BUILTIN_FUNC1 not tested
-# INST_CALL_FUNC1 not tested
 
 # INST_TRY_CVT_TO_NUMERIC is partially tested:
 test execute-3.72 {TclExecuteByteCode, INST_TRY_CVT_TO_NUMERIC, op is int} {testobj} {
@@ -1066,7 +1061,7 @@ test execute-9.1 {Interp result resetting [Bug 1522803]} {
 } SUCCESS
 
 test execute-10.1 {TclExecuteByteCode, INST_CONCAT1, bytearrays} {
-    apply {s {binary scan $s c x; list $x [scan $s$s %c%c]}} İ
+    apply {s {binary scan [binary format a $s] c x; list $x [scan $s$s %c%c]}} İ
 } {48 {304 304}}
 test execute-10.2 {Bug 2802881} -setup {
     interp create child

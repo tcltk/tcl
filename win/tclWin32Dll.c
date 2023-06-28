@@ -144,7 +144,7 @@ DllMain(
  *----------------------------------------------------------------------
  */
 
-HINSTANCE
+void *
 TclWinGetTclInstance(void)
 {
     return hInstance;
@@ -247,8 +247,8 @@ TclWinEncodingsCleanup(void)
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
 	dlIter2 = dlIter->nextPtr;
-	ckfree(dlIter->volumeName);
-	ckfree(dlIter);
+	Tcl_Free(dlIter->volumeName);
+	Tcl_Free(dlIter);
 	dlIter = dlIter2;
     }
     Tcl_MutexUnlock(&mountPointMap);
@@ -341,8 +341,8 @@ TclWinDriveLetterForVolMountPoint(
 	     * Now dlPtr2 points to the structure to free.
 	     */
 
-	    ckfree(dlPtr2->volumeName);
-	    ckfree(dlPtr2);
+	    Tcl_Free(dlPtr2->volumeName);
+	    Tcl_Free(dlPtr2);
 
 	    /*
 	     * Restart the loop - we could try to be clever and continue half
@@ -377,7 +377,7 @@ TclWinDriveLetterForVolMountPoint(
 		}
 	    }
 	    if (!alreadyStored) {
-		dlPtr2 = (MountPointMap *)ckalloc(sizeof(MountPointMap));
+		dlPtr2 = (MountPointMap *)Tcl_Alloc(sizeof(MountPointMap));
 		dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep(Target);
 		dlPtr2->driveLetter = (WCHAR) drive[0];
 		dlPtr2->nextPtr = driveLetterLookup;
@@ -403,7 +403,7 @@ TclWinDriveLetterForVolMountPoint(
      * that fact and store '-1' so we don't have to look it up each time.
      */
 
-    dlPtr2 = (MountPointMap *)ckalloc(sizeof(MountPointMap));
+    dlPtr2 = (MountPointMap *)Tcl_Alloc(sizeof(MountPointMap));
     dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep((void *)mountPoint);
     dlPtr2->driveLetter = (WCHAR)-1;
     dlPtr2->nextPtr = driveLetterLookup;
@@ -411,76 +411,6 @@ TclWinDriveLetterForVolMountPoint(
     Tcl_MutexUnlock(&mountPointMap);
     return -1;
 }
-
-/*
- *---------------------------------------------------------------------------
- *
- * Tcl_WinUtfToTChar, Tcl_WinTCharToUtf --
- *
- *	Convert between UTF-8 and Unicode when running Windows.
- *
- *	On Mac and Unix, all strings exchanged between Tcl and the OS are
- *	"char" oriented. We need only one Tcl_Encoding to convert between
- *	UTF-8 and the system's native encoding. We use NULL to represent
- *	that encoding.
- *
- *	On Windows, some strings exchanged between Tcl and the OS are "char"
- *	oriented, while others are in Unicode. We need two Tcl_Encoding APIs
- *	depending on whether we are targeting a "char" or Unicode interface.
- *
- *	Calling Tcl_UtfToExternal() or Tcl_ExternalToUtf() with an encoding
- *	of NULL should always used to convert between UTF-8 and the system's
- *	"char" oriented encoding. The following two functions are used in
- *	Windows-specific code to convert between UTF-8 and Unicode strings.
- *	This saves you the trouble of writing the
- *	following type of fragment over and over:
- *
- *		encoding <- Tcl_GetEncoding("unicode");
- *		nativeBuffer <- UtfToExternal(encoding, utfBuffer);
- *		Tcl_FreeEncoding(encoding);
- *
- *	By convention, in Windows a WCHAR is a Unicode character. If you plan
- *	on targeting a Unicode interface when running on Windows, these
- *	functions should be used. If you plan on targetting a "char" oriented
- *	function on Windows, use Tcl_UtfToExternal() with an encoding of NULL.
- *
- * Results:
- *	The result is a pointer to the string in the desired target encoding.
- *	Storage for the result string is allocated in dsPtr; the caller must
- *	call Tcl_DStringFree() when the result is no longer needed.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-#undef Tcl_WinUtfToTChar
-TCHAR *
-Tcl_WinUtfToTChar(
-    const char *string,		/* Source string in UTF-8. */
-    int len,			/* Source string length in bytes, or -1 for
-				 * strlen(). */
-    Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
-				 * converted string is stored. */
-{
-    Tcl_DStringInit(dsPtr);
-    return (TCHAR *)Tcl_UtfToWCharDString(string, len, dsPtr);
-}
-#undef Tcl_WinTCharToUtf
-char *
-Tcl_WinTCharToUtf(
-    const TCHAR *string,	/* Source string in Unicode. */
-    int len,			/* Source string length in bytes, or -1 for
-				 * platform-specific string length. */
-    Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
-				 * converted string is stored. */
-{
-    Tcl_DStringInit(dsPtr);
-    return Tcl_WCharToUtfDString((WCHAR *)string, len >> 1, dsPtr);
-}
-#endif /* !defined(TCL_NO_DEPRECATED) */
 
 /*
  *------------------------------------------------------------------------

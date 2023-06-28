@@ -127,7 +127,7 @@ PkguaEqObjCmd(
 {
     int result;
     const char *str1, *str2;
-    int len1, len2;
+    Tcl_Size len1, len2;
     (void)dummy;
 
     if (objc != 3) {
@@ -138,7 +138,7 @@ PkguaEqObjCmd(
     str1 = Tcl_GetStringFromObj(objv[1], &len1);
     str2 = Tcl_GetStringFromObj(objv[2], &len2);
     if (len1 == len2) {
-	result = (Tcl_UtfNcmp(str1, str2, (size_t)len1) == 0);
+	result = (Tcl_UtfNcmp(str1, str2, (size_t) len1) == 0);
     } else {
 	result = 0;
     }

@@ -201,7 +201,7 @@ TclJoinThread(
 
     Tcl_ConditionFinalize(&threadPtr->cond);
     Tcl_MutexFinalize(&threadPtr->threadMutex);
-    ckfree(threadPtr);
+    Tcl_Free(threadPtr);
 
     return TCL_OK;
 }
@@ -230,7 +230,7 @@ TclRememberJoinableThread(
 {
     JoinableThread *threadPtr;
 
-    threadPtr = (JoinableThread *)ckalloc(sizeof(JoinableThread));
+    threadPtr = (JoinableThread *)Tcl_Alloc(sizeof(JoinableThread));
     threadPtr->id = id;
     threadPtr->done = 0;
     threadPtr->waitedUpon = 0;

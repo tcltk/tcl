@@ -178,7 +178,7 @@ TclWinThreadStart(
     lpOrigStartAddress = winThreadPtr->lpStartAddress;
     lpOrigParameter = winThreadPtr->lpParameter;
 
-    ckfree(winThreadPtr);
+    Tcl_Free(winThreadPtr);
     return lpOrigStartAddress(lpOrigParameter);
 }
 
@@ -203,15 +203,15 @@ int
 TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread. */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread. */
-    ClientData clientData,	/* The one argument to Main(). */
-	TCL_HASH_TYPE stackSize,	/* Size of stack for the new thread. */
+    void *clientData,	/* The one argument to Main(). */
+    TCL_HASH_TYPE stackSize,	/* Size of stack for the new thread. */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {
     WinThread *winThreadPtr;		/* Per-thread startup info */
     HANDLE tHandle;
 
-    winThreadPtr = (WinThread *)ckalloc(sizeof(WinThread));
+    winThreadPtr = (WinThread *)Tcl_Alloc(sizeof(WinThread));
     winThreadPtr->lpStartAddress = (LPTHREAD_START_ROUTINE) proc;
     winThreadPtr->lpParameter = clientData;
     winThreadPtr->fpControl = _controlfp(0, 0);
@@ -535,7 +535,7 @@ TclFinalizeLock(void)
 #if TCL_THREADS
 
 /* locally used prototype */
-static void		FinalizeConditionEvent(ClientData data);
+static void		FinalizeConditionEvent(void *data);
 
 /*
  *----------------------------------------------------------------------
@@ -568,7 +568,7 @@ Tcl_MutexLock(
 	 */
 
 	if (*mutexPtr == NULL) {
-	    csPtr = (CRITICAL_SECTION *)ckalloc(sizeof(CRITICAL_SECTION));
+	    csPtr = (CRITICAL_SECTION *)Tcl_Alloc(sizeof(CRITICAL_SECTION));
 	    InitializeCriticalSection(csPtr);
 	    *mutexPtr = (Tcl_Mutex)csPtr;
 	    TclRememberMutex(mutexPtr);
@@ -629,7 +629,7 @@ TclpFinalizeMutex(
 
     if (csPtr != NULL) {
 	DeleteCriticalSection(csPtr);
-	ckfree(csPtr);
+	Tcl_Free(csPtr);
 	*mutexPtr = NULL;
     }
 }
@@ -711,7 +711,7 @@ Tcl_ConditionWait(
 	 */
 
 	if (*condPtr == NULL) {
-	    winCondPtr = (WinCondition *)ckalloc(sizeof(WinCondition));
+	    winCondPtr = (WinCondition *)Tcl_Alloc(sizeof(WinCondition));
 	    InitializeCriticalSection(&winCondPtr->condLock);
 	    winCondPtr->firstPtr = NULL;
 	    winCondPtr->lastPtr = NULL;
@@ -880,7 +880,7 @@ Tcl_ConditionNotify(
 
 static void
 FinalizeConditionEvent(
-    ClientData data)
+    void *data)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) data;
 
@@ -922,7 +922,7 @@ TclpFinalizeCondition(
 
     if (winCondPtr != NULL) {
 	DeleteCriticalSection(&winCondPtr->condLock);
-	ckfree(winCondPtr);
+	Tcl_Free(winCondPtr);
 	*condPtr = NULL;
     }
 }
@@ -1037,7 +1037,7 @@ TclpThreadCreateKey(void)
 {
     DWORD *key;
 
-    key = (DWORD *)TclpSysAlloc(sizeof *key, 0);
+    key = (DWORD *)TclpSysAlloc(sizeof *key);
     if (key == NULL) {
 	Tcl_Panic("unable to allocate thread key!");
     }

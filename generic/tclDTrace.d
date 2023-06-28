@@ -181,9 +181,9 @@ typedef struct Tcl_ObjType {
 } Tcl_ObjType;
 
 struct Tcl_Obj {
-    int refCount;
+    size_t refCount;
     char *bytes;
-    int length;
+    size_t length;
     const Tcl_ObjType *typePtr;
     union {
 	long longValue;

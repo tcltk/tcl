@@ -58,9 +58,8 @@ Tcl_RecordAndEval(
     const char *cmd,		/* Command to record. */
     int flags)			/* Additional flags. TCL_NO_EVAL means only
 				 * record: don't execute command.
-				 * TCL_EVAL_GLOBAL means evaluate the script
-				 * in global variable context instead of the
-				 * current procedure. */
+				 * TCL_EVAL_GLOBAL means use Tcl_GlobalEval
+				 * instead of Tcl_Eval. */
 {
     Tcl_Obj *cmdPtr;
     int result;
@@ -73,13 +72,6 @@ Tcl_RecordAndEval(
 	cmdPtr = Tcl_NewStringObj(cmd, -1);
 	Tcl_IncrRefCount(cmdPtr);
 	result = Tcl_RecordAndEvalObj(interp, cmdPtr, flags);
-
-	/*
-	 * Move the interpreter's object result to the string result, then
-	 * reset the object result.
-	 */
-
-	(void) Tcl_GetStringResult(interp);
 
 	/*
 	 * Discard the Tcl object created to hold the command.
@@ -138,7 +130,7 @@ Tcl_RecordAndEvalObj(
      */
 
     if (histObjsPtr == NULL) {
-	histObjsPtr = (HistoryObjs *)ckalloc(sizeof(HistoryObjs));
+	histObjsPtr = (HistoryObjs *)Tcl_Alloc(sizeof(HistoryObjs));
 	TclNewLiteralStringObj(histObjsPtr->historyObj, "::history");
 	TclNewLiteralStringObj(histObjsPtr->addObj, "add");
 	Tcl_IncrRefCount(histObjsPtr->historyObj);
@@ -211,14 +203,14 @@ Tcl_RecordAndEvalObj(
 
 static void
 DeleteHistoryObjs(
-    ClientData clientData,
+    void *clientData,
     TCL_UNUSED(Tcl_Interp *))
 {
     HistoryObjs *histObjsPtr = (HistoryObjs *)clientData;
 
     TclDecrRefCount(histObjsPtr->historyObj);
     TclDecrRefCount(histObjsPtr->addObj);
-    ckfree(histObjsPtr);
+    Tcl_Free(histObjsPtr);
 }
 
 /*

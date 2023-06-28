@@ -30,7 +30,7 @@ typedef struct AsyncHandler {
 				 * for the process. */
     Tcl_AsyncProc *proc;	/* Procedure to call when handler is
 				 * invoked. */
-    ClientData clientData;	/* Value to pass to handler when it is
+    void *clientData;	/* Value to pass to handler when it is
 				 * invoked. */
     struct ThreadSpecificData *originTsd;
 				/* Used in Tcl_AsyncMark to modify thread-
@@ -38,7 +38,7 @@ typedef struct AsyncHandler {
 				 * associated to. */
     Tcl_ThreadId originThrdId;	/* Origin thread where this token was created
 				 * and where it will be yielded. */
-    ClientData notifierData;	/* Platform notifier data or NULL. */
+    void *notifierData;	/* Platform notifier data or NULL. */
 } AsyncHandler;
 
 typedef struct ThreadSpecificData {
@@ -115,7 +115,7 @@ TclFinalizeAsync(void)
     while (toDelete != NULL) {
 	token = toDelete;
 	toDelete = toDelete->nextPtr;
-	ckfree(token);
+	Tcl_Free(token);
     }
 }
 
@@ -142,12 +142,12 @@ Tcl_AsyncHandler
 Tcl_AsyncCreate(
     Tcl_AsyncProc *proc,	/* Procedure to call when handler is
 				 * invoked. */
-    ClientData clientData)	/* Argument to pass to handler. */
+    void *clientData)	/* Argument to pass to handler. */
 {
     AsyncHandler *asyncPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    asyncPtr = (AsyncHandler*)ckalloc(sizeof(AsyncHandler));
+    asyncPtr = (AsyncHandler*)Tcl_Alloc(sizeof(AsyncHandler));
     asyncPtr->ready = 0;
     asyncPtr->nextPtr = NULL;
     asyncPtr->prevPtr = NULL;
@@ -406,7 +406,7 @@ Tcl_AsyncDelete(
 	asyncPtr->nextPtr->prevPtr = asyncPtr->prevPtr;
     }
     Tcl_MutexUnlock(&asyncMutex);
-    ckfree(asyncPtr);
+    Tcl_Free(asyncPtr);
 }
 
 /*

@@ -34,38 +34,33 @@ typedef struct {
 				 * calculated. Any other means that there is a valid
 				 * Unicode rep, or that the number of UTF bytes ==
 				 * the number of chars. */
-    Tcl_Size allocated;		/* The amount of space actually allocated for
-				 * the UTF-8 string (minus 1 byte for the
-				 * termination char). */
+    Tcl_Size allocated;		/* The amount of space allocated for
+				 * the UTF-8 string. Does not include nul
+				 * terminator so actual allocation is
+				 * (allocated+1). */
     Tcl_Size maxChars;		/* Max number of chars that can fit in the
 				 * space allocated for the Unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has
 				 * a Tcl_UniChar representation. */
-    unsigned short unicode[TCLFLEXARRAY];	/* The array of Tcl_UniChar units.
+    Tcl_UniChar unicode[TCLFLEXARRAY];	/* The array of Tcl_UniChar units.
 				 * The actual size of this field depends on
 				 * the maxChars field above. */
 } String;
 
 /* Limit on string lengths. The -1 because limit does not include the nul */
 #define STRING_MAXCHARS \
-    (int)(((size_t)UINT_MAX - offsetof(String, unicode))/sizeof(unsigned short) - 1)
+    ((Tcl_Size)((TCL_SIZE_MAX - offsetof(String, unicode))/sizeof(Tcl_UniChar) - 1))
+/* Memory needed to hold a string of length numChars - including NUL */
 #define STRING_SIZE(numChars) \
-    (offsetof(String, unicode) + sizeof(unsigned short) + ((numChars) * sizeof(unsigned short)))
-#define stringCheckLimits(numChars) \
-    do {								\
-	if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) {		\
-	    Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
-		      STRING_MAXCHARS);					\
-	}								\
-    } while (0)
+    (offsetof(String, unicode) + sizeof(Tcl_UniChar) + ((numChars) * sizeof(Tcl_UniChar)))
 #define stringAttemptAlloc(numChars) \
-    (String *) attemptckalloc(STRING_SIZE(numChars))
+    (String *) Tcl_AttemptAlloc(STRING_SIZE(numChars))
 #define stringAlloc(numChars) \
-    (String *) ckalloc(STRING_SIZE(numChars))
+    (String *) Tcl_Alloc(STRING_SIZE(numChars))
 #define stringRealloc(ptr, numChars) \
-    (String *) ckrealloc((ptr), STRING_SIZE(numChars))
+    (String *) Tcl_Realloc((ptr), STRING_SIZE(numChars))
 #define stringAttemptRealloc(ptr, numChars) \
-    (String *) attemptckrealloc((ptr), STRING_SIZE(numChars))
+    (String *) Tcl_AttemptRealloc((ptr), STRING_SIZE(numChars))
 #define GET_STRING(objPtr) \
     ((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_STRING(objPtr, stringPtr) \

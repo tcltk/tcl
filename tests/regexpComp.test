@@ -16,8 +16,6 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-source [file join [file dirname [info script]] tcltests.tcl]
-
 # Procedure to evaluate a script within a proc, to test compilation
 # functionality
 
@@ -793,16 +791,16 @@ test regexpComp-19.1 {regsub null replacement} {
     }
 } "\0a\0hel\0a\0lo\0a\0 14"
 
-test regexpComp-20.1 {regsub shared object shimmering} deprecated {
+test regexpComp-20.1 {regsub shared object shimmering} {
     evalInProc {
 	# Bug #461322
 	set a abcdefghijklmnopqurstuvwxyz
 	set b $a
 	set c abcdefghijklmnopqurstuvwxyz0123456789
 	regsub $a $c $b d
-	list $d [string length $d] [string bytelength $d]
+	list $d [string length $d]
     }
-} [list abcdefghijklmnopqurstuvwxyz0123456789 37 37]
+} [list abcdefghijklmnopqurstuvwxyz0123456789 37]
 test regexpComp-20.2 {regsub shared object shimmering with -about} {
     evalInProc {
 	eval regexp -about abc

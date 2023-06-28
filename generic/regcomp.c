@@ -39,7 +39,7 @@
 /* automatically gathered by fwd; do not hand-edit */
 /* === regcomp.c === */
 int compile(regex_t *, const chr *, size_t, int);
-static void moresubs(struct vars *, int);
+static void moresubs(struct vars *, size_t);
 static int freev(struct vars *, int);
 static void makesearch(struct vars *, struct nfa *);
 static struct subre *parse(struct vars *, int, int, struct state *, struct state *);
@@ -156,7 +156,7 @@ static void fixconstraintloops(struct nfa *, FILE *);
 static int	findconstraintloop(struct nfa *, struct state *);
 static void breakconstraintloop(struct nfa *, struct state *);
 static void clonesuccessorstates(struct nfa *, struct state *, struct state *,
-		 struct state *, struct arc *, char *, char *, int);
+		 struct state *, struct arc *, char *, char *, size_t);
 static void cleanup(struct nfa *);
 static void markreachable(struct nfa *, struct state *, struct state *, struct state *);
 static void markcanreach(struct nfa *, struct state *, struct state *, struct state *);
@@ -179,8 +179,8 @@ static void dumpcstate(int, struct cnfa *, FILE *);
 static struct cvec *clearcvec(struct cvec *);
 static void addchr(struct cvec *, pchr);
 static void addrange(struct cvec *, pchr, pchr);
-static struct cvec *newcvec(int, int);
-static struct cvec *getcvec(struct vars *, int, int);
+static struct cvec *newcvec(size_t, size_t);
+static struct cvec *getcvec(struct vars *, size_t, size_t);
 static void freecvec(struct cvec *);
 /* === regc_locale.c === */
 static celt element(struct vars *, const chr *, const chr *);
@@ -205,11 +205,11 @@ struct vars {
     int cflags;			/* copy of compile flags */
     int lasttype;		/* type of previous token */
     int nexttype;		/* type of next token */
-    int nextvalue;		/* value (if any) of next token */
+    size_t nextvalue;		/* value (if any) of next token */
     int lexcon;			/* lexical context type (see lex.c) */
-    int nsubexp;		/* subexpression count */
+    size_t nsubexp;		/* subexpression count */
     struct subre **subs;	/* subRE pointer vector */
-    int nsubs;			/* length of vector */
+    size_t nsubs;		/* length of vector */
     struct subre *sub10[10];	/* initial vector, enough for most */
     struct nfa *nfa;		/* the NFA */
     struct colormap *cm;	/* character color map */
@@ -222,7 +222,7 @@ struct vars {
     struct cvec *cv;		/* interface cvec */
     struct cvec *cv2;		/* utility cvec */
     struct subre *lacons;	/* lookahead-constraint vector */
-    int nlacons;		/* size of lacons */
+    size_t nlacons;		/* size of lacons */
     size_t spaceused;		/* approx. space used for compilation */
 };
 
@@ -287,7 +287,7 @@ compile(
 {
     AllocVars(v);
     struct guts *g;
-    int i, j;
+    size_t i, j;
     FILE *debug = (flags&REG_PROGRESS) ? stdout : NULL;
 #define	CNOERR()	{ if (ISERR()) return freev(v, v->err); }
 
@@ -338,7 +338,6 @@ compile(
     v->spaceused = 0;
     re->re_magic = REMAGIC;
     re->re_info = 0;		/* bits get set during parse */
-    re->re_csize = sizeof(chr);
     re->re_guts = NULL;
     re->re_fns = (void*)(&functions);
 
@@ -411,7 +410,7 @@ compile(
     assert(v->nlacons == 0 || v->lacons != NULL);
     for (i = 1; i < v->nlacons; i++) {
 	if (debug != NULL) {
-	    fprintf(debug, "\n\n\n========= LA%d ==========\n", i);
+	    fprintf(debug, "\n\n\n========= LA%" TCL_Z_MODIFIER "u ==========\n", i);
 	}
 	nfanode(v, &v->lacons[i], debug);
     }
@@ -467,15 +466,15 @@ compile(
 
 /*
  - moresubs - enlarge subRE vector
- ^ static void moresubs(struct vars *, int);
+ ^ static void moresubs(struct vars *, size_t);
  */
 static void
 moresubs(
     struct vars *v,
-    int wanted)			/* want enough room for this one */
+    size_t wanted)			/* want enough room for this one */
 {
     struct subre **p;
-    int n;
+    size_t n;
 
     assert(wanted > 0 && wanted >= v->nsubs);
     n = wanted * 3 / 2 + 1;
@@ -795,7 +794,7 @@ parseqatom(
     struct subre *t;
     int cap;			/* capturing parens? */
     int pos;			/* positive lookahead? */
-    int subno;			/* capturing-parens or backref number */
+    size_t subno;		/* capturing-parens or backref number */
     int atomtype;
     int qprefer;		/* quantifier short/long preference */
     int f;
@@ -2048,7 +2047,7 @@ dump(
 {
 #ifdef REG_DEBUG
     struct guts *g;
-    int i;
+    size_t i;
 
     if (re->re_magic != REMAGIC) {
 	fprintf(f, "bad magic number (0x%x not 0x%x)\n",
@@ -2065,8 +2064,8 @@ dump(
     }
 
     fprintf(f, "\n\n\n========= DUMP ==========\n");
-    fprintf(f, "nsub %d, info 0%lo, csize %d, ntree %d\n",
-	    (int) re->re_nsub, re->re_info, re->re_csize, g->ntree);
+    fprintf(f, "nsub %" TCL_Z_MODIFIER "u, info 0%lo, ntree %" TCL_Z_MODIFIER "u\n",
+	    re->re_nsub, re->re_info, g->ntree);
 
     dumpcolors(&g->cmap, f);
     if (!NULLCNFA(g->search)) {
@@ -2074,7 +2073,7 @@ dump(
 	dumpcnfa(&g->search, f);
     }
     for (i = 1; i < g->nlacons; i++) {
-	fprintf(f, "\nla%d (%s):\n", i,
+	fprintf(f, "\nla%" TCL_Z_MODIFIER "u (%s):\n", i,
 		(g->lacons[i].subno) ? "positive" : "negative");
 	dumpcnfa(&g->lacons[i].cnfa, f);
     }
@@ -2146,7 +2145,7 @@ stdump(
 	fprintf(f, "}");
     }
     if (nfapresent) {
-	fprintf(f, " %d-%d", t->begin->no, t->end->no);
+	fprintf(f, " %" TCL_Z_MODIFIER "u-%" TCL_Z_MODIFIER "u", t->begin->no, t->end->no);
     }
     if (t->left != NULL) {
 	fprintf(f, " L:%s", stid(t->left, idbuf, sizeof(idbuf)));

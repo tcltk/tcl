@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 
-AC_INIT([tcl],[8.7])
+AC_INIT([tcl],[9.0])
 AC_PREREQ([2.69])
 
 dnl This is only used when included from macosx/configure.ac
@@ -23,10 +23,10 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
     #endif /* _TCLCONFIG */])
 ])
 
-TCL_VERSION=8.7
-TCL_MAJOR_VERSION=8
-TCL_MINOR_VERSION=7
-TCL_PATCH_LEVEL="a6"
+TCL_VERSION=9.0
+TCL_MAJOR_VERSION=9
+TCL_MINOR_VERSION=0
+TCL_PATCH_LEVEL="a4"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -229,7 +229,7 @@ AC_CHECK_FUNCS(getcwd, , [AC_DEFINE(USEGETWD, 1, [Is getcwd Posix-compliant?])])
 # Nb: if getcwd uses popen and pwd(1) (like SunOS 4) we should really
 # define USEGETWD even if the posix getcwd exists. Add a test ?
 
-AC_REPLACE_FUNCS(mkstemp opendir strtol waitpid)
+AC_REPLACE_FUNCS(mkstemp waitpid)
 AC_CHECK_FUNC(strerror, , [AC_DEFINE(NO_STRERROR, 1, [Do we have strerror()])])
 AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD, 1, [Do we have getwd()])])
 AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3, 1, [Do we have wait3()])])
@@ -377,13 +377,6 @@ AC_CHECK_TYPES([blkcnt_t])
 AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS, 1, [Do we have fstatfs()?])])
 
 #--------------------------------------------------------------------
-#       Some system have no memcmp or it does not work with 8 bit data, this
-#       checks it and add memcmp.o to LIBOBJS if needed
-#--------------------------------------------------------------------
-
-AC_FUNC_MEMCMP
-
-#--------------------------------------------------------------------
 #       Some system like SunOS 4 and other BSD like systems have no memmove
 #       (we assume they have bcopy instead). {The replacement define is in
 #       compat/string.h}
@@ -392,26 +385,6 @@ AC_FUNC_MEMCMP
 AC_CHECK_FUNC(memmove, , [
     AC_DEFINE(NO_MEMMOVE, 1, [Do we have memmove()?])
     AC_DEFINE(NO_STRING_H, 1, [Do we have <string.h>?]) ])
-
-#--------------------------------------------------------------------
-#	On some systems strstr is broken: it returns a pointer even if
-#	the original string is empty.
-#--------------------------------------------------------------------
-
-SC_TCL_CHECK_BROKEN_FUNC(strstr, [
-    exit(strstr("\0test", "test") ? 1 : 0);
-])
-
-#--------------------------------------------------------------------
-#	Check for strtoul function.  This is tricky because under some
-#	versions of AIX strtoul returns an incorrect terminator
-#	pointer for the string "0".
-#--------------------------------------------------------------------
-
-SC_TCL_CHECK_BROKEN_FUNC(strtoul, [
-    char *term, *string = "0";
-    exit(strtoul(string,&term,0) != 0 || term != string+1);
-])
 
 #--------------------------------------------------------------------
 #	Check for various typedefs and provide substitutes if
@@ -437,15 +410,6 @@ fi
 AC_CHECK_TYPES([intptr_t, uintptr_t],,,[[
 #include <stdint.h>
 ]])
-
-#--------------------------------------------------------------------
-#	If a system doesn't have an opendir function (man, that's old!)
-#	then we have to supply a different version of dirent.h which
-#	is compatible with the substitute version of opendir that's
-#	provided.  This version only works with V7-style directories.
-#--------------------------------------------------------------------
-
-AC_CHECK_FUNC(opendir, , [AC_DEFINE(USE_DIRENT2_H, 1, [May we include <dirent2.h>?])])
 
 #--------------------------------------------------------------------
 #	The check below checks whether <sys/wait.h> defines the type
@@ -577,8 +541,6 @@ if test "`uname -s`" = "Darwin" ; then
 	AC_CHECK_FUNCS(OSSpinLockLock)
     fi
     AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
-    AC_DEFINE(TCL_DEFAULT_ENCODING, "utf-8",
-	[Are we to override what our default encoding is?])
     AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1,
 	[Can this platform load code from memory?])
     AC_DEFINE(TCL_WIDE_CLICKS, 1,
@@ -937,15 +899,11 @@ fi
 # Replace ${VERSION} with contents of ${TCL_VERSION}
 # double-eval to account for TCL_TRIM_DOTS.
 #
-eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
+eval "TCL_STUB_LIB_FILE=libtclstub.a"
 eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_DIR=\"${libdir}\""
 
-if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-    TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}"
-else
-    TCL_STUB_LIB_FLAG="-ltclstub`echo ${TCL_VERSION} | tr -d .`"
-fi
+TCL_STUB_LIB_FLAG="-ltclstub"
 
 TCL_BUILD_STUB_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_STUB_LIB_FLAG}"
 TCL_STUB_LIB_SPEC="-L${TCL_STUB_LIB_DIR} ${TCL_STUB_LIB_FLAG}"

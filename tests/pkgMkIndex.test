@@ -553,7 +553,7 @@ removeFile [file join pkg circ3.tcl]
 
 # Some tests require the existence of one of the DLLs in the dltest directory
 set x [file join [file dirname [info nameofexecutable]] dltest \
-	pkga[info sharedlibextension]]
+	tcl9pkga[info sharedlibextension]]
 set dll "[file tail $x]Required"
 testConstraint $dll [file exists $x]
 
@@ -575,8 +575,8 @@ test pkgMkIndex-10.1 {package in DLL and script} [list exec $dll] {
     # it.
     set cmd [list pkg_mkIndex -lazy $fullPkgPath [file tail $x] pkga.tcl]
     exec [interpreter] << $cmd
-    pkgtest::runCreatedIndex {0 {}} -lazy $fullPkgPath pkga[info sharedlibextension] pkga.tcl
-} "0 {{pkga:1.0 {tclPkgSetup {pkga[info sharedlibextension] load {pkga_eq pkga_quote}} {pkga.tcl source pkga_neq}}}}"
+    pkgtest::runCreatedIndex {0 {}} -lazy $fullPkgPath tcl9pkga[info sharedlibextension] pkga.tcl
+} "0 {{pkga:1.0 {tclPkgSetup {tcl9pkga[info sharedlibextension] load {pkga_eq pkga_quote}} {pkga.tcl source pkga_neq}}}}"
 
 test pkgMkIndex-10.2 {package in DLL hidden by -load} [list exec $dll] {
     # Do all [load]ing of shared libraries in another process, so we can

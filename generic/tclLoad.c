@@ -17,18 +17,14 @@
  * The following structure describes a library that has been loaded either
  * dynamically (with the "load" command) or statically (as indicated by a call
  * to Tcl_StaticLibrary). All such libraries are linked together into a
- * single list for the process. Library are never unloaded, until the
- * application exits, when TclFinalizeLoad is called, and these structures are
- * freed.
+ * single list for the process.
  */
 
 typedef struct LoadedLibrary {
     char *fileName;		/* Name of the file from which the library was
 				 * loaded. An empty string means the library
 				 * is loaded statically. Malloc-ed. */
-    char *prefix;		/* Prefix for the library,
-				 * properly capitalized (first letter UC,
-				 * others LC), as in "Net".
+    char *prefix;		/* Prefix for the library.
 				 * Malloc-ed. */
     Tcl_LoadHandle loadHandle;	/* Token for the loaded file which should be
 				 * passed to (*unLoadProcPtr)() when the file
@@ -94,7 +90,7 @@ typedef struct InterpLibrary {
  * Prototypes for functions that are private to this file:
  */
 
-static void	LoadCleanupProc(ClientData clientData,
+static void	LoadCleanupProc(void *clientData,
 		    Tcl_Interp *interp);
 static int	IsStatic (LoadedLibrary *libraryPtr);
 static int	UnloadLibrary(Tcl_Interp *interp, Tcl_Interp *target,
@@ -144,15 +140,15 @@ Tcl_LoadObjCmd(
     const char *p, *fullFileName, *prefix;
     Tcl_LoadHandle loadHandle;
     Tcl_UniChar ch = 0;
-    unsigned len;
-    int index, flags = 0;
+    size_t len;
+    int flags = 0;
     Tcl_Obj *const *savedobjv = objv;
     static const char *const options[] = {
 	"-global",		"-lazy",		"--",	NULL
     };
     enum loadOptionsEnum {
 	LOAD_GLOBAL,	LOAD_LAZY,	LOAD_LAST
-    };
+    } index;
 
     while (objc > 2) {
 	if (TclGetString(objv[1])[0] != '-') {
@@ -163,9 +159,9 @@ Tcl_LoadObjCmd(
 	    return TCL_ERROR;
 	}
 	++objv; --objc;
-	if (LOAD_GLOBAL == (enum loadOptionsEnum) index) {
+	if (LOAD_GLOBAL == index) {
 	    flags |= TCL_LOAD_GLOBAL;
-	} else if (LOAD_LAZY == (enum loadOptionsEnum) index) {
+	} else if (LOAD_LAZY == index) {
 	    flags |= TCL_LOAD_LAZY;
 	} else {
 		break;
@@ -178,7 +174,7 @@ Tcl_LoadObjCmd(
     if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
-    fullFileName = Tcl_GetString(objv[1]);
+    fullFileName = TclGetString(objv[1]);
 
     Tcl_DStringInit(&pfx);
     Tcl_DStringInit(&initName);
@@ -189,7 +185,7 @@ Tcl_LoadObjCmd(
 
     prefix = NULL;
     if (objc >= 3) {
-	prefix = Tcl_GetString(objv[2]);
+	prefix = TclGetString(objv[2]);
 	if (prefix[0] == '\0') {
 	    prefix = NULL;
 	}
@@ -209,7 +205,7 @@ Tcl_LoadObjCmd(
 
     target = interp;
     if (objc == 4) {
-	const char *childIntName = Tcl_GetString(objv[3]);
+	const char *childIntName = TclGetString(objv[3]);
 
 	target = Tcl_GetChild(interp, childIntName);
 	if (target == NULL) {
@@ -239,8 +235,6 @@ Tcl_LoadObjCmd(
 	    Tcl_DStringAppend(&pfx, prefix, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
-	    Tcl_UtfToLower(Tcl_DStringValue(&pfx));
-	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pfx)) == 0) {
 		namesMatch = 1;
@@ -316,7 +310,7 @@ Tcl_LoadObjCmd(
 	    Tcl_DStringAppend(&pfx, prefix, -1);
 	} else {
 	    Tcl_Obj *splitPtr, *pkgGuessPtr;
-	    int pElements;
+	    Tcl_Size pElements;
 	    const char *pkgGuess;
 
 	    /*
@@ -326,14 +320,14 @@ Tcl_LoadObjCmd(
 	    /*
 	     * The platform-specific code couldn't figure out the prefix.
 	     * Make a guess by taking the last element of the file
-	     * name, stripping off any leading "lib" and/or "tcl", and
+	     * name, stripping off any leading "lib" and/or "tcl9", and
 	     * then using all of the alphabetic and underline characters
 	     * that follow that.
 	     */
 
 	    splitPtr = Tcl_FSSplitPath(objv[1], &pElements);
 	    Tcl_ListObjIndex(NULL, splitPtr, pElements -1, &pkgGuessPtr);
-	    pkgGuess = Tcl_GetString(pkgGuessPtr);
+	    pkgGuess = TclGetString(pkgGuessPtr);
 	    if ((pkgGuess[0] == 'l') && (pkgGuess[1] == 'i')
 		    && (pkgGuess[2] == 'b')) {
 		pkgGuess += 3;
@@ -349,14 +343,13 @@ Tcl_LoadObjCmd(
 		    || (pkgGuess[0] == 'T')
 #endif
 		    ) && (pkgGuess[1] == 'c')
-		    && (pkgGuess[2] == 'l')) {
-		pkgGuess += 3;
+		    && (pkgGuess[2] == 'l') && (pkgGuess[3] == '9')) {
+		pkgGuess += 4;
 	    }
 	    for (p = pkgGuess; *p != 0; p += offset) {
 		offset = TclUtfToUniChar(p, &ch);
-		if ((ch > 0x100)
-			|| !(isalpha(UCHAR(ch)) /* INTL: ISO only */
-				|| (UCHAR(ch) == '_'))) {
+		if (!Tcl_UniCharIsWordChar(UCHAR(ch))
+			|| Tcl_UniCharIsDigit(UCHAR(ch))) {
 		    break;
 		}
 	    }
@@ -372,16 +365,17 @@ Tcl_LoadObjCmd(
 	    }
 	    Tcl_DStringAppend(&pfx, pkgGuess, p - pkgGuess);
 	    Tcl_DecrRefCount(splitPtr);
+
+	    /*
+	     * Fix the capitalization in the prefix so that the first
+	     * character is in caps (or title case) but the others are all
+	     * lower-case.
+	     */
+
+	    Tcl_DStringSetLength(&pfx,
+		    Tcl_UtfToTitle(Tcl_DStringValue(&pfx)));
+
 	}
-
-	/*
-	 * Fix the capitalization in the prefix so that the first
-	 * character is in caps (or title case) but the others are all
-	 * lower-case.
-	 */
-
-	Tcl_DStringSetLength(&pfx,
-		Tcl_UtfToTitle(Tcl_DStringValue(&pfx)));
 
 	/*
 	 * Compute the names of the two initialization functions, based on the
@@ -417,12 +411,12 @@ Tcl_LoadObjCmd(
 	 * Create a new record to describe this library.
 	 */
 
-	libraryPtr = (LoadedLibrary *)ckalloc(sizeof(LoadedLibrary));
+	libraryPtr = (LoadedLibrary *)Tcl_Alloc(sizeof(LoadedLibrary));
 	len = strlen(fullFileName) + 1;
-	libraryPtr->fileName	   = (char *)ckalloc(len);
+	libraryPtr->fileName	   = (char *)Tcl_Alloc(len);
 	memcpy(libraryPtr->fileName, fullFileName, len);
 	len = Tcl_DStringLength(&pfx) + 1;
-	libraryPtr->prefix	   = (char *)ckalloc(len);
+	libraryPtr->prefix	   = (char *)Tcl_Alloc(len);
 	memcpy(libraryPtr->prefix, Tcl_DStringValue(&pfx), len);
 	libraryPtr->loadHandle	   = loadHandle;
 	libraryPtr->initProc	   = initProc;
@@ -486,19 +480,17 @@ Tcl_LoadObjCmd(
      */
 
     if (code != TCL_OK) {
-#if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 	Interp *iPtr = (Interp *) target;
-	if (iPtr->result && *(iPtr->result) && !iPtr->freeProc) {
+	if (iPtr->legacyResult && *(iPtr->legacyResult) && !iPtr->legacyFreeProc) {
 	    /*
 	     * A call to Tcl_InitStubs() determined the caller extension and
 	     * this interp are incompatible in their stubs mechanisms, and
 	     * recorded the error in the oldest legacy place we have to do so.
 	     */
-	    Tcl_SetObjResult(target, Tcl_NewStringObj(iPtr->result, -1));
-	    iPtr->result =  &tclEmptyString;
-	    iPtr->freeProc = NULL;
+	    Tcl_SetObjResult(target, Tcl_NewStringObj(iPtr->legacyResult, -1));
+	    iPtr->legacyResult = NULL;
+	    iPtr->legacyFreeProc = (void (*) (void))-1;
 	}
-#endif /* defined(TCL_NO_DEPRECATED) */
 	Tcl_TransferResult(target, code, interp);
 	goto done;
     }
@@ -524,7 +516,7 @@ Tcl_LoadObjCmd(
      */
 
     ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
-    ipPtr = (InterpLibrary *)ckalloc(sizeof(InterpLibrary));
+    ipPtr = (InterpLibrary *)Tcl_Alloc(sizeof(InterpLibrary));
     ipPtr->libraryPtr = libraryPtr;
     ipPtr->nextPtr = ipFirstPtr;
     Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
@@ -567,7 +559,7 @@ Tcl_UnloadObjCmd(
     LoadedLibrary *libraryPtr;
     Tcl_DString pfx, tmp;
     InterpLibrary *ipFirstPtr, *ipPtr;
-    int i, index, code, complain = 1, keepLibrary = 0;
+    int i, code, complain = 1, keepLibrary = 0;
     const char *fullFileName = "";
     const char *prefix;
     static const char *const options[] = {
@@ -575,12 +567,12 @@ Tcl_UnloadObjCmd(
     };
     enum unloadOptionsEnum {
 	UNLOAD_NOCOMPLAIN, UNLOAD_KEEPLIB, UNLOAD_LAST
-    };
+    } index;
 
     for (i = 1; i < objc; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&index) != TCL_OK) {
-	    fullFileName = Tcl_GetString(objv[i]);
+	    fullFileName = TclGetString(objv[i]);
 	    if (fullFileName[0] == '-') {
 		/*
 		 * It looks like the command contains an option so signal an
@@ -598,7 +590,7 @@ Tcl_UnloadObjCmd(
 		break;
 	    }
 	}
-	switch ((enum unloadOptionsEnum)index) {
+	switch (index) {
 	case UNLOAD_NOCOMPLAIN:		/* -nocomplain */
 	    complain = 0;
 	    break;
@@ -620,13 +612,13 @@ Tcl_UnloadObjCmd(
 	return TCL_ERROR;
     }
 
-    fullFileName = Tcl_GetString(objv[i]);
+    fullFileName = TclGetString(objv[i]);
     Tcl_DStringInit(&pfx);
     Tcl_DStringInit(&tmp);
 
     prefix = NULL;
     if (objc - i >= 2) {
-	prefix = Tcl_GetString(objv[i+1]);
+	prefix = TclGetString(objv[i+1]);
 	if (prefix[0] == '\0') {
 	    prefix = NULL;
 	}
@@ -646,7 +638,7 @@ Tcl_UnloadObjCmd(
 
     target = interp;
     if (objc - i == 3) {
-	const char *childIntName = Tcl_GetString(objv[i + 2]);
+	const char *childIntName = TclGetString(objv[i + 2]);
 
 	target = Tcl_GetChild(interp, childIntName);
 	if (target == NULL) {
@@ -676,8 +668,6 @@ Tcl_UnloadObjCmd(
 	    Tcl_DStringAppend(&pfx, prefix, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
-	    Tcl_UtfToLower(Tcl_DStringValue(&pfx));
-	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pfx)) == 0) {
 		namesMatch = 1;
@@ -892,7 +882,7 @@ UnloadLibrary(
 	    }
 	}
     }
-    ckfree(ipPtr);
+    Tcl_Free(ipPtr);
     Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipFirstPtr);
 
 
@@ -965,9 +955,9 @@ UnloadLibrary(
 		    }
 		}
 
-		ckfree(iterLibraryPtr->fileName);
-		ckfree(iterLibraryPtr->prefix);
-		ckfree(iterLibraryPtr);
+		Tcl_Free(iterLibraryPtr->fileName);
+		Tcl_Free(iterLibraryPtr->prefix);
+		Tcl_Free(iterLibraryPtr);
 		Tcl_MutexUnlock(&libraryMutex);
 	    } else {
 		code = TCL_ERROR;
@@ -1011,9 +1001,7 @@ Tcl_StaticLibrary(
 				 * already been loaded into the given
 				 * interpreter by calling the appropriate init
 				 * proc. */
-    const char *prefix,	/* Prefix (must be properly
-				 * capitalized: first letter upper case,
-				 * others lower case). */
+    const char *prefix,	/* Prefix. */
     Tcl_LibraryInitProc *initProc,
 				/* Function to call to incorporate this
 				 * library into a trusted interpreter. */
@@ -1048,10 +1036,10 @@ Tcl_StaticLibrary(
      */
 
     if (libraryPtr == NULL) {
-	libraryPtr = (LoadedLibrary *)ckalloc(sizeof(LoadedLibrary));
-	libraryPtr->fileName	= (char *)ckalloc(1);
+	libraryPtr = (LoadedLibrary *)Tcl_Alloc(sizeof(LoadedLibrary));
+	libraryPtr->fileName	= (char *)Tcl_Alloc(1);
 	libraryPtr->fileName[0]	= 0;
-	libraryPtr->prefix	= (char *)ckalloc(strlen(prefix) + 1);
+	libraryPtr->prefix	= (char *)Tcl_Alloc(strlen(prefix) + 1);
 	strcpy(libraryPtr->prefix, prefix);
 	libraryPtr->loadHandle	= NULL;
 	libraryPtr->initProc	= initProc;
@@ -1083,7 +1071,7 @@ Tcl_StaticLibrary(
 	 * loaded.
 	 */
 
-	ipPtr = (InterpLibrary *)ckalloc(sizeof(InterpLibrary));
+	ipPtr = (InterpLibrary *)Tcl_Alloc(sizeof(InterpLibrary));
 	ipPtr->libraryPtr = libraryPtr;
 	ipPtr->nextPtr = ipFirstPtr;
 	Tcl_SetAssocData(interp, "tclLoad", LoadCleanupProc, ipPtr);
@@ -1206,7 +1194,7 @@ TclGetLoadedLibraries(
 
 static void
 LoadCleanupProc(
-    TCL_UNUSED(ClientData),	/* Pointer to first InterpLibrary structure
+    TCL_UNUSED(void *),	/* Pointer to first InterpLibrary structure
 				 * for interp. */
     Tcl_Interp *interp)
 {
@@ -1269,9 +1257,9 @@ TclFinalizeLoad(void)
 	}
 #endif
 
-	ckfree(libraryPtr->fileName);
-	ckfree(libraryPtr->prefix);
-	ckfree(libraryPtr);
+	Tcl_Free(libraryPtr->fileName);
+	Tcl_Free(libraryPtr->prefix);
+	Tcl_Free(libraryPtr);
     }
 }
 

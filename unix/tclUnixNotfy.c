@@ -27,7 +27,7 @@ static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 # define NOTIFIER_SELECT
 #elif !defined(NOTIFIER_EPOLL) && !defined(NOTIFIER_KQUEUE)
 # define NOTIFIER_SELECT
-static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
+static TCL_NORETURN void NotifierThreadProc(void *clientData);
 # if defined(HAVE_PTHREAD_ATFORK)
 static void		AtForkChild(void);
 # endif /* HAVE_PTHREAD_ATFORK */
@@ -497,13 +497,13 @@ AtForkChild(void)
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpNotifierData(void)
 {
 #if defined(NOTIFIER_EPOLL) || defined(NOTIFIER_KQUEUE)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    return (ClientData) tsdPtr;
+    return (void *) tsdPtr;
 #else
     return NULL;
 #endif

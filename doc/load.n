@@ -38,17 +38,14 @@ Tcl interpreter.
 The name of the initialization procedure is determined by
 \fIprefix\fR and whether or not the target interpreter
 is a safe one.  For normal interpreters the name of the initialization
-procedure will have the form \fIpfx\fB_Init\fR, where \fIpfx\fR
-is the same as \fIprefix\fR except that the first letter is
-converted to upper case and all other letters
-are converted to lower case.  For example, if \fIprefix\fR is
-\fBfoo\fR or \fBFOo\fR, the initialization procedure's name will
+procedure will have the form \fIprefix\fB_Init\fR.  For example, if
+\fIprefix\fR is \fBFoo\fR, the initialization procedure's name will
 be \fBFoo_Init\fR.
 .PP
 If the target interpreter is a safe interpreter, then the name
-of the initialization procedure will be \fIpfx\fB_SafeInit\fR
-instead of \fIpfx\fB_Init\fR.
-The \fIpfx\fB_SafeInit\fR function should be written carefully, so that it
+of the initialization procedure will be \fIprefix\fB_SafeInit\fR
+instead of \fIprefix\fB_Init\fR.
+The \fIprefix\fB_SafeInit\fR function should be written carefully, so that it
 initializes the safe interpreter only with partial functionality provided
 by the library that is safe for use by untrusted code. For more information
 on Safe\-Tcl, see the \fBsafe\fR manual entry.
@@ -84,13 +81,11 @@ If \fIfileName\fR is an empty string, then \fIprefix\fR must
 be specified.
 .PP
 If \fIprefix\fR is omitted or specified as an empty string,
-Tcl tries to guess the prefix. This may be done differently on
-different platforms. The default guess, which is used on most
-UNIX platforms, is to take the last element of
+Tcl tries to guess the prefix by taking the last element of
 \fIfileName\fR, strip off the first three characters if they
-are \fBlib\fR, then strip off the next three characters if they
-are \fBtcl\fR, and use any following alphabetic and
-underline characters, converted to titlecase as the prefix.
+are \fBlib\fR, then strip off the next three characters if
+they are \fBtcl9\fR, and use any following wordchars but not digits,
+converted to titlecase as the prefix.
 For example, the command \fBload libxyz4.2.so\fR uses the prefix
 \fBXyz\fR and the command \fBload bin/last.so {}\fR uses the
 prefix \fBLast\fR.

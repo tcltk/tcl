@@ -1,4 +1,4 @@
-/*
+ /*
  * tclWinPanic.c --
  *
  *	Contains the Windows-specific command-line panic proc.
@@ -28,7 +28,7 @@
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN1 void
 Tcl_ConsolePanic(
     const char *format, ...)
 {

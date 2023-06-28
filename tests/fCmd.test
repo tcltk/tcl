@@ -102,6 +102,14 @@ if {[testConstraint unix]} {
 	set user "root"
     }
 }
+if {[testConstraint win]} {
+    catch {
+        set user $::env(USERNAME)
+    }
+    if {$user eq ""} {
+        set user Administrator
+    }
+}
 
 # Try getting a lower case glob pattern that will match the home directory of
 # a given user to test ~user and [file tildeexpand ~user]. Note this may not
@@ -167,6 +175,10 @@ proc checkcontent {file matchString} {
 }
 
 proc openup {path} {
+    # Double check for inadvertent ~ -> home directory mapping
+    if {[string match ~* $path]} {
+        set file ./$path
+    }
     testchmod 0o777 $path
     if {[file isdirectory $path]} {
 	catch {
@@ -182,9 +194,13 @@ proc cleanup {args} {
     foreach p [concat $wd $args] {
 	set x ""
 	catch {
-	    set x [glob -directory $p tf* td*]
+	    set x [glob -directory $p tf* td* ~*]
 	}
 	foreach file $x {
+            # Double check for inadvertent ~ -> home directory mapping
+            if {[string match ~* $file]} {
+                set file ./$file
+            }
 	    if {
 		[catch {file delete -force -- $file}]
 		&& [testConstraint testchmod]
@@ -224,6 +240,43 @@ test fCmd-1.1 {TclFileRenameCmd} -constraints {notRoot} -setup {
     file rename tf1 tf2
     glob tf*
 } -result {tf2}
+test fCmd-1.2 {TclFileRenameCmd when target is ~} -setup {
+    cleanup
+    createfile tf1
+} -cleanup {
+    file delete ./~
+} -body {
+    file rename tf1 ~
+    file isfile ~
+} -result 1
+test fCmd-1.3 {TclFileRenameCmd when target is ~user} -setup {
+    cleanup
+    createfile tf1
+} -cleanup {
+    file delete ./~$user
+} -body {
+    file rename tf1 ~$user
+    file isfile ~$user
+} -result 1
+test fCmd-1.4 {TclFileRenameCmd when source is ~} -setup {
+    cleanup
+    createfile ./~
+} -cleanup {
+    file delete ./~
+} -body {
+    file rename ~ tf1
+    list [file exists ~] [file exists tf1]
+} -result {0 1}
+test fCmd-1.5 {TclFileRenameCmd when source is ~user} -setup {
+    cleanup
+    createfile ./~$user
+} -cleanup {
+    file delete ./~$user
+} -body {
+    file rename ~$user tf1
+    list [file exists ~$user] [file exists tf1]
+} -result {0 1}
+
 
 test fCmd-2.1 {TclFileCopyCmd} -constraints {notRoot} -setup {
     cleanup
@@ -232,6 +285,42 @@ test fCmd-2.1 {TclFileCopyCmd} -constraints {notRoot} -setup {
     file copy tf1 tf2
     lsort [glob tf*]
 } -result {tf1 tf2}
+test fCmd-2.2 {TclFileCopyCmd when target is ~} -setup {
+    cleanup
+    createfile tf1
+} -cleanup {
+    file delete ./~
+} -body {
+    file copy tf1 ~
+    list [file exists tf1] [file exists ~]
+} -result {1 1}
+test fCmd-2.3 {TclFileCopyCmd when target is ~user} -setup {
+    cleanup
+    createfile tf1
+} -cleanup {
+    file delete ./~$user
+} -body {
+    file copy tf1 ~$user
+    list [file exists tf1] [file exists ~$user]
+} -result {1 1}
+test fCmd-2.4 {TclFileCopyCmd when source is ~} -setup {
+    cleanup
+    createfile ./~
+} -cleanup {
+    file delete ./~
+} -body {
+    file copy ~ tf1
+    list [file exists ~] [file exists tf1]
+} -result {1 1}
+test fCmd-2.5 {TclFileCopyCmd when source is ~user} -setup {
+    cleanup
+    createfile ./~$user
+} -cleanup {
+    file delete ./~$user
+} -body {
+    file copy ~$user tf1
+    list [file exists ~$user] [file exists tf1]
+} -result {1 1}
 
 test fCmd-3.1 {FileCopyRename: FileForceOption fails} -constraints {notRoot} -body {
     file rename -xyz
@@ -241,7 +330,7 @@ test fCmd-3.2 {FileCopyRename: not enough args} -constraints {notRoot} -body {
 } -returnCodes error -result {wrong # args: should be "file rename ?-option value ...? source ?source ...? target"}
 test fCmd-3.3 {FileCopyRename: Tcl_TranslateFileName fails} -constraints {notRoot} -body {
     file rename xyz ~_totally_bogus_user
-} -returnCodes error -result {user "_totally_bogus_user" doesn't exist}
+} -returnCodes error -result {error renaming "xyz": no such file or directory}
 test fCmd-3.4 {FileCopyRename: Tcl_TranslateFileName passes} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
@@ -315,7 +404,7 @@ test fCmd-3.14 {FileCopyRename: FileBasename fails} -setup {
 } -constraints {notRoot} -returnCodes error -body {
     file mkdir td1
     file rename ~_totally_bogus_user td1
-} -result {user "_totally_bogus_user" doesn't exist}
+} -result {error renaming "~_totally_bogus_user": no such file or directory}
 test fCmd-3.15 {FileCopyRename: source[0] == '\x00'} -setup {
     cleanup
 } -constraints {notRoot unixOrWin} -returnCodes error -body {
@@ -353,11 +442,17 @@ test fCmd-4.3 {TclFileMakeDirsCmd: stops on first error} -setup {
     catch {file mkdir td1 td2 tf1 td3 td4}
     glob td1 td2 tf1 td3 td4
 } -result {td1 td2 tf1}
-test fCmd-4.4 {TclFileMakeDirsCmd: Tcl_TranslateFileName fails} -setup {
+test fCmd-4.4 {TclFileMakeDirsCmd: Tcl_TranslateFileName treats ~ as normal char} -setup {
     cleanup
-} -constraints {notRoot} -returnCodes error -body {
+} -constraints {notRoot} -body {
+    list [file isdir ~] [file mkdir ~] [file isdir ~]
+} -result {0 {} 1}
+test fCmd-4.4.1 {TclFileMakeDirsCmd: Tcl_TranslateFileName treats ~ as normal char} -setup {
+    cleanup
+} -constraints {notRoot} -body {
     file mkdir ~_totally_bogus_user
-} -result {user "_totally_bogus_user" doesn't exist}
+    file isdir ~_totally_bogus_user
+} -result 1
 test fCmd-4.5 {TclFileMakeDirsCmd: Tcl_SplitPath returns 0: *name == '\x00'} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
@@ -465,15 +560,16 @@ test fCmd-5.5 {TclFileDeleteCmd: stop at first error} -setup {
     catch {file delete tf1 td1 $root tf2}
     list [file exists tf1] [file exists tf2] [file exists td1]
 } -cleanup {cleanup} -result {0 1 0}
-test fCmd-5.6 {TclFileDeleteCmd: Tcl_TranslateFileName fails} -constraints {notRoot} -body {
+test fCmd-5.6 {
+    TclFileDeleteCmd: Tcl_TranslateFileName treats ~user as normal char
+} -constraints {notRoot} -body {
     file delete ~_totally_bogus_user
-} -returnCodes error -result {user "_totally_bogus_user" doesn't exist}
-test fCmd-5.7 {TclFileDeleteCmd: Tcl_TranslateFileName succeeds} -setup {
-    catch {file delete ~/tf1}
+} -result {}
+test fCmd-5.7 {
+    TclFileDeleteCmd: Tcl_TranslateFileName treats ~ as normal char
 } -constraints {notRoot} -body {
     createfile ~/tf1
-    file delete ~/tf1
-} -result {}
+} -returnCodes error -result {couldn't open "~/tf1": no such file or directory}
 test fCmd-5.8 {TclFileDeleteCmd: file doesn't exist: lstat(name) != 0} -setup {
     cleanup
 } -constraints {notRoot} -body {
@@ -672,37 +768,37 @@ test fCmd-6.23 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
 test fCmd-6.24 {CopyRenameOneFile: error uses original name} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
-    file mkdir ~/td1/td2
-    set td1name [file join [file dirname ~] [file tail ~] td1]
+    file mkdir [file home]/td1/td2
+    set td1name [file join [file dirname [file home]] [file tail [file home]] td1]
     file attributes $td1name -permissions 0
-    file copy ~/td1 td1
+    file copy [file home]/td1 td1
 } -returnCodes error -cleanup {
     file attributes $td1name -permissions 0o755
-    file delete -force ~/td1
-} -result {error copying "~/td1": permission denied}
+    file delete -force [file home]/td1
+} -result "error copying \"[file home]/td1\": permission denied"
 test fCmd-6.25 {CopyRenameOneFile: error uses original name} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
     file mkdir td2
-    file mkdir ~/td1
-    set td1name [file join [file dirname ~] [file tail ~] td1]
+    file mkdir [file home]/td1
+    set td1name [file join [file dirname [file home]] [file tail [file home]] td1]
     file attributes $td1name -permissions 0
-    file copy td2 ~/td1
+    file copy td2 [file home]/td1
 } -returnCodes error -cleanup {
     file attributes $td1name -permissions 0o755
-    file delete -force ~/td1
-} -result {error copying "td2" to "~/td1/td2": permission denied}
+    file delete -force [file home]/td1
+} -result "error copying \"td2\" to \"[file home]/td1/td2\": permission denied"
 test fCmd-6.26 {CopyRenameOneFile: doesn't use original name} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
-    file mkdir ~/td1/td2
-    set td2name [file join [file dirname ~] [file tail ~] td1 td2]
+    file mkdir [file home]/td1/td2
+    set td2name [file join [file dirname [file home]] [file tail [file home]] td1 td2]
     file attributes $td2name -permissions 0
-    file copy ~/td1 td1
+    file copy [file home]/td1 td1
 } -returnCodes error -cleanup {
     file attributes $td2name -permissions 0o755
-    file delete -force ~/td1
-} -result "error copying \"~/td1\" to \"td1\": \"[file join $::env(HOME) td1 td2]\": permission denied"
+    file delete -force [file home]/td1
+} -result "error copying \"[file home]/td1\" to \"td1\": \"[file join $::env(HOME) td1 td2]\": permission denied"
 test fCmd-6.27 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
     cleanup $tmpspace
 } -constraints {notRoot xdev} -returnCodes error -body {
@@ -778,15 +874,15 @@ test fCmd-7.4 {FileForceOption: bad option} -constraints {notRoot} -setup {
 } -result {bad option "-tf1": must be -force or --}
 test fCmd-7.5 {FileForceOption: multiple times through loop} -setup {
     cleanup
-} -constraints {notRoot} -returnCodes error -body {
+} -constraints {notRoot} -body {
     createfile --
     createfile -force
     file delete -force -force -- -- -force
     glob -- -- -force
-} -result {no files matched glob patterns "-- -force"}
+} -result {}
 
 test fCmd-8.1 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
-    -constraints {unix notRoot knownBug} -body {
+    -constraints {unix notRoot knownBug tildeexpansion} -body {
     # Labeled knownBug because it is dangerous [Bug: 3881]
     file mkdir td1
     file attr td1 -perm 0o40000
@@ -797,11 +893,11 @@ test fCmd-8.1 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
 test fCmd-8.2 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
 	-constraints {unix notRoot} -body {
     string equal [file tail ~$user] ~$user
-} -result 0
+} -result 1
 test fCmd-8.3 {file copy and path translation: ensure correct error} -body {
-    file copy ~ [file join this file doesnt exist]
+    file copy [file home] [file join this file doesnt exist]
 } -returnCodes error -result [subst \
-	{error copying "~" to "[file join this file doesnt exist]": no such file or directory}]
+   {error copying "[file home]" to "[file join this file doesnt exist]": no such file or directory}]
 
 test fCmd-9.1 {file rename: comprehensive: EACCES} -setup {
     cleanup
@@ -943,9 +1039,9 @@ test fCmd-9.10 {file rename: comprehensive: file to new name and dir} -setup {
     testchmod 0o444 tf2
     file rename tf1 [file join td1 tf3]
     file rename tf2 [file join td1 tf4]
-    list [catch {glob tf*}] [lsort [glob -directory td1 t*]] \
+    list [glob tf*] [lsort [glob -directory td1 t*]] \
     [file writable [file join td1 tf3]] [file writable [file join td1 tf4]]
-} -result [subst {1 {[file join td1 tf3] [file join td1 tf4]} 1 0}]
+} -result [subst {{} {[file join td1 tf3] [file join td1 tf4]} 1 0}]
 test fCmd-9.11 {file rename: comprehensive: dir to new name and dir} -setup {
     cleanup
 } -constraints {notRoot testchmod} -body {
@@ -1553,9 +1649,11 @@ test fCmd-14.8 {copyfile: copy directory failing} -setup {
 #
 # Coverage tests for TclMkdirCmd()
 #
+
+# ~ is no longer a special char. Need a test case where translation fails.
 test fCmd-15.1 {TclMakeDirsCmd: target filename translation failing} -setup {
     set temp $::env(HOME)
-} -constraints {notRoot} -body {
+} -constraints {notRoot TODO} -body {
     global env
     unset env(HOME)
     catch {file mkdir ~/tfa}
@@ -1654,9 +1752,10 @@ test fCmd-16.4 {accept zero files (TIP 323)} -body {
 test fCmd-16.5 {accept zero files (TIP 323)} -body {
     file delete --
 } -result {}
+# ~ is no longer a special char. Need a test case where translation fails.
 test fCmd-16.6 {delete: source filename translation failing} -setup {
     set temp $::env(HOME)
-} -constraints {notRoot} -body {
+} -constraints {notRoot TODO} -body {
     global env
     unset env(HOME)
     catch {file delete ~/tfa}
@@ -2282,7 +2381,7 @@ test fCmd-27.2 {TclFileAttrsCmd - Tcl_TranslateFileName fails} -setup {
     file attributes ~_totally_bogus_user
 } -returnCodes error -cleanup {
     testsetplatform $platform
-} -result {user "_totally_bogus_user" doesn't exist}
+} -result {could not read "~_totally_bogus_user": no such file or directory}
 test fCmd-27.3 {TclFileAttrsCmd - all attributes} -setup {
     catch {file delete -force -- foo.tmp}
 } -body {

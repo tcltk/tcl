@@ -108,7 +108,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 			catch {lappend paths [::tcl::pkgconfig get bindir,runtime]}
 		    }
 		    if {[catch {::${basename}::pkgconfig get dllfile,runtime} dllfile]} {
-			set dllfile "lib${basename}${version}[info sharedlibextension]"
+			set dllfile "libtcl9${basename}${version}[info sharedlibextension]"
 		    }
 		    set dir [file dirname [file join [pwd] [info nameofexecutable]]]
 		    lappend paths $dir
@@ -302,7 +302,7 @@ proc auto_mkindex_old {dir args} {
 	set f ""
 	set error [catch {
 	    set f [open $file]
-	    fconfigure $f -encoding utf-8 -eofchar "\x1A {}"
+	    fconfigure $f -encoding utf-8 -eofchar \x1A
 	    while {[gets $f line] >= 0} {
 		if {[regexp {^proc[ 	]+([^ 	]*)} $line match procName]} {
 		    set procName [lindex [auto_qualify $procName "::"] 0]
@@ -414,7 +414,7 @@ proc auto_mkindex_parser::mkindex {file} {
     set scriptFile $file
 
     set fid [open $file]
-    fconfigure $fid -encoding utf-8 -eofchar "\x1A {}"
+    fconfigure $fid -encoding utf-8 -eofchar \x1A
     set contents [read $fid]
     close $fid
 

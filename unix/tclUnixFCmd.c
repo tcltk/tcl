@@ -41,8 +41,6 @@
  */
 
 #include "tclInt.h"
-#include <utime.h>
-#include <grp.h>
 #ifndef HAVE_STRUCT_STAT_ST_BLKSIZE
 #ifndef NO_FSTATFS
 #include <sys/statfs.h>
@@ -260,6 +258,11 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
 #else
 #   define haveRealpath	1
 #endif
+#else /* NO_REALPATH */
+/*
+ * At least TclpObjNormalizedPath now requires REALPATH
+*/
+#error NO_REALPATH is not supported
 #endif /* NO_REALPATH */
 
 #ifdef HAVE_FTS
@@ -544,9 +547,9 @@ TclUnixCopyFile(
     int dontCopyAtts)		/* If flag set, don't copy attributes. */
 {
     int srcFd, dstFd;
-    unsigned blockSize;		/* Optimal I/O blocksize for filesystem */
+    size_t blockSize;		/* Optimal I/O blocksize for filesystem */
     char *buffer;		/* Data buffer for copy */
-    size_t nread;
+    ssize_t nread;
 
 #ifdef DJGPP
 #define BINMODE |O_BINARY
@@ -600,21 +603,21 @@ TclUnixCopyFile(
     if (blockSize <= 0) {
 	blockSize = DEFAULT_COPY_BLOCK_SIZE;
     }
-    buffer = (char *)ckalloc(blockSize);
+    buffer = (char *)Tcl_Alloc(blockSize);
     while (1) {
-	nread = (size_t) read(srcFd, buffer, blockSize);
-	if ((nread == (size_t) -1) || (nread == 0)) {
+	nread = read(srcFd, buffer, blockSize);
+	if ((nread == -1) || (nread == 0)) {
 	    break;
 	}
-	if ((size_t) write(dstFd, buffer, nread) != nread) {
-	    nread = (size_t) -1;
+	if (write(dstFd, buffer, nread) != nread) {
+	    nread = -1;
 	    break;
 	}
     }
 
-    ckfree(buffer);
+    Tcl_Free(buffer);
     close(srcFd);
-    if ((close(dstFd) != 0) || (nread == (size_t) -1)) {
+    if ((close(dstFd) != 0) || (nread == -1)) {
 	unlink(dst);					/* INTL: Native. */
 	return TCL_ERROR;
     }
@@ -759,16 +762,16 @@ TclpObjCopyDirectory(
     Tcl_Obj *transPtr;
 
     transPtr = Tcl_FSGetTranslatedPath(NULL,srcPathPtr);
-    Tcl_UtfToExternalDString(NULL,
+    Tcl_UtfToExternalDStringEx(NULL, NULL,
 	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
-	    -1, &srcString);
+	    -1, TCL_ENCODING_PROFILE_TCL8, &srcString, NULL);
     if (transPtr != NULL) {
 	Tcl_DecrRefCount(transPtr);
     }
     transPtr = Tcl_FSGetTranslatedPath(NULL,destPathPtr);
-    Tcl_UtfToExternalDString(NULL,
+    Tcl_UtfToExternalDStringEx(NULL, NULL,
 	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
-	    -1, &dstString);
+	    -1, TCL_ENCODING_PROFILE_TCL8, &dstString, NULL);
     if (transPtr != NULL) {
 	Tcl_DecrRefCount(transPtr);
     }
@@ -823,9 +826,9 @@ TclpObjRemoveDirectory(
     int ret;
     Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
 
-    Tcl_UtfToExternalDString(NULL,
+    Tcl_UtfToExternalDStringEx(NULL, NULL,
 	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
-	    -1, &pathString);
+	    -1, TCL_ENCODING_PROFILE_TCL8, &pathString, NULL);
     if (transPtr != NULL) {
 	Tcl_DecrRefCount(transPtr);
     }
@@ -883,7 +886,7 @@ DoRemoveDirectory(
     result = TCL_OK;
     if ((errno != EEXIST) || (recursive == 0)) {
 	if (errorPtr != NULL) {
-	    Tcl_ExternalToUtfDString(NULL, path, TCL_INDEX_NONE, errorPtr);
+	    Tcl_ExternalToUtfDStringEx(NULL, NULL, path, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, errorPtr, NULL);
 	}
 	result = TCL_ERROR;
     }
@@ -950,8 +953,8 @@ TraverseUnixTree(
 {
     Tcl_StatBuf statBuf;
     const char *source, *errfile;
-    int result, sourceLen;
-    int targetLen;
+    int result;
+    size_t targetLen, sourceLen;
 #ifndef HAVE_FTS
     int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
@@ -1132,7 +1135,7 @@ TraverseUnixTree(
   end:
     if (errfile != NULL) {
 	if (errorPtr != NULL) {
-	    Tcl_ExternalToUtfDString(NULL, errfile, TCL_INDEX_NONE, errorPtr);
+	    Tcl_ExternalToUtfDStringEx(NULL, NULL, errfile, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, errorPtr, NULL);
 	}
 	result = TCL_ERROR;
     }
@@ -1202,8 +1205,8 @@ TraversalCopy(
      */
 
     if (errorPtr != NULL) {
-	Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(dstPtr),
-		Tcl_DStringLength(dstPtr), errorPtr);
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(dstPtr),
+		Tcl_DStringLength(dstPtr), TCL_ENCODING_PROFILE_TCL8, errorPtr, NULL);
     }
     return TCL_ERROR;
 }
@@ -1253,8 +1256,8 @@ TraversalDelete(
 	break;
     }
     if (errorPtr != NULL) {
-	Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(srcPtr),
-		Tcl_DStringLength(srcPtr), errorPtr);
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(srcPtr),
+		Tcl_DStringLength(srcPtr), TCL_ENCODING_PROFILE_TCL8, errorPtr, NULL);
     }
     return TCL_ERROR;
 }
@@ -1421,7 +1424,7 @@ GetOwnerAttribute(
     } else {
 	Tcl_DString ds;
 
-	(void) Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, TCL_INDEX_NONE, &ds);
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, pwPtr->pw_name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
 	*attributePtrPtr = Tcl_DStringToObj(&ds);
     }
     return TCL_OK;
@@ -1501,10 +1504,11 @@ SetGroupAttribute(
 	Tcl_DString ds;
 	struct group *groupPtr = NULL;
 	const char *string;
+	Tcl_Size length;
 
-	string = TclGetString(attributePtr);
+	string = Tcl_GetStringFromObj(attributePtr, &length);
 
-	native = Tcl_UtfToExternalDString(NULL, string, attributePtr->length, &ds);
+	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
 	groupPtr = TclpGetGrNam(native); /* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
@@ -1567,10 +1571,11 @@ SetOwnerAttribute(
 	Tcl_DString ds;
 	struct passwd *pwPtr = NULL;
 	const char *string;
+	Tcl_Size length;
 
-	string = TclGetString(attributePtr);
+	string = Tcl_GetStringFromObj(attributePtr, &length);
 
-	native = Tcl_UtfToExternalDString(NULL, string, attributePtr->length, &ds);
+	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
 	pwPtr = TclpGetPwNam(native);			/* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
@@ -1643,7 +1648,7 @@ SetPermissionsAttribute(
 	Tcl_Obj *modeObj;
 
 	TclNewLiteralStringObj(modeObj, "0o");
-	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, -1);
+	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, TCL_INDEX_NONE);
 	result = Tcl_GetWideIntFromObj(NULL, modeObj, &mode);
 	Tcl_DecrRefCount(modeObj);
     }
@@ -1942,8 +1947,8 @@ TclpObjNormalizePath(
 {
     const char *currentPathEndPosition;
     char cur;
-    const char *path = TclGetString(pathPtr);
-    size_t pathLen = pathPtr->length;
+    Tcl_Size pathLen;
+    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
     Tcl_DString ds;
     const char *nativePath;
 #ifndef NO_REALPATH
@@ -2047,7 +2052,7 @@ TclpObjNormalizePath(
 
 	nativePath = Tcl_UtfToExternalDString(NULL, path,nextCheckpoint, &ds);
 	if (Realpath(nativePath, normPath) != NULL) {
-	    int newNormLen;
+	    Tcl_Size newNormLen;
 
 	wholeStringOk:
 	    newNormLen = strlen(normPath);
@@ -2081,7 +2086,7 @@ TclpObjNormalizePath(
 	     */
 
 	    Tcl_DStringFree(&ds);
-	    Tcl_ExternalToUtfDString(NULL, normPath, (int) newNormLen, &ds);
+	    Tcl_ExternalToUtfDStringEx(NULL, NULL, normPath, newNormLen, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
 
 	    if (path[nextCheckpoint] != '\0') {
 		/*
@@ -2166,14 +2171,15 @@ TclUnixOpenTemporaryFile(
     Tcl_DString templ, tmp;
     const char *string;
     int fd;
+    Tcl_Size length;
 
     /*
      * We should also check against making more then TMP_MAX of these.
      */
 
     if (dirObj) {
-	string = TclGetString(dirObj);
-	Tcl_UtfToExternalDString(NULL, string, dirObj->length, &templ);
+	string = Tcl_GetStringFromObj(dirObj, &length);
+	Tcl_UtfToExternalDStringEx(NULL, NULL, string, length, TCL_ENCODING_PROFILE_TCL8, &templ, NULL);
     } else {
 	Tcl_DStringInit(&templ);
 	Tcl_DStringAppend(&templ, DefaultTempDir(), TCL_INDEX_NONE); /* INTL: native */
@@ -2182,8 +2188,8 @@ TclUnixOpenTemporaryFile(
     TclDStringAppendLiteral(&templ, "/");
 
     if (basenameObj) {
-	string = TclGetString(basenameObj);
-	Tcl_UtfToExternalDString(NULL, string, basenameObj->length, &tmp);
+	string = Tcl_GetStringFromObj(basenameObj, &length);
+	Tcl_UtfToExternalDStringEx(NULL, NULL, string, length, TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
 	TclDStringAppendDString(&templ, &tmp);
 	Tcl_DStringFree(&tmp);
     } else {
@@ -2194,8 +2200,8 @@ TclUnixOpenTemporaryFile(
 
 #ifdef HAVE_MKSTEMPS
     if (extensionObj) {
-	string = TclGetString(extensionObj);
-	Tcl_UtfToExternalDString(NULL, string, extensionObj->length, &tmp);
+	string = Tcl_GetStringFromObj(extensionObj, &length);
+	Tcl_UtfToExternalDStringEx(NULL, NULL, string, length, TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
 	TclDStringAppendDString(&templ, &tmp);
 	fd = mkstemps(Tcl_DStringValue(&templ), Tcl_DStringLength(&tmp));
 	Tcl_DStringFree(&tmp);
@@ -2211,8 +2217,8 @@ TclUnixOpenTemporaryFile(
     }
 
     if (resultingNameObj) {
-	Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&templ),
-		Tcl_DStringLength(&templ), &tmp);
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(&templ),
+		Tcl_DStringLength(&templ), TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
 	Tcl_SetStringObj(resultingNameObj, Tcl_DStringValue(&tmp),
 		Tcl_DStringLength(&tmp));
 	Tcl_DStringFree(&tmp);
@@ -2298,7 +2304,7 @@ TclpCreateTemporaryDirectory(
 
     if (dirObj) {
 	string = TclGetString(dirObj);
-	Tcl_UtfToExternalDString(NULL, string, dirObj->length, &templ);
+	Tcl_UtfToExternalDStringEx(NULL, NULL, string, dirObj->length, TCL_ENCODING_PROFILE_TCL8, &templ, NULL);
     } else {
 	Tcl_DStringInit(&templ);
 	Tcl_DStringAppend(&templ, DefaultTempDir(), TCL_INDEX_NONE); /* INTL: native */
@@ -2311,7 +2317,7 @@ TclpCreateTemporaryDirectory(
     if (basenameObj) {
 	string = TclGetString(basenameObj);
 	if (basenameObj->length) {
-	    Tcl_UtfToExternalDString(NULL, string, basenameObj->length, &tmp);
+	    Tcl_UtfToExternalDStringEx(NULL, NULL, string, basenameObj->length, TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
 	    TclDStringAppendDString(&templ, &tmp);
 	    Tcl_DStringFree(&tmp);
 	} else {
@@ -2336,8 +2342,8 @@ TclpCreateTemporaryDirectory(
      * The template has been updated. Tell the caller what it was.
      */
 
-    Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&templ),
-	    Tcl_DStringLength(&templ), &tmp);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(&templ),
+	    Tcl_DStringLength(&templ), TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
     Tcl_DStringFree(&templ);
     return Tcl_DStringToObj(&tmp);
 }
@@ -2359,12 +2365,12 @@ static WCHAR *
 winPathFromObj(
     Tcl_Obj *fileName)
 {
-    int size;
+    size_t size;
     const char *native =  (const char *)Tcl_FSGetNativePath(fileName);
     WCHAR *winPath;
 
     size = cygwin_conv_path(1, native, NULL, 0);
-    winPath = (WCHAR *)ckalloc(size);
+    winPath = (WCHAR *)Tcl_Alloc(size);
     cygwin_conv_path(1, native, winPath, size);
 
     return winPath;
@@ -2404,7 +2410,7 @@ GetUnixFileAttributes(
     WCHAR *winPath = winPathFromObj(fileName);
 
     fileAttributes = GetFileAttributesW(winPath);
-    ckfree(winPath);
+    Tcl_Free(winPath);
 
     if (fileAttributes == -1) {
 	StatError(interp, fileName);
@@ -2451,7 +2457,7 @@ SetUnixFileAttributes(
     fileAttributes = old = GetFileAttributesW(winPath);
 
     if (fileAttributes == -1) {
-	ckfree(winPath);
+	Tcl_Free(winPath);
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }
@@ -2464,12 +2470,12 @@ SetUnixFileAttributes(
 
     if ((fileAttributes != old)
 	    && !SetFileAttributesW(winPath, fileAttributes)) {
-	ckfree(winPath);
+	Tcl_Free(winPath);
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }
 
-    ckfree(winPath);
+    Tcl_Free(winPath);
     return TCL_OK;
 }
 #elif defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)

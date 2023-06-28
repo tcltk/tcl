@@ -11,6 +11,7 @@
 
 #include "tclInt.h"
 #include "tclTomMath.h"
+#include <assert.h>
 
 /*
  * Flag values used by Tcl_ScanObjCmd.
@@ -104,9 +105,9 @@ BuildCharSet(
 	end += TclUtfToUniChar(end, &ch);
     }
 
-    cset->chars = (Tcl_UniChar *)ckalloc(sizeof(Tcl_UniChar) * (end - format - 1));
+    cset->chars = (Tcl_UniChar *)Tcl_Alloc(sizeof(Tcl_UniChar) * (end - format - 1));
     if (nranges > 0) {
-	cset->ranges = (Range *)ckalloc(sizeof(Range) * nranges);
+	cset->ranges = (Range *)Tcl_Alloc(sizeof(Range) * nranges);
     } else {
 	cset->ranges = NULL;
     }
@@ -226,9 +227,9 @@ static void
 ReleaseCharSet(
     CharSet *cset)
 {
-    ckfree(cset->chars);
+    Tcl_Free(cset->chars);
     if (cset->ranges) {
-	ckfree(cset->ranges);
+	Tcl_Free(cset->ranges);
     }
 }
 
@@ -258,7 +259,7 @@ ValidateFormat(
     int *totalSubs)		/* The number of variables that will be
 				 * required. */
 {
-    int gotXpg, gotSequential, value, i, flags;
+    int gotXpg, gotSequential, i, flags;
     char *end;
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
@@ -306,7 +307,8 @@ ValidateFormat(
 	     * format string.
 	     */
 
-	    unsigned long ul = strtoul(format-1, &end, 10);	/* INTL: "C" locale. */
+	    /* assert(value is >= 0) because of the isdigit() check above */
+	    unsigned long long ull = strtoull(format-1, &end, 10);	/* INTL: "C" locale. */
 	    if (*end != '$') {
 		goto notXpg;
 	    }
@@ -316,20 +318,22 @@ ValidateFormat(
 	    if (gotSequential) {
 		goto mixedXPG;
 	    }
-	    if (ul == 0 || ul >= INT_MAX) {
+	    /* >=INT_MAX because 9.0 does not support more than INT_MAX-1 args */
+	    if (ull == 0 || ull >= INT_MAX) {
 		goto badIndex;
 	    }
-	    objIndex = (int) ul - 1;
+	    objIndex = (int) ull - 1;
 	    if (numVars && (objIndex >= numVars)) {
 		goto badIndex;
-	    } else if (numVars == 0) {
+	    }
+	    else if (numVars == 0) {
 		/*
 		 * In the case where no vars are specified, the user can
 		 * specify %9999$ legally, so we have to consider special
-		 * rules for growing the assign array. 'ul' is guaranteed
+		 * rules for growing the assign array. 'ull' is guaranteed
 		 * to be > 0 and < INT_MAX as per checks above.
 		 */
-		xpgSize = (xpgSize > (int)ul) ? xpgSize : (int)ul;
+		xpgSize = (xpgSize > (int)ull) ? xpgSize : (int)ull;
 	    }
 	    goto xpgCheckDone;
 	}
@@ -351,7 +355,22 @@ ValidateFormat(
 	 */
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
-	    value = strtoul(format-1, (char **) &format, 10);	/* INTL: "C" locale. */
+	    /* Note ull >= 0 because of isdigit check above */
+	    unsigned long long ull;
+	    ull = strtoull(
+		format - 1, (char **)&format, 10); /* INTL: "C" locale. */
+	    /* Note >=, not >, to leave room for a nul */
+	    if (ull >= TCL_SIZE_MAX) {
+		Tcl_SetObjResult(
+		    interp,
+		    Tcl_ObjPrintf("specified field width %" TCL_LL_MODIFIER
+				  "u exceeds limit %" TCL_SIZE_MODIFIER "d.",
+				  ull,
+				  (Tcl_Size)TCL_SIZE_MAX-1));
+		Tcl_SetErrorCode(
+		    interp, "TCL", "FORMAT", "WIDTHLIMIT", NULL);
+		goto error;
+	    }
 	    flags |= SCAN_WIDTH;
 	    format += TclUtfToUniChar(format, &ch);
 	}
@@ -476,7 +495,7 @@ ValidateFormat(
 		 * guaranteed to be at least one larger than objIndex.
 		 */
 
-		value = nspace;
+		int nspaceOrig = nspace;
 		if (xpgSize) {
 		    nspace = xpgSize;
 		} else {
@@ -484,7 +503,7 @@ ValidateFormat(
 		}
 		nassign = (int *)TclStackRealloc(interp, nassign,
 			nspace * sizeof(int));
-		for (i = value; i < nspace; i++) {
+		for (i = nspaceOrig; i < nspace; i++) {
 		    nassign[i] = 0;
 		}
 	    }
@@ -567,7 +586,7 @@ ValidateFormat(
 
 int
 Tcl_ScanObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -578,7 +597,8 @@ Tcl_ScanObjCmd(
     long value;
     const char *string, *end, *baseString;
     char op = 0;
-    int width, underflow = 0;
+    int underflow = 0;
+    Tcl_Size width;
     Tcl_WideInt wideValue;
     Tcl_UniChar ch = 0, sch = 0;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
@@ -590,7 +610,7 @@ Tcl_ScanObjCmd(
 	return TCL_ERROR;
     }
 
-    format = Tcl_GetString(objv[2]);
+    format = TclGetString(objv[2]);
     numVars = objc-3;
 
     /*
@@ -606,13 +626,13 @@ Tcl_ScanObjCmd(
      */
 
     if (totalVars > 0) {
-	objs = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj *) * totalVars);
+	objs = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * totalVars);
 	for (i = 0; i < totalVars; i++) {
 	    objs[i] = NULL;
 	}
     }
 
-    string = Tcl_GetString(objv[1]);
+    string = TclGetString(objv[1]);
     baseString = string;
 
     /*
@@ -673,6 +693,7 @@ Tcl_ScanObjCmd(
 	    format += TclUtfToUniChar(format, &ch);
 	} else if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
 	    char *formatEnd;
+	    /* Note currently XPG3 range limited to INT_MAX to match type of objc */
 	    value = strtoul(format-1, &formatEnd, 10);/* INTL: "C" locale. */
 	    if (*formatEnd == '$') {
 		format = formatEnd+1;
@@ -686,7 +707,10 @@ Tcl_ScanObjCmd(
 	 */
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
-	    width = (int) strtoul(format-1, (char **) &format, 10);/* INTL: "C" locale. */
+	    unsigned long long ull;
+	    ull  = strtoull(format-1, (char **) &format, 10); /* INTL: "C" locale. */
+	    assert(ull <= TCL_SIZE_MAX); /* Else ValidateFormat should've error'ed */
+	    width = (Tcl_Size)ull;
 	    format += TclUtfToUniChar(format, &ch);
 	} else {
 	    width = 0;
@@ -952,7 +976,7 @@ Tcl_ScanObjCmd(
 
 		    if (res == TCL_ERROR) {
 			if (objs != NULL) {
-			    ckfree(objs);
+			    Tcl_Free(objs);
 			}
 			Tcl_DecrRefCount(objPtr);
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -1022,7 +1046,7 @@ Tcl_ScanObjCmd(
 		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
 #ifdef ACCEPT_NAN
 		    const Tcl_ObjInternalRep *irPtr
-			    = TclFetchInternalRep(objPtr, &tclDoubleType);
+			    = TclFetchInternalRep(objPtr, &tclDoubleType.objType);
 		    if (irPtr) {
 			dvalue = irPtr->doubleValue;
 		    } else
@@ -1070,27 +1094,40 @@ Tcl_ScanObjCmd(
     } else {
 	/*
 	 * Here no vars were specified, we want a list returned (inline scan)
+	 * We create an empty Tcl_Obj to fill missing values rather than
+	 * allocating a new Tcl_Obj every time. See test scan-bigdata-XX.
 	 */
-
+	Tcl_Obj *emptyObj;
+	TclNewObj(emptyObj);
+	Tcl_IncrRefCount(emptyObj);
 	TclNewObj(objPtr);
-	for (i = 0; i < totalVars; i++) {
+	for (i = 0; code == TCL_OK && i < totalVars; i++) {
 	    if (objs[i] != NULL) {
-		Tcl_ListObjAppendElement(NULL, objPtr, objs[i]);
+		code = Tcl_ListObjAppendElement(interp, objPtr, objs[i]);
 		Tcl_DecrRefCount(objs[i]);
 	    } else {
-		Tcl_Obj *obj;
 		/*
 		 * More %-specifiers than matching chars, so we just spit out
 		 * empty strings for these.
 		 */
 
-		TclNewObj(obj);
-		Tcl_ListObjAppendElement(NULL, objPtr, obj);
+		code = Tcl_ListObjAppendElement(interp, objPtr, emptyObj);
 	    }
+	}
+	Tcl_DecrRefCount(emptyObj);
+	if (code != TCL_OK) {
+	    /* If error'ed out, free up remaining. i contains last index freed */
+	    while (++i < totalVars) {
+		if (objs[i] != NULL) {
+		    Tcl_DecrRefCount(objs[i]);
+		}
+	    }
+	    Tcl_DecrRefCount(objPtr);
+	    objPtr = NULL;
 	}
     }
     if (objs != NULL) {
-	ckfree(objs);
+	Tcl_Free(objs);
     }
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {

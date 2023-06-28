@@ -16,13 +16,11 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact tcl::test [info patchlevel]]
 
 # Determine if "long int" type is a 32 bit number and if the wide
 # type is a 64 bit number on this machine.
 
 testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
-testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 testConstraint wideIs64bit [expr {wide(0x8000000000000000) < 0}]
 
 # Big test for correct ordering of data in [expr]
@@ -853,7 +851,7 @@ test expr-21.21 {non-numeric boolean variables} {
 test expr-21.22 {non-numeric boolean variables} {
     set v ""
     list [catch {expr {!$v}} err] $err
-} {1 {can't use empty string "" as operand of "!"}}
+} {1 {can't use non-numeric string "" as operand of "!"}}
 
 # Test for non-numeric float handling.
 test expr-22.1 {non-numeric floats} {
@@ -7452,43 +7450,45 @@ test expr-62.10 {TIP 582: comments can go inside function calls} {
 	     (1,2)}
 } 2
 
-# Bug e3dcab1d14
-proc do-one-test-expr-63 {e p float athreshold} {
-    # e - power of 2 to test
-    # p - tcl_precision to test with
-    # float - floating point value 2**-$p
-    # athreshold - tolerable absolute error (1/2 decimal digit in
-    #              least significant place plus 1/2 least significant bit)
-    set trouble {}
-    set ::tcl_precision $p
-    set xfmt x[expr $float]
-    set ::tcl_precision 0
-    set fmt [string range $xfmt 1 end]
-    set aerror [expr {abs($fmt - $float)}]
-    if {$aerror > $athreshold} {
-        return "Result $fmt is more than $athreshold away from $float"
-    } else {
-        return {}
-    }
-}
+# Bug e3dcab1d14 TODO: Need to work out a test case that fails
+# without tcl_precision, which has been eliminated in 9.0
 
-proc run-test-expr-63 {} {
-    for {set e 0} {$e <= 1023} {incr e} {
-        set pt [expr {floor($e*log(2)/log(10))}]
-        for {set p 6} {$p <= 17} {incr p} {
-            set athreshold [expr {0.5*10.0**-($pt+$p) + 2.0**-($e+53)}]
-            set numer [expr {5**$e}]
-            set xfloat x[expr {2.**-$e}]
-            set float [string range $xfloat 1 end]
-            test expr-63.$p.$e "convert 2**-$e to decimal at precision $p" {
-                do-one-test-expr-63 $e $p $float $athreshold
-            } {}
-        }
-    }
-    rename do-one-test-expr-63 {}
-    rename run-test-expr-63 {}
-}
-run-test-expr-63
+# proc do-one-test-expr-63 {e p float athreshold} {
+#     # e - power of 2 to test
+#     # p - tcl_precision to test wuth
+#     # float - floating point value 2**-$p
+#     # athreshold - tolerable absolute error (1/2 decimal digit in
+#     #              least significant place plus 1/2 least significant bit)
+#     set trouble {}
+#     set ::tcl_precision $p
+#     set xfmt x[expr $float]
+#     set ::tcl_precision 0
+#     set fmt [string range $xfmt 1 end]
+#     set aerror [expr {abs($fmt - $float)}]
+#     if {$aerror > $athreshold} {
+#         return "Result $fmt is more than $athreshold away from $float"
+#     } else {
+#         return {}
+#     }
+# }
+
+# proc run-test-expr-63 {} {
+#     for {set e 0} {$e <= 1023} {incr e} {
+#         set pt [expr {floor($e*log(2)/log(10))}]
+#         for {set p 6} {$p <= 17} {incr p} {
+#             set athreshold [expr {0.5*10.0**-($pt+$p) + 2.0**-($e+53)}]
+#             set numer [expr {5**$e}]
+#             set xfloat x[expr {2.**-$e}]
+#             set float [string range $xfloat 1 end]
+#             test expr-63.$p.$e "convert 2**-$e to decimal at precision $p" {
+#                 do-one-test-expr-63 $e $p $float $athreshold
+#             } {}
+#         }
+#     }
+#     rename do-one-test-expr-63 {}
+#     rename run-test-expr-63 {}
+# }
+# run-test-expr-63
 
 # cleanup
 unset -nocomplain a

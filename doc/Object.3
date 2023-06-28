@@ -111,9 +111,9 @@ which is defined as follows.
 .PP
 .CS
 typedef struct Tcl_Obj {
-    int \fIrefCount\fR;
+    Tcl_Size \fIrefCount\fR;
     char *\fIbytes\fR;
-    int \fIlength\fR;
+    Tcl_Size \fIlength\fR;
     const Tcl_ObjType *\fItypePtr\fR;
     union {
         long \fIlongValue\fR;

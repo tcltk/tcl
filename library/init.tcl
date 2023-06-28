@@ -19,7 +19,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact tcl 8.7a6
+package require -exact tcl 9.0a4
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -47,7 +47,15 @@ package require -exact tcl 8.7a6
 
 if {![info exists auto_path]} {
     if {[info exists env(TCLLIBPATH)] && (![interp issafe])} {
-	set auto_path $env(TCLLIBPATH)
+        set auto_path [apply {{} {
+            lmap path $::env(TCLLIBPATH) {
+                # Paths relative to unresolvable home dirs are ignored
+                if {[catch {file tildeexpand $path} expanded_path]} {
+                    continue
+                }
+                set expanded_path
+            }
+        }}]
     } else {
 	set auto_path ""
     }
@@ -442,7 +450,7 @@ proc auto_load_index {} {
 	    continue
 	} else {
 	    set error [catch {
-		fconfigure $f -encoding utf-8 -eofchar "\x1A {}"
+		fconfigure $f -encoding utf-8 -eofchar \x1A
 		set id [gets $f]
 		if {$id eq "# Tcl autoload index file, version 2.0"} {
 		    eval [read $f]

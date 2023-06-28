@@ -24,8 +24,8 @@ already been incorporated (i.e., the caller has already invoked the
 appropriate initialization procedure).  NULL means the library
 has not yet been incorporated into any interpreter.
 .AP "const char" *prefix in
-Prefix for library initialization function;  should be properly
-capitalized (first letter upper-case, all others lower-case).
+Prefix for library initialization function. Normally in titlecase (first
+letter upper-case, all others lower-case), but this is no longer required.
 .AP Tcl_LibraryInitProc *initProc in
 Procedure to invoke to incorporate this library into a trusted
 interpreter.
@@ -70,8 +70,7 @@ initialization procedure to be invoked.
 \fBTcl_StaticLibrary\fR was named \fBTcl_StaticPackage\fR in Tcl 8.6 and
 earlier, but the old name is deprecated now.
 .PP
-\fBTcl_StaticLibrary\fR can not be used in stub-enabled extensions. Its symbol
-entry in the stub table is deprecated and it will be removed in Tcl 9.0.
+\fBTcl_StaticLibrary\fR can not be used in stub-enabled extensions.
 .SH KEYWORDS
 initialization procedure, package, static linking
 .SH "SEE ALSO"

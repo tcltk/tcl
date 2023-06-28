@@ -309,7 +309,8 @@ DoRenameFile(
 	if (srcAttr & FILE_ATTRIBUTE_DIRECTORY) {
 	    WCHAR *nativeSrcRest, *nativeDstRest;
 	    const char **srcArgv, **dstArgv;
-	    Tcl_Size size, srcArgc, dstArgc;
+	    size_t size;
+	    Tcl_Size srcArgc, dstArgc;
 	    WCHAR nativeSrcPath[MAX_PATH];
 	    WCHAR nativeDstPath[MAX_PATH];
 	    Tcl_DString srcString, dstString;
@@ -317,7 +318,7 @@ DoRenameFile(
 
 	    size = GetFullPathNameW(nativeSrc, MAX_PATH,
 		    nativeSrcPath, &nativeSrcRest);
-	    if ((size <= 0) || (size > MAX_PATH)) {
+	    if ((size == 0) || (size > MAX_PATH)) {
 		return TCL_ERROR;
 	    }
 	    size = GetFullPathNameW(nativeDst, MAX_PATH,
@@ -378,8 +379,8 @@ DoRenameFile(
 		Tcl_SetErrno(EXDEV);
 	    }
 
-	    ckfree(srcArgv);
-	    ckfree(dstArgv);
+	    Tcl_Free((void *)srcArgv);
+	    Tcl_Free((void *)dstArgv);
 	}
 
 	/*
@@ -1536,7 +1537,7 @@ GetWinFileAttributes(
 	 */
 
 	Tcl_Size len;
-	const char *str = TclGetStringFromObj(fileName, &len);
+	const char *str = Tcl_GetStringFromObj(fileName, &len);
 
 	if (len < 4) {
 	    if (len == 0) {
@@ -1604,7 +1605,7 @@ ConvertFileNameFormat(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "could not read \"%s\": no such file or directory",
-		    Tcl_GetString(fileName)));
+		    TclGetString(fileName)));
 	    errno = ENOENT;
 	    Tcl_PosixError(interp);
 	}
@@ -1624,7 +1625,7 @@ ConvertFileNameFormat(
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
-	pathv = TclGetStringFromObj(elt, &length);
+	pathv = Tcl_GetStringFromObj(elt, &length);
 	if ((pathv[0] == '/') || ((length == 3) && (pathv[1] == ':'))
 		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
@@ -1660,7 +1661,7 @@ ConvertFileNameFormat(
 	     * likely to lead to infinite loops.
 	     */
 
-	    tempString = TclGetStringFromObj(tempPath, &length);
+	    tempString = Tcl_GetStringFromObj(tempPath, &length);
 	    Tcl_DStringInit(&ds);
 	    nativeName = Tcl_UtfToWCharDString(tempString, length, &ds);
 	    Tcl_DecrRefCount(tempPath);
@@ -1714,19 +1715,8 @@ ConvertFileNameFormat(
 	    Tcl_WCharToUtfDString(nativeName, TCL_INDEX_NONE, &dsTemp);
 	    Tcl_DStringFree(&ds);
 
-	    /*
-	     * Deal with issues of tildes being absolute.
-	     */
-
-	    if (Tcl_DStringValue(&dsTemp)[0] == '~') {
-		TclNewLiteralStringObj(tempPath, "./");
-		Tcl_AppendToObj(tempPath, Tcl_DStringValue(&dsTemp),
-			Tcl_DStringLength(&dsTemp));
-		Tcl_DStringFree(&dsTemp);
-	    } else {
-		tempPath = Tcl_DStringToObj(&dsTemp);
-	    }
-	    Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
+            tempPath = Tcl_DStringToObj(&dsTemp);
+            Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
 	    FindClose(handle);
 	}
     }
@@ -1895,7 +1885,7 @@ CannotSetAttribute(
 {
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "cannot set attribute \"%s\" for file \"%s\": attribute is readonly",
-	    tclpFileAttrStrings[objIndex], Tcl_GetString(fileName)));
+	    tclpFileAttrStrings[objIndex], TclGetString(fileName)));
     errno = EINVAL;
     Tcl_PosixError(interp);
     return TCL_ERROR;

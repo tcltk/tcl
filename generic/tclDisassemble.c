@@ -42,6 +42,7 @@ static const Tcl_ObjType instNameType = {
     NULL,			/* dupIntRepProc */
     UpdateStringOfInstName,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 #define InstNameSetInternalRep(objPtr, inst)				\
@@ -56,7 +57,7 @@ static const Tcl_ObjType instNameType = {
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &instNameType);	\
 	assert(irPtr != NULL);					\
-	(inst) = (size_t)irPtr->wideValue;			\
+	(inst) = irPtr->wideValue;			\
     } while (0)
 
 
@@ -198,7 +199,7 @@ TclPrintObject(
     char *bytes;
     Tcl_Size length;
 
-    bytes = TclGetStringFromObj(objPtr, &length);
+    bytes = Tcl_GetStringFromObj(objPtr, &length);
     TclPrintSource(outFile, bytes, TclMin(length, maxChars));
 }
 
@@ -353,10 +354,10 @@ DisassembleByteCodeObj(
      * Print the ExceptionRange array.
      */
 
-    if (codePtr->numExceptRanges > 0) {
+    if ((int)codePtr->numExceptRanges > 0) {
 	Tcl_AppendPrintfToObj(bufferObj, "  Exception ranges %" TCL_SIZE_MODIFIER "u, depth %" TCL_SIZE_MODIFIER "u:\n",
 		codePtr->numExceptRanges, codePtr->maxExceptDepth);
-	for (i = 0;  i < codePtr->numExceptRanges;  i++) {
+	for (i = 0;  i < (int)codePtr->numExceptRanges;  i++) {
 	    ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
 
 	    Tcl_AppendPrintfToObj(bufferObj,
@@ -655,7 +656,7 @@ FormatInstruction(
 	Tcl_Size length;
 
 	Tcl_AppendToObj(bufferObj, "\t# ", -1);
-	bytes = TclGetStringFromObj(codePtr->objArrayPtr[opnd], &length);
+	bytes = Tcl_GetStringFromObj(codePtr->objArrayPtr[opnd], &length);
 	PrintSourceToObj(bufferObj, bytes, TclMin(length, 40));
     } else if (suffixBuffer[0]) {
 	Tcl_AppendPrintfToObj(bufferObj, "\t# %s", suffixBuffer);
@@ -833,14 +834,14 @@ UpdateStringOfInstName(
 
     InstNameGetInternalRep(objPtr, inst);
 
-    if (inst > LAST_INST_OPCODE) {
+    if (inst >= LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
 	TclOOM(dst, TCL_INTEGER_SPACE + 5);
         snprintf(dst, TCL_INTEGER_SPACE + 5, "inst_%" TCL_Z_MODIFIER "u", inst);
 	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
     } else {
 	const char *s = tclInstructionTable[inst].name;
-	unsigned int len = strlen(s);
+	size_t len = strlen(s);
 	dst = Tcl_InitStringRep(objPtr, s, len);
 	TclOOM(dst, len);
     }
@@ -1113,7 +1114,7 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(aux);
-    for (i=0 ; i<codePtr->numAuxDataItems ; i++) {
+    for (i=0 ; i<(int)codePtr->numAuxDataItems ; i++) {
 	AuxData *auxData = &codePtr->auxDataArrayPtr[i];
 	Tcl_Obj *auxDesc = Tcl_NewStringObj(auxData->type->name, -1);
 
@@ -1140,7 +1141,7 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(exn);
-    for (i=0 ; i<codePtr->numExceptRanges ; i++) {
+    for (i=0 ; i<(int)codePtr->numExceptRanges ; i++) {
 	ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
 
 	switch (rangePtr->type) {
@@ -1180,7 +1181,7 @@ DisassembleByteCodeAsDicts(
     srcOffPtr = codePtr->srcDeltaStart;
     srcLenPtr = codePtr->srcLengthStart;
     codeOffset = sourceOffset = 0;
-    for (i=0 ; i<codePtr->numCommands ; i++) {
+    for (i=0 ; i<(int)codePtr->numCommands ; i++) {
 	Tcl_Obj *cmd;
 
 	codeOffset += Decode(codeOffPtr);
@@ -1268,7 +1269,7 @@ DisassembleByteCodeAsDicts(
 
 int
 Tcl_DisassembleObjCmd(
-    ClientData clientData,	/* What type of operation. */
+    void *clientData,	/* What type of operation. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1281,8 +1282,8 @@ Tcl_DisassembleObjCmd(
 	DISAS_CLASS_CONSTRUCTOR, DISAS_CLASS_DESTRUCTOR,
 	DISAS_LAMBDA, DISAS_CLASS_METHOD, DISAS_OBJECT_METHOD, DISAS_PROC,
 	DISAS_SCRIPT
-    };
-    int idx, result;
+    } idx;
+    int result;
     Tcl_Obj *codeObjPtr = NULL;
     Proc *procPtr = NULL;
     Tcl_HashEntry *hPtr;
@@ -1298,7 +1299,7 @@ Tcl_DisassembleObjCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum Types) idx) {
+    switch (idx) {
     case DISAS_LAMBDA: {
 	Command cmd;
 	Tcl_Obj *nsObjPtr;
@@ -1528,7 +1529,7 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 	hPtr = Tcl_FindHashEntry(&oPtr->classPtr->classMethods,
-		(char *)objv[3]);
+		objv[3]);
 	goto methodBody;
     case DISAS_OBJECT_METHOD:
 	if (objc != 4) {
@@ -1547,7 +1548,7 @@ Tcl_DisassembleObjCmd(
 	if (oPtr->methodsPtr == NULL) {
 	    goto unknownMethod;
 	}
-	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *)objv[3]);
+	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[3]);
 
 	/*
 	 * Compile (if necessary) and disassemble a method body.

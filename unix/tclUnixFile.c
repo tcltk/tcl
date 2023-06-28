@@ -155,7 +155,7 @@ TclpFindExecutable(
 #endif
     {
 	encoding = Tcl_GetEncoding(NULL, NULL);
-	Tcl_ExternalToUtfDString(encoding, name, TCL_INDEX_NONE, &utfName);
+	Tcl_ExternalToUtfDStringEx(NULL, encoding, name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
 	TclSetObjNameOfExecutable(
 		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
 	Tcl_DStringFree(&utfName);
@@ -182,8 +182,8 @@ TclpFindExecutable(
     Tcl_DStringAppend(&nameString, name, TCL_INDEX_NONE);
 
     Tcl_DStringFree(&buffer);
-    Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&cwd),
-	    Tcl_DStringLength(&cwd), &buffer);
+    Tcl_UtfToExternalDStringEx(NULL, NULL, Tcl_DStringValue(&cwd),
+	    Tcl_DStringLength(&cwd), TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
     if (Tcl_DStringValue(&cwd)[Tcl_DStringLength(&cwd) -1] != '/') {
 	TclDStringAppendLiteral(&buffer, "/");
     }
@@ -192,8 +192,8 @@ TclpFindExecutable(
     Tcl_DStringFree(&nameString);
 
     encoding = Tcl_GetEncoding(NULL, NULL);
-    Tcl_ExternalToUtfDString(encoding, Tcl_DStringValue(&buffer), TCL_INDEX_NONE,
-	    &utfName);
+    Tcl_ExternalToUtfDStringEx(NULL, encoding, Tcl_DStringValue(&buffer), TCL_INDEX_NONE,
+	    TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
     TclSetObjNameOfExecutable(
 	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
     Tcl_DStringFree(&utfName);
@@ -712,9 +712,9 @@ TclpObjLstat(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpGetNativeCwd(
-    ClientData clientData)
+    void *clientData)
 {
     char buffer[MAXPATHLEN+1];
 
@@ -729,7 +729,7 @@ TclpGetNativeCwd(
 #endif /* USEGETWD */
 
     if ((clientData == NULL) || strcmp(buffer, (const char *) clientData)) {
-	char *newCd = (char *)ckalloc(strlen(buffer) + 1);
+	char *newCd = (char *)Tcl_Alloc(strlen(buffer) + 1);
 
 	strcpy(newCd, buffer);
 	return newCd;
@@ -816,7 +816,7 @@ TclpReadlink(
 {
 #ifndef DJGPP
     char link[MAXPATHLEN];
-    Tcl_Size length;
+    ssize_t length;
     const char *native;
     Tcl_DString ds;
 
@@ -828,7 +828,7 @@ TclpReadlink(
 	return NULL;
     }
 
-    Tcl_ExternalToUtfDString(NULL, link, length, linkPtr);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, TCL_ENCODING_PROFILE_TCL8, linkPtr, NULL);
     return Tcl_DStringValue(linkPtr);
 #else
     return NULL;
@@ -961,7 +961,7 @@ TclpObjLink(
 	    if (transPtr == NULL) {
 		return NULL;
 	    }
-	    target = TclGetStringFromObj(transPtr, &length);
+	    target = Tcl_GetStringFromObj(transPtr, &length);
 	    target = Tcl_UtfToExternalDString(NULL, target, length, &ds);
 	    Tcl_DecrRefCount(transPtr);
 
@@ -982,7 +982,7 @@ TclpObjLink(
 	Tcl_Obj *linkPtr = NULL;
 
 	char link[MAXPATHLEN];
-	Tcl_Size length;
+	ssize_t length;
 	Tcl_DString ds;
 	Tcl_Obj *transPtr;
 
@@ -997,7 +997,7 @@ TclpObjLink(
 	    return NULL;
 	}
 
-	Tcl_ExternalToUtfDString(NULL, link, length, &ds);
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
 	linkPtr = Tcl_DStringToObj(&ds);
 	Tcl_IncrRefCount(linkPtr);
 	return linkPtr;
@@ -1058,11 +1058,11 @@ TclpFilesystemPathType(
 
 Tcl_Obj *
 TclpNativeToNormalized(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDString(NULL, (const char *) clientData, TCL_INDEX_NONE, &ds);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
     return Tcl_DStringToObj(&ds);
 }
 
@@ -1082,7 +1082,7 @@ TclpNativeToNormalized(
  *---------------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclNativeCreateNativeRep(
     Tcl_Obj *pathPtr)
 {
@@ -1115,8 +1115,8 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = TclGetStringFromObj(validPathPtr, &len);
-    Tcl_UtfToExternalDString(NULL, str, len, &ds);
+    str = Tcl_GetStringFromObj(validPathPtr, &len);
+    Tcl_UtfToExternalDStringEx(NULL, NULL, str, len, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
     len = Tcl_DStringLength(&ds) + sizeof(char);
     if (strlen(Tcl_DStringValue(&ds)) < len - sizeof(char)) {
 	/* See bug [3118489]: NUL in filenames */
@@ -1125,7 +1125,7 @@ TclNativeCreateNativeRep(
 	return NULL;
     }
     Tcl_DecrRefCount(validPathPtr);
-    nativePathPtr = (char *)ckalloc(len);
+    nativePathPtr = (char *)Tcl_Alloc(len);
     memcpy(nativePathPtr, Tcl_DStringValue(&ds), len);
 
     Tcl_DStringFree(&ds);
@@ -1149,9 +1149,9 @@ TclNativeCreateNativeRep(
  *---------------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclNativeDupInternalRep(
-    ClientData clientData)
+    void *clientData)
 {
     char *copy;
     size_t len;
@@ -1166,7 +1166,7 @@ TclNativeDupInternalRep(
 
     len = (strlen((const char*) clientData) + 1) * sizeof(char);
 
-    copy = (char *)ckalloc(len);
+    copy = (char *)Tcl_Alloc(len);
     memcpy(copy, clientData, len);
     return copy;
 }

@@ -156,11 +156,7 @@ static void		WrapNotify(void *clientData, int mask);
 static const Tcl_ChannelType tcpChannelType = {
     "tcp",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-#ifndef TCL_NO_DEPRECATED
-    TcpCloseProc,		/* Close proc. */
-#else
-    TCL_CLOSE2PROC,		/* Close proc. */
-#endif
+    NULL,		/* Close proc. */
     TcpInputProc,		/* Input proc. */
     TcpOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -220,7 +216,7 @@ printaddrinfo(
 static void
 InitializeHostName(
     char **valuePtr,
-    unsigned int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *native = NULL;
@@ -242,12 +238,12 @@ InitializeHostName(
 	    char *dot = strchr(u.nodename, '.');
 
 	    if (dot != NULL) {
-		char *node = (char *)ckalloc(dot - u.nodename + 1);
+		char *node = (char *)Tcl_Alloc(dot - u.nodename + 1);
 
 		memcpy(node, u.nodename, dot - u.nodename);
 		node[dot - u.nodename] = '\0';
 		hp = TclpGetHostByName(node);
-		ckfree(node);
+		Tcl_Free(node);
 	    }
 	}
         if (hp != NULL) {
@@ -286,11 +282,11 @@ InitializeHostName(
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     if (native) {
 	*lengthPtr = strlen(native);
-	*valuePtr = (char *)ckalloc(*lengthPtr + 1);
+	*valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
 	memcpy(*valuePtr, native, *lengthPtr + 1);
     } else {
 	*lengthPtr = 0;
-	*valuePtr = (char *)ckalloc(1);
+	*valuePtr = (char *)Tcl_Alloc(1);
 	*valuePtr[0] = '\0';
     }
 }
@@ -316,7 +312,8 @@ InitializeHostName(
 const char *
 Tcl_GetHostName(void)
 {
-    return Tcl_GetString(TclGetProcessGlobalValue(&hostName));
+    Tcl_Obj *tclObj = TclGetProcessGlobalValue(&hostName);
+    return TclGetString(tclObj);
 }
 
 /*
@@ -626,7 +623,7 @@ TcpCloseProc(
     while (fds != NULL) {
 	TcpFdList *next = fds->next;
 
-	ckfree(fds);
+	Tcl_Free(fds);
 	fds = next;
     }
     if (statePtr->addrlist != NULL) {
@@ -635,7 +632,7 @@ TcpCloseProc(
     if (statePtr->myaddrlist != NULL) {
         freeaddrinfo(statePtr->myaddrlist);
     }
-    ckfree(statePtr);
+    Tcl_Free(statePtr);
     return errorCode;
 }
 
@@ -1531,7 +1528,7 @@ Tcl_OpenTcpClient(
      * Allocate a new TcpState for this socket.
      */
 
-    statePtr = (TcpState *)ckalloc(sizeof(TcpState));
+    statePtr = (TcpState *)Tcl_Alloc(sizeof(TcpState));
     memset(statePtr, 0, sizeof(TcpState));
     statePtr->flags = async ? TCP_ASYNC_CONNECT : 0;
     statePtr->cachedBlocking = TCL_MODE_BLOCKING;
@@ -1554,7 +1551,7 @@ Tcl_OpenTcpClient(
             statePtr, TCL_READABLE | TCL_WRITABLE);
     if (Tcl_SetChannelOption(interp, statePtr->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
-	Tcl_Close(NULL, statePtr->channel);
+	Tcl_CloseEx(NULL, statePtr->channel, 0);
 	return NULL;
     }
     return statePtr->channel;
@@ -1610,7 +1607,7 @@ TclpMakeTcpClientChannelMode(
     TcpState *statePtr;
     char channelName[SOCK_CHAN_LENGTH];
 
-    statePtr = (TcpState *)ckalloc(sizeof(TcpState));
+    statePtr = (TcpState *)Tcl_Alloc(sizeof(TcpState));
     memset(statePtr, 0, sizeof(TcpState));
     statePtr->fds.fd = PTR2INT(sock);
     statePtr->flags = 0;
@@ -1621,7 +1618,7 @@ TclpMakeTcpClientChannelMode(
 	    statePtr, mode);
     if (Tcl_SetChannelOption(NULL, statePtr->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
-	Tcl_Close(NULL, statePtr->channel);
+	Tcl_CloseEx(NULL, statePtr->channel, 0);
 	return NULL;
     }
     return statePtr->channel;
@@ -1837,14 +1834,14 @@ Tcl_OpenTcpServerEx(
              * Allocate a new TcpState for this socket.
              */
 
-            statePtr = (TcpState *)ckalloc(sizeof(TcpState));
+            statePtr = (TcpState *)Tcl_Alloc(sizeof(TcpState));
             memset(statePtr, 0, sizeof(TcpState));
             statePtr->acceptProc = acceptProc;
             statePtr->acceptProcData = acceptProcData;
             snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
             newfds = &statePtr->fds;
         } else {
-            newfds = (TcpFdList *)ckalloc(sizeof(TcpFdList));
+            newfds = (TcpFdList *)Tcl_Alloc(sizeof(TcpFdList));
             memset(newfds, (int) 0, sizeof(TcpFdList));
             fds->next = newfds;
         }
@@ -1928,7 +1925,7 @@ TcpAccept(
 
     (void) fcntl(newsock, F_SETFD, FD_CLOEXEC);
 
-    newSockState = (TcpState *)ckalloc(sizeof(TcpState));
+    newSockState = (TcpState *)Tcl_Alloc(sizeof(TcpState));
     memset(newSockState, 0, sizeof(TcpState));
     newSockState->flags = 0;
     newSockState->fds.fd = newsock;

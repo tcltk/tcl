@@ -16,6 +16,7 @@
  */
 
 #include "tclInt.h"
+#include <assert.h>
 
 #define FALSE	0
 #define TRUE	1
@@ -121,7 +122,7 @@ static char dumpFile[100];	/* Records where to dump memory allocation
 /*
  * Mutex to serialize allocations. This is a low-level mutex that must be
  * explicitly initialized. This is necessary because the self initializing
- * mutexes use ckalloc...
+ * mutexes use Tcl_Alloc...
  */
 
 static Tcl_Mutex *ckallocMutexPtr;
@@ -365,7 +366,7 @@ Tcl_DumpActiveMemory(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_DbCkalloc - debugging ckalloc
+ * Tcl_DbCkalloc - debugging Tcl_Alloc
  *
  *	Allocate the requested amount of space plus some extra for guard bands
  *	at both ends of the request, plus a size, panicking if there isn't
@@ -374,15 +375,15 @@ Tcl_DumpActiveMemory(
  *
  *	The second and third arguments are file and line, these contain the
  *	filename and line number corresponding to the caller. These are sent
- *	by the ckalloc macro; it uses the preprocessor autodefines __FILE__
+ *	by the Tcl_Alloc macro; it uses the preprocessor autodefines __FILE__
  *	and __LINE__.
  *
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 Tcl_DbCkalloc(
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
@@ -393,14 +394,14 @@ Tcl_DbCkalloc(
     }
 
     /* Don't let size argument to TclpAlloc overflow */
-    if (size <= UINT_MAX - offsetof(struct mem_header, body) - 1U - HIGH_GUARD_SIZE) {
+    if (size <= (size_t)-2 - offsetof(struct mem_header, body) - HIGH_GUARD_SIZE) {
 	result = (struct mem_header *) TclpAlloc(size +
 		offsetof(struct mem_header, body) + 1U + HIGH_GUARD_SIZE);
     }
     if (result == NULL) {
 	fflush(stdout);
 	TclDumpMemoryInfo(stderr, 0);
-	Tcl_Panic("unable to alloc %u bytes, %s line %d", size, file, line);
+	Tcl_Panic("unable to alloc %" TCL_Z_MODIFIER "u bytes, %s line %d", size, file, line);
     }
 
     /*
@@ -446,7 +447,7 @@ Tcl_DbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr,"ckalloc %p %u %s %d\n",
+	fprintf(stderr,"Tcl_Alloc %p %" TCL_Z_MODIFIER "u %s %d\n",
 		result->body, size, file, line);
     }
 
@@ -470,9 +471,9 @@ Tcl_DbCkalloc(
     return result->body;
 }
 
-char *
+void *
 Tcl_AttemptDbCkalloc(
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
@@ -483,7 +484,7 @@ Tcl_AttemptDbCkalloc(
     }
 
     /* Don't let size argument to TclpAlloc overflow */
-    if (size <= UINT_MAX - offsetof(struct mem_header, body) - 1U - HIGH_GUARD_SIZE) {
+    if (size <= (size_t)-2 - offsetof(struct mem_header, body) - HIGH_GUARD_SIZE) {
 	result = (struct mem_header *) TclpAlloc(size +
 		offsetof(struct mem_header, body) + 1U + HIGH_GUARD_SIZE);
     }
@@ -535,7 +536,7 @@ Tcl_AttemptDbCkalloc(
     }
 
     if (alloc_tracing) {
-	fprintf(stderr,"ckalloc %p %u %s %d\n",
+	fprintf(stderr,"Tcl_Alloc %p %" TCL_Z_MODIFIER "u %s %d\n",
 		result->body, size, file, line);
     }
 
@@ -562,7 +563,7 @@ Tcl_AttemptDbCkalloc(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_DbCkfree - debugging ckfree
+ * Tcl_DbCkfree - debugging Tcl_Free
  *
  *	Verify that the low and high guards are intact, and if so then free
  *	the buffer else Tcl_Panic.
@@ -571,7 +572,7 @@ Tcl_AttemptDbCkalloc(
  *
  *	The second and third arguments are file and line, these contain the
  *	filename and line number corresponding to the caller. These are sent
- *	by the ckfree macro; it uses the preprocessor autodefines __FILE__ and
+ *	by the Tcl_Free macro; it uses the preprocessor autodefines __FILE__ and
  *	__LINE__.
  *
  *----------------------------------------------------------------------
@@ -579,7 +580,7 @@ Tcl_AttemptDbCkalloc(
 
 void
 Tcl_DbCkfree(
-    char *ptr,
+    void *ptr,
     const char *file,
     int line)
 {
@@ -600,7 +601,7 @@ Tcl_DbCkfree(
     memp = (struct mem_header *) (((size_t) ptr) - BODY_OFFSET);
 
     if (alloc_tracing) {
-	fprintf(stderr, "ckfree %p %" TCL_Z_MODIFIER "u %s %d\n",
+	fprintf(stderr, "Tcl_Free %p %" TCL_Z_MODIFIER "u %s %d\n",
 		memp->body, memp->length, file, line);
     }
 
@@ -644,7 +645,7 @@ Tcl_DbCkfree(
 /*
  *--------------------------------------------------------------------
  *
- * Tcl_DbCkrealloc - debugging ckrealloc
+ * Tcl_DbCkrealloc - debugging Tcl_Realloc
  *
  *	Reallocate a chunk of memory by allocating a new one of the right
  *	size, copying the old data to the new location, and then freeing the
@@ -654,10 +655,10 @@ Tcl_DbCkfree(
  *--------------------------------------------------------------------
  */
 
-char *
+void *
 Tcl_DbCkrealloc(
-    char *ptr,
-    unsigned int size,
+    void *ptr,
+    size_t size,
     const char *file,
     int line)
 {
@@ -685,10 +686,10 @@ Tcl_DbCkrealloc(
     return newPtr;
 }
 
-char *
+void *
 Tcl_AttemptDbCkrealloc(
-    char *ptr,
-    unsigned int size,
+    void *ptr,
+    size_t size,
     const char *file,
     int line)
 {
@@ -737,38 +738,38 @@ Tcl_AttemptDbCkrealloc(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 Tcl_Alloc(
-    unsigned int size)
+    size_t size)
 {
     return Tcl_DbCkalloc(size, "unknown", 0);
 }
 
-char *
+void *
 Tcl_AttemptAlloc(
-    unsigned int size)
+    size_t size)
 {
     return Tcl_AttemptDbCkalloc(size, "unknown", 0);
 }
 
 void
 Tcl_Free(
-    char *ptr)
+    void *ptr)
 {
     Tcl_DbCkfree(ptr, "unknown", 0);
 }
 
-char *
+void *
 Tcl_Realloc(
-    char *ptr,
-    unsigned int size)
+    void *ptr,
+    size_t size)
 {
     return Tcl_DbCkrealloc(ptr, size, "unknown", 0);
 }
-char *
+void *
 Tcl_AttemptRealloc(
-    char *ptr,
-    unsigned int size)
+    void *ptr,
+    size_t size)
 {
     return Tcl_AttemptDbCkrealloc(ptr, size, "unknown", 0);
 }
@@ -1030,11 +1031,11 @@ Tcl_InitMemory(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 Tcl_Alloc(
-    unsigned int size)
+    size_t size)
 {
-    char *result = (char *)TclpAlloc(size);
+    void *result = TclpAlloc(size);
 
     /*
      * Most systems will not alloc(0), instead bumping it to one so that NULL
@@ -1047,22 +1048,23 @@ Tcl_Alloc(
      */
 
     if ((result == NULL) && size) {
-	Tcl_Panic("unable to alloc %u bytes", size);
+	Tcl_Panic("unable to alloc %" TCL_Z_MODIFIER "u bytes", size);
     }
     return result;
 }
 
-char *
+void *
 Tcl_DbCkalloc(
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
-    char *result = (char *)TclpAlloc(size);
+    void *result = TclpAlloc(size);
 
     if ((result == NULL) && size) {
 	fflush(stdout);
-	Tcl_Panic("unable to alloc %u bytes, %s line %d", size, file, line);
+	Tcl_Panic("unable to alloc %" TCL_Z_MODIFIER "u bytes, %s line %d",
+		size, file, line);
     }
     return result;
 }
@@ -1078,16 +1080,16 @@ Tcl_DbCkalloc(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 Tcl_AttemptAlloc(
-    unsigned int size)
+    size_t size)
 {
     return (char *)TclpAlloc(size);
 }
 
-char *
+void *
 Tcl_AttemptDbCkalloc(
-    unsigned int size,
+    size_t size,
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
@@ -1105,31 +1107,32 @@ Tcl_AttemptDbCkalloc(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 Tcl_Realloc(
-    char *ptr,
-    unsigned int size)
+    void *ptr,
+    size_t size)
 {
-    char *result = (char *)TclpRealloc(ptr, size);
+    void *result = TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
-	Tcl_Panic("unable to realloc %u bytes", size);
+	Tcl_Panic("unable to realloc %" TCL_Z_MODIFIER "u bytes", size);
     }
     return result;
 }
 
-char *
+void *
 Tcl_DbCkrealloc(
-    char *ptr,
-    unsigned int size,
+    void *ptr,
+    size_t size,
     const char *file,
     int line)
 {
-    char *result = (char *)TclpRealloc(ptr, size);
+    void *result = TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
 	fflush(stdout);
-	Tcl_Panic("unable to realloc %u bytes, %s line %d", size, file, line);
+	Tcl_Panic("unable to realloc %" TCL_Z_MODIFIER "u bytes, %s line %d",
+		size, file, line);
     }
     return result;
 }
@@ -1145,18 +1148,18 @@ Tcl_DbCkrealloc(
  *----------------------------------------------------------------------
  */
 
-char *
+void *
 Tcl_AttemptRealloc(
-    char *ptr,
-    unsigned int size)
+    void *ptr,
+    size_t size)
 {
     return (char *)TclpRealloc(ptr, size);
 }
 
-char *
+void *
 Tcl_AttemptDbCkrealloc(
-    char *ptr,
-    unsigned int size,
+    void *ptr,
+    size_t size,
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
@@ -1177,14 +1180,14 @@ Tcl_AttemptDbCkrealloc(
 
 void
 Tcl_Free(
-    char *ptr)
+    void *ptr)
 {
     TclpFree(ptr);
 }
 
 void
 Tcl_DbCkfree(
-    char *ptr,
+    void *ptr,
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
@@ -1230,6 +1233,148 @@ TclDumpMemoryInfo(
 }
 
 #endif	/* TCL_MEM_DEBUG */
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclAllocElemsEx --
+ *
+ *    See TclAttemptAllocElemsEx. This function differs in that it panics
+ *    on failure.
+ *
+ * Results:
+ *    Non-NULL pointer to allocated memory block.
+ *
+ * Side effects:
+ *    Panics if memory of at least the requested size could not be
+ *    allocated.
+ *
+ *------------------------------------------------------------------------
+ */
+void *
+TclAllocElemsEx(
+    Tcl_Size elemCount,     /* Allocation will store at least these many... */
+    Tcl_Size elemSize,	    /* ...elements of this size */
+    Tcl_Size leadSize,      /* Additional leading space in bytes */
+    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
+			       here if non-NULL. Only modified on success */
+{
+    void *ptr = TclAttemptReallocElemsEx(
+	NULL, elemCount, elemSize, leadSize, capacityPtr);
+    if (ptr == NULL) {
+	Tcl_Panic("Failed to allocate %" TCL_SIZE_MODIFIER
+		  "d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
+		  elemCount,
+		  elemSize);
+    }
+    return ptr;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclAttemptReallocElemsEx --
+ *
+ *    Attempts to allocate (oldPtr == NULL) or reallocate memory of the
+ *    requested size plus some more for future growth. The amount of
+ *    reallocation is adjusted depending on on failure.
+ *
+ *
+ * Results:
+ *    Pointer to allocated memory block which is at least as large
+ *    as the requested size or NULL if allocation failed.
+ *
+ *------------------------------------------------------------------------
+ */
+void *
+TclAttemptReallocElemsEx(
+    void *oldPtr,	    /* Pointer to memory block to reallocate or
+			     * NULL to indicate this is a new allocation */
+    Tcl_Size elemCount,     /* Allocation will store at least these many... */
+    Tcl_Size elemSize,	    /* ...elements of this size */
+    Tcl_Size leadSize,      /* Additional leading space in bytes */
+    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
+			       here if non-NULL. Only modified on success */
+{
+    void *ptr;
+    Tcl_Size limit;
+    Tcl_Size attempt;
+
+    assert(elemCount > 0);
+    assert(elemSize > 0);
+    assert(elemSize < TCL_SIZE_MAX);
+    assert(leadSize >= 0);
+    assert(leadSize < TCL_SIZE_MAX);
+
+    limit = (TCL_SIZE_MAX - leadSize) / elemSize;
+    if (elemCount > limit) {
+	return NULL;
+    }
+    /* Loop trying for extra space, reducing request each time */
+    attempt = TclUpsizeAlloc(0, elemCount, limit);
+    ptr = NULL;
+    while (attempt > elemCount) {
+	if (oldPtr) {
+	    ptr = Tcl_AttemptRealloc(oldPtr, leadSize + attempt * elemSize);
+	} else {
+	    ptr = Tcl_AttemptAlloc(leadSize + attempt * elemSize);
+	}
+	if (ptr) {
+	    break;
+	}
+	attempt = TclUpsizeRetry(elemCount, attempt);
+    }
+    /* Try exact size as a last resort */
+    if (ptr == NULL) {
+	attempt = elemCount;
+	if (oldPtr) {
+	    ptr = Tcl_AttemptRealloc(oldPtr, leadSize + attempt * elemSize);
+	} else {
+	    ptr = Tcl_AttemptAlloc(leadSize + attempt * elemSize);
+	}
+    }
+    if (ptr && capacityPtr) {
+	*capacityPtr = attempt;
+    }
+    return ptr;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclReallocElemsEx --
+ *
+ *    See TclAttemptReallocElemsEx. This function differs in that it panics
+ *    on failure.
+ *
+ * Results:
+ *    Non-NULL pointer to allocated memory block.
+ *
+ * Side effects:
+ *    Panics if memory of at least the requested size could not be
+ *    allocated.
+ *
+ *------------------------------------------------------------------------
+ */
+void *
+TclReallocElemsEx(
+    void *oldPtr,	    /* Pointer to memory block to reallocate */
+    Tcl_Size elemCount,     /* Allocation will store at least these many... */
+    Tcl_Size elemSize,	    /* ...elements of this size */
+    Tcl_Size leadSize,      /* Additional leading space in bytes */
+    Tcl_Size *capacityPtr) /* OUTPUT: Actual capacity is stored
+			       here if non-NULL. Only modified on success */
+{
+    void *ptr = TclAttemptReallocElemsEx(
+	oldPtr, elemCount, elemSize, leadSize, capacityPtr);
+    if (ptr == NULL) {
+	Tcl_Panic("Failed to reallocate %" TCL_SIZE_MODIFIER
+		  "d elements of size %" TCL_SIZE_MODIFIER "d bytes.",
+		  elemCount,
+		  elemSize);
+    }
+    return ptr;
+}
 
 /*
  *---------------------------------------------------------------------------

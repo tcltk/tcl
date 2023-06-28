@@ -97,17 +97,17 @@ test get-3.2 {Tcl_GetDouble(FromObj), bad numbers} {
 } {0 1 0 1 1 {expected floating-point number but got "++1.0"} 1 {expected floating-point number but got "+-1.0"} 1 {expected floating-point number but got "-+1.0"} 0 -1 1 {expected floating-point number but got "--1.0"} 1 {expected floating-point number but got "- +1.0"}}
 # Bug 7114ac6141
 test get-3.3 {tcl_GetInt with iffy numbers} testgetint {
-    lmap x {0 " 0" "0 " " 0 " " 0xa " " 007 " " 0o10 " " 0b10 "} {
+    lmap x {0 " 0" "0 " " 0 " " 0xa " " 010 " " 0o10 " " 0b10 "} {
 	catch {testgetint 44 $x} x
 	set x
     }
-} {44 44 44 44 54 51 52 46}
+} {44 44 44 44 54 54 52 46}
 test get-3.4 {Tcl_GetDouble with iffy numbers} testdoubleobj {
-    lmap x {0 0.0 " .0" ".0 " " 0e0 " "07" "- 0" "-0" "0o12" "0b10"} {
+    lmap x {0 0.0 " .0" ".0 " " 0e0 " "09" "- 0" "-0" "0o12" "0b10"} {
 	catch {testdoubleobj set 1 $x} x
 	set x
     }
-} {0.0 0.0 0.0 0.0 0.0 7.0 {expected floating-point number but got "- 0"} 0.0 10.0 2.0}
+} {0.0 0.0 0.0 0.0 0.0 9.0 {expected floating-point number but got "- 0"} 0.0 10.0 2.0}
 test get-3.5 {tcl_GetInt with numeric whitespace (i.e. '_')} testgetint {
     lmap x {0_0 " 1_0" "0_2 " " 3_3 " 14__23__32___4 " 0x_a " 0b1111_1111 " 0_07 " " 0o_1_0 " " 0b_1_0 " " 0_b1_0 " _33 42_ 0_x15 0_o17 0_d19 } {
 	catch {testgetint $x} x

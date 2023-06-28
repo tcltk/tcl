@@ -44,8 +44,9 @@ the range \eu0000\-\eu00FF.
 When encoding binary data as a readable string, the starting binary data is
 passed to the \fBbinary encode\fR command, together with the name of the
 encoding to use and any encoding-specific options desired. Data which has been
-encoded can be converted back to binary form using \fBbinary decode\fR. The
-following formats and options are supported.
+encoded can be converted back to binary form using \fBbinary decode\fR.
+The \fBbinary encode\fR command raises an error if the \fIdata\fR argument
+is not binary data. The following formats and options are supported.
 .TP
 \fBbase64\fR
 .
@@ -609,9 +610,9 @@ will return
 .PP
 The \fBbinary scan\fR command parses fields from a binary string,
 returning the number of conversions performed.  \fIString\fR gives the
-input bytes to be parsed (one byte per character, and characters not
-representable as a byte have their high bits chopped)
-and \fIformatString\fR indicates how to parse it.
+input bytes to be parsed and \fIformatString\fR indicates how to parse it.
+An error is raised if \fIstring\fR is anything other than a valid binary
+data value.
 Each \fIvarName\fR gives the name of a variable; when a field is
 scanned from \fIstring\fR the result is assigned to the corresponding
 variable.

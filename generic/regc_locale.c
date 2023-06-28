@@ -110,7 +110,7 @@ static const struct cname {
     {"right-brace",	'}'},
     {"right-curly-bracket", '}'},
     {"tilde",		'~'},
-    {"DEL",		'\177'},
+    {"DEL",		'\x7F'},
     {NULL,		0}
 };
 
@@ -826,8 +826,6 @@ static const chr graphCharTable[] = {
 /*
  *	End of auto-generated Unicode character ranges declarations.
  */
-
-#define	CH	NOCELT
 
 /*
  - element - map collating-element name to celt
@@ -920,9 +918,9 @@ range(
 
     for (c=a; c<=b; c++) {
 	addchr(cv, c);
-	lc = Tcl_UniCharToLower((chr)c);
-	uc = Tcl_UniCharToUpper((chr)c);
-	tc = Tcl_UniCharToTitle((chr)c);
+	lc = Tcl_UniCharToLower(c);
+	uc = Tcl_UniCharToUpper(c);
+	tc = Tcl_UniCharToTitle(c);
 	if (c != lc) {
 	    addchr(cv, lc);
 	}
@@ -971,11 +969,11 @@ eclass(
 
     if ((v->cflags&REG_FAKE) && c == 'x') {
 	cv = getcvec(v, 4, 0);
-	addchr(cv, (chr)'x');
-	addchr(cv, (chr)'y');
+	addchr(cv, 'x');
+	addchr(cv, 'y');
 	if (cases) {
-	    addchr(cv, (chr)'X');
-	    addchr(cv, (chr)'Y');
+	    addchr(cv, 'X');
+	    addchr(cv, 'Y');
 	}
 	return cv;
     }
@@ -989,7 +987,7 @@ eclass(
     }
     cv = getcvec(v, 1, 0);
     assert(cv != NULL);
-    addchr(cv, (chr)c);
+    addchr(cv, c);
     return cv;
 }
 
@@ -1005,12 +1003,11 @@ cclass(
     const chr *endp,		/* just past the end of the name */
     int cases)			/* case-independent? */
 {
-    size_t len;
+    size_t i, len;
     struct cvec *cv = NULL;
     Tcl_DString ds;
     const char *np;
     const char *const *namePtr;
-    int i, index;
 
     /*
      * The following arrays define the valid character class names.
@@ -1022,9 +1019,10 @@ cclass(
     };
 
     enum classes {
+	CC_NULL = -1,
 	CC_ALNUM, CC_ALPHA, CC_ASCII, CC_BLANK, CC_CNTRL, CC_DIGIT, CC_GRAPH,
 	CC_LOWER, CC_PRINT, CC_PUNCT, CC_SPACE, CC_UPPER, CC_XDIGIT
-    };
+    } index;
 
 
     /*
@@ -1033,24 +1031,20 @@ cclass(
 
     len = endp - startp;
     Tcl_DStringInit(&ds);
-    np = Tcl_UniCharToUtfDString(startp, (int)len, &ds);
+    np = Tcl_UniCharToUtfDString(startp, len, &ds);
 
     /*
      * Map the name to the corresponding enumerated value.
      */
 
-    index = -1;
+    index = CC_NULL;
     for (namePtr=classNames,i=0 ; *namePtr!=NULL ; namePtr++,i++) {
 	if ((strlen(*namePtr) == len) && (strncmp(*namePtr, np, len) == 0)) {
-	    index = i;
+	    index = (enum classes)i;
 	    break;
 	}
     }
     Tcl_DStringFree(&ds);
-    if (index == -1) {
-	ERR(REG_ECTYPE);
-	return NULL;
-    }
 
     /*
      * Remap lower and upper to alpha if the match is case insensitive.
@@ -1064,18 +1058,21 @@ cclass(
      * Now compute the character class contents.
      */
 
-    switch((enum classes) index) {
+    switch (index) {
+    case CC_NULL:
+	ERR(REG_ECTYPE);
+	return NULL;
     case CC_ALNUM:
 	cv = getcvec(v, NUM_ALPHA_CHAR, NUM_DIGIT_RANGE + NUM_ALPHA_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_ALPHA_CHAR ; i++) {
+	    for (i=0 ; i<NUM_ALPHA_CHAR ; i++) {
 		addchr(cv, alphaCharTable[i]);
 	    }
-	    for (i=0 ; (size_t)i<NUM_ALPHA_RANGE ; i++) {
+	    for (i=0 ; i<NUM_ALPHA_RANGE ; i++) {
 		addrange(cv, alphaRangeTable[i].start,
 			alphaRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_DIGIT_RANGE ; i++) {
+	    for (i=0 ; i<NUM_DIGIT_RANGE ; i++) {
 		addrange(cv, digitRangeTable[i].start,
 			digitRangeTable[i].end);
 	    }
@@ -1084,11 +1081,11 @@ cclass(
     case CC_ALPHA:
 	cv = getcvec(v, NUM_ALPHA_CHAR, NUM_ALPHA_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_ALPHA_RANGE ; i++) {
+	    for (i=0 ; i<NUM_ALPHA_RANGE ; i++) {
 		addrange(cv, alphaRangeTable[i].start,
 			alphaRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_ALPHA_CHAR ; i++) {
+	    for (i=0 ; i<NUM_ALPHA_CHAR ; i++) {
 		addchr(cv, alphaCharTable[i]);
 	    }
 	}
@@ -1107,11 +1104,11 @@ cclass(
     case CC_CNTRL:
 	cv = getcvec(v, NUM_CONTROL_CHAR, NUM_CONTROL_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_CONTROL_RANGE ; i++) {
+	    for (i=0 ; i<NUM_CONTROL_RANGE ; i++) {
 		addrange(cv, controlRangeTable[i].start,
 			controlRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_CONTROL_CHAR ; i++) {
+	    for (i=0 ; i<NUM_CONTROL_CHAR ; i++) {
 		addchr(cv, controlCharTable[i]);
 	    }
 	}
@@ -1119,7 +1116,7 @@ cclass(
     case CC_DIGIT:
 	cv = getcvec(v, 0, NUM_DIGIT_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_DIGIT_RANGE ; i++) {
+	    for (i=0 ; i<NUM_DIGIT_RANGE ; i++) {
 		addrange(cv, digitRangeTable[i].start,
 			digitRangeTable[i].end);
 	    }
@@ -1128,11 +1125,11 @@ cclass(
     case CC_PUNCT:
 	cv = getcvec(v, NUM_PUNCT_CHAR, NUM_PUNCT_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_PUNCT_RANGE ; i++) {
+	    for (i=0 ; i<NUM_PUNCT_RANGE ; i++) {
 		addrange(cv, punctRangeTable[i].start,
 			punctRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_PUNCT_CHAR ; i++) {
+	    for (i=0 ; i<NUM_PUNCT_CHAR ; i++) {
 		addchr(cv, punctCharTable[i]);
 	    }
 	}
@@ -1157,11 +1154,11 @@ cclass(
     case CC_SPACE:
 	cv = getcvec(v, NUM_SPACE_CHAR, NUM_SPACE_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_SPACE_RANGE ; i++) {
+	    for (i=0 ; i<NUM_SPACE_RANGE ; i++) {
 		addrange(cv, spaceRangeTable[i].start,
 			spaceRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_SPACE_CHAR ; i++) {
+	    for (i=0 ; i<NUM_SPACE_CHAR ; i++) {
 		addchr(cv, spaceCharTable[i]);
 	    }
 	}
@@ -1169,11 +1166,11 @@ cclass(
     case CC_LOWER:
 	cv  = getcvec(v, NUM_LOWER_CHAR, NUM_LOWER_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_LOWER_RANGE ; i++) {
+	    for (i=0 ; i<NUM_LOWER_RANGE ; i++) {
 		addrange(cv, lowerRangeTable[i].start,
 			lowerRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_LOWER_CHAR ; i++) {
+	    for (i=0 ; i<NUM_LOWER_CHAR ; i++) {
 		addchr(cv, lowerCharTable[i]);
 	    }
 	}
@@ -1181,11 +1178,11 @@ cclass(
     case CC_UPPER:
 	cv  = getcvec(v, NUM_UPPER_CHAR, NUM_UPPER_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_UPPER_RANGE ; i++) {
+	    for (i=0 ; i<NUM_UPPER_RANGE ; i++) {
 		addrange(cv, upperRangeTable[i].start,
 			upperRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_UPPER_CHAR ; i++) {
+	    for (i=0 ; i<NUM_UPPER_CHAR ; i++) {
 		addchr(cv, upperCharTable[i]);
 	    }
 	}
@@ -1193,18 +1190,18 @@ cclass(
     case CC_PRINT:
     	cv  = getcvec(v, NUM_SPACE_CHAR + NUM_GRAPH_CHAR, NUM_SPACE_RANGE + NUM_GRAPH_RANGE  - 1);
     	if (cv) {
-    	    for (i=1 ; (size_t)i<NUM_SPACE_RANGE ; i++) {
+    	    for (i=1 ; i<NUM_SPACE_RANGE ; i++) {
     		addrange(cv, spaceRangeTable[i].start,
     				spaceRangeTable[i].end);
     	    }
-    	    for (i=0 ; (size_t)i<NUM_SPACE_CHAR ; i++) {
+    	    for (i=0 ; i<NUM_SPACE_CHAR ; i++) {
     		addchr(cv, spaceCharTable[i]);
     	    }
-    	    for (i=0 ; (size_t)i<NUM_GRAPH_RANGE ; i++) {
+    	    for (i=0 ; i<NUM_GRAPH_RANGE ; i++) {
     		addrange(cv, graphRangeTable[i].start,
     				graphRangeTable[i].end);
     	    }
-    	    for (i=0 ; (size_t)i<NUM_GRAPH_CHAR ; i++) {
+    	    for (i=0 ; i<NUM_GRAPH_CHAR ; i++) {
     		addchr(cv, graphCharTable[i]);
     	    }
     	}
@@ -1212,11 +1209,11 @@ cclass(
     case CC_GRAPH:
 	cv  = getcvec(v, NUM_GRAPH_CHAR, NUM_GRAPH_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_GRAPH_RANGE ; i++) {
+	    for (i=0 ; i<NUM_GRAPH_RANGE ; i++) {
 		addrange(cv, graphRangeTable[i].start,
 			graphRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_GRAPH_CHAR ; i++) {
+	    for (i=0 ; i<NUM_GRAPH_CHAR ; i++) {
 		addchr(cv, graphCharTable[i]);
 	    }
 	}
@@ -1243,9 +1240,9 @@ allcases(
     chr c = (chr)pc;
     chr lc, uc, tc;
 
-    lc = Tcl_UniCharToLower((chr)c);
-    uc = Tcl_UniCharToUpper((chr)c);
-    tc = Tcl_UniCharToTitle((chr)c);
+    lc = Tcl_UniCharToLower(c);
+    uc = Tcl_UniCharToUpper(c);
+    tc = Tcl_UniCharToTitle(c);
 
     if (tc != uc) {
 	cv = getcvec(v, 3, 0);

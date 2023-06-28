@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include "tclTomMath.h"
 
 /*
  * Callback structure for accept callback in a TCP server.
@@ -132,19 +133,6 @@ Tcl_PutsObjCmd(
 	    chanObjPtr = objv[2];
 	    string = objv[3];
 	    break;
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-	} else if (strcmp(TclGetString(objv[3]), "nonewline") == 0) {
-	    /*
-	     * The code below provides backwards compatibility with an old
-	     * form of the command that is no longer recommended or
-	     * documented. See also [Bug #3151675]. Will be removed in Tcl 9,
-	     * maybe even earlier.
-	     */
-
-	    chanObjPtr = objv[1];
-	    string = objv[2];
-	    break;
-#endif
 	}
 	/* Fall through */
     default:			/* [puts] or
@@ -380,7 +368,7 @@ Tcl_ReadObjCmd(
 {
     Tcl_Channel chan;		/* The channel to read from. */
     int newline, i;		/* Discard newline at end? */
-    int toRead;			/* How many bytes to read? */
+    Tcl_WideInt toRead;			/* How many bytes to read? */
     Tcl_Size charactersRead;		/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *resultPtr, *chanObjPtr;
@@ -431,27 +419,13 @@ Tcl_ReadObjCmd(
 
     toRead = -1;
     if (i < objc) {
-	if ((TclGetIntFromObj(NULL, objv[i], &toRead) != TCL_OK)
+	if ((TclGetWideIntFromObj(NULL, objv[i], &toRead) != TCL_OK)
 		|| (toRead < 0)) {
-#if !defined(TCL_NO_DEPRECATED)
-	    /*
-	     * The code below provides backwards compatibility with an old
-	     * form of the command that is no longer recommended or
-	     * documented. See also [Bug #3151675]. Will be removed in Tcl 9,
-	     * maybe even earlier.
-	     */
-
-	    if (strcmp(TclGetString(objv[i]), "nonewline") != 0) {
-#endif
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected non-negative integer but got \"%s\"",
 			TclGetString(objv[i])));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 		return TCL_ERROR;
-#if !defined(TCL_NO_DEPRECATED)
-	    }
-	    newline = 1;
-#endif
 	}
     }
 
@@ -484,7 +458,7 @@ Tcl_ReadObjCmd(
 	const char *result;
 	Tcl_Size length;
 
-	result = TclGetStringFromObj(resultPtr, &length);
+	result = Tcl_GetStringFromObj(resultPtr, &length);
 	if (result[length - 1] == '\n') {
 	    Tcl_SetObjLength(resultPtr, length - 1);
 	}
@@ -730,7 +704,7 @@ Tcl_CloseObjCmd(
 	    resultPtr = Tcl_DuplicateObj(resultPtr);
 	    Tcl_SetObjResult(interp, resultPtr);
 	}
-	string = TclGetStringFromObj(resultPtr, &len);
+	string = Tcl_GetStringFromObj(resultPtr, &len);
 	if ((len > 0) && (string[len - 1] == '\n')) {
 	    Tcl_SetObjLength(resultPtr, len - 1);
 	}
@@ -969,7 +943,7 @@ Tcl_ExecObjCmd(
 	 */
 
 	TclGetAndDetachPids(interp, chan);
-	if (Tcl_Close(interp, chan) != TCL_OK) {
+	if (Tcl_CloseEx(interp, chan, 0) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -1001,7 +975,7 @@ Tcl_ExecObjCmd(
      * string.
      */
 
-    result = Tcl_Close(interp, chan);
+    result = Tcl_CloseEx(interp, chan, 0);
     Tcl_AppendObjToObj(resultPtr, Tcl_GetObjResult(interp));
 
     /*
@@ -1010,7 +984,7 @@ Tcl_ExecObjCmd(
      */
 
     if (keepNewline == 0) {
-	string = TclGetStringFromObj(resultPtr, &length);
+	string = Tcl_GetStringFromObj(resultPtr, &length);
 	if ((length > 0) && (string[length - 1] == '\n')) {
 	    Tcl_SetObjLength(resultPtr, length - 1);
 	}
@@ -1177,7 +1151,7 @@ Tcl_OpenObjCmd(
 		Tcl_SetChannelOption(interp, chan, "-translation", "binary");
 	    }
 	}
-	ckfree(cmdArgv);
+	Tcl_Free((void *)cmdArgv);
     }
     if (chan == NULL) {
 	return TCL_ERROR;
@@ -1225,7 +1199,7 @@ TcpAcceptCallbacksDeleteProc(
 	acceptCallbackPtr->interp = NULL;
     }
     Tcl_DeleteHashTable(hTblPtr);
-    ckfree(hTblPtr);
+    Tcl_Free(hTblPtr);
 }
 
 /*
@@ -1265,7 +1239,7 @@ RegisterTcpServerInterpCleanup(
     hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
 
     if (hTblPtr == NULL) {
-	hTblPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
+	hTblPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_ONE_WORD_KEYS);
 	Tcl_SetAssocData(interp, "tclTCPAcceptCallbacks",
 		TcpAcceptCallbacksDeleteProc, hTblPtr);
@@ -1313,7 +1287,7 @@ UnregisterTcpServerInterpCleanupProc(
 	return;
     }
 
-    hPtr = Tcl_FindHashEntry(hTblPtr, (char *)acceptCallbackPtr);
+    hPtr = Tcl_FindHashEntry(hTblPtr, acceptCallbackPtr);
     if (hPtr != NULL) {
 	Tcl_DeleteHashEntry(hPtr);
     }
@@ -1402,7 +1376,7 @@ AcceptCallbackProc(
 	 * the client socket - just close it.
 	 */
 
-	Tcl_Close(NULL, chan);
+	Tcl_CloseEx(NULL, chan, 0);
     }
 }
 
@@ -1440,7 +1414,7 @@ TcpServerCloseProc(
 		acceptCallbackPtr);
     }
     Tcl_DecrRefCount(acceptCallbackPtr->script);
-    ckfree(acceptCallbackPtr);
+    Tcl_Free(acceptCallbackPtr);
 }
 
 /*
@@ -1474,8 +1448,8 @@ Tcl_SocketObjCmd(
     enum socketOptionsEnum {
 	SKT_ASYNC, SKT_BACKLOG, SKT_MYADDR, SKT_MYPORT, SKT_REUSEADDR,
 	SKT_REUSEPORT, SKT_SERVER
-    };
-    int a, server = 0, myport = 0, async = 0, reusep = -1, optionIndex,
+    } optionIndex;
+    int a, server = 0, myport = 0, async = 0, reusep = -1,
 	reusea = -1, backlog = -1;
     unsigned int flags = 0;
     const char *host, *port, *myaddr = NULL;
@@ -1494,7 +1468,7 @@ Tcl_SocketObjCmd(
 		TCL_EXACT, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum socketOptionsEnum) optionIndex) {
+	switch (optionIndex) {
 	case SKT_ASYNC:
 	    if (server == 1) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -1645,7 +1619,7 @@ Tcl_SocketObjCmd(
     port = TclGetString(objv[a]);
 
     if (server) {
-	AcceptCallback *acceptCallbackPtr = (AcceptCallback *)ckalloc(sizeof(AcceptCallback));
+	AcceptCallback *acceptCallbackPtr = (AcceptCallback *)Tcl_Alloc(sizeof(AcceptCallback));
 
 	Tcl_IncrRefCount(script);
 	acceptCallbackPtr->script = script;
@@ -1655,7 +1629,7 @@ Tcl_SocketObjCmd(
 		AcceptCallbackProc, acceptCallbackPtr);
 	if (chan == NULL) {
 	    Tcl_DecrRefCount(script);
-	    ckfree(acceptCallbackPtr);
+	    Tcl_Free(acceptCallbackPtr);
 	    return TCL_ERROR;
 	}
 
@@ -1815,8 +1789,8 @@ ChanPendingObjCmd(
 {
     Tcl_Channel chan;
     static const char *const options[] = {"input", "output", NULL};
-    enum pendingOptionsEnum {PENDING_INPUT, PENDING_OUTPUT};
-    int mode, index;
+    enum pendingOptionsEnum {PENDING_INPUT, PENDING_OUTPUT} index;
+    int mode;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode channelId");
@@ -1832,7 +1806,7 @@ ChanPendingObjCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum pendingOptionsEnum) index) {
+    switch (index) {
     case PENDING_INPUT:
 	if (!(mode & TCL_READABLE)) {
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-1));

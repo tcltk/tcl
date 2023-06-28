@@ -734,10 +734,10 @@ test safe-9.6 {interpConfigure widget like behaviour} -body {
 	 safe::interpConfigure $i]
 } -cleanup {
     safe::interpDelete $i
-} -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar}}\
-        {-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}}\
-        {-accessPath * -statics 1 -nested 1 -deleteHook {foo bar}}\
-        {-accessPath * -statics 0 -nested 0 -deleteHook toto}}
+} -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar} -autoPath *}\
+	{-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}}\
+	{-accessPath * -statics 1 -nested 1 -deleteHook {foo bar} -autoPath *}\
+	{-accessPath * -statics 0 -nested 0 -deleteHook toto -autoPath *}}
 test safe-9.7 {interpConfigure widget like behaviour (demystified)} -body {
    # this test shall work, believed equivalent to 9.6
     set i [safe::interpCreate \
@@ -759,10 +759,10 @@ test safe-9.7 {interpConfigure widget like behaviour (demystified)} -body {
 } -cleanup {
     safe::interpDelete $i
     unset -nocomplain a b c d e f g i
-} -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar}}\
-        {-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}}\
-        {-accessPath * -statics 1 -nested 1 -deleteHook {foo bar}}\
-        {-accessPath * -statics 0 -nested 0 -deleteHook toto}}
+} -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar} -autoPath *}\
+	{-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}}\
+	{-accessPath * -statics 1 -nested 1 -deleteHook {foo bar} -autoPath *}\
+	{-accessPath * -statics 0 -nested 0 -deleteHook toto -autoPath *}}
 test safe-9.8 {autoloading commands indexed in tclIndex files, Sync Mode on} -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
@@ -1951,7 +1951,7 @@ test safe-16.5 {Bug 3529949: defang ~ in paths used by AliasGlob (1)} -setup {
     safe::interpDelete $i
     set env(HOME) $savedHOME
     unset savedHOME
-} -result {~}
+} -result {$p(:0:)/~}
 test safe-16.6 {Bug 3529949: defang ~ in paths used by AliasGlob (2)} -setup {
     set savedHOME $env(HOME)
     set env(HOME) /foo/bar
@@ -1965,7 +1965,7 @@ test safe-16.6 {Bug 3529949: defang ~ in paths used by AliasGlob (2)} -setup {
     safe::interpDelete $i
     set env(HOME) $savedHOME
     unset savedHOME
-} -result {~}
+} -result {$p(:0:)/foo/bar/~}
 test safe-16.7 {Bug 3529949: defang ~user in paths used by AliasGlob (1)} -setup {
     set i [safe::interpCreate]
     set user $tcl_platform(user)
@@ -1974,7 +1974,7 @@ test safe-16.7 {Bug 3529949: defang ~user in paths used by AliasGlob (1)} -setup
 } -cleanup {
     safe::interpDelete $i
     unset user
-} -result {~USER}
+} -result {$p(:0:)/~USER}
 test safe-16.8 {Bug 3529949: defang ~user in paths used by AliasGlob (2)} -setup {
     set i [safe::interpCreate]
     set user $tcl_platform(user)
@@ -1983,7 +1983,7 @@ test safe-16.8 {Bug 3529949: defang ~user in paths used by AliasGlob (2)} -setup
 } -cleanup {
     safe::interpDelete $i
     unset user
-} -result {~USER}
+} -result {$p(:0:)/foo/bar/~USER}
 
 ### 17. Test the use of ::auto_path for loading commands (via tclIndex files)
 ###     and non-module packages (via pkgIndex.tcl files).

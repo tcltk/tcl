@@ -20,7 +20,7 @@ int
 int
 \fBTcl_FSUnregister\fR(\fIfsPtr\fR)
 .sp
-ClientData
+void *
 \fBTcl_FSData\fR(\fIfsPtr\fR)
 .sp
 void
@@ -123,7 +123,7 @@ Tcl_Obj *
 int
 \fBTcl_FSConvertToPathType\fR(\fIinterp, pathPtr\fR)
 .sp
-ClientData
+void *
 \fBTcl_FSGetInternalRep\fR(\fIpathPtr, fsPtr\fR)
 .sp
 Tcl_Obj *
@@ -210,7 +210,7 @@ this structure will be returned. This parameter may be NULL.
 .AP Tcl_Interp *interp in
 Interpreter to use either for results, evaluation, or reporting error
 messages.
-.AP ClientData clientData in
+.AP void *clientData in
 The native description of the path value to create.
 .AP Tcl_Obj *firstPtr in
 The first of two path values to compare. The value may be converted
@@ -220,8 +220,8 @@ The second of two path values to compare. The value may be converted
 to \fBpath\fR type.
 .AP Tcl_Obj *listObj in
 The list of path elements to operate on with a \fBjoin\fR operation.
-.AP int elements in
-If non-negative, the number of elements in the \fIlistObj\fR which should
+.AP Tcl_Size elements in
+The number of elements in the \fIlistObj\fR which should
 be joined together. If negative, then all elements are joined.
 .AP Tcl_Obj **errorPtr out
 In the case of an error, filled with a value containing the name of
@@ -251,7 +251,7 @@ Name of a procedure to look up in the file's symbol table
 Filled with the init function for this code.
 .AP Tcl_LibraryInitProc **proc2Ptr out
 Filled with the safe-init function for this code.
-.AP ClientData *clientDataPtr out
+.AP void **clientDataPtr out
 Filled with the clientData value to pass to this code's unload
 function when it is called.
 .AP Tcl_LoadHandle *loadHandlePtr out
@@ -269,11 +269,11 @@ allowed for the \fImode\fR argument to the Tcl \fBopen\fR command.
 .AP int permissions in
 POSIX-style permission flags such as 0644. If a new file is created, these
 permissions will be set on the created file.
-.AP int *lenPtr out
+.AP "Tcl_Size \&| int" *lenPtr out
 If non-NULL, filled with the number of elements in the split path.
 .AP Tcl_Obj *basePtr in
 The base path on to which to join the given elements. May be NULL.
-.AP int objc in
+.AP Tcl_Size objc in
 The number of elements in \fIobjv\fR.
 .AP "Tcl_Obj *const" objv[] in
 The elements to join to the given base path.
@@ -678,11 +678,6 @@ of zero, they will be freed when this function returns.
 \fBTcl_FSConvertToPathType\fR tries to convert the given Tcl_Obj to a valid
 Tcl path type, taking account of the fact that the cwd may have changed
 even if this value is already supposedly of the correct type.
-The filename may begin with
-.QW ~
-(to indicate current user's home directory) or
-.QW ~<user>
-(to indicate any user's home directory).
 .PP
 If the conversion succeeds (i.e.\ the value is a valid path in one of
 the current filesystems), then \fBTCL_OK\fR is returned. Otherwise
@@ -704,14 +699,7 @@ from the given Tcl_Obj.
 .PP
 If the translation succeeds (i.e.\ the value is a valid path), then it is
 returned. Otherwise NULL will be returned, and an error message may be
-left in the interpreter. A
-.QW translated
-path is one which contains no
-.QW ~
-or
-.QW ~user
-sequences (these have been expanded to their current
-representation in the filesystem). The value returned is owned by the
+left in the interpreter. The value returned is owned by the
 caller, which must store it or call \fBTcl_DecrRefCount\fR to ensure memory is
 freed. This function is of little practical use, and
 \fBTcl_FSGetNormalizedPath\fR or \fBTcl_FSGetNativePath\fR are usually
@@ -720,7 +708,7 @@ better functions to use for most purposes.
 \fBTcl_FSGetTranslatedStringPath\fR does the same as
 \fBTcl_FSGetTranslatedPath\fR, but returns a character string or NULL.
 The string returned is dynamically allocated and owned by the caller,
-which must store it or call \fBckfree\fR to ensure it is freed. Again,
+which must store it or call \fBTcl_Free\fR to ensure it is freed. Again,
 \fBTcl_FSGetNormalizedPath\fR or \fBTcl_FSGetNativePath\fR are usually
 better functions to use for most purposes.
 .PP
@@ -787,7 +775,7 @@ It returns one of \fBTCL_PATH_ABSOLUTE\fR, \fBTCL_PATH_RELATIVE\fR, or
 .SS "PORTABLE STAT RESULT API"
 .PP
 \fBTcl_AllocStatBuf\fR allocates a \fITcl_StatBuf\fR on the system heap (which
-may be deallocated by being passed to \fBckfree\fR). This allows extensions to
+may be deallocated by being passed to \fBTcl_Free\fR). This allows extensions to
 invoke \fBTcl_FSStat\fR and \fBTcl_FSLstat\fR without being dependent on the
 size of the buffer. That in turn depends on the flags used to build Tcl.
 .PP
@@ -835,7 +823,7 @@ general that is not a good thing to do). \fBTCL_OK\fR will be returned.
 the list of known filesystems, if it is known, and returns \fBTCL_OK\fR. If
 the filesystem is not currently registered, \fBTCL_ERROR\fR is returned.
 .PP
-\fBTcl_FSData\fR will return the ClientData associated with the given
+\fBTcl_FSData\fR will return the clientData associated with the given
 filesystem, if that filesystem is registered. Otherwise it will
 return NULL.
 .PP
@@ -850,7 +838,7 @@ The \fBTcl_Filesystem\fR structure contains the following fields:
 .CS
 typedef struct Tcl_Filesystem {
     const char *\fItypeName\fR;
-    int \fIstructureLength\fR;
+    Tcl_Size \fIstructureLength\fR;
     Tcl_FSVersion \fIversion\fR;
     Tcl_FSPathInFilesystemProc *\fIpathInFilesystemProc\fR;
     Tcl_FSDupInternalRepProc *\fIdupInternalRepProc\fR;
@@ -1012,7 +1000,7 @@ Tcl's internal list of known filesystems.
 .CS
 typedef int \fBTcl_FSPathInFilesystemProc\fR(
         Tcl_Obj *\fIpathPtr\fR,
-        ClientData *\fIclientDataPtr\fR);
+        void **\fIclientDataPtr\fR);
 .CE
 .SS DUPINTERNALREPPROC
 .PP
@@ -1022,8 +1010,8 @@ simply not copy the internal representation, which may then need to be
 regenerated later.
 .PP
 .CS
-typedef ClientData \fBTcl_FSDupInternalRepProc\fR(
-        ClientData \fIclientData\fR);
+typedef void *\fBTcl_FSDupInternalRepProc\fR(
+        void *\fIclientData\fR);
 .CE
 .SS FREEINTERNALREPPROC
 Free the internal representation. This must be implemented if internal
@@ -1032,7 +1020,7 @@ internal representation is generated), but may otherwise be NULL.
 .PP
 .CS
 typedef void \fBTcl_FSFreeInternalRepProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .SS INTERNALTONORMALIZEDPROC
 .PP
@@ -1043,7 +1031,7 @@ representation is the normalized path.
 .PP
 .CS
 typedef Tcl_Obj *\fBTcl_FSInternalToNormalizedProc\fR(
-        ClientData \fIclientData\fR);
+        void *\fIclientData\fR);
 .CE
 .SS CREATEINTERNALREPPROC
 .PP
@@ -1054,7 +1042,7 @@ the \fITcl_FSPathInFilesystemProc\fR for this filesystem always
 immediately creates an internal representation for paths it accepts.
 .PP
 .CS
-typedef ClientData \fBTcl_FSCreateInternalRepProc\fR(
+typedef void *\fBTcl_FSCreateInternalRepProc\fR(
         Tcl_Obj *\fIpathPtr\fR);
 .CE
 .SS NORMALIZEPATHPROC
@@ -1068,9 +1056,7 @@ must have a single unique
 string representation. Depending on the filesystem,
 there may be more than one unnormalized string representation which
 refers to that path (e.g.\ a relative path, a path with different
-character case if the filesystem is case insensitive, a path contain a
-reference to a home directory such as
-.QW ~ ,
+character case if the filesystem is case insensitive,
 a path containing symbolic
 links, etc). If the very last component in the path is a symbolic
 link, it should not be converted into the value it points to (but

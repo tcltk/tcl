@@ -57,11 +57,12 @@ struct sset {			/* state set */
 };
 
 struct dfa {
-    int nssets;			/* size of cache */
-    int nssused;		/* how many entries occupied yet */
-    int nstates;		/* number of states */
+    size_t nssets;			/* size of cache */
+    size_t nssused;		/* how many entries occupied yet */
+    size_t nstates;		/* number of states */
+    size_t wordsper;		/* length of state-set bitvectors */
     int ncolors;		/* length of outarc and inchain vectors */
-    int wordsper;		/* length of state-set bitvectors */
+    int cptsmalloced;		/* were the areas individually malloced? */
     struct sset *ssets;		/* state-set cache */
     unsigned *statesarea;	/* bitvector storage */
     unsigned *work;		/* pointer to work area within statesarea */
@@ -72,7 +73,6 @@ struct dfa {
     chr *lastpost;		/* location of last cache-flushed success */
     chr *lastnopr;		/* location of last cache-flushed NOPROGRESS */
     struct sset *search;	/* replacement-search-pointer memory */
-    int cptsmalloced;		/* were the areas individually malloced? */
     char *mallocarea;		/* self, or malloced area, or NULL */
 };
 
@@ -185,10 +185,6 @@ exec(
     if (re == NULL || string == NULL || re->re_magic != REMAGIC) {
 	FreeVars(v);
 	return REG_INVARG;
-    }
-    if (re->re_csize != sizeof(chr)) {
-	FreeVars(v);
-	return REG_MIXED;
     }
 
     /*
@@ -554,8 +550,8 @@ zapallsubs(
     size_t i;
 
     for (i = n-1; i > 0; i--) {
-	p[i].rm_so = -1;
-	p[i].rm_eo = -1;
+	p[i].rm_so = FREESTATE;
+	p[i].rm_eo = FREESTATE;
     }
 }
 
@@ -569,11 +565,11 @@ zaptreesubs(
     struct subre *const t)
 {
     if (t->op == '(') {
-	int n = t->subno;
+	size_t n = t->subno;
 	assert(n > 0);
-	if ((size_t) n < v->nmatch) {
-	    v->pmatch[n].rm_so = -1;
-	    v->pmatch[n].rm_eo = -1;
+	if (n < v->nmatch) {
+	    v->pmatch[n].rm_so = FREESTATE;
+	    v->pmatch[n].rm_eo = FREESTATE;
 	}
     }
 
@@ -893,7 +889,7 @@ cbrdissect(
     MDEBUG(("cbackref n%d %d{%d-%d}\n", t->id, n, min, max));
 
     /* get the backreferenced string */
-    if (v->pmatch[n].rm_so == TCL_INDEX_NONE) {
+    if (v->pmatch[n].rm_so == FREESTATE) {
 	return REG_NOMATCH;
     }
     brstring = v->start + v->pmatch[n].rm_so;

@@ -12,36 +12,11 @@
 
 #include "tclInt.h"
 
-#define SECSPERDAY	(60L * 60L * 24L)
-#define SECSPERYEAR	(SECSPERDAY * 365L)
-#define SECSPER4YEAR	(SECSPERYEAR * 4L + SECSPERDAY)
-
 /*
  * Number of samples over which to estimate the performance counter.
  */
 
 #define SAMPLES		64
-
-/*
- * The following arrays contain the day of year for the last day of each
- * month, where index 1 is January.
- */
-
-#ifndef TCL_NO_DEPRECATED
-static const int normalDays[] = {
-    -1, 30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333, 364
-};
-
-static const int leapDays[] = {
-    -1, 30, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
-};
-
-typedef struct {
-    char tzName[64];		/* Time zone name */
-    struct tm tm;		/* time information */
-} ThreadSpecificData;
-static Tcl_ThreadDataKey dataKey;
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Data for managing high-resolution timers.
@@ -133,10 +108,7 @@ static struct {
  * Declarations for functions defined later in this file.
  */
 
-#ifndef TCL_NO_DEPRECATED
-static struct tm *	ComputeGMT(const time_t *tp);
-#endif /* TCL_NO_DEPRECATED */
-static void		StopCalibration(ClientData clientData);
+static void		StopCalibration(void *clientData);
 static DWORD WINAPI	CalibrationThread(LPVOID arg);
 static void 		UpdateTimeEachSecond(void);
 static void		ResetCounterSamples(unsigned long long fileTime,
@@ -144,10 +116,10 @@ static void		ResetCounterSamples(unsigned long long fileTime,
 static long long	AccumulateSample(long long perfCounter,
 			    unsigned long long fileTime);
 static void		NativeScaleTime(Tcl_Time* timebuf,
-			    ClientData clientData);
+			    void *clientData);
 static long long	NativeGetMicroseconds(void);
 static void		NativeGetTime(Tcl_Time* timebuf,
-			    ClientData clientData);
+			    void *clientData);
 
 /*
  * TIP #233 (Virtualized Time): Data for the time hooks, if any.
@@ -155,7 +127,7 @@ static void		NativeGetTime(Tcl_Time* timebuf,
 
 Tcl_GetTimeProc *tclGetTimeProcPtr = NativeGetTime;
 Tcl_ScaleTimeProc *tclScaleTimeProcPtr = NativeScaleTime;
-ClientData tclTimeClientData = NULL;
+void *tclTimeClientData = NULL;
 
 /*
  * Inlined version of Tcl_GetTime.
@@ -191,7 +163,7 @@ IsTimeNative(void)
  *----------------------------------------------------------------------
  */
 
-unsigned long
+unsigned long long
 TclpGetSeconds(void)
 {
     long long usecSincePosixEpoch;
@@ -206,7 +178,7 @@ TclpGetSeconds(void)
 	Tcl_Time t;
 
 	GetTime(&t);
-	return t.sec;
+	return (unsigned long long)(unsigned long) t.sec;
     }
 }
 
@@ -229,7 +201,7 @@ TclpGetSeconds(void)
  *----------------------------------------------------------------------
  */
 
-unsigned long
+unsigned long long
 TclpGetClicks(void)
 {
     long long usecSincePosixEpoch;
@@ -239,7 +211,7 @@ TclpGetClicks(void)
      */
 
     if (IsTimeNative() && (usecSincePosixEpoch = NativeGetMicroseconds())) {
-	return (unsigned long) usecSincePosixEpoch;
+	return (Tcl_WideUInt) usecSincePosixEpoch;
     } else {
 	/*
 	* Use the Tcl_GetTime abstraction to get the time in microseconds, as
@@ -249,7 +221,8 @@ TclpGetClicks(void)
 	Tcl_Time now;		/* Current Tcl time */
 
 	GetTime(&now);
-	return ((unsigned long)(now.sec)*1000000UL) + (unsigned long)(now.usec);
+	return ((unsigned long long)(now.sec)*1000000ULL) +
+		(unsigned long long)(now.usec);
     }
 }
 
@@ -438,7 +411,7 @@ Tcl_GetTime(
 static void
 NativeScaleTime(
     TCL_UNUSED(Tcl_Time *),
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     /*
      * Native scale is 1:1. Nothing is done.
@@ -626,7 +599,6 @@ NativeGetMicroseconds(void)
 	LONGLONG perfCounterLastCall, curCounterFreq;
 				/* Copy with current data of calibration
 				 * cycle. */
-
 	LARGE_INTEGER curCounter;
 				/* Current performance counter. */
 
@@ -681,6 +653,7 @@ NativeGetMicroseconds(void)
     /*
      * High resolution timer is not available.
      */
+
     return 0;
 }
 
@@ -704,7 +677,7 @@ NativeGetMicroseconds(void)
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     long long usecSincePosixEpoch;
 
@@ -751,7 +724,7 @@ void TclWinResetTimerResolution(void);
 
 static void
 StopCalibration(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     SetEvent(timeInfo.exitEvent);
 
@@ -764,226 +737,6 @@ StopCalibration(
     CloseHandle(timeInfo.exitEvent);
     CloseHandle(timeInfo.calibrationThread);
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpGetDate --
- *
- *	This function converts between seconds and struct tm. If useGMT is
- *	true, then the returned date will be in Greenwich Mean Time (GMT).
- *	Otherwise, it will be in the local time zone.
- *
- * Results:
- *	Returns a static tm structure.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-struct tm *
-TclpGetDate(
-    const time_t *t,
-    int useGMT)
-{
-    struct tm *tmPtr;
-    time_t time;
-#if defined(_WIN64) || defined(_USE_64BIT_TIME_T)
-#   define t2 *t		/* no need to cripple time to 32-bit */
-#else
-    time_t t2 = *(__time32_t *) t;
-#endif
-
-    if (!useGMT) {
-#if defined(_MSC_VER)
-#	undef timezone /* prevent conflict with timezone() function */
-	long timezone = 0;
-#endif
-
-	tzset();
-
-	/*
-	 * If we are in the valid range, let the C run-time library handle it.
-	 * Otherwise we need to fake it. Note that this algorithm ignores
-	 * daylight savings time before the epoch.
-	 */
-
-	if (t2 >= 0) {
-	    return TclpLocaltime(&t2);
-	}
-
-#if defined(_MSC_VER)
-	_get_timezone(&timezone);
-#endif
-
-	time = t2 - timezone;
-
-	/*
-	 * If we aren't near to overflowing the long, just add the bias and
-	 * use the normal calculation. Otherwise we will need to adjust the
-	 * result at the end.
-	 */
-
-	if (t2 < (LONG_MAX - 2*SECSPERDAY) && t2 > (LONG_MIN + 2*SECSPERDAY)) {
-	    tmPtr = ComputeGMT(&time);
-	} else {
-	    tmPtr = ComputeGMT(&t2);
-
-	    tzset();
-
-	    /*
-	     * Add the bias directly to the tm structure to avoid overflow.
-	     * Propagate seconds overflow into minutes, hours and days.
-	     */
-
-	    time = tmPtr->tm_sec - timezone;
-	    tmPtr->tm_sec = (int)(time % 60);
-	    if (tmPtr->tm_sec < 0) {
-		tmPtr->tm_sec += 60;
-		time -= 60;
-	    }
-
-	    time = tmPtr->tm_min + time / 60;
-	    tmPtr->tm_min = (int)(time % 60);
-	    if (tmPtr->tm_min < 0) {
-		tmPtr->tm_min += 60;
-		time -= 60;
-	    }
-
-	    time = tmPtr->tm_hour + time / 60;
-	    tmPtr->tm_hour = (int)(time % 24);
-	    if (tmPtr->tm_hour < 0) {
-		tmPtr->tm_hour += 24;
-		time -= 24;
-	    }
-
-	    time /= 24;
-	    tmPtr->tm_mday += (int) time;
-	    tmPtr->tm_yday += (int) time;
-	    tmPtr->tm_wday = (tmPtr->tm_wday + (int) time) % 7;
-	}
-    } else {
-	tmPtr = ComputeGMT(&t2);
-    }
-    return tmPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ComputeGMT --
- *
- *	This function computes GMT given the number of seconds since the epoch
- *	(midnight Jan 1 1970).
- *
- * Results:
- *	Returns a (per thread) statically allocated struct tm.
- *
- * Side effects:
- *	Updates the values of the static struct tm.
- *
- *----------------------------------------------------------------------
- */
-
-static struct tm *
-ComputeGMT(
-    const time_t *tp)
-{
-    struct tm *tmPtr;
-    long tmp, rem;
-    int isLeap;
-    const int *days;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-    tmPtr = &tsdPtr->tm;
-
-    /*
-     * Compute the 4 year span containing the specified time.
-     */
-
-    tmp = (long) (*tp / SECSPER4YEAR);
-    rem = (long) (*tp % SECSPER4YEAR);
-
-    /*
-     * Correct for weird mod semantics so the remainder is always positive.
-     */
-
-    if (rem < 0) {
-	tmp--;
-	rem += SECSPER4YEAR;
-    }
-
-    /*
-     * Compute the year after 1900 by taking the 4 year span and adjusting for
-     * the remainder. This works because 2000 is a leap year, and 1900/2100
-     * are out of the range.
-     */
-
-    tmp = (tmp * 4) + 70;
-    isLeap = 0;
-    if (rem >= SECSPERYEAR) {			  /* 1971, etc. */
-	tmp++;
-	rem -= SECSPERYEAR;
-	if (rem >= SECSPERYEAR) {		  /* 1972, etc. */
-	    tmp++;
-	    rem -= SECSPERYEAR;
-	    if (rem >= SECSPERYEAR + SECSPERDAY) { /* 1973, etc. */
-		tmp++;
-		rem -= SECSPERYEAR + SECSPERDAY;
-	    } else {
-		isLeap = 1;
-	    }
-	}
-    }
-    tmPtr->tm_year = tmp;
-
-    /*
-     * Compute the day of year and leave the seconds in the current day in the
-     * remainder.
-     */
-
-    tmPtr->tm_yday = rem / SECSPERDAY;
-    rem %= SECSPERDAY;
-
-    /*
-     * Compute the time of day.
-     */
-
-    tmPtr->tm_hour = rem / 3600;
-    rem %= 3600;
-    tmPtr->tm_min = rem / 60;
-    tmPtr->tm_sec = rem % 60;
-
-    /*
-     * Compute the month and day of month.
-     */
-
-    days = (isLeap) ? leapDays : normalDays;
-    for (tmp = 1; days[tmp] < tmPtr->tm_yday; tmp++) {
-	/* empty body */
-    }
-    tmPtr->tm_mon = --tmp;
-    tmPtr->tm_mday = tmPtr->tm_yday - days[tmp];
-
-    /*
-     * Compute day of week.  Epoch started on a Thursday.
-     */
-
-    tmPtr->tm_wday = (long) (*tp / SECSPERDAY) + 4;
-    if ((*tp % SECSPERDAY) < 0) {
-	tmPtr->tm_wday--;
-    }
-    tmPtr->tm_wday %= 7;
-    if (tmPtr->tm_wday < 0) {
-	tmPtr->tm_wday += 7;
-    }
-
-    return tmPtr;
-}
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1253,6 +1006,7 @@ UpdateTimeEachSecond(void)
 	     * First adjust with a micro jump (short frozen time is
 	     * acceptable).
 	     */
+
 	    vt0 += nt0 - nt1;
 
 	    /*
@@ -1426,77 +1180,6 @@ AccumulateSample(
 /*
  *----------------------------------------------------------------------
  *
- * TclpGmtime --
- *
- *	Wrapper around the 'gmtime' library function to make it thread safe.
- *
- * Results:
- *	Returns a pointer to a 'struct tm' in thread-specific data.
- *
- * Side effects:
- *	Invokes gmtime or gmtime_r as appropriate.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-struct tm *
-TclpGmtime(
-    const time_t *timePtr)	/* Pointer to the number of seconds since the
-				 * local system's epoch */
-{
-    /*
-     * The MS implementation of gmtime is thread safe because it returns the
-     * time in a block of thread-local storage, and Windows does not provide a
-     * Posix gmtime_r function.
-     */
-
-#if defined(_WIN64) || defined(_USE_64BIT_TIME_T)
-    return gmtime(timePtr);
-#else
-    return _gmtime32((const __time32_t *) timePtr);
-#endif /* _WIN64 || _USE_64BIT_TIME_T */
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpLocaltime --
- *
- *	Wrapper around the 'localtime' library function to make it thread
- *	safe.
- *
- * Results:
- *	Returns a pointer to a 'struct tm' in thread-specific data.
- *
- * Side effects:
- *	Invokes localtime or localtime_r as appropriate.
- *
- *----------------------------------------------------------------------
- */
-
-struct tm *
-TclpLocaltime(
-    const time_t *timePtr)	/* Pointer to the number of seconds since the
-				 * local system's epoch */
-{
-    /*
-     * The MS implementation of localtime is thread safe because it returns
-     * the time in a block of thread-local storage, and Windows does not
-     * provide a Posix localtime_r function.
-     */
-
-#if defined(_WIN64) || defined(_USE_64BIT_TIME_T)
-    return localtime(timePtr);
-#else
-    return _localtime32((const __time32_t *) timePtr);
-#endif /* _WIN64 || _USE_64BIT_TIME_T */
-}
-#endif /* TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_SetTimeProc --
  *
  *	TIP #233 (Virtualized Time): Registers two handlers for the
@@ -1515,7 +1198,7 @@ void
 Tcl_SetTimeProc(
     Tcl_GetTimeProc *getProc,
     Tcl_ScaleTimeProc *scaleProc,
-    ClientData clientData)
+    void *clientData)
 {
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
@@ -1542,7 +1225,7 @@ void
 Tcl_QueryTimeProc(
     Tcl_GetTimeProc **getProc,
     Tcl_ScaleTimeProc **scaleProc,
-    ClientData *clientData)
+    void **clientData)
 {
     if (getProc) {
 	*getProc = tclGetTimeProcPtr;

@@ -351,9 +351,9 @@ void
 Tcl_WinConvertError(
     unsigned errCode)		/* Win32 error code. */
 {
-    if (errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
+    if ((unsigned)errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
 	errCode -= WSAEWOULDBLOCK;
-	if (errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
+	if ((unsigned)errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
 	    Tcl_SetErrno(errorTable[1]);
 	} else {
 	    Tcl_SetErrno(wsaErrorTable[errCode]);
@@ -381,7 +381,7 @@ Tcl_WinConvertError(
  *----------------------------------------------------------------------
  */
 
-TCL_NORETURN void
+void
 tclWinDebugPanic(
     const char *format, ...)
 {
@@ -413,12 +413,6 @@ tclWinDebugPanic(
 	fprintf(stderr, "\n");
 	fflush(stderr);
     }
-#   if defined(__GNUC__)
-    __builtin_trap();
-#   else
-    DebugBreak();
-#   endif
-    abort();
 }
 #endif
 /*

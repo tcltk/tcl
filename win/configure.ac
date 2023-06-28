@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 
-AC_INIT([tcl],[8.7])
+AC_INIT([tcl],[9.0])
 AC_CONFIG_SRCDIR([../generic/tcl.h])
 AC_PREREQ([2.69])
 
@@ -12,10 +12,10 @@ AC_PREREQ([2.69])
 # /bin/sh. The bash shell seems to suffer from some strange failures.
 SHELL=/bin/sh
 
-TCL_VERSION=8.7
-TCL_MAJOR_VERSION=8
-TCL_MINOR_VERSION=7
-TCL_PATCH_LEVEL="a6"
+TCL_VERSION=9.0
+TCL_MAJOR_VERSION=9
+TCL_MINOR_VERSION=0
+TCL_PATCH_LEVEL="a4"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -90,20 +90,6 @@ SC_TCL_CFG_ENCODING
 #--------------------------------------------------------------------
 
 SC_ENABLE_SHARED
-
-#--------------------------------------------------------------------
-# Check whether --enable-time64bit was given.
-#--------------------------------------------------------------------
-
-AC_MSG_CHECKING([force of 64-bit time_t])
-AC_ARG_ENABLE(time64bit,
-    AS_HELP_STRING([--enable-time64bit],
-	[force 64-bit time_t for 32-bit build (default: off)]),
-    [tcl_ok=$enableval], [tcl_ok=no])
-AC_MSG_RESULT("$tcl_ok")
-if test "$tcl_ok" = "yes"; then
-    CFLAGS="${CFLAGS} -D_USE_64BIT_TIME_T"
-fi
 
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
@@ -327,8 +313,8 @@ eval "TCL_SRC_DIR=\"`cd $srcdir/..; $CYGPATH $(pwd)`\""
 
 eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
 
-eval "TCL_STUB_LIB_FILE=\"${LIBPREFIX}tclstub${VER}${LIBSUFFIX}\""
-eval "TCL_STUB_LIB_FLAG=\"-ltclstub${VER}${LIBFLAGSUFFIX}\""
+eval "TCL_STUB_LIB_FILE=\"${LIBPREFIX}tclstub${LIBSUFFIX}\""
+eval "TCL_STUB_LIB_FLAG=\"-ltclstub${LIBFLAGSUFFIX}\""
 eval "TCL_BUILD_STUB_LIB_SPEC=\"-L`$CYGPATH $(pwd)` ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_STUB_LIB_SPEC=\"-L${libdir} ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_BUILD_STUB_LIB_PATH=\"`$CYGPATH $(pwd)`/${TCL_STUB_LIB_FILE}\""

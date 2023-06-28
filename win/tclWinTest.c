@@ -40,7 +40,6 @@ static Tcl_ObjCmdProc	TesteventloopCmd;
 static Tcl_ObjCmdProc	TestvolumetypeCmd;
 static Tcl_ObjCmdProc	TestwinclockCmd;
 static Tcl_ObjCmdProc	TestwinsleepCmd;
-static Tcl_ObjCmdProc	TestSizeCmd;
 static Tcl_ObjCmdProc	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
 static Tcl_ObjCmdProc	TestchmodCmd;
@@ -77,7 +76,6 @@ TclplatformtestInit(
     Tcl_CreateObjCommand(interp, "testwinclock", TestwinclockCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwinsleep", TestwinsleepCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testexcept", TestExceptionCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testsize", TestSizeCmd, NULL, NULL);
     return TCL_OK;
 }
 
@@ -101,7 +99,7 @@ TclplatformtestInit(
 
 static int
 TesteventloopCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -177,7 +175,7 @@ TesteventloopCmd(
 
 static int
 TestvolumetypeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -243,7 +241,7 @@ TestvolumetypeCmd(
 
 static int
 TestwinclockCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
@@ -292,7 +290,7 @@ TestwinclockCmd(
 
 static int
 TestwinsleepCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
@@ -308,28 +306,6 @@ TestwinsleepCmd(
     }
     Sleep((DWORD) ms);
     return TCL_OK;
-}
-
-static int
-TestSizeCmd(
-    TCL_UNUSED(ClientData),
-    Tcl_Interp* interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
-    Tcl_Obj *const * objv)	/* Parameter vector */
-{
-
-    if (objc != 2) {
-	goto syntax;
-    }
-    if (strcmp(Tcl_GetString(objv[1]), "st_mtime") == 0) {
-	Tcl_StatBuf *statPtr;
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sizeof(statPtr->st_mtime)));
-	return TCL_OK;
-    }
-
-syntax:
-    Tcl_WrongNumArgs(interp, 1, objv, "st_mtime");
-    return TCL_ERROR;
 }
 
 /*
@@ -357,7 +333,7 @@ syntax:
 
 static int
 TestExceptionCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp* interp,			/* Tcl interpreter */
     int objc,				/* Argument count */
     Tcl_Obj *const objv[])		/* Argument vector */
@@ -480,16 +456,16 @@ TestplatformChmod(
 	GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 	goto done;
     }
-    pTokenUser = (TOKEN_USER *)ckalloc(dw);
+    pTokenUser = (TOKEN_USER *)Tcl_Alloc(dw);
     if (!GetTokenInformation(hToken, TokenUser, pTokenUser, dw, &dw)) {
 	goto done;
     }
     aceEntry[nSids].sidLen = GetLengthSid(pTokenUser->User.Sid);
-    aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
+    aceEntry[nSids].pSid = Tcl_Alloc(aceEntry[nSids].sidLen);
     if (!CopySid(aceEntry[nSids].sidLen,
 		 aceEntry[nSids].pSid,
 		 pTokenUser->User.Sid)) {
-	ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
+	Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
 	goto done;
     }
     /*
@@ -522,19 +498,19 @@ TestplatformChmod(
 		GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 	    goto done;
 	}
-	pTokenGroup = (TOKEN_PRIMARY_GROUP *)ckalloc(dw);
+	pTokenGroup = (TOKEN_PRIMARY_GROUP *)Tcl_Alloc(dw);
 	if (!GetTokenInformation(hToken, TokenPrimaryGroup, pTokenGroup, dw, &dw)) {
-	    ckfree(pTokenGroup);
+	    Tcl_Free(pTokenGroup);
 	    goto done;
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pTokenGroup->PrimaryGroup);
-	aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
+	aceEntry[nSids].pSid = Tcl_Alloc(aceEntry[nSids].sidLen);
 	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pTokenGroup->PrimaryGroup)) {
-	    ckfree(pTokenGroup);
-	    ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
+	    Tcl_Free(pTokenGroup);
+	    Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
 	    goto done;
 	}
-	ckfree(pTokenGroup);
+	Tcl_Free(pTokenGroup);
 
 	/* Generate mask for group ACL */
 
@@ -558,10 +534,10 @@ TestplatformChmod(
 	    goto done;
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pWorldSid);
-	aceEntry[nSids].pSid = ckalloc(aceEntry[nSids].sidLen);
+	aceEntry[nSids].pSid = Tcl_Alloc(aceEntry[nSids].sidLen);
 	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pWorldSid)) {
 	    LocalFree(pWorldSid);
-	    ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
+	    Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
 	    goto done;
 	}
 	LocalFree(pWorldSid);
@@ -589,7 +565,7 @@ TestplatformChmod(
 	newAclSize +=
 	    offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
     }
-    newAcl = (PACL)ckalloc(newAclSize);
+    newAcl = (PACL)Tcl_Alloc(newAclSize);
     if (!InitializeAcl(newAcl, newAclSize, ACL_REVISION)) {
 	goto done;
     }
@@ -618,16 +594,16 @@ TestplatformChmod(
 
   done:
     if (pTokenUser) {
-	ckfree(pTokenUser);
+	Tcl_Free(pTokenUser);
     }
     if (hToken) {
 	CloseHandle(hToken);
     }
     if (newAcl) {
-	ckfree(newAcl);
+	Tcl_Free(newAcl);
     }
     for (i = 0; i < nSids; ++i) {
-	ckfree(aceEntry[i].pSid);
+	Tcl_Free(aceEntry[i].pSid);
     }
 
     if (res != 0) {
@@ -636,6 +612,7 @@ TestplatformChmod(
 
     /* Run normal chmod command */
     return chmod(nativePath, pmode);
+
 
 }
 
@@ -660,7 +637,7 @@ TestplatformChmod(
 
 static int
 TestchmodCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */

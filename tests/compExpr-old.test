@@ -19,7 +19,6 @@ if {"::tcltest" ni [namespace children]} {
 
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact tcl::test [info patchlevel]]
 
 # Big test for correct ordering of data in [expr]
 
@@ -78,9 +77,6 @@ proc testIEEE {} {
     }
 }
 testConstraint ieeeFloatingPoint [testIEEE]
-
-testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
-testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 # procedures used below
 

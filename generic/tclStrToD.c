@@ -386,9 +386,9 @@ static Tcl_WideUInt	Nokia770Twiddle(Tcl_WideUInt w);
  *	the first byte to be scanned. If bytes is NULL, then objPtr must be
  *	non-NULL, and the string representation of objPtr will be scanned
  *	(generated first, if necessary). The numBytes argument determines the
- *	number of bytes to be scanned. If numBytes is negative, the first NUL
- *	byte encountered will terminate the scan. If numBytes is non-negative,
- *	then no more than numBytes bytes will be scanned.
+ *	number of bytes to be scanned. If numBytes is TCL_INDEX_NONE, the first NUL
+ *	byte encountered will terminate the scan. Otherwise,
+ *	no more than numBytes bytes will be scanned.
  *
  *	The argument flags is an input that controls the numeric formats
  *	recognized by the parser. The flag bits are:
@@ -484,7 +484,7 @@ TclParseNumber(
 				 * ("integer", "boolean value", etc.). */
     const char *bytes,		/* Pointer to the start of the string to
 				 * scan. */
-    int numBytes,		/* Maximum number of bytes to scan, see
+    Tcl_Size numBytes,		/* Maximum number of bytes to scan, see
 				 * above. */
     const char **endPtrPtr,	/* Place to store pointer to the character
 				 * that terminated the scan. */
@@ -493,7 +493,7 @@ TclParseNumber(
     enum State {
 	INITIAL, SIGNUM, ZERO, ZERO_X,
 	ZERO_O, ZERO_B, ZERO_D, BINARY,
-	HEXADECIMAL, OCTAL, BAD_OCTAL, DECIMAL,
+	HEXADECIMAL, OCTAL, DECIMAL,
 	LEADING_RADIX_POINT, FRACTION,
 	EXPONENT_START, EXPONENT_SIGNUM, EXPONENT,
 	sI, sIN, sINF, sINFI, sINFIN, sINFINI, sINFINIT, sINFINITY
@@ -529,16 +529,15 @@ TclParseNumber(
 				 * number. */
     long exponent = 0;		/* Exponent of a floating point number. */
     const char *p;		/* Pointer to next character to scan. */
-    size_t len;			/* Number of characters remaining after p. */
+    Tcl_Size len;		/* Number of characters remaining after p. */
     const char *acceptPoint;	/* Pointer to position after last character in
 				 * an acceptable number. */
-    size_t acceptLen;		/* Number of characters following that
+    Tcl_Size acceptLen;		/* Number of characters following that
 				 * point. */
     int status = TCL_OK;	/* Status to return to caller. */
     char d = 0;			/* Last hexadecimal digit scanned; initialized
 				 * to avoid a compiler warning. */
     int shift = 0;		/* Amount to shift when accumulating binary */
-    int explicitOctal = 0;
     mp_err err = MP_OKAY;
     int under = 0;              /* Flag trailing '_' as error if true once
 				 * number is accepted. */
@@ -556,8 +555,8 @@ TclParseNumber(
 		/* A dict can never be a (single) number */
 		return TCL_ERROR;
 	    }
-	    if (TclHasInternalRep(objPtr, &tclListType)) {
-		int length;
+	    if (TclHasInternalRep(objPtr, &tclListType.objType)) {
+		Tcl_Size length;
 		/* A list can only be a (single) number if its length == 1 */
 		TclListObjLengthM(NULL, objPtr, &length);
 		if (length != 1) {
@@ -675,7 +674,6 @@ TclParseNumber(
 		if (under) {
 		    goto endgame;
 		}
-		explicitOctal = 1;
 		state = ZERO_O;
 		break;
 	    }
@@ -686,10 +684,7 @@ TclParseNumber(
 		state = ZERO_D;
 		break;
 	    }
-#ifdef TCL_NO_DEPRECATED
 	    goto decimal;
-#endif
-	    /* FALLTHROUGH */
 
 	case OCTAL:
 	    /*
@@ -774,62 +769,6 @@ TclParseNumber(
                 under = 1;
                 break;
 	    }
-	    /* FALLTHROUGH */
-
-	case BAD_OCTAL:
-	    if (explicitOctal) {
-		/*
-		 * No forgiveness for bad digits in explicitly octal numbers.
-		 */
-
-		goto endgame;
-	    }
-	    if (flags & TCL_PARSE_INTEGER_ONLY) {
-		/*
-		 * No seeking floating point when parsing only integer.
-		 */
-
-		goto endgame;
-	    }
-#ifndef TCL_NO_DEPRECATED
-
-	    /*
-	     * Scanned a number with a leading zero that contains an 8, 9,
-	     * radix point or E. This is an invalid octal number, but might
-	     * still be floating point.
-	     */
-
-	    if (c == '0') {
-		numTrailZeros++;
-		under = 0;
-		state = BAD_OCTAL;
-		break;
-	    } else if (isdigit(UCHAR(c))) {
-		if (objPtr != NULL) {
-		    significandOverflow = AccumulateDecimalDigit(
-			    (unsigned)(c-'0'), numTrailZeros,
-			    &significandWide, &significandBig,
-			    significandOverflow);
-		}
-		if (numSigDigs != 0) {
-		    numSigDigs += (numTrailZeros + 1);
-		} else {
-		    numSigDigs = 1;
-		}
-		numTrailZeros = 0;
-		under = 0;
-		state = BAD_OCTAL;
-		break;
-	    } else if (c == '.') {
-		under = 0;
-		state = FRACTION;
-		break;
-	    } else if (c == 'E' || c == 'e') {
-		under = 0;
-		state = EXPONENT_START;
-		break;
-	    }
-#endif
 	    goto endgame;
 
 	    /*
@@ -997,9 +936,7 @@ TclParseNumber(
 	     * digits.
 	     */
 
-#ifdef TCL_NO_DEPRECATED
 	decimal:
-#endif
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
@@ -1309,7 +1246,7 @@ TclParseNumber(
 	    }
 	}
 	if (endPtrPtr == NULL) {
-	    if ((len != 0) && ((numBytes > 0) || (*p != '\0'))) {
+	    if ((len != 0) && ((numBytes + 1 > 1) || (*p != '\0'))) {
 		status = TCL_ERROR;
 	    }
 	} else {
@@ -1325,7 +1262,6 @@ TclParseNumber(
 	TclFreeInternalRep(objPtr);
 	switch (acceptState) {
 	case SIGNUM:
-	case BAD_OCTAL:
 	case ZERO_X:
 	case ZERO_O:
 	case ZERO_B:
@@ -1442,7 +1378,7 @@ TclParseNumber(
 			    octalSignificandWide);
 		    octalSignificandOverflow = 1;
 		} else {
-		    objPtr->typePtr = &tclIntType;
+		    objPtr->typePtr = &tclIntType.objType;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
 				(Tcl_WideInt)(-octalSignificandWide);
@@ -1478,7 +1414,7 @@ TclParseNumber(
 			    significandWide);
 		    significandOverflow = 1;
 		} else {
-		    objPtr->typePtr = &tclIntType;
+		    objPtr->typePtr = &tclIntType.objType;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
 				(Tcl_WideInt)(-significandWide);
@@ -1510,7 +1446,7 @@ TclParseNumber(
 	     * k = numTrailZeros+exponent-numDigitsAfterDp.
 	     */
 
-	    objPtr->typePtr = &tclDoubleType;
+	    objPtr->typePtr = &tclDoubleType.objType;
 	    if (exponentSignum) {
 		/*
 		 * At this point exponent>=0, so the following calculation
@@ -1561,14 +1497,14 @@ TclParseNumber(
 	    } else {
 		objPtr->internalRep.doubleValue = HUGE_VAL;
 	    }
-	    objPtr->typePtr = &tclDoubleType;
+	    objPtr->typePtr = &tclDoubleType.objType;
 	    break;
 
 #ifdef IEEE_FLOATING_POINT
 	case sNAN:
 	case sNANFINISH:
 	    objPtr->internalRep.doubleValue = MakeNaN(signum, significandWide);
-	    objPtr->typePtr = &tclDoubleType;
+	    objPtr->typePtr = &tclDoubleType.objType;
 	    break;
 #endif
 	case INITIAL:
@@ -1588,9 +1524,6 @@ TclParseNumber(
 
 	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
 	    Tcl_AppendToObj(msg, "\"", -1);
-	    if (state == BAD_OCTAL) {
-		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
-	    }
 	    Tcl_SetObjResult(interp, msg);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 	}
@@ -2476,7 +2409,7 @@ TakeAbsoluteValue(
  *
  * Results:
  *	Returns one of the strings 'Infinity' and 'NaN'.  The string returned
- *	must be freed by the caller using 'ckfree'.
+ *	must be freed by the caller using 'Tcl_Free'.
  *
  * Side effects:
  *	Stores 9999 in *decpt, and sets '*endPtr' to designate the terminating
@@ -2495,13 +2428,13 @@ FormatInfAndNaN(
 
     *decpt = 9999;
     if (!(d->w.word1) && !(d->w.word0 & HI_ORDER_SIG_MASK)) {
-	retval = (char *)ckalloc(9);
+	retval = (char *)Tcl_Alloc(9);
 	strcpy(retval, "Infinity");
 	if (endPtr) {
 	    *endPtr = retval + 8;
 	}
     } else {
-	retval = (char *)ckalloc(4);
+	retval = (char *)Tcl_Alloc(4);
 	strcpy(retval, "NaN");
 	if (endPtr) {
 	    *endPtr = retval + 3;
@@ -2532,7 +2465,7 @@ FormatZero(
     int *decpt,			/* Location of the decimal point. */
     char **endPtr)		/* Pointer to the end of the formatted data */
 {
-    char *retval = (char *)ckalloc(2);
+    char *retval = (char *)Tcl_Alloc(2);
 
     strcpy(retval, "0");
     if (endPtr) {
@@ -3078,7 +3011,7 @@ QuickConversion(
      * Handle the peculiar case where the result has no significant digits.
      */
 
-    retval = (char *)ckalloc(len + 1);
+    retval = (char *)Tcl_Alloc(len + 1);
     if (ilim == 0) {
 	d = d - 5.;
 	if (d > eps.d) {
@@ -3089,7 +3022,7 @@ QuickConversion(
 	    *decpt = k;
 	    return retval;
 	} else {
-	    ckfree(retval);
+	    Tcl_Free(retval);
 	    return NULL;
 	}
     }
@@ -3104,7 +3037,7 @@ QuickConversion(
 	end = StrictQuickFormat(d, k, ilim, eps.d, retval, decpt);
     }
     if (end == NULL) {
-	ckfree(retval);
+	Tcl_Free(retval);
 	return NULL;
     }
     *end = '\0';
@@ -3189,7 +3122,7 @@ ShorteningInt64Conversion(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = (char *)ckalloc(len + 1);
+    char *retval = (char *)Tcl_Alloc(len + 1);
 				/* Output buffer. */
     Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
@@ -3352,7 +3285,7 @@ StrictInt64Conversion(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = (char *)ckalloc(len + 1);
+    char *retval = (char *)Tcl_Alloc(len + 1);
 				/* Output buffer. */
     Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
@@ -3552,7 +3485,7 @@ ShorteningBignumConversionPowD(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = (char *)ckalloc(len + 1);
+    char *retval = (char *)Tcl_Alloc(len + 1);
 				/* Output buffer. */
     mp_int b;			/* Numerator of the fraction being
 				 * converted. */
@@ -3759,7 +3692,7 @@ StrictBignumConversionPowD(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = (char *)ckalloc(len + 1);
+    char *retval = (char *)Tcl_Alloc(len + 1);
 				/* Output buffer. */
     mp_int b;			/* Numerator of the fraction being
 				 * converted. */
@@ -3913,7 +3846,7 @@ ShouldBankerRoundUpToNext(
     }
     r = mp_cmp_mag(&temp, S);
     mp_clear(&temp);
-    switch(r) {
+    switch (r) {
     case MP_EQ:
 	return isodd;
     case MP_GT:
@@ -3955,7 +3888,7 @@ ShorteningBignumConversion(
     int *decpt,			/* OUTPUT: Position of the decimal point. */
     char **endPtr)		/* OUTPUT: Pointer to the end of the number */
 {
-    char *retval = (char *)ckalloc(len+1);
+    char *retval = (char *)Tcl_Alloc(len+1);
 				/* Buffer of digits to return. */
     char *s = retval;		/* Cursor in the return value. */
     mp_int b;			/* Numerator of the result. */
@@ -4189,7 +4122,7 @@ StrictBignumConversion(
     int *decpt,			/* OUTPUT: Position of the decimal point. */
     char **endPtr)		/* OUTPUT: Pointer to the end of the number */
 {
-    char *retval = (char *)ckalloc(len+1);
+    char *retval = (char *)Tcl_Alloc(len+1);
 				/* Buffer of digits to return. */
     char *s = retval;		/* Cursor in the return value. */
     mp_int b;			/* Numerator of the result. */
@@ -4355,15 +4288,14 @@ StrictBignumConversion(
  * This function is a service routine that produces the string of digits for
  * floating-point-to-decimal conversion. It can do a number of things
  * according to the 'flags' argument. Valid values for 'flags' include:
- *	TCL_DD_SHORTEST - This is the default for floating point conversion if
- *		::tcl_precision is 0. It constructs the shortest string of
+ *	TCL_DD_SHORTEST - This is the default for floating point conversion.
+ *		It constructs the shortest string of
  *		digits that will reconvert to the given number when scanned.
  *		For floating point numbers that are exactly between two
  *		decimal numbers, it resolves using the 'round to even' rule.
  *		With this value, the 'ndigits' parameter is ignored.
  *	TCL_DD_E_FORMAT - This value is used to prepare numbers for %e format
- *		conversion (or for default floating->string if tcl_precision
- *		is not 0). It constructs a string of at most 'ndigits' digits,
+ *		conversion. It constructs a string of at most 'ndigits' digits,
  *		choosing the one that is closest to the given number (and
  *		resolving ties with 'round to even').  It is allowed to return
  *		fewer than 'ndigits' if the number converts exactly; if the
@@ -4699,7 +4631,7 @@ TclInitDoubleConversion(void)
     maxpow10_wide = (int)
 	    floor(sizeof(Tcl_WideUInt) * CHAR_BIT * log(2.) / log(10.));
     pow10_wide = (Tcl_WideUInt *)
-	    ckalloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
+	    Tcl_Alloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
     u = 1;
     for (i = 0; i < maxpow10_wide; ++i) {
 	pow10_wide[i] = u;
@@ -4809,7 +4741,7 @@ TclFinalizeDoubleConversion(void)
 {
     int i;
 
-    ckfree(pow10_wide);
+    Tcl_Free(pow10_wide);
     for (i=0; i<9; ++i) {
 	mp_clear(pow5 + i);
     }

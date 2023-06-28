@@ -251,11 +251,11 @@ TclFinalizeAllocSubsystem(void)
 
 void *
 TclpAlloc(
-    unsigned int numBytes)	/* Number of bytes to allocate. */
+    size_t numBytes)	/* Number of bytes to allocate. */
 {
     union overhead *overPtr;
     size_t bucket;
-    unsigned amount;
+    size_t amount;
     struct block *bigBlockPtr = NULL;
 
     if (!allocInit) {
@@ -274,8 +274,8 @@ TclpAlloc(
 
     if (numBytes >= MAXMALLOC - OVERHEAD) {
 	if (numBytes <= UINT_MAX - OVERHEAD -sizeof(struct block)) {
-	    bigBlockPtr = (struct block *) TclpSysAlloc(
-		    sizeof(struct block) + OVERHEAD + numBytes, 0);
+	    bigBlockPtr = TclpSysAlloc(
+		    sizeof(struct block) + OVERHEAD + numBytes);
 	}
 	if (bigBlockPtr == NULL) {
 	    Tcl_MutexUnlock(allocMutexPtr);
@@ -304,7 +304,7 @@ TclpAlloc(
 #endif
 
 	Tcl_MutexUnlock(allocMutexPtr);
-	return (char *)(overPtr+1);
+	return (void *)(overPtr+1);
     }
 
     /*
@@ -405,8 +405,7 @@ MoreCore(
     numBlocks = amount / size;
     ASSERT(numBlocks*size == amount);
 
-    blockPtr = (struct block *) TclpSysAlloc(
-	    (sizeof(struct block) + amount), 1);
+    blockPtr = TclpSysAlloc(sizeof(struct block) + amount);
     /* no more room! */
     if (blockPtr == NULL) {
 	return;
@@ -512,7 +511,7 @@ TclpFree(
 void *
 TclpRealloc(
     void *oldPtr,		/* Pointer to alloc'ed block. */
-    unsigned int numBytes)	/* New size of memory. */
+    size_t numBytes)	/* New size of memory. */
 {
     int i;
     union overhead *overPtr;
@@ -692,9 +691,10 @@ mstats(
  *----------------------------------------------------------------------
  */
 
+#undef TclpAlloc
 void *
 TclpAlloc(
-    unsigned int numBytes)	/* Number of bytes to allocate. */
+    size_t numBytes)	/* Number of bytes to allocate. */
 {
     return malloc(numBytes);
 }
@@ -715,6 +715,7 @@ TclpAlloc(
  *----------------------------------------------------------------------
  */
 
+#undef TclpFree
 void
 TclpFree(
     void *oldPtr)		/* Pointer to memory to free. */
@@ -742,7 +743,7 @@ TclpFree(
 void *
 TclpRealloc(
     void *oldPtr,		/* Pointer to alloced block. */
-    unsigned int numBytes)	/* New size of memory. */
+    size_t numBytes)	/* New size of memory. */
 {
     return realloc(oldPtr, numBytes);
 }

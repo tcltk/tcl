@@ -21,7 +21,7 @@
  */
 
 typedef struct {
-    ClientData clientData;	/* Address of preserved block. */
+    void *clientData;	/* Address of preserved block. */
     size_t refCount;		/* Number of Tcl_Preserve calls in effect for
 				 * block. */
     int mustFree;		/* Non-zero means Tcl_EventuallyFree was
@@ -37,9 +37,9 @@ typedef struct {
  */
 
 static Reference *refArray = NULL;	/* First in array of references. */
-static int spaceAvl = 0;	/* Total number of structures available at
+static size_t spaceAvl = 0;	/* Total number of structures available at
 				 * *firstRefPtr. */
-static int inUse = 0;		/* Count of structures currently in use in
+static size_t inUse = 0;		/* Count of structures currently in use in
 				 * refArray. */
 TCL_DECLARE_MUTEX(preserveMutex)/* To protect the above statics */
 
@@ -53,7 +53,7 @@ TCL_DECLARE_MUTEX(preserveMutex)/* To protect the above statics */
  * objects that we don't want to live any longer than necessary.
  */
 
-typedef struct HandleStruct {
+typedef struct {
     void *ptr;			/* Pointer to the memory block being tracked.
 				 * This field will become NULL when the memory
 				 * block is deleted. This field must be the
@@ -88,7 +88,7 @@ TclFinalizePreserve(void)
 {
     Tcl_MutexLock(&preserveMutex);
     if (spaceAvl != 0) {
-	ckfree(refArray);
+	Tcl_Free(refArray);
 	refArray = NULL;
 	inUse = 0;
 	spaceAvl = 0;
@@ -117,10 +117,10 @@ TclFinalizePreserve(void)
 
 void
 Tcl_Preserve(
-    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
+    void *clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
-    int i;
+    size_t i;
 
     /*
      * See if there is already a reference for this pointer. If so, just
@@ -143,7 +143,7 @@ Tcl_Preserve(
 
     if (inUse == spaceAvl) {
 	spaceAvl = spaceAvl ? 2*spaceAvl : INITIAL_SIZE;
-	refArray = (Reference *)ckrealloc(refArray, spaceAvl * sizeof(Reference));
+	refArray = (Reference *)Tcl_Realloc(refArray, spaceAvl * sizeof(Reference));
     }
 
     /*
@@ -180,10 +180,10 @@ Tcl_Preserve(
 
 void
 Tcl_Release(
-    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
+    void *clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
-    int i;
+    size_t i;
 
     Tcl_MutexLock(&preserveMutex);
     for (i=0, refPtr=refArray ; i<inUse ; i++, refPtr++) {
@@ -223,7 +223,7 @@ Tcl_Release(
 	Tcl_MutexUnlock(&preserveMutex);
 	if (mustFree) {
 	    if (freeProc == TCL_DYNAMIC) {
-		ckfree(clientData);
+		Tcl_Free(clientData);
 	    } else {
 		freeProc((char *)clientData);
 	    }
@@ -259,11 +259,11 @@ Tcl_Release(
 
 void
 Tcl_EventuallyFree(
-    ClientData clientData,	/* Pointer to malloc'ed block of memory. */
+    void *clientData,	/* Pointer to malloc'ed block of memory. */
     Tcl_FreeProc *freeProc)	/* Function to actually do free. */
 {
     Reference *refPtr;
-    int i;
+    size_t i;
 
     /*
      * See if there is a reference for this pointer. If so, set its "mustFree"
@@ -290,7 +290,7 @@ Tcl_EventuallyFree(
      */
 
     if (freeProc == TCL_DYNAMIC) {
-	ckfree(clientData);
+	Tcl_Free(clientData);
     } else {
 	freeProc((char *)clientData);
     }
@@ -326,7 +326,7 @@ TclHandleCreate(
 				 * be tracked for deletion. Must not be
 				 * NULL. */
 {
-    HandleStruct *handlePtr = (HandleStruct *)ckalloc(sizeof(HandleStruct));
+    HandleStruct *handlePtr = (HandleStruct *)Tcl_Alloc(sizeof(HandleStruct));
 
     handlePtr->ptr = ptr;
 #ifdef TCL_MEM_DEBUG
@@ -376,7 +376,7 @@ TclHandleFree(
 #endif
     handlePtr->ptr = NULL;
     if (handlePtr->refCount == 0) {
-	ckfree(handlePtr);
+	Tcl_Free(handlePtr);
     }
 }
 
@@ -459,7 +459,7 @@ TclHandleRelease(
     }
 #endif
     if ((handlePtr->refCount-- <= 1) && (handlePtr->ptr == NULL)) {
-	ckfree(handlePtr);
+	Tcl_Free(handlePtr);
     }
 }
 

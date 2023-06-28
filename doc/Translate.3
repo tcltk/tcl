@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_TranslateFileName \- convert file name to native form and replace tilde with home directory
+Tcl_TranslateFileName \- convert file name to native form
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -21,8 +21,7 @@ char *
 .AP Tcl_Interp *interp in
 Interpreter in which to report an error, if any.
 .AP "const char" *name in
-File name, which may start with a
-.QW ~ .
+File name
 .AP Tcl_DString *bufferPtr in/out
 If needed, this dynamic string is used to store the new file name.
 At the time of the call it should be uninitialized or free.  The
@@ -34,7 +33,7 @@ anything stored here.
 This utility procedure translates a file name to a platform-specific form
 which, after being converted to the appropriate encoding, is suitable for
 passing to the local operating system.  In particular, it converts
-network names into native form and does tilde substitution.
+network names into native form.
 .PP
 However, with the advent of the newer \fBTcl_FSGetNormalizedPath\fR and
 \fBTcl_FSGetNativePath\fR, there is no longer any need to use this
@@ -45,7 +44,7 @@ Finally \fBTcl_FSGetNativePath\fR does not require you to free anything
 afterwards.
 .PP
 If
-\fBTcl_TranslateFileName\fR has to do tilde substitution or translate
+\fBTcl_TranslateFileName\fR has to translate
 the name then it uses
 the dynamic string at \fI*bufferPtr\fR to hold the new string it
 generates.
@@ -68,4 +67,4 @@ has its default empty value when \fBTcl_TranslateFileName\fR is invoked.
 .SH "SEE ALSO"
 filename(n)
 .SH KEYWORDS
-file name, home directory, tilde, translate, user
+file name, home directory, translate, user

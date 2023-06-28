@@ -33,7 +33,7 @@ typedef struct FileHandler {
     XtInputId except;		/* Xt exception callback handle. */
     Tcl_FileProc *proc;		/* Procedure to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    ClientData clientData;	/* Argument to pass to proc. */
+    void *clientData;	/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
 } FileHandler;
 
@@ -79,10 +79,10 @@ static int initialized = 0;
 static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 static void		FileProc(XtPointer clientData, int *source,
 			    XtInputId *id);
-static void		NotifierExitHandler(ClientData clientData);
+static void		NotifierExitHandler(void *clientData);
 static void		TimerProc(XtPointer clientData, XtIntervalId *id);
 static void		CreateFileHandler(int fd, int mask,
-			    Tcl_FileProc *proc, ClientData clientData);
+			    Tcl_FileProc *proc, void *clientData);
 static void		DeleteFileHandler(int fd);
 static void		SetTimer(const Tcl_Time * timePtr);
 static int		WaitForEvent(const Tcl_Time * timePtr);
@@ -229,7 +229,7 @@ InitNotifier(void)
 
 static void
 NotifierExitHandler(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     if (notifier.currentTimeout != 0) {
 	XtRemoveTimeOut(notifier.currentTimeout);
@@ -265,7 +265,7 @@ static void
 SetTimer(
     const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
 {
-    long timeout;
+    unsigned long timeout;
 
     if (!initialized) {
 	InitNotifier();
@@ -278,7 +278,7 @@ SetTimer(
     if (timePtr) {
 	timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
 	notifier.currentTimeout = XtAppAddTimeOut(notifier.appContext,
-		(unsigned long) timeout, TimerProc, NULL);
+		timeout, TimerProc, NULL);
     } else {
 	notifier.currentTimeout = 0;
     }
@@ -339,7 +339,7 @@ CreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Procedure to call for each selected
 				 * event. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)	/* Arbitrary data to pass to proc. */
 {
     FileHandler *filePtr;
 
@@ -356,7 +356,7 @@ CreateFileHandler(
 	}
     }
     if (filePtr == NULL) {
-	filePtr = (FileHandler *) ckalloc(sizeof(FileHandler));
+	filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->read = 0;
 	filePtr->write = 0;
@@ -467,7 +467,7 @@ DeleteFileHandler(
     if (filePtr->mask & TCL_EXCEPTION) {
 	XtRemoveInput(filePtr->except);
     }
-    ckfree(filePtr);
+    Tcl_Free(filePtr);
 }
 
 /*
@@ -522,7 +522,7 @@ FileProc(
      */
 
     filePtr->readyMask |= mask;
-    fileEvPtr = (FileHandlerEvent *) ckalloc(sizeof(FileHandlerEvent));
+    fileEvPtr = (FileHandlerEvent *) Tcl_Alloc(sizeof(FileHandlerEvent));
     fileEvPtr->header.proc = FileHandlerEventProc;
     fileEvPtr->fd = filePtr->fd;
     Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);

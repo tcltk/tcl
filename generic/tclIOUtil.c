@@ -34,7 +34,7 @@
  */
 
 typedef struct FilesystemRecord {
-    ClientData clientData;	/* Client-specific data for the filesystem
+    void *clientData;	/* Client-specific data for the filesystem
 				 * (can be NULL) */
     const Tcl_Filesystem *fsPtr;/* Pointer to filesystem dispatch table. */
     struct FilesystemRecord *nextPtr;
@@ -58,7 +58,7 @@ typedef struct {
 				 * the value is accessed  and cwdPathEpoch has
 				 * changed.
 				 */
-    ClientData cwdClientData;
+    void *cwdClientData;
     FilesystemRecord *filesystemList;
     size_t claims;
 } ThreadSpecificData;
@@ -69,12 +69,12 @@ typedef struct {
 
 static Tcl_NRPostProc	EvalFileCallback;
 static FilesystemRecord*FsGetFirstFilesystem(void);
-static void		FsThrExitProc(ClientData cd);
+static void		FsThrExitProc(void *cd);
 static Tcl_Obj *	FsListMounts(Tcl_Obj *pathPtr, const char *pattern);
 static void		FsAddMountsToGlobResult(Tcl_Obj *resultPtr,
 			    Tcl_Obj *pathPtr, const char *pattern,
 			    Tcl_GlobTypeData *types);
-static void		FsUpdateCwd(Tcl_Obj *cwdObj, ClientData clientData);
+static void		FsUpdateCwd(Tcl_Obj *cwdObj, void *clientData);
 static void		FsRecacheFilesystemList(void);
 static void		Claim(void);
 static void		Disclaim(void);
@@ -212,7 +212,7 @@ TCL_DECLARE_MUTEX(filesystemMutex)
 
 static Tcl_Obj *cwdPathPtr = NULL;
 static size_t cwdPathEpoch = 0;	    /* The pathname of the current directory */
-static ClientData cwdClientData = NULL;
+static void *cwdClientData = NULL;
 TCL_DECLARE_MUTEX(cwdMutex)
 
 static Tcl_ThreadDataKey fsDataKey;
@@ -230,7 +230,7 @@ typedef struct {
     Tcl_FSUnloadFileProc *unloadProcPtr;
     Tcl_Obj *divertedFile;
     const Tcl_Filesystem *divertedFilesystem;
-    ClientData divertedFileNativeRep;
+    void *divertedFileNativeRep;
 } FsDivertLoad;
 
 /*
@@ -414,7 +414,7 @@ Tcl_EvalFile(
 
 static void
 FsThrExitProc(
-    ClientData cd)
+    void *cd)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)cd;
     FilesystemRecord *fsRecPtr = NULL, *tmpFsRecPtr = NULL;
@@ -439,7 +439,7 @@ FsThrExitProc(
     while (fsRecPtr != NULL) {
 	tmpFsRecPtr = fsRecPtr->nextPtr;
 	fsRecPtr->fsPtr = NULL;
-	ckfree(fsRecPtr);
+	Tcl_Free(fsRecPtr);
 	fsRecPtr = tmpFsRecPtr;
     }
     tsdPtr->filesystemList = NULL;
@@ -521,11 +521,11 @@ TclFSCwdPointerEquals(
     if (tsdPtr->cwdPathPtr == *pathPtrPtr) {
 	return 1;
     } else {
-	int len1, len2;
+	Tcl_Size len1, len2;
 	const char *str1, *str2;
 
-	str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	str2 = TclGetStringFromObj(*pathPtrPtr, &len2);
+	str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	str2 = Tcl_GetStringFromObj(*pathPtrPtr, &len2);
 	if ((len1 == len2) && !memcmp(str1, str2, len1)) {
 	    /*
 	     * The values are equal but the objects are different.  Cache the
@@ -578,7 +578,7 @@ FsRecacheFilesystemList(void)
     list = NULL;
     fsRecPtr = tmpFsRecPtr;
     while (fsRecPtr != NULL) {
-	tmpFsRecPtr = (FilesystemRecord *)ckalloc(sizeof(FilesystemRecord));
+	tmpFsRecPtr = (FilesystemRecord *)Tcl_Alloc(sizeof(FilesystemRecord));
 	*tmpFsRecPtr = *fsRecPtr;
 	tmpFsRecPtr->nextPtr = list;
 	tmpFsRecPtr->prevPtr = NULL;
@@ -593,7 +593,7 @@ FsRecacheFilesystemList(void)
 	FilesystemRecord *next = toFree->nextPtr;
 
 	toFree->fsPtr = NULL;
-	ckfree(toFree);
+	Tcl_Free(toFree);
 	toFree = next;
     }
 
@@ -661,14 +661,14 @@ TclFSEpoch(void)
 static void
 FsUpdateCwd(
     Tcl_Obj *cwdObj,
-    ClientData clientData)
+    void *clientData)
 {
-    int len;
+    Tcl_Size len = 0;
     const char *str = NULL;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
     if (cwdObj != NULL) {
-	str = TclGetStringFromObj(cwdObj, &len);
+	str = Tcl_GetStringFromObj(cwdObj, &len);
     }
 
     Tcl_MutexLock(&cwdMutex);
@@ -770,7 +770,7 @@ TclFinalizeFilesystem(void)
 	 */
 
 	if (fsRecPtr != &nativeFilesystemRecord) {
-	    ckfree(fsRecPtr);
+	    Tcl_Free(fsRecPtr);
 	}
 	fsRecPtr = tmpFsRecPtr;
     }
@@ -843,7 +843,7 @@ TclResetFilesystem(void)
 
 int
 Tcl_FSRegister(
-    ClientData clientData,	/* Client-specific data for this filesystem. */
+    void *clientData,	/* Client-specific data for this filesystem. */
     const Tcl_Filesystem *fsPtr)/* The filesystem record for the new fs. */
 {
     FilesystemRecord *newFilesystemPtr;
@@ -852,7 +852,7 @@ Tcl_FSRegister(
 	return TCL_ERROR;
     }
 
-    newFilesystemPtr = (FilesystemRecord *)ckalloc(sizeof(FilesystemRecord));
+    newFilesystemPtr = (FilesystemRecord *)Tcl_Alloc(sizeof(FilesystemRecord));
 
     newFilesystemPtr->clientData = clientData;
     newFilesystemPtr->fsPtr = fsPtr;
@@ -938,7 +938,7 @@ Tcl_FSUnregister(
 		++theFilesystemEpoch;
 	    }
 
-	    ckfree(fsRecPtr);
+	    Tcl_Free(fsRecPtr);
 
 	    retVal = TCL_OK;
 	} else {
@@ -989,7 +989,8 @@ Tcl_FSMatchInDirectory(
 {
     const Tcl_Filesystem *fsPtr;
     Tcl_Obj *cwd, *tmpResultPtr, **elemsPtr;
-    int resLength, i, ret = -1;
+    Tcl_Size resLength, i;
+    int ret = -1;
 
     if (types != NULL && (types->type & TCL_GLOB_TYPE_MOUNT)) {
 	/*
@@ -1105,7 +1106,7 @@ FsAddMountsToGlobResult(
 				 * directory flag is particularly significant.
 				 */
 {
-    int mLength, gLength, i;
+    Tcl_Size mLength, gLength, i;
     int dir = (types == NULL || (types->type & TCL_GLOB_TYPE_DIR));
     Tcl_Obj *mounts = FsListMounts(pathPtr, pattern);
 
@@ -1121,7 +1122,7 @@ FsAddMountsToGlobResult(
     }
     for (i=0 ; i<mLength ; i++) {
 	Tcl_Obj *mElt;
-	int j;
+	Tcl_Size j;
 	int found = 0;
 
 	Tcl_ListObjIndex(NULL, mounts, i, &mElt);
@@ -1145,7 +1146,7 @@ FsAddMountsToGlobResult(
 	}
 	if (!found && dir) {
 	    Tcl_Obj *norm;
-	    int len, mlen;
+	    Tcl_Size len, mlen;
 
 	    /*
 	     * mElt is normalized and lies inside pathPtr so
@@ -1157,8 +1158,8 @@ FsAddMountsToGlobResult(
 	    if (norm != NULL) {
 		const char *path, *mount;
 
-		mount = TclGetStringFromObj(mElt, &mlen);
-		path = TclGetStringFromObj(norm, &len);
+		mount = Tcl_GetStringFromObj(mElt, &mlen);
+		path = Tcl_GetStringFromObj(norm, &len);
 		if (path[len-1] == '/') {
 		    /*
 		     * Deal with the root of the volume.
@@ -1212,9 +1213,7 @@ FsAddMountsToGlobResult(
  *	native file system; see note below).
  *
  *	(4) The mapping from a string representation of a file to a full,
- *	normalized pathname changes. For example, if 'env(HOME)' is modified,
- *	then any pathname containing '~' maps to a different item, possibly in
- *	a different filesystem.
+ *	normalized pathname changes.
  *
  *	Tcl has no control over (2) and (3), so each registered filesystem must
  *	call Tcl_FSMountsChnaged in each of those circumstances.
@@ -1263,12 +1262,12 @@ Tcl_FSMountsChanged(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 Tcl_FSData(
     const Tcl_Filesystem *fsPtr) /* The filesystem to find in the list of
 				  *  registered filesystems. */
 {
-    ClientData retVal = NULL;
+    void *retVal = NULL;
     FilesystemRecord *fsRecPtr = FsGetFirstFilesystem();
 
     /*
@@ -1325,7 +1324,7 @@ TclFSNormalizeToUniquePath(
 {
     FilesystemRecord *fsRecPtr, *firstFsRecPtr;
 
-    int i;
+    Tcl_Size i;
     int isVfsPath = 0;
     const char *path;
 
@@ -1338,7 +1337,7 @@ TclFSNormalizeToUniquePath(
      * We check these first to avoid useless calls to the native filesystem's
      * normalizePathProc.
      */
-    path = TclGetStringFromObj(pathPtr, &i);
+    path = Tcl_GetStringFromObj(pathPtr, &i);
 
     if ( (i >= 3) && ( (path[0] == '/' && path[1] == '/')
 		    || (path[0] == '\\' && path[1] == '\\') ) ) {
@@ -1475,7 +1474,8 @@ TclGetOpenModeEx(
 				 * configure the channel for binary
 				 * operations after opening the file. */
 {
-    int mode, modeArgc, c, i, gotRW;
+    int mode, c, gotRW;
+    Tcl_Size modeArgc, i;
     const char **modeArgv, *flag;
 #define RW_MODES (O_RDONLY|O_WRONLY|O_RDWR)
 
@@ -1597,7 +1597,7 @@ TclGetOpenModeEx(
 			"access mode \"%s\" not supported by this system",
 			flag));
 	    }
-	    ckfree(modeArgv);
+	    Tcl_Free((void *)modeArgv);
 	    return -1;
 #endif
 
@@ -1610,7 +1610,7 @@ TclGetOpenModeEx(
 			"access mode \"%s\" not supported by this system",
 			flag));
 	    }
-	    ckfree(modeArgv);
+	    Tcl_Free((void *)modeArgv);
 	    return -1;
 #endif
 
@@ -1626,12 +1626,12 @@ TclGetOpenModeEx(
 			"RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK,"
 			" or TRUNC", flag));
 	    }
-	    ckfree(modeArgv);
+	    Tcl_Free((void *)modeArgv);
 	    return -1;
 	}
     }
 
-    ckfree(modeArgv);
+    Tcl_Free((void *)modeArgv);
 
     if (!gotRW) {
 	if (interp != NULL) {
@@ -1686,7 +1686,8 @@ Tcl_FSEvalFileEx(
     const char *encodingName)	/* Either the name of an encoding or NULL to
 				   use the utf-8 encoding. */
 {
-    int length, result = TCL_ERROR;
+    Tcl_Size length;
+	int result = TCL_ERROR;
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile;
     Interp *iPtr;
@@ -1702,23 +1703,23 @@ Tcl_FSEvalFileEx(
 	Tcl_SetErrno(errno);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	return result;
     }
     chan = Tcl_FSOpenFileChannel(interp, pathPtr, "r", 0644);
     if (chan == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	return result;
     }
 
     /*
-     * The eof character is \32 (^Z). This is standard on Windows, and Tcl
-     * uses it on every platform to allow for scripted documents. [Bug: 2040]
+     * The eof character is \x1A (^Z). Tcl uses it on every platform to allow
+     * for scripted documents. [Bug: 2040]
      */
 
-    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32 {}");
+    Tcl_SetChannelOption(interp, chan, "-eofchar", "\x1A");
 
     /*
      * If the encoding is specified, set the channel to that encoding.
@@ -1730,7 +1731,7 @@ Tcl_FSEvalFileEx(
     }
     if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 	    != TCL_OK) {
-	Tcl_Close(interp,chan);
+	Tcl_CloseEx(interp,chan,0);
 	return result;
     }
 
@@ -1742,29 +1743,29 @@ Tcl_FSEvalFileEx(
      */
 
     if (Tcl_ReadChars(chan, objPtr, 1, 0) == TCL_IO_FAILURE) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	goto end;
     }
-    string = Tcl_GetString(objPtr);
+    string = TclGetString(objPtr);
 
     /*
      * If first character is not a BOM, append the remaining characters.
      * Otherwise, replace them. [Bug 3466099]
      */
 
-    if (Tcl_ReadChars(chan, objPtr, -1,
+    if (Tcl_ReadChars(chan, objPtr, TCL_INDEX_NONE,
 	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	goto end;
     }
 
-    if (Tcl_Close(interp, chan) != TCL_OK) {
+    if (Tcl_CloseEx(interp, chan, 0) != TCL_OK) {
 	goto end;
     }
 
@@ -1772,7 +1773,7 @@ Tcl_FSEvalFileEx(
     oldScriptFile = iPtr->scriptFile;
     iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
-    string = TclGetStringFromObj(objPtr, &length);
+    string = Tcl_GetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280:  Open a frame for the evaluated script.
@@ -1799,13 +1800,13 @@ Tcl_FSEvalFileEx(
 	 * Record information about where the error occurred.
 	 */
 
-	const char *pathString = TclGetStringFromObj(pathPtr, &length);
-	int limit = 150;
-	int overflow = (length > limit);
+	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
+	unsigned limit = 150;
+	int overflow = ((unsigned)length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",
-		(overflow ? limit : length), pathString,
+		(overflow ? limit : (unsigned)length), pathString,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 
@@ -1837,24 +1838,24 @@ TclNREvalFile(
 	Tcl_SetErrno(errno);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
     chan = Tcl_FSOpenFileChannel(interp, pathPtr, "r", 0644);
     if (chan == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
-    TclPkgFileSeen(interp, Tcl_GetString(pathPtr));
+    TclPkgFileSeen(interp, TclGetString(pathPtr));
 
     /*
-     * The eof character is \32 (^Z). This is standard on Windows, and Tcl
-     * uses it on every platform to allow for scripted documents. [Bug: 2040]
+     * The eof character is \x1A (^Z). Tcl uses it on every platform to allow
+     * for scripted documents. [Bug: 2040]
      */
 
-    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32 {}");
+    Tcl_SetChannelOption(interp, chan, "-eofchar", "\x1A");
 
     /*
      * If the encoding is specified, set the channel to that encoding.
@@ -1866,7 +1867,7 @@ TclNREvalFile(
     }
     if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 	    != TCL_OK) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	return TCL_ERROR;
     }
 
@@ -1878,31 +1879,31 @@ TclNREvalFile(
      */
 
     if (Tcl_ReadChars(chan, objPtr, 1, 0) == TCL_IO_FAILURE) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
-    string = Tcl_GetString(objPtr);
+    string = TclGetString(objPtr);
 
     /*
      * If first character is not a BOM, append the remaining characters.
      * Otherwise, replace them. [Bug 3466099]
      */
 
-    if (Tcl_ReadChars(chan, objPtr, -1,
+    if (Tcl_ReadChars(chan, objPtr, TCL_INDEX_NONE,
 	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
-	Tcl_Close(interp, chan);
+	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
 	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
 
-    if (Tcl_Close(interp, chan) != TCL_OK) {
+    if (Tcl_CloseEx(interp, chan, 0) != TCL_OK) {
 	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
@@ -1924,7 +1925,7 @@ TclNREvalFile(
 
 static int
 EvalFileCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -1951,14 +1952,14 @@ EvalFileCallback(
 	 * Record information about where the error occurred.
 	 */
 
-	int length;
-	const char *pathString = TclGetStringFromObj(pathPtr, &length);
-	const int limit = 150;
-	int overflow = (length > limit);
+	Tcl_Size length;
+	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
+	const unsigned limit = 150;
+	int overflow = ((unsigned)length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",
-		(overflow ? limit : length), pathString,
+		(overflow ? limit : (unsigned)length), pathString,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 
@@ -2231,9 +2232,9 @@ Tcl_FSOpenFileChannel(
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"could not seek to end of file while opening \"%s\": %s",
-			Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+			TclGetString(pathPtr), Tcl_PosixError(interp)));
 	    }
-	    Tcl_Close(NULL, retVal);
+	    Tcl_CloseEx(NULL, retVal, 0);
 	    return NULL;
 	}
 	if (binary) {
@@ -2250,7 +2251,7 @@ Tcl_FSOpenFileChannel(
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't open \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		TclGetString(pathPtr), Tcl_PosixError(interp)));
     }
     return NULL;
 }
@@ -2472,7 +2473,7 @@ TclFSFileAttrIndex(
 	 * It's a non-constant attribute list, so do a literal search.
 	 */
 
-	int i, objc;
+	Tcl_Size i, objc;
 	Tcl_Obj **objv;
 
 	if (TclListObjGetElementsM(NULL, listObj, &objc, &objv) != TCL_OK) {
@@ -2619,7 +2620,7 @@ Tcl_FSGetCwd(
 	Claim();
 	for (; (retVal == NULL) && (fsRecPtr != NULL);
 		fsRecPtr = fsRecPtr->nextPtr) {
-	    ClientData retCd;
+	    void *retCd;
 	    TclFSGetCwdProc2 *proc2;
 
 	    if (fsRecPtr->fsPtr->getCwdProc == NULL) {
@@ -2720,7 +2721,7 @@ Tcl_FSGetCwd(
 
 	const Tcl_Filesystem *fsPtr =
 		Tcl_FSGetFileSystemForPath(tsdPtr->cwdPathPtr);
-	ClientData retCd = NULL;
+	void *retCd = NULL;
 	Tcl_Obj *retVal, *norm;
 
 	if (fsPtr == NULL || fsPtr->getCwdProc == NULL) {
@@ -2793,11 +2794,11 @@ Tcl_FSGetCwd(
 	     * infinite loop bug when trying to normalize tsdPtr->cwdPathPtr.
 	     */
 
-	    int len1, len2;
+	    Tcl_Size len1, len2;
 	    const char *str1, *str2;
 
-	    str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	    str2 = TclGetStringFromObj(norm, &len2);
+	    str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	    str2 = Tcl_GetStringFromObj(norm, &len2);
 	    if ((len1 == len2) && (strcmp(str1, str2) == 0)) {
 		/*
 		 * The pathname values are equal so retain the old pathname
@@ -2922,8 +2923,8 @@ Tcl_FSChdir(
 	}
 
 	if (fsPtr == &tclNativeFilesystem) {
-	    ClientData cd;
-	    ClientData oldcd = tsdPtr->cwdClientData;
+	    void *cd;
+	    void *oldcd = tsdPtr->cwdClientData;
 
 	    /*
 	     * Assume that the native filesystem has a getCwdProc and that it
@@ -3133,7 +3134,7 @@ skipUnlink(
 */
 #define AUFS_SUPER_MAGIC ('a' << 24 | 'u' << 16 | 'f' << 8 | 's')
 #endif /* AUFS_SUPER_MAGIC */
-	if ((statfs(Tcl_GetString(shlibFile), &fs) == 0)
+	if ((statfs(TclGetString(shlibFile), &fs) == 0)
 		&& (fs.f_type == AUFS_SUPER_MAGIC)) {
 	    return 1;
 	}
@@ -3209,7 +3210,7 @@ Tcl_LoadFile(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't load library \"%s\": %s",
-		    Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+		    TclGetString(pathPtr), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -3246,11 +3247,11 @@ Tcl_LoadFile(
 	}
 	buffer = TclpLoadMemoryGetBuffer(interp, size);
 	if (!buffer) {
-	    Tcl_Close(interp, data);
+	    Tcl_CloseEx(interp, data, 0);
 	    goto mustCopyToTempAnyway;
 	}
 	ret = Tcl_Read(data, (char *)buffer, size);
-	Tcl_Close(interp, data);
+	Tcl_CloseEx(interp, data, 0);
 	ret = TclpLoadMemory(interp, buffer, size, ret, handlePtr,
 		&unloadProcPtr, flags);
 	if (ret == TCL_OK && *handlePtr != NULL) {
@@ -3364,7 +3365,7 @@ Tcl_LoadFile(
      * Divert the unloading in order to unload and cleanup the temporary file.
      */
 
-    tvdlPtr = (FsDivertLoad *)ckalloc(sizeof(FsDivertLoad));
+    tvdlPtr = (FsDivertLoad *)Tcl_Alloc(sizeof(FsDivertLoad));
 
     /*
      * Remember three pieces of information in order to clean up the diverted
@@ -3405,7 +3406,7 @@ Tcl_LoadFile(
 
     copyToPtr = NULL;
 
-    divertedLoadHandle = (Tcl_LoadHandle)ckalloc(sizeof(struct Tcl_LoadHandle_));
+    divertedLoadHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
     divertedLoadHandle->clientData = tvdlPtr;
     divertedLoadHandle->findSymbolProcPtr = DivertFindSymbol;
     divertedLoadHandle->unloadFileProcPtr = DivertUnloadFile;
@@ -3543,8 +3544,8 @@ DivertUnloadFile(
 	Tcl_DecrRefCount(tvdlPtr->divertedFile);
     }
 
-    ckfree(tvdlPtr);
-    ckfree(loadHandle);
+    Tcl_Free(tvdlPtr);
+    Tcl_Free(loadHandle);
 }
 
 /*
@@ -3684,7 +3685,7 @@ TclFSUnloadTempFile(
 	Tcl_DecrRefCount(tvdlPtr->divertedFile);
     }
 
-    ckfree(tvdlPtr);
+    Tcl_Free(tvdlPtr);
 }
 
 /*
@@ -3874,13 +3875,13 @@ FsListMounts(
 Tcl_Obj *
 Tcl_FSSplitPath(
     Tcl_Obj *pathPtr,		/* The pathname to split. */
-    int *lenPtr)		/* A place to hold the number of pathname
+    Tcl_Size *lenPtr)		/* A place to hold the number of pathname
 				 * elements. */
 {
     Tcl_Obj *result = NULL;	/* Just to squelch gcc warnings. */
     const Tcl_Filesystem *fsPtr;
     char separator = '/';
-    int driveNameLength;
+    Tcl_Size driveNameLength;
     const char *p;
 
     /*
@@ -3903,7 +3904,7 @@ Tcl_FSSplitPath(
 
 	if (sep != NULL) {
 	    Tcl_IncrRefCount(sep);
-	    separator = Tcl_GetString(sep)[0];
+	    separator = TclGetString(sep)[0];
 	    Tcl_DecrRefCount(sep);
 	}
     }
@@ -3915,7 +3916,7 @@ Tcl_FSSplitPath(
      */
 
     TclNewObj(result);
-    p = Tcl_GetString(pathPtr);
+    p = TclGetString(pathPtr);
     Tcl_ListObjAppendElement(NULL, result,
 	    Tcl_NewStringObj(p, driveNameLength));
     p += driveNameLength;
@@ -3926,7 +3927,7 @@ Tcl_FSSplitPath(
 
     for (;;) {
 	const char *elementStart = p;
-	int length;
+	Tcl_Size length;
 
 	while ((*p != '\0') && (*p != separator)) {
 	    p++;
@@ -3934,14 +3935,8 @@ Tcl_FSSplitPath(
 	length = p - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-
-	    if (elementStart[0] == '~') {
-		TclNewLiteralStringObj(nextElt, "./");
-		Tcl_AppendToObj(nextElt, elementStart, length);
-	    } else {
-		nextElt = Tcl_NewStringObj(elementStart, length);
-	    }
-	    Tcl_ListObjAppendElement(NULL, result, nextElt);
+            nextElt = Tcl_NewStringObj(elementStart, length);
+            Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
 	if (*p++ == '\0') {
 	    break;
@@ -3977,15 +3972,15 @@ TclGetPathType(
 				/* If not NULL, a place in which to store a
 				 * pointer to the filesystem for this pathname
 				 * if it is absolute. */
-    int *driveNameLengthPtr,	/* If not NULL, a place in which to store the
+    Tcl_Size *driveNameLengthPtr,	/* If not NULL, a place in which to store the
 				 * length of the volume name. */
     Tcl_Obj **driveNameRef)	/* If not NULL, for an absolute pathname, a
 				 * place to store a pointer to an object with a
 				 * refCount of 1, and whose value is the name
 				 * of the volume. */
 {
-    int pathLen;
-    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
+    Tcl_Size pathLen;
+    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
     Tcl_PathType type;
 
     type = TclFSNonnativePathType(path, pathLen, filesystemPtrPtr,
@@ -4026,12 +4021,12 @@ TclGetPathType(
 Tcl_PathType
 TclFSNonnativePathType(
     const char *path,		/* Pathname to determine the type of. */
-    int pathLen,		/* Length of the pathname. */
+    Tcl_Size pathLen,		/* Length of the pathname. */
     const Tcl_Filesystem **filesystemPtrPtr,
 				/* If not NULL, a  place to store a pointer to
 				 * the filesystem for this pathname when it is
 				 * an absolute pathname. */
-    int *driveNameLengthPtr,	/* If not NULL, a place to store the length of
+    Tcl_Size *driveNameLengthPtr,/* If not NULL, a place to store the length of
 				 * the volume name if the pathname is absolute.
 				 */
     Tcl_Obj **driveNameRef)	/* If not NULL, a place to store a pointer to
@@ -4068,7 +4063,7 @@ TclFSNonnativePathType(
 
 	if ((fsRecPtr->fsPtr != &tclNativeFilesystem)
 		&& (fsRecPtr->fsPtr->listVolumesProc != NULL)) {
-	    int numVolumes;
+	    Tcl_Size numVolumes;
 	    Tcl_Obj *thisFsVolumes = fsRecPtr->fsPtr->listVolumesProc();
 
 	    if (thisFsVolumes != NULL) {
@@ -4083,16 +4078,16 @@ TclFSNonnativePathType(
 		     * Tcl_Panic seems a bit excessive.
 		     */
 
-		    numVolumes = -1;
+		    numVolumes = TCL_INDEX_NONE;
 		}
 		while (numVolumes > 0) {
 		    Tcl_Obj *vol;
-		    int len;
+		    Tcl_Size len;
 		    const char *strVol;
 
 		    numVolumes--;
 		    Tcl_ListObjIndex(NULL, thisFsVolumes, numVolumes, &vol);
-		    strVol = TclGetStringFromObj(vol,&len);
+		    strVol = Tcl_GetStringFromObj(vol,&len);
 		    if (pathLen < len) {
 			continue;
 		    }
@@ -4253,7 +4248,7 @@ TclCrossFilesystemCopy(
 	 * Could not open an input channel.  Why didn't the caller check this?
 	 */
 
-	Tcl_Close(interp, out);
+	Tcl_CloseEx(interp, out, 0);
 	goto done;
     }
 
@@ -4270,8 +4265,8 @@ TclCrossFilesystemCopy(
      * If the copy failed, assume that copy channel left an error message.
      */
 
-    Tcl_Close(interp, in);
-    Tcl_Close(interp, out);
+    Tcl_CloseEx(interp, in, 0);
+    Tcl_CloseEx(interp, out, 0);
 
     /*
      * Set modification date of copied file.
@@ -4434,14 +4429,14 @@ Tcl_FSRemoveDirectory(
 	Tcl_Obj *cwdPtr = Tcl_FSGetCwd(NULL);
 	if (cwdPtr != NULL) {
 	    const char *cwdStr, *normPathStr;
-	    int cwdLen, normLen;
+	    Tcl_Size cwdLen, normLen;
 	    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 
 	    if (normPath != NULL) {
-		normPathStr = TclGetStringFromObj(normPath, &normLen);
-		cwdStr = TclGetStringFromObj(cwdPtr, &cwdLen);
+		normPathStr = Tcl_GetStringFromObj(normPath, &normLen);
+		cwdStr = Tcl_GetStringFromObj(cwdPtr, &cwdLen);
 		if ((cwdLen >= normLen) && (strncmp(normPathStr, cwdStr,
-			(size_t) normLen) == 0)) {
+			normLen) == 0)) {
 		    /*
 		     * The cwd is inside the directory to be removed.  Change
 		     * the cwd to [file dirname $path].
@@ -4522,7 +4517,7 @@ Tcl_FSGetFileSystemForPath(
      * corresponding filesystem is found.
      */
     for (; fsRecPtr!=NULL ; fsRecPtr=fsRecPtr->nextPtr) {
-	ClientData clientData = NULL;
+	void *clientData = NULL;
 
 	if (fsRecPtr->fsPtr->pathInFilesystemProc == NULL) {
 	    continue;
@@ -4579,9 +4574,9 @@ Tcl_FSGetNativePath(
 
 static void
 NativeFreeInternalRep(
-    ClientData clientData)
+    void *clientData)
 {
-    ckfree(clientData);
+    Tcl_Free(clientData);
 }
 
 /*

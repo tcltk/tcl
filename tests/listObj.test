@@ -22,6 +22,9 @@ catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint testobj [llength [info commands testobj]]
 testConstraint memory [llength [info commands memory]]
 
+set INT_MAX 0x7fffffff; # Assumes sizeof(int) == 4
+set SIZE_MAX [expr {(1 << (8*$::tcl_platform(pointerSize) - 1)) - 1}]
+
 catch {unset x}
 test listobj-1.1 {Tcl_GetListObjType} emptyTest {
     # Test removed; tested an internal detail
@@ -206,6 +209,16 @@ test listobj-10.3 {Tcl_ListObjReplace with negative count value} testobj {
     testlistobj replace 1 1 -1 f
     testlistobj get 1
 } {a f b c d e}
+test listobj-10.4 {Tcl_ListObjReplace with $SIZE_MAX count value} testobj {
+    testlistobj set 1 a b c d e
+    testlistobj replace 1 1 $SIZE_MAX f
+    testlistobj get 1
+} {a f}
+test listobj-10.5 {Tcl_ListObjReplace with SIZE_MAX-1 count value} testobj {
+    testlistobj set 1 a b c d e
+    testlistobj replace 1 1 [expr {$SIZE_MAX -1}] f
+    testlistobj get 1
+} {a f}
 
 test listobj-11.1 {Bug 3598580: Tcl_ListObjReplace refcount management} testobj {
     testobj bug3598580

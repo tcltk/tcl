@@ -34,7 +34,7 @@ and the Tcl \fBmemory\fR command can be used to validate and examine
 memory usage.
 .SH "GUARD ZONES"
 .PP
-When memory debugging is enabled, whenever a call to \fBckalloc\fR is
+When memory debugging is enabled, whenever a call to \fBTcl_Alloc\fR is
 made, slightly more memory than requested is allocated so the memory
 debugging code can keep track of the allocated memory, and eight-byte
 .QW "guard zones"
@@ -44,7 +44,7 @@ C #define \fBLOW_GUARD_SIZE\fR and #define \fBHIGH_GUARD_SIZE\fR
 in the file \fIgeneric/tclCkalloc.c\fR \(em it can
 be extended if you suspect large overwrite problems, at some cost in
 performance.)  A known pattern is written into the guard zones and, on
-a call to \fBckfree\fR, the guard zones of the space being freed are
+a call to \fBTcl_Free\fR, the guard zones of the space being freed are
 checked to see if either zone has been modified in any way.  If one
 has been, the guard bytes and their new contents are identified, and a
 .QW "low guard failed"
@@ -53,7 +53,7 @@ or
 message is issued.  The
 .QW "guard failed"
 message includes the address of the memory packet and
-the file name and line number of the code that called \fBckfree\fR.
+the file name and line number of the code that called \fBTcl_Free\fR.
 This allows you to detect the common sorts of one-off problems, where
 not enough space was allocated to contain the data written, for
 example.
@@ -66,15 +66,15 @@ suspect (or know) that corruption is occurring before the Tcl
 interpreter comes up far enough for you to issue commands, you can set
 \fBMEM_VALIDATE\fR define, recompile tclCkalloc.c and rebuild Tcl.
 This will enable memory validation from the first call to
-\fBckalloc\fR, again, at a large performance impact.
+\fBTcl_Alloc\fR, again, at a large performance impact.
 .PP
 If you are desperate and validating memory on every call to
-\fBckalloc\fR and \fBckfree\fR is not enough, you can explicitly call
+\fBTcl_Alloc\fR and \fBTcl_Free\fR is not enough, you can explicitly call
 \fBTcl_ValidateAllMemory\fR directly at any point.  It takes a \fIchar
 *\fR and an \fIint\fR which are normally the filename and line number
 of the caller, but they can actually be anything you want.  Remember
 to remove the calls after you find the problem.
 .SH "SEE ALSO"
-ckalloc, memory, Tcl_ValidateAllMemory, Tcl_DumpActiveMemory
+Tcl_Alloc, memory, Tcl_ValidateAllMemory, Tcl_DumpActiveMemory
 .SH KEYWORDS
 memory, debug

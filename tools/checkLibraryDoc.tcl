@@ -3,7 +3,7 @@
 # This script attempts to determine what APIs exist in the source base that
 # have not been documented.  By grepping through all of the doc/*.3 man
 # pages, looking for "Pkg_*" (e.g., Tcl_ or Tk_), and comparing this list
-# against the list of Pkg_ APIs found in the source (e.g., tcl8.7/*/*.[ch])
+# against the list of Pkg_ APIs found in the source (e.g., tcl9.0/*/*.[ch])
 # we create six lists:
 #      1) APIs in Source not in Docs.
 #      2) APIs in Docs not in Source.
@@ -43,15 +43,12 @@ set StructList {
     Tcl_Pid \
     Tcl_QueuePosition \
     Tcl_ResolvedVarInfo \
-    Tcl_SavedResult \
     Tcl_ThreadDataKey \
     Tcl_ThreadId \
     Tcl_Time \
     Tcl_TimerToken \
     Tcl_Token \
     Tcl_Trace \
-    Tcl_Value \
-    Tcl_ValueType \
     Tcl_Var \
     Tk_3DBorder \
     Tk_ArgvInfo \

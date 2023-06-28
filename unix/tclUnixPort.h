@@ -7,7 +7,7 @@
  *	file that contains #ifdefs to handle different flavors of UNIX. This
  *	file sets up the union of all UNIX-related things needed by any of the
  *	Tcl core files. This file depends on configuration #defines such as
- *	NO_DIRENT_H that are set up by the "configure" script.
+ *	HAVE_SYS_PARAM_H that are set up by the "configure" script.
  *
  *	Much of the material in this file was originally contributed by Karl
  *	Lehenbauer, Mark Diekhans and Peter da Silva.
@@ -40,15 +40,7 @@
 #   include <sys/param.h>
 #endif
 #include <sys/types.h>
-#ifdef USE_DIRENT2_H
-#   include "../compat/dirent2.h"
-#else
-#ifdef NO_DIRENT_H
-#   include "../compat/dirent.h"
-#else
-#   include <dirent.h>
-#endif
-#endif
+#include <dirent.h>
 
 /*
  *---------------------------------------------------------------------------
@@ -90,11 +82,8 @@ typedef off_t		Tcl_SeekOffset;
 extern "C" {
 #endif
     /* Make some symbols available without including <windows.h> */
-#   define DWORD unsigned int
 #   define CP_UTF8 65001
 #   define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
-#   define HANDLE void *
-#   define HINSTANCE void *
 #   define HMODULE void *
 #   define MAX_PATH 260
 #   define SOCKET unsigned int
@@ -158,11 +147,6 @@ extern "C" {
 #   include <inttypes.h>
 #endif
 #include <limits.h>
-#ifdef HAVE_STDINT_H
-#   include <stdint.h>
-#else
-#   include "../compat/stdint.h"
-#endif
 #include <unistd.h>
 
 MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
@@ -678,9 +662,9 @@ typedef int socklen_t;
  *---------------------------------------------------------------------------
  */
 
-#define TclpSysAlloc(size, isBin)	malloc((size_t)(size))
-#define TclpSysFree(ptr)		free((char *)(ptr))
-#define TclpSysRealloc(ptr, size)	realloc((char *)(ptr), (size_t)(size))
+#define TclpSysAlloc(size)		malloc(size)
+#define TclpSysFree(ptr)		free(ptr)
+#define TclpSysRealloc(ptr, size)	realloc(ptr, size)
 
 /*
  *---------------------------------------------------------------------------

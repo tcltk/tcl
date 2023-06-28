@@ -28,7 +28,7 @@ static void		TrimUnreachable(CompileEnv *envPtr);
  */
 
 #define DefineTargetAddress(tablePtr, address) \
-    ((void) Tcl_CreateHashEntry((tablePtr), (void *) (address), &isNew))
+    ((void) Tcl_CreateHashEntry((tablePtr), (address), &isNew))
 #define IsTargetAddress(tablePtr, address) \
     (Tcl_FindHashEntry((tablePtr), (void *) (address)) != NULL)
 #define AddrLength(address) \
@@ -54,7 +54,8 @@ LocateTargetAddresses(
     Tcl_HashTable *tablePtr)
 {
     unsigned char *currentInstPtr, *targetInstPtr;
-    int isNew, i;
+    int isNew;
+    Tcl_Size i;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
 
@@ -133,7 +134,7 @@ LocateTargetAddresses(
 	} else {
 	    targetInstPtr = envPtr->codeStart + rangePtr->breakOffset;
 	    DefineTargetAddress(tablePtr, targetInstPtr);
-	    if (rangePtr->continueOffset >= 0) {
+	    if (rangePtr->continueOffset != TCL_INDEX_NONE) {
 		targetInstPtr = envPtr->codeStart + rangePtr->continueOffset;
 		DefineTargetAddress(tablePtr, targetInstPtr);
 	    }
@@ -231,9 +232,9 @@ ConvertZeroEffectToNOP(
 		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
 			TclGetUInt1AtPtr(currentInstPtr + 1));
-		int numBytes;
+		Tcl_Size numBytes;
 
-		(void) TclGetStringFromObj(litPtr, &numBytes);
+		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
 		if (numBytes == 0) {
 		    blank = size + InstLength(nextInst);
 		}
@@ -246,9 +247,9 @@ ConvertZeroEffectToNOP(
 		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
 			TclGetUInt4AtPtr(currentInstPtr + 1));
-		int numBytes;
+		Tcl_Size numBytes;
 
-		(void) TclGetStringFromObj(litPtr, &numBytes);
+		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
 		if (numBytes == 0) {
 		    blank = size + InstLength(nextInst);
 		}
@@ -287,8 +288,6 @@ ConvertZeroEffectToNOP(
 	    case INST_INCR_ARRAY_STK:
 	    case INST_INCR_SCALAR_STK:
 	    case INST_INCR_STK:
-	    case INST_LOR:
-	    case INST_LAND:
 	    case INST_EQ:
 	    case INST_NEQ:
 	    case INST_LT:

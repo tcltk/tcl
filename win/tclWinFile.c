@@ -149,8 +149,8 @@ typedef struct {
  * Other typedefs required by this code.
  */
 
-static time_t		ToCTime(FILETIME fileTime);
-static void		FromCTime(time_t posixTime, FILETIME *fileTime);
+static __time64_t		ToCTime(FILETIME fileTime);
+static void		FromCTime(__time64_t posixTime, FILETIME *fileTime);
 
 /*
  * Declarations for local functions defined in this file:
@@ -177,7 +177,7 @@ static int		WinLink(const WCHAR *LinkSource,
 			    const WCHAR *LinkTarget, int linkAction);
 static int		WinSymLinkDirectory(const WCHAR *LinkDirectory,
 			    const WCHAR *LinkTarget);
-MODULE_SCOPE TCL_NORETURN void	tclWinDebugPanic(const char *format, ...);
+MODULE_SCOPE void	tclWinDebugPanic(const char *format, ...);
 
 /*
  *--------------------------------------------------------------------
@@ -808,7 +808,7 @@ NativeWriteReparse(
  *----------------------------------------------------------------------
  */
 
-TCL_NORETURN void
+void
 tclWinDebugPanic(
     const char *format, ...)
 {
@@ -838,16 +838,6 @@ tclWinDebugPanic(
 	MessageBoxW(NULL, msgString, L"Fatal Error",
 		MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
     }
-#if defined(__GNUC__)
-    __builtin_trap();
-#elif defined(_WIN64)
-    __debugbreak();
-#elif defined(_MSC_VER) && defined (_M_IX86)
-    _asm {int 3}
-#else
-    DebugBreak();
-#endif
-    abort();
 }
 
 /*
@@ -874,16 +864,7 @@ TclpFindExecutable(
 {
     WCHAR wName[MAX_PATH];
     char name[MAX_PATH * 3];
-
-    /*
-     * Under Windows we ignore argv0, and return the path for the file used to
-     * create this process. Only if it is NULL, install a new panic handler.
-     */
-
-    if (argv0 == NULL) {
-#	undef Tcl_SetPanicProc
-	Tcl_SetPanicProc(tclWinDebugPanic);
-    }
+    (void)argv0;
 
     GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(WCHAR));
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
@@ -941,7 +922,7 @@ TclpMatchInDirectory(
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
 	    Tcl_Size len = 0;
-	    const char *str = TclGetStringFromObj(norm, &len);
+	    const char *str = Tcl_GetStringFromObj(norm, &len);
 
 	    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
@@ -1001,7 +982,7 @@ TclpMatchInDirectory(
 	 */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
+	dirName = Tcl_GetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	lastChar = dirName[dirLength -1];
@@ -2288,7 +2269,7 @@ NativeStatMode(
  *
  * ToCTime --
  *
- *	Converts a Windows FILETIME to a time_t in UTC.
+ *	Converts a Windows FILETIME to a __time64_t in UTC.
  *
  * Results:
  *	Returns the count of seconds from the Posix epoch.
@@ -2296,7 +2277,7 @@ NativeStatMode(
  *------------------------------------------------------------------------
  */
 
-static time_t
+static __time64_t
 ToCTime(
     FILETIME fileTime)		/* UTC time */
 {
@@ -2305,7 +2286,7 @@ ToCTime(
     convertedTime.LowPart = fileTime.dwLowDateTime;
     convertedTime.HighPart = (LONG) fileTime.dwHighDateTime;
 
-    return (time_t) ((convertedTime.QuadPart -
+    return (__time64_t) ((convertedTime.QuadPart -
 	    (long long) POSIX_EPOCH_AS_FILETIME) / (long long) 10000000);
 }
 
@@ -2314,7 +2295,7 @@ ToCTime(
  *
  * FromCTime --
  *
- *	Converts a time_t to a Windows FILETIME
+ *	Converts a __time64_t to a Windows FILETIME
  *
  * Results:
  *	Returns the count of 100-ns ticks seconds from the Windows epoch.
@@ -2324,7 +2305,7 @@ ToCTime(
 
 static void
 FromCTime(
-    time_t posixTime,
+    __time64_t posixTime,
     FILETIME *fileTime)		/* UTC Time */
 {
     LARGE_INTEGER convertedTime;
@@ -2471,7 +2452,7 @@ TclpFilesystemPathType(
     if (normPath == NULL) {
 	return NULL;
     }
-    path = Tcl_GetString(normPath);
+    path = TclGetString(normPath);
     if (path == NULL) {
 	return NULL;
     }
@@ -2551,7 +2532,7 @@ TclpObjNormalizePath(
     Tcl_DString ds;		/* Some workspace. */
 
     Tcl_DStringInit(&dsNorm);
-    path = Tcl_GetString(pathPtr);
+    path = TclGetString(pathPtr);
 
     currentPathEndPosition = path + nextCheckpoint;
     if (*currentPathEndPosition == '/') {
@@ -2649,12 +2630,12 @@ TclpObjNormalizePath(
 		     * Convert link to forward slashes.
 		     */
 
-		    for (path = Tcl_GetString(to); *path != 0; path++) {
+		    for (path = TclGetString(to); *path != 0; path++) {
 			if (*path == '\\') {
 			    *path = '/';
 			}
 		    }
-		    path = Tcl_GetString(to);
+		    path = TclGetString(to);
 		    currentPathEndPosition = path + nextCheckpoint;
 		    if (temp != NULL) {
 			Tcl_DecrRefCount(temp);
@@ -2820,7 +2801,7 @@ TclpObjNormalizePath(
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
 	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, TCL_INDEX_NONE);
-	    path = TclGetStringFromObj(tmpPathPtr, &len);
+	    path = Tcl_GetStringFromObj(tmpPathPtr, &len);
 	    Tcl_SetStringObj(pathPtr, path, len);
 	    Tcl_DecrRefCount(tmpPathPtr);
 	} else {
@@ -2889,7 +2870,7 @@ TclWinVolumeRelativeNormalize(
 	 * current volume.
 	 */
 
-	const char *drive = Tcl_GetString(useThisCwd);
+	const char *drive = TclGetString(useThisCwd);
 
 	absolutePath = Tcl_NewStringObj(drive,2);
 	Tcl_AppendToObj(absolutePath, path, TCL_INDEX_NONE);
@@ -2905,7 +2886,7 @@ TclWinVolumeRelativeNormalize(
 	 */
 
 	Tcl_Size cwdLen;
-	const char *drive = TclGetStringFromObj(useThisCwd, &cwdLen);
+	const char *drive = Tcl_GetStringFromObj(useThisCwd, &cwdLen);
 	char drive_cur = path[0];
 
 	if (drive_cur >= 'a') {
@@ -2978,7 +2959,7 @@ TclpNativeToNormalized(
 {
     Tcl_DString ds;
     Tcl_Obj *objPtr;
-    Tcl_Size len;
+    size_t len;
     char *copy, *p;
 
     Tcl_DStringInit(&ds);
@@ -3078,7 +3059,7 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = TclGetStringFromObj(validPathPtr, &len);
+    str = Tcl_GetStringFromObj(validPathPtr, &len);
 
     if (strlen(str) != (size_t)len) {
 	/*
@@ -3109,7 +3090,7 @@ TclNativeCreateNativeRep(
      * Overallocate 6 chars, making some room for extended paths
      */
 
-    wp = nativePathPtr = (WCHAR *)ckalloc((len + 6) * sizeof(WCHAR));
+    wp = nativePathPtr = (WCHAR *)Tcl_Alloc((len + 6) * sizeof(WCHAR));
     if (nativePathPtr==0) {
       goto done;
     }
@@ -3208,7 +3189,7 @@ TclNativeDupInternalRep(
 
     len = sizeof(WCHAR) * (wcslen((const WCHAR *) clientData) + 1);
 
-    copy = (char *)ckalloc(len);
+    copy = (char *)Tcl_Alloc(len);
     memcpy(copy, clientData, len);
     return copy;
 }
@@ -3324,7 +3305,7 @@ TclWinFileOwned(
         bufsz = 0;
         GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
         if (bufsz) {
-            buf = (LPBYTE)ckalloc(bufsz);
+            buf = (LPBYTE)Tcl_Alloc(bufsz);
             if (GetTokenInformation(token, TokenUser, buf, bufsz, &bufsz)) {
                 owned = EqualSid(ownerSid, ((PTOKEN_USER) buf)->User.Sid);
             }
@@ -3340,7 +3321,7 @@ TclWinFileOwned(
         LocalFree(secd);            /* Also frees ownerSid */
     }
     if (buf) {
-        ckfree(buf);
+        Tcl_Free(buf);
     }
 
     return (owned != 0);        /* Convert non-0 to 1 */

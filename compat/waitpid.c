@@ -100,7 +100,7 @@ waitpid(
 	} else {
 	    prevPtr->nextPtr = waitPtr->nextPtr;
 	}
-	ckfree(waitPtr);
+	Tcl_Free(waitPtr);
 	return result;
     }
 
@@ -156,7 +156,7 @@ waitpid(
 		goto waitAgain;
 	    }
 	}
-	waitPtr = (WaitInfo *) attemptckalloc(sizeof(WaitInfo));
+	waitPtr = (WaitInfo *) Tcl_AttemptAlloc(sizeof(WaitInfo));
 	if (!waitPtr) {
 	    errno = ENOMEM;
 	    return -1;

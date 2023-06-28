@@ -109,6 +109,7 @@ typedef struct Tcl_ObjType {
     Tcl_DupInternalRepProc *\fIdupIntRepProc\fR;
     Tcl_UpdateStringProc *\fIupdateStringProc\fR;
     Tcl_SetFromAnyProc *\fIsetFromAnyProc\fR;
+    size_t \fIversion\fR;
 } \fBTcl_ObjType\fR;
 .CE
 .SS "THE NAME FIELD"
@@ -184,8 +185,8 @@ to be treated as conventional null character-terminated C strings.
 These restrictions are easily met by using Tcl's internal UTF encoding
 for the string representation, same as one would do for other
 Tcl routines accepting string values as arguments.
-Storage for the byte array must be allocated in the heap by \fBTcl_Alloc\fR
-or \fBckalloc\fR.  Note that \fIupdateStringProc\fRs must allocate
+Storage for the byte array must be allocated in the heap by \fBTcl_Alloc\fR.
+Note that \fIupdateStringProc\fRs must allocate
 enough storage for the string's bytes and the terminating null byte.
 .PP
 The \fIupdateStringProc\fR for Tcl's built-in double type, for example,
@@ -253,6 +254,10 @@ Note that if a subsidiary value has its reference count reduced to zero
 during the running of a \fIfreeIntRepProc\fR, that value may be not freed
 immediately, in order to limit stack usage. However, the value will be freed
 before the outermost current \fBTcl_DecrRefCount\fR returns.
+.SS "THE VERSION FIELD"
+.PP
+The \fIversion\fR member provides for future extensibility of the structure
+and should be set to \fITCL_OBJTYPE_V0\fR.
 .SH "REFERENCE COUNT MANAGEMENT"
 .PP
 The \fIobjPtr\fR argument to \fBTcl_AppendAllObjTypes\fR should be an unshared

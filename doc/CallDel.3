@@ -23,7 +23,7 @@ Tcl_CallWhenDeleted, Tcl_DontCallWhenDeleted \- Arrange for callback when interp
 Interpreter with which to associated callback.
 .AP Tcl_InterpDeleteProc *proc in
 Procedure to call when \fIinterp\fR is deleted.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .BE
 .SH DESCRIPTION
@@ -38,7 +38,7 @@ type \fBTcl_InterpDeleteProc\fR:
 .PP
 .CS
 typedef void \fBTcl_InterpDeleteProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR);
 .CE
 .PP

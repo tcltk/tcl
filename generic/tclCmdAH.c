@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 #include "tclIO.h"
+#include "tclTomMath.h"
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
@@ -133,142 +134,6 @@ Tcl_BreakObjCmd(
     }
     return TCL_BREAK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_CaseObjCmd --
- *
- *	This procedure is invoked to process the "case" Tcl command. See the
- *	user documentation for details on what it does. THIS COMMAND IS
- *	OBSOLETE AND DEPRECATED. SLATED FOR REMOVAL IN TCL 9.0.
- *
- * Results:
- *	A standard Tcl object result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-int
-Tcl_CaseObjCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    int i;
-    int body, result, caseObjc;
-    const char *stringPtr, *arg;
-    Tcl_Obj *const *caseObjv;
-    Tcl_Obj *armPtr;
-
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"string ?in? ?pattern body ...? ?default body?");
-	return TCL_ERROR;
-    }
-
-    stringPtr = TclGetString(objv[1]);
-    body = -1;
-
-    arg = TclGetString(objv[2]);
-    if (strcmp(arg, "in") == 0) {
-	i = 3;
-    } else {
-	i = 2;
-    }
-    caseObjc = objc - i;
-    caseObjv = objv + i;
-
-    /*
-     * If all of the pattern/command pairs are lumped into a single argument,
-     * split them out again.
-     */
-
-    if (caseObjc == 1) {
-	Tcl_Obj **newObjv;
-
-	TclListObjGetElementsM(interp, caseObjv[0], &caseObjc, &newObjv);
-	caseObjv = newObjv;
-    }
-
-    for (i = 0;  i < caseObjc;  i += 2) {
-	int patObjc, j;
-	const char **patObjv;
-	const char *pat, *p;
-
-	if (i == caseObjc-1) {
-	    Tcl_ResetResult(interp);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "extra case pattern with no body", -1));
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Check for special case of single pattern (no list) with no
-	 * backslash sequences.
-	 */
-
-	pat = TclGetString(caseObjv[i]);
-	for (p = pat; *p != '\0'; p++) {
-	    if (TclIsSpaceProcM(*p) || (*p == '\\')) {
-		break;
-	    }
-	}
-	if (*p == '\0') {
-	    if ((*pat == 'd') && (strcmp(pat, "default") == 0)) {
-		body = i + 1;
-	    }
-	    if (Tcl_StringMatch(stringPtr, pat)) {
-		body = i + 1;
-		goto match;
-	    }
-	    continue;
-	}
-
-	/*
-	 * Break up pattern lists, then check each of the patterns in the
-	 * list.
-	 */
-
-	result = Tcl_SplitList(interp, pat, &patObjc, &patObjv);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	for (j = 0; j < patObjc; j++) {
-	    if (Tcl_StringMatch(stringPtr, patObjv[j])) {
-		body = i + 1;
-		break;
-	    }
-	}
-	ckfree(patObjv);
-	if (j < patObjc) {
-	    break;
-	}
-    }
-
-  match:
-    if (body != -1) {
-	armPtr = caseObjv[body - 1];
-	result = Tcl_EvalObjEx(interp, caseObjv[body], 0);
-	if (result == TCL_ERROR) {
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (\"%.50s\" arm line %d)",
-		    TclGetString(armPtr), Tcl_GetErrorLine(interp)));
-	}
-	return result;
-    }
-
-    /*
-     * Nothing matched: return nothing.
-     */
-
-    return TCL_OK;
-}
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -410,7 +275,10 @@ Tcl_CdObjCmd(
     if (objc == 2) {
 	dir = objv[1];
     } else {
-	TclNewLiteralStringObj(dir, "~");
+	dir = TclGetHomeDirObj(interp, NULL);
+	if (dir == NULL) {
+	    return TCL_ERROR;
+	}
 	Tcl_IncrRefCount(dir);
     }
     if (Tcl_FSConvertToPathType(interp, dir) != TCL_OK) {
@@ -608,7 +476,7 @@ numArgsError: /* ONLY jump here if nothing needs to be freed!!! */
 	    switch (optIndex) {
 	    case PROFILE:
 		if (TclEncodingProfileNameToId(interp,
-					       TclGetString(objv[argIndex]),
+					       Tcl_GetString(objv[argIndex]),
 					       &profile) != TCL_OK) {
 		    return TCL_ERROR;
 		}
@@ -658,7 +526,7 @@ EncodingConvertfromObjCmd(
     Tcl_Obj *data;		/* Byte array to convert */
     Tcl_DString ds;		/* Buffer to hold the string */
     Tcl_Encoding encoding;	/* Encoding to use */
-    Tcl_Size length;			/* Length of the byte array being converted */
+    Tcl_Size length = 0;			/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
     int flags;
     int result;
@@ -674,13 +542,7 @@ EncodingConvertfromObjCmd(
     /*
      * Convert the string into a byte array in 'ds'.
      */
-#if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
-    if (ENCODING_PROFILE_GET(flags) == TCL_ENCODING_PROFILE_TCL8) {
-	/* Permits high bits to be non-0 in byte array (Tcl 8 style) */
-	bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
-    } else
-#endif
-	bytesPtr = (char *) TclGetBytesFromObj(interp, data, &length);
+    bytesPtr = (char *) Tcl_GetBytesFromObj(interp, data, &length);
 
     if (bytesPtr == NULL) {
 	return TCL_ERROR;
@@ -781,7 +643,7 @@ EncodingConverttoObjCmd(
      * Convert the string to a byte array in 'ds'
      */
 
-    stringPtr = TclGetStringFromObj(data, &length);
+    stringPtr = Tcl_GetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(interp, encoding, stringPtr, length, flags,
                                         &ds, failVarObj ? &errorLocation : NULL);
     /* NOTE: ds must be freed beyond this point even on error */
@@ -2198,7 +2060,7 @@ PathSplitCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    res = Tcl_FSSplitPath(objv[1], (Tcl_Size *)NULL);
+    res = Tcl_FSSplitPath(objv[1], NULL);
     if (res == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"could not read \"%s\": no such file or directory",
@@ -2494,8 +2356,6 @@ StoreStatData(
     }
 
     /*
-     * Assume Tcl_ObjSetVar2() does not keep a copy of the field name!
-     *
      * Might be a better idea to call Tcl_SetVar2Ex() instead, except we want
      * to have an object (i.e. possibly cached) array variable name but a
      * string element name, so no API exists. Messy.
@@ -2929,7 +2789,7 @@ EachloopCmd(
 	/* List */
 	/* Variables */
 	statePtr->vCopyList[i] = TclDuplicatePureObj(
-	    interp, objv[1+i*2], &tclListType);
+	    interp, objv[1+i*2], &tclListType.objType);
 	if (!statePtr->vCopyList[i]) {
 	    result = TCL_ERROR;
 	    goto done;
@@ -2954,19 +2814,19 @@ EachloopCmd(
 	    &statePtr->varcList[i], &statePtr->varvList[i]);
 
 	/* Values */
-	if (TclHasInternalRep(objv[2+i*2],&tclArithSeriesType)) {
+	if (TclHasInternalRep(objv[2+i*2],&tclArithSeriesType.objType)) {
 	    /* Special case for Arith Series */
-	    statePtr->aCopyList[i] = TclArithSeriesObjCopy(interp, objv[2+i*2]);
+	    statePtr->aCopyList[i] = Tcl_DuplicateObj(objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;
 	    }
 	    /* Don't compute values here, wait until the last moment */
-	    statePtr->argcList[i] = TclArithSeriesObjLength(statePtr->aCopyList[i]);
+	    statePtr->argcList[i] = ABSTRACTLIST_PROC(statePtr->aCopyList[i], lengthProc)(statePtr->aCopyList[i]);
 	} else {
 	    /* List values */
 	    statePtr->aCopyList[i] = TclDuplicatePureObj(
-		    interp, objv[2+i*2], &tclListType);
+		interp, objv[2+i*2], &tclListType.objType);
 	    if (!statePtr->aCopyList[i]) {
 		result = TCL_ERROR;
 		goto done;
@@ -3037,8 +2897,12 @@ ForeachLoopStep(
 	break;
     case TCL_OK:
 	if (statePtr->resultList != NULL) {
-	    Tcl_ListObjAppendElement(interp, statePtr->resultList,
-		    Tcl_GetObjResult(interp));
+	    result = Tcl_ListObjAppendElement(
+		interp, statePtr->resultList, Tcl_GetObjResult(interp));
+	    if (result != TCL_OK) {
+		/* e.g. memory alloc failure on big data tests */
+		goto done;
+	    }
 	}
 	break;
     case TCL_BREAK:
@@ -3095,11 +2959,12 @@ ForeachAssignments(
     Tcl_Interp *interp,
     struct ForeachState *statePtr)
 {
-    int i, v, k;
+    int i;
+    Tcl_Size v, k;
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
-	int isarithseries = TclHasInternalRep(statePtr->aCopyList[i],&tclArithSeriesType);
+	int isarithseries = TclHasInternalRep(statePtr->aCopyList[i],&tclArithSeriesType.objType);
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {

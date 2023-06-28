@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_TraceVar 3 8.7 Tcl "Tcl Library Procedures"
+.TH Tcl_TraceVar 3 9.0 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
@@ -24,13 +24,13 @@ int
 .sp
 \fBTcl_UntraceVar2(\fIinterp, name1, name2, flags, proc, clientData\fB)\fR
 .sp
-ClientData
+void *
 \fBTcl_VarTraceInfo(\fIinterp, varName, flags, proc, prevClientData\fB)\fR
 .sp
-ClientData
+void *
 \fBTcl_VarTraceInfo2(\fIinterp, name1, name2, flags, proc, prevClientData\fB)\fR
 .SH ARGUMENTS
-.AS Tcl_VarTraceProc prevClientData
+.AS void *prevClientData
 .AP Tcl_Interp *interp in
 Interpreter containing variable.
 .AP "const char" *varName in
@@ -46,7 +46,7 @@ Not all flags are used by all
 procedures.  See below for more information.
 .AP Tcl_VarTraceProc *proc in
 Procedure to invoke whenever one of the traced operations occurs.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .AP "const char" *name1 in
 Name of scalar or array variable (without array index).
@@ -54,7 +54,7 @@ Name of scalar or array variable (without array index).
 For a trace on an element of an array, gives the index of the
 element.  For traces on scalar variables or on whole arrays,
 is NULL.
-.AP ClientData prevClientData in
+.AP void *prevClientData in
 If non-NULL, gives last value returned by \fBTcl_VarTraceInfo\fR or
 \fBTcl_VarTraceInfo2\fR, so this call will return information about
 next trace.  If NULL, this call will return information about first
@@ -107,7 +107,7 @@ before an array set, but that will trigger write traces.
 \fBTCL_TRACE_RESULT_DYNAMIC\fR
 The result of invoking the \fIproc\fR is a dynamically allocated
 string that will be released by the Tcl library via a call to
-\fBckfree\fR.  Must not be specified at the same time as
+\fBTcl_Free\fR.  Must not be specified at the same time as
 \fBTCL_TRACE_RESULT_OBJECT\fR.
 .TP
 \fBTCL_TRACE_RESULT_OBJECT\fR
@@ -124,7 +124,7 @@ It should have arguments and result that match the type
 .PP
 .CS
 typedef char *\fBTcl_VarTraceProc\fR(
-        ClientData \fIclientData\fR,
+        void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         const char *\fIname1\fR,
         const char *\fIname2\fR,
@@ -134,12 +134,14 @@ typedef char *\fBTcl_VarTraceProc\fR(
 The \fIclientData\fR and \fIinterp\fR parameters will
 have the same values as those passed to \fBTcl_TraceVar\fR when the
 trace was created.
-\fIClientData\fR typically points to an application-specific
+\fIclientData\fR typically points to an application-specific
 data structure that describes what to do when \fIproc\fR
 is invoked.
-\fIName1\fR and \fIname2\fR give the name of the traced variable
-in the normal two-part form (see the description of \fBTcl_TraceVar2\fR
-below for details).
+\fIName1\fR and \fIname2\fR give the name of the variable that
+triggered the callback in the normal two-part form (see the description
+of \fBTcl_TraceVar2\fR below for details).  In case \fIname1\fR is an
+alias to an array element (created through facilities such as \fBupvar\fR),
+\fIname2\fR holds the index of the array element, rather than NULL.
 \fIFlags\fR is an OR-ed combination of bits providing several
 pieces of information.
 One of the bits \fBTCL_TRACE_READS\fR, \fBTCL_TRACE_WRITES\fR,
@@ -308,7 +310,7 @@ The return value must be a pointer to a static character string
 containing an error message,
 unless (\fIexactly\fR one of) the \fBTCL_TRACE_RESULT_DYNAMIC\fR and
 \fBTCL_TRACE_RESULT_OBJECT\fR flags is set, which specify that the result is
-either a dynamic string (to be released with \fBckfree\fR) or a
+either a dynamic string (to be released with \fBTcl_Free\fR) or a
 Tcl_Obj* (cast to char* and to be released with
 \fBTcl_DecrRefCount\fR) containing the error message.
 If a trace procedure returns an error, no further traces are
@@ -333,7 +335,8 @@ The routine \fBTcl_InterpDeleted\fR is an important tool for this.
 When \fBTcl_InterpDeleted\fR returns 1, \fIproc\fR will not be able
 to invoke any scripts in \fIinterp\fR. You may encounter old code using
 a deprecated flag value \fBTCL_INTERP_DESTROYED\fR to signal this
-condition, but any supported code should be converted to stop using it.
+condition, but Tcl 9 no longer supports this. Any supported code
+must be converted to stop using it.
 .PP
 A trace procedure can be called at any time, even when there
 are partially formed results stored in the interpreter.  If

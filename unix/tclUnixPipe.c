@@ -35,7 +35,7 @@ typedef struct {
     TclFile inFile;		/* Output from pipe. */
     TclFile outFile;		/* Input to pipe. */
     TclFile errorFile;		/* Error output from pipe. */
-    int numPids;		/* How many processes are attached to this
+    size_t numPids;		/* How many processes are attached to this
 				 * pipe? */
     Tcl_Pid *pidPtr;		/* The process IDs themselves. Allocated by
 				 * the creator of the pipe. */
@@ -69,7 +69,7 @@ static int		SetupStdFile(TclFile file, int type);
 static const Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    TCL_CLOSE2PROC,		/* Close proc. */
+    NULL,		/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -381,7 +381,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    int argc,			/* Number of arguments in following array. */
+    size_t argc,			/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings in UTF-8.
 				 * argv[0] contains the name of the executable
 				 * translated using Tcl_TranslateFileName
@@ -410,7 +410,8 @@ TclpCreateProcess(
     char errSpace[200 + TCL_INTEGER_SPACE];
     Tcl_DString *dsArray;
     char **newArgv;
-    int pid, i;
+    int pid;
+    size_t i;
 
     errPipeIn = NULL;
     errPipeOut = NULL;
@@ -524,7 +525,7 @@ TclpCreateProcess(
     errPipeOut = NULL;
 
     fd = GetFd(errPipeIn);
-    count = read(fd, errSpace, (size_t) (sizeof(errSpace) - 1));
+    count = read(fd, errSpace, sizeof(errSpace) - 1);
     if (count > 0) {
 	char *end;
 
@@ -736,7 +737,7 @@ TclpCreateCommandChannel(
     TclFile writeFile,		/* If non-null, gives the file for writing. */
     TclFile errorFile,		/* If non-null, gives the file where errors
 				 * can be read. */
-    int numPids,		/* The number of pids in the pid array. */
+    size_t numPids,		/* The number of pids in the pid array. */
     Tcl_Pid *pidPtr)		/* An array of process identifiers. Allocated
 				 * by the caller, freed when the channel is
 				 * closed or the processes are detached (in a
@@ -744,7 +745,7 @@ TclpCreateCommandChannel(
 {
     char channelName[16 + TCL_INTEGER_SPACE];
     int channelId;
-    PipeState *statePtr = (PipeState *)ckalloc(sizeof(PipeState));
+    PipeState *statePtr = (PipeState *)Tcl_Alloc(sizeof(PipeState));
     int mode;
 
     statePtr->inFile = readFile;
@@ -858,7 +859,7 @@ TclGetAndDetachPids(
     PipeState *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
     Tcl_Obj *pidsObj;
-    int i;
+    size_t i;
 
     /*
      * Punt if the channel is not a command channel.
@@ -878,7 +879,7 @@ TclGetAndDetachPids(
     }
     Tcl_SetObjResult(interp, pidsObj);
     if (pipePtr->numPids > 0) {
-	ckfree(pipePtr->pidPtr);
+	Tcl_Free(pipePtr->pidPtr);
 	pipePtr->numPids = 0;
     }
 }
@@ -1008,9 +1009,9 @@ PipeClose2Proc(
     }
 
     if (pipePtr->numPids != 0) {
-	ckfree(pipePtr->pidPtr);
+	Tcl_Free(pipePtr->pidPtr);
     }
-    ckfree(pipePtr);
+    Tcl_Free(pipePtr);
     if (errorCode == 0) {
 	return result;
     }
@@ -1058,7 +1059,7 @@ PipeInputProc(
      */
 
     do {
-	bytesRead = read(GetFd(psPtr->inFile), buf, (size_t) toRead);
+	bytesRead = read(GetFd(psPtr->inFile), buf, toRead);
     } while ((bytesRead < 0) && (errno == EINTR));
 
     if (bytesRead < 0) {
@@ -1104,7 +1105,7 @@ PipeOutputProc(
      */
 
     do {
-	written = write(GetFd(psPtr->outFile), buf, (size_t) toWrite);
+	written = write(GetFd(psPtr->outFile), buf, toWrite);
     } while ((written < 0) && (errno == EINTR));
 
     if (written < 0) {
@@ -1250,14 +1251,14 @@ Tcl_WaitPid(
 
 int
 Tcl_PidObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Channel chan;
     PipeState *pipePtr;
-    int i;
+    size_t i;
     Tcl_Obj *resultPtr;
 
     if (objc > 2) {
@@ -1272,7 +1273,7 @@ Tcl_PidObjCmd(
 	 * Get the channel and make sure that it refers to a pipe.
 	 */
 
-	chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
+	chan = Tcl_GetChannel(interp, TclGetString(objv[1]), NULL);
 	if (chan == NULL) {
 	    return TCL_ERROR;
 	}
@@ -1288,7 +1289,7 @@ Tcl_PidObjCmd(
 	TclNewObj(resultPtr);
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
-		    Tcl_NewWideIntObj(PTR2INT(TclpGetPid(pipePtr->pidPtr[i]))));
+		    Tcl_NewWideIntObj(TclpGetPid(pipePtr->pidPtr[i])));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }

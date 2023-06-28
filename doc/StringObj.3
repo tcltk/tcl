@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendStringsToObjVA, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj \- manipulate Tcl values as strings
+Tcl_NewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj \- manipulate Tcl values as strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -40,7 +40,7 @@ Tcl_UniChar *
 int
 \fBTcl_GetUniChar\fR(\fIobjPtr, index\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_GetCharLength\fR(\fIobjPtr\fR)
 .sp
 Tcl_Obj *
@@ -57,9 +57,6 @@ void
 .sp
 void
 \fBTcl_AppendStringsToObj\fR(\fIobjPtr, string, string, ... \fB(char *) NULL\fR)
-.sp
-void
-\fBTcl_AppendStringsToObjVA\fR(\fIobjPtr, argList\fR)
 .sp
 void
 \fBTcl_AppendLimitedToObj\fR(\fIobjPtr, bytes, length, limit, ellipsis\fR)
@@ -94,7 +91,7 @@ unless \fInumChars\fR is negative.  (Applications needing null bytes
 should represent them as the two-byte sequence \fI\e300\e200\fR, use
 \fBTcl_ExternalToUtf\fR to convert, or \fBTcl_NewByteArrayObj\fR if
 the string is a collection of uninterpreted bytes.)
-.AP int length in
+.AP Tcl_Size length in
 The number of bytes to copy from \fIbytes\fR when
 initializing, setting, or appending to a string value.
 If negative, all bytes up to the first null are used.
@@ -103,33 +100,30 @@ Points to the first byte of an array of Unicode characters
 used to set or append to a string value.
 This byte array may contain embedded null characters
 unless \fInumChars\fR is negative.
-.AP int numChars in
+.AP Tcl_Size numChars in
 The number of Unicode characters to copy from \fIunicode\fR when
 initializing, setting, or appending to a string value.
 If negative, all characters up to the first null character are used.
-.AP int index in
+.AP Tcl_Size index in
 The index of the Unicode character to return.
-.AP int first in
+.AP Tcl_Size first in
 The index of the first Unicode character in the Unicode range to be
 returned as a new value. If negative, behave the same as if the
 value was 0.
-.AP int last in
+.AP Tcl_Size last in
 The index of the last Unicode character in the Unicode range to be
 returned as a new value. If negative, take all characters up to
 the last one available.
 .AP Tcl_Obj *objPtr in/out
-Points to a value to manipulate.
+A pointer to a value to read, or to an unshared value to modify.
 .AP Tcl_Obj *appendObjPtr in
 The value to append to \fIobjPtr\fR in \fBTcl_AppendObjToObj\fR.
-.AP int *lengthPtr out
+.AP "Tcl_Size \&| int" *lengthPtr out
 The location where \fBTcl_GetStringFromObj\fR will store the length
 of a value's string representation. May be (int *)NULL when not used.
 .AP "const char" *string in
 Null-terminated string value to append to \fIobjPtr\fR.
-.AP va_list argList in
-An argument list which must have been initialized using
-\fBva_start\fR, and cleared using \fBva_end\fR.
-.AP int limit in
+.AP Tcl_Size limit in
 Maximum number of bytes to be appended.
 .AP "const char" *ellipsis in
 Suffix to append when the limit leads to string truncation.
@@ -138,11 +132,11 @@ If NULL is passed then the suffix
 is used.
 .AP "const char" *format in
 Format control string including % conversion specifiers.
-.AP int objc in
+.AP Tcl_Size objc in
 The number of elements to format or concatenate.
 .AP Tcl_Obj *objv[] in
 The array of values to format or concatenate.
-.AP int newLength in
+.AP Tcl_Size newLength in
 New length for the string value of \fIobjPtr\fR, not including the
 final null character.
 .BE
@@ -191,7 +185,9 @@ Even in the limited situations where writing to this pointer is
 acceptable, one should take care to respect the copy-on-write
 semantics required by \fBTcl_Obj\fR's, with appropriate calls
 to \fBTcl_IsShared\fR and \fBTcl_DuplicateObj\fR prior to any
-in-place modification of the string representation.
+in-place modification of the string representation. If \fIlengthPtr\fR
+points to an \fBint\fR variable, and the string has more than 2^31 bytes,
+a panic will result.
 The procedure \fBTcl_GetString\fR is used in the common case
 where the caller does not need the length of the string
 representation.
@@ -203,18 +199,19 @@ value as a Unicode string.  This is given by the returned pointer and
 byte pointer is owned by the value manager and should not be modified by
 the caller.  The procedure \fBTcl_GetUnicode\fR is used in the common case
 where the caller does not need the length of the unicode string
-representation.
+representation. If \fIlengthPtr\fR points to an \fBint\fR variable,
+and the string has more than 2^31 unicode characters, a panic will result.
 .PP
 \fBTcl_GetUniChar\fR returns the \fIindex\fR'th character in the
 value's Unicode representation. If the index is out of range or
 it references a low surrogate preceded by a high surrogate, it returns -1;
 .PP
 \fBTcl_GetRange\fR returns a newly created value comprised of the
-characters between \fIfirst\fR and \fIlast\fR (inclusive) in the
-value's Unicode representation.  If the value's Unicode
-representation is invalid, the Unicode representation is regenerated
-from the value's string representation.  If \fIfirst\fR < 0, then
-the returned string starts at the beginning of the value. If \fIlast\fR < 0,
+characters between \fIfirst\fR and \fIlast\fR (inclusive) in the value's
+Unicode representation.  If the value's Unicode representation
+is invalid, the Unicode representation is regenerated from the value's
+string representation.  If \fIfirst\fR is negative, then the returned
+string starts at the beginning of the value. If \fIlast\fR negative,
 then the returned string ends at the end of the value.
 .PP
 \fBTcl_GetCharLength\fR returns the number of characters (as opposed
@@ -251,12 +248,6 @@ values may contain internal null characters).  Any number of
 \fIstring\fR arguments may be provided, but the last argument
 must be a NULL pointer to indicate the end of the list.
 .PP
-\fBTcl_AppendStringsToObjVA\fR is the same as \fBTcl_AppendStringsToObj\fR
-except that instead of taking a variable number of arguments it takes an
-argument list.  Interfaces using argument lists have been found to be
-nonportable in practice. This function is deprecated and will be removed
-in Tcl 9.0.
-.PP
 \fBTcl_AppendLimitedToObj\fR is similar to \fBTcl_AppendToObj\fR
 except that it imposes a limit on how many bytes are appended.
 This can be handy when the string to be appended might be
@@ -269,7 +260,7 @@ all \fIlength\fR bytes that are available from being appended, then the
 appending is done so that the last bytes appended are from the
 string \fIellipsis\fR. This allows for an indication of the truncation
 to be left in the string.
-When \fIlength\fR is \fB-1\fR, all bytes up to the first zero byte are appended,
+When \fIlength\fR is negative, all bytes up to the first zero byte are appended,
 subject to the limit. When \fIellipsis\fR is NULL, the default
 string \fB...\fR is used. When \fIellipsis\fR is non-NULL, it must point
 to a zero-byte-terminated string in Tcl's internal UTF encoding.

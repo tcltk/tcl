@@ -9,11 +9,6 @@ uniClass.tcl -- Script for generating regexp class tables from the Tcl
 	"string is" classes
 
 Generating HTML files.
-The tcltk-man2html.tcl script generates a nice set of HTML with
-good cross references. Use it like
-    cd unix
-    ./configure
-    make html
 This script is very picky about the organization of man pages,
 effectively acting as a style enforcer.
 The resulting documentation can be found at

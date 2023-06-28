@@ -4976,7 +4976,7 @@ msgcat package (duperval, krone, nelson)
 	trace {add|remove|list} {variable|command} name ops command
 (darley, melski)
 
-2000-09-06 (cross-platform feature) Set ^Z (\32) as default EOF char. (hobbs)
+2000-09-06 (cross-platform feature) Set ^Z (\x1A) as default EOF char. (hobbs)
 
 2000-09-07 partial fix for bug 2460 to prevent exec mem leak on Windows for the
 common case (gravereaux)
@@ -9123,6 +9123,26 @@ in this changeset (new minor version) rather than bug fixes:
 
 - Released 8.7a3, Nov 21, 2019 --- https://core.tcl-lang.org/tcl/ for details -
 
+Changes to 9.0a1 include all changes to the 8.7 line through 8.7a3,
+plus the following, which focuses on the high-level feature changes
+in this changeset (new minor version) rather than bug fixes:
+
+2017-11-03 [TIP 114] Leading zero integer no longer means octal
+
+2017-11-03 [TIP 278] Revise variable name resolution, solve "Creative Writing"
+
+2017-11-03 [TIPs 330,336] Encapsulate struct Tcl_Interp
+
+2017-11-17 [TIP 422] Remove all Tcl_*VA() routines
+
+2017-12-15 [TIP 488] Disable magic $::tcl_precision
+
+2018-10-08 [TIP 494] Increased support for size_t value ranges
+
+2019-05-31 [TIP 537] 64-bit indices in regexp matching
+
+- Released 9.0a1, Nov 25, 2019 --- https://core.tcl-lang.org/tcl/ for details -
+
 2019-12-03 (bug)[3cd9be] Corner case in surrogate handling (nijtmans)
 
 2019-12-09 (new) Add tcltest::(Setup|Eval|Cleanup|)Test (coulter,sebres)
@@ -9329,6 +9349,24 @@ in this changeset (new minor version) rather than bug fixes:
 2021-05-18 (bug)[688fcc,28027d] namespace teardown reform (coulter)
 
 - Released 8.7a5, Jun 18, 2021 --- https://core.tcl-lang.org/tcl/ for details -
+
+Changes to 9.0a3 include all changes to the 8.7 line through 8.7a5,
+plus the following, which focuses on the high-level feature changes
+in this changeset (new major version) rather than bug fixes:
+
+Many of the TIPs in Tcl 8.7 mentioned above are extended further in 9.0
+
+2020-02-28 [TIP 497] Full support for Unicode planes 1-16
+
+2020-08-21 (bug)[43b434] improper calls to stat64()
+
+2021-04-08 [TIP 595] Unicode-aware loadable library handling.
+
+2021-04-30 [TIP 596] Stubs support for embedding Tcl in apps
+
+Many internal changes to broaden support for sizes beyond 32-bits.
+
+- Released 9.0a3, Jun 23, 2021 --- https://core.tcl-lang.org/tcl/ for details -
 
 2021-02-02 (new) support for MacOS Big Sur updates (nijtmans)
 => platform 1.0.17

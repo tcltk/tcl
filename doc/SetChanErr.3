@@ -87,13 +87,9 @@ the value.
 Which functions of a channel driver are allowed to use which bypass function
 is listed below, as is which functions of the public channel API may leave a
 messages in the bypass areas.
-.IP \fBTcl_DriverCloseProc\fR
-May use \fBTcl_SetChannelErrorInterp\fR, and only this function.
 .IP \fBTcl_DriverInputProc\fR
 May use \fBTcl_SetChannelError\fR, and only this function.
 .IP \fBTcl_DriverOutputProc\fR
-May use \fBTcl_SetChannelError\fR, and only this function.
-.IP \fBTcl_DriverSeekProc\fR
 May use \fBTcl_SetChannelError\fR, and only this function.
 .IP \fBTcl_DriverWideSeekProc\fR
 May use \fBTcl_SetChannelError\fR, and only this function.

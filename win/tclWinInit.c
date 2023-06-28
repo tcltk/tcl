@@ -167,9 +167,9 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = TclGetStringFromObj(pathPtr, &length);
+    bytes = Tcl_GetStringFromObj(pathPtr, &length);
     *lengthPtr = length++;
-    *valuePtr = (char *)ckalloc(length);
+    *valuePtr = (char *)Tcl_Alloc(length);
     memcpy(*valuePtr, bytes, length);
     Tcl_DecrRefCount(pathPtr);
 }
@@ -260,7 +260,7 @@ AppendEnvironment(
 	    objPtr = Tcl_NewStringObj(buf, TCL_INDEX_NONE);
 	}
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	ckfree(pathv);
+	Tcl_Free((void *)pathv);
     }
 }
 
@@ -284,7 +284,7 @@ AppendEnvironment(
 static void
 InitializeDefaultLibraryDir(
     char **valuePtr,
-    TCL_HASH_TYPE *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     HMODULE hModule = (HMODULE)TclWinGetTclInstance();
@@ -306,7 +306,7 @@ InitializeDefaultLibraryDir(
     TclWinNoBackslash(name);
     snprintf(end + 1, LIBRARY_SIZE, "lib/tcl%s", TCL_VERSION);
     *lengthPtr = strlen(name);
-    *valuePtr = (char *)ckalloc(*lengthPtr + 1);
+    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
 }
@@ -332,7 +332,7 @@ InitializeDefaultLibraryDir(
 static void
 InitializeSourceLibraryDir(
     char **valuePtr,
-    TCL_HASH_TYPE *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     HMODULE hModule = (HMODULE)TclWinGetTclInstance();
@@ -354,7 +354,7 @@ InitializeSourceLibraryDir(
     TclWinNoBackslash(name);
     snprintf(end + 1, LIBRARY_SIZE, "../library");
     *lengthPtr = strlen(name);
-    *valuePtr = (char *)ckalloc(*lengthPtr + 1);
+    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     *encodingPtr = NULL;
     memcpy(*valuePtr, name, *lengthPtr + 1);
 }
@@ -496,20 +496,6 @@ TclpSetVariables(
 		TCL_GLOBAL_ONLY);
     }
 
-#if !defined(NDEBUG) && !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-
-    /*
-     * The existence of the "debug" element of the tcl_platform array
-     * indicates that this particular Tcl shell has been compiled with debug
-     * information. Using "info exists tcl_platform(debug)" a Tcl script can
-     * direct the interpreter to load debug versions of DLLs with the load
-     * command.
-     */
-
-    Tcl_SetVar2(interp, "tcl_platform", "debug", "1",
-	    TCL_GLOBAL_ONLY);
-#endif
-
     /*
      * Set up the HOME environment variable from the HOMEDRIVE & HOMEPATH
      * environment variables, if necessary.
@@ -569,9 +555,10 @@ TclpSetVariables(
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or -1 if there is no such entry. The integer at *lengthPtr is
- *	filled in with the length of name (if a matching entry is found) or
- *	the length of the environ array (if no matching entry is found).
+ *	"name", or -1 if there is no such entry. The integer
+ *	at *lengthPtr is filled in with the length of name (if a matching
+ *	entry is found) or the length of the environ array (if no
+ *	matching entry is found).
  *
  * Side effects:
  *	None.
@@ -602,7 +589,7 @@ TclpFindVariable(
      */
 
     length = strlen(name);
-    nameUpper = (char *)ckalloc(length + 1);
+    nameUpper = (char *)Tcl_Alloc(length + 1);
     memcpy(nameUpper, name, length+1);
     Tcl_UtfToUpper(nameUpper);
 
@@ -644,7 +631,7 @@ TclpFindVariable(
 
   done:
     Tcl_DStringFree(&envString);
-    ckfree(nameUpper);
+    Tcl_Free(nameUpper);
     return result;
 }
 

@@ -179,16 +179,16 @@ FileForRedirect(
 
 void
 Tcl_DetachPids(
-    int numPids,		/* Number of pids to detach: gives size of
+    Tcl_Size numPids,		/* Number of pids to detach: gives size of
 				 * array pointed to by pidPtr. */
     Tcl_Pid *pidPtr)		/* Array of pids to detach. */
 {
     Detached *detPtr;
-    int i;
+    Tcl_Size i;
 
     Tcl_MutexLock(&pipeMutex);
     for (i = 0; i < numPids; i++) {
-	detPtr = (Detached *)ckalloc(sizeof(Detached));
+	detPtr = (Detached *)Tcl_Alloc(sizeof(Detached));
 	detPtr->pid = pidPtr[i];
 	detPtr->nextPtr = detList;
 	detList = detPtr;
@@ -238,7 +238,7 @@ Tcl_ReapDetachedProcs(void)
 	} else {
 	    prevPtr->nextPtr = detPtr->nextPtr;
 	}
-	ckfree(detPtr);
+	Tcl_Free(detPtr);
 	detPtr = nextPtr;
     }
     Tcl_MutexUnlock(&pipeMutex);
@@ -269,16 +269,16 @@ Tcl_ReapDetachedProcs(void)
 int
 TclCleanupChildren(
     Tcl_Interp *interp,		/* Used for error messages. */
-    int numPids,		/* Number of entries in pidPtr array. */
+    Tcl_Size numPids,		/* Number of entries in pidPtr array. */
     Tcl_Pid *pidPtr,		/* Array of process ids of children. */
     Tcl_Channel errorChan)	/* Channel for file containing stderr output
 				 * from pipeline. NULL means there isn't any
 				 * stderr output. */
 {
     int result = TCL_OK;
-    int i, abnormalExit, anyErrorInfo;
+    int code, abnormalExit, anyErrorInfo;
     TclProcessWaitStatus waitStatus;
-    int code;
+    Tcl_Size i;
     Tcl_Obj *msg, *error;
 
     abnormalExit = 0;
@@ -335,8 +335,8 @@ TclCleanupChildren(
 
 	    Tcl_Seek(errorChan, 0, SEEK_SET);
 	    TclNewObj(objPtr);
-	    count = Tcl_ReadChars(errorChan, objPtr, -1, 0);
-	    if (count < 0) {
+	    count = Tcl_ReadChars(errorChan, objPtr, TCL_INDEX_NONE, 0);
+	    if (count == -1) {
 		result = TCL_ERROR;
 		Tcl_DecrRefCount(objPtr);
 		Tcl_ResetResult(interp);
@@ -351,7 +351,7 @@ TclCleanupChildren(
 		Tcl_DecrRefCount(objPtr);
 	    }
 	}
-	Tcl_Close(NULL, errorChan);
+	Tcl_CloseEx(NULL, errorChan, 0);
     }
 
     /*
@@ -378,7 +378,7 @@ TclCleanupChildren(
  *
  * Results:
  *	The return value is a count of the number of new processes created, or
- *	-1 if an error occurred while creating the pipeline. *pidArrayPtr is
+ *	TCL_INDEX_NONE if an error occurred while creating the pipeline. *pidArrayPtr is
  *	filled in with the address of a dynamically allocated array giving the
  *	ids of all of the processes. It is up to the caller to free this array
  *	when it isn't needed anymore. If inPipePtr is non-NULL, *inPipePtr is
@@ -395,10 +395,10 @@ TclCleanupChildren(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclCreatePipeline(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
-    int argc,			/* Number of entries in argv. */
+    Tcl_Size argc,		/* Number of entries in argv. */
     const char **argv,		/* Array of strings describing commands in
 				 * pipeline plus I/O redirection with <, <<,
 				 * >, etc. Argv[argc] must be NULL. */
@@ -431,9 +431,9 @@ TclCreatePipeline(
 {
     Tcl_Pid *pidPtr = NULL;	/* Points to malloc-ed array holding all the
 				 * pids of child processes. */
-    int numPids;		/* Actual number of processes that exist at
+    Tcl_Size numPids;		/* Actual number of processes that exist at
 				 * *pidPtr right now. */
-    int cmdCount;		/* Count of number of distinct commands found
+    Tcl_Size cmdCount;		/* Count of number of distinct commands found
 				 * in argc/argv. */
     const char *inputLiteral = NULL;
 				/* If non-null, then this points to a string
@@ -460,7 +460,8 @@ TclCreatePipeline(
     int errorRelease = 0;
     const char *p;
     const char *nextArg;
-    int skip, lastBar, lastArg, i, j, atOK, flags, needCmd, errorToOutput = 0;
+    int skip, atOK, flags, needCmd, errorToOutput = 0;
+    Tcl_Size i, j, lastArg, lastBar;
     Tcl_DString execBuffer;
     TclFile pipeIn;
     TclFile curInFile, curOutFile, curErrFile;
@@ -824,7 +825,7 @@ TclCreatePipeline(
      */
 
     Tcl_ReapDetachedProcs();
-    pidPtr = (Tcl_Pid *)ckalloc(cmdCount * sizeof(Tcl_Pid));
+    pidPtr = (Tcl_Pid *)Tcl_Alloc(cmdCount * sizeof(Tcl_Pid));
 
     curInFile = inputFile;
 
@@ -978,7 +979,7 @@ TclCreatePipeline(
 		Tcl_DetachPids(1, &pidPtr[i]);
 	    }
 	}
-	ckfree(pidPtr);
+	Tcl_Free(pidPtr);
     }
     numPids = -1;
     goto cleanup;
@@ -1020,15 +1021,15 @@ Tcl_Channel
 Tcl_OpenCommandChannel(
     Tcl_Interp *interp,		/* Interpreter for error reporting. Can NOT be
 				 * NULL. */
-    int argc,			/* How many arguments. */
+    Tcl_Size argc,			/* How many arguments. */
     const char **argv,		/* Array of arguments for command pipe. */
     int flags)			/* Or'ed combination of TCL_STDIN, TCL_STDOUT,
 				 * TCL_STDERR, and TCL_ENFORCE_MODE. */
 {
     TclFile *inPipePtr, *outPipePtr, *errFilePtr;
     TclFile inPipe, outPipe, errFile;
-    int numPids;
-    Tcl_Pid *pidPtr;
+    Tcl_Size numPids;
+    Tcl_Pid *pidPtr = NULL;
     Tcl_Channel channel;
 
     inPipe = outPipe = errFile = NULL;
@@ -1080,9 +1081,9 @@ Tcl_OpenCommandChannel(
     return channel;
 
   error:
-    if (numPids > 0) {
+    if (pidPtr) {
 	Tcl_DetachPids(numPids, pidPtr);
-	ckfree(pidPtr);
+	Tcl_Free(pidPtr);
     }
     if (inPipe != NULL) {
 	TclpCloseFile(inPipe);

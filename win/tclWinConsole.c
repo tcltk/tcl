@@ -203,29 +203,29 @@ typedef struct {
  * Declarations for functions used only in this file.
  */
 
-static int	ConsoleBlockModeProc(ClientData instanceData, int mode);
-static void	ConsoleCheckProc(ClientData clientData, int flags);
-static int	ConsoleCloseProc(ClientData instanceData,
+static int	ConsoleBlockModeProc(void *instanceData, int mode);
+static void	ConsoleCheckProc(void *clientData, int flags);
+static int	ConsoleCloseProc(void *instanceData,
 		    Tcl_Interp *interp, int flags);
 static int	ConsoleEventProc(Tcl_Event *evPtr, int flags);
-static void	ConsoleExitHandler(ClientData clientData);
-static int	ConsoleGetHandleProc(ClientData instanceData,
-		    int direction, ClientData *handlePtr);
-static int	ConsoleGetOptionProc(ClientData instanceData,
+static void	ConsoleExitHandler(void *clientData);
+static int	ConsoleGetHandleProc(void *instanceData,
+		    int direction, void **handlePtr);
+static int	ConsoleGetOptionProc(void *instanceData,
 		    Tcl_Interp *interp, const char *optionName,
 		    Tcl_DString *dsPtr);
 static void	ConsoleInit(void);
-static int	ConsoleInputProc(ClientData instanceData, char *buf,
+static int	ConsoleInputProc(void *instanceData, char *buf,
 		    int toRead, int *errorCode);
-static int	ConsoleOutputProc(ClientData instanceData,
+static int	ConsoleOutputProc(void *instanceData,
 		    const char *buf, int toWrite, int *errorCode);
-static int	ConsoleSetOptionProc(ClientData instanceData,
+static int	ConsoleSetOptionProc(void *instanceData,
 		    Tcl_Interp *interp, const char *optionName,
 		    const char *value);
-static void	ConsoleSetupProc(ClientData clientData, int flags);
-static void	ConsoleWatchProc(ClientData instanceData, int mask);
-static void	ProcExitHandler(ClientData clientData);
-static void	ConsoleThreadActionProc(ClientData instanceData, int action);
+static void	ConsoleSetupProc(void *clientData, int flags);
+static void	ConsoleWatchProc(void *instanceData, int mask);
+static void	ProcExitHandler(void *clientData);
+static void	ConsoleThreadActionProc(void *instanceData, int action);
 static DWORD	ReadConsoleChars(HANDLE hConsole, WCHAR *lpBuffer,
 		    Tcl_Size nChars, Tcl_Size *nCharsReadPtr);
 static DWORD	WriteConsoleChars(HANDLE hConsole,
@@ -291,7 +291,7 @@ static ConsoleChannelInfo *gWatchingChannelList;
 static const Tcl_ChannelType consoleChannelType = {
     "console",               /* Type name. */
     TCL_CHANNEL_VERSION_5,   /* v5 channel */
-    TCL_CLOSE2PROC,          /* Close proc. */
+    NULL,                    /* Close proc. */
     ConsoleInputProc,        /* Input proc. */
     ConsoleOutputProc,       /* Output proc. */
     NULL,                    /* Seek proc. */
@@ -329,7 +329,7 @@ RingBufferInit(RingBuffer *ringPtr, Tcl_Size capacity)
     if (capacity <= 0 || capacity > TCL_SIZE_MAX) {
 	Tcl_Panic("Internal error: invalid ring buffer capacity requested.");
     }
-    ringPtr->bufPtr = (char *)ckalloc(capacity);
+    ringPtr->bufPtr = (char *)Tcl_Alloc(capacity);
     ringPtr->capacity = capacity;
     ringPtr->start    = 0;
     ringPtr->length   = 0;
@@ -354,7 +354,7 @@ static void
 RingBufferClear(RingBuffer *ringPtr)
 {
     if (ringPtr->bufPtr) {
-	ckfree(ringPtr->bufPtr);
+	Tcl_Free(ringPtr->bufPtr);
 	ringPtr->bufPtr = NULL;
     }
     ringPtr->capacity = 0;
@@ -663,7 +663,7 @@ ConsoleInit(void)
 
 static void
 ConsoleExitHandler(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     Tcl_DeleteEventSource(ConsoleSetupProc, ConsoleCheckProc, NULL);
 }
@@ -687,7 +687,7 @@ ConsoleExitHandler(
 
 static void
 ProcExitHandler(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     AcquireSRWLockExclusive(&gConsoleLock);
     gInitialized = 0;
@@ -752,7 +752,7 @@ void NudgeWatchers (HANDLE consoleHandle)
 
 void
 ConsoleSetupProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     ConsoleChannelInfo *chanInfoPtr;
@@ -817,7 +817,7 @@ ConsoleSetupProc(
 
 static void
 ConsoleCheckProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     ConsoleChannelInfo *chanInfoPtr;
@@ -883,7 +883,7 @@ ConsoleCheckProc(
 	ReleaseSRWLockShared(&handleInfoPtr->lock);
 
 	if (needEvent) {
-	    ConsoleEvent *evPtr = (ConsoleEvent *)ckalloc(sizeof(ConsoleEvent));
+	    ConsoleEvent *evPtr = (ConsoleEvent *)Tcl_Alloc(sizeof(ConsoleEvent));
 
 	    /* See note above loop why this can be accessed without locks */
 	    chanInfoPtr->flags |= CONSOLE_EVENT_QUEUED;
@@ -916,7 +916,7 @@ ConsoleCheckProc(
 
 static int
 ConsoleBlockModeProc(
-    ClientData instanceData,	/* Instance data for channel. */
+    void *instanceData,	/* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -956,7 +956,7 @@ ConsoleBlockModeProc(
 
 static int
 ConsoleCloseProc(
-    ClientData instanceData,	/* Pointer to ConsoleChannelInfo structure. */
+    void *instanceData,	/* Pointer to ConsoleChannelInfo structure. */
     TCL_UNUSED(Tcl_Interp *),
     int flags)
 {
@@ -1050,7 +1050,7 @@ ConsoleCloseProc(
 	/* There may be references already on the event queue */
 	chanInfoPtr->numRefs -= 1;
     } else {
-	ckfree(chanInfoPtr);
+	Tcl_Free(chanInfoPtr);
     }
 
     return errorCode;
@@ -1075,7 +1075,7 @@ ConsoleCloseProc(
  */
 static int
 ConsoleInputProc(
-    ClientData instanceData,	/* Console state. */
+    void *instanceData,	/* Console state. */
     char *bufPtr,		/* Where to store data read. */
     int bufSize,		/* How much space is available in the
 				 * buffer? */
@@ -1228,7 +1228,7 @@ ConsoleInputProc(
  */
 static int
 ConsoleOutputProc(
-    ClientData instanceData,	/* Console state. */
+    void *instanceData,	/* Console state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
@@ -1444,7 +1444,7 @@ ConsoleEventProc(
     }
 
     if (freeChannel) {
-	ckfree(chanInfoPtr);
+	Tcl_Free(chanInfoPtr);
     }
 
     return 1;
@@ -1468,7 +1468,7 @@ ConsoleEventProc(
 
 static void
 ConsoleWatchProc(
-    ClientData instanceData,	/* Console state. */
+    void *instanceData,	/* Console state. */
     int newMask)		/* What events to watch for, one of
 				 * of TCL_READABLE, TCL_WRITABLE
 				 */
@@ -1544,9 +1544,9 @@ ConsoleWatchProc(
 
 static int
 ConsoleGetHandleProc(
-    ClientData instanceData,	/* The console state. */
+    void *instanceData,	/* The console state. */
     TCL_UNUSED(int) /*direction*/,
-    ClientData *handlePtr)	/* Where to store the handle. */
+    void **handlePtr)	/* Where to store the handle. */
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
 
@@ -1799,7 +1799,7 @@ ConsoleReaderThread(
 	 */
     }
 
-    ckfree(handleInfoPtr);
+    Tcl_Free(handleInfoPtr);
 
     return 0;
 }
@@ -1957,7 +1957,7 @@ ConsoleWriterThread(LPVOID arg)
 
     RingBufferClear(&handleInfoPtr->buffer);
 
-    ckfree(handleInfoPtr);
+    Tcl_Free(handleInfoPtr);
 
     return 0;
 }
@@ -1994,7 +1994,8 @@ AllocateConsoleHandleInfo(
     DWORD consoleMode;
 
 
-    handleInfoPtr = (ConsoleHandleInfo *)ckalloc(sizeof(*handleInfoPtr));
+    handleInfoPtr = (ConsoleHandleInfo *)Tcl_Alloc(sizeof(*handleInfoPtr));
+    memset(handleInfoPtr, 0, sizeof(*handleInfoPtr));
     memset(handleInfoPtr, 0, sizeof(*handleInfoPtr));
     handleInfoPtr->console = consoleHandle;
     InitializeSRWLock(&handleInfoPtr->lock);
@@ -2021,7 +2022,7 @@ AllocateConsoleHandleInfo(
     if (handleInfoPtr->consoleThread == NULL) {
 	/* Note - SRWLock and condition variables do not need finalization */
 	RingBufferClear(&handleInfoPtr->buffer);
-	ckfree(handleInfoPtr);
+	Tcl_Free(handleInfoPtr);
 	return NULL;
     }
 
@@ -2100,7 +2101,7 @@ TclWinOpenConsoleChannel(
 
     ConsoleInit();
 
-    chanInfoPtr = (ConsoleChannelInfo *)ckalloc(sizeof(*chanInfoPtr));
+    chanInfoPtr = (ConsoleChannelInfo *)Tcl_Alloc(sizeof(*chanInfoPtr));
     memset(chanInfoPtr, 0, sizeof(*chanInfoPtr));
 
     chanInfoPtr->permissions = permissions;
@@ -2159,7 +2160,7 @@ TclWinOpenConsoleChannel(
 	if (permissions == TCL_READABLE) {
 	    SetConsoleMode(handle, chanInfoPtr->initMode);
 	}
-	ckfree(chanInfoPtr);
+	Tcl_Free(chanInfoPtr);
 	return NULL;
     }
 
@@ -2191,7 +2192,6 @@ TclWinOpenConsoleChannel(
      */
 
     Tcl_SetChannelOption(NULL, chanInfoPtr->channel, "-translation", "auto");
-    Tcl_SetChannelOption(NULL, chanInfoPtr->channel, "-eofchar", "\x1A {}");
     Tcl_SetChannelOption(NULL, chanInfoPtr->channel, "-encoding", "utf-16");
     return chanInfoPtr->channel;
 }
@@ -2214,7 +2214,7 @@ TclWinOpenConsoleChannel(
 
 static void
 ConsoleThreadActionProc(
-    ClientData instanceData,
+    void *instanceData,
     int action)
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
@@ -2247,7 +2247,7 @@ ConsoleThreadActionProc(
  */
 static int
 ConsoleSetOptionProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Which option to set? */
     const char *value)		/* New value for option. */
@@ -2336,7 +2336,7 @@ ConsoleSetOptionProc(
 
 static int
 ConsoleGetOptionProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Option to get. */
     Tcl_DString *dsPtr)		/* Where to store value(s). */

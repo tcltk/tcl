@@ -92,12 +92,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #   include <inttypes.h>
 #endif
 #include <limits.h>
-#ifdef HAVE_STDINT_H
-#   include <stdint.h>
-#else
-#   include "../compat/stdint.h"
-#endif
-
 #ifndef __GNUC__
 #    define strncasecmp _strnicmp
 #    define strcasecmp _stricmp
@@ -517,12 +511,12 @@ typedef DWORD_PTR * PDWORD_PTR;
  * use by tclAlloc.c.
  */
 
-#define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
-					    (DWORD)0, (DWORD)size))
+#define TclpSysAlloc(size)		((void*)HeapAlloc(GetProcessHeap(), \
+					    0, size))
 #define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
-					    (DWORD)0, (HGLOBAL)ptr))
+					    0, (HGLOBAL)ptr))
 #define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
-					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
+					    0, (LPVOID)ptr, size))
 
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
@@ -533,7 +527,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * address platform-specific issues.
  */
 
-#define TclpReleaseFile(file)	ckfree(file)
+#define TclpReleaseFile(file)	Tcl_Free(file)
 
 /*
  * The following macros and declarations wrap the C runtime library
@@ -549,8 +543,5 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifndef LABEL_SECURITY_INFORMATION
 #   define LABEL_SECURITY_INFORMATION (0x00000010L)
 #endif
-
-#define Tcl_DirEntry void
-#define TclDIR void
 
 #endif /* _TCLWINPORT */

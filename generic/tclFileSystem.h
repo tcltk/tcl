@@ -48,13 +48,13 @@ MODULE_SCOPE const Tcl_Filesystem tclNativeFilesystem;
 
 MODULE_SCOPE Tcl_PathType TclFSGetPathType(Tcl_Obj *pathPtr,
 			    const Tcl_Filesystem **filesystemPtrPtr,
-			    int *driveNameLengthPtr);
+			    Tcl_Size *driveNameLengthPtr);
 MODULE_SCOPE Tcl_PathType TclFSNonnativePathType(const char *pathPtr,
-			    int pathLen, const Tcl_Filesystem **filesystemPtrPtr,
-			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
+			    Tcl_Size pathLen, const Tcl_Filesystem **filesystemPtrPtr,
+			    Tcl_Size *driveNameLengthPtr, Tcl_Obj **driveNameRef);
 MODULE_SCOPE Tcl_PathType TclGetPathType(Tcl_Obj *pathPtr,
 			    const Tcl_Filesystem **filesystemPtrPtr,
-			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
+			    Tcl_Size *driveNameLengthPtr, Tcl_Obj **driveNameRef);
 MODULE_SCOPE int	TclFSEpochOk(size_t filesystemEpoch);
 MODULE_SCOPE int	TclFSCwdIsNative(void);
 MODULE_SCOPE Tcl_Obj *	TclWinVolumeRelativeNormalize(Tcl_Interp *interp,

@@ -63,7 +63,7 @@ namespace eval ::tcl::test::io {
     set umaskValue 0
     testConstraint umask [expr {![catch {set umaskValue [scan [exec /bin/sh -c umask] %o]}]}]
 
-    testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~]}]
+    testConstraint makeFileInHome [expr {![file exists $::env(HOME)/_test_] && [file writable $::env(HOME)]}]
 
     # set up a long data file for some of the following tests
 
@@ -82,7 +82,7 @@ namespace eval ::tcl::test::io {
 	if {$argv != ""} {
 	    set f [open [lindex $argv 0]]
 	}
-	chan configure $f -encoding binary -translation lf -blocking 0 -eofchar "\x1A \x1A"
+	chan configure $f -encoding binary -translation lf -blocking 0 -eofchar \x1A
 	chan configure stdout -encoding binary -translation lf -buffering none
 	chan event $f readable "foo $f"
 	proc foo {f} {
@@ -483,7 +483,7 @@ test chan-io-6.8 {Tcl_GetsObj: remember if EOF is seen} -body {
     chan puts $f "abcdef\x1Aghijk\nwombat"
     chan close $f
     set f [open $path(test1)]
-    chan configure $f -eofchar "\x1A \x1A"
+    chan configure $f -eofchar \x1A
     list [chan gets $f line] $line [chan gets $f line] $line
 } -cleanup {
     chan close $f
@@ -493,7 +493,7 @@ test chan-io-6.9 {Tcl_GetsObj: remember if EOF is seen} -body {
     chan puts $f "abcdefghijk\nwom\x1Abat"
     chan close $f
     set f [open $path(test1)]
-    chan configure $f -eofchar "\x1A \x1A"
+    chan configure $f -eofchar \x1A
     list [chan gets $f line] $line [chan gets $f line] $line
 } -cleanup {
     chan close $f
@@ -1001,7 +1001,7 @@ test chan-io-6.52 {Tcl_GetsObj: saw EOF character} -constraints {testchannel} -b
     chan puts -nonewline $f "123456\x1Ak9012345\r"
     chan close $f
     set f [open $path(test1)]
-    chan configure $f -eofchar "\x1A \x1A"
+    chan configure $f -eofchar \x1A
     list [chan gets $f] [testchannel queuedcr $f] [chan tell $f] [chan gets $f]
 } -cleanup {
     chan close $f
@@ -1098,7 +1098,7 @@ test chan-io-7.3 {FilterInputBytes: split up character at EOF} -setup {
     chan puts -nonewline $f "1234567890123\x82\x4F\x82\x50\x82"
     chan close $f
     set f [open $path(test1)]
-    chan configure $f -encoding shiftjis
+    chan configure $f -encoding shiftjis -profile tcl8
     lappend x [chan gets $f line] $line
     lappend x [chan tell $f] [testchannel inputbuffered $f] [chan eof $f]
     lappend x [chan gets $f line] $line
@@ -1891,13 +1891,13 @@ test chan-io-20.2 {Tcl_CreateChannel: initial settings} -constraints {win} -body
     list [chan configure $f -eofchar] [chan configure $f -translation]
 } -cleanup {
     chan close $f
-} -result [list [list \x1A ""] {auto crlf}]
+} -result {{} {auto crlf}}
 test chan-io-20.3 {Tcl_CreateChannel: initial settings} -constraints {unix} -body {
     set f [open $path(test1) w+]
     list [chan configure $f -eofchar] [chan configure $f -translation]
 } -cleanup {
     chan close $f
-} -result {{{} {}} {auto lf}}
+} -result {{} {auto lf}}
 test chan-io-20.5 {Tcl_CreateChannel: install channel in empty slot} -setup {
     set path(stdout) [makeFile {} stdout]
 } -constraints {stdio notWinCI} -body {
@@ -3107,7 +3107,7 @@ test chan-io-30.16 {Tcl_Write ^Z at end, Tcl_Read auto} -setup {
     chan puts -nonewline $f hello\nthere\nand\rhere\n\x1A
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     chan read $f
 } -cleanup {
     chan close $f
@@ -3120,11 +3120,11 @@ test chan-io-30.17 {Tcl_Write, implicit ^Z at end, Tcl_Read auto} -setup {
     file delete $path(test1)
 } -constraints {win} -body {
     set f [open $path(test1) w]
-    chan configure $f -translation lf -eofchar "\x1A \x1A"
+    chan configure $f -translation lf -eofchar \x1A
     chan puts $f hello\nthere\nand\rhere
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     chan read $f
 } -cleanup {
     chan close $f
@@ -3142,7 +3142,7 @@ test chan-io-30.18 {Tcl_Write, ^Z in middle, Tcl_Read auto} -setup {
     chan puts $f $s
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     set l ""
     lappend l [chan gets $f]
     lappend l [chan gets $f]
@@ -3163,7 +3163,7 @@ test chan-io-30.19 {Tcl_Write, ^Z no newline in middle, Tcl_Read auto} -setup {
     chan puts $f $s
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     set l ""
     lappend l [chan gets $f]
     lappend l [chan gets $f]
@@ -3241,7 +3241,7 @@ test chan-io-30.23 {Tcl_Write lf, ^Z in middle, Tcl_Read auto} -setup {
     chan puts $f [format abc\ndef\n%cqrs\ntuv 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     list [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
@@ -3255,7 +3255,7 @@ test chan-io-30.24 {Tcl_Write lf, ^Z in middle, Tcl_Read lf} -setup {
     chan puts $f $c
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation lf -eofchar "\x1A \x1A"
+    chan configure $f -translation lf -eofchar \x1A
     list [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
@@ -3269,7 +3269,7 @@ test chan-io-30.25 {Tcl_Write cr, ^Z in middle, Tcl_Read auto} -setup {
     chan puts $f $c
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     list [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
@@ -3283,7 +3283,7 @@ test chan-io-30.26 {Tcl_Write cr, ^Z in middle, Tcl_Read cr} -setup {
     chan puts $f $c
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation cr -eofchar "\x1A \x1A"
+    chan configure $f -translation cr -eofchar \x1A
     list [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
@@ -3297,7 +3297,7 @@ test chan-io-30.27 {Tcl_Write crlf, ^Z in middle, Tcl_Read auto} -setup {
     chan puts $f $c
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     list [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
@@ -3311,7 +3311,7 @@ test chan-io-30.28 {Tcl_Write crlf, ^Z in middle, Tcl_Read crlf} -setup {
     chan puts $f $c
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation crlf -eofchar "\x1A \x1A"
+    chan configure $f -translation crlf -eofchar \x1A
     list [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
@@ -3662,7 +3662,7 @@ test chan-io-31.18 {Tcl_Write ^Z at end, Tcl_Gets auto} -setup {
     chan puts $f [format "hello\nthere\nand\rhere\n\%c" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     lappend l [chan gets $f]
     lappend l [chan gets $f]
     lappend l [chan gets $f]
@@ -3678,11 +3678,11 @@ test chan-io-31.19 {Tcl_Write, implicit ^Z at end, Tcl_Gets auto} -setup {
     set l ""
 } -body {
     set f [open $path(test1) w]
-    chan configure $f -translation lf -eofchar "\x1A \x1A"
+    chan configure $f -translation lf -eofchar \x1A
     chan puts $f hello\nthere\nand\rhere
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     lappend l [chan gets $f]
     lappend l [chan gets $f]
     lappend l [chan gets $f]
@@ -3702,7 +3702,7 @@ test chan-io-31.20 {Tcl_Write, ^Z in middle, Tcl_Gets auto, eofChar} -setup {
     chan puts $f [format "abc\ndef\n%cqrs\ntuv" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     lappend l [chan gets $f]
     lappend l [chan gets $f]
     lappend l [chan eof $f]
@@ -3720,7 +3720,7 @@ test chan-io-31.21 {Tcl_Write, no newline ^Z in middle, Tcl_Gets auto, eofChar} 
     chan puts $f [format "abc\ndef\n%cqrs\ntuv" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     lappend l [chan gets $f]
     lappend l [chan gets $f]
     lappend l [chan eof $f]
@@ -3804,7 +3804,7 @@ test chan-io-31.25 {Tcl_Write lf, ^Z in middle, Tcl_Gets auto} -setup {
     chan puts $f [format "abc\ndef\n%cqrs\ntuv" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     lappend l [chan gets $f]
     lappend l [chan gets $f]
     lappend l [chan eof $f]
@@ -3822,7 +3822,7 @@ test chan-io-31.26 {Tcl_Write lf, ^Z in middle, Tcl_Gets lf} -setup {
     chan puts $f [format "abc\ndef\n%cqrs\ntuv" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation lf -eofchar "\x1A \x1A"
+    chan configure $f -translation lf -eofchar \x1A
     lappend l [chan gets $f]
     lappend l [chan gets $f]
     lappend l [chan eof $f]
@@ -3840,7 +3840,7 @@ test chan-io-31.27 {Tcl_Write cr, ^Z in middle, Tcl_Gets auto} -setup {
     chan puts $f [format "abc\ndef\n%cqrs\ntuv" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     lappend l [chan gets $f]
     lappend l [chan gets $f]
     lappend l [chan eof $f]
@@ -3858,7 +3858,7 @@ test chan-io-31.28 {Tcl_Write cr, ^Z in middle, Tcl_Gets cr} -setup {
     chan puts $f [format "abc\ndef\n%cqrs\ntuv" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation cr -eofchar "\x1A \x1A"
+    chan configure $f -translation cr -eofchar \x1A
     lappend l [chan gets $f]
     lappend l [chan gets $f]
     lappend l [chan eof $f]
@@ -3876,7 +3876,7 @@ test chan-io-31.29 {Tcl_Write crlf, ^Z in middle, Tcl_Gets auto} -setup {
     chan puts $f [format "abc\ndef\n%cqrs\ntuv" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     lappend l [chan gets $f]
     lappend l [chan gets $f]
     lappend l [chan eof $f]
@@ -3894,7 +3894,7 @@ test chan-io-31.30 {Tcl_Write crlf, ^Z in middle, Tcl_Gets crlf} -setup {
     chan puts $f [format "abc\ndef\n%cqrs\ntuv" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation crlf -eofchar "\x1A \x1A"
+    chan configure $f -translation crlf -eofchar \x1A
     lappend l [chan gets $f]
     lappend l [chan gets $f]
     lappend l [chan eof $f]
@@ -4650,86 +4650,86 @@ test chan-io-35.6 {Tcl_Eof, eof char, lf write, auto read} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
-    chan configure $f -translation lf -eofchar "\x1A \x1A"
+    chan configure $f -translation lf -eofchar \x1A
     chan puts $f abc\ndef
     chan close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     list $s [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
-} -result {9 8 1}
+} -result {8 8 1}
 test chan-io-35.7 {Tcl_Eof, eof char, lf write, lf read} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
-    chan configure $f -translation lf -eofchar "\x1A \x1A"
+    chan configure $f -translation lf -eofchar \x1A
     chan puts $f abc\ndef
     chan close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    chan configure $f -translation lf -eofchar "\x1A \x1A"
+    chan configure $f -translation lf -eofchar \x1A
     list $s [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
-} -result {9 8 1}
+} -result {8 8 1}
 test chan-io-35.8 {Tcl_Eof, eof char, cr write, auto read} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
-    chan configure $f -translation cr -eofchar "\x1A \x1A"
+    chan configure $f -translation cr -eofchar \x1A
     chan puts $f abc\ndef
     chan close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     list $s [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
-} -result {9 8 1}
+} -result {8 8 1}
 test chan-io-35.9 {Tcl_Eof, eof char, cr write, cr read} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
-    chan configure $f -translation cr -eofchar "\x1A \x1A"
+    chan configure $f -translation cr -eofchar \x1A
     chan puts $f abc\ndef
     chan close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    chan configure $f -translation cr -eofchar "\x1A \x1A"
+    chan configure $f -translation cr -eofchar \x1A
     list $s [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
-} -result {9 8 1}
+} -result {8 8 1}
 test chan-io-35.10 {Tcl_Eof, eof char, crlf write, auto read} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
-    chan configure $f -translation crlf -eofchar "\x1A \x1A"
+    chan configure $f -translation crlf -eofchar \x1A
     chan puts $f abc\ndef
     chan close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     list $s [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
-} -result {11 8 1}
+} -result {10 8 1}
 test chan-io-35.11 {Tcl_Eof, eof char, crlf write, crlf read} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
-    chan configure $f -translation crlf -eofchar "\x1A \x1A"
+    chan configure $f -translation crlf -eofchar \x1A
     chan puts $f abc\ndef
     chan close $f
     set s [file size $path(test1)]
     set f [open $path(test1) r]
-    chan configure $f -translation crlf -eofchar "\x1A \x1A"
+    chan configure $f -translation crlf -eofchar \x1A
     list $s [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
-} -result {11 8 1}
+} -result {10 8 1}
 test chan-io-35.12 {Tcl_Eof, eof char in middle, lf write, auto read} -setup {
     file delete $path(test1)
 } -body {
@@ -4739,7 +4739,7 @@ test chan-io-35.12 {Tcl_Eof, eof char in middle, lf write, auto read} -setup {
     chan close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     list $c [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
@@ -4753,7 +4753,7 @@ test chan-io-35.13 {Tcl_Eof, eof char in middle, lf write, lf read} -setup {
     chan close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    chan configure $f -translation lf -eofchar "\x1A \x1A"
+    chan configure $f -translation lf -eofchar \x1A
     list $c [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
@@ -4767,7 +4767,7 @@ test chan-io-35.14 {Tcl_Eof, eof char in middle, cr write, auto read} -setup {
     chan close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     list $c [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
@@ -4781,7 +4781,7 @@ test chan-io-35.15 {Tcl_Eof, eof char in middle, cr write, cr read} -setup {
     chan close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    chan configure $f -translation cr -eofchar "\x1A \x1A"
+    chan configure $f -translation cr -eofchar \x1A
     list $c [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
@@ -4795,7 +4795,7 @@ test chan-io-35.16 {Tcl_Eof, eof char in middle, crlf write, auto read} -setup {
     chan close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     list $c [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
@@ -4809,7 +4809,7 @@ test chan-io-35.17 {Tcl_Eof, eof char in middle, crlf write, crlf read} -setup {
     chan close $f
     set c [file size $path(test1)]
     set f [open $path(test1) r]
-    chan configure $f -translation crlf -eofchar "\x1A \x1A"
+    chan configure $f -translation crlf -eofchar \x1A
     list $c [string length [chan read $f]] [chan eof $f]
 } -cleanup {
     chan close $f
@@ -5287,29 +5287,29 @@ test chan-io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
 test chan-io-39.22 {Tcl_SetChannelOption, invariance} -setup {
     file delete $path(test1)
     set l ""
-} -constraints {unix} -body {
+} -constraints {unix deprecated} -body {
     set f1 [open $path(test1) w+]
     lappend l [chan configure $f1 -eofchar]
-    chan configure $f1 -eofchar {ON GO}
+    chan configure $f1 -eofchar {O {}}
     lappend l [chan configure $f1 -eofchar]
-    chan configure $f1 -eofchar {D D}
+    chan configure $f1 -eofchar D
     lappend l [chan configure $f1 -eofchar]
 } -cleanup {
     chan close $f1
-} -result {{{} {}} {O G} {D D}}
-test chan-io-39.22a {Tcl_SetChannelOption, invariance} -setup {
+} -result {{} O D}
+test chan-io-39.22a {Tcl_SetChannelOption, invariance} -constraints deprecated -setup {
     file delete $path(test1)
     set l [list]
 } -body {
     set f1 [open $path(test1) w+]
-    chan configure $f1 -eofchar {ON GO}
+    chan configure $f1 -eofchar {O {}}
     lappend l [chan configure $f1 -eofchar]
-    chan configure $f1 -eofchar {D D}
+    chan configure $f1 -eofchar D
     lappend l [chan configure $f1 -eofchar]
     lappend l [list [catch {chan configure $f1 -eofchar {1 2 3}} msg] $msg]
 } -cleanup {
     chan close $f1
-} -result {{O G} {D D} {1 {bad value for -eofchar: should be a list of zero, one, or two elements}}}
+} -result {O D {1 {bad value for -eofchar: must be non-NUL ASCII character}}}
 test chan-io-39.23 {
 	Tcl_GetChannelOption, server socket is not readable or writable, but should
 	still have valid -eofchar and -translation options.
@@ -5321,7 +5321,7 @@ test chan-io-39.23 {
 	[chan configure $sock -translation]
 } -cleanup {
     chan close $sock
-} -result {{{}} auto}
+} -result {{} auto}
 test chan-io-39.24 {Tcl_SetChannelOption, server socket is not readable or\
         writable so we can't change -eofchar or -translation} -setup {
     set l [list]
@@ -5332,7 +5332,7 @@ test chan-io-39.24 {Tcl_SetChannelOption, server socket is not readable or\
 	[chan configure $sock -translation]
 } -cleanup {
     chan close $sock
-} -result {{{}} auto}
+} -result {{} auto}
 
 test chan-io-40.1 {POSIX open access modes: RDWR} -setup {
     file delete $path(test3)
@@ -5492,21 +5492,16 @@ test chan-io-40.15 {POSIX open access modes: RDWR} {
     chan close $f
     lappend x [viewFile test3]
 } {zzy abzzy}
-test chan-io-40.16 {tilde substitution in open} -constraints makeFileInHome -setup {
-    makeFile {Some text} _test_ ~
+test chan-io-40.16 {verify no tilde substitution in open} -setup {
+    set curdir [pwd]
+    cd [temporaryDirectory]
 } -body {
-    file exists [file join $::env(HOME) _test_]
+    close [open ~ w]
+    list [file isfile ~]
 } -cleanup {
-    removeFile _test_ ~
+    file delete ./~ ;# ./ because don't want to delete home in case of bugs!
+    cd $curdir
 } -result 1
-test chan-io-40.17 {tilde substitution in open} -setup {
-    set home $::env(HOME)
-} -body {
-    unset ::env(HOME)
-    open ~/foo
-} -returnCodes error -cleanup {
-    set ::env(HOME) $home
-} -result {couldn't find HOME environment variable to expand path}
 
 test chan-io-41.1 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
     chan event foo
@@ -6051,7 +6046,7 @@ test chan-io-48.4 {lf write, testing readability, ^Z termination, auto read mode
     chan puts -nonewline $f [format "abc\ndef\n%c" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     chan event $f readable [namespace code {
 	if {[chan eof $f]} {
 	   set x done
@@ -6075,7 +6070,7 @@ test chan-io-48.5 {lf write, testing readability, ^Z in middle, auto read mode} 
     chan puts -nonewline $f [format "abc\ndef\n%cfoo\nbar\n" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     chan event $f readable [namespace code {
 	if {[chan eof $f]} {
 	   set x done
@@ -6099,7 +6094,7 @@ test chan-io-48.6 {cr write, testing readability, ^Z termination, auto read mode
     chan puts -nonewline $f [format "abc\ndef\n%c" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     chan event $f readable [namespace code {
 	if {[chan eof $f]} {
 	   set x done
@@ -6123,7 +6118,7 @@ test chan-io-48.7 {cr write, testing readability, ^Z in middle, auto read mode} 
     chan puts -nonewline $f [format "abc\ndef\n%cfoo\nbar\n" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     chan event $f readable [namespace code {
 	if {[chan eof $f]} {
 	   set x done
@@ -6147,7 +6142,7 @@ test chan-io-48.8 {crlf write, testing readability, ^Z termination, auto read mo
     chan puts -nonewline $f [format "abc\ndef\n%c" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     chan event $f readable [namespace code {
 	if {[chan eof $f]} {
 	   set x done
@@ -6171,7 +6166,7 @@ test chan-io-48.9 {crlf write, testing readability, ^Z in middle, auto read mode
     chan puts -nonewline $f [format "abc\ndef\n%cfoo\nbar\n" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation auto -eofchar "\x1A \x1A"
+    chan configure $f -translation auto -eofchar \x1A
     chan event $f readable [namespace code {
 	if {[chan eof $f]} {
 	   set x done
@@ -6195,7 +6190,7 @@ test chan-io-48.10 {lf write, testing readability, ^Z in middle, lf read mode} -
     chan puts -nonewline $f [format "abc\ndef\n%cfoo\nbar\n" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation lf -eofchar "\x1A \x1A"
+    chan configure $f -translation lf -eofchar \x1A
     chan event $f readable [namespace code {
 	if {[chan eof $f]} {
 	   set x done
@@ -6219,7 +6214,7 @@ test chan-io-48.11 {lf write, testing readability, ^Z termination, lf read mode}
     chan puts -nonewline $f [format "abc\ndef\n%c" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation lf -eofchar "\x1A \x1A"
+    chan configure $f -translation lf -eofchar \x1A
     chan event $f readable [namespace code {
 	if {[chan eof $f]} {
 	   set x done
@@ -6243,7 +6238,7 @@ test chan-io-48.12 {cr write, testing readability, ^Z in middle, cr read mode} -
     chan puts -nonewline $f [format "abc\ndef\n%cfoo\nbar\n" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation cr -eofchar "\x1A \x1A"
+    chan configure $f -translation cr -eofchar \x1A
     chan event $f readable [namespace code {
 	if {[chan eof $f]} {
 	   set x done
@@ -6267,7 +6262,7 @@ test chan-io-48.13 {cr write, testing readability, ^Z termination, cr read mode}
     chan puts -nonewline $f [format "abc\ndef\n%c" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation cr -eofchar "\x1A \x1A"
+    chan configure $f -translation cr -eofchar \x1A
     chan event $f readable [namespace code {
 	if {[chan eof $f]} {
 	   set x done
@@ -6291,7 +6286,7 @@ test chan-io-48.14 {crlf write, testing readability, ^Z in middle, crlf read mod
     chan puts -nonewline $f [format "abc\ndef\n%cfoo\nbar\n" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation crlf -eofchar "\x1A \x1A"
+    chan configure $f -translation crlf -eofchar \x1A
     chan event $f readable [namespace code {
 	if {[chan eof $f]} {
 	   set x done
@@ -6315,7 +6310,7 @@ test chan-io-48.15 {crlf write, testing readability, ^Z termi, crlf read mode} -
     chan puts -nonewline $f [format "abc\ndef\n%c" 26]
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation crlf -eofchar "\x1A \x1A"
+    chan configure $f -translation crlf -eofchar \x1A
     chan event $f readable [namespace code {
 	if {[chan eof $f]} {
 	   set x done
@@ -6875,8 +6870,7 @@ test chan-io-52.9 {TclCopyChannel & encodings} {fcopy} {
 	    [file size $path(utf8-fcopy.txt)] \
 	    [file size $path(utf8-rp.txt)]
 } {3 5 5}
-test chan-io-52.10 {TclCopyChannel & encodings} {fcopy notWinCI} {
-    # encoding to binary (=> implies that the internal utf-8 is written)
+test chan-io-52.10 {TclCopyChannel & encodings} -constraints {fcopy} -body {
     set in  [open $path(kyrillic.txt) r]
     set out [open $path(utf8-fcopy.txt) w]
     chan configure $in  -encoding koi8-r -translation lf
@@ -6886,25 +6880,31 @@ test chan-io-52.10 {TclCopyChannel & encodings} {fcopy notWinCI} {
     chan close $in
     chan close $out
     file size $path(utf8-fcopy.txt)
-} 5
+} -returnCodes 1 -match glob -result {error writing "*":\
+	invalid or incomplete multibyte or wide character}
 test chan-io-52.11 {TclCopyChannel & encodings} -setup {
     set f [open $path(utf8-fcopy.txt) w]
     fconfigure $f -encoding utf-8 -translation lf
     puts $f АА
     close $f
 } -constraints {fcopy} -body {
-    # binary to encoding => the input has to be in utf-8 to make sense to the
-    # encoder
     set in  [open $path(utf8-fcopy.txt) r]
     set out [open $path(kyrillic.txt) w]
     # -translation binary is also -encoding binary
     chan configure $in  -translation binary
-    chan configure $out -encoding koi8-r -translation lf
-    chan copy $in $out
-    chan close $in
-    chan close $out
-    file size $path(kyrillic.txt)
-} -result 3
+    chan configure $out -encoding koi8-r -translation lf -profile strict
+    catch {chan copy $in $out} cres copts
+    return $cres
+} -cleanup {
+    if {$in in [chan names]} {
+	close $in
+    }
+    if {$out in [chan names]} {
+	close $out
+    }
+    catch {unset cres}
+} -match glob -result  {error writing "*": invalid or incomplete\
+	multibyte or wide character}
 
 test chan-io-53.1 {CopyData} -setup {
     file delete $path(test1)

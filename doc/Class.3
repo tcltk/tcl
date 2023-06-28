@@ -41,12 +41,12 @@ Tcl_Object
 int
 \fBTcl_ObjectDeleted\fR(\fIobject\fR)
 .sp
-ClientData
+void *
 \fBTcl_ObjectGetMetadata\fR(\fIobject, metaTypePtr\fR)
 .sp
 \fBTcl_ObjectSetMetadata\fR(\fIobject, metaTypePtr, metadata\fR)
 .sp
-ClientData
+void *
 \fBTcl_ClassGetMetadata\fR(\fIclass, metaTypePtr\fR)
 .sp
 \fBTcl_ClassSetMetadata\fR(\fIclass, metaTypePtr, metadata\fR)
@@ -64,7 +64,7 @@ Tcl_Obj *
 \fBTcl_GetObjectClassName\fR(\fIinterp\fR, \fIobject\fR)
 .VE "TIP 605"
 .SH ARGUMENTS
-.AS ClientData metadata in/out
+.AS void *metadata in/out
 .AP Tcl_Interp *interp in/out
 Interpreter providing the context for looking up or creating an object, and
 into whose result error messages will be written on failure.
@@ -81,11 +81,11 @@ automatically selected.
 The name of the namespace to create for the object's private use, or NULL if a
 new unused name is to be automatically selected. The namespace must not
 already exist.
-.AP int objc in
+.AP Tcl_Size objc in
 The number of elements in the \fIobjv\fR array.
 .AP "Tcl_Obj *const" *objv in
 The arguments to the command to create the instance of the class.
-.AP int skip in
+.AP Tcl_Size skip in
 The number of arguments at the start of the argument array, \fIobjv\fR, that
 are not arguments to any constructors. This allows the generation of correct
 error messages even when complicated calling patterns are used (e.g., via the
@@ -93,7 +93,7 @@ error messages even when complicated calling patterns are used (e.g., via the
 .AP Tcl_ObjectMetadataType *metaTypePtr in
 The type of \fImetadata\fR being set with \fBTcl_ClassSetMetadata\fR or
 retrieved with \fBTcl_ClassGetMetadata\fR.
-.AP ClientData metadata in
+.AP void *metadata in
 An item of metadata to attach to the class, or NULL to remove the metadata
 associated with a particular \fImetaTypePtr\fR.
 .AP "Tcl_ObjectMapMethodNameProc" "methodNameMapper" in
@@ -200,7 +200,7 @@ a class or object.
 .PP
 .CS
 typedef void \fBTcl_ObjectMetadataDeleteProc\fR(
-        ClientData \fImetadata\fR);
+        void *\fImetadata\fR);
 .CE
 .PP
 The \fImetadata\fR argument gives the address of the metadata to be
@@ -213,8 +213,8 @@ associated with a class or object.
 .CS
 typedef int \fBTcl_CloneProc\fR(
         Tcl_Interp *\fIinterp\fR,
-        ClientData \fIsrcMetadata\fR,
-        ClientData *\fIdstMetadataPtr\fR);
+        void *\fIsrcMetadata\fR,
+        void **\fIdstMetadataPtr\fR);
 .CE
 .PP
 The \fIinterp\fR argument gives a place to write an error message when the

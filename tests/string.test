@@ -33,9 +33,10 @@ proc makeShared {s} {uplevel 1 [list lappend copy $s]; return $s}
 testConstraint testobj [expr {[info commands testobj] ne {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
-testConstraint utf16 [expr {[string length \U010000] == 2}]
+testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
-testConstraint testutf16string [llength [info commands testutf16string]]
+testConstraint utf32 [expr {[testConstraint fullutf]
+		&& [string length [format %c 0x10000]] == 1}]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -77,7 +78,7 @@ if {$noComp} {
 
 test string-1.1.$noComp {error conditions} -body {
     list [catch {run {string gorp a b}} msg] $msg
-} -match glob -result {1 {unknown or ambiguous subcommand "gorp": must be *cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -result {1 {unknown or ambiguous subcommand "gorp": must be cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2.$noComp {error conditions} {
     list [catch {run {string}} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -423,7 +424,7 @@ test string-4.16.$noComp {string first, normal string vs pure unicode string} -b
     # Representation checks are canaries
     run {list [representationpoke $s] [representationpoke $m] \
 	[string first $m $s]}
-} -match glob -result {{*string 1} {*string 0} 2}
+} -result {{string 1} {string 0} 2}
 test string-4.17.$noComp {string first, corner case} -body {
     run {string first a aaa 4294967295}
 } -result -1
@@ -498,19 +499,19 @@ test string-5.16.$noComp {string index, bytearray object with string obj shimmer
 } 0
 test string-5.17.$noComp {string index, bad integer} -body {
     list [catch {run {string index "abc" 0o8}} msg] $msg
-} -match glob -result {1 {*invalid octal number*}}
+} -match glob -result {1 {*}}
 test string-5.18.$noComp {string index, bad integer} -body {
     list [catch {run {string index "abc" end-0o0289}} msg] $msg
-} -match glob -result {1 {*invalid octal number*}}
+} -match glob -result {1 {*}}
 test string-5.19.$noComp {string index, bytearray object out of bounds} {
     run {string index [binary format I* {0x50515253 0x52}] -1}
 } {}
 test string-5.20.$noComp {string index, bytearray object out of bounds} -body {
     run {string index [binary format I* {0x50515253 0x52}] 20}
 } -result {}
-test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints utf16 -body {
+test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints utf32 -body {
     run {list [string index a\U100000b 1] [string index a\U100000b 2] [string index a\U100000b 3]}
-} -result [list \U100000 {} b]
+} -result [list \U100000 b {}]
 test string-5.22.$noComp {string index} -constraints testbytestring -body {
     run {list [scan [string index [testbytestring \xFF] 0] %c var] $var}
 } -result {1 255}
@@ -1046,19 +1047,6 @@ test string-7.16.$noComp {string last, start index} {
     run {string last Üa ÜadÜad end-1}
 } 3
 
-test string-8.1.$noComp {string bytelength} deprecated {
-    list [catch {run {string bytelength}} msg] $msg
-} {1 {wrong # args: should be "string bytelength string"}}
-test string-8.2.$noComp {string bytelength} deprecated {
-    list [catch {run {string bytelength a b}} msg] $msg
-} {1 {wrong # args: should be "string bytelength string"}}
-test string-8.3.$noComp {string bytelength} deprecated {
-    run {string bytelength "\xC7"}
-} 2
-test string-8.4.$noComp {string bytelength} deprecated {
-    run {string b ""}
-} 0
-
 test string-9.1.$noComp {string length} {
     list [catch {run {string length}} msg] $msg
 } {1 {wrong # args: should be "string length string"}}
@@ -1525,9 +1513,9 @@ test string-12.22.$noComp {string range, shimmering binary/index} {
     binary scan $s a* x
     run {string range $s $s end}
 } 000000001
-test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} utf16 {
+test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} utf32 {
     run {list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]}
-} [list \U100000 {} b]
+} [list \U100000 b {}]
 test string-12.24.$noComp {bignum index arithmetic} -setup {
     proc demo {i j} {string range fubar $i $j}
 } -cleanup {
@@ -1795,10 +1783,10 @@ test string-17.7.$noComp {string totitle, unicode} {
 test string-17.8.$noComp {string totitle, compiled} {
     lindex [run {string totitle [list aa bb [list cc]]}] 0
 } Aa
-test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} utf16 {
+test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} utf32 {
     run {list [string totitle a\U118c0c 1 1] [string totitle a\U118c0c 2 2] \
 	[string totitle a\U118c0c 3 3]}
-} [list a\U118a0c a\U118c0C a\U118c0C]
+} [list a\U118a0c a\U118c0C a\U118c0c]
 
 test string-18.1.$noComp {string trim} {
     list [catch {run {string trim}} msg] $msg
@@ -1852,7 +1840,7 @@ test string-20.1.$noComp {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-20.2.$noComp {string trimright errors} -body {
     list [catch {run {string trimg a}} msg] $msg
-} -match glob -result {1 {unknown or ambiguous subcommand "trimg": must be *cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -result {1 {unknown or ambiguous subcommand "trimg": must be cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3.$noComp {string trimright} {
     run {string trimright "    XYZ      "}
 } {    XYZ}
@@ -1939,9 +1927,9 @@ test string-21.14.$noComp {string wordend, unicode} -body {
 test string-21.15.$noComp {string wordend, unicode} -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 0}
 } -result 2
-test string-21.16.$noComp {string wordend, unicode} -constraints utf16 -body {
+test string-21.16.$noComp {string wordend, unicode} -constraints utf32 -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
-} -result 8
+} -result 6
 test string-21.17.$noComp {string trim, unicode} {
     run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
 } "Hello world!"
@@ -1961,18 +1949,18 @@ test string-21.22.$noComp {string trimright, unicode} {
     run {string trimright "\uF602Hello world!\uF602" \uD83D\uDE02}
 } "\uF602Hello world!\uF602"
 test string-21.23.$noComp {string trim, unicode} {
-    run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+    run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D}
 } "\uD83D\uDE02Hello world!\uD83D\uDE02"
 test string-21.24.$noComp {string trimleft, unicode} {
     run {string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
 } "\uD83D\uDE02Hello world!\uD83D\uDE02"
 test string-21.25.$noComp {string trimright, unicode} {
-    run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+    run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D}
 } "\uD83D\uDE02Hello world!\uD83D\uDE02"
 
 test string-22.1.$noComp {string wordstart} -body {
     list [catch {run {string word a}} msg] $msg
-} -match glob -result {1 {unknown or ambiguous subcommand "word": must be *cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -result {1 {unknown or ambiguous subcommand "word": must be cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2.$noComp {string wordstart} -body {
     list [catch {run {string wordstart a}} msg] $msg
 } -result {1 {wrong # args: should be "string wordstart string index"}}
@@ -2017,9 +2005,9 @@ test string-22.14.$noComp {string wordstart, invalid UTF-8} -constraints testbyt
 test string-22.15.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 0}
 } -result 0
-test string-22.16.$noComp {string wordstart, unicode} -constraints utf16 -body {
+test string-22.16.$noComp {string wordstart, unicode} -constraints utf32 -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 10}
-} -result 5
+} -result 3
 
 test string-23.0.$noComp {string is boolean, Bug 1187123} testindexobj {
     set x 5
@@ -2131,24 +2119,24 @@ test string-24.15.$noComp {string reverse command - pure bytearray} {
     binary scan [run {tcl::string::reverse [binary format H* 010203]}] H* x
     set x
 } 030201
-test string-24.16.$noComp {string reverse command - surrogates} {
+test string-24.16.$noComp {string reverse command - surrogates} utf32 {
     run {string reverse \u0444bulb\uD83D\uDE02}
-} \uD83D\uDE02blub\u0444
-test string-24.17.$noComp {string reverse command - surrogates} {
+} \uDE02\uD83Dblub\u0444
+test string-24.17.$noComp {string reverse command - surrogates} utf32 {
     run {string reverse \uD83D\uDE02hello\uD83D\uDE02}
-} \uD83D\uDE02olleh\uD83D\uDE02
-test string-24.18.$noComp {string reverse command - surrogates} {
+} \uDE02\uD83Dolleh\uDE02\uD83D
+test string-24.18.$noComp {string reverse command - surrogates} utf32 {
     set s \u0444bulb\uD83D\uDE02
     # shim shimmery ...
     string index $s 0
     run {string reverse $s}
-} \uD83D\uDE02blub\u0444
-test string-24.19.$noComp {string reverse command - surrogates} {
+} \uDE02\uD83Dblub\u0444
+test string-24.19.$noComp {string reverse command - surrogates} utf32 {
     set s \uD83D\uDE02hello\uD83D\uDE02
     # shim shimmery ...
     string index $s 0
     run {string reverse $s}
-} \uD83D\uDE02olleh\uD83D\uDE02
+} \uDE02\uD83Dolleh\uDE02\uD83D
 
 test string-25.1.$noComp {string is list} {
     run {string is list {a b c}}
@@ -2445,11 +2433,11 @@ test string-29.11.$noComp {string cat, efficiency} -body {
 test string-29.12.$noComp {string cat, efficiency} -body {
     tcl::unsupported::representation \
 	[run {string cat [encoding convertto utf-8 {}] [list x]}]
-} -match glob -result {*, string representation "x"}
+} -match glob -result {*, no string representation}
 test string-29.13.$noComp {string cat, efficiency} -body {
     tcl::unsupported::representation [run {string cat \
 	[encoding convertto utf-8 {}] [encoding convertto utf-8 {}] [list x]}]
-} -match glob -result {*, string representation "x"}
+} -match glob -result {*, no string representation}
 test string-29.14.$noComp {string cat, efficiency} -setup {
     set e [encoding convertto utf-8 {}]
 } -cleanup {
@@ -2637,17 +2625,6 @@ test string-32.17.$noComp {string is dict, valid dict packed in invalid dict} {
 } 0
 
 };				# foreach noComp {0 1}
-
-test string-bug-b79df322a9 {Tcl_GetUnicode/Tcl_NewUnicodeObj api} -constraints {
-    testutf16string deprecated
-} -body {
-    # This simple test suffices because the bug has nothing to do with
-    # the actual encoding conversion. The test was added because these
-    # functions are no longer called within the Tcl core and thus
-    # not tested by either `string`, not `encoding` tests.
-    testutf16string "abcde"
-} -result abcde
-
 
 # cleanup
 rename MemStress {}

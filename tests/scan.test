@@ -864,6 +864,7 @@ test scan-13.9 {Tcl_ScanObjCmd, inline XPG case limit error} -body {
     scan abc {%2147483648$s}
 } -result {"%n$" argument index out of range} -returnCodes error
 
+
 # scan infinities - not working
 
 test scan-14.1 {positive infinity} {

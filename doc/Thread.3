@@ -67,9 +67,9 @@ Id of the thread waited upon.
 .AP Tcl_ThreadCreateProc *proc in
 This procedure will act as the \fBmain()\fR of the newly created
 thread. The specified \fIclientData\fR will be its sole argument.
-.AP ClientData clientData in
+.AP void *clientData in
 Arbitrary information. Passed as sole argument to the \fIproc\fR.
-.AP unsigned stackSize in
+.AP size_t stackSize in
 The size of the stack given to the new thread.
 .AP int flags in
 Bitmask containing flags allowing the caller to modify behavior of
@@ -208,7 +208,7 @@ value and then finishes.
 .CS
 static \fBTcl_ThreadCreateType\fR
 MyThreadImplFunc(
-    ClientData clientData)
+    void *clientData)
 {
     int i, limit = (int) clientData;
     for (i=0 ; i<limit ; i++) {
@@ -223,7 +223,7 @@ would do this:
 .PP
 .CS
 int limit = 1000000000;
-ClientData limitData = (void*)((intptr_t) limit);
+void *limitData = (void*)((intptr_t) limit);
 Tcl_ThreadId id;    \fI/* holds identity of thread created */\fR
 int result;
 

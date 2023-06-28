@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
-#undef BUILD_tcl
+
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
@@ -25,14 +25,7 @@
 #endif
 #include "tclStringRep.h"
 
-#ifdef __GNUC__
-/*
- * The rest of this file shouldn't warn about deprecated functions; they're
- * there because we intend them to be so and know that this file is OK to
- * touch those fields.
- */
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+#include <assert.h>
 
 /*
  * Forward declarations for functions defined later in this file:
@@ -50,6 +43,7 @@ static Tcl_ObjCmdProc	TestintobjCmd;
 static Tcl_ObjCmdProc	TestlistobjCmd;
 static Tcl_ObjCmdProc	TestobjCmd;
 static Tcl_ObjCmdProc	TeststringobjCmd;
+static Tcl_ObjCmdProc	TestbigdataCmd;
 
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
@@ -61,7 +55,7 @@ static void VarPtrDeleteProc(void *clientData, TCL_UNUSED(Tcl_Interp *))
     for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
 	if (varPtr[i]) Tcl_DecrRefCount(varPtr[i]);
     }
-    ckfree(varPtr);
+    Tcl_Free(varPtr);
 }
 
 static Tcl_Obj **GetVarPtr(Tcl_Interp *interp)
@@ -101,7 +95,7 @@ TclObjTest_Init(
      */
     Tcl_Obj **varPtr;
 
-    varPtr = (Tcl_Obj **) ckalloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
+    varPtr = (Tcl_Obj **) Tcl_Alloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
     if (!varPtr) {
 	return TCL_ERROR;
     }
@@ -125,6 +119,10 @@ TclObjTest_Init(
     Tcl_CreateObjCommand(interp, "testobj", TestobjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringobj", TeststringobjCmd,
 	    NULL, NULL);
+    if (sizeof(Tcl_Size) == sizeof(Tcl_WideInt)) {
+	Tcl_CreateObjCommand(interp, "testbigdata", TestbigdataCmd,
+		NULL, NULL);
+    }
     return TCL_OK;
 }
 
@@ -159,7 +157,7 @@ TestbignumobjCmd(
     enum options {
 	BIGNUM_SET, BIGNUM_GET, BIGNUM_MULT10, BIGNUM_DIV10, BIGNUM_ISEVEN,
 	BIGNUM_RADIXSIZE
-    };
+    } idx;
     int index;
     Tcl_Size varIndex;
     const char *string;
@@ -171,7 +169,7 @@ TestbignumobjCmd(
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "option", 0,
-	    &index) != TCL_OK) {
+	    &idx) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
@@ -179,7 +177,7 @@ TestbignumobjCmd(
     }
     varPtr = GetVarPtr(interp);
 
-    switch ((enum options)index) {
+    switch (idx) {
     case BIGNUM_SET:
 	if (objc != 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "var value");
@@ -617,7 +615,7 @@ TestindexobjCmd(
 	return TCL_ERROR;
     }
 
-    argv = (const char **)ckalloc((objc-3) * sizeof(char *));
+    argv = (const char **)Tcl_Alloc((objc-3) * sizeof(char *));
     for (i = 4; i < objc; i++) {
 	argv[i-4] = Tcl_GetString(objv[i]);
     }
@@ -626,7 +624,7 @@ TestindexobjCmd(
     result = Tcl_GetIndexFromObj((setError? interp : NULL), objv[3],
 	    argv, "token", TCL_INDEX_TEMP_TABLE|(allowAbbrev? 0 : TCL_EXACT),
 	    &index);
-    ckfree(argv);
+    Tcl_Free((void *)argv);
     if (result == TCL_OK) {
 	Tcl_SetWideIntObj(Tcl_GetObjResult(interp), index);
     }
@@ -1257,7 +1255,7 @@ TeststringobjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    unsigned short *unicode;
+    Tcl_UniChar *unicode;
     Tcl_Size size, varIndex;
     int option, i;
     Tcl_Size length;
@@ -1360,25 +1358,21 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), (varPtr[varIndex] != NULL)
-		    ? varPtr[varIndex]->length : -1);
+		    ? (Tcl_WideInt)varPtr[varIndex]->length : (Tcl_WideInt)-1);
 	    break;
 	case 5:				/* length2 */
 	    if (objc != 3) {
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
-		const Tcl_ObjType *objType = Tcl_GetObjType("string");
-		if (objType != NULL) {
-		    Tcl_ConvertToType(NULL, varPtr[varIndex], objType);
-		    strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
-		    length = (int) strPtr->allocated;
-		} else {
-		    length = TCL_INDEX_NONE;
-		}
+		Tcl_ConvertToType(NULL, varPtr[varIndex],
+			Tcl_GetObjType("string"));
+		strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
+		length = strPtr->allocated;
 	    } else {
 		length = TCL_INDEX_NONE;
 	    }
-	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), length);
+	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), (Tcl_WideInt)((Tcl_WideUInt)(length + 1U)) - 1);
 	    break;
 	case 6:				/* set */
 	    if (objc != 4) {
@@ -1425,14 +1419,10 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
-		const Tcl_ObjType *objType = Tcl_GetObjType("string");
-		if (objType != NULL) {
-		    Tcl_ConvertToType(NULL, varPtr[varIndex],objType);
-		    strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
-		    length = strPtr->maxChars;
-		} else {
-		    length = TCL_INDEX_NONE;
-		}
+		Tcl_ConvertToType(NULL, varPtr[varIndex],
+			Tcl_GetObjType("string"));
+		strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
+		length = strPtr->maxChars;
 	    } else {
 		length = TCL_INDEX_NONE;
 	    }
@@ -1513,27 +1503,165 @@ TeststringobjCmd(
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 13: /* newunicode*/
-	    unicode = (unsigned short *) ckalloc(((unsigned)objc - 3) * sizeof(unsigned short));
+	    unicode = (Tcl_UniChar *)Tcl_Alloc((objc - 3) * sizeof(Tcl_UniChar));
 	    for (i = 0; i < (objc - 3); ++i) {
 		int val;
 		if (Tcl_GetIntFromObj(interp, objv[i + 3], &val) != TCL_OK) {
 		    break;
 		}
-		unicode[i] = (unsigned short)val;
+		unicode[i] = (Tcl_UniChar)val;
 	    }
 	    if (i < (objc-3)) {
-		ckfree(unicode);
+		Tcl_Free(unicode);
 		return TCL_ERROR;
 	    }
 	    SetVarToObj(varPtr, varIndex, Tcl_NewUnicodeObj(unicode, objc - 3));
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
-	    ckfree(unicode);
+	    Tcl_Free(unicode);
 	    break;
     }
 
     return TCL_OK;
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * TestbigdataCmd --
+ *
+ *    Implements the Tcl command testbigdata
+ *	testbigdata string ?LEN? ?SPLIT? - returns 01234567890123...
+ *      testbigdata bytearray ?LEN? ?SPLIT? - returns {0 1 2 3 4 5 6 7 8 9 0 1 ...}
+ *      testbigdata dict ?SIZE? - returns dict mapping integers to themselves
+ *    If no arguments given, returns the pattern used to generate strings.
+ *    If SPLIT is specified, the character at that position is set to "X".
+ *
+ * Results:
+ *    TCL_OK    - Success.
+ *    TCL_ERROR - Error.
+ *
+ * Side effects:
+ *    Interpreter result holds result or error message.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+TestbigdataCmd (
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,    /* Current interpreter. */
+    int objc,              /* Number of arguments. */
+    Tcl_Obj *const objv[]) /* Argument objects. */
+{
+    static const char *const subcmds[] = {
+	   "string", "bytearray", "list", "dict", NULL
+    };
+    enum options {
+	   BIGDATA_STRING, BIGDATA_BYTEARRAY, BIGDATA_LIST, BIGDATA_DICT
+    } idx;
+    char *s;
+    unsigned char *p;
+    Tcl_WideInt i, len, split;
+    Tcl_DString ds;
+    Tcl_Obj *objPtr;
+#define PATTERN_LEN 10
+    Tcl_Obj *patternObjs[PATTERN_LEN];
+
+    if (objc < 2 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command ?len? ?split?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "option", 0,
+	    &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    split = -1;
+    if (objc == 2) {
+	len = PATTERN_LEN;
+    } else {
+	if (Tcl_GetWideIntFromObj(interp, objv[2], &len) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (objc == 4) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[3], &split) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (split >= len) {
+		split = len - 1; /* Last position */
+	    }
+	}
+    }
+    /* Need one byte for nul terminator */
+    Tcl_WideInt limit =
+	sizeof(Tcl_Size) == sizeof(Tcl_WideInt) ? WIDE_MAX-1 : INT_MAX-1;
+    if (len < 0 || len > limit) {
+	Tcl_SetObjResult(
+	    interp,
+	    Tcl_ObjPrintf(
+		"%s is greater than max permitted length %" TCL_LL_MODIFIER "d",
+		Tcl_GetString(objv[2]),
+		limit));
+	return TCL_ERROR;
+    }
+
+    switch (idx) {
+    case BIGDATA_STRING:
+	Tcl_DStringInit(&ds);
+	Tcl_DStringSetLength(&ds, len);/* Also stores \0 at index len+1 */
+	s = Tcl_DStringValue(&ds);
+	for (i = 0; i < len; ++i) {
+	    s[i] = '0' + (i % PATTERN_LEN);
+	}
+	if (split >= 0) {
+	    assert(split < len);
+	    s[split] = 'X';
+	}
+	Tcl_DStringResult(interp, &ds);
+	break;
+    case BIGDATA_BYTEARRAY:
+	objPtr = Tcl_NewByteArrayObj(NULL, len);
+	p = Tcl_GetByteArrayFromObj(objPtr, &len);
+	for (i = 0; i < len; ++i) {
+	    p[i] = '0' + (i % PATTERN_LEN);
+	}
+	if (split >= 0) {
+	    assert(split < len);
+	    p[split] = 'X';
+	}
+	Tcl_SetObjResult(interp, objPtr);
+	break;
+    case BIGDATA_LIST:
+	for (i = 0; i < PATTERN_LEN; ++i) {
+	    patternObjs[i] = Tcl_NewIntObj(i);
+	    Tcl_IncrRefCount(patternObjs[i]);
+	}
+	objPtr = Tcl_NewListObj(len, NULL);
+	for (i = 0; i < len; ++i) {
+	    Tcl_ListObjAppendElement(
+		interp, objPtr, patternObjs[i % PATTERN_LEN]);
+	}
+	if (split >= 0) {
+	    assert(split < len);
+	    Tcl_Obj *splitMarker = Tcl_NewStringObj("X", 1);
+	    Tcl_ListObjReplace(interp, objPtr, split, 1, 1, &splitMarker);
+	}
+	for (i = 0; i < PATTERN_LEN; ++i) {
+	    patternObjs[i] = Tcl_NewIntObj(i);
+	    Tcl_DecrRefCount(patternObjs[i]);
+	}
+	Tcl_SetObjResult(interp, objPtr);
+	break;
+    case BIGDATA_DICT:
+	objPtr = Tcl_NewDictObj();
+	for (i = 0; i < len; ++i) {
+	    Tcl_Obj *objPtr2 = Tcl_NewWideIntObj(i);
+	    Tcl_DictObjPut(interp, objPtr, objPtr2, objPtr2);
+	}
+	Tcl_SetObjResult(interp, objPtr);
+	break;
+    }
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *

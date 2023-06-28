@@ -127,7 +127,7 @@ proc ::safe::CheckInterp {child} {
 # we had the bad idea to support for the sake of user simplicity in
 # create/init but which makes life hard in configure...
 # So this will be hopefully written and some integrated with opt1.0
-# (hopefully for tcl8.1 ?)
+# (hopefully for tcl9.0 ?)
 proc ::safe::interpConfigure {args} {
     variable AutoPathSync
     switch [llength $args] {
@@ -619,8 +619,6 @@ proc ::safe::InterpInit {
     ::interp alias $child ::tcl::info::nameofexecutable {} \
 	::safe::AliasExeName $child
 
-    # The allowed child variables already have been set by Tcl_MakeSafe(3)
-
     # Source init.tcl and tm.tcl into the child, to get auto_load and
     # other procedures defined:
 
@@ -832,9 +830,6 @@ proc ::safe::CheckFileName {child file} {
 # prevent discovery of what home directories exist.
 
 proc ::safe::AliasFileSubcommand {child subcommand name} {
-    if {[string match ~* $name]} {
-	set name ./$name
-    }
     tailcall ::interp invokehidden $child tcl:file:$subcommand $name
 }
 
@@ -1081,7 +1076,7 @@ proc ::safe::AliasSource {child args} {
     set replacementMsg "script error"
     set code [catch {
 	set f [open $realfile]
-	fconfigure $f -encoding $encoding -eofchar "\x1A {}"
+	fconfigure $f -encoding $encoding -eofchar \x1A
 	set contents [read $f]
 	close $f
 	::interp eval $child [list info script $file]
@@ -1424,7 +1419,7 @@ namespace eval ::safe {
     # Set to 1 for "traditional" behavior: a child's entire access path and
     # module path are copied to its ::auto_path, which is updated whenever
     # the user calls ::safe::interpAddToAccessPath to add to the access path.
-    variable AutoPathSync 1
+    variable AutoPathSync 0
 
     # Log command, set via 'setLogCmd'. Logging is disabled when empty.
     variable Log {}

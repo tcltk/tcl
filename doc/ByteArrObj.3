@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_ByteArrayObj 3 8.1 Tcl "Tcl Library Procedures"
+.TH Tcl_ByteArrayObj 3 9.0 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
@@ -34,8 +34,8 @@ unsigned char *
 .AP "const unsigned char" *bytes in
 The array of bytes used to initialize or set a byte-array value. May be NULL
 even if \fInumBytes\fR is non-zero.
-.AP int numBytes in
-The number of bytes in the array.  It must be >= 0.
+.AP Tcl_Size numBytes in
+The number of bytes in the array.
 .AP Tcl_Obj *objPtr in/out
 For \fBTcl_SetByteArrayObj\fR, this points to an unshared value to be
 overwritten by a byte-array value.  For \fBTcl_GetBytesFromObj\fR,
@@ -43,7 +43,7 @@ overwritten by a byte-array value.  For \fBTcl_GetBytesFromObj\fR,
 to the value from which to extract an array of bytes.
 .AP Tcl_Interp *interp in
 Interpreter to use for error reporting.
-.AP "ptrdiff_t | int" *numBytesPtr out
+.AP "Tcl_Size \&| int" *numBytesPtr out
 Points to space where the number of bytes in the array may be written.
 Caller may pass NULL when it does not need this information.
 .BE
@@ -92,11 +92,6 @@ returns a pointer to the created value with a reference count of zero.
 of the unshared \fIobjPtr\fR as appropriate, and keeps its reference
 count (0 or 1) unchanged.  The value produced by these routines has no
 string representation.  Any memory allocation failure may cause a panic.
-Note that the type of the \fInumBytes\fR argument is \fBint\fR; consequently
-the largest byte-array value that can be produced by these routines is one
-holding \fBINT_MAX\fR bytes.  Note also that the string representation of
-any Tcl value is limited to \fBINT_MAX\fR bytes, so caution should be
-taken with any byte-array of more than \fBINT_MAX / 2\fR bytes.
 .PP
 \fBTcl_GetBytesFromObj\fR performs the opposite function of
 \fBTcl_SetByteArrayObj\fR, providing access to read a byte-array from
@@ -121,29 +116,14 @@ failure, nothing will be written to \fInumBytesPtr\fR, and if
 the \fIinterp\fR argument is non-NULL, then error messages and
 codes are left in it recording the error.
 .PP
-\fBTcl_GetByteArrayFromObj\fR performs nearly the same function as
-\fBTcl_GetBytesFromObj\fR.  They differ only in the circumstance when
-a byte-array internal value must be created by transformation of
-a string representation, and that string representation contains a
-character with codepoint greater than U+00FF.  Instead of failing
-the conversion, \fBTcl_GetByteArrayFromObj\fR will use the 8 least
-significant bits of each codepoint to produce a valid byte value
-from any character codepoint value.  In any other circumstance,
-\fBTcl_GetByteArrayFromObj\fR performs just as \fBTcl_GetBytesFromObj\fR
-does.  Since the conversion cannot fail, \fBTcl_GetByteArrayFromObj\fR
-has no need for an \fIinterp\fR argument to record any errors and
-the caller can assume \fBTcl_GetByteArrayFromObj\fR does not return NULL.
+\fBTcl_GetByteArrayFromObj\fR performs exactly the same function as
+\fBTcl_GetBytesFromObj\fR does when called with the \fIinterp\fR
+argument passed the value NULL.  This is incompatible with the
+way \fBTcl_GetByteArrayFromObj\fR functioned in Tcl 8.
+\fBTcl_GetBytesFromObj\fR is the more capable interface and should
+usually be favored for use over \fBTcl_GetByteArrayFromObj\fR.
 .PP
-\fBTcl_GetByteArrayFromObj\fR must be used with caution.  Because of the
-truncation on conversion, the byte-array made available to the caller
-cannot reliably complete a round-trip back to the original string
-representation.  This creates opportunities for bugs due to blindness
-to differences in values.  This routine exists in this form primarily
-for compatibility with codebases written for earlier releases of Tcl.
-It is expected this routine will incompatibly change in Tcl 9 so that
-it also signals failed conversions with a NULL return.
-.PP
-On success, both \fBTcl_GetBytesFromObj\fR and \fBTcl_GetByteArrayFromObj\fR
+On success, both \fBTcl_GetByteFromObj\fR and \fBTcl_GetByteArrayFromObj\fR
 return a pointer into the internal representation of a \fBTcl_Obj\fR.
 That pointer must not be freed by the caller, and should not be retained
 for use beyond the known time the internal representation of the value
@@ -154,10 +134,14 @@ and any string representation is invalidated.
 On success, both \fBTcl_GetBytesFromObj\fR and \fBTcl_GetByteArrayFromObj\fR
 write the number of bytes in the byte-array value of \fIobjPtr\fR
 to the space pointed to by \fInumBytesPtr\fR.  This space may be of type
-\fBptrdiff_t\fR or of type \fBint\fR.  In Tcl 8, the largest number of
-bytes possible is \fBINT_MAX\fR, so either type can receive the value.
-In codebases meant to migrate to Tcl 9, the option to write to a space
-of type \fBptrdiff_t\fR may aid in the migration.
+\fBTcl_Size\fR or of type \fBint\fR.  It is recommended that callers provide
+a \fBTcl_Size\fR space for this purpose.  If the caller provides only
+an \fBint\fR space and the number of bytes in the byte-array value of
+\fIobjPtr\fR is greater than \fBINT_MAX\fR, the routine will fail due
+to being unable to correctly report the byte-array size to the caller.
+The ability to provide an \fBint\fR space is best considered a migration
+aid for codebases constrained to continue operating with Tcl releases
+older than 8.7.
 .PP
 \fBTcl_SetByteArrayLength\fR enables a caller to change the size of a
 byte-array in the internal representation of an unshared \fIobjPtr\fR to
@@ -170,8 +154,9 @@ changes the internal representation, \fBTcl_SetByteArrayLength\fR
 also invalidates any string representation in \fIobjPtr\fR.  If resizing
 grows the byte-array, the new byte values are undefined.  If \fIobjPtr\fR
 does not already possess an internal byte-array, one is produced in the
-same way that \fBTcl_GetByteArrayFromObj\fR does, with all the cautions
-that go along with that.
+same way that \fBTcl_GetBytesFromObj\fR does, also returning NULL
+when any characters of the value in \fIobjPtr\fR (up to
+\fInumBytes\fR of them) are not valid bytes.
 .SH "REFERENCE COUNT MANAGEMENT"
 .PP
 \fBTcl_NewByteArrayObj\fR always returns a zero-reference object, much

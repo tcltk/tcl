@@ -67,9 +67,9 @@ static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method **newMPtrPtr);
 static int		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
-static void		DeletedDefineNamespace(ClientData clientData);
-static void		DeletedObjdefNamespace(ClientData clientData);
-static void		DeletedHelpersNamespace(ClientData clientData);
+static void		DeletedDefineNamespace(void *clientData);
+static void		DeletedObjdefNamespace(void *clientData);
+static void		DeletedHelpersNamespace(void *clientData);
 static Tcl_NRPostProc	FinalizeAlloc;
 static Tcl_NRPostProc	FinalizeNext;
 static Tcl_NRPostProc	FinalizeObjectCall;
@@ -78,23 +78,23 @@ static void		InitClassSystemRoots(Tcl_Interp *interp,
 			    Foundation *fPtr);
 static int		InitFoundation(Tcl_Interp *interp);
 static Tcl_InterpDeleteProc	KillFoundation;
-static void		MyDeleted(ClientData clientData);
-static void		ObjectNamespaceDeleted(ClientData clientData);
+static void		MyDeleted(void *clientData);
+static void		ObjectNamespaceDeleted(void *clientData);
 static Tcl_CommandTraceProc	ObjectRenamedTrace;
-static inline void	RemoveClass(Class **list, int num, int idx);
-static inline void	RemoveObject(Object **list, int num, int idx);
+static inline void	RemoveClass(Class **list, size_t num, size_t idx);
+static inline void	RemoveObject(Object **list, size_t num, size_t idx);
 static inline void	SquelchCachedName(Object *oPtr);
 
-static int		PublicNRObjectCmd(ClientData clientData,
+static int		PublicNRObjectCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
-static int		PrivateNRObjectCmd(ClientData clientData,
+static int		PrivateNRObjectCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
-static int		MyClassNRObjCmd(ClientData clientData,
+static int		MyClassNRObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
-static void		MyClassDeleted(ClientData clientData);
+static void		MyClassDeleted(void *clientData);
 
 /*
  * Methods in the oo::object and oo::class classes. First, we define a helper
@@ -201,10 +201,10 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 static inline void
 RemoveClass(
     Class **list,
-    int num,
-    int idx)
+    size_t num,
+    size_t idx)
 {
-    for (; idx < num - 1; idx++) {
+    for (; idx + 1 < num; idx++) {
 	list[idx] = list[idx + 1];
     }
     list[idx] = NULL;
@@ -213,10 +213,10 @@ RemoveClass(
 static inline void
 RemoveObject(
     Object **list,
-    int num,
-    int idx)
+    size_t num,
+    size_t idx)
 {
-    for (; idx < num - 1; idx++) {
+    for (; idx + 1 < num; idx++) {
 	list[idx] = list[idx + 1];
     }
     list[idx] = NULL;
@@ -256,7 +256,7 @@ TclOOInit(
      * to be fully provided.
      */
 
-    if (Tcl_EvalEx(interp, initScript, -1, 0) != TCL_OK) {
+    if (Tcl_EvalEx(interp, initScript, TCL_INDEX_NONE, 0) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -304,11 +304,11 @@ InitFoundation(
     static Tcl_ThreadDataKey tsdKey;
     ThreadLocalData *tsdPtr =
 	    (ThreadLocalData *)Tcl_GetThreadData(&tsdKey, sizeof(ThreadLocalData));
-    Foundation *fPtr = (Foundation *)ckalloc(sizeof(Foundation));
+    Foundation *fPtr = (Foundation *)Tcl_Alloc(sizeof(Foundation));
     Tcl_Obj *namePtr;
     Tcl_DString buffer;
     Command *cmdPtr;
-    int i;
+    size_t i;
 
     /*
      * Initialize the structure that holds the OO system core. This is
@@ -328,7 +328,7 @@ InitFoundation(
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", fPtr,
 	    DeletedHelpersNamespace);
     Tcl_CreateNamespace(interp, "::oo::configuresupport", NULL, NULL);
-    fPtr->epoch = 0;
+    fPtr->epoch = 1;
     fPtr->tsdPtr = tsdPtr;
     TclNewLiteralStringObj(fPtr->unknownMethodNameObj, "unknown");
     TclNewLiteralStringObj(fPtr->constructorName, "<constructor>");
@@ -430,7 +430,7 @@ InitFoundation(
      * Evaluate the remaining definitions, which are a compiled-in Tcl script.
      */
 
-    return Tcl_EvalEx(interp, tclOOSetupScript, -1, 0);
+    return Tcl_EvalEx(interp, tclOOSetupScript, TCL_INDEX_NONE, 0);
 }
 
 /*
@@ -470,7 +470,7 @@ InitClassSystemRoots(
      */
 
     fPtr->objectCls->superclasses.num = 0;
-    ckfree(fPtr->objectCls->superclasses.list);
+    Tcl_Free(fPtr->objectCls->superclasses.list);
     fPtr->objectCls->superclasses.list = NULL;
 
     /*
@@ -536,7 +536,7 @@ InitClassSystemRoots(
 
 static void
 DeletedDefineNamespace(
-    ClientData clientData)
+    void *clientData)
 {
     Foundation *fPtr = (Foundation *)clientData;
 
@@ -545,7 +545,7 @@ DeletedDefineNamespace(
 
 static void
 DeletedObjdefNamespace(
-    ClientData clientData)
+    void *clientData)
 {
     Foundation *fPtr = (Foundation *)clientData;
 
@@ -554,7 +554,7 @@ DeletedObjdefNamespace(
 
 static void
 DeletedHelpersNamespace(
-    ClientData clientData)
+    void *clientData)
 {
     Foundation *fPtr = (Foundation *)clientData;
 
@@ -588,7 +588,7 @@ KillFoundation(
     TclOODecrRefCount(fPtr->objectCls->thisPtr);
     TclOODecrRefCount(fPtr->classCls->thisPtr);
 
-    ckfree(fPtr);
+    Tcl_Free(fPtr);
 }
 
 /*
@@ -626,9 +626,9 @@ AllocObject(
     Object *oPtr;
     Command *cmdPtr;
     CommandTrace *tracePtr;
-    int creationEpoch;
+    size_t creationEpoch;
 
-    oPtr = (Object *)ckalloc(sizeof(Object));
+    oPtr = (Object *)Tcl_Alloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
 
     /*
@@ -655,7 +655,7 @@ AllocObject(
     while (1) {
 	char objName[10 + TCL_INTEGER_SPACE];
 
-	snprintf(objName, sizeof(objName), "::oo::Obj%d", ++fPtr->tsdPtr->nsCount);
+	snprintf(objName, sizeof(objName), "::oo::Obj%" TCL_Z_MODIFIER "u", ++fPtr->tsdPtr->nsCount);
 	oPtr->namespacePtr = Tcl_CreateNamespace(interp, objName, oPtr, NULL);
 	if (oPtr->namespacePtr != NULL) {
 	    creationEpoch = fPtr->tsdPtr->nsCount;
@@ -739,7 +739,7 @@ AllocObject(
 
     cmdPtr = (Command *) oPtr->command;
     cmdPtr->nreProc = PublicNRObjectCmd;
-    cmdPtr->tracePtr = tracePtr = (CommandTrace *)ckalloc(sizeof(CommandTrace));
+    cmdPtr->tracePtr = tracePtr = (CommandTrace *)Tcl_Alloc(sizeof(CommandTrace));
     tracePtr->traceProc = ObjectRenamedTrace;
     tracePtr->clientData = oPtr;
     tracePtr->flags = TCL_TRACE_RENAME|TCL_TRACE_DELETE;
@@ -790,7 +790,7 @@ SquelchCachedName(
 
 static void
 MyDeleted(
-    ClientData clientData)	/* Reference to the object whose [my] has been
+    void *clientData)	/* Reference to the object whose [my] has been
 				 * squelched. */
 {
     Object *oPtr = (Object *)clientData;
@@ -800,7 +800,7 @@ MyDeleted(
 
 static void
 MyClassDeleted(
-    ClientData clientData)
+    void *clientData)
 {
     Object *oPtr = (Object *)clientData;
     oPtr->myclassCommand = NULL;
@@ -821,7 +821,7 @@ MyClassDeleted(
 
 static void
 ObjectRenamedTrace(
-    ClientData clientData,	/* The object being deleted. */
+    void *clientData,	/* The object being deleted. */
     TCL_UNUSED(Tcl_Interp *),
     TCL_UNUSED(const char *) /*oldName*/,
     TCL_UNUSED(const char *) /*newName*/,
@@ -893,7 +893,7 @@ TclOODeleteDescendants(
 	}
     }
     if (clsPtr->mixinSubs.size > 0) {
-	ckfree(clsPtr->mixinSubs.list);
+	Tcl_Free(clsPtr->mixinSubs.list);
 	clsPtr->mixinSubs.size = 0;
     }
 
@@ -913,7 +913,7 @@ TclOODeleteDescendants(
 	}
     }
     if (clsPtr->subclasses.size > 0) {
-	ckfree(clsPtr->subclasses.list);
+	Tcl_Free(clsPtr->subclasses.list);
 	clsPtr->subclasses.list = NULL;
 	clsPtr->subclasses.size = 0;
     }
@@ -938,7 +938,7 @@ TclOODeleteDescendants(
 	}
     }
     if (clsPtr->instances.size > 0) {
-	ckfree(clsPtr->instances.list);
+	Tcl_Free(clsPtr->instances.list);
 	clsPtr->instances.list = NULL;
 	clsPtr->instances.size = 0;
     }
@@ -961,7 +961,7 @@ TclOOReleaseClassContents(
     Object *oPtr)		/* The object representing the class. */
 {
     FOREACH_HASH_DECLS;
-    int i;
+    Tcl_Size i;
     Class *clsPtr = oPtr->classPtr, *tmpClsPtr;
     Method *mPtr;
     Foundation *fPtr = oPtr->fPtr;
@@ -1014,7 +1014,7 @@ TclOOReleaseClassContents(
 	    TclOODeleteChain(callPtr);
 	}
 	Tcl_DeleteHashTable(clsPtr->classChainCache);
-	ckfree(clsPtr->classChainCache);
+	Tcl_Free(clsPtr->classChainCache);
 	clsPtr->classChainCache = NULL;
     }
 
@@ -1032,13 +1032,13 @@ TclOOReleaseClassContents(
 	FOREACH(propertyObj, clsPtr->properties.readable) {
 	    Tcl_DecrRefCount(propertyObj);
 	}
-	ckfree(clsPtr->properties.readable.list);
+	Tcl_Free(clsPtr->properties.readable.list);
     }
     if (clsPtr->properties.writable.num) {
 	FOREACH(propertyObj, clsPtr->properties.writable) {
 	    Tcl_DecrRefCount(propertyObj);
 	}
-	ckfree(clsPtr->properties.writable.list);
+	Tcl_Free(clsPtr->properties.writable.list);
     }
 
     /*
@@ -1051,7 +1051,7 @@ TclOOReleaseClassContents(
 	FOREACH(filterObj, clsPtr->filters) {
 	    TclDecrRefCount(filterObj);
 	}
-	ckfree(clsPtr->filters.list);
+	Tcl_Free(clsPtr->filters.list);
 	clsPtr->filters.list = NULL;
 	clsPtr->filters.num = 0;
     }
@@ -1062,13 +1062,13 @@ TclOOReleaseClassContents(
 
     if (clsPtr->metadataPtr != NULL) {
 	Tcl_ObjectMetadataType *metadataTypePtr;
-	ClientData value;
+	void *value;
 
 	FOREACH_HASH(metadataTypePtr, value, clsPtr->metadataPtr) {
 	    metadataTypePtr->deleteProc(value);
 	}
 	Tcl_DeleteHashTable(clsPtr->metadataPtr);
-	ckfree(clsPtr->metadataPtr);
+	Tcl_Free(clsPtr->metadataPtr);
 	clsPtr->metadataPtr = NULL;
     }
 
@@ -1077,7 +1077,7 @@ TclOOReleaseClassContents(
 	    TclOORemoveFromMixinSubs(clsPtr, tmpClsPtr);
 	    TclOODecrRefCount(tmpClsPtr->thisPtr);
 	}
-	ckfree(clsPtr->mixins.list);
+	Tcl_Free(clsPtr->mixins.list);
 	clsPtr->mixins.list = NULL;
 	clsPtr->mixins.num = 0;
     }
@@ -1087,7 +1087,7 @@ TclOOReleaseClassContents(
 	    TclOORemoveFromSubclasses(clsPtr, tmpClsPtr);
 	    TclOODecrRefCount(tmpClsPtr->thisPtr);
 	}
-	ckfree(clsPtr->superclasses.list);
+	Tcl_Free(clsPtr->superclasses.list);
 	clsPtr->superclasses.num = 0;
 	clsPtr->superclasses.list = NULL;
     }
@@ -1103,7 +1103,7 @@ TclOOReleaseClassContents(
 	TclDecrRefCount(variableObj);
     }
     if (i) {
-	ckfree(clsPtr->variables.list);
+	Tcl_Free(clsPtr->variables.list);
     }
 
     FOREACH_STRUCT(privateVariable, clsPtr->privateVariables) {
@@ -1111,7 +1111,7 @@ TclOOReleaseClassContents(
 	TclDecrRefCount(privateVariable->fullNameObj);
     }
     if (i) {
-	ckfree(clsPtr->privateVariables.list);
+	Tcl_Free(clsPtr->privateVariables.list);
     }
 
     if (IsRootClass(oPtr) && !Destructing(fPtr->objectCls->thisPtr)) {
@@ -1134,7 +1134,7 @@ TclOOReleaseClassContents(
 
 static void
 ObjectNamespaceDeleted(
-    ClientData clientData)	/* Pointer to the class whose namespace is
+    void *clientData)	/* Pointer to the class whose namespace is
 				 * being deleted. */
 {
     Object *oPtr = (Object *)clientData;
@@ -1145,7 +1145,7 @@ ObjectNamespaceDeleted(
     Tcl_Obj *filterObj, *variableObj, *propertyObj;
     PrivateVariableMapping *privateVariable;
     Tcl_Interp *interp = oPtr->fPtr->interp;
-    int i;
+    Tcl_Size i;
 
     if (Destructing(oPtr)) {
 	/*
@@ -1243,7 +1243,7 @@ ObjectNamespaceDeleted(
 	    TclOODecrRefCount(mixinPtr->thisPtr);
 	}
 	if (oPtr->mixins.list != NULL) {
-	    ckfree(oPtr->mixins.list);
+	    Tcl_Free(oPtr->mixins.list);
 	}
     }
 
@@ -1251,7 +1251,7 @@ ObjectNamespaceDeleted(
 	TclDecrRefCount(filterObj);
     }
     if (i) {
-	ckfree(oPtr->filters.list);
+	Tcl_Free(oPtr->filters.list);
     }
 
     if (oPtr->methodsPtr) {
@@ -1259,14 +1259,14 @@ ObjectNamespaceDeleted(
 	    TclOODelMethodRef(mPtr);
 	}
 	Tcl_DeleteHashTable(oPtr->methodsPtr);
-	ckfree(oPtr->methodsPtr);
+	Tcl_Free(oPtr->methodsPtr);
     }
 
     FOREACH(variableObj, oPtr->variables) {
 	TclDecrRefCount(variableObj);
     }
     if (i) {
-	ckfree(oPtr->variables.list);
+	Tcl_Free(oPtr->variables.list);
     }
 
     FOREACH_STRUCT(privateVariable, oPtr->privateVariables) {
@@ -1274,7 +1274,7 @@ ObjectNamespaceDeleted(
 	TclDecrRefCount(privateVariable->fullNameObj);
     }
     if (i) {
-	ckfree(oPtr->privateVariables.list);
+	Tcl_Free(oPtr->privateVariables.list);
     }
 
     if (oPtr->chainCache) {
@@ -1285,13 +1285,13 @@ ObjectNamespaceDeleted(
 
     if (oPtr->metadataPtr != NULL) {
 	Tcl_ObjectMetadataType *metadataTypePtr;
-	ClientData value;
+	void *value;
 
 	FOREACH_HASH(metadataTypePtr, value, oPtr->metadataPtr) {
 	    metadataTypePtr->deleteProc(value);
 	}
 	Tcl_DeleteHashTable(oPtr->metadataPtr);
-	ckfree(oPtr->metadataPtr);
+	Tcl_Free(oPtr->metadataPtr);
 	oPtr->metadataPtr = NULL;
     }
 
@@ -1309,13 +1309,13 @@ ObjectNamespaceDeleted(
 	FOREACH(propertyObj, oPtr->properties.readable) {
 	    Tcl_DecrRefCount(propertyObj);
 	}
-	ckfree(oPtr->properties.readable.list);
+	Tcl_Free(oPtr->properties.readable.list);
     }
     if (oPtr->properties.writable.num) {
 	FOREACH(propertyObj, oPtr->properties.writable) {
 	    Tcl_DecrRefCount(propertyObj);
 	}
-	ckfree(oPtr->properties.writable.list);
+	Tcl_Free(oPtr->properties.writable.list);
     }
 
     /*
@@ -1370,9 +1370,9 @@ TclOODecrRefCount(
     if (oPtr->refCount-- <= 1) {
 
 	if (oPtr->classPtr != NULL) {
-	    ckfree(oPtr->classPtr);
+	    Tcl_Free(oPtr->classPtr);
 	}
-	ckfree(oPtr);
+	Tcl_Free(oPtr);
 	return 1;
     }
     return 0;
@@ -1409,7 +1409,8 @@ TclOORemoveFromInstances(
     Class *clsPtr)		/* The class (possibly) containing the
 				 * reference to the instance. */
 {
-    int i, res = 0;
+    Tcl_Size i;
+    int res = 0;
     Object *instPtr;
 
     FOREACH(instPtr, clsPtr->instances) {
@@ -1444,9 +1445,9 @@ TclOOAddToInstances(
     if (clsPtr->instances.num >= clsPtr->instances.size) {
 	clsPtr->instances.size += ALLOC_CHUNK;
 	if (clsPtr->instances.size == ALLOC_CHUNK) {
-	    clsPtr->instances.list = (Object **)ckalloc(sizeof(Object *) * ALLOC_CHUNK);
+	    clsPtr->instances.list = (Object **)Tcl_Alloc(sizeof(Object *) * ALLOC_CHUNK);
 	} else {
-	    clsPtr->instances.list = (Object **)ckrealloc(clsPtr->instances.list,
+	    clsPtr->instances.list = (Object **)Tcl_Realloc(clsPtr->instances.list,
 		    sizeof(Object *) * clsPtr->instances.size);
 	}
     }
@@ -1471,7 +1472,8 @@ TclOORemoveFromMixins(
     Object *oPtr)		/* The object (possibly) containing the
 				 * reference to the mixin. */
 {
-    int i, res = 0;
+    Tcl_Size i;
+    int res = 0;
     Class *mixPtr;
 
     FOREACH(mixPtr, oPtr->mixins) {
@@ -1483,7 +1485,7 @@ TclOORemoveFromMixins(
 	}
     }
     if (oPtr->mixins.num == 0) {
-	ckfree(oPtr->mixins.list);
+	Tcl_Free(oPtr->mixins.list);
 	oPtr->mixins.list = NULL;
     }
     return res;
@@ -1506,7 +1508,8 @@ TclOORemoveFromSubclasses(
     Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
-    int i, res = 0;
+    Tcl_Size i;
+    int res = 0;
     Class *subclsPtr;
 
     FOREACH(subclsPtr, superPtr->subclasses) {
@@ -1543,9 +1546,9 @@ TclOOAddToSubclasses(
     if (superPtr->subclasses.num >= superPtr->subclasses.size) {
 	superPtr->subclasses.size += ALLOC_CHUNK;
 	if (superPtr->subclasses.size == ALLOC_CHUNK) {
-	    superPtr->subclasses.list = (Class **)ckalloc(sizeof(Class *) * ALLOC_CHUNK);
+	    superPtr->subclasses.list = (Class **)Tcl_Alloc(sizeof(Class *) * ALLOC_CHUNK);
 	} else {
-	    superPtr->subclasses.list = (Class **)ckrealloc(superPtr->subclasses.list,
+	    superPtr->subclasses.list = (Class **)Tcl_Realloc(superPtr->subclasses.list,
 		    sizeof(Class *) * superPtr->subclasses.size);
 	}
     }
@@ -1570,7 +1573,8 @@ TclOORemoveFromMixinSubs(
     Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
-    int i, res = 0;
+    Tcl_Size i;
+    int res = 0;
     Class *subclsPtr;
 
     FOREACH(subclsPtr, superPtr->mixinSubs) {
@@ -1608,9 +1612,9 @@ TclOOAddToMixinSubs(
     if (superPtr->mixinSubs.num >= superPtr->mixinSubs.size) {
 	superPtr->mixinSubs.size += ALLOC_CHUNK;
 	if (superPtr->mixinSubs.size == ALLOC_CHUNK) {
-	    superPtr->mixinSubs.list = (Class **)ckalloc(sizeof(Class *) * ALLOC_CHUNK);
+	    superPtr->mixinSubs.list = (Class **)Tcl_Alloc(sizeof(Class *) * ALLOC_CHUNK);
 	} else {
-	    superPtr->mixinSubs.list = (Class **)ckrealloc(superPtr->mixinSubs.list,
+	    superPtr->mixinSubs.list = (Class **)Tcl_Realloc(superPtr->mixinSubs.list,
 		    sizeof(Class *) * superPtr->mixinSubs.size);
 	}
     }
@@ -1656,7 +1660,7 @@ TclOOAllocClass(
 				 * representation. */
 {
     Foundation *fPtr = GetFoundation(interp);
-    Class *clsPtr = (Class *)ckalloc(sizeof(Class));
+    Class *clsPtr = (Class *)Tcl_Alloc(sizeof(Class));
 
     memset(clsPtr, 0, sizeof(Class));
     clsPtr->thisPtr = useThisObj;
@@ -1673,7 +1677,7 @@ TclOOAllocClass(
      */
 
     clsPtr->superclasses.num = 1;
-    clsPtr->superclasses.list = (Class **)ckalloc(sizeof(Class *));
+    clsPtr->superclasses.list = (Class **)Tcl_Alloc(sizeof(Class *));
     clsPtr->superclasses.list[0] = fPtr->objectCls;
     AddRef(fPtr->objectCls->thisPtr);
 
@@ -1710,15 +1714,15 @@ Tcl_NewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    int objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    int skip)			/* Number of arguments to _not_ pass to the
+    Tcl_Size skip)			/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
     Class *classPtr = (Class *) cls;
     Object *oPtr;
-    ClientData clientData[4];
+    void *clientData[4];
 
     oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
     if (oPtr == NULL) {
@@ -1730,7 +1734,7 @@ Tcl_NewObjectInstance(
      * used for object cloning only.
      */
 
-    if (objc >= 0) {
+    if (objc != TCL_INDEX_NONE) {
 	CallContext *contextPtr =
 		TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL, NULL, NULL);
 
@@ -1778,10 +1782,10 @@ TclNRNewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    int objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    int skip,			/* Number of arguments to _not_ pass to the
+    Tcl_Size skip,			/* Number of arguments to _not_ pass to the
 				 * constructor. */
     Tcl_Object *objectPtr)	/* Place to write the object reference upon
 				 * successful allocation. */
@@ -1797,7 +1801,7 @@ TclNRNewObjectInstance(
     }
 
     /*
-     * Run constructors, except when objc < 0 (a special flag case used for
+     * Run constructors, except when objc == TCL_INDEX_NONE (a special flag case used for
      * object cloning only). If there aren't any constructors, we do nothing.
      */
 
@@ -1897,7 +1901,7 @@ TclNewObjectInstanceCommon(
 
 static int
 FinalizeAlloc(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -1975,7 +1979,8 @@ Tcl_CopyObjectInstance(
     CallContext *contextPtr;
     Tcl_Obj *keyPtr, *filterObj, *variableObj, *args[3];
     PrivateVariableMapping *privateVariable;
-    int i, result;
+    Tcl_Size i;
+    int result;
 
     /*
      * Sanity check.
@@ -1993,7 +1998,7 @@ Tcl_CopyObjectInstance(
      */
 
     o2Ptr = (Object *) Tcl_NewObjectInstance(interp,
-	    (Tcl_Class) oPtr->selfCls, targetName, targetNamespaceName, -1,
+	    (Tcl_Class) oPtr->selfCls, targetName, targetNamespaceName, TCL_INDEX_NONE,
 	    NULL, -1);
     if (o2Ptr == NULL) {
 	return NULL;
@@ -2023,7 +2028,7 @@ Tcl_CopyObjectInstance(
 	    }
 	    TclOODecrRefCount(mixinPtr->thisPtr);
 	}
-	ckfree(o2Ptr->mixins.list);
+	Tcl_Free(o2Ptr->mixins.list);
     }
     DUPLICATE(o2Ptr->mixins, oPtr->mixins, Class *);
     FOREACH(mixinPtr, o2Ptr->mixins) {
@@ -2079,7 +2084,7 @@ Tcl_CopyObjectInstance(
 
     if (oPtr->metadataPtr != NULL) {
 	Tcl_ObjectMetadataType *metadataTypePtr;
-	ClientData value, duplicate;
+	void *value, *duplicate;
 
 	FOREACH_HASH(metadataTypePtr, value, oPtr->metadataPtr) {
 	    if (metadataTypePtr->cloneProc == NULL) {
@@ -2124,11 +2129,11 @@ Tcl_CopyObjectInstance(
 	    TclOODecrRefCount(superPtr->thisPtr);
 	}
 	if (cls2Ptr->superclasses.num) {
-	    cls2Ptr->superclasses.list = (Class **) ckrealloc(cls2Ptr->superclasses.list,
+	    cls2Ptr->superclasses.list = (Class **)Tcl_Realloc(cls2Ptr->superclasses.list,
 		    sizeof(Class *) * clsPtr->superclasses.num);
 	} else {
 	    cls2Ptr->superclasses.list =
-		    (Class **)ckalloc(sizeof(Class *) * clsPtr->superclasses.num);
+		    (Class **)Tcl_Alloc(sizeof(Class *) * clsPtr->superclasses.num);
 	}
 	memcpy(cls2Ptr->superclasses.list, clsPtr->superclasses.list,
 		sizeof(Class *) * clsPtr->superclasses.num);
@@ -2179,7 +2184,7 @@ Tcl_CopyObjectInstance(
 		TclOORemoveFromMixinSubs(cls2Ptr, mixinPtr);
 		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
-	    ckfree(clsPtr->mixins.list);
+	    Tcl_Free(clsPtr->mixins.list);
 	}
 	DUPLICATE(cls2Ptr->mixins, clsPtr->mixins, Class *);
 	FOREACH(mixinPtr, cls2Ptr->mixins) {
@@ -2224,7 +2229,7 @@ Tcl_CopyObjectInstance(
 
 	if (clsPtr->metadataPtr != NULL) {
 	    Tcl_ObjectMetadataType *metadataTypePtr;
-	    ClientData value, duplicate;
+	    void *value, *duplicate;
 
 	    FOREACH_HASH(metadataTypePtr, value, clsPtr->metadataPtr) {
 		if (metadataTypePtr->cloneProc == NULL) {
@@ -2296,7 +2301,7 @@ CloneObjectMethod(
 	TclNewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
     } else if (mPtr->typePtr->cloneProc) {
-	ClientData newClientData;
+	void *newClientData;
 
 	if (mPtr->typePtr->cloneProc(interp, mPtr->clientData,
 		&newClientData) != TCL_OK) {
@@ -2325,7 +2330,7 @@ CloneClassMethod(
 	m2Ptr = (Method *) TclNewMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, NULL, NULL);
     } else if (mPtr->typePtr->cloneProc) {
-	ClientData newClientData;
+	void *newClientData;
 
 	if (mPtr->typePtr->cloneProc(interp, mPtr->clientData,
 		&newClientData) != TCL_OK) {
@@ -2371,7 +2376,7 @@ CloneClassMethod(
  * ----------------------------------------------------------------------
  */
 
-ClientData
+void *
 Tcl_ClassGetMetadata(
     Tcl_Class clazz,
     const Tcl_ObjectMetadataType *typePtr)
@@ -2392,7 +2397,7 @@ Tcl_ClassGetMetadata(
      * There is a metadata store, so look in it for the given type.
      */
 
-    hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, (char *) typePtr);
+    hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, typePtr);
 
     /*
      * Return the metadata value if we found it, otherwise NULL.
@@ -2408,7 +2413,7 @@ void
 Tcl_ClassSetMetadata(
     Tcl_Class clazz,
     const Tcl_ObjectMetadataType *typePtr,
-    ClientData metadata)
+    void *metadata)
 {
     Class *clsPtr = (Class *) clazz;
     Tcl_HashEntry *hPtr;
@@ -2422,7 +2427,7 @@ Tcl_ClassSetMetadata(
 	if (metadata == NULL) {
 	    return;
 	}
-	clsPtr->metadataPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
+	clsPtr->metadataPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(clsPtr->metadataPtr, TCL_ONE_WORD_KEYS);
     }
 
@@ -2431,7 +2436,7 @@ Tcl_ClassSetMetadata(
      */
 
     if (metadata == NULL) {
-	hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, (char *) typePtr);
+	hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, typePtr);
 	if (hPtr != NULL) {
 	    typePtr->deleteProc(Tcl_GetHashValue(hPtr));
 	    Tcl_DeleteHashEntry(hPtr);
@@ -2444,14 +2449,14 @@ Tcl_ClassSetMetadata(
      * some metadata attached of this type, we delete that first.
      */
 
-    hPtr = Tcl_CreateHashEntry(clsPtr->metadataPtr, (char *) typePtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(clsPtr->metadataPtr, typePtr, &isNew);
     if (!isNew) {
 	typePtr->deleteProc(Tcl_GetHashValue(hPtr));
     }
     Tcl_SetHashValue(hPtr, metadata);
 }
 
-ClientData
+void *
 Tcl_ObjectGetMetadata(
     Tcl_Object object,
     const Tcl_ObjectMetadataType *typePtr)
@@ -2472,7 +2477,7 @@ Tcl_ObjectGetMetadata(
      * There is a metadata store, so look in it for the given type.
      */
 
-    hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, (char *) typePtr);
+    hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, typePtr);
 
     /*
      * Return the metadata value if we found it, otherwise NULL.
@@ -2488,7 +2493,7 @@ void
 Tcl_ObjectSetMetadata(
     Tcl_Object object,
     const Tcl_ObjectMetadataType *typePtr,
-    ClientData metadata)
+    void *metadata)
 {
     Object *oPtr = (Object *) object;
     Tcl_HashEntry *hPtr;
@@ -2502,7 +2507,7 @@ Tcl_ObjectSetMetadata(
 	if (metadata == NULL) {
 	    return;
 	}
-	oPtr->metadataPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
+	oPtr->metadataPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(oPtr->metadataPtr, TCL_ONE_WORD_KEYS);
     }
 
@@ -2511,7 +2516,7 @@ Tcl_ObjectSetMetadata(
      */
 
     if (metadata == NULL) {
-	hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, (char *) typePtr);
+	hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, typePtr);
 	if (hPtr != NULL) {
 	    typePtr->deleteProc(Tcl_GetHashValue(hPtr));
 	    Tcl_DeleteHashEntry(hPtr);
@@ -2524,7 +2529,7 @@ Tcl_ObjectSetMetadata(
      * some metadata attached of this type, we delete that first.
      */
 
-    hPtr = Tcl_CreateHashEntry(oPtr->metadataPtr, (char *) typePtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(oPtr->metadataPtr, typePtr, &isNew);
     if (!isNew) {
 	typePtr->deleteProc(Tcl_GetHashValue(hPtr));
     }
@@ -2546,7 +2551,7 @@ Tcl_ObjectSetMetadata(
 
 int
 TclOOPublicObjectCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2556,7 +2561,7 @@ TclOOPublicObjectCmd(
 
 static int
 PublicNRObjectCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2567,7 +2572,7 @@ PublicNRObjectCmd(
 
 int
 TclOOPrivateObjectCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2577,7 +2582,7 @@ TclOOPrivateObjectCmd(
 
 static int
 PrivateNRObjectCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2598,7 +2603,7 @@ TclOOInvokeObject(
 				 * (PRIVATE_METHOD), or a *really* private
 				 * context (any other value; conventionally
 				 * 0). */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Array of argument objects. It is assumed
 				 * that the name of the method to invoke will
 				 * be at index 1. */
@@ -2628,7 +2633,7 @@ TclOOInvokeObject(
 
 int
 TclOOMyClassObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2638,7 +2643,7 @@ TclOOMyClassObjCmd(
 
 static int
 MyClassNRObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2669,7 +2674,7 @@ int
 TclOOObjectCmdCore(
     Object *oPtr,		/* The object being invoked. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
-    int objc,			/* How many arguments are being passed in. */
+    Tcl_Size objc,			/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
     int flags,			/* Whether this is an invocation through the
 				 * public or the private command interface. */
@@ -2810,7 +2815,7 @@ TclOOObjectCmdCore(
 
 static int
 FinalizeObjectCall(
-    ClientData data[],
+    void *data[],
     TCL_UNUSED(Tcl_Interp *),
     int result)
 {
@@ -2841,13 +2846,13 @@ int
 Tcl_ObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv,
-    int skip)
+    Tcl_Size skip)
 {
     CallContext *contextPtr = (CallContext *) context;
-    int savedIndex = contextPtr->index;
-    int savedSkip = contextPtr->skip;
+    size_t savedIndex = contextPtr->index;
+    size_t savedSkip = contextPtr->skip;
     int result;
 
     if (contextPtr->index + 1 >= contextPtr->callPtr->numChain) {
@@ -2913,9 +2918,9 @@ int
 TclNRObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv,
-    int skip)
+    Tcl_Size skip)
 {
     CallContext *contextPtr = (CallContext *) context;
 
@@ -2971,7 +2976,7 @@ TclNRObjectContextInvokeNext(
 
 static int
 FinalizeNext(
-    ClientData data[],
+    void *data[],
     TCL_UNUSED(Tcl_Interp *),
     int result)
 {
@@ -3042,7 +3047,7 @@ TclOOIsReachable(
     Class *targetPtr,
     Class *startPtr)
 {
-    int i;
+    Tcl_Size i;
     Class *superPtr;
 
   tailRecurse:
@@ -3135,7 +3140,7 @@ Tcl_ObjectContextObject(
     return (Tcl_Object) ((CallContext *)context)->oPtr;
 }
 
-int
+Tcl_Size
 Tcl_ObjectContextSkippedArgs(
     Tcl_ObjectContext context)
 {

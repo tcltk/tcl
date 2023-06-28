@@ -117,11 +117,15 @@ TclSockGetPort(
 int
 TclSockMinimumBuffers(
     void *sock,			/* Socket file descriptor */
-    int size)			/* Minimum buffer size */
+    Tcl_Size size1)		/* Minimum buffer size */
 {
     int current;
     socklen_t len;
+    int size = size1;
 
+    if (size != size1) {
+	return TCL_ERROR;
+    }
     len = sizeof(int);
     getsockopt((SOCKET)(size_t) sock, SOL_SOCKET, SO_SNDBUF,
 	    (char *) &current, &len);
@@ -224,7 +228,7 @@ TclCreateSocketAddress(
      * using AI_ADDRCONFIG is probably low even in situations where it works,
      * we'll leave it out for now. After all, it is just an optimisation.
      *
-     * Missing on: OpenBSD, NetBSD.
+     * Missing on NetBSD.
      * Causes failure when used on AIX 5.1 and HP-UX
      */
 
@@ -313,7 +317,7 @@ Tcl_OpenTcpServer(
     int port,
     const char *host,
     Tcl_TcpAcceptProc *acceptProc,
-    ClientData callbackData)
+    void *callbackData)
 {
     char portbuf[TCL_INTEGER_SPACE];
 

@@ -48,7 +48,7 @@ static struct {
  */
 
 typedef struct {
-    ClientData *tablePtr;	/* The table of Tcl TSDs. */
+    void **tablePtr;	/* The table of Tcl TSDs. */
     sig_atomic_t allocated;	/* The size of the table in the current
 				 * thread. */
 } TSDTable;
@@ -85,14 +85,14 @@ TSDTableCreate(void)
     TSDTable *tsdTablePtr;
     sig_atomic_t i;
 
-    tsdTablePtr = (TSDTable *)TclpSysAlloc(sizeof(TSDTable), 0);
+    tsdTablePtr = (TSDTable *)TclpSysAlloc(sizeof(TSDTable));
     if (tsdTablePtr == NULL) {
 	Tcl_Panic("unable to allocate TSDTable");
     }
 
     tsdTablePtr->allocated = 8;
     tsdTablePtr->tablePtr =
-	    (void **)TclpSysAlloc(sizeof(void *) * tsdTablePtr->allocated, 0);
+	    (void **)TclpSysAlloc(sizeof(void *) * tsdTablePtr->allocated);
     if (tsdTablePtr->tablePtr == NULL) {
 	Tcl_Panic("unable to allocate TSDTable");
     }
@@ -117,7 +117,7 @@ TSDTableDelete(
 	     * and must now be deallocated or they will leak.
 	     */
 
-	    ckfree(tsdTablePtr->tablePtr[i]);
+	    Tcl_Free(tsdTablePtr->tablePtr[i]);
 	}
     }
 
@@ -190,7 +190,7 @@ TclThreadStorageKeyGet(
     Tcl_ThreadDataKey *dataKeyPtr)
 {
     TSDTable *tsdTablePtr = (TSDTable *)TclpThreadGetGlobalTSD(tsdGlobal.key);
-    ClientData resultPtr = NULL;
+    void *resultPtr = NULL;
     TSDUnion *keyPtr = (TSDUnion *) dataKeyPtr;
     sig_atomic_t offset = keyPtr->offset;
 

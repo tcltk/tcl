@@ -16,41 +16,13 @@
 #endif
 
 /*
- * TclpGetDate is coded to return a pointer to a 'struct tm'. For thread
- * safety, this structure must be in thread-specific data. The 'tmKey'
- * variable is the key to this buffer.
- */
-
-#ifndef TCL_NO_DEPRECATED
-static Tcl_ThreadDataKey tmKey;
-typedef struct {
-    struct tm gmtime_buf;
-    struct tm localtime_buf;
-} ThreadSpecificData;
-
-/*
- * If we fall back on the thread-unsafe versions of gmtime and localtime, use
- * this mutex to try to protect them.
- */
-
-TCL_DECLARE_MUTEX(tmMutex)
-
-static char *lastTZ = NULL;	/* Holds the last setting of the TZ
-				 * environment variable, or an empty string if
-				 * the variable was not set. */
-
-/*
  * Static functions declared in this file.
  */
 
-static void		SetTZIfNecessary(void);
-static void		CleanupMemory(ClientData clientData);
-#endif /* TCL_NO_DEPRECATED */
-
 static void		NativeScaleTime(Tcl_Time *timebuf,
-			    ClientData clientData);
+			    void *clientData);
 static void		NativeGetTime(Tcl_Time *timebuf,
-			    ClientData clientData);
+			    void *clientData);
 
 /*
  * TIP #233 (Virtualized Time): Data for the time hooks, if any.
@@ -94,10 +66,10 @@ IsTimeNative(void)
  *----------------------------------------------------------------------
  */
 
-unsigned long
+unsigned long long
 TclpGetSeconds(void)
 {
-    return time(NULL);
+    return (unsigned long long) time(NULL);
 }
 
 /*
@@ -123,7 +95,7 @@ TclpGetMicroseconds(void)
     Tcl_Time time;
 
     GetTime(&time);
-    return ((long long) time.sec)*1000000 + time.usec;
+    return ((long long)(unsigned long) time.sec)*1000000 + time.usec;
 }
 
 /*
@@ -145,30 +117,32 @@ TclpGetMicroseconds(void)
  *----------------------------------------------------------------------
  */
 
-unsigned long
+unsigned long long
 TclpGetClicks(void)
 {
-    unsigned long now;
+    unsigned long long now;
 
 #ifdef NO_GETTOD
     if (!IsTimeNative()) {
 	Tcl_Time time;
 
 	GetTime(&time);
-	now = ((unsigned long)(time.sec)*1000000UL) + (unsigned long)(time.usec);
+	now = ((unsigned long long)(time.sec)*1000000ULL) +
+		(unsigned long long)(time.usec);
     } else {
 	/*
 	 * A semi-NativeGetTime, specialized to clicks.
 	 */
 	struct tms dummy;
 
-	now = (unsigned long) times(&dummy);
+	now = (unsigned long long) times(&dummy);
     }
 #else /* !NO_GETTOD */
     Tcl_Time time;
 
     GetTime(&time);
-    now = ((unsigned long)(time.sec)*1000000UL) + (unsigned long)(time.usec);
+    now = ((unsigned long long)(time.sec)*1000000ULL) +
+	    (unsigned long long)(time.usec);
 #endif /* NO_GETTOD */
 
     return now;
@@ -290,17 +264,15 @@ TclpWideClickInMicrosec(void)
 	static int initialized = 0;
 	static double scale = 0.0;
 
-	if (initialized) {
-	    return scale;
-	} else {
+	if (!initialized) {
 	    mach_timebase_info_data_t tb;
 
 	    mach_timebase_info(&tb);
 	    /* value of tb.numer / tb.denom = 1 click in nanoseconds */
-	    scale = ((double)tb.numer) / tb.denom / 1000;
+	    scale = ((double) tb.numer) / tb.denom / 1000;
 	    initialized = 1;
-	    return scale;
 	}
+	return scale;
 #else
 #error Wide high-resolution clicks not implemented on this platform
 #endif /* MAC_OSX_TCL */
@@ -338,116 +310,6 @@ Tcl_GetTime(
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetDate --
- *
- *	This function converts between seconds and struct tm. If useGMT is
- *	true, then the returned date will be in Greenwich Mean Time (GMT).
- *	Otherwise, it will be in the local time zone.
- *
- * Results:
- *	Returns a static tm structure.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-struct tm *
-TclpGetDate(
-    const time_t *time,
-    int useGMT)
-{
-    if (useGMT) {
-	return TclpGmtime(time);
-    } else {
-	return TclpLocaltime(time);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpGmtime --
- *
- *	Wrapper around the 'gmtime' library function to make it thread safe.
- *
- * Results:
- *	Returns a pointer to a 'struct tm' in thread-specific data.
- *
- * Side effects:
- *	Invokes gmtime or gmtime_r as appropriate.
- *
- *----------------------------------------------------------------------
- */
-
-struct tm *
-TclpGmtime(
-    const time_t *timePtr)	/* Pointer to the number of seconds since the
-				 * local system's epoch */
-{
-    /*
-     * Get a thread-local buffer to hold the returned time.
-     */
-
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tmKey);
-
-#ifdef HAVE_GMTIME_R
-    gmtime_r(timePtr, &tsdPtr->gmtime_buf);
-#else
-    Tcl_MutexLock(&tmMutex);
-    memcpy(&tsdPtr->gmtime_buf, gmtime(timePtr), sizeof(struct tm));
-    Tcl_MutexUnlock(&tmMutex);
-#endif
-
-    return &tsdPtr->gmtime_buf;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpLocaltime --
- *
- *	Wrapper around the 'localtime' library function to make it thread
- *	safe.
- *
- * Results:
- *	Returns a pointer to a 'struct tm' in thread-specific data.
- *
- * Side effects:
- *	Invokes localtime or localtime_r as appropriate.
- *
- *----------------------------------------------------------------------
- */
-
-struct tm *
-TclpLocaltime(
-    const time_t *timePtr)	/* Pointer to the number of seconds since the
-				 * local system's epoch */
-{
-    /*
-     * Get a thread-local buffer to hold the returned time.
-     */
-
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tmKey);
-
-    SetTZIfNecessary();
-#ifdef HAVE_LOCALTIME_R
-    localtime_r(timePtr, &tsdPtr->localtime_buf);
-#else
-    Tcl_MutexLock(&tmMutex);
-    memcpy(&tsdPtr->localtime_buf, localtime(timePtr), sizeof(struct tm));
-    Tcl_MutexUnlock(&tmMutex);
-#endif
-
-    return &tsdPtr->localtime_buf;
-}
-#endif /* TCL_NO_DEPRECATED */
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_SetTimeProc --
  *
  *	TIP #233 (Virtualized Time): Registers two handlers for the
@@ -466,7 +328,7 @@ void
 Tcl_SetTimeProc(
     Tcl_GetTimeProc *getProc,
     Tcl_ScaleTimeProc *scaleProc,
-    ClientData clientData)
+    void *clientData)
 {
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
@@ -493,7 +355,7 @@ void
 Tcl_QueryTimeProc(
     Tcl_GetTimeProc **getProc,
     Tcl_ScaleTimeProc **scaleProc,
-    ClientData *clientData)
+    void **clientData)
 {
     if (getProc) {
 	*getProc = tclGetTimeProcPtr;
@@ -526,7 +388,7 @@ Tcl_QueryTimeProc(
 static void
 NativeScaleTime(
     TCL_UNUSED(Tcl_Time *),
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     /* Native scale is 1:1. Nothing is done */
 }
@@ -551,7 +413,7 @@ NativeScaleTime(
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     struct timeval tv;
 
@@ -559,72 +421,6 @@ NativeGetTime(
     timePtr->sec = tv.tv_sec;
     timePtr->usec = tv.tv_usec;
 }
-/*
- *----------------------------------------------------------------------
- *
- * SetTZIfNecessary --
- *
- *	Determines whether a call to 'tzset' is needed prior to the next call
- *	to 'localtime' or examination of the 'timezone' variable.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If 'tzset' has never been called in the current process, or if the
- *	value of the environment variable TZ has changed since the last call
- *	to 'tzset', then 'tzset' is called again.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-static void
-SetTZIfNecessary(void)
-{
-    const char *newTZ = getenv("TZ");
-
-    Tcl_MutexLock(&tmMutex);
-    if (newTZ == NULL) {
-	newTZ = "";
-    }
-    if (lastTZ == NULL || strcmp(lastTZ, newTZ)) {
-	tzset();
-	if (lastTZ == NULL) {
-	    Tcl_CreateExitHandler(CleanupMemory, NULL);
-	} else {
-	    ckfree(lastTZ);
-	}
-	lastTZ = (char *) ckalloc(strlen(newTZ) + 1);
-	strcpy(lastTZ, newTZ);
-    }
-    Tcl_MutexUnlock(&tmMutex);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * CleanupMemory --
- *
- *	Releases the private copy of the TZ environment variable upon exit
- *	from Tcl.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Frees allocated memory.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-CleanupMemory(
-    TCL_UNUSED(ClientData))
-{
-    ckfree(lastTZ);
-}
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Local Variables:

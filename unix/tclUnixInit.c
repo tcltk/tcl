@@ -92,7 +92,7 @@ typedef struct {
  */
 
 #ifndef TCL_DEFAULT_ENCODING
-#define TCL_DEFAULT_ENCODING "iso8859-1"
+#define TCL_DEFAULT_ENCODING "utf-8"
 #endif
 
 /*
@@ -455,7 +455,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    unsigned int *lengthPtr,
+    TCL_HASH_TYPE *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
@@ -473,12 +473,12 @@ TclpInitLibraryPath(
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
-    Tcl_ExternalToUtfDString(NULL, str, TCL_INDEX_NONE, &buffer);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, str, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
     str = Tcl_DStringValue(&buffer);
 
     if ((str != NULL) && (str[0] != '\0')) {
 	Tcl_DString ds;
-	int pathc;
+	Tcl_Size pathc;
 	const char **pathv;
 	char installLib[LIBRARY_SIZE];
 
@@ -512,7 +512,7 @@ TclpInitLibraryPath(
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
 	    Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_DStringToObj(&ds));
 	}
-	ckfree(pathv);
+	Tcl_Free(pathv);
     }
 
     /*
@@ -544,10 +544,17 @@ TclpInitLibraryPath(
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    str = TclGetString(pathPtr);
-    *lengthPtr = pathPtr->length;
-    *valuePtr = (char *)ckalloc(*lengthPtr + 1);
-    memcpy(*valuePtr, str, *lengthPtr + 1);
+
+    /*
+     * Note lengthPtr is (TCL_HASH_TYPE *) which is unsigned so cannot
+     * pass directly to Tcl_GetStringFromObj.
+     * TODO - why is the type TCL_HASH_TYPE anyways?
+     */
+    Tcl_Size length;
+    str = Tcl_GetStringFromObj(pathPtr, &length);
+    *lengthPtr = length;
+    *valuePtr = (char *)Tcl_Alloc(length + 1);
+    memcpy(*valuePtr, str, length + 1);
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -864,6 +871,18 @@ TclpSetVariables(
 	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath, TCL_GLOBAL_ONLY);
     }
 
+    {
+        /* Some platforms build configure scripts expect ~ expansion so do that */
+        Tcl_Obj *origPaths;
+        Tcl_Obj *resolvedPaths;
+        origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
+        resolvedPaths = TclResolveTildePathList(origPaths);
+        if (resolvedPaths != origPaths && resolvedPaths != NULL) {
+            Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL,
+		resolvedPaths, TCL_GLOBAL_ONLY);
+        }
+    }
+
 #ifdef DJGPP
     Tcl_SetVar2(interp, "tcl_platform", "platform", "dos", TCL_GLOBAL_ONLY);
 #else
@@ -1001,16 +1020,16 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable
 				 * (native). */
-    int *lengthPtr)		/* Used to return length of name (for
+    Tcl_Size *lengthPtr)	/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    int i, result = -1;
+    Tcl_Size i, result = -1;
     const char *env, *p1, *p2;
     Tcl_DString envString;
 

@@ -243,12 +243,12 @@ static int		FindFDInList(TcpState *statePtr, SOCKET socket);
 static DWORD WINAPI	SocketThread(LPVOID arg);
 static void		TcpThreadActionProc(void *instanceData,
 			    int action);
+static int		TcpCloseProc(void *, Tcl_Interp *);
 
 static Tcl_EventCheckProc	SocketCheckProc;
 static Tcl_EventProc		SocketEventProc;
 static Tcl_EventSetupProc	SocketSetupProc;
 static Tcl_DriverBlockModeProc	TcpBlockModeProc;
-static Tcl_DriverCloseProc	TcpCloseProc;
 static Tcl_DriverClose2Proc	TcpClose2Proc;
 static Tcl_DriverSetOptionProc	TcpSetOptionProc;
 static Tcl_DriverGetOptionProc	TcpGetOptionProc;
@@ -265,11 +265,7 @@ static Tcl_DriverGetHandleProc	TcpGetHandleProc;
 static const Tcl_ChannelType tcpChannelType = {
     "tcp",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-#ifndef TCL_NO_DEPRECATED
-    TcpCloseProc,		/* Close proc. */
-#else
-    TCL_CLOSE2PROC,		/* Close proc. */
-#endif
+    NULL,		/* Close proc. */
     TcpInputProc,		/* Input proc. */
     TcpOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -377,15 +373,15 @@ InitializeHostName(
 	Tcl_DStringSetLength(&inDs, 256);
 	if (gethostname(Tcl_DStringValue(&inDs),
 		Tcl_DStringLength(&inDs)) == 0) {
-	    Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs),
-		    TCL_INDEX_NONE, &ds);
+	    Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(&inDs),
+		    TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
 	}
 	Tcl_DStringFree(&inDs);
     }
 
     *encodingPtr = Tcl_GetEncoding(NULL, "utf-8");
     *lengthPtr = Tcl_DStringLength(&ds);
-    *valuePtr = (char *)ckalloc(*lengthPtr + 1);
+    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, Tcl_DStringValue(&ds), *lengthPtr + 1);
     Tcl_DStringFree(&ds);
 }
@@ -1012,7 +1008,7 @@ TcpCloseProc(
 	    Tcl_WinConvertError((DWORD) WSAGetLastError());
 	    errorCode = Tcl_GetErrno();
 	}
-	ckfree(thisfd);
+	Tcl_Free(thisfd);
     }
 
     if (statePtr->addrlist != NULL) {
@@ -1053,7 +1049,7 @@ TcpCloseProc(
      * fear of damaging the list.
      */
 
-    ckfree(statePtr);
+    Tcl_Free(statePtr);
     return errorCode;
 }
 
@@ -1987,11 +1983,11 @@ Tcl_OpenTcpClient(
 	    statePtr, (TCL_READABLE | TCL_WRITABLE));
     if (TCL_ERROR == Tcl_SetChannelOption(NULL, statePtr->channel,
 	    "-translation", "auto crlf")) {
-	Tcl_Close(NULL, statePtr->channel);
+	Tcl_CloseEx(NULL, statePtr->channel, 0);
 	return NULL;
     } else if (TCL_ERROR == Tcl_SetChannelOption(NULL, statePtr->channel,
 	    "-eofchar", "")) {
-	Tcl_Close(NULL, statePtr->channel);
+	Tcl_CloseEx(NULL, statePtr->channel, 0);
 	return NULL;
     }
     return statePtr->channel;
@@ -2230,7 +2226,7 @@ Tcl_OpenTcpServerEx(
 	SendSelectMessage(tsdPtr, SELECT, statePtr);
 	if (Tcl_SetChannelOption(interp, statePtr->channel, "-eofchar", "")
 	    == TCL_ERROR) {
-	    Tcl_Close(NULL, statePtr->channel);
+	    Tcl_CloseEx(NULL, statePtr->channel, 0);
 	    return NULL;
 	}
 	return statePtr->channel;
@@ -2302,12 +2298,12 @@ TcpAccept(
 	    newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
-	Tcl_Close(NULL, newInfoPtr->channel);
+	Tcl_CloseEx(NULL, newInfoPtr->channel, 0);
 	return;
     }
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-eofchar", "")
 	    == TCL_ERROR) {
-	Tcl_Close(NULL, newInfoPtr->channel);
+	Tcl_CloseEx(NULL, newInfoPtr->channel, 0);
 	return;
     }
 
@@ -2550,7 +2546,7 @@ SocketCheckProc(
 		statePtr->watchEvents | FD_CONNECT | FD_ACCEPT)
                 && !GOT_BITS(statePtr->flags, SOCKET_PENDING)) {
 	    SET_BITS(statePtr->flags, SOCKET_PENDING);
-	    evPtr = (SocketEvent *)ckalloc(sizeof(SocketEvent));
+	    evPtr = (SocketEvent *)Tcl_Alloc(sizeof(SocketEvent));
 	    evPtr->header.proc = SocketEventProc;
 	    evPtr->socket = statePtr->sockets->fd;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -2825,7 +2821,7 @@ AddSocketInfoFd(
 	 * Add the first FD.
 	 */
 
-	statePtr->sockets = (TcpFdList *)ckalloc(sizeof(TcpFdList));
+	statePtr->sockets = (TcpFdList *)Tcl_Alloc(sizeof(TcpFdList));
 	fds = statePtr->sockets;
     } else {
 	/*
@@ -2836,7 +2832,7 @@ AddSocketInfoFd(
 	    fds = fds->next;
 	}
 
-	fds->next = (TcpFdList *)ckalloc(sizeof(TcpFdList));
+	fds->next = (TcpFdList *)Tcl_Alloc(sizeof(TcpFdList));
 	fds = fds->next;
     }
 
@@ -2869,7 +2865,7 @@ AddSocketInfoFd(
 static TcpState *
 NewSocketInfo(SOCKET socket)
 {
-    TcpState *statePtr = (TcpState *)ckalloc(sizeof(TcpState));
+    TcpState *statePtr = (TcpState *)Tcl_Alloc(sizeof(TcpState));
 
     memset(statePtr, 0, sizeof(TcpState));
 
@@ -3228,68 +3224,6 @@ FindFDInList(
     }
     return 0;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclWinGetSockOpt, et al. --
- *
- *	Those functions are historically exported by the stubs table and
- *	just use the original system calls now.
- *
- * Warning:
- *	Those functions are depreciated and will be removed with TCL 9.0.
- *
- * Results:
- *	As defined for each function.
- *
- * Side effects:
- *	As defined for each function.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-#undef TclWinGetSockOpt
-int
-TclWinGetSockOpt(
-    SOCKET s,
-    int level,
-    int optname,
-    char *optval,
-    int *optlen)
-{
-
-    return getsockopt(s, level, optname, optval, optlen);
-}
-#undef TclWinSetSockOpt
-int
-TclWinSetSockOpt(
-    SOCKET s,
-    int level,
-    int optname,
-    const char *optval,
-    int optlen)
-{
-    return setsockopt(s, level, optname, optval, optlen);
-}
-
-#undef TclpInetNtoa
-char *
-TclpInetNtoa(
-    struct in_addr addr)
-{
-    return inet_ntoa(addr);
-}
-#undef TclWinGetServByName
-struct servent *
-TclWinGetServByName(
-    const char *name,
-    const char *proto)
-{
-    return getservbyname(name, proto);
-}
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

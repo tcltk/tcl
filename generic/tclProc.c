@@ -63,8 +63,9 @@ const Tcl_ObjType tclProcBodyType = {
     NULL,			/* UpdateString function; Tcl_GetString and
 				 * Tcl_GetStringFromObj should panic
 				 * instead. */
-    NULL			/* SetFromAny function; Tcl_ConvertToType
+    NULL,			/* SetFromAny function; Tcl_ConvertToType
 				 * should panic instead. */
+    TCL_OBJTYPE_V0
 };
 
 #define ProcSetInternalRep(objPtr, procPtr)					\
@@ -93,7 +94,7 @@ const Tcl_ObjType tclProcBodyType = {
 
 static const Tcl_ObjType levelReferenceType = {
     "levelReference",
-    NULL, NULL, NULL, NULL
+    NULL, NULL, NULL, NULL, TCL_OBJTYPE_V0
 };
 
 /*
@@ -110,7 +111,8 @@ static const Tcl_ObjType lambdaType = {
     FreeLambdaInternalRep,	/* freeIntRepProc */
     DupLambdaInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetLambdaFromAny		/* setFromAnyProc */
+    SetLambdaFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V0
 };
 
 #define LambdaSetInternalRep(objPtr, procPtr, nsObjPtr)			\
@@ -262,11 +264,11 @@ Tcl_ProcObjCmd(
 		    && (contextPtr->nline >= 4) && (contextPtr->line[3] >= 0)) {
 		int isNew;
 		Tcl_HashEntry *hePtr;
-		CmdFrame *cfPtr = (CmdFrame *)ckalloc(sizeof(CmdFrame));
+		CmdFrame *cfPtr = (CmdFrame *)Tcl_Alloc(sizeof(CmdFrame));
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = (int *)ckalloc(sizeof(int));
+		cfPtr->line = (int *)Tcl_Alloc(sizeof(int));
 		cfPtr->line[0] = contextPtr->line[3];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -294,9 +296,9 @@ Tcl_ProcObjCmd(
 			Tcl_DecrRefCount(cfOldPtr->data.eval.path);
 			cfOldPtr->data.eval.path = NULL;
 		    }
-		    ckfree(cfOldPtr->line);
+		    Tcl_Free(cfOldPtr->line);
 		    cfOldPtr->line = NULL;
-		    ckfree(cfOldPtr);
+		    Tcl_Free(cfOldPtr);
 		}
 		Tcl_SetHashValue(hePtr, cfPtr);
 	    }
@@ -353,7 +355,7 @@ Tcl_ProcObjCmd(
 	 * The argument list is just "args"; check the body
 	 */
 
-	procBody = TclGetStringFromObj(objv[3], &numBytes);
+	procBody = Tcl_GetStringFromObj(objv[3], &numBytes);
 	if (TclParseAllWhiteSpace(procBody, numBytes) < numBytes) {
 	    goto done;
 	}
@@ -448,7 +450,7 @@ TclCreateProc(
 	    Tcl_Size length;
 	    Tcl_Obj *sharedBodyPtr = bodyPtr;
 
-	    bytes = TclGetStringFromObj(bodyPtr, &length);
+	    bytes = Tcl_GetStringFromObj(bodyPtr, &length);
 	    bodyPtr = Tcl_NewStringObj(bytes, length);
 
 	    /*
@@ -468,7 +470,7 @@ TclCreateProc(
 
 	Tcl_IncrRefCount(bodyPtr);
 
-	procPtr = (Proc *)ckalloc(sizeof(Proc));
+	procPtr = (Proc *)Tcl_Alloc(sizeof(Proc));
 	procPtr->iPtr = iPtr;
 	procPtr->refCount = 1;
 	procPtr->bodyPtr = bodyPtr;
@@ -530,7 +532,7 @@ TclCreateProc(
 		    "FORMALARGUMENTFORMAT", NULL);
 	    goto procError;
 	}
-	if ((fieldCount == 0) || (TclGetCharLength(fieldValues[0]) == 0)) {
+	if ((fieldCount == 0) || (Tcl_GetCharLength(fieldValues[0]) == 0)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument with no name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
@@ -538,7 +540,7 @@ TclCreateProc(
 	    goto procError;
 	}
 
-	argname = TclGetStringFromObj(fieldValues[0], &nameLength);
+	argname = Tcl_GetStringFromObj(fieldValues[0], &nameLength);
 
 	/*
 	 * Check that the formal parameter name is a scalar.
@@ -551,7 +553,7 @@ TclCreateProc(
 		if (*argnamelast == ')') { /* We have an array element. */
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "formal parameter \"%s\" is an array element",
-			    Tcl_GetString(fieldValues[0])));
+			    TclGetString(fieldValues[0])));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			    "FORMALARGUMENTFORMAT", NULL);
 		    goto procError;
@@ -601,8 +603,8 @@ TclCreateProc(
 
 	    if (localPtr->defValuePtr != NULL) {
 		Tcl_Size tmpLength, valueLength;
-		const char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr, &tmpLength);
-		const char *value = TclGetStringFromObj(fieldValues[1], &valueLength);
+		const char *tmpPtr = Tcl_GetStringFromObj(localPtr->defValuePtr, &tmpLength);
+		const char *value = Tcl_GetStringFromObj(fieldValues[1], &valueLength);
 
 		if ((valueLength != tmpLength)
 		     || memcmp(value, tmpPtr, tmpLength) != 0
@@ -632,7 +634,7 @@ TclCreateProc(
 	     * local variables for the argument.
 	     */
 
-	    localPtr = (CompiledLocal *)ckalloc(
+	    localPtr = (CompiledLocal *)Tcl_Alloc(
 		    offsetof(CompiledLocal, name) + 1U + fieldValues[0]->length);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
@@ -678,9 +680,9 @@ TclCreateProc(
 		Tcl_DecrRefCount(localPtr->defValuePtr);
 	    }
 
-	    ckfree(localPtr);
+	    Tcl_Free(localPtr);
 	}
-	ckfree(procPtr);
+	Tcl_Free(procPtr);
     }
     return TCL_ERROR;
 }
@@ -830,7 +832,7 @@ TclObjGetFrame(
 	    CallFrame *framePtr;
 	    for (framePtr = iPtr->varFramePtr; framePtr != NULL;
 		    framePtr = framePtr->callerVarPtr) {
-		if (framePtr->level == level) {
+		if ((int)framePtr->level == level) {
 		    *framePtrPtr = framePtr;
 		    return result;
 		}
@@ -1080,11 +1082,7 @@ ProcWrongNumArgs(
     if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	desiredObjs[0] = Tcl_NewStringObj("lambdaExpr", -1);
     } else {
-#ifdef AVOID_HACKS_FOR_ITCL
 	desiredObjs[0] = framePtr->objv[skip-1];
-#else
-	desiredObjs[0] = Tcl_NewListObj(1, framePtr->objv + skip - 1);
-#endif /* AVOID_HACKS_FOR_ITCL */
     }
     Tcl_IncrRefCount(desiredObjs[0]);
 
@@ -1119,56 +1117,6 @@ ProcWrongNumArgs(
     TclStackFree(interp, desiredObjs);
     return TCL_ERROR;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitCompiledLocals --
- *
- *	This routine is invoked in order to initialize the compiled locals
- *	table for a new call frame.
- *
- *	DEPRECATED: functionality has been inlined elsewhere; this function
- *	remains to insure binary compatibility with Itcl.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	May invoke various name resolvers in order to determine which
- *	variables are being referenced at runtime.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-void
-TclInitCompiledLocals(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    CallFrame *framePtr,	/* Call frame to initialize. */
-    Namespace *nsPtr)		/* Pointer to current namespace. */
-{
-    Var *varPtr = framePtr->compiledLocals;
-    Tcl_Obj *bodyPtr;
-    ByteCode *codePtr;
-
-    bodyPtr = framePtr->procPtr->bodyPtr;
-    ByteCodeGetInternalRep(bodyPtr, &tclByteCodeType, codePtr);
-    if (codePtr == NULL) {
-	Tcl_Panic("body object for proc attached to frame is not a byte code type");
-    }
-
-    if (framePtr->numCompiledLocals) {
-	if (!codePtr->localCachePtr) {
-	    InitLocalCache(framePtr->procPtr) ;
-	}
-	framePtr->localCachePtr = codePtr->localCachePtr;
-	framePtr->localCachePtr->refCount++;
-    }
-
-    InitResolvedLocals(interp, codePtr, varPtr, nsPtr);
-}
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1226,7 +1174,7 @@ InitResolvedLocals(
 	    if (localPtr->resolveInfo->deleteProc) {
 		localPtr->resolveInfo->deleteProc(localPtr->resolveInfo);
 	    } else {
-		ckfree(localPtr->resolveInfo);
+		Tcl_Free(localPtr->resolveInfo);
 	    }
 	    localPtr->resolveInfo = NULL;
 	}
@@ -1312,7 +1260,7 @@ TclFreeLocalCache(
 	    TclReleaseLiteral(interp, objPtr);
 	}
     }
-    ckfree(localCachePtr);
+    Tcl_Free(localCachePtr);
 }
 
 static void
@@ -1338,7 +1286,7 @@ InitLocalCache(
      * for future calls.
      */
 
-    localCachePtr = (LocalCache *)ckalloc(offsetof(LocalCache, varName0)
+    localCachePtr = (LocalCache *)Tcl_Alloc(offsetof(LocalCache, varName0)
 	    + localCt * sizeof(Tcl_Obj *)
 	    + numArgs * sizeof(Var));
 
@@ -1350,7 +1298,7 @@ InitLocalCache(
 	    *namePtr = NULL;
 	} else {
 	    *namePtr = TclCreateLiteral(iPtr, localPtr->name,
-		    localPtr->nameLength, /* hash */ (unsigned int) -1,
+		    localPtr->nameLength, /* hash */ TCL_INDEX_NONE,
 		    &isNew, /* nsPtr */ NULL, 0, NULL);
 	    Tcl_IncrRefCount(*namePtr);
 	}
@@ -1690,7 +1638,7 @@ NRInterpProc2(
 				 * interpreted. */
     Tcl_Interp *interp, 	/* Interpreter in which procedure was
 				 * invoked. */
-    ptrdiff_t objc,			/* Count of number of arguments to this
+    Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1709,7 +1657,7 @@ ObjInterpProc2(
 				 * interpreted. */
     Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
-    ptrdiff_t objc,			/* Count of number of arguments to this
+    Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -2066,10 +2014,10 @@ TclProcCompileProc(
 		    if (toFree->resolveInfo->deleteProc) {
 			toFree->resolveInfo->deleteProc(toFree->resolveInfo);
 		    } else {
-			ckfree(toFree->resolveInfo);
+			Tcl_Free(toFree->resolveInfo);
 		    }
 		}
-		ckfree(toFree);
+		Tcl_Free(toFree);
 	    }
 	    procPtr->numCompiledLocals = procPtr->numArgs;
 	}
@@ -2132,9 +2080,9 @@ MakeProcError(
 {
     int overflow, limit = 60;
     Tcl_Size nameLen;
-    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
+    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
-    overflow = (nameLen > limit);
+    overflow = (nameLen > (Tcl_Size)limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (procedure \"%.*s%s\" line %d)",
 	    (overflow ? limit : (int)nameLen), procName,
@@ -2219,7 +2167,7 @@ TclProcCleanupProc(
 	    if (resVarInfo->deleteProc) {
 		resVarInfo->deleteProc(resVarInfo);
 	    } else {
-		ckfree(resVarInfo);
+		Tcl_Free(resVarInfo);
 	    }
 	}
 
@@ -2227,10 +2175,10 @@ TclProcCleanupProc(
 	    defPtr = localPtr->defValuePtr;
 	    Tcl_DecrRefCount(defPtr);
 	}
-	ckfree(localPtr);
+	Tcl_Free(localPtr);
 	localPtr = nextPtr;
     }
-    ckfree(procPtr);
+    Tcl_Free(procPtr);
 
     /*
      * TIP #280: Release the location data associated with this Proc
@@ -2254,9 +2202,9 @@ TclProcCleanupProc(
 	    Tcl_DecrRefCount(cfPtr->data.eval.path);
 	    cfPtr->data.eval.path = NULL;
 	}
-	ckfree(cfPtr->line);
+	Tcl_Free(cfPtr->line);
 	cfPtr->line = NULL;
-	ckfree(cfPtr);
+	Tcl_Free(cfPtr);
     }
     Tcl_DeleteHashEntry(hePtr);
 }
@@ -2520,7 +2468,7 @@ SetLambdaFromAny(
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",
-		Tcl_GetString(objPtr)));
+		TclGetString(objPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "LAMBDA", NULL);
 	return TCL_ERROR;
     }
@@ -2606,12 +2554,12 @@ SetLambdaFromAny(
 		 * location (line of 2nd list element).
 		 */
 
-		cfPtr = (CmdFrame *)ckalloc(sizeof(CmdFrame));
+		cfPtr = (CmdFrame *)Tcl_Alloc(sizeof(CmdFrame));
 		TclListLines(objPtr, contextPtr->line[1], 2, buf, NULL);
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = (int *)ckalloc(sizeof(int));
+		cfPtr->line = (int *)Tcl_Alloc(sizeof(int));
 		cfPtr->line[0] = buf[1];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -2826,9 +2774,9 @@ MakeLambdaError(
 {
     int overflow, limit = 60;
     Tcl_Size nameLen;
-    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
+    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
-    overflow = (nameLen > limit);
+    overflow = (nameLen > (Tcl_Size)limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (lambda term \"%.*s%s\" line %d)",
 	    (overflow ? limit : (int)nameLen), procName,

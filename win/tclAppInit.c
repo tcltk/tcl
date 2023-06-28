@@ -215,8 +215,11 @@ Tcl_AppInit(
      * user-specific startup file will be run under any conditions.
      */
 
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", TCL_INDEX_NONE), NULL,
-	    Tcl_NewStringObj("~/tclshrc.tcl", TCL_INDEX_NONE), TCL_GLOBAL_ONLY);
+    (void)Tcl_EvalEx(interp,
+		     "set tcl_rcFileName [file tildeexpand ~/tclshrc.tcl]",
+		     -1,
+		     TCL_EVAL_GLOBAL);
+
     return TCL_OK;
 }
 
@@ -277,11 +280,10 @@ setargv(
 	}
     }
 
-    /* Make sure we don't call ckalloc through the (not yet initialized) stub table */
+    /* Make sure we don't call Tcl_Alloc through the (not yet initialized) stub table */
 #   undef Tcl_Alloc
-#   undef Tcl_DbCkalloc
 
-    argSpace = (TCHAR *)ckalloc(size * sizeof(char *)
+    argSpace = (TCHAR *)Tcl_Alloc(size * sizeof(char *)
 	    + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR));
     argv = (TCHAR **) argSpace;
     argSpace += size * (sizeof(char *)/sizeof(TCHAR));

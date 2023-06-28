@@ -8,7 +8,7 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 # Dependencies
-package require Tcl 8.6
+package require Tcl 8.6-
 package require http 2.8.4
 package require sqlite3
 package require tcl::idna 1.0

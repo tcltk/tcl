@@ -93,11 +93,11 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
 			`ls -d /usr/pkg/lib 2>/dev/null` \
-			`ls -d /usr/lib/tcl8.7 2>/dev/null` \
+			`ls -d /usr/lib/tcl9.0 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
-			`ls -d /usr/local/lib/tcl8.7 2>/dev/null` \
-			`ls -d /usr/local/lib/tcl/tcl8.7 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl9.0 2>/dev/null` \
+			`ls -d /usr/local/lib/tcl/tcl9.0 2>/dev/null` \
 			; do
 		    if test -f "$i/tclConfig.sh" ; then
 			ac_cv_c_tclconfig="`(cd $i; pwd)`"
@@ -1932,8 +1932,6 @@ dnl # preprocessing tests use only CPPFLAGS.
 # Results:
 #
 #	Defines some of the following vars:
-#		NO_DIRENT_H
-#		NO_STDLIB_H
 #		NO_STRING_H
 #		NO_SYS_WAIT_H
 #		NO_DLFCN_H
@@ -1943,38 +1941,6 @@ dnl # preprocessing tests use only CPPFLAGS.
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_MISSING_POSIX_HEADERS], [
-    AC_CACHE_CHECK([dirent.h], tcl_cv_dirent_h, [
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
-#include <dirent.h>]], [[
-#ifndef _POSIX_SOURCE
-#   ifdef __Lynx__
-	/*
-	 * Generate compilation error to make the test fail:  Lynx headers
-	 * are only valid if really in the POSIX environment.
-	 */
-
-	missing_procedure();
-#   endif
-#endif
-DIR *d;
-struct dirent *entryPtr;
-char *p;
-d = opendir("foobar");
-entryPtr = readdir(d);
-p = entryPtr->d_name;
-closedir(d);
-]])],[tcl_cv_dirent_h=yes],[tcl_cv_dirent_h=no])])
-
-    if test $tcl_cv_dirent_h = no; then
-	AC_DEFINE(NO_DIRENT_H, 1, [Do we have <dirent.h>?])
-    fi
-
-    AC_CHECK_HEADER(stdlib.h, tcl_ok=1, tcl_ok=0)
-    AC_EGREP_HEADER(strtol, stdlib.h, , tcl_ok=0)
-    AC_EGREP_HEADER(strtoul, stdlib.h, , tcl_ok=0)
-    if test $tcl_ok = 0; then
-	AC_DEFINE(NO_STDLIB_H, 1, [Do we have <stdlib.h>?])
-    fi
     AC_CHECK_HEADER(string.h, tcl_ok=1, tcl_ok=0)
     AC_EGREP_HEADER(strstr, string.h, , tcl_ok=0)
     AC_EGREP_HEADER(strerror, string.h, , tcl_ok=0)
@@ -2388,7 +2354,7 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
             case 1: case (sizeof(long long)==sizeof(long)): ;
         }]])],[tcl_cv_type_64bit="long long"],[])])
     if test "${tcl_cv_type_64bit}" = none ; then
-	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, ['long' and 'long long' have the same size])
+	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, [Do 'long' and 'long long' have the same size (64-bit)?])
 	AC_MSG_RESULT([yes])
     else
 	AC_MSG_RESULT([no])

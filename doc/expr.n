@@ -62,9 +62,7 @@ A \fBnumeric value\fR
 .
 Either integer or floating-point.  The first two characters of an integer may
 also be \fB0d\fR for decimal, \fB0b\fR for binary, \fB0o\fR for octal or
-\fB0x\fR for hexadicimal.  For compatibility with older Tcl releases, an
-operand that begins with \fB0\fR is interpreted as an octal integer even if the
-second character is not \fBo\fR.
+\fB0x\fR for hexadicimal.
 .PP
 A floating-point number may be take any of several
 common decimal formats, and may use the decimal point \fB.\fR,

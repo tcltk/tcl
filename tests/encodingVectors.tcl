@@ -332,22 +332,22 @@ lappend encInvalidBytes {*}{
     utf-8 ED9F7F replace   \uFFFD\u7F       -1 {knownW3C} {Second trail byte must be 80:BF}
     utf-8 ED9F7F strict    {}                0 {}  {Second trail byte must be 80:BF}
     utf-8 EDA080 tcl8       \uD800          -1 {}  {High surrogate}
-    utf-8 EDA080 replace    \uFFFD          -1 {}  {High surrogate}
+    utf-8 EDA080 replace    \uFFFD          -1 {knownBug}  {High surrogate}
     utf-8 EDA080 strict     {}               0 {}  {High surrogate}
     utf-8 EDAFBF tcl8       \uDBFF          -1 {}  {High surrogate}
-    utf-8 EDAFBF replace    \uFFFD          -1 {}  {High surrogate}
+    utf-8 EDAFBF replace    \uFFFD          -1 {knownBug}  {High surrogate}
     utf-8 EDAFBF strict     {}               0 {}  {High surrogate}
     utf-8 EDB080 tcl8       \uDC00          -1 {}  {Low surrogate}
-    utf-8 EDB080 replace    \uFFFD          -1 {}  {Low surrogate}
+    utf-8 EDB080 replace    \uFFFD          -1 {knownBug}  {Low surrogate}
     utf-8 EDB080 strict     {}               0 {}  {Low surrogate}
-    utf-8 EDBFBF tcl8       \uDFFF          -1 {}  {Low surrogate}
-    utf-8 EDBFBF replace    \uFFFD          -1 {}  {Low surrogate}
+    utf-8 EDBFBF tcl8       \uDFFF          -1 {knownBug}  {Low surrogate}
+    utf-8 EDBFBF replace    \uFFFD          -1 {knownBug}  {Low surrogate}
     utf-8 EDBFBF strict     {}               0 {}  {Low surrogate}
-    utf-8 EDA080EDB080 tcl8 \U00010000      -1 {}  {High low surrogate pair}
-    utf-8 EDA080EDB080 replace \uFFFD\uFFFD -1 {}  {High low surrogate pair}
+    utf-8 EDA080EDB080 tcl8 \U00010000      -1 {knownBug}  {High low surrogate pair}
+    utf-8 EDA080EDB080 replace \uFFFD\uFFFD -1 {knownBug}  {High low surrogate pair}
     utf-8 EDA080EDB080 strict {}             0 {}  {High low surrogate pair}
-    utf-8 EDAFBFEDBFBF tcl8 \U0010FFFF      -1 {}  {High low surrogate pair}
-    utf-8 EDAFBFEDBFBF replace \uFFFD\uFFFD -1 {}  {High low surrogate pair}
+    utf-8 EDAFBFEDBFBF tcl8 \U0010FFFF      -1 {knownBug}  {High low surrogate pair}
+    utf-8 EDAFBFEDBFBF replace \uFFFD\uFFFD -1 {knownBug}  {High low surrogate pair}
     utf-8 EDAFBFEDBFBF strict {}             0 {}  {High low surrogate pair}
 
     utf-8 EE tcl8       \u00EE        -1 {} {Missing trail byte}
@@ -553,10 +553,10 @@ lappend encInvalidBytes {*}{
     utf-16le 41      replace   \uFFFD -1 {solo tail} {Truncated}
     utf-16le 41      strict    {}      0 {solo tail} {Truncated}
     utf-16le 00D8    tcl8      \uD800 -1 {} {Missing low surrogate}
-    utf-16le 00D8    replace   \uFFFD -1 {knownBug} {Missing low surrogate}
+    utf-16le 00D8    replace   \uFFFD -1 {} {Missing low surrogate}
     utf-16le 00D8    strict    {}      0 {knownBug} {Missing low surrogate}
     utf-16le 00DC    tcl8      \uDC00 -1 {} {Missing high surrogate}
-    utf-16le 00DC    replace   \uFFFD -1 {knownBug} {Missing high surrogate}
+    utf-16le 00DC    replace   \uFFFD -1 {} {Missing high surrogate}
     utf-16le 00DC    strict    {}      0 {knownBug} {Missing high surrogate}
 
     utf-16be 41      tcl8      \uFFFD -1 {solo tail} {Truncated}

@@ -61,7 +61,7 @@ test lrepeat-1.7 {Accept zero repetitions (TIP 323)} {
     }
     -result {}
 }
-test lrepeat-1.8 {Do not build enormous lists - Bug 2130992} -body {
+test lrepeat-1.8 {Do not build enormous lists - Bug 2130992} -constraints knownBug -body {
      lrepeat 0x10000000 a b c d e f g h
 } -returnCodes error -match glob -result *
 

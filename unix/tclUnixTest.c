@@ -129,7 +129,7 @@ TclplatformtestInit(
 
 static int
 TestfilehandlerCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -310,7 +310,7 @@ TestfilehandlerCmd(
 
 static void
 TestFileHandlerProc(
-    ClientData clientData,	/* Points to a Pipe structure. */
+    void *clientData,	/* Points to a Pipe structure. */
     int mask)			/* Indicates which events happened:
 				 * TCL_READABLE or TCL_WRITABLE. */
 {
@@ -343,7 +343,7 @@ TestFileHandlerProc(
 
 static int
 TestfilewaitCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -351,7 +351,7 @@ TestfilewaitCmd(
     int mask, result, timeout;
     Tcl_Channel channel;
     int fd;
-    ClientData data;
+    void *data;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "file readable|writable|both timeout");
@@ -374,7 +374,7 @@ TestfilewaitCmd(
     }
     if (Tcl_GetChannelHandle(channel,
 	    (mask & TCL_READABLE) ? TCL_READABLE : TCL_WRITABLE,
-	    (ClientData*) &data) != TCL_OK) {
+	    (void **) &data) != TCL_OK) {
 	Tcl_AppendResult(interp, "couldn't get channel file", NULL);
 	return TCL_ERROR;
     }
@@ -411,7 +411,7 @@ TestfilewaitCmd(
 
 static int
 TestfindexecutableCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -453,7 +453,7 @@ TestfindexecutableCmd(
 
 static int
 TestforkCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -499,7 +499,7 @@ TestforkCmd(
 
 static int
 TestalarmCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -577,7 +577,7 @@ AlarmHandler(
 
 static int
 TestgotsigCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     TCL_UNUSED(int) /*objc*/,
     TCL_UNUSED(Tcl_Obj *const *))
@@ -608,7 +608,7 @@ TestgotsigCmd(
 
 static int
 TestchmodCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,			/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)		/* Argument strings. */

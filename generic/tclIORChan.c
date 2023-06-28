@@ -46,10 +46,6 @@ static int		ReflectEventDelete(Tcl_Event *ev, void *cd);
 #endif
 static long long ReflectSeekWide(void *clientData,
 			    long long offset, int mode, int *errorCodePtr);
-#ifndef TCL_NO_DEPRECATED
-static int		ReflectSeek(void *clientData, long offset,
-			    int mode, int *errorCodePtr);
-#endif
 static int		ReflectGetOption(void *clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
@@ -68,14 +64,10 @@ static void     TimerRunWrite(void *clientData);
 static const Tcl_ChannelType tclRChannelType = {
     "tclrchannel",	   /* Type name.				  */
     TCL_CHANNEL_VERSION_5, /* v5 channel */
-    TCL_CLOSE2PROC,	   /* Close channel, clean instance data	  */
+    NULL,	   /* Close channel, clean instance data	  */
     ReflectInput,	   /* Handle read request			  */
     ReflectOutput,	   /* Handle write request			  */
-#ifndef TCL_NO_DEPRECATED
-    ReflectSeek,	   /* Move location of access point.	NULL'able */
-#else
     NULL,
-#endif
     ReflectSetOption,	   /* Set options.			NULL'able */
     ReflectGetOption,	   /* Get options.			NULL'able */
     ReflectWatch,	   /* Initialize notifier			  */
@@ -412,7 +404,7 @@ static void		SrcExitProc(void *clientData);
 
 #define FreeReceivedError(p) \
 	if ((p)->base.mustFree) {                               \
-	    ckfree((p)->base.msgStr);                           \
+	    Tcl_Free((p)->base.msgStr);                           \
 	}
 #define PassReceivedErrorInterp(i,p) \
 	if ((i) != NULL) {                                      \
@@ -474,6 +466,7 @@ static void		MarkDead(ReflectedChannel *rcPtr);
  */
 
 static const char *msg_read_toomuch = "{read delivered more than requested}";
+static const char *msg_read_nonbyte = "{read delivered nonbyte result}";
 static const char *msg_write_toomuch = "{write wrote more than requested}";
 static const char *msg_write_nothing = "{write wrote nothing}";
 static const char *msg_seek_beforestart = "{Tried to seek before origin}";
@@ -587,6 +580,9 @@ TclChanCreateObjCmd(
 
     rcId = NextHandle();
     rcPtr = NewReflectedChannel(interp, cmdObj, mode, rcId);
+    if (!rcPtr) {
+	return TCL_ERROR;
+    }
 
     /*
      * Invoke 'initialize' and validate that the handler is present and ok.
@@ -696,7 +692,7 @@ TclChanCreateObjCmd(
 	 * as the actual channel type.
 	 */
 
-	Tcl_ChannelType *clonePtr = (Tcl_ChannelType *)ckalloc(sizeof(Tcl_ChannelType));
+	Tcl_ChannelType *clonePtr = (Tcl_ChannelType *)Tcl_Alloc(sizeof(Tcl_ChannelType));
 
 	memcpy(clonePtr, &tclRChannelType, sizeof(Tcl_ChannelType));
 
@@ -711,9 +707,6 @@ TclChanCreateObjCmd(
 	    clonePtr->blockModeProc = NULL;
 	}
 	if (!(methods & FLAG(METH_SEEK))) {
-#ifndef TCL_NO_DEPRECATED
-	    clonePtr->seekProc = NULL;
-#endif
 	    clonePtr->wideSeekProc = NULL;
 	}
 	if (!(methods & FLAG(METH_TRUNCATE))) {
@@ -756,7 +749,7 @@ TclChanCreateObjCmd(
     Tcl_DecrRefCount(rcPtr->name);
     Tcl_DecrRefCount(rcPtr->methods);
     Tcl_DecrRefCount(rcPtr->cmd);
-    ckfree(rcPtr);
+    Tcl_Free(rcPtr);
     return TCL_ERROR;
 
 #undef MODE
@@ -970,7 +963,7 @@ TclChanPostEventObjCmd(
 	}
 #if TCL_THREADS
     } else {
-        ReflectEvent *ev = (ReflectEvent *)ckalloc(sizeof(ReflectEvent));
+        ReflectEvent *ev = (ReflectEvent *)Tcl_Alloc(sizeof(ReflectEvent));
 
         ev->header.proc = ReflectEventRun;
         ev->events = events;
@@ -1228,7 +1221,7 @@ ReflectClose(
 
 	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
 	if (tctPtr && tctPtr != &tclRChannelType) {
-	    ckfree(tctPtr);
+	    Tcl_Free((void *)tctPtr);
 	    ((Channel *)rcPtr->chan)->typePtr = NULL;
 	}
 	if (rcPtr->readTimer != NULL) {
@@ -1303,7 +1296,7 @@ ReflectClose(
 #endif
     tctPtr = ((Channel *)rcPtr->chan)->typePtr;
     if (tctPtr && tctPtr != &tclRChannelType) {
-	ckfree(tctPtr);
+	Tcl_Free((void *)tctPtr);
 	((Channel *)rcPtr->chan)->typePtr = NULL;
     }
     if (rcPtr->readTimer != NULL) {
@@ -1341,7 +1334,7 @@ ReflectInput(
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
     Tcl_Obj *toReadObj;
-    Tcl_Size bytec;			/* Number of returned bytes */
+    Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     Tcl_Obj *resObj;		/* Result data for 'read' */
 
@@ -1400,9 +1393,12 @@ ReflectInput(
 
     bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 
-    if (toRead < bytec) {
+    if (bytev == NULL) {
+	SetChannelErrorStr(rcPtr->chan, msg_read_nonbyte);
+	goto invalid;
+    } else if (toRead < bytec) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_toomuch);
-        goto invalid;
+	goto invalid;
     }
 
     *errorCodePtr = EOK;
@@ -1643,26 +1639,6 @@ ReflectSeekWide(
     newLoc = -1;
     goto stop;
 }
-
-#ifndef TCL_NO_DEPRECATED
-static int
-ReflectSeek(
-    void *clientData,
-    long offset,
-    int seekMode,
-    int *errorCodePtr)
-{
-    /*
-     * This function can be invoked from a transformation which is based on
-     * standard seeking, i.e. non-wide. Because of this we have to implement
-     * it, a dummy is not enough. We simply delegate the call to the wide
-     * routine.
-     */
-
-    return ReflectSeekWide(clientData, offset, seekMode,
-	    errorCodePtr);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2038,12 +2014,12 @@ ReflectGetOption(
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Expected list with even number of "
-		"elements, got %" TCL_SIZE_MODIFIER "d element%s instead", listc,
+		"elements, got %" TCL_SIZE_MODIFIER "u element%s instead", listc,
 		(listc == 1 ? "" : "s")));
         goto error;
     } else {
 	Tcl_Size len;
-	const char *str = TclGetStringFromObj(resObj, &len);
+	const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 	if (len) {
 	    TclDStringAppendLiteral(dsPtr, " ");
@@ -2270,7 +2246,7 @@ NewReflectedChannel(
     ReflectedChannel *rcPtr;
     int mn = 0;
 
-    rcPtr = (ReflectedChannel *)ckalloc(sizeof(ReflectedChannel));
+    rcPtr = (ReflectedChannel *)Tcl_Alloc(sizeof(ReflectedChannel));
 
     /* rcPtr->chan: Assigned by caller. Dummy data here. */
 
@@ -2285,7 +2261,7 @@ NewReflectedChannel(
     rcPtr->mode = mode;
     rcPtr->interest = 0;		/* Initially no interest registered */
 
-    rcPtr->cmd = TclDuplicatePureObj(interp, cmdpfxObj, &tclListType);
+    rcPtr->cmd = TclDuplicatePureObj(interp, cmdpfxObj, &tclListType.objType);
     if (!rcPtr->cmd) {
 	return NULL;
     }
@@ -2359,7 +2335,7 @@ FreeReflectedChannel(
     if (rcPtr->cmd) {
 	Tcl_DecrRefCount(rcPtr->cmd);
     }
-    ckfree(rcPtr);
+    Tcl_Free(rcPtr);
 }
 
 /*
@@ -2425,7 +2401,7 @@ InvokeTclMethod(
      * before the channel id.
      */
 
-    cmd = TclDuplicatePureObj(NULL, rcPtr->cmd, &tclListType);
+    cmd = TclDuplicatePureObj(NULL, rcPtr->cmd, &tclListType.objType);
     if (!cmd) {
 	return TCL_ERROR;
     }
@@ -2483,7 +2459,7 @@ InvokeTclMethod(
 
 	    if (result != TCL_ERROR) {
 		Tcl_Size cmdLen;
-		const char *cmdString = TclGetStringFromObj(cmd, &cmdLen);
+		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
 		Tcl_ResetResult(rcPtr->interp);
@@ -2597,7 +2573,7 @@ GetReflectedChannelMap(
     ReflectedChannelMap *rcmPtr = (ReflectedChannelMap *)Tcl_GetAssocData(interp, RCMKEY, NULL);
 
     if (rcmPtr == NULL) {
-	rcmPtr = (ReflectedChannelMap *)ckalloc(sizeof(ReflectedChannelMap));
+	rcmPtr = (ReflectedChannelMap *)Tcl_Alloc(sizeof(ReflectedChannelMap));
 	Tcl_InitHashTable(&rcmPtr->map, TCL_STRING_KEYS);
 	Tcl_SetAssocData(interp, RCMKEY, DeleteReflectedChannelMap, rcmPtr);
     }
@@ -2685,7 +2661,7 @@ DeleteReflectedChannelMap(
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(&rcmPtr->map);
-    ckfree(&rcmPtr->map);
+    Tcl_Free(&rcmPtr->map);
 
 #if TCL_THREADS
     /*
@@ -2799,7 +2775,7 @@ GetThreadReflectedChannelMap(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->rcmPtr) {
-	tsdPtr->rcmPtr = (ReflectedChannelMap *)ckalloc(sizeof(ReflectedChannelMap));
+	tsdPtr->rcmPtr = (ReflectedChannelMap *)Tcl_Alloc(sizeof(ReflectedChannelMap));
 	Tcl_InitHashTable(&tsdPtr->rcmPtr->map, TCL_STRING_KEYS);
 	Tcl_CreateThreadExitHandler(DeleteThreadReflectedChannelMap, NULL);
     }
@@ -2924,7 +2900,7 @@ DeleteThreadReflectedChannelMap(
 	MarkDead(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
-    ckfree(rcmPtr);
+    Tcl_Free(rcmPtr);
 }
 
 static void
@@ -2964,8 +2940,8 @@ ForwardOpToHandlerThread(
      * Create and initialize the event and data structures.
      */
 
-    evPtr = (ForwardingEvent *)ckalloc(sizeof(ForwardingEvent));
-    resultPtr = (ForwardingResult *)ckalloc(sizeof(ForwardingResult));
+    evPtr = (ForwardingEvent *)Tcl_Alloc(sizeof(ForwardingEvent));
+    resultPtr = (ForwardingResult *)Tcl_Alloc(sizeof(ForwardingResult));
 
     evPtr->event.proc = ForwardProc;
     evPtr->resultPtr = resultPtr;
@@ -3047,7 +3023,7 @@ ForwardOpToHandlerThread(
 
     Tcl_DeleteThreadExitHandler(SrcExitProc, evPtr);
 
-    ckfree(resultPtr);
+    Tcl_Free(resultPtr);
 }
 
 static int
@@ -3155,12 +3131,15 @@ ForwardProc(
 	     * Process a regular result.
 	     */
 
-	    Tcl_Size bytec;		/* Number of returned bytes */
+	    Tcl_Size bytec = 0;		/* Number of returned bytes */
 	    unsigned char *bytev;	/* Array of returned bytes */
 
 	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 
-	    if (paramPtr->input.toRead < bytec) {
+	    if (bytev == NULL) {
+		ForwardSetStaticError(paramPtr, msg_read_nonbyte);
+		paramPtr->input.toRead = -1;
+	    } else if (paramPtr->input.toRead < bytec) {
 		ForwardSetStaticError(paramPtr, msg_read_toomuch);
 		paramPtr->input.toRead = TCL_IO_FAILURE;
 	    } else {
@@ -3347,15 +3326,15 @@ ForwardProc(
 		 * Odd number of elements is wrong. [x].
 		 */
 
-		char *buf = (char *)ckalloc(200);
+		char *buf = (char *)Tcl_Alloc(200);
 		snprintf(buf, 200,
-			"{Expected list with even number of elements, got %d %s instead}",
+			"{Expected list with even number of elements, got %" TCL_SIZE_MODIFIER "u %s instead}",
 			listc, (listc == 1 ? "element" : "elements"));
 
 		ForwardSetDynamicError(paramPtr, buf);
 	    } else {
 		Tcl_Size len;
-		const char *str = TclGetStringFromObj(resObj, &len);
+		const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 		if (len) {
 		    TclDStringAppendLiteral(paramPtr->getOpt.value, " ");
@@ -3467,10 +3446,10 @@ ForwardSetObjError(
     Tcl_Obj *obj)
 {
     Tcl_Size len;
-    const char *msgStr = TclGetStringFromObj(obj, &len);
+    const char *msgStr = Tcl_GetStringFromObj(obj, &len);
 
     len++;
-    ForwardSetDynamicError(paramPtr, ckalloc(len));
+    ForwardSetDynamicError(paramPtr, Tcl_Alloc(len));
     memcpy(paramPtr->base.msgStr, msgStr, len);
 }
 #endif

@@ -42,7 +42,7 @@ size_t TclEnvEpoch = 0;	/* Epoch of the tcl environment
 				 * (if changed with tcl-env). */
 
 static struct {
-    int cacheSize;		/* Number of env strings in cache. */
+    size_t cacheSize;		/* Number of env strings in cache. */
     char **cache;		/* Array containing all of the environment
 				 * strings that Tcl has allocated. */
 #ifndef USE_PUTENV
@@ -50,7 +50,7 @@ static struct {
 				 * need to track this in case another
 				 * subsystem swaps around the environ array
 				 * like we do. */
-    int ourEnvironSize;		/* Non-zero means that the environ array was
+    Tcl_Size ourEnvironSize;	/* Non-zero means that the environ array was
 				 * malloced and has this many total entries
 				 * allocated to it (not all may be in use at
 				 * once). Zero means that the environment
@@ -64,7 +64,7 @@ static struct {
  * Declarations for local functions defined in this file:
  */
 
-static char *		EnvTraceProc(ClientData clientData, Tcl_Interp *interp,
+static char *		EnvTraceProc(void *clientData, Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
 static void		ReplaceString(const char *oldStr, char *newStr);
 MODULE_SCOPE void	TclSetEnv(const char *name, const char *value);
@@ -253,8 +253,8 @@ TclSetEnv(
     const char *value)		/* New value for variable (UTF-8). */
 {
     Tcl_DString envString;
-    unsigned nameLength, valueLength;
-    int index, length;
+    Tcl_Size nameLength, valueLength;
+    Tcl_Size index, length;
     char *p, *oldValue;
     const techar *p2;
 
@@ -267,7 +267,7 @@ TclSetEnv(
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
 
-    if (index == -1) {
+    if (index == TCL_INDEX_NONE) {
 #ifndef USE_PUTENV
 	/*
 	 * We need to handle the case where the environment may be changed
@@ -276,11 +276,11 @@ TclSetEnv(
 	 */
 
 	if ((env.ourEnviron != tenviron) || (length+2 > env.ourEnvironSize)) {
-	    techar **newEnviron = (techar **)ckalloc((length + 5) * sizeof(techar *));
+	    techar **newEnviron = (techar **)Tcl_Alloc((length + 5) * sizeof(techar *));
 
 	    memcpy(newEnviron, tenviron, length * sizeof(techar *));
 	    if ((env.ourEnvironSize != 0) && (env.ourEnviron != NULL)) {
-		ckfree(env.ourEnviron);
+		Tcl_Free(env.ourEnviron);
 	    }
 	    tenviron = (env.ourEnviron = newEnviron);
 	    env.ourEnvironSize = length + 5;
@@ -320,7 +320,7 @@ TclSetEnv(
      */
 
     valueLength = strlen(value);
-    p = (char *)ckalloc(nameLength + valueLength + 2);
+    p = (char *)Tcl_Alloc(nameLength + valueLength + 2);
     memcpy(p, name, nameLength);
     p[nameLength] = '=';
     memcpy(p+nameLength+1, value, valueLength+1);
@@ -330,7 +330,7 @@ TclSetEnv(
      * Copy the native string to heap memory.
      */
 
-    p = (char *)ckrealloc(p, Tcl_DStringLength(&envString) + tNTL);
+    p = (char *)Tcl_Realloc(p, Tcl_DStringLength(&envString) + tNTL);
     memcpy(p, p2, Tcl_DStringLength(&envString) + tNTL);
     Tcl_DStringFree(&envString);
 
@@ -351,7 +351,7 @@ TclSetEnv(
      * string in the cache.
      */
 
-    if ((index != -1) && (tenviron[index] == (techar *)p)) {
+    if ((index != TCL_INDEX_NONE) && (tenviron[index] == (techar *)p)) {
 	ReplaceString(oldValue, p);
 #ifdef HAVE_PUTENV_THAT_COPIES
     } else {
@@ -359,20 +359,11 @@ TclSetEnv(
 	 * This putenv() copies instead of taking ownership.
 	 */
 
-	ckfree(p);
+	Tcl_Free(p);
 #endif /* HAVE_PUTENV_THAT_COPIES */
     }
 
     Tcl_MutexUnlock(&envMutex);
-
-    if (!strcmp(name, "HOME")) {
-	/*
-	 * If the user's home directory has changed, we must invalidate the
-	 * filesystem cache, because '~' expansions will now be incorrect.
-	 */
-
-	Tcl_FSMountsChanged(NULL);
-    }
 }
 
 /*
@@ -415,7 +406,7 @@ Tcl_PutEnv(
      * name and value parts, and call TclSetEnv to do all of the real work.
      */
 
-    name = Tcl_ExternalToUtfDString(NULL, assignment, -1, &nameString);
+    name = Tcl_ExternalToUtfDString(NULL, assignment, TCL_INDEX_NONE, &nameString);
     value = (char *)strchr(name, '=');
 
     if ((value != NULL) && (value != name)) {
@@ -462,8 +453,7 @@ TclUnsetEnv(
     const char *name)		/* Name of variable to remove (UTF-8). */
 {
     char *oldValue;
-    int length;
-    int index;
+    Tcl_Size length, index;
 #ifdef USE_PUTENV_FOR_UNSET
     Tcl_DString envString;
     char *string;
@@ -502,18 +492,18 @@ TclUnsetEnv(
      */
 
 #if defined(_WIN32)
-    string = (char *)ckalloc(length + 2);
+    string = (char *)Tcl_Alloc(length + 2);
     memcpy(string, name, length);
     string[length] = '=';
     string[length+1] = '\0';
 #else
-    string = (char *)ckalloc(length + 1);
+    string = (char *)Tcl_Alloc(length + 1);
     memcpy(string, name, length);
     string[length] = '\0';
 #endif /* _WIN32 */
 
     utf2tenvirondstr(string, -1, &envString);
-    string = (char *)ckrealloc(string, Tcl_DStringLength(&envString) + tNTL);
+    string = (char *)Tcl_Realloc(string, Tcl_DStringLength(&envString) + tNTL);
     memcpy(string, Tcl_DStringValue(&envString),
 	    Tcl_DStringLength(&envString) + tNTL);
     Tcl_DStringFree(&envString);
@@ -534,7 +524,7 @@ TclUnsetEnv(
 	 * This putenv() copies instead of taking ownership.
 	 */
 
-	ckfree(string);
+	Tcl_Free(string);
 #endif /* HAVE_PUTENV_THAT_COPIES */
     }
 #else /* !USE_PUTENV_FOR_UNSET */
@@ -578,7 +568,7 @@ TclGetEnv(
 				 * value of the environment variable is
 				 * stored. */
 {
-    int length, index;
+    Tcl_Size length, index;
     const char *result;
 
     Tcl_MutexLock(&envMutex);
@@ -626,7 +616,7 @@ TclGetEnv(
 
 static char *
 EnvTraceProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter whose "env" variable is being
 				 * modified. */
     const char *name1,		/* Better be "env". */
@@ -713,7 +703,7 @@ ReplaceString(
     const char *oldStr,		/* Old environment string. */
     char *newStr)		/* New environment string. */
 {
-    int i;
+    size_t i;
 
     /*
      * Check to see if the old value was allocated by Tcl. If so, it needs to
@@ -733,7 +723,7 @@ ReplaceString(
 	 */
 
 	if (env.cache[i]) {
-	    ckfree(env.cache[i]);
+	    Tcl_Free(env.cache[i]);
 	}
 
 	if (newStr) {
@@ -751,11 +741,11 @@ ReplaceString(
 
 	const int growth = 5;
 
-	env.cache = (char **)ckrealloc(env.cache,
+	env.cache = (char **)Tcl_Realloc(env.cache,
 		(env.cacheSize + growth) * sizeof(char *));
 	env.cache[env.cacheSize] = newStr;
 	(void) memset(env.cache+env.cacheSize+1, 0,
-		(size_t) (growth-1) * sizeof(char *));
+		(growth-1) * sizeof(char *));
 	env.cacheSize += growth;
     }
 }
@@ -792,17 +782,17 @@ TclFinalizeEnvironment(void)
 
     if (env.cache) {
 #ifdef PURIFY
-	int i;
+	size_t i;
 	for (i = 0; i < env.cacheSize; i++) {
-	    ckfree(env.cache[i]);
+	    Tcl_Free(env.cache[i]);
 	}
 #endif
-	ckfree(env.cache);
+	Tcl_Free(env.cache);
 	env.cache = NULL;
 	env.cacheSize = 0;
 #ifndef USE_PUTENV
 	if ((env.ourEnviron != NULL)) {
-	    ckfree(env.ourEnviron);
+	    Tcl_Free(env.ourEnviron);
 	    env.ourEnviron = NULL;
 	}
 	env.ourEnvironSize = 0;

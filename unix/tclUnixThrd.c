@@ -160,14 +160,6 @@ PCondTimedWait(
 }
 #endif /* HAVE_PTHREAD_MUTEX_RECURSIVE */
 
-#ifndef TCL_NO_DEPRECATED
-typedef struct {
-    char nabuf[16];
-} ThreadSpecificData;
-
-static Tcl_ThreadDataKey dataKey;
-#endif /* TCL_NO_DEPRECATED */
-
 /*
  * globalLock is used to serialize creation of mutexes, condition variables,
  * and thread local storage. This is the only place that can count on the
@@ -221,7 +213,7 @@ int
 TclpThreadCreate(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
-    ClientData clientData,	/* The one argument to Main() */
+    void *clientData,	/* The one argument to Main() */
     TCL_HASH_TYPE stackSize,	/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
@@ -585,7 +577,7 @@ Tcl_MutexLock(
 	     * Double inside global lock check to avoid a race condition.
 	     */
 
-	    pmutexPtr = (PMutex *)ckalloc(sizeof(PMutex));
+	    pmutexPtr = (PMutex *)Tcl_Alloc(sizeof(PMutex));
 	    PMutexInit(pmutexPtr);
 	    *mutexPtr = (Tcl_Mutex) pmutexPtr;
 	    TclRememberMutex(mutexPtr);
@@ -649,7 +641,7 @@ TclpFinalizeMutex(
 
     if (pmutexPtr != NULL) {
 	PMutexDestroy(pmutexPtr);
-	ckfree(pmutexPtr);
+	Tcl_Free(pmutexPtr);
 	*mutexPtr = NULL;
     }
 }
@@ -695,7 +687,7 @@ Tcl_ConditionWait(
 	 */
 
 	if (*condPtr == NULL) {
-	    pcondPtr = (pthread_cond_t *)ckalloc(sizeof(pthread_cond_t));
+	    pcondPtr = (pthread_cond_t *)Tcl_Alloc(sizeof(pthread_cond_t));
 	    pthread_cond_init(pcondPtr, NULL);
 	    *condPtr = (Tcl_Condition) pcondPtr;
 	    TclRememberCondition(condPtr);
@@ -783,59 +775,11 @@ TclpFinalizeCondition(
 
     if (pcondPtr != NULL) {
 	pthread_cond_destroy(pcondPtr);
-	ckfree(pcondPtr);
+	Tcl_Free(pcondPtr);
 	*condPtr = NULL;
     }
 }
-#endif /* TCL_THREADS */
 
-/*
- *----------------------------------------------------------------------
- *
- * TclpReaddir, TclpInetNtoa --
- *
- *	These procedures replace core C versions to be used in a threaded
- *	environment.
- *
- * Results:
- *	See documentation of C functions.
- *
- * Side effects:
- *	See documentation of C functions.
- *
- * Notes:
- *	TclpReaddir is no longer used by the core (see 1095909), but it
- *	appears in the internal stubs table (see #589526).
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_DEPRECATED
-Tcl_DirEntry *
-TclpReaddir(
-    TclDIR * dir)
-{
-    return TclOSreaddir(dir);
-}
-
-#undef TclpInetNtoa
-char *
-TclpInetNtoa(
-    struct in_addr addr)
-{
-#if TCL_THREADS
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    unsigned char *b = (unsigned char*) &addr.s_addr;
-
-    snprintf(tsdPtr->nabuf, sizeof(tsdPtr->nabuf), "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
-    return tsdPtr->nabuf;
-#else
-    return inet_ntoa(addr);
-#endif
-}
-#endif /* TCL_NO_DEPRECATED */
-
-#if TCL_THREADS
 /*
  * Additions by AOL for specialized thread memory allocator.
  */
@@ -925,7 +869,7 @@ TclpThreadCreateKey(void)
 {
     pthread_key_t *ptkeyPtr;
 
-    ptkeyPtr = (pthread_key_t *)TclpSysAlloc(sizeof(pthread_key_t), 0);
+    ptkeyPtr = (pthread_key_t *)TclpSysAlloc(sizeof(pthread_key_t));
     if (NULL == ptkeyPtr) {
 	Tcl_Panic("unable to allocate thread key!");
     }

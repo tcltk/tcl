@@ -119,26 +119,6 @@ Volume-relative path to a file \fBfoo\fR in the root directory of the current
 volume.  This is not a valid UNC path, so the assumption is that the
 extra backslashes are superfluous.
 .RE
-.SH "TILDE SUBSTITUTION"
-.PP
-In addition to the file name rules described above, Tcl also supports
-\fIcsh\fR-style tilde substitution.  If a file name starts with a tilde,
-then the file name will be interpreted as if the first element is
-replaced with the location of the home directory for the given user.  If
-the tilde is followed immediately by a separator, then the \fB$HOME\fR
-environment variable is substituted.  Otherwise the characters between
-the tilde and the next separator are taken as a user name, which is used
-to retrieve the user's home directory for substitution.  This works on
-Unix, MacOS X and Windows (except very old releases).
-.PP
-Old Windows platforms do not support tilde substitution when a user name
-follows the tilde.  On these platforms, attempts to use a tilde followed
-by a user name will generate an error that the user does not exist when
-Tcl attempts to interpret that part of the path or otherwise access the
-file.  The behaviour of these paths when not trying to interpret them is
-the same as on Unix.  File names that have a tilde without a user name
-will be correctly substituted using the \fB$HOME\fR environment
-variable, just like for Unix.
 .SH "PORTABILITY ISSUES"
 .PP
 Not all file systems are case sensitive, so scripts should avoid code

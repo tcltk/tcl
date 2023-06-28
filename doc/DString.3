@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_DStringInit, Tcl_DStringAppend, Tcl_DStringAppendElement, Tcl_DStringStartSublist, Tcl_DStringEndSublist, Tcl_DStringLength, Tcl_DStringValue, Tcl_DStringSetLength, Tcl_DStringTrunc, Tcl_DStringFree, Tcl_DStringResult, Tcl_DStringGetResult \- manipulate dynamic strings
+Tcl_DStringInit, Tcl_DStringAppend, Tcl_DStringAppendElement, Tcl_DStringStartSublist, Tcl_DStringEndSublist, Tcl_DStringLength, Tcl_DStringValue, Tcl_DStringSetLength, Tcl_DStringFree, Tcl_DStringResult, Tcl_DStringGetResult \- manipulate dynamic strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -26,15 +26,13 @@ char *
 .sp
 \fBTcl_DStringEndSublist\fR(\fIdsPtr\fR)
 .sp
-int
+Tcl_Size
 \fBTcl_DStringLength\fR(\fIdsPtr\fR)
 .sp
 char *
 \fBTcl_DStringValue\fR(\fIdsPtr\fR)
 .sp
 \fBTcl_DStringSetLength\fR(\fIdsPtr, newLength\fR)
-.sp
-\fBTcl_DStringTrunc\fR(\fIdsPtr, newLength\fR)
 .sp
 \fBTcl_DStringFree\fR(\fIdsPtr\fR)
 .sp
@@ -53,10 +51,10 @@ Pointer to structure that is used to manage a dynamic string.
 Pointer to characters to append to dynamic string.
 .AP "const char" *element in
 Pointer to characters to append as list element to dynamic string.
-.AP int length in
-Number of bytes from \fIbytes\fR to add to dynamic string.  If -1,
+.AP Tcl_Size length in
+Number of bytes from \fIbytes\fR to add to dynamic string.  If negative,
 add all characters up to null terminating character.
-.AP int newLength in
+.AP Tcl_Size newLength in
 New length for dynamic string, not including null terminating
 character.
 .AP Tcl_Interp *interp in/out
@@ -132,10 +130,6 @@ caller to fill in the new space.
 even if the string is truncated to zero length, so \fBTcl_DStringFree\fR
 will still need to be called.
 .PP
-\fBTcl_DStringTrunc\fR changes the length of a dynamic string.
-This procedure is now deprecated.  \fBTcl_DStringSetLength\fR  should
-be used instead.
-.PP
 \fBTcl_DStringFree\fR should be called when you are finished using
 the string.  It frees up any memory that was allocated for the string
 and reinitializes the string's value to an empty string.
@@ -148,7 +142,8 @@ This saves the cost of allocating new memory and copying the string.
 an empty string.
 Since the dynamic string is reinitialized, there is no need to
 further call \fBTcl_DStringFree\fR on it and it can be reused without
-calling \fBTcl_DStringInit\fR.
+calling \fBTcl_DStringInit\fR. The caller must ensure that the dynamic
+string stored in \fIdsPtr\fR is encoded in Tcl's internal UTF-8 format.
 .PP
 \fBTcl_DStringGetResult\fR does the opposite of \fBTcl_DStringResult\fR.
 It sets the value of \fIdsPtr\fR to the result of \fIinterp\fR and
@@ -156,15 +151,15 @@ it clears \fIinterp\fR's result.
 If possible it does this by moving a pointer rather than by copying
 the string.
 .PP
-\fBTcl_DStringToObj\fR returns a \fBTcl_Obj\fR containing the value of
-the dynamic string given by \fIdsPtr\fR.  It does this by moving
-a pointer from \fIdsPtr\fR to a newly allocated \fBTcl_Obj\fR
-and reinitializing to dynamic string to an empty string.
-This saves the cost of allocating new memory and copying the string.
-Since the dynamic string is reinitialized, there is no need to
-further call \fBTcl_DStringFree\fR on it and it can be reused without
-calling \fBTcl_DStringInit\fR.
-The returned \fBTcl_Obj\fR has a reference count of 0.
+\fBTcl_DStringToObj\fR returns a \fBTcl_Obj\fR containing the value of the
+dynamic string given by \fIdsPtr\fR. It does this by moving a pointer from
+\fIdsPtr\fR to a newly allocated \fBTcl_Obj\fR and reinitializing to dynamic
+string to an empty string. This saves the cost of allocating new memory and
+copying the string. Since the dynamic string is reinitialized, there is no need
+to further call \fBTcl_DStringFree\fR on it and it can be reused without calling
+\fBTcl_DStringInit\fR. The returned \fBTcl_Obj\fR has a reference count of 0.
+The caller must ensure that the dynamic string stored in \fIdsPtr\fR is encoded
+in Tcl's internal UTF-8 format.
 
 .SH KEYWORDS
 append, dynamic string, free, result
