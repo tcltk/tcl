@@ -28,6 +28,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        timeout-minutes: 5
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
@@ -38,23 +39,30 @@ jobs:
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
         env:
           CFGOPT: ${{ matrix.cfgopt }}
+        timeout-minutes: 5
       - name: Build
         run: |
           make all
+        timeout-minutes: 5
       - name: Build Test Harness
         run: |
           make tcltest
+        timeout-minutes: 5
       - name: Run Tests
         run: |
           make test
         env:
           ERROR_ON_FAILURES: 1
+        timeout-minutes: 30
       - name: Test-Drive Installation
         run: |
           make install
+        timeout-minutes: 5
       - name: Create Distribution Package
         run: |
           make dist
+        timeout-minutes: 5
       - name: Convert Documentation to HTML
         run: |
           make html-tcl
+        timeout-minutes: 5
