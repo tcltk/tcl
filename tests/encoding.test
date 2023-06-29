@@ -1109,6 +1109,15 @@ test encoding-29.0 {get encoding nul terminator lengths} -constraints {
         [testencoding nullength ksc5601]
 } -result {1 2 4 2 2}
 
+test encoding-bug-6a3e2cb0f0-1 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
+    encoding convertfrom -profile tcl8 iso2022-jp x\x1b\x7aaby
+} -result x\uFFFDy
+test encoding-bug-6a3e2cb0f0-2 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
+    encoding convertfrom -profile strict iso2022-jp x\x1b\x7aaby
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\x1B'}
+test encoding-bug-6a3e2cb0f0-3 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
+    encoding convertfrom -profile replace iso2022-jp x\x1b\x7aaby
+} -result x\uFFFDy
 
 # cleanup
 namespace delete ::tcl::test::encoding
