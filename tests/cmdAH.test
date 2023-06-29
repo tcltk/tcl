@@ -682,16 +682,51 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
     set suffix_bytes [encoding convertto $enc $suffix]
     set prefixLen [string length $prefix_bytes]
     if {$ctrl eq {} || "solo" in $ctrl} {
-        test cmdAH-4.4.15.$hex.solo.$enc "Roundtrip $hex for $enc" -body {
+        test cmdAH-4.4.15.$hex.solo.$enc "Lossless roundtrip $hex for $enc" -body {
             set decoded [encoding convertfrom -profile lossless $enc $bytes]
             string equal $bytes [encoding convertto -profile lossless $enc $decoded]
         } -result 1
     }
     if {$ctrl eq {} || "lead" in $ctrl} {
+        test cmdAH-4.4.15.$hex.lead.$enc "Lossless roundtrip $hex for $enc" -body {
+            set decoded [encoding convertfrom -profile lossless $enc $bytes$suffix_bytes]
+            string equal $bytes$suffix_bytes [encoding convertto -profile lossless $enc $decoded]
+        } -result 1
     }
     if {$ctrl eq {} || "tail" in $ctrl} {
+        test cmdAH-4.4.15.$hex.tail.$enc "Lossless roundtrip $hex for $enc" -body {
+            set decoded [encoding convertfrom -profile lossless $enc $prefix_bytes$bytes]
+            string equal $prefix_bytes$bytes [encoding convertto -profile lossless $enc $decoded]
+        } -result 1
     }
     if {$ctrl eq {} || "middle" in $ctrl} {
+        test cmdAH-4.4.15.$hex.middle.$enc "Lossless roundtrip $hex for $enc" -body {
+            set decoded [encoding convertfrom -profile lossless $enc $prefix_bytes$bytes$suffix_bytes]
+            string equal $prefix_bytes$bytes$suffix_bytes [encoding convertto -profile lossless $enc $decoded]
+        } -result 1
+    }
+}
+
+#
+# Invalid bytes < 128 should map to FFFD for lossless profile
+
+# Find an invalid byte < 128 for the given encoding
+proc invalid_byte_under_128 enc {
+    for {set i 0} {$i < 128} {incr i} {
+        set bin [binary format c $i]
+        if {[catch {set ch [encoding convertfrom -profile strict $enc $bin]}]} {
+            return $bin
+        }
+    }
+    # All bytes under 128 are valid
+    return ""
+}
+foreach enc [encoding names] {
+    set byte [invalid_byte_under_128 $enc]
+    if {$byte ne ""} {
+        test cmdAH-4.4.16.$enc "Invalid byte under 128 for lossless profile" -body {
+            encoding convertfrom -profile replace $enc $byte
+        } -result \uFFFD
     }
 }
 
