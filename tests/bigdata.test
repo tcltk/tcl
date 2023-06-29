@@ -112,8 +112,10 @@ proc bigPatlenMultiple {limit} {
 set ::bigLengths(intmax) 0x7fffffff
 set ::bigLengths(uintmax) 0xffffffff
 # Some tests are more convenient if operands are multiple of pattern length
+if {[testConstraint bigdata]} {
 set ::bigLengths(patlenmultiple) [bigPatlenMultiple $::bigLengths(intmax)]
 set ::bigLengths(upatlenmultiple) [bigPatlenMultiple $::bigLengths(uintmax)]
+}
 
 #
 # script limits

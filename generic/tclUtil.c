@@ -103,10 +103,10 @@ static void		ClearHash(Tcl_HashTable *tablePtr);
 static void		FreeProcessGlobalValue(void *clientData);
 static void		FreeThreadHash(void *clientData);
 static int		GetEndOffsetFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Tcl_Size endValue, Tcl_WideInt *indexPtr);
+			    Tcl_WideInt endValue, Tcl_WideInt *indexPtr);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		GetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Tcl_Size endValue, Tcl_WideInt *widePtr);
+			    Tcl_WideInt endValue, Tcl_WideInt *widePtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    Tcl_Size stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
@@ -140,7 +140,7 @@ TclLengthOne(
 {
     return 1;
 }
-
+
 /*
  *	*	STRING REPRESENTATION OF LISTS	*	*	*
  *
@@ -1574,7 +1574,8 @@ Tcl_Merge(
 {
 #define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    Tcl_Size i, bytesNeeded = 0;
+    Tcl_Size i;
+    size_t bytesNeeded = 0;
     char *result, *dst;
 
     /*
@@ -1583,6 +1584,9 @@ Tcl_Merge(
      */
 
     if (argc <= 0) {
+	if (argc < 0) {
+	    Tcl_Panic("Tcl_Merge called with negative argc (%" TCL_SIZE_MODIFIER "d)", argc);
+	}
 	result = (char *)Tcl_Alloc(1);
 	result[0] = '\0';
 	return result;
@@ -2749,8 +2753,7 @@ Tcl_DStringAppendElement(
     newSize += 1; /* For terminating nul */
     if (newSize > dsPtr->spaceAvl) {
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString;
-	    newString = (char *) TclAllocEx(newSize, &dsPtr->spaceAvl);
+	    char *newString = (char *) TclAllocEx(newSize, &dsPtr->spaceAvl);
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
@@ -2763,7 +2766,7 @@ Tcl_DStringAppendElement(
 		offset = element - dsPtr->string;
 	    }
 	    dsPtr->string =
-		(char *)TclReallocEx(dsPtr->string, newSize, &dsPtr->spaceAvl);
+		    (char *)TclReallocEx(dsPtr->string, newSize, &dsPtr->spaceAvl);
 	    if (offset >= 0) {
 		element = dsPtr->string + offset;
 	    }
@@ -2936,7 +2939,7 @@ Tcl_DStringGetResult(
 				 * of interp. */
 {
     Tcl_Obj *obj = Tcl_GetObjResult(interp);
-    char *bytes = TclGetString(obj);
+    const char *bytes = TclGetString(obj);
 
     Tcl_DStringFree(dsPtr);
     Tcl_DStringAppend(dsPtr, bytes, obj->length);
@@ -3363,7 +3366,7 @@ GetWideForIndex(
 				 * NULL, then no error message is left after
 				 * errors. */
     Tcl_Obj *objPtr,            /* Points to the value to be parsed */
-    Tcl_Size endValue,            /* The value to be stored at *widePtr if
+    Tcl_WideInt endValue,       /* The value to be stored at *widePtr if
 				 * objPtr holds "end".
                                  * NOTE: this value may be TCL_INDEX_NONE. */
     Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
@@ -3377,12 +3380,15 @@ GetWideForIndex(
 	if (numType == TCL_NUMBER_INT) {
 	    /* objPtr holds an integer in the signed wide range */
 	    *widePtr = *(Tcl_WideInt *)cd;
+	    if ((*widePtr < 0)) {
+		*widePtr = (endValue == -1) ? WIDE_MIN : -1;
+	    }
 	    return TCL_OK;
 	}
 	if (numType == TCL_NUMBER_BIG) {
 	    /* objPtr holds an integer outside the signed wide range */
 	    /* Truncate to the signed wide range. */
-	    *widePtr = ((mp_isneg((mp_int *)cd)) ? WIDE_MIN : WIDE_MAX);
+	    *widePtr = ((mp_isneg((mp_int *)cd)) ? ((endValue == -1) ? WIDE_MIN : -1) : WIDE_MAX);
 	    return TCL_OK;
 	}
     }
@@ -3404,14 +3410,12 @@ GetWideForIndex(
  *	(0..TCL_SIZE_MAX) it is returned. Higher values are returned as
  *	TCL_SIZE_MAX. Negative values are returned as TCL_INDEX_NONE (-1).
  *
- *	Callers should pass reasonable values for endValue - one in the
- *      valid index range or TCL_INDEX_NONE (-1), for example for an empty
- *	list.
  *
  * Results:
  * 	TCL_OK
  *
- * 	    The index is stored at the address given by by 'indexPtr'.
+ * 	    The index is stored at the address given by by 'indexPtr'. If
+ * 	    'objPtr' has the value "end", the value stored is 'endValue'.
  *
  * 	TCL_ERROR
  *
@@ -3419,9 +3423,10 @@ GetWideForIndex(
  * 	    'interp' is non-NULL, an error message is left in the interpreter's
  * 	    result object.
  *
- * Side effects:
+ * Effect
  *
- * 	The internal representation contained within objPtr may shimmer.
+ * 	The object referenced by 'objPtr' is converted, as needed, to an
+ * 	integer, wide integer, or end-based-index object.
  *
  *----------------------------------------------------------------------
  */
@@ -3443,12 +3448,14 @@ Tcl_GetIntForIndex(
 	return TCL_ERROR;
     }
     if (indexPtr != NULL) {
-	if ((wide < 0) && ((size_t)endValue < (size_t)TCL_INDEX_END)) {
+	if ((wide < 0) && (endValue >= 0)) {
 	    *indexPtr = TCL_INDEX_NONE;
-	} else if ((Tcl_WideUInt)wide > (size_t)TCL_INDEX_END && ((size_t)endValue < (size_t)TCL_INDEX_END)) {
-	    *indexPtr = TCL_INDEX_END;
+	} else if (wide > TCL_SIZE_MAX) {
+	    *indexPtr = TCL_SIZE_MAX;
+	} else if (wide < -1-TCL_SIZE_MAX) {
+	    *indexPtr = -1-TCL_SIZE_MAX;
 	} else {
-	    *indexPtr = (Tcl_Size)wide;
+	    *indexPtr = (Tcl_Size) wide;
 	}
     }
     return TCL_OK;
@@ -3470,7 +3477,8 @@ Tcl_GetIntForIndex(
  *	-2:         Index "end-1"
  *	-1:         Index "end"
  *	0:          Index "0"
- *	WIDE_MAX-1: Index "end+n", for any n > 1
+ *	WIDE_MAX-1: Index "end+n", for any n > 1. Distinguish from end+1 for
+ *                  commands like lset.
  *	WIDE_MAX:   Index "end+1"
  *
  * Results:
@@ -3486,7 +3494,7 @@ static int
 GetEndOffsetFromObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,            /* Pointer to the object to parse */
-    Tcl_Size endValue,          /* The value to be stored at "widePtr" if
+    Tcl_WideInt endValue,       /* The value to be stored at "widePtr" if
                                  * "objPtr" holds "end". */
     Tcl_WideInt *widePtr)       /* Location filled in with an integer
                                  * representing an index. */
@@ -3687,9 +3695,11 @@ GetEndOffsetFromObj(
     offset = irPtr->wideValue;
 
     if (offset == WIDE_MAX) {
-	*widePtr = (size_t)endValue + 1;
+	*widePtr = (endValue == -1) ? WIDE_MAX : endValue + 1;
     } else if (offset == WIDE_MIN) {
 	*widePtr = -1;
+    } else if (endValue == -1) {
+	*widePtr = offset;
     } else if (offset < 0) {
 	/* Different signs, sum cannot overflow */
 	*widePtr = (size_t)endValue + offset + 1;
@@ -3775,14 +3785,12 @@ int
 TclIndexEncode(
     Tcl_Interp *interp,	/* For error reporting, may be NULL */
     Tcl_Obj *objPtr,	/* Index value to parse */
-    Tcl_Size before1,		/* Value to return for index before beginning */
-    Tcl_Size after1,		/* Value to return for index after end */
+    int before,	/* Value to return for index before beginning */
+    int after,		/* Value to return for index after end */
     int *indexPtr)	/* Where to write the encoded answer, not NULL */
 {
     Tcl_WideInt wide;
     int idx;
-    size_t before = before1;
-    size_t after = after1;
 
     if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
 	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &endOffsetType.objType);
@@ -3844,11 +3852,11 @@ TclIndexDecode(
     int encoded,	/* Value to decode */
     Tcl_Size endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
 {
-    if (encoded > (int)TCL_INDEX_END) {
+    if (encoded > TCL_INDEX_END) {
 	return encoded;
     }
     if ((size_t)endValue >= (size_t)TCL_INDEX_END - encoded) {
-	return (size_t)endValue + encoded - TCL_INDEX_END;
+	return endValue + encoded - TCL_INDEX_END;
     }
     return TCL_INDEX_NONE;
 }

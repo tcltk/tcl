@@ -598,7 +598,7 @@ test lseq-4.12 {bug lseq} -constraints has64BitLengths -body {
     llength [lseq 0x100000000]
 } -result {4294967296}
 
-test lseq-4.13 {bug lseq} -constraints knownBug -body {
+test lseq-4.13 {bug lseq} -constraints {has64BitLengths knownBug} -body {
     set l [lseq 0x7fffffffffffffff]
     list \
     [llength $l] \
