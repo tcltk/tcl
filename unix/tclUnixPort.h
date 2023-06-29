@@ -7,7 +7,7 @@
  *	file that contains #ifdefs to handle different flavors of UNIX. This
  *	file sets up the union of all UNIX-related things needed by any of the
  *	Tcl core files. This file depends on configuration #defines such as
- *	NO_DIRENT_H that are set up by the "configure" script.
+ *	HAVE_SYS_PARAM_H that are set up by the "configure" script.
  *
  *	Much of the material in this file was originally contributed by Karl
  *	Lehenbauer, Mark Diekhans and Peter da Silva.
@@ -40,15 +40,7 @@
 #   include <sys/param.h>
 #endif
 #include <sys/types.h>
-#ifdef USE_DIRENT2_H
-#   include "../compat/dirent2.h"
-#else
-#ifdef NO_DIRENT_H
-#   include "../compat/dirent.h"
-#else
-#   include <dirent.h>
-#endif
-#endif
+#include <dirent.h>
 
 /*
  *---------------------------------------------------------------------------

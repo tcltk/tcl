@@ -4179,23 +4179,20 @@ EscapeToUtfProc(
 		if (PROFILE_STRICT(flags)) {
 		    result = TCL_CONVERT_SYNTAX;
 		} else {
+                    Tcl_Size skip = longest > left ? left : longest;
 		    if (PROFILE_LOSSLESS(flags)) {
 			Tcl_Size n =
-			    ToLosslessUtf8(src, longest, dst, dstStart + dstLen - dst);
+			    ToLosslessUtf8(src, skip, dst, dstStart + dstLen - dst);
 			if (n < 0) {
 			    result = TCL_CONVERT_NOSPACE;
 			    break;
 			}
 			dst += n;
 		    } else {
-			/*
-			 * PROFILE_{REPLACE,TCL8}. Do nothing and
-			 * skip the unknown escape sequence. TODO - bug?
-			 * May be replace with UNICODE_REPLACE_CHAR?
-			 */
+                        /* Unknown escape sequence */
+                        dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 		    }
-
-		    src += longest;
+		    src += skip;
 		    continue;
 		}
 	    } else {

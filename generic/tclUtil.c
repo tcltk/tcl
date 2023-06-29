@@ -140,7 +140,7 @@ TclLengthOne(
 {
     return 1;
 }
-
+
 /*
  *	*	STRING REPRESENTATION OF LISTS	*	*	*
  *
@@ -3380,12 +3380,15 @@ GetWideForIndex(
 	if (numType == TCL_NUMBER_INT) {
 	    /* objPtr holds an integer in the signed wide range */
 	    *widePtr = *(Tcl_WideInt *)cd;
+	    if ((*widePtr < 0)) {
+		*widePtr = (endValue == -1) ? WIDE_MIN : -1;
+	    }
 	    return TCL_OK;
 	}
 	if (numType == TCL_NUMBER_BIG) {
 	    /* objPtr holds an integer outside the signed wide range */
 	    /* Truncate to the signed wide range. */
-	    *widePtr = ((mp_isneg((mp_int *)cd)) ? WIDE_MIN : WIDE_MAX);
+	    *widePtr = ((mp_isneg((mp_int *)cd)) ? ((endValue == -1) ? WIDE_MIN : -1) : WIDE_MAX);
 	    return TCL_OK;
 	}
     }
@@ -3407,14 +3410,12 @@ GetWideForIndex(
  *	(0..TCL_SIZE_MAX) it is returned. Higher values are returned as
  *	TCL_SIZE_MAX. Negative values are returned as TCL_INDEX_NONE (-1).
  *
- *	Callers should pass reasonable values for endValue - one in the
- *      valid index range or TCL_INDEX_NONE (-1), for example for an empty
- *	list.
  *
  * Results:
  * 	TCL_OK
  *
- * 	    The index is stored at the address given by by 'indexPtr'.
+ * 	    The index is stored at the address given by by 'indexPtr'. If
+ * 	    'objPtr' has the value "end", the value stored is 'endValue'.
  *
  * 	TCL_ERROR
  *
@@ -3422,9 +3423,10 @@ GetWideForIndex(
  * 	    'interp' is non-NULL, an error message is left in the interpreter's
  * 	    result object.
  *
- * Side effects:
+ * Effect
  *
- * 	The internal representation contained within objPtr may shimmer.
+ * 	The object referenced by 'objPtr' is converted, as needed, to an
+ * 	integer, wide integer, or end-based-index object.
  *
  *----------------------------------------------------------------------
  */
@@ -3446,13 +3448,14 @@ Tcl_GetIntForIndex(
 	return TCL_ERROR;
     }
     if (indexPtr != NULL) {
-	/* Note: check against TCL_SIZE_MAX needed for 32-bit builds */
-	if (wide >= 0 && wide <= TCL_SIZE_MAX) {
-	    *indexPtr = (Tcl_Size)wide;
+	if ((wide < 0) && (endValue >= 0)) {
+	    *indexPtr = TCL_INDEX_NONE;
 	} else if (wide > TCL_SIZE_MAX) {
 	    *indexPtr = TCL_SIZE_MAX;
+	} else if (wide < -1-TCL_SIZE_MAX) {
+	    *indexPtr = -1-TCL_SIZE_MAX;
 	} else {
-	    *indexPtr = TCL_INDEX_NONE;
+	    *indexPtr = (Tcl_Size) wide;
 	}
     }
     return TCL_OK;
@@ -3692,26 +3695,17 @@ GetEndOffsetFromObj(
     offset = irPtr->wideValue;
 
     if (offset == WIDE_MAX) {
-	/*
-	 * Encodes end+1. This is distinguished from end+n as noted above
-	 * NOTE: this may wrap around if the caller passes (as lset does)
-	 * listLen-1 as endValue and and listLen is 0. The -1 will be
-	 * interpreted as FF...FF and adding 1 will result in 0 which
-	 * is what we want. 2's complements shenanigans but it is what
-	 * it is ...
-	 */
-	*widePtr = endValue + 1;
+	*widePtr = (endValue == -1) ? WIDE_MAX : endValue + 1;
     } else if (offset == WIDE_MIN) {
-	/* -1 - position before first */
 	*widePtr = -1;
+    } else if (endValue == -1) {
+	*widePtr = offset;
     } else if (offset < 0) {
-	/* end-(n-1) - Different signs, sum cannot overflow */
-	*widePtr = endValue + offset + 1;
+	/* Different signs, sum cannot overflow */
+	*widePtr = (size_t)endValue + offset + 1;
     } else if (offset < WIDE_MAX) {
-	/* 0:WIDE_MAX-1 - plain old index. */
 	*widePtr = offset;
     } else {
-	/* Huh, what case remains here? */
 	*widePtr = WIDE_MAX;
     }
     return TCL_OK;
@@ -3736,26 +3730,19 @@ GetEndOffsetFromObj(
  *----------------------------------------------------------------------
  *
  * TclIndexEncode --
- *      IMPORTANT: function only encodes indices in the range that fits within
- *      an "int" type. Do NOT change this as the byte code compiler and engine
- *      which call this function cannot handle wider index types. Indices
- *      outside the range will result in the function returning an error.
  *
  *      Parse objPtr to determine if it is an index value. Two cases
  *	are possible.  The value objPtr might be parsed as an absolute
- *	index value in the Tcl_Size range.  Note that this includes
+ *	index value in the C signed int range.  Note that this includes
  *	index values that are integers as presented and it includes index
- *      arithmetic expressions.
- *
- *      The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
- *      This means the largest supported character length is also TCL_SIZE_MAX,
- *      and the index of the last character in a string of length TCL_SIZE_MAX
- *      is TCL_SIZE_MAX-1. Thus the absolute index values that can be
+ *      arithmetic expressions. The absolute index values that can be
  *	directly meaningful as an index into either a list or a string are
- *	integer values in the range 0 to TCL_SIZE_MAX - 1.
- *
- *      This function however can only handle integer indices in the range
- *      0 : INT_MAX-1.
+ *	those integer values >= TCL_INDEX_START (0)
+ *	and < INT_MAX.
+ *      The largest string supported in Tcl 8 has bytelength INT_MAX.
+ *      This means the largest supported character length is also INT_MAX,
+ *      and the index of the last character in a string of length INT_MAX
+ *      is INT_MAX-1.
  *
  *      Any absolute index value parsed outside that range is encoded
  *      using the before and after values passed in by the
@@ -3780,9 +3767,12 @@ GetEndOffsetFromObj(
  *      if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
  *      they can be encoded with the before value.
  *
+ *      These details will require re-examination whenever string and
+ *      list length limits are increased, but that will likely also
+ *      mean a revised routine capable of returning Tcl_WideInt values.
+ *
  * Returns:
- *      TCL_OK if parsing succeeded, and TCL_ERROR if it failed or the
- *      index does not fit in an int type.
+ *      TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
  *
  * Side effects:
  *      When TCL_OK is returned, the encoded index value is written
@@ -3795,138 +3785,51 @@ int
 TclIndexEncode(
     Tcl_Interp *interp,	/* For error reporting, may be NULL */
     Tcl_Obj *objPtr,	/* Index value to parse */
-    int before,		/* Value to return for index before beginning */
+    int before,	/* Value to return for index before beginning */
     int after,		/* Value to return for index after end */
     int *indexPtr)	/* Where to write the encoded answer, not NULL */
 {
     Tcl_WideInt wide;
     int idx;
-    const Tcl_WideInt ENDVALUE = 2 * (Tcl_WideInt) INT_MAX;
 
-    assert(ENDVALUE < WIDE_MAX);
-    if (TCL_OK != GetWideForIndex(interp, objPtr, ENDVALUE, &wide)) {
-	return TCL_ERROR;
-    }
-    /*
-     * We passed 2*INT_MAX as the "end value" to GetWideForIndex. The computed
-     * index will be in one of the following ranges that need to be
-     * distinguished for encoding purposes in the following code.
-     * (1) 0:INT_MAX when
-     *     (a) objPtr was a pure non-negative numeric value in that range
-     *     (b) objPtr was a numeric computation M+/-N with a result in that range
-     *     (c) objPtr was of the form end-N where N was in range INT_MAX:2*INT_MAX
-     * (2) INT_MAX+1:2*INT_MAX when
-     *     (a,b) as above
-     *     (c) objPtr was of the form end-N where N was in range 0:INT_MAX-1
-     * (3) 2*INT_MAX:WIDE_MAX when
-     *     (a,b) as above
-     *     (c) objPtr was of the form end+N
-     * (4) (2*INT_MAX)-TCL_SIZE_MAX : -1 when
-     *     (a,b) as above
-     *     (c) objPtr was of the form end-N where N was in the range 0:TCL_SIZE_MAX
-     * (5) WIDE_MIN:(2*INT_MAX)-TCL_SIZE_MAX
-     *     (a,b) as above
-     *     (c) objPtr was of the form end-N where N was > TCL_SIZE_MAX
-     *
-     * For all cases (b) and (c), the internal representation of objPtr
-     * will be shimmered to endOffsetType. That allows us to distinguish between
-     * (for example) 1a (encodable) and 1c (not encodable) though the computed
-     * index value is the same.
-     *
-     * Further note, the values TCL_SIZE_MAX < N < WIDE_MAX come into play
-     * only in the 32-bit builds as TCL_SIZE_MAX == WIDE_MAX for 64-bits.
-     */
-
-    const Tcl_ObjInternalRep *irPtr =
-	TclFetchInternalRep(objPtr, &endOffsetType.objType);
-
-    if (irPtr && irPtr->wideValue >= 0) {
-	/*
-	 * "int[+-]int" syntax, works the same here as "int".
-	 * Note same does not hold for negative integers.
-	 * Distinguishes 1b and 1c where wide will be in 0:INT_MAX for
-	 * both but irPtr->wideValue will be negative for 1c.
-	 */
-	irPtr = NULL;
-    }
-
-    if (irPtr == NULL) {
-	/* objPtr can be treated as a purely numeric value. */
-
-	/*
-	 * On 64-bit systems, indices in the range INT_MAX:TCL_SIZE_MAX are
-	 * valid indices but are not in the encodable range. Thus an
-	 * error is raised. On 32-bit systems, indices in that range indicate
-	 * the position after the end and so do not raise an error.
-	 */
-	if ((sizeof(int) != sizeof(Tcl_Size)) &&
-	    (wide > INT_MAX) && (wide < WIDE_MAX-1)) {
-	    /* 2(a,b) on 64-bit systems*/
-	    goto rangeerror;
+    if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &endOffsetType.objType);
+	if (irPtr && irPtr->wideValue >= 0) {
+	    /* "int[+-]int" syntax, works the same here as "int" */
+	    irPtr = NULL;
 	}
-	if (wide > INT_MAX) {
+	/*
+	 * We parsed an end+offset index value.
+	 * wide holds the offset value in the range WIDE_MIN...WIDE_MAX.
+	 */
+	if ((irPtr ? ((wide < INT_MIN) && ((Tcl_Size)-wide <= LIST_MAX))
+		: ((wide > INT_MAX) && ((Tcl_Size)wide <= LIST_MAX))) && (sizeof(int) != sizeof(Tcl_Size))) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"index \"%s\" out of range",
+			TclGetString(objPtr)));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX"
+			"OUTOFRANGE", NULL);
+	    }
+	    return TCL_ERROR;
+	} else if (wide > (unsigned)(irPtr ? TCL_INDEX_END : INT_MAX)) {
 	    /*
-	     * 3(a,b) on 64-bit systems and 2(a,b), 3(a,b) on 32-bit systems
-	     * Because of the check above, this case holds for indices
-	     * greater than INT_MAX on 32-bit systems and > TCL_SIZE_MAX
-	     * on 64-bit systems. Always maps to the element after the end.
+	     * All end+postive or end-negative expressions
+	     * always indicate "after the end".
 	     */
 	    idx = after;
-	} else if (wide < 0) {
-	    /* 4(a,b) (32-bit systems), 5(a,b) - before the beginning */
+	} else if (wide <= (irPtr ? INT_MAX : -1)) {
+	    /* These indices always indicate "before the beginning" */
 	    idx = before;
 	} else {
-	    /* 1(a,b) Encodable range */
+	    /* Encoded end-positive (or end+negative) are offset */
 	    idx = (int)wide;
 	}
     } else {
-	/* objPtr is not purely numeric (end etc.)  */
-
-	/*
-	 * On 64-bit systems, indices in the range end-LIST_MAX:end-INT_MAX
-	 * are valid indices (with max size strings/lists) but are not in
-	 * the encodable range. Thus an error is raised. On 32-bit systems,
-	 * indices in that range indicate the position before the beginning
-	 * and so do not raise an error.
-	 */
-	if ((sizeof(int) != sizeof(Tcl_Size)) &&
-	    (wide > (ENDVALUE - LIST_MAX)) && (wide <= INT_MAX)) {
-	    /* 1(c), 4(a,b) on 64-bit systems */
-	    goto rangeerror;
-	}
-	if (wide > ENDVALUE) {
-	    /*
-	     * 2(c) (32-bit systems), 3(c)
-	     * All end+positive or end-negative expressions
-	     * always indicate "after the end".
-	     * Note we will not reach here for a pure numeric value in this
-	     * range because irPtr will be NULL in that case.
-	     */
-	    idx = after;
-	} else if (wide <= INT_MAX) {
-	    /* 1(c) (32-bit systems), 4(c) (32-bit systems), 5(c) */
-	    idx = before;
-	} else {
-	    /* 2(c) Encodable end-positive (or end+negative) */
-	    idx = (int)wide;
-	}
+	return TCL_ERROR;
     }
     *indexPtr = idx;
     return TCL_OK;
-
-rangeerror:
-    if (interp) {
-	Tcl_SetObjResult(
-	    interp,
-	    Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
-	Tcl_SetErrorCode(interp,
-			 "TCL",
-			 "VALUE",
-			 "INDEX"
-			 "OUTOFRANGE",
-			 NULL);
-    }
-    return TCL_ERROR;
 }
 
 /*
@@ -3952,9 +3855,8 @@ TclIndexDecode(
     if (encoded > TCL_INDEX_END) {
 	return encoded;
     }
-    endValue += encoded - TCL_INDEX_END;
-    if (endValue >= 0) {
-	return endValue;
+    if ((size_t)endValue >= (size_t)TCL_INDEX_END - encoded) {
+	return endValue + encoded - TCL_INDEX_END;
     }
     return TCL_INDEX_NONE;
 }
