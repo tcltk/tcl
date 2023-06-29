@@ -1162,6 +1162,15 @@ test encoding-30.3 {encoding convertfrom large strings > 4GB} -constraints {
     list [string length [set s [string repeat A 0x100000000]]] [string equal $s [encoding convertfrom ascii $s]]
 } -result {4294967296 1}
 
+test encoding-bug-6a3e2cb0f0-1 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
+    encoding convertfrom -profile tcl8 iso2022-jp x\x1b\x7aaby
+} -result x\uFFFDy
+test encoding-bug-6a3e2cb0f0-2 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
+    encoding convertfrom -profile strict iso2022-jp x\x1b\x7aaby
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\x1B'}
+test encoding-bug-6a3e2cb0f0-3 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
+    encoding convertfrom -profile replace iso2022-jp x\x1b\x7aaby
+} -result x\uFFFDy
 
 # cleanup
 namespace delete ::tcl::test::encoding
