@@ -409,8 +409,6 @@ TclNewArithSeriesObj(
 	}
     }
 
-    int precision = maxPrecision(dstart,dend,dstep);
-
     if (startObj && endObj) {
 	if (!stepObj) {
 	    if (useDoubles) {
@@ -424,6 +422,7 @@ TclNewArithSeriesObj(
 	assert(dstep!=0);
 	if (!lenObj) {
 	    if (useDoubles) {
+		int precision = maxPrecision(dstart,dend,dstep);
 		len = ArithSeriesLenDbl(dstart, dend, dstep, precision);
 	    } else {
 		len = ArithSeriesLenInt(start, end, step);
