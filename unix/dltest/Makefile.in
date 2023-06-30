@@ -22,7 +22,7 @@ LDFLAGS_DEBUG		= @LDFLAGS_DEBUG@
 LDFLAGS_OPTIMIZE	= @LDFLAGS_OPTIMIZE@
 LDFLAGS			= @LDFLAGS_DEFAULT@ @LDFLAGS@
 
-CC_SWITCHES = $(CFLAGS) -I${SRC_DIR}/../../generic -DTCL_MEM_DEBUG \
+CC_SWITCHES = $(CFLAGS) -I${SRC_DIR}/../../generic \
 	${SHLIB_CFLAGS} -DUSE_TCL_STUBS ${AC_FLAGS}
 
 all: embtest tcl9pkga${SHLIB_SUFFIX} tcl9pkgb${SHLIB_SUFFIX} tcl9pkgc${SHLIB_SUFFIX} \
@@ -79,7 +79,7 @@ pkgooa.o: $(SRC_DIR)/pkgooa.c
 	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgooa.c
 
 embtest: embtest.o
-	$(CC) -o $@ embtest.o ${SHLIB_LD_LIBS}
+	$(CC) -o $@ $(CFLAGS) ${AC_FLAGS} $(LDFLAGS) embtest.o ${SHLIB_LD_LIBS}
 
 tcl9pkgπ${SHLIB_SUFFIX}: pkgπ.o
 	${SHLIB_LD} -o $@ pkgπ.o ${SHLIB_LD_LIBS}
