@@ -2105,6 +2105,7 @@ dnl # preprocessing tests use only CPPFLAGS.
     AC_SUBST(DLL_INSTALL_DIR)
     AC_SUBST(INSTALL_STUB_LIB)
     AC_SUBST(RANLIB)
+    AC_CHECK_FUNCS([posix_spawnp])
 ])
 
 #--------------------------------------------------------------------
@@ -3085,6 +3086,7 @@ if test "x$NEED_FAKE_RFC2553" = "x1"; then
    AC_CHECK_FUNC(strlcpy)
 fi
 ])
+
 # Local Variables:
 # mode: autoconf
 # End:

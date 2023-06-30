@@ -13,9 +13,7 @@
 
 #include "tclInt.h"
 
-#define USE_POSIX_SPAWN 1
-
-#ifdef USE_POSIX_SPAWN
+#ifdef HAVE_POSIX_SPAWNP
 # include <spawn.h>
 #endif
 
@@ -445,7 +443,7 @@ TclpCreateProcess(
 	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
     }
 
-#if defined(USE_VFORK) || defined(USE_POSIX_SPAWN)
+#if defined(USE_VFORK) || defined(HAVE_POSIX_SPAWNP)
     /*
      * After vfork(), do not call code in the child that changes global state,
      * because it is using the parent's memory space at that point and writes
@@ -465,7 +463,7 @@ TclpCreateProcess(
     }
 #endif
 
-#ifdef USE_POSIX_SPAWN
+#ifdef HAVE_POSIX_SPAWNP
     {
 	posix_spawn_file_actions_t actions;
 	posix_spawnattr_t attr;
@@ -553,7 +551,7 @@ TclpCreateProcess(
     TclStackFree(interp, dsArray);
 
     if (pid == -1) {
-#ifdef USE_POSIX_SPAWN
+#ifdef HAVE_POSIX_SPAWNP
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't execute \"%s\": %s", argv[0], Tcl_PosixError(interp)));
 #else
