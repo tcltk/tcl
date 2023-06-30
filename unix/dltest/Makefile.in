@@ -79,7 +79,7 @@ pkgooa.o: $(SRC_DIR)/pkgooa.c
 	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgooa.c
 
 embtest: embtest.o
-	$(SHLIB_LD) -o $@ embtest.o ${SHLIB_LD_LIBS}
+	$(CC) -o $@ embtest.o ${SHLIB_LD_LIBS}
 
 tcl9pkgπ${SHLIB_SUFFIX}: pkgπ.o
 	${SHLIB_LD} -o $@ pkgπ.o ${SHLIB_LD_LIBS}
