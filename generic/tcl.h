@@ -131,7 +131,7 @@ extern "C" {
  */
 
 #include <stdarg.h>
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED)
 #    define TCL_VARARGS(type, name) (type name, ...)
 #    define TCL_VARARGS_DEF(type, name) (type name, ...)
 #    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
@@ -505,7 +505,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
  */
 
 typedef struct Tcl_Interp
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED)
 {
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
@@ -1134,7 +1134,7 @@ typedef struct Tcl_DString {
  * give the flag)
  */
 
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#if !defined(TCL_NO_DEPRECATED)
 #   define TCL_PARSE_PART1	0x400
 #endif /* !TCL_NO_DEPRECATED */
 
