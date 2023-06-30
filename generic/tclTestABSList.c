@@ -819,7 +819,7 @@ UpdateStringOfLString(Tcl_Obj *objPtr)
     for (bytesNeeded = 0, i = 0; i < llen; i++) {
         Tcl_Obj *elemObj;
         const char *elemStr;
-        int elemLen;
+        Tcl_Size elemLen;
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 	typePtr->indexProc(NULL, objPtr, i, &elemObj);
 	Tcl_IncrRefCount(elemObj);
@@ -844,7 +844,7 @@ UpdateStringOfLString(Tcl_Obj *objPtr)
     for (i = 0; i < llen; i++) {
         Tcl_Obj *elemObj;
         const char *elemStr;
-        int elemLen;
+        Tcl_Size elemLen;
 	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
 	typePtr->indexProc(NULL, objPtr, i, &elemObj);
 	Tcl_IncrRefCount(elemObj);

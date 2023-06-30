@@ -588,13 +588,13 @@ test encoding-16.22 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
 test encoding-16.23 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
     encoding convertfrom -profile strict utf-16le \x00\xDC
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x00'}
-test {encoding-24.4 utf-8 invalid strict} {Parse invalid utf-8, strict} -body {
-    string length [encoding convertfrom -profile strict utf-8 "\xC0\x80"]
-} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
-test {encoding-24.4 utf-8 invalid tcl8} {UtfToUtfProc utf-8} {
-    encoding convertfrom -profile tcl8 utf-8 \xC0\x80
-} \x00
-test encoding-16.25 {Utf32ToUtfProc} -body {
+test encoding-16.24 {Utf32ToUtfProc} -body {
+    encoding convertfrom utf-32 "\xFF\xFF\xFF\xFF"
+} -result \uFFFD
+test {encoding-16.25 strict} {Utf32ToUtfProc} -body {
+    encoding convertfrom -profile strict utf-32 "\x01\x00\x00\x01"
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x01'}
+test {encoding-16.25 tcl8} {Utf32ToUtfProc} -body {
     encoding convertfrom -profile tcl8 utf-32 "\x01\x00\x00\x01"
 } -result \uFFFD
 
@@ -779,9 +779,12 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     list $count [viewable $line]
 } [list 3 "乎乞也 (\\u4E4E\\u4E5E\\u4E5F)"]
 
-test encoding-24.4 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom -profile tcl8 utf-8 "\xC0\x80"]
-} 1
+test {encoding-24.4 utf-8 invalid strict} {Parse invalid utf-8, strict} -body {
+    encoding convertfrom -profile strict utf-8 "\xC0\x80"
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
+test {encoding-24.4 utf-8 invalid tcl8} {UtfToUtfProc utf-8} {
+    encoding convertfrom -profile tcl8 utf-8 \xC0\x80
+} \x00
 test encoding-24.5 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom -profile tcl8 utf-8 "\xC0\x81"]
 } 2
@@ -1159,6 +1162,15 @@ test encoding-30.3 {encoding convertfrom large strings > 4GB} -constraints {
     list [string length [set s [string repeat A 0x100000000]]] [string equal $s [encoding convertfrom ascii $s]]
 } -result {4294967296 1}
 
+test encoding-bug-6a3e2cb0f0-1 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
+    encoding convertfrom -profile tcl8 iso2022-jp x\x1b\x7aaby
+} -result x\uFFFDy
+test encoding-bug-6a3e2cb0f0-2 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
+    encoding convertfrom -profile strict iso2022-jp x\x1b\x7aaby
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\x1B'}
+test encoding-bug-6a3e2cb0f0-3 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
+    encoding convertfrom -profile replace iso2022-jp x\x1b\x7aaby
+} -result x\uFFFDy
 
 # cleanup
 namespace delete ::tcl::test::encoding

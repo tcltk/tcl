@@ -8985,7 +8985,7 @@ ValidatePcAndStackTop(
     }
     if (checkStack &&
 	    (stackTop > stackUpperBound)) {
-	size_t numChars;
+	Tcl_Size numChars;
 	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL, NULL);
 
 	fprintf(stderr, "\nBad stack top %" TCL_Z_MODIFIER "u at pc %" TCL_Z_MODIFIER "u in TclNRExecuteByteCode (min 0, max %" TCL_Z_MODIFIER "u)",
@@ -9525,7 +9525,8 @@ EvalStatsCmd(
     double numInstructions, currentHeaderBytes;
     size_t numCurrentByteCodes, numByteCodeLits;
     size_t refCountSum, literalMgmtBytes, sum, decadeHigh, length;
-    size_t numSharedMultX, numSharedOnce, minSizeDecade, maxSizeDecade, i;
+    size_t numSharedMultX, numSharedOnce, minSizeDecade, maxSizeDecade;
+    Tcl_Size i;
     char *litTableStats;
     LiteralEntry *entryPtr;
     Tcl_Obj *objPtr;
