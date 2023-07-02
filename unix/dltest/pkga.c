@@ -14,15 +14,6 @@
 #include "tcl.h"
 
 /*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    Pkga_EqObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkga_QuoteObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-
-/*
  *----------------------------------------------------------------------
  *
  * Pkga_EqObjCmd --

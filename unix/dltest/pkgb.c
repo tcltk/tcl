@@ -18,17 +18,6 @@
 #endif
 
 /*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    Pkgb_SubObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkgb_UnsafeObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkgb_DemoObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-
-/*
  *----------------------------------------------------------------------
  *
  * Pkgb_SubObjCmd --
@@ -112,11 +101,11 @@ Pkgb_DemoObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-#if (TCL_MAJOR_VERSION > 8) || (TCL_MINOR_VERSION > 4)
-    Tcl_Obj *first;
     (void)dummy;
     (void)objc;
     (void)objv;
+#if (TCL_MAJOR_VERSION > 8) || (TCL_MINOR_VERSION > 4)
+    Tcl_Obj *first;
 
     if (Tcl_ListObjIndex(NULL, Tcl_GetEncodingSearchPath(), 0, &first)
 	    == TCL_OK) {

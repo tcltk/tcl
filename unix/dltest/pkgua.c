@@ -15,16 +15,6 @@
 #include "tcl.h"
 
 /*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    PkguaEqObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    PkguaQuoteObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static void   CommandDeleted(ClientData clientData);
-
-/*
  * In the following hash table we are going to store a struct that holds all
  * the command tokens created by Tcl_CreateObjCommand in an interpreter,
  * indexed by the interpreter. In this way, we can find which command tokens
