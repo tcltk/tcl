@@ -3400,19 +3400,19 @@ TableToUtfProc(
 	    src++;
 	    if (src >= srcEnd) {
 		if (!(flags & TCL_ENCODING_END)) {
+                    /* Suffix bytes expected, don't consume prefix */
 		    src--;
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		} else if (PROFILE_STRICT(flags)) {
+                    /* Truncation. Do not consume so error location correct */
 		    src--;
 		    result = TCL_CONVERT_SYNTAX;
 		    break;
 		} else if (PROFILE_REPLACE(flags)) {
 		    ch = UNICODE_REPLACE_CHAR;
 		} else {
-		    src--; /* See bug [bdcb5126c0] */
-		    result = TCL_CONVERT_MULTIBYTE;
-		    break;
+		    ch = (unsigned) byte;
 		}
 	    } else {
 		ch = toUnicode[byte][*((unsigned char *)src)];
@@ -3421,6 +3421,7 @@ TableToUtfProc(
 	    ch = pageZero[byte];
 	}
 	if ((ch == 0) && (byte != 0)) {
+            /* Prefix+suffix pair is invalid */
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
@@ -3431,7 +3432,7 @@ TableToUtfProc(
 	    if (PROFILE_REPLACE(flags)) {
 		ch = UNICODE_REPLACE_CHAR;
 	    } else {
-		ch = (Tcl_UniChar)byte;
+                ch = (Tcl_UniChar)byte;
 	    }
 	}
 
