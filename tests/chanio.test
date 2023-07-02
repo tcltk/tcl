@@ -1104,7 +1104,7 @@ test chan-io-7.3 {FilterInputBytes: split up character at EOF} -setup {
     lappend x [chan gets $f line] $line
 } -cleanup {
     chan close $f
-} -result [list 15 "1234567890123０１" 18 0 1 -1 ""]
+} -result [list 16 "1234567890123０１\x82" 18 0 1 -1 ""]
 test chan-io-7.4 {FilterInputBytes: recover from split up character} -setup {
     variable x ""
 } -constraints {stdio fileevent} -body {

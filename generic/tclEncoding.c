@@ -83,6 +83,8 @@ typedef struct {
 				 * is no corresponding character the encoding,
 				 * the value in the matrix is 0x0000.
 				 * malloc'd. */
+    int flags;			/* Miscellaneous flags */
+#define ENCODING_ASCII_COMPATIBLE 0x1
 } TableEncodingData;
 
 /*
@@ -2162,11 +2164,29 @@ LoadTableEncoding(
     TclDecrRefCount(objPtr);
 
     if (type == ENCODING_DOUBLEBYTE) {
+	/* DBCS never ascii compatible so no need to set dataPtr->flags */
 	memset(dataPtr->prefixBytes, 1, sizeof(dataPtr->prefixBytes));
     } else {
+	int asciiCompatible = 1;
 	for (hi = 1; hi < 256; hi++) {
 	    if (dataPtr->toUnicode[hi] != NULL) {
 		dataPtr->prefixBytes[hi] = 1;
+		if (hi < 128) {
+		    /* any byte < 128 is a prefix => not ASCII compatible */
+		    asciiCompatible = 0;
+		}
+	    }
+	}
+	if (asciiCompatible) {
+	    for (lo = 1; lo < 128; ++lo) {
+		if (dataPtr->toUnicode[0][lo] != lo) {
+		    /* any byte < 128 does not map to itself => not ASCII compatible */
+		    asciiCompatible = 0;
+		    break;
+		}
+	    }
+	    if (asciiCompatible) {
+		dataPtr->flags |= ENCODING_ASCII_COMPATIBLE;
 	    }
 	}
     }
@@ -3581,22 +3601,25 @@ TableToUtfProc(
 	    if (src >= srcEnd) {
 		/* Truncated sequence ... */
 		if (!(flags & TCL_ENCODING_END)) {
-		    /* ... but more bytes may follow */
+                    /* Suffix bytes expected, don't consume prefix */
 		    src--;
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		} else if (PROFILE_STRICT(flags)) {
+                    /* Truncation. Do not consume so error location correct */
 		    src--;
 		    result = TCL_CONVERT_SYNTAX;
 		    break;
 		} else if (PROFILE_REPLACE(flags)) {
 		    ch = UNICODE_REPLACE_CHAR;
 		} else if (PROFILE_LOSSLESS(flags)) {
-		    ch = ToLossless(byte);
+		    if (dataPtr->flags & ENCODING_ASCII_COMPATIBLE) {
+			ch = ToLossless(byte);
+		    } else {
+			ch = UNICODE_REPLACE_CHAR;
+		    }
 		} else {
-		    src--; /* See bug [bdcb5126c0] */
-		    result = TCL_CONVERT_MULTIBYTE;
-		    break;
+		    ch = (unsigned) byte;
 		}
 	    } else {
 		ch = toUnicode[byte][*((unsigned char *)src)];
@@ -3605,6 +3628,7 @@ TableToUtfProc(
 	    ch = pageZero[byte];
 	}
 	if ((ch == 0) && (byte != 0)) {
+            /* Prefix+suffix pair is invalid */
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
@@ -3686,6 +3710,7 @@ TableFromUtfProc(
     Tcl_UniChar ch = 0;
     int result, len, word, numChars;
     TableEncodingData *dataPtr = (TableEncodingData *)clientData;
+    int asciiCompatible = dataPtr->flags & ENCODING_ASCII_COMPATIBLE;
     const unsigned short *const *fromUnicode;
 
     result = TCL_OK;
@@ -3734,10 +3759,12 @@ TableFromUtfProc(
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
-	    if (PROFILE_LOSSLESS(flags) && IsLosslessWrapper(ch)) {
+	    if (PROFILE_LOSSLESS(flags) && IsLosslessWrapper(ch) &&
+		asciiCompatible) {
 		word = FromLossless(ch);
 		isWrappedLossless = 1;
-	    } else {
+	    }
+	    else {
 		word = dataPtr->fallback; /* Both profiles REPLACE and TCL8 */
 	    }
 	}
@@ -4180,18 +4207,8 @@ EscapeToUtfProc(
 		    result = TCL_CONVERT_SYNTAX;
 		} else {
                     Tcl_Size skip = longest > left ? left : longest;
-		    if (PROFILE_LOSSLESS(flags)) {
-			Tcl_Size n =
-			    ToLosslessUtf8(src, skip, dst, dstStart + dstLen - dst);
-			if (n < 0) {
-			    result = TCL_CONVERT_NOSPACE;
-			    break;
-			}
-			dst += n;
-		    } else {
-                        /* Unknown escape sequence */
-                        dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-		    }
+		    /* Unknown escape sequence */
+		    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 		    src += skip;
 		    continue;
 		}
@@ -4366,16 +4383,10 @@ EscapeFromUtfProc(
 		    result = TCL_CONVERT_UNKNOWN;
 		    break;
 		}
-		if (PROFILE_LOSSLESS(flags) && IsLosslessWrapper(ch)) {
-		    *dst++ = FromLossless(ch);
-		    src += len;
-		    continue;
-		} else {
-		    encodingPtr = GetTableEncoding(dataPtr, state);
-		    tableDataPtr =
-			(const TableEncodingData *)encodingPtr->clientData;
-		    word = tableDataPtr->fallback;
-		}
+		encodingPtr = GetTableEncoding(dataPtr, state);
+		tableDataPtr =
+		    (const TableEncodingData *)encodingPtr->clientData;
+		word = tableDataPtr->fallback;
 	    }
 
 	    tablePrefixBytes = (const char *) tableDataPtr->prefixBytes;

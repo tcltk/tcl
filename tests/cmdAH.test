@@ -665,15 +665,25 @@ foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
     }
 }
 
+proc ascii_compatible {enc} {
+    # All bytes under 128 should map to their ascii values
+    for {set i 0} {$i < 128} {incr i} {
+        set bin [binary format c $i]
+        if {[catch {set ch [encoding convertfrom -profile strict $enc $bin]}]} {
+            return 0
+        }
+        if {$ch ne [encoding convertfrom -profile strict ascii $bin]} {
+            return 0
+        }
+    }
+    return 1
+}
+
 #
 # Roundtrip tests for lossless profile
 foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
     if {"knownBug" in $ctrl} continue
     if {$profile ne "lossless"} continue
-    if {$enc in {utf-16 utf-16le utf-16be utf-32 utf-32le utf-32be}} {
-        # These do not implement lossless behaviors
-        continue
-    }
     # There are multiple test cases based on location of invalid bytes
     set bytes [binary decode hex $hex]
     set prefix A
@@ -681,6 +691,13 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
     set prefix_bytes [encoding convertto $enc $prefix]
     set suffix_bytes [encoding convertto $enc $suffix]
     set prefixLen [string length $prefix_bytes]
+    if {![ascii_compatible $enc]} {
+        # These do not implement lossless behaviors
+        test cmdAH-4.4.15.$hex.solo.$enc "Invalid byte under 128 for lossless profile" -body {
+            encoding convertfrom -profile lossless $enc $bytes
+        } -result \uFFFD* -match glob
+        continue
+    }
     if {$ctrl eq {} || "solo" in $ctrl} {
         test cmdAH-4.4.15.$hex.solo.$enc "Lossless roundtrip $hex for $enc" -body {
             set decoded [encoding convertfrom -profile lossless $enc $bytes]
@@ -708,11 +725,23 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
 }
 
 #
+# Non-ascii encoding should not output lossless wrappers
+foreach enc [encoding names] {
+    if {[ascii_compatible $enc]} {
+        
+    } else {
+        test cmdAH-4.4.16.$enc "Lossless output for ascii-incompatible encodings" -body {
+            encoding convertto -profile lossless $enc \uDC41
+        } -result [encoding convertto $enc \uFFFD]
+    }
+}
+
+#
 # Invalid bytes < 128 should map to FFFD for lossless profile
 
-# Find an invalid byte < 128 for the given encoding
-proc invalid_byte_under_128 enc {
-    for {set i 0} {$i < 128} {incr i} {
+# Find an invalid byte within a range for the given encoding
+proc find_invalid_byte {enc {lo 0} {hi 127}} {
+    for {set i $lo} {$i <= $hi} {incr i} {
         set bin [binary format c $i]
         if {[catch {set ch [encoding convertfrom -profile strict $enc $bin]}]} {
             return $bin
@@ -722,16 +751,17 @@ proc invalid_byte_under_128 enc {
     return ""
 }
 foreach enc [encoding names] {
-    set byte [invalid_byte_under_128 $enc]
+    set byte [find_invalid_byte $enc]
     if {$byte ne ""} {
-        test cmdAH-4.4.16.$enc "Invalid byte under 128 for lossless profile" -body {
-            encoding convertfrom -profile replace $enc $byte
+        test cmdAH-4.4.17.$enc "Invalid byte under 128 for lossless profile" -body {
+            encoding convertfrom -profile lossless $enc $byte
         } -result \uFFFD
     }
 }
 
+
 test cmdAH-4.4.xx {convertto -profile strict} -constraints {testbytestring knownBug} -body {
-    # TODO - what does testbytestring even test? Invalid UTF8 in the Tcl_Obj bytes field
+    # TODO - what does testbytestring even test? Invalid UTF8 in the Tcl_Obj bytes field?
     encoding convertto -profile strict utf-8 A[testbytestring \x80]B
 } -returnCodes error -result {unexpected byte sequence starting at index 1: '\x80'}
 
