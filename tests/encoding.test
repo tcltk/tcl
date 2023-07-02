@@ -1172,6 +1172,28 @@ test encoding-bug-6a3e2cb0f0-3 {Bug [6a3e2cb0f0] - invalid bytes in escape encod
     encoding convertfrom -profile replace iso2022-jp x\x1b\x7aaby
 } -result x\uFFFDy
 
+test encoding-bug-66ffafd309-1-tcl8 {Bug [66ffafd309] - truncated DBCS} -body {
+    encoding convertfrom -profile tcl8 gb12345 x
+} -result x
+test encoding-bug-66ffafd309-1-strict {Bug [66ffafd309] - truncated DBCS} -body {
+    encoding convertfrom -profile strict gb12345 x
+} -result {unexpected byte sequence starting at index 0: '\x78'} -returnCodes error
+test encoding-bug-66ffafd309-1-replace {Bug [66ffafd309] - truncated DBCS} -body {
+    encoding convertfrom -profile replace gb12345 x
+} -result \uFFFD
+test encoding-bug-66ffafd309-2-tcl8 {Bug [66ffafd309] - invalid DBCS} -body {
+    # Not truncated but invalid
+    encoding convertfrom -profile tcl8 jis0208 \x78\x79
+} -result \x78\x79
+test encoding-bug-66ffafd309-2-strict {Bug [66ffafd309] - invalid DBCS} -body {
+    # Not truncated but invalid
+    encoding convertfrom -profile strict jis0208 \x78\x79
+} -result {unexpected byte sequence starting at index 1: '\x79'} -returnCodes error
+test encoding-bug-66ffafd309-2-replace {Bug [66ffafd309] - invalid DBCS} -body {
+    # Not truncated but invalid
+    encoding convertfrom -profile replace jis0208 \x78\x79
+} -result \uFFFD\uFFFD
+
 # cleanup
 namespace delete ::tcl::test::encoding
 ::tcltest::cleanupTests
