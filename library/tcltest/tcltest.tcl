@@ -29,6 +29,7 @@ namespace eval tcltest {
     # yourself.  You don't need tcltest to wrap it for you.
     variable version [package provide Tcl]
     variable patchLevel [info patchlevel]
+    variable fullutf [package vsatisfies $version 8.7-]
 
 ##### Export the public tcltest procs; several categories
     #
@@ -1150,16 +1151,17 @@ proc tcltest::SafeFetch {n1 n2 op} {
 #       None.
 
 proc tcltest::Asciify {s} {
+    variable fullutf
     set print ""
     foreach c [split $s ""] {
         if {[string is print $c] && (($c <= "\x7E") || ($c == "\n"))} {
             append print $c
-        } elseif {$c <= "\xFF"} {
+        } elseif {$c < "\u0100"} {
             append print \\x[format %02X [scan $c %c]]
-        } elseif {$c <= "\xFFFF"} {
-            append print \\u[format %04X [scan $c %c]]
-        } else {
+        } elseif {$fullutf && ($c >= "\U10000")} {
             append print \\U[format %08X [scan $c %c]]
+        } else {
+            append print \\u[format %04X [scan $c %c]]
         }
     }
     return $print
