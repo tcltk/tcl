@@ -2068,6 +2068,8 @@ dnl # preprocessing tests use only CPPFLAGS.
 	CFLAGS_NOLTO=""
     fi
 
+    AC_CHECK_FUNCS([posix_spawnp])
+
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
     # would use TCL_DL_LIBS instead of TCL_LIBS.
@@ -2105,7 +2107,6 @@ dnl # preprocessing tests use only CPPFLAGS.
     AC_SUBST(DLL_INSTALL_DIR)
     AC_SUBST(INSTALL_STUB_LIB)
     AC_SUBST(RANLIB)
-    AC_CHECK_FUNCS([posix_spawnp])
 ])
 
 #--------------------------------------------------------------------
@@ -3086,7 +3087,6 @@ if test "x$NEED_FAKE_RFC2553" = "x1"; then
    AC_CHECK_FUNC(strlcpy)
 fi
 ])
-
 # Local Variables:
 # mode: autoconf
 # End:

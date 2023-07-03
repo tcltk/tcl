@@ -7219,22 +7219,23 @@ test chan-io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
 	}
 	chan puts stderr SRV
 	set l {}
-	set srv [socket -server new 9999]
+	set srv [socket -server new -myaddr 127.0.0.1 0]
+        set port [lindex [chan configure $srv -sockname] 2]
 	chan puts stderr WAITING
 	chan event stdin readable bye
-	chan puts OK
+	puts "OK $port"
 	vwait forever
     }
     # wait for OK from server.
-    chan gets $pipe
+    lassign [chan gets $pipe] ok port
     # Now the two clients.
     proc done {sock} {
 	if {[chan eof $sock]} { chan close $sock ; return }
 	lappend ::forever [chan gets $sock]
 	return
     }
-    set a [socket 127.0.0.1 9999]
-    set b [socket 127.0.0.1 9999]
+    set a [socket 127.0.0.1 $port]
+    set b [socket 127.0.0.1 $port]
     chan configure $a -translation binary -buffering none
     chan configure $b -translation binary -buffering none
     chan event  $a readable [namespace code "done $a"]

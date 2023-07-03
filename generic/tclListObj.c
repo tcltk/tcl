@@ -594,18 +594,18 @@ Tcl_ListObjAppendElement(
 
 	attempt = 2 * numRequired;
 	if (attempt <= LIST_MAX) {
-	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = (List *)attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr == NULL) {
 	    attempt = numRequired + 1 + TCL_MIN_ELEMENT_GROWTH;
 	    if (attempt > LIST_MAX) {
 		attempt = LIST_MAX;
 	    }
-	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = (List *)attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr == NULL) {
 	    attempt = numRequired;
-	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = (List *)attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr) {
 	    listRepPtr = newPtr;
@@ -916,18 +916,18 @@ Tcl_ListObjReplace(
 	List *newPtr = NULL;
 	int attempt = 2 * numRequired;
 	if (attempt <= LIST_MAX) {
-	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = (List *)attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr == NULL) {
 	    attempt = numRequired + 1 + TCL_MIN_ELEMENT_GROWTH;
 	    if (attempt > LIST_MAX) {
 		attempt = LIST_MAX;
 	    }
-	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = (List *)attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr == NULL) {
 	    attempt = numRequired;
-	    newPtr = attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
+	    newPtr = (List *)attemptckrealloc(listRepPtr, LIST_SIZE(attempt));
 	}
 	if (newPtr) {
 	    listRepPtr = newPtr;
@@ -993,11 +993,7 @@ Tcl_ListObjReplace(
 		if (listRepPtr == NULL) {
 		    for (i = 0;  i < objc;  i++) {
 			/* See bug 3598580 */
-#if TCL_MAJOR_VERSION > 8
-			Tcl_DecrRefCount(objv[i]);
-#else
 			objv[i]->refCount--;
-#endif
 		    }
 		    return TCL_ERROR;
 		}
@@ -1536,7 +1532,7 @@ TclLsetFlat(
 	 * Clear away our internalrep surgery mess.
 	 */
 
-	chainPtr = objPtr->internalRep.twoPtrValue.ptr2;
+	chainPtr = (Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr2;
 	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     }
 
@@ -1896,7 +1892,7 @@ SetListFromAny(
 		TclNewStringObj(*elemPtrs, elemStart, elemSize);
 	    } else {
 		TclNewObj(*elemPtrs);
-		(*elemPtrs)->bytes = ckalloc((unsigned) elemSize + 1);
+		(*elemPtrs)->bytes = (char *)ckalloc((unsigned) elemSize + 1);
 		(*elemPtrs)->length = TclCopyAndCollapse(elemSize, elemStart,
 			(*elemPtrs)->bytes);
 	    }
@@ -1980,7 +1976,7 @@ UpdateStringOfList(
 	 * We know numElems <= LIST_MAX, so this is safe.
 	 */
 
-	flagPtr = ckalloc(numElems);
+	flagPtr = (char *)ckalloc(numElems);
     }
     elemPtrs = &listRepPtr->elements;
     for (i = 0; i < numElems; i++) {
@@ -2015,7 +2011,7 @@ UpdateStringOfList(
      *
      */
 
-    listPtr->bytes = ckalloc(bytesNeeded);
+    listPtr->bytes = (char *)ckalloc(bytesNeeded);
     dst = listPtr->bytes;
     for (i = 0; i < numElems; i++) {
 	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);

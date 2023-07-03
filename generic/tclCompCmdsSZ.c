@@ -7,9 +7,9 @@
  *	Also includes the operator command compilers.
  *
  * Copyright (c) 1997-1998 Sun Microsystems, Inc.
- * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2001 Kevin B. Kenny.  All rights reserved.
  * Copyright (c) 2002 ActiveState Corporation.
- * Copyright (c) 2004-2010 by Donal K. Fellows.
+ * Copyright (c) 2004-2010 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -23,14 +23,10 @@
  * Prototypes for procedures defined later in this file:
  */
 
-static ClientData	DupJumptableInfo(ClientData clientData);
-static void		FreeJumptableInfo(ClientData clientData);
-static void		PrintJumptableInfo(ClientData clientData,
-			    Tcl_Obj *appendObj, ByteCode *codePtr,
-			    unsigned int pcOffset);
-static void		DisassembleJumptableInfo(ClientData clientData,
-			    Tcl_Obj *dictObj, ByteCode *codePtr,
-			    unsigned int pcOffset);
+static AuxDataDupProc	DupJumptableInfo;
+static AuxDataFreeProc	FreeJumptableInfo;
+static AuxDataPrintProc	PrintJumptableInfo;
+static AuxDataPrintProc	DisassembleJumptableInfo;
 static int		CompileAssociativeBinaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, const char *identity,
 			    int instruction, CompileEnv *envPtr);
@@ -45,13 +41,12 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int mode, int noCase,
-			    int valueIndex, int numWords,
-			    Tcl_Token **bodyToken, int *bodyLines,
-			    int **bodyNext);
+			   	int numWords, Tcl_Token **bodyToken,
+			    int *bodyLines, int **bodyNext);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
-			    CompileEnv *envPtr, int valueIndex,
-			    int numWords, Tcl_Token **bodyToken,
-			    int *bodyLines, int **bodyContLines);
+			    CompileEnv *envPtr, int numWords,
+			    Tcl_Token **bodyToken, int *bodyLines,
+			    int **bodyContLines);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, int *matchCodes,
@@ -467,7 +462,7 @@ TclCompileStringIsCmd(
 	"true",		"upper",	"wideinteger",	"wordchar",
 	"xdigit",	NULL
     };
-    enum isClasses {
+    enum isClassesEnum {
 	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
 	STR_IS_BOOL,	STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_ENTIER,
 	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,	STR_IS_LIST,
@@ -531,7 +526,7 @@ TclCompileStringIsCmd(
 
     CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
 
-    switch ((enum isClasses) t) {
+    switch ((enum isClassesEnum) t) {
     case STR_IS_ALNUM:
 	strClassType = STR_CLASS_ALNUM;
 	goto compileStrClass;
@@ -692,13 +687,13 @@ TclCompileStringIsCmd(
 	}
 
 	switch (t) {
-	case STR_IS_INT:
-	    PUSH(	"1");
-	    OP(		EQ);
-	    break;
 	case STR_IS_WIDE:
 	    PUSH(	"2");
 	    OP(		LE);
+	    break;
+	case STR_IS_INT:
+	    PUSH(	"1");
+	    OP(		EQ);
 	    break;
 	case STR_IS_ENTIER:
 	    PUSH(	"3");
@@ -860,7 +855,7 @@ TclCompileStringMapCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *mapTokenPtr, *stringTokenPtr;
     Tcl_Obj *mapObj, **objv;
-    char *bytes;
+    const char *bytes;
     int len;
 
     /*
@@ -1354,7 +1349,7 @@ static int
 UniCharIsHexDigit(
     int character)
 {
-    return (character >= 0) && (character < 0x80) && isxdigit(character);
+    return (character >= 0) && (character < 0x80) && isxdigit(UCHAR(character));
 }
 
 StringClassDesc const tclStringClassTable[] = {
@@ -1415,7 +1410,7 @@ TclCompileSubstCmd(
 	return TCL_ERROR;
     }
 
-    objv = TclStackAlloc(interp, /*numArgs*/ numOpts * sizeof(Tcl_Obj *));
+    objv = (Tcl_Obj **)TclStackAlloc(interp, /*numArgs*/ numOpts * sizeof(Tcl_Obj *));
 
     for (objc = 0; objc < /*numArgs*/ numOpts; objc++) {
 	TclNewObj(objv[objc]);
@@ -1908,10 +1903,10 @@ TclCompileSwitchCmd(
 	if (maxLen < 2)  {
 	    return TCL_ERROR;
 	}
-	bodyTokenArray = ckalloc(sizeof(Tcl_Token) * maxLen);
-	bodyToken = ckalloc(sizeof(Tcl_Token *) * maxLen);
-	bodyLines = ckalloc(sizeof(int) * maxLen);
-	bodyContLines = ckalloc(sizeof(int*) * maxLen);
+	bodyTokenArray = (Tcl_Token *)ckalloc(sizeof(Tcl_Token) * maxLen);
+	bodyToken = (Tcl_Token **)ckalloc(sizeof(Tcl_Token *) * maxLen);
+	bodyLines = (int *)ckalloc(sizeof(int) * maxLen);
+	bodyContLines = (int **)ckalloc(sizeof(int*) * maxLen);
 
 	bline = mapPtr->loc[eclIndex].line[valueIndex+1];
 	numWords = 0;
@@ -1970,9 +1965,9 @@ TclCompileSwitchCmd(
 	 * Multi-word definition of patterns & actions.
 	 */
 
-	bodyToken = ckalloc(sizeof(Tcl_Token *) * numWords);
-	bodyLines = ckalloc(sizeof(int) * numWords);
-	bodyContLines = ckalloc(sizeof(int*) * numWords);
+	bodyToken = (Tcl_Token **)ckalloc(sizeof(Tcl_Token *) * numWords);
+	bodyLines = (int *)ckalloc(sizeof(int) * numWords);
+	bodyContLines = (int **)ckalloc(sizeof(int*) * numWords);
 	bodyTokenArray = NULL;
 	for (i=0 ; i<numWords ; i++) {
 	    /*
@@ -2018,10 +2013,10 @@ TclCompileSwitchCmd(
     CompileWord(envPtr, valueTokenPtr, interp, valueIndex);
 
     if (mode == Switch_Exact) {
-	IssueSwitchJumpTable(interp, envPtr, valueIndex, numWords, bodyToken,
+	IssueSwitchJumpTable(interp, envPtr, numWords, bodyToken,
 		bodyLines, bodyContLines);
     } else {
-	IssueSwitchChainedTests(interp, envPtr, mode, noCase, valueIndex,
+	IssueSwitchChainedTests(interp, envPtr, mode, noCase,
 		numWords, bodyToken, bodyLines, bodyContLines);
     }
     result = TCL_OK;
@@ -2062,7 +2057,6 @@ IssueSwitchChainedTests(
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int mode,			/* Exact, Glob or Regexp */
     int noCase,			/* Case-insensitivity flag. */
-    int valueIndex,		/* The value to match against. */
     int numBodyTokens,		/* Number of tokens describing things the
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
@@ -2092,8 +2086,8 @@ IssueSwitchChainedTests(
 
     contFixIndex = -1;
     contFixCount = 0;
-    fixupArray = TclStackAlloc(interp, sizeof(JumpFixup) * numBodyTokens);
-    fixupTargetArray = TclStackAlloc(interp, sizeof(int) * numBodyTokens);
+    fixupArray = (JumpFixup *)TclStackAlloc(interp, sizeof(JumpFixup) * numBodyTokens);
+    fixupTargetArray = (unsigned int *)TclStackAlloc(interp, sizeof(int) * numBodyTokens);
     memset(fixupTargetArray, 0, numBodyTokens * sizeof(int));
     fixupCount = 0;
     foundDefault = 0;
@@ -2311,7 +2305,6 @@ static void
 IssueSwitchJumpTable(
     Tcl_Interp *interp,		/* Context for compiling script bodies. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int valueIndex,		/* The value to match against. */
     int numBodyTokens,		/* Number of tokens describing things the
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
@@ -2336,10 +2329,10 @@ IssueSwitchJumpTable(
      * Start by allocating the jump table itself, plus some workspace.
      */
 
-    jtPtr = ckalloc(sizeof(JumptableInfo));
+    jtPtr = (JumptableInfo *)ckalloc(sizeof(JumptableInfo));
     Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
     infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
-    finalFixups = TclStackAlloc(interp, sizeof(int) * (numBodyTokens/2));
+    finalFixups = (int *)TclStackAlloc(interp, sizeof(int) * (numBodyTokens/2));
     foundDefault = 0;
     mustGenerate = 1;
 
@@ -2507,8 +2500,8 @@ static ClientData
 DupJumptableInfo(
     ClientData clientData)
 {
-    JumptableInfo *jtPtr = clientData;
-    JumptableInfo *newJtPtr = ckalloc(sizeof(JumptableInfo));
+    JumptableInfo *jtPtr = (JumptableInfo *)clientData;
+    JumptableInfo *newJtPtr = (JumptableInfo *)ckalloc(sizeof(JumptableInfo));
     Tcl_HashEntry *hPtr, *newHPtr;
     Tcl_HashSearch search;
     int isNew;
@@ -2527,7 +2520,7 @@ static void
 FreeJumptableInfo(
     ClientData clientData)
 {
-    JumptableInfo *jtPtr = clientData;
+    JumptableInfo *jtPtr = (JumptableInfo *)clientData;
 
     Tcl_DeleteHashTable(&jtPtr->hashTable);
     ckfree(jtPtr);
@@ -2540,7 +2533,7 @@ PrintJumptableInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    JumptableInfo *jtPtr = clientData;
+    JumptableInfo *jtPtr = (JumptableInfo *)clientData;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     const char *keyPtr;
@@ -2548,7 +2541,7 @@ PrintJumptableInfo(
 
     hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	keyPtr = Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
+	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	if (i++) {
@@ -2569,7 +2562,7 @@ DisassembleJumptableInfo(
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
-    JumptableInfo *jtPtr = clientData;
+    JumptableInfo *jtPtr = (JumptableInfo *)clientData;
     Tcl_Obj *mapping;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -2579,7 +2572,7 @@ DisassembleJumptableInfo(
     TclNewObj(mapping);
     hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
-	keyPtr = Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
+	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 	Tcl_DictObjPut(NULL, mapping, Tcl_NewStringObj(keyPtr, -1),
 		Tcl_NewIntObj(offset));
@@ -2798,12 +2791,12 @@ TclCompileTryCmd(
     numHandlers = numWords >> 2;
     numWords -= numHandlers * 4;
     if (numHandlers > 0) {
-	handlerTokens = TclStackAlloc(interp, sizeof(Tcl_Token*)*numHandlers);
-	matchClauses = TclStackAlloc(interp, sizeof(Tcl_Obj *) * numHandlers);
+	handlerTokens = (Tcl_Token**)TclStackAlloc(interp, sizeof(Tcl_Token*)*numHandlers);
+	matchClauses = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * numHandlers);
 	memset(matchClauses, 0, sizeof(Tcl_Obj *) * numHandlers);
-	matchCodes = TclStackAlloc(interp, sizeof(int) * numHandlers);
-	resultVarIndices = TclStackAlloc(interp, sizeof(int) * numHandlers);
-	optionVarIndices = TclStackAlloc(interp, sizeof(int) * numHandlers);
+	matchCodes = (int *)TclStackAlloc(interp, sizeof(int) * numHandlers);
+	resultVarIndices = (int *)TclStackAlloc(interp, sizeof(int) * numHandlers);
+	optionVarIndices = (int *)TclStackAlloc(interp, sizeof(int) * numHandlers);
 
 	for (i=0 ; i<numHandlers ; i++) {
 	    Tcl_Obj *tmpObj, **objv;
@@ -3067,9 +3060,9 @@ IssueTryClausesInstructions(
      * Slight overallocation, but reduces size of this function.
      */
 
-    addrsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
-    forwardsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
-    noError = TclStackAlloc(interp, sizeof(int)*numHandlers);
+    addrsToFix = (int *)TclStackAlloc(interp, sizeof(int)*numHandlers);
+    forwardsToFix = (int *)TclStackAlloc(interp, sizeof(int)*numHandlers);
+    noError = (int *)TclStackAlloc(interp, sizeof(int)*numHandlers);
 
     for (i=0 ; i<numHandlers ; i++) {
 	noError[i] = -1;
@@ -3096,7 +3089,7 @@ IssueTryClausesInstructions(
 	    OP(				STR_EQ);
 	    JUMP4(			JUMP_FALSE, notECJumpSource);
 	} else {
-	    notECJumpSource = -1; /* LINT */
+	    notECJumpSource = -1;
 	}
 	OP(				POP);
 
@@ -3278,8 +3271,8 @@ IssueTryClausesFinallyInstructions(
      * Slight overallocation, but reduces size of this function.
      */
 
-    addrsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
-    forwardsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
+    addrsToFix = (int *)TclStackAlloc(interp, sizeof(int)*numHandlers);
+    forwardsToFix = (int *)TclStackAlloc(interp, sizeof(int)*numHandlers);
 
     for (i=0 ; i<numHandlers ; i++) {
 	int noTrapError, trapError;
@@ -3307,7 +3300,7 @@ IssueTryClausesFinallyInstructions(
 	    OP(				STR_EQ);
 	    JUMP4(			JUMP_FALSE, notECJumpSource);
 	} else {
-	    notECJumpSource = -1; /* LINT */
+	    notECJumpSource = -1;
 	}
 	OP(				POP);
 

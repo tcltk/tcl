@@ -84,10 +84,8 @@ static TclOOStubs stubsCopy = {
     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL
-#ifdef Tcl_MethodIsPrivate
-    ,NULL
-#endif
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 DLLEXPORT int
