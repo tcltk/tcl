@@ -48,9 +48,11 @@ libtommath/*.tex
 macosx/configure
 unix/autoMkindex.tcl
 unix/dltest.marker
+unix/dltest/embtest
 unix/dltest/*.bundle
 unix/dltest/*.dll
 unix/dltest/*.dylib
+unix/dltest/*.exe
 unix/dltest/*.o
 unix/dltest/*.sl
 unix/dltest/*.so
