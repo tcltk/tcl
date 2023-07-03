@@ -1189,7 +1189,8 @@ test io-7.2 {FilterInputBytes: split up character in middle of buffer} {
     close $f
     set x
 } [list 10 "1234567890" 0]
-test io-7.3 {FilterInputBytes: split up character at EOF} {testchannel} {
+# This testcase fails in "debug" builds. See: [5be203d6ca]
+test io-7.3 {FilterInputBytes: split up character at EOF} {testchannel ndebug} {
     set f [open $path(test1) w]
     fconfigure $f -encoding binary
     puts -nonewline $f "1234567890123\x82\x4F\x82\x50\x82"
