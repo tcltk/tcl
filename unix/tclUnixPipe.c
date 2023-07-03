@@ -499,7 +499,7 @@ TclpCreateProcess(
 	    pid = -1;
 	}
     }
-#else  
+#else
     pid = fork();
 #endif
     if (pid == 0) {
