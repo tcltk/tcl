@@ -1090,7 +1090,7 @@ test chan-io-7.2 {FilterInputBytes: split up character in middle of buffer} -bod
 } -cleanup {
     chan close $f
 } -result {10 1234567890 0}
-# This testcase fails in "debug" builds. See: []
+# This testcase fails in "debug" builds. See: [5be203d6ca]
 test chan-io-7.3 {FilterInputBytes: split up character at EOF} -setup {
     set x ""
 } -constraints {testchannel ndebug} -body {
