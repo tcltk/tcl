@@ -597,6 +597,18 @@ test abstractlist-lgen-bug2 {bug in foreach} -body {
     unset res
 } -result {{x-value is a arithseries} {y-value is a lgenseries} {0 -> 0} {1 -> 6} {2 -> 12} {3 -> 18} {4 -> 24} {5 -> 30} {6 -> 36} {7 -> 42} {8 -> 48} {9 -> 54} {10 -> 60} {11 -> 66} {12 -> 72} {13 -> 78} {14 -> 84} {15 -> 90} {16 -> 96} {x-value is a arithseries} {y-value is a lgenseries}}
 
+# scalar values
+test abstractlist-int {TclLengthOne: anti-shimmer of boolean, int, double, bignum} {
+    set res {}
+    foreach i [list [expr {1+0}] [expr {true}] [expr {3.141592}] [expr {round(double(0x7fffffffffffffff))}]] {
+	lappend res [testobj objtype $i]
+	lappend res [llength $i]
+	lappend res [testobj objtype $i]
+    }
+#set w [expr {3.141592}]
+#lappend res [testobj objtype $w] [llength $w] [testobj objtype $w]
+    set res
+} {int 1 int boolean 1 boolean double 1 double bignum 1 bignum}
 
 # lsort
 
