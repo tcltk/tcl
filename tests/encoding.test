@@ -231,18 +231,6 @@ test encoding-10.1 {Tcl_UtfToExternal} {
     return $x
 } "ab\x8C\xC1g"
 
-proc viewable {str} {
-    set res ""
-    foreach c [split $str {}] {
-	if {[string is print $c] && [string is ascii $c]} {
-	    append res $c
-	} else {
-	    append res "\\u[format %4.4X [scan $c %c]]"
-	}
-    }
-    return "$str ($res)"
-}
-
 test encoding-11.1 {LoadEncodingFile: unknown encoding} {testencoding} {
     set system [encoding system]
     set path [encoding dirs]
@@ -264,11 +252,11 @@ test encoding-11.4 {LoadEncodingFile: multi-byte} {
     encoding convertfrom shiftjis \x8C\xC1
 } 乎
 test encoding-11.5 {LoadEncodingFile: escape file} {
-    viewable [encoding convertto iso2022 乎]
-} [viewable "\x1B\$B8C\x1B(B"]
+    encoding convertto iso2022 乎
+} \x1B\$B8C\x1B(B
 test encoding-11.5.1 {LoadEncodingFile: escape file} {
-    viewable [encoding convertto iso2022-jp 乎]
-} [viewable "\x1B\$B8C\x1B(B"]
+    encoding convertto iso2022-jp 乎
+} \x1B\$B8C\x1B(B
 test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} -setup {
     set system [encoding system]
     set path [encoding dirs]
@@ -292,17 +280,17 @@ test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} 
     encoding system $system
 } -result {invalid encoding file "splat"}
 test encoding-11.8 {encoding: extended Unicode UTF-16} {
-    viewable [encoding convertto utf-16le 😹]
-} {=Ø9Þ (=\u00D89\u00DE)}
+    encoding convertto utf-16le 😹
+} =Ø9Þ
 test encoding-11.9 {encoding: extended Unicode UTF-16} {
-    viewable [encoding convertto utf-16be 😹]
-} {Ø=Þ9 (\u00D8=\u00DE9)}
+    encoding convertto utf-16be 😹
+} Ø=Þ9
 test encoding-11.10 {encoding: extended Unicode UTF-32} {
-    viewable [encoding convertto utf-32le 😹]
-} "9\xF6\x01\x00 (9\\u00F6\\u0001\\u0000)"
+    encoding convertto utf-32le 😹
+} 9\xF6\x01\x00
 test encoding-11.11 {encoding: extended Unicode UTF-32} {
-    viewable [encoding convertto utf-32be 😹]
-} "\x00\x01\xF69 (\\u0000\\u0001\\u00F69)"
+    encoding convertto utf-32be 😹
+} \x00\x01\xF69
 # OpenEncodingFile is fully tested by the rest of the tests in this file.
 
 test encoding-12.1 {LoadTableEncoding: normal encoding} {
@@ -329,8 +317,8 @@ test encoding-12.5 {LoadTableEncoding: symbol encoding} {
 } "ggγ"
 
 test encoding-13.1 {LoadEscapeTable} {
-    viewable [set x [encoding convertto iso2022 ab乎棙g]]
-} [viewable "ab\x1B\$B8C\x1B\$\(DD%\x1B(Bg"]
+    encoding convertto iso2022 ab乎棙g
+} ab\x1B\$B8C\x1B\$\(DD%\x1B(Bg
 
 test encoding-15.1 {UtfToUtfProc} {
     encoding convertto utf-8 £
@@ -740,14 +728,14 @@ test encoding-24.1 {EscapeFreeProc on open channels} exec {
 } {}
 test encoding-24.2 {EscapeFreeProc on open channels} {exec} {
     # Bug #524674 output
-    viewable [runInSubprocess {
+    runInSubprocess {
 	encoding system cp1252;	# Bug #2891556 crash revelator
 	fconfigure stdout -encoding iso2022-jp
 	puts ab乎棙g
 	set env(TCL_FINALIZE_ON_EXIT) 1
 	exit
-    }]
-} "ab\x1B\$B8C\x1B\$(DD%\x1B(Bg (ab\\u001B\$B8C\\u001B\$(DD%\\u001B(Bg)"
+    }
+} "ab\x1B\$B8C\x1B\$(DD%\x1B(Bg"
 test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     # Bug #219314 - if we don't free escape encodings correctly on channel
     # closure, we go boom
@@ -761,8 +749,8 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     set count [gets $f line]
     close $f
     removeFile iso2022.tcl
-    list $count [viewable $line]
-} [list 3 "乎乞也 (\\u4E4E\\u4E5E\\u4E5F)"]
+    list $count $line
+} [list 3 乎乞也]
 
 test encoding-24.4 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom -profile tcl8 utf-8 "\xC0\x80"]
@@ -1061,30 +1049,30 @@ runtests
 test encoding-bug-183a1adcc0-1 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExternal} -constraints {
     testencoding
 } -body {
-    # Note - buffers are initialized to \xff
+    # Note - buffers are initialized to \xFF
     list [catch {testencoding Tcl_UtfToExternal utf-16 A {start end} {} 1} result] $result
-} -result [list 0 [list nospace {} \xff]]
+} -result [list 0 [list nospace {} \xFF]]
 
 test encoding-bug-183a1adcc0-2 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExternal} -constraints {
     testencoding
 } -body {
-    # Note - buffers are initialized to \xff
+    # Note - buffers are initialized to \xFF
     list [catch {testencoding Tcl_UtfToExternal utf-16 A {start end} {} 0} result] $result
 } -result [list 0 [list nospace {} {}]]
 
 test encoding-bug-183a1adcc0-3 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExternal} -constraints {
     testencoding
 } -body {
-    # Note - buffers are initialized to \xff
+    # Note - buffers are initialized to \xFF
     list [catch {testencoding Tcl_UtfToExternal utf-16 A {start end} {} 2} result] $result
 } -result [list 0 [list nospace {} \x00\x00]]
 
 test encoding-bug-183a1adcc0-4 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExternal} -constraints {
     testencoding
 } -body {
-    # Note - buffers are initialized to \xff
+    # Note - buffers are initialized to \xFF
     list [catch {testencoding Tcl_UtfToExternal utf-16 A {start end} {} 3} result] $result
-} -result [list 0 [list nospace {} \x00\x00\xff]]
+} -result [list 0 [list nospace {} \x00\x00\xFF]]
 
 test encoding-bug-183a1adcc0-5 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExternal} -constraints {
     testencoding ucs2 knownBug
@@ -1092,7 +1080,7 @@ test encoding-bug-183a1adcc0-5 {Bug [183a1adcc0] Buffer overflow Tcl_UtfToExtern
     # The knownBug constraint is because test depends on TCL_UTF_MAX and
     # also UtfToUtf16 assumes space required in destination buffer is
     # sizeof(Tcl_UniChar) which is incorrect when TCL_UTF_MAX==4
-    # Note - buffers are initialized to \xff
+    # Note - buffers are initialized to \xFF
     list [catch {testencoding Tcl_UtfToExternal utf-16 A {start end} {} 4} result] $result
 } -result [list 0 [list ok {} [expr {$::tcl_platform(byteOrder) eq "littleEndian" ? "\x41\x00" : "\x00\x41"}]\x00\x00]]
 
@@ -1110,13 +1098,13 @@ test encoding-29.0 {get encoding nul terminator lengths} -constraints {
 } -result {1 2 4 2 2}
 
 test encoding-bug-6a3e2cb0f0-1 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
-    encoding convertfrom -profile tcl8 iso2022-jp x\x1b\x7aaby
+    encoding convertfrom -profile tcl8 iso2022-jp x\x1B\x7Aaby
 } -result x\uFFFDy
 test encoding-bug-6a3e2cb0f0-2 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
-    encoding convertfrom -profile strict iso2022-jp x\x1b\x7aaby
+    encoding convertfrom -profile strict iso2022-jp x\x1B\x7Aaby
 } -returnCodes error -result {unexpected byte sequence starting at index 1: '\x1B'}
 test encoding-bug-6a3e2cb0f0-3 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
-    encoding convertfrom -profile replace iso2022-jp x\x1b\x7aaby
+    encoding convertfrom -profile replace iso2022-jp x\x1B\x7Aaby
 } -result x\uFFFDy
 
 test encoding-bug-66ffafd309-1-tcl8 {Bug [66ffafd309] - truncated DBCS} -body {

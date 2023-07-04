@@ -168,7 +168,7 @@ applied to input only.
 
 The default value is the empty string, except that under Windows the default
 value for reading is Control-z (\ex1A).  The acceptable range is \ex01 -
-\ex7f.  A value outside this range results in an error.
+\ex7F.  A value outside this range results in an error.
 .VS "TCL8.7 TIP656"
 .TP
 \fB\-profile\fR \fIprofile\fR

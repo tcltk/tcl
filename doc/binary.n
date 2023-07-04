@@ -240,7 +240,7 @@ which returns a binary string equivalent to:
 \fB\e254\fR
 .CE
 .PP
-(i.e. \fB\exac\fR) by
+(i.e. \fB\exAC\fR) by
 truncating the high-bits of the character, and which is probably not
 what is desired.
 .RE
@@ -298,7 +298,7 @@ high-to-low order within each byte.  For example,
 will return a binary string equivalent to:
 .PP
 .CS
-\fB\exe0\exe1\exa0\fR
+\fB\exE0\exE1\exA0\fR
 .CE
 .RE
 .IP \fBH\fR 5
@@ -325,7 +325,7 @@ remaining bits of the last byte will be zeros.  For example,
 will return a binary string equivalent to:
 .PP
 .CS
-\fB\exab\ex00\exde\exf0\ex98\fR
+\fB\exAB\ex00\exDE\exF0\ex98\fR
 .CE
 .RE
 .IP \fBh\fR 5
@@ -340,7 +340,7 @@ low-to-high order within each byte. This is seldom required. For example,
 will return a binary string equivalent to:
 .PP
 .CS
-\fB\exba\ex00\exed\ex0f\ex89\fR
+\fB\exBA\ex00\exED\ex0F\ex89\fR
 .CE
 .RE
 .IP \fBc\fR 5
@@ -362,7 +362,7 @@ than \fIcount\fR, then the extra elements are ignored.  For example,
 will return a binary string equivalent to:
 .PP
 .CS
-\fB\ex03\exfd\ex80\ex04\ex02\ex05\fR
+\fB\ex03\exFD\ex80\ex04\ex02\ex05\fR
 .CE
 .PP
 whereas:
@@ -388,7 +388,7 @@ example,
 will return a binary string equivalent to:
 .PP
 .CS
-\fB\ex03\ex00\exfd\exff\ex02\ex01\fR
+\fB\ex03\ex00\exFD\exFF\ex02\ex01\fR
 .CE
 .RE
 .IP \fBS\fR 5
@@ -404,7 +404,7 @@ example,
 will return a binary string equivalent to:
 .PP
 .CS
-\fB\ex00\ex03\exff\exfd\ex01\ex02\fR
+\fB\ex00\ex03\exFF\exFD\ex01\ex02\fR
 .CE
 .RE
 .IP \fBt\fR 5
@@ -428,7 +428,7 @@ example,
 will return a binary string equivalent to:
 .PP
 .CS
-\fB\ex03\ex00\ex00\ex00\exfd\exff\exff\exff\ex00\ex00\ex01\ex00\fR
+\fB\ex03\ex00\ex00\ex00\exFD\exFF\exFF\exFF\ex00\ex00\ex01\ex00\fR
 .CE
 .RE
 .IP \fBI\fR 5
@@ -444,7 +444,7 @@ For example,
 will return a binary string equivalent to:
 .PP
 .CS
-\fB\ex00\ex00\ex00\ex03\exff\exff\exff\exfd\ex00\ex01\ex00\ex00\fR
+\fB\ex00\ex00\ex00\ex03\exFF\exFF\exFF\exFD\ex00\ex01\ex00\ex00\fR
 .CE
 .RE
 .IP \fBn\fR 5
@@ -509,7 +509,7 @@ on a Windows system running on an Intel Pentium processor,
 will return a binary string equivalent to:
 .PP
 .CS
-\fB\excd\excc\excc\ex3f\ex9a\ex99\ex59\ex40\fR
+\fB\exCD\exCC\exCC\ex3F\ex9A\ex99\ex59\ex40\fR
 .CE
 .RE
 .IP \fBr\fR 5
@@ -535,7 +535,7 @@ Windows system running on an Intel Pentium processor,
 will return a binary string equivalent to:
 .PP
 .CS
-\fB\ex9a\ex99\ex99\ex99\ex99\ex99\exf9\ex3f\fR
+\fB\ex9A\ex99\ex99\ex99\ex99\ex99\exF9\ex3F\fR
 .CE
 .RE
 .IP \fBq\fR 5
@@ -787,7 +787,7 @@ scanned. For example,
 .RS
 .PP
 .CS
-\fBbinary scan\fR \ex07\exC6\ex05\ex1f\ex34 H3H* var1 var2
+\fBbinary scan\fR \ex07\exC6\ex05\ex1F\ex34 H3H* var1 var2
 .CE
 .PP
 will return \fB2\fR with \fB07c\fR stored in \fIvar1\fR and
@@ -838,7 +838,7 @@ example,
 .RS
 .PP
 .CS
-\fBbinary scan\fR \ex05\ex00\ex07\ex00\exf0\exff s2s* var1 var2
+\fBbinary scan\fR \ex05\ex00\ex07\ex00\exF0\exFF s2s* var1 var2
 .CE
 .PP
 will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
@@ -852,7 +852,7 @@ order.  For example,
 .RS
 .PP
 .CS
-\fBbinary scan\fR \ex00\ex05\ex00\ex07\exff\exf0 S2S* var1 var2
+\fBbinary scan\fR \ex00\ex05\ex00\ex07\exFF\exF0 S2S* var1 var2
 .CE
 .PP
 will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
@@ -877,7 +877,7 @@ example,
 .RS
 .PP
 .CS
-set str \ex05\ex00\ex00\ex00\ex07\ex00\ex00\ex00\exf0\exff\exff\exff
+set str \ex05\ex00\ex00\ex00\ex07\ex00\ex00\ex00\exF0\exFF\exFF\exFF
 \fBbinary scan\fR $str i2i* var1 var2
 .CE
 .PP
@@ -893,7 +893,7 @@ immediately after the \fBI\fR.  For example,
 .RS
 .PP
 .CS
-set str \ex00\ex00\ex00\ex05\ex00\ex00\ex00\ex07\exff\exff\exff\exf0
+set str \ex00\ex00\ex00\ex05\ex00\ex00\ex00\ex07\exFF\exFF\exFF\exF0
 \fBbinary scan\fR $str I2I* var1 var2
 .CE
 .PP
@@ -919,7 +919,7 @@ example,
 .RS
 .PP
 .CS
-set str \ex05\ex00\ex00\ex00\ex07\ex00\ex00\ex00\exf0\exff\exff\exff
+set str \ex05\ex00\ex00\ex00\ex07\ex00\ex00\ex00\exF0\exFF\exFF\exFF
 \fBbinary scan\fR $str wi* var1 var2
 .CE
 .PP
@@ -934,7 +934,7 @@ immediately after the \fBW\fR.  For example,
 .RS
 .PP
 .CS
-set str \ex00\ex00\ex00\ex05\ex00\ex00\ex00\ex07\exff\exff\exff\exf0
+set str \ex00\ex00\ex00\ex05\ex00\ex00\ex00\ex07\exFF\exFF\exFF\exF0
 \fBbinary scan\fR $str WI* var1 var2
 .CE
 .PP
@@ -965,7 +965,7 @@ Intel Pentium processor,
 .RS
 .PP
 .CS
-\fBbinary scan\fR \ex3f\excc\excc\excd f var1
+\fBbinary scan\fR \ex3F\exCC\exCC\exCD f var1
 .CE
 .PP
 will return \fB1\fR with \fB1.6000000238418579\fR stored in
@@ -989,7 +989,7 @@ running on an Intel Pentium processor,
 .RS
 .PP
 .CS
-\fBbinary scan\fR \ex9a\ex99\ex99\ex99\ex99\ex99\exf9\ex3f d var1
+\fBbinary scan\fR \ex9A\ex99\ex99\ex99\ex99\ex99\exF9\ex3F d var1
 .CE
 .PP
 will return \fB1\fR with \fB1.6000000000000001\fR
