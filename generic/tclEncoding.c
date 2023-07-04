@@ -3448,6 +3448,14 @@ TableToUtfProc(
 	src++;
     }
 
+    if (src > srcEnd) {
+        /*
+         * This can happen in the case of a trailing truncated byte sequence
+         * where src is incremented past the prefix byte which is the last.
+         * See bug [5be203d6ca]
+         */
+        src--;
+    }
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
