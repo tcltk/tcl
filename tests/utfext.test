@@ -24,25 +24,6 @@ lappend utfExtMap {*}{
     ascii 414243 414243
 }
 
-if {[info commands printable] eq ""} {
-    proc printable {s} {
-        set print ""
-        foreach c [split $s ""] {
-            set i [scan $c %c]
-            if {[string is print $c] && ($i <= 127)} {
-                append print $c
-            } elseif {$i <= 0xff} {
-                append print \\x[format %02X $i]
-            } elseif {$i <= 0xffff} {
-                append print \\u[format %04X $i]
-            } else {
-                append print \\U[format %08X $i]
-            }
-        }
-        return $print
-    }
-}
-
 # Simple test with basic flags
 proc testbasic {direction enc hexin hexout {flags {start end}}} {
     if {$direction eq "toutf"} {
