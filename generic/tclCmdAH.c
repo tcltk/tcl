@@ -435,7 +435,7 @@ EncodingConvertParseOptions (
     Tcl_Encoding encoding;
     Tcl_Obj *dataObj;
     Tcl_Obj *failVarObj;
-    int profile = TCL_ENCODING_PROFILE_TCL8;
+    int profile = TCL_ENCODING_PROFILE_STRICT;
 
     /*
      * Possible combinations:
