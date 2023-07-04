@@ -727,8 +727,14 @@ foreach {enc hex profile str failidx ctrl comment} $encInvalidBytes {
 #
 # Non-ascii encoding should not output lossless wrappers
 foreach enc [encoding names] {
-    if {[ascii_compatible $enc]} {
-        
+    if {$enc eq "cesu-8"} {
+        test cmdAH-4.4.16.$enc "Lossless output for CESU-8" -body {
+            encoding convertto -profile lossless $enc \uDC41
+        } -result \xED\xB1\x81
+    } elseif {[ascii_compatible $enc]} {
+        test cmdAH-4.4.16.$enc "Lossless output for ascii-compatible encodings" -body {
+            encoding convertto -profile lossless $enc \uDC41
+        } -result A
     } else {
         test cmdAH-4.4.16.$enc "Lossless output for ascii-incompatible encodings" -body {
             encoding convertto -profile lossless $enc \uDC41
