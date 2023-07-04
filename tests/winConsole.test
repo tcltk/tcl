@@ -218,7 +218,7 @@ test console-fconfigure-get-1.[incr testnum] {
     Console get stdin option -eofchar
 } -constraints {win interactive} -body {
     fconfigure stdin -eofchar
-} -result \x1a
+} -result \x1A
 
 test console-fconfigure-get-1.[incr testnum] {
     fconfigure -winsize
