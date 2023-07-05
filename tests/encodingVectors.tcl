@@ -32,7 +32,7 @@ set encValidStrings {}; # Reset the table
 
 lappend encValidStrings {*}{
     ascii    \u0000 00 {} {Lowest ASCII}
-    ascii    \u007F 7F knownBug {Highest ASCII}
+    ascii    \u007F 7F {} {Highest ASCII}
     ascii    \u007D 7D {} {Brace - just to verify test scripts are escaped correctly}
     ascii    \u007B 7B {} {Terminating brace - just to verify test scripts are escaped correctly}
 
@@ -721,13 +721,13 @@ lappend encInvalidBytes {*}{
     utf-32le 00D8000000DC0000 replace  \uFFFD\uFFFD -1 {} {High-low-surrogate-pair}
     utf-32le 00D8000000DC0000 lossless \uFFFD\uFFFD -1 {} {High-low-surrogate-pair}
     utf-32le 00D8000000DC0000 strict  {}            0 {} {High-low-surrogate-pair}
-    utf-32le 00001100 tcl8 \UFFFD    -1 {} {Out of range}
-    utf-32le 00001100 replace  \UFFFD -1 {} {Out of range}
-    utf-32le 00001100 lossless \UFFFD -1 {} {Out of range}
+    utf-32le 00001100 tcl8 \uFFFD    -1 {} {Out of range}
+    utf-32le 00001100 replace  \uFFFD -1 {} {Out of range}
+    utf-32le 00001100 lossless \uFFFD -1 {} {Out of range}
     utf-32le 00001100 strict {}       0 {} {Out of range}
-    utf-32le FFFFFFFF tcl8 \UFFFD    -1 {} {Out of range}
-    utf-32le FFFFFFFF replace  \UFFFD -1 {} {Out of range}
-    utf-32le FFFFFFFF lossless \UFFFD -1 {} {Out of range}
+    utf-32le FFFFFFFF tcl8 \uFFFD    -1 {} {Out of range}
+    utf-32le FFFFFFFF replace  \uFFFD -1 {} {Out of range}
+    utf-32le FFFFFFFF lossless \uFFFD -1 {} {Out of range}
     utf-32le FFFFFFFF strict {}       0 {} {Out of range}
 
     utf-32be 41      tcl8      \uFFFD  -1 {solo tail} {Truncated}
@@ -754,13 +754,13 @@ lappend encInvalidBytes {*}{
     utf-32be 0000D8000000DC00 replace  \uFFFD\uFFFD -1 {} {High-low-surrogate-pair}
     utf-32be 0000D8000000DC00 lossless \uFFFD\uFFFD -1 {} {High-low-surrogate-pair}
     utf-32be 0000D8000000DC00 strict  {}            0 {} {High-low-surrogate-pair}
-    utf-32be 00110000 tcl8 \UFFFD    -1 {} {Out of range}
-    utf-32be 00110000 replace  \UFFFD -1 {} {Out of range}
-    utf-32be 00110000 lossless \UFFFD -1 {} {Out of range}
+    utf-32be 00110000 tcl8 \uFFFD    -1 {} {Out of range}
+    utf-32be 00110000 replace  \uFFFD -1 {} {Out of range}
+    utf-32be 00110000 lossless \uFFFD -1 {} {Out of range}
     utf-32be 00110000 strict {}       0 {} {Out of range}
-    utf-32be FFFFFFFF tcl8 \UFFFD    -1 {} {Out of range}
-    utf-32be FFFFFFFF replace  \UFFFD -1 {} {Out of range}
-    utf-32be FFFFFFFF lossless \UFFFD -1 {} {Out of range}
+    utf-32be FFFFFFFF tcl8 \uFFFD    -1 {} {Out of range}
+    utf-32be FFFFFFFF replace  \uFFFD -1 {} {Out of range}
+    utf-32be FFFFFFFF lossless \uFFFD -1 {} {Out of range}
     utf-32be FFFFFFFF strict {}       0 {} {Out of range}
 }
 

@@ -8247,7 +8247,7 @@ Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
 2013-06-05 (bug fix)[2835313] [while 1 {foo [continue]}] crash (fellows)
 
-2013-06-17 (bug fix)[a876646] [:cntrl:] includes \x00 to \x1f (nijtmans)
+2013-06-17 (bug fix)[a876646] [:cntrl:] includes \x00 to \x1F (nijtmans)
 
 2013-06-27 (bug fix)[983509] missing encodings for config values (nijtmans)
 

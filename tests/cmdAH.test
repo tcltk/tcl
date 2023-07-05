@@ -207,24 +207,6 @@ proc endianUtf {enc} {
     return ""
 }
 
-# Map arbitrary strings to printable form in ASCII.
-proc printable {s} {
-    set print ""
-    foreach c [split $s ""] {
-        set i [scan $c %c]
-        if {[string is print $c] && ($i <= 127)} {
-            append print $c
-        } elseif {$i <= 0xff} {
-            append print \\x[format %02X $i]
-        } elseif {$i <= 0xffff} {
-            append print \\u[format %04X $i]
-        } else {
-            append print \\U[format %08X $i]
-        }
-    }
-    return $print
-}
-
 #
 # Check errors for invalid number of arguments
 proc badnumargs {id cmd cmdargs} {
@@ -354,7 +336,7 @@ unknownencodingtest cmdAH-4.3.9 {convertfrom -failindex VAR -profile ABC}
 unknownencodingtest cmdAH-4.3.10 {convertfrom -profile strict -failindex ABC}
 testconvert cmdAH-4.3.11 {
     encoding convertfrom jis0208 \x38\x43
-} \u4e4e -setup {
+} 乎 -setup {
     set system [encoding system]
     encoding system iso8859-1
 } -cleanup {
@@ -364,7 +346,7 @@ testconvert cmdAH-4.3.11 {
 # Verify single arg defaults to system encoding
 testconvert cmdAH-4.3.12 {
     encoding convertfrom \x38\x43
-} \u4e4e -setup {
+} 乎 -setup {
     set system [encoding system]
     encoding system jis0208
 } -cleanup {
@@ -516,7 +498,7 @@ unknownencodingtest cmdAH-4.4.8 {convertto nosuchencoding ABC}
 unknownencodingtest cmdAH-4.4.9 {convertto -failindex VAR -profile ABC}
 unknownencodingtest cmdAH-4.4.10 {convertto -profile strict -failindex ABC}
 testconvert cmdAH-4.4.11 {
-    encoding convertto jis0208 \u4e4e
+    encoding convertto jis0208 乎
 } \x38\x43 -setup {
     set system [encoding system]
     encoding system iso8859-1
@@ -526,7 +508,7 @@ testconvert cmdAH-4.4.11 {
 
 # Verify single arg defaults to system encoding
 testconvert cmdAH-4.4.12 {
-    encoding convertto \u4e4e
+    encoding convertto 乎
 } \x38\x43 -setup {
     set system [encoding system]
     encoding system jis0208
@@ -539,7 +521,7 @@ testconvert cmdAH-4.4.12 {
 foreach {enc str hex ctrl comment} $encValidStrings {
     if {"knownBug" in $ctrl} continue
     set bytes [binary decode hex $hex]
-    set printable [printable $str]
+    set printable [tcltest::Asciify $str]
     set prefix A
     set suffix B
     set prefix_bytes [encoding convertto $enc A]
@@ -556,7 +538,7 @@ foreach {enc str hex ctrl comment} $encValidStrings {
 foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
     if {"knownBug" in $ctrl} continue
     set bytes [binary decode hex $hex]
-    set printable [printable $str]
+    set printable [tcltest::Asciify $str]
     set prefix A
     set suffix B
     set prefix_bytes [encoding convertto $enc $prefix]
@@ -605,7 +587,7 @@ foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
 foreach {enc str hex ctrl comment} $encValidStrings {
     if {"knownBug" in $ctrl} continue
     set bytes [binary decode hex $hex]
-    set printable [printable $str]
+    set printable [tcltest::Asciify $str]
     set prefix A
     set suffix B
     set prefix_bytes [encoding convertto $enc A]
@@ -622,7 +604,7 @@ foreach {enc str hex ctrl comment} $encValidStrings {
 foreach {enc str profile hex failidx ctrl comment} $encUnencodableStrings {
     if {"knownBug" in $ctrl} continue
     set bytes [binary decode hex $hex]
-    set printable [printable $str]
+    set printable [tcltest::Asciify $str]
     set prefix A
     set suffix B
     set prefixLen [string length [encoding convertto $enc $prefix]]
