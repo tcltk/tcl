@@ -564,8 +564,8 @@ TclInitEncodingSubsystem(void)
     unsigned size;
     unsigned short i;
     union {
-        char c;
-        short s;
+	char c;
+	short s;
     } isLe;
     int leFlags;
 
@@ -3399,9 +3399,9 @@ TableToUtfProc(
 	byte = *((unsigned char *) src);
 	if (prefixBytes[byte]) {
 	    if (src >= srcEnd-1) {
-                /* Prefix byte but nothing after it */
+		/* Prefix byte but nothing after it */
 		if (!(flags & TCL_ENCODING_END)) {
-                    /* More data to come */
+		    /* More data to come */
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		} else if (PROFILE_STRICT(flags)) {
@@ -3410,17 +3410,16 @@ TableToUtfProc(
 		} else if (PROFILE_REPLACE(flags)) {
 		    ch = UNICODE_REPLACE_CHAR;
 		} else {
-		    ch = (unsigned) byte;
+		    ch = (Tcl_UniChar)byte;
 		}
 	    } else {
-                ++src;
-		ch = toUnicode[byte][*((unsigned char *)src)];
+		ch = toUnicode[byte][*((unsigned char *)++src)];
 	    }
 	} else {
 	    ch = pageZero[byte];
 	}
 	if ((ch == 0) && (byte != 0)) {
-            /* Prefix+suffix pair is invalid */
+	    /* Prefix+suffix pair is invalid */
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
@@ -3431,7 +3430,7 @@ TableToUtfProc(
 	    if (PROFILE_REPLACE(flags)) {
 		ch = UNICODE_REPLACE_CHAR;
 	    } else {
-                ch = (Tcl_UniChar)byte;
+		ch = (Tcl_UniChar)byte;
 	    }
 	}
 
