@@ -537,8 +537,8 @@ TclInitEncodingSubsystem(void)
     unsigned size;
     unsigned short i;
     union {
-        char c;
-        short s;
+	char c;
+	short s;
     } isLe;
 
     if (encodingsInitialized) {
@@ -1233,9 +1233,9 @@ Tcl_ExternalToUtf(
     }
 
     if (!noTerminate) {
-        if (dstLen < 1) {
-            return TCL_CONVERT_NOSPACE;
-        }
+	if (dstLen < 1) {
+	    return TCL_CONVERT_NOSPACE;
+	}
 	/*
 	 * If there are any null characters in the middle of the buffer,
 	 * they will converted to the UTF-8 null character (\xC080). To get
@@ -1245,9 +1245,9 @@ Tcl_ExternalToUtf(
 
 	dstLen--;
     } else {
-        if (dstLen < 0) {
-            return TCL_CONVERT_NOSPACE;
-        }
+	if (dstLen < 0) {
+	    return TCL_CONVERT_NOSPACE;
+	}
     }
     do {
 	Tcl_EncodingState savedState = *statePtr;
@@ -1423,7 +1423,7 @@ Tcl_UtfToExternal(
     }
 
     if (dstLen < encodingPtr->nullSize) {
-        return TCL_CONVERT_NOSPACE;
+	return TCL_CONVERT_NOSPACE;
     }
     dstLen -= encodingPtr->nullSize;
     result = encodingPtr->fromUtfProc(encodingPtr->clientData, src, srcLen,
@@ -2731,17 +2731,26 @@ TableToUtfProc(
 	}
 	byte = *((unsigned char *) src);
 	if (prefixBytes[byte]) {
-	    src++;
-	    if (src >= srcEnd) {
-		src--;
-		result = TCL_CONVERT_MULTIBYTE;
-		break;
+	    if (src >= srcEnd-1) {
+		/* Prefix byte but nothing after it */
+		if (!(flags & TCL_ENCODING_END)) {
+		    /* More data to come */
+		    result = TCL_CONVERT_MULTIBYTE;
+		    break;
+		} else if (flags & TCL_ENCODING_STOPONERROR) {
+		    result = TCL_CONVERT_SYNTAX;
+		    break;
+		} else {
+		    ch = (Tcl_UniChar)byte;
+		}
+	    } else {
+		ch = toUnicode[byte][*((unsigned char *)++src)];
 	    }
-	    ch = toUnicode[byte][*((unsigned char *) src)];
 	} else {
 	    ch = pageZero[byte];
 	}
 	if ((ch == 0) && (byte != 0)) {
+	    /* Prefix+suffix pair is invalid */
 	    if (flags & TCL_ENCODING_STOPONERROR) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
@@ -2749,14 +2758,14 @@ TableToUtfProc(
 	    if (prefixBytes[byte]) {
 		src--;
 	    }
-	    ch = (Tcl_UniChar) byte;
+	    ch = (Tcl_UniChar)byte;
 	}
 
 	/*
 	 * Special case for 1-byte Utf chars for speed.
 	 */
 
-	if (ch && ch < 0x80) {
+	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (char) ch;
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
@@ -2963,7 +2972,7 @@ Iso88591ToUtfProc(
 	 * Special case for 1-byte utf chars for speed.
 	 */
 
-	if (ch && ch < 0x80) {
+	if ((unsigned)ch - 1 < 0x7F) {
 	    *dst++ = (char) ch;
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
