@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include <assert.h>
 
 typedef size_t (LengthProc)(const char *src);
 
@@ -3476,16 +3477,13 @@ TableToUtfProc(
 	}
 	byte = *((unsigned char *) src);
 	if (prefixBytes[byte]) {
-	    src++;
-	    if (src >= srcEnd) {
+	    if (src >= srcEnd-1) {
+                /* Prefix byte but nothing after it */
 		if (!(flags & TCL_ENCODING_END)) {
-                    /* Suffix bytes expected, don't consume prefix */
-		    src--;
+                    /* More data to come */
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		} else if (PROFILE_STRICT(flags)) {
-                    /* Truncation. Do not consume so error location correct */
-		    src--;
 		    result = TCL_CONVERT_SYNTAX;
 		    break;
 		} else if (PROFILE_REPLACE(flags)) {
@@ -3494,6 +3492,7 @@ TableToUtfProc(
 		    ch = (unsigned) byte;
 		}
 	    } else {
+                ++src;
 		ch = toUnicode[byte][*((unsigned char *)src)];
 	    }
 	} else {
@@ -3527,6 +3526,7 @@ TableToUtfProc(
 	src++;
     }
 
+    assert(src <= srcEnd);
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
