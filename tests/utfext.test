@@ -93,6 +93,14 @@ test xx-bufferoverflow {buffer overflow Tcl_ExternalToUtf} -body {
 # % testencoding Tcl_ExternalToUtf utf-8 abcdefgh {start end noterminate charlimit} {} 20 rv wv cv
 # nospace {} abcÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ
 
+test TableToUtf-bug-5be203d6ca {Bug 5be203d6ca - truncated prefix in table encoding} -body {
+    set src \x82\x4f\x82\x50\x82 
+    lassign [testencoding Tcl_ExternalToUtf shiftjis $src {start} 0 16 srcRead dstWritten charsWritten] buf 
+    set result [list [testencoding Tcl_ExternalToUtf shiftjis $src {start} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
+    lappend result {*}[list [testencoding Tcl_ExternalToUtf shiftjis [string range $src $srcRead end] {end} 0 10 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
+} -result [list [list multibyte 0 \xEF\xBC\x90\xEF\xBC\x91\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 4 6 2 [list ok 0 \xC2\x82\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 1 2 1]
+
+
 ::tcltest::cleanupTests
 return
 
