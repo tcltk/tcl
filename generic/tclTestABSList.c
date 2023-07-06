@@ -40,6 +40,7 @@ static int my_LStringGetElements(Tcl_Interp *interp,
 				 Tcl_Obj *listPtr,
 				 Tcl_Size *objcptr,
 				 Tcl_Obj ***objvptr);
+static void lstringFreeElements(Tcl_Obj* lstringObj);
 static void UpdateStringOfLString(Tcl_Obj *objPtr);
 
 /*
@@ -608,8 +609,9 @@ my_LStringReplace(
     lstringRep->string = newStr;
     lstringRep->strlen = newLen;
 
-    /* Changes made to value, string rep no longer valid */
+    /* Changes made to value, string rep and elements array no longer valid */
     Tcl_InvalidateStringRep(listObj);
+    lstringFreeElements(listObj);
 
     return TCL_OK;
 }
@@ -701,8 +703,30 @@ my_NewLStringObj(
     } else {
 	Tcl_InitStringRep(lstringPtr, NULL, 0);
     }
-
     return lstringPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * freeElements --
+ *
+ *      Free the element array
+ *
+ */
+
+static void
+lstringFreeElements(Tcl_Obj* lstringObj)
+{
+    LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
+    if (lstringRepPtr->elements) {
+	Tcl_Obj **objptr = lstringRepPtr->elements;
+	while (objptr < &lstringRepPtr->elements[lstringRepPtr->strlen]) {
+	    Tcl_DecrRefCount(*objptr++);
+	}
+	Tcl_Free((char*)lstringRepPtr->elements);
+	lstringRepPtr->elements = NULL;
+    }
 }
 
 /*
@@ -728,14 +752,7 @@ freeRep(Tcl_Obj* lstringObj)
     if (lstringRepPtr->string) {
 	Tcl_Free(lstringRepPtr->string);
     }
-    if (lstringRepPtr->elements) {
-	Tcl_Obj **objptr = lstringRepPtr->elements;
-	while (objptr < &lstringRepPtr->elements[lstringRepPtr->strlen]) {
-	    Tcl_DecrRefCount(*objptr++);
-	}
-	Tcl_Free((char*)lstringRepPtr->elements);
-	lstringRepPtr->elements = NULL;
-    }
+    lstringFreeElements(lstringObj);
     Tcl_Free((char*)lstringRepPtr);
     lstringObj->internalRep.twoPtrValue.ptr1 = NULL;
 }
@@ -773,7 +790,7 @@ static int my_LStringGetElements(Tcl_Interp *interp,
     if (lstringRepPtr->elements == NULL) {
 	lstringRepPtr->elements = (Tcl_Obj**)Tcl_Alloc(sizeof(Tcl_Obj*) * lstringRepPtr->strlen);
 	objPtr=lstringRepPtr->elements;
-	while (objPtr<&lstringRepPtr->elements[lstringRepPtr->strlen]) {
+	while (objPtr < &lstringRepPtr->elements[lstringRepPtr->strlen]) {
 	    *objPtr = Tcl_NewStringObj(cptr++,1);
 	    Tcl_IncrRefCount(*objPtr++);
 	}
@@ -944,13 +961,11 @@ lgen(
 	int status = Tcl_EvalObjEx(intrp, genCmd, flags);
 	elemObj = Tcl_GetObjResult(intrp);
 	if (status != TCL_OK) {
-	    fprintf(stderr,"Error: %s\nwhile executing %s\n",
-		   elemObj ? Tcl_GetString(elemObj) : "NULL",
-		   Tcl_GetString(genCmd));
+	    Tcl_SetObjResult(intrp, Tcl_ObjPrintf(
+	        "Error: %s\nwhile executing %s\n",
+		elemObj ? Tcl_GetString(elemObj) : "NULL", Tcl_GetString(genCmd)));
+	    return NULL;
 	}
-	// Interp may be only holder of the result,
-	// incr refCount to hold on to it.
-	Tcl_IncrRefCount(elemObj);
     }
     return elemObj;
 }

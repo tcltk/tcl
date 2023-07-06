@@ -9527,6 +9527,7 @@ EvalStatsCmd(
     size_t refCountSum, literalMgmtBytes, sum, decadeHigh, length;
     size_t numSharedMultX, numSharedOnce, minSizeDecade, maxSizeDecade;
     Tcl_Size i;
+    size_t ui;
     char *litTableStats;
     LiteralEntry *entryPtr;
     Tcl_Obj *objPtr;
@@ -9662,7 +9663,7 @@ EvalStatsCmd(
     strBytesIfUnshared = 0.0;
     strBytesSharedMultX = 0.0;
     strBytesSharedOnce = 0.0;
-    for (i = 0;  i < globalTablePtr->numBuckets;  i++) {
+    for (ui = 0;  ui < globalTablePtr->numBuckets;  ui++) {
 	for (entryPtr = globalTablePtr->buckets[i];  entryPtr != NULL;
 		entryPtr = entryPtr->nextPtr) {
 	    if (TclHasInternalRep(entryPtr->objPtr, &tclByteCodeType)) {

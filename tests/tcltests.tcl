@@ -8,7 +8,6 @@ namespace import ::tcltest::*
 testConstraint exec [llength [info commands exec]]
 testConstraint deprecated [expr {![tcl::build-info no-deprecate]}]
 testConstraint debug [tcl::build-info debug]
-testConstraint ndebug [expr {![tcl::build-info debug]}]
 testConstraint purify [tcl::build-info purify]
 testConstraint debugpurify [
     expr {
