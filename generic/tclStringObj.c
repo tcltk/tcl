@@ -4886,11 +4886,11 @@ ExtendStringRepWithUnicode(
   copyBytes:
     dst = objPtr->bytes + origLength;
     for (i = 0; i < numChars; i++) {
-	if (((i == 0) || !HIGH_SURROGATE(unicode[i-1])) && LOW_SURROGATE(unicode[i])) {
+	if (LOW_SURROGATE(unicode[i]) && ((i == 0) || !HIGH_SURROGATE(unicode[i-1]))) {
 	    *dst = 0; /* In case of lower surrogate, don't try to combine */
 	}
 	dst += Tcl_UniCharToUtf(unicode[i], dst);
-	if (HIGH_SURROGATE(unicode[i]) && ((i >= numChars) || !LOW_SURROGATE(unicode[i+1]))) {
+	if (HIGH_SURROGATE(unicode[i]) && ((i+1 >= numChars) || !LOW_SURROGATE(unicode[i+1]))) {
 	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
     }
