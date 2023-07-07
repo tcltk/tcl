@@ -1093,33 +1093,8 @@ typedef struct ActiveInterpTrace {
      ?	((objPtr)->typePtr)->proc		\
      : NULL)
 
-
-MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
-
+MODULE_SCOPE Tcl_ObjTypeLengthProc TclLengthOne;
 
-/*
- * Abstract List
- *
- *  This structure provides the functions used in List operations to emulate a
- *  List for AbstractList types.
- */
-
-
-#define Tcl_ObjTypeLength(objPtr) (objPtr)->typePtr->lengthProc(objPtr)
-#define Tcl_ObjTypeIndex(interp, objPtr, index, elemObjPtr) \
-    (objPtr)->typePtr->indexProc((interp),(objPtr),(index),(elemObjPtr))
-#define Tcl_ObjTypeSlice(interp, objPtr, fromIdx, toIdx, newObjPtr) \
-    (objPtr)->typePtr->sliceProc((interp),(objPtr),(fromIdx),(toIdx),(newObjPtr))
-#define Tcl_ObjTypeReverse(interp, objPtr, newObjPtr) \
-    (objPtr)->typePtr->reverseProc((interp),(objPtr),(newObjPtr))
-#define Tcl_ObjTypeGetElements(interp, objPtr, objCPtr, objVPtr) \
-    (objPtr)->typePtr->getElementsProc((interp),(objPtr),(objCPtr),(objVPtr))
-#define Tcl_ObjTypeSetElement(interp, objPtr, indexCount, indexArray, valueObj) \
-    (objPtr)->typePtr->setElementProc((interp), (objPtr), (indexCount), (indexArray), (valueObj))
-#define Tcl_ObjTypeReplace(interp, objPtr, first, numToDelete, numToInsert, insertObjs) \
-    (objPtr)->typePtr->replaceProc((interp), (objPtr), (first), (numToDelete), (numToInsert), (insertObjs))
-
-
 /*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function
