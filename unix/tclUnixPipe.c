@@ -415,6 +415,9 @@ TclpCreateProcess(
     Tcl_DString *dsArray;
     char **newArgv;
     int pid, i;
+#if defined(HAVE_POSIX_SPAWNP)
+    int childErrno;
+#endif
 
     errPipeIn = NULL;
     errPipeOut = NULL;
@@ -478,11 +481,13 @@ TclpCreateProcess(
 		0
 # endif
 		);
+
 	posix_spawn_file_actions_adddup2(&actions, GetFd(inputFile), 0);
 	posix_spawn_file_actions_adddup2(&actions, GetFd(outputFile), 1);
 	posix_spawn_file_actions_adddup2(&actions, GetFd(errorFile), 2);
 
 	status = posix_spawnp(&pid, newArgv[0], &actions, &attr, newArgv, environ);
+	childErrno = status;
 
 	posix_spawn_file_actions_destroy(&actions);
 	posix_spawnattr_destroy(&attr);
@@ -552,6 +557,7 @@ TclpCreateProcess(
 
     if (pid == -1) {
 #ifdef HAVE_POSIX_SPAWNP
+	errno = childErrno;
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't execute \"%s\": %s", argv[0], Tcl_PosixError(interp)));
 #else
