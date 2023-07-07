@@ -656,6 +656,7 @@ typedef struct Tcl_ObjType {
 				/* Called to convert the object's internal rep
 				 * to this type. Frees the internal rep of the
 				 * old type. Returns TCL_ERROR on failure. */
+#if TCL_MAJOR_VERSION > 8
     size_t version;
 
     /* List emulation functions - ObjType Version 1 */
@@ -672,16 +673,19 @@ typedef struct Tcl_ObjType {
     Tcl_ObjTypeSetElement *setElementProc;   /* Replace the element at the indicie
 					     ** with the given valueObj. */
     Tcl_ObjTypeReplaceProc *replaceProc;     /* Replace subset with subset */
+#endif
 } Tcl_ObjType;
 
-#define TCL_OBJTYPE_V0 0,0,0,0,0,0,0,0 /* Pre-Tcl 9 */
-#define TCL_OBJTYPE_V1(a) 1,a,0,0,0,0,0,0 /* Tcl 9 Version 1 */
-
-#define TCL_OBJTYPE_V2(a,b,c,d,e,f,g)	 2, \
-    a,b,c,d,e,f,g /* Tcl 9 - AbstractLists */
-
-#define TCL_OBJTYPE_CURRENT 2
-
+#if TCL_MAJOR_VERSION > 8
+#   define TCL_OBJTYPE_V0 0, \
+	    0,0,0,0,0,0,0 /* Pre-Tcl 9 */
+#   define TCL_OBJTYPE_V1(a) 1, \
+	    a,0,0,0,0,0,0 /* Tcl 9 Version 1 */
+#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g) 2, \
+	    a,b,c,d,e,f,g /* Tcl 9 - AbstractLists */
+#else
+#   define TCL_OBJTYPE_V0 /* just empty */
+#endif
 
 /*
  * The following structure stores an internal representation (internalrep) for
