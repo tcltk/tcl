@@ -17,7 +17,6 @@
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
-#include "tclArithSeries.h"
 
 /*
  * The state structure used by [foreach]. Note that the actual structure has
@@ -2789,7 +2788,7 @@ EachloopCmd(
 	/* List */
 	/* Variables */
 	statePtr->vCopyList[i] = TclDuplicatePureObj(
-	    interp, objv[1+i*2], &tclListType.objType);
+	    interp, objv[1+i*2], &tclListType);
 	if (!statePtr->vCopyList[i]) {
 	    result = TCL_ERROR;
 	    goto done;
@@ -2814,19 +2813,18 @@ EachloopCmd(
 	    &statePtr->varcList[i], &statePtr->varvList[i]);
 
 	/* Values */
-	if (TclHasInternalRep(objv[2+i*2],&tclArithSeriesType.objType)) {
-	    /* Special case for Arith Series */
+	if (TclObjTypeHasProc(objv[2+i*2],indexProc)) {
+	    /* Special case for AbstractList */
 	    statePtr->aCopyList[i] = Tcl_DuplicateObj(objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;
 	    }
 	    /* Don't compute values here, wait until the last moment */
-	    statePtr->argcList[i] = ABSTRACTLIST_PROC(statePtr->aCopyList[i], lengthProc)(statePtr->aCopyList[i]);
+	    statePtr->argcList[i] = TclObjTypeHasProc(statePtr->aCopyList[i], lengthProc)(statePtr->aCopyList[i]);
 	} else {
-	    /* List values */
 	    statePtr->aCopyList[i] = TclDuplicatePureObj(
-		interp, objv[2+i*2], &tclListType.objType);
+		interp, objv[2+i*2], &tclListType);
 	    if (!statePtr->aCopyList[i]) {
 		result = TCL_ERROR;
 		goto done;
@@ -2964,17 +2962,18 @@ ForeachAssignments(
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
-	int isarithseries = TclHasInternalRep(statePtr->aCopyList[i],&tclArithSeriesType.objType);
+	int isAbstractList =
+		TclObjTypeHasProc(statePtr->aCopyList[i],indexProc) != NULL;
+
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
-		if (isarithseries) {
-		    valuePtr = TclArithSeriesObjIndex(interp, statePtr->aCopyList[i], k);
-		    if (valuePtr == NULL) {
+		if (isAbstractList) {
+		    if (Tcl_ObjTypeIndex(interp, statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (setting %s loop variable \"%s\")",
-			(statePtr->resultList != NULL ? "lmap" : "foreach"),
-			TclGetString(statePtr->varvList[i][v])));
+				"\n    (setting %s loop variable \"%s\")",
+				(statePtr->resultList != NULL ? "lmap" : "foreach"),
+				TclGetString(statePtr->varvList[i][v])));
 			return TCL_ERROR;
 		    }
 		} else {

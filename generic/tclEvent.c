@@ -233,7 +233,7 @@ HandleBgErrors(
 	 */
 
 	Tcl_Obj *copyObj = TclDuplicatePureObj(
-	    interp, assocPtr->cmdPrefix, &tclListType.objType);
+	    interp, assocPtr->cmdPrefix, &tclListType);
 	if (!copyObj) {
 	    return;
 	}

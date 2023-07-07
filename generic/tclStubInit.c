@@ -102,6 +102,7 @@
 static void uniCodePanic() {
     Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
 }
+
 #   define Tcl_GetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, Tcl_Size *))(void *)uniCodePanic
 #   define TclGetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, int *))(void *)uniCodePanic
 #   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const Tcl_UniChar *, Tcl_Size))(void *)uniCodePanic
