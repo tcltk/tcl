@@ -2821,7 +2821,7 @@ EachloopCmd(
 		goto done;
 	    }
 	    /* Don't compute values here, wait until the last moment */
-	    statePtr->argcList[i] = TclObjTypeHasProc(statePtr->aCopyList[i], lengthProc)(statePtr->aCopyList[i]);
+	    statePtr->argcList[i] = TclObjTypeLength(statePtr->aCopyList[i]);
 	} else {
 	    statePtr->aCopyList[i] = TclDuplicatePureObj(
 		interp, objv[2+i*2], &tclListType);
@@ -2962,14 +2962,14 @@ ForeachAssignments(
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
-	Tcl_ObjTypeIndexProc *indexProc =
-		TclObjTypeHasProc(statePtr->aCopyList[i], indexProc);
+	int isAbstractList =
+		TclObjTypeHasProc(statePtr->aCopyList[i],indexProc) != NULL;
 
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
-		if (indexProc) {
-		    if (indexProc(interp, statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
+		if (isAbstractList) {
+		    if (TclObjTypeIndex(interp, statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 				"\n    (setting %s loop variable \"%s\")",
 				(statePtr->resultList != NULL ? "lmap" : "foreach"),

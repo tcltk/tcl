@@ -1093,8 +1093,82 @@ typedef struct ActiveInterpTrace {
      ?	((objPtr)->typePtr)->proc		\
      : NULL)
 
-MODULE_SCOPE Tcl_ObjTypeLengthProc TclLengthOne;
+
+MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
+
 
+/*
+ * Abstract List
+ *
+ *  This structure provides the functions used in List operations to emulate a
+ *  List for AbstractList types.
+ */
+
+
+static inline Tcl_Size
+TclObjTypeLength(Tcl_Obj *objPtr)
+{
+    return TclObjTypeHasProc(objPtr, lengthProc)(objPtr);
+}
+static inline int
+TclObjTypeIndex(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Size index,
+    Tcl_Obj **elemObjPtr)
+{
+    return TclObjTypeHasProc(objPtr, indexProc)(interp, objPtr, index, elemObjPtr);
+}
+static inline int
+TclObjTypeSlice(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Size fromIdx,
+    Tcl_Size toIdx,
+    Tcl_Obj **newObjPtr)
+{
+    return TclObjTypeHasProc(objPtr, sliceProc)(interp, objPtr, fromIdx, toIdx, newObjPtr);
+}
+static inline int
+TclObjTypeReverse(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Obj **newObjPtr)
+{
+    return TclObjTypeHasProc(objPtr, reverseProc)(interp, objPtr, newObjPtr);
+}
+static inline int
+TclObjTypeGetElements(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Size *objCPtr,
+    Tcl_Obj ***objVPtr)
+{
+    return TclObjTypeHasProc(objPtr, getElementsProc)(interp, objPtr, objCPtr, objVPtr);
+}
+static inline Tcl_Obj*
+TclObjTypeSetElement(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Size indexCount,
+    Tcl_Obj *const indexArray[],
+    Tcl_Obj *valueObj)
+{
+    return TclObjTypeHasProc(objPtr, setElementProc)(interp, objPtr, indexCount, indexArray, valueObj);
+}
+static inline int
+TclObjTypeReplace(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Size first,
+    Tcl_Size numToDelete,
+    Tcl_Size numToInsert,
+    Tcl_Obj *const insertObjs[])
+{
+    return TclObjTypeHasProc(objPtr, replaceProc)(interp, objPtr, first, numToDelete, numToInsert, insertObjs);
+}
+
+
 /*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function

@@ -1627,7 +1627,7 @@ Tcl_ListObjGetElements(
     ListRep listRep;
 
     if (TclObjTypeHasProc(objPtr, getElementsProc) &&
-	objPtr->typePtr->getElementsProc(interp, objPtr, objcPtr, objvPtr) == TCL_OK) {
+	TclObjTypeGetElements(interp, objPtr, objcPtr, objvPtr) == TCL_OK) {
 	return TCL_OK;
     }
     if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
@@ -1912,7 +1912,7 @@ Tcl_ListObjIndex(
 {
     Tcl_Obj **elemObjs;
     Tcl_Size numElems;
-    Tcl_ObjTypeIndexProc *indexProc = TclObjTypeHasProc(listObj,indexProc);
+    int hasAbstractList = TclObjTypeHasProc(listObj,indexProc) != 0;
 
     /* Empty string => empty list. Avoid unnecessary shimmering */
     if (listObj->bytes == &tclEmptyString) {
@@ -1920,8 +1920,8 @@ Tcl_ListObjIndex(
 	return TCL_OK;
     }
 
-    if (indexProc) {
-	return indexProc(interp, listObj, index, objPtrPtr);
+    if (hasAbstractList) {
+	return TclObjTypeIndex(interp, listObj, index, objPtrPtr);
     }
 
     if (TclListObjGetElementsM(interp, listObj, &numElems, &elemObjs)
@@ -1974,9 +1974,8 @@ Tcl_ListObjLength(
 	return TCL_OK;
     }
 
-    Tcl_Size (*lengthProc)(Tcl_Obj *obj) =  TclObjTypeHasProc(listObj, lengthProc);
-    if (lengthProc) {
-	*lenPtr = lengthProc(listObj);
+    if (TclObjTypeHasProc(listObj, lengthProc)) {
+	*lenPtr = TclObjTypeLength(listObj);
 	return TCL_OK;
     }
 
@@ -2058,9 +2057,8 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
 
-    Tcl_ObjTypeReplaceProc *replaceProc = TclObjTypeHasProc(listObj, replaceProc);
-    if (replaceProc) {
-	return replaceProc(interp, listObj, first,
+    if (TclObjTypeHasProc(listObj, replaceProc)) {
+	return TclObjTypeReplace(interp, listObj, first,
 				  numToDelete, numToInsert, insertObjs);
     }
 
@@ -2624,11 +2622,10 @@ TclLindexFlat(
 {
     int status;
     Tcl_Size i;
-    Tcl_ObjTypeIndexProc *indexProc = TclObjTypeHasProc(listObj, indexProc);
 
     /* Handle AbstractList as special case */
-    if (indexProc) {
-	Tcl_Size listLen = TclObjTypeHasProc(listObj,lengthProc)(listObj);
+    if (TclObjTypeHasProc(listObj,indexProc)) {
+	Tcl_Size listLen = TclObjTypeLength(listObj);
 	Tcl_Size index;
 	Tcl_Obj *elemObj = NULL;
 	for (i=0 ; i<indexCount && listObj ; i++) {
@@ -2636,7 +2633,7 @@ TclLindexFlat(
 				   &index) == TCL_OK) {
 	    }
 	    if (i==0) {
-		if (indexProc(interp, listObj, index, &elemObj) != TCL_OK) {
+		if (TclObjTypeIndex(interp, listObj, index, &elemObj) != TCL_OK) {
 		    return NULL;
 		}
 	    } else if (index > 0) {
@@ -2761,17 +2758,15 @@ TclLsetList(
 
     if (!TclHasInternalRep(indexArgObj, &tclListType) &&
 	TclGetIntForIndexM(NULL, indexArgObj, TCL_SIZE_MAX - 1, &index)
-		== TCL_OK) {
+	== TCL_OK) {
 
-	Tcl_ObjTypeSetElement *setElementProc = TclObjTypeHasProc(listObj, setElementProc);
-	if (setElementProc) {
+	if (TclObjTypeHasProc(listObj, setElementProc)) {
 	    indices = &indexArgObj;
 	    retValueObj =
-		    setElementProc(interp, listObj, 1, indices, valueObj);
-	    if (retValueObj) {
-		Tcl_IncrRefCount(retValueObj);
-	    }
+		TclObjTypeSetElement(interp, listObj, 1, indices, valueObj);
+	    if (retValueObj) Tcl_IncrRefCount(retValueObj);
 	} else {
+
 	    /* indexArgPtr designates a single index. */
 	    /* T:listrep-1.{2.1,12.1,15.1,19.1},2.{2.3,9.3,10.1,13.1,16.1}, 3.{4,5,6}.3 */
 	    retValueObj = TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
@@ -3331,9 +3326,8 @@ SetListFromAny(
 	}
     } else if (TclObjTypeHasProc(objPtr,indexProc)) {
 	Tcl_Size elemCount, i;
-	Tcl_ObjTypeIndexProc *indexProc = TclObjTypeHasProc(objPtr, indexProc);
 
-	elemCount = TclObjTypeHasProc(objPtr,lengthProc)(objPtr);
+	elemCount = TclObjTypeLength(objPtr);
 
 	if (ListRepInitAttempt(interp, elemCount, NULL, &listRep) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3346,7 +3340,7 @@ SetListFromAny(
 
 	/* Each iteration, store a list element */
 	for (i = 0; i < elemCount; i++) {
-	    if (indexProc(interp, objPtr, i, elemPtrs) != TCL_OK) {
+	    if (TclObjTypeIndex(interp, objPtr, i, elemPtrs) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    Tcl_IncrRefCount(*elemPtrs++);/* Since list now holds ref to it. */

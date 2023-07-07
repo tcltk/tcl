@@ -4674,13 +4674,13 @@ TEBCresume(
 	/* special case for AbstractList */
 	if (TclObjTypeHasProc(valuePtr,indexProc)) {
 	    DECACHE_STACK_INFO();
-	    length = TclObjTypeHasProc(valuePtr, lengthProc)(valuePtr);
+	    length = TclObjTypeLength(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    if (TclObjTypeHasProc(valuePtr,indexProc)(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+	    if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4762,16 +4762,15 @@ TEBCresume(
 	 */
 
 	/* special case for AbstractList */
-	Tcl_ObjTypeIndexProc *indexProc = TclObjTypeHasProc(valuePtr,indexProc);
-	if (indexProc) {
-	    length = TclObjTypeHasProc(valuePtr, lengthProc)(valuePtr);
+	if (TclObjTypeHasProc(valuePtr,indexProc)) {
+	    length = TclObjTypeLength(valuePtr);
 
 	    /* Decode end-offset index values. */
 	    index = TclIndexDecode(opnd, length-1);
 
 	    /* Compute value @ index */
 	    DECACHE_STACK_INFO();
-	    if (indexProc(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+	    if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4855,16 +4854,15 @@ TEBCresume(
 	 * Compute the new variable value.
 	 */
 
-	Tcl_ObjTypeSetElement *setElementProc = TclObjTypeHasProc(valuePtr, setElementProc);
-	if (setElementProc) {
+	if (TclObjTypeHasProc(valuePtr, setElementProc)) {
 
 	    DECACHE_STACK_INFO();
-	    objResultPtr = setElementProc(interp,
-		    valuePtr, numIndices,
-		    &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+	    objResultPtr = TclObjTypeSetElement(interp,
+		valuePtr, numIndices,
+	        &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
 	} else {
 	    objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
-		    &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+		&OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
 	}
 	if (!objResultPtr) {
 	    CACHE_STACK_INFO();
@@ -4987,10 +4985,9 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	Tcl_ObjTypeSliceProc *sliceProc = TclObjTypeHasProc(valuePtr, sliceProc);
-	if (sliceProc) {
+	if (TclObjTypeHasProc(valuePtr, sliceProc)) {
 	    DECACHE_STACK_INFO();
-	    if (sliceProc(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
+	    if (TclObjTypeSlice(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
 		objResultPtr = NULL;
 	    }
 	} else {
@@ -5030,7 +5027,7 @@ TEBCresume(
 	    do {
 		if (isAbstractList) {
 		    DECACHE_STACK_INFO();
-		    if (TclObjTypeHasProc(value2Ptr,indexProc)(interp, value2Ptr, i, &o) != TCL_OK) {
+		    if (TclObjTypeIndex(interp, value2Ptr, i, &o) != TCL_OK) {
 			CACHE_STACK_INFO();
 			TRACE_ERROR(interp);
 			goto gotError;
