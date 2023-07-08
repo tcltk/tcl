@@ -80,6 +80,9 @@ static void		UpdateStringOfUTF16String(Tcl_Obj *objPtr);
 	((((bytes)[0] & 0xC0) == 0x80) || (((bytes)[0] == '\xED') \
 	&& (((bytes)[1] & 0xF0) == 0xB0) && (((bytes)[2] & 0xC0) == 0x80))))
 
+#define SURROGATE(c_)      (((c_) & ~0x7FF) == 0xD800)
+#define HIGH_SURROGATE(c_) (((c_) & ~0x3FF) == 0xD800)
+#define LOW_SURROGATE(c_)  (((c_) & ~0x3FF) == 0xDC00)
 
 /*
  * The structure below defines the string Tcl object type by means of
@@ -799,14 +802,14 @@ Tcl_GetUniChar(
     }
     ch = stringPtr->unicode[index];
     /* See: bug [11ae2be95dac9417] */
-    if ((ch & 0xF800) == 0xD800) {
+    if (SURROGATE(ch)) {
 	if (ch & 0x400) {
 	    if ((index > 0)
-		    && ((stringPtr->unicode[index-1] & 0xFC00) == 0xD800)) {
+		    && HIGH_SURROGATE(stringPtr->unicode[index-1])) {
 		ch = -1; /* low surrogate preceded by high surrogate */
 	    }
 	} else if ((++index < stringPtr->numChars)
-		&& ((stringPtr->unicode[index] & 0xFC00) == 0xDC00)) {
+		&& LOW_SURROGATE(stringPtr->unicode[index])) {
 	    /* high surrogate followed by low surrogate */
 	    ch = (((ch & 0x3FF) << 10) |
 			(stringPtr->unicode[index] & 0x3FF)) + 0x10000;
@@ -872,14 +875,14 @@ TclGetUniChar(
     ch = stringPtr->unicode[index];
 #if TCL_UTF_MAX < 4
     /* See: bug [11ae2be95dac9417] */
-    if ((ch & 0xF800) == 0xD800) {
+    if (SURROGATE(ch)) {
 	if (ch & 0x400) {
 	    if ((index > 0)
-		    && ((stringPtr->unicode[index-1] & 0xFC00) == 0xD800)) {
+		    && HIGH_SURROGATE(stringPtr->unicode[index-1])) {
 		ch = -1; /* low surrogate preceded by high surrogate */
 	    }
 	} else if ((++index < stringPtr->numChars)
-		&& ((stringPtr->unicode[index] & 0xFC00) == 0xDC00)) {
+		&& LOW_SURROGATE(stringPtr->unicode[index])) {
 	    /* high surrogate followed by low surrogate */
 	    ch = (((ch & 0x3FF) << 10) |
 			(stringPtr->unicode[index] & 0x3FF)) + 0x10000;
@@ -1155,13 +1158,13 @@ TclGetRange(
     }
 #if TCL_UTF_MAX < 4
     /* See: bug [11ae2be95dac9417] */
-    if ((first > 0) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
-	    && ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
+    if ((first > 0) && LOW_SURROGATE(stringPtr->unicode[first])
+	    && HIGH_SURROGATE(stringPtr->unicode[first-1])) {
 	++first;
     }
     if ((last + 1 < stringPtr->numChars)
-	    && ((stringPtr->unicode[last+1] & 0xFC00) == 0xDC00)
-	    && ((stringPtr->unicode[last] & 0xFC00) == 0xD800)) {
+	    && LOW_SURROGATE(stringPtr->unicode[last+1])
+	    && HIGH_SURROGATE(stringPtr->unicode[last])) {
 	++last;
     }
 #endif
@@ -4345,7 +4348,7 @@ TclStringReverse(
 	    while (--src >= from) {
 #if TCL_UTF_MAX < 4
 		ch = *src;
-		if ((ch & 0xF800) == 0xD800) {
+		if (SURROGATE(ch)) {
 		    needFlip = 1;
 		}
 		*to++ = ch;
@@ -4364,7 +4367,7 @@ TclStringReverse(
 	    while (--src > from) {
 		ch = *src;
 #if TCL_UTF_MAX < 4
-		if ((ch & 0xF800) == 0xD800) {
+		if (SURROGATE(ch)) {
 		    needFlip = 1;
 		}
 #endif
@@ -4381,8 +4384,8 @@ TclStringReverse(
 	    from = to - stringPtr->numChars;
 	    while (--to >= from) {
 		ch = *to;
-		if ((ch & 0xFC00) == 0xD800) {
-		    if ((to-1 >= from) && ((to[-1] & 0xFC00) == 0xDC00)) {
+		if (HIGH_SURROGATE(ch)) {
+		    if ((to-1 >= from) && LOW_SURROGATE(to[-1])) {
 			to[0] = to[-1];
 			to[-1] = ch;
 			--to;
@@ -4882,9 +4885,14 @@ ExtendStringRepWithUnicode(
 
   copyBytes:
     dst = objPtr->bytes + origLength;
-    *dst = '\0';
     for (i = 0; i < numChars; i++) {
+	if (LOW_SURROGATE(unicode[i]) && ((i == 0) || !HIGH_SURROGATE(unicode[i-1]))) {
+	    *dst = 0; /* In case of lower surrogate, don't try to combine */
+	}
 	dst += Tcl_UniCharToUtf(unicode[i], dst);
+	if (HIGH_SURROGATE(unicode[i]) && ((i+1 >= numChars) || !LOW_SURROGATE(unicode[i+1]))) {
+	    dst += Tcl_UniCharToUtf(-1, dst);
+	}
     }
     *dst = '\0';
     objPtr->length = dst - objPtr->bytes;
