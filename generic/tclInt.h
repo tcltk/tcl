@@ -1083,6 +1083,7 @@ typedef struct ActiveInterpTrace {
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
 
+#if TCL_MAJOR_VERSION > 8
 /*
  * Versions 0, 1, and 2 are currently supported concurrently for now
  */
@@ -1167,6 +1168,7 @@ TclObjTypeReplace(
 {
     return TclObjTypeHasProc(objPtr, replaceProc)(interp, objPtr, first, numToDelete, numToInsert, insertObjs);
 }
+#endif /* TCL_MAJOR_VERSION > 8 */
 
 
 /*
