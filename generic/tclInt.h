@@ -3434,15 +3434,6 @@ MODULE_SCOPE void	TclRegisterCommandTypeName(
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
-#if TCL_UTF_MAX > 3
-#   define TclUtfToUCS4 Tcl_UtfToUniChar
-#   define TclUniCharToUCS4(src, ptr) (*ptr = *(src),1)
-#   define TclUCS4Prev(src, ptr) (((src) > (ptr)) ? ((src) - 1) : (src))
-#else
-    MODULE_SCOPE int	TclUtfToUCS4(const char *, int *);
-    MODULE_SCOPE int	TclUniCharToUCS4(const Tcl_UniChar *, int *);
-    MODULE_SCOPE const Tcl_UniChar *TclUCS4Prev(const Tcl_UniChar *, const Tcl_UniChar *);
-#endif
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(void *clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -3485,43 +3476,12 @@ MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
 MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
 
 
-#if TCL_UTF_MAX > 3
-    MODULE_SCOPE int *TclGetUnicodeFromObj_(Tcl_Obj *, int *);
-    MODULE_SCOPE Tcl_Obj *TclNewUnicodeObj(const int *, int);
-    MODULE_SCOPE void TclAppendUnicodeToObj(Tcl_Obj *, const int *, int);
-    MODULE_SCOPE int TclUniCharNcasecmp(const int *, const int *, unsigned long);
-    MODULE_SCOPE int TclUniCharCaseMatch(const int *, const int *, int);
-    MODULE_SCOPE int TclUniCharNcmp(const int *, const int *, unsigned long);
-#   undef Tcl_NumUtfChars
-#   define Tcl_NumUtfChars TclNumUtfChars
-#   undef Tcl_GetCharLength
-#   define Tcl_GetCharLength TclGetCharLength
-#   undef Tcl_UtfAtIndex
-#   define Tcl_UtfAtIndex TclUtfAtIndex
-#   undef Tcl_GetRange
-#   define Tcl_GetRange TclGetRange
-#   undef Tcl_GetUniChar
-#   define Tcl_GetUniChar TclGetUniChar
-#else
-#   define tclUniCharStringType tclStringType
-#   define TclGetUnicodeFromObj_ Tcl_GetUnicodeFromObj
-#   define TclNewUnicodeObj Tcl_NewUnicodeObj
-#   define TclAppendUnicodeToObj Tcl_AppendUnicodeToObj
-#   define TclUniCharNcasecmp Tcl_UniCharNcasecmp
-#   define TclUniCharCaseMatch Tcl_UniCharCaseMatch
-#   define TclUniCharNcmp Tcl_UniCharNcmp
-#   undef TclNumUtfChars
-#   define TclNumUtfChars Tcl_NumUtfChars
-#   undef TclGetCharLength
-#   define TclGetCharLength Tcl_GetCharLength
-#   undef TclUtfAtIndex
-#   define TclUtfAtIndex Tcl_UtfAtIndex
-#   undef TclGetRange
-#   define TclGetRange Tcl_GetRange
-#   undef TclGetUniChar
-#   define TclGetUniChar Tcl_GetUniChar
-#endif
-
+MODULE_SCOPE int *TclGetUnicodeFromObj_(Tcl_Obj *, int *);
+MODULE_SCOPE Tcl_Obj *TclNewUnicodeObj(const int *, int);
+MODULE_SCOPE void TclAppendUnicodeToObj(Tcl_Obj *, const int *, int);
+MODULE_SCOPE int TclUniCharNcasecmp(const int *, const int *, unsigned long);
+MODULE_SCOPE int TclUniCharCaseMatch(const int *, const int *, int);
+MODULE_SCOPE int TclUniCharNcmp(const int *, const int *, unsigned long);
 
 /*
  * Many parsing tasks need a common definition of whitespace.
@@ -4720,17 +4680,10 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  *----------------------------------------------------------------
  */
 
-#if TCL_UTF_MAX > 3
 #define TclUtfToUniChar(str, chPtr) \
 	(((UCHAR(*(str))) < 0x80) ?		\
 	    ((*(chPtr) = UCHAR(*(str))), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
-#else
-#define TclUtfToUniChar(str, chPtr) \
-	(((UCHAR(*(str))) < 0x80) ?		\
-	    ((*(chPtr) = UCHAR(*(str))), 1)	\
-	    : Tcl_UtfToChar16(str, chPtr))
-#endif
 
 /*
  *----------------------------------------------------------------

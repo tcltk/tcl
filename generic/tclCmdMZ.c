@@ -1217,7 +1217,7 @@ Tcl_SplitObjCmd(
 	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 
 	for ( ; stringPtr < end; stringPtr += len) {
-	    len = TclUtfToUCS4(stringPtr, &ch);
+	    len = Tcl_UtfToUniChar(stringPtr, &ch);
 	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ch), &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
@@ -1263,9 +1263,9 @@ Tcl_SplitObjCmd(
 	splitEnd = splitChars + splitCharLen;
 
 	for (element = stringPtr; stringPtr < end; stringPtr += len) {
-	    len = TclUtfToUCS4(stringPtr, &ch);
+	    len = Tcl_UtfToUniChar(stringPtr, &ch);
 	    for (p = splitChars; p < splitEnd; p += splitLen) {
-		splitLen = TclUtfToUCS4(p, &splitChar);
+		splitLen = Tcl_UtfToUniChar(p, &splitChar);
 		if (ch == splitChar) {
 		    TclNewStringObj(objPtr, element, stringPtr - element);
 		    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
@@ -1895,7 +1895,7 @@ StringIsCmd(
 	for (; string1 < end; string1 += length2, failat++) {
 	    int ucs4;
 
-	    length2 = TclUtfToUCS4(string1, &ucs4);
+	    length2 = Tcl_UtfToUniChar(string1, &ucs4);
 	    if (!chcomp(ucs4)) {
 		result = 0;
 		break;
@@ -2517,7 +2517,7 @@ StringStartCmd(
     if (index > 0) {
 	p = &string[index];
 
-	(void)TclUniCharToUCS4(p, &ch);
+	ch = *p;
 	for (cur = index; cur >= 0; cur--) {
 	    int delta = 0;
 	    const Tcl_UniChar *next;
@@ -2526,10 +2526,11 @@ StringStartCmd(
 		break;
 	    }
 
-	    next = TclUCS4Prev(p, string);
+	    next = (p > string) ? p - 1 : p;
 	    do {
 		next += delta;
-		delta = TclUniCharToUCS4(next, &ch);
+		ch = *next;
+		delta = 1;
 	    } while (next + delta < p);
 	    p = next;
 	}
@@ -2587,7 +2588,7 @@ StringEndCmd(
 	p = &string[index];
 	end = string+length;
 	for (cur = index; p < end; cur++) {
-	    p += TclUniCharToUCS4(p, &ch);
+	    ch = *p++;
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;
 	    }
@@ -2931,7 +2932,7 @@ StringLowerCmd(
 	const char *start, *end;
 	Tcl_Obj *resultPtr;
 
-	length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	length1 = TclNumUtfChars(string1, length1) - 1;
 	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3016,7 +3017,7 @@ StringUpperCmd(
 	const char *start, *end;
 	Tcl_Obj *resultPtr;
 
-	length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	length1 = TclNumUtfChars(string1, length1) - 1;
 	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3101,7 +3102,7 @@ StringTitleCmd(
 	const char *start, *end;
 	Tcl_Obj *resultPtr;
 
-	length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	length1 = TclNumUtfChars(string1, length1) - 1;
 	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}

@@ -408,7 +408,7 @@ Tcl_Char16ToUtfDString(
  *	Tcl_UtfCharComplete() before calling this routine to ensure that
  *	enough bytes remain in the string.
  *
- *	If TCL_UTF_MAX <= 4, special handling of Surrogate pairs is done:
+ *	Special handling of Surrogate pairs is done:
  *	For any UTF-8 string containing a character outside of the BMP, the
  *	first call to this function will fill *chPtr with the high surrogate
  *	and generate a return value of 1. Calling Tcl_UtfToUniChar again
@@ -676,11 +676,11 @@ Tcl_UtfToUniCharDString(
     endPtr = src + length;
     optPtr = endPtr - 4;
     while (p <= optPtr) {
-	p += TclUtfToUCS4(p, &ch);
+	p += Tcl_UtfToUniChar(p, &ch);
 	*w++ = ch;
     }
     while ((p < endPtr) && Tcl_UtfCharComplete(p, endPtr-p)) {
-	p += TclUtfToUCS4(p, &ch);
+	p += Tcl_UtfToUniChar(p, &ch);
 	*w++ = ch;
     }
     while (p < endPtr) {
@@ -849,8 +849,7 @@ TclNumUtfChars(
     return i;
 }
 
-#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
-#undef Tcl_NumUtfChars
+#if !defined(TCL_NO_DEPRECATED)
 int
 Tcl_NumUtfChars(
     const char *src,	/* The UTF-8 string to measure. */
@@ -929,7 +928,7 @@ Tcl_UtfFindFirst(
     int ch)			/* The Unicode character to search for. */
 {
     while (1) {
-	int find, len = TclUtfToUCS4(src, &find);
+	int find, len = Tcl_UtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    return src;
@@ -968,7 +967,7 @@ Tcl_UtfFindLast(
     const char *last = NULL;
 
     while (1) {
-	int find, len = TclUtfToUCS4(src, &find);
+	int find, len = Tcl_UtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    last = src;
@@ -1195,7 +1194,7 @@ Tcl_UniCharAtIndex(
 	/* Index points at character following high Surrogate */
 	return -1;
     }
-    TclUtfToUCS4(src, &i);
+    Tcl_UtfToUniChar(src, &i);
     return i;
 }
 
@@ -1205,9 +1204,7 @@ Tcl_UniCharAtIndex(
  * Tcl_UtfAtIndex --
  *
  *	Returns a pointer to the specified character (not byte) position in
- *	the UTF-8 string. If TCL_UTF_MAX < 4, characters > U+FFFF count as
- *	2 positions, but then the pointer should never be placed between
- *	the two positions.
+ *	the UTF-8 string.
  *
  * Results:
  *	As above.
@@ -1217,11 +1214,6 @@ Tcl_UniCharAtIndex(
  *
  *---------------------------------------------------------------------------
  */
-
-#if TCL_UTF_MAX < 4
-#   undef Tcl_UtfToUniChar
-#   define Tcl_UtfToUniChar Tcl_UtfToChar16
-#endif
 
 const char *
 TclUtfAtIndex(
@@ -1235,17 +1227,10 @@ TclUtfAtIndex(
 	len = (Tcl_UtfToUniChar)(src, &ch);
 	src += len;
     }
-#if TCL_UTF_MAX < 4
-    if ((ch >= 0xD800) && (len < 3)) {
-	/* Index points at character following high Surrogate */
-	src += (Tcl_UtfToUniChar)(src, &ch);
-    }
-#endif
     return src;
 }
 
-#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
-#undef Tcl_UtfAtIndex
+#if !defined(TCL_NO_DEPRECATED)
 const char *
 Tcl_UtfAtIndex(
     const char *src,	/* The UTF-8 string. */
@@ -1353,7 +1338,7 @@ Tcl_UtfToUpper(
 
     src = dst = str;
     while (*src) {
-	len = TclUtfToUCS4(src, &ch);
+	len = Tcl_UtfToUniChar(src, &ch);
 	upChar = Tcl_UniCharToUpper(ch);
 
 	/*
@@ -1406,7 +1391,7 @@ Tcl_UtfToLower(
 
     src = dst = str;
     while (*src) {
-	len = TclUtfToUCS4(src, &ch);
+	len = Tcl_UtfToUniChar(src, &ch);
 	lowChar = Tcl_UniCharToLower(ch);
 
 	/*
@@ -1462,7 +1447,7 @@ Tcl_UtfToTitle(
     src = dst = str;
 
     if (*src) {
-	len = TclUtfToUCS4(src, &ch);
+	len = Tcl_UtfToUniChar(src, &ch);
 	titleChar = Tcl_UniCharToTitle(ch);
 
 	if ((len < TclUtfCount(titleChar)) || ((titleChar & ~0x7FF) == 0xD800)) {
@@ -1474,7 +1459,7 @@ Tcl_UtfToTitle(
 	src += len;
     }
     while (*src) {
-	len = TclUtfToUCS4(src, &ch);
+	len = Tcl_UtfToUniChar(src, &ch);
 	lowChar = ch;
 	/* Special exception for Georgian Asomtavruli chars, no titlecase. */
 	if ((unsigned)(lowChar - 0x1C90) >= 0x30) {
@@ -1581,16 +1566,6 @@ Tcl_UtfNcmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX < 4
-	    /* Surrogates always report higher than non-surrogates */
-	    if (((ch1 & 0xFC00) == 0xD800)) {
-	    if ((ch2 & 0xFC00) != 0xD800) {
-		return ch1;
-	    }
-	    } else if ((ch2 & 0xFC00) == 0xD800) {
-		return -ch2;
-	    }
-#endif
 	    return (ch1 - ch2);
 	}
     }
@@ -1632,16 +1607,6 @@ Tcl_UtfNcasecmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX < 4
-	    /* Surrogates always report higher than non-surrogates */
-	    if (((ch1 & 0xFC00) == 0xD800)) {
-	    if ((ch2 & 0xFC00) != 0xD800) {
-		return ch1;
-	    }
-	    } else if ((ch2 & 0xFC00) == 0xD800) {
-		return -ch2;
-	    }
-#endif
 	    ch1 = Tcl_UniCharToLower(ch1);
 	    ch2 = Tcl_UniCharToLower(ch2);
 	    if (ch1 != ch2) {
@@ -1681,16 +1646,6 @@ TclUtfCmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX < 4
-	    /* Surrogates always report higher than non-surrogates */
-	    if (((ch1 & 0xFC00) == 0xD800)) {
-	    if ((ch2 & 0xFC00) != 0xD800) {
-		return ch1;
-	    }
-	    } else if ((ch2 & 0xFC00) == 0xD800) {
-		return -ch2;
-	    }
-#endif
 	    return ch1 - ch2;
 	}
     }
@@ -1727,16 +1682,6 @@ TclUtfCasecmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX < 4
-	    /* Surrogates always report higher than non-surrogates */
-	    if (((ch1 & 0xFC00) == 0xD800)) {
-	    if ((ch2 & 0xFC00) != 0xD800) {
-		return ch1;
-	    }
-	    } else if ((ch2 & 0xFC00) == 0xD800) {
-		return -ch2;
-	    }
-#endif
 	    ch1 = Tcl_UniCharToLower(ch1);
 	    ch2 = Tcl_UniCharToLower(ch2);
 	    if (ch1 != ch2) {
@@ -1935,7 +1880,7 @@ TclUniCharNcmp(
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
 {
-#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
+#if defined(WORDS_BIGENDIAN)
     /*
      * We are definitely on a big-endian machine; memcmp() is safe
      */
@@ -1956,14 +1901,14 @@ TclUniCharNcmp(
 #endif /* WORDS_BIGENDIAN */
 }
 
-#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
 int
 Tcl_UniCharNcmp(
     const unsigned short *ucs,	/* Unicode string to compare to uct. */
     const unsigned short *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
 {
-#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
+#if defined(WORDS_BIGENDIAN)
     /*
      * We are definitely on a big-endian machine; memcmp() is safe
      */
@@ -2027,7 +1972,7 @@ TclUniCharNcasecmp(
     return 0;
 }
 
-#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
 int
 Tcl_UniCharNcasecmp(
     const unsigned short *ucs,	/* Unicode string to compare to uct. */
@@ -2583,7 +2528,7 @@ TclUniCharCaseMatch(
     }
 }
 
-#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
 int
 Tcl_UniCharCaseMatch(
     const unsigned short *uniStr,	/* Unicode String. */
@@ -2943,71 +2888,6 @@ TclUniCharMatch(
 	pattern++;
     }
 }
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclUtfToUCS4 --
- *
- *	Extracts the 4-byte codepoint from the leading bytes of the
- *	Modified UTF-8 string "src".  This is a utility routine to
- *	contain the surrogate gymnastics in one place.
- *
- *	The caller must ensure that the source buffer is long enough that this
- *	routine does not run off the end and dereference non-existent memory
- *	looking for trail bytes. If the source buffer is known to be '\0'
- *	terminated, this cannot happen. Otherwise, the caller should call
- *	Tcl_UtfCharComplete() before calling this routine to ensure that
- *	enough bytes remain in the string.
- *
- * Results:
- *	Fills *usc4Ptr with the UCS4 code point and returns the number of bytes
- *	consumed from the source string.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-
-#if TCL_UTF_MAX < 4
-int
-TclUtfToUCS4(
-    const char *src,	/* The UTF-8 string. */
-    int *ucs4Ptr)	/* Filled with the UCS4 codepoint represented
-			 * by the UTF-8 string. */
-{
-#   undef Tcl_UtfToUniChar
-    return Tcl_UtfToUniChar(src, ucs4Ptr);
-}
-
-int
-TclUniCharToUCS4(
-    const Tcl_UniChar *src,	/* The Tcl_UniChar string. */
-    int *ucs4Ptr)	/* Filled with the UCS4 codepoint represented
-			 * by the Tcl_UniChar string. */
-{
-    if (((src[0] & 0xFC00) == 0xD800) && ((src[1] & 0xFC00) == 0xDC00)) {
-	*ucs4Ptr = (((src[0] & 0x3FF) << 10) | (src[1] & 0x3FF)) + 0x10000;
-	return 2;
-    }
-    *ucs4Ptr = src[0];
-    return 1;
-}
-
-const Tcl_UniChar *TclUCS4Prev(const Tcl_UniChar *src, const Tcl_UniChar *ptr) {
-    if (src <= ptr + 1) {
-    	return ptr;
-    }
-    if (((src[-1] & 0xFC00) == 0xDC00) && ((src[-2] & 0xFC00) == 0xD800)) {
-	return src - 2;
-    }
-    return src - 1;
-}
-
-
-
-#endif
 
 /*
  * Local Variables:
