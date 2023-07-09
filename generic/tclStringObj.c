@@ -661,7 +661,7 @@ Tcl_GetCharLength(
 	(void) Tcl_GetByteArrayFromObj(objPtr, &numChars);
     } else {
 	Tcl_GetString(objPtr);
-	numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+	numChars = TclNumUtfChars(objPtr->bytes, objPtr->length);
     }
 
     return numChars;
@@ -696,7 +696,7 @@ TclCheckEmptyString(
     }
 
     if (TclIsPureByteArray(objPtr)
-	&& Tcl_GetCharLength(objPtr) == 0) {
+	&& TclGetCharLength(objPtr) == 0) {
 	return TCL_EMPTYSTRING_YES;
     }
 
@@ -1019,7 +1019,7 @@ Tcl_GetRange(
 	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
     }
 
-    int numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+    int numChars = TclNumUtfChars(objPtr->bytes, objPtr->length);
 
     if (last < 0 || last >= numChars) {
 	last = numChars - 1;
@@ -3966,8 +3966,8 @@ TclStringCmp(
 		if ((reqlength < 0) && !nocase) {
 		    memCmpFn = (memCmpFn_t)(void *)TclpUtfNcmp2;
 		} else {
-		    s1len = Tcl_NumUtfChars(s1, s1len);
-		    s2len = Tcl_NumUtfChars(s2, s2len);
+		    s1len = TclNumUtfChars(s1, s1len);
+		    s2len = TclNumUtfChars(s2, s2len);
 		    memCmpFn = (memCmpFn_t)(void *)
 			    (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
 		}
