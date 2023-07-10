@@ -53,6 +53,7 @@ libtommath/*.tex
 macosx/configure
 unix/autoMkindex.tcl
 unix/dltest.marker
+unix/dltest/embtest
 unix/tcl.pc
 unix/tclIndex
 unix/pkgs/*
