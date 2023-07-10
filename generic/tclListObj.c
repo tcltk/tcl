@@ -12,7 +12,6 @@
 #include <assert.h>
 #include "tclInt.h"
 #include "tclTomMath.h"
-#include "tclArithSeries.h"
 
 /*
  * TODO - memmove is fast. Measure at what size we should prefer memmove
