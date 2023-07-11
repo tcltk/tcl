@@ -1192,6 +1192,11 @@ Tcl_SplitObjCmd(
 	return TCL_ERROR;
     }
 
+    if (splitCharLen == 0) {
+	Tcl_SetObjResult(interp, TclNewStringListObj(interp, objv[1]));
+	return TCL_OK;
+    }
+
     stringPtr = Tcl_GetStringFromObj(objv[1], &stringLen);
     end = stringPtr + stringLen;
     TclNewObj(listPtr);
@@ -1200,40 +1205,6 @@ Tcl_SplitObjCmd(
 	/*
 	 * Do nothing.
 	 */
-    } else if (splitCharLen == 0) {
-	Tcl_HashTable charReuseTable;
-	Tcl_HashEntry *hPtr;
-	int isNew;
-
-	/*
-	 * Handle the special case of splitting on every character.
-	 *
-	 * Uses a hash table to ensure that each kind of character has only
-	 * one Tcl_Obj instance (multiply-referenced) in the final list. This
-	 * is a *major* win when splitting on a long string (especially in the
-	 * megabyte range!) - DKF
-	 */
-
-	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
-
-	for ( ; stringPtr < end; stringPtr += len) {
-	    len = TclUtfToUCS4(stringPtr, &ch);
-	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ch), &isNew);
-	    if (isNew) {
-		TclNewStringObj(objPtr, stringPtr, len);
-
-		/*
-		 * Don't need to fiddle with refcount...
-		 */
-
-		Tcl_SetHashValue(hPtr, objPtr);
-	    } else {
-		objPtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
-	    }
-	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
-	}
-	Tcl_DeleteHashTable(&charReuseTable);
-
     } else if (splitCharLen == 1) {
 	const char *p;
 
