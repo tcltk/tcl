@@ -6553,12 +6553,15 @@ TEBCresume(
 		    if (valIndex >= listLen) {
 			TclNewObj(valuePtr);
 		    } else {
+			DECACHE_STACK_INFO();
 			status = Tcl_ListObjIndex(
 			    interp, listPtr, valIndex, &valuePtr);
 			if (status != TCL_OK) {
 			    /* Could happen for abstract lists */
+			    CACHE_STACK_INFO();
 			    goto gotError;
 			}
+			CACHE_STACK_INFO();
 			if (valuePtr == NULL) {
 			    /* Permitted for Tcl_LOI to return NULL */
 			    TclNewObj(valuePtr);
