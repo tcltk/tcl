@@ -6424,7 +6424,7 @@ TEBCresume(
 
     {
 	ForeachInfo *infoPtr;
-	Tcl_Obj *listPtr, **elements;
+	Tcl_Obj *listPtr;
 	ForeachVarList *varListPtr;
 	Tcl_Size numLists, listLen, numVars, listTmpDepth;
 	Tcl_Size iterNum, iterMax, iterTmp;
@@ -6540,8 +6540,7 @@ TEBCresume(
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
 		DECACHE_STACK_INFO();
-		status = TclListObjGetElementsM(
-		    interp, listPtr, &listLen, &elements);
+		status = Tcl_ListObjLength(interp, listPtr, &listLen);
 		if (status != TCL_OK) {
 		    CACHE_STACK_INFO();
 		    goto gotError;
@@ -6554,7 +6553,16 @@ TEBCresume(
 		    if (valIndex >= listLen) {
 			TclNewObj(valuePtr);
 		    } else {
-			valuePtr = elements[valIndex];
+			status = Tcl_ListObjIndex(
+			    interp, listPtr, valIndex, &valuePtr);
+			if (status != TCL_OK) {
+			    /* Could happen for abstract lists */
+			    goto gotError;
+			}
+			if (valuePtr == NULL) {
+			    /* Permitted for Tcl_LOI to return NULL */
+			    TclNewObj(valuePtr);
+			}
 		    }
 
 		    varIndex = varListPtr->varIndexes[j];
