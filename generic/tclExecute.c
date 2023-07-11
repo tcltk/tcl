@@ -6424,7 +6424,7 @@ TEBCresume(
 
     {
 	ForeachInfo *infoPtr;
-	Tcl_Obj *listPtr;
+	Tcl_Obj *listPtr, **elements;
 	ForeachVarList *varListPtr;
 	Tcl_Size numLists, listLen, numVars, listTmpDepth;
 	Tcl_Size iterNum, iterMax, iterTmp;
@@ -6537,10 +6537,18 @@ TEBCresume(
 	    for (i = 0;  i < numLists;  i++) {
 		varListPtr = infoPtr->varLists[i];
 		numVars = varListPtr->numVars;
+		int hasAbstractList;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
+		hasAbstractList = TclObjTypeHasProc(listPtr, indexProc) != 0;
 		DECACHE_STACK_INFO();
-		status = Tcl_ListObjLength(interp, listPtr, &listLen);
+		if (hasAbstractList) {
+		    status = Tcl_ListObjLength(interp, listPtr, &listLen);
+		    elements = NULL;
+		} else {
+		    status = TclListObjGetElementsM(
+			interp, listPtr, &listLen, &elements);
+		}
 		if (status != TCL_OK) {
 		    CACHE_STACK_INFO();
 		    goto gotError;
@@ -6554,18 +6562,22 @@ TEBCresume(
 			TclNewObj(valuePtr);
 		    } else {
 			DECACHE_STACK_INFO();
-			status = Tcl_ListObjIndex(
-			    interp, listPtr, valIndex, &valuePtr);
-			if (status != TCL_OK) {
-			    /* Could happen for abstract lists */
-			    CACHE_STACK_INFO();
-			    goto gotError;
+			if (elements) {
+			    valuePtr = elements[valIndex];
+			} else {
+			    status = Tcl_ListObjIndex(
+				interp, listPtr, valIndex, &valuePtr);
+			    if (status != TCL_OK) {
+				/* Could happen for abstract lists */
+				CACHE_STACK_INFO();
+				goto gotError;
+			    }
+			    if (valuePtr == NULL) {
+				/* Permitted for Tcl_LOI to return NULL */
+				TclNewObj(valuePtr);
+			    }
 			}
 			CACHE_STACK_INFO();
-			if (valuePtr == NULL) {
-			    /* Permitted for Tcl_LOI to return NULL */
-			    TclNewObj(valuePtr);
-			}
 		    }
 
 		    varIndex = varListPtr->varIndexes[j];
