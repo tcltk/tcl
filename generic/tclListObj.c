@@ -156,14 +156,7 @@ const Tcl_ObjType tclListType = {
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
     SetListFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V2(
-    ListLength,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL)
+    TCL_OBJTYPE_V1(ListLength)
 };
 
 /* Macros to manipulate the List internal rep */
@@ -1626,9 +1619,8 @@ Tcl_ListObjGetElements(
 {
     ListRep listRep;
 
-    if (TclObjTypeHasProc(objPtr, getElementsProc) &&
-	TclObjTypeGetElements(interp, objPtr, objcPtr, objvPtr) == TCL_OK) {
-	return TCL_OK;
+    if (TclObjTypeHasProc(objPtr, getElementsProc)) {
+	return TclObjTypeGetElements(interp, objPtr, objcPtr, objvPtr);
     }
     if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
     	return TCL_ERROR;

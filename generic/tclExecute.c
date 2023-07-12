@@ -4685,6 +4685,7 @@ TEBCresume(
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
+	    CACHE_STACK_INFO();
 	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
 	}
@@ -4768,14 +4769,18 @@ TEBCresume(
 	    /* Decode end-offset index values. */
 	    index = TclIndexDecode(opnd, length-1);
 
-	    /* Compute value @ index */
-	    DECACHE_STACK_INFO();
-	    if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+	    if (index >= 0 && index < length) {
+		/* Compute value @ index */
+		DECACHE_STACK_INFO();
+		if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+		    CACHE_STACK_INFO();
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
 		CACHE_STACK_INFO();
-		TRACE_ERROR(interp);
-		goto gotError;
+	    } else {
+		TclNewObj(objResultPtr);
 	    }
-	    CACHE_STACK_INFO();
 
 	    pcAdjustment = 5;
 	    goto lindexFastPath2;
@@ -4854,9 +4859,8 @@ TEBCresume(
 	 * Compute the new variable value.
 	 */
 
+	DECACHE_STACK_INFO();
 	if (TclObjTypeHasProc(valuePtr, setElementProc)) {
-
-	    DECACHE_STACK_INFO();
 	    objResultPtr = TclObjTypeSetElement(interp,
 		valuePtr, numIndices,
 	        &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
@@ -4985,8 +4989,8 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
+	DECACHE_STACK_INFO();
 	if (TclObjTypeHasProc(valuePtr, sliceProc)) {
-	    DECACHE_STACK_INFO();
 	    if (TclObjTypeSlice(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
 		objResultPtr = NULL;
 	    }
@@ -6458,6 +6462,7 @@ TEBCresume(
 			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
 		goto gotError;
 	    }
+	    CACHE_STACK_INFO();
 	    if (Tcl_IsShared(listPtr)) {
 		objPtr = TclDuplicatePureObj(
 		    interp, listPtr, &tclListType);

@@ -1109,7 +1109,8 @@ MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
 static inline Tcl_Size
 TclObjTypeLength(Tcl_Obj *objPtr)
 {
-    return TclObjTypeHasProc(objPtr, lengthProc)(objPtr);
+    Tcl_ObjTypeLengthProc *proc = TclObjTypeHasProc(objPtr, lengthProc);
+    return proc(objPtr);
 }
 static inline int
 TclObjTypeIndex(
@@ -1118,7 +1119,8 @@ TclObjTypeIndex(
     Tcl_Size index,
     Tcl_Obj **elemObjPtr)
 {
-    return TclObjTypeHasProc(objPtr, indexProc)(interp, objPtr, index, elemObjPtr);
+    Tcl_ObjTypeIndexProc *proc = TclObjTypeHasProc(objPtr, indexProc);
+    return proc(interp, objPtr, index, elemObjPtr);
 }
 static inline int
 TclObjTypeSlice(
@@ -1128,7 +1130,8 @@ TclObjTypeSlice(
     Tcl_Size toIdx,
     Tcl_Obj **newObjPtr)
 {
-    return TclObjTypeHasProc(objPtr, sliceProc)(interp, objPtr, fromIdx, toIdx, newObjPtr);
+    Tcl_ObjTypeSliceProc *proc = TclObjTypeHasProc(objPtr, sliceProc);
+    return proc(interp, objPtr, fromIdx, toIdx, newObjPtr);
 }
 static inline int
 TclObjTypeReverse(
@@ -1136,7 +1139,8 @@ TclObjTypeReverse(
     Tcl_Obj *objPtr,
     Tcl_Obj **newObjPtr)
 {
-    return TclObjTypeHasProc(objPtr, reverseProc)(interp, objPtr, newObjPtr);
+    Tcl_ObjTypeReverseProc *proc = TclObjTypeHasProc(objPtr, reverseProc);
+    return proc(interp, objPtr, newObjPtr);
 }
 static inline int
 TclObjTypeGetElements(
@@ -1145,7 +1149,8 @@ TclObjTypeGetElements(
     Tcl_Size *objCPtr,
     Tcl_Obj ***objVPtr)
 {
-    return TclObjTypeHasProc(objPtr, getElementsProc)(interp, objPtr, objCPtr, objVPtr);
+    Tcl_ObjTypeGetElements *proc = TclObjTypeHasProc(objPtr, getElementsProc);
+    return proc(interp, objPtr, objCPtr, objVPtr);
 }
 static inline Tcl_Obj*
 TclObjTypeSetElement(
@@ -1155,7 +1160,8 @@ TclObjTypeSetElement(
     Tcl_Obj *const indexArray[],
     Tcl_Obj *valueObj)
 {
-    return TclObjTypeHasProc(objPtr, setElementProc)(interp, objPtr, indexCount, indexArray, valueObj);
+    Tcl_ObjTypeSetElement *proc = TclObjTypeHasProc(objPtr, setElementProc);
+    return proc(interp, objPtr, indexCount, indexArray, valueObj);
 }
 static inline int
 TclObjTypeReplace(
@@ -1166,7 +1172,8 @@ TclObjTypeReplace(
     Tcl_Size numToInsert,
     Tcl_Obj *const insertObjs[])
 {
-    return TclObjTypeHasProc(objPtr, replaceProc)(interp, objPtr, first, numToDelete, numToInsert, insertObjs);
+    Tcl_ObjTypeReplaceProc *proc = TclObjTypeHasProc(objPtr, replaceProc);
+    return proc(interp, objPtr, first, numToDelete, numToInsert, insertObjs);
 }
 #endif /* TCL_MAJOR_VERSION > 8 */
 
