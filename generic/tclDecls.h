@@ -4036,9 +4036,7 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GetBooleanFromObj
 #undef Tcl_GetBoolean
 #undef TclGetByteArrayFromObj
-#if !defined(TCL_NO_DEPRECATED)
-#   undef Tcl_GetByteArrayFromObj
-#endif
+#undef Tcl_GetByteArrayFromObj
 #if defined(USE_TCL_STUBS)
 #   if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
 #	define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
