@@ -1675,10 +1675,10 @@ int SetDuplicatePureObj(
 
     if (bytes && (dupPtr->typePtr == NULL
 	|| dupPtr->typePtr->updateStringProc == NULL
-	|| typePtr == &tclUniCharStringType
-	|| typePtr == &tclDoubleType
-	|| typePtr == &tclIntType
-	|| typePtr == &tclIndexType
+	|| objPtr->typePtr == &tclUniCharStringType
+	|| objPtr->typePtr == &tclDoubleType
+	|| objPtr->typePtr == &tclIntType
+	|| objPtr->typePtr == &tclIndexType
 	)
     ) {
 	if (!TclAttemptInitStringRep(dupPtr, bytes, objPtr->length)) {
