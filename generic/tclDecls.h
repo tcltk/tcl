@@ -4036,7 +4036,9 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GetBooleanFromObj
 #undef Tcl_GetBoolean
 #undef TclGetByteArrayFromObj
-#undef Tcl_GetByteArrayFromObj
+#if !defined(TCL_NO_DEPRECATED)
+#   undef Tcl_GetByteArrayFromObj
+#endif
 #if defined(USE_TCL_STUBS)
 #   if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
 #	define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
@@ -4082,11 +4084,14 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetBoolean(interp, src, boolPtr) \
 	((sizeof(*(boolPtr)) == sizeof(int) && (TCL_MAJOR_VERSION == 8)) ? Tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
 	Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
+#if defined(TCL_NO_DEPRECATED)
+#define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
+	(Tcl_GetBytesFromObj)(NULL, objPtr, (Tcl_Size *)(void *)(sizePtr))
+#else
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? \
 		TclGetBytesFromObj(NULL, objPtr, (sizePtr)) : \
 		(Tcl_GetBytesFromObj)(NULL, objPtr, (Tcl_Size *)(void *)(sizePtr)))
-#if !defined(TCL_NO_DEPRECATED)
 #define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? \
 		TclGetUnicodeFromObj(objPtr, (sizePtr)) : \
