@@ -269,6 +269,7 @@ ${AC_FLAGS} ${COMPILE_DEBUG_FLAGS}
 
 TCLTEST_OBJS = \
 	tclTest.$(OBJEXT) \
+	tclTestABSList.$(OBJEXT) \
 	tclTestObj.$(OBJEXT) \
 	tclTestProcBodyObj.$(OBJEXT) \
 	tclThreadTest.$(OBJEXT) \

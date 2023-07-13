@@ -380,7 +380,7 @@ ExecuteCallback(
     Tcl_InterpState state = NULL;
     int res = TCL_OK;
     Tcl_Obj *command = TclDuplicatePureObj(
-	interp, dataPtr->command, &tclListType.objType);
+	interp, dataPtr->command, &tclListType);
     if (!command) {
 	return TCL_ERROR;
     }

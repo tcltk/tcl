@@ -3625,7 +3625,7 @@ NamespaceExportCmd(
 	if (nsPtr->exportPatternList) {
 	    Tcl_SetObjResult(interp,
 		    TclDuplicatePureObj(NULL, nsPtr->exportPatternList,
-		    &tclListType.objType));
+		    &tclListType));
 	}
 	return TCL_OK;
     }

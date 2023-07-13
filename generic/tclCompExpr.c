@@ -2105,7 +2105,7 @@ ParseLexeme(
 	     * Example: Inf + luence + () becomes a valid function call.
 	     * [Bug 3401704]
 	     */
-	    if (TclHasInternalRep(literal, &tclDoubleType.objType)) {
+	    if (TclHasInternalRep(literal, &tclDoubleType)) {
 		const char *p = start;
 
 		while (p < end) {

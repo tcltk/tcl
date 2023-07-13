@@ -743,6 +743,10 @@ Tcltest_Init(
     }
 #endif
 
+    if (Tcl_ABSListTest_Init(interp) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
     /*
      * Check for special options used in ../tests/main.test
      */
@@ -8851,4 +8855,3 @@ vamoose:
  * indent-tabs-mode: nil
  * End:
  */
-
