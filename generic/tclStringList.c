@@ -310,10 +310,14 @@ StringListObjIndex(
 	strIndex = startIndex + index;
     }
 
+    char buf[TCL_UTF_MAX];
+    int utfLen;
+
     assert(strIndex <
 	   Tcl_GetCharLength(srcStringObj));
     Tcl_UniChar ch = Tcl_GetUniChar(srcStringObj, strIndex);
-    *elemObj = Tcl_NewUnicodeObj(&ch, 1);
+    utfLen = Tcl_UniCharToUtf(ch, buf);
+    *elemObj = Tcl_NewStringObj(buf, utfLen);
 
     return TCL_OK;
 
