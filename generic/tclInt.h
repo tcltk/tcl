@@ -1069,6 +1069,20 @@ typedef struct ActiveInterpTrace {
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
 
+MODULE_SCOPE  Tcl_Obj *TclArithSeriesObjIndex(Tcl_Interp *, Tcl_Obj *,
+			    Tcl_Size index);
+MODULE_SCOPE Tcl_Size TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
+MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjRange(Tcl_Interp *interp,
+			    Tcl_Obj *arithSeriesPtr, Tcl_Size fromIdx, Tcl_Size toIdx);
+MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjReverse(Tcl_Interp *interp,
+			    Tcl_Obj *arithSeriesPtr);
+MODULE_SCOPE int	TclArithSeriesGetElements(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, Tcl_Size *objcPtr, Tcl_Obj ***objvPtr);
+MODULE_SCOPE int 	TclNewArithSeriesObj(Tcl_Interp *interp,
+			    Tcl_Obj **arithSeriesObj, int useDoubles,
+			    Tcl_Obj *startObj, Tcl_Obj *endObj,
+			    Tcl_Obj *stepObj, Tcl_Obj *lenObj);
+
 /*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function
@@ -2923,6 +2937,7 @@ MODULE_SCOPE const Tcl_ObjType tclByteArrayType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
+MODULE_SCOPE const Tcl_ObjType tclIndexType;
 MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclArithSeriesType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;

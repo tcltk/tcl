@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include <assert.h>
 
 typedef size_t (LengthProc)(const char *src);
 
@@ -563,8 +564,8 @@ TclInitEncodingSubsystem(void)
     unsigned size;
     unsigned short i;
     union {
-        char c;
-        short s;
+	char c;
+	short s;
     } isLe;
     int leFlags;
 
@@ -3397,30 +3398,28 @@ TableToUtfProc(
 	}
 	byte = *((unsigned char *) src);
 	if (prefixBytes[byte]) {
-	    src++;
-	    if (src >= srcEnd) {
+	    if (src >= srcEnd-1) {
+		/* Prefix byte but nothing after it */
 		if (!(flags & TCL_ENCODING_END)) {
-		    src--;
+		    /* More data to come */
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		} else if (PROFILE_STRICT(flags)) {
-		    src--;
 		    result = TCL_CONVERT_SYNTAX;
 		    break;
 		} else if (PROFILE_REPLACE(flags)) {
 		    ch = UNICODE_REPLACE_CHAR;
 		} else {
-		    src--; /* See bug [bdcb5126c0] */
-		    result = TCL_CONVERT_MULTIBYTE;
-		    break;
+		    ch = (Tcl_UniChar)byte;
 		}
 	    } else {
-		ch = toUnicode[byte][*((unsigned char *)src)];
+		ch = toUnicode[byte][*((unsigned char *)++src)];
 	    }
 	} else {
 	    ch = pageZero[byte];
 	}
 	if ((ch == 0) && (byte != 0)) {
+	    /* Prefix+suffix pair is invalid */
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
@@ -3447,6 +3446,7 @@ TableToUtfProc(
 	src++;
     }
 
+    assert(src <= srcEnd);
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -3961,11 +3961,8 @@ EscapeToUtfProc(
 	    if ((checked == dataPtr->numSubTables + 2)
 		    || (flags & TCL_ENCODING_END)) {
 		if (!PROFILE_STRICT(flags)) {
-		    /*
-		     * Skip the unknown escape sequence. TODO - bug?
-		     * May be replace with UNICODE_REPLACE_CHAR?
-		     */
-
+		    /* Unknown escape sequence */
+		    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 		    src += longest;
 		    continue;
 		}

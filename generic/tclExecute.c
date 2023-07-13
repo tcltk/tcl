@@ -19,7 +19,6 @@
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tclTomMath.h"
-#include "tclArithSeries.h"
 #include <math.h>
 #include <assert.h>
 
@@ -6790,8 +6789,8 @@ TEBCresume(
 		goto gotError;
 	    }
 	    if (Tcl_IsShared(listPtr)) {
-		objPtr = TclDuplicatePureObj(
-		    interp, listPtr, &tclListType);
+		/* Do NOT use TclDuplicatePureObj here - shimmers abstract list to list */
+		objPtr = Tcl_DuplicateObj(listPtr);
 		if (!objPtr) {
 		    goto gotError;
 		}
@@ -6868,21 +6867,41 @@ TEBCresume(
 	    for (i = 0;  i < numLists;  i++) {
 		varListPtr = infoPtr->varLists[i];
 		numVars = varListPtr->numVars;
+		int hasAbstractList;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
-		status = TclListObjGetElementsM(
-		    interp, listPtr, &listLen, &elements);
+		hasAbstractList =
+		    TclHasInternalRep(listPtr, &tclArithSeriesType);
+		DECACHE_STACK_INFO();
+		if (hasAbstractList) {
+		    status = Tcl_ListObjLength(interp, listPtr, &listLen);
+		    elements = NULL;
+		} else {
+		    status = TclListObjGetElementsM(
+			interp, listPtr, &listLen, &elements);
+		}
 		if (status != TCL_OK) {
+		    CACHE_STACK_INFO();
 		    goto gotError;
 		}
-
+		CACHE_STACK_INFO();
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
 		    if (valIndex >= listLen) {
 			TclNewObj(valuePtr);
 		    } else {
-			valuePtr = elements[valIndex];
+			if (elements) {
+			    valuePtr = elements[valIndex];
+			} else {
+			    DECACHE_STACK_INFO();
+			    valuePtr = TclArithSeriesObjIndex(
+				NULL, listPtr, valIndex);
+			    if (valuePtr == NULL) {
+				TclNewObj(valuePtr);
+			    }
+			    CACHE_STACK_INFO();
+			}
 		    }
 
 		    varIndex = varListPtr->varIndexes[j];

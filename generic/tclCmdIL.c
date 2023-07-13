@@ -19,7 +19,6 @@
 
 #include "tclInt.h"
 #include "tclRegexp.h"
-#include "tclArithSeries.h"
 #include "tclTomMath.h"
 #include <math.h>
 #include <assert.h>
