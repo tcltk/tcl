@@ -2017,10 +2017,10 @@ test binary-53.19 {Tcl_BinaryObjCmd: format} {} {
 } \xCD\xCC\xCC\x3F
 test binary-53.20 {Tcl_BinaryObjCmd: float Inf} {} {
     binary format R Inf
-} \x7f\x80\x00\x00
+} \x7F\x80\x00\x00
 test binary-53.21 {Tcl_BinaryObjCmd: float Inf} {} {
     binary format r Inf
-} \x00\x00\x80\x7f
+} \x00\x00\x80\x7F
 test binary-53.22 {Binary float Inf round trip} -body {
     binary scan [binary format R Inf] R inf
     binary scan [binary format R -Inf] R inf_
