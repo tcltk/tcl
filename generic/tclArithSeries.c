@@ -10,12 +10,92 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include "tcl.h"
 #include "tclInt.h"
-#include "tclArithSeries.h"
 #include <assert.h>
 #include <math.h>
 
+/*
+ * The structure below defines the arithmetic series Tcl object type by
+ * means of procedures that can be invoked by generic object code.
+ *
+ * The arithmetic series object is a special case of Tcl list representing
+ * an interval of an arithmetic series in constant space.
+ *
+ * The arithmetic series is internally represented with three integers,
+ * *start*, *end*, and *step*, Where the length is calculated with
+ * the following algorithm:
+ *
+ * if RANGE == 0 THEN
+ *   ERROR
+ * if RANGE > 0
+ *   LEN is (((END-START)-1)/STEP) + 1
+ * else if RANGE < 0
+ *   LEN is (((END-START)-1)/STEP) - 1
+ *
+ * And where the equivalent's list I-th element is calculated
+ * as:
+ *
+ * LIST[i] = START + (STEP * i)
+ *
+ * Zero elements ranges, like in the case of START=10 END=10 STEP=1
+ * are valid and will be equivalent to the empty list.
+ */
+
+/*
+ * The structure used for the ArithSeries internal representation.
+ * Note that the len can in theory be always computed by start,end,step
+ * but it's faster to cache it inside the internal representation.
+ */
+typedef struct {
+    Tcl_Size len;
+    Tcl_Obj **elements;
+    int isDouble;
+    Tcl_WideInt start;
+    Tcl_WideInt end;
+    Tcl_WideInt step;
+} ArithSeries;
+typedef struct {
+    Tcl_Size len;
+    Tcl_Obj **elements;
+    int isDouble;
+    double start;
+    double end;
+    double step;
+    int precision;
+} ArithSeriesDbl;
+
 /* -------------------------- ArithSeries object ---------------------------- */
+
+static int TclArithSeriesObjIndex(TCL_UNUSED(Tcl_Interp *), Tcl_Obj *arithSeriesObj,
+				  Tcl_Size index, Tcl_Obj **elemObj);
+
+static Tcl_Size ArithSeriesObjLength(Tcl_Obj *arithSeriesObj);
+static int TclArithSeriesObjRange(Tcl_Interp *interp, Tcl_Obj *arithSeriesObj,
+			    Tcl_Size fromIdx, Tcl_Size toIdx, Tcl_Obj **newObjPtr);
+static int TclArithSeriesObjReverse(Tcl_Interp *interp, Tcl_Obj *arithSeriesObj, Tcl_Obj **newObjPtr);
+static int TclArithSeriesGetElements(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, Tcl_Size *objcPtr, Tcl_Obj ***objvPtr);
+static void DupArithSeriesInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
+static void FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesObjPtr);
+static void UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr);
+static int  SetArithSeriesFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+
+static const Tcl_ObjType arithSeriesType = {
+    "arithseries",			/* name */
+    FreeArithSeriesInternalRep,		/* freeIntRepProc */
+    DupArithSeriesInternalRep,		/* dupIntRepProc */
+    UpdateStringOfArithSeries,		/* updateStringProc */
+    SetArithSeriesFromAny,		/* setFromAnyProc */
+    TCL_OBJTYPE_V2(
+    ArithSeriesObjLength,
+    TclArithSeriesObjIndex,
+    TclArithSeriesObjRange,
+    TclArithSeriesObjReverse,
+    TclArithSeriesGetElements,
+    NULL, // SetElement
+    NULL) // Replace
+};
 
 /*
  * Helper functions
@@ -68,10 +148,13 @@ static inline ArithSeries*
 ArithSeriesGetInternalRep(Tcl_Obj *objPtr)
 {
     const Tcl_ObjInternalRep *irPtr;
-    irPtr = TclFetchInternalRep((objPtr), &tclArithSeriesType.objType);
+    irPtr = TclFetchInternalRep((objPtr), &arithSeriesType);
     return irPtr ? (ArithSeries *)irPtr->twoPtrValue.ptr1 : NULL;
 }
 
+/*
+ * Compute number of significant factional digits
+ */
 static inline int
 Precision(double d)
 {
@@ -81,10 +164,13 @@ Precision(double d)
     off = strchr(tmp, '.');
     return (off ? strlen(off+1) : 0);
 }
+
+/*
+ * Find longest number of digits after the decimal point.
+ */
 static inline int
 maxPrecision(double start, double end, double step)
 {
-    // Find longest number of digits after the decimal point.
     int dp = Precision(step);
     int i  = Precision(start);
     dp = i>dp ? i : dp;
@@ -93,54 +179,7 @@ maxPrecision(double start, double end, double step)
     return dp;
 }
 
-/*
- * Prototypes for procedures defined later in this file:
- */
-
-static void	DupArithSeriesInternalRep (Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
-static void	FreeArithSeriesInternalRep (Tcl_Obj *listPtr);
-static int	SetArithSeriesFromAny (Tcl_Interp *interp, Tcl_Obj *objPtr);
-static void	UpdateStringOfArithSeries (Tcl_Obj *arithSeriesObj);
-static Tcl_Obj* ArithSeriesObjStep(Tcl_Obj *arithSeriesPtr);
-static Tcl_Size ArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
-
-/*
- * The structure below defines the arithmetic series Tcl object type by
- * means of procedures that can be invoked by generic object code.
- *
- * The arithmetic series object is a special case of Tcl list representing
- * an interval of an arithmetic series in constant space.
- *
- * The arithmetic series is internally represented with three integers,
- * *start*, *end*, and *step*, Where the length is calculated with
- * the following algorithm:
- *
- * if RANGE == 0 THEN
- *   ERROR
- * if RANGE > 0
- *   LEN is (((END-START)-1)/STEP) + 1
- * else if RANGE < 0
- *   LEN is (((END-START)-1)/STEP) - 1
- *
- * And where the equivalent's list I-th element is calculated
- * as:
- *
- * LIST[i] = START + (STEP * i)
- *
- * Zero elements ranges, like in the case of START=10 END=10 STEP=1
- * are valid and will be equivalent to the empty list.
- */
-
-const TclObjTypeWithAbstractList tclArithSeriesType = {
-    {"arithseries",			/* name */
-    FreeArithSeriesInternalRep,		/* freeIntRepProc */
-    DupArithSeriesInternalRep,		/* dupIntRepProc */
-    UpdateStringOfArithSeries,		/* updateStringProc */
-    SetArithSeriesFromAny,		/* setFromAnyProc */
-    TCL_OBJTYPE_V0_1(
-    ArithSeriesObjLength
-    )}
-};
+static int TclArithSeriesObjStep(Tcl_Obj *arithSeriesObj, Tcl_Obj **stepObj);
 
 /*
  *----------------------------------------------------------------------
@@ -178,16 +217,98 @@ ArithSeriesLenInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step)
 }
 
 static Tcl_WideInt
-ArithSeriesLenDbl(double start, double end, double step)
+ArithSeriesLenDbl(double start, double end, double step, int precision)
 {
-    Tcl_WideInt len;
-
+    double istart, iend, istep, ilen;
     if (step == 0) {
 	return 0;
     }
-    len = ((end-start+step)/step);
-    return (len < 0) ? -1 : len;
+    istart = start * pow(10,precision);
+    iend = end * pow(10,precision);
+    istep = step * pow(10,precision);
+    ilen = ((iend-istart+istep)/istep);
+    return floor(ilen);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DupArithSeriesInternalRep --
+ *
+ *	Initialize the internal representation of a arithseries Tcl_Obj to a
+ *	copy of the internal representation of an existing arithseries object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	We set "copyPtr"s internal rep to a pointer to a
+ *	newly allocated ArithSeries structure.
+ *----------------------------------------------------------------------
+ */
+
+static void
+DupArithSeriesInternalRep(
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
+{
+    ArithSeries *srcArithSeriesRepPtr =
+	(ArithSeries *) srcPtr->internalRep.twoPtrValue.ptr1;
+    /*
+     * Allocate a new ArithSeries structure. */
+
+    if (srcArithSeriesRepPtr->isDouble) {
+	ArithSeriesDbl *srcArithSeriesDblRepPtr =
+	    (ArithSeriesDbl *)srcArithSeriesRepPtr;
+	ArithSeriesDbl *copyArithSeriesDblRepPtr =
+	    (ArithSeriesDbl *) Tcl_Alloc(sizeof(ArithSeriesDbl));
+	*copyArithSeriesDblRepPtr = *srcArithSeriesDblRepPtr;
+	copyArithSeriesDblRepPtr->elements = NULL;
+	copyPtr->internalRep.twoPtrValue.ptr1 = copyArithSeriesDblRepPtr;
+    } else {
+	ArithSeries *copyArithSeriesRepPtr =
+	    (ArithSeries *) Tcl_Alloc(sizeof(ArithSeries));
+	*copyArithSeriesRepPtr = *srcArithSeriesRepPtr;
+	copyArithSeriesRepPtr->elements = NULL;
+	copyPtr->internalRep.twoPtrValue.ptr1 = copyArithSeriesRepPtr;
+    }
+    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    copyPtr->typePtr = &arithSeriesType;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeArithSeriesInternalRep --
+ *
+ *	Free any allocated memory in the ArithSeries Rep
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesObjPtr)  /* Free any allocated memory */
+{
+    ArithSeries *arithSeriesRepPtr = (ArithSeries*)arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
+
+    if (arithSeriesRepPtr) {
+	if (arithSeriesRepPtr->elements) {
+	    Tcl_WideInt i, len = arithSeriesRepPtr->len;
+	    for (i=0; i<len; i++) {
+		Tcl_DecrRefCount(arithSeriesRepPtr->elements[i]);
+	    }
+	    Tcl_Free((char*)arithSeriesRepPtr->elements);
+	    arithSeriesRepPtr->elements = NULL;
+	}
+	Tcl_Free((char*)arithSeriesRepPtr);
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -233,7 +354,7 @@ NewArithSeriesInt(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_Wide
     arithSeriesRepPtr->elements = NULL;
     arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
-    arithSeriesObj->typePtr = &tclArithSeriesType.objType;
+    arithSeriesObj->typePtr = &arithSeriesType;
     if (length > 0)
     	Tcl_InvalidateStringRep(arithSeriesObj);
 
@@ -288,7 +409,7 @@ NewArithSeriesDbl(double start, double end, double step, Tcl_WideInt len)
     arithSeriesRepPtr->precision = maxPrecision(start,end,step);
     arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
-    arithSeriesObj->typePtr = &tclArithSeriesType.objType;
+    arithSeriesObj->typePtr = &arithSeriesType;
 
     if (length > 0) {
     	Tcl_InvalidateStringRep(arithSeriesObj);
@@ -420,7 +541,8 @@ TclNewArithSeriesObj(
 	assert(dstep!=0);
 	if (!lenObj) {
 	    if (useDoubles) {
-		len = ArithSeriesLenDbl(dstart, dend, dstep);
+		int precision = maxPrecision(dstart,dend,dstep);
+		len = ArithSeriesLenDbl(dstart, dend, dstep, precision);
 	    } else {
 		len = ArithSeriesLenInt(start, end, step);
 	    }
@@ -456,53 +578,17 @@ TclNewArithSeriesObj(
 /*
  *----------------------------------------------------------------------
  *
- * ArithSeriesObjStep --
- *
- *	Return a Tcl_Obj with the step value from the give ArithSeries Obj.
- *	refcount = 0.
- *
- * Results:
- *
- * 	A Tcl_Obj pointer to the created ArithSeries object.
- * 	A NULL pointer of the range is invalid.
- *
- * Side Effects:
- *
- * 	None.
- *----------------------------------------------------------------------
- */
-Tcl_Obj *
-ArithSeriesObjStep(
-    Tcl_Obj *arithSeriesObj)
-{
-    ArithSeries *arithSeriesRepPtr;
-    Tcl_Obj *stepObj;
-
-    if (arithSeriesObj->typePtr != &tclArithSeriesType.objType) {
-        Tcl_Panic("ArithSeriesObjStep called with a not ArithSeries Obj.");
-    }
-    arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
-    if (arithSeriesRepPtr->isDouble) {
-	TclNewDoubleObj(stepObj, ((ArithSeriesDbl*)(arithSeriesRepPtr))->step);
-    } else {
-	TclNewIntObj(stepObj, arithSeriesRepPtr->step);
-    }
-    return stepObj;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * TclArithSeriesObjIndex --
  *
  *	Returns the element with the specified index in the list
  *	represented by the specified Arithmetic Sequence object.
- *	If the index is out of range, NULL is returned.
+ *	If the index is out of range, TCL_ERROR is returned,
+ *	otherwise TCL_OK is returned and the integer value of the
+ *	element is stored in *element.
  *
  * Results:
  *
- * 	The element on success, NULL on index out of range.
+ * 	TCL_OK on success, TCL_ERROR on index out of range.
  *
  * Side Effects:
  *
@@ -511,27 +597,27 @@ ArithSeriesObjStep(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
+int
 TclArithSeriesObjIndex(
-    TCL_UNUSED(Tcl_Interp *),
-    Tcl_Obj *arithSeriesObj,
-    Tcl_WideInt index)
+    TCL_UNUSED(Tcl_Interp *),/* Used for error reporting if not NULL. */
+    Tcl_Obj *arithSeriesObj, /* List obj */
+    Tcl_Size index,          /* index to element of interest */
+    Tcl_Obj **elemObj)       /* Return value */
 {
-    ArithSeries *arithSeriesRepPtr;
+    ArithSeries *arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
 
-    if (arithSeriesObj->typePtr != &tclArithSeriesType.objType) {
-	Tcl_Panic("TclArithSeriesObjIndex called with a not ArithSeries Obj.");
-    }
-    arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
-    if (index < 0 || (Tcl_Size)index >= arithSeriesRepPtr->len) {
-	return Tcl_NewObj();
-    }
-    /* List[i] = Start + (Step * index) */
-    if (arithSeriesRepPtr->isDouble) {
-	return Tcl_NewDoubleObj(ArithSeriesIndexDbl(arithSeriesRepPtr, index));
+    if (index < 0 || arithSeriesRepPtr->len <= index) {
+	*elemObj = Tcl_NewObj();
     } else {
-	return Tcl_NewWideIntObj(ArithSeriesIndexInt(arithSeriesRepPtr, index));
+	/* List[i] = Start + (Step * index) */
+	if (arithSeriesRepPtr->isDouble) {
+	    *elemObj = Tcl_NewDoubleObj(ArithSeriesIndexDbl(arithSeriesRepPtr, index));
+	} else {
+	    *elemObj = Tcl_NewWideIntObj(ArithSeriesIndexInt(arithSeriesRepPtr, index));
+	}
     }
+
+    return TCL_OK;
 }
 
 /*
@@ -557,173 +643,38 @@ Tcl_Size ArithSeriesObjLength(Tcl_Obj *arithSeriesObj)
 	    arithSeriesObj->internalRep.twoPtrValue.ptr1;
     return arithSeriesRepPtr->len;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
- * FreeArithSeriesInternalRep --
+ * TclArithSeriesObjStep --
  *
- *	Deallocate the storage associated with an arithseries object's
- *	internal representation.
+ *	Return a Tcl_Obj with the step value from the give ArithSeries Obj.
+ *	refcount = 0.
  *
  * Results:
- *	None.
  *
- * Side effects:
- *	Frees arithSeriesObj's ArithSeries* internal representation and
- *	sets listPtr's	internalRep.twoPtrValue.ptr1 to NULL.
+ * 	A Tcl_Obj pointer to the created ArithSeries object.
+ * 	A NULL pointer of the range is invalid.
  *
+ * Side Effects:
+ *
+ * 	None.
  *----------------------------------------------------------------------
  */
 
-static void
-FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesObj)
+int
+TclArithSeriesObjStep(
+    Tcl_Obj *arithSeriesObj,
+    Tcl_Obj **stepObj)
 {
-    ArithSeries *arithSeriesRepPtr =
-	    (ArithSeries *) arithSeriesObj->internalRep.twoPtrValue.ptr1;
-    if (arithSeriesRepPtr->elements) {
-	Tcl_Size i;
-	Tcl_Obj**elmts = arithSeriesRepPtr->elements;
-	for(i=0; i<arithSeriesRepPtr->len; i++) {
-	    if (elmts[i]) {
-		Tcl_DecrRefCount(elmts[i]);
-	    }
-	}
-	Tcl_Free((char *) arithSeriesRepPtr->elements);
-    }
-    Tcl_Free((char *) arithSeriesRepPtr);
-    arithSeriesObj->internalRep.twoPtrValue.ptr1 = NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DupArithSeriesInternalRep --
- *
- *	Initialize the internal representation of a arithseries Tcl_Obj to a
- *	copy of the internal representation of an existing arithseries object.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	We set "copyPtr"s internal rep to a pointer to a
- *	newly allocated ArithSeries structure.
- *----------------------------------------------------------------------
- */
-
-static void
-DupArithSeriesInternalRep(
-    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
-{
-    ArithSeries *srcArithSeriesRepPtr =
-	(ArithSeries *) srcPtr->internalRep.twoPtrValue.ptr1;
-    /*
-     * Allocate a new ArithSeries structure. */
-
-    if (srcArithSeriesRepPtr->isDouble) {
-	ArithSeriesDbl *srcArithSeriesDblRepPtr =
-	    (ArithSeriesDbl *)srcArithSeriesRepPtr;
-	ArithSeriesDbl *copyArithSeriesDblRepPtr =
-	    (ArithSeriesDbl *) Tcl_Alloc(sizeof(ArithSeriesDbl));
-	*copyArithSeriesDblRepPtr = *srcArithSeriesDblRepPtr;
-	copyArithSeriesDblRepPtr->elements = NULL;
-	copyPtr->internalRep.twoPtrValue.ptr1 = copyArithSeriesDblRepPtr;
+    ArithSeries *arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
+    if (arithSeriesRepPtr->isDouble) {
+	*stepObj = Tcl_NewDoubleObj(((ArithSeriesDbl*)(arithSeriesRepPtr))->step);
     } else {
-	ArithSeries *copyArithSeriesRepPtr =
-	    (ArithSeries *) Tcl_Alloc(sizeof(ArithSeries));
-	*copyArithSeriesRepPtr = *srcArithSeriesRepPtr;
-	copyArithSeriesRepPtr->elements = NULL;
-	copyPtr->internalRep.twoPtrValue.ptr1 = copyArithSeriesRepPtr;
+	*stepObj = Tcl_NewWideIntObj(arithSeriesRepPtr->step);
     }
-    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    copyPtr->typePtr = &tclArithSeriesType.objType;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * UpdateStringOfArithSeries --
- *
- *	Update the string representation for an arithseries object.
- *	Note: This procedure does not invalidate an existing old string rep
- *	so storage will be lost if this has not already been done.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object's string is set to a valid string that results from
- *	the list-to-string conversion. This string will be empty if the
- *	list has no elements. The list internal representation
- *	should not be NULL and we assume it is not NULL.
- *
- * Notes:
- * 	At the cost of overallocation it's possible to estimate
- * 	the length of the string representation and make this procedure
- * 	much faster. Because the programmer shouldn't expect the
- * 	string conversion of a big arithmetic sequence to be fast
- * 	this version takes more care of space than time.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObj)
-{
-    ArithSeries *arithSeriesRepPtr =
-	    (ArithSeries*) arithSeriesObj->internalRep.twoPtrValue.ptr1;
-    char *elem, *p;
-    Tcl_Obj *elemObj;
-    Tcl_Size i;
-    Tcl_Size length = 0;
-    Tcl_Size slen;
-
-    /*
-     * Pass 1: estimate space.
-     */
-    if (!arithSeriesRepPtr->isDouble) {
-	for (i = 0; i < arithSeriesRepPtr->len; i++) {
-	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
-	    slen = d>0 ? log10(d)+1 : d<0 ? log10((0-d))+2 : 1;
-	    length += slen;
-	}
-    } else {
-	for (i = 0; i < arithSeriesRepPtr->len; i++) {
-	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
-	    char tmp[TCL_DOUBLE_SPACE+2];
-	    tmp[0] = 0;
-	    Tcl_PrintDouble(NULL,d,tmp);
-	    if ((length + strlen(tmp)) > TCL_SIZE_MAX) {
-		break; // overflow
-	    }
-	    length += strlen(tmp);
-	}
-    }
-    length += arithSeriesRepPtr->len; // Space for each separator
-
-    /*
-     * Pass 2: generate the string repr.
-     */
-
-    p = Tcl_InitStringRep(arithSeriesObj, NULL, length);
-    if (p == NULL) {
-	Tcl_Panic("Unable to allocate string size %" TCL_Z_MODIFIER "u", length);
-    }
-    for (i = 0; i < arithSeriesRepPtr->len; i++) {
-	elemObj = TclArithSeriesObjIndex(NULL, arithSeriesObj, i);
-	elem = Tcl_GetStringFromObj(elemObj, &slen);
-	if (((p - arithSeriesObj->bytes)+slen) > length) {
-	    break;
-	}
-	strncpy(p, elem, slen);
-	p[slen] = ' ';
-	p += slen+1;
-	Tcl_DecrRefCount(elemObj);
-    }
-    if (length > 0) arithSeriesObj->bytes[length-1] = '\0';
-    arithSeriesObj->length = length-1;
+    return TCL_OK;
 }
 
 /*
@@ -776,15 +727,18 @@ SetArithSeriesFromAny(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
+int
 TclArithSeriesObjRange(
     Tcl_Interp *interp,         /* For error message(s) */
     Tcl_Obj *arithSeriesObj,	/* List object to take a range from. */
     Tcl_Size fromIdx,		/* Index of first element to include. */
-    Tcl_Size toIdx)		/* Index of last element to include. */
+    Tcl_Size toIdx,		/* Index of last element to include. */
+    Tcl_Obj **newObjPtr)        /* return value */
 {
     ArithSeries *arithSeriesRepPtr;
     Tcl_Obj *startObj, *endObj, *stepObj;
+
+    (void)interp; /* silence compiler */
 
     arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
 
@@ -792,12 +746,14 @@ TclArithSeriesObjRange(
 	fromIdx = 0;
     }
 
+    if (toIdx >= arithSeriesRepPtr->len) {
+	toIdx = arithSeriesRepPtr->len-1;
+    }
+
     if (fromIdx > toIdx ||
-	(toIdx > arithSeriesRepPtr->len-1 &&
-	 fromIdx > arithSeriesRepPtr->len-1)) {
-	Tcl_Obj *obj;
-	TclNewObj(obj);
-	return obj;
+	fromIdx >= arithSeriesRepPtr->len) {
+	TclNewObj(*newObjPtr);
+	return TCL_OK;
     }
 
     if (fromIdx < 0) {
@@ -810,31 +766,22 @@ TclArithSeriesObjRange(
 	toIdx = arithSeriesRepPtr->len-1;
     }
 
-    startObj = TclArithSeriesObjIndex(interp, arithSeriesObj, fromIdx);
-    if (startObj == NULL) {
-	return NULL;
-    }
+    TclArithSeriesObjIndex(interp, arithSeriesObj, fromIdx, &startObj);
     Tcl_IncrRefCount(startObj);
-    endObj = TclArithSeriesObjIndex(interp, arithSeriesObj, toIdx);
-    if (endObj == NULL) {
-	return NULL;
-    }
+    TclArithSeriesObjIndex(interp, arithSeriesObj, toIdx, &endObj);
     Tcl_IncrRefCount(endObj);
-    stepObj = ArithSeriesObjStep(arithSeriesObj);
+    TclArithSeriesObjStep(arithSeriesObj, &stepObj);
     Tcl_IncrRefCount(stepObj);
 
     if (Tcl_IsShared(arithSeriesObj) ||
 	    ((arithSeriesObj->refCount > 1))) {
-	Tcl_Obj *newSlicePtr;
-	if (TclNewArithSeriesObj(interp, &newSlicePtr,
-	        arithSeriesRepPtr->isDouble, startObj, endObj,
-		stepObj, NULL) != TCL_OK) {
-	    newSlicePtr = NULL;
-	}
+	int status = TclNewArithSeriesObj(NULL, newObjPtr,
+		arithSeriesRepPtr->isDouble, startObj, endObj, stepObj, NULL);
+
 	Tcl_DecrRefCount(startObj);
 	Tcl_DecrRefCount(endObj);
 	Tcl_DecrRefCount(stepObj);
-	return newSlicePtr;
+	return status;
     }
 
     /*
@@ -859,7 +806,8 @@ TclArithSeriesObjRange(
 	arithSeriesDblRepPtr->end = end;
 	arithSeriesDblRepPtr->step = step;
 	arithSeriesDblRepPtr->precision = maxPrecision(start, end, step);
-	arithSeriesDblRepPtr->len = ArithSeriesLenDbl(start, end, step);
+	arithSeriesDblRepPtr->len =
+	    ArithSeriesLenDbl(start, end, step, arithSeriesDblRepPtr->precision);
 	arithSeriesDblRepPtr->elements = NULL;
 
     } else {
@@ -878,7 +826,8 @@ TclArithSeriesObjRange(
     Tcl_DecrRefCount(endObj);
     Tcl_DecrRefCount(stepObj);
 
-    return arithSeriesObj;
+    *newObjPtr = arithSeriesObj;
+    return TCL_OK;
 }
 
 /*
@@ -920,12 +869,13 @@ TclArithSeriesGetElements(
     Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
 				 * pointers to the list's objects. */
 {
-    if (TclHasInternalRep(objPtr,&tclArithSeriesType.objType)) {
+    if (TclHasInternalRep(objPtr,&arithSeriesType)) {
 	ArithSeries *arithSeriesRepPtr;
 	Tcl_Obj **objv;
 	int i, objc;
 
 	arithSeriesRepPtr = ArithSeriesGetInternalRep(objPtr);
+
 	objc = arithSeriesRepPtr->len;
 	if (objc > 0) {
 	    if (arithSeriesRepPtr->elements) {
@@ -945,8 +895,8 @@ TclArithSeriesGetElements(
 		}
 		arithSeriesRepPtr->elements = objv;
 		for (i = 0; i < objc; i++) {
-		    objv[i] = TclArithSeriesObjIndex(interp, objPtr, i);
-		    if (objv[i] == NULL) {
+		    int status = TclArithSeriesObjIndex(interp, objPtr, i, &objv[i]);
+		    if (status) {
 			return TCL_ERROR;
 		    }
 		    Tcl_IncrRefCount(objv[i]);
@@ -974,24 +924,23 @@ TclArithSeriesGetElements(
  *
  * TclArithSeriesObjReverse --
  *
- *	Reverse the order of the ArithSeries value.
- *      *arithSeriesObj must be known to be a valid list.
+ *	Reverse the order of the ArithSeries value. The arithSeriesObj is
+ *	assumed to be a valid ArithSeries. The new Obj has the Start and End
+ *	values appropriately swapped and the Step value sign is changed.
  *
  * Results:
- *	Returns a pointer to the reordered series.
- *      This may be a new object or the same object if not shared.
+ *      The result will be an ArithSeries in the reverse order.
  *
  * Side effects:
- *	?The possible conversion of the object referenced by listPtr?
- *	?to a list object.?
+ *      The ogiginal obj will be modified and returned if it is not Shared.
  *
  *----------------------------------------------------------------------
  */
-
-Tcl_Obj *
+int
 TclArithSeriesObjReverse(
     Tcl_Interp *interp,         /* For error message(s) */
-    Tcl_Obj *arithSeriesObj)	/* List object to reverse. */
+    Tcl_Obj *arithSeriesObj,	/* List object to reverse. */
+    Tcl_Obj **newObjPtr)
 {
     ArithSeries *arithSeriesRepPtr;
     Tcl_Obj *startObj, *endObj, *stepObj;
@@ -1000,16 +949,22 @@ TclArithSeriesObjReverse(
     double dstart, dend, dstep;
     int isDouble;
 
+    (void)interp;
+
+    if (newObjPtr == NULL) {
+	return TCL_ERROR;
+    }
+
     arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
 
     isDouble = arithSeriesRepPtr->isDouble;
     len = arithSeriesRepPtr->len;
 
-    startObj = TclArithSeriesObjIndex(NULL, arithSeriesObj, (len-1));
+    TclArithSeriesObjIndex(NULL, arithSeriesObj, (len-1), &startObj);
     Tcl_IncrRefCount(startObj);
-    endObj = TclArithSeriesObjIndex(NULL, arithSeriesObj, 0);
+    TclArithSeriesObjIndex(NULL, arithSeriesObj, 0, &endObj);
     Tcl_IncrRefCount(endObj);
-    stepObj = ArithSeriesObjStep(arithSeriesObj);
+    TclArithSeriesObjStep(arithSeriesObj, &stepObj);
     Tcl_IncrRefCount(stepObj);
 
     if (isDouble) {
@@ -1030,8 +985,8 @@ TclArithSeriesObjReverse(
 	    ((arithSeriesObj->refCount > 1))) {
 	Tcl_Obj *lenObj;
 	TclNewIntObj(lenObj, len);
-	if (TclNewArithSeriesObj(interp, &resultObj,
-		 isDouble, startObj, endObj, stepObj, lenObj) != TCL_OK) {
+	if (TclNewArithSeriesObj(NULL, &resultObj, isDouble,
+		startObj, endObj, stepObj, lenObj) != TCL_OK) {
 	    resultObj = NULL;
 	}
 	Tcl_DecrRefCount(lenObj);
@@ -1070,7 +1025,87 @@ TclArithSeriesObjReverse(
     Tcl_DecrRefCount(endObj);
     Tcl_DecrRefCount(stepObj);
 
-    return resultObj;
+    *newObjPtr = resultObj;
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateStringOfArithSeries --
+ *
+ *	Update the string representation for an arithseries object.
+ *	Note: This procedure does not invalidate an existing old string rep
+ *	so storage will be lost if this has not already been done.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's string is set to a valid string that results from
+ *	the list-to-string conversion. This string will be empty if the
+ *	list has no elements. The list internal representation
+ *	should not be NULL and we assume it is not NULL.
+ *
+ * Notes:
+ * 	At the cost of overallocation it's possible to estimate
+ * 	the length of the string representation and make this procedure
+ * 	much faster. Because the programmer shouldn't expect the
+ * 	string conversion of a big arithmetic sequence to be fast
+ * 	this version takes more care of space than time.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr)
+{
+    ArithSeries *arithSeriesRepPtr = (ArithSeries*)arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
+    char *p;
+    Tcl_Obj *eleObj;
+    Tcl_Size i, bytlen = 0;
+
+    /*
+     * Pass 1: estimate space.
+     */
+    if (!arithSeriesRepPtr->isDouble) {
+	for (i = 0; i < arithSeriesRepPtr->len; i++) {
+	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
+	    size_t slen = d>0 ? log10(d)+1 : d<0 ? log10((0-d))+2 : 1;
+	    bytlen += slen;
+	}
+    } else {
+	for (i = 0; i < arithSeriesRepPtr->len; i++) {
+	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
+	    char tmp[TCL_DOUBLE_SPACE+2];
+	    tmp[0] = 0;
+	    Tcl_PrintDouble(NULL,d,tmp);
+	    if ((bytlen + strlen(tmp)) > TCL_SIZE_MAX) {
+		break; // overflow
+	    }
+	    bytlen += strlen(tmp);
+	}
+    }
+    bytlen += arithSeriesRepPtr->len; // Space for each separator
+
+    /*
+     * Pass 2: generate the string repr.
+     */
+
+    p = Tcl_InitStringRep(arithSeriesObjPtr, NULL, bytlen);
+    for (i = 0; i < arithSeriesRepPtr->len; i++) {
+	if (TclArithSeriesObjIndex(NULL, arithSeriesObjPtr, i, &eleObj) == TCL_OK) {
+	    Tcl_Size slen;
+	    char *str = Tcl_GetStringFromObj(eleObj, &slen);
+	    strcpy(p, str);
+	    p[slen] = ' ';
+	    p += slen+1;
+	    Tcl_DecrRefCount(eleObj);
+	} // else TODO: report error here?
+    }
+    if (bytlen > 0) arithSeriesObjPtr->bytes[bytlen-1] = '\0';
+    arithSeriesObjPtr->length = bytlen-1;
 }
 
 /*

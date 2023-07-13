@@ -2001,7 +2001,7 @@ FormatNumber(
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(src, &tclDoubleType.objType);
+	    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(src, &tclDoubleType);
 	    if (irPtr == NULL) {
 		return TCL_ERROR;
 	    }
@@ -2021,7 +2021,7 @@ FormatNumber(
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(src, &tclDoubleType.objType);
+	    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(src, &tclDoubleType);
 
 	    if (irPtr == NULL) {
 		return TCL_ERROR;
