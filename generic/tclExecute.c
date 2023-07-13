@@ -19,7 +19,6 @@
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tclTomMath.h"
-#include "tclArithSeries.h"
 #include <math.h>
 #include <assert.h>
 
@@ -451,11 +450,11 @@ VarHashCreateVar(
  */
 
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
-    ((TclHasInternalRep((objPtr), &tclIntType.objType))					\
+    ((TclHasInternalRep((objPtr), &tclIntType))					\
 	?	(*(tPtr) = TCL_NUMBER_INT,				\
 		*(ptrPtr) = (void *)				\
 		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
-    TclHasInternalRep((objPtr), &tclDoubleType.objType)				\
+    TclHasInternalRep((objPtr), &tclDoubleType)				\
 	?	(((isnan((objPtr)->internalRep.doubleValue))		\
 		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
@@ -674,7 +673,8 @@ static const Tcl_ObjType exprCodeType = {
 static const Tcl_ObjType dictIteratorType = {
     "dictIterator",
     ReleaseDictIterator,
-    NULL, NULL, NULL, TCL_OBJTYPE_V0
+    NULL, NULL, NULL,
+    TCL_OBJTYPE_V0
 };
 
 /*
@@ -2598,13 +2598,16 @@ TEBCresume(
     case INST_STR_CONCAT1:
 
 	opnd = TclGetUInt1AtPtr(pc+1);
+	DECACHE_STACK_INFO();
 	objResultPtr = TclStringCat(interp, opnd, &OBJ_AT_DEPTH(opnd-1),
 		TCL_STRING_IN_PLACE);
 	if (objResultPtr == NULL) {
+	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
 
+	CACHE_STACK_INFO();
 	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	NEXT_INST_V(2, opnd, 1);
     break;
@@ -3375,7 +3378,7 @@ TEBCresume(
 	}
 	if (Tcl_IsShared(objResultPtr)) {
 	    Tcl_Obj *newValue = TclDuplicatePureObj(
-		    interp, objResultPtr, &tclListType.objType);
+		    interp, objResultPtr, &tclListType);
 	    if (!newValue) {
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -3439,7 +3442,7 @@ TEBCresume(
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
 		    valueToAssign = TclDuplicatePureObj(
-			interp, objResultPtr, &tclListType.objType);
+			interp, objResultPtr, &tclListType);
 		    if (!valueToAssign) {
 			goto errorInLappendListPtr;
 		    }
@@ -4668,21 +4671,21 @@ TEBCresume(
 	valuePtr = OBJ_UNDER_TOS;
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
-
-	/* special case for ArithSeries */
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType.objType)) {
-	    length = ABSTRACTLIST_PROC(valuePtr, lengthProc)(valuePtr);
+	/* special case for AbstractList */
+	if (TclObjTypeHasProc(valuePtr,indexProc)) {
+	    DECACHE_STACK_INFO();
+	    length = TclObjTypeLength(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    objResultPtr = TclArithSeriesObjIndex(interp, valuePtr, index);
-	    if (objResultPtr == NULL) {
+	    if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
+	    CACHE_STACK_INFO();
 	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
 	}
@@ -4696,7 +4699,7 @@ TEBCresume(
 	    Tcl_Obj *indexListPtr = value2Ptr;
 	    if ((TclListObjGetElementsM(interp, valuePtr, &objc, &objv) == TCL_OK)
 		&& (
-		    !TclHasInternalRep(value2Ptr, &tclListType.objType)
+		    !TclHasInternalRep(value2Ptr, &tclListType)
 		    ||
 		    ((Tcl_ListObjLength(interp,value2Ptr,&value2Length),
 			value2Length == 1
@@ -4754,34 +4757,36 @@ TEBCresume(
 	opnd = TclGetInt4AtPtr(pc+1);
 	TRACE(("\"%.30s\" %d => ", O2S(valuePtr), opnd));
 
-	/* special case for ArithSeries */
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType.objType)) {
-	    length = ABSTRACTLIST_PROC(valuePtr, lengthProc)(valuePtr);
-
-	    /* Decode end-offset index values. */
-
-	    index = TclIndexDecode(opnd, length-1);
-
-	    /* Compute value @ index */
-	    if (index >= 0 && index < length) {
-		objResultPtr = TclArithSeriesObjIndex(interp, valuePtr, index);
-		if (objResultPtr == NULL) {
-		    CACHE_STACK_INFO();
-		    TRACE_ERROR(interp);
-		    goto gotError;
-		}
-	    } else {
-		TclNewObj(objResultPtr);
-	    }
-	    pcAdjustment = 5;
-	    goto lindexFastPath2;
-	}
-
 	/*
 	 * Get the contents of the list, making sure that it really is a list
 	 * in the process.
 	 */
 
+	/* special case for AbstractList */
+	if (TclObjTypeHasProc(valuePtr,indexProc)) {
+	    length = TclObjTypeLength(valuePtr);
+
+	    /* Decode end-offset index values. */
+	    index = TclIndexDecode(opnd, length-1);
+
+	    if (index >= 0 && index < length) {
+		/* Compute value @ index */
+		DECACHE_STACK_INFO();
+		if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+		    CACHE_STACK_INFO();
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+		CACHE_STACK_INFO();
+	    } else {
+		TclNewObj(objResultPtr);
+	    }
+
+	    pcAdjustment = 5;
+	    goto lindexFastPath2;
+	}
+
+	/* List case */
 	if (TclListObjGetElementsM(interp, valuePtr, &objc, &objv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -4854,9 +4859,17 @@ TEBCresume(
 	 * Compute the new variable value.
 	 */
 
-	objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
+	DECACHE_STACK_INFO();
+	if (TclObjTypeHasProc(valuePtr, setElementProc)) {
+	    objResultPtr = TclObjTypeSetElement(interp,
+		valuePtr, numIndices,
+	        &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+	} else {
+	    objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
 		&OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+	}
 	if (!objResultPtr) {
+	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -4864,7 +4877,7 @@ TEBCresume(
 	/*
 	 * Set result.
 	 */
-
+	CACHE_STACK_INFO();
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_V(5, numIndices+1, -1);
 
@@ -4976,16 +4989,21 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	if (TclHasInternalRep(valuePtr,&tclArithSeriesType.objType)) {
-	    objResultPtr = TclArithSeriesObjRange(interp, valuePtr, fromIdx, toIdx);
+	DECACHE_STACK_INFO();
+	if (TclObjTypeHasProc(valuePtr, sliceProc)) {
+	    if (TclObjTypeSlice(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
+		objResultPtr = NULL;
+	    }
 	} else {
 	    objResultPtr = TclListObjRange(interp, valuePtr, fromIdx, toIdx);
 	}
 	if (objResultPtr == NULL) {
+	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
 
+	CACHE_STACK_INFO();
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
 
@@ -5004,14 +5022,21 @@ TEBCresume(
 	if (length > 0) {
 	    Tcl_Size i = 0;
 	    Tcl_Obj *o;
-	    int isArithSeries = TclHasInternalRep(value2Ptr,&tclArithSeriesType.objType);
+	    int isAbstractList = TclObjTypeHasProc(value2Ptr,indexProc) != NULL;
+
 	    /*
 	     * An empty list doesn't match anything.
 	     */
 
 	    do {
-		if (isArithSeries) {
-		    o = TclArithSeriesObjIndex(NULL, value2Ptr, i);
+		if (isAbstractList) {
+		    DECACHE_STACK_INFO();
+		    if (TclObjTypeIndex(interp, value2Ptr, i, &o) != TCL_OK) {
+			CACHE_STACK_INFO();
+			TRACE_ERROR(interp);
+			goto gotError;
+		    }
+		    CACHE_STACK_INFO();
 		} else {
 		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		}
@@ -5024,9 +5049,10 @@ TEBCresume(
 		if (s1len == s2len) {
 		    match = (memcmp(s1, s2, s1len) == 0);
 		}
-		if (isArithSeries) {
-		    TclDecrRefCount(o);
-		}
+
+		/* Could be an ephemeral abstract obj */
+		Tcl_BumpObj(o);
+
 		i++;
 	    } while (i < length && match == 0);
 	}
@@ -6368,7 +6394,7 @@ TEBCresume(
 
     case INST_TRY_CVT_TO_BOOLEAN:
 	valuePtr = OBJ_AT_TOS;
-	if (TclHasInternalRep(valuePtr,  &tclBooleanType.objType)) {
+	if (TclHasInternalRep(valuePtr,  &tclBooleanType)) {
 	    objResultPtr = TCONST(1);
 	} else {
 	    int res = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
@@ -6429,14 +6455,17 @@ TEBCresume(
 	    varListPtr = infoPtr->varLists[i];
 	    numVars = varListPtr->numVars;
 	    listPtr = OBJ_AT_DEPTH(listTmpDepth);
+	    DECACHE_STACK_INFO();
 	    if (TclListObjLengthM(interp, listPtr, &listLen) != TCL_OK) {
+		CACHE_STACK_INFO();
 		TRACE_APPEND(("ERROR converting list %" TCL_Z_MODIFIER "d, \"%s\": %s",
 			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
 		goto gotError;
 	    }
+	    CACHE_STACK_INFO();
 	    if (Tcl_IsShared(listPtr)) {
 		objPtr = TclDuplicatePureObj(
-		    interp, listPtr, &tclListType.objType);
+		    interp, listPtr, &tclListType);
 		if (!objPtr) {
 		    goto gotError;
 		}
@@ -6480,7 +6509,7 @@ TEBCresume(
 
 	pc += 5 - infoPtr->loopCtTemp;
 
-    case INST_FOREACH_STEP:
+    case INST_FOREACH_STEP: /* TODO: address abstract list indexing here! */
 	/*
 	 * "Step" a foreach loop (i.e., begin its next iteration) by assigning
 	 * the next value list element to each loop var.
@@ -6513,13 +6542,23 @@ TEBCresume(
 	    for (i = 0;  i < numLists;  i++) {
 		varListPtr = infoPtr->varLists[i];
 		numVars = varListPtr->numVars;
+		int hasAbstractList;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
-		status = TclListObjGetElementsM(
-		    interp, listPtr, &listLen, &elements);
+		hasAbstractList = TclObjTypeHasProc(listPtr, indexProc) != 0;
+		DECACHE_STACK_INFO();
+		if (hasAbstractList) {
+		    status = Tcl_ListObjLength(interp, listPtr, &listLen);
+		    elements = NULL;
+		} else {
+		    status = TclListObjGetElementsM(
+			interp, listPtr, &listLen, &elements);
+		}
 		if (status != TCL_OK) {
+		    CACHE_STACK_INFO();
 		    goto gotError;
 		}
+		CACHE_STACK_INFO();
 
 
 		valIndex = (iterNum * numVars);
@@ -6527,7 +6566,23 @@ TEBCresume(
 		    if (valIndex >= listLen) {
 			TclNewObj(valuePtr);
 		    } else {
-			valuePtr = elements[valIndex];
+			DECACHE_STACK_INFO();
+			if (elements) {
+			    valuePtr = elements[valIndex];
+			} else {
+			    status = Tcl_ListObjIndex(
+				interp, listPtr, valIndex, &valuePtr);
+			    if (status != TCL_OK) {
+				/* Could happen for abstract lists */
+				CACHE_STACK_INFO();
+				goto gotError;
+			    }
+			    if (valuePtr == NULL) {
+				/* Permitted for Tcl_LOI to return NULL */
+				TclNewObj(valuePtr);
+			    }
+			}
+			CACHE_STACK_INFO();
 		    }
 
 		    varIndex = varListPtr->varIndexes[j];
@@ -8398,7 +8453,7 @@ ExecuteExtendedBinaryMathOp(
     overflowExpon:
 
 	if ((TclGetWideIntFromObj(NULL, value2Ptr, &w2) != TCL_OK)
-		|| (value2Ptr->typePtr != &tclIntType.objType)
+		|| (value2Ptr->typePtr != &tclIntType)
 		|| (Tcl_WideUInt)w2 >= (1<<28)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "exponent too large", -1));
@@ -9498,7 +9553,9 @@ EvalStatsCmd(
     double numInstructions, currentHeaderBytes;
     size_t numCurrentByteCodes, numByteCodeLits;
     size_t refCountSum, literalMgmtBytes, sum, decadeHigh, length;
-    size_t numSharedMultX, numSharedOnce, minSizeDecade, maxSizeDecade, i;
+    size_t numSharedMultX, numSharedOnce, minSizeDecade, maxSizeDecade;
+    Tcl_Size i;
+    size_t ui;
     char *litTableStats;
     LiteralEntry *entryPtr;
     Tcl_Obj *objPtr;
@@ -9634,7 +9691,7 @@ EvalStatsCmd(
     strBytesIfUnshared = 0.0;
     strBytesSharedMultX = 0.0;
     strBytesSharedOnce = 0.0;
-    for (i = 0;  i < globalTablePtr->numBuckets;  i++) {
+    for (ui = 0;  ui < globalTablePtr->numBuckets;  ui++) {
 	for (entryPtr = globalTablePtr->buckets[i];  entryPtr != NULL;
 		entryPtr = entryPtr->nextPtr) {
 	    if (TclHasInternalRep(entryPtr->objPtr, &tclByteCodeType)) {
@@ -9752,9 +9809,9 @@ EvalStatsCmd(
 	}
     }
     sum = 0;
-    for (i = 0;  i <= maxSizeDecade;  i++) {
-	decadeHigh = (1 << (i+1)) - 1;
-	sum += statsPtr->literalCount[i];
+    for (ui = 0;  ui <= maxSizeDecade;  ui++) {
+	decadeHigh = (1 << (ui+1)) - 1;
+	sum += statsPtr->literalCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_SIZE_MODIFIER "d\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numLiteralsCreated));
     }
@@ -9785,9 +9842,9 @@ EvalStatsCmd(
     }
     maxSizeDecade = i;
     sum = 0;
-    for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
-	decadeHigh = (1 << (i+1)) - 1;
-	sum += statsPtr->srcCount[i];
+    for (ui = minSizeDecade;  ui <= maxSizeDecade;  ui++) {
+	decadeHigh = (1 << (ui+1)) - 1;
+	sum += statsPtr->srcCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_SIZE_MODIFIER "d\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numCompilations));
     }
@@ -9809,9 +9866,9 @@ EvalStatsCmd(
     }
     maxSizeDecade = i;
     sum = 0;
-    for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
-	decadeHigh = (1 << (i+1)) - 1;
-	sum += statsPtr->byteCodeCount[i];
+    for (ui = minSizeDecade;  ui <= maxSizeDecade;  i++) {
+	decadeHigh = (1 << (ui+1)) - 1;
+	sum += statsPtr->byteCodeCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%10" TCL_SIZE_MODIFIER "d\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numCompilations));
     }
@@ -9833,9 +9890,9 @@ EvalStatsCmd(
     }
     maxSizeDecade = i;
     sum = 0;
-    for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
-	decadeHigh = (1 << (i+1)) - 1;
-	sum += statsPtr->lifetimeCount[i];
+    for (ui = minSizeDecade;  ui <= maxSizeDecade;  ui++) {
+	decadeHigh = (1 << (ui+1)) - 1;
+	sum += statsPtr->lifetimeCount[ui];
 	Tcl_AppendPrintfToObj(objPtr, "\t%12.3f\t\t%8.0f%%\n",
 		decadeHigh/1000.0, Percent(sum, statsPtr->numByteCodesFreed));
     }

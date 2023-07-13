@@ -123,17 +123,15 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  * is unregistered, so has no need of a setFromAnyProc either.
  */
 
-static const TclObjTypeWithAbstractList endOffsetType = {
-    {"end-offset",			/* name */
+static const Tcl_ObjType endOffsetType = {
+    "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
     NULL,				/* setFromAnyProc */
-    TCL_OBJTYPE_V0_1(
-    TclLengthOne
-    )}
+    TCL_OBJTYPE_V1(TclLengthOne)
 };
-
+
 Tcl_Size
 TclLengthOne(
     TCL_UNUSED(Tcl_Obj *))
@@ -1979,7 +1977,8 @@ Tcl_ConcatObj(
 	Tcl_Size length;
 
 	objPtr = objv[i];
-	if (TclListObjIsCanonical(objPtr)) {
+	if (TclListObjIsCanonical(objPtr) ||
+            TclObjTypeHasProc(objPtr,indexProc)) {
 	    continue;
 	}
 	(void)Tcl_GetStringFromObj(objPtr, &length);
@@ -1991,7 +1990,8 @@ Tcl_ConcatObj(
 	resPtr = NULL;
 	for (i = 0;  i < objc;  i++) {
 	    objPtr = objv[i];
-	    if (!TclListObjIsCanonical(objPtr)) {
+	    if (!TclListObjIsCanonical(objPtr) &&
+		!TclObjTypeHasProc(objPtr,indexProc)) {
 		continue;
 	    }
 	    if (resPtr) {
@@ -2009,7 +2009,7 @@ Tcl_ConcatObj(
 		}
 	    } else {
 		resPtr = TclDuplicatePureObj(
-		    NULL, objPtr, &tclListType.objType);
+		    NULL, objPtr, &tclListType);
 		if (!resPtr) {
 		    return NULL;
 		}
@@ -3503,7 +3503,7 @@ GetEndOffsetFromObj(
     Tcl_WideInt offset = -1;	/* Offset in the "end-offset" expression - 1 */
     void *cd;
 
-    while ((irPtr = TclFetchInternalRep(objPtr, &endOffsetType.objType)) == NULL) {
+    while ((irPtr = TclFetchInternalRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjInternalRep ir;
 	Tcl_Size length;
 	const char *bytes = Tcl_GetStringFromObj(objPtr, &length);
@@ -3689,7 +3689,7 @@ GetEndOffsetFromObj(
     parseOK:
 	/* Success. Store the new internal rep. */
 	ir.wideValue = offset;
-	Tcl_StoreInternalRep(objPtr, &endOffsetType.objType, &ir);
+	Tcl_StoreInternalRep(objPtr, &endOffsetType, &ir);
     }
 
     offset = irPtr->wideValue;
@@ -3793,7 +3793,7 @@ TclIndexEncode(
     int idx;
 
     if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &endOffsetType.objType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &endOffsetType);
 	if (irPtr && irPtr->wideValue >= 0) {
 	    /* "int[+-]int" syntax, works the same here as "int" */
 	    irPtr = NULL;

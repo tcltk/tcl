@@ -23,6 +23,8 @@ Tcl_Obj *
 .sp
 \fBTcl_DecrRefCount\fR(\fIobjPtr\fR)
 .sp
+\fBTcl_BumpObj\fR(\fIobjPtr\fR)
+.sp
 int
 \fBTcl_IsShared\fR(\fIobjPtr\fR)
 .sp
@@ -278,26 +280,27 @@ The string representation is now \fB124\fR
 and both representations are again valid.
 .SH "STORAGE MANAGEMENT OF VALUES"
 .PP
-Tcl values are allocated on the heap and are shared as much as possible
-to reduce storage requirements.
-Reference counting is used to determine when a value is
-no longer needed and can safely be freed.
-A value just created by \fBTcl_NewObj\fR or \fBTcl_NewStringObj\fR
-has \fIrefCount\fR 0, meaning that the object can often be given to a function
-like \fBTcl_SetObjResult\fR, \fBTcl_ListObjAppendElement\fR, or
-\fBTcl_DictObjPut\fR (as a value) without explicit reference management, all
-of which are common use cases. (The latter two require that the the target
-list or dictionary be well-formed, but that is often easy to arrange when the
-value is being initially constructed.)
-The macro \fBTcl_IncrRefCount\fR increments the reference count
-when a new reference to the value is created.
-The macro \fBTcl_DecrRefCount\fR decrements the count
-when a reference is no longer needed and,
-if the value's reference count drops to zero, frees its storage.
+Tcl values are allocated on the heap and are shared as much as
+possible to reduce storage requirements.  Reference counting is used
+to determine when a value is no longer needed and can safely be freed.
+A value just created by \fBTcl_NewObj\fR, \fBTcl_NewStringObj\fR, or
+any Abstract List command or function, has \fIrefCount\fR 0, meaning
+that the object can often be given to a function like
+\fBTcl_SetObjResult\fR, \fBTcl_ListObjAppendElement\fR, or
+\fBTcl_DictObjPut\fR (as a value) without explicit reference
+management, all of which are common use cases. (The latter two require
+that the target list or dictionary be well-formed, but that is
+often easy to arrange when the value is being initially constructed.)
+The macro \fBTcl_IncrRefCount\fR increments the reference count when a
+new reference to the value is created.
+The macro \fBTcl_DecrRefCount\fR decrements the count when a reference is no longer needed.
+If the value's reference count drops to zero, frees
+its storage.
+The macro \fBTcl_BumpObj\fR will check if the value has no references (i.e. in a "new" state) and free the value.
 A value shared by different code or data structures has
-\fIrefCount\fR greater than 1.
-Incrementing a value's reference count ensures that
-it will not be freed too early or have its value change accidentally.
+\fIrefCount\fR greater than 1.  Incrementing a value's reference count
+ensures that it will not be freed too early or have its value change
+accidentally.
 .PP
 As an example, the bytecode interpreter shares argument values
 between calling and called Tcl procedures to avoid having to copy values.
@@ -311,12 +314,25 @@ the interpreter calls \fBTcl_DecrRefCount\fR to decrement
 each argument's reference count.
 When a value's reference count drops less than or equal to zero,
 \fBTcl_DecrRefCount\fR reclaims its storage.
-Most command procedures do not have to be concerned about
-reference counting since they use a value's value immediately
-and do not retain a pointer to the value after they return.
-However, if they do retain a pointer to a value in a data structure,
-they must be careful to increment its reference count
-since the retained pointer is a new reference.
+
+.PP
+Most command procedures have not been concerned about reference
+counting since they use a value's value immediately and do not retain
+a pointer to the value after they return.  However, there are some
+procedures that may return a new value, with a refCount of 0. In this
+situation, it is the caller's responsibility to free the value before
+the procedure returns.  One way to cover this is to always call
+\fBTcl_IncrRefCount\fR before using the value, then call
+\fBTcl_DecrRefCount\fR before returning. The other way is to use
+\fBTcl_BumpObj\fR after the value is no longer needed or
+referenced. This macro will free the value if there are no other
+references to the value. When retaining a pointer to a value in a data
+structure the procedure must be careful to increment its reference
+count since the retained pointer is a new reference. Examples of
+procedures that return new values are \fBTcl_NewIntObj\fR, and
+commands like \fBlseq\fR, which creates an Abstract List, and an
+lindex on this list may return a new Obj with a refCount of 0.
+
 .PP
 Command procedures that directly modify values
 such as those for \fBlappend\fR and \fBlinsert\fR must be careful to
@@ -350,6 +366,11 @@ must check whether the variable's value is shared before
 incrementing the integer in its internal representation.
 If it is shared, it needs to duplicate the value
 in order to avoid accidentally changing values in other data structures.
+.PP
+In cases where a value is obtained, used, and not retained, the value
+can be freed using \fBTcl_BumpObj\fR. This
+is functionally equivalent to calling \fBTcl_IncrRefCount\fR followed
+\fBTcl_DecrRefCount\fR.
 .SH "SEE ALSO"
 Tcl_ConvertToType(3), Tcl_GetIntFromObj(3), Tcl_ListObjAppendElement(3), Tcl_ListObjIndex(3), Tcl_ListObjReplace(3), Tcl_RegisterObjType(3)
 .SH KEYWORDS
