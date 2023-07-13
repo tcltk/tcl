@@ -1085,6 +1085,7 @@ typedef struct ActiveInterpTrace {
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
 
+#if TCL_MAJOR_VERSION > 8
 /*
  * Versions 0, 1, and 2 are currently supported concurrently for now
  */
@@ -1107,19 +1108,76 @@ MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
  */
 
 
-#define Tcl_ObjTypeLength(objPtr) (objPtr)->typePtr->lengthProc(objPtr)
-#define Tcl_ObjTypeIndex(interp, objPtr, index, elemObjPtr) \
-    (objPtr)->typePtr->indexProc((interp),(objPtr),(index),(elemObjPtr))
-#define Tcl_ObjTypeSlice(interp, objPtr, fromIdx, toIdx, newObjPtr) \
-    (objPtr)->typePtr->sliceProc((interp),(objPtr),(fromIdx),(toIdx),(newObjPtr))
-#define Tcl_ObjTypeReverse(interp, objPtr, newObjPtr) \
-    (objPtr)->typePtr->reverseProc((interp),(objPtr),(newObjPtr))
-#define Tcl_ObjTypeGetElements(interp, objPtr, objCPtr, objVPtr) \
-    (objPtr)->typePtr->getElementsProc((interp),(objPtr),(objCPtr),(objVPtr))
-#define Tcl_ObjTypeSetElement(interp, objPtr, indexCount, indexArray, valueObj) \
-    (objPtr)->typePtr->setElementProc((interp), (objPtr), (indexCount), (indexArray), (valueObj))
-#define Tcl_ObjTypeReplace(interp, objPtr, first, numToDelete, numToInsert, insertObjs) \
-    (objPtr)->typePtr->replaceProc((interp), (objPtr), (first), (numToDelete), (numToInsert), (insertObjs))
+static inline Tcl_Size
+TclObjTypeLength(Tcl_Obj *objPtr)
+{
+    Tcl_ObjTypeLengthProc *proc = TclObjTypeHasProc(objPtr, lengthProc);
+    return proc(objPtr);
+}
+static inline int
+TclObjTypeIndex(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Size index,
+    Tcl_Obj **elemObjPtr)
+{
+    Tcl_ObjTypeIndexProc *proc = TclObjTypeHasProc(objPtr, indexProc);
+    return proc(interp, objPtr, index, elemObjPtr);
+}
+static inline int
+TclObjTypeSlice(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Size fromIdx,
+    Tcl_Size toIdx,
+    Tcl_Obj **newObjPtr)
+{
+    Tcl_ObjTypeSliceProc *proc = TclObjTypeHasProc(objPtr, sliceProc);
+    return proc(interp, objPtr, fromIdx, toIdx, newObjPtr);
+}
+static inline int
+TclObjTypeReverse(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Obj **newObjPtr)
+{
+    Tcl_ObjTypeReverseProc *proc = TclObjTypeHasProc(objPtr, reverseProc);
+    return proc(interp, objPtr, newObjPtr);
+}
+static inline int
+TclObjTypeGetElements(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Size *objCPtr,
+    Tcl_Obj ***objVPtr)
+{
+    Tcl_ObjTypeGetElements *proc = TclObjTypeHasProc(objPtr, getElementsProc);
+    return proc(interp, objPtr, objCPtr, objVPtr);
+}
+static inline Tcl_Obj*
+TclObjTypeSetElement(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Size indexCount,
+    Tcl_Obj *const indexArray[],
+    Tcl_Obj *valueObj)
+{
+    Tcl_ObjTypeSetElement *proc = TclObjTypeHasProc(objPtr, setElementProc);
+    return proc(interp, objPtr, indexCount, indexArray, valueObj);
+}
+static inline int
+TclObjTypeReplace(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Size first,
+    Tcl_Size numToDelete,
+    Tcl_Size numToInsert,
+    Tcl_Obj *const insertObjs[])
+{
+    Tcl_ObjTypeReplaceProc *proc = TclObjTypeHasProc(objPtr, replaceProc);
+    return proc(interp, objPtr, first, numToDelete, numToInsert, insertObjs);
+}
+#endif /* TCL_MAJOR_VERSION > 8 */
 
 
 /*
@@ -3040,6 +3098,7 @@ MODULE_SCOPE const Tcl_ObjType tclBooleanType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
+MODULE_SCOPE const Tcl_ObjType tclIndexType;
 MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;

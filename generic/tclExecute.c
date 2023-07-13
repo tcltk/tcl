@@ -4674,17 +4674,18 @@ TEBCresume(
 	/* special case for AbstractList */
 	if (TclObjTypeHasProc(valuePtr,indexProc)) {
 	    DECACHE_STACK_INFO();
-	    length = TclObjTypeHasProc(valuePtr, lengthProc)(valuePtr);
+	    length = TclObjTypeLength(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    if (Tcl_ObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+	    if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
+	    CACHE_STACK_INFO();
 	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
 	}
@@ -4763,19 +4764,23 @@ TEBCresume(
 
 	/* special case for AbstractList */
 	if (TclObjTypeHasProc(valuePtr,indexProc)) {
-	    length = TclObjTypeHasProc(valuePtr, lengthProc)(valuePtr);
+	    length = TclObjTypeLength(valuePtr);
 
 	    /* Decode end-offset index values. */
 	    index = TclIndexDecode(opnd, length-1);
 
-	    /* Compute value @ index */
-	    DECACHE_STACK_INFO();
-	    if (Tcl_ObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+	    if (index >= 0 && index < length) {
+		/* Compute value @ index */
+		DECACHE_STACK_INFO();
+		if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr)!=TCL_OK) {
+		    CACHE_STACK_INFO();
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
 		CACHE_STACK_INFO();
-		TRACE_ERROR(interp);
-		goto gotError;
+	    } else {
+		TclNewObj(objResultPtr);
 	    }
-	    CACHE_STACK_INFO();
 
 	    pcAdjustment = 5;
 	    goto lindexFastPath2;
@@ -4854,10 +4859,9 @@ TEBCresume(
 	 * Compute the new variable value.
 	 */
 
+	DECACHE_STACK_INFO();
 	if (TclObjTypeHasProc(valuePtr, setElementProc)) {
-
-	    DECACHE_STACK_INFO();
-	    objResultPtr = Tcl_ObjTypeSetElement(interp,
+	    objResultPtr = TclObjTypeSetElement(interp,
 		valuePtr, numIndices,
 	        &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
 	} else {
@@ -4985,9 +4989,9 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
+	DECACHE_STACK_INFO();
 	if (TclObjTypeHasProc(valuePtr, sliceProc)) {
-	    DECACHE_STACK_INFO();
-	    if (Tcl_ObjTypeSlice(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
+	    if (TclObjTypeSlice(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
 		objResultPtr = NULL;
 	    }
 	} else {
@@ -5027,7 +5031,7 @@ TEBCresume(
 	    do {
 		if (isAbstractList) {
 		    DECACHE_STACK_INFO();
-		    if (Tcl_ObjTypeIndex(interp, value2Ptr, i, &o) != TCL_OK) {
+		    if (TclObjTypeIndex(interp, value2Ptr, i, &o) != TCL_OK) {
 			CACHE_STACK_INFO();
 			TRACE_ERROR(interp);
 			goto gotError;
@@ -6458,6 +6462,7 @@ TEBCresume(
 			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
 		goto gotError;
 	    }
+	    CACHE_STACK_INFO();
 	    if (Tcl_IsShared(listPtr)) {
 		objPtr = TclDuplicatePureObj(
 		    interp, listPtr, &tclListType);
@@ -6537,11 +6542,18 @@ TEBCresume(
 	    for (i = 0;  i < numLists;  i++) {
 		varListPtr = infoPtr->varLists[i];
 		numVars = varListPtr->numVars;
+		int hasAbstractList;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
+		hasAbstractList = TclObjTypeHasProc(listPtr, indexProc) != 0;
 		DECACHE_STACK_INFO();
-		status = TclListObjGetElementsM(
-		    interp, listPtr, &listLen, &elements);
+		if (hasAbstractList) {
+		    status = Tcl_ListObjLength(interp, listPtr, &listLen);
+		    elements = NULL;
+		} else {
+		    status = TclListObjGetElementsM(
+			interp, listPtr, &listLen, &elements);
+		}
 		if (status != TCL_OK) {
 		    CACHE_STACK_INFO();
 		    goto gotError;
@@ -6554,7 +6566,23 @@ TEBCresume(
 		    if (valIndex >= listLen) {
 			TclNewObj(valuePtr);
 		    } else {
-			valuePtr = elements[valIndex];
+			DECACHE_STACK_INFO();
+			if (elements) {
+			    valuePtr = elements[valIndex];
+			} else {
+			    status = Tcl_ListObjIndex(
+				interp, listPtr, valIndex, &valuePtr);
+			    if (status != TCL_OK) {
+				/* Could happen for abstract lists */
+				CACHE_STACK_INFO();
+				goto gotError;
+			    }
+			    if (valuePtr == NULL) {
+				/* Permitted for Tcl_LOI to return NULL */
+				TclNewObj(valuePtr);
+			    }
+			}
+			CACHE_STACK_INFO();
 		    }
 
 		    varIndex = varListPtr->varIndexes[j];

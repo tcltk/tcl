@@ -2216,10 +2216,10 @@ Tcl_JoinObjCmd(
      */
 
     if (TclObjTypeHasProc(objv[1], getElementsProc)) {
-	listLen = TclObjTypeHasProc(objv[1], lengthProc)(objv[1]);
+	listLen = TclObjTypeLength(objv[1]);
 	isAbstractList = (listLen ? 1 : 0);
 	if (listLen > 1 &&
-	    Tcl_ObjTypeGetElements(interp, objv[1], &listLen, &elemPtrs)
+	    TclObjTypeGetElements(interp, objv[1], &listLen, &elemPtrs)
 	    != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -2237,11 +2237,11 @@ Tcl_JoinObjCmd(
 	if (!isAbstractList) {
 	    Tcl_SetObjResult(interp, elemPtrs[0]);
 	} else {
-            Tcl_Obj *elemObj;
-            if (Tcl_ObjTypeIndex(interp, objv[1], 0, &elemObj)
+	    Tcl_Obj *elemObj;
+	    if (TclObjTypeIndex(interp, objv[1], 0, &elemObj)
 		!= TCL_OK) {
-                return TCL_ERROR;
-            }
+		return TCL_ERROR;
+	    }
 	    Tcl_SetObjResult(interp, elemObj);
 	}
 	return TCL_OK;
@@ -2770,7 +2770,7 @@ Tcl_LrangeObjCmd(
 
     if (TclObjTypeHasProc(objv[1], sliceProc)) {
 	Tcl_Obj *resultObj;
-	int status = Tcl_ObjTypeSlice(interp, objv[1], first, last, &resultObj);
+	int status = TclObjTypeSlice(interp, objv[1], first, last, &resultObj);
 	if (status == TCL_OK) {
 	    Tcl_SetObjResult(interp, resultObj);
 	} else {
@@ -3195,7 +3195,7 @@ Tcl_LreverseObjCmd(
     if (TclObjTypeHasProc(objv[1], reverseProc)) {
 	Tcl_Obj *resultObj;
 
-	if (Tcl_ObjTypeReverse(interp, objv[1], &resultObj) == TCL_OK) {
+	if (TclObjTypeReverse(interp, objv[1], &resultObj) == TCL_OK) {
 	    Tcl_SetObjResult(interp, resultObj);
 	    return TCL_OK;
 	}
@@ -4477,7 +4477,7 @@ Tcl_LsetObjCmd(
 	finalValuePtr = TclLsetList(interp, listPtr, objv[2], objv[3]);
     } else {
 	if (TclObjTypeHasProc(listPtr, setElementProc)) {
-	    finalValuePtr = Tcl_ObjTypeSetElement(interp, listPtr,
+	    finalValuePtr = TclObjTypeSetElement(interp, listPtr,
 						       objc-3, objv+2, objv[objc-1]);
 	    if (finalValuePtr) {
 		Tcl_IncrRefCount(finalValuePtr);
@@ -4786,7 +4786,7 @@ Tcl_LsortObjCmd(
 
     if (TclObjTypeHasProc(objv[1], getElementsProc)) {
 	sortInfo.resultCode =
-	    Tcl_ObjTypeGetElements(interp, listObj, &length, &listObjPtrs);
+	    TclObjTypeGetElements(interp, listObj, &length, &listObjPtrs);
     } else {
 	sortInfo.resultCode = TclListObjGetElementsM(interp, listObj,
 	    &length, &listObjPtrs);
