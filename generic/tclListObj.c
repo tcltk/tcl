@@ -118,7 +118,7 @@
 /*
  * Prototypes for non-inline static functions defined later in this file:
  */
-static int	MemoryAllocationError(Tcl_Interp *, Tcl_Size size);
+static int	MemoryAllocationError(Tcl_Interp *, size_t size);
 static int	ListLimitExceededError(Tcl_Interp *);
 static ListStore *ListStoreNew(Tcl_Size objc, Tcl_Obj *const objv[], int flags);
 static int	ListRepInit(Tcl_Size objc, Tcl_Obj *const objv[], int flags, ListRep *);
@@ -463,15 +463,15 @@ ObjArrayCopy(
 static int
 MemoryAllocationError(
     Tcl_Interp *interp, /* Interpreter for error message. May be NULL */
-    Tcl_Size size)        /* Size of attempted allocation that failed */
+    size_t size)        /* Size of attempted allocation that failed */
 {
     if (interp != NULL) {
 	Tcl_SetObjResult(
 	    interp,
 	    Tcl_ObjPrintf(
-		"list construction failed: unable to alloc %" TCL_LL_MODIFIER
+		"list construction failed: unable to alloc %" TCL_Z_MODIFIER
 		"u bytes",
-		(Tcl_WideInt)size));
+		size));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
     return TCL_ERROR;
@@ -642,8 +642,11 @@ ListRepValidate(const ListRep *repPtr, const char *file, int lineNum)
 
     /* Separate each condition so line number gives exact reason for failure */
     INVARIANT(storePtr != NULL);
+    INVARIANT(storePtr->numAllocated >= 0);
     INVARIANT(storePtr->numAllocated <= LIST_MAX);
+    INVARIANT(storePtr->firstUsed >= 0);
     INVARIANT(storePtr->firstUsed < storePtr->numAllocated);
+    INVARIANT(storePtr->numUsed >= 0);
     INVARIANT(storePtr->numUsed <= storePtr->numAllocated);
     INVARIANT(storePtr->firstUsed <= (storePtr->numAllocated - storePtr->numUsed));
 
@@ -754,9 +757,9 @@ ListStoreNew(
     }
     if (storePtr == NULL) {
 	if (flags & LISTREP_PANIC_ON_FAIL) {
-	    Tcl_Panic("list creation failed: unable to alloc %" TCL_Z_MODIFIER
-		      "u bytes",
-		      LIST_SIZE(objc));
+	    Tcl_Panic("list creation failed: unable to alloc %" TCL_SIZE_MODIFIER
+		    "d bytes",
+		    LIST_SIZE(objc));
 	}
 	return NULL;
     }
@@ -833,7 +836,7 @@ ListStoreReallocate (ListStore *storePtr, Tcl_Size needed)
     }
     return storePtr;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1083,7 +1086,7 @@ Tcl_NewListObj(
 
     TclNewObj(listObj);
 
-    if (objc + 1 <= 1) {
+    if (objc <= 0) {
 	return listObj;
     }
 
@@ -1139,7 +1142,7 @@ Tcl_DbNewListObj(
 
     TclDbNewObj(listObj, file, line);
 
-    if (objc + 1 <= 1) {
+    if (objc <= 0) {
 	return listObj;
     }
 
@@ -1301,7 +1304,7 @@ Tcl_SetListObj(
      * not be called with objc == 0!
      */
 
-    if (objc + 1 > 1) {
+    if (objc > 0) {
 	ListRep listRep;
 	/* TODO - perhaps ask for extra space? */
 	ListRepInit(objc, objv, LISTREP_PANIC_ON_FAIL, &listRep);
@@ -1904,7 +1907,6 @@ Tcl_ListObjIndex(
 {
     Tcl_Obj **elemObjs;
     Tcl_Size numElems;
-    int hasAbstractList = TclObjTypeHasProc(listObj,indexProc) != 0;
 
     /* Empty string => empty list. Avoid unnecessary shimmering */
     if (listObj->bytes == &tclEmptyString) {
@@ -1912,6 +1914,7 @@ Tcl_ListObjIndex(
 	return TCL_OK;
     }
 
+    int hasAbstractList = TclObjTypeHasProc(listObj,indexProc) != 0;
     if (hasAbstractList) {
 	return TclObjTypeIndex(interp, listObj, index, objPtrPtr);
     }
@@ -1920,7 +1923,7 @@ Tcl_ListObjIndex(
 	!= TCL_OK) {
 	return TCL_ERROR;
     }
-    if (index < 0 || index >= numElems) {
+    if ((index < 0) || (index >= numElems)) {
 	*objPtrPtr = NULL;
     } else {
 	*objPtrPtr = elemObjs[index];
@@ -2748,9 +2751,9 @@ TclLsetList(
      * shimmering; see TIP #22 and #23 for details.
      */
 
-    if (!TclHasInternalRep(indexArgObj, &tclListType) &&
-	TclGetIntForIndexM(NULL, indexArgObj, TCL_SIZE_MAX - 1, &index)
-	== TCL_OK) {
+    if (!TclHasInternalRep(indexArgObj, &tclListType)
+	    && TclGetIntForIndexM(NULL, indexArgObj, TCL_SIZE_MAX - 1, &index)
+		== TCL_OK) {
 
 	if (TclObjTypeHasProc(listObj, setElementProc)) {
 	    indices = &indexArgObj;
@@ -2758,7 +2761,6 @@ TclLsetList(
 		TclObjTypeSetElement(interp, listObj, 1, indices, valueObj);
 	    if (retValueObj) Tcl_IncrRefCount(retValueObj);
 	} else {
-
 	    /* indexArgPtr designates a single index. */
 	    /* T:listrep-1.{2.1,12.1,15.1,19.1},2.{2.3,9.3,10.1,13.1,16.1}, 3.{4,5,6}.3 */
 	    retValueObj = TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
@@ -3139,10 +3141,10 @@ TclListObjSetElement(
     elemCount = ListRepLength(&listRep);
 
     /* Ensure that the index is in bounds. */
-    if (index>=elemCount) {
+    if ((index < 0) || (index >= elemCount)) {
 	if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%" TCL_Z_MODIFIER "u\" out of range", index));
+			"index \"%" TCL_SIZE_MODIFIER "u\" out of range", index));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX",
 		    "OUTOFRANGE", NULL);
 	}
