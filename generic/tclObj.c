@@ -1653,18 +1653,12 @@ int SetDuplicatePureObj(
      *
      * Perhaps in the future this can be remedied and this special treatment
      * removed.
-     *
-     * Similar problem with the integer (0x0A vs 10), double (1e-1 vs 0.1) and
-     * index types ("coord" vs "coords", see bug [a34733451b])
      */
 
 
     if (bytes && (dupPtr->typePtr == NULL
 	|| dupPtr->typePtr->updateStringProc == NULL
 	|| useTypePtr == &tclStringType
-	|| useTypePtr == &tclDoubleType
-	|| useTypePtr == &tclIntType
-	|| useTypePtr == &tclIndexType
 	)
     ) {
 	if (!TclAttemptInitStringRep(dupPtr, bytes, objPtr->length)) {
