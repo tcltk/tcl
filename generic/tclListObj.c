@@ -2532,7 +2532,7 @@ TclLindexList(
 
     /*
      * Make a private copy of the index list argument to keep the internal
-     * representation of th indices array unchanged while it is in use.  This
+     * representation of the indices array unchanged while it is in use.  This
      * is probably unnecessary. It does not appear that any damaging change to
      * the internal representation is possible, and no test has been devised to
      * show any error when this private copy is not made, But it's cheap, and
