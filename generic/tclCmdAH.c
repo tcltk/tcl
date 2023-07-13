@@ -17,7 +17,6 @@
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
-#include "tclArithSeries.h"
 
 /*
  * The state structure used by [foreach]. Note that the actual structure has
@@ -552,11 +551,11 @@ EncodingConvertfromObjCmd(
     /* NOTE: ds must be freed beyond this point even on error */
     switch (result) {
     case TCL_OK:
-        errorLocation = TCL_INDEX_NONE;
-        break;
+	errorLocation = TCL_INDEX_NONE;
+	break;
     case TCL_ERROR:
 	/* Error in parameters. Should not happen. interp will have error */
-        Tcl_DStringFree(&ds);
+	Tcl_DStringFree(&ds);
 	return TCL_ERROR;
     default:
 	/*
@@ -566,10 +565,10 @@ EncodingConvertfromObjCmd(
 	 * what could be decoded and the returned error location.
 	 */
 	if (failVarObj == NULL) {
-            Tcl_DStringFree(&ds);
+	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
-        break;
+	break;
     }
 
     /*
@@ -654,7 +653,7 @@ EncodingConverttoObjCmd(
 	break;
     case TCL_ERROR:
 	/* Error in parameters. Should not happen. interp will have error */
-        Tcl_DStringFree(&ds);
+	Tcl_DStringFree(&ds);
 	return TCL_ERROR;
     default:
 	/*
@@ -664,10 +663,10 @@ EncodingConverttoObjCmd(
 	 * what could be decoded and the returned error location.
 	 */
 	if (failVarObj == NULL) {
-            Tcl_DStringFree(&ds);
+	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
-        break;
+	break;
     }
     /*
      * TCL_OK or a TCL_CONVERT_* error where the caller wants back as much
@@ -1200,10 +1199,10 @@ FileAttrAccessTimeCmd(
 #if defined(_WIN32)
     /* We use a value of 0 to indicate the access time not available */
     if (Tcl_GetAccessTimeFromStat(&buf) == 0) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                             "could not get access time for file \"%s\"",
-                             TclGetString(objv[1])));
-        return TCL_ERROR;
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			     "could not get access time for file \"%s\"",
+			     TclGetString(objv[1])));
+	return TCL_ERROR;
     }
 #endif
 
@@ -1282,10 +1281,10 @@ FileAttrModifyTimeCmd(
 #if defined(_WIN32)
     /* We use a value of 0 to indicate the modification time not available */
     if (Tcl_GetModificationTimeFromStat(&buf) == 0) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                             "could not get modification time for file \"%s\"",
-                             TclGetString(objv[1])));
-        return TCL_ERROR;
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			     "could not get modification time for file \"%s\"",
+			     TclGetString(objv[1])));
+	return TCL_ERROR;
     }
 #endif
     if (objc == 3) {
@@ -2325,34 +2324,34 @@ StoreStatData(
     unsigned short mode;
 
     if (varName == NULL) {
-        TclNewObj(result);
-        Tcl_IncrRefCount(result);
+	TclNewObj(result);
+	Tcl_IncrRefCount(result);
 #define DOBJPUT(key, objValue)                  \
         Tcl_DictObjPut(NULL, result,            \
             Tcl_NewStringObj((key), -1),        \
             (objValue));
-        DOBJPUT("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
-        DOBJPUT("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
-        DOBJPUT("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
-        DOBJPUT("uid",	Tcl_NewWideIntObj((long)statPtr->st_uid));
-        DOBJPUT("gid",	Tcl_NewWideIntObj((long)statPtr->st_gid));
-        DOBJPUT("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
+	DOBJPUT("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
+	DOBJPUT("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
+	DOBJPUT("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
+	DOBJPUT("uid",	Tcl_NewWideIntObj((long)statPtr->st_uid));
+	DOBJPUT("gid",	Tcl_NewWideIntObj((long)statPtr->st_gid));
+	DOBJPUT("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-        DOBJPUT("blocks",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
+	DOBJPUT("blocks",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-        DOBJPUT("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
+	DOBJPUT("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
 #endif
-        DOBJPUT("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
-        DOBJPUT("mtime",	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
-        DOBJPUT("ctime",	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
-        mode = (unsigned short) statPtr->st_mode;
-        DOBJPUT("mode",	Tcl_NewWideIntObj(mode));
-        DOBJPUT("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
+	DOBJPUT("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
+	DOBJPUT("mtime",	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
+	DOBJPUT("ctime",	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
+	mode = (unsigned short) statPtr->st_mode;
+	DOBJPUT("mode",	Tcl_NewWideIntObj(mode));
+	DOBJPUT("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
 #undef DOBJPUT
-        Tcl_SetObjResult(interp, result);
-        Tcl_DecrRefCount(result);
-        return TCL_OK;
+	Tcl_SetObjResult(interp, result);
+	Tcl_DecrRefCount(result);
+	return TCL_OK;
     }
 
     /*
@@ -2788,8 +2787,7 @@ EachloopCmd(
     for (i=0 ; i<numLists ; i++) {
 	/* List */
 	/* Variables */
-	statePtr->vCopyList[i] = TclDuplicatePureObj(
-	    interp, objv[1+i*2], &tclListType.objType);
+	statePtr->vCopyList[i] = Tcl_DuplicateObj(objv[1+i*2]);
 	if (!statePtr->vCopyList[i]) {
 	    result = TCL_ERROR;
 	    goto done;
@@ -2814,19 +2812,18 @@ EachloopCmd(
 	    &statePtr->varcList[i], &statePtr->varvList[i]);
 
 	/* Values */
-	if (TclHasInternalRep(objv[2+i*2],&tclArithSeriesType.objType)) {
-	    /* Special case for Arith Series */
+	if (TclObjTypeHasProc(objv[2+i*2],indexProc)) {
+	    /* Special case for AbstractList */
 	    statePtr->aCopyList[i] = Tcl_DuplicateObj(objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;
 	    }
 	    /* Don't compute values here, wait until the last moment */
-	    statePtr->argcList[i] = ABSTRACTLIST_PROC(statePtr->aCopyList[i], lengthProc)(statePtr->aCopyList[i]);
+	    statePtr->argcList[i] = TclObjTypeLength(statePtr->aCopyList[i]);
 	} else {
-	    /* List values */
 	    statePtr->aCopyList[i] = TclDuplicatePureObj(
-		interp, objv[2+i*2], &tclListType.objType);
+		interp, objv[2+i*2], &tclListType);
 	    if (!statePtr->aCopyList[i]) {
 		result = TCL_ERROR;
 		goto done;
@@ -2964,17 +2961,18 @@ ForeachAssignments(
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
-	int isarithseries = TclHasInternalRep(statePtr->aCopyList[i],&tclArithSeriesType.objType);
+	int isAbstractList =
+		TclObjTypeHasProc(statePtr->aCopyList[i],indexProc) != NULL;
+
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
-		if (isarithseries) {
-		    valuePtr = TclArithSeriesObjIndex(interp, statePtr->aCopyList[i], k);
-		    if (valuePtr == NULL) {
+		if (isAbstractList) {
+		    if (TclObjTypeIndex(interp, statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (setting %s loop variable \"%s\")",
-			(statePtr->resultList != NULL ? "lmap" : "foreach"),
-			TclGetString(statePtr->varvList[i][v])));
+				"\n    (setting %s loop variable \"%s\")",
+				(statePtr->resultList != NULL ? "lmap" : "foreach"),
+				TclGetString(statePtr->varvList[i][v])));
 			return TCL_ERROR;
 		    }
 		} else {

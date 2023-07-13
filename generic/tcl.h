@@ -573,6 +573,26 @@ typedef void *(Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
+/* Abstract List functions */
+typedef	      Tcl_Size	(Tcl_ObjTypeLengthProc)  (struct Tcl_Obj *listPtr);
+typedef		   int	(Tcl_ObjTypeIndexProc)   (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+                                             Tcl_Size index, struct Tcl_Obj** elemObj);
+typedef		   int	(Tcl_ObjTypeSliceProc)   (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+                                             Tcl_Size fromIdx, Tcl_Size toIdx,
+                                             struct Tcl_Obj **newObjPtr);
+typedef		   int	(Tcl_ObjTypeReverseProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					     struct Tcl_Obj **newObjPtr);
+typedef		   int	(Tcl_ObjTypeGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+					     Tcl_Size *objcptr, struct Tcl_Obj ***objvptr);
+typedef	struct Tcl_Obj*	(Tcl_ObjTypeSetElement)  (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+                                             Tcl_Size indexCount,
+                                             struct Tcl_Obj *const indexArray[],
+                                             struct Tcl_Obj *valueObj);
+typedef            int  (Tcl_ObjTypeReplaceProc) (Tcl_Interp *interp, struct Tcl_Obj *listObj,
+                                             Tcl_Size first, Tcl_Size numToDelete,
+                                             Tcl_Size numToInsert,
+                                             struct Tcl_Obj *const insertObjs[]);
+
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_PackageInitProc Tcl_LibraryInitProc
 #   define Tcl_PackageUnloadProc Tcl_LibraryUnloadProc
@@ -601,12 +621,36 @@ typedef struct Tcl_ObjType {
 				/* Called to convert the object's internal rep
 				 * to this type. Frees the internal rep of the
 				 * old type. Returns TCL_ERROR on failure. */
+#if TCL_MAJOR_VERSION > 8
     size_t version;
+
+    /* List emulation functions - ObjType Version 1 */
+    Tcl_ObjTypeLengthProc *lengthProc;	     /* Return the [llength] of the
+					     ** AbstractList */
+    Tcl_ObjTypeIndexProc *indexProc;	     /* Return a value (Tcl_Obj) for
+					     ** [lindex $al $index] */
+    Tcl_ObjTypeSliceProc *sliceProc;	     /* Return an AbstractList for
+					     ** [lrange $al $start $end] */
+    Tcl_ObjTypeReverseProc *reverseProc;     /* Return an AbstractList for
+					     ** [lreverse $al] */
+    Tcl_ObjTypeGetElements *getElementsProc; /* Return an objv[] of all elements in
+					     ** the list */
+    Tcl_ObjTypeSetElement *setElementProc;   /* Replace the element at the indicie
+					     ** with the given valueObj. */
+    Tcl_ObjTypeReplaceProc *replaceProc;     /* Replace subset with subset */
+#endif
 } Tcl_ObjType;
-#define TCL_OBJTYPE_V0 0 /* Pre-Tcl 9. Set to 0 so compiler will auto-init
-			  * when existing code that does not init this
-			  * field is compiled with Tcl9 headers */
-#define TCL_OBJTYPE_CURRENT TCL_OBJTYPE_V0
+
+#if TCL_MAJOR_VERSION > 8
+#   define TCL_OBJTYPE_V0 0, \
+	    0,0,0,0,0,0,0 /* Pre-Tcl 9 */
+#   define TCL_OBJTYPE_V1(a) 1, \
+	    a,0,0,0,0,0,0 /* Tcl 9 Version 1 */
+#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g) 2, \
+	    a,b,c,d,e,f,g /* Tcl 9 - AbstractLists */
+#else
+#   define TCL_OBJTYPE_V0 /* just empty */
+#endif
 
 /*
  * The following structure stores an internal representation (internalrep) for
@@ -659,7 +703,6 @@ typedef struct Tcl_Obj {
     Tcl_ObjInternalRep internalRep;	/* The internal representation: */
 } Tcl_Obj;
 
-
 /*
  *----------------------------------------------------------------------------
  * The following definitions support Tcl's namespace facility. Note: the first
@@ -2392,6 +2435,25 @@ TCLAPI const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
 	Tcl_DbIsShared(objPtr, __FILE__, __LINE__)
+/*
+ * Free the Obj by effectively doing:
+ *
+ *   Tcl_IncrRefCount(objPtr);
+ *   Tcl_DecrRefCount(objPtr);
+ *
+ * This will free the obj if there are no references to the obj.
+ */
+#   define Tcl_BumpObj(objPtr) \
+    TclBumpObj(objPtr, __FILE__, __LINE__)
+
+static inline void TclBumpObj(Tcl_Obj* objPtr, const char* fn, int line)
+{
+    if (objPtr) {
+        if ((objPtr)->refCount == 0) {
+            Tcl_DbDecrRefCount(objPtr, fn, line);
+	}
+    }
+}
 #else
 #   undef Tcl_IncrRefCount
 #   define Tcl_IncrRefCount(objPtr) \
@@ -2411,6 +2473,24 @@ TCLAPI const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   undef Tcl_IsShared
 #   define Tcl_IsShared(objPtr) \
 	((objPtr)->refCount > 1)
+
+/*
+ * Declare that obj will no longer be used or referenced.
+ * This will release the obj if there is no referece count,
+ * otherwise let it be.
+ */
+#   define Tcl_BumpObj(objPtr)     \
+    TclBumpObj(objPtr);
+
+static inline void TclBumpObj(Tcl_Obj* objPtr)
+{
+    if (objPtr) {
+        if ((objPtr)->refCount == 0) {
+            Tcl_DecrRefCount(objPtr);
+	}
+    }
+}
+
 #endif
 
 /*

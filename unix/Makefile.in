@@ -293,10 +293,11 @@ DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
 TCLSH_OBJS = tclAppInit.o
 
 TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
-	tclThreadTest.o tclUnixTest.o
+	tclThreadTest.o tclUnixTest.o tclTestABSList.o
 
 XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
-	tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o
+	tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o \
+	tclTestABSList.o
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclArithSeries.o tclAssembly.o tclAsync.o tclBasic.o tclBinary.o \
@@ -394,8 +395,7 @@ GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclPatch.h \
 	$(GENERIC_DIR)/tclPlatDecls.h \
 	$(GENERIC_DIR)/tclPort.h \
-	$(GENERIC_DIR)/tclRegexp.h \
-	$(GENERIC_DIR)/tclArithSeries.h
+	$(GENERIC_DIR)/tclRegexp.h
 
 GENERIC_SRCS = \
 	$(GENERIC_DIR)/regcomp.c \
@@ -467,6 +467,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclStringObj.c \
 	$(GENERIC_DIR)/tclStrToD.c \
 	$(GENERIC_DIR)/tclTest.c \
+	$(GENERIC_DIR)/tclTestABSList.c \
 	$(GENERIC_DIR)/tclTestObj.c \
 	$(GENERIC_DIR)/tclTestProcBodyObj.c \
 	$(GENERIC_DIR)/tclThread.c \
@@ -1556,6 +1557,9 @@ tclZipfs.o: $(GENERIC_DIR)/tclZipfs.c
 
 tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS) tclUuid.h
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
+
+tclTestABSList.o: $(GENERIC_DIR)/tclTestABSList.c $(MATHHDRS)
+	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTestABSList.c
 
 tclTestObj.o: $(GENERIC_DIR)/tclTestObj.c $(MATHHDRS)
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTestObj.c

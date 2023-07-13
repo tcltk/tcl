@@ -1687,7 +1687,7 @@ Tcl_FSEvalFileEx(
 				   use the utf-8 encoding. */
 {
     Tcl_Size length;
-	int result = TCL_ERROR;
+    int result = TCL_ERROR;
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile;
     Interp *iPtr;

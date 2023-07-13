@@ -152,7 +152,7 @@ If \fIchar\fR is the empty string, there is no special character that marks
 the end of the data.
 
 The default value is the empty string.  The acceptable range is \ex01 -
-\ex7f.  A value outside this range results in an error.
+\ex7F.  A value outside this range results in an error.
 .VS "TCL8.7 TIP656"
 .TP
 \fB\-profile\fR \fIprofile\fR
@@ -245,10 +245,10 @@ files to slow destinations like network sockets.
 .PP
 \fB\-size\fR limits the number of characters copied.
 .PP
-If \fB\-command\fR is gviven, \fBchan copy\fR returns immediately, works in the
+If \fB\-command\fR is given, \fBchan copy\fR returns immediately, works in the
 background, and calls \fIcallback\fR when the copy completes, providing as an
 additional argument the number of characters written to \fIoutputChan\fR.  If
-an error occurres during the background copy, another argument provides message
+an error occurs during the background copy, another argument provides message
 for the error.  \fIinputChan\fR and \fIoutputChan\fR are automatically
 configured for non-blocking mode if needed.  Background copying only works
 correctly if events are being processed, e.g. via \fBvwait\fR or Tk.
