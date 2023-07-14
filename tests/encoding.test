@@ -813,7 +813,7 @@ test encoding-24.16 {Parse valid or invalid utf-8} -constraints testbytestring -
     encoding convertto utf-8 [testbytestring "Z\u4343\x80"]
 } -returnCodes 1 -result {expected byte sequence but character 1 was '䍃' (U+004343)}
 test encoding-24.17 {Parse valid or invalid utf-8} -constraints testbytestring -body {
-    encoding convertto utf-8 [testbytestring "Z\xE0\x80"]
+    encoding convertto -profile tcl8 utf-8 [testbytestring "Z\xE0\x80"]
 } -result "Z\xC3\xA0\xE2\x82\xAC"
 test encoding-24.18 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\xE0\x80xxxxxx"]
@@ -1169,6 +1169,14 @@ test encoding-bug-66ffafd309-1-strict {Bug [66ffafd309] - truncated DBCS} -body 
 test encoding-bug-66ffafd309-1-replace {Bug [66ffafd309] - truncated DBCS} -body {
     encoding convertfrom -profile replace gb12345 x
 } -result \uFFFD
+test encoding-bug-66ffafd309-1-lossless-a {Bug [66ffafd309] - truncated DBCS} -body {
+    # lossless - byte < 128
+    encoding convertfrom -profile lossless gb12345 x
+} -result \uFFFD
+test encoding-bug-66ffafd309-1-lossless-b {Bug [66ffafd309] - truncated DBCS} -body {
+    # lossless - byte > 128
+    encoding convertfrom -profile lossless gb12345 \x82
+} -result \uFFFD
 test encoding-bug-66ffafd309-2-tcl8 {Bug [66ffafd309] - invalid DBCS} -body {
     # Not truncated but invalid
     encoding convertfrom -profile tcl8 jis0208 \x78\x79
@@ -1180,6 +1188,14 @@ test encoding-bug-66ffafd309-2-strict {Bug [66ffafd309] - invalid DBCS} -body {
 test encoding-bug-66ffafd309-2-replace {Bug [66ffafd309] - invalid DBCS} -body {
     # Not truncated but invalid
     encoding convertfrom -profile replace jis0208 \x78\x79
+} -result \uFFFD\uFFFD
+test encoding-bug-66ffafd309-2-lossless-a {Bug [66ffafd309] - invalid DBCS} -body {
+    # Not truncated but invalid. \x78 is invalid prefix
+    encoding convertfrom -profile lossless jis0208 \x78\x79
+} -result \uFFFD\uFFFD
+test encoding-bug-66ffafd309-2-lossless-b {Bug [66ffafd309] - invalid DBCS} -body {
+    # Not truncated but invalid. \x21 is valid prefix but FF is not valid suffix
+    encoding convertfrom -profile lossless jis0208 \x21\xFF
 } -result \uFFFD\uFFFD
 
 # cleanup
