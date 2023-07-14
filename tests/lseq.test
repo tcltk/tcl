@@ -470,7 +470,7 @@ test lseq-3.32 {lsearch nested lists of lseq} arithSeriesShimmer {
 # lsearch -
 #  -- should not shimmer lseq  list
 #  -- should not leak lseq elements
-test lseq-3.32 {lsearch nested lists of lseq} -constraints arithSeriesShimmer -body {
+test lseq-3.33 {lsearch nested lists of lseq} -constraints arithSeriesShimmer -body {
     set srchlist {}
     for {set i 5} {$i < 25} {incr i} {
 	lappend srchlist [lseq $i count 7 by 3]
