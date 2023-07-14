@@ -651,7 +651,7 @@ TclpCreateTempFile(
     const char *contents)	/* String to write into temp file, or NULL. */
 {
     WCHAR name[MAX_PATH];
-    const char *native;
+    const char *native = NULL;
     Tcl_DString dstring;
     HANDLE handle;
 
@@ -679,7 +679,10 @@ TclpCreateTempFile(
 	 * Convert the contents from UTF to native encoding
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, contents, TCL_INDEX_NONE, &dstring);
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
+	   goto error;
+	}
+	native = Tcl_DStringValue(&dstring);
 
 	toCopy = Tcl_DStringLength(&dstring);
 	for (p = native; toCopy > 0; p++, toCopy--) {
@@ -719,7 +722,9 @@ TclpCreateTempFile(
 	Tcl_DStringFree(&dstring);
     }
 
-    Tcl_WinConvertError(GetLastError());
+    if (native != NULL) {
+	Tcl_WinConvertError(GetLastError());
+    }
     CloseHandle(handle);
     DeleteFileW(name);
     return NULL;
