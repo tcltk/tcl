@@ -588,11 +588,12 @@ TclNewArithSeriesObj(
  *
  * Results:
  *
- * 	TCL_OK on success, TCL_ERROR on index out of range.
+ * 	TCL_OK on success.
  *
  * Side Effects:
  *
  * 	On success, the integer pointed by *element is modified.
+ * 	An empty string ("") is assigned if index is out-of-bounds.
  *
  *----------------------------------------------------------------------
  */
