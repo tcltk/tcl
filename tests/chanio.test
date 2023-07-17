@@ -6877,9 +6877,10 @@ test chan-io-52.10 {TclCopyChannel & encodings} -constraints {fcopy} -body {
     # -translation binary is also -encoding binary
     chan configure $out -translation binary
     chan copy $in $out
+    file size $path(utf8-fcopy.txt)
+} -cleanup {
     chan close $in
     chan close $out
-    file size $path(utf8-fcopy.txt)
 } -returnCodes 1 -match glob -result {error writing "*":\
 	invalid or incomplete multibyte or wide character}
 test chan-io-52.11 {TclCopyChannel & encodings} -setup {
