@@ -505,6 +505,15 @@ test ledit-5.2 {compiled lreplace: Bug 47ac84309b} {
     }} {a b c}
 } {a b A c}
 
+test ledit-bug-a366c6efee {Bug [a366c6efee]} -body {
+    apply {{} {
+        set l { }
+        string length [ledit l 1 1]; # Force string generation
+        set result foo
+        append result " " bar
+    }}
+} -result "foo bar"
+
 # Testing for compiled behaviour. Far too many variations to check with
 # spelt-out tests. Note that this *just* checks whether the compiled version
 # and the interpreted version are the same, not whether the interpreted

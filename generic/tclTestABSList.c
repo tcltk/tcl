@@ -361,7 +361,6 @@ my_LStringObjSetElem(
 {
     LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
     Tcl_Size index;
-    const char *newvalue;
     int status;
     Tcl_Obj *returnObj;
 
@@ -385,8 +384,17 @@ my_LStringObjSetElem(
 	lstringRepPtr->string = (char*)Tcl_Realloc(lstringRepPtr->string, lstringRepPtr->strlen+1);
     }
 
-    newvalue = Tcl_GetString(valueObj);
-    lstringRepPtr->string[index] = newvalue[0];
+    if (valueObj) {
+	const char newvalue = Tcl_GetString(valueObj)[0];
+	lstringRepPtr->string[index] = newvalue;
+    } else if (index < lstringRepPtr->strlen) {
+	/* Remove the char by sliding the tail of the string down */
+	char *sptr = &lstringRepPtr->string[index];
+	/* This is an overlapping copy, by definition */
+	lstringRepPtr->strlen--;
+	memmove(sptr, (sptr+1), (lstringRepPtr->strlen - index));
+    }
+    // else do nothing
 
     Tcl_InvalidateStringRep(returnObj);
 
@@ -684,6 +692,7 @@ my_NewLStringObj(
 	i++;
     }
     if (i != objc-1) {
+	Tcl_Free((char*)lstringRepPtr);
 	Tcl_WrongNumArgs(interp, 0, objv, "lstring string");
 	return NULL;
     }
