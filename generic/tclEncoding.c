@@ -202,11 +202,11 @@ static struct TclEncodingProfiles {
 #define PROFILE_TCL8(flags_)                                           \
     (ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_TCL8)
 
+#define PROFILE_REPLACE(flags_)                                        \
+    (ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE)
+
 #define PROFILE_STRICT(flags_)                                         \
     (!PROFILE_TCL8(flags_) && !PROFILE_REPLACE(flags_))
-
-#define PROFILE_REPLACE(flags_)                                         \
-    (ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE)
 
 #define UNICODE_REPLACE_CHAR ((Tcl_UniChar)0xFFFD)
 #define SURROGATE(c_)      (((c_) & ~0x7FF) == 0xD800)
@@ -1227,6 +1227,7 @@ Tcl_ExternalToUtfDStringEx(
 		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
 		TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
+	errno = EINVAL;
 	return TCL_ERROR;
     }
 
@@ -1301,6 +1302,9 @@ Tcl_ExternalToUtfDStringEx(
 		    Tcl_SetErrorCode(
 			interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, NULL);
 		}
+	    }
+	    if (result != TCL_OK) {
+		errno = (result == TCL_CONVERT_NOSPACE) ? ENOMEM : EILSEQ;
 	    }
 	    return result;
 	}
@@ -1492,7 +1496,7 @@ Tcl_UtfToExternalDString(
  *	The parameter flags controls the behavior, if any of the bytes in
  *	the source buffer are invalid or cannot be represented in the
  *	target encoding. It should be composed by OR-ing the following:
- *	- *At most one* of TCL_ENCODING_PROFILE{DEFAULT,TCL8,STRICT}
+ *	- *At most one* of TCL_ENCODING_PROFILE_*
  *
  * Results:
  *      The return value is one of
@@ -1553,6 +1557,7 @@ Tcl_UtfToExternalDStringEx(
 		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
 		TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
+	errno = EINVAL;
 	return TCL_ERROR;
     }
 
@@ -1631,6 +1636,9 @@ Tcl_UtfToExternalDStringEx(
 		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
 				     buf, NULL);
 		}
+	    }
+	    if (result != TCL_OK) {
+		errno = (result == TCL_CONVERT_NOSPACE) ? ENOMEM : EILSEQ;
 	    }
 	    return result;
 	}
@@ -3599,7 +3607,7 @@ TableFromUtfProc(
 	    word = 0;
 	} else
 #endif
-	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
+	word = fromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
 	    if (PROFILE_STRICT(flags)) {
