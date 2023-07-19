@@ -308,7 +308,13 @@ TclpMatchInDirectory(
 	 * Now open the directory for reading and iterate over the contents.
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, dirName, TCL_INDEX_NONE, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, dirName, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&dsOrig);
+	    Tcl_DStringFree(&ds);
+	    Tcl_DecrRefCount(fileNamePtr);
+	    return TCL_ERROR;
+	}
+	native = Tcl_DStringValue(&ds);
 
 	if ((TclOSstat(native, &statBuf) != 0)		/* INTL: Native. */
 		|| !S_ISDIR(statBuf.st_mode)) {
@@ -372,8 +378,12 @@ TclpMatchInDirectory(
 	     * and pattern. If so, add the file to the result.
 	     */
 
-	    utfname = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, TCL_INDEX_NONE,
-		    &utfDs);
+	    if (Tcl_ExternalToUtfDStringEx(interp, NULL, entryPtr->d_name, TCL_INDEX_NONE,
+		    0, &utfDs, NULL) != TCL_OK) {
+		matchResult = -1;
+		break;
+	    }
+	    utfname = Tcl_DStringValue(&utfDs);
 	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
 		int typeOk = 1;
 
@@ -599,7 +609,13 @@ TclpGetUserHome(
 {
     struct passwd *pwPtr;
     Tcl_DString ds;
-    const char *native = Tcl_UtfToExternalDString(NULL, name, TCL_INDEX_NONE, &ds);
+    const char *native;
+
+    if (Tcl_UtfToExternalDStringEx(NULL, NULL, name, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return NULL;
+    }
+    native = Tcl_DStringValue(&ds);
 
     pwPtr = TclpGetPwNam(native);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
@@ -607,7 +623,11 @@ TclpGetUserHome(
     if (pwPtr == NULL) {
 	return NULL;
     }
-    return Tcl_ExternalToUtfDString(NULL, pwPtr->pw_dir, TCL_INDEX_NONE, bufferPtr);
+    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, pwPtr->pw_dir, TCL_INDEX_NONE, 0, bufferPtr, NULL) != TCL_OK) {
+	return NULL;
+    } else {
+	return Tcl_DStringValue(bufferPtr);
+    }
 }
 
 /*
@@ -785,7 +805,10 @@ TclpGetCwd(
 	}
 	return NULL;
     }
-    return Tcl_ExternalToUtfDString(NULL, buffer, TCL_INDEX_NONE, bufferPtr);
+    if (Tcl_ExternalToUtfDStringEx(interp, NULL, buffer, TCL_INDEX_NONE, 0, bufferPtr, NULL) != TCL_OK) {
+	return NULL;
+    }
+    return Tcl_DStringValue(bufferPtr);
 }
 
 /*
@@ -816,11 +839,15 @@ TclpReadlink(
 {
 #ifndef DJGPP
     char link[MAXPATHLEN];
-    ssize_t length;
+    Tcl_Size length;
     const char *native;
     Tcl_DString ds;
 
-    native = Tcl_UtfToExternalDString(NULL, path, TCL_INDEX_NONE, &ds);
+    if (Tcl_UtfToExternalDStringEx(NULL, NULL, path, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return NULL;
+    }
+    native = Tcl_DStringValue(&ds);
     length = readlink(native, link, sizeof(link));	/* INTL: Native. */
     Tcl_DStringFree(&ds);
 
@@ -828,11 +855,12 @@ TclpReadlink(
 	return NULL;
     }
 
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, TCL_ENCODING_PROFILE_TCL8, linkPtr, NULL);
-    return Tcl_DStringValue(linkPtr);
-#else
-    return NULL;
+    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, link, length, 0, linkPtr, NULL) == TCL_OK) {
+	return Tcl_DStringValue(linkPtr);
+    }
 #endif /* !DJGPP */
+
+    return NULL;
 }
 
 /*
@@ -962,7 +990,11 @@ TclpObjLink(
 		return NULL;
 	    }
 	    target = Tcl_GetStringFromObj(transPtr, &length);
-	    target = Tcl_UtfToExternalDString(NULL, target, length, &ds);
+	    if (Tcl_UtfToExternalDStringEx(NULL, NULL, target, length, 0, &ds, NULL) != TCL_OK) {
+		Tcl_DStringFree(&ds);
+		return NULL;
+	    }
+	    target = Tcl_DStringValue(&ds);
 	    Tcl_DecrRefCount(transPtr);
 
 	    if (symlink(target, src) != 0) {
@@ -997,7 +1029,9 @@ TclpObjLink(
 	    return NULL;
 	}
 
-	Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+	if (Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, 0, &ds, NULL) != TCL_OK) {
+	    return NULL;
+	}
 	linkPtr = Tcl_DStringToObj(&ds);
 	Tcl_IncrRefCount(linkPtr);
 	return linkPtr;
@@ -1062,7 +1096,7 @@ TclpNativeToNormalized(
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData, TCL_INDEX_NONE, 0, &ds, NULL);
     return Tcl_DStringToObj(&ds);
 }
 
@@ -1116,7 +1150,11 @@ TclNativeCreateNativeRep(
     }
 
     str = Tcl_GetStringFromObj(validPathPtr, &len);
-    Tcl_UtfToExternalDStringEx(NULL, NULL, str, len, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+    if (Tcl_UtfToExternalDStringEx(NULL, NULL, str, len, 0, &ds, NULL) != TCL_OK) {
+	Tcl_DecrRefCount(validPathPtr);
+	Tcl_DStringFree(&ds);
+	return NULL;
+    }
     len = Tcl_DStringLength(&ds) + sizeof(char);
     if (strlen(Tcl_DStringValue(&ds)) < len - sizeof(char)) {
 	/* See bug [3118489]: NUL in filenames */

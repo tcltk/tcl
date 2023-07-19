@@ -2541,7 +2541,11 @@ ZipAddFile(
      * crazy enough to embed NULs in filenames, they deserve what they get!
      */
 
-    zpathExt = Tcl_UtfToExternalDString(ZipFS.utf8, zpathTcl, -1, &zpathDs);
+    if (Tcl_UtfToExternalDStringEx(interp, ZipFS.utf8, zpathTcl, TCL_INDEX_NONE, 0, &zpathDs, NULL) != TCL_OK) {
+	Tcl_DStringFree(&zpathDs);
+	return TCL_ERROR;
+    }
+    zpathExt = Tcl_DStringValue(&zpathDs);
     zpathlen = strlen(zpathExt);
     if (zpathlen + ZIP_CENTRAL_HEADER_LEN > bufsize) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3210,7 +3214,11 @@ ZipFSMkZipOrImg(
 	}
 	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 
-	name = Tcl_UtfToExternalDString(ZipFS.utf8, z->name, TCL_INDEX_NONE, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, ZipFS.utf8, z->name, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    ret = TCL_ERROR;
+	    goto done;
+	}
+	name = Tcl_DStringValue(&ds);
 	len = Tcl_DStringLength(&ds);
 	SerializeCentralDirectoryEntry(start, end, (unsigned char *) buf,
 		z, len);
