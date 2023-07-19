@@ -859,7 +859,7 @@ TclpReadlink(
 	return Tcl_DStringValue(linkPtr);
     }
 #endif /* !DJGPP */
-    
+
     return NULL;
 }
 

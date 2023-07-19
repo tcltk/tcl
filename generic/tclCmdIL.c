@@ -2635,7 +2635,7 @@ Tcl_LpopObjCmd(
     Tcl_Size listLen;
     int copied = 0, result;
     Tcl_Obj *elemPtr, *stored;
-    Tcl_Obj *listPtr, **elemPtrs;
+    Tcl_Obj *listPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "listvar ?index?");
@@ -2647,7 +2647,7 @@ Tcl_LpopObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjGetElementsM(interp, listPtr, &listLen, &elemPtrs);
+    result = TclListObjLengthM(interp, listPtr, &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2666,7 +2666,12 @@ Tcl_LpopObjCmd(
 		"OUTOFRANGE", NULL);
 	    return TCL_ERROR;
 	}
-	elemPtr = elemPtrs[listLen - 1];
+
+	result = Tcl_ListObjIndex(interp, listPtr, (listLen-1),	&elemPtr);
+	if (result != TCL_OK) {
+	    return result;
+	}
+
 	Tcl_IncrRefCount(elemPtr);
     } else {
 	elemPtr = TclLindexFlat(interp, listPtr, objc-2, objv+2);
@@ -2699,7 +2704,13 @@ Tcl_LpopObjCmd(
 	    return result;
 	}
     } else {
-	Tcl_Obj *newListPtr = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL);
+	Tcl_Obj *newListPtr;
+	Tcl_ObjTypeSetElement *proc = TclObjTypeHasProc(listPtr, setElementProc);
+	if (proc) {
+	    newListPtr = proc(interp, listPtr, objc-2, objv+2, NULL);
+	} else {
+	    newListPtr = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL);
+	}
 	if (newListPtr == NULL) {
 	    if (copied) {
 		Tcl_DecrRefCount(listPtr);
@@ -3946,6 +3957,7 @@ Tcl_LsearchObjCmd(
 		 */
 
 		if (returnSubindices && (sortInfo.indexc != 0)) {
+		    Tcl_BumpObj(itemPtr);
 		    itemPtr = SelectObjFromSublist(listv[i+groupOffset],
 			    &sortInfo);
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
@@ -3953,6 +3965,7 @@ Tcl_LsearchObjCmd(
 		    Tcl_ListObjReplace(interp, listPtr, LIST_MAX, 0,
 			    groupSize, &listv[i]);
 		} else {
+		    Tcl_BumpObj(itemPtr);
 		    itemPtr = listv[i];
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		}
@@ -4023,6 +4036,9 @@ Tcl_LsearchObjCmd(
      */
 
   done:
+    /* potential lingering abstract list element */
+    Tcl_BumpObj(itemPtr);
+
     if (startPtr != NULL) {
 	Tcl_DecrRefCount(startPtr);
     }

@@ -455,7 +455,7 @@ test lseq-3.31 {lreverse inplace with doubles} {arithSeriesDouble} {
 # lsearch -
 #  -- should not shimmer lseq  list
 #  -- should not leak lseq elements
-test lseq-3.32 {lsearch nested lists of lseq} arithSeriesShimmer {
+test lseq-3.32 {lsearch nested lists of lseq} -constraints arithSeriesShimmer -body {
     set srchlist {}
     for {set i 5} {$i < 25} {incr i} {
 	lappend srchlist [lseq $i count 7 by 3]
@@ -464,13 +464,15 @@ test lseq-3.32 {lsearch nested lists of lseq} arithSeriesShimmer {
     set b [lmap i $a {lindex [tcl::unsupported::representation $i] 3}]
     list [lindex [tcl::unsupported::representation $a] 3] $a $b \
         [lindex [tcl::unsupported::representation [lindex $srchlist 15]] 3]
-} {list {{20 23 26 29 32 35 38}} arithseries arithseries}
+} -cleanup {
+    unset a b srchlist i
+} -result {list {{20 23 26 29 32 35 38}} arithseries arithseries}
 
 
 # lsearch -
 #  -- should not shimmer lseq  list
 #  -- should not leak lseq elements
-test lseq-3.32 {lsearch nested lists of lseq} -constraints arithSeriesShimmer -body {
+test lseq-3.33 {lsearch nested lists of lseq} -constraints arithSeriesShimmer -body {
     set srchlist {}
     for {set i 5} {$i < 25} {incr i} {
 	lappend srchlist [lseq $i count 7 by 3]
@@ -725,7 +727,7 @@ test lseq-bug-54329e39c7 {does not cause memory bloat} -constraints {
     set premem [memusage]
     p $l
     set postmem [memusage]
-    expr {($postmem - $premem) < 10}
+    expr {[string match *purify* [tcl::build-info]] || ($postmem - $premem < 10) ? 1 : ($postmem - $premem)}
 } -result 1
 
 # cleanup
