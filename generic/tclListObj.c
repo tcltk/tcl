@@ -3448,8 +3448,8 @@ UpdateStringOfList(
      * Mark the list as being canonical; although it will now have a string
      * rep, it is one we derived through proper "canonical" quoting and so
      * it's known to be free from nasties relating to [concat] and [eval].
-     * However, we only do this if 
-     * 
+     * However, we only do this if
+     *
      * (a) the store is not shared as a shared store may be referenced by
      * multiple lists with different string reps. (see [a366c6efee]), AND
      *
