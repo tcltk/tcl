@@ -205,10 +205,10 @@ static struct TclEncodingProfiles {
 #define PROFILE_TCL8(flags_)                                           \
     (ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_TCL8)
 
-#define PROFILE_REPLACE(flags_)                                           \
+#define PROFILE_REPLACE(flags_)                                        \
     (ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE)
 
-#define PROFILE_LOSSLESS(flags_)                                           \
+#define PROFILE_LOSSLESS(flags_)                                       \
     (ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_LOSSLESS)
 
 #define PROFILE_STRICT(flags_)                                         \
@@ -1348,11 +1348,11 @@ Tcl_ExternalToUtfDStringEx(
 		/* Caller wants error message on failure */
 		if (result != TCL_OK && interp != NULL) {
 		    char buf[TCL_INTEGER_SPACE];
-		    snprintf(buf, sizeof(buf), "%" TCL_Z_MODIFIER "u", nBytesProcessed);
+		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "u", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf("unexpected byte sequence starting at index %"
-				      TCL_Z_MODIFIER "u: '\\x%02X'",
+				      TCL_SIZE_MODIFIER "u: '\\x%02X'",
 				      nBytesProcessed,
 				      UCHAR(srcStart[nBytesProcessed])));
 		    Tcl_SetErrorCode(
@@ -1681,11 +1681,11 @@ Tcl_UtfToExternalDStringEx(
 		    int ucs4;
 		    char buf[TCL_INTEGER_SPACE];
 		    TclUtfToUCS4(&srcStart[nBytesProcessed], &ucs4);
-		    snprintf(buf, sizeof(buf), "%" TCL_Z_MODIFIER "u", nBytesProcessed);
+		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "u", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf(
-			    "unexpected character at index %" TCL_Z_MODIFIER
+			    "unexpected character at index %" TCL_SIZE_MODIFIER
 			    "u: 'U+%06X'",
 			    pos,
 			    ucs4));
@@ -4188,7 +4188,7 @@ EscapeToUtfProc(
 		if (PROFILE_STRICT(flags)) {
 		    result = TCL_CONVERT_SYNTAX;
 		} else {
-                    Tcl_Size skip = longest > left ? left : longest;
+		    unsigned skip = longest > left ? left : longest;
 		    /* Unknown escape sequence */
 		    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 		    src += skip;
