@@ -1437,7 +1437,7 @@ GetOwnerAttribute(
     } else {
 	Tcl_DString ds;
 
-	Tcl_ExternalToUtfDStringEx(NULL, NULL, pwPtr->pw_name, TCL_INDEX_NONE, 0, &ds, NULL);
+	(void)Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, TCL_INDEX_NONE, &ds);
 	*attributePtrPtr = Tcl_DStringToObj(&ds);
     }
     return TCL_OK;

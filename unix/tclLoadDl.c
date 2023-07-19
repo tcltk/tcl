@@ -183,7 +183,7 @@ FindSymbol(
      * the underscore.
      */
 
-    if (Tcl_UtfToExternalDStringEx(NULL, NULL, symbol, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+    if (Tcl_UtfToExternalDStringEx(interp, NULL, symbol, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
 	Tcl_DStringFree(&ds);
 	return NULL;
     }
