@@ -2295,18 +2295,19 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
 #	Might define the following vars:
 #		_ISOC99_SOURCE
 #		_LARGEFILE64_SOURCE
+#		_FILE_OFFSET_BITS
 #
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_TCL_EARLY_FLAG],[
     AC_CACHE_VAL([tcl_cv_flag_]translit($1,[A-Z],[a-z]),
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[$2]], [[$3]])],
-	    [tcl_cv_flag_]translit($1,[A-Z],[a-z])=no,[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[[#define ]$1[ 1
+	    [tcl_cv_flag_]translit($1,[A-Z],[a-z])=no,[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[[#define ]$1[ ]m4_default([$4],[1])[
 ]$2]], [[$3]])],
 	[tcl_cv_flag_]translit($1,[A-Z],[a-z])=yes,
 	[tcl_cv_flag_]translit($1,[A-Z],[a-z])=no)]))
     if test ["x${tcl_cv_flag_]translit($1,[A-Z],[a-z])[}" = "xyes"] ; then
-	AC_DEFINE($1, 1, [Add the ]$1[ flag when building])
+	AC_DEFINE($1, m4_default([$4],[1]), [Add the ]$1[ flag when building])
 	tcl_flags="$tcl_flags $1"
     fi
 ])
@@ -2318,6 +2319,8 @@ AC_DEFUN([SC_TCL_EARLY_FLAGS],[
 	[char *p = (char *)strtoll; char *q = (char *)strtoull;])
     SC_TCL_EARLY_FLAG(_LARGEFILE64_SOURCE,[#include <sys/stat.h>],
 	[struct stat64 buf; int i = stat64("/", &buf);])
+    SC_TCL_EARLY_FLAG(_FILE_OFFSET_BITS,[#include <sys/stat.h>],
+	[switch (0) { case 0: case (sizeof(off_t)==sizeof(long long)): ; }],64)
     if test "x${tcl_flags}" = "x" ; then
 	AC_MSG_RESULT([none])
     else
@@ -2340,6 +2343,7 @@ AC_DEFUN([SC_TCL_EARLY_FLAGS],[
 #		HAVE_STRUCT_DIRENT64, HAVE_DIR64
 #		HAVE_STRUCT_STAT64
 #		HAVE_TYPE_OFF64_T
+#		_TIME_BITS
 #
 #--------------------------------------------------------------------
 
@@ -2359,6 +2363,25 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
     else
 	AC_MSG_RESULT([no])
 	# Now check for auxiliary declarations
+	AC_CACHE_CHECK([for 64-bit time_t], tcl_cv_time_t_64,[
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]],
+		[[switch (0) {case 0: case (sizeof(time_t)==sizeof(long long)): ;}]])],
+		[tcl_cv_time_t_64=yes],[tcl_cv_time_t_64=no])])
+	if test "x${tcl_cv_time_t_64}" = "xno" ; then
+	    # Note that _TIME_BITS=64 requires _FILE_OFFSET_BITS=64
+	    # which SC_TCL_EARLY_FLAGS has defined if necessary.
+	    AC_CACHE_CHECK([if _TIME_BITS=64 enables 64-bit time_t], tcl_cv__time_bits,[
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _TIME_BITS 64
+#include <sys/types.h>]],
+		    [[switch (0) {case 0: case (sizeof(time_t)==sizeof(long long)): ;}]])],
+		    [tcl_cv__time_bits=yes],[tcl_cv__time_bits=no])])
+	    if test "x${tcl_cv__time_bits}" = "xyes" ; then
+		AC_DEFINE(_TIME_BITS, 64, [_TIME_BITS=64 enables 64-bit time_t.])
+	    else
+		AC_MSG_ERROR([no 64-bit time_t available])
+	    fi
+	fi
+
 	AC_CACHE_CHECK([for struct dirent64], tcl_cv_struct_dirent64,[
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <dirent.h>]], [[struct dirent64 p;]])],
