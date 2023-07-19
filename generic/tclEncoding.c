@@ -3961,9 +3961,10 @@ EscapeToUtfProc(
 	    if ((checked == dataPtr->numSubTables + 2)
 		    || (flags & TCL_ENCODING_END)) {
 		if (!PROFILE_STRICT(flags)) {
+		    unsigned skip = longest > left ? left : longest;
 		    /* Unknown escape sequence */
 		    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-		    src += longest;
+		    src += skip;
 		    continue;
 		}
 		result = TCL_CONVERT_SYNTAX;
