@@ -7706,8 +7706,6 @@ printf "%s\n" "$tcl_cv__time_bits" >&6; }
 
 printf "%s\n" "#define _TIME_BITS 64" >>confdefs.h
 
-	    else
-		as_fn_error $? "no 64-bit time_t available" "$LINENO" 5
 	    fi
 	fi
 

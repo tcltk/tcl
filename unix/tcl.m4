@@ -2377,8 +2377,6 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 		    [tcl_cv__time_bits=yes],[tcl_cv__time_bits=no])])
 	    if test "x${tcl_cv__time_bits}" = "xyes" ; then
 		AC_DEFINE(_TIME_BITS, 64, [_TIME_BITS=64 enables 64-bit time_t.])
-	    else
-		AC_MSG_ERROR([no 64-bit time_t available])
 	    fi
 	fi
 
