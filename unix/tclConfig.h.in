@@ -471,6 +471,9 @@
 /* Are Darwin SUSv3 extensions available? */
 #undef _DARWIN_C_SOURCE
 
+/* Add the _FILE_OFFSET_BITS flag when building */
+#undef _FILE_OFFSET_BITS
+
 /* Add the _ISOC99_SOURCE flag when building */
 #undef _ISOC99_SOURCE
 
@@ -488,6 +491,9 @@
 
 /* Do we want the thread-safe OS API? */
 #undef _THREAD_SAFE
+
+/* _TIME_BITS=64 enables 64-bit time_t. */
+#undef _TIME_BITS
 
 /* Do we want to use the XOPEN network library? */
 #undef _XOPEN_SOURCE
