@@ -189,7 +189,7 @@ TclpDlopen(
 	Tcl_DStringFree(&ds);
 	return TCL_ERROR;
     }
-    nativeFileName = Tcl_DStringValue();
+    nativeFileName = Tcl_DStringValue(&ds);
 
 #if TCL_DYLD_USE_DLFCN
     /*
@@ -347,7 +347,7 @@ FindSymbol(
 
     if (Tcl_UtfToExternalDStringEx(interp, NULL, symbol, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
 	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
+	return NULL;
     }
     native = Tcl_DStringValue(&ds);
     if (dyldLoadHandle->dlHandle) {

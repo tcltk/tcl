@@ -283,7 +283,12 @@ Tcl_CdObjCmd(
     if (Tcl_FSConvertToPathType(interp, dir) != TCL_OK) {
 	result = TCL_ERROR;
     } else {
-	result = Tcl_FSChdir(dir);
+	Tcl_DString ds;
+	result = Tcl_UtfToExternalDStringEx(NULL, NULL, TclGetString(dir), -1, 0, &ds, NULL);
+	Tcl_DStringFree(&ds);
+	if (result == TCL_OK) {
+	    result = Tcl_FSChdir(dir);
+	}
 	if (result != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't change working directory to \"%s\": %s",
