@@ -869,7 +869,7 @@ TclpGetPid(
 
     Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->dwProcessId == PTR2INT(pid)) {
+	if (infoPtr->dwProcessId == PTR2UINT(pid)) {
 	    Tcl_MutexUnlock(&pipeMutex);
 	    return infoPtr->dwProcessId;
 	}
@@ -2565,7 +2565,7 @@ Tcl_WaitPid(
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
-	 if (infoPtr->dwProcessId == PTR2INT(pid)) {
+	 if (infoPtr->dwProcessId == PTR2UINT(pid)) {
 	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}
