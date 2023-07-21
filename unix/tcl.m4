@@ -2294,8 +2294,8 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
 #
 #	Might define the following vars:
 #		_ISOC99_SOURCE
-#		_LARGEFILE64_SOURCE
 #		_FILE_OFFSET_BITS
+#		_LARGEFILE64_SOURCE
 #
 #--------------------------------------------------------------------
 
@@ -2317,10 +2317,10 @@ AC_DEFUN([SC_TCL_EARLY_FLAGS],[
     tcl_flags=""
     SC_TCL_EARLY_FLAG(_ISOC99_SOURCE,[#include <stdlib.h>],
 	[char *p = (char *)strtoll; char *q = (char *)strtoull;])
-    SC_TCL_EARLY_FLAG(_LARGEFILE64_SOURCE,[#include <sys/stat.h>],
-	[struct stat64 buf; int i = stat64("/", &buf);])
     SC_TCL_EARLY_FLAG(_FILE_OFFSET_BITS,[#include <sys/stat.h>],
 	[switch (0) { case 0: case (sizeof(off_t)==sizeof(long long)): ; }],64)
+    SC_TCL_EARLY_FLAG(_LARGEFILE64_SOURCE,[#include <sys/stat.h>],
+	[struct stat64 buf; int i = stat64("/", &buf);])
     if test "x${tcl_flags}" = "x" ; then
 	AC_MSG_RESULT([none])
     else

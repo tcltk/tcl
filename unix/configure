@@ -7492,56 +7492,6 @@ printf "%s\n" "#define _ISOC99_SOURCE 1" >>confdefs.h
     fi
 
 
-    if test ${tcl_cv_flag__largefile64_source+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/stat.h>
-int
-main (void)
-{
-struct stat64 buf; int i = stat64("/", &buf);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  tcl_cv_flag__largefile64_source=no
-else $as_nop
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#define _LARGEFILE64_SOURCE 1
-#include <sys/stat.h>
-int
-main (void)
-{
-struct stat64 buf; int i = stat64("/", &buf);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  tcl_cv_flag__largefile64_source=yes
-else $as_nop
-  tcl_cv_flag__largefile64_source=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-    if test "x${tcl_cv_flag__largefile64_source}" = "xyes" ; then
-
-printf "%s\n" "#define _LARGEFILE64_SOURCE 1" >>confdefs.h
-
-	tcl_flags="$tcl_flags _LARGEFILE64_SOURCE"
-    fi
-
-
     if test ${tcl_cv_flag__file_offset_bits+y}
 then :
   printf %s "(cached) " >&6
@@ -7589,6 +7539,56 @@ fi
 printf "%s\n" "#define _FILE_OFFSET_BITS 64" >>confdefs.h
 
 	tcl_flags="$tcl_flags _FILE_OFFSET_BITS"
+    fi
+
+
+    if test ${tcl_cv_flag__largefile64_source+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/stat.h>
+int
+main (void)
+{
+struct stat64 buf; int i = stat64("/", &buf);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv_flag__largefile64_source=no
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#define _LARGEFILE64_SOURCE 1
+#include <sys/stat.h>
+int
+main (void)
+{
+struct stat64 buf; int i = stat64("/", &buf);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv_flag__largefile64_source=yes
+else $as_nop
+  tcl_cv_flag__largefile64_source=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+    if test "x${tcl_cv_flag__largefile64_source}" = "xyes" ; then
+
+printf "%s\n" "#define _LARGEFILE64_SOURCE 1" >>confdefs.h
+
+	tcl_flags="$tcl_flags _LARGEFILE64_SOURCE"
     fi
 
     if test "x${tcl_flags}" = "x" ; then
