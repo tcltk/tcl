@@ -41,13 +41,15 @@ test abstractlist-1.1 {error cases} -body {
 } -returnCodes 1 \
     -result {wrong # args: should be "lstring string"}
 
-test abstractlist-2.0 {no shimmer llength} {
+test abstractlist-2.0 {no shimmer llength} -body {
     set l [lstring $str]
     set l-isa [testobj objtype $l]
     set len [llength $l]
     set l-isa2 [testobj objtype $l]
     list $l ${l-isa} ${len} ${l-isa2}
-} {{M y { } n a m e { } i s { } I n i g o { } M o n t o y a . { } Y o u { } k i l l e d { } m y { } f a t h e r . { } P r e p a r e { } t o { } d i e !} lstring 63 lstring}
+} -cleanup {
+unset l
+} -result {{M y { } n a m e { } i s { } I n i g o { } M o n t o y a . { } Y o u { } k i l l e d { } m y { } f a t h e r . { } P r e p a r e { } t o { } d i e !} lstring 63 lstring}
 
 test abstractlist-2.1 {no shimmer lindex} {
     set l [lstring $str]
@@ -501,14 +503,15 @@ test abstractlist-$not-4.11e {error case lset multiple indicies} \
     -result {Multiple indicies not supported by lstring.}
 
 # lrepeat
-test abstractlist-$not-4.12 {shimmer lrepeat} {
+test abstractlist-$not-4.12 {shimmer lrepeat} -body {
     set l [lstring {*}$options Inconceivable]
     set l-isa [testobj objtype $l]
     set m [lrepeat 3 $l]
     set m-isa [testobj objtype $m]
     set n [lindex $m 1]
     list $l ${l-isa} $m ${m-isa} [testobj objtype $n] [value-cmp l n]
-} {{I n c o n c e i v a b l e} lstring {{I n c o n c e i v a b l e} {I n c o n c e i v a b l e} {I n c o n c e i v a b l e}} list lstring 0}
+} -cleanup {
+} -result {{I n c o n c e i v a b l e} lstring {{I n c o n c e i v a b l e} {I n c o n c e i v a b l e} {I n c o n c e i v a b l e}} list lstring 0}
 
 # Disable constraint
 testConstraint [format "%sShimmer" [string totitle $not]] 1

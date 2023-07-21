@@ -3470,16 +3470,21 @@ UpdateStringOfList(
      * Mark the list as being canonical; although it will now have a string
      * rep, it is one we derived through proper "canonical" quoting and so
      * it's known to be free from nasties relating to [concat] and [eval].
-     * However, we only do this if this is not a spanned list. Marking the
-     * storage canonical for a spanned list make ALL lists using the storage
-     * canonical which is not right. (Consider a list generated from a
+     * However, we only do this if
+     *
+     * (a) the store is not shared as a shared store may be referenced by
+     * multiple lists with different string reps. (see [a366c6efee]), AND
+     *
+     * (b) list does not have a span. Consider a list generated from a
      * string and then this function called for a spanned list generated
-     * from it). On the other hand, a spanned list is always canonical
+     * from the original list. We cannot mark the list store as canonical as
+     * that would also make the originating list canonical, which it may not
+     * be. On the other hand, the spanned list itself is always canonical
      * (never generated from a string) so it does not have to be explicitly
      * marked as such. The ListObjIsCanonical macro takes this into account.
      * See the comments there.
      */
-    if (listRep.spanPtr == NULL) {
+    if (listRep.storePtr->refCount < 2 && listRep.spanPtr == NULL) {
 	LIST_ASSERT(listRep.storePtr->firstUsed == 0);/* Invariant */
 	listRep.storePtr->flags |= LISTSTORE_CANONICAL;
     }
