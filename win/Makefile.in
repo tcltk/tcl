@@ -614,10 +614,14 @@ ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
 
 # use pre-built libtommath.dll
 ${TOMMATH_DLL_FILE}: ${TCL_STUB_LIB_FILE}
-	@if test "@TOMMATH_LIBS@set" != "${TOMMATH_DIR_NATIVE}/win32/tommath.libset" ; then \
-		$(COPY) $(TOMMATH_DIR)/win64/${TOMMATH_DLL_FILE} ${TOMMATH_DLL_FILE}; \
-	else \
+	@if test "@TOMMATH_LIBS@set" = "${TOMMATH_DIR_NATIVE}/win64-arm/tommath.libset" ; then \
+		$(COPY) $(TOMMATH_DIR)/win64-arm/${TOMMATH_DLL_FILE} ${TOMMATH_DLL_FILE}; \
+	elif test "@TOMMATH_LIBS@set" = "${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.aset" ; then \
+		$(COPY) $(TOMMATH_DIR)/win64-arm/${TOMMATH_DLL_FILE} ${TOMMATH_DLL_FILE}; \
+	elif test "@TOMMATH_LIBS@set" = "${TOMMATH_DIR_NATIVE}/win32/tommath.libset" ; then \
 		$(COPY) $(TOMMATH_DIR)/win32/${TOMMATH_DLL_FILE} ${TOMMATH_DLL_FILE}; \
+	else \
+		$(COPY) $(TOMMATH_DIR)/win64/${TOMMATH_DLL_FILE} ${TOMMATH_DLL_FILE}; \
 	fi;
 
 # Add the object extension to the implicit rules. By default .obj is not
