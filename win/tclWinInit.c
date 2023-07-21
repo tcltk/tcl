@@ -579,9 +579,6 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-#  define tenviron2utfdstr(string, len, dsPtr) \
-		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr))
-
 Tcl_Size
 TclpFindVariable(
     const char *name,		/* Name of desired environment variable

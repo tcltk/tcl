@@ -19,20 +19,20 @@ TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
 #if defined(_WIN32)
 #  define tenviron _wenviron
-#  define tenviron2utfdstr(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
-		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr)))
-#  define utf2tenvirondstr(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
-		(const WCHAR *)Tcl_UtfToChar16DString((string), (len), (dsPtr)))
+#  define tenviron2utfdstr(str, dsPtr) (Tcl_DStringInit(dsPtr), \
+		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(str), -1, (dsPtr)))
+#  define utf2tenvirondstr(str, dsPtr) (Tcl_DStringInit(dsPtr), \
+		(const WCHAR *)Tcl_UtfToChar16DString((str), -1, (dsPtr)))
 #  define techar WCHAR
 #  ifdef USE_PUTENV
 #    define putenv(env) _wputenv((const wchar_t *)env)
 #  endif
 #else
 #  define tenviron environ
-#  define tenviron2utfdstr(tenvstr, len, dstr) \
-		Tcl_ExternalToUtfDString(NULL, tenvstr, len, dstr)
-#  define utf2tenvirondstr(str, len, dstr) \
-		Tcl_UtfToExternalDString(NULL, str, len, dstr)
+#  define tenviron2utfdstr(str, dsPtr) \
+		Tcl_ExternalToUtfDString(NULL, str, -1, dsPtr)
+#  define utf2tenvirondstr(str, dsPtr) \
+		Tcl_UtfToExternalDString(NULL, str, -1, dsPtr)
 #  define techar char
 #endif
 
@@ -42,7 +42,7 @@ size_t TclEnvEpoch = 0;	/* Epoch of the tcl environment
 				 * (if changed with tcl-env). */
 
 static struct {
-    int cacheSize;		/* Number of env strings in cache. */
+    Tcl_Size cacheSize;		/* Number of env strings in cache. */
     char **cache;		/* Array containing all of the environment
 				 * strings that Tcl has allocated. */
 #ifndef USE_PUTENV
@@ -50,7 +50,7 @@ static struct {
 				 * need to track this in case another
 				 * subsystem swaps around the environ array
 				 * like we do. */
-    int ourEnvironSize;		/* Non-zero means that the environ array was
+    Tcl_Size ourEnvironSize;	/* Non-zero means that the environ array was
 				 * malloced and has this many total entries
 				 * allocated to it (not all may be in use at
 				 * once). Zero means that the environment
@@ -64,7 +64,7 @@ static struct {
  * Declarations for local functions defined in this file:
  */
 
-static char *		EnvTraceProc(ClientData clientData, Tcl_Interp *interp,
+static char *		EnvTraceProc(void *clientData, Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
 static void		ReplaceString(const char *oldStr, char *newStr);
 MODULE_SCOPE void	TclSetEnv(const char *name, const char *value);
@@ -159,7 +159,11 @@ TclSetupEnv(
 	    const char *p1;
 	    char *p2;
 
-	    p1 = tenviron2utfdstr(tenviron[i], -1, &envString);
+	    p1 = tenviron2utfdstr(tenviron[i], &envString);
+	    if (p1 == NULL) {
+		/* Ignore what cannot be decoded (should not happen) */
+		continue;
+	    }
 	    p2 = (char *)strchr(p1, '=');
 	    if (p2 == NULL) {
 		/*
@@ -253,8 +257,8 @@ TclSetEnv(
     const char *value)		/* New value for variable (UTF-8). */
 {
     Tcl_DString envString;
-    unsigned nameLength, valueLength;
-    int index, length;
+    Tcl_Size nameLength, valueLength;
+    Tcl_Size index, length;
     char *p, *oldValue;
     const techar *p2;
 
@@ -267,7 +271,7 @@ TclSetEnv(
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
 
-    if (index == -1) {
+    if (index == TCL_INDEX_NONE) {
 #ifndef USE_PUTENV
 	/*
 	 * We need to handle the case where the environment may be changed
@@ -301,9 +305,9 @@ TclSetEnv(
 	 * interpreters.
 	 */
 
-	oldEnv = tenviron2utfdstr(tenviron[index], -1, &envString);
-	if (strcmp(value, oldEnv + (length + 1)) == 0) {
-	    Tcl_DStringFree(&envString);
+	oldEnv = tenviron2utfdstr(tenviron[index], &envString);
+	if (oldEnv == NULL || strcmp(value, oldEnv + (length + 1)) == 0) {
+	    Tcl_DStringFree(&envString); /* OK even if oldEnv is NULL */
 	    Tcl_MutexUnlock(&envMutex);
 	    return;
 	}
@@ -324,7 +328,13 @@ TclSetEnv(
     memcpy(p, name, nameLength);
     p[nameLength] = '=';
     memcpy(p+nameLength+1, value, valueLength+1);
-    p2 = utf2tenvirondstr(p, -1, &envString);
+    p2 = utf2tenvirondstr(p, &envString);
+    if (p2 == NULL) {
+	/* No way to signal error from here :-( but should not happen */
+	ckfree(p);
+	Tcl_MutexUnlock(&envMutex);
+	return;
+    }
 
     /*
      * Copy the native string to heap memory.
@@ -351,7 +361,7 @@ TclSetEnv(
      * string in the cache.
      */
 
-    if ((index != -1) && (tenviron[index] == (techar *)p)) {
+    if ((index != TCL_INDEX_NONE) && (tenviron[index] == (techar *)p)) {
 	ReplaceString(oldValue, p);
 #ifdef HAVE_PUTENV_THAT_COPIES
     } else {
@@ -415,7 +425,7 @@ Tcl_PutEnv(
      * name and value parts, and call TclSetEnv to do all of the real work.
      */
 
-    name = Tcl_ExternalToUtfDString(NULL, assignment, -1, &nameString);
+    name = Tcl_ExternalToUtfDString(NULL, assignment, TCL_INDEX_NONE, &nameString);
     value = (char *)strchr(name, '=');
 
     if ((value != NULL) && (value != name)) {
@@ -462,8 +472,7 @@ TclUnsetEnv(
     const char *name)		/* Name of variable to remove (UTF-8). */
 {
     char *oldValue;
-    int length;
-    int index;
+    Tcl_Size length, index;
 #ifdef USE_PUTENV_FOR_UNSET
     Tcl_DString envString;
     char *string;
@@ -512,7 +521,11 @@ TclUnsetEnv(
     string[length] = '\0';
 #endif /* _WIN32 */
 
-    utf2tenvirondstr(string, -1, &envString);
+    if (utf2tenvirondstr(string, &envString) == NULL) {
+	/* Should not happen except memory alloc fail. */
+	Tcl_MutexUnlock(&envMutex);
+	return;
+    }
     string = (char *)ckrealloc(string, Tcl_DStringLength(&envString) + tNTL);
     memcpy(string, Tcl_DStringValue(&envString),
 	    Tcl_DStringLength(&envString) + tNTL);
@@ -578,7 +591,7 @@ TclGetEnv(
 				 * value of the environment variable is
 				 * stored. */
 {
-    int length, index;
+    Tcl_Size length, index;
     const char *result;
 
     Tcl_MutexLock(&envMutex);
@@ -587,17 +600,19 @@ TclGetEnv(
     if (index != -1) {
 	Tcl_DString envStr;
 
-	result = tenviron2utfdstr(tenviron[index], -1, &envStr);
-	result += length;
-	if (*result == '=') {
-	    result++;
-	    Tcl_DStringInit(valuePtr);
-	    Tcl_DStringAppend(valuePtr, result, -1);
-	    result = Tcl_DStringValue(valuePtr);
-	} else {
-	    result = NULL;
+	result = tenviron2utfdstr(tenviron[index], &envStr);
+	if (result) {
+	    result += length;
+	    if (*result == '=') {
+		result++;
+		Tcl_DStringInit(valuePtr);
+		Tcl_DStringAppend(valuePtr, result, -1);
+		result = Tcl_DStringValue(valuePtr);
+	    } else {
+		result = NULL;
+	    }
+	    Tcl_DStringFree(&envStr);
 	}
-	Tcl_DStringFree(&envStr);
     }
     Tcl_MutexUnlock(&envMutex);
     return result;
@@ -626,7 +641,7 @@ TclGetEnv(
 
 static char *
 EnvTraceProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter whose "env" variable is being
 				 * modified. */
     const char *name1,		/* Better be "env". */
@@ -713,7 +728,7 @@ ReplaceString(
     const char *oldStr,		/* Old environment string. */
     char *newStr)		/* New environment string. */
 {
-    int i;
+    Tcl_Size i;
 
     /*
      * Check to see if the old value was allocated by Tcl. If so, it needs to
@@ -792,7 +807,7 @@ TclFinalizeEnvironment(void)
 
     if (env.cache) {
 #ifdef PURIFY
-	int i;
+	Tcl_Size i;
 	for (i = 0; i < env.cacheSize; i++) {
 	    ckfree(env.cache[i]);
 	}
