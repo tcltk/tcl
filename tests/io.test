@@ -7525,10 +7525,11 @@ test io-52.10 {TclCopyChannel & encodings} -constraints fcopy -body {
     fconfigure $out -translation binary
 
     fcopy $in $out
-    close $in
-    close $out
 
     file size $path(utf8-fcopy.txt)
+} -cleanup {
+    close $in
+    close $out
 } -returnCodes 1 -match glob -result {error writing "*":\
     invalid or incomplete multibyte or wide character}
 test io-52.11 {TclCopyChannel & encodings} -setup {

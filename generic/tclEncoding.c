@@ -1235,6 +1235,7 @@ Tcl_ExternalToUtfDStringEx(
 		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
 		TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
+	errno = EINVAL;
 	return TCL_ERROR;
     }
 
@@ -1299,16 +1300,19 @@ Tcl_ExternalToUtfDStringEx(
 		/* Caller wants error message on failure */
 		if (result != TCL_OK && interp != NULL) {
 		    char buf[TCL_INTEGER_SPACE];
-		    snprintf(buf, sizeof(buf), "%" TCL_Z_MODIFIER "u", nBytesProcessed);
+		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "u", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf("unexpected byte sequence starting at index %"
-				      TCL_Z_MODIFIER "u: '\\x%02X'",
+				      TCL_SIZE_MODIFIER "u: '\\x%02X'",
 				      nBytesProcessed,
 				      UCHAR(srcStart[nBytesProcessed])));
 		    Tcl_SetErrorCode(
 			interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, NULL);
 		}
+	    }
+	    if (result != TCL_OK) {
+		errno = (result == TCL_CONVERT_NOSPACE) ? ENOMEM : EILSEQ;
 	    }
 	    return result;
 	}
@@ -1500,7 +1504,7 @@ Tcl_UtfToExternalDString(
  *	The parameter flags controls the behavior, if any of the bytes in
  *	the source buffer are invalid or cannot be represented in the
  *	target encoding. It should be composed by OR-ing the following:
- *	- *At most one* of TCL_ENCODING_PROFILE{DEFAULT,TCL8,STRICT}
+ *	- *At most one* of TCL_ENCODING_PROFILE_*
  *	- TCL_ENCODING_STOPONERROR: Backward compatibility. Sets the profile
  *	  to TCL_ENCODING_PROFILE_STRICT overriding any specified profile flags
  *
@@ -1563,6 +1567,7 @@ Tcl_UtfToExternalDStringEx(
 		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
 		TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
+	errno = EINVAL;
 	return TCL_ERROR;
     }
 
@@ -1630,17 +1635,20 @@ Tcl_UtfToExternalDStringEx(
 		    int ucs4;
 		    char buf[TCL_INTEGER_SPACE];
 		    TclUtfToUCS4(&srcStart[nBytesProcessed], &ucs4);
-		    snprintf(buf, sizeof(buf), "%" TCL_Z_MODIFIER "u", nBytesProcessed);
+		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "u", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf(
-			    "unexpected character at index %" TCL_Z_MODIFIER
+			    "unexpected character at index %" TCL_SIZE_MODIFIER
 			    "u: 'U+%06X'",
 			    pos,
 			    ucs4));
 		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
 				     buf, NULL);
 		}
+	    }
+	    if (result != TCL_OK) {
+		errno = (result == TCL_CONVERT_NOSPACE) ? ENOMEM : EILSEQ;
 	    }
 	    return result;
 	}
@@ -4058,9 +4066,10 @@ EscapeToUtfProc(
 	    if ((checked == dataPtr->numSubTables + 2)
 		    || (flags & TCL_ENCODING_END)) {
 		if (!PROFILE_STRICT(flags)) {
+		    unsigned skip = longest > left ? left : longest;
 		    /* Unknown escape sequence */
 		    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-		    src += longest;
+		    src += skip;
 		    continue;
 		}
 		result = TCL_CONVERT_SYNTAX;

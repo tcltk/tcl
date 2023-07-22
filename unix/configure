@@ -6860,6 +6860,53 @@ $as_echo "#define _ISOC99_SOURCE 1" >>confdefs.h
     fi
 
 
+    if ${tcl_cv_flag__file_offset_bits+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/stat.h>
+int
+main ()
+{
+switch (0) { case 0: case (sizeof(off_t)==sizeof(long long)): ; }
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  tcl_cv_flag__file_offset_bits=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#define _FILE_OFFSET_BITS 64
+#include <sys/stat.h>
+int
+main ()
+{
+switch (0) { case 0: case (sizeof(off_t)==sizeof(long long)): ; }
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  tcl_cv_flag__file_offset_bits=yes
+else
+  tcl_cv_flag__file_offset_bits=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+    if test "x${tcl_cv_flag__file_offset_bits}" = "xyes" ; then
+
+$as_echo "#define _FILE_OFFSET_BITS 64" >>confdefs.h
+
+	tcl_flags="$tcl_flags _FILE_OFFSET_BITS"
+    fi
+
+
     if ${tcl_cv_flag__largefile64_source+:} false; then :
   $as_echo_n "(cached) " >&6
 else
@@ -6955,6 +7002,69 @@ $as_echo "yes" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 	# Now check for auxiliary declarations
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for 64-bit time_t" >&5
+$as_echo_n "checking for 64-bit time_t... " >&6; }
+if ${tcl_cv_time_t_64+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/types.h>
+int
+main ()
+{
+switch (0) {case 0: case (sizeof(time_t)==sizeof(long long)): ;}
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  tcl_cv_time_t_64=yes
+else
+  tcl_cv_time_t_64=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_time_t_64" >&5
+$as_echo "$tcl_cv_time_t_64" >&6; }
+	if test "x${tcl_cv_time_t_64}" = "xno" ; then
+	    # Note that _TIME_BITS=64 requires _FILE_OFFSET_BITS=64
+	    # which SC_TCL_EARLY_FLAGS has defined if necessary.
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if _TIME_BITS=64 enables 64-bit time_t" >&5
+$as_echo_n "checking if _TIME_BITS=64 enables 64-bit time_t... " >&6; }
+if ${tcl_cv__time_bits+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#define _TIME_BITS 64
+#include <sys/types.h>
+int
+main ()
+{
+switch (0) {case 0: case (sizeof(time_t)==sizeof(long long)): ;}
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  tcl_cv__time_bits=yes
+else
+  tcl_cv__time_bits=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_cv__time_bits" >&5
+$as_echo "$tcl_cv__time_bits" >&6; }
+	    if test "x${tcl_cv__time_bits}" = "xyes" ; then
+
+$as_echo "#define _TIME_BITS 64" >>confdefs.h
+
+	    fi
+	fi
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for struct dirent64" >&5
 $as_echo_n "checking for struct dirent64... " >&6; }
 if ${tcl_cv_struct_dirent64+:} false; then :

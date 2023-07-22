@@ -2672,8 +2672,8 @@ typedef struct ListRep {
  * (1) No string representation exists which means it will obviously have
  * to be generated from the list representation when needed
  * (2) The ListStore flags is marked canonical. This is done at the time
- * the string representation is generated from the list IF the list
- * representation does not have a span (see comments in UpdateStringOfList).
+ * the string representation is generated from the list under certain
+ * conditions (see comments in UpdateStringOfList).
  * (3) The list representation does not have a span component. This is
  * because list Tcl_Obj's with spans are always created from existing lists
  * and never from strings (see SetListFromAny) and thus their string
@@ -3056,6 +3056,7 @@ MODULE_SCOPE const Tcl_ObjType tclBooleanType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
+MODULE_SCOPE const Tcl_ObjType tclIndexType;
 MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
