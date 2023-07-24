@@ -119,6 +119,22 @@ Volume-relative path to a file \fBfoo\fR in the root directory of the current
 volume.  This is not a valid UNC path, so the assumption is that the
 extra backslashes are superfluous.
 .RE
+.SH "TILDE SUBSTITUTION"
+.PP
+Unlike earlier versions of Tcl, Tcl 9 does not do implicit tilde substitution
+on file paths with the exception noted below. The commands \fBfile home\fR and
+\fBfile tildeexpand\fR may be used to explicitly accomplish the same.
+.PP
+The exception to the above is initialization of the \fBauto_path\fR variable
+and the Tcl module search paths as documented in the manpages for
+\fBtclvars\fR and \fBtm\fR. When any path in an environment variable used to
+initialize these starts with a tilde, it will be interpreted as if the first
+element is replaced with the location of the home directory for the given
+user. If the tilde is followed immediately by a separator, the
+\fB$HOME\fR environment variable is substituted. Otherwise the characters
+between the tilde and the next separator are taken as a user name, which is
+used to retrieve the user's home directory for substitution. This works on
+POSIX, MacOS X and Windows platforms.
 .SH "PORTABILITY ISSUES"
 .PP
 Not all file systems are case sensitive, so scripts should avoid code

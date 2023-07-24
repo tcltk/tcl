@@ -295,6 +295,10 @@ environment variables:
 \fB$::env(TCL8.1_TM_PATH)\fR  \fB$::env(TCL8_1_TM_PATH)\fR
 \fB$::env(TCL8.0_TM_PATH)\fR  \fB$::env(TCL8_0_TM_PATH)\fR
 .CE
+.PP
+Paths initialized from the environment variables undergo tilde
+substitution (see \fBfilename\fR). Any path whose tilde substitution
+fails because the user is unknown will be omitted from search paths.
 .SH "SEE ALSO"
 package(n), Tcl Improvement Proposal #189
 .QW "\fITcl Modules\fR"
