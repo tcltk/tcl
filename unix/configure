@@ -7329,6 +7329,8 @@ printf "%s\n" "#define HAVE_STDBOOL_H 1" >>confdefs.h
 fi
 
 
+    #AC_CHECK_FUNCS([posix_spawnp])
+
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
     # would use TCL_DL_LIBS instead of TCL_LIBS.
@@ -10077,9 +10079,6 @@ then :
 fi
 
     fi
-
-printf "%s\n" "#define USE_VFORK 1" >>confdefs.h
-
 
 printf "%s\n" "#define TCL_DEFAULT_ENCODING \"utf-8\"" >>confdefs.h
 
