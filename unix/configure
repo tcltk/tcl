@@ -7329,13 +7329,7 @@ printf "%s\n" "#define HAVE_STDBOOL_H 1" >>confdefs.h
 fi
 
 
-    ac_fn_c_check_func "$LINENO" "posix_spawnp" "ac_cv_func_posix_spawnp"
-if test "x$ac_cv_func_posix_spawnp" = xyes
-then :
-  printf "%s\n" "#define HAVE_POSIX_SPAWNP 1" >>confdefs.h
-
-fi
-
+    #AC_CHECK_FUNCS([posix_spawnp])
 
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
