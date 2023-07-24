@@ -13,6 +13,10 @@
 
 #include "tclInt.h"
 
+#ifdef HAVE_POSIX_SPAWNP
+# include <spawn.h>
+#endif
+
 #ifdef USE_VFORK
 #define fork vfork
 #endif
@@ -411,6 +415,9 @@ TclpCreateProcess(
     Tcl_DString *dsArray;
     char **newArgv;
     int pid, i;
+#if defined(HAVE_POSIX_SPAWNP)
+    int childErrno;
+#endif
 
     errPipeIn = NULL;
     errPipeOut = NULL;
@@ -439,7 +446,7 @@ TclpCreateProcess(
 	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
     }
 
-#ifdef USE_VFORK
+#if defined(USE_VFORK) || defined(HAVE_POSIX_SPAWNP)
     /*
      * After vfork(), do not call code in the child that changes global state,
      * because it is using the parent's memory space at that point and writes
@@ -452,14 +459,54 @@ TclpCreateProcess(
 	Tcl_GetStdChannel(TCL_STDIN);
     }
     if (!outputFile) {
-        Tcl_GetStdChannel(TCL_STDOUT);
+	Tcl_GetStdChannel(TCL_STDOUT);
     }
     if (!errorFile) {
-        Tcl_GetStdChannel(TCL_STDERR);
+	Tcl_GetStdChannel(TCL_STDERR);
     }
 #endif
 
+#ifdef HAVE_POSIX_SPAWNP
+    {
+	posix_spawn_file_actions_t actions;
+	posix_spawnattr_t attr;
+
+	posix_spawn_file_actions_init(&actions);
+	posix_spawnattr_init(&attr);
+
+	posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETSIGDEF|
+# ifdef POSIX_SPAWN_USEVFORK
+		POSIX_SPAWN_USEVFORK
+# else
+		0
+# endif
+		);
+
+	posix_spawn_file_actions_adddup2(&actions, GetFd(inputFile), 0);
+	posix_spawn_file_actions_adddup2(&actions, GetFd(outputFile), 1);
+	posix_spawn_file_actions_adddup2(&actions, GetFd(errorFile), 2);
+
+	status = posix_spawnp(&pid, newArgv[0], &actions, &attr, newArgv, environ);
+	childErrno = status;
+
+	posix_spawn_file_actions_destroy(&actions);
+	posix_spawnattr_destroy(&attr);
+
+	/*
+	 * Fork semantics:
+	 *  - pid == 0: child process
+	 *  - pid == -1: error
+	 *  - pid > 0: parent process
+	 *
+	 * Mimic fork semantics to minimize changes below
+	 */
+	if (status != 0) {
+	    pid = -1;
+	}
+    }
+#else
     pid = fork();
+#endif
     if (pid == 0) {
 	size_t len;
 	int joinThisError = errorFile && (errorFile == outputFile);
@@ -509,8 +556,14 @@ TclpCreateProcess(
     TclStackFree(interp, dsArray);
 
     if (pid == -1) {
+#ifdef HAVE_POSIX_SPAWNP
+	errno = childErrno;
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't execute \"%s\": %s", argv[0], Tcl_PosixError(interp)));
+#else
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't fork child process: %s", Tcl_PosixError(interp)));
+#endif
 	goto error;
     }
 
