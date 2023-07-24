@@ -636,13 +636,6 @@ extern char **		environ;
 	    defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050
 #	warning "Weak import of 64-bit CoreFoundation is not supported, will not run on Mac OS X < 10.5."
 #   endif
-/* For now, test exec-17.1 fails (I/O setup after closing stdout) with
- * posix_spawnp(), but the classic implementation (based on fork()+execvp())
- * works well under macOS quite OK.
- */
-#   if defined(HAVE_POSIX_SPAWNP)
-#	undef HAVE_POSIX_SPAWNP
-#   endif /* __x86_64__ */
 #endif /* __APPLE__ */
 
 /*
