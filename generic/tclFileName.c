@@ -2339,8 +2339,8 @@ Tcl_AllocStatBuf(void)
  * Access functions for Tcl_StatBuf --
  *
  *	These functions provide portable read-only access to the portable
- *	fields of the Tcl_StatBuf structure (really a 'struct stat', 'struct
- *	stat64' or something else related). [TIP #316]
+ *	fields of the Tcl_StatBuf structure (really a 'struct stat'
+ *	or something else related). [TIP #316]
  *
  * Results:
  *	The value from the field being retrieved.
