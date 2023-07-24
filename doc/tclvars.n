@@ -30,6 +30,10 @@ the parent directory of \fBtcl_library\fR,
 the directories listed in the \fBtcl_pkgPath\fR variable.
 Additional locations to look for files and package indices should
 normally be added to this variable using \fBlappend\fR.
+Initialization of auto_path from the TCLLIBPATH environment
+variable undergoes tilde substitution (see \fBfilename\fR) on each
+path. Any tilde substitution that fails because the user is unknown
+will be omitted from auto_path.
 .RS
 .PP
 Additional variables relating to package management exist. More
