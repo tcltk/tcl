@@ -640,9 +640,7 @@ extern char **		environ;
  * posix_spawnp(), but the classic implementation (based on fork()+execvp())
  * works well under macOS quite OK.
  */
-#   if defined(HAVE_POSIX_SPAWNP)
-#	undef HAVE_POSIX_SPAWNP
-#   endif /* __x86_64__ */
+#undef HAVE_POSIX_SPAWNP
 #endif /* __APPLE__ */
 
 /*
