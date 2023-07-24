@@ -7329,6 +7329,14 @@ printf "%s\n" "#define HAVE_STDBOOL_H 1" >>confdefs.h
 fi
 
 
+    ac_fn_c_check_func "$LINENO" "posix_spawnp" "ac_cv_func_posix_spawnp"
+if test "x$ac_cv_func_posix_spawnp" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWNP 1" >>confdefs.h
+
+fi
+
+
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
     # would use TCL_DL_LIBS instead of TCL_LIBS.
@@ -7777,41 +7785,6 @@ printf "%s\n" "$tcl_cv_DIR64" >&6; }
 	if test "x${tcl_cv_DIR64}" = "xyes" ; then
 
 printf "%s\n" "#define HAVE_DIR64 1" >>confdefs.h
-
-	fi
-
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for struct stat64" >&5
-printf %s "checking for struct stat64... " >&6; }
-if test ${tcl_cv_struct_stat64+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/stat.h>
-int
-main (void)
-{
-struct stat64 p;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  tcl_cv_struct_stat64=yes
-else $as_nop
-  tcl_cv_struct_stat64=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_struct_stat64" >&5
-printf "%s\n" "$tcl_cv_struct_stat64" >&6; }
-	if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
-
-printf "%s\n" "#define HAVE_STRUCT_STAT64 1" >>confdefs.h
 
 	fi
 
@@ -10194,9 +10167,6 @@ then :
 fi
 
     fi
-
-printf "%s\n" "#define USE_VFORK 1" >>confdefs.h
-
 
 printf "%s\n" "#define TCL_LOAD_FROM_MEMORY 1" >>confdefs.h
 
