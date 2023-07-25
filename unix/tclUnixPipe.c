@@ -15,7 +15,8 @@
 
 #ifdef HAVE_POSIX_SPAWNP
 #   if defined(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2) \
-	    && defined(HAVE_POSIX_SPAWNATTR_SETFLAGS)
+	    && defined(HAVE_POSIX_SPAWNATTR_SETFLAGS) \
+	    && !defined(HAVE_VFORK)
 #	include <unistd.h>
 #	include <spawn.h>
 #   else
