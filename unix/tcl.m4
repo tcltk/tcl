@@ -2067,8 +2067,8 @@ dnl # preprocessing tests use only CPPFLAGS.
 	CFLAGS_NOLTO=""
     fi
 
-    # Check for posix_spawnp() and friends unconditionally
-    AC_CHECK_FUNCS(posix_spawnp posix_spawn_file_actions_adddup2 posix_spawnattr_setflags)
+    # Check for vfork, posix_spawnp() and friends unconditionally
+    AC_CHECK_FUNCS(vfork posix_spawnp posix_spawn_file_actions_adddup2 posix_spawnattr_setflags)
 
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone

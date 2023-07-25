@@ -14,27 +14,17 @@
 #include "tclInt.h"
 
 #ifdef HAVE_POSIX_SPAWNP
-#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2
-#ifdef HAVE_POSIX_SPAWNATTR_SETFLAGS
-#include <unistd.h>
-#include <spawn.h>
-#define USE_POSIX_SPAWN 1
-#endif
-#endif
+#   if defined(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2) \
+	    && defined(HAVE_POSIX_SPAWNATTR_SETFLAGS)
+#	include <unistd.h>
+#	include <spawn.h>
+#   else
+#	undef HAVE_POSIX_SPAWNP
+#   endif
 #endif
 
-#ifdef USE_VFORK
+#ifdef HAVE_VFORK
 #define fork vfork
-#endif
-
-/*
- * For now, test exec-17.1 fails (I/O setup after closing stdout) with
- * posix_spawnp(), but the classic implementation (based on fork()+execvp())
- * works well under macOS.
- */
-
-#ifdef __APPLE__
-#undef USE_POSIX_SPAWN
 #endif
 
 /*
@@ -431,7 +421,7 @@ TclpCreateProcess(
     Tcl_DString *dsArray;
     char **newArgv;
     int pid, i;
-#if defined(USE_POSIX_SPAWN)
+#if defined(HAVE_POSIX_SPAWNP)
     int childErrno;
     static int use_spawn = -1;
 #endif
@@ -463,7 +453,7 @@ TclpCreateProcess(
 	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
     }
 
-#if defined(USE_VFORK) || defined(USE_POSIX_SPAWN)
+#if defined(HAVE_VFORK) || defined(HAVE_POSIX_SPAWNP)
     /*
      * After vfork(), do not call code in the child that changes global state,
      * because it is using the parent's memory space at that point and writes
@@ -483,7 +473,7 @@ TclpCreateProcess(
     }
 #endif
 
-#ifdef USE_POSIX_SPAWN
+#ifdef HAVE_POSIX_SPAWNP
 #ifdef _CS_GNU_LIBC_VERSION
     if (use_spawn < 0) {
 	char conf[32], *p;
@@ -599,7 +589,7 @@ TclpCreateProcess(
     TclStackFree(interp, dsArray);
 
     if (pid == -1) {
-#ifdef USE_POSIX_SPAWN
+#ifdef HAVE_POSIX_SPAWNP
 	errno = childErrno;
 #endif
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(

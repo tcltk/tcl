@@ -8978,11 +8978,12 @@ echo "${ECHO_T}$ac_cv_nolto" >&6
 	CFLAGS_NOLTO=""
     fi
 
-    # Check for posix_spawnp() and friends unconditionally
+    # Check for vfork, posix_spawnp() and friends unconditionally
 
 
 
-for ac_func in posix_spawnp posix_spawn_file_actions_adddup2 posix_spawnattr_setflags
+
+for ac_func in vfork posix_spawnp posix_spawn_file_actions_adddup2 posix_spawnattr_setflags
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
