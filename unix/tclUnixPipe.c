@@ -433,7 +433,7 @@ TclpCreateProcess(
     int pid, i;
 #if defined(USE_POSIX_SPAWN)
     int childErrno;
-    int use_spawn = -1;
+    static int use_spawn = -1;
 #endif
 
     errPipeIn = NULL;
