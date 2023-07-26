@@ -99,7 +99,6 @@ static void uniCodePanic(void) {
 }
 #   define Tcl_GetUnicode (unsigned short *(*)(Tcl_Obj *))(void *)uniCodePanic
 #   define Tcl_GetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, int *))(void *)uniCodePanic
-#   define TclGetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, void *))(void *)uniCodePanic
 #   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const unsigned short *, int))(void *)uniCodePanic
 #   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const unsigned short *, int))(void *)uniCodePanic
 #   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const unsigned short *, int))(void *)uniCodePanic
@@ -137,71 +136,6 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 	return src - 3;
     }
     return Tcl_UtfPrev(src, start);
-}
-
-int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-    void *objcPtr, Tcl_Obj ***objvPtr) {
-    int n, result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
-    if ((result == TCL_OK) && objcPtr) {
-	*(ptrdiff_t *)objcPtr = n;
-    }
-    return result;
-}
-int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-    void *lengthPtr) {
-    int n;
-    int result = Tcl_ListObjLength(interp, listPtr, &n);
-    if ((result == TCL_OK) && lengthPtr) {
-	*(ptrdiff_t *)lengthPtr = n;
-    }
-    return result;
-}
-int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	void *sizePtr) {
-    int n, result = Tcl_DictObjSize(interp, dictPtr, &n);
-    if ((result == TCL_OK) && sizePtr) {
-	*(ptrdiff_t *)sizePtr = n;
-    }
-    return result;
-}
-int TclSplitList(Tcl_Interp *interp, const char *listStr, void *argcPtr,
-	const char ***argvPtr) {
-    int n;
-    int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
-    if ((result == TCL_OK) && argcPtr) {
-	*(ptrdiff_t *)argcPtr = n;
-    }
-    return result;
-}
-void TclSplitPath(const char *path, void *argcPtr, const char ***argvPtr) {
-    int n;
-    Tcl_SplitPath(path, &n, argvPtr);
-    if (argcPtr) {
-	*(ptrdiff_t *)argcPtr = n;
-    }
-}
-Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, void *lenPtr) {
-    int n;
-    Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
-    if (result && lenPtr) {
-	*(ptrdiff_t *)lenPtr = n;
-    }
-    return result;
-}
-int TclParseArgsObjv(Tcl_Interp *interp,
-	const Tcl_ArgvInfo *argTable, void *objcPtr, Tcl_Obj *const *objv,
-	Tcl_Obj ***remObjv) {
-    int n, result;
-    if (*(ptrdiff_t *)objcPtr > INT_MAX) {
-	if (interp) {
-	    Tcl_AppendResult(interp, "Tcl_ParseArgsObjv cannot handle *objcPtr > INT_MAX", NULL);
-	}
-	return TCL_ERROR;
-    }
-    n = *(ptrdiff_t *)objcPtr;
-    result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
-    *(ptrdiff_t *)objcPtr = n;
-    return result;
 }
 
 #define TclBN_mp_add mp_add
@@ -913,7 +847,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetOpenMode, /* 40 */
     TclGetOriginalCommand, /* 41 */
     TclpGetUserHome, /* 42 */
-    TclGetObjInterpProc2, /* 43 */
+    0, /* 43 */
     TclGuessPackageName, /* 44 */
     TclHideUnsafeCommands, /* 45 */
     TclInExit, /* 46 */
@@ -2022,11 +1956,11 @@ const TclStubs tclStubs = {
     Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
-    TclGetBytesFromObj, /* 649 */
-    Tcl_GetBytesFromObj, /* 650 */
-    TclGetStringFromObj, /* 651 */
-    TclGetUnicodeFromObj, /* 652 */
-    TclGetByteArrayFromObj, /* 653 */
+    Tcl_GetBytesFromObj, /* 649 */
+    0, /* 650 */
+    0, /* 651 */
+    0, /* 652 */
+    0, /* 653 */
     Tcl_UtfCharComplete, /* 654 */
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
@@ -2034,13 +1968,13 @@ const TclStubs tclStubs = {
     Tcl_ExternalToUtfDStringEx, /* 658 */
     Tcl_UtfToExternalDStringEx, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
-    TclListObjGetElements, /* 661 */
-    TclListObjLength, /* 662 */
-    TclDictObjSize, /* 663 */
-    TclSplitList, /* 664 */
-    TclSplitPath, /* 665 */
-    TclFSSplitPath, /* 666 */
-    TclParseArgsObjv, /* 667 */
+    0, /* 661 */
+    0, /* 662 */
+    0, /* 663 */
+    0, /* 664 */
+    0, /* 665 */
+    0, /* 666 */
+    0, /* 667 */
     Tcl_UniCharLen, /* 668 */
     TclNumUtfChars, /* 669 */
     TclGetCharLength, /* 670 */
@@ -2049,10 +1983,10 @@ const TclStubs tclStubs = {
     TclGetUniChar, /* 673 */
     Tcl_GetBool, /* 674 */
     Tcl_GetBoolFromObj, /* 675 */
-    Tcl_CreateObjCommand2, /* 676 */
-    Tcl_CreateObjTrace2, /* 677 */
-    Tcl_NRCreateCommand2, /* 678 */
-    Tcl_NRCallObjProc2, /* 679 */
+    0, /* 676 */
+    0, /* 677 */
+    0, /* 678 */
+    0, /* 679 */
     Tcl_GetNumberFromObj, /* 680 */
     Tcl_GetNumber, /* 681 */
     Tcl_RemoveChannelMode, /* 682 */
