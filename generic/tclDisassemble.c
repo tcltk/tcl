@@ -875,7 +875,7 @@ PrintSourceToObj(
     for (;  (*p != '\0') && (i < maxChars);  p+=len) {
 	int ucs4;
 
-	len = TclUtfToUCS4(p, &ucs4);
+	len = Tcl_UtfToUniChar(p, &ucs4);
 	switch (ucs4) {
 	case '"':
 	    Tcl_AppendToObj(appendObj, "\\\"", -1);
@@ -1199,10 +1199,10 @@ DisassembleByteCodeAsDicts(
 	 */
 
 	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptfrom", -1),
-		Tcl_NewWideIntObj(Tcl_NumUtfChars(codePtr->source,
+		Tcl_NewWideIntObj(TclNumUtfChars(codePtr->source,
 			sourceOffset)));
 	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptto", -1),
-		Tcl_NewWideIntObj(Tcl_NumUtfChars(codePtr->source,
+		Tcl_NewWideIntObj(TclNumUtfChars(codePtr->source,
 			sourceOffset + sourceLength - 1)));
 	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("script", -1),
 		Tcl_NewStringObj(codePtr->source+sourceOffset, sourceLength));
