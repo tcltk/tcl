@@ -14,10 +14,17 @@
 #include "tclInt.h"
 
 #ifdef HAVE_POSIX_SPAWNP
-# include <spawn.h>
+#   if defined(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2) \
+	    && defined(HAVE_POSIX_SPAWNATTR_SETFLAGS) \
+	    && !defined(HAVE_VFORK)
+#	include <unistd.h>
+#	include <spawn.h>
+#   else
+#	undef HAVE_POSIX_SPAWNP
+#   endif
 #endif
 
-#ifdef USE_VFORK
+#ifdef HAVE_VFORK
 #define fork vfork
 #endif
 
@@ -417,6 +424,7 @@ TclpCreateProcess(
     int pid, i;
 #if defined(HAVE_POSIX_SPAWNP)
     int childErrno;
+    static int use_spawn = -1;
 #endif
 
     errPipeIn = NULL;
@@ -446,7 +454,7 @@ TclpCreateProcess(
 	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
     }
 
-#if defined(USE_VFORK) || defined(HAVE_POSIX_SPAWNP)
+#if defined(HAVE_VFORK) || defined(HAVE_POSIX_SPAWNP)
     /*
      * After vfork(), do not call code in the child that changes global state,
      * because it is using the parent's memory space at that point and writes
@@ -467,28 +475,52 @@ TclpCreateProcess(
 #endif
 
 #ifdef HAVE_POSIX_SPAWNP
-    {
+#ifdef _CS_GNU_LIBC_VERSION
+    if (use_spawn < 0) {
+	char conf[32], *p;
+	int major = 0, minor = 0;
+
+	use_spawn = 0;
+	memset(conf, 0, sizeof(conf));
+	confstr(_CS_GNU_LIBC_VERSION, conf, sizeof(conf));
+	p = strchr(conf, ' ');	/* skip "glibc" */
+	if (p != NULL) {
+	    ++p;
+	    if (sscanf(p, "%d.%d", &major, &minor) > 1) {
+		if ((major > 2) || ((major == 2) && (minor >= 24))) {
+		    use_spawn = 1;
+		}
+	    }
+	}
+    }
+#endif
+    status = -1;
+    if (use_spawn) {
 	posix_spawn_file_actions_t actions;
 	posix_spawnattr_t attr;
+	sigset_t sigs;
 
 	posix_spawn_file_actions_init(&actions);
 	posix_spawnattr_init(&attr);
+	sigfillset(&sigs);
+	sigdelset(&sigs, SIGKILL);
+	sigdelset(&sigs, SIGSTOP);
 
-	posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETSIGDEF|
-# ifdef POSIX_SPAWN_USEVFORK
-		POSIX_SPAWN_USEVFORK
-# else
-		0
-# endif
-		);
+	posix_spawnattr_setflags(&attr,
+				 POSIX_SPAWN_SETSIGDEF
+#ifdef POSIX_SPAWN_USEVFORK
+				 | POSIX_SPAWN_USEVFORK
+#endif
+				 );
+	posix_spawnattr_setsigdefault(&attr, &sigs);
 
 	posix_spawn_file_actions_adddup2(&actions, GetFd(inputFile), 0);
 	posix_spawn_file_actions_adddup2(&actions, GetFd(outputFile), 1);
 	posix_spawn_file_actions_adddup2(&actions, GetFd(errorFile), 2);
 
-	status = posix_spawnp(&pid, newArgv[0], &actions, &attr, newArgv, environ);
-	childErrno = status;
-
+	status = posix_spawnp(&pid, newArgv[0], &actions, &attr,
+			      newArgv, environ);
+	childErrno = errno;
 	posix_spawn_file_actions_destroy(&actions);
 	posix_spawnattr_destroy(&attr);
 
@@ -498,11 +530,13 @@ TclpCreateProcess(
 	 *  - pid == -1: error
 	 *  - pid > 0: parent process
 	 *
-	 * Mimic fork semantics to minimize changes below
+	 * Mimic fork semantics to minimize changes below,
+	 * but retry with fork() as last ressort.
 	 */
-	if (status != 0) {
-	    pid = -1;
-	}
+    }
+    if (status != 0) {
+	pid = fork();
+	childErrno = errno;
     }
 #else
     pid = fork();
@@ -558,12 +592,9 @@ TclpCreateProcess(
     if (pid == -1) {
 #ifdef HAVE_POSIX_SPAWNP
 	errno = childErrno;
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't execute \"%s\": %s", argv[0], Tcl_PosixError(interp)));
-#else
+#endif
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't fork child process: %s", Tcl_PosixError(interp)));
-#endif
 	goto error;
     }
 
