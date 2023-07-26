@@ -584,7 +584,7 @@ TestplatformChmod(
     /* Add in size required for each ACE entry in the ACL */
     for (i = 0; i < nSids; ++i) {
 	newAclSize +=
-	    offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
+	    TclOffset(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
     }
     newAcl = (PACL)ckalloc(newAclSize);
     if (!InitializeAcl(newAcl, newAclSize, ACL_REVISION)) {
