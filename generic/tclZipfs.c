@@ -262,6 +262,10 @@ typedef struct ZipChannel {
  * ZIP archive files.
  */
 
+Tcl_Encoding TclUtf8Encoding = NULL;		/* The UTF-8 encoding that we prefer to use
+			 * for the strings (especially filenames)
+			 * embedded in a ZIP. Other encodings are used
+			 * dynamically. */
 static struct {
     int initialized;		/* True when initialized */
     int lock;			/* RW lock, see below */
@@ -273,15 +277,11 @@ static struct {
 				 * they are believed to not be UTF-8; only
 				 * written to from Tcl code in a trusted
 				 * interpreter, so not protected by mutex. */
-    Tcl_Encoding utf8;		/* The UTF-8 encoding that we prefer to use
-				 * for the strings (especially filenames)
-				 * embedded in a ZIP. Other encodings are used
-				 * dynamically. */
     int idCount;		/* Counter for channel names */
     Tcl_HashTable fileHash;	/* File name to ZipEntry mapping */
     Tcl_HashTable zipHash;	/* Mount to ZipFile mapping */
 } ZipFS = {
-    0, 0, 0, DEFAULT_WRITE_MAX_SIZE, NULL, NULL, 0,
+    0, 0, 0, DEFAULT_WRITE_MAX_SIZE, NULL, 0,
 	    {0,{0,0,0,0},0,0,0,0,0,0,0,0,0},
 	    {0,{0,0,0,0},0,0,0,0,0,0,0,0,0}
 };
@@ -743,7 +743,7 @@ DecodeZipEntryText(
 
     while (1) {
 	int srcRead, dstWrote;
-	int result = Tcl_ExternalToUtf(NULL, ZipFS.utf8, src, srcLen, flags,
+	int result = Tcl_ExternalToUtf(NULL, TclUtf8Encoding, src, srcLen, flags,
 		&state, dst, dstLen, &srcRead, &dstWrote, NULL);
 	int soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
@@ -1860,7 +1860,7 @@ ZipfsSetup(void)
     ZipFS.fallbackEntryEncoding = (char *)
 	    Tcl_Alloc(strlen(ZIPFS_FALLBACK_ENCODING) + 1);
     strcpy(ZipFS.fallbackEntryEncoding, ZIPFS_FALLBACK_ENCODING);
-    ZipFS.utf8 = Tcl_GetEncoding(NULL, "utf-8");
+    TclUtf8Encoding = Tcl_GetEncoding(NULL, "utf-8");
     ZipFS.initialized = 1;
     Tcl_CreateExitHandler(ZipfsExitHandler, NULL);
 }
@@ -2541,7 +2541,11 @@ ZipAddFile(
      * crazy enough to embed NULs in filenames, they deserve what they get!
      */
 
-    zpathExt = Tcl_UtfToExternalDString(ZipFS.utf8, zpathTcl, -1, &zpathDs);
+    if (Tcl_UtfToExternalDStringEx(interp, TclUtf8Encoding, zpathTcl, TCL_INDEX_NONE, 0, &zpathDs, NULL) != TCL_OK) {
+	Tcl_DStringFree(&zpathDs);
+	return TCL_ERROR;
+    }
+    zpathExt = Tcl_DStringValue(&zpathDs);
     zpathlen = strlen(zpathExt);
     if (zpathlen + ZIP_CENTRAL_HEADER_LEN > bufsize) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3210,7 +3214,11 @@ ZipFSMkZipOrImg(
 	}
 	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 
-	name = Tcl_UtfToExternalDString(ZipFS.utf8, z->name, TCL_INDEX_NONE, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, TclUtf8Encoding, z->name, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    ret = TCL_ERROR;
+	    goto done;
+	}
+	name = Tcl_DStringValue(&ds);
 	len = Tcl_DStringLength(&ds);
 	SerializeCentralDirectoryEntry(start, end, (unsigned char *) buf,
 		z, len);
