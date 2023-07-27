@@ -21,6 +21,16 @@ testConstraint knownBug 0
 testConstraint has64BitLengths [expr {$tcl_platform(pointerSize) == 8}]
 testConstraint has32BitLengths [expr {$tcl_platform(pointerSize) == 4}]
 
+proc memusage {} {
+    set fd [open /proc/[pid]/statm]
+    set line [gets $fd]
+    if {[llength $line] != 7} {
+        error "Unexpected /proc/pid/statm format"
+    }
+    return [lindex $line 5]
+}
+testConstraint hasMemUsage [expr {![catch {memusage}]}]
+
 # Arg errors
 test lseq-1.1 {error cases} -body {
     lseq
@@ -445,7 +455,7 @@ test lseq-3.31 {lreverse inplace with doubles} {arithSeriesDouble} {
 # lsearch -
 #  -- should not shimmer lseq  list
 #  -- should not leak lseq elements
-test lseq-3.32 {lsearch nested lists of lseq} arithSeriesShimmer {
+test lseq-3.32 {lsearch nested lists of lseq} -constraints arithSeriesShimmer -body {
     set srchlist {}
     for {set i 5} {$i < 25} {incr i} {
 	lappend srchlist [lseq $i count 7 by 3]
@@ -454,13 +464,15 @@ test lseq-3.32 {lsearch nested lists of lseq} arithSeriesShimmer {
     set b [lmap i $a {lindex [tcl::unsupported::representation $i] 3}]
     list [lindex [tcl::unsupported::representation $a] 3] $a $b \
         [lindex [tcl::unsupported::representation [lindex $srchlist 15]] 3]
-} {list {{20 23 26 29 32 35 38}} arithseries arithseries}
+} -cleanup {
+    unset a b srchlist i
+} -result {list {{20 23 26 29 32 35 38}} arithseries arithseries}
 
 
 # lsearch -
 #  -- should not shimmer lseq  list
 #  -- should not leak lseq elements
-test lseq-3.32 {lsearch nested lists of lseq} -constraints arithSeriesShimmer -body {
+test lseq-3.33 {lsearch nested lists of lseq} -constraints arithSeriesShimmer -body {
     set srchlist {}
     for {set i 5} {$i < 25} {incr i} {
 	lappend srchlist [lseq $i count 7 by 3]
@@ -706,6 +718,17 @@ test lseq-convertToList {does not result in a memory error} -body {
 	} [namespace current]]]
 	list [catch {set var1 [lindex [lreplace [lseq 1 2] 1 1 hello] 0]} cres] $cres
 } -cleanup {unset var1 cres} -result {1 {can't set "var1": this is an error}}
+
+test lseq-bug-54329e39c7 {does not cause memory bloat} -constraints {
+    hasMemUsage
+} -body {
+    set l [lseq 1000000]
+    proc p l {foreach x $l {}}
+    set premem [memusage]
+    p $l
+    set postmem [memusage]
+    expr {[string match *purify* [tcl::build-info]] || ($postmem - $premem < 10) ? 1 : ($postmem - $premem)}
+} -result 1
 
 # cleanup
 ::tcltest::cleanupTests

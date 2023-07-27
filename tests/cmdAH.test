@@ -1710,6 +1710,8 @@ test cmdAH-24.14.1 {
 test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -setup {
     set filename [makeFile "" foo.text]
 } -body {
+    # This test may fail if your system does not have a 64-bit time_t.
+    # That is to be expected and is not a problem with Tcl.
     list [file atime $filename 3155760000] [file atime $filename]
 } -cleanup {
     removeFile $filename
@@ -1717,6 +1719,8 @@ test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -setu
 test cmdAH-24.20.2 {Tcl_FileObjCmd: mtime 64-bit time_t, bug [4718b41c56]} -setup {
     set filename [makeFile "" foo.text]
 } -body {
+    # This test may fail if your system does not have a 64-bit time_t.
+    # That is to be expected and is not a problem with Tcl.
     list [file mtime $filename 3155760000] [file mtime $filename]
 } -cleanup {
     file delete -force $filename

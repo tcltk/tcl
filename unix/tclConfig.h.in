@@ -181,6 +181,15 @@
 /* Define to 1 if you have the `OSSpinLockLock' function. */
 #undef HAVE_OSSPINLOCKLOCK
 
+/* Define to 1 if you have the `posix_spawnattr_setflags' function. */
+#undef HAVE_POSIX_SPAWNATTR_SETFLAGS
+
+/* Define to 1 if you have the `posix_spawnp' function. */
+#undef HAVE_POSIX_SPAWNP
+
+/* Define to 1 if you have the `posix_spawn_file_actions_adddup2' function. */
+#undef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2
+
 /* Should we use pselect()? */
 #undef HAVE_PSELECT
 
@@ -228,9 +237,6 @@
 
 /* Define to 1 if the system has the type `struct sockaddr_storage'. */
 #undef HAVE_STRUCT_SOCKADDR_STORAGE
-
-/* Is 'struct stat64' in <sys/stat.h>? */
-#undef HAVE_STRUCT_STAT64
 
 /* Define to 1 if `st_blksize' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
@@ -294,6 +300,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the `vfork' function. */
+#undef HAVE_VFORK
 
 /* Define to 1 if you have the `waitpid' function. */
 #undef HAVE_WAITPID
@@ -450,9 +459,6 @@
 /* Should we use FIONBIO? */
 #undef USE_FIONBIO
 
-/* Should we use vfork() instead of fork()? */
-#undef USE_VFORK
-
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
 #if defined AC_APPLE_UNIVERSAL_BUILD
@@ -471,6 +477,9 @@
 /* Are Darwin SUSv3 extensions available? */
 #undef _DARWIN_C_SOURCE
 
+/* Add the _FILE_OFFSET_BITS flag when building */
+#undef _FILE_OFFSET_BITS
+
 /* Add the _ISOC99_SOURCE flag when building */
 #undef _ISOC99_SOURCE
 
@@ -488,6 +497,9 @@
 
 /* Do we want the thread-safe OS API? */
 #undef _THREAD_SAFE
+
+/* _TIME_BITS=64 enables 64-bit time_t. */
+#undef _TIME_BITS
 
 /* Do we want to use the XOPEN network library? */
 #undef _XOPEN_SOURCE

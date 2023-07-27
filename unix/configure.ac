@@ -185,6 +185,8 @@ if test x"${libtommath_ok}" = x -o x"${libtommath_ok}" != xno; then
     libtommath_ok=no])])
 fi
 AS_IF([test $libtommath_ok = yes], [
+  AC_SUBST(TCL_PC_REQUIRES_PRIVATE, ['libtommath >= 1.2.0,'])
+  AC_SUBST(TCL_PC_CFLAGS, ['-DTCL_WITH_EXTERNAL_TOMMATH'])
   AC_DEFINE(TCL_WITH_EXTERNAL_TOMMATH, 1, [Tcl with external libtommath])
 ], [
   AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
@@ -540,7 +542,6 @@ if test "`uname -s`" = "Darwin" ; then
 	AC_CHECK_HEADERS(libkern/OSAtomic.h)
 	AC_CHECK_FUNCS(OSSpinLockLock)
     fi
-    AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
     AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1,
 	[Can this platform load code from memory?])
     AC_DEFINE(TCL_WIDE_CLICKS, 1,

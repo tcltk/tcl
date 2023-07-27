@@ -737,6 +737,8 @@ RANLIB
 TOMMATH_INCLUDE
 TOMMATH_SRCS
 TOMMATH_OBJS
+TCL_PC_CFLAGS
+TCL_PC_REQUIRES_PRIVATE
 ZLIB_INCLUDE
 ZLIB_SRCS
 ZLIB_OBJS
@@ -5139,6 +5141,10 @@ fi
 if test $libtommath_ok = yes
 then :
 
+  TCL_PC_REQUIRES_PRIVATE='libtommath >= 1.2.0,'
+
+  TCL_PC_CFLAGS='-DTCL_WITH_EXTERNAL_TOMMATH'
+
 
 printf "%s\n" "#define TCL_WITH_EXTERNAL_TOMMATH 1" >>confdefs.h
 
@@ -7323,6 +7329,33 @@ printf "%s\n" "#define HAVE_STDBOOL_H 1" >>confdefs.h
 fi
 
 
+    # Check for vfork, posix_spawnp() and friends unconditionally
+    ac_fn_c_check_func "$LINENO" "vfork" "ac_cv_func_vfork"
+if test "x$ac_cv_func_vfork" = xyes
+then :
+  printf "%s\n" "#define HAVE_VFORK 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawnp" "ac_cv_func_posix_spawnp"
+if test "x$ac_cv_func_posix_spawnp" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWNP 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawn_file_actions_adddup2" "ac_cv_func_posix_spawn_file_actions_adddup2"
+if test "x$ac_cv_func_posix_spawn_file_actions_adddup2" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawnattr_setflags" "ac_cv_func_posix_spawnattr_setflags"
+if test "x$ac_cv_func_posix_spawnattr_setflags" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWNATTR_SETFLAGS 1" >>confdefs.h
+
+fi
+
+
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
     # would use TCL_DL_LIBS instead of TCL_LIBS.
@@ -7486,6 +7519,56 @@ printf "%s\n" "#define _ISOC99_SOURCE 1" >>confdefs.h
     fi
 
 
+    if test ${tcl_cv_flag__file_offset_bits+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/stat.h>
+int
+main (void)
+{
+switch (0) { case 0: case (sizeof(off_t)==sizeof(long long)): ; }
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv_flag__file_offset_bits=no
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#define _FILE_OFFSET_BITS 64
+#include <sys/stat.h>
+int
+main (void)
+{
+switch (0) { case 0: case (sizeof(off_t)==sizeof(long long)): ; }
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv_flag__file_offset_bits=yes
+else $as_nop
+  tcl_cv_flag__file_offset_bits=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+    if test "x${tcl_cv_flag__file_offset_bits}" = "xyes" ; then
+
+printf "%s\n" "#define _FILE_OFFSET_BITS 64" >>confdefs.h
+
+	tcl_flags="$tcl_flags _FILE_OFFSET_BITS"
+    fi
+
+
     if test ${tcl_cv_flag__largefile64_source+y}
 then :
   printf %s "(cached) " >&6
@@ -7586,6 +7669,73 @@ printf "%s\n" "yes" >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 	# Now check for auxiliary declarations
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for 64-bit time_t" >&5
+printf %s "checking for 64-bit time_t... " >&6; }
+if test ${tcl_cv_time_t_64+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/types.h>
+int
+main (void)
+{
+switch (0) {case 0: case (sizeof(time_t)==sizeof(long long)): ;}
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv_time_t_64=yes
+else $as_nop
+  tcl_cv_time_t_64=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_time_t_64" >&5
+printf "%s\n" "$tcl_cv_time_t_64" >&6; }
+	if test "x${tcl_cv_time_t_64}" = "xno" ; then
+	    # Note that _TIME_BITS=64 requires _FILE_OFFSET_BITS=64
+	    # which SC_TCL_EARLY_FLAGS has defined if necessary.
+	    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if _TIME_BITS=64 enables 64-bit time_t" >&5
+printf %s "checking if _TIME_BITS=64 enables 64-bit time_t... " >&6; }
+if test ${tcl_cv__time_bits+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#define _TIME_BITS 64
+#include <sys/types.h>
+int
+main (void)
+{
+switch (0) {case 0: case (sizeof(time_t)==sizeof(long long)): ;}
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv__time_bits=yes
+else $as_nop
+  tcl_cv__time_bits=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv__time_bits" >&5
+printf "%s\n" "$tcl_cv__time_bits" >&6; }
+	    if test "x${tcl_cv__time_bits}" = "xyes" ; then
+
+printf "%s\n" "#define _TIME_BITS 64" >>confdefs.h
+
+	    fi
+	fi
+
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for struct dirent64" >&5
 printf %s "checking for struct dirent64... " >&6; }
 if test ${tcl_cv_struct_dirent64+y}
@@ -7654,41 +7804,6 @@ printf "%s\n" "$tcl_cv_DIR64" >&6; }
 	if test "x${tcl_cv_DIR64}" = "xyes" ; then
 
 printf "%s\n" "#define HAVE_DIR64 1" >>confdefs.h
-
-	fi
-
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for struct stat64" >&5
-printf %s "checking for struct stat64... " >&6; }
-if test ${tcl_cv_struct_stat64+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/stat.h>
-int
-main (void)
-{
-struct stat64 p;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  tcl_cv_struct_stat64=yes
-else $as_nop
-  tcl_cv_struct_stat64=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_struct_stat64" >&5
-printf "%s\n" "$tcl_cv_struct_stat64" >&6; }
-	if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
-
-printf "%s\n" "#define HAVE_STRUCT_STAT64 1" >>confdefs.h
 
 	fi
 
@@ -10071,9 +10186,6 @@ then :
 fi
 
     fi
-
-printf "%s\n" "#define USE_VFORK 1" >>confdefs.h
-
 
 printf "%s\n" "#define TCL_LOAD_FROM_MEMORY 1" >>confdefs.h
 
