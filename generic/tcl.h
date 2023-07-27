@@ -671,16 +671,19 @@ typedef struct Tcl_ObjType {
     Tcl_ObjTypeSetElement *setElementProc;   /* Replace the element at the indicie
 					     ** with the given valueObj. */
     Tcl_ObjTypeReplaceProc *replaceProc;     /* Replace subset with subset */
+    void *reservedProc;     /* Reserved for version 3, to be filled in */
 #endif
 } Tcl_ObjType;
 
 #if TCL_MAJOR_VERSION > 8
 #   define TCL_OBJTYPE_V0 0, \
-	    0,0,0,0,0,0,0 /* Pre-Tcl 9 */
+	    0,0,0,0,0,0,0,0 /* Pre-Tcl 9 */
 #   define TCL_OBJTYPE_V1(a) offsetof(Tcl_ObjType, indexProc), \
-	    a,0,0,0,0,0,0 /* Tcl 9 Version 1 */
-#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g) sizeof(Tcl_ObjType), \
-	    a,b,c,d,e,f,g /* Tcl 9 - AbstractLists */
+	    a,0,0,0,0,0,0,0 /* Tcl 9 Version 1 */
+#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g) offsetof(Tcl_ObjType, reservedProc), \
+	    a,b,c,d,e,f,g,0 /* Tcl 9 - AbstractLists */
+#   define TCL_OBJTYPE_V3(a,b,c,d,e,f,g,h) sizeof(Tcl_ObjType), \
+	    a,b,c,d,e,f,g,h /* Tcl 9 - AbstractLists, version 3 */
 #else
 #   define TCL_OBJTYPE_V0 /* just empty */
 #endif
