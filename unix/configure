@@ -6699,6 +6699,20 @@ fi
 
 
 
+    # Check for vfork, posix_spawnp() and friends unconditionally
+    for ac_func in vfork posix_spawnp posix_spawn_file_actions_adddup2 posix_spawnattr_setflags
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
     # would use TCL_DL_LIBS instead of TCL_LIBS.
@@ -7129,39 +7143,6 @@ $as_echo "$tcl_cv_DIR64" >&6; }
 	if test "x${tcl_cv_DIR64}" = "xyes" ; then
 
 $as_echo "#define HAVE_DIR64 1" >>confdefs.h
-
-	fi
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for struct stat64" >&5
-$as_echo_n "checking for struct stat64... " >&6; }
-if ${tcl_cv_struct_stat64+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/stat.h>
-int
-main ()
-{
-struct stat64 p;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  tcl_cv_struct_stat64=yes
-else
-  tcl_cv_struct_stat64=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_struct_stat64" >&5
-$as_echo "$tcl_cv_struct_stat64" >&6; }
-	if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
-
-$as_echo "#define HAVE_STRUCT_STAT64 1" >>confdefs.h
 
 	fi
 
@@ -9490,9 +9471,6 @@ fi
 done
 
     fi
-
-$as_echo "#define USE_VFORK 1" >>confdefs.h
-
 
 $as_echo "#define TCL_LOAD_FROM_MEMORY 1" >>confdefs.h
 
