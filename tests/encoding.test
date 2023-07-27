@@ -577,7 +577,7 @@ test encoding-16.23 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
     encoding convertfrom -profile strict utf-16le \x00\xDC
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x00'}
 test encoding-16.24 {Utf32ToUtfProc} -body {
-    encoding convertfrom utf-32 "\xFF\xFF\xFF\xFF"
+    encoding convertfrom -profile tcl8 utf-32 "\xFF\xFF\xFF\xFF"
 } -result \uFFFD
 test {encoding-16.25 strict} {Utf32ToUtfProc} -body {
     encoding convertfrom -profile strict utf-32 "\x01\x00\x00\x01"
