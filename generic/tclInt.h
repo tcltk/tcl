@@ -3029,6 +3029,7 @@ MODULE_SCOPE TclPlatformType tclPlatform;
  */
 
 MODULE_SCOPE Tcl_Encoding tclIdentityEncoding;
+MODULE_SCOPE Tcl_Encoding tclUtf8Encoding;
 MODULE_SCOPE int
 TclEncodingProfileNameToId(Tcl_Interp *interp,
 			   const char *profileName,
