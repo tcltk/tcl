@@ -701,7 +701,8 @@ static void		StartExpanding(CompileEnv *envPtr);
  */
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, Tcl_Size srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd,
-			    Tcl_Size numWords, Tcl_Size line, int *clNext, int **lines,
+			    Tcl_Size numWords, Tcl_Size line,
+			    Tcl_Size *clNext, Tcl_Size **lines,
 			    CompileEnv *envPtr);
 static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
@@ -1953,7 +1954,8 @@ CompileCmdCompileProc(
     CompileEnv *envPtr)
 {
     DefineLineInformation;
-    int unwind = 0, incrOffset = -1;
+    int unwind = 0;
+    Tcl_Size incrOffset = -1;
     int depth = TclGetStackDepth(envPtr);
 
     /*
@@ -2040,11 +2042,11 @@ CompileCommandTokens(
     Command *cmdPtr = NULL;
     int code = TCL_ERROR;
     int cmdKnown, expand = -1;
-    int *wlines, wlineat;
-    int cmdLine = envPtr->line;
-    int *clNext = envPtr->clNext;
-    int cmdIdx = envPtr->numCommands;
-    int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
+    Tcl_Size *wlines, wlineat;
+    Tcl_Size cmdLine = envPtr->line;
+    Tcl_Size *clNext = envPtr->clNext;
+    Tcl_Size cmdIdx = envPtr->numCommands;
+    Tcl_Size startCodeOffset = envPtr->codeNext - envPtr->codeStart;
     int depth = TclGetStackDepth(envPtr);
 
     assert ((int)parsePtr->numWords > 0);
@@ -2194,7 +2196,7 @@ TclCompileScript(
 	Tcl_SetObjResult(interp,
 	  Tcl_ObjPrintf("Script length %" TCL_SIZE_MODIFIER
 			   "d exceeds max permitted length %d.",
-			   numBytes, (int)INT_MAX-1));
+			   numBytes, INT_MAX-1));
 	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH", NULL);
 	    TclCompileSyntaxError(interp, envPtr);
 	    return;
@@ -2421,19 +2423,20 @@ TclCompileTokens(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * compile. */
-    size_t count1,			/* Number of tokens to consider at tokenPtr.
+    size_t count1,		/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     Tcl_DString textBuffer;	/* Holds concatenated chars from adjacent
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[4] = "";
-    int i, numObjsToConcat, adjust;
+    Tcl_Size i, numObjsToConcat, adjust;
     size_t length;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
-    int isLiteral, maxNumCL, numCL;
-    int *clPosition = NULL;
+    int isLiteral;
+    Tcl_Size maxNumCL, numCL;
+    Tcl_Size *clPosition = NULL;
     int depth = TclGetStackDepth(envPtr);
     int count = count1;
 
@@ -2463,7 +2466,7 @@ TclCompileTokens(
 
     if (isLiteral) {
 	maxNumCL = NUM_STATIC_POS;
-	clPosition = (int *)Tcl_Alloc(maxNumCL * sizeof(int));
+	clPosition = (Tcl_Size *)Tcl_Alloc(maxNumCL * sizeof(Tcl_Size));
     }
 
     adjust = 0;
@@ -2503,8 +2506,8 @@ TclCompileTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = (int *)Tcl_Realloc(clPosition,
-                                maxNumCL * sizeof(int));
+			clPosition = (Tcl_Size *)Tcl_Realloc(clPosition,
+                                maxNumCL * sizeof(Tcl_Size));
 		    }
 		    clPosition[numCL] = clPos;
 		    numCL ++;
@@ -3330,14 +3333,14 @@ EnterCmdWordData(
     const char *cmd,
     Tcl_Size numWords,
     Tcl_Size line,
-    int *clNext,
-    int **wlines,
+    Tcl_Size *clNext,
+    Tcl_Size **wlines,
     CompileEnv *envPtr)
 {
     ECL *ePtr;
     const char *last;
     Tcl_Size wordIdx, wordLine;
-    int *wwlines, *wordNext;
+    Tcl_Size *wwlines, *wordNext;
 
     if (eclPtr->nuloc >= eclPtr->nloc) {
 	/*
@@ -3356,10 +3359,10 @@ EnterCmdWordData(
 
     ePtr = &eclPtr->loc[eclPtr->nuloc];
     ePtr->srcOffset = srcOffset;
-    ePtr->line = (int *)Tcl_Alloc(numWords * sizeof(int));
-    ePtr->next = (int **)Tcl_Alloc(numWords * sizeof(int *));
+    ePtr->line = (Tcl_Size *)Tcl_Alloc(numWords * sizeof(Tcl_Size));
+    ePtr->next = (Tcl_Size **)Tcl_Alloc(numWords * sizeof(Tcl_Size *));
     ePtr->nline = numWords;
-    wwlines = (int *)Tcl_Alloc(numWords * sizeof(int));
+    wwlines = (Tcl_Size *)Tcl_Alloc(numWords * sizeof(Tcl_Size));
 
     last = cmd;
     wordLine = line;
@@ -3372,7 +3375,7 @@ EnterCmdWordData(
 	/* See Ticket 4b61afd660 */
 	wwlines[wordIdx] =
 		((wordIdx == 0) || TclWordKnownAtCompileTime(tokenPtr, NULL))
-		? (int)wordLine : -1;
+		? wordLine : -1;
 	ePtr->line[wordIdx] = wordLine;
 	ePtr->next[wordIdx] = wordNext;
 	last = tokenPtr->start;
