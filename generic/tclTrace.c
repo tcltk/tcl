@@ -52,7 +52,7 @@ typedef struct {
 				 * invoked step trace */
     int curFlags;		/* Trace flags for the current command */
     int curCode;		/* Return code for the current command */
-    size_t refCount;		/* Used to ensure this structure is not
+    Tcl_Size refCount;		/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -192,7 +192,7 @@ int
 Tcl_TraceObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
@@ -2135,6 +2135,7 @@ TraceVarProc(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct {
     Tcl_CmdObjTraceProc *proc;
     Tcl_CmdObjTraceDeleteProc *delProc;
@@ -2185,6 +2186,7 @@ Tcl_CreateObjTrace(
 	    (proc ? traceWrapperProc : NULL),
 	    info, traceWrapperDelProc);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Trace
 Tcl_CreateObjTrace2(

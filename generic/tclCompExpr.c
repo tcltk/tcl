@@ -2621,7 +2621,7 @@ int
 TclSingleOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
@@ -2674,7 +2674,7 @@ int
 TclSortingOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     int code = TCL_OK;
@@ -2687,7 +2687,8 @@ TclSortingOpCmd(
 		2 * (objc-2) * sizeof(Tcl_Obj *));
 	OpNode *nodes = (OpNode *)TclStackAlloc(interp, 2 * (objc-2) * sizeof(OpNode));
 	unsigned char lexeme;
-	int i, lastAnd = 1;
+	Tcl_Size i;
+	int lastAnd = 1;
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
 
 	ParseLexeme(occdPtr->op, strlen(occdPtr->op), &lexeme, NULL);
@@ -2754,7 +2755,7 @@ int
 TclVariadicOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
@@ -2813,7 +2814,8 @@ TclVariadicOpCmd(
     } else {
 	Tcl_Obj *const *litObjv = objv + 1;
 	OpNode *nodes = (OpNode *)TclStackAlloc(interp, (objc-1) * sizeof(OpNode));
-	int i, lastOp = OT_LITERAL;
+	Tcl_Size i;
+	int lastOp = OT_LITERAL;
 
 	nodes[0].lexeme = START;
 	nodes[0].mark = MARK_RIGHT;
@@ -2873,7 +2875,7 @@ int
 TclNoIdentOpCmd(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;

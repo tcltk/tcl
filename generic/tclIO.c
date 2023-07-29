@@ -9172,7 +9172,7 @@ Tcl_FileEventObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which the channel for which
 				 * to create the handler is found. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Channel *chanPtr;		/* The channel to create the handler for. */

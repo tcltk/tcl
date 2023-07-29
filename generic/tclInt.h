@@ -1713,9 +1713,9 @@ typedef struct ByteCodeStats {
 
 typedef struct {
     const char *name;		/* The name of the subcommand. */
-    Tcl_ObjCmdProc *proc;	/* The implementation of the subcommand. */
+    Tcl_ObjCmdProc2 *proc2;	/* The implementation of the subcommand. */
     CompileProc *compileProc;	/* The compiler for the subcommand. */
-    Tcl_ObjCmdProc *nreProc;	/* NRE implementation of this command. */
+    Tcl_ObjCmdProc2 *nreProc2;	/* NRE implementation of this command. */
     void *clientData;	/* Any clientData to give the command. */
     int unsafe;			/* Whether this command is to be hidden by
 				 * default in a safe interpreter. */
@@ -1792,8 +1792,8 @@ typedef struct Command {
 				 * renamed, deleted, hidden, or exposed. */
     CompileProc *compileProc;	/* Procedure called to compile command. NULL
 				 * if no compile proc exists for command. */
-    Tcl_ObjCmdProc *objProc;	/* Object-based command procedure. */
-    void *objClientData;	/* Arbitrary value passed to object proc. */
+    Tcl_ObjCmdProc2 *objProc2;	/* Object-based command procedure. */
+    void *objClientData2;	/* Arbitrary value passed to object proc. */
     Tcl_CmdProc *proc;		/* String-based command procedure. */
     void *clientData;	/* Arbitrary value passed to string proc. */
     Tcl_CmdDeleteProc *deleteProc;
@@ -1811,7 +1811,7 @@ typedef struct Command {
 				 * command. */
     CommandTrace *tracePtr;	/* First in list of all traces set for this
 				 * command. */
-    Tcl_ObjCmdProc *nreProc;	/* NRE implementation of this command. */
+    Tcl_ObjCmdProc2 *nreProc2;	/* NRE implementation of this command. */
 } Command;
 
 /*
@@ -3108,31 +3108,31 @@ enum CheckEmptyStringResult {
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_ObjCmdProc TclNRApplyObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNREvalObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRCatchObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRExprObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRForObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRForeachCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRIfObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRLmapCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRPackageObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRSourceObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRSubstObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRSwitchObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRTryObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRApplyObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNREvalObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRCatchObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRExprObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRForObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRForeachCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRIfObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRLmapCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRPackageObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRSourceObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRSubstObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRSwitchObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRTryObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRUplevelObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRWhileObjCmd;
 
 MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
 MODULE_SCOPE Tcl_NRPostProc TclNRCoroutineActivateCallback;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRTailcallObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRTailcallObjCmd;
 MODULE_SCOPE Tcl_NRPostProc TclNRTailcallEval;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRInvoke;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRCoroutineObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRYieldObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRYieldmObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRYieldToObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRInvoke;
 MODULE_SCOPE Tcl_NRPostProc TclNRReleaseValues;
 
 MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Tcl_Obj *tailcallPtr);
@@ -3211,11 +3211,11 @@ MODULE_SCOPE void	TclAdvanceContinuations(Tcl_Size *line, Tcl_Size **next,
 MODULE_SCOPE void	TclAdvanceLines(Tcl_Size *line, const char *start,
 			    const char *end);
 MODULE_SCOPE void	TclArgumentEnter(Tcl_Interp *interp,
-			    Tcl_Obj *objv[], int objc, CmdFrame *cf);
+			    Tcl_Obj *objv[], Tcl_Size objc, CmdFrame *cf);
 MODULE_SCOPE void	TclArgumentRelease(Tcl_Interp *interp,
-			    Tcl_Obj *objv[], int objc);
+			    Tcl_Obj *objv[], Tcl_Size objc);
 MODULE_SCOPE void	TclArgumentBCEnter(Tcl_Interp *interp,
-			    Tcl_Obj *objv[], int objc,
+			    Tcl_Obj *objv[], Tcl_Size objc,
 			    void *codePtr, CmdFrame *cfPtr, Tcl_Size cmd, Tcl_Size pc);
 MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
@@ -3236,7 +3236,7 @@ MODULE_SCOPE int	TclCheckArrayTraces(Tcl_Interp *interp, Var *varPtr,
 MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
-MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclChannelNamesCmd;
 MODULE_SCOPE Tcl_NRPostProc TclClearRootEnsemble;
 MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
 			    Tcl_Obj *value2Ptr);
@@ -3251,7 +3251,7 @@ MODULE_SCOPE Tcl_Size	TclConvertElement(const char *src, Tcl_Size length,
 			    char *dst, int flags);
 MODULE_SCOPE Tcl_Command TclCreateObjCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
-			    Tcl_ObjCmdProc *proc, void *clientData,
+			    Tcl_ObjCmdProc2 *proc, void *clientData,
 			    Tcl_CmdDeleteProc *deleteProc);
 MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 			    const char *name, Tcl_Namespace *nameNamespacePtr,
@@ -3269,17 +3269,17 @@ MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    Tcl_Size numBytes, int flags, Tcl_Size line,
 			    Tcl_Size *clNextOuter, const char *outerScript);
-MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileCopyCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileDeleteCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileLinkCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileMakeDirsCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileReadLinkCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileRenameCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileTempDirCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileTemporaryCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileHomeCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileTildeExpandCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileAttrsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileCopyCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileDeleteCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileLinkCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileMakeDirsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileReadLinkCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileRenameCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileTempDirCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileTemporaryCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileHomeCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileTildeExpandCmd;
 MODULE_SCOPE void	TclCreateLateExitHandler(Tcl_ExitProc *proc,
 			    void *clientData);
 MODULE_SCOPE void	TclDeleteLateExitHandler(Tcl_ExitProc *proc,
@@ -3321,7 +3321,7 @@ MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
 MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
-			    Tcl_ObjCmdProc *proc, Tcl_ObjCmdProc *nreProc,
+			    Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc,
 			    void *clientData, Tcl_CmdDeleteProc *deleteProc);
 MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    const char *encodingName);
@@ -3340,7 +3340,7 @@ MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
 			    const char *modeString, int *seekFlagPtr,
 			    int *binaryPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue(ProcessGlobalValue *pgvPtr);
-MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, int objc,
+MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
 			    Tcl_Size *sizePtr);
@@ -3353,12 +3353,12 @@ MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 			    Tcl_Obj *incrPtr);
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags);
-MODULE_SCOPE Tcl_ObjCmdProc TclInfoExistsCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclInfoCoroutineCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoExistsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoCoroutineCmd;
 MODULE_SCOPE Tcl_Obj *	TclInfoFrame(Tcl_Interp *interp, CmdFrame *framePtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclInfoGlobalsCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclInfoLocalsCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclInfoVarsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoGlobalsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoLocalsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoVarsCmd;
 MODULE_SCOPE void	TclInitAlloc(void);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
@@ -3406,7 +3406,7 @@ MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 MODULE_SCOPE int TclMakeSafe(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Size	TclMaxListLength(const char *bytes, Tcl_Size numBytes,
 			    const char **endPtr);
-MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
+MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
 MODULE_SCOPE Tcl_Obj *  TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
@@ -3416,8 +3416,18 @@ MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
 			    const char *reason, int index);
+MODULE_SCOPE int	TclObjInterpProc(void *clientData,
+				Tcl_Interp *interp, int objc,
+				Tcl_Obj *const objv[]);
+MODULE_SCOPE int	TclObjInterpProc2(void *clientData,
+				Tcl_Interp *interp, Tcl_Size objc,
+				Tcl_Obj *const objv[]);
+#define TclObjInterpProc TclGetObjInterpProc()
+#define TclObjInterpProc2 TclGetObjInterpProc2()
+MODULE_SCOPE int		TclObjInvoke(Tcl_Interp *interp, Tcl_Size objc,
+				Tcl_Obj *const objv[], int flags);
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[],
+			    Tcl_Size objc, Tcl_Obj *const objv[],
 			    Tcl_Namespace *nsPtr, int flags);
 MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
@@ -3541,7 +3551,7 @@ MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 typedef int (*memCmpFn_t)(const void*, const void*, size_t);
 MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
 			    int checkEq, int nocase, Tcl_Size reqlength);
-MODULE_SCOPE int	TclStringCmpOpts(Tcl_Interp *interp, int objc,
+MODULE_SCOPE int	TclStringCmpOpts(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[], int *nocase,
 			    Tcl_Size *reqlength);
 MODULE_SCOPE int	TclStringMatch(const char *str, Tcl_Size strLen,
@@ -3567,7 +3577,7 @@ MODULE_SCOPE Tcl_Size	TclTrimRight(const char *bytes, Tcl_Size numBytes,
 			    const char *trim, Tcl_Size numTrim);
 MODULE_SCOPE const char*TclGetCommandTypeName(Tcl_Command command);
 MODULE_SCOPE void	TclRegisterCommandTypeName(
-			    Tcl_ObjCmdProc *implementationProc,
+			    Tcl_ObjCmdProc2 *implementationProc,
 			    const char *nameStr);
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
@@ -3639,28 +3649,28 @@ MODULE_SCOPE int	TclIsSpaceProc(int byte);
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_AfterObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_AppendObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ApplyObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_AfterObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_AppendObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ApplyObjCmd;
 MODULE_SCOPE Tcl_Command TclInitArrayCmd(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Command TclInitBinaryCmd(Tcl_Interp *interp);
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_BreakObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_CatchObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_CdObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_BreakObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_CatchObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_CdObjCmd;
 MODULE_SCOPE Tcl_Command TclInitChanCmd(Tcl_Interp *interp);
-MODULE_SCOPE Tcl_ObjCmdProc TclChanCreateObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclChanPostEventObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclChanPopObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclChanPushObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclChanCreateObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclChanPostEventObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclChanPopObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclChanPushObjCmd;
 MODULE_SCOPE void	TclClockInit(Tcl_Interp *interp);
-MODULE_SCOPE Tcl_ObjCmdProc TclClockOldscanObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_CloseObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ConcatObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ContinueObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclClockOldscanObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_CloseObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ConcatObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ContinueObjCmd;
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
 			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
 			    void *clientData);
-MODULE_SCOPE Tcl_ObjCmdProc TclDefaultBgErrorHandlerObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclDefaultBgErrorHandlerObjCmd;
 MODULE_SCOPE Tcl_Command TclInitDictCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *part1Ptr,
@@ -3668,91 +3678,91 @@ MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *const pathv[], Tcl_Obj *keysPtr);
 MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    Tcl_Size pathc, Tcl_Obj *const pathv[]);
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_DisassembleObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_DisassembleObjCmd;
 
 /* Assemble command function */
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_AssembleObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRAssembleObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_AssembleObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRAssembleObjCmd;
 MODULE_SCOPE Tcl_Command TclInitEncodingCmd(Tcl_Interp *interp);
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_EofObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ErrorObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_EvalObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ExecObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ExitObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ExprObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_FblockedObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_FconfigureObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_FcopyObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_EofObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ErrorObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_EvalObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ExecObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ExitObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ExprObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_FblockedObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_FconfigureObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_FcopyObjCmd;
 MODULE_SCOPE Tcl_Command TclInitFileCmd(Tcl_Interp *interp);
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_FileEventObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_FlushObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ForObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ForeachObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_FormatObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_GetsObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_GlobalObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_GlobObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_IfObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_IncrObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_FileEventObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_FlushObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ForObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ForeachObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_FormatObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_GetsObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_GlobalObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_GlobObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_IfObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_IncrObjCmd;
 MODULE_SCOPE Tcl_Command TclInitInfoCmd(Tcl_Interp *interp);
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_InterpObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_JoinObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LappendObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LassignObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LeditObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LindexObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LinsertObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LlengthObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ListObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LmapObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LoadObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LpopObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LrangeObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LremoveObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LrepeatObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LreplaceObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LreverseObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LsearchObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LseqObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LsetObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_LsortObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_InterpObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_JoinObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LappendObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LassignObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LeditObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LindexObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LinsertObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LlengthObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ListObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LmapObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LoadObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LpopObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LrangeObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LremoveObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LrepeatObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LreplaceObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LreverseObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LsearchObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LseqObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LsetObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LsortObjCmd;
 MODULE_SCOPE Tcl_Command TclInitNamespaceCmd(Tcl_Interp *interp);
-MODULE_SCOPE Tcl_ObjCmdProc TclNamespaceEnsembleCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_OpenObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_PackageObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_PidObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNamespaceEnsembleCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_OpenObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_PackageObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_PidObjCmd;
 MODULE_SCOPE Tcl_Command TclInitPrefixCmd(Tcl_Interp *interp);
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_PutsObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_PwdObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ReadObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_RegexpObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_RegsubObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_RenameObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_RepresentationCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ReturnObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ScanObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_SeekObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_SetObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_SplitObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_SocketObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_SourceObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_PutsObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_PwdObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ReadObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_RegexpObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_RegsubObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_RenameObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_RepresentationCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ReturnObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ScanObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_SeekObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_SetObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_SplitObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_SocketObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_SourceObjCmd;
 MODULE_SCOPE Tcl_Command TclInitStringCmd(Tcl_Interp *interp);
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_SubstObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_SwitchObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_TellObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_ThrowObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_TimeObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_TimeRateObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_TraceObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_TryObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_UnloadObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_UnsetObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_UpdateObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_UplevelObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_UpvarObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_VariableObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_VwaitObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc Tcl_WhileObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_SubstObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_SwitchObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_TellObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ThrowObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_TimeObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_TimeRateObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_TraceObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_TryObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_UnloadObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_UnsetObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_UpdateObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_UplevelObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_UpvarObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_VariableObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_VwaitObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_WhileObjCmd;
 
 /*
  *----------------------------------------------------------------
@@ -4082,71 +4092,71 @@ MODULE_SCOPE int	TclCompileBasicMin2ArgCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 
-MODULE_SCOPE Tcl_ObjCmdProc TclInvertOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclInvertOpCmd;
 MODULE_SCOPE int	TclCompileInvertOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclNotOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNotOpCmd;
 MODULE_SCOPE int	TclCompileNotOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclAddOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclAddOpCmd;
 MODULE_SCOPE int	TclCompileAddOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclMulOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclMulOpCmd;
 MODULE_SCOPE int	TclCompileMulOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclAndOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclAndOpCmd;
 MODULE_SCOPE int	TclCompileAndOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclOrOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclOrOpCmd;
 MODULE_SCOPE int	TclCompileOrOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclXorOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclXorOpCmd;
 MODULE_SCOPE int	TclCompileXorOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclPowOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclPowOpCmd;
 MODULE_SCOPE int	TclCompilePowOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclLshiftOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclLshiftOpCmd;
 MODULE_SCOPE int	TclCompileLshiftOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclRshiftOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclRshiftOpCmd;
 MODULE_SCOPE int	TclCompileRshiftOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclModOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclModOpCmd;
 MODULE_SCOPE int	TclCompileModOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclNeqOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNeqOpCmd;
 MODULE_SCOPE int	TclCompileNeqOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclStrneqOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclStrneqOpCmd;
 MODULE_SCOPE int	TclCompileStrneqOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclInOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclInOpCmd;
 MODULE_SCOPE int	TclCompileInOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclNiOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNiOpCmd;
 MODULE_SCOPE int	TclCompileNiOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclMinusOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclMinusOpCmd;
 MODULE_SCOPE int	TclCompileMinusOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE Tcl_ObjCmdProc TclDivOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclDivOpCmd;
 MODULE_SCOPE int	TclCompileDivOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
@@ -4280,14 +4290,14 @@ MODULE_SCOPE int TclUniCharCaseMatch(const Tcl_UniChar *uniStr,
  * Just for the purposes of command-type registration.
  */
 
-MODULE_SCOPE Tcl_ObjCmdProc TclEnsembleImplementationCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclAliasObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclLocalAliasObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclChildObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclInvokeImportedCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclOOPublicObjectCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclOOPrivateObjectCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclOOMyClassObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclEnsembleImplementationCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclAliasObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclLocalAliasObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclChildObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclInvokeImportedCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclOOPublicObjectCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclOOPrivateObjectCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclOOMyClassObjCmd;
 
 /*
  * TIP #462.
@@ -4329,8 +4339,6 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int before, int after, int *indexPtr);
 MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
-MODULE_SCOPE int	TclIndexInvalidError(Tcl_Interp *interp,
-			    const char *idxType, Tcl_Size idx);
 
 /*
  * Error message utility functions

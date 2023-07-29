@@ -161,16 +161,16 @@ static void		GetJulianDayFromEraYearWeekDay(TclDateFields *, int);
 static void		GetJulianDayFromEraYearMonthDay(TclDateFields *, int);
 static int		IsGregorianLeapYear(TclDateFields *);
 static int		WeekdayOnOrBefore(int, int);
-static Tcl_ObjCmdProc ClockClicksObjCmd;
-static Tcl_ObjCmdProc ClockConvertlocaltoutcObjCmd;
-static Tcl_ObjCmdProc ClockGetdatefieldsObjCmd;
-static Tcl_ObjCmdProc ClockGetjuliandayfromerayearmonthdayObjCmd;
-static Tcl_ObjCmdProc ClockGetjuliandayfromerayearweekdayObjCmd;
-static Tcl_ObjCmdProc ClockGetenvObjCmd;
-static Tcl_ObjCmdProc ClockMicrosecondsObjCmd;
-static Tcl_ObjCmdProc ClockMillisecondsObjCmd;
-static Tcl_ObjCmdProc ClockParseformatargsObjCmd;
-static Tcl_ObjCmdProc ClockSecondsObjCmd;
+static Tcl_ObjCmdProc2 ClockClicksObjCmd;
+static Tcl_ObjCmdProc2 ClockConvertlocaltoutcObjCmd;
+static Tcl_ObjCmdProc2 ClockGetdatefieldsObjCmd;
+static Tcl_ObjCmdProc2 ClockGetjuliandayfromerayearmonthdayObjCmd;
+static Tcl_ObjCmdProc2 ClockGetjuliandayfromerayearweekdayObjCmd;
+static Tcl_ObjCmdProc2 ClockGetenvObjCmd;
+static Tcl_ObjCmdProc2 ClockMicrosecondsObjCmd;
+static Tcl_ObjCmdProc2 ClockMillisecondsObjCmd;
+static Tcl_ObjCmdProc2 ClockParseformatargsObjCmd;
+static Tcl_ObjCmdProc2 ClockSecondsObjCmd;
 static struct tm *	ThreadSafeLocalTime(const time_t *);
 static void		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(void *);
@@ -183,7 +183,7 @@ struct ClockCommand {
     const char *name;		/* The tail of the command name. The full name
 				 * is "::tcl::clock::<name>". When NULL marks
 				 * the end of the table. */
-    Tcl_ObjCmdProc *objCmdProc;	/* Function that implements the command. This
+    Tcl_ObjCmdProc2 *objCmdProc;	/* Function that implements the command. This
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
 };
@@ -274,7 +274,7 @@ TclClockInit(
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
 	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
 	data->refCount++;
-	Tcl_CreateObjCommand(interp, cmdName, clockCmdPtr->objCmdProc, data,
+	Tcl_CreateObjCommand2(interp, cmdName, clockCmdPtr->objCmdProc, data,
 		ClockDeleteCmdProc);
     }
 
@@ -314,7 +314,7 @@ static int
 ClockConvertlocaltoutcObjCmd(
     void *clientData,	/* Client data */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     ClockClientData *data = (ClockClientData *)clientData;
@@ -406,7 +406,7 @@ int
 ClockGetdatefieldsObjCmd(
     void *clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     TclDateFields fields;
@@ -560,7 +560,7 @@ static int
 ClockGetjuliandayfromerayearmonthdayObjCmd(
     void *clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     TclDateFields fields;
@@ -644,7 +644,7 @@ static int
 ClockGetjuliandayfromerayearweekdayObjCmd(
     void *clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     TclDateFields fields;
@@ -1628,7 +1628,7 @@ int
 ClockGetenvObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
 #ifdef _WIN32
@@ -1731,7 +1731,7 @@ int
 ClockClicksObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     static const char *const clicksSwitches[] = {
@@ -1801,7 +1801,7 @@ int
 ClockMillisecondsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
@@ -1840,7 +1840,7 @@ int
 ClockMicrosecondsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     if (objc != 1) {
@@ -1873,7 +1873,7 @@ static int
 ClockParseformatargsObjCmd(
     void *clientData,	/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter vector */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
@@ -1893,7 +1893,7 @@ ClockParseformatargsObjCmd(
     int optionIndex;		/* Index of an option. */
     int saw = 0;		/* Flag == 1 if option was seen already. */
     Tcl_WideInt clockVal;	/* Clock value - just used to parse. */
-    int i;
+    Tcl_Size i;
 
     /*
      * Args consist of a time followed by keyword-value pairs.
@@ -1991,7 +1991,7 @@ int
 ClockSecondsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;

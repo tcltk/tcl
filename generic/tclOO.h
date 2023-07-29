@@ -60,8 +60,10 @@ typedef struct Tcl_ObjectContext_ *Tcl_ObjectContext;
  * and to allow the attachment of arbitrary data to objects and classes.
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef int (Tcl_MethodCallProc)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
+#endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_MethodCallProc2)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, Tcl_Size objc, Tcl_Obj *const *objv);
 typedef void (Tcl_MethodDeleteProc)(void *clientData);
@@ -77,6 +79,7 @@ typedef int (Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
  * how to create a clone of it (when the object or class is copied).
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct {
     int version;		/* Structure version field. Always to be equal
 				 * to TCL_OO_METHOD_VERSION_(1|CURRENT) in
@@ -93,6 +96,7 @@ typedef struct {
 				 * data, or NULL if the type-specific data can
 				 * be copied directly. */
 } Tcl_MethodType;
+#endif /* TCL_NO_DEPRECATED */
 
 typedef struct {
     int version;		/* Structure version field. Always to be equal
