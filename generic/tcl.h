@@ -678,7 +678,7 @@ typedef struct Tcl_ObjType {
 #   define TCL_OBJTYPE_V0 0, \
 	    0,0,0,0,0,0,0 /* Pre-Tcl 9 */
 #   define TCL_OBJTYPE_V1(a) 1, \
-	    a,0,0,0,0,0,0 /* Tcl 9 Version 1 */
+	    a,INT2PTR(1),INT2PTR(1),INT2PTR(1),INT2PTR(1),INT2PTR(1),INT2PTR(1) /* Tcl 9 Version 1 */
 #   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g) 2, \
 	    a,b,c,d,e,f,g /* Tcl 9 - AbstractLists */
 #else
