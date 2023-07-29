@@ -268,7 +268,7 @@ Tcl_ProcObjCmd(
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = (int *)Tcl_Alloc(sizeof(int));
+		cfPtr->line = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size));
 		cfPtr->line[0] = contextPtr->line[3];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -2547,7 +2547,7 @@ SetLambdaFromAny(
 
 	    if (contextPtr->line
 		    && (contextPtr->nline >= 2) && (contextPtr->line[1] >= 0)) {
-		int buf[2];
+		Tcl_Size buf[2];
 
 		/*
 		 * Move from approximation (line of list cmd word) to actual
@@ -2559,7 +2559,7 @@ SetLambdaFromAny(
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = (int *)Tcl_Alloc(sizeof(int));
+		cfPtr->line = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size));
 		cfPtr->line[0] = buf[1];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;

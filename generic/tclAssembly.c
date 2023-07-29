@@ -224,7 +224,7 @@ typedef struct AssemblyEnv {
 				 * offsets of the labels. */
     Tcl_Size cmdLine;	/* Current line number within the assembly
 				 * code */
-    int* clNext;		/* Invisible continuation line for
+    Tcl_Size* clNext;	/* Invisible continuation line for
 				 * [info frame] */
     BasicBlock* head_bb;	/* First basic block in the code */
     BasicBlock* curr_bb;	/* Current basic block */
