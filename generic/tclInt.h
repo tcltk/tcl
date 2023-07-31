@@ -1086,16 +1086,10 @@ typedef struct ActiveInterpTrace {
 #define TCL_TRACE_LEAVE_EXEC	2
 
 #if TCL_MAJOR_VERSION > 8
-/*
- * Versions 0, 1, and 2 are currently supported concurrently for now
- */
-#define TclObjTypeHasProc(objPtr, proc)		\
-    (((objPtr)->typePtr				\
-      && (   (objPtr)->typePtr->version == 1	\
-	  || (objPtr)->typePtr->version == 2))	\
-     ?	((objPtr)->typePtr)->proc		\
-     : NULL)
-
+#define TclObjTypeHasProc(objPtr, proc) (((objPtr)->typePtr \
+	&& ((offsetof(Tcl_ObjType, proc) < offsetof(Tcl_ObjType, version)) \
+	|| (offsetof(Tcl_ObjType, proc) < (objPtr)->typePtr->version))) ? \
+	((objPtr)->typePtr)->proc : NULL)
 
 MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
 
