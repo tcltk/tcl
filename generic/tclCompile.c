@@ -720,8 +720,9 @@ static void		StartExpanding(CompileEnv *envPtr);
  */
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, Tcl_Size srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd,
-			    Tcl_Size numWords, Tcl_Size line, int *clNext,
-			    Tcl_Size **lines, CompileEnv *envPtr);
+			    Tcl_Size numWords, Tcl_Size line,
+			    Tcl_Size *clNext, Tcl_Size **lines,
+			    CompileEnv *envPtr);
 static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
 /*
@@ -1977,7 +1978,8 @@ CompileCmdCompileProc(
     CompileEnv *envPtr)
 {
     DefineLineInformation;
-    int unwind = 0, incrOffset = -1;
+    int unwind = 0;
+    Tcl_Size incrOffset = -1;
     int depth = TclGetStackDepth(envPtr);
     Tcl_Parse parse;
 
@@ -2090,7 +2092,7 @@ CompileCommandTokens(
     int cmdKnown, expand = -1;
     Tcl_Size *wlines, wlineat;
     Tcl_Size cmdLine = envPtr->line;
-    int *clNext = envPtr->clNext;
+    Tcl_Size *clNext = envPtr->clNext;
     Tcl_Size startCodeOffset = envPtr->codeNext - envPtr->codeStart;
     int depth = TclGetStackDepth(envPtr);
 
@@ -2450,12 +2452,13 @@ TclCompileTokens(
     Tcl_DString textBuffer;	/* Holds concatenated chars from adjacent
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[4] = "";
-    int numObjsToConcat, adjust;
-    Tcl_Size i, length;
+    Tcl_Size i, numObjsToConcat, adjust;
+    size_t length;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
-    int isLiteral, maxNumCL, numCL;
-    int *clPosition = NULL;
+    int isLiteral;
+    Tcl_Size maxNumCL, numCL;
+    Tcl_Size *clPosition = NULL;
     int depth = TclGetStackDepth(envPtr);
 
     /*
@@ -2484,7 +2487,7 @@ TclCompileTokens(
 
     if (isLiteral) {
 	maxNumCL = NUM_STATIC_POS;
-	clPosition = (int *)Tcl_Alloc(maxNumCL * sizeof(int));
+	clPosition = (Tcl_Size *)Tcl_Alloc(maxNumCL * sizeof(Tcl_Size));
     }
 
     adjust = 0;
@@ -2524,8 +2527,8 @@ TclCompileTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = (int *)Tcl_Realloc(clPosition,
-                                maxNumCL * sizeof(int));
+			clPosition = (Tcl_Size *)Tcl_Realloc(clPosition,
+                                maxNumCL * sizeof(Tcl_Size));
 		    }
 		    clPosition[numCL] = clPos;
 		    numCL ++;
@@ -3263,7 +3266,7 @@ EnterCmdWordData(
     const char *cmd,
     Tcl_Size numWords,
     Tcl_Size line,
-    int *clNext,
+    Tcl_Size *clNext,
     Tcl_Size **wlines,
     CompileEnv *envPtr)
 {
@@ -3271,7 +3274,7 @@ EnterCmdWordData(
     const char *last;
     Tcl_Size wordIdx, wordLine;
     Tcl_Size *wwlines;
-    int *wordNext;
+    Tcl_Size *wordNext;
 
     if (eclPtr->nuloc >= eclPtr->nloc) {
 	/*
@@ -3291,7 +3294,7 @@ EnterCmdWordData(
     ePtr = &eclPtr->loc[eclPtr->nuloc];
     ePtr->srcOffset = srcOffset;
     ePtr->line = (Tcl_Size *)Tcl_Alloc(numWords * sizeof(Tcl_Size));
-    ePtr->next = (int **)Tcl_Alloc(numWords * sizeof(int *));
+    ePtr->next = (Tcl_Size **)Tcl_Alloc(numWords * sizeof(Tcl_Size *));
     ePtr->nline = numWords;
     wwlines = (Tcl_Size *)Tcl_Alloc(numWords * sizeof(Tcl_Size));
 
@@ -3306,7 +3309,7 @@ EnterCmdWordData(
 	/* See Ticket 4b61afd660 */
 	wwlines[wordIdx] =
 		((wordIdx == 0) || TclWordKnownAtCompileTime(tokenPtr, NULL))
-		? (int)wordLine : -1;
+		? wordLine : -1;
 	ePtr->line[wordIdx] = wordLine;
 	ePtr->next[wordIdx] = wordNext;
 	last = tokenPtr->start;

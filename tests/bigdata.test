@@ -1147,6 +1147,21 @@ test puts-bigdata-2 "puts" -setup {
     set written
 } -result {2345—}
 
+test source-bigdata-1 "source" -setup {
+    # This test crashes because the frame linenumber tracking
+    # wraps around at INT_MAX
+    set fpath [tcltest::makeFile {} source-bigdata-1.tcl]
+    set fd [open $fpath w]
+    fconfigure $fd -translation lf
+    puts -nonewline $fd [string repeat \n 4294967296]
+    puts $fd {dict get [info frame 0] line}
+    close $fd
+} -constraints {
+    bigdata knownBug
+} -body {
+    set line [source $fpath]
+} -result 4294967297
+
 #
 # TODO
 # lremove

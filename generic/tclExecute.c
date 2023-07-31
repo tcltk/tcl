@@ -634,7 +634,7 @@ static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    ByteCode *codePtr, Tcl_Size *lengthPtr,
-			    const unsigned char **pcBeg, int *cmdIdxPtr);
+			    const unsigned char **pcBeg, Tcl_Size *cmdIdxPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, TCL_HASH_TYPE growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
@@ -1850,7 +1850,7 @@ ArgumentBCEnter(
     int objc,
     Tcl_Obj **objv)
 {
-    int cmd;
+    Tcl_Size cmd;
 
     if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
 	TclArgumentBCEnter(interp, objv, objc, codePtr, &tdPtr->cmdFrame, cmd,
@@ -9164,7 +9164,7 @@ TclGetSrcInfoForPc(
 	ExtCmdLoc *eclPtr;
 	ECL *locPtr = NULL;
 	Tcl_Size srcOffset;
-	int i;
+	Tcl_Size i;
 	Interp *iPtr = (Interp *) *codePtr->interpHandle;
 	Tcl_HashEntry *hePtr =
 		Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
@@ -9176,7 +9176,7 @@ TclGetSrcInfoForPc(
 	srcOffset = cfPtr->cmd - codePtr->source;
 	eclPtr = (ExtCmdLoc *)Tcl_GetHashValue(hePtr);
 
-	for (i=0; i < (int)eclPtr->nuloc; i++) {
+	for (i=0; i < eclPtr->nuloc; i++) {
 	    if (eclPtr->loc[i].srcOffset == srcOffset) {
 		locPtr = eclPtr->loc+i;
 		break;
@@ -9216,7 +9216,7 @@ GetSrcInfoForPc(
     const unsigned char **pcBeg,/* If non-NULL, the bytecode location
 				 * where the current instruction starts.
 				 * If NULL; no pointer is stored. */
-    int *cmdIdxPtr)		/* If non-NULL, the location where the index
+    Tcl_Size *cmdIdxPtr)	/* If non-NULL, the location where the index
 				 * of the command containing the pc should
 				 * be stored. */
 {
@@ -9225,10 +9225,10 @@ GetSrcInfoForPc(
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
     Tcl_Size codeOffset, codeLen, codeEnd, srcOffset, srcLen, delta, i;
-    int bestDist = INT_MAX;	/* Distance of pc to best cmd's start pc. */
-    int bestSrcOffset = -1;	/* Initialized to avoid compiler warning. */
-    int bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
-    int bestCmdIdx = -1;
+    Tcl_Size bestDist = TCL_SIZE_MAX; /* Distance of pc to best cmd's start pc. */
+    Tcl_Size bestSrcOffset = -1; /* Initialized to avoid compiler warning. */
+    Tcl_Size bestSrcLength = -1; /* Initialized to avoid compiler warning. */
+    Tcl_Size bestCmdIdx = -1;
 
     /* The pc must point within the bytecode */
     assert ((pcOffset >= 0) && (pcOffset < codePtr->numCodeBytes));
@@ -9307,7 +9307,7 @@ GetSrcInfoForPc(
 	 * instructions. Stop when crossing pc; keep previous.
 	 */
 
-	curr = ((bestDist == INT_MAX) ? codePtr->codeStart : pc - bestDist);
+	curr = ((bestDist == TCL_SIZE_MAX) ? codePtr->codeStart : pc - bestDist);
 	prev = curr;
 	while (curr <= pc) {
 	    prev = curr;
@@ -9316,7 +9316,7 @@ GetSrcInfoForPc(
 	*pcBeg = prev;
     }
 
-    if (bestDist == INT_MAX) {
+    if (bestDist == TCL_SIZE_MAX) {
 	return NULL;
     }
 

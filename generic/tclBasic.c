@@ -5121,7 +5121,7 @@ TclEvalScriptTokens(
     Tcl_Size length,
     int flags,
     Tcl_Size line,
-    int*  clNextOuter,		/* Information about an outer context for */
+    Tcl_Size *clNextOuter,	/* Information about an outer context for */
     const char* outerScript)	/* continuation line data. This is set only in
 				 * TclSubstTokens(), to properly handle
 				 * [...]-nested commands. The 'outerScript'
@@ -5152,7 +5152,7 @@ TclEvalScriptTokens(
     CmdFrame *eeFramePtr;	/* TIP #280 Structures for tracking of command
 				 * locations. */
     int allowExceptions = 1;
-    int *clNext = NULL;		/* Pointer for the tracking of invisible
+    Tcl_Size *clNext = NULL;	/* Pointer for the tracking of invisible
 				 * continuation lines. Initialized only if the
 				 * caller gave us a table of locations to
 				 * track, via scriptCLLocPtr. It always refers
@@ -5267,7 +5267,7 @@ TclEvalScriptTokens(
 
 	Tcl_Size wordLine = line;
 	const char *wordStart = commandTokenPtr->start;
-	int *wordCLNext = clNext;
+	Tcl_Size *wordCLNext = clNext;
 
         if (length == 0) {
             Tcl_Panic("EvalScriptTokens: overran token array");
@@ -5547,7 +5547,7 @@ TclEvalEx(
 				 * TCL_EVAL_GLOBAL is currently
 				 * supported. */
     Tcl_Size line,		/* The line the script starts on. */
-    int*  clNextOuter,       /* Information about an outer context for */
+    Tcl_Size *clNextOuter,      /* Information about an outer context for */
     const char* outerScript) /* continuation line data. This is set only in
 			      * EvalTokensStandard(), to properly handle
 			      * [...]-nested commands. The 'outerScript'
@@ -5630,7 +5630,7 @@ TclAdvanceLines(
 void
 TclAdvanceContinuations(
     Tcl_Size *line,
-    int **clNextPtrPtr,
+    Tcl_Size **clNextPtrPtr,
     int loc)
 {
     /*
@@ -5808,7 +5808,7 @@ TclArgumentBCEnter(
     int objc,
     void *codePtr,
     CmdFrame *cfPtr,
-    int cmd,
+    Tcl_Size cmd,
     Tcl_Size pc)
 {
     ExtCmdLoc *eclPtr;

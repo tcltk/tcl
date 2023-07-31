@@ -41,12 +41,12 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int mode, int noCase,
-			    int numWords, Tcl_Token **bodyToken,
-				int *bodyLines, int **bodyNext);
+			    Tcl_Size numWords, Tcl_Token **bodyToken,
+				Tcl_Size *bodyLines, Tcl_Size **bodyNext);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int numWords,
-				Tcl_Token **bodyToken, int *bodyLines,
-				int **bodyContLines);
+				Tcl_Token **bodyToken, Tcl_Size *bodyLines,
+				Tcl_Size **bodyContLines);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, int *matchCodes,
@@ -1806,14 +1806,14 @@ TclCompileSwitchCmd(
 
     Tcl_Token *bodyTokenArray;	/* Array of real pattern list items. */
     Tcl_Token **bodyToken;	/* Array of pointers to pattern list items. */
-    int *bodyLines;		/* Array of line numbers for body list
+    Tcl_Size *bodyLines;	/* Array of line numbers for body list
 				 * items. */
-    int **bodyContLines;	/* Array of continuation line info. */
+    Tcl_Size **bodyContLines;	/* Array of continuation line info. */
     int noCase;			/* Has the -nocase flag been given? */
     int foundMode = 0;		/* Have we seen a mode flag yet? */
     int i, valueIndex;
     int result = TCL_ERROR;
-    int *clNext = envPtr->clNext;
+    Tcl_Size *clNext = envPtr->clNext;
 
     /*
      * Only handle the following versions:
@@ -1970,8 +1970,8 @@ TclCompileSwitchCmd(
 	}
 	bodyTokenArray = (Tcl_Token *)Tcl_Alloc(sizeof(Tcl_Token) * maxLen);
 	bodyToken = (Tcl_Token **)Tcl_Alloc(sizeof(Tcl_Token *) * maxLen);
-	bodyLines = (int *)Tcl_Alloc(sizeof(int) * maxLen);
-	bodyContLines = (int **)Tcl_Alloc(sizeof(int*) * maxLen);
+	bodyLines = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size) * maxLen);
+	bodyContLines = (Tcl_Size **)Tcl_Alloc(sizeof(Tcl_Size*) * maxLen);
 
 	bline = mapPtr->loc[eclIndex].line[valueIndex+1];
 	numWords = 0;
@@ -2031,8 +2031,8 @@ TclCompileSwitchCmd(
 	 */
 
 	bodyToken = (Tcl_Token **)Tcl_Alloc(sizeof(Tcl_Token *) * numWords);
-	bodyLines = (int *)Tcl_Alloc(sizeof(int) * numWords);
-	bodyContLines = (int **)Tcl_Alloc(sizeof(int*) * numWords);
+	bodyLines = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size) * numWords);
+	bodyContLines = (Tcl_Size **)Tcl_Alloc(sizeof(Tcl_Size*) * numWords);
 	bodyTokenArray = NULL;
 	for (i=0 ; i<numWords ; i++) {
 	    /*
@@ -2122,13 +2122,13 @@ IssueSwitchChainedTests(
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int mode,			/* Exact, Glob or Regexp */
     int noCase,			/* Case-insensitivity flag. */
-    int numBodyTokens,		/* Number of tokens describing things the
+    Tcl_Size numBodyTokens,	/* Number of tokens describing things the
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
     Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    int *bodyLines,		/* Array of line numbers for body list
+    Tcl_Size *bodyLines,		/* Array of line numbers for body list
 				 * items. */
-    int **bodyContLines)	/* Array of continuation line info. */
+    Tcl_Size **bodyContLines)	/* Array of continuation line info. */
 {
     enum {Switch_Exact, Switch_Glob, Switch_Regexp};
     int foundDefault;		/* Flag to indicate whether a "default" clause
@@ -2374,9 +2374,9 @@ IssueSwitchJumpTable(
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
     Tcl_Token **bodyToken,	/* Array of pointers to pattern list items. */
-    int *bodyLines,		/* Array of line numbers for body list
+    Tcl_Size *bodyLines,		/* Array of line numbers for body list
 				 * items. */
-    int **bodyContLines)	/* Array of continuation line info. */
+    Tcl_Size **bodyContLines)	/* Array of continuation line info. */
 {
     JumptableInfo *jtPtr;
     int infoIndex, isNew, *finalFixups, numRealBodies = 0, jumpLocation;

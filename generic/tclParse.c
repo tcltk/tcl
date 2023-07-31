@@ -1554,7 +1554,7 @@ ParseTokens(
 				 * termination information. */
 {
     char type;
-    int originalTokens;
+    Tcl_Size originalTokens;
     int noSubstCmds = !(flags & TCL_SUBST_COMMANDS);
     int noSubstVars = !(flags & TCL_SUBST_VARIABLES);
     int noSubstBS = !(flags & TCL_SUBST_BACKSLASHES);
@@ -1589,7 +1589,7 @@ ParseTokens(
 	    tokenPtr->size = src - tokenPtr->start;
 	    parsePtr->numTokens++;
 	} else if (*src == '$') {
-	    int varToken;
+	    Tcl_Size varToken;
 
 	    if (noSubstVars) {
 		tokenPtr->type = TCL_TOKEN_TEXT;
@@ -1727,7 +1727,7 @@ ParseTokens(
 		 */
 
 		if (mask & TYPE_SPACE) {
-		    if ((int)parsePtr->numTokens == originalTokens) {
+		    if (parsePtr->numTokens == originalTokens) {
 			goto finishToken;
 		    }
 		    break;
@@ -1748,7 +1748,7 @@ ParseTokens(
 	    Tcl_Panic("ParseTokens encountered unknown character");
 	}
     }
-    if ((int)parsePtr->numTokens == originalTokens) {
+    if (parsePtr->numTokens == originalTokens) {
 	/*
 	 * There was nothing in this range of text. Add an empty token for the
 	 * empty range, so that there is always at least one token added.
@@ -2230,8 +2230,7 @@ ParseBraces(
 {
     Tcl_Token *tokenPtr;
     const char *src;
-    int startIndex, level;
-    Tcl_Size length;
+    Tcl_Size length, startIndex, level;
     int append = (flags & PARSE_APPEND);
 
     if (numBytes < 0 && start) {
@@ -2283,7 +2282,7 @@ ParseBraces(
 		 */
 
 		if ((src != tokenPtr->start)
-			|| ((int)parsePtr->numTokens == startIndex)) {
+			|| (parsePtr->numTokens == startIndex)) {
 		    tokenPtr->size = (src - tokenPtr->start);
 		    parsePtr->numTokens++;
 		}
@@ -2556,7 +2555,7 @@ TclSubstTokens(
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
     Tcl_Size line,		/* The line the script starts on. */
-    int *clNextOuter,		/* Information about an outer context for */
+    Tcl_Size *clNextOuter,	/* Information about an outer context for */
     const char *outerScript,	/* continuation line data. This is set by
 				 * EvalEx() to properly handle [...]-nested
 				 * commands. The 'outerScript' refers to the
@@ -2580,7 +2579,7 @@ TclSubstTokens(
 #define NUM_STATIC_POS 20
     int isLiteral;
     Tcl_Size i, maxNumCL, numCL, adjust;
-    int *clPosition = NULL;
+    Tcl_Size *clPosition = NULL;
     Interp *iPtr = (Interp *) interp;
     int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
 
@@ -2615,7 +2614,7 @@ TclSubstTokens(
 
     if (isLiteral) {
 	maxNumCL = NUM_STATIC_POS;
-	clPosition = (int *)Tcl_Alloc(maxNumCL * sizeof(int));
+	clPosition = (Tcl_Size *)Tcl_Alloc(maxNumCL * sizeof(Tcl_Size));
     }
 
     adjust = 0;
@@ -2665,8 +2664,8 @@ TclSubstTokens(
 
 		    if (numCL >= maxNumCL) {
 			maxNumCL *= 2;
-			clPosition = (int *)Tcl_Realloc(clPosition,
-				maxNumCL * sizeof(int));
+			clPosition = (Tcl_Size *)Tcl_Realloc(clPosition,
+				maxNumCL * sizeof(Tcl_Size));
 		    }
 		    clPosition[numCL] = clPos;
 		    numCL++;
