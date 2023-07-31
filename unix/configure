@@ -7329,7 +7329,32 @@ printf "%s\n" "#define HAVE_STDBOOL_H 1" >>confdefs.h
 fi
 
 
-    #AC_CHECK_FUNCS([posix_spawnp])
+    # Check for vfork, posix_spawnp() and friends unconditionally
+    ac_fn_c_check_func "$LINENO" "vfork" "ac_cv_func_vfork"
+if test "x$ac_cv_func_vfork" = xyes
+then :
+  printf "%s\n" "#define HAVE_VFORK 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawnp" "ac_cv_func_posix_spawnp"
+if test "x$ac_cv_func_posix_spawnp" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWNP 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawn_file_actions_adddup2" "ac_cv_func_posix_spawn_file_actions_adddup2"
+if test "x$ac_cv_func_posix_spawn_file_actions_adddup2" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawnattr_setflags" "ac_cv_func_posix_spawnattr_setflags"
+if test "x$ac_cv_func_posix_spawnattr_setflags" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWNATTR_SETFLAGS 1" >>confdefs.h
+
+fi
+
 
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
