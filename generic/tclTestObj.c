@@ -891,6 +891,7 @@ TestlistobjCmd(
 	"replace",
 	"indexmemcheck",
 	"getelementsmemcheck",
+	"index",
 	NULL
     };
     enum listobjCmdIndex {
@@ -899,6 +900,7 @@ TestlistobjCmd(
 	LISTOBJ_REPLACE,
 	LISTOBJ_INDEXMEMCHECK,
 	LISTOBJ_GETELEMENTSMEMCHECK,
+	LISTOBJ_INDEX,
     } cmdIndex;
 
     Tcl_Size varIndex;		/* Variable number converted to binary */
@@ -1005,6 +1007,26 @@ TestlistobjCmd(
 		    break;
 		}
 	    }
+	}
+	break;
+    case LISTOBJ_INDEX:
+	/*
+	 * Tcl_ListObjIndex semantics differ from lindex for out of bounds.
+	 * Hence this explicit test.
+	 */
+	if (objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv,
+			     "varIndex listIndex");
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetIntForIndex(interp, objv[3], TCL_INDEX_NONE, &first) != TCL_OK) {
+	    return TCL_ERROR;
+	} else {
+	    Tcl_Obj *objP;
+	    if (Tcl_ListObjIndex(interp, varPtr[varIndex], first, &objP) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    Tcl_SetObjResult(interp, objP ? objP : Tcl_NewStringObj("null", -1));
 	}
 	break;
     }

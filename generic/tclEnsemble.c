@@ -3293,7 +3293,7 @@ TclAttemptCompileProc(
     Tcl_Size i;
     Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
     Tcl_Size savedStackDepth = envPtr->currStackDepth;
-    unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
+    Tcl_Size savedCodeNext = envPtr->codeNext - envPtr->codeStart;
     Tcl_Size savedAuxDataArrayNext = envPtr->auxDataArrayNext;
     Tcl_Size savedExceptArrayNext = envPtr->exceptArrayNext;
 #ifdef TCL_COMPILE_DEBUG
@@ -3356,13 +3356,13 @@ TclAttemptCompileProc(
 	ExceptionAux *auxPtr = envPtr->exceptAuxArrayPtr;
 
 	for (i = 0; i < savedExceptArrayNext; i++) {
-	    while ((int)auxPtr->numBreakTargets > 0
-		    && auxPtr->breakTargets[auxPtr->numBreakTargets - 1]
+	    while (auxPtr->numBreakTargets > 0
+		    && (Tcl_Size) auxPtr->breakTargets[auxPtr->numBreakTargets - 1]
 		    >= savedCodeNext) {
 		auxPtr->numBreakTargets--;
 	    }
-	    while ((int)auxPtr->numContinueTargets > 0
-		    && auxPtr->continueTargets[auxPtr->numContinueTargets - 1]
+	    while (auxPtr->numContinueTargets > 0
+		    && (Tcl_Size) auxPtr->continueTargets[auxPtr->numContinueTargets - 1]
 		    >= savedCodeNext) {
 		auxPtr->numContinueTargets--;
 	    }
