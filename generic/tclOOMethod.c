@@ -588,7 +588,7 @@ TclOOMakeProcInstanceMethod(
 
 		cfPtr->level = -1;
 		cfPtr->type = context.type;
-		cfPtr->line = (int *)Tcl_Alloc(sizeof(int));
+		cfPtr->line = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size));
 		cfPtr->line[0] = context.line[3];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
@@ -701,7 +701,7 @@ TclOOMakeProcMethod(
 
 		cfPtr->level = -1;
 		cfPtr->type = context.type;
-		cfPtr->line = (int *)Tcl_Alloc(sizeof(int));
+		cfPtr->line = (Tcl_Size *)Tcl_Alloc(sizeof(Tcl_Size));
 		cfPtr->line[0] = context.line[3];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
