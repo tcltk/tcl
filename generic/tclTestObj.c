@@ -1050,6 +1050,33 @@ TestlistobjCmd(
  *----------------------------------------------------------------------
  */
 
+static Tcl_Size V1TestListObjLength(TCL_UNUSED(Tcl_Obj *)) {
+    return 100;
+}
+
+static int V1TestListObjIndex(
+    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(Tcl_Obj *),
+    TCL_UNUSED(Tcl_Size),
+    Tcl_Obj **objPtr)
+{
+    *objPtr = Tcl_NewStringObj("This indexProc should never be accessed (bug: e58d7e19e9)", -1);
+    return TCL_OK;
+}
+
+static const Tcl_ObjType v1TestListType = {
+    "testlist",			/* name */
+    NULL,		/* freeIntRepProc */
+    NULL,		/* dupIntRepProc */
+    NULL,		/* updateStringProc */
+    NULL,		/* setFromAnyProc */
+    1,			/* This is a V1 objType, which doesn't have an indexProc */
+    V1TestListObjLength, /* always return 100, doesn't really matter */
+    V1TestListObjIndex, /* should never be accessed, because this objType = V1*/
+    NULL, NULL, NULL, NULL, NULL
+};
+
+
 static int
 TestobjCmd(
     TCL_UNUSED(void *),
@@ -1062,15 +1089,15 @@ TestobjCmd(
     const Tcl_ObjType *targetType;
     Tcl_Obj **varPtr;
     const char *subcommands[] = {
-	"freeallvars", "bug3598580", "types",
-	"objtype", "newobj", "set",
+	"freeallvars", "bug3598580", "buge58d7e19e9",
+	"types", "objtype", "newobj", "set",
 	"assign", "convert", "duplicate",
 	"invalidateStringRep", "refcount", "type",
 	NULL
     };
     enum testobjCmdIndex {
-	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580, TESTOBJ_TYPES,
-	TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
+	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580, TESTOBJ_BUGE58D7E19E9,
+	TESTOBJ_TYPES, TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
 	TESTOBJ_ASSIGN, TESTOBJ_CONVERT, TESTOBJ_DUPLICATE,
 	TESTOBJ_INVALIDATESTRINGREP, TESTOBJ_REFCOUNT, TESTOBJ_TYPE,
     } cmdIndex;
@@ -1109,6 +1136,15 @@ TestobjCmd(
 	    /* Replace the single list element through itself, nonsense but
 	     * legal. */
 	    Tcl_ListObjReplace(interp, listObjPtr, 0, 1, 1, &elemObjPtr);
+	    Tcl_SetObjResult(interp, listObjPtr);
+	}
+	return TCL_OK;
+    case TESTOBJ_BUGE58D7E19E9:
+	if (objc != 3) {
+	    goto wrongNumArgs;
+	} else {
+	    Tcl_Obj *listObjPtr = Tcl_NewStringObj(Tcl_GetString(objv[2]), -1);
+	    listObjPtr->typePtr = &v1TestListType;
 	    Tcl_SetObjResult(interp, listObjPtr);
 	}
 	return TCL_OK;
