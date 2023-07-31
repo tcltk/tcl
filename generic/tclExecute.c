@@ -941,6 +941,9 @@ wordSkip(
 {
     int mask = TCL_ALLOCALIGN-1;
     int base = PTR2INT(ptr) & mask;
+fprintf(stdout,"WS: %p, %d %d\n", ptr, base, TCL_ALLOCALIGN); fflush(stdout);
+fprintf(stdout,"WS: skip %d\n", (TCL_ALLOCALIGN - base)/sizeof(Tcl_Obj *));
+fflush(stdout);
     return (TCL_ALLOCALIGN - base)/sizeof(Tcl_Obj *);
 }
 
@@ -990,6 +993,8 @@ GrowEvaluationStack(
 	    Tcl_Panic("STACK: Reallocating with no previous alloc");
 	}
 	if (needed <= 0) {
+fprintf(stdout,"GES 1: %p\n", MEMSTART(markerPtr));
+fflush(stdout);
 	    return MEMSTART(markerPtr);
 	}
     } else {
@@ -1008,6 +1013,8 @@ GrowEvaluationStack(
 	    memStart = tmpMarkerPtr + offset;
 	    esPtr->tosPtr = memStart - 1;
 	    *esPtr->markerPtr = (Tcl_Obj *) markerPtr;
+fprintf(stdout,"GES 2: %p\n", memStart);
+fflush(stdout);
 	    return memStart;
 	}
 #endif
@@ -1102,6 +1109,8 @@ GrowEvaluationStack(
 	DeleteExecStack(oldPtr);
     }
 
+fprintf(stdout,"GES 3: %p\n", memStart);
+fflush(stdout);
     return memStart;
 }
 
@@ -1179,6 +1188,7 @@ TclStackFree(
     esPtr = eePtr->execStackPtr;
     markerPtr = esPtr->markerPtr;
     marker = *markerPtr;
+fprintf(stdout, "TSF: %p %p\n", markerPtr, marker); fflush(stdout);
 
     if ((freePtr != NULL) && (MEMSTART(markerPtr) != (Tcl_Obj **)freePtr)) {
 	Tcl_Panic("TclStackFree: incorrect freePtr (%p != %p). Call out of sequence?",
@@ -2062,6 +2072,12 @@ TEBCresume(
 
     TEBC_DATA_DIG();
 
+
+fprintf(stdout,"TEBCR: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
+
+
+
 #ifdef TCL_COMPILE_DEBUG
     if (!pc && (tclTraceExec >= 2)) {
 	PrintByteCodeInfo(codePtr);
@@ -2089,6 +2105,8 @@ TEBCresume(
 	    iPtr->objResultPtr = objPtr;
 	}
 
+fprintf(stdout,"TEBCR 2: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	goto cleanup0;
     } else {
         /* resume from invocation */
@@ -2145,9 +2163,13 @@ TEBCresume(
 #ifndef TCL_COMPILE_DEBUG
 	if (*pc == INST_POP) {
 	    TclDecrRefCount(objResultPtr);
+fprintf(stdout,"TEBCR 3.5: %d, %p\n", cleanup, iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	    NEXT_INST_V(1, cleanup, 0);
 	}
 #endif
+fprintf(stdout,"TEBCR 4: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	NEXT_INST_V(0, cleanup, -1);
     }
 
@@ -2159,6 +2181,8 @@ TEBCresume(
      * This used to be a "for(;;)" loop, with each instruction doing its own
      * cleanup.
      */
+fprintf(stdout,"TEBCR 5: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 
   cleanupV_pushObjResultPtr:
     switch (cleanup) {
@@ -2258,6 +2282,8 @@ TEBCresume(
     inst = *pc;
 
     peepholeStart:
+fprintf(stdout,"TEBCR PEEP: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 #ifdef TCL_COMPILE_STATS
     iPtr->stats.instructionCount[*pc]++;
 #endif
@@ -2278,6 +2304,8 @@ TEBCresume(
     TCL_DTRACE_INST_NEXT();
 
     if (inst == INST_LOAD_SCALAR1) {
+fprintf(stdout,"TEBCR LS: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	goto instLoadScalar1;
     } else if (inst == INST_PUSH1) {
 	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
@@ -2310,6 +2338,8 @@ TEBCresume(
 	goto peepholeStart;
     }
 
+fprintf(stdout,"TEBCR SWITCH: %d %p\n", inst, iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
     switch (inst) {
     case INST_SYNTAX:
     case INST_RETURN_IMM: {
@@ -2523,6 +2553,8 @@ TEBCresume(
     }
 
     case INST_DONE:
+fprintf(stdout,"TEBCR DONE: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	if (tosPtr > initTosPtr) {
 
 	    if ((curEvalFlags & TCL_EVAL_DISCARD_RESULT) && (result == TCL_OK)) {
@@ -2547,8 +2579,12 @@ TEBCresume(
 		fprintf(stdout, "\n");
 	    }
 #endif
+fprintf(stdout,"TEBCR DONE 1: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	    goto checkForCatch;
 	}
+fprintf(stdout,"TEBCR DONE 2: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	(void) POP_OBJECT();
 	goto abnormalReturn;
 
@@ -7439,6 +7475,8 @@ TEBCresume(
 	 */
 
     processExceptionReturn:
+fprintf(stdout,"TEBCR 6: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 #ifdef TCL_COMPILE_DEBUG
 	switch (*pc) {
 	case INST_INVOKE_STK1:
@@ -7559,6 +7597,8 @@ TEBCresume(
 	 */
 
     checkForCatch:
+fprintf(stdout,"TEBCR CFC: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	if (iPtr->execEnvPtr->rewind) {
 	    goto abnormalReturn;
 	}
@@ -7572,6 +7612,8 @@ TEBCresume(
 		    bytes ? xxx1length : 0, pcBeg, tosPtr);
 	    CACHE_STACK_INFO();
 	}
+fprintf(stdout,"TEBCR CFC1: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
 	/*
@@ -7587,6 +7629,8 @@ TEBCresume(
 	    }
 	    POP_TAUX_OBJ();
 	}
+fprintf(stdout,"TEBCR CFC2: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 
 	/*
 	 * We must not catch if the script in progress has been canceled with
@@ -7606,6 +7650,8 @@ TEBCresume(
 #endif
 	    goto abnormalReturn;
 	}
+fprintf(stdout,"TEBCR CFC3: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 
 	/*
 	 * We must not catch an exceeded limit. Instead, it blows outwards
@@ -7623,6 +7669,8 @@ TEBCresume(
 	    goto abnormalReturn;
 	}
 	if (catchTop == initCatchTop) {
+fprintf(stdout,"TEBCR TOP IS TOP: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 #ifdef TCL_COMPILE_DEBUG
 	    if (traceInstructions) {
 		fprintf(stdout, "   ... no enclosing catch, returning %s\n",
@@ -7657,6 +7705,8 @@ TEBCresume(
 	 */
 
     processCatch:
+fprintf(stdout,"TEBCR PC: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	while (CURR_DEPTH > PTR2INT(*catchTop)) {
 	    valuePtr = POP_OBJECT();
 	    TclDecrRefCount(valuePtr);
@@ -7683,6 +7733,8 @@ TEBCresume(
 	 */
 
     abnormalReturn:
+fprintf(stdout,"TEBCR ABNORMAL 1: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	TCL_DTRACE_INST_LAST();
 
 	/*
@@ -7692,14 +7744,20 @@ TEBCresume(
 	 * markers.
 	 */
 
+fprintf(stdout,"TEBCR ABNORMAL 2: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	while (auxObjList) {
 	    POP_TAUX_OBJ();
 	}
+fprintf(stdout,"TEBCR ABNORMAL 3: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	while (tosPtr > initTosPtr) {
 	    objPtr = POP_OBJECT();
 	    Tcl_DecrRefCount(objPtr);
 	}
 
+fprintf(stdout,"TEBCR ABNORMAL 4: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	if (tosPtr < initTosPtr) {
 	    fprintf(stderr,
 		    "\nTclNRExecuteByteCode: abnormal return at pc %" TCL_T_MODIFIER "d: "
@@ -7708,12 +7766,22 @@ TEBCresume(
 		    CURR_DEPTH, 0);
 	    Tcl_Panic("TclNRExecuteByteCode execution failure: end stack top < start stack top");
 	}
+fprintf(stdout,"TEBCR ABNORMAL 5: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 	CLANG_ASSERT(bcFramePtr);
     }
 
+fprintf(stdout,"TEBCR ABNORMAL 6: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
+fprintf(stdout,"TEBCR ABNORMAL 7: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
     TclReleaseByteCode(codePtr);
+fprintf(stdout,"TEBCR ABNORMAL 8: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
     TclStackFree(interp, TD);	/* free my stack */
+fprintf(stdout,"TEBCR ABNORMAL 9: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 
     return result;
 

@@ -1777,6 +1777,8 @@ TclNRInterpProcCore(
     procPtr->refCount++;
     ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
+fprintf(stdout,"NBB: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
     TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
 	    NULL, NULL);
     return TclNRExecuteByteCode(interp, codePtr);
@@ -1794,6 +1796,8 @@ InterpProcNR2(
     Tcl_Obj *procNameObj = (Tcl_Obj *)data[0];
     ProcErrorProc *errorProc = (ProcErrorProc *)data[1];
 
+fprintf(stdout,"ZZ: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
     if (TCL_DTRACE_PROC_RETURN_ENABLED()) {
 	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 
@@ -1826,6 +1830,8 @@ InterpProcNR2(
 		TclGetString(r), r);
     }
 
+fprintf(stdout,"AA: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
     freePtr = iPtr->framePtr;
     Tcl_PopCallFrame(interp);		/* Pop but do not free. */
     TclStackFree(interp, freePtr->compiledLocals);
