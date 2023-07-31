@@ -1070,7 +1070,7 @@ static const Tcl_ObjType v1TestListType = {
     NULL,		/* dupIntRepProc */
     NULL,		/* updateStringProc */
     NULL,		/* setFromAnyProc */
-    1,			/* This is a V1 objType, which doesn't have an indexProc */
+    offsetof(Tcl_ObjType, indexProc),			/* This is a V1 objType, which doesn't have an indexProc */
     V1TestListObjLength, /* always return 100, doesn't really matter */
     V1TestListObjIndex, /* should never be accessed, because this objType = V1*/
     NULL, NULL, NULL, NULL, NULL
