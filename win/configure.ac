@@ -135,6 +135,8 @@ AS_IF([test "${enable_shared+set}" = "set"], [
 ], [
   tcl_ok=yes
 ])
+zlib_lib_name=zdll.lib
+tommath_lib_name=tommath.lib
 AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(ZLIB_DLL_FILE,[\${ZLIB_DLL_FILE}])
   AC_SUBST(TOMMATH_DLL_FILE,[\${TOMMATH_DLL_FILE}])
@@ -145,6 +147,8 @@ AS_IF([test "$tcl_ok" = "yes"], [
       AS_IF([test "$GCC" == "yes"],[
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.a])
         AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.a])
+        zlib_lib_name=libz.dll.a
+        tommath_lib_name=libtommath.dll.a
       ], [
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/zdll.lib])
         AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/tommath.lib])
@@ -153,6 +157,8 @@ AS_IF([test "$tcl_ok" = "yes"], [
       AS_IF([test "$GCC" == "yes"],[
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/libz.dll.a])
         AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a])
+        zlib_lib_name=libz.dll.a
+        tommath_lib_name=libtommath.dll.a
       ], [
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/zdll.lib])
         AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/tommath.lib])
@@ -167,7 +173,8 @@ AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
-
+AC_SUBST(TCL_ZLIB_LIB_NAME, $zlib_lib_name)
+AC_SUBST(TCL_TOMMATH_LIB_NAME, $tommath_lib_name)
 AC_CHECK_TYPES([intptr_t, uintptr_t],,,[[
 #include <stdint.h>
 ]])

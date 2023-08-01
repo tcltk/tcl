@@ -739,6 +739,8 @@ ZIP_PROG
 TCLSH_PROG
 EXEEXT_FOR_BUILD
 CC_FOR_BUILD
+TCL_TOMMATH_LIB_NAME
+TCL_ZLIB_LIB_NAME
 TOMMATH_OBJS
 ZLIB_OBJS
 TOMMATH_LIBS
@@ -4887,6 +4889,8 @@ else $as_nop
   tcl_ok=yes
 
 fi
+zlib_lib_name=zdll.lib
+tommath_lib_name=tommath.lib
 if test "$tcl_ok" = "yes"
 then :
 
@@ -4913,6 +4917,8 @@ then :
 
         TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.a
 
+        zlib_lib_name=libz.dll.a
+        tommath_lib_name=libtommath.dll.a
 
 else $as_nop
 
@@ -4932,6 +4938,8 @@ then :
 
         TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a
 
+        zlib_lib_name=libz.dll.a
+        tommath_lib_name=libtommath.dll.a
 
 else $as_nop
 
@@ -4964,6 +4972,9 @@ fi
 
 printf "%s\n" "#define HAVE_ZLIB 1" >>confdefs.h
 
+TCL_ZLIB_LIB_NAME=$zlib_lib_name
+
+TCL_TOMMATH_LIB_NAME=$tommath_lib_name
 
 ac_fn_c_check_type "$LINENO" "intptr_t" "ac_cv_type_intptr_t" "
 #include <stdint.h>
