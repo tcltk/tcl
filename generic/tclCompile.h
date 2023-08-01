@@ -183,16 +183,16 @@ typedef struct {
 typedef struct {
     Tcl_Size srcOffset;		/* Command location to find the entry. */
     Tcl_Size nline;			/* Number of words in the command */
-    int *line;			/* Line information for all words in the
+    Tcl_Size *line;			/* Line information for all words in the
 				 * command. */
-    int **next;			/* Transient information used by the compiler
+    Tcl_Size **next;			/* Transient information used by the compiler
 				 * for tracking of hidden continuation
 				 * lines. */
 } ECL;
 
 typedef struct {
     int type;			/* Context type. */
-    int start;			/* Starting line for compiled script. Needed
+    Tcl_Size start;		/* Starting line for compiled script. Needed
 				 * for the extended recompile check in
 				 * tclCompileObj. */
     Tcl_Obj *path;		/* Path of the sourced file the command is
@@ -382,7 +382,7 @@ typedef struct CompileEnv {
 				 * encountered that have not yet been paired
 				 * with a corresponding
 				 * INST_INVOKE_EXPANDED. */
-    int *clNext;		/* If not NULL, it refers to the next slot in
+    Tcl_Size *clNext;	/* If not NULL, it refers to the next slot in
 				 * clLoc to check for an invisible
 				 * continuation line. */
 } CompileEnv;
@@ -1095,7 +1095,7 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  */
 
 MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
+			    Tcl_Parse *parsePtr, Tcl_Size depth, Command *cmdPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
@@ -1103,7 +1103,7 @@ MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
-			    int numBytes, CompileEnv *envPtr, int optimize);
+			    Tcl_Size numBytes, CompileEnv *envPtr, int optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr);
@@ -1111,7 +1111,7 @@ MODULE_SCOPE void	TclCompileInvocation(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, int numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
-			    const char *script, int numBytes,
+			    const char *script, Tcl_Size numBytes,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
@@ -1120,13 +1120,13 @@ MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
-MODULE_SCOPE int	TclCreateAuxData(void *clientData,
+MODULE_SCOPE Tcl_Size	TclCreateAuxData(void *clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
-MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
+MODULE_SCOPE Tcl_Size	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
-			    int length, TCL_HASH_TYPE hash, int *newPtr,
+			    Tcl_Size length, TCL_HASH_TYPE hash, int *newPtr,
 			    Namespace *nsPtr, int flags,
 			    LiteralEntry **globalPtrPtr);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
@@ -1141,7 +1141,7 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, TCL_HASH_TYPE index);
-MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
+MODULE_SCOPE Tcl_Size	TclFindCompiledLocal(const char *name, Tcl_Size nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
@@ -1182,9 +1182,9 @@ MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
 MODULE_SCOPE int	TclPrintInstruction(ByteCode *codePtr,
 			    const unsigned char *pc);
 MODULE_SCOPE void	TclPrintObject(FILE *outFile,
-			    Tcl_Obj *objPtr, int maxChars);
+			    Tcl_Obj *objPtr, Tcl_Size maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
-			    const char *string, int maxChars);
+			    const char *string, Tcl_Size maxChars);
 MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
@@ -1206,13 +1206,13 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 			    const char *script, const char *command,
-			    int length, const unsigned char *pc,
+			    Tcl_Size length, const unsigned char *pc,
 			    Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
 /*
@@ -1544,7 +1544,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  * these macros are:
  *
  * static void		PushLiteral(CompileEnv *envPtr,
- *			    const char *string, int length);
+ *			    const char *string, Tcl_Size length);
  * static void		PushStringLiteral(CompileEnv *envPtr,
  *			    const char *string);
  */
