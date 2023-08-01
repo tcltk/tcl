@@ -48,7 +48,12 @@ extern "C" {
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  */
 
-#define TCL_MAJOR_VERSION   8
+#if !defined(TCL_MAJOR_VERSION)
+#   define TCL_MAJOR_VERSION   8
+#endif
+#if TCL_MAJOR_VERSION != 8
+#   error "This header-file is for Tcl 8 only"
+#endif
 #define TCL_MINOR_VERSION   6
 #define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
 #define TCL_RELEASE_SERIAL  13
