@@ -733,6 +733,7 @@ $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 !else
 @TCL_SHARED_BUILD@   1
 !endif
+@TCL_ZLIB_LIB_NAME@ zdll.lib
 <<
 
 

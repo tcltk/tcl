@@ -179,3 +179,5 @@ TCL_STUB_LIB_PATH='@TCL_STUB_LIB_PATH@'
 # Flag, 1: we built Tcl with threads enabled, 0 we didn't
 TCL_THREADS=@TCL_THREADS@
 
+# Name of the zlib library that extensions should use
+TCL_ZLIB_LIB_NAME='@TCL_ZLIB_LIB_NAME@'
