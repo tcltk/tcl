@@ -5,13 +5,14 @@
 ###
 
 Gzip=:
-SymOrLoc=""
+Sym=""
+Loc=""
 Gz=""
 Suffix=""
 
 while true; do
     case $1 in
-        -s | --symlinks  ) SymOrLoc="-s "      ;;
+        -s | --symlinks  )      Sym="-s "      ;;
         -z | --compress  )     Gzip=$2;  shift ;;
 	-e | --extension )       Gz=$2;  shift ;;
 	-x | --suffix    )   Suffix=$2;  shift ;;
@@ -47,7 +48,7 @@ if test -d "$Dir" ; then : ; else
     echo "target directory must exist"
     exit 1
 fi
-test -z "$SymOrLoc" && SymOrLoc="$Dir/"
+test -z "$Sym" && Loc="$Dir/"
 
 ########################################################################
 ### Extract Target Names from Manual Page
@@ -117,7 +118,7 @@ for Target in $Names; do
 	chmod 644 "$Dir/$First"
 	$Gzip "$Dir/$First"
     else
-	ln $SymOrLoc"$First$Gz" "$Dir/$Target$Gz"
+	ln $Sym"$Loc$First$Gz" "$Dir/$Target$Gz"
     fi
 done
 
