@@ -745,7 +745,6 @@ $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 @LDFLAGS_DEBUG@      -nologo -machine:$(MACHINE) -debug -debugtype:cv
 @LDFLAGS_OPTIMIZE@   -nologo -machine:$(MACHINE) -release -opt:ref -opt:icf,3
 @TCL_LIB_FILE@       $(PROJECT)$(VERSION)$(SUFX).lib
-@TCL_NEEDS_EXP_FILE@
 @LIBS@               $(baselibs) $(PRJ_LIBS)
 @prefix@             $(_INSTALLDIR)
 @exec_prefix@        $(BIN_INSTALL_DIR)
@@ -757,17 +756,12 @@ $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 @STLIB_LD@           $(lib32) -nologo
 @SHLIB_LD_LIBS@      $(baselibs) $(PRJ_LIBS)
 @SHLIB_SUFFIX@       .dll
-@DL_LIBS@
 @LDFLAGS@
-@TCL_CC_SEARCH_FLAGS@
-@TCL_LD_SEARCH_FLAGS@
 @LIBOBJS@
 @RANLIB@
-@TCL_LIB_FLAG@
 @TCL_BUILD_LIB_SPEC@
 @TCL_LIB_SPEC@       $(LIB_INSTALL_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 @TCL_INCLUDE_SPEC@   -I$(INCLUDE_INSTALL_DIR)
-@TCL_LIB_VERSIONS_OK@
 @TCL_SRC_DIR@        $(ROOT)
 @TCL_PACKAGE_PATH@
 @TCL_STUB_LIB_FILE@  $(TCLSTUBLIBNAME)
@@ -776,7 +770,6 @@ $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 @TCL_BUILD_STUB_LIB_SPEC@ -L$(OUT_DIR) $(TCLSTUBLIBNAME)
 @TCL_BUILD_STUB_LIB_PATH@ $(TCLSTUBLIB)
 @TCL_STUB_LIB_PATH@  $(LIB_INSTALL_DIR)\$(TCLSTUBLIBNAME)
-@CFG_TCL_EXPORT_FILE_SUFFIX@  $(VERSION)$(SUFX).lib
 @CFG_TCL_SHARED_LIB_SUFFIX@   $(VERSION)$(SUFX).dll
 @CFG_TCL_UNSHARED_LIB_SUFFIX@ $(VERSION)$(SUFX).lib
 !if $(STATIC_BUILD)
