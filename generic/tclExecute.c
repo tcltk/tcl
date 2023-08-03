@@ -3377,8 +3377,12 @@ TEBCresume(
 	    goto gotError;
 	}
 	if (Tcl_IsShared(objResultPtr)) {
+#if 0
 	    Tcl_Obj *newValue = TclDuplicatePureObj(
 		    interp, objResultPtr, &tclListType);
+#else
+	    Tcl_Obj *newValue = Tcl_DuplicateObj(objResultPtr);
+#endif
 	    if (!newValue) {
 		TRACE_ERROR(interp);
 		goto gotError;
