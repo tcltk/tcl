@@ -704,6 +704,7 @@ TCL_IMPORT_LIB_FLAG
 TCL_IMPORT_LIB_FILE
 TCL_STATIC_LIB_FLAG
 TCL_STATIC_LIB_FILE
+TCL_LIB_FLAG
 TCL_LIB_FILE
 TCL_EXE
 PKG_CFG_ARGS
@@ -5765,12 +5766,14 @@ eval "TCL_BUILD_STUB_LIB_PATH=\"`$CYGPATH $(pwd)`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
 
 if test ${SHARED_BUILD} = 0 -o "$GCC" != "yes" ; then
+ eval "TCL_LIB_FLAG=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
  eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
 else
+ eval "TCL_LIB_FLAG=\"-ltcl${VER}${FLAGSUFFIX}\""
  eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${DLLSUFFIX}.a\""
 fi
-eval "TCL_BUILD_LIB_SPEC=\"-L`$CYGPATH $(pwd)` -ltcl${VER}${FLAGSUFFIX}\""
-eval "TCL_LIB_SPEC=\"-L${libdir} -ltcl${VER}${FLAGSUFFIX}\""
+eval "TCL_BUILD_LIB_SPEC=\"-L`$CYGPATH $(pwd)` ${TCL_LIB_FLAG}\""
+eval "TCL_LIB_SPEC=\"-L${libdir} ${TCL_LIB_FLAG}\""
 
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
@@ -5816,6 +5819,7 @@ esac
 TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d ab.`"
 
 # X86|AMD64|ARM64|IA64 for manifest
+
 
 
 
