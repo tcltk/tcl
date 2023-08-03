@@ -1184,6 +1184,10 @@ TclStackFree(
      * the previous marker.
      */
 
+fprintf(stdout,"TSF A: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
     eePtr = iPtr->execEnvPtr;
     esPtr = eePtr->execStackPtr;
     markerPtr = esPtr->markerPtr;
@@ -1195,6 +1199,10 @@ fprintf(stdout, "TSF: %p %p\n", markerPtr, marker); fflush(stdout);
 		freePtr, MEMSTART(markerPtr));
     }
 
+fprintf(stdout,"TSF B: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
     esPtr->tosPtr = markerPtr - 1;
     esPtr->markerPtr = (Tcl_Obj **) marker;
     if (marker) {
@@ -1206,6 +1214,8 @@ fprintf(stdout, "TSF: %p %p\n", markerPtr, marker); fflush(stdout);
      * reallocs could have generated several unused intervening stacks: free
      * them too.
      */
+fprintf(stdout,"TSF C: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 
     while (esPtr->nextPtr) {
 	esPtr = esPtr->nextPtr;
@@ -1219,6 +1229,8 @@ fprintf(stdout, "TSF: %p %p\n", markerPtr, marker); fflush(stdout);
 	    break;
 	}
     }
+fprintf(stdout,"TSF D: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
     if (esPtr->prevPtr) {
 	eePtr->execStackPtr = esPtr->prevPtr;
 #ifdef PURIFY
@@ -1228,6 +1240,8 @@ fprintf(stdout, "TSF: %p %p\n", markerPtr, marker); fflush(stdout);
     } else {
 	eePtr->execStackPtr = esPtr;
     }
+fprintf(stdout,"TSF E: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fflush(stdout);
 }
 
 void *
@@ -2282,7 +2296,10 @@ fflush(stdout);
     inst = *pc;
 
     peepholeStart:
-fprintf(stdout,"TEBCR PEEP: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fprintf(stdout,"TEBCR PEEP: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr)
+);
 fflush(stdout);
 #ifdef TCL_COMPILE_STATS
     iPtr->stats.instructionCount[*pc]++;
@@ -2338,7 +2355,10 @@ fflush(stdout);
 	goto peepholeStart;
     }
 
-fprintf(stdout,"TEBCR SWITCH: %d %p\n", inst, iPtr->execEnvPtr->execStackPtr->markerPtr);
+fprintf(stdout,"TEBCR SWITCH: %d %p %p\n", inst,
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr)
+);
 fflush(stdout);
     switch (inst) {
     case INST_SYNTAX:
@@ -2553,7 +2573,10 @@ fflush(stdout);
     }
 
     case INST_DONE:
-fprintf(stdout,"TEBCR DONE: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fprintf(stdout,"TEBCR DONE: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr)
+);
 fflush(stdout);
 	if (tosPtr > initTosPtr) {
 
@@ -2579,7 +2602,10 @@ fflush(stdout);
 		fprintf(stdout, "\n");
 	    }
 #endif
-fprintf(stdout,"TEBCR DONE 1: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fprintf(stdout,"TEBCR DONE 1: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr)
+);
 fflush(stdout);
 	    goto checkForCatch;
 	}
@@ -3331,6 +3357,10 @@ fflush(stdout);
 	NEXT_INST_V(pcAdjustment, cleanup, 1);
 
     case INST_LAPPEND_LIST:
+fprintf(stdout,"ILL 1: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	opnd = TclGetUInt4AtPtr(pc+1);
 	valuePtr = OBJ_AT_TOS;
 	varPtr = LOCAL(opnd);
@@ -3339,18 +3369,34 @@ fflush(stdout);
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
+fprintf(stdout,"ILL 2: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	TRACE(("%u <- \"%.30s\" => ", opnd, O2S(valuePtr)));
 	if (TclListObjGetElementsM(interp, valuePtr, &objc, &objv)
 		!= TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+fprintf(stdout,"ILL 3: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	if (TclIsVarDirectReadable(varPtr)
 		&& TclIsVarDirectWritable(varPtr)) {
 	    goto lappendListDirect;
 	}
+fprintf(stdout,"ILL 4: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	arrayPtr = NULL;
 	part1Ptr = part2Ptr = NULL;
+fprintf(stdout,"ILL 5: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	goto lappendListPtr;
 
     case INST_LAPPEND_LIST_ARRAY:
@@ -3407,14 +3453,26 @@ fflush(stdout);
 	goto lappendList;
 
     lappendListDirect:
+fprintf(stdout,"ILL 3.1: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	objResultPtr = varPtr->value.objPtr;
 	if (TclListObjLengthM(interp, objResultPtr, &len) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+fprintf(stdout,"ILL 3.2: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	if (Tcl_IsShared(objResultPtr)) {
+#if 0
 	    Tcl_Obj *newValue = TclDuplicatePureObj(
 		    interp, objResultPtr, &tclListType);
+#else
+	    Tcl_Obj *newValue = Tcl_DuplicateObj(objResultPtr);
+#endif
 	    if (!newValue) {
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -3424,11 +3482,19 @@ fflush(stdout);
 	    varPtr->value.objPtr = objResultPtr = newValue;
 	    Tcl_IncrRefCount(newValue);
 	}
+fprintf(stdout,"ILL 3.3: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	if (TclListObjAppendElements(interp, objResultPtr, objc, objv)
 		!= TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+fprintf(stdout,"ILL 3.4: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_V(pcAdjustment, cleanup, 1);
 
@@ -3449,16 +3515,28 @@ fflush(stdout);
 	}
 
     lappendListPtr:
+fprintf(stdout,"ILL 6: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	if (TclIsVarInHash(varPtr)) {
 	    VarHashRefCount(varPtr)++;
 	}
 	if (arrayPtr && TclIsVarInHash(arrayPtr)) {
 	    VarHashRefCount(arrayPtr)++;
 	}
+fprintf(stdout,"ILL 7: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	DECACHE_STACK_INFO();
 	objResultPtr = TclPtrGetVarIdx(interp, varPtr, arrayPtr,
 		part1Ptr, part2Ptr, TCL_LEAVE_ERR_MSG, opnd);
 	CACHE_STACK_INFO();
+fprintf(stdout,"ILL 8: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	if (TclIsVarInHash(varPtr)) {
 	    VarHashRefCount(varPtr)--;
 	}
@@ -3504,6 +3582,10 @@ fflush(stdout);
 		goto gotError;
 	    }
 	}
+fprintf(stdout,"ILL 9: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_V(pcAdjustment, cleanup, 1);
     }
@@ -7597,7 +7679,9 @@ fflush(stdout);
 	 */
 
     checkForCatch:
-fprintf(stdout,"TEBCR CFC: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fprintf(stdout,"TEBCR CFC: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
 fflush(stdout);
 	if (iPtr->execEnvPtr->rewind) {
 	    goto abnormalReturn;
@@ -7733,9 +7817,11 @@ fflush(stdout);
 	 */
 
     abnormalReturn:
-fprintf(stdout,"TEBCR ABNORMAL 1: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
-fflush(stdout);
 	TCL_DTRACE_INST_LAST();
+fprintf(stdout,"TEBCR ABNORMAL 1: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
+fflush(stdout);
 
 	/*
 	 * Clear all expansions and same-level NR calls.
@@ -7744,20 +7830,14 @@ fflush(stdout);
 	 * markers.
 	 */
 
-fprintf(stdout,"TEBCR ABNORMAL 2: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
-fflush(stdout);
 	while (auxObjList) {
 	    POP_TAUX_OBJ();
 	}
-fprintf(stdout,"TEBCR ABNORMAL 3: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
-fflush(stdout);
 	while (tosPtr > initTosPtr) {
 	    objPtr = POP_OBJECT();
 	    Tcl_DecrRefCount(objPtr);
 	}
 
-fprintf(stdout,"TEBCR ABNORMAL 4: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
-fflush(stdout);
 	if (tosPtr < initTosPtr) {
 	    fprintf(stderr,
 		    "\nTclNRExecuteByteCode: abnormal return at pc %" TCL_T_MODIFIER "d: "
@@ -7766,18 +7846,14 @@ fflush(stdout);
 		    CURR_DEPTH, 0);
 	    Tcl_Panic("TclNRExecuteByteCode execution failure: end stack top < start stack top");
 	}
-fprintf(stdout,"TEBCR ABNORMAL 5: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
-fflush(stdout);
 	CLANG_ASSERT(bcFramePtr);
     }
 
-fprintf(stdout,"TEBCR ABNORMAL 6: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
-fflush(stdout);
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
-fprintf(stdout,"TEBCR ABNORMAL 7: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
-fflush(stdout);
     TclReleaseByteCode(codePtr);
-fprintf(stdout,"TEBCR ABNORMAL 8: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
+fprintf(stdout,"TEBCR ABNORMAL 8: %p %p\n",
+iPtr->execEnvPtr->execStackPtr->markerPtr,
+*(iPtr->execEnvPtr->execStackPtr->markerPtr));
 fflush(stdout);
     TclStackFree(interp, TD);	/* free my stack */
 fprintf(stdout,"TEBCR ABNORMAL 9: %p\n", iPtr->execEnvPtr->execStackPtr->markerPtr);
