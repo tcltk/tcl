@@ -42,7 +42,7 @@ TCL_SHARED_BUILD=@TCL_SHARED_BUILD@
 TCL_LIB_FILE='@TCL_LIB_FILE@'
 
 # Flag to indicate whether shared libraries need export files.
-TCL_NEEDS_EXP_FILE=@TCL_NEEDS_EXP_FILE@
+TCL_NEEDS_EXP_FILE=''
 
 # Deprecated. Same as TCL_UNSHARED_LIB_SUFFIX
 TCL_EXPORT_FILE_SUFFIX='@CFG_TCL_UNSHARED_LIB_SUFFIX@'
@@ -122,7 +122,7 @@ TCL_INCLUDE_SPEC='@TCL_INCLUDE_SPEC@'
 # ("ok" means it's safe to use switches like -ltcl7.5;  "nodots" means
 # use switches like -ltcl75).  SunOS and FreeBSD require "nodots", for
 # example.
-TCL_LIB_VERSIONS_OK='@TCL_LIB_VERSIONS_OK@'
+TCL_LIB_VERSIONS_OK='nodots'
 
 # String that can be evaluated to generate the part of a shared library
 # name that comes after the "libxxx" (includes version number, if any,
