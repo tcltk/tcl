@@ -1555,20 +1555,34 @@ test io-12.9 {ReadChars: multibyte chars split} -body {
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -buffersize 10
+    fconfigure $f -encoding utf-8 -profile tcl8 -buffersize 10
     set in [read $f]
-    close $f
+    read $f
     scan [string index $in end] %c
 } -cleanup {
     catch {close $f}
 } -result 194
-test io-12.10 {ReadChars: multibyte chars split} -body {
+test io-12.11 {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
     close $f
     set f [open $path(test1)]
-    fconfigure $f -encoding utf-8 -buffersize 11
+    fconfigure $f -encoding utf-8 -profile strict -buffersize 10
+    set in [read $f]
+    close $f
+    scan [string index $in end] %c
+} -cleanup {
+    catch {close $f}
+} -returnCodes 1 -match glob -result {error reading "file*":\
+	invalid or incomplete multibyte or wide character}
+test io-12.12 {ReadChars: multibyte chars split} -body {
+    set f [open $path(test1) w]
+    fconfigure $f -translation binary
+    puts -nonewline $f [string repeat a 9]\xC2
+    close $f
+    set f [open $path(test1)]
+    fconfigure $f -encoding utf-8 -profile tcl8 -buffersize 11
     set in [read $f]
     close $f
     scan [string index $in end] %c
@@ -5765,7 +5779,7 @@ test io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
     close $s2
     set modes
 } {auto crlf}
-test io-39.22 {Tcl_SetChannelOption, invariance} {unix} {
+test io-39.22 {Tcl_SetChannelOption, invariance} -constraints {unix} -body {
     file delete $path(test1)
     set f1 [open $path(test1) w+]
     set l ""
@@ -5776,8 +5790,8 @@ test io-39.22 {Tcl_SetChannelOption, invariance} {unix} {
     lappend l [fconfigure $f1 -eofchar]
     close $f1
     set l
-} {{{} {}} {O G} {D D}}
-test io-39.22a {Tcl_SetChannelOption, invariance} {
+} -result {{{} {}} {O G} {D D}}
+test io-39.22a {Tcl_SetChannelOption, invariance} -body {
     file delete $path(test1)
     set f1 [open $path(test1) w+]
     set l [list]
@@ -5788,7 +5802,7 @@ test io-39.22a {Tcl_SetChannelOption, invariance} {
     lappend l [list [catch {fconfigure $f1 -eofchar {1 2 3}} msg] $msg]
     close $f1
     set l
-} {{O G} {D D} {1 {bad value for -eofchar: should be a list of zero, one, or two elements}}}
+} -result {{O G} {D D} {1 {bad value for -eofchar: should be a list of zero, one, or two elements}}}
 test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
 	writable, it should still have valid -eofchar and -translation options } {
     set l [list]
@@ -6367,7 +6381,7 @@ test io-47.3 {deleting fileevent on interpreter delete} {testfevent fileevent} {
     fileevent $f readable {script 1}
     fileevent $f2 readable {script 2}
     testfevent cmd "fileevent $f3 readable {script 3}
-      fileevent $f4 readable {script 4}"
+    fileevent $f4 readable {script 4}"
     testfevent delete
     set x [list [fileevent $f readable] [fileevent $f2 readable] \
 		[fileevent $f3 readable] [fileevent $f4 readable]]
@@ -7435,7 +7449,7 @@ test io-52.9 {TclCopyChannel & encodings} {fcopy} {
 	    [file size $path(utf8-fcopy.txt)] \
 	    [file size $path(utf8-rp.txt)]
 } {3 5 5}
-test io-52.10 {TclCopyChannel & encodings} {fcopy notWinCI} {
+test io-52.10 {TclCopyChannel & encodings} -constraints {fcopy notWinCI} -body {
     # encoding to binary (=> implies that the
     # internal utf-8 is written)
 
@@ -7447,11 +7461,12 @@ test io-52.10 {TclCopyChannel & encodings} {fcopy notWinCI} {
     fconfigure $out -translation binary
 
     fcopy $in $out
-    close $in
-    close $out
 
     file size $path(utf8-fcopy.txt)
-} 5
+} -cleanup {
+    close $in
+    close $out
+} -result 5
 test io-52.11 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
     fconfigure $out -encoding utf-8 -translation lf
@@ -9213,6 +9228,7 @@ test io-75.7 {
 } -cleanup {
     close $f
     removeFile io-75.7
+    unset msg f fn
 } -match glob -result {1 {error reading "file*":\
     invalid or incomplete multibyte or wide character}}
 
@@ -9250,17 +9266,16 @@ test io-75.8.eoflater {invalid utf-8 encoding eof handling (-profile strict)} -s
     fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A \
 	-translation lf -profile strict
 } -body {
-    set res [list [catch {read $f} cres] [eof $f]]
+    set res [list [catch {read $f} msg] [eof $f]]
     chan configure $f -encoding iso8859-1
     lappend res [read $f 1]
     chan configure $f -encoding utf-8
-    catch {read $f 1} cres
-    lappend res $cres
-    close $f
-    set res
+    lappend res [catch {read $f 1} msg] $msg
 } -cleanup {
+    close $f
     removeFile io-75.8
-} -match glob -result "1 0 \x81 {error reading \"*\":\
+    unset res msg fn f
+} -match glob -result "1 0 \x81 1 {error reading \"*\":\
     invalid or incomplete multibyte or wide character}"
 
 
@@ -9269,7 +9284,6 @@ test io-strict-multibyte-eof {
 
     See issue 25cdcb7e8fb381fb
 } -setup {
-    set res {}
     set chan [file tempfile];
     fconfigure $chan -encoding binary
     puts -nonewline $chan \x81\x1A
@@ -9277,10 +9291,10 @@ test io-strict-multibyte-eof {
     seek $chan 0
     chan configure $chan -encoding utf-8 -profile strict
 } -body {
-    list [catch {read $chan 1} cres] $cres
+    list [catch {read $chan 1} msg] $msg
 } -cleanup {
     close $chan
-    unset res
+    unset msg chan
 } -match glob -result {1 {error reading "*":\
     invalid or incomplete multibyte or wide character}}
 
@@ -9296,6 +9310,7 @@ test io-75.9 {unrepresentable character write passes and is replaced by ?} -setu
 } -cleanup {
     close $f
     removeFile io-75.9
+    unset f
 } -match glob -result [list {A} {error writing "*":\
     invalid or incomplete multibyte or wide character}]
 
@@ -9317,6 +9332,7 @@ test io-75.10 {incomplete multibyte encoding read is ignored} -setup {
 } -cleanup {
     close $f
     removeFile io-75.10
+    unset d hd
 } -result 41c0
 # The current result returns the orphan byte as byte.
 # This may be expected due to special utf-8 handling.
@@ -9341,6 +9357,7 @@ test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
 } -cleanup {
     close $f
     removeFile io-75.11
+    unset d hd msg f
 } -match glob -result {41 1 {error reading "file*":\
     invalid or incomplete multibyte or wide character}}
 
@@ -9381,6 +9398,7 @@ test io-75.13 {
 } -cleanup {
     close $f
     removeFile io-75.13
+    unset d hd msg f fn
 } -match glob -result {41 1 {error reading "file*":\
     invalid or incomplete multibyte or wide character}}
 
@@ -9398,14 +9416,16 @@ test io-75.14 {
     fconfigure $chan -encoding utf-8 -buffering none -eofchar {} \
 	-translation auto -profile strict
 } -body {
+    set res [gets $chan]
     lappend res [gets $chan]
-    lappend res [gets $chan]
-    lappend res [catch {gets $chan} cres] $cres
+    lappend res [catch {gets $chan} msg] $msg
     chan configure $chan -profile tcl8
     lappend res [gets $chan]
     lappend res [gets $chan]
-    close $chan
     return $res
+} -cleanup {
+    close $chan
+    unset chan res msg
 } -match glob -result {a b 1 {error reading "*":\
     invalid or incomplete multibyte or wide character} cÀ d}
 
@@ -9425,8 +9445,8 @@ test io-75.15 {
     fconfigure $chan -encoding utf-8 -profile strict
     lappend res [gets $chan]
     lappend res [gets $chan]
-    lappend res [catch {gets $chan} cres] $cres
-    lappend res [catch {gets $chan} cres] $cres
+    lappend res [catch {gets $chan} msg] $msg
+    lappend res [catch {gets $chan} msg] $msg
 	chan configure $chan -translation binary
 	set data [read $chan 4]
 	foreach char [split $data {}] {
@@ -9439,6 +9459,7 @@ test io-75.15 {
     return $res
 } -cleanup {
     close $chan
+    unset chan res msg data
 } -match glob -result {hello AB 1 {error reading "*": invalid or incomplete multibyte or wide character}\
     1 {error reading "*": invalid or incomplete multibyte or wide character} 43 44 c0 40 EF GHI}
 
