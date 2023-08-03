@@ -677,9 +677,9 @@ typedef struct Tcl_ObjType {
 #if TCL_MAJOR_VERSION > 8
 #   define TCL_OBJTYPE_V0 0, \
 	    0,0,0,0,0,0,0 /* Pre-Tcl 9 */
-#   define TCL_OBJTYPE_V1(a) 1, \
+#   define TCL_OBJTYPE_V1(a) offsetof(Tcl_ObjType, indexProc), \
 	    a,0,0,0,0,0,0 /* Tcl 9 Version 1 */
-#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g) 2, \
+#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g) sizeof(Tcl_ObjType), \
 	    a,b,c,d,e,f,g /* Tcl 9 - AbstractLists */
 #else
 #   define TCL_OBJTYPE_V0 /* just empty */

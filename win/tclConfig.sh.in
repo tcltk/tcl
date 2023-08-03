@@ -41,13 +41,7 @@ TCL_LIB_FILE='@TCL_LIB_FILE@'
 TCL_ZIP_FILE='@TCL_ZIP_FILE@'
 
 # Flag to indicate whether shared libraries need export files.
-TCL_NEEDS_EXP_FILE=@TCL_NEEDS_EXP_FILE@
-
-# String that can be evaluated to generate the part of the export file
-# name that comes after the "libxxx" (includes version number, if any,
-# extension, and anything else needed).  May depend on the variables
-# VERSION.  On most UNIX systems this is ${VERSION}.exp.
-TCL_EXPORT_FILE_SUFFIX='@CFG_TCL_EXPORT_FILE_SUFFIX@'
+TCL_NEEDS_EXP_FILE=''
 
 # Additional libraries to use when linking Tcl.
 TCL_LIBS='@LIBS@'
@@ -85,7 +79,7 @@ TCL_SHLIB_SUFFIX='@SHLIB_SUFFIX@'
 
 # Library file(s) to include in tclsh and other base applications
 # in order to provide facilities needed by DLOBJ above.
-TCL_DL_LIBS='@DL_LIBS@'
+TCL_DL_LIBS=''
 
 # Flags to pass to the compiler when linking object files into
 # an executable tclsh or tcltest binary.
@@ -95,8 +89,8 @@ TCL_LD_FLAGS='@LDFLAGS@'
 # run-time dynamic linker where to look for shared libraries such as
 # libtcl.so.  Used when linking applications.  Only works if there
 # is a variable "LIB_RUNTIME_DIR" defined in the Makefile.
-TCL_CC_SEARCH_FLAGS='@TCL_CC_SEARCH_FLAGS@'
-TCL_LD_SEARCH_FLAGS='@TCL_LD_SEARCH_FLAGS@'
+TCL_CC_SEARCH_FLAGS=''
+TCL_LD_SEARCH_FLAGS=''
 
 # Additional object files linked with Tcl to provide compatibility
 # with standard facilities from ANSI C or POSIX.
@@ -124,7 +118,7 @@ TCL_INCLUDE_SPEC='@TCL_INCLUDE_SPEC@'
 # ("ok" means it's safe to use switches like -ltcl7.5;  "nodots" means
 # use switches like -ltcl75).  SunOS and FreeBSD require "nodots", for
 # example.
-TCL_LIB_VERSIONS_OK='@TCL_LIB_VERSIONS_OK@'
+TCL_LIB_VERSIONS_OK='nodots'
 
 # String that can be evaluated to generate the part of a shared library
 # name that comes after the "libxxx" (includes version number, if any,
@@ -174,3 +168,9 @@ TCL_BUILD_STUB_LIB_PATH='@TCL_BUILD_STUB_LIB_PATH@'
 
 # Path to the Tcl stub library in the install directory.
 TCL_STUB_LIB_PATH='@TCL_STUB_LIB_PATH@'
+
+# Name of the zlib library that extensions should use
+TCL_ZLIB_LIB_NAME='@TCL_ZLIB_LIB_NAME@'
+
+# Name of the tommath library that extensions should use
+TCL_TOMMATH_LIB_NAME='@TCL_TOMMATH_LIB_NAME@'
