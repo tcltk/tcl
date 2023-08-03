@@ -5773,8 +5773,6 @@ fi
 	    DL_LIBS="-ldl"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
-	    TCL_NEEDS_EXP_FILE=1
-	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,--out-implib,\$@.a"
 	    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for Cygwin version of gcc" >&5
 printf %s "checking for Cygwin version of gcc... " >&6; }
 if test ${ac_cv_cygwin+y}
