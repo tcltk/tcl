@@ -3377,8 +3377,12 @@ TEBCresume(
 	    goto gotError;
 	}
 	if (Tcl_IsShared(objResultPtr)) {
-	    Tcl_Obj *newValue = TclDuplicatePureObj(
-		    interp, objResultPtr, &tclListType);
+	    Tcl_Obj *newValue;
+
+	    DECACHE_STACK_INFO();
+	    newValue = TclDuplicatePureObj(interp, objResultPtr, &tclListType);
+	    CACHE_STACK_INFO();
+
 	    if (!newValue) {
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -3441,8 +3445,10 @@ TEBCresume(
 		goto gotError;
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
+		    DECACHE_STACK_INFO();
 		    valueToAssign = TclDuplicatePureObj(
 			interp, objResultPtr, &tclListType);
+		    CACHE_STACK_INFO();
 		    if (!valueToAssign) {
 			goto errorInLappendListPtr;
 		    }
@@ -6462,10 +6468,11 @@ TEBCresume(
 			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
 		goto gotError;
 	    }
-	    CACHE_STACK_INFO();
 	    if (Tcl_IsShared(listPtr)) {
+		DECACHE_STACK_INFO();
 		objPtr = TclDuplicatePureObj(
 		    interp, listPtr, &tclListType);
+		CACHE_STACK_INFO();
 		if (!objPtr) {
 		    goto gotError;
 		}
