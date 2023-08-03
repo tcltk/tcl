@@ -121,6 +121,8 @@ AS_IF([test "${enable_shared+set}" = "set"], [
 ], [
   tcl_ok=yes
 ])
+zlib_lib_name=zdll.lib
+tommath_lib_name=tommath.lib
 AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(ZLIB_DLL_FILE,[\${ZLIB_DLL_FILE}])
   AC_SUBST(TOMMATH_DLL_FILE,[\${TOMMATH_DLL_FILE}])
@@ -131,6 +133,8 @@ AS_IF([test "$tcl_ok" = "yes"], [
       AS_IF([test "$GCC" == "yes"],[
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.a])
         AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.a])
+        zlib_lib_name=libz.dll.a
+        tommath_lib_name=libtommath.dll.a
       ], [
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/zdll.lib])
         AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/tommath.lib])
@@ -139,6 +143,8 @@ AS_IF([test "$tcl_ok" = "yes"], [
       AS_IF([test "$GCC" == "yes"],[
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/libz.dll.a])
         AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a])
+        zlib_lib_name=libz.dll.a
+        tommath_lib_name=libtommath.dll.a
       ], [
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/zdll.lib])
         AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/tommath.lib])
@@ -153,7 +159,8 @@ AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
-
+AC_SUBST(TCL_ZLIB_LIB_NAME, $zlib_lib_name)
+AC_SUBST(TCL_TOMMATH_LIB_NAME, $tommath_lib_name)
 AC_CHECK_TYPES([intptr_t, uintptr_t],,,[[
 #include <stdint.h>
 ]])
@@ -321,23 +328,23 @@ eval "TCL_BUILD_STUB_LIB_PATH=\"`$CYGPATH $(pwd)`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
 
 if test ${SHARED_BUILD} = 0 -o "$GCC" != "yes" ; then
+ eval "TCL_LIB_FLAG=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
  eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
 else
+ eval "TCL_LIB_FLAG=\"-ltcl${VER}${FLAGSUFFIX}\""
  eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${DLLSUFFIX}.a\""
 fi
-eval "TCL_BUILD_LIB_SPEC=\"-L`$CYGPATH $(pwd)` -ltcl${VER}${FLAGSUFFIX}\""
-eval "TCL_LIB_SPEC=\"-L${libdir} -ltcl${VER}${FLAGSUFFIX}\""
+eval "TCL_BUILD_LIB_SPEC=\"-L`$CYGPATH $(pwd)` ${TCL_LIB_FLAG}\""
+eval "TCL_LIB_SPEC=\"-L${libdir} ${TCL_LIB_FLAG}\""
 
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
 
 TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
 TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
-TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
 
 CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}
 CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}
-CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 
 #--------------------------------------------------------------------
 # Adjust the defines for how the resources are built depending
@@ -404,7 +411,6 @@ AC_SUBST(TCL_SRC_DIR)
 AC_SUBST(TCL_BIN_DIR)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
-AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
 
 # win/tcl.m4 doesn't set (CFLAGS)
 AC_SUBST(CFLAGS_DEFAULT)
@@ -443,15 +449,7 @@ AC_SUBST(POST_MAKE_LIB)
 AC_SUBST(MAKE_DLL)
 AC_SUBST(MAKE_EXE)
 
-# empty on win, but needs sub'ing
 AC_SUBST(TCL_BUILD_LIB_SPEC)
-AC_SUBST(TCL_CC_SEARCH_FLAGS)
-AC_SUBST(TCL_LD_SEARCH_FLAGS)
-AC_SUBST(TCL_NEEDS_EXP_FILE)
-AC_SUBST(TCL_BUILD_EXP_FILE)
-AC_SUBST(TCL_EXP_FILE)
-AC_SUBST(DL_LIBS)
-AC_SUBST(TCL_LIB_VERSIONS_OK)
 AC_SUBST(TCL_PACKAGE_PATH)
 
 # win only
