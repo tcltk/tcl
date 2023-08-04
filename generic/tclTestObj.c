@@ -101,7 +101,7 @@ TclObjTest_Init(
      */
     Tcl_Obj **varPtr;
 
-    varPtr = (Tcl_Obj **) ckalloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
+    varPtr = (Tcl_Obj **)ckalloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
     if (!varPtr) {
 	return TCL_ERROR;
     }
@@ -893,6 +893,7 @@ TestlistobjCmd(
 	"replace",
 	"indexmemcheck",
 	"getelementsmemcheck",
+	"index",
 	NULL
     };
     enum listobjCmdIndex {
@@ -901,6 +902,7 @@ TestlistobjCmd(
 	LISTOBJ_REPLACE,
 	LISTOBJ_INDEXMEMCHECK,
 	LISTOBJ_GETELEMENTSMEMCHECK,
+	LISTOBJ_INDEX,
     } cmdIndex;
 
     Tcl_Size varIndex;		/* Variable number converted to binary */
@@ -982,6 +984,7 @@ TestlistobjCmd(
 			TCL_INDEX_NONE));
 		/* Keep looping since we are also looping for leaks */
 	    }
+	    Tcl_DecrRefCount(objP);
 	}
 	break;
 
@@ -1006,6 +1009,26 @@ TestlistobjCmd(
 		    break;
 		}
 	    }
+	}
+	break;
+    case LISTOBJ_INDEX:
+	/*
+	 * Tcl_ListObjIndex semantics differ from lindex for out of bounds.
+	 * Hence this explicit test.
+	 */
+	if (objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv,
+			     "varIndex listIndex");
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetIntForIndex(interp, objv[3], TCL_INDEX_NONE, &first) != TCL_OK) {
+	    return TCL_ERROR;
+	} else {
+	    Tcl_Obj *objP;
+	    if (Tcl_ListObjIndex(interp, varPtr[varIndex], first, &objP) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    Tcl_SetObjResult(interp, objP ? objP : Tcl_NewStringObj("null", -1));
 	}
 	break;
     }
@@ -1041,15 +1064,15 @@ TestobjCmd(
     const Tcl_ObjType *targetType;
     Tcl_Obj **varPtr;
     const char *subcommands[] = {
-	"freeallvars", "bug3598580", "types",
-	"objtype", "newobj", "set",
+	"freeallvars", "bug3598580",
+	"types", "objtype", "newobj", "set",
 	"assign", "convert", "duplicate",
 	"invalidateStringRep", "refcount", "type",
 	NULL
     };
     enum testobjCmdIndex {
-	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580, TESTOBJ_TYPES,
-	TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
+	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580,
+	TESTOBJ_TYPES, TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
 	TESTOBJ_ASSIGN, TESTOBJ_CONVERT, TESTOBJ_DUPLICATE,
 	TESTOBJ_INVALIDATESTRINGREP, TESTOBJ_REFCOUNT, TESTOBJ_TYPE,
     } cmdIndex;
@@ -1513,7 +1536,7 @@ TeststringobjCmd(
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 13: /* newunicode*/
-	    unicode = (unsigned short *) ckalloc(((unsigned)objc - 3) * sizeof(unsigned short));
+	    unicode = (unsigned short *)ckalloc(((unsigned)objc - 3) * sizeof(unsigned short));
 	    for (i = 0; i < (objc - 3); ++i) {
 		int val;
 		if (Tcl_GetIntFromObj(interp, objv[i + 3], &val) != TCL_OK) {

@@ -236,10 +236,7 @@ static Tcl_ResolveCompiledVarProc	InterpCompiledVarResolver;
 static void		MainLoop(void);
 static Tcl_CmdProc	NoopCmd;
 static Tcl_ObjCmdProc	NoopObjCmd;
-static int		ObjTraceProc(void *clientData,
-			    Tcl_Interp *interp, int level, const char *command,
-			    Tcl_Command commandToken, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_CmdObjTraceProc2 ObjTraceProc;
 static void		ObjTraceDeleteProc(void *clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
 static void		SpecialFree(char *blockPtr);
@@ -315,7 +312,7 @@ static Tcl_CmdProc	TestsetplatformCmd;
 static Tcl_CmdProc	TeststaticlibraryCmd;
 static Tcl_CmdProc	TesttranslatefilenameCmd;
 static Tcl_CmdProc	TestupvarCmd;
-static Tcl_ObjCmdProc	TestWrongNumArgsObjCmd;
+static Tcl_ObjCmdProc2	TestWrongNumArgsObjCmd;
 static Tcl_ObjCmdProc	TestGetIndexFromObjStructObjCmd;
 static Tcl_CmdProc	TestChannelCmd;
 static Tcl_CmdProc	TestChannelEventCmd;
@@ -600,7 +597,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testutf16string", Testutf16stringObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
+    Tcl_CreateObjCommand2(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfilesystem", TestFilesystemObjCmd,
 	    NULL, NULL);
@@ -1170,6 +1167,8 @@ TestcmdinfoObjCmd(
 	    Tcl_AppendResult(interp, " stringProc", NULL);
 	} else if (info.isNativeObjectProc == 1) {
 	    Tcl_AppendResult(interp, " nativeObjectProc", NULL);
+	} else if (info.isNativeObjectProc == 2) {
+	    Tcl_AppendResult(interp, " nativeObjectProc2", NULL);
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("Invalid isNativeObjectProc value %d",
 		    info.isNativeObjectProc));
@@ -1302,7 +1301,7 @@ TestcmdtokenCmd(
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "create") == 0) {
-	refPtr = (TestCommandTokenRef *)Tcl_Alloc(sizeof(TestCommandTokenRef));
+	refPtr = (TestCommandTokenRef *)ckalloc(sizeof(TestCommandTokenRef));
 	refPtr->token = Tcl_CreateCommand(interp, argv[2], CmdProc0,
 		refPtr, CmdDelProc0);
 	refPtr->id = nextCommandTokenRefId;
@@ -1426,7 +1425,7 @@ TestcmdtraceCmd(
 	static int deleteCalled;
 
 	deleteCalled = 0;
-	cmdTrace = Tcl_CreateObjTrace(interp, 50000,
+	cmdTrace = Tcl_CreateObjTrace2(interp, 50000,
 		TCL_ALLOW_INLINE_COMPILATION, ObjTraceProc,
 		&deleteCalled, ObjTraceDeleteProc);
 	result = Tcl_EvalEx(interp, argv[2], TCL_INDEX_NONE, 0);
@@ -1509,10 +1508,10 @@ static int
 ObjTraceProc(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    TCL_UNUSED(int) /*level*/,
+    TCL_UNUSED(Tcl_Size) /* level */,
     const char *command,
     TCL_UNUSED(Tcl_Command),
-    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(Tcl_Size) /*objc*/,
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *word = Tcl_GetString(objv[0]);
@@ -2026,7 +2025,7 @@ TestdstringCmd(
 static void SpecialFree(
     char *blockPtr			/* Block to free. */
 ) {
-    ckfree(blockPtr - 16);
+    ckfree((char *)blockPtr - 16);
 }
 
 /*
@@ -4594,7 +4593,7 @@ TestregexpObjCmd(
 	Tcl_Obj *newPtr, *varPtr, *valuePtr;
 
 	varPtr = objv[i];
-	ii = ((cflags&REG_EXPECT) && i == objc-1) ? TCL_INDEX_NONE : i;
+	ii = ((cflags&REG_EXPECT) && i == objc-1) ? TCL_INDEX_NONE : (Tcl_Size)i;
 	if (indices) {
 	    Tcl_Obj *objs[2];
 
@@ -5727,7 +5726,10 @@ TestbytestringObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    Tcl_Size n = 0;
+    struct {
+	Tcl_Size n;
+	int m; /* This variable should not be overwritten */
+    } x = {0, 1};
     const char *p;
 
     if (objc != 2) {
@@ -5735,11 +5737,15 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
 
-    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &n);
+    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &x.n);
     if (p == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
+    if (x.m != 1) {
+	Tcl_AppendResult(interp, "Tcl_GetBytesFromObj() overwrites variable", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, x.n));
     return TCL_OK;
 }
 
@@ -7917,7 +7923,7 @@ TestHashSystemHashCmd(
 	Tcl_SetHashValue(hPtr, INT2PTR(i+42));
     }
 
-    if (hash.numEntries != limit) {
+    if (hash.numEntries != (Tcl_Size)limit) {
 	Tcl_AppendResult(interp, "unexpected maximal size", NULL);
 	Tcl_DeleteHashTable(&hash);
 	return TCL_ERROR;
@@ -8656,7 +8662,7 @@ MyCompiledVarFetch(
     }
 
     hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) &iPtr->globalNsPtr->varTable,
-            (char *) resVarInfo->nameObj, &isNewVar);
+            (char *)resVarInfo->nameObj, &isNewVar);
     if (hPtr) {
         var = (Tcl_Var) TclVarHashGetValue(hPtr);
     } else {
@@ -8825,4 +8831,3 @@ int TestApplyLambdaObjCmd (
  * indent-tabs-mode: nil
  * End:
  */
-

@@ -273,15 +273,11 @@ static struct {
 				 * they are believed to not be UTF-8; only
 				 * written to from Tcl code in a trusted
 				 * interpreter, so not protected by mutex. */
-    Tcl_Encoding utf8;		/* The UTF-8 encoding that we prefer to use
-				 * for the strings (especially filenames)
-				 * embedded in a ZIP. Other encodings are used
-				 * dynamically. */
     int idCount;		/* Counter for channel names */
     Tcl_HashTable fileHash;	/* File name to ZipEntry mapping */
     Tcl_HashTable zipHash;	/* Mount to ZipFile mapping */
 } ZipFS = {
-    0, 0, 0, DEFAULT_WRITE_MAX_SIZE, NULL, NULL, 0,
+    0, 0, 0, DEFAULT_WRITE_MAX_SIZE, NULL, 0,
 	    {0,{0,0,0,0},0,0,0,0,0,0,0,0,0},
 	    {0,{0,0,0,0},0,0,0,0,0,0,0,0,0}
 };
@@ -758,7 +754,7 @@ DecodeZipEntryText(
 
     while (1) {
 	int srcRead, dstWrote;
-	int result = Tcl_ExternalToUtf(NULL, ZipFS.utf8, src, srcLen, flags,
+	int result = Tcl_ExternalToUtf(NULL, tclUtf8Encoding, src, srcLen, flags,
 		&state, dst, dstLen, &srcRead, &dstWrote, NULL);
 	int soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
@@ -1875,7 +1871,6 @@ ZipfsSetup(void)
     ZipFS.fallbackEntryEncoding = (char *)
 	    ckalloc(strlen(ZIPFS_FALLBACK_ENCODING) + 1);
     strcpy(ZipFS.fallbackEntryEncoding, ZIPFS_FALLBACK_ENCODING);
-    ZipFS.utf8 = Tcl_GetEncoding(NULL, "utf-8");
     ZipFS.initialized = 1;
     Tcl_CreateExitHandler(ZipfsExitHandler, NULL);
 }
@@ -2555,7 +2550,7 @@ ZipAddFile(
      * crazy enough to embed NULs in filenames, they deserve what they get!
      */
 
-    zpathExt = Tcl_UtfToExternalDString(ZipFS.utf8, zpathTcl, -1, &zpathDs);
+    zpathExt = Tcl_UtfToExternalDString(tclUtf8Encoding, zpathTcl, -1, &zpathDs);
     zpathlen = strlen(zpathExt);
     if (zpathlen + ZIP_CENTRAL_HEADER_LEN > bufsize) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3224,7 +3219,7 @@ ZipFSMkZipOrImg(
 	}
 	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 
-	name = Tcl_UtfToExternalDString(ZipFS.utf8, z->name, -1, &ds);
+	name = Tcl_UtfToExternalDString(tclUtf8Encoding, z->name, -1, &ds);
 	len = Tcl_DStringLength(&ds);
 	SerializeCentralDirectoryEntry(start, end, (unsigned char *) buf,
 		z, len);

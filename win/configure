@@ -661,10 +661,8 @@ TCL_DDE_MINOR_VERSION
 TCL_DDE_MAJOR_VERSION
 TCL_DDE_VERSION
 TCL_PACKAGE_PATH
-TCL_LIB_VERSIONS_OK
 TCL_EXP_FILE
 TCL_BUILD_EXP_FILE
-TCL_NEEDS_EXP_FILE
 TCL_LD_SEARCH_FLAGS
 TCL_CC_SEARCH_FLAGS
 TCL_BUILD_LIB_SPEC
@@ -693,7 +691,6 @@ CC_EXENAME
 CC_OBJNAME
 DEPARG
 EXTRA_CFLAGS
-CFG_TCL_EXPORT_FILE_SUFFIX
 CFG_TCL_UNSHARED_LIB_SUFFIX
 CFG_TCL_SHARED_LIB_SUFFIX
 TCL_BIN_DIR
@@ -739,6 +736,8 @@ ZIP_PROG
 TCLSH_PROG
 EXEEXT_FOR_BUILD
 CC_FOR_BUILD
+TCL_TOMMATH_LIB_NAME
+TCL_ZLIB_LIB_NAME
 TOMMATH_OBJS
 ZLIB_OBJS
 TOMMATH_LIBS
@@ -4887,6 +4886,8 @@ else $as_nop
   tcl_ok=yes
 
 fi
+zlib_lib_name=zdll.lib
+tommath_lib_name=tommath.lib
 if test "$tcl_ok" = "yes"
 then :
 
@@ -4913,6 +4914,8 @@ then :
 
         TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.a
 
+        zlib_lib_name=libz.dll.a
+        tommath_lib_name=libtommath.dll.a
 
 else $as_nop
 
@@ -4932,6 +4935,8 @@ then :
 
         TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a
 
+        zlib_lib_name=libz.dll.a
+        tommath_lib_name=libtommath.dll.a
 
 else $as_nop
 
@@ -4964,6 +4969,9 @@ fi
 
 printf "%s\n" "#define HAVE_ZLIB 1" >>confdefs.h
 
+TCL_ZLIB_LIB_NAME=$zlib_lib_name
+
+TCL_TOMMATH_LIB_NAME=$tommath_lib_name
 
 ac_fn_c_check_type "$LINENO" "intptr_t" "ac_cv_type_intptr_t" "
 #include <stdint.h>
@@ -5787,23 +5795,23 @@ eval "TCL_BUILD_STUB_LIB_PATH=\"`$CYGPATH $(pwd)`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
 
 if test ${SHARED_BUILD} = 0 -o "$GCC" != "yes" ; then
+ eval "TCL_LIB_FLAG=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
  eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
 else
+ eval "TCL_LIB_FLAG=\"-ltcl${VER}${FLAGSUFFIX}\""
  eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${DLLSUFFIX}.a\""
 fi
-eval "TCL_BUILD_LIB_SPEC=\"-L`$CYGPATH $(pwd)` -ltcl${VER}${FLAGSUFFIX}\""
-eval "TCL_LIB_SPEC=\"-L${libdir} -ltcl${VER}${FLAGSUFFIX}\""
+eval "TCL_BUILD_LIB_SPEC=\"-L`$CYGPATH $(pwd)` ${TCL_LIB_FLAG}\""
+eval "TCL_LIB_SPEC=\"-L${libdir} ${TCL_LIB_FLAG}\""
 
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
 
 TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
 TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
-TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
 
 CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}
 CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}
-CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 
 #--------------------------------------------------------------------
 # Adjust the defines for how the resources are built depending
@@ -5871,7 +5879,6 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 
-
 # win/tcl.m4 doesn't set (CFLAGS)
 
 
@@ -5910,8 +5917,6 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 # empty on win, but needs sub'ing
-
-
 
 
 

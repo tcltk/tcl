@@ -1225,7 +1225,7 @@ typedef struct CmdFrame {
     int type;			/* Values see below. */
     int level;			/* Number of frames in stack, prevent O(n)
 				 * scan of list. */
-    int *line;			/* Lines the words of the command start on. */
+    Tcl_Size *line;		/* Lines the words of the command start on. */
     Tcl_Size nline;
     CallFrame *framePtr;	/* Procedure activation record, may be
 				 * NULL. */
@@ -1320,7 +1320,7 @@ typedef struct CFWordBC {
 typedef struct ContLineLoc {
     Tcl_Size num;			/* Number of entries in loc, not counting the
 				 * final -1 marker entry. */
-    int loc[TCLFLEXARRAY];/* Table of locations, as character offsets.
+    Tcl_Size loc[TCLFLEXARRAY];/* Table of locations, as character offsets.
 				 * The table is allocated as part of the
 				 * structure, extending behind the nominal end
 				 * of the structure. An entry containing the
@@ -2909,6 +2909,7 @@ MODULE_SCOPE TclPlatformType tclPlatform;
  */
 
 MODULE_SCOPE Tcl_Encoding tclIdentityEncoding;
+MODULE_SCOPE Tcl_Encoding tclUtf8Encoding;
 MODULE_SCOPE int
 TclEncodingProfileNameToId(Tcl_Interp *interp,
 			   const char *profileName,
@@ -3087,7 +3088,7 @@ MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, Tcl_Size len);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
-MODULE_SCOPE void	TclAdvanceContinuations(Tcl_Size *line, int **next,
+MODULE_SCOPE void	TclAdvanceContinuations(Tcl_Size *line, Tcl_Size **next,
 			    int loc);
 MODULE_SCOPE void	TclAdvanceLines(Tcl_Size *line, const char *start,
 			    const char *end);
@@ -3097,7 +3098,7 @@ MODULE_SCOPE void	TclArgumentRelease(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc);
 MODULE_SCOPE void	TclArgumentBCEnter(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc,
-			    void *codePtr, CmdFrame *cfPtr, int cmd, Tcl_Size pc);
+			    void *codePtr, CmdFrame *cfPtr, Tcl_Size cmd, Tcl_Size pc);
 MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
@@ -3124,9 +3125,9 @@ MODULE_SCOPE Tcl_NRPostProc TclClearRootEnsemble;
 MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
 			    Tcl_Obj *value2Ptr);
 MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, Tcl_Size num,
-			    int *loc);
+			    Tcl_Size *loc);
 MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
-			    int start, int *clNext);
+			    Tcl_Size start, Tcl_Size *clNext);
 MODULE_SCOPE ContLineLoc *TclContinuationsGet(Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 			    Tcl_Obj *originObjPtr);
@@ -3150,7 +3151,7 @@ MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 /* TIP #280 - Modified token based evaluation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    Tcl_Size numBytes, int flags, Tcl_Size line,
-			    int *clNextOuter, const char *outerScript);
+			    Tcl_Size *clNextOuter, const char *outerScript);
 MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileCopyCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileDeleteCmd;
@@ -3270,8 +3271,8 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Size indexCount, Tcl_Obj *const indexArray[]);
 /* TIP #280 */
-MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, Tcl_Size line, int n,
-			    int *lines, Tcl_Obj *const *elems);
+MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, Tcl_Size line, Tcl_Size n,
+			    Tcl_Size *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
 			    Tcl_Obj *toObj, Tcl_Size elemCount,
 			    Tcl_Obj *const elemObjv[]);
@@ -3435,7 +3436,7 @@ MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 			    Tcl_InterpState *statePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    Tcl_Size count, int *tokensLeftPtr, Tcl_Size line,
-			    int *clNextOuter, const char *outerScript);
+			    Tcl_Size *clNextOuter, const char *outerScript);
 MODULE_SCOPE Tcl_Size	TclTrim(const char *bytes, Tcl_Size numBytes,
 			    const char *trim, Tcl_Size numTrim, Tcl_Size *trimRight);
 MODULE_SCOPE Tcl_Size	TclTrimLeft(const char *bytes, Tcl_Size numBytes,
@@ -4231,7 +4232,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
  */
 
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Tcl_Size before, Tcl_Size after, int *indexPtr);
+			    int before, int after, int *indexPtr);
 MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
 
 /* Constants used in index value encoding routines. */
@@ -4837,7 +4838,6 @@ MODULE_SCOPE Tcl_LibraryInitProc TclObjTest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc TclThread_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
-
 
 
 /*

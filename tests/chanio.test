@@ -1098,7 +1098,7 @@ test chan-io-7.3 {FilterInputBytes: split up character at EOF} -setup {
     chan puts -nonewline $f "1234567890123\x82\x4F\x82\x50\x82"
     chan close $f
     set f [open $path(test1)]
-    chan configure $f -encoding shiftjis
+    chan configure $f -encoding shiftjis -profile tcl8
     lappend x [chan gets $f line] $line
     lappend x [chan tell $f] [testchannel inputbuffered $f] [chan eof $f]
     lappend x [chan gets $f line] $line
@@ -6875,7 +6875,7 @@ test chan-io-52.9 {TclCopyChannel & encodings} {fcopy} {
 	    [file size $path(utf8-fcopy.txt)] \
 	    [file size $path(utf8-rp.txt)]
 } {3 5 5}
-test chan-io-52.10 {TclCopyChannel & encodings} {fcopy notWinCI} {
+test chan-io-52.10 {TclCopyChannel & encodings} -constraints {fcopy notWinCI} -body {
     # encoding to binary (=> implies that the internal utf-8 is written)
     set in  [open $path(kyrillic.txt) r]
     set out [open $path(utf8-fcopy.txt) w]
@@ -6883,10 +6883,12 @@ test chan-io-52.10 {TclCopyChannel & encodings} {fcopy notWinCI} {
     # -translation binary is also -encoding binary
     chan configure $out -translation binary
     chan copy $in $out
+    file size $path(utf8-fcopy.txt)
+} -cleanup {
     chan close $in
     chan close $out
-    file size $path(utf8-fcopy.txt)
-} 5
+    unset in out
+} -result 5
 test chan-io-52.11 {TclCopyChannel & encodings} -setup {
     set f [open $path(utf8-fcopy.txt) w]
     fconfigure $f -encoding utf-8 -translation lf

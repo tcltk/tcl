@@ -2540,7 +2540,7 @@ declare 3 win {
 declare 0 macosx {
     int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, int hasResourceFile,
-	    int maxPathLen, char *libraryPath)
+	    Tcl_Size maxPathLen, char *libraryPath)
 }
 declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
