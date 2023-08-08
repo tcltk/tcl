@@ -80,7 +80,8 @@ static void DupArithSeriesInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesObjPtr);
 static void UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr);
 static int  SetArithSeriesFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-
+static int  ArithSeriesInOperation(Tcl_Interp *interp, Tcl_Obj *valueObj, Tcl_Obj *arithSeriesObj,
+				   int *boolResult);
 static const Tcl_ObjType arithSeriesType = {
     "arithseries",			/* name */
     FreeArithSeriesInternalRep,		/* freeIntRepProc */
@@ -94,7 +95,8 @@ static const Tcl_ObjType arithSeriesType = {
     TclArithSeriesObjReverse,
     TclArithSeriesGetElements,
     NULL, // SetElement
-    NULL) // Replace
+    NULL, // Replace
+    ArithSeriesInOperation) // "in" operator
 };
 
 /*
@@ -1108,7 +1110,90 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr)
     if (bytlen > 0) arithSeriesObjPtr->bytes[bytlen-1] = '\0';
     arithSeriesObjPtr->length = bytlen-1;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArithSeriesInOperator --
+ *
+ *	Evaluate the "in" operation for expr
+ *
+ *      This can be done more efficiently in the Arith Series relative to
+ *      doing a linear search as implemented in expr.
+ *
+ * Results:
+ *	Boolean true or false (1/0)
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
 
+static int
+ArithSeriesInOperation(
+    Tcl_Interp *interp,
+    Tcl_Obj *valueObj,
+    Tcl_Obj *arithSeriesObjPtr,
+    int *boolResult)
+{
+    ArithSeries *arithSeriesRepPtr = (ArithSeries*)arithSeriesObjPtr->internalRep.twoPtrValue.ptr1;
+    ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl*)arithSeriesRepPtr;
+    int status;
+    Tcl_Size index, incr, elen, vlen;
+
+    if (arithSeriesRepPtr->isDouble) {
+        double y;
+	int test = 0;
+
+	incr = 0; // Check index+incr where incr is 0 and 1
+        status = Tcl_GetDoubleFromObj(interp, valueObj, &y);
+        if (status != TCL_OK) {
+	    test = 0;
+        } else {
+            char *vstr = Tcl_GetStringFromObj(valueObj, &vlen);
+            index = (y - dblRepPtr->start) / dblRepPtr->step;
+	    while (incr<2) {
+		Tcl_Obj *elemObj;
+		TclArithSeriesObjIndex(interp, arithSeriesObjPtr, (index+incr), &elemObj);
+		char *estr = Tcl_GetStringFromObj(elemObj, &elen);
+		/* "in" operation defined as a string compare */
+		test = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
+		Tcl_BumpObj(elemObj);
+		/* Stop if we have a match */
+		if (test) {
+		    break;
+		}
+		incr++;
+	    }
+        }
+	if (boolResult) {
+	    *boolResult = test;
+	}
+    } else {
+        ArithSeries *intRepPtr = arithSeriesRepPtr;
+        Tcl_WideInt y;
+
+        status = Tcl_GetWideIntFromObj(NULL, valueObj, &y);
+        if (status != TCL_OK) {
+            if (boolResult) {
+                *boolResult = 0;
+            }
+        } else {
+            Tcl_Obj *elemObj;
+            index = (y - intRepPtr->start) / intRepPtr->step;
+            TclArithSeriesObjIndex(interp, arithSeriesObjPtr, index, &elemObj);
+            char *vstr = Tcl_GetStringFromObj(valueObj, &vlen);
+            char *estr = Tcl_GetStringFromObj(elemObj, &elen);
+            if (boolResult) {
+                *boolResult = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
+            }
+            Tcl_BumpObj(elemObj);
+        }
+    }
+    return TCL_OK;
+}
+
 /*
  * Local Variables:
  * mode: c

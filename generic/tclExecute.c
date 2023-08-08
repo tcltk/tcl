@@ -5018,50 +5018,60 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
-	s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
-	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
-	if (TclListObjLengthM(interp, value2Ptr, &length) != TCL_OK) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	}
-	match = 0;
-	if (length > 0) {
-	    Tcl_Size i = 0;
-	    Tcl_Obj *o;
-	    int isAbstractList = TclObjTypeHasProc(value2Ptr,indexProc) != NULL;
+        s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
+        TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
-	    /*
-	     * An empty list doesn't match anything.
-	     */
+        if (TclObjTypeHasProc(value2Ptr,inOperProc) != NULL) {
+            int status = TclObjTypeInOperator(interp, valuePtr, value2Ptr, &match);
+            if (status != TCL_OK) {
+                TRACE_ERROR(interp);
+                goto gotError;
+            }
+        } else {
 
-	    do {
-		if (isAbstractList) {
-		    DECACHE_STACK_INFO();
-		    if (TclObjTypeIndex(interp, value2Ptr, i, &o) != TCL_OK) {
-			CACHE_STACK_INFO();
-			TRACE_ERROR(interp);
-			goto gotError;
-		    }
-		    CACHE_STACK_INFO();
-		} else {
-		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
-		}
-		if (o != NULL) {
-		    s2 = Tcl_GetStringFromObj(o, &s2len);
-		} else {
-		    s2 = "";
-		    s2len = 0;
-		}
-		if (s1len == s2len) {
-		    match = (memcmp(s1, s2, s1len) == 0);
-		}
+            if (TclListObjLengthM(interp, value2Ptr, &length) != TCL_OK) {
+                TRACE_ERROR(interp);
+                goto gotError;
+            }
+            match = 0;
+            if (length > 0) {
+                Tcl_Size i = 0;
+                Tcl_Obj *o;
+                int isAbstractList = TclObjTypeHasProc(value2Ptr,indexProc) != NULL;
 
-		/* Could be an ephemeral abstract obj */
-		Tcl_BumpObj(o);
+                /*
+                 * An empty list doesn't match anything.
+                 */
 
-		i++;
-	    } while (i < length && match == 0);
-	}
+                do {
+                    if (isAbstractList) {
+                        DECACHE_STACK_INFO();
+                        if (TclObjTypeIndex(interp, value2Ptr, i, &o) != TCL_OK) {
+                            CACHE_STACK_INFO();
+                            TRACE_ERROR(interp);
+                            goto gotError;
+                        }
+                        CACHE_STACK_INFO();
+                    } else {
+                        Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
+                    }
+                    if (o != NULL) {
+                        s2 = Tcl_GetStringFromObj(o, &s2len);
+                    } else {
+                        s2 = "";
+                        s2len = 0;
+                    }
+                    if (s1len == s2len) {
+                        match = (memcmp(s1, s2, s1len) == 0);
+                    }
+
+                    /* Could be an ephemeral abstract obj */
+                    Tcl_BumpObj(o);
+
+                    i++;
+                } while (i < length && match == 0);
+            }
+        }
 
 	if (*pc == INST_LIST_NOT_IN) {
 	    match = !match;

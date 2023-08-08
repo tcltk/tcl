@@ -72,8 +72,9 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace)     /* Replace */
-    },
+	    my_LStringReplace,     /* Replace */
+            NULL)                  /* "in" operator */
+        },
     {/*1*/
 	"lstring",
 	freeRep,
@@ -87,7 +88,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace)     /* Replace */
+	    my_LStringReplace,     /* Replace */
+            NULL)                  /* "in" operator */
     },
     {/*2*/
 	"lstring",
@@ -102,7 +104,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace)     /* Replace */
+	    my_LStringReplace,     /* Replace */
+            NULL)                  /* "in" operator */
     },
     {/*3*/
 	"lstring",
@@ -117,7 +120,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace)     /* Replace */
+	    my_LStringReplace,     /* Replace */
+            NULL)                  /* "in" operator */
     },
     {/*4*/
 	"lstring",
@@ -132,7 +136,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    NULL,                  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace)     /* Replace */
+	    my_LStringReplace,     /* Replace */
+            NULL)                  /* "in" operator */
     },
     {/*5*/
 	"lstring",
@@ -147,7 +152,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    NULL,                  /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace)     /* Replace */
+	    my_LStringReplace,     /* Replace */
+            NULL)                  /* "in" operator */
     },
     {/*6*/
 	"lstring",
@@ -162,7 +168,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    NULL,                  /* SetElement */
-	    my_LStringReplace)     /* Replace */
+	    my_LStringReplace,     /* Replace */
+            NULL)                  /* "in" operator */
     },
     {/*7*/
 	"lstring",
@@ -177,7 +184,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    NULL)                  /* Replace */
+	    NULL,                  /* Replace */
+            NULL)                  /* "in" operator */
     },
     {/*8*/
 	"lstring",
@@ -192,7 +200,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace)     /* Replace */
+	    my_LStringReplace,     /* Replace */
+            NULL)                  /* "in" operator */
     },
     {/*9*/
 	"lstring",
@@ -207,7 +216,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace)     /* Replace */
+	    my_LStringReplace,     /* Replace */
+            NULL)                  /* "in" operator */
     },
     {/*10*/
 	"lstring",
@@ -222,7 +232,8 @@ static const Tcl_ObjType lstringTypes[11] = {
 	    my_LStringObjReverse,  /* Reverse */
 	    my_LStringGetElements, /* GetElements */
 	    my_LStringObjSetElem,  /* SetElement */
-	    my_LStringReplace)     /* Replace */
+	    my_LStringReplace,     /* Replace */
+            NULL)                  /* "in" operator */
     }
 };
 
@@ -1089,7 +1100,8 @@ static Tcl_ObjType lgenType = {
 	NULL, /* reverse */
 	NULL, /* get elements */
         NULL, /* set element */
-        NULL) /* replace */
+        NULL, /* replace */
+        NULL) /* "in" operator */
 };
 
 /*
