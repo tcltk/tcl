@@ -274,7 +274,7 @@ my_LStringObjIndex(
       cchar[1] = 0;
       *charObjPtr = Tcl_NewStringObj(cchar,1);
   } else {
-      *charObjPtr = Tcl_NewObj();
+      *charObjPtr = NULL;
   }
 
   return TCL_OK;
@@ -1015,9 +1015,10 @@ lgenSeriesObjIndex(
 
     lgenSeriesRepPtr = (LgenSeries*)lgenSeriesObjPtr->internalRep.twoPtrValue.ptr1;
 
-    if (index < 0 || index >= lgenSeriesRepPtr->len)
-	return TCL_ERROR;
-
+    if (index < 0 || index >= lgenSeriesRepPtr->len) {
+	*elemPtr = NULL;
+	return TCL_OK;
+    }
     if (lgenSeriesRepPtr->interp == NULL && interp == NULL) {
 	return TCL_ERROR;
     }
