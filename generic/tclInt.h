@@ -1169,6 +1169,13 @@ TclObjTypeReplace(
     Tcl_ObjTypeReplaceProc *proc = TclObjTypeHasProc(objPtr, replaceProc);
     return proc(interp, objPtr, first, numToDelete, numToInsert, insertObjs);
 }
+static inline int
+TclObjTypeInOperator(Tcl_Interp *interp, struct Tcl_Obj *valueObj,
+		     struct Tcl_Obj *listObj, int *boolResult)
+{
+    Tcl_ObjTypeInOperatorProc *proc = TclObjTypeHasProc(listObj, inOperProc);
+    return proc(interp, valueObj, listObj, boolResult);
+}
 #endif /* TCL_MAJOR_VERSION > 8 */
 
 
