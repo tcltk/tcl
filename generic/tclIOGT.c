@@ -380,9 +380,6 @@ ExecuteCallback(
     Tcl_InterpState state = NULL;
     int res = TCL_OK;
     Tcl_Obj *command = Tcl_DuplicateObj(dataPtr->command);
-    if (!command) {
-	return TCL_ERROR;
-    }
     Tcl_Interp *eval = dataPtr->interp;
 
     Tcl_Preserve(eval);

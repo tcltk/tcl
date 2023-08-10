@@ -3383,11 +3383,6 @@ TEBCresume(
 	    newValue = Tcl_DuplicateObj(objResultPtr);
 	    CACHE_STACK_INFO();
 
-	    if (!newValue) {
-		TRACE_ERROR(interp);
-		goto gotError;
-	    }
-
 	    TclDecrRefCount(objResultPtr);
 	    varPtr->value.objPtr = objResultPtr = newValue;
 	    Tcl_IncrRefCount(newValue);
@@ -3448,9 +3443,6 @@ TEBCresume(
 		    DECACHE_STACK_INFO();
 		    valueToAssign = Tcl_DuplicateObj(objResultPtr);
 		    CACHE_STACK_INFO();
-		    if (!valueToAssign) {
-			goto errorInLappendListPtr;
-		    }
 		    createdNewObj = 1;
 		} else {
 		    valueToAssign = objResultPtr;
@@ -6485,9 +6477,6 @@ TEBCresume(
 		DECACHE_STACK_INFO();
 		objPtr = Tcl_DuplicateObj(listPtr);
 		CACHE_STACK_INFO();
-		if (!objPtr) {
-		    goto gotError;
-		}
 		Tcl_IncrRefCount(objPtr);
 		Tcl_DecrRefCount(listPtr);
 		OBJ_AT_DEPTH(listTmpDepth) = objPtr;

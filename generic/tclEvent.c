@@ -233,9 +233,6 @@ HandleBgErrors(
 	 */
 
 	Tcl_Obj *copyObj = Tcl_DuplicateObj(assocPtr->cmdPrefix);
-	if (!copyObj) {
-	    return;
-	}
 
 	errPtr = assocPtr->firstBgPtr;
 

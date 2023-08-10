@@ -2011,9 +2011,6 @@ Tcl_ConcatObj(
 		Tcl_BumpObj(elemPtr); // could be an an abstract list element
 	    } else {
 		resPtr = Tcl_DuplicateObj(objPtr);
-		if (!resPtr) {
-		    return NULL;
-		}
 	    }
 	}
 	if (!resPtr) {

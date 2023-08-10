@@ -2546,26 +2546,18 @@ TclLindexList(
     }
 
     /*
-     * Make a private copy of the index list argument to keep the internal
-     * representation of the indices array unchanged while it is in use.  This
-     * is probably unnecessary. It does not appear that any damaging change to
-     * the internal representation is possible, and no test has been devised to
-     * show any error when this private copy is not made, But it's cheap, and
-     * it offers some future-proofing insurance in case the TclLindexFlat
-     * implementation changes in some unexpected way, or some new form of trace
-     * or callback permits things to happen that the current implementation
-     * does not.
+     * Here we make a private copy of the index list argument to avoid any
+     * shimmering issues that might invalidate the indices array below while
+     * we are still using it. This is probably unnecessary. It does not appear
+     * that any damaging shimmering is possible, and no test has been devised
+     * to show any error when this private copy is not made. But it's cheap,
+     * and it offers some future-proofing insurance in case the TclLindexFlat
+     * implementation changes in some unexpected way, or some new form of
+     * trace or callback permits things to happen that the current
+     * implementation does not.
      */
 
     indexListCopy = Tcl_DuplicateObj(argObj);
-    if (!indexListCopy) {
-	/*
-	 * The argument is neither an index nor a well-formed list.
-	 * Report the error via TclLindexFlat.
-	 * TODO - This is as original code. why not directly return an error?
-	 */
-	return TclLindexFlat(interp, listObj, 1, &argObj);
-    }
     status = TclListObjGetElementsM(
 	interp, indexListCopy, &numIndexObjs, &indexObjs);
     if (status != TCL_OK) {
@@ -2847,7 +2839,7 @@ TclLsetFlat(
     Tcl_Obj *valueObj)		/* Value arg to 'lset' or NULL to 'lpop'. */
 {
     Tcl_Size index, len;
-    int copied = 0, result;
+    int result;
     Tcl_Obj *subListObj, *retValueObj;
     Tcl_Obj *pendingInvalidates[10];
     Tcl_Obj **pendingInvalidatesPtr = pendingInvalidates;
@@ -2867,14 +2859,16 @@ TclLsetFlat(
     }
 
     /*
-     * If the list is shared, make a copy to modify (copy-on-write). The string
-     * representation and internal representation of listObj remains unchanged.
+     * If the list is shared, make a copy we can modify (copy-on-write).  We
+     * 1) we have not yet confirmed listObj is actually a list; 2) We make a
+     * verbatim copy of any existing string rep, and when we combine that with
+     * the delayed invalidation of string reps of modified Tcl_Obj's
+     * implemented below, the outcome is that any error condition that causes
+     * this routine to return NULL, will leave the string rep of listObj and
+     * all elements to be unchanged.
      */
 
     subListObj = Tcl_IsShared(listObj) ? Tcl_DuplicateObj(listObj) : listObj;
-    if (!subListObj) {
-	return NULL;
-    }
 
     /*
      * Anchor the linked list of Tcl_Obj's whose string reps must be
@@ -2947,9 +2941,10 @@ TclLsetFlat(
 	}
 
 	/*
-	 * No error conditions.  If this is not the last index, determine the
-	 * next sublist for the next pass through the loop, and take steps to
-	 * make sure it is unshared in order to modify it.
+	 * No error conditions.  As long as we're not yet on the last index,
+	 * determine the next sublist for the next pass through the loop,
+	 * and take steps to make sure it is an unshared copy, as we intend
+	 * to modify it.
 	 */
 
 	if (--indexCount) {
@@ -2961,10 +2956,6 @@ TclLsetFlat(
 	    }
 	    if (Tcl_IsShared(subListObj)) {
 		subListObj = Tcl_DuplicateObj(subListObj);
-		if (!subListObj) {
-		    return NULL;
-		}
-		copied = 1;
 	    }
 
 	    /*
@@ -2982,16 +2973,7 @@ TclLsetFlat(
 		TclListObjSetElement(NULL, parentList, index, subListObj);
 	    }
 	    if (Tcl_IsShared(subListObj)) {
-		Tcl_Obj * newSubListObj;
-		newSubListObj = Tcl_DuplicateObj(subListObj);
-		if (copied) {
-		    Tcl_DecrRefCount(subListObj);
-		}
-		if (newSubListObj) {
-		    subListObj = newSubListObj;
-		} else {
-		    return NULL;
-		}
+		subListObj = Tcl_DuplicateObj(subListObj);
 		TclListObjSetElement(NULL, parentList, index, subListObj);
 	    }
 

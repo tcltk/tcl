@@ -2316,9 +2316,6 @@ Tcl_LassignObjCmd(
     }
 
     listCopyPtr = Tcl_DuplicateObj(objv[1]);
-    if (!listCopyPtr) {
-	return TCL_ERROR;
-    }
     Tcl_IncrRefCount(listCopyPtr); /* Important! fs */
 
     code = TclListObjGetElementsM(
@@ -2486,9 +2483,6 @@ Tcl_LinsertObjCmd(
     listPtr = objv[1];
     if (Tcl_IsShared(listPtr)) {
 	listPtr = Tcl_DuplicateObj(listPtr);
-	if (!listPtr) {
-	    return TCL_ERROR;
-	}
 	copied = 1;
     }
 
@@ -2691,9 +2685,6 @@ Tcl_LpopObjCmd(
     if (objc == 2) {
 	if (Tcl_IsShared(listPtr)) {
 	    listPtr = Tcl_DuplicateObj(listPtr);
-	    if (!listPtr) {
-		return TCL_ERROR;
-	    }
 	    copied = 1;
 	}
 	result = Tcl_ListObjReplace(interp, listPtr, listLen - 1, 1, 0, NULL);
@@ -2884,10 +2875,6 @@ Tcl_LremoveObjCmd(
 
     if (Tcl_IsShared(listObj)) {
 	listObj = Tcl_DuplicateObj(listObj);
-	if (!listObj) {
-	    status = TCL_ERROR;
-	    goto done;
-	}
 	copied = 1;
     }
     num = 0;
@@ -3140,9 +3127,6 @@ Tcl_LreplaceObjCmd(
     listPtr = objv[1];
     if (Tcl_IsShared(listPtr)) {
 	listPtr = Tcl_DuplicateObj(listPtr);
-	if (!listPtr) {
-	    return TCL_ERROR;
-	}
     }
 
     /*
@@ -5132,9 +5116,6 @@ Tcl_LeditObjCmd(
 
     if (Tcl_IsShared(listPtr)) {
 	listPtr = Tcl_DuplicateObj(listPtr);
-	if (!listPtr) {
-	    return TCL_ERROR;
-	}
 	createdNewObj = 1;
     } else {
 	createdNewObj = 0;
