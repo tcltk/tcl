@@ -1617,7 +1617,8 @@ int SetDuplicatePureObj(
     char *bytes = objPtr->bytes;
     int status = TCL_OK;
     const Tcl_ObjType *useTypePtr =
-        objPtr->typePtr ? objPtr->typePtr : typePtr;
+	(bytes == &tclEmptyString || objPtr->typePtr == NULL)
+	? typePtr : objPtr->typePtr;
 
     TclInvalidateStringRep(dupPtr);
     assert(dupPtr->typePtr == NULL);
