@@ -2261,7 +2261,7 @@ NewReflectedChannel(
     rcPtr->mode = mode;
     rcPtr->interest = 0;		/* Initially no interest registered */
 
-    rcPtr->cmd = TclDuplicatePureObj(interp, cmdpfxObj, &tclListType);
+    rcPtr->cmd = Tcl_DuplicateObj(cmdpfxObj);
     if (!rcPtr->cmd) {
 	return NULL;
     }
@@ -2401,7 +2401,7 @@ InvokeTclMethod(
      * before the channel id.
      */
 
-    cmd = TclDuplicatePureObj(NULL, rcPtr->cmd, &tclListType);
+    cmd = Tcl_DuplicateObj(rcPtr->cmd);
     if (!cmd) {
 	return TCL_ERROR;
     }

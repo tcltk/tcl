@@ -2557,7 +2557,7 @@ TclLindexList(
      * does not.
      */
 
-    indexListCopy = TclDuplicatePureObj(interp, argObj, &tclListType);
+    indexListCopy = Tcl_DuplicateObj(argObj);
     if (!indexListCopy) {
 	/*
 	 * The argument is neither an index nor a well-formed list.
@@ -2768,8 +2768,7 @@ TclLsetList(
 
     } else {
 
-	indexListCopy = TclDuplicatePureObj(
-	    interp, indexArgObj, &tclListType);
+	indexListCopy = Tcl_DuplicateObj(indexArgObj);
 	if (!indexListCopy) {
 	    /*
 	     * indexArgPtr designates something that is neither an index nor a
@@ -2872,8 +2871,7 @@ TclLsetFlat(
      * representation and internal representation of listObj remains unchanged.
      */
 
-    subListObj = Tcl_IsShared(listObj)
-	? TclDuplicatePureObj(interp, listObj, &tclListType) : listObj;
+    subListObj = Tcl_IsShared(listObj) ? Tcl_DuplicateObj(listObj) : listObj;
     if (!subListObj) {
 	return NULL;
     }
@@ -2962,8 +2960,7 @@ TclLsetFlat(
 		subListObj = elemPtrs[index];
 	    }
 	    if (Tcl_IsShared(subListObj)) {
-		subListObj = TclDuplicatePureObj(
-		    interp, subListObj, &tclListType);
+		subListObj = Tcl_DuplicateObj(subListObj);
 		if (!subListObj) {
 		    return NULL;
 		}
@@ -2986,8 +2983,7 @@ TclLsetFlat(
 	    }
 	    if (Tcl_IsShared(subListObj)) {
 		Tcl_Obj * newSubListObj;
-		newSubListObj = TclDuplicatePureObj(
-		    interp, subListObj, &tclListType);
+		newSubListObj = Tcl_DuplicateObj(subListObj);
 		if (copied) {
 		    Tcl_DecrRefCount(subListObj);
 		}

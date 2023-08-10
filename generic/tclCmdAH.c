@@ -2822,8 +2822,7 @@ EachloopCmd(
 	    /* Don't compute values here, wait until the last moment */
 	    statePtr->argcList[i] = TclObjTypeLength(statePtr->aCopyList[i]);
 	} else {
-	    statePtr->aCopyList[i] = TclDuplicatePureObj(
-		interp, objv[2+i*2], &tclListType);
+	    statePtr->aCopyList[i] = Tcl_DuplicateObj(objv[2+i*2]);
 	    if (!statePtr->aCopyList[i]) {
 		result = TCL_ERROR;
 		goto done;

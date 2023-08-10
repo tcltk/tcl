@@ -6153,7 +6153,7 @@ TclNREvalObjEx(
 	 */
 
 	Tcl_IncrRefCount(objPtr);
-	listPtr = TclDuplicatePureObj(interp, objPtr, &tclListType);
+	listPtr = Tcl_DuplicateObj(objPtr);
 	if (!listPtr) {
 	    Tcl_DecrRefCount(objPtr);
 	    return TCL_ERROR;

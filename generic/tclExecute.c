@@ -3380,7 +3380,7 @@ TEBCresume(
 	    Tcl_Obj *newValue;
 
 	    DECACHE_STACK_INFO();
-	    newValue = TclDuplicatePureObj(interp, objResultPtr, &tclListType);
+	    newValue = Tcl_DuplicateObj(objResultPtr);
 	    CACHE_STACK_INFO();
 
 	    if (!newValue) {
@@ -3446,8 +3446,7 @@ TEBCresume(
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
 		    DECACHE_STACK_INFO();
-		    valueToAssign = TclDuplicatePureObj(
-			interp, objResultPtr, &tclListType);
+		    valueToAssign = Tcl_DuplicateObj(objResultPtr);
 		    CACHE_STACK_INFO();
 		    if (!valueToAssign) {
 			goto errorInLappendListPtr;
@@ -6484,8 +6483,7 @@ TEBCresume(
 	    }
 	    if (Tcl_IsShared(listPtr)) {
 		DECACHE_STACK_INFO();
-		objPtr = TclDuplicatePureObj(
-		    interp, listPtr, &tclListType);
+		objPtr = Tcl_DuplicateObj(listPtr);
 		CACHE_STACK_INFO();
 		if (!objPtr) {
 		    goto gotError;
