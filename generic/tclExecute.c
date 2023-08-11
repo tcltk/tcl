@@ -3377,11 +3377,7 @@ TEBCresume(
 	    goto gotError;
 	}
 	if (Tcl_IsShared(objResultPtr)) {
-	    Tcl_Obj *newValue;
-
-	    DECACHE_STACK_INFO();
-	    newValue = Tcl_DuplicateObj(objResultPtr);
-	    CACHE_STACK_INFO();
+	    Tcl_Obj *newValue = Tcl_DuplicateObj(objResultPtr);
 
 	    TclDecrRefCount(objResultPtr);
 	    varPtr->value.objPtr = objResultPtr = newValue;
@@ -3440,9 +3436,7 @@ TEBCresume(
 		goto gotError;
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
-		    DECACHE_STACK_INFO();
 		    valueToAssign = Tcl_DuplicateObj(objResultPtr);
-		    CACHE_STACK_INFO();
 		    createdNewObj = 1;
 		} else {
 		    valueToAssign = objResultPtr;
@@ -6474,9 +6468,7 @@ TEBCresume(
 		goto gotError;
 	    }
 	    if (Tcl_IsShared(listPtr)) {
-		DECACHE_STACK_INFO();
 		objPtr = Tcl_DuplicateObj(listPtr);
-		CACHE_STACK_INFO();
 		Tcl_IncrRefCount(objPtr);
 		Tcl_DecrRefCount(listPtr);
 		OBJ_AT_DEPTH(listTmpDepth) = objPtr;
