@@ -674,7 +674,7 @@ typedef struct Tcl_ObjType {
 					     ** with the given valueObj. */
     Tcl_ObjTypeReplaceProc *replaceProc;     /* Replace subset with subset */
     Tcl_ObjTypeInOperatorProc *inOperProc;   /* "in" and "ni" expr list
-                                             ** operation Determine if the given 
+                                             ** operation Determine if the given
                                              ** string value matches an element in
                                              ** the list */
 #endif
@@ -2482,10 +2482,10 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
  *
  * This will free the obj if there are no references to the obj.
  */
-#   define Tcl_BumpObj(objPtr) \
-    TclBumpObj(objPtr, __FILE__, __LINE__)
+#   define Tcl_BounceRefCount(objPtr) \
+    TclBounceRefCount(objPtr, __FILE__, __LINE__)
 
-static inline void TclBumpObj(Tcl_Obj* objPtr, const char* fn, int line)
+static inline void TclBounceRefCount(Tcl_Obj* objPtr, const char* fn, int line)
 {
     if (objPtr) {
         if ((objPtr)->refCount == 0) {
@@ -2518,10 +2518,10 @@ static inline void TclBumpObj(Tcl_Obj* objPtr, const char* fn, int line)
  * This will release the obj if there is no referece count,
  * otherwise let it be.
  */
-#   define Tcl_BumpObj(objPtr)     \
-    TclBumpObj(objPtr);
+#   define Tcl_BounceRefCount(objPtr)     \
+    TclBounceRefCount(objPtr);
 
-static inline void TclBumpObj(Tcl_Obj* objPtr)
+static inline void TclBounceRefCount(Tcl_Obj* objPtr)
 {
     if (objPtr) {
         if ((objPtr)->refCount == 0) {

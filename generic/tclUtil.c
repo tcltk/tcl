@@ -2005,10 +2005,10 @@ Tcl_ConcatObj(
 			!= Tcl_ListObjAppendList(NULL, resPtr, objPtr)) {
 		    /* Abandon ship! */
 		    Tcl_DecrRefCount(resPtr);
-		    Tcl_BumpObj(elemPtr); // could be an abstract list element
+		    Tcl_BounceRefCount(elemPtr); // could be an abstract list element
 		    goto slow;
 		}
-		Tcl_BumpObj(elemPtr); // could be an an abstract list element
+		Tcl_BounceRefCount(elemPtr); // could be an an abstract list element
 	    } else {
 		resPtr = TclDuplicatePureObj(
 		    NULL, objPtr, &tclListType);
