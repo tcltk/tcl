@@ -2572,7 +2572,6 @@ TclLindexList(
     Tcl_Obj *indexListCopy;
     Tcl_Obj **indexObjs;
     Tcl_Size numIndexObjs;
-    int status;
 
     /*
      * Determine whether argPtr designates a list or a single index. We have
@@ -2602,10 +2601,7 @@ TclLindexList(
      */
 
     indexListCopy = TclListObjCopy(NULL, argObj);
-    status = (indexListCopy ? TclListObjGetElementsM(
-		  interp, indexListCopy, &numIndexObjs, &indexObjs) : TCL_ERROR);
-    if (status != TCL_OK) {
-	Tcl_DecrRefCount(indexListCopy);
+    if (indexListCopy == NULL) {
 	/*
 	 * The argument is neither an index nor a well-formed list.
 	 * Report the error via TclLindexFlat.
@@ -2613,6 +2609,7 @@ TclLindexList(
 	 */
 	return TclLindexFlat(interp, listObj, 1, &argObj);
     }
+    TclListObjGetElementsM(interp, indexListCopy, &numIndexObjs, &indexObjs);
     listObj = TclLindexFlat(interp, listObj, numIndexObjs, indexObjs);
     Tcl_DecrRefCount(indexListCopy);
     return listObj;
