@@ -2787,7 +2787,11 @@ EachloopCmd(
     for (i=0 ; i<numLists ; i++) {
 	/* List */
 	/* Variables */
-	statePtr->vCopyList[i] = Tcl_DuplicateObj(objv[1+i*2]);
+	statePtr->vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
+	if (statePtr->vCopyList[i] == NULL) {
+	    result = TCL_ERROR;
+	    goto done;
+	}
 	result = TclListObjLengthM(interp, statePtr->vCopyList[i],
 	    &statePtr->varcList[i]);
 	if (result != TCL_OK) {
@@ -2818,7 +2822,12 @@ EachloopCmd(
 	    /* Don't compute values here, wait until the last moment */
 	    statePtr->argcList[i] = TclObjTypeLength(statePtr->aCopyList[i]);
 	} else {
-	    statePtr->aCopyList[i] = Tcl_DuplicateObj(objv[2+i*2]);
+	    /* List values */
+	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
+	    if (statePtr->aCopyList[i] == NULL) {
+		result = TCL_ERROR;
+		goto done;
+	    }
 	    result = TclListObjGetElementsM(interp, statePtr->aCopyList[i],
 		&statePtr->argcList[i], &statePtr->argvList[i]);
 	    if (result != TCL_OK) {

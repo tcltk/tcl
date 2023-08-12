@@ -2315,7 +2315,10 @@ Tcl_LassignObjCmd(
 	return TCL_ERROR;
     }
 
-    listCopyPtr = Tcl_DuplicateObj(objv[1]);
+    listCopyPtr = TclListObjCopy(interp, objv[1]);
+    if (listCopyPtr == NULL) {
+	return TCL_ERROR;
+    }
     Tcl_IncrRefCount(listCopyPtr); /* Important! fs */
 
     code = TclListObjGetElementsM(
@@ -2482,7 +2485,7 @@ Tcl_LinsertObjCmd(
 
     listPtr = objv[1];
     if (Tcl_IsShared(listPtr)) {
-	listPtr = Tcl_DuplicateObj(listPtr);
+	listPtr = TclListObjCopy(NULL, listPtr);
 	copied = 1;
     }
 
@@ -2684,7 +2687,7 @@ Tcl_LpopObjCmd(
 
     if (objc == 2) {
 	if (Tcl_IsShared(listPtr)) {
-	    listPtr = Tcl_DuplicateObj(listPtr);
+	    listPtr = TclListObjCopy(NULL, listPtr);
 	    copied = 1;
 	}
 	result = Tcl_ListObjReplace(interp, listPtr, listLen - 1, 1, 0, NULL);
@@ -2874,7 +2877,7 @@ Tcl_LremoveObjCmd(
      */
 
     if (Tcl_IsShared(listObj)) {
-	listObj = Tcl_DuplicateObj(listObj);
+	listObj = TclListObjCopy(NULL, listObj);
 	copied = 1;
     }
     num = 0;
@@ -3126,7 +3129,7 @@ Tcl_LreplaceObjCmd(
 
     listPtr = objv[1];
     if (Tcl_IsShared(listPtr)) {
-	listPtr = Tcl_DuplicateObj(listPtr);
+	listPtr = TclListObjCopy(NULL, listPtr);
     }
 
     /*
@@ -4759,7 +4762,7 @@ Tcl_LsortObjCmd(
 	 * 1675116]
 	 */
 
-	listObj = Tcl_DuplicateObj(listObj);
+	listObj = TclListObjCopy(interp, listObj);
 	if (listObj == NULL) {
 	    sortInfo.resultCode = TCL_ERROR;
 	    goto done;
@@ -5115,7 +5118,7 @@ Tcl_LeditObjCmd(
     }
 
     if (Tcl_IsShared(listPtr)) {
-	listPtr = Tcl_DuplicateObj(listPtr);
+	listPtr = TclListObjCopy(NULL, listPtr);
 	createdNewObj = 1;
     } else {
 	createdNewObj = 0;

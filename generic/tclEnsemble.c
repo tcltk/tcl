@@ -1904,7 +1904,7 @@ NsEnsembleImplementationCmdNR(
 	TclListObjLengthM(NULL, prefixObj, &prefixObjc);
 
 	if (objc == 2) {
-	    copyPtr = Tcl_DuplicateObj(prefixObj);
+	    copyPtr = TclListObjCopy(NULL, prefixObj);
 	} else {
 	    copyPtr = Tcl_NewListObj(objc - 2 + prefixObjc, NULL);
 	    Tcl_ListObjAppendList(NULL, copyPtr, prefixObj);
