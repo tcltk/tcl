@@ -690,7 +690,7 @@ test lseq-4.12.32 {bug lseq} -constraints has32BitLengths -body {
     llength [lseq 0x100000000]
 } -returnCodes 1 -result {max length of a Tcl list exceeded}
 
-test lseq-4.13 {bug lseq} -constraints knownBug -body {
+test lseq-4.13 {bug lseq} -constraints has64BitLengths -body {
     set l [lseq 0x7fffffffffffffff]
     list \
     [llength $l] \
