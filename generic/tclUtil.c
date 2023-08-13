@@ -3702,14 +3702,15 @@ GetEndOffsetFromObj(
 
     if (offset == WIDE_MAX) {
 	/*
-	 * Encodes end+1. This is distinguished from end+n as noted above
+	 * Encodes end+1. This is distinguished from end+n as noted
+         * in function header.
 	 * NOTE: this may wrap around if the caller passes (as lset does)
 	 * listLen-1 as endValue and and listLen is 0. The -1 will be
 	 * interpreted as FF...FF and adding 1 will result in 0 which
-	 * is what we want. 2's complements shenanigans but it is what
-	 * it is ...
+	 * is what we want. Callers like lset which pass in listLen-1 == -1
+         * as endValue will have to adjust accordingly.
 	 */
-	*widePtr = endValue + 1;
+	*widePtr = (endValue == -1) ? WIDE_MAX : endValue + 1;
     } else if (offset == WIDE_MIN) {
 	/* -1 - position before first */
 	*widePtr = -1;
