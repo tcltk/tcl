@@ -3741,7 +3741,7 @@ Tcl_LsearchObjCmd(
 	    i = (lower + upper)/2;
 	    i -= i % groupSize;
 
-	    Tcl_BumpObj(itemPtr);
+	    Tcl_BounceRefCount(itemPtr);
 	    itemPtr = NULL;
 
 	    if (sortInfo.indexc != 0) {
@@ -3842,7 +3842,7 @@ Tcl_LsearchObjCmd(
 	}
 	for (i = start; i < listc; i += groupSize) {
 	    match = 0;
-	    Tcl_BumpObj(itemPtr);
+	    Tcl_BounceRefCount(itemPtr);
 	    itemPtr = NULL;
 
 	    if (sortInfo.indexc != 0) {
@@ -3944,7 +3944,7 @@ Tcl_LsearchObjCmd(
 		 */
 
 		if (returnSubindices && (sortInfo.indexc != 0)) {
-		    Tcl_BumpObj(itemPtr);
+		    Tcl_BounceRefCount(itemPtr);
 		    itemPtr = SelectObjFromSublist(listv[i+groupOffset],
 			    &sortInfo);
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
@@ -3952,7 +3952,7 @@ Tcl_LsearchObjCmd(
 		    Tcl_ListObjReplace(interp, listPtr, LIST_MAX, 0,
 			    groupSize, &listv[i]);
 		} else {
-		    Tcl_BumpObj(itemPtr);
+		    Tcl_BounceRefCount(itemPtr);
 		    itemPtr = listv[i];
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		}
@@ -3973,7 +3973,7 @@ Tcl_LsearchObjCmd(
 	}
     }
 
-    Tcl_BumpObj(itemPtr);
+    Tcl_BounceRefCount(itemPtr);
     itemPtr = NULL;
 
     /*
@@ -4024,7 +4024,7 @@ Tcl_LsearchObjCmd(
 
   done:
     /* potential lingering abstract list element */
-    Tcl_BumpObj(itemPtr);
+    Tcl_BounceRefCount(itemPtr);
 
     if (startPtr != NULL) {
 	Tcl_DecrRefCount(startPtr);
@@ -5566,7 +5566,7 @@ SelectObjFromSublist(
 	    return NULL;
 	}
 	objPtr = currentObj;
-	Tcl_BumpObj(lastObj);
+	Tcl_BounceRefCount(lastObj);
 	lastObj = currentObj;
     }
     return objPtr;

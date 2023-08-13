@@ -5055,7 +5055,7 @@ TEBCresume(
                     }
 
                     /* Could be an ephemeral abstract obj */
-                    Tcl_BumpObj(o);
+                    Tcl_BounceRefCount(o);
 
                     i++;
                 } while (i < length && match == 0);

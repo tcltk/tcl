@@ -23,7 +23,7 @@ Tcl_Obj *
 .sp
 \fBTcl_DecrRefCount\fR(\fIobjPtr\fR)
 .sp
-\fBTcl_BumpObj\fR(\fIobjPtr\fR)
+\fBTcl_BounceRefCount\fR(\fIobjPtr\fR)
 .sp
 int
 \fBTcl_IsShared\fR(\fIobjPtr\fR)
@@ -296,7 +296,7 @@ new reference to the value is created.
 The macro \fBTcl_DecrRefCount\fR decrements the count when a reference is no longer needed.
 If the value's reference count drops to zero, frees
 its storage.
-The macro \fBTcl_BumpObj\fR will check if the value has no references (i.e. in a "new" state) and free the value.
+The macro \fBTcl_BounceRefCount\fR will check if the value has no references (i.e. in a "new" state) and free the value.
 A value shared by different code or data structures has
 \fIrefCount\fR greater than 1.  Incrementing a value's reference count
 ensures that it will not be freed too early or have its value change
@@ -324,7 +324,7 @@ situation, it is the caller's responsibility to free the value before
 the procedure returns.  One way to cover this is to always call
 \fBTcl_IncrRefCount\fR before using the value, then call
 \fBTcl_DecrRefCount\fR before returning. The other way is to use
-\fBTcl_BumpObj\fR after the value is no longer needed or
+\fBTcl_BounceRefCount\fR after the value is no longer needed or
 referenced. This macro will free the value if there are no other
 references to the value. When retaining a pointer to a value in a data
 structure the procedure must be careful to increment its reference
@@ -368,7 +368,7 @@ If it is shared, it needs to duplicate the value
 in order to avoid accidentally changing values in other data structures.
 .PP
 In cases where a value is obtained, used, and not retained, the value
-can be freed using \fBTcl_BumpObj\fR. This
+can be freed using \fBTcl_BounceRefCount\fR. This
 is functionally equivalent to calling \fBTcl_IncrRefCount\fR followed
 \fBTcl_DecrRefCount\fR.
 .SH "SEE ALSO"
