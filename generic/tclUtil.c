@@ -3382,6 +3382,9 @@ GetWideForIndex(
 	if (numType == TCL_NUMBER_INT) {
 	    /* objPtr holds an integer in the signed wide range */
 	    *widePtr = *(Tcl_WideInt *)cd;
+            if ((*widePtr < 0)) {
+		*widePtr = (endValue == -1) ? WIDE_MIN : -1;
+	    }
 	    return TCL_OK;
 	}
 	if (numType == TCL_NUMBER_BIG) {
@@ -3450,11 +3453,15 @@ Tcl_GetIntForIndex(
     if (indexPtr != NULL) {
 	/* Note: check against TCL_SIZE_MAX needed for 32-bit builds */
 	if (wide >= 0 && wide <= TCL_SIZE_MAX) {
-	    *indexPtr = (Tcl_Size)wide;
+	    *indexPtr = (Tcl_Size)wide; /* A valid index */
 	} else if (wide > TCL_SIZE_MAX) {
-	    *indexPtr = TCL_SIZE_MAX;
-	} else {
-	    *indexPtr = TCL_INDEX_NONE;
+	    *indexPtr = TCL_SIZE_MAX;   /* Beyond max possible index */
+	} else if (wide < -1-TCL_SIZE_MAX) {
+            *indexPtr = -1-TCL_SIZE_MAX; /* Below most negative index */
+        } else if ((wide < 0) && (endValue >= 0)) {
+            *indexPtr = TCL_INDEX_NONE; /* No clue why this special case */
+        } else {
+	    *indexPtr = (Tcl_Size) wide;
 	}
     }
     return TCL_OK;
