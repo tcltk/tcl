@@ -982,7 +982,7 @@ TestlistobjCmd(
 			TCL_INDEX_NONE));
 		/* Keep looping since we are also looping for leaks */
 	    }
-	    Tcl_BumpObj(objP);
+	    Tcl_BounceRefCount(objP);
 	}
 	break;
 
