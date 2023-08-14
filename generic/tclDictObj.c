@@ -3884,7 +3884,6 @@ DictAsListLength(
  *   The intent is to have no side effects.
  *
  */
-
 #if 0 /* Needs rewrite */
 static int
 DictAsListIndex(

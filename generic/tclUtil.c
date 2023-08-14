@@ -2010,11 +2010,7 @@ Tcl_ConcatObj(
 		}
 		Tcl_BounceRefCount(elemPtr); // could be an an abstract list element
 	    } else {
-		resPtr = TclDuplicatePureObj(
-		    NULL, objPtr, &tclListType);
-		if (!resPtr) {
-		    return NULL;
-		}
+		resPtr = TclListObjCopy(NULL, objPtr);
 	    }
 	}
 	if (!resPtr) {
