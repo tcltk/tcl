@@ -674,7 +674,7 @@ typedef struct Tcl_ObjType {
 					     ** with the given valueObj. */
     Tcl_ObjTypeReplaceProc *replaceProc;     /* Replace subset with subset */
     Tcl_ObjTypeInOperatorProc *inOperProc;   /* "in" and "ni" expr list
-                                             ** operation Determine if the given 
+                                             ** operation Determine if the given
                                              ** string value matches an element in
                                              ** the list */
 #endif
@@ -2060,8 +2060,7 @@ typedef struct Tcl_EncodingType {
 
 /*
  * The maximum number of bytes that are necessary to represent a single
- * Unicode character in UTF-8. The valid values are 3 and 4
- * (or perhaps 1 if we want to support a non-unicode enabled core). If > 3,
+ * Unicode character in UTF-8. The valid values are 3 and 4. If > 3,
  * then Tcl_UniChar must be 4-bytes in size (UCS-4) (the default). If == 3,
  * then Tcl_UniChar must be 2-bytes in size (UTF-16). Since Tcl 9.0, UCS-4
  * mode is the default and recommended mode.
@@ -2482,10 +2481,10 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
  *
  * This will free the obj if there are no references to the obj.
  */
-#   define Tcl_BumpObj(objPtr) \
-    TclBumpObj(objPtr, __FILE__, __LINE__)
+#   define Tcl_BounceRefCount(objPtr) \
+    TclBounceRefCount(objPtr, __FILE__, __LINE__)
 
-static inline void TclBumpObj(Tcl_Obj* objPtr, const char* fn, int line)
+static inline void TclBounceRefCount(Tcl_Obj* objPtr, const char* fn, int line)
 {
     if (objPtr) {
         if ((objPtr)->refCount == 0) {
@@ -2518,10 +2517,10 @@ static inline void TclBumpObj(Tcl_Obj* objPtr, const char* fn, int line)
  * This will release the obj if there is no referece count,
  * otherwise let it be.
  */
-#   define Tcl_BumpObj(objPtr)     \
-    TclBumpObj(objPtr);
+#   define Tcl_BounceRefCount(objPtr)     \
+    TclBounceRefCount(objPtr);
 
-static inline void TclBumpObj(Tcl_Obj* objPtr)
+static inline void TclBounceRefCount(Tcl_Obj* objPtr)
 {
     if (objPtr) {
         if ((objPtr)->refCount == 0) {

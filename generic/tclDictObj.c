@@ -62,7 +62,7 @@ static Tcl_ObjCmdProc		DictMapNRCmd;
 static Tcl_NRPostProc		DictForLoopCallback;
 static Tcl_NRPostProc		DictMapLoopCallback;
 static Tcl_ObjTypeLengthProc    DictAsListLength;
-static Tcl_ObjTypeIndexProc     DictAsListIndex;
+/* static Tcl_ObjTypeIndexProc     DictAsListIndex; Needs rewrite */
 
 /*
  * Table of dict subcommand names and implementations.
@@ -3885,6 +3885,7 @@ DictAsListLength(
  *
  */
 
+#if 0 /* Needs rewrite */
 static int
 DictAsListIndex(
     Tcl_Interp *interp,
@@ -3952,6 +3953,7 @@ DictAsListIndex(
     *elemObjPtr = elemPtr;
     return TCL_OK;
 }
+#endif
 
 /*
  * Local Variables:

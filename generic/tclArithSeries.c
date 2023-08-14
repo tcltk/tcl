@@ -1160,7 +1160,7 @@ ArithSeriesInOperation(
 		const char *estr = elemObj ? Tcl_GetStringFromObj(elemObj, &elen) : "";
 		/* "in" operation defined as a string compare */
 		test = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
-		Tcl_BumpObj(elemObj);
+		Tcl_BounceRefCount(elemObj);
 		/* Stop if we have a match */
 		if (test) {
 		    break;
@@ -1190,7 +1190,7 @@ ArithSeriesInOperation(
             if (boolResult) {
                 *boolResult = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
             }
-            Tcl_BumpObj(elemObj);
+            Tcl_BounceRefCount(elemObj);
         }
     }
     return TCL_OK;

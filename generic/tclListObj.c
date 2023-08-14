@@ -2927,6 +2927,11 @@ TclLsetFlat(
 	}
 	indexArray++;
 
+        /*
+         * Special case 0-length lists. The Tcl indexing function treat
+         * will return any value beyond length as TCL_SIZE_MAX for this
+         * case.
+         */
 	if ((index == TCL_SIZE_MAX) && (elemCount == 0)) {
 	    index = 0;
 	}
