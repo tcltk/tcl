@@ -62,7 +62,7 @@ static Tcl_ObjCmdProc		DictMapNRCmd;
 static Tcl_NRPostProc		DictForLoopCallback;
 static Tcl_NRPostProc		DictMapLoopCallback;
 static Tcl_ObjTypeLengthProc    DictAsListLength;
-/* static Tcl_ObjTypeIndexProc     DictAsListIndex; needs work */
+static Tcl_ObjTypeIndexProc     DictAsListIndex; //needs work
 
 /*
  * Table of dict subcommand names and implementations.
@@ -153,7 +153,7 @@ const Tcl_ObjType tclDictType = {
     TCL_OBJTYPE_V2(		/* Extended type for AbstractLists */
     DictAsListLength,		/* return "list" length of dict value w/o
 				 * shimmering */
-    NULL/*DictAsListIndex*/,	/* return key or value at "list" index
+    DictAsListIndex,		/* return key or value at "list" index
 				 * location.  (keysare at even indicies,
 				 * values at odd indicies) */
     NULL,
@@ -3869,7 +3869,7 @@ DictAsListLength(
  *   The intent is to have no side effects.
  *
  */
-#if 0 /* needs work */
+
 static int
 DictAsListIndex(
     Tcl_Interp *interp,
@@ -3887,7 +3887,7 @@ DictAsListIndex(
 
     Tcl_Size numElems = dict->table.numEntries * 2;
 
-    if (index < numElems) {
+    if (dict->llength == numElems) {
 
 	result = Tcl_DictObjFirst(interp, objPtr, &search,
 				  &keyPtr, &valuePtr, &done);
@@ -3922,7 +3922,7 @@ DictAsListIndex(
 	 */
 	*elemObjPtr = NULL;
 	return TCL_OK;
-    } else if (index < dict->llength) {
+    } else {
 
 	/* The slow way 'cause "list" has duplicate keys */
 
@@ -3950,7 +3950,7 @@ DictAsListIndex(
 	    int literal;
 
 	    if (TCL_OK != TclFindElement(NULL, nextElem, limit - nextElem,
-					 &elemStart, &nextElem, &elemSize, &literal)) {
+			      &elemStart, &nextElem, &elemSize, &literal)) {
 		goto errorIndex;
 	    }
 	    if (elemStart == limit) {
@@ -3960,7 +3960,7 @@ DictAsListIndex(
 	    if (llen & 1) { //value
 		TclInvalidateStringRep(valuePtr);
 		check = Tcl_InitStringRep(valuePtr, literal ? elemStart : NULL,
-					  elemSize);
+			    elemSize);
 		if (elemSize && check == NULL) {
 		    if (interp) {
 			// Need error message here
@@ -3969,12 +3969,12 @@ DictAsListIndex(
 		}
 		if (!literal) {
 		    Tcl_InitStringRep(valuePtr, NULL,
-				      TclCopyAndCollapse(elemSize, elemStart, check));
+			TclCopyAndCollapse(elemSize, elemStart, check));
 		}
 	    } else {
 		TclInvalidateStringRep(keyPtr);
-		check = Tcl_InitStringRep(keyPtr, literal ? elemStart : NULL,
-					  elemSize);
+		check = Tcl_InitStringRep(keyPtr,
+			    literal ? elemStart : NULL, elemSize);
 		if (elemSize && check == NULL) {
 		    if (interp) {
 			// Need error message here
@@ -3983,14 +3983,13 @@ DictAsListIndex(
 		}
 		if (!literal) {
 		    Tcl_InitStringRep(keyPtr, NULL,
-				      TclCopyAndCollapse(elemSize, elemStart, check));
+			TclCopyAndCollapse(elemSize, elemStart, check));
 		}
 	    }
 	    if (llen == index) {
 		if (index & 1) {
-		    if (Tcl_DictObjGet(interp, objPtr, keyPtr, elemObjPtr) != TCL_OK) {
-			goto errorIndex;
-		    }
+		    *elemObjPtr = valuePtr;
+		    Tcl_IncrRefCount(*elemObjPtr);
 		    goto doneIndex;
 		} else {
 		    *elemObjPtr = keyPtr;
@@ -4013,7 +4012,6 @@ doneIndex:
     if (valuePtr) Tcl_BounceRefCount(valuePtr);
     return TCL_OK;
 }
-#endif
 
 /*
  * Local Variables:
