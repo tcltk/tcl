@@ -62,7 +62,6 @@ static Tcl_ObjCmdProc		DictMapNRCmd;
 static Tcl_NRPostProc		DictForLoopCallback;
 static Tcl_NRPostProc		DictMapLoopCallback;
 static Tcl_ObjTypeLengthProc    DictAsListLength;
-/* static Tcl_ObjTypeIndexProc     DictAsListIndex; Needs rewrite */
 
 /*
  * Table of dict subcommand names and implementations.
@@ -136,6 +135,7 @@ typedef struct Dict {
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
 				 * dictionaries. */
+    Tcl_Size llength;		/* cache list length */
 } Dict;
 
 /*
@@ -152,9 +152,8 @@ const Tcl_ObjType tclDictType = {
     TCL_OBJTYPE_V2(		/* Extended type for AbstractLists */
     DictAsListLength,		/* return "list" length of dict value w/o
 				 * shimmering */
-    NULL,			/* return key or value at "list" index
-				 * location.  (keysare at even indicies,
-				 * values at odd indicies) */
+    NULL,			/* Shimmering here is the most efficient
+				 * option. */
     NULL,
     NULL,
     NULL,
@@ -404,6 +403,7 @@ DupDictInternalRep(
     newDict->epoch = 1;
     newDict->chain = NULL;
     newDict->refCount = 1;
+    newDict->llength = oldDict->llength;
 
     /*
      * Store in the object.
@@ -574,6 +574,9 @@ UpdateStringOfDict(
     /* Last space overwrote the terminating NUL; cal T_ISR again to restore */
     (void)Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
 
+    /* Update cached llength. In this case, llength matches numElems by definition. */
+    dict->llength = numElems;
+
     if (flagPtr != localFlags) {
 	Tcl_Free(flagPtr);
     }
@@ -607,6 +610,7 @@ SetDictFromAny(
     Tcl_HashEntry *hPtr;
     int isNew;
     Dict *dict = (Dict *)Tcl_Alloc(sizeof(Dict));
+    int llength = 0;
 
     InitChainTable(dict);
 
@@ -646,6 +650,10 @@ SetDictFromAny(
 	    Tcl_SetHashValue(hPtr, objv[i+1]);
 	    Tcl_IncrRefCount(objv[i+1]); /* Since hash now holds ref to it */
 	}
+
+        /* llength is list length */
+        llength = objc;
+
     } else {
 	Tcl_Size length;
 	const char *nextElem = Tcl_GetStringFromObj(objPtr, &length);
@@ -682,6 +690,9 @@ SetDictFromAny(
 			TclCopyAndCollapse(elemSize, elemStart, dst));
 	    }
 
+            /* count the elements */
+            llength++;
+
 	    if (TclFindDictElement(interp, nextElem, (limit - nextElem),
 		    &elemStart, &nextElem, &elemSize, &literal) != TCL_OK) {
 		TclDecrRefCount(keyPtr);
@@ -701,6 +712,9 @@ SetDictFromAny(
 		(void)Tcl_InitStringRep(valuePtr, NULL,
 			TclCopyAndCollapse(elemSize, elemStart, dst));
 	    }
+
+            /* count the elements */
+            llength++;
 
 	    /* Store key and value in the hash table we're building. */
 	    hPtr = CreateChainEntry(dict, keyPtr, &isNew);
@@ -724,6 +738,7 @@ SetDictFromAny(
     dict->epoch = 1;
     dict->chain = NULL;
     dict->refCount = 1;
+    dict->llength = llength;
     DictSetInternalRep(objPtr, dict);
     return TCL_OK;
 
@@ -964,6 +979,8 @@ Tcl_DictObjPut(
 	Tcl_Obj *oldValuePtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
 	TclDecrRefCount(oldValuePtr);
+    } else {
+        dict->llength += 2;
     }
     Tcl_SetHashValue(hPtr, valuePtr);
     dict->epoch++;
@@ -1053,6 +1070,7 @@ Tcl_DictObjRemove(
 
     if (DeleteChainEntry(dict, keyPtr)) {
 	TclInvalidateStringRep(dictPtr);
+        dict->llength -= 2;
 	dict->epoch++;
     }
     return TCL_OK;
@@ -1342,6 +1360,8 @@ Tcl_DictObjPutKeyList(
 	Tcl_Obj *oldValuePtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
 	TclDecrRefCount(oldValuePtr);
+    } else {
+        dict->llength += 2;
     }
     Tcl_SetHashValue(hPtr, valuePtr);
     InvalidateDictChain(dictPtr);
@@ -1395,6 +1415,7 @@ Tcl_DictObjRemoveKeyList(
     DictGetInternalRep(dictPtr, dict);
     assert(dict != NULL);
     DeleteChainEntry(dict, keyv[keyc-1]);
+    dict->llength -= 2;
     InvalidateDictChain(dictPtr);
     return TCL_OK;
 }
@@ -1438,6 +1459,7 @@ Tcl_NewDictObj(void)
     InitChainTable(dict);
     dict->epoch = 1;
     dict->chain = NULL;
+    dict->llength = 0;
     dict->refCount = 1;
     DictSetInternalRep(dictPtr, dict);
     return dictPtr;
@@ -1486,6 +1508,7 @@ Tcl_DbNewDictObj(
     InitChainTable(dict);
     dict->epoch = 1;
     dict->chain = NULL;
+    dict->llength = 0;
     dict->refCount = 1;
     DictSetInternalRep(dictPtr, dict);
     return dictPtr;
@@ -3821,138 +3844,13 @@ static Tcl_Size
 DictAsListLength(
     Tcl_Obj *objPtr)
 {
-    Tcl_Size estCount, length, llen;
-    const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
-    Tcl_Obj *elemPtr;
+    Dict *dict;
 
-    /*
-     * Allocate enough space to hold a (Tcl_Obj *) for each
-     * (possible) list element.
-     */
+    DictGetInternalRep(objPtr, dict);
+    assert(dict != NULL);
 
-    estCount = TclMaxListLength(nextElem, length, &limit);
-    estCount += (estCount == 0); /* Smallest list struct holds 1
-				  * element. */
-    elemPtr = Tcl_NewObj();
-
-    llen = 0;
-
-    while (nextElem < limit) {
-	const char *elemStart;
-	char *check;
-	Tcl_Size elemSize;
-	int literal;
-
-	if (TCL_OK != TclFindElement(NULL, nextElem, limit - nextElem,
-		          &elemStart, &nextElem, &elemSize, &literal)) {
-	    Tcl_DecrRefCount(elemPtr);
-	    return 0;
-	}
-	if (elemStart == limit) {
-	    break;
-	}
-
-	TclInvalidateStringRep(elemPtr);
-	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
-				  elemSize);
-	if (elemSize && check == NULL) {
-	    Tcl_DecrRefCount(elemPtr);
-	    return 0;
-	}
-	if (!literal) {
-	    Tcl_InitStringRep(elemPtr, NULL,
-			      TclCopyAndCollapse(elemSize, elemStart, check));
-	}
-	llen++;
-    }
-    Tcl_DecrRefCount(elemPtr);
-    return llen;
+    return dict->llength;
 }
-
-
-/*
- *----------------------------------------------------------------------
- *
- * DictAsListIndex --
- *
- *   Return the key or value at the given "list" index, i.e., as if the string
- *   value where treated as a list. The intent is to support this list
- *   operation w/o causing the Obj value to shimmer into a List.
- *
- * Side Effects --
- *
- *   The intent is to have no side effects.
- *
- */
-#if 0 /* Needs rewrite */
-static int
-DictAsListIndex(
-    Tcl_Interp *interp,
-    struct Tcl_Obj *objPtr,
-    Tcl_Size index,
-    Tcl_Obj** elemObjPtr)
-{
-    Tcl_Size /*estCount,*/ length, llen;
-    const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
-    Tcl_Obj *elemPtr;
-
-    /*
-     * Compute limit of the list string
-     */
-
-    TclMaxListLength(nextElem, length, &limit);
-    elemPtr = Tcl_NewObj();
-
-    llen = 0;
-
-    /*
-     * parse out each element until reaching the "index"th element.
-     * Sure this is slow, but shimmering is slower.
-     */
-    while (nextElem < limit) {
-	const char *elemStart;
-	char *check;
-	Tcl_Size elemSize;
-	int literal;
-
-	if (TCL_OK != TclFindElement(NULL, nextElem, limit - nextElem,
-		          &elemStart, &nextElem, &elemSize, &literal)) {
-	    Tcl_DecrRefCount(elemPtr);
-	    return 0;
-	}
-	if (elemStart == limit) {
-	    break;
-	}
-
-	TclInvalidateStringRep(elemPtr);
-	check = Tcl_InitStringRep(elemPtr, literal ? elemStart : NULL,
-				  elemSize);
-	if (elemSize && check == NULL) {
-	    Tcl_DecrRefCount(elemPtr);
-	    if (interp) {
-		// Need error message here
-	    }
-	    return TCL_ERROR;
-	}
-	if (!literal) {
-	    Tcl_InitStringRep(elemPtr, NULL,
-			      TclCopyAndCollapse(elemSize, elemStart, check));
-	}
-	if (llen == index) {
-	    *elemObjPtr = elemPtr;
-	    return TCL_OK;
-	}
-	llen++;
-    }
-
-    /*
-     * Index is beyond end of list - return empty
-     */
-    Tcl_InitStringRep(elemPtr, NULL, 0);
-    *elemObjPtr = elemPtr;
-    return TCL_OK;
-}
-#endif
 
 /*
  * Local Variables:
