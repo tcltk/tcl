@@ -1151,7 +1151,7 @@ ArithSeriesInOperation(
         if (status != TCL_OK) {
 	    test = 0;
         } else {
-            char *vstr = Tcl_GetStringFromObj(valueObj, &vlen);
+            const char *vstr = Tcl_GetStringFromObj(valueObj, &vlen);
             index = (y - dblRepPtr->start) / dblRepPtr->step;
 	    while (incr<2) {
 		Tcl_Obj *elemObj;

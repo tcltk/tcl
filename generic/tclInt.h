@@ -3260,8 +3260,6 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
 MODULE_SCOPE Tcl_Size	TclDictGetSize(Tcl_Obj *dictPtr);
-MODULE_SCOPE Tcl_Obj *TclDuplicatePureObj(Tcl_Interp *interp,
-			    Tcl_Obj * objPtr, const Tcl_ObjType *typPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, Tcl_Size dictLength,
 			    const char **elementPtr, const char **nextPtr,
@@ -3392,6 +3390,7 @@ MODULE_SCOPE Tcl_Obj *	TclListObjGetElement(Tcl_Obj *listObj, Tcl_Size index);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, Tcl_Size line, Tcl_Size n,
 			    Tcl_Size *lines, Tcl_Obj *const *elems);
+MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
 			    Tcl_Obj *toObj, Tcl_Size elemCount,
 			    Tcl_Obj *const elemObjv[]);
