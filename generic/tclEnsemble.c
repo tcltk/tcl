@@ -312,17 +312,7 @@ TclNamespaceEnsembleCmd(
 			Tcl_AppendObjToObj(newCmd, listv[0]);
 			Tcl_ListObjReplace(NULL, newList, 0, 1, 1, &newCmd);
 			if (patchedDict == NULL) {
-			    patchedDict = TclDuplicatePureObj(
-				interp, objv[1], &tclDictType);
-			    if (!patchedDict) {
-				if (allocatedMapFlag) {
-				    Tcl_DecrRefCount(mapObj);
-				}
-				Tcl_DecrRefCount(newList);
-				Tcl_DecrRefCount(newCmd);
-				Tcl_DecrRefCount(patchedDict);
-				return TCL_ERROR;
-			    }
+			    patchedDict = Tcl_DuplicateObj(objv[1]);
 			}
 			Tcl_DictObjPut(NULL, patchedDict, subcmdWordsObj,
 				newList);
@@ -606,14 +596,7 @@ TclNamespaceEnsembleCmd(
 			}
 			cmd = TclGetString(listv[0]);
 			if (!(cmd[0] == ':' && cmd[1] == ':')) {
-			    Tcl_Obj *newList = TclDuplicatePureObj(
-				interp, listObj, &tclListType);
-			    if (!newList) {
-				if (patchedDict) {
-				    Tcl_DecrRefCount(patchedDict);
-				}
-				goto freeMapAndError;
-			    }
+			    Tcl_Obj *newList = Tcl_DuplicateObj(listObj);
 			    Tcl_Obj *newCmd = NewNsObj((Tcl_Namespace*)nsPtr);
 
 			    if (nsPtr->parentPtr) {
@@ -623,11 +606,7 @@ TclNamespaceEnsembleCmd(
 			    Tcl_ListObjReplace(NULL, newList, 0, 1, 1,
 				    &newCmd);
 			    if (patchedDict == NULL) {
-				patchedDict = TclDuplicatePureObj(
-				    interp, objv[1], &tclListType);
-				if (!patchedDict) {
-				    goto freeMapAndError;
-				}
+				patchedDict = Tcl_DuplicateObj(objv[1]);
 			    }
 			    Tcl_DictObjPut(NULL, patchedDict, subcmdWordsObj,
 				    newList);
@@ -1925,11 +1904,7 @@ NsEnsembleImplementationCmdNR(
 	TclListObjLengthM(NULL, prefixObj, &prefixObjc);
 
 	if (objc == 2) {
-	    copyPtr = TclDuplicatePureObj(
-		interp, prefixObj, &tclListType);
-	    if (!copyPtr) {
-		return TCL_ERROR;
-	    }
+	    copyPtr = TclListObjCopy(NULL, prefixObj);
 	} else {
 	    copyPtr = Tcl_NewListObj(objc - 2 + prefixObjc, NULL);
 	    Tcl_ListObjAppendList(NULL, copyPtr, prefixObj);
@@ -2329,11 +2304,7 @@ EnsembleUnknownCallback(
      * Create the "unknown" command callback to determine what to do.
      */
 
-    unknownCmd = TclDuplicatePureObj(
-	interp, ensemblePtr->unknownHandler, &tclListType);
-    if (!unknownCmd) {
-	return TCL_ERROR;
-    }
+    unknownCmd = Tcl_DuplicateObj(ensemblePtr->unknownHandler);
     TclNewObj(ensObj);
     Tcl_GetCommandFullName(interp, ensemblePtr->token, ensObj);
     Tcl_ListObjAppendElement(NULL, unknownCmd, ensObj);

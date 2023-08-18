@@ -3623,9 +3623,7 @@ NamespaceExportCmd(
     nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     if (objc == 1) {
 	if (nsPtr->exportPatternList) {
-	    Tcl_SetObjResult(interp,
-		    TclDuplicatePureObj(NULL, nsPtr->exportPatternList,
-		    &tclListType));
+	    Tcl_SetObjResult(interp, nsPtr->exportPatternList);
 	}
 	return TCL_OK;
     }
