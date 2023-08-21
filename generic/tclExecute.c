@@ -6692,7 +6692,7 @@ TEBCresume(
 		numVars = varListPtr->numVars;
 
 		listVarPtr = LOCAL(listTmpIndex);
-		listPtr = TclDuplicatePureObj(NULL, listVarPtr->value.objPtr, &tclListType);
+		listPtr = TclListObjCopy(NULL, listVarPtr->value.objPtr);
 		TclListObjGetElementsM(interp, listPtr, &listLen, &elements);
 
 		valIndex = (iterNum * numVars);
@@ -6789,11 +6789,7 @@ TEBCresume(
 		goto gotError;
 	    }
 	    if (Tcl_IsShared(listPtr)) {
-		/* Do NOT use TclDuplicatePureObj here - shimmers abstract list to list */
-		objPtr = Tcl_DuplicateObj(listPtr);
-		if (!objPtr) {
-		    goto gotError;
-		}
+		objPtr = TclListObjCopy(NULL, listPtr);
 		Tcl_IncrRefCount(objPtr);
 		Tcl_DecrRefCount(listPtr);
 		OBJ_AT_DEPTH(listTmpDepth) = objPtr;
