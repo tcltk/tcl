@@ -6692,7 +6692,8 @@ TEBCresume(
 		numVars = varListPtr->numVars;
 
 		listVarPtr = LOCAL(listTmpIndex);
-		listPtr = TclListObjCopy(NULL, listVarPtr->value.objPtr);
+                /* Do not use TclListObjCopy here - shimmers arithseries to list */
+		listPtr = Tcl_DuplicateObj(listVarPtr->value.objPtr);
 		TclListObjGetElementsM(interp, listPtr, &listLen, &elements);
 
 		valIndex = (iterNum * numVars);
@@ -6789,7 +6790,8 @@ TEBCresume(
 		goto gotError;
 	    }
 	    if (Tcl_IsShared(listPtr)) {
-		objPtr = TclListObjCopy(NULL, listPtr);
+                /* Do not use TclListObjCopy here - shimmers arithseries to list */
+		objPtr = Tcl_DuplicateObj(listPtr);
 		Tcl_IncrRefCount(objPtr);
 		Tcl_DecrRefCount(listPtr);
 		OBJ_AT_DEPTH(listTmpDepth) = objPtr;

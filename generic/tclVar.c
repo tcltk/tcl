@@ -3221,7 +3221,8 @@ ArrayForNRCmd(
      * loop) don't vanish.
      */
 
-    varListObj = TclListObjCopy(NULL, objv[1]);
+    /* Do not use TclListObjCopy here - shimmers arithseries to list */
+    varListObj = Tcl_DuplicateObj(objv[1]);
     if (!varListObj) {
 	return TCL_ERROR;
     }

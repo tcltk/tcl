@@ -2927,7 +2927,9 @@ EachloopCmd(
     for (i=0 ; i<numLists ; i++) {
 	/* List */
 	/* Variables */
-	statePtr->vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
+
+	/* Do not use TclListObjCopy here - shimmers arithseries to list */
+	statePtr->vCopyList[i] = Tcl_DuplicateObj(objv[1+i*2]);
 	if (statePtr->vCopyList[i] == NULL) {
 	    result = TCL_ERROR;
 	    goto done;
