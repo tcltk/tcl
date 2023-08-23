@@ -4,12 +4,12 @@
  *	This file contains procedures that execute byte-compiled Tcl commands.
  *
  * Copyright (c) 1996-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 by Scriptics Corporation.
- * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
- * Copyright (c) 2002-2010 by Miguel Sofer.
- * Copyright (c) 2005-2007 by Donal K. Fellows.
+ * Copyright (c) 1998-2000 Scriptics Corporation.
+ * Copyright (c) 2001 Kevin B. Kenny. All rights reserved.
+ * Copyright (c) 2002-2010 Miguel Sofer.
+ * Copyright (c) 2005-2007 Donal K. Fellows.
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
- * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
+ * Copyright (c) 2006-2008 Joe Mistachkin.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -6314,7 +6314,7 @@ TEBCresume(
 		     * Quickly force large right shifts to 0 or -1.
 		     */
 
-		    if (l2 >= (long)(CHAR_BIT*sizeof(long))) {
+		    if (l2 >= (long)(CHAR_BIT*sizeof(l1))) {
 			/*
 			 * We assume that INT_MAX is much larger than the
 			 * number of bits in a long. This is a pretty safe
@@ -6382,9 +6382,9 @@ TEBCresume(
 		     * Handle shifts within the native long range.
 		     */
 
-		    if (((size_t) shift < CHAR_BIT*sizeof(long))
+		    if (((size_t) shift < CHAR_BIT*sizeof(l1))
 			    && !((l1>0 ? l1 : ~l1) &
-				-(1UL<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
+				-(1UL<<(CHAR_BIT*sizeof(l1) - 1 - shift)))) {
 			lResult = (unsigned long)l1 << shift;
 			goto longResultOfArithmetic;
 		    }
