@@ -6081,7 +6081,7 @@ TEBCresume(
 		     * Quickly force large right shifts to 0 or -1.
 		     */
 
-		    if (w2 >= (Tcl_WideInt)(CHAR_BIT*sizeof(long))) {
+		    if (w2 >= (Tcl_WideInt)(CHAR_BIT*sizeof(w1))) {
 			/*
 			 * We assume that INT_MAX is much larger than the
 			 * number of bits in a long. This is a pretty safe
@@ -6149,9 +6149,9 @@ TEBCresume(
 		     * Handle shifts within the native long range.
 		     */
 
-		    if (((size_t)shift < CHAR_BIT*sizeof(long))
+		    if (((size_t)shift < CHAR_BIT*sizeof(w1))
 			    && !((w1>0 ? w1 : ~w1) &
-				-(1UL<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
+				-(1UL<<(CHAR_BIT*sizeof(w1) - 1 - shift)))) {
 			wResult = (Tcl_WideUInt)w1 << shift;
 			goto wideResultOfArithmetic;
 		    }
