@@ -634,7 +634,7 @@ static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    ByteCode *codePtr, Tcl_Size *lengthPtr,
-			    const unsigned char **pcBeg, int *cmdIdxPtr);
+			    const unsigned char **pcBeg, Tcl_Size *cmdIdxPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, TCL_HASH_TYPE growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
@@ -1850,7 +1850,7 @@ ArgumentBCEnter(
     int objc,
     Tcl_Obj **objv)
 {
-    int cmd;
+    Tcl_Size cmd;
 
     if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
 	TclArgumentBCEnter(interp, objv, objc, codePtr, &tdPtr->cmdFrame, cmd,
@@ -3377,12 +3377,7 @@ TEBCresume(
 	    goto gotError;
 	}
 	if (Tcl_IsShared(objResultPtr)) {
-	    Tcl_Obj *newValue = TclDuplicatePureObj(
-		    interp, objResultPtr, &tclListType);
-	    if (!newValue) {
-		TRACE_ERROR(interp);
-		goto gotError;
-	    }
+	    Tcl_Obj *newValue = Tcl_DuplicateObj(objResultPtr);
 
 	    TclDecrRefCount(objResultPtr);
 	    varPtr->value.objPtr = objResultPtr = newValue;
@@ -3441,11 +3436,7 @@ TEBCresume(
 		goto gotError;
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
-		    valueToAssign = TclDuplicatePureObj(
-			interp, objResultPtr, &tclListType);
-		    if (!valueToAssign) {
-			goto errorInLappendListPtr;
-		    }
+		    valueToAssign = Tcl_DuplicateObj(objResultPtr);
 		    createdNewObj = 1;
 		} else {
 		    valueToAssign = objResultPtr;
@@ -4686,6 +4677,10 @@ TEBCresume(
 		goto gotError;
 	    }
 	    CACHE_STACK_INFO();
+	    if (objResultPtr == NULL) {
+		/* Index is out of range, return empty result. */
+		TclNewObj(objResultPtr);
+	    }
 	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
 	}
@@ -5012,50 +5007,60 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
-	s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
-	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
-	if (TclListObjLengthM(interp, value2Ptr, &length) != TCL_OK) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	}
-	match = 0;
-	if (length > 0) {
-	    Tcl_Size i = 0;
-	    Tcl_Obj *o;
-	    int isAbstractList = TclObjTypeHasProc(value2Ptr,indexProc) != NULL;
+        s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
+        TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
-	    /*
-	     * An empty list doesn't match anything.
-	     */
+        if (TclObjTypeHasProc(value2Ptr,inOperProc) != NULL) {
+            int status = TclObjTypeInOperator(interp, valuePtr, value2Ptr, &match);
+            if (status != TCL_OK) {
+                TRACE_ERROR(interp);
+                goto gotError;
+            }
+        } else {
 
-	    do {
-		if (isAbstractList) {
-		    DECACHE_STACK_INFO();
-		    if (TclObjTypeIndex(interp, value2Ptr, i, &o) != TCL_OK) {
-			CACHE_STACK_INFO();
-			TRACE_ERROR(interp);
-			goto gotError;
-		    }
-		    CACHE_STACK_INFO();
-		} else {
-		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
-		}
-		if (o != NULL) {
-		    s2 = Tcl_GetStringFromObj(o, &s2len);
-		} else {
-		    s2 = "";
-		    s2len = 0;
-		}
-		if (s1len == s2len) {
-		    match = (memcmp(s1, s2, s1len) == 0);
-		}
+            if (TclListObjLengthM(interp, value2Ptr, &length) != TCL_OK) {
+                TRACE_ERROR(interp);
+                goto gotError;
+            }
+            match = 0;
+            if (length > 0) {
+                Tcl_Size i = 0;
+                Tcl_Obj *o;
+                int isAbstractList = TclObjTypeHasProc(value2Ptr,indexProc) != NULL;
 
-		/* Could be an ephemeral abstract obj */
-		Tcl_BumpObj(o);
+                /*
+                 * An empty list doesn't match anything.
+                 */
 
-		i++;
-	    } while (i < length && match == 0);
-	}
+                do {
+                    if (isAbstractList) {
+                        DECACHE_STACK_INFO();
+                        if (TclObjTypeIndex(interp, value2Ptr, i, &o) != TCL_OK) {
+                            CACHE_STACK_INFO();
+                            TRACE_ERROR(interp);
+                            goto gotError;
+                        }
+                        CACHE_STACK_INFO();
+                    } else {
+                        Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
+                    }
+                    if (o != NULL) {
+                        s2 = Tcl_GetStringFromObj(o, &s2len);
+                    } else {
+                        s2 = "";
+                        s2len = 0;
+                    }
+                    if (s1len == s2len) {
+                        match = (memcmp(s1, s2, s1len) == 0);
+                    }
+
+                    /* Could be an ephemeral abstract obj */
+                    Tcl_BounceRefCount(o);
+
+                    i++;
+                } while (i < length && match == 0);
+            }
+        }
 
 	if (*pc == INST_LIST_NOT_IN) {
 	    match = !match;
@@ -5918,7 +5923,7 @@ TEBCresume(
 		     * Quickly force large right shifts to 0 or -1.
 		     */
 
-		    if (w2 >= (Tcl_WideInt)(CHAR_BIT*sizeof(long))) {
+		    if (w2 >= (Tcl_WideInt)(CHAR_BIT*sizeof(w1))) {
 			/*
 			 * We assume that INT_MAX is much larger than the
 			 * number of bits in a long. This is a pretty safe
@@ -5986,9 +5991,9 @@ TEBCresume(
 		     * Handle shifts within the native long range.
 		     */
 
-		    if (((size_t)shift < CHAR_BIT*sizeof(long))
+		    if (((size_t)shift < CHAR_BIT*sizeof(w1))
 			    && !((w1>0 ? w1 : ~w1) &
-				-(1UL<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
+				-(1UL<<(CHAR_BIT*sizeof(w1) - 1 - shift)))) {
 			wResult = (Tcl_WideUInt)w1 << shift;
 			goto wideResultOfArithmetic;
 		    }
@@ -6462,13 +6467,8 @@ TEBCresume(
 			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
 		goto gotError;
 	    }
-	    CACHE_STACK_INFO();
 	    if (Tcl_IsShared(listPtr)) {
-		objPtr = TclDuplicatePureObj(
-		    interp, listPtr, &tclListType);
-		if (!objPtr) {
-		    goto gotError;
-		}
+		objPtr = TclListObjCopy(NULL, listPtr);
 		Tcl_IncrRefCount(objPtr);
 		Tcl_DecrRefCount(listPtr);
 		OBJ_AT_DEPTH(listTmpDepth) = objPtr;
@@ -9163,7 +9163,7 @@ TclGetSrcInfoForPc(
 	ExtCmdLoc *eclPtr;
 	ECL *locPtr = NULL;
 	Tcl_Size srcOffset;
-	int i;
+	Tcl_Size i;
 	Interp *iPtr = (Interp *) *codePtr->interpHandle;
 	Tcl_HashEntry *hePtr =
 		Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
@@ -9175,7 +9175,7 @@ TclGetSrcInfoForPc(
 	srcOffset = cfPtr->cmd - codePtr->source;
 	eclPtr = (ExtCmdLoc *)Tcl_GetHashValue(hePtr);
 
-	for (i=0; i < (int)eclPtr->nuloc; i++) {
+	for (i=0; i < eclPtr->nuloc; i++) {
 	    if (eclPtr->loc[i].srcOffset == srcOffset) {
 		locPtr = eclPtr->loc+i;
 		break;
@@ -9215,7 +9215,7 @@ GetSrcInfoForPc(
     const unsigned char **pcBeg,/* If non-NULL, the bytecode location
 				 * where the current instruction starts.
 				 * If NULL; no pointer is stored. */
-    int *cmdIdxPtr)		/* If non-NULL, the location where the index
+    Tcl_Size *cmdIdxPtr)	/* If non-NULL, the location where the index
 				 * of the command containing the pc should
 				 * be stored. */
 {
@@ -9224,10 +9224,10 @@ GetSrcInfoForPc(
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
     Tcl_Size codeOffset, codeLen, codeEnd, srcOffset, srcLen, delta, i;
-    int bestDist = INT_MAX;	/* Distance of pc to best cmd's start pc. */
-    int bestSrcOffset = -1;	/* Initialized to avoid compiler warning. */
-    int bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
-    int bestCmdIdx = -1;
+    Tcl_Size bestDist = TCL_SIZE_MAX; /* Distance of pc to best cmd's start pc. */
+    Tcl_Size bestSrcOffset = -1; /* Initialized to avoid compiler warning. */
+    Tcl_Size bestSrcLength = -1; /* Initialized to avoid compiler warning. */
+    Tcl_Size bestCmdIdx = -1;
 
     /* The pc must point within the bytecode */
     assert ((pcOffset >= 0) && (pcOffset < codePtr->numCodeBytes));
@@ -9306,7 +9306,7 @@ GetSrcInfoForPc(
 	 * instructions. Stop when crossing pc; keep previous.
 	 */
 
-	curr = ((bestDist == INT_MAX) ? codePtr->codeStart : pc - bestDist);
+	curr = ((bestDist == TCL_SIZE_MAX) ? codePtr->codeStart : pc - bestDist);
 	prev = curr;
 	while (curr <= pc) {
 	    prev = curr;
@@ -9315,7 +9315,7 @@ GetSrcInfoForPc(
 	*pcBeg = prev;
     }
 
-    if (bestDist == INT_MAX) {
+    if (bestDist == TCL_SIZE_MAX) {
 	return NULL;
     }
 

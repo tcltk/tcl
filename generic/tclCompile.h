@@ -183,16 +183,16 @@ typedef struct {
 typedef struct {
     Tcl_Size srcOffset;		/* Command location to find the entry. */
     Tcl_Size nline;			/* Number of words in the command */
-    int *line;			/* Line information for all words in the
+    Tcl_Size *line;			/* Line information for all words in the
 				 * command. */
-    int **next;			/* Transient information used by the compiler
+    Tcl_Size **next;			/* Transient information used by the compiler
 				 * for tracking of hidden continuation
 				 * lines. */
 } ECL;
 
 typedef struct {
     int type;			/* Context type. */
-    int start;			/* Starting line for compiled script. Needed
+    Tcl_Size start;		/* Starting line for compiled script. Needed
 				 * for the extended recompile check in
 				 * tclCompileObj. */
     Tcl_Obj *path;		/* Path of the sourced file the command is
@@ -392,7 +392,7 @@ typedef struct CompileEnv {
 				 * encountered that have not yet been paired
 				 * with a corresponding
 				 * INST_INVOKE_EXPANDED. */
-    int *clNext;		/* If not NULL, it refers to the next slot in
+    Tcl_Size *clNext;	/* If not NULL, it refers to the next slot in
 				 * clLoc to check for an invisible
 				 * continuation line. */
 } CompileEnv;
@@ -1138,7 +1138,7 @@ MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclGetIndexFromToken(Tcl_Token *tokenPtr,
-			    int before, int after, int *indexPtr);
+			    size_t before, size_t after, int *indexPtr);
 MODULE_SCOPE ByteCode *	TclInitByteCode(CompileEnv *envPtr);
 MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);

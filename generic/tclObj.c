@@ -202,9 +202,6 @@ static void		DupBignum(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		UpdateStringOfBignum(Tcl_Obj *objPtr);
 static int		GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int copy, mp_int *bignumValue);
-static int		SetDuplicatePureObj(Tcl_Interp *interp,
-			    Tcl_Obj *dupPtr, Tcl_Obj *objPtr,
-			    const Tcl_ObjType *typePtr);
 
 /*
  * Prototypes for the array hash key methods.
@@ -555,13 +552,13 @@ ContLineLoc *
 TclContinuationsEnter(
     Tcl_Obj *objPtr,
     Tcl_Size num,
-    int *loc)
+    Tcl_Size *loc)
 {
     int newEntry;
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
 	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = (ContLineLoc *)Tcl_Alloc(offsetof(ContLineLoc, loc) + (num + 1U) *sizeof(int));
+    ContLineLoc *clLocPtr = (ContLineLoc *)Tcl_Alloc(offsetof(ContLineLoc, loc) + (num + 1U) *sizeof(Tcl_Size));
 
     if (!newEntry) {
 	/*
@@ -589,7 +586,7 @@ TclContinuationsEnter(
     }
 
     clLocPtr->num = num;
-    memcpy(&clLocPtr->loc, loc, num*sizeof(int));
+    memcpy(&clLocPtr->loc, loc, num*sizeof(Tcl_Size));
     clLocPtr->loc[num] = CLL_END;       /* Sentinel */
     Tcl_SetHashValue(hPtr, clLocPtr);
 
@@ -618,12 +615,12 @@ TclContinuationsEnter(
 void
 TclContinuationsEnterDerived(
     Tcl_Obj *objPtr,
-    int start,
-    int *clNext)
+    Tcl_Size start,
+    Tcl_Size *clNext)
 {
     Tcl_Size length;
-    int end, num;
-    int *wordCLLast = clNext;
+    Tcl_Size end, num;
+    Tcl_Size *wordCLLast = clNext;
 
     /*
      * We have to handle invisible continuations lines here as well, despite
@@ -666,7 +663,7 @@ TclContinuationsEnterDerived(
 
     num = wordCLLast - clNext;
     if (num) {
-	int i;
+	Tcl_Size i;
 	ContLineLoc *clLocPtr = TclContinuationsEnter(objPtr, num, clNext);
 
 	/*
@@ -1529,14 +1526,6 @@ TclObjBeingDeleted(
  *	Create and return a new object that is a duplicate of the argument
  *	object.
  *
- * TclDuplicatePureObj --
- *	Like Tcl_DuplicateObj, except that it converts the duplicate to the
- *	specifid typ, does not duplicate the 'bytes'
- *	field unless it is necessary, i.e. the duplicated Tcl_Obj provides no
- *	updateStringProc.  This can avoid an expensive memory allocation since
- *	the data in the 'bytes' field of each Tcl_Obj must reside in allocated
- *	memory.
- *
  * Results:
  *	The return value is a pointer to a newly created Tcl_Obj. This object
  *	has reference count 0 and the same type, if any, as the source object
@@ -1587,113 +1576,6 @@ Tcl_DuplicateObj(
     SetDuplicateObj(dupPtr, objPtr);
     return dupPtr;
 }
-
-
-/*
- *----------------------------------------------------------------------
- *
- * TclDuplicatePureObj --
- *
- *	Duplicates a Tcl_Obj and converts the internal representation of the
- *	duplicate to the given type, changing neither the 'bytes' field
- *	nor the internal representation of the original object, and without
- *	duplicating the bytes field unless necessary, i.e. unless the
- *	duplicate provides no updateStringProc after conversion.  This can
- *	avoid an expensive memory allocation since the data in the 'bytes'
- *	field of each Tcl_Obj must reside in allocated memory.
- *
- * Results:
- *	A pointer to a newly-created Tcl_Obj or NULL if there was an error.
- *	This object has reference count 0.  Also:
- *
- *----------------------------------------------------------------------
- */
-int SetDuplicatePureObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *dupPtr,
-    Tcl_Obj *objPtr,
-    const Tcl_ObjType *typePtr)
-{
-    char *bytes = objPtr->bytes;
-    int status = TCL_OK;
-    const Tcl_ObjType *useTypePtr =
-        objPtr->typePtr ? objPtr->typePtr : typePtr;
-
-    TclInvalidateStringRep(dupPtr);
-    assert(dupPtr->typePtr == NULL);
-
-    if (objPtr->typePtr && objPtr->typePtr->dupIntRepProc) {
-	objPtr->typePtr->dupIntRepProc(objPtr, dupPtr);
-    } else {
-	dupPtr->internalRep = objPtr->internalRep;
-	dupPtr->typePtr = objPtr->typePtr;
-    }
-
-    if (typePtr != NULL && dupPtr->typePtr != useTypePtr) {
-	if (bytes) {
-	    dupPtr->bytes = bytes;
-	    dupPtr->length = objPtr->length;
-	}
-	/* borrow bytes from original object */
-	status = Tcl_ConvertToType(interp, dupPtr, useTypePtr);
-	if (bytes) {
-	    dupPtr->bytes = NULL;
-	    dupPtr->length = 0;
-	}
-	if (status != TCL_OK) {
-	    return status;
-	}
-    }
-
-    /* tclStringType is treated as a special case because a Tcl_Obj having this
-     * type can not always update the string representation.  This happens, for
-     * example, when Tcl_GetCharLength() converts the internal representation
-     * to tclStringType in order to store the number of characters, but does
-     * not store enough information to generate the string representation.
-     *
-     * Perhaps in the future this can be remedied and this special treatment
-     * removed.
-     */
-
-
-    if (bytes && (dupPtr->typePtr == NULL
-	|| dupPtr->typePtr->updateStringProc == NULL
-	|| useTypePtr == &tclStringType
-	)
-    ) {
-	if (!TclAttemptInitStringRep(dupPtr, bytes, objPtr->length)) {
-	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"insufficient memory to initialize string", -1));
-		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	    }
-	    status = TCL_ERROR;
-	}
-    }
-    return status;
-}
-
-Tcl_Obj *
-TclDuplicatePureObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr,
-    const Tcl_ObjType *typePtr
-)		/* The object to duplicate. */
-{
-    int status;
-    Tcl_Obj *dupPtr;
-
-    TclNewObj(dupPtr);
-    status = SetDuplicatePureObj(interp, dupPtr, objPtr, typePtr);
-    if (status == TCL_OK) {
-	return dupPtr;
-    } else {
-	Tcl_DecrRefCount(dupPtr);
-	return NULL;
-    }
-}
-
-
 
 void
 TclSetDuplicateObj(

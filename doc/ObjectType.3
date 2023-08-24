@@ -118,6 +118,7 @@ typedef struct Tcl_ObjType {
     Tcl_ObjTypeGetElements *\fIgetElementsProc\fR;
     Tcl_ObjTypeSetElement *\fIsetElementProc\fR;
     Tcl_ObjTypeReplaceProc *\fIreplaceProc\fR;
+    Tcl_ObjTypeInOperatorProc *\fIinOperProc\fR;
 } \fBTcl_ObjType\fR;
 .CE
 .SS "THE NAME FIELD"
@@ -214,6 +215,7 @@ The \fIdupIntRepProc\fR member contains the address of a function
 called to copy an internal representation from one value to another.
 .PP
 .CS
+
 typedef void \fBTcl_DupInternalRepProc\fR(
         Tcl_Obj *\fIsrcPtr\fR,
         Tcl_Obj *\fIdupPtr\fR);
@@ -237,6 +239,7 @@ The \fIfreeIntRepProc\fR member contains the address of a function
 that is called when a value is freed.
 .PP
 .CS
+
 typedef void \fBTcl_FreeInternalRepProc\fR(
         Tcl_Obj *\fIobjPtr\fR);
 .CE
@@ -293,12 +296,12 @@ use of the List commands without causing the type of the Tcl_Obj value
 to be converted to a list.
 .SS "THE LENGTHPROC FIELD"
 .PP
-The \fBLengthProc\fR function correlates with the \fBllength\fR
-command. The function returns the number of elements in the list. It
+The \fBLengthProc\fR function correlates with the \fBTcl_ListObjLength\fR
+C API. The function returns the number of elements in the list. It
 is used in every List operation and is required for all Abstract List
 implementations.
-
 .CS
+
 typedef Tcl_Size
 (Tcl_ObjTypeLengthProc) (Tcl_Obj *listPtr);
 .CE
@@ -306,10 +309,11 @@ typedef Tcl_Size
 .PP
 .SS "THE INDEXPROC FIELD"
 .PP
-The \fBIndexProc\fR function correlates with the \fBlindex\fR
-command. The function returns a Tcl_Obj value for the element at the
-specified index.
+The \fBIndexProc\fR function correlates with with the
+\fBTcl_ListObjIndex\fR C API. The function returns a Tcl_Obj value for
+the element at the specified index.
 .CS
+
 typedef int
 (Tcl_ObjTypeIndexProc) (
     Tcl_Interp *interp,
@@ -323,6 +327,7 @@ The \fBSliceProc\fR correlates with the \fBlrange\fR command,
 returning a new List or Abstract List for the portion of the original
 list specifed.
 .CS
+
 typedef int
 (Tcl_ObjTypeSliceProc) (
     Tcl_Interp *interp,
@@ -337,6 +342,7 @@ The \fBReverseProc\fR correlates with the \fBlreverse\fR command,
 returning a List or Abstract List that has the same elements as the
 input Abstract List, with the elements in the reverse order.
 .CS
+
 typedef int
 (Tcl_ObjTypeReverseProc) (
     Tcl_Interp *interp,
@@ -345,10 +351,11 @@ typedef int
 .CE
 .SS "THE GETELEMENTS FIELD"
 .PP
-THe \fBGetElements\fR function returns a count and a pointer to an
+The \fBGetElements\fR function returns a count and a pointer to an
 array of Tcl_Obj values for the entire Abstract List. This is a
 correlary to the \fBTcl_ListObjGetElements\fR C API call.
 .CS
+
 typedef int
 (Tcl_ObjTypeGetElements) (
     Tcl_Interp *interp,
@@ -360,8 +367,10 @@ typedef int
 .PP
 The \fBSetElement\fR function replaces the element within the
 specified list at the give index. This function correlates to the
-\fBlset\fR command.  typedef Tcl_Obj*
+\fBlset\fR command.
 .CS
+
+typedef Tcl_Obj*
 Tcl_ObjTypeSetElement) (
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
@@ -373,8 +382,9 @@ Tcl_ObjTypeSetElement) (
 .PP
 The \fBReplaceProc\fR returns a new list after modfying the list
 replacing the elements to be deleted, and adding the elements to be
-inserted. This function correlates to the \fBlreplace\fR command.
+inserted. This function correlates to the \fBTcl_ListObjReplace\fR C API.
 .CS
+
 typedef int
 (Tcl_ObjTypeReplaceProc) (
     Tcl_Interp *interp,
@@ -383,6 +393,22 @@ typedef int
     Tcl_Size numToDelete,
     Tcl_Size numToInsert,
     Tcl_Obj *const insertObjs[]);
+.CE
+.SS "THE INOPERATORPROC FIELD"
+.PP
+The \fBInOperProc\fR function determines whether the value is present in the
+given list, according to equivalent string comparison of elements. The
+\fBboolResult\fR is set to 1 (true) if the value is present, and 0
+(false) if it is not present. This function implements the "in" and
+"ni" math operators for an abstract list.
+.CS
+
+typedef int
+(Tcl_ObjTypeInOperatorProc) (
+    Tcl_Interp *interp,
+    Tcl_Obj *valueObj,
+    Tcl_Obj *listObj,
+    int *boolResult);
 .CE
 .SH "REFERENCE COUNT MANAGEMENT"
 .PP
@@ -402,6 +428,6 @@ modify the reference count of their arguments, but if the values contain
 subsidiary values (e.g., the elements of a list or the keys of a dictionary)
 then those subsidiary values may have their reference counts modified.
 .SH "SEE ALSO"
-Tcl_NewObj(3), Tcl_DecrRefCount(3), Tcl_IncrRefCount(3)
+Tcl_NewObj(3), Tcl_DecrRefCount(3), Tcl_IncrRefCount(3), Tcl_BounceRefCount(3)
 .SH KEYWORDS
 internal representation, value, value type, string representation, type conversion

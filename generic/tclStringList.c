@@ -63,7 +63,8 @@ static const Tcl_ObjType stringListType = {
     StringListObjReverse,
     NULL, /* GetElements */
     NULL, /* SetElement */
-    NULL) /* Replace */
+    NULL, /* Replace */
+    NULL) /* "in" operator */
 };
 
 /* Returns the source for a StringList, NULL if objPtr is not a StringList */

@@ -277,14 +277,14 @@ bigtestRO string-last-bigdata-1 "string last > INT_MAX" {2 -1 2147483640 11} -bo
 } -cleanup {
     bigClean
 }
-bigtestRO string-last-bigdata-2 "string last > UINT_MAX" {4294967300 -1 4294967290 1} -body {
+bigtestRO string-last-bigdata-2 "string last > UINT_MAX" {4294967320 -1 4294967290 1} -body {
     list \
         [string last 0 $s] \
         [string last Y $s] \
         [string last 0 $s 0x100000000] \
         [string last 1 $s end-0x100000010]
 } -setup {
-    set s [bigString 0x10000000a 2]
+    set s [bigString 0x10000001a 2]
 } -cleanup {
     bigClean
 }
@@ -1146,6 +1146,21 @@ test puts-bigdata-2 "puts" -setup {
     close $fd
     set written
 } -result {2345—}
+
+test source-bigdata-1 "source" -setup {
+    # This test crashes because the frame linenumber tracking
+    # wraps around at INT_MAX
+    set fpath [tcltest::makeFile {} source-bigdata-1.tcl]
+    set fd [open $fpath w]
+    fconfigure $fd -translation lf
+    puts -nonewline $fd [string repeat \n 4294967296]
+    puts $fd {dict get [info frame 0] line}
+    close $fd
+} -constraints {
+    bigdata knownBug
+} -body {
+    set line [source $fpath]
+} -result 4294967297
 
 #
 # TODO

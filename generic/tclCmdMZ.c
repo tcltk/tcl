@@ -3819,7 +3819,7 @@ TclNRSwitchObjCmd(
 	if (ctxPtr->type == TCL_LOCATION_SOURCE && ctxPtr->line[bidx] >= 0) {
 	    int bline = ctxPtr->line[bidx];
 
-	    ctxPtr->line = (int *)Tcl_Alloc(objc * sizeof(int));
+	    ctxPtr->line = (Tcl_Size *)Tcl_Alloc(objc * sizeof(Tcl_Size));
 	    ctxPtr->nline = objc;
 	    TclListLines(blist, bline, objc, ctxPtr->line, objv);
 	} else {
@@ -3833,7 +3833,7 @@ TclNRSwitchObjCmd(
 
 	    int k;
 
-	    ctxPtr->line = (int *)Tcl_Alloc(objc * sizeof(int));
+	    ctxPtr->line = (Tcl_Size *)Tcl_Alloc(objc * sizeof(Tcl_Size));
 	    ctxPtr->nline = objc;
 	    for (k=0; k < objc; k++) {
 		ctxPtr->line[k] = -1;
@@ -5273,17 +5273,17 @@ TclListLines(
 				 * structure. Assumed to be valid. Assumed to
 				 * contain n elements. */
     Tcl_Size line,		/* Line the list as a whole starts on. */
-    int n,			/* #elements in lines */
-    int *lines,			/* Array of line numbers, to fill. */
+    Tcl_Size n,			/* #elements in lines */
+    Tcl_Size *lines,		/* Array of line numbers, to fill. */
     Tcl_Obj *const *elems)      /* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
     const char *listStr = TclGetString(listObj);
     const char *listHead = listStr;
-    int i, length = strlen(listStr);
+    Tcl_Size i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;
     ContLineLoc *clLocPtr = TclContinuationsGet(listObj);
-    int *clNext = (clLocPtr ? &clLocPtr->loc[0] : NULL);
+    Tcl_Size *clNext = (clLocPtr ? &clLocPtr->loc[0] : NULL);
 
     for (i = 0; i < n; i++) {
 	TclFindElement(NULL, listStr, length, &element, &next, NULL, NULL);

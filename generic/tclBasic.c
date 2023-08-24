@@ -5147,7 +5147,7 @@ TclEvalEx(
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
     Tcl_Size line,		/* The line the script starts on. */
-    int *clNextOuter,		/* Information about an outer context for */
+    Tcl_Size *clNextOuter,		/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set only in
 				 * TclSubstTokens(), to properly handle
 				 * [...]-nested commands. The 'outerScript'
@@ -5169,7 +5169,8 @@ TclEvalEx(
     const char *p, *next;
     const int minObjs = 20;
     Tcl_Obj **objv, **objvSpace;
-    int *expand, *lines, *lineSpace;
+    int *expand;
+    Tcl_Size *lines, *lineSpace;
     Tcl_Token *tokenPtr;
     int expandRequested, code = TCL_OK;
     Tcl_Size bytesLeft, commandLength;
@@ -5187,10 +5188,10 @@ TclEvalEx(
     Tcl_Obj **stackObjArray = (Tcl_Obj **)
 	    TclStackAlloc(interp, minObjs * sizeof(Tcl_Obj *));
     int *expandStack = (int *)TclStackAlloc(interp, minObjs * sizeof(int));
-    int *linesStack = (int *)TclStackAlloc(interp, minObjs * sizeof(int));
+    Tcl_Size *linesStack = (Tcl_Size *)TclStackAlloc(interp, minObjs * sizeof(Tcl_Size));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
-    int *clNext = NULL;		/* Pointer for the tracking of invisible
+    Tcl_Size *clNext = NULL;		/* Pointer for the tracking of invisible
 				 * continuation lines. Initialized only if the
 				 * caller gave us a table of locations to
 				 * track, via scriptCLLocPtr. It always refers
@@ -5314,7 +5315,7 @@ TclEvalEx(
 
 	    Tcl_Size wordLine = line;
 	    const char *wordStart = parsePtr->commandStart;
-	    int *wordCLNext = clNext;
+	    Tcl_Size *wordCLNext = clNext;
 	    Tcl_Size objectsNeeded = 0;
 	    Tcl_Size numWords = parsePtr->numWords;
 
@@ -5325,7 +5326,7 @@ TclEvalEx(
 	    if (numWords > minObjs) {
 		expand =    (int *)Tcl_Alloc(numWords * sizeof(int));
 		objvSpace = (Tcl_Obj **)Tcl_Alloc(numWords * sizeof(Tcl_Obj *));
-		lineSpace = (int *)Tcl_Alloc(numWords * sizeof(int));
+		lineSpace = (Tcl_Size *)Tcl_Alloc(numWords * sizeof(Tcl_Size));
 	    }
 	    expandRequested = 0;
 	    objv = objvSpace;
@@ -5351,7 +5352,7 @@ TclEvalEx(
 		wordStart = tokenPtr->start;
 
 		lines[objectsUsed] = TclWordKnownAtCompileTime(tokenPtr, NULL)
-			? (int)wordLine : -1;
+			? wordLine : -1;
 
 		if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
 		    iPtr->evalFlags |= TCL_EVAL_FILE;
@@ -5417,14 +5418,14 @@ TclEvalEx(
 		 */
 
 		Tcl_Obj **copy = objvSpace;
-		int *lcopy = lineSpace;
-		int wordIdx = numWords;
-		int objIdx = objectsNeeded - 1;
+		Tcl_Size *lcopy = lineSpace;
+		Tcl_Size wordIdx = numWords;
+		Tcl_Size objIdx = objectsNeeded - 1;
 
 		if ((numWords > minObjs) || (objectsNeeded > minObjs)) {
 		    objv = objvSpace =
 			    (Tcl_Obj **)Tcl_Alloc(objectsNeeded * sizeof(Tcl_Obj *));
-		    lines = lineSpace = (int *)Tcl_Alloc(objectsNeeded * sizeof(int));
+		    lines = lineSpace = (Tcl_Size *)Tcl_Alloc(objectsNeeded * sizeof(Tcl_Size));
 		}
 
 		objectsUsed = 0;
@@ -5659,7 +5660,7 @@ TclAdvanceLines(
 void
 TclAdvanceContinuations(
     Tcl_Size *line,
-    int **clNextPtrPtr,
+    Tcl_Size **clNextPtrPtr,
     int loc)
 {
     /*
@@ -5837,7 +5838,7 @@ TclArgumentBCEnter(
     int objc,
     void *codePtr,
     CmdFrame *cfPtr,
-    int cmd,
+    Tcl_Size cmd,
     Tcl_Size pc)
 {
     ExtCmdLoc *eclPtr;
@@ -6152,11 +6153,7 @@ TclNREvalObjEx(
 	 */
 
 	Tcl_IncrRefCount(objPtr);
-	listPtr = TclDuplicatePureObj(interp, objPtr, &tclListType);
-	if (!listPtr) {
-	    Tcl_DecrRefCount(objPtr);
-	    return TCL_ERROR;
-	}
+	listPtr = TclListObjCopy(interp, objPtr);
 	Tcl_IncrRefCount(listPtr);
 
 	if (word != INT_MIN) {

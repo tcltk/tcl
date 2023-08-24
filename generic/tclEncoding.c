@@ -186,6 +186,7 @@ TCL_DECLARE_MUTEX(encodingMutex)
 static Tcl_Encoding defaultEncoding = NULL;
 static Tcl_Encoding systemEncoding = NULL;
 Tcl_Encoding tclIdentityEncoding = NULL;
+Tcl_Encoding tclUtf8Encoding = NULL;
 
 /*
  * Names of encoding profiles and corresponding integer values.
@@ -609,7 +610,7 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 1;
     type.clientData	= INT2PTR(ENCODING_UTF);
-    Tcl_CreateEncoding(&type);
+    tclUtf8Encoding = Tcl_CreateEncoding(&type);
     type.clientData	= NULL;
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
@@ -731,6 +732,8 @@ TclFinalizeEncodingSubsystem(void)
     defaultEncoding = NULL;
     FreeEncoding(tclIdentityEncoding);
     tclIdentityEncoding = NULL;
+    FreeEncoding(tclUtf8Encoding);
+    tclUtf8Encoding = NULL;
 
     hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     while (hPtr != NULL) {
@@ -3231,7 +3234,7 @@ UtfToUtf16Proc(
     }
 
     dstStart = dst;
-    dstEnd   = dst + dstLen - sizeof(Tcl_UniChar);
+    dstEnd   = dst + dstLen - 2; /* 2 -> sizeof a UTF-16 code unit */
     flags |= PTR2INT(clientData);
 
     result = TCL_OK;
@@ -3341,7 +3344,7 @@ UtfToUcs2Proc(
     }
 
     dstStart = dst;
-    dstEnd   = dst + dstLen - sizeof(Tcl_UniChar);
+    dstEnd   = dst + dstLen - 2; /* 2 - size of UCS code unit */
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd; numChars++) {
