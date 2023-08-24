@@ -1300,7 +1300,7 @@ typedef struct Tcl_Time {
 #else
     long sec;			/* Seconds. */
 #endif
-#if defined(_WIN32) && TCL_MAJOR_VERSION > 8
+#if defined(_WIN32) && defined(_WIN64) && TCL_MAJOR_VERSION > 8
     long long usec;		/* Microseconds. */
 #else
     long usec;			/* Microseconds. */
