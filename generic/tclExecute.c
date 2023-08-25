@@ -3611,7 +3611,7 @@ TEBCresume(
 			objResultPtr = objPtr;
 
 			/*
-			 * We know the sum value is outside the long range;
+			 * We know the sum value is outside the Tcl_WideInt range;
 			 * use macro form that doesn't range test again.
 			 */
 
@@ -5926,9 +5926,9 @@ TEBCresume(
 		    if (w2 >= (Tcl_WideInt)(CHAR_BIT*sizeof(w1))) {
 			/*
 			 * We assume that INT_MAX is much larger than the
-			 * number of bits in a long. This is a pretty safe
+			 * number of bits in a Tcl_WideInt. This is a pretty safe
 			 * assumption, given that the former is usually around
-			 * 4e9 and the latter 32 or 64...
+			 * 4e9 and the latter 64...
 			 */
 
 			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
@@ -5942,7 +5942,7 @@ TEBCresume(
 		    }
 
 		    /*
-		     * Handle shifts within the native long range.
+		     * Handle shifts within the native Tcl_WideInt range.
 		     */
 
 		    wResult = w1 >> ((int) w2);
@@ -5988,12 +5988,12 @@ TEBCresume(
 		    int shift = (int) w2;
 
 		    /*
-		     * Handle shifts within the native long range.
+		     * Handle shifts within the native Tcl_WideInt range.
 		     */
 
 		    if (((size_t)shift < CHAR_BIT*sizeof(w1))
 			    && !((w1>0 ? w1 : ~w1) &
-				-(1UL<<(CHAR_BIT*sizeof(w1) - 1 - shift)))) {
+				-((Tcl_WideUInt)1<<(CHAR_BIT*sizeof(w1) - 1 - shift)))) {
 			wResult = (Tcl_WideUInt)w1 << shift;
 			goto wideResultOfArithmetic;
 		    }
@@ -6093,7 +6093,7 @@ TEBCresume(
 #endif
 
 	/*
-	 * Handle (long,long) arithmetic as best we can without going out to
+	 * Handle Tcl_WideInt arithmetic as best we can without going out to
 	 * an external function.
 	 */
 
@@ -7969,8 +7969,8 @@ ExecuteExtendedBinaryMathOp(
     mp_int big1, big2, bigResult, bigRemainder;
     Tcl_Obj *objResultPtr;
     int invalid, zero;
-    long shift;
-	mp_err err;
+    int shift;
+    mp_err err;
 
     (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
     (void) GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
@@ -8369,7 +8369,7 @@ ExecuteExtendedBinaryMathOp(
 	 * We refuse to accept exponent arguments that exceed one mp_digit
 	 * which means the max exponent value is 2**28-1 = 0x0FFFFFFF =
 	 * 268435455, which fits into a signed 32 bit int which is within the
-	 * range of the long int type. This means any numeric Tcl_Obj value
+	 * range of the Tcl_WideInt type. This means any numeric Tcl_Obj value
 	 * not using TCL_NUMBER_INT type must hold a value larger than we
 	 * accept.
 	 */
@@ -8767,7 +8767,7 @@ TclCompareTwoNumbers(
 	    d1 = (double) w1;
 
 	    /*
-	     * If the double has a fractional part, or if the long can be
+	     * If the double has a fractional part, or if the Tcl_WideInt can be
 	     * converted to double without loss of precision, then compare as
 	     * doubles.
 	     */
