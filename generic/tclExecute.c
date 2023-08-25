@@ -9161,7 +9161,7 @@ TclCompareTwoNumbers(
 		mp_clear(&big2);
 		return compare;
 	    }
-	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(long)
+	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
 		    && modf(d1, &tmp) != 0.0) {
 		d2 = TclBignumToDouble(&big2);
 		mp_clear(&big2);
@@ -9191,7 +9191,7 @@ TclCompareTwoNumbers(
 		mp_clear(&big1);
 		return compare;
 	    }
-	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(long)
+	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
 		    && modf(d2, &tmp) != 0.0) {
 		d1 = TclBignumToDouble(&big1);
 		mp_clear(&big1);
