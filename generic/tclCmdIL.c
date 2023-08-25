@@ -2333,7 +2333,7 @@ Tcl_LassignObjCmd(
 	return TCL_ERROR;
     }
 
-    listCopyPtr = TclDuplicatePureObj(interp, objv[1], &tclListType);
+    listCopyPtr = TclListObjCopy(interp, objv[1]);
     if (listCopyPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -2498,10 +2498,7 @@ Tcl_LinsertObjCmd(
 
     listPtr = objv[1];
     if (Tcl_IsShared(listPtr)) {
-	listPtr = TclDuplicatePureObj(interp, listPtr, &tclListType);
-	if (!listPtr) {
-	    return TCL_ERROR;
-	}
+	listPtr = TclListObjCopy(NULL, listPtr);
     }
 
     if ((objc == 4) && (index == len)) {
@@ -2688,10 +2685,7 @@ Tcl_LpopObjCmd(
 
     if (objc == 2) {
 	if (Tcl_IsShared(listPtr)) {
-	    listPtr = TclDuplicatePureObj(interp, listPtr, &tclListType);
-	    if (!listPtr) {
-		return TCL_ERROR;
-	    }
+	    listPtr = TclListObjCopy(NULL, listPtr);
 	}
 	result = Tcl_ListObjReplace(interp, listPtr, listLen - 1, 1, 0, NULL);
 	if (result != TCL_OK) {
@@ -2868,11 +2862,7 @@ Tcl_LremoveObjCmd(
      */
 
     if (Tcl_IsShared(listObj)) {
-	listObj = TclDuplicatePureObj(interp, listObj, &tclListType);
-	if (!listObj) {
-	    status = TCL_ERROR;
-	    goto done;
-	}
+	listObj = TclListObjCopy(NULL, listObj);
 	copied = 1;
     }
     num = 0;
@@ -3124,10 +3114,7 @@ Tcl_LreplaceObjCmd(
 
     listPtr = objv[1];
     if (Tcl_IsShared(listPtr)) {
-	listPtr = TclDuplicatePureObj(interp, listPtr, &tclListType);
-	if (!listPtr) {
-	    return TCL_ERROR;
-	}
+	listPtr = TclListObjCopy(NULL, listPtr);
     }
 
     /*
@@ -4018,91 +4005,6 @@ Tcl_LsearchObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_LsetObjCmd --
- *
- *	This procedure is invoked to process the "lset" Tcl command. See the
- *	user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_LsetObjCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument values. */
-{
-    Tcl_Obj *listPtr;		/* Pointer to the list being altered. */
-    Tcl_Obj *finalValuePtr;	/* Value finally assigned to the variable. */
-
-    /*
-     * Check parameter count.
-     */
-
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"listVar ?index? ?index ...? value");
-	return TCL_ERROR;
-    }
-
-    /*
-     * Look up the list variable's value.
-     */
-
-    listPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
-    if (listPtr == NULL) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Substitute the value in the value. Return either the value or else an
-     * unshared copy of it.
-     */
-
-    if (objc == 4) {
-	finalValuePtr = TclLsetList(interp, listPtr, objv[2], objv[3]);
-    } else {
-	finalValuePtr = TclLsetFlat(interp, listPtr, objc-3, objv+2,
-		objv[objc-1]);
-    }
-
-    /*
-     * If substitution has failed, bail out.
-     */
-
-    if (finalValuePtr == NULL) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Finally, update the variable so that traces fire.
-     */
-
-    listPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, finalValuePtr,
-	    TCL_LEAVE_ERR_MSG);
-    Tcl_DecrRefCount(finalValuePtr);
-    if (listPtr == NULL) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Return the new value of the variable as the interpreter result.
-     */
-
-    Tcl_SetObjResult(interp, listPtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * SequenceIdentifyArgument --
  *   (for [lseq] command)
  *
@@ -4314,7 +4216,7 @@ Tcl_LseqObjCmd(
 	 goto done;
 	 break;
 
-/*    range n */
+/*    lseq n */
     case 1:
 	start = zero;
 	elementCount = numValues[0];
@@ -4322,22 +4224,22 @@ Tcl_LseqObjCmd(
 	step = one;
 	break;
 
-/*    range n n */
+/*    lseq n n */
     case 11:
 	start = numValues[0];
 	end = numValues[1];
 	break;
 
-/*    range n n n */
+/*    lseq n n n */
     case 111:
 	start = numValues[0];
 	end = numValues[1];
 	step = numValues[2];
 	break;
 
-/*    range n 'to' n    */
-/*    range n 'count' n */
-/*    range n 'by' n    */
+/*    lseq n 'to' n    */
+/*    lseq n 'count' n */
+/*    lseq n 'by' n    */
     case 121:
 	opmode = (SequenceOperators)values[1];
 	switch (opmode) {
@@ -4362,8 +4264,8 @@ Tcl_LseqObjCmd(
 	}
 	break;
 
-/*    range n 'to' n n    */
-/*    range n 'count' n n */
+/*    lseq n 'to' n n    */
+/*    lseq n 'count' n n */
     case 1211:
 	opmode = (SequenceOperators)values[1];
 	switch (opmode) {
@@ -4390,7 +4292,7 @@ Tcl_LseqObjCmd(
 	}
 	break;
 
-/*    range n n 'by' n */
+/*    lseq n n 'by' n */
     case 1121:
 	start = numValues[0];
 	end = numValues[1];
@@ -4409,8 +4311,8 @@ Tcl_LseqObjCmd(
 	}
 	break;
 
-/*    range n 'to' n 'by' n    */
-/*    range n 'count' n 'by' n */
+/*    lseq n 'to' n 'by' n    */
+/*    lseq n 'count' n 'by' n */
     case 12121:
 	start = numValues[0];
 	opmode = (SequenceOperators)values[3];
@@ -4498,6 +4400,91 @@ Tcl_LseqObjCmd(
     Tcl_DecrRefCount(one);
 
     return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LsetObjCmd --
+ *
+ *	This procedure is invoked to process the "lset" Tcl command. See the
+ *	user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_LsetObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument values. */
+{
+    Tcl_Obj *listPtr;		/* Pointer to the list being altered. */
+    Tcl_Obj *finalValuePtr;	/* Value finally assigned to the variable. */
+
+    /*
+     * Check parameter count.
+     */
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"listVar ?index? ?index ...? value");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Look up the list variable's value.
+     */
+
+    listPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
+    if (listPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Substitute the value in the value. Return either the value or else an
+     * unshared copy of it.
+     */
+
+    if (objc == 4) {
+	finalValuePtr = TclLsetList(interp, listPtr, objv[2], objv[3]);
+    } else {
+	finalValuePtr = TclLsetFlat(interp, listPtr, objc-3, objv+2,
+		objv[objc-1]);
+    }
+
+    /*
+     * If substitution has failed, bail out.
+     */
+
+    if (finalValuePtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Finally, update the variable so that traces fire.
+     */
+
+    listPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, finalValuePtr,
+	    TCL_LEAVE_ERR_MSG);
+    Tcl_DecrRefCount(finalValuePtr);
+    if (listPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Return the new value of the variable as the interpreter result.
+     */
+
+    Tcl_SetObjResult(interp, listPtr);
+    return TCL_OK;
 }
 
 /*
@@ -4743,7 +4730,7 @@ Tcl_LsortObjCmd(
 	 * 1675116]
 	 */
 
-	listObj = TclDuplicatePureObj(interp ,listObj, &tclListType);
+	listObj = TclListObjCopy(interp, listObj);
 	if (listObj == NULL) {
 	    sortInfo.resultCode = TCL_ERROR;
 	    goto done;
@@ -5101,10 +5088,7 @@ Tcl_LeditObjCmd(
     }
 
     if (Tcl_IsShared(listPtr)) {
-	listPtr = TclDuplicatePureObj(interp, listPtr, &tclListType);
-	if (!listPtr) {
-	    return TCL_ERROR;
-	}
+	listPtr = TclListObjCopy(NULL, listPtr);
 	createdNewObj = 1;
     } else {
 	createdNewObj = 0;
