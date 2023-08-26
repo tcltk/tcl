@@ -1761,7 +1761,7 @@ ClockClicksObjCmd(
     switch (index) {
     case CLICKS_MILLIS:
 	Tcl_GetTime(&now);
-	clicks = (Tcl_WideInt)(unsigned long)now.sec * 1000 + now.usec / 1000;
+	clicks = (Tcl_WideInt)(unsigned long long)now.sec * 1000 + now.usec / 1000;
 	break;
     case CLICKS_NATIVE:
 #ifdef TCL_WIDE_CLICKS
@@ -2039,7 +2039,7 @@ TzsetIfNecessary(void)
 {
     static WCHAR* tzWas = (WCHAR *)INT2PTR(-1);	 /* Previous value of TZ, protected by
 					  * clockMutex. */
-    static long	 tzLastRefresh = 0;	 /* Used for latency before next refresh */
+    static long long tzLastRefresh = 0;	 /* Used for latency before next refresh */
     static size_t tzEnvEpoch = 0;        /* Last env epoch, for faster signaling,
 					    that TZ changed via TCL */
     const WCHAR *tzIsNow;		 /* Current value of TZ */
