@@ -3339,7 +3339,7 @@ test interp-34.10 {time limits trigger in vwaits: Bug 1221395} -body {
     interp delete $i
     lappend result $msg
 } -result {1 {time limit exceeded}}
-test interp-34.11 {time limit extension in callbacks} -constraints knownBug -setup {
+test interp-34.11 {time limit extension in callbacks} -setup {
     proc cb1 {i t} {
 	global result
 	lappend result cb1
