@@ -4360,16 +4360,16 @@ MODULE_SCOPE int TclCommandWordLimitError(Tcl_Interp *interp, Tcl_Size count);
  *------------------------------------------------------------------------
  */
 static inline int TclGetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *sizePtr) {
-#if TCL_SIZE_MAX == INT_MAX
-    return TclGetIntFromObj(interp, objPtr, sizePtr);
-#else
-    Tcl_WideInt wide;
-    if (TclGetWideIntFromObj(interp, objPtr, &wide) != TCL_OK) {
-	return TCL_ERROR;
+    if (TCL_SIZE_MAX == INT_MAX) {
+	return TclGetIntFromObj(interp, objPtr, (int *)sizePtr);
+    } else {
+	Tcl_WideInt wide;
+	if (TclGetWideIntFromObj(interp, objPtr, &wide) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*sizePtr = (Tcl_Size)wide;
+	return TCL_OK;
     }
-    *sizePtr = (Tcl_Size)wide;
-    return TCL_OK;
-#endif
 }
 
 
