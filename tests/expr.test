@@ -1427,6 +1427,7 @@ test expr-24.9 {expr edge cases; shifting} {expr 5>>32} 0
 
 test expr-24.10 {INST_LSHIFT: Bug 1567222} {expr 500000000000000<<28} 134217728000000000000000
 test expr-24.11 {INST_LSHIFT: Bug 84a5355235} {expr -549755813888>>32} -128
+test expr-24.12 {INST_LSHIFT: Bug 920e393634} {expr 7244019458077122840<<1} 14488038916154245680
 
 # List membership tests
 test expr-25.1 {'in' operator} {expr {"a" in "a b c"}} 1
