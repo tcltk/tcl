@@ -323,11 +323,11 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #if TCL_MAJOR_VERSION < 9
     typedef int Tcl_Size;
+#   define TCL_SIZE_MAX ((int)(((unsigned int)-1)>>1))
 #   define TCL_SIZE_MODIFIER ""
-#   define TCL_SIZE_MAX INT_MAX
 #else
     typedef ptrdiff_t Tcl_Size;
-#   define TCL_SIZE_MAX PTRDIFF_MAX
+#   define TCL_SIZE_MAX ((ptrdiff_t)(((size_t)-1)>>1))
 #   define TCL_SIZE_MODIFIER TCL_T_MODIFIER
 #endif /* TCL_MAJOR_VERSION */
 
@@ -1295,8 +1295,16 @@ typedef enum {
  */
 
 typedef struct Tcl_Time {
+#if TCL_MAJOR_VERSION > 8
+    long long sec;		/* Seconds. */
+#else
     long sec;			/* Seconds. */
+#endif
+#if defined(_WIN32) && defined(_WIN64) && TCL_MAJOR_VERSION > 8
+    long long usec;		/* Microseconds. */
+#else
     long usec;			/* Microseconds. */
+#endif
 } Tcl_Time;
 
 typedef void (Tcl_SetTimerProc) (const Tcl_Time *timePtr);

@@ -3975,9 +3975,9 @@ extern const TclStubs *tclStubsPtr;
 	TCL_ENCODING_PROFILE_TCL8, (ds), NULL), Tcl_DStringValue(ds))
 
 #if defined(USE_TCL_STUBS)
-#   if defined(_WIN32) && defined(_WIN64)
+#   if defined(_WIN32) && defined(_WIN64) && TCL_MAJOR_VERSION < 9
 #	undef Tcl_GetTime
-/* Handle Win64 tk.dll being loaded in Cygwin64. */
+/* Handle Win64 tk.dll being loaded in Cygwin64 (only needed for Tcl 8). */
 #	define Tcl_GetTime(t) \
 		do { \
 		    struct { \
