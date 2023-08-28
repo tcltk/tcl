@@ -95,7 +95,7 @@ TclpGetMicroseconds(void)
     Tcl_Time time;
 
     GetTime(&time);
-    return ((long long)(unsigned long) time.sec)*1000000 + time.usec;
+    return time.sec * 1000000 + time.usec;
 }
 
 /*
