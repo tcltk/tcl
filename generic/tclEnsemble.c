@@ -1900,11 +1900,7 @@ NsEnsembleImplementationCmdNR(
 	TclListObjLengthM(NULL, prefixObj, &prefixObjc);
 
 	if (objc == 2) {
-	    copyPtr = TclDuplicatePureObj(
-		interp, prefixObj, &tclListType);
-	    if (!copyPtr) {
-		return TCL_ERROR;
-	    }
+	    copyPtr = TclListObjCopy(NULL, prefixObj);
 	} else {
 	    copyPtr = Tcl_NewListObj(objc - 2 + prefixObjc, NULL);
 	    Tcl_ListObjAppendList(NULL, copyPtr, prefixObj);
@@ -3055,7 +3051,7 @@ TclCompileEnsemble(
 	 * No map, so check the dictionary directly.
 	 */
 
-	TclNewStringObj(subcmdObj, word, (int) numBytes);
+	TclNewStringObj(subcmdObj, word, numBytes);
 	result = Tcl_DictObjGet(NULL, mapObj, subcmdObj, &targetCmdObj);
 	if (result == TCL_OK && targetCmdObj != NULL) {
 	    /*
