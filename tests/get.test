@@ -113,7 +113,7 @@ test get-3.5 {tcl_GetInt with numeric whitespace (i.e. '_')} testgetint {
 	catch {testgetint $x} x
 	set x
     }
-} {0 10 2 33 1423324 10 255 7 8 2 {expected integer but got " 0_b1_0 "} {expected integer but got "_33"} {expected integer but got "42_"} {expected integer but got "0_x15"} {expected integer but got "0_o17"} {expected integer but got "0_d19"}}
+} {0 10 2 33 {expected integer but got "14__23__32___4"} 10 255 7 8 2 {expected integer but got " 0_b1_0 "} {expected integer but got "_33"} {expected integer but got "42_"} {expected integer but got "0_x15"} {expected integer but got "0_o17"} {expected integer but got "0_d19"}}
 
 # cleanup
 ::tcltest::cleanupTests
