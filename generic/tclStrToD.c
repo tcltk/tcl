@@ -766,6 +766,10 @@ TclParseNumber(
 		break;
             } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
+		if (under) {
+		    // No multiple '_' in a row
+		    goto endgame;
+		}
                 under = 1;
                 break;
 	    }
@@ -801,6 +805,10 @@ TclParseNumber(
 		d = (c-'a'+10);
             } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
+		if (under) {
+		    // No multiple '_' in a row
+		    goto endgame;
+		}
                 under = 1;
                 break;
 	    } else {
@@ -863,6 +871,10 @@ TclParseNumber(
 		break;
 	    } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
 		/* Ignore numeric "white space" */
+		if (under) {
+		    // No multiple '_' in a row
+		    goto endgame;
+		}
 		under = 1;
 		break;
 	    } else if (c != '1') {
@@ -920,6 +932,10 @@ TclParseNumber(
 	    } else if ( ! isdigit(UCHAR(c))) {
 		if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
 		    /* Ignore numeric "white space" */
+		    if (under) {
+			// No multiple '_' in a row
+			goto endgame;
+		    }
 		    under = 1;
 		    break;
 		}
@@ -959,16 +975,26 @@ TclParseNumber(
 		break;
             } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
+		if (under) {
+		    // No multiple '_' in a row
+		    goto endgame;
+		}
                 under = 1;
                 break;
 	    } else if (flags & TCL_PARSE_INTEGER_ONLY) {
 		goto endgame;
 	    } else if (c == '.') {
-		under = 0;
+		if (under) {
+		    // Must be a digit before and after '_'
+		    goto endgame;
+		}
 		state = FRACTION;
 		break;
 	    } else if (c == 'E' || c == 'e') {
-		under = 0;
+		if (under) {
+		    // Must be a digit before and after '_'
+		    goto endgame;
+		}
 		state = EXPONENT_START;
 		break;
 	    }
@@ -1016,6 +1042,10 @@ TclParseNumber(
 		break;
             } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
+		if (under) {
+		    // No multiple '_' in a row
+		    goto endgame;
+		}
                 under = 1;
                 break;
 	    }
@@ -1029,12 +1059,18 @@ TclParseNumber(
 	     */
 
 	    if (c == '+') {
-		under = 0;
+		if (under) {
+		    // Must be a digit before and after '_'
+		    goto endgame;
+		}
 		state = EXPONENT_SIGNUM;
 		break;
 	    } else if (c == '-') {
 		exponentSignum = 1;
-		under = 0;
+		if (under) {
+		    // Must be a digit before and after '_'
+		    goto endgame;
+		}
 		state = EXPONENT_SIGNUM;
 		break;
 	    }
@@ -1053,6 +1089,10 @@ TclParseNumber(
 		break;
             } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
+		if (under) {
+		    // No multiple '_' in a row
+		    goto endgame;
+		}
                 under = 1;
                 break;
 	    }
@@ -1078,6 +1118,10 @@ TclParseNumber(
 		break;
             } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
+		if (under) {
+		    // No multiple '_' in a row
+		    goto endgame;
+		}
                 under = 1;
                 break;
 	    }
@@ -1234,6 +1278,9 @@ TclParseNumber(
 
 	p = under ? acceptPoint-1 : acceptPoint;
 	len = under ? acceptLen-1 : acceptLen;
+
+	// No trailing '_' allowed
+	status = under ? TCL_ERROR : TCL_OK;
 
 	if (!(flags & TCL_PARSE_NO_WHITESPACE)) {
 	    /*
