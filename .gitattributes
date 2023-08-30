@@ -22,6 +22,7 @@
 
 # Declare files that will always have CRLF line endings on checkout.
 *.bat eol=crlf
+*.cs eol=crlf
 *.sln eol=crlf
 *.vc eol=crlf
 
