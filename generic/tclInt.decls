@@ -115,9 +115,6 @@ declare 41 {
 declare 42 {
     const char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
-declare 43 {
-    Tcl_ObjCmdProc2 *TclGetObjInterpProc2(void)
-}
 declare 44 {
     int TclGuessPackageName(const char *fileName, Tcl_DString *bufPtr)
 }

@@ -2408,24 +2408,8 @@ declare 648 {
 
 # TIP #568
 declare 649 {
-    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *numBytesPtr)
-}
-declare 650 {
     unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    void *numBytesPtr)
-}
-
-# TIP #481
-declare 651 {
-    char *TclGetStringFromObj(Tcl_Obj *objPtr, void *lengthPtr)
-}
-declare 652 {
-    unsigned short *TclGetUnicodeFromObj(Tcl_Obj *objPtr, void *lengthPtr)
-}
-# Only available in Tcl 8.x, NULL in Tcl 9.0
-declare 653 {
-    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, void *numBytesPtr)
+	    Tcl_Size *numBytesPtr)
 }
 
 # TIP #575
@@ -2459,33 +2443,6 @@ declare 660 {
     int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
 }
 
-# TIP #616
-declare 661 {
-    int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    void *objcPtr, Tcl_Obj ***objvPtr)
-}
-declare 662 {
-    int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    void *lengthPtr)
-}
-declare 663 {
-    int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, void *sizePtr)
-}
-declare 664 {
-    int TclSplitList(Tcl_Interp *interp, const char *listStr, void *argcPtr,
-	    const char ***argvPtr)
-}
-declare 665 {
-    void TclSplitPath(const char *path, void *argcPtr, const char ***argvPtr)
-}
-declare 666 {
-    Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, void *lenPtr)
-}
-declare 667 {
-    int TclParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
-	    void *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
-}
-
 # TIP #617
 declare 668 {
     Tcl_Size Tcl_UniCharLen(const int *uniStr)
@@ -2514,35 +2471,13 @@ declare 675 {
     int Tcl_GetBoolFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int flags, char *charPtr)
 }
-declare 676 {
-    Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
-	    const char *cmdName,
-	    Tcl_ObjCmdProc2 *proc2, void *clientData,
-	    Tcl_CmdDeleteProc *deleteProc)
-}
-declare 677 {
-    Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, Tcl_Size level, int flags,
-	    Tcl_CmdObjTraceProc2 *objProc2, void *clientData,
-	    Tcl_CmdObjTraceDeleteProc *delProc)
-}
-declare 678 {
-    Tcl_Command Tcl_NRCreateCommand2(Tcl_Interp *interp,
-	    const char *cmdName, Tcl_ObjCmdProc2 *proc,
-	    Tcl_ObjCmdProc2 *nreProc2, void *clientData,
-	    Tcl_CmdDeleteProc *deleteProc)
-}
-declare 679 {
-    int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2,
-	    void *clientData, ptrdiff_t objc, Tcl_Obj *const objv[])
-}
-
 # TIP #638.
 declare 680 {
     int Tcl_GetNumberFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    void **clientDataPtr, int *typePtr)
 }
 declare 681 {
-    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, ptrdiff_t numBytes,
+    int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, Tcl_Size numBytes,
 	    void **clientDataPtr, int *typePtr)
 }
 

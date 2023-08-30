@@ -156,8 +156,7 @@ EXTERN Tcl_Command	TclGetOriginalCommand(Tcl_Command command);
 /* 42 */
 EXTERN const char *	TclpGetUserHome(const char *name,
 				Tcl_DString *bufferPtr);
-/* 43 */
-EXTERN Tcl_ObjCmdProc2 * TclGetObjInterpProc2(void);
+/* Slot 43 is reserved */
 /* 44 */
 EXTERN int		TclGuessPackageName(const char *fileName,
 				Tcl_DString *bufPtr);
@@ -715,7 +714,7 @@ typedef struct TclIntStubs {
     int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *seekFlagPtr); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) (Tcl_Command command); /* 41 */
     const char * (*tclpGetUserHome) (const char *name, Tcl_DString *bufferPtr); /* 42 */
-    Tcl_ObjCmdProc2 * (*tclGetObjInterpProc2) (void); /* 43 */
+    void (*reserved43)(void);
     int (*tclGuessPackageName) (const char *fileName, Tcl_DString *bufPtr); /* 44 */
     int (*tclHideUnsafeCommands) (Tcl_Interp *interp); /* 45 */
     int (*tclInExit) (void); /* 46 */
@@ -1016,8 +1015,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclGetOriginalCommand) /* 41 */
 #define TclpGetUserHome \
 	(tclIntStubsPtr->tclpGetUserHome) /* 42 */
-#define TclGetObjInterpProc2 \
-	(tclIntStubsPtr->tclGetObjInterpProc2) /* 43 */
+/* Slot 43 is reserved */
 #define TclGuessPackageName \
 	(tclIntStubsPtr->tclGuessPackageName) /* 44 */
 #define TclHideUnsafeCommands \
@@ -1425,7 +1423,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 #undef TclSetPreInitScript
 #undef TclObjInterpProc
 #define TclObjInterpProc TclGetObjInterpProc()
-#define TclObjInterpProc2 TclGetObjInterpProc2()
+#define TclObjInterpProc2 TclObjInterpProc
+
 #ifndef TCL_NO_DEPRECATED
 #   define TclSetPreInitScript Tcl_SetPreInitScript
 #   define TclGuessPackageName(fileName, pkgName) ((void)fileName,(void)pkgName,0)
