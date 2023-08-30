@@ -842,7 +842,7 @@ install-binaries: binaries
 		$(COPY) $$i "$(BIN_INSTALL_DIR)"; \
 	    fi; \
 	    done
-	@for i in tclConfig.sh tclooConfig.sh $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE); \
+	@for i in tclConfig.sh tclooConfig.sh $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) @ZLIB_LIBS@ @TOMMATH_LIBS@; \
 	    do \
 	    if [ -f $$i ]; then \
 		echo "Installing $$i to $(LIB_INSTALL_DIR)/"; \

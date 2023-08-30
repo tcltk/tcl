@@ -323,11 +323,11 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #if TCL_MAJOR_VERSION < 9
     typedef int Tcl_Size;
+#   define TCL_SIZE_MAX ((int)(((unsigned int)-1)>>1))
 #   define TCL_SIZE_MODIFIER ""
-#   define TCL_SIZE_MAX INT_MAX
 #else
     typedef ptrdiff_t Tcl_Size;
-#   define TCL_SIZE_MAX PTRDIFF_MAX
+#   define TCL_SIZE_MAX ((ptrdiff_t)(((size_t)-1)>>1))
 #   define TCL_SIZE_MODIFIER TCL_T_MODIFIER
 #endif /* TCL_MAJOR_VERSION */
 
@@ -629,6 +629,8 @@ typedef            int  (Tcl_ObjTypeReplaceProc) (Tcl_Interp *interp, struct Tcl
                                              Tcl_Size first, Tcl_Size numToDelete,
                                              Tcl_Size numToInsert,
                                              struct Tcl_Obj *const insertObjs[]);
+typedef            int (Tcl_ObjTypeInOperatorProc) (Tcl_Interp *interp, struct Tcl_Obj *valueObj,
+                                             struct Tcl_Obj *listObj, int *boolResult);
 
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_PackageInitProc Tcl_LibraryInitProc
@@ -675,16 +677,20 @@ typedef struct Tcl_ObjType {
     Tcl_ObjTypeSetElement *setElementProc;   /* Replace the element at the indicie
 					     ** with the given valueObj. */
     Tcl_ObjTypeReplaceProc *replaceProc;     /* Replace subset with subset */
+    Tcl_ObjTypeInOperatorProc *inOperProc;   /* "in" and "ni" expr list
+                                             ** operation Determine if the given
+                                             ** string value matches an element in
+                                             ** the list */
 #endif
 } Tcl_ObjType;
 
 #if TCL_MAJOR_VERSION > 8
 #   define TCL_OBJTYPE_V0 0, \
-	    0,0,0,0,0,0,0 /* Pre-Tcl 9 */
-#   define TCL_OBJTYPE_V1(a) 1, \
-	    a,0,0,0,0,0,0 /* Tcl 9 Version 1 */
-#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g) 2, \
-	    a,b,c,d,e,f,g /* Tcl 9 - AbstractLists */
+	   0,0,0,0,0,0,0,0 /* Pre-Tcl 9 */
+#   define TCL_OBJTYPE_V1(a) offsetof(Tcl_ObjType, indexProc), \
+	   a,0,0,0,0,0,0,0 /* Tcl 9 Version 1 */
+#   define TCL_OBJTYPE_V2(a,b,c,d,e,f,g,h) sizeof(Tcl_ObjType),  \
+	   a,b,c,d,e,f,g,h /* Tcl 9 - AbstractLists */
 #else
 #   define TCL_OBJTYPE_V0 /* just empty */
 #endif
@@ -1298,8 +1304,16 @@ typedef enum {
  */
 
 typedef struct Tcl_Time {
+#if TCL_MAJOR_VERSION > 8
+    long long sec;		/* Seconds. */
+#else
     long sec;			/* Seconds. */
+#endif
+#if defined(_CYGWIN_) && TCL_MAJOR_VERSION > 8
+    int usec;			/* Microseconds. */
+#else
     long usec;			/* Microseconds. */
+#endif
 } Tcl_Time;
 
 typedef void (Tcl_SetTimerProc) (const Tcl_Time *timePtr);
@@ -2063,8 +2077,7 @@ typedef struct Tcl_EncodingType {
 
 /*
  * The maximum number of bytes that are necessary to represent a single
- * Unicode character in UTF-8. The valid values are 3 and 4
- * (or perhaps 1 if we want to support a non-unicode enabled core). If > 3,
+ * Unicode character in UTF-8. The valid values are 3 and 4. If > 3,
  * then Tcl_UniChar must be 4-bytes in size (UCS-4) (the default). If == 3,
  * then Tcl_UniChar must be 2-bytes in size (UTF-16). Since Tcl 9.0, UCS-4
  * mode is the default and recommended mode.
@@ -2478,10 +2491,10 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
  *
  * This will free the obj if there are no references to the obj.
  */
-#   define Tcl_BumpObj(objPtr) \
-    TclBumpObj(objPtr, __FILE__, __LINE__)
+#   define Tcl_BounceRefCount(objPtr) \
+    TclBounceRefCount(objPtr, __FILE__, __LINE__)
 
-static inline void TclBumpObj(Tcl_Obj* objPtr, const char* fn, int line)
+static inline void TclBounceRefCount(Tcl_Obj* objPtr, const char* fn, int line)
 {
     if (objPtr) {
         if ((objPtr)->refCount == 0) {
@@ -2514,10 +2527,10 @@ static inline void TclBumpObj(Tcl_Obj* objPtr, const char* fn, int line)
  * This will release the obj if there is no referece count,
  * otherwise let it be.
  */
-#   define Tcl_BumpObj(objPtr)     \
-    TclBumpObj(objPtr);
+#   define Tcl_BounceRefCount(objPtr)     \
+    TclBounceRefCount(objPtr);
 
-static inline void TclBumpObj(Tcl_Obj* objPtr)
+static inline void TclBounceRefCount(Tcl_Obj* objPtr)
 {
     if (objPtr) {
         if ((objPtr)->refCount == 0) {

@@ -2315,8 +2315,8 @@ Tcl_LassignObjCmd(
 	return TCL_ERROR;
     }
 
-    listCopyPtr = TclDuplicatePureObj(interp, objv[1], &tclListType);
-    if (!listCopyPtr) {
+    listCopyPtr = TclListObjCopy(interp, objv[1]);
+    if (listCopyPtr == NULL) {
 	return TCL_ERROR;
     }
     Tcl_IncrRefCount(listCopyPtr); /* Important! fs */
@@ -2485,10 +2485,7 @@ Tcl_LinsertObjCmd(
 
     listPtr = objv[1];
     if (Tcl_IsShared(listPtr)) {
-	listPtr = TclDuplicatePureObj(interp, listPtr, &tclListType);
-	if (!listPtr) {
-	    return TCL_ERROR;
-	}
+	listPtr = TclListObjCopy(NULL, listPtr);
 	copied = 1;
     }
 
@@ -2690,10 +2687,7 @@ Tcl_LpopObjCmd(
 
     if (objc == 2) {
 	if (Tcl_IsShared(listPtr)) {
-	    listPtr = TclDuplicatePureObj(interp, listPtr, &tclListType);
-	    if (!listPtr) {
-		return TCL_ERROR;
-	    }
+	    listPtr = TclListObjCopy(NULL, listPtr);
 	    copied = 1;
 	}
 	result = Tcl_ListObjReplace(interp, listPtr, listLen - 1, 1, 0, NULL);
@@ -2883,11 +2877,7 @@ Tcl_LremoveObjCmd(
      */
 
     if (Tcl_IsShared(listObj)) {
-	listObj = TclDuplicatePureObj(interp, listObj, &tclListType);
-	if (!listObj) {
-	    status = TCL_ERROR;
-	    goto done;
-	}
+	listObj = TclListObjCopy(NULL, listObj);
 	copied = 1;
     }
     num = 0;
@@ -3139,10 +3129,7 @@ Tcl_LreplaceObjCmd(
 
     listPtr = objv[1];
     if (Tcl_IsShared(listPtr)) {
-	listPtr = TclDuplicatePureObj(interp, listPtr, &tclListType);
-	if (!listPtr) {
-	    return TCL_ERROR;
-	}
+	listPtr = TclListObjCopy(NULL, listPtr);
     }
 
     /*
@@ -3754,7 +3741,7 @@ Tcl_LsearchObjCmd(
 	    i = (lower + upper)/2;
 	    i -= i % groupSize;
 
-	    Tcl_BumpObj(itemPtr);
+	    Tcl_BounceRefCount(itemPtr);
 	    itemPtr = NULL;
 
 	    if (sortInfo.indexc != 0) {
@@ -3855,7 +3842,7 @@ Tcl_LsearchObjCmd(
 	}
 	for (i = start; i < listc; i += groupSize) {
 	    match = 0;
-	    Tcl_BumpObj(itemPtr);
+	    Tcl_BounceRefCount(itemPtr);
 	    itemPtr = NULL;
 
 	    if (sortInfo.indexc != 0) {
@@ -3957,7 +3944,7 @@ Tcl_LsearchObjCmd(
 		 */
 
 		if (returnSubindices && (sortInfo.indexc != 0)) {
-		    Tcl_BumpObj(itemPtr);
+		    Tcl_BounceRefCount(itemPtr);
 		    itemPtr = SelectObjFromSublist(listv[i+groupOffset],
 			    &sortInfo);
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
@@ -3965,7 +3952,7 @@ Tcl_LsearchObjCmd(
 		    Tcl_ListObjReplace(interp, listPtr, LIST_MAX, 0,
 			    groupSize, &listv[i]);
 		} else {
-		    Tcl_BumpObj(itemPtr);
+		    Tcl_BounceRefCount(itemPtr);
 		    itemPtr = listv[i];
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		}
@@ -3986,7 +3973,7 @@ Tcl_LsearchObjCmd(
 	}
     }
 
-    Tcl_BumpObj(itemPtr);
+    Tcl_BounceRefCount(itemPtr);
     itemPtr = NULL;
 
     /*
@@ -4037,7 +4024,7 @@ Tcl_LsearchObjCmd(
 
   done:
     /* potential lingering abstract list element */
-    Tcl_BumpObj(itemPtr);
+    Tcl_BounceRefCount(itemPtr);
 
     if (startPtr != NULL) {
 	Tcl_DecrRefCount(startPtr);
@@ -4776,7 +4763,7 @@ Tcl_LsortObjCmd(
 	 * 1675116]
 	 */
 
-	listObj = TclDuplicatePureObj(interp ,listObj, &tclListType);
+	listObj = TclListObjCopy(interp, listObj);
 	if (listObj == NULL) {
 	    sortInfo.resultCode = TCL_ERROR;
 	    goto done;
@@ -5132,10 +5119,7 @@ Tcl_LeditObjCmd(
     }
 
     if (Tcl_IsShared(listPtr)) {
-	listPtr = TclDuplicatePureObj(interp, listPtr, &tclListType);
-	if (!listPtr) {
-	    return TCL_ERROR;
-	}
+	listPtr = TclListObjCopy(NULL, listPtr);
 	createdNewObj = 1;
     } else {
 	createdNewObj = 0;
@@ -5583,7 +5567,7 @@ SelectObjFromSublist(
 	    return NULL;
 	}
 	objPtr = currentObj;
-	Tcl_BumpObj(lastObj);
+	Tcl_BounceRefCount(lastObj);
 	lastObj = currentObj;
     }
     return objPtr;

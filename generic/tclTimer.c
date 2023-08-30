@@ -117,7 +117,7 @@ static Tcl_ThreadDataKey dataKey;
  * side-effect free. The "prototypes" for these macros are:
  *
  * static int	TCL_TIME_BEFORE(Tcl_Time t1, Tcl_Time t2);
- * static long	TCL_TIME_DIFF_MS(Tcl_Time t1, Tcl_Time t2);
+ * static Tcl_WideInt TCL_TIME_DIFF_MS(Tcl_Time t1, Tcl_Time t2);
  */
 
 #define TCL_TIME_BEFORE(t1, t2) \
@@ -125,11 +125,11 @@ static Tcl_ThreadDataKey dataKey;
 
 #define TCL_TIME_DIFF_MS(t1, t2) \
     (1000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
-	    ((long)(t1).usec - (long)(t2).usec)/1000)
+	    ((t1).usec - (t2).usec)/1000)
 
 #define TCL_TIME_DIFF_MS_CEILING(t1, t2) \
     (1000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
-	    ((long)(t1).usec - (long)(t2).usec + 999)/1000)
+	    ((t1).usec - (t2).usec + 999)/1000)
 
 /*
  * Sleeps under that number of milliseconds don't get double-checked
@@ -866,8 +866,8 @@ Tcl_AfterObjCmd(
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
 	Tcl_GetTime(&wakeup);
-	wakeup.sec += (long)(ms / 1000);
-	wakeup.usec += ((long)(ms % 1000)) * 1000;
+	wakeup.sec += ms / 1000;
+	wakeup.usec += ms % 1000 * 1000;
 	if (wakeup.usec > 1000000) {
 	    wakeup.sec++;
 	    wakeup.usec -= 1000000;
@@ -1014,8 +1014,8 @@ AfterDelay(
 
     Tcl_GetTime(&now);
     endTime = now;
-    endTime.sec += (long)(ms / 1000);
-    endTime.usec += ((int)(ms % 1000)) * 1000;
+    endTime.sec += (ms / 1000);
+    endTime.usec += (ms % 1000) * 1000;
     if (endTime.usec >= 1000000) {
 	endTime.sec++;
 	endTime.usec -= 1000000;
@@ -1047,7 +1047,7 @@ AfterDelay(
                 diff = 1;
             }
 	    if (diff > 0) {
-		Tcl_Sleep((long) diff);
+		Tcl_Sleep((int) diff);
                 if (diff < SLEEP_OFFLOAD_GETTIMEOFDAY) {
                     break;
                 }

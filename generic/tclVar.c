@@ -3100,7 +3100,7 @@ ArrayForNRCmd(
      * loop) don't vanish.
      */
 
-    varListObj = TclDuplicatePureObj(interp, objv[1], &tclListType);
+    varListObj = TclListObjCopy(NULL, objv[1]);
     if (!varListObj) {
 	return TCL_ERROR;
     }
@@ -4076,8 +4076,7 @@ ArraySetCmd(
 	 * the loop and return an error.
 	 */
 
-	copyListObj =
-	    TclDuplicatePureObj(interp, arrayElemObj, &tclListType);
+	copyListObj = TclListObjCopy(NULL, arrayElemObj);
 	if (!copyListObj) {
 	    return TCL_ERROR;
 	}

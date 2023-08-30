@@ -62,7 +62,7 @@ static Tcl_ObjCmdProc2		DictMapNRCmd;
 static Tcl_NRPostProc		DictForLoopCallback;
 static Tcl_NRPostProc		DictMapLoopCallback;
 static Tcl_ObjTypeLengthProc    DictAsListLength;
-static Tcl_ObjTypeIndexProc     DictAsListIndex;
+/* static Tcl_ObjTypeIndexProc     DictAsListIndex; Needs rewrite */
 
 /*
  * Table of dict subcommand names and implementations.
@@ -152,9 +152,10 @@ const Tcl_ObjType tclDictType = {
     TCL_OBJTYPE_V2(		/* Extended type for AbstractLists */
     DictAsListLength,		/* return "list" length of dict value w/o
 				 * shimmering */
-    DictAsListIndex,		/* return key or value at "list" index
+    NULL,			/* return key or value at "list" index
 				 * location.  (keysare at even indicies,
 				 * values at odd indicies) */
+    NULL,
     NULL,
     NULL,
     NULL,
@@ -3883,7 +3884,7 @@ DictAsListLength(
  *   The intent is to have no side effects.
  *
  */
-
+#if 0 /* Needs rewrite */
 static int
 DictAsListIndex(
     Tcl_Interp *interp,
@@ -3951,6 +3952,7 @@ DictAsListIndex(
     *elemObjPtr = elemPtr;
     return TCL_OK;
 }
+#endif
 
 /*
  * Local Variables:
