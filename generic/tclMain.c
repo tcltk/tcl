@@ -53,7 +53,7 @@ NewNativeObj(
     Tcl_DStringInit(&ds);
     Tcl_WCharToUtfDString(string, -1, &ds);
 #else
-    (void)Tcl_ExternalToUtfDString(NULL, (char *)string, -1, &ds);
+    (void) TclSystemToInternalEncoding(NULL, string, -1, &ds);
 #endif
     return Tcl_DStringToObj(&ds);
 }
