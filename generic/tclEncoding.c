@@ -83,6 +83,8 @@ typedef struct {
 				 * is no corresponding character the encoding,
 				 * the value in the matrix is 0x0000.
 				 * malloc'd. */
+    int flags;			/* Miscellaneous flags */
+#define ENCODING_ASCII_COMPATIBLE 0x1
 } TableEncodingData;
 
 /*
@@ -196,6 +198,7 @@ static struct TclEncodingProfiles {
     const char *name;
     int value;
 } encodingProfiles[] = {
+    {"lossless", TCL_ENCODING_PROFILE_LOSSLESS},
     {"replace", TCL_ENCODING_PROFILE_REPLACE},
     {"strict", TCL_ENCODING_PROFILE_STRICT},
     {"tcl8", TCL_ENCODING_PROFILE_TCL8},
@@ -206,8 +209,11 @@ static struct TclEncodingProfiles {
 #define PROFILE_REPLACE(flags_)                                        \
     (ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_REPLACE)
 
+#define PROFILE_LOSSLESS(flags_)                                       \
+    (ENCODING_PROFILE_GET(flags_) == TCL_ENCODING_PROFILE_LOSSLESS)
+
 #define PROFILE_STRICT(flags_)                                         \
-    (!PROFILE_TCL8(flags_) && !PROFILE_REPLACE(flags_))
+    (!PROFILE_TCL8(flags_) && !PROFILE_REPLACE(flags_) && !PROFILE_LOSSLESS(flags_))
 
 #define UNICODE_REPLACE_CHAR ((Tcl_UniChar)0xFFFD)
 #define SURROGATE(c_)      (((c_) & ~0x7FF) == 0xD800)
@@ -257,6 +263,20 @@ static Tcl_EncodingConvertProc	UtfToUtfProc;
 static Tcl_EncodingConvertProc	Iso88591FromUtfProc;
 static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
 
+/* Return 1/0 if unich is a lossless wrapper */
+static inline int IsLosslessWrapper(Tcl_UniChar unich) {
+    return (unich >= 0xDC00 && unich <= 0xDCFF);
+}
+/* Convert a byte to internal lossless representation */
+static inline Tcl_UniChar ToLossless(char ch) {
+    /* Only encode if non-ASCII for security reasons. See TIP */
+    return 0x80 & ch ? 0xDC00 + UCHAR(ch) : UNICODE_REPLACE_CHAR;
+}
+/* Convert an internal lossless representation to raw byte */
+static inline unsigned char FromLossless(Tcl_UniChar unich) {
+    assert(IsLosslessWrapper(unich));
+    return (unsigned char)(unich - 0xDC00);
+}
 
 /*
  * A Tcl_ObjType for holding a cached Tcl_Encoding in the twoPtrValue.ptr1 field
@@ -289,6 +309,42 @@ static const Tcl_ObjType encodingType = {
     } while (0)
 
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * ToLosslessUtf8 --
+ *
+ *    Converts an entire string of bytes to their lossless utf-8 representation.
+ *    Caller has to ensure the entire string is to be treated as invalid encoding.
+ *
+ * Results:
+ *    Number of bytes in converted utf-8 output or a negative value if
+ *    insufficient space.
+ *
+ * Side effects:
+ *    The dst buffer is filled with the utf-8 lossless representation.
+ *
+ *------------------------------------------------------------------------
+ */
+static Tcl_Size
+ToLosslessUtf8(
+	const char *src, /* Source bytes */
+	Tcl_Size srcLen, /* Number of source bytes */
+	char *dst,       /* Destination buffer */
+	Tcl_Size dstLen) /* Size of destination buffer */
+{
+    if ((dstLen / 3) < srcLen) {
+	return -1; /* No space */
+    }
+    const char *srcEnd = src + srcLen;
+    char *dstStart = dst;
+    while (src < srcEnd) {
+	dst += Tcl_UniCharToUtf(ToLossless(UCHAR(*src)), dst);
+	++src;
+    }
+    return (dst - dstStart);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2108,11 +2164,29 @@ LoadTableEncoding(
     TclDecrRefCount(objPtr);
 
     if (type == ENCODING_DOUBLEBYTE) {
+	/* DBCS never ascii compatible so no need to set dataPtr->flags */
 	memset(dataPtr->prefixBytes, 1, sizeof(dataPtr->prefixBytes));
     } else {
+	int asciiCompatible = 1;
 	for (hi = 1; hi < 256; hi++) {
 	    if (dataPtr->toUnicode[hi] != NULL) {
 		dataPtr->prefixBytes[hi] = 1;
+		if (hi < 128) {
+		    /* any byte < 128 is a prefix => not ASCII compatible */
+		    asciiCompatible = 0;
+		}
+	    }
+	}
+	if (asciiCompatible) {
+	    for (lo = 1; lo < 128; ++lo) {
+		if (dataPtr->toUnicode[0][lo] != lo) {
+		    /* any byte < 128 does not map to itself => not ASCII compatible */
+		    asciiCompatible = 0;
+		    break;
+		}
+	    }
+	    if (asciiCompatible) {
+		dataPtr->flags |= ENCODING_ASCII_COMPATIBLE;
 	    }
 	}
     }
@@ -2565,54 +2639,77 @@ UtfToUtfProc(
 	    *dst++ = *src++;
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd) &&
 		 (UCHAR(src[1]) == 0x80) &&
-		 (!(flags & ENCODING_INPUT) || PROFILE_STRICT(profile) ||
-		  PROFILE_REPLACE(profile))) {
-	    /* Special sequence \xC0\x80 */
-	    if ((PROFILE_STRICT(profile) || PROFILE_REPLACE(profile)) && (flags & ENCODING_INPUT)) {
-		if (PROFILE_REPLACE(profile)) {
+		 (!(flags & ENCODING_INPUT) || ! PROFILE_TCL8(profile))) {
+	    /*
+	     * \xC0\x80 is handled specially for either of the following:
+	     *   1. We are doing (internal) modified utf-8 to (external)
+	     *   conformant utf-8. C080 is valid internal utf-8 so we
+	     *   simply output a \0. Note this overrides case 2.
+	     *   2. The profile in use is not TCL8, in which case we have to
+	     *   to take a profile-dependent action.
+	     * Note the remaining case of external->internal with a TCL8
+	     * profile is handled in the default if clause later. (TODO - why not here?)
+	     */
+	    if (flags & ENCODING_INPUT) {
+		assert(!PROFILE_TCL8(profile));
+		if (PROFILE_STRICT(profile)) {
+		   result = TCL_CONVERT_SYNTAX;
+		   break;
+		} else if (PROFILE_REPLACE(profile)) {
 		   dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 		   src += 2;
 		} else {
-		   /* PROFILE_STRICT */
-		   result = TCL_CONVERT_SYNTAX;
-		   break;
+		   assert(PROFILE_LOSSLESS(profile));
+		   Tcl_Size len =
+		       ToLosslessUtf8(src, 2, dst, dstLen - (dst - dstStart));
+		   if (len < 0) {
+		       result = TCL_CONVERT_NOSPACE;
+		       break;
+		   }
+		   dst += len;
+		   src += 2;
 		}
 	    } else {
-		/*
-		 * For output convert 0xC080 to a real null.
-		 */
+		/* For output convert 0xC080 to a real null. */
 		*dst++ = 0;
 		src += 2;
 	    }
-
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
-	     * Incomplete byte sequence.
-		 * Always check before using TclUtfToUCS4. Not doing so can cause it
-		 * run beyond the end of the buffer! If we happen on such an incomplete
-		 * char its bytes are made to represent themselves unless the user has
-		 * explicitly asked to be told.
+	     * Incomplete byte sequence. We need to do this check before the
+	     * TclUtfToUCS4 checks in the next sibling if clause. Not doing
+	     * so can cause it run beyond the end of the buffer! If we
+	     * happen on such an incomplete char its bytes are made to
+	     * represent themselves unless the user has explicitly asked to
+	     * be told.
 	     */
-
+	    assert(flags & TCL_ENCODING_END); /* Else break earlier would
+	    					 trigger (srcClose compare) */
 	    if (flags & ENCODING_INPUT) {
+		/* TODO - why is this inside a ENCODING_INPUT check? */
 		/* Incomplete bytes for modified UTF-8 target */
 		if (PROFILE_STRICT(profile)) {
-		    result = (flags & TCL_ENCODING_CHAR_LIMIT)
-			       ? TCL_CONVERT_MULTIBYTE
-			       : TCL_CONVERT_SYNTAX;
-		    break;
+		   result = (flags & TCL_ENCODING_CHAR_LIMIT)
+			      ? TCL_CONVERT_MULTIBYTE
+			      : TCL_CONVERT_SYNTAX;
+		   break;
 		}
 	    }
 	    if (PROFILE_REPLACE(profile)) {
 		ch = UNICODE_REPLACE_CHAR;
 		++src;
-	    } else {
-		/* TCL_ENCODING_PROFILE_TCL8 */
+		dst += Tcl_UniCharToUtf(ch, dst);
+	    } else if (PROFILE_TCL8(profile)) {
 		char chbuf[2];
 		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
 		TclUtfToUCS4(chbuf, &ch);
+		dst += Tcl_UniCharToUtf(ch, dst);
+	    } else {
+		assert(PROFILE_LOSSLESS(profile));
+                ch = ToLossless(UCHAR(*src));
+		dst += Tcl_UniCharToUtf(ch, dst);
+		src += 1;
 	    }
-	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
 	    int isInvalid = 0;
 	    size_t len = TclUtfToUCS4(src, &ch);
@@ -2628,7 +2725,18 @@ UtfToUtfProc(
 			break;
 		    } else if (PROFILE_REPLACE(profile)) {
 			ch = UNICODE_REPLACE_CHAR;
+		    } else if (PROFILE_LOSSLESS(profile)) {
+			Tcl_Size n = ToLosslessUtf8(
+			    src, len, dst, dstLen - (dst - dstStart));
+			if (n < 0) {
+			    result = TCL_CONVERT_NOSPACE;
+			    break;
+			}
+			dst += n;
+			src += len;
+			continue;
 		    }
+		    /* else PROFILE_TCL8 - treat as normal char below */
 		}
 	    }
 
@@ -2650,8 +2758,8 @@ UtfToUtfProc(
 		*dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
 		*dst++ = (char) ((ch | 0x80) & 0xBF);
 		continue;
-#if TCL_UTF_MAX < 4
 	    } else if (SURROGATE(ch)) {
+#if TCL_UTF_MAX < 4
 		/*
 		 * A surrogate character is detected, handle especially.
 		 */
@@ -2659,8 +2767,7 @@ UtfToUtfProc(
 		    result = TCL_CONVERT_UNKNOWN;
 		    src = saveSrc;
 		    break;
-		}
-		if (PROFILE_REPLACE(profile)) {
+		} else if (PROFILE_REPLACE(profile)) {
 		    /* TODO - is this right for cesu8 or should we fall through below? */
 		    ch = UNICODE_REPLACE_CHAR;
 		} else {
@@ -2680,19 +2787,19 @@ UtfToUtfProc(
 		    dst += Tcl_UniCharToUtf(ch, dst);
 		    ch = low;
 		}
+#else /* TCL_UTF_MAX */
+		if (PROFILE_STRICT(profile)) {
+		    result = (flags & ENCODING_INPUT) ? TCL_CONVERT_SYNTAX
+						      : TCL_CONVERT_UNKNOWN;
+		    src = saveSrc;
+		    break;
+		} else if (PROFILE_LOSSLESS(profile)) {
+		    if (IsLosslessWrapper(ch)) {
+			*dst++ = FromLossless(ch); /* Invalid UTF8 by design! */
+			continue;
+		    }
+		}
 #endif
-	    } else if (PROFILE_STRICT(profile) &&
-		       (!(flags & ENCODING_INPUT)) &&
-		       SURROGATE(ch)) {
-		result = TCL_CONVERT_UNKNOWN;
-		src = saveSrc;
-		break;
-	    } else if (PROFILE_STRICT(profile) &&
-		       (flags & ENCODING_INPUT) &&
-		       SURROGATE(ch)) {
-		result = TCL_CONVERT_SYNTAX;
-		src = saveSrc;
-		break;
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
@@ -2826,7 +2933,8 @@ Utf32ToUtfProc(
 	    ch = 0;
 #endif
 	    break;
-	} else if (PROFILE_REPLACE(flags) && SURROGATE(ch)) {
+	} else if ((! PROFILE_TCL8(flags)) && SURROGATE(ch)) {
+            /* PROFILE_REPLACE | PROFILE_LOSSLESS */
 	    ch = UNICODE_REPLACE_CHAR;
 	}
 
@@ -2866,7 +2974,7 @@ Utf32ToUtfProc(
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 	    } else {
-		/* PROFILE_REPLACE or PROFILE_TCL8 */
+		/* PROFILE_REPLACE | PROFILE_LOSSLESS | PROFILE_TCL8 */
 		result = TCL_OK;
 		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 		numChars++;
@@ -2955,8 +3063,8 @@ UtfToUtf32Proc(
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
-	    }
-	    if (PROFILE_REPLACE(flags)) {
+	    } else if (! PROFILE_TCL8(flags)) {
+                /* PROFILE_REPLACE | PROFILE_LOSSLESS */
 		ch = UNICODE_REPLACE_CHAR;
 	    }
 	}
@@ -3084,7 +3192,10 @@ Utf16ToUtfProc(
 		dst--; /* Also undo writing a single byte too much */
 		numChars--;
 		break;
-	    } else if (PROFILE_REPLACE(flags)) {
+	    } else if (PROFILE_TCL8(flags)) {
+                /* Bug [10c2c17c32]. Hi surrogate not followed by Lo: finish 3-byte UTF-8 */
+		dst += Tcl_UniCharToUtf(-1, dst);
+	    } else {
 		/*
 		 * Previous loop wrote a single byte to mark the high surrogate.
 		 * Replace it with the replacement character. Further, restart
@@ -3097,9 +3208,6 @@ Utf16ToUtfProc(
 		src -= 2;
 		numChars--;
 		continue;
-	    } else {
-	    /* Bug [10c2c17c32]. If Hi surrogate not followed by Lo surrogate, finish 3-byte UTF-8 */
-		dst += Tcl_UniCharToUtf(-1, dst);
 	    }
 	}
 
@@ -3112,15 +3220,20 @@ Utf16ToUtfProc(
 	    *dst++ = (ch & 0xFF);
 	} else if (HIGH_SURROGATE(prev) || HIGH_SURROGATE(ch)) {
 	    dst += Tcl_UniCharToUtf(ch | TCL_COMBINE, dst);
-	} else if (LOW_SURROGATE(ch) && !PROFILE_TCL8(flags)) {
+	} else if (LOW_SURROGATE(ch)) {
 	    /* Lo surrogate not preceded by Hi surrogate and not tcl8 profile */
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
+	    } else if (PROFILE_TCL8(flags)) {
+                dst += Tcl_UniCharToUtf(ch, dst);
 	    } else {
-		/* PROFILE_REPLACE */
+                /*
+                 * PROFILE_REPLACE | PROFILE_LOSSLESS. LOSSLESS treated like
+                 * REPLACE for UTF16 - see TIP 671
+                 */
 		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-	    }
+            }
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
@@ -3132,18 +3245,19 @@ Utf16ToUtfProc(
 	    src -= 2;
 	    dst--;
 	    numChars--;
-	} else if (PROFILE_REPLACE(flags)) {
+	} else if (PROFILE_TCL8(flags)) {
+	    dst += Tcl_UniCharToUtf(-1, dst);
+	} else {
+            /* PROFILE_REPLACE | PROFILE_LOSSLESS */
 	    dst--;
 	    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
-	} else {
-	    /* Bug [10c2c17c32]. If Hi surrogate, finish 3-byte UTF-8 */
-	    dst += Tcl_UniCharToUtf(-1, dst);
 	}
     }
 
     /*
      * If we had a truncated code unit at the end AND this is the last
-     * fragment AND profile is not "strict", stick FFFD in its place.
+     * fragment AND profile is not "strict", use the appropriate replacement
+     * strategy.
      */
     if ((flags & TCL_ENCODING_END) && (result == TCL_CONVERT_MULTIBYTE)) {
 	if (dst > dstEnd) {
@@ -3152,7 +3266,7 @@ Utf16ToUtfProc(
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_SYNTAX;
 	    } else {
-		/* PROFILE_REPLACE or PROFILE_TCL8 */
+		/* PROFILE_REPLACE | PROFILE_TCL8 | PROFILE_LOSSLESS */
 		result = TCL_OK;
 		dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 		numChars++;
@@ -3241,8 +3355,8 @@ UtfToUtf16Proc(
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
-	    }
-	    if (PROFILE_REPLACE(flags)) {
+	    } else if (! PROFILE_TCL8(flags)) {
+                /* PROFILE_REPLACE | PROFILE_LOSSLESS */
 		ch = UNICODE_REPLACE_CHAR;
 	    }
 	}
@@ -3365,9 +3479,14 @@ UtfToUcs2Proc(
 	    ch = UNICODE_REPLACE_CHAR;
 	}
 #endif
-	if (PROFILE_STRICT(flags) && SURROGATE(ch)) {
-	    result = TCL_CONVERT_SYNTAX;
-	    break;
+	if (SURROGATE(ch)) {
+	    if (PROFILE_STRICT(flags)) {
+		result = TCL_CONVERT_SYNTAX;
+		break;
+	    } else if (!PROFILE_TCL8(flags)) {
+                /* PROFILE_REPLACE | PROFILE_LOSSLESS */
+                ch = UNICODE_REPLACE_CHAR;
+            }
 	}
 
 	src += len;
@@ -3472,6 +3591,7 @@ TableToUtfProc(
 	if (prefixBytes[byte]) {
 	    if (src >= srcEnd-1) {
 		/* Prefix byte but nothing after it */
+		/* Truncated sequence ... */
 		if (!(flags & TCL_ENCODING_END)) {
 		    /* More data to come */
 		    result = TCL_CONVERT_MULTIBYTE;
@@ -3481,6 +3601,12 @@ TableToUtfProc(
 		    break;
 		} else if (PROFILE_REPLACE(flags)) {
 		    ch = UNICODE_REPLACE_CHAR;
+		} else if (PROFILE_LOSSLESS(flags)) {
+		    if (dataPtr->flags & ENCODING_ASCII_COMPATIBLE) {
+			ch = ToLossless(byte);
+		    } else {
+			ch = UNICODE_REPLACE_CHAR;
+		    }
 		} else {
 		    ch = (Tcl_UniChar)byte;
 		}
@@ -3501,6 +3627,8 @@ TableToUtfProc(
 	    }
 	    if (PROFILE_REPLACE(flags)) {
 		ch = UNICODE_REPLACE_CHAR;
+	    } else if (PROFILE_LOSSLESS(flags)) {
+		ch = ToLossless(byte);
 	    } else {
 		ch = (Tcl_UniChar)byte;
 	    }
@@ -3571,6 +3699,7 @@ TableFromUtfProc(
     Tcl_UniChar ch = 0;
     int result, len, word, numChars;
     TableEncodingData *dataPtr = (TableEncodingData *)clientData;
+    int asciiCompatible = dataPtr->flags & ENCODING_ASCII_COMPATIBLE;
     const unsigned short *const *fromUnicode;
 
     result = TCL_OK;
@@ -3612,14 +3741,22 @@ TableFromUtfProc(
 #endif
 	word = fromUnicode[(ch >> 8)][ch & 0xFF];
 
+	int isWrappedLossless = 0;
 	if ((word == 0) && (ch != 0)) {
 	    if (PROFILE_STRICT(flags)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
-	    word = dataPtr->fallback; /* Both profiles REPLACE and TCL8 */
+	    if (PROFILE_LOSSLESS(flags) && IsLosslessWrapper(ch) &&
+		asciiCompatible) {
+		word = FromLossless(ch);
+		isWrappedLossless = 1;
+	    }
+	    else {
+		word = dataPtr->fallback; /* Both profiles REPLACE and TCL8 */
+	    }
 	}
-	if (prefixBytes[(word >> 8)] != 0) {
+	if (prefixBytes[(word >> 8)] != 0 && !isWrappedLossless) {
 	    if (dst + 1 > dstEnd) {
 		result = TCL_CONVERT_NOSPACE;
 		break;
@@ -3704,6 +3841,11 @@ Iso88591ToUtfProc(
      */
     memset(dst, 0xff, dstLen);
 #endif
+    /*
+     * Note with respect to profiles: all byte values are mapped
+     * to Unicode characters on input so there is no question of invalid
+     * 8859-1 characters.
+     */
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
@@ -3819,11 +3961,11 @@ Iso88591FromUtfProc(
 		len = 4;
 	    }
 #endif
-	    /*
-	     * Plunge on, using '?' as a fallback character.
-	     */
-
-	    ch = (Tcl_UniChar) '?'; /* Profiles TCL8 and REPLACE */
+	    if (PROFILE_LOSSLESS(flags) && IsLosslessWrapper(ch)) {
+		ch = FromLossless(ch);
+	    } else {
+		ch = (Tcl_UniChar)'?';
+	    }
 	}
 
 	if (dst > dstEnd) {
@@ -4046,14 +4188,15 @@ EscapeToUtfProc(
 
 	    if ((checked == dataPtr->numSubTables + 2)
 		    || (flags & TCL_ENCODING_END)) {
-		if (!PROFILE_STRICT(flags)) {
+		if (PROFILE_STRICT(flags)) {
+		    result = TCL_CONVERT_SYNTAX;
+		} else {
 		    unsigned skip = longest > left ? left : longest;
 		    /* Unknown escape sequence */
 		    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
 		    src += skip;
 		    continue;
 		}
-		result = TCL_CONVERT_SYNTAX;
 	    } else {
 		result = TCL_CONVERT_MULTIBYTE;
 	    }
@@ -4225,7 +4368,8 @@ EscapeFromUtfProc(
 		    break;
 		}
 		encodingPtr = GetTableEncoding(dataPtr, state);
-		tableDataPtr = (const TableEncodingData *)encodingPtr->clientData;
+		tableDataPtr =
+		    (const TableEncodingData *)encodingPtr->clientData;
 		word = tableDataPtr->fallback;
 	    }
 
@@ -4630,6 +4774,90 @@ TclGetEncodingProfiles(Tcl_Interp *interp)
     }
     Tcl_SetObjResult(interp, objPtr);
 }
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclSystemToInternalEncoding --
+ *
+ *    Converts a string encoded in the system encoding to Tcl's internal UTF8
+ *    using the lossless profile.
+ *
+ * Results:
+ *    Tcl_OK / TCL_ERROR
+ *
+ * Side effects:
+ *    On success *dsPtr holds the converted string. On error, *dsPtr is
+ *    cleared, an error message is stored in interp (if not NULL), and a
+ *    POSIX error code stored in errno.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclSystemToInternalEncoding(
+    Tcl_Interp *interp, /* For error messages, may be NULL */
+    const char *src,    /* String in system encoding */
+    Tcl_Size srcLen,    /* Number of bytes passed in */
+    Tcl_DString *dsPtr) /* Pointer to uninitialized or cleared Tcl_DString. */
+{
+    Tcl_Size errorLoc;
+    int ret;
+    ret = Tcl_ExternalToUtfDStringEx(interp,
+				     NULL,
+				     src,
+				     srcLen,
+				     TCL_ENCODING_PROFILE_LOSSLESS,
+				     dsPtr,
+				     &errorLoc);
+    /* On TCL_OK, caller owns *dsPtr. On failure we have to free it. */
+    if (ret != TCL_OK) {
+	Tcl_DStringFree(dsPtr);
+	ret = TCL_ERROR; /* Map TCL_CONVERT_* to TCL_ERROR */
+    }
+    return ret;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclInternalToSystemEncoding --
+ *
+ *    Converts a string to the system encoding using the lossless profile
+ *
+ * Results:
+ *    Tcl_OK / TCL_ERROR
+ *
+ * Side effects:
+ *    On success *dsPtr holds the converted string. On error, *dsPtr is
+ *    cleared, an error message is stored in interp (if not NULL), and a
+ *    POSIX error code stored in errno.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclInternalToSystemEncoding(
+    Tcl_Interp *interp, /* For error messages, may be NULL */
+    const char *src,    /* String in system encoding */
+    Tcl_Size srcLen,    /* Number of bytes passed in */
+    Tcl_DString *dsPtr) /* Pointer to uninitialized or cleared Tcl_DString. */
+{
+    Tcl_Size errorLoc;
+    int ret;
+    ret = Tcl_UtfToExternalDStringEx(interp,
+				     NULL,
+				     src,
+				     srcLen,
+				     TCL_ENCODING_PROFILE_LOSSLESS,
+				     dsPtr,
+				     &errorLoc);
+    /* On TCL_OK, caller owns *dsPtr. On failure we have to free it. */
+    if (ret != TCL_OK) {
+	Tcl_DStringFree(dsPtr);
+	ret = TCL_ERROR; /* Map TCL_CONVERT_* to TCL_ERROR */
+    }
+    return ret;
+}
+
 
 /*
  * Local Variables:

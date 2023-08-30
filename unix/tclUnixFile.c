@@ -155,7 +155,7 @@ TclpFindExecutable(
 #endif
     {
 	encoding = Tcl_GetEncoding(NULL, NULL);
-	Tcl_ExternalToUtfDStringEx(NULL, encoding, name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
+	Tcl_ExternalToUtfDStringEx(NULL, encoding, name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_LOSSLESS, &utfName, NULL);
 	TclSetObjNameOfExecutable(
 		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
 	Tcl_DStringFree(&utfName);
@@ -183,7 +183,7 @@ TclpFindExecutable(
 
     Tcl_DStringFree(&buffer);
     Tcl_UtfToExternalDStringEx(NULL, NULL, Tcl_DStringValue(&cwd),
-	    Tcl_DStringLength(&cwd), TCL_ENCODING_PROFILE_TCL8, &buffer, NULL);
+	    Tcl_DStringLength(&cwd), TCL_ENCODING_PROFILE_LOSSLESS, &buffer, NULL);
     if (Tcl_DStringValue(&cwd)[Tcl_DStringLength(&cwd) -1] != '/') {
 	TclDStringAppendLiteral(&buffer, "/");
     }
@@ -193,7 +193,7 @@ TclpFindExecutable(
 
     encoding = Tcl_GetEncoding(NULL, NULL);
     Tcl_ExternalToUtfDStringEx(NULL, encoding, Tcl_DStringValue(&buffer), TCL_INDEX_NONE,
-	    TCL_ENCODING_PROFILE_TCL8, &utfName, NULL);
+	    TCL_ENCODING_PROFILE_LOSSLESS, &utfName, NULL);
     TclSetObjNameOfExecutable(
 	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
     Tcl_DStringFree(&utfName);
@@ -308,7 +308,7 @@ TclpMatchInDirectory(
 	 * Now open the directory for reading and iterate over the contents.
 	 */
 
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, dirName, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, dirName, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_LOSSLESS, &ds, NULL) != TCL_OK) {
 	    Tcl_DStringFree(&dsOrig);
 	    Tcl_DStringFree(&ds);
 	    Tcl_DecrRefCount(fileNamePtr);
@@ -379,7 +379,7 @@ TclpMatchInDirectory(
 	     */
 
 	    if (Tcl_ExternalToUtfDStringEx(interp, NULL, entryPtr->d_name, TCL_INDEX_NONE,
-		    0, &utfDs, NULL) != TCL_OK) {
+		    TCL_ENCODING_PROFILE_LOSSLESS, &utfDs, NULL) != TCL_OK) {
 		matchResult = -1;
 		break;
 	    }
@@ -611,7 +611,7 @@ TclpGetUserHome(
     Tcl_DString ds;
     const char *native;
 
-    if (Tcl_UtfToExternalDStringEx(NULL, NULL, name, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+    if (Tcl_UtfToExternalDStringEx(NULL, NULL, name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_LOSSLESS, &ds, NULL) != TCL_OK) {
 	Tcl_DStringFree(&ds);
 	return NULL;
     }
@@ -623,7 +623,7 @@ TclpGetUserHome(
     if (pwPtr == NULL) {
 	return NULL;
     }
-    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, pwPtr->pw_dir, TCL_INDEX_NONE, 0, bufferPtr, NULL) != TCL_OK) {
+    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, pwPtr->pw_dir, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_LOSSLESS, bufferPtr, NULL) != TCL_OK) {
 	return NULL;
     } else {
 	return Tcl_DStringValue(bufferPtr);
@@ -805,7 +805,7 @@ TclpGetCwd(
 	}
 	return NULL;
     }
-    if (Tcl_ExternalToUtfDStringEx(interp, NULL, buffer, TCL_INDEX_NONE, 0, bufferPtr, NULL) != TCL_OK) {
+    if (Tcl_ExternalToUtfDStringEx(interp, NULL, buffer, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_LOSSLESS, bufferPtr, NULL) != TCL_OK) {
 	return NULL;
     }
     return Tcl_DStringValue(bufferPtr);
@@ -843,7 +843,7 @@ TclpReadlink(
     const char *native;
     Tcl_DString ds;
 
-    if (Tcl_UtfToExternalDStringEx(NULL, NULL, path, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+    if (Tcl_UtfToExternalDStringEx(NULL, NULL, path, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_LOSSLESS, &ds, NULL) != TCL_OK) {
 	Tcl_DStringFree(&ds);
 	return NULL;
     }
@@ -855,7 +855,7 @@ TclpReadlink(
 	return NULL;
     }
 
-    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, link, length, 0, linkPtr, NULL) == TCL_OK) {
+    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, link, length, TCL_ENCODING_PROFILE_LOSSLESS, linkPtr, NULL) == TCL_OK) {
 	return Tcl_DStringValue(linkPtr);
     }
 #endif /* !DJGPP */
@@ -990,7 +990,7 @@ TclpObjLink(
 		return NULL;
 	    }
 	    target = Tcl_GetStringFromObj(transPtr, &length);
-	    if (Tcl_UtfToExternalDStringEx(NULL, NULL, target, length, 0, &ds, NULL) != TCL_OK) {
+	    if (Tcl_UtfToExternalDStringEx(NULL, NULL, target, length, TCL_ENCODING_PROFILE_LOSSLESS, &ds, NULL) != TCL_OK) {
 		Tcl_DStringFree(&ds);
 		return NULL;
 	    }
@@ -1029,7 +1029,7 @@ TclpObjLink(
 	    return NULL;
 	}
 
-	if (Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_ExternalToUtfDStringEx(NULL, NULL, link, (size_t)length, TCL_ENCODING_PROFILE_LOSSLESS, &ds, NULL) != TCL_OK) {
 	    return NULL;
 	}
 	linkPtr = Tcl_DStringToObj(&ds);
@@ -1096,7 +1096,7 @@ TclpNativeToNormalized(
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+    Tcl_ExternalToUtfDStringEx(NULL, NULL, (const char *) clientData, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_LOSSLESS, &ds, NULL);
     return Tcl_DStringToObj(&ds);
 }
 
@@ -1150,7 +1150,7 @@ TclNativeCreateNativeRep(
     }
 
     str = Tcl_GetStringFromObj(validPathPtr, &len);
-    if (Tcl_UtfToExternalDStringEx(NULL, NULL, str, len, 0, &ds, NULL) != TCL_OK) {
+    if (Tcl_UtfToExternalDStringEx(NULL, NULL, str, len, TCL_ENCODING_PROFILE_LOSSLESS, &ds, NULL) != TCL_OK) {
 	Tcl_DecrRefCount(validPathPtr);
 	Tcl_DStringFree(&ds);
 	return NULL;
