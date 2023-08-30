@@ -503,6 +503,30 @@ TclParseNumber(
     } state = INITIAL;
     enum State acceptState = INITIAL;
 
+    /* identify which numeric whitespace to ignore/skip
+     * and which to flag as illegal.
+     *
+     * The one and only legal position for '_' in an integer value.
+     * Similar for real values in that the numeric whitespace must
+     * begin and end with a digit only.
+     * ---------------------------------\
+     *                                  V
+     * (0b|0o|0d|0x)?(:digit:)|(:digit:+_*:digit:+)
+     * Note: :digit: set depends on base:
+     *    {}|d :: [0-9]
+     *    o    :: [0-7]
+     *    b    :: [0-1]
+     *    x    :: [0-9a-fA-F]
+     */
+    enum UnderState {
+	NO_NUM_WS, /* initial/off state */
+	NUM_WS,    /* on state (general check) */
+	NUM_WS_B,  /* numeric space illegal after '0b' */
+	NUM_WS_O,  /* numeric space illegal after '0o' */
+	NUM_WS_D,  /* numeric space illegal after '0d' */
+	NUM_WS_X   /* numeric space illegal after '0x' */
+    } under = NO_NUM_WS;
+
     int signum = 0;		/* Sign of the number being parsed. */
     Tcl_WideUInt significandWide = 0;
 				/* Significand of the number being parsed (if
@@ -539,8 +563,6 @@ TclParseNumber(
 				 * to avoid a compiler warning. */
     int shift = 0;		/* Amount to shift when accumulating binary */
     mp_err err = MP_OKAY;
-    int under = 0;              /* Flag trailing '_' as error if true once
-				 * number is accepted. */
 
 #define MOST_BITS	(UWIDE_MAX >> 1)
 
@@ -648,10 +670,12 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == 'x' || c == 'X') {
-		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY) || under) {
+		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY)
+		    || under != NO_NUM_WS) {
 		    goto endgame;
 		}
 		state = ZERO_X;
+		under = NUM_WS_X; /* check for '_' after 0x */
 		break;
 	    }
 	    if (flags & TCL_PARSE_HEXADECIMAL_ONLY) {
@@ -661,10 +685,12 @@ TclParseNumber(
 		goto zeroo;
 	    }
 	    if (c == 'b' || c == 'B') {
-		if ((flags & TCL_PARSE_OCTAL_ONLY) || under) {
+		if ((flags & TCL_PARSE_OCTAL_ONLY)
+		    || under != NO_NUM_WS) {
 		    goto endgame;
 		}
 		state = ZERO_B;
+		under = NUM_WS_B; /* check for '_' after 0b */
 		break;
 	    }
 	    if (flags & TCL_PARSE_BINARY_ONLY) {
@@ -675,6 +701,7 @@ TclParseNumber(
 		    goto endgame;
 		}
 		state = ZERO_O;
+		under = NUM_WS_O; /* check for '_' after 0o */
 		break;
 	    }
 	    if (c == 'd' || c == 'D') {
@@ -682,6 +709,7 @@ TclParseNumber(
 		    goto endgame;
 		}
 		state = ZERO_D;
+		under= NUM_WS_D; /* check for '_' after 0d */
 		break;
 	    }
 	    goto decimal;
@@ -691,21 +719,24 @@ TclParseNumber(
 	     * Scanned an optional + or -, followed by a string of octal
 	     * digits. Acceptable inputs are more digits, period, or E. If 8
 	     * or 9 is encountered, commit to floating point.
+	     *
+	     * Don't advance acceptPoint while passing over
+	     * numeric whitespace
 	     */
 
 	    acceptState = state;
-	    acceptPoint = p;
+	    acceptPoint = under ? acceptPoint : p;
 	    acceptLen = len;
 	    /* FALLTHROUGH */
 	case ZERO_O:
 	zeroo:
 	    if (c == '0') {
 		numTrailZeros++;
-		under = 0;
+		under = NO_NUM_WS;
 		state = OCTAL;
 		break;
 	    } else if (c >= '1' && c <= '7') {
-		under = 0;
+		under = NO_NUM_WS;
 		if (objPtr != NULL) {
 		    shift = 3 * (numTrailZeros + 1);
 		    significandOverflow = AccumulateDecimalDigit(
@@ -766,11 +797,11 @@ TclParseNumber(
 		break;
             } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
-		if (under) {
-		    // No multiple '_' in a row
+		if (under == NUM_WS_O) {
+		    // No '_' after 0o
 		    goto endgame;
 		}
-                under = 1;
+                under = NUM_WS;
                 break;
 	    }
 	    goto endgame;
@@ -779,11 +810,14 @@ TclParseNumber(
 	     * Scanned 0x. If state is HEXADECIMAL, scanned at least one
 	     * character following the 0x. The only acceptable inputs are
 	     * hexadecimal digits.
+	     *
+	     * Don't advance acceptPoint while passing over
+	     * numeric whitespace
 	     */
 
 	case HEXADECIMAL:
 	    acceptState = state;
-	    acceptPoint = p;
+	    acceptPoint = under == NUM_WS ? acceptPoint : p;
 	    acceptLen = len;
 	    /* FALLTHROUGH */
 
@@ -791,25 +825,25 @@ TclParseNumber(
 	zerox:
 	    if (c == '0') {
 		numTrailZeros++;
-		under = 0;
+		under = NO_NUM_WS;
 		state = HEXADECIMAL;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
-		under = 0;
+		under = NO_NUM_WS;
 		d = (c-'0');
 	    } else if (c >= 'A' && c <= 'F') {
-		under = 0;
+		under = NO_NUM_WS;
 		d = (c-'A'+10);
 	    } else if (c >= 'a' && c <= 'f') {
-		under = 0;
+		under = NO_NUM_WS;
 		d = (c-'a'+10);
             } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
-		if (under) {
-		    // No multiple '_' in a row
+		if (under == NUM_WS_X) {
+		    // No '_' after 0x
 		    goto endgame;
 		}
-                under = 1;
+                under = NUM_WS;
                 break;
 	    } else {
 		goto endgame;
@@ -866,21 +900,21 @@ TclParseNumber(
 	zerob:
 	    if (c == '0') {
 		numTrailZeros++;
-		under = 0;
+		under = NO_NUM_WS;
 		state = BINARY;
 		break;
 	    } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
 		/* Ignore numeric "white space" */
-		if (under) {
-		    // No multiple '_' in a row
+		if (under == NUM_WS_B) {
+		    // No '_' after 0b
 		    goto endgame;
 		}
-		under = 1;
+		under = NUM_WS;
 		break;
 	    } else if (c != '1') {
 		goto endgame;
 	    } else {
-		under = 0;
+		under = NO_NUM_WS;
 	    }
 	    if (objPtr != NULL) {
 		shift = numTrailZeros + 1;
@@ -927,21 +961,21 @@ TclParseNumber(
 
 	case ZERO_D:
 	    if (c == '0') {
-		under = 0;
+		under = NO_NUM_WS;
 		numTrailZeros++;
 	    } else if ( ! isdigit(UCHAR(c))) {
 		if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
 		    /* Ignore numeric "white space" */
-		    if (under) {
-			// No multiple '_' in a row
+		    if (under == NUM_WS_D) {
+			// No '_' after 0d
 			goto endgame;
 		    }
-		    under = 1;
+		    under = NUM_WS;
 		    break;
 		}
 		goto endgame;
 	    }
-	    under = 0;
+	    under = NO_NUM_WS;
 	    state = DECIMAL;
 	    flags |= TCL_PARSE_INTEGER_ONLY;
 	    /* FALLTHROUGH */
@@ -950,15 +984,18 @@ TclParseNumber(
 	    /*
 	     * Scanned an optional + or - followed by a string of decimal
 	     * digits.
+	     *
+	     * Don't advance acceptPoint while passing over
+	     * numeric whitespace
 	     */
 
 	decimal:
 	    acceptState = state;
-	    acceptPoint = p;
+	    acceptPoint = under == NUM_WS ? acceptPoint : p;
 	    acceptLen = len;
 	    if (c == '0') {
 		numTrailZeros++;
-		under = 0;
+		under = NO_NUM_WS;
 		state = DECIMAL;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
@@ -970,28 +1007,24 @@ TclParseNumber(
 		}
 		numSigDigs += numTrailZeros+1;
 		numTrailZeros = 0;
-		under = 0;
+		under = NO_NUM_WS;
 		state = DECIMAL;
 		break;
             } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
                 /* Ignore numeric "white space" */
-		if (under) {
-		    // No multiple '_' in a row
-		    goto endgame;
-		}
-                under = 1;
+                under = NUM_WS;
                 break;
 	    } else if (flags & TCL_PARSE_INTEGER_ONLY) {
 		goto endgame;
 	    } else if (c == '.') {
-		if (under) {
+		if (under == NUM_WS) {
 		    // Must be a digit before and after '_'
 		    goto endgame;
 		}
 		state = FRACTION;
 		break;
 	    } else if (c == 'E' || c == 'e') {
-		if (under) {
+		if (under == NUM_WS) {
 		    // Must be a digit before and after '_'
 		    goto endgame;
 		}
@@ -1020,7 +1053,7 @@ TclParseNumber(
 	    if (c == '0') {
 		numDigitsAfterDp++;
 		numTrailZeros++;
-		under = 0;
+		under = NO_NUM_WS;
 		state = FRACTION;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
@@ -1037,17 +1070,9 @@ TclParseNumber(
 		    numSigDigs = 1;
 		}
 		numTrailZeros = 0;
-		under = 0;
+		under = NO_NUM_WS;
 		state = FRACTION;
 		break;
-            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
-                /* Ignore numeric "white space" */
-		if (under) {
-		    // No multiple '_' in a row
-		    goto endgame;
-		}
-                under = 1;
-                break;
 	    }
 	    goto endgame;
 
@@ -1059,7 +1084,7 @@ TclParseNumber(
 	     */
 
 	    if (c == '+') {
-		if (under) {
+		if (under == NUM_WS) {
 		    // Must be a digit before and after '_'
 		    goto endgame;
 		}
@@ -1067,7 +1092,7 @@ TclParseNumber(
 		break;
 	    } else if (c == '-') {
 		exponentSignum = 1;
-		if (under) {
+		if (under == NUM_WS) {
 		    // Must be a digit before and after '_'
 		    goto endgame;
 		}
@@ -1084,17 +1109,9 @@ TclParseNumber(
 
 	    if (isdigit(UCHAR(c))) {
 		exponent = c - '0';
-		under = 0;
+		under = NO_NUM_WS;
 		state = EXPONENT;
 		break;
-            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
-                /* Ignore numeric "white space" */
-		if (under) {
-		    // No multiple '_' in a row
-		    goto endgame;
-		}
-                under = 1;
-                break;
 	    }
 	    goto endgame;
 
@@ -1113,16 +1130,11 @@ TclParseNumber(
 		} else {
 		    exponent = LONG_MAX;
 		}
-		under = 0;
+		under = NO_NUM_WS;
 		state = EXPONENT;
 		break;
             } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
-                /* Ignore numeric "white space" */
-		if (under) {
-		    // No multiple '_' in a row
-		    goto endgame;
-		}
-                under = 1;
+                under = NUM_WS;
                 break;
 	    }
 	    goto endgame;
@@ -1134,14 +1146,14 @@ TclParseNumber(
 
 	case sI:
 	    if (c == 'n' || c == 'N') {
-		under = 0;
+		under = NO_NUM_WS;
 		state = sIN;
 		break;
 	    }
 	    goto endgame;
 	case sIN:
 	    if (c == 'f' || c == 'F') {
-		under = 0;
+		under = NO_NUM_WS;
 		state = sINF;
 		break;
 	    }
@@ -1150,7 +1162,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-            under = 0;
+            under = NO_NUM_WS;
 	    if (c == 'i' || c == 'I') {
 		state = sINFI;
 		break;
@@ -1158,28 +1170,28 @@ TclParseNumber(
 	    goto endgame;
 	case sINFI:
 	    if (c == 'n' || c == 'N') {
-		under = 0;
+		under = NO_NUM_WS;
 		state = sINFIN;
 		break;
 	    }
 	    goto endgame;
 	case sINFIN:
 	    if (c == 'i' || c == 'I') {
-		under = 0;
+		under = NO_NUM_WS;
 		state = sINFINI;
 		break;
 	    }
 	    goto endgame;
 	case sINFINI:
 	    if (c == 't' || c == 'T') {
-		under = 0;
+		under = NO_NUM_WS;
 		state = sINFINIT;
 		break;
 	    }
 	    goto endgame;
 	case sINFINIT:
 	    if (c == 'y' || c == 'Y') {
-		under = 0;
+		under = NO_NUM_WS;
 		state = sINFINITY;
 		break;
 	    }
@@ -1191,14 +1203,14 @@ TclParseNumber(
 #ifdef IEEE_FLOATING_POINT
 	case sN:
 	    if (c == 'a' || c == 'A') {
-		under = 0;
+		under = NO_NUM_WS;
 		state = sNA;
 		break;
 	    }
 	    goto endgame;
 	case sNA:
 	    if (c == 'n' || c == 'N') {
-		under = 0;
+		under = NO_NUM_WS;
 		state = sNAN;
 		break;
 	    }
@@ -1208,7 +1220,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == '(') {
-		under = 0;
+		under = NO_NUM_WS;
 		state = sNANPAREN;
 		break;
 	    }
@@ -1219,14 +1231,14 @@ TclParseNumber(
 	     */
 	case sNANHEX:
 	    if (c == ')') {
-		under = 0;
+		under = NO_NUM_WS;
 		state = sNANFINISH;
 		break;
 	    }
 	    /* FALLTHROUGH */
 	case sNANPAREN:
 	    if (TclIsSpaceProcM(c)) {
-		under = 0;
+		under = NO_NUM_WS;
 		break;
 	    }
 	    if (numSigDigs < 13) {
@@ -1241,7 +1253,7 @@ TclParseNumber(
 		}
 		numSigDigs++;
 		significandWide = (significandWide << 4) + d;
-		under = 0;
+		under = NO_NUM_WS;
 		state = sNANHEX;
 		break;
 	    }
@@ -1276,11 +1288,11 @@ TclParseNumber(
 	 * backup to that.
 	 */
 
-	p = under ? acceptPoint-1 : acceptPoint;
-	len = under ? acceptLen-1 : acceptLen;
+	p = under == NUM_WS ? acceptPoint-1 : acceptPoint;
+	len = under == NUM_WS ? acceptLen-1 : acceptLen;
 
 	// No trailing '_' allowed
-	status = under ? TCL_ERROR : TCL_OK;
+	status = under == NUM_WS ? TCL_ERROR : TCL_OK;
 
 	if (!(flags & TCL_PARSE_NO_WHITESPACE)) {
 	    /*
