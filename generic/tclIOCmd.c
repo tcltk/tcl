@@ -318,7 +318,9 @@ Tcl_GetsObjCmd(
     lineLen = Tcl_GetsObj(chan, linePtr);
     if (lineLen == TCL_IO_FAILURE) {
 	if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
-	    Tcl_DecrRefCount(linePtr);
+	    Tcl_Obj *returnOptsPtr = Tcl_NewDictObj();
+	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-data", -1),
+		    linePtr);
 
 	    /*
 	     * TIP #219.
@@ -333,6 +335,7 @@ Tcl_GetsObjCmd(
 			TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	    }
 	    code = TCL_ERROR;
+	    Tcl_SetReturnOptions(interp, returnOptsPtr);
 	    goto done;
 	}
 	lineLen = TCL_IO_FAILURE;
@@ -459,7 +462,9 @@ Tcl_ReadObjCmd(
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
     if (charactersRead == TCL_IO_FAILURE) {
-	Tcl_DecrRefCount(resultPtr);
+	Tcl_Obj *returnOptsPtr = Tcl_NewDictObj();
+	Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-data", -1),
+		resultPtr);
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
@@ -473,6 +478,7 @@ Tcl_ReadObjCmd(
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
 	TclChannelRelease(chan);
+	Tcl_SetReturnOptions(interp, returnOptsPtr);
 	return TCL_ERROR;
     }
 
