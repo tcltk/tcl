@@ -7935,8 +7935,8 @@ TestNRELevels(
     TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
 {
     Interp *iPtr = (Interp *) interp;
-    static ptrdiff_t *refDepth = NULL;
-    ptrdiff_t depth;
+    static Tcl_Size *refDepth = NULL;
+    Tcl_Size depth;
     Tcl_Obj *levels[6];
     Tcl_Size i = 0;
     NRE_callback *cbPtr = iPtr->execEnvPtr->callbackPtr;
