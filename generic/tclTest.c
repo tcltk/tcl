@@ -210,10 +210,7 @@ static Tcl_ResolveCompiledVarProc	InterpCompiledVarResolver;
 static void		MainLoop(void);
 static Tcl_CmdProc	NoopCmd;
 static Tcl_ObjCmdProc	NoopObjCmd;
-static int		ObjTraceProc(void *clientData,
-			    Tcl_Interp *interp, int level, const char *command,
-			    Tcl_Command commandToken, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_CmdObjTraceProc ObjTraceProc;
 static void		ObjTraceDeleteProc(void *clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
 static void		SpecialFree(void *blockPtr);
@@ -1545,10 +1542,10 @@ static int
 ObjTraceProc(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    TCL_UNUSED(int) /*level*/,
+    TCL_UNUSED(int) /* level */,
     const char *command,
     TCL_UNUSED(Tcl_Command),
-    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(int) /* objc */,
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *word = Tcl_GetString(objv[0]);
