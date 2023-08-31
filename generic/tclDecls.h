@@ -1933,7 +1933,7 @@ EXTERN int *		Tcl_UtfToUniCharDString(const char *src,
 				Tcl_Size length, Tcl_DString *dsPtr);
 /* 649 */
 EXTERN unsigned char *	Tcl_GetBytesFromObj(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, Tcl_Size *numBytesPtr);
+				Tcl_Obj *objPtr, int *numBytesPtr);
 /* Slot 650 is reserved */
 /* Slot 651 is reserved */
 /* Slot 652 is reserved */
@@ -2697,7 +2697,7 @@ typedef struct TclStubs {
     Tcl_Size (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 646 */
     char * (*tcl_UniCharToUtfDString) (const int *uniStr, Tcl_Size uniLength, Tcl_DString *dsPtr); /* 647 */
     int * (*tcl_UtfToUniCharDString) (const char *src, Tcl_Size length, Tcl_DString *dsPtr); /* 648 */
-    unsigned char * (*tcl_GetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *numBytesPtr); /* 649 */
+    unsigned char * (*tcl_GetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *numBytesPtr); /* 649 */
     void (*reserved650)(void);
     void (*reserved651)(void);
     void (*reserved652)(void);

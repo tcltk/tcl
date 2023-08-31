@@ -2409,7 +2409,7 @@ declare 648 {
 # TIP #568
 declare 649 {
     unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    Tcl_Size *numBytesPtr)
+	    int *numBytesPtr)
 }
 
 # TIP #575
