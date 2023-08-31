@@ -101,7 +101,7 @@ TclObjTest_Init(
      */
     Tcl_Obj **varPtr;
 
-    varPtr = (Tcl_Obj **) ckalloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
+    varPtr = (Tcl_Obj **)ckalloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
     if (!varPtr) {
 	return TCL_ERROR;
     }
@@ -1063,15 +1063,15 @@ TestobjCmd(
     const Tcl_ObjType *targetType;
     Tcl_Obj **varPtr;
     const char *subcommands[] = {
-	"freeallvars", "bug3598580", "types",
-	"objtype", "newobj", "set",
+	"freeallvars", "bug3598580",
+	"types", "objtype", "newobj", "set",
 	"assign", "convert", "duplicate",
 	"invalidateStringRep", "refcount", "type",
 	NULL
     };
     enum testobjCmdIndex {
-	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580, TESTOBJ_TYPES,
-	TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
+	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580,
+	TESTOBJ_TYPES, TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
 	TESTOBJ_ASSIGN, TESTOBJ_CONVERT, TESTOBJ_DUPLICATE,
 	TESTOBJ_INVALIDATESTRINGREP, TESTOBJ_REFCOUNT, TESTOBJ_TYPE,
     } cmdIndex;
@@ -1535,7 +1535,7 @@ TeststringobjCmd(
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 13: /* newunicode*/
-	    unicode = (unsigned short *) ckalloc(((unsigned)objc - 3) * sizeof(unsigned short));
+	    unicode = (unsigned short *)ckalloc(((unsigned)objc - 3) * sizeof(unsigned short));
 	    for (i = 0; i < (objc - 3); ++i) {
 		int val;
 		if (Tcl_GetIntFromObj(interp, objv[i + 3], &val) != TCL_OK) {
