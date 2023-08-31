@@ -50,8 +50,6 @@
 #undef Tcl_UniCharCaseMatch
 #undef Tcl_UniCharLen
 #undef Tcl_UniCharNcmp
-#undef Tcl_GetRange
-#undef Tcl_GetUniChar
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
@@ -80,11 +78,6 @@
 #undef Tcl_MacOSXOpenBundleResources
 #undef TclWinConvertWSAError
 #undef TclWinConvertError
-#undef Tcl_NumUtfChars
-#undef Tcl_GetCharLength
-#undef Tcl_UtfAtIndex
-#undef Tcl_GetRange
-#undef Tcl_GetUniChar
 #undef TclObjInterpProc
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -93,7 +86,7 @@
 #endif
 
 
-#if TCL_UTF_MAX > 3 && defined(TCL_NO_DEPRECATED)
+#if defined(TCL_NO_DEPRECATED)
 static void uniCodePanic(void) {
     Tcl_Panic("Tcl is compiled without the the UTF16 compatibility layer (-DTCL_NO_DEPRECATED)");
 }
@@ -658,16 +651,6 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     return result;
 }
 #define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
-#if TCL_UTF_MAX < 4 && !defined(TCL_NO_DEPRECATED)
-static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
-   return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
-}
-#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))(void *)uniCharNcmp
-static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
-   return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
-}
-#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))(void *)uniCharNcasecmp
-#endif
 static int utfNcmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
 }
@@ -768,13 +751,6 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define Tcl_SetExitProc 0
 #   define Tcl_SetPanicProc 0
 #   define Tcl_FindExecutable 0
-#if TCL_UTF_MAX < 4
-#   define Tcl_GetUnicode 0
-#   define Tcl_AppendUnicodeToObj 0
-#   define Tcl_UniCharCaseMatch 0
-#   define Tcl_UniCharNcasecmp 0
-#   define Tcl_UniCharNcmp 0
-#endif
 #   undef Tcl_StringMatch
 #   define Tcl_StringMatch 0
 #   define TclBN_reverse 0
