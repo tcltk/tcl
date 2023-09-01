@@ -371,16 +371,6 @@ static double		SafeLdExp(double fraction, int exponent);
 #ifdef IEEE_FLOATING_POINT
 static Tcl_WideUInt	Nokia770Twiddle(Tcl_WideUInt w);
 #endif
-
-static inline int
-isHexDigit(int u)
-{
-    int c = UCHAR(u);
-    return     (isdigit(c)
-	    || (c >= 'A' && c <= 'F')
-	    || (c >= 'a' && c <= 'f'));
-}
-
 
 /*
  *----------------------------------------------------------------------
@@ -644,8 +634,8 @@ TclParseNumber(
 		goto endgame;
 	    case ZERO_X:
 	    case HEXADECIMAL:
-		if ( (!before || isHexDigit(*before)) &&
-		     (!after || isHexDigit(*after))) {
+		if ( (!before || isxdigit(*before)) &&
+		     (!after  || isxdigit(*after))) {
 		    break;
 		}
 		goto endgame;
