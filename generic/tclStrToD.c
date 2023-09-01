@@ -634,8 +634,8 @@ TclParseNumber(
 		goto endgame;
 	    case ZERO_X:
 	    case HEXADECIMAL:
-		if ( (!before || isxdigit(*before)) &&
-		     (!after  || isxdigit(*after))) {
+		if ( (!before || isxdigit(UCHAR(*before))) &&
+		     (!after  || isxdigit(UCHAR(*after)))) {
 		    break;
 		}
 		goto endgame;
