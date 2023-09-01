@@ -610,8 +610,8 @@ TclParseNumber(
 		break;
 	    case ZERO_O:
 	    case OCTAL:
-		if (((!before || (*before < '0' || '7' < *before))) ||
-		    ((!before || (*after  < '0' || '7' < *after)))) {
+		if (((before && (*before < '0' || '7' < *before))) ||
+		    ((after  && (*after  < '0' || '7' < *after)))) {
 		    goto endgame;
 		}
 		break;
