@@ -85,7 +85,7 @@ end of a numeric value.  Here are some examples:
 \fBexpr\fR 100_000_000		\fI100000000\fR
 \fBexpr\fR 0xffff_ffff		\fI4294967295\fR
 \fBformat\fR 0x%x 0b1111_1110_1101_1011		\fI0xfedb\fR
-\fBexpr\fR 3_141_592_653_589e-1_2		\fI3.141592653589
+\fBexpr\fR 3_141_592_653_589e-1_2		\fI3.141592653589\fR
 .CE
 .RE
 
