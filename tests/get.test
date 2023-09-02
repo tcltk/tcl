@@ -102,18 +102,27 @@ test get-3.3 {tcl_GetInt with iffy numbers} testgetint {
 	set x
     }
 } {44 44 44 44 54 51 52 46}
-test get-3.4 {Tcl_GetDouble with iffy numbers} testdoubleobj {
-    lmap x {0 0.0 " .0" ".0 " " 0e0 " "07" "- 0" "-0" "0o12" "0b10"} {
+
+test get-3.4 {Tcl_GetDouble with iffy numbers} {testdoubleobj} {
+    lmap x {0 0.0 " .0" ".0 " " 0e0 " "- 0" "-0" "0o12" "0b10" "2_0.3_4e+1_5" _1.0e+2 1_.0e+2 1._0e+2 1.0_e+2 1.0e_+2 1.0e+_2 1.0e+2_ 1_1.0e+0_2 2__2.0e+2__2 54321________} {
 	catch {testdoubleobj set 1 $x} x
 	set x
     }
-} {0.0 0.0 0.0 0.0 0.0 7.0 {expected floating-point number but got "- 0"} 0.0 10.0 2.0}
+} {0.0 0.0 0.0 0.0 0.0 {expected floating-point number but got "- 0"} 0.0 10.0 2.0 20340000000000000.0 {expected floating-point number but got "_1.0e+2"} {expected floating-point number but got "1_.0e+2"} {expected floating-point number but got "1._0e+2"} {expected floating-point number but got "1.0_e+2"} {expected floating-point number but got "1.0e_+2"} {expected floating-point number but got "1.0e+_2"} {expected floating-point number but got "1.0e+2_"} 1100.0 2.2e+23 {expected floating-point number but got "54321________"}}
+
+test get-3.4.1 {Tcl_GetDouble with iffy numbers} {testdoubleobj deprecated} {
+    lmap x {"09"} {
+	catch {testdoubleobj set 1 $x} x
+	set x
+    }
+} {9.0}
+
 test get-3.5 {tcl_GetInt with numeric whitespace (i.e. '_')} testgetint {
-    lmap x {0_0 " 1_0" "0_2 " " 3_3 " 14__23__32___4 " 0x_a " 0b1111_1111 " 0_07 " " 0o_1_0 " " 0b_1_0 " " 0_b1_0 " _33 42_ 0_x15 0_o17 0_d19 } {
+    lmap x {0_0 " 1_0" "0_2 " " 3_3 " 14__23__32___4 " 0x0_a " 0b1111_1111 " 0_07 " " 0o1_0 " " 0b_1_0 " " 0_b1_0 " _33 42_ 0_x15 0_o17 0_d19 0x_b 0o_2_0 0o2__3_4} {
 	catch {testgetint $x} x
 	set x
     }
-} {0 10 2 33 1423324 10 255 7 8 2 {expected integer but got " 0_b1_0 "} {expected integer but got "_33"} {expected integer but got "42_"} {expected integer but got "0_x15"} {expected integer but got "0_o17"} {expected integer but got "0_d19"}}
+} {0 10 2 33 1423324 10 255 7 8 {expected integer but got " 0b_1_0 "} {expected integer but got " 0_b1_0 "} {expected integer but got "_33"} {expected integer but got "42_"} {expected integer but got "0_x15"} {expected integer but got "0_o17"} {expected integer but got "0_d19"} {expected integer but got "0x_b"} {expected integer but got "0o_2_0"} 156}
 
 # cleanup
 ::tcltest::cleanupTests

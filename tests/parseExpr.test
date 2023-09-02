@@ -1034,7 +1034,7 @@ test parseExpr-22.10 {Bug 3401704} -constraints testexprparser -body {
     dict get $o -errorcode
 } -result {TCL PARSE EXPR BADCHAR}
 test parseExpr-22.11 {Bug 3401704} -constraints testexprparser -body {
-    catch {testexprparser 1e-3_() -1} m o
+    catch {testexprparser 1e-3`() -1} m o
     dict get $o -errorcode
 } -result {TCL PARSE EXPR BADCHAR}
 test parseExpr-22.12 {Bug 3401704} -constraints testexprparser -body {
