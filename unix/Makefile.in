@@ -151,7 +151,7 @@ SHELL			= @MAKEFILE_SHELL@
 # distribution, which is slower but guaranteed to work.
 
 INSTALL_STRIP_PROGRAM	= -s
-INSTALL_STRIP_LIBRARY	= -S -x
+INSTALL_STRIP_LIBRARY	= -R -x
 
 INSTALL			= $(SHELL) $(UNIX_DIR)/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
@@ -2233,6 +2233,8 @@ DISTROOT = /tmp/dist
 DISTNAME = tcl${VERSION}${PATCH_LEVEL}
 ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
+DIST_INSTALL_DATA   = $(INSTALL) -p -m 644
+DIST_INSTALL_SCRIPT = $(INSTALL) -p -m 755
 BUILTIN_PACKAGE_LIST = cookiejar http opt msgcat registry dde tcltest platform
 
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.ac $(UNIX_DIR)/tcl.m4 \
@@ -2258,120 +2260,125 @@ $(TOP_DIR)/manifest.uuid:
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in genstubs \
 		$(MAC_OSX_DIR)/configure $(TOP_DIR)/manifest.uuid dist-packages ${NATIVE_TCLSH}
 	rm -rf $(DISTDIR)
-	mkdir -p $(DISTDIR)/unix
-	cp -p $(TOP_DIR)/manifest.uuid $(DISTDIR)
-	cp -p $(UNIX_DIR)/*.[ch] $(DISTDIR)/unix
-	cp -p $(UNIX_DIR)/Makefile.in $(DISTDIR)/unix
-	chmod 664 $(DISTDIR)/unix/Makefile.in
-	cp -p $(UNIX_DIR)/configure $(UNIX_DIR)/configure.ac \
+	$(INSTALL_DATA_DIR) $(DISTDIR)/unix
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/manifest.uuid $(DISTDIR)
+	$(DIST_INSTALL_DATA) $(UNIX_DIR)/*.[ch] $(DISTDIR)/unix
+	$(DIST_INSTALL_DATA) $(UNIX_DIR)/Makefile.in $(DISTDIR)/unix
+	$(DIST_INSTALL_DATA) $(UNIX_DIR)/configure.ac \
 		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
 		$(UNIX_DIR)/tclConfig.sh.in $(UNIX_DIR)/tclooConfig.sh \
 		$(UNIX_DIR)/install-sh \
-		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix $(UNIX_DIR)/tcl.spec \
+		$(UNIX_DIR)/README $(UNIX_DIR)/tcl.spec \
 		$(UNIX_DIR)/installManPage $(UNIX_DIR)/tclConfig.h.in \
 		$(UNIX_DIR)/tcl.pc.in $(DISTDIR)/unix
-	chmod 775 $(DISTDIR)/unix/configure
-	chmod 775 $(DISTDIR)/unix/ldAix
-	@mkdir $(DISTDIR)/generic
-	cp -p $(GENERIC_DIR)/*.[cdh] $(DISTDIR)/generic
-	cp -p $(GENERIC_DIR)/*.decls $(DISTDIR)/generic
-	cp -p $(GENERIC_DIR)/README $(DISTDIR)/generic
-	cp -p $(GENERIC_DIR)/tclGetDate.y $(DISTDIR)/generic
-	cp -p $(TOP_DIR)/changes $(TOP_DIR)/README.md \
+	$(DIST_INSTALL_SCRIPT) $(UNIX_DIR)/configure $(UNIX_DIR)/ldAix $(DISTDIR)/unix
+	$(INSTALL_DATA_DIR) $(DISTDIR)/generic
+	$(DIST_INSTALL_DATA) $(GENERIC_DIR)/*.[cdh] $(DISTDIR)/generic
+	$(DIST_INSTALL_DATA) $(GENERIC_DIR)/*.decls $(DISTDIR)/generic
+	$(DIST_INSTALL_DATA) $(GENERIC_DIR)/README $(DISTDIR)/generic
+	$(DIST_INSTALL_DATA) $(GENERIC_DIR)/tclGetDate.y $(DISTDIR)/generic
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/changes $(TOP_DIR)/README.md \
 		$(TOP_DIR)/license.terms $(DISTDIR)
-	@mkdir $(DISTDIR)/library
-	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
+	$(INSTALL_DATA_DIR) $(DISTDIR)/library
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/manifest.txt \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
 	@for i in $(BUILTIN_PACKAGE_LIST); do \
-	    mkdir $(DISTDIR)/library/$$i;\
-	    cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
+	    $(INSTALL_DATA_DIR) $(DISTDIR)/library/$$i;\
+	    $(DIST_INSTALL_DATA) $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
 	done
-	cp -p $(TOP_DIR)/library/cookiejar/*.dat.gz $(DISTDIR)/library/cookiejar
-	@mkdir $(DISTDIR)/library/encoding
-	cp -p $(TOP_DIR)/library/encoding/*.enc $(DISTDIR)/library/encoding
-	@mkdir $(DISTDIR)/library/msgs
-	cp -p $(TOP_DIR)/library/msgs/*.msg $(DISTDIR)/library/msgs
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/library/cookiejar/*.dat.gz $(DISTDIR)/library/cookiejar
+	$(INSTALL_DATA_DIR) $(DISTDIR)/library/encoding
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/library/encoding/*.enc $(DISTDIR)/library/encoding
+	$(INSTALL_DATA_DIR) $(DISTDIR)/library/msgs
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/library/msgs/*.msg $(DISTDIR)/library/msgs
 	@echo cp -r $(TOP_DIR)/library/tzdata $(DISTDIR)/library/tzdata
 	@( cd $(TOP_DIR); find library/tzdata -type f -print ) \
 	    | ( cd $(TOP_DIR) ; xargs tar cf - ) \
 	    | ( cd $(DISTDIR) ; tar xfp - )
-	@mkdir $(DISTDIR)/doc
-	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/doc/*.[13n] \
+	$(INSTALL_DATA_DIR) $(DISTDIR)/doc
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(TOP_DIR)/doc/*.[13n] \
 		$(TOP_DIR)/doc/man.macros $(DISTDIR)/doc
-	@mkdir $(DISTDIR)/compat
-	cp -p $(TOP_DIR)/license.terms $(COMPAT_DIR)/*.[ch] \
+	$(INSTALL_DATA_DIR) $(DISTDIR)/compat
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(COMPAT_DIR)/*.[ch] \
 		$(COMPAT_DIR)/README $(DISTDIR)/compat
-	@mkdir $(DISTDIR)/compat/zlib
+	$(INSTALL_DATA_DIR) $(DISTDIR)/compat/zlib
 	@echo cp -r $(COMPAT_DIR)/zlib $(DISTDIR)/compat/zlib
 	@( cd $(COMPAT_DIR)/zlib; find . -type f -print ) \
 	    | ( cd $(COMPAT_DIR)/zlib ; xargs tar cf - ) \
 	    | ( cd $(DISTDIR)/compat/zlib ; tar xfp - )
-	@mkdir $(DISTDIR)/libtommath
+	$(INSTALL_DATA_DIR) $(DISTDIR)/libtommath
 	@echo cp -r $(TOP_DIR)/libtommath $(DISTDIR)/libtommath
 	@( cd $(TOP_DIR)/libtommath; find . -type f -print ) \
 	    | ( cd $(TOP_DIR)/libtommath ; xargs tar cf - ) \
 	    | ( cd $(DISTDIR)/libtommath ; tar xfp - )
-	@mkdir $(DISTDIR)/tests
-	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tests
-	cp -p $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \
+	$(INSTALL_DATA_DIR) $(DISTDIR)/tests
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(DISTDIR)/tests
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \
 		$(TOP_DIR)/tests/httpd $(TOP_DIR)/tests/*.tcl \
 		$(TOP_DIR)/tests/auto-files.zip $(DISTDIR)/tests
 	@mkdir $(DISTDIR)/tests/auto0
 	for i in auto1 auto2 ; \
 	    do \
-		mkdir $(DISTDIR)/tests/auto0/$$i ;\
-		cp -p $(TOP_DIR)/tests/auto0/$$i/tclIndex $(TOP_DIR)/tests/auto0/$$i/*.tcl \
+		$(INSTALL_DATA_DIR) $(DISTDIR)/tests/auto0/$$i ;\
+		$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/auto0/$$i/tclIndex $(TOP_DIR)/tests/auto0/$$i/*.tcl \
 			$(DISTDIR)/tests/auto0/$$i; \
 	    done;
 	for i in modules modules/mod1 modules/mod2 ; \
 	    do \
-		mkdir $(DISTDIR)/tests/auto0/$$i ;\
-		cp -p $(TOP_DIR)/tests/auto0/$$i/*.tm \
+		$(INSTALL_DATA_DIR) $(DISTDIR)/tests/auto0/$$i ;\
+		$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/auto0/$$i/*.tm \
 			$(DISTDIR)/tests/auto0/$$i; \
 	    done;
-	@mkdir $(DISTDIR)/win
-	cp -p $(TOP_DIR)/win/Makefile.in $(DISTDIR)/win
-	cp -p $(TOP_DIR)/win/configure.ac $(TOP_DIR)/win/configure \
+	$(INSTALL_DATA_DIR) $(DISTDIR)/win
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/Makefile.in $(DISTDIR)/win
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/configure.ac \
 		$(TOP_DIR)/win/tclConfig.sh.in $(TOP_DIR)/win/tclooConfig.sh \
 		$(TOP_DIR)/win/tcl.m4 $(TOP_DIR)/win/aclocal.m4 \
 		$(TOP_DIR)/win/tclsh.exe.manifest.in $(TOP_DIR)/win/tclUuid.h.in \
 		$(TOP_DIR)/win/gitmanifest.in $(TOP_DIR)/win/svnmanifest.in \
 		$(TOP_DIR)/win/x86_64-w64-mingw32-nmakehlp.exe $(DISTDIR)/win
 	chmod 775 $(DISTDIR)/win/x86_64-w64-mingw32-nmakehlp.exe
-	cp -p $(TOP_DIR)/win/*.[ch] $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
+	$(DIST_INSTALL_SCRIPT) $(TOP_DIR)/win/configure $(DISTDIR)/win
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.[ch] $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
-	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
-	cp -p $(TOP_DIR)/win/*.vc $(DISTDIR)/win
-	cp -p $(TOP_DIR)/win/tcl.ds* $(DISTDIR)/win
-	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
-	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
-	@mkdir $(DISTDIR)/macosx
-	cp -p $(MAC_OSX_DIR)/GNUmakefile $(MAC_OSX_DIR)/README \
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.bat $(DISTDIR)/win
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.vc $(DISTDIR)/win
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/tcl.ds* $(DISTDIR)/win
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/README $(DISTDIR)/win
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(DISTDIR)/win
+	$(INSTALL_DATA_DIR) $(DISTDIR)/macosx
+	$(DIST_INSTALL_DATA) $(MAC_OSX_DIR)/GNUmakefile $(MAC_OSX_DIR)/README \
 		$(MAC_OSX_DIR)/*.c $(MAC_OSX_DIR)/*.in \
 		$(MAC_OSX_DIR)/*.ac $(MAC_OSX_DIR)/*.xcconfig \
-		$(MAC_OSX_DIR)/configure $(DISTDIR)/macosx
-	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/macosx
-	@mkdir $(DISTDIR)/macosx/Tcl.xcodeproj
-	cp -p $(MAC_OSX_DIR)/Tcl.xcodeproj/project.pbxproj \
+		$(DISTDIR)/macosx
+	$(DIST_INSTALL_SCRIPT) $(MAC_OSX_DIR)/configure $(DISTDIR)/macosx
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(DISTDIR)/macosx
+	$(INSTALL_DATA_DIR) $(DISTDIR)/macosx/Tcl.xcodeproj
+	$(DIST_INSTALL_DATA) $(MAC_OSX_DIR)/Tcl.xcodeproj/project.pbxproj \
 		$(MAC_OSX_DIR)/Tcl.xcodeproj/default.pbxuser \
 		$(DISTDIR)/macosx/Tcl.xcodeproj
-	@mkdir $(DISTDIR)/unix/dltest
-	cp -p $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
+	$(INSTALL_DATA_DIR) $(DISTDIR)/unix/dltest
+	$(DIST_INSTALL_DATA) $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
 		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
-	@mkdir $(DISTDIR)/tools
-	cp -p $(TOOL_DIR)/README $(TOOL_DIR)/*.c $(TOOL_DIR)/*.svg \
+	$(INSTALL_DATA_DIR) $(DISTDIR)/tools
+	$(DIST_INSTALL_DATA) $(TOOL_DIR)/README $(TOOL_DIR)/*.c $(TOOL_DIR)/*.svg \
 		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/*.bmp \
 		$(TOOL_DIR)/valgrind_suppress $(DISTDIR)/tools
-	@mkdir $(DISTDIR)/pkgs
-	cp -p $(TOP_DIR)/pkgs/README $(DISTDIR)/pkgs
-	cp -p $(TOP_DIR)/pkgs/package.list.txt $(DISTDIR)/pkgs
+	chmod 755 $(DISTDIR)/tools/checkLibraryDoc.tcl \
+		$(DISTDIR)/tools/findBadExternals.tcl \
+		$(DISTDIR)/tools/loadICU.tcl \
+		$(DISTDIR)/tools/makeTestCases.tcl $(DISTDIR)/tools/tclZIC.tcl \
+		$(DISTDIR)/tools/tcltk-man2html.tcl
+	$(INSTALL_DATA_DIR) $(DISTDIR)/pkgs
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/pkgs/README $(DISTDIR)/pkgs
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/pkgs/package.list.txt $(DISTDIR)/pkgs
 	for i in `ls $(DISTROOT)/pkgs/*.tar.gz 2> /dev/null`; do \
 	    tar -C $(DISTDIR)/pkgs -xzf "$$i"; \
 	done
-	cp -p $(TOP_DIR)/.travis.yml $(DISTDIR)
-	mkdir -p $(DISTDIR)/.github/workflows
-	cp -p $(TOP_DIR)/.github/workflows/*.yml $(DISTDIR)/.github/workflows
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/.travis.yml $(DISTDIR)
+	$(INSTALL_DATA_DIR) $(DISTDIR)/.github/workflows
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/.github/workflows/*.yml $(DISTDIR)/.github/workflows
 
 alldist: dist
 	rm -f $(DISTROOT)/$(DISTNAME)-src.tar.gz $(DISTROOT)/$(ZIPNAME)
