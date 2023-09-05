@@ -1670,11 +1670,11 @@ Tcl_DeleteAssocData(
 	return;
     }
     dPtr = (AssocData *)Tcl_GetHashValue(hPtr);
+    Tcl_DeleteHashEntry(hPtr);
     if (dPtr->proc != NULL) {
 	dPtr->proc(dPtr->clientData, interp);
     }
     ckfree(dPtr);
-    Tcl_DeleteHashEntry(hPtr);
 }
 
 /*
