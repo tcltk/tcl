@@ -151,7 +151,7 @@ SHELL			= @MAKEFILE_SHELL@
 # distribution, which is slower but guaranteed to work.
 
 INSTALL_STRIP_PROGRAM	= -s
-INSTALL_STRIP_LIBRARY	= -S -x
+INSTALL_STRIP_LIBRARY	= -R -x
 
 INSTALL			= $(SHELL) $(UNIX_DIR)/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
@@ -2252,8 +2252,8 @@ DISTROOT = /tmp/dist
 DISTNAME = tcl${VERSION}${PATCH_LEVEL}
 ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
-DIST_INSTALL_DATA   = CPPROG='cp -p' $(INSTALL) -m 644
-DIST_INSTALL_SCRIPT = CPPROG='cp -p' $(INSTALL) -m 755
+DIST_INSTALL_DATA   = $(INSTALL) -p -m 644
+DIST_INSTALL_SCRIPT = $(INSTALL) -p -m 755
 BUILTIN_PACKAGE_LIST = cookiejar http opt msgcat registry dde tcltest platform
 
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.ac $(UNIX_DIR)/tcl.m4 \
