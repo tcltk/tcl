@@ -34,6 +34,7 @@ testConstraint testnumutfchars [llength [info commands testnumutfchars]]
 testConstraint teststringobj [llength [info commands teststringobj]]
 testConstraint testutfnext [llength [info commands testutfnext]]
 testConstraint testutfprev [llength [info commands testutfprev]]
+testConstraint testgetunichar [llength [info commands testgetunichar]]
 
 testConstraint tip413 [expr {[string trim \x00] eq {}}]
 
@@ -1476,9 +1477,36 @@ test utf-26.1 {Tcl_UniCharDString} -setup {
     scan [string index [teststringobj get 1] 11] %c
 } -result 128
 
-
 unset count
 rename UniCharCaseCmpTest {}
+
+proc GetUniCharTest {s index result} {
+    variable count
+    # Use quotes, not {} so test output shows exact string on error
+    test getunichar-1.$count "Tcl_GetUniChar $s $index" \
+        -constraints testgetunichar \
+        -body "testgetunichar $s $index" \
+        -result $result
+    incr count
+}
+variable count 1
+set errorIndicator [expr 0xFFFD]; # Decimalize U+FFFD
+GetUniCharTest abcd -2   $errorIndicator
+GetUniCharTest abcd -1   $errorIndicator
+GetUniCharTest abcd  0   97 ;# a -> ASCII 97
+GetUniCharTest abcd  3   100
+GetUniCharTest abcd  4    $errorIndicator
+GetUniCharTest abcd  1000 $errorIndicator
+
+GetUniCharTest \xe0bc\xe1 -2   $errorIndicator
+GetUniCharTest \xe0bc\xe1 -1   $errorIndicator
+GetUniCharTest \xe0bc\xe1  0   224 ;# \xe0 == 224
+GetUniCharTest \xe0bc\xe1  3   225
+GetUniCharTest \xe0bc\xe1  4    $errorIndicator
+GetUniCharTest \xe0bc\xe1  1000 $errorIndicator
+
+unset count
+rename GetUniCharTest ""
 
 # cleanup
 ::tcltest::cleanupTests

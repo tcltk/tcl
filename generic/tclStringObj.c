@@ -575,6 +575,9 @@ Tcl_GetUniChar(
 	if (stringPtr->numChars == -1) {
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
+        if (index >= stringPtr->numChars) {
+            return 0xFFFD;
+        }
 	if (stringPtr->numChars == objPtr->length) {
 	    return (unsigned char) objPtr->bytes[index];
 	}
@@ -631,7 +634,11 @@ TclGetUCS4(
 	if (stringPtr->numChars == -1) {
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
+        if (index >= stringPtr->numChars) {
+            return -1;
+        }
 	if (stringPtr->numChars == objPtr->length) {
+            /* Pure ascii, can directly index bytes */
 	    return (unsigned char) objPtr->bytes[index];
 	}
 	FillUnicodeRep(objPtr);
