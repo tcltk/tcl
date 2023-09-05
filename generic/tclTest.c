@@ -358,6 +358,7 @@ static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
 static Tcl_ObjCmdProc	TestUtfNextCmd;
 static Tcl_ObjCmdProc	TestUtfPrevCmd;
 static Tcl_ObjCmdProc	TestNumUtfCharsCmd;
+static Tcl_ObjCmdProc	TestGetUniCharCmd;
 static Tcl_ObjCmdProc	TestFindFirstCmd;
 static Tcl_ObjCmdProc	TestFindLastCmd;
 static Tcl_ObjCmdProc	TestHashSystemHashCmd;
@@ -718,6 +719,8 @@ Tcltest_Init(
 	    TestUtfPrevCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testgetunichar",
+                         TestGetUniCharCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindfirst",
 	    TestFindFirstCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindlast",
@@ -7751,6 +7754,34 @@ TestNumUtfCharsCmd(
 	len = Tcl_NumUtfChars(bytes, limit);
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(len));
     }
+    return TCL_OK;
+}
+
+
+/*
+ * Used to check correct operation of Tcl_GetUniChar
+ * testgetunichar STRING INDEX
+ * This differs from just using "string index" in being a direct
+ * call to Tcl_GetUniChar without any prior range checking.
+ */
+static int
+TestGetUniCharCmd(
+    ClientData dummy,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *const objv[]	/* Argument strings */
+    )
+{
+    int index;
+    int c ;
+    if (objc != 3) {
+       	Tcl_WrongNumArgs(interp, 1, objv, "STRING INDEX");
+	return TCL_ERROR; 
+    }
+    Tcl_GetIntFromObj(interp, objv[2], &index);
+    c = Tcl_GetUniChar(objv[1], index);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(c));
+
     return TCL_OK;
 }
 
