@@ -1641,11 +1641,11 @@ Tcl_DeleteAssocData(
 	return;
     }
     dPtr = (AssocData *)Tcl_GetHashValue(hPtr);
+    Tcl_DeleteHashEntry(hPtr);
     if (dPtr->proc != NULL) {
 	dPtr->proc(dPtr->clientData, interp);
     }
     Tcl_Free(dPtr);
-    Tcl_DeleteHashEntry(hPtr);
 }
 
 /*
@@ -6153,11 +6153,7 @@ TclNREvalObjEx(
 	 */
 
 	Tcl_IncrRefCount(objPtr);
-	listPtr = TclDuplicatePureObj(interp, objPtr, &tclListType);
-	if (!listPtr) {
-	    Tcl_DecrRefCount(objPtr);
-	    return TCL_ERROR;
-	}
+	listPtr = TclListObjCopy(interp, objPtr);
 	Tcl_IncrRefCount(listPtr);
 
 	if (word != INT_MIN) {
@@ -8525,7 +8521,7 @@ Tcl_NRCallObjProc2(
     Tcl_Interp *interp,
     Tcl_ObjCmdProc2 *objProc,
     void *clientData,
-    ptrdiff_t objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     if (objc > INT_MAX) {

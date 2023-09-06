@@ -379,11 +379,7 @@ ExecuteCallback(
     unsigned char *resBuf;
     Tcl_InterpState state = NULL;
     int res = TCL_OK;
-    Tcl_Obj *command = TclDuplicatePureObj(
-	interp, dataPtr->command, &tclListType);
-    if (!command) {
-	return TCL_ERROR;
-    }
+    Tcl_Obj *command = TclListObjCopy(NULL, dataPtr->command);
     Tcl_Interp *eval = dataPtr->interp;
 
     Tcl_Preserve(eval);

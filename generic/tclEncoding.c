@@ -3234,7 +3234,7 @@ UtfToUtf16Proc(
     }
 
     dstStart = dst;
-    dstEnd   = dst + dstLen - sizeof(Tcl_UniChar);
+    dstEnd   = dst + dstLen - 2; /* 2 -> sizeof a UTF-16 code unit */
     flags |= PTR2INT(clientData);
 
     result = TCL_OK;
@@ -3344,7 +3344,7 @@ UtfToUcs2Proc(
     }
 
     dstStart = dst;
-    dstEnd   = dst + dstLen - sizeof(Tcl_UniChar);
+    dstEnd   = dst + dstLen - 2; /* 2 - size of UCS code unit */
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd; numChars++) {
