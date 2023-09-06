@@ -210,10 +210,7 @@ static Tcl_ResolveCompiledVarProc	InterpCompiledVarResolver;
 static void		MainLoop(void);
 static Tcl_CmdProc	NoopCmd;
 static Tcl_ObjCmdProc	NoopObjCmd;
-static int		ObjTraceProc(void *clientData,
-			    Tcl_Interp *interp, int level, const char *command,
-			    Tcl_Command commandToken, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_CmdObjTraceProc ObjTraceProc;
 static void		ObjTraceDeleteProc(void *clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
 static void		SpecialFree(void *blockPtr);
@@ -331,6 +328,7 @@ static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
 static Tcl_ObjCmdProc	TestUtfNextCmd;
 static Tcl_ObjCmdProc	TestUtfPrevCmd;
 static Tcl_ObjCmdProc	TestNumUtfCharsCmd;
+static Tcl_ObjCmdProc	TestGetUniCharCmd;
 static Tcl_ObjCmdProc	TestFindFirstCmd;
 static Tcl_ObjCmdProc	TestFindLastCmd;
 static Tcl_ObjCmdProc	TestHashSystemHashCmd;
@@ -689,6 +687,8 @@ Tcltest_Init(
 	    TestUtfPrevCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testgetunichar",
+                         TestGetUniCharCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindfirst",
 	    TestFindFirstCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindlast",
@@ -1545,10 +1545,10 @@ static int
 ObjTraceProc(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    TCL_UNUSED(int) /*level*/,
+    TCL_UNUSED(int) /* level */,
     const char *command,
     TCL_UNUSED(Tcl_Command),
-    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(int) /* objc */,
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *word = Tcl_GetString(objv[0]);
@@ -7633,6 +7633,34 @@ TestNumUtfCharsCmd(
     return TCL_OK;
 }
 
+
+/*
+ * Used to check correct operation of Tcl_GetUniChar
+ * testgetunichar STRING INDEX
+ * This differs from just using "string index" in being a direct
+ * call to Tcl_GetUniChar without any prior range checking.
+ */
+static int
+TestGetUniCharCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *const objv[]	/* Argument strings */
+    )
+{
+    int index;
+    int c ;
+    if (objc != 3) {
+       	Tcl_WrongNumArgs(interp, 1, objv, "STRING INDEX");
+	return TCL_ERROR;
+    }
+    Tcl_GetIntFromObj(interp, objv[2], &index);
+    c = Tcl_GetUniChar(objv[1], index);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(c));
+
+    return TCL_OK;
+}
+
 /*
  * Used to check correct operation of Tcl_UtfFindFirst
  */
@@ -7935,8 +7963,8 @@ TestNRELevels(
     TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
 {
     Interp *iPtr = (Interp *) interp;
-    static ptrdiff_t *refDepth = NULL;
-    ptrdiff_t depth;
+    static Tcl_Size *refDepth = NULL;
+    Tcl_Size depth;
     Tcl_Obj *levels[6];
     Tcl_Size i = 0;
     NRE_callback *cbPtr = iPtr->execEnvPtr->callbackPtr;
