@@ -117,7 +117,7 @@ test get-3.4.1 {Tcl_GetDouble with iffy numbers} {testdoubleobj deprecated} {
 	catch {testdoubleobj set 1 $x} x
 	set x
     }
-} {9.0}
+} {{expected floating-point number but got "09" (looks like invalid octal number)}}
 
 test get-3.5 {tcl_GetInt with numeric whitespace (i.e. '_')} testgetint {
     lmap x {0_0 " 1_0" "0_2 " " 3_3 " 14__23__32___4 " 0x0_a " 0b1111_1111 " 0_07 " " 0o1_0 " " 0b_1_0 " " 0_b1_0 " _33 42_ 0_x15 0_o17 0_d19 0x_b 0o_2_0 0o2__3_4} {
