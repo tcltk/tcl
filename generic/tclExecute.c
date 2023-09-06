@@ -2666,7 +2666,7 @@ TEBCresume(
     case INST_EXPAND_STKTOP: {
 	Tcl_Size i;
 	TEBCdata *newTD;
-	ptrdiff_t oldCatchTopOff, oldTosPtrOff;
+	Tcl_Size oldCatchTopOff, oldTosPtrOff;
 
 	/*
 	 * Make sure that the element at stackTop is a list; if not, just
