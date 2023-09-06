@@ -2839,7 +2839,7 @@ Tcl_LremoveObjCmd(
 	Tcl_SetObjResult(interp, listObj);
 	return TCL_OK;
     }
-    idxv = (Tcl_Size *)Tcl_Alloc((objc - 2) * sizeof(*idxv));
+    idxv = (Tcl_Size *)ckalloc((objc - 2) * sizeof(*idxv));
     for (i = 2; i < objc; i++) {
 	status = (TclGetIntForIndexM(interp, objv[i], /*endValue*/ listLen - 1,
 		&idxv[i - 2]) != TCL_OK);

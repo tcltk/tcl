@@ -862,6 +862,9 @@ TclGetUniChar(
 	if (stringPtr->numChars == -1) {
 	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
+        if (index >= stringPtr->numChars) {
+            return -1;
+        }
 	if (stringPtr->numChars == objPtr->length) {
 	    return (unsigned char) objPtr->bytes[index];
 	}

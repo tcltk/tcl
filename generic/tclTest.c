@@ -236,10 +236,7 @@ static Tcl_ResolveCompiledVarProc	InterpCompiledVarResolver;
 static void		MainLoop(void);
 static Tcl_CmdProc	NoopCmd;
 static Tcl_ObjCmdProc	NoopObjCmd;
-static int		ObjTraceProc(void *clientData,
-			    Tcl_Interp *interp, int level, const char *command,
-			    Tcl_Command commandToken, int objc,
-			    Tcl_Obj *const objv[]);
+static Tcl_CmdObjTraceProc ObjTraceProc;
 static void		ObjTraceDeleteProc(void *clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
 static void		SpecialFree(char *blockPtr);
@@ -361,6 +358,7 @@ static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
 static Tcl_ObjCmdProc	TestUtfNextCmd;
 static Tcl_ObjCmdProc	TestUtfPrevCmd;
 static Tcl_ObjCmdProc	TestNumUtfCharsCmd;
+static Tcl_ObjCmdProc	TestGetUniCharCmd;
 static Tcl_ObjCmdProc	TestFindFirstCmd;
 static Tcl_ObjCmdProc	TestFindLastCmd;
 static Tcl_ObjCmdProc	TestHashSystemHashCmd;
@@ -721,6 +719,8 @@ Tcltest_Init(
 	    TestUtfPrevCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testgetunichar",
+                         TestGetUniCharCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindfirst",
 	    TestFindFirstCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindlast",
@@ -1170,6 +1170,8 @@ TestcmdinfoObjCmd(
 	    Tcl_AppendResult(interp, " stringProc", NULL);
 	} else if (info.isNativeObjectProc == 1) {
 	    Tcl_AppendResult(interp, " nativeObjectProc", NULL);
+	} else if (info.isNativeObjectProc == 2) {
+	    Tcl_AppendResult(interp, " nativeObjectProc2", NULL);
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("Invalid isNativeObjectProc value %d",
 		    info.isNativeObjectProc));
@@ -1302,7 +1304,7 @@ TestcmdtokenCmd(
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "create") == 0) {
-	refPtr = (TestCommandTokenRef *)Tcl_Alloc(sizeof(TestCommandTokenRef));
+	refPtr = (TestCommandTokenRef *)ckalloc(sizeof(TestCommandTokenRef));
 	refPtr->token = Tcl_CreateCommand(interp, argv[2], CmdProc0,
 		refPtr, CmdDelProc0);
 	refPtr->id = nextCommandTokenRefId;
@@ -1509,10 +1511,10 @@ static int
 ObjTraceProc(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    TCL_UNUSED(int) /*level*/,
+    TCL_UNUSED(int) /* level */,
     const char *command,
     TCL_UNUSED(Tcl_Command),
-    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(int) /* objc */,
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *word = Tcl_GetString(objv[0]);
@@ -5727,7 +5729,10 @@ TestbytestringObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    Tcl_Size n = 0;
+    struct {
+	Tcl_Size n;
+	int m; /* This variable should not be overwritten */
+    } x = {0, 1};
     const char *p;
 
     if (objc != 2) {
@@ -5735,11 +5740,15 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
 
-    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &n);
+    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &x.n);
     if (p == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
+    if (x.m != 1) {
+	Tcl_AppendResult(interp, "Tcl_GetBytesFromObj() overwrites variable", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, x.n));
     return TCL_OK;
 }
 
@@ -7748,6 +7757,34 @@ TestNumUtfCharsCmd(
     return TCL_OK;
 }
 
+
+/*
+ * Used to check correct operation of Tcl_GetUniChar
+ * testgetunichar STRING INDEX
+ * This differs from just using "string index" in being a direct
+ * call to Tcl_GetUniChar without any prior range checking.
+ */
+static int
+TestGetUniCharCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *const objv[]	/* Argument strings */
+    )
+{
+    int index;
+    int c ;
+    if (objc != 3) {
+       	Tcl_WrongNumArgs(interp, 1, objv, "STRING INDEX");
+	return TCL_ERROR;
+    }
+    Tcl_GetIntFromObj(interp, objv[2], &index);
+    c = Tcl_GetUniChar(objv[1], index);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(c));
+
+    return TCL_OK;
+}
+
 /*
  * Used to check correct operation of Tcl_UtfFindFirst
  */
@@ -8656,7 +8693,7 @@ MyCompiledVarFetch(
     }
 
     hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) &iPtr->globalNsPtr->varTable,
-            (char *) resVarInfo->nameObj, &isNewVar);
+            (char *)resVarInfo->nameObj, &isNewVar);
     if (hPtr) {
         var = (Tcl_Var) TclVarHashGetValue(hPtr);
     } else {
@@ -8825,4 +8862,3 @@ int TestApplyLambdaObjCmd (
  * indent-tabs-mode: nil
  * End:
  */
-
