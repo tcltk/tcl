@@ -7642,7 +7642,7 @@ TestNumUtfCharsCmd(
  */
 static int
 TestGetUniCharCmd(
-    ClientData dummy,	/* Not used. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[]	/* Argument strings */
