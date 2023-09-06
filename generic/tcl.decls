@@ -2593,7 +2593,7 @@ declare 678 {
 }
 declare 679 {
     int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2,
-	    void *clientData, ptrdiff_t objc, Tcl_Obj *const objv[])
+	    void *clientData, Tcl_Size objc, Tcl_Obj *const objv[])
 }
 
 # TIP #638.

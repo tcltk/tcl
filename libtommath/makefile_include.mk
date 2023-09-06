@@ -3,9 +3,9 @@
 #
 
 #version of library
-VERSION=1.2.0
-VERSION_PC=1.2.0
-VERSION_SO=3:0:2
+VERSION=1.2.1
+VERSION_PC=1.2.1
+VERSION_SO=3:1:2
 
 PLATFORM := $(shell uname | sed -e 's/_.*//')
 
@@ -116,10 +116,10 @@ endif
 
 # adjust coverage set
 ifneq ($(filter $(_ARCH), i386 i686 x86_64 amd64 ia64),)
-   COVERAGE = test timing
+   COVERAGE = test_standalone timing
    COVERAGE_APP = ./test && ./timing
 else
-   COVERAGE = test
+   COVERAGE = test_standalone
    COVERAGE_APP = ./test
 endif
 
@@ -134,10 +134,6 @@ PREFIX   ?= /usr/local
 LIBPATH  ?= $(PREFIX)/lib
 INCPATH  ?= $(PREFIX)/include
 DATAPATH ?= $(PREFIX)/share/doc/libtommath/pdf
-
-# build & run test-suite
-check: test
-	./test
 
 #make the code coverage of the library
 #
