@@ -1317,6 +1317,50 @@ Tcl_SetListObj(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclListObjCopy --
+ *
+ *	Makes a "pure list" copy of a list value. This provides for the C
+ *	level a counterpart of the [lrange $list 0 end] command, while using
+ *	internals details to be as efficient as possible.
+ *
+ * Results:
+ *	Normally returns a pointer to a new Tcl_Obj, that contains the same
+ *	list value as *listPtr does. The returned Tcl_Obj has a refCount of
+ *	zero. If *listPtr does not hold a list, NULL is returned, and if
+ *	interp is non-NULL, an error message is recorded there.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclListObjCopy(
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
+    Tcl_Obj *listObj)		/* List object for which an element array is
+				 * to be returned. */
+{
+    Tcl_Obj *copyObj;
+
+    if (!TclHasInternalRep(listObj, &tclListType)) {
+	if (TclObjTypeHasProc(listObj, lengthProc)) {
+	    return Tcl_DuplicateObj(listObj);
+	}
+	if (SetListFromAny(interp, listObj) != TCL_OK) {
+	    return NULL;
+	}
+    }
+
+    TclNewObj(copyObj);
+    TclInvalidateStringRep(copyObj);
+    DupListInternalRep(listObj, copyObj);
+    return copyObj;
+}
+
+/*
  *------------------------------------------------------------------------
  *
  * ListRepRange --
@@ -2528,7 +2572,6 @@ TclLindexList(
     Tcl_Obj *indexListCopy;
     Tcl_Obj **indexObjs;
     Tcl_Size numIndexObjs;
-    int status;
 
     /*
      * Determine whether argPtr designates a list or a single index. We have
@@ -2546,19 +2589,19 @@ TclLindexList(
     }
 
     /*
-     * Make a private copy of the index list argument to keep the internal
-     * representation of the indices array unchanged while it is in use.  This
-     * is probably unnecessary. It does not appear that any damaging change to
-     * the internal representation is possible, and no test has been devised to
-     * show any error when this private copy is not made, But it's cheap, and
-     * it offers some future-proofing insurance in case the TclLindexFlat
-     * implementation changes in some unexpected way, or some new form of trace
-     * or callback permits things to happen that the current implementation
-     * does not.
+     * Here we make a private copy of the index list argument to avoid any
+     * shimmering issues that might invalidate the indices array below while
+     * we are still using it. This is probably unnecessary. It does not appear
+     * that any damaging shimmering is possible, and no test has been devised
+     * to show any error when this private copy is not made. But it's cheap,
+     * and it offers some future-proofing insurance in case the TclLindexFlat
+     * implementation changes in some unexpected way, or some new form of
+     * trace or callback permits things to happen that the current
+     * implementation does not.
      */
 
-    indexListCopy = TclDuplicatePureObj(interp, argObj, &tclListType);
-    if (!indexListCopy) {
+    indexListCopy = TclListObjCopy(NULL, argObj);
+    if (indexListCopy == NULL) {
 	/*
 	 * The argument is neither an index nor a well-formed list.
 	 * Report the error via TclLindexFlat.
@@ -2566,17 +2609,7 @@ TclLindexList(
 	 */
 	return TclLindexFlat(interp, listObj, 1, &argObj);
     }
-    status = TclListObjGetElementsM(
-	interp, indexListCopy, &numIndexObjs, &indexObjs);
-    if (status != TCL_OK) {
-	Tcl_DecrRefCount(indexListCopy);
-	/*
-	 * The argument is neither an index nor a well-formed list.
-	 * Report the error via TclLindexFlat.
-	 * TODO - This is as original code. why not directly return an error?
-	 */
-	return TclLindexFlat(interp, listObj, 1, &argObj);
-    }
+    TclListObjGetElementsM(interp, indexListCopy, &numIndexObjs, &indexObjs);
     listObj = TclLindexFlat(interp, listObj, numIndexObjs, indexObjs);
     Tcl_DecrRefCount(indexListCopy);
     return listObj;
@@ -2768,8 +2801,7 @@ TclLsetList(
 
     } else {
 
-	indexListCopy = TclDuplicatePureObj(
-	    interp, indexArgObj, &tclListType);
+	indexListCopy = TclListObjCopy(NULL,indexArgObj);
 	if (!indexListCopy) {
 	    /*
 	     * indexArgPtr designates something that is neither an index nor a
@@ -2848,7 +2880,7 @@ TclLsetFlat(
     Tcl_Obj *valueObj)		/* Value arg to 'lset' or NULL to 'lpop'. */
 {
     Tcl_Size index, len;
-    int copied = 0, result;
+    int result;
     Tcl_Obj *subListObj, *retValueObj;
     Tcl_Obj *pendingInvalidates[10];
     Tcl_Obj **pendingInvalidatesPtr = pendingInvalidates;
@@ -2868,15 +2900,17 @@ TclLsetFlat(
     }
 
     /*
-     * If the list is shared, make a copy to modify (copy-on-write). The string
-     * representation and internal representation of listObj remains unchanged.
+     * If the list is shared, make a copy we can modify (copy-on-write).  We
+     * use Tcl_DuplicateObj() instead of TclListObjCopy() for a few reasons:
+     * 1) we have not yet confirmed listObj is actually a list; 2) We make a
+     * verbatim copy of any existing string rep, and when we combine that with
+     * the delayed invalidation of string reps of modified Tcl_Obj's
+     * implemented below, the outcome is that any error condition that causes
+     * this routine to return NULL, will leave the string rep of listObj and
+     * all elements to be unchanged.
      */
 
-    subListObj = Tcl_IsShared(listObj)
-	? TclDuplicatePureObj(interp, listObj, &tclListType) : listObj;
-    if (!subListObj) {
-	return NULL;
-    }
+    subListObj = Tcl_IsShared(listObj) ? Tcl_DuplicateObj(listObj) : listObj;
 
     /*
      * Anchor the linked list of Tcl_Obj's whose string reps must be
@@ -2927,6 +2961,11 @@ TclLsetFlat(
 	}
 	indexArray++;
 
+        /*
+         * Special case 0-length lists. The Tcl indexing function treat
+         * will return any value beyond length as TCL_SIZE_MAX for this
+         * case.
+         */
 	if ((index == TCL_SIZE_MAX) && (elemCount == 0)) {
 	    index = 0;
 	}
@@ -2949,9 +2988,10 @@ TclLsetFlat(
 	}
 
 	/*
-	 * No error conditions.  If this is not the last index, determine the
-	 * next sublist for the next pass through the loop, and take steps to
-	 * make sure it is unshared in order to modify it.
+	 * No error conditions.  As long as we're not yet on the last index,
+	 * determine the next sublist for the next pass through the loop,
+	 * and take steps to make sure it is an unshared copy, as we intend
+	 * to modify it.
 	 */
 
 	if (--indexCount) {
@@ -2962,12 +3002,7 @@ TclLsetFlat(
 		subListObj = elemPtrs[index];
 	    }
 	    if (Tcl_IsShared(subListObj)) {
-		subListObj = TclDuplicatePureObj(
-		    interp, subListObj, &tclListType);
-		if (!subListObj) {
-		    return NULL;
-		}
-		copied = 1;
+		subListObj = Tcl_DuplicateObj(subListObj);
 	    }
 
 	    /*
@@ -2985,17 +3020,7 @@ TclLsetFlat(
 		TclListObjSetElement(NULL, parentList, index, subListObj);
 	    }
 	    if (Tcl_IsShared(subListObj)) {
-		Tcl_Obj * newSubListObj;
-		newSubListObj = TclDuplicatePureObj(
-		    interp, subListObj, &tclListType);
-		if (copied) {
-		    Tcl_DecrRefCount(subListObj);
-		}
-		if (newSubListObj) {
-		    subListObj = newSubListObj;
-		} else {
-		    return NULL;
-		}
+		subListObj = Tcl_DuplicateObj(subListObj);
 		TclListObjSetElement(NULL, parentList, index, subListObj);
 	    }
 

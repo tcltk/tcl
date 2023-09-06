@@ -485,6 +485,49 @@ test lseq-3.33 {lsearch nested lists of lseq} -constraints arithSeriesShimmer -b
     unset srchlist i a b
 } -result {list {{20 23 26 29 32 35 38}} arithseries arithseries}
 
+test lseq-3.34 {"in" operator} -body {
+    set seq [lseq 0.3 15e4 0.1]
+    set inlist {}
+    set nilist {}
+    foreach y [lseq 3012.0 3013.0 0.03] {
+	if {$y in $seq} {
+	    lappend inlist $y
+	} else {
+	    lappend nilist $y
+	}
+    }
+    list $inlist $nilist
+} -cleanup {
+    unset seq inlist nilist y
+} -result {{3012.0 3012.3 3012.6 3012.9} {3012.03 3012.06 3012.09 3012.12 3012.15 3012.18 3012.21 3012.24 3012.27 3012.33 3012.36 3012.39 3012.42 3012.45 3012.48 3012.51 3012.54 3012.57 3012.63 3012.66 3012.69 3012.72 3012.75 3012.78 3012.81 3012.84 3012.87 3012.93 3012.96 3012.99}}
+
+test lseq-3.35 {"in" operator integer} -body {
+    set seq [lseq 3 int(15e4) 5]
+    set inlist {}
+    set nilist {}
+    foreach y [lseq 3012 3213 3] {
+	if {$y in $seq} {
+	    lappend inlist $y
+	} else {
+	    lappend nilist $y
+	}
+    }
+    list $inlist $nilist
+} -cleanup {
+    unset seq inlist nilist y
+} -result {{3018 3033 3048 3063 3078 3093 3108 3123 3138 3153 3168 3183 3198 3213} {3012 3015 3021 3024 3027 3030 3036 3039 3042 3045 3051 3054 3057 3060 3066 3069 3072 3075 3081 3084 3087 3090 3096 3099 3102 3105 3111 3114 3117 3120 3126 3129 3132 3135 3141 3144 3147 3150 3156 3159 3162 3165 3171 3174 3177 3180 3186 3189 3192 3195 3201 3204 3207 3210}}
+
+test lseq-3.36 {"in" non-numeric case} -body {
+    if {"barney" in [lseq 15]} {
+	set res found
+    } else {
+	set res not-found
+    }
+    set res
+} -cleanup {
+    unset res
+} -result {not-found}
+
 test lseq-4.1 {end expressions} -body {
     set start 7
     lseq $start $start+11
@@ -647,7 +690,7 @@ test lseq-4.12.32 {bug lseq} -constraints has32BitLengths -body {
     llength [lseq 0x100000000]
 } -returnCodes 1 -result {max length of a Tcl list exceeded}
 
-test lseq-4.13 {bug lseq} -constraints knownBug -body {
+test lseq-4.13 {bug lseq} -constraints has64BitLengths -body {
     set l [lseq 0x7fffffffffffffff]
     list \
     [llength $l] \

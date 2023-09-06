@@ -1,4 +1,5 @@
-compat/zlib/contrib/dotzlib/DotZLib/UnitTests.cs
+compat/zlib/contrib/dotzlib/readme.txt
+compat/zlib/contrib/dotzlib/*.cs
 compat/zlib/contrib/vstudio/readme.txt
 compat/zlib/contrib/vstudio/*/zlib.rc
 compat/zlib/contrib/vstudio/*/zlibvc.def

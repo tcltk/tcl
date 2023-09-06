@@ -1169,6 +1169,13 @@ TclObjTypeReplace(
     Tcl_ObjTypeReplaceProc *proc = TclObjTypeHasProc(objPtr, replaceProc);
     return proc(interp, objPtr, first, numToDelete, numToInsert, insertObjs);
 }
+static inline int
+TclObjTypeInOperator(Tcl_Interp *interp, struct Tcl_Obj *valueObj,
+		     struct Tcl_Obj *listObj, int *boolResult)
+{
+    Tcl_ObjTypeInOperatorProc *proc = TclObjTypeHasProc(listObj, inOperProc);
+    return proc(interp, valueObj, listObj, boolResult);
+}
 #endif /* TCL_MAJOR_VERSION > 8 */
 
 
@@ -3253,8 +3260,6 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
 MODULE_SCOPE Tcl_Size	TclDictGetSize(Tcl_Obj *dictPtr);
-MODULE_SCOPE Tcl_Obj *TclDuplicatePureObj(Tcl_Interp *interp,
-			    Tcl_Obj * objPtr, const Tcl_ObjType *typPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, Tcl_Size dictLength,
 			    const char **elementPtr, const char **nextPtr,
@@ -3385,6 +3390,7 @@ MODULE_SCOPE Tcl_Obj *	TclListObjGetElement(Tcl_Obj *listObj, Tcl_Size index);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, Tcl_Size line, Tcl_Size n,
 			    Tcl_Size *lines, Tcl_Obj *const *elems);
+MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
 			    Tcl_Obj *toObj, Tcl_Size elemCount,
 			    Tcl_Obj *const elemObjv[]);
@@ -4354,16 +4360,16 @@ MODULE_SCOPE int TclCommandWordLimitError(Tcl_Interp *interp, Tcl_Size count);
  *------------------------------------------------------------------------
  */
 static inline int TclGetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *sizePtr) {
-#if TCL_SIZE_MAX == INT_MAX
-    return TclGetIntFromObj(interp, objPtr, sizePtr);
-#else
-    Tcl_WideInt wide;
-    if (TclGetWideIntFromObj(interp, objPtr, &wide) != TCL_OK) {
-	return TCL_ERROR;
+    if (sizeof(Tcl_Size) == sizeof(int)) {
+	return TclGetIntFromObj(interp, objPtr, (int *)sizePtr);
+    } else {
+	Tcl_WideInt wide;
+	if (TclGetWideIntFromObj(interp, objPtr, &wide) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*sizePtr = (Tcl_Size)wide;
+	return TCL_OK;
     }
-    *sizePtr = (Tcl_Size)wide;
-    return TCL_OK;
-#endif
 }
 
 

@@ -1149,7 +1149,7 @@ ConsoleInputProc(
 	 * reader thread which handles these case rather than dealing with
 	 * them here (which is a little trickier than it might sound.)
 	 */
-	if ((1 & (ptrdiff_t)bufPtr) == 0 /* aligned buffer */
+	if ((1 & (size_t)bufPtr) == 0 /* aligned buffer */
 	    && bufSize > 1         /* Not single byte read */
 	) {
 	    DWORD lastError;

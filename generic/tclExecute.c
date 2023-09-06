@@ -2666,7 +2666,7 @@ TEBCresume(
     case INST_EXPAND_STKTOP: {
 	Tcl_Size i;
 	TEBCdata *newTD;
-	ptrdiff_t oldCatchTopOff, oldTosPtrOff;
+	Tcl_Size oldCatchTopOff, oldTosPtrOff;
 
 	/*
 	 * Make sure that the element at stackTop is a list; if not, just
@@ -3377,16 +3377,7 @@ TEBCresume(
 	    goto gotError;
 	}
 	if (Tcl_IsShared(objResultPtr)) {
-	    Tcl_Obj *newValue;
-
-	    DECACHE_STACK_INFO();
-	    newValue = TclDuplicatePureObj(interp, objResultPtr, &tclListType);
-	    CACHE_STACK_INFO();
-
-	    if (!newValue) {
-		TRACE_ERROR(interp);
-		goto gotError;
-	    }
+	    Tcl_Obj *newValue = Tcl_DuplicateObj(objResultPtr);
 
 	    TclDecrRefCount(objResultPtr);
 	    varPtr->value.objPtr = objResultPtr = newValue;
@@ -3445,13 +3436,7 @@ TEBCresume(
 		goto gotError;
 	    } else {
 		if (Tcl_IsShared(objResultPtr)) {
-		    DECACHE_STACK_INFO();
-		    valueToAssign = TclDuplicatePureObj(
-			interp, objResultPtr, &tclListType);
-		    CACHE_STACK_INFO();
-		    if (!valueToAssign) {
-			goto errorInLappendListPtr;
-		    }
+		    valueToAssign = Tcl_DuplicateObj(objResultPtr);
 		    createdNewObj = 1;
 		} else {
 		    valueToAssign = objResultPtr;
@@ -3626,7 +3611,7 @@ TEBCresume(
 			objResultPtr = objPtr;
 
 			/*
-			 * We know the sum value is outside the long range;
+			 * We know the sum value is outside the Tcl_WideInt range;
 			 * use macro form that doesn't range test again.
 			 */
 
@@ -4692,6 +4677,10 @@ TEBCresume(
 		goto gotError;
 	    }
 	    CACHE_STACK_INFO();
+	    if (objResultPtr == NULL) {
+		/* Index is out of range, return empty result. */
+		TclNewObj(objResultPtr);
+	    }
 	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
 	}
@@ -5018,50 +5007,60 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
-	s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
-	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
-	if (TclListObjLengthM(interp, value2Ptr, &length) != TCL_OK) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	}
-	match = 0;
-	if (length > 0) {
-	    Tcl_Size i = 0;
-	    Tcl_Obj *o;
-	    int isAbstractList = TclObjTypeHasProc(value2Ptr,indexProc) != NULL;
+        s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
+        TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
-	    /*
-	     * An empty list doesn't match anything.
-	     */
+        if (TclObjTypeHasProc(value2Ptr,inOperProc) != NULL) {
+            int status = TclObjTypeInOperator(interp, valuePtr, value2Ptr, &match);
+            if (status != TCL_OK) {
+                TRACE_ERROR(interp);
+                goto gotError;
+            }
+        } else {
 
-	    do {
-		if (isAbstractList) {
-		    DECACHE_STACK_INFO();
-		    if (TclObjTypeIndex(interp, value2Ptr, i, &o) != TCL_OK) {
-			CACHE_STACK_INFO();
-			TRACE_ERROR(interp);
-			goto gotError;
-		    }
-		    CACHE_STACK_INFO();
-		} else {
-		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
-		}
-		if (o != NULL) {
-		    s2 = Tcl_GetStringFromObj(o, &s2len);
-		} else {
-		    s2 = "";
-		    s2len = 0;
-		}
-		if (s1len == s2len) {
-		    match = (memcmp(s1, s2, s1len) == 0);
-		}
+            if (TclListObjLengthM(interp, value2Ptr, &length) != TCL_OK) {
+                TRACE_ERROR(interp);
+                goto gotError;
+            }
+            match = 0;
+            if (length > 0) {
+                Tcl_Size i = 0;
+                Tcl_Obj *o;
+                int isAbstractList = TclObjTypeHasProc(value2Ptr,indexProc) != NULL;
 
-		/* Could be an ephemeral abstract obj */
-		Tcl_BumpObj(o);
+                /*
+                 * An empty list doesn't match anything.
+                 */
 
-		i++;
-	    } while (i < length && match == 0);
-	}
+                do {
+                    if (isAbstractList) {
+                        DECACHE_STACK_INFO();
+                        if (TclObjTypeIndex(interp, value2Ptr, i, &o) != TCL_OK) {
+                            CACHE_STACK_INFO();
+                            TRACE_ERROR(interp);
+                            goto gotError;
+                        }
+                        CACHE_STACK_INFO();
+                    } else {
+                        Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
+                    }
+                    if (o != NULL) {
+                        s2 = Tcl_GetStringFromObj(o, &s2len);
+                    } else {
+                        s2 = "";
+                        s2len = 0;
+                    }
+                    if (s1len == s2len) {
+                        match = (memcmp(s1, s2, s1len) == 0);
+                    }
+
+                    /* Could be an ephemeral abstract obj */
+                    Tcl_BounceRefCount(o);
+
+                    i++;
+                } while (i < length && match == 0);
+            }
+        }
 
 	if (*pc == INST_LIST_NOT_IN) {
 	    match = !match;
@@ -5924,12 +5923,12 @@ TEBCresume(
 		     * Quickly force large right shifts to 0 or -1.
 		     */
 
-		    if (w2 >= (Tcl_WideInt)(CHAR_BIT*sizeof(long))) {
+		    if (w2 >= (Tcl_WideInt)(CHAR_BIT*sizeof(w1))) {
 			/*
 			 * We assume that INT_MAX is much larger than the
-			 * number of bits in a long. This is a pretty safe
+			 * number of bits in a Tcl_WideInt. This is a pretty safe
 			 * assumption, given that the former is usually around
-			 * 4e9 and the latter 32 or 64...
+			 * 4e9 and the latter 64...
 			 */
 
 			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
@@ -5943,7 +5942,7 @@ TEBCresume(
 		    }
 
 		    /*
-		     * Handle shifts within the native long range.
+		     * Handle shifts within the native Tcl_WideInt range.
 		     */
 
 		    wResult = w1 >> ((int) w2);
@@ -5989,12 +5988,12 @@ TEBCresume(
 		    int shift = (int) w2;
 
 		    /*
-		     * Handle shifts within the native long range.
+		     * Handle shifts within the native Tcl_WideInt range.
 		     */
 
-		    if (((size_t)shift < CHAR_BIT*sizeof(long))
+		    if (((size_t)shift < CHAR_BIT*sizeof(w1))
 			    && !((w1>0 ? w1 : ~w1) &
-				-(1UL<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
+				-((Tcl_WideUInt)1<<(CHAR_BIT*sizeof(w1) - 1 - shift)))) {
 			wResult = (Tcl_WideUInt)w1 << shift;
 			goto wideResultOfArithmetic;
 		    }
@@ -6094,7 +6093,7 @@ TEBCresume(
 #endif
 
 	/*
-	 * Handle (long,long) arithmetic as best we can without going out to
+	 * Handle Tcl_WideInt arithmetic as best we can without going out to
 	 * an external function.
 	 */
 
@@ -6469,13 +6468,7 @@ TEBCresume(
 		goto gotError;
 	    }
 	    if (Tcl_IsShared(listPtr)) {
-		DECACHE_STACK_INFO();
-		objPtr = TclDuplicatePureObj(
-		    interp, listPtr, &tclListType);
-		CACHE_STACK_INFO();
-		if (!objPtr) {
-		    goto gotError;
-		}
+		objPtr = TclListObjCopy(NULL, listPtr);
 		Tcl_IncrRefCount(objPtr);
 		Tcl_DecrRefCount(listPtr);
 		OBJ_AT_DEPTH(listTmpDepth) = objPtr;
@@ -7976,8 +7969,8 @@ ExecuteExtendedBinaryMathOp(
     mp_int big1, big2, bigResult, bigRemainder;
     Tcl_Obj *objResultPtr;
     int invalid, zero;
-    long shift;
-	mp_err err;
+    int shift;
+    mp_err err;
 
     (void) GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
     (void) GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
@@ -8376,7 +8369,7 @@ ExecuteExtendedBinaryMathOp(
 	 * We refuse to accept exponent arguments that exceed one mp_digit
 	 * which means the max exponent value is 2**28-1 = 0x0FFFFFFF =
 	 * 268435455, which fits into a signed 32 bit int which is within the
-	 * range of the long int type. This means any numeric Tcl_Obj value
+	 * range of the Tcl_WideInt type. This means any numeric Tcl_Obj value
 	 * not using TCL_NUMBER_INT type must hold a value larger than we
 	 * accept.
 	 */
@@ -8774,7 +8767,7 @@ TclCompareTwoNumbers(
 	    d1 = (double) w1;
 
 	    /*
-	     * If the double has a fractional part, or if the long can be
+	     * If the double has a fractional part, or if the Tcl_WideInt can be
 	     * converted to double without loss of precision, then compare as
 	     * doubles.
 	     */
@@ -8852,7 +8845,7 @@ TclCompareTwoNumbers(
 		mp_clear(&big2);
 		return compare;
 	    }
-	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(long)
+	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
 		    && modf(d1, &tmp) != 0.0) {
 		d2 = TclBignumToDouble(&big2);
 		mp_clear(&big2);
@@ -8882,7 +8875,7 @@ TclCompareTwoNumbers(
 		mp_clear(&big1);
 		return compare;
 	    }
-	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(long)
+	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
 		    && modf(d2, &tmp) != 0.0) {
 		d1 = TclBignumToDouble(&big1);
 		mp_clear(&big1);
