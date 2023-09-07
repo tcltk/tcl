@@ -106,9 +106,8 @@ to access the files inside the mount).
 \fBzipfs root\fR
 .
 Returns a constant string which indicates the mount point for zipfs volumes
-for the current platform. On Windows, this value is
-.QW \fBzipfs:/\fR .
-On Unix, this value is
+for the current platform.
+This value is
 .QW \fB//zipfs:/\fR .
 .TP
 \fBzipfs unmount \fImountpoint\fR
