@@ -2346,8 +2346,8 @@ declare 634 {
     Tcl_Obj *TclZipfs_TclLibrary(void)
 }
 declare 635 {
-    int TclZipfs_MountBuffer(Tcl_Interp *interp, const char *mountPoint,
-	    unsigned char *data, size_t datalen, int copy)
+    int TclZipfs_MountBuffer(Tcl_Interp *interp, const void *data,
+	    size_t datalen, const char *mountPoint, int copy)
 }
 
 # TIP #445

@@ -31,7 +31,7 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBzipfs unmount\fR \fImountpoint\fR
 .fi
 '\" The following subcommand is *UNDOCUMENTED*
-'\" \fBzipfs mount_data\fR ?\fImountpoint\fR? ?\fIdata\fR?
+'\" \fBzipfs mount_data\fR ?\fIdata\fR ?\fImountpoint\fR??
 .BE
 .SH DESCRIPTION
 .PP

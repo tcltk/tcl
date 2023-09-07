@@ -2058,9 +2058,9 @@ TclZipfs_Mount(
 int
 TclZipfs_MountBuffer(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    const char *mountPoint,	/* Mount point path. */
-    unsigned char *data,
+    const void *data,
     size_t datalen,
+    const char *mountPoint,	/* Mount point path. */
     int copy)
 {
     ZipFile *zf;
@@ -2112,7 +2112,7 @@ TclZipfs_MountBuffer(
 	memcpy(zf->data, data, datalen);
 	zf->ptrToFree = zf->data;
     } else {
-	zf->data = data;
+	zf->data = (unsigned char *) data;
 	zf->ptrToFree = NULL;
     }
     if (ZipFSFindTOC(interp, 0, zf) != TCL_OK) {
@@ -2292,7 +2292,7 @@ ZipFSMountBufferObjCmd(
     int length;
 
     if (objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? ?data?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?data? ?mountpoint?");
 	return TCL_ERROR;
     }
     if (objc < 2) {
@@ -2304,19 +2304,19 @@ ZipFSMountBufferObjCmd(
 	return ret;
     }
 
-    mountPoint = Tcl_GetString(objv[1]);
     if (objc < 3) {
 	ReadLock();
-	DescribeMounted(interp, mountPoint);
+	DescribeMounted(interp, Tcl_GetString(objv[1]));
 	Unlock();
 	return TCL_OK;
     }
 
-    data = TclGetBytesFromObj(interp, objv[2], &length);
+    data = TclGetBytesFromObj(interp, objv[1], &length);
+    mountPoint = Tcl_GetString(objv[2]);
     if (data == NULL) {
 	return TCL_ERROR;
     }
-    return TclZipfs_MountBuffer(interp, mountPoint, data, length, 1);
+    return TclZipfs_MountBuffer(interp, data, length, mountPoint, 1);
 }
 
 /*
@@ -5960,9 +5960,9 @@ TclZipfs_Mount(
 int
 TclZipfs_MountBuffer(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    TCL_UNUSED(const char *),	/* Mount point path. */
-    TCL_UNUSED(unsigned char *),
+    TCL_UNUSED(const void *),
     TCL_UNUSED(size_t),
+    TCL_UNUSED(const char *),	/* Mount point path. */
     TCL_UNUSED(int))
 {
     ZIPFS_ERROR(interp, "no zlib available");

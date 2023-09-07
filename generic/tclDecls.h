@@ -1893,8 +1893,8 @@ EXTERN int		TclZipfs_Unmount(Tcl_Interp *interp,
 EXTERN Tcl_Obj *	TclZipfs_TclLibrary(void);
 /* 635 */
 EXTERN int		TclZipfs_MountBuffer(Tcl_Interp *interp,
-				const char *mountPoint, unsigned char *data,
-				size_t datalen, int copy);
+				const void *data, size_t datalen,
+				const char *mountPoint, int copy);
 /* 636 */
 EXTERN void		Tcl_FreeInternalRep(Tcl_Obj *objPtr);
 /* 637 */
@@ -2721,7 +2721,7 @@ typedef struct TclStubs {
     int (*tclZipfs_Mount) (Tcl_Interp *interp, const char *zipname, const char *mountPoint, const char *passwd); /* 632 */
     int (*tclZipfs_Unmount) (Tcl_Interp *interp, const char *mountPoint); /* 633 */
     Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
-    int (*tclZipfs_MountBuffer) (Tcl_Interp *interp, const char *mountPoint, unsigned char *data, size_t datalen, int copy); /* 635 */
+    int (*tclZipfs_MountBuffer) (Tcl_Interp *interp, const void *data, size_t datalen, const char *mountPoint, int copy); /* 635 */
     void (*tcl_FreeInternalRep) (Tcl_Obj *objPtr); /* 636 */
     char * (*tcl_InitStringRep) (Tcl_Obj *objPtr, const char *bytes, TCL_HASH_TYPE numBytes); /* 637 */
     Tcl_ObjInternalRep * (*tcl_FetchInternalRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 638 */
