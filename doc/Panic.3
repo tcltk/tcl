@@ -82,8 +82,8 @@ making calls into the Tcl library, or into other libraries that may
 call the Tcl library, since the original call to \fBTcl_Panic\fR
 indicates the Tcl library is not in a state of reliable operation.
 .PP
-The result of \fBTcl_SetPanicProc\fR is the full Tcl version (e.g.,
-\fB8.7.0+abcdef...abcdef.gcc-1002.utf16\fR).
+The result of \fBTcl_SetPanicProc\fR is the full Tcl version with build
+information (e.g., \fB8.7.0+abcdef...abcdef.gcc-1002\fR).
 .PP
 The typical use of \fBTcl_SetPanicProc\fR arranges for the error message
 to be displayed or reported in a manner more suitable for the
