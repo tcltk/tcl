@@ -31,7 +31,7 @@ apply [list {} {
     set TestsDir [file normalize [file dirname [info script]]]
 
     set ZipMountPoint [zipfs root]auto-files
-    zipfs mount $ZipMountPoint [file join $TestsDir auto-files.zip]
+    zipfs mount [file join $TestsDir auto-files.zip] $ZipMountPoint
 
     set PathMapp {}
     lappend PathMapp $tcl_library TCLLIB $TestsDir TESTSDIR $ZipMountPoint ZIPDIR

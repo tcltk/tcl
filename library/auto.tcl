@@ -92,7 +92,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 			break
 		    }
 		    set found 1
-		    zipfs mount $mountpoint $dllfile
+		    zipfs mount $dllfile $mountpoint
 		    break
 		}
 		if {!$found} {
@@ -118,7 +118,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 			if {![file exists $archive]} {
 			    continue
 			}
-			zipfs mount $mountpoint $archive
+			zipfs mount $archive $mountpoint
 			if {[zipfs exists [file join $mountpoint ${basename}_library $initScript]]} {
 			    lappend dirs [file join $mountpoint ${basename}_library]
 			    set found 1

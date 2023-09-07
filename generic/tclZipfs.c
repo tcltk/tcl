@@ -1980,9 +1980,9 @@ DescribeMounted(
 int
 TclZipfs_Mount(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    const char *mountPoint,	/* Mount point path. */
     const char *zipname,	/* Path to ZIP file to mount; should be
 				 * normalized. */
+    const char *mountPoint,	/* Mount point path. */
     const char *passwd)		/* Password for opening the ZIP, or NULL if
 				 * the ZIP is unprotected. */
 {
@@ -2236,14 +2236,11 @@ ZipFSMountObjCmd(
 
     if (objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		 "?mountpoint? ?zipfile? ?password?");
+		 "?zipfile? ?mountpoint? ?password?");
 	return TCL_ERROR;
     }
     if (objc > 1) {
-	mountPoint = Tcl_GetString(objv[1]);
-    }
-    if (objc > 2) {
-	zipFileObj = Tcl_FSGetNormalizedPath(interp, objv[2]);
+	zipFileObj = Tcl_FSGetNormalizedPath(interp, objv[1]);
 	if (!zipFileObj) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "could not normalize zip filename", -1));
@@ -2253,11 +2250,14 @@ ZipFSMountObjCmd(
 	Tcl_IncrRefCount(zipFileObj);
 	zipFile = Tcl_GetString(zipFileObj);
     }
+    if (objc > 2) {
+	mountPoint = Tcl_GetString(objv[2]);
+    }
     if (objc > 3) {
 	password = Tcl_GetString(objv[3]);
     }
 
-    result = TclZipfs_Mount(interp, mountPoint, zipFile, password);
+    result = TclZipfs_Mount(interp, zipFile, mountPoint, password);
     if (zipFileObj != NULL) {
 	Tcl_DecrRefCount(zipFileObj);
     }
@@ -5722,7 +5722,7 @@ ZipfsAppHookFindTclInit(
     if (zipfs_literal_tcl_library) {
 	return TCL_ERROR;
     }
-    if (TclZipfs_Mount(NULL, ZIPFS_ZIP_MOUNT, archive, NULL)) {
+    if (TclZipfs_Mount(NULL, archive, ZIPFS_ZIP_MOUNT, NULL)) {
 	/* Either the file doesn't exist or it is not a zip archive */
 	return TCL_ERROR;
     }
@@ -5836,7 +5836,7 @@ TclZipfs_AppHook(
      * function.
      */
 
-    if (!TclZipfs_Mount(NULL, ZIPFS_APP_MOUNT, archive, NULL)) {
+    if (!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
 	int found;
 	Tcl_Obj *vfsInitScript;
 
@@ -5898,7 +5898,7 @@ TclZipfs_AppHook(
 		Tcl_SetStartupScript(vfsInitScript, NULL);
 	    }
 	    return version;
-	} else if (!TclZipfs_Mount(NULL, ZIPFS_APP_MOUNT, archive, NULL)) {
+	} else if (!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
 	    int found;
 	    Tcl_Obj *vfsInitScript;
 
@@ -5947,8 +5947,8 @@ TclZipfs_AppHook(
 int
 TclZipfs_Mount(
     Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(const char *),	/* Mount point path. */
     TCL_UNUSED(const char *),	/* Path to ZIP file to mount. */
+    TCL_UNUSED(const char *),	/* Mount point path. */
     TCL_UNUSED(const char *))		/* Password for opening the ZIP, or NULL if
 				 * the ZIP is unprotected. */
 {

@@ -17,7 +17,7 @@ const char *
 \fBTclZipfs_AppHook(\fIargcPtr, argvPtr\fR)
 .sp
 int
-\fBTclZipfs_Mount\fR(\fIinterp, mountpoint, zipname, password\fR)
+\fBTclZipfs_Mount\fR(\fIinterp, zipname, mountpoint, password\fR)
 .sp
 int
 \fBTclZipfs_MountBuffer\fR(\fIinterp, mountpoint, data, dataLen, copy\fR)
@@ -85,8 +85,8 @@ it uses WCHAR instead of char. As a result, it requires your application to
 be compiled with the UNICODE preprocessor symbol defined (e.g., via the
 \fB-DUNICODE\fR compiler flag).
 .PP
-The result of \fBTclZipfs_AppHook\fR is the full Tcl version (e.g.,
-\fB8.7.0+abcdef...abcdef.gcc-1002.utf16\fR).
+The result of \fBTclZipfs_AppHook\fR is the full Tcl version with build
+information (e.g., \fB8.7.0+abcdef...abcdef.gcc-1002\fR).
 The function \fImay\fR modify the variables pointed to by \fIargcPtr\fR and
 \fIargvPtr\fR to remove arguments; the current implementation does not do so,
 but callers \fIshould not\fR assume that this will be true in the future.

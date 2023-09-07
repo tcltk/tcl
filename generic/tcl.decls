@@ -2336,8 +2336,8 @@ declare 631 {
 
 # TIP #430
 declare 632 {
-    int TclZipfs_Mount(Tcl_Interp *interp, const char *mountPoint,
-	    const char *zipname, const char *passwd)
+    int TclZipfs_Mount(Tcl_Interp *interp, const char *zipname,
+	    const char *mountPoint, const char *passwd)
 }
 declare 633 {
     int TclZipfs_Unmount(Tcl_Interp *interp, const char *mountPoint)
