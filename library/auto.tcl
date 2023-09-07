@@ -128,7 +128,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 			    set found 1
 			    break
 			} else {
-			    catch {zipfs unmount $archive}
+			    catch {zipfs unmount $mountpoint}
 			}
 	      	    }
 		}

@@ -2370,7 +2370,7 @@ ZipFSUnmountObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "zipfile");
+	Tcl_WrongNumArgs(interp, 1, objv, "mountpoint");
 	return TCL_ERROR;
     }
     return TclZipfs_Unmount(interp, Tcl_GetString(objv[1]));
@@ -3669,22 +3669,13 @@ ZipFSExistsObjCmd(
 {
     char *filename;
     int exists;
-    Tcl_DString ds;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "filename");
 	return TCL_ERROR;
     }
 
-    /*
-     * Prepend ZIPFS_VOLUME to filename, eliding the final /
-     */
-
     filename = Tcl_GetString(objv[1]);
-    Tcl_DStringInit(&ds);
-    Tcl_DStringAppend(&ds, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN - 1);
-    Tcl_DStringAppend(&ds, filename, -1);
-    filename = Tcl_DStringValue(&ds);
 
     ReadLock();
     exists = ZipFSLookup(filename) != NULL;

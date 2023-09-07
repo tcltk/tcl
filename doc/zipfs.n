@@ -192,7 +192,7 @@ set base [file join [\fBzipfs root\fR] myApp]
 source [file join $base app.tcl]
 # use the contents, load libraries from it, etc...
 
-\fBzipfs unmount\fR $zip
+\fBzipfs unmount\fR $base
 .CE
 .PP
 Creating a ZIP archive, given that a directory exists containing the content

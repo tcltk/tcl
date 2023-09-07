@@ -96,7 +96,7 @@ test zipfs-1.3 {zipfs errors} -constraints zipfs -returnCodes error -body {
 } -result {wrong # args: should be "zipfs mount ?zipfile? ?mountpoint? ?password?"}
 test zipfs-1.4 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs unmount a b c d e f
-} -result {wrong # args: should be "zipfs unmount zipfile"}
+} -result {wrong # args: should be "zipfs unmount mountpoint"}
 test zipfs-1.5 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs mkkey a b c d e f
 } -result {wrong # args: should be "zipfs mkkey password"}
