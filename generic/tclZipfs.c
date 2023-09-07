@@ -81,10 +81,10 @@ static const z_crc_t* crc32tab;
 ** TIP430 style zipfs prefix
 */
 
-#define ZIPFS_VOLUME	  "//zipfs:/"
-#define ZIPFS_VOLUME_LEN  9
-#define ZIPFS_APP_MOUNT	  "//zipfs:/app"
-#define ZIPFS_ZIP_MOUNT	  "//zipfs:/lib/tcl"
+#define ZIPFS_VOLUME	  "/zipfs:/"
+#define ZIPFS_VOLUME_LEN  8
+#define ZIPFS_APP_MOUNT	  ZIPFS_VOLUME "app"
+#define ZIPFS_ZIP_MOUNT	  ZIPFS_VOLUME "lib/tcl"
 #define ZIPFS_FALLBACK_ENCODING "cp437"
 
 /*
@@ -852,7 +852,6 @@ CanonicalPath(
 #endif /* _WIN32 */
 
     if (haveZipfsPath) {
-	/* UNC style path */
 	if (root && strncmp(root, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) == 0) {
 	    isVfs = 1;
 	} else if (tail &&

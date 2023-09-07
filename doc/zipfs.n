@@ -108,7 +108,7 @@ to access the files inside the mount).
 Returns a constant string which indicates the mount point for zipfs volumes
 for the current platform.
 This value is
-.QW \fB//zipfs:/\fR .
+.QW \fB/zipfs:/\fR .
 .TP
 \fBzipfs unmount \fImountpoint\fR
 .
@@ -244,7 +244,7 @@ close $f
 
 # Launch the executable, printing its output to stdout
 exec $img >@stdout
-#    prints: \fIHi. This is //zipfs:/app/main.tcl\fR
+#    prints: \fIHi. This is /zipfs:/app/main.tcl\fR
 .CE
 .SH "SEE ALSO"
 tclsh(1), file(n), zipfs(3), zlib(n)
