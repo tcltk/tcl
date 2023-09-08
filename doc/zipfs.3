@@ -17,10 +17,10 @@ const char *
 \fBTclZipfs_AppHook(\fIargcPtr, argvPtr\fR)
 .sp
 int
-\fBTclZipfs_Mount\fR(\fIinterp, mountpoint, zipname, password\fR)
+\fBTclZipfs_Mount\fR(\fIinterp, zipname, mountpoint, password\fR)
 .sp
 int
-\fBTclZipfs_MountBuffer\fR(\fIinterp, mountpoint, data, dataLen, copy\fR)
+\fBTclZipfs_MountBuffer\fR(\fIinterp, data, dataLen, mountpoint, copy\fR)
 .sp
 int
 \fBTclZipfs_Unmount\fR(\fIinterp, mountpoint\fR)
@@ -43,7 +43,7 @@ Name of a mount point, which must be a legal Tcl file or directory name. May
 be NULL to query current mount points.
 .AP "const char" *password in
 An (optional) password. Use NULL if no password is wanted to read the file.
-.AP "unsigned char" *data in
+.AP "const void" *data in
 A data buffer to mount. The data buffer must hold the contents of a ZIP
 archive, and must not be NULL.
 .AP size_t dataLen in
