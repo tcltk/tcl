@@ -42,7 +42,7 @@ if {![string match ${ziproot}* $tcl_library]} {
     set tclzip [file join $CWD libtcl[info patchlevel].zip]
     testConstraint zipfslib [file isfile $tclzip]
     if {[testConstraint zipfslib]} {
-        zipfs mount /lib/tcl $tclzip
+        zipfs mount $tclzip /lib/tcl
         set ::tcl_library ${ziproot}lib/tcl/tcl_library
     }
 }
@@ -82,21 +82,21 @@ test zipfs-0.9 {zipfs basics: glob} -constraints zipfslib -body {
     glob -nocomplain -tails -types f -dir $tcl_library http*
 } -result {}
 test zipfs-0.10 {zipfs basics: join} -constraints {zipfs zipfslib} -body {
-    file join [zipfs root] bar baz
-} -result "[zipfs root]bar/baz"
+    file join ${ziproot} bar baz
+} -result "${ziproot}bar/baz"
 test zipfs-0.11 {zipfs basics: join} -constraints {zipfs zipfslib} -body {
-    file normalize [zipfs root]
-} -result "[zipfs root]"
+    file normalize ${ziproot}
+} -result "${ziproot}"
 test zipfs-0.12 {zipfs basics: join} -constraints {zipfs zipfslib} -body {
-    file normalize [zipfs root]//bar/baz//qux/../
-} -result "[zipfs root]bar/baz"
+    file normalize ${ziproot}//bar/baz//qux/../
+} -result "${ziproot}bar/baz"
 
 test zipfs-1.3 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs mount a b c d e f
-} -result {wrong # args: should be "zipfs mount ?mountpoint? ?zipfile? ?password?"}
+} -result {wrong # args: should be "zipfs mount ?zipfile? ?mountpoint? ?password?"}
 test zipfs-1.4 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs unmount a b c d e f
-} -result {wrong # args: should be "zipfs unmount zipfile"}
+} -result {wrong # args: should be "zipfs unmount mountpoint"}
 test zipfs-1.5 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs mkkey a b c d e f
 } -result {wrong # args: should be "zipfs mkkey password"}
@@ -131,12 +131,12 @@ if {[file exists $zipfile]} {
 test zipfs-2.2 {zipfs mkzip} -constraints zipfs -body {
     cd $tcl_library/encoding
     zipfs mkzip $zipfile .
-    zipfs mount ${ziproot}abc $zipfile
+    zipfs mount $zipfile ${ziproot}abc
     zipfs list -glob ${ziproot}abc/cp850.*
 } -cleanup {
     cd $CWD
-} -result "[zipfs root]abc/cp850.enc"
-testConstraint zipfsenc [zipfs exists /abc/cp850.enc]
+} -result "${ziproot}abc/cp850.enc"
+testConstraint zipfsenc [zipfs exists ${ziproot}abc/cp850.enc]
 test zipfs-2.3 {zipfs info} -constraints {zipfs zipfsenc} -body {
     set r [zipfs info ${ziproot}abc/cp850.enc]
     lrange $r 0 2
@@ -166,7 +166,7 @@ S
 00AD00B1201700BE00B600A700F700B800B000A800B700B900B300B225A000A0
 } ;# FIXME: result depends on content of encodings dir
 test zipfs-2.5 {zipfs exists} -constraints {zipfs zipfsenc} -body {
-    zipfs exists /abc/cp850.enc
+    zipfs exists ${ziproot}abc/cp850.enc
 } -result 1
 test zipfs-2.6 {zipfs unmount while busy} -constraints {zipfs zipfsenc} -body {
     zipfs unmount /abc
@@ -186,12 +186,12 @@ test zipfs-2.8 {zipfs mkzip} -constraints zipfs -body {
     fconfigure $fin -translation binary
     set dat [read $fin]
     close $fin
-    zipfs mount_data def $dat
+    zipfs mount_data $dat def
     zipfs list -glob ${ziproot}def/cp850.*
 } -cleanup {
     cd $CWD
-} -result "[zipfs root]def/cp850.enc"
-testConstraint zipfsencbuf [zipfs exists /def/cp850.enc]
+} -result "${ziproot}def/cp850.enc"
+testConstraint zipfsencbuf [zipfs exists ${ziproot}def/cp850.enc]
 test zipfs-2.9 {zipfs info} -constraints {zipfs zipfsencbuf} -body {
     set r [zipfs info ${ziproot}def/cp850.enc]
     lrange $r 0 2
@@ -221,7 +221,7 @@ S
 00AD00B1201700BE00B600A700F700B800B000A800B700B900B300B225A000A0
 } ;# FIXME: result depends on content of encodings dir
 test zipfs-2.11 {zipfs exists} -constraints {zipfs zipfsencbuf} -body {
-    zipfs exists /def/cp850.enc
+    zipfs exists ${ziproot}def/cp850.enc
 } -result 1
 test zipfs-2.12 {zipfs unmount while busy} -constraints {zipfs zipfsencbuf} -body {
     zipfs unmount /def
@@ -278,9 +278,9 @@ test zipfs-4.1 {zipfs lmkimg} -constraints zipfs -setup {
     file delete $targetImage
 } -body {
     zipfs lmkimg $targetImage [list $addFile test/add.tcl] {} $baseImage
-    zipfs mount ziptest $targetImage
+    zipfs mount $targetImage ziptest
     try {
-	list [source $targetImage] [source //zipfs:/ziptest/test/add.tcl]
+	list [source $targetImage] [source ${ziproot}ziptest/test/add.tcl]
     } finally {
 	zipfs unmount ziptest
     }
@@ -298,9 +298,9 @@ test zipfs-4.2 {zipfs lmkimg: making an image from an image} -constraints zipfs 
 } -body {
     zipfs lmkimg $midImage [list $addFile test/ko.tcl] {} $baseImage
     zipfs lmkimg $targetImage [list $addFile test/ok.tcl] {} $midImage
-    zipfs mount ziptest $targetImage
+    zipfs mount $targetImage ziptest
     try {
-	list [glob -tails -directory //zipfs://ziptest/test *.tcl] \
+	list [glob -tails -directory ${ziproot}/ziptest/test *.tcl] \
 	    [if {[file size $midImage] == [file size $targetImage]} {
 		string cat equal
 	    } else {
@@ -325,9 +325,9 @@ test zipfs-4.3 {zipfs lmkimg: stripping password} -constraints zipfs -setup {
     set pass gorp
     zipfs lmkimg $midImage [list $addFile test/add.tcl] $pass $baseImage
     zipfs lmkimg $targetImage [list $addFile test/ok.tcl] {} $midImage
-    zipfs mount ziptest $targetImage
+    zipfs mount $targetImage ziptest
     try {
-	glob -tails -directory //zipfs://ziptest/test *.tcl
+	glob -tails -directory ${ziproot}/ziptest/test *.tcl
     } finally {
 	zipfs unmount ziptest
     }
@@ -347,9 +347,9 @@ test zipfs-4.4 {zipfs lmkimg: final password} -constraints zipfs -setup {
     set pass gorp
     zipfs lmkimg $midImage [list $addFile test/add.tcl] {} $baseImage
     zipfs lmkimg $targetImage [list $addFile test/ok.tcl] $pass $midImage
-    zipfs mount ziptest $targetImage
+    zipfs mount $targetImage ziptest
     try {
-	glob -tails -directory //zipfs://ziptest/test *.tcl
+	glob -tails -directory ${ziproot}/ziptest/test *.tcl
     } finally {
 	zipfs unmount ziptest
     }
@@ -367,35 +367,35 @@ test zipfs-4.5 {zipfs lmkimg: making image from mounted} -constraints zipfs -set
     file delete $midImage $targetImage
 } -body {
     zipfs lmkimg $midImage [list $addFile test/add.tcl] {} $baseImage
-    zipfs mount ziptest $midImage
-    set f [glob -directory //zipfs://ziptest/test *.tcl]
+    zipfs mount $midImage ziptest
+    set f [glob -directory ${ziproot}/ziptest/test *.tcl]
     zipfs lmkimg $targetImage [list $f test/ok.tcl] {} $midImage
     zipfs unmount ziptest
-    zipfs mount ziptest $targetImage
-    list $f [glob -directory //zipfs://ziptest/test *.tcl]
+    zipfs mount $targetImage ziptest
+    list $f [glob -directory ${ziproot}/ziptest/test *.tcl]
 } -cleanup {
     zipfs unmount ziptest
     removeFile $baseImage
     removeFile $midImage
     removeFile $targetImage
     removeFile $addFile
-} -result {//zipfs://ziptest/test/add.tcl //zipfs://ziptest/test/ok.tcl}
+} -result [list ${ziproot}/ziptest/test/add.tcl ${ziproot}/ziptest/test/ok.tcl]
 
 test zipfs-5.1 {zipfs mount_data: short data} -constraints zipfs -body {
-    zipfs mount_data gorp {}
+    zipfs mount_data {} gorp
 } -returnCodes error -result {bad zip data}
 test zipfs-5.2 {zipfs mount_data: short data} -constraints zipfs -body {
-    zipfs mount_data gorp gorpGORPgorp
+    zipfs mount_data gorpGORPgorp gorp
 } -returnCodes error -result {bad zip data}
 test zipfs-5.3 {zipfs mount_data: short data} -constraints zipfs -body {
     set data PK\x03\x04.....................................
     append data PK\x01\x02.....................................
     append data PK\x05\x06.....................................
-    zipfs mount_data gorp $data
+    zipfs mount_data $data gorp
 } -returnCodes error -result {bad zip data}
 test zipfs-5.4 {zipfs mount_data: bad arg count} -constraints zipfs -body {
-    zipfs mount_data gorp {} foobar
-} -returnCodes error -result {wrong # args: should be "zipfs mount_data ?mountpoint? ?data?"}
+    zipfs mount_data {} gorp foobar
+} -returnCodes error -result {wrong # args: should be "zipfs mount_data ?data? ?mountpoint?"}
 
 test zipfs-6.1 {zipfs mkkey} -constraints zipfs -body {
     binary scan [zipfs mkkey gorp] cu* x
