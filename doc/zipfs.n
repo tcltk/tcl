@@ -26,12 +26,12 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBzipfs mkimg\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
 \fBzipfs mkkey\fR \fIpassword\fR
 \fBzipfs mkzip\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR?
-\fBzipfs mount\fR ?\fImountpoint\fR? ?\fIzipfile\fR? ?\fIpassword\fR?
+\fBzipfs mount\fR ?\fIzipfile\fR? ?\fImountpoint\fR? ?\fIpassword\fR?
 \fBzipfs root\fR
 \fBzipfs unmount\fR \fImountpoint\fR
 .fi
 '\" The following subcommand is *UNDOCUMENTED*
-'\" \fBzipfs mount_data\fR ?\fImountpoint\fR? ?\fIdata\fR?
+'\" \fBzipfs mount_data\fR ?\fIdata\fR ?\fImountpoint\fR??
 .BE
 .SH DESCRIPTION
 .PP
@@ -84,7 +84,7 @@ Return a list of all files in the mounted zipfs, or just those matching
 \fIpattern\fR (optionally controlled by the option parameters).  The order of
 the names in the list is arbitrary.
 .TP
-\fBzipfs mount\fR ?\fImountpoint\fR? ?\fIzipfile\fR? ?\fIpassword\fR?
+\fBzipfs mount\fR ?\fIzipfile\fR? ?\fImountpoint\fR? ?\fIpassword\fR?
 .
 The \fBzipfs mount\fR command mounts a ZIP archive file as a Tcl virtual
 filesystem at \fImountpoint\fR.  After this command executes, files contained
@@ -186,13 +186,13 @@ before unmounting it again:
 set zip myApp.zip
 set base [file join [\fBzipfs root\fR] myApp]
 
-\fBzipfs mount\fR $base $zip
+\fBzipfs mount\fR $zip $base
 # $base now has the contents of myApp.zip
 
 source [file join $base app.tcl]
 # use the contents, load libraries from it, etc...
 
-\fBzipfs unmount\fR $zip
+\fBzipfs unmount\fR $base
 .CE
 .PP
 Creating a ZIP archive, given that a directory exists containing the content
@@ -219,7 +219,7 @@ set base [file join [\fBzipfs root\fR] myApp]
 \fBzipfs mkzip\fR $targetZip $sourceDir $sourceDir $password
 
 # Mount with password
-\fBzipfs mount\fR $base $zip $password
+\fBzipfs mount\fR $zip $base $password
 .CE
 .PP
 When creating an executable image with a password, the password is placed
