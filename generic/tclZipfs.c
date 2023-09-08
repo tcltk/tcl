@@ -83,8 +83,8 @@ static const z_crc_t* crc32tab;
 
 #define ZIPFS_VOLUME	  "//zipfs:/"
 #define ZIPFS_VOLUME_LEN  9
-#define ZIPFS_APP_MOUNT	  "//zipfs:/app"
-#define ZIPFS_ZIP_MOUNT	  "//zipfs:/lib/tcl"
+#define ZIPFS_APP_MOUNT	  ZIPFS_VOLUME "app"
+#define ZIPFS_ZIP_MOUNT	  ZIPFS_VOLUME "lib/tcl"
 #define ZIPFS_FALLBACK_ENCODING "cp437"
 
 /*
@@ -3656,22 +3656,13 @@ ZipFSExistsObjCmd(
 {
     char *filename;
     int exists;
-    Tcl_DString ds;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "filename");
 	return TCL_ERROR;
     }
 
-    /*
-     * Prepend ZIPFS_VOLUME to filename, eliding the final /
-     */
-
     filename = TclGetString(objv[1]);
-    Tcl_DStringInit(&ds);
-    Tcl_DStringAppend(&ds, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN - 1);
-    Tcl_DStringAppend(&ds, filename, -1);
-    filename = Tcl_DStringValue(&ds);
 
     ReadLock();
     exists = ZipFSLookup(filename) != NULL;
