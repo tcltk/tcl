@@ -14,10 +14,9 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+source [file join [file dirname [info script]] tcltests.tcl]
 
-testConstraint zipfs [expr {
-    [llength [info commands zlib]] && [regexp tcltest [info nameofexecutable]]
-}]
+testConstraint zipfs [expr {[llength [info commands zipfs]]}]
 testConstraint zipfslib 1
 
 set ziproot [zipfs root]
@@ -91,12 +90,6 @@ test zipfs-0.12 {zipfs basics: join} -constraints {zipfs zipfslib} -body {
     file normalize [zipfs root]//bar/baz//qux/../
 } -result "[zipfs root]bar/baz"
 
-test zipfs-1.3 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs mount a b c d e f
-} -result {wrong # args: should be "zipfs mount ?mountpoint? ?zipfile? ?password?"}
-test zipfs-1.4 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs unmount a b c d e f
-} -result {wrong # args: should be "zipfs unmount zipfile"}
 test zipfs-1.5 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs mkkey a b c d e f
 } -result {wrong # args: should be "zipfs mkkey password"}
@@ -383,16 +376,16 @@ test zipfs-4.5 {zipfs lmkimg: making image from mounted} -constraints zipfs -set
 
 test zipfs-5.1 {zipfs mount_data: short data} -constraints zipfs -body {
     zipfs mount_data gorp {}
-} -returnCodes error -result {bad zip data}
+} -returnCodes error -result {archive directory end signature not found}
 test zipfs-5.2 {zipfs mount_data: short data} -constraints zipfs -body {
     zipfs mount_data gorp gorpGORPgorp
-} -returnCodes error -result {bad zip data}
+} -returnCodes error -result {archive directory end signature not found}
 test zipfs-5.3 {zipfs mount_data: short data} -constraints zipfs -body {
     set data PK\x03\x04.....................................
     append data PK\x01\x02.....................................
     append data PK\x05\x06.....................................
     zipfs mount_data gorp $data
-} -returnCodes error -result {bad zip data}
+} -returnCodes error -result {archive directory truncated}
 test zipfs-5.4 {zipfs mount_data: bad arg count} -constraints zipfs -body {
     zipfs mount_data gorp {} foobar
 } -returnCodes error -result {wrong # args: should be "zipfs mount_data ?mountpoint? ?data?"}
@@ -401,6 +394,221 @@ test zipfs-6.1 {zipfs mkkey} -constraints zipfs -body {
     binary scan [zipfs mkkey gorp] cu* x
     return $x
 } -result {224 226 111 103 4 80 75 90 90}
+
+
+#
+# Additional tests for more coverage. Some of the ones above may be duplicated.
+
+namespace eval test_ns_zipfs {
+    namespace import ::tcltest::test
+    namespace path ::tcltests
+    variable zipTestDir [file normalize [file join [file dirname [info script]] zipfiles]]
+    variable defaultMountPoint [file join [zipfs root] test]
+
+    proc readbin {path} {
+        set fd [open $path rb]
+        set data [read $fd]
+        close $fd
+        return $data
+    }
+
+    # Wrapper to ease transition if Tcl changes order of argument to zipfs mount
+    # or the zipfs prefix
+    proc mount [list zippath [list mountpoint $defaultMountPoint]] {
+        zipfs mount $mountpoint $zippath
+    }
+
+    # Make full path to zip file
+    proc zippath {zipfile} {
+        variable zipTestDir
+        return [file join $zipTestDir $zipfile]
+    }
+
+    proc cleanup {} {
+        variable defaultMountPoint
+        # Catch in case mount was not done
+        catch {zipfs unmount $defaultMountPoint}
+    }
+
+    proc mounttarget {mountpoint} {
+        return [dict getdef [zipfs mount] $mountpoint ""]
+    }
+
+    #
+    # zipfs mount
+
+    proc testbadmount {id fname messagePattern args} {
+        variable zipTestDir
+        variable defaultMountPoint
+        set zipfile [zippath $fname]
+        test zipfs-mount-$id $id -body {
+            list [catch {mount $zipfile} message] \
+                [string match $messagePattern $message] \
+                [mounttarget $defaultMountPoint]
+        } -cleanup {
+            # In case mount succeeded when it should not
+            cleanup
+        } -result {1 1 {}}
+
+        if {![file exists $zipfile]} {
+            return
+        }
+        set data [readbin $zipfile]
+        test zipfs-mount_data-$id $id -body {
+            list [catch {zipfs mount_data $defaultMountPoint $data} message] \
+                [string match $messagePattern $message] \
+                [mounttarget $defaultMountPoint]
+        } -cleanup {
+            # In case mount succeeded when it should not
+            cleanup
+        } -result {1 1 {}}
+
+    }
+    proc testmount {id fname checkPath args} {
+        variable zipTestDir
+        variable defaultMountPoint
+        set zippath [zippath $fname]
+        test zipfs-mount-$id $id -body {
+            mount $zippath
+            list [file exists [file join $defaultMountPoint $checkPath]] \
+                [mounttarget $defaultMountPoint]
+        } -cleanup {
+            cleanup
+        } -result [list 1 $zippath]
+    }
+
+    testnumargs "zipfs mount" "" "?mountpoint? ?zipfile? ?password?"
+
+    # Not supported zip files
+    testbadmount non-existent-file    nosuchfile.zip "couldn't open*nosuchfile.zip*no such file or directory"
+    testbadmount not-zipfile          [file normalize [info script]]      "archive directory end signature not found"
+    testbadmount zip64-unsupported    zip64.zip      "wrong header signature"
+
+    # Inconsistent metadata
+    testbadmount bad-directory-offset incons-cdoffset.zip          "archive directory truncated"
+    testbadmount bad-directory-magic  incons-central-magic-bad.zip "wrong header signature"
+    testbadmount bad-local-magic      incons-local-magic-bad.zip   "Failed to find local header"
+
+    # TODO testbadmount bad-directory-crc incons-central-crc.zip ""
+    # TODO - at open testbadmount bad-file-count-low  incons-file-count-low.zip ""
+    # TODO - at open testbadmount bad-file-count-high  incons-file-count-high.zip ""
+
+    testmount basic test.zip testdir/test2
+    testmount zip-at-end junk-at-start.zip testdir/test2
+    testmount zip-at-start junk-at-end.zip testdir/test2
+
+    test zipfs-mount-no-args-1 "mount - get mount list" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set mounts [zipfs mount]
+        lsearch -inline -stride 2 $mounts $defaultMountPoint
+    } -result [list $defaultMountPoint [zippath test.zip]]
+
+    test zipfs-mount-one-arg-1 "mount - get mount target - absolute path" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs mount $defaultMountPoint
+    } -result [zippath test.zip]
+
+    test zipfs-mount-one-arg-2 "mount - get mount target - relative path" -setup {
+        mount ../tests/zipfiles/test.zip
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs mount $defaultMountPoint
+    } -result [zippath test.zip]
+
+    test zipfs-mount-password-1 "mount - verify plaintext readable without password" -body {
+        zipfs mount $defaultMountPoint [zippath test-password.zip]
+        readbin [file join $defaultMountPoint plain.txt]
+    } -cleanup {
+        cleanup
+    } -result plaintext
+
+    test zipfs-mount-password-2 "mount - verify uncompressed cipher unreadable without password" -body {
+        zipfs mount $defaultMountPoint [zippath test-password.zip]
+        set chans [lsort [chan names]]; # Want to ensure open does not leave dangling channel
+        set result [list ]
+        lappend result [catch {open [file join $defaultMountPoint cipher.bin]} message]
+        lappend result $message
+        lappend result [string equal $chans [lsort [chan names]]]
+    } -cleanup {
+        cleanup
+    } -result {1 {decryption failed} 1}
+
+    test zipfs-mount-password-3 "mount - verify compressed cipher unreadable without password" -body {
+        zipfs mount $defaultMountPoint [zippath test-password.zip]
+        set chans [lsort [chan names]]; # Want to ensure open does not leave dangling channel
+        set result [list ]
+        lappend result [catch {open [file join $defaultMountPoint cipher-deflate.bin]} message]
+        lappend result $message
+        lappend result [string equal $chans [lsort [chan names]]]
+    } -cleanup {
+        cleanup
+    } -result {1 {decryption failed} 1}
+
+    test zipfs-mount-password-4 "mount - verify uncompressed cipher readable with password" -body {
+        zipfs mount $defaultMountPoint [zippath test-password.zip] password
+        readbin [file join $defaultMountPoint cipher.bin]
+    } -cleanup {
+        cleanup
+    } -result ciphertext
+
+    test zipfs-mount-password-5 "mount - verify compressed cipher readable with password" -body {
+        zipfs mount $defaultMountPoint [zippath test-password.zip] password
+        readbin [file join $defaultMountPoint cipher-deflate.bin]
+    } -cleanup {
+        cleanup
+    } -result [lseq 100]
+
+    test xxzipfs-mount-existing-1 "Attempt to mount on existing mount point" -setup {
+        zipfs mount $defaultMountPoint
+    }
+
+    #
+    # unmount - only special cases. Normal case already tested as part of other tests
+
+    testnumargs "zipfs unmount" "mountpoint" ""
+
+    test zipfs-unmount-1 "Unmount bogus mount" -body {
+        zipfs unmount [file join [zipfs root] nosuchmount]
+    } -result ""
+
+    test zipfs-unmount-2 "Unmount mount with open files" -setup {
+        mount [zippath test.zip]
+        set fd [open [file join $defaultMountPoint test]]
+    } -cleanup {
+        close $fd
+        cleanup
+    } -body {
+        zipfs unmount $defaultMountPoint
+    } -result {filesystem is busy} -returnCodes error
+
+    test zipfs-unmount-3 "Unmount mount with current directory" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set cwd [pwd]
+        cd [file join $defaultMountPoint testdir]
+        list [pwd] [zipfs unmount $defaultMountPoint] [string equal [pwd] $cwd]
+    } -result [list [file join $defaultMountPoint testdir] {} 1]
+
+    test bug-6ed3447a7e "Crash opening file in streamed archive" -setup {
+        mount [zippath streamed.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set fd [open [file join $defaultMountPoint -]]
+        list [catch {read $fd} message] [close $fd] $message
+        close $fd
+    } -result {file size error (may be zip64)} -returnCodes error
+}
+
 
 ::tcltest::cleanupTests
 return

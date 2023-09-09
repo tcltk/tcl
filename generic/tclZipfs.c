@@ -2385,7 +2385,7 @@ ZipFSUnmountObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "zipfile");
+	Tcl_WrongNumArgs(interp, 1, objv, "mountpoint");
 	return TCL_ERROR;
     }
     return TclZipfs_Unmount(interp, Tcl_GetString(objv[1]));
