@@ -19,6 +19,8 @@
 #include "tclInt.h"
 #include "tclFileSystem.h"
 
+#include <assert.h>
+
 #ifndef _WIN32
 #include <sys/mman.h>
 #endif /* _WIN32*/
@@ -217,8 +219,10 @@ typedef struct ZipEntry {
     char *name;			/* The full pathname of the virtual file */
     ZipFile *zipFilePtr;	/* The ZIP file holding this virtual file */
     size_t offset;		/* Data offset into memory mapped ZIP file */
-    int numBytes;		/* Uncompressed size of the virtual file */
-    int numCompressedBytes;	/* Compressed size of the virtual file */
+    int numBytes;		/* Uncompressed size of the virtual file.
+    				   -1 for zip64 */
+    int numCompressedBytes;	/* Compressed size of the virtual file.
+    				   -1 for zip64 */
     int compressMethod;		/* Compress method */
     int isDirectory;		/* Set to 1 if directory, or -1 if root */
     int depth;			/* Number of slashes in path. */
@@ -1216,7 +1220,7 @@ ZipFSFindTOC(
 	    zf->baseOffset = zf->passOffset = zf->length;
 	    return TCL_OK;
 	}
-	ZIPFS_ERROR(interp, "wrong end signature");
+	ZIPFS_ERROR(interp, "archive directory end signature not found");
 	ZIPFS_ERROR_CODE(interp, "END_SIG");
 	goto error;
     }
@@ -1250,7 +1254,7 @@ ZipFSFindTOC(
 	    zf->baseOffset = zf->passOffset = zf->length;
 	    return TCL_OK;
 	}
-	ZIPFS_ERROR(interp, "archive directory not found");
+	ZIPFS_ERROR(interp, "archive directory truncated");
 	ZIPFS_ERROR_CODE(interp, "NO_DIR");
 	goto error;
     }
@@ -1279,7 +1283,9 @@ ZipFSFindTOC(
 	comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
 	extra = ZipReadShort(start, end, q + ZIP_CENTRAL_EXTRALEN_OFFS);
 	localhdr_off = ZipReadInt(start, end, q + ZIP_CENTRAL_LOCALHDR_OFFS);
- 	if (ZipReadInt(start, end, zf->data + zf->baseOffset + localhdr_off) != ZIP_LOCAL_HEADER_SIG) {
+	const unsigned char *localP = zf->data + zf->baseOffset + localhdr_off;
+	if (localP > (p - ZIP_LOCAL_HEADER_LEN) ||
+	    ZipReadInt(start, end, localP) != ZIP_LOCAL_HEADER_SIG) {
 	    ZIPFS_ERROR(interp, "Failed to find local header");
 	    ZIPFS_ERROR_CODE(interp, "LCL_HDR");
 	    goto error;
@@ -1457,14 +1463,15 @@ ZipMapArchive(
      * Determine the file size.
      */
 
-#   ifdef _WIN64
     readSuccessful = GetFileSizeEx(hFile, (PLARGE_INTEGER) &zf->length) != 0;
-#   else /* !_WIN64 */
-    zf->length = GetFileSize(hFile, 0);
-    readSuccessful = (zf->length != (size_t) INVALID_FILE_SIZE);
-#   endif /* _WIN64 */
-    if (!readSuccessful || (zf->length < ZIP_CENTRAL_END_LEN)) {
-	ZIPFS_POSIX_ERROR(interp, "invalid file size");
+    if (!readSuccessful) {
+	Tcl_WinConvertError(GetLastError());
+	ZIPFS_POSIX_ERROR(interp, "failed to retrieve file size");
+	return TCL_ERROR;
+    }
+    if (zf->length < ZIP_CENTRAL_END_LEN) {
+	Tcl_SetErrno(EINVAL);
+	ZIPFS_POSIX_ERROR(interp, "truncated file");
 	return TCL_ERROR;
     }
 
@@ -1475,12 +1482,14 @@ ZipMapArchive(
     zf->mountHandle = CreateFileMappingW(hFile, 0, PAGE_READONLY, 0,
 	    zf->length, 0);
     if (zf->mountHandle == INVALID_HANDLE_VALUE) {
+	Tcl_WinConvertError(GetLastError());
 	ZIPFS_POSIX_ERROR(interp, "file mapping failed");
 	return TCL_ERROR;
     }
     zf->data = (unsigned char *)
 	    MapViewOfFile(zf->mountHandle, FILE_MAP_READ, 0, 0, zf->length);
     if (!zf->data) {
+	Tcl_WinConvertError(GetLastError());
 	ZIPFS_POSIX_ERROR(interp, "file mapping failed");
 	return TCL_ERROR;
     }
@@ -1492,8 +1501,13 @@ ZipMapArchive(
      */
 
     zf->length = lseek(fd, 0, SEEK_END);
-    if (zf->length == ERROR_LENGTH || zf->length < ZIP_CENTRAL_END_LEN) {
-	ZIPFS_POSIX_ERROR(interp, "invalid file size");
+    if (zf->length == ERROR_LENGTH) {
+	ZIPFS_POSIX_ERROR(interp, "failed to retrieve file size");
+	return TCL_ERROR;
+    }
+    if (zf->length < ZIP_CENTRAL_END_LEN) {
+	Tcl_SetErrno(EINVAL);
+	ZIPFS_POSIX_ERROR(interp, "truncated file");
 	return TCL_ERROR;
     }
     lseek(fd, 0, SEEK_SET);
@@ -2116,7 +2130,7 @@ TclZipfs_MountBuffer(
 	zf->data = data;
 	zf->ptrToFree = NULL;
     }
-    if (ZipFSFindTOC(interp, 0, zf) != TCL_OK) {
+    if (ZipFSFindTOC(interp, 1, zf) != TCL_OK) {
 	return TCL_ERROR;
     }
     result = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
@@ -4344,6 +4358,13 @@ ZipChannelOpen(
 	goto error;
     }
 
+    if (z->numBytes < 0 || z->numCompressedBytes < 0 || z->offset < 0) {
+	/* Normally this should only happen for zip64. */
+	ZIPFS_ERROR(interp, "file size error (may be zip64)");
+	ZIPFS_ERROR_CODE(interp, "FILE_SIZE");
+	goto error;
+    }
+
     /*
      * Do we support opening the file that way?
      */
@@ -4602,7 +4623,8 @@ InitWritableChannel(
  * InitReadableChannel --
  *
  *	Assistant for ZipChannelOpen() that sets up a readable channel. It's
- *	up to the caller to actually register the channel.
+ *	up to the caller to actually register the channel. Caller should have
+ *	validated the passed ZipEntry (byte counts in particular)
  *
  * Returns:
  *	Tcl result code.
@@ -4629,6 +4651,9 @@ InitReadableChannel(
     info->ubuf = z->zipFilePtr->data + z->offset;
     info->isDirectory = z->isDirectory;
     info->isEncrypted = z->isEncrypted;
+
+    /* Caller must validate - bug [6ed3447a7e] */
+    assert(z->numBytes >= 0 && z->numCompressedBytes >= 0);
     info->numBytes = z->numBytes;
 
     if (info->isEncrypted) {
