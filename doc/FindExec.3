@@ -35,8 +35,8 @@ Tcl.  For example, it is needed on some platforms in the
 implementation of the \fBload\fR command.
 It is also returned by the \fBinfo nameofexecutable\fR command.
 .PP
-The result of \fBTcl_FindExecutable\fR is the full Tcl version (e.g.,
-\fB8.7.0+abcdef...abcdef.gcc-1002.utf16\fR).
+The result of \fBTcl_FindExecutable\fR is the full Tcl version with build
+information (e.g., \fB8.7.0+abcdef...abcdef.gcc-1002\fR).
 .PP
 On UNIX platforms this procedure is typically invoked as the very
 first thing in the application's main program;  it must be passed

@@ -79,8 +79,8 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	    set root [zipfs root]
 	    set mountpoint [file join $root lib $basename]
 	    lappend dirs [file join $root app ${basename}_library]
-	    lappend dirs [file join $root lib $mountpoint ${basename}_library]
-	    lappend dirs [file join $root lib $mountpoint]
+	    lappend dirs [file join $root lib ${basename} ${basename}_library]
+	    lappend dirs [file join $root lib ${basename}]
 	    if {![zipfs exists [file join $root app ${basename}_library]] \
 		    && ![zipfs exists $mountpoint]} {
 		set found 0
@@ -92,7 +92,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 			break
 		    }
 		    set found 1
-		    zipfs mount $mountpoint $dllfile
+		    zipfs mount $dllfile $mountpoint
 		    break
 		}
 		if {!$found} {
@@ -118,7 +118,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 			if {![file exists $archive]} {
 			    continue
 			}
-			zipfs mount $mountpoint $archive
+			zipfs mount $archive $mountpoint
 			if {[zipfs exists [file join $mountpoint ${basename}_library $initScript]]} {
 			    lappend dirs [file join $mountpoint ${basename}_library]
 			    set found 1
@@ -128,7 +128,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 			    set found 1
 			    break
 			} else {
-			    catch {zipfs unmount $archive}
+			    catch {zipfs unmount $mountpoint}
 			}
 	      	    }
 		}
