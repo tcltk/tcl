@@ -2225,22 +2225,30 @@ ZipFSMountObjCmd(
 		 "?zipfile? ?mountpoint? ?password?");
 	return TCL_ERROR;
     }
+    /*
+     * A single argument is treated as the mountpoint. Two arguments
+     * are treated as zipfile and mountpoint.
+     */
     if (objc > 1) {
-	zipFileObj = Tcl_FSGetNormalizedPath(interp, objv[1]);
-	if (!zipFileObj) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "could not normalize zip filename", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", NULL);
-	    return TCL_ERROR;
+	if (objc == 2) {
+	    mountPoint = Tcl_GetString(objv[1]);
+	} else {
+	    /* 2 < objc < 4 */
+	    zipFileObj = Tcl_FSGetNormalizedPath(interp, objv[1]);
+	    if (!zipFileObj) {
+		Tcl_SetObjResult(
+		    interp,
+		    Tcl_NewStringObj("could not normalize zip filename", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", NULL);
+		return TCL_ERROR;
+	    }
+	    Tcl_IncrRefCount(zipFileObj);
+	    zipFile = Tcl_GetString(zipFileObj);
+	    mountPoint = Tcl_GetString(objv[2]);
+	    if (objc > 3) {
+		password = Tcl_GetString(objv[3]);
+	    }
 	}
-	Tcl_IncrRefCount(zipFileObj);
-	zipFile = TclGetString(zipFileObj);
-    }
-    if (objc > 2) {
-	mountPoint = TclGetString(objv[2]);
-    }
-    if (objc > 3) {
-	password = TclGetString(objv[3]);
     }
 
     result = TclZipfs_Mount(interp, zipFile, mountPoint, password);
