@@ -565,9 +565,14 @@ namespace eval test_ns_zipfs {
         cleanup
     } -result [lseq 100]
 
-    test xxzipfs-mount-existing-1 "Attempt to mount on existing mount point" -setup {
-        zipfs mount $defaultMountPoint
-    }
+    test zipfs-mount-existing-1 "Attempt to mount on existing mount point" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs mount [zippath test2.zip] $defaultMountPoint
+    } -result {} -returnCodes error
+
 
     #
     # unmount - only special cases. Normal case already tested as part of other tests
