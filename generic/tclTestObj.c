@@ -984,6 +984,7 @@ TestlistobjCmd(
 			TCL_INDEX_NONE));
 		/* Keep looping since we are also looping for leaks */
 	    }
+	    Tcl_DecrRefCount(objP);
 	}
 	break;
 
