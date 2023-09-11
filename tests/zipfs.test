@@ -99,15 +99,9 @@ test zipfs-1.6 {zipfs errors} -constraints zipfs -returnCodes error -body {
 test zipfs-1.7 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs mkzip a b c d e f
 } -result {wrong # args: should be "zipfs mkzip outfile indir ?strip? ?password?"}
-test zipfs-1.8 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs exists a b c d e f
-} -result {wrong # args: should be "zipfs exists filename"}
 test zipfs-1.9 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs info a b c d e f
 } -result {wrong # args: should be "zipfs info filename"}
-test zipfs-1.10 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs list a b c d e f
-} -result {wrong # args: should be "zipfs list ?(-glob|-regexp)? ?pattern?"}
 
 file mkdir tmp
 test zipfs-2.1 {zipfs mkzip empty archive} -constraints zipfs -returnCodes error -body {
@@ -403,7 +397,7 @@ namespace eval test_ns_zipfs {
     namespace import ::tcltest::test
     namespace path ::tcltests
     variable zipTestDir [file normalize [file join [file dirname [info script]] zipfiles]]
-    variable defaultMountPoint [file join [zipfs root] test]
+    variable defaultMountPoint [file join [zipfs root] testmount]
 
     proc readbin {path} {
         set fd [open $path rb]
@@ -419,15 +413,22 @@ namespace eval test_ns_zipfs {
     }
 
     # Make full path to zip file
-    proc zippath {zipfile} {
+    proc zippath {zippath} {
         variable zipTestDir
-        return [file join $zipTestDir $zipfile]
+        if {[file pathtype $zippath] eq "absolute"} {
+            return $zippath
+        } else {
+            return [file join $zipTestDir $zippath]
+        }
     }
 
     proc cleanup {} {
-        variable defaultMountPoint
-        # Catch in case mount was not done
-        catch {zipfs unmount $defaultMountPoint}
+        dict for {mount -} [zipfs mount] {
+            if {[string match //zipfs:/test* $mount]} {
+                zipfs unmount $mount
+            }
+        }
+        zipfs unmount [zipfs root]
     }
 
     proc mounttarget {mountpoint} {
@@ -437,23 +438,22 @@ namespace eval test_ns_zipfs {
     #
     # zipfs mount
 
-    proc testbadmount {id fname messagePattern args} {
-        variable zipTestDir
+    proc testbadmount {id zippath messagePattern args} {
         variable defaultMountPoint
-        set zipfile [zippath $fname]
+        set zippath [zippath $zippath]
         test zipfs-mount-$id $id -body {
-            list [catch {mount $zipfile} message] \
+            list [catch {mount $zippath} message] \
                 [string match $messagePattern $message] \
                 [mounttarget $defaultMountPoint]
         } -cleanup {
             # In case mount succeeded when it should not
             cleanup
-        } -result {1 1 {}}
+        } -result {1 1 {}} {*}$args
 
-        if {![file exists $zipfile]} {
+        if {![file exists $zippath]} {
             return
         }
-        set data [readbin $zipfile]
+        set data [readbin $zippath]
         test zipfs-mount_data-$id $id -body {
             list [catch {zipfs mount_data $data $defaultMountPoint} message] \
                 [string match $messagePattern $message] \
@@ -461,20 +461,39 @@ namespace eval test_ns_zipfs {
         } -cleanup {
             # In case mount succeeded when it should not
             cleanup
-        } -result {1 1 {}}
+        } -result {1 1 {}} {*}$args
 
     }
-    proc testmount {id fname checkPath args} {
-        variable zipTestDir
-        variable defaultMountPoint
-        set zippath [zippath $fname]
+
+    # Generates tests for file, file on root, memory buffer cases for an archive
+    proc testmount [list id zippath checkPath [list mountpoint $defaultMountPoint] args] {
+        set zippath [zippath $zippath]
         test zipfs-mount-$id $id -body {
             mount $zippath
-            list [file exists [file join $defaultMountPoint $checkPath]] \
-                [mounttarget $defaultMountPoint]
+            list [file exists [file join $mountpoint $checkPath]] \
+                [mounttarget $mountpoint]
         } -cleanup {
             cleanup
-        } -result [list 1 $zippath]
+        } -result [list 1 $zippath] {*}$args
+        # Also separately test mounting on root itself as some bugs
+        # have manifested in that scenario
+        test zipfs-mount-$id-on-root $id -body {
+            mount $zippath [zipfs root]
+            list [file exists [file join [zipfs root] $checkPath]] \
+                [mounttarget [zipfs root]]
+        } -cleanup {
+            cleanup
+        } -result [list 1 $zippath] {*}$args
+
+        # Mount memory buffer
+        test zipfs-mount_data-$id $id -body {
+            zipfs mount_data [readbin $zippath] $mountpoint
+            list [file exists [file join $mountpoint $checkPath]] \
+                [mounttarget $mountpoint]
+        } -cleanup {
+            cleanup
+        } -result [list 1 {Memory Buffer}] {*}$args
+
     }
 
     testnumargs "zipfs mount" "" "?zipfile? ?mountpoint? ?password?"
@@ -496,6 +515,17 @@ namespace eval test_ns_zipfs {
     testmount basic test.zip testdir/test2
     testmount zip-at-end junk-at-start.zip testdir/test2
     testmount zip-at-start junk-at-end.zip testdir/test2
+    testmount zip-in-zip [file join [zipfs root] test2 test.zip] testdir/test2 $defaultMountPoint -setup {
+        mount [zippath test-zip-in-zip.zip] [file join [zipfs root] test2]
+    }
+
+    test zipfs-mount-busy-1 "Attempt to mount on existing mount point" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs mount [zippath testfile-cp437.zip] $defaultMountPoint
+    } -result "[zippath test.zip] is already mounted on $defaultMountPoint" -returnCodes error
 
     test zipfs-mount-no-args-1 "mount - get mount list" -setup {
         mount [zippath test.zip]
@@ -515,12 +545,14 @@ namespace eval test_ns_zipfs {
     } -result [zippath test.zip]
 
     test zipfs-mount-one-arg-2 "mount - get mount target - relative path" -setup {
-        mount ../tests/zipfiles/test.zip
+        file copy [zippath test.zip] test.zip
+        mount ./test.zip
     } -cleanup {
         cleanup
+        file delete ./test.zip
     } -body {
         zipfs mount $defaultMountPoint
-    } -result [zippath test.zip]
+    } -result [file normalize ./test.zip]
 
     test zipfs-mount-password-1 "mount - verify plaintext readable without password" -body {
         zipfs mount [zippath test-password.zip] $defaultMountPoint
@@ -565,14 +597,34 @@ namespace eval test_ns_zipfs {
         cleanup
     } -result [lseq 100]
 
-    test zipfs-mount-existing-1 "Attempt to mount on existing mount point" -setup {
+    test zipfs-mount-nested-1 "mount - nested mount on non-existing path" -setup {
         mount [zippath test.zip]
     } -cleanup {
         cleanup
     } -body {
-        zipfs mount [zippath test2.zip] $defaultMountPoint
-    } -result {} -returnCodes error
+        set newmount [file join $defaultMountPoint newdir]
+        mount [zippath test-overlay.zip] $newmount
+        list \
+            [lsort [glob -tails -dir $defaultMountPoint *]] \
+            [lsort [glob -tails -dir $newmount *]] \
+            [readbin [file join $newmount test2]]
+    } -result {{newdir test testdir} {test2 test3} test2-overlay}
 
+    test zipfs-mount-nested-2 "mount - nested mount on existing path" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set newmount [file join $defaultMountPoint testdir]
+        mount [zippath test-overlay.zip] $newmount
+        # Note - file from existing mount is preserved (testdir/test2)
+        # Not clear this is desired but defined as such by the
+        # current implementation
+        list \
+            [lsort [glob -tails -dir $defaultMountPoint *]] \
+            [lsort [glob -tails -dir $newmount *]] \
+            [readbin [file join $newmount test2]]
+    } -result [list {test testdir} {test2 test3} test\n]
 
     #
     # unmount - only special cases. Normal case already tested as part of other tests
@@ -602,6 +654,206 @@ namespace eval test_ns_zipfs {
         cd [file join $defaultMountPoint testdir]
         list [pwd] [zipfs unmount $defaultMountPoint] [string equal [pwd] $cwd]
     } -result [list [file join $defaultMountPoint testdir] {} 1]
+
+    test zipfs-unmount-nested-1 "unmount parent of nested mount on new directory should not affect nested mount" -setup {
+        mount [zippath test.zip]
+        set newmount [file join [zipfs root] test newdir]
+        mount [zippath test-overlay.zip] $newmount
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs unmount $defaultMountPoint
+        list \
+            [zipfs mount $defaultMountPoint] \
+            [lsort [glob -tails -dir $newmount *]] \
+            [readbin [file join $newmount test2]]
+    } -result {{} {test2 test3} test2-overlay}
+
+    test zipfs-unmount-nested-2 "unmount parent of nested mount on existing directory should not affect nested mount" -setup {
+        mount [zippath test.zip]
+        set newmount [file join [zipfs root] test testdir]
+        mount [zippath test-overlay.zip] $newmount
+    } -constraints knownBug -cleanup {
+        cleanup
+    } -body {
+        # KNOWN BUG. The test2 file is also present in parent mount.
+        # After the unmount, the test2 in the nested mount is not
+        # made available.
+        zipfs unmount $defaultMountPoint
+        list \
+            [zipfs mount $defaultMountPoint] \
+            [lsort [glob -tails -dir $newmount *]] \
+            [readbin [file join $newmount test2]]
+    } -result {{} {test2 test3} test2-overlay}
+
+    #
+    # zipfs list
+    testnumargs "zipfs list" "" "?(-glob|-regexp)? ?pattern?"
+
+    # Generates zipfs list tests for file, memory buffer cases for an archive
+    proc testzipfslist {id cmdargs mounts resultpaths args} {
+        set resultpaths [lmap path $resultpaths {
+            file join [zipfs root] $path
+        }]
+        set resultpaths [lsort $resultpaths]
+        test zipfs-list-$id $id -body {
+            lsort [zipfs list {*}$cmdargs]
+        } -setup {
+            foreach {zippath mountpoint} $mounts {
+                zipfs mount [zippath $zippath] [file join [zipfs root] $mountpoint]
+            }
+        } -cleanup {
+            cleanup
+        } -result $resultpaths {*}$args
+
+        # Mount memory buffer
+        test zipfs-list-memory-$id $id -body {
+            lsort [zipfs list {*}$cmdargs]
+        } -setup {
+            foreach {zippath mountpoint} $mounts {
+                zipfs mount_data [readbin [zippath $zippath]] [file join [zipfs root] $mountpoint]
+            }
+        } -cleanup {
+            cleanup
+        } -result $resultpaths {*}$args
+    }
+    testzipfslist no-mounts "" {} {}
+    testzipfslist no-pattern "" {test.zip testmountA} {testmountA testmountA/test testmountA/testdir testmountA/testdir/test2}
+    testzipfslist no-pattern-mount-on-root "" {test.zip {}} {{} test testdir testdir/test2} -constraints knownBug
+    testzipfslist no-pattern-multiple "" {test.zip testmountA test.zip testmountB/subdir} {
+        testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
+        testmountB/subdir testmountB/subdir/test testmountB/subdir/testdir testmountB/subdir/testdir/test2
+    }
+    testzipfslist glob [list "*2*"] {test.zip testmountA test.zip testmountB/subdir} {
+        testmountA/testdir/test2
+        testmountB/subdir/testdir/test2
+    }
+    testzipfslist opt-glob [list -glob "*2*"] {test.zip testmountA test.zip testmountB/subdir} {
+        testmountA/testdir/test2
+        testmountB/subdir/testdir/test2
+    }
+    testzipfslist opt-regexp [list -regexp "A|2"] {test.zip testmountA test.zip testmountB/subdir} {
+        testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
+        testmountB/subdir/testdir/test2
+    }
+
+    #
+    # zipfs exists
+    testnumargs "zipfs exists" "filename" ""
+
+    # Generates tests for zipfs exists
+    proc testzipfsexists {id path result args} {
+        test zipfs-exists-$id $id -body {
+            zipfs exists $path
+        } -setup {
+            mount [zippath test.zip]
+        } -cleanup {
+            cleanup
+        } -result $result {*}$args
+    }
+    testzipfsexists native-file [info nameofexecutable] 0
+    testzipfsexists nonexistent-file [file join $defaultMountPoint nosuchfile] 0
+    testzipfsexists file [file join $defaultMountPoint test] 1
+    testzipfsexists dir [file join $defaultMountPoint testdir] 1
+    testzipfsexists mountpoint $defaultMountPoint 1
+    testzipfsexists root [zipfs root] 1 -constraints knownBug
+
+    #
+    # zipfs find
+    testnumargs "zipfs find" "directoryName" ""
+    # Generates zipfs find tests for file, memory buffer cases for an archive
+    proc testzipfsfind {id findtarget mounts resultpaths args} {
+        set setup {
+            foreach {zippath mountpoint} $mounts {
+                zipfs mount [zippath $zippath] [file join [zipfs root] $mountpoint]
+            }
+        }
+        set memory_setup {
+            foreach {zippath mountpoint} $mounts {
+                zipfs mount_data [readbin [zippath $zippath]] [file join [zipfs root] $mountpoint]
+            }
+        }
+        if {[dict exists $args -setup]} {
+            append setup \n[dict get $args -setup]
+            append memory_setup \n[dict get $args -setup]
+            dict unset args -setup
+        }
+        set cleanup cleanup
+        if {[dict exists $args -cleanup]} {
+            set cleanup "[dict get $args -cleanup]\n$cleanup"
+            dict unset args -cleanup
+        }
+        set resultpaths [lsort $resultpaths]
+        test zipfs-find-$id $id -body {
+            lsort [zipfs find $findtarget]
+        } -setup $setup -cleanup $cleanup -result $resultpaths {*}$args
+
+        # Mount memory buffer
+        test zipfs-find-memory-$id $id -body {
+            lsort [zipfs find $findtarget]
+        } -setup $memory_setup -cleanup $cleanup -result $resultpaths {*}$args
+    }
+
+    testzipfsfind nonexistingmount [file join [zipfs root] nosuchmount] {
+        test.zip testmountA test.zip testmountB/subdir
+    } {}
+
+    testzipfsfind absolute-path    [file join [zipfs root] testmountA] {
+        test.zip testmountA test.zip testmountB/subdir
+    } [lmap path {
+            testmountA/test testmountA/testdir testmountA/testdir/test2
+        } {file join [zipfs root] $path}]
+
+    testzipfsfind relative-path   testdir {
+        test.zip testmountA test.zip testmountB/subdir
+    } { testdir/test2 } -setup {
+        set cwd [pwd]
+        cd [file join [zipfs root] testmountA]
+    } -cleanup {
+        cd $cwd
+    }
+
+    test zipfs-find-native-absolute "zipfs find on native file system" -setup {
+        set dir [makeDirectory zipfs-native-absolute]
+        set subdir [file join $dir subdir]
+        file mkdir $subdir
+        set file [file join $subdir native]
+        close [open $file w]
+    } -cleanup {
+        removeDirectory zipfs-native-absolute
+    } -body {
+        string equal [zipfs find $dir] [list $subdir $file]
+    } -result 1
+
+    test zipfs-find-native-relative "zipfs find relative on native file system" -setup {
+        set dir [makeDirectory zipfs-native-relative]
+        set subdir [file join $dir subdir]
+        file mkdir $subdir
+        set file [file join $subdir native]
+        close [open $file w]
+        set cwd [pwd]
+    } -cleanup {
+        cd $cwd
+        removeDirectory zipfs-native-relative
+    } -body {
+        cd [file dirname $dir]
+        # string equal [zipfs find [file tail $subdir]] [list subdir subdir/native]
+        zipfs find [file tail $dir]
+    } -result {zipfs-native-relative/subdir zipfs-native-relative/subdir/native}
+
+    testzipfsfind bug-6183f535c8   [zipfs root] {
+        test.zip {} test.zip testmountB/subdir
+    } [lmap path {
+        test testdir testdir/test2
+    } {file join [zipfs root] $path}] -constraints knownBug
+
+    #
+    # zipfs info
+    testnumargs "zipfs info" "filename" ""
+
+
+    #
+    # Bug regressions
 
     test bug-6ed3447a7e "Crash opening file in streamed archive" -setup {
         mount [zippath streamed.zip]
