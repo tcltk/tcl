@@ -661,6 +661,11 @@ typedef struct VarInHash {
  *				through "upvar" and "global" commands, or
  *				through references to variables in enclosing
  *				namespaces.
+ * VAR_CONSTANT -		1 means this is a constant "variable", and 
+ *				cannot be written to by ordinary commands. 
+ *				Structurally, it's the same as a scalar when
+ *				being read, but writes are rejected. Constants
+ *				are not supported inside arrays.
  *
  * Flags that indicate the type and status of storage; none is set for
  * compiled local variables (Var structs).
@@ -725,6 +730,7 @@ typedef struct VarInHash {
 /* Type of value (0 is scalar) */
 #define VAR_ARRAY		0x1
 #define VAR_LINK		0x2
+#define VAR_CONSTANT		0x10000
 
 /* Type of storage (0 is compiled local) */
 #define VAR_IN_HASHTABLE	0x4
@@ -759,13 +765,14 @@ typedef struct VarInHash {
  * MODULE_SCOPE void	TclSetVarScalar(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarArray(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarLink(Var *varPtr);
+ * MODULE_SCOPE void	TclSetVarConstant(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarArrayElement(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarUndefined(Var *varPtr);
  * MODULE_SCOPE void	TclClearVarUndefined(Var *varPtr);
  */
 
 #define TclSetVarScalar(varPtr) \
-    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK)
+    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT)
 
 #define TclSetVarArray(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_LINK) | VAR_ARRAY
@@ -773,11 +780,14 @@ typedef struct VarInHash {
 #define TclSetVarLink(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_LINK
 
+#define TclSetVarConstant(varPtr) \
+    (varPtr)->flags = ((varPtr)->flags & ~(VAR_ARRAY|VAR_LINK)) | VAR_CONSTANT
+
 #define TclSetVarArrayElement(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_ARRAY_ELEMENT
 
 #define TclSetVarUndefined(varPtr) \
-    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK);\
+    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT);\
     (varPtr)->value.objPtr = NULL
 
 #define TclClearVarUndefined(varPtr)
@@ -809,6 +819,7 @@ typedef struct VarInHash {
  * The ANSI C "prototypes" for these macros are:
  *
  * MODULE_SCOPE int	TclIsVarScalar(Var *varPtr);
+ * MODULE_SCOPE int	TclIsVarConstant(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarLink(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarArray(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarUndefined(Var *varPtr);
@@ -834,6 +845,10 @@ typedef struct VarInHash {
 
 #define TclIsVarArray(varPtr) \
     ((varPtr)->flags & VAR_ARRAY)
+
+/* Implies scalar as well. */
+#define TclIsVarConstant(varPtr) \
+    ((varPtr)->flags & VAR_CONSTANT)
 
 #define TclIsVarUndefined(varPtr) \
     ((varPtr)->value.objPtr == NULL)
@@ -894,13 +909,13 @@ typedef struct VarInHash {
           && (varPtr)->value.objPtr)
 
 #define TclIsVarDirectWritable(varPtr) \
-    (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH))
+    (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH|VAR_CONSTANT))
 
 #define TclIsVarDirectUnsettable(varPtr) \
-    (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH))
+    (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH|VAR_CONSTANT))
 
 #define TclIsVarDirectModifyable(varPtr) \
-    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE))	\
+    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_CONSTANT))	\
           &&  (varPtr)->value.objPtr)
 
 #define TclIsVarDirectReadable2(varPtr, arrayPtr) \
