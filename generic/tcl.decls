@@ -146,7 +146,7 @@ declare 32 {
 }
 # Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 33 {
-    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, void *numBytesPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -2482,9 +2482,11 @@ declare 651 {
 declare 652 {
     Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
-# Only available in Tcl 8.x, NULL in Tcl 9.0
+
+# TIP 660
 declare 653 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, Tcl_Size *numBytesPtr)
+    int Tcl_GetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Size *sizePtr)
 }
 
 # TIP #575
@@ -2624,12 +2626,6 @@ declare 684 {
 # TIP 651
 declare 685 {
     Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
-}
-
-# TIP 660
-declare 686 {
-    int Tcl_GetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    Tcl_Size *sizePtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
