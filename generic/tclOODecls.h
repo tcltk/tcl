@@ -98,7 +98,7 @@ TCLAPI void		Tcl_ObjectSetMetadata(Tcl_Object object,
 				const Tcl_ObjectMetadataType *typePtr,
 				void *metadata);
 /* 23 */
-TCLAPI int		Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
+TCLAPI Tcl_Code		Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
 				Tcl_ObjectContext context, Tcl_Size objc,
 				Tcl_Obj *const *objv, Tcl_Size skip);
 /* 24 */
@@ -159,7 +159,7 @@ typedef struct TclOOStubs {
     void (*tcl_ClassSetMetadata) (Tcl_Class clazz, const Tcl_ObjectMetadataType *typePtr, void *metadata); /* 20 */
     void * (*tcl_ObjectGetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType *typePtr); /* 21 */
     void (*tcl_ObjectSetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType *typePtr, void *metadata); /* 22 */
-    int (*tcl_ObjectContextInvokeNext) (Tcl_Interp *interp, Tcl_ObjectContext context, Tcl_Size objc, Tcl_Obj *const *objv, Tcl_Size skip); /* 23 */
+    Tcl_Code (*tcl_ObjectContextInvokeNext) (Tcl_Interp *interp, Tcl_ObjectContext context, Tcl_Size objc, Tcl_Obj *const *objv, Tcl_Size skip); /* 23 */
     Tcl_ObjectMapMethodNameProc * (*tcl_ObjectGetMethodNameMapper) (Tcl_Object object); /* 24 */
     void (*tcl_ObjectSetMethodNameMapper) (Tcl_Object object, Tcl_ObjectMapMethodNameProc *mapMethodNameProc); /* 25 */
     void (*tcl_ClassSetConstructor) (Tcl_Interp *interp, Tcl_Class clazz, Tcl_Method method); /* 26 */

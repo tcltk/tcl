@@ -103,7 +103,7 @@ declare 22 {
 	    const Tcl_ObjectMetadataType *typePtr, void *metadata)
 }
 declare 23 {
-    int Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
+    Tcl_Code Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
 	    Tcl_ObjectContext context, Tcl_Size objc, Tcl_Obj *const *objv,
 	    Tcl_Size skip)
 }
@@ -173,7 +173,7 @@ declare 4 {
 	    ProcedureMethod **pmPtrPtr)
 }
 declare 5 {
-    int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, Tcl_Size objc,
+    Tcl_Code TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, Tcl_Size objc,
 	    Tcl_Obj *const *objv, int publicOnly, Class *startCls)
 }
 declare 6 {
@@ -202,7 +202,7 @@ declare 10 {
 	    void **internalTokenPtr)
 }
 declare 11 {
-    int TclOOInvokeObject(Tcl_Interp *interp, Tcl_Object object,
+    Tcl_Code TclOOInvokeObject(Tcl_Interp *interp, Tcl_Object object,
 	    Tcl_Class startCls, int publicPrivate, Tcl_Size objc,
 	    Tcl_Obj *const *objv)
 }

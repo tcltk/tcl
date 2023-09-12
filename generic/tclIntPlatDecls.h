@@ -53,7 +53,7 @@ EXTERN Tcl_Channel	TclpCreateCommandChannel(TclFile readFile,
 /* 3 */
 EXTERN int		TclpCreatePipe(TclFile *readPipe, TclFile *writePipe);
 /* 4 */
-EXTERN int		TclpCreateProcess(Tcl_Interp *interp, int argc,
+EXTERN Tcl_Code		TclpCreateProcess(Tcl_Interp *interp, int argc,
 				const char **argv, TclFile inputFile,
 				TclFile outputFile, TclFile errorFile,
 				Tcl_Pid *pidPtr);
@@ -76,19 +76,19 @@ EXTERN struct tm *	TclpGmtime_unix(const time_t *clock);
 /* 13 */
 EXTERN char *		TclpInetNtoa(struct in_addr addr);
 /* 14 */
-EXTERN int		TclUnixCopyFile(const char *src, const char *dst,
+EXTERN Tcl_Code		TclUnixCopyFile(const char *src, const char *dst,
 				const Tcl_StatBuf *statBufPtr,
 				int dontCopyAtts);
 /* 15 */
-EXTERN int		TclMacOSXGetFileAttribute(Tcl_Interp *interp,
+EXTERN Tcl_Code		TclMacOSXGetFileAttribute(Tcl_Interp *interp,
 				int objIndex, Tcl_Obj *fileName,
 				Tcl_Obj **attributePtrPtr);
 /* 16 */
-EXTERN int		TclMacOSXSetFileAttribute(Tcl_Interp *interp,
+EXTERN Tcl_Code		TclMacOSXSetFileAttribute(Tcl_Interp *interp,
 				int objIndex, Tcl_Obj *fileName,
 				Tcl_Obj *attributePtr);
 /* 17 */
-EXTERN int		TclMacOSXCopyFileAttributes(const char *src,
+EXTERN Tcl_Code		TclMacOSXCopyFileAttributes(const char *src,
 				const char *dst,
 				const Tcl_StatBuf *statBufPtr);
 /* 18 */
@@ -110,7 +110,7 @@ EXTERN TclFile		TclpCreateTempFile_(const char *contents);
 /* Slot 27 is reserved */
 /* Slot 28 is reserved */
 /* 29 */
-EXTERN int		TclWinCPUID(int index, int *regs);
+EXTERN Tcl_Code		TclWinCPUID(int index, int *regs);
 /* 30 */
 EXTERN int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
@@ -154,14 +154,14 @@ EXTERN Tcl_Channel	TclpCreateCommandChannel(TclFile readFile,
 /* 14 */
 EXTERN int		TclpCreatePipe(TclFile *readPipe, TclFile *writePipe);
 /* 15 */
-EXTERN int		TclpCreateProcess(Tcl_Interp *interp, int argc,
+EXTERN Tcl_Code		TclpCreateProcess(Tcl_Interp *interp, int argc,
 				const char **argv, TclFile inputFile,
 				TclFile outputFile, TclFile errorFile,
 				Tcl_Pid *pidPtr);
 /* 16 */
 EXTERN int		TclpIsAtty(int fd);
 /* 17 */
-EXTERN int		TclUnixCopyFile(const char *src, const char *dst,
+EXTERN Tcl_Code		TclUnixCopyFile(const char *src, const char *dst,
 				const Tcl_StatBuf *statBufPtr,
 				int dontCopyAtts);
 /* 18 */
@@ -185,7 +185,7 @@ EXTERN void		TclWinFlushDirtyChannels(void);
 /* 28 */
 EXTERN void		TclWinResetInterfaces(void);
 /* 29 */
-EXTERN int		TclWinCPUID(int index, int *regs);
+EXTERN Tcl_Code		TclWinCPUID(int index, int *regs);
 /* 30 */
 EXTERN int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
@@ -204,7 +204,7 @@ EXTERN Tcl_Channel	TclpCreateCommandChannel(TclFile readFile,
 /* 3 */
 EXTERN int		TclpCreatePipe(TclFile *readPipe, TclFile *writePipe);
 /* 4 */
-EXTERN int		TclpCreateProcess(Tcl_Interp *interp, int argc,
+EXTERN Tcl_Code		TclpCreateProcess(Tcl_Interp *interp, int argc,
 				const char **argv, TclFile inputFile,
 				TclFile outputFile, TclFile errorFile,
 				Tcl_Pid *pidPtr);
@@ -227,19 +227,19 @@ EXTERN struct tm *	TclpGmtime_unix(const time_t *clock);
 /* 13 */
 EXTERN char *		TclpInetNtoa(struct in_addr addr);
 /* 14 */
-EXTERN int		TclUnixCopyFile(const char *src, const char *dst,
+EXTERN Tcl_Code		TclUnixCopyFile(const char *src, const char *dst,
 				const Tcl_StatBuf *statBufPtr,
 				int dontCopyAtts);
 /* 15 */
-EXTERN int		TclMacOSXGetFileAttribute(Tcl_Interp *interp,
+EXTERN Tcl_Code		TclMacOSXGetFileAttribute(Tcl_Interp *interp,
 				int objIndex, Tcl_Obj *fileName,
 				Tcl_Obj **attributePtrPtr);
 /* 16 */
-EXTERN int		TclMacOSXSetFileAttribute(Tcl_Interp *interp,
+EXTERN Tcl_Code		TclMacOSXSetFileAttribute(Tcl_Interp *interp,
 				int objIndex, Tcl_Obj *fileName,
 				Tcl_Obj *attributePtr);
 /* 17 */
-EXTERN int		TclMacOSXCopyFileAttributes(const char *src,
+EXTERN Tcl_Code		TclMacOSXCopyFileAttributes(const char *src,
 				const char *dst,
 				const Tcl_StatBuf *statBufPtr);
 /* 18 */
@@ -261,7 +261,7 @@ EXTERN TclFile		TclpCreateTempFile_(const char *contents);
 /* Slot 27 is reserved */
 /* Slot 28 is reserved */
 /* 29 */
-EXTERN int		TclWinCPUID(int index, int *regs);
+EXTERN Tcl_Code		TclWinCPUID(int index, int *regs);
 /* 30 */
 EXTERN int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
@@ -277,7 +277,7 @@ typedef struct TclIntPlatStubs {
     int (*tclpCloseFile) (TclFile file); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
-    int (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 4 */
+    Tcl_Code (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 4 */
     int (*tclUnixWaitForFile_) (int fd, int mask, int timeout); /* 5 */
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 6 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 7 */
@@ -287,10 +287,10 @@ typedef struct TclIntPlatStubs {
     struct tm * (*tclpLocaltime_unix) (const time_t *clock); /* 11 */
     struct tm * (*tclpGmtime_unix) (const time_t *clock); /* 12 */
     char * (*tclpInetNtoa) (struct in_addr addr); /* 13 */
-    int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 14 */
-    int (*tclMacOSXGetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr); /* 15 */
-    int (*tclMacOSXSetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj *attributePtr); /* 16 */
-    int (*tclMacOSXCopyFileAttributes) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr); /* 17 */
+    Tcl_Code (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 14 */
+    Tcl_Code (*tclMacOSXGetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr); /* 15 */
+    Tcl_Code (*tclMacOSXSetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj *attributePtr); /* 16 */
+    Tcl_Code (*tclMacOSXCopyFileAttributes) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr); /* 17 */
     int (*tclMacOSXMatchType) (Tcl_Interp *interp, const char *pathName, const char *fileName, Tcl_StatBuf *statBufPtr, Tcl_GlobTypeData *types); /* 18 */
     void (*tclMacOSXNotifierAddRunLoopMode) (const void *runLoopMode); /* 19 */
     void (*reserved20)(void);
@@ -302,7 +302,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved26)(void);
     void (*reserved27)(void);
     void (*reserved28)(void);
-    int (*tclWinCPUID) (int index, int *regs); /* 29 */
+    Tcl_Code (*tclWinCPUID) (int index, int *regs); /* 29 */
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
@@ -321,9 +321,9 @@ typedef struct TclIntPlatStubs {
     int (*tclpCloseFile) (TclFile file); /* 12 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 13 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 14 */
-    int (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 15 */
+    Tcl_Code (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 15 */
     int (*tclpIsAtty) (int fd); /* 16 */
-    int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 17 */
+    Tcl_Code (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 17 */
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 18 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 19 */
     void (*tclWinAddProcess) (void *hProcess, Tcl_Size id); /* 20 */
@@ -335,7 +335,7 @@ typedef struct TclIntPlatStubs {
     void (*tclWinSetInterfaces) (int wide); /* 26 */
     void (*tclWinFlushDirtyChannels) (void); /* 27 */
     void (*tclWinResetInterfaces) (void); /* 28 */
-    int (*tclWinCPUID) (int index, int *regs); /* 29 */
+    Tcl_Code (*tclWinCPUID) (int index, int *regs); /* 29 */
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -343,7 +343,7 @@ typedef struct TclIntPlatStubs {
     int (*tclpCloseFile) (TclFile file); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
-    int (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 4 */
+    Tcl_Code (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 4 */
     int (*tclUnixWaitForFile_) (int fd, int mask, int timeout); /* 5 */
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 6 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 7 */
@@ -353,10 +353,10 @@ typedef struct TclIntPlatStubs {
     struct tm * (*tclpLocaltime_unix) (const time_t *clock); /* 11 */
     struct tm * (*tclpGmtime_unix) (const time_t *clock); /* 12 */
     char * (*tclpInetNtoa) (struct in_addr addr); /* 13 */
-    int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 14 */
-    int (*tclMacOSXGetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr); /* 15 */
-    int (*tclMacOSXSetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj *attributePtr); /* 16 */
-    int (*tclMacOSXCopyFileAttributes) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr); /* 17 */
+    Tcl_Code (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 14 */
+    Tcl_Code (*tclMacOSXGetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr); /* 15 */
+    Tcl_Code (*tclMacOSXSetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj *attributePtr); /* 16 */
+    Tcl_Code (*tclMacOSXCopyFileAttributes) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr); /* 17 */
     int (*tclMacOSXMatchType) (Tcl_Interp *interp, const char *pathName, const char *fileName, Tcl_StatBuf *statBufPtr, Tcl_GlobTypeData *types); /* 18 */
     void (*tclMacOSXNotifierAddRunLoopMode) (const void *runLoopMode); /* 19 */
     void (*reserved20)(void);
@@ -368,7 +368,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved26)(void);
     void (*reserved27)(void);
     void (*reserved28)(void);
-    int (*tclWinCPUID) (int index, int *regs); /* 29 */
+    Tcl_Code (*tclWinCPUID) (int index, int *regs); /* 29 */
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* MACOSX */
 } TclIntPlatStubs;

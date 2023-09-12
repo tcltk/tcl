@@ -27,7 +27,7 @@ MODULE_SCOPE int	TclFSNormalizeToUniquePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, int startAt);
 MODULE_SCOPE Tcl_Obj *	TclFSMakePathRelative(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, Tcl_Obj *cwdPtr);
-MODULE_SCOPE int	TclFSEnsureEpochOk(Tcl_Obj *pathPtr,
+MODULE_SCOPE Tcl_Code	TclFSEnsureEpochOk(Tcl_Obj *pathPtr,
 			    const Tcl_Filesystem **fsPtrPtr);
 MODULE_SCOPE void	TclFSSetPathDetails(Tcl_Obj *pathPtr,
 			    const Tcl_Filesystem *fsPtr, void *clientData);

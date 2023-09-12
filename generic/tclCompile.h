@@ -1159,7 +1159,7 @@ MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
-			    int returnCode, ExceptionAux **auxPtrPtr);
+			    Tcl_Code returnCode, ExceptionAux **auxPtrPtr);
 MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,

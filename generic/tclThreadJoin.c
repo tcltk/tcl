@@ -23,7 +23,7 @@
 
 typedef struct JoinableThread {
     Tcl_ThreadId  id;		/* The id of the joinable thread. */
-    int result;			/* A place for the result after the demise of
+    Tcl_Code result;		/* A place for the result after the demise of
 				 * the thread. */
     int done;			/* Boolean flag. Initialized to 0 and set to 1
 				 * after the exit of the thread. This allows a

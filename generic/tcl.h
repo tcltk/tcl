@@ -639,6 +639,8 @@ typedef struct stat *Tcl_OldStat_;
  *			interpreter's result is meaningless.
  */
 
+typedef int	Tcl_Code;
+
 #define TCL_OK			0
 #define TCL_ERROR		1
 #define TCL_RETURN		2
@@ -1516,14 +1518,14 @@ typedef int	(Tcl_DriverOutputProc) (void *instanceData,
 			const char *buf, int toWrite, int *errorCodePtr);
 typedef int	(Tcl_DriverSeekProc) (void *instanceData, long offset,
 			int mode, int *errorCodePtr);
-typedef int	(Tcl_DriverSetOptionProc) (void *instanceData,
+typedef Tcl_Code	(Tcl_DriverSetOptionProc) (void *instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			const char *value);
-typedef int	(Tcl_DriverGetOptionProc) (void *instanceData,
+typedef Tcl_Code	(Tcl_DriverGetOptionProc) (void *instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			Tcl_DString *dsPtr);
 typedef void	(Tcl_DriverWatchProc) (void *instanceData, int mask);
-typedef int	(Tcl_DriverGetHandleProc) (void *instanceData,
+typedef Tcl_Code	(Tcl_DriverGetHandleProc) (void *instanceData,
 			int direction, void **handlePtr);
 typedef int	(Tcl_DriverFlushProc) (void *instanceData);
 typedef int	(Tcl_DriverHandlerProc) (void *instanceData,
@@ -1689,19 +1691,19 @@ typedef int (Tcl_FSStatProc) (Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 typedef int (Tcl_FSAccessProc) (Tcl_Obj *pathPtr, int mode);
 typedef Tcl_Channel (Tcl_FSOpenFileChannelProc) (Tcl_Interp *interp,
 	Tcl_Obj *pathPtr, int mode, int permissions);
-typedef int (Tcl_FSMatchInDirectoryProc) (Tcl_Interp *interp, Tcl_Obj *result,
+typedef Tcl_Code (Tcl_FSMatchInDirectoryProc) (Tcl_Interp *interp, Tcl_Obj *result,
 	Tcl_Obj *pathPtr, const char *pattern, Tcl_GlobTypeData *types);
 typedef Tcl_Obj * (Tcl_FSGetCwdProc) (Tcl_Interp *interp);
 typedef int (Tcl_FSChdirProc) (Tcl_Obj *pathPtr);
 typedef int (Tcl_FSLstatProc) (Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
-typedef int (Tcl_FSCreateDirectoryProc) (Tcl_Obj *pathPtr);
-typedef int (Tcl_FSDeleteFileProc) (Tcl_Obj *pathPtr);
-typedef int (Tcl_FSCopyDirectoryProc) (Tcl_Obj *srcPathPtr,
+typedef Tcl_Code (Tcl_FSCreateDirectoryProc) (Tcl_Obj *pathPtr);
+typedef Tcl_Code (Tcl_FSDeleteFileProc) (Tcl_Obj *pathPtr);
+typedef Tcl_Code (Tcl_FSCopyDirectoryProc) (Tcl_Obj *srcPathPtr,
 	Tcl_Obj *destPathPtr, Tcl_Obj **errorPtr);
-typedef int (Tcl_FSCopyFileProc) (Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr);
-typedef int (Tcl_FSRemoveDirectoryProc) (Tcl_Obj *pathPtr, int recursive,
+typedef Tcl_Code (Tcl_FSCopyFileProc) (Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr);
+typedef Tcl_Code (Tcl_FSRemoveDirectoryProc) (Tcl_Obj *pathPtr, int recursive,
 	Tcl_Obj **errorPtr);
-typedef int (Tcl_FSRenameFileProc) (Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr);
+typedef Tcl_Code (Tcl_FSRenameFileProc) (Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr);
 typedef void (Tcl_FSUnloadFileProc) (Tcl_LoadHandle loadHandle);
 typedef Tcl_Obj * (Tcl_FSListVolumesProc) (void);
 /* We have to declare the utime structure here. */
@@ -1709,15 +1711,15 @@ struct utimbuf;
 typedef int (Tcl_FSUtimeProc) (Tcl_Obj *pathPtr, struct utimbuf *tval);
 typedef int (Tcl_FSNormalizePathProc) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
 	int nextCheckpoint);
-typedef int (Tcl_FSFileAttrsGetProc) (Tcl_Interp *interp, int index,
+typedef Tcl_Code (Tcl_FSFileAttrsGetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef);
 typedef const char *CONST86 * (Tcl_FSFileAttrStringsProc) (Tcl_Obj *pathPtr,
 	Tcl_Obj **objPtrRef);
-typedef int (Tcl_FSFileAttrsSetProc) (Tcl_Interp *interp, int index,
+typedef Tcl_Code (Tcl_FSFileAttrsSetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj *objPtr);
 typedef Tcl_Obj * (Tcl_FSLinkProc) (Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
 	int linkType);
-typedef int (Tcl_FSLoadFileProc) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
+typedef Tcl_Code (Tcl_FSLoadFileProc) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
 	Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr);
 typedef int (Tcl_FSPathInFilesystemProc) (Tcl_Obj *pathPtr,
 	void **clientDataPtr);
@@ -2425,8 +2427,8 @@ typedef int (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
  * Single public declaration for NRE.
  */
 
-typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
-				int result);
+typedef Tcl_Code (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
+				Tcl_Code result);
 
 /*
  *----------------------------------------------------------------------------
