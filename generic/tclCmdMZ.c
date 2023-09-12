@@ -606,9 +606,9 @@ Tcl_RegsubObjCmd(
 	nocase = (cflags & TCL_REG_NOCASE);
 	strCmpFn = nocase ? TclUniCharNcasecmp : TclUniCharNcmp;
 
-	wsrc = TclGetUnicodeFromObj_(objv[0], &slen);
-	wstring = TclGetUnicodeFromObj_(objv[1], &wlen);
-	wsubspec = TclGetUnicodeFromObj_(objv[2], &wsublen);
+	wsrc = TclGetUnicodeFromObj(objv[0], &slen);
+	wstring = TclGetUnicodeFromObj(objv[1], &wlen);
+	wsubspec = TclGetUnicodeFromObj(objv[2], &wsublen);
 	wend = wstring + wlen - (slen ? slen - 1 : 0);
 	result = TCL_OK;
 
@@ -699,14 +699,14 @@ Tcl_RegsubObjCmd(
     } else {
 	objPtr = objv[1];
     }
-    wstring = TclGetUnicodeFromObj_(objPtr, &wlen);
+    wstring = TclGetUnicodeFromObj(objPtr, &wlen);
     if (objv[2] == objv[0]) {
 	subPtr = Tcl_DuplicateObj(objv[2]);
     } else {
 	subPtr = objv[2];
     }
     if (!command) {
-	wsubspec = TclGetUnicodeFromObj_(subPtr, &wsublen);
+	wsubspec = TclGetUnicodeFromObj(subPtr, &wsublen);
     }
 
     result = TCL_OK;
@@ -826,7 +826,7 @@ Tcl_RegsubObjCmd(
 	     * the user code.
 	     */
 
-	    wstring = TclGetUnicodeFromObj_(objPtr, &wlen);
+	    wstring = TclGetUnicodeFromObj(objPtr, &wlen);
 
 	    offset += end;
 	    if (end == 0 || start == end) {
@@ -1217,7 +1217,7 @@ Tcl_SplitObjCmd(
 	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 
 	for ( ; stringPtr < end; stringPtr += len) {
-	    len = TclUtfToUCS4(stringPtr, &ch);
+	    len = Tcl_UtfToUniChar(stringPtr, &ch);
 	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ch), &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
@@ -1263,9 +1263,9 @@ Tcl_SplitObjCmd(
 	splitEnd = splitChars + splitCharLen;
 
 	for (element = stringPtr; stringPtr < end; stringPtr += len) {
-	    len = TclUtfToUCS4(stringPtr, &ch);
+	    len = Tcl_UtfToUniChar(stringPtr, &ch);
 	    for (p = splitChars; p < splitEnd; p += splitLen) {
-		splitLen = TclUtfToUCS4(p, &splitChar);
+		splitLen = Tcl_UtfToUniChar(p, &splitChar);
 		if (ch == splitChar) {
 		    TclNewStringObj(objPtr, element, stringPtr - element);
 		    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
@@ -1895,7 +1895,7 @@ StringIsCmd(
 	for (; string1 < end; string1 += length2, failat++) {
 	    int ucs4;
 
-	    length2 = TclUtfToUCS4(string1, &ucs4);
+	    length2 = Tcl_UtfToUniChar(string1, &ucs4);
 	    if (!chcomp(ucs4)) {
 		result = 0;
 		break;
@@ -2060,7 +2060,7 @@ StringMapCmd(
     } else {
 	sourceObj = objv[objc-1];
     }
-    ustring1 = TclGetUnicodeFromObj_(sourceObj, &length1);
+    ustring1 = TclGetUnicodeFromObj(sourceObj, &length1);
     if (length1 == 0) {
 	/*
 	 * Empty input string, just stop now.
@@ -2089,7 +2089,7 @@ StringMapCmd(
 	int mapLen, u2lc;
 	Tcl_UniChar *mapString;
 
-	ustring2 = TclGetUnicodeFromObj_(mapElemv[0], &length2);
+	ustring2 = TclGetUnicodeFromObj(mapElemv[0], &length2);
 	p = ustring1;
 	if ((length2 > length1) || (length2 == 0)) {
 	    /*
@@ -2098,7 +2098,7 @@ StringMapCmd(
 
 	    ustring1 = end;
 	} else {
-	    mapString = TclGetUnicodeFromObj_(mapElemv[1], &mapLen);
+	    mapString = TclGetUnicodeFromObj(mapElemv[1], &mapLen);
 	    u2lc = (nocase ? Tcl_UniCharToLower(*ustring2) : 0);
 	    for (; ustring1 < end; ustring1++) {
 		if (((*ustring1 == *ustring2) ||
@@ -2134,7 +2134,7 @@ StringMapCmd(
 	    u2lc = (int *)TclStackAlloc(interp, mapElemc * sizeof(int));
 	}
 	for (index = 0; index < mapElemc; index++) {
-	    mapStrings[index] = TclGetUnicodeFromObj_(mapElemv[index],
+	    mapStrings[index] = TclGetUnicodeFromObj(mapElemv[index],
 		    mapLens+index);
 	    if (nocase && ((index % 2) == 0)) {
 		u2lc[index/2] = Tcl_UniCharToLower(*mapStrings[index]);
@@ -2506,7 +2506,7 @@ StringStartCmd(
 	return TCL_ERROR;
     }
 
-    string = TclGetUnicodeFromObj_(objv[1], &length);
+    string = TclGetUnicodeFromObj(objv[1], &length);
     if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2517,7 +2517,7 @@ StringStartCmd(
     if (index > 0) {
 	p = &string[index];
 
-	(void)TclUniCharToUCS4(p, &ch);
+	ch = *p;
 	for (cur = index; cur >= 0; cur--) {
 	    int delta = 0;
 	    const Tcl_UniChar *next;
@@ -2526,10 +2526,11 @@ StringStartCmd(
 		break;
 	    }
 
-	    next = TclUCS4Prev(p, string);
+	    next = (p > string) ? p - 1 : p;
 	    do {
 		next += delta;
-		delta = TclUniCharToUCS4(next, &ch);
+		ch = *next;
+		delta = 1;
 	    } while (next + delta < p);
 	    p = next;
 	}
@@ -2576,7 +2577,7 @@ StringEndCmd(
 	return TCL_ERROR;
     }
 
-    string = TclGetUnicodeFromObj_(objv[1], &length);
+    string = TclGetUnicodeFromObj(objv[1], &length);
     if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2587,7 +2588,7 @@ StringEndCmd(
 	p = &string[index];
 	end = string+length;
 	for (cur = index; p < end; cur++) {
-	    p += TclUniCharToUCS4(p, &ch);
+	    ch = *p++;
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;
 	    }
@@ -2931,7 +2932,7 @@ StringLowerCmd(
 	const char *start, *end;
 	Tcl_Obj *resultPtr;
 
-	length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	length1 = TclNumUtfChars(string1, length1) - 1;
 	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3016,7 +3017,7 @@ StringUpperCmd(
 	const char *start, *end;
 	Tcl_Obj *resultPtr;
 
-	length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	length1 = TclNumUtfChars(string1, length1) - 1;
 	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3101,7 +3102,7 @@ StringTitleCmd(
 	const char *start, *end;
 	Tcl_Obj *resultPtr;
 
-	length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	length1 = TclNumUtfChars(string1, length1) - 1;
 	if (TclGetIntForIndexM(interp,objv[2],length1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}

@@ -435,7 +435,7 @@ Tcl_GetBytesFromObj(
 		irPtr = TclFetchInternalRep(objPtr, &tclByteArrayType);
 		baPtr = GET_BYTEARRAY(irPtr);
 		nonbyte = TclUtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
-		TclUtfToUCS4(nonbyte, &ucs4);
+		Tcl_UtfToUniChar(nonbyte, &ucs4);
 
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected byte sequence but character %d "
@@ -2653,7 +2653,7 @@ BinaryDecodeHex(
     if (pure) {
 	ucs4 = c;
     } else {
-	TclUtfToUCS4((const char *)(data - 1), &ucs4);
+	Tcl_UtfToUniChar((const char *)(data - 1), &ucs4);
     }
     TclDecrRefCount(resultObj);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3110,7 +3110,7 @@ BinaryDecodeUu(
     if (pure) {
 	ucs4 = c;
     } else {
-	TclUtfToUCS4((const char *)(data - 1), &ucs4);
+	Tcl_UtfToUniChar((const char *)(data - 1), &ucs4);
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid uuencode character \"%c\" (U+%06X) at position %d",
@@ -3284,7 +3284,7 @@ BinaryDecode64(
 	 * of a multi-byte character. */
 
 	/* Safe because we know data is NUL-terminated */
-	TclUtfToUCS4((const char *)(data - 1), &ucs4);
+	Tcl_UtfToUniChar((const char *)(data - 1), &ucs4);
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(

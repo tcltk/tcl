@@ -387,10 +387,8 @@ TclInitObjSubsystem(void)
 
     Tcl_RegisterObjType(&tclByteArrayType);
     Tcl_RegisterObjType(&tclDoubleType);
-#if (TCL_UTF_MAX < 4) || !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
     Tcl_RegisterObjType(&tclStringType);
-#endif
-#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
     /* Only registered for 8.7, not for 9.0 any more.
      * See [https://core.tcl-lang.org/tk/tktview/6b49149b4e] */
     Tcl_RegisterObjType(&tclUniCharStringType);

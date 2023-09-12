@@ -1119,9 +1119,6 @@ static const struct {
 #ifdef STATIC_BUILD
 	    ".static"
 #endif
-#if TCL_UTF_MAX < 4
-	    ".utf-16"
-#endif
 }};
 
 const char *
