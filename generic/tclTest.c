@@ -2282,17 +2282,61 @@ TestevalobjvObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int evalGlobal;
+    static const char *const options[] = {
+	"-global", "-safe", "--", NULL
+    };
+    enum options {
+	EOV_Global, EOV_Safe, EOV_End
+    };
+    int ret, index, flags = 0, evalSafe = 0;
+    Tcl_InterpState interpState;
 
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "global word ?word ...?");
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-global|0|1? ?-safe? ?--? word ?word ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIntFromObj(interp, objv[1], &evalGlobal) != TCL_OK) {
-	return TCL_ERROR;
+    objc--; objv++;
+    while (objc >= 2) {
+	if (Tcl_GetIndexFromObj(NULL, objv[0], options, "option", TCL_EXACT,
+		&index) == TCL_OK) {
+	    objc--; objv++;
+	    if (index == EOV_Global) {
+		flags |= TCL_EVAL_GLOBAL;
+		continue;
+	    }
+	    if (index == EOV_Safe) {
+		evalSafe = 1;
+		continue;
+	    }
+	    if (index == EOV_End) {
+		break;
+	    }
+	} else if (Tcl_GetIntFromObj(NULL, objv[0], &index) == TCL_OK) {
+	    if (index) {
+		flags |= TCL_EVAL_GLOBAL;
+	    }
+	    objc--; objv++;
+	} else {
+	    break;
+	}
     }
-    return Tcl_EvalObjv(interp, objc-2, objv+2,
-	    (evalGlobal) ? TCL_EVAL_GLOBAL : 0);
+    if (evalSafe) {
+	interpState = Tcl_SaveInterpState(interp, 0);
+    }
+    ret = Tcl_EvalObjv(interp, objc, objv, flags);
+    if (evalSafe) {
+	if (ret != TCL_OK) {
+	    Tcl_DiscardInterpState(interpState);
+	} else {
+	    /* restore state (excepting result) */
+	    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
+	    Tcl_IncrRefCount(objPtr);
+	    (void) Tcl_RestoreInterpState(interp, interpState);
+	    Tcl_SetObjResult(interp, objPtr);
+	    Tcl_DecrRefCount(objPtr);
+	}
+    }
+    return ret;
 }
 
 /*

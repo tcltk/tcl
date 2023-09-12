@@ -24,6 +24,7 @@ testConstraint testsaveresult      [llength [info commands testsaveresult]]
 testConstraint testsetobjerrorcode [llength [info commands testsetobjerrorcode]]
 testConstraint testseterrorcode    [llength [info commands testseterrorcode]]
 testConstraint testreturn          [llength [info commands testreturn]]
+testConstraint testevalobjv        [llength [info commands testevalobjv]]
 
 test result-1.1 {Tcl_SaveInterpResult} {testsaveresult} {
     testsaveresult small {set x 42} 0
@@ -49,6 +50,36 @@ test result-1.7 {Tcl_SaveInterpResult} {testsaveresult} {
 test result-1.8 {Tcl_SaveInterpResult} {testsaveresult} {
     testsaveresult object {set x 42} 1
 } {42 different}
+
+test result-1.9.1 {Tcl_SaveInterpState: "safe" eval without modifying states} {testevalobjv} {
+    if {[catch {
+	return -level 0 -code error -errorcode {EXPERR TEST-ERROR} -errorinfo "ERROR expected error" test
+    }]} {
+	# safe routine (e.g. clock format) that should never overwrite error code/info:
+	testevalobjv -safe catch {
+	    error catched "ERROR in safe block" {UNEXPERR INVISIBLE}
+	}
+	list $::errorCode $::errorInfo
+    }
+} {{EXPERR TEST-ERROR} {ERROR expected error}}
+test result-1.9.2 {Tcl_SaveInterpState: nested save state does not modify error info/code} {testevalobjv} {
+    proc _get_time {} {
+	testevalobjv -safe eval {
+	    # some catched (initialization) error:
+	    testevalobjv -safe catch {
+		error catched "ERROR in safe block" {UNEXPERR INVISIBLE}
+	    }
+	    # clock seconds:
+	    return 0
+	}
+    }
+    if {[catch {
+	return -level 0 -code error -errorcode {EXPERR TEST-ERROR} -errorinfo "ERROR expected error" test
+    }]} {
+	# safe routine _get_time should never overwrite error code/info:
+	list [_get_time] $::errorCode $::errorInfo
+    }
+} {0 {EXPERR TEST-ERROR} {ERROR expected error}}
 
 # Tcl_RestoreInterpResult is mostly tested by the previous tests except
 # for the following case

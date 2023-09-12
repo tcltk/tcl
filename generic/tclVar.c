@@ -1352,6 +1352,25 @@ Tcl_ObjGetVar2(
     return TclPtrGetVarIdx(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
 	    flags, -1);
 }
+
+Tcl_Obj *
+TclObjGetVarScalarNoTrace(
+    Tcl_Interp *interp,		/* Command interpreter in which variable is to
+				 * be looked up. */
+    register Tcl_Obj *namePtr,	/* Points to an object holding the name of a
+				 * variable. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
+				 * TCL_LEAVE_ERR_MSG bits. */
+{
+    Var *varPtr, *arrayPtr;
+
+    varPtr = TclObjLookupVarEx(interp, namePtr, NULL, flags, "read",
+	    /*createPart1*/ 0, /*createPart2*/ 1, &arrayPtr);
+    if (varPtr && TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) {
+	return varPtr->value.objPtr;
+    }
+    return NULL;
+}
 
 /*
  *----------------------------------------------------------------------

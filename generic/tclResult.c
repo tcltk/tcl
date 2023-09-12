@@ -81,14 +81,23 @@ Tcl_SaveInterpState(
     statePtr->flags = iPtr->flags & ERR_ALREADY_LOGGED;
     statePtr->returnLevel = iPtr->returnLevel;
     statePtr->returnCode = iPtr->returnCode;
-    statePtr->errorInfo = iPtr->errorInfo;
+    /* be sure we obtain content of ei/ec vars if states are NULL */
+    if ((statePtr->errorInfo = iPtr->errorInfo) == NULL) {
+	statePtr->flags |= ERR_LEGACY_COPY;
+	statePtr->errorInfo = TclObjGetVarScalarNoTrace(interp, iPtr->eiVar,
+						TCL_GLOBAL_ONLY);
+    }
     statePtr->errorStack = iPtr->errorStack;
     statePtr->resetErrorStack = iPtr->resetErrorStack;
     if (statePtr->errorInfo) {
 	Tcl_IncrRefCount(statePtr->errorInfo);
     }
-    statePtr->errorCode = iPtr->errorCode;
-    if (statePtr->errorCode) {
+    if ((statePtr->errorCode = iPtr->errorCode) == NULL) {
+	statePtr->flags |= ERR_LEGACY_COPY;
+	statePtr->errorCode = TclObjGetVarScalarNoTrace(interp, iPtr->ecVar,
+						TCL_GLOBAL_ONLY);
+    }
+    if ( statePtr->errorCode) {
 	Tcl_IncrRefCount(statePtr->errorCode);
     }
     statePtr->returnOpts = iPtr->returnOpts;
@@ -131,7 +140,7 @@ Tcl_RestoreInterpState(
     int status = statePtr->status;
 
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
-    iPtr->flags |= (statePtr->flags & ERR_ALREADY_LOGGED);
+    iPtr->flags |= (statePtr->flags & (ERR_ALREADY_LOGGED|ERR_LEGACY_COPY));
 
     iPtr->returnLevel = statePtr->returnLevel;
     iPtr->returnCode = statePtr->returnCode;
