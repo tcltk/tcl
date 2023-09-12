@@ -19,20 +19,33 @@ TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
 #if defined(_WIN32)
 #  define tenviron _wenviron
-#  define tenviron2utfdstr(str, dsPtr) (Tcl_DStringInit(dsPtr), \
-		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(str), -1, (dsPtr)))
-#  define utf2tenvirondstr(str, dsPtr) (Tcl_DStringInit(dsPtr), \
-		(const WCHAR *)Tcl_UtfToChar16DString((str), -1, (dsPtr)))
+static inline char *tenviron2utfdstr(const WCHAR *str, Tcl_DString *dsPtr) {
+    Tcl_DStringInit(dsPtr);
+    return Tcl_Char16ToUtfDString(str, -1, dsPtr);
+}
+static inline WCHAR *utf2tenvirondstr(const char *str, Tcl_DString *dsPtr) {
+    Tcl_DStringInit(dsPtr);
+    return Tcl_UtfToChar16DString(str, -1, dsPtr);
+}
 #  define techar WCHAR
 #  ifdef USE_PUTENV
 #    define putenv(env) _wputenv((const wchar_t *)env)
 #  endif
 #else
 #  define tenviron environ
-#  define tenviron2utfdstr(str, dsPtr) \
-		Tcl_ExternalToUtfDString(NULL, str, -1, dsPtr)
-#  define utf2tenvirondstr(str, dsPtr) \
-		Tcl_UtfToExternalDString(NULL, str, -1, dsPtr)
+static inline char *tenviron2utfdstr(const char *str, Tcl_DString *dsPtr) {
+    if (TclSystemToInternalEncoding(NULL,str,-1,dsPtr) == TCL_OK) {
+        return Tcl_DStringValue(dsPtr);
+    }
+    return NULL;
+}
+static inline char *utf2tenvirondstr(const char *str, Tcl_DString *dsPtr) {
+    Tcl_DStringInit(dsPtr);
+    if (TclInternalToSystemEncoding(NULL,str,-1,dsPtr) == TCL_OK) {
+        return Tcl_DStringValue(dsPtr);
+    }
+    return NULL;
+}
 #  define techar char
 #endif
 

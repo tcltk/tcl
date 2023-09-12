@@ -3044,6 +3044,10 @@ TclEncodingProfileNameToId(Tcl_Interp *interp,
 MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 						    int profileId);
 MODULE_SCOPE void TclGetEncodingProfiles(Tcl_Interp *interp);
+MODULE_SCOPE int TclInternalToSystemEncoding(Tcl_Interp *interp,
+			const char *src, Tcl_Size srcLen, Tcl_DString *dsPtr);
+MODULE_SCOPE int TclSystemToInternalEncoding(Tcl_Interp *interp,
+			const char *src, Tcl_Size srcLen, Tcl_DString *dsPtr);
 
 /*
  * TIP #233 (Virtualized Time)
