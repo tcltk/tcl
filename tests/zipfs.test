@@ -436,6 +436,11 @@ namespace eval test_ns_zipfs {
     }
 
     #
+    # zipfs root - only arg count check since do not want to assume
+    # what it resolves to
+    testnumargs "zipfs root" "" ""
+
+    #
     # zipfs mount
 
     proc testbadmount {id zippath messagePattern args} {
@@ -507,10 +512,10 @@ namespace eval test_ns_zipfs {
     testbadmount bad-directory-offset incons-cdoffset.zip          "archive directory truncated"
     testbadmount bad-directory-magic  incons-central-magic-bad.zip "wrong header signature"
     testbadmount bad-local-magic      incons-local-magic-bad.zip   "Failed to find local header"
+    testbadmount bad-file-count-high  incons-file-count-high.zip "truncated directory"
 
     # TODO testbadmount bad-directory-crc incons-central-crc.zip ""
     # TODO - at open testbadmount bad-file-count-low  incons-file-count-low.zip ""
-    # TODO - at open testbadmount bad-file-count-high  incons-file-count-high.zip ""
 
     testmount basic test.zip testdir/test2
     testmount zip-at-end junk-at-start.zip testdir/test2
@@ -851,6 +856,63 @@ namespace eval test_ns_zipfs {
     # zipfs info
     testnumargs "zipfs info" "filename" ""
 
+    test zipfs-info-native-nosuchfile "zipfs info on non-existent native path" -body {
+        zipfs info nosuchfile
+    } -result {path "nosuchfile" not found in any zipfs volume} -returnCodes error
+
+    test zipfs-info-native-file "zipfs info on native path" -body {
+        zipfs info [info nameofexecutable]
+    } -result "path \"[info nameofexecutable]\" not found in any zipfs volume" -returnCodes error
+
+    test zipfs-info-nosuchfile "zipfs info non-existent path in mounted archive" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs info [file join $defaultMountPoint nosuchfile]
+    } -result "path \"[file join $defaultMountPoint nosuchfile]\" not found in any zipfs volume" -returnCodes error
+
+    test zipfs-info-file "zipfs info file within mounted archive" -setup {
+        mount [zippath testdeflated2.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs info [file join $defaultMountPoint abac-repeat.txt]
+    } -result [list [zippath testdeflated2.zip] 60 17 108]
+
+    test zipfs-info-dir "zipfs info dir within mounted archive" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs info [file join $defaultMountPoint testdir]
+    } -result [list [zippath test.zip] 0 0 119]
+
+    test zipfs-info-mountpoint "zipfs info on mount point - verify correct offset of zip content" -setup {
+        # zip starts at offset 4
+        mount [zippath junk-at-start.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs info $defaultMountPoint
+    } -result [list [zippath junk-at-start.zip] 0 0 4]
+
+    #
+    # zipfs canonical - TODO - semantics are very unclear. Can produce nonsensical paths like
+    # //zipfs:/n/zipfs:/m/test
+
+    #
+    # TODO - open of zipfs file
+
+
+    #
+    # TODO - glob of zipfs file
+
+    #
+    # TODO - stat of zipfs file
+
+    #
+    # TODO - copy, rename etc.
 
     #
     # Bug regressions

@@ -1270,8 +1270,8 @@ ZipFSFindTOC(
 	size_t localhdr_off = zf->length;
 
 	if (q + ZIP_CENTRAL_HEADER_LEN > end) {
-	    ZIPFS_ERROR(interp, "wrong header length");
-	    ZIPFS_ERROR_CODE(interp, "HDR_LEN");
+	    ZIPFS_ERROR(interp, "truncated directory");
+	    ZIPFS_ERROR_CODE(interp, "TRUNC_DIR");
 	    goto error;
 	}
 	if (ZipReadInt(start, end, q) != ZIP_CENTRAL_HEADER_SIG) {
@@ -2362,9 +2362,13 @@ static int
 ZipFSRootObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) /*objc*/,
-    TCL_UNUSED(Tcl_Obj *const *)) /*objv*/
+    int objc,
+    Tcl_Obj *const *objv)
 {
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(ZIPFS_VOLUME, -1));
     return TCL_OK;
 }
@@ -3736,6 +3740,7 @@ ZipFSInfoObjCmd(
 {
     char *filename;
     ZipEntry *z;
+    int ret;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "filename");
@@ -3754,11 +3759,21 @@ ZipFSInfoObjCmd(
 	Tcl_ListObjAppendElement(interp, result,
 		Tcl_NewWideIntObj(z->numCompressedBytes));
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(z->offset));
+	ret = TCL_OK;
+    } else {
+	Tcl_SetErrno(ENOENT);
+	if (interp) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_ObjPrintf("path \"%s\" not found in any zipfs volume",
+			      filename));
+	}
+	ret = TCL_ERROR;
     }
     Unlock();
-    return TCL_OK;
+    return ret;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
