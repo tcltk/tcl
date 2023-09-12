@@ -643,7 +643,7 @@ SetOSTypeFromAny(
     Tcl_Size length;
 
     string = Tcl_GetStringFromObj(objPtr, &length);
-    Tcl_UtfToExternalDStringEx(NULL, encoding, string, length, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+    Tcl_UtfToExternalDStringEx(NULL, encoding, string, length, TCL_ENCODING_PROFILE_LOSSLESS, &ds, NULL);
 
     if (Tcl_DStringLength(&ds) > 4) {
 	if (interp) {
