@@ -85,29 +85,13 @@
 # undef TclGetUnicodeFromObj
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
-# if TCL_UTF_MAX > 3
-#   define TclGetUnicodeFromObj 0
-# endif
+# define TclGetUnicodeFromObj 0
 #endif
 #undef Tcl_Close
 #define Tcl_Close 0
 #undef Tcl_GetByteArrayFromObj
 #define Tcl_GetByteArrayFromObj 0
 #define TclUnusedStubEntry 0
-
-
-#if TCL_UTF_MAX < 4
-static void uniCodePanic() {
-    Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
-}
-
-#   define Tcl_GetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, Tcl_Size *))(void *)uniCodePanic
-#   define TclGetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, void *))(void *)uniCodePanic
-#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const Tcl_UniChar *, Tcl_Size))(void *)uniCodePanic
-#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, Tcl_Size))(void *)uniCodePanic
-#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, Tcl_Size))(void *)uniCodePanic
-#endif
-
 #define TclUtfCharComplete Tcl_UtfCharComplete
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev

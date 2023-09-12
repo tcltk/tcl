@@ -816,7 +816,6 @@ DOTSEPARATED=$(DOTSEPARATED:b=.)
 #           configuration (ignored for Tcl itself)
 # _USE_64BIT_TIME_T - forces a build using 64-bit time_t for 32-bit build
 #           (CRT library should support this, not needed for Tcl 9.x)
-# TCL_UTF_MAX=3 - forces a build using UTF-16 internally (not recommended).
 # Further, LINKERFLAGS are modified based on above.
 
 # Default values for all the above
@@ -887,11 +886,6 @@ TCL_BUILD_FOR = 8
 !message *** Force 64-bit time_t
 _USE_64BIT_TIME_T = 1
 !endif
-!endif
-
-!if [nmakehlp -f $(OPTS) "utf16"]
-!message *** Force UTF-16 internally
-TCL_UTF_MAX = 3
 !endif
 
 # Yes, it's weird that the "symbols" option controls DEBUG and
@@ -1450,9 +1444,6 @@ OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T=1
 
 # _ATL_XP_TARGETING - Newer SDK's need this to build for XP
 COMPILERFLAGS  = /D_ATL_XP_TARGETING
-!endif
-!if "$(TCL_UTF_MAX)" == "3"
-OPTDEFINES	= $(OPTDEFINES) /DTCL_UTF_MAX=3
 !endif
 !if "$(TCL_BUILD_FOR)" == "8"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8

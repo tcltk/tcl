@@ -2095,15 +2095,17 @@ typedef struct Tcl_EncodingType {
  * reflected in regcustom.h.
  */
 
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX == 4
     /*
      * int isn't 100% accurate as it should be a strict 4-byte value
      * (perhaps int32_t). ILP64/SILP64 systems may have troubles. The
      * size of this value must be reflected correctly in regcustom.h.
      */
 typedef int Tcl_UniChar;
-#else
+#elif TCL_UTF_MAX == 3 && !defined(BUILD_tcl)
 typedef unsigned short Tcl_UniChar;
+#else
+#   error "This TCL_UTF_MAX value is not supported"
 #endif
 
 /*
