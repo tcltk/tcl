@@ -386,15 +386,6 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(&tclRegexpType);
     Tcl_RegisterObjType(&tclProcBodyType);
 
-    /* For backward compatibility only ... */
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-    Tcl_RegisterObjType(&tclIntType);
-#if !defined(TCL_WIDE_INT_IS_LONG)
-    Tcl_RegisterObjType(&oldIntType);
-#endif
-    Tcl_RegisterObjType(&oldBooleanType);
-#endif
-
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
     tclObjsAlloced = 0;

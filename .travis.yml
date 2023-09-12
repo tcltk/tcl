@@ -20,13 +20,6 @@ jobs:
       compiler: gcc
       env:
         - BUILD_DIR=unix
-    - name: "Linux/GCC/Shared: UTF_MAX=3"
-      os: linux
-      dist: focal
-      compiler: gcc
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT="CFLAGS=-DTCL_UTF_MAX=3"
     - name: "Linux/GCC/Shared: NO_DEPRECATED"
       os: linux
       dist: focal
@@ -301,13 +294,6 @@ jobs:
         - touch generic/tclStubInit.c generic/tclOOStubInit.c generic/tclOOScript.h
         - choco install -y make zip
         - cd ${BUILD_DIR}
-    - name: "Windows/GCC/Shared: UTF_MAX=3"
-      os: windows
-      compiler: gcc
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--enable-64bit CFLAGS=-DTCL_UTF_MAX=3"
-      before_install: *makepreinst
     - name: "Windows/GCC/Shared: NO_DEPRECATED"
       os: windows
       compiler: gcc
@@ -342,13 +328,6 @@ jobs:
       compiler: gcc
       env:
         - BUILD_DIR=win
-      before_install: *makepreinst
-    - name: "Windows/GCC-x86/Shared: UTF_MAX=3"
-      os: windows
-      compiler: gcc
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="CFLAGS=-DTCL_UTF_MAX=3"
       before_install: *makepreinst
     - name: "Windows/GCC-x86/Shared: NO_DEPRECATED"
       os: windows
