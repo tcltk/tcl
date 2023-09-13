@@ -1289,12 +1289,12 @@ ZipFSFindTOC(
     zf->directoryOffset = cdirZipOffset + zf->baseOffset;
     zf->directorySize = cdirSize;
 
-    const unsigned char *const cdirStart = p - cdirSize; /* Start of  */
+    const unsigned char *const cdirStart = p - cdirSize; /* Start of CD */
 
     /*
      * Original pointer based validation replaced by simpler checks above.
      * Ensure still holds. The assigments to p, q are only there for use in
-     * the asserts.
+     * the asserts. May be removed at some future date.
      */
     q = zf->data + cdirZipOffset;
     p -= cdirSize;

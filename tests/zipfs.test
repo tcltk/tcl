@@ -512,10 +512,10 @@ namespace eval test_ns_zipfs {
     testbadmount bad-directory-offset incons-cdoffset.zip          "archive directory truncated"
     testbadmount bad-directory-magic  incons-central-magic-bad.zip "wrong header signature"
     testbadmount bad-local-magic      incons-local-magic-bad.zip   "Failed to find local header"
-    testbadmount bad-file-count-high  incons-file-count-high.zip "truncated directory"
+    testbadmount bad-file-count-high  incons-file-count-high.zip   "truncated directory"
+    testbadmount bad-file-count-low   incons-file-count-low.zip    "short file count"
 
     # TODO testbadmount bad-directory-crc incons-central-crc.zip ""
-    # TODO - at open testbadmount bad-file-count-low  incons-file-count-low.zip ""
 
     testmount basic test.zip testdir/test2
     testmount zip-at-end junk-at-start.zip testdir/test2
@@ -722,22 +722,23 @@ namespace eval test_ns_zipfs {
             cleanup
         } -result $resultpaths {*}$args
     }
-    testzipfslist no-mounts "" {} {}
-    testzipfslist no-pattern "" {test.zip testmountA} {testmountA testmountA/test testmountA/testdir testmountA/testdir/test2}
+    # Some tests have !zipfslib constraint because otherwise they dump the entire Tcl library which is mounted on root
+    testzipfslist no-mounts "" {} {} -constraints !zipfslib
+    testzipfslist no-pattern "" {test.zip testmountA} {testmountA testmountA/test testmountA/testdir testmountA/testdir/test2} -constraints !zipfslib
     testzipfslist no-pattern-mount-on-root "" {test.zip {}} {{} test testdir testdir/test2} -constraints knownBug
     testzipfslist no-pattern-multiple "" {test.zip testmountA test.zip testmountB/subdir} {
         testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
         testmountB/subdir testmountB/subdir/test testmountB/subdir/testdir testmountB/subdir/testdir/test2
-    }
-    testzipfslist glob [list "*2*"] {test.zip testmountA test.zip testmountB/subdir} {
+    } -constraints !zipfslib
+    testzipfslist glob [list "*testmount*2*"] {test.zip testmountA test.zip testmountB/subdir} {
         testmountA/testdir/test2
         testmountB/subdir/testdir/test2
     }
-    testzipfslist opt-glob [list -glob "*2*"] {test.zip testmountA test.zip testmountB/subdir} {
+    testzipfslist opt-glob [list -glob "*testmount*2*"] {test.zip testmountA test.zip testmountB/subdir} {
         testmountA/testdir/test2
         testmountB/subdir/testdir/test2
     }
-    testzipfslist opt-regexp [list -regexp "A|2"] {test.zip testmountA test.zip testmountB/subdir} {
+    testzipfslist opt-regexp [list -regexp "testmount.*(A|2)"] {test.zip testmountA test.zip testmountB/subdir} {
         testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
         testmountB/subdir/testdir/test2
     }

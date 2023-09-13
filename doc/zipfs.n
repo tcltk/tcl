@@ -86,7 +86,9 @@ matching the pattern are returned. By default, or with the \fB-glob\fR option,
 the pattern is treated as a glob pattern and matching is done as described for
 the \fBstring match\fR command. Alternatively, the \fB-regexp\fR option may be
 used to specify matching \fBpattern\fR as a regular expression. The file names
-are returned in arbitrary order.
+are returned in arbitrary order. Note that path separators are treated as
+ordinary characters in the matching. Thus forward slashes should be used
+as path separators in the pattern.
 .TP
 \fBzipfs mount\fR
 .TP
