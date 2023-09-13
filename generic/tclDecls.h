@@ -141,7 +141,7 @@ EXTERN int		Tcl_GetBooleanFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, int *intPtr);
 /* 33 */
 EXTERN unsigned char *	Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr,
-				int *lengthPtr);
+				int *numBytesPtr);
 /* 34 */
 EXTERN int		Tcl_GetDouble(Tcl_Interp *interp, const char *src,
 				double *doublePtr);
@@ -193,7 +193,7 @@ EXTERN int		Tcl_ListObjReplace(Tcl_Interp *interp,
 EXTERN Tcl_Obj *	Tcl_NewBooleanObj(int intValue);
 /* 50 */
 EXTERN Tcl_Obj *	Tcl_NewByteArrayObj(const unsigned char *bytes,
-				int length);
+				int numBytes);
 /* 51 */
 EXTERN Tcl_Obj *	Tcl_NewDoubleObj(double doubleValue);
 /* 52 */
@@ -1835,15 +1835,9 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 /* Slot 648 is reserved */
 /* Slot 649 is reserved */
 /* Slot 650 is reserved */
-/* 651 */
-EXTERN char *		TclGetStringFromObj_(Tcl_Obj *objPtr,
-				void *lengthPtr);
-/* 652 */
-EXTERN unsigned short *	 TclGetUnicodeFromObj_(Tcl_Obj *objPtr,
-				void *lengthPtr);
-/* 653 */
-EXTERN unsigned char *	TclGetByteArrayFromObj_(Tcl_Obj *objPtr,
-				void *numBytesPtr);
+/* Slot 651 is reserved */
+/* Slot 652 is reserved */
+/* Slot 653 is reserved */
 /* Slot 654 is reserved */
 /* Slot 655 is reserved */
 /* Slot 656 is reserved */
@@ -1940,7 +1934,7 @@ typedef struct TclStubs {
     void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
     int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *intPtr); /* 31 */
     int (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *intPtr); /* 32 */
-    unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 33 */
+    unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, int *numBytesPtr); /* 33 */
     int (*tcl_GetDouble) (Tcl_Interp *interp, const char *src, double *doublePtr); /* 34 */
     int (*tcl_GetDoubleFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, double *doublePtr); /* 35 */
     int (*tcl_GetIndexFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, CONST84 char *const *tablePtr, const char *msg, int flags, int *indexPtr); /* 36 */
@@ -1957,7 +1951,7 @@ typedef struct TclStubs {
     int (*tcl_ListObjLength) (Tcl_Interp *interp, Tcl_Obj *listPtr, int *lengthPtr); /* 47 */
     int (*tcl_ListObjReplace) (Tcl_Interp *interp, Tcl_Obj *listPtr, int first, int count, int objc, Tcl_Obj *const objv[]); /* 48 */
     Tcl_Obj * (*tcl_NewBooleanObj) (int intValue); /* 49 */
-    Tcl_Obj * (*tcl_NewByteArrayObj) (const unsigned char *bytes, int length); /* 50 */
+    Tcl_Obj * (*tcl_NewByteArrayObj) (const unsigned char *bytes, int numBytes); /* 50 */
     Tcl_Obj * (*tcl_NewDoubleObj) (double doubleValue); /* 51 */
     Tcl_Obj * (*tcl_NewIntObj) (int intValue); /* 52 */
     Tcl_Obj * (*tcl_NewListObj) (int objc, Tcl_Obj *const objv[]); /* 53 */
@@ -2566,9 +2560,9 @@ typedef struct TclStubs {
     void (*reserved648)(void);
     void (*reserved649)(void);
     void (*reserved650)(void);
-    char * (*tclGetStringFromObj_) (Tcl_Obj *objPtr, void *lengthPtr); /* 651 */
-    unsigned short * (*tclGetUnicodeFromObj_) (Tcl_Obj *objPtr, void *lengthPtr); /* 652 */
-    unsigned char * (*tclGetByteArrayFromObj_) (Tcl_Obj *objPtr, void *numBytesPtr); /* 653 */
+    void (*reserved651)(void);
+    void (*reserved652)(void);
+    void (*reserved653)(void);
     void (*reserved654)(void);
     void (*reserved655)(void);
     void (*reserved656)(void);
@@ -3916,12 +3910,9 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 648 is reserved */
 /* Slot 649 is reserved */
 /* Slot 650 is reserved */
-#define TclGetStringFromObj_ \
-	(tclStubsPtr->tclGetStringFromObj_) /* 651 */
-#define TclGetUnicodeFromObj_ \
-	(tclStubsPtr->tclGetUnicodeFromObj_) /* 652 */
-#define TclGetByteArrayFromObj_ \
-	(tclStubsPtr->tclGetByteArrayFromObj_) /* 653 */
+/* Slot 651 is reserved */
+/* Slot 652 is reserved */
+/* Slot 653 is reserved */
 /* Slot 654 is reserved */
 /* Slot 655 is reserved */
 /* Slot 656 is reserved */
@@ -3996,9 +3987,6 @@ extern const TclStubs *tclStubsPtr;
 
 #undef Tcl_SeekOld
 #undef Tcl_TellOld
-#undef TclGetStringFromObj_
-#undef TclGetUnicodeFromObj_
-#undef TclGetByteArrayFromObj_
 
 #undef Tcl_PkgPresent
 #define Tcl_PkgPresent(interp, name, version, exact) \

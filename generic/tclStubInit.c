@@ -139,45 +139,6 @@ static const char *TclGetStartupScriptFileName(void)
     return Tcl_GetString(path);
 }
 
-/* (unsupported in Tcl 8.6) */
-
-#define TclGetStringFromObj_ getStringFromObj
-static char *
-TclGetStringFromObj_(
-    Tcl_Obj *objPtr,
-    void *lengthPtr)
-{
-    int length;
-    char *result = Tcl_GetStringFromObj(objPtr, &length);
-    *(size_t *)lengthPtr = (size_t)length;
-    return result;
-}
-
-#define TclGetUnicodeFromObj_ getUnicodeFromObj
-static unsigned short *
-TclGetUnicodeFromObj_(
-    Tcl_Obj *objPtr,
-    void *lengthPtr)
-{
-    int length;
-    Tcl_UniChar *result = Tcl_GetUnicodeFromObj(objPtr, &length);
-    *(size_t *)lengthPtr = (size_t)length;
-    return result;
-}
-
-#define TclGetByteArrayFromObj_ getByteArrayFromObj
-static unsigned char *
-TclGetByteArrayFromObj_(
-    Tcl_Obj *objPtr,
-    void *numBytesPtr)
-{
-    int numBytes;
-    unsigned char *result = Tcl_GetByteArrayFromObj(objPtr, &numBytes);
-    *(size_t *)numBytesPtr = (size_t)numBytes;
-    return result;
-}
-
-
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
 #define TclWinNToHS winNToHS
@@ -1690,9 +1651,9 @@ const TclStubs tclStubs = {
     0, /* 648 */
     0, /* 649 */
     0, /* 650 */
-    TclGetStringFromObj_, /* 651 */
-    TclGetUnicodeFromObj_, /* 652 */
-    TclGetByteArrayFromObj_, /* 653 */
+    0, /* 651 */
+    0, /* 652 */
+    0, /* 653 */
     0, /* 654 */
     0, /* 655 */
     0, /* 656 */
