@@ -199,7 +199,8 @@ typedef struct ZipFile {
     size_t baseOffset;		/* Archive start */
     size_t passOffset;		/* Password start */
     size_t directoryOffset;	/* Archive directory start */
-    unsigned char passBuf[264];	/* Password buffer */
+    size_t directorySize;       /* Size of archive directory */
+    unsigned char passBuf[264]; /* Password buffer */
     size_t numOpen;		/* Number of open files on archive */
     struct ZipEntry *entries;	/* List of files in archive */
     struct ZipEntry *topEnts;	/* List of top-level dirs in archive */
@@ -1225,6 +1226,8 @@ ZipFSFindTOC(
 	goto error;
     }
 
+    /* p -> End of Central Directory (EOCD) record at this point */
+
     /*
      * How many files in the archive? If that's bogus, we're done here.
      */
@@ -1241,17 +1244,30 @@ ZipFSFindTOC(
     }
 
     /*
-     * Where does the central directory start?
+     * The Central Directory (CD) is a series of Central Directory File
+     * Header (CDFH) records preceding the EOCD (but not necessarily
+     * immediately preceding). cdirZipOffset is the offset into the
+     * *archive* to the CD (first CDFH). The size of the CD is given by
+     * cdirSize. NOTE: offset into archive does NOT mean offset into
+     * (zf->data) as other data may precede the archive in the file.
      */
+    ptrdiff_t eocdDataOffset = p - zf->data;
+    unsigned int cdirZipOffset = ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSTART_OFFS);
+    unsigned int cdirSize = ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSIZE_OFFS);
 
-    q = zf->data + ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSTART_OFFS);
-    p -= ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSIZE_OFFS);
-    zf->baseOffset = zf->passOffset = (p>q) ? p - q : 0;
-    zf->directoryOffset = q - zf->data + zf->baseOffset;
-    if ((p < q) || (p < zf->data) || (p > zf->data + zf->length)
-	    || (q < zf->data) || (q > zf->data + zf->length)) {
+    /*
+     * As computed above, 
+     *    eocdDataOffset < zf->length.
+     * In addition, the following consistency checks must be met
+     * (1) cdirZipOffset <= eocdDataOffset (to prevent under flow in computation of (2))
+     * (2) cdirZipOffset + cdirSize <= eocdDataOffset. Else the CD will be overlapping
+     * the EOCD. Note this automatically means cdirZipOffset+cdirSize < zf->length.
+     */
+    if (!(cdirZipOffset <= eocdDataOffset &&
+	  cdirSize <= eocdDataOffset - cdirZipOffset)) {
 	if (!needZip) {
-	    zf->baseOffset = zf->passOffset = zf->length;
+	    /* Simply point to end od data */
+	    zf->directoryOffset = zf->baseOffset = zf->passOffset = zf->length;
 	    return TCL_OK;
 	}
 	ZIPFS_ERROR(interp, "archive directory truncated");
@@ -1260,16 +1276,37 @@ ZipFSFindTOC(
     }
 
     /*
+     * Calculate the offset of the CD in the *data*. If there was no extra
+     * "junk" preceding the archive, this would just be cdirZipOffset but
+     * otherwise we have to account for it.
+     */
+    if (eocdDataOffset - cdirSize > cdirZipOffset) {
+	zf->baseOffset = eocdDataOffset - cdirSize - cdirZipOffset;
+    } else {
+	zf->baseOffset = 0;
+    }
+    zf->passOffset = zf->baseOffset;
+    zf->directoryOffset = cdirZipOffset + zf->baseOffset;
+    zf->directorySize = cdirSize;
+
+    const unsigned char *const cdirStart = p - cdirSize; /* Start of  */
+
+    /*
+     * Original pointer based validation replaced by simpler checks above.
+     * Ensure still holds. The assigments to p, q are only there for use in
+     * the asserts.
+     */
+    q = zf->data + cdirZipOffset;
+    p -= cdirSize;
+    assert(!((p < q) || (p < zf->data) || (p > zf->data + zf->length) ||
+	    (q < zf->data) || (q > zf->data + zf->length)));
+
+    /*
      * Read the central directory.
      */
-
-    q = p;
     minoff = zf->length;
-    for (i = 0; i < zf->numFiles; i++) {
-	int pathlen, comlen, extra;
-	size_t localhdr_off = zf->length;
-
-	if (q + ZIP_CENTRAL_HEADER_LEN > end) {
+    for (q = cdirStart, i = 0; i < zf->numFiles; i++) {
+	if ((q-cdirStart) + ZIP_CENTRAL_HEADER_LEN > (ptrdiff_t)zf->directorySize) {
 	    ZIPFS_ERROR(interp, "truncated directory");
 	    ZIPFS_ERROR_CODE(interp, "TRUNC_DIR");
 	    goto error;
@@ -1279,10 +1316,10 @@ ZipFSFindTOC(
 	    ZIPFS_ERROR_CODE(interp, "HDR_SIG");
 	    goto error;
 	}
-	pathlen = ZipReadShort(start, end, q + ZIP_CENTRAL_PATHLEN_OFFS);
-	comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
-	extra = ZipReadShort(start, end, q + ZIP_CENTRAL_EXTRALEN_OFFS);
-	localhdr_off = ZipReadInt(start, end, q + ZIP_CENTRAL_LOCALHDR_OFFS);
+	int pathlen = ZipReadShort(start, end, q + ZIP_CENTRAL_PATHLEN_OFFS);
+	int comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
+	int extra = ZipReadShort(start, end, q + ZIP_CENTRAL_EXTRALEN_OFFS);
+	size_t localhdr_off = ZipReadInt(start, end, q + ZIP_CENTRAL_LOCALHDR_OFFS);
 	const unsigned char *localP = zf->data + zf->baseOffset + localhdr_off;
 	if (localP > (p - ZIP_LOCAL_HEADER_LEN) ||
 	    ZipReadInt(start, end, localP) != ZIP_LOCAL_HEADER_SIG) {
@@ -1294,6 +1331,12 @@ ZipFSFindTOC(
 	    minoff = localhdr_off;
 	}
 	q += pathlen + comlen + extra + ZIP_CENTRAL_HEADER_LEN;
+    }
+    if ((q-cdirStart) < (ptrdiff_t) zf->directorySize) {
+	/* file count and dir size do not match */
+	ZIPFS_ERROR(interp, "short file count");
+	ZIPFS_ERROR_CODE(interp, "FILE_COUNT");
+	goto error;
     }
 
     zf->passOffset = minoff + zf->baseOffset;
@@ -4372,7 +4415,8 @@ ZipChannelOpen(
 	goto error;
     }
 
-    if (z->numBytes < 0 || z->numCompressedBytes < 0 || z->offset < 0) {
+    if (z->numBytes < 0 || z->numCompressedBytes < 0 ||
+	z->offset >= z->zipFilePtr->length) {
 	/* Normally this should only happen for zip64. */
 	ZIPFS_ERROR(interp, "file size error (may be zip64)");
 	ZIPFS_ERROR_CODE(interp, "FILE_SIZE");
