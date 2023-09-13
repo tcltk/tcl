@@ -244,7 +244,7 @@ MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
 
 #define MP_GET_ENDIANNESS(x) \
    do{\
-      int16_t n = 0x1;                                          \
+      short n = 0x1;                                            \
       char *p = (char *)&n;                                     \
       x = (p[0] == '\x01') ? MP_LITTLE_ENDIAN : MP_BIG_ENDIAN;  \
    } while (0)
