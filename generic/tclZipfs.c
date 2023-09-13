@@ -910,10 +910,12 @@ CanonicalPath(
 	break;
     default:
 	if (inZipfs) {
-	    Tcl_DStringSetLength(dsPtr, i + j + ZIPFS_VOLUME_LEN);
+	    Tcl_DStringSetLength(dsPtr, i + 1 + j + ZIPFS_VOLUME_LEN);
 	    path = Tcl_DStringValue(dsPtr);
 	    memcpy(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN);
-	    memcpy(path + ZIPFS_VOLUME_LEN + i , tail, j);
+	    memcpy(path+ZIPFS_VOLUME_LEN, root, i);
+	    path[ZIPFS_VOLUME_LEN+i] = '/';
+	    memcpy(path + ZIPFS_VOLUME_LEN + 1 + i, tail, j);
 	} else {
 	    Tcl_DStringSetLength(dsPtr, i + j + 1);
 	    path = Tcl_DStringValue(dsPtr);
