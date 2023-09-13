@@ -341,12 +341,12 @@ static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
 static Tcl_ObjCmdProc2	TestUtfNextCmd;
 static Tcl_ObjCmdProc2	TestUtfPrevCmd;
 static Tcl_ObjCmdProc2	TestNumUtfCharsCmd;
+static Tcl_ObjCmdProc2	TestGetUniCharCmd;
 static Tcl_ObjCmdProc2	TestFindFirstCmd;
 static Tcl_ObjCmdProc2	TestFindLastCmd;
 static Tcl_ObjCmdProc2	TestHashSystemHashCmd;
 static Tcl_ObjCmdProc2	TestGetIntForIndexCmd;
 static Tcl_ObjCmdProc2	TestLutilCmd;
-
 static Tcl_NRPostProc	NREUnwind_callback;
 static Tcl_ObjCmdProc2	TestNREUnwind;
 static Tcl_ObjCmdProc2	TestNRELevels;
@@ -696,6 +696,8 @@ Tcltest_Init(
 	    TestUtfPrevCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testgetunichar",
+                         TestGetUniCharCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testfindfirst",
 	    TestFindFirstCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testfindlast",
@@ -7583,6 +7585,34 @@ TestNumUtfCharsCmd(
     return TCL_OK;
 }
 
+
+/*
+ * Used to check correct operation of Tcl_GetUniChar
+ * testgetunichar STRING INDEX
+ * This differs from just using "string index" in being a direct
+ * call to Tcl_GetUniChar without any prior range checking.
+ */
+static int
+TestGetUniCharCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter */
+    TclSizeT objc,
+    Tcl_Obj *const objv[]	/* Argument strings */
+    )
+{
+    int index;
+    int c ;
+    if (objc != 3) {
+       	Tcl_WrongNumArgs(interp, 1, objv, "STRING INDEX");
+	return TCL_ERROR;
+    }
+    Tcl_GetIntFromObj(interp, objv[2], &index);
+    c = Tcl_GetUniChar(objv[1], index);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(c));
+
+    return TCL_OK;
+}
+
 /*
  * Used to check correct operation of Tcl_UtfFindFirst
  */
@@ -7885,8 +7915,8 @@ TestNRELevels(
     TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
 {
     Interp *iPtr = (Interp *) interp;
-    static ptrdiff_t *refDepth = NULL;
-    ptrdiff_t depth;
+    static Tcl_Size *refDepth = NULL;
+    Tcl_Size depth;
     Tcl_Obj *levels[6];
     Tcl_Size i = 0;
     NRE_callback *cbPtr = iPtr->execEnvPtr->callbackPtr;

@@ -10,20 +10,20 @@
 .so man.macros
 .BS
 .SH NAME
-TclZipfs_AppHook, Tclzipfs_Mount, TclZipfs_MountBuffer, Tclzipfs_Unmount \- handle ZIP files as Tcl virtual filesystems
+TclZipfs_AppHook, TclZipfs_Mount, TclZipfs_MountBuffer, TclZipfs_Unmount \- handle ZIP files as Tcl virtual filesystems
 .SH SYNOPSIS
 .nf
 const char *
 \fBTclZipfs_AppHook(\fIargcPtr, argvPtr\fR)
 .sp
 int
-\fBTclzipfs_Mount\fR(\fIinterp, mountpoint, zipname, password\fR)
+\fBTclZipfs_Mount\fR(\fIinterp, mountpoint, zipname, password\fR)
 .sp
 int
 \fBTclZipfs_MountBuffer\fR(\fIinterp, mountpoint, data, dataLen, copy\fR)
 .sp
 int
-\fBTclzipfs_Unmount\fR(\fIinterp, mountpoint\fR)
+\fBTclZipfs_Unmount\fR(\fIinterp, mountpoint\fR)
 .fi
 .SH ARGUMENTS
 .AS Tcl_Interp *mountpoint in
@@ -60,10 +60,8 @@ initialization procedures, taking into account available ZIP archives as
 follows:
 .IP [1]
 If the current application has a mountable ZIP archive, that archive is
-mounted under \fIZIPFS_VOLUME\fB/app\fR as a read-only Tcl virtual file
-system. \fIZIPFS_VOLUME\fR is usually \fB//zipfs:\fR on all platforms, but
-\fBzipfs:\fR may also be used on Windows (due to differences in the
-platform's filename parsing).
+mounted under \fIZIPFS_VOLUME\fBapp\fR as a read-only Tcl virtual file
+system. \fIZIPFS_VOLUME\fR is \fB//zipfs:/\fR on all platforms.
 .IP [2]
 If a file named \fBmain.tcl\fR is located in the root directory of that file
 system (i.e., at \fIZIPROOT\fB/app/main.tcl\fR after the ZIP archive is
@@ -93,7 +91,7 @@ The function \fImay\fR modify the variables pointed to by \fIargcPtr\fR and
 \fIargvPtr\fR to remove arguments; the current implementation does not do so,
 but callers \fIshould not\fR assume that this will be true in the future.
 .PP
-\fBTclzipfs_Mount\fR mounts the ZIP archive \fIzipname\fR on the mount point
+\fBTclZipfs_Mount\fR mounts the ZIP archive \fIzipname\fR on the mount point
 given in \fImountpoint\fR using the optional ZIP password \fIpassword\fR.
 Errors during that process are reported in the interpreter \fIinterp\fR.  If
 \fImountpoint\fR is a NULL pointer, information on all currently mounted ZIP
@@ -101,14 +99,14 @@ file systems is written into \fIinterp\fR's result as a sequence of mount
 points and ZIP file names.  The result of this call is a standard Tcl result
 code.
 .PP
-\fBTclzipfs_MountBuffer\fR mounts the ZIP archive in the buffer pointed to by
+\fBTclZipfs_MountBuffer\fR mounts the ZIP archive in the buffer pointed to by
 \fIdata\fR on the mount point given in \fImountpoint\fR. The ZIP archive is
 assumed to be not password protected.  Errors during that process are reported
 in the interpreter \fIinterp\fR. The \fIcopy\fR argument determines whether
 the buffer is internally copied before mounting or not. The result of this
 call is a standard Tcl result code.
 .PP
-\fBTclzipfs_Unmount\fR undoes the effect of \fBTclzipfs_Mount\fR, i.e., it
+\fBTclZipfs_Unmount\fR undoes the effect of \fBTclZipfs_Mount\fR, i.e., it
 unmounts the mounted ZIP file system that was mounted from \fIzipname\fR (at
 \fImountpoint\fR). Errors are reported in the interpreter \fIinterp\fR.  The
 result of this call is a standard Tcl result code.

@@ -118,7 +118,7 @@ static int		ParseKeyName(Tcl_Interp *interp, char *name,
 static DWORD		RecursiveDeleteKey(HKEY hStartKey,
 			    const WCHAR * pKeyName, REGSAM mode);
 static int		RegistryObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
@@ -176,7 +176,7 @@ Registry_Init(
 	return TCL_ERROR;
     }
 
-    cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
+    cmd = Tcl_CreateObjCommand2(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
     return Tcl_PkgProvideEx(interp, "registry", "1.3.7", NULL);
@@ -291,11 +291,11 @@ static int
 RegistryObjCmd(
     void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    int n = 1;
-    int index, argc;
+    Tcl_Size n = 1, argc;
+    int index;
     REGSAM mode = 0;
     const char *errString = NULL;
 
