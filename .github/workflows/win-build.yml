@@ -22,7 +22,6 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "OPTS=utf16"
           - "CHECKS=nodep"
           - "OPTS=static"
           - "OPTS=symbols"
@@ -61,7 +60,6 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "CFLAGS=-DTCL_UTF_MAX=3"
           - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "--disable-shared"
           - "--enable-symbols"

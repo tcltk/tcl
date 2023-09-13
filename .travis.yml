@@ -20,13 +20,6 @@ jobs:
       compiler: gcc
       env:
         - BUILD_DIR=unix
-    - name: "Linux/GCC/Shared: UTF_MAX=4"
-      os: linux
-      dist: focal
-      compiler: gcc
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT=CFLAGS=-DTCL_UTF_MAX=4
     - name: "Linux/GCC/Shared: NO_DEPRECATED"
       os: linux
       dist: focal
@@ -215,15 +208,6 @@ jobs:
       script:
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake '-f' makefile.vc test
-    - name: "Windows/MSVC/Shared: UTF_MAX=4"
-      os: windows
-      compiler: cl
-      env: *vcenv
-      before_install: *vcpreinst
-      install: []
-      script:
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=utf16' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=utf16' '-f' makefile.vc test
     - name: "Windows/MSVC/Shared: NO_DEPRECATED"
       os: windows
       compiler: cl
@@ -270,15 +254,6 @@ jobs:
       script:
         - cmd.exe //C vcvarsall.bat x86 '&&' nmake '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x86 '&&' nmake '-f' makefile.vc test
-    - name: "Windows/MSVC-x86/Shared: UTF_MAX=4"
-      os: windows
-      compiler: cl
-      env: *vcenv
-      before_install: *vcpreinst
-      install: []
-      script:
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=utf16' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=utf16' '-f' makefile.vc test
     - name: "Windows/MSVC-x86/Shared: NO_DEPRECATED"
       os: windows
       compiler: cl
@@ -326,13 +301,6 @@ jobs:
         - touch generic/tclStubInit.c generic/tclOOStubInit.c generic/tclOOScript.h
         - choco install -y make zip
         - cd ${BUILD_DIR}
-    - name: "Windows/GCC/Shared: UTF_MAX=4"
-      os: windows
-      compiler: gcc
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="--enable-64bit CFLAGS=-DTCL_UTF_MAX=4"
-      before_install: *makepreinst
     - name: "Windows/GCC/Shared: NO_DEPRECATED"
       os: windows
       compiler: gcc
@@ -367,13 +335,6 @@ jobs:
       compiler: gcc
       env:
         - BUILD_DIR=win
-      before_install: *makepreinst
-    - name: "Windows/GCC-x86/Shared: UTF_MAX=4"
-      os: windows
-      compiler: gcc
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="CFLAGS=-DTCL_UTF_MAX=4"
       before_install: *makepreinst
     - name: "Windows/GCC-x86/Shared: NO_DEPRECATED"
       os: windows

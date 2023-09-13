@@ -62,8 +62,7 @@ typedef struct Tcl_ObjectContext_ *Tcl_ObjectContext;
 
 typedef int (Tcl_MethodCallProc)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
-typedef int (Tcl_MethodCallProc2)(void *clientData, Tcl_Interp *interp,
-	Tcl_ObjectContext objectContext, ptrdiff_t objc, Tcl_Obj *const *objv);
+#define Tcl_MethodCallProc2 Tcl_MethodCallProc
 typedef void (Tcl_MethodDeleteProc)(void *clientData);
 typedef int (Tcl_CloneProc)(Tcl_Interp *interp, void *oldClientData,
 	void **newClientData);
@@ -94,22 +93,7 @@ typedef struct {
 				 * be copied directly. */
 } Tcl_MethodType;
 
-typedef struct {
-    int version;		/* Structure version field. Always to be equal
-				 * to TCL_OO_METHOD_VERSION_2 in
-				 * declarations. */
-    const char *name;		/* Name of this type of method, mostly for
-				 * debugging purposes. */
-    Tcl_MethodCallProc2 *callProc;
-				/* How to invoke this method. */
-    Tcl_MethodDeleteProc *deleteProc;
-				/* How to delete this method's type-specific
-				 * data, or NULL if the type-specific data
-				 * does not need deleting. */
-    Tcl_CloneProc *cloneProc;	/* How to copy this method's type-specific
-				 * data, or NULL if the type-specific data can
-				 * be copied directly. */
-} Tcl_MethodType2;
+#define Tcl_MethodType2 Tcl_MethodType
 
 /*
  * The correct value for the version field of the Tcl_MethodType structure.

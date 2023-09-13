@@ -64,7 +64,7 @@ typedef struct {
     Tcl_Obj *inData, *outData;	/* Input / output buffers (lists) */
     Tcl_Obj *currentInput;	/* Pointer to what is currently being
 				 * inflated. */
-    int outPos;
+    Tcl_Size outPos;
     int mode;			/* Either TCL_ZLIB_STREAM_DEFLATE or
 				 * TCL_ZLIB_STREAM_INFLATE. */
     int format;			/* Flags from the TCL_ZLIB_FORMAT_* */
@@ -576,7 +576,7 @@ ExtractHeader(
 	    }
 	}
 
-	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->comment, -1,
+	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->comment, TCL_INDEX_NONE,
 		&tmp);
 	SetValue(dictObj, "comment", Tcl_DStringToObj(&tmp));
     }
@@ -593,7 +593,7 @@ ExtractHeader(
 	    }
 	}
 
-	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->name, -1,
+	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->name, TCL_INDEX_NONE,
 		&tmp);
 	SetValue(dictObj, "filename", Tcl_DStringToObj(&tmp));
     }
@@ -833,7 +833,7 @@ Tcl_ZlibStreamInit(
      */
 
     if (interp != NULL) {
-	if (Tcl_EvalEx(interp, "::incr ::tcl::zlib::cmdcounter", -1, 0) != TCL_OK) {
+	if (Tcl_EvalEx(interp, "::incr ::tcl::zlib::cmdcounter", TCL_INDEX_NONE, 0) != TCL_OK) {
 	    goto error;
 	}
 	Tcl_DStringInit(&cmdname);
@@ -1183,8 +1183,8 @@ Tcl_ZlibStreamSetCompressionDictionary(
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
 
-    if (compressionDictionaryObj && (NULL == TclGetBytesFromObj(NULL,
-	    compressionDictionaryObj, (int *)NULL))) {
+    if (compressionDictionaryObj && (NULL == Tcl_GetBytesFromObj(NULL,
+	    compressionDictionaryObj, NULL))) {
 	/* Missing or invalid compression dictionary */
 	compressionDictionaryObj = NULL;
     }
@@ -1239,7 +1239,7 @@ Tcl_ZlibStreamPut(
 	return TCL_ERROR;
     }
 
-    bytes = TclGetBytesFromObj(zshPtr->interp, data, &size);
+    bytes = Tcl_GetBytesFromObj(zshPtr->interp, data, &size);
     if (bytes == NULL) {
 	return TCL_ERROR;
     }
@@ -1357,10 +1357,10 @@ Tcl_ZlibStreamGet(
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
     int e;
-    int i, listLen, itemLen, dataPos = 0;
+    Tcl_Size listLen, i, itemLen, dataPos = 0;
     Tcl_Obj *itemObj;
     unsigned char *dataPtr, *itemPtr;
-    int existing;
+    Tcl_Size existing;
 
     /*
      * Getting beyond the of stream, just return empty string.
@@ -1370,7 +1370,7 @@ Tcl_ZlibStreamGet(
 	return TCL_OK;
     }
 
-    if (NULL == TclGetBytesFromObj(zshPtr->interp, data, &existing)) {
+    if (NULL == Tcl_GetBytesFromObj(zshPtr->interp, data, &existing)) {
 	return TCL_ERROR;
     }
 
@@ -1609,7 +1609,7 @@ Tcl_ZlibDeflate(
     Tcl_Obj *gzipHeaderDictObj)
 {
     int wbits = 0, e = 0, extraSize = 0;
-    int inLen = 0;
+    Tcl_Size inLen = 0;
     Byte *inData = NULL;
     z_stream stream;
     GzipHeader header;
@@ -1625,7 +1625,7 @@ Tcl_ZlibDeflate(
      * to the deflate command.
      */
 
-    inData = TclGetBytesFromObj(interp, data, &inLen);
+    inData = Tcl_GetBytesFromObj(interp, data, &inLen);
     if (inData == NULL) {
 	return TCL_ERROR;
     }
@@ -1760,11 +1760,11 @@ Tcl_ZlibInflate(
     Tcl_Interp *interp,
     int format,
     Tcl_Obj *data,
-    int bufferSize,
+    Tcl_Size bufferSize,
     Tcl_Obj *gzipHeaderDictObj)
 {
     int wbits = 0, e = 0;
-    int inLen = 0, newBufferSize;
+    Tcl_Size inLen = 0, newBufferSize;
     Byte *inData = NULL, *outData = NULL, *newOutData = NULL;
     z_stream stream;
     gz_header header, *headerPtr = NULL;
@@ -1775,7 +1775,7 @@ Tcl_ZlibInflate(
 	return TCL_ERROR;
     }
 
-    inData = TclGetBytesFromObj(interp, data, &inLen);
+    inData = Tcl_GetBytesFromObj(interp, data, &inLen);
     if (inData == NULL) {
 	return TCL_ERROR;
     }
@@ -1949,7 +1949,7 @@ unsigned int
 Tcl_ZlibCRC32(
     unsigned int crc,
     const unsigned char *buf,
-    int len)
+    Tcl_Size len)
 {
     /* Nothing much to do, just wrap the crc32(). */
     return crc32(crc, (Bytef *) buf, len);
@@ -1959,7 +1959,7 @@ unsigned int
 Tcl_ZlibAdler32(
     unsigned int adler,
     const unsigned char *buf,
-    int len)
+    Tcl_Size len)
 {
     return adler32(adler, (Bytef *) buf, len);
 }
@@ -2012,7 +2012,7 @@ ZlibCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "data ?startValue?");
 	    return TCL_ERROR;
 	}
-	data = TclGetBytesFromObj(interp, objv[2], &dlen);
+	data = Tcl_GetBytesFromObj(interp, objv[2], &dlen);
 	if (data == NULL) {
 	    return TCL_ERROR;
 	}
@@ -2032,7 +2032,7 @@ ZlibCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "data ?startValue?");
 	    return TCL_ERROR;
 	}
-	data = TclGetBytesFromObj(interp, objv[2], &dlen);
+	data = Tcl_GetBytesFromObj(interp, objv[2], &dlen);
 	if (data == NULL) {
 	    return TCL_ERROR;
 	}
@@ -2376,7 +2376,7 @@ ZlibStreamSubcmd(
     }
 
     if (compDictObj) {
-	if (NULL == TclGetBytesFromObj(interp, compDictObj, NULL)) {
+	if (NULL == Tcl_GetBytesFromObj(interp, compDictObj, (Tcl_Size *)NULL)) {
 	    return TCL_ERROR;
 	}
     }
@@ -2435,7 +2435,7 @@ ZlibPushSubcmd(
     enum pushOptionsEnum {poDictionary, poHeader, poLevel, poLimit};
     Tcl_Obj *headerObj = NULL, *compDictObj = NULL;
     int limit = DEFAULT_BUFFER_SIZE;
-    int dummy;
+    Tcl_Size dummy;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "mode channel ?options...?");
@@ -2494,7 +2494,7 @@ ZlibPushSubcmd(
     }
     if (mode == TCL_ZLIB_STREAM_INFLATE && !(chanMode & TCL_READABLE)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"decompression may only be applied to readable channels",-1));
+		"decompression may only be applied to readable channels", TCL_INDEX_NONE));
 	Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNREADABLE", NULL);
 	return TCL_ERROR;
     }
@@ -2559,7 +2559,7 @@ ZlibPushSubcmd(
 	}
     }
 
-    if (compDictObj && (NULL == TclGetBytesFromObj(interp, compDictObj, NULL))) {
+    if (compDictObj && (NULL == Tcl_GetBytesFromObj(interp, compDictObj, (Tcl_Size *)NULL))) {
 	return TCL_ERROR;
     }
 
@@ -2806,9 +2806,9 @@ ZlibStreamAddCmd(
      */
 
     if (compDictObj != NULL) {
-	int len;
+	Tcl_Size len;
 
-	if (NULL == TclGetBytesFromObj(interp, compDictObj, &len)) {
+	if (NULL == Tcl_GetBytesFromObj(interp, compDictObj, &len)) {
 	    return TCL_ERROR;
 	}
 
@@ -2913,9 +2913,9 @@ ZlibStreamPutCmd(
      */
 
     if (compDictObj != NULL) {
-	int len;
+	Tcl_Size len;
 
-	if (NULL == TclGetBytesFromObj(interp, compDictObj, &len)) {
+	if (NULL == Tcl_GetBytesFromObj(interp, compDictObj, &len)) {
 	    return TCL_ERROR;
 	}
 	if (len == 0) {
@@ -3354,7 +3354,7 @@ ZlibTransformSetOption(			/* not used */
 
 	TclNewStringObj(compDictObj, value, strlen(value));
 	Tcl_IncrRefCount(compDictObj);
-	if (NULL == TclGetBytesFromObj(interp, compDictObj, NULL)) {
+	if (NULL == Tcl_GetBytesFromObj(interp, compDictObj, (Tcl_Size *)NULL)) {
 	    Tcl_DecrRefCount(compDictObj);
 	    return TCL_ERROR;
 	}
@@ -3504,10 +3504,10 @@ ZlibTransformGetOption(
 	    }
 	} else {
 	    if (cd->compDictObj) {
-		int len;
-		const char *str = TclGetStringFromObj(cd->compDictObj, &len);
+		Tcl_Size length;
+		const char *str = TclGetStringFromObj(cd->compDictObj, &length);
 
-		Tcl_DStringAppend(dsPtr, str, len);
+		Tcl_DStringAppend(dsPtr, str, length);
 	    }
 	    return TCL_OK;
 	}
@@ -3745,7 +3745,7 @@ ZlibStackChannelTransform(
     if (compDictObj != NULL) {
 	cd->compDictObj = Tcl_DuplicateObj(compDictObj);
 	Tcl_IncrRefCount(cd->compDictObj);
-	TclGetByteArrayFromObj(cd->compDictObj, NULL);
+	Tcl_GetByteArrayFromObj(cd->compDictObj, (Tcl_Size *)NULL);
     }
 
     if (format == TCL_ZLIB_FORMAT_RAW) {
@@ -3963,7 +3963,7 @@ TclZlibInit(
      * commands.
      */
 
-    Tcl_EvalEx(interp, "namespace eval ::tcl::zlib {variable cmdcounter 0}", -1, 0);
+    Tcl_EvalEx(interp, "namespace eval ::tcl::zlib {variable cmdcounter 0}", TCL_INDEX_NONE, 0);
 
     /*
      * Create the public scripted interface to this file's functionality.
@@ -4071,7 +4071,7 @@ int
 Tcl_ZlibStreamGet(
     Tcl_ZlibStream zshandle,
     Tcl_Obj *data,
-    int count)
+    Tcl_Size count)
 {
     return TCL_OK;
 }
@@ -4096,7 +4096,7 @@ Tcl_ZlibInflate(
     Tcl_Interp *interp,
     int format,
     Tcl_Obj *data,
-    int bufferSize,
+    Tcl_Size bufferSize,
     Tcl_Obj *gzipHeaderDictObj)
 {
     if (interp) {
@@ -4110,7 +4110,7 @@ unsigned int
 Tcl_ZlibCRC32(
     TCL_UNUSED(unsigned int),
     TCL_UNUSED(const unsigned char *),
-    TCL_UNUSED(int))
+    TCL_UNUSED(Tcl_Size))
 {
     return 0;
 }
@@ -4119,7 +4119,7 @@ unsigned int
 Tcl_ZlibAdler32(
     TCL_UNUSED(unsigned int),
     TCL_UNUSED(const unsigned char *),
-    TCL_UNUSED(int))
+    TCL_UNUSED(Tcl_Size))
 {
     return 0;
 }
