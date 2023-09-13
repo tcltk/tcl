@@ -164,13 +164,13 @@ declare 0 {
 declare 1 {
     Tcl_Method TclOOMakeProcInstanceMethod(Tcl_Interp *interp, Object *oPtr,
 	    int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
-	    const Tcl_MethodType *typePtr, void *clientData,
+	    const Tcl_MethodType2 *typePtr, void *clientData,
 	    Proc **procPtrPtr)
 }
 declare 2 {
     Tcl_Method TclOOMakeProcMethod(Tcl_Interp *interp, Class *clsPtr,
 	    int flags, Tcl_Obj *nameObj, const char *namePtr,
-	    Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType *typePtr,
+	    Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType2 *typePtr,
 	    void *clientData, Proc **procPtrPtr)
 }
 declare 3 {

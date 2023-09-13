@@ -74,7 +74,6 @@
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
 #undef Tcl_UniCharLen
-#undef TclObjInterpProc
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 # undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
@@ -92,6 +91,15 @@
 #undef Tcl_GetByteArrayFromObj
 #define Tcl_GetByteArrayFromObj 0
 #define TclUnusedStubEntry 0
+
+#ifdef TCL_NO_DEPRECATED
+#   define Tcl_CreateObjCommand 0
+#   define Tcl_CreateObjTrace 0
+#   define Tcl_NRCallObjProc 0
+#   define Tcl_NRCreateCommand 0
+#   define TclGetObjInterpProc 0
+#endif
+
 #define TclUtfCharComplete Tcl_UtfCharComplete
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
@@ -458,8 +466,8 @@ static const TclIntStubs tclIntStubs = {
     0, /* 50 */
     TclInterpInit, /* 51 */
     0, /* 52 */
-    TclInvokeObjectCommand, /* 53 */
-    TclInvokeStringCommand, /* 54 */
+    0, /* 53 */
+    0, /* 54 */
     TclIsProc, /* 55 */
     0, /* 56 */
     0, /* 57 */
@@ -468,8 +476,8 @@ static const TclIntStubs tclIntStubs = {
     TclNeedSpace, /* 60 */
     TclNewProcBodyObj, /* 61 */
     TclObjCommandComplete, /* 62 */
-    TclObjInterpProc, /* 63 */
-    TclObjInvoke, /* 64 */
+    0, /* 63 */
+    0, /* 64 */
     0, /* 65 */
     0, /* 66 */
     0, /* 67 */
@@ -643,7 +651,7 @@ static const TclIntStubs tclIntStubs = {
     TclInitVarHashTable, /* 235 */
     0, /* 236 */
     TclResetCancellation, /* 237 */
-    TclNRInterpProc, /* 238 */
+    0, /* 238 */
     TclNRInterpProcCore, /* 239 */
     TclNRRunCallbacks, /* 240 */
     TclNREvalObjEx, /* 241 */

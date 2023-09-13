@@ -122,7 +122,7 @@ static int
 PkguaEqObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
@@ -167,7 +167,7 @@ static int
 PkguaQuoteObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     (void)dummy;
@@ -225,10 +225,10 @@ Pkgua_Init(
 
     cmdTokens = PkguaInterpToTokens(interp);
     cmdTokens[0] =
-	    Tcl_CreateObjCommand(interp, "pkgua_eq", PkguaEqObjCmd, &cmdTokens[0],
+	    Tcl_CreateObjCommand2(interp, "pkgua_eq", PkguaEqObjCmd, &cmdTokens[0],
 		    CommandDeleted);
     cmdTokens[1] =
-	    Tcl_CreateObjCommand(interp, "pkgua_quote", PkguaQuoteObjCmd,
+	    Tcl_CreateObjCommand2(interp, "pkgua_quote", PkguaQuoteObjCmd,
 		    &cmdTokens[1], CommandDeleted);
     return TCL_OK;
 }

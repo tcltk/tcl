@@ -825,7 +825,7 @@ TclCompileClockReadingCmd(
 	return TCL_ERROR;
     }
 
-    TclEmitInstInt1(INST_CLOCK_READ, PTR2INT(cmdPtr->objClientData), envPtr);
+    TclEmitInstInt1(INST_CLOCK_READ, PTR2INT(cmdPtr->objClientData2), envPtr);
 
     return TCL_OK;
 }
@@ -2945,7 +2945,7 @@ FreeForeachInfo(
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *listPtr;
-    size_t i, numLists = infoPtr->numLists;
+    Tcl_Size i, numLists = infoPtr->numLists;
 
     for (i = 0;  i < numLists;  i++) {
 	listPtr = infoPtr->varLists[i];
@@ -3422,9 +3422,9 @@ TclPushVarName(
 {
     const char *p;
     const char *last, *name, *elName;
-    size_t n;
+    Tcl_Size n;
     Tcl_Token *elemTokenPtr = NULL;
-	size_t nameLen, elNameLen;
+	Tcl_Size nameLen, elNameLen;
     int simpleVarName, localIndex;
     int elemTokenCount = 0, allocedTokens = 0, removedParen = 0;
 

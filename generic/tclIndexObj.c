@@ -26,9 +26,9 @@ static int		GetIndexFromObjList(Tcl_Interp *interp,
 static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
 static void		DupIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		FreeIndex(Tcl_Obj *objPtr);
-static Tcl_ObjCmdProc PrefixAllObjCmd;
-static Tcl_ObjCmdProc PrefixLongestObjCmd;
-static Tcl_ObjCmdProc PrefixMatchObjCmd;
+static Tcl_ObjCmdProc2 PrefixAllObjCmd;
+static Tcl_ObjCmdProc2 PrefixLongestObjCmd;
+static Tcl_ObjCmdProc2 PrefixMatchObjCmd;
 static void		PrintUsage(Tcl_Interp *interp,
 			    const Tcl_ArgvInfo *argTable);
 
@@ -56,8 +56,8 @@ const Tcl_ObjType tclIndexType = {
 
 typedef struct {
     void *tablePtr;		/* Pointer to the table of strings */
-    Tcl_Size offset;			/* Offset between table entries */
-    Tcl_Size index;			/* Selected index into table. */
+    size_t offset;			/* Offset between table entries */
+    size_t index;			/* Selected index into table. */
 } IndexRep;
 
 /*
@@ -69,7 +69,7 @@ typedef struct {
 #define NEXT_ENTRY(table, offset) \
 	(&(STRING_AT(table, offset)))
 #define EXPAND_OF(indexRep) \
-	(((indexRep)->index != TCL_INDEX_NONE) ? STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : "")
+	(((indexRep)->index != (size_t)-1) ? STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : "")
 
 /*
  *----------------------------------------------------------------------
@@ -191,7 +191,7 @@ Tcl_GetIndexFromObjStruct(
 				 * offset, the third plus the offset again,
 				 * etc. The last entry must be NULL and there
 				 * must not be duplicate entries. */
-    Tcl_Size offset,		/* The number of bytes between entries */
+    size_t offset,		/* The number of bytes between entries */
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
     int flags,			/* 0, TCL_EXACT, TCL_NULL_OK or TCL_INDEX_TEMP_TABLE */
@@ -205,8 +205,9 @@ Tcl_GetIndexFromObjStruct(
     IndexRep *indexRep;
     const Tcl_ObjInternalRep *irPtr;
 
-    if (offset < (Tcl_Size) sizeof(char *)) {
-	return TclIndexInvalidError(interp, "struct offset", offset);
+    /* Protect against invalid values, like TCL_INDEX_NONE or 0. */
+    if (offset+1 <= sizeof(char *)) {
+	offset = sizeof(char *);
     }
     /*
      * See if there is a valid cached result from a previous lookup.
@@ -218,7 +219,7 @@ Tcl_GetIndexFromObjStruct(
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
 	if ((indexRep->tablePtr == tablePtr)
 		&& (indexRep->offset == offset)
-		&& (indexRep->index != TCL_INDEX_NONE)) {
+		&& (indexRep->index != (size_t)-1)) {
 	    index = indexRep->index;
 	    goto uncachedDone;
 	}
@@ -504,11 +505,11 @@ static int
 PrefixMatchObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int flags = 0, result, dummy, i;
-    Tcl_Size dummyLength, errorLength;
+    int flags = 0, result, dummy;
+    Tcl_Size dummyLength, errorLength, i;
     Tcl_Obj *errorPtr = NULL;
     const char *message = "option";
     Tcl_Obj *tablePtr, *objPtr, *resultPtr;
@@ -628,7 +629,7 @@ static int
 PrefixAllObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
@@ -686,7 +687,7 @@ static int
 PrefixLongestObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;

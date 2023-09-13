@@ -22,7 +22,6 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "CHECKS=nodep"
           - "OPTS=static"
           - "OPTS=symbols"
           - "OPTS=symbols STATS=compdbg,memdbg"
@@ -65,7 +64,6 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"

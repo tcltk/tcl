@@ -484,7 +484,7 @@ AtForkChild(void)
  *
  * TclpNotifierData --
  *
- *	This function returns a ClientData pointer to be associated
+ *	This function returns a pointer to be associated
  *	with a Tcl_AsyncHandler.
  *
  * Results:

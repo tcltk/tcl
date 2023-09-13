@@ -137,14 +137,15 @@ declare 46 {
 declare 51 {
     int TclInterpInit(Tcl_Interp *interp)
 }
-declare 53 {
-    int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
-	    int argc, const char **argv)
-}
-declare 54 {
-    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
-}
+# Removed in 9.0
+#declare 53 {
+#    int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
+#	    int argc, const char **argv)
+#}
+#declare 54 {
+#    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
+#	    int objc, Tcl_Obj *const objv[])
+#}
 declare 55 {
     Proc *TclIsProc(Command *cmdPtr)
 }
@@ -162,14 +163,16 @@ declare 61 {
 declare 62 {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
-declare 63 {
-    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
-}
-declare 64 {
-    int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
-	    int flags)
-}
+# Removed in 9.0
+#declare 63 {
+#    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
+#	    int objc, Tcl_Obj *const objv[])
+#}
+# Removed in 9.0
+#declare 64 {
+#    int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
+#	    int flags)
+#}
 declare 69 {
     void *TclpAlloc(TCL_HASH_TYPE size)
 }
@@ -607,10 +610,11 @@ declare 237 {
 
 # NRE functions for "rogue" extensions to exploit NRE; they will need to
 # include NRE.h too.
-declare 238 {
-    int TclNRInterpProc(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
-}
+# Removed in 9.0
+#declare 238 {
+#    int TclNRInterpProc(void *clientData, Tcl_Interp *interp,
+#	    size_t objc, Tcl_Obj *const objv[])
+#}
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
 	    Tcl_Size skip, ProcErrorProc *errorProc)

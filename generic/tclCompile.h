@@ -1064,8 +1064,7 @@ typedef struct {
  *----------------------------------------------------------------
  */
 
-#if TCL_MAJOR_VERSION > 8
-MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclNRInterpCoroutine;
 
 /*
  *----------------------------------------------------------------
@@ -1183,10 +1182,10 @@ MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
-MODULE_SCOPE Tcl_ObjCmdProc	TclSingleOpCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclSortingOpCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclVariadicOpCmd;
-MODULE_SCOPE Tcl_ObjCmdProc	TclNoIdentOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclSingleOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclSortingOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclVariadicOpCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclNoIdentOpCmd;
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
@@ -1203,8 +1202,6 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[], int isLambda);
-#endif /* TCL_MAJOR_VERSION > 8 */
-
 
 /*
  *----------------------------------------------------------------

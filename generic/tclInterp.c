@@ -215,52 +215,52 @@ struct LimitHandler {
 
 static int		AliasCreate(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, Tcl_Interp *parentInterp,
-			    Tcl_Obj *namePtr, Tcl_Obj *targetPtr, int objc,
+			    Tcl_Obj *namePtr, Tcl_Obj *targetPtr, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static int		AliasDelete(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, Tcl_Obj *namePtr);
 static int		AliasDescribe(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, Tcl_Obj *objPtr);
 static int		AliasList(Tcl_Interp *interp, Tcl_Interp *childInterp);
-static Tcl_ObjCmdProc		AliasNRCmd;
+static Tcl_ObjCmdProc2		AliasNRCmd;
 static Tcl_CmdDeleteProc	AliasObjCmdDeleteProc;
 static Tcl_Interp *	GetInterp(Tcl_Interp *interp, Tcl_Obj *pathPtr);
-static Tcl_Interp *	GetInterp2(Tcl_Interp *interp, int objc,
+static Tcl_Interp *	GetInterp2(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static Tcl_InterpDeleteProc	InterpInfoDeleteProc;
 static int		ChildBgerror(Tcl_Interp *interp,
-			    Tcl_Interp *childInterp, int objc,
+			    Tcl_Interp *childInterp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static Tcl_Interp *	ChildCreate(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    int safe);
 static int		ChildDebugCmd(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp,
-			    int objc, Tcl_Obj *const objv[]);
+			    Tcl_Size objc, Tcl_Obj *const objv[]);
 static int		ChildEval(Tcl_Interp *interp, Tcl_Interp *childInterp,
-			    int objc, Tcl_Obj *const objv[]);
+			    Tcl_Size objc, Tcl_Obj *const objv[]);
 static int		ChildExpose(Tcl_Interp *interp,
-			    Tcl_Interp *childInterp, int objc,
+			    Tcl_Interp *childInterp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static int		ChildHide(Tcl_Interp *interp, Tcl_Interp *childInterp,
-			    int objc, Tcl_Obj *const objv[]);
+			    Tcl_Size objc, Tcl_Obj *const objv[]);
 static int		ChildHidden(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp);
 static int		ChildInvokeHidden(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp,
 			    const char *namespaceName,
-			    int objc, Tcl_Obj *const objv[]);
+			    Tcl_Size objc, Tcl_Obj *const objv[]);
 static int		ChildMarkTrusted(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp);
 static Tcl_CmdDeleteProc	ChildObjCmdDeleteProc;
 static int		ChildRecursionLimit(Tcl_Interp *interp,
-			    Tcl_Interp *childInterp, int objc,
+			    Tcl_Interp *childInterp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static int		ChildCommandLimitCmd(Tcl_Interp *interp,
-			    Tcl_Interp *childInterp, int consumedObjc,
-			    int objc, Tcl_Obj *const objv[]);
+			    Tcl_Interp *childInterp, Tcl_Size consumedObjc,
+			    Tcl_Size objc, Tcl_Obj *const objv[]);
 static int		ChildTimeLimitCmd(Tcl_Interp *interp,
-			    Tcl_Interp *childInterp, int consumedObjc,
-			    int objc, Tcl_Obj *const objv[]);
+			    Tcl_Interp *childInterp, Tcl_Size consumedObjc,
+			    Tcl_Size objc, Tcl_Obj *const objv[]);
 static void		InheritLimitsFromParent(Tcl_Interp *childInterp,
 			    Tcl_Interp *parentInterp);
 static void		SetScriptLimitCallback(Tcl_Interp *interp, int type,
@@ -275,8 +275,8 @@ static void		TimeLimitCallback(void *clientData);
 
 /* NRE enabling */
 static Tcl_NRPostProc	NRPostInvokeHidden;
-static Tcl_ObjCmdProc	NRInterpCmd;
-static Tcl_ObjCmdProc	NRChildCmd;
+static Tcl_ObjCmdProc2	NRInterpCmd;
+static Tcl_ObjCmdProc2	NRChildCmd;
 
 
 /*
@@ -497,7 +497,7 @@ TclInterpInit(
     childPtr->interpCmd		= NULL;
     Tcl_InitHashTable(&childPtr->aliasTable, TCL_STRING_KEYS);
 
-    Tcl_NRCreateCommand(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
+    Tcl_NRCreateCommand2(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
 	    NULL, NULL);
 
     Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
@@ -604,17 +604,17 @@ int
 Tcl_InterpObjCmd(
     void *clientData,
     Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
+    Tcl_Size objc,				/* Number of arguments. */
     Tcl_Obj *const objv[])		/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, NRInterpCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, NRInterpCmd, clientData, objc, objv);
 }
 
 static int
 NRInterpCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
+    Tcl_Size objc,				/* Number of arguments. */
     Tcl_Obj *const objv[])		/* Argument objects. */
 {
     Tcl_Interp *childInterp;
@@ -710,7 +710,8 @@ NRInterpCmd(
 	}
 	return ChildBgerror(interp, childInterp, objc - 3, objv + 3);
     case OPT_CANCEL: {
-	int i, flags;
+	Tcl_Size i;
+	int flags;
 	Tcl_Obj *resultObjPtr;
 	static const char *const cancelOptions[] = {
 	    "-unwind",	"--",	NULL
@@ -782,7 +783,8 @@ NRInterpCmd(
 	return Tcl_CancelEval(childInterp, resultObjPtr, 0, flags);
     }
     case OPT_CREATE: {
-	int i, last, safe;
+	int last, safe;
+	Tcl_Size i;
 	Tcl_Obj *childPtr;
 	char buf[16 + TCL_INTEGER_SPACE];
 	static const char *const createOptions[] = {
@@ -833,7 +835,7 @@ NRInterpCmd(
 	    for (i = 0; ; i++) {
 		Tcl_CmdInfo cmdInfo;
 
-		snprintf(buf, sizeof(buf), "interp%d", i);
+		snprintf(buf, sizeof(buf), "interp%" TCL_Z_MODIFIER "d", i);
 		if (Tcl_GetCommandInfo(interp, buf, &cmdInfo) == 0) {
 		    break;
 		}
@@ -864,7 +866,7 @@ NRInterpCmd(
 	}
 	return ChildDebugCmd(interp, childInterp, objc - 3, objv + 3);
     case OPT_DELETE: {
-	int i;
+	Tcl_Size i;
 	InterpInfo *iiPtr;
 
 	for (i = 2; i < objc; i++) {
@@ -942,7 +944,7 @@ NRInterpCmd(
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Tcl_IsSafe(childInterp)));
 	return TCL_OK;
     case OPT_INVOKEHID: {
-	int i;
+	Tcl_Size i;
 	const char *namespaceName;
 	static const char *const hiddenOptions[] = {
 	    "-global",	"-namespace",	"--", NULL
@@ -1163,7 +1165,7 @@ static Tcl_Interp *
 GetInterp2(
     Tcl_Interp *interp,		/* Default interp if no interp was specified
 				 * on the command line. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc == 2) {
@@ -1432,8 +1434,8 @@ TclPreventAliasLoop(
      * create or rename the command.
      */
 
-    if (cmdPtr->objProc != TclAliasObjCmd
-	    && cmdPtr->objProc != TclLocalAliasObjCmd) {
+    if (cmdPtr->objProc2 != TclAliasObjCmd
+	    && cmdPtr->objProc2 != TclLocalAliasObjCmd) {
 	return TCL_OK;
     }
 
@@ -1443,7 +1445,7 @@ TclPreventAliasLoop(
      * chain then we have a loop.
      */
 
-    aliasPtr = (Alias *)cmdPtr->objClientData;
+    aliasPtr = (Alias *)cmdPtr->objClientData2;
     nextAliasPtr = aliasPtr;
     while (1) {
 	Tcl_Obj *cmdNamePtr;
@@ -1488,11 +1490,11 @@ TclPreventAliasLoop(
 	 * Otherwise we do not have a loop.
 	 */
 
-	if (aliasCmdPtr->objProc != TclAliasObjCmd
-		&& aliasCmdPtr->objProc != TclLocalAliasObjCmd) {
+	if (aliasCmdPtr->objProc2 != TclAliasObjCmd
+		&& aliasCmdPtr->objProc2 != TclLocalAliasObjCmd) {
 	    return TCL_OK;
 	}
-	nextAliasPtr = (Alias *)aliasCmdPtr->objClientData;
+	nextAliasPtr = (Alias *)aliasCmdPtr->objClientData2;
     }
 }
 
@@ -1522,7 +1524,7 @@ AliasCreate(
 				 * invoked. */
     Tcl_Obj *namePtr,		/* Name of alias cmd. */
     Tcl_Obj *targetNamePtr,	/* Name of target cmd. */
-    int objc,			/* Additional arguments to store */
+    Tcl_Size objc,			/* Additional arguments to store */
     Tcl_Obj *const objv[])	/* with alias. */
 {
     Alias *aliasPtr;
@@ -1531,7 +1533,8 @@ AliasCreate(
     Child *childPtr;
     Parent *parentPtr;
     Tcl_Obj **prefv;
-    int isNew, i;
+    int isNew;
+    Tcl_Size i;
 
     aliasPtr = (Alias *)Tcl_Alloc(sizeof(Alias) + objc * sizeof(Tcl_Obj *));
     aliasPtr->token = namePtr;
@@ -1552,11 +1555,11 @@ AliasCreate(
     Tcl_Preserve(parentInterp);
 
     if (childInterp == parentInterp) {
-	aliasPtr->childCmd = Tcl_NRCreateCommand(childInterp,
+	aliasPtr->childCmd = Tcl_NRCreateCommand2(childInterp,
 		TclGetString(namePtr), TclLocalAliasObjCmd, AliasNRCmd,
 		aliasPtr, AliasObjCmdDeleteProc);
     } else {
-	aliasPtr->childCmd = Tcl_CreateObjCommand(childInterp,
+	aliasPtr->childCmd = Tcl_CreateObjCommand2(childInterp,
 		TclGetString(namePtr), TclAliasObjCmd, aliasPtr,
 		AliasObjCmdDeleteProc);
     }
@@ -1823,7 +1826,7 @@ static int
 AliasNRCmd(
     void *clientData,	/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     Alias *aliasPtr = (Alias *)clientData;
@@ -1876,7 +1879,7 @@ int
 TclAliasObjCmd(
     void *clientData,	/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
 #define ALIAS_CMDV_PREALLOC 10
@@ -1967,7 +1970,7 @@ int
 TclLocalAliasObjCmd(
     void *clientData,	/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
 #define ALIAS_CMDV_PREALLOC 10
@@ -2378,7 +2381,7 @@ static int
 ChildBgerror(
     Tcl_Interp *interp,		/* Interp for error return. */
     Tcl_Interp *childInterp,	/* Interp in which limit is set/queried. */
-    int objc,			/* Set or Query. */
+    Tcl_Size objc,			/* Set or Query. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     if (objc) {
@@ -2468,7 +2471,7 @@ ChildCreate(
     childPtr->parentInterp = parentInterp;
     childPtr->childEntryPtr = hPtr;
     childPtr->childInterp = childInterp;
-    childPtr->interpCmd = Tcl_NRCreateCommand(parentInterp, path,
+    childPtr->interpCmd = Tcl_NRCreateCommand2(parentInterp, path,
 	    TclChildObjCmd, NRChildCmd, childInterp, ChildObjCmdDeleteProc);
     Tcl_InitHashTable(&childPtr->aliasTable, TCL_STRING_KEYS);
     Tcl_SetHashValue(hPtr, childPtr);
@@ -2553,17 +2556,17 @@ int
 TclChildObjCmd(
     void *clientData,	/* Child interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, NRChildCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, NRChildCmd, clientData, objc, objv);
 }
 
 static int
 NRChildCmd(
     void *clientData,	/* Child interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *childInterp = (Tcl_Interp *)clientData;
@@ -2664,7 +2667,7 @@ NRChildCmd(
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Tcl_IsSafe(childInterp)));
 	return TCL_OK;
     case OPT_INVOKEHIDDEN: {
-	int i;
+	Tcl_Size i;
 	const char *namespaceName;
 	static const char *const hiddenOptions[] = {
 	    "-global",	"-namespace",	"--", NULL
@@ -2813,7 +2816,7 @@ ChildDebugCmd(
     Tcl_Interp *interp,		/* Interp for error return. */
     Tcl_Interp *childInterp,	/* The child interpreter in which command
 				 * will be evaluated. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const debugTypes[] = {
@@ -2884,7 +2887,7 @@ ChildEval(
     Tcl_Interp *interp,		/* Interp for error return. */
     Tcl_Interp *childInterp,	/* The child interpreter in which command
 				 * will be evaluated. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
@@ -2947,7 +2950,7 @@ static int
 ChildExpose(
     Tcl_Interp *interp,		/* Interp for error return. */
     Tcl_Interp *childInterp,	/* Interp in which command will be exposed. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     const char *name;
@@ -2991,7 +2994,7 @@ static int
 ChildRecursionLimit(
     Tcl_Interp *interp,		/* Interp for error return. */
     Tcl_Interp *childInterp,	/* Interp in which limit is set/queried. */
-    int objc,			/* Set or Query. */
+    Tcl_Size objc,			/* Set or Query. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     Interp *iPtr;
@@ -3053,7 +3056,7 @@ static int
 ChildHide(
     Tcl_Interp *interp,		/* Interp for error return. */
     Tcl_Interp *childInterp,	/* Interp in which command will be exposed. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     const char *name;
@@ -3138,7 +3141,7 @@ ChildInvokeHidden(
     Tcl_Interp *childInterp,	/* The child interpreter in which command will
 				 * be invoked. */
     const char *namespaceName,	/* The namespace to use, if any. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
@@ -4481,8 +4484,8 @@ static int
 ChildCommandLimitCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Interp *childInterp,	/* Interpreter being adjusted. */
-    int consumedObjc,		/* Number of args already parsed. */
-    int objc,			/* Total number of arguments. */
+    Tcl_Size consumedObjc,		/* Number of args already parsed. */
+    Tcl_Size objc,			/* Total number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const options[] = {
@@ -4582,8 +4585,7 @@ ChildCommandLimitCmd(
 	Tcl_WrongNumArgs(interp, consumedObjc, objv, "?-option value ...?");
 	return TCL_ERROR;
     } else {
-	int i;
-	Tcl_Size scriptLen = 0, limitLen = 0;
+	Tcl_Size i, scriptLen = 0, limitLen = 0;
 	Tcl_Obj *scriptObj = NULL, *granObj = NULL, *limitObj = NULL;
 	int gran = 0, limit = 0;
 
@@ -4669,8 +4671,8 @@ static int
 ChildTimeLimitCmd(
     Tcl_Interp *interp,			/* Current interpreter. */
     Tcl_Interp *childInterp,		/* Interpreter being adjusted. */
-    int consumedObjc,			/* Number of args already parsed. */
-    int objc,				/* Total number of arguments. */
+    Tcl_Size consumedObjc,			/* Number of args already parsed. */
+    Tcl_Size objc,				/* Total number of arguments. */
     Tcl_Obj *const objv[])		/* Argument objects. */
 {
     static const char *const options[] = {
@@ -4787,8 +4789,7 @@ ChildTimeLimitCmd(
 	Tcl_WrongNumArgs(interp, consumedObjc, objv, "?-option value ...?");
 	return TCL_ERROR;
     } else {
-	int i;
-	Tcl_Size scriptLen = 0, milliLen = 0, secLen = 0;
+	Tcl_Size i, scriptLen = 0, milliLen = 0, secLen = 0;
 	Tcl_Obj *scriptObj = NULL, *granObj = NULL;
 	Tcl_Obj *milliObj = NULL, *secObj = NULL;
 	int gran = 0;

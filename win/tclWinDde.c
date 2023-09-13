@@ -114,7 +114,7 @@ static int		MakeDdeConnection(Tcl_Interp *interp,
 			    const WCHAR *name, HCONV *ddeConvPtr);
 static void		SetDdeError(Tcl_Interp *interp);
 static int		DdeObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 
 #if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
@@ -167,7 +167,7 @@ Dde_Init(
 	return TCL_ERROR;
     }
 
-    Tcl_CreateObjCommand(interp, "dde", DdeObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "dde", DdeObjCmd, NULL, NULL);
     Tcl_CreateExitHandler(DdeExitProc, NULL);
     return Tcl_PkgProvideEx(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION, NULL);
 }
@@ -445,7 +445,7 @@ DdeSetServerName(
 	Tcl_ExposeCommand(interp, "dde", "dde");
     }
 
-    Tcl_CreateObjCommand(interp, "dde", DdeObjCmd,
+    Tcl_CreateObjCommand2(interp, "dde", DdeObjCmd,
 	    riPtr, DeleteProc);
     if (Tcl_IsSafe(interp)) {
 	Tcl_HideCommand(interp, "dde", "dde");
@@ -1301,7 +1301,7 @@ static int
 DdeObjCmd(
     void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* The interp we are sending from */
-    int objc,			/* Number of arguments */
+    Tcl_Size objc,			/* Number of arguments */
     Tcl_Obj *const *objv)	/* The arguments */
 {
     static const char *const ddeCommands[] = {
@@ -1330,8 +1330,8 @@ DdeObjCmd(
 	"-binary", NULL
     };
 
-    int index, i, argIndex;
-    Tcl_Size length;
+    int index, argIndex;
+    Tcl_Size length, i;
     int flags = 0, result = TCL_OK, firstArg = 0;
     HSZ ddeService = NULL, ddeTopic = NULL, ddeItem = NULL, ddeCookie = NULL;
     HDDEDATA ddeData = NULL, ddeItemData = NULL, ddeReturn;
