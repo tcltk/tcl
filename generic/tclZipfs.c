@@ -83,8 +83,8 @@ static const z_crc_t* crc32tab;
 
 #define ZIPFS_VOLUME	  "//zipfs:/"
 #define ZIPFS_VOLUME_LEN  9
-#define ZIPFS_APP_MOUNT	  "//zipfs:/app"
-#define ZIPFS_ZIP_MOUNT	  "//zipfs:/lib/tcl"
+#define ZIPFS_APP_MOUNT	  ZIPFS_VOLUME "app"
+#define ZIPFS_ZIP_MOUNT	  ZIPFS_VOLUME "lib/tcl"
 #define ZIPFS_FALLBACK_ENCODING "cp437"
 
 /*
@@ -1966,9 +1966,9 @@ DescribeMounted(
 int
 TclZipfs_Mount(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    const char *mountPoint,	/* Mount point path. */
     const char *zipname,	/* Path to ZIP file to mount; should be
 				 * normalized. */
+    const char *mountPoint,	/* Mount point path. */
     const char *passwd)		/* Password for opening the ZIP, or NULL if
 				 * the ZIP is unprotected. */
 {
@@ -2044,9 +2044,9 @@ TclZipfs_Mount(
 int
 TclZipfs_MountBuffer(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    const char *mountPoint,	/* Mount point path. */
-    unsigned char *data,
+    const void *data,
     size_t datalen,
+    const char *mountPoint,	/* Mount point path. */
     int copy)
 {
     ZipFile *zf;
@@ -2098,7 +2098,7 @@ TclZipfs_MountBuffer(
 	memcpy(zf->data, data, datalen);
 	zf->ptrToFree = zf->data;
     } else {
-	zf->data = data;
+	zf->data = (unsigned char *) data;
 	zf->ptrToFree = NULL;
     }
     if (ZipFSFindTOC(interp, 0, zf) != TCL_OK) {
@@ -2222,28 +2222,36 @@ ZipFSMountObjCmd(
 
     if (objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		 "?mountpoint? ?zipfile? ?password?");
+		 "?zipfile? ?mountpoint? ?password?");
 	return TCL_ERROR;
     }
+    /*
+     * A single argument is treated as the mountpoint. Two arguments
+     * are treated as zipfile and mountpoint.
+     */
     if (objc > 1) {
-	mountPoint = TclGetString(objv[1]);
-    }
-    if (objc > 2) {
-	zipFileObj = Tcl_FSGetNormalizedPath(interp, objv[2]);
-	if (!zipFileObj) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "could not normalize zip filename", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", NULL);
-	    return TCL_ERROR;
+	if (objc == 2) {
+	    mountPoint = Tcl_GetString(objv[1]);
+	} else {
+	    /* 2 < objc < 4 */
+	    zipFileObj = Tcl_FSGetNormalizedPath(interp, objv[1]);
+	    if (!zipFileObj) {
+		Tcl_SetObjResult(
+		    interp,
+		    Tcl_NewStringObj("could not normalize zip filename", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", NULL);
+		return TCL_ERROR;
+	    }
+	    Tcl_IncrRefCount(zipFileObj);
+	    zipFile = Tcl_GetString(zipFileObj);
+	    mountPoint = Tcl_GetString(objv[2]);
+	    if (objc > 3) {
+		password = Tcl_GetString(objv[3]);
+	    }
 	}
-	Tcl_IncrRefCount(zipFileObj);
-	zipFile = TclGetString(zipFileObj);
-    }
-    if (objc > 3) {
-	password = TclGetString(objv[3]);
     }
 
-    result = TclZipfs_Mount(interp, mountPoint, zipFile, password);
+    result = TclZipfs_Mount(interp, zipFile, mountPoint, password);
     if (zipFileObj != NULL) {
 	Tcl_DecrRefCount(zipFileObj);
     }
@@ -2278,7 +2286,7 @@ ZipFSMountBufferObjCmd(
     Tcl_Size length;
 
     if (objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? ?data?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?data? ?mountpoint?");
 	return TCL_ERROR;
     }
     if (objc < 2) {
@@ -2290,19 +2298,19 @@ ZipFSMountBufferObjCmd(
 	return ret;
     }
 
-    mountPoint = TclGetString(objv[1]);
     if (objc < 3) {
 	ReadLock();
-	DescribeMounted(interp, mountPoint);
+	DescribeMounted(interp, TclGetString(objv[1]));
 	Unlock();
 	return TCL_OK;
     }
 
-    data = Tcl_GetBytesFromObj(interp, objv[2], &length);
+    data = Tcl_GetBytesFromObj(interp, objv[1], &length);
+    mountPoint = TclGetString(objv[2]);
     if (data == NULL) {
 	return TCL_ERROR;
     }
-    return TclZipfs_MountBuffer(interp, mountPoint, data, length, 1);
+    return TclZipfs_MountBuffer(interp, data, length, mountPoint, 1);
 }
 
 /*
@@ -2356,7 +2364,7 @@ ZipFSUnmountObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "zipfile");
+	Tcl_WrongNumArgs(interp, 1, objv, "mountpoint");
 	return TCL_ERROR;
     }
     return TclZipfs_Unmount(interp, TclGetString(objv[1]));
@@ -3656,22 +3664,13 @@ ZipFSExistsObjCmd(
 {
     char *filename;
     int exists;
-    Tcl_DString ds;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "filename");
 	return TCL_ERROR;
     }
 
-    /*
-     * Prepend ZIPFS_VOLUME to filename, eliding the final /
-     */
-
     filename = TclGetString(objv[1]);
-    Tcl_DStringInit(&ds);
-    Tcl_DStringAppend(&ds, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN - 1);
-    Tcl_DStringAppend(&ds, filename, -1);
-    filename = Tcl_DStringValue(&ds);
 
     ReadLock();
     exists = ZipFSLookup(filename) != NULL;
@@ -5701,7 +5700,7 @@ ZipfsAppHookFindTclInit(
     if (zipfs_literal_tcl_library) {
 	return TCL_ERROR;
     }
-    if (TclZipfs_Mount(NULL, ZIPFS_ZIP_MOUNT, archive, NULL)) {
+    if (TclZipfs_Mount(NULL, archive, ZIPFS_ZIP_MOUNT, NULL)) {
 	/* Either the file doesn't exist or it is not a zip archive */
 	return TCL_ERROR;
     }
@@ -5815,7 +5814,7 @@ TclZipfs_AppHook(
      * function.
      */
 
-    if (!TclZipfs_Mount(NULL, ZIPFS_APP_MOUNT, archive, NULL)) {
+    if (!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
 	int found;
 	Tcl_Obj *vfsInitScript;
 
@@ -5877,7 +5876,7 @@ TclZipfs_AppHook(
 		Tcl_SetStartupScript(vfsInitScript, NULL);
 	    }
 	    return result;
-	} else if (!TclZipfs_Mount(NULL, ZIPFS_APP_MOUNT, archive, NULL)) {
+	} else if (!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
 	    int found;
 	    Tcl_Obj *vfsInitScript;
 
@@ -5926,8 +5925,8 @@ TclZipfs_AppHook(
 int
 TclZipfs_Mount(
     Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(const char *),	/* Mount point path. */
     TCL_UNUSED(const char *),	/* Path to ZIP file to mount. */
+    TCL_UNUSED(const char *),	/* Mount point path. */
     TCL_UNUSED(const char *))		/* Password for opening the ZIP, or NULL if
 				 * the ZIP is unprotected. */
 {
@@ -5939,9 +5938,9 @@ TclZipfs_Mount(
 int
 TclZipfs_MountBuffer(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    TCL_UNUSED(const char *),	/* Mount point path. */
-    TCL_UNUSED(unsigned char *),
+    TCL_UNUSED(const void *),
     TCL_UNUSED(size_t),
+    TCL_UNUSED(const char *),	/* Mount point path. */
     TCL_UNUSED(int))
 {
     ZIPFS_ERROR(interp, "no zlib available");

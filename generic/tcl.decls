@@ -146,7 +146,7 @@ declare 32 {
 }
 # Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 33 {
-    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, void *numBytesPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -2395,8 +2395,8 @@ declare 631 {
 
 # TIP #430
 declare 632 {
-    int TclZipfs_Mount(Tcl_Interp *interp, const char *mountPoint,
-	    const char *zipname, const char *passwd)
+    int TclZipfs_Mount(Tcl_Interp *interp, const char *zipname,
+	    const char *mountPoint, const char *passwd)
 }
 declare 633 {
     int TclZipfs_Unmount(Tcl_Interp *interp, const char *mountPoint)
@@ -2405,8 +2405,8 @@ declare 634 {
     Tcl_Obj *TclZipfs_TclLibrary(void)
 }
 declare 635 {
-    int TclZipfs_MountBuffer(Tcl_Interp *interp, const char *mountPoint,
-	    unsigned char *data, size_t datalen, int copy)
+    int TclZipfs_MountBuffer(Tcl_Interp *interp, const void *data,
+	    size_t datalen, const char *mountPoint, int copy)
 }
 
 # TIP #445
@@ -2482,9 +2482,11 @@ declare 651 {
 declare 652 {
     Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, Tcl_Size *lengthPtr)
 }
-# Only available in Tcl 8.x, NULL in Tcl 9.0
+
+# TIP 660
 declare 653 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, Tcl_Size *numBytesPtr)
+    int Tcl_GetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Size *sizePtr)
 }
 
 # TIP #575
@@ -2624,12 +2626,6 @@ declare 684 {
 # TIP 651
 declare 685 {
     Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
-}
-
-# TIP 660
-declare 686 {
-    int Tcl_GetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    Tcl_Size *sizePtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
