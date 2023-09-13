@@ -137,7 +137,7 @@ Tcl_RegexpObjCmd(
 	"-expanded",	"-line",	"-linestop",	"-lineanchor",
 	"-nocase",	"-start",	"--",		NULL
     };
-    enum options {
+    enum regexpoptions {
 	REGEXP_ALL,	REGEXP_ABOUT,	REGEXP_INDICES,	REGEXP_INLINE,
 	REGEXP_EXPANDED,REGEXP_LINE,	REGEXP_LINESTOP,REGEXP_LINEANCHOR,
 	REGEXP_NOCASE,	REGEXP_START,	REGEXP_LAST
@@ -162,7 +162,7 @@ Tcl_RegexpObjCmd(
 		&index) != TCL_OK) {
 	    goto optionError;
 	}
-	switch ((enum options) index) {
+	switch ((enum regexpoptions) index) {
 	case REGEXP_ALL:
 	    all = 1;
 	    break;
@@ -1094,14 +1094,14 @@ Tcl_SplitObjCmd(
 
 		Tcl_SetHashValue(hPtr, objPtr);
 	    } else {
-		objPtr = Tcl_GetHashValue(hPtr);
+		objPtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 	    }
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	}
 	Tcl_DeleteHashTable(&charReuseTable);
 
     } else if (splitCharLen == 1) {
-	char *p;
+	const char *p;
 
 	/*
 	 * Handle the special case of splitting on a single character. This is
@@ -1900,7 +1900,7 @@ StringMapCmd(
 	 * adapt this code...
 	 */
 
-	mapElemv = TclStackAlloc(interp, sizeof(Tcl_Obj *) * mapElemc);
+	mapElemv = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * mapElemc);
 	Tcl_DictObjFirst(interp, objv[objc-2], &search, mapElemv+0,
 		mapElemv+1, &done);
 	for (i=2 ; i<mapElemc ; i+=2) {
@@ -2011,10 +2011,10 @@ StringMapCmd(
 	 * case.
 	 */
 
-	mapStrings = TclStackAlloc(interp, mapElemc*2*sizeof(Tcl_UniChar *));
-	mapLens = TclStackAlloc(interp, mapElemc * 2 * sizeof(int));
+	mapStrings = (Tcl_UniChar **)TclStackAlloc(interp, mapElemc*2*sizeof(Tcl_UniChar *));
+	mapLens = (int *)TclStackAlloc(interp, mapElemc * 2 * sizeof(int));
 	if (nocase) {
-	    u2lc = TclStackAlloc(interp, mapElemc * sizeof(Tcl_UniChar));
+	    u2lc = (Tcl_UniChar *)TclStackAlloc(interp, mapElemc * sizeof(Tcl_UniChar));
 	}
 	for (index = 0; index < mapElemc; index++) {
 	    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
@@ -2272,7 +2272,7 @@ StringReptCmd(
      * Include space for the NUL.
      */
 
-    string2 = attemptckalloc(length2 + 1);
+    string2 = (char *)attemptckalloc(length2 + 1);
     if (string2 == NULL) {
 	/*
 	 * Alloc failed. Note that in this case we try to do an error message
@@ -3992,7 +3992,7 @@ TclNRSwitchObjCmd(
      */
 
   matchFound:
-    ctxPtr = TclStackAlloc(interp, sizeof(CmdFrame));
+    ctxPtr = (CmdFrame *)TclStackAlloc(interp, sizeof(CmdFrame));
     *ctxPtr = *iPtr->cmdFramePtr;
 
     if (splitObjs) {
@@ -4022,7 +4022,7 @@ TclNRSwitchObjCmd(
 	if (ctxPtr->type == TCL_LOCATION_SOURCE && ctxPtr->line[bidx] >= 0) {
 	    int bline = ctxPtr->line[bidx];
 
-	    ctxPtr->line = ckalloc(objc * sizeof(int));
+	    ctxPtr->line = (int *)ckalloc(objc * sizeof(int));
 	    ctxPtr->nline = objc;
 	    TclListLines(blist, bline, objc, ctxPtr->line, objv);
 	} else {
@@ -4036,7 +4036,7 @@ TclNRSwitchObjCmd(
 
 	    int k;
 
-	    ctxPtr->line = ckalloc(objc * sizeof(int));
+	    ctxPtr->line = (int *)ckalloc(objc * sizeof(int));
 	    ctxPtr->nline = objc;
 	    for (k=0; k < objc; k++) {
 		ctxPtr->line[k] = -1;
@@ -4076,9 +4076,9 @@ SwitchPostProc(
     /* Unpack the preserved data */
 
     int splitObjs = PTR2INT(data[0]);
-    CmdFrame *ctxPtr = data[1];
+    CmdFrame *ctxPtr = (CmdFrame *)data[1];
     int pc = PTR2INT(data[2]);
-    const char *pattern = data[3];
+    const char *pattern = (const char *)data[3];
     int patternLength = strlen(pattern);
 
     /*
@@ -5052,9 +5052,9 @@ TryPostBody(
     int i, dummy, code, objc;
     int numHandlers = 0;
 
-    handlersObj = data[0];
-    finallyObj = data[1];
-    objv = data[2];
+    handlersObj = (Tcl_Obj *)data[0];
+    finallyObj = (Tcl_Obj *)data[1];
+    objv = (Tcl_Obj **)data[2];
     objc = PTR2INT(data[3]);
 
     cmdObj = objv[0];
@@ -5267,9 +5267,9 @@ TryPostHandler(
     Tcl_Obj *finallyObj;
     int finallyIndex;
 
-    objv = data[0];
-    options = data[1];
-    handlerKindObj = data[2];
+    objv = (Tcl_Obj **)data[0];
+    options = (Tcl_Obj *)data[1];
+    handlerKindObj = (Tcl_Obj *)data[2];
     finallyIndex = PTR2INT(data[3]);
 
     cmdObj = objv[0];
@@ -5351,9 +5351,9 @@ TryPostFinal(
 {
     Tcl_Obj *resultObj, *options, *cmdObj;
 
-    resultObj = data[0];
-    options = data[1];
-    cmdObj = data[2];
+    resultObj = (Tcl_Obj *)data[0];
+    options = (Tcl_Obj *)data[1];
+    cmdObj = (Tcl_Obj *)data[2];
 
     /*
      * If the result wasn't OK, we need to adjust the result options.

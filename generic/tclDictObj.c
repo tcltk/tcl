@@ -229,10 +229,10 @@ AllocChainEntry(
     Tcl_HashTable *tablePtr,
     void *keyPtr)
 {
-    Tcl_Obj *objPtr = keyPtr;
+    Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     ChainEntry *cPtr;
 
-    cPtr = ckalloc(sizeof(ChainEntry));
+    cPtr = (ChainEntry *)ckalloc(sizeof(ChainEntry));
     cPtr->entry.key.objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
     cPtr->entry.clientData = NULL;
@@ -363,7 +363,7 @@ DupDictInternalRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *copyPtr)
 {
-    Dict *oldDict = DICT(srcPtr);
+    Dict *oldDict = (Dict *)DICT(srcPtr);
     Dict *newDict = (Dict *)ckalloc(sizeof(Dict));
     ChainEntry *cPtr;
 
@@ -425,7 +425,7 @@ static void
 FreeDictInternalRep(
     Tcl_Obj *dictPtr)
 {
-    Dict *dict = DICT(dictPtr);
+    Dict *dict = (Dict *)DICT(dictPtr);
 
     if (dict->refCount-- <= 1) {
 	DeleteDict(dict);
@@ -489,7 +489,7 @@ UpdateStringOfDict(
 {
 #define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    Dict *dict = DICT(dictPtr);
+    Dict *dict = (Dict *)DICT(dictPtr);
     ChainEntry *cPtr;
     Tcl_Obj *keyPtr, *valuePtr;
     int i, length;
@@ -552,7 +552,7 @@ UpdateStringOfDict(
      */
 
     dictPtr->length = bytesNeeded - 1;
-    dictPtr->bytes = ckalloc(bytesNeeded);
+    dictPtr->bytes = (char *)ckalloc(bytesNeeded);
     dst = dictPtr->bytes;
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -667,7 +667,7 @@ SetDictFromAny(
 	    } else {
 		/* Avoid double copy */
 		TclNewObj(keyPtr);
-		keyPtr->bytes = ckalloc((unsigned) elemSize + 1);
+		keyPtr->bytes = (char *)ckalloc(elemSize + 1);
 		keyPtr->length = TclCopyAndCollapse(elemSize, elemStart,
 			keyPtr->bytes);
 	    }
@@ -683,7 +683,7 @@ SetDictFromAny(
 	    } else {
 		/* Avoid double copy */
 		TclNewObj(valuePtr);
-		valuePtr->bytes = ckalloc((unsigned) elemSize + 1);
+		valuePtr->bytes = (char *)ckalloc(elemSize + 1);
 		valuePtr->length = TclCopyAndCollapse(elemSize, elemStart,
 			valuePtr->bytes);
 	    }
@@ -775,7 +775,7 @@ TclTraceDictPath(
 	    && SetDictFromAny(interp, dictPtr) != TCL_OK) {
 	return NULL;
     }
-    dict = DICT(dictPtr);
+    dict = (Dict *)DICT(dictPtr);
     if (flags & DICT_PATH_UPDATE) {
 	dict->chain = NULL;
     }
@@ -817,7 +817,7 @@ TclTraceDictPath(
 	    }
 	}
 
-	newDict = DICT(tmpObj);
+	newDict = (Dict *)DICT(tmpObj);
 	if (flags & DICT_PATH_UPDATE) {
 	    if (Tcl_IsShared(tmpObj)) {
 		TclDecrRefCount(tmpObj);
@@ -825,7 +825,7 @@ TclTraceDictPath(
 		Tcl_IncrRefCount(tmpObj);
 		Tcl_SetHashValue(hPtr, tmpObj);
 		dict->epoch++;
-		newDict = DICT(tmpObj);
+		newDict = (Dict *)DICT(tmpObj);
 	    }
 
 	    newDict->chain = dictPtr;
@@ -860,7 +860,7 @@ static void
 InvalidateDictChain(
     Tcl_Obj *dictObj)
 {
-    Dict *dict = DICT(dictObj);
+    Dict *dict = (Dict *)DICT(dictObj);
 
     do {
 	TclInvalidateStringRep(dictObj);
@@ -870,7 +870,7 @@ InvalidateDictChain(
 	    break;
 	}
 	dict->chain = NULL;
-	dict = DICT(dictObj);
+	dict = (Dict *)DICT(dictObj);
     } while (dict != NULL);
 }
 
@@ -916,7 +916,7 @@ Tcl_DictObjPut(
     if (dictPtr->bytes != NULL) {
 	TclInvalidateStringRep(dictPtr);
     }
-    dict = DICT(dictPtr);
+    dict = (Dict *)DICT(dictPtr);
     hPtr = CreateChainEntry(dict, keyPtr, &isNew);
     Tcl_IncrRefCount(valuePtr);
     if (!isNew) {
@@ -965,7 +965,7 @@ Tcl_DictObjGet(
 	return TCL_ERROR;
     }
 
-    dict = DICT(dictPtr);
+    dict = (Dict *)DICT(dictPtr);
     hPtr = Tcl_FindHashEntry(&dict->table, keyPtr);
     if (hPtr == NULL) {
 	*valuePtrPtr = NULL;
@@ -1011,7 +1011,7 @@ Tcl_DictObjRemove(
 	return TCL_ERROR;
     }
 
-    dict = DICT(dictPtr);
+    dict = (Dict *)DICT(dictPtr);
     if (DeleteChainEntry(dict, keyPtr)) {
 	if (dictPtr->bytes != NULL) {
 	    TclInvalidateStringRep(dictPtr);
@@ -1052,7 +1052,7 @@ Tcl_DictObjSize(
 	return TCL_ERROR;
     }
 
-    dict = DICT(dictPtr);
+    dict = (Dict *)DICT(dictPtr);
     *sizePtr = dict->table.numEntries;
     return TCL_OK;
 }
@@ -1104,7 +1104,7 @@ Tcl_DictObjFirst(
 	return TCL_ERROR;
     }
 
-    dict = DICT(dictPtr);
+    dict = (Dict *)DICT(dictPtr);
     cPtr = dict->entryChainHead;
     if (cPtr == NULL) {
 	searchPtr->epoch = -1;
@@ -1278,11 +1278,11 @@ Tcl_DictObjPutKeyList(
 	return TCL_ERROR;
     }
 
-    dict = DICT(dictPtr);
+    dict = (Dict *)DICT(dictPtr);
     hPtr = CreateChainEntry(dict, keyv[keyc-1], &isNew);
     Tcl_IncrRefCount(valuePtr);
     if (!isNew) {
-	Tcl_Obj *oldValuePtr = Tcl_GetHashValue(hPtr);
+	Tcl_Obj *oldValuePtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
 	TclDecrRefCount(oldValuePtr);
     }
@@ -1335,7 +1335,7 @@ Tcl_DictObjRemoveKeyList(
 	return TCL_ERROR;
     }
 
-    dict = DICT(dictPtr);
+    dict = (Dict *)DICT(dictPtr);
     DeleteChainEntry(dict, keyv[keyc-1]);
     InvalidateDictChain(dictPtr);
     return TCL_OK;
@@ -1376,7 +1376,7 @@ Tcl_NewDictObj(void)
 
     TclNewObj(dictPtr);
     TclInvalidateStringRep(dictPtr);
-    dict = ckalloc(sizeof(Dict));
+    dict = (Dict *)ckalloc(sizeof(Dict));
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;
@@ -1426,7 +1426,7 @@ Tcl_DbNewDictObj(
 
     TclDbNewObj(dictPtr, file, line);
     TclInvalidateStringRep(dictPtr);
-    dict = ckalloc(sizeof(Dict));
+    dict = (Dict *)ckalloc(sizeof(Dict));
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;
@@ -2036,7 +2036,7 @@ DictInfoCmd(
 	    && SetDictFromAny(interp, dictPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    dict = DICT(dictPtr);
+    dict = (Dict *)DICT(dictPtr);
 
     statsStr = Tcl_HashStats(&dict->table);
     Tcl_SetObjResult(interp, Tcl_NewStringObj(statsStr, -1));
@@ -2373,7 +2373,7 @@ DictForNRCmd(
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "for", NULL);
 	return TCL_ERROR;
     }
-    searchPtr = TclStackAlloc(interp, sizeof(Tcl_DictSearch));
+    searchPtr = (Tcl_DictSearch *)TclStackAlloc(interp, sizeof(Tcl_DictSearch));
     if (Tcl_DictObjFirst(interp, objv[2], searchPtr, &keyObj, &valueObj,
 	    &done) != TCL_OK) {
 	TclStackFree(interp, searchPtr);
@@ -2443,10 +2443,10 @@ DictForLoopCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_DictSearch *searchPtr = data[0];
-    Tcl_Obj *keyVarObj = data[1];
-    Tcl_Obj *valueVarObj = data[2];
-    Tcl_Obj *scriptObj = data[3];
+    Tcl_DictSearch *searchPtr = (Tcl_DictSearch *)data[0];
+    Tcl_Obj *keyVarObj = (Tcl_Obj *)data[1];
+    Tcl_Obj *valueVarObj = (Tcl_Obj *)data[2];
+    Tcl_Obj *scriptObj = (Tcl_Obj *)data[3];
     Tcl_Obj *keyObj, *valueObj;
     int done;
 
@@ -2546,7 +2546,8 @@ DictMapNRCmd(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj **varv, *keyObj, *valueObj;
     DictMapStorage *storagePtr;
-    int varc, done;
+    int varc;
+    int done;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2567,7 +2568,7 @@ DictMapNRCmd(
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "map", NULL);
 	return TCL_ERROR;
     }
-    storagePtr = TclStackAlloc(interp, sizeof(DictMapStorage));
+    storagePtr = (DictMapStorage *)TclStackAlloc(interp, sizeof(DictMapStorage));
     if (Tcl_DictObjFirst(interp, objv[2], &storagePtr->search, &keyObj,
 	    &valueObj, &done) != TCL_OK) {
 	TclStackFree(interp, storagePtr);
@@ -2647,7 +2648,7 @@ DictMapLoopCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    DictMapStorage *storagePtr = data[0];
+    DictMapStorage *storagePtr = (DictMapStorage *)data[0];
     Tcl_Obj *keyObj, *valueObj;
     int done;
 
@@ -3215,8 +3216,8 @@ FinalizeDictUpdate(
     Tcl_Obj *dictPtr, *objPtr, **objv;
     Tcl_InterpState state;
     int i, objc;
-    Tcl_Obj *varName = data[0];
-    Tcl_Obj *argsObj = data[1];
+    Tcl_Obj *varName = (Tcl_Obj *)data[0];
+    Tcl_Obj *argsObj = (Tcl_Obj *)data[1];
 
     /*
      * ErrorInfo handling.
@@ -3366,9 +3367,9 @@ FinalizeDictWith(
     Tcl_Obj **pathv;
     int pathc;
     Tcl_InterpState state;
-    Tcl_Obj *varName = data[0];
-    Tcl_Obj *keysPtr = data[1];
-    Tcl_Obj *pathPtr = data[2];
+    Tcl_Obj *varName = (Tcl_Obj *)data[0];
+    Tcl_Obj *keysPtr = (Tcl_Obj *)data[1];
+    Tcl_Obj *pathPtr = (Tcl_Obj *)data[2];
     Var *varPtr, *arrayPtr;
 
     if (result == TCL_ERROR) {

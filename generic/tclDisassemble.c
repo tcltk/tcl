@@ -833,7 +833,7 @@ UpdateStringOfInstName(
         s = (char *) tclInstructionTable[objPtr->internalRep.longValue].name;
     }
     len = strlen(s);
-    objPtr->bytes = ckalloc(len + 1);
+    objPtr->bytes = (char *)ckalloc(len + 1);
     memcpy(objPtr->bytes, s, len + 1);
     objPtr->length = len;
 }
@@ -1306,18 +1306,18 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 	if (objv[2]->typePtr == &tclLambdaType) {
-	    procPtr = objv[2]->internalRep.twoPtrValue.ptr1;
+	    procPtr = (Proc *)objv[2]->internalRep.twoPtrValue.ptr1;
 	}
 	if (procPtr == NULL || procPtr->iPtr != (Interp *) interp) {
 	    result = tclLambdaType.setFromAnyProc(interp, objv[2]);
 	    if (result != TCL_OK) {
 		return result;
 	    }
-	    procPtr = objv[2]->internalRep.twoPtrValue.ptr1;
+	    procPtr = (Proc *)objv[2]->internalRep.twoPtrValue.ptr1;
 	}
 
 	memset(&cmd, 0, sizeof(Command));
-	nsObjPtr = objv[2]->internalRep.twoPtrValue.ptr2;
+	nsObjPtr = (Tcl_Obj *)objv[2]->internalRep.twoPtrValue.ptr2;
 	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -1560,7 +1560,7 @@ Tcl_DisassembleObjCmd(
 		    TclGetString(objv[3]), NULL);
 	    return TCL_ERROR;
 	}
-	procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+	procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
 	if (procPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "body not available for this kind of method", -1));

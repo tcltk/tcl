@@ -836,11 +836,11 @@ ReleaseDictIterator(
      * that we were holding.
      */
 
-    searchPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    searchPtr = (Tcl_DictSearch *)objPtr->internalRep.twoPtrValue.ptr1;
     Tcl_DictObjDone(searchPtr);
     ckfree(searchPtr);
 
-    dictPtr = objPtr->internalRep.twoPtrValue.ptr2;
+    dictPtr = (Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr2;
     TclDecrRefCount(dictPtr);
 
     objPtr->typePtr = NULL;
@@ -913,8 +913,8 @@ TclCreateExecEnv(
     int size)			/* The initial stack size, in number of words
 				 * [sizeof(Tcl_Obj*)] */
 {
-    ExecEnv *eePtr = ckalloc(sizeof(ExecEnv));
-    ExecStack *esPtr = ckalloc(TclOffset(ExecStack, stackWords)
+    ExecEnv *eePtr = (ExecEnv *)ckalloc(sizeof(ExecEnv));
+    ExecStack *esPtr = (ExecStack *)ckalloc(TclOffset(ExecStack, stackWords)
 	    + size * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
@@ -1183,7 +1183,7 @@ GrowEvaluationStack(
     newBytes = TclOffset(ExecStack, stackWords) + newElems * sizeof(Tcl_Obj *);
 
     oldPtr = esPtr;
-    esPtr = ckalloc(newBytes);
+    esPtr = (ExecStack *)ckalloc(newBytes);
 
     oldPtr->nextPtr = esPtr;
     esPtr->prevPtr = oldPtr;
@@ -1428,8 +1428,8 @@ CopyCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj **resultPtrPtr = data[0];
-    Tcl_Obj *resultPtr = data[1];
+    Tcl_Obj **resultPtrPtr = (Tcl_Obj **)data[0];
+    Tcl_Obj *resultPtr = (Tcl_Obj *)data[1];
 
     if (result == TCL_OK) {
 	*resultPtrPtr = resultPtr;
@@ -1486,8 +1486,8 @@ ExprObjCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_InterpState state = data[0];
-    Tcl_Obj *resultPtr = data[1];
+    Tcl_InterpState state = (Tcl_InterpState)data[0];
+    Tcl_Obj *resultPtr = (Tcl_Obj *)data[1];
 
     if (result == TCL_OK) {
 	TclSetDuplicateObj(resultPtr, Tcl_GetObjResult(interp));
@@ -1537,7 +1537,7 @@ CompileExprObj(
     if (objPtr->typePtr == &exprCodeType) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+	codePtr = (ByteCode *)objPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != namespacePtr)
@@ -1577,7 +1577,7 @@ CompileExprObj(
 	TclInitByteCodeObj(objPtr, &compEnv);
 	objPtr->typePtr = &exprCodeType;
 	TclFreeCompileEnv(&compEnv);
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+	codePtr = (ByteCode *)objPtr->internalRep.twoPtrValue.ptr1;
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
@@ -1649,7 +1649,7 @@ static void
 FreeExprCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr = (ByteCode *)objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
     if (codePtr->refCount-- <= 1) {

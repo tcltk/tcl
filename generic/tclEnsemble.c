@@ -664,7 +664,7 @@ TclCreateEnsembleInNs(
     EnsembleConfig *ensemblePtr;
     Tcl_Command token;
 
-    ensemblePtr = ckalloc(sizeof(EnsembleConfig));
+    ensemblePtr = (EnsembleConfig *)ckalloc(sizeof(EnsembleConfig));
     token = TclNRCreateCommandInNs(interp, name,
 	(Tcl_Namespace *) nameNsPtr, NsEnsembleImplementationCmd,
 	NsEnsembleImplementationCmdNR, ensemblePtr, DeleteEnsembleConfig);
@@ -791,7 +791,7 @@ Tcl_SetEnsembleSubcommandList(
 	}
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     oldList = ensemblePtr->subcmdList;
     ensemblePtr->subcmdList = subcmdList;
     if (subcmdList != NULL) {
@@ -867,7 +867,7 @@ Tcl_SetEnsembleParameterList(
 	}
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     oldList = ensemblePtr->parameterList;
     ensemblePtr->parameterList = paramList;
     if (paramList != NULL) {
@@ -967,7 +967,7 @@ Tcl_SetEnsembleMappingDict(
 	}
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     oldDict = ensemblePtr->subcommandDict;
     ensemblePtr->subcommandDict = mapDict;
     if (mapDict != NULL) {
@@ -1042,7 +1042,7 @@ Tcl_SetEnsembleUnknownHandler(
 	}
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     oldList = ensemblePtr->unknownHandler;
     ensemblePtr->unknownHandler = unknownList;
     if (unknownList != NULL) {
@@ -1098,7 +1098,7 @@ Tcl_SetEnsembleFlags(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     wasCompiled = ensemblePtr->flags & ENSEMBLE_COMPILE;
 
     /*
@@ -1176,7 +1176,7 @@ Tcl_GetEnsembleSubcommandList(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     *subcmdListPtr = ensemblePtr->subcmdList;
     return TCL_OK;
 }
@@ -1218,7 +1218,7 @@ Tcl_GetEnsembleParameterList(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     *paramListPtr = ensemblePtr->parameterList;
     return TCL_OK;
 }
@@ -1260,7 +1260,7 @@ Tcl_GetEnsembleMappingDict(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     *mapDictPtr = ensemblePtr->subcommandDict;
     return TCL_OK;
 }
@@ -1301,7 +1301,7 @@ Tcl_GetEnsembleUnknownHandler(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     *unknownListPtr = ensemblePtr->unknownHandler;
     return TCL_OK;
 }
@@ -1342,7 +1342,7 @@ Tcl_GetEnsembleFlags(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     *flagsPtr = ensemblePtr->flags;
     return TCL_OK;
 }
@@ -1383,7 +1383,7 @@ Tcl_GetEnsembleNamespace(
 	return TCL_ERROR;
     }
 
-    ensemblePtr = cmdPtr->objClientData;
+    ensemblePtr = (EnsembleConfig *)cmdPtr->objClientData;
     *namespacePtrPtr = (Tcl_Namespace *) ensemblePtr->nsPtr;
     return TCL_OK;
 }
@@ -1682,7 +1682,7 @@ NsEnsembleImplementationCmdNR(
     int objc,
     Tcl_Obj *const objv[])
 {
-    EnsembleConfig *ensemblePtr = clientData;
+    EnsembleConfig *ensemblePtr = (EnsembleConfig *)clientData;
 				/* The ensemble itself. */
     Tcl_Obj *prefixObj;		/* An object containing the prefix words of
 				 * the command that implements the
@@ -1751,11 +1751,11 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	if (subObj->typePtr==&ensembleCmdType){
-	    EnsembleCmdRep *ensembleCmd = subObj->internalRep.twoPtrValue.ptr1;
+	    EnsembleCmdRep *ensembleCmd = (EnsembleCmdRep *)subObj->internalRep.twoPtrValue.ptr1;
 
 	    if (ensembleCmd->epoch == ensemblePtr->epoch &&
 		    ensembleCmd->token == (Command *)ensemblePtr->token) {
-		prefixObj = Tcl_GetHashValue(ensembleCmd->hPtr);
+		prefixObj = (Tcl_Obj *)Tcl_GetHashValue(ensembleCmd->hPtr);
 		Tcl_IncrRefCount(prefixObj);
 		if (ensembleCmd->fix) {
 		    TclSpellFix(interp, objv, objc, subIdx, subObj, ensembleCmd->fix);
@@ -1858,7 +1858,7 @@ NsEnsembleImplementationCmdNR(
 	TclSpellFix(interp, objv, objc, subIdx, subObj, fix);
     }
 
-    prefixObj = Tcl_GetHashValue(hPtr);
+    prefixObj = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
     Tcl_IncrRefCount(prefixObj);
   runResultingSubcommand:
 
@@ -2168,9 +2168,9 @@ TclSpellFix(
     if (search[0] == NULL) {
 	store = (Tcl_Obj **) search[2];
     }  else {
-	Tcl_Obj **tmp = ckalloc(3 * sizeof(Tcl_Obj *));
+	Tcl_Obj **tmp = (Tcl_Obj **)ckalloc(3 * sizeof(Tcl_Obj *));
 
-	store = ckalloc(size * sizeof(Tcl_Obj *));
+	store = (Tcl_Obj **)ckalloc(size * sizeof(Tcl_Obj *));
 	memcpy(store, iPtr->ensembleRewrite.sourceObjs,
 		size * sizeof(Tcl_Obj *));
 
@@ -2417,7 +2417,7 @@ MakeCachedEnsembleCommand(
     EnsembleCmdRep *ensembleCmd;
 
     if (objPtr->typePtr == &ensembleCmdType) {
-	ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
+	ensembleCmd = (EnsembleCmdRep *)objPtr->internalRep.twoPtrValue.ptr1;
 	TclCleanupCommandMacro(ensembleCmd->token);
 	if (ensembleCmd->fix) {
 	    Tcl_DecrRefCount(ensembleCmd->fix);
@@ -2429,7 +2429,7 @@ MakeCachedEnsembleCommand(
 	 */
 
 	TclFreeIntRep(objPtr);
-	ensembleCmd = ckalloc(sizeof(EnsembleCmdRep));
+	ensembleCmd = (EnsembleCmdRep *)ckalloc(sizeof(EnsembleCmdRep));
 	objPtr->internalRep.twoPtrValue.ptr1 = ensembleCmd;
 	objPtr->typePtr = &ensembleCmdType;
     }
@@ -2479,7 +2479,7 @@ ClearTable(
         Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(hash, &search);
 
         while (hPtr != NULL) {
-            Tcl_Obj *prefixObj = Tcl_GetHashValue(hPtr);
+            Tcl_Obj *prefixObj = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
             Tcl_DecrRefCount(prefixObj);
             hPtr = Tcl_NextHashEntry(&search);
         }
@@ -2492,7 +2492,7 @@ static void
 DeleteEnsembleConfig(
     ClientData clientData)
 {
-    EnsembleConfig *ensemblePtr = clientData;
+    EnsembleConfig *ensemblePtr = (EnsembleConfig *)clientData;
     Namespace *nsPtr = ensemblePtr->nsPtr;
 
     /*
@@ -2695,7 +2695,7 @@ BuildEnsembleConfig(
 
 	hPtr = Tcl_FirstHashEntry(&ensemblePtr->nsPtr->cmdTable, &search);
 	for (; hPtr!= NULL ; hPtr=Tcl_NextHashEntry(&search)) {
-	    char *nsCmdName =		/* Name of command in namespace. */
+	    char *nsCmdName = (char *) /* Name of command in namespace. */
 		    Tcl_GetHashKey(&ensemblePtr->nsPtr->cmdTable, hPtr);
 
 	    for (i=0 ; i<ensemblePtr->nsPtr->numExportPatterns ; i++) {
@@ -2744,7 +2744,7 @@ BuildEnsembleConfig(
      * the hash too, and vice versa) and running quicksort over the array.
      */
 
-    ensemblePtr->subcommandArrayPtr =
+    ensemblePtr->subcommandArrayPtr = (char **)
 	    ckalloc(sizeof(char *) * hash->numEntries);
 
     /*
@@ -2769,12 +2769,12 @@ BuildEnsembleConfig(
     j = hash->numEntries;
     hPtr = Tcl_FirstHashEntry(hash, &search);
     while (hPtr != NULL) {
-	ensemblePtr->subcommandArrayPtr[i++] = Tcl_GetHashKey(hash, hPtr);
+	ensemblePtr->subcommandArrayPtr[i++] = (char *)Tcl_GetHashKey(hash, hPtr);
 	hPtr = Tcl_NextHashEntry(&search);
 	if (hPtr == NULL) {
 	    break;
 	}
-	ensemblePtr->subcommandArrayPtr[--j] = Tcl_GetHashKey(hash, hPtr);
+	ensemblePtr->subcommandArrayPtr[--j] = (char *)Tcl_GetHashKey(hash, hPtr);
 	hPtr = Tcl_NextHashEntry(&search);
     }
     if (hash->numEntries > 1) {
@@ -2832,7 +2832,7 @@ static void
 FreeEnsembleCmdRep(
     Tcl_Obj *objPtr)
 {
-    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
+    EnsembleCmdRep *ensembleCmd = (EnsembleCmdRep *)objPtr->internalRep.twoPtrValue.ptr1;
 
     TclCleanupCommandMacro(ensembleCmd->token);
     if (ensembleCmd->fix) {
@@ -2865,8 +2865,8 @@ DupEnsembleCmdRep(
     Tcl_Obj *objPtr,
     Tcl_Obj *copyPtr)
 {
-    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
-    EnsembleCmdRep *ensembleCopy = ckalloc(sizeof(EnsembleCmdRep));
+    EnsembleCmdRep *ensembleCmd = (EnsembleCmdRep *)objPtr->internalRep.twoPtrValue.ptr1;
+    EnsembleCmdRep *ensembleCopy = (EnsembleCmdRep *)ckalloc(sizeof(EnsembleCmdRep));
 
     copyPtr->typePtr = &ensembleCmdType;
     copyPtr->internalRep.twoPtrValue.ptr1 = ensembleCopy;
