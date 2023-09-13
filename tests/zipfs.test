@@ -471,30 +471,23 @@ namespace eval test_ns_zipfs {
     }
 
     # Generates tests for file, file on root, memory buffer cases for an archive
-    proc testmount [list id zippath checkPath [list mountpoint $defaultMountPoint] args] {
+    proc testmount {id zippath checkPath mountpoint args} {
         set zippath [zippath $zippath]
         test zipfs-mount-$id $id -body {
-            mount $zippath
-            list [file exists [file join $mountpoint $checkPath]] \
-                [mounttarget $mountpoint]
+            mount $zippath $mountpoint
+            set canon [zipfs canonical $mountpoint]
+            list [file exists [file join $canon $checkPath]] \
+                [mounttarget $canon]
         } -cleanup {
-            cleanup
-        } -result [list 1 $zippath] {*}$args
-        # Also separately test mounting on root itself as some bugs
-        # have manifested in that scenario
-        test zipfs-mount-$id-on-root $id -body {
-            mount $zippath [zipfs root]
-            list [file exists [file join [zipfs root] $checkPath]] \
-                [mounttarget [zipfs root]]
-        } -cleanup {
-            cleanup
+            zipfs unmount $mountpoint
         } -result [list 1 $zippath] {*}$args
 
         # Mount memory buffer
         test zipfs-mount_data-$id $id -body {
             zipfs mount_data [readbin $zippath] $mountpoint
-            list [file exists [file join $mountpoint $checkPath]] \
-                [mounttarget $mountpoint]
+            set canon [zipfs canonical $mountpoint]
+            list [file exists [file join $canon $checkPath]] \
+                [mounttarget $canon]
         } -cleanup {
             cleanup
         } -result [list 1 {Memory Buffer}] {*}$args
@@ -517,12 +510,20 @@ namespace eval test_ns_zipfs {
 
     # TODO testbadmount bad-directory-crc incons-central-crc.zip ""
 
-    testmount basic test.zip testdir/test2
-    testmount zip-at-end junk-at-start.zip testdir/test2
-    testmount zip-at-start junk-at-end.zip testdir/test2
+    testmount basic             test.zip           testdir/test2 $defaultMountPoint
+    testmount basic-on-default  test.zip           testdir/test2 ""
+    testmount basic-on-root     test.zip           testdir/test2 [zipfs root]
+    # TODO - testmount basic-on-slash    test.zip           testdir/test2 /
+    testmount basic-on-relative test.zip           testdir/test2 testmount
+    testmount zip-at-end        junk-at-start.zip  testdir/test2 $defaultMountPoint
+    testmount zip-at-start      junk-at-end.zip    testdir/test2 $defaultMountPoint
     testmount zip-in-zip [file join [zipfs root] test2 test.zip] testdir/test2 $defaultMountPoint -setup {
         mount [zippath test-zip-in-zip.zip] [file join [zipfs root] test2]
+    } -cleanup {
+        zipfs unmount $mountpoint
+        zipfs unmount [file join [zipfs root] test2]
     }
+    testmount relative-mount-point test.zip testdir/test2 ""
 
     test zipfs-mount-busy-1 "Attempt to mount on existing mount point" -setup {
         mount [zippath test.zip]
