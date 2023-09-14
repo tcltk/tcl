@@ -466,11 +466,13 @@ ClockGetdatefieldsObjCmd(
     }
 
     /*
-     * Extract Julian day.
+     * Extract Julian day. Always round the quotient down by subtracting 1
+     * when the remainder is negative (i.e. if the quotient was rounded up).
      */
 
-    fields.julianDay = (int) ((fields.localSeconds + JULIAN_SEC_POSIX_EPOCH)
-	    / SECONDS_PER_DAY);
+    fields.julianDay = (int) ((fields.localSeconds / SECONDS_PER_DAY) -
+	    ((fields.localSeconds % SECONDS_PER_DAY) < 0) +
+	    JULIAN_DAY_POSIX_EPOCH);
 
     /*
      * Convert to Julian or Gregorian calendar.
