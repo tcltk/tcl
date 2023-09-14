@@ -3648,7 +3648,7 @@ ZipFSLMkImgObjCmd(
     Tcl_Obj *originFile, *password;
 
     if (objc < 3 || objc > 5) {
-	Tcl_WrongNumArgs(interp, 1, objv, "outfile inlist ?password infile?");
+	Tcl_WrongNumArgs(interp, 1, objv, "outfile inlist ?password? ?infile?");
 	return TCL_ERROR;
     }
     if (Tcl_IsSafe(interp)) {

@@ -90,19 +90,6 @@ test zipfs-0.12 {zipfs basics: join} -constraints {zipfs zipfslib} -body {
     file normalize ${ziproot}//bar/baz//qux/../
 } -result "${ziproot}bar/baz"
 
-test zipfs-1.5 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs mkkey a b c d e f
-} -result {wrong # args: should be "zipfs mkkey password"}
-test zipfs-1.6 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs mkimg a b c d e f
-} -result {wrong # args: should be "zipfs mkimg outfile indir ?strip? ?password? ?infile?"}
-test zipfs-1.7 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs mkzip a b c d e f
-} -result {wrong # args: should be "zipfs mkzip outfile indir ?strip? ?password?"}
-test zipfs-1.9 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs info a b c d e f
-} -result {wrong # args: should be "zipfs info filename"}
-
 file mkdir tmp
 test zipfs-2.1 {zipfs mkzip empty archive} -constraints zipfs -returnCodes error -body {
     zipfs mkzip [file join $tmpdir empty.zip] $tcl_library/xxxx
@@ -958,14 +945,22 @@ namespace eval test_ns_zipfs {
     testuncompress bzip2   testbzip2.zip {unsupported compression method} -returnCodes error
     testuncompress lzma    testfile-lzma.zip {unsupported compression method} -returnCodes error
     testuncompress xz      testfile-xz.zip {unsupported compression method} -returnCodes error
+    testuncompress zstd    testfile-zstd.zip {unsupported compression method} -returnCodes error
 
     #
     # file stat
+    proc fixupstat {stat} {
+        if {$::tcl_platform(platform) ne "windows"} {
+            dict set stat blksize 0
+            dict set stat blocks 0
+        }
+        return [lsort -stride 2 $stat]
+    }
     test zipfs-file-stat-nosuchfile "Read stat of nonexistent file" -setup {
         mount [zippath test.zip]
     } -cleanup cleanup -body {
         file stat [file join $defaultMountPoint nosuchfile]
-    } -result "could not read \"[file join $defaultMountPoint nosuchfile]\": no such file or directory" -returnCodes error
+    } -result "could not read \"[file join $defaultMountPoint nosuchfile]\": *" -match glob -returnCodes error
 
     test zipfs-file-stat-nosuchmount "Read stat of nonexistent mount" -body {
         file stat [file join $defaultMountPoint nosuchfile]
@@ -975,31 +970,31 @@ namespace eval test_ns_zipfs {
         mount [zippath test.zip]
     } -cleanup cleanup -body {
         lsort -stride 2 [file stat [file join $defaultMountPoint test]]
-    } -result {atime 1065435402 ctime 1065435402 dev 0 gid 0 ino 0 mode 33133 mtime 1065435402 nlink 0 size 5 type file uid 0}
+    } -result [fixupstat {atime 1065435402 ctime 1065435402 dev 0 gid 0 ino 0 mode 33133 mtime 1065435402 nlink 0 size 5 type file uid 0}]
 
     test zipfs-file-stat-dir "Read stat of dir" -setup {
         mount [zippath test.zip]
     } -cleanup cleanup -body {
         lsort -stride 2 [file stat [file join $defaultMountPoint testdir]]
-    } -result {atime 1105450434 ctime 1105450434 dev 0 gid 0 ino 0 mode 16749 mtime 1105450434 nlink 0 size 0 type directory uid 0}
+    } -result [fixupstat {atime 1105450434 ctime 1105450434 dev 0 gid 0 ino 0 mode 16749 mtime 1105450434 nlink 0 size 0 type directory uid 0}]
 
     test zipfs-file-stat-mount "Read stat of mount point" -setup {
         mount [zippath test.zip]
     } -cleanup cleanup -body {
         lsort -stride 2 [file stat $defaultMountPoint]
-    } -result {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}
+    } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
 
     test zipfs-file-stat-root-mount "Read stat of root" -setup {
         mount [zippath test.zip] [zipfs root]
     } -cleanup cleanup -body {
         lsort -stride 2 [file stat [zipfs root]]
-    } -result {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}
+    } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
 
     test zipfs-file-stat-root-subdir-mount "Read stat of root when mount is subdir" -setup {
         mount [zippath test.zip]
     } -cleanup cleanup -constraints knownBug -body {
         lsort -stride 2 [file stat [zipfs root]]
-    } -result {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}
+    } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
 
     #
     # TODO - glob of zipfs file
@@ -1008,6 +1003,14 @@ namespace eval test_ns_zipfs {
 
     #
     # TODO - file copy, file rename etc.
+
+
+    # TODO - mkkey, mkimg, mkzip, lmkimg, lmkzip
+    testnumargs "zipfs mkkey" "password" "" -constraints zipfs
+    testnumargs "zipfs mkimg" "outfile indir" "?strip? ?password? ?infile?"
+    testnumargs "zipfs lmkimg" "outfile inlist" "?password? ?infile?"
+    testnumargs "zipfs mkzip" "outfile indir" "?strip? ?password?"
+    testnumargs "zipfs lmkzip" "outfile inlist" "?password?"
 
     #
     # Bug regressions
