@@ -75,7 +75,7 @@ TclSockGetPort(
 	 * Don't bother translating 'proto' to native.
 	 */
 
-	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, string, -1, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, -1, 0, &ds, NULL) != TCL_OK) {
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
@@ -188,7 +188,7 @@ TclCreateSocketAddress(
     int result;
 
     if (host != NULL) {
-	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, host, -1, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds, NULL) != TCL_OK) {
 		Tcl_DStringFree(&ds);
 	    return 0;
 	}
