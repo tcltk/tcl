@@ -494,8 +494,6 @@ namespace eval test_ns_zipfs {
     testbadmount bad-file-count-high  incons-file-count-high.zip   "truncated directory"
     testbadmount bad-file-count-low   incons-file-count-low.zip    "short file count"
 
-    # TODO testbadmount bad-directory-crc incons-central-crc.zip ""
-
     testmount basic             test.zip           testdir/test2 $defaultMountPoint
     testmount basic-on-default  test.zip           testdir/test2 ""
     testmount basic-on-root     test.zip           testdir/test2 [zipfs root]
@@ -923,7 +921,7 @@ namespace eval test_ns_zipfs {
 
     #
     # Read/uncompress
-    proc testuncompress {id zippath result args} {
+    proc testuncompress {id zippath result {filename abac-repeat.txt} args} {
         variable defaultMountPoint
         set zippath [zippath $zippath]
         test zipfs-uncompress-$id $id -setup {
@@ -936,16 +934,17 @@ namespace eval test_ns_zipfs {
             }
             cleanup
         } -body {
-            set fd [open [file join $defaultMountPoint abac-repeat.txt]]
+            set fd [open [file join $defaultMountPoint $filename]]
             gets $fd
         } -result $result {*}$args
     }
-    testuncompress deflate testdeflated2.zip aaaaaaaaaaaaaa
     testuncompress stored  teststored.zip    aaaaaaaaaaaaaa
-    testuncompress bzip2   testbzip2.zip {unsupported compression method} -returnCodes error
-    testuncompress lzma    testfile-lzma.zip {unsupported compression method} -returnCodes error
-    testuncompress xz      testfile-xz.zip {unsupported compression method} -returnCodes error
-    testuncompress zstd    testfile-zstd.zip {unsupported compression method} -returnCodes error
+    testuncompress deflate testdeflated2.zip aaaaaaaaaaaaaa
+    testuncompress deflate-error broken.zip {decompression error} deflatezliberror -returnCodes error
+    testuncompress bzip2   testbzip2.zip {unsupported compression method} abac-repeat.txt -returnCodes error
+    testuncompress lzma    testfile-lzma.zip {unsupported compression method} abac-repeat.txt -returnCodes error
+    testuncompress xz      testfile-xz.zip {unsupported compression method} abac-repeat.txt -returnCodes error
+    testuncompress zstd    testfile-zstd.zip {unsupported compression method} abac-repeat.txt -returnCodes error
 
     proc testpassword {id filename password result args} {
         variable defaultMountPoint
@@ -977,7 +976,37 @@ namespace eval test_ns_zipfs {
     testpassword cipher-deflate cipher-deflate.bin password [lseq 100]
     testpassword cipher-deflate-nopassword cipher-deflate.bin {} "decryption failed" -returnCodes error
     testpassword cipher-deflate-badpassword cipher-deflate.bin xxx "decryption failed" -returnCodes error -constraints bug-b3c7429255
-    
+
+    #
+    # CRC errors
+    proc testcrc {id zippath filename result args} {
+        variable defaultMountPoint
+        set zippath [zippath $zippath]
+        test zipfs-crc-$id $id -setup {
+            unset -nocomplain fd
+            zipfs mount $zippath $defaultMountPoint
+        } -cleanup {
+            # In case mount succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body {
+            set fd [open [file join $defaultMountPoint $filename]]
+        } -result $result -returnCodes error {*}$args
+
+        # Mount memory buffer
+        test zipfs-crc-memory-$id $id -setup {
+            zipfs mount_data [readbin [zippath $zippath]] $defaultMountPoint
+        } -cleanup {
+            cleanup
+        } -body {
+            set fd [open [file join $defaultMountPoint $filename]]
+        } -result $result -returnCodes error {*}$args
+    }
+    testcrc local incons-local-crc.zip a "invalid CRC"
+    testcrc store-crc broken.zip storedcrcerror "invalid CRC"
+    testcrc deflate-crc broken.zip deflatecrcerror "invalid CRC"
 
     #
     # file stat
