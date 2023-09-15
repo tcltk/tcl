@@ -14,10 +14,9 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+source [file join [file dirname [info script]] tcltests.tcl]
 
-testConstraint zipfs [expr {
-    [llength [info commands zlib]] && [regexp tcltest [info nameofexecutable]]
-}]
+testConstraint zipfs [expr {[llength [info commands zipfs]]}]
 testConstraint zipfslib 1
 
 set ziproot [zipfs root]
@@ -90,31 +89,6 @@ test zipfs-0.11 {zipfs basics: join} -constraints {zipfs zipfslib} -body {
 test zipfs-0.12 {zipfs basics: join} -constraints {zipfs zipfslib} -body {
     file normalize ${ziproot}//bar/baz//qux/../
 } -result "${ziproot}bar/baz"
-
-test zipfs-1.3 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs mount a b c d e f
-} -result {wrong # args: should be "zipfs mount ?zipfile? ?mountpoint? ?password?"}
-test zipfs-1.4 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs unmount a b c d e f
-} -result {wrong # args: should be "zipfs unmount mountpoint"}
-test zipfs-1.5 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs mkkey a b c d e f
-} -result {wrong # args: should be "zipfs mkkey password"}
-test zipfs-1.6 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs mkimg a b c d e f
-} -result {wrong # args: should be "zipfs mkimg outfile indir ?strip? ?password? ?infile?"}
-test zipfs-1.7 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs mkzip a b c d e f
-} -result {wrong # args: should be "zipfs mkzip outfile indir ?strip? ?password?"}
-test zipfs-1.8 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs exists a b c d e f
-} -result {wrong # args: should be "zipfs exists filename"}
-test zipfs-1.9 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs info a b c d e f
-} -result {wrong # args: should be "zipfs info filename"}
-test zipfs-1.10 {zipfs errors} -constraints zipfs -returnCodes error -body {
-    zipfs list a b c d e f
-} -result {wrong # args: should be "zipfs list ?(-glob|-regexp)? ?pattern?"}
 
 file mkdir tmp
 test zipfs-2.1 {zipfs mkzip empty archive} -constraints zipfs -returnCodes error -body {
@@ -383,16 +357,16 @@ test zipfs-4.5 {zipfs lmkimg: making image from mounted} -constraints zipfs -set
 
 test zipfs-5.1 {zipfs mount_data: short data} -constraints zipfs -body {
     zipfs mount_data {} gorp
-} -returnCodes error -result {bad zip data}
+} -returnCodes error -result {archive directory end signature not found}
 test zipfs-5.2 {zipfs mount_data: short data} -constraints zipfs -body {
     zipfs mount_data gorpGORPgorp gorp
-} -returnCodes error -result {bad zip data}
+} -returnCodes error -result {archive directory end signature not found}
 test zipfs-5.3 {zipfs mount_data: short data} -constraints zipfs -body {
     set data PK\x03\x04.....................................
     append data PK\x01\x02.....................................
     append data PK\x05\x06.....................................
     zipfs mount_data $data gorp
-} -returnCodes error -result {bad zip data}
+} -returnCodes error -result {archive directory truncated}
 test zipfs-5.4 {zipfs mount_data: bad arg count} -constraints zipfs -body {
     zipfs mount_data {} gorp foobar
 } -returnCodes error -result {wrong # args: should be "zipfs mount_data ?data? ?mountpoint?"}
@@ -401,6 +375,689 @@ test zipfs-6.1 {zipfs mkkey} -constraints zipfs -body {
     binary scan [zipfs mkkey gorp] cu* x
     return $x
 } -result {224 226 111 103 4 80 75 90 90}
+
+
+#
+# Additional tests for more coverage. Some of the ones above may be duplicated.
+
+namespace eval test_ns_zipfs {
+    namespace import ::tcltest::test
+    namespace path ::tcltests
+    variable zipTestDir [file normalize [file join [file dirname [info script]] zipfiles]]
+    variable defaultMountPoint [file join [zipfs root] testmount]
+
+    proc readbin {path} {
+        set fd [open $path rb]
+        set data [read $fd]
+        close $fd
+        return $data
+    }
+
+    # Wrapper to ease transition if Tcl changes order of argument to zipfs mount
+    # or the zipfs prefix
+    proc mount [list zippath [list mountpoint $defaultMountPoint]] {
+        zipfs mount $zippath $mountpoint
+    }
+
+    # Make full path to zip file
+    proc zippath {zippath} {
+        variable zipTestDir
+        if {[file pathtype $zippath] eq "absolute"} {
+            return $zippath
+        } else {
+            return [file join $zipTestDir $zippath]
+        }
+    }
+
+    proc cleanup {} {
+        dict for {mount -} [zipfs mount] {
+            if {[string match //zipfs:/test* $mount]} {
+                zipfs unmount $mount
+            }
+        }
+        zipfs unmount [zipfs root]
+    }
+
+    proc mounttarget {mountpoint} {
+        return [dict getdef [zipfs mount] $mountpoint ""]
+    }
+
+    #
+    # zipfs root - only arg count check since do not want to assume
+    # what it resolves to
+    testnumargs "zipfs root" "" ""
+
+    #
+    # zipfs mount
+
+    proc testbadmount {id zippath messagePattern args} {
+        variable defaultMountPoint
+        set zippath [zippath $zippath]
+        test zipfs-mount-$id $id -body {
+            list [catch {mount $zippath} message] \
+                [string match $messagePattern $message] \
+                [mounttarget $defaultMountPoint]
+        } -cleanup {
+            # In case mount succeeded when it should not
+            cleanup
+        } -result {1 1 {}} {*}$args
+
+        if {![file exists $zippath]} {
+            return
+        }
+        set data [readbin $zippath]
+        test zipfs-mount_data-$id $id -body {
+            list [catch {zipfs mount_data $data $defaultMountPoint} message] \
+                [string match $messagePattern $message] \
+                [mounttarget $defaultMountPoint]
+        } -cleanup {
+            # In case mount succeeded when it should not
+            cleanup
+        } -result {1 1 {}} {*}$args
+    }
+
+    # Generates tests for file, file on root, memory buffer cases for an archive
+    proc testmount {id zippath checkPath mountpoint args} {
+        set zippath [zippath $zippath]
+        test zipfs-mount-$id $id -body {
+            mount $zippath $mountpoint
+            set canon [zipfs canonical $mountpoint]
+            list [file exists [file join $canon $checkPath]] \
+                [mounttarget $canon]
+        } -cleanup {
+            zipfs unmount $mountpoint
+        } -result [list 1 $zippath] {*}$args
+
+        # Mount memory buffer
+        test zipfs-mount_data-$id $id -body {
+            zipfs mount_data [readbin $zippath] $mountpoint
+            set canon [zipfs canonical $mountpoint]
+            list [file exists [file join $canon $checkPath]] \
+                [mounttarget $canon]
+        } -cleanup {
+            cleanup
+        } -result [list 1 {Memory Buffer}] {*}$args
+
+    }
+
+    testnumargs "zipfs mount" "" "?zipfile? ?mountpoint? ?password?"
+
+    # Not supported zip files
+    testbadmount non-existent-file    nosuchfile.zip "couldn't open*nosuchfile.zip*no such file or directory"
+    testbadmount not-zipfile          [file normalize [info script]]      "archive directory end signature not found"
+    testbadmount zip64-unsupported    zip64.zip      "wrong header signature"
+
+    # Inconsistent metadata
+    testbadmount bad-directory-offset incons-cdoffset.zip          "archive directory truncated"
+    testbadmount bad-directory-magic  incons-central-magic-bad.zip "wrong header signature"
+    testbadmount bad-local-magic      incons-local-magic-bad.zip   "Failed to find local header"
+    testbadmount bad-file-count-high  incons-file-count-high.zip   "truncated directory"
+    testbadmount bad-file-count-low   incons-file-count-low.zip    "short file count"
+
+    # TODO testbadmount bad-directory-crc incons-central-crc.zip ""
+
+    testmount basic             test.zip           testdir/test2 $defaultMountPoint
+    testmount basic-on-default  test.zip           testdir/test2 ""
+    testmount basic-on-root     test.zip           testdir/test2 [zipfs root]
+    # TODO - testmount basic-on-slash    test.zip           testdir/test2 /
+    testmount basic-on-relative test.zip           testdir/test2 testmount
+    testmount zip-at-end        junk-at-start.zip  testdir/test2 $defaultMountPoint
+    testmount zip-at-start      junk-at-end.zip    testdir/test2 $defaultMountPoint
+    testmount zip-in-zip [file join [zipfs root] test2 test.zip] testdir/test2 $defaultMountPoint -setup {
+        mount [zippath test-zip-in-zip.zip] [file join [zipfs root] test2]
+    } -cleanup {
+        zipfs unmount $mountpoint
+        zipfs unmount [file join [zipfs root] test2]
+    }
+    testmount relative-mount-point test.zip testdir/test2 ""
+
+    test zipfs-mount-busy-1 "Attempt to mount on existing mount point" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs mount [zippath testfile-cp437.zip] $defaultMountPoint
+    } -result "[zippath test.zip] is already mounted on $defaultMountPoint" -returnCodes error
+
+    test zipfs-mount-no-args-1 "mount - get mount list" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set mounts [zipfs mount]
+        lsearch -inline -stride 2 $mounts $defaultMountPoint
+    } -result [list $defaultMountPoint [zippath test.zip]]
+
+    test zipfs-mount-one-arg-1 "mount - get mount target - absolute path" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs mount $defaultMountPoint
+    } -result [zippath test.zip]
+
+    test zipfs-mount-one-arg-2 "mount - get mount target - relative path" -setup {
+        file copy [zippath test.zip] test.zip
+        mount ./test.zip
+    } -cleanup {
+        cleanup
+        file delete ./test.zip
+    } -body {
+        zipfs mount $defaultMountPoint
+    } -result [file normalize ./test.zip]
+
+    test zipfs-mount-password-1 "mount - verify plaintext readable without password" -body {
+        zipfs mount [zippath test-password.zip] $defaultMountPoint
+        readbin [file join $defaultMountPoint plain.txt]
+    } -cleanup {
+        cleanup
+    } -result plaintext
+
+    test zipfs-mount-password-2 "mount - verify uncompressed cipher unreadable without password" -body {
+        zipfs mount [zippath test-password.zip] $defaultMountPoint
+        set chans [lsort [chan names]]; # Want to ensure open does not leave dangling channel
+        set result [list ]
+        lappend result [catch {open [file join $defaultMountPoint cipher.bin]} message]
+        lappend result $message
+        lappend result [string equal $chans [lsort [chan names]]]
+    } -cleanup {
+        cleanup
+    } -result {1 {decryption failed} 1}
+
+    test zipfs-mount-password-3 "mount - verify compressed cipher unreadable without password" -body {
+        zipfs mount [zippath test-password.zip] $defaultMountPoint
+        set chans [lsort [chan names]]; # Want to ensure open does not leave dangling channel
+        set result [list ]
+        lappend result [catch {open [file join $defaultMountPoint cipher-deflate.bin]} message]
+        lappend result $message
+        lappend result [string equal $chans [lsort [chan names]]]
+    } -cleanup {
+        cleanup
+    } -result {1 {decryption failed} 1}
+
+    test zipfs-mount-password-4 "mount - verify uncompressed cipher readable with password" -body {
+        zipfs mount [zippath test-password.zip] $defaultMountPoint password
+        readbin [file join $defaultMountPoint cipher.bin]
+    } -cleanup {
+        cleanup
+    } -result ciphertext
+
+    test zipfs-mount-password-5 "mount - verify compressed cipher readable with password" -body {
+        zipfs mount [zippath test-password.zip] $defaultMountPoint password
+        readbin [file join $defaultMountPoint cipher-deflate.bin]
+    } -cleanup {
+        cleanup
+    } -result [lseq 100]
+
+    test zipfs-mount-nested-1 "mount - nested mount on non-existing path" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set newmount [file join $defaultMountPoint newdir]
+        mount [zippath test-overlay.zip] $newmount
+        list \
+            [lsort [glob -tails -dir $defaultMountPoint *]] \
+            [lsort [glob -tails -dir $newmount *]] \
+            [readbin [file join $newmount test2]]
+    } -result {{newdir test testdir} {test2 test3} test2-overlay}
+
+    test zipfs-mount-nested-2 "mount - nested mount on existing path" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set newmount [file join $defaultMountPoint testdir]
+        mount [zippath test-overlay.zip] $newmount
+        # Note - file from existing mount is preserved (testdir/test2)
+        # Not clear this is desired but defined as such by the
+        # current implementation
+        list \
+            [lsort [glob -tails -dir $defaultMountPoint *]] \
+            [lsort [glob -tails -dir $newmount *]] \
+            [readbin [file join $newmount test2]]
+    } -result [list {test testdir} {test2 test3} test\n]
+
+    #
+    # unmount - only special cases. Normal case already tested as part of other tests
+
+    testnumargs "zipfs unmount" "mountpoint" ""
+
+    test zipfs-unmount-1 "Unmount bogus mount" -body {
+        zipfs unmount [file join [zipfs root] nosuchmount]
+    } -result ""
+
+    test zipfs-unmount-2 "Unmount mount with open files" -setup {
+        mount [zippath test.zip]
+        set fd [open [file join $defaultMountPoint test]]
+    } -cleanup {
+        close $fd
+        cleanup
+    } -body {
+        zipfs unmount $defaultMountPoint
+    } -result {filesystem is busy} -returnCodes error
+
+    test zipfs-unmount-3 "Unmount mount with current directory" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set cwd [pwd]
+        cd [file join $defaultMountPoint testdir]
+        list [pwd] [zipfs unmount $defaultMountPoint] [string equal [pwd] $cwd]
+    } -result [list [file join $defaultMountPoint testdir] {} 1]
+
+    test zipfs-unmount-nested-1 "unmount parent of nested mount on new directory should not affect nested mount" -setup {
+        mount [zippath test.zip]
+        set newmount [file join [zipfs root] test newdir]
+        mount [zippath test-overlay.zip] $newmount
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs unmount $defaultMountPoint
+        list \
+            [zipfs mount $defaultMountPoint] \
+            [lsort [glob -tails -dir $newmount *]] \
+            [readbin [file join $newmount test2]]
+    } -result {{} {test2 test3} test2-overlay}
+
+    test zipfs-unmount-nested-2 "unmount parent of nested mount on existing directory should not affect nested mount" -setup {
+        mount [zippath test.zip]
+        set newmount [file join [zipfs root] test testdir]
+        mount [zippath test-overlay.zip] $newmount
+    } -constraints bug-4ae42446ab -cleanup {
+        cleanup
+    } -body {
+        # KNOWN BUG. The test2 file is also present in parent mount.
+        # After the unmount, the test2 in the nested mount is not
+        # made available.
+        zipfs unmount $defaultMountPoint
+        list \
+            [zipfs mount $defaultMountPoint] \
+            [lsort [glob -tails -dir $newmount *]] \
+            [readbin [file join $newmount test2]]
+    } -result {{} {test2 test3} test2-overlay}
+
+    #
+    # zipfs list
+    testnumargs "zipfs list" "" "?(-glob|-regexp)? ?pattern?"
+
+    # Generates zipfs list tests for file, memory buffer cases for an archive
+    proc testzipfslist {id cmdargs mounts resultpaths args} {
+        set resultpaths [lmap path $resultpaths {
+            file join [zipfs root] $path
+        }]
+        set resultpaths [lsort $resultpaths]
+        test zipfs-list-$id $id -body {
+            lsort [zipfs list {*}$cmdargs]
+        } -setup {
+            foreach {zippath mountpoint} $mounts {
+                zipfs mount [zippath $zippath] [file join [zipfs root] $mountpoint]
+            }
+        } -cleanup {
+            cleanup
+        } -result $resultpaths {*}$args
+
+        # Mount memory buffer
+        test zipfs-list-memory-$id $id -body {
+            lsort [zipfs list {*}$cmdargs]
+        } -setup {
+            foreach {zippath mountpoint} $mounts {
+                zipfs mount_data [readbin [zippath $zippath]] [file join [zipfs root] $mountpoint]
+            }
+        } -cleanup {
+            cleanup
+        } -result $resultpaths {*}$args
+    }
+    # Some tests have !zipfslib constraint because otherwise they dump the entire Tcl library which is mounted on root
+    testzipfslist no-mounts "" {} {} -constraints !zipfslib
+    testzipfslist no-pattern "" {test.zip testmountA} {testmountA testmountA/test testmountA/testdir testmountA/testdir/test2} -constraints !zipfslib
+    testzipfslist no-pattern-mount-on-root "" {test.zip {}} {{} test testdir testdir/test2} -constraints bug-d056ee6d30
+    testzipfslist no-pattern-multiple "" {test.zip testmountA test.zip testmountB/subdir} {
+        testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
+        testmountB/subdir testmountB/subdir/test testmountB/subdir/testdir testmountB/subdir/testdir/test2
+    } -constraints !zipfslib
+    testzipfslist glob [list "*testmount*2*"] {test.zip testmountA test.zip testmountB/subdir} {
+        testmountA/testdir/test2
+        testmountB/subdir/testdir/test2
+    }
+    testzipfslist opt-glob [list -glob "*testmount*2*"] {test.zip testmountA test.zip testmountB/subdir} {
+        testmountA/testdir/test2
+        testmountB/subdir/testdir/test2
+    }
+    testzipfslist opt-regexp [list -regexp "testmount.*(A|2)"] {test.zip testmountA test.zip testmountB/subdir} {
+        testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
+        testmountB/subdir/testdir/test2
+    }
+
+    #
+    # zipfs exists
+    testnumargs "zipfs exists" "filename" ""
+
+    # Generates tests for zipfs exists
+    proc testzipfsexists {id path result args} {
+        test zipfs-exists-$id $id -body {
+            zipfs exists $path
+        } -setup {
+            mount [zippath test.zip]
+        } -cleanup {
+            cleanup
+        } -result $result {*}$args
+    }
+    testzipfsexists native-file      [info nameofexecutable] 0
+    testzipfsexists nonexistent-file [file join $defaultMountPoint nosuchfile] 0
+    testzipfsexists file             [file join $defaultMountPoint test] 1
+    testzipfsexists dir              [file join $defaultMountPoint testdir] 1
+    testzipfsexists mountpoint       $defaultMountPoint 1
+    testzipfsexists root             [zipfs root] 1 -constraints bug-02acab5aea
+
+    #
+    # zipfs find
+    testnumargs "zipfs find" "directoryName" ""
+    # Generates zipfs find tests for file, memory buffer cases for an archive
+    proc testzipfsfind {id findtarget mounts resultpaths args} {
+        set setup {
+            foreach {zippath mountpoint} $mounts {
+                zipfs mount [zippath $zippath] [file join [zipfs root] $mountpoint]
+            }
+        }
+        set memory_setup {
+            foreach {zippath mountpoint} $mounts {
+                zipfs mount_data [readbin [zippath $zippath]] [file join [zipfs root] $mountpoint]
+            }
+        }
+        if {[dict exists $args -setup]} {
+            append setup \n[dict get $args -setup]
+            append memory_setup \n[dict get $args -setup]
+            dict unset args -setup
+        }
+        set cleanup cleanup
+        if {[dict exists $args -cleanup]} {
+            set cleanup "[dict get $args -cleanup]\n$cleanup"
+            dict unset args -cleanup
+        }
+        set resultpaths [lsort $resultpaths]
+        test zipfs-find-$id $id -body {
+            lsort [zipfs find $findtarget]
+        } -setup $setup -cleanup $cleanup -result $resultpaths {*}$args
+
+        # Mount memory buffer
+        test zipfs-find-memory-$id $id -body {
+            lsort [zipfs find $findtarget]
+        } -setup $memory_setup -cleanup $cleanup -result $resultpaths {*}$args
+    }
+
+    testzipfsfind nonexistingmount [file join [zipfs root] nosuchmount] {
+        test.zip testmountA test.zip testmountB/subdir
+    } {}
+
+    testzipfsfind absolute-path    [file join [zipfs root] testmountA] {
+        test.zip testmountA test.zip testmountB/subdir
+    } [lmap path {
+            testmountA/test testmountA/testdir testmountA/testdir/test2
+        } {file join [zipfs root] $path}]
+
+    testzipfsfind relative-path   testdir {
+        test.zip testmountA test.zip testmountB/subdir
+    } { testdir/test2 } -setup {
+        set cwd [pwd]
+        cd [file join [zipfs root] testmountA]
+    } -cleanup {
+        cd $cwd
+    }
+
+    test zipfs-find-native-absolute "zipfs find on native file system" -setup {
+        set dir [makeDirectory zipfs-native-absolute]
+        set subdir [file join $dir subdir]
+        file mkdir $subdir
+        set file [file join $subdir native]
+        close [open $file w]
+    } -cleanup {
+        removeDirectory zipfs-native-absolute
+    } -body {
+        string equal [zipfs find $dir] [list $subdir $file]
+    } -result 1
+
+    test zipfs-find-native-relative "zipfs find relative on native file system" -setup {
+        set dir [makeDirectory zipfs-native-relative]
+        set subdir [file join $dir subdir]
+        file mkdir $subdir
+        set file [file join $subdir native]
+        close [open $file w]
+        set cwd [pwd]
+    } -cleanup {
+        cd $cwd
+        removeDirectory zipfs-native-relative
+    } -body {
+        cd [file dirname $dir]
+        # string equal [zipfs find [file tail $subdir]] [list subdir subdir/native]
+        zipfs find [file tail $dir]
+    } -result {zipfs-native-relative/subdir zipfs-native-relative/subdir/native}
+
+    testzipfsfind bug-6183f535c8   [zipfs root] {
+        test.zip {} test.zip testmountB/subdir
+    } [lmap path {
+        test testdir testdir/test2
+    } {file join [zipfs root] $path}] -constraints bug-6183f535c8
+
+    #
+    # zipfs info
+    testnumargs "zipfs info" "filename" ""
+
+    test zipfs-info-native-nosuchfile "zipfs info on non-existent native path" -body {
+        zipfs info nosuchfile
+    } -result {path "nosuchfile" not found in any zipfs volume} -returnCodes error
+
+    test zipfs-info-native-file "zipfs info on native path" -body {
+        zipfs info [info nameofexecutable]
+    } -result "path \"[info nameofexecutable]\" not found in any zipfs volume" -returnCodes error
+
+    test zipfs-info-nosuchfile "zipfs info non-existent path in mounted archive" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs info [file join $defaultMountPoint nosuchfile]
+    } -result "path \"[file join $defaultMountPoint nosuchfile]\" not found in any zipfs volume" -returnCodes error
+
+    test zipfs-info-file "zipfs info file within mounted archive" -setup {
+        mount [zippath testdeflated2.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs info [file join $defaultMountPoint abac-repeat.txt]
+    } -result [list [zippath testdeflated2.zip] 60 17 108]
+
+    test zipfs-info-dir "zipfs info dir within mounted archive" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs info [file join $defaultMountPoint testdir]
+    } -result [list [zippath test.zip] 0 0 119]
+
+    test zipfs-info-mountpoint "zipfs info on mount point - verify correct offset of zip content" -setup {
+        # zip starts at offset 4
+        mount [zippath junk-at-start.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs info $defaultMountPoint
+    } -result [list [zippath junk-at-start.zip] 0 0 4]
+
+    #
+    # zipfs canonical -
+    # TODO - semantics are very unclear. Can produce nonsensical paths like
+    # //zipfs:/n/zipfs:/m/test. Minimal sanity tests for now.
+    test zipfs-canonical-minargs {zipfs canonical min args} -body {
+        zipfs canonical
+    } -returnCodes error -result {wrong # args: should be "zipfs canonical ?mountpoint? filename ?inZipfs?"}
+    test zipfs-canonical-maxargs {zipfs canonical max args} -body {
+        zipfs canonical a b c d
+    } -returnCodes error -result {wrong # args: should be "zipfs canonical ?mountpoint? filename ?inZipfs?"}
+    proc testzipfscanonical {id cmdargs result args} {
+        test zipfs-canonical-$id "zipfs canonical $id" \
+            -body [list zipfs canonical {*}$cmdargs] \
+            -result $result {*}$args
+    }
+    testzipfscanonical basic-relative           PATH [file join [zipfs root] PATH]
+    testzipfscanonical basic-absolute           /PATH [file join [zipfs root] PATH]
+    testzipfscanonical mountpoint-relative      {MT PATH} [file join [zipfs root] MT PATH]
+    testzipfscanonical mountpoint-absolute      {MT /PATH} [file join [zipfs root] PATH]
+    testzipfscanonical mountpoint-trailslash-relative      {MT/ PATH} [file join [zipfs root] MT PATH]
+    testzipfscanonical mountpoint-trailslash-absolute      {MT/ /PATH} [file join [zipfs root] PATH]
+    testzipfscanonical mountpoint-root-relative [list [zipfs root] PATH] [file join [zipfs root] PATH]
+    testzipfscanonical mountpoint-root-absolute [list [zipfs root] /PATH] [file join [zipfs root] PATH]
+    testzipfscanonical mountpoint-empty-relative      {{} PATH} [file join [zipfs root] PATH]
+
+    testzipfscanonical driveletter X: [zipfs root] -constraints win
+    testzipfscanonical drivepath X:/foo/bar [file join [zipfs root] foo bar] -constraints win
+    # (backslashes need additional escaping passed to testzipfscanonical)
+    testzipfscanonical backslashes X:\\\\foo\\\\bar [file join [zipfs root] foo bar] -constraints win
+    testzipfscanonical backslashes X:/foo\\\\bar [file join [zipfs root] foo bar] -constraints win
+
+
+
+    #
+    # TODO - read of zipfs file Bad CRC
+
+    #
+    # Read/uncompress
+    proc testuncompress {id zippath result args} {
+        variable defaultMountPoint
+        set zippath [zippath $zippath]
+        test zipfs-uncompress-$id $id -setup {
+            unset -nocomplain fd
+            zipfs mount $zippath $defaultMountPoint
+        } -cleanup {
+            # In case mount succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body {
+            set fd [open [file join $defaultMountPoint abac-repeat.txt]]
+            gets $fd
+        } -result $result {*}$args
+    }
+    testuncompress deflate testdeflated2.zip aaaaaaaaaaaaaa
+    testuncompress stored  teststored.zip    aaaaaaaaaaaaaa
+    testuncompress bzip2   testbzip2.zip {unsupported compression method} -returnCodes error
+    testuncompress lzma    testfile-lzma.zip {unsupported compression method} -returnCodes error
+    testuncompress xz      testfile-xz.zip {unsupported compression method} -returnCodes error
+    testuncompress zstd    testfile-zstd.zip {unsupported compression method} -returnCodes error
+
+    proc testpassword {id filename password result args} {
+        variable defaultMountPoint
+        set zippath [zippath test-password.zip]
+        test zipfs-password-read-$id $id -setup {
+            unset -nocomplain fd
+            if {$password ne ""} {
+                zipfs mount $zippath $defaultMountPoint $password
+            } else {
+                zipfs mount $zippath $defaultMountPoint
+            }
+        } -cleanup {
+            # In case mount succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body {
+            set fd [open [file join $defaultMountPoint $filename]]
+            gets $fd
+        } -result $result {*}$args
+    }
+    testpassword plain plain.txt password plaintext
+    testpassword plain-nopassword plain.txt "" plaintext
+    testpassword plain-badpassword plain.txt xxx plaintext
+    testpassword cipher cipher.bin password ciphertext
+    testpassword cipher-nopassword cipher.bin {} "decryption failed" -returnCodes error
+    testpassword cipher-badpassword cipher.bin xxx "decryption failed" -returnCodes error -constraints bug-b3c7429255
+    testpassword cipher-deflate cipher-deflate.bin password [lseq 100]
+    testpassword cipher-deflate-nopassword cipher-deflate.bin {} "decryption failed" -returnCodes error
+    testpassword cipher-deflate-badpassword cipher-deflate.bin xxx "decryption failed" -returnCodes error -constraints bug-b3c7429255
+    
+
+    #
+    # file stat
+    proc fixupstat {stat} {
+        if {$::tcl_platform(platform) ne "windows"} {
+            dict set stat blksize 0
+            dict set stat blocks 0
+        }
+        return [lsort -stride 2 $stat]
+    }
+    test zipfs-file-stat-nosuchfile "Read stat of nonexistent file" -setup {
+        mount [zippath test.zip]
+    } -cleanup cleanup -body {
+        file stat [file join $defaultMountPoint nosuchfile]
+    } -result "could not read \"[file join $defaultMountPoint nosuchfile]\": *" -match glob -returnCodes error
+
+    test zipfs-file-stat-nosuchmount "Read stat of nonexistent mount" -body {
+        file stat [file join $defaultMountPoint nosuchfile]
+    } -result "could not read \"[file join $defaultMountPoint nosuchfile]\": no such file or directory" -returnCodes error
+
+    test zipfs-file-stat-file "Read stat of file" -setup {
+        mount [zippath test.zip]
+    } -cleanup cleanup -body {
+        lsort -stride 2 [file stat [file join $defaultMountPoint test]]
+    } -result [fixupstat {atime 1065435402 ctime 1065435402 dev 0 gid 0 ino 0 mode 33133 mtime 1065435402 nlink 0 size 5 type file uid 0}]
+
+    test zipfs-file-stat-dir "Read stat of dir" -setup {
+        mount [zippath test.zip]
+    } -cleanup cleanup -body {
+        lsort -stride 2 [file stat [file join $defaultMountPoint testdir]]
+    } -result [fixupstat {atime 1105450434 ctime 1105450434 dev 0 gid 0 ino 0 mode 16749 mtime 1105450434 nlink 0 size 0 type directory uid 0}]
+
+    test zipfs-file-stat-mount "Read stat of mount point" -setup {
+        mount [zippath test.zip]
+    } -cleanup cleanup -body {
+        lsort -stride 2 [file stat $defaultMountPoint]
+    } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
+
+    test zipfs-file-stat-root-mount "Read stat of root" -setup {
+        mount [zippath test.zip] [zipfs root]
+    } -cleanup cleanup -body {
+        lsort -stride 2 [file stat [zipfs root]]
+    } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
+
+    test zipfs-file-stat-root-subdir-mount "Read stat of root when mount is subdir" -setup {
+        mount [zippath test.zip]
+    } -cleanup cleanup -constraints bug-02acab5aea -body {
+        lsort -stride 2 [file stat [zipfs root]]
+    } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
+
+    #
+    # TODO - glob of zipfs file
+
+    # TODO tests for compress and save, + with password
+
+    #
+    # TODO - file copy, file rename etc.
+
+
+    # TODO - mkkey, mkimg, mkzip, lmkimg, lmkzip
+    testnumargs "zipfs mkkey" "password" "" -constraints zipfs
+    testnumargs "zipfs mkimg" "outfile indir" "?strip? ?password? ?infile?"
+    testnumargs "zipfs lmkimg" "outfile inlist" "?password? ?infile?"
+    testnumargs "zipfs mkzip" "outfile indir" "?strip? ?password?"
+    testnumargs "zipfs lmkzip" "outfile inlist" "?password?"
+
+    #
+    # Bug regressions
+
+    test bug-6ed3447a7e "Crash opening file in streamed archive" -setup {
+        mount [zippath streamed.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set fd [open [file join $defaultMountPoint -]]
+        list [catch {read $fd} message] [close $fd] $message
+        close $fd
+    } -result {file size error (may be zip64)} -returnCodes error
+}
+
 
 ::tcltest::cleanupTests
 return
