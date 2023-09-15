@@ -69,6 +69,7 @@ namespace eval ::tcltests {
     #  testnumargs "zipfs mount" "" "?mountpoint? ?zipfile? ?password?"
     #  testnumargs "lappend" "varName" "?value ...?"
     proc testnumargs {cmd {fixed {}} {optional {}} args} {
+	variable count
         set minargs [llength $fixed]
         set maxargs [expr {$minargs + [llength $optional]}]
         if {[regexp {\.\.\.\??$} [lindex $optional end]]} {
@@ -89,12 +90,14 @@ namespace eval ::tcltests {
         set label [join $cmd -]
         if {$minargs > 0} {
             set arguments [lrepeat [expr {$minargs-1}] x]
-            test $label-minargs-1 "$label no arguments" \
+            test $label-minargs-[incr count($label-minargs)] \
+		"$label no arguments" \
                 -body "$cmd" \
                 -result $message -returnCodes error \
                 {*}$args
             if {$minargs > 1} {
-                test $label-minargs-1 "$label missing arguments" \
+                test $label-minargs-[incr count($label-minargs)] \
+		    "$label missing arguments" \
                     -body "$cmd $arguments" \
                     -result $message -returnCodes error \
                     {*}$args
@@ -102,7 +105,8 @@ namespace eval ::tcltests {
         }
         if {[info exists maxargs]} {
             set arguments [lrepeat [expr {$maxargs+1}] x]
-            test $label-maxargs-1 "$label extra arguments" \
+            test $label-maxargs-[incr count($label-maxargs)] \
+		"$label extra arguments" \
                 -body "$cmd $arguments" \
                 -result $message -returnCodes error \
                 {*}$args
