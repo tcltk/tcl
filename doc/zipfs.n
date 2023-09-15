@@ -35,11 +35,14 @@ zipfs \- Mount and work with ZIP files within Tcl
 .BE
 .SH DESCRIPTION
 .PP
-The \fBzipfs\fR command (the sole public command provided by the built-in
-package with the same name) provides Tcl with the ability to mount the
-contents of a ZIP archive file as a virtual file system. ZIP archives support
+The \fBzipfs\fR command provides Tcl with the ability to mount the
+contents of a ZIP archive file as a virtual file system. Tcl's ZIP
+archive support is limited to basic features and options.
+Supported storage methods include only STORE and DEFLATE with optional
 simple encryption, sufficient to prevent casual inspection of their contents
 but not able to prevent access by even a moderately determined attacker.
+Strong encryption, multi-part archives, platform metadata,
+zip64 formats and other compression methods like bzip2 are not supported.
 .TP
 \fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR ?\fIinZipfs\fR?
 .
@@ -125,7 +128,8 @@ to access the files inside the mount).
 Returns a constant string which indicates the mount point for zipfs volumes
 for the current platform.
 This value is
-.QW \fB//zipfs:/\fR .
+.QW \fB//zipfs:/\fR
+on most platforms.
 .TP
 \fBzipfs unmount \fImountpoint\fR
 .

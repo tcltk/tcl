@@ -665,7 +665,7 @@ namespace eval test_ns_zipfs {
         mount [zippath test.zip]
         set newmount [file join [zipfs root] test testdir]
         mount [zippath test-overlay.zip] $newmount
-    } -constraints knownBug -cleanup {
+    } -constraints bug-4ae42446ab -cleanup {
         cleanup
     } -body {
         # KNOWN BUG. The test2 file is also present in parent mount.
@@ -712,7 +712,7 @@ namespace eval test_ns_zipfs {
     # Some tests have !zipfslib constraint because otherwise they dump the entire Tcl library which is mounted on root
     testzipfslist no-mounts "" {} {} -constraints !zipfslib
     testzipfslist no-pattern "" {test.zip testmountA} {testmountA testmountA/test testmountA/testdir testmountA/testdir/test2} -constraints !zipfslib
-    testzipfslist no-pattern-mount-on-root "" {test.zip {}} {{} test testdir testdir/test2} -constraints knownBug
+    testzipfslist no-pattern-mount-on-root "" {test.zip {}} {{} test testdir testdir/test2} -constraints bug-d056ee6d30
     testzipfslist no-pattern-multiple "" {test.zip testmountA test.zip testmountB/subdir} {
         testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
         testmountB/subdir testmountB/subdir/test testmountB/subdir/testdir testmountB/subdir/testdir/test2
@@ -749,7 +749,7 @@ namespace eval test_ns_zipfs {
     testzipfsexists file             [file join $defaultMountPoint test] 1
     testzipfsexists dir              [file join $defaultMountPoint testdir] 1
     testzipfsexists mountpoint       $defaultMountPoint 1
-    testzipfsexists root             [zipfs root] 1 -constraints knownBug
+    testzipfsexists root             [zipfs root] 1 -constraints bug-02acab5aea
 
     #
     # zipfs find
@@ -838,7 +838,7 @@ namespace eval test_ns_zipfs {
         test.zip {} test.zip testmountB/subdir
     } [lmap path {
         test testdir testdir/test2
-    } {file join [zipfs root] $path}] -constraints knownBug
+    } {file join [zipfs root] $path}] -constraints bug-6183f535c8
 
     #
     # zipfs info
@@ -928,7 +928,7 @@ namespace eval test_ns_zipfs {
         set zippath [zippath $zippath]
         test zipfs-uncompress-$id $id -setup {
             unset -nocomplain fd
-            mount $zippath
+            zipfs mount $zippath $defaultMountPoint
         } -cleanup {
             # In case mount succeeded when it should not
             if {[info exists fd]} {
@@ -946,6 +946,38 @@ namespace eval test_ns_zipfs {
     testuncompress lzma    testfile-lzma.zip {unsupported compression method} -returnCodes error
     testuncompress xz      testfile-xz.zip {unsupported compression method} -returnCodes error
     testuncompress zstd    testfile-zstd.zip {unsupported compression method} -returnCodes error
+
+    proc testpassword {id filename password result args} {
+        variable defaultMountPoint
+        set zippath [zippath test-password.zip]
+        test zipfs-password-read-$id $id -setup {
+            unset -nocomplain fd
+            if {$password ne ""} {
+                zipfs mount $zippath $defaultMountPoint $password
+            } else {
+                zipfs mount $zippath $defaultMountPoint
+            }
+        } -cleanup {
+            # In case mount succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body {
+            set fd [open [file join $defaultMountPoint $filename]]
+            gets $fd
+        } -result $result {*}$args
+    }
+    testpassword plain plain.txt password plaintext
+    testpassword plain-nopassword plain.txt "" plaintext
+    testpassword plain-badpassword plain.txt xxx plaintext
+    testpassword cipher cipher.bin password ciphertext
+    testpassword cipher-nopassword cipher.bin {} "decryption failed" -returnCodes error
+    testpassword cipher-badpassword cipher.bin xxx "decryption failed" -returnCodes error -constraints bug-b3c7429255
+    testpassword cipher-deflate cipher-deflate.bin password [lseq 100]
+    testpassword cipher-deflate-nopassword cipher-deflate.bin {} "decryption failed" -returnCodes error
+    testpassword cipher-deflate-badpassword cipher-deflate.bin xxx "decryption failed" -returnCodes error bug-b3c7429255
+    
 
     #
     # file stat
@@ -992,14 +1024,14 @@ namespace eval test_ns_zipfs {
 
     test zipfs-file-stat-root-subdir-mount "Read stat of root when mount is subdir" -setup {
         mount [zippath test.zip]
-    } -cleanup cleanup -constraints knownBug -body {
+    } -cleanup cleanup -constraints bug-02acab5aea -body {
         lsort -stride 2 [file stat [zipfs root]]
     } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
 
     #
     # TODO - glob of zipfs file
 
-    # TODO tests for compress and save
+    # TODO tests for compress and save, + with password
 
     #
     # TODO - file copy, file rename etc.
