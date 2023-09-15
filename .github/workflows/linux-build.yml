@@ -20,6 +20,7 @@ jobs:
           - "--enable-symbols"
           - "--enable-symbols=mem"
           - "--enable-symbols=all"
+          - "CFLAGS=-ftrapv"
           - "CFLAGS=-DTCL_UTF_MAX=4"
           - "CFLAGS=-DTCL_UTF_MAX=6"
     defaults:
