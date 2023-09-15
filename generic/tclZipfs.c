@@ -1535,7 +1535,7 @@ ZipMapArchive(
      */
 
     zf->length = lseek(fd, 0, SEEK_END);
-    if (zf->length == (off_t)-1) {
+    if ((off_t)zf->length == (off_t)-1) {
 	ZIPFS_POSIX_ERROR(interp, "failed to retrieve file size");
 	return TCL_ERROR;
     }
