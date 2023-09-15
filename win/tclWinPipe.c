@@ -679,7 +679,7 @@ TclpCreateTempFile(
 	 * Convert the contents from UTF to native encoding
 	 */
 
-	if (Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
 	   goto error;
 	}
 	native = Tcl_DStringValue(&dstring);
