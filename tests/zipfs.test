@@ -40,6 +40,8 @@ if {![string match ${ziproot}* $tcl_library]} {
     ###
     set tclzip [file join $CWD libtcl[info patchlevel].zip]
     testConstraint zipfslib [file isfile $tclzip]
+    puts C:[testConstraint zipfslib],$tclzip,$tcl_library
+    parray ::env TCL*
     if {[testConstraint zipfslib]} {
         zipfs mount $tclzip /lib/tcl
         set ::tcl_library ${ziproot}lib/tcl/tcl_library
@@ -1007,6 +1009,18 @@ namespace eval test_ns_zipfs {
     testcrc local incons-local-crc.zip a "invalid CRC"
     testcrc store-crc broken.zip storedcrcerror "invalid CRC"
     testcrc deflate-crc broken.zip deflatecrcerror "invalid CRC"
+    test zipfs-crc-false-positives {
+        Verify no false positives in CRC checking
+    } -constraints zipfslib -body {
+        # Just loop ensuring no crc failures
+        foreach f [zipfs list] {
+            if {[file isfile $f]} {
+                close [open $f]
+                incr count
+            }
+        }
+        expr {$count > 0}
+    } -result 1
 
     #
     # file stat
