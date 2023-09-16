@@ -4529,6 +4529,9 @@ ZipChannelOpen(
 	if (!(z->flags & ZE_F_CRC_CORRECT)) {
 	    ZIPFS_ERROR(interp, "invalid CRC");
 	    ZIPFS_ERROR_CODE(interp, "CRC_FAILED");
+	    if (info->ubufToFree) {
+		ckfree(info->ubufToFree);
+	    }
 	    ckfree(info);
 	    goto error;
 	}
