@@ -247,7 +247,10 @@ typedef struct ZipChannel {
     size_t numRead;		/* Position of next byte to be read from the
 				 * channel */
     unsigned char *ubuf;	/* Pointer to the uncompressed data */
-    int iscompr;		/* True if data is compressed */
+    unsigned char *ubufToFree;  /* NULL if ubuf points to memory that does not
+    				   need freeing. Else memory to free (ubuf
+				   may point *inside* the block) */
+    int iscompr;                /* True if data is compressed */
     int isDirectory;		/* Set to 1 if directory, or -1 if root */
     int isEncrypted;		/* True if data is encrypted */
     int isWriting;		/* True if open for writing */
@@ -4092,20 +4095,19 @@ ZipChannelClose(
 	return EINVAL;
     }
 
-    if (info->iscompr && info->ubuf) {
-	ckfree(info->ubuf);
-	info->ubuf = NULL;
-    }
     if (info->isEncrypted) {
 	info->isEncrypted = 0;
 	memset(info->keys, 0, sizeof(info->keys));
     }
     if (info->isWriting) {
 	ZipEntry *z = info->zipEntryPtr;
-	unsigned char *newdata = (unsigned char *)
-		attemptckrealloc(info->ubuf, info->numRead);
+	assert(info->ubufToFree && info->ubuf);
+	unsigned char *newdata =
+	    (unsigned char *)attemptckrealloc(info->ubufToFree, info->numRead);
 
 	if (newdata) {
+	    info->ubufToFree = NULL;/* Now newdata! */
+	    info->ubuf = NULL;
 	    if (z->data) {
 		ckfree(z->data);
 	    }
@@ -4117,13 +4119,16 @@ ZipChannelClose(
 	    z->isEncrypted = 0;
 	    z->offset = 0;
 	    z->crc32 = 0;
-	} else {
-	    ckfree(info->ubuf);
 	}
     }
     WriteLock();
     info->zipFilePtr->numOpen--;
     Unlock();
+    if (info->ubufToFree) {
+	ckfree(info->ubufToFree);
+	info->ubuf = NULL;
+	info->ubufToFree = NULL;
+    }
     ckfree(info);
     return TCL_OK;
 }
@@ -4493,7 +4498,9 @@ ZipChannelOpen(
 	flags |= TCL_READABLE;
 	info->numBytes = z->numBytes;
 	info->ubuf = z->data;
-    } else {
+	info->ubufToFree = NULL;
+    }
+    else {
 	/*
 	 * Set up a readable channel.
 	 */
@@ -4557,7 +4564,8 @@ InitWritableChannel(
     info->isWriting = 1;
     info->maxWrite = ZipFS.wrmax;
 
-    info->ubuf = (unsigned char *) attemptckalloc(info->maxWrite);
+    info->ubufToFree = (unsigned char *) attemptckalloc(info->maxWrite);
+    info->ubuf = info->ubufToFree;
     if (!info->ubuf) {
 	goto memoryError;
     }
@@ -4668,8 +4676,10 @@ InitWritableChannel(
     return TCL_OK;
 
   memoryError:
-    if (info->ubuf) {
-	ckfree(info->ubuf);
+    if (info->ubufToFree) {
+	ckfree(info->ubufToFree);
+	info->ubufToFree = NULL;
+	info->ubuf = NULL;
     }
     ZIPFS_MEM_ERROR(interp);
     return TCL_ERROR;
@@ -4679,8 +4689,10 @@ InitWritableChannel(
 	memset(info->keys, 0, sizeof(info->keys));
 	ckfree(cbuf);
     }
-    if (info->ubuf) {
-	ckfree(info->ubuf);
+    if (info->ubufToFree) {
+	ckfree(info->ubufToFree);
+	info->ubufToFree = NULL;
+	info->ubuf = NULL;
     }
     ZIPFS_ERROR(interp, "decompression error");
     ZIPFS_ERROR_CODE(interp, "CORRUPT");
@@ -4719,6 +4731,7 @@ InitReadableChannel(
 
     info->iscompr = (z->compressMethod == ZIP_COMPMETH_DEFLATED);
     info->ubuf = z->zipFilePtr->data + z->offset;
+    info->ubufToFree = NULL; /* ubuf memory not allocated */
     info->isDirectory = z->isDirectory;
     info->isEncrypted = z->isEncrypted;
 
@@ -4762,7 +4775,6 @@ InitReadableChannel(
 	    stream.avail_in -= 12;
 	    ubuf = (unsigned char *) attemptckalloc(stream.avail_in);
 	    if (!ubuf) {
-		info->ubuf = NULL;
 		goto memoryError;
 	    }
 
@@ -4774,8 +4786,10 @@ InitReadableChannel(
 	} else {
 	    stream.next_in = info->ubuf;
 	}
-	stream.next_out = info->ubuf = (unsigned char *)
+	info->ubufToFree = (unsigned char *)
 		attemptckalloc(info->numBytes);
+	info->ubuf = info->ubufToFree;
+	stream.next_out = info->ubuf;
 	if (!info->ubuf) {
 	    goto memoryError;
 	}
@@ -4811,7 +4825,7 @@ InitReadableChannel(
 	 */
 
 	len = z->numCompressedBytes - 12;
-	ubuf = (unsigned char *) attemptckalloc(len);
+	ubuf = (unsigned char *) attemptckalloc(len > 10000 ? len : 10000);
 	if (ubuf == NULL) {
 	    goto memoryError;
 	}
@@ -4819,7 +4833,9 @@ InitReadableChannel(
 	    ch = info->ubuf[j];
 	    ubuf[j] = zdecode(info->keys, crc32tab, ch);
 	}
-	info->ubuf = ubuf;
+	info->ubufToFree = ubuf;
+	info->ubuf = info->ubufToFree;
+	ubuf = NULL; /* So it does not inadvertently get free on future changes */
 	info->isEncrypted = 0;
     }
     return TCL_OK;
@@ -4830,8 +4846,10 @@ InitReadableChannel(
 	memset(info->keys, 0, sizeof(info->keys));
 	ckfree(ubuf);
     }
-    if (info->ubuf) {
-	ckfree(info->ubuf);
+    if (info->ubufToFree) {
+	ckfree(info->ubufToFree);
+	info->ubufToFree = NULL;
+	info->ubuf = NULL;
     }
     ZIPFS_ERROR(interp, "decompression error");
     ZIPFS_ERROR_CODE(interp, "CORRUPT");
