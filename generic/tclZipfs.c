@@ -1183,11 +1183,12 @@ ZipFSCloseArchive(
  *
  * Results:
  *	TCL_OK on success, TCL_ERROR otherwise with an error message placed
- *	into the given "interp" if it is not NULL.
+ *	into the given "interp" if it is not NULL. 
  *
  * Side effects:
- *	The given ZipFile struct is filled with information about the ZIP
- *	archive file.
+ *      The given ZipFile struct is filled with information about the ZIP
+ *      archive file.  On error, ZipFSCloseArchive is called on zf but 
+ *      it is not freed.
  *
  *-------------------------------------------------------------------------
  */
@@ -1389,7 +1390,8 @@ ZipFSFindTOC(
  *
  * Results:
  *	TCL_OK on success, TCL_ERROR otherwise with an error message placed
- *	into the given "interp" if it is not NULL.
+ *	into the given "interp" if it is not NULL. On error, ZipFSCloseArchive
+ *      is called on zf but it is not freed.
  *
  * Side effects:
  *	ZIP archive is memory mapped or read into allocated memory, the given
@@ -1612,7 +1614,7 @@ IsPasswordValid(
  *
  * Results:
  *	TCL_OK on success, TCL_ERROR otherwise with an error message placed
- *	into the given "interp" if it is not NULL.
+ *	into the given "interp" if it is not NULL. On error, frees zf!!
  *
  * Side effects:
  *	Will acquire and release the write lock.
@@ -2101,6 +2103,7 @@ TclZipfs_Mount(
     }
     if (ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname)
 	    != TCL_OK) {
+	/* zf would have been freed! */
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -2187,13 +2190,12 @@ TclZipfs_MountBuffer(
 	zf->ptrToFree = NULL;
     }
     if (ZipFSFindTOC(interp, 1, zf) != TCL_OK) {
-	ZipFSCloseArchive(interp, zf);
 	ckfree(zf);
 	return TCL_ERROR;
     }
-    result = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
-	    "Memory Buffer");
-    return result;
+    /* Note ZipFSCatalogFilesystem will free zf on error */
+    return ZipFSCatalogFilesystem(
+	interp, zf, mountPoint, NULL, "Memory Buffer");
 }
 
 /*
@@ -4823,7 +4825,7 @@ InitReadableChannel(
 	 */
 
 	len = z->numCompressedBytes - 12;
-	ubuf = (unsigned char *) attemptckalloc(len > 10000 ? len : 10000);
+	ubuf = (unsigned char *) attemptckalloc(len);
 	if (ubuf == NULL) {
 	    goto memoryError;
 	}
