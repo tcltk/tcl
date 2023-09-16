@@ -225,11 +225,14 @@ typedef struct ZipEntry {
     int numCompressedBytes;	/* Compressed size of the virtual file.
     				   -1 for zip64 */
     int compressMethod;		/* Compress method */
-    int isDirectory;		/* Set to 1 if directory, or -1 if root */
+    int isDirectory;		/* 0 if file, 1 if directory, -1 if root */
     int depth;			/* Number of slashes in path. */
-    int crc32;			/* CRC-32 */
+    int crc32;			/* CRC-32 as stored in ZIP */
     int timestamp;		/* Modification time */
     int isEncrypted;		/* True if data is encrypted */
+    int flags;
+#define ZE_F_CRC_COMPARED  0x1  /* If 1, the CRC has been compared. */
+#define ZE_F_CRC_CORRECT   0x2  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
     unsigned char *data;	/* File data if written */
     struct ZipEntry *next;	/* Next file in the same archive */
     struct ZipEntry *tnext;	/* Next top-level dir in archive */
@@ -4483,6 +4486,26 @@ ZipChannelOpen(
 
 	flags |= TCL_READABLE;
 	if (InitReadableChannel(interp, info, z) == TCL_ERROR) {
+	    Tcl_Free(info);
+	    goto error;
+	}
+    }
+
+    if (z->crc32) {
+	if (!(z->flags & ZE_F_CRC_COMPARED)) {
+	    int crc = crc32(0, NULL, info->numBytes);
+	    crc = crc32(crc, info->ubuf, info->numBytes);
+	    z->flags |= ZE_F_CRC_COMPARED;
+	    if (crc == z->crc32) {
+		z->flags |= ZE_F_CRC_CORRECT;
+	    }
+	}
+	if (!(z->flags & ZE_F_CRC_CORRECT)) {
+	    ZIPFS_ERROR(interp, "invalid CRC");
+	    ZIPFS_ERROR_CODE(interp, "CRC_FAILED");
+	    if (info->ubufToFree) {
+		Tcl_Free(info->ubufToFree);
+	    }
 	    Tcl_Free(info);
 	    goto error;
 	}
