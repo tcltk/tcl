@@ -4125,6 +4125,7 @@ ZipChannelClose(
     info->zipFilePtr->numOpen--;
     Unlock();
     if (info->ubufToFree) {
+	assert(info->ubuf);
 	ckfree(info->ubufToFree);
 	info->ubuf = NULL;
 	info->ubufToFree = NULL;
@@ -4498,7 +4499,7 @@ ZipChannelOpen(
 	flags |= TCL_READABLE;
 	info->numBytes = z->numBytes;
 	info->ubuf = z->data;
-	info->ubufToFree = NULL;
+	info->ubufToFree = NULL; /* Not dynamically allocated */
     }
     else {
 	/*
@@ -4676,26 +4677,23 @@ InitWritableChannel(
     return TCL_OK;
 
   memoryError:
-    if (info->ubufToFree) {
-	ckfree(info->ubufToFree);
-	info->ubufToFree = NULL;
-	info->ubuf = NULL;
-    }
     ZIPFS_MEM_ERROR(interp);
-    return TCL_ERROR;
+    goto error_cleanup;
 
   corruptionError:
     if (cbuf) {
 	memset(info->keys, 0, sizeof(info->keys));
 	ckfree(cbuf);
     }
+    ZIPFS_ERROR(interp, "decompression error");
+    ZIPFS_ERROR_CODE(interp, "CORRUPT");
+
+  error_cleanup:
     if (info->ubufToFree) {
 	ckfree(info->ubufToFree);
 	info->ubufToFree = NULL;
 	info->ubuf = NULL;
     }
-    ZIPFS_ERROR(interp, "decompression error");
-    ZIPFS_ERROR_CODE(interp, "CORRUPT");
     return TCL_ERROR;
 }
 
@@ -4841,8 +4839,15 @@ InitReadableChannel(
     return TCL_OK;
 
   corruptionError:
+    ZIPFS_ERROR(interp, "decompression error");
+    ZIPFS_ERROR_CODE(interp, "CORRUPT");
+    goto error_cleanup;
+
+  memoryError:
+    ZIPFS_MEM_ERROR(interp);
+
+  error_cleanup:
     if (ubuf) {
-	info->isEncrypted = 0;
 	memset(info->keys, 0, sizeof(info->keys));
 	ckfree(ubuf);
     }
@@ -4851,17 +4856,7 @@ InitReadableChannel(
 	info->ubufToFree = NULL;
 	info->ubuf = NULL;
     }
-    ZIPFS_ERROR(interp, "decompression error");
-    ZIPFS_ERROR_CODE(interp, "CORRUPT");
-    return TCL_ERROR;
 
-  memoryError:
-    if (ubuf) {
-	info->isEncrypted = 0;
-	memset(info->keys, 0, sizeof(info->keys));
-	ckfree(ubuf);
-    }
-    ZIPFS_MEM_ERROR(interp);
     return TCL_ERROR;
 }
 
