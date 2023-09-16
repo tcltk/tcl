@@ -1642,6 +1642,8 @@ ZipFSCatalogFilesystem(
     if (passwd) {
 	pwlen = strlen(passwd);
 	if (IsPasswordValid(interp, passwd, pwlen) != TCL_OK) {
+	    ZipFSCloseArchive(interp, zf);
+	    ckfree(zf);
 	    return TCL_ERROR;
 	}
     }
@@ -2170,6 +2172,8 @@ TclZipfs_MountBuffer(
     if (copy) {
 	zf->data = (unsigned char *) attemptckalloc(datalen);
 	if (!zf->data) {
+	    ZipFSCloseArchive(interp, zf);
+	    ckfree(zf);
 	    ZIPFS_MEM_ERROR(interp);
 	    return TCL_ERROR;
 	}
@@ -2180,6 +2184,8 @@ TclZipfs_MountBuffer(
 	zf->ptrToFree = NULL;
     }
     if (ZipFSFindTOC(interp, 1, zf) != TCL_OK) {
+	ZipFSCloseArchive(interp, zf);
+	ckfree(zf);
 	return TCL_ERROR;
     }
     result = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,

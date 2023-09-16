@@ -978,7 +978,6 @@ namespace eval test_ns_zipfs {
     testpassword cipher-deflate cipher-deflate.bin password [lseq 100]
     testpassword cipher-deflate-nopassword cipher-deflate.bin {} "decryption failed" -returnCodes error
     testpassword cipher-deflate-badpassword cipher-deflate.bin xxx "decryption failed" -returnCodes error -constraints bug-b3c7429255
-    
 
     #
     # file stat
