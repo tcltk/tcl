@@ -753,13 +753,13 @@ test cmdIL-6.24 {lassign command - memory leak testing} -setup {
     rename stress {}
 }
 # Assorted shimmering problems
-test cmdIL-6.25 {lassign command - shimmering protection} -body {
+test cmdIL-6.25 {lassign command (compiled) - shimmering protection} -body {
     apply {{} {
 	set x {a b c}
 	list [lassign $x $x y] $x [set $x] $y
     }}
 } -result {c {a b c} a b}
-test cmdIL-6.26 {lassign command - shimmering protection} -body {
+test cmdIL-6.26 {lassign command (uncompiled) - shimmering protection} -body {
     apply {{} {
 	set x {a b c}
 	set lassign lassign

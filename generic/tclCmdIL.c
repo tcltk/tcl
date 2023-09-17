@@ -2304,10 +2304,9 @@ Tcl_LassignObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *listCopyPtr;
+    Tcl_Obj *listPtr;
     Tcl_Size listObjc;		/* The length of the list. */
     Tcl_Size origListObjc;	/* Original length */
-    int code;
     int i;
 
     if (objc < 2) {
@@ -2315,80 +2314,84 @@ Tcl_LassignObjCmd(
 	return TCL_ERROR;
     }
 
-    listCopyPtr = TclListObjCopy(interp, objv[1]);
-    if (listCopyPtr == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_IncrRefCount(listCopyPtr); /* Important! fs */
+    /*
+     * Note: no need to Dup the list to avoid shimmering. That is only
+     * needed when Tcl_ListObjGetElements is used since that returns
+     * pointers to internal structures. Using Tcl_ListObjIndex does not
+     * have that problem. However, we now have to IncrRef each elemObj
+     * (see below). I see that as preferable as duping lists is potentially
+     * expensive for abstract lists when they have a string representation.
+     */
+    listPtr = objv[1];
 
-    code = TclListObjLengthM(interp, listCopyPtr, &listObjc);
-    if (code != TCL_OK) {
-	Tcl_DecrRefCount(listCopyPtr);
-	return code;
+    if (TclListObjLengthM(interp, listPtr, &listObjc) != TCL_OK) {
+	return TCL_ERROR;
     }
     origListObjc = listObjc;
 
     objc -= 2;
     objv += 2;
-    code = TCL_OK;
     for (i = 0; i < objc && i < listObjc; ++i) {
 	Tcl_Obj *elemObj;
-	code = Tcl_ListObjIndex(interp, listCopyPtr, i, &elemObj);
-	if (code != TCL_OK)
-	    break;
-	if (Tcl_ObjSetVar2(
-		interp, *objv++, NULL, elemObj, TCL_LEAVE_ERR_MSG) ==
-	    NULL) {
-	    code = TCL_ERROR;
-	    break;
+	if (Tcl_ListObjIndex(interp, listPtr, i, &elemObj) != TCL_OK) {
+	    return TCL_ERROR;
 	}
 	/*
-	 * NOTE: due to ObjSetVar2 semantics, no Tcl_BounceCount(elemObj)
-	 * needed on success or failure
+	 * Must incrref elemObj. If the var name being set is same as the
+	 * the list value, ObjSetVar2 will shimmer the list to a VAR freeing
+	 * the elements in the list (in case list refCount was 1) BEFORE
+	 * the elemObj is stored in the var. See tests 6.{25,26}
 	 */
+	Tcl_IncrRefCount(elemObj);
+	if (Tcl_ObjSetVar2(interp, *objv++, NULL, elemObj, TCL_LEAVE_ERR_MSG) ==
+	    NULL) {
+	    Tcl_DecrRefCount(elemObj);
+	    return TCL_ERROR;
+	}
+	Tcl_DecrRefCount(elemObj);
     }
     objc -= i;
     listObjc -= i;
 
-    if (code == TCL_OK && objc > 0) {
+    if (objc > 0) {
 	/* Still some variables left to be assigned */
 	Tcl_Obj *emptyObj;
 
 	TclNewObj(emptyObj);
 	Tcl_IncrRefCount(emptyObj);
-	while (code == TCL_OK && objc-- > 0) {
+	while (objc-- > 0) {
 	    if (Tcl_ObjSetVar2(interp, *objv++, NULL, emptyObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		code = TCL_ERROR;
+		Tcl_DecrRefCount(emptyObj);
+		return TCL_ERROR;
 	    }
 	}
 	Tcl_DecrRefCount(emptyObj);
     }
 
-    if (code == TCL_OK && listObjc > 0) {
+    if (listObjc > 0) {
 	Tcl_Obj *resultObjPtr = NULL;
 	Tcl_Size fromIdx = origListObjc - listObjc;
 	Tcl_Size toIdx = origListObjc - 1;
-	if (TclObjTypeHasProc(listCopyPtr, sliceProc)) {
-	    code = TclObjTypeSlice(
-		interp, listCopyPtr, fromIdx, toIdx, &resultObjPtr);
+	if (TclObjTypeHasProc(listPtr, sliceProc)) {
+	    if (TclObjTypeSlice(
+		    interp, listPtr, fromIdx, toIdx, &resultObjPtr) != TCL_OK) {
+		return TCL_ERROR;
+	    }
 	}
 	else {
 	    resultObjPtr = TclListObjRange(
-		interp, listCopyPtr, origListObjc - listObjc, origListObjc - 1);
+		interp, listPtr, origListObjc - listObjc, origListObjc - 1);
 	    if (resultObjPtr == NULL) {
-		code = TCL_ERROR;
+		return TCL_ERROR;
 	    }
 	}
-	if (code == TCL_OK) {
-	    Tcl_SetObjResult(interp, resultObjPtr);
-	}
+	Tcl_SetObjResult(interp, resultObjPtr);
     }
 
-    Tcl_DecrRefCount(listCopyPtr);
-    return code;
+    return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
