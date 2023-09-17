@@ -2321,7 +2321,7 @@ Tcl_LassignObjCmd(
     }
     Tcl_IncrRefCount(listCopyPtr); /* Important! fs */
 
-    code = Tcl_ListObjLength(interp, listCopyPtr, &listObjc);
+    code = TclListObjLengthM(interp, listCopyPtr, &listObjc);
     if (code != TCL_OK) {
 	Tcl_DecrRefCount(listCopyPtr);
 	return code;
