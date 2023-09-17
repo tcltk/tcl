@@ -19,6 +19,16 @@ catch [list package require -exact tcl::test [info patchlevel]]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
+proc memusage {} {
+    set fd [open /proc/[pid]/statm]
+    set line [gets $fd]
+    if {[llength $line] != 7} {
+        error "Unexpected /proc/pid/statm format"
+    }
+    return [lindex $line 5]
+}
+testConstraint hasMemUsage [expr {![catch {memusage}]}]
+
 testConstraint testobj [llength [info commands testobj]]
 source [file join [file dirname [info script]] internals.tcl]
 namespace import -force ::tcltest::internals::*
@@ -743,19 +753,31 @@ test cmdIL-6.24 {lassign command - memory leak testing} -setup {
     rename stress {}
 }
 # Assorted shimmering problems
-test cmdIL-6.25 {lassign command - shimmering protection} -body {
+test cmdIL-6.25 {lassign command (compiled) - shimmering protection} -body {
     apply {{} {
 	set x {a b c}
 	list [lassign $x $x y] $x [set $x] $y
     }}
 } -result {c {a b c} a b}
-test cmdIL-6.26 {lassign command - shimmering protection} -body {
+test cmdIL-6.26 {lassign command (uncompiled) - shimmering protection} -body {
     apply {{} {
 	set x {a b c}
 	set lassign lassign
 	list [$lassign $x $x y] $x [set $x] $y
     }}
 } -result {c {a b c} a b}
+test cmdIL-6.27 {bug-f5e36eb588 - uncompiled lassign on lseq does not bloat memory} -constraints {
+    hasMemUsage
+} -body {
+    set l [lseq 1000000]
+    lassign $l x
+    set premem [memusage]
+    set lassign lassign
+    $lassign $l x
+    set postmem [memusage]
+    expr {($postmem-$premem) < 100}
+} -result 1
+
 
 test cmdIL-7.1 {lreverse command} -body {
     lreverse
