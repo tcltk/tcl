@@ -973,10 +973,10 @@ namespace eval test_ns_zipfs {
     testpassword plain-badpassword plain.txt xxx plaintext
     testpassword cipher cipher.bin password ciphertext
     testpassword cipher-nopassword cipher.bin {} "decryption failed" -returnCodes error
-    testpassword cipher-badpassword cipher.bin xxx "decryption failed" -returnCodes error -constraints bug-b3c7429255
+    testpassword cipher-badpassword cipher.bin xxx "invalid CRC" -returnCodes error
     testpassword cipher-deflate cipher-deflate.bin password [lseq 100]
     testpassword cipher-deflate-nopassword cipher-deflate.bin {} "decryption failed" -returnCodes error
-    testpassword cipher-deflate-badpassword cipher-deflate.bin xxx "decryption failed" -returnCodes error -constraints bug-b3c7429255
+    testpassword cipher-deflate-badpassword cipher-deflate.bin xxx "decompression error" -returnCodes error
 
     #
     # CRC errors
