@@ -1024,6 +1024,13 @@ namespace eval test_ns_zipfs {
     #
     # file stat
     proc fixupstat {stat} {
+        foreach key {atime ctime mtime} {
+            # ZIP files have no TZ info so zipfs uses mktime which is localtime
+            set time [dict get $stat $key]
+            if {$time ne "0"} {
+                dict set stat $key [clock scan [dict get $stat $key] -format "%Y-%m-%d %H:%M:%S"]
+            }
+        }
         if {$::tcl_platform(platform) ne "windows"} {
             dict set stat blksize 0
             dict set stat blocks 0
@@ -1044,13 +1051,13 @@ namespace eval test_ns_zipfs {
         mount [zippath test.zip]
     } -cleanup cleanup -body {
         lsort -stride 2 [file stat [file join $defaultMountPoint test]]
-    } -result [fixupstat {atime 1065435402 ctime 1065435402 dev 0 gid 0 ino 0 mode 33133 mtime 1065435402 nlink 0 size 5 type file uid 0}] -constraints bug-3f9f494cc1
+    } -result [fixupstat {atime {2003-10-06 15:46:42} ctime {2003-10-06 15:46:42} dev 0 gid 0 ino 0 mode 33133 mtime {2003-10-06 15:46:42} nlink 0 size 5 type file uid 0}]
 
     test zipfs-file-stat-dir "Read stat of dir" -setup {
         mount [zippath test.zip]
     } -cleanup cleanup -body {
         lsort -stride 2 [file stat [file join $defaultMountPoint testdir]]
-    } -result [fixupstat {atime 1105450434 ctime 1105450434 dev 0 gid 0 ino 0 mode 16749 mtime 1105450434 nlink 0 size 0 type directory uid 0}] -constraints bug-3f9f494cc1
+    } -result [fixupstat {atime {2005-01-11 19:03:54} ctime {2005-01-11 19:03:54} dev 0 gid 0 ino 0 mode 16749 mtime {2005-01-11 19:03:54} nlink 0 size 0 type directory uid 0}]
 
     test zipfs-file-stat-mount "Read stat of mount point" -setup {
         mount [zippath test.zip]
