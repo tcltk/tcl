@@ -2305,10 +2305,10 @@ Tcl_LassignObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listCopyPtr;
-    Tcl_Obj **listObjv;		/* The contents of the list. */
     Tcl_Size listObjc;		/* The length of the list. */
     Tcl_Size origListObjc;	/* Original length */
     int code;
+    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list ?varName ...?");
@@ -2321,8 +2321,7 @@ Tcl_LassignObjCmd(
     }
     Tcl_IncrRefCount(listCopyPtr); /* Important! fs */
 
-    code = TclListObjGetElementsM(
-	interp, listCopyPtr, &listObjc, &listObjv);
+    code = Tcl_ListObjLength(interp, listCopyPtr, &listObjc);
     if (code != TCL_OK) {
 	Tcl_DecrRefCount(listCopyPtr);
 	return code;
@@ -2331,16 +2330,28 @@ Tcl_LassignObjCmd(
 
     objc -= 2;
     objv += 2;
-    while (code == TCL_OK && objc > 0 && listObjc > 0) {
-	if (Tcl_ObjSetVar2(interp, *objv++, NULL, *listObjv++,
-		TCL_LEAVE_ERR_MSG) == NULL) {
+    code = TCL_OK;
+    for (i = 0; i < objc && i < listObjc; ++i) {
+	Tcl_Obj *elemObj;
+	code = Tcl_ListObjIndex(interp, listCopyPtr, i, &elemObj);
+	if (code != TCL_OK)
+	    break;
+	if (Tcl_ObjSetVar2(
+		interp, *objv++, NULL, elemObj, TCL_LEAVE_ERR_MSG) ==
+	    NULL) {
 	    code = TCL_ERROR;
+	    break;
 	}
-	objc--;
-	listObjc--;
+	/*
+	 * NOTE: due to ObjSetVar2 semantics, no Tcl_BounceCount(elemObj)
+	 * needed on success or failure
+	 */
     }
+    objc -= i;
+    listObjc -= i;
 
     if (code == TCL_OK && objc > 0) {
+	/* Still some variables left to be assigned */
 	Tcl_Obj *emptyObj;
 
 	TclNewObj(emptyObj);
@@ -2355,11 +2366,21 @@ Tcl_LassignObjCmd(
     }
 
     if (code == TCL_OK && listObjc > 0) {
-	Tcl_Obj *resultObjPtr = TclListObjRange(
-	    interp, listCopyPtr, origListObjc - listObjc, origListObjc - 1);
-	if (resultObjPtr == NULL) {
-	    code = TCL_ERROR;
-	} else {
+	Tcl_Obj *resultObjPtr = NULL;
+	Tcl_Size fromIdx = origListObjc - listObjc;
+	Tcl_Size toIdx = origListObjc - 1;
+	if (TclObjTypeHasProc(listCopyPtr, sliceProc)) {
+	    code = TclObjTypeSlice(
+		interp, listCopyPtr, fromIdx, toIdx, &resultObjPtr);
+	}
+	else {
+	    resultObjPtr = TclListObjRange(
+		interp, listCopyPtr, origListObjc - listObjc, origListObjc - 1);
+	    if (resultObjPtr == NULL) {
+		code = TCL_ERROR;
+	    }
+	}
+	if (code == TCL_OK) {
 	    Tcl_SetObjResult(interp, resultObjPtr);
 	}
     }
