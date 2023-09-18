@@ -3141,7 +3141,7 @@ Tcl_LreplaceObjCmd(
 	last = listLen - 1;
     }
     if (first <= last) {
-	numToDelete = last - first + 1;
+	numToDelete = (size_t)last - (size_t)first + 1; /* See [3d3124d01d] */
     } else {
 	numToDelete = 0;
     }
@@ -5131,12 +5131,11 @@ Tcl_LeditObjCmd(
 	first = listLen;
     }
 
-    /* The +1 in comparisons are necessitated by indices being unsigned */
     if (last >= listLen) {
 	last = listLen - 1;
     }
     if (first <= last) {
-	numToDelete = last - first + 1;
+	numToDelete = (size_t)last - (size_t)first + 1; /* See [3d3124d01d] */
     } else {
 	numToDelete = 0;
     }
