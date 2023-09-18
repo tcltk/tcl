@@ -509,7 +509,7 @@ MakeByteArray(
 
     for (; src < srcEnd && dst < dstEnd; ) {
 	int ch;
-	int count = TclUtfToUCS4(src, &ch);
+	int count = Tcl_UtfToUniChar(src, &ch);
 
 	if (ch > 255) {
 	    proper = 0;
@@ -2561,7 +2561,7 @@ BinaryDecodeHex(
     if (pure) {
 	ucs4 = c;
     } else {
-	TclUtfToUCS4((const char *)(data - 1), &ucs4);
+	Tcl_UtfToUniChar((const char *)(data - 1), &ucs4);
     }
     TclDecrRefCount(resultObj);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3026,7 +3026,7 @@ BinaryDecodeUu(
     if (pure) {
 	ucs4 = c;
     } else {
-	TclUtfToUCS4((const char *)(data - 1), &ucs4);
+	Tcl_UtfToUniChar((const char *)(data - 1), &ucs4);
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid uuencode character \"%c\" (U+%06X) at position %"
@@ -3201,7 +3201,7 @@ BinaryDecode64(
 	 * of a multi-byte character. */
 
 	/* Safe because we know data is NUL-terminated */
-	TclUtfToUCS4((const char *)(data - 1), &ucs4);
+	Tcl_UtfToUniChar((const char *)(data - 1), &ucs4);
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(

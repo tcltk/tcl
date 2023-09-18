@@ -270,4 +270,14 @@ extern const TclOOStubs *tclOOStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+#if TCL_MAJOR_VERSION < 9
+    /* TIP #630 for 8.7 */
+#   undef Tcl_MethodIsType2
+#   define Tcl_MethodIsType2 Tcl_MethodIsType
+#   undef Tcl_NewInstanceMethod2
+#   define Tcl_NewInstanceMethod2 Tcl_NewInstanceMethod
+#   undef Tcl_NewMethod2
+#   define Tcl_NewMethod2 Tcl_NewMethod
+#endif
+
 #endif /* _TCLOODECLS */

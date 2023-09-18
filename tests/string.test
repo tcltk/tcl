@@ -228,6 +228,9 @@ test string-2.35.$noComp {string compare, binary neq} {
 test string-2.36.$noComp {string compare, binary neq unequal length} {
     run {string compare [binary format a20a 0 1] [binary format a100a 0 0]}
 } 1
+test string-2.37.$noComp {string compare with -length >= 2^32} {
+    run {string compare -length 4294967296 ab abde}
+} -1
 
 # only need a few tests on equal, since it uses the same code as
 # string compare, but just modifies the return output

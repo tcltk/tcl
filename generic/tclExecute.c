@@ -5152,7 +5152,7 @@ TEBCresume(
 		    toIdx = length;
 		}
 		if (toIdx >= fromIdx) {
-		    numToDelete = toIdx - fromIdx + 1;
+		    numToDelete = (size_t)toIdx - (size_t)fromIdx + 1;
 		}
 	    }
 	}
@@ -5353,11 +5353,6 @@ TEBCresume(
 		TclNewObj(objResultPtr);
 	    } else {
 		slength = Tcl_UniCharToUtf(ch, buf);
-#if TCL_UTF_MAX < 4
-		if ((ch >= 0xD800) && (slength < 3)) {
-		    slength += Tcl_UniCharToUtf(-1, buf + slength);
-		}
-#endif
 		objResultPtr = Tcl_NewStringObj(buf, slength);
 	    }
 	}
@@ -5569,7 +5564,7 @@ TEBCresume(
 	    int ch;
 	    end = ustring1 + slength;
 	    for (p=ustring1 ; p<end ; ) {
-		p += TclUniCharToUCS4(p, &ch);
+		ch = *p++;
 		if (!tclStringClassTable[opnd].comparator(ch)) {
 		    match = 0;
 		    break;

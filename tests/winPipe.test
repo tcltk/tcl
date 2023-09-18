@@ -616,6 +616,7 @@ removeFile nothing
 if {[info exists path(echoArgs.tcl)]} { removeFile echoArgs.tcl }
 if {[info exists path(echoArgs.bat)]} { removeFile echoArgs.bat }
 if {[info exists path(echoArgs2.bat)]} { removeDirectory test(Dir)Check }
+unset -nocomplain path
 ::tcltest::cleanupTests
 # back to original directory:
 cd $org_pwd; unset org_pwd
