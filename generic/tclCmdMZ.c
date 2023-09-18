@@ -2725,7 +2725,7 @@ StringCmpCmd(
      */
 
     int match, nocase, status;
-    Tcl_Size reqlength;
+    Tcl_Size reqlength = -1;
 
     status = StringCmpOpts(interp, objc, objv, &nocase, &reqlength);
     if (status != TCL_OK) {
