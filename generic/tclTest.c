@@ -1221,6 +1221,9 @@ TestcmdinfoObjCmd(
 	info.objClientData = NULL;
 	info.deleteProc = CmdDelProc2;
 	info.deleteData = (void *) "new_delete_data";
+	info.namespacePtr = NULL;
+	info.objProc2 = NULL;
+	info.objClientData2 = NULL;
 	if (Tcl_SetCommandInfo(interp, Tcl_GetString(objv[2]), &info) == 0) {
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
 	} else {

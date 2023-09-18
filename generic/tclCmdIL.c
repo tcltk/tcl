@@ -2304,70 +2304,94 @@ Tcl_LassignObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *listCopyPtr;
-    Tcl_Obj **listObjv;		/* The contents of the list. */
+    Tcl_Obj *listPtr;
     Tcl_Size listObjc;		/* The length of the list. */
     Tcl_Size origListObjc;	/* Original length */
-    int code;
+    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list ?varName ...?");
 	return TCL_ERROR;
     }
 
-    listCopyPtr = TclListObjCopy(interp, objv[1]);
-    if (listCopyPtr == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_IncrRefCount(listCopyPtr); /* Important! fs */
+    /*
+     * Note: no need to Dup the list to avoid shimmering. That is only
+     * needed when Tcl_ListObjGetElements is used since that returns
+     * pointers to internal structures. Using Tcl_ListObjIndex does not
+     * have that problem. However, we now have to IncrRef each elemObj
+     * (see below). I see that as preferable as duping lists is potentially
+     * expensive for abstract lists when they have a string representation.
+     */
+    listPtr = objv[1];
 
-    code = TclListObjGetElementsM(
-	interp, listCopyPtr, &listObjc, &listObjv);
-    if (code != TCL_OK) {
-	Tcl_DecrRefCount(listCopyPtr);
-	return code;
+    if (TclListObjLengthM(interp, listPtr, &listObjc) != TCL_OK) {
+	return TCL_ERROR;
     }
     origListObjc = listObjc;
 
     objc -= 2;
     objv += 2;
-    while (code == TCL_OK && objc > 0 && listObjc > 0) {
-	if (Tcl_ObjSetVar2(interp, *objv++, NULL, *listObjv++,
-		TCL_LEAVE_ERR_MSG) == NULL) {
-	    code = TCL_ERROR;
+    for (i = 0; i < objc && i < listObjc; ++i) {
+	Tcl_Obj *elemObj;
+	if (Tcl_ListObjIndex(interp, listPtr, i, &elemObj) != TCL_OK) {
+	    return TCL_ERROR;
 	}
-	objc--;
-	listObjc--;
+	/*
+	 * Must incrref elemObj. If the var name being set is same as the
+	 * the list value, ObjSetVar2 will shimmer the list to a VAR freeing
+	 * the elements in the list (in case list refCount was 1) BEFORE
+	 * the elemObj is stored in the var. See tests 6.{25,26}
+	 */
+	Tcl_IncrRefCount(elemObj);
+	if (Tcl_ObjSetVar2(interp, *objv++, NULL, elemObj, TCL_LEAVE_ERR_MSG) ==
+	    NULL) {
+	    Tcl_DecrRefCount(elemObj);
+	    return TCL_ERROR;
+	}
+	Tcl_DecrRefCount(elemObj);
     }
+    objc -= i;
+    listObjc -= i;
 
-    if (code == TCL_OK && objc > 0) {
+    if (objc > 0) {
+	/* Still some variables left to be assigned */
 	Tcl_Obj *emptyObj;
 
 	TclNewObj(emptyObj);
 	Tcl_IncrRefCount(emptyObj);
-	while (code == TCL_OK && objc-- > 0) {
+	while (objc-- > 0) {
 	    if (Tcl_ObjSetVar2(interp, *objv++, NULL, emptyObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		code = TCL_ERROR;
+		Tcl_DecrRefCount(emptyObj);
+		return TCL_ERROR;
 	    }
 	}
 	Tcl_DecrRefCount(emptyObj);
     }
 
-    if (code == TCL_OK && listObjc > 0) {
-	Tcl_Obj *resultObjPtr = TclListObjRange(
-	    interp, listCopyPtr, origListObjc - listObjc, origListObjc - 1);
-	if (resultObjPtr == NULL) {
-	    code = TCL_ERROR;
-	} else {
-	    Tcl_SetObjResult(interp, resultObjPtr);
+    if (listObjc > 0) {
+	Tcl_Obj *resultObjPtr = NULL;
+	Tcl_Size fromIdx = origListObjc - listObjc;
+	Tcl_Size toIdx = origListObjc - 1;
+	if (TclObjTypeHasProc(listPtr, sliceProc)) {
+	    if (TclObjTypeSlice(
+		    interp, listPtr, fromIdx, toIdx, &resultObjPtr) != TCL_OK) {
+		return TCL_ERROR;
+	    }
 	}
+	else {
+	    resultObjPtr = TclListObjRange(
+		interp, listPtr, origListObjc - listObjc, origListObjc - 1);
+	    if (resultObjPtr == NULL) {
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_SetObjResult(interp, resultObjPtr);
     }
 
-    Tcl_DecrRefCount(listCopyPtr);
-    return code;
+    return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3117,7 +3141,7 @@ Tcl_LreplaceObjCmd(
 	last = listLen - 1;
     }
     if (first <= last) {
-	numToDelete = last - first + 1;
+	numToDelete = (size_t)last - (size_t)first + 1; /* See [3d3124d01d] */
     } else {
 	numToDelete = 0;
     }
@@ -5107,12 +5131,11 @@ Tcl_LeditObjCmd(
 	first = listLen;
     }
 
-    /* The +1 in comparisons are necessitated by indices being unsigned */
     if (last >= listLen) {
 	last = listLen - 1;
     }
     if (first <= last) {
-	numToDelete = last - first + 1;
+	numToDelete = (size_t)last - (size_t)first + 1; /* See [3d3124d01d] */
     } else {
 	numToDelete = 0;
     }
@@ -5453,8 +5476,8 @@ DictionaryCompare(
 	 */
 
 	if ((*left != '\0') && (*right != '\0')) {
-	    left += TclUtfToUCS4(left, &uniLeft);
-	    right += TclUtfToUCS4(right, &uniRight);
+	    left += Tcl_UtfToUniChar(left, &uniLeft);
+	    right += Tcl_UtfToUniChar(right, &uniRight);
 
 	    /*
 	     * Convert both chars to lower for the comparison, because
