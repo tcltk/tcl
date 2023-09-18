@@ -710,7 +710,7 @@ namespace eval test_ns_zipfs {
     # Some tests have !zipfslib constraint because otherwise they dump the entire Tcl library which is mounted on root
     testzipfslist no-mounts "" {} {} -constraints !zipfslib
     testzipfslist no-pattern "" {test.zip testmountA} {testmountA testmountA/test testmountA/testdir testmountA/testdir/test2} -constraints !zipfslib
-    testzipfslist no-pattern-mount-on-root "" {test.zip {}} {{} test testdir testdir/test2} -constraints bug-d056ee6d30
+    testzipfslist no-pattern-mount-on-root "" {test.zip {}} {{} test testdir testdir/test2}
     testzipfslist no-pattern-multiple "" {test.zip testmountA test.zip testmountB/subdir} {
         testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
         testmountB/subdir testmountB/subdir/test testmountB/subdir/testdir testmountB/subdir/testdir/test2
