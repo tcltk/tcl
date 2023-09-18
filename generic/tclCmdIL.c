@@ -3102,7 +3102,7 @@ Tcl_LreplaceObjCmd(
 	last = listLen - 1;
     }
     if (first <= last) {
-	numToDelete = last - first + 1;
+	numToDelete = (unsigned)last - (unsigned)first + 1; /* See [3d3124d01d] */
     } else {
 	numToDelete = 0;
     }
@@ -5082,7 +5082,7 @@ Tcl_LeditObjCmd(
 	last = listLen - 1;
     }
     if (first <= last) {
-	numToDelete = last - first + 1;
+	numToDelete = (unsigned)last - (unsigned)first + 1; /* See [3d3124d01d] */
     } else {
 	numToDelete = 0;
     }
