@@ -268,6 +268,7 @@ static void		SetScriptLimitCallback(Tcl_Interp *interp, int type,
 static void		CallScriptLimitCallback(void *clientData,
 			    Tcl_Interp *interp);
 static void		DeleteScriptLimitCallback(void *clientData);
+static void		MakeSafe(Tcl_Interp *interp);
 static void		RunLimitHandlers(LimitHandler *handlerPtr,
 			    Tcl_Interp *interp);
 static void		TimeLimitCallback(void *clientData);
@@ -2481,9 +2482,7 @@ ChildCreate(
 	    ((Interp *) parentInterp)->maxNestingDepth;
 
     if (safe) {
-	if (TclMakeSafe(childInterp) == TCL_ERROR) {
-	    goto error;
-	}
+	MakeSafe(childInterp);
     } else {
 	if (Tcl_Init(childInterp) == TCL_ERROR) {
 	    goto error;
@@ -3264,7 +3263,7 @@ Tcl_IsSafe(
 /*
  *----------------------------------------------------------------------
  *
- * TclMakeSafe --
+ * MakeSafe --
  *
  *	Makes its argument interpreter contain only functionality that is
  *	defined to be part of Safe Tcl. Unsafe commands are hidden, the env
@@ -3280,8 +3279,8 @@ Tcl_IsSafe(
  *----------------------------------------------------------------------
  */
 
-int
-TclMakeSafe(
+void
+MakeSafe(
     Tcl_Interp *interp)		/* Interpreter to be made safe. */
 {
     Tcl_Channel chan;		/* Channel to remove from safe interpreter. */
@@ -3355,8 +3354,6 @@ TclMakeSafe(
     if (chan != NULL) {
 	Tcl_UnregisterChannel(interp, chan);
     }
-
-    return TCL_OK;
 }
 
 /*

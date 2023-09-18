@@ -52,7 +52,7 @@
 # turn on the 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=nomsvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,unchecked,utf16,none
+#	OPTS=nomsvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,unchecked,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -78,7 +78,6 @@
 #		unchecked = Allows a symbols build to not use the debug
 #			    enabled runtime (msvcrt.dll not msvcrtd.dll
 #			    or libcmt.lib not libcmtd.lib).
-#		utf16     = Forces a build using UTF-16 representation internally.
 #
 #	STATS=compdbg,memdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
@@ -162,9 +161,11 @@ VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 !if [nmakehlp -f $(OPTS) "noembed"]
 !message *** Option noembed specified. Tcl script library will not be appended to the binary.
 TCL_EMBED_SCRIPTS = 0
+TCL_TEST_LIBRARY=$(ROOT:\=/)/library
 !else
 !message *** Tcl script library will be appended to the binary.
 TCL_EMBED_SCRIPTS = 1
+TCL_TEST_LIBRARY=
 !endif
 
 # We need versions of various core packages to generate appropriate
@@ -498,18 +499,18 @@ setup:      default-setup
 
 test: test-core test-pkgs
 test-core: setup $(TCLTEST) dlls
-	set TCL_LIBRARY=$(ROOT:\=/)/library
+	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
 		package ifneeded dde 1.4.5 [list load "$(TCLDDELIB:\=/)"]
 		package ifneeded registry 1.3.7 [list load "$(TCLREGLIB:\=/)"]
 <<
 
 runtest: setup $(TCLTEST) dlls
-	set TCL_LIBRARY=$(ROOT:\=/)/library
+	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
 	$(DEBUGGER) $(TCLTEST) $(SCRIPT)
 
 runshell: setup $(TCLSH) dlls
-	set TCL_LIBRARY=$(ROOT:\=/)/library
+	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
 	$(DEBUGGER) $(TCLSH) $(SCRIPT)
 
 !if $(STATIC_BUILD)

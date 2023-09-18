@@ -57,8 +57,12 @@ typedef struct Tcl_ObjectContext_ *Tcl_ObjectContext;
 
 typedef int (Tcl_MethodCallProc)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
+#if TCL_MAJOR_VERSION > 8
 typedef int (Tcl_MethodCallProc2)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, Tcl_Size objc, Tcl_Obj *const *objv);
+#else
+#define Tcl_MethodCallProc2 Tcl_MethodCallProc
+#endif
 typedef void (Tcl_MethodDeleteProc)(void *clientData);
 typedef int (Tcl_CloneProc)(Tcl_Interp *interp, void *oldClientData,
 	void **newClientData);
@@ -89,6 +93,7 @@ typedef struct {
 				 * be copied directly. */
 } Tcl_MethodType;
 
+#if TCL_MAJOR_VERSION > 8
 typedef struct {
     int version;		/* Structure version field. Always to be equal
 				 * to TCL_OO_METHOD_VERSION_2 in
@@ -105,6 +110,9 @@ typedef struct {
 				 * data, or NULL if the type-specific data can
 				 * be copied directly. */
 } Tcl_MethodType2;
+#else
+#define Tcl_MethodType2 Tcl_MethodType;
+#endif
 
 /*
  * The correct value for the version field of the Tcl_MethodType structure.

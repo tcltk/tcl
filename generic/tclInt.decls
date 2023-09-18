@@ -349,7 +349,6 @@ declare 142 {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    CompileHookProc *hookProc, void *clientData)
 }
-# Do NOT change width of the size. TclEmitPush cannot handle it
 declare 143 {
     int TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr,
 	    LiteralEntry **litPtrPtr)
@@ -664,7 +663,6 @@ declare 250 {
 }
 
 # Allow extensions for optimization
-# Do NOT change width of the size. TclEmitPush cannot handle it
 declare 251 {
     int TclRegisterLiteral(void *envPtr,
 	    const char *bytes, Tcl_Size length, int flags)
