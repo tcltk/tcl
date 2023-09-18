@@ -35,11 +35,14 @@ zipfs \- Mount and work with ZIP files within Tcl
 .BE
 .SH DESCRIPTION
 .PP
-The \fBzipfs\fR command (the sole public command provided by the built-in
-package with the same name) provides Tcl with the ability to mount the
-contents of a ZIP archive file as a virtual file system. ZIP archives support
+The \fBzipfs\fR command provides Tcl with the ability to mount the
+contents of a ZIP archive file as a virtual file system. Tcl's ZIP
+archive support is limited to basic features and options.
+Supported storage methods include only STORE and DEFLATE with optional
 simple encryption, sufficient to prevent casual inspection of their contents
 but not able to prevent access by even a moderately determined attacker.
+Strong encryption, multi-part archives, platform metadata,
+zip64 formats and other compression methods like bzip2 are not supported.
 .TP
 \fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR ?\fIinZipfs\fR?
 .
@@ -55,10 +58,10 @@ Return 1 if the given filename exists in the mounted zipfs and 0 if it does not.
 .TP
 \fBzipfs find\fR \fIdirectoryName\fR
 .
-Recursively lists files including and below the directory \fIdirectoryName\fR.
-The result list consists of relative path names starting from the given
-directory. This command is also used by the \fBzipfs mkzip\fR and \fBzipfs
-mkimg\fR commands.
+Returns the list of paths under directory \fIdirectoryName\fR which need not be
+within a zipfs mounted archive. The paths are prefixed with \fIdirectoryName\fR.
+This command is also used by the \fBzipfs mkzip\fR and \fBzipfs mkimg\fR
+commands.
 .TP
 \fBzipfs info\fR \fIfile\fR
 .
@@ -80,9 +83,15 @@ in (4), which can be used to truncate the zip information from an executable.
 .TP
 \fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? ?\fIpattern\fR?
 .
-Return a list of all files in the mounted zipfs, or just those matching
-\fIpattern\fR (optionally controlled by the option parameters).  The order of
-the names in the list is arbitrary.
+If \fIpattern\fR is not specified, the command returns a list of files across
+all zipfs mounted archives. If \fIpattern\fR is specified, only those paths
+matching the pattern are returned. By default, or with the \fB-glob\fR option,
+the pattern is treated as a glob pattern and matching is done as described for
+the \fBstring match\fR command. Alternatively, the \fB-regexp\fR option may be
+used to specify matching \fBpattern\fR as a regular expression. The file names
+are returned in arbitrary order. Note that path separators are treated as
+ordinary characters in the matching. Thus forward slashes should be used
+as path separators in the pattern.
 .TP
 \fBzipfs mount\fR
 .TP
@@ -95,7 +104,7 @@ The \fBzipfs mount\fR command mounts ZIP archives as Tcl virtual file systems
 and returns information about current mounts.
 .PP
 With no arguments, the command returns a dictionary mapping
-current mount points to the file path of the corresponding ZIP archive.
+mount points to the path of the corresponding ZIP archive.
 .PP
 In the single argument form, the command returns the file path
 of the ZIP archive mounted at the specified mount point.
@@ -119,11 +128,16 @@ to access the files inside the mount).
 Returns a constant string which indicates the mount point for zipfs volumes
 for the current platform.
 This value is
-.QW \fB//zipfs:/\fR .
+.QW \fB//zipfs:/\fR
+on most platforms.
 .TP
 \fBzipfs unmount \fImountpoint\fR
 .
 Unmounts a previously mounted ZIP archive mounted to \fImountpoint\fR.
+If the current directory is located within the mounted archive,
+the directory that was previously the current directory is restored
+on the unmount. The command will fail with an error exception if
+there are any files within the mounted archive are open.
 .SS "ZIP CREATION COMMANDS"
 This package also provides several commands to aid the creation of ZIP
 archives as Tcl applications.

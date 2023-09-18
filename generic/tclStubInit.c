@@ -85,31 +85,13 @@
 # undef TclGetUnicodeFromObj
 # define TclGetStringFromObj 0
 # define TclGetBytesFromObj 0
-# if TCL_UTF_MAX > 3
-#   define TclGetUnicodeFromObj 0
-# endif
+# define TclGetUnicodeFromObj 0
 #endif
 #undef Tcl_Close
 #define Tcl_Close 0
-#undef TclGetByteArrayFromObj
-#define TclGetByteArrayFromObj 0
 #undef Tcl_GetByteArrayFromObj
 #define Tcl_GetByteArrayFromObj 0
 #define TclUnusedStubEntry 0
-
-
-#if TCL_UTF_MAX < 4
-static void uniCodePanic() {
-    Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
-}
-
-#   define Tcl_GetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, Tcl_Size *))(void *)uniCodePanic
-#   define TclGetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, void *))(void *)uniCodePanic
-#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const Tcl_UniChar *, Tcl_Size))(void *)uniCodePanic
-#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, Tcl_Size))(void *)uniCodePanic
-#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, Tcl_Size))(void *)uniCodePanic
-#endif
-
 #define TclUtfCharComplete Tcl_UtfCharComplete
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
@@ -860,7 +842,7 @@ const TclStubs tclStubs = {
     TclFreeObj, /* 30 */
     Tcl_GetBoolean, /* 31 */
     Tcl_GetBooleanFromObj, /* 32 */
-    TclGetByteArrayFromObj, /* 33 */
+    Tcl_GetByteArrayFromObj, /* 33 */
     Tcl_GetDouble, /* 34 */
     Tcl_GetDoubleFromObj, /* 35 */
     0, /* 36 */
@@ -1480,7 +1462,7 @@ const TclStubs tclStubs = {
     Tcl_GetBytesFromObj, /* 650 */
     Tcl_GetStringFromObj, /* 651 */
     Tcl_GetUnicodeFromObj, /* 652 */
-    Tcl_GetByteArrayFromObj, /* 653 */
+    Tcl_GetSizeIntFromObj, /* 653 */
     Tcl_UtfCharComplete, /* 654 */
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
@@ -1513,7 +1495,7 @@ const TclStubs tclStubs = {
     Tcl_GetEncodingNulLength, /* 683 */
     Tcl_GetWideUIntFromObj, /* 684 */
     Tcl_DStringToObj, /* 685 */
-    Tcl_GetSizeIntFromObj, /* 686 */
+    0, /* 686 */
     0, /* 687 */
     TclUnusedStubEntry, /* 688 */
 };
