@@ -3279,7 +3279,7 @@ Tcl_IsSafe(
  *----------------------------------------------------------------------
  */
 
-void 
+void
 MakeSafe(
     Tcl_Interp *interp)		/* Interpreter to be made safe. */
 {
