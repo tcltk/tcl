@@ -5293,7 +5293,7 @@ TEBCresume(
 		toIdx = length;
 	    }
 	    if (toIdx >= fromIdx) {
-		numToDelete = toIdx - fromIdx + 1;
+		numToDelete = (unsigned)toIdx - (unsigned)fromIdx + 1; /* See [3d3124d01d] */
 	    }
 	}
 
