@@ -84,6 +84,7 @@ static const z_crc_t* crc32tab;
 */
 
 #define ZIPFS_VOLUME	  "//zipfs:/"
+#define ZIPFS_ROOTDIR_DEPTH 3 /* Number of / in root mount */
 #define ZIPFS_VOLUME_LEN  9
 #define ZIPFS_APP_MOUNT	  ZIPFS_VOLUME "app"
 #define ZIPFS_ZIP_MOUNT	  ZIPFS_VOLUME "lib/tcl"
@@ -1728,6 +1729,7 @@ ZipFSCatalogFilesystem(
 	    Tcl_SetHashValue(hPtr, z);
 
 	    z->depth = CountSlashes(mountPoint);
+	    assert(z->depth >= ZIPFS_ROOTDIR_DEPTH);
 	    z->zipFilePtr = zf;
 	    z->isDirectory = (zf->baseOffset == 0) ? 1 : -1; /* root marker */
 	    z->offset = zf->baseOffset;
@@ -1816,6 +1818,7 @@ ZipFSCatalogFilesystem(
 	fullpath = CanonicalPath(mountPoint, path, &fpBuf, 1);
 	z = AllocateZipEntry();
 	z->depth = CountSlashes(fullpath);
+	assert(z->depth >= ZIPFS_ROOTDIR_DEPTH);
 	z->zipFilePtr = zf;
 	z->isDirectory = isdir;
 	z->isEncrypted =
@@ -1853,7 +1856,7 @@ ZipFSCatalogFilesystem(
 	z->name = (char *) Tcl_GetHashKey(&ZipFS.fileHash, hPtr);
 	z->next = zf->entries;
 	zf->entries = z;
-	if (isdir && (mountPoint[0] == '\0') && (z->depth == 1)) {
+	if (isdir && (mountPoint[0] == '\0') && (z->depth == ZIPFS_ROOTDIR_DEPTH)) {
 	    z->tnext = zf->topEnts;
 	    zf->topEnts = z;
 	}
@@ -1863,7 +1866,7 @@ ZipFSCatalogFilesystem(
 	 * containing directory nodes.
 	 */
 
-	if (!z->isDirectory && (z->depth > 1)) {
+	if (!z->isDirectory && (z->depth > ZIPFS_ROOTDIR_DEPTH)) {
 	    char *dir, *endPtr;
 	    ZipEntry *zd;
 
@@ -1884,6 +1887,7 @@ ZipFSCatalogFilesystem(
 
 		zd = AllocateZipEntry();
 		zd->depth = CountSlashes(dir);
+		assert(zd->depth > ZIPFS_ROOTDIR_DEPTH);
 		zd->zipFilePtr = zf;
 		zd->isDirectory = 1;
 		zd->offset = z->offset;
@@ -1893,7 +1897,7 @@ ZipFSCatalogFilesystem(
 		zd->name = (char *) Tcl_GetHashKey(&ZipFS.fileHash, hPtr);
 		zd->next = zf->entries;
 		zf->entries = zd;
-		if ((mountPoint[0] == '\0') && (zd->depth == 1)) {
+		if ((mountPoint[0] == '\0') && (zd->depth == ZIPFS_ROOTDIR_DEPTH)) {
 		    zd->tnext = zf->topEnts;
 		    zf->topEnts = zd;
 		}
