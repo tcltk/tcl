@@ -679,7 +679,7 @@ EncodingConvertfromObjCmd(
 	bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
     } else
 #endif
-	bytesPtr = (char *) TclGetBytesFromObj(interp, data, &length);
+	bytesPtr = (char *) Tcl_GetBytesFromObj(interp, data, &length);
 
     if (bytesPtr == NULL) {
 	return TCL_ERROR;
@@ -2197,7 +2197,7 @@ PathSplitCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    res = Tcl_FSSplitPath(objv[1], (Tcl_Size *)NULL);
+    res = Tcl_FSSplitPath(objv[1], NULL);
     if (res == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"could not read \"%s\": no such file or directory",

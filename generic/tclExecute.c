@@ -4788,11 +4788,7 @@ TEBCresume(
 	    Method *const mPtr =
 		    contextPtr->callPtr->chain[newDepth].mPtr;
 
-	    if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
-		return mPtr->typePtr->callProc(mPtr->clientData, interp,
-			(Tcl_ObjectContext) contextPtr, opnd, objv);
-	    }
-	    return ((Tcl_MethodCallProc2 *)(void *)(mPtr->typePtr->callProc))(mPtr->clientData, interp,
+	    return mPtr->typePtr->callProc(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, opnd, objv);
 	}
 
@@ -5297,7 +5293,7 @@ TEBCresume(
 		toIdx = length;
 	    }
 	    if (toIdx >= fromIdx) {
-		numToDelete = toIdx - fromIdx + 1;
+		numToDelete = (unsigned)toIdx - (unsigned)fromIdx + 1; /* See [3d3124d01d] */
 	    }
 	}
 
@@ -5480,7 +5476,7 @@ TEBCresume(
 	    TclNewObj(objResultPtr);
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
-		    TclGetByteArrayFromObj(valuePtr, (Tcl_Size *)NULL)+index, 1);
+		    Tcl_GetByteArrayFromObj(valuePtr, NULL)+index, 1);
 	} else if (valuePtr->bytes && length == valuePtr->length) {
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
@@ -5652,12 +5648,12 @@ TEBCresume(
 	    objResultPtr = value3Ptr;
 	    goto doneStringMap;
 	}
-	ustring1 = TclGetUnicodeFromObj_(valuePtr, &length);
+	ustring1 = TclGetUnicodeFromObj(valuePtr, &length);
 	if (length == 0) {
 	    objResultPtr = valuePtr;
 	    goto doneStringMap;
 	}
-	ustring2 = TclGetUnicodeFromObj_(value2Ptr, &length2);
+	ustring2 = TclGetUnicodeFromObj(value2Ptr, &length2);
 	if (length2 > length || length2 == 0) {
 	    objResultPtr = valuePtr;
 	    goto doneStringMap;
@@ -5669,7 +5665,7 @@ TEBCresume(
 	    }
 	    goto doneStringMap;
 	}
-	ustring3 = TclGetUnicodeFromObj_(value3Ptr, &length3);
+	ustring3 = TclGetUnicodeFromObj(value3Ptr, &length3);
 
 	objResultPtr = TclNewUnicodeObj(ustring1, 0);
 	p = ustring1;
@@ -5722,13 +5718,13 @@ TEBCresume(
 	valuePtr = OBJ_AT_TOS;
 	TRACE(("%s \"%.30s\" => ", tclStringClassTable[opnd].name,
 		O2S(valuePtr)));
-	ustring1 = TclGetUnicodeFromObj_(valuePtr, &length);
+	ustring1 = TclGetUnicodeFromObj(valuePtr, &length);
 	match = 1;
 	if (length > 0) {
 	    int ch;
 	    end = ustring1 + length;
 	    for (p=ustring1 ; p<end ; ) {
-		p += TclUniCharToUCS4(p, &ch);
+		ch = *p++;
 		if (!tclStringClassTable[opnd].comparator(ch)) {
 		    match = 0;
 		    break;
@@ -5753,8 +5749,8 @@ TEBCresume(
 		|| TclHasInternalRep(value2Ptr, &tclUniCharStringType)) {
 	    Tcl_UniChar *ustring1, *ustring2;
 
-	    ustring1 = TclGetUnicodeFromObj_(valuePtr, &length);
-	    ustring2 = TclGetUnicodeFromObj_(value2Ptr, &length2);
+	    ustring1 = TclGetUnicodeFromObj(valuePtr, &length);
+	    ustring2 = TclGetUnicodeFromObj(value2Ptr, &length2);
 	    match = TclUniCharMatch(ustring1, length, ustring2, length2,
 		    nocase);
 	} else if (TclIsPureByteArray(valuePtr) && !nocase) {

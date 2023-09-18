@@ -3102,7 +3102,7 @@ Tcl_LreplaceObjCmd(
 	last = listLen - 1;
     }
     if (first <= last) {
-	numToDelete = last - first + 1;
+	numToDelete = (unsigned)last - (unsigned)first + 1; /* See [3d3124d01d] */
     } else {
 	numToDelete = 0;
     }
@@ -5082,7 +5082,7 @@ Tcl_LeditObjCmd(
 	last = listLen - 1;
     }
     if (first <= last) {
-	numToDelete = last - first + 1;
+	numToDelete = (unsigned)last - (unsigned)first + 1; /* See [3d3124d01d] */
     } else {
 	numToDelete = 0;
     }
@@ -5431,8 +5431,8 @@ DictionaryCompare(
 	 */
 
 	if ((*left != '\0') && (*right != '\0')) {
-	    left += TclUtfToUCS4(left, &uniLeft);
-	    right += TclUtfToUCS4(right, &uniRight);
+	    left += Tcl_UtfToUniChar(left, &uniLeft);
+	    right += Tcl_UtfToUniChar(right, &uniRight);
 
 	    /*
 	     * Convert both chars to lower for the comparison, because

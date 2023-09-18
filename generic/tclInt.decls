@@ -115,9 +115,6 @@ declare 41 {
 declare 42 {
     const char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
-declare 43 {
-    Tcl_ObjCmdProc2 *TclGetObjInterpProc2(void)
-}
 declare 44 {
     int TclGuessPackageName(const char *fileName, Tcl_DString *bufPtr)
 }
@@ -511,16 +508,6 @@ declare 208 {
     Tcl_Channel TclpOpenFileChannel(Tcl_Interp *interp,
 	    Tcl_Obj *pathPtr, int mode, int permissions)
 }
-# Made public by TIP 258
-#declare 209 {
-#    Tcl_Obj *TclGetEncodingSearchPath(void)
-#}
-#declare 210 {
-#    int TclSetEncodingSearchPath(Tcl_Obj *searchPath)
-#}
-#declare 211 {
-#    const char *TclpGetEncodingNameFromEnvironment(Tcl_DString *bufPtr)
-#}
 declare 212 {
     void TclpFindExecutable(const char *argv0)
 }

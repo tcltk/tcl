@@ -30,6 +30,9 @@ static int		IsSeparatorOrNull(int ch);
 static Tcl_Obj *	GetExtension(Tcl_Obj *pathPtr);
 static int		MakePathFromNormalized(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr);
+static int		MakeTildeRelativePath(Tcl_Interp *interp,
+			    const char *user, const char *subPath,
+			    Tcl_DString *dsPtr);
 
 /*
  * Define the 'path' object type, which Tcl uses to represent file paths
