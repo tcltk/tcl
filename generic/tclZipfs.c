@@ -1681,9 +1681,8 @@ ZipFSCatalogFilesystem(
     Tcl_DStringInit(&dsm);
     if (strcmp(mountPoint, "/") == 0) {
 	mountPoint = "";
-    } else {
-	mountPoint = CanonicalPath("", mountPoint, &dsm, 1);
     }
+    mountPoint = CanonicalPath("", mountPoint, &dsm, 1);
     hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, mountPoint, &isNew);
     if (!isNew) {
 	if (interp) {

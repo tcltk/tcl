@@ -497,8 +497,9 @@ namespace eval test_ns_zipfs {
     testmount basic             test.zip           testdir/test2 $defaultMountPoint
     testmount basic-on-default  test.zip           testdir/test2 ""
     testmount basic-on-root     test.zip           testdir/test2 [zipfs root]
-    # TODO - testmount basic-on-slash    test.zip           testdir/test2 /
+    testmount basic-on-slash    test.zip           testdir/test2 /
     testmount basic-on-relative test.zip           testdir/test2 testmount
+    testmount basic-on-absolute test.zip           testdir/test2 /testmount
     testmount zip-at-end        junk-at-start.zip  testdir/test2 $defaultMountPoint
     testmount zip-at-start      junk-at-end.zip    testdir/test2 $defaultMountPoint
     testmount zip-in-zip [file join [zipfs root] test2 test.zip] testdir/test2 $defaultMountPoint -setup {
@@ -710,7 +711,9 @@ namespace eval test_ns_zipfs {
     # Some tests have !zipfslib constraint because otherwise they dump the entire Tcl library which is mounted on root
     testzipfslist no-mounts "" {} {} -constraints !zipfslib
     testzipfslist no-pattern "" {test.zip testmountA} {testmountA testmountA/test testmountA/testdir testmountA/testdir/test2} -constraints !zipfslib
-    testzipfslist no-pattern-mount-on-root "" {test.zip {}} {{} test testdir testdir/test2} -constraints !zipfslib
+    testzipfslist no-pattern-mount-on-empty "" {test.zip {}} {{} test testdir testdir/test2} -constraints !zipfslib
+    testzipfslist no-pattern-mount-on-root "" [list test.zip [zipfs root]] {{} test testdir testdir/test2} -constraints !zipfslib
+    testzipfslist no-pattern-mount-on-slash "" [list test.zip /] {{} test testdir testdir/test2} -constraints !zipfslib
     testzipfslist no-pattern-multiple "" {test.zip testmountA test.zip testmountB/subdir} {
         testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
         testmountB/subdir testmountB/subdir/test testmountB/subdir/testdir testmountB/subdir/testdir/test2
