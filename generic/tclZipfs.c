@@ -1262,7 +1262,7 @@ ZipFSFindTOC(
      * (2) cdirZipOffset + cdirSize <= eocdDataOffset. Else the CD will be overlapping
      * the EOCD. Note this automatically means cdirZipOffset+cdirSize < zf->length.
      */
-    if (!(cdirZipOffset <= eocdDataOffset &&
+    if (!(cdirZipOffset <= (size_t)eocdDataOffset &&
 	  cdirSize <= eocdDataOffset - cdirZipOffset)) {
 	if (!needZip) {
 	    /* Simply point to end od data */
@@ -1544,7 +1544,7 @@ ZipMapArchive(
      */
 
     zf->length = lseek(fd, 0, SEEK_END);
-    if ((off_t)zf->length == (off_t)-1) {
+    if (zf->length == (size_t)-1) {
 	ZIPFS_POSIX_ERROR(interp, "failed to retrieve file size");
 	return TCL_ERROR;
     }
