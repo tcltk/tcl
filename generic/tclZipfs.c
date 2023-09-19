@@ -1277,7 +1277,7 @@ ZipFSFindTOC(
      * (2) cdirZipOffset + cdirSize <= eocdDataOffset. Else the CD will be overlapping
      * the EOCD. Note this automatically means cdirZipOffset+cdirSize < zf->length.
      */
-    if (!(cdirZipOffset <= eocdDataOffset &&
+    if (!(cdirZipOffset <= (size_t)eocdDataOffset &&
 	  cdirSize <= eocdDataOffset - cdirZipOffset)) {
 	if (!needZip) {
 	    /* Simply point to end od data */
