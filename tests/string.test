@@ -371,6 +371,12 @@ test string-3.41.$noComp {string equal, binary neq} {
 test string-3.42.$noComp {string equal, binary neq inequal length} {
     run {string equal [binary format a20a 0 1] [binary format a100a 0 0]}
 } 0
+test string-3.43.$noComp {string equal, big -length} {
+    run {string equal -length 4294967296 abc def}
+} 0
+test string-3.44.$noComp {string equal, bigger -length} -body {
+    run {string equal -length 18446744073709551616 abc def}
+} -returnCodes 1 -result {integer value too large to represent}
 
 test string-4.1.$noComp {string first, not enough args} {
     list [catch {run {string first a}} msg] $msg
