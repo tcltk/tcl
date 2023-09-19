@@ -214,7 +214,6 @@ typedef struct ZipFile {
 
 /*
  * In-core description of file contained in mounted ZIP archive.
- * ZIP_ATTR_
  */
 
 typedef struct ZipEntry {
@@ -232,8 +231,9 @@ typedef struct ZipEntry {
     int timestamp;		/* Modification time */
     int isEncrypted;		/* True if data is encrypted */
     int flags;
-#define ZE_F_CRC_COMPARED  0x1  /* If 1, the CRC has been compared. */
-#define ZE_F_CRC_CORRECT   0x2  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
+#define ZE_F_CRC_COMPARED  0x00000001  /* If 1, the CRC has been compared. */
+#define ZE_F_CRC_CORRECT   0x00000002  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
+#define ZE_F_VOLUME        0x00000004  /* Entry corresponds to //zipfs:/ */
     unsigned char *data;	/* File data if written */
     struct ZipEntry *next;	/* Next file in the same archive */
     struct ZipEntry *tnext;	/* Next top-level dir in archive */
@@ -1734,6 +1734,9 @@ ZipFSCatalogFilesystem(
 	    z->offset = zf->baseOffset;
 	    z->compressMethod = ZIP_COMPMETH_STORED;
 	    z->name = (char *) Tcl_GetHashKey(&ZipFS.fileHash, hPtr);
+	    if (!strcmp(z->name, ZIPFS_VOLUME)) {
+		z->flags |= ZE_F_VOLUME; /* Mark as root volume */
+	    }
 	    z->next = zf->entries;
 	    zf->entries = z;
 	}
@@ -5253,7 +5256,9 @@ ZipFSMatchInDirectoryProc(
 		|| (!dirOnly && z->isDirectory))) {
 	    continue;
 	}
-	if ((z->depth == scnt) && Tcl_StringCaseMatch(z->name, pat, 0)) {
+	if ((z->depth == scnt) &&
+	    ((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
+	    && Tcl_StringCaseMatch(z->name, pat, 0)) {
 	    AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
 	}
     }
