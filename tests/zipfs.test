@@ -1103,8 +1103,7 @@ namespace eval test_ns_zipfs {
         [list [file join $defaultMountPoint test]] {-type f}
     testzipfsglob dirs $defaultMountPoint [file join $defaultMountPoint t*] \
         [list [file join $defaultMountPoint testdir]] {-type d}
-    testzipfsglob no-match $defaultMountPoint [file join $defaultMountPoint testdir x*] \
-        {no files matched glob pattern "//zipfs:/testmount/testdir/x*"} {} -returnCodes error
+    testzipfsglob no-match $defaultMountPoint [file join $defaultMountPoint testdir x*] {} {}
     testzipfsglob no-match-nocomplain $defaultMountPoint [file join $defaultMountPoint testdir x*] {} {-nocomplain}
     testzipfsglob mountpoint $defaultMountPoint [file join [zipfs root] *] \
         [list $defaultMountPoint] {}
