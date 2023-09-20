@@ -813,7 +813,7 @@ namespace eval test_ns_zipfs {
         test.zip {} test.zip testmountB/subdir
     } [lmap path {
         test testdir testdir/test2
-    } {file join [zipfs root] $path}]
+    } {file join [zipfs root] $path}] -constraints !zipfslib
 
     test zipfs-find-native-absolute "zipfs find on native file system" -setup {
         set dir [makeDirectory zipfs-native-absolute]
@@ -1095,8 +1095,8 @@ namespace eval test_ns_zipfs {
         } -result $result {*}$args
     }
     # Bug 14db54d81e
-    testzipfsglob root-dir [zipfs root] * {//zipfs:/test //zipfs:/testdir} [list -dir [zipfs root]]
-    testzipfsglob root [zipfs root] [file join [zipfs root] *] {//zipfs:/test //zipfs:/testdir}
+    testzipfsglob root-dir [zipfs root] * {//zipfs:/test //zipfs:/testdir} [list -dir [zipfs root]] -constraints !zipfslib
+    testzipfsglob root [zipfs root] [file join [zipfs root] *] {//zipfs:/test //zipfs:/testdir} {} -constraints !zipfslib
     testzipfsglob pattern $defaultMountPoint [file join $defaultMountPoint testdir t*] \
         [file join $defaultMountPoint testdir test2]
     testzipfsglob files $defaultMountPoint [file join $defaultMountPoint t*] \
@@ -1107,7 +1107,7 @@ namespace eval test_ns_zipfs {
         {no files matched glob pattern "//zipfs:/testmount/testdir/x*"} {} -returnCodes error
     testzipfsglob no-match-nocomplain $defaultMountPoint [file join $defaultMountPoint testdir x*] {} {-nocomplain}
     testzipfsglob mountpoint $defaultMountPoint [file join [zipfs root] *] \
-        [list $defaultMountPoint] {}
+        [list $defaultMountPoint] {} -constraints !zipfslib
 
     # TODO tests for compress and save, + with password
 
