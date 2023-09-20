@@ -33,10 +33,7 @@ proc makeShared {s} {uplevel 1 [list lappend copy $s]; return $s}
 testConstraint testobj [expr {[info commands testobj] ne {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
-testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
-testConstraint utf32 [expr {[testConstraint fullutf]
-		&& [string length [format %c 0x10000]] == 1}]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -518,7 +515,7 @@ test string-5.19.$noComp {string index, bytearray object out of bounds} {
 test string-5.20.$noComp {string index, bytearray object out of bounds} -body {
     run {string index [binary format I* {0x50515253 0x52}] 20}
 } -result {}
-test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints utf32 -body {
+test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -body {
     run {list [string index a\U100000b 1] [string index a\U100000b 2] [string index a\U100000b 3]}
 } -result [list \U100000 b {}]
 test string-5.22.$noComp {string index} -constraints testbytestring -body {
@@ -1522,7 +1519,7 @@ test string-12.22.$noComp {string range, shimmering binary/index} {
     binary scan $s a* x
     run {string range $s $s end}
 } 000000001
-test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} utf32 {
+test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} {
     run {list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]}
 } [list \U100000 b {}]
 test string-12.24.$noComp {bignum index arithmetic} -setup {
@@ -1792,7 +1789,7 @@ test string-17.7.$noComp {string totitle, unicode} {
 test string-17.8.$noComp {string totitle, compiled} {
     lindex [run {string totitle [list aa bb [list cc]]}] 0
 } Aa
-test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} utf32 {
+test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} {
     run {list [string totitle a\U118c0c 1 1] [string totitle a\U118c0c 2 2] \
 	[string totitle a\U118c0c 3 3]}
 } [list a\U118a0c a\U118c0C a\U118c0c]
@@ -1936,7 +1933,7 @@ test string-21.14.$noComp {string wordend, unicode} -body {
 test string-21.15.$noComp {string wordend, unicode} -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 0}
 } -result 2
-test string-21.16.$noComp {string wordend, unicode} -constraints utf32 -body {
+test string-21.16.$noComp {string wordend, unicode} -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
 } -result 6
 test string-21.17.$noComp {string trim, unicode} {
@@ -2014,7 +2011,7 @@ test string-22.14.$noComp {string wordstart, invalid UTF-8} -constraints testbyt
 test string-22.15.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 0}
 } -result 0
-test string-22.16.$noComp {string wordstart, unicode} -constraints utf32 -body {
+test string-22.16.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 10}
 } -result 3
 
@@ -2128,19 +2125,19 @@ test string-24.15.$noComp {string reverse command - pure bytearray} {
     binary scan [run {tcl::string::reverse [binary format H* 010203]}] H* x
     set x
 } 030201
-test string-24.16.$noComp {string reverse command - surrogates} utf32 {
+test string-24.16.$noComp {string reverse command - surrogates} {
     run {string reverse \u0444bulb\uD83D\uDE02}
 } \uDE02\uD83Dblub\u0444
-test string-24.17.$noComp {string reverse command - surrogates} utf32 {
+test string-24.17.$noComp {string reverse command - surrogates} {
     run {string reverse \uD83D\uDE02hello\uD83D\uDE02}
 } \uDE02\uD83Dolleh\uDE02\uD83D
-test string-24.18.$noComp {string reverse command - surrogates} utf32 {
+test string-24.18.$noComp {string reverse command - surrogates} {
     set s \u0444bulb\uD83D\uDE02
     # shim shimmery ...
     string index $s 0
     run {string reverse $s}
 } \uDE02\uD83Dblub\u0444
-test string-24.19.$noComp {string reverse command - surrogates} utf32 {
+test string-24.19.$noComp {string reverse command - surrogates} {
     set s \uD83D\uDE02hello\uD83D\uDE02
     # shim shimmery ...
     string index $s 0
