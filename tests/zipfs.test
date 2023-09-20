@@ -1114,6 +1114,59 @@ namespace eval test_ns_zipfs {
     #
     # TODO - file copy, file rename etc.
 
+    #
+    # file normalize
+    proc testzipfsnormalize {id path result {dir {}}} {
+        if {$dir eq ""} {
+            test zipfs-file-normalize-$id "zipfs file normalize $id" -body {
+                file normalize $path
+            } -result $result
+        } else {
+            test zipfs-file-normalize-$id "zipfs file normalize $id" -setup {
+                set cwd [pwd]
+                mount [zippath test.zip] [zipfs root]
+                cd $dir
+            } -cleanup {
+                cd $cwd
+                cleanup
+            } -body {
+                file normalize $path
+            } -result $result
+        }
+    }
+    # The parsing requires all these cases for various code paths
+    # in particular, root, one below root and more than one below root
+    testzipfsnormalize dot-1  [zipfs root] [zipfs root]
+    testzipfsnormalize dot-2  [file join [zipfs root] .]        [zipfs root]
+    testzipfsnormalize dot-3  [file join [zipfs root] . .]      [zipfs root]
+    testzipfsnormalize dot-4  [file join [zipfs root] a .]      [file join [zipfs root] a]
+    testzipfsnormalize dot-5  [file join [zipfs root] a . . .]  [file join [zipfs root] a]
+    testzipfsnormalize dot-6  [file join [zipfs root] a b .]    [file join [zipfs root] a b]
+    testzipfsnormalize dot-7  [file join [zipfs root] a b . .]  [file join [zipfs root] a b]
+
+    testzipfsnormalize dotdot-1  [file join [zipfs root] ..]              [zipfs root]
+    testzipfsnormalize dotdot-2  [file join [zipfs root] .. ..]           [zipfs root]
+    testzipfsnormalize dotdot-3  [file join [zipfs root] a ..]            [zipfs root]
+    testzipfsnormalize dotdot-4  [file join [zipfs root] a .. .. ..]      [zipfs root]
+    testzipfsnormalize dotdot-5  [file join [zipfs root] a b ..]          [file join [zipfs root] a]
+    testzipfsnormalize dotdot-6  [file join [zipfs root] a b ..]          [file join [zipfs root] a]
+    testzipfsnormalize dotdot-7  [file join [zipfs root] a b .. ..]       [zipfs root]
+    testzipfsnormalize dotdot-8  [file join [zipfs root] a b .. .. .. ..] [zipfs root]
+
+    testzipfsnormalize relative-1  a               [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-2  .               [zipfs root]                       [zipfs root]
+    testzipfsnormalize relative-3  ./              [zipfs root]                       [zipfs root]
+    testzipfsnormalize relative-4  ./a             [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-5  ../             [file join [zipfs root]]           [zipfs root]
+    testzipfsnormalize relative-6  ../a            [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-7  ../a/           [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-8  ../..           [zipfs root]                       [zipfs root]
+    testzipfsnormalize relative-9  dir/a           [file join [zipfs root] dir a]     [zipfs root]
+    testzipfsnormalize relative-10  dir/dirb/..    [file join [zipfs root] dir]       [zipfs root]
+    testzipfsnormalize relative-11  dir/../a       [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-12  dir/../a/      [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-13  dir/../../../a [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-14  a              [file join [zipfs root] testdir a] [file join [zipfs root] testdir]
 
     # TODO - mkkey, mkimg, mkzip, lmkimg, lmkzip
     testnumargs "zipfs mkkey" "password" "" -constraints zipfs

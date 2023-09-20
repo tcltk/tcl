@@ -69,7 +69,6 @@
 	}								\
     } while (0)
 
-
 #ifdef HAVE_ZLIB
 #include "zlib.h"
 #include "crypt.h"
@@ -435,6 +434,27 @@ static Tcl_ChannelType ZipChannelType = {
     NULL,			/* Thread action function, NULL'able */
     NULL,			/* Truncate function, NULL'able */
 };
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclIsZipfsPath --
+ *
+ *    Checks if the passed path has a zipfs volume prefix.
+ *
+ * Results:
+ *    0 if not a zipfs path
+ *    else the length of the zipfs volume prefix
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+int TclIsZipfsPath (const char *path)
+{
+    return strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) ? 0 : ZIPFS_VOLUME_LEN;
+}
 
 /*
  *-------------------------------------------------------------------------
@@ -6115,6 +6135,11 @@ Tcl_Obj *
 TclZipfs_TclLibrary(void)
 {
     return NULL;
+}
+
+int TclIsZipfsPath (const char *path)
+{
+    return 0;
 }
 
 #endif /* !HAVE_ZLIB */

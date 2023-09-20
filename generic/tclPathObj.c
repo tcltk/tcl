@@ -144,9 +144,17 @@ TclFSNormalizeAbsolutePath(
 				 * directory separator - we can't use '..' to
 				 * remove the volume in a path. */
     Tcl_Obj *retVal = NULL;
+    int zipVolumeLen;
     dirSep = TclGetString(pathPtr);
 
-    if (tclPlatform == TCL_PLATFORM_WINDOWS) {
+    zipVolumeLen = TclIsZipfsPath(dirSep);
+    if (zipVolumeLen) {
+	/*
+	 * NOTE: file normalization for zipfs is very specific to
+	 * format of zipfs volume being of the form //xxx:/
+	 */
+	dirSep += zipVolumeLen-1; /* Start parse after : */
+    } else if (tclPlatform == TCL_PLATFORM_WINDOWS) {
 	if (   (dirSep[0] == '/' || dirSep[0] == '\\')
 	    && (dirSep[1] == '/' || dirSep[1] == '\\')
 	    && (dirSep[2] == '?')
@@ -247,13 +255,17 @@ TclFSNormalizeAbsolutePath(
 		    Tcl_AppendToObj(retVal, dirSep, 1);
 		}
 		if (!first || (tclPlatform == TCL_PLATFORM_UNIX)) {
-		    linkObj = Tcl_FSLink(retVal, NULL, 0);
+		    if (zipVolumeLen) {
+			linkObj = NULL;
+		    } else {
+			linkObj = Tcl_FSLink(retVal, NULL, 0);
 
-		    /* Safety check in case driver caused sharing */
-		    if (Tcl_IsShared(retVal)) {
-			TclDecrRefCount(retVal);
-			retVal = Tcl_DuplicateObj(retVal);
-			Tcl_IncrRefCount(retVal);
+			/* Safety check in case driver caused sharing */
+			if (Tcl_IsShared(retVal)) {
+			    TclDecrRefCount(retVal);
+			    retVal = Tcl_DuplicateObj(retVal);
+			    Tcl_IncrRefCount(retVal);
+			}
 		    }
 
 		    if (linkObj != NULL) {
@@ -323,10 +335,12 @@ TclFSNormalizeAbsolutePath(
 
 		    /*
 		     * Either way, we now remove the last path element (but
-		     * not the first character of the path).
+		     * not the first character of the path). In the case of
+		     * zipfs, make sure not to go beyond the zipfs volume.
 		     */
 
-		    while (curLen-- > 0) {
+		    int minLen = zipVolumeLen ? zipVolumeLen - 1 : 0;
+		    while (--curLen >= minLen) {
 			if (IsSeparatorOrNull(linkStr[curLen])) {
 			    if (curLen) {
 				Tcl_SetObjLength(retVal, curLen);
@@ -385,13 +399,21 @@ TclFSNormalizeAbsolutePath(
 
     /*
      * Ensure a windows drive like C:/ has a trailing separator.
+     * Likewise for zipfs volumes.
      */
-
-    if (tclPlatform == TCL_PLATFORM_WINDOWS) {
+    if (zipVolumeLen || (tclPlatform == TCL_PLATFORM_WINDOWS)) {
+	int needTrailingSlash = 0;
 	Tcl_Size len;
 	const char *path = Tcl_GetStringFromObj(retVal, &len);
-
-	if (len == 2 && path[0] != 0 && path[1] == ':') {
+	if (zipVolumeLen) {
+	    if (len == (zipVolumeLen - 1))
+		needTrailingSlash = 1;
+	} else {
+	    if (len == 2 && path[0] != 0 && path[1] == ':') {
+		needTrailingSlash = 1;
+	    }
+	}
+	if (needTrailingSlash) {
 	    if (Tcl_IsShared(retVal)) {
 		TclDecrRefCount(retVal);
 		retVal = Tcl_DuplicateObj(retVal);
