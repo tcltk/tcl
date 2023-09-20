@@ -69,7 +69,6 @@
 	}								\
     } while (0)
 
-
 #ifdef HAVE_ZLIB
 #include "zlib.h"
 #include "crypt.h"
@@ -84,6 +83,7 @@ static const z_crc_t* crc32tab;
 */
 
 #define ZIPFS_VOLUME	  "//zipfs:/"
+#define ZIPFS_ROOTDIR_DEPTH 3 /* Number of / in root mount */
 #define ZIPFS_VOLUME_LEN  9
 #define ZIPFS_APP_MOUNT	  ZIPFS_VOLUME "app"
 #define ZIPFS_ZIP_MOUNT	  ZIPFS_VOLUME "lib/tcl"
@@ -213,7 +213,6 @@ typedef struct ZipFile {
 
 /*
  * In-core description of file contained in mounted ZIP archive.
- * ZIP_ATTR_
  */
 
 typedef struct ZipEntry {
@@ -231,8 +230,9 @@ typedef struct ZipEntry {
     int timestamp;		/* Modification time */
     int isEncrypted;		/* True if data is encrypted */
     int flags;
-#define ZE_F_CRC_COMPARED  0x1  /* If 1, the CRC has been compared. */
-#define ZE_F_CRC_CORRECT   0x2  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
+#define ZE_F_CRC_COMPARED  0x00000001  /* If 1, the CRC has been compared. */
+#define ZE_F_CRC_CORRECT   0x00000002  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
+#define ZE_F_VOLUME        0x00000004  /* Entry corresponds to //zipfs:/ */
     unsigned char *data;	/* File data if written */
     struct ZipEntry *next;	/* Next file in the same archive */
     struct ZipEntry *tnext;	/* Next top-level dir in archive */
@@ -449,6 +449,27 @@ static Tcl_ChannelType ZipChannelType = {
 
 #define ERROR_LENGTH	((size_t) -1)
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclIsZipfsPath --
+ *
+ *    Checks if the passed path has a zipfs volume prefix.
+ *
+ * Results:
+ *    0 if not a zipfs path
+ *    else the length of the zipfs volume prefix
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+int TclIsZipfsPath (const char *path)
+{
+    return strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) ? 0 : ZIPFS_VOLUME_LEN;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -1276,7 +1297,7 @@ ZipFSFindTOC(
      * (2) cdirZipOffset + cdirSize <= eocdDataOffset. Else the CD will be overlapping
      * the EOCD. Note this automatically means cdirZipOffset+cdirSize < zf->length.
      */
-    if (!(cdirZipOffset <= eocdDataOffset &&
+    if (!(cdirZipOffset <= (size_t)eocdDataOffset &&
 	  cdirSize <= eocdDataOffset - cdirZipOffset)) {
 	if (!needZip) {
 	    /* Simply point to end od data */
@@ -1680,9 +1701,8 @@ ZipFSCatalogFilesystem(
     Tcl_DStringInit(&dsm);
     if (strcmp(mountPoint, "/") == 0) {
 	mountPoint = "";
-    } else {
-	mountPoint = CanonicalPath("", mountPoint, &dsm, 1);
     }
+    mountPoint = CanonicalPath("", mountPoint, &dsm, 1);
     hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, mountPoint, &isNew);
     if (!isNew) {
 	if (interp) {
@@ -1728,11 +1748,15 @@ ZipFSCatalogFilesystem(
 	    Tcl_SetHashValue(hPtr, z);
 
 	    z->depth = CountSlashes(mountPoint);
+	    assert(z->depth >= ZIPFS_ROOTDIR_DEPTH);
 	    z->zipFilePtr = zf;
 	    z->isDirectory = (zf->baseOffset == 0) ? 1 : -1; /* root marker */
 	    z->offset = zf->baseOffset;
 	    z->compressMethod = ZIP_COMPMETH_STORED;
 	    z->name = (char *) Tcl_GetHashKey(&ZipFS.fileHash, hPtr);
+	    if (!strcmp(z->name, ZIPFS_VOLUME)) {
+		z->flags |= ZE_F_VOLUME; /* Mark as root volume */
+	    }
 	    z->next = zf->entries;
 	    zf->entries = z;
 	}
@@ -1816,6 +1840,7 @@ ZipFSCatalogFilesystem(
 	fullpath = CanonicalPath(mountPoint, path, &fpBuf, 1);
 	z = AllocateZipEntry();
 	z->depth = CountSlashes(fullpath);
+	assert(z->depth >= ZIPFS_ROOTDIR_DEPTH);
 	z->zipFilePtr = zf;
 	z->isDirectory = isdir;
 	z->isEncrypted =
@@ -1853,7 +1878,7 @@ ZipFSCatalogFilesystem(
 	z->name = (char *) Tcl_GetHashKey(&ZipFS.fileHash, hPtr);
 	z->next = zf->entries;
 	zf->entries = z;
-	if (isdir && (mountPoint[0] == '\0') && (z->depth == 1)) {
+	if (isdir && (mountPoint[0] == '\0') && (z->depth == ZIPFS_ROOTDIR_DEPTH)) {
 	    z->tnext = zf->topEnts;
 	    zf->topEnts = z;
 	}
@@ -1863,7 +1888,7 @@ ZipFSCatalogFilesystem(
 	 * containing directory nodes.
 	 */
 
-	if (!z->isDirectory && (z->depth > 1)) {
+	if (!z->isDirectory && (z->depth > ZIPFS_ROOTDIR_DEPTH)) {
 	    char *dir, *endPtr;
 	    ZipEntry *zd;
 
@@ -1884,6 +1909,7 @@ ZipFSCatalogFilesystem(
 
 		zd = AllocateZipEntry();
 		zd->depth = CountSlashes(dir);
+		assert(zd->depth > ZIPFS_ROOTDIR_DEPTH);
 		zd->zipFilePtr = zf;
 		zd->isDirectory = 1;
 		zd->offset = z->offset;
@@ -1893,7 +1919,7 @@ ZipFSCatalogFilesystem(
 		zd->name = (char *) Tcl_GetHashKey(&ZipFS.fileHash, hPtr);
 		zd->next = zf->entries;
 		zf->entries = zd;
-		if ((mountPoint[0] == '\0') && (zd->depth == 1)) {
+		if ((mountPoint[0] == '\0') && (zd->depth == ZIPFS_ROOTDIR_DEPTH)) {
 		    zd->tnext = zf->topEnts;
 		    zf->topEnts = zd;
 		}
@@ -5250,7 +5276,9 @@ ZipFSMatchInDirectoryProc(
 		|| (!dirOnly && z->isDirectory))) {
 	    continue;
 	}
-	if ((z->depth == scnt) && Tcl_StringCaseMatch(z->name, pat, 0)) {
+	if ((z->depth == scnt) &&
+	    ((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
+	    && Tcl_StringCaseMatch(z->name, pat, 0)) {
 	    AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
 	}
     }
@@ -6132,6 +6160,11 @@ Tcl_Obj *
 TclZipfs_TclLibrary(void)
 {
     return NULL;
+}
+
+int TclIsZipfsPath (const char *path)
+{
+    return 0;
 }
 
 #endif /* !HAVE_ZLIB */

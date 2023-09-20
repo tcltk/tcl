@@ -1112,7 +1112,7 @@ typedef struct Tcl_DString {
 
 #define TCL_LEAVE_ERR_MSG	 0x200
 #define TCL_TRACE_ARRAY		 0x800
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
 /* Required to support old variable/vdelete/vinfo traces. */
 #define TCL_TRACE_OLD_STYLE	 0x1000
 #endif

@@ -2710,6 +2710,12 @@ test binary-72.28 {binary encode base64} -body {
 test binary-72.29 {binary encode base64} {
     string length [binary encode base64 -maxlen 3 -wrapchar \xCA abc]
 } 5
+test binary-72.30 {binary encode base64} {
+    string length [binary encode base64 -maxlen 4294967296 abc]
+} 4
+test binary-72.31 {binary encode base64} -body {
+    string length [binary encode base64 -maxlen 18446744073709551616 abc]
+} -returnCodes 1 -result {integer value too large to represent}
 
 test binary-73.1 {binary decode base64} -body {
     binary decode base64
