@@ -24,7 +24,6 @@ source [file join [file dirname [info script]] tcltests.tcl]
 testConstraint testobj [llength [info commands testobj]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testdstring [llength [info commands testdstring]]
-testConstraint tip389 [expr {[string length \U010000] == 2}]
 
 test stringObj-1.1 {string type registration} {testobj deprecated} {
     set t [testobj types]
@@ -455,19 +454,19 @@ test stringObj-15.4 {Tcl_Append*ToObj: self appends} testobj {
     teststringobj set 1 foo
     teststringobj appendself 1 3
 } foo
-test stringObj-15.5 {Tcl_Append*ToObj: self appends} {testobj tip389 deprecated} {
+test stringObj-15.5 {Tcl_Append*ToObj: self appends} {testobj knownBug deprecated} {
     teststringobj set 1 foo
     teststringobj appendself2 1 0
 } foofoo
-test stringObj-15.6 {Tcl_Append*ToObj: self appends} {testobj tip389 deprecated} {
+test stringObj-15.6 {Tcl_Append*ToObj: self appends} {testobj knownBug deprecated} {
     teststringobj set 1 foo
     teststringobj appendself2 1 1
 } foooo
-test stringObj-15.7 {Tcl_Append*ToObj: self appends} {testobj tip389 deprecated} {
+test stringObj-15.7 {Tcl_Append*ToObj: self appends} {testobj knownBug deprecated} {
     teststringobj set 1 foo
     teststringobj appendself2 1 2
 } fooo
-test stringObj-15.8 {Tcl_Append*ToObj: self appends} {testobj tip389 deprecated} {
+test stringObj-15.8 {Tcl_Append*ToObj: self appends} {testobj deprecated} {
     teststringobj set 1 foo
     teststringobj appendself2 1 3
 } foo
