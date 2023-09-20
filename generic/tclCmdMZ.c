@@ -2402,7 +2402,7 @@ StringRplcCmd(
 	return TCL_ERROR;
     }
 
-    end = Tcl_GetCharLength(objv[1]) - 1;
+    end = TclGetCharLength(objv[1]) - 1;
 
     if (TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK ||
 	    TclGetIntForIndexM(interp, objv[3], end, &last) != TCL_OK) {

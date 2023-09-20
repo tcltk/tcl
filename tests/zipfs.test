@@ -459,7 +459,7 @@ namespace eval test_ns_zipfs {
     # Generates tests for file, file on root, memory buffer cases for an archive
     proc testmount {id zippath checkPath mountpoint args} {
         set zippath [zippath $zippath]
-        test zipfs-mount-$id $id -body {
+        test zipfs-mount-$id "zipfs mount $id" -body {
             mount $zippath $mountpoint
             set canon [zipfs canonical $mountpoint]
             list [file exists [file join $canon $checkPath]] \
@@ -469,7 +469,7 @@ namespace eval test_ns_zipfs {
         } -result [list 1 $zippath] {*}$args
 
         # Mount memory buffer
-        test zipfs-mount_data-$id $id -body {
+        test zipfs-mount_data-$id "zipfs mount_data $id" -body {
             zipfs mount_data [readbin $zippath] $mountpoint
             set canon [zipfs canonical $mountpoint]
             list [file exists [file join $canon $checkPath]] \
@@ -497,8 +497,9 @@ namespace eval test_ns_zipfs {
     testmount basic             test.zip           testdir/test2 $defaultMountPoint
     testmount basic-on-default  test.zip           testdir/test2 ""
     testmount basic-on-root     test.zip           testdir/test2 [zipfs root]
-    # TODO - testmount basic-on-slash    test.zip           testdir/test2 /
+    testmount basic-on-slash    test.zip           testdir/test2 /
     testmount basic-on-relative test.zip           testdir/test2 testmount
+    testmount basic-on-absolute test.zip           testdir/test2 /testmount
     testmount zip-at-end        junk-at-start.zip  testdir/test2 $defaultMountPoint
     testmount zip-at-start      junk-at-end.zip    testdir/test2 $defaultMountPoint
     testmount zip-in-zip [file join [zipfs root] test2 test.zip] testdir/test2 $defaultMountPoint -setup {
@@ -686,7 +687,7 @@ namespace eval test_ns_zipfs {
             file join [zipfs root] $path
         }]
         set resultpaths [lsort $resultpaths]
-        test zipfs-list-$id $id -body {
+        test zipfs-list-$id "zipfs list $id" -body {
             lsort [zipfs list {*}$cmdargs]
         } -setup {
             foreach {zippath mountpoint} $mounts {
@@ -697,7 +698,7 @@ namespace eval test_ns_zipfs {
         } -result $resultpaths {*}$args
 
         # Mount memory buffer
-        test zipfs-list-memory-$id $id -body {
+        test zipfs-list-memory-$id "zipfs list memory $id" -body {
             lsort [zipfs list {*}$cmdargs]
         } -setup {
             foreach {zippath mountpoint} $mounts {
@@ -710,7 +711,9 @@ namespace eval test_ns_zipfs {
     # Some tests have !zipfslib constraint because otherwise they dump the entire Tcl library which is mounted on root
     testzipfslist no-mounts "" {} {} -constraints !zipfslib
     testzipfslist no-pattern "" {test.zip testmountA} {testmountA testmountA/test testmountA/testdir testmountA/testdir/test2} -constraints !zipfslib
-    testzipfslist no-pattern-mount-on-root "" {test.zip {}} {{} test testdir testdir/test2} -constraints bug-d056ee6d30
+    testzipfslist no-pattern-mount-on-empty "" {test.zip {}} {{} test testdir testdir/test2} -constraints !zipfslib
+    testzipfslist no-pattern-mount-on-root "" [list test.zip [zipfs root]] {{} test testdir testdir/test2} -constraints !zipfslib
+    testzipfslist no-pattern-mount-on-slash "" [list test.zip /] {{} test testdir testdir/test2} -constraints !zipfslib
     testzipfslist no-pattern-multiple "" {test.zip testmountA test.zip testmountB/subdir} {
         testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
         testmountB/subdir testmountB/subdir/test testmountB/subdir/testdir testmountB/subdir/testdir/test2
@@ -734,7 +737,7 @@ namespace eval test_ns_zipfs {
 
     # Generates tests for zipfs exists
     proc testzipfsexists {id path result args} {
-        test zipfs-exists-$id $id -body {
+        test zipfs-exists-$id "zipfs exists $id" -body {
             zipfs exists $path
         } -setup {
             mount [zippath test.zip]
@@ -775,12 +778,12 @@ namespace eval test_ns_zipfs {
             dict unset args -cleanup
         }
         set resultpaths [lsort $resultpaths]
-        test zipfs-find-$id $id -body {
+        test zipfs-find-$id "zipfs find $id" -body {
             lsort [zipfs find $findtarget]
         } -setup $setup -cleanup $cleanup -result $resultpaths {*}$args
 
         # Mount memory buffer
-        test zipfs-find-memory-$id $id -body {
+        test zipfs-find-memory-$id "zipfs find memory $id" -body {
             lsort [zipfs find $findtarget]
         } -setup $memory_setup -cleanup $cleanup -result $resultpaths {*}$args
     }
@@ -804,6 +807,13 @@ namespace eval test_ns_zipfs {
     } -cleanup {
         cd $cwd
     }
+
+    # bug-6183f535c8
+    testzipfsfind root-path   [zipfs root] {
+        test.zip {} test.zip testmountB/subdir
+    } [lmap path {
+        test testdir testdir/test2
+    } {file join [zipfs root] $path}] -constraints !zipfslib
 
     test zipfs-find-native-absolute "zipfs find on native file system" -setup {
         set dir [makeDirectory zipfs-native-absolute]
@@ -833,11 +843,6 @@ namespace eval test_ns_zipfs {
         zipfs find [file tail $dir]
     } -result {zipfs-native-relative/subdir zipfs-native-relative/subdir/native}
 
-    testzipfsfind bug-6183f535c8   [zipfs root] {
-        test.zip {} test.zip testmountB/subdir
-    } [lmap path {
-        test testdir testdir/test2
-    } {file join [zipfs root] $path}] -constraints bug-6183f535c8
 
     #
     # zipfs info
@@ -925,7 +930,7 @@ namespace eval test_ns_zipfs {
     proc testuncompress {id zippath result {filename abac-repeat.txt} args} {
         variable defaultMountPoint
         set zippath [zippath $zippath]
-        test zipfs-uncompress-$id $id -setup {
+        test zipfs-uncompress-$id "zipfs uncompress $id" -setup {
             unset -nocomplain fd
             zipfs mount $zippath $defaultMountPoint
         } -cleanup {
@@ -950,7 +955,7 @@ namespace eval test_ns_zipfs {
     proc testpassword {id filename password result args} {
         variable defaultMountPoint
         set zippath [zippath test-password.zip]
-        test zipfs-password-read-$id $id -setup {
+        test zipfs-password-read-$id "zipfs password read $id" -setup {
             unset -nocomplain fd
             if {$password ne ""} {
                 zipfs mount $zippath $defaultMountPoint $password
@@ -983,7 +988,7 @@ namespace eval test_ns_zipfs {
     proc testcrc {id zippath filename result args} {
         variable defaultMountPoint
         set zippath [zippath $zippath]
-        test zipfs-crc-$id $id -setup {
+        test zipfs-crc-$id "zipfs crc $id" -setup {
             unset -nocomplain fd
             zipfs mount $zippath $defaultMountPoint
         } -cleanup {
@@ -997,7 +1002,7 @@ namespace eval test_ns_zipfs {
         } -result $result -returnCodes error {*}$args
 
         # Mount memory buffer
-        test zipfs-crc-memory-$id $id -setup {
+        test zipfs-crc-memory-$id "zipfs crc memory $id" -setup {
             zipfs mount_data [readbin [zippath $zippath]] $defaultMountPoint
         } -cleanup {
             cleanup
@@ -1051,7 +1056,8 @@ namespace eval test_ns_zipfs {
         mount [zippath test.zip]
     } -cleanup cleanup -body {
         lsort -stride 2 [file stat [file join $defaultMountPoint test]]
-    } -result [fixupstat {atime {2003-10-06 15:46:42} ctime {2003-10-06 15:46:42} dev 0 gid 0 ino 0 mode 33133 mtime {2003-10-06 15:46:42} nlink 0 size 5 type file uid 0}]
+    } -result [fixupstat {atime {2003-10-06 15:46:42} ctime {2003-10-06 15:46:42} dev 0 gid 0 ino 0 mode 33133 mtime {2003-10-06 15:46:42} nlink 0 size
+        5 type file uid 0}]
 
     test zipfs-file-stat-dir "Read stat of dir" -setup {
         mount [zippath test.zip]
@@ -1078,13 +1084,89 @@ namespace eval test_ns_zipfs {
     } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
 
     #
-    # TODO - glob of zipfs file
+    # glob of zipfs file
+    proc testzipfsglob {id mountpoint pat result {globopt {}} args} {
+        test zipfs-glob-$id "zipfs glob $id" -setup {
+            mount [zippath test.zip] $mountpoint
+        } -cleanup {
+            cleanup
+        } -body {
+            lsort [glob {*}$globopt $pat]
+        } -result $result {*}$args
+    }
+    # Bug 14db54d81e
+    testzipfsglob root-dir [zipfs root] * {//zipfs:/test //zipfs:/testdir} [list -dir [zipfs root]] -constraints !zipfslib
+    testzipfsglob root [zipfs root] [file join [zipfs root] *] {//zipfs:/test //zipfs:/testdir} {} -constraints !zipfslib
+    testzipfsglob pattern $defaultMountPoint [file join $defaultMountPoint testdir t*] \
+        [file join $defaultMountPoint testdir test2]
+    testzipfsglob files $defaultMountPoint [file join $defaultMountPoint t*] \
+        [list [file join $defaultMountPoint test]] {-type f}
+    testzipfsglob dirs $defaultMountPoint [file join $defaultMountPoint t*] \
+        [list [file join $defaultMountPoint testdir]] {-type d}
+    testzipfsglob no-match $defaultMountPoint [file join $defaultMountPoint testdir x*] \
+        {no files matched glob pattern "//zipfs:/testmount/testdir/x*"} {} -returnCodes error
+    testzipfsglob no-match-nocomplain $defaultMountPoint [file join $defaultMountPoint testdir x*] {} {-nocomplain}
+    testzipfsglob mountpoint $defaultMountPoint [file join [zipfs root] *] \
+        [list $defaultMountPoint] {} -constraints !zipfslib
 
     # TODO tests for compress and save, + with password
 
     #
     # TODO - file copy, file rename etc.
 
+    #
+    # file normalize
+    proc testzipfsnormalize {id path result {dir {}}} {
+        if {$dir eq ""} {
+            test zipfs-file-normalize-$id "zipfs file normalize $id" -body {
+                file normalize $path
+            } -result $result
+        } else {
+            test zipfs-file-normalize-$id "zipfs file normalize $id" -setup {
+                set cwd [pwd]
+                mount [zippath test.zip] [zipfs root]
+                cd $dir
+            } -cleanup {
+                cd $cwd
+                cleanup
+            } -body {
+                file normalize $path
+            } -result $result
+        }
+    }
+    # The parsing requires all these cases for various code paths
+    # in particular, root, one below root and more than one below root
+    testzipfsnormalize dot-1  [zipfs root] [zipfs root]
+    testzipfsnormalize dot-2  [file join [zipfs root] .]        [zipfs root]
+    testzipfsnormalize dot-3  [file join [zipfs root] . .]      [zipfs root]
+    testzipfsnormalize dot-4  [file join [zipfs root] a .]      [file join [zipfs root] a]
+    testzipfsnormalize dot-5  [file join [zipfs root] a . . .]  [file join [zipfs root] a]
+    testzipfsnormalize dot-6  [file join [zipfs root] a b .]    [file join [zipfs root] a b]
+    testzipfsnormalize dot-7  [file join [zipfs root] a b . .]  [file join [zipfs root] a b]
+
+    testzipfsnormalize dotdot-1  [file join [zipfs root] ..]              [zipfs root]
+    testzipfsnormalize dotdot-2  [file join [zipfs root] .. ..]           [zipfs root]
+    testzipfsnormalize dotdot-3  [file join [zipfs root] a ..]            [zipfs root]
+    testzipfsnormalize dotdot-4  [file join [zipfs root] a .. .. ..]      [zipfs root]
+    testzipfsnormalize dotdot-5  [file join [zipfs root] a b ..]          [file join [zipfs root] a]
+    testzipfsnormalize dotdot-6  [file join [zipfs root] a b ..]          [file join [zipfs root] a]
+    testzipfsnormalize dotdot-7  [file join [zipfs root] a b .. ..]       [zipfs root]
+    testzipfsnormalize dotdot-8  [file join [zipfs root] a b .. .. .. ..] [zipfs root]
+
+    testzipfsnormalize relative-1  a               [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-2  .               [zipfs root]                       [zipfs root]
+    testzipfsnormalize relative-3  ./              [zipfs root]                       [zipfs root]
+    testzipfsnormalize relative-4  ./a             [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-5  ../             [file join [zipfs root]]           [zipfs root]
+    testzipfsnormalize relative-6  ../a            [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-7  ../a/           [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-8  ../..           [zipfs root]                       [zipfs root]
+    testzipfsnormalize relative-9  dir/a           [file join [zipfs root] dir a]     [zipfs root]
+    testzipfsnormalize relative-10  dir/dirb/..    [file join [zipfs root] dir]       [zipfs root]
+    testzipfsnormalize relative-11  dir/../a       [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-12  dir/../a/      [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-13  dir/../../../a [file join [zipfs root] a]         [zipfs root]
+    testzipfsnormalize relative-14  a              [file join [zipfs root] testdir a] [file join [zipfs root] testdir]
 
     # TODO - mkkey, mkimg, mkzip, lmkimg, lmkzip
     testnumargs "zipfs mkkey" "password" "" -constraints zipfs
