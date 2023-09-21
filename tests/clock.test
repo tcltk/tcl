@@ -18605,10 +18605,10 @@ test clock-7.10 {Julian Day, negative amount} {
     # add negative amounts to Julian day 0 instead
     set s0 [clock scan 0 -format %J -gmt true]
     set J0 [scan [clock format $s0 -format %J -gmt true] %lld]
-    set s0m1d [clock add $s0 -1 days]
-    set s0m24h [clock add $s0 -24 hours]
+    set s0m1d [clock add $s0 -1 days -timezone :UTC]
+    set s0m24h [clock add $s0 -24 hours -timezone :UTC]
     set J0m24h [scan [clock format $s0m24h -format %J -gmt true] %lld]
-    set s0m1s [clock add $s0 -1 seconds]
+    set s0m1s [clock add $s0 -1 seconds -timezone :UTC]
     set J0m1s [scan [clock format $s0m1s -format %J -gmt true] %lld]
     list $s0m1d $s0m24h $J0m24h $s0m1s $J0m1s $s0 $J0 \
 	[::tcl::mathop::== $s0m1d $s0m24h] [::tcl::mathop::== $J0m24h $J0m1s]
