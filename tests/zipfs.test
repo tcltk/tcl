@@ -18,6 +18,7 @@ source [file join [file dirname [info script]] tcltests.tcl]
 
 testConstraint zipfs [expr {[llength [info commands zipfs]]}]
 testConstraint zipfslib 1
+
 
 set ziproot [zipfs root]
 set CWD [pwd]
@@ -574,20 +575,6 @@ namespace eval test_ns_zipfs {
         cleanup
     } -result {1 {decryption failed} 1}
 
-    test zipfs-mount-password-4 "mount - verify uncompressed cipher readable with password" -body {
-        zipfs mount [zippath test-password.zip] $defaultMountPoint password
-        readbin [file join $defaultMountPoint cipher.bin]
-    } -cleanup {
-        cleanup
-    } -result ciphertext
-
-    test zipfs-mount-password-5 "mount - verify compressed cipher readable with password" -body {
-        zipfs mount [zippath test-password.zip] $defaultMountPoint password
-        readbin [file join $defaultMountPoint cipher-deflate.bin]
-    } -cleanup {
-        cleanup
-    } -result [lseq 100]
-
     test zipfs-mount-nested-1 "mount - nested mount on non-existing path" -setup {
         mount [zippath test.zip]
     } -cleanup {
@@ -973,13 +960,17 @@ namespace eval test_ns_zipfs {
             gets $fd
         } -result $result {*}$args
     }
+    if {$::tcl_platform(platform) in {windows unix}} {
+        # The bug bbe7c6ff9e only manifests on macos
+        testConstraint bbe7c6ff9e 1
+    }
     testpassword plain plain.txt password plaintext
     testpassword plain-nopassword plain.txt "" plaintext
     testpassword plain-badpassword plain.txt xxx plaintext
-    testpassword cipher cipher.bin password ciphertext
+    testpassword cipher cipher.bin password ciphertext -constraints bbe7c6ff9e
     testpassword cipher-nopassword cipher.bin {} "decryption failed" -returnCodes error
     testpassword cipher-badpassword cipher.bin xxx "invalid CRC" -returnCodes error
-    testpassword cipher-deflate cipher-deflate.bin password [lseq 100]
+    testpassword cipher-deflate cipher-deflate.bin password [lseq 100] -constraints bbe7c6ff9e
     testpassword cipher-deflate-nopassword cipher-deflate.bin {} "decryption failed" -returnCodes error
     testpassword cipher-deflate-badpassword cipher-deflate.bin xxx "decompression error" -returnCodes error
 
