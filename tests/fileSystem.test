@@ -69,7 +69,7 @@ apply {{} {
 		    lappend drives $vol
 		}
 	    }
-	    testConstraint moreThanOneDrive [llength $drives]
+	    testConstraint moreThanOneDrive [expr {[llength $drives] > 1}]
 	} finally {
 	    cd $dir
 	}
