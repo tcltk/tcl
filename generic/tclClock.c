@@ -1724,7 +1724,7 @@ ThreadSafeLocalTime(
 	Tcl_MutexUnlock(&clockMutex);
 	return NULL;
     }
-    memcpy(tmPtr, localtime(timePtr), sizeof(struct tm));
+    memcpy(tmPtr, sysTmPtr, sizeof(struct tm));
     Tcl_MutexUnlock(&clockMutex);
 #endif
     return tmPtr;
