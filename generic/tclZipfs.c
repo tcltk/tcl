@@ -205,7 +205,7 @@ typedef struct ZipFile {
     struct ZipEntry *entries;	/* List of files in archive */
     struct ZipEntry *topEnts;	/* List of top-level dirs in archive */
     char *mountPoint;		/* Mount point name */
-    size_t mountPointLen;	/* Length of mount point name */
+    Tcl_Size mountPointLen;	/* Length of mount point name */
 #ifdef _WIN32
     HANDLE mountHandle;		/* Handle used for direct file access. */
 #endif /* _WIN32 */
@@ -307,13 +307,14 @@ static const char *zipfs_literal_tcl_library = NULL;
 
 static int		CopyImageFile(Tcl_Interp *interp, const char *imgName,
 			    Tcl_Channel out);
-static inline int	DescribeMounted(Tcl_Interp *interp,
+static int		DescribeMounted(Tcl_Interp *interp,
 			    const char *mountPoint);
 static int		InitReadableChannel(Tcl_Interp *interp,
 			    ZipChannel *info, ZipEntry *z);
 static int		InitWritableChannel(Tcl_Interp *interp,
 			    ZipChannel *info, ZipEntry *z, int trunc);
-static inline int	ListMountPoints(Tcl_Interp *interp);
+static int		ListMountPoints(Tcl_Interp *interp);
+static int		ContainsMountPoint(const char *path, int pathLen);
 static void		SerializeCentralDirectoryEntry(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
@@ -1075,6 +1076,123 @@ ZipFSLookupZip(
     return zf;
 }
 
+#ifdef NOTNEEDED
+/*
+ *------------------------------------------------------------------------
+ *
+ * ZipFSDirExists --
+ *
+ *    Checks if a given path is a directory in a zipfs mount. A directory
+ *    may be either a real directory in an archive or a prefix of a mount
+ *    path. For example, if an archive is mounted at //zipfs:/a/b/c then
+ *    //zipfs:/a and //zipfs:/a/b are treated as directories even though
+ *    there are no entries for it in the mounted archive.
+ *
+ *    Caller must hold lock before calling.
+ *
+ * Results:
+ *    Returns 1 if a real directory, -1 if a mount prefix, and 0 otherwise.
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+ZipFSDirExists(const char *path)
+{
+    Tcl_HashEntry *hPtr;
+    hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, path);
+    if (hPtr) {
+	ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
+	return z->isDirectory ? 1 : 0;
+    }
+
+    /*
+     * We have to do an exhaustive search. No other alternative with the
+     * current data structures. Still, this should be a rare case
+     */
+    for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
+	    hPtr; hPtr = Tcl_NextHashEntry(&search)) {
+	ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
+
+	if ((dirOnly >= 0) && ((dirOnly && !z->isDirectory)
+		|| (!dirOnly && z->isDirectory))) {
+	    continue;
+	}
+	if ((z->depth == scnt) &&
+	    ((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
+	    && Tcl_StringCaseMatch(z->name, pat, 0)) {
+	    AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
+	}
+    }
+}
+#endif
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * ContainsMountPoint --
+ *
+ *    Check if there is a mount point anywhere under the specified path.
+ *    Caller must hold read lock before calling.
+ *
+ * Results:
+ *    1 - there is at least one mount point under the path
+ *    0 - otherwise
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+ContainsMountPoint (const char *path, int pathLen)
+{
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+
+    if (ZipFS.zipHash.numEntries == 0) {
+	return 0;
+    }
+    if (pathLen < 0)
+	pathLen = strlen(path);
+
+    /*
+     * We are looking for the case where the path is //zipfs:/a/b
+     * and there is a mount point //zipfs:/a/b/c/.. below it
+     */
+    for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
+	 hPtr = Tcl_NextHashEntry(&search)) {
+	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+
+	if (zf->mountPointLen == 0) {
+	    /* 
+	     * Enumerate the contents of the ZIP; it's mounted on the root.
+	     * TODO - a holdover from androwish? Tcl does not allow mounting
+	     * outside of the //zipfs:/ area.
+	     */
+	    ZipEntry *z;
+
+	    for (z = zf->topEnts; z; z = z->tnext) {
+		int lenz = (int) strlen(z->name);
+		if ((lenz >= pathLen) &&
+		    (z->name[pathLen] == '/' || z->name[pathLen] == '\0') &&
+		    (strncmp(z->name, path, pathLen) == 0)) {
+		    return 1;
+		}
+	    }
+	} else if ((zf->mountPointLen >= pathLen) &&
+		 (zf->mountPoint[pathLen] == '/' ||
+		  zf->mountPoint[pathLen] == '\0') &&
+		 (strncmp(zf->mountPoint, path, pathLen) == 0)) {
+	    /* Matched standard mount */
+	    return 1;
+	}
+    }
+    return 0;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -1993,7 +2111,7 @@ ZipfsSetup(void)
  *-------------------------------------------------------------------------
  */
 
-static inline int
+static int
 ListMountPoints(
     Tcl_Interp *interp)
 {
@@ -2043,7 +2161,7 @@ ListMountPoints(
  *-------------------------------------------------------------------------
  */
 
-static inline int
+static int
 DescribeMounted(
     Tcl_Interp *interp,
     const char *mountPoint)
@@ -4976,17 +5094,23 @@ ZipEntryAccess(
     char *path,
     int mode)
 {
-    ZipEntry *z;
-
     if (mode & 3) {
 	return -1;
     }
+
     ReadLock();
-    z = ZipFSLookup(path);
+    int access;
+    ZipEntry *z = ZipFSLookup(path);
+    /* Could a real zip entry or an intermediate directory of a mount point */
+    if (z || ContainsMountPoint(path, -1)) {
+	access = 0;
+    } else {
+	access = -1;
+    }
     Unlock();
-    return (z ? 0 : -1);
+    return access;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -5321,9 +5445,10 @@ ZipFSMatchMountPoints(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int l, normLength;
+    int l;
+    Tcl_Size normLength;
     const char *path = TclGetStringFromObj(normPathPtr, &normLength);
-    size_t len = (size_t) normLength;
+    Tcl_Size len = (size_t) normLength;
 
     if (len < 1) {
 	/*
@@ -5351,10 +5476,12 @@ ZipFSMatchMountPoints(
 
 	    /*
 	     * Enumerate the contents of the ZIP; it's mounted on the root.
+	     * TODO - a holdover from androwish? Tcl does not allow mounting
+	     * outside of the //zipfs:/ area.
 	     */
 
 	    for (z = zf->topEnts; z; z = z->tnext) {
-		size_t lenz = strlen(z->name);
+		Tcl_Size lenz = strlen(z->name);
 
 		if ((lenz > len + 1) && (strncmp(z->name, path, len) == 0)
 			&& (z->name[len] == '/')
@@ -5402,7 +5529,6 @@ ZipFSPathInFilesystemProc(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int ret = -1;
     Tcl_Size len;
     char *path;
 
@@ -5411,39 +5537,84 @@ ZipFSPathInFilesystemProc(
 	return -1;
     }
     path = TclGetStringFromObj(pathPtr, &len);
+    /*
+     * TODO - why not make ZIPFS_VOLUME both necessary AND sufficient? 
+     * Currently we only claim ownership if there is an actual matching mount.
+     */
     if (strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) != 0) {
 	return -1;
     }
 
+    int ret = TCL_OK;
+
     ReadLock();
     hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, path);
     if (hPtr) {
-	ret = TCL_OK;
 	goto endloop;
     }
+
+    /*
+     * Not in hash table but still could be owned by zipfs in two other cases:
+     * Assuming there is a mount point //zipfs:/a/b/c,
+     *  1. The path is under the mount point, e.g. //zipfs:/a/b/c/f but that
+     *     file does not exist.
+     *  2. The path is an intermediate directory in a mount point, e.g.
+     *     //zipfs:/a/b
+     */
 
     for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 
 	if (zf->mountPointLen == 0) {
+	    /* 
+	     * Mounted on the root (/)
+	     * TODO - a holdover from androwish? Tcl does not allow mounting
+	     * outside of the //zipfs:/ area.
+	     */
 	    ZipEntry *z;
 
 	    for (z = zf->topEnts; z != NULL; z = z->tnext) {
-		size_t lenz = strlen(z->name);
+		if (strncmp(path, z->name, len) == 0) {
+		    int lenz = (int)strlen(z->name);
+		    if (len == lenz) {
+			/* Would have been in hash table? But nm ... */
+			goto endloop;
+		    } else if (len > lenz) {
+			/* Case 1 above */
+			if (path[lenz] == '/') {
+			    goto endloop;
+			}
+		    } else { /* len < lenz */
+			/* Case 2 above */
+			if (z->name[len] == '/') {
+			    goto endloop;
+			}
+		    }
+		}
 
-		if (((size_t) len >= lenz) &&
-			(strncmp(path, z->name, lenz) == 0)) {
-		    ret = TCL_OK;
+	    }
+	} else {
+	    /* Not mounted on root - the norm in Tcl core */
+
+	    /* Lengths are known so check them before strnmp for efficiency*/
+	    if (len == zf->mountPointLen) {
+		goto endloop;
+	    } else if (len > zf->mountPointLen) {
+		/* Case 1 above */
+		if (path[zf->mountPointLen] == '/' &&
+		strncmp(path, zf->mountPoint, zf->mountPointLen) == 0) {
+		    goto endloop;
+		}
+	    } else { /* len < zf->mountPointLen */
+		if (zf->mountPoint[len] == '/' &&
+		strncmp(path, zf->mountPoint, len) == 0) {
 		    goto endloop;
 		}
 	    }
-	} else if (((size_t) len >= zf->mountPointLen) &&
-		(strncmp(path, zf->mountPoint, zf->mountPointLen) == 0)) {
-	    ret = TCL_OK;
-	    break;
 	}
     }
+    ret = -1; /* Not our file */
 
   endloop:
     Unlock();
