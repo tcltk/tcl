@@ -1076,65 +1076,16 @@ ZipFSLookupZip(
     return zf;
 }
 
-#ifdef NOTNEEDED
-/*
- *------------------------------------------------------------------------
- *
- * ZipFSDirExists --
- *
- *    Checks if a given path is a directory in a zipfs mount. A directory
- *    may be either a real directory in an archive or a prefix of a mount
- *    path. For example, if an archive is mounted at //zipfs:/a/b/c then
- *    //zipfs:/a and //zipfs:/a/b are treated as directories even though
- *    there are no entries for it in the mounted archive.
- *
- *    Caller must hold lock before calling.
- *
- * Results:
- *    Returns 1 if a real directory, -1 if a mount prefix, and 0 otherwise.
- *
- * Side effects:
- *    None.
- *
- *------------------------------------------------------------------------
- */
-static int
-ZipFSDirExists(const char *path)
-{
-    Tcl_HashEntry *hPtr;
-    hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, path);
-    if (hPtr) {
-	ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
-	return z->isDirectory ? 1 : 0;
-    }
-
-    /*
-     * We have to do an exhaustive search. No other alternative with the
-     * current data structures. Still, this should be a rare case
-     */
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
-	    hPtr; hPtr = Tcl_NextHashEntry(&search)) {
-	ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
-
-	if ((dirOnly >= 0) && ((dirOnly && !z->isDirectory)
-		|| (!dirOnly && z->isDirectory))) {
-	    continue;
-	}
-	if ((z->depth == scnt) &&
-	    ((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
-	    && Tcl_StringCaseMatch(z->name, pat, 0)) {
-	    AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
-	}
-    }
-}
-#endif
-
 /*
  *------------------------------------------------------------------------
  *
  * ContainsMountPoint --
  *
  *    Check if there is a mount point anywhere under the specified path.
+ *    Although the function will work for any path, for efficiency reasons
+ *    it should be called only after checking ZipFSLookup does not find
+ *    the path.
+ *
  *    Caller must hold read lock before calling.
  *
  * Results:
@@ -1184,7 +1135,8 @@ ContainsMountPoint (const char *path, int pathLen)
 	    }
 	} else if ((zf->mountPointLen >= pathLen) &&
 		 (zf->mountPoint[pathLen] == '/' ||
-		  zf->mountPoint[pathLen] == '\0') &&
+		  zf->mountPoint[pathLen] == '\0' ||
+		  pathLen == ZIPFS_VOLUME_LEN) &&
 		 (strncmp(zf->mountPoint, path, pathLen) == 0)) {
 	    /* Matched standard mount */
 	    return 1;
@@ -5067,6 +5019,11 @@ ZipEntryStat(
 	buf->st_ctime = z->timestamp;
 	buf->st_atime = z->timestamp;
 	ret = 0;
+    } else if (ContainsMountPoint(path, -1)) {
+	/* An intermediate dir under which a mount exists */
+	memset(buf, 0, sizeof(Tcl_StatBuf));
+	buf->st_mode = S_IFDIR | 0555;
+	ret = 0;
     }
     Unlock();
     return ret;
@@ -5365,10 +5322,10 @@ ZipFSMatchInDirectoryProc(
 
     if (!pattern || (pattern[0] == '\0')) {
 	ZipEntry *z = ZipFSLookup(path);
-
-	if (z && ((dirOnly < 0) || (!dirOnly && !z->isDirectory)
-		|| (dirOnly && z->isDirectory))) {
-	    AppendWithPrefix(result, prefixBuf, z->name, -1);
+	__debugbreak();
+	if (z && ((dirOnly < 0) || (!dirOnly && !z->isDirectory) ||
+		  (dirOnly && z->isDirectory))) {
+	    AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
 	}
 	goto end;
     }
@@ -5539,10 +5496,13 @@ ZipFSPathInFilesystemProc(
     path = TclGetStringFromObj(pathPtr, &len);
     /*
      * TODO - why not make ZIPFS_VOLUME both necessary AND sufficient? 
-     * Currently we only claim ownership if there is an actual matching mount.
+     * Currently we only claim ownership if there is a matching mount.
      */
     if (strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) != 0) {
 	return -1;
+    } else if (len == ZIPFS_VOLUME_LEN && ZipFS.zipHash.numEntries != 0) {
+	/* zipfs root and at least one entry */
+	return TCL_OK;
     }
 
     int ret = TCL_OK;
@@ -5598,7 +5558,9 @@ ZipFSPathInFilesystemProc(
 	    /* Not mounted on root - the norm in Tcl core */
 
 	    /* Lengths are known so check them before strnmp for efficiency*/
+	    assert(len != ZIPFS_VOLUME_LEN); /* Else already handled at top */
 	    if (len == zf->mountPointLen) {
+		/* A non-root or root mount. */
 		goto endloop;
 	    } else if (len > zf->mountPointLen) {
 		/* Case 1 above */
