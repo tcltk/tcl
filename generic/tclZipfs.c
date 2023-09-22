@@ -5315,19 +5315,31 @@ ZipFSMatchInDirectoryProc(
 	goto end;
     }
 
-    /*
-     * Can we skip the complexity of actual globbing? Without a pattern, yes;
-     * it's a directory existence test.
-     */
-
-    if (!pattern || (pattern[0] == '\0')) {
-	ZipEntry *z = ZipFSLookup(path);
-	__debugbreak();
-	if (z && ((dirOnly < 0) || (!dirOnly && !z->isDirectory) ||
-		  (dirOnly && z->isDirectory))) {
-	    AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
+    /* Does the path exist in the hash table? */
+    ZipEntry *z = ZipFSLookup(path);
+    if (z) {
+	/*
+	 * Can we skip the complexity of actual globbing? Without a pattern,
+	 * yes; it's a directory existence test.
+	 */
+	if (!pattern || (pattern[0] == '\0')) {
+	    /* TODO - can't seem to get to this code from script for tests. */
+	    /* Follow logic of what tclUnixFile.c does */
+	    if ((dirOnly < 0) || (!dirOnly && !z->isDirectory) ||
+		(dirOnly && z->isDirectory)) {
+		Tcl_ListObjAppendElement(NULL, result, pathPtr);
+	    }
+	    goto end;
 	}
-	goto end;
+    } else {
+	/* Not in the hash table but could be an intermediate dir in a mount */
+	if (!pattern || (pattern[0] == '\0')) {
+	    /* TODO - can't seem to get to this code from script for tests. */
+	    if (dirOnly && ContainsMountPoint(path, len)) {
+		Tcl_ListObjAppendElement(NULL, result, pathPtr);
+	    }
+	    goto end;
+	}
     }
 
     /*
