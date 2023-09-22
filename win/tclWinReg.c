@@ -91,7 +91,7 @@ static DWORD lastType = REG_RESOURCE_LIST;
  */
 
 static void		AppendSystemError(Tcl_Interp *interp, DWORD error);
-static int		BroadcastValue(Tcl_Interp *interp, int objc,
+static int		BroadcastValue(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static DWORD		ConvertDWORD(DWORD type, DWORD value);
 static void		DeleteCmd(void *clientData);
@@ -1426,7 +1426,7 @@ SetValue(
 static int
 BroadcastValue(
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     LRESULT result;

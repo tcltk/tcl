@@ -1168,6 +1168,9 @@ TestcmdinfoObjCmd(
 	info.objClientData2 = NULL;
 	info.deleteProc = CmdDelProc2;
 	info.deleteData = (void *) "new_delete_data";
+	info.namespacePtr = NULL;
+	info.objProc2 = NULL;
+	info.objClientData2 = NULL;
 	if (Tcl_SetCommandInfo(interp, Tcl_GetString(objv[2]), &info) == 0) {
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
 	} else {
@@ -2052,7 +2055,7 @@ typedef int
 UtfTransformFn(Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr,
                char *dst, Tcl_Size dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
 static int UtfExtWrapper(
-    Tcl_Interp *interp, UtfTransformFn *transformer, int objc, Tcl_Obj *const objv[])
+    Tcl_Interp *interp, UtfTransformFn *transformer, TclSizeT objc, Tcl_Obj *const objv[])
 {
     Tcl_Encoding encoding;
     Tcl_EncodingState encState, *encStatePtr;

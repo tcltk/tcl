@@ -666,7 +666,7 @@ my_SetAbstractProc(int ptype)
 static Tcl_Obj *
 my_NewLStringObj(
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj * const objv[])
 {
     LString *lstringRepPtr;

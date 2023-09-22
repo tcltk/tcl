@@ -2515,7 +2515,7 @@ static inline void TclBounceRefCount(Tcl_Obj* objPtr, const char* fn, int line)
 #else
 #   undef Tcl_IncrRefCount
 #   define Tcl_IncrRefCount(objPtr) \
-	++(objPtr)->refCount
+	((void)++(objPtr)->refCount)
     /*
      * Use do/while0 idiom for optimum correctness without compiler warnings.
      * https://wiki.c2.com/?TrivialDoWhileLoop

@@ -421,7 +421,7 @@ TclInitEncodingCmd(
 static int
 EncodingConvertParseOptions (
     Tcl_Interp *interp,    /* For error messages. May be NULL */
-    int objc,		   /* Number of arguments */
+    Tcl_Size objc,		   /* Number of arguments */
     Tcl_Obj *const objv[], /* Argument objects as passed to command. */
     Tcl_Encoding *encPtr,  /* Where to store the encoding */
     Tcl_Obj **dataObjPtr,  /* Where to store ptr to Tcl_Obj containing data */

@@ -5154,7 +5154,7 @@ TEBCresume(
 		    toIdx = length;
 		}
 		if (toIdx >= fromIdx) {
-		    numToDelete = toIdx - fromIdx + 1;
+		    numToDelete = (size_t)toIdx - (size_t)fromIdx + 1;
 		}
 	    }
 	}
