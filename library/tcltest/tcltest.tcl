@@ -2365,6 +2365,7 @@ proc tcltest::Skipped {name constraints} {
 	# make sure that the constraints are satisfied.
 
 	set doTest 0
+        set constraints [string trim $constraints]
 	if {[string match {*[$\[]*} $constraints] != 0} {
 	    # full expression, e.g. {$foo > [info tclversion]}
 	    catch {set doTest [uplevel #0 [list expr $constraints]]}
