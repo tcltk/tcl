@@ -960,10 +960,8 @@ namespace eval test_ns_zipfs {
             gets $fd
         } -result $result {*}$args
     }
-    if {$::tcl_platform(platform) in {windows unix}} {
-        # The bug bbe7c6ff9e only manifests on macos
-        testConstraint bbe7c6ff9e 1
-    }
+    # The bug bbe7c6ff9e only manifests on macos
+    testConstraint bbe7c6ff9e [expr {$::tcl_platform(os) ne "Darwin"}]
     testpassword plain plain.txt password plaintext
     testpassword plain-nopassword plain.txt "" plaintext
     testpassword plain-badpassword plain.txt xxx plaintext
