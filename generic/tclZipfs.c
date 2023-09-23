@@ -4628,18 +4628,16 @@ InitWritableChannel(
 	 */
 
 	info->numBytes = 0;
+	z->crc32 = 0; /* Truncated, CRC no longer applicable */
     } else if (z->data) {
 	/*
 	 * Already got uncompressed data.
 	 */
+	if (z->numBytes > info->maxWrite)
+	    goto tooBigError;
 
-	unsigned int j = z->numBytes;
-
-	if (j > info->maxWrite) {
-	    j = info->maxWrite;
-	}
-	memcpy(info->ubuf, z->data, j);
-	info->numBytes = j;
+	memcpy(info->ubuf, z->data, z->numBytes);
+	info->numBytes = z->numBytes;
     } else {
 	/*
 	 * Need to uncompress the existing data.
@@ -4697,37 +4695,51 @@ InitWritableChannel(
 	    }
 	    err = inflate(&stream, Z_SYNC_FLUSH);
 	    inflateEnd(&stream);
-	    if ((err == Z_STREAM_END)
-		    || ((err == Z_OK) && (stream.avail_in == 0))) {
-		if (cbuf) {
-		    memset(info->keys, 0, sizeof(info->keys));
-		    ckfree(cbuf);
-		}
-		return TCL_OK;
+	    if ((err != Z_STREAM_END) &&
+		((err != Z_OK) || (stream.avail_in != 0))) {
+		goto corruptionError;
 	    }
-	    goto corruptionError;
+	    /* Even if decompression succeeded, counts should be as expected */
+	    if (stream.total_out != z->numBytes)
+		goto corruptionError;
+	    info->numBytes = z->numBytes;
+	    if (cbuf) {
+		ckfree(cbuf);
+	    }
 	} else if (z->isEncrypted) {
 	    /*
 	     * Need to decrypt some otherwise-simple stored data.
 	     */
-
-	    for (i = 0; i < z->numBytes - 12; i++) {
+	    if (z->numCompressedBytes <= 12 ||
+		(z->numCompressedBytes - 12) != z->numBytes)
+		goto corruptionError;
+	    int len = z->numCompressedBytes - 12;
+	    for (i = 0; i < len; i++) {
 		ch = zbuf[i];
 		info->ubuf[i] = zdecode(info->keys, crc32tab, ch);
 	    }
-	} else {
+	    info->numBytes = len;
+	}
+	else {
 	    /*
 	     * Simple stored data. Copy into our working buffer.
 	     */
-
 	    memcpy(info->ubuf, zbuf, z->numBytes);
+	    info->numBytes = z->numBytes;
 	}
 	memset(info->keys, 0, sizeof(info->keys));
     }
+
+    assert(info->numBytes == 0 || info->numBytes == z->numBytes);
     return TCL_OK;
 
   memoryError:
     ZIPFS_MEM_ERROR(interp);
+    goto error_cleanup;
+
+  tooBigError:
+    ZIPFS_ERROR(interp, "file size exceeds max writable");
+    ZIPFS_ERROR_CODE(interp, "TOOBIG");
     goto error_cleanup;
 
   corruptionError:
@@ -4857,6 +4869,9 @@ InitReadableChannel(
 		&& ((err != Z_OK) || (stream.avail_in != 0))) {
 	    goto corruptionError;
 	}
+	/* Even if decompression succeeded, counts should be as expected */
+	if (stream.total_out != z->numBytes)
+	    goto corruptionError;
 
 	if (ubuf) {
 	    info->isEncrypted = 0;
@@ -4871,7 +4886,8 @@ InitReadableChannel(
 	 * Decode encrypted but uncompressed file, since we support Tcl_Seek()
 	 * on it, and it can be randomly accessed later.
 	 */
-
+	if (z->numCompressedBytes <= 12 || (z->numCompressedBytes - 12) != z->numBytes)
+	    goto corruptionError;
 	len = z->numCompressedBytes - 12;
 	ubuf = (unsigned char *) attemptckalloc(len);
 	if (ubuf == NULL) {
@@ -5011,13 +5027,13 @@ ZipFSOpenFileChannelProc(
     int mode,
     TCL_UNUSED(int) /* permissions */)
 {
-    int trunc = (mode & O_TRUNC) != 0;
-    int wr = (mode & (O_WRONLY | O_RDWR)) != 0;
-
     pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (!pathPtr) {
 	return NULL;
     }
+
+    int trunc = (mode & O_TRUNC) != 0;
+    int wr = (mode & (O_WRONLY | O_RDWR)) != 0;
 
     /*
      * Check for unsupported modes.
@@ -5027,7 +5043,8 @@ ZipFSOpenFileChannelProc(
 	Tcl_SetErrno(EACCES);
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "write access not supported: %s",
+		    "%s not supported: %s",
+		    mode & O_APPEND ? "append mode" : "write access",
 		    Tcl_PosixError(interp)));
 	}
 	return NULL;
