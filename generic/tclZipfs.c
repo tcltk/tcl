@@ -4633,7 +4633,7 @@ InitWritableChannel(
 	/*
 	 * Already got uncompressed data.
 	 */
-	if (z->numBytes > info->maxWrite)
+	if (z->numBytes > (int) info->maxWrite)
 	    goto tooBigError;
 
 	memcpy(info->ubuf, z->data, z->numBytes);
@@ -4700,7 +4700,7 @@ InitWritableChannel(
 		goto corruptionError;
 	    }
 	    /* Even if decompression succeeded, counts should be as expected */
-	    if (stream.total_out != z->numBytes)
+	    if ((int) stream.total_out != z->numBytes)
 		goto corruptionError;
 	    info->numBytes = z->numBytes;
 	    if (cbuf) {
@@ -4730,7 +4730,7 @@ InitWritableChannel(
 	memset(info->keys, 0, sizeof(info->keys));
     }
 
-    assert(info->numBytes == 0 || info->numBytes == z->numBytes);
+    assert(info->numBytes == 0 || (int) info->numBytes == z->numBytes);
     return TCL_OK;
 
   memoryError:
@@ -4870,7 +4870,7 @@ InitReadableChannel(
 	    goto corruptionError;
 	}
 	/* Even if decompression succeeded, counts should be as expected */
-	if (stream.total_out != z->numBytes)
+	if ((int) stream.total_out != z->numBytes)
 	    goto corruptionError;
 
 	if (ubuf) {
