@@ -932,14 +932,14 @@ namespace eval test_ns_zipfs {
 
     #
     # Read/uncompress
-    proc testuncompress {id zippath result {filename abac-repeat.txt} {openopts {}} args} {
+    proc testzipfsread {id zippath result {filename abac-repeat.txt} {openopts {}} args} {
         variable defaultMountPoint
         set zippath [zippath $zippath]
-        test zipfs-uncompress-$id "zipfs uncompress $id" -setup {
+        test zipfs-read-$id "zipfs read $id" -setup {
             unset -nocomplain fd
             zipfs mount $zippath $defaultMountPoint
         } -cleanup {
-            # In case mount succeeded when it should not
+            # In case open succeeded when it should not
             if {[info exists fd]} {
                 close $fd
             }
@@ -948,24 +948,207 @@ namespace eval test_ns_zipfs {
             set fd [open [file join $defaultMountPoint $filename] {*}$openopts]
             gets $fd
         } -result $result {*}$args
+
+        set data [readbin $zippath]
+        test zipfs-read-memory-$id "zipfs read in-memory $id" -setup {
+            unset -nocomplain fd
+            zipfs mount_data $data $defaultMountPoint
+        } -cleanup {
+            # In case open succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body {
+            set fd [open [file join $defaultMountPoint $filename] {*}$openopts]
+            gets $fd
+        } -result $result {*}$args
+
     }
-    testuncompress stored  test.zip          test           test
-    testuncompress stored  teststored.zip    aaaaaaaaaaaaaa
-    testuncompress deflate testdeflated2.zip aaaaaaaaaaaaaa
+    testzipfsread stored  test.zip          test           test
+    testzipfsread stored  teststored.zip    aaaaaaaaaaaaaa
+    testzipfsread deflate testdeflated2.zip aaaaaaaaaaaaaa
     # Test open modes - see bug [4645658689]
-    testuncompress stored-rw  teststored.zip    aaaaaaaaaaaaaa abac-repeat.txt r+
-    testuncompress deflate-rw testdeflated2.zip aaaaaaaaaaaaaa abac-repeat.txt r+
-    testuncompress stored-wr  teststored.zip    {} abac-repeat.txt w+ -constraints bug-00018ec7a0
-    testuncompress deflate-wr testdeflated2.zip {} abac-repeat.txt w+ -constraints bug-00018ec7a0
-    testuncompress stored-ar  teststored.zip    {} abac-repeat.txt a+
-    testuncompress deflate-ar testdeflated2.zip {} abac-repeat.txt a+
+    testzipfsread stored-rw  teststored.zip    aaaaaaaaaaaaaa abac-repeat.txt r+
+    testzipfsread deflate-rw testdeflated2.zip aaaaaaaaaaaaaa abac-repeat.txt r+
+    testzipfsread stored-wr  teststored.zip    {} abac-repeat.txt w+ -constraints bug-00018ec7a0
+    testzipfsread deflate-wr testdeflated2.zip {} abac-repeat.txt w+ -constraints bug-00018ec7a0
+    testzipfsread stored-ar  teststored.zip    {} abac-repeat.txt a+
+    testzipfsread deflate-ar testdeflated2.zip {} abac-repeat.txt a+
 
-    testuncompress deflate-error broken.zip {decompression error} deflatezliberror {} -returnCodes error
-    testuncompress bzip2   testbzip2.zip {unsupported compression method} abac-repeat.txt {} -returnCodes error
-    testuncompress lzma    testfile-lzma.zip {unsupported compression method} abac-repeat.txt {} -returnCodes error
-    testuncompress xz      testfile-xz.zip {unsupported compression method} abac-repeat.txt {} -returnCodes error
-    testuncompress zstd    testfile-zstd.zip {unsupported compression method} abac-repeat.txt {} -returnCodes error
+    testzipfsread nosuch  test.zip          "file not found \"//zipfs:/testmount/nosuchfile\": no such file or directory" nosuchfile {} -returnCodes error
+    testzipfsread deflate-error broken.zip  {decompression error} deflatezliberror {} -returnCodes error
+    testzipfsread bzip2   testbzip2.zip     {unsupported compression method} abac-repeat.txt {} -returnCodes error
+    testzipfsread lzma    testfile-lzma.zip {unsupported compression method} abac-repeat.txt {} -returnCodes error
+    testzipfsread xz      testfile-xz.zip   {unsupported compression method} abac-repeat.txt {} -returnCodes error
+    testzipfsread zstd    testfile-zstd.zip {unsupported compression method} abac-repeat.txt {} -returnCodes error
 
+    test zipfs-read-unwritable "Writes not allowed on file opened for read" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        close $fd
+        cleanup
+    } -body {
+        set fd [open [file join $defaultMountPoint test]]
+        puts $fd blah
+    } -result {channel "*" wasn't opened for writing} -match glob -returnCodes error
+
+    #
+    # Write
+    proc testzipfswrite {id zippath result filename mode args} {
+        variable defaultMountPoint
+        set zippath [zippath $zippath]
+        set path [file join $defaultMountPoint $filename]
+        set body {
+            set fd [open $path $mode]
+            fconfigure $fd -translation binary
+            puts -nonewline $fd "xyz"
+            close $fd
+            set fd [open $path]
+            fconfigure $fd -translation binary
+            read $fd
+        }
+        test zipfs-write-$id "zipfs write $id" -setup {
+            unset -nocomplain fd
+            zipfs mount $zippath $defaultMountPoint
+        } -cleanup {
+            # In case open succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body $body -result $result {*}$args
+
+        set data [readbin $zippath]
+        test zipfs-write-memory-$id "zipfs write in-memory $id" -setup {
+            unset -nocomplain fd
+            zipfs mount_data $data $defaultMountPoint
+        } -cleanup {
+            # In case open succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body $body -result $result {*}$args
+
+    }
+    testzipfswrite create-w test.zip  "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile w -returnCodes error
+    testzipfswrite create-wr test.zip "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile w+ -returnCodes error
+    testzipfswrite create-a test.zip  "append mode not supported: permission denied" newfile a -returnCodes error
+    testzipfswrite create-ar test.zip "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile a+ -returnCodes error
+    testzipfswrite store-w teststored.zip      "xyz" abac-repeat.txt w
+    testzipfswrite deflate-w testdeflated2.zip "xyz" abac-repeat.txt w
+    testzipfswrite store-wr teststored.zip     "xyz" abac-repeat.txt w+
+    testzipfswrite deflate-wr testdeflated2.zip "xyz" abac-repeat.txt w+
+    testzipfswrite stored-a teststored.zip     "append mode not supported: permission denied" abac-repeat.txt a -returnCodes error
+    testzipfswrite deflate-a testdeflated2.zip "append mode not supported: permission denied" abac-repeat.txt a -returnCodes error
+    testzipfswrite store-ar teststored.zip     "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
+    testzipfswrite deflate-ar testdeflated2.zip "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
+
+    test zipfs-write-unreadable "Reads not allowed on file opened for write" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        close $fd
+        cleanup
+    } -body {
+        set fd [open [file join $defaultMountPoint test] w]
+        read $fd
+    } -result {channel "*" wasn't opened for reading} -match glob -returnCodes error
+
+    test zipfs-write-persist "Writes persist ONLY while mounted" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set path [file join $defaultMountPoint test]
+        set fd [open $path w]
+        puts -nonewline $fd newtext
+        close $fd
+        set fd [open $path]
+        set result [list [read $fd]]
+        close $fd
+        zipfs unmount $defaultMountPoint
+        mount [zippath test.zip]
+        set fd [open $path]
+        lappend result [read $fd]
+        close $fd
+        set result
+    } -result [list newtext test\n]
+
+    test zipfs-write-size-limit-0 "Writes have a size limit" -setup {
+        set origlimit $::tcl::zipfs::wrmax
+        mount [zippath test.zip]
+    } -cleanup {
+        close $fd
+        set ::tcl::zipfs::wrmax $origlimit
+        cleanup
+    } -body {
+        set ::tcl::zipfs::wrmax 10
+        set fd [open [file join $defaultMountPoint test] w]
+        puts -nonewline $fd [string repeat x 11]
+    } -result {} -returnCodes error -constraints bug-d5d03207ca
+
+    test zipfs-write-size-limit-1 "Writes disallowed" -setup {
+        set origlimit $::tcl::zipfs::wrmax
+        mount [zippath test.zip]
+    } -cleanup {
+        set ::tcl::zipfs::wrmax $origlimit
+        cleanup
+    } -body {
+        set ::tcl::zipfs::wrmax -1
+        open [file join $defaultMountPoint test] w
+    } -result {write access not supported: permission denied} -returnCodes error
+
+    #
+    # read/seek/write
+    proc testzipfsrw {id zippath expected filename mode args} {
+        variable defaultMountPoint
+        set zippath [zippath $zippath]
+        set path [file join $defaultMountPoint $filename]
+        set body {
+            set result ""
+            set fd [open $path $mode]
+            fconfigure $fd -translation binary
+            append result [gets $fd],
+            set pos [tell $fd]
+            append result $pos,
+            puts -nonewline $fd "xyz"
+            append result [gets $fd],
+            seek $fd $pos
+            append result [gets $fd],
+            seek $fd -6 end
+            append result [read $fd]
+        }
+        test zipfs-readwrite-$id "zipfs read/seek/write $id" -setup {
+            unset -nocomplain fd
+            zipfs mount $zippath $defaultMountPoint
+        } -cleanup {
+            # In case open succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body $body -result $expected {*}$args
+
+        set data [readbin $zippath]
+        test zipfs-readwrite-memory-$id "zipfs read/seek/write in-memory $id" -setup {
+            unset -nocomplain fd
+            zipfs mount_data $data $defaultMountPoint
+        } -cleanup {
+            # In case open succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body $body -result $expected {*}$args
+
+    }
+    testzipfsrw store-r+ teststored.zip      "aaaaaaaaaaaaaa,15,bbbbbbbbbbb,xyzbbbbbbbbbbb,ccccc\n" abac-repeat.txt r+
+    testzipfsrw store-w+ teststored.zip      ",0,,xyz,yz" abac-repeat.txt w+ -constraints bug-00018ec7a0
+    testzipfsrw store-a+ teststored.zip      ",60,,xyz,cc\nxyz" abac-repeat.txt a+
+
+    #
+    # Password protected
     proc testpassword {id filename password result args} {
         variable defaultMountPoint
         set zippath [zippath test-password.zip]
@@ -977,7 +1160,7 @@ namespace eval test_ns_zipfs {
                 zipfs mount $zippath $defaultMountPoint
             }
         } -cleanup {
-            # In case mount succeeded when it should not
+            # In case open succeeded when it should not
             if {[info exists fd]} {
                 close $fd
             }
@@ -987,15 +1170,15 @@ namespace eval test_ns_zipfs {
             gets $fd
         } -result $result {*}$args
     }
-    # The bug bbe7c6ff9e only manifests on macos
-    testConstraint bbe7c6ff9e [expr {$::tcl_platform(os) ne "Darwin"}]
+    # The bug bug-bbe7c6ff9e only manifests on macos
+    testConstraint bug-bbe7c6ff9e [expr {$::tcl_platform(os) ne "Darwin"}]
     testpassword plain plain.txt password plaintext
     testpassword plain-nopassword plain.txt "" plaintext
     testpassword plain-badpassword plain.txt xxx plaintext
-    testpassword cipher cipher.bin password ciphertext -constraints bbe7c6ff9e
+    testpassword cipher cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
     testpassword cipher-nopassword cipher.bin {} "decryption failed" -returnCodes error
     testpassword cipher-badpassword cipher.bin xxx "invalid CRC" -returnCodes error
-    testpassword cipher-deflate cipher-deflate.bin password [lseq 100] -constraints bbe7c6ff9e
+    testpassword cipher-deflate cipher-deflate.bin password [lseq 100] -constraints bug-bbe7c6ff9e
     testpassword cipher-deflate-nopassword cipher-deflate.bin {} "decryption failed" -returnCodes error
     testpassword cipher-deflate-badpassword cipher-deflate.bin xxx "decompression error" -returnCodes error
 
