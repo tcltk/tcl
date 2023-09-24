@@ -1184,6 +1184,43 @@ proc msgcat::mcmax {args} {
     return $max
 }
 
+## Fill a dict Msgsrev by reversing keys and values of the "$Msgs $nscur $loc" list
+proc msgcat::reverse {ns loc} {
+  variable Msgs
+  variable Msgsrev
+  if {![info exists Msgsrev]} {
+    set Msgsrev [dict create]
+  }
+  if {[dict exists $Msgs $ns $loc]} {
+    foreach {src trg} [dict get $Msgs $ns $loc] {
+      dict set Msgsrev $ns $loc $trg $src
+    }
+  }
+}
+
+## Get reversed translation
+proc msgcat::mcrev {trg} {
+  # Check for the trg in each namespace starting from the local and
+  # ending in the global.
+
+  variable Msgsrev
+  variable Loclist
+
+  set ns [uplevel 1 [list ::namespace current]]
+  set loclist [PackagePreferences $ns]
+
+  set nscur $ns
+  while {$nscur != ""} {
+    foreach loc $loclist {
+      if {[dict exists $Msgsrev $nscur $loc $trg]} {
+        return [dict get $Msgsrev $nscur $loc $trg]
+      }
+    }
+    set nscur [namespace parent $nscur]
+  }
+  return $trg
+}
+
 # Convert the locale values stored in environment variables to a form
 # suitable for passing to [mclocale]
 proc msgcat::mcutil::ConvertLocale {value} {
