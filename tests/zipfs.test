@@ -1312,7 +1312,26 @@ namespace eval test_ns_zipfs {
     testzipfsglob mountpoint $defaultMountPoint [file join [zipfs root] *] \
         [list $defaultMountPoint] {} -constraints !zipfslib
 
-    # TODO tests for compress and save, + with password
+    #
+    # file attributes
+    proc testzipfsfileattr [list id path result [list mountpoint $defaultMountPoint] args] {
+        test zipfs-file-attrs-$id "zipfs file attrs $id" -setup {
+            mount [zippath test.zip] $mountpoint
+        } -cleanup cleanup -body {
+            lsort -stride 2 [file attributes $path]
+        } -result $result {*}$args
+    }
+    testzipfsfileattr noent [file join $defaultMountPoint nosuchfile] \
+        {file not found: no such file or directory} $defaultMountPoint -returnCodes error
+    testzipfsfileattr file [file join $defaultMountPoint test] \
+        [list -archive [zippath test.zip] -compsize 5 -crc [expr 0x3BB935C6] -mount $defaultMountPoint -offset 55 -permissions 0o555 -uncompsize 5]
+    testzipfsfileattr dir [file join $defaultMountPoint testdir] \
+        [list -archive [zippath test.zip] -compsize 0 -crc 0 -mount $defaultMountPoint -offset 119 -permissions 0o555 -uncompsize 0]
+    testzipfsfileattr root [zipfs root] {} {} -constraints bug-4af110a6a1
+    testzipfsfileattr mountpoint $defaultMountPoint \
+        [list -archive [zippath test.zip] -compsize 0 -crc 0 -mount $defaultMountPoint -offset 0 -permissions 0o555 -uncompsize 0]
+    testzipfsfileattr mezzo [file join $defaultMountPoint a b] {} [file join $defaultMountPoint a b c] -constraints bug-4af110a6a1
+
 
     #
     # TODO - file copy, file rename etc.
