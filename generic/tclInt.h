@@ -2860,6 +2860,21 @@ typedef struct ProcessGlobalValue {
 				/* Reject underscore digit separator */
 
 /*
+ *----------------------------------------------------------------------
+ * Internal convenience macros for manipulating encoding flags. See
+ * TCL_ENCODING_PROFILE_* in tcl.h
+ *----------------------------------------------------------------------
+ */
+
+#define ENCODING_PROFILE_MASK     0xFF000000
+#define ENCODING_PROFILE_GET(flags_)  ((flags_) & ENCODING_PROFILE_MASK)
+#define ENCODING_PROFILE_SET(flags_, profile_)      \
+    do {                                            \
+	(flags_) &= ~ENCODING_PROFILE_MASK;             \
+	(flags_) |= (profile_) & ENCODING_PROFILE_MASK; \
+    } while (0)
+
+/*
  *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
  *----------------------------------------------------------------
