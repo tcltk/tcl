@@ -4342,14 +4342,14 @@ ZipChannelWrite(
 	*errloc = EINVAL;
 	return -1;
     }
-    nextpos = info->numRead + toWrite;
-    if (nextpos > info->maxWrite) {
+    if (toWrite > info->maxWrite - info->numRead) {
 	toWrite = info->maxWrite - info->numRead;
-	nextpos = info->maxWrite;
     }
     if (toWrite == 0) {
-	return 0;
+	*errloc = EFBIG;
+	return -1;
     }
+    nextpos = info->numRead + toWrite;
     memcpy(info->ubuf + info->numRead, buf, toWrite);
     info->numRead = nextpos;
     if (info->numRead > info->numBytes) {
