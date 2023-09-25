@@ -232,12 +232,8 @@ typedef struct ChannelState {
  * the channel can also have TCL_READABLE (1<<1) and TCL_WRITABLE (1<<2) set.
  */
 
-#define CHANNEL_NONBLOCKING	(1<<3)	/* Channel is currently in nonblocking
+#define CHANNEL_NONBLOCKING	(1<<6)	/* Channel is currently in nonblocking
 					 * mode. */
-#define CHANNEL_LINEBUFFERED	(1<<4)	/* Output to the channel must be
-					 * flushed after every newline. */
-#define CHANNEL_UNBUFFERED	(1<<5)	/* Output to the channel must always
-					 * be flushed immediately. */
 #define BG_FLUSH_SCHEDULED	(1<<7)	/* A background flush of the queued
 					 * output buffers has been
 					 * scheduled. */
@@ -280,6 +276,10 @@ typedef struct ChannelState {
 					 * encountered an encoding error */
 #define CHANNEL_RAW_MODE	(1<<16)	/* When set, notes that the Raw API is
 					 * being used. */
+#define CHANNEL_LINEBUFFERED	(1<<17)	/* Output to the channel must be
+					 * flushed after every newline. */
+#define CHANNEL_UNBUFFERED	(1<<18)	/* Output to the channel must always
+					 * be flushed immediately. */
 #define CHANNEL_INCLOSE		(1<<19)	/* Channel is currently being closed.
 					 * Its structures are still live and
 					 * usable, but it may not be closed
