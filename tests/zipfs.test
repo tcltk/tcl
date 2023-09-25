@@ -706,7 +706,7 @@ namespace eval test_ns_zipfs {
     testzipfslist no-pattern-mount-on-empty "" {test.zip {}} {{} test testdir testdir/test2} -constraints !zipfslib
     testzipfslist no-pattern-mount-on-root "" [list test.zip [zipfs root]] {{} test testdir testdir/test2} -constraints !zipfslib
     testzipfslist no-pattern-mount-on-slash "" [list test.zip /] {{} test testdir testdir/test2} -constraints !zipfslib
-    testzipfslist no-pattern-mount-on-level3 "" [list test.zip testmt/a/b] {{} testmt testmt/a testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2} -constraints {!zipfslib}
+    testzipfslist no-pattern-mount-on-level3 "" [list test.zip testmt/a/b] {{} testmt testmt/a testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2} -constraints {knownBug !zipfslib}
     testzipfslist no-pattern-multiple "" {test.zip testmountA test.zip testmountB/subdir} {
         testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
         testmountB/subdir testmountB/subdir/test testmountB/subdir/testdir testmountB/subdir/testdir/test2

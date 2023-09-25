@@ -5385,7 +5385,7 @@ ZipFSMatchInDirectoryProc(
 
     for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
 	    hPtr; hPtr = Tcl_NextHashEntry(&search)) {
-	ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
+	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 
 	if ((dirOnly >= 0) && ((dirOnly && !z->isDirectory)
 		|| (!dirOnly && z->isDirectory))) {
