@@ -4258,6 +4258,20 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_GetMaster Tcl_GetParent
 #endif
 
+#ifdef TCL_USE_STUBS
+    /* Protect those 10 functions, being usable through the stub table */
+#   undef TclGetStringFromObj
+#   undef TclGetBytesFromObj
+#   undef TclGetUnicodeFromObj
+#   undef TclListObjGetElements
+#   undef TclListObjLength
+#   undef TclDictObjSize
+#   undef TclSplitList
+#   undef TclSplitPath
+#   undef TclFSSplitPath
+#   undef TclParseArgsObjv
+#endif
+
 #if TCL_MAJOR_VERSION < 9
     /* TIP #627 for 8.7 */
 #   undef Tcl_CreateObjCommand2
