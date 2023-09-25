@@ -706,7 +706,7 @@ namespace eval test_ns_zipfs {
     testzipfslist no-pattern-mount-on-empty "" {test.zip {}} {{} test testdir testdir/test2} -constraints !zipfslib
     testzipfslist no-pattern-mount-on-root "" [list test.zip [zipfs root]] {{} test testdir testdir/test2} -constraints !zipfslib
     testzipfslist no-pattern-mount-on-slash "" [list test.zip /] {{} test testdir testdir/test2} -constraints !zipfslib
-    testzipfslist no-pattern-mount-on-level3 "" [list test.zip testmt/a/b] {{} testmt testmt/a testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2} -constraints {bug-02acab5aea !zipfslib}
+    testzipfslist no-pattern-mount-on-level3 "" [list test.zip testmt/a/b] {{} testmt testmt/a testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2} -constraints {knownBug !zipfslib}
     testzipfslist no-pattern-multiple "" {test.zip testmountA test.zip testmountB/subdir} {
         testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
         testmountB/subdir testmountB/subdir/test testmountB/subdir/testdir testmountB/subdir/testdir/test2
@@ -739,15 +739,14 @@ namespace eval test_ns_zipfs {
             cleanup
         } -result $result {*}$args
     }
-    testzipfsexists native-file      [info nameofexecutable]                   0
-    testzipfsexists nonexistent-file [file join $defaultMountPoint nosuchfile] 0
-    testzipfsexists file             [file join $defaultMountPoint test]       1
-    testzipfsexists dir              [file join $defaultMountPoint testdir]    1
-    testzipfsexists mountpoint       $defaultMountPoint                        1
-    testzipfsexists root             [zipfs root]                              1 \
-        $defaultMountPoint -constraints bug-02acab5aea
-    testzipfsexists level3           [file join $defaultMountPoint a b]        1 \
-        [file join $defaultMountPoint a b c] -constraints bug-02acab5aea
+    testzipfsexists native-file [info nameofexecutable]                   0
+    testzipfsexists enoent      [file join $defaultMountPoint nosuchfile] 0
+    testzipfsexists file        [file join $defaultMountPoint test]       1
+    testzipfsexists dir         [file join $defaultMountPoint testdir]    1
+    testzipfsexists mountpoint  $defaultMountPoint                        1
+    testzipfsexists root        [zipfs root]                              1 $defaultMountPoint
+    testzipfsexists level3      [file join $defaultMountPoint a b]        1 [file join $defaultMountPoint a b c]
+    testzipfsexists level3-enoent [file join $defaultMountPoint a c]      0 [file join $defaultMountPoint a b c]
 
     #
     # zipfs find
@@ -809,13 +808,12 @@ namespace eval test_ns_zipfs {
 
     testzipfsfind level3 [file join [zipfs root] testmt a] {
         test.zip testmt/a/b
-    } [zipfspaths testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2] \
-        -constraints bug-02acab5aea
+    } [zipfspaths testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2]
 
     testzipfsfind level3-root [zipfs root] {
         test.zip testmt/a/b
     } [zipfspaths testmt testmt/a testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2] \
-        -constraints bug-02acab5aea
+        -constraints bug-9e039ee0b9
 
     test zipfs-find-native-absolute "zipfs find on native file system" -setup {
         set dir [makeDirectory zipfs-native-absolute]
@@ -897,7 +895,7 @@ namespace eval test_ns_zipfs {
         cleanup
     } -body {
         zipfs info [file join [zipfs root] testmt a]
-    } -result {{} 0 0 0} -constraints bug-02acab5aea
+    } -result {path "//zipfs:/testmt/a" not found in any zipfs volume} -returnCodes error
 
     #
     # zipfs canonical -
@@ -1276,21 +1274,17 @@ namespace eval test_ns_zipfs {
         lsort -stride 2 [file stat [zipfs root]]
     } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
 
-    test zipfs-file-stat-root-subdir-mount "Read stat of root when mount is subdir" -constraints {
-        bug-02acab5aea
-    } -setup {
+    test zipfs-file-stat-root-subdir-mount "Read stat of root when mount is subdir" -setup {
         mount [zippath test.zip]
     } -cleanup cleanup -body {
         lsort -stride 2 [file stat [zipfs root]]
     } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
 
-    test zipfs-file-stat-level3 "Stat on a directory that is intermediary in a mount point" -constraints {
-        bug-02acab5aea
-    } -setup {
+    test zipfs-file-stat-level3 "Stat on a directory that is intermediary in a mount point" -setup {
         mount [zippath test.zip] [file join $defaultMountPoint mt2]
     } -cleanup cleanup -body {
         lsort -stride 2 [file stat $defaultMountPoint]
-    }
+    } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
 
     #
     # glob of zipfs file
