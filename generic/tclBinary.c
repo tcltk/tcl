@@ -471,11 +471,10 @@ Tcl_GetBytesFromObj(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_GetByteArrayFromObj
 unsigned char *
 Tcl_GetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    int *numBytesPtr)		/* If non-NULL, write the number of bytes
+    Tcl_Size *numBytesPtr)		/* If non-NULL, write the number of bytes
 				 * in the array here */
 {
     ByteArray *baPtr;

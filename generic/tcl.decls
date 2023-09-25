@@ -144,7 +144,7 @@ declare 32 {
 }
 # Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 33 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, Tcl_Size *numBytesPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
