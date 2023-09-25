@@ -306,7 +306,7 @@ ValidateFormat(
 	     * format string.
 	     */
 
-	    value = strtoul(format-1, &end, 10);	/* INTL: "C" locale. */
+	    unsigned long ul = strtoul(format-1, &end, 10);	/* INTL: "C" locale. */
 	    if (*end != '$') {
 		goto notXpg;
 	    }
@@ -316,17 +316,20 @@ ValidateFormat(
 	    if (gotSequential) {
 		goto mixedXPG;
 	    }
-	    objIndex = value - 1;
-	    if ((objIndex < 0) || (numVars && (objIndex >= numVars))) {
+	    if (ul == 0 || ul >= INT_MAX) {
+		goto badIndex;
+	    }
+	    objIndex = (int) ul - 1;
+	    if (numVars && (objIndex >= numVars)) {
 		goto badIndex;
 	    } else if (numVars == 0) {
 		/*
 		 * In the case where no vars are specified, the user can
 		 * specify %9999$ legally, so we have to consider special
-		 * rules for growing the assign array. 'value' is guaranteed
-		 * to be > 0.
+		 * rules for growing the assign array. 'ul' is guaranteed
+		 * to be > 0 and < INT_MAX as per checks above.
 		 */
-		xpgSize = (xpgSize > value) ? xpgSize : value;
+		xpgSize = (xpgSize > (int)ul) ? xpgSize : (int)ul;
 	    }
 	    goto xpgCheckDone;
 	}

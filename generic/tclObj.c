@@ -390,6 +390,11 @@ TclInitObjSubsystem(void)
 #if (TCL_UTF_MAX < 4) || !defined(TCL_NO_DEPRECATED)
     Tcl_RegisterObjType(&tclStringType);
 #endif
+#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
+    /* Only registered for 8.7, not for 9.0 any more.
+     * See [https://core.tcl-lang.org/tk/tktview/6b49149b4e] */
+    Tcl_RegisterObjType(&tclUniCharStringType);
+#endif
     Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclDictType);
     Tcl_RegisterObjType(&tclByteCodeType);
@@ -1721,7 +1726,7 @@ char *
 TclGetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
 				 * be returned. */
-    size_t *lengthPtr)	/* If non-NULL, the location where the string
+    void *lengthPtr)	/* If non-NULL, the location where the string
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {
@@ -1751,11 +1756,7 @@ TclGetStringFromObj(
 	}
     }
     if (lengthPtr != NULL) {
-#if TCL_MAJOR_VERSION > 8
-	*lengthPtr = objPtr->length;
-#else
-	*lengthPtr = ((size_t)(unsigned)(objPtr->length + 1)) - 1;
-#endif
+	*(ptrdiff_t *)lengthPtr = ((ptrdiff_t)(unsigned)(objPtr->length + 1)) - 1;
     }
     return objPtr->bytes;
 }
@@ -4041,7 +4042,7 @@ int
 Tcl_GetNumber(
     Tcl_Interp *interp,
     const char *bytes,
-    size_t numBytes,
+    ptrdiff_t numBytes,
     void **clientDataPtr,
     int *typePtr)
 {
@@ -4055,8 +4056,8 @@ Tcl_GetNumber(
 	bytes = &tclEmptyString;
 	numBytes = 0;
     }
-    if (numBytes == (size_t)TCL_INDEX_NONE) {
-	numBytes = strlen(bytes);
+    if (numBytes < 0) {
+	numBytes = (ptrdiff_t)strlen(bytes);
     }
     if (numBytes > INT_MAX) {
 	if (interp) {

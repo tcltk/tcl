@@ -2,7 +2,7 @@
  * tclBinary.c --
  *
  *	This file contains the implementation of the "binary" Tcl built-in
- *	command and the Tcl value internal representation for binary data.
+ *	command and the Tcl binary data object.
  *
  * Copyright © 1997 Sun Microsystems, Inc.
  * Copyright © 1998-1999 Scriptics Corporation.
@@ -64,7 +64,7 @@ static int		FormatNumber(Tcl_Interp *interp, int type,
 static void		FreeByteArrayInternalRep(Tcl_Obj *objPtr);
 static void		FreeProperByteArrayInternalRep(Tcl_Obj *objPtr);
 static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
-			    int *countPtr, int *flagsPtr);
+			    Tcl_Size *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
 			    int flags, Tcl_HashTable **numberCachePtr);
 static int		SetByteArrayFromAny(Tcl_Interp *interp,
@@ -143,7 +143,7 @@ static const EnsembleImplMap decodeMap[] = {
 };
 
 /*
- * The following object types represent an array of bytes. The intent is to
+ * The following Tcl_ObjType represents an array of bytes. The intent is to
  * allow arbitrary binary data to pass through Tcl as a Tcl value without loss
  * or damage. Such values are useful for things like encoded strings or Tk
  * images to name just two.
@@ -457,7 +457,7 @@ unsigned char *
 Tcl_GetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
-    size_t *numBytesPtr)	/* If non-NULL, write the number of bytes
+    void *numBytesPtr)	/* If non-NULL, write the number of bytes
 				 * in the array here */
 {
     ByteArray *baPtr;
@@ -487,7 +487,7 @@ Tcl_GetBytesFromObj(
     baPtr = GET_BYTEARRAY(irPtr);
 
     if (numBytesPtr != NULL) {
-	*numBytesPtr = baPtr->used;
+	*(ptrdiff_t *)numBytesPtr = baPtr->used;
     }
     return baPtr->bytes;
 }
@@ -539,7 +539,7 @@ Tcl_GetByteArrayFromObj(
 unsigned char *
 TclGetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    size_t *numBytesPtr)	/* If non-NULL, write the number of bytes
+    void *numBytesPtr)	/* If non-NULL, write the number of bytes
 				 * in the array here */
 {
     ByteArray *baPtr;
@@ -556,8 +556,8 @@ TclGetByteArrayFromObj(
     baPtr = GET_BYTEARRAY(irPtr);
 
     if (numBytesPtr != NULL) {
-	/* Make sure we return a value between 0 and UINT_MAX-1, or (size_t)-1 */
-	*numBytesPtr = ((size_t)(unsigned int)(baPtr->used + 1)) - 1;
+	/* Make sure we return a value between 0 and UINT_MAX-1, or (ptrdiff_t)-1 */
+	*(ptrdiff_t *)numBytesPtr = ((ptrdiff_t)(unsigned int)(baPtr->used + 1)) - 1;
     }
     return baPtr->bytes;
 }

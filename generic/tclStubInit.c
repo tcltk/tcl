@@ -97,7 +97,7 @@ static void uniCodePanic(void) {
 }
 #   define Tcl_GetUnicode (unsigned short *(*)(Tcl_Obj *))(void *)uniCodePanic
 #   define Tcl_GetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, int *))(void *)uniCodePanic
-#   define TclGetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, size_t *))(void *)uniCodePanic
+#   define TclGetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, ptrdiff_t *))(void *)uniCodePanic
 #   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const unsigned short *, int))(void *)uniCodePanic
 #   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const unsigned short *, int))(void *)uniCodePanic
 #   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const unsigned short *, int))(void *)uniCodePanic
@@ -138,67 +138,67 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 }
 
 int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-    size_t *objcPtr, Tcl_Obj ***objvPtr) {
+    void *objcPtr, Tcl_Obj ***objvPtr) {
     int n, result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
     if ((result == TCL_OK) && objcPtr) {
-	*objcPtr = n;
+	*(ptrdiff_t *)objcPtr = n;
     }
     return result;
 }
 int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-    size_t *lengthPtr) {
+    void *lengthPtr) {
     int n;
     int result = Tcl_ListObjLength(interp, listPtr, &n);
     if ((result == TCL_OK) && lengthPtr) {
-	*lengthPtr = n;
+	*(ptrdiff_t *)lengthPtr = n;
     }
     return result;
 }
 int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	size_t *sizePtr) {
+	void *sizePtr) {
     int n, result = Tcl_DictObjSize(interp, dictPtr, &n);
     if ((result == TCL_OK) && sizePtr) {
-	*sizePtr = n;
+	*(ptrdiff_t *)sizePtr = n;
     }
     return result;
 }
-int TclSplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
+int TclSplitList(Tcl_Interp *interp, const char *listStr, void *argcPtr,
 	const char ***argvPtr) {
     int n;
     int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
     if ((result == TCL_OK) && argcPtr) {
-	*argcPtr = n;
+	*(ptrdiff_t *)argcPtr = n;
     }
     return result;
 }
-void TclSplitPath(const char *path, size_t *argcPtr, const char ***argvPtr) {
+void TclSplitPath(const char *path, void *argcPtr, const char ***argvPtr) {
     int n;
     Tcl_SplitPath(path, &n, argvPtr);
     if (argcPtr) {
-	*argcPtr = n;
+	*(ptrdiff_t *)argcPtr = n;
     }
 }
-Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr) {
+Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, void *lenPtr) {
     int n;
     Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
     if (result && lenPtr) {
-	*lenPtr = n;
+	*(ptrdiff_t *)lenPtr = n;
     }
     return result;
 }
 int TclParseArgsObjv(Tcl_Interp *interp,
-	const Tcl_ArgvInfo *argTable, size_t *objcPtr, Tcl_Obj *const *objv,
+	const Tcl_ArgvInfo *argTable, void *objcPtr, Tcl_Obj *const *objv,
 	Tcl_Obj ***remObjv) {
     int n, result;
-    if (*objcPtr > INT_MAX) {
+    if (*(ptrdiff_t *)objcPtr > INT_MAX) {
 	if (interp) {
 	    Tcl_AppendResult(interp, "Tcl_ParseArgsObjv cannot handle *objcPtr > INT_MAX", NULL);
 	}
 	return TCL_ERROR;
     }
-    n = (int)*objcPtr;
+    n = *(ptrdiff_t *)objcPtr;
     result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
-    *objcPtr = n;
+    *(ptrdiff_t *)objcPtr = n;
     return result;
 }
 
@@ -2058,7 +2058,8 @@ const TclStubs tclStubs = {
     Tcl_GetWideUIntFromObj, /* 684 */
     Tcl_DStringToObj, /* 685 */
     0, /* 686 */
-    TclUnusedStubEntry, /* 687 */
+    0, /* 687 */
+    TclUnusedStubEntry, /* 688 */
 };
 
 /* !END!: Do not edit above this line. */
