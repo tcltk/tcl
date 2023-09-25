@@ -3864,6 +3864,11 @@ ZipFSExistsObjCmd(
 
     ReadLock();
     exists = ZipFSLookup(filename) != NULL;
+    if (!exists) {
+	/* An ancestor directory of a file ? */
+	exists = ContainsMountPoint(filename, -1);
+    }
+
     Unlock();
 
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(exists));
