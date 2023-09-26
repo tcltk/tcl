@@ -4324,18 +4324,17 @@ ZipChannelWrite(
     ZipChannel *info = (ZipChannel *) instanceData;
     unsigned long nextpos;
 
-    if (!info->isWriting) {
+    if (toWrite == 0 || !info->isWriting) {
 	*errloc = EINVAL;
 	return -1;
     }
+    assert(info->maxWrite >= info->numRead);
+    if (toWrite > (int) (info->maxWrite - info->numRead)) {
+	/* Don't do partial writes in error case. Or should we? */
+	*errloc = EFBIG;
+	return -1;
+    }
     nextpos = info->numRead + toWrite;
-    if (nextpos > info->maxWrite) {
-	toWrite = info->maxWrite - info->numRead;
-	nextpos = info->maxWrite;
-    }
-    if (toWrite == 0) {
-	return 0;
-    }
     memcpy(info->ubuf + info->numRead, buf, toWrite);
     info->numRead = nextpos;
     if (info->numRead > info->numBytes) {
