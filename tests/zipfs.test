@@ -1073,7 +1073,7 @@ namespace eval test_ns_zipfs {
         set result
     } -result [list newtext test\n]
 
-    test zipfs-write-size-limit-0 "Writes have a size limit" -setup {
+    test zipfs-write-size-limit-0 "Writes more than size limit with flush" -setup {
         set origlimit $::tcl::zipfs::wrmax
         mount [zippath test.zip]
     } -cleanup {
@@ -1083,10 +1083,35 @@ namespace eval test_ns_zipfs {
     } -body {
         set ::tcl::zipfs::wrmax 10
         set fd [open [file join $defaultMountPoint test] w]
-        puts -nonewline $fd [string repeat x 11]
-    } -result {} -returnCodes error -constraints bug-d5d03207ca
+        puts $fd [string repeat x 11]
+        flush $fd
+    } -result {error flushing *: file too large} -match glob -returnCodes error
 
-    test zipfs-write-size-limit-1 "Writes disallowed" -setup {
+    test zipfs-write-size-limit-1 "Writes size limit on close" -setup {
+        set origlimit $::tcl::zipfs::wrmax
+        mount [zippath test.zip]
+    } -cleanup {
+        set ::tcl::zipfs::wrmax $origlimit
+        cleanup
+    } -body {
+        set ::tcl::zipfs::wrmax 10
+        set fd [open [file join $defaultMountPoint test] w]
+        puts $fd [string repeat x 11]
+        close $fd
+    } -result {file too large} -match glob -returnCodes error
+
+    test zipfs-write-size-limit-2 "Writes max size" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set fd [open [file join $defaultMountPoint test] w]
+        puts -nonewline $fd [string repeat x $::tcl::zipfs::wrmax]
+        close $fd
+        file size [file join $defaultMountPoint test]
+    } -result $::tcl::zipfs::wrmax
+
+    test zipfs-write-size-limit-3 "Writes disallowed" -setup {
         set origlimit $::tcl::zipfs::wrmax
         mount [zippath test.zip]
     } -cleanup {
