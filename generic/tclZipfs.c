@@ -1551,8 +1551,10 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "seek error");
 	    goto error;
 	}
-	if ((zf->length - ZIP_CENTRAL_END_LEN)
-		> (64 * 1024 * 1024 - ZIP_CENTRAL_END_LEN)) {
+        /* What's the magic about 64 * 1024 * 1024 ? */
+	if ((zf->length <= ZIP_CENTRAL_END_LEN) ||
+	    (zf->length - ZIP_CENTRAL_END_LEN) >
+		(64 * 1024 * 1024 - ZIP_CENTRAL_END_LEN)) {
 	    ZIPFS_ERROR(interp, "illegal file size");
 	    ZIPFS_ERROR_CODE(interp, "FILE_SIZE");
 	    goto error;
@@ -2265,7 +2267,15 @@ TclZipfs_MountBuffer(
 
     /*
      * Have both a mount point and data to mount there.
+     * What's the magic about 64 * 1024 * 1024 ?
      */
+    if ((datalen <= ZIP_CENTRAL_END_LEN) ||
+	(datalen - ZIP_CENTRAL_END_LEN) >
+	    (64 * 1024 * 1024 - ZIP_CENTRAL_END_LEN)) {
+	ZIPFS_ERROR(interp, "illegal file size");
+	ZIPFS_ERROR_CODE(interp, "FILE_SIZE");
+	return TCL_ERROR;
+    }
 
     zf = AllocateZipFile(interp, strlen(mountPoint));
     if (!zf) {
@@ -4205,26 +4215,38 @@ ZipChannelClose(
 	memset(info->keys, 0, sizeof(info->keys));
     }
     if (info->isWriting) {
+	/*
+	 * Copy channel data back into original file in archive.
+	 * TODO - there seems to be no locking here to protect access from
+	 * multiple threads. The channel (info) may be thread specific (?)
+	 * but the ZipEntry is not afaict
+	 */
 	ZipEntry *z = info->zipEntryPtr;
 	assert(info->ubufToFree && info->ubuf);
-	unsigned char *newdata =
-	    (unsigned char *)attemptckrealloc(info->ubufToFree, info->numRead);
-
-	if (newdata) {
-	    info->ubufToFree = NULL;/* Now newdata! */
-	    info->ubuf = NULL;
-	    if (z->data) {
-		ckfree(z->data);
-	    }
-	    z->data = newdata;
-	    z->numBytes = z->numCompressedBytes = info->numBytes;
-	    z->compressMethod = ZIP_COMPMETH_STORED;
-	    z->timestamp = time(NULL);
-	    z->isDirectory = 0;
-	    z->isEncrypted = 0;
-	    z->offset = 0;
-	    z->crc32 = 0;
+	unsigned char *newdata;
+	newdata = (unsigned char *)attemptckrealloc(
+	    info->ubufToFree,
+	    info->numBytes ? info->numBytes : 1); /* Bug [23dd83ce7c] */
+	if (newdata == NULL) {
+	    /* Could not reallocate, keep existing buffer */
+	    newdata = info->ubufToFree;
 	}
+	info->ubufToFree = NULL; /* Now newdata! */
+	info->ubuf = NULL;
+
+	/* Replace old content */
+	if (z->data) {
+	    ckfree(z->data);
+	}
+	z->data = newdata; /* May be NULL */
+	z->numBytes = z->numCompressedBytes = info->numBytes;
+	assert(z->data || z->numBytes == 0);
+	z->compressMethod = ZIP_COMPMETH_STORED;
+	z->timestamp = time(NULL);
+	z->isDirectory = 0;
+	z->isEncrypted = 0;
+	z->offset = 0;
+	z->crc32 = 0;
     }
     WriteLock();
     info->zipFilePtr->numOpen--;
@@ -4694,6 +4716,7 @@ InitWritableChannel(
     if (!info->ubuf) {
 	goto memoryError;
     }
+    /* TODO - why is the memset necessary? Not cheap for default maxWrite. */
     memset(info->ubuf, 0, info->maxWrite);
 
     if (trunc) {
@@ -4812,8 +4835,8 @@ InitWritableChannel(
     goto error_cleanup;
 
   tooBigError:
-    ZIPFS_ERROR(interp, "file size exceeds max writable");
-    ZIPFS_ERROR_CODE(interp, "TOOBIG");
+    Tcl_SetErrno(EFBIG);
+    ZIPFS_POSIX_ERROR(interp, "file size exceeds max writable");
     goto error_cleanup;
 
   corruptionError:

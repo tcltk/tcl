@@ -358,10 +358,10 @@ test zipfs-4.5 {zipfs lmkimg: making image from mounted} -constraints zipfs -set
 
 test zipfs-5.1 {zipfs mount_data: short data} -constraints zipfs -body {
     zipfs mount_data {} gorp
-} -returnCodes error -result {archive directory end signature not found}
+} -returnCodes error -result {illegal file size}
 test zipfs-5.2 {zipfs mount_data: short data} -constraints zipfs -body {
     zipfs mount_data gorpGORPgorp gorp
-} -returnCodes error -result {archive directory end signature not found}
+} -returnCodes error -result {illegal file size}
 test zipfs-5.3 {zipfs mount_data: short data} -constraints zipfs -body {
     set data PK\x03\x04.....................................
     append data PK\x01\x02.....................................
