@@ -4343,9 +4343,7 @@ ZipChannelWrite(
 	return -1;
     }
     if (toWrite > info->maxWrite - info->numRead) {
-	toWrite = info->maxWrite - info->numRead;
-    }
-    if (toWrite == 0) {
+	/* Don't do partial writes in error case. Or should we? */
 	*errloc = EFBIG;
 	return -1;
     }
