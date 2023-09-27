@@ -410,6 +410,11 @@ namespace eval test_ns_zipfs {
         }
     }
 
+    # list of paths -> list of paths under [zipfs root]
+    proc zipfspaths {args} {
+        return [lmap path $args {file join [zipfs root] $path}]
+    }
+
     proc cleanup {} {
         dict for {mount -} [zipfs mount] {
             if {[string match //zipfs:/test* $mount]} {
@@ -701,6 +706,7 @@ namespace eval test_ns_zipfs {
     testzipfslist no-pattern-mount-on-empty "" {test.zip {}} {{} test testdir testdir/test2} -constraints !zipfslib
     testzipfslist no-pattern-mount-on-root "" [list test.zip [zipfs root]] {{} test testdir testdir/test2} -constraints !zipfslib
     testzipfslist no-pattern-mount-on-slash "" [list test.zip /] {{} test testdir testdir/test2} -constraints !zipfslib
+    testzipfslist no-pattern-mount-on-level3 "" [list test.zip testmt/a/b] {{} testmt testmt/a testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2} -constraints {knownBug !zipfslib}
     testzipfslist no-pattern-multiple "" {test.zip testmountA test.zip testmountB/subdir} {
         testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
         testmountB/subdir testmountB/subdir/test testmountB/subdir/testdir testmountB/subdir/testdir/test2
@@ -723,21 +729,24 @@ namespace eval test_ns_zipfs {
     testnumargs "zipfs exists" "filename" ""
 
     # Generates tests for zipfs exists
-    proc testzipfsexists {id path result args} {
+    proc testzipfsexists [list id path result [list mountpoint $defaultMountPoint] args] {
         test zipfs-exists-$id "zipfs exists $id" -body {
             zipfs exists $path
         } -setup {
-            mount [zippath test.zip]
+            mount [zippath test.zip] $mountpoint
         } -cleanup {
+            zipfs unmount $mountpoint
             cleanup
         } -result $result {*}$args
     }
-    testzipfsexists native-file      [info nameofexecutable] 0
-    testzipfsexists nonexistent-file [file join $defaultMountPoint nosuchfile] 0
-    testzipfsexists file             [file join $defaultMountPoint test] 1
-    testzipfsexists dir              [file join $defaultMountPoint testdir] 1
-    testzipfsexists mountpoint       $defaultMountPoint 1
-    testzipfsexists root             [zipfs root] 1 -constraints bug-02acab5aea
+    testzipfsexists native-file [info nameofexecutable]                   0
+    testzipfsexists enoent      [file join $defaultMountPoint nosuchfile] 0
+    testzipfsexists file        [file join $defaultMountPoint test]       1
+    testzipfsexists dir         [file join $defaultMountPoint testdir]    1
+    testzipfsexists mountpoint  $defaultMountPoint                        1
+    testzipfsexists root        [zipfs root]                              1 $defaultMountPoint
+    testzipfsexists level3      [file join $defaultMountPoint a b]        1 [file join $defaultMountPoint a b c]
+    testzipfsexists level3-enoent [file join $defaultMountPoint a c]      0 [file join $defaultMountPoint a b c]
 
     #
     # zipfs find
@@ -779,12 +788,9 @@ namespace eval test_ns_zipfs {
         test.zip testmountA test.zip testmountB/subdir
     } {}
 
-    variable path
     testzipfsfind absolute-path    [file join [zipfs root] testmountA] {
         test.zip testmountA test.zip testmountB/subdir
-    } [lmap path {
-            testmountA/test testmountA/testdir testmountA/testdir/test2
-        } {file join [zipfs root] $path}]
+    } [zipfspaths testmountA/test testmountA/testdir testmountA/testdir/test2]
 
     testzipfsfind relative-path   testdir {
         test.zip testmountA test.zip testmountB/subdir
@@ -798,9 +804,16 @@ namespace eval test_ns_zipfs {
     # bug-6183f535c8
     testzipfsfind root-path   [zipfs root] {
         test.zip {} test.zip testmountB/subdir
-    } [lmap path {
-        test testdir testdir/test2
-    } {file join [zipfs root] $path}] -constraints !zipfslib
+    } [zipfspaths test testdir testdir/test2] -constraints !zipfslib
+
+    testzipfsfind level3 [file join [zipfs root] testmt a] {
+        test.zip testmt/a/b
+    } [zipfspaths testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2]
+
+    testzipfsfind level3-root [zipfs root] {
+        test.zip testmt/a/b
+    } [zipfspaths testmt testmt/a testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2] \
+        -constraints bug-9e039ee0b9
 
     test zipfs-find-native-absolute "zipfs find on native file system" -setup {
         set dir [makeDirectory zipfs-native-absolute]
@@ -829,7 +842,6 @@ namespace eval test_ns_zipfs {
         # string equal [zipfs find [file tail $subdir]] [list subdir subdir/native]
         zipfs find [file tail $dir]
     } -result {zipfs-native-relative/subdir zipfs-native-relative/subdir/native}
-
 
     #
     # zipfs info
@@ -876,6 +888,15 @@ namespace eval test_ns_zipfs {
         zipfs info $defaultMountPoint
     } -result [list [zippath junk-at-start.zip] 0 0 4]
 
+    test zipfs-info-level3 "zipfs info on mount point - verify correct offset of zip content" -setup {
+        # zip starts at offset 4
+        mount [zippath junk-at-start.zip] /testmt/a/b
+    } -cleanup {
+        cleanup
+    } -body {
+        zipfs info [file join [zipfs root] testmt a]
+    } -result {path "//zipfs:/testmt/a" not found in any zipfs volume} -returnCodes error
+
     #
     # zipfs canonical -
     # TODO - semantics are very unclear. Can produce nonsensical paths like
@@ -907,38 +928,250 @@ namespace eval test_ns_zipfs {
     testzipfscanonical backslashes X:\\\\foo\\\\bar [file join [zipfs root] foo bar] -constraints win
     testzipfscanonical backslashes-1 X:/foo\\\\bar [file join [zipfs root] foo bar] -constraints win
 
-
-
-    #
-    # TODO - read of zipfs file Bad CRC
-
     #
     # Read/uncompress
-    proc testuncompress {id zippath result {filename abac-repeat.txt} args} {
+    proc testzipfsread {id zippath result {filename abac-repeat.txt} {openopts {}} args} {
         variable defaultMountPoint
         set zippath [zippath $zippath]
-        test zipfs-uncompress-$id "zipfs uncompress $id" -setup {
+        test zipfs-read-$id "zipfs read $id" -setup {
             unset -nocomplain fd
             zipfs mount $zippath $defaultMountPoint
         } -cleanup {
-            # In case mount succeeded when it should not
+            # In case open succeeded when it should not
             if {[info exists fd]} {
                 close $fd
             }
             cleanup
         } -body {
-            set fd [open [file join $defaultMountPoint $filename]]
+            set fd [open [file join $defaultMountPoint $filename] {*}$openopts]
             gets $fd
         } -result $result {*}$args
-    }
-    testuncompress stored  teststored.zip    aaaaaaaaaaaaaa
-    testuncompress deflate testdeflated2.zip aaaaaaaaaaaaaa
-    testuncompress deflate-error broken.zip {decompression error} deflatezliberror -returnCodes error
-    testuncompress bzip2   testbzip2.zip {unsupported compression method} abac-repeat.txt -returnCodes error
-    testuncompress lzma    testfile-lzma.zip {unsupported compression method} abac-repeat.txt -returnCodes error
-    testuncompress xz      testfile-xz.zip {unsupported compression method} abac-repeat.txt -returnCodes error
-    testuncompress zstd    testfile-zstd.zip {unsupported compression method} abac-repeat.txt -returnCodes error
 
+        set data [readbin $zippath]
+        test zipfs-read-memory-$id "zipfs read in-memory $id" -setup {
+            unset -nocomplain fd
+            zipfs mount_data $data $defaultMountPoint
+        } -cleanup {
+            # In case open succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body {
+            set fd [open [file join $defaultMountPoint $filename] {*}$openopts]
+            gets $fd
+        } -result $result {*}$args
+
+    }
+    testzipfsread stored  test.zip          test           test
+    testzipfsread stored  teststored.zip    aaaaaaaaaaaaaa
+    testzipfsread deflate testdeflated2.zip aaaaaaaaaaaaaa
+    # Test open modes - see bug [4645658689]
+    testzipfsread stored-rw  teststored.zip    aaaaaaaaaaaaaa abac-repeat.txt r+
+    testzipfsread deflate-rw testdeflated2.zip aaaaaaaaaaaaaa abac-repeat.txt r+
+    testzipfsread stored-wr  teststored.zip    {} abac-repeat.txt w+ -constraints bug-00018ec7a0
+    testzipfsread deflate-wr testdeflated2.zip {} abac-repeat.txt w+ -constraints bug-00018ec7a0
+    testzipfsread stored-ar  teststored.zip    {} abac-repeat.txt a+
+    testzipfsread deflate-ar testdeflated2.zip {} abac-repeat.txt a+
+
+    testzipfsread nosuch  test.zip          "file not found \"//zipfs:/testmount/nosuchfile\": no such file or directory" nosuchfile {} -returnCodes error
+    testzipfsread deflate-error broken.zip  {decompression error} deflatezliberror {} -returnCodes error
+    testzipfsread bzip2   testbzip2.zip     {unsupported compression method} abac-repeat.txt {} -returnCodes error
+    testzipfsread lzma    testfile-lzma.zip {unsupported compression method} abac-repeat.txt {} -returnCodes error
+    testzipfsread xz      testfile-xz.zip   {unsupported compression method} abac-repeat.txt {} -returnCodes error
+    testzipfsread zstd    testfile-zstd.zip {unsupported compression method} abac-repeat.txt {} -returnCodes error
+
+    test zipfs-read-unwritable "Writes not allowed on file opened for read" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        close $fd
+        cleanup
+    } -body {
+        set fd [open [file join $defaultMountPoint test]]
+        puts $fd blah
+    } -result {channel "*" wasn't opened for writing} -match glob -returnCodes error
+
+    #
+    # Write
+    proc testzipfswrite {id zippath result filename mode args} {
+        variable defaultMountPoint
+        set zippath [zippath $zippath]
+        set path [file join $defaultMountPoint $filename]
+        set body {
+            set fd [open $path $mode]
+            fconfigure $fd -translation binary
+            puts -nonewline $fd "xyz"
+            close $fd
+            set fd [open $path]
+            fconfigure $fd -translation binary
+            read $fd
+        }
+        test zipfs-write-$id "zipfs write $id" -setup {
+            unset -nocomplain fd
+            zipfs mount $zippath $defaultMountPoint
+        } -cleanup {
+            # In case open succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body $body -result $result {*}$args
+
+        set data [readbin $zippath]
+        test zipfs-write-memory-$id "zipfs write in-memory $id" -setup {
+            unset -nocomplain fd
+            zipfs mount_data $data $defaultMountPoint
+        } -cleanup {
+            # In case open succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body $body -result $result {*}$args
+
+    }
+    testzipfswrite create-w test.zip  "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile w -returnCodes error
+    testzipfswrite create-wr test.zip "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile w+ -returnCodes error
+    testzipfswrite create-a test.zip  "append mode not supported: permission denied" newfile a -returnCodes error
+    testzipfswrite create-ar test.zip "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile a+ -returnCodes error
+    testzipfswrite store-w teststored.zip      "xyz" abac-repeat.txt w
+    testzipfswrite deflate-w testdeflated2.zip "xyz" abac-repeat.txt w
+    testzipfswrite store-wr teststored.zip     "xyz" abac-repeat.txt w+
+    testzipfswrite deflate-wr testdeflated2.zip "xyz" abac-repeat.txt w+
+    testzipfswrite stored-a teststored.zip     "append mode not supported: permission denied" abac-repeat.txt a -returnCodes error
+    testzipfswrite deflate-a testdeflated2.zip "append mode not supported: permission denied" abac-repeat.txt a -returnCodes error
+    testzipfswrite store-ar teststored.zip     "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
+    testzipfswrite deflate-ar testdeflated2.zip "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
+
+    test zipfs-write-unreadable "Reads not allowed on file opened for write" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        close $fd
+        cleanup
+    } -body {
+        set fd [open [file join $defaultMountPoint test] w]
+        read $fd
+    } -result {channel "*" wasn't opened for reading} -match glob -returnCodes error
+
+    test zipfs-write-persist "Writes persist ONLY while mounted" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set path [file join $defaultMountPoint test]
+        set fd [open $path w]
+        puts -nonewline $fd newtext
+        close $fd
+        set fd [open $path]
+        set result [list [read $fd]]
+        close $fd
+        zipfs unmount $defaultMountPoint
+        mount [zippath test.zip]
+        set fd [open $path]
+        lappend result [read $fd]
+        close $fd
+        set result
+    } -result [list newtext test\n]
+
+    test zipfs-write-size-limit-0 "Writes more than size limit with flush" -setup {
+        set origlimit $::tcl::zipfs::wrmax
+        mount [zippath test.zip]
+    } -cleanup {
+        close $fd
+        set ::tcl::zipfs::wrmax $origlimit
+        cleanup
+    } -body {
+        set ::tcl::zipfs::wrmax 10
+        set fd [open [file join $defaultMountPoint test] w]
+        puts $fd [string repeat x 11]
+        flush $fd
+    } -result {error flushing *: file too large} -match glob -returnCodes error
+
+    test zipfs-write-size-limit-1 "Writes size limit on close" -setup {
+        set origlimit $::tcl::zipfs::wrmax
+        mount [zippath test.zip]
+    } -cleanup {
+        set ::tcl::zipfs::wrmax $origlimit
+        cleanup
+    } -body {
+        set ::tcl::zipfs::wrmax 10
+        set fd [open [file join $defaultMountPoint test] w]
+        puts $fd [string repeat x 11]
+        close $fd
+    } -result {file too large} -match glob -returnCodes error
+
+    test zipfs-write-size-limit-2 "Writes max size" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set fd [open [file join $defaultMountPoint test] w]
+        puts -nonewline $fd [string repeat x $::tcl::zipfs::wrmax]
+        close $fd
+        file size [file join $defaultMountPoint test]
+    } -result $::tcl::zipfs::wrmax
+
+    test zipfs-write-size-limit-3 "Writes disallowed" -setup {
+        set origlimit $::tcl::zipfs::wrmax
+        mount [zippath test.zip]
+    } -cleanup {
+        set ::tcl::zipfs::wrmax $origlimit
+        cleanup
+    } -body {
+        set ::tcl::zipfs::wrmax -1
+        open [file join $defaultMountPoint test] w
+    } -result {write access not supported: permission denied} -returnCodes error
+
+    #
+    # read/seek/write
+    proc testzipfsrw {id zippath expected filename mode args} {
+        variable defaultMountPoint
+        set zippath [zippath $zippath]
+        set path [file join $defaultMountPoint $filename]
+        set body {
+            set result ""
+            set fd [open $path $mode]
+            fconfigure $fd -translation binary
+            append result [gets $fd],
+            set pos [tell $fd]
+            append result $pos,
+            puts -nonewline $fd "xyz"
+            append result [gets $fd],
+            seek $fd $pos
+            append result [gets $fd],
+            seek $fd -6 end
+            append result [read $fd]
+        }
+        test zipfs-readwrite-$id "zipfs read/seek/write $id" -setup {
+            unset -nocomplain fd
+            zipfs mount $zippath $defaultMountPoint
+        } -cleanup {
+            # In case open succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body $body -result $expected {*}$args
+
+        set data [readbin $zippath]
+        test zipfs-readwrite-memory-$id "zipfs read/seek/write in-memory $id" -setup {
+            unset -nocomplain fd
+            zipfs mount_data $data $defaultMountPoint
+        } -cleanup {
+            # In case open succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body $body -result $expected {*}$args
+
+    }
+    testzipfsrw store-r+ teststored.zip      "aaaaaaaaaaaaaa,15,bbbbbbbbbbb,xyzbbbbbbbbbbb,ccccc\n" abac-repeat.txt r+
+    testzipfsrw store-w+ teststored.zip      ",0,,xyz,yz" abac-repeat.txt w+ -constraints bug-00018ec7a0
+    testzipfsrw store-a+ teststored.zip      ",60,,xyz,cc\nxyz" abac-repeat.txt a+
+
+    #
+    # Password protected
     proc testpassword {id filename password result args} {
         variable defaultMountPoint
         set zippath [zippath test-password.zip]
@@ -950,7 +1183,7 @@ namespace eval test_ns_zipfs {
                 zipfs mount $zippath $defaultMountPoint
             }
         } -cleanup {
-            # In case mount succeeded when it should not
+            # In case open succeeded when it should not
             if {[info exists fd]} {
                 close $fd
             }
@@ -960,15 +1193,15 @@ namespace eval test_ns_zipfs {
             gets $fd
         } -result $result {*}$args
     }
-    # The bug bbe7c6ff9e only manifests on macos
-    testConstraint bbe7c6ff9e [expr {$::tcl_platform(os) ne "Darwin"}]
+    # The bug bug-bbe7c6ff9e only manifests on macos
+    testConstraint bug-bbe7c6ff9e [expr {$::tcl_platform(os) ne "Darwin"}]
     testpassword plain plain.txt password plaintext
     testpassword plain-nopassword plain.txt "" plaintext
     testpassword plain-badpassword plain.txt xxx plaintext
-    testpassword cipher cipher.bin password ciphertext -constraints bbe7c6ff9e
+    testpassword cipher cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
     testpassword cipher-nopassword cipher.bin {} "decryption failed" -returnCodes error
     testpassword cipher-badpassword cipher.bin xxx "invalid CRC" -returnCodes error
-    testpassword cipher-deflate cipher-deflate.bin password [lseq 100] -constraints bbe7c6ff9e
+    testpassword cipher-deflate cipher-deflate.bin password [lseq 100] -constraints bug-bbe7c6ff9e
     testpassword cipher-deflate-nopassword cipher-deflate.bin {} "decryption failed" -returnCodes error
     testpassword cipher-deflate-badpassword cipher-deflate.bin xxx "decompression error" -returnCodes error
 
@@ -1068,8 +1301,14 @@ namespace eval test_ns_zipfs {
 
     test zipfs-file-stat-root-subdir-mount "Read stat of root when mount is subdir" -setup {
         mount [zippath test.zip]
-    } -cleanup cleanup -constraints bug-02acab5aea -body {
+    } -cleanup cleanup -body {
         lsort -stride 2 [file stat [zipfs root]]
+    } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
+
+    test zipfs-file-stat-level3 "Stat on a directory that is intermediary in a mount point" -setup {
+        mount [zippath test.zip] [file join $defaultMountPoint mt2]
+    } -cleanup cleanup -body {
+        lsort -stride 2 [file stat $defaultMountPoint]
     } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
 
     #
@@ -1097,7 +1336,26 @@ namespace eval test_ns_zipfs {
     testzipfsglob mountpoint $defaultMountPoint [file join [zipfs root] *] \
         [list $defaultMountPoint] {} -constraints !zipfslib
 
-    # TODO tests for compress and save, + with password
+    #
+    # file attributes
+    proc testzipfsfileattr [list id path result [list mountpoint $defaultMountPoint] args] {
+        test zipfs-file-attrs-$id "zipfs file attrs $id" -setup {
+            mount [zippath test.zip] $mountpoint
+        } -cleanup cleanup -body {
+            lsort -stride 2 [file attributes $path]
+        } -result $result {*}$args
+    }
+    testzipfsfileattr noent [file join $defaultMountPoint nosuchfile] \
+        {file not found: no such file or directory} $defaultMountPoint -returnCodes error
+    testzipfsfileattr file [file join $defaultMountPoint test] \
+        [list -archive [zippath test.zip] -compsize 5 -crc [expr 0x3BB935C6] -mount $defaultMountPoint -offset 55 -permissions 0o555 -uncompsize 5]
+    testzipfsfileattr dir [file join $defaultMountPoint testdir] \
+        [list -archive [zippath test.zip] -compsize 0 -crc 0 -mount $defaultMountPoint -offset 119 -permissions 0o555 -uncompsize 0]
+    testzipfsfileattr root [zipfs root] {} {} -constraints bug-4af110a6a1
+    testzipfsfileattr mountpoint $defaultMountPoint \
+        [list -archive [zippath test.zip] -compsize 0 -crc 0 -mount $defaultMountPoint -offset 0 -permissions 0o555 -uncompsize 0]
+    testzipfsfileattr mezzo [file join $defaultMountPoint a b] {} [file join $defaultMountPoint a b c] -constraints bug-4af110a6a1
+
 
     #
     # TODO - file copy, file rename etc.

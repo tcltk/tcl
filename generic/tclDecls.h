@@ -140,7 +140,7 @@ EXTERN int		Tcl_GetBooleanFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, int *intPtr);
 /* 33 */
 EXTERN unsigned char *	Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr,
-				int *numBytesPtr);
+				Tcl_Size *numBytesPtr);
 /* 34 */
 EXTERN int		Tcl_GetDouble(Tcl_Interp *interp, const char *src,
 				double *doublePtr);
@@ -424,24 +424,33 @@ EXTERN int		Tcl_ExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 EXTERN int		Tcl_ExprString(Tcl_Interp *interp, const char *expr);
 /* 143 */
 EXTERN void		Tcl_Finalize(void);
-/* Slot 144 is reserved */
+/* 144 */
+EXTERN int		Tcl_GetAlias(Tcl_Interp *interp,
+				const char *childCmd,
+				Tcl_Interp **targetInterpPtr,
+				const char **targetCmdPtr, Tcl_Size *argcPtr,
+				const char ***argvPtr);
 /* 145 */
 EXTERN Tcl_HashEntry *	Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
 				Tcl_HashSearch *searchPtr);
 /* 146 */
 EXTERN int		Tcl_Flush(Tcl_Channel chan);
-/* Slot 147 is reserved */
-/* 148 */
-EXTERN int		Tcl_GetAlias(Tcl_Interp *interp,
-				const char *childCmd,
-				Tcl_Interp **targetInterpPtr,
-				const char **targetCmdPtr, int *argcPtr,
-				const char ***argvPtr);
-/* 149 */
+/* 147 */
 EXTERN int		Tcl_GetAliasObj(Tcl_Interp *interp,
 				const char *childCmd,
 				Tcl_Interp **targetInterpPtr,
-				const char **targetCmdPtr, int *objcPtr,
+				const char **targetCmdPtr, Tcl_Size *objcPtr,
+				Tcl_Obj ***objv);
+/* 148 */
+EXTERN int		TclGetAlias(Tcl_Interp *interp, const char *childCmd,
+				Tcl_Interp **targetInterpPtr,
+				const char **targetCmdPtr, void *argcPtr,
+				const char ***argvPtr);
+/* 149 */
+EXTERN int		TclGetAliasObj(Tcl_Interp *interp,
+				const char *childCmd,
+				Tcl_Interp **targetInterpPtr,
+				const char **targetCmdPtr, void *objcPtr,
 				Tcl_Obj ***objv);
 /* 150 */
 EXTERN void *		Tcl_GetAssocData(Tcl_Interp *interp,
@@ -1914,7 +1923,7 @@ typedef struct TclStubs {
     void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
     int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *intPtr); /* 31 */
     int (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *intPtr); /* 32 */
-    unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, int *numBytesPtr); /* 33 */
+    unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, Tcl_Size *numBytesPtr); /* 33 */
     int (*tcl_GetDouble) (Tcl_Interp *interp, const char *src, double *doublePtr); /* 34 */
     int (*tcl_GetDoubleFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, double *doublePtr); /* 35 */
     void (*reserved36)(void);
@@ -2025,12 +2034,12 @@ typedef struct TclStubs {
     int (*tcl_ExprObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr); /* 141 */
     int (*tcl_ExprString) (Tcl_Interp *interp, const char *expr); /* 142 */
     void (*tcl_Finalize) (void); /* 143 */
-    void (*reserved144)(void);
+    int (*tcl_GetAlias) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, Tcl_Size *argcPtr, const char ***argvPtr); /* 144 */
     Tcl_HashEntry * (*tcl_FirstHashEntry) (Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr); /* 145 */
     int (*tcl_Flush) (Tcl_Channel chan); /* 146 */
-    void (*reserved147)(void);
-    int (*tcl_GetAlias) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *argcPtr, const char ***argvPtr); /* 148 */
-    int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objv); /* 149 */
+    int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, Tcl_Size *objcPtr, Tcl_Obj ***objv); /* 147 */
+    int (*tclGetAlias) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, void *argcPtr, const char ***argvPtr); /* 148 */
+    int (*tclGetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, void *objcPtr, Tcl_Obj ***objv); /* 149 */
     void * (*tcl_GetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc **procPtr); /* 150 */
     Tcl_Channel (*tcl_GetChannel) (Tcl_Interp *interp, const char *chanName, int *modePtr); /* 151 */
     Tcl_Size (*tcl_GetChannelBufferSize) (Tcl_Channel chan); /* 152 */
@@ -2856,16 +2865,18 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ExprString) /* 142 */
 #define Tcl_Finalize \
 	(tclStubsPtr->tcl_Finalize) /* 143 */
-/* Slot 144 is reserved */
+#define Tcl_GetAlias \
+	(tclStubsPtr->tcl_GetAlias) /* 144 */
 #define Tcl_FirstHashEntry \
 	(tclStubsPtr->tcl_FirstHashEntry) /* 145 */
 #define Tcl_Flush \
 	(tclStubsPtr->tcl_Flush) /* 146 */
-/* Slot 147 is reserved */
-#define Tcl_GetAlias \
-	(tclStubsPtr->tcl_GetAlias) /* 148 */
 #define Tcl_GetAliasObj \
-	(tclStubsPtr->tcl_GetAliasObj) /* 149 */
+	(tclStubsPtr->tcl_GetAliasObj) /* 147 */
+#define TclGetAlias \
+	(tclStubsPtr->tclGetAlias) /* 148 */
+#define TclGetAliasObj \
+	(tclStubsPtr->tclGetAliasObj) /* 149 */
 #define Tcl_GetAssocData \
 	(tclStubsPtr->tcl_GetAssocData) /* 150 */
 #define Tcl_GetChannel \
@@ -4270,6 +4281,22 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_CreateSlave Tcl_CreateChild
 #   define Tcl_GetSlave Tcl_GetChild
 #   define Tcl_GetMaster Tcl_GetParent
+#endif
+
+#ifdef TCL_USE_STUBS
+    /* Protect those 12 functions, being usable through the stub table */
+#   undef TclGetStringFromObj
+#   undef TclGetBytesFromObj
+#   undef TclGetUnicodeFromObj
+#   undef TclListObjGetElements
+#   undef TclListObjLength
+#   undef TclDictObjSize
+#   undef TclSplitList
+#   undef TclSplitPath
+#   undef TclFSSplitPath
+#   undef TclParseArgsObjv
+#   undef TclGetAlias
+#   undef TclGetAliasObj
 #endif
 
 #if TCL_MAJOR_VERSION < 9

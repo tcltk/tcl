@@ -2154,7 +2154,7 @@ ParseBoolean(
     Tcl_Size i, length;
     const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
-    if ((length == 0) || (length > 5)) {
+    if ((length <= 0) || (length > 5)) {
 	/*
 	 * Longest valid boolean string rep. is "false".
 	 */

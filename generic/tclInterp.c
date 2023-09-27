@@ -51,7 +51,7 @@ typedef struct {
 				 * used in the parent interpreter to map back
 				 * from the target command to aliases
 				 * redirecting to it. */
-    int objc;			/* Count of Tcl_Obj in the prefix of the
+    Tcl_Size objc;			/* Count of Tcl_Obj in the prefix of the
 				 * target command to be invoked in the target
 				 * interpreter. Additional arguments specified
 				 * when calling the alias in the child interp
@@ -1298,13 +1298,13 @@ Tcl_GetAlias(
     Tcl_Interp **targetInterpPtr,
 				/* (Return) target interpreter. */
     const char **targetNamePtr,	/* (Return) name of target command. */
-    int *argcPtr,		/* (Return) count of addnl args. */
+    Tcl_Size *argcPtr,		/* (Return) count of addnl args. */
     const char ***argvPtr)	/* (Return) additional arguments. */
 {
     InterpInfo *iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
     Tcl_HashEntry *hPtr;
     Alias *aliasPtr;
-    int i, objc;
+    Tcl_Size i, objc;
     Tcl_Obj **objv;
 
     hPtr = Tcl_FindHashEntry(&iiPtr->child.aliasTable, aliasName);
@@ -1360,13 +1360,13 @@ Tcl_GetAliasObj(
     Tcl_Interp **targetInterpPtr,
 				/* (Return) target interpreter. */
     const char **targetNamePtr,	/* (Return) name of target command. */
-    int *objcPtr,		/* (Return) count of addnl args. */
+    Tcl_Size *objcPtr,		/* (Return) count of addnl args. */
     Tcl_Obj ***objvPtr)		/* (Return) additional args. */
 {
     InterpInfo *iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
     Tcl_HashEntry *hPtr;
     Alias *aliasPtr;
-    int objc;
+    Tcl_Size objc;
     Tcl_Obj **objv;
 
     hPtr = Tcl_FindHashEntry(&iiPtr->child.aliasTable, aliasName);
@@ -1830,7 +1830,7 @@ AliasNRCmd(
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     Alias *aliasPtr = (Alias *)clientData;
-    int prefc, cmdc, i;
+    Tcl_Size prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *listPtr;
     ListRep listRep;
@@ -1885,7 +1885,8 @@ TclAliasObjCmd(
 #define ALIAS_CMDV_PREALLOC 10
     Alias *aliasPtr = (Alias *)clientData;
     Tcl_Interp *targetInterp = aliasPtr->targetInterp;
-    int result, prefc, cmdc, i;
+    int result;
+    Tcl_Size prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
     Interp *tPtr = (Interp *) targetInterp;
@@ -1975,7 +1976,8 @@ TclLocalAliasObjCmd(
 {
 #define ALIAS_CMDV_PREALLOC 10
     Alias *aliasPtr = (Alias *)clientData;
-    int result, prefc, cmdc, i;
+    int result;
+    Tcl_Size prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
     Interp *iPtr = (Interp *) interp;
@@ -2057,7 +2059,7 @@ AliasObjCmdDeleteProc(
 {
     Alias *aliasPtr = (Alias *)clientData;
     Target *targetPtr;
-    int i;
+    Tcl_Size i;
     Tcl_Obj **objv;
 
     Tcl_DecrRefCount(aliasPtr->token);

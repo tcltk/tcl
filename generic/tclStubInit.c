@@ -112,6 +112,8 @@
 # define TclSplitPath 0
 # define TclFSSplitPath 0
 # define TclParseArgsObjv 0
+# define TclGetAlias 0
+# define TclGetAliasObj 0
 #else /* !defined(TCL_NO_DEPRECATED) */
 int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     void *objcPtr, Tcl_Obj ***objvPtr) {
@@ -204,6 +206,38 @@ int TclParseArgsObjv(Tcl_Interp *interp,
     Tcl_Size n = (*(int *)objcPtr < 0) ? TCL_INDEX_NONE: (Tcl_Size)*(int *)objcPtr ;
     int result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
     *(int *)objcPtr = (int)n;
+    return result;
+}
+int TclGetAlias(Tcl_Interp *interp, const char *childCmd,
+	Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
+	void *argcPtr, const char ***argvPtr) {
+    Tcl_Size n = TCL_INDEX_NONE;
+    int result = Tcl_GetAlias(interp, childCmd, targetInterpPtr, targetCmdPtr, &n, argvPtr);
+    if (argcPtr) {
+	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, "List too large to be processed", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	*(int *)argcPtr = (int)n;
+    }
+    return result;
+}
+int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
+	Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
+	void *objcPtr, Tcl_Obj ***objv) {
+    Tcl_Size n = TCL_INDEX_NONE;
+    int result = Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, &n, objv);
+    if (objcPtr) {
+	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, "List too large to be processed", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	*(int *)objcPtr = (int)n;
+    }
     return result;
 }
 #endif /* !defined(TCL_NO_DEPRECATED) */
@@ -961,12 +995,12 @@ const TclStubs tclStubs = {
     Tcl_ExprObj, /* 141 */
     Tcl_ExprString, /* 142 */
     Tcl_Finalize, /* 143 */
-    0, /* 144 */
+    Tcl_GetAlias, /* 144 */
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
-    0, /* 147 */
-    Tcl_GetAlias, /* 148 */
-    Tcl_GetAliasObj, /* 149 */
+    Tcl_GetAliasObj, /* 147 */
+    TclGetAlias, /* 148 */
+    TclGetAliasObj, /* 149 */
     Tcl_GetAssocData, /* 150 */
     Tcl_GetChannel, /* 151 */
     Tcl_GetChannelBufferSize, /* 152 */

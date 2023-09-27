@@ -3424,12 +3424,11 @@ int
 TclNRSwitchObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc1,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, mode, foundmode, splitObjs, numMatchesSaved;
-    int noCase;
-    int objc = objc1;
+    int noCase, mode, foundmode, splitObjs, numMatchesSaved;
+    Tcl_Size i;
     Tcl_Size patternLength, j;
     const char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
@@ -3513,7 +3512,7 @@ TclNRSwitchObjCmd(
 
 	case OPT_INDEXV:
 	    i++;
-	    if (i >= objc-2) {
+	    if (i + 2 >= objc) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"missing variable name argument to %s option",
 			"-indexvar"));
@@ -3526,7 +3525,7 @@ TclNRSwitchObjCmd(
 	    break;
 	case OPT_MATCHV:
 	    i++;
-	    if (i >= objc-2) {
+	    if (i + 2 >= objc) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"missing variable name argument to %s option",
 			"-matchvar"));
@@ -3541,7 +3540,7 @@ TclNRSwitchObjCmd(
     }
 
   finishedOptions:
-    if (objc - i < 2) {
+    if (objc < i + 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-option ...? string ?pattern body ...? ?default body?");
 	return TCL_ERROR;
@@ -3660,7 +3659,7 @@ TclNRSwitchObjCmd(
 
 	pattern = Tcl_GetStringFromObj(objv[i], &patternLength);
 
-	if ((i == objc - 2) && (*pattern == 'd')
+	if ((i + 2 == objc) && (*pattern == 'd')
 		&& (strcmp(pattern, "default") == 0)) {
 	    Tcl_Obj *emptyObj = NULL;
 
