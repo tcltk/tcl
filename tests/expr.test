@@ -5,7 +5,7 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1996-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-2000 by Scriptics Corporation.
+# Copyright (c) 1998-2000 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -356,7 +356,7 @@ test expr-8.11 {CompileEqualityExpr: error compiling equality arm} -body {
     expr 2!=x
 } -returnCodes error -match glob -result *
 test expr-8.12 {CompileBitAndExpr: equality expr} {expr {"a"eq"a"}} 1
-test expr-8.13 {CompileBitAndExpr: equality expr} {expr {"\374" eq [set s \u00fc]}} 1
+test expr-8.13 {CompileBitAndExpr: equality expr} {expr {"\374" eq [set s \xFC]}} 1
 test expr-8.14 {CompileBitAndExpr: equality expr} {expr 3eq2} 0
 test expr-8.15 {CompileBitAndExpr: equality expr} {expr 2.0eq2} 0
 test expr-8.16 {CompileBitAndExpr: equality expr} {expr 3.2ne2.2} 1
@@ -802,7 +802,7 @@ test expr-20.2 {double invocation of variable traces} -body {
            set var "$counter + [concat $extraargs]"
        }
     }
-    trace variable exprtracevar r [list exprtraceproc 10]
+    trace add variable exprtracevar read [list exprtraceproc 10]
     list [catch {expr "$exprtracevar + 20"} a] $a \
         [catch {expr "$exprtracevar + 20"} b] $b \
         [unset exprtracevar exprtracecounter]

@@ -1979,10 +1979,10 @@ TraceVarProc(
     int rewind = ((Interp *)interp)->execEnvPtr->rewind;
 
     /*
-     * We might call Tcl_Eval() below, and that might evaluate [trace vdelete]
-     * which might try to free tvarPtr. We want to use tvarPtr until the end
-     * of this function, so we use Tcl_Preserve() and Tcl_Release() to be sure
-     * it is not freed while we still need it.
+     * We might call Tcl_EvalEx() below, and that might evaluate
+     * [trace remove variable] which might try to free tvarPtr. We want to
+     * use tvarPtr until the end of this function, so we use Tcl_Preserve()
+     * and Tcl_Release() to be sure it is not freed while we still need it.
      */
 
     result = NULL;

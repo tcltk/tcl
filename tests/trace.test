@@ -76,26 +76,26 @@ test trace-0.0 {memory corruption in trace (Tcl Bug 484339)} {
     trace add variable z array {set z(foo) 1 ;#}
     set res "names: [array names z]"
     unset -nocomplain ::z
-    trace variable ::z w {unset ::z; error "memory corruption";#}
+    trace add variable ::z write {unset ::z; error "memory corruption";#}
     list [catch {set ::z 1} msg] $msg
 } {1 {can't set "::z": memory corruption}}
 
 # Read-tracing on variables
 
-test trace-1.1 {trace variable reads} {
+test trace-1.1 {trace add variable reads} {
     unset -nocomplain x
     set info {}
     trace add variable x read traceScalar
     list [catch {set x} msg] $msg $info
 } {1 {can't read "x": no such variable} {x {} read 1 {can't read "x": no such variable}}}
-test trace-1.2 {trace variable reads} {
+test trace-1.2 {trace add variable reads} {
     unset -nocomplain x
     set x 123
     set info {}
     trace add variable x read traceScalar
     list [catch {set x} msg] $msg $info
 } {0 123 {x {} read 0 123}}
-test trace-1.3 {trace variable reads} {
+test trace-1.3 {trace add variable reads} {
     unset -nocomplain x
     set info {}
     trace add variable x read traceScalar
@@ -156,7 +156,7 @@ test trace-1.9 {trace reads on whole arrays} {
     trace add variable x read traceArray
     list [catch {set x(2)} msg] $msg $info
 } {0 zzz {x 2 read 0 zzz}}
-test trace-1.10 {trace variable reads} {
+test trace-1.10 {trace add variable reads} {
     unset -nocomplain x
     set x 444
     set info {}
@@ -167,35 +167,35 @@ test trace-1.10 {trace variable reads} {
 test trace-1.11 {read traces that modify the array structure} {
     unset -nocomplain x
     set x(bar) 0
-    trace variable x r {set x(foo) 1 ;#}
-    trace variable x r {unset -nocomplain x(bar) ;#}
+    trace add variable x read {set x(foo) 1 ;#}
+    trace add variable x read {unset -nocomplain x(bar) ;#}
     array get x
 } {}
 test trace-1.12 {read traces that modify the array structure} {
     unset -nocomplain x
     set x(bar) 0
-    trace variable x r {unset -nocomplain x(bar) ;#}
-    trace variable x r {set x(foo) 1 ;#}
+    trace add variable x read {unset -nocomplain x(bar) ;#}
+    trace add variable x read {set x(foo) 1 ;#}
     array get x
 } {}
 test trace-1.13 {read traces that modify the array structure} {
     unset -nocomplain x
     set x(bar) 0
-    trace variable x r {set x(foo) 1 ;#}
-    trace variable x r {unset -nocomplain x;#}
+    trace add variable x read {set x(foo) 1 ;#}
+    trace add variable x read {unset -nocomplain x;#}
     list [catch {array get x} res] $res
 } {1 {can't read "x(bar)": no such variable}}
 test trace-1.14 {read traces that modify the array structure} {
     unset -nocomplain x
     set x(bar) 0
-    trace variable x r {unset -nocomplain x;#}
-    trace variable x r {set x(foo) 1 ;#}
+    trace add variable x read {unset -nocomplain x;#}
+    trace add variable x read {set x(foo) 1 ;#}
     list [catch {array get x} res] $res
 } {1 {can't read "x(bar)": no such variable}}
 
 # Basic write-tracing on variables
 
-test trace-2.1 {trace variable writes} {
+test trace-2.1 {trace add variable writes} {
     unset -nocomplain x
     set info {}
     trace add variable x write traceScalar
@@ -216,7 +216,7 @@ test trace-2.3 {trace writes on whole arrays} {
     set x(abc) qq
     set info
 } {x abc write 0 qq}
-test trace-2.4 {trace variable writes} {
+test trace-2.4 {trace add variable writes} {
     unset -nocomplain x
     set x 1234
     set info {}
@@ -224,7 +224,7 @@ test trace-2.4 {trace variable writes} {
     set x
     set info
 } {}
-test trace-2.5 {trace variable writes} {
+test trace-2.5 {trace add variable writes} {
     unset -nocomplain x
     set x 1234
     set info {}
@@ -232,7 +232,7 @@ test trace-2.5 {trace variable writes} {
     unset x
     set info
 } {}
-test trace-2.6 {trace variable writes on compiled local} {
+test trace-2.6 {trace add variable writes on compiled local} {
     #
     # Check correct function of whole array traces on compiled local
     # arrays [Bug 1770591]. The corresponding function for read traces is
@@ -247,7 +247,7 @@ test trace-2.6 {trace variable writes on compiled local} {
     p
     set info
 } {x X write 0 willy}
-test trace-2.7 {trace variable writes on errorInfo} -body {
+test trace-2.7 {trace add variable writes on errorInfo} -body {
    #
    # Check correct behaviour of write traces on errorInfo.
    # [Bug 1773040]
@@ -266,7 +266,7 @@ test trace-2.7 {trace variable writes on errorInfo} -body {
 # still trigger these read traces. Also lappend triggers only one write
 # trace: after appending all arguments to the list.
 
-test trace-3.1 {trace variable read-modify-writes} {
+test trace-3.1 {trace add variable read-modify-writes} {
     unset -nocomplain x
     set info {}
     trace add variable x read traceScalarAppend
@@ -275,7 +275,7 @@ test trace-3.1 {trace variable read-modify-writes} {
     lappend x 789
     set info
 } {x {} read 0 123456}
-test trace-3.2 {trace variable read-modify-writes} {
+test trace-3.2 {trace add variable read-modify-writes} {
     unset -nocomplain x
     set info {}
     trace add variable x {read write} traceScalarAppend
@@ -286,7 +286,7 @@ test trace-3.2 {trace variable read-modify-writes} {
 
 # Basic unset-tracing on variables
 
-test trace-4.1 {trace variable unsets} {
+test trace-4.1 {trace add variable unsets} {
     unset -nocomplain x
     set info {}
     trace add variable x unset traceScalar
@@ -397,10 +397,10 @@ test trace-5.4 {array traces properly listed in trace information} {
 } [list [list array traceArray2]]
 test trace-5.5 {array traces properly listed in trace information} {
     unset -nocomplain x
-    trace variable x a traceArray2
-    set result [trace vinfo x]
+    trace add variable x array traceArray2
+    set result [trace info variable x]
     set result
-} [list [list a traceArray2]]
+} [list [list array traceArray2]]
 test trace-5.6 {array traces don't fire on scalar variables} {
     unset -nocomplain x
     set x foo
@@ -1234,23 +1234,23 @@ test trace-18.1 {unset traces on procedure returns} {
     p1 foo bar
     set info
 } {0 {a x y}}
-test trace-18.2 {namespace delete / trace vdelete combo} {
+test trace-18.2 {namespace delete / trace remove variable combo} {
     namespace eval ::foo {
 	variable x 123
     }
     proc p1 args {
-	trace vdelete ::foo::x u p1
+	trace remove variable ::foo::x unset p1
     }
-    trace variable ::foo::x u p1
+    trace add variable ::foo::x unset p1
     namespace delete ::foo
     info exists ::foo::x
 } 0
-test trace-18.3 {namespace delete / trace vdelete combo, Bug \#1337229} {
+test trace-18.3 {namespace delete / trace remove variable combo, Bug \#1337229} {
     namespace eval ::ns {}
     trace add variable ::ns::var unset {unset ::ns::var ;#}
     namespace delete ::ns
 } {}
-test trace-18.4 {namespace delete / trace vdelete combo, Bug \#1338280} {
+test trace-18.4 {namespace delete / trace remove variable combo, Bug \#1338280} {
     namespace eval ::ref {}
     set ::ref::var1 AAA
     trace add variable ::ref::var1 unset doTrace
@@ -2420,7 +2420,7 @@ test trace-32.1 {
 
 test trace-33.1 {variable match with remove variable} {
     unset -nocomplain x
-    trace variable x w foo
+    trace add variable x write foo
     trace remove variable x write foo
     llength [trace info variable x]
 } 0
