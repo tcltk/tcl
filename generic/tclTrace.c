@@ -92,12 +92,8 @@ typedef struct {
  * Forward declarations for functions defined in this file:
  */
 
-/* 'OLD' options are pre-Tcl-8.4 style */
 enum traceOptionsEnum {
     TRACE_ADD, TRACE_INFO, TRACE_REMOVE
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-    ,TRACE_OLD_VARIABLE, TRACE_OLD_VDELETE, TRACE_OLD_VINFO
-#endif
 };
 typedef int (Tcl_TraceTypeObjCmd)(Tcl_Interp *interp, enum traceOptionsEnum optionIndex,
 	Tcl_Size objc, Tcl_Obj *const objv[]);
@@ -195,16 +191,9 @@ Tcl_TraceObjCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-    const char *name;
-    const char *flagOps, *p;
-#endif
     /* Main sub commands to 'trace' */
     static const char *const traceOptions[] = {
 	"add", "info", "remove",
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-	"variable", "vdelete", "vinfo",
-#endif
 	NULL
     };
     enum traceOptionsEnum optionIndex;
@@ -264,116 +253,8 @@ Tcl_TraceObjCmd(
 	break;
     }
 
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-    case TRACE_OLD_VARIABLE:
-    case TRACE_OLD_VDELETE: {
-	Tcl_Obj *copyObjv[6];
-	Tcl_Obj *opsList;
-	int code;
-	Tcl_Size numFlags;
-
-	if (objc != 5) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "name ops command");
-	    return TCL_ERROR;
-	}
-
-	TclNewObj(opsList);
-	Tcl_IncrRefCount(opsList);
-	flagOps = Tcl_GetStringFromObj(objv[3], &numFlags);
-	if (numFlags == 0) {
-	    Tcl_DecrRefCount(opsList);
-	    goto badVarOps;
-	}
-	for (p = flagOps; *p != 0; p++) {
-	    Tcl_Obj *opObj;
-
-	    if (*p == 'r') {
-		TclNewLiteralStringObj(opObj, "read");
-	    } else if (*p == 'w') {
-		TclNewLiteralStringObj(opObj, "write");
-	    } else if (*p == 'u') {
-		TclNewLiteralStringObj(opObj, "unset");
-	    } else if (*p == 'a') {
-		TclNewLiteralStringObj(opObj, "array");
-	    } else {
-		Tcl_DecrRefCount(opsList);
-		goto badVarOps;
-	    }
-	    Tcl_ListObjAppendElement(NULL, opsList, opObj);
-	}
-	copyObjv[0] = NULL;
-	memcpy(copyObjv+1, objv, objc*sizeof(Tcl_Obj *));
-	copyObjv[4] = opsList;
-	if (optionIndex == TRACE_OLD_VARIABLE) {
-	    code = traceSubCmds[2](interp, TRACE_ADD, objc+1, copyObjv);
-	} else {
-	    code = traceSubCmds[2](interp, TRACE_REMOVE, objc+1, copyObjv);
-	}
-	Tcl_DecrRefCount(opsList);
-	return code;
-    }
-    case TRACE_OLD_VINFO: {
-	void *clientData;
-	char ops[5];
-	Tcl_Obj *resultListPtr, *pairObjPtr, *elemObjPtr;
-
-	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "name");
-	    return TCL_ERROR;
-	}
-	TclNewObj(resultListPtr);
-	name = TclGetString(objv[2]);
-	FOREACH_VAR_TRACE(interp, name, clientData) {
-	    TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
-	    char *q = ops;
-
-	    pairObjPtr = Tcl_NewListObj(0, NULL);
-	    if (tvarPtr->flags & TCL_TRACE_READS) {
-		*q = 'r';
-		q++;
-	    }
-	    if (tvarPtr->flags & TCL_TRACE_WRITES) {
-		*q = 'w';
-		q++;
-	    }
-	    if (tvarPtr->flags & TCL_TRACE_UNSETS) {
-		*q = 'u';
-		q++;
-	    }
-	    if (tvarPtr->flags & TCL_TRACE_ARRAY) {
-		*q = 'a';
-		q++;
-	    }
-	    *q = '\0';
-
-	    /*
-	     * Build a pair (2-item list) with the ops string as the first obj
-	     * element and the tvarPtr->command string as the second obj
-	     * element. Append the pair (as an element) to the end of the
-	     * result object list.
-	     */
-
-	    elemObjPtr = Tcl_NewStringObj(ops, -1);
-	    Tcl_ListObjAppendElement(NULL, pairObjPtr, elemObjPtr);
-	    elemObjPtr = Tcl_NewStringObj(tvarPtr->command, -1);
-	    Tcl_ListObjAppendElement(NULL, pairObjPtr, elemObjPtr);
-	    Tcl_ListObjAppendElement(interp, resultListPtr, pairObjPtr);
-	}
-	Tcl_SetObjResult(interp, resultListPtr);
-	break;
-    }
-#endif /* TCL_REMOVE_OBSOLETE_TRACES */
     }
     return TCL_OK;
-
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-  badVarOps:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "bad operations \"%s\": should be one or more of rwua",
-	    flagOps));
-    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "BADOPS", NULL);
-    return TCL_ERROR;
-#endif
 }
 
 /*
@@ -619,10 +500,6 @@ TraceExecutionObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-    default:
-	break;
-#endif
     }
     return TCL_OK;
 }
@@ -817,10 +694,6 @@ TraceCommandObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-    default:
-	break;
-#endif
     }
     return TCL_OK;
 }
@@ -921,11 +794,6 @@ TraceVariableObjCmd(
 		    + 1 + length);
 
 	    ctvarPtr->traceCmdInfo.flags = flags;
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-	    if (objv[0] == NULL) {
-		ctvarPtr->traceCmdInfo.flags |= TCL_TRACE_OLD_STYLE;
-	    }
-#endif
 	    ctvarPtr->traceCmdInfo.length = length;
 	    flags |= TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT;
 	    memcpy(ctvarPtr->traceCmdInfo.command, command, length+1);
@@ -950,11 +818,7 @@ TraceVariableObjCmd(
 		TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
 
 		if ((tvarPtr->length == length)
-			&& ((tvarPtr->flags
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-& ~TCL_TRACE_OLD_STYLE
-#endif
-						)==flags)
+			&& ((tvarPtr->flags)==flags)
 			&& (strncmp(command, tvarPtr->command,
 				length) == 0)) {
 		    Tcl_UntraceVar2(interp, name, NULL,
@@ -1014,10 +878,6 @@ TraceVariableObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-    default:
-	break;
-#endif
     }
     return TCL_OK;
 }
@@ -1989,10 +1849,10 @@ TraceVarProc(
     int rewind = ((Interp *)interp)->execEnvPtr->rewind;
 
     /*
-     * We might call Tcl_EvalEx() below, and that might evaluate [trace vdelete]
-     * which might try to free tvarPtr. We want to use tvarPtr until the end
-     * of this function, so we use Tcl_Preserve() and Tcl_Release() to be sure
-     * it is not freed while we still need it.
+     * We might call Tcl_EvalEx() below, and that might evaluate
+     * [trace remove variable] which might try to free tvarPtr. We want to
+     * use tvarPtr until the end of this function, so we use Tcl_Preserve()
+     * and Tcl_Release() to be sure it is not freed while we still need it.
      */
 
     result = NULL;
@@ -2008,19 +1868,6 @@ TraceVarProc(
 	    Tcl_DStringAppend(&cmd, tvarPtr->command, tvarPtr->length);
 	    Tcl_DStringAppendElement(&cmd, name1);
 	    Tcl_DStringAppendElement(&cmd, (name2 ? name2 : ""));
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-	    if (tvarPtr->flags & TCL_TRACE_OLD_STYLE) {
-		if (flags & TCL_TRACE_ARRAY) {
-		    TclDStringAppendLiteral(&cmd, " a");
-		} else if (flags & TCL_TRACE_READS) {
-		    TclDStringAppendLiteral(&cmd, " r");
-		} else if (flags & TCL_TRACE_WRITES) {
-		    TclDStringAppendLiteral(&cmd, " w");
-		} else if (flags & TCL_TRACE_UNSETS) {
-		    TclDStringAppendLiteral(&cmd, " u");
-		}
-	    } else {
-#endif
 		if (flags & TCL_TRACE_ARRAY) {
 		    TclDStringAppendLiteral(&cmd, " array");
 		} else if (flags & TCL_TRACE_READS) {
@@ -2030,9 +1877,6 @@ TraceVarProc(
 		} else if (flags & TCL_TRACE_UNSETS) {
 		    TclDStringAppendLiteral(&cmd, " unset");
 		}
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-	    }
-#endif
 
 	    /*
 	     * Execute the command. We discard any object result the command
@@ -2961,9 +2805,6 @@ Tcl_UntraceVar2(
 
     flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
 	  TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-    flagMask |= TCL_TRACE_OLD_STYLE;
-#endif
     flags &= flagMask;
 
     hPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) varPtr);
@@ -3228,9 +3069,6 @@ TraceVarEx(
 
     flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
 	  TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-    flagMask |= TCL_TRACE_OLD_STYLE;
-#endif
     tracePtr->flags = tracePtr->flags & flagMask;
 
     hPtr = Tcl_CreateHashEntry(&iPtr->varTraces, varPtr, &isNew);

@@ -62,6 +62,8 @@
 #undef Tcl_SplitPath
 #undef Tcl_FSSplitPath
 #undef Tcl_ParseArgsObjv
+#undef Tcl_GetAlias
+#undef Tcl_GetAliasObj
 #undef TclpInetNtoa
 #undef TclWinGetServByName
 #undef TclWinGetSockOpt

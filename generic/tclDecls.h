@@ -826,7 +826,7 @@ EXTERN void		Tcl_GetEncodingNames(Tcl_Interp *interp);
 /* 304 */
 EXTERN int		Tcl_GetIndexFromObjStruct(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, const void *tablePtr,
-				size_t offset, const char *msg, int flags,
+				Tcl_Size offset, const char *msg, int flags,
 				void *indexPtr);
 /* 305 */
 EXTERN void *		Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr,
@@ -2194,7 +2194,7 @@ typedef struct TclStubs {
     Tcl_Encoding (*tcl_GetEncoding) (Tcl_Interp *interp, const char *name); /* 301 */
     const char * (*tcl_GetEncodingName) (Tcl_Encoding encoding); /* 302 */
     void (*tcl_GetEncodingNames) (Tcl_Interp *interp); /* 303 */
-    int (*tcl_GetIndexFromObjStruct) (Tcl_Interp *interp, Tcl_Obj *objPtr, const void *tablePtr, size_t offset, const char *msg, int flags, void *indexPtr); /* 304 */
+    int (*tcl_GetIndexFromObjStruct) (Tcl_Interp *interp, Tcl_Obj *objPtr, const void *tablePtr, Tcl_Size offset, const char *msg, int flags, void *indexPtr); /* 304 */
     void * (*tcl_GetThreadData) (Tcl_ThreadDataKey *keyPtr, Tcl_Size size); /* 305 */
     Tcl_Obj * (*tcl_GetVar2Ex) (Tcl_Interp *interp, const char *part1, const char *part2, int flags); /* 306 */
     void * (*tcl_InitNotifier) (void); /* 307 */
@@ -4216,6 +4216,14 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_ParseArgsObjv(interp, argTable, objcPtr, objv, remObjv) (sizeof(*(objcPtr)) == sizeof(int) \
 		? tclStubsPtr->tclParseArgsObjv((interp), (argTable), (objcPtr), (objv), (remObjv)) \
 		: tclStubsPtr->tcl_ParseArgsObjv((interp), (argTable), (Tcl_Size *)(void *)(objcPtr), (objv), (remObjv)))
+#   undef Tcl_GetAlias
+#   define Tcl_GetAlias(interp, childCmd, targetInterpPtr, targetCmdPtr, argcPtr, argvPtr) (sizeof(*(argcPtr)) == sizeof(int) \
+		? tclStubsPtr->tclGetAlias((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (argcPtr), (argvPtr)) \
+		: tclStubsPtr->tcl_GetAlias((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (Tcl_Size *)(void *)(argcPtr), (argvPtr)))
+#   undef Tcl_GetAliasObj
+#   define Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, objcPtr, objv) (sizeof(*(objcPtr)) == sizeof(int) \
+		? tclStubsPtr->tclGetAliasObj((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (objcPtr), (objv)) \
+		: tclStubsPtr->tcl_GetAliasObj((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (Tcl_Size *)(void *)(objcPtr), (objv)))
 #endif /* TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED) */
 #else
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
@@ -4252,6 +4260,12 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_ParseArgsObjv(interp, argTable, objcPtr, objv, remObjv) (sizeof(*(objcPtr)) == sizeof(int) \
 		? TclParseArgsObjv((interp), (argTable), (objcPtr), (objv), (remObjv)) \
 		: (Tcl_ParseArgsObjv)((interp), (argTable), (Tcl_Size *)(void *)(objcPtr), (objv), (remObjv)))
+#   define Tcl_GetAlias(interp, childCmd, targetInterpPtr, targetCmdPtr, argcPtr, argvPtr) (sizeof(*(argcPtr)) == sizeof(int) \
+		? TclGetAlias((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (argcPtr), (argvPtr)) \
+		: (Tcl_GetAlias)((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (Tcl_Size *)(void *)(argcPtr), (argvPtr)))
+#   define Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, objcPtr, objv) (sizeof(*(objcPtr)) == sizeof(int) \
+		? TclGetAliasObj((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (objcPtr), (objv)) \
+		: (Tcl_GetAliasObj)((interp), (childCmd), (targetInterpPtr), (targetCmdPtr), (Tcl_Size *)(void *)(objcPtr), (objv)))
 #endif /* !defined(BUILD_tcl) */
 #endif
 

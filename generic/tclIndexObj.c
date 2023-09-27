@@ -56,8 +56,8 @@ const Tcl_ObjType tclIndexType = {
 
 typedef struct {
     void *tablePtr;		/* Pointer to the table of strings */
-    size_t offset;			/* Offset between table entries */
-    size_t index;			/* Selected index into table. */
+    Tcl_Size offset;			/* Offset between table entries */
+    Tcl_Size index;			/* Selected index into table. */
 } IndexRep;
 
 /*
@@ -69,7 +69,7 @@ typedef struct {
 #define NEXT_ENTRY(table, offset) \
 	(&(STRING_AT(table, offset)))
 #define EXPAND_OF(indexRep) \
-	(((indexRep)->index != (size_t)-1) ? STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : "")
+	(((indexRep)->index != TCL_INDEX_NONE) ? STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : "")
 
 /*
  *----------------------------------------------------------------------
@@ -191,7 +191,7 @@ Tcl_GetIndexFromObjStruct(
 				 * offset, the third plus the offset again,
 				 * etc. The last entry must be NULL and there
 				 * must not be duplicate entries. */
-    size_t offset,		/* The number of bytes between entries */
+    Tcl_Size offset,		/* The number of bytes between entries */
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
     int flags,			/* 0, TCL_EXACT, TCL_NULL_OK or TCL_INDEX_TEMP_TABLE */
@@ -205,9 +205,8 @@ Tcl_GetIndexFromObjStruct(
     IndexRep *indexRep;
     const Tcl_ObjInternalRep *irPtr;
 
-    /* Protect against invalid values, like TCL_INDEX_NONE or 0. */
-    if (offset+1 <= sizeof(char *)) {
-	offset = sizeof(char *);
+    if (offset < (Tcl_Size) sizeof(char *)) {
+	return TclIndexInvalidError(interp, "struct offset", offset);
     }
     /*
      * See if there is a valid cached result from a previous lookup.
@@ -219,7 +218,7 @@ Tcl_GetIndexFromObjStruct(
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
 	if ((indexRep->tablePtr == tablePtr)
 		&& (indexRep->offset == offset)
-		&& (indexRep->index != (size_t)-1)) {
+		&& (indexRep->index != TCL_INDEX_NONE)) {
 	    index = indexRep->index;
 	    goto uncachedDone;
 	}
