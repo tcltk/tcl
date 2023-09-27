@@ -4535,14 +4535,27 @@ static Tcl_Channel
 ZipChannelOpen(
     Tcl_Interp *interp,		/* Current interpreter. */
     char *filename,		/* What are we opening. */
-    int wr,			/* True if we're opening in write mode. */
-    int trunc)			/* True if we're opening in truncate mode. */
+    int mode)			/* O_WRONLY O_RDWR O_TRUNC flags */
 {
     ZipEntry *z;
     ZipChannel *info;
     int flags = 0;
     char cname[128];
 
+    int wr = (mode & (O_WRONLY | O_RDWR)) != 0;
+
+    /* Check for unsupported modes. */
+
+    if ((mode & O_APPEND) || ((ZipFS.wrmax <= 0) && wr)) {
+	Tcl_SetErrno(EACCES);
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "%s not supported: %s",
+		    mode & O_APPEND ? "append mode" : "write access",
+		    Tcl_PosixError(interp)));
+	}
+	return NULL;
+    }
     /*
      * Is the file there?
      */
@@ -4586,8 +4599,20 @@ ZipChannelOpen(
 	ZIPFS_ERROR_CODE(interp, "COMP_METHOD");
 	goto error;
     }
-    if (!trunc) {
+    if (wr) {
+	if ((mode & O_TRUNC) == 0 && !z->data && (z->numBytes > ZipFS.wrmax)) {
+	    Tcl_SetErrno(EFBIG);
+	    ZIPFS_POSIX_ERROR(interp, "file size exceeds max writable");
+	    goto error;
+	}
+	flags = TCL_WRITABLE;
+	if (mode & O_RDWR)
+	    flags |= TCL_READABLE;
+    } else {
+	/* Read-only */
 	flags |= TCL_READABLE;
+    }
+    if (flags & TCL_READABLE) {
 	if (z->isEncrypted) {
 	    if (z->numCompressedBytes < 12) {
 		ZIPFS_ERROR(interp, "decryption failed: truncated decryption header");
@@ -4601,14 +4626,6 @@ ZipChannelOpen(
 		goto error;
 	    }
 	}
-	if (wr && !z->data && (z->numBytes > ZipFS.wrmax)) {
-	    Tcl_SetErrno(EFBIG);
-	    ZIPFS_POSIX_ERROR(interp, "file size exceeds max writable");
-	    goto error;
-	}
-    } else {
-	/* If truncating anyways, we do not care about error checking */
-	flags = TCL_WRITABLE;
     }
 
     info = AllocateZipChannel(interp);
@@ -4618,31 +4635,23 @@ ZipChannelOpen(
     info->zipFilePtr = z->zipFilePtr;
     info->zipEntryPtr = z;
     if (wr) {
-	/*
-	 * Set up a writable channel.
-	 */
+	/* Set up a writable channel. */
 
-	flags |= TCL_WRITABLE;
-	if (InitWritableChannel(interp, info, z, trunc) == TCL_ERROR) {
+	if (InitWritableChannel(interp, info, z, mode & O_TRUNC) == TCL_ERROR) {
 	    ckfree(info);
 	    goto error;
 	}
     } else if (z->data) {
-	/*
-	 * Set up a readable channel for direct data.
-	 */
+	/* Set up a readable channel for direct data. */
 
-	flags |= TCL_READABLE;
 	info->numBytes = z->numBytes;
 	info->ubuf = z->data;
 	info->ubufToFree = NULL; /* Not dynamically allocated */
-    }
-    else {
+    } else {
 	/*
 	 * Set up a readable channel.
 	 */
 
-	flags |= TCL_READABLE;
 	if (InitReadableChannel(interp, info, z) == TCL_ERROR) {
 	    ckfree(info);
 	    goto error;
@@ -5155,27 +5164,9 @@ ZipFSOpenFileChannelProc(
 	return NULL;
     }
 
-    int trunc = (mode & O_TRUNC) != 0;
-    int wr = (mode & (O_WRONLY | O_RDWR)) != 0;
-
-    /*
-     * Check for unsupported modes.
-     */
-
-    if ((mode & O_APPEND) || ((ZipFS.wrmax <= 0) && wr)) {
-	Tcl_SetErrno(EACCES);
-	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s not supported: %s",
-		    mode & O_APPEND ? "append mode" : "write access",
-		    Tcl_PosixError(interp)));
-	}
-	return NULL;
-    }
-
-    return ZipChannelOpen(interp, Tcl_GetString(pathPtr), wr, trunc);
+    return ZipChannelOpen(interp, Tcl_GetString(pathPtr), mode);
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *

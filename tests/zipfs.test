@@ -1137,7 +1137,7 @@ namespace eval test_ns_zipfs {
             append result [gets $fd],
             set pos [tell $fd]
             append result $pos,
-            puts -nonewline $fd "xyz"
+            puts -nonewline $fd "0123456789"
             append result [gets $fd],
             seek $fd $pos
             append result [gets $fd],
@@ -1172,12 +1172,12 @@ namespace eval test_ns_zipfs {
         } -body $body -result $expected {*}$args
 
     }
-    testzipfsrw store-r+ teststored.zip      "aaaaaaaaaaaaaa,15,bbbbbbbbbbb,xyzbbbbbbbbbbb,ccccc\n|aaaaaaaaaaaaaa\nxyzbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\n" abac-repeat.txt r+
-    testzipfsrw store-w+ teststored.zip      ",0,,xyz,yz|" abac-repeat.txt w+ -constraints bug-00018ec7a0
-    testzipfsrw store-a+ teststored.zip      ",60,,xyz,cc\nxyz|aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
-    testzipfsrw deflate-r+ testdeflated2.zip      "aaaaaaaaaaaaaa,15,bbbbbbbbbbb,xyzbbbbbbbbbbb,ccccc\n|aaaaaaaaaaaaaa\nxyzbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\n" abac-repeat.txt r+
-    testzipfsrw deflate-w+ testdeflated2.zip      ",0,,xyz,yz|" abac-repeat.txt w+ -constraints bug-00018ec7a0
-    testzipfsrw deflate-a+ testdeflated2.zip      ",60,,xyz,cc\nxyz|aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
+    testzipfsrw store-r+ teststored.zip      "aaaaaaaaaaaaaa,15,bbbb,0123456789bbbb,ccccc\n|aaaaaaaaaaaaaa\n0123456789bbbb\naaaaaaaaaaaaaa\ncccccccccccccc\n" abac-repeat.txt r+
+    testzipfsrw store-w+ teststored.zip      ",0,,0123456789,456789|0123456789" abac-repeat.txt w+
+    testzipfsrw store-a+ teststored.zip      ",60,,0123456789,456789|aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\n0123456789" abac-repeat.txt a+
+    testzipfsrw deflate-r+ testdeflated2.zip      "aaaaaaaaaaaaaa,15,bbbb,0123456789bbbb,ccccc\n|aaaaaaaaaaaaaa\n0123456789bbbb\naaaaaaaaaaaaaa\ncccccccccccccc\n" abac-repeat.txt r+
+    testzipfsrw deflate-w+ testdeflated2.zip      ",0,,0123456789,456789|0123456789" abac-repeat.txt w+
+    testzipfsrw deflate-a+ testdeflated2.zip      ",60,,0123456789,456789|aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\n0123456789" abac-repeat.txt a+
     test zipfs-rw-bug-f91ee30d33 "Bug f91ee30d33 - truncates at last read" -setup {
         mount [zippath test.zip]
     } -cleanup {
