@@ -4588,16 +4588,26 @@ ZipChannelOpen(
     }
     if (!trunc) {
 	flags |= TCL_READABLE;
-	if (z->isEncrypted && (z->zipFilePtr->passBuf[0] == 0)) {
-	    ZIPFS_ERROR(interp, "decryption failed");
-	    ZIPFS_ERROR_CODE(interp, "DECRYPT");
-	    goto error;
-	} else if (wr && !z->data && (z->numBytes > ZipFS.wrmax)) {
-	    ZIPFS_ERROR(interp, "file too large");
-	    ZIPFS_ERROR_CODE(interp, "FILE_SIZE");
+	if (z->isEncrypted) {
+	    if (z->numCompressedBytes < 12) {
+		ZIPFS_ERROR(interp, "decryption failed: truncated decryption header");
+		ZIPFS_ERROR_CODE(interp, "DECRYPT");
+		goto error;
+
+	    }
+	    if (z->zipFilePtr->passBuf[0] == 0) {
+		ZIPFS_ERROR(interp, "decryption failed - no password provided");
+		ZIPFS_ERROR_CODE(interp, "DECRYPT");
+		goto error;
+	    }
+	}
+	if (wr && !z->data && (z->numBytes > ZipFS.wrmax)) {
+	    Tcl_SetErrno(EFBIG);
+	    ZIPFS_POSIX_ERROR(interp, "file size exceeds max writable");
 	    goto error;
 	}
     } else {
+	/* If truncating anyways, we do not care about error checking */
 	flags = TCL_WRITABLE;
     }
 
@@ -4711,7 +4721,8 @@ InitWritableChannel(
     info->isWriting = 1;
     info->maxWrite = ZipFS.wrmax;
 
-    info->ubufToFree = (unsigned char *) attemptckalloc(info->maxWrite);
+    info->ubufToFree =
+	(unsigned char *)attemptckalloc(info->maxWrite ? info->maxWrite : 1);
     info->ubuf = info->ubufToFree;
     if (!info->ubuf) {
 	goto memoryError;
@@ -4772,8 +4783,11 @@ InitWritableChannel(
 	    if (z->isEncrypted) {
 		unsigned int j;
 
+		/* Min length 12 for keys should already been checked. */
+		assert(stream.avail_in >= 12);
+
 		stream.avail_in -= 12;
-		cbuf = (unsigned char *) attemptckalloc(stream.avail_in);
+		cbuf = (unsigned char *) attemptckalloc(stream.avail_in ? stream.avail_in : 1);
 		if (!cbuf) {
 		    goto memoryError;
 		}
@@ -4929,8 +4943,9 @@ InitReadableChannel(
 	stream.opaque = Z_NULL;
 	stream.avail_in = z->numCompressedBytes;
 	if (info->isEncrypted) {
+	    assert(stream.avail_in >= 12);
 	    stream.avail_in -= 12;
-	    ubuf = (unsigned char *) attemptckalloc(stream.avail_in);
+	    ubuf = (unsigned char *) attemptckalloc(stream.avail_in ? stream.avail_in : 1);
 	    if (!ubuf) {
 		goto memoryError;
 	    }
@@ -4944,7 +4959,7 @@ InitReadableChannel(
 	    stream.next_in = info->ubuf;
 	}
 	info->ubufToFree = (unsigned char *)
-		attemptckalloc(info->numBytes);
+		attemptckalloc(info->numBytes ? info->numBytes : 1);
 	info->ubuf = info->ubufToFree;
 	stream.next_out = info->ubuf;
 	if (!info->ubuf) {

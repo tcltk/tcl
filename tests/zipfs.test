@@ -567,7 +567,7 @@ namespace eval test_ns_zipfs {
         lappend result [string equal $chans [lsort [chan names]]]
     } -cleanup {
         cleanup
-    } -result {1 {decryption failed} 1}
+    } -result {1 {decryption failed - no password provided} 1}
 
     test zipfs-mount-password-3 "mount - verify compressed cipher unreadable without password" -body {
         zipfs mount [zippath test-password.zip] $defaultMountPoint
@@ -578,7 +578,7 @@ namespace eval test_ns_zipfs {
         lappend result [string equal $chans [lsort [chan names]]]
     } -cleanup {
         cleanup
-    } -result {1 {decryption failed} 1}
+    } -result {1 {decryption failed - no password provided} 1}
 
     test zipfs-mount-nested-1 "mount - nested mount on non-existing path" -setup {
         mount [zippath test.zip]
@@ -966,6 +966,7 @@ namespace eval test_ns_zipfs {
     testzipfsread stored  test.zip          test           test
     testzipfsread stored  teststored.zip    aaaaaaaaaaaaaa
     testzipfsread deflate testdeflated2.zip aaaaaaaaaaaaaa
+    testzipfsread bug-23dd83ce7c  empty.zip    {} empty.txt
     # Test open modes - see bug [4645658689]
     testzipfsread stored-rw  teststored.zip    aaaaaaaaaaaaaa abac-repeat.txt r+
     testzipfsread deflate-rw testdeflated2.zip aaaaaaaaaaaaaa abac-repeat.txt r+
@@ -1042,6 +1043,7 @@ namespace eval test_ns_zipfs {
     testzipfswrite deflate-a testdeflated2.zip "append mode not supported: permission denied" abac-repeat.txt a -returnCodes error
     testzipfswrite store-ar teststored.zip     "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
     testzipfswrite deflate-ar testdeflated2.zip "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
+    testzipfswrite bug-23dd83ce7c-w  empty.zip  "xyz"   empty.txt w
 
     test zipfs-write-unreadable "Reads not allowed on file opened for write" -setup {
         mount [zippath test.zip]
@@ -1199,10 +1201,10 @@ namespace eval test_ns_zipfs {
     testpassword plain-nopassword plain.txt "" plaintext
     testpassword plain-badpassword plain.txt xxx plaintext
     testpassword cipher cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
-    testpassword cipher-nopassword cipher.bin {} "decryption failed" -returnCodes error
+    testpassword cipher-nopassword cipher.bin {} "decryption failed - no password provided" -returnCodes error
     testpassword cipher-badpassword cipher.bin xxx "invalid CRC" -returnCodes error
     testpassword cipher-deflate cipher-deflate.bin password [lseq 100] -constraints bug-bbe7c6ff9e
-    testpassword cipher-deflate-nopassword cipher-deflate.bin {} "decryption failed" -returnCodes error
+    testpassword cipher-deflate-nopassword cipher-deflate.bin {} "decryption failed - no password provided" -returnCodes error
     testpassword cipher-deflate-badpassword cipher-deflate.bin xxx "decompression error" -returnCodes error
 
     #
