@@ -1032,17 +1032,17 @@ namespace eval test_ns_zipfs {
 
     }
     testzipfswrite create-w test.zip  "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile w -returnCodes error
-    testzipfswrite create-wr test.zip "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile w+ -returnCodes error
+    testzipfswrite create-w+ test.zip "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile w+ -returnCodes error
     testzipfswrite create-a test.zip  "append mode not supported: permission denied" newfile a -returnCodes error
-    testzipfswrite create-ar test.zip "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile a+ -returnCodes error
+    testzipfswrite create-a+ test.zip "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile a+ -returnCodes error
     testzipfswrite store-w teststored.zip      "xyz" abac-repeat.txt w
     testzipfswrite deflate-w testdeflated2.zip "xyz" abac-repeat.txt w
-    testzipfswrite store-wr teststored.zip     "xyz" abac-repeat.txt w+
-    testzipfswrite deflate-wr testdeflated2.zip "xyz" abac-repeat.txt w+
+    testzipfswrite store-w+ teststored.zip     "xyz" abac-repeat.txt w+
+    testzipfswrite deflate-w+ testdeflated2.zip "xyz" abac-repeat.txt w+
     testzipfswrite stored-a teststored.zip     "append mode not supported: permission denied" abac-repeat.txt a -returnCodes error
     testzipfswrite deflate-a testdeflated2.zip "append mode not supported: permission denied" abac-repeat.txt a -returnCodes error
-    testzipfswrite store-ar teststored.zip     "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
-    testzipfswrite deflate-ar testdeflated2.zip "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
+    testzipfswrite store-a+ teststored.zip     "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
+    testzipfswrite deflate-a+ testdeflated2.zip "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
     testzipfswrite bug-23dd83ce7c-w  empty.zip  "xyz"   empty.txt w
 
     test zipfs-write-unreadable "Reads not allowed on file opened for write" -setup {
@@ -1142,9 +1142,13 @@ namespace eval test_ns_zipfs {
             seek $fd $pos
             append result [gets $fd],
             seek $fd -6 end
+            append result [read $fd]|
+            close $fd
+            # Reopen after closing - bug [f91ee30d3]
+            set fd [open $path rb]
             append result [read $fd]
         }
-        test zipfs-readwrite-$id "zipfs read/seek/write $id" -setup {
+        test zipfs-rw-$id "zipfs read/seek/write $id" -setup {
             unset -nocomplain fd
             zipfs mount $zippath $defaultMountPoint
         } -cleanup {
@@ -1156,7 +1160,7 @@ namespace eval test_ns_zipfs {
         } -body $body -result $expected {*}$args
 
         set data [readbin $zippath]
-        test zipfs-readwrite-memory-$id "zipfs read/seek/write in-memory $id" -setup {
+        test zipfs-rw-memory-$id "zipfs read/seek/write in-memory $id" -setup {
             unset -nocomplain fd
             zipfs mount_data $data $defaultMountPoint
         } -cleanup {
@@ -1168,9 +1172,25 @@ namespace eval test_ns_zipfs {
         } -body $body -result $expected {*}$args
 
     }
-    testzipfsrw store-r+ teststored.zip      "aaaaaaaaaaaaaa,15,bbbbbbbbbbb,xyzbbbbbbbbbbb,ccccc\n" abac-repeat.txt r+
-    testzipfsrw store-w+ teststored.zip      ",0,,xyz,yz" abac-repeat.txt w+ -constraints bug-00018ec7a0
-    testzipfsrw store-a+ teststored.zip      ",60,,xyz,cc\nxyz" abac-repeat.txt a+
+    testzipfsrw store-r+ teststored.zip      "aaaaaaaaaaaaaa,15,bbbbbbbbbbb,xyzbbbbbbbbbbb,ccccc\n|aaaaaaaaaaaaaa\nxyzbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\n" abac-repeat.txt r+
+    testzipfsrw store-w+ teststored.zip      ",0,,xyz,yz|" abac-repeat.txt w+ -constraints bug-00018ec7a0
+    testzipfsrw store-a+ teststored.zip      ",60,,xyz,cc\nxyz|aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
+    testzipfsrw deflate-r+ testdeflated2.zip      "aaaaaaaaaaaaaa,15,bbbbbbbbbbb,xyzbbbbbbbbbbb,ccccc\n|aaaaaaaaaaaaaa\nxyzbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\n" abac-repeat.txt r+
+    testzipfsrw deflate-w+ testdeflated2.zip      ",0,,xyz,yz|" abac-repeat.txt w+ -constraints bug-00018ec7a0
+    testzipfsrw deflate-a+ testdeflated2.zip      ",60,,xyz,cc\nxyz|aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
+    test zipfs-rw-bug-f91ee30d33 "Bug f91ee30d33 - truncates at last read" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        close $fd
+        cleanup
+    } -body {
+        set path [file join $defaultMountPoint test]
+        set fd [open $path r+]
+        puts -nonewline $fd X
+        close $fd
+        set fd [open $path r]
+        read $fd
+    } -result "Xest\n"
 
     #
     # Password protected
