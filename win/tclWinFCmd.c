@@ -56,7 +56,7 @@ static const int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDD
 
 const char *const tclpFileAttrStrings[] = {
 	"-archive", "-hidden", "-longname", "-readonly",
-	"-shortname", "-system", (char *) NULL
+	"-shortname", "-system", NULL
 };
 
 const TclFileAttrProcs tclpFileAttrProcs[] = {
