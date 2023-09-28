@@ -328,7 +328,9 @@ static void		SerializeLocalEntryHeader(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
 			    ZipEntry *z, int nameLength, int align);
-static int		IsCryptHeaderValid(ZipEntry *z, unsigned char cryptHeader[12]);
+static int		IsCryptHeaderValid(ZipEntry *z, unsigned char cryptHdr[12]);
+static int		DecodeCryptHeader(Tcl_Interp *interp, ZipEntry *z,
+			    unsigned long keys[3], unsigned char cryptHdr[12]);
 #if !defined(STATIC_BUILD)
 static int		ZipfsAppHookFindTclInit(const char *archive);
 #endif
@@ -774,6 +776,57 @@ static int IsCryptHeaderValid(
 
     /* No CRC, no way to verify. Assume valid */
     return 1;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * DecodeCryptHeader --
+ *
+ *    Decodes the crypt header and validates it.
+ *
+ * Results:
+ *    TCL_OK on success, TCL_ERROR on failure.
+ *
+ * Side effects:
+ *    On success, keys[] are updated. On failure, an error message is
+ *    left in interp if not NULL.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+DecodeCryptHeader(Tcl_Interp *interp,
+		  ZipEntry *z,
+		  unsigned long keys[3],/* Updated on success. Must have been
+					   initialized by caller. */
+		  unsigned char cryptHeader[12]) /* From zip file content */
+{
+    int i;
+    int ch;
+    int len = z->zipFilePtr->passBuf[0] & 0xFF;
+    char passBuf[260];
+
+    for (i = 0; i < len; i++) {
+	ch = z->zipFilePtr->passBuf[len - i];
+	passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
+    }
+    passBuf[i] = '\0';
+    init_keys(passBuf, keys, crc32tab);
+    memset(passBuf, 0, sizeof(passBuf));
+    unsigned char encheader[12];
+    memcpy(encheader, cryptHeader, 12);
+    for (i = 0; i < 12; i++) {
+	ch = cryptHeader[i];
+	ch ^= decrypt_byte(keys, crc32tab);
+	encheader[i] = ch;
+	update_keys(keys, crc32tab, ch);
+    }
+    if (!IsCryptHeaderValid(z, encheader)) {
+	ZIPFS_ERROR(interp, "invalid password");
+	ZIPFS_ERROR_CODE(interp, "PASSWORD");
+	return TCL_ERROR;
+    }
+    return TCL_OK;
 }
 
 /*
@@ -4660,19 +4713,18 @@ ZipChannelOpen(
 	/* Read-only */
 	flags |= TCL_READABLE;
     }
-    if (flags & TCL_READABLE) {
-	if (z->isEncrypted) {
-	    if (z->numCompressedBytes < 12) {
-		ZIPFS_ERROR(interp, "decryption failed: truncated decryption header");
-		ZIPFS_ERROR_CODE(interp, "DECRYPT");
-		goto error;
 
-	    }
-	    if (z->zipFilePtr->passBuf[0] == 0) {
-		ZIPFS_ERROR(interp, "decryption failed - no password provided");
-		ZIPFS_ERROR_CODE(interp, "DECRYPT");
-		goto error;
-	    }
+    if (z->isEncrypted) {
+	if (z->numCompressedBytes < 12) {
+	    ZIPFS_ERROR(interp,
+			"decryption failed: truncated decryption header");
+	    ZIPFS_ERROR_CODE(interp, "DECRYPT");
+	    goto error;
+	}
+	if (z->zipFilePtr->passBuf[0] == 0) {
+	    ZIPFS_ERROR(interp, "decryption failed - no password provided");
+	    ZIPFS_ERROR_CODE(interp, "DECRYPT");
+	    goto error;
 	}
     }
 
@@ -4787,6 +4839,16 @@ InitWritableChannel(
     /* TODO - why is the memset necessary? Not cheap for default maxWrite. */
     memset(info->ubuf, 0, info->maxWrite);
 
+    info->isEncrypted = z->isEncrypted;
+    if (info->isEncrypted) {
+	assert(z->numCompressedBytes >= 12); /* caller should have checked*/
+	if (DecodeCryptHeader(
+		interp, z, info->keys, z->zipFilePtr->data + z->offset) !=
+	    TCL_OK) {
+	    goto error_cleanup;
+	}
+    }
+    
     if (trunc) {
 	/*
 	 * Truncate; nothing there.
@@ -4955,7 +5017,7 @@ InitReadableChannel(
 				 * from. */
 {
     unsigned char *ubuf = NULL;
-    int i, ch;
+    int ch;
 
     info->iscompr = (z->compressMethod == ZIP_COMPMETH_DEFLATED);
     info->ubuf = z->zipFilePtr->data + z->offset;
@@ -4968,35 +5030,11 @@ InitReadableChannel(
     info->numBytes = z->numBytes;
 
     if (info->isEncrypted) {
-	int len = z->zipFilePtr->passBuf[0] & 0xFF;
-	char passBuf[260];
-
-	for (i = 0; i < len; i++) {
-	    ch = z->zipFilePtr->passBuf[len - i];
-	    passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
-	}
-	passBuf[i] = '\0';
-	init_keys(passBuf, info->keys, crc32tab);
-	memset(passBuf, 0, sizeof(passBuf));
-	unsigned char encheader[12];
-	memcpy(encheader, info->ubuf, 12);
-	for (i = 0; i < 12; i++) {
-	    ch = info->ubuf[i];
-	    ch ^= decrypt_byte(info->keys, crc32tab);
-	    encheader[i] = ch;
-	    update_keys(info->keys, crc32tab, ch);
-	}
-	/*
-	 * Validate the encryption key. This is tricky thanks to multiple
-	 * "standards" as to where the checksum for the encryption header
-	 * is 
-	 */
-	if (!IsCryptHeaderValid(z, encheader)) {
-	    ZIPFS_ERROR(interp, "invalid password");
-	    ZIPFS_ERROR_CODE(interp, "PASSWORD");
+	assert(z->numCompressedBytes >= 12); /* caller should have checked*/
+	if (DecodeCryptHeader(interp, z, info->keys, info->ubuf) != TCL_OK) {
 	    goto error_cleanup;
 	}
-	info->ubuf += i;
+	info->ubuf += 12;
     }
 
     if (info->iscompr) {

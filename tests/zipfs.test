@@ -1194,7 +1194,7 @@ namespace eval test_ns_zipfs {
 
     #
     # Password protected
-    proc testpassword {id zipfile filename password result args} {
+    proc testpasswordr {id zipfile filename password result args} {
         variable defaultMountPoint
         set zippath [zippath $zipfile]
         test zipfs-password-read-$id "zipfs password read $id" -setup {
@@ -1215,23 +1215,58 @@ namespace eval test_ns_zipfs {
             gets $fd
         } -result $result {*}$args
     }
-    # The bug bug-bbe7c6ff9e only manifests on macos
+    # The bug bbe7c6ff9e only manifests on macos
     testConstraint bug-bbe7c6ff9e [expr {$::tcl_platform(os) ne "Darwin"}]
 
     # NOTE: test-password.zip is the DOS time based encryption header validity check (infozip style)
-    # NOTE: test-password2.zip is the CRC based encryption header validity check (pkware style)
-    testpassword plain                  test-password.zip plain.txt password plaintext
-    testpassword plain-nopass           test-password.zip plain.txt "" plaintext
-    testpassword plain-badpass          test-password.zip plain.txt badpassword plaintext
-    testpassword cipher-1               test-password.zip cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
-    testpassword cipher-2               test-password2.zip cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
-    testpassword cipher-nopass-1        test-password.zip cipher.bin {} "decryption failed - no password provided" -returnCodes error
-    testpassword cipher-nopass-2        test-password2.zip cipher.bin {} "decryption failed - no password provided" -returnCodes error
-    testpassword cipher-badpass-1       test-password.zip cipher.bin badpassword "invalid password" -returnCodes error
-    testpassword cipher-badpass-2       test-password2.zip cipher.bin badpassword "invalid password" -returnCodes error
-    testpassword cipher-deflate         test-password.zip cipher-deflate.bin password [lseq 100] -constraints bug-bbe7c6ff9e
-    testpassword cipher-deflate-nopass  test-password.zip cipher-deflate.bin {} "decryption failed - no password provided" -returnCodes error
-    testpassword cipher-deflate-badpass test-password.zip cipher-deflate.bin badpassword "invalid password" -returnCodes error
+    #       test-password2.zip is the CRC based encryption header validity check (pkware style)
+    testpasswordr plain                  test-password.zip plain.txt password plaintext
+    testpasswordr plain-nopass           test-password.zip plain.txt "" plaintext
+    testpasswordr plain-badpass          test-password.zip plain.txt badpassword plaintext
+    testpasswordr cipher-1               test-password.zip cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
+    testpasswordr cipher-2               test-password2.zip cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
+    testpasswordr cipher-nopass-1        test-password.zip cipher.bin {} "decryption failed - no password provided" -returnCodes error
+    testpasswordr cipher-nopass-2        test-password2.zip cipher.bin {} "decryption failed - no password provided" -returnCodes error
+    testpasswordr cipher-badpass-1       test-password.zip cipher.bin badpassword "invalid password" -returnCodes error
+    testpasswordr cipher-badpass-2       test-password2.zip cipher.bin badpassword "invalid password" -returnCodes error
+    testpasswordr cipher-deflate         test-password.zip cipher-deflate.bin password [lseq 100] -constraints bug-bbe7c6ff9e
+    testpasswordr cipher-deflate-nopass  test-password.zip cipher-deflate.bin {} "decryption failed - no password provided" -returnCodes error
+    testpasswordr cipher-deflate-badpass test-password.zip cipher-deflate.bin badpassword "invalid password" -returnCodes error
+
+    proc testpasswordw {id zippath filename password mode result args} {
+        variable defaultMountPoint
+        set zippath [zippath $zippath]
+        set path [file join $defaultMountPoint $filename]
+        set body {
+            set fd [open $path $mode]
+            fconfigure $fd -translation binary
+            puts -nonewline $fd "xyz"
+            close $fd
+            set fd [open $path]
+            fconfigure $fd -translation binary
+            read $fd
+        }
+        test zipfs-password-$id "zipfs write $id" -setup {
+            unset -nocomplain fd
+            if {$password ne ""} {
+                zipfs mount $zippath $defaultMountPoint $password
+            } else {
+                zipfs mount $zippath $defaultMountPoint
+            }
+        } -cleanup {
+            # In case open succeeded when it should not
+            if {[info exists fd]} {
+                close $fd
+            }
+            cleanup
+        } -body $body -result $result {*}$args
+    }
+    testpasswordw write-w test-password.zip cipher.bin password w xyz
+    testpasswordw write-badpass-w test-password.zip cipher.bin badpass w {invalid password} -returnCodes error
+    testpasswordw write-w+ test-password.zip cipher.bin password w xyz
+    testpasswordw write-badpass-w+ test-password.zip cipher.bin badpass w {invalid password} -returnCodes error
+    testpasswordw write-a+ test-password.zip cipher.bin password a+ ciphertextxyz
+    testpasswordw write-badpass-a+ test-password.zip cipher.bin badpass a+ {invalid password} -returnCodes error
 
     #
     # CRC errors
