@@ -1747,7 +1747,7 @@ proc http::OpenSocket {token DoLater} {
 	    fconfigure $sock -translation {auto crlf} \
 			     -buffersize $state(-blocksize)
 	    if {[package vsatisfies [package provide Tcl] 9.0-]} {
-		fconfigure $sock -profile tcl8
+		fconfigure $sock -profile replace
 	    }
 	    ##Log socket opened, DONE fconfigure - token $token
         }
@@ -2168,7 +2168,7 @@ proc http::Connected {token proto phost srvurl} {
     fconfigure $sock -translation [list $trRead crlf] \
 		     -buffersize $state(-blocksize)
     if {[package vsatisfies [package provide Tcl] 9.0-]} {
-	fconfigure $sock -profile tcl8
+	fconfigure $sock -profile replace
     }
 
     # The following is disallowed in safe interpreters, but the socket is
@@ -2561,7 +2561,7 @@ proc http::ReceiveResponse {token} {
     fconfigure $sock -translation [list auto $trWrite] \
 		     -buffersize $state(-blocksize)
     if {[package vsatisfies [package provide Tcl] 9.0-]} {
-	fconfigure $sock -profile tcl8
+	fconfigure $sock -profile replace
     }
     Log ^D$tk begin receiving response - token $token
 
@@ -4555,7 +4555,7 @@ proc http::Eot {token {reason {}}} {
 	    set enc [CharsetToEncoding $state(charset)]
 	    if {$enc ne "binary"} {
 		if {[package vsatisfies [package provide Tcl] 9.0-]} {
-		    set state(body) [encoding convertfrom -profile tcl8 $enc $state(body)]
+		    set state(body) [encoding convertfrom -profile replace $enc $state(body)]
 		} else {
 		    set state(body) [encoding convertfrom $enc $state(body)]
 		}
@@ -4642,7 +4642,7 @@ proc http::GuessType {token} {
         return 0
     }
     if {[package vsatisfies [package provide Tcl] 9.0-]} {
-	set state(body) [encoding convertfrom -profile tcl8 $enc $state(body)]
+	set state(body) [encoding convertfrom -profile replace $enc $state(body)]
     } else {
 	set state(body) [encoding convertfrom $enc $state(body)]
     }
@@ -4727,7 +4727,7 @@ proc http::quoteString {string} {
     # than [regsub]/[subst]). [Bug 1020491]
 
     if {[package vsatisfies [package provide Tcl] 9.0-]} {
-	set string [encoding convertto -profile tcl8 $http(-urlencoding) $string]
+	set string [encoding convertto -profile replace $http(-urlencoding) $string]
     } else {
 	set string [encoding convertto $http(-urlencoding) $string]
     }

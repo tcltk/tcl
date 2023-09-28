@@ -111,9 +111,14 @@ encoding.
 The following profiles are currently implemented.
 .VS "TCL8.7 TIP656"
 .TP
+\fBstrict\fR
+.
+The default profile.  The operation fails when invalid data for the encoding
+are encountered.
+.TP
 \fBtcl8\fR
 .
-The default profile.  Provides for behaviour identical to that of Tcl 8.6: When
+Provides for behaviour identical to that of Tcl 8.6: When
 decoding, for encodings \fBother than utf-8\fR, each invalid byte is interpreted
 as the Unicode value given by that one byte. For example, the byte 0x80, which
 is invalid in the ASCII encoding would be mapped to the Unicode value U+0080.
@@ -126,10 +131,6 @@ an additional special case, the sequence 0xC0 0x80 is mapped to U+0000.
 
 When encoding, each character that cannot be represented in the encoding is
 replaced by an encoding-dependent character, usually the question mark \fB?\fR.
-.TP
-\fBstrict\fR
-.
-The operation fails when invalid data for the encoding are encountered.
 .TP
 \fBreplace\fR
 .
@@ -180,7 +181,7 @@ unexpected byte sequence starting at index 1: '\ex80'
 Example 3: Get partial data and the error location:
 .PP
 .CS
-% codepoints [encoding convertfrom -profile strict -failindex idx ascii AB\ex80]
+% codepoints [encoding convertfrom -failindex idx ascii AB\ex80]
 U+000041 U+000042
 % set idx
 2
@@ -193,7 +194,7 @@ Example 4: Encode a character that is not representable in ISO8859-1:
 A?
 % encoding convertto -profile strict iso8859-1 A\eu0141
 unexpected character at index 1: 'U+000141'
-% encoding convertto -profile strict -failindex idx iso8859-1 A\eu0141
+% encoding convertto -failindex idx iso8859-1 A\eu0141
 A
 % set idx
 1
