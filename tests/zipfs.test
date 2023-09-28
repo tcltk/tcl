@@ -1194,9 +1194,9 @@ namespace eval test_ns_zipfs {
 
     #
     # Password protected
-    proc testpassword {id filename password result args} {
+    proc testpassword {id zipfile filename password result args} {
         variable defaultMountPoint
-        set zippath [zippath test-password.zip]
+        set zippath [zippath $zipfile]
         test zipfs-password-read-$id "zipfs password read $id" -setup {
             unset -nocomplain fd
             if {$password ne ""} {
@@ -1217,15 +1217,21 @@ namespace eval test_ns_zipfs {
     }
     # The bug bug-bbe7c6ff9e only manifests on macos
     testConstraint bug-bbe7c6ff9e [expr {$::tcl_platform(os) ne "Darwin"}]
-    testpassword plain plain.txt password plaintext
-    testpassword plain-nopassword plain.txt "" plaintext
-    testpassword plain-badpassword plain.txt badpassword plaintext
-    testpassword cipher cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
-    testpassword cipher-nopassword cipher.bin {} "decryption failed - no password provided" -returnCodes error
-    testpassword cipher-badpassword cipher.bin badpassword "invalid password" -returnCodes error
-    testpassword cipher-deflate cipher-deflate.bin password [lseq 100] -constraints bug-bbe7c6ff9e
-    testpassword cipher-deflate-nopassword cipher-deflate.bin {} "decryption failed - no password provided" -returnCodes error
-    testpassword cipher-deflate-badpassword cipher-deflate.bin badpassword "invalid password" -returnCodes error
+
+    # NOTE: test-password.zip is the DOS time based encryption header validity check (infozip style)
+    # NOTE: test-password2.zip is the CRC based encryption header validity check (pkware style)
+    testpassword plain                  test-password.zip plain.txt password plaintext
+    testpassword plain-nopass           test-password.zip plain.txt "" plaintext
+    testpassword plain-badpass          test-password.zip plain.txt badpassword plaintext
+    testpassword cipher-1               test-password.zip cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
+    testpassword cipher-2               test-password2.zip cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
+    testpassword cipher-nopass-1        test-password.zip cipher.bin {} "decryption failed - no password provided" -returnCodes error
+    testpassword cipher-nopass-2        test-password2.zip cipher.bin {} "decryption failed - no password provided" -returnCodes error
+    testpassword cipher-badpass-1       test-password.zip cipher.bin badpassword "invalid password" -returnCodes error
+    testpassword cipher-badpass-2       test-password2.zip cipher.bin badpassword "invalid password" -returnCodes error
+    testpassword cipher-deflate         test-password.zip cipher-deflate.bin password [lseq 100] -constraints bug-bbe7c6ff9e
+    testpassword cipher-deflate-nopass  test-password.zip cipher-deflate.bin {} "decryption failed - no password provided" -returnCodes error
+    testpassword cipher-deflate-badpass test-password.zip cipher-deflate.bin badpassword "invalid password" -returnCodes error
 
     #
     # CRC errors

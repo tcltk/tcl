@@ -229,13 +229,10 @@ typedef struct ZipEntry {
     int crc32;			/* CRC-32 as stored in ZIP */
     int timestamp;		/* Modification time */
     int isEncrypted;		/* True if data is encrypted */
-    unsigned short flags;
+    int flags;
 #define ZE_F_CRC_COMPARED      0x0001  /* If 1, the CRC has been compared. */
 #define ZE_F_CRC_CORRECT       0x0002  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
 #define ZE_F_VOLUME            0x0004  /* Entry corresponds to //zipfs:/ */
-#define ZE_F_CRYPT_HDR_COMPARED  0x0008  /* If 1, the encryption header CRC has been compared. */
-#define ZE_F_CRYPT_HDR_CORRECT   0x0010  /* Only meaningful if ZE_F_CRYPT_HDR_COMPARED is 1 */
-    unsigned char cryptHeaderCRC[2];/* May be one or two bytes depending on zip version */
     unsigned char *data;	/* File data if written */
     struct ZipEntry *next;	/* Next file in the same archive */
     struct ZipEntry *tnext;	/* Next top-level dir in archive */
@@ -331,7 +328,7 @@ static void		SerializeLocalEntryHeader(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
 			    ZipEntry *z, int nameLength, int align);
-static void		ComputeCryptHeaderValidity(ZipEntry *z);
+static int		IsCryptHeaderValid(ZipEntry *z, unsigned char cryptHeader[12]);
 #if !defined(STATIC_BUILD)
 static int		ZipfsAppHookFindTclInit(const char *archive);
 #endif
@@ -735,25 +732,23 @@ CountSlashes(
 /*
  *------------------------------------------------------------------------
  *
- * ComputeCryptHeaderValidity --
+ * IsCryptHeaderValid --
  *
  *    Computes the validity of the encryption header CRC for a ZipEntry.
  *
  * Results:
- *    None.
+ *    Returns 1 if the header is valid else 0.
  *
  * Side effects:
- *    Sets the flags bits of the ZipEntry based on whether the validity
- *    could be computed and if so, whether the encryption header was valid.
+ *    None.
  *
  *------------------------------------------------------------------------
  */
-static void ComputeCryptHeaderValidity(ZipEntry *z)
+static int IsCryptHeaderValid(
+	ZipEntry *z, 
+	unsigned char cryptHeader[12]
+	)
 {
-    if (z->flags & ZE_F_CRYPT_HDR_COMPARED) {
-	/* Already computed */
-	return;
-    }
     /* 
      * There are multiple possibilities. The last one or two bytes of the
      * encryption header should match the last one or two bytes of the
@@ -767,23 +762,20 @@ static void ComputeCryptHeaderValidity(ZipEntry *z)
      * reported as a corruption error instead of incorrect password.
      */
     int dosTime = ToDosTime(z->timestamp);
-    if (z->cryptHeaderCRC[1] == (unsigned char)(dosTime >> 8)) {
+    if (cryptHeader[11] == (unsigned char)(dosTime >> 8)) {
 	/* Infozip style - Tested with test-password.zip */
-	z->flags |= ZE_F_CRYPT_HDR_COMPARED | ZE_F_CRYPT_HDR_CORRECT;
-	return;
+	return 1;
     }
     /* DOS time did not match, may be CRC does */
     if (z->crc32) {
 	/* Pkware style - Tested with test-password2.zip */
-	if (z->cryptHeaderCRC[1] == (unsigned char)(z->crc32 >> 24)) {
-	    z->flags |= ZE_F_CRYPT_HDR_COMPARED | ZE_F_CRYPT_HDR_CORRECT;
-	}
-	else {
-	    z->flags |= ZE_F_CRYPT_HDR_COMPARED; /* Compared and incorrect */
-	}
+	return (cryptHeader[11] == (unsigned char)(z->crc32 >> 24));
     }
+
+    /* No CRC, no way to verify. Assume valid */
+    return 1;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -4999,17 +4991,10 @@ InitReadableChannel(
 	 * "standards" as to where the checksum for the encryption header
 	 * is 
 	 */
-	z->cryptHeaderCRC[0] = encheader[10];
-	z->cryptHeaderCRC[1] = encheader[11];
-	ComputeCryptHeaderValidity(z);
-	if (z->flags & ZE_F_CRYPT_HDR_COMPARED) {
-	    /* We had enough information to compare the encryption CRC */
-	    if (!(z->flags & ZE_F_CRYPT_HDR_CORRECT)) {
-		/* And it was found to be invalid */
-		ZIPFS_ERROR(interp, "invalid password");
-		ZIPFS_ERROR_CODE(interp, "PASSWORD");
-		goto error_cleanup;
-	    }
+	if (!IsCryptHeaderValid(z, encheader)) {
+	    ZIPFS_ERROR(interp, "invalid password");
+	    ZIPFS_ERROR_CODE(interp, "PASSWORD");
+	    goto error_cleanup;
 	}
 	info->ubuf += i;
     }
