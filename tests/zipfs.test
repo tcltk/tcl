@@ -1246,7 +1246,7 @@ namespace eval test_ns_zipfs {
             fconfigure $fd -translation binary
             read $fd
         }
-        test zipfs-password-$id "zipfs write $id" -setup {
+        test zipfs-password-write-$id "zipfs write $id" -setup {
             unset -nocomplain fd
             if {$password ne ""} {
                 zipfs mount $zippath $defaultMountPoint $password
@@ -1261,12 +1261,24 @@ namespace eval test_ns_zipfs {
             cleanup
         } -body $body -result $result {*}$args
     }
-    testpasswordw write-w test-password.zip cipher.bin password w xyz
-    testpasswordw write-badpass-w test-password.zip cipher.bin badpass w {invalid password} -returnCodes error
-    testpasswordw write-w+ test-password.zip cipher.bin password w xyz
-    testpasswordw write-badpass-w+ test-password.zip cipher.bin badpass w {invalid password} -returnCodes error
-    testpasswordw write-a+ test-password.zip cipher.bin password a+ ciphertextxyz
-    testpasswordw write-badpass-a+ test-password.zip cipher.bin badpass a+ {invalid password} -returnCodes error
+    # NOTE: test-password.zip is the DOS time based encryption header validity check (infozip style)
+    #       test-password2.zip is the CRC based encryption header validity check (pkware style)
+    testpasswordw cipher-w-1               test-password.zip  cipher.bin password w xyz
+    testpasswordw cipher-w-2               test-password2.zip cipher.bin password w xyz
+    testpasswordw cipher-deflate-w         test-password2.zip cipher-deflate.bin password w xyz
+    testpasswordw cipher-badpass-w-1       test-password.zip  cipher.bin badpass w {invalid password} -returnCodes error
+    testpasswordw cipher-badpass-w-2       test-password2.zip cipher.bin badpass w {invalid password} -returnCodes error
+    testpasswordw cipher-badpass-deflate-w test-password2.zip cipher-deflate.bin badpass w {invalid password} -returnCodes error
+
+    testpasswordw cipher-w+                 test-password.zip cipher.bin password w xyz
+    testpasswordw cipher-deflate-w+         test-password2.zip cipher-deflate.bin password w xyz
+    testpasswordw cipher-badpass-w+         test-password.zip cipher.bin badpass w {invalid password} -returnCodes error
+    testpasswordw cipher-badpass-deflate-w+ test-password2.zip cipher-deflate.bin badpass w {invalid password} -returnCodes error
+
+    testpasswordw cipher-a+ test-password.zip cipher.bin password a+ ciphertextxyz
+    testpasswordw cipher-deflate-a+ test-password2.zip cipher-deflate.bin password a+ [lseq 100]xyz
+    testpasswordw cipher-badpass-a+ test-password.zip cipher.bin badpass a+ {invalid password} -returnCodes error
+    testpasswordw cipher-badpass-deflate-a+ test-password2.zip cipher-deflate.bin badpass a+ {invalid password} -returnCodes error
 
     #
     # CRC errors

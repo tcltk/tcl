@@ -4873,21 +4873,7 @@ InitWritableChannel(
 	unsigned char *zbuf = z->zipFilePtr->data + z->offset;
 
 	if (z->isEncrypted) {
-	    int len = z->zipFilePtr->passBuf[0] & 0xFF;
-	    char passBuf[260];
-
-	    for (i = 0; i < len; i++) {
-		ch = z->zipFilePtr->passBuf[len - i];
-		passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
-	    }
-	    passBuf[i] = '\0';
-	    init_keys(passBuf, info->keys, crc32tab);
-	    memset(passBuf, 0, sizeof(passBuf));
-	    for (i = 0; i < 12; i++) {
-		ch = info->ubuf[i];
-		zdecode(info->keys, crc32tab, ch);
-	    }
-	    zbuf += i;
+	    zbuf += 12;
 	}
 
 	if (z->compressMethod == ZIP_COMPMETH_DEFLATED) {
@@ -4911,7 +4897,7 @@ InitWritableChannel(
 		    goto memoryError;
 		}
 		for (j = 0; j < stream.avail_in; j++) {
-		    ch = info->ubuf[j];
+		    ch = zbuf[j];
 		    cbuf[j] = zdecode(info->keys, crc32tab, ch);
 		}
 		stream.next_in = cbuf;
