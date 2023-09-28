@@ -1219,13 +1219,13 @@ namespace eval test_ns_zipfs {
     testConstraint bug-bbe7c6ff9e [expr {$::tcl_platform(os) ne "Darwin"}]
     testpassword plain plain.txt password plaintext
     testpassword plain-nopassword plain.txt "" plaintext
-    testpassword plain-badpassword plain.txt xxx plaintext
+    testpassword plain-badpassword plain.txt badpassword plaintext
     testpassword cipher cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
     testpassword cipher-nopassword cipher.bin {} "decryption failed - no password provided" -returnCodes error
-    testpassword cipher-badpassword cipher.bin xxx "invalid CRC" -returnCodes error
+    testpassword cipher-badpassword cipher.bin badpassword "invalid password" -returnCodes error
     testpassword cipher-deflate cipher-deflate.bin password [lseq 100] -constraints bug-bbe7c6ff9e
     testpassword cipher-deflate-nopassword cipher-deflate.bin {} "decryption failed - no password provided" -returnCodes error
-    testpassword cipher-deflate-badpassword cipher-deflate.bin xxx "decompression error" -returnCodes error
+    testpassword cipher-deflate-badpassword cipher-deflate.bin badpassword "invalid password" -returnCodes error
 
     #
     # CRC errors

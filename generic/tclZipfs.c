@@ -229,10 +229,13 @@ typedef struct ZipEntry {
     int crc32;			/* CRC-32 as stored in ZIP */
     int timestamp;		/* Modification time */
     int isEncrypted;		/* True if data is encrypted */
-    int flags;
-#define ZE_F_CRC_COMPARED  0x00000001  /* If 1, the CRC has been compared. */
-#define ZE_F_CRC_CORRECT   0x00000002  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
-#define ZE_F_VOLUME        0x00000004  /* Entry corresponds to //zipfs:/ */
+    unsigned short flags;
+#define ZE_F_CRC_COMPARED      0x0001  /* If 1, the CRC has been compared. */
+#define ZE_F_CRC_CORRECT       0x0002  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
+#define ZE_F_VOLUME            0x0004  /* Entry corresponds to //zipfs:/ */
+#define ZE_F_CRYPT_HDR_COMPARED  0x0008  /* If 1, the encryption header CRC has been compared. */
+#define ZE_F_CRYPT_HDR_CORRECT   0x0010  /* Only meaningful if ZE_F_CRYPT_HDR_COMPARED is 1 */
+    unsigned char cryptHeaderCRC[2];/* May be one or two bytes depending on zip version */
     unsigned char *data;	/* File data if written */
     struct ZipEntry *next;	/* Next file in the same archive */
     struct ZipEntry *tnext;	/* Next top-level dir in archive */
@@ -328,6 +331,7 @@ static void		SerializeLocalEntryHeader(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
 			    ZipEntry *z, int nameLength, int align);
+static void		ComputeCryptHeaderValidity(ZipEntry *z);
 #if !defined(STATIC_BUILD)
 static int		ZipfsAppHookFindTclInit(const char *archive);
 #endif
@@ -544,7 +548,7 @@ ZipWriteShort(
     ptr[0] = value & 0xff;
     ptr[1] = (value >> 8) & 0xff;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -726,6 +730,58 @@ CountSlashes(
 	p++;
     }
     return count;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * ComputeCryptHeaderValidity --
+ *
+ *    Computes the validity of the encryption header CRC for a ZipEntry.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    Sets the flags bits of the ZipEntry based on whether the validity
+ *    could be computed and if so, whether the encryption header was valid.
+ *
+ *------------------------------------------------------------------------
+ */
+static void ComputeCryptHeaderValidity(ZipEntry *z)
+{
+    if (z->flags & ZE_F_CRYPT_HDR_COMPARED) {
+	/* Already computed */
+	return;
+    }
+    /* 
+     * There are multiple possibilities. The last one or two bytes of the
+     * encryption header should match the last one or two bytes of the
+     * CRC of the file. Or the last byte of the encryption header should
+     * be the high order byte of the file time. Depending on the archiver
+     * and version, any of the might be in used. We follow libzip in checking
+     * only one byte against both the crc and the time. Note that by design
+     * the check generates high number of false positives in any case.
+     * Also, in case a check is passed when it should not, the final CRC
+     * calculation will (should) catch it. Only difference is it will be
+     * reported as a corruption error instead of incorrect password.
+     */
+    int dosTime = ToDosTime(z->timestamp);
+    if (z->cryptHeaderCRC[1] == (unsigned char)(dosTime >> 8)) {
+	/* Infozip style - Tested with test-password.zip */
+	z->flags |= ZE_F_CRYPT_HDR_COMPARED | ZE_F_CRYPT_HDR_CORRECT;
+	return;
+    }
+    /* DOS time did not match, may be CRC does */
+    if (z->crc32) {
+	/* Pkware style - Tested with test-password2.zip */
+	if (z->cryptHeaderCRC[1] == (unsigned char)(z->crc32 >> 24)) {
+	    z->flags |= ZE_F_CRYPT_HDR_COMPARED | ZE_F_CRYPT_HDR_CORRECT;
+	}
+	else {
+	    z->flags |= ZE_F_CRYPT_HDR_COMPARED; /* Compared and incorrect */
+	}
+    }
 }
 
 /*
@@ -4930,9 +4986,30 @@ InitReadableChannel(
 	passBuf[i] = '\0';
 	init_keys(passBuf, info->keys, crc32tab);
 	memset(passBuf, 0, sizeof(passBuf));
+	unsigned char encheader[12];
+	memcpy(encheader, info->ubuf, 12);
 	for (i = 0; i < 12; i++) {
 	    ch = info->ubuf[i];
-	    zdecode(info->keys, crc32tab, ch);
+	    ch ^= decrypt_byte(info->keys, crc32tab);
+	    encheader[i] = ch;
+	    update_keys(info->keys, crc32tab, ch);
+	}
+	/*
+	 * Validate the encryption key. This is tricky thanks to multiple
+	 * "standards" as to where the checksum for the encryption header
+	 * is 
+	 */
+	z->cryptHeaderCRC[0] = encheader[10];
+	z->cryptHeaderCRC[1] = encheader[11];
+	ComputeCryptHeaderValidity(z);
+	if (z->flags & ZE_F_CRYPT_HDR_COMPARED) {
+	    /* We had enough information to compare the encryption CRC */
+	    if (!(z->flags & ZE_F_CRYPT_HDR_CORRECT)) {
+		/* And it was found to be invalid */
+		ZIPFS_ERROR(interp, "invalid password");
+		ZIPFS_ERROR_CODE(interp, "PASSWORD");
+		goto error_cleanup;
+	    }
 	}
 	info->ubuf += i;
     }
