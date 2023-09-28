@@ -556,9 +556,12 @@ test {encoding-16.19 strict} {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
 test {encoding-16.19 tcl8} {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
     encoding convertfrom -profile tcl8 utf-16 "\x41\x41\x41"
 } -result \u4141\uFFFD
-test encoding-16.20 {utf16ToUtfProc, bug [d19fe0a5b]} -body {
-    encoding convertfrom utf-16 "\xD8\xD8"
+test encoding-16.20.tcl8 {utf16ToUtfProc, bug [d19fe0a5b]} -body {
+    encoding convertfrom -profile tcl8 utf-16 "\xD8\xD8"
 } -result \uD8D8
+test encoding-16.20.strict {utf16ToUtfProc, bug [d19fe0a5b]} -body {
+    encoding convertfrom -profile strict utf-16 "\xD8\xD8"
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xD8'}
 test encoding-16.21.tcl8 {Utf32ToUtfProc, bug [d19fe0a5b]} -body {
     encoding convertfrom -profile tcl8 utf-32 "\x00\x00\x00\x00\x41\x41"
 } -result \x00\uFFFD
