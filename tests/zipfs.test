@@ -1213,23 +1213,23 @@ namespace eval test_ns_zipfs {
         } -body {
             set fd [open [file join $defaultMountPoint $filename]]
             gets $fd
-        } -result $result {*}$args
+        } -result $result {*}$args -constraints bbe7c6ff9e
     }
     # The bug bbe7c6ff9e only manifests on macos
-    testConstraint bug-bbe7c6ff9e [expr {$::tcl_platform(os) ne "Darwin"}]
+    testConstraint bbe7c6ff9e [expr {$::tcl_platform(os) ne "Darwin"}]
 
     # NOTE: test-password.zip is the DOS time based encryption header validity check (infozip style)
     #       test-password2.zip is the CRC based encryption header validity check (pkware style)
     testpasswordr plain                  test-password.zip plain.txt password plaintext
     testpasswordr plain-nopass           test-password.zip plain.txt "" plaintext
     testpasswordr plain-badpass          test-password.zip plain.txt badpassword plaintext
-    testpasswordr cipher-1               test-password.zip cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
-    testpasswordr cipher-2               test-password2.zip cipher.bin password ciphertext -constraints bug-bbe7c6ff9e
+    testpasswordr cipher-1               test-password.zip cipher.bin password ciphertext
+    testpasswordr cipher-2               test-password2.zip cipher.bin password ciphertext
     testpasswordr cipher-nopass-1        test-password.zip cipher.bin {} "decryption failed - no password provided" -returnCodes error
     testpasswordr cipher-nopass-2        test-password2.zip cipher.bin {} "decryption failed - no password provided" -returnCodes error
     testpasswordr cipher-badpass-1       test-password.zip cipher.bin badpassword "invalid password" -returnCodes error
     testpasswordr cipher-badpass-2       test-password2.zip cipher.bin badpassword "invalid password" -returnCodes error
-    testpasswordr cipher-deflate         test-password.zip cipher-deflate.bin password [lseq 100] -constraints bug-bbe7c6ff9e
+    testpasswordr cipher-deflate         test-password.zip cipher-deflate.bin password [lseq 100]
     testpasswordr cipher-deflate-nopass  test-password.zip cipher-deflate.bin {} "decryption failed - no password provided" -returnCodes error
     testpasswordr cipher-deflate-badpass test-password.zip cipher-deflate.bin badpassword "invalid password" -returnCodes error
 
@@ -1259,7 +1259,7 @@ namespace eval test_ns_zipfs {
                 close $fd
             }
             cleanup
-        } -body $body -result $result {*}$args
+        } -body $body -result $result {*}$args -constraints bbe7c6ff9e
     }
     # NOTE: test-password.zip is the DOS time based encryption header validity check (infozip style)
     #       test-password2.zip is the CRC based encryption header validity check (pkware style)
