@@ -14,6 +14,10 @@
  *   generic/tclZipfs.c file in the TIP430-enabled Tcl cores.
  *   compat/tclZipfs.c file in the tclconfig (TEA) file system, for pre-tip430
  *	projects.
+ *
+ * Helpful docs:
+ * https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.3.9.TXT 
+ * https://libzip.org/specifications/appnote_iz.txt
  */
 
 #include "tclInt.h"
@@ -4839,8 +4843,7 @@ InitWritableChannel(
     /* TODO - why is the memset necessary? Not cheap for default maxWrite. */
     memset(info->ubuf, 0, info->maxWrite);
 
-    info->isEncrypted = z->isEncrypted;
-    if (info->isEncrypted) {
+    if (z->isEncrypted) {
 	assert(z->numCompressedBytes >= 12); /* caller should have checked*/
 	if (DecodeCryptHeader(
 		interp, z, info->keys, z->zipFilePtr->data + z->offset) !=
