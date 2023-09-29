@@ -5587,27 +5587,15 @@ TclObjVarErrMsg(
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
-    const char *part2Str = NULL;
     if (!part1Ptr) {
 	if (index == -1) {
 	    Tcl_Panic("invalid part1Ptr and invalid index together");
 	}
 	part1Ptr = localName(((Interp *)interp)->varFramePtr, index);
     }
-    if (part2Ptr) {
-	Tcl_DString ds;
-	Tcl_DStringInit(&ds);
-
-	part2Str = TclGetString(part2Ptr);
-	if (Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, part2Str, -1, 0, &ds, NULL) != TCL_OK) {
-	    /* part2Str is not printable to stdout, because of strict profile. Don't bother */
-	    part2Str = "???";
-	}
-	Tcl_DStringFree(&ds);
-    }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("can't %s \"%s%s%s%s\": %s",
 	    operation, TclGetString(part1Ptr), (part2Ptr ? "(" : ""),
-	    (part2Ptr ? part2Str : ""), (part2Ptr ? ")" : ""),
+	    (part2Ptr ? TclGetString(part2Ptr) : ""), (part2Ptr ? ")" : ""),
 	    reason));
 }
 
