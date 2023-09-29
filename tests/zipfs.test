@@ -964,7 +964,7 @@ namespace eval test_ns_zipfs {
 
     }
     testzipfsread stored  test.zip          test           test
-    testzipfsread stored  teststored.zip    aaaaaaaaaaaaaa
+    testzipfsread stored-1  teststored.zip    aaaaaaaaaaaaaa
     testzipfsread deflate testdeflated2.zip aaaaaaaaaaaaaa
     testzipfsread bug-23dd83ce7c  empty.zip    {} empty.txt
     # Test open modes - see bug [4645658689]
