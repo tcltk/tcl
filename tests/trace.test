@@ -871,7 +871,7 @@ test trace-14.4 "trace command, wrong # args errors" {
 
 test trace-14.5 {trace command, invalid option} {
     list [catch {trace gorp} msg] $msg
-} [list 1 "bad option \"gorp\": must be add, info, remove, variable, vdelete, or vinfo"]
+} [list 1 "bad option \"gorp\": must be add, info, or remove"]
 
 # Again, [trace ... command] and [trace ... variable] share syntax and
 # error message styles for their opList options; these loops test those
@@ -897,23 +897,6 @@ foreach type {variable command execution} err $errs abbvlist $abbvs {
     }
 }
 rename x {}
-
-test trace-14.7 {trace command, "trace variable" errors} {
-    list [catch {trace variable} msg] $msg
-} [list 1 "wrong # args: should be \"trace variable name ops command\""]
-test trace-14.8 {trace command, "trace variable" errors} {
-    list [catch {trace variable x} msg] $msg
-} [list 1 "wrong # args: should be \"trace variable name ops command\""]
-test trace-14.9 {trace command, "trace variable" errors} {
-    list [catch {trace variable x y} msg] $msg
-} [list 1 "wrong # args: should be \"trace variable name ops command\""]
-test trace-14.10 {trace command, "trace variable" errors} {
-    list [catch {trace variable x y z w} msg] $msg
-} [list 1 "wrong # args: should be \"trace variable name ops command\""]
-test trace-14.11 {trace command, "trace variable" errors} {
-    list [catch {trace variable x y z} msg] $msg
-} [list 1 "bad operations \"y\": should be one or more of rwua"]
-
 
 test trace-14.12 {trace command ("remove variable" option)} {
     unset -nocomplain x
@@ -1234,23 +1217,23 @@ test trace-18.1 {unset traces on procedure returns} {
     p1 foo bar
     set info
 } {0 {a x y}}
-test trace-18.2 {namespace delete / trace vdelete combo} {
+test trace-18.2 {namespace delete / trace remove variable combo} {
     namespace eval ::foo {
 	variable x 123
     }
     proc p1 args {
-	trace vdelete ::foo::x u p1
+	trace remove variable ::foo::x unset p1
     }
     trace add variable ::foo::x unset p1
     namespace delete ::foo
     info exists ::foo::x
 } 0
-test trace-18.3 {namespace delete / trace vdelete combo, Bug \#1337229} {
+test trace-18.3 {namespace delete / trace remove variable combo, Bug \#1337229} {
     namespace eval ::ns {}
     trace add variable ::ns::var unset {unset ::ns::var ;#}
     namespace delete ::ns
 } {}
-test trace-18.4 {namespace delete / trace vdelete combo, Bug \#1338280} {
+test trace-18.4 {namespace delete / trace remove variable combo, Bug \#1338280} {
     namespace eval ::ref {}
     set ::ref::var1 AAA
     trace add variable ::ref::var1 unset doTrace
