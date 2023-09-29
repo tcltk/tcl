@@ -124,7 +124,7 @@ TCLAPI int		Tcl_GetBooleanFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, int *intPtr);
 /* 33 */
 TCLAPI unsigned char *	Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr,
-				int *numBytesPtr);
+				Tcl_Size *numBytesPtr);
 /* 34 */
 TCLAPI int		Tcl_GetDouble(Tcl_Interp *interp, const char *src,
 				double *doublePtr);
@@ -1900,7 +1900,7 @@ typedef struct TclStubs {
     void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
     int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *intPtr); /* 31 */
     int (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *intPtr); /* 32 */
-    unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, int *numBytesPtr); /* 33 */
+    unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, Tcl_Size *numBytesPtr); /* 33 */
     int (*tcl_GetDouble) (Tcl_Interp *interp, const char *src, double *doublePtr); /* 34 */
     int (*tcl_GetDoubleFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, double *doublePtr); /* 35 */
     void (*reserved36)(void);
@@ -4246,6 +4246,20 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_CreateSlave Tcl_CreateChild
 #   define Tcl_GetSlave Tcl_GetChild
 #   define Tcl_GetMaster Tcl_GetParent
+#endif
+
+#ifdef TCL_USE_STUBS
+    /* Protect those 10 functions, being usable through the stub table */
+#   undef TclGetStringFromObj
+#   undef TclGetBytesFromObj
+#   undef TclGetUnicodeFromObj
+#   undef TclListObjGetElements
+#   undef TclListObjLength
+#   undef TclDictObjSize
+#   undef TclSplitList
+#   undef TclSplitPath
+#   undef TclFSSplitPath
+#   undef TclParseArgsObjv
 #endif
 
 #if TCL_MAJOR_VERSION < 9
