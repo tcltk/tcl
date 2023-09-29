@@ -1678,9 +1678,15 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "file read error");
 	    goto error;
 	}
-	Tcl_Close(interp, zf->chan);
-	zf->chan = NULL;
     }
+    /* 
+     * Close the Tcl channel. If the file was mapped, the mapping is
+     * unaffected. It is important to close the channel otherwise there is a
+     * potential chicken and egg issue at finalization time as the channels
+     * are closed before the file systems are dismounted.
+     */
+    Tcl_Close(interp, zf->chan);
+    zf->chan = NULL;
     return ZipFSFindTOC(interp, needZip, zf);
 
     /*
