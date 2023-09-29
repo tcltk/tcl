@@ -97,6 +97,8 @@ static int inExit = 0;
 
 static int subsystemsInitialized = 0;
 
+static const char ENCODING_ERROR[] = "\n\t(encoding error in stderr)";
+
 /*
  * This variable contains the application wide exit handler. It will be called
  * by Tcl_Exit instead of the C-runtime exit if this variable is set to a
@@ -294,9 +296,13 @@ HandleBgErrors(
 		Tcl_WriteChars(errChannel,
 			"error in background error handler:\n", -1);
 		if (valuePtr) {
-		    Tcl_WriteObj(errChannel, valuePtr);
+		    if (Tcl_WriteObj(errChannel, valuePtr) < 0) {
+			Tcl_WriteChars(errChannel, ENCODING_ERROR, -1);
+		    }
 		} else {
-		    Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
+		    if (Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp)) < 0) {
+			Tcl_WriteChars(errChannel, ENCODING_ERROR, -1);
+		    }
 		}
 		Tcl_WriteChars(errChannel, "\n", 1);
 		Tcl_Flush(errChannel);
@@ -483,18 +489,22 @@ TclDefaultBgErrorHandlerObjCmd(
 		if (Tcl_FindCommand(interp, "bgerror", NULL,
 			TCL_GLOBAL_ONLY) == NULL) {
 		    Tcl_RestoreInterpState(interp, saved);
-		    Tcl_WriteObj(errChannel, Tcl_GetVar2Ex(interp,
-			    "errorInfo", NULL, TCL_GLOBAL_ONLY));
+		    if (Tcl_WriteObj(errChannel, Tcl_GetVar2Ex(interp,
+			    "errorInfo", NULL, TCL_GLOBAL_ONLY)) < 0) {
+			Tcl_WriteChars(errChannel, ENCODING_ERROR, -1);
+		    }
 		    Tcl_WriteChars(errChannel, "\n", -1);
 		} else {
 		    Tcl_DiscardInterpState(saved);
-		    Tcl_WriteChars(errChannel,
-			    "bgerror failed to handle background error.\n", -1);
-		    Tcl_WriteChars(errChannel, "    Original error: ", -1);
-		    Tcl_WriteObj(errChannel, tempObjv[1]);
-		    Tcl_WriteChars(errChannel, "\n", -1);
-		    Tcl_WriteChars(errChannel, "    Error in bgerror: ", -1);
-		    Tcl_WriteObj(errChannel, resultPtr);
+		    Tcl_WriteChars(errChannel, "bgerror failed to handle"
+			    " background error.\n    Original error: ", -1);
+		    if (Tcl_WriteObj(errChannel, tempObjv[1]) < 0) {
+			Tcl_WriteChars(errChannel, ENCODING_ERROR, -1);
+		    }
+		    Tcl_WriteChars(errChannel, "\n    Error in bgerror: ", -1);
+		    if (Tcl_WriteObj(errChannel, resultPtr) < 0) {
+			Tcl_WriteChars(errChannel, ENCODING_ERROR, -1);
+		    }
 		    Tcl_WriteChars(errChannel, "\n", -1);
 		}
 		Tcl_DecrRefCount(resultPtr);

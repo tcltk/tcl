@@ -159,7 +159,7 @@ EXTERN Tcl_Code		Tcl_GetBooleanFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, int *intPtr);
 /* 33 */
 EXTERN unsigned char *	Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr,
-				int *numBytesPtr);
+				Tcl_Size *numBytesPtr);
 /* 34 */
 EXTERN Tcl_Code		Tcl_GetDouble(Tcl_Interp *interp, const char *src,
 				double *doublePtr);
@@ -2077,7 +2077,7 @@ typedef struct TclStubs {
     void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
     Tcl_Code (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *intPtr); /* 31 */
     Tcl_Code (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *intPtr); /* 32 */
-    unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, int *numBytesPtr); /* 33 */
+    unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, Tcl_Size *numBytesPtr); /* 33 */
     Tcl_Code (*tcl_GetDouble) (Tcl_Interp *interp, const char *src, double *doublePtr); /* 34 */
     Tcl_Code (*tcl_GetDoubleFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, double *doublePtr); /* 35 */
     TCL_DEPRECATED_API("No longer in use, changed to macro") Tcl_Code (*tcl_GetIndexFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, const char *const *tablePtr, const char *msg, int flags, int *indexPtr); /* 36 */

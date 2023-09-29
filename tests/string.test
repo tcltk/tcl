@@ -33,7 +33,6 @@ proc makeShared {s} {uplevel 1 [list lappend copy $s]; return $s}
 testConstraint testobj [expr {[info commands testobj] ne {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
-testConstraint utf16 [expr {[string length \U010000] == 2}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
 testConstraint testutf16string [llength [info commands testutf16string]]
 
@@ -227,6 +226,9 @@ test string-2.35.$noComp {string compare, binary neq} {
 test string-2.36.$noComp {string compare, binary neq unequal length} {
     run {string compare [binary format a20a 0 1] [binary format a100a 0 0]}
 } 1
+test string-2.37.$noComp {string compare with -length >= 2^32} {
+    run {string compare -length 4294967296 ab abde}
+} -1
 
 # only need a few tests on equal, since it uses the same code as
 # string compare, but just modifies the return output
@@ -367,6 +369,12 @@ test string-3.41.$noComp {string equal, binary neq} {
 test string-3.42.$noComp {string equal, binary neq inequal length} {
     run {string equal [binary format a20a 0 1] [binary format a100a 0 0]}
 } 0
+test string-3.43.$noComp {string equal, big -length} {
+    run {string equal -length 4294967296 abc def}
+} 0
+test string-3.44.$noComp {string equal, bigger -length} -body {
+    run {string equal -length 18446744073709551616 abc def}
+} -returnCodes 1 -result {integer value too large to represent}
 
 test string-4.1.$noComp {string first, not enough args} {
     list [catch {run {string first a}} msg] $msg
@@ -508,9 +516,9 @@ test string-5.19.$noComp {string index, bytearray object out of bounds} {
 test string-5.20.$noComp {string index, bytearray object out of bounds} -body {
     run {string index [binary format I* {0x50515253 0x52}] 20}
 } -result {}
-test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints utf16 -body {
+test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -body {
     run {list [string index a\U100000b 1] [string index a\U100000b 2] [string index a\U100000b 3]}
-} -result [list \U100000 {} b]
+} -result [list \U100000 b {}]
 test string-5.22.$noComp {string index} -constraints testbytestring -body {
     run {list [scan [string index [testbytestring \xFF] 0] %c var] $var}
 } -result {1 255}
@@ -1525,9 +1533,9 @@ test string-12.22.$noComp {string range, shimmering binary/index} {
     binary scan $s a* x
     run {string range $s $s end}
 } 000000001
-test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} utf16 {
+test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} {
     run {list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]}
-} [list \U100000 {} b]
+} [list \U100000 b {}]
 test string-12.24.$noComp {bignum index arithmetic} -setup {
     proc demo {i j} {string range fubar $i $j}
 } -cleanup {
@@ -1795,10 +1803,10 @@ test string-17.7.$noComp {string totitle, unicode} {
 test string-17.8.$noComp {string totitle, compiled} {
     lindex [run {string totitle [list aa bb [list cc]]}] 0
 } Aa
-test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} utf16 {
+test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} {
     run {list [string totitle a\U118c0c 1 1] [string totitle a\U118c0c 2 2] \
 	[string totitle a\U118c0c 3 3]}
-} [list a\U118a0c a\U118c0C a\U118c0C]
+} [list a\U118a0c a\U118c0C a\U118c0c]
 
 test string-18.1.$noComp {string trim} {
     list [catch {run {string trim}} msg] $msg
@@ -1939,9 +1947,9 @@ test string-21.14.$noComp {string wordend, unicode} -body {
 test string-21.15.$noComp {string wordend, unicode} -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 0}
 } -result 2
-test string-21.16.$noComp {string wordend, unicode} -constraints utf16 -body {
+test string-21.16.$noComp {string wordend, unicode} -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
-} -result 8
+} -result 6
 test string-21.17.$noComp {string trim, unicode} {
     run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
 } "Hello world!"
@@ -2017,9 +2025,9 @@ test string-22.14.$noComp {string wordstart, invalid UTF-8} -constraints testbyt
 test string-22.15.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 0}
 } -result 0
-test string-22.16.$noComp {string wordstart, unicode} -constraints utf16 -body {
+test string-22.16.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 10}
-} -result 5
+} -result 3
 
 test string-23.0.$noComp {string is boolean, Bug 1187123} testindexobj {
     set x 5
