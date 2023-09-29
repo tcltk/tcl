@@ -737,6 +737,10 @@ Tcl_SetStdChannel(
     case TCL_STDERR:
 	tsdPtr->stderrInitialized = init;
 	tsdPtr->stderrChannel = channel;
+	if (channel) {
+	    ENCODING_PROFILE_SET(((Channel *)channel)->state->inputEncodingFlags, TCL_ENCODING_PROFILE_REPLACE);
+	    ENCODING_PROFILE_SET(((Channel *)channel)->state->outputEncodingFlags, TCL_ENCODING_PROFILE_REPLACE);
+	}
 	break;
     }
 }
@@ -807,6 +811,8 @@ Tcl_GetStdChannel(
 	    tsdPtr->stderrInitialized = -1;
 	    tsdPtr->stderrChannel = TclpGetDefaultStdChannel(TCL_STDERR);
 	    if (tsdPtr->stderrChannel != NULL) {
+		ENCODING_PROFILE_SET(((Channel *)tsdPtr->stderrChannel)->state->inputEncodingFlags, TCL_ENCODING_PROFILE_REPLACE);
+		ENCODING_PROFILE_SET(((Channel *)tsdPtr->stderrChannel)->state->outputEncodingFlags, TCL_ENCODING_PROFILE_REPLACE);
 		tsdPtr->stderrInitialized = 1;
 		Tcl_RegisterChannel(NULL, tsdPtr->stderrChannel);
 	    }
