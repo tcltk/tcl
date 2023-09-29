@@ -6367,8 +6367,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'm') && (strncmp(cmdName, "mremove-rd", len) == 0)) {
         if (argc != 3) {
-            Tcl_AppendResult(interp, "channel name required",
-                    (char *) NULL);
+            Tcl_AppendResult(interp, "channel name required", NULL);
             return TCL_ERROR;
         }
 
@@ -6377,8 +6376,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'm') && (strncmp(cmdName, "mremove-wr", len) == 0)) {
         if (argc != 3) {
-            Tcl_AppendResult(interp, "channel name required",
-                    (char *) NULL);
+            Tcl_AppendResult(interp, "channel name required", NULL);
             return TCL_ERROR;
         }
 
