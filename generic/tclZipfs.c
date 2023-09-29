@@ -319,10 +319,12 @@ static int		InitWritableChannel(Tcl_Interp *interp,
 			    ZipChannel *info, ZipEntry *z, int trunc);
 static int		ListMountPoints(Tcl_Interp *interp);
 static int		ContainsMountPoint(const char *path, int pathLen);
-static void		SerializeCentralDirectoryEntry(
-			    const unsigned char *start,
-			    const unsigned char *end, unsigned char *buf,
-			    ZipEntry *z, size_t nameLength);
+static void		CleanupMount(ZipFile *zf);
+static void SerializeCentralDirectoryEntry(const unsigned char *start,
+					   const unsigned char *end,
+					   unsigned char *buf,
+					   ZipEntry *z,
+					   size_t nameLength);
 static void		SerializeCentralDirectorySuffix(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
@@ -364,10 +366,7 @@ static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
 			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
 static int		ZipMapArchive(Tcl_Interp *interp, ZipFile *zf,
 			    void *handle);
-static void		ZipfsExitHandler(void *clientData);
-static void		ZipfsMountExitHandler(void *clientData);
 static void		ZipfsSetup(void);
-static void		ZipfsFinalize(void);
 static int		ZipChannelClose(void *instanceData,
 			    Tcl_Interp *interp, int flags);
 static Tcl_DriverGetHandleProc	ZipChannelGetFile;
@@ -1906,7 +1905,6 @@ ZipFSCatalogFilesystem(
      */
 
     zf->mountPoint = (char *) Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
-    Tcl_CreateExitHandler(ZipfsMountExitHandler, zf);
     zf->mountPointLen = strlen(zf->mountPoint);
 
     zf->nameLength = strlen(zipname);
@@ -2154,7 +2152,6 @@ ZipfsSetup(void)
 	    ckalloc(strlen(ZIPFS_FALLBACK_ENCODING) + 1);
     strcpy(ZipFS.fallbackEntryEncoding, ZIPFS_FALLBACK_ENCODING);
     ZipFS.initialized = 1;
-    Tcl_CreateExitHandler(ZipfsExitHandler, NULL);
 }
 
 /*
@@ -2207,6 +2204,41 @@ ListMountPoints(
     return TCL_OK;
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * CleanupMount --
+ *
+ *    Releases all resources associated with a mounted archive. There
+ *    must not be any open files in the archive.
+ * 
+ *    Caller MUST be holding WriteLock() before calling this function.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    Memory associated with the mounted archive is deallocated.
+ *------------------------------------------------------------------------
+ */
+static void
+CleanupMount(ZipFile *zf)        /* Mount point */
+{
+    ZipEntry *z, *znext;
+    Tcl_HashEntry *hPtr;
+    for (z = zf->entries; z; z = znext) {
+	znext = z->next;
+	hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, z->name);
+	if (hPtr) {
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+	if (z->data) {
+	    ckfree(z->data);
+	}
+	ckfree(z);
+    }
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -2349,6 +2381,7 @@ TclZipfs_MountBuffer(
 {
     ZipFile *zf;
 
+    /* TODO - how come a *read* lock suffices for initialzing ? */
     ReadLock();
     if (!ZipFS.initialized) {
 	ZipfsSetup();
@@ -2439,7 +2472,6 @@ TclZipfs_Unmount(
     const char *mountPoint)	/* Mount point path. */
 {
     ZipFile *zf;
-    ZipEntry *z, *znext;
     Tcl_HashEntry *hPtr;
     Tcl_DString dsm;
     int ret = TCL_OK, unmounted = 0;
@@ -2477,19 +2509,9 @@ TclZipfs_Unmount(
      * still cleaning things up.
      */
 
-    for (z = zf->entries; z; z = znext) {
-	znext = z->next;
-	hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, z->name);
-	if (hPtr) {
-	    Tcl_DeleteHashEntry(hPtr);
-	}
-	if (z->data) {
-	    ckfree(z->data);
-	}
-	ckfree(z);
-    }
+    CleanupMount(zf);
     ZipFSCloseArchive(interp, zf);
-    Tcl_DeleteExitHandler(ZipfsMountExitHandler, zf);
+
     ckfree(zf);
     unmounted = 1;
 
@@ -6203,6 +6225,7 @@ ZipfsAppHookFindTclInit(
     return TCL_ERROR;
 }
 #endif
+#ifdef OBSOLETE
 
 static void
 ZipfsExitHandler(
@@ -6222,15 +6245,49 @@ ZipfsExitHandler(
 	}
     }
 }
+#endif
 
-static void
-ZipfsFinalize(void) {
-    Tcl_FSUnregister(&zipfsFilesystem);
-    Tcl_DeleteHashTable(&ZipFS.fileHash);
-    ckfree(ZipFS.fallbackEntryEncoding);
-    ZipFS.initialized = -1;
+void TclZipfsFinalize(void)
+{
+    /*
+     * Finalization steps:
+     * For every mounted archive, if it no longer has any open handles
+     * clean up the mount and associated zip file entries.
+     * If there are no more mounted archives, clean up and free the
+     * ZipFS.fileHash and ZipFS.zipHash tables.
+     */
+    WriteLock();
+
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch zipSearch;
+    for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &zipSearch); hPtr;
+	    hPtr = Tcl_NextHashEntry(&zipSearch)) {
+	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+	if (zf->numOpen == 0) {
+	    Tcl_DeleteHashEntry(hPtr);
+	    CleanupMount(zf);
+	    ZipFSCloseArchive(NULL, zf);
+	    ckfree(zf);
+	}
+    }
+
+    hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &zipSearch);
+    if (hPtr == NULL) {
+	hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &zipSearch);
+	if (hPtr == NULL) {
+	    /* Both hash tables empty. Free them */
+	    Tcl_DeleteHashTable(&ZipFS.fileHash);
+	    Tcl_DeleteHashTable(&ZipFS.zipHash);
+	    Tcl_FSUnregister(&zipfsFilesystem);
+	    ckfree(ZipFS.fallbackEntryEncoding);
+	    ZipFS.initialized = -1;
+	}
+    }
+
+    Unlock();
 }
 
+#ifdef OBSOLETE
 static void
 ZipfsMountExitHandler(
     void *clientData)
@@ -6250,6 +6307,7 @@ ZipfsMountExitHandler(
     }
 
 }
+#endif
 
 /*
  *-------------------------------------------------------------------------
