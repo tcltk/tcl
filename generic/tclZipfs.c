@@ -14,6 +14,10 @@
  *   generic/tclZipfs.c file in the TIP430-enabled Tcl cores.
  *   compat/tclZipfs.c file in the tclconfig (TEA) file system, for pre-tip430
  *	projects.
+ *
+ * Helpful docs:
+ * https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.3.9.TXT 
+ * https://libzip.org/specifications/appnote_iz.txt
  */
 
 #include "tclInt.h"
@@ -230,9 +234,9 @@ typedef struct ZipEntry {
     int timestamp;		/* Modification time */
     int isEncrypted;		/* True if data is encrypted */
     int flags;
-#define ZE_F_CRC_COMPARED  0x00000001  /* If 1, the CRC has been compared. */
-#define ZE_F_CRC_CORRECT   0x00000002  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
-#define ZE_F_VOLUME        0x00000004  /* Entry corresponds to //zipfs:/ */
+#define ZE_F_CRC_COMPARED      0x0001  /* If 1, the CRC has been compared. */
+#define ZE_F_CRC_CORRECT       0x0002  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
+#define ZE_F_VOLUME            0x0004  /* Entry corresponds to //zipfs:/ */
     unsigned char *data;	/* File data if written */
     struct ZipEntry *next;	/* Next file in the same archive */
     struct ZipEntry *tnext;	/* Next top-level dir in archive */
@@ -328,6 +332,9 @@ static void		SerializeLocalEntryHeader(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
 			    ZipEntry *z, int nameLength, int align);
+static int		IsCryptHeaderValid(ZipEntry *z, unsigned char cryptHdr[12]);
+static int		DecodeCryptHeader(Tcl_Interp *interp, ZipEntry *z,
+			    unsigned long keys[3], unsigned char cryptHdr[12]);
 #if !defined(STATIC_BUILD)
 static int		ZipfsAppHookFindTclInit(const char *archive);
 #endif
@@ -530,7 +537,7 @@ ZipWriteShort(
     ptr[0] = value & 0xff;
     ptr[1] = (value >> 8) & 0xff;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -714,6 +721,104 @@ CountSlashes(
     return count;
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * IsCryptHeaderValid --
+ *
+ *    Computes the validity of the encryption header CRC for a ZipEntry.
+ *
+ * Results:
+ *    Returns 1 if the header is valid else 0.
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+static int IsCryptHeaderValid(
+	ZipEntry *z, 
+	unsigned char cryptHeader[12]
+	)
+{
+    /* 
+     * There are multiple possibilities. The last one or two bytes of the
+     * encryption header should match the last one or two bytes of the
+     * CRC of the file. Or the last byte of the encryption header should
+     * be the high order byte of the file time. Depending on the archiver
+     * and version, any of the might be in used. We follow libzip in checking
+     * only one byte against both the crc and the time. Note that by design
+     * the check generates high number of false positives in any case.
+     * Also, in case a check is passed when it should not, the final CRC
+     * calculation will (should) catch it. Only difference is it will be
+     * reported as a corruption error instead of incorrect password.
+     */
+    int dosTime = ToDosTime(z->timestamp);
+    if (cryptHeader[11] == (unsigned char)(dosTime >> 8)) {
+	/* Infozip style - Tested with test-password.zip */
+	return 1;
+    }
+    /* DOS time did not match, may be CRC does */
+    if (z->crc32) {
+	/* Pkware style - Tested with test-password2.zip */
+	return (cryptHeader[11] == (unsigned char)(z->crc32 >> 24));
+    }
+
+    /* No CRC, no way to verify. Assume valid */
+    return 1;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * DecodeCryptHeader --
+ *
+ *    Decodes the crypt header and validates it.
+ *
+ * Results:
+ *    TCL_OK on success, TCL_ERROR on failure.
+ *
+ * Side effects:
+ *    On success, keys[] are updated. On failure, an error message is
+ *    left in interp if not NULL.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+DecodeCryptHeader(Tcl_Interp *interp,
+		  ZipEntry *z,
+		  unsigned long keys[3],/* Updated on success. Must have been
+					   initialized by caller. */
+		  unsigned char cryptHeader[12]) /* From zip file content */
+{
+    int i;
+    int ch;
+    int len = z->zipFilePtr->passBuf[0] & 0xFF;
+    char passBuf[260];
+
+    for (i = 0; i < len; i++) {
+	ch = z->zipFilePtr->passBuf[len - i];
+	passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
+    }
+    passBuf[i] = '\0';
+    init_keys(passBuf, keys, crc32tab);
+    memset(passBuf, 0, sizeof(passBuf));
+    unsigned char encheader[12];
+    memcpy(encheader, cryptHeader, 12);
+    for (i = 0; i < 12; i++) {
+	ch = cryptHeader[i];
+	ch ^= decrypt_byte(keys, crc32tab);
+	encheader[i] = ch;
+	update_keys(keys, crc32tab, ch);
+    }
+    if (!IsCryptHeaderValid(z, encheader)) {
+	ZIPFS_ERROR(interp, "invalid password");
+	ZIPFS_ERROR_CODE(interp, "PASSWORD");
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -4586,19 +4691,18 @@ ZipChannelOpen(
 	/* Read-only */
 	flags |= TCL_READABLE;
     }
-    if (flags & TCL_READABLE) {
-	if (z->isEncrypted) {
-	    if (z->numCompressedBytes < 12) {
-		ZIPFS_ERROR(interp, "decryption failed: truncated decryption header");
-		ZIPFS_ERROR_CODE(interp, "DECRYPT");
-		goto error;
 
-	    }
-	    if (z->zipFilePtr->passBuf[0] == 0) {
-		ZIPFS_ERROR(interp, "decryption failed - no password provided");
-		ZIPFS_ERROR_CODE(interp, "DECRYPT");
-		goto error;
-	    }
+    if (z->isEncrypted) {
+	if (z->numCompressedBytes < 12) {
+	    ZIPFS_ERROR(interp,
+			"decryption failed: truncated decryption header");
+	    ZIPFS_ERROR_CODE(interp, "DECRYPT");
+	    goto error;
+	}
+	if (z->zipFilePtr->passBuf[0] == 0) {
+	    ZIPFS_ERROR(interp, "decryption failed - no password provided");
+	    ZIPFS_ERROR_CODE(interp, "DECRYPT");
+	    goto error;
 	}
     }
 
@@ -4713,6 +4817,15 @@ InitWritableChannel(
     /* TODO - why is the memset necessary? Not cheap for default maxWrite. */
     memset(info->ubuf, 0, info->maxWrite);
 
+    if (z->isEncrypted) {
+	assert(z->numCompressedBytes >= 12); /* caller should have checked*/
+	if (DecodeCryptHeader(
+		interp, z, info->keys, z->zipFilePtr->data + z->offset) !=
+	    TCL_OK) {
+	    goto error_cleanup;
+	}
+    }
+    
     if (trunc) {
 	/*
 	 * Truncate; nothing there.
@@ -4737,21 +4850,7 @@ InitWritableChannel(
 	unsigned char *zbuf = z->zipFilePtr->data + z->offset;
 
 	if (z->isEncrypted) {
-	    int len = z->zipFilePtr->passBuf[0] & 0xFF;
-	    char passBuf[260];
-
-	    for (i = 0; i < len; i++) {
-		ch = z->zipFilePtr->passBuf[len - i];
-		passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
-	    }
-	    passBuf[i] = '\0';
-	    init_keys(passBuf, info->keys, crc32tab);
-	    memset(passBuf, 0, sizeof(passBuf));
-	    for (i = 0; i < 12; i++) {
-		ch = info->ubuf[i];
-		zdecode(info->keys, crc32tab, ch);
-	    }
-	    zbuf += i;
+	    zbuf += 12;
 	}
 
 	if (z->compressMethod == ZIP_COMPMETH_DEFLATED) {
@@ -4775,7 +4874,7 @@ InitWritableChannel(
 		    goto memoryError;
 		}
 		for (j = 0; j < stream.avail_in; j++) {
-		    ch = info->ubuf[j];
+		    ch = zbuf[j];
 		    cbuf[j] = zdecode(info->keys, crc32tab, ch);
 		}
 		stream.next_in = cbuf;
@@ -4881,7 +4980,7 @@ InitReadableChannel(
 				 * from. */
 {
     unsigned char *ubuf = NULL;
-    int i, ch;
+    int ch;
 
     info->iscompr = (z->compressMethod == ZIP_COMPMETH_DEFLATED);
     info->ubuf = z->zipFilePtr->data + z->offset;
@@ -4894,21 +4993,11 @@ InitReadableChannel(
     info->numBytes = z->numBytes;
 
     if (info->isEncrypted) {
-	int len = z->zipFilePtr->passBuf[0] & 0xFF;
-	char passBuf[260];
-
-	for (i = 0; i < len; i++) {
-	    ch = z->zipFilePtr->passBuf[len - i];
-	    passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
+	assert(z->numCompressedBytes >= 12); /* caller should have checked*/
+	if (DecodeCryptHeader(interp, z, info->keys, info->ubuf) != TCL_OK) {
+	    goto error_cleanup;
 	}
-	passBuf[i] = '\0';
-	init_keys(passBuf, info->keys, crc32tab);
-	memset(passBuf, 0, sizeof(passBuf));
-	for (i = 0; i < 12; i++) {
-	    ch = info->ubuf[i];
-	    zdecode(info->keys, crc32tab, ch);
-	}
-	info->ubuf += i;
+	info->ubuf += 12;
     }
 
     if (info->iscompr) {
