@@ -146,7 +146,7 @@ test proc-old-3.8 {local and global arrays} {
     catch {unset a}
     trace add var a(1) write t1
     set info {}
-    do {global a; trace remove var a(1) write t1}
+    do {global a; trace remove variable a(1) write t1}
     set a(1) 44
     set info
 } {}
