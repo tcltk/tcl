@@ -1937,6 +1937,9 @@ ZipFSCatalogFilesystem(
 	    if (!strcmp(z->name, ZIPFS_VOLUME)) {
 		z->flags |= ZE_F_VOLUME; /* Mark as root volume */
 	    }
+	    Tcl_Time t;
+	    Tcl_GetTime(&t);
+	    z->timestamp = t.sec;
 	    z->next = zf->entries;
 	    zf->entries = z;
 	}
@@ -4696,11 +4699,13 @@ ZipChannelOpen(
     WriteLock();
     z = ZipFSLookup(filename);
     if (!z) {
-	Tcl_SetErrno(ENOENT);
+	Tcl_SetErrno(wr ? ENOTSUP : ENOENT);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "file not found \"%s\": %s", filename,
-		    Tcl_PosixError(interp)));
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("file \"%s\" not %s: %s",
+					   filename,
+					   wr ? "created" : "found",
+					   Tcl_PosixError(interp)));
 	}
 	goto error;
     }
@@ -5187,7 +5192,7 @@ ZipEntryStat(
     Tcl_StatBuf *buf)
 {
     ZipEntry *z;
-    int ret = -1;
+    int ret;
 
     ReadLock();
     z = ZipFSLookup(path);
@@ -5206,8 +5211,14 @@ ZipEntryStat(
     } else if (ContainsMountPoint(path, -1)) {
 	/* An intermediate dir under which a mount exists */
 	memset(buf, 0, sizeof(Tcl_StatBuf));
+	Tcl_Time t;
+	Tcl_GetTime(&t);
+	buf->st_atime = buf->st_mtime = buf->st_ctime = t.sec;
 	buf->st_mode = S_IFDIR | 0555;
 	ret = 0;
+    } else {
+	Tcl_SetErrno(ENOENT);
+	ret = -1;
     }
     Unlock();
     return ret;
