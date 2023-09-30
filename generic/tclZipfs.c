@@ -16,7 +16,7 @@
  *	projects.
  *
  * Helpful docs:
- * https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.3.9.TXT 
+ * https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.3.9.TXT
  * https://libzip.org/specifications/appnote_iz.txt
  */
 
@@ -320,11 +320,10 @@ static int		InitWritableChannel(Tcl_Interp *interp,
 static int		ListMountPoints(Tcl_Interp *interp);
 static int		ContainsMountPoint(const char *path, int pathLen);
 static void		CleanupMount(ZipFile *zf);
-static void SerializeCentralDirectoryEntry(const unsigned char *start,
-					   const unsigned char *end,
-					   unsigned char *buf,
-					   ZipEntry *z,
-					   size_t nameLength);
+static void		SerializeCentralDirectoryEntry(
+			    const unsigned char *start,
+			    const unsigned char *end, unsigned char *buf,
+			    ZipEntry *z, size_t nameLength);
 static void		SerializeCentralDirectorySuffix(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
@@ -2237,6 +2236,7 @@ CleanupMount(ZipFile *zf)        /* Mount point */
 	}
 	ckfree(z);
     }
+    zf->entries = NULL;
 }
 
 /*
@@ -6225,27 +6225,6 @@ ZipfsAppHookFindTclInit(
     return TCL_ERROR;
 }
 #endif
-#ifdef OBSOLETE
-
-static void
-ZipfsExitHandler(
-    TCL_UNUSED(void *)
-)
-{
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    if (ZipFS.initialized != -1) {
-	hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
-	if (hPtr == NULL) {
-	    ZipfsFinalize();
-	} else {
-	    /* ZipFS.fallbackEntryEncoding was already freed by
-	     * ZipfsMountExitHandler
-	    */
-	}
-    }
-}
-#endif
 
 void TclZipfsFinalize(void)
 {
@@ -6275,40 +6254,18 @@ void TclZipfsFinalize(void)
     if (hPtr == NULL) {
 	hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &zipSearch);
 	if (hPtr == NULL) {
-	    /* Both hash tables empty. Free them */
+	    /* Both hash tables empty. Free all resources */
+	    Tcl_FSUnregister(&zipfsFilesystem);
 	    Tcl_DeleteHashTable(&ZipFS.fileHash);
 	    Tcl_DeleteHashTable(&ZipFS.zipHash);
-	    Tcl_FSUnregister(&zipfsFilesystem);
 	    ckfree(ZipFS.fallbackEntryEncoding);
-	    ZipFS.initialized = -1;
+	    ZipFS.initialized = 0;
 	}
     }
 
     Unlock();
 }
 
-#ifdef OBSOLETE
-static void
-ZipfsMountExitHandler(
-    void *clientData)
-{
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-
-    ZipFile *zf = (ZipFile *) clientData;
-
-    if (TCL_OK != TclZipfs_Unmount(NULL, zf->mountPoint)) {
-	Tcl_Panic("tried to unmount busy filesystem");
-    }
-
-    hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
-    if (hPtr == NULL) {
-	ZipfsFinalize();
-    }
-
-}
-#endif
-
 /*
  *-------------------------------------------------------------------------
  *
