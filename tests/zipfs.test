@@ -1508,6 +1508,19 @@ namespace eval test_ns_zipfs {
         list [catch {read $fd} message] [close $fd] $message
         close $fd
     } -result {file size error (may be zip64)} -returnCodes error
+
+    test bug-8259d74a64 "Crash exiting with open files" -setup {
+        set path [zippath test.zip]
+        set script "zipfs mount $path /\n"
+        append script {open [zipfs root]test} \n
+        append script "exit\n"
+    } -body {
+        set fd [open |[info nameofexecutable] r+]
+        puts $fd $script
+        flush $fd
+        read $fd
+        close $fd
+    } -result ""
 }
 
 
