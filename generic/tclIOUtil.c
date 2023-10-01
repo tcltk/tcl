@@ -4315,11 +4315,17 @@ Tcl_FSDeleteFile(
     Tcl_Obj *pathPtr)		/* Pathname of file to be removed (UTF-8). */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
-
-    if (fsPtr != NULL && fsPtr->deleteFileProc != NULL) {
-	return fsPtr->deleteFileProc(pathPtr);
+    int err;
+    
+    if (fsPtr == NULL) {
+	err = ENOENT;
+    } else {
+	if (fsPtr->deleteFileProc != NULL) {
+	    return fsPtr->deleteFileProc(pathPtr);
+	}
+	err = ENOTSUP;
     }
-    Tcl_SetErrno(ENOENT);
+    Tcl_SetErrno(err);
     return -1;
 }
 
@@ -4437,8 +4443,12 @@ Tcl_FSRemoveDirectory(
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
-    if (fsPtr == NULL || fsPtr->removeDirectoryProc == NULL) {
+    if (fsPtr == NULL) {
 	Tcl_SetErrno(ENOENT);
+	return -1;
+    }
+    if (fsPtr->removeDirectoryProc == NULL) {
+	Tcl_SetErrno(ENOTSUP);
 	return -1;
     }
 

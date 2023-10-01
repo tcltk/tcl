@@ -1325,13 +1325,18 @@ namespace eval test_ns_zipfs {
 
     #
     # file stat
+    proc fixuptime {t} {
+        # To compensate for the lack of timezone in zip, all dates
+        # expressed as strings and translated to local time
+        if {[regexp {^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d} $t]} {
+            return [clock scan $t -format "%Y-%m-%d %H:%M:%S"]
+        }
+        return $t
+    }
     proc fixupstat {stat} {
         foreach key {atime ctime mtime} {
             # ZIP files have no TZ info so zipfs uses mktime which is localtime
-            set time [dict get $stat $key]
-            if {[regexp {^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d} $time]} {
-                dict set stat $key [clock scan [dict get $stat $key] -format "%Y-%m-%d %H:%M:%S"]
-            }
+            dict set stat $key [fixuptime [dict get $stat $key]]
         }
         if {$::tcl_platform(platform) ne "windows"} {
             dict set stat blksize 0
@@ -1516,8 +1521,10 @@ namespace eval test_ns_zipfs {
     } -cleanup {
         cleanup
     } -body {
-        file copy -force [makeFile "newtext" source.tmp] [file join $defaultMountPoint test]
-    } -result "newtext"
+        set to [file join $defaultMountPoint test]
+        file copy -force [makeFile "newtext" source.tmp] $to
+        readbin $to
+    } -result "newtext\n"
     test zipfs-file-copy-tozipdir {Copy native file to archive directory} -setup {
         mount [zippath test.zip]
     } -cleanup {
@@ -1545,7 +1552,71 @@ namespace eval test_ns_zipfs {
         file copy [file join $defaultMountPoint test] $dst
         readbin $dst
     } -result "test\n"
+    test zipfs-file-copydir-fromzip-1 {Copy archive dir to native} -setup {
+        mount [zippath test.zip]
+        set dst [file join [temporaryDirectory] dstdir.tmp]
+        file delete -force $dst
+    } -cleanup {
+        file delete -force $dst
+        cleanup
+    } -body {
+        file copy [file join $defaultMountPoint testdir] $dst
+        zipfs find $dst
+    } -result [file join [temporaryDirectory] dstdir.tmp test2]
+    test zipfs-file-copymount-fromzip-new {Copy archive mount to native} -setup {
+        mount [zippath test.zip]
+        set dst [file join [temporaryDirectory] dstdir2.tmp]
+        file delete -force $dst
+    } -cleanup {
+        file delete -force $dst
+        cleanup
+    } -body {
+        file copy $defaultMountPoint $dst
+        list [file isfile [file join $dst test]] \
+                  [file isdirectory [file join $dst testdir]] \
+                  [file isfile [file join $dst testdir test2]]
+    } -result {1 1 1}
 
+    #
+    # file delete
+    test zipfs-file-delete "Delete file in zip archive" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set file [file join $defaultMountPoint test]
+        list \
+            [file exists $file] \
+            [catch {file delete $file} msg] \
+            $msg \
+            [file exists $file]
+    } -result [list 1 1 {error deleting "//zipfs:/testmount/test": operation not supported} 1]
+
+    test zipfs-file-delete-enoent "Delete nonexisting path in zip archive" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set file [file join $defaultMountPoint enoent]
+        list \
+            [file exists $file] \
+            [catch {file delete $file} msg] \
+            $msg \
+            [file exists $file]
+    } -result [list 0 0 {} 0]
+
+    test zipfs-file-delete-dir "Delete dir in zip archive" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set dir [file join $defaultMountPoint testdir]
+        list \
+            [file isdirectory $dir] \
+            [catch {file delete -force $dir} msg] \
+            $msg \
+            [file isdirectory $dir]
+    } -result [list 1 1 {error deleting unknown file: operation not supported} 1]
 
     #
     # file mkdir
@@ -1556,6 +1627,15 @@ namespace eval test_ns_zipfs {
     } -body {
         file mkdir [file join $defaultMountPoint newdir]
     } -result "can't create directory \"[file join $defaultMountPoint newdir]\": operation not supported" -returnCodes error
+    test zipfs-file-mkdir-existing {Make a an existing directory in zip archive} -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set dir [file join $defaultMountPoint testdir]
+        file mkdir $dir
+        file isdirectory $dir
+    } -result 1
 
     # Standard paths for file command tests. Because code paths are different,
     # we need tests for...
@@ -1580,8 +1660,8 @@ namespace eval test_ns_zipfs {
     #
     # file atime
 
-    testzipfsfile atime-get-file   [list atime $targetFile]        1065435402
-    testzipfsfile atime-get-dir    [list atime $targetDir]         1105450434
+    testzipfsfile atime-get-file   [list atime $targetFile]        [fixuptime {2003-10-06 15:46:42}]
+    testzipfsfile atime-get-dir    [list atime $targetDir]         [fixuptime {2005-01-11 19:03:54}]
     testzipfsfile atime-get-mount  [list atime $targetMount]       {\d+} -match regexp
     testzipfsfile atime-get-mezzo  [list atime $targetMountParent] {\d+} -match regexp
     testzipfsfile atime-get-root   [list atime [zipfs root]]       {\d+} -match regexp
@@ -1596,6 +1676,33 @@ namespace eval test_ns_zipfs {
     testzipfsenotsup atime-set-root  [list atime [zipfs root] $t]
     testzipfsfile atime-set-enoent   [list atime $targetEnoent $t] \
         "could not read \"$targetEnoent\": no such file or directory" -returnCodes error
+
+    #
+    # file dirname
+    testzipfsfile dirname-file [list dirname $targetFile] $targetMount
+    testzipfsfile dirname-dir [list dirname $targetDir] $targetMount
+    testzipfsfile dirname-mount [list dirname $targetMount] $targetMountParent
+    testzipfsfile dirname-mezzo [list dirname $targetMountParent] [zipfs root]
+    testzipfsfile dirname-root [list dirname [zipfs root]] [zipfs root]
+    testzipfsfile dirname-enoent [list dirname $targetEnoent] $targetMount
+
+    #
+    # file executable
+    testzipfsfile executable-file   [list executable $targetFile]        0
+    testzipfsfile executable-dir    [list executable $targetDir]         0
+    testzipfsfile executable-mount  [list executable $targetMount]       0
+    testzipfsfile executable-mezzo  [list executable $targetMountParent] 0
+    testzipfsfile executable-root   [list executable [zipfs root]]       0
+    testzipfsfile executable-enoent [list executable $targetEnoent]      0
+
+    #
+    # file exists
+    testzipfsfile exists-file   [list exists $targetFile]        1
+    testzipfsfile exists-dir    [list exists $targetDir]         1
+    testzipfsfile exists-mount  [list exists $targetMount]       1
+    testzipfsfile exists-mezzo  [list exists $targetMountParent] 1
+    testzipfsfile exists-root   [list exists [zipfs root]]       1
+    testzipfsfile exists-enoent [list exists $targetEnoent]      0
 
     #
     # file isdirectory
@@ -1618,8 +1725,8 @@ namespace eval test_ns_zipfs {
     #
     # file mtime
 
-    testzipfsfile mtime-get-file   [list mtime $targetFile]        1065435402
-    testzipfsfile mtime-get-dir    [list mtime $targetDir]         1105450434
+    testzipfsfile mtime-get-file   [list mtime $targetFile]        [fixuptime {2003-10-06 15:46:42}]
+    testzipfsfile mtime-get-dir    [list mtime $targetDir]         [fixuptime {2005-01-11 19:03:54}]
     testzipfsfile mtime-get-mount  [list mtime $targetMount]       {\d+} -match regexp
     testzipfsfile mtime-get-mezzo  [list mtime $targetMountParent] {\d+} -match regexp
     testzipfsfile mtime-get-root   [list mtime [zipfs root]]       {\d+} -match regexp
@@ -1635,7 +1742,32 @@ namespace eval test_ns_zipfs {
     testzipfsfile    mtime-set-enoent [list mtime $targetEnoent $t] \
         "could not read \"$targetEnoent\": no such file or directory" -returnCodes error
 
+    #
+    # file owned
+    testzipfsfile owned-file   [list owned $targetFile]        1
+    testzipfsfile owned-dir    [list owned $targetDir]         1
+    testzipfsfile owned-mount  [list owned $targetMount]       1
+    testzipfsfile owned-mezzo  [list owned $targetMountParent] 1
+    testzipfsfile owned-root   [list owned [zipfs root]]       1
+    testzipfsfile owned-enoent [list owned $targetEnoent]      0
 
+    #
+    # file readable
+    testzipfsfile readable-file   [list readable $targetFile]        1
+    testzipfsfile readable-dir    [list readable $targetDir]         1
+    testzipfsfile readable-mount  [list readable $targetMount]       1
+    testzipfsfile readable-mezzo  [list readable $targetMountParent] 1
+    testzipfsfile readable-root   [list readable [zipfs root]]       1
+    testzipfsfile readable-enoent [list readable $targetEnoent]      0
+
+    #
+    # file writable
+    testzipfsfile writable-file   [list writable $targetFile]        1
+    testzipfsfile writable-dir    [list writable $targetDir]         0
+    testzipfsfile writable-mount  [list writable $targetMount]       0
+    testzipfsfile writable-mezzo  [list writable $targetMountParent] 0
+    testzipfsfile writable-root   [list writable [zipfs root]]       0
+    testzipfsfile writable-enoent [list writable $targetEnoent]      0
 
     # TODO - mkkey, mkimg, mkzip, lmkimg, lmkzip
     testnumargs "zipfs mkkey" "password" "" -constraints zipfs

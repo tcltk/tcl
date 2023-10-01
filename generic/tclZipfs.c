@@ -4496,9 +4496,12 @@ ZipChannelWrite(
     ZipChannel *info = (ZipChannel *) instanceData;
     unsigned long nextpos;
 
-    if (toWrite == 0 || !info->isWriting) {
+    if (!info->isWriting) {
 	*errloc = EINVAL;
 	return -1;
+    }
+    if (toWrite == 0) {
+	return 0;
     }
     assert(info->maxWrite >= info->numRead);
     if (toWrite > (int) (info->maxWrite - info->numRead)) {
@@ -5246,18 +5249,26 @@ ZipEntryAccess(
     char *path,
     int mode)
 {
-    if (mode & 3) {
+    if (mode & X_OK) {
 	return -1;
     }
 
     ReadLock();
     int access;
     ZipEntry *z = ZipFSLookup(path);
-    /* Could a real zip entry or an intermediate directory of a mount point */
-    if (z || ContainsMountPoint(path, -1)) {
-	access = 0;
+    if (z) {
+	/* Currently existing files read/write but dirs are read-only */
+	access = (z->isDirectory && (mode & W_OK)) ? -1 : 0;
     } else {
-	access = -1;
+	if (mode & W_OK) {
+	    access = -1;
+	} else {
+	    /*
+	     * Even if entry does not exist, could be intermediate dir
+	     * containing a mount point 
+	     */
+	    access = ContainsMountPoint(path, -1) ? 0 : -1;
+	}
     }
     Unlock();
     return access;
