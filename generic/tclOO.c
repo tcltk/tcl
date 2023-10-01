@@ -398,6 +398,7 @@ InitFoundation(
      */
 
     fakeCls.thisPtr = &fakeObject;
+    fakeObject.refCount = 0; /* Do not increment an uninitialized value. */
 
     fPtr->objectCls = TclOOAllocClass(interp,
 	    AllocObject(interp, "object", (Namespace *)fPtr->ooNs, NULL));
