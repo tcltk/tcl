@@ -540,6 +540,11 @@ declare 218 {
 }
 
 # for use in tclTest.c
+
+# Bug 7371b6270b
+declare 223 {
+    void *TclGetCStackPtr(void)
+}
 declare 224 {
     TclPlatformType *TclGetPlatform(void)
 }
@@ -585,7 +590,6 @@ declare 234 {
 declare 235 {
     void TclInitVarHashTable(TclVarHashTable *tablePtr, Namespace *nsPtr)
 }
-
 
 # TIP 337 made this one public
 declare 236 {

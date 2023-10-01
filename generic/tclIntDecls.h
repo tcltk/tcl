@@ -532,7 +532,8 @@ EXTERN void		TclPopStackFrame(Tcl_Interp *interp);
 /* Slot 220 is reserved */
 /* Slot 221 is reserved */
 /* Slot 222 is reserved */
-/* Slot 223 is reserved */
+/* 223 */
+EXTERN void *		TclGetCStackPtr(void);
 /* 224 */
 EXTERN TclPlatformType * TclGetPlatform(void);
 /* 225 */
@@ -875,7 +876,7 @@ typedef struct TclIntStubs {
     void (*reserved220)(void);
     void (*reserved221)(void);
     void (*reserved222)(void);
-    void (*reserved223)(void);
+    void * (*tclGetCStackPtr) (void); /* 223 */
     TclPlatformType * (*tclGetPlatform) (void); /* 224 */
     Tcl_Obj * (*tclTraceDictPath) (Tcl_Interp *interp, Tcl_Obj *rootPtr, int keyc, Tcl_Obj *const keyv[], int flags); /* 225 */
     int (*tclObjBeingDeleted) (Tcl_Obj *objPtr); /* 226 */
@@ -1289,7 +1290,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 220 is reserved */
 /* Slot 221 is reserved */
 /* Slot 222 is reserved */
-/* Slot 223 is reserved */
+#define TclGetCStackPtr \
+	(tclIntStubsPtr->tclGetCStackPtr) /* 223 */
 #define TclGetPlatform \
 	(tclIntStubsPtr->tclGetPlatform) /* 224 */
 #define TclTraceDictPath \

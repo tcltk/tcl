@@ -23,7 +23,42 @@
 #include "tommath.h"
 #include <math.h>
 #include <assert.h>
+
+/*
+ * Bug 7371b6270b: to check C call stack depth, prefer an approach which is
+ * compatible with AddressSanitizer (ASan) use-after-return detection.
+ */
 
+#if defined(HAVE_INTRIN_H)
+#include <intrin.h> /* for _AddressOfReturnAddress() */
+#endif
+
+/*
+ * As suggested by
+ * https://clang.llvm.org/docs/LanguageExtensions.html#has-builtin
+ */
+#ifndef __has_builtin
+#define __has_builtin(x) 0 /* for non-clang compilers */
+#endif
+
+void *
+TclGetCStackPtr(void)
+{
+#if defined(HAVE_INTRIN_H)
+  return _AddressOfReturnAddress();
+#elif __GNUC__ || __has_builtin(__builtin_frame_address)
+  return __builtin_frame_address(0);
+#else
+  int unused = 0;
+  /*
+   * LLVM recommends using volatile:
+   * https://github.com/llvm/llvm-project/blob/llvmorg-10.0.0-rc1/clang/lib/Basic/Stack.cpp#L31
+   */
+  int *volatile stackLevel = &unused;
+  return (void *)stackLevel;
+#endif
+}
+
 #define INTERP_STACK_INITIAL_SIZE 2000
 #define CORO_STACK_INITIAL_SIZE    200
 
@@ -8824,8 +8859,8 @@ TclNRCoroutineActivateCallback(
 {
     CoroutineData *corPtr = (CoroutineData *)data[0];
     int type = PTR2INT(data[1]);
-    int numLevels, unused;
-    int *stackLevel = &unused;
+    int numLevels;
+    void *stackLevel = TclGetCStackPtr();
 
     if (!corPtr->stackLevel) {
         /*
