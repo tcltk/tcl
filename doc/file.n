@@ -31,6 +31,8 @@ for the file.  The time is measured in the standard POSIX fashion as
 seconds from a fixed starting time (often January 1, 1970).  If the file
 does not exist or its access time cannot be queried or set then an error is
 generated.  On Windows, FAT file systems do not support access time.
+On \fBzipfs\fR file systems, access time is mapped to the modification
+time.
 .TP
 \fBfile attributes \fIname\fR
 .TP
@@ -295,6 +297,7 @@ the file (equivalent to Unix \fBtouch\fR).  The time is measured in the
 standard POSIX fashion as seconds from a fixed starting time (often January
 1, 1970).  If the file does not exist or its modified time cannot be queried
 or set then an error is generated.
+On \fBzipfs\fR file systems, modification time cannot be explicitly set.
 .TP
 \fBfile nativename \fIname\fR
 .
