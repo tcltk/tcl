@@ -1922,6 +1922,9 @@ ZipFSCatalogFilesystem(
 	    if (!strcmp(z->name, ZIPFS_VOLUME)) {
 		z->flags |= ZE_F_VOLUME; /* Mark as root volume */
 	    }
+	    Tcl_Time t;
+	    Tcl_GetTime(&t);
+	    z->timestamp = t.sec;
 	    z->next = zf->entries;
 	    zf->entries = z;
 	}
@@ -4479,9 +4482,12 @@ ZipChannelWrite(
     ZipChannel *info = (ZipChannel *) instanceData;
     unsigned long nextpos;
 
-    if (toWrite == 0 || !info->isWriting) {
+    if (!info->isWriting) {
 	*errloc = EINVAL;
 	return -1;
+    }
+    if (toWrite == 0) {
+	return 0;
     }
     assert(info->maxWrite >= info->numRead);
     if (toWrite > (int) (info->maxWrite - info->numRead)) {
@@ -4670,11 +4676,13 @@ ZipChannelOpen(
     WriteLock();
     z = ZipFSLookup(filename);
     if (!z) {
-	Tcl_SetErrno(ENOENT);
+	Tcl_SetErrno(wr ? ENOTSUP : ENOENT);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "file not found \"%s\": %s", filename,
-		    Tcl_PosixError(interp)));
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("file \"%s\" not %s: %s",
+					   filename,
+					   wr ? "created" : "found",
+					   Tcl_PosixError(interp)));
 	}
 	goto error;
     }
@@ -5161,7 +5169,7 @@ ZipEntryStat(
     Tcl_StatBuf *buf)
 {
     ZipEntry *z;
-    int ret = -1;
+    int ret;
 
     ReadLock();
     z = ZipFSLookup(path);
@@ -5180,8 +5188,14 @@ ZipEntryStat(
     } else if (ContainsMountPoint(path, -1)) {
 	/* An intermediate dir under which a mount exists */
 	memset(buf, 0, sizeof(Tcl_StatBuf));
+	Tcl_Time t;
+	Tcl_GetTime(&t);
+	buf->st_atime = buf->st_mtime = buf->st_ctime = t.sec;
 	buf->st_mode = S_IFDIR | 0555;
 	ret = 0;
+    } else {
+	Tcl_SetErrno(ENOENT);
+	ret = -1;
     }
     Unlock();
     return ret;
@@ -5209,18 +5223,26 @@ ZipEntryAccess(
     char *path,
     int mode)
 {
-    if (mode & 3) {
+    if (mode & X_OK) {
 	return -1;
     }
 
     ReadLock();
     int access;
     ZipEntry *z = ZipFSLookup(path);
-    /* Could a real zip entry or an intermediate directory of a mount point */
-    if (z || ContainsMountPoint(path, -1)) {
-	access = 0;
+    if (z) {
+	/* Currently existing files read/write but dirs are read-only */
+	access = (z->isDirectory && (mode & W_OK)) ? -1 : 0;
     } else {
-	access = -1;
+	if (mode & W_OK) {
+	    access = -1;
+	} else {
+	    /*
+	     * Even if entry does not exist, could be intermediate dir
+	     * containing a mount point 
+	     */
+	    access = ContainsMountPoint(path, -1) ? 0 : -1;
+	}
     }
     Unlock();
     return access;
@@ -5847,34 +5869,39 @@ ZipFSFileAttrsGetProc(
     path = Tcl_GetStringFromObj(pathPtr, &len);
     ReadLock();
     z = ZipFSLookup(path);
-    if (!z) {
+    if (!z && !ContainsMountPoint(path, -1)) {
 	Tcl_SetErrno(ENOENT);
 	ZIPFS_POSIX_ERROR(interp, "file not found");
 	ret = TCL_ERROR;
 	goto done;
     }
+    /* z == NULL for intermediate directories that are ancestors of mounts */
     switch (index) {
     case ZIP_ATTR_UNCOMPSIZE:
-	TclNewIntObj(*objPtrRef, z->numBytes);
+	TclNewIntObj(*objPtrRef, z ? z->numBytes : 0);
 	break;
     case ZIP_ATTR_COMPSIZE:
-	TclNewIntObj(*objPtrRef, z->numCompressedBytes);
+	TclNewIntObj(*objPtrRef, z ? z->numCompressedBytes : 0);
 	break;
     case ZIP_ATTR_OFFSET:
-	TclNewIntObj(*objPtrRef, z->offset);
+	TclNewIntObj(*objPtrRef, z ? z->offset : 0);
 	break;
     case ZIP_ATTR_MOUNT:
-	*objPtrRef = Tcl_NewStringObj(z->zipFilePtr->mountPoint,
-		z->zipFilePtr->mountPointLen);
+	if (z) {
+	    *objPtrRef = Tcl_NewStringObj(z->zipFilePtr->mountPoint,
+					  z->zipFilePtr->mountPointLen);
+	} else {
+	    *objPtrRef = Tcl_NewStringObj("", 0);
+	}
 	break;
     case ZIP_ATTR_ARCHIVE:
-	*objPtrRef = Tcl_NewStringObj(z->zipFilePtr->name, -1);
+	*objPtrRef = Tcl_NewStringObj(z ? z->zipFilePtr->name : "", -1);
 	break;
     case ZIP_ATTR_PERMISSIONS:
 	*objPtrRef = Tcl_NewStringObj("0o555", -1);
 	break;
     case ZIP_ATTR_CRC:
-	TclNewIntObj(*objPtrRef, z->crc32);
+	TclNewIntObj(*objPtrRef, z ? z->crc32 : 0);
 	break;
     default:
 	ZIPFS_ERROR(interp, "unknown attribute");
