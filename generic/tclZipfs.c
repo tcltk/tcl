@@ -5531,6 +5531,8 @@ ZipFSMatchInDirectoryProc(
 	}
     }
 
+    int foundInHash = (z != NULL);
+
     /*
      * We've got to work for our supper and do the actual globbing. And all
      * we've got really is an undifferentiated pile of all the filenames we've
@@ -5550,18 +5552,36 @@ ZipFSMatchInDirectoryProc(
     memcpy(pat + len, pattern, l + 1);
     scnt = CountSlashes(pat);
 
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
-	    hPtr; hPtr = Tcl_NextHashEntry(&search)) {
-	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
+    if (foundInHash) {
+	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search); hPtr;
+	     hPtr = Tcl_NextHashEntry(&search)) {
+	    z = (ZipEntry *)Tcl_GetHashValue(hPtr);
 
-	if ((dirOnly >= 0) && ((dirOnly && !z->isDirectory)
-		|| (!dirOnly && z->isDirectory))) {
-	    continue;
+	    if ((dirOnly >= 0) && ((dirOnly && !z->isDirectory) ||
+				   (!dirOnly && z->isDirectory))) {
+		continue;
+	    }
+	    if ((z->depth == scnt) &&
+		((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
+		&& Tcl_StringCaseMatch(z->name, pat, 0)) {
+		AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
+	    }
 	}
-	if ((z->depth == scnt) &&
-	    ((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
-	    && Tcl_StringCaseMatch(z->name, pat, 0)) {
-	    AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
+    } else if (dirOnly) {
+	/* Not found in hash. May be a path that is the ancestor of a mount */
+	Tcl_HashEntry *hPtr;
+	Tcl_HashSearch search;
+	for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
+	     hPtr = Tcl_NextHashEntry(&search)) {
+	    ZipFile *zf = (ZipFile *)Tcl_GetHashValue(hPtr);
+	    if (Tcl_StringCaseMatch(zf->mountPoint, pat, 0)) {
+		const char *tail = zf->mountPoint + len;
+		const char *end = strchr(tail, '/');
+		AppendWithPrefix(result,
+				 prefixBuf,
+				 zf->mountPoint + strip,
+				 end ? (int)(end - zf->mountPoint) : -1);
+	    }
 	}
     }
     ckfree(pat);
