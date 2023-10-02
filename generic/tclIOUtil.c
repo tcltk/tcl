@@ -3737,8 +3737,13 @@ Tcl_FSLink(
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
-    if (fsPtr != NULL && fsPtr->linkProc != NULL) {
-	return fsPtr->linkProc(pathPtr, toPtr, linkAction);
+    if (fsPtr) {
+	if (fsPtr->linkProc == NULL) {
+	    Tcl_SetErrno(ENOTSUP);
+	    return NULL;
+	} else {
+	    return fsPtr->linkProc(pathPtr, toPtr, linkAction);
+	}
     }
 
     /*
