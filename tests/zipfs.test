@@ -968,14 +968,14 @@ namespace eval test_ns_zipfs {
     testzipfsread deflate testdeflated2.zip aaaaaaaaaaaaaa
     testzipfsread bug-23dd83ce7c  empty.zip    {} empty.txt
     # Test open modes - see bug [4645658689]
-    testzipfsread stored-rw  teststored.zip    aaaaaaaaaaaaaa abac-repeat.txt r+
-    testzipfsread deflate-rw testdeflated2.zip aaaaaaaaaaaaaa abac-repeat.txt r+
-    testzipfsread stored-wr  teststored.zip    {} abac-repeat.txt w+ -constraints bug-00018ec7a0
-    testzipfsread deflate-wr testdeflated2.zip {} abac-repeat.txt w+ -constraints bug-00018ec7a0
-    testzipfsread stored-ar  teststored.zip    {} abac-repeat.txt a+
-    testzipfsread deflate-ar testdeflated2.zip {} abac-repeat.txt a+
+    testzipfsread stored-r+  teststored.zip    aaaaaaaaaaaaaa abac-repeat.txt r+
+    testzipfsread deflate-r+ testdeflated2.zip aaaaaaaaaaaaaa abac-repeat.txt r+
+    testzipfsread stored-w+  teststored.zip    {} abac-repeat.txt w+
+    testzipfsread deflate-w+ testdeflated2.zip {} abac-repeat.txt w+
+    testzipfsread stored-a+  teststored.zip    {} abac-repeat.txt a+
+    testzipfsread deflate-a+ testdeflated2.zip {} abac-repeat.txt a+
 
-    testzipfsread nosuch  test.zip          "file not found \"//zipfs:/testmount/nosuchfile\": no such file or directory" nosuchfile {} -returnCodes error
+    testzipfsread enoent  test.zip          "file \"//zipfs:/testmount/nosuchfile\" not found: no such file or directory" nosuchfile {} -returnCodes error
     testzipfsread deflate-error broken.zip  {decompression error} deflatezliberror {} -returnCodes error
     testzipfsread bzip2   testbzip2.zip     {unsupported compression method} abac-repeat.txt {} -returnCodes error
     testzipfsread lzma    testfile-lzma.zip {unsupported compression method} abac-repeat.txt {} -returnCodes error
@@ -1031,10 +1031,10 @@ namespace eval test_ns_zipfs {
         } -body $body -result $result {*}$args
 
     }
-    testzipfswrite create-w test.zip  "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile w -returnCodes error
-    testzipfswrite create-w+ test.zip "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile w+ -returnCodes error
+    testzipfswrite create-w test.zip  "file \"//zipfs:/testmount/newfile\" not created: operation not supported" newfile w -returnCodes error
+    testzipfswrite create-w+ test.zip "file \"//zipfs:/testmount/newfile\" not created: operation not supported" newfile w+ -returnCodes error
     testzipfswrite create-a test.zip  "append mode not supported: permission denied" newfile a -returnCodes error
-    testzipfswrite create-a+ test.zip "file not found \"//zipfs:/testmount/newfile\": no such file or directory" newfile a+ -returnCodes error
+    testzipfswrite create-a+ test.zip "file \"//zipfs:/testmount/newfile\" not created: operation not supported" newfile a+ -returnCodes error
     testzipfswrite store-w teststored.zip      "xyz" abac-repeat.txt w
     testzipfswrite deflate-w testdeflated2.zip "xyz" abac-repeat.txt w
     testzipfswrite store-w+ teststored.zip     "xyz" abac-repeat.txt w+
@@ -1324,14 +1324,19 @@ namespace eval test_ns_zipfs {
     } -result 1
 
     #
-    # file stat
+    # file stat,lstat
+    proc fixuptime {t} {
+        # To compensate for the lack of timezone in zip, all dates
+        # expressed as strings and translated to local time
+        if {[regexp {^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d} $t]} {
+            return [clock scan $t -format "%Y-%m-%d %H:%M:%S"]
+        }
+        return $t
+    }
     proc fixupstat {stat} {
         foreach key {atime ctime mtime} {
             # ZIP files have no TZ info so zipfs uses mktime which is localtime
-            set time [dict get $stat $key]
-            if {$time ne "0"} {
-                dict set stat $key [clock scan [dict get $stat $key] -format "%Y-%m-%d %H:%M:%S"]
-            }
+            dict set stat $key [fixuptime [dict get $stat $key]]
         }
         if {$::tcl_platform(platform) ne "windows"} {
             dict set stat blksize 0
@@ -1339,52 +1344,27 @@ namespace eval test_ns_zipfs {
         }
         return [lsort -stride 2 $stat]
     }
-    test zipfs-file-stat-nosuchfile "Read stat of nonexistent file" -setup {
-        mount [zippath test.zip]
-    } -cleanup cleanup -body {
-        file stat [file join $defaultMountPoint nosuchfile]
-    } -result "could not read \"[file join $defaultMountPoint nosuchfile]\": *" -match glob -returnCodes error
+    # Wraps stat and lstat
+    proc testzipfsstat {id mountpoint target result args} {
+        test zipfs-file-stat-$id "file stat $id" -setup {
+            zipfs mount [zippath test.zip] $mountpoint
+        } -cleanup cleanup -body {
+            lsort -stride 2 [file stat [file join $mountpoint $target]]
+        } -result $result {*}$args
 
-    test zipfs-file-stat-nosuchmount "Read stat of nonexistent mount" -body {
-        file stat [file join $defaultMountPoint nosuchfile]
-    } -result "could not read \"[file join $defaultMountPoint nosuchfile]\": no such file or directory" -returnCodes error
-
-    test zipfs-file-stat-file "Read stat of file" -setup {
-        mount [zippath test.zip]
-    } -cleanup cleanup -body {
-        lsort -stride 2 [file stat [file join $defaultMountPoint test]]
-    } -result [fixupstat {atime {2003-10-06 15:46:42} ctime {2003-10-06 15:46:42} dev 0 gid 0 ino 0 mode 33133 mtime {2003-10-06 15:46:42} nlink 0 size
-        5 type file uid 0}]
-
-    test zipfs-file-stat-dir "Read stat of dir" -setup {
-        mount [zippath test.zip]
-    } -cleanup cleanup -body {
-        lsort -stride 2 [file stat [file join $defaultMountPoint testdir]]
-    } -result [fixupstat {atime {2005-01-11 19:03:54} ctime {2005-01-11 19:03:54} dev 0 gid 0 ino 0 mode 16749 mtime {2005-01-11 19:03:54} nlink 0 size 0 type directory uid 0}]
-
-    test zipfs-file-stat-mount "Read stat of mount point" -setup {
-        mount [zippath test.zip]
-    } -cleanup cleanup -body {
-        lsort -stride 2 [file stat $defaultMountPoint]
-    } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
-
-    test zipfs-file-stat-root-mount "Read stat of root" -setup {
-        mount [zippath test.zip] [zipfs root]
-    } -cleanup cleanup -body {
-        lsort -stride 2 [file stat [zipfs root]]
-    } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
-
-    test zipfs-file-stat-root-subdir-mount "Read stat of root when mount is subdir" -setup {
-        mount [zippath test.zip]
-    } -cleanup cleanup -body {
-        lsort -stride 2 [file stat [zipfs root]]
-    } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
-
-    test zipfs-file-stat-level3 "Stat on a directory that is intermediary in a mount point" -setup {
-        mount [zippath test.zip] [file join $defaultMountPoint mt2]
-    } -cleanup cleanup -body {
-        lsort -stride 2 [file stat $defaultMountPoint]
-    } -result [fixupstat {atime 0 ctime 0 dev 0 gid 0 ino 0 mode 16749 mtime 0 nlink 0 size 0 type directory uid 0}]
+        test zipfs-file-lstat-$id "file lstat $id" -setup {
+            mount [zippath test.zip]
+        } -cleanup cleanup -body {
+            lsort -stride 2 [file lstat [file join $mountpoint $target]]
+        } -result $result {*}$args
+    }
+    testzipfsstat enoent $defaultMountPoint enoent "could not read \"[file join $defaultMountPoint enoent]\": no such file or directory" -returnCodes error
+    testzipfsstat nosuchmount $defaultMountPoint //zipfs:/notamount/test "could not read \"//zipfs:/notamount/test\": no such file or directory" -returnCodes error
+    testzipfsstat file $defaultMountPoint test [fixupstat {atime {2003-10-06 15:46:42} ctime {2003-10-06 15:46:42} dev 0 gid 0 ino 0 mode 33133 mtime {2003-10-06 15:46:42} nlink 0 size 5 type file uid 0}]
+    testzipfsstat dir $defaultMountPoint testdir [fixupstat {atime {2005-01-11 19:03:54} ctime {2005-01-11 19:03:54} dev 0 gid 0 ino 0 mode 16749 mtime {2005-01-11 19:03:54} nlink 0 size 0 type directory uid 0}]
+    testzipfsstat root-mount [zipfs root] [zipfs root] [fixupstat {atime .* ctime .* dev 0 gid 0 ino 0 mode 16749 mtime .* nlink 0 size 0 type directory uid 0}] -match regexp
+    testzipfsstat root-subdir-mount $defaultMountPoint [zipfs root] [fixupstat {atime .* ctime .* dev 0 gid 0 ino 0 mode 16749 mtime .* nlink 0 size 0 type directory uid 0}] -match regexp
+    testzipfsstat mezzo [file join $defaultMountPoint mt2] $defaultMountPoint [fixupstat {atime .* ctime .* dev 0 gid 0 ino 0 mode 16749 mtime .* nlink 0 size 0 type directory uid 0}] -match regexp
 
     #
     # glob of zipfs file
@@ -1426,14 +1406,18 @@ namespace eval test_ns_zipfs {
         [list -archive [zippath test.zip] -compsize 5 -crc [expr 0x3BB935C6] -mount $defaultMountPoint -offset 55 -permissions 0o555 -uncompsize 5]
     testzipfsfileattr dir [file join $defaultMountPoint testdir] \
         [list -archive [zippath test.zip] -compsize 0 -crc 0 -mount $defaultMountPoint -offset 119 -permissions 0o555 -uncompsize 0]
-    testzipfsfileattr root [zipfs root] {} {} -constraints bug-4af110a6a1
+    testzipfsfileattr root [zipfs root] {-archive {} -compsize 0 -crc 0 -mount {} -offset 0 -permissions 0o555 -uncompsize 0}
     testzipfsfileattr mountpoint $defaultMountPoint \
         [list -archive [zippath test.zip] -compsize 0 -crc 0 -mount $defaultMountPoint -offset 0 -permissions 0o555 -uncompsize 0]
-    testzipfsfileattr mezzo [file join $defaultMountPoint a b] {} [file join $defaultMountPoint a b c] -constraints bug-4af110a6a1
+    testzipfsfileattr mezzo [file join $defaultMountPoint a b] {-archive {} -compsize 0 -crc 0 -mount {} -offset 0 -permissions 0o555 -uncompsize 0} [file join $defaultMountPoint a b c]
 
-
-    #
-    # TODO - file copy, file rename etc.
+    foreach attr {-uncompsize -compsize -offset -mount -archive -permissions -crc} {
+        test zipfs-file-attrs-set$attr "Set zipfs file attribute $attr" -setup {
+            mount [zippath test.zip]
+        } -cleanup cleanup \
+            -body "file attributes [file join $defaultMountPoint test] $attr {}" \
+            -result "unsupported operation" -returnCodes error
+    }
 
     #
     # file normalize
@@ -1488,6 +1472,327 @@ namespace eval test_ns_zipfs {
     testzipfsnormalize relative-12  dir/../a/      [file join [zipfs root] a]         [zipfs root]
     testzipfsnormalize relative-13  dir/../../../a [file join [zipfs root] a]         [zipfs root]
     testzipfsnormalize relative-14  a              [file join [zipfs root] testdir a] [file join [zipfs root] testdir]
+
+    #
+    # file copy
+    test zipfs-file-copy-tozip-new {Copy native file to archive} -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        file copy [makeFile "" source.tmp] [file join $defaultMountPoint X]
+    } -result "error copying \"*source.tmp\" to \"[file join $defaultMountPoint X]\": operation not supported" \
+        -match glob -returnCodes error
+    test zipfs-file-copy-tozip-existing {Copy native file to archive} -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        file copy [makeFile "newtext" source.tmp] [file join $defaultMountPoint test]
+    } -result "error copying *: file exists" -match glob -returnCodes error
+    test zipfs-file-copy-tozip-existing-force {Copy native file to archive} -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set to [file join $defaultMountPoint test]
+        file copy -force [makeFile "newtext" source.tmp] $to
+        readbin $to
+    } -result "newtext\n"
+    test zipfs-file-copy-tozipdir {Copy native file to archive directory} -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        file copy [makeFile "" source.tmp] [file join $defaultMountPoint testdir]
+    } -result "error copying \"*source.tmp\" to \"[file join $defaultMountPoint testdir]/source.tmp\": operation not supported" \
+        -match glob -returnCodes error
+    test zipfs-file-copydir-tozipdir {Copy native dir to archive directory} -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        file copy [temporaryDirectory] [file join $defaultMountPoint testdir]
+    } -result "can't create directory *: operation not supported" \
+        -match glob -returnCodes error
+    test zipfs-file-copy-fromzip-new {Copy archive file to native} -setup {
+        mount [zippath test.zip]
+        set dst [file join [temporaryDirectory] dst.tmp]
+        file delete $dst
+    } -cleanup {
+        file delete $dst
+        cleanup
+    } -body {
+        file copy [file join $defaultMountPoint test] $dst
+        readbin $dst
+    } -result "test\n"
+    test zipfs-file-copydir-fromzip-1 {Copy archive dir to native} -setup {
+        mount [zippath test.zip]
+        set dst [file join [temporaryDirectory] dstdir.tmp]
+        file delete -force $dst
+    } -cleanup {
+        file delete -force $dst
+        cleanup
+    } -body {
+        file copy [file join $defaultMountPoint testdir] $dst
+        zipfs find $dst
+    } -result [file join [temporaryDirectory] dstdir.tmp test2]
+    test zipfs-file-copymount-fromzip-new {Copy archive mount to native} -setup {
+        mount [zippath test.zip]
+        set dst [file join [temporaryDirectory] dstdir2.tmp]
+        file delete -force $dst
+    } -cleanup {
+        file delete -force $dst
+        cleanup
+    } -body {
+        file copy $defaultMountPoint $dst
+        list [file isfile [file join $dst test]] \
+                  [file isdirectory [file join $dst testdir]] \
+                  [file isfile [file join $dst testdir test2]]
+    } -result {1 1 1}
+
+    #
+    # file delete
+    test zipfs-file-delete "Delete file in zip archive" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set file [file join $defaultMountPoint test]
+        list \
+            [file exists $file] \
+            [catch {file delete $file} msg] \
+            $msg \
+            [file exists $file]
+    } -result [list 1 1 {error deleting "//zipfs:/testmount/test": operation not supported} 1]
+
+    test zipfs-file-delete-enoent "Delete nonexisting path in zip archive" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set file [file join $defaultMountPoint enoent]
+        list \
+            [file exists $file] \
+            [catch {file delete $file} msg] \
+            $msg \
+            [file exists $file]
+    } -result [list 0 0 {} 0]
+
+    test zipfs-file-delete-dir "Delete dir in zip archive" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set dir [file join $defaultMountPoint testdir]
+        list \
+            [file isdirectory $dir] \
+            [catch {file delete -force $dir} msg] \
+            $msg \
+            [file isdirectory $dir]
+    } -result [list 1 1 {error deleting unknown file: operation not supported} 1]
+
+    #
+    # file join
+    test zipfs-file-join-1 "Ensure file join recognizes zipfs path as absolute" -body {
+        file join /abc [zipfs root]a/b/c
+    } -result [zipfs root]a/b/c
+
+    #
+    # file mkdir
+    test zipfs-file-mkdir {Make a directory in zip archive} -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        file mkdir [file join $defaultMountPoint newdir]
+    } -result "can't create directory \"[file join $defaultMountPoint newdir]\": operation not supported" -returnCodes error
+    test zipfs-file-mkdir-existing {Make a an existing directory in zip archive} -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set dir [file join $defaultMountPoint testdir]
+        file mkdir $dir
+        file isdirectory $dir
+    } -result 1
+
+    # Standard paths for file command tests. Because code paths are different,
+    # we need tests for...
+    set targetMountParent $defaultMountPoint; # Parent of mount directory
+    set targetMount [file join $targetMountParent mt] ; # Mount directory
+    set targetFile [file join $targetMount test]; # Normal file
+    set targetDir [file join $targetMount testdir]; # Directory
+    set targetEnoent [file join $targetMount enoent]; # Non-existing path
+
+    proc testzipfsfile {id cmdargs result args} {
+        variable targetMount
+        test zipfs-file-$id "file $id on zipfs" -setup {
+            zipfs mount [zippath test.zip] $targetMount
+        } -cleanup cleanup -body {
+            file {*}$cmdargs
+        } -result $result {*}$args
+    }
+    proc testzipfsenotsup {id cmdargs args} {
+        testzipfsfile $id $cmdargs "*: operation not supported" -match glob -returnCodes error
+    }
+
+    #
+    # file atime
+
+    testzipfsfile atime-get-file   [list atime $targetFile]        [fixuptime {2003-10-06 15:46:42}]
+    testzipfsfile atime-get-dir    [list atime $targetDir]         [fixuptime {2005-01-11 19:03:54}]
+    testzipfsfile atime-get-mount  [list atime $targetMount]       {\d+} -match regexp
+    testzipfsfile atime-get-mezzo  [list atime $targetMountParent] {\d+} -match regexp
+    testzipfsfile atime-get-root   [list atime [zipfs root]]       {\d+} -match regexp
+    testzipfsfile atime-get-enoent [list atime $targetEnoent] \
+        "could not read \"$targetEnoent\": no such file or directory" -returnCodes error
+
+    set t [clock seconds]
+    testzipfsenotsup atime-set-file  [list atime $targetFile $t]
+    testzipfsenotsup atime-set-dir   [list atime $targetDir $t]
+    testzipfsenotsup atime-set-mount [list atime $targetMount $t]
+    testzipfsenotsup atime-set-mezzo [list atime $targetMountParent $t]
+    testzipfsenotsup atime-set-root  [list atime [zipfs root] $t]
+    testzipfsfile atime-set-enoent   [list atime $targetEnoent $t] \
+        "could not read \"$targetEnoent\": no such file or directory" -returnCodes error
+
+    #
+    # file dirname
+    testzipfsfile dirname-file [list dirname $targetFile] $targetMount
+    testzipfsfile dirname-dir [list dirname $targetDir] $targetMount
+    testzipfsfile dirname-mount [list dirname $targetMount] $targetMountParent
+    testzipfsfile dirname-mezzo [list dirname $targetMountParent] [zipfs root]
+    testzipfsfile dirname-root [list dirname [zipfs root]] [zipfs root]
+    testzipfsfile dirname-enoent [list dirname $targetEnoent] $targetMount
+
+    #
+    # file executable
+    testzipfsfile executable-file   [list executable $targetFile]        0
+    testzipfsfile executable-dir    [list executable $targetDir]         0
+    testzipfsfile executable-mount  [list executable $targetMount]       0
+    testzipfsfile executable-mezzo  [list executable $targetMountParent] 0
+    testzipfsfile executable-root   [list executable [zipfs root]]       0
+    testzipfsfile executable-enoent [list executable $targetEnoent]      0
+
+    #
+    # file exists
+    testzipfsfile exists-file   [list exists $targetFile]        1
+    testzipfsfile exists-dir    [list exists $targetDir]         1
+    testzipfsfile exists-mount  [list exists $targetMount]       1
+    testzipfsfile exists-mezzo  [list exists $targetMountParent] 1
+    testzipfsfile exists-root   [list exists [zipfs root]]       1
+    testzipfsfile exists-enoent [list exists $targetEnoent]      0
+
+    #
+    # file isdirectory
+    testzipfsfile isdirectory-file   [list isdirectory $targetFile]        0
+    testzipfsfile isdirectory-dir    [list isdirectory $targetDir]         1
+    testzipfsfile isdirectory-mount  [list isdirectory $targetMount]       1
+    testzipfsfile isdirectory-mezzo  [list isdirectory $targetMountParent] 1
+    testzipfsfile isdirectory-root   [list isdirectory [zipfs root]]       1
+    testzipfsfile isdirectory-enoent [list isdirectory $targetEnoent]      0
+
+    #
+    # file isfile
+    testzipfsfile isfile-file   [list isfile $targetFile]        1
+    testzipfsfile isfile-dir    [list isfile $targetDir]         0
+    testzipfsfile isfile-mount  [list isfile $targetMount]       0
+    testzipfsfile isfile-mezzo  [list isfile $targetMountParent] 0
+    testzipfsfile isfile-root   [list isfile [zipfs root]]       0
+    testzipfsfile isfile-enoent [list isfile $targetEnoent]      0
+
+    #
+    # file link
+    testzipfsfile link-read-enoent [list link [file join $targetDir l]] {could not read link "//zipfs:/testmount/mt/testdir/l": operation not supported} -returnCodes error
+    testzipfsfile link-read-notalink [list link $targetFile] {could not read link "//zipfs:/testmount/mt/test": operation not supported} -returnCodes error
+    testzipfsfile link-write [list link [file join $targetDir l] $targetFile] {could not create new link "//zipfs:/testmount/mt/testdir/l" pointing to "//zipfs:/testmount/mt/test": operation not supported} -returnCodes error
+
+    #
+    # file mtime
+
+    testzipfsfile mtime-get-file   [list mtime $targetFile]        [fixuptime {2003-10-06 15:46:42}]
+    testzipfsfile mtime-get-dir    [list mtime $targetDir]         [fixuptime {2005-01-11 19:03:54}]
+    testzipfsfile mtime-get-mount  [list mtime $targetMount]       {\d+} -match regexp
+    testzipfsfile mtime-get-mezzo  [list mtime $targetMountParent] {\d+} -match regexp
+    testzipfsfile mtime-get-root   [list mtime [zipfs root]]       {\d+} -match regexp
+    testzipfsfile mtime-set-enoent   [list mtime $targetEnoent $t] \
+        "could not read \"$targetEnoent\": no such file or directory" -returnCodes error
+
+    set t [clock seconds]
+    testzipfsenotsup mtime-set-file   [list mtime $targetFile $t]
+    testzipfsenotsup mtime-set-dir    [list mtime $targetDir $t]
+    testzipfsenotsup mtime-set-mount  [list mtime $targetMount $t]
+    testzipfsenotsup mtime-set-mezzo  [list mtime $targetMountParent $t]
+    testzipfsenotsup mtime-set-root   [list mtime [zipfs root] $t]
+    testzipfsfile    mtime-set-enoent [list mtime $targetEnoent $t] \
+        "could not read \"$targetEnoent\": no such file or directory" -returnCodes error
+
+    #
+    # file owned
+    testzipfsfile owned-file   [list owned $targetFile]        1
+    testzipfsfile owned-dir    [list owned $targetDir]         1
+    testzipfsfile owned-mount  [list owned $targetMount]       1
+    testzipfsfile owned-mezzo  [list owned $targetMountParent] 1
+    testzipfsfile owned-root   [list owned [zipfs root]]       1
+    testzipfsfile owned-enoent [list owned $targetEnoent]      0
+
+    #
+    # file pathtype
+    testzipfsfile pathtype [list pathtype $targetFile] absolute
+
+    #
+    # file readable
+    testzipfsfile readable-file   [list readable $targetFile]        1
+    testzipfsfile readable-dir    [list readable $targetDir]         1
+    testzipfsfile readable-mount  [list readable $targetMount]       1
+    testzipfsfile readable-mezzo  [list readable $targetMountParent] 1
+    testzipfsfile readable-root   [list readable [zipfs root]]       1
+    testzipfsfile readable-enoent [list readable $targetEnoent]      0
+
+    #
+    # file separator
+    testzipfsfile separator [list separator $targetFile] /
+
+    #
+    # file size
+    testzipfsfile size-file   [list size $targetFile]        5
+    testzipfsfile size-dir    [list size $targetDir]         0
+    testzipfsfile size-mount  [list size $targetMount]       0
+    testzipfsfile size-mezzo  [list size $targetMountParent] 0
+    testzipfsfile size-root   [list size [zipfs root]]       0
+    testzipfsfile size-enoent [list size $targetEnoent]      \
+        "could not read \"$targetEnoent\": no such file or directory" -returnCodes error
+
+    #
+    # file split
+    testzipfsfile split-file   [list split $targetFile]        [list [zipfs root] testmount mt test]
+    testzipfsfile split-root   [list split [zipfs root]]       [list [zipfs root]]
+    testzipfsfile split-enoent [list split $targetEnoent]      [list [zipfs root] testmount mt enoent]
+
+    #
+    # file system
+    testzipfsfile system-file   [list system $targetFile]       {zipfs zip}
+    testzipfsfile system-root   [list system [zipfs root]]      {zipfs zip}
+    testzipfsfile system-enoent [list system $targetEnoent]     {zipfs zip}
+
+    #
+    # file type
+    testzipfsfile type-file   [list type $targetFile]        file
+    testzipfsfile type-dir    [list type $targetDir]         directory
+    testzipfsfile type-mount  [list type $targetMount]       directory
+    testzipfsfile type-mezzo  [list type $targetMountParent] directory
+    testzipfsfile type-root   [list type [zipfs root]]       directory
+    testzipfsfile type-enoent [list type $targetEnoent]      {could not read "//zipfs:/testmount/mt/enoent": no such file or directory} -returnCodes error
+
+    #
+    # file writable
+    testzipfsfile writable-file   [list writable $targetFile]        1
+    testzipfsfile writable-dir    [list writable $targetDir]         0
+    testzipfsfile writable-mount  [list writable $targetMount]       0
+    testzipfsfile writable-mezzo  [list writable $targetMountParent] 0
+    testzipfsfile writable-root   [list writable [zipfs root]]       0
+    testzipfsfile writable-enoent [list writable $targetEnoent]      0
 
     # TODO - mkkey, mkimg, mkzip, lmkimg, lmkzip
     testnumargs "zipfs mkkey" "password" "" -constraints zipfs
