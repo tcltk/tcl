@@ -6236,6 +6236,10 @@ void TclZipfsFinalize(void)
      * ZipFS.fileHash and ZipFS.zipHash tables.
      */
     WriteLock();
+    if (!ZipFS.initialized) {
+	Unlock();
+	return;
+    }
 
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch zipSearch;
@@ -6258,7 +6262,10 @@ void TclZipfsFinalize(void)
 	    Tcl_FSUnregister(&zipfsFilesystem);
 	    Tcl_DeleteHashTable(&ZipFS.fileHash);
 	    Tcl_DeleteHashTable(&ZipFS.zipHash);
-	    Tcl_Free(ZipFS.fallbackEntryEncoding);
+	    if (ZipFS.fallbackEntryEncoding) {
+		Tcl_Free(ZipFS.fallbackEntryEncoding);
+		ZipFS.fallbackEntryEncoding = NULL;
+	    }
 	    ZipFS.initialized = 0;
 	}
     }
