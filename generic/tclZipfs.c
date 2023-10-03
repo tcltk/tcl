@@ -1882,7 +1882,6 @@ ZipFSCatalogFilesystem(
 	Tcl_Free(zf);
 	return TCL_ERROR;
     }
-    Unlock();
 
     /*
      * Convert to a real archive descriptor.
@@ -2098,8 +2097,8 @@ ZipFSCatalogFilesystem(
     }
     Tcl_DStringFree(&fpBuf);
     Tcl_DStringFree(&ds);
-    Tcl_FSMountsChanged(NULL);
     Unlock();
+    Tcl_FSMountsChanged(NULL);
     return TCL_OK;
 }
 
@@ -4336,6 +4335,7 @@ ZipChannelClose(
 	info->isEncrypted = 0;
 	memset(info->keys, 0, sizeof(info->keys));
     }
+    WriteLock();
     if (info->isWriting) {
 	/*
 	 * Copy channel data back into original file in archive.
@@ -4370,7 +4370,6 @@ ZipChannelClose(
 	z->offset = 0;
 	z->crc32 = 0;
     }
-    WriteLock();
     info->zipFilePtr->numOpen--;
     Unlock();
     if (info->ubufToFree) {
