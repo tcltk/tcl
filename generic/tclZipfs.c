@@ -5551,6 +5551,10 @@ ZipFSMatchInDirectoryProc(
     memcpy(pat + len, pattern, l + 1);
     scnt = CountSlashes(pat);
 
+    Tcl_HashTable duplicates;
+    int notDuplicate;
+    Tcl_InitHashTable(&duplicates, TCL_STRING_KEYS);
+
     if (foundInHash) {
 	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search); hPtr;
 	     hPtr = Tcl_NextHashEntry(&search)) {
@@ -5563,26 +5567,46 @@ ZipFSMatchInDirectoryProc(
 	    if ((z->depth == scnt) &&
 		((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
 		&& Tcl_StringCaseMatch(z->name, pat, 0)) {
+		Tcl_CreateHashEntry(&duplicates, z->name + strip, &notDuplicate);
+		assert(notDuplicate);
 		AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
 	    }
 	}
-    } else if (dirOnly) {
-	/* Not found in hash. May be a path that is the ancestor of a mount */
+    } 
+    if (dirOnly) {
+	/* 
+	 * Not found in hash. May be a path that is the ancestor of a mount.
+	 * e.g. glob //zipfs:/a/* with mount at //zipfs:/a/b/c. Also have
+	 * to be careful about duplicates, such as when another mount is
+	 * //zipfs:/a/b/d
+	 */
 	Tcl_HashEntry *hPtr;
 	Tcl_HashSearch search;
+	Tcl_DString ds;
+	Tcl_DStringInit(&ds);
 	for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 	     hPtr = Tcl_NextHashEntry(&search)) {
 	    ZipFile *zf = (ZipFile *)Tcl_GetHashValue(hPtr);
 	    if (Tcl_StringCaseMatch(zf->mountPoint, pat, 0)) {
 		const char *tail = zf->mountPoint + len;
+		if (*tail == '\0')
+		    continue;
 		const char *end = strchr(tail, '/');
-		AppendWithPrefix(result,
-				 prefixBuf,
-				 zf->mountPoint + strip,
-				 end ? (int)(end - zf->mountPoint) : -1);
+		Tcl_DStringAppend(&ds,
+				  zf->mountPoint + strip,
+				  end ? (Tcl_Size)(end - zf->mountPoint) : -1);
+		const char *matchedPath = Tcl_DStringValue(&ds);
+		Tcl_HashEntry *dupTableEntry =
+		    Tcl_CreateHashEntry(&duplicates, matchedPath, &notDuplicate);
+		if (notDuplicate) {
+		    AppendWithPrefix(
+			result, prefixBuf, matchedPath, Tcl_DStringLength(&ds));
+		}
+		Tcl_DStringFree(&ds);
 	    }
 	}
     }
+    Tcl_DeleteHashTable(&duplicates);
     ckfree(pat);
 
   end:

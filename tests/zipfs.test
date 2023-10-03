@@ -412,7 +412,7 @@ namespace eval test_ns_zipfs {
 
     # list of paths -> list of paths under [zipfs root]
     proc zipfspaths {args} {
-        return [lmap path $args {file join [zipfs root] $path}]
+        return [lsort [lmap path $args {file join [zipfs root] $path}]]
     }
 
     proc cleanup {} {
@@ -706,7 +706,7 @@ namespace eval test_ns_zipfs {
     testzipfslist no-pattern-mount-on-empty "" {test.zip {}} {{} test testdir testdir/test2} -constraints !zipfslib
     testzipfslist no-pattern-mount-on-root "" [list test.zip [zipfs root]] {{} test testdir testdir/test2} -constraints !zipfslib
     testzipfslist no-pattern-mount-on-slash "" [list test.zip /] {{} test testdir testdir/test2} -constraints !zipfslib
-    testzipfslist no-pattern-mount-on-level3 "" [list test.zip testmt/a/b] {{} testmt testmt/a testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2} -constraints {knownBug !zipfslib}
+    testzipfslist no-pattern-mount-on-mezzo "" [list test.zip testmt/a/b] {{} testmt testmt/a testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2} -constraints {knownBug !zipfslib}
     testzipfslist no-pattern-multiple "" {test.zip testmountA test.zip testmountB/subdir} {
         testmountA testmountA/test testmountA/testdir testmountA/testdir/test2
         testmountB/subdir testmountB/subdir/test testmountB/subdir/testdir testmountB/subdir/testdir/test2
@@ -745,8 +745,8 @@ namespace eval test_ns_zipfs {
     testzipfsexists dir         [file join $defaultMountPoint testdir]    1
     testzipfsexists mountpoint  $defaultMountPoint                        1
     testzipfsexists root        [zipfs root]                              1 $defaultMountPoint
-    testzipfsexists level3      [file join $defaultMountPoint a b]        1 [file join $defaultMountPoint a b c]
-    testzipfsexists level3-enoent [file join $defaultMountPoint a c]      0 [file join $defaultMountPoint a b c]
+    testzipfsexists mezzo      [file join $defaultMountPoint a b]        1 [file join $defaultMountPoint a b c]
+    testzipfsexists mezzo-enoent [file join $defaultMountPoint a c]      0 [file join $defaultMountPoint a b c]
 
     #
     # zipfs find
@@ -804,13 +804,13 @@ namespace eval test_ns_zipfs {
     # bug-6183f535c8
     testzipfsfind root-path   [zipfs root] {
         test.zip {} test.zip testmountB/subdir
-    } [zipfspaths test testdir testdir/test2] -constraints !zipfslib
+    } [zipfspaths test testdir testdir/test2 testmountB testmountB/subdir testmountB/subdir/test testmountB/subdir/testdir testmountB/subdir/testdir/test2] -constraints !zipfslib
 
-    testzipfsfind level3 [file join [zipfs root] testmt a] {
+    testzipfsfind mezzo [file join [zipfs root] testmt a] {
         test.zip testmt/a/b
     } [zipfspaths testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2]
 
-    testzipfsfind level3-root [zipfs root] {
+    testzipfsfind mezzo-root [zipfs root] {
         test.zip testmt/a/b
     } [zipfspaths testmt testmt/a testmt/a/b testmt/a/b/test testmt/a/b/testdir testmt/a/b/testdir/test2] \
         -constraints bug-9e039ee0b9
@@ -888,7 +888,7 @@ namespace eval test_ns_zipfs {
         zipfs info $defaultMountPoint
     } -result [list [zippath junk-at-start.zip] 0 0 4]
 
-    test zipfs-info-level3 "zipfs info on mount point - verify correct offset of zip content" -setup {
+    test zipfs-info-mezzo "zipfs info on mount point - verify correct offset of zip content" -setup {
         # zip starts at offset 4
         mount [zippath junk-at-start.zip] /testmt/a/b
     } -cleanup {
@@ -1368,6 +1368,36 @@ namespace eval test_ns_zipfs {
 
     #
     # glob of zipfs file
+    proc xxx {id mounts cmdopts resultpaths args} {
+        set setup {
+            foreach {zippath mountpoint} $mounts {
+                zipfs mount [zippath $zippath] [file join [zipfs root] $mountpoint]
+            }
+        }
+        if {[dict exists $args -setup]} {
+            append setup \n[dict get $args -setup]
+            dict unset args -setup
+        }
+        set cleanup cleanup
+        if {[dict exists $args -cleanup]} {
+            set cleanup "[dict get $args -cleanup]\n$cleanup"
+            dict unset args -cleanup
+        }
+        set resultpaths [lsort $resultpaths]
+        test zipfs-xxx-$id "zipfs glob $id $cmdopts" -body {
+            lsort [glob {*}$cmdopts]
+        } -setup $setup -cleanup $cleanup -result $resultpaths {*}$args
+    }
+    xxx root {test.zip /} [list [zipfs root]*] [zipfspaths test testdir]
+    xxx root-pat {test.zip /} [list [zipfs root]*d*] [zipfspaths testdir]
+    xxx root-deep {test.zip /} [list [zipfs root]*/*] [zipfspaths testdir/test2]
+    xxx root-dir {test.zip /} [list -dir [zipfs root] *] [zipfspaths test testdir]
+    xxx root-dir-tails {test.zip /} [list -tails -dir [zipfs root] *] [list test testdir]
+    xxx root-type-d {test.zip /} [list -type d [zipfs root]*] [zipfspaths testdir]
+    xxx root-type-f {test.zip /} [list -type f [zipfs root]*] [zipfspaths test]
+    xxx root-path {test.zip /} [list -path [zipfs root]t *d*] [zipfspaths testdir]
+
+
     proc testzipfsglob {id mountpoint pat result {globopt {}} args} {
         test zipfs-glob-$id "zipfs glob $id" -setup {
             mount [zippath test.zip] $mountpoint
