@@ -162,10 +162,6 @@ declare 61 {
 declare 62 {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
-declare 63 {
-    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
-}
 declare 64 {
     int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
 	    int flags)

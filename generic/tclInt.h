@@ -3553,6 +3553,9 @@ MODULE_SCOPE Tcl_Size	TclTrimLeft(const char *bytes, Tcl_Size numBytes,
 MODULE_SCOPE Tcl_Size	TclTrimRight(const char *bytes, Tcl_Size numBytes,
 			    const char *trim, Tcl_Size numTrim);
 MODULE_SCOPE const char*TclGetCommandTypeName(Tcl_Command command);
+MODULE_SCOPE int TclObjInterpProc(void *clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclRegisterCommandTypeName(
 			    Tcl_ObjCmdProc *implementationProc,
 			    const char *nameStr);
