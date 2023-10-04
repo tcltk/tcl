@@ -119,6 +119,12 @@ Volume-relative path to a file \fBfoo\fR in the root directory of the current
 volume.  This is not a valid UNC path, so the assumption is that the
 extra backslashes are superfluous.
 .RE
+.TP
+\fBZipfs\fR
+On all platforms where \fBzipfs\fR support is enabled, paths within mounted
+ZIP archives begin with the string returned by the \fBzipfs root\fR command
+and otherwise follow the rules for the Unix paths.
+.RE
 .SH "TILDE SUBSTITUTION"
 .PP
 Unlike earlier versions of Tcl, Tcl 9 does not do implicit tilde substitution
@@ -167,7 +173,7 @@ or dots with trailing characters
 .QW .....abc
 is illegal.
 .SH "SEE ALSO"
-file(n), glob(n)
+file(n), glob(n), zipfs(n)
 .SH KEYWORDS
 current directory, absolute file name, relative file name,
 volume-relative file name, portability

@@ -1652,6 +1652,21 @@ FileAttrIsOwnedCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
+
+    Tcl_Obj *normPathPtr = Tcl_FSGetNormalizedPath(interp, objv[1]);
+    /* Note normPathPtr owned by Tcl, no need to free it */
+    if (normPathPtr) {
+	if (TclIsZipfsPath(Tcl_GetString(normPathPtr))) {
+	    return CheckAccess(interp, objv[1], F_OK);
+	}
+	/* Not zipfs, try native. */
+    }
+
+    /*
+     * Note use objv[1] below, NOT normPathPtr even if not NULL because
+     * for native paths we may not want links to be resolved.
+     */
+
 #if defined(_WIN32)
     value = TclWinFileOwned(objv[1]);
 #else
