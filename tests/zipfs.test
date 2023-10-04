@@ -1007,7 +1007,9 @@ namespace eval test_ns_zipfs {
         set body {
             set fd [open $path $mode]
             fconfigure $fd -translation binary
-            puts -nonewline $fd "xyz"
+            puts -nonewline $fd XYZ
+            seek $fd 0
+            puts -nonewline $fd xyz
             close $fd
             set fd [open $path]
             fconfigure $fd -translation binary
@@ -1039,16 +1041,16 @@ namespace eval test_ns_zipfs {
     }
     testzipfswrite create-w   test.zip          "file \"//zipfs:/testmount/newfile\" not created: operation not supported" newfile w -returnCodes error
     testzipfswrite create-w+  test.zip          "file \"//zipfs:/testmount/newfile\" not created: operation not supported" newfile w+ -returnCodes error
-    testzipfswrite create-a   test.zip          "append mode not supported: permission denied" newfile a -returnCodes error
+    testzipfswrite create-a   test.zip          "file \"$defMountPt/newfile\" not created: operation not supported" newfile a -returnCodes error
     testzipfswrite create-a+  test.zip          "file \"//zipfs:/testmount/newfile\" not created: operation not supported" newfile a+ -returnCodes error
     testzipfswrite store-w    teststored.zip    "xyz" abac-repeat.txt w
     testzipfswrite deflate-w  testdeflated2.zip "xyz" abac-repeat.txt w
     testzipfswrite store-w+   teststored.zip    "xyz" abac-repeat.txt w+
     testzipfswrite deflate-w+ testdeflated2.zip "xyz" abac-repeat.txt w+
-    testzipfswrite stored-a   teststored.zip    "append mode not supported: permission denied" abac-repeat.txt a -returnCodes error
-    testzipfswrite deflate-a  testdeflated2.zip "append mode not supported: permission denied" abac-repeat.txt a -returnCodes error
-    testzipfswrite store-a+   teststored.zip    "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
-    testzipfswrite deflate-a+ testdeflated2.zip "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nxyz" abac-repeat.txt a+
+    testzipfswrite stored-a   teststored.zip    "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nXYZxyz" abac-repeat.txt a
+    testzipfswrite deflate-a  testdeflated2.zip "aaaaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nXYZxyz" abac-repeat.txt a
+    testzipfswrite store-a+   teststored.zip    "xyzaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nXYZ" abac-repeat.txt a+
+    testzipfswrite deflate-a+ testdeflated2.zip "xyzaaaaaaaaaaa\nbbbbbbbbbbbbbb\naaaaaaaaaaaaaa\ncccccccccccccc\nXYZ" abac-repeat.txt a+
     testzipfswrite bug-23dd83ce7c-w  empty.zip  "xyz"   empty.txt w
 
     test zipfs-write-unreadable "Reads not allowed on file opened for write" -setup {
@@ -1128,7 +1130,7 @@ namespace eval test_ns_zipfs {
     } -body {
         set ::tcl::zipfs::wrmax -1
         open [file join $defMountPt test] w
-    } -result {write access not supported: permission denied} -returnCodes error
+    } -result {writes not permitted: permission denied} -returnCodes error
 
     #
     # read/seek/write

@@ -251,8 +251,7 @@ typedef struct ZipChannel {
     ZipEntry *zipEntryPtr;	/* Pointer back to virtual file */
     size_t maxWrite;		/* Maximum size for write */
     size_t numBytes;		/* Number of bytes of uncompressed data */
-    size_t numRead;		/* Position of next byte to be read from the
-				 * channel */
+    size_t cursor;		/* Seek position for next read or write*/
     unsigned char *ubuf;	/* Pointer to the uncompressed data */
     unsigned char *ubufToFree;  /* NULL if ubuf points to memory that does not
     				   need freeing. Else memory to free (ubuf
@@ -260,9 +259,12 @@ typedef struct ZipChannel {
     int iscompr;                /* True if data is compressed */
     int isDirectory;		/* Set to 1 if directory, or -1 if root */
     int isEncrypted;		/* True if data is encrypted */
-    int isWriting;		/* True if open for writing */
+    int mode;			/* O_WRITE, O_APPEND, O_TRUNC etc.*/
     unsigned long keys[3];	/* Key for decryption */
 } ZipChannel;
+static inline int ZipChannelWritable(ZipChannel *info) {
+    return (info->mode & (O_WRONLY | O_RDWR)) != 0;
+}
 
 /*
  * Global variables.
@@ -4336,7 +4338,7 @@ ZipChannelClose(
 	memset(info->keys, 0, sizeof(info->keys));
     }
     WriteLock();
-    if (info->isWriting) {
+    if (ZipChannelWritable(info)) {
 	/*
 	 * Copy channel data back into original file in archive.
 	 * TODO - there seems to be no locking here to protect access from
@@ -4414,16 +4416,16 @@ ZipChannelRead(
 	 * data in front of ZIP, i.e. the executable itself.
 	 */
 
-	nextpos = info->numRead + toRead;
+	nextpos = info->cursor + toRead;
 	if (nextpos > info->zipFilePtr->baseOffset) {
-	    toRead = info->zipFilePtr->baseOffset - info->numRead;
+	    toRead = info->zipFilePtr->baseOffset - info->cursor;
 	    nextpos = info->zipFilePtr->baseOffset;
 	}
 	if (toRead == 0) {
 	    return 0;
 	}
 	memcpy(buf, info->zipFilePtr->data, toRead);
-	info->numRead = nextpos;
+	info->cursor = nextpos;
 	*errloc = 0;
 	return toRead;
     }
@@ -4431,9 +4433,9 @@ ZipChannelRead(
 	*errloc = EISDIR;
 	return -1;
     }
-    nextpos = info->numRead + toRead;
+    nextpos = info->cursor + toRead;
     if (nextpos > info->numBytes) {
-	toRead = info->numBytes - info->numRead;
+	toRead = info->numBytes - info->cursor;
 	nextpos = info->numBytes;
     }
     if (toRead == 0) {
@@ -4443,14 +4445,14 @@ ZipChannelRead(
 	int i;
 
 	for (i = 0; i < toRead; i++) {
-	    int ch = info->ubuf[i + info->numRead];
+	    int ch = info->ubuf[i + info->cursor];
 
 	    buf[i] = zdecode(info->keys, crc32tab, ch);
 	}
     } else {
-	memcpy(buf, info->ubuf + info->numRead, toRead);
+	memcpy(buf, info->ubuf + info->cursor, toRead);
     }
-    info->numRead = nextpos;
+    info->cursor = nextpos;
     *errloc = 0;
     return toRead;
 }
@@ -4481,24 +4483,28 @@ ZipChannelWrite(
     ZipChannel *info = (ZipChannel *) instanceData;
     unsigned long nextpos;
 
-    if (!info->isWriting) {
+    if (!ZipChannelWritable(info)) {
 	*errloc = EINVAL;
 	return -1;
     }
+    if (info->mode & O_APPEND) {
+	info->cursor = info->numBytes;
+    }
     if (toWrite == 0) {
+	*errloc = 0;
 	return 0;
     }
-    assert(info->maxWrite >= info->numRead);
-    if (toWrite > (int) (info->maxWrite - info->numRead)) {
+    assert(info->maxWrite >= info->cursor);
+    if (toWrite > (int) (info->maxWrite - info->cursor)) {
 	/* Don't do partial writes in error case. Or should we? */
 	*errloc = EFBIG;
 	return -1;
     }
-    nextpos = info->numRead + toWrite;
-    memcpy(info->ubuf + info->numRead, buf, toWrite);
-    info->numRead = nextpos;
-    if (info->numRead > info->numBytes) {
-	info->numBytes = info->numRead;
+    nextpos = info->cursor + toWrite;
+    memcpy(info->ubuf + info->cursor, buf, toWrite);
+    info->cursor = nextpos;
+    if (info->cursor > info->numBytes) {
+	info->numBytes = info->cursor;
     }
     *errloc = 0;
     return toWrite;
@@ -4530,7 +4536,7 @@ ZipChannelWideSeek(
     ZipChannel *info = (ZipChannel *) instanceData;
     size_t end;
 
-    if (!info->isWriting && (info->isDirectory < 0)) {
+    if (!ZipChannelWritable(info) && (info->isDirectory < 0)) {
 	/*
 	 * Special case: when executable combined with ZIP archive file, seek
 	 * within front of ZIP, i.e. the executable itself.
@@ -4544,7 +4550,7 @@ ZipChannelWideSeek(
     }
     switch (mode) {
     case SEEK_CUR:
-	offset += info->numRead;
+	offset += info->cursor;
 	break;
     case SEEK_END:
 	offset += end;
@@ -4559,7 +4565,7 @@ ZipChannelWideSeek(
 	*errloc = EINVAL;
 	return -1;
     }
-    if (info->isWriting) {
+    if (ZipChannelWritable(info)) {
 	if ((size_t) offset > info->maxWrite) {
 	    *errloc = EINVAL;
 	    return -1;
@@ -4571,8 +4577,8 @@ ZipChannelWideSeek(
 	*errloc = EINVAL;
 	return -1;
     }
-    info->numRead = (size_t) offset;
-    return info->numRead;
+    info->cursor = (size_t) offset;
+    return info->cursor;
 }
 
 /*
@@ -4658,16 +4664,28 @@ ZipChannelOpen(
 
     /* Check for unsupported modes. */
 
-    if ((mode & O_APPEND) || ((ZipFS.wrmax <= 0) && wr)) {
+    if ((ZipFS.wrmax <= 0) && wr) {
 	Tcl_SetErrno(EACCES);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s not supported: %s",
-		    mode & O_APPEND ? "append mode" : "write access",
-		    Tcl_PosixError(interp)));
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("writes not permitted: %s",
+					   Tcl_PosixError(interp)));
 	}
 	return NULL;
     }
+
+    if ((mode & (O_APPEND|O_TRUNC)) && !wr) {
+	Tcl_SetErrno(EINVAL);
+	if (interp) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("Invalid flags 0x%x. O_APPEND and "
+					   "O_TRUNC require write access: %s",
+					   mode,
+					   Tcl_PosixError(interp)));
+	}
+	return NULL;
+    }
+
     /*
      * Is the file there?
      */
@@ -4750,7 +4768,7 @@ ZipChannelOpen(
     if (wr) {
 	/* Set up a writable channel. */
 
-	if (InitWritableChannel(interp, info, z, mode & O_TRUNC) == TCL_ERROR) {
+	if (InitWritableChannel(interp, info, z, mode) == TCL_ERROR) {
 	    Tcl_Free(info);
 	    goto error;
 	}
@@ -4831,7 +4849,7 @@ InitWritableChannel(
     ZipChannel *info,		/* The channel to set up. */
     ZipEntry *z,		/* The zipped file that the channel will write
 				 * to. */
-    int trunc)			/* Whether to truncate the data. */
+    int mode)			/* O_APPEND, O_TRUNC */
 {
     int i, ch;
     unsigned char *cbuf = NULL;
@@ -4840,7 +4858,7 @@ InitWritableChannel(
      * Set up a writable channel.
      */
 
-    info->isWriting = 1;
+    info->mode = mode;
     info->maxWrite = ZipFS.wrmax;
 
     info->ubufToFree =
@@ -4861,7 +4879,7 @@ InitWritableChannel(
 	}
     }
     
-    if (trunc) {
+    if (mode & O_TRUNC) {
 	/*
 	 * Truncate; nothing there.
 	 */
@@ -4957,8 +4975,11 @@ InitWritableChannel(
 	}
 	memset(info->keys, 0, sizeof(info->keys));
     }
+    if (mode & O_APPEND) {
+	info->cursor = info->numBytes;
+    }
 
-    assert(info->numBytes == 0 || (int) info->numBytes == z->numBytes);
+    assert(info->numBytes == 0 || (int)info->numBytes == z->numBytes);
     return TCL_OK;
 
   memoryError:
@@ -5022,6 +5043,7 @@ InitReadableChannel(
     info->ubufToFree = NULL; /* ubuf memory not allocated */
     info->isDirectory = z->isDirectory;
     info->isEncrypted = z->isEncrypted;
+    info->mode = O_RDONLY;
 
     /* Caller must validate - bug [6ed3447a7e] */
     assert(z->numBytes >= 0 && z->numCompressedBytes >= 0);
