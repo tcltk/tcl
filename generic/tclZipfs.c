@@ -5422,8 +5422,6 @@ ZipFSMatchInDirectoryProc(
     const char *pattern,	/* What names we are looking for. */
     Tcl_GlobTypeData *types)	/* What types we are looking for. */
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     Tcl_Obj *normPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     int scnt, l, dirOnly = -1, mounts = 0;
     Tcl_Size prefixLen, len, strip = 0;
@@ -5504,6 +5502,8 @@ ZipFSMatchInDirectoryProc(
 	}
     }
 
+    int foundInHash = (z != NULL);
+
     /*
      * We've got to work for our supper and do the actual globbing. And all
      * we've got really is an undifferentiated pile of all the filenames we've
@@ -5523,20 +5523,62 @@ ZipFSMatchInDirectoryProc(
     memcpy(pat + len, pattern, l + 1);
     scnt = CountSlashes(pat);
 
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
-	    hPtr; hPtr = Tcl_NextHashEntry(&search)) {
-	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
+    Tcl_HashTable duplicates;
+    int notDuplicate = 0;
+    Tcl_InitHashTable(&duplicates, TCL_STRING_KEYS);
 
-	if ((dirOnly >= 0) && ((dirOnly && !z->isDirectory)
-		|| (!dirOnly && z->isDirectory))) {
-	    continue;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    if (foundInHash) {
+	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search); hPtr;
+	     hPtr = Tcl_NextHashEntry(&search)) {
+	    z = (ZipEntry *)Tcl_GetHashValue(hPtr);
+
+	    if ((dirOnly >= 0) && ((dirOnly && !z->isDirectory) ||
+				   (!dirOnly && z->isDirectory))) {
+		continue;
+	    }
+	    if ((z->depth == scnt) &&
+		((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
+		&& Tcl_StringCaseMatch(z->name, pat, 0)) {
+		Tcl_CreateHashEntry(&duplicates, z->name + strip, &notDuplicate);
+		assert(notDuplicate);
+		AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
+	    }
 	}
-	if ((z->depth == scnt) &&
-	    ((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
-	    && Tcl_StringCaseMatch(z->name, pat, 0)) {
-	    AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
+    } 
+    if (dirOnly) {
+	/* 
+	 * Not found in hash. May be a path that is the ancestor of a mount.
+	 * e.g. glob //zipfs:/a/? with mount at //zipfs:/a/b/c. Also have
+	 * to be careful about duplicates, such as when another mount is
+	 * //zipfs:/a/b/d
+	 */
+	Tcl_DString ds;
+	Tcl_DStringInit(&ds);
+	for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
+	     hPtr = Tcl_NextHashEntry(&search)) {
+	    ZipFile *zf = (ZipFile *)Tcl_GetHashValue(hPtr);
+	    if (Tcl_StringCaseMatch(zf->mountPoint, pat, 0)) {
+		const char *tail = zf->mountPoint + len;
+		if (*tail == '\0')
+		    continue;
+		const char *end = strchr(tail, '/');
+		Tcl_DStringAppend(&ds,
+				  zf->mountPoint + strip,
+				  end ? (Tcl_Size)(end - zf->mountPoint) : -1);
+		const char *matchedPath = Tcl_DStringValue(&ds);
+		(void)Tcl_CreateHashEntry(
+		    &duplicates, matchedPath, &notDuplicate);
+		if (notDuplicate) {
+		    AppendWithPrefix(
+			result, prefixBuf, matchedPath, Tcl_DStringLength(&ds));
+		}
+		Tcl_DStringFree(&ds);
+	    }
 	}
     }
+    Tcl_DeleteHashTable(&duplicates);
     Tcl_Free(pat);
 
   end:

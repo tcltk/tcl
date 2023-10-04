@@ -92,7 +92,9 @@ the \fBstring match\fR command. Alternatively, the \fB-regexp\fR option may be
 used to specify matching \fBpattern\fR as a regular expression. The file names
 are returned in arbitrary order. Note that path separators are treated as
 ordinary characters in the matching. Thus forward slashes should be used
-as path separators in the pattern.
+as path separators in the pattern. The returned paths only include those
+actually in the archive and does not include intermediate directories in
+mount paths.
 .TP
 \fBzipfs mount\fR
 .TP
