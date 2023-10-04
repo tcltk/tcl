@@ -43,6 +43,10 @@ simple encryption, sufficient to prevent casual inspection of their contents
 but not able to prevent access by even a moderately determined attacker.
 Strong encryption, multi-part archives, platform metadata,
 zip64 formats and other compression methods like bzip2 are not supported.
+.PP
+Files within mounted archives can be written to but new files or directories
+cannot be created. Further, modifications to files are limited to the
+mounted archive in memory and are not persisted to disk.
 .TP
 \fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR ?\fIinZipfs\fR?
 .
@@ -116,7 +120,7 @@ In the third form, the command mounts the ZIP archive \fIzipfile\fR as a Tcl vir
 filesystem at \fImountpoint\fR.  After this command executes, files contained
 in \fIzipfile\fR will appear to Tcl to be regular files at the mount point.
 If \fImountpoint\fR is
-specified as an empty string, it is defaulted to the file path.
+specified as an empty string, it is defaulted to the \fB[zipfs root]\fR.
 .PP
 \fBNB:\fR because the current working directory is a concept maintained by the
 operating system, using \fBcd\fR into a mounted archive will only work in the
