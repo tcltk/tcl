@@ -552,7 +552,8 @@ EXTERN Tcl_Obj *	TclListTestObj(size_t length, size_t leadingSpace,
 /* 222 */
 EXTERN void		TclListObjValidate(Tcl_Interp *interp,
 				Tcl_Obj *listObj);
-/* Slot 223 is reserved */
+/* 223 */
+EXTERN void *		TclGetCStackPtr(void);
 /* 224 */
 EXTERN TclPlatformType * TclGetPlatform(void);
 /* 225 */
@@ -895,7 +896,7 @@ typedef struct TclIntStubs {
     void (*reserved220)(void);
     Tcl_Obj * (*tclListTestObj) (size_t length, size_t leadingSpace, size_t endSpace); /* 221 */
     void (*tclListObjValidate) (Tcl_Interp *interp, Tcl_Obj *listObj); /* 222 */
-    void (*reserved223)(void);
+    void * (*tclGetCStackPtr) (void); /* 223 */
     TclPlatformType * (*tclGetPlatform) (void); /* 224 */
     Tcl_Obj * (*tclTraceDictPath) (Tcl_Interp *interp, Tcl_Obj *rootPtr, Tcl_Size keyc, Tcl_Obj *const keyv[], int flags); /* 225 */
     int (*tclObjBeingDeleted) (Tcl_Obj *objPtr); /* 226 */
@@ -1312,7 +1313,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclListTestObj) /* 221 */
 #define TclListObjValidate \
 	(tclIntStubsPtr->tclListObjValidate) /* 222 */
-/* Slot 223 is reserved */
+#define TclGetCStackPtr \
+	(tclIntStubsPtr->tclGetCStackPtr) /* 223 */
 #define TclGetPlatform \
 	(tclIntStubsPtr->tclGetPlatform) /* 224 */
 #define TclTraceDictPath \

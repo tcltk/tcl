@@ -546,6 +546,10 @@ declare 221 {
 declare 222 {
     void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
 }
+# Bug 7371b6270b
+declare 223 {
+    void *TclGetCStackPtr(void)
+}
 declare 224 {
     TclPlatformType *TclGetPlatform(void)
 }
