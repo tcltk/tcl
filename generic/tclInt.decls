@@ -548,8 +548,22 @@ declare 217 {
 declare 218 {
     void TclPopStackFrame(Tcl_Interp *interp)
 }
+# TIP 431: temporary directory creation function
+declare 219 {
+    Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
+	    Tcl_Obj *basenameObj)
+}
 
 # for use in tclTest.c
+
+# TIP 625: for unit testing - create list objects with span
+declare 221 {
+    Tcl_Obj *TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
+}
+# TIP 625: for unit testing - check list invariants
+declare 222 {
+    void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+}
 declare 224 {
     TclPlatformType *TclGetPlatform(void)
 }
@@ -698,20 +712,8 @@ declare 257 {
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 
-# TIP 431: temporary directory creation function
-declare 258 {
-    Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
-	    Tcl_Obj *basenameObj)
-}
-
-# TIP 625: for unit testing - create list objects with span
-declare 260 {
-    Tcl_Obj *TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
-}
-
-# TIP 625: for unit testing - check list invariants
 declare 261 {
-    void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+    void TclUnusedStubEntry(void)
 }
 
 ##############################################################################

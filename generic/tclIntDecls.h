@@ -462,10 +462,16 @@ EXTERN int		TclPushStackFrame(Tcl_Interp *interp,
 				int isProcCallFrame);
 /* 218 */
 EXTERN void		TclPopStackFrame(Tcl_Interp *interp);
-/* Slot 219 is reserved */
+/* 219 */
+EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
+				Tcl_Obj *basenameObj);
 /* Slot 220 is reserved */
-/* Slot 221 is reserved */
-/* Slot 222 is reserved */
+/* 221 */
+EXTERN Tcl_Obj *	TclListTestObj(size_t length, size_t leadingSpace,
+				size_t endSpace);
+/* 222 */
+EXTERN void		TclListObjValidate(Tcl_Interp *interp,
+				Tcl_Obj *listObj);
 /* Slot 223 is reserved */
 /* 224 */
 EXTERN TclPlatformType * TclGetPlatform(void);
@@ -574,16 +580,11 @@ EXTERN void		TclStaticLibrary(Tcl_Interp *interp,
 				const char *prefix,
 				Tcl_LibraryInitProc *initProc,
 				Tcl_LibraryInitProc *safeInitProc);
-/* 258 */
-EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
-				Tcl_Obj *basenameObj);
+/* Slot 258 is reserved */
 /* Slot 259 is reserved */
-/* 260 */
-EXTERN Tcl_Obj *	TclListTestObj(size_t length, size_t leadingSpace,
-				size_t endSpace);
+/* Slot 260 is reserved */
 /* 261 */
-EXTERN void		TclListObjValidate(Tcl_Interp *interp,
-				Tcl_Obj *listObj);
+EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct TclIntStubs {
     int magic;
@@ -808,10 +809,10 @@ typedef struct TclIntStubs {
     void (*tclStackFree) (Tcl_Interp *interp, void *freePtr); /* 216 */
     int (*tclPushStackFrame) (Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr, Tcl_Namespace *namespacePtr, int isProcCallFrame); /* 217 */
     void (*tclPopStackFrame) (Tcl_Interp *interp); /* 218 */
-    void (*reserved219)(void);
+    Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 219 */
     void (*reserved220)(void);
-    void (*reserved221)(void);
-    void (*reserved222)(void);
+    Tcl_Obj * (*tclListTestObj) (size_t length, size_t leadingSpace, size_t endSpace); /* 221 */
+    void (*tclListObjValidate) (Tcl_Interp *interp, Tcl_Obj *listObj); /* 222 */
     void (*reserved223)(void);
     TclPlatformType * (*tclGetPlatform) (void); /* 224 */
     Tcl_Obj * (*tclTraceDictPath) (Tcl_Interp *interp, Tcl_Obj *rootPtr, Tcl_Size keyc, Tcl_Obj *const keyv[], int flags); /* 225 */
@@ -847,10 +848,10 @@ typedef struct TclIntStubs {
     int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 256 */
     void (*tclStaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc); /* 257 */
-    Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
+    void (*reserved258)(void);
     void (*reserved259)(void);
-    Tcl_Obj * (*tclListTestObj) (size_t length, size_t leadingSpace, size_t endSpace); /* 260 */
-    void (*tclListObjValidate) (Tcl_Interp *interp, Tcl_Obj *listObj); /* 261 */
+    void (*reserved260)(void);
+    void (*tclUnusedStubEntry) (void); /* 261 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1192,10 +1193,13 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclPushStackFrame) /* 217 */
 #define TclPopStackFrame \
 	(tclIntStubsPtr->tclPopStackFrame) /* 218 */
-/* Slot 219 is reserved */
+#define TclpCreateTemporaryDirectory \
+	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 219 */
 /* Slot 220 is reserved */
-/* Slot 221 is reserved */
-/* Slot 222 is reserved */
+#define TclListTestObj \
+	(tclIntStubsPtr->tclListTestObj) /* 221 */
+#define TclListObjValidate \
+	(tclIntStubsPtr->tclListObjValidate) /* 222 */
 /* Slot 223 is reserved */
 #define TclGetPlatform \
 	(tclIntStubsPtr->tclGetPlatform) /* 224 */
@@ -1263,13 +1267,11 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclPtrUnsetVar) /* 256 */
 #define TclStaticLibrary \
 	(tclIntStubsPtr->tclStaticLibrary) /* 257 */
-#define TclpCreateTemporaryDirectory \
-	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
+/* Slot 258 is reserved */
 /* Slot 259 is reserved */
-#define TclListTestObj \
-	(tclIntStubsPtr->tclListTestObj) /* 260 */
-#define TclListObjValidate \
-	(tclIntStubsPtr->tclListObjValidate) /* 261 */
+/* Slot 260 is reserved */
+#define TclUnusedStubEntry \
+	(tclIntStubsPtr->tclUnusedStubEntry) /* 261 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -1290,6 +1292,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 		((unsigned long)tclIntStubsPtr->tclpGetSeconds())
 #endif
 
+#undef TclUnusedStubEntry
 #undef TclObjInterpProc
 #define TclObjInterpProc TclGetObjInterpProc()
 #define TclObjInterpProc2 TclGetObjInterpProc2()
