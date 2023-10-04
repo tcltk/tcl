@@ -1521,33 +1521,37 @@ namespace eval test_ns_zipfs {
     test zipfs-file-copy-tozip-new {Copy native file to archive} -setup {
         mount [zippath test.zip]
     } -cleanup {
+	removeFile $_
         cleanup
     } -body {
-        file copy [makeFile "" source.tmp] [file join $defMountPt X]
+        file copy [set _ [makeFile "" source.tmp]] [file join $defMountPt X]
     } -result "error copying \"*source.tmp\" to \"[file join $defMountPt X]\": operation not supported" \
         -match glob -returnCodes error
     test zipfs-file-copy-tozip-existing {Copy native file to archive} -setup {
         mount [zippath test.zip]
     } -cleanup {
+	removeFile $_
         cleanup
     } -body {
-        file copy [makeFile "newtext" source.tmp] [file join $defMountPt test]
+        file copy [set _ [makeFile "newtext" source.tmp]] [file join $defMountPt test]
     } -result "error copying *: file exists" -match glob -returnCodes error
     test zipfs-file-copy-tozip-existing-force {Copy native file to archive} -setup {
         mount [zippath test.zip]
     } -cleanup {
+	removeFile $_
         cleanup
     } -body {
         set to [file join $defMountPt test]
-        file copy -force [makeFile "newtext" source.tmp] $to
+        file copy -force [set _ [makeFile "newtext" source.tmp]] $to
         readbin $to
     } -result "newtext\n"
     test zipfs-file-copy-tozipdir {Copy native file to archive directory} -setup {
         mount [zippath test.zip]
     } -cleanup {
+	removeFile $_
         cleanup
     } -body {
-        file copy [makeFile "" source.tmp] [file join $defMountPt testdir]
+        file copy [set _ [makeFile "" source.tmp]] [file join $defMountPt testdir]
     } -result "error copying \"*source.tmp\" to \"[file join $defMountPt testdir]/source.tmp\": operation not supported" \
         -match glob -returnCodes error
     test zipfs-file-copydir-tozipdir {Copy native dir to archive directory} -setup {
@@ -1768,7 +1772,7 @@ namespace eval test_ns_zipfs {
     testzipfsenotsup mtime-set-mount  [list mtime $targetMount $t]
     testzipfsenotsup mtime-set-mezzo  [list mtime $targetMountParent $t]
     testzipfsenotsup mtime-set-root   [list mtime [zipfs root] $t]
-    testzipfsfile    mtime-set-enoent [list mtime $targetEnoent $t] \
+    testzipfsfile    mtime-set-enoent-1 [list mtime $targetEnoent $t] \
         "could not read \"$targetEnoent\": no such file or directory" -returnCodes error
 
     #
