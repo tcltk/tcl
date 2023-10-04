@@ -1290,6 +1290,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 #undef TclpGetSeconds
 #define TclpGetSeconds() \
 		((unsigned long)tclIntStubsPtr->tclpGetSeconds())
+#undef TclGetObjInterpProc2
+#define TclGetObjInterpProc2 TclGetObjInterpProc
 #endif
 
 #undef TclUnusedStubEntry
