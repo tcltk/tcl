@@ -1306,11 +1306,15 @@ Tcl_GlobObjCmd(
 		 * We must ensure that we haven't cut off too much, and turned
 		 * a valid path like '/' or 'C:/' into an incorrect path like
 		 * '' or 'C:'. The way we do this is to add a separator if
-		 * there are none presently in the prefix.
+		 * there are none presently in the prefix. Similar treatment
+		 * for the zipfs volume.
 		 */
 
-		if (strpbrk(TclGetString(pathOrDir), "\\/") == NULL) {
+		const char *temp = TclGetString(pathOrDir);
+		if (strpbrk(temp, "\\/") == NULL) {
 		    Tcl_AppendToObj(pathOrDir, last-1, 1);
+		} else if (!strcmp(temp, "//zipfs:")) {
+		    Tcl_AppendToObj(pathOrDir, "/", 1);
 		}
 	    }
 
