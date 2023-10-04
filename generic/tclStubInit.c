@@ -628,7 +628,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 220 */
     TclListTestObj, /* 221 */
     TclListObjValidate, /* 222 */
-    0, /* 223 */
+    TclGetCStackPtr, /* 223 */
     TclGetPlatform, /* 224 */
     TclTraceDictPath, /* 225 */
     TclObjBeingDeleted, /* 226 */
