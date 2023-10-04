@@ -251,8 +251,7 @@ typedef struct ZipChannel {
     ZipEntry *zipEntryPtr;	/* Pointer back to virtual file */
     size_t maxWrite;		/* Maximum size for write */
     size_t numBytes;		/* Number of bytes of uncompressed data */
-    size_t numRead;		/* Position of next byte to be read from the
-				 * channel */
+    size_t cursor;		/* Seek position for next read or write*/
     unsigned char *ubuf;	/* Pointer to the uncompressed data */
     unsigned char *ubufToFree;  /* NULL if ubuf points to memory that does not
     				   need freeing. Else memory to free (ubuf
@@ -4431,16 +4430,16 @@ ZipChannelRead(
 	 * data in front of ZIP, i.e. the executable itself.
 	 */
 
-	nextpos = info->numRead + toRead;
+	nextpos = info->cursor + toRead;
 	if (nextpos > info->zipFilePtr->baseOffset) {
-	    toRead = info->zipFilePtr->baseOffset - info->numRead;
+	    toRead = info->zipFilePtr->baseOffset - info->cursor;
 	    nextpos = info->zipFilePtr->baseOffset;
 	}
 	if (toRead == 0) {
 	    return 0;
 	}
 	memcpy(buf, info->zipFilePtr->data, toRead);
-	info->numRead = nextpos;
+	info->cursor = nextpos;
 	*errloc = 0;
 	return toRead;
     }
@@ -4448,9 +4447,9 @@ ZipChannelRead(
 	*errloc = EISDIR;
 	return -1;
     }
-    nextpos = info->numRead + toRead;
+    nextpos = info->cursor + toRead;
     if (nextpos > info->numBytes) {
-	toRead = info->numBytes - info->numRead;
+	toRead = info->numBytes - info->cursor;
 	nextpos = info->numBytes;
     }
     if (toRead == 0) {
@@ -4460,14 +4459,14 @@ ZipChannelRead(
 	int i;
 
 	for (i = 0; i < toRead; i++) {
-	    int ch = info->ubuf[i + info->numRead];
+	    int ch = info->ubuf[i + info->cursor];
 
 	    buf[i] = zdecode(info->keys, crc32tab, ch);
 	}
     } else {
-	memcpy(buf, info->ubuf + info->numRead, toRead);
+	memcpy(buf, info->ubuf + info->cursor, toRead);
     }
-    info->numRead = nextpos;
+    info->cursor = nextpos;
     *errloc = 0;
     return toRead;
 }
@@ -4503,23 +4502,23 @@ ZipChannelWrite(
 	return -1;
     }
     if (info->mode & O_APPEND) {
-	info->numRead = info->numBytes;
+	info->cursor = info->numBytes;
     }
     if (toWrite == 0) {
 	*errloc = 0;
 	return 0;
     }
-    assert(info->maxWrite >= info->numRead);
-    if (toWrite > (int) (info->maxWrite - info->numRead)) {
+    assert(info->maxWrite >= info->cursor);
+    if (toWrite > (int) (info->maxWrite - info->cursor)) {
 	/* Don't do partial writes in error case. Or should we? */
 	*errloc = EFBIG;
 	return -1;
     }
-    nextpos = info->numRead + toWrite;
-    memcpy(info->ubuf + info->numRead, buf, toWrite);
-    info->numRead = nextpos;
-    if (info->numRead > info->numBytes) {
-	info->numBytes = info->numRead;
+    nextpos = info->cursor + toWrite;
+    memcpy(info->ubuf + info->cursor, buf, toWrite);
+    info->cursor = nextpos;
+    if (info->cursor > info->numBytes) {
+	info->numBytes = info->cursor;
     }
     *errloc = 0;
     return toWrite;
@@ -4565,7 +4564,7 @@ ZipChannelWideSeek(
     }
     switch (mode) {
     case SEEK_CUR:
-	offset += info->numRead;
+	offset += info->cursor;
 	break;
     case SEEK_END:
 	offset += end;
@@ -4592,8 +4591,8 @@ ZipChannelWideSeek(
 	*errloc = EINVAL;
 	return -1;
     }
-    info->numRead = (size_t) offset;
-    return info->numRead;
+    info->cursor = (size_t) offset;
+    return info->cursor;
 }
 
 #if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
@@ -5003,7 +5002,7 @@ InitWritableChannel(
 	memset(info->keys, 0, sizeof(info->keys));
     }
     if (mode & O_APPEND) {
-	info->numRead = info->numBytes;
+	info->cursor = info->numBytes;
     }
 
     assert(info->numBytes == 0 || (int)info->numBytes == z->numBytes);
