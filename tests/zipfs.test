@@ -1039,7 +1039,7 @@ namespace eval test_ns_zipfs {
     }
     testzipfswrite create-w   test.zip          "file \"//zipfs:/testmount/newfile\" not created: operation not supported" newfile w -returnCodes error
     testzipfswrite create-w+  test.zip          "file \"//zipfs:/testmount/newfile\" not created: operation not supported" newfile w+ -returnCodes error
-    testzipfswrite create-a   test.zip          "append mode not supported: permission denied" newfile a -returnCodes error
+    testzipfswrite create-a   test.zip          "file \"$defMountPt/newfile\" not created: operation not supported" newfile a -returnCodes error
     testzipfswrite create-a+  test.zip          "file \"//zipfs:/testmount/newfile\" not created: operation not supported" newfile a+ -returnCodes error
     testzipfswrite store-w    teststored.zip    "xyz" abac-repeat.txt w
     testzipfswrite deflate-w  testdeflated2.zip "xyz" abac-repeat.txt w
@@ -1128,7 +1128,7 @@ namespace eval test_ns_zipfs {
     } -body {
         set ::tcl::zipfs::wrmax -1
         open [file join $defMountPt test] w
-    } -result {write access not supported: permission denied} -returnCodes error
+    } -result {writes not permitted: permission denied} -returnCodes error
 
     #
     # read/seek/write

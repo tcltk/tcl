@@ -260,9 +260,12 @@ typedef struct ZipChannel {
     int iscompr;                /* True if data is compressed */
     int isDirectory;		/* Set to 1 if directory, or -1 if root */
     int isEncrypted;		/* True if data is encrypted */
-    int isWriting;		/* True if open for writing */
+    int mode;			/* O_WRITE, O_APPEND, O_TRUNC etc.*/
     unsigned long keys[3];	/* Key for decryption */
 } ZipChannel;
+static inline int ZipChannelWritable(ZipChannel *info) {
+    return (info->mode & (O_WRONLY | O_RDWR)) != 0;
+}
 
 /*
  * Global variables.
@@ -4350,7 +4353,7 @@ ZipChannelClose(
 	memset(info->keys, 0, sizeof(info->keys));
     }
     WriteLock();
-    if (info->isWriting) {
+    if (ZipChannelWritable(info)) {
 	/*
 	 * Copy channel data back into original file in archive.
 	 * TODO - there seems to be no locking here to protect access from
@@ -4495,11 +4498,15 @@ ZipChannelWrite(
     ZipChannel *info = (ZipChannel *) instanceData;
     unsigned long nextpos;
 
-    if (!info->isWriting) {
+    if (!ZipChannelWritable(info)) {
 	*errloc = EINVAL;
 	return -1;
     }
+    if (info->mode & O_APPEND) {
+	info->numRead = info->numBytes;
+    }
     if (toWrite == 0) {
+	*errloc = 0;
 	return 0;
     }
     assert(info->maxWrite >= info->numRead);
@@ -4544,7 +4551,7 @@ ZipChannelWideSeek(
     ZipChannel *info = (ZipChannel *) instanceData;
     size_t end;
 
-    if (!info->isWriting && (info->isDirectory < 0)) {
+    if (!ZipChannelWritable(info) && (info->isDirectory < 0)) {
 	/*
 	 * Special case: when executable combined with ZIP archive file, seek
 	 * within front of ZIP, i.e. the executable itself.
@@ -4573,7 +4580,7 @@ ZipChannelWideSeek(
 	*errloc = EINVAL;
 	return -1;
     }
-    if (info->isWriting) {
+    if (ZipChannelWritable(info)) {
 	if ((size_t) offset > info->maxWrite) {
 	    *errloc = EINVAL;
 	    return -1;
@@ -4684,16 +4691,28 @@ ZipChannelOpen(
 
     /* Check for unsupported modes. */
 
-    if ((mode & O_APPEND) || ((ZipFS.wrmax <= 0) && wr)) {
+    if ((ZipFS.wrmax <= 0) && wr) {
 	Tcl_SetErrno(EACCES);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s not supported: %s",
-		    mode & O_APPEND ? "append mode" : "write access",
-		    Tcl_PosixError(interp)));
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("writes not permitted: %s",
+					   Tcl_PosixError(interp)));
 	}
 	return NULL;
     }
+
+    if ((mode & (O_APPEND|O_TRUNC)) && !wr) {
+	Tcl_SetErrno(EINVAL);
+	if (interp) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("Invalid flags 0x%x. O_APPEND and "
+					   "O_TRUNC require write access: %s",
+					   mode,
+					   Tcl_PosixError(interp)));
+	}
+	return NULL;
+    }
+
     /*
      * Is the file there?
      */
@@ -4776,7 +4795,7 @@ ZipChannelOpen(
     if (wr) {
 	/* Set up a writable channel. */
 
-	if (InitWritableChannel(interp, info, z, mode & O_TRUNC) == TCL_ERROR) {
+	if (InitWritableChannel(interp, info, z, mode) == TCL_ERROR) {
 	    ckfree(info);
 	    goto error;
 	}
@@ -4857,7 +4876,7 @@ InitWritableChannel(
     ZipChannel *info,		/* The channel to set up. */
     ZipEntry *z,		/* The zipped file that the channel will write
 				 * to. */
-    int trunc)			/* Whether to truncate the data. */
+    int mode)			/* O_APPEND, O_TRUNC */
 {
     int i, ch;
     unsigned char *cbuf = NULL;
@@ -4866,7 +4885,7 @@ InitWritableChannel(
      * Set up a writable channel.
      */
 
-    info->isWriting = 1;
+    info->mode = mode;
     info->maxWrite = ZipFS.wrmax;
 
     info->ubufToFree =
@@ -4887,7 +4906,7 @@ InitWritableChannel(
 	}
     }
     
-    if (trunc) {
+    if (mode & O_TRUNC) {
 	/*
 	 * Truncate; nothing there.
 	 */
@@ -4983,8 +5002,11 @@ InitWritableChannel(
 	}
 	memset(info->keys, 0, sizeof(info->keys));
     }
+    if (mode & O_APPEND) {
+	info->numRead = info->numBytes;
+    }
 
-    assert(info->numBytes == 0 || (int) info->numBytes == z->numBytes);
+    assert(info->numBytes == 0 || (int)info->numBytes == z->numBytes);
     return TCL_OK;
 
   memoryError:
@@ -5048,6 +5070,7 @@ InitReadableChannel(
     info->ubufToFree = NULL; /* ubuf memory not allocated */
     info->isDirectory = z->isDirectory;
     info->isEncrypted = z->isEncrypted;
+    info->mode = O_RDONLY;
 
     /* Caller must validate - bug [6ed3447a7e] */
     assert(z->numBytes >= 0 && z->numCompressedBytes >= 0);
