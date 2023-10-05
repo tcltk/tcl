@@ -636,13 +636,17 @@ namespace eval test_ns_zipfs {
     } -result {filesystem is busy} -returnCodes error
 
     test zipfs-unmount-3 "Unmount mount with current directory" -setup {
+        set cwd [pwd]
         mount [zippath test.zip]
     } -cleanup {
+        cd $cwd
         cleanup
     } -body {
-        set cwd [pwd]
-        cd [file join $defMountPt testdir]
-        list [pwd] [zipfs unmount $defMountPt] [string equal [pwd] $cwd]
+        # Current directory does not change on unmount.
+        # This is the same behavior as when USB pen drive is unmounted
+        set cwd2 [file join $defMountPt testdir]
+        cd $cwd2
+        list [pwd] [zipfs unmount $defMountPt] [string equal [pwd] $cwd2]
     } -result [list [file join $defMountPt testdir] {} 1]
 
     test zipfs-unmount-nested-1 "unmount parent of nested mount on new directory should not affect nested mount" -setup {

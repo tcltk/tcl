@@ -141,9 +141,7 @@ on most platforms.
 \fBzipfs unmount \fImountpoint\fR
 .
 Unmounts a previously mounted ZIP archive mounted to \fImountpoint\fR.
-If the current directory is located within the mounted archive,
-the directory that was previously the current directory is restored
-on the unmount. The command will fail with an error exception if
+The command will fail with an error exception if
 there are any files within the mounted archive are open.
 .SS "ZIP CREATION COMMANDS"
 This package also provides several commands to aid the creation of ZIP

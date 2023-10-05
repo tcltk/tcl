@@ -5645,9 +5645,9 @@ ZipFSMatchInDirectoryProc(
     }
     if (dirOnly) {
 	/*
-	 * Not found in hash. May be a path that is the ancestor of a mount.
-	 * e.g. glob //zipfs:/a/? with mount at //zipfs:/a/b/c. Also have
-	 * to be careful about duplicates, such as when another mount is
+	 * Also check paths that are ancestors of a mount. e.g. glob
+	 * //zipfs:/a/? with mount at //zipfs:/a/b/c. Also have to be
+	 * careful about duplicates, such as when another mount is
 	 * //zipfs:/a/b/d
 	 */
 	Tcl_DString ds;
@@ -5796,8 +5796,6 @@ ZipFSPathInFilesystemProc(
     Tcl_Obj *pathPtr,
     TCL_UNUSED(void **))
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     Tcl_Size len;
     char *path;
 
@@ -5806,93 +5804,13 @@ ZipFSPathInFilesystemProc(
 	return -1;
     }
     path = TclGetStringFromObj(pathPtr, &len);
+    
     /*
-     * TODO - why not make ZIPFS_VOLUME both necessary AND sufficient?
-     * Currently we only claim ownership if there is a matching mount.
+     * Claim any path under ZIPFS_VOLUME as ours. This is both a necessary
+     * and sufficient condition as zipfs mounts at arbitrary paths are
+     * not permitted (unlike Androwish).
      */
-    if (strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) != 0) {
-	return -1;
-    } else if (len == ZIPFS_VOLUME_LEN && ZipFS.zipHash.numEntries != 0) {
-	/* zipfs root and at least one entry */
-	return TCL_OK;
-    }
-
-    int ret = TCL_OK;
-
-    ReadLock();
-    hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, path);
-    if (hPtr) {
-	goto endloop;
-    }
-
-    /*
-     * Not in hash table but still could be owned by zipfs in two other cases:
-     * Assuming there is a mount point //zipfs:/a/b/c,
-     *  1. The path is under the mount point, e.g. //zipfs:/a/b/c/f but that
-     *     file does not exist.
-     *  2. The path is an intermediate directory in a mount point, e.g.
-     *     //zipfs:/a/b
-     */
-
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
-	    hPtr = Tcl_NextHashEntry(&search)) {
-	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
-
-	if (zf->mountPointLen == 0) {
-	    /*
-	     * Mounted on the root (/)
-	     * TODO - a holdover from androwish? Tcl does not allow mounting
-	     * outside of the //zipfs:/ area.
-	     */
-	    ZipEntry *z;
-
-	    for (z = zf->topEnts; z != NULL; z = z->tnext) {
-		if (strncmp(path, z->name, len) == 0) {
-		    int lenz = (int)strlen(z->name);
-		    if (len == lenz) {
-			/* Would have been in hash table? But nm ... */
-			goto endloop;
-		    } else if (len > lenz) {
-			/* Case 1 above */
-			if (path[lenz] == '/') {
-			    goto endloop;
-			}
-		    } else { /* len < lenz */
-			/* Case 2 above */
-			if (z->name[len] == '/') {
-			    goto endloop;
-			}
-		    }
-		}
-
-	    }
-	} else {
-	    /* Not mounted on root - the norm in Tcl core */
-
-	    /* Lengths are known so check them before strnmp for efficiency*/
-	    assert(len != ZIPFS_VOLUME_LEN); /* Else already handled at top */
-	    if (len == zf->mountPointLen) {
-		/* A non-root or root mount. */
-		goto endloop;
-	    } else if (len > zf->mountPointLen) {
-		/* Case 1 above */
-		if (path[zf->mountPointLen] == '/' &&
-		strncmp(path, zf->mountPoint, zf->mountPointLen) == 0) {
-		    goto endloop;
-		}
-	    } else { /* len < zf->mountPointLen */
-		if (zf->mountPoint[len] == '/' &&
-		strncmp(path, zf->mountPoint, len) == 0) {
-		    goto endloop;
-		}
-	    }
-	}
-    }
-    ret = -1; /* Not our file */
-
-  endloop:
-    Unlock();
-    return ret;
+    return strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) ? -1 : TCL_OK;
 }
 
 /*
