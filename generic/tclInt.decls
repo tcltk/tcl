@@ -163,7 +163,7 @@ declare 62 {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
 declare 64 {
-    int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
+    int TclObjInvoke(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	    int flags)
 }
 declare 69 {
@@ -623,7 +623,7 @@ declare 237 {
 # include NRE.h too.
 declare 238 {
     int TclNRInterpProc(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
+	    Tcl_Size objc, Tcl_Obj *const objv[])
 }
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
