@@ -1123,7 +1123,7 @@ namespace eval test_ns_zipfs {
         close $fd
         file size [file join $defMountPt test]
     } -result 10000000
-    
+
     test zipfs-write-size-limit-3 "Writes incrementally - buffer growth" -setup {
         mount [zippath test.zip]
     } -cleanup {

@@ -244,13 +244,13 @@ typedef struct ZipEntry {
 } ZipEntry;
 
 /*
- * File channel for file contained in mounted ZIP archive. 
+ * File channel for file contained in mounted ZIP archive.
  *
- * Regarding data buffers: 
+ * Regarding data buffers:
  * For READ-ONLY files that are not encrypted and not compressed (zip STORE
  * method), ubuf points directly to the mapped zip file data in memory. No
- * additional storage is allocated and so ubufToFree is NULL. 
- * 
+ * additional storage is allocated and so ubufToFree is NULL.
+ *
  * In all other combinations of compression and encryption or if channel is
  * writable, storage is allocated for the decrypted and/or uncompressed data
  * and a pointer to it is stored in ubufToFree and ubuf. When channel is
@@ -764,11 +764,11 @@ CountSlashes(
  *------------------------------------------------------------------------
  */
 static int IsCryptHeaderValid(
-	ZipEntry *z, 
+	ZipEntry *z,
 	unsigned char cryptHeader[12]
 	)
 {
-    /* 
+    /*
      * There are multiple possibilities. The last one or two bytes of the
      * encryption header should match the last one or two bytes of the
      * CRC of the file. Or the last byte of the encryption header should
@@ -1692,7 +1692,7 @@ ZipFSOpenArchive(
 	    goto error;
 	}
     }
-    /* 
+    /*
      * Close the Tcl channel. If the file was mapped, the mapping is
      * unaffected. It is important to close the channel otherwise there is a
      * potential chicken and egg issue at finalization time as the channels
@@ -2232,7 +2232,7 @@ ListMountPoints(
  *
  *    Releases all resources associated with a mounted archive. There
  *    must not be any open files in the archive.
- * 
+ *
  *    Caller MUST be holding WriteLock() before calling this function.
  *
  * Results:
@@ -4548,7 +4548,7 @@ ZipChannelWrite(
     if (toWrite > (info->ubufSize - info->cursor)) {
 	/* grow the buffer. We have already checked will not exceed maxWrite */
 	Tcl_Size needed = info->cursor + toWrite;
-	/* Tack on a bit for future growth. */	
+	/* Tack on a bit for future growth. */
 	if (needed < (info->maxWrite - needed/2)) {
 	    needed += needed / 2;
 	} else {
@@ -4952,7 +4952,7 @@ InitWritableChannel(
 	    goto error_cleanup;
 	}
     }
-    
+
     if (mode & O_TRUNC) {
 	/*
 	 * Truncate; nothing there.
@@ -5334,7 +5334,7 @@ ZipEntryAccess(
 	} else {
 	    /*
 	     * Even if entry does not exist, could be intermediate dir
-	     * containing a mount point 
+	     * containing a mount point
 	     */
 	    access = ContainsMountPoint(path, -1) ? 0 : -1;
 	}
@@ -5642,9 +5642,9 @@ ZipFSMatchInDirectoryProc(
 		AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
 	    }
 	}
-    } 
+    }
     if (dirOnly) {
-	/* 
+	/*
 	 * Not found in hash. May be a path that is the ancestor of a mount.
 	 * e.g. glob //zipfs:/a/? with mount at //zipfs:/a/b/c. Also have
 	 * to be careful about duplicates, such as when another mount is
