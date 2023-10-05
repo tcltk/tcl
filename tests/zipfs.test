@@ -1111,17 +1111,34 @@ namespace eval test_ns_zipfs {
     } -result {file too large} -match glob -returnCodes error
 
     test zipfs-write-size-limit-2 "Writes max size" -setup {
+        set origlimit $::tcl::zipfs::wrmax
+        set ::tcl::zipfs::wrmax 10000000
         mount [zippath test.zip]
     } -cleanup {
+        set ::tcl::zipfs::wrmax $origlimit
         cleanup
     } -body {
         set fd [open [file join $defMountPt test] w]
         puts -nonewline $fd [string repeat x $::tcl::zipfs::wrmax]
         close $fd
         file size [file join $defMountPt test]
-    } -result $::tcl::zipfs::wrmax
+    } -result 10000000
+    
+    test zipfs-write-size-limit-3 "Writes incrementally - buffer growth" -setup {
+        mount [zippath test.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        set fd [open [file join $defMountPt test] w]
+        fconfigure $fd -buffering none
+        for {set i 0} {$i < 100000} {incr i} {
+            puts -nonewline $fd 0123456789
+        }
+        close $fd
+        readbin [file join $defMountPt test]
+    } -result [string repeat 0123456789 100000]
 
-    test zipfs-write-size-limit-3 "Writes disallowed" -setup {
+    test zipfs-write-size-limit-4 "Writes disallowed" -setup {
         set origlimit $::tcl::zipfs::wrmax
         mount [zippath test.zip]
     } -cleanup {
