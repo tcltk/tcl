@@ -29,7 +29,7 @@
  * compatible with AddressSanitizer (ASan) use-after-return detection.
  */
 
-#if defined(HAVE_INTRIN_H)
+#if defined(_MSC_VER) && defined(HAVE_INTRIN_H)
 #include <intrin.h> /* for _AddressOfReturnAddress() */
 #endif
 
@@ -44,10 +44,10 @@
 void *
 TclGetCStackPtr(void)
 {
-#if defined(HAVE_INTRIN_H)
-  return _AddressOfReturnAddress();
-#elif __GNUC__ || __has_builtin(__builtin_frame_address)
+#if __GNUC__ || __has_builtin(__builtin_frame_address)
   return __builtin_frame_address(0);
+#elif defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+  return _AddressOfReturnAddress();
 #else
   size_t unused = 0;
   /*
