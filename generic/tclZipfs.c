@@ -244,13 +244,13 @@ typedef struct ZipEntry {
 } ZipEntry;
 
 /*
- * File channel for file contained in mounted ZIP archive. 
+ * File channel for file contained in mounted ZIP archive.
  *
- * Regarding data buffers: 
+ * Regarding data buffers:
  * For READ-ONLY files that are not encrypted and not compressed (zip STORE
  * method), ubuf points directly to the mapped zip file data in memory. No
- * additional storage is allocated and so ubufToFree is NULL. 
- * 
+ * additional storage is allocated and so ubufToFree is NULL.
+ *
  * In all other combinations of compression and encryption or if channel is
  * writable, storage is allocated for the decrypted and/or uncompressed data
  * and a pointer to it is stored in ubufToFree and ubuf. When channel is
