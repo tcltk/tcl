@@ -162,7 +162,8 @@ static const z_crc_t* crc32tab;
 
 #define ZIP_PASSWORD_END_SIG		0x5a5a4b50
 
-#define DEFAULT_WRITE_MAX_SIZE		(2 * 1024 * 1024)
+#define ZIP_MAX_FILE_SIZE		INT_MAX
+#define DEFAULT_WRITE_MAX_SIZE		ZIP_MAX_FILE_SIZE
 
 /*
  * Windows drive letters.
@@ -243,19 +244,31 @@ typedef struct ZipEntry {
 } ZipEntry;
 
 /*
- * File channel for file contained in mounted ZIP archive.
+ * File channel for file contained in mounted ZIP archive. 
+ *
+ * Regarding data buffers: 
+ * For READ-ONLY files that are not encrypted and not compressed (zip STORE
+ * method), ubuf points directly to the mapped zip file data in memory. No
+ * additional storage is allocated and so ubufToFree is NULL. 
+ * 
+ * In all other combinations of compression and encryption or if channel is
+ * writable, storage is allocated for the decrypted and/or uncompressed data
+ * and a pointer to it is stored in ubufToFree and ubuf. When channel is
+ * closed, ubufToFree is freed if not NULL. ubuf is irrelevant since it may
+ * or may not point to allocated storage as above.
  */
 
 typedef struct ZipChannel {
     ZipFile *zipFilePtr;	/* The ZIP file holding this channel */
     ZipEntry *zipEntryPtr;	/* Pointer back to virtual file */
-    size_t maxWrite;		/* Maximum size for write */
-    size_t numBytes;		/* Number of bytes of uncompressed data */
-    size_t cursor;		/* Seek position for next read or write*/
+    Tcl_Size maxWrite;		/* Maximum size for write */
+    Tcl_Size numBytes;		/* Number of bytes of uncompressed data */
+    Tcl_Size cursor;		/* Seek position for next read or write*/
     unsigned char *ubuf;	/* Pointer to the uncompressed data */
     unsigned char *ubufToFree;  /* NULL if ubuf points to memory that does not
     				   need freeing. Else memory to free (ubuf
 				   may point *inside* the block) */
+    Tcl_Size ubufSize;		/* Size of allocated ubufToFree */
     int iscompr;                /* True if data is compressed */
     int isDirectory;		/* Set to 1 if directory, or -1 if root */
     int isEncrypted;		/* True if data is encrypted */
@@ -1733,6 +1746,11 @@ ZipMapArchive(
     if (zf->length < ZIP_CENTRAL_END_LEN) {
 	Tcl_SetErrno(EINVAL);
 	ZIPFS_POSIX_ERROR(interp, "truncated file");
+	return TCL_ERROR;
+    }
+    if (zf->length > TCL_SIZE_MAX) {
+	Tcl_SetErrno(EFBIG);
+	ZIPFS_POSIX_ERROR(interp, "zip archive too big");
 	return TCL_ERROR;
     }
 
@@ -4355,9 +4373,6 @@ ZipChannelClose(
     if (ZipChannelWritable(info)) {
 	/*
 	 * Copy channel data back into original file in archive.
-	 * TODO - there seems to be no locking here to protect access from
-	 * multiple threads. The channel (info) may be thread specific (?)
-	 * but the ZipEntry is not afaict
 	 */
 	ZipEntry *z = info->zipEntryPtr;
 	assert(info->ubufToFree && info->ubuf);
@@ -4371,12 +4386,13 @@ ZipChannelClose(
 	}
 	info->ubufToFree = NULL; /* Now newdata! */
 	info->ubuf = NULL;
+	info->ubufSize = 0;
 
 	/* Replace old content */
 	if (z->data) {
 	    ckfree(z->data);
 	}
-	z->data = newdata; /* May be NULL */
+	z->data = newdata; /* May be NULL when ubufToFree was NULL */
 	z->numBytes = z->numCompressedBytes = info->numBytes;
 	assert(z->data || z->numBytes == 0);
 	z->compressMethod = ZIP_COMPMETH_STORED;
@@ -4393,6 +4409,7 @@ ZipChannelClose(
 	ckfree(info->ubufToFree);
 	info->ubuf = NULL;
 	info->ubufToFree = NULL;
+	info->ubufSize = 0;
     }
     ckfree(info);
     return TCL_OK;
@@ -4422,7 +4439,7 @@ ZipChannelRead(
     int *errloc)
 {
     ZipChannel *info = (ZipChannel *) instanceData;
-    unsigned long nextpos;
+    Tcl_Size nextpos;
 
     if (info->isDirectory < 0) {
 	/*
@@ -4431,7 +4448,7 @@ ZipChannelRead(
 	 */
 
 	nextpos = info->cursor + toRead;
-	if (nextpos > info->zipFilePtr->baseOffset) {
+	if ((size_t)nextpos > info->zipFilePtr->baseOffset) {
 	    toRead = info->zipFilePtr->baseOffset - info->cursor;
 	    nextpos = info->zipFilePtr->baseOffset;
 	}
@@ -4457,7 +4474,11 @@ ZipChannelRead(
     }
     if (info->isEncrypted) {
 	int i;
-
+	/*
+	 * TODO - when is this code ever exercised? Cannot reach it from
+	 * tests. In particular, decryption is always done at channel open
+	 * to allow for seeks and random reads.
+	 */
 	for (i = 0; i < toRead; i++) {
 	    int ch = info->ubuf[i + info->cursor];
 
@@ -4501,18 +4522,47 @@ ZipChannelWrite(
 	*errloc = EINVAL;
 	return -1;
     }
-    if (info->mode & O_APPEND) {
-	info->cursor = info->numBytes;
-    }
+
+    assert(info->ubuf == info->ubufToFree);
+    assert(info->ubufToFree && info->ubufSize > 0);
+    assert(info->ubufSize <= info->maxWrite);
+    assert(info->numBytes <= info->ubufSize);
+    assert(info->cursor <= info->numBytes);
+
     if (toWrite == 0) {
 	*errloc = 0;
 	return 0;
     }
-    assert(info->maxWrite >= info->cursor);
-    if (toWrite > (int) (info->maxWrite - info->cursor)) {
+
+    if (info->mode & O_APPEND) {
+	info->cursor = info->numBytes;
+    }
+
+    if (toWrite > (info->maxWrite - info->cursor)) {
+	/* File would grow beyond max size permitted */
 	/* Don't do partial writes in error case. Or should we? */
 	*errloc = EFBIG;
 	return -1;
+    }
+
+    if (toWrite > (info->ubufSize - info->cursor)) {
+	/* grow the buffer. We have already checked will not exceed maxWrite */
+	Tcl_Size needed = info->cursor + toWrite;
+	/* Tack on a bit for future growth. */	
+	if (needed < (info->maxWrite - needed/2)) {
+	    needed += needed / 2;
+	} else {
+	    needed = info->maxWrite;
+	}
+	unsigned char *newBuf =
+	    (unsigned char *)attemptckrealloc(info->ubufToFree, needed);
+	if (newBuf == NULL) {
+	    *errloc = ENOMEM;
+	    return -1;
+	}
+	info->ubufToFree = newBuf;
+	info->ubuf = info->ubufToFree;
+	info->ubufSize = needed;
     }
     nextpos = info->cursor + toWrite;
     memcpy(info->ubuf + info->cursor, buf, toWrite);
@@ -4548,7 +4598,7 @@ ZipChannelWideSeek(
     int *errloc)
 {
     ZipChannel *info = (ZipChannel *) instanceData;
-    size_t end;
+    Tcl_Size end;
 
     if (!ZipChannelWritable(info) && (info->isDirectory < 0)) {
 	/*
@@ -4575,23 +4625,23 @@ ZipChannelWideSeek(
 	*errloc = EINVAL;
 	return -1;
     }
-    if (offset < 0) {
+    if (offset < 0 || offset > TCL_SIZE_MAX) {
 	*errloc = EINVAL;
 	return -1;
     }
     if (ZipChannelWritable(info)) {
-	if ((size_t) offset > info->maxWrite) {
+	if (offset > info->maxWrite) {
 	    *errloc = EINVAL;
 	    return -1;
 	}
-	if ((size_t) offset > info->numBytes) {
+	if (offset > info->numBytes) {
 	    info->numBytes = offset;
 	}
-    } else if ((size_t) offset > end) {
+    } else if (offset > end) {
 	*errloc = EINVAL;
 	return -1;
     }
-    info->cursor = (size_t) offset;
+    info->cursor = (Tcl_Size) offset;
     return info->cursor;
 }
 
@@ -4738,9 +4788,7 @@ ZipChannelOpen(
 	goto error;
     }
 
-    /*
-     * Do we support opening the file that way?
-     */
+    /* Do we support opening the file that way? */
 
     if (wr && z->isDirectory) {
 	Tcl_SetErrno(EISDIR);
@@ -4804,6 +4852,7 @@ ZipChannelOpen(
 	info->numBytes = z->numBytes;
 	info->ubuf = z->data;
 	info->ubufToFree = NULL; /* Not dynamically allocated */
+	info->ubufSize = 0;
     } else {
 	/*
 	 * Set up a readable channel.
@@ -4829,6 +4878,7 @@ ZipChannelOpen(
 	    ZIPFS_ERROR_CODE(interp, "CRC_FAILED");
 	    if (info->ubufToFree) {
 		ckfree(info->ubufToFree);
+		info->ubufSize = 0;
 	    }
 	    ckfree(info);
 	    goto error;
@@ -4887,14 +4937,12 @@ InitWritableChannel(
     info->mode = mode;
     info->maxWrite = ZipFS.wrmax;
 
-    info->ubufToFree =
-	(unsigned char *)attemptckalloc(info->maxWrite ? info->maxWrite : 1);
+    info->ubufSize = z->numBytes ? z->numBytes : 1;
+    info->ubufToFree = (unsigned char *)attemptckalloc(info->ubufSize);
     info->ubuf = info->ubufToFree;
-    if (!info->ubuf) {
+    if (info->ubufToFree == NULL) {
 	goto memoryError;
     }
-    /* TODO - why is the memset necessary? Not cheap for default maxWrite. */
-    memset(info->ubuf, 0, info->maxWrite);
 
     if (z->isEncrypted) {
 	assert(z->numCompressedBytes >= 12); /* caller should have checked*/
@@ -4916,9 +4964,7 @@ InitWritableChannel(
 	/*
 	 * Already got uncompressed data.
 	 */
-	if (z->numBytes > (int) info->maxWrite)
-	    goto tooBigError;
-
+	assert(info->ubufSize >= z->numBytes);
 	memcpy(info->ubuf, z->data, z->numBytes);
 	info->numBytes = z->numBytes;
     } else {
@@ -4961,7 +5007,7 @@ InitWritableChannel(
 		stream.next_in = zbuf;
 	    }
 	    stream.next_out = info->ubuf;
-	    stream.avail_out = info->maxWrite;
+	    stream.avail_out = info->ubufSize;
 	    if (inflateInit2(&stream, -15) != Z_OK) {
 		goto corruptionError;
 	    }
@@ -4986,6 +5032,7 @@ InitWritableChannel(
 		(z->numCompressedBytes - 12) != z->numBytes)
 		goto corruptionError;
 	    int len = z->numCompressedBytes - 12;
+	    assert(len <= info->ubufSize);
 	    for (i = 0; i < len; i++) {
 		ch = zbuf[i];
 		info->ubuf[i] = zdecode(info->keys, crc32tab, ch);
@@ -4996,6 +5043,7 @@ InitWritableChannel(
 	    /*
 	     * Simple stored data. Copy into our working buffer.
 	     */
+	    assert(info->ubufSize >= z->numBytes);
 	    memcpy(info->ubuf, zbuf, z->numBytes);
 	    info->numBytes = z->numBytes;
 	}
@@ -5005,16 +5053,10 @@ InitWritableChannel(
 	info->cursor = info->numBytes;
     }
 
-    assert(info->numBytes == 0 || (int)info->numBytes == z->numBytes);
     return TCL_OK;
 
   memoryError:
     ZIPFS_MEM_ERROR(interp);
-    goto error_cleanup;
-
-  tooBigError:
-    Tcl_SetErrno(EFBIG);
-    ZIPFS_POSIX_ERROR(interp, "file size exceeds max writable");
     goto error_cleanup;
 
   corruptionError:
@@ -5030,6 +5072,7 @@ InitWritableChannel(
 	ckfree(info->ubufToFree);
 	info->ubufToFree = NULL;
 	info->ubuf = NULL;
+	info->ubufSize = 0;
     }
     return TCL_ERROR;
 }
@@ -5067,6 +5110,7 @@ InitReadableChannel(
     info->iscompr = (z->compressMethod == ZIP_COMPMETH_DEFLATED);
     info->ubuf = z->zipFilePtr->data + z->offset;
     info->ubufToFree = NULL; /* ubuf memory not allocated */
+    info->ubufSize = 0;
     info->isDirectory = z->isDirectory;
     info->isEncrypted = z->isEncrypted;
     info->mode = O_RDONLY;
@@ -5089,7 +5133,9 @@ InitReadableChannel(
 	unsigned int j;
 
 	/*
-	 * Data to decode is compressed, and possibly encrpyted too.
+	 * Data to decode is compressed, and possibly encrpyted too. If
+	 * encrypted, local variable ubuf is used to hold the decrypted but
+	 * still compressed data.
 	 */
 
 	memset(&stream, 0, sizeof(z_stream));
@@ -5113,8 +5159,9 @@ InitReadableChannel(
 	} else {
 	    stream.next_in = info->ubuf;
 	}
-	info->ubufToFree = (unsigned char *)
-		attemptckalloc(info->numBytes ? info->numBytes : 1);
+
+	info->ubufSize = info->numBytes ? info->numBytes : 1;
+	info->ubufToFree = (unsigned char *)attemptckalloc(info->ubufSize);
 	info->ubuf = info->ubufToFree;
 	stream.next_out = info->ubuf;
 	if (!info->ubuf) {
@@ -5145,7 +5192,6 @@ InitReadableChannel(
 	    memset(info->keys, 0, sizeof(info->keys));
 	    ckfree(ubuf);
 	}
-	return TCL_OK;
     } else if (info->isEncrypted) {
 	unsigned int j, len;
 
@@ -5164,6 +5210,7 @@ InitReadableChannel(
 	    ch = info->ubuf[j];
 	    ubuf[j] = zdecode(info->keys, crc32tab, ch);
 	}
+	info->ubufSize = len;
 	info->ubufToFree = ubuf;
 	info->ubuf = info->ubufToFree;
 	ubuf = NULL; /* So it does not inadvertently get free on future changes */
@@ -5188,6 +5235,7 @@ InitReadableChannel(
 	ckfree(info->ubufToFree);
 	info->ubufToFree = NULL;
 	info->ubuf = NULL;
+	info->ubufSize = 0;
     }
 
     return TCL_ERROR;
