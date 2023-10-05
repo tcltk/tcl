@@ -170,7 +170,7 @@ EXTERN Tcl_Obj *	TclNewProcBodyObj(Proc *procPtr);
 EXTERN int		TclObjCommandComplete(Tcl_Obj *cmdPtr);
 /* Slot 63 is reserved */
 /* 64 */
-EXTERN int		TclObjInvoke(Tcl_Interp *interp, int objc,
+EXTERN int		TclObjInvoke(Tcl_Interp *interp, Tcl_Size objc,
 				Tcl_Obj *const objv[], int flags);
 /* Slot 65 is reserved */
 /* Slot 66 is reserved */
@@ -510,7 +510,7 @@ EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
 EXTERN int		TclResetCancellation(Tcl_Interp *interp, int force);
 /* 238 */
 EXTERN int		TclNRInterpProc(void *clientData, Tcl_Interp *interp,
-				int objc, Tcl_Obj *const objv[]);
+				Tcl_Size objc, Tcl_Obj *const objv[]);
 /* 239 */
 EXTERN int		TclNRInterpProcCore(Tcl_Interp *interp,
 				Tcl_Obj *procNameObj, Tcl_Size skip,
@@ -652,7 +652,7 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclNewProcBodyObj) (Proc *procPtr); /* 61 */
     int (*tclObjCommandComplete) (Tcl_Obj *cmdPtr); /* 62 */
     void (*reserved63)(void);
-    int (*tclObjInvoke) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 64 */
+    int (*tclObjInvoke) (Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[], int flags); /* 64 */
     void (*reserved65)(void);
     void (*reserved66)(void);
     void (*reserved67)(void);
@@ -826,7 +826,7 @@ typedef struct TclIntStubs {
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
     void (*reserved236)(void);
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
-    int (*tclNRInterpProc) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
+    int (*tclNRInterpProc) (void *clientData, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[]); /* 238 */
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, Tcl_Size skip, ProcErrorProc *errorProc); /* 239 */
     int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct NRE_callback *rootPtr); /* 240 */
     int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 241 */
