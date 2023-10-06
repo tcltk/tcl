@@ -458,8 +458,8 @@ static const TclIntStubs tclIntStubs = {
     0, /* 50 */
     TclInterpInit, /* 51 */
     0, /* 52 */
-    TclInvokeObjectCommand, /* 53 */
-    TclInvokeStringCommand, /* 54 */
+    0, /* 53 */
+    0, /* 54 */
     TclIsProc, /* 55 */
     0, /* 56 */
     0, /* 57 */

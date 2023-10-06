@@ -144,14 +144,8 @@ EXTERN int		TclInExit(void);
 /* 51 */
 EXTERN int		TclInterpInit(Tcl_Interp *interp);
 /* Slot 52 is reserved */
-/* 53 */
-EXTERN int		TclInvokeObjectCommand(void *clientData,
-				Tcl_Interp *interp, int argc,
-				const char **argv);
-/* 54 */
-EXTERN int		TclInvokeStringCommand(void *clientData,
-				Tcl_Interp *interp, int objc,
-				Tcl_Obj *const objv[]);
+/* Slot 53 is reserved */
+/* Slot 54 is reserved */
 /* 55 */
 EXTERN Proc *		TclIsProc(Command *cmdPtr);
 /* Slot 56 is reserved */
@@ -641,8 +635,8 @@ typedef struct TclIntStubs {
     void (*reserved50)(void);
     int (*tclInterpInit) (Tcl_Interp *interp); /* 51 */
     void (*reserved52)(void);
-    int (*tclInvokeObjectCommand) (void *clientData, Tcl_Interp *interp, int argc, const char **argv); /* 53 */
-    int (*tclInvokeStringCommand) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 54 */
+    void (*reserved53)(void);
+    void (*reserved54)(void);
     Proc * (*tclIsProc) (Command *cmdPtr); /* 55 */
     void (*reserved56)(void);
     void (*reserved57)(void);
@@ -943,10 +937,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclInterpInit \
 	(tclIntStubsPtr->tclInterpInit) /* 51 */
 /* Slot 52 is reserved */
-#define TclInvokeObjectCommand \
-	(tclIntStubsPtr->tclInvokeObjectCommand) /* 53 */
-#define TclInvokeStringCommand \
-	(tclIntStubsPtr->tclInvokeStringCommand) /* 54 */
+/* Slot 53 is reserved */
+/* Slot 54 is reserved */
 #define TclIsProc \
 	(tclIntStubsPtr->tclIsProc) /* 55 */
 /* Slot 56 is reserved */
