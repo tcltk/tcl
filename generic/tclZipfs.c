@@ -14,6 +14,10 @@
  *   generic/tclZipfs.c file in the TIP430-enabled Tcl cores.
  *   compat/tclZipfs.c file in the tclconfig (TEA) file system, for pre-tip430
  *	projects.
+ *
+ * Helpful docs:
+ * https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.3.9.TXT
+ * https://libzip.org/specifications/appnote_iz.txt
  */
 
 #include "tclInt.h"
@@ -158,7 +162,8 @@ static const z_crc_t* crc32tab;
 
 #define ZIP_PASSWORD_END_SIG		0x5a5a4b50
 
-#define DEFAULT_WRITE_MAX_SIZE		(2 * 1024 * 1024)
+#define ZIP_MAX_FILE_SIZE		INT_MAX
+#define DEFAULT_WRITE_MAX_SIZE		ZIP_MAX_FILE_SIZE
 
 /*
  * Windows drive letters.
@@ -230,9 +235,9 @@ typedef struct ZipEntry {
     int timestamp;		/* Modification time */
     int isEncrypted;		/* True if data is encrypted */
     int flags;
-#define ZE_F_CRC_COMPARED  0x00000001  /* If 1, the CRC has been compared. */
-#define ZE_F_CRC_CORRECT   0x00000002  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
-#define ZE_F_VOLUME        0x00000004  /* Entry corresponds to //zipfs:/ */
+#define ZE_F_CRC_COMPARED      0x0001  /* If 1, the CRC has been compared. */
+#define ZE_F_CRC_CORRECT       0x0002  /* Only meaningful if ZE_F_CRC_COMPARED is 1 */
+#define ZE_F_VOLUME            0x0004  /* Entry corresponds to //zipfs:/ */
     unsigned char *data;	/* File data if written */
     struct ZipEntry *next;	/* Next file in the same archive */
     struct ZipEntry *tnext;	/* Next top-level dir in archive */
@@ -240,25 +245,39 @@ typedef struct ZipEntry {
 
 /*
  * File channel for file contained in mounted ZIP archive.
+ *
+ * Regarding data buffers:
+ * For READ-ONLY files that are not encrypted and not compressed (zip STORE
+ * method), ubuf points directly to the mapped zip file data in memory. No
+ * additional storage is allocated and so ubufToFree is NULL.
+ *
+ * In all other combinations of compression and encryption or if channel is
+ * writable, storage is allocated for the decrypted and/or uncompressed data
+ * and a pointer to it is stored in ubufToFree and ubuf. When channel is
+ * closed, ubufToFree is freed if not NULL. ubuf is irrelevant since it may
+ * or may not point to allocated storage as above.
  */
 
 typedef struct ZipChannel {
     ZipFile *zipFilePtr;	/* The ZIP file holding this channel */
     ZipEntry *zipEntryPtr;	/* Pointer back to virtual file */
-    size_t maxWrite;		/* Maximum size for write */
-    size_t numBytes;		/* Number of bytes of uncompressed data */
-    size_t numRead;		/* Position of next byte to be read from the
-				 * channel */
+    Tcl_Size maxWrite;		/* Maximum size for write */
+    Tcl_Size numBytes;		/* Number of bytes of uncompressed data */
+    Tcl_Size cursor;		/* Seek position for next read or write*/
     unsigned char *ubuf;	/* Pointer to the uncompressed data */
     unsigned char *ubufToFree;  /* NULL if ubuf points to memory that does not
     				   need freeing. Else memory to free (ubuf
 				   may point *inside* the block) */
+    Tcl_Size ubufSize;		/* Size of allocated ubufToFree */
     int iscompr;                /* True if data is compressed */
     int isDirectory;		/* Set to 1 if directory, or -1 if root */
     int isEncrypted;		/* True if data is encrypted */
-    int isWriting;		/* True if open for writing */
+    int mode;			/* O_WRITE, O_APPEND, O_TRUNC etc.*/
     unsigned long keys[3];	/* Key for decryption */
 } ZipChannel;
+static inline int ZipChannelWritable(ZipChannel *info) {
+    return (info->mode & (O_WRONLY | O_RDWR)) != 0;
+}
 
 /*
  * Global variables.
@@ -315,6 +334,7 @@ static int		InitWritableChannel(Tcl_Interp *interp,
 			    ZipChannel *info, ZipEntry *z, int trunc);
 static int		ListMountPoints(Tcl_Interp *interp);
 static int		ContainsMountPoint(const char *path, int pathLen);
+static void		CleanupMount(ZipFile *zf);
 static void		SerializeCentralDirectoryEntry(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
@@ -328,6 +348,9 @@ static void		SerializeLocalEntryHeader(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
 			    ZipEntry *z, int nameLength, int align);
+static int		IsCryptHeaderValid(ZipEntry *z, unsigned char cryptHdr[12]);
+static int		DecodeCryptHeader(Tcl_Interp *interp, ZipEntry *z,
+			    unsigned long keys[3], unsigned char cryptHdr[12]);
 #if !defined(STATIC_BUILD)
 static int		ZipfsAppHookFindTclInit(const char *archive);
 #endif
@@ -357,10 +380,7 @@ static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
 			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
 static int		ZipMapArchive(Tcl_Interp *interp, ZipFile *zf,
 			    void *handle);
-static void		ZipfsExitHandler(void *clientData);
-static void		ZipfsMountExitHandler(void *clientData);
 static void		ZipfsSetup(void);
-static void		ZipfsFinalize(void);
 static int		ZipChannelClose(void *instanceData,
 			    Tcl_Interp *interp, int flags);
 static Tcl_DriverGetHandleProc	ZipChannelGetFile;
@@ -530,7 +550,7 @@ ZipWriteShort(
     ptr[0] = value & 0xff;
     ptr[1] = (value >> 8) & 0xff;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -714,6 +734,104 @@ CountSlashes(
     return count;
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * IsCryptHeaderValid --
+ *
+ *    Computes the validity of the encryption header CRC for a ZipEntry.
+ *
+ * Results:
+ *    Returns 1 if the header is valid else 0.
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+static int IsCryptHeaderValid(
+	ZipEntry *z,
+	unsigned char cryptHeader[12]
+	)
+{
+    /*
+     * There are multiple possibilities. The last one or two bytes of the
+     * encryption header should match the last one or two bytes of the
+     * CRC of the file. Or the last byte of the encryption header should
+     * be the high order byte of the file time. Depending on the archiver
+     * and version, any of the might be in used. We follow libzip in checking
+     * only one byte against both the crc and the time. Note that by design
+     * the check generates high number of false positives in any case.
+     * Also, in case a check is passed when it should not, the final CRC
+     * calculation will (should) catch it. Only difference is it will be
+     * reported as a corruption error instead of incorrect password.
+     */
+    int dosTime = ToDosTime(z->timestamp);
+    if (cryptHeader[11] == (unsigned char)(dosTime >> 8)) {
+	/* Infozip style - Tested with test-password.zip */
+	return 1;
+    }
+    /* DOS time did not match, may be CRC does */
+    if (z->crc32) {
+	/* Pkware style - Tested with test-password2.zip */
+	return (cryptHeader[11] == (unsigned char)(z->crc32 >> 24));
+    }
+
+    /* No CRC, no way to verify. Assume valid */
+    return 1;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * DecodeCryptHeader --
+ *
+ *    Decodes the crypt header and validates it.
+ *
+ * Results:
+ *    TCL_OK on success, TCL_ERROR on failure.
+ *
+ * Side effects:
+ *    On success, keys[] are updated. On failure, an error message is
+ *    left in interp if not NULL.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+DecodeCryptHeader(Tcl_Interp *interp,
+		  ZipEntry *z,
+		  unsigned long keys[3],/* Updated on success. Must have been
+					   initialized by caller. */
+		  unsigned char cryptHeader[12]) /* From zip file content */
+{
+    int i;
+    int ch;
+    int len = z->zipFilePtr->passBuf[0] & 0xFF;
+    char passBuf[260];
+
+    for (i = 0; i < len; i++) {
+	ch = z->zipFilePtr->passBuf[len - i];
+	passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
+    }
+    passBuf[i] = '\0';
+    init_keys(passBuf, keys, crc32tab);
+    memset(passBuf, 0, sizeof(passBuf));
+    unsigned char encheader[12];
+    memcpy(encheader, cryptHeader, 12);
+    for (i = 0; i < 12; i++) {
+	ch = cryptHeader[i];
+	ch ^= decrypt_byte(keys, crc32tab);
+	encheader[i] = ch;
+	update_keys(keys, crc32tab, ch);
+    }
+    if (!IsCryptHeaderValid(z, encheader)) {
+	ZIPFS_ERROR(interp, "invalid password");
+	ZIPFS_ERROR_CODE(interp, "PASSWORD");
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -1558,9 +1676,15 @@ ZipFSOpenArchive(
 	    ZIPFS_POSIX_ERROR(interp, "file read error");
 	    goto error;
 	}
-	Tcl_Close(interp, zf->chan);
-	zf->chan = NULL;
     }
+    /*
+     * Close the Tcl channel. If the file was mapped, the mapping is
+     * unaffected. It is important to close the channel otherwise there is a
+     * potential chicken and egg issue at finalization time as the channels
+     * are closed before the file systems are dismounted.
+     */
+    Tcl_Close(interp, zf->chan);
+    zf->chan = NULL;
     return ZipFSFindTOC(interp, needZip, zf);
 
     /*
@@ -1607,6 +1731,11 @@ ZipMapArchive(
     if (zf->length < ZIP_CENTRAL_END_LEN) {
 	Tcl_SetErrno(EINVAL);
 	ZIPFS_POSIX_ERROR(interp, "truncated file");
+	return TCL_ERROR;
+    }
+    if (zf->length > TCL_SIZE_MAX) {
+	Tcl_SetErrno(EFBIG);
+	ZIPFS_POSIX_ERROR(interp, "zip archive too big");
 	return TCL_ERROR;
     }
 
@@ -1773,14 +1902,12 @@ ZipFSCatalogFilesystem(
 	Tcl_Free(zf);
 	return TCL_ERROR;
     }
-    Unlock();
 
     /*
      * Convert to a real archive descriptor.
      */
 
     zf->mountPoint = (char *) Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
-    Tcl_CreateExitHandler(ZipfsMountExitHandler, zf);
     zf->mountPointLen = strlen(zf->mountPoint);
 
     zf->nameLength = strlen(zipname);
@@ -1814,6 +1941,9 @@ ZipFSCatalogFilesystem(
 	    if (!strcmp(z->name, ZIPFS_VOLUME)) {
 		z->flags |= ZE_F_VOLUME; /* Mark as root volume */
 	    }
+	    Tcl_Time t;
+	    Tcl_GetTime(&t);
+	    z->timestamp = t.sec;
 	    z->next = zf->entries;
 	    zf->entries = z;
 	}
@@ -1987,8 +2117,8 @@ ZipFSCatalogFilesystem(
     }
     Tcl_DStringFree(&fpBuf);
     Tcl_DStringFree(&ds);
-    Tcl_FSMountsChanged(NULL);
     Unlock();
+    Tcl_FSMountsChanged(NULL);
     return TCL_OK;
 }
 
@@ -2028,7 +2158,6 @@ ZipfsSetup(void)
 	    Tcl_Alloc(strlen(ZIPFS_FALLBACK_ENCODING) + 1);
     strcpy(ZipFS.fallbackEntryEncoding, ZIPFS_FALLBACK_ENCODING);
     ZipFS.initialized = 1;
-    Tcl_CreateExitHandler(ZipfsExitHandler, NULL);
 }
 
 /*
@@ -2081,6 +2210,42 @@ ListMountPoints(
     return TCL_OK;
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * CleanupMount --
+ *
+ *    Releases all resources associated with a mounted archive. There
+ *    must not be any open files in the archive.
+ *
+ *    Caller MUST be holding WriteLock() before calling this function.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    Memory associated with the mounted archive is deallocated.
+ *------------------------------------------------------------------------
+ */
+static void
+CleanupMount(ZipFile *zf)        /* Mount point */
+{
+    ZipEntry *z, *znext;
+    Tcl_HashEntry *hPtr;
+    for (z = zf->entries; z; z = znext) {
+	znext = z->next;
+	hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, z->name);
+	if (hPtr) {
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+	if (z->data) {
+	    Tcl_Free(z->data);
+	}
+	Tcl_Free(z);
+    }
+    zf->entries = NULL;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -2223,6 +2388,7 @@ TclZipfs_MountBuffer(
 {
     ZipFile *zf;
 
+    /* TODO - how come a *read* lock suffices for initialzing ? */
     ReadLock();
     if (!ZipFS.initialized) {
 	ZipfsSetup();
@@ -2313,7 +2479,6 @@ TclZipfs_Unmount(
     const char *mountPoint)	/* Mount point path. */
 {
     ZipFile *zf;
-    ZipEntry *z, *znext;
     Tcl_HashEntry *hPtr;
     Tcl_DString dsm;
     int ret = TCL_OK, unmounted = 0;
@@ -2351,19 +2516,9 @@ TclZipfs_Unmount(
      * still cleaning things up.
      */
 
-    for (z = zf->entries; z; z = znext) {
-	znext = z->next;
-	hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, z->name);
-	if (hPtr) {
-	    Tcl_DeleteHashEntry(hPtr);
-	}
-	if (z->data) {
-	    Tcl_Free(z->data);
-	}
-	Tcl_Free(z);
-    }
+    CleanupMount(zf);
     ZipFSCloseArchive(interp, zf);
-    Tcl_DeleteExitHandler(ZipfsMountExitHandler, zf);
+
     Tcl_Free(zf);
     unmounted = 1;
 
@@ -4200,12 +4355,10 @@ ZipChannelClose(
 	info->isEncrypted = 0;
 	memset(info->keys, 0, sizeof(info->keys));
     }
-    if (info->isWriting) {
+    WriteLock();
+    if (ZipChannelWritable(info)) {
 	/*
 	 * Copy channel data back into original file in archive.
-	 * TODO - there seems to be no locking here to protect access from
-	 * multiple threads. The channel (info) may be thread specific (?)
-	 * but the ZipEntry is not afaict
 	 */
 	ZipEntry *z = info->zipEntryPtr;
 	assert(info->ubufToFree && info->ubuf);
@@ -4219,12 +4372,13 @@ ZipChannelClose(
 	}
 	info->ubufToFree = NULL; /* Now newdata! */
 	info->ubuf = NULL;
+	info->ubufSize = 0;
 
 	/* Replace old content */
 	if (z->data) {
 	    Tcl_Free(z->data);
 	}
-	z->data = newdata; /* May be NULL */
+	z->data = newdata; /* May be NULL when ubufToFree was NULL */
 	z->numBytes = z->numCompressedBytes = info->numBytes;
 	assert(z->data || z->numBytes == 0);
 	z->compressMethod = ZIP_COMPMETH_STORED;
@@ -4234,7 +4388,6 @@ ZipChannelClose(
 	z->offset = 0;
 	z->crc32 = 0;
     }
-    WriteLock();
     info->zipFilePtr->numOpen--;
     Unlock();
     if (info->ubufToFree) {
@@ -4242,6 +4395,7 @@ ZipChannelClose(
 	Tcl_Free(info->ubufToFree);
 	info->ubuf = NULL;
 	info->ubufToFree = NULL;
+	info->ubufSize = 0;
     }
     Tcl_Free(info);
     return TCL_OK;
@@ -4271,7 +4425,7 @@ ZipChannelRead(
     int *errloc)
 {
     ZipChannel *info = (ZipChannel *) instanceData;
-    unsigned long nextpos;
+    Tcl_Size nextpos;
 
     if (info->isDirectory < 0) {
 	/*
@@ -4279,16 +4433,16 @@ ZipChannelRead(
 	 * data in front of ZIP, i.e. the executable itself.
 	 */
 
-	nextpos = info->numRead + toRead;
-	if (nextpos > info->zipFilePtr->baseOffset) {
-	    toRead = info->zipFilePtr->baseOffset - info->numRead;
+	nextpos = info->cursor + toRead;
+	if ((size_t)nextpos > info->zipFilePtr->baseOffset) {
+	    toRead = info->zipFilePtr->baseOffset - info->cursor;
 	    nextpos = info->zipFilePtr->baseOffset;
 	}
 	if (toRead == 0) {
 	    return 0;
 	}
 	memcpy(buf, info->zipFilePtr->data, toRead);
-	info->numRead = nextpos;
+	info->cursor = nextpos;
 	*errloc = 0;
 	return toRead;
     }
@@ -4296,9 +4450,9 @@ ZipChannelRead(
 	*errloc = EISDIR;
 	return -1;
     }
-    nextpos = info->numRead + toRead;
+    nextpos = info->cursor + toRead;
     if (nextpos > info->numBytes) {
-	toRead = info->numBytes - info->numRead;
+	toRead = info->numBytes - info->cursor;
 	nextpos = info->numBytes;
     }
     if (toRead == 0) {
@@ -4306,16 +4460,20 @@ ZipChannelRead(
     }
     if (info->isEncrypted) {
 	int i;
-
+	/*
+	 * TODO - when is this code ever exercised? Cannot reach it from
+	 * tests. In particular, decryption is always done at channel open
+	 * to allow for seeks and random reads.
+	 */
 	for (i = 0; i < toRead; i++) {
-	    int ch = info->ubuf[i + info->numRead];
+	    int ch = info->ubuf[i + info->cursor];
 
 	    buf[i] = zdecode(info->keys, crc32tab, ch);
 	}
     } else {
-	memcpy(buf, info->ubuf + info->numRead, toRead);
+	memcpy(buf, info->ubuf + info->cursor, toRead);
     }
-    info->numRead = nextpos;
+    info->cursor = nextpos;
     *errloc = 0;
     return toRead;
 }
@@ -4346,21 +4504,57 @@ ZipChannelWrite(
     ZipChannel *info = (ZipChannel *) instanceData;
     unsigned long nextpos;
 
-    if (toWrite == 0 || !info->isWriting) {
+    if (!ZipChannelWritable(info)) {
 	*errloc = EINVAL;
 	return -1;
     }
-    assert(info->maxWrite >= info->numRead);
-    if (toWrite > (int) (info->maxWrite - info->numRead)) {
+
+    assert(info->ubuf == info->ubufToFree);
+    assert(info->ubufToFree && info->ubufSize > 0);
+    assert(info->ubufSize <= info->maxWrite);
+    assert(info->numBytes <= info->ubufSize);
+    assert(info->cursor <= info->numBytes);
+
+    if (toWrite == 0) {
+	*errloc = 0;
+	return 0;
+    }
+
+    if (info->mode & O_APPEND) {
+	info->cursor = info->numBytes;
+    }
+
+    if (toWrite > (info->maxWrite - info->cursor)) {
+	/* File would grow beyond max size permitted */
 	/* Don't do partial writes in error case. Or should we? */
 	*errloc = EFBIG;
 	return -1;
     }
-    nextpos = info->numRead + toWrite;
-    memcpy(info->ubuf + info->numRead, buf, toWrite);
-    info->numRead = nextpos;
-    if (info->numRead > info->numBytes) {
-	info->numBytes = info->numRead;
+
+    if (toWrite > (info->ubufSize - info->cursor)) {
+	/* grow the buffer. We have already checked will not exceed maxWrite */
+	Tcl_Size needed = info->cursor + toWrite;
+	/* Tack on a bit for future growth. */
+	if (needed < (info->maxWrite - needed/2)) {
+	    needed += needed / 2;
+	} else {
+	    needed = info->maxWrite;
+	}
+	unsigned char *newBuf =
+	    (unsigned char *)Tcl_AttemptRealloc(info->ubufToFree, needed);
+	if (newBuf == NULL) {
+	    *errloc = ENOMEM;
+	    return -1;
+	}
+	info->ubufToFree = newBuf;
+	info->ubuf = info->ubufToFree;
+	info->ubufSize = needed;
+    }
+    nextpos = info->cursor + toWrite;
+    memcpy(info->ubuf + info->cursor, buf, toWrite);
+    info->cursor = nextpos;
+    if (info->cursor > info->numBytes) {
+	info->numBytes = info->cursor;
     }
     *errloc = 0;
     return toWrite;
@@ -4390,9 +4584,9 @@ ZipChannelWideSeek(
     int *errloc)
 {
     ZipChannel *info = (ZipChannel *) instanceData;
-    size_t end;
+    Tcl_Size end;
 
-    if (!info->isWriting && (info->isDirectory < 0)) {
+    if (!ZipChannelWritable(info) && (info->isDirectory < 0)) {
 	/*
 	 * Special case: when executable combined with ZIP archive file, seek
 	 * within front of ZIP, i.e. the executable itself.
@@ -4406,7 +4600,7 @@ ZipChannelWideSeek(
     }
     switch (mode) {
     case SEEK_CUR:
-	offset += info->numRead;
+	offset += info->cursor;
 	break;
     case SEEK_END:
 	offset += end;
@@ -4417,24 +4611,24 @@ ZipChannelWideSeek(
 	*errloc = EINVAL;
 	return -1;
     }
-    if (offset < 0) {
+    if (offset < 0 || offset > TCL_SIZE_MAX) {
 	*errloc = EINVAL;
 	return -1;
     }
-    if (info->isWriting) {
-	if ((size_t) offset > info->maxWrite) {
+    if (ZipChannelWritable(info)) {
+	if (offset > info->maxWrite) {
 	    *errloc = EINVAL;
 	    return -1;
 	}
-	if ((size_t) offset > info->numBytes) {
+	if (offset > info->numBytes) {
 	    info->numBytes = offset;
 	}
-    } else if ((size_t) offset > end) {
+    } else if (offset > end) {
 	*errloc = EINVAL;
 	return -1;
     }
-    info->numRead = (size_t) offset;
-    return info->numRead;
+    info->cursor = (Tcl_Size) offset;
+    return info->cursor;
 }
 
 /*
@@ -4520,16 +4714,28 @@ ZipChannelOpen(
 
     /* Check for unsupported modes. */
 
-    if ((mode & O_APPEND) || ((ZipFS.wrmax <= 0) && wr)) {
+    if ((ZipFS.wrmax <= 0) && wr) {
 	Tcl_SetErrno(EACCES);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s not supported: %s",
-		    mode & O_APPEND ? "append mode" : "write access",
-		    Tcl_PosixError(interp)));
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("writes not permitted: %s",
+					   Tcl_PosixError(interp)));
 	}
 	return NULL;
     }
+
+    if ((mode & (O_APPEND|O_TRUNC)) && !wr) {
+	Tcl_SetErrno(EINVAL);
+	if (interp) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("Invalid flags 0x%x. O_APPEND and "
+					   "O_TRUNC require write access: %s",
+					   mode,
+					   Tcl_PosixError(interp)));
+	}
+	return NULL;
+    }
+
     /*
      * Is the file there?
      */
@@ -4537,11 +4743,13 @@ ZipChannelOpen(
     WriteLock();
     z = ZipFSLookup(filename);
     if (!z) {
-	Tcl_SetErrno(ENOENT);
+	Tcl_SetErrno(wr ? ENOTSUP : ENOENT);
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "file not found \"%s\": %s", filename,
-		    Tcl_PosixError(interp)));
+	    Tcl_SetObjResult(interp,
+			     Tcl_ObjPrintf("file \"%s\" not %s: %s",
+					   filename,
+					   wr ? "created" : "found",
+					   Tcl_PosixError(interp)));
 	}
 	goto error;
     }
@@ -4554,9 +4762,7 @@ ZipChannelOpen(
 	goto error;
     }
 
-    /*
-     * Do we support opening the file that way?
-     */
+    /* Do we support opening the file that way? */
 
     if (wr && z->isDirectory) {
 	Tcl_SetErrno(EISDIR);
@@ -4586,19 +4792,18 @@ ZipChannelOpen(
 	/* Read-only */
 	flags |= TCL_READABLE;
     }
-    if (flags & TCL_READABLE) {
-	if (z->isEncrypted) {
-	    if (z->numCompressedBytes < 12) {
-		ZIPFS_ERROR(interp, "decryption failed: truncated decryption header");
-		ZIPFS_ERROR_CODE(interp, "DECRYPT");
-		goto error;
 
-	    }
-	    if (z->zipFilePtr->passBuf[0] == 0) {
-		ZIPFS_ERROR(interp, "decryption failed - no password provided");
-		ZIPFS_ERROR_CODE(interp, "DECRYPT");
-		goto error;
-	    }
+    if (z->isEncrypted) {
+	if (z->numCompressedBytes < 12) {
+	    ZIPFS_ERROR(interp,
+			"decryption failed: truncated decryption header");
+	    ZIPFS_ERROR_CODE(interp, "DECRYPT");
+	    goto error;
+	}
+	if (z->zipFilePtr->passBuf[0] == 0) {
+	    ZIPFS_ERROR(interp, "decryption failed - no password provided");
+	    ZIPFS_ERROR_CODE(interp, "DECRYPT");
+	    goto error;
 	}
     }
 
@@ -4611,7 +4816,7 @@ ZipChannelOpen(
     if (wr) {
 	/* Set up a writable channel. */
 
-	if (InitWritableChannel(interp, info, z, mode & O_TRUNC) == TCL_ERROR) {
+	if (InitWritableChannel(interp, info, z, mode) == TCL_ERROR) {
 	    Tcl_Free(info);
 	    goto error;
 	}
@@ -4621,6 +4826,7 @@ ZipChannelOpen(
 	info->numBytes = z->numBytes;
 	info->ubuf = z->data;
 	info->ubufToFree = NULL; /* Not dynamically allocated */
+	info->ubufSize = 0;
     } else {
 	/*
 	 * Set up a readable channel.
@@ -4646,6 +4852,7 @@ ZipChannelOpen(
 	    ZIPFS_ERROR_CODE(interp, "CRC_FAILED");
 	    if (info->ubufToFree) {
 		Tcl_Free(info->ubufToFree);
+		info->ubufSize = 0;
 	    }
 	    Tcl_Free(info);
 	    goto error;
@@ -4692,7 +4899,7 @@ InitWritableChannel(
     ZipChannel *info,		/* The channel to set up. */
     ZipEntry *z,		/* The zipped file that the channel will write
 				 * to. */
-    int trunc)			/* Whether to truncate the data. */
+    int mode)			/* O_APPEND, O_TRUNC */
 {
     int i, ch;
     unsigned char *cbuf = NULL;
@@ -4701,19 +4908,26 @@ InitWritableChannel(
      * Set up a writable channel.
      */
 
-    info->isWriting = 1;
+    info->mode = mode;
     info->maxWrite = ZipFS.wrmax;
 
-    info->ubufToFree =
-	(unsigned char *)Tcl_AttemptAlloc(info->maxWrite ? info->maxWrite : 1);
+    info->ubufSize = z->numBytes ? z->numBytes : 1;
+    info->ubufToFree = (unsigned char *)Tcl_AttemptAlloc(info->ubufSize);
     info->ubuf = info->ubufToFree;
-    if (!info->ubuf) {
+    if (info->ubufToFree == NULL) {
 	goto memoryError;
     }
-    /* TODO - why is the memset necessary? Not cheap for default maxWrite. */
-    memset(info->ubuf, 0, info->maxWrite);
 
-    if (trunc) {
+    if (z->isEncrypted) {
+	assert(z->numCompressedBytes >= 12); /* caller should have checked*/
+	if (DecodeCryptHeader(
+		interp, z, info->keys, z->zipFilePtr->data + z->offset) !=
+	    TCL_OK) {
+	    goto error_cleanup;
+	}
+    }
+
+    if (mode & O_TRUNC) {
 	/*
 	 * Truncate; nothing there.
 	 */
@@ -4724,9 +4938,7 @@ InitWritableChannel(
 	/*
 	 * Already got uncompressed data.
 	 */
-	if (z->numBytes > (int) info->maxWrite)
-	    goto tooBigError;
-
+	assert(info->ubufSize >= z->numBytes);
 	memcpy(info->ubuf, z->data, z->numBytes);
 	info->numBytes = z->numBytes;
     } else {
@@ -4737,21 +4949,7 @@ InitWritableChannel(
 	unsigned char *zbuf = z->zipFilePtr->data + z->offset;
 
 	if (z->isEncrypted) {
-	    int len = z->zipFilePtr->passBuf[0] & 0xFF;
-	    char passBuf[260];
-
-	    for (i = 0; i < len; i++) {
-		ch = z->zipFilePtr->passBuf[len - i];
-		passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
-	    }
-	    passBuf[i] = '\0';
-	    init_keys(passBuf, info->keys, crc32tab);
-	    memset(passBuf, 0, sizeof(passBuf));
-	    for (i = 0; i < 12; i++) {
-		ch = info->ubuf[i];
-		zdecode(info->keys, crc32tab, ch);
-	    }
-	    zbuf += i;
+	    zbuf += 12;
 	}
 
 	if (z->compressMethod == ZIP_COMPMETH_DEFLATED) {
@@ -4775,7 +4973,7 @@ InitWritableChannel(
 		    goto memoryError;
 		}
 		for (j = 0; j < stream.avail_in; j++) {
-		    ch = info->ubuf[j];
+		    ch = zbuf[j];
 		    cbuf[j] = zdecode(info->keys, crc32tab, ch);
 		}
 		stream.next_in = cbuf;
@@ -4783,7 +4981,7 @@ InitWritableChannel(
 		stream.next_in = zbuf;
 	    }
 	    stream.next_out = info->ubuf;
-	    stream.avail_out = info->maxWrite;
+	    stream.avail_out = info->ubufSize;
 	    if (inflateInit2(&stream, -15) != Z_OK) {
 		goto corruptionError;
 	    }
@@ -4808,6 +5006,7 @@ InitWritableChannel(
 		(z->numCompressedBytes - 12) != z->numBytes)
 		goto corruptionError;
 	    int len = z->numCompressedBytes - 12;
+	    assert(len <= info->ubufSize);
 	    for (i = 0; i < len; i++) {
 		ch = zbuf[i];
 		info->ubuf[i] = zdecode(info->keys, crc32tab, ch);
@@ -4818,22 +5017,20 @@ InitWritableChannel(
 	    /*
 	     * Simple stored data. Copy into our working buffer.
 	     */
+	    assert(info->ubufSize >= z->numBytes);
 	    memcpy(info->ubuf, zbuf, z->numBytes);
 	    info->numBytes = z->numBytes;
 	}
 	memset(info->keys, 0, sizeof(info->keys));
     }
+    if (mode & O_APPEND) {
+	info->cursor = info->numBytes;
+    }
 
-    assert(info->numBytes == 0 || (int) info->numBytes == z->numBytes);
     return TCL_OK;
 
   memoryError:
     ZIPFS_MEM_ERROR(interp);
-    goto error_cleanup;
-
-  tooBigError:
-    Tcl_SetErrno(EFBIG);
-    ZIPFS_POSIX_ERROR(interp, "file size exceeds max writable");
     goto error_cleanup;
 
   corruptionError:
@@ -4849,6 +5046,7 @@ InitWritableChannel(
 	Tcl_Free(info->ubufToFree);
 	info->ubufToFree = NULL;
 	info->ubuf = NULL;
+	info->ubufSize = 0;
     }
     return TCL_ERROR;
 }
@@ -4881,34 +5079,26 @@ InitReadableChannel(
 				 * from. */
 {
     unsigned char *ubuf = NULL;
-    int i, ch;
+    int ch;
 
     info->iscompr = (z->compressMethod == ZIP_COMPMETH_DEFLATED);
     info->ubuf = z->zipFilePtr->data + z->offset;
     info->ubufToFree = NULL; /* ubuf memory not allocated */
+    info->ubufSize = 0;
     info->isDirectory = z->isDirectory;
     info->isEncrypted = z->isEncrypted;
+    info->mode = O_RDONLY;
 
     /* Caller must validate - bug [6ed3447a7e] */
     assert(z->numBytes >= 0 && z->numCompressedBytes >= 0);
     info->numBytes = z->numBytes;
 
     if (info->isEncrypted) {
-	int len = z->zipFilePtr->passBuf[0] & 0xFF;
-	char passBuf[260];
-
-	for (i = 0; i < len; i++) {
-	    ch = z->zipFilePtr->passBuf[len - i];
-	    passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
+	assert(z->numCompressedBytes >= 12); /* caller should have checked*/
+	if (DecodeCryptHeader(interp, z, info->keys, info->ubuf) != TCL_OK) {
+	    goto error_cleanup;
 	}
-	passBuf[i] = '\0';
-	init_keys(passBuf, info->keys, crc32tab);
-	memset(passBuf, 0, sizeof(passBuf));
-	for (i = 0; i < 12; i++) {
-	    ch = info->ubuf[i];
-	    zdecode(info->keys, crc32tab, ch);
-	}
-	info->ubuf += i;
+	info->ubuf += 12;
     }
 
     if (info->iscompr) {
@@ -4917,7 +5107,9 @@ InitReadableChannel(
 	unsigned int j;
 
 	/*
-	 * Data to decode is compressed, and possibly encrpyted too.
+	 * Data to decode is compressed, and possibly encrpyted too. If
+	 * encrypted, local variable ubuf is used to hold the decrypted but
+	 * still compressed data.
 	 */
 
 	memset(&stream, 0, sizeof(z_stream));
@@ -4941,8 +5133,9 @@ InitReadableChannel(
 	} else {
 	    stream.next_in = info->ubuf;
 	}
-	info->ubufToFree = (unsigned char *)
-		Tcl_AttemptAlloc(info->numBytes ? info->numBytes : 1);
+
+	info->ubufSize = info->numBytes ? info->numBytes : 1;
+	info->ubufToFree = (unsigned char *)Tcl_AttemptAlloc(info->ubufSize);
 	info->ubuf = info->ubufToFree;
 	stream.next_out = info->ubuf;
 	if (!info->ubuf) {
@@ -4973,7 +5166,6 @@ InitReadableChannel(
 	    memset(info->keys, 0, sizeof(info->keys));
 	    Tcl_Free(ubuf);
 	}
-	return TCL_OK;
     } else if (info->isEncrypted) {
 	unsigned int j, len;
 
@@ -4992,6 +5184,7 @@ InitReadableChannel(
 	    ch = info->ubuf[j];
 	    ubuf[j] = zdecode(info->keys, crc32tab, ch);
 	}
+	info->ubufSize = len;
 	info->ubufToFree = ubuf;
 	info->ubuf = info->ubufToFree;
 	ubuf = NULL; /* So it does not inadvertently get free on future changes */
@@ -5016,6 +5209,7 @@ InitReadableChannel(
 	Tcl_Free(info->ubufToFree);
 	info->ubufToFree = NULL;
 	info->ubuf = NULL;
+	info->ubufSize = 0;
     }
 
     return TCL_ERROR;
@@ -5044,7 +5238,7 @@ ZipEntryStat(
     Tcl_StatBuf *buf)
 {
     ZipEntry *z;
-    int ret = -1;
+    int ret;
 
     ReadLock();
     z = ZipFSLookup(path);
@@ -5063,8 +5257,14 @@ ZipEntryStat(
     } else if (ContainsMountPoint(path, -1)) {
 	/* An intermediate dir under which a mount exists */
 	memset(buf, 0, sizeof(Tcl_StatBuf));
+	Tcl_Time t;
+	Tcl_GetTime(&t);
+	buf->st_atime = buf->st_mtime = buf->st_ctime = t.sec;
 	buf->st_mode = S_IFDIR | 0555;
 	ret = 0;
+    } else {
+	Tcl_SetErrno(ENOENT);
+	ret = -1;
     }
     Unlock();
     return ret;
@@ -5092,18 +5292,26 @@ ZipEntryAccess(
     char *path,
     int mode)
 {
-    if (mode & 3) {
+    if (mode & X_OK) {
 	return -1;
     }
 
     ReadLock();
     int access;
     ZipEntry *z = ZipFSLookup(path);
-    /* Could a real zip entry or an intermediate directory of a mount point */
-    if (z || ContainsMountPoint(path, -1)) {
-	access = 0;
+    if (z) {
+	/* Currently existing files read/write but dirs are read-only */
+	access = (z->isDirectory && (mode & W_OK)) ? -1 : 0;
     } else {
-	access = -1;
+	if (mode & W_OK) {
+	    access = -1;
+	} else {
+	    /*
+	     * Even if entry does not exist, could be intermediate dir
+	     * containing a mount point
+	     */
+	    access = ContainsMountPoint(path, -1) ? 0 : -1;
+	}
     }
     Unlock();
     return access;
@@ -5284,8 +5492,6 @@ ZipFSMatchInDirectoryProc(
     const char *pattern,	/* What names we are looking for. */
     Tcl_GlobTypeData *types)	/* What types we are looking for. */
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     Tcl_Obj *normPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     int scnt, l, dirOnly = -1, mounts = 0;
     Tcl_Size prefixLen, len, strip = 0;
@@ -5366,6 +5572,8 @@ ZipFSMatchInDirectoryProc(
 	}
     }
 
+    int foundInHash = (z != NULL);
+
     /*
      * We've got to work for our supper and do the actual globbing. And all
      * we've got really is an undifferentiated pile of all the filenames we've
@@ -5385,20 +5593,62 @@ ZipFSMatchInDirectoryProc(
     memcpy(pat + len, pattern, l + 1);
     scnt = CountSlashes(pat);
 
-    for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
-	    hPtr; hPtr = Tcl_NextHashEntry(&search)) {
-	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
+    Tcl_HashTable duplicates;
+    int notDuplicate = 0;
+    Tcl_InitHashTable(&duplicates, TCL_STRING_KEYS);
 
-	if ((dirOnly >= 0) && ((dirOnly && !z->isDirectory)
-		|| (!dirOnly && z->isDirectory))) {
-	    continue;
-	}
-	if ((z->depth == scnt) &&
-	    ((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
-	    && Tcl_StringCaseMatch(z->name, pat, 0)) {
-	    AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    if (foundInHash) {
+	for (hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search); hPtr;
+	     hPtr = Tcl_NextHashEntry(&search)) {
+	    z = (ZipEntry *)Tcl_GetHashValue(hPtr);
+
+	    if ((dirOnly >= 0) && ((dirOnly && !z->isDirectory) ||
+				   (!dirOnly && z->isDirectory))) {
+		continue;
+	    }
+	    if ((z->depth == scnt) &&
+		((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
+		&& Tcl_StringCaseMatch(z->name, pat, 0)) {
+		Tcl_CreateHashEntry(&duplicates, z->name + strip, &notDuplicate);
+		assert(notDuplicate);
+		AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
+	    }
 	}
     }
+    if (dirOnly) {
+	/*
+	 * Not found in hash. May be a path that is the ancestor of a mount.
+	 * e.g. glob //zipfs:/a/? with mount at //zipfs:/a/b/c. Also have
+	 * to be careful about duplicates, such as when another mount is
+	 * //zipfs:/a/b/d
+	 */
+	Tcl_DString ds;
+	Tcl_DStringInit(&ds);
+	for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
+	     hPtr = Tcl_NextHashEntry(&search)) {
+	    ZipFile *zf = (ZipFile *)Tcl_GetHashValue(hPtr);
+	    if (Tcl_StringCaseMatch(zf->mountPoint, pat, 0)) {
+		const char *tail = zf->mountPoint + len;
+		if (*tail == '\0')
+		    continue;
+		const char *end = strchr(tail, '/');
+		Tcl_DStringAppend(&ds,
+				  zf->mountPoint + strip,
+				  end ? (Tcl_Size)(end - zf->mountPoint) : -1);
+		const char *matchedPath = Tcl_DStringValue(&ds);
+		(void)Tcl_CreateHashEntry(
+		    &duplicates, matchedPath, &notDuplicate);
+		if (notDuplicate) {
+		    AppendWithPrefix(
+			result, prefixBuf, matchedPath, Tcl_DStringLength(&ds));
+		}
+		Tcl_DStringFree(&ds);
+	    }
+	}
+    }
+    Tcl_DeleteHashTable(&duplicates);
     Tcl_Free(pat);
 
   end:
@@ -5730,34 +5980,39 @@ ZipFSFileAttrsGetProc(
     path = Tcl_GetStringFromObj(pathPtr, &len);
     ReadLock();
     z = ZipFSLookup(path);
-    if (!z) {
+    if (!z && !ContainsMountPoint(path, -1)) {
 	Tcl_SetErrno(ENOENT);
 	ZIPFS_POSIX_ERROR(interp, "file not found");
 	ret = TCL_ERROR;
 	goto done;
     }
+    /* z == NULL for intermediate directories that are ancestors of mounts */
     switch (index) {
     case ZIP_ATTR_UNCOMPSIZE:
-	TclNewIntObj(*objPtrRef, z->numBytes);
+	TclNewIntObj(*objPtrRef, z ? z->numBytes : 0);
 	break;
     case ZIP_ATTR_COMPSIZE:
-	TclNewIntObj(*objPtrRef, z->numCompressedBytes);
+	TclNewIntObj(*objPtrRef, z ? z->numCompressedBytes : 0);
 	break;
     case ZIP_ATTR_OFFSET:
-	TclNewIntObj(*objPtrRef, z->offset);
+	TclNewIntObj(*objPtrRef, z ? z->offset : 0);
 	break;
     case ZIP_ATTR_MOUNT:
-	*objPtrRef = Tcl_NewStringObj(z->zipFilePtr->mountPoint,
-		z->zipFilePtr->mountPointLen);
+	if (z) {
+	    *objPtrRef = Tcl_NewStringObj(z->zipFilePtr->mountPoint,
+					  z->zipFilePtr->mountPointLen);
+	} else {
+	    *objPtrRef = Tcl_NewStringObj("", 0);
+	}
 	break;
     case ZIP_ATTR_ARCHIVE:
-	*objPtrRef = Tcl_NewStringObj(z->zipFilePtr->name, -1);
+	*objPtrRef = Tcl_NewStringObj(z ? z->zipFilePtr->name : "", -1);
 	break;
     case ZIP_ATTR_PERMISSIONS:
 	*objPtrRef = Tcl_NewStringObj("0o555", -1);
 	break;
     case ZIP_ATTR_CRC:
-	TclNewIntObj(*objPtrRef, z->crc32);
+	TclNewIntObj(*objPtrRef, z ? z->crc32 : 0);
 	break;
     default:
 	ZIPFS_ERROR(interp, "unknown attribute");
@@ -6082,53 +6337,53 @@ ZipfsAppHookFindTclInit(
 }
 #endif
 
-static void
-ZipfsExitHandler(
-    TCL_UNUSED(void *)
-)
+void TclZipfsFinalize(void)
 {
+    /*
+     * Finalization steps:
+     * For every mounted archive, if it no longer has any open handles
+     * clean up the mount and associated zip file entries.
+     * If there are no more mounted archives, clean up and free the
+     * ZipFS.fileHash and ZipFS.zipHash tables.
+     */
+    WriteLock();
+    if (!ZipFS.initialized) {
+	Unlock();
+	return;
+    }
+
     Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    if (ZipFS.initialized != -1) {
-	hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
-	if (hPtr == NULL) {
-	    ZipfsFinalize();
-	} else {
-	    /* ZipFS.fallbackEntryEncoding was already freed by
-	     * ZipfsMountExitHandler
-	    */
+    Tcl_HashSearch zipSearch;
+    for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &zipSearch); hPtr;
+	    hPtr = Tcl_NextHashEntry(&zipSearch)) {
+	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+	if (zf->numOpen == 0) {
+	    Tcl_DeleteHashEntry(hPtr);
+	    CleanupMount(zf);
+	    ZipFSCloseArchive(NULL, zf);
+	    Tcl_Free(zf);
 	}
     }
-}
-
-static void
-ZipfsFinalize(void) {
-    Tcl_FSUnregister(&zipfsFilesystem);
-    Tcl_DeleteHashTable(&ZipFS.fileHash);
-    Tcl_Free(ZipFS.fallbackEntryEncoding);
-    ZipFS.initialized = -1;
-}
-
-static void
-ZipfsMountExitHandler(
-    void *clientData)
-{
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
 
-    ZipFile *zf = (ZipFile *) clientData;
-
-    if (TCL_OK != TclZipfs_Unmount(NULL, zf->mountPoint)) {
-	Tcl_Panic("tried to unmount busy filesystem");
-    }
-
-    hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
+    hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &zipSearch);
     if (hPtr == NULL) {
-	ZipfsFinalize();
+	hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &zipSearch);
+	if (hPtr == NULL) {
+	    /* Both hash tables empty. Free all resources */
+	    Tcl_FSUnregister(&zipfsFilesystem);
+	    Tcl_DeleteHashTable(&ZipFS.fileHash);
+	    Tcl_DeleteHashTable(&ZipFS.zipHash);
+	    if (ZipFS.fallbackEntryEncoding) {
+		Tcl_Free(ZipFS.fallbackEntryEncoding);
+		ZipFS.fallbackEntryEncoding = NULL;
+	    }
+	    ZipFS.initialized = 0;
+	}
     }
 
+    Unlock();
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *

@@ -1305,8 +1305,7 @@ DdeObjCmd(
     Tcl_Obj *const *objv)	/* The arguments */
 {
     static const char *const ddeCommands[] = {
-	"servername", "execute", "poke", "request", "services", "eval",
-	(char *) NULL};
+	"servername", "execute", "poke", "request", "services", "eval", NULL};
     enum DdeSubcommands {
 	DDE_SERVERNAME, DDE_EXECUTE, DDE_POKE, DDE_REQUEST, DDE_SERVICES,
 	DDE_EVAL

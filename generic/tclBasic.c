@@ -64,6 +64,41 @@
 #endif /* !TCL_FPCLASSIFY_MODE */
 
 
+/*
+ * Bug 7371b6270b: to check C call stack depth, prefer an approach which is
+ * compatible with AddressSanitizer (ASan) use-after-return detection.
+ */
+
+#if defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+#include <intrin.h> /* for _AddressOfReturnAddress() */
+#endif
+
+/*
+ * As suggested by
+ * https://clang.llvm.org/docs/LanguageExtensions.html#has-builtin
+ */
+#ifndef __has_builtin
+#define __has_builtin(x) 0 /* for non-clang compilers */
+#endif
+
+void *
+TclGetCStackPtr(void)
+{
+#if defined( __GNUC__ ) || __has_builtin(__builtin_frame_address)
+  return __builtin_frame_address(0);
+#elif defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+  return _AddressOfReturnAddress();
+#else
+  ptrdiff_t unused = 0;
+  /*
+   * LLVM recommends using volatile:
+   * https://github.com/llvm/llvm-project/blob/llvmorg-10.0.0-rc1/clang/lib/Basic/Stack.cpp#L31
+   */
+  ptrdiff_t *volatile stackLevel = &unused;
+  return (void *)stackLevel;
+#endif
+}
+
 #define INTERP_STACK_INITIAL_SIZE 2000
 #define CORO_STACK_INITIAL_SIZE    200
 
@@ -178,8 +213,6 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
-static Tcl_CmdProc InvokeObjectCommand;
-
 
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
@@ -1033,8 +1066,8 @@ Tcl_CreateInterp(void)
      * but no Tcl_ObjCmdProc2, set the Tcl_ObjCmdProc2 to
      * InvokeStringCommand. This is an object-based wrapper function that
      * extracts strings, calls the string function, and creates an object for
-     * the result. Similarly, if a command has a Tcl_ObjCmdProc2 but no
-     * Tcl_CmdProc, set the Tcl_CmdProc to InvokeObjectCommand.
+     * the result. If a command has a Tcl_ObjCmdProc2 but no
+     * Tcl_CmdProc, set the Tcl_CmdProc to NULL.
      */
 
     for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
@@ -1053,7 +1086,7 @@ Tcl_CreateInterp(void)
 	    cmdPtr->refCount = 1;
 	    cmdPtr->cmdEpoch = 0;
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
-	    cmdPtr->proc = InvokeObjectCommand;
+	    cmdPtr->proc = NULL;
 	    cmdPtr->clientData = cmdPtr;
 	    cmdPtr->objProc2 = cmdInfoPtr->objProc;
 	    cmdPtr->objClientData2 = NULL;
@@ -2881,7 +2914,7 @@ TclCreateObjCommandInNs(
     cmdPtr->compileProc = NULL;
     cmdPtr->objProc2 = proc;
     cmdPtr->objClientData2 = clientData;
-    cmdPtr->proc = InvokeObjectCommand;
+    cmdPtr->proc = NULL;
     cmdPtr->clientData = cmdPtr;
     cmdPtr->deleteProc = deleteProc;
     cmdPtr->deleteData = clientData;
@@ -2970,78 +3003,6 @@ InvokeStringCommand(
     result = cmdPtr->proc(cmdPtr->clientData, interp, objc, argv);
 
     TclStackFree(interp, (void *) argv);
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InvokeObjectCommand --
- *
- *	"Wrapper" Tcl_CmdProc used to call an existing object-based
- *	Tcl_ObjCmdProc2 if no string-based function exists for a command. A
- *	pointer to this function is stored as the Tcl_CmdProc in a Command
- *	structure. It simply turns around and calls the object Tcl_ObjCmdProc2
- *	in the Command structure.
- *
- * Results:
- *	A standard Tcl result value.
- *
- * Side effects:
- *	Besides those side effects of the called Tcl_ObjCmdProc2,
- *	InvokeObjectCommand allocates and frees storage.
- *
- *----------------------------------------------------------------------
- */
-
-int
-InvokeObjectCommand(
-    void *clientData,	/* Points to command's Command structure. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)	/* Argument strings. */
-{
-    Command *cmdPtr = ( Command *) clientData;
-    Tcl_Obj *objPtr;
-    int i, length, result;
-    Tcl_Obj **objv;
-
-    if (argc < 0) {
-	argc = TCL_INDEX_NONE; /* Make sure any invalid argc is handled as TCL_INDEX_NONE */
-	objv = NULL;
-    } else {
-	objv = (Tcl_Obj **) TclStackAlloc(interp, (argc * sizeof(Tcl_Obj *)));
-    }
-    for (i = 0; i < argc; i++) {
-	length = strlen(argv[i]);
-	TclNewStringObj(objPtr, argv[i], length);
-	Tcl_IncrRefCount(objPtr);
-	objv[i] = objPtr;
-    }
-
-    /*
-     * Invoke the command's object-based Tcl_ObjCmdProc2.
-     */
-
-    if (cmdPtr->objProc2 != NULL) {
-	result = cmdPtr->objProc2(cmdPtr->objClientData2, interp, argc, objv);
-    } else {
-	result = Tcl_NRCallObjProc2(interp, cmdPtr->nreProc2,
-		cmdPtr->objClientData2, argc, objv);
-    }
-
-    /*
-     * Decrement the ref counts for the argument objects created above, then
-     * free the objv array if malloc'ed storage was used.
-     */
-
-    for (i = 0; i < argc; i++) {
-	objPtr = objv[i];
-	Tcl_DecrRefCount(objPtr);
-    }
-    if (objv != NULL) {
-	TclStackFree(interp, objv);
-    }
     return result;
 }
 
@@ -5199,18 +5160,18 @@ TclEvalEx(
 {
     Interp *iPtr = (Interp *) interp;
     const char *p, *next;
-    const unsigned int minObjs = 20;
+    const int minObjs = 20;
     Tcl_Obj **objv, **objvSpace;
     int *expand;
     Tcl_Size *lines, *lineSpace;
     Tcl_Token *tokenPtr;
-    int bytesLeft, expandRequested, code = TCL_OK;
-    Tcl_Size commandLength;
+    int expandRequested, code = TCL_OK;
+    Tcl_Size bytesLeft, commandLength;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
     int gotParse = 0;
-    TCL_HASH_TYPE i, objectsUsed = 0;
+    Tcl_Size i, objectsUsed = 0;
 				/* These variables keep track of how much
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed
@@ -5348,8 +5309,8 @@ TclEvalEx(
 	    Tcl_Size wordLine = line;
 	    const char *wordStart = parsePtr->commandStart;
 	    Tcl_Size *wordCLNext = clNext;
-	    unsigned int objectsNeeded = 0;
-	    unsigned int numWords = parsePtr->numWords;
+	    Tcl_Size objectsNeeded = 0;
+	    Tcl_Size numWords = parsePtr->numWords;
 
 	    /*
 	     * Generate an array of objects for the words of the command.
@@ -9232,6 +9193,7 @@ TclNRCoroutineActivateCallback(
     TCL_UNUSED(int) /*result*/)
 {
     CoroutineData *corPtr = (CoroutineData *)data[0];
+    void *stackLevel = TclGetCStackPtr();
 
     if (!corPtr->stackLevel) {
         /*
@@ -9248,7 +9210,7 @@ TclNRCoroutineActivateCallback(
          * the interp's environment to make it suitable to run this coroutine.
          */
 
-        corPtr->stackLevel = &corPtr;
+        corPtr->stackLevel = stackLevel;
         Tcl_Size numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = iPtr->numLevels;
 
@@ -9262,7 +9224,7 @@ TclNRCoroutineActivateCallback(
          * Coroutine is active: yield
          */
 
-        if (corPtr->stackLevel != &corPtr) {
+        if (corPtr->stackLevel != stackLevel) {
 	    NRE_callback *runPtr;
 
 	    iPtr->execEnvPtr = corPtr->callerEEPtr;

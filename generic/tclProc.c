@@ -47,8 +47,6 @@ static void		MakeProcError(Tcl_Interp *interp,
 static void		MakeLambdaError(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static Tcl_ObjCmdProc2 NRInterpProc2;
-
 
 static Tcl_NRPostProc ApplyNR2;
 static Tcl_NRPostProc InterpProcNR2;
@@ -210,7 +208,7 @@ Tcl_ProcObjCmd(
     }
 
     cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
-	TclObjInterpProc2, NRInterpProc2, procPtr, TclProcDeleteProc);
+	TclObjInterpProc2, TclNRInterpProc, procPtr, TclProcDeleteProc);
 
     /*
      * Now initialize the new procedure's cmdPtr field. This will be used
@@ -1585,7 +1583,7 @@ TclPushProcCallFrame(
 /*
  *----------------------------------------------------------------------
  *
- * TclObjInterpProc2/NRInterpProc2 --
+ * TclObjInterpProc2/TclNRInterpProc --
  *
  *	When a Tcl procedure gets invoked during bytecode evaluation, this
  *	object-based routine gets invoked to interpret the procedure.
@@ -1613,11 +1611,11 @@ TclObjInterpProc2(
      * Not used much in the core; external interface for iTcl
      */
 
-    return Tcl_NRCallObjProc2(interp, NRInterpProc2, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRInterpProc, clientData, objc, objv);
 }
 
 int
-NRInterpProc2(
+TclNRInterpProc(
     void *clientData,	/* Record describing procedure to be
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was
@@ -2282,12 +2280,6 @@ TclUpdateReturnInfo(
  *----------------------------------------------------------------------
  */
 
-Tcl_ObjCmdProc2 *
-TclGetObjInterpProc2(void)
-{
-    return TclObjInterpProc2;
-}
-
 #ifndef TCL_NO_DEPRECATED
 Tcl_ObjCmdProc *
 TclGetObjInterpProc(void)
@@ -2296,6 +2288,12 @@ TclGetObjInterpProc(void)
 }
 #endif /* TCL_NO_DEPRECATED */
 
+Tcl_ObjCmdProc2 *
+TclGetObjInterpProc2(void)
+{
+    return TclObjInterpProc2;
+}
+
 /*
  *----------------------------------------------------------------------
  *

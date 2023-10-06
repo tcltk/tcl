@@ -6270,8 +6270,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'm') && (strncmp(cmdName, "mremove-rd", len) == 0)) {
         if (argc != 3) {
-            Tcl_AppendResult(interp, "channel name required",
-                    (char *) NULL);
+            Tcl_AppendResult(interp, "channel name required", NULL);
             return TCL_ERROR;
         }
 
@@ -6280,8 +6279,7 @@ TestChannelCmd(
 
     if ((cmdName[0] == 'm') && (strncmp(cmdName, "mremove-wr", len) == 0)) {
         if (argc != 3) {
-            Tcl_AppendResult(interp, "channel name required",
-                    (char *) NULL);
+            Tcl_AppendResult(interp, "channel name required", NULL);
             return TCL_ERROR;
         }
 
@@ -7871,22 +7869,22 @@ NREUnwind_callback(
     Tcl_Interp *interp,
     TCL_UNUSED(int) /*result*/)
 {
-    int none;
+    void *cStackPtr = TclGetCStackPtr();
 
     if (data[0] == INT2PTR(-1)) {
-        Tcl_NRAddCallback(interp, NREUnwind_callback, &none, INT2PTR(-1),
+        Tcl_NRAddCallback(interp, NREUnwind_callback, cStackPtr, INT2PTR(-1),
                 INT2PTR(-1), NULL);
     } else if (data[1] == INT2PTR(-1)) {
-        Tcl_NRAddCallback(interp, NREUnwind_callback, data[0], &none,
+        Tcl_NRAddCallback(interp, NREUnwind_callback, data[0], cStackPtr,
                 INT2PTR(-1), NULL);
     } else if (data[2] == INT2PTR(-1)) {
         Tcl_NRAddCallback(interp, NREUnwind_callback, data[0], data[1],
-                &none, NULL);
+                cStackPtr, NULL);
     } else {
         Tcl_Obj *idata[3];
         idata[0] = Tcl_NewWideIntObj(((char *) data[1] - (char *) data[0]));
         idata[1] = Tcl_NewWideIntObj(((char *) data[2] - (char *) data[0]));
-        idata[2] = Tcl_NewWideIntObj(((char *) &none   - (char *) data[0]));
+        idata[2] = Tcl_NewWideIntObj(((char *) cStackPtr - (char *) data[0]));
         Tcl_SetObjResult(interp, Tcl_NewListObj(3, idata));
     }
     return TCL_OK;
@@ -7925,10 +7923,10 @@ TestNRELevels(
     NRE_callback *cbPtr = iPtr->execEnvPtr->callbackPtr;
 
     if (refDepth == NULL) {
-	refDepth = &depth;
+	refDepth = (ptrdiff_t *)TclGetCStackPtr();
     }
 
-    depth = (refDepth - &depth);
+    depth = (refDepth - (ptrdiff_t *)TclGetCStackPtr());
 
     levels[0] = Tcl_NewWideIntObj(depth);
     levels[1] = Tcl_NewWideIntObj(iPtr->numLevels);

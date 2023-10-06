@@ -513,7 +513,7 @@ static const TclIntStubs tclIntStubs = {
     TclNewProcBodyObj, /* 61 */
     TclObjCommandComplete, /* 62 */
     0, /* 63 */
-    0, /* 64 */
+    TclObjInvoke, /* 64 */
     0, /* 65 */
     0, /* 66 */
     0, /* 67 */
@@ -668,11 +668,11 @@ static const TclIntStubs tclIntStubs = {
     TclStackFree, /* 216 */
     TclPushStackFrame, /* 217 */
     TclPopStackFrame, /* 218 */
-    0, /* 219 */
+    TclpCreateTemporaryDirectory, /* 219 */
     0, /* 220 */
-    0, /* 221 */
-    0, /* 222 */
-    0, /* 223 */
+    TclListTestObj, /* 221 */
+    TclListObjValidate, /* 222 */
+    TclGetCStackPtr, /* 223 */
     TclGetPlatform, /* 224 */
     TclTraceDictPath, /* 225 */
     TclObjBeingDeleted, /* 226 */
@@ -687,7 +687,7 @@ static const TclIntStubs tclIntStubs = {
     TclInitVarHashTable, /* 235 */
     0, /* 236 */
     TclResetCancellation, /* 237 */
-    0, /* 238 */
+    TclNRInterpProc, /* 238 */
     TclNRInterpProcCore, /* 239 */
     TclNRRunCallbacks, /* 240 */
     TclNREvalObjEx, /* 241 */
@@ -707,10 +707,10 @@ static const TclIntStubs tclIntStubs = {
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
-    TclpCreateTemporaryDirectory, /* 258 */
+    0, /* 258 */
     0, /* 259 */
-    TclListTestObj, /* 260 */
-    TclListObjValidate, /* 261 */
+    0, /* 260 */
+    TclUnusedStubEntry, /* 261 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

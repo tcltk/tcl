@@ -3418,8 +3418,6 @@ MODULE_SCOPE int	TclObjInterpProc2(void *clientData,
 				Tcl_Obj *const objv[]);
 #define TclObjInterpProc TclGetObjInterpProc()
 #define TclObjInterpProc2 TclGetObjInterpProc2()
-MODULE_SCOPE int		TclObjInvoke(Tcl_Interp *interp, Tcl_Size objc,
-				Tcl_Obj *const objv[], int flags);
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    Tcl_Size objc, Tcl_Obj *const objv[],
 			    Tcl_Namespace *nsPtr, int flags);
@@ -3608,8 +3606,9 @@ MODULE_SCOPE void *	TclpThreadGetGlobalTSD(void *tsdKeyPtr);
 MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
 			    const char *msg, Tcl_Size length);
 /* Tip 430 */
-MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
-MODULE_SCOPE int    TclIsZipfsPath(const char *path);
+MODULE_SCOPE int	TclZipfs_Init(Tcl_Interp *interp);
+MODULE_SCOPE int	TclIsZipfsPath(const char *path);
+MODULE_SCOPE void	TclZipfsFinalize(void);
 
 /*
  * Many parsing tasks need a common definition of whitespace.
