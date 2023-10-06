@@ -213,7 +213,6 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
-static Tcl_CmdProc InvokeObjectCommand;
 
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
@@ -1072,8 +1071,8 @@ Tcl_CreateInterp(void)
      * but no Tcl_ObjCmdProc, set the Tcl_ObjCmdProc to
      * InvokeStringCommand. This is an object-based wrapper function that
      * extracts strings, calls the string function, and creates an object for
-     * the result. Similarly, if a command has a Tcl_ObjCmdProc but no
-     * Tcl_CmdProc, set the Tcl_CmdProc to InvokeObjectCommand.
+     * the result. If a command has a Tcl_ObjCmdProc but no
+     * Tcl_CmdProc, set the Tcl_CmdProc to NULL.
      */
 
     for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
@@ -1092,7 +1091,7 @@ Tcl_CreateInterp(void)
 	    cmdPtr->refCount = 1;
 	    cmdPtr->cmdEpoch = 0;
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
-	    cmdPtr->proc = InvokeObjectCommand;
+	    cmdPtr->proc = NULL;
 	    cmdPtr->clientData = cmdPtr;
 	    cmdPtr->objProc = cmdInfoPtr->objProc;
 	    cmdPtr->objClientData = NULL;
@@ -2912,7 +2911,7 @@ TclCreateObjCommandInNs(
     cmdPtr->compileProc = NULL;
     cmdPtr->objProc = proc;
     cmdPtr->objClientData = clientData;
-    cmdPtr->proc = InvokeObjectCommand;
+    cmdPtr->proc = NULL;
     cmdPtr->clientData = cmdPtr;
     cmdPtr->deleteProc = deleteProc;
     cmdPtr->deleteData = clientData;
@@ -2995,71 +2994,6 @@ InvokeStringCommand(
     result = cmdPtr->proc(cmdPtr->clientData, interp, objc, argv);
 
     TclStackFree(interp, (void *) argv);
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InvokeObjectCommand --
- *
- *	"Wrapper" Tcl_CmdProc used to call an existing object-based
- *	Tcl_ObjCmdProc if no string-based function exists for a command. A
- *	pointer to this function is stored as the Tcl_CmdProc in a Command
- *	structure. It simply turns around and calls the object Tcl_ObjCmdProc
- *	in the Command structure.
- *
- * Results:
- *	A standard Tcl result value.
- *
- * Side effects:
- *	Besides those side effects of the called Tcl_ObjCmdProc,
- *	InvokeObjectCommand allocates and frees storage.
- *
- *----------------------------------------------------------------------
- */
-
-int
-InvokeObjectCommand(
-    void *clientData,	/* Points to command's Command structure. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)	/* Argument strings. */
-{
-    Command *cmdPtr = ( Command *) clientData;
-    Tcl_Obj *objPtr;
-    int i, length, result;
-    Tcl_Obj **objv = (Tcl_Obj **)
-	    TclStackAlloc(interp, (argc * sizeof(Tcl_Obj *)));
-
-    for (i = 0; i < argc; i++) {
-	length = strlen(argv[i]);
-	TclNewStringObj(objPtr, argv[i], length);
-	Tcl_IncrRefCount(objPtr);
-	objv[i] = objPtr;
-    }
-
-    /*
-     * Invoke the command's object-based Tcl_ObjCmdProc.
-     */
-
-    if (cmdPtr->objProc != NULL) {
-	result = cmdPtr->objProc(cmdPtr->objClientData, interp, argc, objv);
-    } else {
-	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
-		cmdPtr->objClientData, argc, objv);
-    }
-
-    /*
-     * Decrement the ref counts for the argument objects created above, then
-     * free the objv array if malloc'ed storage was used.
-     */
-
-    for (i = 0; i < argc; i++) {
-	objPtr = objv[i];
-	Tcl_DecrRefCount(objPtr);
-    }
-    TclStackFree(interp, objv);
     return result;
 }
 
