@@ -137,14 +137,15 @@ declare 46 {
 declare 51 {
     int TclInterpInit(Tcl_Interp *interp)
 }
-declare 53 {
-    int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
-	    int argc, const char **argv)
-}
-declare 54 {
-    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
-}
+# Removed in 9.0
+#declare 53 {
+#    int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
+#	    Tcl_Size argc, const char **argv)
+#}
+#declare 54 {
+#    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
+#	    Tcl_Size objc, Tcl_Obj *const objv[])
+#}
 declare 55 {
     Proc *TclIsProc(Command *cmdPtr)
 }
@@ -162,6 +163,11 @@ declare 61 {
 declare 62 {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
+# Removed in 9.0:
+#declare 63 {
+#    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
+#	    Tcl_Size objc, Tcl_Obj *const objv[])
+#}
 declare 64 {
     int TclObjInvoke(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	    int flags)
