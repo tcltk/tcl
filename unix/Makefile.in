@@ -878,9 +878,14 @@ topDirName:
 # tcltest executable gets the build directory burned into its ld search path.
 # This keeps tcltest from picking up an already installed version of the Tcl
 # library.
+ifeq ($(ZIPFS_BUILD), 0)
 SHELL_ENV =	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@} \
 		TCLLIBPATH="@abs_builddir@/pkgs" \
 		TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"
+else
+SHELL_ENV =	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@} \
+		TCLLIBPATH="@abs_builddir@/pkgs"
+endif
 
 ${TCLTEST_EXE}: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${BUILD_DLTEST}
 	$(MAKE) tcltest-real LIB_RUNTIME_DIR="`pwd`"
