@@ -5804,7 +5804,7 @@ ZipFSPathInFilesystemProc(
 	return -1;
     }
     path = TclGetStringFromObj(pathPtr, &len);
-    
+
     /*
      * Claim any path under ZIPFS_VOLUME as ours. This is both a necessary
      * and sufficient condition as zipfs mounts at arbitrary paths are
