@@ -19,7 +19,6 @@ if {"::tcltest" ni [namespace children]} {
 source [file join [file dirname [info script]] tcltests.tcl]
 
 testConstraint zipfs [expr {[llength [info commands zipfs]]}]
-testConstraint zipfslib 1
 
 
 set ziproot [zipfs root]
@@ -34,20 +33,15 @@ test zipfs-0.1 {zipfs basics} -constraints zipfs -body {
     expr {${ziproot} in [file volumes]}
 } -result 1
 
-if {![string match ${ziproot}* $tcl_library]} {
-    ###
-    # "make test" does not map tcl_library from the dynamic library on Unix
-    #
-    # Hack the environment to pretend we did pull tcl_library from a zip
-    # archive
-    ###
-    set tclzip [file join $CWD libtcl[info patchlevel].zip]
-    testConstraint zipfslib [file isfile $tclzip]
-    if {[testConstraint zipfslib]} {
-        zipfs mount $tclzip /lib/tcl
-        set ::tcl_library ${ziproot}lib/tcl/tcl_library
-    }
+if {[string match ${ziproot}* $tcl_library]} {
+    testConstraint zipfslib 1
+    set zipLibTop [file tail [file join {*}[lrange [file split $tcl_library] 0 1]]]
+} else {
+    set zipLibTop ""
 }
+puts M:[zipfs mount]
+puts L:$tcl_library
+puts C:[testConstraint zipfslib]
 
 test zipfs-0.2 {zipfs basics} -constraints zipfslib -body {
     string match ${ziproot}* $tcl_library
@@ -1431,15 +1425,15 @@ namespace eval test_ns_zipfs {
 
     # NOTE: test root mounts separately because some bugs only showed up on these
     set rootMounts [list test.zip /]
-    testzipfsglob root-1           $rootMounts [list [zipfs root]*]              [zipfspaths lib test testdir] -constraints zipfslib
+    testzipfsglob root-1           $rootMounts [list [zipfs root]*]              [zipfspaths $::zipLibTop test testdir] -constraints zipfslib
     testzipfsglob root-2           $rootMounts [list [zipfs root]*]              [zipfspaths test testdir] -constraints !zipfslib
     testzipfsglob root-pat         $rootMounts [list [zipfs root]t*d*]           [zipfspaths testdir]
     testzipfsglob root-deep        $rootMounts [list [zipfs root]tes*/*]         [zipfspaths testdir/test2]
-    testzipfsglob root-dir-1       $rootMounts [list -directory [zipfs root] *]  [zipfspaths lib test testdir] -constraints zipfslib
+    testzipfsglob root-dir-1       $rootMounts [list -directory [zipfs root] *]  [zipfspaths $::zipLibTop test testdir] -constraints zipfslib
     testzipfsglob root-dir-2       $rootMounts [list -directory [zipfs root] *]  [zipfspaths test testdir] -constraints !zipfslib
-    testzipfsglob root-dir-tails-1 $rootMounts [list -tails -dir [zipfs root] *] [list lib test testdir] -constraints zipfslib
+    testzipfsglob root-dir-tails-1 $rootMounts [list -tails -dir [zipfs root] *] [list $::zipLibTop test testdir] -constraints zipfslib
     testzipfsglob root-dir-tails-2 $rootMounts [list -tails -dir [zipfs root] *] [list test testdir] -constraints !zipfslib
-    testzipfsglob root-type-d-1    $rootMounts [list -type d [zipfs root]*]      [zipfspaths lib testdir] -constraints zipfslib
+    testzipfsglob root-type-d-1    $rootMounts [list -type d [zipfs root]*]      [zipfspaths $::zipLibTop testdir] -constraints zipfslib
     testzipfsglob root-type-d-2    $rootMounts [list -type d [zipfs root]*]      [zipfspaths testdir] -constraints !zipfslib
     testzipfsglob root-type-f      $rootMounts [list -type f [zipfs root]*]      [zipfspaths test]
     testzipfsglob root-path        $rootMounts [list -path [zipfs root]t *d*]    [zipfspaths testdir]
@@ -1449,7 +1443,7 @@ namespace eval test_ns_zipfs {
     # glob operations on intermediate directories (mezzo) in mount
     # paths is another source of bugs
     set mezzoMounts [list test.zip $defMountPt/a/b test-overlay.zip $defMountPt/a/c]
-    testzipfsglob mezzo-root-1           $mezzoMounts [list [zipfs root]*]   [list [zipfs root]lib $defMountPt] -constraints zipfslib
+    testzipfsglob mezzo-root-1           $mezzoMounts [list [zipfs root]*]   [zipfspaths $::zipLibTop $defMountPt] -constraints zipfslib
     testzipfsglob mezzo-root-2           $mezzoMounts [list [zipfs root]*]   [list $defMountPt] -constraints !zipfslib
     testzipfsglob mezzo-mountgrandparent $mezzoMounts [list $defMountPt/*]   [list $defMountPt/a]
     testzipfsglob mezzo-mountparent      $mezzoMounts [list $defMountPt/a/*] [zipfspathsmt $defMountPt/a b c]
