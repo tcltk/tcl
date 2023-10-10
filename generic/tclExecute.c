@@ -635,7 +635,7 @@ static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    ByteCode *codePtr, Tcl_Size *lengthPtr,
 			    const unsigned char **pcBeg, Tcl_Size *cmdIdxPtr);
-static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, TCL_HASH_TYPE growth,
+static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, size_t growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj *opndPtr);
@@ -643,8 +643,8 @@ static void		InitByteCodeExecution(Tcl_Interp *interp);
 static inline int	wordSkip(void *ptr);
 static void		ReleaseDictIterator(Tcl_Obj *objPtr);
 /* Useful elsewhere, make available in tclInt.h or stubs? */
-static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, TCL_HASH_TYPE numWords);
-static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, TCL_HASH_TYPE numWords);
+static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, size_t numWords);
+static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, size_t numWords);
 static Tcl_NRPostProc	CopyCallback;
 static Tcl_NRPostProc	ExprObjCallback;
 static Tcl_NRPostProc	FinalizeOONext;
@@ -792,7 +792,7 @@ ExecEnv *
 TclCreateExecEnv(
     Tcl_Interp *interp,		/* Interpreter for which the execution
 				 * environment is being created. */
-    TCL_HASH_TYPE size)		/* The initial stack size, in number of words
+    size_t size)		/* The initial stack size, in number of words
 				 * [sizeof(Tcl_Obj*)] */
 {
     ExecEnv *eePtr = (ExecEnv *)Tcl_Alloc(sizeof(ExecEnv));
@@ -974,12 +974,12 @@ static Tcl_Obj **
 GrowEvaluationStack(
     ExecEnv *eePtr,		/* Points to the ExecEnv with an evaluation
 				 * stack to enlarge. */
-    TCL_HASH_TYPE growth1,		/* How much larger than the current used
+    size_t growth1,		/* How much larger than the current used
 				 * size. */
     int move)			/* 1 if move words since last marker. */
 {
     ExecStack *esPtr = eePtr->execStackPtr, *oldPtr = NULL;
-    TCL_HASH_TYPE newBytes;
+    size_t newBytes;
     Tcl_Size growth = growth1;
     Tcl_Size newElems, currElems, needed = growth - (esPtr->endPtr - esPtr->tosPtr);
     Tcl_Obj **markerPtr = esPtr->markerPtr, **memStart;
@@ -1126,7 +1126,7 @@ GrowEvaluationStack(
 static Tcl_Obj **
 StackAllocWords(
     Tcl_Interp *interp,
-    TCL_HASH_TYPE numWords)
+    size_t numWords)
 {
     /*
      * Note that GrowEvaluationStack sets a marker in the stack. This marker
@@ -1144,7 +1144,7 @@ StackAllocWords(
 static Tcl_Obj **
 StackReallocWords(
     Tcl_Interp *interp,
-    TCL_HASH_TYPE numWords)
+    size_t numWords)
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
@@ -1223,10 +1223,10 @@ TclStackFree(
 void *
 TclStackAlloc(
     Tcl_Interp *interp,
-    TCL_HASH_TYPE numBytes)
+    size_t numBytes)
 {
     Interp *iPtr = (Interp *) interp;
-    TCL_HASH_TYPE numWords;
+    size_t numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return Tcl_Alloc(numBytes);
@@ -1239,13 +1239,13 @@ void *
 TclStackRealloc(
     Tcl_Interp *interp,
     void *ptr,
-    TCL_HASH_TYPE numBytes)
+    size_t numBytes)
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr;
     ExecStack *esPtr;
     Tcl_Obj **markerPtr;
-    TCL_HASH_TYPE numWords;
+    size_t numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return Tcl_Realloc(ptr, numBytes);
@@ -1888,10 +1888,10 @@ TclNRExecuteByteCode(
 {
     Interp *iPtr = (Interp *) interp;
     TEBCdata *TD;
-    TCL_HASH_TYPE size = sizeof(TEBCdata) - 1
+    size_t size = sizeof(TEBCdata) - 1
 	    + (codePtr->maxStackDepth + codePtr->maxExceptDepth)
 		* sizeof(void *);
-    TCL_HASH_TYPE numWords = (size + sizeof(Tcl_Obj *) - 1) / sizeof(Tcl_Obj *);
+    size_t numWords = (size + sizeof(Tcl_Obj *) - 1) / sizeof(Tcl_Obj *);
 
     TclPreserveByteCode(codePtr);
 
@@ -5101,7 +5101,7 @@ TEBCresume(
 
     case INST_LREPLACE4:
 	{
-	TCL_HASH_TYPE numToDelete, numNewElems;
+	size_t numToDelete, numNewElems;
 	int end_indicator;
 	int haveSecondIndex, flags;
 	Tcl_Obj *fromIdxObj, *toIdxObj;
