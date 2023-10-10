@@ -20,10 +20,10 @@
 # or examine Sections 6-8 in rules.vc.
 #
 # Possible values of TARGET are:
-#	release  -- Builds the core, the shell and the dlls. (default)
+#	release  -- Builds everything that ships with a release. (default)
+#	core     -- Builds the core [tclXX.(dll|lib)]
+#	shell    -- Builds tclsh and the core.
 #	dlls     -- Just builds the windows extensions
-#	shell    -- Just builds the shell and the core.
-#	core     -- Only builds the core [tclXX.(dll|lib)].
 #	all      -- Builds everything.
 #	test     -- Builds and runs the test suite.
 #	tcltest  -- Just builds the test shell.
@@ -143,6 +143,13 @@ RCFILE = tcl.rc
 # the build configuration, macros, output directories etc.
 !include "rules.vc"
 
+#
+# The tclsh executable without the embedded libzip. We need this
+# separately from tclsh to have dependency and build order work right.
+# Ditto for the DLL and tcltest
+TCLSHRAW=$(TCLSH:.exe=-raw.exe)
+TCLLIBRAW=$(TCLLIB:.dll=-raw.dll)
+
 # Tcl version info based on macros set up by rules.vc
 DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
 VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
@@ -217,6 +224,7 @@ TCLDDELIBNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
 TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
+TCLTESTRAW	= $(TCLTEST:.exe=-raw.exe)
 
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
@@ -473,15 +481,51 @@ TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
 
 #---------------------------------------------------------------------
 # Project specific targets
+# There are 4 primary build configurations to consider from the combination
+# of static/shared and embed/noembed of the library zip. The targets are
+# done in the following order.
+# $(TCLLIB) - this is either the core static .lib or the .dll. The target
+#             build does not embed the library zip in the DLL irrespective
+#             of the noembed setting. A copy is made as $(TCLLIBRAW)
+#             as the $(TCLLIB) binary is potentially modified later.
+# dlls      - these are the registry and dde DLL's or static libraries
+# $(TCLSH)  - the Tcl shell WITHOUT any embedded zip. This needs $(TCLLIB)
+#             to be built first as it links against it. A copy is made
+#             as $(TCLSHRAW) as $(TCLSH) binary may be modified later.
+# $(TCLSCRIPTZIP) - the zip file that is to be embedded. Note this also
+#             ships separately and needs to be built irrespective of the
+#             whether it is embedded or not. All above targets need to
+#             be built prior as they are used to build the zip (unlike
+#             Unix where the external zip program is used.)
+# core      - this virtual target builds the final release ready Tcl
+#             library. For shared, embedded builds it appends $(TCLSCRIPTZIP)
+#             to the $(TCLLIB). For other build configurations, this
+#             is a no-op.
+# shell     - this virtual target builds the final release ready tclsh shell.
+#             For static, embedded builds it appends $(TCLSCRIPTZIP)
+#             to the $(TCLSH). For other build configurations, this
+#             is a no-op.
+# release   - Everything that builds as part of a release
 #---------------------------------------------------------------------
 
-release:    setup $(TCLSH) $(TCLSTUBLIB) dlls libtclzip embed pkgs
-core:	    setup $(TCLLIB) $(TCLSTUBLIB)
+release:    setup libtclzip core dlls shell pkgs
+all:        setup libtclzip core dlls shell pkgs
+
+core:	    setup $(TCLLIB)
+!if $(TCL_EMBED_SCRIPTS) && !$(STATIC_BUILD)
+core:	    libtclzip
+	@$(COPY) /b "$(TCLLIBRAW)"+"$(TCLSCRIPTZIP)" "$(TCLLIB)"
+!endif
+
 shell:	    setup $(TCLSH)
+!if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
+shell:      libtclzip
+	@$(COPY) /b "$(TCLSHRAW)"+"$(TCLSCRIPTZIP)" "$(TCLSH)"
+!endif
+
 dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
-libtclzip:  core dlls $(TCLSCRIPTZIP)
-all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls libtclzip embed pkgs
-embed:      setup $(TCLSH) $(TCLSTUBLIB) libtclzip
+libtclzip:  $(TCLSCRIPTZIP)
+tbdembed:      setup $(TCLSH) $(TCLSTUBLIB) libtclzip
 !if $(TCL_EMBED_SCRIPTS)
 !if $(STATIC_BUILD)
 	@copy /y /b "$(TCLSH)"+"$(TCLSCRIPTZIP)" "$(TCLSH)"
@@ -491,6 +535,11 @@ embed:      setup $(TCLSH) $(TCLSTUBLIB) libtclzip
 !endif
 
 tcltest:    setup $(TCLTEST) dlls
+!if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
+tcltest:      libtclzip
+	@$(COPY) /b "$(TCLTESTRAW)"+"$(TCLSCRIPTZIP)" "$(TCLTEST)"
+!endif
+
 install:    install-binaries install-libraries install-docs install-pkgs
 !if $(SYMBOLS)
 install:    install-pdbs
@@ -498,7 +547,7 @@ install:    install-pdbs
 setup:      default-setup
 
 test: test-core test-pkgs
-test-core: setup $(TCLTEST) dlls
+test-core: tcltest
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
 		package ifneeded dde 1.4.5 [list load "$(TCLDDELIB:\=/)"]
@@ -509,7 +558,7 @@ runtest: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
 	$(DEBUGGER) $(TCLTEST) $(SCRIPT)
 
-runshell: setup $(TCLSH) dlls
+runshell: setup core shell dlls
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
 	$(DEBUGGER) $(TCLSH) $(SCRIPT)
 
@@ -527,6 +576,9 @@ $(TCLLIB): $(TCLOBJS)
 $**
 <<
 	$(_VC_MANIFEST_EMBED_DLL)
+!if $(TCL_EMBED_SCRIPTS) && !$(STATIC_BUILD)
+	$(COPY) $@ $(TCLLIBRAW)
+!endif
 
 $(TCLIMPLIB): $(TCLLIB)
 
@@ -538,10 +590,17 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
 	$(_VC_MANIFEST_EMBED_EXE)
+!if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
+	$(COPY) $@ $(TCLSHRAW)
+!endif
+
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
 	$(_VC_MANIFEST_EMBED_EXE)
+!if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
+	$(COPY) $@ $(TCLTESTRAW)
+!endif
 
 !if $(STATIC_BUILD)
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
@@ -590,8 +649,9 @@ $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
 	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
 !endif
 
-$(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
-	@echo Building Tcl library zip file
+$(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
+	@echo Building Tcl library zip file $(TCLSCRIPTZIP)
+	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@if exist "$(LIBTCLVFS)" $(RMDIR) "$(LIBTCLVFS)"
 	@$(MKDIR) "$(LIBTCLVFS)"
 	@$(CPYDIR) $(LIBDIR) "$(LIBTCLVFS)\tcl_library"
@@ -609,7 +669,6 @@ $(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
 	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
 	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
 	@cd "$(OUT_DIR)" && $(TCLSH_NATIVE) zipper.tcl
-
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
