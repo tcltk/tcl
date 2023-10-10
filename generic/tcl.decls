@@ -256,7 +256,7 @@ declare 66 {deprecated {No longer in use, changed to macro}} {
 }
 declare 67 {deprecated {No longer in use, changed to macro}} {
     void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,
-	    int length)
+	    Tcl_Size length)
 }
 declare 68 {
     void Tcl_AllowExceptions(Tcl_Interp *interp)
@@ -1267,7 +1267,7 @@ declare 356 {
 }
 declare 357 {deprecated {Use Tcl_EvalTokensStandard}} {
     Tcl_Obj *Tcl_EvalTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-	    int count)
+	    Tcl_Size count)
 }
 declare 358 {
     void Tcl_FreeParse(Tcl_Parse *parsePtr)

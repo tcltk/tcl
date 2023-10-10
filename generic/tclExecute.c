@@ -170,9 +170,8 @@ typedef struct {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
     Tcl_Obj **catchTop;		/* These fields are used on return TO this */
-    Tcl_Obj *auxObjList;	/* this level: they record the state when a */
-    CmdFrame cmdFrame;		/* new codePtr was received for NR */
-                                /* execution. */
+    Tcl_Obj *auxObjList;	/* level: they record the state when a new */
+    CmdFrame cmdFrame;		/* codePtr was received for NR execution. */
     Tcl_Obj *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
 				 * necessary */
@@ -693,7 +692,7 @@ static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    ByteCode *codePtr, Tcl_Size *lengthPtr,
-			    const unsigned char **pcBeg, int *cmdIdxPtr);
+			    const unsigned char **pcBeg, Tcl_Size *cmdIdxPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, TCL_HASH_TYPE growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
@@ -849,7 +848,7 @@ ExecEnv *
 TclCreateExecEnv(
     Tcl_Interp *interp,		/* Interpreter for which the execution
 				 * environment is being created. */
-    Tcl_Size size)			/* The initial stack size, in number of words
+    TCL_HASH_TYPE size)		/* The initial stack size, in number of words
 				 * [sizeof(Tcl_Obj*)] */
 {
     ExecEnv *eePtr = (ExecEnv *)ckalloc(sizeof(ExecEnv));
@@ -1903,10 +1902,10 @@ ArgumentBCEnter(
     ByteCode *codePtr,
     TEBCdata *tdPtr,
     const unsigned char *pc,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj **objv)
 {
-    int cmd;
+    Tcl_Size cmd;
 
     if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
 	TclArgumentBCEnter(interp, objv, objc, codePtr, &tdPtr->cmdFrame, cmd,
@@ -9436,7 +9435,7 @@ IllegalExprOperandType(
 Tcl_Obj *
 TclGetSourceFromFrame(
     CmdFrame *cfPtr,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     if (cfPtr == NULL) {
@@ -9535,7 +9534,7 @@ GetSrcInfoForPc(
     const unsigned char **pcBeg,/* If non-NULL, the bytecode location
 				 * where the current instruction starts.
 				 * If NULL; no pointer is stored. */
-    int *cmdIdxPtr)		/* If non-NULL, the location where the index
+    Tcl_Size *cmdIdxPtr)		/* If non-NULL, the location where the index
 				 * of the command containing the pc should
 				 * be stored. */
 {
@@ -9545,9 +9544,9 @@ GetSrcInfoForPc(
     unsigned char *srcDeltaNext, *srcLengthNext;
     Tcl_Size codeOffset, codeLen, codeEnd, srcOffset, srcLen, delta, i;
     int bestDist = INT_MAX;	/* Distance of pc to best cmd's start pc. */
-    int bestSrcOffset = -1;	/* Initialized to avoid compiler warning. */
-    int bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
-    int bestCmdIdx = -1;
+    Tcl_Size bestSrcOffset = -1;	/* Initialized to avoid compiler warning. */
+    Tcl_Size bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
+    Tcl_Size bestCmdIdx = -1;
 
     /* The pc must point within the bytecode */
     assert ((pcOffset >= 0) && (pcOffset < codePtr->numCodeBytes));

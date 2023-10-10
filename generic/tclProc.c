@@ -34,14 +34,14 @@ typedef struct {
 static void		DupLambdaInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static void		FreeLambdaInternalRep(Tcl_Obj *objPtr);
-static int		InitArgsAndLocals(Tcl_Interp *interp, int skip);
+static int		InitArgsAndLocals(Tcl_Interp *interp, Tcl_Size skip);
 static void		InitResolvedLocals(Tcl_Interp *interp,
 			    ByteCode *codePtr, Var *defPtr,
 			    Namespace *nsPtr);
 static void		InitLocalCache(Proc *procPtr);
 static void		ProcBodyDup(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		ProcBodyFree(Tcl_Obj *objPtr);
-static int		ProcWrongNumArgs(Tcl_Interp *interp, int skip);
+static int		ProcWrongNumArgs(Tcl_Interp *interp, Tcl_Size skip);
 static void		MakeProcError(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static void		MakeLambdaError(Tcl_Interp *interp,
@@ -1061,7 +1061,7 @@ TclIsProc(
 static int
 ProcWrongNumArgs(
     Tcl_Interp *interp,
-    int skip)
+    Tcl_Size skip)
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     Proc *procPtr = framePtr->procPtr;
@@ -1393,7 +1393,7 @@ static int
 InitArgsAndLocals(
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
-    int skip)			/* Number of initial arguments to be skipped,
+    Tcl_Size skip)		/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;

@@ -1057,7 +1057,7 @@ Tcl_ReturnObjCmd(
      */
 
     int explicitResult = (0 == (objc % 2));
-    int numOptionWords = objc - 1 - explicitResult;
+    Tcl_Size numOptionWords = objc - 1 - explicitResult;
 
     if (TCL_ERROR == TclMergeReturnOptions(interp, numOptionWords, objv+1,
 	    &returnOpts, &code, &level)) {
