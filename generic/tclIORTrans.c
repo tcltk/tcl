@@ -421,7 +421,7 @@ static ReflectedTransform * NewReflectedTransform(Tcl_Interp *interp,
 			    Tcl_Obj *cmdpfxObj, int mode, Tcl_Obj *handleObj,
 			    Tcl_Channel parentChan);
 static Tcl_Obj *	NextHandle(void);
-static void		FreeReflectedTransform(ReflectedTransform *rtPtr);
+static Tcl_FreeProc	FreeReflectedTransform;
 static void		FreeReflectedTransformArgs(ReflectedTransform *rtPtr);
 static int		InvokeTclMethod(ReflectedTransform *rtPtr,
 			    const char *method, Tcl_Obj *argOneObj,
@@ -721,7 +721,7 @@ TclChanPushObjCmd(
      * structure.
      */
 
-    Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+    Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
     return TCL_ERROR;
 
 #undef CHAN
@@ -931,7 +931,7 @@ ReflectClose(
 	}
 #endif /* TCL_THREADS */
 
-	Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+	Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
 	return EOK;
     }
 
@@ -948,7 +948,7 @@ ReflectClose(
 #if TCL_THREADS
 	    if (rtPtr->thread != Tcl_GetCurrentThread()) {
 		Tcl_EventuallyFree(rtPtr,
-			(Tcl_FreeProc *) FreeReflectedTransform);
+			FreeReflectedTransform);
 		return errorCode;
 	    }
 #endif /* TCL_THREADS */
@@ -962,7 +962,7 @@ ReflectClose(
 #if TCL_THREADS
 	    if (rtPtr->thread != Tcl_GetCurrentThread()) {
 		Tcl_EventuallyFree(rtPtr,
-			(Tcl_FreeProc *) FreeReflectedTransform);
+			FreeReflectedTransform);
 		return errorCode;
 	    }
 #endif /* TCL_THREADS */
@@ -982,7 +982,7 @@ ReflectClose(
 	ForwardOpToOwnerThread(rtPtr, ForwardedClose, &p);
 	result = p.base.code;
 
-	Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+	Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
 
 	if (result != TCL_OK) {
 	    PassReceivedErrorInterp(interp, &p);
@@ -1041,7 +1041,7 @@ ReflectClose(
 #endif /* TCL_THREADS */
     }
 
-    Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+    Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
     return errorCodeSet ? errorCode : ((result == TCL_OK) ? EOK : EINVAL);
 }
 
@@ -1910,8 +1910,9 @@ FreeReflectedTransformArgs(
 
 static void
 FreeReflectedTransform(
-    ReflectedTransform *rtPtr)
+    char *blockPtr)
 {
+    ReflectedTransform *rtPtr = (ReflectedTransform *) blockPtr;
     TimerKill(rtPtr);
     ResultClear(&rtPtr->result);
 
