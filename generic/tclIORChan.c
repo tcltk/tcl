@@ -448,7 +448,7 @@ static Tcl_Obj *	DecodeEventMask(int mask);
 static ReflectedChannel * NewReflectedChannel(Tcl_Interp *interp,
 			    Tcl_Obj *cmdpfxObj, int mode, Tcl_Obj *handleObj);
 static Tcl_Obj *	NextHandle(void);
-static void		FreeReflectedChannel(ReflectedChannel *rcPtr);
+static Tcl_FreeProc	FreeReflectedChannel;
 static int		InvokeTclMethod(ReflectedChannel *rcPtr,
 			    MethodName method, Tcl_Obj *argOneObj,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
@@ -1230,7 +1230,7 @@ ReflectClose(
 	if (rcPtr->writeTimer != NULL) {
 	    Tcl_DeleteTimerHandler(rcPtr->writeTimer);
 	}
-        Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
+	Tcl_EventuallyFree(rcPtr, FreeReflectedChannel);
 	return EOK;
     }
 
@@ -1305,7 +1305,7 @@ ReflectClose(
     if (rcPtr->writeTimer != NULL) {
 	Tcl_DeleteTimerHandler(rcPtr->writeTimer);
     }
-    Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
+    Tcl_EventuallyFree(rcPtr, FreeReflectedChannel);
     return (result == TCL_OK) ? EOK : EINVAL;
 }
 
@@ -2318,8 +2318,9 @@ NextHandle(void)
 
 static void
 FreeReflectedChannel(
-    ReflectedChannel *rcPtr)
+    void *blockPtr)
 {
+    ReflectedChannel *rcPtr = (ReflectedChannel *) blockPtr;
     Channel *chanPtr = (Channel *) rcPtr->chan;
 
     TclChannelRelease((Tcl_Channel)chanPtr);

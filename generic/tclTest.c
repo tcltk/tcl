@@ -213,7 +213,7 @@ static Tcl_ObjCmdProc	NoopObjCmd;
 static Tcl_CmdObjTraceProc ObjTraceProc;
 static void		ObjTraceDeleteProc(void *clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
-static void		SpecialFree(void *blockPtr);
+static Tcl_FreeProc	SpecialFree;
 static int		StaticInitProc(Tcl_Interp *interp);
 static Tcl_CmdProc	TestasyncCmd;
 static Tcl_ObjCmdProc	TestbumpinterpepochObjCmd;
@@ -2063,7 +2063,11 @@ TestdstringCmd(
  */
 
 static void SpecialFree(
+#if TCL_MAJOR_VERSION > 8
     void *blockPtr			/* Block to free. */
+#else
+    char *blockPtr			/* Block to free. */
+#endif
 ) {
     Tcl_Free(((char *)blockPtr) - 16);
 }
