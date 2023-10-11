@@ -204,7 +204,7 @@ static int		ObjTraceProc(ClientData clientData,
 			    Tcl_Obj *const objv[]);
 static void		ObjTraceDeleteProc(ClientData clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
-static void		SpecialFree(void *blockPtr);
+static Tcl_FreeProc	SpecialFree;
 static int		StaticInitProc(Tcl_Interp *interp);
 static Tcl_CmdProc	TestasyncCmd;
 static Tcl_ObjCmdProc	TestbumpinterpepochObjCmd;
@@ -265,7 +265,7 @@ static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
 			    int length, int *cflagsPtr, int *eflagsPtr);
 static Tcl_ObjCmdProc	TestsaveresultCmd;
-static void		TestsaveresultFree(void *blockPtr);
+static Tcl_FreeProc	TestsaveresultFree;
 static Tcl_CmdProc	TestsetassocdataCmd;
 static Tcl_CmdProc	TestsetCmd;
 static Tcl_CmdProc	Testset2Cmd;
@@ -1764,7 +1764,7 @@ TestdstringCmd(
 	} else if (strcmp(argv[2], "special") == 0) {
 	    char *s = (char *)ckalloc(100) + 16;
 	    strcpy(s, "This is a specially-allocated string");
-	    Tcl_SetResult(interp, s, (Tcl_FreeProc *)(void *)SpecialFree);
+	    Tcl_SetResult(interp, s, SpecialFree);
 	} else {
 	    Tcl_AppendResult(interp, "bad gresult option \"", argv[2],
 		    "\": must be staticsmall, staticlarge, free, or special",
@@ -1811,7 +1811,11 @@ TestdstringCmd(
  */
 
 static void SpecialFree(
+#if TCL_MAJOR_VERSION > 8
     void *blockPtr			/* Block to free. */
+#else
+    char *blockPtr			/* Block to free. */
+#endif
 ) {
     ckfree((char *)blockPtr - 16);
 }
@@ -5428,7 +5432,7 @@ TestsaveresultCmd(
 	break;
     }
     case RESULT_DYNAMIC:
-	Tcl_SetResult(interp, (char *)"dynamic result", (Tcl_FreeProc *)(void *)TestsaveresultFree);
+	Tcl_SetResult(interp, (char *)"dynamic result", TestsaveresultFree);
 	break;
     case RESULT_OBJECT:
 	objPtr = Tcl_NewStringObj("object result", -1);
@@ -5454,7 +5458,7 @@ TestsaveresultCmd(
 
     switch ((enum options) index) {
     case RESULT_DYNAMIC: {
-	int present = iPtr->freeProc == (Tcl_FreeProc *)(void *)TestsaveresultFree;
+	int present = iPtr->freeProc == TestsaveresultFree;
 	int called = freeCount;
 
 	Tcl_AppendElement(interp, called ? "called" : "notCalled");
@@ -5489,7 +5493,11 @@ TestsaveresultCmd(
 
 static void
 TestsaveresultFree(
+#if TCL_MAJOR_VERSION > 8
     void *blockPtr)
+#else
+    char *blockPtr)
+#endif
 {
     freeCount++;
 }
