@@ -161,6 +161,7 @@ static const z_crc_t* crc32tab;
 #define ZIP_COMPMETH_DEFLATED		8
 
 #define ZIP_PASSWORD_END_SIG		0x5a5a4b50
+#define ZIP_CRYPT_HDR_LEN		12
 
 #define ZIP_MAX_FILE_SIZE		INT_MAX
 #define DEFAULT_WRITE_MAX_SIZE		ZIP_MAX_FILE_SIZE
@@ -348,9 +349,11 @@ static void		SerializeLocalEntryHeader(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
 			    ZipEntry *z, int nameLength, int align);
-static int		IsCryptHeaderValid(ZipEntry *z, unsigned char cryptHdr[12]);
+static int		IsCryptHeaderValid(ZipEntry *z,
+			    unsigned char cryptHdr[ZIP_CRYPT_HDR_LEN]);
 static int		DecodeCryptHeader(Tcl_Interp *interp, ZipEntry *z,
-			    unsigned long keys[3], unsigned char cryptHdr[12]);
+			    unsigned long keys[3],
+			    unsigned char cryptHdr[ZIP_CRYPT_HDR_LEN]);
 #if !defined(STATIC_BUILD)
 static int		ZipfsAppHookFindTclInit(const char *archive);
 #endif
@@ -751,7 +754,7 @@ CountSlashes(
  */
 static int IsCryptHeaderValid(
 	ZipEntry *z,
-	unsigned char cryptHeader[12]
+	unsigned char cryptHeader[ZIP_CRYPT_HDR_LEN]
 	)
 {
     /*
@@ -802,7 +805,7 @@ DecodeCryptHeader(Tcl_Interp *interp,
 		  ZipEntry *z,
 		  unsigned long keys[3],/* Updated on success. Must have been
 					   initialized by caller. */
-		  unsigned char cryptHeader[12]) /* From zip file content */
+		  unsigned char cryptHeader[ZIP_CRYPT_HDR_LEN]) /* From zip file content */
 {
     int i;
     int ch;
@@ -816,9 +819,9 @@ DecodeCryptHeader(Tcl_Interp *interp,
     passBuf[i] = '\0';
     init_keys(passBuf, keys, crc32tab);
     memset(passBuf, 0, sizeof(passBuf));
-    unsigned char encheader[12];
-    memcpy(encheader, cryptHeader, 12);
-    for (i = 0; i < 12; i++) {
+    unsigned char encheader[ZIP_CRYPT_HDR_LEN];
+    memcpy(encheader, cryptHeader, ZIP_CRYPT_HDR_LEN);
+    for (i = 0; i < ZIP_CRYPT_HDR_LEN; i++) {
 	ch = cryptHeader[i];
 	ch ^= decrypt_byte(keys, crc32tab);
 	encheader[i] = ch;
@@ -1397,7 +1400,7 @@ ZipFSFindTOC(
     ZipFile *zf)
 {
     size_t i, minoff;
-    const unsigned char *p, *q;
+    const unsigned char *eocdPtr; /* End of Central Directory Record */
     const unsigned char *start = zf->data;
     const unsigned char *end = zf->data + zf->length;
 
@@ -1407,18 +1410,18 @@ ZipFSFindTOC(
      * on the end of executables; digital signatures can also go there.
      */
 
-    p = zf->data + zf->length - ZIP_CENTRAL_END_LEN;
-    while (p >= start) {
-	if (*p == (ZIP_CENTRAL_END_SIG & 0xFF)) {
-	    if (ZipReadInt(start, end, p) == ZIP_CENTRAL_END_SIG) {
+    eocdPtr = zf->data + zf->length - ZIP_CENTRAL_END_LEN;
+    while (eocdPtr >= start) {
+	if (*eocdPtr == (ZIP_CENTRAL_END_SIG & 0xFF)) {
+	    if (ZipReadInt(start, end, eocdPtr) == ZIP_CENTRAL_END_SIG) {
 		break;
 	    }
-	    p -= ZIP_SIG_LEN;
+	    eocdPtr -= ZIP_SIG_LEN;
 	} else {
-	    --p;
+	    --eocdPtr;
 	}
     }
-    if (p < zf->data) {
+    if (eocdPtr < zf->data) {
 	/*
 	 * Didn't find it (or not enough space for a central directory!); not
 	 * a ZIP archive. This might be OK or a problem.
@@ -1433,13 +1436,17 @@ ZipFSFindTOC(
 	goto error;
     }
 
-    /* p -> End of Central Directory (EOCD) record at this point */
+    /* 
+     * eocdPtr -> End of Central Directory (EOCD) record at this point.
+     * Note this is not same as "end of Central Directory" :-) as EOCD
+     * is a record/structure in the ZIP spec terminology
+     */
 
     /*
      * How many files in the archive? If that's bogus, we're done here.
      */
 
-    zf->numFiles = ZipReadShort(start, end, p + ZIP_CENTRAL_ENTS_OFFS);
+    zf->numFiles = ZipReadShort(start, end, eocdPtr + ZIP_CENTRAL_ENTS_OFFS);
     if (zf->numFiles == 0) {
 	if (!needZip) {
 	    zf->baseOffset = zf->passOffset = zf->length;
@@ -1458,9 +1465,9 @@ ZipFSFindTOC(
      * cdirSize. NOTE: offset into archive does NOT mean offset into
      * (zf->data) as other data may precede the archive in the file.
      */
-    ptrdiff_t eocdDataOffset = p - zf->data;
-    unsigned int cdirZipOffset = ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSTART_OFFS);
-    unsigned int cdirSize = ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSIZE_OFFS);
+    ptrdiff_t eocdDataOffset = eocdPtr - zf->data;
+    unsigned int cdirZipOffset = ZipReadInt(start, end, eocdPtr + ZIP_CENTRAL_DIRSTART_OFFS);
+    unsigned int cdirSize = ZipReadInt(start, end, eocdPtr + ZIP_CENTRAL_DIRSIZE_OFFS);
 
     /*
      * As computed above,
@@ -1496,39 +1503,29 @@ ZipFSFindTOC(
     zf->directoryOffset = cdirZipOffset + zf->baseOffset;
     zf->directorySize = cdirSize;
 
-    const unsigned char *const cdirStart = p - cdirSize; /* Start of CD */
-
-    /*
-     * Original pointer based validation replaced by simpler checks above.
-     * Ensure still holds. The assigments to p, q are only there for use in
-     * the asserts. May be removed at some future date.
-     */
-    q = zf->data + cdirZipOffset;
-    p -= cdirSize;
-    assert(!((p < q) || (p < zf->data) || (p > zf->data + zf->length) ||
-	    (q < zf->data) || (q > zf->data + zf->length)));
-
     /*
      * Read the central directory.
      */
+    const unsigned char *const cdirStart = eocdPtr - cdirSize; /* Start of CD */
+    const unsigned char *dirEntry;
     minoff = zf->length;
-    for (q = cdirStart, i = 0; i < zf->numFiles; i++) {
-	if ((q-cdirStart) + ZIP_CENTRAL_HEADER_LEN > (ptrdiff_t)zf->directorySize) {
+    for (dirEntry = cdirStart, i = 0; i < zf->numFiles; i++) {
+	if ((dirEntry-cdirStart) + ZIP_CENTRAL_HEADER_LEN > (ptrdiff_t)zf->directorySize) {
 	    ZIPFS_ERROR(interp, "truncated directory");
 	    ZIPFS_ERROR_CODE(interp, "TRUNC_DIR");
 	    goto error;
 	}
-	if (ZipReadInt(start, end, q) != ZIP_CENTRAL_HEADER_SIG) {
+	if (ZipReadInt(start, end, dirEntry) != ZIP_CENTRAL_HEADER_SIG) {
 	    ZIPFS_ERROR(interp, "wrong header signature");
 	    ZIPFS_ERROR_CODE(interp, "HDR_SIG");
 	    goto error;
 	}
-	int pathlen = ZipReadShort(start, end, q + ZIP_CENTRAL_PATHLEN_OFFS);
-	int comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
-	int extra = ZipReadShort(start, end, q + ZIP_CENTRAL_EXTRALEN_OFFS);
-	size_t localhdr_off = ZipReadInt(start, end, q + ZIP_CENTRAL_LOCALHDR_OFFS);
+	int pathlen = ZipReadShort(start, end, dirEntry + ZIP_CENTRAL_PATHLEN_OFFS);
+	int comlen = ZipReadShort(start, end, dirEntry + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
+	int extra = ZipReadShort(start, end, dirEntry + ZIP_CENTRAL_EXTRALEN_OFFS);
+	size_t localhdr_off = ZipReadInt(start, end, dirEntry + ZIP_CENTRAL_LOCALHDR_OFFS);
 	const unsigned char *localP = zf->data + zf->baseOffset + localhdr_off;
-	if (localP > (p - ZIP_LOCAL_HEADER_LEN) ||
+	if (localP > (cdirStart - ZIP_LOCAL_HEADER_LEN) ||
 	    ZipReadInt(start, end, localP) != ZIP_LOCAL_HEADER_SIG) {
 	    ZIPFS_ERROR(interp, "Failed to find local header");
 	    ZIPFS_ERROR_CODE(interp, "LCL_HDR");
@@ -1537,9 +1534,9 @@ ZipFSFindTOC(
 	if (localhdr_off < minoff) {
 	    minoff = localhdr_off;
 	}
-	q += pathlen + comlen + extra + ZIP_CENTRAL_HEADER_LEN;
+	dirEntry += pathlen + comlen + extra + ZIP_CENTRAL_HEADER_LEN;
     }
-    if ((q-cdirStart) < (ptrdiff_t) zf->directorySize) {
+    if ((dirEntry-cdirStart) < (ptrdiff_t) zf->directorySize) {
 	/* file count and dir size do not match */
 	ZIPFS_ERROR(interp, "short file count");
 	ZIPFS_ERROR_CODE(interp, "FILE_COUNT");
@@ -1551,9 +1548,11 @@ ZipFSFindTOC(
     /*
      * If there's also an encoded password, extract that too (but don't decode
      * yet).
+     * TODO - is this even part of the ZIP "standard". The idea of storing
+     * a password with the archive seems absurd, encoded or not.
      */
 
-    q = zf->data + zf->passOffset;
+    unsigned char *q = zf->data + zf->passOffset;
     if ((zf->passOffset >= 6) && (start < q-4) &&
 	    (ZipReadInt(start, end, q - 4) == ZIP_PASSWORD_END_SIG)) {
 	const unsigned char *passPtr;
@@ -2032,7 +2031,7 @@ ZipFSCatalogFilesystem(
 	z->isDirectory = isdir;
 	z->isEncrypted =
 		(ZipReadShort(start, end, lq + ZIP_LOCAL_FLAGS_OFFS) & 1)
-		&& (nbcompr > 12);
+		&& (nbcompr > ZIP_CRYPT_HDR_LEN);
 	z->offset = offs;
 	if (gq) {
 	    z->crc32 = ZipReadInt(start, end, gq + ZIP_CENTRAL_CRC32_OFFS);
@@ -2999,30 +2998,30 @@ ZipAddFile(
 
     if (passwd) {
 	int i, ch, tmp;
-	unsigned char kvbuf[24];
+	unsigned char kvbuf[2*ZIP_CRYPT_HDR_LEN];
 
 	init_keys(passwd, keys, crc32tab);
-	for (i = 0; i < 12 - 2; i++) {
+	for (i = 0; i < ZIP_CRYPT_HDR_LEN - 2; i++) {
 	    if (RandomChar(interp, i, &ch) != TCL_OK) {
 		Tcl_Close(interp, in);
 		return TCL_ERROR;
 	    }
-	    kvbuf[i + 12] = UCHAR(zencode(keys, crc32tab, ch, tmp));
+	    kvbuf[i + ZIP_CRYPT_HDR_LEN] = UCHAR(zencode(keys, crc32tab, ch, tmp));
 	}
 	Tcl_ResetResult(interp);
 	init_keys(passwd, keys, crc32tab);
-	for (i = 0; i < 12 - 2; i++) {
-	    kvbuf[i] = UCHAR(zencode(keys, crc32tab, kvbuf[i + 12], tmp));
+	for (i = 0; i < ZIP_CRYPT_HDR_LEN - 2; i++) {
+	    kvbuf[i] = UCHAR(zencode(keys, crc32tab, kvbuf[i + ZIP_CRYPT_HDR_LEN], tmp));
 	}
 	kvbuf[i++] = UCHAR(zencode(keys, crc32tab, crc >> 16, tmp));
 	kvbuf[i++] = UCHAR(zencode(keys, crc32tab, crc >> 24, tmp));
-	len = Tcl_Write(out, (char *) kvbuf, 12);
-	memset(kvbuf, 0, 24);
-	if (len != 12) {
+	len = Tcl_Write(out, (char *) kvbuf, ZIP_CRYPT_HDR_LEN);
+	memset(kvbuf, 0, sizeof(kvbuf));
+	if (len != ZIP_CRYPT_HDR_LEN) {
 	    goto writeErrorWithChannelOpen;
 	}
 	memcpy(keys0, keys, sizeof(keys0));
-	nbytecompr += 12;
+	nbytecompr += ZIP_CRYPT_HDR_LEN;
     }
 
     /*
@@ -3114,7 +3113,7 @@ ZipAddFile(
 	    Tcl_DStringFree(&zpathDs);
 	    return TCL_ERROR;
 	}
-	nbytecompr = (passwd ? 12 : 0);
+	nbytecompr = (passwd ? ZIP_CRYPT_HDR_LEN : 0);
 	while (1) {
 	    len = Tcl_Read(in, buf, bufsize);
 	    if (len < 0) {
@@ -4794,7 +4793,7 @@ ZipChannelOpen(
     }
 
     if (z->isEncrypted) {
-	if (z->numCompressedBytes < 12) {
+	if (z->numCompressedBytes < ZIP_CRYPT_HDR_LEN) {
 	    ZIPFS_ERROR(interp,
 			"decryption failed: truncated decryption header");
 	    ZIPFS_ERROR_CODE(interp, "DECRYPT");
@@ -4919,7 +4918,7 @@ InitWritableChannel(
     }
 
     if (z->isEncrypted) {
-	assert(z->numCompressedBytes >= 12); /* caller should have checked*/
+	assert(z->numCompressedBytes >= ZIP_CRYPT_HDR_LEN); /* caller should have checked*/
 	if (DecodeCryptHeader(
 		interp, z, info->keys, z->zipFilePtr->data + z->offset) !=
 	    TCL_OK) {
@@ -4949,7 +4948,7 @@ InitWritableChannel(
 	unsigned char *zbuf = z->zipFilePtr->data + z->offset;
 
 	if (z->isEncrypted) {
-	    zbuf += 12;
+	    zbuf += ZIP_CRYPT_HDR_LEN;
 	}
 
 	if (z->compressMethod == ZIP_COMPMETH_DEFLATED) {
@@ -4964,10 +4963,10 @@ InitWritableChannel(
 	    if (z->isEncrypted) {
 		unsigned int j;
 
-		/* Min length 12 for keys should already been checked. */
-		assert(stream.avail_in >= 12);
+		/* Min length ZIP_CRYPT_HDR_LEN for keys should already been checked. */
+		assert(stream.avail_in >= ZIP_CRYPT_HDR_LEN);
 
-		stream.avail_in -= 12;
+		stream.avail_in -= ZIP_CRYPT_HDR_LEN;
 		cbuf = (unsigned char *) Tcl_AttemptAlloc(stream.avail_in ? stream.avail_in : 1);
 		if (!cbuf) {
 		    goto memoryError;
@@ -5002,10 +5001,10 @@ InitWritableChannel(
 	    /*
 	     * Need to decrypt some otherwise-simple stored data.
 	     */
-	    if (z->numCompressedBytes <= 12 ||
-		(z->numCompressedBytes - 12) != z->numBytes)
+	    if (z->numCompressedBytes <= ZIP_CRYPT_HDR_LEN ||
+		(z->numCompressedBytes - ZIP_CRYPT_HDR_LEN) != z->numBytes)
 		goto corruptionError;
-	    int len = z->numCompressedBytes - 12;
+	    int len = z->numCompressedBytes - ZIP_CRYPT_HDR_LEN;
 	    assert(len <= info->ubufSize);
 	    for (i = 0; i < len; i++) {
 		ch = zbuf[i];
@@ -5094,11 +5093,11 @@ InitReadableChannel(
     info->numBytes = z->numBytes;
 
     if (info->isEncrypted) {
-	assert(z->numCompressedBytes >= 12); /* caller should have checked*/
+	assert(z->numCompressedBytes >= ZIP_CRYPT_HDR_LEN); /* caller should have checked*/
 	if (DecodeCryptHeader(interp, z, info->keys, info->ubuf) != TCL_OK) {
 	    goto error_cleanup;
 	}
-	info->ubuf += 12;
+	info->ubuf += ZIP_CRYPT_HDR_LEN;
     }
 
     if (info->iscompr) {
@@ -5118,8 +5117,8 @@ InitReadableChannel(
 	stream.opaque = Z_NULL;
 	stream.avail_in = z->numCompressedBytes;
 	if (info->isEncrypted) {
-	    assert(stream.avail_in >= 12);
-	    stream.avail_in -= 12;
+	    assert(stream.avail_in >= ZIP_CRYPT_HDR_LEN);
+	    stream.avail_in -= ZIP_CRYPT_HDR_LEN;
 	    ubuf = (unsigned char *) Tcl_AttemptAlloc(stream.avail_in ? stream.avail_in : 1);
 	    if (!ubuf) {
 		goto memoryError;
@@ -5173,9 +5172,10 @@ InitReadableChannel(
 	 * Decode encrypted but uncompressed file, since we support Tcl_Seek()
 	 * on it, and it can be randomly accessed later.
 	 */
-	if (z->numCompressedBytes <= 12 || (z->numCompressedBytes - 12) != z->numBytes)
+	if (z->numCompressedBytes <= ZIP_CRYPT_HDR_LEN ||
+	    (z->numCompressedBytes - ZIP_CRYPT_HDR_LEN) != z->numBytes)
 	    goto corruptionError;
-	len = z->numCompressedBytes - 12;
+	len = z->numCompressedBytes - ZIP_CRYPT_HDR_LEN;
 	ubuf = (unsigned char *) Tcl_AttemptAlloc(len);
 	if (ubuf == NULL) {
 	    goto memoryError;
