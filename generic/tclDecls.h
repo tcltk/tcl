@@ -3973,6 +3973,12 @@ extern const TclStubs *tclStubsPtr;
 	    (tclStubsPtr->tcl_SetVar(interp, varName, newValue, flags))
 #   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
 	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
+#   undef Tcl_EventuallyFree
+#   define Tcl_EventuallyFree \
+	   ((void (*)(void *,void *))(void *)(tclStubsPtr->tcl_EventuallyFree)) /* 132 */
+#   undef Tcl_SetResult
+#   define Tcl_SetResult \
+	   ((void (*)(Tcl_Interp *, char *, void *))(void *)(tclStubsPtr->tcl_SetResult)) /* 232 */
 #endif
 
 #if defined(_WIN32) && defined(UNICODE)

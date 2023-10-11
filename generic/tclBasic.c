@@ -7,10 +7,10 @@
  *
  * Copyright (c) 1987-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 1998-1999 Scriptics Corporation.
+ * Copyright (c) 2001, 2002 Kevin B. Kenny.  All rights reserved.
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
- * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
+ * Copyright (c) 2006-2008 Joe Mistachkin.  All rights reserved.
  * Copyright (c) 2008 Miguel Sofer <msofer@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -44,7 +44,7 @@
 void *
 TclGetCStackPtr(void)
 {
-#if __GNUC__ || __has_builtin(__builtin_frame_address)
+#if defined( __GNUC__ ) || __has_builtin(__builtin_frame_address)
   return __builtin_frame_address(0);
 #elif defined(_MSC_VER) && defined(HAVE_INTRIN_H)
   return _AddressOfReturnAddress();
@@ -106,7 +106,7 @@ typedef struct {
 } CancelInfo;
 static Tcl_HashTable cancelTable;
 static int cancelTableInitialized = 0;	/* 0 means not yet initialized. */
-TCL_DECLARE_MUTEX(cancelLock)
+TCL_DECLARE_MUTEX(cancelLock);
 
 /*
  * Declarations for managing contexts for non-recursive coroutines. Contexts
@@ -136,7 +136,7 @@ static int		CancelEvalProc(ClientData clientData,
 			    Tcl_Interp *interp, int code);
 static int		CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void		DeleteCoroutine(ClientData clientData);
-static void		DeleteInterpProc(Tcl_Interp *interp);
+static Tcl_FreeProc	DeleteInterpProc;
 static void		DeleteOpCmdClientData(ClientData clientData);
 #ifdef USE_DTRACE
 static Tcl_ObjCmdProc	DTraceObjCmd;
@@ -1392,7 +1392,7 @@ Tcl_DeleteInterp(
      * Ensure that the interpreter is eventually deleted.
      */
 
-    Tcl_EventuallyFree(interp, (Tcl_FreeProc *) DeleteInterpProc);
+    Tcl_EventuallyFree(interp, DeleteInterpProc);
 }
 
 /*
@@ -1418,8 +1418,9 @@ Tcl_DeleteInterp(
 
 static void
 DeleteInterpProc(
-    Tcl_Interp *interp)		/* Interpreter to delete. */
+    char *blockPtr)		/* Interpreter to delete. */
 {
+    Tcl_Interp *interp = (Tcl_Interp *) blockPtr;
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;

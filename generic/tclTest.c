@@ -204,7 +204,7 @@ static int		ObjTraceProc(ClientData clientData,
 			    Tcl_Obj *const objv[]);
 static void		ObjTraceDeleteProc(ClientData clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
-static void		SpecialFree(char *blockPtr);
+static Tcl_FreeProc	SpecialFree;
 static int		StaticInitProc(Tcl_Interp *interp);
 static Tcl_CmdProc	TestasyncCmd;
 static Tcl_ObjCmdProc	TestbumpinterpepochObjCmd;
@@ -265,7 +265,7 @@ static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
 			    int length, int *cflagsPtr, int *eflagsPtr);
 static Tcl_ObjCmdProc	TestsaveresultCmd;
-static void		TestsaveresultFree(char *blockPtr);
+static Tcl_FreeProc	TestsaveresultFree;
 static Tcl_CmdProc	TestsetassocdataCmd;
 static Tcl_CmdProc	TestsetCmd;
 static Tcl_CmdProc	Testset2Cmd;
@@ -1811,9 +1811,13 @@ TestdstringCmd(
  */
 
 static void SpecialFree(
+#if TCL_MAJOR_VERSION > 8
+    void *blockPtr			/* Block to free. */
+#else
     char *blockPtr			/* Block to free. */
+#endif
 ) {
-    ckfree(blockPtr - 16);
+    ckfree((char *)blockPtr - 16);
 }
 
 /*
@@ -5489,7 +5493,11 @@ TestsaveresultCmd(
 
 static void
 TestsaveresultFree(
+#if TCL_MAJOR_VERSION > 8
+    void *blockPtr)
+#else
     char *blockPtr)
+#endif
 {
     freeCount++;
 }
