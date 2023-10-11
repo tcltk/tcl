@@ -176,7 +176,7 @@ static int		CancelEvalProc(void *clientData,
 			    Tcl_Interp *interp, int code);
 static int		CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void		DeleteCoroutine(void *clientData);
-static void		DeleteInterpProc(Tcl_Interp *interp);
+static Tcl_FreeProc	DeleteInterpProc;
 static void		DeleteOpCmdClientData(void *clientData);
 #ifdef USE_DTRACE
 static Tcl_ObjCmdProc	DTraceObjCmd;
@@ -1802,7 +1802,7 @@ Tcl_DeleteInterp(
      * Ensure that the interpreter is eventually deleted.
      */
 
-    Tcl_EventuallyFree(interp, (Tcl_FreeProc *) DeleteInterpProc);
+    Tcl_EventuallyFree(interp, DeleteInterpProc);
 }
 
 /*
@@ -1828,8 +1828,9 @@ Tcl_DeleteInterp(
 
 static void
 DeleteInterpProc(
-    Tcl_Interp *interp)		/* Interpreter to delete. */
+    void *blockPtr)		/* Interpreter to delete. */
 {
+    Tcl_Interp *interp = (Tcl_Interp *) blockPtr;
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
