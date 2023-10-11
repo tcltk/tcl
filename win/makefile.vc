@@ -517,7 +517,7 @@ core:	    libtclzip
 	@$(COPY) /b "$(TCLLIBRAW)"+"$(TCLSCRIPTZIP)" "$(TCLLIB)"
 !endif
 
-shell:	    setup $(TCLSH)
+shell:	    setup core $(TCLSH)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 shell:      libtclzip
 	@$(COPY) /b "$(TCLSHRAW)"+"$(TCLSCRIPTZIP)" "$(TCLSH)"
@@ -525,16 +525,8 @@ shell:      libtclzip
 
 dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
 libtclzip:  $(TCLSCRIPTZIP)
-tbdembed:      setup $(TCLSH) $(TCLSTUBLIB) libtclzip
-!if $(TCL_EMBED_SCRIPTS)
-!if $(STATIC_BUILD)
-	@copy /y /b "$(TCLSH)"+"$(TCLSCRIPTZIP)" "$(TCLSH)"
-!else
-	@copy /y /b "$(TCLLIB)"+"$(TCLSCRIPTZIP)" "$(TCLLIB)"
-!endif
-!endif
 
-tcltest:    setup $(TCLTEST) dlls
+tcltest:    setup core $(TCLTEST) dlls
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 tcltest:      libtclzip
 	@$(COPY) /b "$(TCLTESTRAW)"+"$(TCLSCRIPTZIP)" "$(TCLTEST)"
