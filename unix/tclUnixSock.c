@@ -138,7 +138,7 @@ static int		TcpOutputProc(void *instanceData,
 static void		TcpThreadActionProc(void *instanceData, int action);
 static void		TcpWatchProc(void *instanceData, int mask);
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
-static void		WrapNotify(void *clientData, int mask);
+static Tcl_FileProc	WrapNotify;
 
 /*
  * This structure describes the channel type structure for TCP socket
@@ -564,7 +564,7 @@ TcpOutputProc(
     if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
-    written = send(statePtr->fds.fd, buf, (size_t) toWrite, 0);
+    written = send(statePtr->fds.fd, buf, toWrite, 0);
 
     if (written >= 0) {
 	return written;
@@ -807,7 +807,7 @@ TcpHostPortList(
 
 static int
 TcpGetOptionProc(
-    void *instanceData,	/* Socket state. */
+    void *instanceData,		/* Socket state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Name of the option to retrieve the value
 				 * for, or NULL to get all options and their
@@ -909,8 +909,8 @@ TcpGetOptionProc(
     if ((len == 0) || ((len > 1) && (optionName[1] == 's') &&
 	    (strncmp(optionName, "-sockname", len) == 0))) {
 	TcpFdList *fds;
-        address sockname;
-        socklen_t size;
+	address sockname;
+	socklen_t size;
 	int found = 0;
 
 	if (len == 0) {
@@ -1093,10 +1093,10 @@ TcpWatchProc(
 	 */
 
 	statePtr->interest = mask;
-        Tcl_CreateFileHandler(statePtr->fds.fd, mask|TCL_READABLE,
-                (Tcl_FileProc *) WrapNotify, statePtr);
+	Tcl_CreateFileHandler(statePtr->fds.fd, mask|TCL_READABLE,
+		WrapNotify, statePtr);
     } else {
-        Tcl_DeleteFileHandler(statePtr->fds.fd);
+	Tcl_DeleteFileHandler(statePtr->fds.fd);
     }
 }
 
