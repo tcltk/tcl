@@ -286,7 +286,7 @@ FileInputProc(
      */
 
     do {
-	bytesRead = read(fsPtr->fd, buf, (size_t)toRead);
+	bytesRead = read(fsPtr->fd, buf, toRead);
     } while ((bytesRead < 0) && (errno == EINTR));
 
     if (bytesRead < 0) {
@@ -335,7 +335,7 @@ FileOutputProc(
 
 	return 0;
     }
-    written = write(fsPtr->fd, buf, (size_t)toWrite);
+    written = write(fsPtr->fd, buf, toWrite);
     if (written >= 0) {
 	return written;
     }
@@ -549,6 +549,20 @@ FileWideSeekProc(
  *----------------------------------------------------------------------
  */
 
+/*
+ * Bug ad5a57f2f271: Tcl_NotifyChannel is not a Tcl_FileProc,
+ * so do not pass it to directly to Tcl_CreateFileHandler.
+ * Instead, pass a wrapper which is a Tcl_FileProc.
+ */
+static void
+FileWatchNotifyChannelWrapper(
+    void *clientData,
+    int mask)
+{
+    Tcl_Channel channel = (Tcl_Channel)clientData;
+    Tcl_NotifyChannel(channel, mask);
+}
+
 static void
 FileWatchProc(
     void *instanceData,	/* The file state. */
@@ -559,15 +573,13 @@ FileWatchProc(
     FileState *fsPtr = (FileState *)instanceData;
 
     /*
-     * Make sure we only register for events that are valid on this file. Note
-     * that we are passing Tcl_NotifyChannel directly to Tcl_CreateFileHandler
-     * with the channel pointer as the client data.
+     * Make sure we only register for events that are valid on this file.
      */
 
     mask &= fsPtr->validMask;
     if (mask) {
 	Tcl_CreateFileHandler(fsPtr->fd, mask,
-		(Tcl_FileProc *) Tcl_NotifyChannel, fsPtr->channel);
+		FileWatchNotifyChannelWrapper, fsPtr->channel);
     } else {
 	Tcl_DeleteFileHandler(fsPtr->fd);
     }

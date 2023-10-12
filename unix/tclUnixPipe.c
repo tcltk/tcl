@@ -421,7 +421,8 @@ TclpCreateProcess(
     char errSpace[200 + TCL_INTEGER_SPACE];
     Tcl_DString *dsArray;
     char **newArgv;
-    int pid, i;
+    int pid;
+    int i;
 #if defined(HAVE_POSIX_SPAWNP)
     int childErrno;
     static int use_spawn = -1;
@@ -608,7 +609,7 @@ TclpCreateProcess(
     errPipeOut = NULL;
 
     fd = GetFd(errPipeIn);
-    count = read(fd, errSpace, (size_t) (sizeof(errSpace) - 1));
+    count = read(fd, errSpace, sizeof(errSpace) - 1);
     if (count > 0) {
 	char *end;
 
@@ -1142,7 +1143,7 @@ PipeInputProc(
      */
 
     do {
-	bytesRead = read(GetFd(psPtr->inFile), buf, (size_t) toRead);
+	bytesRead = read(GetFd(psPtr->inFile), buf, toRead);
     } while ((bytesRead < 0) && (errno == EINTR));
 
     if (bytesRead < 0) {
@@ -1188,7 +1189,7 @@ PipeOutputProc(
      */
 
     do {
-	written = write(GetFd(psPtr->outFile), buf, (size_t) toWrite);
+	written = write(GetFd(psPtr->outFile), buf, toWrite);
     } while ((written < 0) && (errno == EINTR));
 
     if (written < 0) {
@@ -1215,6 +1216,20 @@ PipeOutputProc(
  *----------------------------------------------------------------------
  */
 
+/*
+ * Bug ad5a57f2f271: Tcl_NotifyChannel is not a Tcl_FileProc,
+ * so do not pass it to directly to Tcl_CreateFileHandler.
+ * Instead, pass a wrapper which is a Tcl_FileProc.
+ */
+static void
+PipeWatchNotifyChannelWrapper(
+    void *clientData,
+    int mask)
+{
+    Tcl_Channel channel = (Tcl_Channel)clientData;
+    Tcl_NotifyChannel(channel, mask);
+}
+
 static void
 PipeWatchProc(
     void *instanceData,	/* The pipe state. */
@@ -1229,7 +1244,7 @@ PipeWatchProc(
 	newmask = mask & (TCL_READABLE | TCL_EXCEPTION);
 	if (newmask) {
 	    Tcl_CreateFileHandler(GetFd(psPtr->inFile), newmask,
-		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
+		    PipeWatchNotifyChannelWrapper, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->inFile));
 	}
@@ -1238,7 +1253,7 @@ PipeWatchProc(
 	newmask = mask & (TCL_WRITABLE | TCL_EXCEPTION);
 	if (newmask) {
 	    Tcl_CreateFileHandler(GetFd(psPtr->outFile), newmask,
-		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
+		    PipeWatchNotifyChannelWrapper, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->outFile));
 	}
