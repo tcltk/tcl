@@ -421,7 +421,8 @@ TclpCreateProcess(
     char errSpace[200 + TCL_INTEGER_SPACE];
     Tcl_DString *dsArray;
     char **newArgv;
-    int pid, i;
+    int pid;
+    int i;
 #if defined(HAVE_POSIX_SPAWNP)
     int childErrno;
     static int use_spawn = -1;
@@ -447,8 +448,8 @@ TclpCreateProcess(
      * deallocated later
      */
 
-    dsArray = TclStackAlloc(interp, argc * sizeof(Tcl_DString));
-    newArgv = TclStackAlloc(interp, (argc+1) * sizeof(char *));
+    dsArray = (Tcl_DString *)TclStackAlloc(interp, argc * sizeof(Tcl_DString));
+    newArgv = (char **)TclStackAlloc(interp, (argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
 	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
@@ -608,7 +609,7 @@ TclpCreateProcess(
     errPipeOut = NULL;
 
     fd = GetFd(errPipeIn);
-    count = read(fd, errSpace, (size_t) (sizeof(errSpace) - 1));
+    count = read(fd, errSpace, sizeof(errSpace) - 1);
     if (count > 0) {
 	char *end;
 
@@ -632,7 +633,7 @@ TclpCreateProcess(
 	 * here, since this is the error case. [Bug: 6148]
 	 */
 
-	Tcl_WaitPid((Tcl_Pid) INT2PTR(pid), &status, 0);
+	Tcl_WaitPid((Tcl_Pid)INT2PTR(pid), &status, 0);
     }
 
     if (errPipeIn) {
@@ -828,7 +829,7 @@ TclpCreateCommandChannel(
 {
     char channelName[16 + TCL_INTEGER_SPACE];
     int channelId;
-    PipeState *statePtr = ckalloc(sizeof(PipeState));
+    PipeState *statePtr = (PipeState *)ckalloc(sizeof(PipeState));
     int mode;
 
     statePtr->inFile = readFile;
@@ -953,7 +954,7 @@ TclGetAndDetachPids(
 	return;
     }
 
-    pipePtr = Tcl_GetChannelInstanceData(chan);
+    pipePtr = (PipeState *)Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
 	Tcl_ListObjAppendElement(NULL, pidsObj, Tcl_NewIntObj(
@@ -991,7 +992,7 @@ PipeBlockModeProc(
 				 * TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
-    PipeState *psPtr = instanceData;
+    PipeState *psPtr = (PipeState *)instanceData;
 
     if (psPtr->inFile
 	    && TclUnixSetBlockingMode(GetFd(psPtr->inFile), mode) < 0) {
@@ -1030,7 +1031,7 @@ PipeClose2Proc(
     Tcl_Interp *interp,		/* For error reporting. */
     int flags)			/* Flags that indicate which side to close. */
 {
-    PipeState *pipePtr = instanceData;
+    PipeState *pipePtr = (PipeState *)instanceData;
     Tcl_Channel errChan;
     int errorCode, result;
 
@@ -1127,7 +1128,7 @@ PipeInputProc(
 				 * buffer? */
     int *errorCodePtr)		/* Where to store error code. */
 {
-    PipeState *psPtr = instanceData;
+    PipeState *psPtr = (PipeState *)instanceData;
     int bytesRead;		/* How many bytes were actually read from the
 				 * input device? */
 
@@ -1142,7 +1143,7 @@ PipeInputProc(
      */
 
     do {
-	bytesRead = read(GetFd(psPtr->inFile), buf, (size_t) toRead);
+	bytesRead = read(GetFd(psPtr->inFile), buf, toRead);
     } while ((bytesRead < 0) && (errno == EINTR));
 
     if (bytesRead < 0) {
@@ -1177,7 +1178,7 @@ PipeOutputProc(
     int toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
 {
-    PipeState *psPtr = instanceData;
+    PipeState *psPtr = (PipeState *)instanceData;
     int written;
 
     *errorCodePtr = 0;
@@ -1188,7 +1189,7 @@ PipeOutputProc(
      */
 
     do {
-	written = write(GetFd(psPtr->outFile), buf, (size_t) toWrite);
+	written = write(GetFd(psPtr->outFile), buf, toWrite);
     } while ((written < 0) && (errno == EINTR));
 
     if (written < 0) {
@@ -1215,6 +1216,20 @@ PipeOutputProc(
  *----------------------------------------------------------------------
  */
 
+/*
+ * Bug ad5a57f2f271: Tcl_NotifyChannel is not a Tcl_FileProc,
+ * so do not pass it to directly to Tcl_CreateFileHandler.
+ * Instead, pass a wrapper which is a Tcl_FileProc.
+ */
+static void
+PipeWatchNotifyChannelWrapper(
+    ClientData clientData,
+    int mask)
+{
+    Tcl_Channel channel = clientData;
+    Tcl_NotifyChannel(channel, mask);
+}
+
 static void
 PipeWatchProc(
     ClientData instanceData,	/* The pipe state. */
@@ -1222,14 +1237,14 @@ PipeWatchProc(
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
-    PipeState *psPtr = instanceData;
+    PipeState *psPtr = (PipeState *)instanceData;
     int newmask;
 
     if (psPtr->inFile) {
 	newmask = mask & (TCL_READABLE | TCL_EXCEPTION);
 	if (newmask) {
 	    Tcl_CreateFileHandler(GetFd(psPtr->inFile), newmask,
-		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
+		    PipeWatchNotifyChannelWrapper, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->inFile));
 	}
@@ -1238,7 +1253,7 @@ PipeWatchProc(
 	newmask = mask & (TCL_WRITABLE | TCL_EXCEPTION);
 	if (newmask) {
 	    Tcl_CreateFileHandler(GetFd(psPtr->outFile), newmask,
-		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
+		    PipeWatchNotifyChannelWrapper, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->outFile));
 	}
@@ -1269,7 +1284,7 @@ PipeGetHandleProc(
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
     ClientData *handlePtr)	/* Where to store the handle. */
 {
-    PipeState *psPtr = instanceData;
+    PipeState *psPtr = (PipeState *)instanceData;
 
     if (direction == TCL_READABLE && psPtr->inFile) {
 	*handlePtr = INT2PTR(GetFd(psPtr->inFile));
@@ -1368,7 +1383,7 @@ Tcl_PidObjCmd(
 	 * Extract the process IDs from the pipe structure.
 	 */
 
-	pipePtr = Tcl_GetChannelInstanceData(chan);
+	pipePtr = (PipeState *)Tcl_GetChannelInstanceData(chan);
 	TclNewObj(resultPtr);
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
