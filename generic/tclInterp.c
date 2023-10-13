@@ -187,7 +187,7 @@ struct LimitHandler {
     int flags;			/* The state of this particular handler. */
     Tcl_LimitHandlerProc *handlerProc;
 				/* The handler callback. */
-    ClientData clientData;	/* Opaque argument to the handler callback. */
+    void *clientData;	/* Opaque argument to the handler callback. */
     Tcl_LimitHandlerDeleteProc *deleteProc;
 				/* How to delete the clientData. */
     LimitHandler *prevPtr;	/* Previous item in linked list of
@@ -266,12 +266,12 @@ static void		InheritLimitsFromParent(Tcl_Interp *childInterp,
 			    Tcl_Interp *parentInterp);
 static void		SetScriptLimitCallback(Tcl_Interp *interp, int type,
 			    Tcl_Interp *targetInterp, Tcl_Obj *scriptObj);
-static void		CallScriptLimitCallback(ClientData clientData,
+static void		CallScriptLimitCallback(void *clientData,
 			    Tcl_Interp *interp);
-static void		DeleteScriptLimitCallback(ClientData clientData);
+static void		DeleteScriptLimitCallback(void *clientData);
 static void		RunLimitHandlers(LimitHandler *handlerPtr,
 			    Tcl_Interp *interp);
-static void		TimeLimitCallback(ClientData clientData);
+static void		TimeLimitCallback(void *clientData);
 
 /* NRE enabling */
 static Tcl_NRPostProc	NRPostInvokeHidden;
@@ -340,7 +340,7 @@ Tcl_Init(
     pkgName.nextPtr = *names;
     *names = &pkgName;
     if (tclPreInitScript != NULL) {
-	if (Tcl_EvalEx(interp, tclPreInitScript, -1, 0) == TCL_ERROR) {
+	if (Tcl_EvalEx(interp, tclPreInitScript, TCL_INDEX_NONE, 0) == TCL_ERROR) {
 	    goto end;
 	}
     }
@@ -450,7 +450,7 @@ Tcl_Init(
 "    error $msg\n"
 "  }\n"
 "}\n"
-"tclInit", -1, 0);
+"tclInit", TCL_INDEX_NONE, 0);
 
 end:
     *names = (*names)->nextPtr;
@@ -602,7 +602,7 @@ InterpInfoDeleteProc(
 
 int
 Tcl_InterpObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,			/* Current interpreter. */
     int objc,				/* Number of arguments. */
     Tcl_Obj *const objv[])		/* Argument objects. */
@@ -1191,12 +1191,12 @@ Tcl_CreateAlias(
     const char *childCmd,	/* Command to install in child. */
     Tcl_Interp *targetInterp,	/* Interpreter for target command. */
     const char *targetCmd,	/* Name of target command. */
-    int argc,			/* How many additional arguments? */
+    Tcl_Size argc,			/* How many additional arguments? */
     const char *const *argv)	/* These are the additional args. */
 {
     Tcl_Obj *childObjPtr, *targetObjPtr;
     Tcl_Obj **objv;
-    int i;
+    Tcl_Size i;
     int result;
 
     objv = (Tcl_Obj **)TclStackAlloc(childInterp, sizeof(Tcl_Obj *) * argc);
@@ -1246,7 +1246,7 @@ Tcl_CreateAliasObj(
     const char *childCmd,	/* Command to install in child. */
     Tcl_Interp *targetInterp,	/* Interpreter for target command. */
     const char *targetCmd,	/* Name of target command. */
-    int objc,			/* How many additional arguments? */
+    Tcl_Size objc,			/* How many additional arguments? */
     Tcl_Obj *const objv[])	/* Argument vector. */
 {
     Tcl_Obj *childObjPtr, *targetObjPtr;
@@ -1814,7 +1814,7 @@ AliasList(
 
 static int
 AliasNRCmd(
-    ClientData clientData,	/* Alias record. */
+    void *clientData,	/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
@@ -1867,7 +1867,7 @@ AliasNRCmd(
 
 int
 TclAliasObjCmd(
-    ClientData clientData,	/* Alias record. */
+    void *clientData,	/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
@@ -1958,7 +1958,7 @@ TclAliasObjCmd(
 
 int
 TclLocalAliasObjCmd(
-    ClientData clientData,	/* Alias record. */
+    void *clientData,	/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument vector. */
@@ -2043,7 +2043,7 @@ TclLocalAliasObjCmd(
 
 static void
 AliasObjCmdDeleteProc(
-    ClientData clientData)	/* The alias record for this alias. */
+    void *clientData)	/* The alias record for this alias. */
 {
     Alias *aliasPtr = (Alias *)clientData;
     Target *targetPtr;
@@ -2317,7 +2317,7 @@ GetInterp(
     Tcl_HashEntry *hPtr;	/* Search element. */
     Child *childPtr;		/* Interim child record. */
     Tcl_Obj **objv;
-    int objc, i;
+    Tcl_Size objc, i;
     Tcl_Interp *searchInterp;	/* Interim storage for interp. to find. */
     InterpInfo *parentInfoPtr;
 
@@ -2375,7 +2375,7 @@ ChildBgerror(
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     if (objc) {
-	int length;
+	Tcl_Size length;
 
 	if (TCL_ERROR == TclListObjLengthM(NULL, objv[0], &length)
 		|| (length < 1)) {
@@ -2421,7 +2421,8 @@ ChildCreate(
     InterpInfo *parentInfoPtr;
     Tcl_HashEntry *hPtr;
     const char *path;
-    int isNew, objc;
+    int isNew;
+    Tcl_Size objc;
     Tcl_Obj **objv;
 
     if (TclListObjGetElementsM(interp, pathPtr, &objc, &objv) != TCL_OK) {
@@ -2545,7 +2546,7 @@ ChildCreate(
 
 int
 TclChildObjCmd(
-    ClientData clientData,	/* Child interpreter. */
+    void *clientData,	/* Child interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2555,7 +2556,7 @@ TclChildObjCmd(
 
 static int
 NRChildCmd(
-    ClientData clientData,	/* Child interpreter. */
+    void *clientData,	/* Child interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2761,7 +2762,7 @@ NRChildCmd(
 
 static void
 ChildObjCmdDeleteProc(
-    ClientData clientData)	/* The ChildRecord for the command. */
+    void *clientData)	/* The ChildRecord for the command. */
 {
     Child *childPtr;		/* Interim storage for Child record. */
     Tcl_Interp *childInterp = (Tcl_Interp *)clientData;
@@ -3178,7 +3179,7 @@ ChildInvokeHidden(
 
 static int
 NRPostInvokeHidden(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -3294,7 +3295,7 @@ TclMakeSafe(
 	 */
 
 	(void) Tcl_EvalEx(interp,
-		"namespace eval ::tcl {namespace eval mathfunc {}}", -1, 0);
+		"namespace eval ::tcl {namespace eval mathfunc {}}", TCL_INDEX_NONE, 0);
     }
 
     iPtr->flags |= SAFE_INTERP;
@@ -3598,12 +3599,20 @@ RunLimitHandlers(
  *----------------------------------------------------------------------
  */
 
+/* Bug 52dbc4b3f8: wrap Tcl_Free since it is not a Tcl_LimitHandlerDeleteProc. */
+static void
+WrapFree(
+    void *ptr)
+{
+    Tcl_Free(ptr);
+}
+
 void
 Tcl_LimitAddHandler(
     Tcl_Interp *interp,
     int type,
     Tcl_LimitHandlerProc *handlerProc,
-    ClientData clientData,
+    void *clientData,
     Tcl_LimitHandlerDeleteProc *deleteProc)
 {
     Interp *iPtr = (Interp *) interp;
@@ -3614,7 +3623,7 @@ Tcl_LimitAddHandler(
      */
 
     if (deleteProc == (Tcl_LimitHandlerDeleteProc *) TCL_DYNAMIC) {
-	deleteProc = (Tcl_LimitHandlerDeleteProc *) Tcl_Free;
+	deleteProc = WrapFree;
     }
 
     /*
@@ -3677,7 +3686,7 @@ Tcl_LimitRemoveHandler(
     Tcl_Interp *interp,
     int type,
     Tcl_LimitHandlerProc *handlerProc,
-    ClientData clientData)
+    void *clientData)
 {
     Interp *iPtr = (Interp *) interp;
     LimitHandler *handlerPtr;
@@ -3980,7 +3989,7 @@ Tcl_LimitTypeReset(
 void
 Tcl_LimitSetCommands(
     Tcl_Interp *interp,
-    int commandLimit)
+    Tcl_Size commandLimit)
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -4076,7 +4085,7 @@ Tcl_LimitSetTime(
 
 static void
 TimeLimitCallback(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_Interp *interp = (Tcl_Interp *)clientData;
     Interp *iPtr = (Interp *)clientData;
@@ -4220,7 +4229,7 @@ Tcl_LimitGetGranularity(
 
 static void
 DeleteScriptLimitCallback(
-    ClientData clientData)
+    void *clientData)
 {
     ScriptLimitCallback *limitCBPtr = (ScriptLimitCallback *)clientData;
 
@@ -4251,7 +4260,7 @@ DeleteScriptLimitCallback(
 
 static void
 CallScriptLimitCallback(
-    ClientData clientData,
+    void *clientData,
     TCL_UNUSED(Tcl_Interp *))
 {
     ScriptLimitCallback *limitCBPtr = (ScriptLimitCallback *)clientData;
@@ -4581,7 +4590,8 @@ ChildCommandLimitCmd(
 	Tcl_WrongNumArgs(interp, consumedObjc, objv, "?-option value ...?");
 	return TCL_ERROR;
     } else {
-	int i, scriptLen = 0, limitLen = 0;
+	int i;
+	Tcl_Size scriptLen = 0, limitLen = 0;
 	Tcl_Obj *scriptObj = NULL, *granObj = NULL, *limitObj = NULL;
 	int gran = 0, limit = 0;
 
@@ -4786,7 +4796,8 @@ ChildTimeLimitCmd(
 	Tcl_WrongNumArgs(interp, consumedObjc, objv, "?-option value ...?");
 	return TCL_ERROR;
     } else {
-	int i, scriptLen = 0, milliLen = 0, secLen = 0;
+	int i;
+	Tcl_Size scriptLen = 0, milliLen = 0, secLen = 0;
 	Tcl_Obj *scriptObj = NULL, *granObj = NULL;
 	Tcl_Obj *milliObj = NULL, *secObj = NULL;
 	int gran = 0;
