@@ -1448,7 +1448,11 @@ ZipFSFindTOC(
 	}
 	ZIPFS_ERROR(interp, "archive directory end signature not found");
 	ZIPFS_ERROR_CODE(interp, "END_SIG");
-	goto error;
+
+  error:
+	ZipFSCloseArchive(interp, zf);
+	return TCL_ERROR;
+
     }
 
     /*
@@ -1582,10 +1586,6 @@ ZipFSFindTOC(
     }
 
     return TCL_OK;
-
-  error:
-    ZipFSCloseArchive(interp, zf);
-    return TCL_ERROR;
 }
 
 /*
@@ -5523,6 +5523,8 @@ ZipFSMatchInDirectoryProc(
     Tcl_Size prefixLen, len, strip = 0;
     char *pat, *prefix, *path;
     Tcl_DString dsPref, *prefixBuf = NULL;
+    int foundInHash, notDuplicate;
+    ZipEntry *z;
 
     if (!normPathPtr) {
 	return -1;
@@ -5572,7 +5574,7 @@ ZipFSMatchInDirectoryProc(
     }
 
     /* Does the path exist in the hash table? */
-    ZipEntry *z = ZipFSLookup(path);
+    z = ZipFSLookup(path);
     if (z) {
 	/*
 	 * Can we skip the complexity of actual globbing? Without a pattern,
@@ -5598,7 +5600,7 @@ ZipFSMatchInDirectoryProc(
 	}
     }
 
-    int foundInHash = (z != NULL);
+    foundInHash = (z != NULL);
 
     /*
      * We've got to work for our supper and do the actual globbing. And all
@@ -5620,7 +5622,7 @@ ZipFSMatchInDirectoryProc(
     scnt = CountSlashes(pat);
 
     Tcl_HashTable duplicates;
-    int notDuplicate = 0;
+    notDuplicate = 0;
     Tcl_InitHashTable(&duplicates, TCL_STRING_KEYS);
 
     Tcl_HashEntry *hPtr;
