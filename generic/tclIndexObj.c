@@ -692,7 +692,7 @@ PrefixAllObjCmd(
 	 */
 
 	if (length <= elemLength) {
-	    if (TclpUtfNcmp2(elemString, string, length) == 0) {
+	    if (TclUtfNcmp2(elemString, string, length) == 0) {
 		Tcl_ListObjAppendElement(interp, resultPtr, tableObjv[t]);
 	    }
 	}
@@ -752,7 +752,7 @@ PrefixLongestObjCmd(
 	 */
 
 	if ((length > elemLength) ||
-		TclpUtfNcmp2(elemString, string, length) != 0) {
+		TclUtfNcmp2(elemString, string, length) != 0) {
 	    continue;
 	}
 

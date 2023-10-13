@@ -3143,9 +3143,14 @@ MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    int numBytes);
 
 typedef int (*memCmpFn_t)(const void*, const void*, size_t);
-MODULE_SCOPE int	TclStringCmp (Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
+MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
 			    int checkEq, int nocase, int reqlength);
-MODULE_SCOPE int	TclStringCmpOpts (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
+MODULE_SCOPE int	TclUniCharNcasecmp(const void*, const void*, size_t);
+MODULE_SCOPE int	TclUtfNcasecmp(const void*, const void*, size_t);
+MODULE_SCOPE int	TclUtfNcmp(const void*, const void*, size_t);
+MODULE_SCOPE int	TclUniCharNcmp(const void*, const void*, size_t);
+MODULE_SCOPE int	TclUtfNcmp2(const void*, const void*, size_t);
+MODULE_SCOPE int	TclStringCmpOpts(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
 			    int *nocase, int *reqlength);
 MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
 			    const char *pattern, int ptnLen, int flags);
@@ -4052,15 +4057,13 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * lexically correct on little-endian systems. The ANSI C "prototype" for
  * this macro is:
  *
- * MODULE_SCOPE int	TclUniCharNcmp(const Tcl_UniChar *cs,
- *			    const Tcl_UniChar *ct, unsigned long n);
+ * MODULE_SCOPE int	TclUniCharNcmp(const void *cs,
+ *			    const void *ct, size_t n);
  *----------------------------------------------------------------
  */
 
 #if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX != 4)
 #   define TclUniCharNcmp(cs,ct,n) memcmp((cs),(ct),(n)*sizeof(Tcl_UniChar))
-#else /* !WORDS_BIGENDIAN */
-#   define TclUniCharNcmp Tcl_UniCharNcmp
 #endif /* WORDS_BIGENDIAN */
 
 /*
