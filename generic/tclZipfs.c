@@ -1436,7 +1436,7 @@ ZipFSFindTOC(
 	goto error;
     }
 
-    /* 
+    /*
      * eocdPtr -> End of Central Directory (EOCD) record at this point.
      * Note this is not same as "end of Central Directory" :-) as EOCD
      * is a record/structure in the ZIP spec terminology

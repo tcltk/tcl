@@ -3615,8 +3615,8 @@ Tcl_LimitAddHandler(
      * Convert everything into a real deletion callback.
      */
 
-    if (deleteProc == (Tcl_LimitHandlerDeleteProc *) TCL_DYNAMIC) {
-	deleteProc = (Tcl_LimitHandlerDeleteProc *) TclpFree;
+    if (deleteProc == TCL_DYNAMIC) {
+	deleteProc = TclpFree;
     }
 
     /*
