@@ -3499,6 +3499,14 @@ RunLimitHandlers(
  *----------------------------------------------------------------------
  */
 
+/* Bug 52dbc4b3f8: wrap Tcl_Free since it is not a Tcl_LimitHandlerDeleteProc. */
+static void
+WrapFree(
+    void *ptr)
+{
+    Tcl_Free(ptr);
+}
+
 void
 Tcl_LimitAddHandler(
     Tcl_Interp *interp,
@@ -3515,10 +3523,7 @@ Tcl_LimitAddHandler(
      */
 
     if (deleteProc == (Tcl_LimitHandlerDeleteProc *) TCL_DYNAMIC) {
-	deleteProc = (Tcl_LimitHandlerDeleteProc *) Tcl_Free;
-    }
-    if (deleteProc == (Tcl_LimitHandlerDeleteProc *) TCL_STATIC) {
-	deleteProc = NULL;
+	deleteProc = WrapFree;
     }
 
     /*
