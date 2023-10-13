@@ -8,7 +8,7 @@
  *
  * Copyright (c) 1983 Regents of the University of California.
  * Copyright (c) 1996-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 Scriptics Corporation.
  *
  * Portions contributed by Chris Kingsley, Jack Jansen and Ray Johnson.
  *
@@ -275,7 +275,7 @@ TclpAlloc(
     if (numBytes >= MAXMALLOC - OVERHEAD) {
 	if (numBytes <= UINT_MAX - OVERHEAD -sizeof(struct block)) {
 	    bigBlockPtr = (struct block *) TclpSysAlloc(
-		    (sizeof(struct block) + OVERHEAD + numBytes), 0);
+		    sizeof(struct block) + OVERHEAD + numBytes, 0);
 	}
 	if (bigBlockPtr == NULL) {
 	    Tcl_MutexUnlock(allocMutexPtr);
@@ -748,6 +748,8 @@ TclpRealloc(
 }
 
 #endif /* !USE_TCLALLOC */
+#else
+TCL_MAC_EMPTY_FILE(generic_tclAlloc_c)
 #endif /* !TCL_THREADS */
 
 /*

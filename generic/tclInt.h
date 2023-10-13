@@ -4503,6 +4503,27 @@ typedef struct NRE_callback {
 #endif
 
 /*
+ * Special hack for macOS, where the static linker (technically the 'ar'
+ * command) hates empty object files, and accepts no flags to make it shut up.
+ *
+ * These symbols are otherwise completely useless.
+ *
+ * They can't be written to or written through. They can't be seen by any
+ * other code. They use a separate attribute (supported by all macOS
+ * compilers, which are derivatives of clang or gcc) to stop the compilation
+ * from moaning. They will be excluded during the final linking stage.
+ *
+ * Other platforms get nothing at all. That's good.
+ */
+
+#ifdef MAC_OSX_TCL
+#define TCL_MAC_EMPTY_FILE(name) \
+    static __attribute__((used)) const void *const TclUnusedFile_ ## name = NULL;
+#else
+#define TCL_MAC_EMPTY_FILE(name)
+#endif /* MAC_OSX_TCL */
+
+/*
  * Other externals.
  */
 

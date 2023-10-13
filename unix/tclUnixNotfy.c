@@ -1483,6 +1483,8 @@ AtForkChild(void)
 
 #endif /* TCL_THREADS */
 
+#else
+TCL_MAC_EMPTY_FILE(unix_tclUnixNotfy_c)
 #endif /* !HAVE_COREFOUNDATION */
 
 /*
