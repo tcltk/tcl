@@ -913,10 +913,16 @@ namespace eval test_ns_zipfs {
             -body [list zipfs canonical {*}$cmdargs] \
             -result $result {*}$args
     }
-    testzipfscanonical basic-relative                 PATH        [file join [zipfs root] PATH]
-    testzipfscanonical basic-absolute                 /PATH       [file join [zipfs root] PATH]
-    testzipfscanonical mountpoint-relative            {MT PATH}   [file join [zipfs root] MT PATH]
-    testzipfscanonical mountpoint-absolute            {MT /PATH}  [file join [zipfs root] PATH]
+    testzipfscanonical default-relative             PATH        [file join [zipfs root] PATH]
+    testzipfscanonical default-absolute             /PATH       [file join [zipfs root] PATH]
+    testzipfscanonical root-relative-1       [list [zipfs root] PATH] [file join [zipfs root] PATH]
+    testzipfscanonical root-relative-2       [list / PATH] [file join [zipfs root] PATH]
+    testzipfscanonical root-absolute-1       [list [zipfs root] /PATH] [file join [zipfs root] PATH]
+    testzipfscanonical root-absolute-2       [list / /PATH] [file join [zipfs root] PATH]
+    testzipfscanonical absolute-relative            {/MT PATH}   [file join [zipfs root] MT PATH]
+    testzipfscanonical absolute-absolute            {/MT /PATH}  [file join [zipfs root] PATH]
+    testzipfscanonical relative-relative            {MT PATH}   [file join [zipfs root] MT PATH]
+    testzipfscanonical relative-absolute            {MT /PATH}  [file join [zipfs root] PATH]
     testzipfscanonical mountpoint-trailslash-relative {MT/ PATH}  [file join [zipfs root] MT PATH]
     testzipfscanonical mountpoint-trailslash-absolute {MT/ /PATH} [file join [zipfs root] PATH]
     testzipfscanonical mountpoint-root-relative       [list [zipfs root] PATH] [file join [zipfs root] PATH]
@@ -925,9 +931,12 @@ namespace eval test_ns_zipfs {
 
     testzipfscanonical driveletter X: [zipfs root] -constraints win
     testzipfscanonical drivepath X:/foo/bar [file join [zipfs root] foo bar] -constraints win
+    testzipfscanonical drivepath {MT X:/foo/bar} [file join [zipfs root] MT foo bar] -constraints win
     # (backslashes need additional escaping passed to testzipfscanonical)
     testzipfscanonical backslashes X:\\\\foo\\\\bar [file join [zipfs root] foo bar] -constraints win
     testzipfscanonical backslashes-1 X:/foo\\\\bar [file join [zipfs root] foo bar] -constraints win
+    testzipfscanonical zipfspath //zipfs:/x/y [file join [zipfs root] x y]
+    testzipfscanonical zipfspath {MT //zipfs:/x/y} [file join [zipfs root] mt x y]
 
     #
     # Read/uncompress

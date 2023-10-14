@@ -47,6 +47,8 @@ zip64 formats and other compression methods like bzip2 are not supported.
 Files within mounted archives can be written to but new files or directories
 cannot be created. Further, modifications to files are limited to the
 mounted archive in memory and are not persisted to disk.
+.PP
+Paths in mounted archives are case-sensitive on all platforms.
 .TP
 \fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR ?\fIinZipfs\fR?
 .
