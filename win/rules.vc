@@ -881,6 +881,7 @@ USE_THREAD_ALLOC= 0
 !message *** Force 64-bit time_t
 _USE_64BIT_TIME_T = 1
 !endif
+!endif
 
 # Yes, it's weird that the "symbols" option controls DEBUG and
 # the "pdbs" option controls SYMBOLS. That's historical.
