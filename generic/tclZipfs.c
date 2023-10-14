@@ -1107,7 +1107,7 @@ MapPathToZipfs(Tcl_Interp *interp,
 	const char **partsPtr;
 	Tcl_SplitPath(path, &numParts, &partsPtr);
 	Tcl_DStringFree(dsPtr);
-	partsPtr[0] = ZIPFS_VOLUME;
+	partsPtr[0] = mountPath;
 	(void)Tcl_JoinPath(numParts, partsPtr, dsPtr);
 	ckfree(partsPtr);
     }
@@ -1126,181 +1126,6 @@ MapPathToZipfs(Tcl_Interp *interp,
     normalizedPath = Tcl_GetStringFromObj(normalizedObj, &normalizedLen);
     Tcl_DStringAppend(dsPtr, normalizedPath, normalizedLen);
     Tcl_DecrRefCount(normalizedObj);
-    return Tcl_DStringValue(dsPtr);
-}
-
-/*
- *-------------------------------------------------------------------------
- *
- * CanonicalPath --
- *
- *	This function computes the canonical path from a directory and file
- *	name components into the specified Tcl_DString.
- *
- * Results:
- *	Returns the pointer to the canonical path contained in the specified
- *	Tcl_DString.
- *
- * Side effects:
- *	Modifies the specified Tcl_DString.
- *
- *-------------------------------------------------------------------------
- */
-
-static char *
-CanonicalPath(
-    const char *root,
-    const char *tail,
-    Tcl_DString *dsPtr,
-    int inZipfs)
-{
-    char *path;
-    int i, j, c, isUNC = 0, isVfs = 0, n = 0;
-    int haveZipfsPath = 1;
-
-#ifdef _WIN32
-    if (tail[0] != '\0' && strchr(drvletters, tail[0]) && tail[1] == ':') {
-	tail += 2;
-	haveZipfsPath = 0;
-    }
-    /* UNC style path */
-    if (tail[0] == '\\') {
-	root = "";
-	++tail;
-	haveZipfsPath = 0;
-    }
-    if (tail[0] == '\\') {
-	root = "/";
-	++tail;
-	haveZipfsPath = 0;
-    }
-#endif /* _WIN32 */
-
-    if (haveZipfsPath) {
-	/* UNC style path */
-	if (root && strncmp(root, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) == 0) {
-	    isVfs = 1;
-	} else if (tail &&
-		strncmp(tail, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) == 0) {
-	    isVfs = 2;
-	}
-	if (isVfs != 1 && (root[0] == '/') && (root[1] == '/')) {
-	    isUNC = 1;
-	}
-    }
-
-    if (isVfs != 2) {
-	if (tail[0] == '/') {
-	    if (isVfs != 1) {
-		root = "";
-	    }
-	    ++tail;
-	    isUNC = 0;
-	}
-	if (tail[0] == '/') {
-	    if (isVfs != 1) {
-		root = "/";
-	    }
-	    ++tail;
-	    isUNC = 1;
-	}
-    }
-    i = strlen(root);
-    j = strlen(tail);
-
-    switch (isVfs) {
-    case 1:
-	if (i > ZIPFS_VOLUME_LEN) {
-	    Tcl_DStringSetLength(dsPtr, i + j + 1);
-	    path = Tcl_DStringValue(dsPtr);
-	    memcpy(path, root, i);
-	    path[i++] = '/';
-	    memcpy(path + i, tail, j);
-	} else {
-	    Tcl_DStringSetLength(dsPtr, i + j);
-	    path = Tcl_DStringValue(dsPtr);
-	    memcpy(path, root, i);
-	    memcpy(path + i, tail, j);
-	}
-	break;
-    case 2:
-	Tcl_DStringSetLength(dsPtr, j);
-	path = Tcl_DStringValue(dsPtr);
-	memcpy(path, tail, j);
-	break;
-    default:
-	if (inZipfs) {
-	    /* pathLen = zipfs vol len + root len + separator + tail len */
-	    Tcl_DStringInit(dsPtr);
-	    (void) Tcl_DStringAppend(dsPtr, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN);
-	    if (i) {
-		(void) Tcl_DStringAppend(dsPtr, root, i);
-		if (root[i-1] != '/') {
-		    Tcl_DStringAppend(dsPtr, "/", 1);
-		}
-	    }
-	    path = Tcl_DStringAppend(dsPtr, tail, j);
-	} else {
-	    Tcl_DStringSetLength(dsPtr, i + j + 1);
-	    path = Tcl_DStringValue(dsPtr);
-	    memcpy(path, root, i);
-	    path[i++] = '/';
-	    memcpy(path + i, tail, j);
-	}
-	break;
-    }
-
-#ifdef _WIN32
-    for (i = 0; path[i] != '\0'; i++) {
-	if (path[i] == '\\') {
-	    path[i] = '/';
-	}
-    }
-#endif /* _WIN32 */
-
-    if (inZipfs) {
-	n = ZIPFS_VOLUME_LEN;
-    } else {
-	n = 0;
-    }
-
-    for (i = j = n; (c = path[i]) != '\0'; i++) {
-	if (c == '/') {
-	    int c2 = path[i + 1];
-
-	    if (c2 == '\0' || c2 == '/') {
-		continue;
-	    }
-	    if (c2 == '.') {
-		int c3 = path[i + 2];
-
-		if ((c3 == '/') || (c3 == '\0')) {
-		    i++;
-		    continue;
-		}
-		if ((c3 == '.')
-			&& ((path[i + 3] == '/') || (path[i + 3] == '\0'))) {
-		    i += 2;
-		    while ((j > 0) && (path[j - 1] != '/')) {
-			j--;
-		    }
-		    if (j > isUNC) {
-			--j;
-			while ((j > 1 + isUNC) && (path[j - 2] == '/')) {
-			    j--;
-			}
-		    }
-		    continue;
-		}
-	    }
-	}
-	path[j++] = c;
-    }
-    if (j == 0) {
-	path[j++] = '/';
-    }
-    path[j] = 0;
-    Tcl_DStringSetLength(dsPtr, j);
     return Tcl_DStringValue(dsPtr);
 }
 
@@ -4139,34 +3964,30 @@ ZipFSCanonicalObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *mntpoint = NULL;
-    char *filename = NULL;
-    char *result;
-    Tcl_DString dPath;
+    char *mntPoint = NULL;
+    Tcl_DString dsPath, dsMount;
 
-    if (objc < 2 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? filename ?inZipfs?");
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? filename");
 	return TCL_ERROR;
     }
-    Tcl_DStringInit(&dPath);
-    if (objc == 2) {
-	filename = Tcl_GetString(objv[1]);
-	result = CanonicalPath("", filename, &dPath, 1);
-    } else if (objc == 3) {
-	mntpoint = Tcl_GetString(objv[1]);
-	filename = Tcl_GetString(objv[2]);
-	result = CanonicalPath(mntpoint, filename, &dPath, 1);
-    } else {
-	int zipfs = 0;
 
-	if (Tcl_GetBooleanFromObj(interp, objv[3], &zipfs)) {
+    Tcl_DStringInit(&dsPath);
+    Tcl_DStringInit(&dsMount);
+
+    if (objc == 2) {
+	mntPoint = ZIPFS_VOLUME;
+    } else {
+	if (NormalizeMountPoint(interp, Tcl_GetString(objv[1]), &dsMount) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	mntpoint = Tcl_GetString(objv[1]);
-	filename = Tcl_GetString(objv[2]);
-	result = CanonicalPath(mntpoint, filename, &dPath, zipfs);
+	mntPoint = Tcl_DStringValue(&dsMount);
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(result, -1));
+    (void)MapPathToZipfs(interp,
+			 mntPoint,
+			 Tcl_GetString(objv[objc - 1]),
+			 &dsPath);
+    Tcl_SetObjResult(interp, Tcl_DStringToObj(&dsPath));
     return TCL_OK;
 }
 
