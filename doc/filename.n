@@ -122,8 +122,8 @@ extra backslashes are superfluous.
 .TP
 \fBZipfs\fR
 On all platforms where \fBzipfs\fR support is enabled, paths within mounted
-ZIP archives begin with the string returned by the \fBzipfs root\fR command
-and otherwise follow the rules for the Unix paths.
+ZIP archives begin with the string returned by the \fBzipfs root\fR command.
+Zipfs paths are case-sensitive on all platforms.
 .RE
 .SH "TILDE SUBSTITUTION"
 .PP

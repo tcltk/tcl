@@ -47,6 +47,8 @@ zip64 formats and other compression methods like bzip2 are not supported.
 Files within mounted archives can be written to but new files or directories
 cannot be created. Further, modifications to files are limited to the
 mounted archive in memory and are not persisted to disk.
+.PP
+Paths in mounted archives are case-sensitive on all platforms.
 .TP
 \fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR ?\fIinZipfs\fR?
 .
@@ -121,6 +123,12 @@ filesystem at \fImountpoint\fR.  After this command executes, files contained
 in \fIzipfile\fR will appear to Tcl to be regular files at the mount point.
 If \fImountpoint\fR is
 specified as an empty string, it is defaulted to the \fB[zipfs root]\fR.
+The command returns the normalized mount point path.
+.PP
+If not under the zipfs file system root, \fImountpoint\fR is normalized with
+respect to it. For example, a mount point passed as either \fBmt\fR \fB/mt\fR 
+would be normalized to \fB//zipfs:/mt\fR. An error is raised if the mount point
+includes a drive or UNC volume.
 .PP
 \fBNB:\fR because the current working directory is a concept maintained by the
 operating system, using \fBcd\fR into a mounted archive will only work in the
