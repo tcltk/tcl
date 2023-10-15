@@ -126,7 +126,7 @@ specified as an empty string, it is defaulted to the \fB[zipfs root]\fR.
 The command returns the normalized mount point path.
 .PP
 If not under the zipfs file system root, \fImountpoint\fR is normalized with
-respect to it. For example, a mount point passed as either \fBmt\fR \fB/mt\fR 
+respect to it. For example, a mount point passed as either \fBmt\fR \fB/mt\fR
 would be normalized to \fB//zipfs:/mt\fR. An error is raised if the mount point
 includes a drive or UNC volume.
 .PP

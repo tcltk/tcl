@@ -1070,7 +1070,7 @@ static char *
 MapPathToZipfs(Tcl_Interp *interp,
 	       const char *mountPath,	/* Must be fully normalized */
 	       const char *path,	/* Archive content path to map */
-	       Tcl_DString *dsPtr)	/* Must be initialized and cleared 
+	       Tcl_DString *dsPtr)	/* Must be initialized and cleared
 	                                   by caller */
 {
     const char *joiner[2];
