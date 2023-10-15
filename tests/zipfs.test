@@ -694,8 +694,8 @@ namespace eval test_ns_zipfs {
         cleanup
     } -body {
         # Primarily verifies that drive letters are stripped and paths maintained
-        lsort [zipfs list]
-    } -result {//zipfs:/testmount //zipfs:/testmount/filename.txt //zipfs:/testmount/src //zipfs:/testmount/src/tcltk //zipfs:/testmount/src/tcltk/wip //zipfs:/testmount/src/tcltk/wip/tcl //zipfs:/testmount/src/tcltk/wip/tcl/tests //zipfs:/testmount/src/tcltk/wip/tcl/tests/zipfiles //zipfs:/testmount/src/tcltk/wip/tcl/tests/zipfiles/abspath.txt //zipfs:/testmount/src/tcltk/wip/tcl/tests/zipfiles/fullpath.txt}
+        lsort [zipfs find $defMountPt]
+    } -result {//zipfs:/testmount/filename.txt //zipfs:/testmount/src //zipfs:/testmount/src/tcltk //zipfs:/testmount/src/tcltk/wip //zipfs:/testmount/src/tcltk/wip/tcl //zipfs:/testmount/src/tcltk/wip/tcl/tests //zipfs:/testmount/src/tcltk/wip/tcl/tests/zipfiles //zipfs:/testmount/src/tcltk/wip/tcl/tests/zipfiles/abspath.txt //zipfs:/testmount/src/tcltk/wip/tcl/tests/zipfiles/fullpath.txt}
 
     #
     # zipfs list
@@ -1917,6 +1917,14 @@ namespace eval test_ns_zipfs {
         read $fd
         close $fd
     } -result ""
+
+    # Following will only show a leak with valgrind
+    test bug-9525f4c8bc "Memory leak with long mount paths" -body {
+        set mt //zipfs:[string repeat /x 240]
+        zipfs mount [zippath test.zip] $mt
+        zipfs unmount $mt
+    } -result ""
+
 }
 
 

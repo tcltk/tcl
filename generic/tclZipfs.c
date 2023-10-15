@@ -889,7 +889,7 @@ static char *
 DecodeZipEntryText(
     const unsigned char *inputBytes,
     unsigned int inputLength,
-    Tcl_DString *dstPtr)
+    Tcl_DString *dstPtr) /* Must have been initialized by caller! */
 {
     Tcl_Encoding encoding;
     const char *src;
@@ -897,7 +897,6 @@ DecodeZipEntryText(
     int dstLen, srcLen = inputLength, flags;
     Tcl_EncodingState state;
 
-    Tcl_DStringInit(dstPtr);
     if (inputLength < 1) {
 	return Tcl_DStringValue(dstPtr);
     }
@@ -996,7 +995,9 @@ DecodeZipEntryText(
  *------------------------------------------------------------------------
  */
 static int
-NormalizeMountPoint(Tcl_Interp *interp, const char *mountPath, Tcl_DString *dsPtr)
+NormalizeMountPoint(Tcl_Interp *interp,
+		    const char *mountPath,
+		    Tcl_DString *dsPtr) /* Must be initialized by caller! */
 {
     const char *joiner[2];
     char *joinedPath;
@@ -1004,8 +1005,7 @@ NormalizeMountPoint(Tcl_Interp *interp, const char *mountPath, Tcl_DString *dsPt
     Tcl_Obj *normalizedObj;
     const char *normalizedPath;
     Tcl_Size normalizedLen;
-
-    Tcl_DStringInit(dsPtr);
+    Tcl_DString dsJoin;
 
     /*
      * Several things need to happen here
@@ -1020,12 +1020,13 @@ NormalizeMountPoint(Tcl_Interp *interp, const char *mountPath, Tcl_DString *dsPt
 
     joiner[0] = ZIPFS_VOLUME;
     joiner[1] = mountPath;
-    joinedPath = Tcl_JoinPath(2, joiner, dsPtr);
+    Tcl_DStringInit(&dsJoin);
+    joinedPath = Tcl_JoinPath(2, joiner, &dsJoin);
 
     /* Now joinedPath has all \ -> / and // -> / (except UNC) converted. */
 
     if (!strncmp(ZIPFS_VOLUME, joinedPath, ZIPFS_VOLUME_LEN)) {
-	unnormalizedObj = Tcl_DStringToObj(dsPtr);
+	unnormalizedObj = Tcl_DStringToObj(&dsJoin);
     } else {
 	if (joinedPath[0] != '/' || joinedPath[1] == '/') {
 	    /* mount path was D:/x, D:x or //unc */
@@ -1044,7 +1045,7 @@ NormalizeMountPoint(Tcl_Interp *interp, const char *mountPath, Tcl_DString *dsPt
 
     /* normalizedObj owned by Tcl!! Do NOT DecrRef without an IncrRef */
     normalizedPath = Tcl_GetStringFromObj(normalizedObj, &normalizedLen);
-    Tcl_DStringFree(dsPtr); /* Reset */
+    Tcl_DStringFree(&dsJoin);
     Tcl_DStringAppend(dsPtr, normalizedPath, normalizedLen);
     Tcl_DecrRefCount(normalizedObj);
     return TCL_OK;
@@ -1057,7 +1058,7 @@ invalidMountPath:
     }
 
 errorReturn:
-    Tcl_DStringFree(dsPtr);
+    Tcl_DStringFree(&dsJoin);
     return TCL_ERROR;
 }
 
@@ -1084,7 +1085,8 @@ static char *
 MapPathToZipfs(Tcl_Interp *interp,
 	       const char *mountPath,	/* Must be fully normalized */
 	       const char *path,	/* Archive content path to map */
-	       Tcl_DString *dsPtr)	/* Must be cleared on success return */
+	       Tcl_DString *dsPtr)	/* Must be initialized and cleared 
+	                                   by caller */
 {
     const char *joiner[2];
     char *joinedPath;
@@ -1092,9 +1094,9 @@ MapPathToZipfs(Tcl_Interp *interp,
     Tcl_Obj *normalizedObj;
     const char *normalizedPath;
     Tcl_Size normalizedLen;
+    Tcl_DString dsJoin;
 
     assert(TclIsZipfsPath(mountPath));
-    Tcl_DStringInit(dsPtr);
 
     joiner[0] = mountPath;
     joiner[1] = path;
@@ -1104,19 +1106,20 @@ MapPathToZipfs(Tcl_Interp *interp,
 	joiner[1] += 2;
     }
 #endif
-    joinedPath = Tcl_JoinPath(2, joiner, dsPtr);
+    Tcl_DStringInit(&dsJoin);
+    joinedPath = Tcl_JoinPath(2, joiner, &dsJoin);
 
     if (strncmp(ZIPFS_VOLUME, joinedPath, ZIPFS_VOLUME_LEN)) {
 	/* path was not relative. Strip off the volume (e.g. UNC) */
 	Tcl_Size numParts;
 	const char **partsPtr;
 	Tcl_SplitPath(path, &numParts, &partsPtr);
-	Tcl_DStringFree(dsPtr);
+	Tcl_DStringFree(&dsJoin);
 	partsPtr[0] = mountPath;
-	(void)Tcl_JoinPath(numParts, partsPtr, dsPtr);
+	(void)Tcl_JoinPath(numParts, partsPtr, &dsJoin);
 	ckfree(partsPtr);
     }
-    unnormalizedObj = Tcl_DStringToObj(dsPtr); /* Also resets dsPtr */
+    unnormalizedObj = Tcl_DStringToObj(&dsJoin); /* Also resets dsJoin */
     Tcl_IncrRefCount(unnormalizedObj);
     normalizedObj = Tcl_FSGetNormalizedPath(interp, unnormalizedObj);
     if (normalizedObj == NULL) {
@@ -1127,7 +1130,6 @@ MapPathToZipfs(Tcl_Interp *interp,
     Tcl_DecrRefCount(unnormalizedObj);
 
     /* normalizedObj owned by Tcl!! Do NOT DecrRef without an IncrRef */
-    Tcl_DStringFree(dsPtr); /* Reset */
     normalizedPath = Tcl_GetStringFromObj(normalizedObj, &normalizedLen);
     Tcl_DStringAppend(dsPtr, normalizedPath, normalizedLen);
     Tcl_DecrRefCount(normalizedObj);
@@ -1971,6 +1973,7 @@ ZipFSCatalogFilesystem(
 	pathlen = ZipReadShort(start, end, q + ZIP_CENTRAL_PATHLEN_OFFS);
 	comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
 	extra = ZipReadShort(start, end, q + ZIP_CENTRAL_EXTRALEN_OFFS);
+	Tcl_DStringSetLength(&ds, 0);
 	path = DecodeZipEntryText(q + ZIP_CENTRAL_HEADER_LEN, pathlen, &ds);
 	if ((pathlen > 0) && (path[pathlen - 1] == '/')) {
 	    Tcl_DStringSetLength(&ds, pathlen - 1);
@@ -2336,6 +2339,7 @@ TclZipfs_Mount(
     }
 
     Tcl_DString ds;
+    Tcl_DStringInit(&ds);
     ret = NormalizeMountPoint(interp, mountPoint, &ds);
     if (ret != TCL_OK) {
 	Unlock();
@@ -2448,6 +2452,7 @@ TclZipfs_MountBuffer(
     }
 
     Tcl_DString ds;
+    Tcl_DStringInit(&ds);
     ret = NormalizeMountPoint(interp, mountPoint, &ds);
     if (ret != TCL_OK) {
 	Unlock();
