@@ -1936,7 +1936,7 @@ ZipFSCatalogFilesystem(
 	}
 	zf->passBuf[k] = '\0';
     }
-    /* TODO - is this test necessary? WHen will mountPoint[0] be \0 ? */
+    /* TODO - is this test necessary? When will mountPoint[0] be \0 ? */
     if (mountPoint[0] != '\0') {
 	hPtr = Tcl_CreateHashEntry(&ZipFS.fileHash, mountPoint, &isNew);
 	if (isNew) {
