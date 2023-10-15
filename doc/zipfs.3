@@ -111,23 +111,12 @@ is NULL, the path to the archive mounted at that mount point is stored
 as \fIinterp\fR's result. The function returns a standard Tcl result
 code.
 .PP
-\fBTclZipfs_MountBuffer\fR is similar to \fBTclZipfs_Mount\fR except that the
-content of a ZIP archive is passed in the buffer pointed to by \fIdata\fR.
-If \fImountpoint\fR and
-\fIdata\fR are both non-NULL, the function
-mounts the ZIP archive content \fIdata\fR on the mount point
-given in \fImountpoint\fR.
-The
-\fIcopy\fR argument determines whether the buffer is internally copied before
-mounting or not. The ZIP archive is assumed to be not password protected.
-On success, \fIinterp\fR's result is set to the normalized mount point
-path.
-If \fImountpoint\fR is a NULL pointer, information on all currently mounted ZIP
-file systems is stored in \fIinterp\fR's result as a sequence of mount
-points and ZIP file names. If \fImountpoint\fR is not NULL but \fIdata\fR
-is NULL, the path to the archive mounted at that mount point is stored
-as \fIinterp\fR's result. The function returns a standard Tcl result
-code.
+\fBTclZipfs_MountBuffer\fR mounts the ZIP archive content \fIdata\fR on the
+mount point given in \fImountpoint\fR. Both \fImountpoint\fR and \fIdata\fR must
+be specified as non-NULL. The \fIcopy\fR argument determines whether the buffer
+is internally copied before mounting or not. The ZIP archive is assumed to be
+not password protected. On success, \fIinterp\fR's result is set to the
+normalized mount point path.
 .PP
 \fBTclZipfs_Unmount\fR undoes the effect of \fBTclZipfs_Mount\fR, i.e., it
 unmounts the mounted ZIP file system that was mounted from \fIzipname\fR (at
