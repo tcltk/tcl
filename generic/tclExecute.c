@@ -8364,7 +8364,7 @@ ExecuteExtendedBinaryMathOp(
 	}
 	Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
 	Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	err = mp_init_multi(&bigResult, &bigRemainder, NULL);
+	err = mp_init_multi(&bigResult, &bigRemainder, (void *)NULL);
 	if (err == MP_OKAY) {
 	    err = mp_div(&big1, &big2, &bigResult, &bigRemainder);
 	}
