@@ -2435,20 +2435,15 @@ TclZipfs_MountBuffer(
     ZipFile *zf;
     int ret;
 
+    if (mountPoint == NULL || data == NULL) {
+	ZIPFS_ERROR(interp, "mount point and/or data are null");
+	return TCL_ERROR;
+    }
+
     /* TODO - how come a *read* lock suffices for initialzing ? */
     ReadLock();
     if (!ZipFS.initialized) {
 	ZipfsSetup();
-    }
-
-    /*
-     * No mount point, so list all mount points and what is mounted there.
-     */
-
-    if (!mountPoint) {
-	ret = ListMountPoints(interp);
-	Unlock();
-	return ret;
     }
 
     Tcl_DString ds;
@@ -2460,57 +2455,53 @@ TclZipfs_MountBuffer(
     }
     mountPoint = Tcl_DStringValue(&ds);
 
-    if (data == NULL) {
-	/* Mount point but no data, so describe what is mounted at there */
-	ret = DescribeMounted(interp, mountPoint);
-	Unlock();
-    } else {
-	Unlock();
+    Unlock();
 
-	/*
-	 * Have both a mount point and data to mount there.
-	 * What's the magic about 64 * 1024 * 1024 ?
-	 */
-	ret = TCL_ERROR;
-	if ((datalen <= ZIP_CENTRAL_END_LEN) ||
-	    (datalen - ZIP_CENTRAL_END_LEN) >
-		(64 * 1024 * 1024 - ZIP_CENTRAL_END_LEN)) {
-	    ZIPFS_ERROR(interp, "illegal file size");
-	    ZIPFS_ERROR_CODE(interp, "FILE_SIZE");
-	    goto done;
-	}
-	zf = AllocateZipFile(interp, strlen(mountPoint));
-	if (zf == NULL) {
-	    goto done;
-	}
-	zf->isMemBuffer = 1;
-	zf->length = datalen;
+    /*
+     * Have both a mount point and data to mount there.
+     * What's the magic about 64 * 1024 * 1024 ?
+     */
+    ret = TCL_ERROR;
+    if ((datalen <= ZIP_CENTRAL_END_LEN) ||
+	(datalen - ZIP_CENTRAL_END_LEN) >
+	    (64 * 1024 * 1024 - ZIP_CENTRAL_END_LEN)) {
+	ZIPFS_ERROR(interp, "illegal file size");
+	ZIPFS_ERROR_CODE(interp, "FILE_SIZE");
+	goto done;
+    }
+    zf = AllocateZipFile(interp, strlen(mountPoint));
+    if (zf == NULL) {
+	goto done;
+    }
+    zf->isMemBuffer = 1;
+    zf->length = datalen;
 
-	if (copy) {
-	    zf->data = (unsigned char *)attemptckalloc(datalen);
-	    if (zf->data == NULL) {
-		ZipFSCloseArchive(interp, zf);
-		ckfree(zf);
-		ZIPFS_MEM_ERROR(interp);
-		goto done;
-	    }
-	    memcpy(zf->data, data, datalen);
-	    zf->ptrToFree = zf->data;
-	} else {
-	    zf->data = (unsigned char *)data;
-	    zf->ptrToFree = NULL;
-	}
-	ret = ZipFSFindTOC(interp, 1, zf);
-	if (ret != TCL_OK) {
+    if (copy) {
+	zf->data = (unsigned char *)attemptckalloc(datalen);
+	if (zf->data == NULL) {
+	    ZipFSCloseArchive(interp, zf);
 	    ckfree(zf);
-	} else {
-	    /* Note ZipFSCatalogFilesystem will free zf on error */
-	    ret = ZipFSCatalogFilesystem(
-		interp, zf, mountPoint, NULL, "Memory Buffer");
+	    ZIPFS_MEM_ERROR(interp);
+	    goto done;
 	}
-	if (ret == TCL_OK && interp) {
-	    Tcl_DStringResult(interp, &ds);
-	}
+	memcpy(zf->data, data, datalen);
+	zf->ptrToFree = zf->data;
+    }
+    else {
+	zf->data = (unsigned char *)data;
+	zf->ptrToFree = NULL;
+    }
+    ret = ZipFSFindTOC(interp, 1, zf);
+    if (ret != TCL_OK) {
+	ckfree(zf);
+    }
+    else {
+	/* Note ZipFSCatalogFilesystem will free zf on error */
+	ret = ZipFSCatalogFilesystem(
+	    interp, zf, mountPoint, NULL, "Memory Buffer");
+    }
+    if (ret == TCL_OK && interp) {
+	Tcl_DStringResult(interp, &ds);
     }
 
 done:
@@ -2675,21 +2666,14 @@ ZipFSMountBufferObjCmd(
     unsigned char *data = NULL;
     Tcl_Size length;
 
-    if (objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?data? ?mountpoint?");
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "data mountpoint");
 	return TCL_ERROR;
     }
-
-    if (objc > 1) {
-	if (objc == 2) {
-	    mountPoint = Tcl_GetString(objv[1]);
-	} else {
-	    data = Tcl_GetBytesFromObj(interp, objv[1], &length);
-	    mountPoint = Tcl_GetString(objv[2]);
-	    if (data == NULL) {
-		return TCL_ERROR;
-	    }
-	}
+    data = Tcl_GetBytesFromObj(interp, objv[1], &length);
+    mountPoint = Tcl_GetString(objv[2]);
+    if (data == NULL) {
+	return TCL_ERROR;
     }
     return TclZipfs_MountBuffer(interp, data, length, mountPoint, 1);
 }

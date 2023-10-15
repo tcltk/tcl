@@ -361,9 +361,6 @@ test zipfs-5.3 {zipfs mount_data: short data} -constraints zipfs -body {
     append data PK\x05\x06.....................................
     zipfs mount_data $data gorp
 } -returnCodes error -result {archive directory truncated}
-test zipfs-5.4 {zipfs mount_data: bad arg count} -constraints zipfs -body {
-    zipfs mount_data {} gorp foobar
-} -returnCodes error -result {wrong # args: should be "zipfs mount_data ?data? ?mountpoint?"}
 
 test zipfs-6.1 {zipfs mkkey} -constraints zipfs -body {
     binary scan [zipfs mkkey gorp] cu* x
@@ -483,6 +480,7 @@ namespace eval test_ns_zipfs {
     }
 
     testnumargs "zipfs mount" "" "?zipfile? ?mountpoint? ?password?"
+    testnumargs "zipfs mount_data" "data mountpoint" ""
 
     # Not supported zip files
     testbadmount non-existent-file    nosuchfile.zip "couldn't open*nosuchfile.zip*no such file or directory"
