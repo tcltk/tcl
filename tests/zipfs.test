@@ -390,7 +390,7 @@ namespace eval test_ns_zipfs {
     # Wrapper to ease transition if Tcl changes order of argument to zipfs mount
     # or the zipfs prefix
     proc mount [list zippath [list mountpoint $defMountPt]] {
-        zipfs mount $zippath $mountpoint
+        return [zipfs mount $zippath $mountpoint]
     }
 
     # Make full path to zip file
@@ -464,23 +464,21 @@ namespace eval test_ns_zipfs {
     proc testmount {id zippath checkPath mountpoint args} {
         set zippath [zippath $zippath]
         test zipfs-mount-$id "zipfs mount $id" -body {
-            mount $zippath $mountpoint
-            set canon [zipfs canonical $mountpoint]
+            set canon [mount $zippath $mountpoint]
             list [file exists [file join $canon $checkPath]] \
-                [mounttarget $canon]
+                [zipfs mount $canon] [zipfs mount $mountpoint]
         } -cleanup {
             zipfs unmount $mountpoint
-        } -result [list 1 $zippath] {*}$args
+        } -result [list 1 $zippath $zippath] {*}$args
 
         # Mount memory buffer
         test zipfs-mount_data-$id "zipfs mount_data $id" -body {
-            zipfs mount_data [readbin $zippath] $mountpoint
-            set canon [zipfs canonical $mountpoint]
+            set canon [zipfs mount_data [readbin $zippath] $mountpoint]
             list [file exists [file join $canon $checkPath]] \
-                [mounttarget $canon]
+                [zipfs mount $canon] [zipfs mount $mountpoint]
         } -cleanup {
             cleanup
-        } -result [list 1 {Memory Buffer}] {*}$args
+        } -result [list 1 {Memory Buffer} {Memory Buffer}] {*}$args
 
     }
 
@@ -498,12 +496,28 @@ namespace eval test_ns_zipfs {
     testbadmount bad-file-count-high  incons-file-count-high.zip   "truncated directory"
     testbadmount bad-file-count-low   incons-file-count-low.zip    "short file count"
 
+    test zipfs-mount-on-drive "Mount point include drive" -body {
+        zipfs mount [zippath test.zip] C:/foo
+    } -result {Invalid mount path "C:/foo"} -returnCodes error -constraints win
+    test zipfs-mount_data-on-drive "Mount point include drive" -body {
+        zipfs mount_data [readbin [zippath test.zip]] C:/foo
+    } -result {Invalid mount path "C:/foo"} -returnCodes error -constraints win
+    test zipfs-mount-on-unc "Mount point is unc" -body {
+        zipfs mount [zippath test.zip] //unc/share/foo
+    } -result {Invalid mount path "//unc/share/foo"} -returnCodes error
+    test zipfs-mount_data-on-unc "Mount point include unc" -body {
+        zipfs mount_data [readbin [zippath test.zip]] //unc/share/foo
+    } -result {Invalid mount path "//unc/share/foo"} -returnCodes error
+
+    # Good mounts
     testmount basic             test.zip           testdir/test2 $defMountPt
     testmount basic-on-default  test.zip           testdir/test2 ""
     testmount basic-on-root     test.zip           testdir/test2 [zipfs root]
     testmount basic-on-slash    test.zip           testdir/test2 /
+    testmount basic-on-bslash   test.zip           testdir/test2 \\ -constraints win
     testmount basic-on-relative test.zip           testdir/test2 testmount
     testmount basic-on-absolute test.zip           testdir/test2 /testmount
+    testmount basic-on-absolute-bslash test.zip    testdir/test2 \\testmount -constraints win
     testmount zip-at-end        junk-at-start.zip  testdir/test2 $defMountPt
     testmount zip-at-start      junk-at-end.zip    testdir/test2 $defMountPt
     testmount zip-in-zip [file join [zipfs root] test2 test.zip] testdir/test2 $defMountPt -setup {
@@ -670,6 +684,18 @@ namespace eval test_ns_zipfs {
             [lsort [glob -tails -dir $newmount *]] \
             [readbin [file join $newmount test2]]
     } -result {{} {test2 test3} test2-overlay}
+
+    #
+    # paths inside a zip
+    # TODO - paths encoded in utf-8 vs fallback encoding
+    test zipfs-content-paths-1 "Test absolute and full paths" -setup {
+        mount [zippath test-paths.zip]
+    } -cleanup {
+        cleanup
+    } -body {
+        # Primarily verifies that drive letters are stripped and paths maintained
+        lsort [zipfs find $defMountPt]
+    } -result {//zipfs:/testmount/filename.txt //zipfs:/testmount/src //zipfs:/testmount/src/tcltk //zipfs:/testmount/src/tcltk/wip //zipfs:/testmount/src/tcltk/wip/tcl //zipfs:/testmount/src/tcltk/wip/tcl/tests //zipfs:/testmount/src/tcltk/wip/tcl/tests/zipfiles //zipfs:/testmount/src/tcltk/wip/tcl/tests/zipfiles/abspath.txt //zipfs:/testmount/src/tcltk/wip/tcl/tests/zipfiles/fullpath.txt}
 
     #
     # zipfs list
@@ -899,35 +925,41 @@ namespace eval test_ns_zipfs {
     } -result {path "//zipfs:/testmt/a" not found in any zipfs volume} -returnCodes error
 
     #
-    # zipfs canonical -
-    # TODO - semantics are very unclear. Can produce nonsensical paths like
-    # //zipfs:/n/zipfs:/m/test. Minimal sanity tests for now.
+    # zipfs canonical
     test zipfs-canonical-minargs {zipfs canonical min args} -body {
         zipfs canonical
-    } -returnCodes error -result {wrong # args: should be "zipfs canonical ?mountpoint? filename ?inZipfs?"}
+    } -returnCodes error -result {wrong # args: should be "zipfs canonical ?mountpoint? filename"}
     test zipfs-canonical-maxargs {zipfs canonical max args} -body {
-        zipfs canonical a b c d
-    } -returnCodes error -result {wrong # args: should be "zipfs canonical ?mountpoint? filename ?inZipfs?"}
+        zipfs canonical a b c
+    } -returnCodes error -result {wrong # args: should be "zipfs canonical ?mountpoint? filename"}
     proc testzipfscanonical {id cmdargs result args} {
         test zipfs-canonical-$id "zipfs canonical $id" \
             -body [list zipfs canonical {*}$cmdargs] \
             -result $result {*}$args
     }
-    testzipfscanonical basic-relative                 PATH        [file join [zipfs root] PATH]
-    testzipfscanonical basic-absolute                 /PATH       [file join [zipfs root] PATH]
-    testzipfscanonical mountpoint-relative            {MT PATH}   [file join [zipfs root] MT PATH]
-    testzipfscanonical mountpoint-absolute            {MT /PATH}  [file join [zipfs root] PATH]
-    testzipfscanonical mountpoint-trailslash-relative {MT/ PATH}  [file join [zipfs root] MT PATH]
-    testzipfscanonical mountpoint-trailslash-absolute {MT/ /PATH} [file join [zipfs root] PATH]
-    testzipfscanonical mountpoint-root-relative       [list [zipfs root] PATH] [file join [zipfs root] PATH]
-    testzipfscanonical mountpoint-root-absolute       [list [zipfs root] /PATH] [file join [zipfs root] PATH]
-    testzipfscanonical mountpoint-empty-relative      {{} PATH} [file join [zipfs root] PATH]
+    testzipfscanonical default-relative      [list a]               [file join [zipfs root] a]
+    testzipfscanonical default-absolute      [list /a]              [file join [zipfs root] a]
+    testzipfscanonical root-relative-1       [list [zipfs root] a]  [file join [zipfs root] a]
+    testzipfscanonical root-relative-2       [list / a]             [file join [zipfs root] a]
+    testzipfscanonical root-absolute-1       [list [zipfs root] /a] [file join [zipfs root] a]
+    testzipfscanonical root-absolute-2       [list / /a]            [file join [zipfs root] a]
+    testzipfscanonical absolute-relative     [list /MT a]           [file join [zipfs root] MT a]
+    testzipfscanonical absolute-absolute     [list /MT /a]          [file join [zipfs root] MT a]
+    testzipfscanonical relative-relative     [list MT a]            [file join [zipfs root] MT a]
+    testzipfscanonical relative-absolute     [list MT /a]           [file join [zipfs root] MT a]
+    testzipfscanonical mountpoint-trailslash-relative [list MT/ a]  [file join [zipfs root] MT a]
+    testzipfscanonical mountpoint-trailslash-absolute [list MT/ /a] [file join [zipfs root] MT a]
+    testzipfscanonical mountpoint-root-relative       [list [zipfs root] a]  [file join [zipfs root] a]
+    testzipfscanonical mountpoint-root-absolute       [list [zipfs root] /a] [file join [zipfs root] a]
+    testzipfscanonical mountpoint-empty-relative      [list {} a] [file join [zipfs root] a]
 
-    testzipfscanonical driveletter X: [zipfs root] -constraints win
-    testzipfscanonical drivepath X:/foo/bar [file join [zipfs root] foo bar] -constraints win
-    # (backslashes need additional escaping passed to testzipfscanonical)
-    testzipfscanonical backslashes X:\\\\foo\\\\bar [file join [zipfs root] foo bar] -constraints win
-    testzipfscanonical backslashes-1 X:/foo\\\\bar [file join [zipfs root] foo bar] -constraints win
+    testzipfscanonical driveletter   [list X:]               [zipfs root] -constraints win
+    testzipfscanonical drivepath     [list X:/foo/bar]       [file join [zipfs root] foo bar] -constraints win
+    testzipfscanonical drivepath     [list MT X:/foo/bar]    [file join [zipfs root] MT foo bar] -constraints win
+    testzipfscanonical backslashes   [list X:\\\\foo\\\\bar] [file join [zipfs root] foo bar] -constraints win
+    testzipfscanonical backslashes-1 [list X:/foo\\\\bar]    [file join [zipfs root] foo bar] -constraints win
+    testzipfscanonical zipfspath     [list //zipfs:/x/y]     [file join [zipfs root] x y]
+    testzipfscanonical zipfspath     [list MT //zipfs:/x/y]  [file join [zipfs root] x y]
 
     #
     # Read/uncompress
@@ -1885,6 +1917,14 @@ namespace eval test_ns_zipfs {
         read $fd
         close $fd
     } -result ""
+
+    # Following will only show a leak with valgrind
+    test bug-9525f4c8bc "Memory leak with long mount paths" -body {
+        set mt //zipfs:[string repeat /x 240]
+        zipfs mount [zippath test.zip] $mt
+        zipfs unmount $mt
+    } -result ""
+
 }
 
 
