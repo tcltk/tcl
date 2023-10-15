@@ -491,7 +491,18 @@ static Tcl_ChannelType ZipChannelType = {
  */
 int TclIsZipfsPath (const char *path)
 {
+#ifdef _WIN32
     return strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) ? 0 : ZIPFS_VOLUME_LEN;
+#else
+    int i;
+    for (i = 0; i < ZIPFS_VOLUME_LEN; ++i) {
+	if (path[i] != ZIPFS_VOLUME[i] &&
+	    (path[i] != '\\' || ZIPFS_VOLUME[i] != '/')) {
+	    return 0;
+	}
+    }
+    return ZIPFS_VOLUME_LEN;
+#endif
 }
 
 /*
@@ -878,7 +889,7 @@ static char *
 DecodeZipEntryText(
     const unsigned char *inputBytes,
     unsigned int inputLength,
-    Tcl_DString *dstPtr)
+    Tcl_DString *dstPtr) /* Must have been initialized by caller! */
 {
     Tcl_Encoding encoding;
     const char *src;
@@ -886,7 +897,6 @@ DecodeZipEntryText(
     int dstLen, srcLen = inputLength, flags;
     Tcl_EncodingState state;
 
-    Tcl_DStringInit(dstPtr);
     if (inputLength < 1) {
 	return Tcl_DStringValue(dstPtr);
     }
@@ -959,177 +969,170 @@ DecodeZipEntryText(
 }
 
 /*
- *-------------------------------------------------------------------------
+ *------------------------------------------------------------------------
  *
- * CanonicalPath --
+ * NormalizeMountPoint --
  *
- *	This function computes the canonical path from a directory and file
- *	name components into the specified Tcl_DString.
+ *    Converts the passed path into a normalized zipfs mount point
+ *    of the form //zipfs:/some/path. On Windows any \ path separators
+ *    are converted to /.
+ *
+ *    Mount points with a volume will raise an error unless the volume is
+ *    zipfs root. Thus D:/foo is not a valid mount point.
+ *
+ *    Relative paths and absolute paths without a volume are mapped under
+ *    the zipfs root.
+ *
+ *    The empty string is mapped to the zipfs root.
+ *
+ *    dsPtr is initialized by the function and must be cleared by caller
+ *    on a successful return.
  *
  * Results:
- *	Returns the pointer to the canonical path contained in the specified
- *	Tcl_DString.
+ *    TCL_OK on success with normalized mount path in dsPtr
+ *    TCL_ERROR on fail with error message in interp if not NULL
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+NormalizeMountPoint(Tcl_Interp *interp,
+		    const char *mountPath,
+		    Tcl_DString *dsPtr) /* Must be initialized by caller! */
+{
+    const char *joiner[2];
+    char *joinedPath;
+    Tcl_Obj *unnormalizedObj;
+    Tcl_Obj *normalizedObj;
+    const char *normalizedPath;
+    Tcl_Size normalizedLen;
+    Tcl_DString dsJoin;
+
+    /*
+     * Several things need to happen here
+     * - Absolute paths containing volumes (drive letter or UNC) raise error
+     *   except of course if the volume is zipfs root
+     * - \ -> / and // -> / conversions (except if UNC which is error)
+     * - . and .. have to be dealt with
+     * The first is explicitly checked, the others are dealt with a
+     * combination file join and normalize. Easier than doing it ourselves
+     * and not performance sensitive anyways.
+     */
+
+    joiner[0] = ZIPFS_VOLUME;
+    joiner[1] = mountPath;
+    Tcl_DStringInit(&dsJoin);
+    joinedPath = Tcl_JoinPath(2, joiner, &dsJoin);
+
+    /* Now joinedPath has all \ -> / and // -> / (except UNC) converted. */
+
+    if (!strncmp(ZIPFS_VOLUME, joinedPath, ZIPFS_VOLUME_LEN)) {
+	unnormalizedObj = Tcl_DStringToObj(&dsJoin);
+    } else {
+	if (joinedPath[0] != '/' || joinedPath[1] == '/') {
+	    /* mount path was D:/x, D:x or //unc */
+	    goto invalidMountPath;
+	}
+	unnormalizedObj = Tcl_ObjPrintf(ZIPFS_VOLUME "%s", joinedPath + 1);
+    }
+    Tcl_IncrRefCount(unnormalizedObj);
+    normalizedObj = Tcl_FSGetNormalizedPath(interp, unnormalizedObj);
+    if (normalizedObj == NULL) {
+	Tcl_DecrRefCount(unnormalizedObj);
+	goto errorReturn;
+    }
+    Tcl_IncrRefCount(normalizedObj); /* BEFORE DecrRefCount on unnormalizedObj */
+    Tcl_DecrRefCount(unnormalizedObj);
+
+    /* normalizedObj owned by Tcl!! Do NOT DecrRef without an IncrRef */
+    normalizedPath = Tcl_GetStringFromObj(normalizedObj, &normalizedLen);
+    Tcl_DStringFree(&dsJoin);
+    Tcl_DStringAppend(dsPtr, normalizedPath, normalizedLen);
+    Tcl_DecrRefCount(normalizedObj);
+    return TCL_OK;
+
+invalidMountPath:
+    if (interp) {
+	Tcl_SetObjResult(interp,
+			 Tcl_ObjPrintf("Invalid mount path \"%s\"", mountPath));
+	ZIPFS_ERROR_CODE(interp, "MOUNT_PATH");
+    }
+
+errorReturn:
+    Tcl_DStringFree(&dsJoin);
+    return TCL_ERROR;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * MapPathToZipfs --
+ *
+ *    Maps a path as stored in a zip archive to its normalized location
+ *    under a given zipfs mount point. Relative paths and Unix style
+ *    absolute paths go directly under the mount point. Volume relative
+ *    paths and absolute paths that have a volume (drive or UNC) are
+ *    stripped of the volume before joining the mount point.
+ *
+ * Results:
+ *    Pointer to normalized path.
  *
  * Side effects:
- *	Modifies the specified Tcl_DString.
+ *    Stores mapped path in dsPtr.
  *
- *-------------------------------------------------------------------------
+ *------------------------------------------------------------------------
  */
-
 static char *
-CanonicalPath(
-    const char *root,
-    const char *tail,
-    Tcl_DString *dsPtr,
-    int inZipfs)
+MapPathToZipfs(Tcl_Interp *interp,
+	       const char *mountPath,	/* Must be fully normalized */
+	       const char *path,	/* Archive content path to map */
+	       Tcl_DString *dsPtr)	/* Must be initialized and cleared 
+	                                   by caller */
 {
-    char *path;
-    int i, j, c, isUNC = 0, isVfs = 0, n = 0;
-    int haveZipfsPath = 1;
+    const char *joiner[2];
+    char *joinedPath;
+    Tcl_Obj *unnormalizedObj;
+    Tcl_Obj *normalizedObj;
+    const char *normalizedPath;
+    Tcl_Size normalizedLen;
+    Tcl_DString dsJoin;
 
-#ifdef _WIN32
-    if (tail[0] != '\0' && strchr(drvletters, tail[0]) && tail[1] == ':') {
-	tail += 2;
-	haveZipfsPath = 0;
-    }
-    /* UNC style path */
-    if (tail[0] == '\\') {
-	root = "";
-	++tail;
-	haveZipfsPath = 0;
-    }
-    if (tail[0] == '\\') {
-	root = "/";
-	++tail;
-	haveZipfsPath = 0;
-    }
-#endif /* _WIN32 */
+    assert(TclIsZipfsPath(mountPath));
 
-    if (haveZipfsPath) {
-	/* UNC style path */
-	if (root && strncmp(root, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) == 0) {
-	    isVfs = 1;
-	} else if (tail &&
-		strncmp(tail, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) == 0) {
-	    isVfs = 2;
-	}
-	if (isVfs != 1 && (root[0] == '/') && (root[1] == '/')) {
-	    isUNC = 1;
-	}
+    joiner[0] = mountPath;
+    joiner[1] = path;
+#ifndef _WIN32
+    /* On Unix C:/foo/bat is not treated as absolute by JoinPath so check ourself */
+    if (path[0] && path[1] == ':') {
+	joiner[1] += 2;
     }
+#endif
+    Tcl_DStringInit(&dsJoin);
+    joinedPath = Tcl_JoinPath(2, joiner, &dsJoin);
 
-    if (isVfs != 2) {
-	if (tail[0] == '/') {
-	    if (isVfs != 1) {
-		root = "";
-	    }
-	    ++tail;
-	    isUNC = 0;
-	}
-	if (tail[0] == '/') {
-	    if (isVfs != 1) {
-		root = "/";
-	    }
-	    ++tail;
-	    isUNC = 1;
-	}
+    if (strncmp(ZIPFS_VOLUME, joinedPath, ZIPFS_VOLUME_LEN)) {
+	/* path was not relative. Strip off the volume (e.g. UNC) */
+	Tcl_Size numParts;
+	const char **partsPtr;
+	Tcl_SplitPath(path, &numParts, &partsPtr);
+	Tcl_DStringFree(&dsJoin);
+	partsPtr[0] = mountPath;
+	(void)Tcl_JoinPath(numParts, partsPtr, &dsJoin);
+	ckfree(partsPtr);
     }
-    i = strlen(root);
-    j = strlen(tail);
-
-    switch (isVfs) {
-    case 1:
-	if (i > ZIPFS_VOLUME_LEN) {
-	    Tcl_DStringSetLength(dsPtr, i + j + 1);
-	    path = Tcl_DStringValue(dsPtr);
-	    memcpy(path, root, i);
-	    path[i++] = '/';
-	    memcpy(path + i, tail, j);
-	} else {
-	    Tcl_DStringSetLength(dsPtr, i + j);
-	    path = Tcl_DStringValue(dsPtr);
-	    memcpy(path, root, i);
-	    memcpy(path + i, tail, j);
-	}
-	break;
-    case 2:
-	Tcl_DStringSetLength(dsPtr, j);
-	path = Tcl_DStringValue(dsPtr);
-	memcpy(path, tail, j);
-	break;
-    default:
-	if (inZipfs) {
-	    /* pathLen = zipfs vol len + root len + separator + tail len */
-	    Tcl_DStringInit(dsPtr);
-	    (void) Tcl_DStringAppend(dsPtr, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN);
-	    if (i) {
-		(void) Tcl_DStringAppend(dsPtr, root, i);
-		if (root[i-1] != '/') {
-		    Tcl_DStringAppend(dsPtr, "/", 1);
-		}
-	    }
-	    path = Tcl_DStringAppend(dsPtr, tail, j);
-	} else {
-	    Tcl_DStringSetLength(dsPtr, i + j + 1);
-	    path = Tcl_DStringValue(dsPtr);
-	    memcpy(path, root, i);
-	    path[i++] = '/';
-	    memcpy(path + i, tail, j);
-	}
-	break;
+    unnormalizedObj = Tcl_DStringToObj(&dsJoin); /* Also resets dsJoin */
+    Tcl_IncrRefCount(unnormalizedObj);
+    normalizedObj = Tcl_FSGetNormalizedPath(interp, unnormalizedObj);
+    if (normalizedObj == NULL) {
+	/* Should not happen but continue... */
+	normalizedObj = unnormalizedObj;
     }
+    Tcl_IncrRefCount(normalizedObj); /* BEFORE DecrRefCount on unnormalizedObj */
+    Tcl_DecrRefCount(unnormalizedObj);
 
-#ifdef _WIN32
-    for (i = 0; path[i] != '\0'; i++) {
-	if (path[i] == '\\') {
-	    path[i] = '/';
-	}
-    }
-#endif /* _WIN32 */
-
-    if (inZipfs) {
-	n = ZIPFS_VOLUME_LEN;
-    } else {
-	n = 0;
-    }
-
-    for (i = j = n; (c = path[i]) != '\0'; i++) {
-	if (c == '/') {
-	    int c2 = path[i + 1];
-
-	    if (c2 == '\0' || c2 == '/') {
-		continue;
-	    }
-	    if (c2 == '.') {
-		int c3 = path[i + 2];
-
-		if ((c3 == '/') || (c3 == '\0')) {
-		    i++;
-		    continue;
-		}
-		if ((c3 == '.')
-			&& ((path[i + 3] == '/') || (path[i + 3] == '\0'))) {
-		    i += 2;
-		    while ((j > 0) && (path[j - 1] != '/')) {
-			j--;
-		    }
-		    if (j > isUNC) {
-			--j;
-			while ((j > 1 + isUNC) && (path[j - 2] == '/')) {
-			    j--;
-			}
-		    }
-		    continue;
-		}
-	    }
-	}
-	path[j++] = c;
-    }
-    if (j == 0) {
-	path[j++] = '/';
-    }
-    path[j] = 0;
-    Tcl_DStringSetLength(dsPtr, j);
+    /* normalizedObj owned by Tcl!! Do NOT DecrRef without an IncrRef */
+    normalizedPath = Tcl_GetStringFromObj(normalizedObj, &normalizedLen);
+    Tcl_DStringAppend(dsPtr, normalizedPath, normalizedLen);
+    Tcl_DecrRefCount(normalizedObj);
     return Tcl_DStringValue(dsPtr);
 }
 
@@ -1850,7 +1853,7 @@ static int
 ZipFSCatalogFilesystem(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
     ZipFile *zf,		/* Temporary buffer hold archive descriptors */
-    const char *mountPoint,	/* Mount point path. */
+    const char *mountPoint,	/* Mount point path. Must be fully normalized */
     const char *passwd,		/* Password for opening the ZIP, or NULL if
 				 * the ZIP is unprotected. */
     const char *zipname)	/* Path to ZIP file to build a catalog of. */
@@ -1860,8 +1863,12 @@ ZipFSCatalogFilesystem(
     ZipFile *zf0;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
-    Tcl_DString ds, dsm, fpBuf;
+    Tcl_DString ds, fpBuf;
     unsigned char *q;
+
+    assert(TclIsZipfsPath(mountPoint)); /* Caller should have normalized */
+
+    Tcl_DStringInit(&ds);
 
     /*
      * Basic verification of the password for sanity.
@@ -1892,17 +1899,6 @@ ZipFSCatalogFilesystem(
 
     WriteLock();
 
-    /*
-     * Mount point sometimes is a relative or otherwise denormalized path.
-     * But an absolute name is needed as mount point here.
-     */
-
-    Tcl_DStringInit(&ds);
-    Tcl_DStringInit(&dsm);
-    if (strcmp(mountPoint, "/") == 0) {
-	mountPoint = "";
-    }
-    mountPoint = CanonicalPath("", mountPoint, &dsm, 1);
     hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, mountPoint, &isNew);
     if (!isNew) {
 	if (interp) {
@@ -1913,6 +1909,7 @@ ZipFSCatalogFilesystem(
 	}
 	Unlock();
 	ZipFSCloseArchive(interp, zf);
+	Tcl_DStringFree(&ds);
 	ckfree(zf);
 	return TCL_ERROR;
     }
@@ -1939,6 +1936,7 @@ ZipFSCatalogFilesystem(
 	}
 	zf->passBuf[k] = '\0';
     }
+    /* TODO - is this test necessary? WHen will mountPoint[0] be \0 ? */
     if (mountPoint[0] != '\0') {
 	hPtr = Tcl_CreateHashEntry(&ZipFS.fileHash, mountPoint, &isNew);
 	if (isNew) {
@@ -1975,6 +1973,7 @@ ZipFSCatalogFilesystem(
 	pathlen = ZipReadShort(start, end, q + ZIP_CENTRAL_PATHLEN_OFFS);
 	comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
 	extra = ZipReadShort(start, end, q + ZIP_CENTRAL_EXTRALEN_OFFS);
+	Tcl_DStringSetLength(&ds, 0);
 	path = DecodeZipEntryText(q + ZIP_CENTRAL_HEADER_LEN, pathlen, &ds);
 	if ((pathlen > 0) && (path[pathlen - 1] == '/')) {
 	    Tcl_DStringSetLength(&ds, pathlen - 1);
@@ -2038,7 +2037,7 @@ ZipFSCatalogFilesystem(
 	}
 
 	Tcl_DStringSetLength(&fpBuf, 0);
-	fullpath = CanonicalPath(mountPoint, path, &fpBuf, 1);
+	fullpath = MapPathToZipfs(interp, mountPoint, path, &fpBuf);
 	z = AllocateZipEntry();
 	z->depth = CountSlashes(fullpath);
 	assert(z->depth >= ZIPFS_ROOTDIR_DEPTH);
@@ -2129,9 +2128,9 @@ ZipFSCatalogFilesystem(
     nextent:
 	q += pathlen + comlen + extra + ZIP_CENTRAL_HEADER_LEN;
     }
+    Unlock();
     Tcl_DStringFree(&fpBuf);
     Tcl_DStringFree(&ds);
-    Unlock();
     Tcl_FSMountsChanged(NULL);
     return TCL_OK;
 }
@@ -2316,13 +2315,13 @@ DescribeMounted(
 int
 TclZipfs_Mount(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    const char *zipname,	/* Path to ZIP file to mount; should be
-				 * normalized. */
+    const char *zipname,	/* Path to ZIP file to mount */
     const char *mountPoint,	/* Mount point path. */
     const char *passwd)		/* Password for opening the ZIP, or NULL if
 				 * the ZIP is unprotected. */
 {
     ZipFile *zf;
+    int ret;
 
     ReadLock();
     if (!ZipFS.initialized) {
@@ -2333,45 +2332,78 @@ TclZipfs_Mount(
      * No mount point, so list all mount points and what is mounted there.
      */
 
-    if (!mountPoint) {
-	int ret = ListMountPoints(interp);
+    if (mountPoint == NULL) {
+	ret = ListMountPoints(interp);
 	Unlock();
 	return ret;
     }
 
-    /*
-     * Mount point but no file, so describe what is mounted at that mount
-     * point.
-     */
+    Tcl_DString ds;
+    Tcl_DStringInit(&ds);
+    ret = NormalizeMountPoint(interp, mountPoint, &ds);
+    if (ret != TCL_OK) {
+	Unlock();
+	return ret;
+    }
+    mountPoint = Tcl_DStringValue(&ds);
 
     if (!zipname) {
-	DescribeMounted(interp, mountPoint);
+	/*
+	 * Mount point but no file, so describe what is mounted at that mount
+	 * point.
+	 */
+
+	ret = DescribeMounted(interp, mountPoint);
 	Unlock();
-	return TCL_OK;
-    }
-    Unlock();
+    } else {
+	/* Have both a mount point and a file (name) to mount there. */
 
-    /*
-     * Have both a mount point and a file (name) to mount there.
-     */
+	Tcl_Obj *zipPathObj;
+	Tcl_Obj *normZipPathObj;
 
-    if (passwd && IsPasswordValid(interp, passwd, strlen(passwd)) != TCL_OK) {
-	return TCL_ERROR;
+	Unlock();
+
+	zipPathObj = Tcl_NewStringObj(zipname, -1);
+	Tcl_IncrRefCount(zipPathObj);
+	normZipPathObj = Tcl_FSGetNormalizedPath(interp, zipPathObj);
+	if (normZipPathObj == NULL) {
+	    Tcl_SetObjResult(
+		interp,
+		Tcl_ObjPrintf("could not normalize zip filename \"%s\"", zipname));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", NULL);
+	    ret = TCL_ERROR;
+	} else {
+	    Tcl_IncrRefCount(normZipPathObj);
+	    const char *normPath = Tcl_GetString(normZipPathObj);
+	    if (passwd == NULL ||
+		(ret = IsPasswordValid(interp, passwd, strlen(passwd))) ==
+		    TCL_OK) {
+		zf = AllocateZipFile(interp, strlen(mountPoint));
+		if (zf == NULL) {
+		    ret = TCL_ERROR;
+		}
+		else {
+		    ret = ZipFSOpenArchive(interp, normPath, 1, zf);
+		    if (ret != TCL_OK) {
+			ckfree(zf);
+		    }
+		    else {
+			ret = ZipFSCatalogFilesystem(
+			    interp, zf, mountPoint, passwd, normPath);
+			/* Note zf is already freed on error! */
+		    }
+		}
+	    }
+	    Tcl_DecrRefCount(normZipPathObj);
+	    if (ret == TCL_OK && interp) {
+		Tcl_DStringResult(interp, &ds);
+	    }
+	}
+	Tcl_DecrRefCount(zipPathObj);
     }
-    zf = AllocateZipFile(interp, strlen(mountPoint));
-    if (!zf) {
-	return TCL_ERROR;
-    }
-    if (ZipFSOpenArchive(interp, zipname, 1, zf) != TCL_OK) {
-	ckfree(zf);
-	return TCL_ERROR;
-    }
-    if (ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname)
-	    != TCL_OK) {
-	/* zf would have been freed! */
-	return TCL_ERROR;
-    }
-    return TCL_OK;
+
+    Tcl_DStringFree(&ds);
+    return ret;
 }
 
 /*
@@ -2380,7 +2412,7 @@ TclZipfs_Mount(
  * TclZipfs_MountBuffer --
  *
  *	This procedure is invoked to mount a given ZIP archive file on a given
- *	mountpoint with optional ZIP password.
+ *	mountpoint.
  *
  * Results:
  *	A standard Tcl result.
@@ -2401,6 +2433,7 @@ TclZipfs_MountBuffer(
     int copy)
 {
     ZipFile *zf;
+    int ret;
 
     /* TODO - how come a *read* lock suffices for initialzing ? */
     ReadLock();
@@ -2413,62 +2446,76 @@ TclZipfs_MountBuffer(
      */
 
     if (!mountPoint) {
-	int ret = ListMountPoints(interp);
+	ret = ListMountPoints(interp);
 	Unlock();
 	return ret;
     }
 
-    /*
-     * Mount point but no data, so describe what is mounted at that mount
-     * point.
-     */
-
-    if (!data) {
-	DescribeMounted(interp, mountPoint);
+    Tcl_DString ds;
+    Tcl_DStringInit(&ds);
+    ret = NormalizeMountPoint(interp, mountPoint, &ds);
+    if (ret != TCL_OK) {
 	Unlock();
-	return TCL_OK;
+	return ret;
     }
-    Unlock();
+    mountPoint = Tcl_DStringValue(&ds);
 
-    /*
-     * Have both a mount point and data to mount there.
-     * What's the magic about 64 * 1024 * 1024 ?
-     */
-    if ((datalen <= ZIP_CENTRAL_END_LEN) ||
-	(datalen - ZIP_CENTRAL_END_LEN) >
-	    (64 * 1024 * 1024 - ZIP_CENTRAL_END_LEN)) {
-	ZIPFS_ERROR(interp, "illegal file size");
-	ZIPFS_ERROR_CODE(interp, "FILE_SIZE");
-	return TCL_ERROR;
-    }
-
-    zf = AllocateZipFile(interp, strlen(mountPoint));
-    if (!zf) {
-	return TCL_ERROR;
-    }
-    zf->isMemBuffer = 1;
-    zf->length = datalen;
-    if (copy) {
-	zf->data = (unsigned char *) attemptckalloc(datalen);
-	if (!zf->data) {
-	    ZipFSCloseArchive(interp, zf);
-	    ckfree(zf);
-	    ZIPFS_MEM_ERROR(interp);
-	    return TCL_ERROR;
-	}
-	memcpy(zf->data, data, datalen);
-	zf->ptrToFree = zf->data;
+    if (data == NULL) {
+	/* Mount point but no data, so describe what is mounted at there */
+	ret = DescribeMounted(interp, mountPoint);
+	Unlock();
     } else {
-	zf->data = (unsigned char *) data;
-	zf->ptrToFree = NULL;
+	Unlock();
+
+	/*
+	 * Have both a mount point and data to mount there.
+	 * What's the magic about 64 * 1024 * 1024 ?
+	 */
+	ret = TCL_ERROR;
+	if ((datalen <= ZIP_CENTRAL_END_LEN) ||
+	    (datalen - ZIP_CENTRAL_END_LEN) >
+		(64 * 1024 * 1024 - ZIP_CENTRAL_END_LEN)) {
+	    ZIPFS_ERROR(interp, "illegal file size");
+	    ZIPFS_ERROR_CODE(interp, "FILE_SIZE");
+	    goto done;
+	}
+	zf = AllocateZipFile(interp, strlen(mountPoint));
+	if (zf == NULL) {
+	    goto done;
+	}
+	zf->isMemBuffer = 1;
+	zf->length = datalen;
+
+	if (copy) {
+	    zf->data = (unsigned char *)attemptckalloc(datalen);
+	    if (zf->data == NULL) {
+		ZipFSCloseArchive(interp, zf);
+		ckfree(zf);
+		ZIPFS_MEM_ERROR(interp);
+		goto done;
+	    }
+	    memcpy(zf->data, data, datalen);
+	    zf->ptrToFree = zf->data;
+	} else {
+	    zf->data = (unsigned char *)data;
+	    zf->ptrToFree = NULL;
+	}
+	ret = ZipFSFindTOC(interp, 1, zf);
+	if (ret != TCL_OK) {
+	    ckfree(zf);
+	} else {
+	    /* Note ZipFSCatalogFilesystem will free zf on error */
+	    ret = ZipFSCatalogFilesystem(
+		interp, zf, mountPoint, NULL, "Memory Buffer");
+	}
+	if (ret == TCL_OK && interp) {
+	    Tcl_DStringResult(interp, &ds);
+	}
     }
-    if (ZipFSFindTOC(interp, 1, zf) != TCL_OK) {
-	ckfree(zf);
-	return TCL_ERROR;
-    }
-    /* Note ZipFSCatalogFilesystem will free zf on error */
-    return ZipFSCatalogFilesystem(
-	interp, zf, mountPoint, NULL, "Memory Buffer");
+
+done:
+    Tcl_DStringFree(&ds);
+    return ret;
 }
 
 /*
@@ -2497,6 +2544,8 @@ TclZipfs_Unmount(
     Tcl_DString dsm;
     int ret = TCL_OK, unmounted = 0;
 
+    Tcl_DStringInit(&dsm);
+
     WriteLock();
     if (!ZipFS.initialized) {
 	goto done;
@@ -2507,8 +2556,10 @@ TclZipfs_Unmount(
      * But an absolute name is needed as mount point here.
      */
 
-    Tcl_DStringInit(&dsm);
-    mountPoint = CanonicalPath("", mountPoint, &dsm, 1);
+    if (NormalizeMountPoint(interp, mountPoint, &dsm) != TCL_OK) {
+	goto done;
+    }
+    mountPoint = Tcl_DStringValue(&dsm);
 
     hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, mountPoint);
     /* don't report no-such-mount as an error */
@@ -2538,6 +2589,7 @@ TclZipfs_Unmount(
 
   done:
     Unlock();
+    Tcl_DStringFree(&dsm);
     if (unmounted) {
 	Tcl_FSMountsChanged(NULL);
     }
@@ -2568,7 +2620,6 @@ ZipFSMountObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *mountPoint = NULL, *zipFile = NULL, *password = NULL;
-    Tcl_Obj *zipFileObj = NULL;
     int result;
 
     if (objc > 4) {
@@ -2585,16 +2636,7 @@ ZipFSMountObjCmd(
 	    mountPoint = Tcl_GetString(objv[1]);
 	} else {
 	    /* 2 < objc < 4 */
-	    zipFileObj = Tcl_FSGetNormalizedPath(interp, objv[1]);
-	    if (!zipFileObj) {
-		Tcl_SetObjResult(
-		    interp,
-		    Tcl_NewStringObj("could not normalize zip filename", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", NULL);
-		return TCL_ERROR;
-	    }
-	    Tcl_IncrRefCount(zipFileObj);
-	    zipFile = Tcl_GetString(zipFileObj);
+	    zipFile = Tcl_GetString(objv[1]);
 	    mountPoint = Tcl_GetString(objv[2]);
 	    if (objc > 3) {
 		password = Tcl_GetString(objv[3]);
@@ -2603,9 +2645,6 @@ ZipFSMountObjCmd(
     }
 
     result = TclZipfs_Mount(interp, zipFile, mountPoint, password);
-    if (zipFileObj != NULL) {
-	Tcl_DecrRefCount(zipFileObj);
-    }
     return result;
 }
 
@@ -2632,34 +2671,25 @@ ZipFSMountBufferObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *mountPoint;	/* Mount point path. */
-    unsigned char *data;
+    const char *mountPoint = NULL;	/* Mount point path. */
+    unsigned char *data = NULL;
     Tcl_Size length;
 
     if (objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?data? ?mountpoint?");
 	return TCL_ERROR;
     }
-    if (objc < 2) {
-	int ret;
 
-	ReadLock();
-	ret = ListMountPoints(interp);
-	Unlock();
-	return ret;
-    }
-
-    if (objc < 3) {
-	ReadLock();
-	DescribeMounted(interp, Tcl_GetString(objv[1]));
-	Unlock();
-	return TCL_OK;
-    }
-
-    data = Tcl_GetBytesFromObj(interp, objv[1], &length);
-    mountPoint = Tcl_GetString(objv[2]);
-    if (data == NULL) {
-	return TCL_ERROR;
+    if (objc > 1) {
+	if (objc == 2) {
+	    mountPoint = Tcl_GetString(objv[1]);
+	} else {
+	    data = Tcl_GetBytesFromObj(interp, objv[1], &length);
+	    mountPoint = Tcl_GetString(objv[2]);
+	    if (data == NULL) {
+		return TCL_ERROR;
+	    }
+	}
     }
     return TclZipfs_MountBuffer(interp, data, length, mountPoint, 1);
 }
@@ -3960,34 +3990,30 @@ ZipFSCanonicalObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *mntpoint = NULL;
-    char *filename = NULL;
-    char *result;
-    Tcl_DString dPath;
+    const char *mntPoint = NULL;
+    Tcl_DString dsPath, dsMount;
 
-    if (objc < 2 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? filename ?inZipfs?");
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?mountpoint? filename");
 	return TCL_ERROR;
     }
-    Tcl_DStringInit(&dPath);
-    if (objc == 2) {
-	filename = Tcl_GetString(objv[1]);
-	result = CanonicalPath("", filename, &dPath, 1);
-    } else if (objc == 3) {
-	mntpoint = Tcl_GetString(objv[1]);
-	filename = Tcl_GetString(objv[2]);
-	result = CanonicalPath(mntpoint, filename, &dPath, 1);
-    } else {
-	int zipfs = 0;
 
-	if (Tcl_GetBooleanFromObj(interp, objv[3], &zipfs)) {
+    Tcl_DStringInit(&dsPath);
+    Tcl_DStringInit(&dsMount);
+
+    if (objc == 2) {
+	mntPoint = ZIPFS_VOLUME;
+    } else {
+	if (NormalizeMountPoint(interp, Tcl_GetString(objv[1]), &dsMount) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	mntpoint = Tcl_GetString(objv[1]);
-	filename = Tcl_GetString(objv[2]);
-	result = CanonicalPath(mntpoint, filename, &dPath, zipfs);
+	mntPoint = Tcl_DStringValue(&dsMount);
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(result, -1));
+    (void)MapPathToZipfs(interp,
+			 mntPoint,
+			 Tcl_GetString(objv[objc - 1]),
+			 &dsPath);
+    Tcl_SetObjResult(interp, Tcl_DStringToObj(&dsPath));
     return TCL_OK;
 }
 
