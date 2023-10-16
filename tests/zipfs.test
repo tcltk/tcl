@@ -953,11 +953,11 @@ namespace eval test_ns_zipfs {
 
     testzipfscanonical driveletter   [list X:]               [zipfs root] -constraints win
     testzipfscanonical drivepath     [list X:/foo/bar]       [file join [zipfs root] foo bar] -constraints win
-    testzipfscanonical drivepath     [list MT X:/foo/bar]    [file join [zipfs root] MT foo bar] -constraints win
+    testzipfscanonical drivepath-1     [list MT X:/foo/bar]    [file join [zipfs root] MT foo bar] -constraints win
     testzipfscanonical backslashes   [list X:\\\\foo\\\\bar] [file join [zipfs root] foo bar] -constraints win
     testzipfscanonical backslashes-1 [list X:/foo\\\\bar]    [file join [zipfs root] foo bar] -constraints win
     testzipfscanonical zipfspath     [list //zipfs:/x/y]     [file join [zipfs root] x y]
-    testzipfscanonical zipfspath     [list MT //zipfs:/x/y]  [file join [zipfs root] x y]
+    testzipfscanonical zipfspath-1     [list MT //zipfs:/x/y]  [file join [zipfs root] x y]
 
     #
     # Read/uncompress
