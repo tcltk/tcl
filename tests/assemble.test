@@ -141,6 +141,7 @@ test assemble-3.1 {wrong # args, compiled path} {
     -returnCodes error
     -match glob
     -result {wrong # args:*}
+    -cleanup {rename x {}}
 }
 test assemble-3.2 {wrong # args, compiled path} {
     -body {
@@ -235,6 +236,7 @@ test assemble-5.3 {unsupported substitution} {
 	list [catch {x} result] $result $::errorCode
     }
     -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+    -cleanup {rename x {}}
 }
 test assemble-5.4 {backslash substitution} {
     -body {
@@ -634,6 +636,7 @@ test assemble-7.24 {lsetList} {
 	x
     }
     -result {{a b} {c d} {e i} {g h}}
+    -cleanup {rename x {}}
 }
 test assemble-7.25 {lshift} {
     -body {
@@ -3104,6 +3107,7 @@ test assemble-41.1 {Inconsistent stack usage} {*}{
     -match glob
     -result {inconsistent stack depths on two execution paths
     ("assemble" body, line 10)*}
+    -cleanup {rename x {}}
 }
 test assemble-41.2 {Inconsistent stack, jumptable and default} {
     -body {
@@ -3122,6 +3126,7 @@ test assemble-41.2 {Inconsistent stack, jumptable and default} {
     -match glob
     -result {inconsistent stack depths on two execution paths
     ("assemble" body, line 6)*}
+    -cleanup {rename x {}}
 }
 test assemble-41.3 {Inconsistent stack, two legs of jumptable} {
     -body {
@@ -3141,6 +3146,7 @@ test assemble-41.3 {Inconsistent stack, two legs of jumptable} {
     -match glob
     -result {inconsistent stack depths on two execution paths
     ("assemble" body, line 7)*}
+    -cleanup {rename x {}}
 }
 
 test assemble-50.1 {Ulam's 3n+1 problem, TAL implementation} {
@@ -3193,6 +3199,7 @@ test assemble-50.1 {Ulam's 3n+1 problem, TAL implementation} {
 	set result
     }
     -result {1 2 16 4 16 16 52 8 52 16 52 16 40 52 160 16 52 52 88 20 64 52 160 24 88 40 9232 52 88}
+    -cleanup {rename ulam {}}
 }
 
 test assemble-51.1 {memory leak testing} memory {
@@ -3348,6 +3355,10 @@ test assemble-52.1 {Bug 3154ea2759} {
 
 rename fillTables {}
 rename assemble {}
+if {[testConstraint memory]} {
+    rename getbytes {}
+    rename leaktest {}
+}
 
 ::tcltest::cleanupTests
 return
