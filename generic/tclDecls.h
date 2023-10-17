@@ -106,7 +106,7 @@ EXTERN int		Tcl_WaitForEvent(const Tcl_Time *timePtr);
 EXTERN int		Tcl_AppendAllObjTypes(Tcl_Interp *interp,
 				Tcl_Obj *objPtr);
 /* 15 */
-EXTERN void		Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...);
+EXTERN void		Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...) __attribute__((sentinel));
 /* 16 */
 EXTERN void		Tcl_AppendToObj(Tcl_Obj *objPtr, const char *bytes,
 				Tcl_Size length);
@@ -268,7 +268,7 @@ EXTERN void		Tcl_AllowExceptions(Tcl_Interp *interp);
 EXTERN void		Tcl_AppendElement(Tcl_Interp *interp,
 				const char *element);
 /* 70 */
-EXTERN void		Tcl_AppendResult(Tcl_Interp *interp, ...);
+EXTERN void		Tcl_AppendResult(Tcl_Interp *interp, ...) __attribute__((sentinel));
 /* 71 */
 EXTERN Tcl_AsyncHandler	 Tcl_AsyncCreate(Tcl_AsyncProc *proc,
 				void *clientData);
@@ -715,7 +715,7 @@ EXTERN int		Tcl_SetCommandInfo(Tcl_Interp *interp,
 /* 227 */
 EXTERN void		Tcl_SetErrno(int err);
 /* 228 */
-EXTERN void		Tcl_SetErrorCode(Tcl_Interp *interp, ...);
+EXTERN void		Tcl_SetErrorCode(Tcl_Interp *interp, ...) __attribute__((sentinel));
 /* 229 */
 EXTERN void		Tcl_SetMaxBlockTime(const Tcl_Time *timePtr);
 /* 230 */
@@ -820,7 +820,7 @@ EXTERN int		Tcl_UpVar2(Tcl_Interp *interp, const char *frameName,
 				const char *part1, const char *part2,
 				const char *localName, int flags);
 /* 260 */
-EXTERN int		Tcl_VarEval(Tcl_Interp *interp, ...);
+EXTERN int		Tcl_VarEval(Tcl_Interp *interp, ...) __attribute__((sentinel));
 /* 261 */
 TCL_DEPRECATED("No longer in use, changed to macro")
 void *			Tcl_VarTraceInfo(Tcl_Interp *interp,

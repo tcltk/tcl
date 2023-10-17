@@ -220,7 +220,7 @@ EXTERN void		TclBN_mp_clamp(mp_int *a);
 /* 6 */
 EXTERN void		TclBN_mp_clear(mp_int *a);
 /* 7 */
-EXTERN void		TclBN_mp_clear_multi(mp_int *a, ...);
+EXTERN void		TclBN_mp_clear_multi(mp_int *a, ...) __attribute__((sentinel));
 /* 8 */
 EXTERN mp_ord		TclBN_mp_cmp(const mp_int *a, const mp_int *b) MP_WUR;
 /* 9 */
@@ -258,7 +258,7 @@ EXTERN mp_err		TclBN_mp_init(mp_int *a) MP_WUR;
 /* 22 */
 EXTERN mp_err		TclBN_mp_init_copy(mp_int *a, const mp_int *b) MP_WUR;
 /* 23 */
-EXTERN mp_err		TclBN_mp_init_multi(mp_int *a, ...) MP_WUR;
+EXTERN mp_err		TclBN_mp_init_multi(mp_int *a, ...) __attribute__((sentinel)) MP_WUR;
 /* 24 */
 EXTERN mp_err		TclBN_mp_init_set(mp_int *a, unsigned int b) MP_WUR;
 /* 25 */
