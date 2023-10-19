@@ -2476,7 +2476,7 @@ TclpFilesystemPathType(
 	return NULL;
     }
 
-    firstSeparator = strchr(path, '/');
+    firstSeparator = strchr((char *)path, '/');
     if (firstSeparator == NULL) {
 	found = GetVolumeInformationW((const WCHAR *)Tcl_FSGetNativePath(pathPtr),
 		NULL, 0, NULL, NULL, NULL, volType, VOL_BUF_SIZE);

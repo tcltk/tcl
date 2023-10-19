@@ -56,7 +56,7 @@
 	if (interp) {							\
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(			\
 		    "out of memory", -1));				\
-	    Tcl_SetErrorCode(interp, "TCL", "MALLOC", NULL);		\
+	    Tcl_SetErrorCode(interp, "TCL", "MALLOC", (void *)NULL);		\
 	}								\
     } while (0)
 #define ZIPFS_POSIX_ERROR(interp,errstr) \
@@ -69,7 +69,7 @@
 #define ZIPFS_ERROR_CODE(interp,errcode) \
     do {								\
 	if (interp) {							\
-	    Tcl_SetErrorCode(interp, "TCL", "ZIPFS", errcode, NULL);	\
+	    Tcl_SetErrorCode(interp, "TCL", "ZIPFS", errcode, (void *)NULL);	\
 	}								\
     } while (0)
 
@@ -165,15 +165,6 @@ static const z_crc_t* crc32tab;
 
 #define ZIP_MAX_FILE_SIZE		INT_MAX
 #define DEFAULT_WRITE_MAX_SIZE		ZIP_MAX_FILE_SIZE
-
-/*
- * Windows drive letters.
- */
-
-#ifdef _WIN32
-static const char drvletters[] =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-#endif /* _WIN32 */
 
 /*
  * Mutex to protect localtime(3) when no reentrant version available.
@@ -1085,7 +1076,7 @@ static char *
 MapPathToZipfs(Tcl_Interp *interp,
 	       const char *mountPath,	/* Must be fully normalized */
 	       const char *path,	/* Archive content path to map */
-	       Tcl_DString *dsPtr)	/* Must be initialized and cleared 
+	       Tcl_DString *dsPtr)	/* Must be initialized and cleared
 	                                   by caller */
 {
     const char *joiner[2];
@@ -2370,7 +2361,7 @@ TclZipfs_Mount(
 	    Tcl_SetObjResult(
 		interp,
 		Tcl_ObjPrintf("could not normalize zip filename \"%s\"", zipname));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NORMALIZE", (void *)NULL);
 	    ret = TCL_ERROR;
 	} else {
 	    Tcl_IncrRefCount(normZipPathObj);

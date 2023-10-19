@@ -1468,7 +1468,7 @@ Tcl_GetChannel(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can not find channel named \"%s\"", chanName));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanName, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanName, (void *)NULL);
 	return NULL;
     }
 
@@ -9881,12 +9881,12 @@ CopyData(
 	    if (interp) {
 		TclNewObj(errObj);
 		Tcl_AppendStringsToObj(errObj, "error reading \"",
-			Tcl_GetChannelName(inChan), "\": ", NULL);
+			Tcl_GetChannelName(inChan), "\": ", (void *)NULL);
 		if (msg != NULL) {
 		    Tcl_AppendObjToObj(errObj, msg);
 		} else {
 		    Tcl_AppendStringsToObj(errObj, Tcl_PosixError(interp),
-			    NULL);
+			    (void *)NULL);
 		}
 	    }
 	    if (msg != NULL) {
@@ -9962,12 +9962,12 @@ CopyData(
 	    if (interp) {
 		TclNewObj(errObj);
 		Tcl_AppendStringsToObj(errObj, "error writing \"",
-			Tcl_GetChannelName(outChan), "\": ", NULL);
+			Tcl_GetChannelName(outChan), "\": ", (void *)NULL);
 		if (msg != NULL) {
 		    Tcl_AppendObjToObj(errObj, msg);
 		} else {
 		    Tcl_AppendStringsToObj(errObj, Tcl_PosixError(interp),
-			    NULL);
+			    (void *)NULL);
 		}
 	    }
 	    if (msg != NULL) {

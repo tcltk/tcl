@@ -56,7 +56,7 @@ Pkgb_SubObjCmd(
 	    || (Tcl_GetIntFromObj(interp, objv[2], &second) != TCL_OK)) {
 	char buf[TCL_INTEGER_SPACE];
 	snprintf(buf, sizeof(buf), "%d", Tcl_GetErrorLine(interp));
-	Tcl_AppendResult(interp, " in line: ", buf, NULL);
+	Tcl_AppendResult(interp, " in line: ", buf, (void *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewIntObj(first - second));
