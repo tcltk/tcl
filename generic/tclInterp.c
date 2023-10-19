@@ -875,7 +875,7 @@ NRInterpCmd(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"cannot delete the current interpreter", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			"DELETESELF", NULL);
+			"DELETESELF", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    iiPtr = (InterpInfo *) ((Interp *) childInterp)->interpInfo;
@@ -1120,7 +1120,7 @@ NRInterpCmd(
 		    "alias \"%s\" in path \"%s\" not found",
 		    aliasName, TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName,
-		    NULL);
+		    (void *)NULL);
 	    return TCL_ERROR;
 	}
 	aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
@@ -1129,7 +1129,7 @@ NRInterpCmd(
 		    "target interpreter for alias \"%s\" in path \"%s\" is "
 		    "not my descendant", aliasName, TclGetString(objv[2])));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-		    "TARGETSHROUDED", NULL);
+		    "TARGETSHROUDED", (void *)NULL);
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -1309,7 +1309,7 @@ Tcl_GetAlias(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"alias \"%s\" not found", aliasName));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, (void *)NULL);
 	return TCL_ERROR;
     }
     aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
@@ -1371,7 +1371,7 @@ Tcl_GetAliasObj(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"alias \"%s\" not found", aliasName));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, (void *)NULL);
 	return TCL_ERROR;
     }
     aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
@@ -1478,7 +1478,7 @@ TclPreventAliasLoop(
 		    "cannot define or rename alias \"%s\": would create a loop",
 		    Tcl_GetCommandName(cmdInterp, cmd)));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-		    "ALIASLOOP", NULL);
+		    "ALIASLOOP", (void *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -1699,7 +1699,7 @@ AliasDelete(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"alias \"%s\" not found", TclGetString(namePtr)));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS",
-		TclGetString(namePtr), NULL);
+		TclGetString(namePtr), (void *)NULL);
 	return TCL_ERROR;
     }
     aliasPtr = (Alias *)Tcl_GetHashValue(hPtr);
@@ -2351,7 +2351,7 @@ GetInterp(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"could not find interpreter \"%s\"", TclGetString(pathPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INTERP",
-		TclGetString(pathPtr), NULL);
+		TclGetString(pathPtr), (void *)NULL);
     }
     return searchInterp;
 }
@@ -2389,7 +2389,7 @@ ChildBgerror(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cmdPrefix must be list of length >= 1", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-		    "BGERRORFORMAT", NULL);
+		    "BGERRORFORMAT", (void *)NULL);
 	    return TCL_ERROR;
 	}
 	TclSetBgErrorHandler(childInterp, objv[0]);
@@ -2957,7 +2957,7 @@ ChildExpose(
 		"permission denied: safe interpreter cannot expose commands",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
-		NULL);
+		(void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -3002,7 +3002,7 @@ ChildRecursionLimit(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("permission denied: "
 		    "safe interpreters cannot change recursion limit", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
-		    NULL);
+		    (void *)NULL);
 	    return TCL_ERROR;
 	}
 	if (TclGetWideIntFromObj(interp, objv[0], &limit) == TCL_ERROR) {
@@ -3011,8 +3011,8 @@ ChildRecursionLimit(
 	if (limit <= 0) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "recursion limit must be > 0", -1));
-	    Tcl_SetErrorCode(
-		interp, "TCL", "OPERATION", "INTERP", "BADLIMIT", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "BADLIMIT",
+		    (void *)NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetRecursionLimit(childInterp, limit);
@@ -3020,7 +3020,7 @@ ChildRecursionLimit(
 	if (interp == childInterp && iPtr->numLevels > limit) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "falling back due to new recursion limit", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "RECURSION", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "RECURSION", (void *)NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, objv[0]);
@@ -3063,7 +3063,7 @@ ChildHide(
 		"permission denied: safe interpreter cannot hide commands",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
-		NULL);
+		(void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -3148,7 +3148,7 @@ ChildInvokeHidden(
 		"not allowed to invoke hidden commands from safe interpreter",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
-		NULL);
+		(void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -3225,7 +3225,7 @@ ChildMarkTrusted(
 		"permission denied: safe interpreter cannot mark trusted",
 		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "UNSAFE",
-		NULL);
+		(void *)NULL);
 	return TCL_ERROR;
     }
     ((Interp *) childInterp)->flags &= ~SAFE_INTERP;
@@ -3477,7 +3477,7 @@ Tcl_LimitCheck(
 	} else if (iPtr->limit.exceeded & TCL_LIMIT_COMMANDS) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command count limit exceeded", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "COMMANDS", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "COMMANDS", (void *)NULL);
 	    Tcl_Release(interp);
 	    return TCL_ERROR;
 	}
@@ -3503,7 +3503,7 @@ Tcl_LimitCheck(
 	    } else if (iPtr->limit.exceeded & TCL_LIMIT_TIME) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"time limit exceeded", -1));
-		Tcl_SetErrorCode(interp, "TCL", "LIMIT", "TIME", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "LIMIT", "TIME", (void *)NULL);
 		Tcl_Release(interp);
 		return TCL_ERROR;
 	    }
@@ -4506,7 +4506,7 @@ ChildCommandLimitCmd(
     if (interp == childInterp) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"limits on current interpreter inaccessible", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "SELF", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "SELF", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -4606,7 +4606,7 @@ ChildCommandLimitCmd(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "granularity must be at least 1", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADVALUE", NULL);
+			    "BADVALUE", (void *)NULL);
 		    return TCL_ERROR;
 		}
 		break;
@@ -4623,7 +4623,7 @@ ChildCommandLimitCmd(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "command limit value must be at least 0", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADVALUE", NULL);
+			    "BADVALUE", (void *)NULL);
 		    return TCL_ERROR;
 		}
 		break;
@@ -4694,7 +4694,7 @@ ChildTimeLimitCmd(
     if (interp == childInterp) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"limits on current interpreter inaccessible", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "SELF", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "SELF", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -4815,7 +4815,7 @@ ChildTimeLimitCmd(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "granularity must be at least 1", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADVALUE", NULL);
+			    "BADVALUE", (void *)NULL);
 		    return TCL_ERROR;
 		}
 		break;
@@ -4832,7 +4832,7 @@ ChildTimeLimitCmd(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "milliseconds must be non-negative", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADVALUE", NULL);
+			    "BADVALUE", (void *)NULL);
 		    return TCL_ERROR;
 		}
 		limitMoment.usec = tmp*1000;
@@ -4850,7 +4850,7 @@ ChildTimeLimitCmd(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "seconds must be non-negative", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADVALUE", NULL);
+			    "BADVALUE", (void *)NULL);
 		    return TCL_ERROR;
 		}
 		limitMoment.sec = (long long)tmp;
@@ -4869,7 +4869,7 @@ ChildTimeLimitCmd(
 			    "may only set -milliseconds if -seconds is not "
 			    "also being reset", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADUSAGE", NULL);
+			    "BADUSAGE", (void *)NULL);
 		    return TCL_ERROR;
 		}
 		if (milliLen == 0 && (secObj == NULL || secLen > 0)) {
@@ -4877,7 +4877,7 @@ ChildTimeLimitCmd(
 			    "may only reset -milliseconds if -seconds is "
 			    "also being reset", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
-			    "BADUSAGE", NULL);
+			    "BADUSAGE", (void *)NULL);
 		    return TCL_ERROR;
 		}
 	    }

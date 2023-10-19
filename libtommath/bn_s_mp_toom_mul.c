@@ -36,7 +36,7 @@ mp_err s_mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c)
    mp_err err;
 
    /* init temps */
-   if ((err = mp_init_multi(&S1, &S2, &T1, NULL)) != MP_OKAY) {
+   if ((err = mp_init_multi(&S1, &S2, &T1, (void *)NULL)) != MP_OKAY) {
       return err;
    }
 
@@ -208,7 +208,7 @@ LBL_ERRa2:
 LBL_ERRa1:
    mp_clear(&a0);
 LBL_ERRa0:
-   mp_clear_multi(&S1, &S2, &T1, NULL);
+   mp_clear_multi(&S1, &S2, &T1, (void *)NULL);
    return err;
 }
 

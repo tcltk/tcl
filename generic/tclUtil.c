@@ -658,7 +658,7 @@ FindElement(
 			    "%s element in braces followed by \"%.*s\" "
 			    "instead of space", typeStr, (int) (p2-p), p));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
-			    NULL);
+			    (void *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -710,7 +710,7 @@ FindElement(
 			    "%s element in quotes followed by \"%.*s\" "
 			    "instead of space", typeStr, (int) (p2-p), p));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
-			    NULL);
+			    (void *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -743,7 +743,7 @@ FindElement(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unmatched open brace in %s", typeStr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "BRACE",
-			NULL);
+			(void *)NULL);
 	    }
 	    return TCL_ERROR;
 	} else if (inQuotes) {
@@ -751,7 +751,7 @@ FindElement(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unmatched open quote in %s", typeStr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "QUOTE",
-			NULL);
+			(void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -902,7 +902,7 @@ Tcl_SplitList(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"internal error in Tcl_SplitList", -1));
 		Tcl_SetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList",
-			NULL);
+			(void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3732,7 +3732,7 @@ GetEndOffsetFromObj(
         if (!strncmp(bytes, "end-", 4)) {
             bytes += 4;
         }
-        Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", (void *)NULL);
     }
 
     return TCL_ERROR;
@@ -4626,7 +4626,7 @@ TclReToGlob(
   invalidGlob:
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
-	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "RE2GLOB", code, (void *)NULL);
     }
     Tcl_DStringFree(dsPtr);
     return TCL_ERROR;
