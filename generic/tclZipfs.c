@@ -6287,6 +6287,9 @@ ZipfsAppHookFindTclInit(
 
 void TclZipfsFinalize(void)
 {
+    if (!TclInExit())
+	return;
+
     /*
      * Finalization steps:
      * For every mounted archive, if it no longer has any open handles
