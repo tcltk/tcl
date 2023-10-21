@@ -706,7 +706,6 @@ TclFinalizeIOSubsystem(void)
 
     TclpFinalizeSockets();
     TclpFinalizePipes();
-    TclZipfsFinalize();
 }
 
 /*
