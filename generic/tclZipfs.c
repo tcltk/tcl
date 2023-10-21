@@ -6285,15 +6285,25 @@ ZipfsAppHookFindTclInit(
 }
 #endif
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclZipfsFinalize --
+ *
+ *    Frees all zipfs resources IRRESPECTIVE of open channels (there should
+ *    not be any!) etc. To be called at process exit time (from
+ *    Tcl_Finalize->TclFinalizeFilesystem)
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    Frees up archives loaded into memory.
+ *
+ *------------------------------------------------------------------------
+ */
 void TclZipfsFinalize(void)
 {
-    /*
-     * Finalization steps:
-     * For every mounted archive, if it no longer has any open handles
-     * clean up the mount and associated zip file entries.
-     * If there are no more mounted archives, clean up and free the
-     * ZipFS.fileHash and ZipFS.zipHash tables.
-     */
     WriteLock();
     if (!ZipFS.initialized) {
 	Unlock();
@@ -6305,30 +6315,21 @@ void TclZipfsFinalize(void)
     for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &zipSearch); hPtr;
 	    hPtr = Tcl_NextHashEntry(&zipSearch)) {
 	ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
-	if (zf->numOpen == 0) {
-	    Tcl_DeleteHashEntry(hPtr);
-	    CleanupMount(zf);
-	    ZipFSCloseArchive(NULL, zf);
-	    ckfree(zf);
-	}
+	Tcl_DeleteHashEntry(hPtr);
+	CleanupMount(zf); /* Frees file entries belonging to the archive */
+	ZipFSCloseArchive(NULL, zf);
+	ckfree(zf);
     }
 
-    hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &zipSearch);
-    if (hPtr == NULL) {
-	hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &zipSearch);
-	if (hPtr == NULL) {
-	    /* Both hash tables empty. Free all resources */
-	    Tcl_FSUnregister(&zipfsFilesystem);
-	    Tcl_DeleteHashTable(&ZipFS.fileHash);
-	    Tcl_DeleteHashTable(&ZipFS.zipHash);
-	    if (ZipFS.fallbackEntryEncoding) {
-		ckfree(ZipFS.fallbackEntryEncoding);
-		ZipFS.fallbackEntryEncoding = NULL;
-	    }
-	    ZipFS.initialized = 0;
-	}
+    Tcl_FSUnregister(&zipfsFilesystem);
+    Tcl_DeleteHashTable(&ZipFS.fileHash);
+    Tcl_DeleteHashTable(&ZipFS.zipHash);
+    if (ZipFS.fallbackEntryEncoding) {
+	ckfree(ZipFS.fallbackEntryEncoding);
+	ZipFS.fallbackEntryEncoding = NULL;
     }
 
+    ZipFS.initialized = 0;
     Unlock();
 }
 

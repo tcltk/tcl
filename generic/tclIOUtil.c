@@ -761,6 +761,7 @@ TclFinalizeFilesystem(void)
      * needed.
      */
 
+    TclZipfsFinalize();
     fsRecPtr = filesystemList;
     while (fsRecPtr != NULL) {
 	FilesystemRecord *tmpFsRecPtr = fsRecPtr->nextPtr;
