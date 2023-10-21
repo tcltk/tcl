@@ -19,6 +19,7 @@ if {"::tcltest" ni [namespace children]} {
 source [file join [file dirname [info script]] tcltests.tcl]
 
 testConstraint zipfs [expr {[llength [info commands zipfs]]}]
+testConstraint thread [expr {0 == [catch {package require Thread 2.8-}]}]
 
 
 set ziproot [zipfs root]
@@ -1923,6 +1924,14 @@ namespace eval test_ns_zipfs {
         zipfs unmount $mt
     } -result ""
 
+    test bug-33b2486199 "zipfs unmounted on thread exit" -constraints {
+        thread
+    } -body {
+        set before [lsort [zipfs mount]]
+        thread::release [thread::create]
+        after 100; # Needed to allow the spawned thread to exit to trigger bug
+        string equal $before [lsort [zipfs mount]]
+    } -result 1
 }
 
 
