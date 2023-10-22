@@ -3925,12 +3925,7 @@ rangeerror:
 	Tcl_SetObjResult(
 	    interp,
 	    Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
-	Tcl_SetErrorCode(interp,
-			 "TCL",
-			 "VALUE",
-			 "INDEX"
-			 "OUTOFRANGE",
-			 NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (void *)NULL);
     }
     return TCL_ERROR;
 }

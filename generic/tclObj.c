@@ -3658,9 +3658,9 @@ Tcl_GetNumber(
     }
     if (numBytes > INT_MAX) {
 	if (interp) {
-            Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
-	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
 	}
 	return TCL_ERROR;
     }
