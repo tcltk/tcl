@@ -368,7 +368,7 @@ ValidateFormat(
 				  ull,
 				  (Tcl_Size)TCL_SIZE_MAX-1));
 		Tcl_SetErrorCode(
-		    interp, "TCL", "FORMAT", "WIDTHLIMIT", NULL);
+		    interp, "TCL", "FORMAT", "WIDTHLIMIT", (void *)NULL);
 		goto error;
 	    }
 	    flags |= SCAN_WIDTH;

@@ -2197,7 +2197,7 @@ TclCompileScript(
 	  Tcl_ObjPrintf("Script length %" TCL_SIZE_MODIFIER
 			   "d exceeds max permitted length %d.",
 			   numBytes, INT_MAX-1));
-	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH", (void *)NULL);
 	    TclCompileSyntaxError(interp, envPtr);
 	    return;
       }

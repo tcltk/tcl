@@ -400,7 +400,7 @@ TclGetBytesFromObj(
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"byte sequence length exceeds INT_MAX", -1));
-		Tcl_SetErrorCode(interp, "TCL", "API", "OUTDATED", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "API", "OUTDATED", (void *)NULL);
 	    }
 	    return NULL;
 	} else {
@@ -519,7 +519,7 @@ MakeByteArray(
 			    "expected byte sequence but character %"
 			    TCL_Z_MODIFIER "u was '%1s' (U+%06X)",
 			    dst - byteArrayPtr->bytes, src, ch));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", (void *)NULL);
 		}
 		Tcl_Free(byteArrayPtr);
 		*byteArrayPtrPtr = NULL;
