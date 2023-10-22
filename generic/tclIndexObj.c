@@ -334,29 +334,29 @@ Tcl_GetIndexFromObjStruct(
 	}
 	Tcl_AppendStringsToObj(resultPtr,
 		(numAbbrev>1 && !(flags & TCL_EXACT) ? "ambiguous " : "bad "),
-		msg, " \"", key, NULL);
+		msg, " \"", key, (void *)NULL);
 	if (*entryPtr == NULL) {
-	    Tcl_AppendStringsToObj(resultPtr, "\": no valid options", NULL);
+	    Tcl_AppendStringsToObj(resultPtr, "\": no valid options", (void *)NULL);
 	} else {
 	    Tcl_AppendStringsToObj(resultPtr, "\": must be ",
-		    *entryPtr, NULL);
+		    *entryPtr, (void *)NULL);
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    while (*entryPtr != NULL) {
 		if ((*NEXT_ENTRY(entryPtr, offset) == NULL) && !(flags & TCL_NULL_OK)) {
 		    Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : ""),
-			    " or ", *entryPtr, NULL);
+			    " or ", *entryPtr, (void *)NULL);
 		} else if (**entryPtr) {
-		    Tcl_AppendStringsToObj(resultPtr, ", ", *entryPtr, NULL);
+		    Tcl_AppendStringsToObj(resultPtr, ", ", *entryPtr, (void *)NULL);
 		    count++;
 		}
 		entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    }
 	    if ((flags & TCL_NULL_OK)) {
-		Tcl_AppendStringsToObj(resultPtr, ", or \"\"", NULL);
+		Tcl_AppendStringsToObj(resultPtr, ", or \"\"", (void *)NULL);
 	    }
 	}
 	Tcl_SetObjResult(interp, resultPtr);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, (void *)NULL);
     }
     return TCL_ERROR;
 }
@@ -537,7 +537,7 @@ PrefixMatchObjCmd(
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"missing value for -message", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -547,7 +547,7 @@ PrefixMatchObjCmd(
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"missing value for -error", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -559,7 +559,7 @@ PrefixMatchObjCmd(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"error options must have an even number of elements",
 			-1));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    errorPtr = objv[i];
@@ -893,7 +893,7 @@ Tcl_WrongNumArgs(
 	     */
 
 	    if (i<toPrint-1 || objc!=0 || message!=NULL) {
-		Tcl_AppendStringsToObj(objPtr, " ", NULL);
+		Tcl_AppendStringsToObj(objPtr, " ", (void *)NULL);
 	    }
 	}
     }
@@ -915,7 +915,7 @@ Tcl_WrongNumArgs(
 	if ((irPtr = TclFetchInternalRep(objv[i], &tclIndexType))) {
 	    IndexRep *indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
 
-	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), NULL);
+	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), (void *)NULL);
 	} else {
 	    /*
 	     * Quote the argument if it contains spaces (Bug 942757).
@@ -943,7 +943,7 @@ Tcl_WrongNumArgs(
 	 */
 
 	if (i + 1 < objc || message!=NULL) {
-	    Tcl_AppendStringsToObj(objPtr, " ", NULL);
+	    Tcl_AppendStringsToObj(objPtr, " ", (void *)NULL);
 	}
     }
 
@@ -954,10 +954,10 @@ Tcl_WrongNumArgs(
      */
 
     if (message != NULL) {
-	Tcl_AppendStringsToObj(objPtr, message, NULL);
+	Tcl_AppendStringsToObj(objPtr, message, (void *)NULL);
     }
-    Tcl_AppendStringsToObj(objPtr, "\"", NULL);
-    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
+    Tcl_AppendStringsToObj(objPtr, "\"", (void *)NULL);
+    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (void *)NULL);
     Tcl_SetObjResult(interp, objPtr);
 }
 
@@ -1379,7 +1379,7 @@ TclGetCompletionCodeFromObj(
 		"bad completion code \"%s\": must be"
 		" ok, error, return, break, continue, or an integer",
 		TclGetString(value)));
-	Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", (void *)NULL);
     }
     return TCL_ERROR;
 }

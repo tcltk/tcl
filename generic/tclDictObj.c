@@ -131,7 +131,7 @@ typedef struct Dict {
 				 * the dictionary. Used for doing traversal of
 				 * the entries in the order that they are
 				 * created. */
-    TCL_HASH_TYPE epoch; 	/* Epoch counter */
+    size_t epoch; 	/* Epoch counter */
     size_t refCount;		/* Reference counter (see above) */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
@@ -503,7 +503,7 @@ UpdateStringOfDict(
     ChainEntry *cPtr;
     Tcl_Obj *keyPtr, *valuePtr;
     Tcl_Size i, length;
-    TCL_HASH_TYPE bytesNeeded = 0;
+    size_t bytesNeeded = 0;
     const char *elem;
     char *dst;
 
@@ -731,7 +731,7 @@ SetDictFromAny(
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing value to go with key", -1));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", (void *)NULL);
     }
   errorInFindDictElement:
     DeleteChainTable(dict);
@@ -826,7 +826,7 @@ TclTraceDictPath(
 			    "key \"%s\" not known in dictionary",
 			    TclGetString(keyv[i])));
 		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-			    TclGetString(keyv[i]), NULL);
+			    TclGetString(keyv[i]), (void *)NULL);
 		}
 		return NULL;
 	    }
@@ -1638,7 +1638,7 @@ DictGetCmd(
 		"key \"%s\" not known in dictionary",
 		TclGetString(objv[objc-1])));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-		TclGetString(objv[objc-1]), NULL);
+		TclGetString(objv[objc-1]), (void *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, valuePtr);
@@ -2516,7 +2516,7 @@ DictForNRCmd(
     if (varc != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must have exactly two variable names", -1));
-	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "for", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "for", (void *)NULL);
 	return TCL_ERROR;
     }
     searchPtr = (Tcl_DictSearch *)TclStackAlloc(interp, sizeof(Tcl_DictSearch));
@@ -2711,7 +2711,7 @@ DictMapNRCmd(
     if (varc != 2) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"must have exactly two variable names", -1));
-	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "map", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "map", (void *)NULL);
 	return TCL_ERROR;
     }
     storagePtr = (DictMapStorage *)TclStackAlloc(interp, sizeof(DictMapStorage));
@@ -3151,7 +3151,7 @@ DictFilterCmd(
 	if (varc != 2) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "must have exactly two variable names", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "filter", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "filter", (void *)NULL);
 	    return TCL_ERROR;
 	}
 	keyVarObj = varv[0];

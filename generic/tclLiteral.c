@@ -179,7 +179,7 @@ TclCreateLiteral(
     const char *bytes,	/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
     Tcl_Size length,	/* Number of bytes in the string. */
-    TCL_HASH_TYPE hash, /* The string's hash. If the value is
+    size_t hash, /* The string's hash. If the value is
 				         * TCL_INDEX_NONE, it will be computed here. */
     int *newPtr,
     Namespace *nsPtr,
@@ -195,7 +195,7 @@ TclCreateLiteral(
      * Is it in the interpreter's global literal table?
      */
 
-    if (hash == (TCL_HASH_TYPE) TCL_INDEX_NONE) {
+    if (hash == (size_t) TCL_INDEX_NONE) {
 	hash = HashString(bytes, length);
     }
     globalHash = (hash & globalTablePtr->mask);

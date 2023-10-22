@@ -267,7 +267,7 @@ declare 65 {
 # Removed in 9.0, replaced by macro.
 #declare 67 {
 #    void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,
-#	    int length)
+#	    Tcl_Size length)
 #}
 declare 68 {
     void Tcl_AllowExceptions(Tcl_Interp *interp)
@@ -1319,7 +1319,7 @@ declare 356 {
 # Removed in 9.0:
 #declare 357 {
 #    Tcl_Obj *Tcl_EvalTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-#	    int count)
+#	    Tcl_Size count)
 #}
 declare 358 {
     void Tcl_FreeParse(Tcl_Parse *parsePtr)

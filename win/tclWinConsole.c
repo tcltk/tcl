@@ -2292,7 +2292,7 @@ ConsoleSetOptionProc(
 			"bad mode \"%s\" for -inputmode: must be"
 			" normal, password, raw, or reset", value));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", NULL);
+			"VALUE", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}

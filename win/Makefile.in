@@ -126,10 +126,6 @@ ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)')
 MINIZIP_DIR_NATIVE	= $(shell $(CYGPATH) '$(MINIZIP_DIR)')
 TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
 
-# Fully qualify library path so that `make test`
-# does not depend on the current directory.
-LIBRARY_DIR1		= $(shell cd '$(ROOT_DIR_NATIVE)/library' ; pwd -P)
-LIBRARY_DIR             = $(shell $(CYGPATH) '$(LIBRARY_DIR1)')
 DLLSUFFIX		= @DLLSUFFIX@
 LIBSUFFIX		= @LIBSUFFIX@
 EXESUFFIX		= @EXESUFFIX@
@@ -231,6 +227,14 @@ ZIP_PROG_VFSSEARCH  = @ZIP_PROG_VFSSEARCH@
 SHARED_BUILD		= @SHARED_BUILD@
 INSTALL_MSGS            = @INSTALL_MSGS@
 INSTALL_LIBRARIES       = @INSTALL_LIBRARIES@
+
+# Fully qualify library path so that `make test`
+# does not depend on the current directory.
+# Only define these if not embedding the library
+ifeq ($(ZIPFS_BUILD), 0)
+LIBRARY_DIR1		= $(shell cd '$(ROOT_DIR_NATIVE)/library' ; pwd -P)
+LIBRARY_DIR             = $(shell $(CYGPATH) '$(LIBRARY_DIR1)')
+endif
 
 # Minizip
 MINIZIP_OBJS = \

@@ -18,6 +18,7 @@ jobs:
           - ""
           - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "--disable-shared"
+          - "--disable-zipfs"
           - "--enable-symbols"
           - "--enable-symbols=mem"
           - "--enable-symbols=all"

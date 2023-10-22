@@ -1479,7 +1479,7 @@ ParseExpr(
 		parsePtr->string, (numBytes < limit) ? "" : "..."));
 	if (errCode) {
 	    Tcl_SetErrorCode(interp, "TCL", "PARSE", "EXPR", errCode,
-		    subErrCode, NULL);
+		    subErrCode, (void *)NULL);
 	}
     }
 
