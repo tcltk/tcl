@@ -49,8 +49,8 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 int
 TclGetIndexFromToken(
     Tcl_Token *tokenPtr,
-    int before,
-    int after,
+    Tcl_Size before,
+    Tcl_Size after,
     int *indexPtr)
 {
     Tcl_Obj *tmpObj;
@@ -2113,7 +2113,7 @@ TclCompileRegsubCmd(
     Tcl_DString pattern;
     const char *bytes;
     int exact, quantified, result = TCL_ERROR;
-    int len;
+    Tcl_Size len;
 
     if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -2267,11 +2267,11 @@ TclCompileReturnCmd(
      * General syntax: [return ?-option value ...? ?result?]
      * An even number of words means an explicit result argument is present.
      */
-    int level, code, objc, status = TCL_OK;
-    int size;
-    int numWords = parsePtr->numWords;
-    int explicitResult = (0 == (numWords % 2));
-    int numOptionWords = numWords - 1 - explicitResult;
+    int level, code, status = TCL_OK;
+    Tcl_Size size;
+    Tcl_Size numWords = parsePtr->numWords;
+    Tcl_Size explicitResult = (0 == (numWords % 2));
+    Tcl_Size objc, numOptionWords = numWords - 1 - explicitResult;
     Tcl_Obj *returnOpts, **objv;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
@@ -2478,7 +2478,7 @@ TclCompileSyntaxError(
     CompileEnv *envPtr)
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
-    int numBytes;
+    Tcl_Size numBytes;
     const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
     TclErrorStackResetIf(interp, bytes, numBytes);
@@ -2705,7 +2705,7 @@ IndexTailVarIfKnown(
     Tcl_Obj *tailPtr;
     const char *tailName, *p;
     int n = varTokenPtr->numComponents;
-    int len;
+    Tcl_Size len;
     Tcl_Token *lastTokenPtr;
     int full, localIndex;
 

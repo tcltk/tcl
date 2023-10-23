@@ -31,7 +31,7 @@ mp_err mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d)
    }
 
    /* init our temps */
-   if ((err = mp_init_multi(&ta, &tb, &tq, &q, NULL)) != MP_OKAY) {
+   if ((err = mp_init_multi(&ta, &tb, &tq, &q, (void *)NULL)) != MP_OKAY) {
       return err;
    }
 
@@ -64,7 +64,7 @@ mp_err mp_div(const mp_int *a, const mp_int *b, mp_int *c, mp_int *d)
       d->sign = MP_IS_ZERO(d) ? MP_ZPOS : n;
    }
 LBL_ERR:
-   mp_clear_multi(&ta, &tb, &tq, &q, NULL);
+   mp_clear_multi(&ta, &tb, &tq, &q, (void *)NULL);
    return err;
 }
 

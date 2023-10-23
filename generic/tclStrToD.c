@@ -1595,7 +1595,7 @@ TclParseNumber(
 		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
 	    }
 	    Tcl_SetObjResult(interp, msg);
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (void *)NULL);
 	}
     }
 
@@ -3716,7 +3716,7 @@ ShorteningBignumConversionPowD(
     if (m2plus > m2minus) {
 	mp_clear(&mplus);
     }
-    mp_clear_multi(&b, &mminus, &temp, NULL);
+    mp_clear_multi(&b, &mminus, &temp, (void *)NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
@@ -4153,7 +4153,7 @@ ShorteningBignumConversion(
     if (m2plus > m2minus) {
 	mp_clear(&mplus);
     }
-    mp_clear_multi(&b, &mminus, &dig, &S, NULL);
+    mp_clear_multi(&b, &mminus, &dig, &S, (void *)NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
@@ -4328,7 +4328,7 @@ StrictBignumConversion(
      * string.
      */
 
-    mp_clear_multi(&b, &S, &dig, NULL);
+    mp_clear_multi(&b, &S, &dig, (void *)NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
@@ -4859,7 +4859,7 @@ Tcl_InitBignumFromDouble(
 	    const char *s = "integer value too large to represent";
 
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
 	}
 	return TCL_ERROR;
     }

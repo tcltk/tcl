@@ -1124,7 +1124,7 @@ MODULE_SCOPE Tcl_Size	TclCreateAuxData(void *clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE Tcl_Size	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
-MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
+MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, TCL_HASH_TYPE size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
 			    Tcl_Size length, TCL_HASH_TYPE hash, int *newPtr,
 			    Namespace *nsPtr, int flags,
@@ -1155,7 +1155,7 @@ MODULE_SCOPE ByteCode *	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    const Tcl_ObjType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
-			    int numBytes, const CmdFrame *invoker, int word);
+			    TCL_HASH_TYPE numBytes, const CmdFrame *invoker, int word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
@@ -1170,9 +1170,9 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
-MODULE_SCOPE int	TclLocalScalar(const char *bytes, int numBytes,
+MODULE_SCOPE Tcl_Size TclLocalScalar(const char *bytes, TCL_HASH_TYPE numBytes,
 			    CompileEnv *envPtr);
-MODULE_SCOPE int	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
+MODULE_SCOPE Tcl_Size TclLocalScalarFromToken(Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG

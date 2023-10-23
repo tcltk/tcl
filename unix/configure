@@ -691,6 +691,7 @@ TCL_PATCH_LEVEL
 TCL_MINOR_VERSION
 TCL_MAJOR_VERSION
 TCL_VERSION
+TCL_BUILDTIME_LIBRARY
 INSTALL_MSGS
 INSTALL_LIBRARIES
 TCL_ZIP_FILE
@@ -10884,6 +10885,12 @@ printf "%s\n" "no" >&6; }
 INSTALL_LIBRARIES=install-libraries
 INSTALL_MSGS=install-msgs
 fi
+
+# Point to tcl script library if we are not embedding it.
+if test "${ZIPFS_BUILD}" = 0; then
+TCL_BUILDTIME_LIBRARY=${TCL_SRC_DIR}/library
+fi
+
 
 
 

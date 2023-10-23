@@ -50,7 +50,7 @@ If nonzero, the client socket is connected asynchronously to the server.
 .AP int backlog in
 Length of OS listen backlog queue. Use -1 for default value.
 .AP "unsigned int" flags in
-ORed combination of \fBTCL_TCPSERVER\fR flags that specify additional
+ORed combination of \fBTCL_TCPSERVER_*\fR flags that specify additional
 informations about the socket being created.
 .AP ClientData sock in
 Platform-specific handle for client TCP socket.
@@ -173,7 +173,10 @@ replacement for the standard channel.
 .PP
 \fBTcl_OpenTcpServerEx\fR behaviour is identical to \fBTcl_OpenTcpServer\fR but
 gives more flexibility to the user by providing a mean to further customize some
-aspects of the socket via the \fIflags\fR parameter.
+aspects of the socket via the \fIflags\fR parameter. Available
+flags (dependent on platform) are
+\fITCL_TCPSERVER_REUSEADDR\fR
+\fITCL_TCPSERVER_REUSEPORT\fR
 .SH "PLATFORM ISSUES"
 .PP
 On Unix platforms, the socket handle is a Unix file descriptor as

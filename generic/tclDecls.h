@@ -261,7 +261,7 @@ void			Tcl_AddErrorInfo(Tcl_Interp *interp,
 /* 67 */
 TCL_DEPRECATED("No longer in use, changed to macro")
 void			Tcl_AddObjErrorInfo(Tcl_Interp *interp,
-				const char *message, int length);
+				const char *message, Tcl_Size length);
 /* 68 */
 EXTERN void		Tcl_AllowExceptions(Tcl_Interp *interp);
 /* 69 */
@@ -1093,7 +1093,7 @@ EXTERN Tcl_RegExp	Tcl_GetRegExpFromObj(Tcl_Interp *interp,
 /* 357 */
 TCL_DEPRECATED("Use Tcl_EvalTokensStandard")
 Tcl_Obj *		Tcl_EvalTokens(Tcl_Interp *interp,
-				Tcl_Token *tokenPtr, int count);
+				Tcl_Token *tokenPtr, Tcl_Size count);
 /* 358 */
 EXTERN void		Tcl_FreeParse(Tcl_Parse *parsePtr);
 /* 359 */
@@ -2107,7 +2107,7 @@ typedef struct TclStubs {
     void (*tcl_SetObjLength) (Tcl_Obj *objPtr, Tcl_Size length); /* 64 */
     void (*tcl_SetStringObj) (Tcl_Obj *objPtr, const char *bytes, Tcl_Size length); /* 65 */
     TCL_DEPRECATED_API("No longer in use, changed to macro") void (*tcl_AddErrorInfo) (Tcl_Interp *interp, const char *message); /* 66 */
-    TCL_DEPRECATED_API("No longer in use, changed to macro") void (*tcl_AddObjErrorInfo) (Tcl_Interp *interp, const char *message, int length); /* 67 */
+    TCL_DEPRECATED_API("No longer in use, changed to macro") void (*tcl_AddObjErrorInfo) (Tcl_Interp *interp, const char *message, Tcl_Size length); /* 67 */
     void (*tcl_AllowExceptions) (Tcl_Interp *interp); /* 68 */
     void (*tcl_AppendElement) (Tcl_Interp *interp, const char *element); /* 69 */
     void (*tcl_AppendResult) (Tcl_Interp *interp, ...); /* 70 */
@@ -2405,7 +2405,7 @@ typedef struct TclStubs {
     char * (*tcl_Char16ToUtfDString) (const unsigned short *uniStr, Tcl_Size uniLength, Tcl_DString *dsPtr); /* 354 */
     unsigned short * (*tcl_UtfToChar16DString) (const char *src, Tcl_Size length, Tcl_DString *dsPtr); /* 355 */
     Tcl_RegExp (*tcl_GetRegExpFromObj) (Tcl_Interp *interp, Tcl_Obj *patObj, int flags); /* 356 */
-    TCL_DEPRECATED_API("Use Tcl_EvalTokensStandard") Tcl_Obj * (*tcl_EvalTokens) (Tcl_Interp *interp, Tcl_Token *tokenPtr, int count); /* 357 */
+    TCL_DEPRECATED_API("Use Tcl_EvalTokensStandard") Tcl_Obj * (*tcl_EvalTokens) (Tcl_Interp *interp, Tcl_Token *tokenPtr, Tcl_Size count); /* 357 */
     void (*tcl_FreeParse) (Tcl_Parse *parsePtr); /* 358 */
     void (*tcl_LogCommandInfo) (Tcl_Interp *interp, const char *script, const char *command, Tcl_Size length); /* 359 */
     int (*tcl_ParseBraces) (Tcl_Interp *interp, const char *start, Tcl_Size numBytes, Tcl_Parse *parsePtr, int append, const char **termPtr); /* 360 */
@@ -4149,6 +4149,14 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
 #   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
 	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
+#ifndef __cplusplus
+#   undef Tcl_EventuallyFree
+#   define Tcl_EventuallyFree \
+	   ((void (*)(void *,void *))(void *)(tclStubsPtr->tcl_EventuallyFree)) /* 132 */
+#   undef Tcl_SetResult
+#   define Tcl_SetResult \
+	   ((void (*)(Tcl_Interp *, char *, void *))(void *)(tclStubsPtr->tcl_SetResult)) /* 232 */
+#endif
 #endif
 
 #if defined(_WIN32) && defined(UNICODE)

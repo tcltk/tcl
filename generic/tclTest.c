@@ -239,7 +239,7 @@ static Tcl_ObjCmdProc	NoopObjCmd;
 static Tcl_CmdObjTraceProc2 ObjTraceProc;
 static void		ObjTraceDeleteProc(void *clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
-static void		SpecialFree(char *blockPtr);
+static Tcl_FreeProc	SpecialFree;
 static int		StaticInitProc(Tcl_Interp *interp);
 static Tcl_CmdProc	TestasyncCmd;
 static Tcl_ObjCmdProc	TestbumpinterpepochObjCmd;
@@ -301,7 +301,7 @@ static void		TestregexpXflags(const char *string,
 			    size_t length, int *cflagsPtr, int *eflagsPtr);
 #ifndef TCL_NO_DEPRECATED
 static Tcl_ObjCmdProc	TestsaveresultCmd;
-static void		TestsaveresultFree(char *blockPtr);
+static Tcl_FreeProc	TestsaveresultFree;
 #endif /* TCL_NO_DEPRECATED */
 static Tcl_CmdProc	TestsetassocdataCmd;
 static Tcl_CmdProc	TestsetCmd;
@@ -2026,7 +2026,11 @@ TestdstringCmd(
  */
 
 static void SpecialFree(
+#if TCL_MAJOR_VERSION > 8
+    void *blockPtr			/* Block to free. */
+#else
     char *blockPtr			/* Block to free. */
+#endif
 ) {
     ckfree((char *)blockPtr - 16);
 }
@@ -5998,7 +6002,11 @@ TestsaveresultCmd(
 
 static void
 TestsaveresultFree(
-    TCL_UNUSED(char *))
+#if TCL_MAJOR_VERSION > 8
+    (TCL_UNUSED void *))
+#else
+    (TCL_UNUSED char *))
+#endif
 {
     freeCount++;
 }
@@ -8038,22 +8046,22 @@ NREUnwind_callback(
     Tcl_Interp *interp,
     TCL_UNUSED(int) /*result*/)
 {
-    int none;
+    void *cStackPtr = TclGetCStackPtr();
 
     if (data[0] == INT2PTR(-1)) {
-        Tcl_NRAddCallback(interp, NREUnwind_callback, &none, INT2PTR(-1),
+        Tcl_NRAddCallback(interp, NREUnwind_callback, cStackPtr, INT2PTR(-1),
                 INT2PTR(-1), NULL);
     } else if (data[1] == INT2PTR(-1)) {
-        Tcl_NRAddCallback(interp, NREUnwind_callback, data[0], &none,
+        Tcl_NRAddCallback(interp, NREUnwind_callback, data[0], cStackPtr,
                 INT2PTR(-1), NULL);
     } else if (data[2] == INT2PTR(-1)) {
         Tcl_NRAddCallback(interp, NREUnwind_callback, data[0], data[1],
-                &none, NULL);
+                cStackPtr, NULL);
     } else {
         Tcl_Obj *idata[3];
         idata[0] = Tcl_NewWideIntObj(((char *) data[1] - (char *) data[0]));
         idata[1] = Tcl_NewWideIntObj(((char *) data[2] - (char *) data[0]));
-        idata[2] = Tcl_NewWideIntObj(((char *) &none   - (char *) data[0]));
+        idata[2] = Tcl_NewWideIntObj(((char *) cStackPtr - (char *) data[0]));
         Tcl_SetObjResult(interp, Tcl_NewListObj(3, idata));
     }
     return TCL_OK;
@@ -8092,10 +8100,10 @@ TestNRELevels(
     NRE_callback *cbPtr = iPtr->execEnvPtr->callbackPtr;
 
     if (refDepth == NULL) {
-	refDepth = &depth;
+	refDepth = (ptrdiff_t *)TclGetCStackPtr();
     }
 
-    depth = (refDepth - &depth);
+    depth = (refDepth - (ptrdiff_t *)TclGetCStackPtr());
 
     levels[0] = Tcl_NewWideIntObj(depth);
     levels[1] = Tcl_NewWideIntObj(iPtr->numLevels);

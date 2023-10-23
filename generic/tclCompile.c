@@ -1447,7 +1447,7 @@ TclInitCompileEnv(
     CompileEnv *envPtr,/* Points to the CompileEnv structure to
 				 * initialize. */
     const char *stringPtr,	/* The source string to be compiled. */
-    int numBytes,		/* Number of bytes in source string. */
+    TCL_HASH_TYPE numBytes,		/* Number of bytes in source string. */
     const CmdFrame *invoker,	/* Location context invoking the bcc */
     int word)			/* Index of the word in that context getting
 				 * compiled */
@@ -2178,7 +2178,7 @@ TclCompileScript(
     if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "too many nested compilations (infinite loop?)", -1));
-	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (void *)NULL);
 	TclCompileSyntaxError(interp, envPtr);
 	return;
     }

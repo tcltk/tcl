@@ -999,11 +999,11 @@ static const TclIntStubs tclIntStubs = {
     TclStackFree, /* 216 */
     TclPushStackFrame, /* 217 */
     TclPopStackFrame, /* 218 */
-    0, /* 219 */
+    TclpCreateTemporaryDirectory, /* 219 */
     0, /* 220 */
-    0, /* 221 */
-    0, /* 222 */
-    0, /* 223 */
+    TclListTestObj, /* 221 */
+    TclListObjValidate, /* 222 */
+    TclGetCStackPtr, /* 223 */
     TclGetPlatform, /* 224 */
     TclTraceDictPath, /* 225 */
     TclObjBeingDeleted, /* 226 */
@@ -1038,10 +1038,10 @@ static const TclIntStubs tclIntStubs = {
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
-    TclpCreateTemporaryDirectory, /* 258 */
+    0, /* 258 */
     0, /* 259 */
-    TclListTestObj, /* 260 */
-    TclListObjValidate, /* 261 */
+    0, /* 260 */
+    TclUnusedStubEntry, /* 261 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
