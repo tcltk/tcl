@@ -1093,7 +1093,7 @@ static const struct {
 #ifdef __INTEL_COMPILER
 	    ".icc-" STRINGIFY(__INTEL_COMPILER)
 #endif
-#if (defined(_WIN32) && !defined(_WIN64)) || (ULONG_MAX == 0xffffffffUL)
+#if (defined(_WIN32) || (ULONG_MAX == 0xffffffffUL)) && !defined(_WIN64)
 	    ".ilp32"
 #endif
 #ifdef TCL_MEM_DEBUG
