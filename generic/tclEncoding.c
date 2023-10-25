@@ -409,52 +409,6 @@ Tcl_SetEncodingSearchPath(
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclGetLibraryPath --
- *
- *	Keeps the per-thread copy of the library path current with changes to
- *	the global copy.
- *
- * Results:
- *	Returns a "list" (Tcl_Obj *) that contains the library path.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclGetLibraryPath(void)
-{
-    return TclGetProcessGlobalValue(&libraryPath);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclSetLibraryPath --
- *
- *	Keeps the per-thread copy of the library path current with changes to
- *	the global copy.
- *
- *	Since the result of this routine is void, if searchPath is not a valid
- *	list this routine silently does nothing.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclSetLibraryPath(
-    Tcl_Obj *path)
-{
-    Tcl_Size dummy;
-
-    if (TCL_ERROR == TclListObjLengthM(NULL, path, &dummy)) {
-	return;
-    }
-    TclSetProcessGlobalValue(&libraryPath, path, NULL);
-}
-
-/*
  *---------------------------------------------------------------------------
  *
  * FillEncodingFileMap --
@@ -4382,7 +4336,7 @@ InitializeEncodingSearchPath(
     TclNewObj(searchPathObj);
     Tcl_IncrRefCount(encodingObj);
     Tcl_IncrRefCount(searchPathObj);
-    libPathObj = TclGetLibraryPath();
+    libPathObj = TclGetProcessGlobalValue(&libraryPath);
     Tcl_IncrRefCount(libPathObj);
     TclListObjLengthM(NULL, libPathObj, &numDirs);
 

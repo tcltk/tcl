@@ -364,12 +364,13 @@ declare 151 {
     void TclRegExpRangeUniChar(Tcl_RegExp re, Tcl_Size index, Tcl_Size *startPtr,
 	    Tcl_Size *endPtr)
 }
-declare 152 {
-    void TclSetLibraryPath(Tcl_Obj *pathPtr)
-}
-declare 153 {
-    Tcl_Obj *TclGetLibraryPath(void)
-}
+# Tcl*LibraryPath routines were obsoleted in Tcl 8.5
+#declare 152 {
+#    void TclSetLibraryPath(Tcl_Obj *pathPtr)
+#}
+#declare 153 {
+#    Tcl_Obj *TclGetLibraryPath(void)
+#}
 declare 156 {
     void TclRegError(Tcl_Interp *interp, const char *msg,
 	    int status)
