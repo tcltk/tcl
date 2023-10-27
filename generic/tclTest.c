@@ -1192,10 +1192,10 @@ TestcmdinfoObjCmd(
 	}
 	if (info.deleteProc == CmdDelProc1) {
 	    Tcl_AppendResult(interp, " CmdDelProc1", " ",
-		    (char *) info.deleteData, NULL);
+		    (char *) info.deleteData, (void *)NULL);
 	} else if (info.deleteProc == CmdDelProc2) {
 	    Tcl_AppendResult(interp, " CmdDelProc2", " ",
-		    (char *) info.deleteData, NULL);
+		    (char *) info.deleteData, (void *)NULL);
 	} else {
 	    Tcl_AppendResult(interp, " unknown", (void *)NULL);
 	}
@@ -1350,7 +1350,7 @@ TestcmdtokenCmd(
 	refPtr->nextPtr = firstCommandTokenRef;
 	firstCommandTokenRef = refPtr;
 	snprintf(buf, sizeof(buf), "%d", refPtr->id);
-	Tcl_AppendResult(interp, buf, NULL);
+	Tcl_AppendResult(interp, buf, (void *)NULL);
     } else {
 	if (sscanf(argv[2], "%d", &id) != 1) {
 	    Tcl_AppendResult(interp, "bad command token \"", argv[2],
@@ -1645,7 +1645,7 @@ CreatedCommandProc(
 	    &info);
     if (!found) {
 	Tcl_AppendResult(interp, "CreatedCommandProc could not get command info for test_ns_basic::createdcommand",
-		NULL);
+		(void *)NULL);
 	return TCL_ERROR;
     }
     Tcl_AppendResult(interp, "CreatedCommandProc in ",
@@ -2871,7 +2871,7 @@ TestexprlongCmd(
 		" expression\"", (void *)NULL);
 	return TCL_ERROR;
     }
-    Tcl_AppendResult(interp, "This is a result", NULL);
+    Tcl_AppendResult(interp, "This is a result", (void *)NULL);
     result = Tcl_ExprLong(interp, argv[1], &exprResult);
     if (result != TCL_OK) {
 	return result;
@@ -5080,23 +5080,23 @@ TestseterrorcodeCmd(
     }
     switch (argc) {
     case 1:
-	Tcl_SetErrorCode(interp, "NONE", NULL);
+	Tcl_SetErrorCode(interp, "NONE", (void *)NULL);
 	break;
     case 2:
-	Tcl_SetErrorCode(interp, argv[1], NULL);
+	Tcl_SetErrorCode(interp, argv[1], (void *)NULL);
 	break;
     case 3:
-	Tcl_SetErrorCode(interp, argv[1], argv[2], NULL);
+	Tcl_SetErrorCode(interp, argv[1], argv[2], (void *)NULL);
 	break;
     case 4:
-	Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], NULL);
+	Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], (void *)NULL);
 	break;
     case 5:
-	Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], argv[4], NULL);
+	Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], argv[4], (void *)NULL);
 	break;
     case 6:
 	Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], argv[4],
-		argv[5], NULL);
+		argv[5], (void *)NULL);
     }
     return TCL_ERROR;
 }
@@ -6392,7 +6392,7 @@ TestChannelCmd(
 	}
 
 	Tcl_AppendResult(interp,
-		(statePtr->flags & INPUT_SAW_CR) ? "1" : "0", NULL);
+		(statePtr->flags & INPUT_SAW_CR) ? "1" : "0", (void *)NULL);
 	return TCL_OK;
     }
 
@@ -6482,7 +6482,7 @@ TestChannelCmd(
 	}
 	if (strcmp(argv[3], "-command") != 0) {
 	    Tcl_AppendResult(interp, "bad argument \"", argv[3],
-		    "\": should be \"-command\"", NULL);
+		    "\": should be \"-command\"", (void *)NULL);
 	    return TCL_ERROR;
 	}
 
@@ -8166,7 +8166,7 @@ TestconcatobjCmd(
 	    Tcl_DecrRefCount(tmpPtr);
 	    break;
 	default:
-	    Tcl_AppendResult(interp, "(more than one refCount added!)", NULL);
+	    Tcl_AppendResult(interp, "(more than one refCount added!)", (void *)NULL);
 	    Tcl_Panic("extremely unsafe behaviour by Tcl_ConcatObj()");
 	}
 	tmpPtr = Tcl_DuplicateObj(list1Ptr);
