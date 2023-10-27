@@ -357,7 +357,7 @@ TestfilewaitCmd(
 	Tcl_WrongNumArgs(interp, 2, objv, "file readable|writable|both timeout");
 	return TCL_ERROR;
     }
-    channel = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), (void *)NULL);
+    channel = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
     if (channel == NULL) {
 	return TCL_ERROR;
     }
