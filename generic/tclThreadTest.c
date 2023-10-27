@@ -913,7 +913,7 @@ ThreadSend(
 
     if (resultPtr->code != TCL_OK) {
 	if (resultPtr->errorCode) {
-	    Tcl_SetErrorCode(interp, resultPtr->errorCode, NULL);
+	    Tcl_SetErrorCode(interp, resultPtr->errorCode, (void *)NULL);
 	    ckfree(resultPtr->errorCode);
 	}
 	if (resultPtr->errorInfo) {
