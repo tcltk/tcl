@@ -352,6 +352,13 @@ proc _testExecArgs {flags args} {
 	    } r]} {
 		set r "ERROR: $r"
 	    }
+	    if {[file extension [lindex $cmd 0]] eq ".bat"} {
+		set evm {}; foreach ev [lsort -unique [regexp -inline -all {%[A-Z]+%} $e]] {
+		    set ev [string range $ev 1 end-1]
+		    if {[info exists ::env($ev)]} { lappend evm %$ev% $::env($ev) }
+		}
+		set e [string map $evm $e]
+	    }
 	    if {$r ne $e} {
 		append broken "\[ERROR\]: exec [file extension [lindex $cmd 0]] on $args\n  -- result:\n$r\n  -- expected:\n$e\n"
 	    }
