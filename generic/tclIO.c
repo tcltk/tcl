@@ -699,7 +699,7 @@ TclFinalizeIOSubsystem(void)
     TclpFinalizeSockets();
     TclpFinalizePipes();
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
