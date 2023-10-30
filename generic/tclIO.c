@@ -707,7 +707,7 @@ TclFinalizeIOSubsystem(void)
     TclpFinalizeSockets();
     TclpFinalizePipes();
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4392,7 +4392,8 @@ Write(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     char *nextNewLine = NULL;
-    int endEncoding, saved = 0, total = 0, flushed = 0, needNlFlush = 0;
+    int endEncoding, needNlFlush = 0;
+    int saved = 0, total = 0, flushed = 0;
     char safe[BUFFER_PADDING];
     int encodingError = 0;
 
@@ -9784,9 +9785,10 @@ CopyData(
     Tcl_Obj *cmdPtr, *errObj = NULL, *bufObj = NULL, *msg = NULL;
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
-    int result = TCL_OK, size;
+    int result = TCL_OK;
     Tcl_Size sizeb;
     Tcl_WideInt total;
+    int size;
     const char *buffer;
     int inBinary, outBinary, sameEncoding;
 				/* Encoding control */
