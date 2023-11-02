@@ -1229,7 +1229,7 @@ Tcl_ExternalToUtfDStringEx(
 	    Tcl_NewStringObj(
 		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
 		TCL_INDEX_NONE));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", (void *)NULL);
 	errno = EINVAL;
 	return TCL_ERROR;
     }
@@ -1303,7 +1303,7 @@ Tcl_ExternalToUtfDStringEx(
 				      nBytesProcessed,
 				      UCHAR(srcStart[nBytesProcessed])));
 		    Tcl_SetErrorCode(
-			interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, NULL);
+			interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, (void *)NULL);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -1559,7 +1559,7 @@ Tcl_UtfToExternalDStringEx(
 	    Tcl_NewStringObj(
 		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
 		TCL_INDEX_NONE));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", (void *)NULL);
 	errno = EINVAL;
 	return TCL_ERROR;
     }
@@ -1637,7 +1637,7 @@ Tcl_UtfToExternalDStringEx(
 			    pos,
 			    ucs4));
 		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-				     buf, NULL);
+				     buf, (void *)NULL);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -1894,7 +1894,7 @@ OpenEncodingFileChannel(
     if ((NULL == chan) && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unknown encoding \"%s\"", name));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (void *)NULL);
     }
     Tcl_DecrRefCount(fileNameObj);
     Tcl_DecrRefCount(nameObj);
@@ -1969,7 +1969,7 @@ LoadEncodingFile(
     if ((encoding == NULL) && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"invalid encoding file \"%s\"", name));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (void *)NULL);
     }
     Tcl_CloseEx(NULL, chan, 0);
 
@@ -4316,7 +4316,7 @@ unilen4(
 static void
 InitializeEncodingSearchPath(
     char **valuePtr,
-    TCL_HASH_TYPE *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *bytes;
@@ -4396,14 +4396,14 @@ TclEncodingProfileNameToId(
 		profileName);
 	for (i = 0; i < (numProfiles - 1); ++i) {
 	    Tcl_AppendStringsToObj(
-		errorObj, " ", encodingProfiles[i].name, ",", NULL);
+		errorObj, " ", encodingProfiles[i].name, ",", (void *)NULL);
 	}
 	Tcl_AppendStringsToObj(
-	    errorObj, " or ", encodingProfiles[numProfiles-1].name, NULL);
+	    errorObj, " or ", encodingProfiles[numProfiles-1].name, (void *)NULL);
 
 	Tcl_SetObjResult(interp, errorObj);
 	Tcl_SetErrorCode(
-	    interp, "TCL", "ENCODING", "PROFILE", profileName, NULL);
+	    interp, "TCL", "ENCODING", "PROFILE", profileName, (void *)NULL);
     }
     return TCL_ERROR;
 }
@@ -4442,7 +4442,7 @@ TclEncodingProfileIdToName(
 		"Internal error. Bad profile id \"%d\".",
 		profileValue));
 	Tcl_SetErrorCode(
-	    interp, "TCL", "ENCODING", "PROFILEID", NULL);
+	    interp, "TCL", "ENCODING", "PROFILEID", (void *)NULL);
     }
     return NULL;
 }

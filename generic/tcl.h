@@ -2127,7 +2127,11 @@ typedef struct Tcl_Config {
  */
 
 typedef void (Tcl_LimitHandlerProc) (void *clientData, Tcl_Interp *interp);
+#if TCL_MAJOR_VERSION > 8
+#define Tcl_LimitHandlerDeleteProc Tcl_FreeProc
+#else
 typedef void (Tcl_LimitHandlerDeleteProc) (void *clientData);
+#endif
 
 #if 0
 /*
