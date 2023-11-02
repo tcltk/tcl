@@ -455,7 +455,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    TCL_HASH_TYPE *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
@@ -546,9 +546,9 @@ TclpInitLibraryPath(
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
 
     /*
-     * Note lengthPtr is (TCL_HASH_TYPE *) which is unsigned so cannot
+     * Note lengthPtr is (size_t *) which is unsigned so cannot
      * pass directly to Tcl_GetStringFromObj.
-     * TODO - why is the type TCL_HASH_TYPE anyways?
+     * TODO - why is the type size_t anyways?
      */
     Tcl_Size length;
     str = Tcl_GetStringFromObj(pathPtr, &length);

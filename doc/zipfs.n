@@ -43,6 +43,12 @@ simple encryption, sufficient to prevent casual inspection of their contents
 but not able to prevent access by even a moderately determined attacker.
 Strong encryption, multi-part archives, platform metadata,
 zip64 formats and other compression methods like bzip2 are not supported.
+.PP
+Files within mounted archives can be written to but new files or directories
+cannot be created. Further, modifications to files are limited to the
+mounted archive in memory and are not persisted to disk.
+.PP
+Paths in mounted archives are case-sensitive on all platforms.
 .TP
 \fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR ?\fIinZipfs\fR?
 .
@@ -92,7 +98,9 @@ the \fBstring match\fR command. Alternatively, the \fB-regexp\fR option may be
 used to specify matching \fBpattern\fR as a regular expression. The file names
 are returned in arbitrary order. Note that path separators are treated as
 ordinary characters in the matching. Thus forward slashes should be used
-as path separators in the pattern.
+as path separators in the pattern. The returned paths only include those
+actually in the archive and does not include intermediate directories in
+mount paths.
 .TP
 \fBzipfs mount\fR
 .TP
@@ -114,7 +122,13 @@ In the third form, the command mounts the ZIP archive \fIzipfile\fR as a Tcl vir
 filesystem at \fImountpoint\fR.  After this command executes, files contained
 in \fIzipfile\fR will appear to Tcl to be regular files at the mount point.
 If \fImountpoint\fR is
-specified as an empty string, it is defaulted to the file path.
+specified as an empty string, it is defaulted to the \fB[zipfs root]\fR.
+The command returns the normalized mount point path.
+.PP
+If not under the zipfs file system root, \fImountpoint\fR is normalized with
+respect to it. For example, a mount point passed as either \fBmt\fR \fB/mt\fR
+would be normalized to \fB//zipfs:/mt\fR. An error is raised if the mount point
+includes a drive or UNC volume.
 .PP
 \fBNB:\fR because the current working directory is a concept maintained by the
 operating system, using \fBcd\fR into a mounted archive will only work in the
@@ -135,9 +149,7 @@ on most platforms.
 \fBzipfs unmount \fImountpoint\fR
 .
 Unmounts a previously mounted ZIP archive mounted to \fImountpoint\fR.
-If the current directory is located within the mounted archive,
-the directory that was previously the current directory is restored
-on the unmount. The command will fail with an error exception if
+The command will fail with an error exception if
 there are any files within the mounted archive are open.
 .SS "ZIP CREATION COMMANDS"
 This package also provides several commands to aid the creation of ZIP

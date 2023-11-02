@@ -761,6 +761,7 @@ TclFinalizeFilesystem(void)
      * needed.
      */
 
+    TclZipfsFinalize();
     fsRecPtr = filesystemList;
     while (fsRecPtr != NULL) {
 	FilesystemRecord *tmpFsRecPtr = fsRecPtr->nextPtr;
@@ -2052,7 +2053,7 @@ Tcl_PosixError(
     msg = Tcl_ErrnoMsg(errno);
     id = Tcl_ErrnoId();
     if (interp) {
-	Tcl_SetErrorCode(interp, "POSIX", id, msg, NULL);
+	Tcl_SetErrorCode(interp, "POSIX", id, msg, (void *)NULL);
     }
     return msg;
 }
@@ -2282,11 +2283,17 @@ Tcl_FSUtime(
 				 * times to use. Should not be modified. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
+    int err;
 
-    if (fsPtr != NULL && fsPtr->utimeProc != NULL) {
-	return fsPtr->utimeProc(pathPtr, tval);
+    if (fsPtr == NULL) {
+	err = ENOENT;
+    } else {
+	if (fsPtr->utimeProc != NULL) {
+	    return fsPtr->utimeProc(pathPtr, tval);
+	}
+	err = ENOTSUP;
     }
-    /* TODO: set errno here? Tcl_SetErrno(ENOENT); */
+    Tcl_SetErrno(err);
     return -1;
 }
 
@@ -3604,91 +3611,6 @@ Tcl_FSUnloadFile(
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclFSUnloadTempFile --
- *
- *	Unloads an object loaded via temporary file from a virtual filesystem
- *	to a native filesystem.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Frees resources for the loaded object and deletes the temporary file.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclFSUnloadTempFile(
-    Tcl_LoadHandle loadHandle)	/* A handle for the object, as provided by a
-				 *  previous call to Tcl_FSLoadFile(). */
-{
-    FsDivertLoad *tvdlPtr = (FsDivertLoad *) loadHandle;
-
-    if (tvdlPtr == NULL) {
-	/*
-	 * tvdlPtr was provided by Tcl_LoadFile so it should not be NULL here.
-	 */
-	return;
-    }
-
-    if (tvdlPtr->unloadProcPtr != NULL) {
-	/*
-	 * 'unloadProcPtr' must be called first so that the shared library is
-	 * actually unloaded by the OS. Otherwise, the following 'delete' may
-	 * well fail because the shared library is still in use.
-	 */
-
-	tvdlPtr->unloadProcPtr(tvdlPtr->loadHandle);
-    }
-
-    if (tvdlPtr->divertedFilesystem == NULL) {
-	/*
-	 * Call the function for the native fileystem, which works even at this
-	 * late stage.
-	 */
-
-	TclpDeleteFile(tvdlPtr->divertedFileNativeRep);
-	NativeFreeInternalRep(tvdlPtr->divertedFileNativeRep);
-    } else {
-	/*
-	 * Remove the temporary file that was created.  If encodings have
-	 * already been freed because the interpreter is exiting this may
-	 * crash.
-	 */
-
-	if (tvdlPtr->divertedFilesystem->deleteFileProc(tvdlPtr->divertedFile)
-		!= TCL_OK) {
-	    /*
-	     * This may have happened because Tcl is exiting and encodings may
-	     * have already been deleted, or something else the filesystem
-	     * depends on may be gone.
-	     *
-	     * TO DO:  Figure out how to delete this file more robustly, or
-	     * give the filesystem the information it needs to delete the file
-	     * more robustly.  One problem might be that the filesystem cannot
-	     * extract the information it needs from the above pathname object
-	     * because Tcl's entire filesystem apparatus (the code in this
-	     * file) has been finalized and there is no way to get the native
-	     * handle of the file.
-	     */
-	}
-
-	/*
-	 * This also decrements the refCount of the Tcl_Filesystem
-	 * corresponding to this file. which might case filesystem to be freed
-	 * if Tcl is exiting.
-	 */
-
-	Tcl_DecrRefCount(tvdlPtr->divertedFile);
-    }
-
-    Tcl_Free(tvdlPtr);
-}
-
-/*
  *---------------------------------------------------------------------------
  *
  * Tcl_FSLink --
@@ -3732,8 +3654,13 @@ Tcl_FSLink(
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
-    if (fsPtr != NULL && fsPtr->linkProc != NULL) {
-	return fsPtr->linkProc(pathPtr, toPtr, linkAction);
+    if (fsPtr) {
+	if (fsPtr->linkProc == NULL) {
+	    Tcl_SetErrno(ENOTSUP);
+	    return NULL;
+	} else {
+	    return fsPtr->linkProc(pathPtr, toPtr, linkAction);
+	}
     }
 
     /*
@@ -4304,11 +4231,17 @@ Tcl_FSDeleteFile(
     Tcl_Obj *pathPtr)		/* Pathname of file to be removed (UTF-8). */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
+    int err;
 
-    if (fsPtr != NULL && fsPtr->deleteFileProc != NULL) {
-	return fsPtr->deleteFileProc(pathPtr);
+    if (fsPtr == NULL) {
+	err = ENOENT;
+    } else {
+	if (fsPtr->deleteFileProc != NULL) {
+	    return fsPtr->deleteFileProc(pathPtr);
+	}
+	err = ENOTSUP;
     }
-    Tcl_SetErrno(ENOENT);
+    Tcl_SetErrno(err);
     return -1;
 }
 
@@ -4335,11 +4268,17 @@ Tcl_FSCreateDirectory(
     Tcl_Obj *pathPtr)		/* Pathname of directory to create (UTF-8). */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
+    int err;
 
-    if (fsPtr != NULL && fsPtr->createDirectoryProc != NULL) {
-	return fsPtr->createDirectoryProc(pathPtr);
+    if (fsPtr == NULL) {
+	err = ENOENT;
+    } else {
+	if (fsPtr->createDirectoryProc != NULL) {
+	    return fsPtr->createDirectoryProc(pathPtr);
+	}
+	err = ENOTSUP;
     }
-    Tcl_SetErrno(ENOENT);
+    Tcl_SetErrno(err);
     return -1;
 }
 
@@ -4420,8 +4359,12 @@ Tcl_FSRemoveDirectory(
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
-    if (fsPtr == NULL || fsPtr->removeDirectoryProc == NULL) {
+    if (fsPtr == NULL) {
 	Tcl_SetErrno(ENOENT);
+	return -1;
+    }
+    if (fsPtr->removeDirectoryProc == NULL) {
+	Tcl_SetErrno(ENOTSUP);
 	return -1;
     }
 

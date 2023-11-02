@@ -1045,7 +1045,7 @@ ConvertUTCToLocalUsingC(
     if ((Tcl_WideInt) tock != fields->seconds) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"number too large to represent as a Posix time", -1));
-	Tcl_SetErrorCode(interp, "CLOCK", "argTooLarge", NULL);
+	Tcl_SetErrorCode(interp, "CLOCK", "argTooLarge", (void *)NULL);
 	return TCL_ERROR;
     }
     TzsetIfNecessary();
@@ -1054,7 +1054,7 @@ ConvertUTCToLocalUsingC(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"localtime failed (clock value may be too "
 		"large/small to represent)", -1));
-	Tcl_SetErrorCode(interp, "CLOCK", "localtimeFailed", NULL);
+	Tcl_SetErrorCode(interp, "CLOCK", "localtimeFailed", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -1905,7 +1905,7 @@ ClockParseformatargsObjCmd(
 	Tcl_WrongNumArgs(interp, 0, objv,
 		"clock format clockval ?-format string? "
 		"?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?");
-	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
+	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -1920,7 +1920,7 @@ ClockParseformatargsObjCmd(
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&optionIndex) != TCL_OK) {
 	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
-		    TclGetString(objv[i]), NULL);
+		    TclGetString(objv[i]), (void *)NULL);
 	    return TCL_ERROR;
 	}
 	switch (optionIndex) {
@@ -1952,7 +1952,7 @@ ClockParseformatargsObjCmd(
     if ((saw & (1 << CLOCK_FORMAT_GMT))
 	    && (saw & (1 << CLOCK_FORMAT_TIMEZONE))) {
 	Tcl_SetObjResult(interp, litPtr[LIT_CANNOT_USE_GMT_AND_TIMEZONE]);
-	Tcl_SetErrorCode(interp, "CLOCK", "gmtWithTimezone", NULL);
+	Tcl_SetErrorCode(interp, "CLOCK", "gmtWithTimezone", (void *)NULL);
 	return TCL_ERROR;
     }
     if (gmtFlag) {
