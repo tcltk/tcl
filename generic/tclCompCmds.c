@@ -3347,12 +3347,13 @@ TclCompileFormatCmd(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclLocalScalarFromToken(
     Tcl_Token *tokenPtr,
     CompileEnv *envPtr)
 {
-    int isScalar, index;
+    int isScalar;
+    Tcl_Size index;
 
     TclPushVarName(NULL, tokenPtr, envPtr, TCL_NO_ELEMENT, &index, &isScalar);
     if (!isScalar) {
@@ -3361,10 +3362,10 @@ TclLocalScalarFromToken(
     return index;
 }
 
-int
+Tcl_Size
 TclLocalScalar(
     const char *bytes,
-    int numBytes,
+    TCL_HASH_TYPE numBytes,
     CompileEnv *envPtr)
 {
     Tcl_Token token[2] =        {{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},

@@ -387,10 +387,8 @@ TclInitObjSubsystem(void)
 
     Tcl_RegisterObjType(&tclByteArrayType);
     Tcl_RegisterObjType(&tclDoubleType);
-#if (TCL_UTF_MAX < 4) || !defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_NO_DEPRECATED)
     Tcl_RegisterObjType(&tclStringType);
-#endif
-#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
     /* Only registered for 8.7, not for 9.0 any more.
      * See [https://core.tcl-lang.org/tk/tktview/6b49149b4e] */
     Tcl_RegisterObjType(&tclUniCharStringType);
@@ -975,7 +973,7 @@ Tcl_ConvertToType(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "can't convert value to type %s", typePtr->name));
-	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", (void *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1664,7 +1662,7 @@ Tcl_GetString(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetStringFromObj/TclGetStringFromObj --
+ * Tcl_GetStringFromObj --
  *
  *	Returns the string representation's byte array pointer and length for
  *	an object.
@@ -1684,7 +1682,6 @@ Tcl_GetString(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_GetStringFromObj
 char *
 Tcl_GetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
@@ -1723,47 +1720,6 @@ Tcl_GetStringFromObj(
     }
     return objPtr->bytes;
 }
-
-#undef TclGetStringFromObj
-char *
-TclGetStringFromObj(
-    Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
-				 * be returned. */
-    void *lengthPtr)	/* If non-NULL, the location where the string
-				 * rep's byte array length should * be stored.
-				 * If NULL, no length is stored. */
-{
-    if (objPtr->bytes == NULL) {
-	/*
-	 * Note we do not check for objPtr->typePtr == NULL.  An invariant
-	 * of a properly maintained Tcl_Obj is that at least  one of
-	 * objPtr->bytes and objPtr->typePtr must not be NULL.  If broken
-	 * extensions fail to maintain that invariant, we can crash here.
-	 */
-
-	if (objPtr->typePtr->updateStringProc == NULL) {
-	    /*
-	     * Those Tcl_ObjTypes which choose not to define an
-	     * updateStringProc must be written in such a way that
-	     * (objPtr->bytes) never becomes NULL.
-	     */
-	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
-		    objPtr->typePtr->name);
-	}
-	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL || objPtr->length < 0
-		|| objPtr->bytes[objPtr->length] != '\0') {
-	    Tcl_Panic("UpdateStringProc for type '%s' "
-		    "failed to create a valid string rep",
-		    objPtr->typePtr->name);
-	}
-    }
-    if (lengthPtr != NULL) {
-	*(ptrdiff_t *)lengthPtr = ((ptrdiff_t)(unsigned)(objPtr->length + 1)) - 1;
-    }
-    return objPtr->bytes;
-}
-
 
 /*
  *----------------------------------------------------------------------
@@ -2312,7 +2268,7 @@ TclSetBooleanFromAny(
 	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
 	Tcl_AppendToObj(msg, "\"", -1);
 	Tcl_SetObjResult(interp, msg);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", (void *)NULL);
     }
     return TCL_ERROR;
 }
@@ -2326,7 +2282,7 @@ ParseBoolean(
     Tcl_Size i, length;
     const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
-    if ((length == 0) || (length > 5)) {
+    if ((length <= 0) || (length > 5)) {
 	/*
 	 * Longest valid boolean string rep. is "false".
 	 */
@@ -2601,7 +2557,7 @@ Tcl_GetDoubleFromObj(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "floating point value is Not a Number", -1));
                     Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
-                            NULL);
+                            (void *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -2817,7 +2773,7 @@ Tcl_GetIntFromObj(
 	    const char *s =
 		    "integer value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -3114,7 +3070,7 @@ Tcl_GetLongFromObj(
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
                         TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3158,7 +3114,7 @@ Tcl_GetLongFromObj(
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3355,7 +3311,7 @@ Tcl_GetWideIntFromObj(
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
                         TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3393,7 +3349,7 @@ Tcl_GetWideIntFromObj(
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3438,7 +3394,7 @@ Tcl_GetWideUIntFromObj(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "expected unsigned integer but got \"%s\"",
 			    TclGetString(objPtr)));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -3477,7 +3433,7 @@ Tcl_GetWideUIntFromObj(
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3524,7 +3480,7 @@ TclGetWideBitsFromObj(
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
                         TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3814,7 +3770,7 @@ GetBignumFromObj(
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
                         TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -4045,7 +4001,7 @@ int
 Tcl_GetNumber(
     Tcl_Interp *interp,
     const char *bytes,
-    ptrdiff_t numBytes,
+    int numBytes,
     void **clientDataPtr,
     int *typePtr)
 {
@@ -4060,15 +4016,7 @@ Tcl_GetNumber(
 	numBytes = 0;
     }
     if (numBytes < 0) {
-	numBytes = (ptrdiff_t)strlen(bytes);
-    }
-    if (numBytes > INT_MAX) {
-	if (interp) {
-            Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
-	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-	}
-	return TCL_ERROR;
+	numBytes = (int)strlen(bytes);
     }
 
     objPtr->bytes = (char *) bytes;

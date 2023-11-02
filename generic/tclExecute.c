@@ -170,9 +170,8 @@ typedef struct {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
     Tcl_Obj **catchTop;		/* These fields are used on return TO this */
-    Tcl_Obj *auxObjList;	/* this level: they record the state when a */
-    CmdFrame cmdFrame;		/* new codePtr was received for NR */
-                                /* execution. */
+    Tcl_Obj *auxObjList;	/* level: they record the state when a new */
+    CmdFrame cmdFrame;		/* codePtr was received for NR execution. */
     Tcl_Obj *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
 				 * necessary */
@@ -693,7 +692,7 @@ static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    ByteCode *codePtr, Tcl_Size *lengthPtr,
-			    const unsigned char **pcBeg, int *cmdIdxPtr);
+			    const unsigned char **pcBeg, Tcl_Size *cmdIdxPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, TCL_HASH_TYPE growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
@@ -849,7 +848,7 @@ ExecEnv *
 TclCreateExecEnv(
     Tcl_Interp *interp,		/* Interpreter for which the execution
 				 * environment is being created. */
-    Tcl_Size size)			/* The initial stack size, in number of words
+    TCL_HASH_TYPE size)		/* The initial stack size, in number of words
 				 * [sizeof(Tcl_Obj*)] */
 {
     ExecEnv *eePtr = (ExecEnv *)ckalloc(sizeof(ExecEnv));
@@ -1903,10 +1902,10 @@ ArgumentBCEnter(
     ByteCode *codePtr,
     TEBCdata *tdPtr,
     const unsigned char *pc,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj **objv)
 {
-    int cmd;
+    Tcl_Size cmd;
 
     if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
 	TclArgumentBCEnter(interp, objv, objc, codePtr, &tdPtr->cmdFrame, cmd,
@@ -2435,7 +2434,7 @@ TEBCresume(
 		    "yield can only be called in a coroutine", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
-		    NULL);
+		    (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -2466,7 +2465,7 @@ TEBCresume(
 		    "yieldto can only be called in a coroutine", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
-		    NULL);
+		    (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -2477,7 +2476,7 @@ TEBCresume(
 		    "yieldto called in deleted namespace", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED",
-		    NULL);
+		    (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -2539,7 +2538,7 @@ TEBCresume(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "tailcall can only be called from a proc or lambda", -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4156,7 +4155,7 @@ TEBCresume(
 		TclObjVarErrMsg(interp, part1Ptr, NULL, "array set",
 			"variable isn't array", opnd);
 		DECACHE_STACK_INFO();
-		Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", (void *)NULL);
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4502,7 +4501,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
-		    TclGetString(OBJ_AT_TOS), NULL);
+		    TclGetString(OBJ_AT_TOS), (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4542,7 +4541,7 @@ TEBCresume(
 		    "invalid command name \"%s\"", TclGetString(OBJ_AT_TOS)));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
-		    TclGetString(OBJ_AT_TOS), NULL);
+		    TclGetString(OBJ_AT_TOS), (void *)NULL);
 	    CACHE_STACK_INFO();
 	    TRACE_APPEND(("ERROR: not command\n"));
 	    goto gotError;
@@ -4571,7 +4570,7 @@ TEBCresume(
 		    "self may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4599,7 +4598,7 @@ TEBCresume(
 		    "nextto may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4620,7 +4619,7 @@ TEBCresume(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"\"%s\" is not a class", TclGetString(valuePtr)));
 		DECACHE_STACK_INFO();
-		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_REQUIRED", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_REQUIRED", (void *)NULL);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
@@ -4672,7 +4671,7 @@ TEBCresume(
 			methodType, TclGetString(valuePtr)));
 		DECACHE_STACK_INFO();
 		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_REACHABLE",
-			NULL);
+			(void *)NULL);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
@@ -4680,7 +4679,7 @@ TEBCresume(
 		    "%s has no non-filter implementation by \"%s\"",
 		    methodType, TclGetString(valuePtr)));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4698,7 +4697,7 @@ TEBCresume(
 		    "next may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4727,7 +4726,7 @@ TEBCresume(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "no next %s implementation", methodType));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 #ifdef TCL_COMPILE_DEBUG
@@ -4788,11 +4787,7 @@ TEBCresume(
 	    Method *const mPtr =
 		    contextPtr->callPtr->chain[newDepth].mPtr;
 
-	    if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
-		return mPtr->typePtr->callProc(mPtr->clientData, interp,
-			(Tcl_ObjectContext) contextPtr, opnd, objv);
-	    }
-	    return ((Tcl_MethodCallProc2 *)(void *)(mPtr->typePtr->callProc))(mPtr->clientData, interp,
+	    return mPtr->typePtr->callProc(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, opnd, objv);
 	}
 
@@ -5297,7 +5292,7 @@ TEBCresume(
 		toIdx = length;
 	    }
 	    if (toIdx >= fromIdx) {
-		numToDelete = toIdx - fromIdx + 1;
+		numToDelete = (unsigned)toIdx - (unsigned)fromIdx + 1; /* See [3d3124d01d] */
 	    }
 	}
 
@@ -5480,7 +5475,7 @@ TEBCresume(
 	    TclNewObj(objResultPtr);
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
-		    TclGetByteArrayFromObj(valuePtr, (Tcl_Size *)NULL)+index, 1);
+		    Tcl_GetByteArrayFromObj(valuePtr, NULL)+index, 1);
 	} else if (valuePtr->bytes && length == valuePtr->length) {
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
@@ -5652,12 +5647,12 @@ TEBCresume(
 	    objResultPtr = value3Ptr;
 	    goto doneStringMap;
 	}
-	ustring1 = TclGetUnicodeFromObj_(valuePtr, &length);
+	ustring1 = TclGetUnicodeFromObj(valuePtr, &length);
 	if (length == 0) {
 	    objResultPtr = valuePtr;
 	    goto doneStringMap;
 	}
-	ustring2 = TclGetUnicodeFromObj_(value2Ptr, &length2);
+	ustring2 = TclGetUnicodeFromObj(value2Ptr, &length2);
 	if (length2 > length || length2 == 0) {
 	    objResultPtr = valuePtr;
 	    goto doneStringMap;
@@ -5669,7 +5664,7 @@ TEBCresume(
 	    }
 	    goto doneStringMap;
 	}
-	ustring3 = TclGetUnicodeFromObj_(value3Ptr, &length3);
+	ustring3 = TclGetUnicodeFromObj(value3Ptr, &length3);
 
 	objResultPtr = TclNewUnicodeObj(ustring1, 0);
 	p = ustring1;
@@ -5722,13 +5717,13 @@ TEBCresume(
 	valuePtr = OBJ_AT_TOS;
 	TRACE(("%s \"%.30s\" => ", tclStringClassTable[opnd].name,
 		O2S(valuePtr)));
-	ustring1 = TclGetUnicodeFromObj_(valuePtr, &length);
+	ustring1 = TclGetUnicodeFromObj(valuePtr, &length);
 	match = 1;
 	if (length > 0) {
 	    int ch;
 	    end = ustring1 + length;
 	    for (p=ustring1 ; p<end ; ) {
-		p += TclUniCharToUCS4(p, &ch);
+		ch = *p++;
 		if (!tclStringClassTable[opnd].comparator(ch)) {
 		    match = 0;
 		    break;
@@ -5753,8 +5748,8 @@ TEBCresume(
 		|| TclHasInternalRep(value2Ptr, &tclUniCharStringType)) {
 	    Tcl_UniChar *ustring1, *ustring2;
 
-	    ustring1 = TclGetUnicodeFromObj_(valuePtr, &length);
-	    ustring2 = TclGetUnicodeFromObj_(value2Ptr, &length2);
+	    ustring1 = TclGetUnicodeFromObj(valuePtr, &length);
+	    ustring2 = TclGetUnicodeFromObj(value2Ptr, &length2);
 	    match = TclUniCharMatch(ustring1, length, ustring2, length2,
 		    nocase);
 	} else if (TclIsPureByteArray(valuePtr) && !nocase) {
@@ -6067,7 +6062,7 @@ TEBCresume(
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
-			    NULL);
+			    (void *)NULL);
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
@@ -6116,7 +6111,7 @@ TEBCresume(
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
-			    NULL);
+			    (void *)NULL);
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
@@ -6138,7 +6133,7 @@ TEBCresume(
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-			    "integer value too large to represent", NULL);
+			    "integer value too large to represent", (void *)NULL);
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
@@ -7131,7 +7126,7 @@ TEBCresume(
 		    TclGetString(OBJ_AT_TOS)));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-		    TclGetString(OBJ_AT_TOS), NULL);
+		    TclGetString(OBJ_AT_TOS), (void *)NULL);
 	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -7836,14 +7831,14 @@ TEBCresume(
     divideByZero:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
 	DECACHE_STACK_INFO();
-	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
+	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", (void *)NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
 
     outOfMemory:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
 	DECACHE_STACK_INFO();
-	Tcl_SetErrorCode(interp, "ARITH", "OUTOFMEMORY", "out of memory", NULL);
+	Tcl_SetErrorCode(interp, "ARITH", "OUTOFMEMORY", "out of memory", (void *)NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
 
@@ -7857,7 +7852,7 @@ TEBCresume(
 		"exponentiation of zero by negative power", -1));
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
-		"exponentiation of zero by negative power", NULL);
+		"exponentiation of zero by negative power", (void *)NULL);
 	CACHE_STACK_INFO();
 
 	/*
@@ -8369,7 +8364,7 @@ ExecuteExtendedBinaryMathOp(
 	}
 	Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
 	Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	err = mp_init_multi(&bigResult, &bigRemainder, NULL);
+	err = mp_init_multi(&bigResult, &bigRemainder, (void *)NULL);
 	if (err == MP_OKAY) {
 	    err = mp_div(&big1, &big2, &bigResult, &bigRemainder);
 	}
@@ -9410,7 +9405,7 @@ IllegalExprOperandType(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "can't use %s \"%s\" as operand of \"%s\"", description,
 	    TclGetString(opndPtr), op));
-    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, NULL);
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (void *)NULL);
 }
 
 /*
@@ -9440,7 +9435,7 @@ IllegalExprOperandType(
 Tcl_Obj *
 TclGetSourceFromFrame(
     CmdFrame *cfPtr,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const objv[])
 {
     if (cfPtr == NULL) {
@@ -9539,7 +9534,7 @@ GetSrcInfoForPc(
     const unsigned char **pcBeg,/* If non-NULL, the bytecode location
 				 * where the current instruction starts.
 				 * If NULL; no pointer is stored. */
-    int *cmdIdxPtr)		/* If non-NULL, the location where the index
+    Tcl_Size *cmdIdxPtr)		/* If non-NULL, the location where the index
 				 * of the command containing the pc should
 				 * be stored. */
 {
@@ -9549,9 +9544,9 @@ GetSrcInfoForPc(
     unsigned char *srcDeltaNext, *srcLengthNext;
     Tcl_Size codeOffset, codeLen, codeEnd, srcOffset, srcLen, delta, i;
     int bestDist = INT_MAX;	/* Distance of pc to best cmd's start pc. */
-    int bestSrcOffset = -1;	/* Initialized to avoid compiler warning. */
-    int bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
-    int bestCmdIdx = -1;
+    Tcl_Size bestSrcOffset = -1;	/* Initialized to avoid compiler warning. */
+    Tcl_Size bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
+    Tcl_Size bestCmdIdx = -1;
 
     /* The pc must point within the bytecode */
     assert ((pcOffset >= 0) && (pcOffset < codePtr->numCodeBytes));
@@ -9788,23 +9783,23 @@ TclExprFloatError(
     if ((errno == EDOM) || isnan(value)) {
 	s = "domain error: argument not in valid range";
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, NULL);
+	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (void *)NULL);
     } else if ((errno == ERANGE) || isinf(value)) {
 	if (value == 0.0) {
 	    s = "floating-point value too small to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, (void *)NULL);
 	} else {
 	    s = "floating-point value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, (void *)NULL);
 	}
     } else {
 	Tcl_Obj *objPtr = Tcl_ObjPrintf(
 		"unknown floating-point error, errno = %d", errno);
 
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN",
-		TclGetString(objPtr), NULL);
+		TclGetString(objPtr), (void *)NULL);
 	Tcl_SetObjResult(interp, objPtr);
     }
 }

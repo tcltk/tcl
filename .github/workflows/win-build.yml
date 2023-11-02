@@ -22,7 +22,6 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "OPTS=utf16"
           - "CHECKS=nodep"
           - "OPTS=static"
           - "OPTS=symbols"
@@ -30,7 +29,7 @@ jobs:
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Init MSVC
         uses: ilammy/msvc-dev-cmd@v1
       - name: Build ${{ matrix.cfgopt }}
@@ -61,7 +60,6 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "CFLAGS=-DTCL_UTF_MAX=3"
           - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "--disable-shared"
           - "--enable-symbols"
@@ -75,7 +73,7 @@ jobs:
           msystem: MINGW64
           install: git mingw-w64-x86_64-toolchain make
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h

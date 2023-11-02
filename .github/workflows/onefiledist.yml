@@ -17,7 +17,7 @@ jobs:
         shell: bash
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
@@ -52,9 +52,9 @@ jobs:
         shell: bash
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Checkout create-dmg
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: create-dmg/create-dmg
           ref: v1.0.8
@@ -122,7 +122,7 @@ jobs:
           msystem: UCRT64
           install: git mingw-w64-ucrt-x86_64-toolchain make zip
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c

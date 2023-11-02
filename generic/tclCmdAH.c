@@ -679,7 +679,7 @@ EncodingConvertfromObjCmd(
 	bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
     } else
 #endif
-	bytesPtr = (char *) TclGetBytesFromObj(interp, data, &length);
+	bytesPtr = (char *) Tcl_GetBytesFromObj(interp, data, &length);
 
     if (bytesPtr == NULL) {
 	return TCL_ERROR;
@@ -875,7 +875,7 @@ EncodingDirsObjCmd(
 		"expected directory list but got \"%s\"",
 		TclGetString(dirListObj)));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "ENCODING", "BADPATH",
-		NULL);
+		(void *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, dirListObj);
@@ -1790,6 +1790,21 @@ FileAttrIsOwnedCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
+
+    Tcl_Obj *normPathPtr = Tcl_FSGetNormalizedPath(interp, objv[1]);
+    /* Note normPathPtr owned by Tcl, no need to free it */
+    if (normPathPtr) {
+	if (TclIsZipfsPath(Tcl_GetString(normPathPtr))) {
+	    return CheckAccess(interp, objv[1], F_OK);
+	}
+	/* Not zipfs, try native. */
+    }
+
+    /*
+     * Note use objv[1] below, NOT normPathPtr even if not NULL because
+     * for native paths we may not want links to be resolved.
+     */
+
 #if defined(_WIN32)
     value = TclWinFileOwned(objv[1]);
 #else
@@ -2053,7 +2068,7 @@ PathFilesystemCmd(
     if (fsInfo == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognised path", -1));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
-		TclGetString(objv[1]), NULL);
+		TclGetString(objv[1]), (void *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, fsInfo);
@@ -2197,13 +2212,13 @@ PathSplitCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    res = Tcl_FSSplitPath(objv[1], (Tcl_Size *)NULL);
+    res = Tcl_FSSplitPath(objv[1], NULL);
     if (res == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"could not read \"%s\": no such file or directory",
 		TclGetString(objv[1])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PATHSPLIT", "NONESUCH",
-		NULL);
+		(void *)NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, res);
@@ -2305,7 +2320,7 @@ FilesystemSeparatorCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unrecognised path", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "FILESYSTEM",
-		    TclGetString(objv[1]), NULL);
+		    TclGetString(objv[1]), (void *)NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, separatorObj);
@@ -2946,7 +2961,7 @@ EachloopCmd(
 		(statePtr->resultList != NULL ? "lmap" : "foreach")));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 		(statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
-		"NEEDVARS", NULL);
+		"NEEDVARS", (void *)NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}

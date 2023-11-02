@@ -97,6 +97,8 @@ static int inExit = 0;
 
 static int subsystemsInitialized = 0;
 
+static const char ENCODING_ERROR[] = "\n\t(encoding error in stderr)";
+
 /*
  * This variable contains the application wide exit handler. It will be called
  * by Tcl_Exit instead of the C-runtime exit if this variable is set to a
@@ -294,9 +296,13 @@ HandleBgErrors(
 		Tcl_WriteChars(errChannel,
 			"error in background error handler:\n", -1);
 		if (valuePtr) {
-		    Tcl_WriteObj(errChannel, valuePtr);
+		    if (Tcl_WriteObj(errChannel, valuePtr) < 0) {
+			Tcl_WriteChars(errChannel, ENCODING_ERROR, -1);
+		    }
 		} else {
-		    Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
+		    if (Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp)) < 0) {
+			Tcl_WriteChars(errChannel, ENCODING_ERROR, -1);
+		    }
 		}
 		Tcl_WriteChars(errChannel, "\n", 1);
 		Tcl_Flush(errChannel);
@@ -355,7 +361,7 @@ TclDefaultBgErrorHandlerObjCmd(
     if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-level\"", -1));
-	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (void *)NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, valuePtr, &level) == TCL_ERROR) {
@@ -368,7 +374,7 @@ TclDefaultBgErrorHandlerObjCmd(
     if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-code\"", -1));
-	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (void *)NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, valuePtr, &code) == TCL_ERROR) {
@@ -483,18 +489,22 @@ TclDefaultBgErrorHandlerObjCmd(
 		if (Tcl_FindCommand(interp, "bgerror", NULL,
 			TCL_GLOBAL_ONLY) == NULL) {
 		    Tcl_RestoreInterpState(interp, saved);
-		    Tcl_WriteObj(errChannel, Tcl_GetVar2Ex(interp,
-			    "errorInfo", NULL, TCL_GLOBAL_ONLY));
+		    if (Tcl_WriteObj(errChannel, Tcl_GetVar2Ex(interp,
+			    "errorInfo", NULL, TCL_GLOBAL_ONLY)) < 0) {
+			Tcl_WriteChars(errChannel, ENCODING_ERROR, -1);
+		    }
 		    Tcl_WriteChars(errChannel, "\n", -1);
 		} else {
 		    Tcl_DiscardInterpState(saved);
-		    Tcl_WriteChars(errChannel,
-			    "bgerror failed to handle background error.\n", -1);
-		    Tcl_WriteChars(errChannel, "    Original error: ", -1);
-		    Tcl_WriteObj(errChannel, tempObjv[1]);
-		    Tcl_WriteChars(errChannel, "\n", -1);
-		    Tcl_WriteChars(errChannel, "    Error in bgerror: ", -1);
-		    Tcl_WriteObj(errChannel, resultPtr);
+		    Tcl_WriteChars(errChannel, "bgerror failed to handle"
+			    " background error.\n    Original error: ", -1);
+		    if (Tcl_WriteObj(errChannel, tempObjv[1]) < 0) {
+			Tcl_WriteChars(errChannel, ENCODING_ERROR, -1);
+		    }
+		    Tcl_WriteChars(errChannel, "\n    Error in bgerror: ", -1);
+		    if (Tcl_WriteObj(errChannel, resultPtr) < 0) {
+			Tcl_WriteChars(errChannel, ENCODING_ERROR, -1);
+		    }
 		    Tcl_WriteChars(errChannel, "\n", -1);
 		}
 		Tcl_DecrRefCount(resultPtr);
@@ -1083,7 +1093,7 @@ static const struct {
 #ifdef __INTEL_COMPILER
 	    ".icc-" STRINGIFY(__INTEL_COMPILER)
 #endif
-#if (defined(_WIN32) && !defined(_WIN64)) || (ULONG_MAX == 0xffffffffUL)
+#if (defined(_WIN32) || (ULONG_MAX == 0xffffffffUL)) && !defined(_WIN64)
 	    ".ilp32"
 #endif
 #ifdef TCL_MEM_DEBUG
@@ -1118,9 +1128,6 @@ static const struct {
 #endif
 #ifdef STATIC_BUILD
 	    ".static"
-#endif
-#if TCL_UTF_MAX < 4
-	    ".utf-16"
 #endif
 }};
 
@@ -1572,7 +1579,7 @@ Tcl_VwaitObjCmd(
 		Tcl_ResetResult(interp);
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"argument required for \"%s\"", vWaitOptionStrings[index]));
-		Tcl_SetErrorCode(interp, "TCL", "EVENT", "ARGUMENT", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "EVENT", "ARGUMENT", (void *)NULL);
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -1584,7 +1591,7 @@ Tcl_VwaitObjCmd(
 		Tcl_ResetResult(interp);
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"timeout must be positive", -1));
-		Tcl_SetErrorCode(interp, "TCL", "EVENT", "NEGTIME", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "EVENT", "NEGTIME", (void *)NULL);
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -1664,7 +1671,7 @@ Tcl_VwaitObjCmd(
 		 TCL_TIMER_EVENTS | TCL_WINDOW_EVENTS)) == 0) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"can't wait: would block forever", -1));
-	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", (void *)NULL);
 	result = TCL_ERROR;
 	goto done;
     }
@@ -1672,7 +1679,7 @@ Tcl_VwaitObjCmd(
     if ((timeout > 0) && ((mask & TCL_TIMER_EVENTS) == 0)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"timer events disabled with timeout specified", -1));
-	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_TIME", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_TIME", (void *)NULL);
 	result = TCL_ERROR;
 	goto done;
     }
@@ -1700,7 +1707,7 @@ Tcl_VwaitObjCmd(
 	    if (vwaitItems[i].mask) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"file events disabled with channel(s) specified", -1));
-		Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_FILE_EVENT", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_FILE_EVENT", (void *)NULL);
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -1739,7 +1746,7 @@ Tcl_VwaitObjCmd(
 	if (Tcl_LimitExceeded(interp)) {
 	    Tcl_ResetResult(interp);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "EVENT", "LIMIT", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "EVENT", "LIMIT", (void *)NULL);
 	    break;
 	}
 	if ((numItems == 0) && (timeout == 0)) {
@@ -1759,7 +1766,7 @@ Tcl_VwaitObjCmd(
 		"can't wait: would wait forever" :
 		"can't wait for variable(s)/channel(s): would wait forever",
 		-1));
-	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", (void *)NULL);
 	result = TCL_ERROR;
 	goto done;
     }

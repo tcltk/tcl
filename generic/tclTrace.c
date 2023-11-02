@@ -95,7 +95,7 @@ typedef struct {
 /* 'OLD' options are pre-Tcl-8.4 style */
 enum traceOptionsEnum {
     TRACE_ADD, TRACE_INFO, TRACE_REMOVE
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
     ,TRACE_OLD_VARIABLE, TRACE_OLD_VDELETE, TRACE_OLD_VINFO
 #endif
 };
@@ -195,29 +195,43 @@ Tcl_TraceObjCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
     const char *name;
     const char *flagOps, *p;
 #endif
     /* Main sub commands to 'trace' */
     static const char *const traceOptions[] = {
 	"add", "info", "remove",
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
 	"variable", "vdelete", "vinfo",
 #endif
 	NULL
     };
     int optionIndex;
+#ifndef TCL_NO_DEPRECATED
+    static const char *const traceShortOptions[] = {
+	"add", "info", "remove", NULL
+    };
+#endif
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
 
+#ifdef TCL_NO_DEPRECATED
     if (Tcl_GetIndexFromObj(interp, objv[1], traceOptions, "option", 0,
 	    &optionIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
+#else
+    if (Tcl_GetIndexFromObj(NULL, objv[1], traceOptions, "option", 0,
+	    &optionIndex) != TCL_OK) {
+	Tcl_GetIndexFromObj(interp, objv[1], traceShortOptions, "option", 0,
+		&optionIndex);
+	return TCL_ERROR;
+    }
+#endif
     switch ((enum traceOptionsEnum) optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
@@ -264,7 +278,7 @@ Tcl_TraceObjCmd(
 	break;
     }
 
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
     case TRACE_OLD_VARIABLE:
     case TRACE_OLD_VDELETE: {
 	Tcl_Obj *copyObjv[6];
@@ -361,16 +375,16 @@ Tcl_TraceObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
-#endif /* TCL_REMOVE_OBSOLETE_TRACES */
+#endif /* TCL_NO_DEPRECATED */
     }
     return TCL_OK;
 
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
   badVarOps:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "bad operations \"%s\": should be one or more of rwua",
 	    flagOps));
-    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "BADOPS", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "BADOPS", (void *)NULL);
     return TCL_ERROR;
 #endif
 }
@@ -438,7 +452,7 @@ TraceExecutionObjCmd(
 		    "bad operation list \"\": must be one or more of"
 		    " enter, leave, enterstep, or leavestep", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
-		    NULL);
+		    (void *)NULL);
 	    return TCL_ERROR;
 	}
 	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
@@ -619,7 +633,7 @@ TraceExecutionObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
     default:
 	break;
 #endif
@@ -685,7 +699,7 @@ TraceCommandObjCmd(
 		    "bad operation list \"\": must be one or more of"
 		    " delete or rename", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
-		    NULL);
+		    (void *)NULL);
 	    return TCL_ERROR;
 	}
 	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
@@ -818,7 +832,7 @@ TraceCommandObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
     default:
 	break;
 #endif
@@ -889,7 +903,7 @@ TraceVariableObjCmd(
 		    "bad operation list \"\": must be one or more of"
 		    " array, read, unset, or write", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
-		    NULL);
+		    (void *)NULL);
 	    return TCL_ERROR;
 	}
 	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
@@ -923,7 +937,7 @@ TraceVariableObjCmd(
 		    + 1 + length);
 
 	    ctvarPtr->traceCmdInfo.flags = flags;
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
 	    if (objv[0] == NULL) {
 		ctvarPtr->traceCmdInfo.flags |= TCL_TRACE_OLD_STYLE;
 	    }
@@ -953,7 +967,7 @@ TraceVariableObjCmd(
 
 		if ((tvarPtr->length == length)
 			&& ((tvarPtr->flags
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
 & ~TCL_TRACE_OLD_STYLE
 #endif
 						)==flags)
@@ -1016,7 +1030,7 @@ TraceVariableObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
     default:
 	break;
 #endif
@@ -1991,10 +2005,10 @@ TraceVarProc(
     int rewind = ((Interp *)interp)->execEnvPtr->rewind;
 
     /*
-     * We might call Tcl_EvalEx() below, and that might evaluate [trace vdelete]
-     * which might try to free tvarPtr. We want to use tvarPtr until the end
-     * of this function, so we use Tcl_Preserve() and Tcl_Release() to be sure
-     * it is not freed while we still need it.
+     * We might call Tcl_EvalEx() below, and that might evaluate
+     * [trace remove variable] which might try to free tvarPtr. We want to
+     * use tvarPtr until the end of this function, so we use Tcl_Preserve()
+     * and Tcl_Release() to be sure it is not freed while we still need it.
      */
 
     result = NULL;
@@ -2010,7 +2024,7 @@ TraceVarProc(
 	    Tcl_DStringAppend(&cmd, tvarPtr->command, tvarPtr->length);
 	    Tcl_DStringAppendElement(&cmd, name1);
 	    Tcl_DStringAppendElement(&cmd, (name2 ? name2 : ""));
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
 	    if (tvarPtr->flags & TCL_TRACE_OLD_STYLE) {
 		if (flags & TCL_TRACE_ARRAY) {
 		    TclDStringAppendLiteral(&cmd, " a");
@@ -2032,7 +2046,7 @@ TraceVarProc(
 		} else if (flags & TCL_TRACE_UNSETS) {
 		    TclDStringAppendLiteral(&cmd, " unset");
 		}
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
 	    }
 #endif
 
@@ -2136,57 +2150,6 @@ TraceVarProc(
  *
  *----------------------------------------------------------------------
  */
-
-typedef struct {
-    Tcl_CmdObjTraceProc2 *proc;
-    Tcl_CmdObjTraceDeleteProc *delProc;
-    void *clientData;
-} TraceWrapperInfo;
-
-static int traceWrapperProc(
-    void *clientData,
-    Tcl_Interp *interp,
-    Tcl_Size level,
-    const char *command,
-    Tcl_Command commandInfo,
-    Tcl_Size objc,
-    Tcl_Obj *const objv[])
-{
-    TraceWrapperInfo *info = (TraceWrapperInfo *)clientData;
-    if (objc < 0) {
-	objc = -1; /* Signal Tcl_CmdObjTraceProc that objc is out of range */
-    }
-    return info->proc(info->clientData, interp, level, command, commandInfo, objc, objv);
-}
-
-static void traceWrapperDelProc(void *clientData)
-{
-    TraceWrapperInfo *info = (TraceWrapperInfo *)clientData;
-    clientData = info->clientData;
-    if (info->delProc) {
-	info->delProc(clientData);
-    }
-    ckfree(info);
-}
-
-Tcl_Trace
-Tcl_CreateObjTrace2(
-    Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Size level,			/* Maximum nesting level */
-    int flags,			/* Flags, see above */
-    Tcl_CmdObjTraceProc2 *proc,	/* Trace callback */
-    void *clientData,	/* Client data for the callback */
-    Tcl_CmdObjTraceDeleteProc *delProc)
-				/* Function to call when trace is deleted */
-{
-    TraceWrapperInfo *info = (TraceWrapperInfo *)ckalloc(sizeof(TraceWrapperInfo));
-    info->proc = proc;
-    info->delProc = delProc;
-    info->clientData = clientData;
-    return Tcl_CreateObjTrace(interp, level, flags,
-	    (proc ? traceWrapperProc : NULL),
-	    info, traceWrapperDelProc);
-}
 
 Tcl_Trace
 Tcl_CreateObjTrace(
@@ -2997,7 +2960,7 @@ Tcl_UntraceVar2(
 
     flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
 	  TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
     flagMask |= TCL_TRACE_OLD_STYLE;
 #endif
     flags &= flagMask;
@@ -3348,7 +3311,7 @@ TraceVarEx(
 
     flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
 	  TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
+#ifndef TCL_NO_DEPRECATED
     flagMask |= TCL_TRACE_OLD_STYLE;
 #endif
     tracePtr->flags = tracePtr->flags & flagMask;

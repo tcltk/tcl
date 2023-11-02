@@ -482,7 +482,7 @@ Tcl_RegExpExecObj(
     regexpPtr->string = NULL;
     regexpPtr->objPtr = textObj;
 
-    udata = TclGetUnicodeFromObj_(textObj, &length);
+    udata = TclGetUnicodeFromObj(textObj, &length);
 
     if (offset > length) {
 	offset = length;
@@ -731,7 +731,7 @@ TclRegError(
 
     snprintf(cbuf, sizeof(cbuf), "%d", status);
     (void) TclReError(REG_ITOA, cbuf, sizeof(cbuf));
-    Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
+    Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, (void *)NULL);
 }
 
 /*

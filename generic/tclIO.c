@@ -1467,7 +1467,7 @@ Tcl_GetChannel(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can not find channel named \"%s\"", chanName));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanName, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanName, (void *)NULL);
 	return NULL;
     }
 
@@ -4392,7 +4392,8 @@ Write(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     char *nextNewLine = NULL;
-    int endEncoding, saved = 0, total = 0, flushed = 0, needNlFlush = 0;
+    int endEncoding, needNlFlush = 0;
+    int saved = 0, total = 0, flushed = 0;
     char safe[BUFFER_PADDING];
     int encodingError = 0;
 
@@ -6033,7 +6034,7 @@ DoReadChars(
 	    && (statePtr->inEofChar == '\0');
 
     if (appendFlag) {
-	if (binaryMode && (NULL == TclGetBytesFromObj(NULL, objPtr, NULL))) {
+	if (binaryMode && (NULL == Tcl_GetBytesFromObj(NULL, objPtr, NULL))) {
 	    binaryMode = 0;
 	}
     } else {
@@ -9784,9 +9785,10 @@ CopyData(
     Tcl_Obj *cmdPtr, *errObj = NULL, *bufObj = NULL, *msg = NULL;
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
-    int result = TCL_OK, size;
+    int result = TCL_OK;
     Tcl_Size sizeb;
     Tcl_WideInt total;
+    int size;
     const char *buffer;
     int inBinary, outBinary, sameEncoding;
 				/* Encoding control */
@@ -9880,12 +9882,12 @@ CopyData(
 	    if (interp) {
 		TclNewObj(errObj);
 		Tcl_AppendStringsToObj(errObj, "error reading \"",
-			Tcl_GetChannelName(inChan), "\": ", NULL);
+			Tcl_GetChannelName(inChan), "\": ", (void *)NULL);
 		if (msg != NULL) {
 		    Tcl_AppendObjToObj(errObj, msg);
 		} else {
 		    Tcl_AppendStringsToObj(errObj, Tcl_PosixError(interp),
-			    NULL);
+			    (void *)NULL);
 		}
 	    }
 	    if (msg != NULL) {
@@ -9961,12 +9963,12 @@ CopyData(
 	    if (interp) {
 		TclNewObj(errObj);
 		Tcl_AppendStringsToObj(errObj, "error writing \"",
-			Tcl_GetChannelName(outChan), "\": ", NULL);
+			Tcl_GetChannelName(outChan), "\": ", (void *)NULL);
 		if (msg != NULL) {
 		    Tcl_AppendObjToObj(errObj, msg);
 		} else {
 		    Tcl_AppendStringsToObj(errObj, Tcl_PosixError(interp),
-			    NULL);
+			    (void *)NULL);
 		}
 	    }
 	    if (msg != NULL) {

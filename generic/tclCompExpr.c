@@ -1479,7 +1479,7 @@ ParseExpr(
 		parsePtr->string, (numBytes < limit) ? "" : "..."));
 	if (errCode) {
 	    Tcl_SetErrorCode(interp, "TCL", "PARSE", "EXPR", errCode,
-		    subErrCode, NULL);
+		    subErrCode, (void *)NULL);
 	}
     }
 
@@ -2146,13 +2146,13 @@ ParseLexeme(
 
     if (!TclIsBareword(*start) || *start == '_') {
 	if (Tcl_UtfCharComplete(start, numBytes)) {
-	    scanned = TclUtfToUCS4(start, &ch);
+	    scanned = Tcl_UtfToUniChar(start, &ch);
 	} else {
 	    char utfBytes[8];
 
 	    memcpy(utfBytes, start, numBytes);
 	    utfBytes[numBytes] = '\0';
-	    scanned = TclUtfToUCS4(utfBytes, &ch);
+	    scanned = Tcl_UtfToUniChar(utfBytes, &ch);
 	}
 	*lexemePtr = INVALID;
 	Tcl_DecrRefCount(literal);

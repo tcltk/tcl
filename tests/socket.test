@@ -2581,6 +2581,14 @@ foreach {servip sc} $x {
     }
 }
 
+test socket-bug-31fc36fe47 "Crash listening in multiple threads" \
+    -constraints thread -body {
+        close [socket -server xxx 0]
+        set tid [thread::create]
+        thread::send $tid {close [socket -server accept 0]}
+        thread::release $tid
+    } -result 0
+
 ::tcltest::cleanupTests
 flush stdout
 return

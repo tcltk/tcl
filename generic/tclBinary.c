@@ -400,7 +400,7 @@ Tcl_SetByteArrayObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetBytesFromObj/TclGetBytesFromObj --
+ * Tcl_GetBytesFromObj --
  *
  *	Attempt to extract the value from objPtr in the representation
  *	of a byte sequence. On success return the extracted byte sequence.
@@ -415,7 +415,7 @@ Tcl_SetByteArrayObj(
  */
 
 unsigned char *
-TclGetBytesFromObj(
+Tcl_GetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
     int *numBytesPtr)		/* If non-NULL, write the number of bytes
@@ -435,12 +435,12 @@ TclGetBytesFromObj(
 		irPtr = TclFetchInternalRep(objPtr, &tclByteArrayType);
 		baPtr = GET_BYTEARRAY(irPtr);
 		nonbyte = TclUtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
-		TclUtfToUCS4(nonbyte, &ucs4);
+		Tcl_UtfToUniChar(nonbyte, &ucs4);
 
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected byte sequence but character %d "
 			"was '%1s' (U+%06X)", baPtr->bad, nonbyte, ucs4));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", (void *)NULL);
 	    }
 	    return NULL;
 	}
@@ -452,50 +452,11 @@ TclGetBytesFromObj(
     }
     return baPtr->bytes;
 }
-#undef Tcl_GetBytesFromObj
-unsigned char *
-Tcl_GetBytesFromObj(
-    Tcl_Interp *interp,		/* For error reporting */
-    Tcl_Obj *objPtr,		/* Value to extract from */
-    void *numBytesPtr)	/* If non-NULL, write the number of bytes
-				 * in the array here */
-{
-    ByteArray *baPtr;
-    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &properByteArrayType);
-
-    if (irPtr == NULL) {
-	SetByteArrayFromAny(NULL, objPtr);
-	irPtr = TclFetchInternalRep(objPtr, &properByteArrayType);
-	if (irPtr == NULL) {
-	    if (interp) {
-		const char *nonbyte;
-		int ucs4;
-
-		irPtr = TclFetchInternalRep(objPtr, &tclByteArrayType);
-		baPtr = GET_BYTEARRAY(irPtr);
-		nonbyte = TclUtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
-		TclUtfToUCS4(nonbyte, &ucs4);
-
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected byte sequence but character %d "
-			"was '%1s' (U+%06X)", baPtr->bad, nonbyte, ucs4));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", NULL);
-	    }
-	    return NULL;
-	}
-    }
-    baPtr = GET_BYTEARRAY(irPtr);
-
-    if (numBytesPtr != NULL) {
-	*(ptrdiff_t *)numBytesPtr = baPtr->used;
-    }
-    return baPtr->bytes;
-}
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetByteArrayFromObj/TclGetByteArrayFromObj --
+ * Tcl_GetByteArrayFromObj --
  *
  *	Attempt to get the array of bytes from the Tcl object. If the object
  *	is not already a ByteArray object, an attempt will be made to convert
@@ -510,36 +471,10 @@ Tcl_GetBytesFromObj(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_GetByteArrayFromObj
 unsigned char *
 Tcl_GetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    int *numBytesPtr)		/* If non-NULL, write the number of bytes
-				 * in the array here */
-{
-    ByteArray *baPtr;
-    const Tcl_ObjInternalRep *irPtr;
-    unsigned char *result = TclGetBytesFromObj(NULL, objPtr, numBytesPtr);
-
-    if (result) {
-	return result;
-    }
-
-    irPtr = TclFetchInternalRep(objPtr, &tclByteArrayType);
-    assert(irPtr != NULL);
-
-    baPtr = GET_BYTEARRAY(irPtr);
-
-    if (numBytesPtr != NULL) {
-	*numBytesPtr = baPtr->used;
-    }
-    return (unsigned char *) baPtr->bytes;
-}
-
-unsigned char *
-TclGetByteArrayFromObj(
-    Tcl_Obj *objPtr,		/* The ByteArray object. */
-    void *numBytesPtr)	/* If non-NULL, write the number of bytes
+    Tcl_Size *numBytesPtr)		/* If non-NULL, write the number of bytes
 				 * in the array here */
 {
     ByteArray *baPtr;
@@ -556,10 +491,9 @@ TclGetByteArrayFromObj(
     baPtr = GET_BYTEARRAY(irPtr);
 
     if (numBytesPtr != NULL) {
-	/* Make sure we return a value between 0 and UINT_MAX-1, or (ptrdiff_t)-1 */
-	*(ptrdiff_t *)numBytesPtr = ((ptrdiff_t)(unsigned int)(baPtr->used + 1)) - 1;
+	*numBytesPtr = baPtr->used;
     }
-    return baPtr->bytes;
+    return (unsigned char *) baPtr->bytes;
 }
 
 /*
@@ -2665,7 +2599,7 @@ BinaryDecodeHex(
     }
 
     TclNewObj(resultObj);
-    data = TclGetBytesFromObj(NULL, objv[objc - 1], &count);
+    data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
 	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
@@ -2718,13 +2652,13 @@ BinaryDecodeHex(
     if (pure) {
 	ucs4 = c;
     } else {
-	TclUtfToUCS4((const char *)(data - 1), &ucs4);
+	Tcl_UtfToUniChar((const char *)(data - 1), &ucs4);
     }
     TclDecrRefCount(resultObj);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid hexadecimal digit \"%c\" (U+%06X) at position %d",
 	    ucs4, ucs4, (int) (data - datastart - 1)));
-    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (void *)NULL);
     return TCL_ERROR;
 }
 
@@ -2766,7 +2700,7 @@ BinaryEncode64(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *limit;
-    int maxlen = 0;
+    Tcl_WideInt maxlen = 0;
     const char *wrapchar = "\n";
     int wrapcharlen = 1;
     int offset, i, index, size, outindex = 0, count = 0, purewrap = 1;
@@ -2785,19 +2719,19 @@ BinaryEncode64(
 	}
 	switch (index) {
 	case OPT_MAXLEN:
-	    if (Tcl_GetIntFromObj(interp, objv[i + 1], &maxlen) != TCL_OK) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[i + 1], &maxlen) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (maxlen < 0) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"line length out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
-			"LINE_LENGTH", NULL);
+			"LINE_LENGTH", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = (const char *)TclGetBytesFromObj(NULL,
+	    wrapchar = (const char *)Tcl_GetBytesFromObj(NULL,
 		    objv[i + 1], &wrapcharlen);
 	    if (wrapchar == NULL) {
 		purewrap = 0;
@@ -2917,7 +2851,7 @@ BinaryEncodeUu(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"line length out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
-			"LINE_LENGTH", NULL);
+			"LINE_LENGTH", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    lineLength = ((lineLength - 1) & -4) + 1; /* 5, 9, 13 ... */
@@ -2946,7 +2880,7 @@ BinaryEncodeUu(
 				    "invalid wrapchar; will defeat decoding",
 				    -1));
 			    Tcl_SetErrorCode(interp, "TCL", "BINARY",
-				    "ENCODE", "WRAPCHAR", NULL);
+				    "ENCODE", "WRAPCHAR", (void *)NULL);
 			    return TCL_ERROR;
 		    }
 		}
@@ -3061,7 +2995,7 @@ BinaryDecodeUu(
     }
 
     TclNewObj(resultObj);
-    data = TclGetBytesFromObj(NULL, objv[objc - 1], &count);
+    data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
 	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
@@ -3167,7 +3101,7 @@ BinaryDecodeUu(
 
   shortUu:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("short uuencode data"));
-    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "SHORT", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "SHORT", (void *)NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 
@@ -3175,12 +3109,12 @@ BinaryDecodeUu(
     if (pure) {
 	ucs4 = c;
     } else {
-	TclUtfToUCS4((const char *)(data - 1), &ucs4);
+	Tcl_UtfToUniChar((const char *)(data - 1), &ucs4);
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid uuencode character \"%c\" (U+%06X) at position %d",
 	    ucs4, ucs4, (int) (data - datastart - 1)));
-    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (void *)NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 }
@@ -3235,7 +3169,7 @@ BinaryDecode64(
     }
 
     TclNewObj(resultObj);
-    data = TclGetBytesFromObj(NULL, objv[objc - 1], &count);
+    data = Tcl_GetBytesFromObj(NULL, objv[objc - 1], &count);
     if (data == NULL) {
 	pure = 0;
 	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
@@ -3349,13 +3283,13 @@ BinaryDecode64(
 	 * of a multi-byte character. */
 
 	/* Safe because we know data is NUL-terminated */
-	TclUtfToUCS4((const char *)(data - 1), &ucs4);
+	Tcl_UtfToUniChar((const char *)(data - 1), &ucs4);
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid base64 character \"%c\" (U+%06X) at position %d",
 	    ucs4, ucs4, (int) (data - datastart - 1)));
-    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", (void *)NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 }

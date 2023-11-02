@@ -43,7 +43,7 @@ overwritten by a byte-array value.  For \fBTcl_GetBytesFromObj\fR,
 to the value from which to extract an array of bytes.
 .AP Tcl_Interp *interp in
 Interpreter to use for error reporting.
-.AP "ptrdiff_t | int" *numBytesPtr out
+.AP int *numBytesPtr out
 Points to space where the number of bytes in the array may be written.
 Caller may pass NULL when it does not need this information.
 .BE
@@ -153,11 +153,7 @@ and any string representation is invalidated.
 .PP
 On success, both \fBTcl_GetBytesFromObj\fR and \fBTcl_GetByteArrayFromObj\fR
 write the number of bytes in the byte-array value of \fIobjPtr\fR
-to the space pointed to by \fInumBytesPtr\fR.  This space may be of type
-\fBptrdiff_t\fR or of type \fBint\fR.  In Tcl 8, the largest number of
-bytes possible is \fBINT_MAX\fR, so either type can receive the value.
-In codebases meant to migrate to Tcl 9, the option to write to a space
-of type \fBptrdiff_t\fR may aid in the migration.
+to the space pointed to by \fInumBytesPtr\fR.
 .PP
 \fBTcl_SetByteArrayLength\fR enables a caller to change the size of a
 byte-array in the internal representation of an unshared \fIobjPtr\fR to

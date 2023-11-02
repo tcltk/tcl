@@ -94,7 +94,7 @@ declare 34 {deprecated {Use Tcl_GetIntForIndex}} {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int endValue, int *indexPtr)
 }
-declare 37 {
+declare 37 {deprecated {}} {
     int TclGetLoadedPackages(Tcl_Interp *interp, const char *targetName)
 }
 declare 38 {
@@ -115,10 +115,7 @@ declare 41 {
 declare 42 {
     const char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
-declare 43 {
-    Tcl_ObjCmdProc2 *TclGetObjInterpProc2(void)
-}
-declare 44 {
+declare 44 {deprecated {}} {
     int TclGuessPackageName(const char *fileName, Tcl_DString *bufPtr)
 }
 declare 45 {
@@ -127,20 +124,20 @@ declare 45 {
 declare 46 {
     int TclInExit(void)
 }
-declare 50 {
+declare 50 {deprecated {}} {
     void TclInitCompiledLocals(Tcl_Interp *interp, CallFrame *framePtr,
 	    Namespace *nsPtr)
 }
 declare 51 {
     int TclInterpInit(Tcl_Interp *interp)
 }
-declare 53 {
+declare 53 {deprecated {}} {
     int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
-	    int argc, const char **argv)
+	    Tcl_Size argc, const char **argv)
 }
-declare 54 {
+declare 54 {deprecated {}} {
     int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
+	    Tcl_Size objc, Tcl_Obj *const objv[])
 }
 declare 55 {
     Proc *TclIsProc(Command *cmdPtr)
@@ -159,12 +156,12 @@ declare 61 {
 declare 62 {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
-declare 63 {
+declare 63 {deprecated {}} {
     int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
+	    Tcl_Size objc, Tcl_Obj *const objv[])
 }
 declare 64 {
-    int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
+    int TclObjInvoke(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	    int flags)
 }
 declare 69 {
@@ -214,7 +211,7 @@ declare 97 {
 declare 98 {
     int TclServiceIdle(void)
 }
-declare 101 {
+declare 101 {deprecated {Use Tcl_SetPreInitScript}} {
     const char *TclSetPreInitScript(const char *string)
 }
 declare 102 {
@@ -245,26 +242,26 @@ declare 111 {
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc,
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-declare 112 {
+declare 112 {deprecated {Use Tcl_AppendExportList}} {
     int TclAppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
 	    Tcl_Obj *objPtr)
 }
-declare 113 {
+declare 113 {deprecated {Use Tcl_CreateNamespace}} {
     Tcl_Namespace *TclCreateNamespace(Tcl_Interp *interp, const char *name,
 	    void *clientData, Tcl_NamespaceDeleteProc *deleteProc)
 }
-declare 114 {
+declare 114 {deprecated {Use Tcl_DeleteNamespace}} {
     void TclDeleteNamespace(Tcl_Namespace *nsPtr)
 }
-declare 115 {
+declare 115 {deprecated {Use Tcl_Export}} {
     int TclExport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
 	    const char *pattern, int resetListFirst)
 }
-declare 116 {
+declare 116 {deprecated {Use Tcl_FindCommand}} {
     Tcl_Command TclFindCommand(Tcl_Interp *interp, const char *name,
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
-declare 117 {
+declare 117 {deprecated {Use Tcl_FindNamespace}} {
     Tcl_Namespace *TclFindNamespace(Tcl_Interp *interp, const char *name,
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
@@ -280,28 +277,28 @@ declare 120 {
     Tcl_Var Tcl_FindNamespaceVar(Tcl_Interp *interp, const char *name,
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
-declare 121 {
+declare 121 {deprecated {Use Tcl_ForgetImport}} {
     int TclForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
 	    const char *pattern)
 }
-declare 122 {
+declare 122 {deprecated {Use Tcl_GetCommandFromObj}} {
     Tcl_Command TclGetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
-declare 123 {
+declare 123 {deprecated {Use Tcl_GetCommandFullName}} {
     void TclGetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
 	    Tcl_Obj *objPtr)
 }
-declare 124 {
+declare 124 {deprecated {Use Tcl_GetCurrentNamespace}} {
     Tcl_Namespace *TclGetCurrentNamespace_(Tcl_Interp *interp)
 }
-declare 125 {
+declare 125 {deprecated {Use Tcl_GetGlobalNamespace}} {
     Tcl_Namespace *TclGetGlobalNamespace_(Tcl_Interp *interp)
 }
 declare 126 {
     void Tcl_GetVariableFullName(Tcl_Interp *interp, Tcl_Var variable,
 	    Tcl_Obj *objPtr)
 }
-declare 127 {
+declare 127 {deprecated {Use }} {
     int TclImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
 	    const char *pattern, int allowOverwrite)
 }
@@ -461,10 +458,10 @@ declare 177 {
     void TclVarErrMsg(Tcl_Interp *interp, const char *part1, const char *part2,
 	    const char *operation, const char *reason)
 }
-declare 178 {
+declare 178 {deprecated {}} {
     void TclSetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
 }
-declare 179 {
+declare 179 {deprecated {}} {
     Tcl_Obj *TclGetStartupScript(const char **encodingNamePtr)
 }
 declare 182 {deprecated {}} {
@@ -511,16 +508,6 @@ declare 208 {
     Tcl_Channel TclpOpenFileChannel(Tcl_Interp *interp,
 	    Tcl_Obj *pathPtr, int mode, int permissions)
 }
-# Made public by TIP 258
-#declare 209 {
-#    Tcl_Obj *TclGetEncodingSearchPath(void)
-#}
-#declare 210 {
-#    int TclSetEncodingSearchPath(Tcl_Obj *searchPath)
-#}
-#declare 211 {
-#    const char *TclpGetEncodingNameFromEnvironment(Tcl_DString *bufPtr)
-#}
 declare 212 {
     void TclpFindExecutable(const char *argv0)
 }
@@ -543,8 +530,26 @@ declare 217 {
 declare 218 {
     void TclPopStackFrame(Tcl_Interp *interp)
 }
+# TIP 431: temporary directory creation function
+declare 219 {
+    Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
+	    Tcl_Obj *basenameObj)
+}
 
 # for use in tclTest.c
+
+# TIP 625: for unit testing - create list objects with span
+declare 221 {
+    Tcl_Obj *TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
+}
+# TIP 625: for unit testing - check list invariants
+declare 222 {
+    void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+}
+# Bug 7371b6270b
+declare 223 {
+    void *TclGetCStackPtr(void)
+}
 declare 224 {
     TclPlatformType *TclGetPlatform(void)
 }
@@ -603,7 +608,7 @@ declare 237 {
 # include NRE.h too.
 declare 238 {
     int TclNRInterpProc(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
+	    Tcl_Size objc, Tcl_Obj *const objv[])
 }
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
@@ -692,20 +697,8 @@ declare 257 {
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 
-# TIP 431: temporary directory creation function
-declare 258 {
-    Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
-	    Tcl_Obj *basenameObj)
-}
-
-# TIP 625: for unit testing - create list objects with span
-declare 260 {
-    Tcl_Obj *TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
-}
-
-# TIP 625: for unit testing - check list invariants
 declare 261 {
-    void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+    void TclUnusedStubEntry(void)
 }
 
 ##############################################################################

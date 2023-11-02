@@ -27,7 +27,7 @@ When non-NULL, error information is recorded here when the value is not
 in any of the numeric formats recognized by Tcl.
 .AP "const char" *bytes in
 Points to first byte of the string value to be examined.
-.AP ptrdiff_t numBytes in
+.AP int numBytes in
 The number of bytes, starting at \fIbytes\fR, that should be examined.
 If the value \fBTCL_INDEX_NONE\fR is provided, then all bytes should
 be examined until the first \fBNUL\fR byte terminates examination.
