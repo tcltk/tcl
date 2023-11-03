@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewObj, Tcl_DuplicateObj, Tcl_IncrRefCount, Tcl_DecrRefCount, Tcl_IsShared, Tcl_InvalidateStringRep \- manipulate Tcl values
+Tcl_NewObj, Tcl_DuplicateObj, Tcl_IncrRefCount, Tcl_DecrRefCount, Tcl_BounceRefCount, Tcl_IsShared, Tcl_InvalidateStringRep \- manipulate Tcl values
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -317,7 +317,7 @@ When a value's reference count drops less than or equal to zero,
 
 .PP
 Most command procedures have not been concerned about reference
-counting since they use a value's value immediately and do not retain
+counting since they use a value immediately and do not retain
 a pointer to the value after they return.  However, there are some
 procedures that may return a new value, with a refCount of 0. In this
 situation, it is the caller's responsibility to free the value before
