@@ -9298,7 +9298,7 @@ test io-strict-multibyte-eof {
 } -match glob -result {1 {error reading "*":\
     invalid or incomplete multibyte or wide character}}
 
-test io-75.9 {unrepresentable character write passes and is replaced by ?} -setup {
+test io-75.9 {unrepresentable character write throws error in strict profile} -setup {
     set fn [makeFile {} io-75.9]
     set f [open $fn w+]
     fconfigure $f -encoding iso8859-1 -profile strict
