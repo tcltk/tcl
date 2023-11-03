@@ -121,6 +121,7 @@ extra backslashes are superfluous.
 .RE
 .TP
 \fBZipfs\fR
+.RS
 On all platforms where \fBzipfs\fR support is enabled, paths within mounted
 ZIP archives begin with the string returned by the \fBzipfs root\fR command.
 Zipfs paths are case-sensitive on all platforms.
