@@ -635,7 +635,7 @@ static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    ByteCode *codePtr, Tcl_Size *lengthPtr,
 			    const unsigned char **pcBeg, Tcl_Size *cmdIdxPtr);
-static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, TCL_HASH_TYPE growth,
+static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, size_t growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj *opndPtr);
@@ -643,8 +643,8 @@ static void		InitByteCodeExecution(Tcl_Interp *interp);
 static inline int	wordSkip(void *ptr);
 static void		ReleaseDictIterator(Tcl_Obj *objPtr);
 /* Useful elsewhere, make available in tclInt.h or stubs? */
-static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, TCL_HASH_TYPE numWords);
-static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, TCL_HASH_TYPE numWords);
+static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, size_t numWords);
+static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, size_t numWords);
 static Tcl_NRPostProc	CopyCallback;
 static Tcl_NRPostProc	ExprObjCallback;
 static Tcl_NRPostProc	FinalizeOONext;
@@ -792,7 +792,7 @@ ExecEnv *
 TclCreateExecEnv(
     Tcl_Interp *interp,		/* Interpreter for which the execution
 				 * environment is being created. */
-    TCL_HASH_TYPE size)		/* The initial stack size, in number of words
+    size_t size)		/* The initial stack size, in number of words
 				 * [sizeof(Tcl_Obj*)] */
 {
     ExecEnv *eePtr = (ExecEnv *)Tcl_Alloc(sizeof(ExecEnv));
@@ -974,12 +974,12 @@ static Tcl_Obj **
 GrowEvaluationStack(
     ExecEnv *eePtr,		/* Points to the ExecEnv with an evaluation
 				 * stack to enlarge. */
-    TCL_HASH_TYPE growth1,		/* How much larger than the current used
+    size_t growth1,		/* How much larger than the current used
 				 * size. */
     int move)			/* 1 if move words since last marker. */
 {
     ExecStack *esPtr = eePtr->execStackPtr, *oldPtr = NULL;
-    TCL_HASH_TYPE newBytes;
+    size_t newBytes;
     Tcl_Size growth = growth1;
     Tcl_Size newElems, currElems, needed = growth - (esPtr->endPtr - esPtr->tosPtr);
     Tcl_Obj **markerPtr = esPtr->markerPtr, **memStart;
@@ -1126,7 +1126,7 @@ GrowEvaluationStack(
 static Tcl_Obj **
 StackAllocWords(
     Tcl_Interp *interp,
-    TCL_HASH_TYPE numWords)
+    size_t numWords)
 {
     /*
      * Note that GrowEvaluationStack sets a marker in the stack. This marker
@@ -1144,7 +1144,7 @@ StackAllocWords(
 static Tcl_Obj **
 StackReallocWords(
     Tcl_Interp *interp,
-    TCL_HASH_TYPE numWords)
+    size_t numWords)
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
@@ -1223,10 +1223,10 @@ TclStackFree(
 void *
 TclStackAlloc(
     Tcl_Interp *interp,
-    TCL_HASH_TYPE numBytes)
+    size_t numBytes)
 {
     Interp *iPtr = (Interp *) interp;
-    TCL_HASH_TYPE numWords;
+    size_t numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return Tcl_Alloc(numBytes);
@@ -1239,13 +1239,13 @@ void *
 TclStackRealloc(
     Tcl_Interp *interp,
     void *ptr,
-    TCL_HASH_TYPE numBytes)
+    size_t numBytes)
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr;
     ExecStack *esPtr;
     Tcl_Obj **markerPtr;
-    TCL_HASH_TYPE numWords;
+    size_t numWords;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return Tcl_Realloc(ptr, numBytes);
@@ -1888,10 +1888,10 @@ TclNRExecuteByteCode(
 {
     Interp *iPtr = (Interp *) interp;
     TEBCdata *TD;
-    TCL_HASH_TYPE size = sizeof(TEBCdata) - 1
+    size_t size = sizeof(TEBCdata) - 1
 	    + (codePtr->maxStackDepth + codePtr->maxExceptDepth)
 		* sizeof(void *);
-    TCL_HASH_TYPE numWords = (size + sizeof(Tcl_Obj *) - 1) / sizeof(Tcl_Obj *);
+    size_t numWords = (size + sizeof(Tcl_Obj *) - 1) / sizeof(Tcl_Obj *);
 
     TclPreserveByteCode(codePtr);
 
@@ -2379,7 +2379,7 @@ TEBCresume(
 		    "yield can only be called in a coroutine", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
-		    NULL);
+		    (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -2410,7 +2410,7 @@ TEBCresume(
 		    "yieldto can only be called in a coroutine", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
-		    NULL);
+		    (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -2421,7 +2421,7 @@ TEBCresume(
 		    "yieldto called in deleted namespace", -1));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED",
-		    NULL);
+		    (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -2483,7 +2483,7 @@ TEBCresume(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "tailcall can only be called from a proc or lambda", -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -3999,7 +3999,7 @@ TEBCresume(
 		TclObjVarErrMsg(interp, part1Ptr, NULL, "array set",
 			"variable isn't array", opnd);
 		DECACHE_STACK_INFO();
-		Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", (void *)NULL);
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4300,7 +4300,7 @@ TEBCresume(
 	    TRACE_ERROR(interp);
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
-		    TclGetString(OBJ_AT_TOS), NULL);
+		    TclGetString(OBJ_AT_TOS), (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4340,7 +4340,7 @@ TEBCresume(
 		    "invalid command name \"%s\"", TclGetString(OBJ_AT_TOS)));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
-		    TclGetString(OBJ_AT_TOS), NULL);
+		    TclGetString(OBJ_AT_TOS), (void *)NULL);
 	    CACHE_STACK_INFO();
 	    TRACE_APPEND(("ERROR: not command\n"));
 	    goto gotError;
@@ -4369,7 +4369,7 @@ TEBCresume(
 		    "self may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4397,7 +4397,7 @@ TEBCresume(
 		    "nextto may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4418,7 +4418,7 @@ TEBCresume(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"\"%s\" is not a class", TclGetString(valuePtr)));
 		DECACHE_STACK_INFO();
-		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_REQUIRED", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_REQUIRED", (void *)NULL);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
@@ -4470,7 +4470,7 @@ TEBCresume(
 			methodType, TclGetString(valuePtr)));
 		DECACHE_STACK_INFO();
 		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_REACHABLE",
-			NULL);
+			(void *)NULL);
 		CACHE_STACK_INFO();
 		goto gotError;
 	    }
@@ -4478,7 +4478,7 @@ TEBCresume(
 		    "%s has no non-filter implementation by \"%s\"",
 		    methodType, TclGetString(valuePtr)));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4496,7 +4496,7 @@ TEBCresume(
 		    "next may only be called from inside a method",
 		    -1));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
@@ -4525,7 +4525,7 @@ TEBCresume(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "no next %s implementation", methodType));
 	    DECACHE_STACK_INFO();
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", (void *)NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
 #ifdef TCL_COMPILE_DEBUG
@@ -5101,7 +5101,7 @@ TEBCresume(
 
     case INST_LREPLACE4:
 	{
-	TCL_HASH_TYPE numToDelete, numNewElems;
+	size_t numToDelete, numNewElems;
 	int end_indicator;
 	int haveSecondIndex, flags;
 	Tcl_Obj *fromIdxObj, *toIdxObj;
@@ -5904,7 +5904,7 @@ TEBCresume(
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
-			    NULL);
+			    (void *)NULL);
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
@@ -5953,7 +5953,7 @@ TEBCresume(
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 			    "domain error: argument not in valid range",
-			    NULL);
+			    (void *)NULL);
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
@@ -5975,7 +5975,7 @@ TEBCresume(
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-			    "integer value too large to represent", NULL);
+			    "integer value too large to represent", (void *)NULL);
 		    CACHE_STACK_INFO();
 #endif /* ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR */
 		    goto gotError;
@@ -6808,7 +6808,7 @@ TEBCresume(
 		    TclGetString(OBJ_AT_TOS)));
 	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-		    TclGetString(OBJ_AT_TOS), NULL);
+		    TclGetString(OBJ_AT_TOS), (void *)NULL);
 	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -7513,14 +7513,14 @@ TEBCresume(
     divideByZero:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
 	DECACHE_STACK_INFO();
-	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
+	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", (void *)NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
 
     outOfMemory:
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
 	DECACHE_STACK_INFO();
-	Tcl_SetErrorCode(interp, "ARITH", "OUTOFMEMORY", "out of memory", NULL);
+	Tcl_SetErrorCode(interp, "ARITH", "OUTOFMEMORY", "out of memory", (void *)NULL);
 	CACHE_STACK_INFO();
 	goto gotError;
 
@@ -7534,7 +7534,7 @@ TEBCresume(
 		"exponentiation of zero by negative power", -1));
 	DECACHE_STACK_INFO();
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
-		"exponentiation of zero by negative power", NULL);
+		"exponentiation of zero by negative power", (void *)NULL);
 	CACHE_STACK_INFO();
 
 	/*
@@ -8048,7 +8048,7 @@ ExecuteExtendedBinaryMathOp(
 	}
 	Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
 	Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	err = mp_init_multi(&bigResult, &bigRemainder, NULL);
+	err = mp_init_multi(&bigResult, &bigRemainder, (void *)NULL);
 	if (err == MP_OKAY) {
 	    err = mp_div(&big1, &big2, &bigResult, &bigRemainder);
 	}
@@ -9081,7 +9081,7 @@ IllegalExprOperandType(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "can't use %s \"%s\" as operand of \"%s\"", description,
 	    TclGetString(opndPtr), op));
-    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, NULL);
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (void *)NULL);
 }
 
 /*
@@ -9459,23 +9459,23 @@ TclExprFloatError(
     if ((errno == EDOM) || isnan(value)) {
 	s = "domain error: argument not in valid range";
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, NULL);
+	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (void *)NULL);
     } else if ((errno == ERANGE) || isinf(value)) {
 	if (value == 0.0) {
 	    s = "floating-point value too small to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, (void *)NULL);
 	} else {
 	    s = "floating-point value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, (void *)NULL);
 	}
     } else {
 	Tcl_Obj *objPtr = Tcl_ObjPrintf(
 		"unknown floating-point error, errno = %d", errno);
 
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN",
-		TclGetString(objPtr), NULL);
+		TclGetString(objPtr), (void *)NULL);
 	Tcl_SetObjResult(interp, objPtr);
     }
 }
