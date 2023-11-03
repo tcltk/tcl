@@ -242,10 +242,10 @@ test basic-15.2 {Tcl_CreateObjCommand, Bug 0e4d88b650} -setup {
 }
 
 
-test basic-16.1 {TclInvokeStringCommand} {emptyTest} {
+test basic-16.1 {InvokeStringCommand} {emptyTest} {
 } {}
 
-test basic-17.1 {TclInvokeObjCommand} {emptyTest} {
+test basic-17.1 {InvokeObjCommand} {emptyTest} {
 } {}
 
 test basic-18.1 {TclRenameCommand, name of existing cmd can have namespace qualifiers} {

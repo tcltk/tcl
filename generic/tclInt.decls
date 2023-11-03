@@ -137,14 +137,15 @@ declare 46 {
 declare 51 {
     int TclInterpInit(Tcl_Interp *interp)
 }
-declare 53 {
-    int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
-	    int argc, const char **argv)
-}
-declare 54 {
-    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
-}
+# Removed in 9.0
+#declare 53 {
+#    int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
+#	    Tcl_Size argc, const char **argv)
+#}
+#declare 54 {
+#    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
+#	    Tcl_Size objc, Tcl_Obj *const objv[])
+#}
 declare 55 {
     Proc *TclIsProc(Command *cmdPtr)
 }
@@ -162,12 +163,13 @@ declare 61 {
 declare 62 {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
-declare 63 {
-    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
-}
+# Removed in 9.0:
+#declare 63 {
+#    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
+#	    Tcl_Size objc, Tcl_Obj *const objv[])
+#}
 declare 64 {
-    int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
+    int TclObjInvoke(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	    int flags)
 }
 declare 69 {
@@ -548,8 +550,26 @@ declare 217 {
 declare 218 {
     void TclPopStackFrame(Tcl_Interp *interp)
 }
+# TIP 431: temporary directory creation function
+declare 219 {
+    Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
+	    Tcl_Obj *basenameObj)
+}
 
 # for use in tclTest.c
+
+# TIP 625: for unit testing - create list objects with span
+declare 221 {
+    Tcl_Obj *TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
+}
+# TIP 625: for unit testing - check list invariants
+declare 222 {
+    void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+}
+# Bug 7371b6270b
+declare 223 {
+    void *TclGetCStackPtr(void)
+}
 declare 224 {
     TclPlatformType *TclGetPlatform(void)
 }
@@ -609,7 +629,7 @@ declare 237 {
 # include NRE.h too.
 declare 238 {
     int TclNRInterpProc(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
+	    Tcl_Size objc, Tcl_Obj *const objv[])
 }
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
@@ -698,20 +718,8 @@ declare 257 {
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 
-# TIP 431: temporary directory creation function
-declare 258 {
-    Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
-	    Tcl_Obj *basenameObj)
-}
-
-# TIP 625: for unit testing - create list objects with span
-declare 260 {
-    Tcl_Obj *TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
-}
-
-# TIP 625: for unit testing - check list invariants
 declare 261 {
-    void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+    void TclUnusedStubEntry(void)
 }
 
 ##############################################################################

@@ -235,7 +235,7 @@ PKGS_DIR		= $(TOP_DIR)/pkgs
 # Must be absolute because of the cd dltest $(DLTEST_DIR)/configure below.
 DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
 # Must be absolute to so the corresponding tcltest's tcl_library is absolute.
-TCL_BUILDTIME_LIBRARY	= @TCL_SRC_DIR@/library
+TCL_BUILDTIME_LIBRARY	= @TCL_BUILDTIME_LIBRARY@
 
 ZLIB_DIR		= ${COMPAT_DIR}/zlib
 ZLIB_INCLUDE		= @ZLIB_INCLUDE@
@@ -888,13 +888,22 @@ SHELL_ENV =	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@} \
 		TCLLIBPATH="@abs_builddir@/pkgs" \
 		TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"
 
-${TCLTEST_EXE}: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${BUILD_DLTEST}
+${TCLTEST_EXE}: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${BUILD_DLTEST} ${TCL_ZIP_FILE}
 	$(MAKE) tcltest-real LIB_RUNTIME_DIR="`pwd`"
 
 tcltest-real:
 	${CC} ${CFLAGS} ${LDFLAGS} ${TCLTEST_OBJS} \
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCLTEST_EXE}
+	@if test "${ZIPFS_BUILD}" = "2" ; then \
+	    if test "x$(MACHER)" = "x" ; then \
+	    cat ${TCL_ZIP_FILE} >> ${TCLTEST_EXE}; \
+	    else $(MACHER) append ${TCLTEST_EXE} ${TCL_ZIP_FILE} /tmp/macher_output; \
+	         mv /tmp/macher_output ${TCLTEST_EXE}; chmod u+x ${TCLTEST_EXE}; \
+	    fi; \
+	    ${NATIVE_ZIP} -A ${TCLTEST_EXE} \
+	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
+	fi
 
 # Note, in the targets below TCL_LIBRARY needs to be set or else "make test"
 # won't work in the case where the compilation directory isn't the same as the

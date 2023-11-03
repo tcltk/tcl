@@ -229,7 +229,7 @@ static WNDCLASSW windowClass;
 
 static int		TcpConnect(Tcl_Interp *interp,
 			    TcpState *state);
-static void		InitSockets(void);
+static void		InitSocketWindowClass(void);
 static TcpState *	NewSocketInfo(SOCKET socket);
 static void		SocketExitHandler(void *clientData);
 static LRESULT CALLBACK	SocketProc(HWND hwnd, UINT message, WPARAM wParam,
@@ -345,7 +345,7 @@ printaddrinfolist(
 void
 InitializeHostName(
     char **valuePtr,
-    TCL_HASH_TYPE *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     WCHAR wbuf[256];
@@ -415,11 +415,11 @@ Tcl_GetHostName(void)
  *
  * TclInitSockets --
  *
- *	This function just calls InitSockets(), but is protected by a mutex.
+ *     Initialization of sockets for the thread. Also creates message
+ *     handling window class for the process if needed.
  *
  * Results:
- *	Returns TCL_OK if the system supports sockets, or TCL_ERROR with an
- *	error in interp (if non-NULL).
+ *	Nothing. Panics on failure.
  *
  * Side effects:
  *	If not already prepared, initializes the TSD structure and socket
@@ -432,13 +432,58 @@ Tcl_GetHostName(void)
 void
 TclInitSockets()
 {
-    if (!initialized) {
-	Tcl_MutexLock(&socketMutex);
-	if (!initialized) {
-	    InitSockets();
-	}
-	Tcl_MutexUnlock(&socketMutex);
+    /* Then Per thread initialization. */
+    DWORD id;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+
+    if (tsdPtr != NULL) {
+	return;
     }
+
+    InitSocketWindowClass();
+
+    /*
+     * OK, this thread has never done anything with sockets before.  Construct
+     * a worker thread to handle asynchronous events related to sockets
+     * assigned to _this_ thread.
+     */
+
+    tsdPtr = TCL_TSD_INIT(&dataKey);
+    tsdPtr->pendingTcpState = NULL;
+    tsdPtr->socketList = NULL;
+    tsdPtr->hwnd       = NULL;
+    tsdPtr->threadId   = Tcl_GetCurrentThread();
+    tsdPtr->readyEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
+    if (tsdPtr->readyEvent == NULL) {
+	goto initFailure;
+    }
+    tsdPtr->socketListLock = CreateEventW(NULL, FALSE, TRUE, NULL);
+    if (tsdPtr->socketListLock == NULL) {
+	goto initFailure;
+    }
+    tsdPtr->socketThread = CreateThread(NULL, 256, SocketThread, tsdPtr, 0,
+	    &id);
+    if (tsdPtr->socketThread == NULL) {
+	goto initFailure;
+    }
+
+    SetThreadPriority(tsdPtr->socketThread, THREAD_PRIORITY_HIGHEST);
+
+    /*
+     * Wait for the thread to signal when the window has been created and if
+     * it is ready to go.
+     */
+
+    WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
+
+    if (tsdPtr->hwnd != NULL) {
+	Tcl_CreateEventSource(SocketSetupProc, SocketCheckProc, NULL);
+	return;
+    }
+
+  initFailure:
+    Tcl_Panic("InitSockets failed");
+    return;
 }
 
 /*
@@ -2322,28 +2367,27 @@ TcpAccept(
 /*
  *----------------------------------------------------------------------
  *
- * InitSockets --
+ * InitSocketWindowClass --
  *
- *	Registers the event window for the socket notifier code.
- *
- *	Assumes socketMutex is held.
+ *	Registers the event window class for the socket notifier code.
+ *	Caller must not hold socket mutex lock.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Register a new window class and creates a
- *	window for use in asynchronous socket notification.
+ *	Register a new window class.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-InitSockets(void)
+InitSocketWindowClass(void)
 {
-    DWORD id;
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
-
+    if (initialized) {
+	return;
+    }
+    Tcl_MutexLock(&socketMutex);
     if (!initialized) {
 	initialized = 1;
 	TclCreateLateExitHandler(SocketExitHandler, NULL);
@@ -2371,57 +2415,12 @@ InitSockets(void)
 	    goto initFailure;
 	}
     }
-
-    /*
-     * Check for per-thread initialization.
-     */
-
-    if (tsdPtr != NULL) {
-	return;
-    }
-
-    /*
-     * OK, this thread has never done anything with sockets before.  Construct
-     * a worker thread to handle asynchronous events related to sockets
-     * assigned to _this_ thread.
-     */
-
-    tsdPtr = TCL_TSD_INIT(&dataKey);
-    tsdPtr->pendingTcpState = NULL;
-    tsdPtr->socketList = NULL;
-    tsdPtr->hwnd       = NULL;
-    tsdPtr->threadId   = Tcl_GetCurrentThread();
-    tsdPtr->readyEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
-    if (tsdPtr->readyEvent == NULL) {
-	goto initFailure;
-    }
-    tsdPtr->socketListLock = CreateEventW(NULL, FALSE, TRUE, NULL);
-    if (tsdPtr->socketListLock == NULL) {
-	goto initFailure;
-    }
-    tsdPtr->socketThread = CreateThread(NULL, 256, SocketThread, tsdPtr, 0,
-	    &id);
-    if (tsdPtr->socketThread == NULL) {
-	goto initFailure;
-    }
-
-    SetThreadPriority(tsdPtr->socketThread, THREAD_PRIORITY_HIGHEST);
-
-    /*
-     * Wait for the thread to signal when the window has been created and if
-     * it is ready to go.
-     */
-
-    WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
-
-    if (tsdPtr->hwnd != NULL) {
-	Tcl_CreateEventSource(SocketSetupProc, SocketCheckProc, NULL);
-	return;
-    }
+    Tcl_MutexUnlock(&socketMutex);
+    return;
 
   initFailure:
+    Tcl_MutexUnlock(&socketMutex); /* Probably pointless before panicing */
     Tcl_Panic("InitSockets failed");
-    return;
 }
 
 /*
