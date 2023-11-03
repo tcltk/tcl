@@ -41,12 +41,12 @@ proc testbasic {direction enc hexin hexout {flags {start end}}} {
     set result [string range "$out$filler" 0 $dstlen-1]
     test $cmd-$enc-$hexin-[join $flags -] "$cmd - $enc - $hexin - $flags" -body \
         [list testencoding $cmd $enc $in $flags {} $dstlen] \
-        -result [list ok {} $result]
+        -result [list ok {} $result] -constraints testencoding
     foreach profile [encoding profiles] {
         set flags2 [linsert $flags end profile$profile]
         test $cmd-$enc-$hexin-[join $flags2 -] "$cmd - $enc - $hexin - $flags" -body \
             [list testencoding $cmd $enc $in $flags2 {} $dstlen] \
-            -result [list ok {} $result]
+            -result [list ok {} $result] -constraints testencoding
     }
 }
 
@@ -67,7 +67,7 @@ foreach {enc utfhex hex} $utfExtMap {
 # Test for insufficient space
 test xx-bufferoverflow {buffer overflow Tcl_ExternalToUtf} -body {
     testencoding Tcl_UtfToExternal utf-16 A {start end} {} 1
-} -result [list nospace {} \xFF]
+} -result [list nospace {} \xFF] -constraints testencoding
 
 # Another bug - char limit not obeyed
 # % set cv 2
@@ -79,7 +79,7 @@ test TableToUtf-bug-5be203d6ca {Bug 5be203d6ca - truncated prefix in table encod
     lassign [testencoding Tcl_ExternalToUtf shiftjis $src {start profiletcl8} 0 16 srcRead dstWritten charsWritten] buf
     set result [list [testencoding Tcl_ExternalToUtf shiftjis $src {start profiletcl8} 0 16 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
     lappend result {*}[list [testencoding Tcl_ExternalToUtf shiftjis [string range $src $srcRead end] {end profiletcl8} 0 10 srcRead dstWritten charsWritten] $srcRead $dstWritten $charsWritten]
-} -result [list [list multibyte 0 \xEF\xBC\x90\xEF\xBC\x91\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 4 6 2 [list ok 0 \xC2\x82\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 1 2 1]
+} -result [list [list multibyte 0 \xEF\xBC\x90\xEF\xBC\x91\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 4 6 2 [list ok 0 \xC2\x82\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF] 1 2 1] -constraints testencoding
 
 
 ::tcltest::cleanupTests
