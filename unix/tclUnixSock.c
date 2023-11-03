@@ -146,7 +146,7 @@ static int		TcpSetOptionProc(void *instanceData,
 static void		TcpThreadActionProc(void *instanceData, int action);
 static void		TcpWatchProc(void *instanceData, int mask);
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
-static void		WrapNotify(void *clientData, int mask);
+static Tcl_FileProc	WrapNotify;
 
 /*
  * This structure describes the channel type structure for TCP socket
@@ -1215,10 +1215,10 @@ TcpWatchProc(
 	 */
 
 	statePtr->interest = mask;
-        Tcl_CreateFileHandler(statePtr->fds.fd, mask|TCL_READABLE,
-                (Tcl_FileProc *) WrapNotify, statePtr);
+	Tcl_CreateFileHandler(statePtr->fds.fd, mask|TCL_READABLE,
+		WrapNotify, statePtr);
     } else {
-        Tcl_DeleteFileHandler(statePtr->fds.fd);
+	Tcl_DeleteFileHandler(statePtr->fds.fd);
     }
 }
 

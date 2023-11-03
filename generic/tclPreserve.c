@@ -288,7 +288,7 @@ Tcl_EventuallyFree(
      * No reference for this block.  Free it now.
      */
 
-    freeProc((char *)clientData);
+    freeProc(clientData);
 }
 
 /*
