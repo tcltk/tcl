@@ -47,6 +47,12 @@ produce the same results as if there were an input line consisting
 only of the end-of-line character(s).
 The \fBeof\fR and \fBfblocked\fR commands can be used to distinguish
 these three cases.
+.SH "ENCODING ERRORS"
+.PP
+Encoding errors may exist, if the encoding profile \fBstrict\fR is used.
+An encoding error is reported by the POSIX error code \fBEILSEQ\fR.
+The file pointer is unchanged in the error case and an eventual returned
+character count is \fB-1\fR.
 .SH "EXAMPLE"
 This example reads a file one line at a time and prints it out with
 the current line number attached to the start of each line.

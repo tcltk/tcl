@@ -62,6 +62,12 @@ To avoid wasting memory, nonblocking I/O should normally
 be used in an event-driven fashion with the \fBfileevent\fR command
 (do not invoke \fBputs\fR unless you have recently been notified
 via a file event that the channel is ready for more output data).
+.SH "ENCODING ERRORS"
+.PP
+Encoding errors may exist, if the encoding profile \fBstrict\fR is used.
+\fBputs\fR writes out data until an encoding error occurs and fails with
+POSIX error code \fBEILSEQ\fR on a non encodable data.
+
 .SH EXAMPLES
 .PP
 Write a short message to the console (or wherever \fBstdout\fR is

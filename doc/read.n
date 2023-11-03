@@ -50,6 +50,21 @@ newline characters according to the \fB\-translation\fR option
 for the channel.
 See the \fBfconfigure\fR manual entry for a discussion on ways in
 which \fBfconfigure\fR will alter input.
+.SH "ENCODING ERRORS"
+.PP
+Encoding errors may exist, if the encoding profile \fBstrict\fR is used.
+An encoding error is reported by the POSIX error code \fBEILSEQ\fR.
+.PP
+In blocking mode, the error is directly thrown, even, if there is a
+leading decodable data portion.
+The file pointer is advanced just before the encoding error.
+An eventual well decoded data chunk before the encoding error is lost.
+It is proposed to return this portion within the additional key \fB-data\fR
+in the error dictionary.
+.PP
+In non blocking mode, first, any data without encoding error is returned
+(without error state).
+In the next call, no data is returned and the \fBEILSEQ\fR error state is set.
 .SH "USE WITH SERIAL PORTS"
 '\" Note:  this advice actually applies to many versions of Tcl
 .PP
