@@ -102,7 +102,7 @@ Non blocking example
 .CS
 % set f [open test_A_195_B.txt r]
 file35a65a0
-% fconfigure $f -encoding utf-8 -profile strict -blocking 1
+% fconfigure $f -encoding utf-8 -profile strict -blocking 0
 % read $f
 A
 % tell $f
