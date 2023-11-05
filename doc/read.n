@@ -71,10 +71,18 @@ In the next call, no data is returned and the \fBEILSEQ\fR error state is set.
 Here is an example with an encoding error in UTF-8 encoding, which is then
 introspected by a switch to the binary encoding. The test file contains a not
 continued multi-byte sequence at position 1 (\fBA \\xC3 B\fR):
+.PP
+File creation for examples
+.
+.CS
+% set f [open test_A_195_B.txt wb]; puts -nonewline $f A\xC3B; close $f
+.CE
+Blocking example
+.
 .CS
 % set f [open test_A_195_B.txt r]
 file35a65a0
-% fconfigure $f -encoding utf-8 -profile strict
+% fconfigure $f -encoding utf-8 -profile strict -blocking 1
 % catch {read $f} e d
 1
 % set d
@@ -87,6 +95,25 @@ file35a65a0
 % fconfigure $f -encoding binary -profile strict
 % read $f
 ÃB
+% close $f
+.CE
+Non blocking example
+.
+.CS
+% set f [open test_A_195_B.txt r]
+file35a65a0
+% fconfigure $f -encoding utf-8 -profile strict -blocking 1
+% read $f
+A
+% tell $f
+1
+% catch {read $f} e d
+1
+% set d
+-data {} -code 1 -level 0
+-errorstack {INNER {invokeStk1 read file384b228}}
+-errorcode {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}
+-errorinfo {...} -errorline 1
 .CE
 ToDo: -data is TIP 653 and may be removed here or explained.
 .SH "USE WITH SERIAL PORTS"

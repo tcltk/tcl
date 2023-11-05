@@ -50,9 +50,38 @@ these three cases.
 .SH "ENCODING ERRORS"
 .PP
 Encoding errors may exist, if the encoding profile \fBstrict\fR is used.
+Encoding errors are special, as an eventual introspection or  recovery is
+possible by changing to an encoding which accepts the data.
 An encoding error is reported by the POSIX error code \fBEILSEQ\fR.
-The file pointer is unchanged in the error case and an eventual returned
-character count is \fB-1\fR.
+The file pointer is unchanged in the error case.
+.PP
+Here is an example with an encoding error in UTF-8 encoding, which is then
+introspected by a switch to the binary encoding. The test file contains a not
+continued multi-byte sequence at position 1 (\fBA \\xC3 B\fR):
+.PP
+File creation for example
+.CS
+% set f [open test_A_195_B.txt wb]; puts -nonewline $f A\xC3B; close $f
+.CE
+Encoding error example
+.CS
+% set f [open test_A_195_B.txt r]
+file384b6a8
+% fconfigure $f -encoding utf-8 -profile strict
+% catch {gets $f} e d
+1
+% set d
+-data A -code 1 -level 0
+-errorstack {INNER {invokeStk1 gets file384b6a8}}
+-errorcode {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}
+-errorinfo {...} -errorline 1
+% tell $f
+0
+% fconfigure $f -encoding binary -profile strict
+% gets $f
+AÃB
+.CE
+ToDo: -data is TIP 653 and may be removed here or explained.
 .SH "EXAMPLE"
 This example reads a file one line at a time and prints it out with
 the current line number attached to the start of each line.
