@@ -4024,7 +4024,7 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_GetStringFromObj(objPtr, (Tcl_Size *)NULL)
 #define Tcl_GetUnicode(objPtr) \
 	Tcl_GetUnicodeFromObj(objPtr, (Tcl_Size *)NULL)
-#if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
+#if TCL_MAJOR_VERSION < 9 || defined(TCL_8_API)
 #   undef Tcl_GetBytesFromObj
 #   undef Tcl_GetStringFromObj
 #   undef Tcl_GetUnicodeFromObj
@@ -4033,7 +4033,7 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GetBooleanFromObj
 #undef Tcl_GetBoolean
 #if defined(USE_TCL_STUBS)
-#   if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
+#   if TCL_MAJOR_VERSION < 9 || defined(TCL_8_API)
 #	define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
 		(sizeof(*(sizePtr)) <= sizeof(int) ? \
 			tclStubsPtr->tclGetBytesFromObj(interp, objPtr, (sizePtr)) : \
@@ -4056,7 +4056,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetBoolean(interp, src, boolPtr) \
 	((sizeof(*(boolPtr)) == sizeof(int) && (TCL_MAJOR_VERSION == 8)) ? tclStubsPtr->tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
 	Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
-#if TCL_MAJOR_VERSION > 8
+#if TCL_MAJOR_VERSION > 8 && defined(TCL_8_API)
 #undef Tcl_GetByteArrayFromObj
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? \
@@ -4075,7 +4075,7 @@ extern const TclStubs *tclStubsPtr;
 	((sizeof(*(boolPtr)) == sizeof(int) && (TCL_MAJOR_VERSION == 8)) ? Tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
 	Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
 #undef Tcl_GetByteArrayFromObj
-#if defined(TCL_NO_DEPRECATED)
+#if !defined(TCL_8_API)
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
 	(Tcl_GetBytesFromObj)(NULL, objPtr, (sizePtr))
 #else
@@ -4167,7 +4167,7 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (Tcl_Size (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
 		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
-#if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
+#if TCL_MAJOR_VERSION < 9 || defined(TCL_8_API)
 #   undef Tcl_ListObjGetElements
 #   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) == sizeof(int) \
 		? tclStubsPtr->tclListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)) \
@@ -4196,7 +4196,7 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_ParseArgsObjv(interp, argTable, objcPtr, objv, remObjv) (sizeof(*(objcPtr)) == sizeof(int) \
 		? tclStubsPtr->tclParseArgsObjv((interp), (argTable), (objcPtr), (objv), (remObjv)) \
 		: tclStubsPtr->tcl_ParseArgsObjv((interp), (argTable), (objcPtr), (objv), (remObjv)))
-#endif /* TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED) */
+#endif /* TCL_MAJOR_VERSION < 9 || defined(TCL_8_API) */
 #else
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
 		? (char *(*)(const wchar_t *, Tcl_Size, Tcl_DString *))Tcl_UniCharToUtfDString \
@@ -4210,7 +4210,7 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (Tcl_Size (*)(wchar_t *))Tcl_UniCharLen \
 		: (Tcl_Size (*)(wchar_t *))Tcl_Char16Len)
-#if !defined(BUILD_tcl) && !defined(TCL_NO_DEPRECATED)
+#if !defined(BUILD_tcl) && defined(TCL_8_API)
 #   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) == sizeof(int) \
 		? TclListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)) \
 		: (Tcl_ListObjGetElements)((interp), (listPtr), (objcPtr), (objvPtr)))
