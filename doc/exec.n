@@ -260,7 +260,7 @@ Avoid subprogram execution:
 Any special character argument containing a special character (\fB&\fR, \fB|\fR,
 \fB^\fR, \fB<\fR, \fB>\fR, \fB!\fR, \fB(\fR, \fB)\fR, \fB(\fR, \fB%\fR)
 is automatically enclosed in quotes (\fB"\fR). Any data quote is escaped by
-appropriate sequences like a double-quote.
+appropriate sequences.
 .IP \(bu 3
 Avoid environment variable replacement:
 Any appearence of environment variable reference (\fB%\fR) is individually quoted
