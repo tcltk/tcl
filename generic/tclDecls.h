@@ -4058,11 +4058,15 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_GetBool(interp, src, (TCL_NULL_OK-2)&(int)sizeof((*(boolPtr))), (char *)(boolPtr)))
 #if TCL_MAJOR_VERSION > 8
 #undef Tcl_GetByteArrayFromObj
+#if !defined(TCL_NO_DEPRECATED)
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? \
 		tclStubsPtr->tclGetBytesFromObj(NULL, objPtr, (sizePtr)) : \
 		tclStubsPtr->tcl_GetBytesFromObj(NULL, objPtr, (Tcl_Size *)(void *)(sizePtr)))
-
+#else
+#define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
+		tclStubsPtr->tcl_GetBytesFromObj(NULL, objPtr, (Tcl_Size *)(void *)(sizePtr))
+#endif
 #endif
 #else
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
