@@ -234,12 +234,17 @@ processor (\fBcmd.exe /c\fR), because this causes truncation of command-line
 (also the argument chain) on the first newline character.
 But it works properly with an executable (using CommandLineToArgv, etc).
 .PP
-\fBVulnerable arguments\fR
+\fBArgument quoting\fR
 .RS
+Each argument of the \fBexec\fR command is mapped to an argument of the called
+program by an adaptive quoting by adding quote characters (\fB"\fR) around the
+arguments.
+.PP
 If invoking batch files or other specific programs, the Windows environment
 does execute programs mentioned in the arguments or replace environment
-variables, which may breake any already existing quoting (for example, if the
-environment variable contains a special character like a \fB"\fR).
+variables, which may have side effects (vulnerabilities) or break any already
+existing quoting (for example, if the environment variable contains a special
+character like a \fB"\fR).
 Examples are:
 .CS
 % exec my-echo.cmd {test&whoami}
@@ -248,21 +253,24 @@ Examples are:
 % exec my-echo.cmd "ENV X:%X%"
   ENV X: CONTENT OF X
 .CE
-This might be seen as a vulnerability. In consequence, the following formatting
-is automatically performed on any argument item:
+In consequence, the following formatting is automatically performed on any
+argument item:
 .IP \(bu 3
 Avoid subprogram execution:
-Any non-paired special
-characters (\fB&\fR, \fB|\fR, \fB^\fR, \fB<\fR, \fB>\fR, \fB!\fR, \fB(\fR,
-\fB)\fR, \fB(\fR, \fB%\fR) are automatically enclosed in quotes (\fB"\fR).
+Any special character argument containing a special character (\fB&\fR, \fB|\fR,
+\fB^\fR, \fB<\fR, \fB>\fR, \fB!\fR, \fB(\fR, \fB)\fR, \fB(\fR, \fB%\fR)
+is automatically enclosed in quotes (\fB"\fR). Any data quote is escaped by
+appropriate sequences like a double-quote.
 .IP \(bu 3
 Avoid environment variable replacement:
 Any appearence of environment variable reference (\fB%\fR) is individually quoted
 by \fB"\fR.
 .PP
-This quoting was introduced in TCL 8.6.10 breaking present scripts which rely on
-the replacement  functionality to avoid. A solution with command parameters is
-envisaged for TCL 8.6.14.
+TCL 8.6.10 refined this quoting by adding quoting for data quotes and individual
+quoting of "\fB%\fR".
+This may break present scripts which rely on the replacement functionality of
+environment variables.
+A solution with command parameters is envisaged for a future release of TCL.
 .RE
 .PP
 The Tk console text widget does not provide real standard IO capabilities.
