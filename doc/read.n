@@ -50,6 +50,72 @@ newline characters according to the \fB\-translation\fR option
 for the channel.
 See the \fBfconfigure\fR manual entry for a discussion on ways in
 which \fBfconfigure\fR will alter input.
+.SH "ENCODING ERRORS"
+.PP
+Encoding errors may exist, if the encoding profile \fBstrict\fR is used.
+Encoding errors are special, as an eventual introspection or  recovery is
+possible by changing to an encoding (or encoding profile), which accepts
+the data.
+An encoding error is reported by the POSIX error code \fBEILSEQ\fR.
+.PP
+In blocking mode, the error is directly thrown, even, if there is a
+leading decodable data portion.
+The file pointer is advanced just before the encoding error.
+An eventual well decoded data chunk before the encoding error is lost.
+It is proposed to return this portion within the additional key \fB-data\fR
+in the error dictionary.
+.PP
+In non blocking mode, first, any data without encoding error is returned
+(without error state).
+In the next call, no data is returned and the \fBEILSEQ\fR error state is set.
+.PP
+Here is an example with an encoding error in UTF-8 encoding, which is then
+introspected by a switch to the binary encoding. The test file contains a not
+continued multi-byte sequence at position 1 (\fBA \\xC3 B\fR):
+.PP
+File creation for examples
+.
+.CS
+% set f [open test_A_195_B.txt wb]; puts -nonewline $f A\\xC3B; close $f
+.CE
+Blocking example
+.
+.CS
+% set f [open test_A_195_B.txt r]
+file35a65a0
+% fconfigure $f -encoding utf-8 -profile strict -blocking 1
+% catch {read $f} e d
+1
+% set d
+-code 1 -level 0
+-errorstack {INNER {invokeStk1 read file35a65a0}}
+-errorcode {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}
+-errorinfo {...} -errorline 1
+% tell $f
+1
+% fconfigure $f -encoding binary -profile strict
+% read $f
+ÃB
+% close $f
+.CE
+Non blocking example
+.
+.CS
+% set f [open test_A_195_B.txt r]
+file35a65a0
+% fconfigure $f -encoding utf-8 -profile strict -blocking 0
+% read $f
+A
+% tell $f
+1
+% catch {read $f} e d
+1
+% set d
+-code 1 -level 0
+-errorstack {INNER {invokeStk1 read file384b228}}
+-errorcode {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}
+-errorinfo {...} -errorline 1
+.CE
 .SH "USE WITH SERIAL PORTS"
 '\" Note:  this advice actually applies to many versions of Tcl
 .PP
