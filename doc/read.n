@@ -54,7 +54,8 @@ which \fBfconfigure\fR will alter input.
 .PP
 Encoding errors may exist, if the encoding profile \fBstrict\fR is used.
 Encoding errors are special, as an eventual introspection or  recovery is
-possible by changing to an encoding which accepts the data.
+possible by changing to an encoding (or encoding profile), which accepts
+the data.
 An encoding error is reported by the POSIX error code \fBEILSEQ\fR.
 .PP
 In blocking mode, the error is directly thrown, even, if there is a
@@ -75,7 +76,7 @@ continued multi-byte sequence at position 1 (\fBA \\xC3 B\fR):
 File creation for examples
 .
 .CS
-% set f [open test_A_195_B.txt wb]; puts -nonewline $f A\xC3B; close $f
+% set f [open test_A_195_B.txt wb]; puts -nonewline $f A\\xC3B; close $f
 .CE
 Blocking example
 .
@@ -86,7 +87,7 @@ file35a65a0
 % catch {read $f} e d
 1
 % set d
--data A -code 1 -level 0
+-code 1 -level 0
 -errorstack {INNER {invokeStk1 read file35a65a0}}
 -errorcode {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}
 -errorinfo {...} -errorline 1
@@ -110,12 +111,11 @@ A
 % catch {read $f} e d
 1
 % set d
--data {} -code 1 -level 0
+-code 1 -level 0
 -errorstack {INNER {invokeStk1 read file384b228}}
 -errorcode {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}
 -errorinfo {...} -errorline 1
 .CE
-ToDo: -data is TIP 653 and may be removed here or explained.
 .SH "USE WITH SERIAL PORTS"
 '\" Note:  this advice actually applies to many versions of Tcl
 .PP

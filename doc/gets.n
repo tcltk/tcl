@@ -61,7 +61,7 @@ continued multi-byte sequence at position 1 (\fBA \\xC3 B\fR):
 .PP
 File creation for example
 .CS
-% set f [open test_A_195_B.txt wb]; puts -nonewline $f A\xC3B; close $f
+% set f [open test_A_195_B.txt wb]; puts -nonewline $f A\\xC3B; close $f
 .CE
 Encoding error example
 .CS
@@ -71,7 +71,7 @@ file384b6a8
 % catch {gets $f} e d
 1
 % set d
--data A -code 1 -level 0
+-code 1 -level 0
 -errorstack {INNER {invokeStk1 gets file384b6a8}}
 -errorcode {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}
 -errorinfo {...} -errorline 1
@@ -81,7 +81,9 @@ file384b6a8
 % gets $f
 AÃB
 .CE
-ToDo: -data is TIP 653 and may be removed here or explained.
+Compared to \fBread\fR, any already decoded data is not consumed.
+The file position is still at 0 and the recovery \fBgets\fR returns also the
+already well decoded leading data.
 .SH "EXAMPLE"
 This example reads a file one line at a time and prints it out with
 the current line number attached to the start of each line.
