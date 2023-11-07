@@ -4214,7 +4214,7 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_ParseArgsObjv
 #   define Tcl_ParseArgsObjv(interp, argTable, objcPtr, objv, remObjv) \
 	    tclStubsPtr->tclParseArgsObjv((interp), (argTable), (objcPtr), (objv), (remObjv))
-#elif !defined(TCL_NO_DEPRECATED)
+#elif defined(TCL_8_API)
 #   undef Tcl_GetByteArrayFromObj
 #   undef Tcl_GetBytesFromObj
 #   undef Tcl_GetStringFromObj
@@ -4295,10 +4295,10 @@ extern const TclStubs *tclStubsPtr;
 		tclStubsPtr->tclParseArgsObjv((interp), (argTable), (objcPtr), (objv), (remObjv)) : \
 		tclStubsPtr->tcl_ParseArgsObjv((interp), (argTable), (objcPtr), (objv), (remObjv)))
 #   endif /* defined(USE_TCL_STUBS) */
-#else /* defined(TCL_NO_DEPRECATED) */
+#else /* !defined(TCL_8_API) */
 #   undef Tcl_GetByteArrayFromObj
 #   define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
 	   tclStubsPtr->tcl_GetBytesFromObj(NULL, (objPtr), (sizePtr))
-#endif /* !defined(TCL_NO_DEPRECATED) */
+#endif /* defined(TCL_8_API) */
 
 #endif /* _TCLDECLS */
