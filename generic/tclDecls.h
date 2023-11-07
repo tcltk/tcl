@@ -4262,7 +4262,7 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_GetMaster Tcl_GetParent
 #endif
 
-#ifdef TCL_USE_STUBS
+#ifdef USE_TCL_STUBS
     /* Protect those 10 functions, being usable through the stub table */
 #   undef TclGetStringFromObj
 #   undef TclGetBytesFromObj
