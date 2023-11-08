@@ -2538,8 +2538,8 @@ TclStringMatchObj(
 		&& !flags) {
 	unsigned char *data, *ptn;
 
-	data = Tcl_GetByteArrayFromObj(strObj, &length);
-	ptn  = Tcl_GetByteArrayFromObj(ptnObj, &plen);
+	data = Tcl_GetBytesFromObj(NULL, strObj, &length);
+	ptn  = Tcl_GetBytesFromObj(NULL, ptnObj, &plen);
 	match = TclByteArrayMatch(data, length, ptn, plen, 0);
     } else {
 	match = Tcl_StringCaseMatch(TclGetString(strObj),
