@@ -1627,7 +1627,7 @@ test io-12.9 {ReadChars: multibyte chars split} -body {
 } -cleanup {
     catch {close $f}
 } -result 194
-test io-12.11 {ReadChars: multibyte chars split} -body {
+test io-12.10 {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
@@ -1641,7 +1641,7 @@ test io-12.11 {ReadChars: multibyte chars split} -body {
     catch {close $f}
 } -returnCodes 1 -match glob -result {error reading "file*":\
 	invalid or incomplete multibyte or wide character}
-test io-12.12 {ReadChars: multibyte chars split} -body {
+test io-12.11 {ReadChars: multibyte chars split} -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
@@ -9299,7 +9299,7 @@ test io-75.6 {invalid utf-8 encoding, gets is not ignored (-profile strict)} -se
 	invalid or incomplete multibyte or wide character}
 
 test io-75.7 {
-    invalid utf-8 encoding gets is not ignored (-profile strict)
+    invalid utf-8 encoding read is not ignored (-profile strict)
 } -setup {
     set fn [makeFile {} io-75.7]
     set f [open $fn w+]
@@ -9434,7 +9434,7 @@ test io-75.10 {
 
 # As utf-8 has a special treatment in multi-byte decoding, also test another
 # one.
-test io-75.11 {shiftjis encoding error read results in raw bytes} -setup {
+test io-75.11 {shiftjis encoding error read results in error (strict profile)} -setup {
     set fn [makeFile {} io-75.11]
     set f [open $fn w+]
     fconfigure $f -encoding binary
