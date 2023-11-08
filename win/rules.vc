@@ -1240,7 +1240,11 @@ TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX).lib
 TKLIBNAME	= tcl9tk$(TK_VERSION)$(SUFX).$(EXT)
 TKIMPLIBNAME	= tcl9tk$(TK_VERSION)$(SUFX).lib
 !endif
+!if $(TK_MAJOR_VERSION) == 8
 TKSTUBLIBNAME	= tkstub$(TK_VERSION).lib
+!else
+TKSTUBLIBNAME	= tkstub.lib
+!endif
 
 !if $(DOING_TK)
 WISH 		= $(OUT_DIR)\$(WISHNAME)
