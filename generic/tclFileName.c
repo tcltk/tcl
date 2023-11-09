@@ -2138,7 +2138,7 @@ DoGlob(
     Tcl_GlobTypeData *types)	/* List object containing list of acceptable
 				 * types. May be NULL. */
 {
-    int baseLength, quoted, count;
+    int baseLength, quoted;
     int result = TCL_OK;
     char *name, *p, *openBrace, *closeBrace, *firstSpecialChar;
     Tcl_Obj *joinedPtr;
@@ -2148,7 +2148,6 @@ DoGlob(
      * past the last initial separator.
      */
 
-    count = 0;
     name = pattern;
     for (; *pattern != '\0'; pattern++) {
 	if (*pattern == '\\') {
@@ -2168,7 +2167,6 @@ DoGlob(
 	} else if (strchr(separators, *pattern) == NULL) {
 	    break;
 	}
-	count++;
     }
 
     /*
