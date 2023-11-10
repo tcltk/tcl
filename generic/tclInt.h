@@ -2879,6 +2879,12 @@ typedef Tcl_Channel (TclOpenFileChannelProc_)(Tcl_Interp *interp,
 typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, TCL_HASH_TYPE *lengthPtr,
 	Tcl_Encoding *encodingPtr);
 
+#ifdef _WIN32
+#   define TCLFSENCODING tclUtf8Encoding /* On Windows, all Unicode (except surrogates) are valid */
+#else
+#   define TCLFSENCODING NULL /* On Non-Windows, use the system encoding for validation checks */
+#endif
+
 /*
  * A ProcessGlobalValue struct exists for each internal value in Tcl that is
  * to be shared among several threads. Each thread sees a (Tcl_Obj) copy of
@@ -2939,10 +2945,10 @@ typedef struct ProcessGlobalValue {
 
 #define ENCODING_PROFILE_MASK     0xFF000000
 #define ENCODING_PROFILE_GET(flags_)  ((flags_) & ENCODING_PROFILE_MASK)
-#define ENCODING_PROFILE_SET(flags_, profile_) \
-    do {                                       \
-	(flags_) &= ~ENCODING_PROFILE_MASK;    \
-	(flags_) |= profile_;                  \
+#define ENCODING_PROFILE_SET(flags_, profile_)       \
+    do {                                             \
+	(flags_) &= ~ENCODING_PROFILE_MASK;              \
+	(flags_) |= ((profile_) & ENCODING_PROFILE_MASK);\
     } while (0)
 
 /*
@@ -3037,7 +3043,6 @@ TclEncodingProfileNameToId(Tcl_Interp *interp,
 			   int *profilePtr);
 MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 						    int profileId);
-MODULE_SCOPE int TclEncodingSetProfileFlags(int flags);
 MODULE_SCOPE void TclGetEncodingProfiles(Tcl_Interp *interp);
 
 /*

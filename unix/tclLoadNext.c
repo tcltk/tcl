@@ -14,14 +14,17 @@
 #include <mach-o/rld.h>
 #include <streams/streams.h>
 
-/* Static procedures defined within this file */
+
+/*
+ * Static procedures defined within this file.
+ */
 
 static void *		FindSymbol(Tcl_Interp *interp,
-			    Tcl_LoadHandle loadHandle, const char* symbol);
+			    Tcl_LoadHandle loadHandle, const char *symbol);
 static void		UnloadFile(Tcl_LoadHandle loadHandle);
 
 /*
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  *
  * TclpDlopen --
  *
@@ -29,13 +32,13 @@ static void		UnloadFile(Tcl_LoadHandle loadHandle);
  *	to the new code.
  *
  * Results:
- *	A standard Tcl completion code.  If an error occurs, an error message
+ *	A standard Tcl completion code. If an error occurs, an error message
  *	is left in the interp's result.
  *
  * Side effects:
  *	New code suddenly appears in memory.
  *
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  */
 
 int
@@ -78,12 +81,16 @@ TclpDlopen(
 	/*
 	 * Let the OS loader examine the binary search path for whatever
 	 * string the user gave us which hopefully refers to a file on the
-	 * binary path
+	 * binary path.
 	 */
 
 	Tcl_DString ds;
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, fileName, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+	native = Tcl_DStringValue(&ds);
 	files = {native,NULL};
 	result = rld_load(errorStream, &header, files, NULL);
 	Tcl_DStringFree(&ds);
@@ -101,12 +108,12 @@ TclpDlopen(
     }
     NXCloseMemory(errorStream, NX_FREEBUFFER);
 
-    newHandle = (Tcl_LoadHandle) Tcl_Alloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(*newHandle));
     newHandle->clientData = INT2PTR(1);
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
-    *loadHandle = newHandle;
     *unloadProcPtr = &UnloadFile;
+    *loadHandle = newHandle;
 
     return TCL_OK;
 }
@@ -169,7 +176,7 @@ FindSymbol(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 UnloadFile(
     Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
 				 * TclpDlopen(). The loadHandle is a token
