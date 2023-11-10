@@ -14,6 +14,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef BUILD_tcl
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
