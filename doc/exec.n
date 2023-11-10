@@ -236,15 +236,15 @@ But it works properly with an executable (using CommandLineToArgv, etc).
 .PP
 \fBArgument quoting\fR
 .RS
-Each argument of the \fBexec\fR command is mapped to an argument of the called
-program by an adaptive quoting by adding quote characters (\fB"\fR) around the
-arguments.
+The arguments of the \fBexec\fR command are mapped to the arguments of the called
+program. Additional quote characters (\fB"\fR) are automatically  added around
+arguments if expected. Special characters are escaped by inserting backslash
+characters.
 .PP
-If invoking batch files or other specific programs, the Windows environment
-does execute programs mentioned in the arguments or replace environment
-variables, which may have side effects (vulnerabilities) or break any already
-existing quoting (for example, if the environment variable contains a special
-character like a \fB"\fR).
+The MS-Windows environment does execute programs mentioned in the arguments and
+called batch files (conspec) replace environment variables, which may have side
+effects (vulnerabilities) or break any already existing quoting (for example,
+if the environment variable contains a special character like a \fB"\fR).
 Examples are:
 .CS
 % exec my-echo.cmd {test&whoami}
@@ -253,14 +253,14 @@ Examples are:
 % exec my-echo.cmd "ENV X:%X%"
   ENV X: CONTENT OF X
 .CE
-In consequence, the following formatting is automatically performed on any
+The following formatting is automatically performed on any
 argument item:
 .IP \(bu 3
 Avoid subprogram execution:
 Any special character argument containing a special character (\fB&\fR, \fB|\fR,
 \fB^\fR, \fB<\fR, \fB>\fR, \fB!\fR, \fB(\fR, \fB)\fR, \fB(\fR, \fB%\fR)
 is automatically enclosed in quotes (\fB"\fR). Any data quote is escaped by
-appropriate sequences.
+insertion of backslash characters.
 .IP \(bu 3
 Avoid environment variable replacement:
 Any appearence of environment variable reference (\fB%\fR) is individually quoted
