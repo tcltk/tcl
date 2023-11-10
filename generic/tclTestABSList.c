@@ -1,5 +1,7 @@
 // Tcl Abstract List test command: "lstring"
 
+#undef BUILD_tcl
+#undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
