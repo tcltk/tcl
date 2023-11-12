@@ -1620,7 +1620,7 @@ TestbigdataCmd (
     } idx;
     char *s;
     unsigned char *p;
-    Tcl_WideInt i, len, split;
+    Tcl_Size i, len, split;
     Tcl_DString ds;
     Tcl_Obj *objPtr;
 #define PATTERN_LEN 10
@@ -1638,11 +1638,11 @@ TestbigdataCmd (
     if (objc == 2) {
 	len = PATTERN_LEN;
     } else {
-	if (Tcl_GetWideIntFromObj(interp, objv[2], &len) != TCL_OK) {
+	if (Tcl_GetSizeIntFromObj(interp, objv[2], &len) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (objc == 4) {
-	    if (Tcl_GetWideIntFromObj(interp, objv[3], &split) != TCL_OK) {
+	    if (Tcl_GetSizeIntFromObj(interp, objv[3], &split) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (split >= len) {
@@ -1651,13 +1651,12 @@ TestbigdataCmd (
 	}
     }
     /* Need one byte for nul terminator */
-    Tcl_WideInt limit =
-	sizeof(Tcl_Size) == sizeof(Tcl_WideInt) ? WIDE_MAX-1 : INT_MAX-1;
+    Tcl_Size limit = TCL_SIZE_MAX-1;
     if (len < 0 || len > limit) {
 	Tcl_SetObjResult(
 	    interp,
 	    Tcl_ObjPrintf(
-		"%s is greater than max permitted length %" TCL_LL_MODIFIER "d",
+		"%s is greater than max permitted length %" TCL_SIZE_MODIFIER "d",
 		Tcl_GetString(objv[2]),
 		limit));
 	return TCL_ERROR;
@@ -1685,7 +1684,6 @@ TestbigdataCmd (
 	}
 	if (split >= 0) {
 	    assert(split < len);
-	    p[split] = 'X';
 	}
 	Tcl_SetObjResult(interp, objPtr);
 	break;
