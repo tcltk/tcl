@@ -9212,8 +9212,27 @@ test io-75.6 {invalid utf-8 encoding, blocking gets is not ignored (-profile str
 	invalid or incomplete multibyte or wide character}
 
 # TCL ticket c4eb46a196: non blocking case had endless loop, so test it
+# The first fix was successful with the test data A\xC3B, but not with A\x81. So, test both
+test io-75.6.1 {invalid utf-8 encoding "A xc3 B", non blocking gets is not ignored (-profile strict)} -setup {
+    set fn [makeFile {} io-75.6.1]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # utf-8: \xC3 requires a 2nd byte > x80, but <x80 is delivered
+    puts -nonewline $f A\xC3B
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+	    -translation lf -profile strict -blocking 0
+} -body {
+    gets $f
+} -cleanup {
+    close $f
+    removeFile io-75.6.1
+} -match glob -returnCodes 1 -result {error reading "file*":\
+	invalid or incomplete multibyte or wide character}
+
 test io-75.6.2 {invalid utf-8 encoding, non blocking gets is not ignored (-profile strict)} -setup {
-    set fn [makeFile {} io-75.6.2]
+    set fn [makeFile {} io-75.6.1]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     # \x81 is an incomplete byte sequence in utf-8
@@ -9226,7 +9245,7 @@ test io-75.6.2 {invalid utf-8 encoding, non blocking gets is not ignored (-profi
     gets $f
 } -cleanup {
     close $f
-    removeFile io-75.6.2
+    removeFile io-75.6.1
 } -match glob -returnCodes 1 -result {error reading "file*":\
 	invalid or incomplete multibyte or wide character}
 
