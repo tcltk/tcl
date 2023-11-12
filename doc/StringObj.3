@@ -120,7 +120,10 @@ A pointer to a value to read, or to an unshared value to modify.
 The value to append to \fIobjPtr\fR in \fBTcl_AppendObjToObj\fR.
 .AP "Tcl_Size \&| int" *lengthPtr out
 The location where \fBTcl_GetStringFromObj\fR will store the length
-of a value's string representation. May be (int *)NULL when not used.
+of a value's string representation. May be (Tcl_Size *)NULL when not used. If it points to a variable which
+type is not \fBTcl_Size\fR, a compiler warning will be generated, in
+order to indicate that when the string is larger than INT_MAX
+this function will panic.
 .AP "const char" *string in
 Null-terminated string value to append to \fIobjPtr\fR.
 .AP Tcl_Size limit in
