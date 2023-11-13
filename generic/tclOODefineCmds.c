@@ -2922,8 +2922,6 @@ ObjMixinSet(
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     int mixinc, i, isNew;
     Tcl_Obj **mixinv;
-    Class **mixins;
-    int i;
     Class **mixins;		/* The references to the classes to actually
 				 * install. */
     Tcl_HashTable uniqueCheck;	/* Note that this hash table is just used as a
