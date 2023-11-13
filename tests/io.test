@@ -9193,7 +9193,7 @@ test io-75.5 {invalid utf-8 encoding read is ignored (-profile tcl8)} -setup {
     removeFile io-75.5
 } -result 4181
 
-test io-75.6 {invalid utf-8 encoding, gets is not ignored (-profile strict)} -setup {
+test io-75.6 {incomplete utf-8 encoding, blocking gets is not ignored (-profile strict)} -setup {
     set fn [makeFile {} io-75.6]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9208,6 +9208,84 @@ test io-75.6 {invalid utf-8 encoding, gets is not ignored (-profile strict)} -se
 } -cleanup {
     close $f
     removeFile io-75.6
+} -match glob -returnCodes 1 -result {error reading "file*":\
+	invalid or incomplete multibyte or wide character}
+
+test io-75.6.1 {invalid utf-8 encoding, blocking gets is not ignored (-profile strict)} -setup {
+    set fn [makeFile {} io-75.6.1]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # utf-8: \xC3 requires a 2nd byte > x80, but <x80 is delivered
+    puts -nonewline $f A\xC3B
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+	    -translation lf -profile strict
+} -body {
+    gets $f
+} -cleanup {
+    close $f
+    removeFile io-75.6.1
+} -match glob -returnCodes 1 -result {error reading "file*":\
+	invalid or incomplete multibyte or wide character}
+
+test io-75.6.2 {invalid utf-8 encoding, blocking gets is not ignored (-profile strict), recover functionality} -setup {
+    set fn [makeFile {} io-75.6.2]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # utf-8: \xC3 requires a 2nd byte > x80, but <x80 is delivered
+    puts -nonewline $f A\xC3B
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+	    -translation lf -profile strict
+} -body {
+    set l {}
+    lappend l [catch {gets $f}]
+    lappend l [tell $f]
+    fconfigure $f -encoding binary
+    lappend l [expr {[gets $f] eq "A\xC3B"}]
+} -cleanup {
+    close $f
+    removeFile io-75.6.2
+} -match glob -returnCodes 0 -result {1 0 1}
+
+# TCL ticket c4eb46a196: non blocking case had endless loop, so test it
+test io-75.6.3 {invalid utf-8 encoding, non blocking gets is not ignored (-profile strict)} -setup {
+    set fn [makeFile {} io-75.6.3]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # utf-8: \xC3 requires a 2nd byte > x80, but <x80 is delivered
+    puts -nonewline $f A\xC3B
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+	    -translation lf -profile strict -blocking 0
+} -body {
+    gets $f
+} -cleanup {
+    close $f
+    removeFile io-75.6.3
+} -match glob -returnCodes 1 -result {error reading "file*":\
+	invalid or incomplete multibyte or wide character}
+
+test io-75.6.4 {incomplete utf-8 encoding, non blocking gets is not ignored (-profile strict)} -setup {
+    set fn [makeFile {} io-75.6.4]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 is an incomplete byte sequence in utf-8
+    puts -nonewline $f A\x81
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar {} \
+	    -translation lf -profile strict -blocking 0
+} -body {
+    gets $f
+	# only the 2nd gets returns the error
+	gets $f
+} -cleanup {
+    close $f
+    removeFile io-75.6.4
 } -match glob -returnCodes 1 -result {error reading "file*":\
 	invalid or incomplete multibyte or wide character}
 
@@ -9232,7 +9310,7 @@ test io-75.7 {
 } -match glob -result {1 {error reading "file*":\
     invalid or incomplete multibyte or wide character}}
 
-test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
+test io-75.8 {invalid utf-8 encoding eof first handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9254,7 +9332,7 @@ test io-75.8 {invalid utf-8 encoding eof handling (-profile strict)} -setup {
     removeFile io-75.8
 } -result {41 1 {}}
 
-test io-75.8.eoflater {invalid utf-8 encoding eof handling (-profile strict)} -setup {
+test io-75.8.eoflater {invalid utf-8 encoding eof after handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.8]
     set f [open $fn w+]
     # This also configures the channel encoding profile as strict.

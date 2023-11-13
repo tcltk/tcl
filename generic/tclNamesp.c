@@ -2156,7 +2156,7 @@ DeleteImportedCmd(
  *	If "flags" contains TCL_CREATE_NS_IF_UNKNOWN, all namespace components
  *	of the qualified name that cannot be found are automatically created
  *	within their specified parent. This makes sure that functions like
- *	Tcl_CreateCommand always succeed. There is no alternate search path,
+ *	Tcl_CreateObjCommand always succeed. There is no alternate search path,
  *	so *altNsPtrPtr is set NULL.
  *
  *	If "flags" contains TCL_FIND_ONLY_NS, the qualified name is treated as
@@ -2353,7 +2353,7 @@ TclGetNamespaceForQualName(
 	 * Look up the namespace qualifier nsName in the current namespace
 	 * context. If it isn't found but TCL_CREATE_NS_IF_UNKNOWN is set,
 	 * create that qualifying namespace. This is needed for functions like
-	 * Tcl_CreateCommand that cannot fail.
+	 * Tcl_CreateObjCommand that cannot fail.
 	 */
 
 	if (nsPtr != NULL) {

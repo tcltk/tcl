@@ -2180,10 +2180,9 @@ typedef struct Tcl_EncodingType {
  * changes, ensure ENCODING_PROFILE_* macros in tclInt.h are modified if
  * necessary.
  */
+#define TCL_ENCODING_PROFILE_STRICT   TCL_ENCODING_STOPONERROR
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
-#define TCL_ENCODING_PROFILE_STRICT   0x02000000
-#define TCL_ENCODING_PROFILE_REPLACE  0x03000000
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
+#define TCL_ENCODING_PROFILE_REPLACE  0x02000000
 
 /*
  * The following definitions are the error codes returned by the conversion
