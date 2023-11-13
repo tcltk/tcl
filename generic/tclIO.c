@@ -4749,6 +4749,12 @@ Tcl_GetsObj(
     ResetFlag(statePtr, CHANNEL_BLOCKED);
     while (1) {
 	if (dst >= dstEnd) {
+	    /*
+	     * In case of encoding errors, state gets flag
+	     * CHANNEL_ENCODING_ERROR set in the call below. First, the
+	     * EOF/EOL condition is checked, as we may have valid data with
+	     * EOF/EOL before the encoding error.
+	     */
 	    if (FilterInputBytes(chanPtr, &gs) != 0) {
 		goto restore;
 	    }
@@ -4918,8 +4924,17 @@ Tcl_GetsObj(
 	    }
 	    goto gotEOL;
 	} else if (gs.bytesWrote == 0
-		&& GotFlag(statePtr, CHANNEL_ENCODING_ERROR)
-		&& !GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
+		&& GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
+	    /* Ticket c4eb46a1 Harald Oehlmann 2023-11-12 debugging session.
+	     * In non blocking mode we loop indifenitly on a decoding error in
+	     * this while-loop.
+	     * Removed the following from the upper condition:
+	     * "&& !GotFlag(statePtr, CHANNEL_NONBLOCKING)"
+	     * In case of an encoding error with leading correct bytes, we pass here
+	     * two times, as gs.bytesWrote is not 0 on the first pass. This feels
+	     * once to much, as the data is anyway not used.
+	     */
+	     
 	    /* Set eol to the position that caused the encoding error, and then
 	     * continue to gotEOL, which stores the data that was decoded
 	     * without error to objPtr.  This allows the caller to do something

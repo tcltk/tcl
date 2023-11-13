@@ -673,7 +673,7 @@ EncodingConvertfromObjCmd(
     /*
      * Convert the string into a byte array in 'ds'.
      */
-#if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
+#if !defined(TCL_NO_DEPRECATED)
     if (ENCODING_PROFILE_GET(flags) == TCL_ENCODING_PROFILE_TCL8) {
 	/* Permits high bits to be non-0 in byte array (Tcl 8 style) */
 	bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
@@ -2212,7 +2212,7 @@ PathSplitCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    res = Tcl_FSSplitPath(objv[1], NULL);
+    res = Tcl_FSSplitPath(objv[1], (Tcl_Size *)NULL);
     if (res == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"could not read \"%s\": no such file or directory",
@@ -3109,7 +3109,8 @@ ForeachAssignments(
     Tcl_Interp *interp,
     struct ForeachState *statePtr)
 {
-    int i, v, k;
+    int i;
+    Tcl_Size v, k;
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
