@@ -865,13 +865,11 @@ EncodingDirsObjCmd(
 	return TCL_ERROR;
     }
     if (objc == 1) {
-fprintf(stdout, "ED GET CALLER\n"); fflush(stdout);
 	Tcl_SetObjResult(interp, Tcl_GetEncodingSearchPath());
 	return TCL_OK;
     }
 
     dirListObj = objv[1];
-fprintf(stdout, "ED SET CALLER\n"); fflush(stdout);
     if (Tcl_SetEncodingSearchPath(dirListObj) == TCL_ERROR) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"expected directory list but got \"%s\"",

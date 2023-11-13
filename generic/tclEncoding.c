@@ -439,7 +439,6 @@ FillEncodingFileMap(void)
     Tcl_Size i, numDirs = 0;
     Tcl_Obj *map, *searchPath;
 
-fprintf(stdout, "FEFM CALLER\n"); fflush(stdout);
     searchPath = Tcl_GetEncodingSearchPath();
     Tcl_IncrRefCount(searchPath);
     TclListObjLengthM(NULL, searchPath, &numDirs);
@@ -723,7 +722,6 @@ Tcl_GetDefaultEncodingDir(void)
 {
     int numDirs;
     Tcl_Obj *first, *searchPath = Tcl_GetEncodingSearchPath();
-fprintf(stdout, "GDE CALLER\n"); fflush(stdout);
 
     TclListObjLengthM(NULL, searchPath, &numDirs);
     if (numDirs == 0) {
@@ -760,7 +758,6 @@ Tcl_SetDefaultEncodingDir(
 
     searchPath = Tcl_DuplicateObj(searchPath);
     Tcl_ListObjReplace(NULL, searchPath, 0, 0, 1, &directory);
-fprintf(stdout, "SDE CALLER\n"); fflush(stdout);
     Tcl_SetEncodingSearchPath(searchPath);
 }
 #endif
@@ -1775,7 +1772,6 @@ OpenEncodingFileChannel(
     Tcl_Obj **dir, *path, *directory = NULL;
     Tcl_Channel chan = NULL;
     Tcl_Size i, numDirs;
-fprintf(stdout, "OEFC CALLER\n"); fflush(stdout);
 
     TclListObjGetElementsM(NULL, searchPath, &numDirs, &dir);
     Tcl_IncrRefCount(nameObj);
@@ -4316,8 +4312,6 @@ InitializeEncodingSearchPath(
     const char *bytes;
     Tcl_Size i, numDirs, numBytes;
     Tcl_Obj *libPathObj, *encodingObj, *searchPathObj;
-
-fprintf(stdout, "IESP\n"); fflush(stdout);
 
     TclNewLiteralStringObj(encodingObj, "encoding");
     TclNewObj(searchPathObj);

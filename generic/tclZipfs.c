@@ -4272,7 +4272,6 @@ ScriptLibrarySetup(
 	    Tcl_FSJoinToPath(libDirObj, 1, &subDirObj));
     Tcl_DecrRefCount(subDirObj);
     Tcl_IncrRefCount(searchPathObj);
-fprintf(stdout, "AH CALLER\n"); fflush(stdout);
     Tcl_SetEncodingSearchPath(searchPathObj);
     Tcl_DecrRefCount(searchPathObj);
     return libDirObj;
