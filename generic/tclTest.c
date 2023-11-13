@@ -5790,6 +5790,8 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
 
+    /* Next line produces a "warning: passing argument 3 of ... from incompatible pointer type",
+     * but that's on purpose: It's exactly what we are testing here */
     p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &x.n);
     if (p == NULL) {
 	return TCL_ERROR;
