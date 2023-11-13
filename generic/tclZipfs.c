@@ -6453,6 +6453,7 @@ TclZipfs_AppHook(
 	    Tcl_DecrRefCount(vfsInitScript);
 	    if (found == TCL_OK) {
 		zipfs_literal_tcl_library = ZIPFS_TCL_LIBRARY_1;
+		Tcl_DecrRefCount(TclZipfs_TclLibrary());
 		return version;
 	    }
 	}
@@ -6479,7 +6480,7 @@ TclZipfs_AppHook(
 	     * wants it.
 	     */
 
-	    TclZipfs_TclLibrary();
+	    Tcl_DecrRefCount(TclZipfs_TclLibrary());
 	    TclNewLiteralStringObj(vfsInitScript,
 		    ZIPFS_TCL_LIBRARY_3 "install.tcl");
 	    Tcl_IncrRefCount(vfsInitScript);
@@ -6490,6 +6491,17 @@ TclZipfs_AppHook(
 	} else if (!TclZipfs_Mount(NULL, archive, ZIPFS_APP_MOUNT, NULL)) {
 	    int found;
 	    Tcl_Obj *vfsInitScript;
+
+	    /* Set Tcl Encodings */
+	    TclNewLiteralStringObj(vfsInitScript,
+		    ZIPFS_TCL_LIBRARY_1 "/init.tcl");
+	    Tcl_IncrRefCount(vfsInitScript);
+	    found = Tcl_FSAccess(vfsInitScript, F_OK);
+	    Tcl_DecrRefCount(vfsInitScript);
+	    if (found == TCL_OK) {
+		zipfs_literal_tcl_library = ZIPFS_TCL_LIBRARY_1;
+		Tcl_DecrRefCount(TclZipfs_TclLibrary());
+	    }
 
 	    TclNewLiteralStringObj(vfsInitScript, ZIPFS_APP_MOUNT "/main.tcl");
 	    Tcl_IncrRefCount(vfsInitScript);
@@ -6502,14 +6514,8 @@ TclZipfs_AppHook(
 	    } else {
 		Tcl_DecrRefCount(vfsInitScript);
 	    }
-	    /* Set Tcl Encodings */
-	    TclNewLiteralStringObj(vfsInitScript,
-		    ZIPFS_TCL_LIBRARY_1 "/init.tcl");
-	    Tcl_IncrRefCount(vfsInitScript);
-	    found = Tcl_FSAccess(vfsInitScript, F_OK);
-	    Tcl_DecrRefCount(vfsInitScript);
+
 	    if (found == TCL_OK) {
-		zipfs_literal_tcl_library = ZIPFS_TCL_LIBRARY_1;
 		return version;
 	    }
 	}
