@@ -4749,6 +4749,12 @@ Tcl_GetsObj(
     ResetFlag(statePtr, CHANNEL_BLOCKED);
     while (1) {
 	if (dst >= dstEnd) {
+	    /*
+	     * In case of encoding errors, state gets flag
+	     * CHANNEL_ENCODING_ERROR set in the call below. First, the
+	     * EOF/EOL condition is checked, as we may have valid data with
+	     * EOF/EOL before the encoding error.
+	     */
 	    if (FilterInputBytes(chanPtr, &gs) != 0) {
 		goto restore;
 	    }
