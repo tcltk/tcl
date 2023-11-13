@@ -2886,11 +2886,13 @@ typedef struct ProcessGlobalValue {
  */
 
 #define ENCODING_PROFILE_MASK     0xFF000000
-#define ENCODING_PROFILE_GET(flags_)  ((flags_) & ENCODING_PROFILE_MASK)
-#define ENCODING_PROFILE_SET(flags_, profile_) \
-    do {                                       \
-	(flags_) &= ~ENCODING_PROFILE_MASK;    \
-	(flags_) |= profile_;                  \
+#define ENCODING_PROFILE_GET(flags_)  (((flags_) & TCL_ENCODING_PROFILE_STRICT) ? \
+	TCL_ENCODING_PROFILE_STRICT : (((flags_) & ENCODING_PROFILE_MASK) ? \
+	((flags_) & ENCODING_PROFILE_MASK) : TCL_ENCODING_PROFILE_TCL8))
+#define ENCODING_PROFILE_SET(flags_, profile_)      \
+    do {                                            \
+	(flags_) &= ~(ENCODING_PROFILE_MASK|TCL_ENCODING_PROFILE_STRICT);             \
+	(flags_) |= (profile_) & (ENCODING_PROFILE_MASK|TCL_ENCODING_PROFILE_STRICT); \
     } while (0)
 
 /*
@@ -2916,7 +2918,6 @@ TclEncodingProfileNameToId(Tcl_Interp *interp,
 			   int *profilePtr);
 MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 						    int profileId);
-MODULE_SCOPE int TclEncodingSetProfileFlags(int flags);
 MODULE_SCOPE void TclGetEncodingProfiles(Tcl_Interp *interp);
 
 /*

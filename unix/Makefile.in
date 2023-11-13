@@ -2106,6 +2106,8 @@ dist-packages: configure-packages
 # the name of the .y file so that make doesn't try to automatically regenerate
 # the .c file.
 
+#
+# Remark: see [54a305cb88]. tclDate.c is manually edited, removing the unused "yynerrs" variable
 gendate:
 	bison --output-file=$(GENERIC_DIR)/tclDate.c \
 		--no-lines \
