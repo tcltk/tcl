@@ -402,7 +402,6 @@ Tcl_Init(
 "if {$tail eq [info tclversion]} continue\n"
 "file join [file dirname $env(TCL_LIBRARY)] tcl[info tclversion]}\n"
 "	}\n"
-"	lappend scripts {::tcl::zipfs::tcl_library_init}\n"
 "	if {[info exists tclDefaultLibrary]} {\n"
 "	    lappend scripts {set tclDefaultLibrary}\n"
 "	} else {\n"

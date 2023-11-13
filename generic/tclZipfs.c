@@ -4356,44 +4356,6 @@ TclZipfs_TclLibrary(void)
 /*
  *-------------------------------------------------------------------------
  *
- * ZipFSTclLibraryObjCmd --
- *
- *	This procedure is invoked to process the
- *	[::tcl::zipfs::tcl_library_init] command, usually called during the
- *	execution of Tcl's interpreter startup. It returns the root that Tcl's
- *	library files are mounted under.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	May initialise the cache of where such library files are to be found.
- *	This cache is never cleared.
- *
- *-------------------------------------------------------------------------
- */
-
-static int
-ZipFSTclLibraryObjCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) /*objc*/,
-    TCL_UNUSED(Tcl_Obj *const *)) /*objv*/
-{
-    if (!Tcl_IsSafe(interp)) {
-	Tcl_Obj *pResult = TclZipfs_TclLibrary();
-
-	if (!pResult) {
-	    TclNewObj(pResult);
-	}
-	Tcl_SetObjResult(interp, pResult);
-    }
-    return TCL_OK;
-}
-
-/*
- *-------------------------------------------------------------------------
- *
  * ZipChannelClose --
  *
  *	This function is called to close a channel.
@@ -6286,8 +6248,6 @@ TclZipfs_Init(
 	Tcl_GetEnsembleMappingDict(NULL, ensemble, &mapObj);
 	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj("find", -1),
 		Tcl_NewStringObj("::tcl::zipfs::find", -1));
-	Tcl_CreateObjCommand(interp, "::tcl::zipfs::tcl_library_init",
-		ZipFSTclLibraryObjCmd, NULL, NULL);
 	Tcl_PkgProvide(interp, "tcl::zipfs", "2.0");
     }
     return TCL_OK;
