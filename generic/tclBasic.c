@@ -1065,14 +1065,9 @@ Tcl_CreateInterp(void)
     iPtr->deferredCallbacks = NULL;
 
     /*
-     * Create the core commands. Do it here, rather than calling
-     * Tcl_CreateCommand, because it's faster (there's no need to check for a
-     * preexisting command by the same name). If a command has a Tcl_CmdProc
-     * but no Tcl_ObjCmdProc, set the Tcl_ObjCmdProc to
-     * InvokeStringCommand. This is an object-based wrapper function that
-     * extracts strings, calls the string function, and creates an object for
-     * the result. If a command has a Tcl_ObjCmdProc but no
-     * Tcl_CmdProc, set the Tcl_CmdProc to NULL.
+     * Create the core commands. Do it here, rather than calling Tcl_CreateObjCommand,
+     * because it's faster (there's no need to check for a preexisting command
+     * by the same name). Set the Tcl_CmdProc to NULL.
      */
 
     for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
@@ -3072,7 +3067,7 @@ TclRenameCommand(
     /*
      * Make sure that the destination command does not already exist. The
      * rename operation is like creating a command, so we should automatically
-     * create the containing namespaces just like Tcl_CreateCommand would.
+     * create the containing namespaces just like Tcl_CreateObjCommand would.
      */
 
     TclGetNamespaceForQualName(interp, newName, NULL,
@@ -3453,7 +3448,7 @@ Tcl_GetCommandInfoFromToken(
  *
  * Tcl_GetCommandName --
  *
- *	Given a token returned by Tcl_CreateCommand, this function returns the
+ *	Given a token returned by Tcl_CreateObjCommand, this function returns the
  *	current name of the command (which may have changed due to renaming).
  *
  * Results:
@@ -3469,7 +3464,7 @@ const char *
 Tcl_GetCommandName(
     TCL_UNUSED(Tcl_Interp *),
     Tcl_Command command)	/* Token for command returned by a previous
-				 * call to Tcl_CreateCommand. The command must
+				 * call to Tcl_CreateObjCommand. The command must
 				 * not have been deleted. */
 {
     Command *cmdPtr = (Command *) command;
@@ -3492,7 +3487,7 @@ Tcl_GetCommandName(
  *
  * Tcl_GetCommandFullName --
  *
- *	Given a token returned by, e.g., Tcl_CreateCommand or Tcl_FindCommand,
+ *	Given a token returned by, e.g., Tcl_CreateObjCommand or Tcl_FindCommand,
  *	this function appends to an object the command's full name, qualified
  *	by a sequence of parent namespace names. The command's fully-qualified
  *	name may have changed due to renaming.
@@ -3511,7 +3506,7 @@ void
 Tcl_GetCommandFullName(
     Tcl_Interp *interp,		/* Interpreter containing the command. */
     Tcl_Command command,	/* Token for command returned by a previous
-				 * call to Tcl_CreateCommand. The command must
+				 * call to Tcl_CreateObjCommand. The command must
 				 * not have been deleted. */
     Tcl_Obj *objPtr)		/* Points to the object onto which the
 				 * command's full name is appended. */

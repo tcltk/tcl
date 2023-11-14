@@ -64,7 +64,6 @@
 #define yylex           TclDatelex
 #define yyerror         TclDateerror
 #define yydebug         TclDatedebug
-#define yynerrs         TclDatenerrs
 
 
 /* Copy the first part of user declarations.  */
@@ -1294,9 +1293,6 @@ static YYLTYPE yyloc_default
 ;
 YYLTYPE yylloc = yyloc_default;
 
-    /* Number of syntax errors so far.  */
-    int yynerrs;
-
     int yystate;
     /* Number of tokens to shift before error messages enabled.  */
     int yyerrstatus;
@@ -1360,7 +1356,6 @@ YYLTYPE yylloc = yyloc_default;
 
   yystate = 0;
   yyerrstatus = 0;
-  yynerrs = 0;
   yychar = YYEMPTY; /* Cause a token to be read.  */
   yylsp[0] = yylloc;
   goto yysetstate;
@@ -2098,7 +2093,6 @@ yyerrlab:
   /* If not already recovering from an error, report this error.  */
   if (!yyerrstatus)
     {
-      ++yynerrs;
 #if ! YYERROR_VERBOSE
       yyerror (&yylloc, info, YY_("syntax error"));
 #else
