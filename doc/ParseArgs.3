@@ -24,7 +24,11 @@ Pointer to array of option descriptors.
 .AP "Tcl_Size \&| int" *objcPtr in/out
 A pointer to variable holding number of arguments in \fIobjv\fR. Will be
 modified to hold number of arguments left in the unprocessed argument list
-stored in \fIremObjv\fR.
+stored in \fIremObjv\fR. May be (Tcl_Size *)NULL when not used. If it points to a variable which
+type is not \fBTcl_Size\fR, a compiler warning will be generated, in
+order to indicate that when the number of elements is larger than INT_MAX
+this function will return TCL_ERROR (which should trigger proper error-handling).
+Apart from that, it will function as expected.
 .AP "Tcl_Obj *const" *objv in
 The array of arguments to be parsed.
 .AP Tcl_Obj ***remObjv out

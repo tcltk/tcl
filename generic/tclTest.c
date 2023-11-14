@@ -15,6 +15,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef BUILD_tcl
 #undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
@@ -5789,6 +5790,8 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
 
+    /* Next line produces a "warning: passing argument 3 of ... from incompatible pointer type",
+     * but that's on purpose: It's exactly what we are testing here */
     p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &x.n);
     if (p == NULL) {
 	return TCL_ERROR;
