@@ -9432,13 +9432,13 @@ test io-75.11 {shiftjis encoding error read results in error (strict profile)} -
 } -body {
     set d [read $f]
     binary scan $d H* hd
-    lappend hd [catch {set d [read $f]} msg data] $msg [dict get $data -data]
+    lappend hd [catch {set d [read $f]} msg data] $msg [dict exists $data -data]
 } -cleanup {
     close $f
     removeFile io-75.11
     unset d hd msg data f
 } -match glob -result {41 1 {error reading "file*":\
-    invalid or incomplete multibyte or wide character} {}}
+    invalid or incomplete multibyte or wide character} 0}
 
 test io-75.12 {invalid utf-8 encoding read is ignored} -setup {
     set fn [makeFile {} io-75.12]

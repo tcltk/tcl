@@ -459,11 +459,9 @@ Tcl_ReadObjCmd(
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
     if (charactersRead == TCL_IO_FAILURE) {
-
-	Tcl_Obj *returnOptsPtr = Tcl_NewDictObj();
-	/* check for blocking and encoding error */
-	/* TODO: check for blocking missing */
-	if ( Tcl_GetErrno() == EILSEQ ) {
+	Tcl_Obj *returnOptsPtr = NULL;
+	if (TclChannelGetBlockingMode(chan)) {
+	    returnOptsPtr = Tcl_NewDictObj();
 	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-data", -1),
 		    resultPtr);
 	}
@@ -480,7 +478,9 @@ Tcl_ReadObjCmd(
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
 	TclChannelRelease(chan);
-	Tcl_SetReturnOptions(interp, returnOptsPtr);
+	if (returnOptsPtr) {
+	    Tcl_SetReturnOptions(interp, returnOptsPtr);
+	}
 	return TCL_ERROR;
     }
 
