@@ -4877,7 +4877,7 @@ Tcl_GetsObj(
 	     * two times, as gs.bytesWrote is not 0 on the first pass. This feels
 	     * once to much, as the data is anyway not used.
 	     */
-	     
+
 	    /* Set eol to the position that caused the encoding error, and then
 	     * continue to gotEOL, which stores the data that was decoded
 	     * without error to objPtr.  This allows the caller to do something
