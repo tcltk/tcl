@@ -3929,22 +3929,23 @@ test iocmd.readFile-1.3 "readFile procedure: syntax" -body {
 } -returnCodes error -result {bad mode "gorp2": must be binary or text}
 
 test iocmd.readFile-2.1 "readFile procedure: behaviour" -setup {
-    set f [makeFile readFile21.txt "File\nContents"]
+    set f [makeFile "File\nContents" readFile21.txt]
 } -body {
     readFile $f
 } -cleanup {
     removeFile $f
 } -result "File\nContents\n"
 test iocmd.readFile-2.2 "readFile procedure: behaviour" -setup {
-    set f [makeFile readFile22.txt "File\nContents"]
+    set f [makeFile "File\nContents" readFile22.txt]
 } -body {
     readFile $f text
 } -cleanup {
     removeFile $f
 } -result "File\nContents\n"
 test iocmd.readFile-2.3 "readFile procedure: behaviour" -setup {
-    set f [makeFile readFile23.bin ""]
+    set f [makeFile "" readFile23.bindata]
     apply {filename {
+	global BIN_DATA
 	set ff [open $filename wb]
 	puts -nonewline $ff $BIN_DATA
 	close $ff
@@ -3955,7 +3956,7 @@ test iocmd.readFile-2.3 "readFile procedure: behaviour" -setup {
     removeFile $f
 } -result {1 {0 1 2 3 4 26 27 13 10 0}}
 # Need to set up ahead of the test
-set f [makeFile readFile24.txt ""]
+set f [makeFile "" readFile24.txt]
 removeFile $f
 test iocmd.readFile-2.4 "readFile procedure: behaviour" -body {
     readFile $f
@@ -3974,7 +3975,7 @@ test iocmd.writeFile-1.3 "writeFile procedure: syntax" -body {
 } -returnCodes error -result {bad mode "gorp2": must be binary or text}
 
 test iocmd.writeFile-2.1 "readFile procedure: behaviour" -setup {
-    set f [makeFile writeFile21.txt ""]
+    set f [makeFile "" writeFile21.txt]
     removeFile $f
 } -body {
     list [writeFile $f "File\nContents\n"] [apply {filename {
@@ -3987,7 +3988,7 @@ test iocmd.writeFile-2.1 "readFile procedure: behaviour" -setup {
     removeFile $f
 } -result [list {} "File\nContents\n"]
 test iocmd.writeFile-2.2 "readFile procedure: behaviour" -setup {
-    set f [makeFile writeFile22.txt ""]
+    set f [makeFile "" writeFile22.txt]
     removeFile $f
 } -body {
     writeFile $f text "File\nContents\n"
@@ -4001,7 +4002,7 @@ test iocmd.writeFile-2.2 "readFile procedure: behaviour" -setup {
     removeFile $f
 } -result "File\nContents\n"
 test iocmd.writeFile-2.3 "readFile procedure: behaviour" -setup {
-    set f [makeFile writeFile23.txt ""]
+    set f [makeFile "" writeFile23.txt]
     removeFile $f
 } -body {
     writeFile $f binary $BIN_DATA
@@ -4025,7 +4026,7 @@ test iocmd.foreachLine-1.2 "foreachLine procedure: syntax" -returnCodes error -b
     foreachLine a b c d
 } -result {wrong # args: should be "foreachLine varName filename body"}
 test iocmd.foreachLine-1.3 "foreachLine procedure: basic errors" -setup {
-    set f [makeFile foreachLine13.txt ""]
+    set f [makeFile "" foreachLine13.txt]
 } -body {
     apply {filename {
 	array set b {1 1}
@@ -4034,7 +4035,7 @@ test iocmd.foreachLine-1.3 "foreachLine procedure: basic errors" -setup {
 } -cleanup {
     removeFile $f
 } -returnCodes error -result {can't set "line": variable is array}
-set f [makeFile foreachLine14.txt ""]
+set f [makeFile "" foreachLine14.txt]
 removeFile $f
 test iocmd.foreachLine-1.4 "foreachLine procedure: basic errors" -body {
     apply {filename {
@@ -4043,19 +4044,20 @@ test iocmd.foreachLine-1.4 "foreachLine procedure: basic errors" -body {
 } -returnCodes error -result "couldn't open \"$f\": no such file or directory"
 
 test iocmd.foreachLine-2.1 "foreachLine procedure: behaviour" -setup {
-    set f [makeFile foreachLine21.txt "a\nb\nc"]
+    set f [makeFile "a\nb\nc" foreachLine21.txt]
 } -body {
     apply {filename {
 	set lines {}
 	foreachLine var $filename {
 	    lappend lines $var
 	}
+	return $lines
     }} $f
 } -cleanup {
     removeFile $f
 } -result {a b c}
 test iocmd.foreachLine-2.2 "foreachLine procedure: behaviour" -setup {
-    set f [makeFile foreachLine22.txt "a\nbb\nc\ndd"]
+    set f [makeFile "a\nbb\nc\ndd" foreachLine22.txt]
 } -body {
     apply {filename {
 	set lines {}
@@ -4069,7 +4071,7 @@ test iocmd.foreachLine-2.2 "foreachLine procedure: behaviour" -setup {
     removeFile $f
 } -result {bb dd}
 test iocmd.foreachLine-2.3 "foreachLine procedure: behaviour" -setup {
-    set f [makeFile foreachLine23.txt "a\nbb\nccc\ndd\ne"]
+    set f [makeFile "a\nbb\nccc\ndd\ne" foreachLine23.txt]
 } -body {
     apply {filename {
 	set lines {}
@@ -4083,7 +4085,7 @@ test iocmd.foreachLine-2.3 "foreachLine procedure: behaviour" -setup {
     removeFile $f
 } -result {a bb}
 test iocmd.foreachLine-2.4 "foreachLine procedure: behaviour" -setup {
-    set f [makeFile foreachLine24.txt "a\nbb\nccc\ndd\ne"]
+    set f [makeFile "a\nbb\nccc\ndd\ne" foreachLine24.txt]
 } -body {
     apply {filename {
     	set lines {}
@@ -4099,7 +4101,7 @@ test iocmd.foreachLine-2.4 "foreachLine procedure: behaviour" -setup {
     removeFile $f
 } -result {ccc}
 test iocmd.foreachLine-2.5 "foreachLine procedure: behaviour" -setup {
-    set f [makeFile foreachLine25.txt "a\nbb\nccc\ndd\ne"]
+    set f [makeFile "a\nbb\nccc\ndd\ne" foreachLine25.txt]
 } -body {
     apply {filename {
 	set lines {}
