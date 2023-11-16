@@ -2629,7 +2629,7 @@ BinaryEncode64(
 	}
 	switch (index) {
 	case OPT_MAXLEN:
-	    if (Tcl_GetWideIntFromObj(interp, objv[i + 1], &maxlen) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i + 1], &maxlen) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (maxlen < 0) {

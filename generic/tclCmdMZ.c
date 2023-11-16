@@ -2662,7 +2662,7 @@ StringEqualCmd(
 		goto str_cmp_args;
 	    }
 	    i++;
-	    if (Tcl_GetWideIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if ((Tcl_WideUInt)reqlength > TCL_SIZE_MAX) {
@@ -2765,7 +2765,7 @@ StringCmpOpts(
 		goto str_cmp_args;
 	    }
 	    i++;
-	    if (Tcl_GetWideIntFromObj(interp, objv[i], &wreqlength) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i], &wreqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if ((Tcl_WideUInt)wreqlength > TCL_SIZE_MAX) {
@@ -4202,14 +4202,15 @@ Tcl_TimeRateObjCmd(
     }
     objPtr = objv[i++];
     if (i < objc) {	/* max-time */
-	result = Tcl_GetWideIntFromObj(interp, objv[i++], &maxms);
+	result = TclGetWideIntFromObj(interp, objv[i], &maxms);
+	i++; // Keep this separate from TclGetWideIntFromObj macro above!
 	if (result != TCL_OK) {
 	    return result;
 	}
 	if (i < objc) {	/* max-count*/
 	    Tcl_WideInt v;
 
-	    result = Tcl_GetWideIntFromObj(interp, objv[i], &v);
+	    result = TclGetWideIntFromObj(interp, objv[i], &v);
 	    if (result != TCL_OK) {
 		return result;
 	    }
