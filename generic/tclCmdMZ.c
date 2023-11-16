@@ -2642,7 +2642,8 @@ StringEqualCmd(
 
     const char *string2;
     int i, match, nocase = 0;
-    Tcl_Size length, reqlength = -1;
+    Tcl_Size length;
+    Tcl_WideInt reqlength = -1;
 
     if (objc < 3 || objc > 6) {
     str_cmp_args:
@@ -2661,8 +2662,11 @@ StringEqualCmd(
 		goto str_cmp_args;
 	    }
 	    i++;
-	    if (TclGetSizeIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
 		return TCL_ERROR;
+	    }
+	    if ((Tcl_WideUInt)reqlength > TCL_SIZE_MAX) {
+		reqlength = -1;
 	    }
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2741,8 +2745,8 @@ StringCmpOpts(
     int i;
     Tcl_Size length;
     const char *string;
+    Tcl_WideInt wreqlength = -1;
 
-    *reqlength = -1;
     *nocase = 0;
     if (objc < 3 || objc > 6) {
     str_cmp_args:
@@ -2761,8 +2765,13 @@ StringCmpOpts(
 		goto str_cmp_args;
 	    }
 	    i++;
-	    if (TclGetSizeIntFromObj(interp, objv[i], reqlength) != TCL_OK) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[i], &wreqlength) != TCL_OK) {
 		return TCL_ERROR;
+	    }
+	    if ((Tcl_WideUInt)wreqlength > TCL_SIZE_MAX) {
+	    	*reqlength = -1;
+	    } else {
+	    	*reqlength = wreqlength;
 	    }
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
