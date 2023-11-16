@@ -511,7 +511,7 @@ GetWide(
     Tcl_Obj *objPtr,
     Tcl_WideInt *widePtr)
 {
-    if (Tcl_GetWideIntFromObj(NULL, objPtr, widePtr) != TCL_OK) {
+    if (TclGetWideIntFromObj(NULL, objPtr, widePtr) != TCL_OK) {
 	int intValue;
 
 	if (GetInvalidIntFromObj(objPtr, &intValue) != TCL_OK) {

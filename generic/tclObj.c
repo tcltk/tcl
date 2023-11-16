@@ -2592,7 +2592,7 @@ SetIntFromAny(
     Tcl_Obj *objPtr)		/* Pointer to the object to convert */
 {
     Tcl_WideInt w;
-    return Tcl_GetWideIntFromObj(interp, objPtr, &w);
+    return TclGetWideIntFromObj(interp, objPtr, &w);
 }
 
 /*
@@ -3147,7 +3147,16 @@ Tcl_GetSizeIntFromObj(
     Tcl_Obj *objPtr,	/* The object from which to get a int. */
     Tcl_Size *sizePtr)  /* Place to store resulting int. */
 {
-    return TclGetSizeIntFromObj(interp, objPtr, sizePtr);
+    if (sizeof(Tcl_Size) == sizeof(int)) {
+	return TclGetIntFromObj(interp, objPtr, (int *)sizePtr);
+    } else {
+	Tcl_WideInt wide;
+	if (TclGetWideIntFromObj(interp, objPtr, &wide) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*sizePtr = (Tcl_Size)wide;
+	return TCL_OK;
+    }
 }
 
 /*

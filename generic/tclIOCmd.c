@@ -510,7 +510,7 @@ Tcl_SeekObjCmd(
     if (TclGetChannelFromObj(interp, objv[1], &chan, NULL, 0) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetWideIntFromObj(interp, objv[2], &offset) != TCL_OK) {
+    if (TclGetWideIntFromObj(interp, objv[2], &offset) != TCL_OK) {
 	return TCL_ERROR;
     }
     mode = SEEK_SET;
@@ -1738,7 +1738,7 @@ Tcl_FcopyObjCmd(
 	}
 	switch (index) {
 	case FcopySize:
-	    if (Tcl_GetWideIntFromObj(interp, objv[i+1], &toRead) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i+1], &toRead) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (toRead < 0) {
@@ -1865,7 +1865,7 @@ ChanTruncateObjCmd(
 	 * User is supplying an explicit length.
 	 */
 
-	if (Tcl_GetWideIntFromObj(interp, objv[2], &length) != TCL_OK) {
+	if (TclGetWideIntFromObj(interp, objv[2], &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 0) {

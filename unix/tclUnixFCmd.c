@@ -1510,7 +1510,7 @@ SetGroupAttribute(
     int result;
     const char *native;
 
-    if (Tcl_GetWideIntFromObj(NULL, attributePtr, &gid) != TCL_OK) {
+    if (TclGetWideIntFromObj(NULL, attributePtr, &gid) != TCL_OK) {
 	Tcl_DString ds;
 	struct group *groupPtr = NULL;
 	const char *string;
@@ -1581,7 +1581,7 @@ SetOwnerAttribute(
     int result;
     const char *native;
 
-    if (Tcl_GetWideIntFromObj(NULL, attributePtr, &uid) != TCL_OK) {
+    if (TclGetWideIntFromObj(NULL, attributePtr, &uid) != TCL_OK) {
 	Tcl_DString ds;
 	struct passwd *pwPtr = NULL;
 	const char *string;
@@ -1667,11 +1667,11 @@ SetPermissionsAttribute(
 
 	TclNewLiteralStringObj(modeObj, "0o");
 	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, TCL_INDEX_NONE);
-	result = Tcl_GetWideIntFromObj(NULL, modeObj, &mode);
+	result = TclGetWideIntFromObj(NULL, modeObj, &mode);
 	Tcl_DecrRefCount(modeObj);
     }
     if (result == TCL_OK
-	    || Tcl_GetWideIntFromObj(NULL, attributePtr, &mode) == TCL_OK) {
+	    || TclGetWideIntFromObj(NULL, attributePtr, &mode) == TCL_OK) {
 	newMode = (mode_t) (mode & 0x00007FFF);
     } else {
 	Tcl_StatBuf buf;
