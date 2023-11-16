@@ -811,21 +811,6 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 		set temp {}
 		set plat aqua
 		if {!$slot(unix) && !$slot(macosx)} {
-		    if {[string range $skipString 1 2] ne "/*"} {
-			# genStubs.tcl previously had a bug here causing it to
-			# erroneously generate both a unix entry and an aqua
-			# entry for a given stubs table slot. To preserve
-			# backwards compatibility, generate a dummy stubs entry
-			# before every aqua entry (note that this breaks the
-			# correspondence between emitted entry number and
-			# actual position of the entry in the stubs table, e.g.
-			# TkIntStubs entry 113 for aqua is in fact at position
-			# 114 in the table, entry 114 at position 116 etc).
-			eval {append temp} $skipString
-			set temp "[string range $temp 0 end-1] /*\
-				Dummy entry for stubs table backwards\
-				compatibility */\n"
-		    }
 		    if {$slot($plat)} {
 			append temp [$slotProc $name $stubs($name,$plat,$i) $i]
 		    } elseif {$onAll} {
