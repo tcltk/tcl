@@ -3604,7 +3604,7 @@ static void
 WrapFree(
     void *ptr)
 {
-    Tcl_Free(ptr);
+    ckfree(ptr);
 }
 
 void
