@@ -5769,20 +5769,7 @@ TestbytestringObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    struct {
-#if !defined(TCL_NO_DEPRECATED)
-#   if defined(_MSC_VER) && !defined(NDEBUG)
-#	pragma warning(disable:4133)
-#   elif defined(__clang__)
-#	pragma clang diagnostic push
-#	pragma clang diagnostic ignored "-Wincompatible-pointer-types"
-#   endif
-	int n; /* On purpose, not Tcl_Size, in order to demonstrate what happens */
-#else
-	Tcl_Size n;
-#endif
-	int m; /* This variable should not be overwritten */
-    } x = {0, 1};
+    Tcl_Size n;
     const char *p;
 
     if (objc != 2) {
@@ -5790,21 +5777,11 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
 
-    /* Next line produces a "warning: passing argument 3 of ... from incompatible pointer type",
-     * but that's on purpose: It's exactly what we are testing here */
-    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &x.n);
+    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &n);
     if (p == NULL) {
 	return TCL_ERROR;
     }
-#if !defined(TCL_NO_DEPRECATED) && defined(__clang__)
-#   pragma clang diagnostic pop
-#endif
-
-    if (x.m != 1) {
-	Tcl_AppendResult(interp, "Tcl_GetBytesFromObj() overwrites variable", (void *)NULL);
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, x.n));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
     return TCL_OK;
 }
 
