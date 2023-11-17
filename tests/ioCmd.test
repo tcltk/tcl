@@ -3999,7 +3999,7 @@ test iocmd.writeFile-2.1 "readFile procedure: behaviour" -setup {
 	return $text
     }} $f]
 } -cleanup {
-    removeFile $f
+    file delete $f
 } -result [list {} "File\nContents\n"]
 test iocmd.writeFile-2.2 "readFile procedure: behaviour" -setup {
     set f [makeFile "" writeFile22.txt]
@@ -4013,7 +4013,7 @@ test iocmd.writeFile-2.2 "readFile procedure: behaviour" -setup {
 	return $text
     }} $f
 } -cleanup {
-    removeFile $f
+    file delete $f
 } -result "File\nContents\n"
 test iocmd.writeFile-2.3 "readFile procedure: behaviour" -setup {
     set f [makeFile "" writeFile23.txt]
@@ -4028,7 +4028,7 @@ test iocmd.writeFile-2.3 "readFile procedure: behaviour" -setup {
 	return $x
     }} $f
 } -cleanup {
-    removeFile $f
+    file delete $f
 } -result {0 1 2 3 4 26 27 13 10 0}
 
 # Tests of foreachLine
