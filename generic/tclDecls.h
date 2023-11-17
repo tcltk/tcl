@@ -4304,7 +4304,7 @@ extern const TclStubs *tclStubsPtr;
 #else /* defined(TCL_NO_DEPRECATED) */
 #   undef Tcl_GetByteArrayFromObj
 #   define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
-	   tclStubsPtr->tcl_GetBytesFromObj(NULL, (objPtr), (sizePtr))
+	   Tcl_GetBytesFromObj(NULL, (objPtr), (sizePtr))
 #endif /* !defined(TCL_NO_DEPRECATED) */
 
 #endif /* _TCLDECLS */
