@@ -527,6 +527,29 @@ test ooUtil-7.2 {TIP 478: link removed when [my] disappears} -setup {
     parent destroy
 } -result {{in foo of ::o} {in foo of ::o} {} 1 {invalid command name "pqr"}}
 
+# Tests a very weird combination of things (with a key problem locus in
+# MixinClassDelegates) that TIP 567 fixes
+test ooUtil-8.1 {TIP 567: call oo::define twice from metaclass constructor} -setup {
+    oo::class create parent
+} -body {
+    ::oo::class create A {
+	superclass parent
+    }
+    ::oo::class create B {
+	superclass ::oo::class parent
+    	constructor {{definitionScript ""}} {
+	    next $definitionScript
+	    next {superclass ::A}
+	}
+    }
+    B create C {
+	superclass A
+    }
+    C create instance
+} -cleanup {
+    parent destroy
+} -result ::instance
+
 # Tests that verify issues detected with the tcllib version of the code
 test ooUtil-tcllib-ticket-b3577ed586 {test scoping of delegation in oo::class.Delegate } -setup {
     oo::class create animal {}
