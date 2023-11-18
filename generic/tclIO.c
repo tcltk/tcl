@@ -8170,7 +8170,7 @@ Tcl_SetChannelOption(
 	obj.length = strlen(newValue);
 	obj.typePtr = NULL;
 
-	code = TclGetWideIntFromObj(interp, &obj, &newBufferSize);
+	code = Tcl_GetWideIntFromObj(interp, &obj, &newBufferSize);
 	TclFreeInternalRep(&obj);
 
 	if (code == TCL_ERROR) {
