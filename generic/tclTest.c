@@ -2130,7 +2130,6 @@ static int UtfExtWrapper(
     } flagMap[] = {
 	{"start", TCL_ENCODING_START},
 	{"end", TCL_ENCODING_END},
-	{"stoponerror", TCL_ENCODING_STOPONERROR},
 	{"noterminate", TCL_ENCODING_NO_TERMINATE},
 	{"charlimit", TCL_ENCODING_CHAR_LIMIT},
 	{"profiletcl8", TCL_ENCODING_PROFILE_TCL8},
