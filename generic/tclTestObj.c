@@ -152,7 +152,7 @@ TestbignumobjCmd(
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
 {
-    const char *const subcmds[] = {
+    static const char *const subcmds[] = {
 	"set", "get", "mult10", "div10", "iseven", "radixsize", NULL
     };
     enum options {
@@ -886,7 +886,7 @@ TestlistobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects */
 {
     /* Subcommands supported by this command */
-    const char* const subcommands[] = {
+    static const char* const subcommands[] = {
 	"set",
 	"get",
 	"replace",
@@ -919,7 +919,7 @@ TestlistobjCmd(
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command",
-			    TCL_INDEX_TEMP_TABLE, &cmdIndex) != TCL_OK) {
+			    0, &cmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch(cmdIndex) {
@@ -1089,7 +1089,7 @@ TestobjCmd(
     int i;
     const Tcl_ObjType *targetType;
     Tcl_Obj **varPtr;
-    const char *subcommands[] = {
+    static const char *const subcommands[] = {
 	"freeallvars", "bug3598580", "buge58d7e19e9",
 	"types", "objtype", "newobj", "set",
 	"assign", "convert", "duplicate",
