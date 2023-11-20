@@ -22,6 +22,8 @@ jobs:
           - "--enable-symbols=mem"
           - "--enable-symbols=all"
           - "CFLAGS=-ftrapv"
+          # Duplicated below
+          - "CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit"
     defaults:
       run:
         shell: bash
@@ -29,6 +31,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install 32-bit dependencies if needed
+        # Duplicated from above
+        if: ${{ matrix.cfgopt == 'CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit' }}
+        run: |
+          sudo apt install gcc-multilib libc6-dev-i386
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
