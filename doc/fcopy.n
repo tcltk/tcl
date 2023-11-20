@@ -20,22 +20,31 @@ fcopy \- Copy data from one channel to another
 The \fBfcopy\fR command copies data from one I/O channel, \fIinchan\fR to another I/O channel, \fIoutchan\fR.
 The \fBfcopy\fR command leverages the buffering in the Tcl I/O system to
 avoid extra copies and to avoid buffering too much data in
-main memory when copying large files to slow destinations like
+main memory when copying large files to destinations like
 network sockets.
 .PP
 The \fBfcopy\fR
-command transfers data from \fIinchan\fR until end of file
-or \fIsize\fR bytes or characters have been
-transferred; \fIsize\fR is in bytes if the input channel is in binary mode,
-or if the two channels are using the same encoding and -strict is not specified.
-Otherwise, size is in characters.
-If no \fB\-size\fR argument is given,
-then the copy goes until end of file.
-All the data read from \fIinchan\fR is copied to \fIoutchan\fR.
+command transfers data from \fIinchan\fR to \fIoutchan\fR.
+.
+.SS "DATA QUANTITY"
+All data until \fIEOF\fR is copied.
+In addition, the quantity of copied data may be specified by the option \fB-size\fR.
+The given size is in bytes, if the input channel is in binary mode.
+Otherwise, it is in characters.
+.PP
+Depreciated feature: the transfer is treated as a binary transfer, if the encoding
+profile is set to
+.QW tcl8
+and the input encoding matches the output encoding.
+In this case, eventual encoding errors are not handled.
+An eventually given size is in bytes in this case.
+This feature exists for TCL 8 compatibility.
+.PP
 Without the \fB\-command\fR option, \fBfcopy\fR blocks until the copy is complete
 and returns the number of bytes or characters (using the same rules as
 for the \fB\-size\fR option) written to \fIoutchan\fR.
-.PP
+.
+.SS "BACKGROUND OPERATION MODE"
 The \fB\-command\fR argument makes \fBfcopy\fR work in the background.
 In this case it returns immediately and the \fIcallback\fR is invoked
 later when the copy completes.
@@ -67,7 +76,8 @@ copy so those handlers do not interfere with the copy.
 Any wrong-sided I/O attempted (by a \fBfileevent\fR handler or otherwise) will get a
 .QW "channel busy"
 error.
-.PP
+.
+.SS "CHANNEL TRANSLATION OPTIONS"
 \fBFcopy\fR translates end-of-line sequences in \fIinchan\fR and \fIoutchan\fR
 according to the \fB\-translation\fR option
 for these channels.
@@ -78,13 +88,13 @@ can be different than the number of bytes written to \fIoutchan\fR.
 Only the number of bytes written to \fIoutchan\fR is reported,
 either as the return value of a synchronous \fBfcopy\fR or
 as the argument to the callback for an asynchronous \fBfcopy\fR.
-.PP
-\fBFcopy\fR obeys the encodings and character translations configured
+.SS "CHANNEL ENCODING OPTIONS"
+\fBFcopy\fR obeys the encodings, profiles and character translations configured
 for the channels. This
 means that the incoming characters are converted internally first
 UTF-8 and then into the encoding of the channel \fBfcopy\fR writes
 to. See the manual entry for \fBfconfigure\fR for details on the
-\fB\-encoding\fR and \fB\-translation\fR options. No conversion is
+\fB\-encoding\fR and \fB\-profile\fR options. No conversion is
 done if both channels are
 set to encoding
 .QW binary
@@ -97,6 +107,21 @@ the system will assume that the incoming
 bytes are valid UTF-8 characters and convert them according to the
 output encoding. The behaviour of the system for bytes which are not
 valid UTF-8 characters is undefined in this case.
+.PP
+\fBFcopy\fR may throw encoding errors (error code \fBEILSEQ\fR), if input or output
+channel is configured to the
+.QW strict
+encoding profile.
+.PP
+If an encoding error arises on the input channel, any data before the error byte is
+written to the output channel. The input file pointer is located just before the
+values causing the encoding error.
+Error inspection or recovery is possible by changing the encoding parameters and
+invoking a file command (\fBread\fR, \fBfcopy\fR).
+.PP
+If an encoding error arises on the output channel, the errorneous data is lost.
+To make the difference between the input error case and the output error case, only the
+error message may be inspected (read or write), as both throw the error code \fIEILSEQ\fR.
 .SH EXAMPLES
 .PP
 The first example transfers the contents of one channel exactly to
