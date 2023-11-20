@@ -3818,7 +3818,7 @@ TestlistrepCmd(
     Tcl_Obj *const objv[])      /* Argument objects. */
 {
     /* Subcommands supported by this command */
-    const char* subcommands[] = {
+    static const char *const subcommands[] = {
 	"new",
 	"describe",
 	"config",
