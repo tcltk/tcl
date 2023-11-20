@@ -919,7 +919,7 @@ TestlistobjCmd(
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command",
-			    0, &cmdIndex) != TCL_OK) {
+			    TCL_INDEX_TEMP_TABLE, &cmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch(cmdIndex) {
