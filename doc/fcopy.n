@@ -35,13 +35,13 @@ profile is set to
 and the input encoding matches the output encoding.
 In this case, eventual encoding errors are not handled.
 An eventually given size is in bytes in this case.
-This feature exists for TCL 8 compatibility.
-.PP
-.SS "BACKGROUND OPERATION MODE"
+.
+.SS "BLOCKING OPERATION MODE"
 Without the \fB\-command\fR option, \fBfcopy\fR blocks until the copy is complete
 and returns the number of bytes or characters (using the same rules as
 for the \fB\-size\fR option) written to \fIoutchan\fR.
-.PP
+.
+.SS "BACKGROUND OPERATION MODE"
 The \fB\-command\fR argument makes \fBfcopy\fR work in the background.
 In this case it returns immediately and the \fIcallback\fR is invoked
 later when the copy completes.
@@ -167,7 +167,7 @@ proc CopyMore {in out chunk bytes {error {}}} {
         close $out
     } else {
         \fBfcopy\fR $in $out -size $chunk \e
-            -command [list CopyMore $in $out $chunk]
+                -command [list CopyMore $in $out $chunk]
     }
 }
 set in [open $file1]
@@ -175,7 +175,7 @@ set out [socket $server $port]
 set chunk 1024
 set total 0
 \fBfcopy\fR $in $out -size $chunk \e
-    -command [list CopyMore $in $out $chunk]
+        -command [list CopyMore $in $out $chunk]
 vwait done
 .CE
 .PP
