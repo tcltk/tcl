@@ -7546,6 +7546,33 @@ Tcl_Eof(
     return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclChannelGetBlockingMode --
+ *
+ *	Returns 1 if the channel is in blocking mode (default), 0 otherwise.
+ *
+ * Results:
+ *	1 or 0, always.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclChannelGetBlockingMode(
+    Tcl_Channel chan)
+{
+    ChannelState *statePtr = ((Channel *) chan)->state;
+				/* State of real channel structure. */
+
+    return GotFlag(statePtr, CHANNEL_NONBLOCKING) ? 0 : 1;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8170,7 +8197,7 @@ Tcl_SetChannelOption(
 	obj.length = strlen(newValue);
 	obj.typePtr = NULL;
 
-	code = TclGetWideIntFromObj(interp, &obj, &newBufferSize);
+	code = Tcl_GetWideIntFromObj(interp, &obj, &newBufferSize);
 	TclFreeInternalRep(&obj);
 
 	if (code == TCL_ERROR) {
