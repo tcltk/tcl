@@ -587,7 +587,7 @@ EXTERN TclFile		TclpMakeFile(Tcl_Channel channel, int direction);
 /* 7 */
 EXTERN TclFile		TclpOpenFile(const char *fname, int mode);
 /* 8 */
-EXTERN size_t		TclpGetPid(Tcl_Pid pid);
+EXTERN Tcl_Size		TclpGetPid(Tcl_Pid pid);
 /* 9 */
 EXTERN TclFile		TclpCreateTempFile(const char *contents);
 /* Slot 10 is reserved */
@@ -611,7 +611,7 @@ EXTERN int		TclUnixCopyFile(const char *src, const char *dst,
 /* Slot 18 is reserved */
 /* Slot 19 is reserved */
 /* 20 */
-EXTERN void		TclWinAddProcess(void *hProcess, size_t id);
+EXTERN void		TclWinAddProcess(void *hProcess, Tcl_Size id);
 /* Slot 21 is reserved */
 /* Slot 22 is reserved */
 /* Slot 23 is reserved */
@@ -641,7 +641,7 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 5 */
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 6 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 7 */
-    size_t (*tclpGetPid) (Tcl_Pid pid); /* 8 */
+    Tcl_Size (*tclpGetPid) (Tcl_Pid pid); /* 8 */
     TclFile (*tclpCreateTempFile) (const char *contents); /* 9 */
     void (*reserved10)(void);
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 11 */
@@ -653,7 +653,7 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 17 */
     void (*reserved18)(void);
     void (*reserved19)(void);
-    void (*tclWinAddProcess) (void *hProcess, size_t id); /* 20 */
+    void (*tclWinAddProcess) (void *hProcess, Tcl_Size id); /* 20 */
     void (*reserved21)(void);
     void (*reserved22)(void);
     void (*reserved23)(void);

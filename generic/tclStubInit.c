@@ -294,7 +294,7 @@ doNothing(void)
 {
     /* dummy implementation, no need to do anything */
 }
-#   define TclWinAddProcess (void (*) (void *, size_t)) doNothing
+#   define TclWinAddProcess (void (*) (void *, Tcl_Size)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
 
 #define TclWinNoBackslash winNoBackslash
@@ -319,10 +319,10 @@ void *TclWinGetTclInstance()
     return hInstance;
 }
 
-size_t
+Tcl_Size
 TclpGetPid(Tcl_Pid pid)
 {
-    return (size_t)pid;
+    return (Tcl_Size)PTR2INT(pid);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
