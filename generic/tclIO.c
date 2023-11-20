@@ -4934,7 +4934,7 @@ Tcl_GetsObj(
 	     * two times, as gs.bytesWrote is not 0 on the first pass. This feels
 	     * once to much, as the data is anyway not used.
 	     */
-	     
+
 	    /* Set eol to the position that caused the encoding error, and then
 	     * continue to gotEOL, which stores the data that was decoded
 	     * without error to objPtr.  This allows the caller to do something
@@ -7616,6 +7616,33 @@ Tcl_Eof(
     return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclChannelGetBlockingMode --
+ *
+ *	Returns 1 if the channel is in blocking mode (default), 0 otherwise.
+ *
+ * Results:
+ *	1 or 0, always.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclChannelGetBlockingMode(
+    Tcl_Channel chan)
+{
+    ChannelState *statePtr = ((Channel *) chan)->state;
+				/* State of real channel structure. */
+
+    return GotFlag(statePtr, CHANNEL_NONBLOCKING) ? 0 : 1;
+}
+
 /*
  *----------------------------------------------------------------------
  *
