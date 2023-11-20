@@ -62,13 +62,7 @@
 #undef Tcl_SplitPath
 #undef Tcl_FSSplitPath
 #undef Tcl_ParseArgsObjv
-#undef TclpInetNtoa
-#undef TclWinGetServByName
-#undef TclWinGetSockOpt
-#undef TclWinSetSockOpt
-#undef TclWinNToHS
 #undef TclStaticLibrary
-#undef Tcl_BackgroundError
 #define TclStaticLibrary Tcl_StaticLibrary
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
