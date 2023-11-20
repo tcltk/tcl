@@ -12,7 +12,7 @@
 .SH NAME
 fcopy \- Copy data from one channel to another
 .SH SYNOPSIS
-\fBfcopy \fIinchan\fR \fIoutchan\fR ?\fB\-size \fIsize\fR? ?\fB\-command \fIcallback\fR?
+\fBfcopy \fIinputChan\fR \fIoutputChan\fR ?\fB\-size \fIsize\fR? ?\fB\-command \fIcallback\fR?
 .BE
 
 .SH DESCRIPTION
@@ -22,9 +22,6 @@ The \fBfcopy\fR command leverages the buffering in the Tcl I/O system to
 avoid extra copies and to avoid buffering too much data in
 main memory when copying large files to destinations like
 network sockets.
-.PP
-The \fBfcopy\fR
-command transfers data from \fIinchan\fR to \fIoutchan\fR.
 .
 .SS "DATA QUANTITY"
 All data until \fIEOF\fR is copied.
@@ -32,14 +29,15 @@ In addition, the quantity of copied data may be specified by the option \fB-size
 The given size is in bytes, if the input channel is in binary mode.
 Otherwise, it is in characters.
 .PP
-Depreciated feature: the transfer is treated as a binary transfer, if the encoding
+The transfer is treated as a binary transfer, if the encoding
 profile is set to
 .QW tcl8
 and the input encoding matches the output encoding.
 In this case, eventual encoding errors are not handled.
 An eventually given size is in bytes in this case.
-This feature exists for TCL 8 compatibility.
-.PP
+This feature is depreciated in TCL 9.
+.
+.SS "BLOCKING OPERATION MODE"
 Without the \fB\-command\fR option, \fBfcopy\fR blocks until the copy is complete
 and returns the number of bytes or characters (using the same rules as
 for the \fB\-size\fR option) written to \fIoutchan\fR.
