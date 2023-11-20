@@ -975,7 +975,7 @@ TclCreatePipeline(
     }
     if (pidPtr != NULL) {
 	for (i = 0; i < numPids; i++) {
-	    if (pidPtr[i] != (Tcl_Pid) -1) {
+	    if (pidPtr[i] != (Tcl_Pid)-1) {
 		Tcl_DetachPids(1, &pidPtr[i]);
 	    }
 	}
