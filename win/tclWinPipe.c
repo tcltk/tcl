@@ -61,7 +61,7 @@ typedef struct {
 
 typedef struct ProcInfo {
     HANDLE hProcess;
-    size_t dwProcessId;
+    int dwProcessId;
     struct ProcInfo *nextPtr;
 } ProcInfo;
 
@@ -864,7 +864,7 @@ TclpCloseFile(
  *--------------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
@@ -874,13 +874,13 @@ TclpGetPid(
 
     Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->dwProcessId == (size_t)pid) {
+	if (infoPtr->dwProcessId == (Tcl_Size)pid) {
 	    Tcl_MutexUnlock(&pipeMutex);
 	    return infoPtr->dwProcessId;
 	}
     }
     Tcl_MutexUnlock(&pipeMutex);
-    return TCL_INDEX_NONE;
+    return -1;
 }
 
 /*
@@ -1168,7 +1168,7 @@ TclpCreateProcess(
     WaitForInputIdle(procInfo.hProcess, 5000);
     CloseHandle(procInfo.hThread);
 
-    *pidPtr = (Tcl_Pid) (size_t) procInfo.dwProcessId;
+    *pidPtr = (Tcl_Pid)INT2PTR(procInfo.dwProcessId);
     if (*pidPtr != 0) {
 	TclWinAddProcess(procInfo.hProcess, procInfo.dwProcessId);
     }
@@ -2564,7 +2564,7 @@ Tcl_WaitPid(
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
-	 if (infoPtr->dwProcessId == (size_t) pid) {
+	 if (infoPtr->dwProcessId == (Tcl_Size)pid) {
 	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}
@@ -2674,7 +2674,7 @@ Tcl_WaitPid(
     } else {
 	errno = ECHILD;
 	*statPtr = 0xC0000000 | ECHILD;
-	result = (Tcl_Pid) -1;
+	result = (Tcl_Pid)-1;
     }
 
     /*
@@ -2708,7 +2708,7 @@ Tcl_WaitPid(
 void
 TclWinAddProcess(
     void *hProcess,		/* Handle to process */
-    size_t id)		/* Global process identifier */
+    Tcl_Size id)		/* Global process identifier */
 {
     ProcInfo *procPtr = (ProcInfo *)Tcl_Alloc(sizeof(ProcInfo));
 

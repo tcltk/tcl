@@ -942,7 +942,7 @@ Tcl_ScanObjCmd(
 		break;
 	    }
 	    if (flags & SCAN_LONGER) {
-		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
+		if (TclGetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
 		    if (TclGetString(objPtr)[0] == '-') {
 			wideValue = WIDE_MIN;
 		    } else {

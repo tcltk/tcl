@@ -3235,6 +3235,7 @@ MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 MODULE_SCOPE double	TclCeil(const void *a);
 MODULE_SCOPE void	TclChannelPreserve(Tcl_Channel chan);
 MODULE_SCOPE void	TclChannelRelease(Tcl_Channel chan);
+MODULE_SCOPE int	TclChannelGetBlockingMode(Tcl_Channel chan);
 MODULE_SCOPE int	TclCheckArrayTraces(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *name, int index);
 MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
@@ -4059,36 +4060,6 @@ MODULE_SCOPE int TclCommandWordLimitError(Tcl_Interp *interp, Tcl_Size count);
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           ((Tcl_Size)-2)
 #define TCL_INDEX_START         ((Tcl_Size)0)
-
-/*
- *------------------------------------------------------------------------
- *
- * TclGetSizeIntFromObj --
- *
- *    Extract a Tcl_Size from a Tcl_Obj
- *
- * Results:
- *    TCL_OK / TCL_ERROR
- *
- * Side effects:
- *    On success, the integer value is stored in *sizePtr. On error,
- *    an error message in interp it it is not NULL.
- *
- *------------------------------------------------------------------------
- */
-static inline int TclGetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *sizePtr) {
-    if (sizeof(Tcl_Size) == sizeof(int)) {
-	return TclGetIntFromObj(interp, objPtr, (int *)sizePtr);
-    } else {
-	Tcl_WideInt wide;
-	if (TclGetWideIntFromObj(interp, objPtr, &wide) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	*sizePtr = (Tcl_Size)wide;
-	return TCL_OK;
-    }
-}
-
 
 /*
  *----------------------------------------------------------------------
