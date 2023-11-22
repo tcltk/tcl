@@ -643,8 +643,8 @@ expectMatch	13.29 P		"a\\U0001234x"	"a\u1234x"	"a\u1234x"
 expectMatch	13.30 P		{a\U0001234x}	"a\u1234x"	"a\u1234x"
 expectMatch	13.31 P		"a\\U000012345x"	"a\u12345x"	"a\u12345x"
 expectMatch	13.32 P		{a\U000012345x}	"a\u12345x"	"a\u12345x"
-expectMatch	13.33 P		"a\\U1000000x"	"a\uFFFD0x"	"a\uFFFD0x"
-expectMatch	13.34 P		{a\U1000000x}	"a\uFFFD0x"	"a\uFFFD0x"
+expectMatch	13.33 P		"a\\U100000x"	"a\U100000x"	"a\U100000"
+expectMatch	13.34 P		{a\U100000x}	"a\U100000x"	"a\U100000"
 
 
 doing 14 "back references"
