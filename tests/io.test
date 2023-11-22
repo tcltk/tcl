@@ -7718,6 +7718,29 @@ test io-52.20 {TclCopyChannel & encodings} -setup {
     close $in
     close $out
 } -returnCodes 1 -match glob -result {error reading "file*": invalid or incomplete multibyte or wide character}
+
+test io-52.20.2 {TclCopyChannel & encoding error on same encoding} -setup {
+    set out [open $path(utf8-fcopy.txt) w]
+    fconfigure $out -encoding utf-8 -translation lf
+    puts $out "AÁ"
+    close $out
+} -constraints {fcopy} -body {
+    # binary to encoding => the input has to be
+    # in utf-8 to make sense to the encoder
+
+    set in  [open $path(utf8-fcopy.txt) r]
+    set out [open $path(kyrillic.txt) w]
+
+    # Using "-encoding ascii" means reading the "Á" gives an error
+    fconfigure $in  -encoding ascii -profile strict
+    fconfigure $out -encoding ascii -translation lf
+
+    fcopy $in $out
+} -cleanup {
+    close $in
+    close $out
+} -returnCodes 1 -match glob -result {error reading "file*": invalid or incomplete multibyte or wide character}
+
 test io-52.21 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
     fconfigure $out -encoding utf-8 -translation lf
@@ -7739,6 +7762,7 @@ test io-52.21 {TclCopyChannel & encodings} -setup {
     close $in
     close $out
 } -returnCodes 1 -match glob -result {error writing "file*": invalid or incomplete multibyte or wide character}
+
 test io-52.22 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
     fconfigure $out -encoding utf-8 -translation lf
@@ -7766,6 +7790,35 @@ test io-52.22 {TclCopyChannel & encodings} -setup {
     close $out
     unset ::s0
 } -match glob -result {0 {error reading "file*": invalid or incomplete multibyte or wide character}}
+
+test io-52.22.1 {TclCopyChannel & encodings & tell position} -setup {
+    set out [open $path(utf8-fcopy.txt) w]
+    fconfigure $out -encoding utf-8 -translation lf
+    puts $out "AÁ"
+    close $out
+} -constraints {fcopy} -body {
+    # binary to encoding => the input has to be
+    # in utf-8 to make sense to the encoder
+
+    set in  [open $path(utf8-fcopy.txt) r]
+    set out [open $path(kyrillic.txt) w]
+
+    # Using "-encoding ascii" means reading the "Á" gives an error
+    fconfigure $in  -encoding ascii -profile strict
+    fconfigure $out -encoding koi8-r -translation lf
+    proc ::xxx args {
+	set ::s0 $args
+    }
+
+    fcopy $in $out -command ::xxx
+    vwait ::s0
+    list [tell $in] [tell $out] {*}[set ::s0]
+} -cleanup {
+    close $in
+    close $out
+    unset ::s0
+} -match glob -result {1 1 1 {error reading "file*": invalid or incomplete multibyte or wide character}}
+
 test io-52.23 {TclCopyChannel & encodings} -setup {
     set out [open $path(utf8-fcopy.txt) w]
     fconfigure $out -encoding utf-8 -translation lf
@@ -7816,7 +7869,6 @@ test io-52.24 {fcopy -size should always be characters} -setup {
 	catch {file delete utf8-fcopy-52.24.txt}
     catch {file delete utf8-fcopy-52.24.out.txt}
 } -result Á
-
 
 test io-53.1 {CopyData} {fcopy} {
     file delete $path(test1)
@@ -9389,13 +9441,13 @@ test io-75.7 {
     fconfigure $f -encoding utf-8 -buffering none -eofchar {} -translation lf \
 	    -profile strict
 } -body {
-    list [catch {read $f} msg] $msg
+    list [catch {read $f} msg data] $msg [dict get $data -data]
 } -cleanup {
     close $f
     removeFile io-75.7
-    unset msg f fn
+    unset msg data f fn
 } -match glob -result {1 {error reading "file*":\
-    invalid or incomplete multibyte or wide character}}
+    invalid or incomplete multibyte or wide character} A}
 
 test io-75.8 {invalid utf-8 encoding eof first handling (-profile strict)} -setup {
     set fn [makeFile {} io-75.8]
@@ -9413,10 +9465,11 @@ test io-75.8 {invalid utf-8 encoding eof first handling (-profile strict)} -setu
     binary scan $d H* hd
     lappend hd [eof $f]
     lappend hd [read $f]
-    close $f
     set hd
 } -cleanup {
+    close $f
     removeFile io-75.8
+    unset f d hd
 } -result {41 1 {}}
 
 test io-75.8.eoflater {invalid utf-8 encoding eof after handling (-profile strict)} -setup {
@@ -9431,17 +9484,17 @@ test io-75.8.eoflater {invalid utf-8 encoding eof after handling (-profile stric
     fconfigure $f -encoding utf-8 -buffering none -eofchar \x1A \
 	-translation lf -profile strict
 } -body {
-    set res [list [catch {read $f} msg] [eof $f]]
+    set res [list [catch {read $f} msg data] [eof $f] [dict get $data -data]]
     chan configure $f -encoding iso8859-1
     lappend res [read $f 1]
     chan configure $f -encoding utf-8
-    lappend res [catch {read $f 1} msg] $msg
+    lappend res [catch {read $f 1} msg data] $msg [dict get $data -data]
 } -cleanup {
     close $f
     removeFile io-75.8
-    unset res msg fn f
-} -match glob -result "1 0 \x81 1 {error reading \"*\":\
-    invalid or incomplete multibyte or wide character}"
+    unset res msg data fn f
+} -match glob -result "1 0 A \x81 1 {error reading \"*\":\
+    invalid or incomplete multibyte or wide character} {}"
 
 
 test io-strict-multibyte-eof {
@@ -9456,12 +9509,12 @@ test io-strict-multibyte-eof {
     seek $chan 0
     chan configure $chan -encoding utf-8 -profile strict
 } -body {
-    list [catch {read $chan 1} msg] $msg
+    list [catch {read $chan 1} msg data] $msg [dict get $data -data]
 } -cleanup {
     close $chan
-    unset msg chan
+    unset msg chan data
 } -match glob -result {1 {error reading "*":\
-    invalid or incomplete multibyte or wide character}}
+    invalid or incomplete multibyte or wide character} {}}
 
 test io-75.9 {unrepresentable character write throws error in strict profile} -setup {
     set fn [makeFile {} io-75.9]
@@ -9526,13 +9579,13 @@ test io-75.11 {shiftjis encoding error read results in error (strict profile)} -
 } -body {
     set d [read $f]
     binary scan $d H* hd
-    lappend hd [catch {set d [read $f]} msg] $msg
+    lappend hd [catch {set d [read $f]} msg data] $msg [dict exists $data -data]
 } -cleanup {
     close $f
     removeFile io-75.11
-    unset d hd msg f
+    unset d hd msg data f
 } -match glob -result {41 1 {error reading "file*":\
-    invalid or incomplete multibyte or wide character}}
+    invalid or incomplete multibyte or wide character} 0}
 
 test io-75.12 {
     invalid utf-8 encoding read is not ignored because setting the encoding to
@@ -9578,13 +9631,13 @@ test io-75.13 {
 } -body {
     set d [read $f]
     binary scan $d H* hd
-    lappend hd [catch {read $f} msg] $msg
+    lappend hd [catch {read $f} msg data] $msg [dict exists $data -data]
 } -cleanup {
     close $f
     removeFile io-75.13
-    unset d hd msg f fn
+    unset d hd msg data f fn
 } -match glob -result {41 1 {error reading "file*":\
-    invalid or incomplete multibyte or wide character}}
+    invalid or incomplete multibyte or wide character} 0}
 
 test io-75.14 {
 	[gets] succesfully returns lines prior to error
@@ -9602,16 +9655,16 @@ test io-75.14 {
 } -body {
     set res [gets $chan]
     lappend res [gets $chan]
-    lappend res [catch {gets $chan} msg] $msg
+    lappend res [catch {gets $chan} msg data] $msg [dict exists $data -data]
     chan configure $chan -profile tcl8
     lappend res [gets $chan]
     lappend res [gets $chan]
     return $res
 } -cleanup {
     close $chan
-    unset chan res msg
+    unset chan res msg data
 } -match glob -result {a b 1 {error reading "*":\
-    invalid or incomplete multibyte or wide character} cÀ d}
+    invalid or incomplete multibyte or wide character} 0 cÀ d}
 
 test io-75.15 {
     invalid utf-8 encoding strict
@@ -9629,8 +9682,8 @@ test io-75.15 {
     fconfigure $chan -encoding utf-8 -profile strict
     lappend res [gets $chan]
     lappend res [gets $chan]
-    lappend res [catch {gets $chan} msg] $msg
-    lappend res [catch {gets $chan} msg] $msg
+    lappend res [catch {gets $chan} msg data] $msg [dict exists $data -data]
+    lappend res [catch {gets $chan} msg data] $msg [dict exists $data -data]
 	chan configure $chan -translation binary
 	set data [read $chan 4]
 	foreach char [split $data {}] {
@@ -9645,7 +9698,7 @@ test io-75.15 {
     close $chan
     unset chan res msg data
 } -match glob -result {hello AB 1 {error reading "*": invalid or incomplete multibyte or wide character}\
-    1 {error reading "*": invalid or incomplete multibyte or wide character} 43 44 c0 40 EF GHI}
+    0 1 {error reading "*": invalid or incomplete multibyte or wide character} 0 43 44 c0 40 EF GHI}
 
 # ### ### ### ######### ######### #########
 

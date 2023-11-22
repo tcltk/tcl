@@ -817,7 +817,7 @@ Tcl_AfterObjCmd(
      * First lets see if the command was passed a number as the first argument.
      */
 
-    if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
+    if (TclGetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
 	if (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0, &index)
 		!= TCL_OK) {
 	    const char *arg = TclGetString(objv[1]);

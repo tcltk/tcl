@@ -2360,6 +2360,14 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/auto0/$$i/*.tm \
 			$(DISTDIR)/tests/auto0/$$i; \
 	    done;
+	@mkdir $(DISTDIR)/tests/zipfiles
+	$(INSTALL_DATA_DIR) $(DISTDIR)/tests/zipfiles
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/zipfiles/*.zip \
+		$(DISTDIR)/tests/zipfiles
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/zipfiles/README \
+		$(DISTDIR)/tests/zipfiles
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/zipfiles/LICENSE-libzip \
+		$(DISTDIR)/tests/zipfiles
 	$(INSTALL_DATA_DIR) $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/Makefile.in $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/configure.ac \

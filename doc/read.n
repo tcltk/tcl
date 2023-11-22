@@ -61,13 +61,15 @@ An encoding error is reported by the POSIX error code \fBEILSEQ\fR.
 In blocking mode, the error is directly thrown, even, if there is a
 leading decodable data portion.
 The file pointer is advanced just before the encoding error.
-An eventual well decoded data chunk before the encoding error is lost.
-It is proposed to return this portion within the additional key \fB-data\fR
-in the error dictionary.
+An eventual well decoded data chunk before the encoding error is returned
+in the error option dictionary key \fB-data\fR.
+The value of the key contains the empty string, if the error arises at the
+first data position.
 .PP
 In non blocking mode, first, any data without encoding error is returned
 (without error state).
 In the next call, no data is returned and the \fBEILSEQ\fR error state is set.
+The key \fB-data\fR is not present.
 .PP
 Here is an example with an encoding error in UTF-8 encoding, which is then
 introspected by a switch to the binary encoding. The test file contains a not
@@ -87,7 +89,7 @@ file35a65a0
 % catch {read $f} e d
 1
 % set d
--code 1 -level 0
+-data A -code 1 -level 0
 -errorstack {INNER {invokeStk1 read file35a65a0}}
 -errorcode {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}
 -errorinfo {...} -errorline 1
@@ -98,6 +100,11 @@ file35a65a0
 ÃB
 % close $f
 .CE
+The already decoded data "A" is returned in the error options dictionary key
+\fB-data\fR.
+The file position is advanced on the encoding error position 1.
+The data at the error position is thus recovered by the next \fBread\fR command.
+.PP
 Non blocking example
 .
 .CS

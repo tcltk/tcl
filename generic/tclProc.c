@@ -784,7 +784,7 @@ TclObjGetFrame(
     if (objPtr == NULL) {
 	/* Do nothing */
     } else if (TCL_OK == Tcl_GetIntFromObj(NULL, objPtr, &level)) {
-	Tcl_GetWideIntFromObj(NULL, objPtr, &w);
+	TclGetWideIntFromObj(NULL, objPtr, &w);
 	if (w < 0 || w > INT_MAX || curLevel > w + INT_MAX) {
 	    result = -1;
 	} else {
