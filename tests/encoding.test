@@ -39,7 +39,6 @@ testConstraint testencoding [llength [info commands testencoding]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint teststringbytes [llength [info commands teststringbytes]]
 testConstraint exec [llength [info commands exec]]
-testConstraint testgetencpath [llength [info commands testgetencpath]]
 
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
@@ -1029,15 +1028,13 @@ foreach from {cp932 shiftjis euc-jp iso2022-jp} {
     }
 }
 
-test encoding-26.0 {Tcl_GetEncodingSearchPath} -constraints {
-    testgetencpath
-} -setup {
-    set origPath [testgetencpath]
-    testsetencpath slappy
+test encoding-26.0 {Tcl_GetEncodingSearchPath} -setup {
+    set origPath [encoding dirs]
+    encoding dirs slappy
 } -body {
-    testgetencpath
+    encoding dirs
 } -cleanup {
-    testsetencpath $origPath
+    encoding dirs $origPath
 } -result slappy
 
 file delete {*}[glob -directory [temporaryDirectory] *.chars *.tcltestout]
