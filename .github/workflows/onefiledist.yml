@@ -163,6 +163,26 @@ jobs:
         working-directory: 1dist
         env:
           TCL_PATCHLEVEL: ${{ steps.cfg.outputs.patchlevel }}
+      - name: Sign Executable
+        # Adapted from https://federicoterzi.com/blog/automatic-codesigning-on-windows-using-github-actions/
+        env:
+          CODESIGN_PWD: ${{ secrets.CODESIGN_PWD}}
+          CODESIGN_INTERMEDIATE_BASE64: ${{ secrets.CODESIGN_INTERMEDIATE_BASE64 }}
+          CODESIGN_BASE64: ${{ secrets.CODESIGN_BASE64}}
+          TCL_PATCHLEVEL: ${{ steps.cfg.outputs.patchlevel }}
+        if: env.CODESIGN_BASE64
+        run: |
+          New-Item -ItemType directory -Path certificate
+          Set-Content -Path certificate\certificate.txt -Value $env:CODESIGN_BASE64
+          certutil -decode certificate\certificate.txt certificate\certificate.pfx
+          Set-Content -Path certificate\intermediate.txt -Value $env:CODESIGN_INTERMEDIATE_BASE64
+          certutil -decode certificate\intermediate.txt certificate\intermediate.crt
+
+          & signtool sign /fd SHA256 /p $env:CODESIGN_PWD /ac certificate\intermediate.crt /f certificate\certificate.pfx /tr "http://timestamp.sectigo.com/rfc3161" /td sha256 tclsh${TCL_PATCHLEVEL}_snapshot.exe
+
+          Remove-Item -Recurse -Force certificate
+        working-directory: 1dist
+        shell: pwsh
       - name: Upload
         uses: actions/upload-artifact@v3
         with:
