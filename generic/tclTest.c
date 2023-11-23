@@ -2086,7 +2086,6 @@ static int UtfExtWrapper(
     } flagMap[] = {
 	{"start", TCL_ENCODING_START},
 	{"end", TCL_ENCODING_END},
-	{"stoponerror", TCL_ENCODING_PROFILE_STRICT},
 	{"noterminate", TCL_ENCODING_NO_TERMINATE},
 	{"charlimit", TCL_ENCODING_CHAR_LIMIT},
 	{"profiletcl8", TCL_ENCODING_PROFILE_TCL8},
@@ -3813,7 +3812,7 @@ TestlistrepCmd(
     Tcl_Obj *const objv[])      /* Argument objects. */
 {
     /* Subcommands supported by this command */
-    const char* subcommands[] = {
+    static const char *const subcommands[] = {
 	"new",
 	"describe",
 	"config",
@@ -4624,11 +4623,11 @@ TestregexpObjCmd(
 	} else {
 	    if (ii == TCL_INDEX_NONE) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
-		newPtr = Tcl_GetRange(objPtr, start, end);
+		newPtr = TclGetRange(objPtr, start, end);
 	    } else if (ii > info.nsubs || info.matches[ii].end <= 0) {
 		newPtr = Tcl_NewObj();
 	    } else {
-		newPtr = Tcl_GetRange(objPtr, info.matches[ii].start,
+		newPtr = TclGetRange(objPtr, info.matches[ii].start,
 			info.matches[ii].end - 1);
 	    }
 	}

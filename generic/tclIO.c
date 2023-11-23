@@ -4934,7 +4934,7 @@ Tcl_GetsObj(
 	     * two times, as gs.bytesWrote is not 0 on the first pass. This feels
 	     * once to much, as the data is anyway not used.
 	     */
-	     
+
 	    /* Set eol to the position that caused the encoding error, and then
 	     * continue to gotEOL, which stores the data that was decoded
 	     * without error to objPtr.  This allows the caller to do something
@@ -7616,6 +7616,33 @@ Tcl_Eof(
     return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclChannelGetBlockingMode --
+ *
+ *	Returns 1 if the channel is in blocking mode (default), 0 otherwise.
+ *
+ * Results:
+ *	1 or 0, always.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclChannelGetBlockingMode(
+    Tcl_Channel chan)
+{
+    ChannelState *statePtr = ((Channel *) chan)->state;
+				/* State of real channel structure. */
+
+    return GotFlag(statePtr, CHANNEL_NONBLOCKING) ? 0 : 1;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9802,6 +9829,7 @@ CopyData(
     ChannelState *inStatePtr, *outStatePtr;
     int result = TCL_OK;
     Tcl_Size sizeb;
+    Tcl_Size sizePart;
     Tcl_WideInt total;
     int size;
     const char *buffer;
@@ -9888,6 +9916,23 @@ CopyData(
 		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
 			!GotFlag(inStatePtr, CHANNEL_NONBLOCKING)
 			,0 /* No append */);
+		/*
+		 * In case of a recoverable encoding error, any data before
+		 * the error should be written. This data is in the bufObj.
+		 * Program flow for this case:
+		 * - Check, if there are any remaining bytes to write
+		 * - If yes, simulate a successful read to write them out
+		 * - Come back here by the outer loop and read again
+		 * - Do not enter in the if below, as there are no pending
+		 *  writes
+		 * - Fail below with a read error
+		 */
+		if (size < 0 && Tcl_GetErrno() == EILSEQ) {
+		    Tcl_GetStringFromObj(bufObj, &sizePart);
+		    if (sizePart > 0) {
+			size = sizePart;
+		    }
+		}
 	    }
 	    underflow = (size >= 0) && (size < sizeb);	/* Input underflow */
 	}
