@@ -17,7 +17,6 @@ if {"::tcltest" ni [namespace children]} {
 unset -nocomplain path
 catch {set oldlang $env(LANG)}
 set env(LANG) C
-
 
 test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unix stdio} {
     set x {}
