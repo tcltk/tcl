@@ -2125,6 +2125,8 @@ dist-packages: configure-packages
 # the name of the .y file so that make doesn't try to automatically regenerate
 # the .c file.
 
+#
+# Remark: see [54a305cb88]. tclDate.c is manually edited, removing the unused "yynerrs" variable
 gendate:
 	bison --output-file=$(GENERIC_DIR)/tclDate.c \
 		--no-lines \
@@ -2358,6 +2360,14 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/auto0/$$i/*.tm \
 			$(DISTDIR)/tests/auto0/$$i; \
 	    done;
+	@mkdir $(DISTDIR)/tests/zipfiles
+	$(INSTALL_DATA_DIR) $(DISTDIR)/tests/zipfiles
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/zipfiles/*.zip \
+		$(DISTDIR)/tests/zipfiles
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/zipfiles/README \
+		$(DISTDIR)/tests/zipfiles
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/zipfiles/LICENSE-libzip \
+		$(DISTDIR)/tests/zipfiles
 	$(INSTALL_DATA_DIR) $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/Makefile.in $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/configure.ac \

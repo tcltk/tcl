@@ -219,7 +219,7 @@ SC_TCL_64BIT_FLAGS
 #	Tcl_UniChar strings to memcmp on big-endian systems.
 #--------------------------------------------------------------------
 
-AC_C_BIGENDIAN
+AC_C_BIGENDIAN(,,,[#])
 
 #--------------------------------------------------------------------
 #	Supply substitutes for missing POSIX library procedures, or

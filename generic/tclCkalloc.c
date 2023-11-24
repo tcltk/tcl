@@ -837,7 +837,7 @@ MemoryCmd(
 	if (objc != 3) {
 	    goto argError;
 	}
-	if (Tcl_GetWideIntFromObj(interp, objv[2], &value) != TCL_OK) {
+	if (TclGetWideIntFromObj(interp, objv[2], &value) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	break_on_malloc = value;
@@ -922,7 +922,7 @@ MemoryCmd(
 	if (objc != 3) {
 	    goto argError;
 	}
-	if (Tcl_GetWideIntFromObj(interp, objv[2], &value) != TCL_OK) {
+	if (TclGetWideIntFromObj(interp, objv[2], &value) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	trace_on_at_malloc = value;

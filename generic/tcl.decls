@@ -532,7 +532,7 @@ declare 143 {
     void Tcl_Finalize(void)
 }
 declare 144 {
-    int Tcl_GetAlias(Tcl_Interp *interp, const char *childCmd,
+    int Tcl_GetAlias2(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
 	    Tcl_Size *argcPtr, const char ***argvPtr)
 }
@@ -544,19 +544,19 @@ declare 146 {
     int Tcl_Flush(Tcl_Channel chan)
 }
 declare 147 {
-    int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
+    int Tcl_GetAliasObj2(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
 	    Tcl_Size *objcPtr, Tcl_Obj ***objv)
 }
 declare 148 {
-    int TclGetAlias(Tcl_Interp *interp, const char *childCmd,
+    int Tcl_GetAlias(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	    void *argcPtr, const char ***argvPtr)
+	    int *argcPtr, const char ***argvPtr)
 }
 declare 149 {
-    int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
+    int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	    void *objcPtr, Tcl_Obj ***objv)
+	    int *objcPtr, Tcl_Obj ***objv)
 }
 declare 150 {
     void *Tcl_GetAssocData(Tcl_Interp *interp, const char *name,

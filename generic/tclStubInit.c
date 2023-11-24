@@ -64,13 +64,7 @@
 #undef Tcl_ParseArgsObjv
 #undef Tcl_GetAlias
 #undef Tcl_GetAliasObj
-#undef TclpInetNtoa
-#undef TclWinGetServByName
-#undef TclWinGetSockOpt
-#undef TclWinSetSockOpt
-#undef TclWinNToHS
 #undef TclStaticLibrary
-#undef Tcl_BackgroundError
 #define TclStaticLibrary Tcl_StaticLibrary
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
@@ -114,8 +108,8 @@
 # define TclSplitPath 0
 # define TclFSSplitPath 0
 # define TclParseArgsObjv 0
-# define TclGetAlias 0
-# define TclGetAliasObj 0
+# define Tcl_GetAlias 0
+# define Tcl_GetAliasObj 0
 #else /* !defined(TCL_NO_DEPRECATED) */
 int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     void *objcPtr, Tcl_Obj ***objvPtr) {
@@ -210,11 +204,11 @@ int TclParseArgsObjv(Tcl_Interp *interp,
     *(int *)objcPtr = (int)n;
     return result;
 }
-int TclGetAlias(Tcl_Interp *interp, const char *childCmd,
+int Tcl_GetAlias(Tcl_Interp *interp, const char *childCmd,
 	Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	void *argcPtr, const char ***argvPtr) {
+	int *argcPtr, const char ***argvPtr) {
     Tcl_Size n = TCL_INDEX_NONE;
-    int result = Tcl_GetAlias(interp, childCmd, targetInterpPtr, targetCmdPtr, &n, argvPtr);
+    int result = Tcl_GetAlias2(interp, childCmd, targetInterpPtr, targetCmdPtr, &n, argvPtr);
     if (argcPtr) {
 	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
@@ -222,15 +216,15 @@ int TclGetAlias(Tcl_Interp *interp, const char *childCmd,
 	    }
 	    return TCL_ERROR;
 	}
-	*(int *)argcPtr = (int)n;
+	*argcPtr = (int)n;
     }
     return result;
 }
-int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
+int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
 	Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
-	void *objcPtr, Tcl_Obj ***objv) {
+	int *objcPtr, Tcl_Obj ***objv) {
     Tcl_Size n = TCL_INDEX_NONE;
-    int result = Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, &n, objv);
+    int result = Tcl_GetAliasObj2(interp, childCmd, targetInterpPtr, targetCmdPtr, &n, objv);
     if (objcPtr) {
 	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
@@ -238,7 +232,7 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
 	    }
 	    return TCL_ERROR;
 	}
-	*(int *)objcPtr = (int)n;
+	*objcPtr = (int)n;
     }
     return result;
 }
@@ -338,7 +332,7 @@ doNothing(void)
 {
     /* dummy implementation, no need to do anything */
 }
-#   define TclWinAddProcess (void (*) (void *, size_t)) doNothing
+#   define TclWinAddProcess (void (*) (void *, Tcl_Size)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
 
 #define TclWinNoBackslash winNoBackslash
@@ -363,10 +357,10 @@ void *TclWinGetTclInstance()
     return hInstance;
 }
 
-size_t
+Tcl_Size
 TclpGetPid(Tcl_Pid pid)
 {
-    return (size_t)pid;
+    return (Tcl_Size)PTR2INT(pid);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -601,8 +595,8 @@ static const TclIntStubs tclIntStubs = {
     TclHandleRelease, /* 149 */
     TclRegAbout, /* 150 */
     TclRegExpRangeUniChar, /* 151 */
-    TclSetLibraryPath, /* 152 */
-    TclGetLibraryPath, /* 153 */
+    0, /* 152 */
+    0, /* 153 */
     0, /* 154 */
     0, /* 155 */
     TclRegError, /* 156 */
@@ -997,12 +991,12 @@ const TclStubs tclStubs = {
     Tcl_ExprObj, /* 141 */
     Tcl_ExprString, /* 142 */
     Tcl_Finalize, /* 143 */
-    Tcl_GetAlias, /* 144 */
+    Tcl_GetAlias2, /* 144 */
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
-    Tcl_GetAliasObj, /* 147 */
-    TclGetAlias, /* 148 */
-    TclGetAliasObj, /* 149 */
+    Tcl_GetAliasObj2, /* 147 */
+    Tcl_GetAlias, /* 148 */
+    Tcl_GetAliasObj, /* 149 */
     Tcl_GetAssocData, /* 150 */
     Tcl_GetChannel, /* 151 */
     Tcl_GetChannelBufferSize, /* 152 */

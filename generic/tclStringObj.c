@@ -402,7 +402,7 @@ Tcl_GetCharLength(
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	(void) Tcl_GetByteArrayFromObj(objPtr, &numChars);
+	(void) Tcl_GetBytesFromObj(NULL, objPtr, &numChars);
 	return numChars;
     }
 
@@ -453,7 +453,7 @@ TclGetCharLength(
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	(void) Tcl_GetByteArrayFromObj(objPtr, &numChars);
+	(void) Tcl_GetBytesFromObj(NULL, objPtr, &numChars);
     } else {
 	Tcl_GetString(objPtr);
 	numChars = TclNumUtfChars(objPtr->bytes, objPtr->length);
@@ -548,7 +548,7 @@ Tcl_GetUniChar(
 
     if (TclIsPureByteArray(objPtr)) {
 	Tcl_Size length = 0;
-	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+	unsigned char *bytes = Tcl_GetBytesFromObj(NULL, objPtr, &length);
 	if (index >= length) {
 		return -1;
 	}
@@ -607,7 +607,7 @@ TclGetUniChar(
 
     if (TclIsPureByteArray(objPtr)) {
 	Tcl_Size length = 0;
-	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+	unsigned char *bytes = Tcl_GetBytesFromObj(NULL, objPtr, &length);
 	if (index >= length) {
 		return -1;
 	}
@@ -740,7 +740,7 @@ Tcl_GetRange(
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+	unsigned char *bytes = Tcl_GetBytesFromObj(NULL, objPtr, &length);
 
 	if (last < 0 || last >= length) {
 	    last = length - 1;
@@ -818,7 +818,7 @@ TclGetRange(
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+	unsigned char *bytes = Tcl_GetBytesFromObj(NULL, objPtr, &length);
 
 	if (last < 0 || last >= length) {
 	    last = length - 1;
@@ -1406,7 +1406,7 @@ Tcl_AppendObjToObj(
 	/*
 	 * One might expect the code here to be
 	 *
-	 *  bytes = Tcl_GetByteArrayFromObj(appendObjPtr, &length);
+	 *  bytes = Tcl_GetBytesFromObj(NULL, appendObjPtr, &length);
 	 *  TclAppendBytesToByteArray(objPtr, bytes, length);
 	 *
 	 * and essentially all of the time that would be fine. However, it
@@ -1424,8 +1424,8 @@ Tcl_AppendObjToObj(
 
 	Tcl_Size lengthSrc = 0;
 
-	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
-	(void) Tcl_GetByteArrayFromObj(appendObjPtr, &lengthSrc);
+	(void) Tcl_GetBytesFromObj(NULL, objPtr, &length);
+	(void) Tcl_GetBytesFromObj(NULL, appendObjPtr, &lengthSrc);
 
 	/*
 	 * Grow buffer enough for the append.
@@ -1445,7 +1445,7 @@ Tcl_AppendObjToObj(
 	 */
 
 	TclAppendBytesToByteArray(objPtr,
-		Tcl_GetByteArrayFromObj(appendObjPtr, (Tcl_Size *) NULL), lengthSrc);
+		Tcl_GetBytesFromObj(NULL, appendObjPtr, (Tcl_Size *) NULL), lengthSrc);
 	return;
     }
 
@@ -1848,7 +1848,7 @@ Tcl_AppendFormatToObj(
 	char *end;
 	int gotMinus = 0, gotHash = 0, gotZero = 0, gotSpace = 0, gotPlus = 0;
 	int gotPrecision, sawFlag, useShort = 0, useBig = 0;
-	Tcl_Size width, precision;
+	Tcl_WideInt width, precision;
 #ifndef TCL_WIDE_INT_IS_LONG
 	int useWide = 0;
 #endif
@@ -1964,12 +1964,12 @@ Tcl_AppendFormatToObj(
 	    unsigned long long ull;
 	    ull = strtoull(format, &end, 10);
 	    /* Comparison is >=, not >, to leave room for nul */
-	    if (ull >= TCL_SIZE_MAX) {
+	    if (ull >= WIDE_MAX) {
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
-	    width = (Tcl_Size)ull;
+	    width = (Tcl_WideInt)ull;
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
@@ -1978,7 +1978,7 @@ Tcl_AppendFormatToObj(
 		errCode = gotXpg ? "INDEXRANGE" : "FIELDVARMISMATCH";
 		goto errorMsg;
 	    }
-	    if (TclGetSizeIntFromObj(interp, objv[objIndex], &width) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[objIndex], &width) != TCL_OK) {
 		goto error;
 	    }
 	    if (width < 0) {
@@ -2010,12 +2010,12 @@ Tcl_AppendFormatToObj(
 	    unsigned long long ull;
 	    ull = strtoull(format, &end, 10);
 	    /* Comparison is >=, not >, to leave room for nul */
-	    if (ull >= TCL_SIZE_MAX) {
+	    if (ull >= WIDE_MAX) {
 		msg = overflow;
 		errCode = "OVERFLOW";
 		goto errorMsg;
 	    }
-	    precision = (Tcl_Size)ull;
+	    precision = (Tcl_WideInt)ull;
 	    format = end;
 	    step = TclUtfToUniChar(format, &ch);
 	} else if (ch == '*') {
@@ -2024,7 +2024,7 @@ Tcl_AppendFormatToObj(
 		errCode = gotXpg ? "INDEXRANGE" : "FIELDVARMISMATCH";
 		goto errorMsg;
 	    }
-	    if (TclGetSizeIntFromObj(interp, objv[objIndex], &precision)
+	    if (TclGetWideIntFromObj(interp, objv[objIndex], &precision)
 		    != TCL_OK) {
 		goto error;
 	    }
@@ -2471,16 +2471,14 @@ Tcl_AppendFormatToObj(
 		*p++ = '+';
 	    }
 	    if (width) {
-		p += snprintf(
-		    p, TCL_INTEGER_SPACE, "%" TCL_SIZE_MODIFIER "d", width);
+		p += snprintf(p, TCL_INTEGER_SPACE, "%" TCL_LL_MODIFIER "d", width);
 		if (width > length) {
 		    length = width;
 		}
 	    }
 	    if (gotPrecision) {
 		*p++ = '.';
-		p += snprintf(
-		    p, TCL_INTEGER_SPACE, "%" TCL_SIZE_MODIFIER "d", precision);
+		p += snprintf(p, TCL_INTEGER_SPACE, "%" TCL_LL_MODIFIER "d", precision);
 		if (precision > TCL_SIZE_MAX - length) {
 		    msg = overflow;
 		    errCode = "OVERFLOW";
@@ -2956,7 +2954,7 @@ TclStringRepeat(
 
     if (binary) {
 	/* Result will be pure byte array. Pre-size it */
-	(void)Tcl_GetByteArrayFromObj(objPtr, &length);
+	(void)Tcl_GetBytesFromObj(NULL, objPtr, &length);
 	maxCount = TCL_SIZE_MAX;
     } else if (unichar) {
 	/* Result will be pure Tcl_UniChar array. Pre-size it. */
@@ -2999,7 +2997,7 @@ TclStringRepeat(
 	    done *= 2;
 	}
 	TclAppendBytesToByteArray(objResultPtr,
-		Tcl_GetByteArrayFromObj(objResultPtr, (Tcl_Size *) NULL),
+		Tcl_GetBytesFromObj(NULL, objResultPtr, (Tcl_Size *) NULL),
 		(count - done) * length);
     } else if (unichar) {
 	/*
@@ -3170,7 +3168,7 @@ TclStringCat(
 	     */
 
 	    if (TclIsPureByteArray(objPtr)) {
-		(void)Tcl_GetByteArrayFromObj(objPtr, &numBytes); /* PANIC? */
+		(void)Tcl_GetBytesFromObj(NULL, objPtr, &numBytes); /* PANIC? */
 
 		if (numBytes) {
 		    last = objc - oc;
@@ -3319,7 +3317,7 @@ TclStringCat(
 	    Tcl_Size start = 0;
 
 	    objResultPtr = *objv++; objc--;
-	    (void)Tcl_GetByteArrayFromObj(objResultPtr, &start);
+	    (void)Tcl_GetBytesFromObj(NULL, objResultPtr, &start);
 	    dst = Tcl_SetByteArrayLength(objResultPtr, length) + start;
 	} else {
 	    objResultPtr = Tcl_NewByteArrayObj(NULL, length);
@@ -3336,7 +3334,7 @@ TclStringCat(
 
 	    if (TclIsPureByteArray(objPtr)) {
 		Tcl_Size more = 0;
-		unsigned char *src = Tcl_GetByteArrayFromObj(objPtr, &more);
+		unsigned char *src = Tcl_GetBytesFromObj(NULL, objPtr, &more);
 		memcpy(dst, src, more);
 		dst += more;
 	    }
@@ -3500,8 +3498,8 @@ TclStringCmp(
 	     * arrays anyway, and we have no memcasecmp() for some reason... :^)
 	     */
 
-	    s1 = (char *) Tcl_GetByteArrayFromObj(value1Ptr, &s1len);
-	    s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
+	    s1 = (char *) Tcl_GetBytesFromObj(NULL, value1Ptr, &s1len);
+	    s2 = (char *) Tcl_GetBytesFromObj(NULL, value2Ptr, &s2len);
 	    memCmpFn = memcmp;
 	} else if (TclHasInternalRep(value1Ptr, &tclStringType)
 		&& TclHasInternalRep(value2Ptr, &tclStringType)) {
@@ -3690,10 +3688,10 @@ TclStringFirst(
 
     if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
 	unsigned char *end, *check, *bh;
-	unsigned char *bn = Tcl_GetByteArrayFromObj(needle, &ln);
+	unsigned char *bn = Tcl_GetBytesFromObj(NULL, needle, &ln);
 
 	/* Find bytes in bytes */
-	bh = Tcl_GetByteArrayFromObj(haystack, &lh);
+	bh = Tcl_GetBytesFromObj(NULL, haystack, &lh);
 	if ((lh < ln) || (start > lh - ln)) {
 	    /* Don't start the loop if there cannot be a valid answer */
 	    goto firstEnd;
@@ -3796,8 +3794,8 @@ TclStringLast(
     }
 
     if (TclIsPureByteArray(needle) && TclIsPureByteArray(haystack)) {
-	unsigned char *check, *bh = Tcl_GetByteArrayFromObj(haystack, &lh);
-	unsigned char *bn = Tcl_GetByteArrayFromObj(needle, &ln);
+	unsigned char *check, *bh = Tcl_GetBytesFromObj(NULL, haystack, &lh);
+	unsigned char *bn = Tcl_GetBytesFromObj(NULL, needle, &ln);
 
 	if (last >= lh) {
 	    last = lh - 1;
@@ -3896,12 +3894,12 @@ TclStringReverse(
 
     if (TclIsPureByteArray(objPtr)) {
 	Tcl_Size numBytes = 0;
-	unsigned char *from = Tcl_GetByteArrayFromObj(objPtr, &numBytes);
+	unsigned char *from = Tcl_GetBytesFromObj(NULL, objPtr, &numBytes);
 
 	if (!inPlace || Tcl_IsShared(objPtr)) {
 	    objPtr = Tcl_NewByteArrayObj(NULL, numBytes);
 	}
-	ReverseBytes(Tcl_GetByteArrayFromObj(objPtr, (Tcl_Size *)NULL), from, numBytes);
+	ReverseBytes(Tcl_GetBytesFromObj(NULL, objPtr, (Tcl_Size *)NULL), from, numBytes);
 	return objPtr;
     }
 
@@ -4048,7 +4046,7 @@ TclStringReplace(
 
     if (TclIsPureByteArray(objPtr)) {
 	Tcl_Size numBytes = 0;
-	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &numBytes);
+	unsigned char *bytes = Tcl_GetBytesFromObj(NULL, objPtr, &numBytes);
 
 	if (insertPtr == NULL) {
 	    /* Replace something with nothing. */
@@ -4072,7 +4070,7 @@ TclStringReplace(
 	if (TclIsPureByteArray(insertPtr)) {
 	    Tcl_Size newBytes = 0;
 	    unsigned char *iBytes
-		    = Tcl_GetByteArrayFromObj(insertPtr, &newBytes);
+		    = Tcl_GetBytesFromObj(NULL, insertPtr, &newBytes);
 
 	    if (count == newBytes && inPlace && !Tcl_IsShared(objPtr)) {
 		/*

@@ -2879,6 +2879,12 @@ typedef Tcl_Channel (TclOpenFileChannelProc_)(Tcl_Interp *interp,
 typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, TCL_HASH_TYPE *lengthPtr,
 	Tcl_Encoding *encodingPtr);
 
+#ifdef _WIN32
+#   define TCLFSENCODING tclUtf8Encoding /* On Windows, all Unicode (except surrogates) are valid */
+#else
+#   define TCLFSENCODING NULL /* On Non-Windows, use the system encoding for validation checks */
+#endif
+
 /*
  * A ProcessGlobalValue struct exists for each internal value in Tcl that is
  * to be shared among several threads. Each thread sees a (Tcl_Obj) copy of
@@ -2939,10 +2945,10 @@ typedef struct ProcessGlobalValue {
 
 #define ENCODING_PROFILE_MASK     0xFF000000
 #define ENCODING_PROFILE_GET(flags_)  ((flags_) & ENCODING_PROFILE_MASK)
-#define ENCODING_PROFILE_SET(flags_, profile_) \
-    do {                                       \
-	(flags_) &= ~ENCODING_PROFILE_MASK;    \
-	(flags_) |= profile_;                  \
+#define ENCODING_PROFILE_SET(flags_, profile_)       \
+    do {                                             \
+	(flags_) &= ~ENCODING_PROFILE_MASK;              \
+	(flags_) |= ((profile_) & ENCODING_PROFILE_MASK);\
     } while (0)
 
 /*
@@ -3037,7 +3043,6 @@ TclEncodingProfileNameToId(Tcl_Interp *interp,
 			   int *profilePtr);
 MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 						    int profileId);
-MODULE_SCOPE int TclEncodingSetProfileFlags(int flags);
 MODULE_SCOPE void TclGetEncodingProfiles(Tcl_Interp *interp);
 
 /*
@@ -3230,6 +3235,7 @@ MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 MODULE_SCOPE double	TclCeil(const void *a);
 MODULE_SCOPE void	TclChannelPreserve(Tcl_Channel chan);
 MODULE_SCOPE void	TclChannelRelease(Tcl_Channel chan);
+MODULE_SCOPE int	TclChannelGetBlockingMode(Tcl_Channel chan);
 MODULE_SCOPE int	TclCheckArrayTraces(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *name, int index);
 MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
@@ -4059,36 +4065,6 @@ MODULE_SCOPE int TclCommandWordLimitError(Tcl_Interp *interp, Tcl_Size count);
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           ((Tcl_Size)-2)
 #define TCL_INDEX_START         ((Tcl_Size)0)
-
-/*
- *------------------------------------------------------------------------
- *
- * TclGetSizeIntFromObj --
- *
- *    Extract a Tcl_Size from a Tcl_Obj
- *
- * Results:
- *    TCL_OK / TCL_ERROR
- *
- * Side effects:
- *    On success, the integer value is stored in *sizePtr. On error,
- *    an error message in interp it it is not NULL.
- *
- *------------------------------------------------------------------------
- */
-static inline int TclGetSizeIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *sizePtr) {
-    if (sizeof(Tcl_Size) == sizeof(int)) {
-	return TclGetIntFromObj(interp, objPtr, (int *)sizePtr);
-    } else {
-	Tcl_WideInt wide;
-	if (TclGetWideIntFromObj(interp, objPtr, &wide) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	*sizePtr = (Tcl_Size)wide;
-	return TCL_OK;
-    }
-}
-
 
 /*
  *----------------------------------------------------------------------

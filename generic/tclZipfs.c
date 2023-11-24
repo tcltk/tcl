@@ -327,6 +327,7 @@ static int		InitWritableChannel(Tcl_Interp *interp,
 static int		ListMountPoints(Tcl_Interp *interp);
 static int		ContainsMountPoint(const char *path, int pathLen);
 static void		CleanupMount(ZipFile *zf);
+static Tcl_Obj *	ScriptLibrarySetup(const char *dirName);
 static void		SerializeCentralDirectoryEntry(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
@@ -2757,7 +2758,7 @@ ZipFSMkKeyObjCmd(
     }
 
     passObj = Tcl_NewByteArrayObj(NULL, 264);
-    passBuf = Tcl_GetByteArrayFromObj(passObj, (Tcl_Size *)NULL);
+    passBuf = Tcl_GetBytesFromObj(NULL, passObj, (Tcl_Size *)NULL);
     while (len > 0) {
 	int ch = pw[len - 1];
 
@@ -2889,7 +2890,11 @@ ZipAddFile(
      * crazy enough to embed NULs in filenames, they deserve what they get!
      */
 
-    zpathExt = Tcl_UtfToExternalDString(tclUtf8Encoding, zpathTcl, -1, &zpathDs);
+    if (Tcl_UtfToExternalDStringEx(interp, tclUtf8Encoding, zpathTcl, TCL_INDEX_NONE, 0, &zpathDs, NULL) != TCL_OK) {
+	Tcl_DStringFree(&zpathDs);
+	return TCL_ERROR;
+    }
+    zpathExt = Tcl_DStringValue(&zpathDs);
     zpathlen = strlen(zpathExt);
     if (zpathlen + ZIP_CENTRAL_HEADER_LEN > bufsize) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3558,7 +3563,11 @@ ZipFSMkZipOrImg(
 	}
 	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 
-	name = Tcl_UtfToExternalDString(tclUtf8Encoding, z->name, TCL_INDEX_NONE, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, tclUtf8Encoding, z->name, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    ret = TCL_ERROR;
+	    goto done;
+	}
+	name = Tcl_DStringValue(&ds);
 	len = Tcl_DStringLength(&ds);
 	SerializeCentralDirectoryEntry(start, end, (unsigned char *) buf,
 		z, len);
@@ -4208,6 +4217,26 @@ ZipFSListObjCmd(
  *-------------------------------------------------------------------------
  */
 
+/* Utility routine to centralize housekeeping */
+static Tcl_Obj *
+ScriptLibrarySetup(
+    const char *dirName)
+{
+    Tcl_Obj *libDirObj = Tcl_NewStringObj(dirName, -1);
+    Tcl_Obj *subDirObj, *searchPathObj;
+
+    TclNewLiteralStringObj(subDirObj, "encoding");
+    Tcl_IncrRefCount(subDirObj);
+    TclNewObj(searchPathObj);
+    Tcl_ListObjAppendElement(NULL, searchPathObj,
+	    Tcl_FSJoinToPath(libDirObj, 1, &subDirObj));
+    Tcl_DecrRefCount(subDirObj);
+    Tcl_IncrRefCount(searchPathObj);
+    Tcl_SetEncodingSearchPath(searchPathObj);
+    Tcl_DecrRefCount(searchPathObj);
+    return libDirObj;
+}
+
 Tcl_Obj *
 TclZipfs_TclLibrary(void)
 {
@@ -4226,7 +4255,7 @@ TclZipfs_TclLibrary(void)
      */
 
     if (zipfs_literal_tcl_library) {
-	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
+	return ScriptLibrarySetup(zipfs_literal_tcl_library);
     }
 
     /*
@@ -4240,7 +4269,7 @@ TclZipfs_TclLibrary(void)
     Tcl_DecrRefCount(vfsInitScript);
     if (found == TCL_OK) {
 	zipfs_literal_tcl_library = ZIPFS_APP_MOUNT "/tcl_library";
-	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
+	return ScriptLibrarySetup(zipfs_literal_tcl_library);
     }
 
     /*
@@ -4259,17 +4288,17 @@ TclZipfs_TclLibrary(void)
 #endif
 
     if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
-	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
+	return ScriptLibrarySetup(zipfs_literal_tcl_library);
     }
 #elif !defined(NO_DLFCN_H)
     Dl_info dlinfo;
     if (dladdr((const void *)TclZipfs_TclLibrary, &dlinfo) && (dlinfo.dli_fname != NULL)
 	&& (ZipfsAppHookFindTclInit(dlinfo.dli_fname) == TCL_OK)) {
-	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
+	return ScriptLibrarySetup(zipfs_literal_tcl_library);
     }
 #else
     if (ZipfsAppHookFindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
-	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
+	return ScriptLibrarySetup(zipfs_literal_tcl_library);
     }
 #endif /* _WIN32 */
 #endif /* !defined(STATIC_BUILD) */
@@ -4280,7 +4309,7 @@ TclZipfs_TclLibrary(void)
      */
 
     if (zipfs_literal_tcl_library) {
-	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
+	return ScriptLibrarySetup(zipfs_literal_tcl_library);
     }
     return NULL;
 }

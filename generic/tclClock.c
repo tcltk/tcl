@@ -894,7 +894,7 @@ ConvertLocalToUTCUsingC(
     Tcl_MutexLock(&clockMutex);
     errno = 0;
     fields->seconds = (Tcl_WideInt) mktime(&timeVal);
-    localErrno = errno;
+    localErrno = (fields->seconds == -1) ? errno : 0;
     Tcl_MutexUnlock(&clockMutex);
 
     /*

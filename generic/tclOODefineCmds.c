@@ -2498,7 +2498,12 @@ ClassMixinSet(
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Size mixinc, i;
     Tcl_Obj **mixinv;
-    Class **mixins;
+    Class **mixins;		/* The references to the classes to actually
+				 * install. */
+    Tcl_HashTable uniqueCheck;	/* Note that this hash table is just used as a
+				 * set of class references; it has no payload
+				 * values and keys are always pointers. */
+    int isNew;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2520,12 +2525,20 @@ ClassMixinSet(
     }
 
     mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * mixinc);
+    Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
 
     for (i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
 	    i--;
+	    goto freeAndError;
+	}
+	(void) Tcl_CreateHashEntry(&uniqueCheck, (void *) mixins[i], &isNew);
+	if (!isNew) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "class should only be a direct mixin once", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS",NULL);
 	    goto freeAndError;
 	}
 	if (TclOOIsReachable(oPtr->classPtr, mixins[i])) {
@@ -2537,10 +2550,12 @@ ClassMixinSet(
     }
 
     TclOOClassSetMixins(interp, oPtr->classPtr, mixinc, mixins);
+    Tcl_DeleteHashTable(&uniqueCheck);
     TclStackFree(interp, mixins);
     return TCL_OK;
 
   freeAndError:
+    Tcl_DeleteHashTable(&uniqueCheck);
     TclStackFree(interp, mixins);
     return TCL_ERROR;
 }
@@ -2948,10 +2963,14 @@ ObjMixinSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    Tcl_Size i;
-    Tcl_Size mixinc;
+    Tcl_Size mixinc, i;
     Tcl_Obj **mixinv;
-    Class **mixins;
+    Class **mixins;		/* The references to the classes to actually
+				 * install. */
+    Tcl_HashTable uniqueCheck;	/* Note that this hash table is just used as a
+				 * set of class references; it has no payload
+				 * values and keys are always pointers. */
+    int isNew;
 
     if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2967,19 +2986,32 @@ ObjMixinSet(
     }
 
     mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * mixinc);
+    Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
 
     for (i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
-	    TclStackFree(interp, mixins);
-	    return TCL_ERROR;
+	    goto freeAndError;
+	}
+	(void) Tcl_CreateHashEntry(&uniqueCheck, (void *) mixins[i], &isNew);
+	if (!isNew) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "class should only be a direct mixin once", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS",NULL);
+	    goto freeAndError;
 	}
     }
 
     TclOOObjectSetMixins(oPtr, mixinc, mixins);
     TclStackFree(interp, mixins);
+    Tcl_DeleteHashTable(&uniqueCheck);
     return TCL_OK;
+
+  freeAndError:
+    TclStackFree(interp, mixins);
+    Tcl_DeleteHashTable(&uniqueCheck);
+    return TCL_ERROR;
 }
 
 /*

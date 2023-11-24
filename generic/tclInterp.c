@@ -1292,7 +1292,7 @@ Tcl_CreateAliasObj(
  */
 
 int
-Tcl_GetAlias(
+Tcl_GetAlias2(
     Tcl_Interp *interp,		/* Interp to start search from. */
     const char *aliasName,	/* Name of alias to find. */
     Tcl_Interp **targetInterpPtr,
@@ -1354,7 +1354,7 @@ Tcl_GetAlias(
  */
 
 int
-Tcl_GetAliasObj(
+Tcl_GetAliasObj2(
     Tcl_Interp *interp,		/* Interp to start search from. */
     const char *aliasName,	/* Name of alias to find. */
     Tcl_Interp **targetInterpPtr,

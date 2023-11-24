@@ -1042,13 +1042,8 @@ typedef struct Tcl_DString {
 #define TCL_LINK_SHORT		8
 #define TCL_LINK_USHORT		9
 #define TCL_LINK_UINT		10
-#if defined(TCL_WIDE_INT_IS_LONG) || defined(_WIN32) || defined(__CYGWIN__)
 #define TCL_LINK_LONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT)
 #define TCL_LINK_ULONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
-#else
-#define TCL_LINK_LONG		11
-#define TCL_LINK_ULONG		12
-#endif
 #define TCL_LINK_FLOAT		13
 #define TCL_LINK_WIDE_UINT	14
 #define TCL_LINK_CHARS		15
@@ -2040,14 +2035,9 @@ typedef struct Tcl_EncodingType {
  * changes, ensure ENCODING_PROFILE_* macros in tclInt.h are modified if
  * necessary.
  */
+#define TCL_ENCODING_PROFILE_STRICT   TCL_ENCODING_STOPONERROR
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
-#define TCL_ENCODING_PROFILE_STRICT   0x02000000
-#define TCL_ENCODING_PROFILE_REPLACE  0x03000000
-#if TCL_MAJOR_VERSION < 9
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
-#else
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
-#endif
+#define TCL_ENCODING_PROFILE_REPLACE  0x02000000
 
 /*
  * The following definitions are the error codes returned by the conversion

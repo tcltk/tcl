@@ -3468,7 +3468,7 @@ Tcl_LsearchObjCmd(
 		result = TCL_ERROR;
 		goto done;
 	    }
-	    if (Tcl_GetWideIntFromObj(interp, objv[i+1], &wide) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i+1], &wide) != TCL_OK) {
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -4723,7 +4723,7 @@ Tcl_LsortObjCmd(
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
 	    }
-	    if (Tcl_GetWideIntFromObj(interp, objv[i+1], &wide) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i+1], &wide) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
 	    }
