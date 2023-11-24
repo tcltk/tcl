@@ -156,35 +156,29 @@ jobs:
       - name: Get Exact Version
         run: |
           ./tclsh*.exe $VER_PATH $GITHUB_ENV
+          echo "target=tclsh${TCL_PATCHLEVEL}_snapshot.exe" >> $GITHUB_OUTPUT
         working-directory: win
+        id: exe
+        env:
+          TCL_PATCHLEVEL: ${{ steps.cfg.outputs.patchlevel }}
       - name: Set Executable Name
         run: |
-          cp ../win/tclsh*.exe tclsh${TCL_PATCHLEVEL}_snapshot.exe
+          cp ../win/tclsh*.exe "$TARGET_EXE"
         working-directory: 1dist
         env:
-          TCL_PATCHLEVEL: ${{ steps.cfg.outputs.patchlevel }}
-      - name: Sign Executable
-        # Adapted from https://federicoterzi.com/blog/automatic-codesigning-on-windows-using-github-actions/
+          TARGET_EXE: ${{ steps.exe.outputs.target }}
+      - name: Sign
+        if: ${{ env.HAVE_CAPABILITY }}
+        uses: dlemstra/code-sign-action@v1
+        with:
+          certificate: '${{ secrets.Windows_Certificate_base64 }}'
+          password: '${{ secrets.Windows_Certificate_password }}'
+          folder: 1dist
+          files: ${{ steps.exe.outputs.target }}
         env:
-          CODESIGN_PWD: ${{ secrets.CODESIGN_PWD}}
-          CODESIGN_INTERMEDIATE_BASE64: ${{ secrets.CODESIGN_INTERMEDIATE_BASE64 }}
-          CODESIGN_BASE64: ${{ secrets.CODESIGN_BASE64}}
-          TCL_PATCHLEVEL: ${{ steps.cfg.outputs.patchlevel }}
-        if: env.CODESIGN_BASE64
-        run: |
-          New-Item -ItemType directory -Path certificate
-          Set-Content -Path certificate\certificate.txt -Value $env:CODESIGN_BASE64
-          certutil -decode certificate\certificate.txt certificate\certificate.pfx
-          Set-Content -Path certificate\intermediate.txt -Value $env:CODESIGN_INTERMEDIATE_BASE64
-          certutil -decode certificate\intermediate.txt certificate\intermediate.crt
-
-          & signtool sign /fd SHA256 /p $env:CODESIGN_PWD /ac certificate\intermediate.crt /f certificate\certificate.pfx /tr "http://timestamp.sectigo.com/rfc3161" /td sha256 tclsh${TCL_PATCHLEVEL}_snapshot.exe
-
-          Remove-Item -Recurse -Force certificate
-        working-directory: 1dist
-        shell: pwsh
+          HAVE_CAPABILITY: ${{ secrets.Windows_Certificate_base64 != '' && secrets.Windows_Certificate_password != '' }}
       - name: Upload
         uses: actions/upload-artifact@v3
         with:
           name: Tclsh ${{ steps.cfg.outputs.patchlevel }} Windows single-file build (snapshot)
-          path: '1dist/*_snapshot.exe'
+          path: 1dist/${{ steps.exe.outputs.target }}
