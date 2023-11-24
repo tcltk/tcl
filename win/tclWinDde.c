@@ -90,8 +90,24 @@ static int ddeIsServer = 0;
 
 TCL_DECLARE_MUTEX(ddeMutex)
 
+#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
+# if TCL_UTF_MAX > 3
+#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
+#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
+# else
+#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
+#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
+# endif
+#ifndef Tcl_Size
+#   define Tcl_Size int
+#endif
+#ifndef Tcl_CreateObjCommand2
+#   define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
+#endif
+#endif
+
 /*
- * Forward declarations for functions defined later in this file.
+ * Declarations for functions defined in this file.
  */
 
 static LRESULT CALLBACK	DdeClientWindowProc(HWND hwnd, UINT uMsg,
@@ -117,25 +133,13 @@ static int		DdeObjCmd(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 
-#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
-# if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
-#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
-# else
-#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
-#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
-# endif
-#define Tcl_Size int
-#define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 DLLEXPORT int		Dde_Init(Tcl_Interp *interp);
 DLLEXPORT int		Dde_SafeInit(Tcl_Interp *interp);
 #if TCL_MAJOR_VERSION < 9
-/* With those additional entries, "load dde14.dll" works without 3th argument */
+/* With those additional entries, "load tcldde14.dll" works without 3th argument */
 DLLEXPORT int		Tcldde_Init(Tcl_Interp *interp);
 DLLEXPORT int		Tcldde_SafeInit(Tcl_Interp *interp);
 #endif
