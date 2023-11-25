@@ -79,7 +79,7 @@ jobs:
       - name: Configure
         run: |
           ./configure --disable-symbols --disable-shared --enable-zipfs
-          sed -n '/^PATCH_LEVEL/{s/.*= /patchlevel=/;p}' < Makefile >> $GITHUB_OUTPUT
+          sed -n '/^PATCH_LEVEL/{ s/.*= /patchlevel=/; p; }' < Makefile >> $GITHUB_OUTPUT
         working-directory: unix
         id: cfg
       - name: Build
