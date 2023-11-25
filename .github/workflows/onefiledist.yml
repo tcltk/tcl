@@ -168,7 +168,7 @@ jobs:
         env:
           TARGET_EXE: ${{ steps.exe.outputs.target }}
       - name: Sign
-        if: ${{ env.HAVE_CAPABILITY }}
+        if: ${{ env.HAVE_CAPABILITY != 'false' }}
         uses: dlemstra/code-sign-action@v1
         with:
           certificate: '${{ secrets.Windows_Certificate_base64 }}'
