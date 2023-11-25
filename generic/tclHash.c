@@ -36,7 +36,7 @@
 
 static Tcl_HashEntry *	AllocArrayEntry(Tcl_HashTable *tablePtr, void *keyPtr);
 static int		CompareArrayKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static TCL_HASH_TYPE	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
+static size_t	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Prototypes for the string hash key methods.
@@ -45,7 +45,7 @@ static TCL_HASH_TYPE	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 static Tcl_HashEntry *	AllocStringEntry(Tcl_HashTable *tablePtr,
 			    void *keyPtr);
 static int		CompareStringKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static TCL_HASH_TYPE	HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
+static size_t	HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Function prototypes for static functions in this file:
@@ -247,7 +247,7 @@ CreateHashEntry(
 {
     Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
-    TCL_HASH_TYPE hash, index;
+    size_t hash, index;
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -369,7 +369,7 @@ Tcl_DeleteHashEntry(
     const Tcl_HashKeyType *typePtr;
     Tcl_HashTable *tablePtr;
     Tcl_HashEntry **bucketPtr;
-    TCL_HASH_TYPE index;
+    size_t index;
 
     tablePtr = entryPtr->tablePtr;
 
@@ -588,7 +588,7 @@ Tcl_HashStats(
 {
 #define NUM_COUNTERS 10
     Tcl_Size i;
-    TCL_HASH_TYPE count[NUM_COUNTERS], overflow, j;
+    size_t count[NUM_COUNTERS], overflow, j;
     double average, tmp;
     Tcl_HashEntry *hPtr;
     char *result, *p;
@@ -660,8 +660,8 @@ AllocArrayEntry(
     void *keyPtr)			/* Key to store in the hash table entry. */
 {
     Tcl_HashEntry *hPtr;
-    TCL_HASH_TYPE count = tablePtr->keyType * sizeof(int);
-    TCL_HASH_TYPE size = offsetof(Tcl_HashEntry, key) + count;
+    size_t count = tablePtr->keyType * sizeof(int);
+    size_t size = offsetof(Tcl_HashEntry, key) + count;
 
     if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
@@ -719,13 +719,13 @@ CompareArrayKeys(
  *----------------------------------------------------------------------
  */
 
-static TCL_HASH_TYPE
+static size_t
 HashArrayKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)				/* Key from which to compute hash value. */
 {
     const int *array = (const int *) keyPtr;
-    TCL_HASH_TYPE result;
+    size_t result;
     int count;
 
     for (result = 0, count = tablePtr->keyType; count > 0;
@@ -813,13 +813,13 @@ CompareStringKeys(
  *----------------------------------------------------------------------
  */
 
-static TCL_HASH_TYPE
+static size_t
 HashStringKey(
     TCL_UNUSED(Tcl_HashTable *),
     void *keyPtr)			/* Key from which to compute hash value. */
 {
     const char *string = (const char *)keyPtr;
-    TCL_HASH_TYPE result;
+    size_t result;
     char c;
 
     /*
@@ -937,7 +937,7 @@ static void
 RebuildTable(
     Tcl_HashTable *tablePtr)	/* Table to enlarge. */
 {
-    TCL_HASH_TYPE count, index, oldSize = tablePtr->numBuckets;
+    size_t count, index, oldSize = tablePtr->numBuckets;
     Tcl_HashEntry **oldBuckets = tablePtr->buckets;
     Tcl_HashEntry **oldChainPtr, **newChainPtr;
     Tcl_HashEntry *hPtr;

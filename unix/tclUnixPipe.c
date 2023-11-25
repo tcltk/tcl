@@ -152,7 +152,11 @@ TclpOpenFile(
     const char *native;
     Tcl_DString ds;
 
-    native = Tcl_UtfToExternalDString(NULL, fname, TCL_INDEX_NONE, &ds);
+    if (Tcl_UtfToExternalDStringEx(NULL, NULL, fname, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return NULL;
+    }
+    native = Tcl_DStringValue(&ds);
     fd = TclOSopen(native, mode, 0666);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
     if (fd != -1) {
@@ -209,7 +213,12 @@ TclpCreateTempFile(
 	Tcl_DString dstring;
 	char *native;
 
-	native = Tcl_UtfToExternalDString(NULL, contents, TCL_INDEX_NONE, &dstring);
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
+	    close(fd);
+	    Tcl_DStringFree(&dstring);
+	    return NULL;
+	}
+	native = Tcl_DStringValue(&dstring);
 	if (write(fd, native, Tcl_DStringLength(&dstring)) == -1) {
 	    close(fd);
 	    Tcl_DStringFree(&dstring);
@@ -452,7 +461,15 @@ TclpCreateProcess(
     newArgv = (char **)TclStackAlloc(interp, (argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
-	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], TCL_INDEX_NONE, &dsArray[i]);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, argv[i], TCL_INDEX_NONE, 0, &dsArray[i], NULL) != TCL_OK) {
+	    while (i-- > 0) {
+		Tcl_DStringFree(&dsArray[i]);
+	    }
+	    TclStackFree(interp, newArgv);
+	    TclStackFree(interp, dsArray);
+	    goto error;
+	}
+	newArgv[i] = Tcl_DStringValue(&dsArray[i]);
     }
 
 #if defined(HAVE_VFORK) || defined(HAVE_POSIX_SPAWNP)
@@ -621,7 +638,7 @@ TclpCreateProcess(
     }
 
     TclpCloseFile(errPipeIn);
-    *pidPtr = (Tcl_Pid) INT2PTR(pid);
+    *pidPtr = (Tcl_Pid)INT2PTR(pid);
     return TCL_OK;
 
   error:
@@ -1216,6 +1233,20 @@ PipeOutputProc(
  *----------------------------------------------------------------------
  */
 
+/*
+ * Bug ad5a57f2f271: Tcl_NotifyChannel is not a Tcl_FileProc,
+ * so do not pass it to directly to Tcl_CreateFileHandler.
+ * Instead, pass a wrapper which is a Tcl_FileProc.
+ */
+static void
+PipeWatchNotifyChannelWrapper(
+    void *clientData,
+    int mask)
+{
+    Tcl_Channel channel = (Tcl_Channel)clientData;
+    Tcl_NotifyChannel(channel, mask);
+}
+
 static void
 PipeWatchProc(
     void *instanceData,	/* The pipe state. */
@@ -1230,7 +1261,7 @@ PipeWatchProc(
 	newmask = mask & (TCL_READABLE | TCL_EXCEPTION);
 	if (newmask) {
 	    Tcl_CreateFileHandler(GetFd(psPtr->inFile), newmask,
-		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
+		    PipeWatchNotifyChannelWrapper, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->inFile));
 	}
@@ -1239,7 +1270,7 @@ PipeWatchProc(
 	newmask = mask & (TCL_WRITABLE | TCL_EXCEPTION);
 	if (newmask) {
 	    Tcl_CreateFileHandler(GetFd(psPtr->outFile), newmask,
-		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
+		    PipeWatchNotifyChannelWrapper, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->outFile));
 	}
@@ -1311,7 +1342,7 @@ Tcl_WaitPid(
     while (1) {
 	result = (int) waitpid(real_pid, statPtr, options);
 	if ((result != -1) || (errno != EINTR)) {
-	    return (Tcl_Pid) INT2PTR(result);
+	    return (Tcl_Pid)INT2PTR(result);
 	}
     }
 }

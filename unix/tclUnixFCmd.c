@@ -759,28 +759,35 @@ TclpObjCopyDirectory(
     Tcl_Obj *transPtr;
 
     transPtr = Tcl_FSGetTranslatedPath(NULL,srcPathPtr);
-    Tcl_UtfToExternalDStringEx(NULL, NULL,
+    ret = Tcl_UtfToExternalDStringEx(NULL, NULL,
 	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
-	    -1, TCL_ENCODING_PROFILE_TCL8, &srcString, NULL);
+	    -1, 0, &srcString, NULL);
     if (transPtr != NULL) {
 	Tcl_DecrRefCount(transPtr);
     }
-    transPtr = Tcl_FSGetTranslatedPath(NULL,destPathPtr);
-    Tcl_UtfToExternalDStringEx(NULL, NULL,
+    if (ret != TCL_OK) {
+	*errorPtr = srcPathPtr;
+    } else {
+	transPtr = Tcl_FSGetTranslatedPath(NULL,destPathPtr);
+	ret = Tcl_UtfToExternalDStringEx(NULL, NULL,
 	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
 	    -1, TCL_ENCODING_PROFILE_TCL8, &dstString, NULL);
-    if (transPtr != NULL) {
-	Tcl_DecrRefCount(transPtr);
+	if (transPtr != NULL) {
+	    Tcl_DecrRefCount(transPtr);
+	}
+	if (ret != TCL_OK) {
+	    *errorPtr = destPathPtr;
+	} else {
+	    ret = TraverseUnixTree(TraversalCopy, &srcString, &dstString, &ds, 0);
+	    /* Note above call only sets ds on error */
+	    if (ret != TCL_OK) {
+		*errorPtr = Tcl_DStringToObj(&ds);
+	    }
+	    Tcl_DStringFree(&dstString);
+	}
+	Tcl_DStringFree(&srcString);
     }
-
-    ret = TraverseUnixTree(TraversalCopy, &srcString, &dstString, &ds, 0);
-
-    Tcl_DStringFree(&srcString);
-    Tcl_DStringFree(&dstString);
-
     if (ret != TCL_OK) {
-	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
-	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);
     }
     return ret;
@@ -823,18 +830,24 @@ TclpObjRemoveDirectory(
     int ret;
     Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
 
-    Tcl_UtfToExternalDStringEx(NULL, NULL,
+    ret = Tcl_UtfToExternalDStringEx(NULL, NULL,
 	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
 	    -1, TCL_ENCODING_PROFILE_TCL8, &pathString, NULL);
     if (transPtr != NULL) {
 	Tcl_DecrRefCount(transPtr);
     }
-    ret = DoRemoveDirectory(&pathString, recursive, &ds);
-    Tcl_DStringFree(&pathString);
+    if (ret != TCL_OK) {
+	*errorPtr = pathPtr;
+    } else {
+	ret = DoRemoveDirectory(&pathString, recursive, &ds);
+	Tcl_DStringFree(&pathString);
+	/* Note above call only sets ds on error */
+	if (ret != TCL_OK) {
+	    *errorPtr = Tcl_DStringToObj(&ds);
+	}
+    }
 
     if (ret != TCL_OK) {
-	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
-	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);
     }
     return ret;
@@ -883,7 +896,7 @@ DoRemoveDirectory(
     result = TCL_OK;
     if ((errno != EEXIST) || (recursive == 0)) {
 	if (errorPtr != NULL) {
-	    Tcl_ExternalToUtfDStringEx(NULL, NULL, path, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, errorPtr, NULL);
+	    Tcl_ExternalToUtfDStringEx(NULL, NULL, path, TCL_INDEX_NONE, 0, errorPtr, NULL);
 	}
 	result = TCL_ERROR;
     }
@@ -1132,7 +1145,7 @@ TraverseUnixTree(
   end:
     if (errfile != NULL) {
 	if (errorPtr != NULL) {
-	    Tcl_ExternalToUtfDStringEx(NULL, NULL, errfile, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, errorPtr, NULL);
+	    Tcl_ExternalToUtfDStringEx(NULL, NULL, errfile, TCL_INDEX_NONE, 0, errorPtr, NULL);
 	}
 	result = TCL_ERROR;
     }
@@ -1203,7 +1216,7 @@ TraversalCopy(
 
     if (errorPtr != NULL) {
 	Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(dstPtr),
-		Tcl_DStringLength(dstPtr), TCL_ENCODING_PROFILE_TCL8, errorPtr, NULL);
+		Tcl_DStringLength(dstPtr), 0, errorPtr, NULL);
     }
     return TCL_ERROR;
 }
@@ -1254,7 +1267,7 @@ TraversalDelete(
     }
     if (errorPtr != NULL) {
 	Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(srcPtr),
-		Tcl_DStringLength(srcPtr), TCL_ENCODING_PROFILE_TCL8, errorPtr, NULL);
+		Tcl_DStringLength(srcPtr), 0, errorPtr, NULL);
     }
     return TCL_ERROR;
 }
@@ -1421,7 +1434,7 @@ GetOwnerAttribute(
     } else {
 	Tcl_DString ds;
 
-	Tcl_ExternalToUtfDStringEx(NULL, NULL, pwPtr->pw_name, TCL_INDEX_NONE, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+	(void)Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, TCL_INDEX_NONE, &ds);
 	*attributePtrPtr = Tcl_DStringToObj(&ds);
     }
     return TCL_OK;
@@ -1497,7 +1510,7 @@ SetGroupAttribute(
     int result;
     const char *native;
 
-    if (Tcl_GetWideIntFromObj(NULL, attributePtr, &gid) != TCL_OK) {
+    if (TclGetWideIntFromObj(NULL, attributePtr, &gid) != TCL_OK) {
 	Tcl_DString ds;
 	struct group *groupPtr = NULL;
 	const char *string;
@@ -1505,7 +1518,11 @@ SetGroupAttribute(
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 
-	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, length, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+	native = Tcl_DStringValue(&ds);
 	groupPtr = TclpGetGrNam(native); /* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
@@ -1516,7 +1533,7 @@ SetGroupAttribute(
 			" group \"%s\" does not exist",
 			TclGetString(fileName), string));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETGRP",
-			"NO_GROUP", NULL);
+			"NO_GROUP", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1564,7 +1581,7 @@ SetOwnerAttribute(
     int result;
     const char *native;
 
-    if (Tcl_GetWideIntFromObj(NULL, attributePtr, &uid) != TCL_OK) {
+    if (TclGetWideIntFromObj(NULL, attributePtr, &uid) != TCL_OK) {
 	Tcl_DString ds;
 	struct passwd *pwPtr = NULL;
 	const char *string;
@@ -1572,7 +1589,11 @@ SetOwnerAttribute(
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 
-	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, string, length, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+	native = Tcl_DStringValue(&ds);
 	pwPtr = TclpGetPwNam(native);			/* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
@@ -1583,7 +1604,7 @@ SetOwnerAttribute(
 			" user \"%s\" does not exist",
 			TclGetString(fileName), string));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETOWN",
-			"NO_USER", NULL);
+			"NO_USER", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1646,11 +1667,11 @@ SetPermissionsAttribute(
 
 	TclNewLiteralStringObj(modeObj, "0o");
 	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, TCL_INDEX_NONE);
-	result = Tcl_GetWideIntFromObj(NULL, modeObj, &mode);
+	result = TclGetWideIntFromObj(NULL, modeObj, &mode);
 	Tcl_DecrRefCount(modeObj);
     }
     if (result == TCL_OK
-	    || Tcl_GetWideIntFromObj(NULL, attributePtr, &mode) == TCL_OK) {
+	    || TclGetWideIntFromObj(NULL, attributePtr, &mode) == TCL_OK) {
 	newMode = (mode_t) (mode & 0x00007FFF);
     } else {
 	Tcl_StatBuf buf;
@@ -1678,7 +1699,7 @@ SetPermissionsAttribute(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unknown permission string format \"%s\"",
 			modeStringPtr));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PERMISSION", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PERMISSION", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1932,7 +1953,7 @@ GetModeFromPermString(
 
 int
 TclpObjNormalizePath(
-    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Interp *interp,
     Tcl_Obj *pathPtr,		/* An unshared object containing the path to
 				 * normalize. */
     int nextCheckpoint)		/* offset to start at in pathPtr.  Must either
@@ -1966,8 +1987,12 @@ TclpObjNormalizePath(
 	const char *lastDir = strrchr(currentPathEndPosition, '/');
 
 	if (lastDir != NULL) {
-	    nativePath = Tcl_UtfToExternalDString(NULL, path,
-		    lastDir-path, &ds);
+	    if (Tcl_UtfToExternalDStringEx(interp, NULL, path,
+		    lastDir-path, 0, &ds, NULL) != TCL_OK) {
+		Tcl_DStringFree(&ds);
+		return -1;
+	    }
+	    nativePath = Tcl_DStringValue(&ds);
 	    if (Realpath(nativePath, normPath) != NULL) {
 		if (*nativePath != '/' && *normPath == '/') {
 		    /*
@@ -2002,8 +2027,12 @@ TclpObjNormalizePath(
 
 	    int accessOk;
 
-	    nativePath = Tcl_UtfToExternalDString(NULL, path,
-		    currentPathEndPosition - path, &ds);
+	    if (Tcl_UtfToExternalDStringEx(interp, NULL, path,
+		    currentPathEndPosition - path, 0, &ds, NULL) != TCL_OK) {
+		Tcl_DStringFree(&ds);
+		return -1;
+	    }
+	    nativePath = Tcl_DStringValue(&ds);
 	    accessOk = access(nativePath, F_OK);
 	    Tcl_DStringFree(&ds);
 
@@ -2047,7 +2076,11 @@ TclpObjNormalizePath(
 	    return 0;
 	}
 
-	nativePath = Tcl_UtfToExternalDString(NULL, path,nextCheckpoint, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, path,nextCheckpoint, 0, &ds, NULL)) {
+	    Tcl_DStringFree(&ds);
+	    return -1;
+	}
+	nativePath = Tcl_DStringValue(&ds);
 	if (Realpath(nativePath, normPath) != NULL) {
 	    Tcl_Size newNormLen;
 
@@ -2083,7 +2116,7 @@ TclpObjNormalizePath(
 	     */
 
 	    Tcl_DStringFree(&ds);
-	    Tcl_ExternalToUtfDStringEx(NULL, NULL, normPath, newNormLen, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+	    Tcl_ExternalToUtfDStringEx(NULL, NULL, normPath, newNormLen, 0, &ds, NULL);
 
 	    if (path[nextCheckpoint] != '\0') {
 		/*
@@ -2171,12 +2204,14 @@ TclUnixOpenTemporaryFile(
     Tcl_Size length;
 
     /*
-     * We should also check against making more then TMP_MAX of these.
+     * We should also check against making more than TMP_MAX of these.
      */
 
     if (dirObj) {
 	string = Tcl_GetStringFromObj(dirObj, &length);
-	Tcl_UtfToExternalDStringEx(NULL, NULL, string, length, TCL_ENCODING_PROFILE_TCL8, &templ, NULL);
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, length, 0, &templ, NULL) != TCL_OK) {
+	    return -1;
+	}
     } else {
 	Tcl_DStringInit(&templ);
 	Tcl_DStringAppend(&templ, DefaultTempDir(), TCL_INDEX_NONE); /* INTL: native */
@@ -2186,7 +2221,10 @@ TclUnixOpenTemporaryFile(
 
     if (basenameObj) {
 	string = Tcl_GetStringFromObj(basenameObj, &length);
-	Tcl_UtfToExternalDStringEx(NULL, NULL, string, length, TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, length, 0, &tmp, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&tmp);
+	    return -1;
+	}
 	TclDStringAppendDString(&templ, &tmp);
 	Tcl_DStringFree(&tmp);
     } else {
@@ -2198,7 +2236,10 @@ TclUnixOpenTemporaryFile(
 #ifdef HAVE_MKSTEMPS
     if (extensionObj) {
 	string = Tcl_GetStringFromObj(extensionObj, &length);
-	Tcl_UtfToExternalDStringEx(NULL, NULL, string, length, TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, length, 0, &tmp, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&templ);
+	    return -1;
+	}
 	TclDStringAppendDString(&templ, &tmp);
 	fd = mkstemps(Tcl_DStringValue(&templ), Tcl_DStringLength(&tmp));
 	Tcl_DStringFree(&tmp);
@@ -2214,8 +2255,11 @@ TclUnixOpenTemporaryFile(
     }
 
     if (resultingNameObj) {
-	Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(&templ),
-		Tcl_DStringLength(&templ), TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
+	if (Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(&templ),
+		Tcl_DStringLength(&templ), 0, &tmp, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&templ);
+	    return -1;
+	}
 	Tcl_SetStringObj(resultingNameObj, Tcl_DStringValue(&tmp),
 		Tcl_DStringLength(&tmp));
 	Tcl_DStringFree(&tmp);
@@ -2301,7 +2345,9 @@ TclpCreateTemporaryDirectory(
 
     if (dirObj) {
 	string = TclGetString(dirObj);
-	Tcl_UtfToExternalDStringEx(NULL, NULL, string, dirObj->length, TCL_ENCODING_PROFILE_TCL8, &templ, NULL);
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, dirObj->length, 0, &templ, NULL) != TCL_OK) {
+	    return NULL;
+	}
     } else {
 	Tcl_DStringInit(&templ);
 	Tcl_DStringAppend(&templ, DefaultTempDir(), TCL_INDEX_NONE); /* INTL: native */
@@ -2314,7 +2360,10 @@ TclpCreateTemporaryDirectory(
     if (basenameObj) {
 	string = TclGetString(basenameObj);
 	if (basenameObj->length) {
-	    Tcl_UtfToExternalDStringEx(NULL, NULL, string, basenameObj->length, TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
+	    if (Tcl_UtfToExternalDStringEx(NULL, NULL, string, basenameObj->length, 0, &tmp, NULL) != TCL_OK) {
+		Tcl_DStringFree(&templ);
+		return NULL;
+	    }
 	    TclDStringAppendDString(&templ, &tmp);
 	    Tcl_DStringFree(&tmp);
 	} else {
@@ -2339,8 +2388,11 @@ TclpCreateTemporaryDirectory(
      * The template has been updated. Tell the caller what it was.
      */
 
-    Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(&templ),
-	    Tcl_DStringLength(&templ), TCL_ENCODING_PROFILE_TCL8, &tmp, NULL);
+    if (Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(&templ),
+	    Tcl_DStringLength(&templ), 0, &tmp, NULL) != TCL_OK) {
+	Tcl_DStringFree(&templ);
+	return NULL;
+    }
     Tcl_DStringFree(&templ);
     return Tcl_DStringToObj(&tmp);
 }

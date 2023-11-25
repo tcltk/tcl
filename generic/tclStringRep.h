@@ -6,7 +6,7 @@
  *
  *  Conceptually, a string is a sequence of Unicode code points. Internally
  *  it may be stored in an encoding form such as a modified version of UTF-8
- *  or UTF-16 (when TCL_UTF_MAX=3) or UTF-32.
+ *  or UTF-32.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation.

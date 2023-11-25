@@ -36,16 +36,17 @@
 #include <sys/types.h>
 #include <loader.h>
 
+
 /*
- * Static functions defined within this file.
+ * Static procedures defined within this file.
  */
 
 static void *		FindSymbol(Tcl_Interp *interp,
-			    Tcl_LoadHandle loadHandle, const char* symbol);
-static void		UnloadFile(Tcl_LoadHandle handle);
+			    Tcl_LoadHandle loadHandle, const char *symbol);
+static void		UnloadFile(Tcl_LoadHandle loadHandle);
 
 /*
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  *
  * TclpDlopen --
  *
@@ -53,13 +54,13 @@ static void		UnloadFile(Tcl_LoadHandle handle);
  *	to the new code.
  *
  * Results:
- *	A standard Tcl completion code.  If an error occurs, an error message
+ *	A standard Tcl completion code. If an error occurs, an error message
  *	is left in the interp's result.
  *
  * Side effects:
  *	New code suddenly appears in memory.
  *
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  */
 
 int
@@ -83,7 +84,7 @@ TclpDlopen(
     const char *native;
 
     /*
-     * First try the full path the user gave us.  This is particularly
+     * First try the full path the user gave us. This is particularly
      * important if the cwd is inside a vfs, and we are trying to load using a
      * relative path.
      */
@@ -100,7 +101,11 @@ TclpDlopen(
 
 	Tcl_DString ds;
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, fileName, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+	native = Tcl_DStringValue(&ds);
 	lm = (Tcl_LibraryInitProc *) load(native, LDR_NOFLAGS);
 	Tcl_DStringFree(&ds);
     }
@@ -132,8 +137,9 @@ TclpDlopen(
     newHandle->clientData = pkg;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
-    *loadHandle = newHandle;
     *unloadProcPtr = &UnloadFile;
+    *loadHandle = newHandle;
+
     return TCL_OK;
 }
 
@@ -147,7 +153,7 @@ TclpDlopen(
  *
  * Results:
  *	Returns a pointer to the function associated with 'symbol' if it is
- *	found.  Otherwise returns NULL and may leave an error message in the
+ *	found. Otherwise returns NULL and may leave an error message in the
  *	interp's result.
  *
  *----------------------------------------------------------------------
@@ -159,14 +165,14 @@ FindSymbol(
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
-    void *retval = ldr_lookup_package((char *) loadHandle, symbol);
+    void *proc = ldr_lookup_package((char *) loadHandle, symbol);
 
-    if (retval == NULL && interp != NULL) {
+    if (proc == NULL && interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"cannot find symbol \"%s\"", symbol));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, (void *)NULL);
     }
-    return retval;
+    return proc;
 }
 
 /*

@@ -413,7 +413,7 @@ static ReflectedTransform * NewReflectedTransform(Tcl_Interp *interp,
 			    Tcl_Obj *cmdpfxObj, int mode, Tcl_Obj *handleObj,
 			    Tcl_Channel parentChan);
 static Tcl_Obj *	NextHandle(void);
-static void		FreeReflectedTransform(ReflectedTransform *rtPtr);
+static Tcl_FreeProc	FreeReflectedTransform;
 static void		FreeReflectedTransformArgs(ReflectedTransform *rtPtr);
 static int		InvokeTclMethod(ReflectedTransform *rtPtr,
 			    const char *method, Tcl_Obj *argOneObj,
@@ -713,7 +713,7 @@ TclChanPushObjCmd(
      * structure.
      */
 
-    Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+    Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
     return TCL_ERROR;
 
 #undef CHAN
@@ -923,7 +923,7 @@ ReflectClose(
 	}
 #endif /* TCL_THREADS */
 
-	Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+	Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
 	return EOK;
     }
 
@@ -940,7 +940,7 @@ ReflectClose(
 #if TCL_THREADS
 	    if (rtPtr->thread != Tcl_GetCurrentThread()) {
 		Tcl_EventuallyFree(rtPtr,
-			(Tcl_FreeProc *) FreeReflectedTransform);
+			FreeReflectedTransform);
 		return errorCode;
 	    }
 #endif /* TCL_THREADS */
@@ -954,7 +954,7 @@ ReflectClose(
 #if TCL_THREADS
 	    if (rtPtr->thread != Tcl_GetCurrentThread()) {
 		Tcl_EventuallyFree(rtPtr,
-			(Tcl_FreeProc *) FreeReflectedTransform);
+			FreeReflectedTransform);
 		return errorCode;
 	    }
 #endif /* TCL_THREADS */
@@ -974,7 +974,7 @@ ReflectClose(
 	ForwardOpToOwnerThread(rtPtr, ForwardedClose, &p);
 	result = p.base.code;
 
-	Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+	Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
 
 	if (result != TCL_OK) {
 	    PassReceivedErrorInterp(interp, &p);
@@ -1033,7 +1033,7 @@ ReflectClose(
 #endif /* TCL_THREADS */
     }
 
-    Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+    Tcl_EventuallyFree(rtPtr, FreeReflectedTransform);
     return errorCodeSet ? errorCode : ((result == TCL_OK) ? EOK : EINVAL);
 }
 
@@ -1870,8 +1870,9 @@ FreeReflectedTransformArgs(
 
 static void
 FreeReflectedTransform(
-    ReflectedTransform *rtPtr)
+    void *blockPtr)
 {
+    ReflectedTransform *rtPtr = (ReflectedTransform *) blockPtr;
     TimerKill(rtPtr);
     ResultClear(&rtPtr->result);
 
@@ -2566,7 +2567,7 @@ ForwardProc(
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
-	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 
 	    paramPtr->transform.size = bytec;
 
@@ -2600,7 +2601,7 @@ ForwardProc(
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
-	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 
 	    paramPtr->transform.size = bytec;
 
@@ -2629,7 +2630,7 @@ ForwardProc(
 	    Tcl_Size bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev; /* Array of returned bytes */
 
-	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 
 	    paramPtr->transform.size = bytec;
 
@@ -2656,7 +2657,7 @@ ForwardProc(
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
-	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 
 	    paramPtr->transform.size = bytec;
 
@@ -3056,7 +3057,7 @@ TransformRead(
     if (rtPtr->thread != Tcl_GetCurrentThread()) {
 	ForwardParam p;
 
-	p.transform.buf = (char *) Tcl_GetByteArrayFromObj(bufObj,
+	p.transform.buf = (char *) Tcl_GetBytesFromObj(NULL, bufObj,
 		&(p.transform.size));
 
 	ForwardOpToOwnerThread(rtPtr, ForwardedInput, &p);
@@ -3084,7 +3085,7 @@ TransformRead(
 	return 0;
     }
 
-    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+    bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
     ResultAdd(&rtPtr->result, bytev, bytec);
 
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
@@ -3146,7 +3147,7 @@ TransformWrite(
 
 	*errorCodePtr = EOK;
 
-	bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+	bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 	res = Tcl_WriteRaw(rtPtr->parent, (char *) bytev, bytec);
 
 	Tcl_DecrRefCount(bufObj);
@@ -3199,7 +3200,7 @@ TransformDrain(
 	    return 0;
 	}
 
-	bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+	bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 	ResultAdd(&rtPtr->result, bytev, bytec);
 
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
@@ -3255,7 +3256,7 @@ TransformFlush(
 	}
 
 	if (op == FLUSH_WRITE) {
-	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 	    res = Tcl_WriteRaw(rtPtr->parent, (char *) bytev, bytec);
 	} else {
 	    res = 0;

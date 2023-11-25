@@ -61,7 +61,7 @@ typedef struct {
 
 typedef struct ProcInfo {
     HANDLE hProcess;
-    size_t dwProcessId;
+    int dwProcessId;
     struct ProcInfo *nextPtr;
 } ProcInfo;
 
@@ -651,7 +651,7 @@ TclpCreateTempFile(
     const char *contents)	/* String to write into temp file, or NULL. */
 {
     WCHAR name[MAX_PATH];
-    const char *native;
+    const char *native = NULL;
     Tcl_DString dstring;
     HANDLE handle;
 
@@ -679,7 +679,10 @@ TclpCreateTempFile(
 	 * Convert the contents from UTF to native encoding
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, contents, TCL_INDEX_NONE, &dstring);
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
+	   goto error;
+	}
+	native = Tcl_DStringValue(&dstring);
 
 	toCopy = Tcl_DStringLength(&dstring);
 	for (p = native; toCopy > 0; p++, toCopy--) {
@@ -719,7 +722,9 @@ TclpCreateTempFile(
 	Tcl_DStringFree(&dstring);
     }
 
-    Tcl_WinConvertError(GetLastError());
+    if (native != NULL) {
+	Tcl_WinConvertError(GetLastError());
+    }
     CloseHandle(handle);
     DeleteFileW(name);
     return NULL;
@@ -859,7 +864,7 @@ TclpCloseFile(
  *--------------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
@@ -869,13 +874,13 @@ TclpGetPid(
 
     Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->dwProcessId == (size_t)pid) {
+	if (infoPtr->dwProcessId == (Tcl_Size)pid) {
 	    Tcl_MutexUnlock(&pipeMutex);
 	    return infoPtr->dwProcessId;
 	}
     }
     Tcl_MutexUnlock(&pipeMutex);
-    return TCL_INDEX_NONE;
+    return -1;
 }
 
 /*
@@ -1163,7 +1168,7 @@ TclpCreateProcess(
     WaitForInputIdle(procInfo.hProcess, 5000);
     CloseHandle(procInfo.hThread);
 
-    *pidPtr = (Tcl_Pid) (size_t) procInfo.dwProcessId;
+    *pidPtr = (Tcl_Pid)INT2PTR(procInfo.dwProcessId);
     if (*pidPtr != 0) {
 	TclWinAddProcess(procInfo.hProcess, procInfo.dwProcessId);
     }
@@ -2559,7 +2564,7 @@ Tcl_WaitPid(
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
-	 if (infoPtr->dwProcessId == (size_t) pid) {
+	 if (infoPtr->dwProcessId == (Tcl_Size)pid) {
 	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}
@@ -2669,7 +2674,7 @@ Tcl_WaitPid(
     } else {
 	errno = ECHILD;
 	*statPtr = 0xC0000000 | ECHILD;
-	result = (Tcl_Pid) -1;
+	result = (Tcl_Pid)-1;
     }
 
     /*
@@ -2703,7 +2708,7 @@ Tcl_WaitPid(
 void
 TclWinAddProcess(
     void *hProcess,		/* Handle to process */
-    size_t id)		/* Global process identifier */
+    Tcl_Size id)		/* Global process identifier */
 {
     ProcInfo *procPtr = (ProcInfo *)Tcl_Alloc(sizeof(ProcInfo));
 

@@ -558,9 +558,13 @@ typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
+#if TCL_MAJOR_VERSION > 8
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
 	Tcl_Size level, const char *command, Tcl_Command commandInfo, Tcl_Size objc,
 	struct Tcl_Obj *const *objv);
+#else
+#define Tcl_CmdObjTraceProc2 Tcl_CmdObjTraceProc
+#endif
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
@@ -583,8 +587,12 @@ typedef void (Tcl_InterpDeleteProc) (void *clientData,
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
+#if TCL_MAJOR_VERSION > 8
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
 	Tcl_Size objc, struct Tcl_Obj *const *objv);
+#else
+#define Tcl_ObjCmdProc2 Tcl_ObjCmdProc
+#endif
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
@@ -990,10 +998,6 @@ typedef struct Tcl_DString {
 
 #define TCL_LEAVE_ERR_MSG	 0x200
 #define TCL_TRACE_ARRAY		 0x800
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-/* Required to support old variable/vdelete/vinfo traces. */
-#define TCL_TRACE_OLD_STYLE	 0x1000
-#endif
 /* Indicate the semantics of the result of a trace. */
 #define TCL_TRACE_RESULT_DYNAMIC 0x8000
 #define TCL_TRACE_RESULT_OBJECT  0x10000
@@ -1029,13 +1033,8 @@ typedef struct Tcl_DString {
 #define TCL_LINK_SHORT		8
 #define TCL_LINK_USHORT		9
 #define TCL_LINK_UINT		10
-#if defined(TCL_WIDE_INT_IS_LONG) || defined(_WIN32) || defined(__CYGWIN__)
 #define TCL_LINK_LONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_INT : TCL_LINK_INT)
 #define TCL_LINK_ULONG		((sizeof(long) != sizeof(int)) ? TCL_LINK_WIDE_UINT : TCL_LINK_UINT)
-#else
-#define TCL_LINK_LONG		11
-#define TCL_LINK_ULONG		12
-#endif
 #define TCL_LINK_FLOAT		13
 #define TCL_LINK_WIDE_UINT	14
 #define TCL_LINK_CHARS		15
@@ -2027,14 +2026,9 @@ typedef struct Tcl_EncodingType {
  * changes, ensure ENCODING_PROFILE_* macros in tclInt.h are modified if
  * necessary.
  */
+#define TCL_ENCODING_PROFILE_STRICT   TCL_ENCODING_STOPONERROR
 #define TCL_ENCODING_PROFILE_TCL8     0x01000000
-#define TCL_ENCODING_PROFILE_STRICT   0x02000000
-#define TCL_ENCODING_PROFILE_REPLACE  0x03000000
-#if TCL_MAJOR_VERSION < 9
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
-#else
-#define TCL_ENCODING_PROFILE_DEFAULT  TCL_ENCODING_PROFILE_TCL8
-#endif
+#define TCL_ENCODING_PROFILE_REPLACE  0x02000000
 
 /*
  * The following definitions are the error codes returned by the conversion
@@ -2087,15 +2081,17 @@ typedef struct Tcl_EncodingType {
  * reflected in regcustom.h.
  */
 
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX == 4
     /*
      * int isn't 100% accurate as it should be a strict 4-byte value
      * (perhaps int32_t). ILP64/SILP64 systems may have troubles. The
      * size of this value must be reflected correctly in regcustom.h.
      */
 typedef int Tcl_UniChar;
-#else
+#elif TCL_UTF_MAX == 3 && !defined(BUILD_tcl)
 typedef unsigned short Tcl_UniChar;
+#else
+#   error "This TCL_UTF_MAX value is not supported"
 #endif
 
 /*
@@ -2126,7 +2122,11 @@ typedef struct Tcl_Config {
  */
 
 typedef void (Tcl_LimitHandlerProc) (void *clientData, Tcl_Interp *interp);
+#if TCL_MAJOR_VERSION > 8
+#define Tcl_LimitHandlerDeleteProc Tcl_FreeProc
+#else
 typedef void (Tcl_LimitHandlerDeleteProc) (void *clientData);
+#endif
 
 #if 0
 /*
@@ -2503,7 +2503,7 @@ static inline void TclBounceRefCount(Tcl_Obj* objPtr, const char* fn, int line)
 #else
 #   undef Tcl_IncrRefCount
 #   define Tcl_IncrRefCount(objPtr) \
-	++(objPtr)->refCount
+	((void)++(objPtr)->refCount)
     /*
      * Use do/while0 idiom for optimum correctness without compiler warnings.
      * https://wiki.c2.com/?TrivialDoWhileLoop
