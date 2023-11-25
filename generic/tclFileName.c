@@ -1172,7 +1172,7 @@ Tcl_GlobObjCmd(
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"missing argument to \"-directory\"", -1));
-		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    if (dir != PATH_NONE) {
@@ -1182,7 +1182,7 @@ Tcl_GlobObjCmd(
 			    : "\"-directory\" cannot be used with \"-path\"",
 			-1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
-			"BADOPTIONCOMBINATION", NULL);
+			"BADOPTIONCOMBINATION", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    dir = PATH_DIR;
@@ -1200,7 +1200,7 @@ Tcl_GlobObjCmd(
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"missing argument to \"-path\"", -1));
-		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    if (dir != PATH_NONE) {
@@ -1210,7 +1210,7 @@ Tcl_GlobObjCmd(
 			    : "\"-path\" cannot be used with \"-dictionary\"",
 			-1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
-			"BADOPTIONCOMBINATION", NULL);
+			"BADOPTIONCOMBINATION", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    dir = PATH_GENERAL;
@@ -1221,7 +1221,7 @@ Tcl_GlobObjCmd(
 	    if (i == (objc-1)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"missing argument to \"-types\"", -1));
-		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (void *)NULL);
 		return TCL_ERROR;
 	    }
 	    typePtr = objv[i+1];
@@ -1242,7 +1242,7 @@ Tcl_GlobObjCmd(
 		"\"-tails\" must be used with either "
 		"\"-directory\" or \"-path\"", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
-		"BADOPTIONCOMBINATION", NULL);
+		"BADOPTIONCOMBINATION", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -1306,11 +1306,15 @@ Tcl_GlobObjCmd(
 		 * We must ensure that we haven't cut off too much, and turned
 		 * a valid path like '/' or 'C:/' into an incorrect path like
 		 * '' or 'C:'. The way we do this is to add a separator if
-		 * there are none presently in the prefix.
+		 * there are none presently in the prefix. Similar treatment
+		 * for the zipfs volume.
 		 */
 
-		if (strpbrk(TclGetString(pathOrDir), "\\/") == NULL) {
+		const char *temp = TclGetString(pathOrDir);
+		if (strpbrk(temp, "\\/") == NULL) {
 		    Tcl_AppendToObj(pathOrDir, last-1, 1);
+		} else if (!strcmp(temp, "//zipfs:")) {
+		    Tcl_AppendToObj(pathOrDir, "/", 1);
 		}
 	    }
 
@@ -1452,7 +1456,7 @@ Tcl_GlobObjCmd(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad argument to \"-types\": %s",
 			TclGetString(look)));
-		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", (void *)NULL);
 		result = TCL_ERROR;
 		join = 0;
 		goto endOfGlob;
@@ -1462,7 +1466,7 @@ Tcl_GlobObjCmd(
 			"only one MacOS type or creator argument"
 			" to \"-types\" allowed", -1));
 		result = TCL_ERROR;
-		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", (void *)NULL);
 		join = 0;
 		goto endOfGlob;
 	    }
@@ -1962,7 +1966,7 @@ DoGlob(
     Tcl_GlobTypeData *types)	/* List object containing list of acceptable
 				 * types. May be NULL. */
 {
-    int baseLength, quoted, count;
+    int baseLength, quoted;
     int result = TCL_OK;
     char *name, *p, *openBrace, *closeBrace, *firstSpecialChar;
     Tcl_Obj *joinedPtr;
@@ -1972,7 +1976,6 @@ DoGlob(
      * past the last initial separator.
      */
 
-    count = 0;
     name = pattern;
     for (; *pattern != '\0'; pattern++) {
 	if (*pattern == '\\') {
@@ -1992,7 +1995,6 @@ DoGlob(
 	} else if (strchr(separators, *pattern) == NULL) {
 	    break;
 	}
-	count++;
     }
 
     /*
@@ -2035,14 +2037,14 @@ DoGlob(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unmatched open-brace in file name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
-		    NULL);
+		    (void *)NULL);
 	    return TCL_ERROR;
 
 	} else if (*p == '}') {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unmatched close-brace in file name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
-		    NULL);
+		    (void *)NULL);
 	    return TCL_ERROR;
 	}
     }

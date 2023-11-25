@@ -29,6 +29,8 @@ for the file.  The time is measured in the standard POSIX fashion as
 seconds from a fixed starting time (often January 1, 1970).  If the file
 does not exist or its access time cannot be queried or set then an error is
 generated.  On Windows, FAT file systems do not support access time.
+On \fBzipfs\fR file systems, access time is mapped to the modification
+time.
 .TP
 \fBfile attributes \fIname\fR
 .TP
@@ -79,6 +81,19 @@ clears the readonly attribute of the file. \fB\-rsrclength\fR gives
 the length of the resource fork of the file, this attribute can only be
 set to the value 0, which results in the resource fork being stripped
 off the file.
+.PP
+On all platforms, files in \fBzipfs\fR mounted archives return the following
+attributes. These are all read-only and cannot be directly set.
+\fB-archive\fR gives the path of the mounted ZIP archive containing the file.
+\fB-compsize\fR gives the compressed size of the file within the archive.
+This is \fB0\fR for directories.
+\fB-crc\fR gives the CRC of the file if present, else \fB0\fR.
+\fB-mount\fR gives the path where the containing archive is mounted.
+\fB-offset\fR gives the offset of the file within the archive.
+\fB-uncompsize\fR gives the uncompressed size of the file.
+This is \fB0\fR for directories.
+Other attributes may be present in the returned list. These should
+be ignored.
 .RE
 .TP
 \fBfile channels\fR ?\fIpattern\fR?
@@ -275,6 +290,7 @@ the file (equivalent to Unix \fBtouch\fR).  The time is measured in the
 standard POSIX fashion as seconds from a fixed starting time (often January
 1, 1970).  If the file does not exist or its modified time cannot be queried
 or set then an error is generated.
+On \fBzipfs\fR file systems, modification time cannot be explicitly set.
 .TP
 \fBfile nativename \fIname\fR
 .

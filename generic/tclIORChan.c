@@ -448,7 +448,7 @@ static Tcl_Obj *	DecodeEventMask(int mask);
 static ReflectedChannel * NewReflectedChannel(Tcl_Interp *interp,
 			    Tcl_Obj *cmdpfxObj, int mode, Tcl_Obj *handleObj);
 static Tcl_Obj *	NextHandle(void);
-static void		FreeReflectedChannel(ReflectedChannel *rcPtr);
+static Tcl_FreeProc	FreeReflectedChannel;
 static int		InvokeTclMethod(ReflectedChannel *rcPtr,
 			    MethodName method, Tcl_Obj *argOneObj,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
@@ -874,7 +874,7 @@ TclChanPostEventObjCmd(
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can not find reflected channel named \"%s\"", chanId));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanId, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanId, (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -1230,7 +1230,7 @@ ReflectClose(
 	if (rcPtr->writeTimer != NULL) {
 	    Tcl_DeleteTimerHandler(rcPtr->writeTimer);
 	}
-        Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
+	Tcl_EventuallyFree(rcPtr, FreeReflectedChannel);
 	return EOK;
     }
 
@@ -1305,7 +1305,7 @@ ReflectClose(
     if (rcPtr->writeTimer != NULL) {
 	Tcl_DeleteTimerHandler(rcPtr->writeTimer);
     }
-    Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
+    Tcl_EventuallyFree(rcPtr, FreeReflectedChannel);
     return (result == TCL_OK) ? EOK : EINVAL;
 }
 
@@ -1391,7 +1391,7 @@ ReflectInput(
         goto invalid;
     }
 
-    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+    bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 
     if (bytev == NULL) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_nonbyte);
@@ -1617,7 +1617,7 @@ ReflectSeekWide(
         goto invalid;
     }
 
-    if (Tcl_GetWideIntFromObj(rcPtr->interp, resObj, &newLoc) != TCL_OK) {
+    if (TclGetWideIntFromObj(rcPtr->interp, resObj, &newLoc) != TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, MarshallError(rcPtr->interp));
         goto invalid;
     }
@@ -2318,8 +2318,9 @@ NextHandle(void)
 
 static void
 FreeReflectedChannel(
-    ReflectedChannel *rcPtr)
+    void *blockPtr)
 {
+    ReflectedChannel *rcPtr = (ReflectedChannel *) blockPtr;
     Channel *chanPtr = (Channel *) rcPtr->chan;
 
     TclChannelRelease((Tcl_Channel)chanPtr);
@@ -3128,7 +3129,7 @@ ForwardProc(
 	    Tcl_Size bytec = 0;		/* Number of returned bytes */
 	    unsigned char *bytev;	/* Array of returned bytes */
 
-	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetBytesFromObj(NULL, resObj, &bytec);
 
 	    if (bytev == NULL) {
 		ForwardSetStaticError(paramPtr, msg_read_nonbyte);
@@ -3211,7 +3212,7 @@ ForwardProc(
 
 	    Tcl_WideInt newLoc;
 
-	    if (Tcl_GetWideIntFromObj(interp, resObj, &newLoc) == TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, resObj, &newLoc) == TCL_OK) {
 		if (newLoc < 0) {
 		    ForwardSetStaticError(paramPtr, msg_seek_beforestart);
 		    paramPtr->seek.offset = -1;

@@ -817,7 +817,7 @@ Tcl_AfterObjCmd(
      * First lets see if the command was passed a number as the first argument.
      */
 
-    if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
+    if (TclGetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
 	if (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0, &index)
 		!= TCL_OK) {
 	    const char *arg = TclGetString(objv[1]);
@@ -826,7 +826,7 @@ Tcl_AfterObjCmd(
                     "bad argument \"%s\": must be"
                     " cancel, idle, info, or an integer", arg));
             Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument",
-                    arg, NULL);
+                    arg, (void *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -965,7 +965,7 @@ Tcl_AfterObjCmd(
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                     "event \"%s\" doesn't exist", eventStr));
-            Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, NULL);
+            Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, (void *)NULL);
 	    return TCL_ERROR;
 	} else {
 	    Tcl_Obj *resultListPtr;

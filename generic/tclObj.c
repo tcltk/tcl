@@ -386,15 +386,6 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(&tclRegexpType);
     Tcl_RegisterObjType(&tclProcBodyType);
 
-    /* For backward compatibility only ... */
-#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-    Tcl_RegisterObjType(&tclIntType);
-#if !defined(TCL_WIDE_INT_IS_LONG)
-    Tcl_RegisterObjType(&oldIntType);
-#endif
-    Tcl_RegisterObjType(&oldBooleanType);
-#endif
-
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
     tclObjsAlloced = 0;
@@ -959,7 +950,7 @@ Tcl_ConvertToType(
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "can't convert value to type %s", typePtr->name));
-	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", (void *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2149,7 +2140,7 @@ TclSetBooleanFromAny(
 	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
 	Tcl_AppendToObj(msg, "\"", -1);
 	Tcl_SetObjResult(interp, msg);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", (void *)NULL);
     }
     return TCL_ERROR;
 }
@@ -2163,7 +2154,7 @@ ParseBoolean(
     Tcl_Size i, length;
     const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
-    if ((length == 0) || (length > 5)) {
+    if ((length <= 0) || (length > 5)) {
 	/*
 	 * Longest valid boolean string rep. is "false".
 	 */
@@ -2438,7 +2429,7 @@ Tcl_GetDoubleFromObj(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "floating point value is Not a Number", -1));
                     Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
-                            NULL);
+                            (void *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -2569,7 +2560,7 @@ Tcl_GetIntFromObj(
 	    const char *s =
 		    "integer value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2601,7 +2592,7 @@ SetIntFromAny(
     Tcl_Obj *objPtr)		/* Pointer to the object to convert */
 {
     Tcl_WideInt w;
-    return Tcl_GetWideIntFromObj(interp, objPtr, &w);
+    return TclGetWideIntFromObj(interp, objPtr, &w);
 }
 
 /*
@@ -2692,7 +2683,7 @@ Tcl_GetLongFromObj(
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
                         TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2736,7 +2727,7 @@ Tcl_GetLongFromObj(
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2933,7 +2924,7 @@ Tcl_GetWideIntFromObj(
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
                         TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2971,7 +2962,7 @@ Tcl_GetWideIntFromObj(
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3016,7 +3007,7 @@ Tcl_GetWideUIntFromObj(
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "expected unsigned integer but got \"%s\"",
 			    TclGetString(objPtr)));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -3055,7 +3046,7 @@ Tcl_GetWideUIntFromObj(
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3102,7 +3093,7 @@ TclGetWideBitsFromObj(
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
                         TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3156,7 +3147,16 @@ Tcl_GetSizeIntFromObj(
     Tcl_Obj *objPtr,	/* The object from which to get a int. */
     Tcl_Size *sizePtr)  /* Place to store resulting int. */
 {
-    return TclGetSizeIntFromObj(interp, objPtr, sizePtr);
+    if (sizeof(Tcl_Size) == sizeof(int)) {
+	return TclGetIntFromObj(interp, objPtr, (int *)sizePtr);
+    } else {
+	Tcl_WideInt wide;
+	if (TclGetWideIntFromObj(interp, objPtr, &wide) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*sizePtr = (Tcl_Size)wide;
+	return TCL_OK;
+    }
 }
 
 /*
@@ -3417,7 +3417,7 @@ GetBignumFromObj(
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                         "expected integer but got \"%s\"",
                         TclGetString(objPtr)));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -3667,9 +3667,9 @@ Tcl_GetNumber(
     }
     if (numBytes > INT_MAX) {
 	if (interp) {
-            Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
-	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -4163,7 +4163,7 @@ TclFreeObjEntry(
  *----------------------------------------------------------------------
  */
 
-TCL_HASH_TYPE
+size_t
 TclHashObjKey(
     TCL_UNUSED(Tcl_HashTable *),
     void *keyPtr)		/* Key from which to compute hash value. */
@@ -4171,7 +4171,7 @@ TclHashObjKey(
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     Tcl_Size length;
     const char *string = Tcl_GetStringFromObj(objPtr, &length);
-    TCL_HASH_TYPE result = 0;
+    size_t result = 0;
 
     /*
      * I tried a zillion different hash functions and asked many other people

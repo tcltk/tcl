@@ -1685,9 +1685,7 @@ test oo-11.5 {OO: cleanup} {
     return done
 } done
 
-test oo-11.6.1 {
-    OO: cleanup of when an class is mixed into itself
-} -constraints memory -body {
+test oo-11.6.1 {OO: cleanup of when an class is mixed into itself} -constraints memory -body {
     leaktest {
 	interp create interp1
 	oo::class create obj1
@@ -1695,13 +1693,8 @@ test oo-11.6.1 {
 	rename obj1 {}
 	interp delete interp1
     }
-} -result 0 -cleanup {
-}
-
-test oo-11.6.2 {
-    OO: cleanup ReleaseClassContents() where class is mixed into one of its
-    instances
-} -constraints memory -body {
+} -result 0
+test oo-11.6.2 {OO: cleanup ReleaseClassContents() where class is mixed into one of its instances} -constraints memory -body {
     leaktest {
 	interp create interp1
 	interp1 eval {
@@ -1712,13 +1705,8 @@ test oo-11.6.2 {
 	}
 	interp delete interp1
     }
-} -result 0 -cleanup {
-}
-
-test oo-11.6.3 {
-    OO: cleanup ReleaseClassContents() where class is mixed into one of its
-    instances
-} -constraints memory -body {
+} -result 0
+test oo-11.6.3 {OO: cleanup ReleaseClassContents() where class is mixed into one of its instances} -constraints memory -body {
     leaktest {
 	interp create interp1
 	interp1 eval {
@@ -1731,13 +1719,8 @@ test oo-11.6.3 {
 	}
 	interp delete interp1
     }
-} -result 0 -cleanup {
-}
-
-test oo-11.6.4 {
-    OO: cleanup ReleaseClassContents() where class is mixed into one of its
-    instances
-} -body {
+} -result 0
+test oo-11.6.4 {OO: cleanup ReleaseClassContents() where class is mixed into one of its instances} -body {
     oo::class create obj1
     ::oo::define obj1 {self mixin [self]}
 
@@ -2218,6 +2201,31 @@ test oo-14.8 {OO: class mixin order - Bug 1998221} -setup {
     }
     [cls new] test
 } -result {mix cls}
+test oo-14.9 {OO: class mixins must be unique in list} -setup {
+    oo::class create parent
+} -body {
+    oo::class create A {superclass parent}
+    oo::class create B {
+	superclass parent
+	mixin A
+    }
+    oo::define B mixin -append A
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {class should only be a direct mixin once}
+test oo-14.10 {OO: instance mixins must be unique in list} -setup {
+    oo::class create parent
+} -body {
+    oo::class create A {superclass parent}
+    oo::class create B {
+	superclass parent
+	constructor {} {oo::objdefine [self] mixin A}
+    }
+    B create obj
+    oo::objdefine obj {mixin -append A}
+} -returnCodes error -cleanup {
+    parent destroy
+} -result {class should only be a direct mixin once}
 
 test oo-15.1 {OO: object cloning} {
     oo::class create Aclass
@@ -4198,6 +4206,19 @@ test oo-33.4 {TIP 380: slots - errors} -setup [SampleSlotSetup {
     rename $s {}
 }] -result \
     {unknown method "-grill": must be -append, -appendifnew, -clear, -prepend, -remove, -set, contents or ops}
+test oo-33.5 {TIP 567: slots -appendifnew} -setup [SampleSlotSetup {
+    set s [SampleSlot new]
+}] -body {
+    list \
+	[$s -clear
+	 $s contents] \
+	[$s -append p q r
+	 $s contents] \
+	[$s -appendifnew q s r t p
+	 $s contents]
+} -cleanup [SampleSlotCleanup {
+    rename $s {}
+}] -result {{} {p q r} {p q r s t}}
 
 test oo-34.1 {TIP 380: slots - presence} -setup {
     set obj [oo::object new]

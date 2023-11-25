@@ -64,6 +64,41 @@
 #endif /* !TCL_FPCLASSIFY_MODE */
 
 
+/*
+ * Bug 7371b6270b: to check C call stack depth, prefer an approach which is
+ * compatible with AddressSanitizer (ASan) use-after-return detection.
+ */
+
+#if defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+#include <intrin.h> /* for _AddressOfReturnAddress() */
+#endif
+
+/*
+ * As suggested by
+ * https://clang.llvm.org/docs/LanguageExtensions.html#has-builtin
+ */
+#ifndef __has_builtin
+#define __has_builtin(x) 0 /* for non-clang compilers */
+#endif
+
+void *
+TclGetCStackPtr(void)
+{
+#if defined( __GNUC__ ) || __has_builtin(__builtin_frame_address)
+  return __builtin_frame_address(0);
+#elif defined(_MSC_VER) && defined(HAVE_INTRIN_H)
+  return _AddressOfReturnAddress();
+#else
+  ptrdiff_t unused = 0;
+  /*
+   * LLVM recommends using volatile:
+   * https://github.com/llvm/llvm-project/blob/llvmorg-10.0.0-rc1/clang/lib/Basic/Stack.cpp#L31
+   */
+  ptrdiff_t *volatile stackLevel = &unused;
+  return (void *)stackLevel;
+#endif
+}
+
 #define INTERP_STACK_INITIAL_SIZE 2000
 #define CORO_STACK_INITIAL_SIZE    200
 
@@ -141,7 +176,7 @@ static int		CancelEvalProc(void *clientData,
 			    Tcl_Interp *interp, int code);
 static int		CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void		DeleteCoroutine(void *clientData);
-static void		DeleteInterpProc(Tcl_Interp *interp);
+static Tcl_FreeProc	DeleteInterpProc;
 static void		DeleteOpCmdClientData(void *clientData);
 #ifdef USE_DTRACE
 static Tcl_ObjCmdProc	DTraceObjCmd;
@@ -149,6 +184,7 @@ static Tcl_NRPostProc	DTraceCmdReturn;
 #else
 #   define DTraceCmdReturn	NULL
 #endif /* USE_DTRACE */
+static Tcl_ObjCmdProc	InvokeStringCommand;
 static Tcl_ObjCmdProc	ExprAbsFunc;
 static Tcl_ObjCmdProc	ExprBinaryFunc;
 static Tcl_ObjCmdProc	ExprBoolFunc;
@@ -634,7 +670,7 @@ buildInfoObjCmd2(
 	    if (p) {
 		memcpy(buf, (char *)clientData, p - (char *)clientData);
 		buf[p - (char *)clientData] = '\0';
-		Tcl_AppendResult(interp, buf, NULL);
+		Tcl_AppendResult(interp, buf, (void *)NULL);
 	    }
 	    return TCL_OK;
 	} else if (len == 10 && !strcmp(arg, "patchlevel")) {
@@ -643,7 +679,7 @@ buildInfoObjCmd2(
 	    if (p) {
 		memcpy(buf, (char *)clientData, p - (char *)clientData);
 		buf[p - (char *)clientData] = '\0';
-		Tcl_AppendResult(interp, buf, NULL);
+		Tcl_AppendResult(interp, buf, (void *)NULL);
 	    }
 	    return TCL_OK;
 	} else if (len == 6 && !strcmp(arg, "commit")) {
@@ -653,9 +689,9 @@ buildInfoObjCmd2(
 		    char buf[80];
 		    memcpy(buf, p+1, q - p - 1);
 		    buf[q - p - 1] = '\0';
-		    Tcl_AppendResult(interp, buf, NULL);
+		    Tcl_AppendResult(interp, buf, (void *)NULL);
 		} else {
-		    Tcl_AppendResult(interp, p+1, NULL);
+		    Tcl_AppendResult(interp, p+1, (void *)NULL);
 		}
 	    }
 	    return TCL_OK;
@@ -669,29 +705,29 @@ buildInfoObjCmd2(
 			char buf[16];
 			memcpy(buf, p+1, q - p - 1);
 			buf[q - p - 1] = '\0';
-			Tcl_AppendResult(interp, buf, NULL);
+			Tcl_AppendResult(interp, buf, (void *)NULL);
 		    } else {
-			Tcl_AppendResult(interp, p+1, NULL);
+			Tcl_AppendResult(interp, p+1, (void *)NULL);
 		    }
 		    return TCL_OK;
 		}
 		p = strchr(p+1, '.');
 	    }
-	    Tcl_AppendResult(interp, "0", NULL);
+	    Tcl_AppendResult(interp, "0", (void *)NULL);
 	    return TCL_OK;
 	}
 	const char *p = strchr((char *)clientData, '.');
 	while (p) {
 	    if (!strncmp(p+1, arg, len) && ((p[len+1] == '.') || (p[len+1] == '\0'))) {
-		Tcl_AppendResult(interp, "1", NULL);
+		Tcl_AppendResult(interp, "1", (void *)NULL);
 		return TCL_OK;
 	    }
 	    p = strchr(p+1, '.');
 	}
-	Tcl_AppendResult(interp, "0", NULL);
+	Tcl_AppendResult(interp, "0", (void *)NULL);
 	return TCL_OK;
     }
-    Tcl_AppendResult(interp, (char *)clientData, NULL);
+    Tcl_AppendResult(interp, (char *)clientData, (void *)NULL);
     return TCL_OK;
 }
 
@@ -1029,14 +1065,9 @@ Tcl_CreateInterp(void)
     iPtr->deferredCallbacks = NULL;
 
     /*
-     * Create the core commands. Do it here, rather than calling
-     * Tcl_CreateCommand, because it's faster (there's no need to check for a
-     * preexisting command by the same name). If a command has a Tcl_CmdProc
-     * but no Tcl_ObjCmdProc, set the Tcl_ObjCmdProc to
-     * TclInvokeStringCommand. This is an object-based wrapper function that
-     * extracts strings, calls the string function, and creates an object for
-     * the result. Similarly, if a command has a Tcl_ObjCmdProc but no
-     * Tcl_CmdProc, set the Tcl_CmdProc to TclInvokeObjectCommand.
+     * Create the core commands. Do it here, rather than calling Tcl_CreateObjCommand,
+     * because it's faster (there's no need to check for a preexisting command
+     * by the same name). Set the Tcl_CmdProc to NULL.
      */
 
     for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
@@ -1055,7 +1086,7 @@ Tcl_CreateInterp(void)
 	    cmdPtr->refCount = 1;
 	    cmdPtr->cmdEpoch = 0;
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
-	    cmdPtr->proc = TclInvokeObjectCommand;
+	    cmdPtr->proc = NULL;
 	    cmdPtr->clientData = cmdPtr;
 	    cmdPtr->objProc = cmdInfoPtr->objProc;
 	    cmdPtr->objClientData = NULL;
@@ -1458,7 +1489,7 @@ BadEnsembleSubcommand(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
             "not allowed to invoke subcommand %s of %s",
             infoPtr->commandName, infoPtr->ensembleNsName));
-    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", (void *)NULL);
     return TCL_ERROR;
 }
 
@@ -1766,7 +1797,7 @@ Tcl_DeleteInterp(
      * Ensure that the interpreter is eventually deleted.
      */
 
-    Tcl_EventuallyFree(interp, (Tcl_FreeProc *) DeleteInterpProc);
+    Tcl_EventuallyFree(interp, DeleteInterpProc);
 }
 
 /*
@@ -1792,8 +1823,9 @@ Tcl_DeleteInterp(
 
 static void
 DeleteInterpProc(
-    Tcl_Interp *interp)		/* Interpreter to delete. */
+    void *blockPtr)		/* Interpreter to delete. */
 {
+    Tcl_Interp *interp = (Tcl_Interp *) blockPtr;
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -2153,7 +2185,7 @@ Tcl_HideCommand(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cannot use namespace qualifiers in hidden command"
 		" token (rename)", -1));
-        Tcl_SetErrorCode(interp, "TCL", "VALUE", "HIDDENTOKEN", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "HIDDENTOKEN", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -2178,7 +2210,7 @@ Tcl_HideCommand(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "can only hide global namespace commands (use rename then hide)",
                 -1));
-        Tcl_SetErrorCode(interp, "TCL", "HIDE", "NON_GLOBAL", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "HIDE", "NON_GLOBAL", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -2204,7 +2236,7 @@ Tcl_HideCommand(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "hidden command named \"%s\" already exists",
                 hiddenCmdToken));
-        Tcl_SetErrorCode(interp, "TCL", "HIDE", "ALREADY_HIDDEN", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "HIDE", "ALREADY_HIDDEN", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -2308,7 +2340,7 @@ Tcl_ExposeCommand(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "cannot expose to a namespace (use expose to toplevel, then rename)",
                 -1));
-        Tcl_SetErrorCode(interp, "TCL", "EXPOSE", "NON_GLOBAL", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "EXPOSE", "NON_GLOBAL", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -2325,7 +2357,7 @@ Tcl_ExposeCommand(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "unknown hidden command \"%s\"", hiddenCmdToken));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "HIDDENTOKEN",
-                hiddenCmdToken, NULL);
+                hiddenCmdToken, (void *)NULL);
 	return TCL_ERROR;
     }
     cmdPtr = (Command *)Tcl_GetHashValue(hPtr);
@@ -2363,7 +2395,7 @@ Tcl_ExposeCommand(
     if (!isNew) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "exposed command \"%s\" already exists", cmdName));
-        Tcl_SetErrorCode(interp, "TCL", "EXPOSE", "COMMAND_EXISTS", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "EXPOSE", "COMMAND_EXISTS", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -2444,7 +2476,7 @@ Tcl_ExposeCommand(
  *	In the future, when cmdName is seen as the name of a command by
  *	Tcl_Eval, proc will be called. To support the bytecode interpreter,
  *	the command is created with a wrapper Tcl_ObjCmdProc
- *	(TclInvokeStringCommand) that eventually calls proc. When the command
+ *	(InvokeStringCommand) that eventually calls proc. When the command
  *	is deleted from the table, deleteProc will be called. See the manual
  *	entry for details on the calling sequence.
  *
@@ -2586,7 +2618,7 @@ Tcl_CreateCommand(
     cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
-    cmdPtr->objProc = TclInvokeStringCommand;
+    cmdPtr->objProc = InvokeStringCommand;
     cmdPtr->objClientData = cmdPtr;
     cmdPtr->proc = proc;
     cmdPtr->clientData = clientData;
@@ -2875,7 +2907,7 @@ TclCreateObjCommandInNs(
     cmdPtr->compileProc = NULL;
     cmdPtr->objProc = proc;
     cmdPtr->objClientData = clientData;
-    cmdPtr->proc = TclInvokeObjectCommand;
+    cmdPtr->proc = NULL;
     cmdPtr->clientData = cmdPtr;
     cmdPtr->deleteProc = deleteProc;
     cmdPtr->deleteData = clientData;
@@ -2916,7 +2948,7 @@ TclCreateObjCommandInNs(
 /*
  *----------------------------------------------------------------------
  *
- * TclInvokeStringCommand --
+ * InvokeStringCommand --
  *
  *	"Wrapper" Tcl_ObjCmdProc used to call an existing string-based
  *	Tcl_CmdProc if no object-based function exists for a command. A
@@ -2929,13 +2961,13 @@ TclCreateObjCommandInNs(
  *
  * Side effects:
  *	Besides those side effects of the called Tcl_CmdProc,
- *	TclInvokeStringCommand allocates and frees storage.
+ *	InvokeStringCommand allocates and frees storage.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclInvokeStringCommand(
+InvokeStringCommand(
     void *clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,		/* Number of arguments. */
@@ -2958,71 +2990,6 @@ TclInvokeStringCommand(
     result = cmdPtr->proc(cmdPtr->clientData, interp, objc, argv);
 
     TclStackFree(interp, (void *) argv);
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInvokeObjectCommand --
- *
- *	"Wrapper" Tcl_CmdProc used to call an existing object-based
- *	Tcl_ObjCmdProc if no string-based function exists for a command. A
- *	pointer to this function is stored as the Tcl_CmdProc in a Command
- *	structure. It simply turns around and calls the object Tcl_ObjCmdProc
- *	in the Command structure.
- *
- * Results:
- *	A standard Tcl result value.
- *
- * Side effects:
- *	Besides those side effects of the called Tcl_ObjCmdProc,
- *	TclInvokeObjectCommand allocates and frees storage.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclInvokeObjectCommand(
-    void *clientData,	/* Points to command's Command structure. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)	/* Argument strings. */
-{
-    Command *cmdPtr = ( Command *) clientData;
-    Tcl_Obj *objPtr;
-    int i, length, result;
-    Tcl_Obj **objv = (Tcl_Obj **)
-	    TclStackAlloc(interp, (argc * sizeof(Tcl_Obj *)));
-
-    for (i = 0; i < argc; i++) {
-	length = strlen(argv[i]);
-	TclNewStringObj(objPtr, argv[i], length);
-	Tcl_IncrRefCount(objPtr);
-	objv[i] = objPtr;
-    }
-
-    /*
-     * Invoke the command's object-based Tcl_ObjCmdProc.
-     */
-
-    if (cmdPtr->objProc != NULL) {
-	result = cmdPtr->objProc(cmdPtr->objClientData, interp, argc, objv);
-    } else {
-	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
-		cmdPtr->objClientData, argc, objv);
-    }
-
-    /*
-     * Decrement the ref counts for the argument objects created above, then
-     * free the objv array if malloc'ed storage was used.
-     */
-
-    for (i = 0; i < argc; i++) {
-	objPtr = objv[i];
-	Tcl_DecrRefCount(objPtr);
-    }
-    TclStackFree(interp, objv);
     return result;
 }
 
@@ -3078,7 +3045,7 @@ TclRenameCommand(
                 "can't %s \"%s\": command doesn't exist",
 		((newName == NULL)||(*newName == '\0'))? "delete":"rename",
 		oldName));
-        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", oldName, NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", oldName, (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -3100,7 +3067,7 @@ TclRenameCommand(
     /*
      * Make sure that the destination command does not already exist. The
      * rename operation is like creating a command, so we should automatically
-     * create the containing namespaces just like Tcl_CreateCommand would.
+     * create the containing namespaces just like Tcl_CreateObjCommand would.
      */
 
     TclGetNamespaceForQualName(interp, newName, NULL,
@@ -3109,7 +3076,7 @@ TclRenameCommand(
     if ((newNsPtr == NULL) || (newTail == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can't rename to \"%s\": bad command name", newName));
-        Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", (void *)NULL);
 	result = TCL_ERROR;
 	goto done;
     }
@@ -3117,7 +3084,7 @@ TclRenameCommand(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can't rename to \"%s\": command already exists", newName));
         Tcl_SetErrorCode(interp, "TCL", "OPERATION", "RENAME",
-                "TARGET_EXISTS", NULL);
+                "TARGET_EXISTS", (void *)NULL);
 	result = TCL_ERROR;
 	goto done;
     }
@@ -3340,7 +3307,7 @@ Tcl_SetCommandInfoFromToken(
     cmdPtr->proc = infoPtr->proc;
     cmdPtr->clientData = infoPtr->clientData;
     if (infoPtr->objProc == NULL) {
-	cmdPtr->objProc = TclInvokeStringCommand;
+	cmdPtr->objProc = InvokeStringCommand;
 	cmdPtr->objClientData = cmdPtr;
 	cmdPtr->nreProc = NULL;
     } else {
@@ -3452,7 +3419,7 @@ Tcl_GetCommandInfoFromToken(
 
     cmdPtr = (Command *) cmd;
     infoPtr->isNativeObjectProc =
-	    (cmdPtr->objProc != TclInvokeStringCommand);
+	    (cmdPtr->objProc != InvokeStringCommand);
     infoPtr->objProc = cmdPtr->objProc;
     infoPtr->objClientData = cmdPtr->objClientData;
     infoPtr->proc = cmdPtr->proc;
@@ -3481,7 +3448,7 @@ Tcl_GetCommandInfoFromToken(
  *
  * Tcl_GetCommandName --
  *
- *	Given a token returned by Tcl_CreateCommand, this function returns the
+ *	Given a token returned by Tcl_CreateObjCommand, this function returns the
  *	current name of the command (which may have changed due to renaming).
  *
  * Results:
@@ -3497,7 +3464,7 @@ const char *
 Tcl_GetCommandName(
     TCL_UNUSED(Tcl_Interp *),
     Tcl_Command command)	/* Token for command returned by a previous
-				 * call to Tcl_CreateCommand. The command must
+				 * call to Tcl_CreateObjCommand. The command must
 				 * not have been deleted. */
 {
     Command *cmdPtr = (Command *) command;
@@ -3520,7 +3487,7 @@ Tcl_GetCommandName(
  *
  * Tcl_GetCommandFullName --
  *
- *	Given a token returned by, e.g., Tcl_CreateCommand or Tcl_FindCommand,
+ *	Given a token returned by, e.g., Tcl_CreateObjCommand or Tcl_FindCommand,
  *	this function appends to an object the command's full name, qualified
  *	by a sequence of parent namespace names. The command's fully-qualified
  *	name may have changed due to renaming.
@@ -3539,7 +3506,7 @@ void
 Tcl_GetCommandFullName(
     Tcl_Interp *interp,		/* Interpreter containing the command. */
     Tcl_Command command,	/* Token for command returned by a previous
-				 * call to Tcl_CreateCommand. The command must
+				 * call to Tcl_CreateObjCommand. The command must
 				 * not have been deleted. */
     Tcl_Obj *objPtr)		/* Points to the object onto which the
 				 * command's full name is appended. */
@@ -4066,7 +4033,7 @@ TclInterpReady(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"attempt to call eval in deleted interpreter", -1));
 	Tcl_SetErrorCode(interp, "TCL", "IDELETE",
-		"attempt to call eval in deleted interpreter", NULL);
+		"attempt to call eval in deleted interpreter", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -4094,7 +4061,7 @@ TclInterpReady(
 
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "too many nested evaluations (infinite loop?)", -1));
-    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (void *)NULL);
     return TCL_ERROR;
 }
 
@@ -4228,7 +4195,7 @@ Tcl_Canceled(
         }
 
         Tcl_SetObjResult(interp, Tcl_NewStringObj(message, -1));
-        Tcl_SetErrorCode(interp, "TCL", "CANCEL", id, message, NULL);
+        Tcl_SetErrorCode(interp, "TCL", "CANCEL", id, message, (void *)NULL);
     }
 
     /*
@@ -4518,7 +4485,7 @@ EvalObjvCore(
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "attempt to invoke a deleted command"));
-	    Tcl_SetErrorCode(interp, "TCL", "EVAL", "DELETEDCOMMAND", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "EVAL", "DELETEDCOMMAND", (void *)NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -4893,7 +4860,7 @@ TEOV_NotFound(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "invalid command name \"%s\"", TclGetString(objv[0])));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
-                TclGetString(objv[0]), NULL);
+                TclGetString(objv[0]), (void *)NULL);
 
 	/*
 	 * Release any resources we locked and allocated during the handler
@@ -6386,7 +6353,7 @@ ProcessUnexpectedResult(
 		"command returned bad code: %d", returnCode));
     }
     snprintf(buf, sizeof(buf), "%d", returnCode);
-    Tcl_SetErrorCode(interp, "TCL", "UNEXPECTED_RESULT_CODE", buf, NULL);
+    Tcl_SetErrorCode(interp, "TCL", "UNEXPECTED_RESULT_CODE", buf, (void *)NULL);
 }
 
 /*
@@ -6677,7 +6644,7 @@ int
 TclObjInvoke(
     Tcl_Interp *interp,		/* Interpreter in which command is to be
 				 * invoked. */
-    int objc,			/* Count of arguments. */
+    Tcl_Size objc,			/* Count of arguments. */
     Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
 				 * name of the command to invoke. */
     int flags)			/* Combination of flags controlling the call:
@@ -6720,7 +6687,7 @@ TclNRInvoke(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "invalid hidden command name \"%s\"", cmdName));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "HIDDENTOKEN", cmdName,
-                NULL);
+                (void *)NULL);
 	return TCL_ERROR;
     }
     cmdPtr = (Command *)Tcl_GetHashValue(hPtr);
@@ -6842,7 +6809,7 @@ Tcl_AppendObjToErrorInfo(
 	iPtr->errorInfo = iPtr->objResultPtr;
 	Tcl_IncrRefCount(iPtr->errorInfo);
 	if (!iPtr->errorCode) {
-	    Tcl_SetErrorCode(interp, "NONE", NULL);
+	    Tcl_SetErrorCode(interp, "NONE", (void *)NULL);
 	}
     }
 
@@ -7210,7 +7177,7 @@ ExprIsqrtFunc(
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
             "square root of negative argument", -1));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
-	    "domain error: argument not in valid range", NULL);
+	    "domain error: argument not in valid range", (void *)NULL);
     return TCL_ERROR;
 }
 
@@ -8319,7 +8286,7 @@ MathFuncWrongNumArgs(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "%s arguments for math function \"%s\"",
 	    (found < expected ? "not enough" : "too many"), name));
-    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (void *)NULL);
 }
 
 #ifdef USE_DTRACE
@@ -8553,7 +8520,7 @@ Tcl_NRCallObjProc2(
  * Side effects:
  *	If no command named "cmdName" already exists for interp, one is
  *	created. Otherwise, if a command does exist, then if the object-based
- *	Tcl_ObjCmdProc is TclInvokeStringCommand, we assume Tcl_CreateCommand
+ *	Tcl_ObjCmdProc is InvokeStringCommand, we assume Tcl_CreateCommand
  *	was called previously for the same command and just set its
  *	Tcl_ObjCmdProc to the argument "proc"; otherwise, we delete the old
  *	command.
@@ -8823,7 +8790,7 @@ TclNRTailcallObjCmd(
     if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "tailcall can only be called from a proc, lambda or method", -1));
-        Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -8985,7 +8952,7 @@ TclNRYieldObjCmd(
     if (!corPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "yield can only be called in a coroutine", -1));
-	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -9018,7 +8985,7 @@ TclNRYieldToObjCmd(
     if (!corPtr) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "yieldto can only be called in a coroutine", -1));
-	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -9026,7 +8993,7 @@ TclNRYieldToObjCmd(
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"yieldto called in deleted namespace", -1));
         Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED",
-		NULL);
+		(void *)NULL);
         return TCL_ERROR;
     }
 
@@ -9211,6 +9178,7 @@ TclNRCoroutineActivateCallback(
     TCL_UNUSED(int) /*result*/)
 {
     CoroutineData *corPtr = (CoroutineData *)data[0];
+    void *stackLevel = TclGetCStackPtr();
 
     if (!corPtr->stackLevel) {
         /*
@@ -9227,7 +9195,7 @@ TclNRCoroutineActivateCallback(
          * the interp's environment to make it suitable to run this coroutine.
          */
 
-        corPtr->stackLevel = &corPtr;
+        corPtr->stackLevel = stackLevel;
         Tcl_Size numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = iPtr->numLevels;
 
@@ -9241,7 +9209,7 @@ TclNRCoroutineActivateCallback(
          * Coroutine is active: yield
          */
 
-        if (corPtr->stackLevel != &corPtr) {
+        if (corPtr->stackLevel != stackLevel) {
 	    NRE_callback *runPtr;
 
 	    iPtr->execEnvPtr = corPtr->callerEEPtr;
@@ -9261,7 +9229,7 @@ TclNRCoroutineActivateCallback(
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "cannot yield: C stack busy", -1));
             Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD",
-                    NULL);
+                    (void *)NULL);
             return TCL_ERROR;
         }
 
@@ -9350,7 +9318,7 @@ CoroTypeObjCmd(
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "can only get coroutine type of a coroutine", -1));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
-                TclGetString(objv[1]), NULL);
+                TclGetString(objv[1]), (void *)NULL);
         return TCL_ERROR;
     }
 
@@ -9380,7 +9348,7 @@ CoroTypeObjCmd(
     default:
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "unknown coroutine type", -1));
-        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "BAD_TYPE", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "BAD_TYPE", (void *)NULL);
         return TCL_ERROR;
     }
 }
@@ -9410,7 +9378,7 @@ GetCoroutineFromObj(
     if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, -1));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
-                TclGetString(objPtr), NULL);
+                TclGetString(objPtr), (void *)NULL);
         return NULL;
     }
     return (CoroutineData *)cmdPtr->objClientData;
@@ -9443,7 +9411,7 @@ TclNRCoroInjectObjCmd(
     if (!COR_IS_SUSPENDED(corPtr)) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "can only inject a command into a suspended coroutine", -1));
-        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", (void *)NULL);
         return TCL_ERROR;
     }
 
@@ -9489,7 +9457,7 @@ TclNRCoroProbeObjCmd(
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "can only inject a probe command into a suspended coroutine",
                 -1));
-        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", (void *)NULL);
         return TCL_ERROR;
     }
 
@@ -9680,7 +9648,7 @@ NRInjectObjCmd(
     if (!COR_IS_SUSPENDED(corPtr)) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "can only inject a command into a suspended coroutine", -1));
-        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", (void *)NULL);
         return TCL_ERROR;
     }
 
@@ -9710,7 +9678,7 @@ TclNRInterpCoroutine(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "coroutine \"%s\" is already running",
                 TclGetString(objv[0])));
-	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "BUSY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "BUSY", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -9734,7 +9702,7 @@ TclNRInterpCoroutine(
             Tcl_SetObjResult(interp,
                     Tcl_NewStringObj("wrong coro nargs; how did we get here? "
                     "not implemented!", -1));
-            Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
+            Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (void *)NULL);
             return TCL_ERROR;
         }
         /* fallthrough */
@@ -9788,14 +9756,14 @@ TclNRCoroutineObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can't create procedure \"%s\": unknown namespace",
                 procName));
-        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE", NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE", (void *)NULL);
 	return TCL_ERROR;
     }
     if (simpleName == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "can't create procedure \"%s\": bad procedure name",
                 procName));
-        Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", procName, NULL);
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMMAND", procName, (void *)NULL);
 	return TCL_ERROR;
     }
 

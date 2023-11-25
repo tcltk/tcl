@@ -72,7 +72,11 @@ placed within it.  For \fBTcl_DictObjFirst\fR and
 not interested in the value.
 .AP "Tcl_Size \&| int" *sizePtr out
 Points to a variable that will have the number of key/value pairs
-contained within the dictionary placed within it.
+contained within the dictionary placed within it. May be (Tcl_Size *)NULL when not used. If it points to a variable which
+type is not \fBTcl_Size\fR, a compiler warning will be generated, in
+order to indicate that when size of the dictionary is larger than INT_MAX
+this function will return TCL_ERROR (which should trigger proper error-handling).
+Apart from that, it will function as expected.
 .AP Tcl_DictSearch *searchPtr in/out
 Pointer to record to use to keep track of progress in enumerating all
 key/value pairs in a dictionary.  The contents of the record will be

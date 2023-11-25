@@ -61,7 +61,11 @@ this points to the Tcl value that will be converted to a list value
 containing the \fIobjc\fR elements of the array referenced by \fIobjv\fR.
 .AP "Tcl_Size \&| int" *objcPtr in
 Points to location where \fBTcl_ListObjGetElements\fR
-stores the number of element values in \fIlistPtr\fR.
+stores the number of element values in \fIlistPtr\fR. May be (Tcl_Size *)NULL when not used. If it points to a variable which
+type is not \fBTcl_Size\fR, a compiler warning will be generated, in
+order to indicate that when the list size is larger than INT_MAX
+this function will return TCL_ERROR (which should trigger proper error-handling).
+Apart from that, it will function as expected.
 .AP Tcl_Obj ***objvPtr out
 A location where \fBTcl_ListObjGetElements\fR stores a pointer to an array
 of pointers to the element values of \fIlistPtr\fR.
@@ -78,7 +82,11 @@ and \fBTcl_ListObjReplace\fR will insert them into an existing \fIlistPtr\fR.
 Each value will become a separate list element.
 .AP "Tcl_Size \&| int" *lengthPtr out
 Points to location where \fBTcl_ListObjLength\fR
-stores the length of the list.
+stores the length of the list. May be (Tcl_Size *)NULL when not used. If it points to a variable which
+type is not \fBTcl_Size\fR, a compiler warning will be generated, in
+order to indicate that when the list size is larger than INT_MAX
+this function will return TCL_ERROR (which should trigger proper error-handling).
+Apart from that, it will function as expected.
 .AP Tcl_Size index in
 Index of the list element that \fBTcl_ListObjIndex\fR
 is to return.

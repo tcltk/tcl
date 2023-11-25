@@ -184,8 +184,12 @@ TclpDlopen(
      */
 
     nativePath = (const char *)Tcl_FSGetNativePath(pathPtr);
-    nativeFileName = Tcl_UtfToExternalDString(NULL, TclGetString(pathPtr),
-	    TCL_INDEX_NONE, &ds);
+    if (Tcl_UtfToExternalDStringEx(interp, NULL, TclGetString(pathPtr),
+	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return TCL_ERROR;
+    }
+    nativeFileName = Tcl_DStringValue(&ds);
 
 #if TCL_DYLD_USE_DLFCN
     /*
@@ -341,7 +345,11 @@ FindSymbol(
     Tcl_DString ds;
     const char *native;
 
-    native = Tcl_UtfToExternalDString(NULL, symbol, TCL_INDEX_NONE, &ds);
+    if (Tcl_UtfToExternalDStringEx(interp, NULL, symbol, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return NULL;
+    }
+    native = Tcl_DStringValue(&ds);
     if (dyldLoadHandle->dlHandle) {
 #if TCL_DYLD_USE_DLFCN
 	proc = (Tcl_LibraryInitProc *)dlsym(dyldLoadHandle->dlHandle, native);
@@ -410,7 +418,7 @@ FindSymbol(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"cannot find symbol \"%s\": %s", symbol, errMsg));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
-		NULL);
+		(void *)NULL);
     }
     return (void *)proc;
 }

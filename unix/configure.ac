@@ -219,7 +219,7 @@ SC_TCL_64BIT_FLAGS
 #	Tcl_UniChar strings to memcmp on big-endian systems.
 #--------------------------------------------------------------------
 
-AC_C_BIGENDIAN
+AC_C_BIGENDIAN(,,,[#])
 
 #--------------------------------------------------------------------
 #	Supply substitutes for missing POSIX library procedures, or
@@ -868,11 +868,17 @@ AC_MSG_RESULT([no])
 INSTALL_LIBRARIES=install-libraries
 INSTALL_MSGS=install-msgs
 fi
+
+# Point to tcl script library if we are not embedding it.
+if test "${ZIPFS_BUILD}" = 0; then
+TCL_BUILDTIME_LIBRARY=${TCL_SRC_DIR}/library
+fi
+
 AC_SUBST(ZIPFS_BUILD)
 AC_SUBST(TCL_ZIP_FILE)
 AC_SUBST(INSTALL_LIBRARIES)
 AC_SUBST(INSTALL_MSGS)
-
+AC_SUBST(TCL_BUILDTIME_LIBRARY)
 
 #--------------------------------------------------------------------
 #	The statements below define the symbol TCL_PACKAGE_PATH, which
