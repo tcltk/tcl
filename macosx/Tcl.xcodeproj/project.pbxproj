@@ -242,7 +242,6 @@
 		F96D3E0C08F272A5004A47F5 /* break.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = break.n; sourceTree = "<group>"; };
 		F96D3E0D08F272A5004A47F5 /* ByteArrObj.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = ByteArrObj.3; sourceTree = "<group>"; };
 		F96D3E0E08F272A5004A47F5 /* CallDel.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = CallDel.3; sourceTree = "<group>"; };
-		F96D3E0F08F272A5004A47F5 /* case.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = case.n; sourceTree = "<group>"; };
 		F96D3E1008F272A5004A47F5 /* catch.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = catch.n; sourceTree = "<group>"; };
 		F96D3E1108F272A5004A47F5 /* cd.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = cd.n; sourceTree = "<group>"; };
 		F96D3E1208F272A5004A47F5 /* chan.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = chan.n; sourceTree = "<group>"; };
@@ -977,7 +976,6 @@
 				F96D3E0C08F272A5004A47F5 /* break.n */,
 				F96D3E0D08F272A5004A47F5 /* ByteArrObj.3 */,
 				F96D3E0E08F272A5004A47F5 /* CallDel.3 */,
-				F96D3E0F08F272A5004A47F5 /* case.n */,
 				F96D3E1008F272A5004A47F5 /* catch.n */,
 				F96D3E1108F272A5004A47F5 /* cd.n */,
 				F96D3E1208F272A5004A47F5 /* chan.n */,
