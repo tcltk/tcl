@@ -3658,6 +3658,7 @@ MODULE_SCOPE void	TclClockInit(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc TclClockOldscanObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_CloseObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ConcatObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc Tcl_ConstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc Tcl_ContinueObjCmd;
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
 			    Tcl_Time *timePtr, Tcl_TimerProc *proc,

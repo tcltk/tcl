@@ -4842,6 +4842,40 @@ Tcl_GetVariableFullName(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_ConstObjCmd --
+ * 
+ *	This function is invoked to process the "const" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl object result value.
+ *
+ * Side effects:
+ *	See the user documentation.
+ * 
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ConstObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "varName value");
+	return TCL_ERROR;
+    }
+
+    /* FIXME: implement this! */
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("not yet implemented"));
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GlobalObjCmd --
  *
  *	This object-based function is invoked to process the "global" Tcl
