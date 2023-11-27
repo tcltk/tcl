@@ -128,6 +128,7 @@ static const char BADNAMESPACE[] =	"parent namespace doesn't exist";
 static const char MISSINGNAME[] =	"missing variable name";
 static const char ISARRAYELEMENT[] =
 	"name refers to an element in an array";
+static const char ISCONST[] =		"variable is a constant";
 
 /*
  * A test to see if we are in a call frame that has local variables. This is
@@ -1942,6 +1943,17 @@ TclPtrSetVarIdx(
     }
 
     /*
+     * It's an error to try to set a constant.
+     */
+    if (TclIsVarConstant(varPtr)) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
+	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "set", ISCONST,index);
+	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "CONST", (void *)NULL);
+	}
+	goto earlyError;
+    }
+
+    /*
      * It's an error to try to set an array variable itself.
      */
 
@@ -2221,6 +2233,17 @@ TclPtrIncrObjVarIdx(
 {
     Tcl_Obj *varValuePtr;
 
+    /*
+     * It's an error to try to increment a constant.
+     */
+    if (TclIsVarConstant(varPtr)) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
+	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "incr", ISCONST,index);
+	    Tcl_SetErrorCode(interp, "TCL", "WRITE", "CONST", (void *)NULL);
+	}
+	return NULL;
+    }
+
     if (TclIsVarInHash(varPtr)) {
 	VarHashRefCount(varPtr)++;
     }
@@ -2429,14 +2452,14 @@ int
 TclPtrUnsetVarIdx(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
 				 * be looked up. */
-    Var *varPtr,	/* The variable to be unset. */
+    Var *varPtr,		/* The variable to be unset. */
     Var *arrayPtr,		/* NULL for scalar variables, pointer to the
 				 * containing array otherwise. */
     Tcl_Obj *part1Ptr,		/* Name of an array (if part2 is non-NULL) or
 				 * the name of a variable. */
     Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    int flags,		/* OR-ed combination of any of
+    int flags,			/* OR-ed combination of any of
 				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_LEAVE_ERR_MSG. */
     int index)			/* Index into the local variable table of the
@@ -2446,6 +2469,17 @@ TclPtrUnsetVarIdx(
     Interp *iPtr = (Interp *) interp;
     int result = (TclIsVarUndefined(varPtr)? TCL_ERROR : TCL_OK);
     Var *initialArrayPtr = arrayPtr;
+
+    /*
+     * It's an error to try to unset a constant.
+     */
+    if (TclIsVarConstant(varPtr)) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
+	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset", ISCONST,index);
+	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "CONST", (void *)NULL);
+	}
+	return TCL_ERROR;
+    }
 
     /*
      * Keep the variable alive until we're done with it. We used to
