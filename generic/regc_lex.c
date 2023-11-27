@@ -843,11 +843,6 @@ lexescape(
 	if (ISERR()) {
 	    FAILW(REG_EESCAPE);
 	}
-	if (i > 0xFFFF) {
-	    /* TODO: output a Surrogate pair
-	     */
-	    i = 0xFFFD;
-	}
 	RETV(PLAIN, (uchr) i);
 	break;
     case CHR('v'):
