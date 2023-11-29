@@ -320,10 +320,8 @@ EXTERN int		TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re);
 /* 151 */
 EXTERN void		TclRegExpRangeUniChar(Tcl_RegExp re, Tcl_Size index,
 				Tcl_Size *startPtr, Tcl_Size *endPtr);
-/* 152 */
-EXTERN void		TclSetLibraryPath(Tcl_Obj *pathPtr);
-/* 153 */
-EXTERN Tcl_Obj *	TclGetLibraryPath(void);
+/* Slot 152 is reserved */
+/* Slot 153 is reserved */
 /* Slot 154 is reserved */
 /* Slot 155 is reserved */
 /* 156 */
@@ -734,8 +732,8 @@ typedef struct TclIntStubs {
     void (*tclHandleRelease) (TclHandle handle); /* 149 */
     int (*tclRegAbout) (Tcl_Interp *interp, Tcl_RegExp re); /* 150 */
     void (*tclRegExpRangeUniChar) (Tcl_RegExp re, Tcl_Size index, Tcl_Size *startPtr, Tcl_Size *endPtr); /* 151 */
-    void (*tclSetLibraryPath) (Tcl_Obj *pathPtr); /* 152 */
-    Tcl_Obj * (*tclGetLibraryPath) (void); /* 153 */
+    void (*reserved152)(void);
+    void (*reserved153)(void);
     void (*reserved154)(void);
     void (*reserved155)(void);
     void (*tclRegError) (Tcl_Interp *interp, const char *msg, int status); /* 156 */
@@ -1080,10 +1078,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclRegAbout) /* 150 */
 #define TclRegExpRangeUniChar \
 	(tclIntStubsPtr->tclRegExpRangeUniChar) /* 151 */
-#define TclSetLibraryPath \
-	(tclIntStubsPtr->tclSetLibraryPath) /* 152 */
-#define TclGetLibraryPath \
-	(tclIntStubsPtr->tclGetLibraryPath) /* 153 */
+/* Slot 152 is reserved */
+/* Slot 153 is reserved */
 /* Slot 154 is reserved */
 /* Slot 155 is reserved */
 #define TclRegError \

@@ -551,8 +551,8 @@ static const TclIntStubs tclIntStubs = {
     TclHandleRelease, /* 149 */
     TclRegAbout, /* 150 */
     TclRegExpRangeUniChar, /* 151 */
-    TclSetLibraryPath, /* 152 */
-    TclGetLibraryPath, /* 153 */
+    0, /* 152 */
+    0, /* 153 */
     0, /* 154 */
     0, /* 155 */
     TclRegError, /* 156 */
