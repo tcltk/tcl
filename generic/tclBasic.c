@@ -6898,7 +6898,7 @@ Tcl_Size
 Tcl_SetRecursionLimit(
     Tcl_Interp *interp,		/* Interpreter whose nesting limit is to be
 				 * set. */
-    Tcl_Size depth)		/* New value for maximimum depth. */
+    Tcl_Size depth)		/* New value for maximum depth. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Size old;
