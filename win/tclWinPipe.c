@@ -1545,12 +1545,20 @@ BuildCommandLine(
     int quote = 0;
     Tcl_Size i;
     Tcl_DString ds;
+#ifdef TCL_WIN_PIPE_FULLESC
+    /* full escape inclusive %-subst avoidance */
     static const char specMetaChars[] = "&|^<>!()%";
 				/* Characters to enclose in quotes if unpaired
 				 * quote flag set. */
     static const char specMetaChars2[] = "%";
 				/* Character to enclose in quotes in any case
 				 * (regardless of unpaired-flag). */
+#else
+    /* escape considering quotation only (no %-subst avoidance) */
+    static const char specMetaChars[] = "&|^<>!()";
+				/* Characters to enclose in quotes if unpaired
+				 * quote flag set. */
+#endif
     /*
      * Quote flags:
      *   CL_ESCAPE   - escape argument;
@@ -1688,7 +1696,7 @@ BuildCommandLine(
 		    start = !bspos ? special : bspos;
 		    continue;
 		}
-
+#ifdef TCL_WIN_PIPE_FULLESC
 		/*
 		 * Special case for % - should be enclosed always (paired
 		 * also)
@@ -1705,6 +1713,7 @@ BuildCommandLine(
 		    start = !bspos ? special : bspos;
 		    continue;
 		}
+#endif
 
 		/*
 		 * Other not special (and not meta) character
