@@ -50,7 +50,7 @@ proc contents {file} {
 proc cleanupRecurse {args} {
     # Assumes no loops via links!
     # Need to change permissions BEFORE deletion
-    testchmod 0o777 {*}$args
+    catch {testchmod 0o777 {*}$args}
     foreach victim $args {
         if {[file isdirectory $victim]} {
             cleanupRecurse {*}[glob -nocomplain -directory $victim td* tf* Test*]
@@ -500,7 +500,7 @@ test winFCmd-2.11 {TclpCopyFile: CopyFile succeeds} -setup {
 } -result {tf1 tf1}
 test winFCmd-2.12 {TclpCopyFile: CopyFile succeeds} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile testchmod} -body {
     createfile tf1 tf1
     file attribute tf1 -readonly 1
     testfile cp tf1 tf2
