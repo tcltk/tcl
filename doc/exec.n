@@ -262,14 +262,6 @@ insertion of backslash characters.
 .PP
 The automatic resolving of environment variables using "\fB%var%\fR" is critical,
 but has more use than danger and is not escaped.
-.PP
-TCL 8.6.10 refined this quoting by adding quoting for data quotes and individual
-quoting of "\fB%\fR".
-This may break present scripts which rely on the replacement functionality of
-environment variables.
-Thus, the individual quoting of "\fB%\fR" was removed in TCL 8.6.14, as environment
-variables are seen more helpful than a problem.
-A solution with command parameters is envisaged for a future release of TCL.
 .RE
 .PP
 The Tk console text widget does not provide real standard IO capabilities.
