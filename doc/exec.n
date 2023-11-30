@@ -254,22 +254,21 @@ Examples are:
   ENV X: CONTENT OF X
 .CE
 The following formatting is automatically performed on any
-argument item:
-.IP \(bu 3
-Avoid subprogram execution:
+argument item to avoid subprogram execution:
 Any special character argument containing a special character (\fB&\fR, \fB|\fR,
 \fB^\fR, \fB<\fR, \fB>\fR, \fB!\fR, \fB(\fR, \fB)\fR, \fB(\fR, \fB%\fR)
 is automatically enclosed in quotes (\fB"\fR). Any data quote is escaped by
 insertion of backslash characters.
-.IP \(bu 3
-Avoid environment variable replacement:
-Any appearence of environment variable reference (\fB%\fR) is individually quoted
-by \fB"\fR.
+.PP
+The automatic resolving of environment variables using "\fB%var%\fR" is critical,
+but has more use than danger and is not escaped.
 .PP
 TCL 8.6.10 refined this quoting by adding quoting for data quotes and individual
 quoting of "\fB%\fR".
 This may break present scripts which rely on the replacement functionality of
 environment variables.
+Thus, the individual quoting of "\fB%\fR" was removed in TCL 8.6.14, as environment
+variables are seen more helpful than a problem.
 A solution with command parameters is envisaged for a future release of TCL.
 .RE
 .PP
