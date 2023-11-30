@@ -3962,15 +3962,6 @@ extern const TclStubs *tclStubsPtr;
 	    } \
 	} while(0)
 
-#undef Tcl_UtfToExternalDString
-#define Tcl_UtfToExternalDString(encoding, src, len, ds) \
-	(Tcl_UtfToExternalDStringEx(NULL, (encoding), (src), (len), \
-	TCL_ENCODING_PROFILE_TCL8, (ds), NULL), Tcl_DStringValue(ds))
-#undef Tcl_ExternalToUtfDString
-#define Tcl_ExternalToUtfDString(encoding, src, len, ds) \
-	(Tcl_ExternalToUtfDStringEx(NULL, (encoding), (src), (len), \
-	TCL_ENCODING_PROFILE_TCL8, (ds), NULL), Tcl_DStringValue(ds))
-
 #if defined(USE_TCL_STUBS)
 #   if defined(_WIN32) && defined(_WIN64) && TCL_MAJOR_VERSION < 9
 #	undef Tcl_GetTime

@@ -61,7 +61,7 @@ typedef struct {
 
 typedef struct ProcInfo {
     HANDLE hProcess;
-    size_t dwProcessId;
+    int dwProcessId;
     struct ProcInfo *nextPtr;
 } ProcInfo;
 
@@ -864,7 +864,7 @@ TclpCloseFile(
  *--------------------------------------------------------------------------
  */
 
-size_t
+Tcl_Size
 TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
@@ -874,13 +874,13 @@ TclpGetPid(
 
     Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->dwProcessId == (size_t)pid) {
+	if (infoPtr->dwProcessId == (Tcl_Size)pid) {
 	    Tcl_MutexUnlock(&pipeMutex);
 	    return infoPtr->dwProcessId;
 	}
     }
     Tcl_MutexUnlock(&pipeMutex);
-    return TCL_INDEX_NONE;
+    return -1;
 }
 
 /*
@@ -1168,7 +1168,7 @@ TclpCreateProcess(
     WaitForInputIdle(procInfo.hProcess, 5000);
     CloseHandle(procInfo.hThread);
 
-    *pidPtr = (Tcl_Pid) (size_t) procInfo.dwProcessId;
+    *pidPtr = (Tcl_Pid)INT2PTR(procInfo.dwProcessId);
     if (*pidPtr != 0) {
 	TclWinAddProcess(procInfo.hProcess, procInfo.dwProcessId);
     }
@@ -1550,12 +1550,20 @@ BuildCommandLine(
     int quote = 0;
     size_t i;
     Tcl_DString ds;
+#ifdef TCL_WIN_PIPE_FULLESC
+    /* full escape inclusive %-subst avoidance */
     static const char specMetaChars[] = "&|^<>!()%";
 				/* Characters to enclose in quotes if unpaired
 				 * quote flag set. */
     static const char specMetaChars2[] = "%";
 				/* Character to enclose in quotes in any case
 				 * (regardless of unpaired-flag). */
+#else
+    /* escape considering quotation only (no %-subst avoidance) */
+    static const char specMetaChars[] = "&|^<>!()";
+				/* Characters to enclose in quotes if unpaired
+				 * quote flag set. */
+#endif
     /*
      * Quote flags:
      *   CL_ESCAPE   - escape argument;
@@ -1693,7 +1701,7 @@ BuildCommandLine(
 		    start = !bspos ? special : bspos;
 		    continue;
 		}
-
+#ifdef TCL_WIN_PIPE_FULLESC
 		/*
 		 * Special case for % - should be enclosed always (paired
 		 * also)
@@ -1710,6 +1718,7 @@ BuildCommandLine(
 		    start = !bspos ? special : bspos;
 		    continue;
 		}
+#endif
 
 		/*
 		 * Other not special (and not meta) character
@@ -2564,7 +2573,7 @@ Tcl_WaitPid(
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
-	 if (infoPtr->dwProcessId == (size_t) pid) {
+	 if (infoPtr->dwProcessId == (Tcl_Size)pid) {
 	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}
@@ -2674,7 +2683,7 @@ Tcl_WaitPid(
     } else {
 	errno = ECHILD;
 	*statPtr = 0xC0000000 | ECHILD;
-	result = (Tcl_Pid) -1;
+	result = (Tcl_Pid)-1;
     }
 
     /*
@@ -2708,7 +2717,7 @@ Tcl_WaitPid(
 void
 TclWinAddProcess(
     void *hProcess,		/* Handle to process */
-    size_t id)		/* Global process identifier */
+    Tcl_Size id)		/* Global process identifier */
 {
     ProcInfo *procPtr = (ProcInfo *)Tcl_Alloc(sizeof(ProcInfo));
 

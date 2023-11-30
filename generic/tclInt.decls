@@ -381,12 +381,6 @@ declare 151 {
     void TclRegExpRangeUniChar(Tcl_RegExp re, Tcl_Size index, Tcl_Size *startPtr,
 	    Tcl_Size *endPtr)
 }
-declare 152 {
-    void TclSetLibraryPath(Tcl_Obj *pathPtr)
-}
-declare 153 {
-    Tcl_Obj *TclGetLibraryPath(void)
-}
 declare 156 {
     void TclRegError(Tcl_Interp *interp, const char *msg,
 	    int status)
@@ -759,7 +753,7 @@ declare 7 {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 8 {
-    size_t TclpGetPid(Tcl_Pid pid)
+    Tcl_Size TclpGetPid(Tcl_Pid pid)
 }
 declare 9 {
     TclFile TclpCreateTempFile(const char *contents)
@@ -780,7 +774,7 @@ declare 17 {
 	    const Tcl_StatBuf *statBufPtr, int dontCopyAtts)
 }
 declare 20 {
-    void TclWinAddProcess(void *hProcess, size_t id)
+    void TclWinAddProcess(void *hProcess, Tcl_Size id)
 }
 declare 24 {
     char *TclWinNoBackslash(char *path)
