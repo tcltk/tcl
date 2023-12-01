@@ -4863,9 +4863,25 @@ Tcl_ConstObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    Var *varPtr, *arrayPtr;
+
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName value");
 	return TCL_ERROR;
+    }
+
+    varPtr = TclObjLookupVarEx(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG, 
+	    "const", /*createPart1*/ 1, /*createPart2*/ 0, &arrayPtr);
+    if (arrayPtr) {
+	// FIXME: What if we got an array?
+    }
+    if (!varPtr->value.objPtr) {
+	if (TclPtrSetVar(interp, (Tcl_Var) varPtr, NULL, objv[1], NULL, 
+		objv[2], TCL_LEAVE_ERR_MSG) == NULL) {
+	    return TCL_ERROR;
+	};
+	varPtr->flags |= VAR_CONSTANT;
+	return TCL_OK;
     }
 
     /* FIXME: implement this! */
