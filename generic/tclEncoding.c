@@ -1108,7 +1108,7 @@ Tcl_ExternalToUtfDString(
 				 * converted string is stored. */
 {
     Tcl_ExternalToUtfDStringEx(
-	NULL, encoding, src, srcLen, TCL_ENCODING_PROFILE_TCL8, dstPtr, NULL);
+	NULL, encoding, src, srcLen, TCL_ENCODING_PROFILE_REPLACE, dstPtr, NULL);
     return Tcl_DStringValue(dstPtr);
 }
 
@@ -1439,7 +1439,7 @@ Tcl_UtfToExternalDString(
 				 * converted string is stored. */
 {
     Tcl_UtfToExternalDStringEx(
-	NULL, encoding, src, srcLen, TCL_ENCODING_PROFILE_TCL8, dstPtr, NULL);
+	NULL, encoding, src, srcLen, TCL_ENCODING_PROFILE_REPLACE, dstPtr, NULL);
     return Tcl_DStringValue(dstPtr);
 }
 
