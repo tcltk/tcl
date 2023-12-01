@@ -1494,7 +1494,7 @@ test var-25.2 {const: single argument} -body {
 	return $X
     }}
 } -returnCodes error -result {wrong # args: should be "const varName value"}
-test var-25.3 {const: two arguments (basic correct usage)} knownBug {
+test var-25.3 {const: two arguments (basic correct usage)} {
     apply {{} {
 	const X gorp
 	return $X
@@ -1512,6 +1512,62 @@ test var-25.5 {const: four arguments} -body {
 	return $X
     }}
 } -returnCodes error -result {wrong # args: should be "const varName value"}
+
+test var-26.1 {const: unmodifiable by set} -body {
+    apply {{} {
+	const X 123
+	set X gorp
+    }}
+} -returnCodes error -result {can't set "X": variable is a constant}
+test var-26.2 {const: unmodifiable by append} -body {
+    apply {{} {
+	const X 123
+	append X gorp
+    }}
+} -returnCodes error -result {can't set "X": variable is a constant}
+test var-26.3 {const: unmodifiable by lappend} -body {
+    apply {{} {
+	const X 123
+	lappend X gorp
+    }}
+} -returnCodes error -result {can't set "X": variable is a constant}
+test var-26.4 {const: unmodifiable by incr} -body {
+    apply {{} {
+	const X 123
+	incr X
+    }}
+} -returnCodes error -result {can't incr "X": variable is a constant}
+test var-26.5 {const: unmodifiable by dict set} -body {
+    apply {{} {
+	const X {a 123}
+	dict set X a gorp
+    }}
+} -returnCodes error -result {can't set "X": variable is a constant}
+test var-26.6 {const: unmodifiable by regsub} -body {
+    apply {{} {
+	const X abcabc
+	regsub -all {a(.)} $X {\1\1} X
+    }}
+} -returnCodes error -result {can't set "X": variable is a constant}
+test var-26.7 {const: unmodifiable by gets} -setup {
+    set file [makeFile foo var26.7.txt]
+    set f [open $file]
+} -body {
+    apply {f {
+	const X abcabc
+	gets $f X
+    }} $f
+} -returnCodes error -cleanup {
+    close $f
+    removeFile $file
+} -result {can't set "X": variable is a constant}
+test var-26.8 {const: modifiable by const} knownBug {
+    apply {{} {
+	const X 1
+	const X 2
+	return $X
+    }}
+} 2
 
 catch {namespace delete ns}
 catch {unset arr}
