@@ -4864,29 +4864,47 @@ Tcl_ConstObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Var *varPtr, *arrayPtr;
+    Tcl_Obj *part1Ptr;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName value");
 	return TCL_ERROR;
     }
 
-    varPtr = TclObjLookupVarEx(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG, 
-	    "const", /*createPart1*/ 1, /*createPart2*/ 0, &arrayPtr);
-    if (arrayPtr) {
-	// FIXME: What if we got an array?
+    part1Ptr = objv[1];
+    varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG, 
+	    "const", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+    if (TclIsVarArray(varPtr)) {
+	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", ISARRAY, -1);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VAR", (void *)NULL);
+	return TCL_ERROR;
     }
-    if (!varPtr->value.objPtr) {
-	if (TclPtrSetVar(interp, (Tcl_Var) varPtr, NULL, objv[1], NULL, 
-		objv[2], TCL_LEAVE_ERR_MSG) == NULL) {
-	    return TCL_ERROR;
-	};
-	varPtr->flags |= VAR_CONSTANT;
-	return TCL_OK;
+    if (TclIsVarArrayElement(varPtr)) {
+	if (!varPtr->value.objPtr) {
+	    CleanupVar(varPtr, arrayPtr);
+	}
+	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", ISARRAYELEMENT, -1);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ELEMENT", (void *)NULL);
+	return TCL_ERROR;
     }
 
-    /* FIXME: implement this! */
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("not yet implemented"));
-    return TCL_ERROR;
+    /*
+     * TODO: Check if the variable is the same as it was, to match TIP feature.
+     * Or make const's ability to write to the variable a documented feature. 
+     */
+    if (!TclIsVarUndefined(varPtr) && TclIsVarConstant(varPtr)) {
+	varPtr->flags &= !VAR_CONSTANT;
+    }
+    if (TclPtrSetVar(interp, (Tcl_Var) varPtr, NULL, objv[1], NULL, 
+	    objv[2], TCL_LEAVE_ERR_MSG) == NULL) {
+	varPtr->flags |= VAR_CONSTANT;
+	if (TclIsVarUndefined(varPtr)) {
+	    CleanupVar(varPtr, arrayPtr);
+	}
+	return TCL_ERROR;
+    };
+    varPtr->flags |= VAR_CONSTANT;
+    return TCL_OK;
 }
 
 /*

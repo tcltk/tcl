@@ -1561,13 +1561,91 @@ test var-26.7 {const: unmodifiable by gets} -setup {
     close $f
     removeFile $file
 } -result {can't set "X": variable is a constant}
-test var-26.8 {const: modifiable by const} knownBug {
+test var-26.8 {const: may not be array} -body {
+    apply {{} {
+	array set X {a b}
+	const X 1
+	return $X
+    }}
+} -returnCodes error -result {can't make constant "X": variable is array}
+test var-26.9 {const: may not be array element} -body {
+    apply {{} {
+	array set X {a b}
+	const X(a) 1
+	return $X(a)
+    }}
+} -returnCodes error -result {can't make constant "X(a)": name refers to an element in an array}
+test var-26.10 {const: modifiable by const} {
     apply {{} {
 	const X 1
 	const X 2
 	return $X
     }}
 } 2
+test var-26.11 {const: may not be unset} -body {
+   apply {{} {
+	const X 1
+	unset X
+   }}
+} -returnCodes error -result {can't unset "X": variable is a constant}
+
+test var-27.1 {const: in a namespace} -setup {
+    namespace eval var27 {}
+} -body {
+    namespace eval var27 {
+	variable X
+	const X gorp
+	return $X
+    }
+} -cleanup {
+    namespace delete var27
+} -result gorp
+test var-27.2 {const: in a namespace} -setup {
+    namespace eval var27 {}
+} -body {
+    namespace eval var27 {
+	variable X
+	const X gorp
+    }
+    apply {{} {
+	variable X
+	set X 123
+    } var27}
+} -cleanup {
+    namespace delete var27
+} -returnCodes error -result {can't set "X": variable is a constant}
+test var-27.3 {const: in a namespace} -setup {
+    namespace eval var27 {}
+} -body {
+    namespace eval var27 {
+	variable X
+	const X gorp
+    }
+    apply {{} {
+	variable X
+	unset X
+    } var27}
+} -cleanup {
+    namespace delete var27
+} -returnCodes error -result {can't unset "X": variable is a constant}
+test var-27.4 {const: in a namespace} -setup {
+    namespace eval var27 {}
+} -body {
+    namespace eval var27 {
+	variable X
+	const X gorp
+    }
+    namespace delete var27
+    namespace eval var27 {
+	variable X abc
+    }
+    apply {{} {
+	variable X
+	return $X
+    } var27}
+} -cleanup {
+    namespace delete var27
+} -result abc
 
 catch {namespace delete ns}
 catch {unset arr}
