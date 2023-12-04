@@ -129,6 +129,7 @@ static const char MISSINGNAME[] =	"missing variable name";
 static const char ISARRAYELEMENT[] =
 	"name refers to an element in an array";
 static const char ISCONST[] =		"variable is a constant";
+static const char EXISTS[] =		"variable already exists";
 
 /*
  * A test to see if we are in a call frame that has local variables. This is
@@ -4880,7 +4881,7 @@ Tcl_ConstObjCmd(
 	return TCL_ERROR;
     }
     if (TclIsVarArrayElement(varPtr)) {
-	if (!varPtr->value.objPtr) {
+	if (TclIsVarUndefined(varPtr)) {
 	    CleanupVar(varPtr, arrayPtr);
 	}
 	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", ISARRAYELEMENT, -1);
@@ -4889,21 +4890,28 @@ Tcl_ConstObjCmd(
     }
 
     /*
-     * TODO: Check if the variable is the same as it was, to match TIP feature.
-     * Or make const's ability to write to the variable a documented feature. 
+     * If already exists, either a constant (no problem) or an error. 
      */
-    if (!TclIsVarUndefined(varPtr) && TclIsVarConstant(varPtr)) {
-	varPtr->flags &= !VAR_CONSTANT;
+    if (!TclIsVarUndefined(varPtr)) {
+	if (TclIsVarConstant(varPtr)) {
+	    return TCL_OK;
+	}
+	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", EXISTS, -1);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VAR", (void *)NULL);
+	return TCL_ERROR;
     }
+
+    /*
+     * Make the variable and flag it as a constant.
+     */
     if (TclPtrSetVar(interp, (Tcl_Var) varPtr, NULL, objv[1], NULL, 
 	    objv[2], TCL_LEAVE_ERR_MSG) == NULL) {
-	varPtr->flags |= VAR_CONSTANT;
 	if (TclIsVarUndefined(varPtr)) {
 	    CleanupVar(varPtr, arrayPtr);
 	}
 	return TCL_ERROR;
     };
-    varPtr->flags |= VAR_CONSTANT;
+    TclSetVarConstant(varPtr);
     return TCL_OK;
 }
 
