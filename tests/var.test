@@ -1496,10 +1496,10 @@ test var-25.2 {const: single argument} -body {
 } -returnCodes error -result {wrong # args: should be "const varName value"}
 test var-25.3 {const: two arguments (basic correct usage)} {
     apply {{} {
-	const X gorp
-	return $X
+	set res [const X gorp]
+	return [list $res $X]
     }}
-} gorp
+} {{} gorp}
 test var-25.4 {const: three arguments} -body {
     apply {{} {
 	const X gorp foo
@@ -1568,26 +1568,118 @@ test var-26.8 {const: may not be array} -body {
 	return $X
     }}
 } -returnCodes error -result {can't make constant "X": variable is array}
-test var-26.9 {const: may not be array element} -body {
+test var-26.9.1 {const: may not be array element} -body {
     apply {{} {
 	array set X {a b}
 	const X(a) 1
 	return $X(a)
     }}
 } -returnCodes error -result {can't make constant "X(a)": name refers to an element in an array}
-test var-26.10 {const: modifiable by const} {
+test var-26.9.2 {const: may not be array element} -body {
+    apply {{} {
+	array set X {a b}
+	const X(b) 1
+	return $X(b)
+    }}
+} -returnCodes error -result {can't make constant "X(b)": name refers to an element in an array}
+test var-26.10.1 {const: unmodifiable by const but not an error} {
     apply {{} {
 	const X 1
 	const X 2
 	return $X
     }}
-} 2
+} 1
+test var-26.10.2 {const: unmodifiable by const but not an error} {
+    apply {{} {
+	lmap x {1 2 3} {
+	    const A 2
+	    const B 3
+	    const C 5
+	    expr {$A * $x**2 + $B * $x + $C}
+	}
+    }}
+} {10 19 32}
 test var-26.11 {const: may not be unset} -body {
    apply {{} {
 	const X 1
 	unset X
    }}
 } -returnCodes error -result {can't unset "X": variable is a constant}
+test var-26.12 {const: may not be unset, but -nocomplain doesn't complain} {
+   apply {{} {
+	const X 1
+	unset -nocomplain X
+	return $X
+   }}
+} 1
+test var-26.13 {const and traces: write trace causes fail} -body {
+    apply {{} {
+	trace add variable X write {apply {args {
+	    error "ERR: $args"
+	}}}
+	const X gorp
+	return $X
+    }}
+} -returnCodes error -result {can't set "X": ERR: X {} write}
+test var-26.14 {const and traces: write trace err causes no const} -body {
+    apply {{} {
+	set trace {apply {args {
+	    error "ERR: $args"
+	}}}
+	trace add variable X write $trace
+	catch {
+	    const X gorp
+	}
+	trace remove variable X write $trace
+	set X 123
+	return $X
+    }}
+} -result 123
+test var-26.15 {const and traces: read traces} -setup {
+    unset -nocomplain traces
+    set traces {}
+} -body {
+    apply {{} {
+	trace add variable X read {apply {args {
+	    lappend ::traces $args
+	}}}
+	const X gorp
+	list $X $X $::traces
+    }}
+} -result {gorp gorp {{X {} read} {X {} read}}} -cleanup {
+    unset -nocomplain traces
+}
+test var-26.16 {const and traces: write traces} -setup {
+    unset -nocomplain traces
+    set traces {}
+} -body {
+    apply {{} {
+	trace add variable X write {apply {args {
+	    lappend ::traces $args
+	}}}
+	const X gorp
+	const X foo
+	catch {set X bar}
+	list $X $::traces
+    }}
+} -result {gorp {{X {} write}}} -cleanup {
+    unset -nocomplain traces
+}
+test var-26.17 {const and traces: unset traces} -setup {
+    unset -nocomplain traces
+    set traces {}
+} -body {
+    list {*}[apply {{} {
+	trace add variable X unset {apply {args {
+	    lappend ::traces $args
+	}}}
+	const X gorp
+	unset -nocomplain X
+	list $X $::traces
+    }}] $traces
+} -result {gorp {} {{X {} unset}}} -cleanup {
+    unset -nocomplain traces
+}
 
 test var-27.1 {const: in a namespace} -setup {
     namespace eval var27 {}
@@ -1646,6 +1738,35 @@ test var-27.4 {const: in a namespace} -setup {
 } -cleanup {
     namespace delete var27
 } -result abc
+test var-27.5 {const: in a namespace, direct access from proc} -setup {
+    namespace eval var27 {}
+} -body {
+    set result [apply {{} {
+	const ::var27::X abc
+	# Constant in namespace, NOT locally!
+	info exists X
+    }}]
+    apply {res {
+	variable X
+	list $res [catch {unset X} msg] $msg $X
+    } var27} $result
+} -cleanup {
+    namespace delete var27
+} -result {0 1 {can't unset "X": variable is a constant} abc}
+
+test var-28.1 {const: globally} -setup {
+    set int [interp create]
+} -body {
+    $int eval {
+	const X gorp
+	apply {{} {
+	    global X
+	    return $X
+	}}
+    }
+} -cleanup {
+    interp delete $int
+} -result gorp
 
 catch {namespace delete ns}
 catch {unset arr}
