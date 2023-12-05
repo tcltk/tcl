@@ -18,6 +18,7 @@ if {"::tcltest" ni [namespace children]} {
 source [file join [file dirname [info script]] tcltests.tcl]
 
 package require http 2.10
+#http::register http 80 ::socket
 
 proc bgerror {args} {
     global errorInfo

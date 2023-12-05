@@ -119,7 +119,7 @@ namespace eval http {
 
     variable urlTypes
     if {![info exists urlTypes]} {
-	set urlTypes(http) [list 80 ::http::socket]
+	set urlTypes(http) [list 80 ::http::socket {} 1 0]
     }
 
     variable encodings [string tolower [encoding names]]
@@ -282,15 +282,34 @@ if {[info command http::Log] eq {}} {proc http::Log {args} {}}
 #     See documentation for details.
 #
 # Arguments:
-#     proto	URL protocol prefix, e.g. https
-#     port	Default port for protocol
-#     command	Command to use to create socket
+#     proto		URL protocol prefix, e.g. https
+#     port		Default port for protocol
+#     command		Command to use to create socket
+#     socketCmdVarName	(optional) name of variable provided by the protocol
+#                       handler whose value is the callback used by argument
+#                       "command" to open a socket. The default value "::socket"
+#                       will be overwritten by http.
+#     useSockThread	(optional, boolean)
+#     endToEndProxy	(optional, boolean)
 # Results:
-#     list of port and command that was registered.
+#     list of port, command, variable name, (boolean) threadability,
+#     and (boolean) endToEndProxy that was registered.
 
-proc http::register {proto port command} {
+proc http::register {proto port command {socketCmdVarName {}} {useSockThread 0} {endToEndProxy 0}} {
     variable urlTypes
-    set urlTypes([string tolower $proto]) [list $port $command]
+    set lower [string tolower $proto]
+    if {[info exists urlTypes($lower)]} {
+        unregister $lower
+    }
+    set urlTypes($lower) [list $port $command $socketCmdVarName $useSockThread $endToEndProxy]
+
+    # If the external handler for protocol $proto has given $socketCmdVarName the expected
+    # value "::socket", overwrite it with the new value.
+    if {($socketCmdVarName ne {}) && ([set $socketCmdVarName] eq {::socket})} {
+	set $socketCmdVarName ::http::socketForTls
+    }
+
+    return $urlTypes($lower)
 }
 
 # http::unregister --
@@ -300,7 +319,8 @@ proc http::register {proto port command} {
 # Arguments:
 #     proto	URL protocol prefix, e.g. https
 # Results:
-#     list of port and command that was unregistered.
+#     list of port, command, variable name, (boolean) useSockThread,
+#     and (boolean) endToEndProxy that was unregistered.
 
 proc http::unregister {proto} {
     variable urlTypes
@@ -309,6 +329,13 @@ proc http::unregister {proto} {
 	return -code error "unsupported url type \"$proto\""
     }
     set old $urlTypes($lower)
+
+    # Restore the external handler's original value for $socketCmdVarName.
+    lassign $old defport defcmd socketCmdVarName useSockThread endToEndProxy
+    if {($socketCmdVarName ne {}) && ([set $socketCmdVarName] eq {::http::socketForTls})} {
+	set $socketCmdVarName ::socket
+    }
+
     unset urlTypes($lower)
     return $old
 }
@@ -941,10 +968,6 @@ proc http::geturl {url args} {
     #   - ::http::socketForTls - as ::http::socket, but can also open a socket
     #                            for HTTPS/TLS through a proxy.
 
-    if {[info exists ::tls::socketCmd] && ($::tls::socketCmd eq {::socket})} {
-        set ::tls::socketCmd ::http::socketForTls
-    }
-
     set token [CreateToken $url {*}$args]
     variable $token
     upvar 0 $token state
@@ -1067,6 +1090,8 @@ proc http::CreateToken {url args} {
 	requestLine     {}
 	transfer        {}
 	proxyUsed       none
+	protoSockThread 0
+	protoProxyConn  0
     }
     set state(-keepalive) $defaultKeepalive
     set state(-strict) $strict
@@ -1261,8 +1286,16 @@ proc http::CreateToken {url args} {
 	unset $token
 	return -code error "Unsupported URL type \"$proto\""
     }
-    set defport [lindex $urlTypes($lower) 0]
-    set defcmd [lindex $urlTypes($lower) 1]
+    lassign $urlTypes($lower) defport defcmd socketCmdVarName useSockThread end2EndProxy
+
+    # If the external handler for protocol $proto has given $socketCmdVarName the expected
+    # value "::socket", overwrite it with the new value.
+    if {($socketCmdVarName ne {}) && ([set $socketCmdVarName] eq {::socket})} {
+	set $socketCmdVarName ::http::socketForTls
+    }
+
+    set state(protoSockThread) $useSockThread
+    set state(protoProxyConn) $end2EndProxy
 
     if {$port eq ""} {
 	set port $defport
@@ -1349,7 +1382,7 @@ proc http::CreateToken {url args} {
     # including the server name.
     # The *tls* test below attempts to describe protocols in addition to
     # "https on port 443" that use HTTP over TLS.
-    if {($phost ne "") && (![string match -nocase *tls* $defcmd])} {
+    if {($phost ne "") && (!$end2EndProxy)} {
 	set srvurl $url
 	set targetAddr [list $phost $pport]
 	set state(proxyUsed) HttpProxy
@@ -1369,8 +1402,13 @@ proc http::CreateToken {url args} {
 	lappend sockopts -myaddr $state(-myaddr)
     }
 
+    if {$useSockThread} {
+        set targs [list -type $token]
+    } else {
+        set targs {}
+    }
     set state(connArgs) [list $proto $phost $srvurl]
-    set state(openCmd) [list {*}$defcmd {*}$sockopts -type $token {*}$targetAddr]
+    set state(openCmd) [list {*}$defcmd {*}$sockopts {*}$targs {*}$targetAddr]
 
     # See if we are supposed to use a previously opened channel.
     # - In principle, ANY call to http::geturl could use a previously opened
@@ -4969,10 +5007,21 @@ interp alias {} http::ncode {} http::responseCode
 
 proc http::socketForTls {args} {
     variable http
+
+    set targ [lsearch -exact $args -type]
+    if {$targ != -1} {
+        set token [lindex $args $targ+1]
+        upvar 0 ${token} state
+        set protoProxyConn $state(protoProxyConn)
+    } else {
+        set protoProxyConn 0
+    }
+
     set host [lindex $args end-1]
     set port [lindex $args end]
     if {    ($http(-proxyfilter) ne {})
          && (![catch {$http(-proxyfilter) $host} proxy])
+         && $protoProxyConn
     } {
         set phost [lindex $proxy 0]
         set pport [lindex $proxy 1]
@@ -5225,7 +5274,8 @@ proc http::socket {args} {
         upvar 0 $token state
     }
 
-    if {!$http(usingThread)} {
+    if {$http(usingThread) && [info exists state] && $state(protoSockThread)} {
+    } else {
         # Use plain "::socket".  This is the default.
         return [eval ::socket $args]
     }
