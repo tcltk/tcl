@@ -29,8 +29,8 @@ File path in a form appropriate for the current platform (see the
 Filled in with number of path elements in \fIpath\fR.
 May be (Tcl_Size *)NULL when not used. If it points to a variable which
 type is not \fBTcl_Size\fR, a compiler warning will be generated.
-If your extensions is compiled with -DTCL_8_API, this function will return
-NULL if the number of elements is larger than INT_MAX (which should
+If your extensions is compiled with -DTCL_8_API, argcPtr will be filled
+with -1 for paths with more than INT_MAX elements (which should
 trigger proper error-handling), otherwise expect it to crash.
 .AP "const char" ***argvPtr out
 \fI*argvPtr\fR will be filled in with the address of an array of
