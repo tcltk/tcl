@@ -1681,80 +1681,249 @@ test var-26.17 {const and traces: unset traces} -setup {
     unset -nocomplain traces
 }
 
-test var-27.1 {const: in a namespace} -setup {
-    namespace eval var27 {}
+# Same [const], but definitely not compiled
+test var-27.1 {const: unmodifiable by set} -body {
+    apply {const {
+	$const X 123
+	set X gorp
+    }} const
+} -returnCodes error -result {can't set "X": variable is a constant}
+test var-27.2 {const: unmodifiable by append} -body {
+    apply {const {
+	$const X 123
+	append X gorp
+    }} const
+} -returnCodes error -result {can't set "X": variable is a constant}
+test var-27.3 {const: unmodifiable by lappend} -body {
+    apply {const {
+	$const X 123
+	lappend X gorp
+    }} const
+} -returnCodes error -result {can't set "X": variable is a constant}
+test var-27.4 {const: unmodifiable by incr} -body {
+    apply {const {
+	$const X 123
+	incr X
+    }} const
+} -returnCodes error -result {can't incr "X": variable is a constant}
+test var-27.5 {const: unmodifiable by dict set} -body {
+    apply {const {
+	$const X {a 123}
+	dict set X a gorp
+    }} const
+} -returnCodes error -result {can't set "X": variable is a constant}
+test var-27.6 {const: unmodifiable by regsub} -body {
+    apply {const {
+	$const X abcabc
+	regsub -all {a(.)} $X {\1\1} X
+    }} const
+} -returnCodes error -result {can't set "X": variable is a constant}
+test var-27.7 {const: unmodifiable by gets} -setup {
+    set file [makeFile foo var27.7.txt]
+    set f [open $file]
 } -body {
-    namespace eval var27 {
+    apply {{const f} {
+	$const X abcabc
+	gets $f X
+    }} const $f
+} -returnCodes error -cleanup {
+    close $f
+    removeFile $file
+} -result {can't set "X": variable is a constant}
+test var-27.8 {const: may not be array} -body {
+    apply {const {
+	array set X {a b}
+	$const X 1
+	return $X
+    }} const
+} -returnCodes error -result {can't make constant "X": variable is array}
+test var-27.9.1 {const: may not be array element} -body {
+    apply {const {
+	array set X {a b}
+	$const X(a) 1
+	return $X(a)
+    }} const
+} -returnCodes error -result {can't make constant "X(a)": name refers to an element in an array}
+test var-27.9.2 {const: may not be array element} -body {
+    apply {const {
+	array set X {a b}
+	$const X(b) 1
+	return $X(b)
+    }} const
+} -returnCodes error -result {can't make constant "X(b)": name refers to an element in an array}
+test var-27.10.1 {const: unmodifiable by const but not an error} {
+    apply {const {
+	$const X 1
+	$const X 2
+	return $X
+    }} const
+} 1
+test var-27.10.2 {const: unmodifiable by const but not an error} {
+    apply {const {
+	lmap x {1 2 3} {
+	    $const A 2
+	    $const B 3
+	    $const C 5
+	    expr {$A * $x**2 + $B * $x + $C}
+	}
+    }} const
+} {10 19 32}
+test var-27.11 {const: may not be unset} -body {
+   apply {const {
+	$const X 1
+	unset X
+   }} const
+} -returnCodes error -result {can't unset "X": variable is a constant}
+test var-27.12 {const: may not be unset, but -nocomplain doesn't complain} {
+   apply {const {
+	$const X 1
+	unset -nocomplain X
+	return $X
+   }} const
+} 1
+test var-27.13 {const and traces: write trace causes fail} -body {
+    apply {const {
+	trace add variable X write {apply {args {
+	    error "ERR: $args"
+	}}}
+	$const X gorp
+	return $X
+    }} const
+} -returnCodes error -result {can't set "X": ERR: X {} write}
+test var-27.14 {const and traces: write trace err causes no const} -body {
+    apply {const {
+	set trace {apply {args {
+	    error "ERR: $args"
+	}}}
+	trace add variable X write $trace
+	catch {
+	    $const X gorp
+	}
+	trace remove variable X write $trace
+	set X 123
+	return $X
+    }} const
+} -result 123
+test var-27.15 {const and traces: read traces} -setup {
+    unset -nocomplain traces
+    set traces {}
+} -body {
+    apply {const {
+	trace add variable X read {apply {args {
+	    lappend ::traces $args
+	}}}
+	$const X gorp
+	list $X $X $::traces
+    }} const
+} -result {gorp gorp {{X {} read} {X {} read}}} -cleanup {
+    unset -nocomplain traces
+}
+test var-27.16 {const and traces: write traces} -setup {
+    unset -nocomplain traces
+    set traces {}
+} -body {
+    apply {const {
+	trace add variable X write {apply {args {
+	    lappend ::traces $args
+	}}}
+	$const X gorp
+	$const X foo
+	catch {set X bar}
+	list $X $::traces
+    }} const
+} -result {gorp {{X {} write}}} -cleanup {
+    unset -nocomplain traces
+}
+test var-27.17 {const and traces: unset traces} -setup {
+    unset -nocomplain traces
+    set traces {}
+} -body {
+    list {*}[apply {const {
+	trace add variable X unset {apply {args {
+	    lappend ::traces $args
+	}}}
+	$const X gorp
+	unset -nocomplain X
+	list $X $::traces
+    }} const] $traces
+} -result {gorp {} {{X {} unset}}} -cleanup {
+    unset -nocomplain traces
+}
+
+test var-28.1 {const: in a namespace} -setup {
+    namespace eval var28 {}
+} -body {
+    namespace eval var28 {
 	variable X
 	const X gorp
 	return $X
     }
 } -cleanup {
-    namespace delete var27
+    namespace delete var28
 } -result gorp
-test var-27.2 {const: in a namespace} -setup {
-    namespace eval var27 {}
+test var-28.2 {const: in a namespace} -setup {
+    namespace eval var28 {}
 } -body {
-    namespace eval var27 {
+    namespace eval var28 {
 	variable X
 	const X gorp
     }
     apply {{} {
 	variable X
 	set X 123
-    } var27}
+    } var28}
 } -cleanup {
-    namespace delete var27
+    namespace delete var28
 } -returnCodes error -result {can't set "X": variable is a constant}
-test var-27.3 {const: in a namespace} -setup {
-    namespace eval var27 {}
+test var-28.3 {const: in a namespace} -setup {
+    namespace eval var28 {}
 } -body {
-    namespace eval var27 {
+    namespace eval var28 {
 	variable X
 	const X gorp
     }
     apply {{} {
 	variable X
 	unset X
-    } var27}
+    } var28}
 } -cleanup {
-    namespace delete var27
+    namespace delete var28
 } -returnCodes error -result {can't unset "X": variable is a constant}
-test var-27.4 {const: in a namespace} -setup {
-    namespace eval var27 {}
+test var-28.4 {const: in a namespace} -setup {
+    namespace eval var28 {}
 } -body {
-    namespace eval var27 {
+    namespace eval var28 {
 	variable X
 	const X gorp
     }
-    namespace delete var27
-    namespace eval var27 {
+    namespace delete var28
+    namespace eval var28 {
 	variable X abc
     }
     apply {{} {
 	variable X
 	return $X
-    } var27}
+    } var28}
 } -cleanup {
-    namespace delete var27
+    namespace delete var28
 } -result abc
-test var-27.5 {const: in a namespace, direct access from proc} -setup {
-    namespace eval var27 {}
+test var-28.5 {const: in a namespace, direct access from proc} -setup {
+    namespace eval var28 {}
 } -body {
     set result [apply {{} {
-	const ::var27::X abc
+	const ::var28::X abc
 	# Constant in namespace, NOT locally!
 	info exists X
     }}]
     apply {res {
 	variable X
 	list $res [catch {unset X} msg] $msg $X
-    } var27} $result
+    } var28} $result
 } -cleanup {
-    namespace delete var27
+    namespace delete var28
 } -result {0 1 {can't unset "X": variable is a constant} abc}
 
-test var-28.1 {const: globally} -setup {
+test var-29.1 {const: globally} -setup {
     set int [interp create]
 } -body {
     $int eval {
@@ -1768,7 +1937,8 @@ test var-28.1 {const: globally} -setup {
     interp delete $int
 } -result gorp
 
-test var-29.1 {info constant and info consts} {
+# The info constant and info consts commands
+test var-30.1 {info constant and info consts} {
     apply {{} {
 	lappend consts [lsort [info consts]] [info constant X]
 	const X 1
@@ -1779,7 +1949,7 @@ test var-29.1 {info constant and info consts} {
 	lappend consts [lsort [info consts]]
     }}
 } {{} 0 X 1 {X Y} {X Y}}
-test var-29.2 {const and info consts} {
+test var-30.2 {info constant and info consts} {
     apply {{} {
 	lappend consts [lsort [info consts X]]
 	const X 1
@@ -1790,7 +1960,7 @@ test var-29.2 {const and info consts} {
 	lappend consts [lsort [info consts X]]
     }}
 } {{} X X X}
-test var-29.3 {const and info consts} {
+test var-30.3 {info constant and info consts} {
     apply {{} {
 	lappend consts [lsort [info consts ?]]
 	const X 1
@@ -1801,7 +1971,7 @@ test var-29.3 {const and info consts} {
 	lappend consts [lsort [info consts ?]]
     }}
 } {{} X {X Y} {X Y}}
-test var-29.4 {const and info consts} {
+test var-30.4 {info constant and info consts} {
     apply {{} {
 	lappend consts [lsort [info consts X]]
 	set X 1
@@ -1812,27 +1982,76 @@ test var-29.4 {const and info consts} {
 	lappend consts [lsort [info consts X]]
     }}
 } {{} {} {} {}}
-test var-29.5 {const: in a namespace} -setup {
-    namespace eval var29 {}
+test var-30.5 {info consts: in a namespace} -setup {
+    namespace eval var30 {}
 } -body {
-    namespace eval var29 {
+    namespace eval var30 {
 	const X gorp
 	info consts
     }
 } -cleanup {
-    namespace delete var29
+    namespace delete var30
 } -result X
-test var-29.6 {const: in a namespace} -setup {
-    namespace eval var29 {}
+test var-30.6 {info consts: in a namespace} -setup {
+    namespace eval var30 {}
 } -body {
-    namespace eval var29 {
+    namespace eval var30 {
 	const X gorp
 	variable Y foo
     }
-    info consts var29::*
+    info consts var30::*
 } -cleanup {
-    namespace delete var29
-} -result ::var29::X
+    namespace delete var30
+} -result ::var30::X
+test var-30.7 {info constant: bad constant names: array element} {
+    apply {{} {
+	info constant a(b)
+    }}
+} 0
+test var-30.8 {info constant: bad constant names: array} {
+    apply {{} {
+	array set a {}
+	info constant a
+    }}
+} 0
+test var-30.9 {info constant: bad constant names: no var} {
+    apply {{} {
+	info constant a
+    }}
+} 0
+test var-30.10 {info constant: bad constant names: no namespace} {
+    apply {{} {
+	info constant ::var29::no::such::ns::a
+    }}
+} 0
+test var-30.11 {info constant: bad constant names: dangling upvar} {
+    apply {{} {
+	upvar 0 no_var a
+	info constant a
+    }}
+} 0
+test var-30.12 {info constant: bad constant names: bad name} {
+    apply {{} {
+	info constant a(b
+    }}
+} 0
+test var-30.13 {info constant: bad constant names: nesting} {
+    apply {{} {
+	array set b {c d}
+	upvar 0 b(c) a
+	info constant a(d)
+    }}
+} 0
+
+test var-31.1 {info constant: syntax} -returnCodes error -body {
+    info constant
+} -result {wrong # args: should be "info constant varName"}
+test var-31.2 {info constant: syntax} -returnCodes error -body {
+    info constant foo bar
+} -result {wrong # args: should be "info constant varName"}
+test var-31.3 {info consts: syntax} -returnCodes error -body {
+    info consts foo bar
+} -result {wrong # args: should be "info consts ?pattern?"}
 
 catch {namespace delete ns}
 catch {unset arr}
