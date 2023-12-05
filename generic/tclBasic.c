@@ -176,7 +176,7 @@ static int		CancelEvalProc(void *clientData,
 			    Tcl_Interp *interp, int code);
 static int		CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void		DeleteCoroutine(void *clientData);
-static Tcl_FreeProc	DeleteInterpProc;
+static void		DeleteInterpProc(Tcl_Interp * interp);
 static void		DeleteOpCmdClientData(void *clientData);
 #ifdef USE_DTRACE
 static Tcl_ObjCmdProc	DTraceObjCmd;
@@ -1822,10 +1822,8 @@ Tcl_DeleteInterp(
  */
 
 static void
-DeleteInterpProc(
-    void *blockPtr)		/* Interpreter to delete. */
+DeleteInterpProc(Tcl_Interp * interp)
 {
-    Tcl_Interp *interp = (Tcl_Interp *) blockPtr;
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
