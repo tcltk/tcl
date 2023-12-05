@@ -1102,7 +1102,7 @@ PipeClose2Proc(
 	    errChan = Tcl_MakeFileChannel(
 		    INT2PTR(GetFd(pipePtr->errorFile)),
 		    TCL_READABLE);
-	    /* Error channels should raise encoding errors */
+	    /* Error channels should not raise encoding errors */
 	    Tcl_SetChannelOption(NULL, errChan, "-profile", "replace");
 	} else {
 	    errChan = NULL;
