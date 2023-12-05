@@ -5293,13 +5293,17 @@ proc http::socket {args} {
 # value 1 => operate as if -threadlevel 0
 # value 2 => error return
 #
+# The command assigns a value to http(usingThread), which records whether
+# command http::socket can use a separate thread.
+#
 # Arguments: none
 # Return Value: none
 # ------------------------------------------------------------------------------
 
 proc http::LoadThreadIfNeeded {} {
     variable http
-    if {$http(usingThread) || ($http(-threadlevel) == 0)} {
+    if {$http(-threadlevel) == 0} {
+        set http(usingThread) 0
         return
     }
     if {[catch {package require Thread}]} {
@@ -5308,6 +5312,7 @@ proc http::LoadThreadIfNeeded {} {
                      but the Thread package is not available}
             return -code error $msg
         }
+        set http(usingThread) 0
         return
     }
     set http(usingThread) 1
