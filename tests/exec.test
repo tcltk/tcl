@@ -712,6 +712,22 @@ test exec-20.1 {exec .CMD file} -constraints {win} -body {
     exec [makeFile "echo %1> $log" exec201.CMD] "Testing exec-20.1"
     viewFile $log
 } -result "\"Testing exec-20.1\""
+
+# Test with encoding mismatches (Bug 0f1ddc0df7fb7)
+test exec-21.1 {exec encoding mismatch} -setup {
+    set path(script) [makeFile {
+        fconfigure stdout -translation binary
+        puts a\xe9b
+    } script]
+    set enc [encoding system]
+    encoding system utf-8
+} -cleanup {
+    removeFile $path(script)
+    encoding system $enc
+} -body {
+    exec [info nameofexecutable] $path(script)
+} -result a\uFFFDb
+
 
 # ----------------------------------------------------------------------
 # cleanup
