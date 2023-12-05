@@ -3376,6 +3376,8 @@ MODULE_SCOPE Tcl_Obj *	TclInfoFrame(Tcl_Interp *interp, CmdFrame *framePtr);
 MODULE_SCOPE Tcl_ObjCmdProc TclInfoGlobalsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclInfoLocalsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclInfoVarsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclInfoConstsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclInfoConstantCmd;
 MODULE_SCOPE void	TclInitAlloc(void);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
