@@ -3774,6 +3774,7 @@ MODULE_SCOPE CompileProc TclCompileCatchCmd;
 MODULE_SCOPE CompileProc TclCompileClockClicksCmd;
 MODULE_SCOPE CompileProc TclCompileClockReadingCmd;
 MODULE_SCOPE CompileProc TclCompileConcatCmd;
+MODULE_SCOPE CompileProc TclCompileConstCmd;
 MODULE_SCOPE CompileProc TclCompileContinueCmd;
 MODULE_SCOPE CompileProc TclCompileDictAppendCmd;
 MODULE_SCOPE CompileProc TclCompileDictCreateCmd;

@@ -4878,7 +4878,7 @@ Tcl_ConstObjCmd(
 	    "const", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
     if (TclIsVarArray(varPtr)) {
 	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", ISARRAY, -1);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VAR", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONST", (void *)NULL);
 	return TCL_ERROR;
     }
     if (TclIsVarArrayElement(varPtr)) {
@@ -4886,7 +4886,7 @@ Tcl_ConstObjCmd(
 	    CleanupVar(varPtr, arrayPtr);
 	}
 	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", ISARRAYELEMENT, -1);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ELEMENT", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONST", (void *)NULL);
 	return TCL_ERROR;
     }
 
@@ -4898,7 +4898,7 @@ Tcl_ConstObjCmd(
 	    return TCL_OK;
 	}
 	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", EXISTS, -1);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VAR", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CONST", (void *)NULL);
 	return TCL_ERROR;
     }
 

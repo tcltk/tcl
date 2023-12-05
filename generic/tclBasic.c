@@ -316,7 +316,7 @@ static const CmdInfo builtInCmds[] = {
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	CMD_IS_SAFE},
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	CMD_IS_SAFE},
     {"concat",		Tcl_ConcatObjCmd,	TclCompileConcatCmd,	NULL,	CMD_IS_SAFE},
-    {"const", 		Tcl_ConstObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"const", 		Tcl_ConstObjCmd,	TclCompileConstCmd,	NULL,	CMD_IS_SAFE},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	CMD_IS_SAFE},
     {"coroinject",	NULL,			NULL,                   TclNRCoroInjectObjCmd,	CMD_IS_SAFE},
     {"coroprobe",	NULL,			NULL,                   TclNRCoroProbeObjCmd,	CMD_IS_SAFE},
