@@ -1767,6 +1767,72 @@ test var-28.1 {const: globally} -setup {
 } -cleanup {
     interp delete $int
 } -result gorp
+
+test var-29.1 {info constant and info consts} {
+    apply {{} {
+	lappend consts [lsort [info consts]] [info constant X]
+	const X 1
+	lappend consts [lsort [info consts]] [info constant X]
+	const Y 2
+	lappend consts [lsort [info consts]]
+	const X 3
+	lappend consts [lsort [info consts]]
+    }}
+} {{} 0 X 1 {X Y} {X Y}}
+test var-29.2 {const and info consts} {
+    apply {{} {
+	lappend consts [lsort [info consts X]]
+	const X 1
+	lappend consts [lsort [info consts X]]
+	const Y 2
+	lappend consts [lsort [info consts X]]
+	const X 3
+	lappend consts [lsort [info consts X]]
+    }}
+} {{} X X X}
+test var-29.3 {const and info consts} {
+    apply {{} {
+	lappend consts [lsort [info consts ?]]
+	const X 1
+	lappend consts [lsort [info consts ?]]
+	const Y 2
+	lappend consts [lsort [info consts ?]]
+	const XX 3
+	lappend consts [lsort [info consts ?]]
+    }}
+} {{} X {X Y} {X Y}}
+test var-29.4 {const and info consts} {
+    apply {{} {
+	lappend consts [lsort [info consts X]]
+	set X 1
+	lappend consts [lsort [info consts X]]
+	set Y 2
+	lappend consts [lsort [info consts X]]
+	set X 3
+	lappend consts [lsort [info consts X]]
+    }}
+} {{} {} {} {}}
+test var-29.5 {const: in a namespace} -setup {
+    namespace eval var29 {}
+} -body {
+    namespace eval var29 {
+	const X gorp
+	info consts
+    }
+} -cleanup {
+    namespace delete var29
+} -result X
+test var-29.6 {const: in a namespace} -setup {
+    namespace eval var29 {}
+} -body {
+    namespace eval var29 {
+	const X gorp
+	variable Y foo
+    }
+    info consts var29::*
+} -cleanup {
+    namespace delete var29
+} -result ::var29::X
 
 catch {namespace delete ns}
 catch {unset arr}
