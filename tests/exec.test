@@ -714,7 +714,7 @@ test exec-20.1 {exec .CMD file} -constraints {win} -body {
 } -result "\"Testing exec-20.1\""
 
 # Test with encoding mismatches (Bug 0f1ddc0df7fb7)
-test exec-21.1 {exec encoding mismatch} -setup {
+test exec-21.1 {exec encoding mismatch on stdout} -setup {
     set path(script) [makeFile {
         fconfigure stdout -translation binary
         puts a\xe9b
@@ -727,6 +727,19 @@ test exec-21.1 {exec encoding mismatch} -setup {
 } -body {
     exec [info nameofexecutable] $path(script)
 } -result a\uFFFDb
+test exec-21.2 {exec encoding mismatch on stderr} -setup {
+    set path(script) [makeFile {
+        fconfigure stderr -translation binary
+        puts stderr a\xe9b
+    } script]
+    set enc [encoding system]
+    encoding system utf-8
+} -cleanup {
+    removeFile $path(script)
+    encoding system $enc
+} -body {
+    list [catch {exec [info nameofexecutable] $path(script)} r] $r
+} -result [list 1 a\uFFFDb]
 
 
 # ----------------------------------------------------------------------
