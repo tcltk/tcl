@@ -86,6 +86,22 @@ static const char *const typeNames[] = {
 
 static DWORD lastType = REG_RESOURCE_LIST;
 
+#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
+# if TCL_UTF_MAX > 3
+#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
+#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
+# else
+#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
+#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
+# endif
+#ifndef Tcl_Size
+#   define Tcl_Size int
+#endif
+#ifndef Tcl_CreateObjCommand2
+#   define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
+#endif
+#endif
+
 /*
  * Declarations for functions defined in this file.
  */
@@ -124,25 +140,13 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj, REGSAM mode);
 
-#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
-# if TCL_UTF_MAX > 3
-#   define Tcl_WCharToUtfDString(a,b,c) Tcl_WinTCharToUtf((TCHAR *)(a),(b)*sizeof(WCHAR),c)
-#   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_WinUtfToTChar(a,b,c)
-# else
-#   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
-#   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
-# endif
-#define Tcl_Size int
-#define TCL_INDEX_NONE -1
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 DLLEXPORT int		Registry_Init(Tcl_Interp *interp);
 DLLEXPORT int		Registry_Unload(Tcl_Interp *interp, int flags);
 #if TCL_MAJOR_VERSION < 9
-/* With those additional entries, "load registry13.dll" works without 3th argument */
+/* With those additional entries, "load tclregistry13.dll" works without 3th argument */
 DLLEXPORT int		Tclregistry_Init(Tcl_Interp *interp);
 DLLEXPORT int		Tclregistry_Unload(Tcl_Interp *interp, int flags);
 #endif
@@ -219,9 +223,9 @@ Registry_Unload(
      * Unregister the registry package. There is no Tcl_PkgForget()
      */
 
-    objv[0] = Tcl_NewStringObj("package", TCL_INDEX_NONE);
-    objv[1] = Tcl_NewStringObj("forget", TCL_INDEX_NONE);
-    objv[2] = Tcl_NewStringObj("registry", TCL_INDEX_NONE);
+    objv[0] = Tcl_NewStringObj("package", -1);
+    objv[1] = Tcl_NewStringObj("forget", -1);
+    objv[2] = Tcl_NewStringObj("registry", -1);
     Tcl_EvalObjv(interp, 3, objv, TCL_EVAL_GLOBAL);
 
     /*
@@ -461,7 +465,7 @@ DeleteKey(
 
     if (*keyName == '\0') {
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("bad key: cannot delete root keys", TCL_INDEX_NONE));
+		Tcl_NewStringObj("bad key: cannot delete root keys", -1));
 	Tcl_SetErrorCode(interp, "WIN_REG", "DEL_ROOT_KEY", (void *)NULL);
 	Tcl_Free(buffer);
 	return TCL_ERROR;
@@ -483,7 +487,7 @@ DeleteKey(
 	    return TCL_OK;
 	}
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("unable to delete key: ", TCL_INDEX_NONE));
+		Tcl_NewStringObj("unable to delete key: ", -1));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -493,13 +497,13 @@ DeleteKey(
      */
 
     Tcl_DStringInit(&buf);
-    nativeTail = Tcl_UtfToWCharDString(tail, TCL_INDEX_NONE, &buf);
+    nativeTail = Tcl_UtfToWCharDString(tail, -1, &buf);
     result = RecursiveDeleteKey(subkey, nativeTail, saveMode);
     Tcl_DStringFree(&buf);
 
     if (result != ERROR_SUCCESS && result != ERROR_FILE_NOT_FOUND) {
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("unable to delete key: ", TCL_INDEX_NONE));
+		Tcl_NewStringObj("unable to delete key: ", -1));
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -731,7 +735,7 @@ GetType(
     if (type > lastType) {
 	Tcl_SetObjResult(interp, Tcl_NewIntObj((int) type));
     } else {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(typeNames[type], TCL_INDEX_NONE));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(typeNames[type], -1));
     }
     return TCL_OK;
 }
@@ -995,7 +999,7 @@ OpenKey(
 	result = OpenSubKey(hostName, rootKey, keyName, mode, flags, keyPtr);
 	if (result != ERROR_SUCCESS) {
 	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("unable to open key: ", TCL_INDEX_NONE));
+		    Tcl_NewStringObj("unable to open key: ", -1));
 	    AppendSystemError(interp, result);
 	    result = TCL_ERROR;
 	} else {
@@ -1043,7 +1047,7 @@ OpenSubKey(
 
     if (hostName) {
 	Tcl_DStringInit(&buf);
-	hostName = (char *) Tcl_UtfToWCharDString(hostName, TCL_INDEX_NONE, &buf);
+	hostName = (char *) Tcl_UtfToWCharDString(hostName, -1, &buf);
 	result = RegConnectRegistryW((WCHAR *)hostName, rootKey,
 		&rootKey);
 	Tcl_DStringFree(&buf);
@@ -1059,7 +1063,7 @@ OpenSubKey(
 
     if (keyName) {
 	Tcl_DStringInit(&buf);
-	keyName = (char *) Tcl_UtfToWCharDString(keyName, TCL_INDEX_NONE, &buf);
+	keyName = (char *) Tcl_UtfToWCharDString(keyName, -1, &buf);
     }
     if (flags & REG_CREATE) {
 	DWORD create;
@@ -1163,7 +1167,7 @@ ParseKeyName(
      * Look for a matching root name.
      */
 
-    rootObj = Tcl_NewStringObj(rootName, TCL_INDEX_NONE);
+    rootObj = Tcl_NewStringObj(rootName, -1);
     result = Tcl_GetIndexFromObj(interp, rootObj, rootKeyNames, "root name",
 	    TCL_EXACT, &index);
     Tcl_DecrRefCount(rootObj);
@@ -1399,7 +1403,7 @@ SetValue(
 
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("unable to set value: ", TCL_INDEX_NONE));
+		Tcl_NewStringObj("unable to set value: ", -1));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }

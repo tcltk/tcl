@@ -15,6 +15,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#define TCL_8_API
 #undef BUILD_tcl
 #undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
@@ -5714,7 +5715,14 @@ TestbytestringObjCmd(
     TclSizeT objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    Tcl_Size n;
+    struct {
+#if !defined(TCL_NO_DEPRECATED)
+	int n; /* On purpose, not Tcl_Size, in order to demonstrate what happens */
+#else
+	Tcl_Size n;
+#endif
+	int m; /* This variable should not be overwritten */
+    } x = {0, 1};
     const char *p;
 
     if (objc != 2) {
@@ -5722,11 +5730,16 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
 
-    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &n);
+    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &x.n);
     if (p == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
+
+    if (x.m != 1) {
+	Tcl_AppendResult(interp, "Tcl_GetBytesFromObj() overwrites variable", (void *)NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, x.n));
     return TCL_OK;
 }
 
