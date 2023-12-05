@@ -124,8 +124,7 @@ of a value's string representation.
 May be (Tcl_Size *)NULL when not used. If it points to a variable which
 type is not \fBTcl_Size\fR, a compiler warning will be generated.
 If your extensions is compiled with -DTCL_8_API, this function will
-panic if the number of elements is larger than INT_MAX (which should
-trigger proper error-handling), otherwise expect it to crash.
+panic for strings with more than INT_MAX bytes/characters, otherwise expect it to crash.
 .AP "const char" *string in
 Null-terminated string value to append to \fIobjPtr\fR.
 .AP Tcl_Size limit in
@@ -190,9 +189,7 @@ Even in the limited situations where writing to this pointer is
 acceptable, one should take care to respect the copy-on-write
 semantics required by \fBTcl_Obj\fR's, with appropriate calls
 to \fBTcl_IsShared\fR and \fBTcl_DuplicateObj\fR prior to any
-in-place modification of the string representation. If \fIlengthPtr\fR
-points to an \fBint\fR variable, and the string has more than 2^31 bytes,
-a panic will result.
+in-place modification of the string representation.
 The procedure \fBTcl_GetString\fR is used in the common case
 where the caller does not need the length of the string
 representation.
@@ -204,8 +201,7 @@ value as a Unicode string.  This is given by the returned pointer and
 byte pointer is owned by the value manager and should not be modified by
 the caller.  The procedure \fBTcl_GetUnicode\fR is used in the common case
 where the caller does not need the length of the unicode string
-representation. If \fIlengthPtr\fR points to an \fBint\fR variable,
-and the string has more than 2^31 unicode characters, a panic will result.
+representation.
 .PP
 \fBTcl_GetUniChar\fR returns the \fIindex\fR'th character in the
 value's Unicode representation. If the index is out of range or
