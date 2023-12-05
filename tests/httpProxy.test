@@ -18,6 +18,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 package require http 2.10
+#http::register http 80 ::socket
 
 proc bgerror {args} {
     global errorInfo
@@ -57,7 +58,7 @@ http::config -threadlevel $ThreadLevel
 if {[testConstraint needsTls]} {
     package require tls
     http::register https 443 [list ::tls::socket -ssl2 0 -ssl3 0 \
-            -tls1 0 -tls1.1 0 -tls1.2 1 -tls1.3 0 -autoservername 1]
+            -tls1 0 -tls1.1 0 -tls1.2 1 -tls1.3 0 -autoservername 1] ::tls::socketCmd 1 1
 }
 
 # Testing with Squid
