@@ -337,7 +337,7 @@ was already reached, and 0 otherwise.
 .TP
 \fBchan event \fIchannelName event\fR ?\fIscript\fR?
 .
-Arranges for the given script, called a \fBchannel event hndler\fR, to be
+Arranges for the given script, called a \fBchannel event handler\fR, to be
 called whenever the given event, one of
 .QW \fBreadable\fR
 or
