@@ -10,6 +10,8 @@
  */
 
 typedef struct Tcl_Obj Tcl_Obj;
+
+typedef ptrdiff_t Tcl_Size
 
 /*
  * Tcl DTrace probes
@@ -21,10 +23,10 @@ provider tcl {
      *	tcl*:::proc-entry probe
      *	    triggered immediately before proc bytecode execution
      *		arg0: proc name				(string)
-     *		arg1: number of arguments		(int)
+     *		arg1: number of arguments		(Tcl_Size)
      *		arg2: array of proc argument objects	(Tcl_Obj**)
      */
-    probe proc__entry(const char *name, int objc, struct Tcl_Obj **objv);
+    probe proc__entry(const char *name, Tcl_Size objc, struct Tcl_Obj **objv);
     /*
      *	tcl*:::proc-return probe
      *	    triggered immediately after proc bytecode execution
@@ -75,10 +77,10 @@ provider tcl {
      *	tcl*:::cmd-entry probe
      *	    triggered immediately before commmand execution
      *		arg0: command name			(string)
-     *		arg1: number of arguments		(int)
+     *		arg1: number of arguments		(Tcl_Size)
      *		arg2: array of command argument objects	(Tcl_Obj**)
      */
-    probe cmd__entry(const char *name, int objc, struct Tcl_Obj **objv);
+    probe cmd__entry(const char *name, Tcl_Size objc, struct Tcl_Obj **objv);
     /*
      *	tcl*:::cmd-return probe
      *	    triggered immediately after commmand execution
@@ -181,9 +183,9 @@ typedef struct Tcl_ObjType {
 } Tcl_ObjType;
 
 struct Tcl_Obj {
-    size_t refCount;
+    Tcl_Size refCount;
     char *bytes;
-    size_t length;
+    Tcl_Size length;
     const Tcl_ObjType *typePtr;
     union {
 	long longValue;
