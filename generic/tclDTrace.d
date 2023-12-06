@@ -64,12 +64,12 @@ provider tcl {
      *		arg2: TIP 280 proc			(string)
      *		arg3: TIP 280 file			(string)
      *		arg4: TIP 280 line			(int)
-     *		arg5: TIP 280 level			(int)
+     *		arg5: TIP 280 level			(Tcl_Size)
      *		arg6: TclOO method			(string)
      *		arg7: TclOO class/object		(string)
      */
     probe proc__info(const char *cmd, const char *type, const char *proc,
-	    const char *file, int line, int level, const char *method,
+	    const char *file, int line, Tcl_Size level, const char *method,
 	    const char *class);
 
     /***************************** cmd probes ******************************/
@@ -123,7 +123,7 @@ provider tcl {
      *		arg7: TclOO class/object		(string)
      */
     probe cmd__info(const char *cmd, const char *type, const char *proc,
-	    const char *file, int line, int level, const char *method,
+	    const char *file, int line, Tcl_Size level, const char *method,
 	    const char *class);
 
     /***************************** inst probes *****************************/
@@ -131,18 +131,18 @@ provider tcl {
      *	tcl*:::inst-start probe
      *	    triggered immediately before execution of a bytecode
      *		arg0: bytecode name			(string)
-     *		arg1: depth of stack			(int)
+     *		arg1: depth of stack			(Tcl_Size)
      *		arg2: top of stack			(Tcl_Obj**)
      */
-    probe inst__start(const char *name, int depth, struct Tcl_Obj **stack);
+    probe inst__start(const char *name, Tcl_Size depth, struct Tcl_Obj **stack);
     /*
      *	tcl*:::inst-done probe
      *	    triggered immediately after execution of a bytecode
      *		arg0: bytecode name			(string)
-     *		arg1: depth of stack			(int)
+     *		arg1: depth of stack			(Tcl_Size)
      *		arg2: top of stack			(Tcl_Obj**)
      */
-    probe inst__done(const char *name, int depth, struct Tcl_Obj **stack);
+    probe inst__done(const char *name, Tcl_Size depth, struct Tcl_Obj **stack);
 
     /***************************** obj probes ******************************/
     /*
@@ -180,6 +180,15 @@ typedef struct Tcl_ObjType {
     void *dupIntRepProc;
     void *updateStringProc;
     void *setFromAnyProc;
+    size_t version;
+    void *lengthProc;
+    void *indexProc;
+    void *sliceProc;
+    void *reverseProc;
+    void *getElementsProc;
+    void *setElementProc;
+    void *replaceProc;
+    void *inOperProc;
 } Tcl_ObjType;
 
 struct Tcl_Obj {
