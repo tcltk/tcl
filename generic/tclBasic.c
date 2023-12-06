@@ -4559,14 +4559,14 @@ Dispatch(
 {
     Tcl_ObjCmdProc *objProc = (Tcl_ObjCmdProc *)data[0];
     void *clientData = data[1];
-    int objc = PTR2INT(data[2]);
+    Tcl_Size objc = PTR2INT(data[2]);
     Tcl_Obj **objv = (Tcl_Obj **)data[3];
     Interp *iPtr = (Interp *) interp;
 
 #ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	const char *a[10];
-	int i = 0;
+	Tcl_Size i = 0;
 
 	while (i < 10) {
 	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
@@ -4576,7 +4576,7 @@ Dispatch(
     }
     if (TCL_DTRACE_CMD_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	const char *a[6]; int i[2];
+	const char *a[6]; Tcl_Size i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
@@ -8346,7 +8346,7 @@ void
 TclDTraceInfo(
     Tcl_Obj *info,
     const char **args,
-    int *argsi)
+    Tcl_Size *argsi)
 {
     static Tcl_Obj *keys[10] = { NULL };
     Tcl_Obj **k = keys, *val;
@@ -8386,7 +8386,7 @@ TclDTraceInfo(
     for (i = 0; i < 2; i++) {
 	Tcl_DictObjGet(NULL, info, *k++, &val);
 	if (val) {
-	    TclGetIntFromObj(NULL, val, &argsi[i]);
+	    Tcl_GetSizeIntFromObj(NULL, val, &argsi[i]);
 	} else {
 	    argsi[i] = 0;
 	}
