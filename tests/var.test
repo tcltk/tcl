@@ -1936,6 +1936,209 @@ test var-29.1 {const: globally} -setup {
 } -cleanup {
     interp delete $int
 } -result gorp
+test var-29.2 {const: TclOO variable resolution} -setup {
+    oo::class create Parent
+} -body {
+    oo::class create C {
+	superclass Parent
+	variable X
+	constructor {} {
+	    const X 123
+	}
+	method checkRead {} {
+	    return $X
+	}
+	method checkWrite {} {
+	    list [catch {
+		set X abc
+	    } msg] $msg 
+	}
+	method checkUnset {} {
+	    list [catch {
+		unset X
+	    } msg] $msg 
+	}
+	method checkProbe {} {
+	    info constant X
+	}
+	method checkList {} {
+	    info consts
+	}
+    }
+    set c [C new]
+    list [$c checkRead] [$c checkWrite] [$c checkUnset] [$c checkProbe] [$c checkList]
+} -cleanup {
+    Parent destroy
+} -result {123 {1 {can't set "X": variable is a constant}} {1 {can't unset "X": variable is a constant}} 1 X}
+test var-29.3 {const: TclOO variable resolution} -setup {
+    oo::class create Parent
+} -body {
+    oo::class create C {
+	superclass Parent
+	private variable X
+	constructor {} {
+	    const X 123
+	}
+	method checkRead {} {
+	    return $X
+	}
+	method checkWrite {} {
+	    list [catch {
+		set X abc
+	    } msg] $msg 
+	}
+	method checkUnset {} {
+	    list [catch {
+		unset X
+	    } msg] $msg 
+	}
+	method checkProbe {} {
+	    info constant X
+	}
+	method checkList {} {
+	    info consts
+	}
+    }
+    set c [C new]
+    list [$c checkRead] [$c checkWrite] [$c checkUnset] [$c checkProbe] [$c checkList]
+} -cleanup {
+    Parent destroy
+} -result {123 {1 {can't set "X": variable is a constant}} {1 {can't unset "X": variable is a constant}} 1 X}
+test var-29.4 {const: TclOO variable resolution} -setup {
+    oo::class create Parent
+} -body {
+    oo::class create C {
+	superclass Parent
+	variable X
+	constructor {} {
+	    set X 123
+	}
+	method checkRead {} {
+	    return $X
+	}
+	method checkWrite {} {
+	    list [catch {
+		set X abc
+	    } msg] $msg 
+	}
+	method checkUnset {} {
+	    list [catch {
+		unset X
+		set X gorp
+	    } msg] $msg 
+	}
+	method checkProbe {} {
+	    info constant X
+	}
+	method checkList {} {
+	    info consts
+	}
+    }
+    set c [C new]
+    list [$c checkRead] [$c checkWrite] [$c checkUnset] [$c checkProbe] [$c checkList]
+} -cleanup {
+    Parent destroy
+} -result {123 {0 abc} {0 gorp} 0 {}}
+test var-29.5 {const: TclOO variable resolution} -setup {
+    set c [oo::object create Instance]
+} -body {
+    oo::objdefine $c {
+	variable X
+	method init {} {
+	    const X 123
+	}
+	method checkRead {} {
+	    return $X
+	}
+	method checkWrite {} {
+	    list [catch {
+		set X abc
+	    } msg] $msg 
+	}
+	method checkUnset {} {
+	    list [catch {
+		unset X
+	    } msg] $msg 
+	}
+	method checkProbe {} {
+	    info constant X
+	}
+	method checkList {} {
+	    info consts
+	}
+    }
+    $c init
+    list [$c checkRead] [$c checkWrite] [$c checkUnset] [$c checkProbe] [$c checkList]
+} -cleanup {
+    Instance destroy
+} -result {123 {1 {can't set "X": variable is a constant}} {1 {can't unset "X": variable is a constant}} 1 X}
+test var-29.6 {const: TclOO variable resolution} -setup {
+    set c [oo::object create Instance]
+} -body {
+    oo::objdefine $c {
+	private variable X
+	method init {} {
+	    const X 123
+	}
+	method checkRead {} {
+	    return $X
+	}
+	method checkWrite {} {
+	    list [catch {
+		set X abc
+	    } msg] $msg 
+	}
+	method checkUnset {} {
+	    list [catch {
+		unset X
+	    } msg] $msg 
+	}
+	method checkProbe {} {
+	    info constant X
+	}
+	method checkList {} {
+	    info consts
+	}
+    }
+    $c init
+    list [$c checkRead] [$c checkWrite] [$c checkUnset] [$c checkProbe] [$c checkList]
+} -cleanup {
+    Instance destroy
+} -result {123 {1 {can't set "X": variable is a constant}} {1 {can't unset "X": variable is a constant}} 1 X}
+test var-29.7 {const: TclOO variable resolution} -setup {
+    set c [oo::object create Instance]
+} -body {
+    oo::objdefine $c {
+	variable X
+	method init {} {
+	    set X 123
+	}
+	method checkRead {} {
+	    return $X
+	}
+	method checkWrite {} {
+	    list [catch {
+		set X abc
+	    } msg] $msg 
+	}
+	method checkUnset {} {
+	    list [catch {
+		unset X
+		set X gorp
+	    } msg] $msg 
+	}
+	method checkProbe {} {
+	    info constant X
+	}
+	method checkList {} {
+	    info consts
+	}
+    }
+    $c init
+    list [$c checkRead] [$c checkWrite] [$c checkUnset] [$c checkProbe] [$c checkList]
+} -cleanup {
+    Instance destroy
+} -result {123 {0 abc} {0 gorp} 0 {}}
 
 # The info constant and info consts commands
 test var-30.1 {info constant and info consts} {

@@ -6516,6 +6516,24 @@ TclInfoConstsCmd(
  *----------------------------------------------------------------------
  */
 
+static int
+ContextObjectContainsConstant(
+    Tcl_ObjectContext context,
+    Tcl_Obj *varNamePtr)
+{
+    /*
+     * Helper for AppendLocals to check if an object contains a variable 
+     * that is a constant. It's too complicated without factoring this 
+     * check out!
+     */
+
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Namespace *nsPtr = (Namespace *) oPtr->namespacePtr;
+    Var *varPtr = VarHashFindVar(&nsPtr->varTable, varNamePtr);
+
+    return !TclIsVarUndefined(varPtr) && TclIsVarConstant(varPtr);
+}
+
 static void
 AppendLocals(
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -6551,11 +6569,12 @@ AppendLocals(
 	     */
 
 	    if (*varNamePtr && !TclIsVarUndefined(varPtr)
-	    	    && (!justConstants || TclIsVarConstant(varPtr))
 		    && (includeLinks || !TclIsVarLink(varPtr))) {
 		varName = TclGetString(*varNamePtr);
 		if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
-		    Tcl_ListObjAppendElement(interp, listPtr, *varNamePtr);
+	    	    if (!justConstants || TclIsVarConstant(varPtr)) {
+			Tcl_ListObjAppendElement(interp, listPtr, *varNamePtr);
+		    }
 		    if (includeLinks) {
 			Tcl_CreateHashEntry(&addedTable, *varNamePtr, &added);
 		    }
@@ -6581,10 +6600,11 @@ AppendLocals(
 	varPtr = VarHashFindVar(localVarTablePtr, patternPtr);
 	if (varPtr != NULL) {
 	    if (!TclIsVarUndefined(varPtr)
-	    	    && (!justConstants || TclIsVarConstant(varPtr))
 		    && (includeLinks || !TclIsVarLink(varPtr))) {
-		Tcl_ListObjAppendElement(interp, listPtr,
-			VarHashGetKey(varPtr));
+		if ((!justConstants || TclIsVarConstant(varPtr))) {
+		    Tcl_ListObjAppendElement(interp, listPtr,
+			    VarHashGetKey(varPtr));
+		}
 		if (includeLinks) {
 		    Tcl_CreateHashEntry(&addedTable, VarHashGetKey(varPtr),
 			    &added);
@@ -6602,12 +6622,13 @@ AppendLocals(
 	    varPtr != NULL;
 	    varPtr = VarHashNextVar(&search)) {
 	if (!TclIsVarUndefined(varPtr)
-	    	&& (!justConstants || TclIsVarConstant(varPtr))
 		&& (includeLinks || !TclIsVarLink(varPtr))) {
 	    objNamePtr = VarHashGetKey(varPtr);
 	    varName = TclGetString(objNamePtr);
 	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
-		Tcl_ListObjAppendElement(interp, listPtr, objNamePtr);
+	    	if (!justConstants || TclIsVarConstant(varPtr)) {
+		    Tcl_ListObjAppendElement(interp, listPtr, objNamePtr);
+		}
 		if (includeLinks) {
 		    Tcl_CreateHashEntry(&addedTable, objNamePtr, &added);
 		}
@@ -6620,10 +6641,10 @@ AppendLocals(
 	return;
     }
 
-    /* TODO: Handle how constants interact with objects. */
     if (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_METHOD) {
-	Method *mPtr = (Method *)
-		Tcl_ObjectContextMethod((Tcl_ObjectContext)iPtr->varFramePtr->clientData);
+	Tcl_ObjectContext context = (Tcl_ObjectContext) 
+		iPtr->varFramePtr->clientData;
+	Method *mPtr = (Method *) Tcl_ObjectContextMethod(context);
 	PrivateVariableMapping *privatePtr;
 
 	if (mPtr->declaringObjectPtr) {
@@ -6631,6 +6652,10 @@ AppendLocals(
 
 	    FOREACH(objNamePtr, oPtr->variables) {
 		Tcl_CreateHashEntry(&addedTable, objNamePtr, &added);
+		if (justConstants && !ContextObjectContainsConstant(context, 
+			objNamePtr)) {
+		    continue;
+		}
 		if (added && (!pattern ||
 			Tcl_StringMatch(TclGetString(objNamePtr), pattern))) {
 		    Tcl_ListObjAppendElement(interp, listPtr, objNamePtr);
@@ -6639,6 +6664,10 @@ AppendLocals(
 	    FOREACH_STRUCT(privatePtr, oPtr->privateVariables) {
 		Tcl_CreateHashEntry(&addedTable, privatePtr->variableObj,
 			&added);
+		if (justConstants && !ContextObjectContainsConstant(context,
+			privatePtr->fullNameObj)) {
+		    continue;
+		}
 		if (added && (!pattern ||
 			Tcl_StringMatch(TclGetString(privatePtr->variableObj),
 				pattern))) {
@@ -6651,6 +6680,10 @@ AppendLocals(
 
 	    FOREACH(objNamePtr, clsPtr->variables) {
 		Tcl_CreateHashEntry(&addedTable, objNamePtr, &added);
+		if (justConstants && !ContextObjectContainsConstant(context,
+			objNamePtr)) {
+		    continue;
+		}
 		if (added && (!pattern ||
 			Tcl_StringMatch(TclGetString(objNamePtr), pattern))) {
 		    Tcl_ListObjAppendElement(interp, listPtr, objNamePtr);
@@ -6659,6 +6692,10 @@ AppendLocals(
 	    FOREACH_STRUCT(privatePtr, clsPtr->privateVariables) {
 		Tcl_CreateHashEntry(&addedTable, privatePtr->variableObj,
 			&added);
+		if (justConstants && !ContextObjectContainsConstant(context,
+			privatePtr->fullNameObj)) {
+		    continue;
+		}
 		if (added && (!pattern ||
 			Tcl_StringMatch(TclGetString(privatePtr->variableObj),
 				pattern))) {
