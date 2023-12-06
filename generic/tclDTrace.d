@@ -11,7 +11,7 @@
 
 typedef struct Tcl_Obj Tcl_Obj;
 
-typedef ptrdiff_t Tcl_Size
+typedef ptrdiff_t Tcl_Size;
 
 /*
  * Tcl DTrace probes
