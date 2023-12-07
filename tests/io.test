@@ -9824,6 +9824,39 @@ test io-76.10 {channel mode dropping} -setup {
 } -match glob -result {Tcl_RemoveChannelMode error:\
     Bad mode, would make channel inacessible. Channel: "*"}
 
+# Encoding errors on pipeline
+# Ensures fix for exec bug [0f1ddc0df7] does not affect open
+# It should still fail unless -profile is explicitly set to replace
+test io-77.1 {open pipe encoding mismatch} -setup {
+    set scriptFile [makeFile {
+        fconfigure stdout -translation binary
+        puts -nonewline a\xe9b
+        flush stdout
+    } script]
+} -cleanup {
+    close $fd
+    removeFile $scriptFile
+} -body {
+    set fd [open |[list [info nameofexecutable] $scriptFile r+]]
+    fconfigure $fd -encoding utf-8
+    list [catch {read $fd} result opts] [string match {error reading "*": invalid or incomplete multibyte or wide character} $result] [dict get $opts -errorcode]
+} -result [list 1 1 {POSIX EILSEQ {invalid or incomplete multibyte or wide character}}]
+test io-77.2 {open pipe encoding mismatch - use replace profile} -setup {
+    set scriptFile [makeFile {
+        fconfigure stdout -translation binary
+        puts -nonewline a\xe9b
+        flush stdout
+    } script]
+} -cleanup {
+    close $fd
+    removeFile $scriptFile
+} -body {
+    set fd [open |[list [info nameofexecutable] $scriptFile r+]]
+    fconfigure $fd -encoding utf-8 -profile replace
+    read $fd
+} -result a\uFFFDb
+
+
 # cleanup
 foreach file [list fooBar longfile script script2 output test1 pipe my_script \
 	test2 test3 cat stdout kyrillic.txt utf8-fcopy.txt utf8-rp.txt] {
