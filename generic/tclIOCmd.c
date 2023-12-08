@@ -945,6 +945,11 @@ Tcl_ExecObjCmd(
 	return TCL_ERROR;
     }
 
+    /* Bug [0f1ddc0df7] - encoding errors - use replace profile */
+    if (Tcl_SetChannelOption(NULL, chan, "-profile", "replace") != TCL_OK) {
+	return TCL_ERROR;
+    }
+
     if (background) {
 	/*
 	 * Store the list of PIDs from the pipeline in interp's result and

@@ -1751,7 +1751,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 #define TCL_DTRACE_DEBUG_LOG()
 
 MODULE_SCOPE void	TclDTraceInfo(Tcl_Obj *info, const char **args,
-			    int *argsi);
+			    Tcl_Size *argsi);
 
 #else /* USE_DTRACE */
 
@@ -1806,7 +1806,7 @@ MODULE_SCOPE void	TclDTraceInfo(Tcl_Obj *info, const char **args,
 MODULE_SCOPE int tclDTraceDebugEnabled, tclDTraceDebugIndent;
 MODULE_SCOPE FILE *tclDTraceDebugLog;
 MODULE_SCOPE void TclDTraceOpenDebugLog(void);
-MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
+MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, Tcl_Size *argsi);
 
 #define TCL_DTRACE_DEBUG_LOG() \
     int tclDTraceDebugEnabled = TCL_DTRACE_DEBUG_LOG_ENABLED;	\
@@ -1844,7 +1844,7 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
 #define TCL_DTRACE_PROC_INFO_ENABLED()	    1
 #define TCL_DTRACE_PROC_ENTRY(a0, a1, a2) \
 	tclDTraceDebugIndent++; \
-	TclDTraceDbgMsg("-> proc-entry", "%s %d %p", a0, a1, a2)
+	TclDTraceDbgMsg("-> proc-entry", "%s %" TCL_SIZE_MODIFIER "d %p", a0, a1, a2)
 #define TCL_DTRACE_PROC_RETURN(a0, a1) \
 	TclDTraceDbgMsg("<- proc-return", "%s %d", a0, a1); \
 	tclDTraceDebugIndent--
@@ -1864,7 +1864,7 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
 #define TCL_DTRACE_CMD_INFO_ENABLED()	    1
 #define TCL_DTRACE_CMD_ENTRY(a0, a1, a2) \
 	tclDTraceDebugIndent++; \
-	TclDTraceDbgMsg("-> cmd-entry", "%s %d %p", a0, a1, a2)
+	TclDTraceDbgMsg("-> cmd-entry", "%s %" TCL_SIZE_MODIFIER "d %p", a0, a1, a2)
 #define TCL_DTRACE_CMD_RETURN(a0, a1) \
 	TclDTraceDbgMsg("<- cmd-return", "%s %d", a0, a1); \
 	tclDTraceDebugIndent--
@@ -1874,7 +1874,7 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
 	TclDTraceDbgMsg(" | cmd-args", "%s %s %s %s %s %s %s %s %s %s", a0, \
 		a1, a2, a3, a4, a5, a6, a7, a8, a9)
 #define TCL_DTRACE_CMD_INFO(a0, a1, a2, a3, a4, a5, a6, a7) \
-	TclDTraceDbgMsg(" | cmd-info", "%s %s %s %s %d %d %s %s", a0, a1, \
+	TclDTraceDbgMsg(" | cmd-info", "%s %s %s %s %" TCL_SIZE_MODIFIER "d %" TCL_SIZE_MODIFIER "d %s %s", a0, a1, \
 		a2, a3, a4, a5, a6, a7)
 
 #define TCL_DTRACE_INST_START_ENABLED()	    TCL_DTRACE_DEBUG_INST_PROBES
