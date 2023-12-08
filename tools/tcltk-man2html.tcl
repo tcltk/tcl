@@ -578,7 +578,7 @@ proc plus-pkgs {type args} {
 ## Set up some special cases. It would be nice if we didn't have them,
 ## but we do...
 ##
-set excluded_pages {}
+set excluded_pages {case menubar pack-old}
 set forced_index_pages {GetDash}
 set process_first_patterns {*/ttk_widget.n */options.n}
 set ensemble_commands {
