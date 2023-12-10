@@ -35,7 +35,8 @@ jobs:
         # Duplicated from above
         if: ${{ matrix.cfgopt == 'CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit' }}
         run: |
-          sudo apt install gcc-multilib libc6-dev-i386
+          sudo apt-get update
+          sudo apt-get install gcc-multilib libc6-dev-i386
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
