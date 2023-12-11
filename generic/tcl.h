@@ -1424,14 +1424,12 @@ typedef struct Tcl_ChannelType {
 				 * type. */
     Tcl_ChannelTypeVersion version;
 				/* Version of the channel type. */
-    void *closeProc;
-				/* Not used any more. */
+    void *closeProc;		/* Not used any more. */
     Tcl_DriverInputProc *inputProc;
 				/* Function to call for input on channel. */
     Tcl_DriverOutputProc *outputProc;
 				/* Function to call for output on channel. */
-    void *seekProc;
-				/* Not used any more. */
+    void *seekProc;		/* Not used any more. */
     Tcl_DriverSetOptionProc *setOptionProc;
 				/* Set an option on a channel. */
     Tcl_DriverGetOptionProc *getOptionProc;
