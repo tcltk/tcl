@@ -665,6 +665,13 @@ InstructionDesc const tclInstructionTable[] = {
 	 * set in flags.
 	 */
 
+    {"constImm",	  5,   -1,	   1,	{OPERAND_LVT4}},
+	/* Create constant. Index into LVT is immediate, value is on stack.
+	 * Stack: ... value => ... */
+    {"constStk",	  1,   -2,	   0,	{OPERAND_NONE}},
+	/* Create constant. Variable name and value on stack.
+	 * Stack: ... varName value => ... */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
