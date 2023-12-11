@@ -10,6 +10,8 @@
  */
 
 typedef struct Tcl_Obj Tcl_Obj;
+
+typedef ptrdiff_t Tcl_Size;
 
 /*
  * Tcl DTrace probes
@@ -21,10 +23,10 @@ provider tcl {
      *	tcl*:::proc-entry probe
      *	    triggered immediately before proc bytecode execution
      *		arg0: proc name				(string)
-     *		arg1: number of arguments		(int)
+     *		arg1: number of arguments		(Tcl_Size)
      *		arg2: array of proc argument objects	(Tcl_Obj**)
      */
-    probe proc__entry(const char *name, int objc, struct Tcl_Obj **objv);
+    probe proc__entry(const char *name, Tcl_Size objc, struct Tcl_Obj **objv);
     /*
      *	tcl*:::proc-return probe
      *	    triggered immediately after proc bytecode execution
@@ -62,12 +64,12 @@ provider tcl {
      *		arg2: TIP 280 proc			(string)
      *		arg3: TIP 280 file			(string)
      *		arg4: TIP 280 line			(int)
-     *		arg5: TIP 280 level			(int)
+     *		arg5: TIP 280 level			(Tcl_Size)
      *		arg6: TclOO method			(string)
      *		arg7: TclOO class/object		(string)
      */
     probe proc__info(const char *cmd, const char *type, const char *proc,
-	    const char *file, int line, int level, const char *method,
+	    const char *file, int line, Tcl_Size level, const char *method,
 	    const char *class);
 
     /***************************** cmd probes ******************************/
@@ -75,10 +77,10 @@ provider tcl {
      *	tcl*:::cmd-entry probe
      *	    triggered immediately before commmand execution
      *		arg0: command name			(string)
-     *		arg1: number of arguments		(int)
+     *		arg1: number of arguments		(Tcl_Size)
      *		arg2: array of command argument objects	(Tcl_Obj**)
      */
-    probe cmd__entry(const char *name, int objc, struct Tcl_Obj **objv);
+    probe cmd__entry(const char *name, Tcl_Size objc, struct Tcl_Obj **objv);
     /*
      *	tcl*:::cmd-return probe
      *	    triggered immediately after commmand execution
@@ -121,7 +123,7 @@ provider tcl {
      *		arg7: TclOO class/object		(string)
      */
     probe cmd__info(const char *cmd, const char *type, const char *proc,
-	    const char *file, int line, int level, const char *method,
+	    const char *file, int line, Tcl_Size level, const char *method,
 	    const char *class);
 
     /***************************** inst probes *****************************/
@@ -129,18 +131,18 @@ provider tcl {
      *	tcl*:::inst-start probe
      *	    triggered immediately before execution of a bytecode
      *		arg0: bytecode name			(string)
-     *		arg1: depth of stack			(int)
+     *		arg1: depth of stack			(Tcl_Size)
      *		arg2: top of stack			(Tcl_Obj**)
      */
-    probe inst__start(const char *name, int depth, struct Tcl_Obj **stack);
+    probe inst__start(const char *name, Tcl_Size depth, struct Tcl_Obj **stack);
     /*
      *	tcl*:::inst-done probe
      *	    triggered immediately after execution of a bytecode
      *		arg0: bytecode name			(string)
-     *		arg1: depth of stack			(int)
+     *		arg1: depth of stack			(Tcl_Size)
      *		arg2: top of stack			(Tcl_Obj**)
      */
-    probe inst__done(const char *name, int depth, struct Tcl_Obj **stack);
+    probe inst__done(const char *name, Tcl_Size depth, struct Tcl_Obj **stack);
 
     /***************************** obj probes ******************************/
     /*
@@ -178,12 +180,21 @@ typedef struct Tcl_ObjType {
     void *dupIntRepProc;
     void *updateStringProc;
     void *setFromAnyProc;
+    size_t version;
+    void *lengthProc;
+    void *indexProc;
+    void *sliceProc;
+    void *reverseProc;
+    void *getElementsProc;
+    void *setElementProc;
+    void *replaceProc;
+    void *inOperProc;
 } Tcl_ObjType;
 
 struct Tcl_Obj {
-    size_t refCount;
+    Tcl_Size refCount;
     char *bytes;
-    size_t length;
+    Tcl_Size length;
     const Tcl_ObjType *typePtr;
     union {
 	long longValue;

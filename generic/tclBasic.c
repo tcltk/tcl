@@ -316,6 +316,7 @@ static const CmdInfo builtInCmds[] = {
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	CMD_IS_SAFE},
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	CMD_IS_SAFE},
     {"concat",		Tcl_ConcatObjCmd,	TclCompileConcatCmd,	NULL,	CMD_IS_SAFE},
+    {"const", 		Tcl_ConstObjCmd,	TclCompileConstCmd,	NULL,	CMD_IS_SAFE},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	CMD_IS_SAFE},
     {"coroinject",	NULL,			NULL,                   TclNRCoroInjectObjCmd,	CMD_IS_SAFE},
     {"coroprobe",	NULL,			NULL,                   TclNRCoroProbeObjCmd,	CMD_IS_SAFE},
@@ -333,7 +334,7 @@ static const CmdInfo builtInCmds[] = {
     {"join",		Tcl_JoinObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	NULL,	CMD_IS_SAFE},
     {"lassign",		Tcl_LassignObjCmd,	TclCompileLassignCmd,	NULL,	CMD_IS_SAFE},
-    {"ledit",		Tcl_LeditObjCmd,	NULL,	NULL,	CMD_IS_SAFE},
+    {"ledit",		Tcl_LeditObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lindex",		Tcl_LindexObjCmd,	TclCompileLindexCmd,	NULL,	CMD_IS_SAFE},
     {"linsert",		Tcl_LinsertObjCmd,	TclCompileLinsertCmd,	NULL,	CMD_IS_SAFE},
     {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	NULL,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
@@ -4559,14 +4560,14 @@ Dispatch(
 {
     Tcl_ObjCmdProc *objProc = (Tcl_ObjCmdProc *)data[0];
     void *clientData = data[1];
-    int objc = PTR2INT(data[2]);
+    Tcl_Size objc = PTR2INT(data[2]);
     Tcl_Obj **objv = (Tcl_Obj **)data[3];
     Interp *iPtr = (Interp *) interp;
 
 #ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	const char *a[10];
-	int i = 0;
+	Tcl_Size i = 0;
 
 	while (i < 10) {
 	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
@@ -4576,7 +4577,7 @@ Dispatch(
     }
     if (TCL_DTRACE_CMD_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	const char *a[6]; int i[2];
+	const char *a[6]; Tcl_Size i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
@@ -8346,7 +8347,7 @@ void
 TclDTraceInfo(
     Tcl_Obj *info,
     const char **args,
-    int *argsi)
+    Tcl_Size *argsi)
 {
     static Tcl_Obj *keys[10] = { NULL };
     Tcl_Obj **k = keys, *val;
@@ -8386,7 +8387,7 @@ TclDTraceInfo(
     for (i = 0; i < 2; i++) {
 	Tcl_DictObjGet(NULL, info, *k++, &val);
 	if (val) {
-	    TclGetIntFromObj(NULL, val, &argsi[i]);
+	    Tcl_GetSizeIntFromObj(NULL, val, &argsi[i]);
 	} else {
 	    argsi[i] = 0;
 	}
