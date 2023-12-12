@@ -558,29 +558,21 @@ typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
-#if TCL_MAJOR_VERSION > 8
-typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
-	Tcl_Size level, const char *command, Tcl_Command commandInfo, Tcl_Size objc,
-	struct Tcl_Obj *const *objv);
-#else
-#define Tcl_CmdObjTraceProc2 Tcl_CmdObjTraceProc
-#endif
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
 typedef int (Tcl_EncodingConvertProc) (void *clientData, const char *src,
 	int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
 	int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
-#define Tcl_EncodingFreeProc Tcl_FreeProc
+typedef void (Tcl_EncodingFreeProc) (void *clientData);
 typedef int (Tcl_EventProc) (Tcl_Event *evPtr, int flags);
 typedef void (Tcl_EventCheckProc) (void *clientData, int flags);
 typedef int (Tcl_EventDeleteProc) (Tcl_Event *evPtr, void *clientData);
 typedef void (Tcl_EventSetupProc) (void *clientData, int flags);
-#define Tcl_ExitProc Tcl_FreeProc
+typedef void (Tcl_ExitProc) (void *clientData);
 typedef void (Tcl_FileProc) (void *clientData, int mask);
-#define Tcl_FileFreeProc Tcl_FreeProc
+typedef void (Tcl_FileFreeProc) (void *clientData);
 typedef void (Tcl_FreeInternalRepProc) (struct Tcl_Obj *objPtr);
-typedef void (Tcl_FreeProc) (void *blockPtr);
 typedef void (Tcl_IdleProc) (void *clientData);
 typedef void (Tcl_InterpDeleteProc) (void *clientData,
 	Tcl_Interp *interp);
@@ -590,8 +582,18 @@ typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 #if TCL_MAJOR_VERSION > 8
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
 	Tcl_Size objc, struct Tcl_Obj *const *objv);
+typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
+	Tcl_Size level, const char *command, Tcl_Command commandInfo, Tcl_Size objc,
+	struct Tcl_Obj *const *objv);
+typedef void (Tcl_FreeProc) (void *blockPtr);
+#define Tcl_ExitProc Tcl_FreeProc
+#define Tcl_FileFreeProc Tcl_FreeProc
+#define Tcl_FileFreeProc Tcl_FreeProc
+#define Tcl_EncodingFreeProc Tcl_FreeProc
 #else
 #define Tcl_ObjCmdProc2 Tcl_ObjCmdProc
+#define Tcl_CmdObjTraceProc2 Tcl_CmdObjTraceProc
+typedef void (Tcl_FreeProc) (char *blockPtr);
 #endif
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
@@ -750,6 +752,7 @@ typedef struct Tcl_Obj {
     Tcl_ObjInternalRep internalRep;	/* The internal representation: */
 } Tcl_Obj;
 
+
 /*
  *----------------------------------------------------------------------------
  * The following definitions support Tcl's namespace facility. Note: the first
