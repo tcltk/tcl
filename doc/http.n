@@ -58,9 +58,9 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 .sp
 \fB::http::responseBody\fR \fItoken\fR
 .sp
-\fB::http::register \fIproto port command\fR
+\fB::http::register \fIproto port command\fR ?\fIsocketCmdVarName\fR? ?\fIuseSockThread\fR? ?\fIendToEndProxy\fR?
 .sp
-\fB::http::registerError \fIport\fR ?\fImessage\fR?
+\fB::http::registerError \fIsock\fR ?\fImessage\fR?
 .sp
 \fB::http::unregister \fIproto\fR
 .sp
@@ -789,24 +789,53 @@ Other terms for
 "message body after decoding", "content(s)", and "file".
 .RE
 .TP
-\fB::http::register\fR \fIproto port command\fR
+\fB::http::register\fR \fIproto port command\fR ?\fIsocketCmdVarName\fR? ?\fIuseSockThread\fR? ?\fIendToEndProxy\fR?
 .
 This procedure allows one to provide custom HTTP transport types
 such as HTTPS, by registering a prefix, the default port, and the
-command to execute to create the Tcl \fBchannel\fR. E.g.:
+command to execute to create the Tcl \fBchannel\fR. The optional
+arguments configure how \fBhttp\fR uses the custom transport, and have
+default values that are compatible with older versions of \fBhttp\fR
+in which \fB::http::register\fR has no optional arguments.
+.RS
+.PP
+Argument \fIsocketCmdVarName\fR is the name of a variable provided by
+the transport, whose value is the command used by the transport to open
+a socket.  Its default value is set by the transport and is "::socket",
+but if the name of the variable is supplied to \fB::http::register\fR,
+then \fBhttp\fR will set a new value in order to make optional
+facilities available.  These facilities are enabled by the optional
+arguments \fIuseSockThread\fR, \fIendToEndProxy\fR, which take boolean
+values with default value \fIfalse\fR.
+.PP
+Iff argument \fIuseSockThread\fR is supplied and is boolean \fItrue\fR,
+then iff permitted by the value [\fBhttp::config\fR \fI-threadlevel\fR]
+and by the availability of package \fBThread\fR, sockets created for
+the transport will be opened in a different thread so that a slow DNS
+lookup will not cause the script to block.
+.PP
+Iff argument \fIendToEndProxy\fR is supplied and is boolean \fItrue\fR,
+then when \fBhttp::geturl\fR accesses a server via a proxy, it will
+open a channel by sending a CONNECT request to the proxy, and it will
+then make its request over this channel.  This allows end-to-end
+encryption for HTTPS requests made through a proxy.
+.PP
+For example,
 .RS
 .PP
 .CS
 package require http
+
 package require tls
 
-::http::register https 443 ::tls::socket
+::http::register https 443 ::tls::socket ::tls::socketCmd 1 1
 
 set token [::http::geturl https://my.secure.site/]
 .CE
 .RE
+.RE
 .TP
-\fB::http::registerError\fR \fIport\fR ?\fImessage\fR?
+\fB::http::registerError\fR \fIsock\fR ?\fImessage\fR?
 .
 This procedure allows a registered protocol handler to deliver an error
 message for use by \fBhttp\fR.  Calling this command does not raise an
@@ -820,10 +849,9 @@ string if no such call has been made.
 \fB::http::unregister\fR \fIproto\fR
 .
 This procedure unregisters a protocol handler that was previously
-registered via \fB::http::register\fR, returning a two-item list of
-the default port and handler command that was previously installed
-(via \fB::http::register\fR) if there was such a handler, and an error if
-there was no such handler.
+registered via \fB::http::register\fR, returning a six-item list of
+the values that were previously supplied to \fB::http::register\fR
+if there was such a handler, and an error if there was no such handler.
 .TP
 \fB::http::code\fR \fItoken\fR
 .

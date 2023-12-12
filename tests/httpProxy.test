@@ -7,7 +7,7 @@
 # Copyright © 1991-1993 The Regents of the University of California.
 # Copyright © 1994-1996 Sun Microsystems, Inc.
 # Copyright © 1998-2000 Ajuba Solutions.
-# Copyright © 2022      Keith Nash.
+# Copyright © 2022-2023 Keith Nash.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -18,6 +18,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 package require http 2.10
+#http::register http 80 ::socket
 
 proc bgerror {args} {
     global errorInfo
@@ -29,9 +30,9 @@ proc bgerror {args} {
 proc stopMe {token} {
     set ${token}(z) done
 }
-
+#set ThreadLevel 0
 if {![info exists ThreadLevel]} {
-    if {[catch {package require Thread}] == 0} {
+    if {[catch {package require Thread 2.8.9-}] == 0} {
         set ValueRange {0 1 2}
     } else {
         set ValueRange {0 1}
@@ -50,14 +51,52 @@ if {![info exists ThreadLevel]} {
 catch {puts "==== Test with ThreadLevel $ThreadLevel ===="}
 http::config -threadlevel $ThreadLevel
 
+testConstraint needsSquidNoAuth 0
+testConstraint needsSquidAuth   0
+testConstraint needsTclTls      0
+testConstraint needsTwapi       0
+testConstraint needsTwapiFull   0
+testConstraint needsTls         [expr {    [testConstraint needsTclTls]
+                                        || [testConstraint needsTwapi]
+                                        || [testConstraint needsTwapiFull]
+                                }]
 
-#testConstraint needsSquid 1
-#testConstraint needsTls 1
-
-if {[testConstraint needsTls]} {
+if {[testConstraint needsTclTls]} {
     package require tls
     http::register https 443 [list ::tls::socket -ssl2 0 -ssl3 0 \
-            -tls1 0 -tls1.1 0 -tls1.2 1 -tls1.3 0 -autoservername 1]
+            -tls1 0 -tls1.1 0 -tls1.2 1 -tls1.3 0 -autoservername 1] ::tls::socketCmd 1 1
+} elseif {[testConstraint needsTwapi]} {
+    # "Original" http::register with 3 arguments has the same capabilities as
+    # in http 2.9 and earlier.  This means that:
+    # (1) it cannot open a socket in a background thread (this option stops a
+    #     slow DNS lookup from blocking a [socket -async] command); and
+    # (2) it cannot use a https proxy.
+    #
+    testConstraint needsSquidNoAuth 0
+    testConstraint needsSquidAuth   0
+    package require twapi
+    http::register https 443 ::twapi::tls_socket
+} elseif {[testConstraint needsTwapiFull]} {
+    # (Any revisions to TWAPI, and the contents/existence of the twapiTlsPlus
+    # wrapper, can be negotiated if the bugs listed below can be fixed.)
+    # Use a temporary wrapper package twapiTlsPlus to present a suitable API.
+    #
+    # N.B. MUST EDIT twapi*/tls.tcl so that
+    #-        set so [$socketcmd {*}$socket_args {*}$args]
+    #+        set so [{*}$socketcmd {*}$socket_args {*}$args]
+    #
+    # Bug with https, threadLevel 1,2, no proxy: try test 'httpProxy-2.2.*'
+    # Bug with https, threadLevel 0, with proxy: try test 'httpProxy-3.4.0'
+    # In both cases (using TWAPI 4.7.2 25d8bc), the result is:
+    # ---- Test generated error; Return code was: 1
+    # ---- Return code should have been one of: 0 2
+    # ---- errorInfo: cannot yield: C stack busy
+    #     while executing
+    # "http::geturl https://www.google.com/"
+    #
+    package require twapiTlsPlus
+    http::register https 443 ::twapiTlsPlus::socket ::twapiTlsPlus::socketCmd 1 1
+} else {
 }
 
 # Testing with Squid
@@ -85,7 +124,7 @@ set aliceCreds {Basic YWxpY2U6YWxpY2lh}
 # concat Basic [base64::encode intruder:intruder]
 set badCreds {Basic aW50cnVkZXI6aW50cnVkZXI=}
 
-test httpProxy-1.1.$ThreadLevel {squid is running - ipv4 noauth} -constraints {needsSquid} -setup {
+test httpProxy-1.1.$ThreadLevel {squid is running - ipv4 no-auth} -constraints {needsSquidNoAuth} -setup {
 } -body {
     set token [http::geturl http://$n4host:$n4port/]
     set ri [http::responseInfo $token]
@@ -96,7 +135,7 @@ test httpProxy-1.1.$ThreadLevel {squid is running - ipv4 noauth} -constraints {n
     unset -nocomplain token ri res
 }
 
-test httpProxy-1.2.$ThreadLevel {squid is running - ipv6 noauth} -constraints {needsSquid} -setup {
+test httpProxy-1.2.$ThreadLevel {squid is running - ipv6 no-auth} -constraints {needsSquidNoAuth} -setup {
 } -body {
     set token [http::geturl http://\[$n6host\]:$n6port/]
     set ri [http::responseInfo $token]
@@ -107,7 +146,7 @@ test httpProxy-1.2.$ThreadLevel {squid is running - ipv6 noauth} -constraints {n
     unset -nocomplain token ri res
 }
 
-test httpProxy-1.3.$ThreadLevel {squid is running - ipv4 auth} -constraints {needsSquid} -setup {
+test httpProxy-1.3.$ThreadLevel {squid is running - ipv4 with-auth} -constraints {needsSquidAuth} -setup {
 } -body {
     set token [http::geturl http://$a4host:$a4port/]
     set ri [http::responseInfo $token]
@@ -118,7 +157,7 @@ test httpProxy-1.3.$ThreadLevel {squid is running - ipv4 auth} -constraints {nee
     unset -nocomplain token ri res
 }
 
-test httpProxy-1.4.$ThreadLevel {squid is running - ipv6 auth} -constraints {needsSquid} -setup {
+test httpProxy-1.4.$ThreadLevel {squid is running - ipv6 with-auth} -constraints {needsSquidAuth} -setup {
 } -body {
     set token [http::geturl http://\[$a6host\]:$a6port/]
     set ri [http::responseInfo $token]
@@ -129,7 +168,7 @@ test httpProxy-1.4.$ThreadLevel {squid is running - ipv6 auth} -constraints {nee
     unset -nocomplain token ri res
 }
 
-test httpProxy-2.1.$ThreadLevel {http no-proxy no-auth} -constraints {needsSquid} -setup {
+test httpProxy-2.1.$ThreadLevel {http no-proxy no-auth} -constraints {} -setup {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 } -body {
     set token [http::geturl http://www.google.com/]
@@ -142,7 +181,7 @@ test httpProxy-2.1.$ThreadLevel {http no-proxy no-auth} -constraints {needsSquid
     unset -nocomplain token ri res
 }
 
-test httpProxy-2.2.$ThreadLevel {https no-proxy no-auth} -constraints {needsSquid needsTls} -setup {
+test httpProxy-2.2.$ThreadLevel {https no-proxy no-auth} -constraints {needsTls} -setup {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 } -body {
     set token [http::geturl https://www.google.com/]
@@ -155,7 +194,7 @@ test httpProxy-2.2.$ThreadLevel {https no-proxy no-auth} -constraints {needsSqui
     unset -nocomplain token ri res
 }
 
-test httpProxy-2.3.$ThreadLevel {http with-proxy ipv4 no-auth} -constraints {needsSquid} -setup {
+test httpProxy-2.3.$ThreadLevel {http with-proxy ipv4 no-auth} -constraints {needsSquidNoAuth} -setup {
    http::config -proxyhost $n4host -proxyport $n4port -proxynot {127.0.0.1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl http://www.google.com/]
@@ -169,7 +208,7 @@ test httpProxy-2.3.$ThreadLevel {http with-proxy ipv4 no-auth} -constraints {nee
     http::config -proxyhost {} -proxyport {} -proxynot {}
 }
 
-test httpProxy-2.4.$ThreadLevel {https with-proxy ipv4 no-auth} -constraints {needsSquid needsTls} -setup {
+test httpProxy-2.4.$ThreadLevel {https with-proxy ipv4 no-auth} -constraints {needsSquidNoAuth needsTls} -setup {
    http::config -proxyhost $n4host -proxyport $n4port -proxynot {127.0.0.1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl https://www.google.com/]
@@ -183,7 +222,7 @@ test httpProxy-2.4.$ThreadLevel {https with-proxy ipv4 no-auth} -constraints {ne
     http::config -proxyhost {} -proxyport {} -proxynot {}
 }
 
-test httpProxy-2.5.$ThreadLevel {http with-proxy ipv6 no-auth} -constraints {needsSquid} -setup {
+test httpProxy-2.5.$ThreadLevel {http with-proxy ipv6 no-auth} -constraints {needsSquidNoAuth} -setup {
    http::config -proxyhost $n6host -proxyport $n6port -proxynot {::1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl http://www.google.com/]
@@ -197,7 +236,7 @@ test httpProxy-2.5.$ThreadLevel {http with-proxy ipv6 no-auth} -constraints {nee
     http::config -proxyhost {} -proxyport {} -proxynot {}
 }
 
-test httpProxy-2.6.$ThreadLevel {https with-proxy ipv6 no-auth} -constraints {needsSquid needsTls} -setup {
+test httpProxy-2.6.$ThreadLevel {https with-proxy ipv6 no-auth} -constraints {needsSquidNoAuth needsTls} -setup {
    http::config -proxyhost $n6host -proxyport $n6port -proxynot {::1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl https://www.google.com/]
@@ -211,7 +250,7 @@ test httpProxy-2.6.$ThreadLevel {https with-proxy ipv6 no-auth} -constraints {ne
     http::config -proxyhost {} -proxyport {} -proxynot {}
 }
 
-test httpProxy-3.1.$ThreadLevel {http no-proxy with-auth valid-creds-provided} -constraints {needsSquid} -setup {
+test httpProxy-3.1.$ThreadLevel {http no-proxy with-auth valid-creds-provided} -constraints {} -setup {
    http::config -proxyhost {} -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
 } -body {
     set token [http::geturl http://www.google.com/]
@@ -227,7 +266,7 @@ test httpProxy-3.1.$ThreadLevel {http no-proxy with-auth valid-creds-provided} -
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.2.$ThreadLevel {https no-proxy with-auth valid-creds-provided} -constraints {needsSquid needsTls} -setup {
+test httpProxy-3.2.$ThreadLevel {https no-proxy with-auth valid-creds-provided} -constraints {needsTls} -setup {
    http::config -proxyhost {} -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
 } -body {
     set token [http::geturl https://www.google.com/]
@@ -243,7 +282,7 @@ test httpProxy-3.2.$ThreadLevel {https no-proxy with-auth valid-creds-provided} 
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.3.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-provided} -constraints {needsSquid} -setup {
+test httpProxy-3.3.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-provided} -constraints {needsSquidAuth} -setup {
    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
 } -body {
     set token [http::geturl http://www.google.com/]
@@ -259,7 +298,7 @@ test httpProxy-3.3.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-prov
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.4.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-provided} -constraints {needsSquid needsTls} -setup {
+test httpProxy-3.4.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-provided} -constraints {needsSquidAuth needsTls} -setup {
    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
 } -body {
     set token [http::geturl https://www.google.com/]
@@ -275,7 +314,7 @@ test httpProxy-3.4.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-pro
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.5.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided} -constraints {needsSquid} -setup {
+test httpProxy-3.5.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided} -constraints {needsSquidAuth} -setup {
    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $aliceCreds
 } -body {
     set token [http::geturl http://www.google.com/]
@@ -291,7 +330,7 @@ test httpProxy-3.5.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-prov
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.6.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided} -constraints {needsSquid needsTls} -setup {
+test httpProxy-3.6.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided} -constraints {needsSquidAuth needsTls} -setup {
    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $aliceCreds
 } -body {
     set token [http::geturl https://www.google.com/]
@@ -307,7 +346,7 @@ test httpProxy-3.6.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-pro
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.7.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquid} -setup {
+test httpProxy-3.7.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
     set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
@@ -333,7 +372,7 @@ test httpProxy-3.7.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-prov
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.7x.$ThreadLevel {http with-proxy ipv4 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquid} -setup {
+test httpProxy-3.7x.$ThreadLevel {http with-proxy ipv4 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
     set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
@@ -361,7 +400,7 @@ test httpProxy-3.7x.$ThreadLevel {http with-proxy ipv4 with-auth 1st request no-
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.8.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquid needsTls} -setup {
+test httpProxy-3.8.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquidAuth needsTls} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $aliceCreds
     set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
@@ -389,7 +428,7 @@ test httpProxy-3.8.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-pro
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.8x.$ThreadLevel {https with-proxy ipv4 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquid needsTls} -setup {
+test httpProxy-3.8x.$ThreadLevel {https with-proxy ipv4 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquidAuth needsTls} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
     set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
@@ -419,7 +458,7 @@ test httpProxy-3.8x.$ThreadLevel {https with-proxy ipv4 with-auth 1st request no
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.9.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquid} -setup {
+test httpProxy-3.9.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $aliceCreds
     set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
@@ -445,7 +484,7 @@ test httpProxy-3.9.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-prov
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.9p.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works, pipelining requested and possible} -constraints {needsSquid} -setup {
+test httpProxy-3.9p.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works, pipelining requested and possible} -constraints {needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $aliceCreds
 } -body {
@@ -476,7 +515,7 @@ after idle {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.9x.$ThreadLevel {http with-proxy ipv6 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquid} -setup {
+test httpProxy-3.9x.$ThreadLevel {http with-proxy ipv6 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
     set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
@@ -504,7 +543,7 @@ test httpProxy-3.9x.$ThreadLevel {http with-proxy ipv6 with-auth 1st request no-
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.10.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquid needsTls} -setup {
+test httpProxy-3.10.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquidAuth needsTls} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $aliceCreds
     set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
@@ -532,7 +571,7 @@ test httpProxy-3.10.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-pr
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.10p.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works, pipelining requested and possible} -constraints {needsSquid needsTls} -setup {
+test httpProxy-3.10p.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works, pipelining requested and possible} -constraints {needsSquidAuth needsTls} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $aliceCreds
 } -body {
@@ -565,7 +604,7 @@ after idle {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.10x.$ThreadLevel {https with-proxy ipv6 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquid needsTls} -setup {
+test httpProxy-3.10x.$ThreadLevel {https with-proxy ipv6 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquidAuth needsTls} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
     set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
@@ -595,7 +634,7 @@ test httpProxy-3.10x.$ThreadLevel {https with-proxy ipv6 with-auth 1st request n
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.1.$ThreadLevel {http no-proxy with-auth no-creds-provided} -constraints {needsSquid} -setup {
+test httpProxy-4.1.$ThreadLevel {http no-proxy with-auth no-creds-provided} -constraints {} -setup {
    http::config -proxyhost {} -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl http://www.google.com/]
@@ -611,7 +650,7 @@ test httpProxy-4.1.$ThreadLevel {http no-proxy with-auth no-creds-provided} -con
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.2.$ThreadLevel {https no-proxy with-auth no-creds-provided} -constraints {needsSquid needsTls} -setup {
+test httpProxy-4.2.$ThreadLevel {https no-proxy with-auth no-creds-provided} -constraints {needsTls} -setup {
    http::config -proxyhost {} -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl https://www.google.com/]
@@ -627,7 +666,7 @@ test httpProxy-4.2.$ThreadLevel {https no-proxy with-auth no-creds-provided} -co
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.3.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provided} -constraints {needsSquid} -setup {
+test httpProxy-4.3.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provided} -constraints {needsSquidAuth} -setup {
    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl http://www.google.com/]
@@ -643,7 +682,7 @@ test httpProxy-4.3.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provide
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.4.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provided} -constraints {needsSquid needsTls} -setup {
+test httpProxy-4.4.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provided} -constraints {needsSquidAuth needsTls} -setup {
    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl https://www.google.com/]
@@ -659,7 +698,7 @@ test httpProxy-4.4.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.5.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided} -constraints {needsSquid} -setup {
+test httpProxy-4.5.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided} -constraints {needsSquidAuth} -setup {
    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl http://www.google.com/]
@@ -675,7 +714,7 @@ test httpProxy-4.5.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provide
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.6.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided} -constraints {needsSquid needsTls} -setup {
+test httpProxy-4.6.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided} -constraints {needsSquidAuth needsTls} -setup {
    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
 } -body {
     set token [http::geturl https://www.google.com/]
@@ -691,7 +730,7 @@ test httpProxy-4.6.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.7.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquid} -setup {
+test httpProxy-4.7.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
     set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
@@ -717,7 +756,7 @@ test httpProxy-4.7.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provide
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.8.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquid needsTls} -setup {
+test httpProxy-4.8.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth needsTls} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth {}
     set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
@@ -745,7 +784,7 @@ test httpProxy-4.8.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.9.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquid} -setup {
+test httpProxy-4.9.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
     set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
@@ -771,7 +810,7 @@ test httpProxy-4.9.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provide
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.9p.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible, pipelining requested and possible} -constraints {needsSquid} -setup {
+test httpProxy-4.9p.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible, pipelining requested and possible} -constraints {needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
 } -body {
@@ -802,7 +841,7 @@ after idle {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.10.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquid needsTls} -setup {
+test httpProxy-4.10.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth needsTls} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
     set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
@@ -830,7 +869,7 @@ test httpProxy-4.10.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provi
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.10p.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible, pipelining requested but not possible} -constraints {needsSquid needsTls} -setup {
+test httpProxy-4.10p.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible, pipelining requested but not possible} -constraints {needsSquidAuth needsTls} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth {}
 } -body {
@@ -864,7 +903,7 @@ after idle {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.1.$ThreadLevel {http no-proxy with-auth bad-creds-provided} -constraints {needsSquid} -setup {
+test httpProxy-5.1.$ThreadLevel {http no-proxy with-auth bad-creds-provided} -constraints {} -setup {
    http::config -proxyhost {} -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
 } -body {
     set token [http::geturl http://www.google.com/]
@@ -880,7 +919,7 @@ test httpProxy-5.1.$ThreadLevel {http no-proxy with-auth bad-creds-provided} -co
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.2.$ThreadLevel {https no-proxy with-auth bad-creds-provided} -constraints {needsSquid needsTls} -setup {
+test httpProxy-5.2.$ThreadLevel {https no-proxy with-auth bad-creds-provided} -constraints {needsTls} -setup {
    http::config -proxyhost {} -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
 } -body {
     set token [http::geturl https://www.google.com/]
@@ -896,7 +935,7 @@ test httpProxy-5.2.$ThreadLevel {https no-proxy with-auth bad-creds-provided} -c
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.3.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided} -constraints {needsSquid} -setup {
+test httpProxy-5.3.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided} -constraints {needsSquidAuth} -setup {
    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
 } -body {
     set token [http::geturl http://www.google.com/]
@@ -912,7 +951,7 @@ test httpProxy-5.3.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.4.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided} -constraints {needsSquid needsTls} -setup {
+test httpProxy-5.4.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided} -constraints {needsSquidAuth needsTls} -setup {
    http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
 } -body {
     set token [http::geturl https://www.google.com/]
@@ -928,7 +967,7 @@ test httpProxy-5.4.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provi
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.5.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provided} -constraints {needsSquid} -setup {
+test httpProxy-5.5.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provided} -constraints {needsSquidAuth} -setup {
    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $badCreds
 } -body {
     set token [http::geturl http://www.google.com/]
@@ -944,7 +983,7 @@ test httpProxy-5.5.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.6.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provided} -constraints {needsSquid needsTls} -setup {
+test httpProxy-5.6.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provided} -constraints {needsSquidAuth needsTls} -setup {
    http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $badCreds
 } -body {
     set token [http::geturl https://www.google.com/]
@@ -960,7 +999,7 @@ test httpProxy-5.6.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provi
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.7.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquid} -setup {
+test httpProxy-5.7.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
     set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
@@ -986,7 +1025,7 @@ test httpProxy-5.7.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.7p.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible, pipelining requested and possible} -constraints {needsSquid} -setup {
+test httpProxy-5.7p.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible, pipelining requested and possible} -constraints {needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
 } -body {
@@ -1017,7 +1056,7 @@ after idle {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.8.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquid needsTls} -setup {
+test httpProxy-5.8.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth needsTls} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
     set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
@@ -1045,7 +1084,7 @@ test httpProxy-5.8.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provi
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.8p.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible, pipelining requested but not possible} -constraints {needsSquid needsTls} -setup {
+test httpProxy-5.8p.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible, pipelining requested but not possible} -constraints {needsSquidAuth needsTls} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot {127.0.0.1 localhost} -proxyauth $badCreds
 } -body {
@@ -1078,7 +1117,7 @@ after idle {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.9.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquid} -setup {
+test httpProxy-5.9.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $badCreds
     set token0 [http::geturl http://www.google.com/ -keepalive 1 -timeout 5000]
@@ -1104,7 +1143,7 @@ test httpProxy-5.9.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.10.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquid needsTls} -setup {
+test httpProxy-5.10.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth needsTls} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot {::1 localhost} -proxyauth $badCreds
     set token0 [http::geturl https://www.google.com/ -keepalive 1 -timeout 5000]
