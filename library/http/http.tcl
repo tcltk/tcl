@@ -5259,6 +5259,8 @@ proc http::AllDone {varName args} {
 #   An error in thread::send -async causes return of just the error message
 #   (not the expected 3 elements), and raises a bgerror in the main thread.
 #   Hence wrap the command with catch as a precaution.
+# - Bug in Thread 2.8.8 - on Windows, read/write operations fail on a socket
+#   moved from another thread by thread::transfer.
 # ------------------------------------------------------------------------------
 
 proc http::AltSocket {args} {
@@ -5357,10 +5359,10 @@ proc http::LoadThreadIfNeeded {} {
         set http(usingThread) 0
         return
     }
-    if {[catch {package require Thread}]} {
+    if {[catch {package require Thread 2.8.9-}]} {
         if {$http(-threadlevel) == 2} {
             set msg {[http::config -threadlevel] has value 2,\
-                     but the Thread package is not available}
+                     but the Thread package (2.8.9 or above) is not available}
             return -code error $msg
         }
         set http(usingThread) 0
@@ -5387,7 +5389,7 @@ proc http::LoadThreadIfNeeded {} {
 # ------------------------------------------------------------------------------
 
 proc http::SockInThread {caller defcmd sockargs} {
-    package require Thread
+    package require Thread 2.8.9-
 
     set catchCode [catch {eval $defcmd $sockargs} sock errdict]
     if {$catchCode == 0} {
