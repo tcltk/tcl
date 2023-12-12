@@ -9,8 +9,8 @@
 
 proc readFile {filename {mode text}} {
     # Parse the arguments
-    set MODES {binary text}
-    set ERR [list -level 1 -errorcode [list TCL LOOKUP MODE $mode]]
+    const MODES {binary text}
+    const ERR [list -level 1 -errorcode [list TCL LOOKUP MODE $mode]]
     set mode [tcl::prefix match -message "mode" -error $ERR $MODES $mode]
 
     # Read the file

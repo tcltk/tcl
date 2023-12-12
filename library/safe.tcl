@@ -503,15 +503,9 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook au
 proc ::safe::DetokPath {child tokenPath} {
     namespace upvar ::safe [VarName $child] state
 
-    set childPath {}
-    foreach token $tokenPath {
-	if {[dict exists $state(access_path,map) $token]} {
-	    lappend childPath [dict get $state(access_path,map) $token]
-	} else {
-	    lappend childPath $token
-	}
-    }
-    return $childPath
+    return [lmap token $tokenPath {
+	dict getdef $state(access_path,map) $token $token
+    }]
 }
 
 #

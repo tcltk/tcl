@@ -12,6 +12,8 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
+package require Tcl 9-
+
 namespace eval ::tcl::idna {
     namespace ensemble create -command puny -map {
 	encode punyencode
@@ -60,43 +62,43 @@ namespace eval ::tcl::idna {
 	return [join $parts .]
     }
 
-    variable digits [split "abcdefghijklmnopqrstuvwxyz0123456789" ""]
+    const DIGITS [split "abcdefghijklmnopqrstuvwxyz0123456789" ""]
     # Bootstring parameters for Punycode
-    variable base 36
-    variable tmin 1
-    variable tmax 26
-    variable skew 38
-    variable damp 700
-    variable initial_bias 72
-    variable initial_n 0x80
+    const BASE 36
+    const T_MIN 1
+    const T_MAX 26
+    const SKEW 38
+    const DAMP 700
+    const INITIAL_BIAS 72
+    const INITIAL_N 0x80
 
-    variable max_codepoint 0x10FFFF
+    const max_codepoint 0x10FFFF
 
     proc adapt {delta first numchars} {
-	variable base
-	variable tmin
-	variable tmax
-	variable damp
-	variable skew
+	variable BASE
+	variable T_MIN
+	variable T_MAX
+	variable DAMP
+	variable SKEW
 
-	set delta [expr {$delta / ($first ? $damp : 2)}]
+	set delta [expr {$delta / ($first ? $DAMP : 2)}]
 	incr delta [expr {$delta / $numchars}]
 	set k 0
-	while {$delta > ($base - $tmin) * $tmax / 2} {
-	    set delta [expr {$delta / ($base-$tmin)}]
-	    incr k $base
+	while {$delta > ($BASE - $T_MIN) * $T_MAX / 2} {
+	    set delta [expr {$delta / ($BASE - $T_MIN)}]
+	    incr k $BASE
 	}
-	return [expr {$k + ($base-$tmin+1) * $delta / ($delta+$skew)}]
+	return [expr {$k + ($BASE - $T_MIN + 1) * $delta / ($delta + $SKEW)}]
     }
 
     # Main punycode encoding function
     proc punyencode {string {case ""}} {
-	variable digits
-	variable tmin
-	variable tmax
-	variable base
-	variable initial_n
-	variable initial_bias
+	variable DIGITS
+	variable T_MIN
+	variable T_MAX
+	variable BASE
+	variable INITIAL_N
+	variable INITIAL_BIAS
 
 	if {![string is boolean $case]} {
 	    return -code error "\"$case\" must be boolean"
@@ -110,9 +112,9 @@ namespace eval ::tcl::idna {
 	set output {}
 
 	# Initialize the state:
-	set n $initial_n
+	set n $INITIAL_N
 	set delta 0
-	set bias $initial_bias
+	set bias $INITIAL_BIAS
 
 	# Handle the basic code points:
 	foreach ch $string {
@@ -152,7 +154,7 @@ namespace eval ::tcl::idna {
 	    # Increase delta enough to advance the decoder's <n,i> state to
 	    # <m,0>, but guard against overflow:
 
-	    if {$m-$n > (0xFFFFFFFF-$delta)/($h+1)} {
+	    if {$m - $n > (0xFFFFFFFF - $delta) / ($h + 1)} {
 		throw {PUNYCODE OVERFLOW} "overflow in delta computation"
 	    }
 	    incr delta [expr {($m-$n) * ($h+1)}]
@@ -169,18 +171,18 @@ namespace eval ::tcl::idna {
 
 		# Represent delta as a generalized variable-length integer:
 
-		for {set q $delta; set k $base} true {incr k $base} {
-		    set t [expr {min(max($k-$bias, $tmin), $tmax)}]
+		for {set q $delta; set k $BASE} true {incr k $BASE} {
+		    set t [expr {min(max($k - $bias, $T_MIN), $T_MAX)}]
 		    if {$q < $t} {
 			break
 		    }
 		    append output \
-			[lindex $digits [expr {$t + ($q-$t)%($base-$t)}]]
-		    set q [expr {($q-$t) / ($base-$t)}]
+			[lindex $DIGITS [expr {$t + ($q - $t) % ($BASE - $t)}]]
+		    set q [expr {($q - $t) / ($BASE - $t)}]
 		}
 
-		append output [lindex $digits $q]
-		set bias [adapt $delta [expr {$h==$b}] [expr {$h+1}]]
+		append output [lindex $DIGITS $q]
+		set bias [adapt $delta [expr {$h == $b}] [expr {$h + 1}]]
 		set delta 0
 		incr h
 	    }
@@ -191,11 +193,11 @@ namespace eval ::tcl::idna {
 
     # Main punycode decode function
     proc punydecode {string {case ""}} {
-	variable tmin
-	variable tmax
-	variable base
-	variable initial_n
-	variable initial_bias
+	variable T_MIN
+	variable T_MAX
+	variable BASE
+	variable INITIAL_N
+	variable INITIAL_BIAS
 	variable max_codepoint
 
 	if {![string is boolean $case]} {
@@ -204,10 +206,10 @@ namespace eval ::tcl::idna {
 
 	# Initialize the state:
 
-	set n $initial_n
+	set n $INITIAL_N
 	set i 0
 	set first 1
-	set bias $initial_bias
+	set bias $INITIAL_BIAS
 
 	# Split the string into the "real" ASCII characters and the ones to
 	# feed into the main decoder. Note that we don't need to check the
@@ -231,7 +233,7 @@ namespace eval ::tcl::idna {
 	    # i as we go, then subtract off its starting value at the end to
 	    # obtain delta.
 
-	    for {set oldi $i; set w 1; set k $base} 1 {incr in} {
+	    for {set oldi $i; set w 1; set k $BASE} 1 {incr in} {
 		if {[set ch [string index $post $in]] eq ""} {
 		    throw {PUNYCODE BAD_INPUT LENGTH} "exceeded input data"
 		}
@@ -245,17 +247,17 @@ namespace eval ::tcl::idna {
 			    "bad decode character \"$ch\""
 		}
 		incr i [expr {$digit * $w}]
-		set t [expr {min(max($tmin, $k-$bias), $tmax)}]
+		set t [expr {min(max($T_MIN, $k - $bias), $T_MAX)}]
 		if {$digit < $t} {
-		    set bias [adapt [expr {$i-$oldi}] $first [incr out]]
+		    set bias [adapt [expr {$i - $oldi}] $first [incr out]]
 		    set first 0
 		    break
 		}
-		if {[set w [expr {$w * ($base - $t)}]] > 0x7FFFFFFF} {
+		if {[set w [expr {$w * ($BASE - $t)}]] > 0x7FFFFFFF} {
 		    throw {PUNYCODE OVERFLOW} \
 			"excessively large integer computed in digit decode"
 		}
-		incr k $base
+		incr k $BASE
 	    }
 
 	    # i was supposed to wrap around from out+1 to 0, incrementing n
@@ -284,7 +286,7 @@ namespace eval ::tcl::idna {
     }
 }
 
-package provide tcl::idna 1.0.1
+package provide tcl::idna 1.0.2
 
 # Local variables:
 # mode: tcl

@@ -2593,21 +2593,23 @@ proc http::EventGateway {sock token} {
     variable $token
     upvar 0 $token state
     fileevent $sock readable {}
-    catch {${token}--EventCoroutine} res opts
-    if {[info commands ${token}--EventCoroutine] ne {}} {
-        # The coroutine can be deleted by completion (a non-yield return), by
-        # http::Finish (when there is a premature end to the transaction), by
-        # http::reset or http::cleanup, or if the caller set option -channel
-        # but not option -handler: in the last case reading from the socket is
-        # now managed by commands ::http::Copy*, http::ReceiveChunked, and
-        # http::MakeTransformationChunked.
-        #
-        # Catch in case the coroutine has closed the socket.
-        catch {fileevent $sock readable [list http::EventGateway $sock $token]}
+    try {
+	${token}--EventCoroutine
+    } finally {
+	if {[info commands ${token}--EventCoroutine] ne {}} {
+	    # The coroutine can be deleted by completion (a non-yield return), by
+	    # http::Finish (when there is a premature end to the transaction), by
+	    # http::reset or http::cleanup, or if the caller set option -channel
+	    # but not option -handler: in the last case reading from the socket is
+	    # now managed by commands ::http::Copy*, http::ReceiveChunked, and
+	    # http::MakeTransformationChunked.
+	    #
+	    # Catch in case the coroutine has closed the socket.
+	    catch {
+		fileevent $sock readable [list http::EventGateway $sock $token]
+	    }
+	}
     }
-
-    # If there was an error, re-throw it.
-    return -options $opts $res
 }
 
 

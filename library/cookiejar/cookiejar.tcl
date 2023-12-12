@@ -8,7 +8,7 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 # Dependencies
-package require Tcl 8.6-
+package require Tcl 9-
 package require http 2.8.4
 package require sqlite3
 package require tcl::idna 1.0
@@ -54,11 +54,11 @@ namespace eval [info object namespace ::http::cookiejar] {
 
     # Keep this in sync with pkgIndex.tcl and with the install directories in
     # Makefiles
-    variable version 0.2.0
+    const version 0.3.0
 
-    variable domainlist \
+    const domainlist \
 	https://publicsuffix.org/list/public_suffix_list.dat
-    variable domainfile \
+    const domainfile \
 	[file join [file dirname [info script]] public_suffix_list.dat.gz]
     # The list is directed to from http://publicsuffix.org/list/
     variable loglevel info

@@ -81,7 +81,7 @@ proc tcl::Pkg::CompareExtension {fileName {ext {}}} {
 #			dir.
 
 proc pkg_mkIndex {args} {
-    set usage {"pkg_mkIndex ?-direct? ?-lazy? ?-load pattern? ?-verbose? ?--? dir ?pattern ...?"}
+    const usage {"pkg_mkIndex ?-direct? ?-lazy? ?-load pattern? ?-verbose? ?--? dir ?pattern ...?"}
 
     set argCount [llength $args]
     if {$argCount < 1} {
@@ -412,9 +412,12 @@ proc pkg_mkIndex {args} {
     }
 
     set f [open [file join $dir pkgIndex.tcl] w]
-    fconfigure $f -encoding utf-8 -translation lf
-    puts $f $index
-    close $f
+    try {
+	fconfigure $f -encoding utf-8 -translation lf
+	puts $f $index
+    } finally {
+	close $f
+    }
 }
 
 # tclPkgSetup --

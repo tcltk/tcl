@@ -241,51 +241,59 @@ proc ::tcl::clock::Initialize {} {
     # Paths at which binary time zone data for the Olson libraries are known
     # to reside on various operating systems
 
-    variable ZoneinfoPaths {}
-    foreach path {
-	/usr/share/zoneinfo
-	/usr/share/lib/zoneinfo
-	/usr/lib/zoneinfo
-	/usr/local/etc/zoneinfo
-    } {
-	if { [file isdirectory $path] } {
-	    lappend ZoneinfoPaths $path
+    variable ZoneinfoPaths [apply { {} {
+	lmap path {
+	    /usr/share/zoneinfo
+	    /usr/share/lib/zoneinfo
+	    /usr/lib/zoneinfo
+	    /usr/local/etc/zoneinfo
+	} {
+	    if {![file isdirectory $path]} {
+		continue
+	    }
+	    set path
 	}
-    }
+    }}]
 
     # Define the directories for time zone data and message catalogs.
 
-    variable DataDir [file join $LibDir tzdata]
+    const DataDir [file join $LibDir tzdata]
 
     # Number of days in the months, in common years and leap years.
 
-    variable DaysInRomanMonthInCommonYear \
+    const DaysInRomanMonthInCommonYear \
 	{ 31 28 31 30 31 30 31 31 30 31 30 31 }
-    variable DaysInRomanMonthInLeapYear \
+    const DaysInRomanMonthInLeapYear \
 	{ 31 29 31 30 31 30 31 31 30 31 30 31 }
-    variable DaysInPriorMonthsInCommonYear [list 0]
-    variable DaysInPriorMonthsInLeapYear [list 0]
-    set i 0
-    foreach j $DaysInRomanMonthInCommonYear {
-	lappend DaysInPriorMonthsInCommonYear [incr i $j]
-    }
-    set i 0
-    foreach j $DaysInRomanMonthInLeapYear {
-	lappend DaysInPriorMonthsInLeapYear [incr i $j]
-    }
+    const DaysInPriorMonthsInLeapYear [apply {lengths {
+	set days [list 0]
+	set i 0
+	foreach j $lengths {
+	    lappend days [incr i $j]
+	}
+	return $days
+    }} $DaysInRomanMonthInCommonYear]
+    const DaysInPriorMonthsInLeapYear [apply {lengths {
+	set days [list 0]
+	set i 0
+	foreach j $lengths {
+	    lappend days [incr i $j]
+	}
+	return $days
+    }} $DaysInRomanMonthInLeapYear]
 
     # Another epoch (Hi, Jeff!)
 
-    variable Roddenberry 1946
+    const Roddenberry 1946
 
     # Integer ranges
 
-    variable MINWIDE -9223372036854775808
-    variable MAXWIDE 9223372036854775807
+    const MINWIDE -9223372036854775808
+    const MAXWIDE 9223372036854775807
 
     # Day before Leap Day
 
-    variable FEB_28	       58
+    const FEB_28	       58
 
     # Translation table to map Windows TZI onto cities, so that the Olson
     # rules can apply.  In some cases the mapping is ambiguous, so it's wise
@@ -2034,7 +2042,7 @@ proc ::tcl::clock::LocaleNumeralMatcher {l} {
     if { ![dict exists $LocaleNumeralCache $l] } {
 	set d {}
 	set i 0
-	set sep \(
+	set sep "\("
 	foreach n [mc LOCALE_NUMERALS] {
 	    dict set d $n $i
 	    regsub -all {[^[:alnum:]]} $n \\\\& subex
@@ -2042,7 +2050,7 @@ proc ::tcl::clock::LocaleNumeralMatcher {l} {
 	    set sep |
 	    incr i
 	}
-	append re \)
+	append re "\)"
 	dict set LocaleNumeralCache $l [list $re $d]
     }
     return [dict get $LocaleNumeralCache $l]

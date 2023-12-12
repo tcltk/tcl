@@ -16,12 +16,12 @@ proc writeFile {args} {
 	}
 	3 {
 	    lassign $args filename mode data
-	    set MODES {binary text}
-	    set ERR [list -level 1 -errorcode [list TCL LOOKUP MODE $mode]]
+	    const MODES {binary text}
+	    const ERR [list -level 1 -errorcode [list TCL LOOKUP MODE $mode]]
 	    set mode [tcl::prefix match -message "mode" -error $ERR $MODES $mode]
 	}
 	default {
-	    set COMMAND [lindex [info level 0] 0]
+	    const COMMAND [lindex [info level 0] 0]
 	    return -code error -errorcode {TCL WRONGARGS} \
 		"wrong # args: should be \"$COMMAND filename ?mode? data\""
 	}
