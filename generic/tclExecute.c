@@ -3937,7 +3937,7 @@ TEBCresume(
 	cleanup = 1;
 	part1Ptr = NULL;
 	objPtr = OBJ_AT_TOS;
-	TRACE(("%u "\"%.30s\" => \n", opnd, O2S(objPtr)));
+	TRACE(("%u \"%.30s\" => \n", opnd, O2S(objPtr)));
 	varPtr = LOCAL(opnd);
 	arrayPtr = NULL;
 	while (TclIsVarLink(varPtr)) {
@@ -9618,9 +9618,9 @@ EvalStatsCmd(
     double strBytesSharedMultX, strBytesSharedOnce;
     double numInstructions, currentHeaderBytes;
     size_t numCurrentByteCodes, numByteCodeLits;
-    size_t refCountSum, literalMgmtBytes, sum, decadeHigh, length;
+    size_t refCountSum, literalMgmtBytes, sum, decadeHigh;
     size_t numSharedMultX, numSharedOnce, minSizeDecade, maxSizeDecade;
-    Tcl_Size i;
+    Tcl_Size i, length;
     size_t ui;
     char *litTableStats;
     LiteralEntry *entryPtr;
