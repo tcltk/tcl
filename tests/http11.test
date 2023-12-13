@@ -13,6 +13,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 package require http 2.10
+#http::register http 80 ::socket
 
 # start the server
 variable httpd_output
