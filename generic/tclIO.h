@@ -158,10 +158,6 @@ typedef struct ChannelState {
 				 * of line sequences in output? */
     int inEofChar;		/* If nonzero, use this as a signal of EOF on
 				 * input. */
-#if TCL_MAJOR_VERSION < 9
-    int outEofChar;		/* If nonzero, append this to the channel when
-				 * it is closed if it is open for writing. For Tcl 8.x only */
-#endif
     int unreportedError;	/* Non-zero if an error report was deferred
 				 * because it happened in the background. The
 				 * value is the POSIX error code. */

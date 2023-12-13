@@ -17,6 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 package require http 2.10
+#http::register http 80 ::socket
 
 proc bgerror {args} {
     global errorInfo
@@ -480,7 +481,7 @@ test http-3.33.$ThreadLevel {http::geturl application/xml is text} -body {
 } -result {test 4660 /test}
 test http-3.34.$ThreadLevel {http::geturl -headers not a list} -returnCodes error -body {
     http::geturl http://test/t -headers \"
-} -result {Bad value for -headers ("), must be list}
+} -result "Bad value for -headers (\"), must be list"
 test http-3.35.$ThreadLevel {http::geturl -headers not even number of elements} -returnCodes error -body {
     http::geturl http://test/t -headers {List Length 3}
 } -result {Bad value for -headers (List Length 3), number of list elements must be even}
@@ -633,13 +634,29 @@ test http-4.14.$ThreadLevel {http::Event} -body {
 
 # Bogus host
 test http-4.15.$ThreadLevel {http::Event} -body {
-    # This test may fail if you use a proxy server. That is to be
-    # expected and is not a problem with Tcl.
-    # With http::config -threadlevel 1 or 2, the script enters the event loop
-    # during the DNS lookup, and has the opportunity to time out.
-    # Increase -timeout from 3000 to 10000 to prevent this.
-    set token [http::geturl //not_a_host.tcl.tk -timeout 10000 -command \#]
+    # 1. The test assumes that http is not using a proxy server.
+    #    If http is using a proxy server, the latter is responsible for the DNS
+    #    lookup of the non-existent host. Squid responds with
+    #    "503 Service Unavailable" and an explanatory response body; but other
+    #    proxies may respond differently.
+    # 2. The [socket] command blocks during the DNS lookup.
+    #    - When [socket] runs in the main thread (i.e. when -threadlevel is 0 or
+    #      (if Thread package not available) 1), the script cannot time out
+    #      during a prolonged DNS lookup.
+    #    - When [socket] runs in a separate thread (i.e. when the Thread package
+    #      is available and [http::config -threadlevel] is 1 or 2), the main
+    #      thread enters the event loop and has the opportunity to time out
+    #      during the DNS lookup.  This causes the test to fail.
+    #    - The test uses a long -timeout so that it is not confounded by a slow
+    #      DNS lookup.
+    #    - If the error result is "timeout", this suggests a problem with
+    #      negative DNS lookups on the test host.  Compare the timings for
+    #      different values of threadLevel.
+    # set t0 [clock milliseconds]
+    set token [http::geturl //not-a-host.nodns. -timeout 30000 -command \#]
     http::wait $token
+    # set t1 [clock milliseconds]
+    # puts "Test http-4.15.$ThreadLevel - time taken: [expr {$t1 - $t0}] ms"
     set result "[http::status $token] -- [lindex [http::error $token] 0]"
     # error codes vary among platforms.
 } -cleanup {

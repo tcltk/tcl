@@ -163,17 +163,12 @@ declare 61 {
 declare 62 {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
-# Removed in 9.0:
-#declare 63 {
-#    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
-#	    Tcl_Size objc, Tcl_Obj *const objv[])
-#}
 declare 64 {
     int TclObjInvoke(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	    int flags)
 }
 declare 69 {
-    void *TclpAlloc(TCL_HASH_TYPE size)
+    void *TclpAlloc(size_t size)
 }
 declare 74 {
     void TclpFree(void *ptr)
@@ -189,7 +184,7 @@ declare 76 {
 #    void TclpGetTime(Tcl_Time *time)
 #}
 declare 81 {
-    void *TclpRealloc(void *ptr, TCL_HASH_TYPE size)
+    void *TclpRealloc(void *ptr, size_t size)
 }
 # Removed in 9.0:
 #declare 88 {
@@ -532,7 +527,7 @@ declare 214 {
     void TclSetObjNameOfExecutable(Tcl_Obj *name, Tcl_Encoding encoding)
 }
 declare 215 {
-    void *TclStackAlloc(Tcl_Interp *interp, TCL_HASH_TYPE numBytes)
+    void *TclStackAlloc(Tcl_Interp *interp, size_t numBytes)
 }
 declare 216 {
     void TclStackFree(Tcl_Interp *interp, void *freePtr)

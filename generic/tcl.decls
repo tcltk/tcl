@@ -40,22 +40,22 @@ declare 2 {
     TCL_NORETURN void Tcl_Panic(const char *format, ...)
 }
 declare 3 {
-    void *Tcl_Alloc(TCL_HASH_TYPE size)
+    void *Tcl_Alloc(size_t size)
 }
 declare 4 {
     void Tcl_Free(void *ptr)
 }
 declare 5 {
-    void *Tcl_Realloc(void *ptr, TCL_HASH_TYPE size)
+    void *Tcl_Realloc(void *ptr, size_t size)
 }
 declare 6 {
-    void *Tcl_DbCkalloc(TCL_HASH_TYPE size, const char *file, int line)
+    void *Tcl_DbCkalloc(size_t size, const char *file, int line)
 }
 declare 7 {
     void Tcl_DbCkfree(void *ptr, const char *file, int line)
 }
 declare 8 {
-    void *Tcl_DbCkrealloc(void *ptr, TCL_HASH_TYPE size,
+    void *Tcl_DbCkrealloc(void *ptr, size_t size,
 	    const char *file, int line)
 }
 
@@ -104,10 +104,6 @@ declare 20 {
 declare 21 {
     int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
-# Removed in 9.0 (changed to macro):
-#declare 22 {
-#    Tcl_Obj *Tcl_DbNewBooleanObj(int intValue, const char *file, int line)
-#}
 declare 23 {
     Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes,
 	    Tcl_Size numBytes, const char *file, int line)
@@ -120,10 +116,6 @@ declare 25 {
     Tcl_Obj *Tcl_DbNewListObj(Tcl_Size objc, Tcl_Obj *const *objv,
 	    const char *file, int line)
 }
-# Removed in 9.0 (changed to macro):
-#declare 26 {
-#    Tcl_Obj *Tcl_DbNewLongObj(long longValue, const char *file, int line)
-#}
 declare 27 {
     Tcl_Obj *Tcl_DbNewObj(const char *file, int line)
 }
@@ -137,17 +129,6 @@ declare 29 {
 declare 30 {
     void TclFreeObj(Tcl_Obj *objPtr)
 }
-declare 31 {
-    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *intPtr)
-}
-declare 32 {
-    int Tcl_GetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *intPtr)
-}
-# Only available in Tcl 8.x, NULL in Tcl 9.0
-declare 33 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, Tcl_Size *numBytesPtr)
-}
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
 }
@@ -155,11 +136,6 @@ declare 35 {
     int Tcl_GetDoubleFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    double *doublePtr)
 }
-# Removed in 9.0, replaced by macro.
-#declare 36 {
-#    int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-#	    const char *const *tablePtr, const char *msg, int flags, int *indexPtr)
-#}
 declare 37 {
     int Tcl_GetInt(Tcl_Interp *interp, const char *src, int *intPtr)
 }
@@ -212,27 +188,15 @@ declare 50 {
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
 }
-# Removed in 9.0 (changed to macro):
-#declare 52 {
-#    Tcl_Obj *Tcl_NewIntObj(int intValue)
-#}
 declare 53 {
     Tcl_Obj *Tcl_NewListObj(Tcl_Size objc, Tcl_Obj *const objv[])
 }
-# Removed in 9.0 (changed to macro):
-#declare 54 {
-#    Tcl_Obj *Tcl_NewLongObj(long longValue)
-#}
 declare 55 {
     Tcl_Obj *Tcl_NewObj(void)
 }
 declare 56 {
     Tcl_Obj *Tcl_NewStringObj(const char *bytes, Tcl_Size length)
 }
-# Removed in 9.0 (changed to macro):
-#declare 57 {
-#    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int intValue)
-#}
 declare 58 {
     unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, Tcl_Size numBytes)
 }
@@ -243,32 +207,15 @@ declare 59 {
 declare 60 {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
 }
-# Removed in 9.0 (changed to macro):
-#declare 61 {
-#    void Tcl_SetIntObj(Tcl_Obj *objPtr, int intValue)
-#}
 declare 62 {
     void Tcl_SetListObj(Tcl_Obj *objPtr, Tcl_Size objc, Tcl_Obj *const objv[])
 }
-# Removed in 9.0 (changed to macro):
-#declare 63 {
-#    void Tcl_SetLongObj(Tcl_Obj *objPtr, long longValue)
-#}
 declare 64 {
     void Tcl_SetObjLength(Tcl_Obj *objPtr, Tcl_Size length)
 }
 declare 65 {
     void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, Tcl_Size length)
 }
-# Removed in 9.0, replaced by macro.
-#declare 66 {
-#    void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
-#}
-# Removed in 9.0, replaced by macro.
-#declare 67 {
-#    void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,
-#	    Tcl_Size length)
-#}
 declare 68 {
     void Tcl_AllowExceptions(Tcl_Interp *interp)
 }
@@ -294,14 +241,6 @@ declare 74 {
 declare 75 {
     int Tcl_AsyncReady(void)
 }
-# Removed in 9.0
-#declare 76 {
-#    void Tcl_BackgroundError(Tcl_Interp *interp)
-#}
-# Removed in 9.0:
-#declare 77 {
-#    char Tcl_Backslash(const char *src, int *readPtr)
-#}
 declare 78 {
     int Tcl_BadChannelOption(Tcl_Interp *interp, const char *optionName,
 	    const char *optionList)
@@ -314,9 +253,6 @@ declare 80 {
     void Tcl_CancelIdleCall(Tcl_IdleProc *idleProc, void *clientData)
 }
 # Only available in Tcl 8.x, NULL in Tcl 9.0
-declare 81 {
-    int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
-}
 declare 82 {
     int Tcl_CommandComplete(const char *cmd)
 }
@@ -1444,7 +1380,7 @@ declare 392 {
 }
 declare 393 {
     int Tcl_CreateThread(Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc,
-	    void *clientData, TCL_HASH_TYPE stackSize, int flags)
+	    void *clientData, size_t stackSize, int flags)
 }
 
 # Introduced in 8.3.2
@@ -1580,16 +1516,16 @@ declare 427 {
 	    int flags, Tcl_CommandTraceProc *proc, void *clientData)
 }
 declare 428 {
-    void *Tcl_AttemptAlloc(TCL_HASH_TYPE size)
+    void *Tcl_AttemptAlloc(size_t size)
 }
 declare 429 {
-    void *Tcl_AttemptDbCkalloc(TCL_HASH_TYPE size, const char *file, int line)
+    void *Tcl_AttemptDbCkalloc(size_t size, const char *file, int line)
 }
 declare 430 {
-    void *Tcl_AttemptRealloc(void *ptr, TCL_HASH_TYPE size)
+    void *Tcl_AttemptRealloc(void *ptr, size_t size)
 }
 declare 431 {
-    void *Tcl_AttemptDbCkrealloc(void *ptr, TCL_HASH_TYPE size,
+    void *Tcl_AttemptDbCkrealloc(void *ptr, size_t size,
 	    const char *file, int line)
 }
 declare 432 {
@@ -2417,7 +2353,7 @@ declare 636 {
 }
 declare 637 {
     char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
-	    TCL_HASH_TYPE numBytes)
+	    size_t numBytes)
 }
 declare 638 {
     Tcl_ObjInternalRep *Tcl_FetchInternalRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)

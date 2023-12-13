@@ -1457,8 +1457,8 @@ TclCompileSubstCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     int numArgs = parsePtr->numWords - 1;
-    int numOpts = numArgs - 1;
-    int objc, flags = TCL_SUBST_ALL;
+    Tcl_Size objc, numOpts = numArgs - 1;
+    int flags = TCL_SUBST_ALL;
     Tcl_Obj **objv/*, *toSubst = NULL*/;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     int code = TCL_ERROR;

@@ -222,9 +222,7 @@ typedef struct NamespacePathEntry NamespacePathEntry;
 typedef struct TclVarHashTable {
     Tcl_HashTable table;
     struct Namespace *nsPtr;
-#if TCL_MAJOR_VERSION > 8
     struct Var *arrayPtr;
-#endif /* TCL_MAJOR_VERSION > 8 */
 } TclVarHashTable;
 
 /*
@@ -274,11 +272,7 @@ typedef struct Namespace {
 				 * strings; values have type (Namespace *). If
 				 * NULL, there are no children. */
 #endif
-#if TCL_MAJOR_VERSION > 8
     size_t nsId;		/* Unique id for the namespace. */
-#else
-    unsigned long nsId;
-#endif
     Tcl_Interp *interp;	/* The interpreter containing this
 				 * namespace. */
     int flags;			/* OR-ed combination of the namespace status
@@ -661,6 +655,11 @@ typedef struct VarInHash {
  *				through "upvar" and "global" commands, or
  *				through references to variables in enclosing
  *				namespaces.
+ * VAR_CONSTANT -		1 means this is a constant "variable", and 
+ *				cannot be written to by ordinary commands. 
+ *				Structurally, it's the same as a scalar when
+ *				being read, but writes are rejected. Constants
+ *				are not supported inside arrays.
  *
  * Flags that indicate the type and status of storage; none is set for
  * compiled local variables (Var structs).
@@ -725,6 +724,7 @@ typedef struct VarInHash {
 /* Type of value (0 is scalar) */
 #define VAR_ARRAY		0x1
 #define VAR_LINK		0x2
+#define VAR_CONSTANT		0x10000
 
 /* Type of storage (0 is compiled local) */
 #define VAR_IN_HASHTABLE	0x4
@@ -759,13 +759,14 @@ typedef struct VarInHash {
  * MODULE_SCOPE void	TclSetVarScalar(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarArray(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarLink(Var *varPtr);
+ * MODULE_SCOPE void	TclSetVarConstant(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarArrayElement(Var *varPtr);
  * MODULE_SCOPE void	TclSetVarUndefined(Var *varPtr);
  * MODULE_SCOPE void	TclClearVarUndefined(Var *varPtr);
  */
 
 #define TclSetVarScalar(varPtr) \
-    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK)
+    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT)
 
 #define TclSetVarArray(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_LINK) | VAR_ARRAY
@@ -773,11 +774,14 @@ typedef struct VarInHash {
 #define TclSetVarLink(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_LINK
 
+#define TclSetVarConstant(varPtr) \
+    (varPtr)->flags = ((varPtr)->flags & ~(VAR_ARRAY|VAR_LINK)) | VAR_CONSTANT
+
 #define TclSetVarArrayElement(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_ARRAY_ELEMENT
 
 #define TclSetVarUndefined(varPtr) \
-    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK);\
+    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT);\
     (varPtr)->value.objPtr = NULL
 
 #define TclClearVarUndefined(varPtr)
@@ -809,6 +813,7 @@ typedef struct VarInHash {
  * The ANSI C "prototypes" for these macros are:
  *
  * MODULE_SCOPE int	TclIsVarScalar(Var *varPtr);
+ * MODULE_SCOPE int	TclIsVarConstant(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarLink(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarArray(Var *varPtr);
  * MODULE_SCOPE int	TclIsVarUndefined(Var *varPtr);
@@ -834,6 +839,10 @@ typedef struct VarInHash {
 
 #define TclIsVarArray(varPtr) \
     ((varPtr)->flags & VAR_ARRAY)
+
+/* Implies scalar as well. */
+#define TclIsVarConstant(varPtr) \
+    ((varPtr)->flags & VAR_CONSTANT)
 
 #define TclIsVarUndefined(varPtr) \
     ((varPtr)->value.objPtr == NULL)
@@ -894,13 +903,13 @@ typedef struct VarInHash {
           && (varPtr)->value.objPtr)
 
 #define TclIsVarDirectWritable(varPtr) \
-    (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH))
+    (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH|VAR_CONSTANT))
 
 #define TclIsVarDirectUnsettable(varPtr) \
-    (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH))
+    (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH|VAR_CONSTANT))
 
 #define TclIsVarDirectModifyable(varPtr) \
-    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE))	\
+    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_CONSTANT))	\
           &&  (varPtr)->value.objPtr)
 
 #define TclIsVarDirectReadable2(varPtr, arrayPtr) \
@@ -959,9 +968,6 @@ typedef struct CompiledLocal {
 				 * Among others used to speed up var lookups. */
     Tcl_Size frameIndex;		/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
-#if TCL_MAJOR_VERSION < 9
-    int flags;
-#endif
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
 				 * argument, if any. NULL if not an argument
 				 * or, if an argument, no default value. */
@@ -972,12 +978,10 @@ typedef struct CompiledLocal {
 				 * is marked by a unique tag during
 				 * compilation, and that same tag is used to
 				 * find the variable at runtime. */
-#if TCL_MAJOR_VERSION > 8
     int flags;			/* Flag bits for the local variable. Same as
 				 * the flags for the Var structure above,
 				 * although only VAR_ARGUMENT, VAR_TEMPORARY,
 				 * and VAR_RESOLVED make sense. */
-#endif
     char name[TCLFLEXARRAY];		/* Name of the local variable starts here. If
 				 * the name is NULL, this will just be '\0'.
 				 * The actual size of this field will be large
@@ -1035,11 +1039,7 @@ typedef void (ProcErrorProc)(Tcl_Interp *interp, Tcl_Obj *procNameObj);
 typedef struct Trace {
     Tcl_Size level;		/* Only trace commands at nesting level less
 				 * than or equal to this. */
-#if TCL_MAJOR_VERSION > 8
     Tcl_CmdObjTraceProc2 *proc;	/* Procedure to call to trace command. */
-#else
-    Tcl_CmdObjTraceProc *proc;	/* Procedure to call to trace command. */
-#endif
     void *clientData;	/* Arbitrary value to pass to proc. */
     struct Trace *nextPtr;	/* Next in list of traces for this interp. */
     int flags;			/* Flags governing the trace - see
@@ -1083,14 +1083,12 @@ typedef struct ActiveInterpTrace {
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
 
-#if TCL_MAJOR_VERSION > 8
 #define TclObjTypeHasProc(objPtr, proc) (((objPtr)->typePtr \
 	&& ((offsetof(Tcl_ObjType, proc) < offsetof(Tcl_ObjType, version)) \
 	|| (offsetof(Tcl_ObjType, proc) < (objPtr)->typePtr->version))) ? \
 	((objPtr)->typePtr)->proc : NULL)
 
 MODULE_SCOPE Tcl_Size TclLengthOne(Tcl_Obj *);
-
 
 /*
  * Abstract List
@@ -1176,7 +1174,6 @@ TclObjTypeInOperator(Tcl_Interp *interp, struct Tcl_Obj *valueObj,
     Tcl_ObjTypeInOperatorProc *proc = TclObjTypeHasProc(listObj, inOperProc);
     return proc(interp, valueObj, listObj, boolResult);
 }
-#endif /* TCL_MAJOR_VERSION > 8 */
 
 
 /*
@@ -1960,18 +1957,7 @@ typedef struct Interp {
     void *interpInfo;	/* Information used by tclInterp.c to keep
 				 * track of parent/child interps on a
 				 * per-interp basis. */
-#if TCL_MAJOR_VERSION > 8
     void (*optimizer)(void *envPtr);
-#else
-    union {
-	void (*optimizer)(void *envPtr);
-	Tcl_HashTable unused2;	/* No longer used (was mathFuncTable). The
-				 * unused space in interp was repurposed for
-				 * pluggable bytecode optimizers. The core
-				 * contains one optimizer, which can be
-				 * selectively overridden by extensions. */
-    } extra;
-#endif
     /*
      * Information related to procedures and variables. See tclProc.c and
      * tclVar.c for usage.
@@ -2000,11 +1986,6 @@ typedef struct Interp {
     Namespace *lookupNsPtr;	/* Namespace to use ONLY on the next
 				 * TCL_EVAL_INVOKE call to Tcl_EvalObjv. */
 
-#if TCL_MAJOR_VERSION < 9
-    char *appendResultDontUse;
-    int appendAvlDontUse;
-    int appendUsedDontUse;
-#endif
 
     /*
      * Information about packages. Used only in tclPkg.c.
@@ -2028,9 +2009,6 @@ typedef struct Interp {
 				 * Normally zero, but may be set before
 				 * calling Tcl_Eval. See below for valid
 				 * values. */
-#if TCL_MAJOR_VERSION < 9
-    int unused1;		/* No longer used (was termOffset) */
-#endif
     LiteralTable literalTable;	/* Contains LiteralEntry's describing all Tcl
 				 * objects holding literals of scripts
 				 * compiled by the interpreter. Indexed by the
@@ -2068,9 +2046,6 @@ typedef struct Interp {
 				 * string. Returned by Tcl_ObjSetVar2 when
 				 * variable traces change a variable in a
 				 * gross way. */
-#if TCL_MAJOR_VERSION < 9
-    char resultSpaceDontUse[TCL_DSTRING_STATIC_SIZE+1];
-#endif
     Tcl_Obj *objResultPtr;	/* If the last command returned an object
 				 * result, this points to it. Should not be
 				 * accessed directly; see comment above. */
@@ -2727,20 +2702,11 @@ typedef struct ListRep {
  * WARNING: these macros eval their args more than once.
  */
 
-#if TCL_MAJOR_VERSION > 8
 #define TclGetBooleanFromObj(interp, objPtr, intPtr) \
     (((objPtr)->typePtr == &tclIntType \
 	    || (objPtr)->typePtr == &tclBooleanType) \
 	? (*(intPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
 	: Tcl_GetBooleanFromObj((interp), (objPtr), (intPtr)))
-#else
-#define TclGetBooleanFromObj(interp, objPtr, intPtr) \
-    (((objPtr)->typePtr == &tclIntType)			\
-	? (*(intPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
-	: ((objPtr)->typePtr == &tclBooleanType)			\
-	? (*(intPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
-	: Tcl_GetBooleanFromObj((interp), (objPtr), (intPtr)))
-#endif
 
 #ifdef TCL_WIDE_INT_IS_LONG
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
@@ -3207,7 +3173,6 @@ struct Tcl_LoadHandle_ {
  *----------------------------------------------------------------
  */
 
-#if TCL_MAJOR_VERSION > 8
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, Tcl_Size len);
 MODULE_SCOPE void	TclAdvanceContinuations(Tcl_Size *line, Tcl_Size **next,
@@ -3361,6 +3326,8 @@ MODULE_SCOPE Tcl_Obj *	TclInfoFrame(Tcl_Interp *interp, CmdFrame *framePtr);
 MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoGlobalsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoLocalsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoVarsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoConstsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclInfoConstantCmd;
 MODULE_SCOPE void	TclInitAlloc(void);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
@@ -3415,12 +3382,10 @@ MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
 			    const char *reason, int index);
-MODULE_SCOPE int	TclObjInterpProc(void *clientData,
-				Tcl_Interp *interp, int objc,
-				Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclObjInterpProc2(void *clientData,
-				Tcl_Interp *interp, Tcl_Size objc,
-				Tcl_Obj *const objv[]);
+#ifndef TCL_NO_DEPRECATED
+MODULE_SCOPE Tcl_ObjCmdProc TclObjInterpProc;
+#endif
+MODULE_SCOPE Tcl_ObjCmdProc2 TclObjInterpProc2;
 #define TclObjInterpProc TclGetObjInterpProc()
 #define TclObjInterpProc2 TclGetObjInterpProc2()
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
@@ -3648,6 +3613,7 @@ MODULE_SCOPE void	TclClockInit(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_ObjCmdProc2 TclClockOldscanObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_CloseObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ConcatObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ConstObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_ContinueObjCmd;
 MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
 			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
@@ -3761,6 +3727,7 @@ MODULE_SCOPE CompileProc TclCompileCatchCmd;
 MODULE_SCOPE CompileProc TclCompileClockClicksCmd;
 MODULE_SCOPE CompileProc TclCompileClockReadingCmd;
 MODULE_SCOPE CompileProc TclCompileConcatCmd;
+MODULE_SCOPE CompileProc TclCompileConstCmd;
 MODULE_SCOPE CompileProc TclCompileContinueCmd;
 MODULE_SCOPE CompileProc TclCompileDictAppendCmd;
 MODULE_SCOPE CompileProc TclCompileDictCreateCmd;
@@ -4059,8 +4026,6 @@ MODULE_SCOPE int	TclIndexInvalidError(Tcl_Interp *interp,
  * Error message utility functions
  */
 MODULE_SCOPE int TclCommandWordLimitError(Tcl_Interp *interp, Tcl_Size count);
-
-#endif /* TCL_MAJOR_VERSION > 8 */
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           ((Tcl_Size)-2)
