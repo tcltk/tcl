@@ -8929,7 +8929,7 @@ test io-75.5 {invalid utf-8 encoding read is ignored} -setup {
 # ### ### ### ######### ######### #########
 
 # cleanup
-foreach file [list fooBar longfile script2 output test1 pipe my_script \
+foreach file [list fooBar longfile script script2 output test1 pipe my_script \
 	test2 test3 cat stdout kyrillic.txt utf8-fcopy.txt utf8-rp.txt] {
     removeFile $file
 }
