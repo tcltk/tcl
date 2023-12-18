@@ -32,7 +32,7 @@ proc stopMe {token} {
 }
 #set ThreadLevel 0
 if {![info exists ThreadLevel]} {
-    if {[catch {package require Thread 2.8.9-}] == 0} {
+    if {[catch {package require Thread}] == 0} {
         set ValueRange {0 1 2}
     } else {
         set ValueRange {0 1}

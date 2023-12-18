@@ -5359,10 +5359,10 @@ proc http::LoadThreadIfNeeded {} {
         set http(usingThread) 0
         return
     }
-    if {[catch {package require Thread 2.8.9-}]} {
+    if {[catch {package require Thread}]} {
         if {$http(-threadlevel) == 2} {
             set msg {[http::config -threadlevel] has value 2,\
-                     but the Thread package (2.8.9 or above) is not available}
+                     but the Thread package is not available}
             return -code error $msg
         }
         set http(usingThread) 0
@@ -5389,7 +5389,7 @@ proc http::LoadThreadIfNeeded {} {
 # ------------------------------------------------------------------------------
 
 proc http::SockInThread {caller defcmd sockargs} {
-    package require Thread 2.8.9-
+    package require Thread
 
     set catchCode [catch {eval $defcmd $sockargs} sock errdict]
     if {$catchCode == 0} {
