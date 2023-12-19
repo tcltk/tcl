@@ -41,16 +41,18 @@ proc stopMe {token} {
     set ${token}(z) done
 }
 proc putsBlurb {} {
+    puts {}
     puts {- Constraints needsTls, knownTwapiFullBugThreadlevelAny, knownTwapiFullBugThreadUsed are}
     puts {  always set by the script, not by the caller.}
     puts {- Set one of needsTclTls, needsTwapi, needsTwapiFull instead of needsTls.}
     puts {- Set knownBug instead of knownTwapiFullBugThreadlevelAny, knownTwapiFullBugThreadUsed.}
     puts {- If the caller sets constraint needsTwapi, the script forces needsSquidNoAuth and needsSquidAuth to 0.}
+    puts {}
     return
 }
 
 if 0 {
-    # Run with a single velue of ThreadLevel: 0|1|2
+    # For debugging: run with a single value of ThreadLevel: 0|1|2
     set ThreadLevel 0
     testConstraint ThreadLevelSummary 1
 }
@@ -68,10 +70,9 @@ if {![info exists ThreadLevel]} {
     }
     catch {unset ThreadLevel}
     catch {unset ValueRange}
-    if {![testConstraint ThreadLevelSummary]
-    } {
-        ::tcltest::cleanupTests
+    if {![testConstraint ThreadLevelSummary]} {
         putsBlurb
+        ::tcltest::cleanupTests
     }
     return
 }
@@ -187,9 +188,10 @@ foreach constr {
     knownTwapiFullBugThreadlevelAny
     knownTwapiFullBugThreadUsed
 } {
-    puts [list testConstraint $constr [testConstraint $constr]]
+    # For debugging.
+    # puts [list testConstraint $constr [testConstraint $constr]]
 }
-putsBlurb
+#putsBlurb
 
 test httpProxy-1.1.$ThreadLevel {squid is running - ipv4 no-auth} -constraints {needsSquidNoAuth} -setup {
 } -body {
@@ -1373,10 +1375,10 @@ rename bgerror {}
 rename stopMe {}
 
 if {[testConstraint ThreadLevelSummary]} {
-    ::tcltest::cleanupTests
     putsBlurb
+    ::tcltest::cleanupTests
+    rename putsBlurb {}
 }
-
 
 # Local variables:
 # mode: tcl
