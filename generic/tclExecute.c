@@ -3975,7 +3975,7 @@ TEBCresume(
 	    Tcl_Obj *resPtr;
 
 	    DECACHE_STACK_INFO();
-	    resPtr = TclPtrSetVarIdx(interp, varPtr, arrayPtr, part1Ptr, NULL, 
+	    resPtr = TclPtrSetVarIdx(interp, varPtr, arrayPtr, part1Ptr, NULL,
 		    objPtr, TCL_LEAVE_ERR_MSG, opnd);
 	    CACHE_STACK_INFO();
 	    if (resPtr == NULL) {

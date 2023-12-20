@@ -1951,12 +1951,12 @@ test var-29.2 {const: TclOO variable resolution} -setup {
 	method checkWrite {} {
 	    list [catch {
 		set X abc
-	    } msg] $msg 
+	    } msg] $msg
 	}
 	method checkUnset {} {
 	    list [catch {
 		unset X
-	    } msg] $msg 
+	    } msg] $msg
 	}
 	method checkProbe {} {
 	    info constant X
@@ -1985,12 +1985,12 @@ test var-29.3 {const: TclOO variable resolution} -setup {
 	method checkWrite {} {
 	    list [catch {
 		set X abc
-	    } msg] $msg 
+	    } msg] $msg
 	}
 	method checkUnset {} {
 	    list [catch {
 		unset X
-	    } msg] $msg 
+	    } msg] $msg
 	}
 	method checkProbe {} {
 	    info constant X
@@ -2019,13 +2019,13 @@ test var-29.4 {const: TclOO variable resolution} -setup {
 	method checkWrite {} {
 	    list [catch {
 		set X abc
-	    } msg] $msg 
+	    } msg] $msg
 	}
 	method checkUnset {} {
 	    list [catch {
 		unset X
 		set X gorp
-	    } msg] $msg 
+	    } msg] $msg
 	}
 	method checkProbe {} {
 	    info constant X
@@ -2053,12 +2053,12 @@ test var-29.5 {const: TclOO variable resolution} -setup {
 	method checkWrite {} {
 	    list [catch {
 		set X abc
-	    } msg] $msg 
+	    } msg] $msg
 	}
 	method checkUnset {} {
 	    list [catch {
 		unset X
-	    } msg] $msg 
+	    } msg] $msg
 	}
 	method checkProbe {} {
 	    info constant X
@@ -2086,12 +2086,12 @@ test var-29.6 {const: TclOO variable resolution} -setup {
 	method checkWrite {} {
 	    list [catch {
 		set X abc
-	    } msg] $msg 
+	    } msg] $msg
 	}
 	method checkUnset {} {
 	    list [catch {
 		unset X
-	    } msg] $msg 
+	    } msg] $msg
 	}
 	method checkProbe {} {
 	    info constant X
@@ -2119,13 +2119,13 @@ test var-29.7 {const: TclOO variable resolution} -setup {
 	method checkWrite {} {
 	    list [catch {
 		set X abc
-	    } msg] $msg 
+	    } msg] $msg
 	}
 	method checkUnset {} {
 	    list [catch {
 		unset X
 		set X gorp
-	    } msg] $msg 
+	    } msg] $msg
 	}
 	method checkProbe {} {
 	    info constant X
