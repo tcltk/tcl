@@ -661,8 +661,8 @@ typedef struct VarInHash {
  *				through "upvar" and "global" commands, or
  *				through references to variables in enclosing
  *				namespaces.
- * VAR_CONSTANT -		1 means this is a constant "variable", and 
- *				cannot be written to by ordinary commands. 
+ * VAR_CONSTANT -		1 means this is a constant "variable", and
+ *				cannot be written to by ordinary commands.
  *				Structurally, it's the same as a scalar when
  *				being read, but writes are rejected. Constants
  *				are not supported inside arrays.
