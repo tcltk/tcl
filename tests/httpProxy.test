@@ -147,7 +147,7 @@ if {[testConstraint needsTclTls]} {
 # Testing with Squid
 # - Example Squid configuration for Enterprise Linux 8 (Red Hat, Oracle, Rocky,
 #   Alma, ...) is in file tests/httpProxySquidConfigForEL8.tar.gz.
-# - Example Squid configuration for Diladele Squid on Windows is in 
+# - Example Squid configuration for Diladele Squid on Windows is in
 #   file tests/httpProxySquidConfigForWindowsDiladele.zip.
 #
 # - Two instances of Squid are launched, one that needs authentication and one
