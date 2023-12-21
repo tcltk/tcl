@@ -116,7 +116,7 @@ typedef struct {
 				 * be copied directly. */
 } Tcl_MethodType2;
 #else
-#define Tcl_MethodType2 Tcl_MethodType;
+#define Tcl_MethodType2 Tcl_MethodType
 #endif
 
 /*
