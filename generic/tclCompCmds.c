@@ -947,7 +947,7 @@ TclCompileConstCmd(
     int isScalar, localIndex;
 
     /*
-     * Need exactly two arguments. 
+     * Need exactly two arguments.
      */
     if (parsePtr->numWords != 3) {
 	return TCL_ERROR;
@@ -967,7 +967,7 @@ TclCompileConstCmd(
 
     /*
      * If the user specified an array element, we don't bother handling
-     * that. 
+     * that.
      */
     if (!isScalar) {
         return TCL_ERROR;

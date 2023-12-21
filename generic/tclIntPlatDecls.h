@@ -117,7 +117,7 @@ EXTERN int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 /* Slot 2 is reserved */
 /* Slot 3 is reserved */
 /* 4 */
-EXTERN HINSTANCE	TclWinGetTclInstance(void);
+EXTERN void *		TclWinGetTclInstance(void);
 /* 5 */
 EXTERN int		TclUnixWaitForFile(int fd, int mask, int timeout);
 /* Slot 6 is reserved */
@@ -260,7 +260,7 @@ typedef struct TclIntPlatStubs {
     Tcl_DirEntry * (*tclpReaddir) (TclDIR *dir); /* 10 */
     void (*reserved11)(void);
     void (*reserved12)(void);
-    char * (*tclpInetNtoa) (struct in_addr addr); /* 13 */
+    void (*reserved13)(void);
     int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 14 */
     int (*tclMacOSXGetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr); /* 15 */
     int (*tclMacOSXSetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj *attributePtr); /* 16 */
@@ -280,16 +280,16 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-    void (*tclWinConvertError) (DWORD errCode); /* 0 */
-    void (*tclWinConvertWSAError) (DWORD errCode); /* 1 */
-    struct servent * (*tclWinGetServByName) (const char *nm, const char *proto); /* 2 */
-    int (*tclWinGetSockOpt) (SOCKET s, int level, int optname, char *optval, int *optlen); /* 3 */
-    HINSTANCE (*tclWinGetTclInstance) (void); /* 4 */
+    void (*reserved0)(void);
+    void (*reserved1)(void);
+    void (*reserved2)(void);
+    void (*reserved3)(void);
+    void * (*tclWinGetTclInstance) (void); /* 4 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 5 */
-    unsigned short (*tclWinNToHS) (unsigned short ns); /* 6 */
-    int (*tclWinSetSockOpt) (SOCKET s, int level, int optname, const char *optval, int optlen); /* 7 */
+    void (*reserved6)(void);
+    void (*reserved7)(void);
     Tcl_Size (*tclpGetPid) (Tcl_Pid pid); /* 8 */
-    int (*tclWinGetPlatformId) (void); /* 9 */
+    void (*reserved9)(void);
     void *(*tclpReaddir) (void *dir); /* 10 */
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 11 */
     int (*tclpCloseFile) (TclFile file); /* 12 */
@@ -301,14 +301,14 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 18 */
     TclFile (*tclpOpenFile) (const char *fname, int mode); /* 19 */
     void (*tclWinAddProcess) (void *hProcess, Tcl_Size id); /* 20 */
-    char * (*tclpInetNtoa) (struct in_addr addr); /* 21 */
+    void (*reserved21)(void);
     TclFile (*tclpCreateTempFile) (const char *contents); /* 22 */
     void (*reserved23)(void);
     char * (*tclWinNoBackslash) (char *path); /* 24 */
     void (*reserved25)(void);
-    void (*tclWinSetInterfaces) (int wide); /* 26 */
+    void (*reserved26)(void);
     void (*tclWinFlushDirtyChannels) (void); /* 27 */
-    void (*tclWinResetInterfaces) (void); /* 28 */
+    void (*reserved28)(void);
     int (*tclWinCPUID) (int index, int *regs); /* 29 */
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* WIN */
@@ -326,7 +326,7 @@ typedef struct TclIntPlatStubs {
     Tcl_DirEntry * (*tclpReaddir) (TclDIR *dir); /* 10 */
     void (*reserved11)(void);
     void (*reserved12)(void);
-    char * (*tclpInetNtoa) (struct in_addr addr); /* 13 */
+    void (*reserved13)(void);
     int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 14 */
     int (*tclMacOSXGetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr); /* 15 */
     int (*tclMacOSXSetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj *attributePtr); /* 16 */

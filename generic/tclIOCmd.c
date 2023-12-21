@@ -439,6 +439,8 @@ Tcl_ReadObjCmd(
 	    returnOptsPtr = Tcl_NewDictObj();
 	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-data", -1),
 		    resultPtr);
+	} else {
+	    Tcl_DecrRefCount(resultPtr);
 	}
 	/*
 	 * TIP #219.

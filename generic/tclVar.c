@@ -180,7 +180,7 @@ typedef struct ArrayVarHashTable {
  */
 
 static void		AppendLocals(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    Tcl_Obj *patternPtr, int includeLinks, 
+			    Tcl_Obj *patternPtr, int includeLinks,
 			    int justConstants);
 static void		ArrayPopulateSearch(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Var *varPtr,
@@ -4846,7 +4846,7 @@ Tcl_GetVariableFullName(
  *----------------------------------------------------------------------
  *
  * Tcl_ConstObjCmd --
- * 
+ *
  *	This function is invoked to process the "const" Tcl command.
  *	See the user documentation for details on what it does.
  *
@@ -4855,7 +4855,7 @@ Tcl_GetVariableFullName(
  *
  * Side effects:
  *	See the user documentation.
- * 
+ *
  *----------------------------------------------------------------------
  */
 
@@ -4875,7 +4875,7 @@ Tcl_ConstObjCmd(
     }
 
     part1Ptr = objv[1];
-    varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG, 
+    varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG,
 	    "const", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
     if (TclIsVarArray(varPtr)) {
 	TclObjVarErrMsg(interp, part1Ptr, NULL, "make constant", ISARRAY, -1);
@@ -4892,7 +4892,7 @@ Tcl_ConstObjCmd(
     }
 
     /*
-     * If already exists, either a constant (no problem) or an error. 
+     * If already exists, either a constant (no problem) or an error.
      */
     if (!TclIsVarUndefined(varPtr)) {
 	if (TclIsVarConstant(varPtr)) {
@@ -4906,7 +4906,7 @@ Tcl_ConstObjCmd(
     /*
      * Make the variable and flag it as a constant.
      */
-    if (TclPtrSetVar(interp, (Tcl_Var) varPtr, NULL, objv[1], NULL, 
+    if (TclPtrSetVar(interp, (Tcl_Var) varPtr, NULL, objv[1], NULL,
 	    objv[2], TCL_LEAVE_ERR_MSG) == NULL) {
 	if (TclIsVarUndefined(varPtr)) {
 	    CleanupVar(varPtr, arrayPtr);
@@ -6525,8 +6525,8 @@ ContextObjectContainsConstant(
     Tcl_Obj *varNamePtr)
 {
     /*
-     * Helper for AppendLocals to check if an object contains a variable 
-     * that is a constant. It's too complicated without factoring this 
+     * Helper for AppendLocals to check if an object contains a variable
+     * that is a constant. It's too complicated without factoring this
      * check out!
      */
 
@@ -6645,7 +6645,7 @@ AppendLocals(
     }
 
     if (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_METHOD) {
-	Tcl_ObjectContext context = (Tcl_ObjectContext) 
+	Tcl_ObjectContext context = (Tcl_ObjectContext)
 		iPtr->varFramePtr->clientData;
 	Method *mPtr = (Method *) Tcl_ObjectContextMethod(context);
 	PrivateVariableMapping *privatePtr;
@@ -6655,7 +6655,7 @@ AppendLocals(
 
 	    FOREACH(objNamePtr, oPtr->variables) {
 		Tcl_CreateHashEntry(&addedTable, objNamePtr, &added);
-		if (justConstants && !ContextObjectContainsConstant(context, 
+		if (justConstants && !ContextObjectContainsConstant(context,
 			objNamePtr)) {
 		    continue;
 		}
