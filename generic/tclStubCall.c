@@ -39,7 +39,7 @@ MODULE_SCOPE void *tclStubsHandle;
 
 /* Table containing which function will be returned, depending on the "arg" */
 static const char PROCNAME[][24] = {
-    "_Tcl_SetPanicProc", /* Default, whenever "arg" <= 0 or "arg" > 8 */
+    "_Tcl_SetPanicProc", /* Default, whenever "arg" <= 0 or "arg" > 9 */
     "_Tcl_InitSubsystems", /* "arg" == (void *)1 */
     "_Tcl_FindExecutable", /* "arg" == (void *)2 */
     "_TclZipfs_AppHook", /* "arg" == (void *)3 */
