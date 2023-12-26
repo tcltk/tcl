@@ -493,8 +493,8 @@ TclCreateProc(
     if (precompiled) {
 	if (numArgs > procPtr->numArgs) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "procedure \"%s\": arg list contains %" TCL_SIZE_MODIFIER "u entries, "
-		    "precompiled header expects %" TCL_SIZE_MODIFIER "u", procName, numArgs,
+		    "procedure \"%s\": arg list contains %" TCL_SIZE_MODIFIER "d entries, "
+		    "precompiled header expects %" TCL_SIZE_MODIFIER "d", procName, numArgs,
 		    procPtr->numArgs));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 		    "BYTECODELIES", (void *)NULL);
@@ -588,7 +588,7 @@ TclCreateProc(
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
 		    || (localPtr->defValuePtr != NULL && fieldCount != 2)) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"procedure \"%s\": formal parameter %" TCL_SIZE_MODIFIER "u is "
+			"procedure \"%s\": formal parameter %" TCL_SIZE_MODIFIER "d is "
 			"inconsistent with precompiled body", procName, i));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			"BYTECODELIES", (void *)NULL);
@@ -2277,7 +2277,7 @@ TclUpdateReturnInfo(
  *
  * TclGetObjInterpProc --
  *
- *	Returns a pointer to the TclObjInterpProc functions;
+ *	Returns a pointer to the TclObjInterpProc function;
  *	this is different from the value obtained from the TclObjInterpProc
  *	reference on systems like Windows where import and export versions
  *	of a function exported by a DLL exist.

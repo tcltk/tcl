@@ -587,6 +587,9 @@ TclChanCreateObjCmd(
 
     rcId = NextHandle();
     rcPtr = NewReflectedChannel(interp, cmdObj, mode, rcId);
+    if (!rcPtr) {
+	return TCL_ERROR;
+    }
 
     /*
      * Invoke 'initialize' and validate that the handler is present and ok.
@@ -1402,7 +1405,7 @@ ReflectInput(
 
     if (toRead < bytec) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_toomuch);
-        goto invalid;
+	goto invalid;
     }
 
     *errorCodePtr = EOK;
@@ -3344,7 +3347,7 @@ ForwardProc(
 
 		char *buf = (char *)ckalloc(200);
 		snprintf(buf, 200,
-			"{Expected list with even number of elements, got %d %s instead}",
+			"{Expected list with even number of elements, got %" TCL_SIZE_MODIFIER "d %s instead}",
 			listc, (listc == 1 ? "element" : "elements"));
 
 		ForwardSetDynamicError(paramPtr, buf);

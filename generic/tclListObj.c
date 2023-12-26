@@ -394,7 +394,7 @@ ObjArrayIncrRefs(
     Tcl_Size startIdx,     /* Starting index of subarray within objv */
     Tcl_Size count)        /* Number of elements in the subarray */
 {
-    Tcl_Obj * const *end;
+    Tcl_Obj *const *end;
     LIST_INDEX_ASSERT(startIdx);
     LIST_COUNT_ASSERT(count);
     objv += startIdx;
@@ -492,9 +492,9 @@ MemoryAllocationError(
 	Tcl_SetObjResult(
 	    interp,
 	    Tcl_ObjPrintf(
-		"list construction failed: unable to alloc %" TCL_LL_MODIFIER
+		"list construction failed: unable to alloc %" TCL_Z_MODIFIER
 		"u bytes",
-		(Tcl_WideInt)size));
+		size));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
     }
     return TCL_ERROR;
@@ -1764,7 +1764,7 @@ Tcl_ListObjAppendList(
     if (TclListObjGetRep(interp, toObj, &listRep) != TCL_OK)
 	return TCL_ERROR; /* Cannot be converted to a list */
 
-    if (elemCount == 0)
+    if (elemCount <= 0)
 	return TCL_OK; /* Nothing to do. Note AFTER check for list above */
 
     ListRepElements(&listRep, toLen, toObjv);
@@ -1852,7 +1852,7 @@ Tcl_ListObjAppendList(
 				    : LISTREP_SPACE_ONLY_BACK,
 		    &listRep)
 	!= TCL_OK) {
-	return TCL_ERROR;
+	return MemoryAllocationError(interp, finalLen);
     }
     LIST_ASSERT(listRep.storePtr->numAllocated >= finalLen);
 
@@ -2765,7 +2765,7 @@ TclLsetList(
      */
 
     if (!TclHasInternalRep(indexArgObj, &tclListType)
-	&& TclGetIntForIndexM(NULL, indexArgObj, TCL_SIZE_MAX - 1, &index)
+	    && TclGetIntForIndexM(NULL, indexArgObj, TCL_SIZE_MAX - 1, &index)
 		== TCL_OK) {
 
 	/* indexArgPtr designates a single index. */
@@ -2933,6 +2933,11 @@ TclLsetFlat(
 	}
 	indexArray++;
 
+        /*
+         * Special case 0-length lists. The Tcl indexing function treat
+         * will return any value beyond length as TCL_SIZE_MAX for this
+         * case.
+         */
 	if ((index == TCL_SIZE_MAX) && (elemCount == 0)) {
 	    index = 0;
 	}
@@ -3133,10 +3138,10 @@ TclListObjSetElement(
     elemCount = ListRepLength(&listRep);
 
     /* Ensure that the index is in bounds. */
-    if (index<0 || index>=elemCount) {
+    if ((index < 0) || (index >= elemCount)) {
 	if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%" TCL_SIZE_MODIFIER "u\" out of range", index));
+			"index \"%" TCL_SIZE_MODIFIER "d\" out of range", index));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX",
 		    "OUTOFRANGE", (void *)NULL);
 	}
@@ -3568,7 +3573,7 @@ TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
 	return NULL;
     }
 
-    ListRepInit(capacity, NULL, 0, &listRep);
+    ListRepInit(capacity, NULL, LISTREP_PANIC_ON_FAIL, &listRep);
 
     ListStore *storePtr = listRep.storePtr;
     size_t i;
