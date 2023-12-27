@@ -3169,7 +3169,7 @@ TclListObjSetElement(
     if ((index < 0) || (index >= elemCount)) {
 	if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%" TCL_SIZE_MODIFIER "u\" out of range", index));
+			"index \"%" TCL_SIZE_MODIFIER "d\" out of range", index));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX",
 		    "OUTOFRANGE", (void *)NULL);
 	}
