@@ -1240,7 +1240,7 @@ StringFirstCmd(
 	     */
 
 	    if ((*p == *needleStr) && (TclUniCharNcmp(needleStr, p,
-		    (unsigned long) needleLen) == 0)) {
+		    needleLen) == 0)) {
 		match = p - haystackStr;
 		break;
 	    }
@@ -1953,7 +1953,7 @@ StringMapCmd(
     }
     end = ustring1 + length1;
 
-    strCmpFn = (nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp);
+    strCmpFn = nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp;
 
     /*
      * Force result to be Unicode
@@ -2740,7 +2740,7 @@ TclStringCmp(
 	if (nocase) {
 	    s1 = (char *) Tcl_GetUnicodeFromObj(value1Ptr, &s1len);
 	    s2 = (char *) Tcl_GetUnicodeFromObj(value2Ptr, &s2len);
-	    memCmpFn = (memCmpFn_t)Tcl_UniCharNcasecmp;
+	    memCmpFn = TclUniCharNcasecmp;
 	} else {
 	    s1len = Tcl_GetCharLength(value1Ptr);
 	    s2len = Tcl_GetCharLength(value2Ptr);
@@ -2771,7 +2771,7 @@ TclStringCmp(
 			reqlength *= sizeof(Tcl_UniChar);
 		    }
 		} else {
-		    memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
+		    memCmpFn = TclUniCharNcmp;
 		}
 	    }
 	}
@@ -2822,17 +2822,16 @@ TclStringCmp(
 	    /*
 	     * As a catch-all we will work with UTF-8. We cannot use memcmp()
 	     * as that is unsafe with any string containing NUL (\xC0\x80 in
-	     * Tcl's utf rep). We can use the more efficient TclpUtfNcmp2 if
+	     * Tcl's utf rep). We can use the more efficient TclUtfNcmp if
 	     * we are case-sensitive and no specific length was requested.
 	     */
 
 	    if ((reqlength < 0) && !nocase) {
-		memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
+		memCmpFn = TclUtfNcmp2;
 	    } else {
 		s1len = Tcl_NumUtfChars(s1, s1len);
 		s2len = Tcl_NumUtfChars(s2, s2len);
-		memCmpFn = (memCmpFn_t)
-		    (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
+		memCmpFn = nocase ? TclUtfNcasecmp : TclUtfNcmp;
 	    }
 	}
     }

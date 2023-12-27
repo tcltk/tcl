@@ -1231,6 +1231,17 @@ TclpUtfNcmp2(
     const char *ct,		/* UTF string cs is compared to. */
     unsigned long numBytes)	/* Number of *bytes* to compare. */
 {
+	return TclUtfNcmp2(cs, ct, numBytes);
+}
+
+int
+TclUtfNcmp2(
+    const void *csPtr,		/* UTF string to compare to ct. */
+    const void *ctPtr,		/* UTF string cs is compared to. */
+    size_t numBytes)	/* Number of *bytes* to compare. */
+{
+    const char *cs = (const char *)csPtr;
+    const char *ct = (const char *)ctPtr;
     /*
      * We can't simply call 'memcmp(cs, ct, numBytes);' because we need to
      * check for Tcl's \xC0\x80 non-utf-8 null encoding. Otherwise utf-8 lexes
@@ -1278,6 +1289,17 @@ Tcl_UtfNcmp(
     const char *ct,		/* UTF string cs is compared to. */
     unsigned long numChars)	/* Number of UTF chars to compare. */
 {
+    return TclUtfNcmp(cs, ct, numChars);
+}
+
+int
+TclUtfNcmp(
+    const void *csPtr,		/* UTF string to compare to ct. */
+    const void *ctPtr,		/* UTF string cs is compared to. */
+    size_t numChars)	/* Number of UTF chars to compare. */
+{
+    const char *cs = (const char *)csPtr;
+    const char *ct = (const char *)ctPtr;
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
     /*
@@ -1336,6 +1358,17 @@ Tcl_UtfNcasecmp(
     const char *ct,		/* UTF string cs is compared to. */
     unsigned long numChars)	/* Number of UTF chars to compare. */
 {
+    return TclUtfNcasecmp(cs, ct, numChars);
+}
+
+int
+TclUtfNcasecmp(
+    const void *csPtr,		/* UTF string to compare to ct. */
+    const void *ctPtr,		/* UTF string cs is compared to. */
+    size_t numChars)	/* Number of UTF chars to compare. */
+{
+    const char *cs = (const char *)csPtr;
+    const char *ct = (const char *)ctPtr;
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
     while (numChars-- > 0) {
@@ -1588,12 +1621,24 @@ Tcl_UniCharLen(
  *----------------------------------------------------------------------
  */
 
+#undef TclUniCharNcmp
 int
 Tcl_UniCharNcmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
 {
+    return TclUniCharNcmp(ucs, uct, numChars);
+}
+
+int
+TclUniCharNcmp(
+    const void *ucsPtr,	/* Unicode string to compare to uct. */
+    const void *uctPtr,	/* Unicode string ucs is compared to. */
+    size_t numChars)	/* Number of unichars to compare. */
+{
+    const Tcl_UniChar *ucs = (const Tcl_UniChar *)ucsPtr;
+    const Tcl_UniChar *uct = (const Tcl_UniChar *)uctPtr;
 #if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX != 4)
     /*
      * We are definitely on a big-endian machine; memcmp() is safe
@@ -1647,6 +1692,18 @@ Tcl_UniCharNcasecmp(
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of Unichars to compare. */
 {
+    return TclUniCharNcasecmp(ucs, uct, numChars);
+}
+
+int
+TclUniCharNcasecmp(
+    const void *ucsPtr,	/* Unicode string to compare to uct. */
+    const void *uctPtr,	/* Unicode string ucs is compared to. */
+    size_t numChars)	/* Number of Unichars to compare. */
+{
+    const Tcl_UniChar *ucs = (const Tcl_UniChar *)ucsPtr;
+    const Tcl_UniChar *uct = (const Tcl_UniChar *)uctPtr;
+
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
 	if (*ucs != *uct) {
 	    Tcl_UniChar lcs = Tcl_UniCharToLower(*ucs);
