@@ -2072,7 +2072,7 @@ StringMapCmd(
     }
     end = ustring1 + length1;
 
-    strCmpFn = (nocase ? TclUniCharNcasecmp : TclUniCharNcmp);
+    strCmpFn = nocase ? TclUniCharNcasecmp : TclUniCharNcmp;
 
     /*
      * Force result to be Unicode

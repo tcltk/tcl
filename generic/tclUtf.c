@@ -1489,10 +1489,12 @@ Tcl_UtfToTitle(
 
 int
 TclpUtfNcmp2(
-    const char *cs,		/* UTF string to compare to ct. */
-    const char *ct,		/* UTF string cs is compared to. */
+    const void *csPtr,		/* UTF string to compare to ct. */
+    const void *ctPtr,		/* UTF string cs is compared to. */
     size_t numBytes)	/* Number of *bytes* to compare. */
 {
+    const char *cs = (const char *)csPtr;
+    const char *ct = (const char *)ctPtr;
     /*
      * We can't simply call 'memcmp(cs, ct, numBytes);' because we need to
      * check for Tcl's \xC0\x80 non-utf-8 null encoding. Otherwise utf-8 lexes
