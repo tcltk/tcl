@@ -204,11 +204,10 @@ Invalid(
  *---------------------------------------------------------------------------
  */
 
-#undef Tcl_UniCharToUtf
 Tcl_Size
 Tcl_UniCharToUtf(
     int ch,	/* The Tcl_UniChar to be stored in the
-		 * buffer. Can be or'ed with flag TCL_COMBINE
+		 * buffer. Can be or'ed with flag TCL_COMBINE.
 		 */
     char *buf)	/* Buffer in which the UTF-8 representation of
 		 * ch is stored. Must be large enough to hold the UTF-8
@@ -231,8 +230,7 @@ Tcl_UniCharToUtf(
 	    return 2;
 	}
 	if (ch <= 0xFFFF) {
-	    if (
-		    (flags & TCL_COMBINE) &&
+	    if ((flags & TCL_COMBINE) &&
 		    ((ch & 0xF800) == 0xD800)) {
 		if (ch & 0x0400) {
 		    /* Low surrogate */
@@ -310,12 +308,11 @@ three:
  *---------------------------------------------------------------------------
  */
 
-#undef Tcl_UniCharToUtfDString
 char *
 Tcl_UniCharToUtfDString(
     const int *uniStr,	/* Unicode string to convert to UTF-8. */
     Tcl_Size uniLength,		/* Length of Unicode string. Negative for nul
-    				 * nul terminated string */
+    				 * terminated string */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
@@ -363,7 +360,7 @@ Tcl_Char16ToUtfDString(
 {
     const unsigned short *w, *wEnd;
     char *p, *string;
-    size_t oldLength;
+    Tcl_Size oldLength;
     int len = 1;
 
     /*
@@ -442,7 +439,6 @@ static const unsigned short cp1252[32] = {
    0x2DC, 0x2122, 0x0161, 0x203A, 0x0153,   0x9D, 0x017E, 0x0178
 };
 
-#undef Tcl_UtfToUniChar
 Tcl_Size
 Tcl_UtfToUniChar(
     const char *src,	/* The UTF-8 string. */
@@ -643,7 +639,6 @@ Tcl_UtfToChar16(
  *---------------------------------------------------------------------------
  */
 
-#undef Tcl_UtfToUniCharDString
 int *
 Tcl_UtfToUniCharDString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
@@ -1011,7 +1006,7 @@ const char *
 Tcl_UtfNext(
     const char *src)		/* The current location in the string. */
 {
-    size_t left;
+    int left;
     const char *next;
 
     if (((*src) & 0xC0) == 0x80) {
@@ -1222,13 +1217,10 @@ Tcl_UtfAtIndex(
     const char *src,	/* The UTF-8 string. */
     Tcl_Size index)	/* The position of the desired character. */
 {
-    int ch = 0;
+    Tcl_UniChar ch = 0;
 
-    if (index > 0) {
-	while (index--) {
-	    /* Make use of the #undef Tcl_UtfToUniChar above, which already handles UCS4. */
-	    src += Tcl_UtfToUniChar(src, &ch);
-	}
+    while (index-- > 0) {
+	src += Tcl_UtfToUniChar(src, &ch);
     }
     return src;
 }
@@ -1843,7 +1835,6 @@ Tcl_Char16Len(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_UniCharLen
 Tcl_Size
 Tcl_UniCharLen(
     const int *uniStr)	/* Unicode string to find length of. */
