@@ -604,7 +604,7 @@ Tcl_RegsubObjCmd(
 
 	Tcl_Size slen;
 	int nocase, wsrclc;
-	int (*strCmpFn)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long);
+	int (*strCmpFn)(const Tcl_UniChar*,const Tcl_UniChar*,size_t);
 	Tcl_UniChar *p;
 
 	numMatches = 0;
@@ -1968,7 +1968,7 @@ StringMapCmd(
     int nocase = 0, mapWithDict = 0, copySource = 0;
     Tcl_Obj **mapElemv, *sourceObj, *resultPtr;
     Tcl_UniChar *ustring1, *ustring2, *p, *end;
-    int (*strCmpFn)(const Tcl_UniChar*, const Tcl_UniChar*, unsigned long);
+    int (*strCmpFn)(const Tcl_UniChar*, const Tcl_UniChar*, size_t);
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nocase? charMap string");
@@ -2076,7 +2076,7 @@ StringMapCmd(
     }
     end = ustring1 + length1;
 
-    strCmpFn = (nocase ? TclUniCharNcasecmp : TclUniCharNcmp);
+    strCmpFn = nocase ? TclUniCharNcasecmp : TclUniCharNcmp;
 
     /*
      * Force result to be Unicode
