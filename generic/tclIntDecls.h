@@ -352,7 +352,7 @@ EXTERN int		TclListObjSetElement(Tcl_Interp *interp,
 /* Slot 167 is reserved */
 /* Slot 168 is reserved */
 /* 169 */
-EXTERN int		TclpUtfNcmp2(const char *s1, const char *s2,
+EXTERN int		TclpUtfNcmp2(const void *s1, const void *s2,
 				size_t n);
 /* 170 */
 EXTERN int		TclCheckInterpTraces(Tcl_Interp *interp,
@@ -749,7 +749,7 @@ typedef struct TclIntStubs {
     int (*tclListObjSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size index, Tcl_Obj *valuePtr); /* 166 */
     void (*reserved167)(void);
     void (*reserved168)(void);
-    int (*tclpUtfNcmp2) (const char *s1, const char *s2, size_t n); /* 169 */
+    int (*tclpUtfNcmp2) (const void *s1, const void *s2, size_t n); /* 169 */
     int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags, Tcl_Size objc, Tcl_Obj *const objv[]); /* 170 */
     int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags, Tcl_Size objc, Tcl_Obj *const objv[]); /* 171 */
     int (*tclInThreadExit) (void); /* 172 */
