@@ -1028,7 +1028,7 @@ test utf-19.1 {TclUniCharLen} -body {
 test utf-20.1 {TclUniCharNcmp} {
     string compare [string range [format %c 0xFFFF] 0 0] [string range [format %c 0x10000] 0 0]
 } -1
-test utf-20.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} {
+test utf-20.2 {[4c591fa487] Tcl_UniCharNcmp/Tcl_UtfNcmp} {
     set one [format %c 0xFFFF]
     set two [format %c 0x10000]
     set first [string compare $one $two]

@@ -3484,9 +3484,14 @@ MODULE_SCOPE void	TclZipfsFinalize(void);
 MODULE_SCOPE int *TclGetUnicodeFromObj(Tcl_Obj *, int *);
 MODULE_SCOPE Tcl_Obj *TclNewUnicodeObj(const int *, int);
 MODULE_SCOPE void TclAppendUnicodeToObj(Tcl_Obj *, const int *, int);
-MODULE_SCOPE int TclUniCharNcasecmp(const int *, const int *, unsigned long);
+MODULE_SCOPE int TclUniCharNcasecmp(const int *, const int *, size_t);
+MODULE_SCOPE int TclUniCharNcasememcmp(const void *, const void *, size_t);
 MODULE_SCOPE int TclUniCharCaseMatch(const int *, const int *, int);
-MODULE_SCOPE int TclUniCharNcmp(const int *, const int *, unsigned long);
+MODULE_SCOPE int TclUniCharNcmp(const int *, const int *, size_t);
+MODULE_SCOPE int TclUniCharNmemcmp(const void *, const void *, size_t);
+MODULE_SCOPE int TclUtfNcasememcmp(const void *s1, const void *s2, size_t n);
+MODULE_SCOPE int TclUtfNmemcmp(const void *s1, const void *s2, size_t n);
+
 
 /*
  * Many parsing tasks need a common definition of whitespace.

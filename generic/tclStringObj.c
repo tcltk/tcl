@@ -3807,6 +3807,38 @@ TclStringCat(
  *---------------------------------------------------------------------------
  */
 
+static int
+UtfNmemcmp(
+    const void *csPtr,		/* UTF string to compare to ct. */
+    const void *ctPtr,		/* UTF string cs is compared to. */
+    size_t numBytes)	/* Number of *bytes* to compare. */
+{
+    const char *cs = (const char *)csPtr;
+    const char *ct = (const char *)ctPtr;
+    /*
+     * We can't simply call 'memcmp(cs, ct, numBytes);' because we need to
+     * check for Tcl's \xC0\x80 non-utf-8 null encoding. Otherwise utf-8 lexes
+     * fine in the strcmp manner.
+     */
+
+    int result = 0;
+
+    for ( ; numBytes != 0; numBytes--, cs++, ct++) {
+	if (*cs != *ct) {
+	    result = UCHAR(*cs) - UCHAR(*ct);
+	    break;
+	}
+    }
+    if (numBytes && ((UCHAR(*cs) == 0xC0) || (UCHAR(*ct) == 0xC0))) {
+	unsigned char c1, c2;
+
+	c1 = ((UCHAR(*cs) == 0xC0) && (UCHAR(cs[1]) == 0x80)) ? 0 : UCHAR(*cs);
+	c2 = ((UCHAR(*ct) == 0xC0) && (UCHAR(ct[1]) == 0x80)) ? 0 : UCHAR(*ct);
+	result = (c1 - c2);
+    }
+    return result;
+}
+
 int
 TclStringCmp(
     Tcl_Obj *value1Ptr,
@@ -3852,7 +3884,7 @@ TclStringCmp(
 	    if (nocase) {
 		s1 = (char *) TclGetUnicodeFromObj(value1Ptr, &s1len);
 		s2 = (char *) TclGetUnicodeFromObj(value2Ptr, &s2len);
-		memCmpFn = (memCmpFn_t)(void *)TclUniCharNcasecmp;
+		memCmpFn = TclUniCharNcasememcmp;
 	    } else {
 		s1len = TclGetCharLength(value1Ptr);
 		s2len = TclGetCharLength(value2Ptr);
@@ -3883,7 +3915,7 @@ TclStringCmp(
 			    reqlength *= sizeof(Tcl_UniChar);
 			}
 		    } else {
-			memCmpFn = (memCmpFn_t)(void *)TclUniCharNcmp;
+			memCmpFn = TclUniCharNmemcmp;
 		    }
 		}
 	    }
@@ -3941,12 +3973,11 @@ TclStringCmp(
 		 */
 
 		if ((reqlength < 0) && !nocase) {
-		    memCmpFn = (memCmpFn_t)(void *)TclpUtfNcmp2;
+		    memCmpFn = UtfNmemcmp;
 		} else {
 		    s1len = TclNumUtfChars(s1, s1len);
 		    s2len = TclNumUtfChars(s2, s2len);
-		    memCmpFn = (memCmpFn_t)(void *)
-			    (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
+		    memCmpFn = nocase ? TclUtfNcasememcmp : TclUtfNmemcmp;
 		}
 	    }
 	}
