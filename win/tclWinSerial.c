@@ -1648,12 +1648,12 @@ SerialSetOptionProc(
      */
 
     if ((len > 2) && (strncmp(optionName, "-closemode", len) == 0)) {
-	if (Tcl_UtfNcasecmp(value, "DEFAULT", vlen) == 0) {
+	if (strncasecmp(value, "DEFAULT", vlen) == 0) {
 	    infoPtr->flags &= ~SERIAL_CLOSE_MASK;
-	} else if (Tcl_UtfNcasecmp(value, "DRAIN", vlen) == 0) {
+	} else if (strncasecmp(value, "DRAIN", vlen) == 0) {
 	    infoPtr->flags &= ~SERIAL_CLOSE_MASK;
 	    infoPtr->flags |= SERIAL_CLOSE_DRAIN;
-	} else if (Tcl_UtfNcasecmp(value, "DISCARD", vlen) == 0) {
+	} else if (strncasecmp(value, "DISCARD", vlen) == 0) {
 	    infoPtr->flags &= ~SERIAL_CLOSE_MASK;
 	    infoPtr->flags |= SERIAL_CLOSE_DISCARD;
 	} else {
@@ -1662,7 +1662,7 @@ SerialSetOptionProc(
 			"bad mode \"%s\" for -closemode: must be"
 			" default, discard, or drain", value));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (void *)NULL);
+			"VALUE", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1687,7 +1687,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -mode: should be baud,parity,data,stop",
 			value));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1751,7 +1751,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -handshake: must be one of"
 			" xonxoff, rtscts, dtrdsr or none", value));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "HANDSHAKE", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "HANDSHAKE", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1780,7 +1780,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -xchar: should be a list of"
 			" two elements with each a single 8-bit character", TCL_INDEX_NONE));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", (char *)NULL);
 	    }
 	    ckfree(argv);
 	    return TCL_ERROR;
@@ -1837,7 +1837,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -ttycontrol: should be "
 			"a list of signal,value pairs", value));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTYCONTROL", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTYCONTROL", (char *)NULL);
 	    }
 	    ckfree(argv);
 	    return TCL_ERROR;
@@ -1855,7 +1855,7 @@ SerialSetOptionProc(
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"can't set DTR signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-				"FCONFIGURE", "TTY_SIGNAL", (void *)NULL);
+				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
 		    }
 		    res = TCL_ERROR;
 		    break;
@@ -1867,7 +1867,7 @@ SerialSetOptionProc(
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"can't set RTS signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-				"FCONFIGURE", "TTY_SIGNAL", (void *)NULL);
+				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
 		    }
 		    res = TCL_ERROR;
 		    break;
@@ -1879,7 +1879,7 @@ SerialSetOptionProc(
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"can't set BREAK signal", TCL_INDEX_NONE));
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-				"FCONFIGURE", "TTY_SIGNAL", (void *)NULL);
+				"FCONFIGURE", "TTY_SIGNAL", (char *)NULL);
 		    }
 		    res = TCL_ERROR;
 		    break;
@@ -1890,7 +1890,7 @@ SerialSetOptionProc(
 			    "bad signal name \"%s\" for -ttycontrol: must be"
 			    " DTR, RTS or BREAK", argv[i]));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTY_SIGNAL",
-			    (void *)NULL);
+			    (char *)NULL);
 		}
 		res = TCL_ERROR;
 		break;
@@ -1930,7 +1930,7 @@ SerialSetOptionProc(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -sysbuffer: should be "
 			"a list of one or two integers > 0", value));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "SYS_BUFFER", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "SYS_BUFFER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
