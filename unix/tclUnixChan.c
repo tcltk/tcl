@@ -1531,30 +1531,34 @@ Tcl_MakeFileChannel(
     char channelName[16 + TCL_INTEGER_SPACE];
     int fd = PTR2INT(handle);
     const Tcl_ChannelType *channelTypePtr;
-    struct sockaddr sockaddr;
-    socklen_t sockaddrLen = sizeof(sockaddr);
+    struct stat buf;
 
     if (mode == 0) {
 	return NULL;
     }
 
-    sockaddr.sa_family = AF_UNSPEC;
-
 #ifdef SUPPORTS_TTY
     if (isatty(fd)) {
 	channelTypePtr = &ttyChannelType;
 	snprintf(channelName, sizeof(channelName), "serial%d", fd);
+	goto final;
     } else
 #endif /* SUPPORTS_TTY */
-    if ((getsockname(fd, (struct sockaddr *)&sockaddr, &sockaddrLen) == 0)
-	&& (sockaddrLen > 0)
-	&& (sockaddr.sa_family == AF_INET || sockaddr.sa_family == AF_INET6)) {
-	return TclpMakeTcpClientChannelMode(INT2PTR(fd), mode);
-    } else {
-	channelTypePtr = &fileChannelType;
-	snprintf(channelName, sizeof(channelName), "file%d", fd);
-    }
+    if (fstat(fd, &buf) == 0 && S_ISSOCK(buf.st_mode)) {
+	struct sockaddr sockaddr;
+	socklen_t sockaddrLen = sizeof(sockaddr);
 
+	sockaddr.sa_family = AF_UNSPEC;
+	if ((getsockname(fd, (struct sockaddr *)&sockaddr, &sockaddrLen) == 0)
+		&& (sockaddrLen > 0)
+		&& (sockaddr.sa_family == AF_INET
+			|| sockaddr.sa_family == AF_INET6)) {
+	    return (Tcl_Channel)TclpMakeTcpClientChannelMode(INT2PTR(fd), mode);
+	}
+    }
+    channelTypePtr = &fileChannelType;
+    snprintf(channelName, sizeof(channelName), "file%d", fd);
+final:
     fsPtr = (FileState *)ckalloc(sizeof(FileState));
     fsPtr->fd = fd;
     fsPtr->validMask = mode | TCL_EXCEPTION;
