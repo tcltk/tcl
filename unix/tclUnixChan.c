@@ -1985,6 +1985,7 @@ Tcl_MakeFileChannel(
     if (isatty(fd)) {
 	channelTypePtr = &ttyChannelType;
 	snprintf(channelName, sizeof(channelName), "serial%d", fd);
+	goto final;
     } else
 #endif /* SUPPORTS_TTY */
     if (TclOSfstat(fd, &buf) == 0 && S_ISSOCK(buf.st_mode)) {
@@ -1998,10 +1999,10 @@ Tcl_MakeFileChannel(
 			|| sockaddr.sa_family == AF_INET6)) {
 	    return (Tcl_Channel)TclpMakeTcpClientChannelMode(INT2PTR(fd), mode);
 	}
-	channelTypePtr = &fileChannelType;
-	snprintf(channelName, sizeof(channelName), "file%d", fd);
     }
-
+    channelTypePtr = &fileChannelType;
+    snprintf(channelName, sizeof(channelName), "file%d", fd);
+final:
     fsPtr = (TtyState *)ckalloc(sizeof(TtyState));
     fsPtr->fileState.fd = fd;
     fsPtr->fileState.validMask = mode | TCL_EXCEPTION;
