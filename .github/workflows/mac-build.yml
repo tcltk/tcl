@@ -34,7 +34,7 @@ jobs:
     runs-on: macos-11
     strategy:
       matrix:
-        cfgopt:
+        config:
           - ""
           - "--disable-shared"
           - "--enable-symbols"
@@ -52,11 +52,11 @@ jobs:
           touch tclStubInit.c tclOOStubInit.c
           mkdir "$HOME/install dir"
         working-directory: generic
-      - name: Configure ${{ matrix.cfgopt }}
+      - name: Configure ${{ matrix.config }}
         # Note that macOS is always a 64 bit platform
         run: ./configure --enable-64bit --enable-dtrace --enable-framework ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
         env:
-          CFGOPT: ${{ matrix.cfgopt }}
+          CFGOPT: ${{ matrix.config }}
       - name: Build
         run: |
           make all tcltest

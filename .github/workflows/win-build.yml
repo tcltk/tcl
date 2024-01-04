@@ -20,32 +20,33 @@ jobs:
         working-directory: win
     strategy:
       matrix:
-        cfgopt:
+        config:
           - ""
-          - "OPTS=static,msvcrt"
           - "OPTS=symbols"
           - "OPTS=symbols STATS=compdbg,memdbg"
+          - "OPTS=static,msvcrt"
+          - "OPTS=static,staticpkg,msvcrt"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Init MSVC
         uses: ilammy/msvc-dev-cmd@v1
-      - name: Build ${{ matrix.cfgopt }}
+      - name: Build ${{ matrix.config }}
         run: |
-          &nmake -f makefile.vc ${{ matrix.cfgopt }} all
+          &nmake -f makefile.vc ${{ matrix.config }} all
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
-      - name: Build Test Harness ${{ matrix.cfgopt }}
+      - name: Build Test Harness ${{ matrix.config }}
         run: |
-          &nmake -f makefile.vc ${{ matrix.cfgopt }} tcltest
+          &nmake -f makefile.vc ${{ matrix.config }} tcltest
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
-      - name: Run Tests ${{ matrix.cfgopt }}
+      - name: Run Tests ${{ matrix.config }}
         run: |
-          &nmake -f makefile.vc ${{ matrix.cfgopt }} test
+          &nmake -f makefile.vc ${{ matrix.config }} test
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
@@ -57,7 +58,7 @@ jobs:
         working-directory: win
     strategy:
       matrix:
-        cfgopt:
+        config:
           - ""
           - "--disable-shared"
           - "--enable-symbols"
@@ -77,11 +78,11 @@ jobs:
           touch tclStubInit.c tclOOStubInit.c
           mkdir "${HOME}/install dir"
         working-directory: generic
-      - name: Configure ${{ matrix.cfgopt }}
+      - name: Configure ${{ matrix.config }}
         run: |
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
         env:
-          CFGOPT: --enable-64bit ${{ matrix.cfgopt }}
+          CFGOPT: --enable-64bit ${{ matrix.config }}
       - name: Build
         run: make all
       - name: Build Test Harness
