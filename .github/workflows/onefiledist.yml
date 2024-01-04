@@ -15,6 +15,7 @@ jobs:
     defaults:
       run:
         shell: bash
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,6 +51,7 @@ jobs:
     defaults:
       run:
         shell: bash
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -112,6 +114,7 @@ jobs:
     defaults:
       run:
         shell: msys2 {0}
+    timeout-minutes: 10
     env:
       CC: gcc
       CFGOPT: --disable-symbols --disable-shared
