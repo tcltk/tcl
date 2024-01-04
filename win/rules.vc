@@ -1624,7 +1624,7 @@ DLLCMD = $(link32) $(dlllflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
 CONEXECMD = $(link32) $(conlflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
 GUIEXECMD = $(link32) $(guilflags) -out:$@ $(baselibs) $(tcllibs) $(tklibs)
 RESCMD  = $(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
-	    $(TCL_INCLUDES) \
+	    $(TCL_INCLUDES) /DSTATIC_BUILD=$(STATIC_BUILD) \
 	    /DDEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
 	    /DCOMMAVERSION=$(RCCOMMAVERSION) \
 	    /DDOTVERSION=\"$(DOTVERSION)\" \
