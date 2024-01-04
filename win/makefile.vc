@@ -212,7 +212,8 @@ TCLTESTOBJS = \
 	$(TMP_DIR)\tclWinDde.obj \
 !endif
 !endif
-	$(TMP_DIR)\testMain.obj
+	$(TMP_DIR)\testMain.obj \
+	$(TMP_DIR)\tcltest.res
 
 COREOBJS = \
 	$(TMP_DIR)\regcomp.obj \
@@ -831,6 +832,12 @@ $(TMP_DIR)\tclsh.exe.manifest: $(WIN_DIR)\tclsh.exe.manifest.in
 @TCL_WIN_VERSION@  $(DOTVERSION).0.0
 <<
 
+$(TMP_DIR)\tcltest.exe.manifest: $(WIN_DIR)\tcltest.exe.manifest.in
+	@nmakehlp -s << $** >$@
+@MACHINE@	  $(MACHINE:IX86=X86)
+@TCL_WIN_VERSION@  $(DOTVERSION).0.0
+<<
+
 #---------------------------------------------------------------------
 # Generate the source dependencies.  Having dependency rules will
 # improve incremental build accuracy without having to resort to a
@@ -884,6 +891,7 @@ $<
 
 $(TMP_DIR)\tclsh.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tclsh.rc
 
+$(TMP_DIR)\tcltest.res: $(TMP_DIR)\tcltest.exe.manifest $(WIN_DIR)\tcltest.rc
 
 #---------------------------------------------------------------------
 # Installation.
