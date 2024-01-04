@@ -187,7 +187,7 @@ TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
 TCLDDELIBNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
 TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
-TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
+TCLTEST		= $(OUT_DIR)\$(PROJECT)test$(VERSION)$(SUFX:t=).exe
 CAT32		= $(OUT_DIR)\cat32.exe
 
 TCLSHOBJS = \
@@ -499,7 +499,7 @@ $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
-	copy $(TMP_DIR)\tcltest.exe.manifest $(TCLTEST).manifest
+	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLTEST).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 
 !if $(STATIC_BUILD)
@@ -834,12 +834,6 @@ $(TMP_DIR)\tclsh.exe.manifest: $(WIN_DIR)\tclsh.exe.manifest.in
 @TCL_WIN_VERSION@  $(DOTVERSION).0.0
 <<
 
-$(TMP_DIR)\tcltest.exe.manifest: $(WIN_DIR)\tcltest.exe.manifest.in
-	@nmakehlp -s << $** >$@
-@MACHINE@	  $(MACHINE:IX86=X86)
-@TCL_WIN_VERSION@  $(DOTVERSION).0.0
-<<
-
 #---------------------------------------------------------------------
 # Generate the source dependencies.  Having dependency rules will
 # improve incremental build accuracy without having to resort to a
@@ -893,7 +887,7 @@ $<
 
 $(TMP_DIR)\tclsh.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tclsh.rc
 
-$(TMP_DIR)\tcltest.res: $(TMP_DIR)\tcltest.exe.manifest $(WIN_DIR)\tcltest.rc
+$(TMP_DIR)\tcltest.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tcltest.rc
 
 #---------------------------------------------------------------------
 # Installation.
