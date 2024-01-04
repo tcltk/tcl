@@ -3468,6 +3468,118 @@ TclStringCat(
  *---------------------------------------------------------------------------
  */
 
+
+static int
+UniCharNcasememcmp(
+    const void *ucsPtr,	/* Unicode string to compare to uct. */
+    const void *uctPtr,	/* Unicode string ucs is compared to. */
+    size_t numChars)	/* Number of Unichars to compare. */
+{
+    const Tcl_UniChar *ucs = (const Tcl_UniChar *)ucsPtr;
+    const Tcl_UniChar *uct = (const Tcl_UniChar *)uctPtr;
+    for ( ; numChars != 0; numChars--, ucs++, uct++) {
+	if (*ucs != *uct) {
+	    Tcl_UniChar lcs = Tcl_UniCharToLower(*ucs);
+	    Tcl_UniChar lct = Tcl_UniCharToLower(*uct);
+
+	    if (lcs != lct) {
+		return (lcs - lct);
+	    }
+	}
+    }
+    return 0;
+}
+
+static int
+UtfNmemcmp(
+    const void *csPtr,		/* UTF string to compare to ct. */
+    const void *ctPtr,		/* UTF string cs is compared to. */
+    size_t numChars)	/* Number of UTF chars to compare. */
+{
+    Tcl_UniChar ch1 = 0, ch2 = 0;
+    const char *cs = (const char *)csPtr;
+    const char *ct = (const char *)ctPtr;
+
+    /*
+     * Cannot use 'memcmp(cs, ct, n);' as byte representation of \u0000 (the
+     * pair of bytes 0xC0,0x80) is larger than byte representation of \u0001
+     * (the byte 0x01.)
+     */
+
+    while (numChars-- > 0) {
+	/*
+	 * n must be interpreted as chars, not bytes. This should be called
+	 * only when both strings are of at least n chars long (no need for \0
+	 * check)
+	 */
+
+	cs += TclUtfToUniChar(cs, &ch1);
+	ct += TclUtfToUniChar(ct, &ch2);
+	if (ch1 != ch2) {
+	    return (ch1 - ch2);
+	}
+    }
+    return 0;
+}
+
+static int
+UtfNcasememcmp(
+    const void *csPtr,		/* UTF string to compare to ct. */
+    const void *ctPtr,		/* UTF string cs is compared to. */
+    size_t numChars)	/* Number of UTF chars to compare. */
+{
+    Tcl_UniChar ch1 = 0, ch2 = 0;
+    const char *cs = (const char *)csPtr;
+    const char *ct = (const char *)ctPtr;
+
+    while (numChars-- > 0) {
+	/*
+	 * n must be interpreted as chars, not bytes.
+	 * This should be called only when both strings are of
+	 * at least n chars long (no need for \0 check)
+	 */
+	cs += TclUtfToUniChar(cs, &ch1);
+	ct += TclUtfToUniChar(ct, &ch2);
+	if (ch1 != ch2) {
+	    ch1 = Tcl_UniCharToLower(ch1);
+	    ch2 = Tcl_UniCharToLower(ch2);
+	    if (ch1 != ch2) {
+		return (ch1 - ch2);
+	    }
+	}
+    }
+    return 0;
+}
+
+static int
+UniCharNmemcmp(
+    const void *ucsPtr,	/* Unicode string to compare to uct. */
+    const void *uctPtr,	/* Unicode string ucs is compared to. */
+    size_t numChars)	/* Number of unichars to compare. */
+{
+    const Tcl_UniChar *ucs = (const Tcl_UniChar *)ucsPtr;
+    const Tcl_UniChar *uct = (const Tcl_UniChar *)uctPtr;
+#if defined(WORDS_BIGENDIAN)
+    /*
+     * We are definitely on a big-endian machine; memcmp() is safe
+     */
+
+    return memcmp(ucs, uct, numChars*sizeof(Tcl_UniChar));
+
+#else /* !WORDS_BIGENDIAN */
+    /*
+     * We can't simply call memcmp() because that is not lexically correct.
+     */
+
+    for ( ; numChars != 0; ucs++, uct++, numChars--) {
+	if (*ucs != *uct) {
+	    return (*ucs - *uct);
+	}
+    }
+    return 0;
+#endif /* WORDS_BIGENDIAN */
+}
+
 int
 TclStringCmp(
     Tcl_Obj *value1Ptr,
@@ -3513,7 +3625,7 @@ TclStringCmp(
 	    if (nocase) {
 		s1 = (char *) Tcl_GetUnicodeFromObj(value1Ptr, &s1len);
 		s2 = (char *) Tcl_GetUnicodeFromObj(value2Ptr, &s2len);
-		memCmpFn = (memCmpFn_t)TclUniCharNcasecmp;
+		memCmpFn = UniCharNcasememcmp;
 	    } else {
 		s1len = Tcl_GetCharLength(value1Ptr);
 		s2len = Tcl_GetCharLength(value2Ptr);
@@ -3544,7 +3656,7 @@ TclStringCmp(
 			    reqlength *= sizeof(Tcl_UniChar);
 			}
 		    } else {
-			memCmpFn = (memCmpFn_t)(void *)TclUniCharNcmp;
+			memCmpFn = UniCharNmemcmp;
 		    }
 		}
 	    }
@@ -3602,12 +3714,11 @@ TclStringCmp(
 		 */
 
 		if ((reqlength < 0) && !nocase) {
-		    memCmpFn = (memCmpFn_t)(void *)TclpUtfNcmp2;
+		    memCmpFn = TclpUtfNcmp2;
 		} else {
 		    s1len = Tcl_NumUtfChars(s1, s1len);
 		    s2len = Tcl_NumUtfChars(s2, s2len);
-		    memCmpFn = (memCmpFn_t)(void *)
-			    (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
+		    memCmpFn = nocase ? UtfNcasememcmp : UtfNmemcmp;
 		}
 	    }
 	}

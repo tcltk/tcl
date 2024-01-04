@@ -2273,15 +2273,15 @@ ConsoleSetOptionProc(
 	    }
 	    return TCL_ERROR;
 	}
-	if (Tcl_UtfNcasecmp(value, "NORMAL", vlen) == 0) {
+	if (strncasecmp(value, "NORMAL", vlen) == 0) {
 	    mode |=
 		ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
-	} else if (Tcl_UtfNcasecmp(value, "PASSWORD", vlen) == 0) {
+	} else if (strncasecmp(value, "PASSWORD", vlen) == 0) {
 	    mode |= ENABLE_LINE_INPUT|ENABLE_PROCESSED_INPUT;
 	    mode &= ~ENABLE_ECHO_INPUT;
-	} else if (Tcl_UtfNcasecmp(value, "RAW", vlen) == 0) {
+	} else if (strncasecmp(value, "RAW", vlen) == 0) {
 	    mode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT);
-	} else if (Tcl_UtfNcasecmp(value, "RESET", vlen) == 0) {
+	} else if (strncasecmp(value, "RESET", vlen) == 0) {
 	    /*
 	     * Reset to the initial mode, whatever that is.
 	     */

@@ -20,7 +20,7 @@ jobs:
         working-directory: win
     strategy:
       matrix:
-        cfgopt:
+        config:
           - ""
           - "OPTS=static"
           - "OPTS=noembed"
@@ -34,23 +34,23 @@ jobs:
       - name: Init MSVC
         uses: ilammy/msvc-dev-cmd@v1
         timeout-minutes: 5
-      - name: Build ${{ matrix.cfgopt }}
+      - name: Build ${{ matrix.config }}
         run: |
-          &nmake -f makefile.vc ${{ matrix.cfgopt }} all
+          &nmake -f makefile.vc ${{ matrix.config }} all
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
         timeout-minutes: 5
-      - name: Build Test Harness ${{ matrix.cfgopt }}
+      - name: Build Test Harness ${{ matrix.config }}
         run: |
-          &nmake -f makefile.vc ${{ matrix.cfgopt }} tcltest
+          &nmake -f makefile.vc ${{ matrix.config }} tcltest
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
         timeout-minutes: 5
-      - name: Run Tests ${{ matrix.cfgopt }}
+      - name: Run Tests ${{ matrix.config }}
         run: |
-          &nmake -f makefile.vc ${{ matrix.cfgopt }} test
+          &nmake -f makefile.vc ${{ matrix.config }} test
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
@@ -63,7 +63,7 @@ jobs:
         working-directory: win
     strategy:
       matrix:
-        cfgopt:
+        config:
           - ""
           - "--disable-shared"
           - "--disable-zipfs"
@@ -86,11 +86,11 @@ jobs:
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
           mkdir "${HOME}/install dir"
         working-directory: generic
-      - name: Configure ${{ matrix.cfgopt }}
+      - name: Configure ${{ matrix.config }}
         run: |
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
         env:
-          CFGOPT: --enable-64bit ${{ matrix.cfgopt }}
+          CFGOPT: --enable-64bit ${{ matrix.config }}
         timeout-minutes: 5
       - name: Build
         run: make all

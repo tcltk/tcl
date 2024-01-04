@@ -819,20 +819,20 @@ TtySetOptionProc(
 #ifdef CRTSCTS
 	CLEAR_BITS(iostate.c_cflag, CRTSCTS);
 #endif /* CRTSCTS */
-	if (Tcl_UtfNcasecmp(value, "NONE", vlen) == 0) {
+	if (strncasecmp(value, "NONE", vlen) == 0) {
 	    /*
 	     * Leave all handshake options disabled.
 	     */
-	} else if (Tcl_UtfNcasecmp(value, "XONXOFF", vlen) == 0) {
+	} else if (strncasecmp(value, "XONXOFF", vlen) == 0) {
 	    SET_BITS(iostate.c_iflag, IXON | IXOFF | IXANY);
-	} else if (Tcl_UtfNcasecmp(value, "RTSCTS", vlen) == 0) {
+	} else if (strncasecmp(value, "RTSCTS", vlen) == 0) {
 #ifdef CRTSCTS
 	    SET_BITS(iostate.c_cflag, CRTSCTS);
 #else /* !CRTSTS */
 	    UNSUPPORTED_OPTION("-handshake RTSCTS");
 	    return TCL_ERROR;
 #endif /* CRTSCTS */
-	} else if (Tcl_UtfNcasecmp(value, "DTRDSR", vlen) == 0) {
+	} else if (strncasecmp(value, "DTRDSR", vlen) == 0) {
 	    UNSUPPORTED_OPTION("-handshake DTRDSR");
 	    return TCL_ERROR;
 	} else {
@@ -940,19 +940,19 @@ TtySetOptionProc(
 		Tcl_Free(argv);
 		return TCL_ERROR;
 	    }
-	    if (Tcl_UtfNcasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
+	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
 		if (flag) {
 		    SET_BITS(control, TIOCM_DTR);
 		} else {
 		    CLEAR_BITS(control, TIOCM_DTR);
 		}
-	    } else if (Tcl_UtfNcasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
+	    } else if (strncasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
 		if (flag) {
 		    SET_BITS(control, TIOCM_RTS);
 		} else {
 		    CLEAR_BITS(control, TIOCM_RTS);
 		}
-	    } else if (Tcl_UtfNcasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
+	    } else if (strncasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
 #if defined(TIOCSBRK) && defined(TIOCCBRK)
 		if (flag) {
 		    ioctl(fsPtr->fileState.fd, TIOCSBRK, NULL);
@@ -990,11 +990,11 @@ TtySetOptionProc(
      */
 
     if ((len > 2) && (strncmp(optionName, "-closemode", len) == 0)) {
-	if (Tcl_UtfNcasecmp(value, "DEFAULT", vlen) == 0) {
+	if (strncasecmp(value, "DEFAULT", vlen) == 0) {
 	    fsPtr->closeMode = CLOSE_DEFAULT;
-	} else if (Tcl_UtfNcasecmp(value, "DRAIN", vlen) == 0) {
+	} else if (strncasecmp(value, "DRAIN", vlen) == 0) {
 	    fsPtr->closeMode = CLOSE_DRAIN;
-	} else if (Tcl_UtfNcasecmp(value, "DISCARD", vlen) == 0) {
+	} else if (strncasecmp(value, "DISCARD", vlen) == 0) {
 	    fsPtr->closeMode = CLOSE_DISCARD;
 	} else {
 	    if (interp) {
@@ -1022,11 +1022,11 @@ TtySetOptionProc(
 	    }
 	    return TCL_ERROR;
 	}
-	if (Tcl_UtfNcasecmp(value, "NORMAL", vlen) == 0) {
+	if (strncasecmp(value, "NORMAL", vlen) == 0) {
 	    SET_BITS(iostate.c_iflag, BRKINT | IGNPAR | ISTRIP | ICRNL | IXON);
 	    SET_BITS(iostate.c_oflag, OPOST);
 	    SET_BITS(iostate.c_lflag, ECHO | ECHONL | ICANON | ISIG);
-	} else if (Tcl_UtfNcasecmp(value, "PASSWORD", vlen) == 0) {
+	} else if (strncasecmp(value, "PASSWORD", vlen) == 0) {
 	    SET_BITS(iostate.c_iflag, BRKINT | IGNPAR | ISTRIP | ICRNL | IXON);
 	    SET_BITS(iostate.c_oflag, OPOST);
 	    CLEAR_BITS(iostate.c_lflag, ECHO);
@@ -1037,7 +1037,7 @@ TtySetOptionProc(
 	     * feels highly unnatural to do so in practice.
 	     */
 	    SET_BITS(iostate.c_lflag, ECHONL | ICANON | ISIG);
-	} else if (Tcl_UtfNcasecmp(value, "RAW", vlen) == 0) {
+	} else if (strncasecmp(value, "RAW", vlen) == 0) {
 #ifdef HAVE_CFMAKERAW
 	    cfmakeraw(&iostate);
 #else /* !HAVE_CFMAKERAW */
@@ -1048,7 +1048,7 @@ TtySetOptionProc(
 	    CLEAR_BITS(iostate.c_cflag, CSIZE | PARENB);
 	    SET_BITS(iostate.c_cflag, CS8);
 #endif /* HAVE_CFMAKERAW */
-	} else if (Tcl_UtfNcasecmp(value, "RESET", vlen) == 0) {
+	} else if (strncasecmp(value, "RESET", vlen) == 0) {
 	    /*
 	     * Reset to the initial state, whatever that is.
 	     */
@@ -1292,7 +1292,7 @@ TtyGetOptionProc(
 	return TCL_OK;
     }
     return Tcl_BadChannelOption(interp, optionName,
-		"closemode inputmode mode queue ttystatus winsize xchar");
+	    "closemode inputmode mode queue ttystatus winsize xchar");
 }
 
 static const struct {int baud; speed_t speed;} speeds[] = {
@@ -1906,7 +1906,7 @@ Tcl_MakeFileChannel(
     char channelName[16 + TCL_INTEGER_SPACE];
     int fd = PTR2INT(handle);
     const Tcl_ChannelType *channelTypePtr;
-    struct stat buf;
+    Tcl_StatBuf buf;
 
     if (mode == 0) {
 	return NULL;
@@ -1918,7 +1918,7 @@ Tcl_MakeFileChannel(
 	snprintf(channelName, sizeof(channelName), "serial%d", fd);
     } else
 #endif /* SUPPORTS_TTY */
-    if (fstat(fd, &buf) == 0 && S_ISSOCK(buf.st_mode)) {
+    if (TclOSfstat(fd, &buf) == 0 && S_ISSOCK(buf.st_mode)) {
 	struct sockaddr sockaddr;
 	socklen_t sockaddrLen = sizeof(sockaddr);
 

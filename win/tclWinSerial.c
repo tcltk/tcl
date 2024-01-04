@@ -1642,12 +1642,12 @@ SerialSetOptionProc(
      */
 
     if ((len > 2) && (strncmp(optionName, "-closemode", len) == 0)) {
-	if (Tcl_UtfNcasecmp(value, "DEFAULT", vlen) == 0) {
+	if (strncasecmp(value, "DEFAULT", vlen) == 0) {
 	    infoPtr->flags &= ~SERIAL_CLOSE_MASK;
-	} else if (Tcl_UtfNcasecmp(value, "DRAIN", vlen) == 0) {
+	} else if (strncasecmp(value, "DRAIN", vlen) == 0) {
 	    infoPtr->flags &= ~SERIAL_CLOSE_MASK;
 	    infoPtr->flags |= SERIAL_CLOSE_DRAIN;
-	} else if (Tcl_UtfNcasecmp(value, "DISCARD", vlen) == 0) {
+	} else if (strncasecmp(value, "DISCARD", vlen) == 0) {
 	    infoPtr->flags &= ~SERIAL_CLOSE_MASK;
 	    infoPtr->flags |= SERIAL_CLOSE_DISCARD;
 	} else {
