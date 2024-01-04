@@ -494,10 +494,12 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
+	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLSH).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
+	copy $(TMP_DIR)\tcltest.exe.manifest $(TCLTEST).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 
 !if $(STATIC_BUILD)
