@@ -19,17 +19,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        timeout-minutes: 5
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c
         working-directory: generic
       - name: Build
         run: make all
+        timeout-minutes: 15
       - name: Run Tests
         run: make test styles=develop
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
+        timeout-minutes: 15
   clang:
     runs-on: macos-11
     strategy:
@@ -47,6 +50,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        timeout-minutes: 5
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c
@@ -57,12 +61,15 @@ jobs:
         run: ./configure --enable-64bit --enable-dtrace --enable-framework ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
         env:
           CFGOPT: ${{ matrix.config }}
+        timeout-minutes: 5
       - name: Build
         run: |
           make all tcltest
+        timeout-minutes: 15
       - name: Run Tests
         run: |
           make test
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
+        timeout-minutes: 15
