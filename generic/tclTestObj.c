@@ -14,6 +14,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef BUILD_tcl
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
@@ -151,7 +152,7 @@ TestbignumobjCmd(
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
 {
-    const char *const subcmds[] = {
+    static const char *const subcmds[] = {
 	"set", "get", "mult10", "div10", "iseven", "radixsize", NULL
     };
     enum options {
@@ -418,7 +419,7 @@ TestbooleanobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, or not", NULL);
+		"\": must be set, get, or not", (void *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -535,7 +536,7 @@ TestdoubleobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, mult10, or div10", NULL);
+		"\": must be set, get, mult10, or div10", (void *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -824,7 +825,7 @@ TestintobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, get2, mult10, or div10", NULL);
+		"\": must be set, get, get2, mult10, or div10", (void *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -885,7 +886,7 @@ TestlistobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects */
 {
     /* Subcommands supported by this command */
-    const char* const subcommands[] = {
+    static const char* const subcommands[] = {
 	"set",
 	"get",
 	"replace",
@@ -1088,7 +1089,7 @@ TestobjCmd(
     int i;
     const Tcl_ObjType *targetType;
     Tcl_Obj **varPtr;
-    const char *subcommands[] = {
+    static const char *const subcommands[] = {
 	"freeallvars", "bug3598580", "buge58d7e19e9",
 	"types", "objtype", "newobj", "set",
 	"assign", "convert", "duplicate",
@@ -1234,7 +1235,7 @@ TestobjCmd(
 	}
 	if ((targetType = Tcl_GetObjType(Tcl_GetString(objv[3]))) == NULL) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "no type ", Tcl_GetString(objv[3]), " found", NULL);
+		    "no type ", Tcl_GetString(objv[3]), " found", (void *)NULL);
 	    return TCL_ERROR;
 	}
 	if (Tcl_ConvertToType(interp, varPtr[varIndex], targetType)
@@ -1391,7 +1392,7 @@ TeststringobjCmd(
 	    Tcl_AppendStringsToObj(varPtr[varIndex], strings[0], strings[1],
 		    strings[2], strings[3], strings[4], strings[5],
 		    strings[6], strings[7], strings[8], strings[9],
-		    strings[10], strings[11]);
+		    strings[10], strings[11], (void *)NULL);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 2:				/* get */
@@ -1619,7 +1620,7 @@ TestbigdataCmd (
     } idx;
     char *s;
     unsigned char *p;
-    Tcl_WideInt i, len, split;
+    Tcl_Size i, len, split;
     Tcl_DString ds;
     Tcl_Obj *objPtr;
 #define PATTERN_LEN 10
@@ -1637,11 +1638,11 @@ TestbigdataCmd (
     if (objc == 2) {
 	len = PATTERN_LEN;
     } else {
-	if (Tcl_GetWideIntFromObj(interp, objv[2], &len) != TCL_OK) {
+	if (Tcl_GetSizeIntFromObj(interp, objv[2], &len) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (objc == 4) {
-	    if (Tcl_GetWideIntFromObj(interp, objv[3], &split) != TCL_OK) {
+	    if (Tcl_GetSizeIntFromObj(interp, objv[3], &split) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (split >= len) {
@@ -1650,13 +1651,12 @@ TestbigdataCmd (
 	}
     }
     /* Need one byte for nul terminator */
-    Tcl_WideInt limit =
-	sizeof(Tcl_Size) == sizeof(Tcl_WideInt) ? WIDE_MAX-1 : INT_MAX-1;
+    Tcl_Size limit = TCL_SIZE_MAX-1;
     if (len < 0 || len > limit) {
 	Tcl_SetObjResult(
 	    interp,
 	    Tcl_ObjPrintf(
-		"%s is greater than max permitted length %" TCL_LL_MODIFIER "d",
+		"%s is greater than max permitted length %" TCL_SIZE_MODIFIER "d",
 		Tcl_GetString(objv[2]),
 		limit));
 	return TCL_ERROR;

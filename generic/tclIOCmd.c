@@ -424,7 +424,7 @@ Tcl_ReadObjCmd(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected non-negative integer but got \"%s\"",
 			TclGetString(objv[i])));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (void *)NULL);
 		return TCL_ERROR;
 	}
     }
@@ -433,7 +433,14 @@ Tcl_ReadObjCmd(
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
     if (charactersRead == TCL_IO_FAILURE) {
-	Tcl_DecrRefCount(resultPtr);
+	Tcl_Obj *returnOptsPtr = NULL;
+	if (TclChannelGetBlockingMode(chan)) {
+	    returnOptsPtr = Tcl_NewDictObj();
+	    Tcl_DictObjPut(NULL, returnOptsPtr, Tcl_NewStringObj("-data", -1),
+		    resultPtr);
+	} else {
+	    Tcl_DecrRefCount(resultPtr);
+	}
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
@@ -447,6 +454,9 @@ Tcl_ReadObjCmd(
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
 	TclChannelRelease(chan);
+	if (returnOptsPtr) {
+	    Tcl_SetReturnOptions(interp, returnOptsPtr);
+	}
 	return TCL_ERROR;
     }
 
@@ -510,7 +520,7 @@ Tcl_SeekObjCmd(
     if (TclGetChannelFromObj(interp, objv[1], &chan, NULL, 0) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetWideIntFromObj(interp, objv[2], &offset) != TCL_OK) {
+    if (TclGetWideIntFromObj(interp, objv[2], &offset) != TCL_OK) {
 	return TCL_ERROR;
     }
     mode = SEEK_SET;
@@ -933,6 +943,11 @@ Tcl_ExecObjCmd(
     TclStackFree(interp, (void *) argv);
 
     if (chan == NULL) {
+	return TCL_ERROR;
+    }
+
+    /* Bug [0f1ddc0df7] - encoding errors - use replace profile */
+    if (Tcl_SetChannelOption(NULL, chan, "-profile", "replace") != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1738,7 +1753,7 @@ Tcl_FcopyObjCmd(
 	}
 	switch (index) {
 	case FcopySize:
-	    if (Tcl_GetWideIntFromObj(interp, objv[i+1], &toRead) != TCL_OK) {
+	    if (TclGetWideIntFromObj(interp, objv[i+1], &toRead) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (toRead < 0) {
@@ -1865,7 +1880,7 @@ ChanTruncateObjCmd(
 	 * User is supplying an explicit length.
 	 */
 
-	if (Tcl_GetWideIntFromObj(interp, objv[2], &length) != TCL_OK) {
+	if (TclGetWideIntFromObj(interp, objv[2], &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 0) {

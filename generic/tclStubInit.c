@@ -62,13 +62,7 @@
 #undef Tcl_SplitPath
 #undef Tcl_FSSplitPath
 #undef Tcl_ParseArgsObjv
-#undef TclpInetNtoa
-#undef TclWinGetServByName
-#undef TclWinGetSockOpt
-#undef TclWinSetSockOpt
-#undef TclWinNToHS
 #undef TclStaticLibrary
-#undef Tcl_BackgroundError
 #define TclStaticLibrary Tcl_StaticLibrary
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
@@ -112,7 +106,7 @@ int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     if (objcPtr) {
 	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
-		Tcl_AppendResult(interp, "List too large to be processed", NULL);
+		Tcl_AppendResult(interp, "List too large to be processed", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -127,7 +121,7 @@ int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     if (lengthPtr) {
 	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
-		Tcl_AppendResult(interp, "List too large to be processed", NULL);
+		Tcl_AppendResult(interp, "List too large to be processed", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -142,7 +136,7 @@ int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
     if (sizePtr) {
 	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
-		Tcl_AppendResult(interp, "Dict too large to be processed", NULL);
+		Tcl_AppendResult(interp, "Dict too large to be processed", (void *)NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -157,7 +151,7 @@ int TclSplitList(Tcl_Interp *interp, const char *listStr, void *argcPtr,
     if (argcPtr) {
 	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
-		Tcl_AppendResult(interp, "List too large to be processed", NULL);
+		Tcl_AppendResult(interp, "List too large to be processed", (void *)NULL);
 	    }
 	    Tcl_Free((void *)*argvPtr);
 	    return TCL_ERROR;
@@ -294,7 +288,7 @@ doNothing(void)
 {
     /* dummy implementation, no need to do anything */
 }
-#   define TclWinAddProcess (void (*) (void *, size_t)) doNothing
+#   define TclWinAddProcess (void (*) (void *, Tcl_Size)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
 
 #define TclWinNoBackslash winNoBackslash
@@ -319,10 +313,10 @@ void *TclWinGetTclInstance()
     return hInstance;
 }
 
-size_t
+Tcl_Size
 TclpGetPid(Tcl_Pid pid)
 {
-    return (size_t)pid;
+    return (Tcl_Size)PTR2INT(pid);
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)
@@ -458,8 +452,8 @@ static const TclIntStubs tclIntStubs = {
     0, /* 50 */
     TclInterpInit, /* 51 */
     0, /* 52 */
-    TclInvokeObjectCommand, /* 53 */
-    TclInvokeStringCommand, /* 54 */
+    0, /* 53 */
+    0, /* 54 */
     TclIsProc, /* 55 */
     0, /* 56 */
     0, /* 57 */
@@ -468,7 +462,7 @@ static const TclIntStubs tclIntStubs = {
     TclNeedSpace, /* 60 */
     TclNewProcBodyObj, /* 61 */
     TclObjCommandComplete, /* 62 */
-    TclObjInterpProc, /* 63 */
+    0, /* 63 */
     TclObjInvoke, /* 64 */
     0, /* 65 */
     0, /* 66 */
@@ -557,8 +551,8 @@ static const TclIntStubs tclIntStubs = {
     TclHandleRelease, /* 149 */
     TclRegAbout, /* 150 */
     TclRegExpRangeUniChar, /* 151 */
-    TclSetLibraryPath, /* 152 */
-    TclGetLibraryPath, /* 153 */
+    0, /* 152 */
+    0, /* 153 */
     0, /* 154 */
     0, /* 155 */
     TclRegError, /* 156 */
@@ -624,11 +618,11 @@ static const TclIntStubs tclIntStubs = {
     TclStackFree, /* 216 */
     TclPushStackFrame, /* 217 */
     TclPopStackFrame, /* 218 */
-    0, /* 219 */
+    TclpCreateTemporaryDirectory, /* 219 */
     0, /* 220 */
-    0, /* 221 */
-    0, /* 222 */
-    0, /* 223 */
+    TclListTestObj, /* 221 */
+    TclListObjValidate, /* 222 */
+    TclGetCStackPtr, /* 223 */
     TclGetPlatform, /* 224 */
     TclTraceDictPath, /* 225 */
     TclObjBeingDeleted, /* 226 */
@@ -663,10 +657,10 @@ static const TclIntStubs tclIntStubs = {
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
-    TclpCreateTemporaryDirectory, /* 258 */
+    0, /* 258 */
     0, /* 259 */
-    TclListTestObj, /* 260 */
-    TclListObjValidate, /* 261 */
+    0, /* 260 */
+    TclUnusedStubEntry, /* 261 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

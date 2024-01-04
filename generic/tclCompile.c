@@ -665,6 +665,13 @@ InstructionDesc const tclInstructionTable[] = {
 	 * set in flags.
 	 */
 
+    {"constImm",	  5,   -1,	   1,	{OPERAND_LVT4}},
+	/* Create constant. Index into LVT is immediate, value is on stack.
+	 * Stack: ... value => ... */
+    {"constStk",	  1,   -2,	   0,	{OPERAND_NONE}},
+	/* Create constant. Variable name and value on stack.
+	 * Stack: ... varName value => ... */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
@@ -2176,7 +2183,7 @@ TclCompileScript(
     if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "too many nested compilations (infinite loop?)", -1));
-	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (void *)NULL);
 	TclCompileSyntaxError(interp, envPtr);
 	return;
     }
@@ -2197,7 +2204,7 @@ TclCompileScript(
 	  Tcl_ObjPrintf("Script length %" TCL_SIZE_MODIFIER
 			   "d exceeds max permitted length %d.",
 			   numBytes, INT_MAX-1));
-	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "SCRIPTLENGTH", (void *)NULL);
 	    TclCompileSyntaxError(interp, envPtr);
 	    return;
       }

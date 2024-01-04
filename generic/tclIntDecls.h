@@ -144,14 +144,8 @@ EXTERN int		TclInExit(void);
 /* 51 */
 EXTERN int		TclInterpInit(Tcl_Interp *interp);
 /* Slot 52 is reserved */
-/* 53 */
-EXTERN int		TclInvokeObjectCommand(void *clientData,
-				Tcl_Interp *interp, int argc,
-				const char **argv);
-/* 54 */
-EXTERN int		TclInvokeStringCommand(void *clientData,
-				Tcl_Interp *interp, int objc,
-				Tcl_Obj *const objv[]);
+/* Slot 53 is reserved */
+/* Slot 54 is reserved */
 /* 55 */
 EXTERN Proc *		TclIsProc(Command *cmdPtr);
 /* Slot 56 is reserved */
@@ -168,12 +162,9 @@ EXTERN int		TclNeedSpace(const char *start, const char *end);
 EXTERN Tcl_Obj *	TclNewProcBodyObj(Proc *procPtr);
 /* 62 */
 EXTERN int		TclObjCommandComplete(Tcl_Obj *cmdPtr);
-/* 63 */
-EXTERN int		TclObjInterpProc(void *clientData,
-				Tcl_Interp *interp, int objc,
-				Tcl_Obj *const objv[]);
+/* Slot 63 is reserved */
 /* 64 */
-EXTERN int		TclObjInvoke(Tcl_Interp *interp, int objc,
+EXTERN int		TclObjInvoke(Tcl_Interp *interp, Tcl_Size objc,
 				Tcl_Obj *const objv[], int flags);
 /* Slot 65 is reserved */
 /* Slot 66 is reserved */
@@ -329,10 +320,8 @@ EXTERN int		TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re);
 /* 151 */
 EXTERN void		TclRegExpRangeUniChar(Tcl_RegExp re, Tcl_Size index,
 				Tcl_Size *startPtr, Tcl_Size *endPtr);
-/* 152 */
-EXTERN void		TclSetLibraryPath(Tcl_Obj *pathPtr);
-/* 153 */
-EXTERN Tcl_Obj *	TclGetLibraryPath(void);
+/* Slot 152 is reserved */
+/* Slot 153 is reserved */
 /* Slot 154 is reserved */
 /* Slot 155 is reserved */
 /* 156 */
@@ -363,7 +352,7 @@ EXTERN int		TclListObjSetElement(Tcl_Interp *interp,
 /* Slot 167 is reserved */
 /* Slot 168 is reserved */
 /* 169 */
-EXTERN int		TclpUtfNcmp2(const char *s1, const char *s2,
+EXTERN int		TclpUtfNcmp2(const void *s1, const void *s2,
 				size_t n);
 /* 170 */
 EXTERN int		TclCheckInterpTraces(Tcl_Interp *interp,
@@ -462,11 +451,18 @@ EXTERN int		TclPushStackFrame(Tcl_Interp *interp,
 				int isProcCallFrame);
 /* 218 */
 EXTERN void		TclPopStackFrame(Tcl_Interp *interp);
-/* Slot 219 is reserved */
+/* 219 */
+EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
+				Tcl_Obj *basenameObj);
 /* Slot 220 is reserved */
-/* Slot 221 is reserved */
-/* Slot 222 is reserved */
-/* Slot 223 is reserved */
+/* 221 */
+EXTERN Tcl_Obj *	TclListTestObj(size_t length, size_t leadingSpace,
+				size_t endSpace);
+/* 222 */
+EXTERN void		TclListObjValidate(Tcl_Interp *interp,
+				Tcl_Obj *listObj);
+/* 223 */
+EXTERN void *		TclGetCStackPtr(void);
 /* 224 */
 EXTERN TclPlatformType * TclGetPlatform(void);
 /* 225 */
@@ -506,7 +502,7 @@ EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
 EXTERN int		TclResetCancellation(Tcl_Interp *interp, int force);
 /* 238 */
 EXTERN int		TclNRInterpProc(void *clientData, Tcl_Interp *interp,
-				int objc, Tcl_Obj *const objv[]);
+				Tcl_Size objc, Tcl_Obj *const objv[]);
 /* 239 */
 EXTERN int		TclNRInterpProcCore(Tcl_Interp *interp,
 				Tcl_Obj *procNameObj, Tcl_Size skip,
@@ -574,16 +570,11 @@ EXTERN void		TclStaticLibrary(Tcl_Interp *interp,
 				const char *prefix,
 				Tcl_LibraryInitProc *initProc,
 				Tcl_LibraryInitProc *safeInitProc);
-/* 258 */
-EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
-				Tcl_Obj *basenameObj);
+/* Slot 258 is reserved */
 /* Slot 259 is reserved */
-/* 260 */
-EXTERN Tcl_Obj *	TclListTestObj(size_t length, size_t leadingSpace,
-				size_t endSpace);
+/* Slot 260 is reserved */
 /* 261 */
-EXTERN void		TclListObjValidate(Tcl_Interp *interp,
-				Tcl_Obj *listObj);
+EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct TclIntStubs {
     int magic;
@@ -642,8 +633,8 @@ typedef struct TclIntStubs {
     void (*reserved50)(void);
     int (*tclInterpInit) (Tcl_Interp *interp); /* 51 */
     void (*reserved52)(void);
-    int (*tclInvokeObjectCommand) (void *clientData, Tcl_Interp *interp, int argc, const char **argv); /* 53 */
-    int (*tclInvokeStringCommand) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 54 */
+    void (*reserved53)(void);
+    void (*reserved54)(void);
     Proc * (*tclIsProc) (Command *cmdPtr); /* 55 */
     void (*reserved56)(void);
     void (*reserved57)(void);
@@ -652,8 +643,8 @@ typedef struct TclIntStubs {
     int (*tclNeedSpace) (const char *start, const char *end); /* 60 */
     Tcl_Obj * (*tclNewProcBodyObj) (Proc *procPtr); /* 61 */
     int (*tclObjCommandComplete) (Tcl_Obj *cmdPtr); /* 62 */
-    int (*tclObjInterpProc) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 63 */
-    int (*tclObjInvoke) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 64 */
+    void (*reserved63)(void);
+    int (*tclObjInvoke) (Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[], int flags); /* 64 */
     void (*reserved65)(void);
     void (*reserved66)(void);
     void (*reserved67)(void);
@@ -741,8 +732,8 @@ typedef struct TclIntStubs {
     void (*tclHandleRelease) (TclHandle handle); /* 149 */
     int (*tclRegAbout) (Tcl_Interp *interp, Tcl_RegExp re); /* 150 */
     void (*tclRegExpRangeUniChar) (Tcl_RegExp re, Tcl_Size index, Tcl_Size *startPtr, Tcl_Size *endPtr); /* 151 */
-    void (*tclSetLibraryPath) (Tcl_Obj *pathPtr); /* 152 */
-    Tcl_Obj * (*tclGetLibraryPath) (void); /* 153 */
+    void (*reserved152)(void);
+    void (*reserved153)(void);
     void (*reserved154)(void);
     void (*reserved155)(void);
     void (*tclRegError) (Tcl_Interp *interp, const char *msg, int status); /* 156 */
@@ -758,7 +749,7 @@ typedef struct TclIntStubs {
     int (*tclListObjSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size index, Tcl_Obj *valuePtr); /* 166 */
     void (*reserved167)(void);
     void (*reserved168)(void);
-    int (*tclpUtfNcmp2) (const char *s1, const char *s2, size_t n); /* 169 */
+    int (*tclpUtfNcmp2) (const void *s1, const void *s2, size_t n); /* 169 */
     int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags, Tcl_Size objc, Tcl_Obj *const objv[]); /* 170 */
     int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, Tcl_Size numChars, Command *cmdPtr, int result, int traceFlags, Tcl_Size objc, Tcl_Obj *const objv[]); /* 171 */
     int (*tclInThreadExit) (void); /* 172 */
@@ -808,11 +799,11 @@ typedef struct TclIntStubs {
     void (*tclStackFree) (Tcl_Interp *interp, void *freePtr); /* 216 */
     int (*tclPushStackFrame) (Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr, Tcl_Namespace *namespacePtr, int isProcCallFrame); /* 217 */
     void (*tclPopStackFrame) (Tcl_Interp *interp); /* 218 */
-    void (*reserved219)(void);
+    Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 219 */
     void (*reserved220)(void);
-    void (*reserved221)(void);
-    void (*reserved222)(void);
-    void (*reserved223)(void);
+    Tcl_Obj * (*tclListTestObj) (size_t length, size_t leadingSpace, size_t endSpace); /* 221 */
+    void (*tclListObjValidate) (Tcl_Interp *interp, Tcl_Obj *listObj); /* 222 */
+    void * (*tclGetCStackPtr) (void); /* 223 */
     TclPlatformType * (*tclGetPlatform) (void); /* 224 */
     Tcl_Obj * (*tclTraceDictPath) (Tcl_Interp *interp, Tcl_Obj *rootPtr, Tcl_Size keyc, Tcl_Obj *const keyv[], int flags); /* 225 */
     int (*tclObjBeingDeleted) (Tcl_Obj *objPtr); /* 226 */
@@ -827,7 +818,7 @@ typedef struct TclIntStubs {
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
     void (*reserved236)(void);
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
-    int (*tclNRInterpProc) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
+    int (*tclNRInterpProc) (void *clientData, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[]); /* 238 */
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, Tcl_Size skip, ProcErrorProc *errorProc); /* 239 */
     int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct NRE_callback *rootPtr); /* 240 */
     int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 241 */
@@ -847,10 +838,10 @@ typedef struct TclIntStubs {
     int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 256 */
     void (*tclStaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc); /* 257 */
-    Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
+    void (*reserved258)(void);
     void (*reserved259)(void);
-    Tcl_Obj * (*tclListTestObj) (size_t length, size_t leadingSpace, size_t endSpace); /* 260 */
-    void (*tclListObjValidate) (Tcl_Interp *interp, Tcl_Obj *listObj); /* 261 */
+    void (*reserved260)(void);
+    void (*tclUnusedStubEntry) (void); /* 261 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -944,10 +935,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclInterpInit \
 	(tclIntStubsPtr->tclInterpInit) /* 51 */
 /* Slot 52 is reserved */
-#define TclInvokeObjectCommand \
-	(tclIntStubsPtr->tclInvokeObjectCommand) /* 53 */
-#define TclInvokeStringCommand \
-	(tclIntStubsPtr->tclInvokeStringCommand) /* 54 */
+/* Slot 53 is reserved */
+/* Slot 54 is reserved */
 #define TclIsProc \
 	(tclIntStubsPtr->tclIsProc) /* 55 */
 /* Slot 56 is reserved */
@@ -961,8 +950,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclNewProcBodyObj) /* 61 */
 #define TclObjCommandComplete \
 	(tclIntStubsPtr->tclObjCommandComplete) /* 62 */
-#define TclObjInterpProc \
-	(tclIntStubsPtr->tclObjInterpProc) /* 63 */
+/* Slot 63 is reserved */
 #define TclObjInvoke \
 	(tclIntStubsPtr->tclObjInvoke) /* 64 */
 /* Slot 65 is reserved */
@@ -1090,10 +1078,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclRegAbout) /* 150 */
 #define TclRegExpRangeUniChar \
 	(tclIntStubsPtr->tclRegExpRangeUniChar) /* 151 */
-#define TclSetLibraryPath \
-	(tclIntStubsPtr->tclSetLibraryPath) /* 152 */
-#define TclGetLibraryPath \
-	(tclIntStubsPtr->tclGetLibraryPath) /* 153 */
+/* Slot 152 is reserved */
+/* Slot 153 is reserved */
 /* Slot 154 is reserved */
 /* Slot 155 is reserved */
 #define TclRegError \
@@ -1192,11 +1178,15 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclPushStackFrame) /* 217 */
 #define TclPopStackFrame \
 	(tclIntStubsPtr->tclPopStackFrame) /* 218 */
-/* Slot 219 is reserved */
+#define TclpCreateTemporaryDirectory \
+	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 219 */
 /* Slot 220 is reserved */
-/* Slot 221 is reserved */
-/* Slot 222 is reserved */
-/* Slot 223 is reserved */
+#define TclListTestObj \
+	(tclIntStubsPtr->tclListTestObj) /* 221 */
+#define TclListObjValidate \
+	(tclIntStubsPtr->tclListObjValidate) /* 222 */
+#define TclGetCStackPtr \
+	(tclIntStubsPtr->tclGetCStackPtr) /* 223 */
 #define TclGetPlatform \
 	(tclIntStubsPtr->tclGetPlatform) /* 224 */
 #define TclTraceDictPath \
@@ -1263,13 +1253,11 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclPtrUnsetVar) /* 256 */
 #define TclStaticLibrary \
 	(tclIntStubsPtr->tclStaticLibrary) /* 257 */
-#define TclpCreateTemporaryDirectory \
-	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
+/* Slot 258 is reserved */
 /* Slot 259 is reserved */
-#define TclListTestObj \
-	(tclIntStubsPtr->tclListTestObj) /* 260 */
-#define TclListObjValidate \
-	(tclIntStubsPtr->tclListObjValidate) /* 261 */
+/* Slot 260 is reserved */
+#define TclUnusedStubEntry \
+	(tclIntStubsPtr->tclUnusedStubEntry) /* 261 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -1288,9 +1276,11 @@ extern const TclIntStubs *tclIntStubsPtr;
 #undef TclpGetSeconds
 #define TclpGetSeconds() \
 		((unsigned long)tclIntStubsPtr->tclpGetSeconds())
+#undef TclGetObjInterpProc2
+#define TclGetObjInterpProc2 TclGetObjInterpProc
 #endif
 
-#undef TclObjInterpProc
+#undef TclUnusedStubEntry
 #define TclObjInterpProc TclGetObjInterpProc()
 #define TclObjInterpProc2 TclGetObjInterpProc2()
 

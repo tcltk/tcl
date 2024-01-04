@@ -40,6 +40,11 @@ is left.
 Pointer to a string with proper list structure.
 .AP "Tcl_Size \&| int" *argcPtr out
 Filled in with number of elements in \fIlist\fR.
+May be (Tcl_Size *)NULL when not used. If it points to a variable which
+type is not \fBTcl_Size\fR, a compiler warning will be generated.
+If your extensions is compiled with -DTCL_8_API, this function will return
+TCL_ERROR for lists with more than INT_MAX elements (which should
+trigger proper error-handling), otherwise expect it to crash.
 .AP "const char" ***argvPtr out
 \fI*argvPtr\fR will be filled in with the address of an array of
 pointers to the strings that are the extracted elements of \fIlist\fR.

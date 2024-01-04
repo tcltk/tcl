@@ -14,13 +14,17 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        cfgopt:
+        config:
           - ""
           - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "--disable-shared"
+          - "--disable-zipfs"
           - "--enable-symbols"
           - "--enable-symbols=mem"
           - "--enable-symbols=all"
+          - "CFLAGS=-ftrapv"
+          # Duplicated below
+          - "CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit"
     defaults:
       run:
         shell: bash
@@ -29,16 +33,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         timeout-minutes: 5
+      - name: Install 32-bit dependencies if needed
+        # Duplicated from above
+        if: ${{ matrix.config == 'CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 --disable-64bit' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install gcc-multilib libc6-dev-i386
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
         working-directory: generic
-      - name: Configure ${{ matrix.cfgopt }}
+      - name: Configure ${{ matrix.config }}
         run: |
           mkdir "${HOME}/install dir"
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
         env:
-          CFGOPT: ${{ matrix.cfgopt }}
+          CFGOPT: ${{ matrix.config }}
         timeout-minutes: 5
       - name: Build
         run: |

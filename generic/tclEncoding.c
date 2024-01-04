@@ -469,52 +469,6 @@ Tcl_SetEncodingSearchPath(
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclGetLibraryPath --
- *
- *	Keeps the per-thread copy of the library path current with changes to
- *	the global copy.
- *
- * Results:
- *	Returns a "list" (Tcl_Obj *) that contains the library path.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclGetLibraryPath(void)
-{
-    return TclGetProcessGlobalValue(&libraryPath);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclSetLibraryPath --
- *
- *	Keeps the per-thread copy of the library path current with changes to
- *	the global copy.
- *
- *	Since the result of this routine is void, if searchPath is not a valid
- *	list this routine silently does nothing.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclSetLibraryPath(
-    Tcl_Obj *path)
-{
-    Tcl_Size dummy;
-
-    if (TCL_ERROR == TclListObjLengthM(NULL, path, &dummy)) {
-	return;
-    }
-    TclSetProcessGlobalValue(&libraryPath, path, NULL);
-}
-
-/*
  *---------------------------------------------------------------------------
  *
  * FillEncodingFileMap --
@@ -1285,7 +1239,7 @@ Tcl_ExternalToUtfDStringEx(
 	    Tcl_NewStringObj(
 		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
 		TCL_INDEX_NONE));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", (void *)NULL);
 	errno = EINVAL;
 	return TCL_ERROR;
     }
@@ -1351,15 +1305,15 @@ Tcl_ExternalToUtfDStringEx(
 		/* Caller wants error message on failure */
 		if (result != TCL_OK && interp != NULL) {
 		    char buf[TCL_INTEGER_SPACE];
-		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "u", nBytesProcessed);
+		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf("unexpected byte sequence starting at index %"
-				      TCL_SIZE_MODIFIER "u: '\\x%02X'",
+				      TCL_SIZE_MODIFIER "d: '\\x%02X'",
 				      nBytesProcessed,
 				      UCHAR(srcStart[nBytesProcessed])));
 		    Tcl_SetErrorCode(
-			interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, NULL);
+			interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf, (void *)NULL);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -1615,7 +1569,7 @@ Tcl_UtfToExternalDStringEx(
 	    Tcl_NewStringObj(
 		"Parameter error: TCL_ENCODING_{START,STOP} bits set in flags.",
 		TCL_INDEX_NONE));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALFLAGS", (void *)NULL);
 	errno = EINVAL;
 	return TCL_ERROR;
     }
@@ -1684,7 +1638,7 @@ Tcl_UtfToExternalDStringEx(
 		    int ucs4;
 		    char buf[TCL_INTEGER_SPACE];
 		    Tcl_UtfToUniChar(&srcStart[nBytesProcessed], &ucs4);
-		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "u", nBytesProcessed);
+		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d", nBytesProcessed);
 		    Tcl_SetObjResult(
 			interp,
 			Tcl_ObjPrintf(
@@ -1693,7 +1647,7 @@ Tcl_UtfToExternalDStringEx(
 			    pos,
 			    ucs4));
 		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-				     buf, NULL);
+				     buf, (void *)NULL);
 		}
 	    }
 	    if (result != TCL_OK) {
@@ -1950,7 +1904,7 @@ OpenEncodingFileChannel(
     if ((NULL == chan) && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unknown encoding \"%s\"", name));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (void *)NULL);
     }
     Tcl_DecrRefCount(fileNameObj);
     Tcl_DecrRefCount(nameObj);
@@ -2025,7 +1979,7 @@ LoadEncodingFile(
     if ((encoding == NULL) && (interp != NULL)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"invalid encoding file \"%s\"", name));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (void *)NULL);
     }
     Tcl_CloseEx(NULL, chan, 0);
 
@@ -4462,7 +4416,7 @@ unilen4(
 static void
 InitializeEncodingSearchPath(
     char **valuePtr,
-    TCL_HASH_TYPE *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *bytes;
@@ -4473,7 +4427,7 @@ InitializeEncodingSearchPath(
     TclNewObj(searchPathObj);
     Tcl_IncrRefCount(encodingObj);
     Tcl_IncrRefCount(searchPathObj);
-    libPathObj = TclGetLibraryPath();
+    libPathObj = TclGetProcessGlobalValue(&libraryPath);
     Tcl_IncrRefCount(libPathObj);
     TclListObjLengthM(NULL, libPathObj, &numDirs);
 
@@ -4542,14 +4496,14 @@ TclEncodingProfileNameToId(
 		profileName);
 	for (i = 0; i < (numProfiles - 1); ++i) {
 	    Tcl_AppendStringsToObj(
-		errorObj, " ", encodingProfiles[i].name, ",", NULL);
+		errorObj, " ", encodingProfiles[i].name, ",", (void *)NULL);
 	}
 	Tcl_AppendStringsToObj(
-	    errorObj, " or ", encodingProfiles[numProfiles-1].name, NULL);
+	    errorObj, " or ", encodingProfiles[numProfiles-1].name, (void *)NULL);
 
 	Tcl_SetObjResult(interp, errorObj);
 	Tcl_SetErrorCode(
-	    interp, "TCL", "ENCODING", "PROFILE", profileName, NULL);
+	    interp, "TCL", "ENCODING", "PROFILE", profileName, (void *)NULL);
     }
     return TCL_ERROR;
 }
@@ -4588,7 +4542,7 @@ TclEncodingProfileIdToName(
 		"Internal error. Bad profile id \"%d\".",
 		profileValue));
 	Tcl_SetErrorCode(
-	    interp, "TCL", "ENCODING", "PROFILEID", NULL);
+	    interp, "TCL", "ENCODING", "PROFILEID", (void *)NULL);
     }
     return NULL;
 }

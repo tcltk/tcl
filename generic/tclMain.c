@@ -29,6 +29,7 @@
  */
 
 static const char DEFAULT_PRIMARY_PROMPT[] = "% ";
+static const char ENCODING_ERROR[] = "\n\t(encoding error in stderr)";
 
 /*
  * This file can be compiled on Windows in UNICODE mode, as well as on all
@@ -249,7 +250,9 @@ Tcl_SourceRCFile(
 		if (Tcl_EvalFile(interp, fullName) != TCL_OK) {
 		    chan = Tcl_GetStdChannel(TCL_STDERR);
 		    if (chan) {
-			Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
+			if (Tcl_WriteObj(chan, Tcl_GetObjResult(interp)) < 0) {
+			    Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+			}
 			Tcl_WriteChars(chan, "\n", 1);
 		    }
 		}
@@ -377,7 +380,9 @@ Tcl_MainEx(
 	if (chan) {
 	    Tcl_WriteChars(chan,
 		    "application-specific initialization failed: ", -1);
-	    Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
+	    if (Tcl_WriteObj(chan, Tcl_GetObjResult(interp)) < 0) {
+		Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+	    }
 	    Tcl_WriteChars(chan, "\n", 1);
 	}
     }
@@ -417,7 +422,9 @@ Tcl_MainEx(
 		Tcl_DecrRefCount(keyPtr);
 
 		if (valuePtr) {
-		    Tcl_WriteObj(chan, valuePtr);
+		    if (Tcl_WriteObj(chan, valuePtr) < 0) {
+			Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+		    }
 		}
 		Tcl_WriteChars(chan, "\n", 1);
 		Tcl_DecrRefCount(options);
@@ -530,7 +537,9 @@ Tcl_MainEx(
 	    if (code != TCL_OK) {
 		chan = Tcl_GetStdChannel(TCL_STDERR);
 		if (chan) {
-		    Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
+			if (Tcl_WriteObj(chan, Tcl_GetObjResult(interp)) < 0) {
+			    Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+			}
 		    Tcl_WriteChars(chan, "\n", 1);
 		}
 	    } else if (is.tty) {
@@ -539,7 +548,9 @@ Tcl_MainEx(
 		(void)Tcl_GetStringFromObj(resultPtr, &length);
 		chan = Tcl_GetStdChannel(TCL_STDOUT);
 		if ((length > 0) && chan) {
-		    Tcl_WriteObj(chan, resultPtr);
+		    if (Tcl_WriteObj(chan, resultPtr) < 0) {
+			Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+		    }
 		    Tcl_WriteChars(chan, "\n", 1);
 		}
 		Tcl_DecrRefCount(resultPtr);
@@ -804,7 +815,9 @@ StdinProc(
 	chan = Tcl_GetStdChannel(TCL_STDERR);
 
 	if (chan != NULL) {
-	    Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
+	    if (Tcl_WriteObj(chan, Tcl_GetObjResult(interp)) < 0) {
+		Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+	    }
 	    Tcl_WriteChars(chan, "\n", 1);
 	}
     } else if (isPtr->tty) {
@@ -814,7 +827,9 @@ StdinProc(
 	Tcl_IncrRefCount(resultPtr);
 	(void)Tcl_GetStringFromObj(resultPtr, &length);
 	if ((length > 0) && (chan != NULL)) {
-	    Tcl_WriteObj(chan, resultPtr);
+	    if (Tcl_WriteObj(chan, resultPtr) < 0) {
+		Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+	    }
 	    Tcl_WriteChars(chan, "\n", 1);
 	}
 	Tcl_DecrRefCount(resultPtr);
@@ -885,7 +900,9 @@ Prompt(
 		    "\n    (script that generates prompt)");
 	    chan = Tcl_GetStdChannel(TCL_STDERR);
 	    if (chan != NULL) {
-		Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
+		if (Tcl_WriteObj(chan, Tcl_GetObjResult(interp)) < 0) {
+		    Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+		}
 		Tcl_WriteChars(chan, "\n", 1);
 	    }
 	    goto defaultPrompt;

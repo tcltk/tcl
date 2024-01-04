@@ -1,6 +1,7 @@
 # -*- tcl -*-
 # Commands covered: open, close, gets, read, puts, seek, tell, eof, flush,
-#		    fblocked, fconfigure, open, channel, fcopy
+#		    fblocked, fconfigure, open, channel, fcopy,
+#		    readFile, writeFile, foreachLine
 #
 # This file contains a collection of tests for one or more of the Tcl
 # built-in commands.  Sourcing this file into Tcl runs the tests and
@@ -3912,6 +3913,209 @@ test iocmd.tf-32.1 {origin thread of moved channel destroyed during access} -mat
     set res
 } -constraints {testchannel thread notValgrind} \
     -result {Owner lost}
+
+# Tests of readFile
+
+set BIN_DATA "\u0000\u0001\u0002\u0003\u0004\u001a\u001b\u000d\u000a\u0000"
+
+test iocmd.readFile-1.1 "readFile procedure: syntax" -body {
+    readFile
+} -returnCodes error -result {wrong # args: should be "readFile filename ?mode?"}
+test iocmd.readFile-1.2 "readFile procedure: syntax" -body {
+    readFile a b c
+} -returnCodes error -result {wrong # args: should be "readFile filename ?mode?"}
+test iocmd.readFile-1.3 "readFile procedure: syntax" -body {
+    readFile gorp gorp2
+} -returnCodes error -result {bad mode "gorp2": must be binary or text}
+
+test iocmd.readFile-2.1 "readFile procedure: behaviour" -setup {
+    set f [makeFile "File\nContents" readFile21.txt]
+} -body {
+    readFile $f
+} -cleanup {
+    removeFile $f
+} -result "File\nContents\n"
+test iocmd.readFile-2.2 "readFile procedure: behaviour" -setup {
+    set f [makeFile "File\nContents" readFile22.txt]
+} -body {
+    readFile $f text
+} -cleanup {
+    removeFile $f
+} -result "File\nContents\n"
+test iocmd.readFile-2.3 "readFile procedure: behaviour" -setup {
+    set f [makeFile "" readFile23.bindata]
+    apply {filename {
+	global BIN_DATA
+	set ff [open $filename wb]
+	puts -nonewline $ff $BIN_DATA
+	close $ff
+    }} $f
+} -body {
+    list [binary scan [readFile $f binary] c* x] $x
+} -cleanup {
+    removeFile $f
+} -result {1 {0 1 2 3 4 26 27 13 10 0}}
+# Need to set up ahead of the test
+set f [makeFile "" readFile24.txt]
+removeFile $f
+test iocmd.readFile-2.4 "readFile procedure: behaviour" -body {
+    readFile $f
+} -returnCodes error -result "couldn't open \"$f\": no such file or directory"
+
+# Tests of writeFile
+
+test iocmd.writeFile-1.1 "writeFile procedure: syntax" -body {
+    writeFile
+} -returnCodes error -result {wrong # args: should be "writeFile filename ?mode? data"}
+test iocmd.writeFile-1.2 "writeFile procedure: syntax" -body {
+    writeFile a b c d
+} -returnCodes error -result {wrong # args: should be "writeFile filename ?mode? data"}
+test iocmd.writeFile-1.3 "writeFile procedure: syntax" -body {
+    writeFile gorp gorp2 gorp3
+} -returnCodes error -result {bad mode "gorp2": must be binary or text}
+
+test iocmd.writeFile-2.1 "readFile procedure: behaviour" -setup {
+    set f [makeFile "" writeFile21.txt]
+    removeFile $f
+} -body {
+    list [writeFile $f "File\nContents\n"] [apply {filename {
+	set f [open $filename]
+	set text [read $f]
+	close $f
+	return $text
+    }} $f]
+} -cleanup {
+    file delete $f
+} -result [list {} "File\nContents\n"]
+test iocmd.writeFile-2.2 "readFile procedure: behaviour" -setup {
+    set f [makeFile "" writeFile22.txt]
+    removeFile $f
+} -body {
+    writeFile $f text "File\nContents\n"
+    apply {filename {
+	set f [open $filename]
+	set text [read $f]
+	close $f
+	return $text
+    }} $f
+} -cleanup {
+    file delete $f
+} -result "File\nContents\n"
+test iocmd.writeFile-2.3 "readFile procedure: behaviour" -setup {
+    set f [makeFile "" writeFile23.txt]
+    removeFile $f
+} -body {
+    writeFile $f binary $BIN_DATA
+    apply {filename {
+	set f [open $filename rb]
+	set bytes [read $f]
+	close $f
+	binary scan $bytes c* x
+	return $x
+    }} $f
+} -cleanup {
+    file delete $f
+} -result {0 1 2 3 4 26 27 13 10 0}
+
+# Tests of foreachLine
+
+test iocmd.foreachLine-1.1 "foreachLine procedure: syntax" -returnCodes error -body {
+    foreachLine
+} -result {wrong # args: should be "foreachLine varName filename body"}
+test iocmd.foreachLine-1.2 "foreachLine procedure: syntax" -returnCodes error -body {
+    foreachLine a b c d
+} -result {wrong # args: should be "foreachLine varName filename body"}
+test iocmd.foreachLine-1.3 "foreachLine procedure: basic errors" -setup {
+    set f [makeFile "" foreachLine13.txt]
+} -body {
+    apply {filename {
+	array set b {1 1}
+        foreachLine b $filename {}
+    }} $f
+} -cleanup {
+    removeFile $f
+} -returnCodes error -result {can't set "line": variable is array}
+set f [makeFile "" foreachLine14.txt]
+removeFile $f
+test iocmd.foreachLine-1.4 "foreachLine procedure: basic errors" -body {
+    apply {filename {
+	foreachLine var $filename {}
+    }} $f
+} -returnCodes error -result "couldn't open \"$f\": no such file or directory"
+
+test iocmd.foreachLine-2.1 "foreachLine procedure: behaviour" -setup {
+    set f [makeFile "a\nb\nc" foreachLine21.txt]
+} -body {
+    apply {filename {
+	set lines {}
+	foreachLine var $filename {
+	    lappend lines $var
+	}
+	return $lines
+    }} $f
+} -cleanup {
+    removeFile $f
+} -result {a b c}
+test iocmd.foreachLine-2.2 "foreachLine procedure: behaviour" -setup {
+    set f [makeFile "a\nbb\nc\ndd" foreachLine22.txt]
+} -body {
+    apply {filename {
+	set lines {}
+	foreachLine var $filename {
+	    if {[string length $var] == 1} continue
+	    lappend lines $var
+	}
+	return $lines
+    }} $f
+} -cleanup {
+    removeFile $f
+} -result {bb dd}
+test iocmd.foreachLine-2.3 "foreachLine procedure: behaviour" -setup {
+    set f [makeFile "a\nbb\nccc\ndd\ne" foreachLine23.txt]
+} -body {
+    apply {filename {
+	set lines {}
+	foreachLine var $filename {
+	    if {[string length $var] > 2} break
+	    lappend lines $var
+	}
+	return $lines
+    }} $f
+} -cleanup {
+    removeFile $f
+} -result {a bb}
+test iocmd.foreachLine-2.4 "foreachLine procedure: behaviour" -setup {
+    set f [makeFile "a\nbb\nccc\ndd\ne" foreachLine24.txt]
+} -body {
+    apply {filename {
+    	set lines {}
+	foreachLine var $filename {
+	    if {[string length $var] > 2} {
+		return $var
+	    }
+	    lappend lines $var
+	}
+	return $lines
+    }} $f
+} -cleanup {
+    removeFile $f
+} -result {ccc}
+test iocmd.foreachLine-2.5 "foreachLine procedure: behaviour" -setup {
+    set f [makeFile "a\nbb\nccc\ndd\ne" foreachLine25.txt]
+} -body {
+    apply {filename {
+	set lines {}
+	foreachLine var $filename {
+	    if {[string length $var] > 2} {
+		error "line too long"
+	    }
+	    lappend lines $var
+	}
+	return $lines
+    }} $f
+} -cleanup {
+    removeFile $f
+} -returnCodes error -result {line too long}
 
 # ### ### ### ######### ######### #########
 

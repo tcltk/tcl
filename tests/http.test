@@ -17,6 +17,10 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 package require http 2.10
+#http::register http 80 ::socket
+
+# To write a separate summary for each value of ThreadLevel, set constraint ThreadLevelSummary.
+#testConstraint ThreadLevelSummary 0
 
 proc bgerror {args} {
     global errorInfo
@@ -67,6 +71,11 @@ if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
     set threadStack {}
 }
 
+if 0 {
+    # For debugging: run with a single value of ThreadLevel: 0|1|2
+    set ThreadLevel 0
+    testConstraint ThreadLevelSummary 1
+}
 if {![info exists ThreadLevel]} {
     if {[catch {package require Thread}] == 0} {
         set ValueRange {0 1 2}
@@ -84,6 +93,9 @@ if {![info exists ThreadLevel]} {
     }
     catch {unset ThreadLevel}
     catch {unset ValueRange}
+    if {![testConstraint ThreadLevelSummary]} {
+        ::tcltest::cleanupTests
+    }
     return
 }
 
@@ -161,7 +173,7 @@ test http-3.3.$ThreadLevel {http::geturl} -body {
     set token [http::geturl $url]
     http::data $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result "<html><head><title>HTTP/1.0 TEST</title></head><body>
 <h1>Hello, World!</h1>
 <h2>GET /</h2>
@@ -181,7 +193,7 @@ test http-3.4.$ThreadLevel {http::geturl} -body {
     set token [http::geturl $url]
     http::data $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result "<html><head><title>HTTP/1.0 TEST</title></head><body>
 <h1>Hello, World!</h1>
 <h2>GET $tail</h2>
@@ -196,7 +208,7 @@ test http-3.5.$ThreadLevel {http::geturl} -body {
     http::data $token
 } -cleanup {
     http::config -proxyfilter http::ProxyRequired
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result "<html><head><title>HTTP/1.0 TEST</title></head><body>
 <h1>Hello, World!</h1>
 <h2>GET http:$url</h2>
@@ -207,7 +219,7 @@ test http-3.6.$ThreadLevel {http::geturl} -body {
     http::data $token
 } -cleanup {
     http::config -proxyfilter http::ProxyRequired
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result "<html><head><title>HTTP/1.0 TEST</title></head><body>
 <h1>Hello, World!</h1>
 <h2>GET $tail</h2>
@@ -216,7 +228,7 @@ test http-3.7.$ThreadLevel {http::geturl} -body {
     set token [http::geturl $url -headers {Pragma no-cache}]
     http::data $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result "<html><head><title>HTTP/1.0 TEST</title></head><body>
 <h1>Hello, World!</h1>
 <h2>GET $tail</h2>
@@ -225,7 +237,7 @@ test http-3.8.$ThreadLevel {http::geturl} -body {
     set token [http::geturl $url -query Name=Value&Foo=Bar -timeout 3000]
     http::data $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result "<html><head><title>HTTP/1.0 TEST</title></head><body>
 <h1>Hello, World!</h1>
 <h2>POST $tail</h2>
@@ -239,7 +251,7 @@ test http-3.9.$ThreadLevel {http::geturl} -body {
     set token [http::geturl $url -validate 1]
     http::code $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result "HTTP/1.0 200 OK"
 test http-3.10.$ThreadLevel {http::geturl queryprogress} -setup {
     set query foo=bar
@@ -252,17 +264,17 @@ test http-3.10.$ThreadLevel {http::geturl queryprogress} -setup {
 	set sep &
     }
 } -body {
-    proc postProgress {token x y} {
+    proc postProgress {tok x y} {
 	global postProgress
 	lappend postProgress $y
     }
     set postProgress {}
-    set t [http::geturl $posturl -keepalive 0 -query $query \
+    set token [http::geturl $posturl -keepalive 0 -query $query \
 	    -queryprogress postProgress -queryblocksize 16384]
-    http::wait $t
-    list [http::status $t] [string length $query] $postProgress [http::data $t]
+    http::wait $token
+    list [http::status $token] [string length $query] $postProgress [http::data $token]
 } -cleanup {
-    http::cleanup $t
+    catch {http::cleanup $token}
 } -result {ok 122879 {16384 32768 49152 65536 81920 98304 114688 122879} {Got 122879 bytes}}
 test http-3.11.$ThreadLevel {http::geturl querychannel with -command} -setup {
     set query foo=bar
@@ -277,26 +289,26 @@ test http-3.11.$ThreadLevel {http::geturl querychannel with -command} -setup {
     set file [makeFile $query outdata]
 } -body {
     set fp [open $file]
-    proc asyncCB {token} {
+    proc asyncCB {tok} {
 	global postResult
-	lappend postResult [http::data $token]
+	lappend postResult [http::data $tok]
     }
     set postResult [list ]
-    set t [http::geturl $posturl -querychannel $fp]
-    http::wait $t
-    set testRes [list [http::status $t] [string length $query] [http::data $t]]
+    set token [http::geturl $posturl -querychannel $fp]
+    http::wait $token
+    set testRes [list [http::status $token] [string length $query] [http::data $token]]
     # Now do async
-    http::cleanup $t
+    http::cleanup $token
     close $fp
     set fp [open $file]
-    set t [http::geturl $posturl -querychannel $fp -command asyncCB]
+    set token [http::geturl $posturl -querychannel $fp -command asyncCB]
     set postResult [list PostStart]
-    http::wait $t
+    http::wait $token
     close $fp
-    lappend testRes [http::status $t] $postResult
+    lappend testRes [http::status $token] $postResult
 } -cleanup {
     removeFile outdata
-    http::cleanup $t
+    catch {http::cleanup $token}
 } -result {ok 122879 {Got 122880 bytes} ok {PostStart {Got 122880 bytes}}}
 # On Linux platforms when the client and server are on the same host, the
 # client is unable to read the server's response one it hits the write error.
@@ -316,11 +328,11 @@ test http-3.12.$ThreadLevel {http::geturl querychannel with aborted request} -se
     set file [makeFile $query outdata]
 } -constraints {nonPortable} -body {
     set fp [open $file]
-    proc asyncCB {token} {
+    proc asyncCB {tok} {
 	global postResult
-	lappend postResult [http::data $token]
+	lappend postResult [http::data $tok]
     }
-    proc postProgress {token x y} {
+    proc postProgress {tok x y} {
 	global postProgress
 	lappend postProgress $y
     }
@@ -328,18 +340,18 @@ test http-3.12.$ThreadLevel {http::geturl querychannel with aborted request} -se
     # Now do async
     set postResult [list PostStart]
     if {[catch {
-	set t [http::geturl $badposturl -querychannel $fp -command asyncCB \
+	set token [http::geturl $badposturl -querychannel $fp -command asyncCB \
 		-queryprogress postProgress]
-	http::wait $t
-	upvar #0 $t state
+	http::wait $token
+	upvar #0 $token state
     } err]} {
 	puts $::errorInfo
 	error $err
     }
-    list [http::status $t] [http::code $t]
+    list [http::status $token] [http::code $token]
 } -cleanup {
     removeFile outdata
-    http::cleanup $t
+    catch {http::cleanup $token}
 } -result {ok {HTTP/1.0 200 Data follows}}
 test http-3.13.$ThreadLevel {http::geturl socket leak test} {
     set chanCount [llength [file channels]]
@@ -353,7 +365,7 @@ test http-3.14.$ThreadLevel "http::geturl $fullurl" -body {
     set token [http::geturl $fullurl -validate 1]
     http::code $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result "HTTP/1.0 200 OK"
 test http-3.15.$ThreadLevel {http::geturl parse failures} -body {
     http::geturl "{invalid}:url"
@@ -392,7 +404,7 @@ test http-3.25.$ThreadLevel {http::meta} -setup {
     array set m [http::meta $token]
     lsort [array names m]
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
     unset -nocomplain m token
 } -result {content-length content-type date}
 test http-3.26.$ThreadLevel {http::meta} -setup {
@@ -402,7 +414,7 @@ test http-3.26.$ThreadLevel {http::meta} -setup {
     array set m [http::meta $token]
     lsort [array names m]
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
     unset -nocomplain m token
 } -result {content-length content-type date x-check}
 test http-3.27.$ThreadLevel {http::geturl: -headers override -type} -body {
@@ -410,7 +422,7 @@ test http-3.27.$ThreadLevel {http::geturl: -headers override -type} -body {
 	    -headers [list "Content-Type" "text/plain;charset=utf-8"]]
     http::data $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -match regexp -result {(?n)Host .*
 User-Agent .*
 Content-Type {text/plain;charset=utf-8}
@@ -423,7 +435,7 @@ test http-3.28.$ThreadLevel {http::geturl: -headers override -type default} -bod
 	    -headers [list "Content-Type" "text/plain;charset=utf-8"]]
     http::data $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -match regexp -result {(?n)Host .*
 User-Agent .*
 Content-Type {text/plain;charset=utf-8}
@@ -443,19 +455,19 @@ test http-3.29.$ThreadLevel {http::geturl IPv6 address} -body {
     }
     set error
 } -cleanup {
-    catch { http::cleanup $token }
+    catch {http::cleanup $token}
 } -result 0
 test http-3.30.$ThreadLevel {http::geturl query without path} -body {
     set token [http::geturl $authorityurl?var=val]
     http::ncode $token
 } -cleanup {
-    catch { http::cleanup $token }
+    catch {http::cleanup $token}
 } -result 200
 test http-3.31.$ThreadLevel {http::geturl fragment without path} -body {
     set token [http::geturl "$authorityurl#fragment42"]
     http::ncode $token
 } -cleanup {
-    catch { http::cleanup $token }
+    catch {http::cleanup $token}
 } -result 200
 # Bug c11a51c482
 test http-3.32.$ThreadLevel {http::geturl: -headers override -accept default} -body {
@@ -463,7 +475,7 @@ test http-3.32.$ThreadLevel {http::geturl: -headers override -accept default} -b
 	    -headers [list "Accept" "text/plain,application/tcl-test-value"]]
     http::data $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -match regexp -result {(?n)Host .*
 User-Agent .*
 Accept text/plain,application/tcl-test-value
@@ -476,11 +488,11 @@ test http-3.33.$ThreadLevel {http::geturl application/xml is text} -body {
     set token [http::geturl "$xmlurl"]
     scan [http::data $token] "<%\[^>]>%c<%\[^>]>"
 } -cleanup {
-    catch { http::cleanup $token }
+    catch {http::cleanup $token}
 } -result {test 4660 /test}
 test http-3.34.$ThreadLevel {http::geturl -headers not a list} -returnCodes error -body {
     http::geturl http://test/t -headers \"
-} -result {Bad value for -headers ("), must be list}
+} -result "Bad value for -headers (\"), must be list"
 test http-3.35.$ThreadLevel {http::geturl -headers not even number of elements} -returnCodes error -body {
     http::geturl http://test/t -headers {List Length 3}
 } -result {Bad value for -headers (List Length 3), number of list elements must be even}
@@ -491,7 +503,7 @@ test http-4.1.$ThreadLevel {http::Event} -body {
     array set meta $data(meta)
     expr {($data(totalsize) == $meta(content-length))}
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result 1
 test http-4.2.$ThreadLevel {http::Event} -body {
     set token [http::geturl $url]
@@ -499,13 +511,13 @@ test http-4.2.$ThreadLevel {http::Event} -body {
     array set meta $data(meta)
     string compare $data(type) [string trim $meta(content-type)]
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result 0
 test http-4.3.$ThreadLevel {http::Event} -body {
     set token [http::geturl $url]
     http::code $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result {HTTP/1.0 200 Data follows}
 test http-4.4.$ThreadLevel {http::Event} -setup {
     set testfile [makeFile "" testfile]
@@ -519,7 +531,7 @@ test http-4.4.$ThreadLevel {http::Event} -setup {
     catch {close $in}
     catch {close $out}
     removeFile $testfile
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result "<html><head><title>HTTP/1.0 TEST</title></head><body>
 <h1>Hello, World!</h1>
 <h2>GET $tail</h2>
@@ -535,7 +547,7 @@ test http-4.5.$ThreadLevel {http::Event} -setup {
     expr {$data(currentsize) == $data(totalsize)}
 } -cleanup {
     removeFile $testfile
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result 1
 test http-4.6.$ThreadLevel {http::Event} -setup {
     set testfile [makeFile "" testfile]
@@ -550,7 +562,7 @@ test http-4.6.$ThreadLevel {http::Event} -setup {
     catch {close $in}
     catch {close $out}
     removeFile $testfile
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result "$bindata[string trimleft $binurl /]"
 proc myProgress {token total current} {
     global progress httpLog
@@ -567,25 +579,25 @@ test http-4.7.$ThreadLevel {http::Event} -body {
     set token [http::geturl $url -keepalive 0 -progress myProgress]
     return $progress
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result {111 111}
 test http-4.8.$ThreadLevel {http::Event} -body {
     set token [http::geturl $url]
     http::status $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result {ok}
 test http-4.9.$ThreadLevel {http::Event} -body {
     set token [http::geturl $url -progress myProgress]
     http::code $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result {HTTP/1.0 200 Data follows}
 test http-4.10.$ThreadLevel {http::Event} -body {
     set token [http::geturl $url -progress myProgress]
     http::size $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result {111}
 
 # Timeout cases
@@ -596,7 +608,7 @@ test http-4.11.$ThreadLevel {http::Event} -body {
     http::reset $token
     http::status $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result {reset}
 
 #	Longer timeout with reset.
@@ -605,7 +617,7 @@ test http-4.12.$ThreadLevel {http::Event} -body {
     http::reset $token
     http::status $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result {reset}
 
 #	Medium timeout to working server that waits even longer. The timeout
@@ -615,7 +627,7 @@ test http-4.13.$ThreadLevel {http::Event} -body {
     http::wait $token
     http::status $token
 } -cleanup {
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result {timeout}
 
 #	Longer timeout to good host, bad port, gets an error after the
@@ -633,13 +645,29 @@ test http-4.14.$ThreadLevel {http::Event} -body {
 
 # Bogus host
 test http-4.15.$ThreadLevel {http::Event} -body {
-    # This test may fail if you use a proxy server. That is to be
-    # expected and is not a problem with Tcl.
-    # With http::config -threadlevel 1 or 2, the script enters the event loop
-    # during the DNS lookup, and has the opportunity to time out.
-    # Increase -timeout from 3000 to 10000 to prevent this.
-    set token [http::geturl //not_a_host.tcl.tk -timeout 10000 -command \#]
+    # 1. The test assumes that http is not using a proxy server.
+    #    If http is using a proxy server, the latter is responsible for the DNS
+    #    lookup of the non-existent host. Squid responds with
+    #    "503 Service Unavailable" and an explanatory response body; but other
+    #    proxies may respond differently.
+    # 2. The [socket] command blocks during the DNS lookup.
+    #    - When [socket] runs in the main thread (i.e. when -threadlevel is 0 or
+    #      (if Thread package not available) 1), the script cannot time out
+    #      during a prolonged DNS lookup.
+    #    - When [socket] runs in a separate thread (i.e. when the Thread package
+    #      is available and [http::config -threadlevel] is 1 or 2), the main
+    #      thread enters the event loop and has the opportunity to time out
+    #      during the DNS lookup.  This causes the test to fail.
+    #    - The test uses a long -timeout so that it is not confounded by a slow
+    #      DNS lookup.
+    #    - If the error result is "timeout", this suggests a problem with
+    #      negative DNS lookups on the test host.  Compare the timings for
+    #      different values of threadLevel.
+    # set t0 [clock milliseconds]
+    set token [http::geturl //not-a-host.nodns. -timeout 30000 -command \#]
     http::wait $token
+    # set t1 [clock milliseconds]
+    # puts "Test http-4.15.$ThreadLevel - time taken: [expr {$t1 - $t0}] ms"
     set result "[http::status $token] -- [lindex [http::error $token] 0]"
     # error codes vary among platforms.
 } -cleanup {
@@ -687,7 +715,7 @@ test http-6.1.$ThreadLevel {http::ProxyRequired} -body {
     set data(body)
 } -cleanup {
     http::config -proxyhost {} -proxyport {}
-    http::cleanup $token
+    catch {http::cleanup $token}
 } -result "<html><head><title>HTTP/1.0 TEST</title></head><body>
 <h1>Hello, World!</h1>
 <h2>GET http:$url</h2>
@@ -1185,7 +1213,10 @@ if {[info exists removeHttpd]} {
 }
 
 rename bgerror {}
-::tcltest::cleanupTests
+
+if {[testConstraint ThreadLevelSummary]} {
+    ::tcltest::cleanupTests
+}
 
 # Local variables:
 # mode: tcl

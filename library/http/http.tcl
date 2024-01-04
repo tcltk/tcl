@@ -119,7 +119,7 @@ namespace eval http {
 
     variable urlTypes
     if {![info exists urlTypes]} {
-	set urlTypes(http) [list 80 ::http::socket]
+	set urlTypes(http) [list 80 ::http::AltSocket {} 1 0]
     }
 
     variable encodings [string tolower [encoding names]]
@@ -282,15 +282,34 @@ if {[info command http::Log] eq {}} {proc http::Log {args} {}}
 #     See documentation for details.
 #
 # Arguments:
-#     proto	URL protocol prefix, e.g. https
-#     port	Default port for protocol
-#     command	Command to use to create socket
+#     proto		URL protocol prefix, e.g. https
+#     port		Default port for protocol
+#     command		Command to use to create socket
+#     socketCmdVarName	(optional) name of variable provided by the protocol
+#                       handler whose value is the callback used by argument
+#                       "command" to open a socket. The default value "::socket"
+#                       will be overwritten by http.
+#     useSockThread	(optional, boolean)
+#     endToEndProxy	(optional, boolean)
 # Results:
-#     list of port and command that was registered.
+#     list of port, command, variable name, (boolean) threadability,
+#     and (boolean) endToEndProxy that was registered.
 
-proc http::register {proto port command} {
+proc http::register {proto port command {socketCmdVarName {}} {useSockThread 0} {endToEndProxy 0}} {
     variable urlTypes
-    set urlTypes([string tolower $proto]) [list $port $command]
+    set lower [string tolower $proto]
+    if {[info exists urlTypes($lower)]} {
+        unregister $lower
+    }
+    set urlTypes($lower) [list $port $command $socketCmdVarName $useSockThread $endToEndProxy]
+
+    # If the external handler for protocol $proto has given $socketCmdVarName the expected
+    # value "::socket", overwrite it with the new value.
+    if {($socketCmdVarName ne {}) && ([set $socketCmdVarName] eq {::socket})} {
+	set $socketCmdVarName ::http::socketAsCallback
+    }
+
+    return $urlTypes($lower)
 }
 
 # http::unregister --
@@ -300,7 +319,8 @@ proc http::register {proto port command} {
 # Arguments:
 #     proto	URL protocol prefix, e.g. https
 # Results:
-#     list of port and command that was unregistered.
+#     list of port, command, variable name, (boolean) useSockThread,
+#     and (boolean) endToEndProxy that was unregistered.
 
 proc http::unregister {proto} {
     variable urlTypes
@@ -309,6 +329,13 @@ proc http::unregister {proto} {
 	return -code error "unsupported url type \"$proto\""
     }
     set old $urlTypes($lower)
+
+    # Restore the external handler's original value for $socketCmdVarName.
+    lassign $old defport defcmd socketCmdVarName useSockThread endToEndProxy
+    if {($socketCmdVarName ne {}) && ([set $socketCmdVarName] eq {::http::socketAsCallback})} {
+	set $socketCmdVarName ::socket
+    }
+
     unset urlTypes($lower)
     return $old
 }
@@ -928,22 +955,19 @@ proc http::geturl {url args} {
     variable urlTypes
 
     # - If ::tls::socketCmd has its default value "::socket", change it to the
-    #   new value ::http::socketForTls.
+    #   new value ::http::socketAsCallback.
     # - If the old value is different, then it has been modified either by the
     #   script or by the Tcl installation, and replaced by a new command.  The
     #   script or installation that modified ::tls::socketCmd is also
-    #   responsible for integrating ::http::socketForTls into its own "new"
+    #   responsible for integrating ::http::socketAsCallback into its own "new"
     #   command, if it wishes to do so.
     # - Commands that open a socket:
-    #   - ::socket             - basic
-    #   - ::http::socket       - can use a thread to avoid blockage by slow DNS
-    #                            lookup.  See http::config option -threadlevel.
-    #   - ::http::socketForTls - as ::http::socket, but can also open a socket
-    #                            for HTTPS/TLS through a proxy.
-
-    if {[info exists ::tls::socketCmd] && ($::tls::socketCmd eq {::socket})} {
-        set ::tls::socketCmd ::http::socketForTls
-    }
+    #   - ::socket                 - basic
+    #   - ::http::AltSocket        - can use a thread to avoid blockage by slow
+    #                                DNS lookup.  See http::config option
+    #                                -threadlevel.
+    #   - ::http::socketAsCallback - as ::http::AltSocket, but can also open a
+    #                                socket for HTTPS/TLS through a proxy.
 
     set token [CreateToken $url {*}$args]
     variable $token
@@ -1067,6 +1091,8 @@ proc http::CreateToken {url args} {
 	requestLine     {}
 	transfer        {}
 	proxyUsed       none
+	protoSockThread 0
+	protoProxyConn  0
     }
     set state(-keepalive) $defaultKeepalive
     set state(-strict) $strict
@@ -1261,8 +1287,16 @@ proc http::CreateToken {url args} {
 	unset $token
 	return -code error "Unsupported URL type \"$proto\""
     }
-    set defport [lindex $urlTypes($lower) 0]
-    set defcmd [lindex $urlTypes($lower) 1]
+    lassign $urlTypes($lower) defport defcmd socketCmdVarName useSockThread end2EndProxy
+
+    # If the external handler for protocol $proto has given $socketCmdVarName the expected
+    # value "::socket", overwrite it with the new value.
+    if {($socketCmdVarName ne {}) && ([set $socketCmdVarName] eq {::socket})} {
+	set $socketCmdVarName ::http::socketAsCallback
+    }
+
+    set state(protoSockThread) $useSockThread
+    set state(protoProxyConn) $end2EndProxy
 
     if {$port eq ""} {
 	set port $defport
@@ -1344,12 +1378,12 @@ proc http::CreateToken {url args} {
     }
 
     # Handle proxy requests here for http:// but not for https://
-    # The proxying for https is done in the ::http::socketForTls command.
+    # The proxying for https is done in the ::http::socketAsCallback command.
     # A proxy request for http:// needs the full URL in the HTTP request line,
     # including the server name.
     # The *tls* test below attempts to describe protocols in addition to
     # "https on port 443" that use HTTP over TLS.
-    if {($phost ne "") && (![string match -nocase *tls* $defcmd])} {
+    if {($phost ne "") && (!$end2EndProxy)} {
 	set srvurl $url
 	set targetAddr [list $phost $pport]
 	set state(proxyUsed) HttpProxy
@@ -1369,8 +1403,13 @@ proc http::CreateToken {url args} {
 	lappend sockopts -myaddr $state(-myaddr)
     }
 
+    if {$useSockThread} {
+        set targs [list -type $token]
+    } else {
+        set targs {}
+    }
     set state(connArgs) [list $proto $phost $srvurl]
-    set state(openCmd) [list {*}$defcmd {*}$sockopts -type $token {*}$targetAddr]
+    set state(openCmd) [list {*}$defcmd {*}$sockopts {*}$targs {*}$targetAddr]
 
     # See if we are supposed to use a previously opened channel.
     # - In principle, ANY call to http::geturl could use a previously opened
@@ -4946,11 +4985,11 @@ interp alias {} http::ncode {} http::responseCode
 
 
 # ------------------------------------------------------------------------------
-#  Proc http::socketForTls
+#  Proc http::socketAsCallback
 # ------------------------------------------------------------------------------
 # Command to use in place of ::socket as the value of ::tls::socketCmd.
-# This command does the same as http::socket, and also handles https connections
-# through a proxy server.
+# This command does the same as http::AltSocket, and also handles https
+# connections through a proxy server.
 #
 # Notes.
 # - The proxy server works differently for https and http.  This implementation
@@ -4967,12 +5006,23 @@ interp alias {} http::ncode {} http::responseCode
 # Return Value: a socket identifier
 # ------------------------------------------------------------------------------
 
-proc http::socketForTls {args} {
+proc http::socketAsCallback {args} {
     variable http
+
+    set targ [lsearch -exact $args -type]
+    if {$targ != -1} {
+        set token [lindex $args $targ+1]
+        upvar 0 ${token} state
+        set protoProxyConn $state(protoProxyConn)
+    } else {
+        set protoProxyConn 0
+    }
+
     set host [lindex $args end-1]
     set port [lindex $args end]
     if {    ($http(-proxyfilter) ne {})
          && (![catch {$http(-proxyfilter) $host} proxy])
+         && $protoProxyConn
     } {
         set phost [lindex $proxy 0]
         set pport [lindex $proxy 1]
@@ -4981,7 +5031,7 @@ proc http::socketForTls {args} {
         set pport {}
     }
     if {$phost eq ""} {
-        set sock [::http::socket {*}$args]
+        set sock [::http::AltSocket {*}$args]
     } else {
         set sock [::http::SecureProxyConnect {*}$args $phost $pport]
     }
@@ -5036,8 +5086,8 @@ proc http::SecureProxyConnect {args} {
     # Elements of args other than host and port are not used when
     # AsyncTransaction opens a socket.  Those elements are -async and the
     # -type $tokenName for the https transaction.  Option -async is used by
-    # AsyncTransaction anyway, and -type $tokenName should not be propagated:
-    # the proxy request adds its own -type value.
+    # AsyncTransaction anyway, and -type $tokenName should not be
+    # propagated: the proxy request adds its own -type value.
 
     set targ [lsearch -exact $args -type]
     if {$targ != -1} {
@@ -5182,14 +5232,14 @@ proc http::AllDone {varName args} {
 
 
 # ------------------------------------------------------------------------------
-#  Proc http::socket
+#  Proc http::AltSocket
 # ------------------------------------------------------------------------------
 # This command is a drop-in replacement for ::socket.
 # Arguments and return value as for ::socket.
 #
 # Notes.
-# - http::socket is specified in place of ::socket by the definition of urlTypes
-#   in the namespace header of this file (http.tcl).
+# - http::AltSocket is specified in place of ::socket by the definition of
+#   urlTypes in the namespace header of this file (http.tcl).
 # - The command makes a simple call to ::socket unless the user has called
 #   http::config to change the value of -threadlevel from the default value 0.
 # - For -threadlevel 1 or 2, if the Thread package is available, the command
@@ -5200,18 +5250,20 @@ proc http::AllDone {varName args} {
 # - FIXME The peer thread can transfer the socket only to the main interpreter
 #   in the present thread.  Therefore this code works only if this script runs
 #   in the main interpreter.  In a child interpreter, the parent must alias a
-#   command to ::http::socket in the child, run http::socket in the parent,
-#   and then transfer the socket to the child.
-# - The http::socket command is simple, and can easily be replaced with an
+#   command to ::http::AltSocket in the child, run http::AltSocket in the
+#   parent, and then transfer the socket to the child.
+# - The http::AltSocket command is simple, and can easily be replaced with an
 #   alternative command that uses a different technique to open a socket while
 #   entering the event loop.
 # - Unexpected behaviour by thread::send -async (Thread 2.8.6).
 #   An error in thread::send -async causes return of just the error message
 #   (not the expected 3 elements), and raises a bgerror in the main thread.
 #   Hence wrap the command with catch as a precaution.
+# - Bug in Thread 2.8.8 - on Windows, read/write operations fail on a socket
+#   moved from another thread by thread::transfer.
 # ------------------------------------------------------------------------------
 
-proc http::socket {args} {
+proc http::AltSocket {args} {
     variable ThreadVar
     variable ThreadCounter
     variable http
@@ -5225,7 +5277,8 @@ proc http::socket {args} {
         upvar 0 $token state
     }
 
-    if {!$http(usingThread)} {
+    if {$http(usingThread) && [info exists state] && $state(protoSockThread)} {
+    } else {
         # Use plain "::socket".  This is the default.
         return [eval ::socket $args]
     }
@@ -5281,7 +5334,7 @@ proc http::socket {args} {
     return -options $errdict -code $catchCode $sock
 }
 
-# The commands below are dependencies of http::socket and
+# The commands below are dependencies of http::AltSocket and
 # http::SecureProxyConnect and are not used elsewhere.
 
 # ------------------------------------------------------------------------------
@@ -5293,13 +5346,17 @@ proc http::socket {args} {
 # value 1 => operate as if -threadlevel 0
 # value 2 => error return
 #
+# The command assigns a value to http(usingThread), which records whether
+# command http::AltSocket can use a separate thread.
+#
 # Arguments: none
 # Return Value: none
 # ------------------------------------------------------------------------------
 
 proc http::LoadThreadIfNeeded {} {
     variable http
-    if {$http(usingThread) || ($http(-threadlevel) == 0)} {
+    if {$http(-threadlevel) == 0} {
+        set http(usingThread) 0
         return
     }
     if {[catch {package require Thread}]} {
@@ -5308,6 +5365,7 @@ proc http::LoadThreadIfNeeded {} {
                      but the Thread package is not available}
             return -code error $msg
         }
+        set http(usingThread) 0
         return
     }
     set http(usingThread) 1
@@ -5318,7 +5376,7 @@ proc http::LoadThreadIfNeeded {} {
 # ------------------------------------------------------------------------------
 #  Proc http::SockInThread
 # ------------------------------------------------------------------------------
-# Command http::socket is a ::socket replacement.  It defines and runs this
+# Command http::AltSocket is a ::socket replacement.  It defines and runs this
 # command, http::SockInThread, in a peer thread.
 #
 # Arguments:

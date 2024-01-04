@@ -39,9 +39,10 @@ jobs:
     runs-on: macos-11
     strategy:
       matrix:
-        cfgopt:
+        config:
           - ""
           - "--disable-shared"
+          - "--disable-zipfs"
           - "--enable-symbols"
           - "--enable-symbols=mem"
           - "--enable-symbols=all"
@@ -58,12 +59,12 @@ jobs:
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
           mkdir "$HOME/install dir"
         working-directory: generic
-      - name: Configure ${{ matrix.cfgopt }}
+      - name: Configure ${{ matrix.config }}
         # Note that macOS is always a 64 bit platform
         run: ./configure --enable-dtrace --enable-framework ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
         env:
           CFLAGS: -arch x86_64 -arch arm64
-          CFGOPT: ${{ matrix.cfgopt }}
+          CFGOPT: ${{ matrix.config }}
         timeout-minutes: 5
       - name: Build
         run: |

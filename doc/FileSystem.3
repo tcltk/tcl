@@ -270,7 +270,12 @@ allowed for the \fImode\fR argument to the Tcl \fBopen\fR command.
 POSIX-style permission flags such as 0644. If a new file is created, these
 permissions will be set on the created file.
 .AP "Tcl_Size \&| int" *lenPtr out
-If non-NULL, filled with the number of elements in the split path.
+Filled with the number of elements in the split path.
+May be (Tcl_Size *)NULL when not used. If it points to a variable which
+type is not \fBTcl_Size\fR, a compiler warning will be generated.
+If your extensions is compiled with -DTCL_8_API, this function will return
+NULL for paths having more than INT_MAX elements (which should
+trigger proper error-handling), otherwise expect it to crash.
 .AP Tcl_Obj *basePtr in
 The base path on to which to join the given elements. May be NULL.
 .AP Tcl_Size objc in
@@ -649,7 +654,7 @@ filesystem object.
 It returns 1 if the paths are equal, and 0 if they are different. If
 either path is NULL, 0 is always returned.
 .PP
-\fBTcl_FSGetNormalizedPath\fR this important function attempts to extract
+\fBTcl_FSGetNormalizedPath\fR attempts to extract
 from the given Tcl_Obj a unique normalized path representation, whose
 string value can be used as a unique identifier for the file.
 .PP

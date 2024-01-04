@@ -677,8 +677,19 @@ EnvTraceProc(
 
     if (flags & TCL_TRACE_WRITES) {
 	const char *value;
+	Tcl_DString ds;
 
 	value = Tcl_GetVar2(interp, "env", name2, TCL_GLOBAL_ONLY);
+	Tcl_DStringInit(&ds);
+	if (Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, name2, -1, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return (char *) "encoding error";
+	}
+	if (Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, value, -1, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_DStringFree(&ds);
+	    return (char *) "encoding error";
+	}
+	Tcl_DStringFree(&ds);
 	TclSetEnv(name2, value);
 	TclEnvEpoch++;
     }

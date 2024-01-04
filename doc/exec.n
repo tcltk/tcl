@@ -234,6 +234,36 @@ processor (\fBcmd.exe /c\fR), because this causes truncation of command-line
 (also the argument chain) on the first newline character.
 But it works properly with an executable (using CommandLineToArgv, etc).
 .PP
+\fBArgument quoting\fR
+.RS
+The arguments of the \fBexec\fR command are mapped to the arguments of the called
+program. Additional quote characters (\fB"\fR) are automatically  added around
+arguments if expected. Special characters are escaped by inserting backslash
+characters.
+.PP
+The MS-Windows environment does execute programs mentioned in the arguments and
+called batch files (conspec) replace environment variables, which may have side
+effects (vulnerabilities) or break any already existing quoting (for example,
+if the environment variable contains a special character like a \fB"\fR).
+Examples are:
+.CS
+% exec my-echo.cmd {test&whoami}
+  test
+  mylogin
+% exec my-echo.cmd "ENV X:%X%"
+  ENV X: CONTENT OF X
+.CE
+The following formatting is automatically performed on any
+argument item to avoid subprogram execution:
+Any special character argument containing a special character (\fB&\fR, \fB|\fR,
+\fB^\fR, \fB<\fR, \fB>\fR, \fB!\fR, \fB(\fR, \fB)\fR, \fB(\fR, \fB%\fR)
+is automatically enclosed in quotes (\fB"\fR). Any data quote is escaped by
+insertion of backslash characters.
+.PP
+The automatic resolving of environment variables using "\fB%var%\fR" is critical,
+but has more use than danger and is not escaped.
+.RE
+.PP
 The Tk console text widget does not provide real standard IO capabilities.
 Under Tk, when redirecting from standard input, all applications will see an
 immediate end-of-file; information redirected to standard output or standard

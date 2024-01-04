@@ -472,7 +472,7 @@ MemoryAllocationError(
 		"list construction failed: unable to alloc %" TCL_Z_MODIFIER
 		"u bytes",
 		size));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
     }
     return TCL_ERROR;
 }
@@ -499,7 +499,7 @@ ListLimitExceededError(Tcl_Interp *interp)
 	Tcl_SetObjResult(
 	    interp,
 	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (void *)NULL);
     }
     return TCL_ERROR;
 }
@@ -2981,7 +2981,7 @@ TclLsetFlat(
 		                 "VALUE",
 		                 "INDEX"
 		                 "OUTOFRANGE",
-		                 NULL);
+		                 (void *)NULL);
 	    }
 	    result = TCL_ERROR;
 	    break;
@@ -3169,9 +3169,9 @@ TclListObjSetElement(
     if ((index < 0) || (index >= elemCount)) {
 	if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%" TCL_SIZE_MODIFIER "u\" out of range", index));
+			"index \"%" TCL_SIZE_MODIFIER "d\" out of range", index));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX",
-		    "OUTOFRANGE", NULL);
+		    "OUTOFRANGE", (void *)NULL);
 	}
 	return TCL_ERROR;
     }
@@ -3480,7 +3480,7 @@ UpdateStringOfList(
 #   define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
     Tcl_Size numElems, i, length;
-    TCL_HASH_TYPE bytesNeeded = 0;
+    size_t bytesNeeded = 0;
     const char *elem, *start;
     char *dst;
     Tcl_Obj **elemPtrs;

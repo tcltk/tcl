@@ -691,6 +691,7 @@ TCL_PATCH_LEVEL
 TCL_MINOR_VERSION
 TCL_MAJOR_VERSION
 TCL_VERSION
+TCL_BUILDTIME_LIBRARY
 INSTALL_MSGS
 INSTALL_LIBRARIES
 TCL_ZIP_FILE
@@ -8089,9 +8090,7 @@ printf "%s\n" "$ac_cv_c_bigendian" >&6; }
    no)
       ;; #(
    universal)
-
-printf "%s\n" "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
-
+     #
      ;; #(
    *)
      as_fn_error $? "unknown endianness
@@ -10964,6 +10963,12 @@ INSTALL_LIBRARIES=install-libraries
 INSTALL_MSGS=install-msgs
 fi
 
+# Point to tcl script library if we are not embedding it.
+if test "${ZIPFS_BUILD}" = 0; then
+TCL_BUILDTIME_LIBRARY=${TCL_SRC_DIR}/library
+fi
+
+
 
 
 
@@ -11208,7 +11213,6 @@ DEFS=`sed -n "$ac_script" confdefs.h`
 
 
 CFLAGS="${CFLAGS} ${CPPFLAGS}"; CPPFLAGS=""
-
 
 : "${CONFIG_STATUS=./config.status}"
 ac_write_fail=0

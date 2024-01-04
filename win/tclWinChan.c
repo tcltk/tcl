@@ -80,7 +80,7 @@ static int		FileCloseProc(void *instanceData,
 static int		FileEventProc(Tcl_Event *evPtr, int flags);
 static int		FileGetHandleProc(void *instanceData,
 			    int direction, void **handlePtr);
-static int		FileGetOptionProc(ClientData instanceData,
+static int		FileGetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
 static ThreadSpecificData *FileInit(void);
@@ -894,7 +894,7 @@ StatOpenFile(
 
 static int
 FileGetOptionProc(
-    ClientData instanceData,	/* The file state. */
+    void *instanceData,	/* The file state. */
     Tcl_Interp *interp,		/* For error reporting. */
     const char *optionName,	/* What option to read, or NULL for all. */
     Tcl_DString *dsPtr)		/* Where to write the value read. */
@@ -1167,7 +1167,7 @@ TclpOpenFileChannel(
 		"couldn't open \"%s\": bad file type",
 		TclGetString(pathPtr)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "BAD_TYPE",
-		NULL);
+		(void *)NULL);
 	break;
     }
 

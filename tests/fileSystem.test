@@ -64,12 +64,13 @@ apply {{} {
 
 	set dir [pwd]
 	try {
-	    foreach vol [file volumes] {
-		if {![catch {cd $vol}]} {
-		    lappend drives $vol
-		}
-	    }
-	    testConstraint moreThanOneDrive [llength $drives]
+            set drives [lmap vol [file volumes] {
+                if {$vol eq [zipfs root] || [catch {cd $vol}]} {
+                    continue
+                }
+                set vol
+            }]
+	    testConstraint moreThanOneDrive [expr {[llength $drives] > 1}]
 	} finally {
 	    cd $dir
 	}
@@ -280,7 +281,7 @@ test filesystem-1.30.3 {file normalization should distinguish between ~ and ~use
     set olduserhome [file home $::tcl_platform(user)]
     set ::env(HOME) [file join $oldhome temp]
 } -cleanup {
-    set env(HOME) $oldhome
+    set ::env(HOME) $oldhome
 } -body {
     list [string equal [file home] $::env(HOME)] \
         [string equal $olduserhome [file home $::tcl_platform(user)]]

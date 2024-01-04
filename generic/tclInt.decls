@@ -137,14 +137,15 @@ declare 46 {
 declare 51 {
     int TclInterpInit(Tcl_Interp *interp)
 }
-declare 53 {
-    int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
-	    int argc, const char **argv)
-}
-declare 54 {
-    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
-}
+# Removed in 9.0
+#declare 53 {
+#    int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
+#	    Tcl_Size argc, const char **argv)
+#}
+#declare 54 {
+#    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
+#	    Tcl_Size objc, Tcl_Obj *const objv[])
+#}
 declare 55 {
     Proc *TclIsProc(Command *cmdPtr)
 }
@@ -162,12 +163,13 @@ declare 61 {
 declare 62 {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
-declare 63 {
-    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
-}
+# Removed in 9.0:
+#declare 63 {
+#    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
+#	    Tcl_Size objc, Tcl_Obj *const objv[])
+#}
 declare 64 {
-    int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
+    int TclObjInvoke(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	    int flags)
 }
 declare 69 {
@@ -379,12 +381,6 @@ declare 151 {
     void TclRegExpRangeUniChar(Tcl_RegExp re, Tcl_Size index, Tcl_Size *startPtr,
 	    Tcl_Size *endPtr)
 }
-declare 152 {
-    void TclSetLibraryPath(Tcl_Obj *pathPtr)
-}
-declare 153 {
-    Tcl_Obj *TclGetLibraryPath(void)
-}
 declare 156 {
     void TclRegError(Tcl_Interp *interp, const char *msg,
 	    int status)
@@ -445,7 +441,7 @@ declare 166 {
 #}
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
 declare 169 {
-    int TclpUtfNcmp2(const char *s1, const char *s2, size_t n)
+    int TclpUtfNcmp2(const void *s1, const void *s2, size_t n)
 }
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
@@ -548,8 +544,26 @@ declare 217 {
 declare 218 {
     void TclPopStackFrame(Tcl_Interp *interp)
 }
+# TIP 431: temporary directory creation function
+declare 219 {
+    Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
+	    Tcl_Obj *basenameObj)
+}
 
 # for use in tclTest.c
+
+# TIP 625: for unit testing - create list objects with span
+declare 221 {
+    Tcl_Obj *TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
+}
+# TIP 625: for unit testing - check list invariants
+declare 222 {
+    void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+}
+# Bug 7371b6270b
+declare 223 {
+    void *TclGetCStackPtr(void)
+}
 declare 224 {
     TclPlatformType *TclGetPlatform(void)
 }
@@ -609,7 +623,7 @@ declare 237 {
 # include NRE.h too.
 declare 238 {
     int TclNRInterpProc(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
+	    Tcl_Size objc, Tcl_Obj *const objv[])
 }
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
@@ -698,20 +712,8 @@ declare 257 {
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 
-# TIP 431: temporary directory creation function
-declare 258 {
-    Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
-	    Tcl_Obj *basenameObj)
-}
-
-# TIP 625: for unit testing - create list objects with span
-declare 260 {
-    Tcl_Obj *TclListTestObj(size_t length, size_t leadingSpace, size_t endSpace)
-}
-
-# TIP 625: for unit testing - check list invariants
 declare 261 {
-    void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+    void TclUnusedStubEntry(void)
 }
 
 ##############################################################################
@@ -751,7 +753,7 @@ declare 7 {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 8 {
-    size_t TclpGetPid(Tcl_Pid pid)
+    Tcl_Size TclpGetPid(Tcl_Pid pid)
 }
 declare 9 {
     TclFile TclpCreateTempFile(const char *contents)
@@ -772,7 +774,7 @@ declare 17 {
 	    const Tcl_StatBuf *statBufPtr, int dontCopyAtts)
 }
 declare 20 {
-    void TclWinAddProcess(void *hProcess, size_t id)
+    void TclWinAddProcess(void *hProcess, Tcl_Size id)
 }
 declare 24 {
     char *TclWinNoBackslash(char *path)

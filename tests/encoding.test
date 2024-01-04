@@ -39,10 +39,6 @@ testConstraint testencoding [llength [info commands testencoding]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint teststringbytes [llength [info commands teststringbytes]]
 testConstraint exec [llength [info commands exec]]
-testConstraint testgetencpath [llength [info commands testgetencpath]]
-testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
-testConstraint utf32 [expr {[testConstraint fullutf]
-		&& [string length [format %c 0x10000]] == 1}]
 
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
@@ -343,7 +339,7 @@ test encoding-15.5 {UtfToUtfProc emoji character input} {
     set y [encoding convertfrom utf-8 \xF0\x9F\x98\x82]
     list [string length $x] $y
 } "4 😂"
-test encoding-15.6 {UtfToUtfProc emoji character output} utf32 {
+test encoding-15.6 {UtfToUtfProc emoji character output} {
     set x \uDE02\uD83D\uDE02\uD83D
     set y [encoding convertto -profile tcl8 utf-8 \uDE02\uD83D\uDE02\uD83D]
     binary scan $y H* z
@@ -452,10 +448,7 @@ test encoding-15.24 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
 test encoding-15.25 {UtfToUtfProc CESU-8} {
     encoding convertfrom cesu-8 \x00
 } \x00
-test {encoding-15.26 cesu-8 tclnull strict} {UtfToUtfProc CESU-8} {
-    encoding convertfrom -profile tcl8 cesu-8 \xC0\x80
-} \x00
-test {encoding-15.26 cesu-8 tclnull tcl8} {UtfToUtfProc CESU-8} {
+test encoding-15.26 {UtfToUtfProc CESU-8} {
     encoding convertfrom -profile tcl8 cesu-8 \xC0\x80
 } \x00
 test encoding-15.27 {UtfToUtfProc -profile strict CESU-8} {
@@ -495,18 +488,18 @@ test encoding-16.5 {Ucs2ToUtfProc} -body {
     list $val [format %x [scan $val %c]]
 } -result "\U460DC 460dc"
 test encoding-16.6 {Utf32ToUtfProc} -body {
-    set val [encoding convertfrom -profile strict utf-32le NN\0\0]
+    set val [encoding convertfrom utf-32le NN\0\0]
     list $val [format %x [scan $val %c]]
 } -result "乎 4e4e"
 test encoding-16.7 {Utf32ToUtfProc} -body {
-    set val [encoding convertfrom -profile strict utf-32be \0\0NN]
+    set val [encoding convertfrom utf-32be \0\0NN]
     list $val [format %x [scan $val %c]]
 } -result "乎 4e4e"
 test encoding-16.8 {Utf32ToUtfProc} -body {
     set val [encoding convertfrom -profile tcl8 utf-32 \x41\x00\x00\x41]
     list $val [format %x [scan $val %c]]
 } -result "\uFFFD fffd"
-test encoding-16.9 {Utf32ToUtfProc} -constraints utf32 -body {
+test encoding-16.9 {Utf32ToUtfProc} -body {
     encoding convertfrom -profile tcl8 utf-32le \x00\xD8\x00\x00
 } -result \uD800
 test encoding-16.10 {Utf32ToUtfProc} -body {
@@ -515,7 +508,7 @@ test encoding-16.10 {Utf32ToUtfProc} -body {
 test encoding-16.11 {Utf32ToUtfProc} -body {
     encoding convertfrom -profile tcl8 utf-32le \x00\xD8\x00\x00\x00\xDC\x00\x00
 } -result \uD800\uDC00
-test encoding-16.12 {Utf32ToUtfProc} -constraints utf32 -body {
+test encoding-16.12 {Utf32ToUtfProc} -body {
     encoding convertfrom -profile tcl8 utf-32le \x00\xDC\x00\x00\x00\xD8\x00\x00
 } -result \uDC00\uD800
 test encoding-16.13 {Utf16ToUtfProc} -body {
@@ -553,23 +546,24 @@ test encoding-16.18 {
 	return done
     } [namespace current]]
 } -result done
-test {encoding-16.19 strict} {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
+test encoding-16.19.strict {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
     encoding convertfrom -profile strict utf-16 "\x41\x41\x41"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 2: '\x41'}
-test {encoding-16.19 tcl8} {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
+test encoding-16.19.tcl8 {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
     encoding convertfrom -profile tcl8 utf-16 "\x41\x41\x41"
 } -result \u4141\uFFFD
-test encoding-16.20 {utf16ToUtfProc, bug [d19fe0a5b]} \
-    -constraints deprecated -body {
-    encoding convertfrom utf-16 "\xD8\xD8"
+test encoding-16.20.tcl8 {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
+    encoding convertfrom -profile tcl8 utf-16 "\xD8\xD8"
 } -result \uD8D8
+test encoding-16.20.strict {Utf16ToUtfProc, bug [d19fe0a5b]} -body {
+    encoding convertfrom -profile strict utf-16 "\xD8\xD8"
+} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xD8'}
 test encoding-16.21.tcl8 {Utf32ToUtfProc, bug [d19fe0a5b]} -body {
     encoding convertfrom -profile tcl8 utf-32 "\x00\x00\x00\x00\x41\x41"
 } -result \x00\uFFFD
 test encoding-16.21.strict {Utf32ToUtfProc, bug [d19fe0a5b]} -body {
     encoding convertfrom -profile strict utf-32 "\x00\x00\x00\x00\x41\x41"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 4: '\x41'}
-
 test encoding-16.22 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
     encoding convertfrom -profile strict utf-16le \x00\xD8
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x00'}
@@ -579,10 +573,10 @@ test encoding-16.23 {Utf16ToUtfProc, strict, bug [db7a085bd9]} -body {
 test encoding-16.24 {Utf32ToUtfProc} -body {
     encoding convertfrom -profile tcl8 utf-32 "\xFF\xFF\xFF\xFF"
 } -result \uFFFD
-test {encoding-16.25 strict} {Utf32ToUtfProc} -body {
+test encoding-16.25.strict {Utf32ToUtfProc} -body {
     encoding convertfrom -profile strict utf-32 "\x01\x00\x00\x01"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\x01'}
-test {encoding-16.25 tcl8} {Utf32ToUtfProc} -body {
+test encoding-16.25.tcl8 {Utf32ToUtfProc} -body {
     encoding convertfrom -profile tcl8 utf-32 "\x01\x00\x00\x01"
 } -result \uFFFD
 
@@ -767,10 +761,10 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     list $count $line
 } [list 3 乎乞也]
 
-test {encoding-24.4 utf-8 invalid strict} {Parse invalid utf-8, strict} -body {
+test encoding-24.4.strict {Parse invalid utf-8, strict} -body {
     encoding convertfrom -profile strict utf-8 "\xC0\x80"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
-test {encoding-24.4 utf-8 invalid tcl8} {UtfToUtfProc utf-8} {
+test encoding-24.4.tcl8 {UtfToUtfProc utf-8} {
     encoding convertfrom -profile tcl8 utf-8 \xC0\x80
 } \x00
 test encoding-24.5 {Parse valid or invalid utf-8} {
@@ -795,14 +789,20 @@ test encoding-24.11 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom -profile tcl8 utf-8 "\xEF\xBF\xBF"]
 } 1
 test encoding-24.12 {Parse invalid utf-8} -body {
+    encoding convertfrom -profile tcl8 utf-8 "\xC0\x81"
+} -result \xC0\x81
+test encoding-24.12.1 {Parse invalid utf-8} -body {
     encoding convertfrom -profile strict utf-8 "\xC0\x81"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
 test encoding-24.13 {Parse invalid utf-8} -body {
+    encoding convertfrom -profile tcl8 utf-8 "\xC1\xBF"
+} -result \xC1\xBF
+test encoding-24.13.1 {Parse invalid utf-8} -body {
     encoding convertfrom -profile strict utf-8 "\xC1\xBF"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC1'}
 test encoding-24.14 {Parse valid utf-8} {
-    expr {[encoding convertfrom utf-8 "\xC2\x80"] eq "\u80"}
-} 1
+    encoding convertfrom utf-8 "\xC2\x80"
+} \x80
 test encoding-24.15.strict {Parse invalid utf-8, -profile strict} -body {
     encoding convertfrom -profile strict utf-8 "Z\xE0\x80"
 } -returnCodes 1 -result "unexpected byte sequence starting at index 1: '\\xE0'"
@@ -869,7 +869,7 @@ test encoding-24.33 {Try to generate invalid utf-8} -body {
 test encoding-24.34 {Try to generate invalid utf-8 with -profile tcl8} -body {
     encoding convertto -profile tcl8 utf-8 \uFFFF
 } -result \xEF\xBF\xBF
-test encoding-24.35 {Parse invalid utf-8} -constraints utf32 -body {
+test encoding-24.35 {Parse invalid utf-8} -body {
     encoding convertfrom -profile tcl8 utf-8 \xED\xA0\x80
 } -result \uD800
 test encoding-24.36 {Parse invalid utf-8 with -profile strict} -body {
@@ -1028,15 +1028,13 @@ foreach from {cp932 shiftjis euc-jp iso2022-jp} {
     }
 }
 
-test encoding-26.0 {Tcl_GetEncodingSearchPath} -constraints {
-    testgetencpath
-} -setup {
-    set origPath [testgetencpath]
-    testsetencpath slappy
+test encoding-26.0 {Tcl_GetEncodingSearchPath} -setup {
+    set origPath [encoding dirs]
+    encoding dirs slappy
 } -body {
-    testgetencpath
+    encoding dirs
 } -cleanup {
-    testsetencpath $origPath
+    encoding dirs $origPath
 } -result slappy
 
 file delete {*}[glob -directory [temporaryDirectory] *.chars *.tcltestout]
