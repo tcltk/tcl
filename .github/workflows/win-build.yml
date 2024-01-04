@@ -22,34 +22,39 @@ jobs:
       matrix:
         config:
           - ""
-          - "OPTS=symbols"
-          - "OPTS=symbols STATS=compdbg,memdbg"
           - "OPTS=static,msvcrt"
           - "OPTS=static,staticpkg,msvcrt"
+          - "OPTS=symbols"
+          - "OPTS=symbols STATS=compdbg,memdbg"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        timeout-minutes: 5
       - name: Init MSVC
         uses: ilammy/msvc-dev-cmd@v1
+        timeout-minutes: 5
       - name: Build ${{ matrix.config }}
         run: |
           &nmake -f makefile.vc ${{ matrix.config }} all
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
+        timeout-minutes: 5
       - name: Build Test Harness ${{ matrix.config }}
         run: |
           &nmake -f makefile.vc ${{ matrix.config }} tcltest
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
+        timeout-minutes: 5
       - name: Run Tests ${{ matrix.config }}
         run: |
           &nmake -f makefile.vc ${{ matrix.config }} test
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
+        timeout-minutes: 30
   gcc:
     runs-on: windows-2022
     defaults:
@@ -71,8 +76,10 @@ jobs:
         with:
           msystem: MINGW64
           install: git mingw-w64-x86_64-toolchain make
+        timeout-minutes: 10
       - name: Checkout
         uses: actions/checkout@v4
+        timeout-minutes: 5
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c
@@ -83,9 +90,16 @@ jobs:
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
         env:
           CFGOPT: --enable-64bit ${{ matrix.config }}
+        timeout-minutes: 5
       - name: Build
         run: make all
+        timeout-minutes: 5
       - name: Build Test Harness
         run: make tcltest
+        timeout-minutes: 5
       - name: Run Tests
         run: make test
+        timeout-minutes: 30
+
+# If you add builds with Wine, be sure to define the environment variable
+# CI_USING_WINE when running them so that broken tests know not to run.
