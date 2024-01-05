@@ -1093,7 +1093,7 @@ SUFX	    = $(SUFX:x=)
 !else
 TMP_DIRFULL = $(TMP_DIRFULL:Dynamic=)
 EXT	    = lib
-!if !$(MSVCRT)
+!if $(MSVCRT) && $(TCL_VERSION) > 86 || !$(MSVCRT) && $(TCL_VERSION) < 87
 TMP_DIRFULL = $(TMP_DIRFULL:X=)
 SUFX	    = $(SUFX:x=)
 !endif
