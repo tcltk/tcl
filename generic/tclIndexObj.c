@@ -504,8 +504,8 @@ PrefixMatchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int flags = 0, result, dummy, i;
-    Tcl_Size dummyLength, errorLength;
+    int flags = 0, result, i;
+    Tcl_Size dummy, dummyLength, errorLength;
     Tcl_Obj *errorPtr = NULL;
     const char *message = "option";
     Tcl_Obj *tablePtr, *objPtr, *resultPtr;
