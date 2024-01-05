@@ -2023,6 +2023,7 @@ PKG_CFG_ARGS		= @PKG_CFG_ARGS@
 # cannot use absolute paths due to issues in nested configure when path to
 # build dir contains spaces).
 PKG_DIR			= ./pkgs
+PKG8_DIR			= ./pkgs8
 
 configure-packages:
 	@for i in $(PKGS_DIR)/*; do \
@@ -2030,6 +2031,14 @@ configure-packages:
 		if [ -x $$i/configure ] ; then \
 		    pkg=`basename $$i`; \
 		    echo "Configuring package '$$pkg'"; \
+		    mkdir -p $(PKG8_DIR)/$$pkg; \
+		    if [ ! -f $(PKG8_DIR)/$$pkg/Makefile ] ; then \
+			( cd $(PKG8_DIR)/$$pkg; \
+			  $$i/configure --with-tcl8 --with-tcl=../.. \
+			      --with-tclinclude=$(GENERIC_DIR) \
+			      $(PKG_CFG_ARGS) --libdir=$(PACKAGE_DIR) \
+			      --enable-shared; ) || exit $$?; \
+		    fi; \
 		    mkdir -p $(PKG_DIR)/$$pkg; \
 		    if [ ! -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 			( cd $(PKG_DIR)/$$pkg; \
@@ -2046,6 +2055,10 @@ packages: configure-packages ${STUB_LIB_FILE}
 	@for i in $(PKGS_DIR)/*; do \
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
+		if [ -f $(PKG8_DIR)/$$pkg/Makefile ] ; then \
+		    echo "Building package '$$pkg' for Tcl 8"; \
+		    ( cd $(PKG8_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
+		fi; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 		    echo "Building package '$$pkg'"; \
 		    ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
@@ -2057,6 +2070,11 @@ install-packages: packages
 	@for i in $(PKGS_DIR)/*; do \
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
+		if [ -f $(PKG8_DIR)/$$pkg/Makefile ] ; then \
+		    echo "Installing package '$$pkg' for Tcl 8"; \
+		    ( cd $(PKG8_DIR)/$$pkg; $(MAKE) install \
+			  "DESTDIR=$(INSTALL_ROOT)"; ) || exit $$?; \
+		fi; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 		    echo "Installing package '$$pkg'"; \
 		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) install \
@@ -2084,6 +2102,9 @@ clean-packages:
 	@for i in $(PKGS_DIR)/*; do \
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
+		if [ -f $(PKG8_DIR)/$$pkg/Makefile ] ; then \
+		    ( cd $(PKG8_DIR)/$$pkg; $(MAKE) clean; ) \
+		fi; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
 		fi; \
@@ -2094,12 +2115,17 @@ distclean-packages:
 	@for i in $(PKGS_DIR)/*; do \
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
+		if [ -f $(PKG8_DIR)/$$pkg/Makefile ] ; then \
+		    ( cd $(PKG8_DIR)/$$pkg; $(MAKE) distclean; ) \
+		fi; \
+		rm -rf $(PKG8_DIR)/$$pkg; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
 		fi; \
 		rm -rf $(PKG_DIR)/$$pkg; \
 	    fi; \
 	done; \
+	rm -rf $(PKG8_DIR)
 	rm -rf $(PKG_DIR)
 
 dist-packages: configure-packages
