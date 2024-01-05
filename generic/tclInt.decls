@@ -426,7 +426,7 @@ declare 167 {deprecated {use public Tcl_SetStartupScript()}} {
 declare 168 {deprecated {use public Tcl_GetStartupScript()}} {
     Tcl_Obj *TclGetStartupScriptPath(void)
 }
-# variant of Tcl_UtfNCmp that takes n as bytes, not chars
+# variant of Tcl_UtfNcmp that takes n as bytes, not chars
 declare 169 {
     int TclpUtfNcmp2(const char *s1, const char *s2, unsigned long n)
 }
