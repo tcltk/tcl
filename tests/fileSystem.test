@@ -31,7 +31,9 @@ catch {
     set ::ddelib [lindex [package ifneeded dde $::ddever] 1]
     set ::regver  [package require registry]
     set ::reglib [lindex [package ifneeded registry $::regver] 1]
-    testConstraint loaddll 1
+    if {[file extension $::reglib] eq ".dll"} {
+	testConstraint loaddll 1
+    }
 }
 
 # Test for commands defined in Tcltest executable
