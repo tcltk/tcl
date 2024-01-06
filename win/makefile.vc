@@ -17,13 +17,13 @@
 #   nmake [-nologo] -f makefile.vc [TARGET|MACRODEF [TARGET|MACRODEF] [...]]
 #
 # For MACRODEF, see TIP 477 (https://core.tcl-lang.org/tips/doc/main/tip/477.md)
-# or examine Sections 6-8 in rules.vc.
+# or examine Sections 7-9 in rules.vc.
 #
-# Possible values of TARGET are:
+# Possible values for TARGET are:
 #	release  -- Builds everything that ships with a release. (default)
 #	core     -- Builds the core [tclXX.(dll|lib)]
 #	shell    -- Builds tclsh and the core.
-#	dlls     -- Just builds the windows extensions
+#	dlls     -- Just builds the windows extensions.
 #	all      -- Builds everything.
 #	test     -- Builds and runs the test suite.
 #	tcltest  -- Just builds the test shell.
@@ -47,9 +47,9 @@
 # Visual Studio/Windows SDK for the appropriate target architecture.
 #
 # NOTE: For older (Visual C++ 6 or the 2003 SDK), to use the Platform
-# SDK (not expressly needed), run setenv.bat after
-# vcvars32.bat according to the instructions for it.  This can also
-# turn on the 64-bit compiler, if your SDK has it.
+# SDK (not expressly needed), run setenv.bat after vcvars32.bat
+# according to the instructions for it.  This can also turn on the
+# 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
 #	OPTS=nomsvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,unchecked,none
@@ -134,10 +134,10 @@ PROJECT = tcl
 # rules.vc file will set up "all" as the target.
 DEFAULT_BUILD_TARGET = release
 
-# We want to use our own resource file, not the standard template one.
+# We have a custom resource file
 RCFILE = tcl.rc
 
-# The rules.vc file does most of the hard work in terms of defining
+# The rules.vc file does much of the hard work in terms of defining
 # the build configuration, macros, output directories etc.
 !include "rules.vc"
 

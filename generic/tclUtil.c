@@ -3963,36 +3963,6 @@ TclIndexDecode(
 /*
  *------------------------------------------------------------------------
  *
- * TclIndexInvalidError --
- *
- *    Generates an error message including the invalid index.
- *
- * Results:
- *    Always return TCL_ERROR.
- *
- * Side effects:
- *    If interp is not-NULL, an error message is stored in it.
- *
- *------------------------------------------------------------------------
- */
-int
-TclIndexInvalidError (
-    Tcl_Interp *interp,   /* May be NULL */
-    const char *idxType,  /* The descriptive string for idx. Defaults to "index" */
-    Tcl_Size idx)         /* Invalid index value */
-{
-    if (interp) {
-	Tcl_SetObjResult(interp,
-			 Tcl_ObjPrintf("Invalid %s value %" TCL_SIZE_MODIFIER "d.",
-				       idxType ? idxType : "index",
-				       idx));
-    }
-    return TCL_ERROR; /* Always */
-}
-
-/*
- *------------------------------------------------------------------------
- *
  * TclCommandWordLimitErrpr --
  *
  *    Generates an error message limit on number of command words exceeded.
