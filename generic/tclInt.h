@@ -4066,8 +4066,6 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int before, int after, int *indexPtr);
 MODULE_SCOPE Tcl_Size	TclIndexDecode(int encoded, Tcl_Size endValue);
-MODULE_SCOPE int	TclIndexInvalidError(Tcl_Interp *interp,
-			    const char *idxType, Tcl_Size idx);
 
 /*
  * Error message utility functions
