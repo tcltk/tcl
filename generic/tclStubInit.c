@@ -357,15 +357,6 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     return result;
 }
 #define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
-static int utfNcmp(const char *s1, const char *s2, unsigned int n){
-   return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
-}
-#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcmp
-static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
-   return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
-}
-#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))(void *)utfNcasecmp
-
 #endif /* TCL_WIDE_INT_IS_LONG */
 
 #else /* __CYGWIN__ */
