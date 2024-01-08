@@ -553,6 +553,7 @@ Tcl_WinTCharToUtf(
  * signature. Tcl 9 must find a better solution, but that cannot be done
  * without introducing a binary incompatibility.
  */
+#define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)Tcl_GetIntFromObj
 static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
@@ -568,7 +569,7 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     }
     return result;
 }
-#define Tcl_ExprLong (int(*)(Tcl_Interp*,const char*,long*))exprInt
+#define Tcl_ExprLong (int(*)(Tcl_Interp*,const char*,long*))(void *)exprInt
 static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLongObj(interp, expr, &longValue);
@@ -584,7 +585,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     }
     return result;
 }
-#define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
+#define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)exprIntObj
 static int utfNcmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
 }
