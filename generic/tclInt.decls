@@ -434,7 +434,7 @@ declare 166 {
 #declare 168 {
 #    Tcl_Obj *TclGetStartupScriptPath(void)
 #}
-# variant of Tcl_UtfNCmp that takes n as bytes, not chars
+# variant of Tcl_UtfNcmp that takes n as bytes, not chars
 declare 169 {
     int TclpUtfNcmp2(const void *s1, const void *s2, size_t n)
 }

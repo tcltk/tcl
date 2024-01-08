@@ -14,7 +14,6 @@
  */
 
 #include "tclInt.h"
-#include <assert.h>
 
 /*
  * Prototypes for functions defined later in this file:
@@ -22,7 +21,7 @@
 
 static int		GetIndexFromObjList(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Obj *tableObjPtr,
-			    const char *msg, int flags, int *indexPtr);
+			    const char *msg, int flags, Tcl_Size *indexPtr);
 static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
 static void		DupIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		FreeIndex(Tcl_Obj *objPtr);
@@ -56,8 +55,8 @@ const Tcl_ObjType tclIndexType = {
 
 typedef struct {
     void *tablePtr;		/* Pointer to the table of strings */
-    Tcl_Size offset;			/* Offset between table entries */
-    Tcl_Size index;			/* Selected index into table. */
+    Tcl_Size offset;	/* Offset between table entries */
+    Tcl_Size index;		/* Selected index into table. */
 } IndexRep;
 
 /*
@@ -105,7 +104,7 @@ GetIndexFromObjList(
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
     int flags,			/* 0 or TCL_EXACT */
-    int *indexPtr)		/* Place to store resulting integer index. */
+    Tcl_Size *indexPtr)		/* Place to store resulting index. */
 {
 
     Tcl_Size objc, t;
@@ -123,9 +122,6 @@ GetIndexFromObjList(
 	return result;
     }
 
-    /* Return type is int* so caller should not be passing larger table */
-    assert(objc <= INT_MAX);
-
     /*
      * Build a string table from the list.
      */
@@ -137,8 +133,8 @@ GetIndexFromObjList(
 	     * An exact match is always chosen, so we can stop here.
 	     */
 
-	    Tcl_Free((void *)tablePtr);
-	    *indexPtr = (int) t;
+	    Tcl_Free(tablePtr);
+	    *indexPtr = t;
 	    return TCL_OK;
 	}
 
@@ -149,7 +145,7 @@ GetIndexFromObjList(
     result = Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr,
 	    sizeof(char *), msg, flags | TCL_INDEX_TEMP_TABLE, indexPtr);
 
-    Tcl_Free((void *)tablePtr);
+    Tcl_Free(tablePtr);
 
     return result;
 }
@@ -205,8 +201,13 @@ Tcl_GetIndexFromObjStruct(
     IndexRep *indexRep;
     const Tcl_ObjInternalRep *irPtr;
 
-    if (offset < (Tcl_Size) sizeof(char *)) {
-	return TclIndexInvalidError(interp, "struct offset", offset);
+    if (offset < (Tcl_Size)sizeof(char *)) {
+	if (interp) {
+	    Tcl_SetObjResult(interp,
+			Tcl_ObjPrintf("Invalid %s value %" TCL_SIZE_MODIFIER "d.",
+				"struct offset", offset));
+	}
+    return TCL_ERROR;
     }
     /*
      * See if there is a valid cached result from a previous lookup.
@@ -334,29 +335,29 @@ Tcl_GetIndexFromObjStruct(
 	}
 	Tcl_AppendStringsToObj(resultPtr,
 		(numAbbrev>1 && !(flags & TCL_EXACT) ? "ambiguous " : "bad "),
-		msg, " \"", key, (void *)NULL);
+		msg, " \"", key, (char *)NULL);
 	if (*entryPtr == NULL) {
-	    Tcl_AppendStringsToObj(resultPtr, "\": no valid options", (void *)NULL);
+	    Tcl_AppendStringsToObj(resultPtr, "\": no valid options", (char *)NULL);
 	} else {
 	    Tcl_AppendStringsToObj(resultPtr, "\": must be ",
-		    *entryPtr, (void *)NULL);
+		    *entryPtr, (char *)NULL);
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    while (*entryPtr != NULL) {
 		if ((*NEXT_ENTRY(entryPtr, offset) == NULL) && !(flags & TCL_NULL_OK)) {
 		    Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : ""),
-			    " or ", *entryPtr, (void *)NULL);
+			    " or ", *entryPtr, (char *)NULL);
 		} else if (**entryPtr) {
-		    Tcl_AppendStringsToObj(resultPtr, ", ", *entryPtr, (void *)NULL);
+		    Tcl_AppendStringsToObj(resultPtr, ", ", *entryPtr, (char *)NULL);
 		    count++;
 		}
 		entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    }
 	    if ((flags & TCL_NULL_OK)) {
-		Tcl_AppendStringsToObj(resultPtr, ", or \"\"", (void *)NULL);
+		Tcl_AppendStringsToObj(resultPtr, ", or \"\"", (char *)NULL);
 	    }
 	}
 	Tcl_SetObjResult(interp, resultPtr);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, (char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -507,8 +508,8 @@ PrefixMatchObjCmd(
     Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int flags = 0, result, dummy;
-    Tcl_Size dummyLength, errorLength, i;
+    int flags = 0, result;
+    Tcl_Size errorLength, i;
     Tcl_Obj *errorPtr = NULL;
     const char *message = "option";
     Tcl_Obj *tablePtr, *objPtr, *resultPtr;
@@ -536,8 +537,8 @@ PrefixMatchObjCmd(
 	case PRFMATCH_MESSAGE:
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing value for -message", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (void *)NULL);
+			"missing value for -message", TCL_INDEX_NONE));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -546,8 +547,8 @@ PrefixMatchObjCmd(
 	case PRFMATCH_ERROR:
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing value for -error", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (void *)NULL);
+			"missing value for -error", TCL_INDEX_NONE));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -559,7 +560,7 @@ PrefixMatchObjCmd(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"error options must have an even number of elements",
 			-1));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", (void *)NULL);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    errorPtr = objv[i];
@@ -575,13 +576,13 @@ PrefixMatchObjCmd(
      * error case regardless of level.
      */
 
-    result = TclListObjLengthM(interp, tablePtr, &dummyLength);
+    result = TclListObjLengthM(interp, tablePtr, &i);
     if (result != TCL_OK) {
 	return result;
     }
 
     result = GetIndexFromObjList(interp, objPtr, tablePtr, message, flags,
-	    &dummy);
+	    &i);
     if (result != TCL_OK) {
 	if (errorPtr != NULL && errorLength == 0) {
 	    Tcl_ResetResult(interp);
@@ -600,7 +601,7 @@ PrefixMatchObjCmd(
 	return Tcl_SetReturnOptions(interp, errorPtr);
     }
 
-    result = Tcl_ListObjIndex(interp, tablePtr, dummy, &resultPtr);
+    result = Tcl_ListObjIndex(interp, tablePtr, i, &resultPtr);
     if (result != TCL_OK) {
 	return result;
     }
@@ -805,7 +806,7 @@ PrefixLongestObjCmd(
 void
 Tcl_WrongNumArgs(
     Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,		/* Number of arguments to print from objv. */
+    Tcl_Size objc,			/* Number of arguments to print from objv. */
     Tcl_Obj *const objv[],	/* Initial argument objects, which should be
 				 * included in the error message. */
     const char *message)	/* Error message to print after the leading
@@ -822,9 +823,9 @@ Tcl_WrongNumArgs(
     if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
 	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_AppendObjToObj(objPtr, Tcl_GetObjResult(interp));
-	Tcl_AppendToObj(objPtr, " or \"", -1);
+	Tcl_AppendToObj(objPtr, " or \"", TCL_INDEX_NONE);
     } else {
-	Tcl_AppendToObj(objPtr, "wrong # args: should be \"", -1);
+	Tcl_AppendToObj(objPtr, "wrong # args: should be \"", TCL_INDEX_NONE);
     }
 
     /*
@@ -892,8 +893,8 @@ Tcl_WrongNumArgs(
 	     * moderately complex condition here).
 	     */
 
-	    if (i<toPrint-1 || objc!=0 || message!=NULL) {
-		Tcl_AppendStringsToObj(objPtr, " ", (void *)NULL);
+	    if (i + 1 < toPrint || objc!=0 || message!=NULL) {
+		Tcl_AppendStringsToObj(objPtr, " ", (char *)NULL);
 	    }
 	}
     }
@@ -915,7 +916,7 @@ Tcl_WrongNumArgs(
 	if ((irPtr = TclFetchInternalRep(objv[i], &tclIndexType))) {
 	    IndexRep *indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
 
-	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), (void *)NULL);
+	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), (char *)NULL);
 	} else {
 	    /*
 	     * Quote the argument if it contains spaces (Bug 942757).
@@ -943,7 +944,7 @@ Tcl_WrongNumArgs(
 	 */
 
 	if (i + 1 < objc || message!=NULL) {
-	    Tcl_AppendStringsToObj(objPtr, " ", (void *)NULL);
+	    Tcl_AppendStringsToObj(objPtr, " ", (char *)NULL);
 	}
     }
 
@@ -954,10 +955,10 @@ Tcl_WrongNumArgs(
      */
 
     if (message != NULL) {
-	Tcl_AppendStringsToObj(objPtr, message, (void *)NULL);
+	Tcl_AppendStringsToObj(objPtr, message, (char *)NULL);
     }
-    Tcl_AppendStringsToObj(objPtr, "\"", (void *)NULL);
-    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (void *)NULL);
+    Tcl_AppendStringsToObj(objPtr, "\"", (char *)NULL);
+    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
     Tcl_SetObjResult(interp, objPtr);
 }
 
@@ -1012,13 +1013,13 @@ Tcl_ParseArgsObjv(
 				 * quick check for matching; use 2nd char.
 				 * because first char. will almost always be
 				 * '-'). */
-    Tcl_Size srcIndex;		/* Location from which to read next argument
+    Tcl_Size srcIndex;	/* Location from which to read next argument
 				 * from objv. */
-    Tcl_Size dstIndex;		/* Used to keep track of current arguments
+    Tcl_Size dstIndex;	/* Used to keep track of current arguments
 				 * being processed, primarily for error
 				 * reporting. */
-    Tcl_Size objc;			/* # arguments in objv still to process. */
-    Tcl_Size length;			/* Number of characters in current argument */
+    Tcl_Size objc;		/* # arguments in objv still to process. */
+    Tcl_Size length;		/* Number of characters in current argument */
 
     if (remObjv != NULL) {
 	/*
@@ -1180,12 +1181,11 @@ Tcl_ParseArgsObjv(
 	    Tcl_ArgvGenFuncProc *handlerProc = (Tcl_ArgvGenFuncProc *)
 		    infoPtr->srcPtr;
 
-	    int i = handlerProc(infoPtr->clientData, interp, (int) objc,
+	    objc = handlerProc(infoPtr->clientData, interp, (int)objc,
 		    &objv[srcIndex], infoPtr->dstPtr);
-	    if (i < 0) {
+	    if (objc < 0) {
 		goto error;
 	    }
-	    objc = i;
 	    break;
 	}
 	case TCL_ARGV_HELP:
@@ -1291,7 +1291,7 @@ PrintUsage(
      * Now add the option information, with pretty-printing.
      */
 
-    msg = Tcl_NewStringObj("Command-specific options:", -1);
+    msg = Tcl_NewStringObj("Command-specific options:", TCL_INDEX_NONE);
     for (infoPtr = argTable; infoPtr->type != TCL_ARGV_END; infoPtr++) {
 	if ((infoPtr->type == TCL_ARGV_HELP) && (infoPtr->keyStr == NULL)) {
 	    Tcl_AppendPrintfToObj(msg, "\n%s", infoPtr->helpStr);
@@ -1307,7 +1307,7 @@ PrintUsage(
 	    }
 	    numSpaces -= NUM_SPACES;
 	}
-	Tcl_AppendToObj(msg, infoPtr->helpStr, -1);
+	Tcl_AppendToObj(msg, infoPtr->helpStr, TCL_INDEX_NONE);
 	switch (infoPtr->type) {
 	case TCL_ARGV_INT:
 	    Tcl_AppendPrintfToObj(msg, "\n\t\tDefault value: %d",
@@ -1379,7 +1379,7 @@ TclGetCompletionCodeFromObj(
 		"bad completion code \"%s\": must be"
 		" ok, error, return, break, continue, or an integer",
 		TclGetString(value)));
-	Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", (void *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", (char *)NULL);
     }
     return TCL_ERROR;
 }
