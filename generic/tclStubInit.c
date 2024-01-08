@@ -3,7 +3,7 @@
  *
  *	This file contains the initializers for the Tcl stub vectors.
  *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -371,7 +371,7 @@ Tcl_WinTCharToUtf(
  * signature. Tcl 9 must find a better solution, but that cannot be done
  * without introducing a binary incompatibility.
  */
-#define Tcl_DbNewLongObj ((Tcl_Obj*(*)(long,const char*,int))(void *)dbNewLongObj)
+#define Tcl_DbNewLongObj (Tcl_Obj*(*)(long,const char*,int))(void *)dbNewLongObj
 static Tcl_Obj *dbNewLongObj(
     int intValue,
     const char *file,
@@ -408,7 +408,7 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     }
     return result;
 }
-#define Tcl_ExprLong (int(*)(Tcl_Interp*,const char*,long*))exprInt
+#define Tcl_ExprLong (int(*)(Tcl_Interp*,const char*,long*))(void *)exprInt
 static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLongObj(interp, expr, &longValue);
@@ -424,7 +424,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     }
     return result;
 }
-#define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
+#define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)exprIntObj
 static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
    return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
 }
