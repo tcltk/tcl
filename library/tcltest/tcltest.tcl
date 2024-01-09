@@ -16,7 +16,6 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 
-package require Tcl 8.5-		;# -verbose line uses [info frame]
 namespace eval tcltest {
 
     # When the version number changes, be sure to update the pkgIndex.tcl file,
@@ -25,10 +24,12 @@ namespace eval tcltest {
     variable Version 2.5.6
 
     # Compatibility support for dumb variables defined in tcltest 1
-    # Do not use these.  Call [package provide Tcl] and [info patchlevel]
+    # Do not use these.  Call [package require] and [info patchlevel]
     # yourself.  You don't need tcltest to wrap it for you.
-    variable version [package provide Tcl]
+    variable version [package require Tcl 8.5-]
     variable patchLevel [info patchlevel]
+
+    # Detect if we can use code points >= \U10000
     variable fullutf [package vsatisfies $version 8.7-]
 
 ##### Export the public tcltest procs; several categories
@@ -42,7 +43,7 @@ namespace eval tcltest {
 	    outputChannel testConstraint
 
     # Export commands that are duplication (candidates for deprecation)
-    if {![package vsatisfies [package provide Tcl] 8.7-]} {
+    if {!$fullutf} {
 	namespace export bytestring	;# dups [encoding convertfrom identity]
     }
     namespace export debug		;#	[configure -debug]
@@ -346,6 +347,7 @@ namespace eval tcltest {
     proc outputChannel { {filename ""} } {
 	variable outputChannel
 	variable ChannelsWeOpened
+	variable fullutf
 
 	# This is very subtle and tricky, so let me try to explain.
 	# (Hopefully this longer comment will be clear when I come
@@ -400,7 +402,7 @@ namespace eval tcltest {
 	    }
 	    default {
 		set outputChannel [open $filename a]
-		if {[package vsatisfies [package provide Tcl] 8.7-]} {
+		if {$fullutf} {
 		    fconfigure $outputChannel -profile tcl8 -encoding utf-8
 		}
 		set ChannelsWeOpened($outputChannel) 1
@@ -428,6 +430,7 @@ namespace eval tcltest {
     proc errorChannel { {filename ""} } {
 	variable errorChannel
 	variable ChannelsWeOpened
+	variable fullutf
 
 	# This is subtle and tricky.  See the comment above in
 	# [outputChannel] for a detailed explanation.
@@ -447,7 +450,7 @@ namespace eval tcltest {
 	    }
 	    default {
 		set errorChannel [open $filename a]
-		if {[package vsatisfies [package provide Tcl] 8.7-]} {
+		if {$fullutf} {
 		    fconfigure $errorChannel -profile tcl8 -encoding utf-8
 		}
 		set ChannelsWeOpened($errorChannel) 1
@@ -790,9 +793,11 @@ namespace eval tcltest {
     }
     proc ReadLoadScript {args} {
 	variable Option
+	variable fullutf
+
 	if {$Option(-loadfile) eq {}} {return}
 	set tmp [open $Option(-loadfile) r]
-	if {[package vsatisfies [package provide Tcl] 8.7-]} {
+	if {$fullutf} {
 	    fconfigure $tmp -profile tcl8 -encoding utf-8
 	}
 	loadScript [read $tmp]
@@ -1151,14 +1156,13 @@ proc tcltest::SafeFetch {n1 n2 op} {
 #       None.
 
 proc tcltest::Asciify {s} {
-    variable fullutf
     set print ""
     foreach c [split $s ""] {
         if {[string is print $c] && (($c <= "\x7E") || ($c == "\n"))} {
             append print $c
         } elseif {$c < "\u0100"} {
             append print \\x[format %02X [scan $c %c]]
-        } elseif {$fullutf && ($c >= "\U10000")} {
+        } elseif {$c > "\uFFFF"} {
             append print \\U[format %08X [scan $c %c]]
         } else {
             append print \\u[format %04X [scan $c %c]]
@@ -1370,9 +1374,11 @@ proc tcltest::DefineConstraintInitializers {} {
     }
 
     ConstraintInitializer stdio {
+	variable fullutf
+
 	set code 0
 	if {![catch {set f [open "|[list [interpreter]]" w]}]} {
-	    if {[package vsatisfies [package provide Tcl] 8.7-]} {
+	    if {$fullutf} {
 		fconfigure $f -profile tcl8 -encoding utf-8
 	    }
 	    if {![catch {puts $f exit}]} {
@@ -1917,6 +1923,8 @@ proc tcltest::test {name description args} {
     global tcl_platform
     variable testLevel
     variable coreModTime
+    variable fullutf
+
     DebugPuts 3 "test $name $args"
     DebugDo 1 {
 	variable TestNames
@@ -2222,7 +2230,7 @@ proc tcltest::test {name description args} {
 	    set testFile [file normalize [uplevel 1 {info script}]]
 	    if {[file readable $testFile]} {
 		set testFd [open $testFile r]
-		if {[package vsatisfies [package provide Tcl] 8.7-]} {
+		if {$fullutf} {
 		    fconfigure $testFd -profile tcl8 -encoding utf-8
 		}
 		set testLine [expr {[lsearch -regexp \
@@ -2853,6 +2861,7 @@ proc tcltest::runAllTests { {shell ""} } {
     variable numTests
     variable failFiles
     variable DefaultValue
+    variable fullutf
 
     FillFilesExisted
     if {[llength [info level 0]] == 1} {
@@ -2938,7 +2947,7 @@ proc tcltest::runAllTests { {shell ""} } {
 	    if {[catch {
 		incr numTestFiles
 		set pipeFd [open $cmd "r"]
-		if {[package vsatisfies [package provide Tcl] 8.7-]} {
+		if {$fullutf} {
 		    fconfigure $pipeFd -profile tcl8 -encoding utf-8
 		}
 		while {[gets $pipeFd line] >= 0} {
@@ -3125,6 +3134,8 @@ proc tcltest::normalizeMsg {msg} {
 
 proc tcltest::makeFile {contents name {directory ""}} {
     variable filesMade
+    variable fullutf
+
     FillFilesExisted
 
     if {[llength [info level 0]] == 3} {
@@ -3138,7 +3149,7 @@ proc tcltest::makeFile {contents name {directory ""}} {
 
     set fd [open $fullName w]
     fconfigure $fd -translation lf
-    if {[package vsatisfies [package provide Tcl] 8.7-]} {
+    if {$fullutf} {
 	fconfigure $fd -profile tcl8 -encoding utf-8
     }
     if {[string index $contents end] eq "\n"} {
@@ -3283,13 +3294,15 @@ proc tcltest::removeDirectory {name {directory ""}} {
 #	None.
 
 proc tcltest::viewFile {name {directory ""}} {
+    variable fullutf
+
     FillFilesExisted
     if {[llength [info level 0]] == 2} {
 	set directory [temporaryDirectory]
     }
     set fullName [file join $directory $name]
     set f [open $fullName]
-    if {[package vsatisfies [package provide Tcl] 8.7-]} {
+    if {$fullutf} {
 	fconfigure $f -profile tcl8 -encoding utf-8
     }
     set data [read -nonewline $f]
@@ -3325,7 +3338,7 @@ proc tcltest::viewFile {name {directory ""}} {
 # Side effects:
 #	None
 
-if {![package vsatisfies [package provide Tcl] 8.7-]} {
+if {!$::tcltest::fullutf} {
     proc tcltest::bytestring {string} {
 	return [encoding convertfrom identity $string]
     }
