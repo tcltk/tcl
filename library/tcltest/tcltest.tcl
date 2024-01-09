@@ -2583,7 +2583,7 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	# loop is running, which is the real issue.
 	# Actually, this doesn't belong here at all.  A package
 	# really has no business [exit]-ing an application.
-	if {![catch {package present Tk}] && ![testConstraint interactive]} {
+	if {![info exists ::tk_version] && ![testConstraint interactive]} {
 	    exit
 	}
     } else {
