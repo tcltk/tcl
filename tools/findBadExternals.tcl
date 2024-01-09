@@ -16,38 +16,34 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #----------------------------------------------------------------------
 
-proc main {argc argv} {
-
-    if {$argc != 1} {
+proc main {argv} {
+    if {[llength $argv] != 1} {
 	puts stderr "syntax is: [info script] libtcl"
 	return 1
     }
 
-
-    switch -exact -- $::tcl_platform(platform) {
-	unix -
-	macosx {
-	    set status [catch {
+    try {
+	switch -exact -- $::tcl_platform(platform) {
+	    unix - macosx {
 		exec nm --extern-only --defined-only [lindex $argv 0]
-	    } result]
-	}
-	windows {
-	    set status [catch {
+	    }
+	    windows {
 		exec dumpbin /exports [lindex $argv 0]
-	    } result]
+	    }
 	}
-    }
-    if {$status != 0 && $::errorCode ne "NONE"} {
-	puts $result
+    } trap NONE {} {
+	# Nothing to do
+    } on error msg {
+	puts stderr $msg
 	return 1
-    }
-
-    foreach line [split $result \n] {
-	if {! [string match {* [Tt]cl*} $line]} {
-	    puts $line
+    } on ok result {
+	foreach line [split $result \n] {
+	    if {! [string match {* [Tt]cl*} $line]} {
+		puts $line
+	    }
 	}
     }
 
     return 0
 }
-exit [main $::argc $::argv]
+exit [main $::argv]

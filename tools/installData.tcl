@@ -18,7 +18,6 @@ exec tclsh "$0" ${1+"$@"}
 #----------------------------------------------------------------------
 
 proc copyDir {d1 d2} {
-
     puts [format {%*sCreating %s} [expr {4 * [info level]}] {} \
 	      [file tail $d2]]
 
@@ -27,7 +26,7 @@ proc copyDir {d1 d2} {
 
     foreach ftail [glob -directory $d1 -nocomplain -tails *] {
 	set f [file join $d1 $ftail]
-	if {[file isdirectory $f] && [string compare CVS $ftail]} {
+	if {[file isdirectory $f] && "CVS" ne $ftail} {
 	    copyDir $f [file join $d2 $ftail]
 	} elseif {[file isfile $f]} {
 	    file copy -force $f [file join $d2 $ftail]
@@ -44,7 +43,6 @@ proc copyDir {d1 d2} {
     } else {
 	file attributes $d2 -readonly 1
     }
-
 }
 
 copyDir [file normalize [lindex $argv 0]] [file normalize [lindex $argv 1]]

@@ -12,7 +12,7 @@
 # Initialize message delimiter
 
 # Initialize command array
-catch {unset command}
+unset -nocomplain command
 set command(0) ""
 set callerSocket ""
 
@@ -30,22 +30,23 @@ proc __doCommands__ {l s} {
 	puts "---"
     }
     set callerSocket $s
-    set ::errorInfo ""
-    set code [catch {uplevel "#0" $l} msg]
-    return [list $code $::errorInfo $msg]
+    set code [catch {
+	uplevel "#0" $l
+    } msg opt]
+    return [list $code [dict getdef $opt -errorinfo ""] $msg]
 }
 
 proc __readAndExecute__ {s} {
     global command VERBOSE
 
     set l [gets $s]
-    if {[string compare $l "--Marker--Marker--Marker--"] == 0} {
+    if {$l eq "--Marker--Marker--Marker--"} {
         puts $s [__doCommands__ $command($s) $s]
 	puts $s "--Marker--Marker--Marker--"
         set command($s) ""
 	return
     }
-    if {[string compare $l ""] == 0} {
+    if {$l eq ""} {
 	if {[eof $s]} {
 	    if {$VERBOSE} {
 		puts "Server closing $s, eof from client"
@@ -76,24 +77,14 @@ proc __accept__ {s a p} {
     fileevent $s readable [list __readAndExecute__ $s]
 }
 
-set serverIsSilent 0
-for {set i 0} {$i < $argc} {incr i} {
-    if {[string compare -serverIsSilent [lindex $argv $i]] == 0} {
-	set serverIsSilent 1
-	break
-    }
+set serverIsSilent [expr {"-serverIsSilent" in $argv}]
+if {![info exists serverPort] && [info exists env(serverPort)]} {
+    set serverPort $env(serverPort)
 }
 if {![info exists serverPort]} {
-    if {[info exists env(serverPort)]} {
-	set serverPort $env(serverPort)
-    }
-}
-if {![info exists serverPort]} {
-    for {set i 0} {$i < $argc} {incr i} {
-	if {[string compare -port [lindex $argv $i]] == 0} {
-	    if {$i < $argc - 1} {
-		set serverPort [lindex $argv [expr {$i + 1}]]
-	    }
+    for {set i 0} {$i < $argc - 1} {incr i} {
+	if {"-port" eq [lindex $argv $i]} {
+	    set serverPort [lindex $argv [expr {$i + 1}]]
 	    break
 	}
     }
@@ -102,17 +93,13 @@ if {![info exists serverPort]} {
     set serverPort 2048
 }
 
-if {![info exists serverAddress]} {
-    if {[info exists env(serverAddress)]} {
-	set serverAddress $env(serverAddress)
-    }
+if {![info exists serverAddress] && [info exists env(serverAddress)]} {
+    set serverAddress $env(serverAddress)
 }
 if {![info exists serverAddress]} {
-    for {set i 0} {$i < $argc} {incr i} {
-	if {[string compare -address [lindex $argv $i]] == 0} {
-	    if {$i < $argc - 1} {
-		set serverAddress [lindex $argv [expr {$i + 1}]]
-	    }
+    for {set i 0} {$i < $argc - 1} {incr i} {
+	if {"-address" eq [lindex $argv $i]} {
+	    set serverAddress [lindex $argv [expr {$i + 1}]]
 	    break
 	}
     }
@@ -125,8 +112,7 @@ if {$serverIsSilent == 0} {
     set l "Remote server listening on port $serverPort, IP $serverAddress."
     puts ""
     puts $l
-    for {set c [string length $l]} {$c > 0} {incr c -1} {puts -nonewline "-"}
-    puts ""
+    puts [regsub -all . $l -]
     puts ""
     puts "You have set the Tcl variables serverAddress to $serverAddress and"
     puts "serverPort to $serverPort. You can set these with the -address and"
@@ -150,10 +136,12 @@ proc getPort sock {
     lindex [fconfigure $sock -sockname] 2
 }
 
-if {[catch {set serverSocket \
-	[socket -myaddr $serverAddress -server __accept__ $serverPort]} msg]} {
+try {
+    set serverSocket \
+	[socket -myaddr $serverAddress -server __accept__ $serverPort]
+} on error msg {
     puts "Server on $serverAddress:$serverPort cannot start: $msg"
-} else {
-    puts ready
-    vwait __server_wait_variable__
+    exit 1
 }
+puts ready
+vwait __server_wait_variable__

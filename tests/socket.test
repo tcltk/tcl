@@ -270,11 +270,11 @@ if {[testConstraint doTestsWithRemoteServer]} {
 	if {[eof $commandSocket]} {
 	    error "remote server disappeared"
 	}
-	if {[catch {puts $commandSocket $c} msg]} {
+	try {
+	    puts $commandSocket $c
+	    puts $commandSocket "--Marker--Marker--Marker--"
+	} on error msg {
 	    error "remote server disappaered: $msg"
-	}
-	if {[catch {puts $commandSocket "--Marker--Marker--Marker--"} msg]} {
-	    error "remote server disappeared: $msg"
 	}
 
 	while {1} {

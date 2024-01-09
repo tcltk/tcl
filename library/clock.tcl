@@ -21,8 +21,12 @@
 uplevel \#0 {
     package require msgcat 1.6
     if { $::tcl_platform(platform) eq {windows} } {
-	if { [catch { package require registry 1.1 }] } {
-	    namespace eval ::tcl::clock [list variable NoRegistry {}]
+	try { 
+	    package require registry 1.1 
+	} on error {} {
+	    namespace eval ::tcl::clock {
+		variable NoRegistry {}
+	    }
 	}
     }
 }
@@ -682,7 +686,9 @@ proc ::tcl::clock::format { args } {
 	set timezone [GetSystemTimeZone]
     }
     if {![info exists TZData($timezone)]} {
-	if {[catch {SetupTimeZone $timezone} retval opts]} {
+	try {
+	    SetupTimeZone $timezone
+	} on error {retval opts} {
 	    dict unset opts -errorinfo
 	    return -options $opts $retval
 	}
@@ -761,7 +767,7 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
     foreach char [split $format {}] {
 	switch -exact -- $state {
 	    {} {
-		if { [string equal % $char] } {
+		if { "%" eq $char } {
 		    set state percent
 		} else {
 		    append formatString $char
@@ -1206,7 +1212,7 @@ proc ::tcl::clock::scan { args } {
     # Set defaults
 
     set base [clock seconds]
-    set string [lindex $args 0]
+    set args [lassign $args string]
     set format {}
     set gmt 0
     set locale c
@@ -1214,32 +1220,26 @@ proc ::tcl::clock::scan { args } {
 
     # Pick up command line options.
 
-    foreach { flag value } [lreplace $args 0 0] {
-	switch -exact -- $flag {
-	    -b - -ba - -bas - -base {
+    set OPTIONS {-base -format -gmt -locale -timezone}
+    foreach { flag value } $args {
+	set options [list -errorcode [list CLOCK badOption $flag] -level 1]
+	set expanded [tcl::prefix match -error $options $OPTIONS $flag]
+	set saw($expanded) {}
+	switch -exact -- $expanded {
+	    -base {
 		set base $value
 	    }
-	    -f - -fo - -for - -form - -forma - -format {
-		set saw(-format) {}
+	    -format {
 		set format $value
 	    }
-	    -g - -gm - -gmt {
-		set saw(-gmt) {}
+	    -gmt {
 		set gmt $value
 	    }
-	    -l - -lo - -loc - -loca - -local - -locale {
-		set saw(-locale) {}
+	    -locale {
 		set locale [string tolower $value]
 	    }
-	    -t - -ti - -tim - -time - -timez - -timezo - -timezon - -timezone {
-		set saw(-timezone) {}
+	    -timezone {
 		set timezone $value
-	    }
-	    default {
-		return -code error \
-		    -errorcode [list CLOCK badOption $flag] \
-		    "bad option \"$flag\",\
-		     must be -base, -format, -gmt, -locale or -timezone"
 	    }
 	}
     }
@@ -1251,7 +1251,9 @@ proc ::tcl::clock::scan { args } {
 	    -errorcode [list CLOCK gmtWithTimezone] \
 	    "cannot use -gmt and -timezone in same call"
     }
-    if { [catch { expr { wide($base) } } result] } {
+    try { 
+	expr { wide($base) }
+    } on error {} {
 	return -code error "expected integer but got \"$base\""
     }
     if { ![string is boolean -strict $gmt] } {
@@ -2372,10 +2374,11 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
     variable NoRegistry
     if { [info exists NoRegistry] } return
 
-    if { ![catch {
-	registry get "HKEY_CURRENT_USER\\Control Panel\\International" \
-	    sShortDate
-    } string] } {
+    const KEY "HKEY_CURRENT_USER\\Control Panel\\International"
+
+    try {
+	registry get $KEY sShortDate
+    } on ok string {
 	set quote {}
 	set datefmt {}
 	foreach { unquoted quoted } [split $string '] {
@@ -2402,10 +2405,9 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
 	::msgcat::mcset $locale DATE_FORMAT $datefmt
     }
 
-    if { ![catch {
-	registry get "HKEY_CURRENT_USER\\Control Panel\\International" \
-	    sLongDate
-    } string] } {
+    try {
+	registry get $KEY sLongDate
+    } on ok string {
 	set quote {}
 	set ldatefmt {}
 	foreach { unquoted quoted } [split $string '] {
@@ -2432,10 +2434,9 @@ proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
 	::msgcat::mcset $locale LOCALE_DATE_FORMAT $ldatefmt
     }
 
-    if { ![catch {
-	registry get "HKEY_CURRENT_USER\\Control Panel\\International" \
-	    sTimeFormat
-    } string] } {
+    try {
+	registry get $KEY sTimeFormat
+    } on ok string {
 	set quote {}
 	set timefmt {}
 	foreach { unquoted quoted } [split $string '] {
@@ -3006,9 +3007,9 @@ proc ::tcl::clock::GetSystemTimeZone {} {
 	    set timezone $CachedSystemTimeZone
 	} elseif { $::tcl_platform(platform) eq {windows} } {
 	    set timezone [GuessWindowsTimeZone]
-	} elseif { [file exists /etc/localtime]
-		   && ![catch {ReadZoneinfoFile \
-				   Tcl/Localtime /etc/localtime}] } {
+	} elseif { [file exists /etc/localtime] && ![catch {
+	    ReadZoneinfoFile Tcl/Localtime /etc/localtime
+	}] } {
 	    set timezone :Tcl/Localtime
 	} else {
 	    set timezone :localtime
@@ -3105,7 +3106,7 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 	    }
 	    set TZData($timezone) [list [list $MINWIDE $offset -1 $timezone]]
 
-	} elseif { [string index $timezone 0] eq {:} } {
+	} elseif { [string match :* $timezone] } {
 	    # Convert using a time zone file
 
 	    if {
@@ -3122,12 +3123,14 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 	} elseif { ![catch {ParsePosixTimeZone $timezone} tzfields] } {
 	    # This looks like a POSIX time zone - try to process it
 
-	    if { [catch {ProcessPosixTimeZone $tzfields} data opts] } {
+	    try {
+		ProcessPosixTimeZone $tzfields
+	    } on error {data opts} {
 		if { [lindex [dict get $opts -errorcode] 0] eq {CLOCK} } {
 		    dict unset opts -errorinfo
 		}
 		return -options $opts $data
-	    } else {
+	    } on ok data {
 		set TZData($timezone) $data
 	    }
 
@@ -3183,15 +3186,12 @@ proc ::tcl::clock::GuessWindowsTimeZone {} {
 
     # Dredge time zone information out of the registry
 
-    if { [catch {
-	set rpath HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\TimeZoneInformation
+    const rpath HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\TimeZoneInformation
+    try {
 	set data [list \
-		      [expr { -60
-			      * [registry get $rpath Bias] }] \
-		      [expr { -60
-				  * [registry get $rpath StandardBias] }] \
-		      [expr { -60 \
-				  * [registry get $rpath DaylightBias] }]]
+		[expr { -60 * [registry get $rpath Bias] }] \
+		[expr { -60 * [registry get $rpath StandardBias] }] \
+		[expr { -60 * [registry get $rpath DaylightBias] }]]
 	set stdtzi [registry get $rpath StandardStart]
 	foreach ind {0 2 14 4 6 8 10 12} {
 	    binary scan $stdtzi @${ind}s val
@@ -3202,7 +3202,7 @@ proc ::tcl::clock::GuessWindowsTimeZone {} {
 	    binary scan $daytzi @${ind}s val
 	    lappend data $val
 	}
-    }] } {
+    } on error {} {
 	# Missing values in the Registry - bail out
 
 	return :localtime
@@ -3516,7 +3516,7 @@ proc ::tcl::clock::ReadZoneinfoFile {fileName fname} {
     if {$version eq {2}} {
 	set seek [expr {$seek + 8 * $nLeap + $nIsStd + $nIsGMT + 1}]
 	set last [string first \n $d $seek]
-	set posix [string range $d $seek [expr {$last-1}]]
+	set posix [string range $d $seek [expr {$last - 1}]]
 	if {[llength $posix] > 0} {
 	    set posixFields [ParsePosixTimeZone $posix]
 	    foreach tuple [ProcessPosixTimeZone $posixFields] {
@@ -3732,7 +3732,7 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
     # Determine the standard time zone name and seconds east of Greenwich
 
     set stdName [dict get $z stdName]
-    if { [string index $stdName 0] eq {<} } {
+    if { [string match <* $stdName] } {
 	set stdName [string range $stdName 1 end-1]
     }
     if { [dict get $z stdSignum] eq {-} } {
@@ -3762,7 +3762,7 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
     if { $dstName eq {} } {
 	return $data
     }
-    if { [string index $dstName 0] eq {<} } {
+    if { [string match <* $dstName] } {
 	set dstName [string range $dstName 1 end-1]
     }
 
@@ -4257,7 +4257,9 @@ proc ::tcl::clock::add { clockval args } {
 	     \"$cmdName clockval ?number units?...\
 	     ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?\""
     }
-    if { [catch { expr {wide($clockval)} } result] } {
+    try {
+	expr { wide($clockval) }
+    } on error result {
 	return -code error $result
     }
 
@@ -4266,27 +4268,23 @@ proc ::tcl::clock::add { clockval args } {
     set locale c
     set timezone [GetSystemTimeZone]
 
+    set OPTIONS {-gmt -locale -timezone}
     foreach { a b } $args {
 	if { [string is integer -strict $a] } {
 	    lappend offsets $a $b
 	} else {
-	    switch -exact -- $a {
-		-g - -gm - -gmt {
-		    set saw(-gmt) {}
+	    set options [list -errorcode [list CLOCK badOption $a] -level 1]
+	    set expanded [tcl::prefix match -error $options $OPTIONS $a]
+	    set saw($expanded) {}
+	    switch -exact -- $expanded {
+		-gmt {
 		    set gmt $b
 		}
-		-l - -lo - -loc - -loca - -local - -locale {
+		-locale {
 		    set locale [string tolower $b]
 		}
-		-t - -ti - -tim - -time - -timez - -timezo - -timezon -
 		-timezone {
-		    set saw(-timezone) {}
 		    set timezone $b
-		}
-		default {
-		    throw [list CLOCK badOption $a] \
-			"bad option \"$a\",\
-			 must be -gmt, -locale or -timezone"
 		}
 	    }
 	}
@@ -4299,7 +4297,9 @@ proc ::tcl::clock::add { clockval args } {
 	    -errorcode [list CLOCK gmtWithTimezone] \
 	    "cannot use -gmt and -timezone in same call"
     }
-    if { [catch { expr { wide($clockval) } } result] } {
+    try { 
+	expr { wide($clockval) } 
+    } on error {} {
 	return -code error "expected integer but got \"$clockval\""
     }
     if { ![string is boolean -strict $gmt] } {
@@ -4312,7 +4312,9 @@ proc ::tcl::clock::add { clockval args } {
 
     set changeover [mc GREGORIAN_CHANGE_DATE]
 
-    if {[catch {SetupTimeZone $timezone} retval opts]} {
+    try {
+	SetupTimeZone $timezone
+    } on error {retval opts} {
 	dict unset opts -errorinfo
 	return -options $opts $retval
     }

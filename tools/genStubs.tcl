@@ -257,29 +257,35 @@ proc genStubs::rewriteFile {file text} {
 	return
     }
     set in [open ${file} r]
-    fconfigure $in -eofchar "\x1A {}" -encoding utf-8
-    set out [open ${file}.new w]
-    fconfigure $out -translation lf -encoding utf-8
+    try {
+	fconfigure $in -eofchar "\x1A {}" -encoding utf-8
+	set out [open ${file}.new w]
+	try {
+	    fconfigure $out -translation lf -encoding utf-8
 
-    while {![eof $in]} {
-	set line [gets $in]
-	if {[string match "*!BEGIN!*" $line]} {
-	    break
+	    while {![eof $in]} {
+		set line [gets $in]
+		if {[string match "*!BEGIN!*" $line]} {
+		    break
+		}
+		puts $out $line
+	    }
+	    puts $out "/* !BEGIN!: Do not edit below this line. */"
+	    puts $out $text
+	    while {![eof $in]} {
+		set line [gets $in]
+		if {[string match "*!END!*" $line]} {
+		    break
+		}
+	    }
+	    puts $out "/* !END!: Do not edit above this line. */"
+	    puts -nonewline $out [read $in]
+	} finally {
+	    close $out
 	}
-	puts $out $line
+    } finally {
+	close $in
     }
-    puts $out "/* !BEGIN!: Do not edit below this line. */"
-    puts $out $text
-    while {![eof $in]} {
-	set line [gets $in]
-	if {[string match "*!END!*" $line]} {
-	    break
-	}
-    }
-    puts $out "/* !END!: Do not edit above this line. */"
-    puts -nonewline $out [read $in]
-    close $in
-    close $out
     file rename -force ${file}.new ${file}
     return
 }
@@ -403,7 +409,7 @@ proc genStubs::parseDecl {decl} {
     foreach arg [split $args ,] {
 	lappend argList [string trim $arg]
     }
-    if {![string compare [lindex $argList end] "..."]} {
+    if {[lindex $argList end] eq "..."} {
 	set args TCL_VARARGS
 	foreach arg [lrange $argList 0 end-1] {
 	    set argInfo [parseArg $arg]
@@ -418,7 +424,7 @@ proc genStubs::parseDecl {decl} {
 	set args {}
 	foreach arg $argList {
 	    set argInfo [parseArg $arg]
-	    if {![string compare $argInfo "void"]} {
+	    if {$argInfo eq "void"} {
 		lappend args "void"
 		break
 	    } elseif {[llength $argInfo] == 2 || [llength $argInfo] == 3} {
@@ -740,8 +746,10 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 	    } elseif {[llength $slots] > 0} {
 		array set slot {unix 0 x11 0 win 0 macosx 0 aqua 0}
 		foreach s $slots {
-		    set slot([lindex [split $s ,] 1]) 1
+		    set sidx [lindex [split $s ,] 1]
+		    set slot($sidx) 1
 		}
+
 		# "aqua", "macosx" and "x11" are special cases:
 		# "macosx" implies "unix", "aqua" implies "macosx" and "x11"
 		# implies "unix", so we need to be careful not to emit
@@ -751,6 +759,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 			($slot(x11)  || $slot(aqua)))} {
 		    puts stderr "conflicting platform entries: $name $i"
 		}
+
 		## unix ##
 		set temp {}
 		set plat unix
@@ -765,6 +774,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 		    append text [addPlatformGuard $plat $temp]
 		    set emit 1
 		}
+
 		## x11 ##
 		set temp {}
 		set plat x11
@@ -779,6 +789,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 		    append text [addPlatformGuard $plat $temp]
 		    set emit 1
 		}
+
 		## win ##
 		set temp {}
 		set plat win
@@ -791,6 +802,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 		    append text [addPlatformGuard $plat $temp]
 		    set emit 1
 		}
+
 		## macosx ##
 		set temp {}
 		set plat macosx
@@ -807,6 +819,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 		    append text [addPlatformGuard $plat $temp]
 		    set emit 1
 		}
+
 		## aqua ##
 		set temp {}
 		set plat aqua

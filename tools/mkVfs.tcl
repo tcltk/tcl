@@ -12,7 +12,7 @@ proc pkgIndexDir {root fout d1} {
     set idx [string length $root]
     foreach ftail [glob -directory $d1 -nocomplain -tails *] {
         set f [file join $d1 $ftail]
-        if {[file isdirectory $f] && [string compare CVS $ftail]} {
+        if {[file isdirectory $f] && "CVS" ne $ftail} {
             pkgIndexDir $root $fout $f
         } elseif {[file tail $f] eq "pkgIndex.tcl"} {
       	    puts $fout "set dir \${VFSROOT}[string range $d1 $idx end]"
@@ -34,7 +34,7 @@ proc copyDir {d1 d2} {
 
     foreach ftail [glob -directory $d1 -nocomplain -tails *] {
         set f [file join $d1 $ftail]
-        if {[file isdirectory $f] && [string compare CVS $ftail]} {
+        if {[file isdirectory $f] && "CVS" ne $ftail} {
             copyDir $f [file join $d2 $ftail]
         } elseif {[file isfile $f]} {
       	    file copy -force $f [file join $d2 $ftail]

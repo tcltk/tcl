@@ -674,8 +674,10 @@ proc parseZone {fileName lno zone words start} {
     variable forwardRuleRefs
 
     lassign $words gmtoff save format
-    if {[catch {parseOffsetTime $gmtoff} gmtoff]} {
-	puts stderr "$fileName:$lno:$gmtoff"
+    try {
+	set gmtoff[parseOffsetTime $gmtoff]
+    } on error msg {
+	puts stderr "$fileName:$lno:$error"
 	incr errorCount
 	return
     }
@@ -1032,14 +1034,14 @@ proc divideRules {ruleSet year} {
     } $rules($ruleSet) {
 	if {$toYear ne "maximum" && $year > $toYear} {
 	    # ignore - rule is in the past
-	} else {
-	    if {$fromYear eq "minimum" || $fromYear <= $year} {
-		lappend currentRules $fromYear $toYear $yearType $monthIn \
-			$daySpecOn $timeAt $save $letter
-	    }
-	    if {$toYear ne "maximum"} {
-		incr nSunsetRules
-	    }
+	    continue
+	}
+	if {$fromYear eq "minimum" || $fromYear <= $year} {
+	    lappend currentRules $fromYear $toYear $yearType $monthIn \
+		    $daySpecOn $timeAt $save $letter
+	}
+	if {$toYear ne "maximum"} {
+	    incr nSunsetRules
 	}
     }
 
@@ -1240,7 +1242,7 @@ proc writeZones {outDir} {
 
     foreach zoneName [lsort -dictionary [array names zones]] {
 	puts "calculating: $zoneName"
-	set fileName [eval [list file join $outDir] [file split $zoneName]]
+	set fileName [file join $outDir {*}[file split $zoneName]]
 
 	# Create directories as needed
 
@@ -1263,11 +1265,14 @@ proc writeZones {outDir} {
 	# Write the data to the information file
 
 	set f [open $fileName w]
-	fconfigure $f -translation lf -encoding utf-8
-	puts $f "\# created by $::argv0 - do not edit"
-	puts $f ""
-	puts $f [list set TZData(:$zoneName) $data]
-	close $f
+	try {
+	    fconfigure $f -translation lf -encoding utf-8
+	    puts $f "\# created by $::argv0 - do not edit"
+	    puts $f ""
+	    puts $f [list set TZData(:$zoneName) $data]
+	} finally {
+	    close $f
+	}
     }
 
     return
@@ -1296,7 +1301,7 @@ proc writeLinks {outDir} {
 
     foreach zoneName [lsort -dictionary [array names links]] {
 	puts "creating link: $zoneName"
-	set fileName [eval [list file join $outDir] [file split $zoneName]]
+	set fileName [file join $outDir {*}[file split $zoneName]]
 
 	# Create directories as needed
 
@@ -1316,11 +1321,14 @@ proc writeLinks {outDir} {
 	# Write the file
 
 	set f [open $fileName w]
-	fconfigure $f -translation lf -encoding utf-8
-	puts $f "\# created by $::argv0 - do not edit"
-	puts $f $ifCmd
-	puts $f $setCmd
-	close $f
+	try {
+	    fconfigure $f -translation lf -encoding utf-8
+	    puts $f "\# created by $::argv0 - do not edit"
+	    puts $f $ifCmd
+	    puts $f $setCmd
+	} finally {
+	    close $f
+	}
     }
 
     return

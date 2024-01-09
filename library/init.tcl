@@ -47,55 +47,54 @@ package require -exact tcl 9.0a4
 
 if {![info exists auto_path]} {
     if {[info exists env(TCLLIBPATH)] && (![interp issafe])} {
-        set auto_path [apply {{} {
+        set auto_path [apply { {} {
             lmap path $::env(TCLLIBPATH) {
                 # Paths relative to unresolvable home dirs are ignored
-                if {[catch {file tildeexpand $path} expanded_path]} {
+                try {
+		    file tildeexpand $path
+		} on error {} {
                     continue
                 }
-                set expanded_path
             }
         }}]
     } else {
 	set auto_path ""
     }
 }
-namespace eval tcl {
-    if {![interp issafe]} {
-	variable Dir
-	foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
-	    if {$Dir ni $::auto_path} {
-		lappend ::auto_path $Dir
+
+if {![interp issafe]} {
+    apply { {} {
+	global tcl_library auto_path tcl_pkgPath
+	foreach Dir [list $tcl_library [file dirname $tcl_library]] {
+	    if {$Dir ni $auto_path} {
+		lappend auto_path $Dir
 	    }
 	}
-	set Dir [file join [file dirname [file dirname \
-		[info nameofexecutable]]] lib]
-	if {$Dir ni $::auto_path} {
-	    lappend ::auto_path $Dir
+	set Dir [file join [file dirname [file dirname [info nameofexecutable]]] lib]
+	if {$Dir ni $auto_path} {
+	    lappend auto_path $Dir
 	}
-	if {[info exists ::tcl_pkgPath]} { catch {
-	    foreach Dir $::tcl_pkgPath {
-		if {$Dir ni $::auto_path} {
-		    lappend ::auto_path $Dir
+	if {[info exists tcl_pkgPath]} { catch {
+	    foreach Dir $tcl_pkgPath {
+		if {$Dir ni $auto_path} {
+		    lappend auto_path $Dir
 		}
 	    }
 	}}
 
-	variable Path [encoding dirs]
-	set Dir [file join $::tcl_library encoding]
+	set Path [encoding dirs]
+	set Dir [file join $tcl_library encoding]
 	if {$Dir ni $Path} {
 	    lappend Path $Dir
 	    encoding dirs $Path
 	}
-	unset Dir Path
-    }
+    }}
 }
 
 namespace eval tcl::Pkg {}
 
 
 # Setup the unknown package handler
-
 
 if {[interp issafe]} {
     package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
@@ -121,7 +120,7 @@ if {[interp issafe]} {
 	    proc ::tcl::clock::$cmd args {
 		variable TclLibDir
 		source [file join $TclLibDir clock.tcl]
-		return [uplevel 1 [info level 0]]
+		tailcall {*}[info level 0]
 	    }
 	}
 
@@ -133,7 +132,6 @@ if {[interp issafe]} {
 # Conditionalize for presence of exec.
 
 if {[namespace which -command exec] eq ""} {
-
     # Some machines do not have exec. Also, on all
     # platforms, safe interpreters do not have exec.
 
@@ -190,13 +188,13 @@ proc unknown args {
 		    in \"unknown\" for command \"$name\""
 	}
 	set UnknownPending($name) pending
-	set ret [catch {
-		auto_load $name [uplevel 1 {::namespace current}]
-	} msg opts]
-	unset UnknownPending($name)
-	if {$ret != 0} {
+	try {
+	    auto_load $name [uplevel 1 {::namespace current}]
+	} on error {msg opts} {
 	    dict append opts -errorinfo "\n    (autoloading \"$name\")"
 	    return -options $opts $msg
+	} finally {
+	    unset UnknownPending($name)
 	}
 	if {![array size UnknownPending]} {
 	    unset UnknownPending
@@ -213,68 +211,67 @@ proc unknown args {
 		unset -nocomplain errorInfo
 	    }
 	    set code [catch {uplevel 1 $args} msg opts]
-	    if {$code ==  1} {
-		#
-		# Compute stack trace contribution from the [uplevel].
-		# Note the dependence on how Tcl_AddErrorInfo, etc.
-		# construct the stack trace.
-		#
-		set errInfo [dict get $opts -errorinfo]
-		set errCode [dict get $opts -errorcode]
-		set cinfo $args
-		if {[string length [encoding convertto utf-8 $cinfo]] > 150} {
-		    set cinfo [string range $cinfo 0 150]
-		    while {[string length [encoding convertto utf-8 $cinfo]] > 150} {
-			set cinfo [string range $cinfo 0 end-1]
-		    }
-		    append cinfo ...
-		}
-		set tail "\n    (\"uplevel\" body line 1)\n    invoked\
-			from within\n\"uplevel 1 \$args\""
-		set expect "$msg\n    while executing\n\"$cinfo\"$tail"
-		if {$errInfo eq $expect} {
-		    #
-		    # The stack has only the eval from the expanded command
-		    # Do not generate any stack trace here.
-		    #
-		    dict unset opts -errorinfo
-		    dict incr opts -level
-		    return -options $opts $msg
-		}
-		#
-		# Stack trace is nested, trim off just the contribution
-		# from the extra "eval" of $args due to the "catch" above.
-		#
-		set last [string last $tail $errInfo]
-		if {$last + [string length $tail] != [string length $errInfo]} {
-		    # Very likely cannot happen
-		    return -options $opts $msg
-		}
-		set errInfo [string range $errInfo 0 $last-1]
-		set tail "\"$cinfo\""
-		set last [string last $tail $errInfo]
-		if {$last < 0 || $last + [string length $tail] != [string length $errInfo]} {
-		    return -code error -errorcode $errCode \
-			    -errorinfo $errInfo $msg
-		}
-		set errInfo [string range $errInfo 0 $last-1]
-		set tail "\n    invoked from within\n"
-		set last [string last $tail $errInfo]
-		if {$last + [string length $tail] == [string length $errInfo]} {
-		    return -code error -errorcode $errCode \
-			    -errorinfo [string range $errInfo 0 $last-1] $msg
-		}
-		set tail "\n    while executing\n"
-		set last [string last $tail $errInfo]
-		if {$last + [string length $tail] == [string length $errInfo]} {
-		    return -code error -errorcode $errCode \
-			    -errorinfo [string range $errInfo 0 $last-1] $msg
-		}
-		return -options $opts $msg
-	    } else {
+	    if {$code != 1} {
+		# Not an error so just pass it out
 		dict incr opts -level
 		return -options $opts $msg
 	    }
+	    #
+	    # Compute stack trace contribution from the [uplevel].
+	    # Note the dependence on how Tcl_AddErrorInfo, etc.
+	    # construct the stack trace.
+	    #
+	    set errInfo [dict get $opts -errorinfo]
+	    set errCode [dict get $opts -errorcode]
+	    set cinfo $args
+	    if {[string length [encoding convertto utf-8 $cinfo]] > 150} {
+		set cinfo [string range $cinfo 0 150]
+		while {[string length [encoding convertto utf-8 $cinfo]] > 150} {
+		    set cinfo [string range $cinfo 0 end-1]
+		}
+		append cinfo ...
+	    }
+	    set tail "\n    (\"uplevel\" body line 1)\n    invoked\
+		    from within\n\"uplevel 1 \$args\""
+	    set expect "$msg\n    while executing\n\"$cinfo\"$tail"
+	    if {$errInfo eq $expect} {
+		#
+		# The stack has only the eval from the expanded command
+		# Do not generate any stack trace here.
+		#
+		dict unset opts -errorinfo
+		dict incr opts -level
+		return -options $opts $msg
+	    }
+	    #
+	    # Stack trace is nested, trim off just the contribution
+	    # from the extra "eval" of $args due to the "catch" above.
+	    #
+	    set last [string last $tail $errInfo]
+	    if {$last + [string length $tail] != [string length $errInfo]} {
+		# Very likely cannot happen
+		return -options $opts $msg
+	    }
+	    set errInfo [string range $errInfo 0 $last-1]
+	    set tail "\"$cinfo\""
+	    set last [string last $tail $errInfo]
+	    if {$last < 0 || $last + [string length $tail] != [string length $errInfo]} {
+		return -code error -errorcode $errCode -errorinfo $errInfo $msg
+	    }
+	    set errInfo [string range $errInfo 0 $last-1]
+	    set tail "\n    invoked from within\n"
+	    set last [string last $tail $errInfo]
+	    if {$last + [string length $tail] == [string length $errInfo]} {
+		return -code error -errorcode $errCode \
+			-errorinfo [string range $errInfo 0 $last-1] $msg
+	    }
+	    set tail "\n    while executing\n"
+	    set last [string last $tail $errInfo]
+	    if {$last + [string length $tail] == [string length $errInfo]} {
+		return -code error -errorcode $errCode \
+			-errorinfo [string range $errInfo 0 $last-1] $msg
+	    }
+	    return -options $opts $msg
 	}
     }
 
@@ -282,16 +279,12 @@ proc unknown args {
 	    && [info exists tcl_interactive] && $tcl_interactive} {
 	if {![info exists auto_noexec]} {
 	    set new [auto_execok $name]
-	    if {$new ne ""} {
+	    if {[llength $new]} {
 		set redir ""
 		if {[namespace which -command console] eq ""} {
 		    set redir ">&@stdout <@stdin"
 		}
-		uplevel 1 [list ::catch \
-			[concat exec $redir $new [lrange $args 1 end]] \
-			::tcl::UnknownResult ::tcl::UnknownOptions]
-		dict incr ::tcl::UnknownOptions -level
-		return -options $::tcl::UnknownOptions $::tcl::UnknownResult
+		tailcall exec {*}$redir {*}$new {*}[lrange $args 1 end]
 	    }
 	}
 	if {$name eq "!!"} {
@@ -305,20 +298,21 @@ proc unknown args {
 	if {[info exists newcmd]} {
 	    tclLog $newcmd
 	    history change $newcmd 0
-	    uplevel 1 [list ::catch $newcmd \
-		    ::tcl::UnknownResult ::tcl::UnknownOptions]
-	    dict incr ::tcl::UnknownOptions -level
-	    return -options $::tcl::UnknownOptions $::tcl::UnknownResult
+	    tailcall {*}$newcmd
 	}
 
-	set ret [catch {set candidates [info commands $name*]} msg]
-	if {$name eq "::"} {
-	    set name ""
-	}
-	if {$ret != 0} {
+	try {
+	    set candidates [info commands $name*]
+	} on error msg {
+	    if {$name eq "::"} {
+		set name ""
+	    }
 	    dict append opts -errorinfo \
 		    "\n    (expanding command prefix \"$name\" in unknown)"
 	    return -options $opts $msg
+	}
+	if {$name eq "::"} {
+	    set name ""
 	}
 	# Filter out bogus matches when $name contained
 	# a glob-special char [Bug 946952]
@@ -327,18 +321,13 @@ proc unknown args {
 	    # in [string first] (See RFE 1243354)
 	    set cmds $candidates
 	} else {
-	    set cmds [list]
-	    foreach x $candidates {
-		if {[string first $name $x] == 0} {
-		    lappend cmds $x
-		}
-	    }
+	    set len [string length $name]
+	    set cmds [lmap x $candidates {if {
+		[string equal -length $len $name $x]
+	    } {set x} else continue}]
 	}
 	if {[llength $cmds] == 1} {
-	    uplevel 1 [list ::catch [lreplace $args 0 0 [lindex $cmds 0]] \
-		    ::tcl::UnknownResult ::tcl::UnknownOptions]
-	    dict incr ::tcl::UnknownOptions -level
-	    return -options $::tcl::UnknownOptions $::tcl::UnknownResult
+	    tailcall [lindex $cmd 0] {*}[lrange $args 1 end]
 	}
 	if {[llength $cmds]} {
 	    return -code error "ambiguous command name \"$name\": [lsort $cmds]"
@@ -364,7 +353,7 @@ proc auto_load {cmd {namespace {}}} {
     global auto_index auto_path
 
     if {$namespace eq ""} {
-	set namespace [uplevel 1 [list ::namespace current]]
+	set namespace [uplevel 1 {::namespace current}]
     }
     set nameList [auto_qualify $cmd $namespace]
     # workaround non canonical auto_index entries that might be around
@@ -413,9 +402,9 @@ proc auto_load {cmd {namespace {}}} {
 
 proc ::tcl::Pkg::source {filename} {
     if {[interp issafe]} {
-	uplevel 1 [list ::source $filename]
+	tailcall ::source $filename]
     } else {
-	uplevel 1 [list ::source -nopkg $filename]
+	tailcall ::source -nopkg $filename
     }
 }
 
@@ -446,33 +435,33 @@ proc auto_load_index {} {
 	set f ""
 	if {$issafe} {
 	    catch {source [file join $dir tclIndex]}
-	} elseif {[catch {set f [open [file join $dir tclIndex]]}]} {
 	    continue
-	} else {
-	    set error [catch {
-		fconfigure $f -encoding utf-8 -eofchar \x1A
-		set id [gets $f]
-		if {$id eq "# Tcl autoload index file, version 2.0"} {
-		    eval [read $f]
-		} elseif {$id eq "# Tcl autoload index file: each line identifies a Tcl"} {
-		    while {[gets $f line] >= 0} {
-			if {([string index $line 0] eq "#") \
-				|| ([llength $line] != 2)} {
-			    continue
-			}
-			set name [lindex $line 0]
-			set auto_index($name) \
-				"::tcl::Pkg::source [file join $dir [lindex $line 1]]"
+	}
+	try {
+	    set f [open [file join $dir tclIndex]]
+	} on error {} {
+	    continue
+	}
+	try {
+	    fconfigure $f -encoding utf-8 -eofchar \x1A
+	    set id [gets $f]
+	    if {$id eq "# Tcl autoload index file, version 2.0"} {
+		eval [read $f]
+	    } elseif {$id eq "# Tcl autoload index file: each line identifies a Tcl"} {
+		while {[gets $f line] >= 0} {
+		    if {[string match "#*" $line] || ([llength $line] != 2)} {
+			continue
 		    }
-		} else {
-		    error "[file join $dir tclIndex] isn't a proper Tcl index file"
+		    set name [lindex $line 0]
+		    set auto_index($name) \
+			[list ::tcl::Pkg::source [file join $dir [lindex $line 1]]]
 		}
-	    } msg opts]
+	    } else {
+		error "[file join $dir tclIndex] isn't a proper Tcl index file"
+	    }
+	} finally {
 	    if {$f ne ""} {
 		close $f
-	    }
-	    if {$error} {
-		return -options $opts $msg
 	    }
 	}
     }
@@ -557,7 +546,7 @@ proc auto_import {pattern} {
 	return
     }
 
-    set ns [uplevel 1 [list ::namespace current]]
+    set ns [uplevel 1 {::namespace current}]
     set patternList [auto_qualify $pattern $ns]
 
     auto_load_index
@@ -768,8 +757,8 @@ proc tcl::CopyDirectory {action src dest} {
     #
     # On Unix 'hidden' files begin with '.'.  On other platforms
     # or filesystems hidden files may have other interpretations.
-    set filelist [concat [glob -nocomplain -directory $src *] \
-      [glob -nocomplain -directory $src -types hidden *]]
+    set filelist [list {*}[glob -nocomplain -directory $src *] \
+        {*}[glob -nocomplain -directory $src -types hidden *]]
 
     foreach s [lsort -unique $filelist] {
 	if {[file tail $s] ni {. ..}} {

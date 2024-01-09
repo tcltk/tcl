@@ -142,21 +142,35 @@ namespace eval http {
     }
 
     # Regular expression used to parse cookies
-    variable CookieRE {(?x)                            # EXPANDED SYNTAX
-	\s*                                            # Ignore leading spaces
-	([^][\u0000- ()<>@,;:\\""/?={}\u007f-\uffff]+) # Match the name
-	=                                              # LITERAL: Equal sign
-	([!\u0023-+\u002D-:<-\u005B\u005D-~]*)         # Match the value
+    const CookieRE [string trim {
+	(?x)                                            # EXPANDED SYNTAX
+	# Skip leading spaces
+	\s*
+
+	# Capture the name; name characters are... limited
+	(
+	    [^][\u0000-\u0032()<>@,;:\\"\\"/?={\u007f-\U10ffff}] +
+	)
+
+	# LITERAL: equal sign, which must be present
+	=
+
+	# Capture the value
+	(
+	    [!\u0023-+\u002D-:<-\u005B\u005D-~] *
+	)
+
+	# Optionally, the cookie options
 	(?:
-	 \s* ; \s*                                     # LITERAL: semicolon
-	 ([^\u0000]+)                                  # Match the options
+	    \s* ; \s*                                   # LITERAL: semicolon
+	    ([^\u0000]+)                                # Match the options
 	)?
-    }
+    }]
 
     variable TmpSockCounter 0
     variable ThreadCounter  0
 
-    variable reasonDict [dict create {*}{
+    const reasonDict [dict create {*}{
         100 Continue
         101 {Switching Protocols}
         102 Processing
@@ -222,7 +236,7 @@ namespace eval http {
         511 {Network Authentication Required}
     }]
 
-    variable failedProxyValues {
+    const failedProxyValues {
 	binary
 	body
 	charset
@@ -377,12 +391,7 @@ proc http::reasonPhrase {code} {
         set msg {argument must be a three-digit integer from 100 to 599}
         return -code error $msg
     }
-    if {[dict exists $reasonDict $code]} {
-        set reason [dict get $reasonDict $code]
-    } else {
-        set reason Unassigned
-    }
-    return $reason
+    return [dict getdef $reasonDict $code Unassigned]
 }
 
 # http::Finish --
@@ -464,7 +473,6 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
             # Test http-4.11 may come here.
 	    thread::release $state(tid)
 	    set state(tid) {}
-	} else {
 	}
     } elseif {$upgradeResponse} {
 	# Special handling for an upgrade request/response.
@@ -772,21 +780,22 @@ proc http::CloseSocket {s {token {}}} {
 	 && ($socketMapping($connId) eq $s)
     } {
 	Log "Closing connection $connId (sock $socketMapping($connId))"
-	if {[catch {close $socketMapping($connId)} err]} {
+	try {
+	    close $socketMapping($connId)
+	} on error err {
 	    Log "Error closing connection: $err"
-	} else {
 	}
 	if {$token eq {}} {
 	    # Cases with a non-empty token are handled by Finish, so the tokens
 	    # are finished in connection order.
 	    http::CloseQueuedQueries $connId
-	} else {
 	}
     } else {
 	Log "Closing socket $s (no connection info)"
-	if {[catch {close $s} err]} {
+	try {
+	    close $s
+	} on error err {
 	    Log "Error closing socket: $err"
-	} else {
 	}
     }
     return
@@ -1225,7 +1234,7 @@ proc http::CreateToken {url args} {
 	# RFC 3986 allows empty paths (not even a /), but servers
 	# return 400 if the path in the HTTP request doesn't start
 	# with / , so add it here if needed.
-	if {[string index $srvurl 0] ne "/"} {
+	if {![string match "/*" $srvurl]} {
 	    set srvurl /$srvurl
 	}
 	# Check for validity according to RFC 3986, Appendix A
@@ -1261,16 +1270,16 @@ proc http::CreateToken {url args} {
 	unset $token
 	return -code error "Unsupported URL type \"$proto\""
     }
-    set defport [lindex $urlTypes($lower) 0]
-    set defcmd [lindex $urlTypes($lower) 1]
+    lassign $urlTypes($lower) defport defcmd
 
     if {$port eq ""} {
 	set port $defport
     }
-    if {![catch {$http(-proxyfilter) $host} proxy]} {
-	set phost [lindex $proxy 0]
-	set pport [lindex $proxy 1]
-    } else {
+    try {
+	$http(-proxyfilter) $host
+    } on ok proxy {
+	lassign $proxy phost pport
+    } on error {} {
 	set phost {}
 	set pport {}
     }
@@ -1455,7 +1464,6 @@ proc http::CreateToken {url args} {
 		if {[SockIsPlaceHolder $sock]} {
 		    set state(ReusingPlaceholder) 1
 		    lappend socketPhQueue($sock) $token
-		} else {
 		}
 		Log "reusing open socket $sock for $state(socketinfo) - token $token"
 	    }
@@ -1721,7 +1729,7 @@ proc http::OpenSocket {token DoLater} {
     dict unset socketCoEvent($state(socketinfo)) $token
     unset -nocomplain state(socketcoro)
 
-    if {[catch {
+    try {
         if {$state(reusing)} {
 	    # If ($state(reusing)) is true, then we do not need to create a new
 	    # socket, even if $sockOld is only a placeholder for a socket.
@@ -1758,7 +1766,7 @@ proc http::OpenSocket {token DoLater} {
         # Code above has set state(sock) $sock
         ConfigureNewSocket $token $sockOld $DoLater
         ##Log OpenSocket success $sock - token $token
-    } result errdict]} {
+    } on error {result errdict} {
 	##Log OpenSocket failed $result - token $token
 	# There may be other requests in the socketPhQueue.
 	# Prepare socketPlayCmd so that Finish will replay them.
@@ -2059,7 +2067,6 @@ proc http::ScheduleRequest {token} {
 	    #Log new, init for nonpipeline, GRANT r/w access to $token in geturl
             set socketRdState($state(socketinfo)) $token
             set socketWrState($state(socketinfo)) $token
-        } else {
         }
 
 	# Process the request now.
@@ -2078,10 +2085,10 @@ proc http::ScheduleRequest {token} {
 
         lassign $state(connArgs) proto phost srvurl
 
-	if {[catch {
-		fileevent $state(sock) writable \
-			[list http::Connect $token $proto $phost $srvurl]
-	} res opts]} {
+	try {
+	    fileevent $state(sock) writable \
+		[list http::Connect $token $proto $phost $srvurl]
+	} on error {res opts} {
 	    # The socket no longer exists.
 	    ##Log bug -- socket gone -- $res -- $opts
 	}
@@ -2202,7 +2209,7 @@ proc http::Connected {token proto phost srvurl} {
 
     Log ^B$tk begin sending request - token $token
 
-    if {[catch {
+    try {
 	if {[info exists state(bypass)]} {
 	    set state(method) [lindex [split $state(bypass) { }] 0]
 	    set state(requestHeaders) {}
@@ -2306,21 +2313,19 @@ proc http::Connected {token proto phost srvurl} {
 	if {!$accept_types_seen} {
 	    SendHeader $token Accept $state(accept-types)
 	}
-	if {    (!$accept_encoding_seen)
-	     && (![info exists state(-handler)])
-	     && $http(-zip)
-	} {
-	    SendHeader $token Accept-Encoding gzip,deflate
-	} elseif {!$accept_encoding_seen} {
-	    SendHeader $token Accept-Encoding identity
-	} else {
+	if {!$accept_encoding_seen} {
+	    if {(![info exists state(-handler)]) && $http(-zip)} {
+		SendHeader $token Accept-Encoding gzip,deflate
+	    } else {
+		SendHeader $token Accept-Encoding identity
+	    }
 	}
 	if {!$connection_seen} {
 	    SendHeader $token Connection $ConnVal
 	}
 	if {$isQueryChannel && ($state(querylength) == 0)} {
 	    # Try to determine size of data in channel. If we cannot seek, the
-	    # surrounding catch will trap us
+	    # surrounding try will trap us
 
 	    set start [tell $state(-querychannel)]
 	    seek $state(-querychannel) 0 end
@@ -2401,7 +2406,7 @@ proc http::Connected {token proto phost srvurl} {
 	    DoneRequest $token
 	}
 
-    } err]} {
+    } on error {err} {
 	# The socket probably was never connected, OR the connection dropped
 	# later, OR https handshake error, which may be discovered as late as
 	# the "flush" command above...
@@ -2454,11 +2459,11 @@ proc http::registerError {sock args} {
 
     if {    ([llength $args] == 0)
 	 && (![info exists registeredErrors($sock)])
-    } {
+    } then {
 	return
     } elseif {    ([llength $args] == 1)
 	       && ([lindex $args 0] eq {})
-    } {
+    } else {
 	unset -nocomplain registeredErrors($sock)
 	return
     }
@@ -3428,7 +3433,7 @@ proc http::Write {token} {
 
     # Output a block.  Tcl will buffer this if the socket blocks
     set done 0
-    if {[catch {
+    try {
 	# Catch I/O errors on dead sockets
 
 	if {[info exists state(-query)]} {
@@ -3480,7 +3485,7 @@ proc http::Write {token} {
 		set done 1
 	    }
 	}
-    } err opts]} {
+    } on error {err opts} {
 	# Do not call Finish here, but instead let the read half of the socket
 	# process whatever server reply there is to get.
 	set state(posterror) $err
@@ -3547,14 +3552,11 @@ proc http::Event {sock token} {
 		if {[set d [read $sock]] ne ""} {
 		    Log "WARNING: additional data left on closed socket\
 			    - token $token"
-		} else {
 		}
-	    } else {
 	    }
 	    Log ^X$tk end of response (token error) - token $token
 	    CloseSocket $sock
 	    return
-	} else {
 	}
 	if {$state(state) eq "connecting"} {
 	    ##Log - connecting - token $token
@@ -3565,7 +3567,6 @@ proc http::Event {sock token} {
 	    } {
 		set state(after) [after $state(-timeout) \
 			[list http::reset $token timeout]]
-	    } else {
 	    }
 
 	    if {[catch {gets $sock state(http)} nsl]} {
@@ -3577,7 +3578,6 @@ proc http::Event {sock token} {
 
 		    if {[TestForReplay $token read $nsl c]} {
 			return
-		    } else {
 		    }
 		    # else:
 		    # This is NOT a persistent socket that has been closed since
@@ -3609,7 +3609,6 @@ proc http::Event {sock token} {
 
 		if {[TestForReplay $token read {} d]} {
 		    return
-		} else {
 		}
 
 		# else:
@@ -3617,7 +3616,6 @@ proc http::Event {sock token} {
 		# last use.
 		# If any other requests are in flight or pipelined/queued, they
 		# will be discarded.
-	    } else {
 	    }
 	} elseif {$state(state) eq "header"} {
 	    if {[catch {gets $sock line} nhl]} {
@@ -3636,7 +3634,6 @@ proc http::Event {sock token} {
 		    set state(state) "connecting"
 		    continue
 		    # This was a "return" in the pre-coroutine code.
-		} else {
 		}
 
 		# We have $state(http) so let's split it into its components.
@@ -3665,7 +3662,6 @@ proc http::Event {sock token} {
 		    # Previous value is $token. It cannot be "pending".
 		    set socketWrState($state(socketinfo)) Wready
 		    http::NextPipelinedWrite $token
-		} else {
 		}
 
 		# Once a "close" has been signaled, the client MUST NOT send any
@@ -3696,7 +3692,6 @@ proc http::Event {sock token} {
 			    Log Move $tok from socketCoEvent to socketWrQueue and cancel its after idle coro
 			}
 			set socketCoEvent($state(socketinfo)) {}
-		    } else {
 		    }
 
 		    if {    ($socketRdQueue($state(socketinfo)) ne {})
@@ -3725,7 +3720,6 @@ proc http::Event {sock token} {
 			    if {[info exists ${tokenVal}(after)]} {
 				after cancel [set ${tokenVal}(after)]
 				unset ${tokenVal}(after)
-			    } else {
 			    }
 			    # Tokens in the read queue have no (socketcoro) to
 			    # cancel.
@@ -3738,7 +3732,6 @@ proc http::Event {sock token} {
 		    # Do not allow further connections on this socket (but
 		    # geturl can add new requests to the replay).
 		    set socketClosing($state(socketinfo)) 1
-		} else {
 		}
 
 		set state(state) body
@@ -3754,7 +3747,6 @@ proc http::Event {sock token} {
 		    && ("keep-alive" ni $state(connection))
 		} {
 		    lappend state(connection) "keep-alive"
-		} else {
 		}
 
 		# If doing a HEAD, then we won't get any body
@@ -3796,13 +3788,15 @@ proc http::Event {sock token} {
 			 && (![info exists state(done-command-cb)])
 		    } {
 			set state(done-command-cb) yes
-			if {[catch {namespace eval :: $state(-command) $token} err]} {
-			    set state(error) [list $err $errorInfo $errorCode]
+			try {
+			    namespace eval :: $state(-command) $token
+			} on error {err opt} {
+			    set state(error) [list \
+				$err [dict get $opt -errorinfo] [dict get $opt -errorcode]]
 			    set state(status) error
 			}
 		    }
 		    return
-		} else {
 		}
 
 		# - For non-chunked transfer we may have no body - in this case
@@ -3833,7 +3827,6 @@ proc http::Event {sock token} {
 		    set state(state) complete
 		    Eot $token
 		    return
-		} else {
 		}
 
 		# We have to use binary translation to count bytes properly.
@@ -3845,12 +3838,10 @@ proc http::Event {sock token} {
 		} {
 		    # Turn off conversions for non-text data.
 		    set state(binary) 1
-		} else {
 		}
 		if {[info exists state(-channel)]} {
 		    if {$state(binary) || [llength [ContentEncoding $token]]} {
 			fconfigure $state(-channel) -translation binary
-		    } else {
 		    }
 		    if {![info exists state(-handler)]} {
 			# Initiate a sequence of background fcopies.
@@ -3858,9 +3849,7 @@ proc http::Event {sock token} {
 			rename ${token}--EventCoroutine {}
 			CopyStart $sock $token
 			return
-		    } else {
 		    }
-		} else {
 		}
 	    } elseif {$nhl > 0} {
 		# Process header lines.
@@ -3910,19 +3899,16 @@ proc http::Event {sock token} {
 			set-cookie {
 			    if {$http(-cookiejar) ne ""} {
 				ParseCookie $token [string trim $value]
-			    } else {
 			    }
 			}
 		    }
 		    lappend state(meta) $key [string trim $value]
-		} else {
 		}
-	    } else {
 	    }
 	} else {
 	    # Now reading body
 	    ##Log body - token $token
-	    if {[catch {
+	    try {
 		if {[info exists state(-handler)]} {
 		    set n [namespace eval :: $state(-handler) [list $sock $token]]
 		    ##Log handler $n - token $token
@@ -3933,7 +3919,6 @@ proc http::Event {sock token} {
 			# We know the transfer is complete only when the server
 			# closes the connection - i.e. eof is not an error.
 			set state(state) complete
-		    } else {
 		    }
 		    if {![string is integer -strict $n]} {
 			if 1 {
@@ -3963,7 +3948,6 @@ proc http::Event {sock token} {
 			    set n 0
 			    set state(state) complete
 			}
-		    } else {
 		    }
 		} elseif {[info exists state(transfer_final)]} {
 		    # This code forgives EOF in place of the final CRLF.
@@ -4003,7 +3987,6 @@ proc http::Event {sock token} {
 				incr state(log_size) [string length $chunk]
 				##Log chunk $n cumul $state(log_size) -\
 					token $token
-			    } else {
 			    }
 			    if {$size != [string length $chunk]} {
 				Log "WARNING: mis-sized chunk:\
@@ -4016,7 +3999,6 @@ proc http::Event {sock token} {
 				set msg {error in chunked encoding - fetch\
 					terminated}
 				Eot $token $msg
-			    } else {
 			    }
 			    # CRLF that follows chunk.
 			    # If eof, this is handled at the end of this proc.
@@ -4064,7 +4046,6 @@ proc http::Event {sock token} {
 			append state(body) $block
 			##Log non-chunk [string length $state(body)] -\
 				token $token
-		    } else {
 		    }
 		}
 		# This calculation uses n from the -handler, chunked, or
@@ -4076,7 +4057,6 @@ proc http::Event {sock token} {
 			set t $state(totalsize)
 			##Log another $n currentsize $c totalsize $t -\
 				token $token
-		    } else {
 		    }
 		    # If Content-Length - check for end of data.
 		    if {
@@ -4087,26 +4067,27 @@ proc http::Event {sock token} {
 				token $token
 			set state(state) complete
 			Eot $token
-		    } else {
 		    }
-		} else {
 		}
-	    } err]} {
+	    } on error err {
 		Log ^X$tk end of response (error ${err}) - token $token
 		Finish $token $err
 		return
-	    } else {
+	    } ok ok {} {
 		if {[info exists state(-progress)]} {
 		    namespace eval :: $state(-progress) \
 			[list $token $state(totalsize) $state(currentsize)]
-		} else {
 		}
 	    }
 	}
 
 	# catch as an Eot above may have closed the socket already
 	# $state(state) may be connecting, header, body, or complete
-	if {(![catch {eof $sock} eof]) && $eof} {
+	catch {
+	    set eof 0
+	    set eof [eof $sock]
+	}
+	if {$eof} {
 	    # [eof sock] succeeded and the result was 1
 	    ##Log eof - token $token
 	    if {[info exists $token]} {
@@ -4339,7 +4320,11 @@ proc http::BlockingRead {sock size} {
     while 1 {
 	set need [expr {$size - [string length $result]}]
 	set block [read $sock $need]
-	set eof [expr {[catch {eof $sock} tmp] || $tmp}]
+	try {
+	    set eof [eof $sock]
+	} on error {} {
+	    set eof 1
+	}
 	append result $block
 	if {[string length $result] >= $size || $eof} {
 	    return $result
@@ -4359,7 +4344,11 @@ proc http::BlockingRead {sock size} {
 proc http::BlockingGets {sock} {
     while 1 {
 	set count [gets $sock line]
-	set eof [expr {[catch {eof $sock} tmp] || $tmp}]
+	try {
+	    set eof [eof $sock]
+	} on error {} {
+	    set eof 1
+	}
 	if {$count >= 0 || $eof} {
 	    return $line
 	} else {
@@ -4404,14 +4393,14 @@ proc http::CopyStart {sock token {initial 1}} {
 		zlib push $coding2 $sock
 	    }
 	}
-	if {[catch {
+	try {
 	    # FIXME Keep-Alive on https tls::socket with unchunked transfer
 	    # hangs until the server times out. A workaround is possible, as for
 	    # the case without -channel, but it does not use the neat "fcopy"
 	    # solution.
 	    fcopy $sock $state(-channel) -size $state(-blocksize) -command \
 		[list http::CopyDone $token]
-	} err]} {
+	} on error err {
 	    Finish $token $err
 	}
     }
@@ -4525,24 +4514,23 @@ proc http::Eot {token {reason {}}} {
     }
 
     if {[string length $state(body)] > 0} {
-	if {[catch {
+	try {
 	    foreach coding [ContentEncoding $token] {
 		if {$coding eq {deflateX}} {
 		    # First try the standards-compliant choice.
 		    set coding2 decompress
-		    if {[catch {zlib $coding2 $state(body)} result]} {
+		    try {
+			set state(body) [zlib $coding2 $state(body)]
+		    } on error {} {
 			# If that fails, try the MS non-compliant choice.
 			set coding2 inflate
 			set state(body) [zlib $coding2 $state(body)]
-		    } else {
-			# error {failed at standards-compliant deflate}
-			set state(body) $result
 		    }
 		} else {
 		    set state(body) [zlib $coding $state(body)]
 		}
 	    }
-	} err]} {
+	} on error err {
 	    Log "error doing decompression for token $token: $err"
 	    Finish $token $err
 	    return
@@ -4874,10 +4862,10 @@ proc http::ReceiveChunked {chan command} {
 	    incr size -[string length $part]
 	    append chunk $part
 	}
-	if {[catch {
+	try {
 	    uplevel #0 [linsert $command end $chunk]
-	}]} {
-	    http::Log "Error in callback: $::errorInfo"
+	} on error {- opt} {
+	    http::Log "Error in callback: [dict get $opt -errorinfo]"
 	}
 	if {[string length $chunk] == 0} {
 	    # channel might have been closed in the callback
@@ -5164,7 +5152,6 @@ proc http::SecureProxyConnect {args} {
 	} elseif {($code == 401)} {
 	    set msg "the proxy server responded to the HTTP request with an\
 		    inappropriate 401 request for target-host credentials"
-	} else {
 	}
     } else {
 	set msg "connection to proxy failed with status code $code"
@@ -5304,7 +5291,9 @@ proc http::LoadThreadIfNeeded {} {
     if {$http(usingThread) || ($http(-threadlevel) == 0)} {
         return
     }
-    if {[catch {package require Thread}]} {
+    try {
+	package require Thread
+    } on error {} {
         if {$http(-threadlevel) == 2} {
             set msg {[http::config -threadlevel] has value 2,\
                      but the Thread package is not available}

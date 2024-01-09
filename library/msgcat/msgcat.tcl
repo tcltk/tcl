@@ -235,7 +235,7 @@ proc msgcat::mcn {ns src args} {
     set loclist [PackagePreferences $ns]
 
     set nscur $ns
-    while {$nscur != ""} {
+    while {$nscur ne ""} {
 	foreach loc $loclist {
 	    if {[dict exists $Msgs $nscur $loc $src]} {
 		return [DefaultUnknown "" [dict get $Msgs $nscur $loc $src]\
@@ -992,18 +992,15 @@ proc msgcat::Invoke {index arglist {ns ""} {resultname ""} {failerror 0}} {
 	    set cmd [dict get $PackageConfig $index $ns]
 	    if {"" eq $cmd} {
 		if {$ret == 0} {set ret 1}
-	    } else {
-		if {$failerror} {
-		    set result [namespace inscope $ns $cmd {*}$arglist]
-		    set ret 2
-		} elseif {1 == [catch {
-		    set result [namespace inscope $ns $cmd {*}$arglist]
-		    if {$ret < 2} {set ret 2}
-		} err derr]} {
-		    after idle [concat [::interp bgerror ""]\
-			    [list $err $derr]]
-		    set ret 3
-		}
+	    } elseif {$failerror} {
+		set result [namespace inscope $ns $cmd {*}$arglist]
+		set ret 2
+	    } elseif {1 == [catch {
+		set result [namespace inscope $ns $cmd {*}$arglist]
+		if {$ret < 2} {set ret 2}
+	    } err derr]} {
+		after idle [list {*}[::interp bgerror ""] $err $derr]
+		set ret 3
 	    }
 	}
     }
@@ -1194,13 +1191,13 @@ proc msgcat::mcutil::ConvertLocale {value} {
     # regexp -expanded {
     #	^		# Match all the way to the beginning
     #	([^_.@]*)	# Match "lanugage"; ends with _, ., or @
-    #	(_([^.@]*))?	# Match (optional) "territory"; starts with _
-    #	([.]([^@]*))?	# Match (optional) "codeset"; starts with .
-    #	(@(.*))?	# Match (optional) "modifier"; starts with @
+    #	(?:_([^.@]*))?	# Match (optional) "territory"; starts with _
+    #	(?:[.]([^@]*))?	# Match (optional) "codeset"; starts with .
+    #	(?:@(.*))?	# Match (optional) "modifier"; starts with @
     #	$		# Match all the way to the end
     # } $value -> language _ territory _ codeset _ modifier
-    if {![regexp {^([^_.@]+)(_([^.@]*))?([.]([^@]*))?(@(.*))?$} $value \
-	    -> language _ territory _ codeset _ modifier]} {
+    if {![regexp {^([^_.@]+)(?:_([^.@]*))?(?:[.]([^@]*))?(?:@(.*))?$} $value \
+	    -> language territory codeset modifier]} {
 	return -code error "invalid locale '$value': empty language part"
     }
     set ret $language
@@ -1254,18 +1251,18 @@ proc msgcat::mcutil::getsystemlocale {} {
     #
     foreach varName {LC_ALL LC_MESSAGES LANG} {
 	if {[info exists env($varName)] && ("" ne $env($varName))} {
-	    if {![catch { ConvertLocale $env($varName) } locale]} {
-		return $locale
-	    }
+	    try {
+		return [ConvertLocale $env($varName)]
+	    } on error {} continue
 	}
     }
     #
     # On Darwin, fallback to current CFLocale identifier if available.
     #
     if {[info exists ::tcl::mac::locale] && $::tcl::mac::locale ne ""} {
-	if {![catch { ConvertLocale $::tcl::mac::locale } locale]} {
-	    return $locale
-	}
+	try {
+	    return [ConvertLocale $::tcl::mac::locale]
+	} on error {} {}
     }
     #
     # The rest of this routine is special processing for Windows or
@@ -1294,9 +1291,13 @@ proc msgcat::mcutil::getsystemlocale {} {
     #
     foreach key {{HKEY_CURRENT_USER\Control Panel\Desktop} {HKEY_CURRENT_USER\Control Panel\International}}\
 	    value {PreferredUILanguages localeName} {
-	if {![catch {registry get $key $value} localeName]
-		&& [regexp {^([a-z]{2,3})(?:-([a-z]{4}))?(?:-([a-z]{2}))?(?:-.+)?$}\
-		    [string tolower $localeName] match locale script territory]} {
+	try {
+	    set localeName [registry get $key $value]
+	} on error {} {
+	    continue
+	}
+	if {[regexp {^([a-z]{2,3})(?:-([a-z]{4}))?(?:-([a-z]{2}))?(?:-.+)?$}\
+		    [string tolower $localeName] -> locale script territory]} {
 	    if {"" ne $territory} {
 		append locale _ $territory
 	    }
@@ -1311,9 +1312,9 @@ proc msgcat::mcutil::getsystemlocale {} {
     }
 
     # then check value locale which contains a numerical language ID
-    if {[catch {
+    try {
 	set locale [registry get $key "locale"]
-    }]} {
+    } on error {} {
 	return C
     }
     #
@@ -1328,12 +1329,11 @@ proc msgcat::mcutil::getsystemlocale {} {
     variable WinRegToISO639
     set locale [string tolower $locale]
     while {[string length $locale]} {
-	if {![catch {
-	    ConvertLocale [dict get $WinRegToISO639 $locale]
-	} localeOut]} {
-	    return $localeOut
+	try {
+	    return [ConvertLocale [dict get $WinRegToISO639 $locale]]
+	} on error {} {
+	    set locale [string range $locale 1 end]
 	}
-	set locale [string range $locale 1 end]
     }
     #
     # No translation known.  Fall back on "C" locale

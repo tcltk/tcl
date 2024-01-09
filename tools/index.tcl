@@ -87,7 +87,6 @@ proc getTopics {pkg sect} {
 # Arguments:
 # string -		Text to index.
 
-
 proc text string {
     global state curID curPkg curSect topics keywords
 
@@ -96,8 +95,7 @@ proc text string {
 	    foreach i [split $string ","] {
 		set topic [string trim $i]
 		set index "$curPkg,$curSect,$topic"
-		if {[info exists topics($index)]
-		    && [string compare $topics($index) $curID] != 0} {
+		if {[info exists topics($index)] && $topics($index) ne $curID} {
 		    puts stderr "duplicate topic $topic in $curPkg"
 		}
 		set topics($index) $curID

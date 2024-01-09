@@ -296,7 +296,7 @@ proc ::tcl::tm::UnknownHandler {original name args} {
     # ::list...
 
     if {[llength $original]} {
-	uplevel 1 $original [::linsert $args 0 $name]
+	uplevel 1 [::list {*}$original $name {*}$args]
     }
 }
 

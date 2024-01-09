@@ -165,7 +165,7 @@ proc processFile {d} {
 	    {} {
 		puts $f2 $line
 		if { [regexp "^\# BEGIN (.*)" $line -> cases]
-		     && [string compare {} [info commands $cases]] } {
+		     && [llength [info commands $cases]] } {
 		    set state inCaseSet
 		    $cases $f2
 		}

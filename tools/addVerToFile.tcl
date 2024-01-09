@@ -4,6 +4,9 @@ if {$argc < 1} {
 }
 lassign $argv filename
 set f [open $filename a]
-puts $f "TCL_VERSION=[info tclversion]"
-puts $f "TCL_PATCHLEVEL=[info patchlevel]"
-close $f
+try {
+    puts $f "TCL_VERSION=[info tclversion]"
+    puts $f "TCL_PATCHLEVEL=[info patchlevel]"
+} finally {
+    close $f
+}

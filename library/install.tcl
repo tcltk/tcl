@@ -29,47 +29,39 @@ proc ::practcl::_pkgindex_directory {path} {
       # We used to be able to ... Assume the package is correct in the filename
       # No hunt for a "package provides"
       ###
-      set package [lindex [split $fname -] 0]
-      set version [lindex [split $fname -] 1]
+      lassign [split $fname -] package version
       ###
       # Read the file, and override assumptions as needed
       ###
-      set fin [open $file r]
-      fconfigure $fin -encoding utf-8 -eofchar \x1A
-      set dat [read $fin]
-      close $fin
+      set lines [split [_read_script $file] \n]
       # Look for a teapot style Package statement
-      foreach line [split $dat \n] {
+      foreach line $lines {
         set line [string trim $line]
-        if { [string range $line 0 9] != "# Package " } continue
-        set package [lindex $line 2]
-        set version [lindex $line 3]
-        break
+        if { [string match "# Package *" $line] } {
+	  lassign $line - - package version
+          break
+	}
       }
       # Look for a package provide statement
-      foreach line [split $dat \n] {
+      foreach line $lines {
         set line [string trim $line]
-        if { [string range $line 0 14] != "package provide" } continue
-        set package [lindex $line 2]
-        set version [lindex $line 3]
-        break
+        if { [string match "package provide*" $line] } {
+	  lassign $line - - package version
+          break
+	}
       }
       append buffer "package ifneeded $package $version \[list source \[file join \$dir [file tail $file]\]\]" \n
     }
     foreach file [glob -nocomplain $path/*.tcl] {
-      if { [file tail $file] == "version_info.tcl" } continue
-      set fin [open $file r]
-      fconfigure $fin -encoding utf-8 -eofchar \x1A
-      set dat [read $fin]
-      close $fin
+      if { [file tail $file] eq "version_info.tcl" } continue
+      set dat [_read_script $file]
       if {![regexp "package provide" $dat]} continue
       set fname [file rootname [file tail $file]]
       # Look for a package provide statement
       foreach line [split $dat \n] {
         set line [string trim $line]
-        if { [string range $line 0 14] != "package provide" } continue
-        set package [lindex $line 2]
-        set version [lindex $line 3]
+        if { ![string match "package provide*" $line] } continue
+	lassign $line - - package version
         if {[string index $package 0] in "\$ \[ @"} continue
         if {[string index $version 0] in "\$ \[ @"} continue
         append buffer "package ifneeded $package $version \[list source \[file join \$dir [file tail $file]\]\]" \n
@@ -78,47 +70,62 @@ proc ::practcl::_pkgindex_directory {path} {
     }
     return $buffer
   }
-  set fin [open $pkgidxfile r]
-  fconfigure $fin -encoding utf-8 -eofchar \x1A
-  set dat [read $fin]
-  close $fin
+  set lines [split [_read_script $pkgidxfile] \n]
   set trace 0
   #if {[file tail $path] eq "tool"} {
   #  set trace 1
   #}
   set thisline {}
-  foreach line [split $dat \n] {
+  foreach line $lines {
     append thisline $line \n
     if {![info complete $thisline]} continue
     set line [string trim $line]
     if {[string length $line]==0} {
       set thisline {} ; continue
     }
-    if {[string index $line 0] eq "#"} {
+    if {[string match "#*" $line]} {
       set thisline {} ; continue
     }
     if {[regexp "if.*catch.*package.*Tcl.*return" $thisline]} {
-      if {$trace} {puts "[file dirname $pkgidxfile] Ignoring $thisline"}
+      if {$trace} {
+	puts "[file dirname $pkgidxfile] Ignoring $thisline"
+      }
       set thisline {} ; continue
     }
     if {[regexp "if.*package.*vsatisfies.*package.*provide.*return" $thisline]} {
-      if {$trace} { puts "[file dirname $pkgidxfile] Ignoring $thisline" }
+      if {$trace} {
+	puts "[file dirname $pkgidxfile] Ignoring $thisline"
+      }
       set thisline {} ; continue
     }
     if {![regexp "package.*ifneeded" $thisline]} {
       # This package index contains arbitrary code
       # source instead of trying to add it to the main
       # package index
-      if {$trace} { puts "[file dirname $pkgidxfile] Arbitrary code $thisline" }
+      if {$trace} {
+	puts "[file dirname $pkgidxfile] Arbitrary code $thisline"
+      }
       return {source [file join $dir pkgIndex.tcl]}
     }
     append buffer $thisline \n
     set thisline {}
   }
-  if {$trace} {puts [list [file dirname $pkgidxfile] $buffer]}
+  if {$trace} {
+    puts [list [file dirname $pkgidxfile] $buffer]
+  }
   return $buffer
 }
 
+# Read a file under standard rules for Tcl scripts
+proc ::practcl::_read_script {file} {
+  set fin [open $file r]
+  try {
+    fconfigure $fin -encoding utf-8 -eofchar \x1A
+    return [read $fin]
+  } finally {
+    close $fin
+  }
+}
 
 proc ::practcl::_pkgindex_path_subdir {path} {
   set result {}
@@ -197,7 +204,7 @@ proc ::practcl::installDir {d1 d2} {
 
   foreach ftail [glob -directory $d1 -nocomplain -tails *] {
     set f [file join $d1 $ftail]
-    if {[file isdirectory $f] && [string compare CVS $ftail]} {
+    if {[file isdirectory $f] && "CVS" ne $ftail} {
       installDir $f [file join $d2 $ftail]
     } elseif {[file isfile $f]} {
 	    file copy -force $f [file join $d2 $ftail]
@@ -225,7 +232,7 @@ proc ::practcl::copyDir {d1 d2 {toplevel 1}} {
 
   foreach ftail [glob -directory $d1 -nocomplain -tails *] {
     set f [file join $d1 $ftail]
-    if {[file isdirectory $f] && [string compare CVS $ftail]} {
+    if {[file isdirectory $f] && "CVS" ne $ftail} {
       copyDir $f [file join $d2 $ftail] 0
     } elseif {[file isfile $f]} {
       file copy -force $f [file join $d2 $ftail]

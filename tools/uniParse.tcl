@@ -25,7 +25,7 @@ namespace eval uni {
 				# group number, initialized with the
 				# unassigned character group
 
-    variable categories {
+    const categories {
 	Cn Lu Ll Lt Lm Lo Mn Me Mc Nd Nl No Zs Zl Zp
 	Cc Cf Co Cs Pc Pd Ps Pe Pi Pf Po Sm Sc Sk So
     };				# Ordered list of character categories, must
@@ -282,7 +282,7 @@ static const int groups\[\] = {"
     set line "    "
     set last [expr {[llength $groups] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
-	foreach {type toupper tolower totitle} [lindex $groups $i] {}
+	lassign [lindex $groups $i] type toupper tolower totitle
 
 	# Compute the case conversion type and delta
 

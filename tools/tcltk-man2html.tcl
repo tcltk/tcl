@@ -1,6 +1,8 @@
 #!/usr/bin/env tclsh
 
-if {[catch {package require Tcl 8.6-} msg]} {
+try {
+    package require Tcl 8.6-
+} on error msg {
     puts stderr "ERROR: $msg"
     puts stderr "If running this script from 'make html', set the\
 	NATIVE_TCLSH environment\nvariable to point to an installed\
@@ -34,8 +36,11 @@ source -encoding utf-8 [file join [file dirname [info script]] tcltk-man2html-ut
 proc getversion {tclh {name {}}} {
     if {[file exists $tclh]} {
 	set chan [open $tclh]
-	set data [read $chan]
-	close $chan
+	try {
+	    set data [read $chan]
+	} finally {
+	    close $chan
+	}
 	if {$name eq ""} {
 	    set name [string toupper [file root [file tail $tclh]]]
 	}
@@ -235,8 +240,8 @@ proc capitalize {string} {
 ##
 proc css-style args {
     upvar 1 style style
-    set body [uplevel 1 [list subst [lindex $args end]]]
-    set tokens [join [lrange $args 0 end-1] ", "]
+    set body [uplevel 1 [list subst [lpop args]]]
+    set tokens [join $args ", "]
     append style $tokens " \{" $body "\}\n"
 }
 proc css-stylesheet {} {
@@ -319,6 +324,47 @@ proc css-stylesheet {} {
 }
 
 ##
+## Write a particular keyword file
+## 
+proc write-keyword-file {html letter keyheader keys} {
+    global manual overall_title tcltkdesc
+    set f [open $html/Keywords/$letter.html w]
+    try {
+	fconfigure $f -translation lf -encoding utf-8
+	puts $f [htmlhead "$tcltkdesc Keywords - $letter" \
+		       "$tcltkdesc Keywords - $letter" \
+		       $overall_title "../[indexfile]"]
+	puts $f $keyheader
+	puts $f "<dl class=\"keylist\">"
+	foreach k [lsort -dictionary $keys] {
+	    set k [string range $k 8 end]
+	    puts $f "<dt><a name=\"[nospace-text $k]\" id=\"[nospace-text $k]\">$k</a></dt>"
+	    puts $f "<dd>"
+	    set refs {}
+	    foreach man $manual(keyword-$k) {
+		lassign $man name file
+		if {[info exists manual(tooltip-$file)]} {
+		    set tooltip $manual(tooltip-$file)
+		    if {![string match {*[<>""]*} $tooltip]} {
+			lappend refs "<a href=\"../$file\" title=\"$tooltip\">$name</a>"
+			continue
+		    }
+		    manerror "bad tooltip for $file: \"$tooltip\""
+		}
+		lappend refs "<a href=\"../$file\">$name</a>"
+	    }
+	    puts $f "[join $refs {, }]</dd>"
+	}
+	puts $f "</dl>"
+	# insert merged copyrights
+	puts $f [copyout $manual(merge-copyrights)]
+	puts $f "</body></html>"
+    } finally {
+	close $f
+    }
+}
+
+##
 ## foreach of the man directories specified by args
 ## convert manpages into hypertext in the directory
 ## specified by html.
@@ -329,9 +375,13 @@ proc make-man-pages {html args} {
 
     makedirhier $html
     set cssfd [open $html/$::CSSFILE w]
-    fconfigure $cssfd -translation lf -encoding utf-8
-    puts $cssfd [css-stylesheet]
-    close $cssfd
+    try {
+	fconfigure $cssfd -translation lf -encoding utf-8
+	puts $cssfd [css-stylesheet]
+    } finally {
+	close $cssfd
+    }
+
     set manual(short-toc-n) 1
     set manual(short-toc-fp) [open $html/[indexfile] w]
     fconfigure $manual(short-toc-fp) -translation lf -encoding utf-8
@@ -371,67 +421,38 @@ proc make-man-pages {html args} {
     }
     file delete -force -- $html/Keywords
     makedirhier $html/Keywords
+    const letters {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
     set keyfp [open $html/Keywords/[indexfile] w]
-    fconfigure $keyfp -translation lf -encoding utf-8
-    puts $keyfp [htmlhead "$tcltkdesc Keywords" "$tcltkdesc Keywords" \
-		     $overall_title "../[indexfile]"]
-    set letters {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
-    # Create header first
-    set keyheader {}
-    foreach a $letters {
-	set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
-	if {[llength $keys]} {
-	    lappend keyheader "<a href=\"$a.html\">$a</a>"
-	} else {
-	    # No keywords for this letter
-	    lappend keyheader $a
-	}
-    }
-    set keyheader <h3>[join $keyheader " |\n"]</h3>
-    puts $keyfp $keyheader
-    foreach a $letters {
-	set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
-	if {![llength $keys]} {
-	    continue
-	}
-	# Per-keyword page
-	set afp [open $html/Keywords/$a.html w]
-	fconfigure $afp -translation lf -encoding utf-8
-	puts $afp [htmlhead "$tcltkdesc Keywords - $a" \
-		       "$tcltkdesc Keywords - $a" \
-		       $overall_title "../[indexfile]"]
-	puts $afp $keyheader
-	puts $afp "<dl class=\"keylist\">"
-	foreach k [lsort -dictionary $keys] {
-	    set k [string range $k 8 end]
-	    puts $afp "<dt><a name=\"[nospace-text $k]\" id=\"[nospace-text $k]\">$k</a></dt>"
-	    puts $afp "<dd>"
-	    set refs {}
-	    foreach man $manual(keyword-$k) {
-		set name [lindex $man 0]
-		set file [lindex $man 1]
-		if {[info exists manual(tooltip-$file)]} {
-		    set tooltip $manual(tooltip-$file)
-		    if {[string match {*[<>""]*} $tooltip]} {
-			manerror "bad tooltip for $file: \"$tooltip\""
-		    }
-		    lappend refs "<a href=\"../$file\" title=\"$tooltip\">$name</a>"
-		} else {
-		    lappend refs "<a href=\"../$file\">$name</a>"
-		}
+    try {
+	fconfigure $keyfp -translation lf -encoding utf-8
+	puts $keyfp [htmlhead "$tcltkdesc Keywords" "$tcltkdesc Keywords" \
+		$overall_title "../[indexfile]"]
+	# Create header first
+	set keyheader {}
+	foreach a $letters {
+	    set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
+	    if {[llength $keys]} {
+		lappend keyheader "<a href=\"$a.html\">$a</a>"
+	    } else {
+		# No keywords for this letter
+		lappend keyheader $a
 	    }
-	    puts $afp "[join $refs {, }]</dd>"
 	}
-	puts $afp "</dl>"
+	set keyheader <h3>[join $keyheader " |\n"]</h3>
+	puts $keyfp $keyheader
+	foreach a $letters {
+	    set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
+	    if {[llength $keys]} {
+		# Per-keyword page
+		write-keyword-file $html $a $keyheader $keys
+	    }
+	}
 	# insert merged copyrights
-	puts $afp [copyout $manual(merge-copyrights)]
-	puts $afp "</body></html>"
-	close $afp
+	puts $keyfp [copyout $manual(merge-copyrights)]
+	puts $keyfp "</body></html>"
+    } finally {
+	close $keyfp
     }
-    # insert merged copyrights
-    puts $keyfp [copyout $manual(merge-copyrights)]
-    puts $keyfp "</body></html>"
-    close $keyfp
 
     ##
     ## finish off short table of contents
@@ -505,7 +526,7 @@ proc make-man-pages {html args} {
     if {!$verbose} {
 	puts stderr "\nDone"
     }
-    return {}
+    return
 }
 
 ##
@@ -516,9 +537,12 @@ proc plus-base {var root glob name dir desc} {
     if {$var} {
 	if {[file exists $tcltkdir/$root/README]} {
 	    set f [open $tcltkdir/$root/README]
-	    fconfigure $f -encoding utf-8
-	    set d [read $f]
-	    close $f
+	    try {
+		fconfigure $f -encoding utf-8
+		set d [read $f]
+	    } finally {
+		close $f
+	    }
 	    if {[regexp {This is the \w+ (\S+) source distribution} $d -> version]} {
 	       append name ", version $version"
 	    }
@@ -761,7 +785,8 @@ try {
 		    }
 		}
 	    } finally {
-		catch {close $f; unset f}
+		catch {close $f}
+		unset -nocomplain f
 	    }
 
 	    if {[file exists [file join $pkgsDir $dir configure]]} {

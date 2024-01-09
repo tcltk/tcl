@@ -10,18 +10,11 @@
 
 package require Tcl
 
-proc ::tcl::dict::get? {dict key} {
-    if {[dict exists $dict $key]} {
-        return [dict get $dict $key]
-    }
-    return
-}
-namespace ensemble configure dict \
-    -map [linsert [namespace ensemble configure dict -map] end get? ::tcl::dict::get?]
-
 proc make-chunk-generator {data {size 4096}} {
     variable _chunk_gen_uid
-    if {![info exists _chunk_gen_uid]} {set _chunk_gen_uid 0}
+    if {![info exists _chunk_gen_uid]} {
+	set _chunk_gen_uid 0
+    }
     set lambda {{data size} {
         set pos 0
         yield
@@ -92,11 +85,19 @@ proc Service {chan addr port} {
         chan configure $chan -blocking 0
         yield
         while {[gets $chan line] < 0} {
-            if {[eof $chan]} {chan event $chan readable {}; close $chan; return}
+            if {[eof $chan]} {
+		chan event $chan readable {}
+		close $chan
+		return
+	    }
             yield
         }
-        if {[eof $chan]} {chan event $chan readable {}; close $chan; return}
-        foreach {req url protocol} {GET {} HTTP/1.1} break
+        if {[eof $chan]} {
+	    chan event $chan readable {}
+	    close $chan
+	    return
+	}
+        lassign {GET {} HTTP/1.1} req url protocol
         regexp {^(\S+)\s+(.*)\s(\S+)?$} $line -> req url protocol
 
         puts $line
@@ -125,7 +126,7 @@ proc Service {chan addr port} {
             }
             POST {
                 # Read the query.
-                set qlen [dict get? $meta content-length]
+                set qlen [dict getdef $meta content-length ""fget]
                 if {[string is integer -strict $qlen]} {
                     chan configure $chan -buffering none -translation binary
                     while {[string length $query] < $qlen} {
@@ -133,7 +134,7 @@ proc Service {chan addr port} {
                         if {[string length $query] < $qlen} {yield}
                     }
                     # Check for excess query bytes [Bug 2715421]
-                    if {[dict get? $meta x-check-query] eq "yes"} {
+                    if {[dict getdef $meta x-check-query {}] eq "yes"} {
                         chan configure $chan -blocking 0
                         append query [read $chan]
                     }
@@ -143,12 +144,14 @@ proc Service {chan addr port} {
                 # invalid request error 5??
             }
         }
-        if {$query ne ""} {puts $query}
+        if {$query ne ""} {
+	    puts $query
+	}
 
         set path [string trimleft $path /]
         set path [file join [pwd] $path]
         if {[file exists $path] && [file isfile $path]} {
-            foreach {what type} [mime-type $path] break
+            lassign [mime-type $path] what type
             set f [open $path r]
             if {$what eq "binary"} {
                 chan configure $f -translation binary
@@ -158,11 +161,11 @@ proc Service {chan addr port} {
             set data [read $f]
             close $f
             set code "200 OK"
-            set close [expr {[dict get? $meta connection] eq "close"}]
+            set close [expr {[dict getdef $meta connection {}] eq "close"}]
         }
 
         if {$protocol eq "HTTP/1.1"} {
-	    foreach enc [split [dict get? $meta accept-encoding] ,] {
+	    foreach enc [split [dict getdef $meta accept-encoding {}] ,] {
 		set enc [string trim $enc]
 		# The current implementation of "compress" appears to be
 		# incorrect (bug [a13b9d0ce1]).  Keep it here for
@@ -183,7 +186,9 @@ proc Service {chan addr port} {
         set nosendclose 0
         set msdeflate 0
         foreach pair [split $query &] {
-            if {[scan $pair {%[^=]=%s} key val] != 2} {set val ""}
+            if {[scan $pair {%[^=]=%s} key val] != 2} {
+		set val ""
+	    }
             switch -exact -- $key {
                 nosendclose  {set nosendclose 1}
                 close        {set close 1 ; set transfer 0}
@@ -206,7 +211,7 @@ proc Service {chan addr port} {
         if {$close && (!$nosendclose)} {
             Puts $chan "connection: close"
         }
-	Puts $chan "x-requested-encodings: [dict get? $meta accept-encoding]"
+	Puts $chan "x-requested-encodings: [dict getdef $meta accept-encoding {}]"
         if {$encoding eq "identity" && (!$nosendclose)} {
             Puts $chan "content-length: [string length $data]"
         } elseif {$encoding eq "identity"} {
@@ -283,7 +288,14 @@ proc Main {{port 0}} {
 }
 
 if {!$tcl_interactive} {
-    set r [catch [linsert $argv 0 Main] err]
-    if {$r} {puts stderr $errorInfo} elseif {[string length $err]} {puts $err}
-    exit $r
+    try {
+	Main {*}$argv
+    } on error {- opt} {
+	puts stderr [dict get $opt -errorinfo]
+	exit 1
+    } on ok msg {
+	if {$msg ne ""} {
+	    puts $msg
+	}
+    }
 }

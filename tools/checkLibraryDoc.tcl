@@ -22,7 +22,9 @@
 
 lappend auto_path "c:/program\ files/tclpro1.2/win32-ix86/bin"
 #lappend auto_path "/home/surles/cvs/tclx8.0/tcl/unix"
-if {[catch {package require Tclx}]} {
+try {
+    package require Tclx
+} on error {} {
     puts "error: could not load TclX.  Please set TCL_LIBRARY."
     exit 1
 }
@@ -30,75 +32,74 @@ if {[catch {package require Tclx}]} {
 # A list of structs that are known to be undocumented.
 
 set StructList {
-    Tcl_AsyncHandler \
-    Tcl_CallFrame \
-    Tcl_Condition \
-    Tcl_Encoding \
-    Tcl_EncodingState \
-    Tcl_EncodingType \
-    Tcl_HashEntry \
-    Tcl_HashSearch \
-    Tcl_HashTable \
-    Tcl_Mutex \
-    Tcl_Pid \
-    Tcl_QueuePosition \
-    Tcl_ResolvedVarInfo \
-    Tcl_ThreadDataKey \
-    Tcl_ThreadId \
-    Tcl_Time \
-    Tcl_TimerToken \
-    Tcl_Token \
-    Tcl_Trace \
-    Tcl_Var \
-    Tk_3DBorder \
-    Tk_ArgvInfo \
-    Tk_BindingTable \
-    Tk_Canvas \
-    Tk_CanvasTextInfo \
-    Tk_ConfigSpec \
-    Tk_ConfigTypes \
-    Tk_Cursor \
-    Tk_CustomOption \
-    Tk_ErrorHandler \
-    Tk_FakeWin \
-    Tk_Font \
-    Tk_FontMetrics \
-    Tk_GeomMgr \
-    Tk_Image \
-    Tk_ImageMaster \
-    Tk_ImageModel \
-    Tk_ImageType \
-    Tk_Item \
-    Tk_ItemType \
-    Tk_OptionSpec\
-    Tk_OptionTable \
-    Tk_OptionType \
-    Tk_PhotoHandle \
-    Tk_PhotoImageBlock \
-    Tk_PhotoImageFormat \
-    Tk_PostscriptInfo \
-    Tk_SavedOption \
-    Tk_SavedOptions \
-    Tk_SegType \
-    Tk_TextLayout \
-    Tk_Window \
+    Tcl_AsyncHandler
+    Tcl_CallFrame
+    Tcl_Condition
+    Tcl_Encoding
+    Tcl_EncodingState
+    Tcl_EncodingType
+    Tcl_HashEntry
+    Tcl_HashSearch
+    Tcl_HashTable
+    Tcl_Mutex
+    Tcl_Pid
+    Tcl_QueuePosition
+    Tcl_ResolvedVarInfo
+    Tcl_ThreadDataKey
+    Tcl_ThreadId
+    Tcl_Time
+    Tcl_TimerToken
+    Tcl_Token
+    Tcl_Trace
+    Tcl_Var
+    Tk_3DBorder
+    Tk_ArgvInfo
+    Tk_BindingTable
+    Tk_Canvas
+    Tk_CanvasTextInfo
+    Tk_ConfigSpec
+    Tk_ConfigTypes
+    Tk_Cursor
+    Tk_CustomOption
+    Tk_ErrorHandler
+    Tk_FakeWin
+    Tk_Font
+    Tk_FontMetrics
+    Tk_GeomMgr
+    Tk_Image
+    Tk_ImageMaster
+    Tk_ImageModel
+    Tk_ImageType
+    Tk_Item
+    Tk_ItemType
+    Tk_OptionSpec
+    Tk_OptionTable
+    Tk_OptionType
+    Tk_PhotoHandle
+    Tk_PhotoImageBlock
+    Tk_PhotoImageFormat
+    Tk_PostscriptInfo
+    Tk_SavedOption
+    Tk_SavedOptions
+    Tk_SegType
+    Tk_TextLayout
+    Tk_Window
 }
 
 # Misc junk that appears in the comments of the source.  This just
 # allows us to filter comments that "fool" the script.
 
 set CommentList {
-    Tcl_Create\[Obj\]Command \
-    Tcl_DecrRefCount\\n \
-    Tcl_NewObj\\n \
-    Tk_GetXXX \
+    Tcl_Create[Obj]Command
+    Tcl_DecrRefCount\\n
+    Tcl_NewObj\\n
+    Tk_GetXXX
 }
 
 # Main entry point to this script.
 
 proc main {} {
-    global argv0
-    global argv
+    global argv0 argv
 
     set len [llength $argv]
     if {($len != 2) && ($len != 3)} {
@@ -107,19 +108,20 @@ proc main {} {
 	exit 1
     }
 
-    set pkg [lindex $argv 0]
-    set dir [lindex $argv 1]
+    lassign $argv pkg dir filename
     if {[llength $argv] == 3} {
-	set file [open [lindex $argv 2] w]
+	set file [open $filename w]
     } else {
 	set file stdout
     }
 
-    foreach {c d} [compare [grepCode $dir $pkg] [grepDocs $dir $pkg]] {}
-    filter $c $d $dir $pkg $file
-
-    if {$file ne "stdout"} {
-	close $file
+    try {
+	lassign [compare [grepCode $dir $pkg] [grepDocs $dir $pkg]] c d
+	filter $c $d $dir $pkg $file
+    } finally {
+	if {$file ne "stdout"} {
+	    close $file
+	}
     }
     return
 }
@@ -172,9 +174,7 @@ proc filter {code docs dir pkg {outFile stdout}} {
 	    if {[string match ${pkg}* $x]} {
 		lappend procs $x
 	    }
-	} elseif {[lsearch -exact $decls $x] >= 0} {
-	    # No Op.
-	} elseif {[lsearch -exact $misc $x] >= 0} {
+	} elseif {$x in $decls || $x in $misc} {
 	    # No Op.
 	} else {
 	    lappend apis $x
@@ -209,13 +209,14 @@ proc dump {list title file} {
 proc grepCode {dir pkg} {
     set apis [myGrep "${pkg}_\.\*" "${dir}/\*/\*\.\[ch\]"]
     set pat1 ".*(${pkg}_\[A-z0-9]+).*$"
+    set result {}
 
     foreach a $apis {
 	if {[regexp --  $pat1 $a main n1]} {
-	    set result([string trim $n1]) 1
+	    dict set result [string trim $n1] 1
 	}
     }
-    return [lsort [array names result]]
+    return [lsort [dict keys $result]]
 }
 
 # Grep into "dir/doc/*.3" looking for APIs that match $pkg_*.
@@ -224,13 +225,14 @@ proc grepCode {dir pkg} {
 proc grepDocs {dir pkg} {
     set apis [myGrep "\\fB${pkg}_\.\*\\fR" "${dir}/doc/\*\.3"]
     set pat1 ".*(${pkg}_\[A-z0-9]+)\\\\fR.*$"
+    set result {}
 
     foreach a $apis {
 	if {[regexp -- $pat1 $a main n1]} {
-	    set result([string trim $n1]) 1
+	    dict set result [string trim $n1] 1
 	}
     }
-    return [lsort [array names result]]
+    return [lsort [dict keys $result]]
 }
 
 # Grep into "generic/pkgIntDecls.h" looking for APIs that match $pkg_*.
@@ -240,13 +242,14 @@ proc grepDecl {dir pkg} {
     set file [file join $dir generic "[string tolower $pkg]IntDecls.h"]
     set apis [myGrep "^EXTERN.*\[ \t\]${pkg}_.*" $file]
     set pat1 ".*(${pkg}_\[A-z0-9]+).*$"
+    set result {}
 
     foreach a $apis {
 	if {[regexp -- $pat1 $a main n1]} {
-	    set result([string trim $n1]) 1
+	    dict set result [string trim $n1] 1
 	}
     }
-    return [lsort [array names result]]
+    return [lsort [dict keys $result]]
 }
 
 # Grep into "*/*.[ch]" looking for APIs that match $pkg_Db*.
@@ -258,26 +261,30 @@ proc grepMisc {dir pkg} {
 
     set apis [myGrep "^EXTERN.*\[ \t\]${pkg}_Db.*" "${dir}/\*/\*\.\[ch\]"]
     set pat1 ".*(${pkg}_\[A-z0-9]+).*$"
+    set dbg {}
 
     foreach a $apis {
 	if {[regexp -- $pat1 $a main n1]} {
-	    set dbg([string trim $n1]) 1
+	    dict set dbg [string trim $n1] 1
 	}
     }
 
     set result {}
-    eval {lappend result} $StructList
-    eval {lappend result} [lsort [array names dbg]]
-    eval {lappend result} $CommentList
+    lappend result {*}$StructList
+    lappend result {*}[lsort [dict keys $dbg]]
+    lappend result {*}$CommentList
     return $result
 }
 
 proc myGrep {searchPat globPat} {
     set result {}
     foreach file [glob -nocomplain $globPat] {
-	set file [open $file r]
-	set data [read $file]
-	close $file
+	set f [open $file r]
+	try {
+	    set data [read $f]
+	} finally {
+	    close $f
+	}
 	foreach line [split $data "\n"] {
 	    if {[regexp "^.*${searchPat}.*\$" $line]} {
 		lappend result $line

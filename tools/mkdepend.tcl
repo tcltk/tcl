@@ -69,7 +69,7 @@ proc openOutput {file} {
 
 proc closeOutput {} {
     global output
-    if {[string match stdout $output] != 0} {
+    if {[string match stdout $output]} {
         close $output
     }
 }
@@ -86,28 +86,30 @@ proc closeOutput {} {
 
 proc readDepends {chan} {
     set line ""
-    array set depends {}
+    set depends {}
 
     while {[gets $chan line] >= 0} {
-        if {[regexp {^#line [0-9]+ \"(.*)\"$} $line dummy fname] != 0} {
+        if {[regexp {^#line [0-9]+ \"(.*)\"$} $line dummy fname]} {
 	    set fname [file normalize $fname]
             if {![info exists target]} {
 		# this is ourself
 		set target $fname
 		puts stderr "processing [file tail $fname]"
-            } else {
+            } elseif {$fname eq $target} {
 		# don't include ourselves as a dependency of ourself.
-		if {![string compare $fname $target]} {continue}
-		# store in an array so multiple occurrences are not counted.
-                set depends($target|$fname) ""
+		continue
+	    } else {
+		# store in a dict so multiple occurrences are not counted.
+                dict set depends $target $fname {}
             }
         }
     }
 
     set result {}
-    foreach n [array names depends] {
-        set pair [split $n "|"]
-        lappend result [list [lindex $pair 0] [lindex $pair 1]]
+    dict for {target fnames} $depends {
+	foreach fname [dict keys $fnames] {
+	    lappend result $target $fname
+	}
     }
 
     return $result
@@ -142,9 +144,7 @@ proc writeDepends {out depends} {
 #	the result of the comparison.
 
 proc stringStartsWith {str prefix} {
-    set front [string range $str 0 [expr {[string length $prefix] - 1}]]
-    return [expr {[string compare [string tolower $prefix] \
-                                  [string tolower $front]] == 0}]
+    string equal -nocase -length [string length $prefix] $prefix $str
 }
 
 # filterExcludes --
@@ -166,9 +166,9 @@ proc filterExcludes {depends excludes} {
         set file [lindex $pair 1]
 
         foreach dir $excludes {
-            if [stringStartsWith $file $dir] {
+            if {[stringStartsWith $file $dir]} {
                 set excluded 1
-                break;
+                break
             }
         }
 
@@ -293,8 +293,11 @@ proc displayUsage {} {
 proc readInputListFile {objectListFile} {
     global srcFileList srcPathList source_extensions
     set f [open $objectListFile r]
-    set fl [read $f]
-    close $f
+    try {
+	set fl [read $f]
+    } finally {
+	close $f
+    }
 
     # fix native path separator so it isn't treated as an escape.
     regsub -all {\\} $fl {/} fl
@@ -391,19 +394,20 @@ proc main {} {
     # Execute the CPP command and parse output
 
     foreach srcFile $srcFileList {
-	if {[catch {
+	try {
 	    set command "$mode_data($mode) $passthru \"$srcFile\""
 	    set input [open |$command r]
 	    set depends [readDepends $input]
-	    set status [catch {close $input} result]
-	    if {$status == 1 && [lindex $::errorCode 0] eq "CHILDSTATUS"} {
-		foreach { - pid code } $::errorCode break
+	    try {
+		close $input
+	    } trap CHILDSTATUS {result opt} {
+		lassign [dict get $opt -errorcode] -> pid code
 		if {$code == 2} {
 		    # preprocessor died a cruel death.
 		    error $result
 		}
 	    }
-	} err]} {
+	} on error err {
 	    puts stderr "error ocurred: $err\n"
 	    continue
 	}

@@ -556,7 +556,7 @@ namespace eval tcltest {
 
     proc EstablishAutoConfigureTraces {} {
 	variable OptionControlledVariables
-	foreach varName [concat $OptionControlledVariables Option] {
+	foreach varName [list {*}$OptionControlledVariables Option] {
 	    variable $varName
 	    trace add variable $varName read [namespace code {
 		    ProcessCmdLineArgs ;#}]
@@ -565,7 +565,7 @@ namespace eval tcltest {
 
     proc RemoveAutoConfigureTraces {} {
 	variable OptionControlledVariables
-	foreach varName [concat $OptionControlledVariables Option] {
+	foreach varName [list {*}$OptionControlledVariables Option] {
 	    variable $varName
 	    foreach pair [trace info variable $varName] {
 		lassign $pair op cmd
@@ -804,8 +804,7 @@ namespace eval tcltest {
     trace add variable Option(-loadfile) write [namespace code ReadLoadScript]
 
     proc AcceptOutFile { file } {
-	if {[string equal stderr $file]} {return $file}
-	if {[string equal stdout $file]} {return $file}
+	if {$file in {stdout stderr}} {return $file}
 	return [file join [temporaryDirectory] $file]
     }
 
@@ -1327,7 +1326,9 @@ proc tcltest::DefineConstraintInitializers {} {
 
     ConstraintInitializer asyncPipeClose {expr {
 	    !([string equal unix $::tcl_platform(platform)]
-	    && ([catch {exec uname -X | fgrep {Release = 3.2v}}] == 0))}}
+	    && (0 == [catch {
+		exec uname -X | fgrep {Release = 3.2v}
+	    }]))}}
 
     # Test to see if we have a broken version of sprintf with respect
     # to the "e" format of floating-point numbers.
@@ -1436,7 +1437,7 @@ proc tcltest::Usage { {option ""} } {
 	append msg "Available flags (and valid input values) are:"
 
 	set max 0
-	set allOpts [concat -help [Configure]]
+	set allOpts [list -help {*}[Configure]]
 	foreach opt $allOpts {
 	    set foo [Usage $opt]
 	    lassign $foo x type($opt) usage($opt)
@@ -1725,7 +1726,9 @@ proc tcltest::CompareStrings {actual expected mode} {
         return -code error "No matching command registered for `-match $mode'"
     }
     set match [namespace eval :: $CustomMatch($mode) [list $expected $actual]]
-    if {[catch {expr {$match && $match}} result]} {
+    try {
+	expr {$match && $match}
+    } on error result {
 	return -code error "Invalid result from `-match $mode' command: $result"
     }
     return $match
@@ -1837,12 +1840,16 @@ proc tcltest::SubstArguments {argList} {
             set token $word
         }
 
-        if { [catch {llength $token} length] == 0 && $length == 1} {
-            # The token is a valid list so add it to the result.
-            # lappend result [string trim $token]
-            append result \{$token\}
-            set token {}
-        }
+	try {
+	    llength $token
+	} on ok length {
+	    if {$length == 1} {
+		# The token is a valid list so add it to the result.
+		# lappend result [string trim $token]
+		append result \{$token\}
+		set token {}
+	    }
+	}
     }
 
     # If the last token has not been added to the list then there
@@ -2131,12 +2138,16 @@ proc tcltest::test {name description args} {
     if {[set cmd [namespace which -command [namespace current]::CleanupTest]] ne ""} {
 	set cleanup [list $cmd $cleanup]
     }
-    set code [catch {uplevel 1 $cleanup} cleanupMsg]
-    if {$code == 1} {
-	set errorInfo(cleanup) $::errorInfo
-	set errorCodeRes(cleanup) $::errorCode
+    set cleanupFailure 1
+    set cleanupMsg ""
+    try {
+	uplevel 1 $cleanup
+    } on error {cleanupMsg opt} {
+	set errorInfo(cleanup) [dict get $opt -errorinfo]
+	set errorCodeRes(cleanup) [dict get $opt -errorcode]
+    } on ok {} {
+	set cleanupFailure 0
     }
-    set cleanupFailure [expr {$code != 0}]
 
     set coreFailure 0
     set coreMsg ""
@@ -2159,11 +2170,11 @@ proc tcltest::test {name description args} {
 	    if {([preserveCore] > 1) && ($coreFailure)} {
 		append coreMsg "\nMoving file to:\
 		    [file join [temporaryDirectory] core-$name]"
-		catch {file rename -force -- \
-		    [file join [workingDirectory] core] \
-		    [file join [temporaryDirectory] core-$name]
-		} msg
-		if {$msg ne {}} {
+		try {
+		    file rename -force -- \
+			[file join [workingDirectory] core] \
+			[file join [temporaryDirectory] core-$name]
+		} on error msg {
 		    append coreMsg "\nError:\
 			Problem renaming core file: $msg"
 		}
@@ -2254,9 +2265,9 @@ proc tcltest::test {name description args} {
 	if {$scriptCompare} {
 	    puts [outputChannel] "---- Error testing result: $scriptMatch"
 	} else {
-	    if {[catch {
+	    try {
 		puts [outputChannel] "---- Result was:\n[Asciify $actualAnswer]"
-	    } errMsg]} {
+	    } on error errMsg {
 		puts [outputChannel] "\n---- Result was:\n<error printing result: $errMsg>"
 	    }
 	    puts [outputChannel] "---- Result should have been\
@@ -2687,11 +2698,11 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 		puts [outputChannel] "produced core file! \
 			Moving file to: \
 			[file join [temporaryDirectory] core-$testFileName]"
-		catch {file rename -force -- \
+		try {
+		    file rename -force -- \
 			[file join [workingDirectory] core] \
 			[file join [temporaryDirectory] core-$testFileName]
-		} msg
-		if {$msg ne {}} {
+		} on error msg {
 		    PrintError "Problem renaming file: $msg"
 		}
 	    } else {
@@ -2908,10 +2919,10 @@ proc tcltest::runAllTests { {shell ""} } {
 	flush [outputChannel]
 
 	if {[singleProcess]} {
-	    if {[catch {
+	    try {
 		incr numTestFiles
 		uplevel 1 [list ::source $file]
-	    } msg]} {
+	    } on error msg {
 		puts [outputChannel] "Test file error: $msg"
 		# append the name of the test to a list to be reported
 		# later
@@ -3189,7 +3200,9 @@ proc tcltest::removeFile {name {directory ""}} {
 	    Warn "removeFile removing \"$fullName\":\n  not a file"
 	}
     }
-    if {[catch {file delete -- $fullName} msg ]} {
+    try {
+	file delete -- $fullName
+    } on error msg {
 	DebugDo 1 {
 	    Warn "removeFile removing \"$fullName\":\n  failed: $msg"
 	}
@@ -3397,7 +3410,7 @@ proc tcltest::LeakFiles {old} {
 proc tcltest::SetIso8859_1_Locale {} {
     variable previousLocale
     variable isoLocale
-    if {[info commands testlocale] != ""} {
+    if {[info commands testlocale] ne ""} {
 	set previousLocale [testlocale ctype]
 	testlocale ctype $isoLocale
     }
@@ -3419,7 +3432,7 @@ proc tcltest::SetIso8859_1_Locale {} {
 
 proc tcltest::RestoreLocale {} {
     variable previousLocale
-    if {[info commands testlocale] != ""} {
+    if {[info commands testlocale] ne ""} {
 	testlocale ctype $previousLocale
     }
     return
@@ -3517,7 +3530,9 @@ namespace eval tcltest {
     # the effect of resetting tcltest's default configuration.
     proc ConfigureFromEnvironment {} {
 	upvar #0 env(TCLTEST_OPTIONS) options
-	if {[catch {llength $options} msg]} {
+	try {
+	    llength $options
+	} on error msg {
 	    Warn "invalid TCLTEST_OPTIONS \"$options\":\n  invalid\
 		    Tcl list: $msg"
 	    return
@@ -3527,7 +3542,9 @@ namespace eval tcltest {
 		    -option value ?-option value ...?"
 	    return
 	}
-	if {[catch {Configure {*}$options} msg]} {
+	try {
+	    Configure {*}$options
+	} on error msg {
 	    Warn "invalid TCLTEST_OPTIONS: \"$options\":\n  $msg"
 	    return
 	}

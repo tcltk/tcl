@@ -7,37 +7,25 @@
 # Copyright © 1996 Sun Microsystems, Inc.
 
 proc readInputFile {} {
-    global inFileName
-    global lineArray
+    global inFileName lineArray
 
     set fileId [open $inFileName r]
-
-    set i 0
-    while {[gets $fileId line] >= 0} {
-
-	set len [string length $line]
-
-	if {($len > 0) && ([string index $line [expr {$len - 1}]] == "\\")} {
-	    if {[info exists lineArray(c$i)] == 0} {
-		set lineArray(c$i) 1
-	    } else {
+    try {
+	set i 0
+	while {[gets $fileId line] >= 0} {
+	    if {[string index $line end] eq "\\"} {
 		incr lineArray(c$i)
+		append lineArray($i) [string range $line 0 end-1]
+		continue
 	    }
-	    set line [string range $line 0 [expr {$len - 2}]]
-	    append lineArray($i) $line
-	    continue
-	}
-	if {[info exists lineArray(c$i)] == 0} {
-	    set lineArray(c$i) 1
-	} else {
 	    incr lineArray(c$i)
+	    append lineArray($i) $line
+	    incr i
 	}
-	append lineArray($i) $line
-	incr i
+	return $i
+    } finally {
+	close $fileId
     }
-
-    close $fileId
-    return $i
 }
 
 #
@@ -45,49 +33,60 @@ proc readInputFile {} {
 # unpreceded @'s are replaced by {}
 #
 proc removeAts {ls} {
-    set len [llength $ls]
-    set newLs {}
-    foreach item $ls {
-	regsub @.* $item "" newItem
-	lappend newLs $newItem
+    lmap item $ls {
+	regsub @.* $item ""
     }
-    return $newLs
 }
 
 proc convertErrCode {code} {
-
     set errMsg "couldn't compile regular expression pattern:"
-
-    if {[string compare $code "INVARG"] == 0} {
-	return "$errMsg invalid argument to regex routine"
-    } elseif {[string compare $code "BADRPT"] == 0} {
-	return "$errMsg ?+* follows nothing"
-    } elseif {[string compare $code "BADBR"] == 0} {
-	return "$errMsg invalid repetition count(s)"
-    } elseif {[string compare $code "BADOPT"] == 0} {
-	return "$errMsg invalid embedded option"
-    } elseif {[string compare $code "EPAREN"] == 0} {
-	return "$errMsg unmatched ()"
-    } elseif {[string compare $code "EBRACE"] == 0} {
-	return "$errMsg unmatched {}"
-    } elseif {[string compare $code "EBRACK"] == 0} {
-	return "$errMsg unmatched \[\]"
-    } elseif {[string compare $code "ERANGE"] == 0} {
-	return "$errMsg invalid character range"
-    } elseif {[string compare $code "ECTYPE"] == 0} {
-	return "$errMsg invalid character class"
-    } elseif {[string compare $code "ECOLLATE"] == 0} {
-	return "$errMsg invalid collating element"
-    } elseif {[string compare $code "EESCAPE"] == 0} {
-	return "$errMsg invalid escape sequence"
-    } elseif {[string compare $code "BADPAT"] == 0} {
-	return "$errMsg invalid regular expression"
-    } elseif {[string compare $code "ESUBREG"] == 0} {
-	return "$errMsg invalid backreference number"
-    } elseif {[string compare $code "IMPOSS"] == 0} {
-	return "$errMsg can never match"
+    switch $code {
+	"INVARG" {
+	    return "$errMsg invalid argument to regex routine"
+	}
+	"BADRPT" {
+	    return "$errMsg ?+* follows nothing"
+	}
+	"BADBR" {
+	    return "$errMsg invalid repetition count(s)"
+	}
+	"BADOPT" {
+	    return "$errMsg invalid embedded option"
+	}
+	"EPAREN" {
+	    return "$errMsg unmatched ()"
+	}
+	"EBRACE" {
+	    return "$errMsg unmatched {}"
+	}
+	"EBRACK" {
+	    return "$errMsg unmatched \[\]"
+	}
+	"ERANGE" {
+	    return "$errMsg invalid character range"
+	}
+	"ECTYPE" {
+	    return "$errMsg invalid character class"
+	}
+	"ECOLLATE" {
+	    return "$errMsg invalid collating element"
+	}
+	"EESCAPE" {
+	    return "$errMsg invalid escape sequence"
+	}
+	"BADPAT" {
+	    return "$errMsg invalid regular expression"
+	}
+	"ESUBREG" {
+	    return "$errMsg invalid backreference number"
+	}
+	"IMPOSS" {
+	    return "$errMsg can never match"
+	}
+	default {
+	    return "$errMsg $code"
+	}
     }
-    return "$errMsg $code"
 }
 
 proc writeOutputFile {numLines fcn} {
@@ -124,12 +123,11 @@ proc writeOutputFile {numLines fcn} {
     set lineNum 0
     set srcLineNum 1
     while {$lineNum < $numLines} {
-
 	set currentLine $lineArray($lineNum)
 
 	# copy comment string to output file and continue
 
-	if {[string index $currentLine 0] == "#"} {
+	if {[string match "#*" $currentLine]} {
 	    puts $fileId $currentLine
 	    incr srcLineNum $lineArray(c$lineNum)
 	    incr lineNum
@@ -146,7 +144,7 @@ proc writeOutputFile {numLines fcn} {
 	    incr lineNum
 	    continue
 	}
-	if {($len < 3)} {
+	if {$len < 3} {
 	    puts "warning: test is too short --\n\t$currentLine"
 	    incr srcLineNum $lineArray(c$lineNum)
 	    incr lineNum
@@ -163,11 +161,7 @@ proc writeOutputFile {numLines fcn} {
 }
 
 proc convertTestLine {currentLine len lineNum srcLineNum} {
-
-    regsub -all {(?b)\\} $currentLine {\\\\} currentLine
-    set re [lindex $currentLine 0]
-    set flags [lindex $currentLine 1]
-    set str [lindex $currentLine 2]
+    lassign [regsub -all {(?b)\\} $currentLine {\\\\}] re flags str
 
     # based on flags, decide whether to skip the test
 
@@ -181,21 +175,23 @@ proc convertTestLine {currentLine len lineNum srcLineNum} {
     # perform mapping if '=' flag exists
 
     set noBraces 0
-    if {[regexp {=|>} $flags] == 1} {
-	regsub -all {_} $currentLine {\\ } currentLine
-	regsub -all {A} $currentLine {\\x07} currentLine
-	regsub -all {B} $currentLine {\\b} currentLine
-	regsub -all {E} $currentLine {\\x1B} currentLine
-	regsub -all {F} $currentLine {\\f} currentLine
-	regsub -all {N} $currentLine {\\n} currentLine
+    if {[regexp {=|>} $flags]} {
+	set currentLine [string map {
+	    _ {\\ }
+	    A {\\x07}
+	    B {\\b}
+	    E {\\x1B}
+	    F {\\f}
+	    N {\\n}
+	    T {\\t}
+	    V {\\v}
+	} $currentLine]
 
-	# if and \r substitutions are made, do not wrap re, flags,
+	# if any \r substitutions are made, do not wrap re, flags,
 	# str, and result in braces
-
 	set noBraces [regsub -all {R} $currentLine {\\\x0D} currentLine]
-	regsub -all {T} $currentLine {\\t} currentLine
-	regsub -all {V} $currentLine {\\v} currentLine
-	if {[regexp {=} $flags] == 1} {
+
+	if {[regexp {=} $flags]} {
 	    set re [lindex $currentLine 0]
 	}
 	set str [lindex $currentLine 2]
@@ -210,10 +206,10 @@ proc convertTestLine {currentLine len lineNum srcLineNum} {
     set result 0
     set v 0
 
-    if {[regsub {\*} "$flags" "" newFlags] == 1} {
+    if {[regsub {\*} "$flags" "" newFlags]} {
 	# an error is expected
 
-	if {[string compare $str "EMPTY"] == 0} {
+	if {$str eq "EMPTY"} {
 	    # empty regexp is not an error
 	    # skip this test
 
@@ -224,7 +220,7 @@ proc convertTestLine {currentLine len lineNum srcLineNum} {
     } elseif {$numVars > 0} {
 	# at least 1 match is made
 
-	if {[regexp {s} $flags] == 1} {
+	if {[regexp {s} $flags]} {
 	    set result "\{0 1\}"
 	} else {
 	    while {$v < $numVars} {
@@ -252,7 +248,7 @@ proc convertTestLine {currentLine len lineNum srcLineNum} {
     }
 
     set test "test regexp-1.$srcLineNum \{converted from line $srcLineNum\} \{\n"
-    append test "\tcatch {unset var}\n"
+    append test "\tunset -nocomplain var\n"
     append test "\tlist \[catch \{\n"
     append test "\t\tset match \[$cmd\]\n"
     append test "\t\tlist \$match $vals\n"
@@ -260,4 +256,3 @@ proc convertTestLine {currentLine len lineNum srcLineNum} {
     append test "\} $result\n"
     return $test
 }
-
