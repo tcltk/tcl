@@ -926,7 +926,7 @@ typedef enum InstStringClassType {
 				 * punctuation) characters. */
     STR_CLASS_XDIGIT,		/* Characters that can be used as digits in
 				 * hexadecimal numbers ([0-9A-Fa-f]). */
-    STR_CLASS_UNICODE		/* Unicode characters. */
+    STR_CLASS_TRANSFERABLE	/* Transferable characters. */
 } InstStringClassType;
 
 typedef struct StringClassDesc {

@@ -508,7 +508,7 @@ TclCompileStringIsCmd(
 	"boolean",	"dict",		"digit",	"double",
 	"entier",	"false",	"graph",	"integer",
 	"list",		"lower",	"print",	"punct",
-	"space",	"true",		"upper",	"unicode",
+	"space",	"true",		"transferable",	"upper",
 	"wideinteger", "wordchar",	"xdigit",	NULL
     };
     enum isClassesEnum {
@@ -516,7 +516,7 @@ TclCompileStringIsCmd(
 	STR_IS_BOOL,	STR_IS_DICT,	STR_IS_DIGIT,	STR_IS_DOUBLE,
 	STR_IS_ENTIER,	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,
 	STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,
-	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_UNICODE,
+	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_TRANSFERABLE,	STR_IS_UPPER,
 	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
     };
     int t, range, allowEmpty = 0, end;
@@ -606,11 +606,11 @@ TclCompileStringIsCmd(
     case STR_IS_SPACE:
 	strClassType = STR_CLASS_SPACE;
 	goto compileStrClass;
+    case STR_IS_TRANSFERABLE:
+	strClassType = STR_CLASS_TRANSFERABLE;
+	goto compileStrClass;
     case STR_IS_UPPER:
 	strClassType = STR_CLASS_UPPER;
-	goto compileStrClass;
-    case STR_IS_UNICODE:
-	strClassType = STR_CLASS_UNICODE;
 	goto compileStrClass;
     case STR_IS_WORD:
 	strClassType = STR_CLASS_WORD;
@@ -1418,7 +1418,7 @@ StringClassDesc const tclStringClassTable[] = {
     {"upper",	Tcl_UniCharIsUpper},
     {"word",	Tcl_UniCharIsWordChar},
     {"xdigit",	UniCharIsHexDigit},
-    {"unicode",	Tcl_UniCharIsUnicode},
+    {"transferable",	Tcl_UniCharIsTransferable},
     {"",	NULL}
 };
 

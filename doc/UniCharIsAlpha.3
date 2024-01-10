@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_UniCharIsAlnum, Tcl_UniCharIsAlpha, Tcl_UniCharIsControl, Tcl_UniCharIsDigit, Tcl_UniCharIsGraph, Tcl_UniCharIsLower, Tcl_UniCharIsPrint, Tcl_UniCharIsPunct, Tcl_UniCharIsSpace, Tcl_UniCharIsUpper, Tcl_UniCharIsUnicode, Tcl_UniCharIsWordChar \- routines for classification of Tcl_UniChar characters
+Tcl_UniCharIsAlnum, Tcl_UniCharIsAlpha, Tcl_UniCharIsControl, Tcl_UniCharIsDigit, Tcl_UniCharIsGraph, Tcl_UniCharIsLower, Tcl_UniCharIsPrint, Tcl_UniCharIsPunct, Tcl_UniCharIsSpace, Tcl_UniCharIsTransferable, Tcl_UniCharIsUpper, Tcl_UniCharIsWordChar \- routines for classification of Tcl_UniChar characters
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -41,10 +41,10 @@ int
 \fBTcl_UniCharIsSpace\fR(\fIch\fR)
 .sp
 int
-\fBTcl_UniCharIsUpper\fR(\fIch\fR)
+\fBTcl_UniCharIsTransferable\fR(\fIch\fR)
 .sp
 int
-\fBTcl_UniCharIsUnicode\fR(\fIch\fR)
+\fBTcl_UniCharIsUpper\fR(\fIch\fR)
 .sp
 int
 \fBTcl_UniCharIsWordChar\fR(\fIch\fR)
@@ -82,10 +82,10 @@ with the various routines.
 .PP
 \fBTcl_UniCharIsSpace\fR tests if the character is a whitespace Unicode character.
 .PP
-\fBTcl_UniCharIsUpper\fR tests if the character is an uppercase Unicode character.
-.PP
-\fBTcl_UniCharIsUnicode\fR tests if the character is a Unicode character, not being
+\fBTcl_UniCharIsTransferable\fR tests if the character is a Unicode character, not being
 a surrogate or noncharacter.
+.PP
+\fBTcl_UniCharIsUpper\fR tests if the character is an uppercase Unicode character.
 .PP
 \fBTcl_UniCharIsWordChar\fR tests if the character is alphanumeric or
 a connector punctuation mark.

@@ -538,10 +538,10 @@ test string-6.4.$noComp {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5.$noComp {string is, class check} {
     list [catch {run {string is bogus str}} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, unicode, wideinteger, wordchar, or xdigit}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, transferable, upper, wideinteger, wordchar, or xdigit}}
 test string-6.6.$noComp {string is, ambiguous class} {
     list [catch {run {string is al str}} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, unicode, wideinteger, wordchar, or xdigit}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, transferable, upper, wideinteger, wordchar, or xdigit}}
 test string-6.7.$noComp {string is alpha, all ok} {
     run {string is alpha -strict -failindex var abc}
 } 1
@@ -974,26 +974,26 @@ test string-6.130.1.$noComp {string is entier, false on bad octal} {
 test string-6.131.$noComp {string is entier, false on bad hex} {
     list [run {string is entier -fail var 0X12345611234123456123456562345612345612345612345612345612345612345612345612345612345345XYZ}] $var
 } {0 88}
-test string-6.132.$noComp {string is unicode} {
-    run {string is unicode \U10FFFD\uD7FF\uE000\uFDCF\uFDF0}
+test string-6.132.$noComp {string is transferable} {
+    run {string is transferable \U10FFFD\uD7FF\uE000\uFDCF\uFDF0}
 } 1
-test string-6.133.$noComp {string is unicode, upper surrogate} {
-    run {string is unicode \uD800}
+test string-6.133.$noComp {string is transferable, upper surrogate} {
+    run {string is transferable \uD800}
 } 0
-test string-6.134.$noComp {string is unicode, lower surrogate} {
-    run {string is unicode \uDFFF}
+test string-6.134.$noComp {string is transferable, lower surrogate} {
+    run {string is transferable \uDFFF}
 } 0
-test string-6.135.$noComp {string is unicode, noncharacter} {
-    run {string is unicode \uFFFE}
+test string-6.135.$noComp {string is transferable, noncharacter} {
+    run {string is transferable \uFFFE}
 } 0
-test string-6.136.$noComp {string is unicode, noncharacter} {
-    run {string is unicode \uFFFF}
+test string-6.136.$noComp {string is transferable, noncharacter} {
+    run {string is transferable \uFFFF}
 } 0
-test string-6.137.$noComp {string is unicode, noncharacter} {
-    run {string is unicode \uFDD0}
+test string-6.137.$noComp {string is transferable, noncharacter} {
+    run {string is transferable \uFDD0}
 } 0
-test string-6.138.$noComp {string is unicode, noncharacter} {
-    run {string is unicode \uFDEF}
+test string-6.138.$noComp {string is transferable, noncharacter} {
+    run {string is transferable \uFDEF}
 } 0
 test string-6.139.$noComp {string is integer, bug [76ad7aeba3]} {
     run {string is integer 18446744073709551615}

@@ -2402,9 +2402,9 @@ Tcl_UniCharIsUpper(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UniCharIsUnicode --
+ * Tcl_UniCharIsTransferable --
  *
- *	Test if a character is a Unicode character.
+ *	Test if a character is a transferable Unicode character.
  *
  * Results:
  *	Returns non-zero if character belongs to the Unicode set.
@@ -2422,7 +2422,7 @@ Tcl_UniCharIsUpper(
  */
 
 int
-Tcl_UniCharIsUnicode(
+Tcl_UniCharIsTransferable(
     int ch)			/* Unicode character to test. */
 {
     return ((unsigned int)ch <= 0x10FFFF) && ((ch & 0xFFF800) != 0xD800)

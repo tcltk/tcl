@@ -174,8 +174,9 @@ zero width no-break space (U+feff) (=BOM).
 .IP \fBtrue\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 true.
-.IP \fBunicode\fR 12
-Any Unicode character, except surrogates and noncharacters
+.IP \fBtransferable\fR 12
+Any Unicode character, except surrogates and noncharacters.
+The purpose is to check, if a string may be transfered to an external program using an unicode encoding.
 .IP \fBupper\fR 12
 Any upper case alphabet character in the Unicode character set.
 .IP \fBwideinteger\fR 12

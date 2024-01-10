@@ -1945,7 +1945,7 @@ EXTERN const char *	Tcl_UtfNext(const char *src);
 /* 656 */
 EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
 /* 657 */
-EXTERN int		Tcl_UniCharIsUnicode(int ch);
+EXTERN int		Tcl_UniCharIsTransferable(int ch);
 /* 658 */
 EXTERN int		Tcl_ExternalToUtfDStringEx(Tcl_Interp *interp,
 				Tcl_Encoding encoding, const char *src,
@@ -4077,8 +4077,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfNext) /* 655 */
 #define Tcl_UtfPrev \
 	(tclStubsPtr->tcl_UtfPrev) /* 656 */
-#define Tcl_UniCharIsUnicode \
-	(tclStubsPtr->tcl_UniCharIsUnicode) /* 657 */
+#define Tcl_UniCharIsTransferable \
+	(tclStubsPtr->tcl_UniCharIsTransferable) /* 657 */
 #define Tcl_ExternalToUtfDStringEx \
 	(tclStubsPtr->tcl_ExternalToUtfDStringEx) /* 658 */
 #define Tcl_UtfToExternalDStringEx \
