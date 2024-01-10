@@ -2009,8 +2009,11 @@ EXTERN int		Tcl_GetWideUIntFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, Tcl_WideUInt *uwidePtr);
 /* 685 */
 EXTERN Tcl_Obj *	Tcl_DStringToObj(Tcl_DString *dsPtr);
-/* Slot 686 is reserved */
-/* Slot 687 is reserved */
+/* 686 */
+EXTERN int		TclUtfNcmp(const char *s1, const char *s2, size_t n);
+/* 687 */
+EXTERN int		TclUtfNcasecmp(const char *s1, const char *s2,
+				size_t n);
 /* 688 */
 EXTERN void		TclUnusedStubEntry(void);
 
@@ -2734,8 +2737,8 @@ typedef struct TclStubs {
     Tcl_Size (*tcl_GetEncodingNulLength) (Tcl_Encoding encoding); /* 683 */
     int (*tcl_GetWideUIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideUInt *uwidePtr); /* 684 */
     Tcl_Obj * (*tcl_DStringToObj) (Tcl_DString *dsPtr); /* 685 */
-    void (*reserved686)(void);
-    void (*reserved687)(void);
+    int (*tclUtfNcmp) (const char *s1, const char *s2, size_t n); /* 686 */
+    int (*tclUtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 687 */
     void (*tclUnusedStubEntry) (void); /* 688 */
 } TclStubs;
 
@@ -4124,8 +4127,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetWideUIntFromObj) /* 684 */
 #define Tcl_DStringToObj \
 	(tclStubsPtr->tcl_DStringToObj) /* 685 */
-/* Slot 686 is reserved */
-/* Slot 687 is reserved */
+#define TclUtfNcmp \
+	(tclStubsPtr->tclUtfNcmp) /* 686 */
+#define TclUtfNcasecmp \
+	(tclStubsPtr->tclUtfNcasecmp) /* 687 */
 #define TclUnusedStubEntry \
 	(tclStubsPtr->tclUnusedStubEntry) /* 688 */
 
@@ -4392,6 +4397,10 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_GetRange TclGetRange
 #   undef Tcl_GetUniChar
 #   define Tcl_GetUniChar TclGetUniChar
+#   undef Tcl_UtfNcmp
+#   define Tcl_UtfNcmp TclUtfNcmp
+#   undef Tcl_UtfNcasecmp
+#   define Tcl_UtfNcasecmp TclUtfNcasecmp
 #endif
 #if defined(USE_TCL_STUBS)
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \

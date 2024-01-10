@@ -2502,6 +2502,13 @@ declare 685 {
     Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
 }
 
+declare 686 {
+    int TclUtfNcmp(const char *s1, const char *s2, size_t n)
+}
+declare 687 {
+    int TclUtfNcasecmp(const char *s1, const char *s2, size_t n)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
 
 declare 688 {
