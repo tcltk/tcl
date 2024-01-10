@@ -972,9 +972,9 @@ EXTERN int		Tcl_Access(const char *path, int mode);
 /* 368 */
 EXTERN int		Tcl_Stat(const char *path, struct stat *bufPtr);
 /* 369 */
-EXTERN int		Tcl_UtfNcmp(const char *s1, const char *s2, size_t n);
+EXTERN int		TclUtfNcmp(const char *s1, const char *s2, size_t n);
 /* 370 */
-EXTERN int		Tcl_UtfNcasecmp(const char *s1, const char *s2,
+EXTERN int		TclUtfNcasecmp(const char *s1, const char *s2,
 				size_t n);
 /* 371 */
 EXTERN int		Tcl_StringCaseMatch(const char *str,
@@ -1862,8 +1862,11 @@ EXTERN int		Tcl_GetWideUIntFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, Tcl_WideUInt *uwidePtr);
 /* 685 */
 EXTERN Tcl_Obj *	Tcl_DStringToObj(Tcl_DString *dsPtr);
-/* Slot 686 is reserved */
-/* Slot 687 is reserved */
+/* 686 */
+EXTERN int		Tcl_UtfNcmp(const char *s1, const char *s2, size_t n);
+/* 687 */
+EXTERN int		Tcl_UtfNcasecmp(const char *s1, const char *s2,
+				size_t n);
 /* 688 */
 EXTERN void		TclUnusedStubEntry(void);
 
@@ -2246,8 +2249,8 @@ typedef struct TclStubs {
     int (*tcl_Chdir) (const char *dirName); /* 366 */
     int (*tcl_Access) (const char *path, int mode); /* 367 */
     int (*tcl_Stat) (const char *path, struct stat *bufPtr); /* 368 */
-    int (*tcl_UtfNcmp) (const char *s1, const char *s2, size_t n); /* 369 */
-    int (*tcl_UtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 370 */
+    int (*tclUtfNcmp) (const char *s1, const char *s2, size_t n); /* 369 */
+    int (*tclUtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 370 */
     int (*tcl_StringCaseMatch) (const char *str, const char *pattern, int nocase); /* 371 */
     int (*tcl_UniCharIsControl) (int ch); /* 372 */
     int (*tcl_UniCharIsGraph) (int ch); /* 373 */
@@ -2563,8 +2566,8 @@ typedef struct TclStubs {
     Tcl_Size (*tcl_GetEncodingNulLength) (Tcl_Encoding encoding); /* 683 */
     int (*tcl_GetWideUIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideUInt *uwidePtr); /* 684 */
     Tcl_Obj * (*tcl_DStringToObj) (Tcl_DString *dsPtr); /* 685 */
-    void (*reserved686)(void);
-    void (*reserved687)(void);
+    int (*tcl_UtfNcmp) (const char *s1, const char *s2, size_t n); /* 686 */
+    int (*tcl_UtfNcasecmp) (const char *s1, const char *s2, size_t n); /* 687 */
     void (*tclUnusedStubEntry) (void); /* 688 */
 } TclStubs;
 
@@ -3266,10 +3269,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_Access) /* 367 */
 #define Tcl_Stat \
 	(tclStubsPtr->tcl_Stat) /* 368 */
-#define Tcl_UtfNcmp \
-	(tclStubsPtr->tcl_UtfNcmp) /* 369 */
-#define Tcl_UtfNcasecmp \
-	(tclStubsPtr->tcl_UtfNcasecmp) /* 370 */
+#define TclUtfNcmp \
+	(tclStubsPtr->tclUtfNcmp) /* 369 */
+#define TclUtfNcasecmp \
+	(tclStubsPtr->tclUtfNcasecmp) /* 370 */
 #define Tcl_StringCaseMatch \
 	(tclStubsPtr->tcl_StringCaseMatch) /* 371 */
 #define Tcl_UniCharIsControl \
@@ -3890,8 +3893,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetWideUIntFromObj) /* 684 */
 #define Tcl_DStringToObj \
 	(tclStubsPtr->tcl_DStringToObj) /* 685 */
-/* Slot 686 is reserved */
-/* Slot 687 is reserved */
+#define Tcl_UtfNcmp \
+	(tclStubsPtr->tcl_UtfNcmp) /* 686 */
+#define Tcl_UtfNcasecmp \
+	(tclStubsPtr->tcl_UtfNcasecmp) /* 687 */
 #define TclUnusedStubEntry \
 	(tclStubsPtr->tclUnusedStubEntry) /* 688 */
 
@@ -4089,7 +4094,6 @@ extern const TclStubs *tclStubsPtr;
 #	define Tcl_UniCharToUtf(c, p) \
 		((Tcl_UniCharToUtf)((c)|TCL_COMBINE, (p)))
 #   endif
-#if !defined(BUILD_tcl)
 #   undef Tcl_NumUtfChars
 #   define Tcl_NumUtfChars TclNumUtfChars
 #   undef Tcl_GetCharLength
@@ -4100,7 +4104,10 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_GetRange TclGetRange
 #   undef Tcl_GetUniChar
 #   define Tcl_GetUniChar TclGetUniChar
-#endif
+#   undef Tcl_UtfNcmp
+#   define Tcl_UtfNcmp TclUtfNcmp
+#   undef Tcl_UtfNcasecmp
+#   define Tcl_UtfNcasecmp TclUtfNcasecmp
 #endif
 #if defined(USE_TCL_STUBS)
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \

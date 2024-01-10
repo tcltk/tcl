@@ -1537,6 +1537,44 @@ TclpUtfNcmp2(
  */
 
 int
+TclUtfNcmp(
+    const char *cs,		/* UTF string to compare to ct. */
+    const char *ct,		/* UTF string cs is compared to. */
+    size_t numChars)	/* Number of UTF-16 chars to compare. */
+{
+    unsigned short ch1 = 0, ch2 = 0;
+
+    /*
+     * Cannot use 'memcmp(cs, ct, n);' as byte representation of \u0000 (the
+     * pair of bytes 0xC0,0x80) is larger than byte representation of \u0001
+     * (the byte 0x01.)
+     */
+
+    while (numChars-- > 0) {
+	/*
+	 * n must be interpreted as chars, not bytes. This should be called
+	 * only when both strings are of at least n UTF-16 chars long (no need for \0
+	 * check)
+	 */
+
+	cs += Tcl_UtfToChar16(cs, &ch1);
+	ct += Tcl_UtfToChar16(ct, &ch2);
+	if (ch1 != ch2) {
+	    /* Surrogates always report higher than non-surrogates */
+	    if (((ch1 & 0xFC00) == 0xD800)) {
+	    if ((ch2 & 0xFC00) != 0xD800) {
+		return ch1;
+	    }
+	    } else if ((ch2 & 0xFC00) == 0xD800) {
+		return -ch2;
+	    }
+	    return (ch1 - ch2);
+	}
+    }
+    return 0;
+}
+
+int
 Tcl_UtfNcmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
@@ -1583,6 +1621,41 @@ Tcl_UtfNcmp(
  *
  *----------------------------------------------------------------------
  */
+
+int
+TclUtfNcasecmp(
+    const char *cs,		/* UTF string to compare to ct. */
+    const char *ct,		/* UTF string cs is compared to. */
+    size_t numChars)	/* Number of UTF-16 chars to compare. */
+{
+    unsigned short ch1 = 0, ch2 = 0;
+
+    while (numChars-- > 0) {
+	/*
+	 * n must be interpreted as UTF-16 chars, not bytes.
+	 * This should be called only when both strings are of
+	 * at least n UTF-16 chars long (no need for \0 check)
+	 */
+	cs += Tcl_UtfToChar16(cs, &ch1);
+	ct += Tcl_UtfToChar16(ct, &ch2);
+	if (ch1 != ch2) {
+	    /* Surrogates always report higher than non-surrogates */
+	    if (((ch1 & 0xFC00) == 0xD800)) {
+	    if ((ch2 & 0xFC00) != 0xD800) {
+		return ch1;
+	    }
+	    } else if ((ch2 & 0xFC00) == 0xD800) {
+		return -ch2;
+	    }
+	    ch1 = Tcl_UniCharToLower(ch1);
+	    ch2 = Tcl_UniCharToLower(ch2);
+	    if (ch1 != ch2) {
+		return (ch1 - ch2);
+	    }
+	}
+    }
+    return 0;
+}
 
 int
 Tcl_UtfNcasecmp(

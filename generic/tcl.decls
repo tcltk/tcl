@@ -1363,10 +1363,10 @@ declare 368 {
     int Tcl_Stat(const char *path, struct stat *bufPtr)
 }
 declare 369 {
-    int Tcl_UtfNcmp(const char *s1, const char *s2, size_t n)
+    int TclUtfNcmp(const char *s1, const char *s2, size_t n)
 }
 declare 370 {
-    int Tcl_UtfNcasecmp(const char *s1, const char *s2, size_t n)
+    int TclUtfNcasecmp(const char *s1, const char *s2, size_t n)
 }
 declare 371 {
     int Tcl_StringCaseMatch(const char *str, const char *pattern, int nocase)
@@ -2626,6 +2626,13 @@ declare 684 {
 # TIP 651
 declare 685 {
     Tcl_Obj *Tcl_DStringToObj(Tcl_DString *dsPtr)
+}
+
+declare 686 {
+    int Tcl_UtfNcmp(const char *s1, const char *s2, size_t n)
+}
+declare 687 {
+    int Tcl_UtfNcasecmp(const char *s1, const char *s2, size_t n)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 / 9.0.0 ----- #
