@@ -2423,7 +2423,7 @@ declare 656 {
     const char *Tcl_UtfPrev(const char *src, const char *start)
 }
 declare 657 {
-    int Tcl_UniCharIsUnicode(int ch)
+    int Tcl_UniCharIsTransferable(int ch)
 }
 
 # TIP 656
