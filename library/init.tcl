@@ -168,7 +168,6 @@ if {[namespace which -command tclLog] eq ""} {
 #		command, including the command name.
 
 proc unknown args {
-    variable ::tcl::UnknownPending
     global auto_noexec auto_noload env tcl_interactive errorInfo errorCode
 
     if {[info exists errorInfo]} {
@@ -183,23 +182,25 @@ proc unknown args {
 	#
 	# Make sure we're not trying to load the same proc twice.
 	#
+	variable ::tcl::UnknownPending
 	if {[info exists UnknownPending($name)]} {
-	    return -code error "self-referential recursion\
+	    return -errorcode [list TCL LOOKUP COMMAND $name] -code error \
+	    	    "self-referential recursion\
 		    in \"unknown\" for command \"$name\""
 	}
 	set UnknownPending($name) pending
 	try {
-	    auto_load $name [uplevel 1 {::namespace current}]
+	    set loaded [auto_load $name [uplevel 1 {::namespace current}]]
 	} on error {msg opts} {
 	    dict append opts -errorinfo "\n    (autoloading \"$name\")"
 	    return -options $opts $msg
 	} finally {
-	    unset UnknownPending($name)
+	    unset -nocomplain UnknownPending($name)
 	}
-	if {![array size UnknownPending]} {
-	    unset UnknownPending
+	if {[info exists UnknownPending] && ![array size UnknownPending]} {
+	    unset -nocomplain UnknownPending
 	}
-	if {$msg} {
+	if {$loaded} {
 	    if {[info exists savedErrorCode]} {
 		set ::errorCode $savedErrorCode
 	    } else {
@@ -210,68 +211,7 @@ proc unknown args {
 	    } else {
 		unset -nocomplain errorInfo
 	    }
-	    set code [catch {uplevel 1 $args} msg opts]
-	    if {$code != 1} {
-		# Not an error so just pass it out
-		dict incr opts -level
-		return -options $opts $msg
-	    }
-	    #
-	    # Compute stack trace contribution from the [uplevel].
-	    # Note the dependence on how Tcl_AddErrorInfo, etc.
-	    # construct the stack trace.
-	    #
-	    set errInfo [dict get $opts -errorinfo]
-	    set errCode [dict get $opts -errorcode]
-	    set cinfo $args
-	    if {[string length [encoding convertto utf-8 $cinfo]] > 150} {
-		set cinfo [string range $cinfo 0 150]
-		while {[string length [encoding convertto utf-8 $cinfo]] > 150} {
-		    set cinfo [string range $cinfo 0 end-1]
-		}
-		append cinfo ...
-	    }
-	    set tail "\n    (\"uplevel\" body line 1)\n    invoked\
-		    from within\n\"uplevel 1 \$args\""
-	    set expect "$msg\n    while executing\n\"$cinfo\"$tail"
-	    if {$errInfo eq $expect} {
-		#
-		# The stack has only the eval from the expanded command
-		# Do not generate any stack trace here.
-		#
-		dict unset opts -errorinfo
-		dict incr opts -level
-		return -options $opts $msg
-	    }
-	    #
-	    # Stack trace is nested, trim off just the contribution
-	    # from the extra "eval" of $args due to the "catch" above.
-	    #
-	    set last [string last $tail $errInfo]
-	    if {$last + [string length $tail] != [string length $errInfo]} {
-		# Very likely cannot happen
-		return -options $opts $msg
-	    }
-	    set errInfo [string range $errInfo 0 $last-1]
-	    set tail "\"$cinfo\""
-	    set last [string last $tail $errInfo]
-	    if {$last < 0 || $last + [string length $tail] != [string length $errInfo]} {
-		return -code error -errorcode $errCode -errorinfo $errInfo $msg
-	    }
-	    set errInfo [string range $errInfo 0 $last-1]
-	    set tail "\n    invoked from within\n"
-	    set last [string last $tail $errInfo]
-	    if {$last + [string length $tail] == [string length $errInfo]} {
-		return -code error -errorcode $errCode \
-			-errorinfo [string range $errInfo 0 $last-1] $msg
-	    }
-	    set tail "\n    while executing\n"
-	    set last [string last $tail $errInfo]
-	    if {$last + [string length $tail] == [string length $errInfo]} {
-		return -code error -errorcode $errCode \
-			-errorinfo [string range $errInfo 0 $last-1] $msg
-	    }
-	    return -options $opts $msg
+	    tailcall $name {*}[lrange $args 1 end]
 	}
     }
 
@@ -327,10 +267,11 @@ proc unknown args {
 	    } {set x} else continue}]
 	}
 	if {[llength $cmds] == 1} {
-	    tailcall [lindex $cmd 0] {*}[lrange $args 1 end]
+	    tailcall [lindex $cmds 0] {*}[lrange $args 1 end]
 	}
 	if {[llength $cmds]} {
-	    return -code error "ambiguous command name \"$name\": [lsort $cmds]"
+	    return -code error -errorcode [list TCL LOOKUP COMMAND $name] \
+	    	"ambiguous command name \"$name\": [lsort $cmds]"
 	}
     }
     return -code error -errorcode [list TCL LOOKUP COMMAND $name] \
@@ -705,15 +646,15 @@ proc tcl::CopyDirectory {action src dest} {
 	# error message here, but that would break the test suite.
 	if {$nsrc in [file volumes]} {
 	    return -code error "error $action \"$src\" to\
-	      \"$dest\": trying to rename a volume or move a directory\
-	      into itself"
+		\"$dest\": trying to rename a volume or move a directory\
+		into itself"
 	}
     }
     if {[file exists $dest]} {
 	if {$nsrc eq $ndest} {
 	    return -code error "error $action \"$src\" to\
-	      \"$dest\": trying to rename a volume or move a directory\
-	      into itself"
+		\"$dest\": trying to rename a volume or move a directory\
+		into itself"
 	}
 	if {$action eq "copying"} {
 	    # We used to throw an error here, but, looking more closely
@@ -735,7 +676,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    foreach s $existing {
 		if {[file tail $s] ni {. ..}} {
 		    return -code error "error $action \"$src\" to\
-		      \"$dest\": file exists"
+			\"$dest\": file exists"
 		}
 	    }
 	}
@@ -745,8 +686,8 @@ proc tcl::CopyDirectory {action src dest} {
 	    set ndest [lindex [file split $ndest] $srclen]
 	    if {$ndest eq [file tail $nsrc]} {
 		return -code error "error $action \"$src\" to\
-		  \"$dest\": trying to rename a volume or move a directory\
-		  into itself"
+		    \"$dest\": trying to rename a volume or move a directory\
+		    into itself"
 	    }
 	}
 	file mkdir $dest
