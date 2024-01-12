@@ -103,6 +103,8 @@ static void uniCodePanic(void) {
 #   define Tcl_GetRange (Tcl_Obj *(*)(Tcl_Obj *, int, int))(void *)uniCodePanic
 #   define Tcl_GetUniChar (int(*)(Tcl_Obj *, int))(void *)uniCodePanic
 #   define Tcl_NumUtfChars (int(*)(const char *, int))(void *)uniCodePanic
+#   define Tcl_UtfNcmp (int(*)(const char *, const char *, unsigned long))(void *)uniCodePanic
+#   define Tcl_UtfNcasecmp (int(*)(const char *, const char *, unsigned long))(void *)uniCodePanic
 #endif
 
 #define TclUtfCharComplete UtfCharComplete

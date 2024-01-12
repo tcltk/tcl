@@ -70,11 +70,11 @@ test load-1.8 {basic errors} -returnCodes error -body {
     load -global
 } -result {couldn't figure out prefix for -global}
 
-test load-2.1 {basic loading, with guess for package name} \
-	[list $dll $loaded] {
+test load-2.1 {basic loading, with guess for package name} -constraints \
+	[list $dll $loaded deprecated] -body {
     load -global [file join $testDir pkga$ext]
     list [pkga_eq abc def] [lsort [info commands pkga_*]]
-} {0 {pkga_eq pkga_quote}}
+} -result {0 {pkga_eq pkga_quote}}
 interp create -safe child
 test load-2.2 {loading into a safe interpreter, with package name conversion} \
 	[list $dll $loaded] {
@@ -179,7 +179,7 @@ test load-7.4 {Tcl_StaticLibrary procedure, redundant calls} -setup {
     teststaticlibrary Test 1 0
     teststaticlibrary Another 0 0
     teststaticlibrary More 0 1
-} -constraints [list teststaticlibrary $dll $loaded] -body {
+} -constraints [list teststaticlibrary $dll $loaded deprecated] -body {
     teststaticlibrary Double 0 1
     teststaticlibrary Double 0 1
     info loaded

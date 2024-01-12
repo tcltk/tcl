@@ -77,11 +77,11 @@ set pkgua_loaded {}
 set pkgua_detached {}
 set pkgua_unloaded {}
 # Tests for loading/unloading in trusted (non-safe) interpreters...
-test unload-2.1 {basic loading of non-unloadable package, with guess for prefix} [list $dll $loaded] {
+test unload-2.1 {basic loading of non-unloadable package, with guess for prefix} [list $dll $loaded deprecated] {
     loadIfNotPresent pkga
     list [pkga_eq abc def] [lsort [info commands pkga_*]]
 } {0 {pkga_eq pkga_quote}}
-test unload-2.2 {basic loading of unloadable package, with guess for prefix} [list $dll $loaded] {
+test unload-2.2 {basic loading of unloadable package, with guess for prefix} [list $dll $loaded deprecated] {
     list $pkgua_loaded $pkgua_detached $pkgua_unloaded \
 	    [load [file join $testDir pkgua$ext]] \
 	    [pkgua_eq abc def] [lsort [info commands pkgua_*]] \
@@ -105,7 +105,7 @@ test unload-2.5 {reloading of unloaded package, with guess for prefix} -setup {
 	loadIfNotPresent pkgua
 	unload [file join $testDir pkgua$ext]
     }
-} -constraints [list $dll $loaded] -body {
+} -constraints [list $dll $loaded deprecated] -body {
     list $pkgua_loaded $pkgua_detached $pkgua_unloaded \
 	    [load [file join $testDir pkgua$ext]] \
 	    [pkgua_eq abc def] [lsort [info commands pkgua_*]] \
@@ -118,7 +118,7 @@ test unload-2.6 {basic unloading of re-loaded package, with guess for prefix} -s
 	unload [file join $testDir pkgua$ext]
 	load [file join $testDir pkgua$ext]
     }
-} -constraints [list $dll $loaded] -body {
+} -constraints [list $dll $loaded deprecated] -body {
     list $pkgua_loaded $pkgua_detached $pkgua_unloaded \
 	    [unload [file join $testDir pkgua$ext]] \
 	    [info commands pkgua_*] \
@@ -140,7 +140,7 @@ test unload-3.1 {basic loading of non-unloadable package in a safe interpreter} 
          [catch {pkgb_sub 12 10} msg2] $msg2
 } {31 1 {invalid command name "pkgb_unsafe"} 1 {invalid command name "pkgb_sub"}}
 test unload-3.2 {basic loading of unloadable package in a safe interpreter} \
-	[list $dll $loaded] {
+	[list $dll $loaded deprecated] {
     list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
 	    [load [file join $testDir pkgua$ext] pkgua child] \
 	    [child eval pkgua_eq abc def] \
@@ -174,7 +174,7 @@ test unload-3.6 {reloading of unloaded package in a safe interpreter, with guess
 	load [file join $testDir pkgua$ext] {} child
 	unload [file join $testDir pkgua$ext] {} child
     }
-} -constraints [list $dll $loaded] -body {
+} -constraints [list $dll $loaded deprecated] -body {
     list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
 	    [load [file join $testDir pkgua$ext] {} child] \
 	    [child eval pkgua_eq abc def] \
@@ -187,7 +187,7 @@ test unload-3.7 {basic unloading of re-loaded package from a safe interpreter, w
 	unload [file join $testDir pkgua$ext] {} child
 	load [file join $testDir pkgua$ext] {} child
     }
-} -constraints [list $dll $loaded] -body {
+} -constraints [list $dll $loaded deprecated] -body {
     list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
 	    [unload [file join $testDir pkgua$ext] pKgUa child] \
 	    [child eval info commands pkgua_*] \
@@ -208,7 +208,7 @@ test unload-4.1 {loading of unloadable package in trusted interpreter, with gues
     set pkgua_detached ""
     set pkgua_unloaded ""
     incr load(M)
-} -constraints [list $dll $loaded] -body {
+} -constraints [list $dll $loaded deprecated] -body {
     list [list $pkgua_loaded $pkgua_detached $pkgua_unloaded] \
 	    [load [file join $testDir pkgua$ext]] \
 	    [pkgua_eq abc def] [lsort [info commands pkgua_*]] \
@@ -222,7 +222,7 @@ test unload-4.2 {basic loading of unloadable package in a safe interpreter} -set
 	set pkgua_unloaded ""
     }
     incr load(C)
-} -constraints [list $dll $loaded] -body {
+} -constraints [list $dll $loaded deprecated] -body {
     list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
 	    [load [file join $testDir pkgua$ext] pkgua child] \
 	    [child eval pkgua_eq abc def] \
@@ -232,7 +232,7 @@ test unload-4.2 {basic loading of unloadable package in a safe interpreter} -set
 ## Load package in child-trusted interpreter...
 test unload-4.3 {basic loading of unloadable package in a second trusted interpreter} -setup {
     incr load(T)
-} -constraints [list $dll $loaded] -body {
+} -constraints [list $dll $loaded deprecated] -body {
     list [child-trusted eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
 	    [load [file join $testDir pkgua$ext] pkgua child-trusted] \
 	    [child-trusted eval pkgua_eq abc def] \
@@ -252,7 +252,7 @@ test unload-4.4 {basic unloading of unloadable package from trusted interpreter,
 	load [file join $testDir pkgua$ext] {} child-trusted
 	incr load(T)
     }
-} -constraints [list $dll $loaded] -body {
+} -constraints [list $dll $loaded deprecated] -body {
     list [list $pkgua_loaded $pkgua_detached $pkgua_unloaded] \
 	    [unload [file join $testDir pkgua$ext]] \
 	    [info commands pkgua_*] \
@@ -267,7 +267,7 @@ test unload-4.5 {basic unloading of unloadable package from a safe interpreter, 
 	load [file join $testDir pkgua$ext] {} child-trusted
 	incr load(T)
     }
-} -constraints [list $dll $loaded] -body {
+} -constraints [list $dll $loaded deprecated] -body {
     list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
 	    [unload [file join $testDir pkgua$ext] {} child] \
 	    [child eval info commands pkgua_*] \
