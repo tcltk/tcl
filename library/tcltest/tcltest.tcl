@@ -1144,7 +1144,7 @@ proc tcltest::SafeFetch {n1 n2 op} {
 #
 #       Transforms the passed string to contain only printable ascii characters.
 #       Useful for printing to terminals. Non-printables are mapped to
-#       \x, \u or \U sequences.
+#       \x, \u or \U sequences, except \n.
 #
 # Arguments:
 #       s - string to transform
@@ -1158,7 +1158,7 @@ proc tcltest::SafeFetch {n1 n2 op} {
 proc tcltest::Asciify {s} {
     set print ""
     foreach c [split $s ""] {
-        if {[string is print $c] && (($c <= "\x7E") || ($c == "\n"))} {
+        if {(($c < "\x7F") && [string is print $c]) || ($c eq "\n")} {
             append print $c
         } elseif {$c < "\u0100"} {
             append print \\x[format %02X [scan $c %c]]
