@@ -26,7 +26,7 @@
 #define ALPHA_BITS ((1 << UPPERCASE_LETTER) | (1 << LOWERCASE_LETTER) \
 	| (1 << TITLECASE_LETTER) | (1 << MODIFIER_LETTER) | (1<<OTHER_LETTER))
 
-#define CONTROL_BITS ((1 << CONTROL) | (1 << FORMAT) | (1 << PRIVATE_USE))
+#define CONTROL_BITS ((1 << CONTROL) | (1 << FORMAT))
 
 #define DIGIT_BITS (1 << DECIMAL_DIGIT_NUMBER)
 
@@ -2270,9 +2270,6 @@ Tcl_UniCharIsControl(
 	/* Clear away extension bits, if any */
 	ch &= 0x1FFFFF;
 	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007F))) {
-	    return 1;
-	}
-	if ((ch >= 0xF0000) && ((ch & 0xFFFF) <= 0xFFFD)) {
 	    return 1;
 	}
 	return 0;
