@@ -2596,7 +2596,7 @@
 
 	* tclUtf.c: added Unicode character table support
 
-	* tclInt.h: added TclUniCharIsWordChar
+	* tclInt.h: added Tcl_UniCharIsWordChar
 
 	* tclCmdMZ.c (Tcl_StringObjCmd): added "totitle" subcommand, changed
 	"wordend" and "wordstart" to properly handle Unicode word characters
