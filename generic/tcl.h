@@ -56,7 +56,7 @@ extern "C" {
 #endif
 #define TCL_MINOR_VERSION   6
 #define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
-#define TCL_RELEASE_SERIAL  13
+#define TCL_RELEASE_SERIAL  14
 
 #define TCL_VERSION	    "8.6"
 #define TCL_PATCH_LEVEL	    "8.6.14"
