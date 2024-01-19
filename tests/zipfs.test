@@ -1447,6 +1447,13 @@ namespace eval test_ns_zipfs {
     testzipfsglob basic-dir-tails $basicMounts [list -tails -dir $defMountPt *]  [list test testdir]
     testzipfsglob basic-type-d    $basicMounts [list -type d $defMountPt/*]      [zipfspathsmt $defMountPt testdir]
     testzipfsglob basic-type-f    $basicMounts [list -type f $defMountPt/*]      [zipfspathsmt $defMountPt test]
+    testzipfsglob basic-type-d-f  $basicMounts [list -type {d f} $defMountPt/*]  [zipfspathsmt $defMountPt test testdir]
+    testzipfsglob basic-type-l    $basicMounts [list -type l $defMountPt/*]      {}
+    foreach type {b c l p s} {
+        testzipfsglob basic-type-$type    $basicMounts [list -type $type $defMountPt/*]          {}
+        testzipfsglob basic-type-f-$type  $basicMounts [list -type [list f $type] $defMountPt/*] [zipfspathsmt $defMountPt test]
+        testzipfsglob basic-type-d-$type  $basicMounts [list -type [list d $type] $defMountPt/*] [zipfspathsmt $defMountPt testdir]
+    }
     testzipfsglob basic-path      $basicMounts [list -path $defMountPt/t *d*]    [zipfspathsmt $defMountPt testdir]
     testzipfsglob basic-enoent    $basicMounts [list $defMountPt/x*]             {}
     testzipfsglob basic-enoent-ok $basicMounts [list -nocomplain $defMountPt/x*] {}
@@ -1464,6 +1471,7 @@ namespace eval test_ns_zipfs {
     testzipfsglob root-type-d-1    $rootMounts [list -type d [zipfs root]*]      [zipfspaths $::zipLibTop testdir] -constraints zipfslib
     testzipfsglob root-type-d-2    $rootMounts [list -type d [zipfs root]*]      [zipfspaths testdir] -constraints !zipfslib
     testzipfsglob root-type-f      $rootMounts [list -type f [zipfs root]*]      [zipfspaths test]
+    testzipfsglob root-type-d-f    $rootMounts [list -type {d f} [zipfs root]*]  [zipfspaths test testdir] -constraints !zipfslib
     testzipfsglob root-path        $rootMounts [list -path [zipfs root]t *d*]    [zipfspaths testdir]
     testzipfsglob root-enoent      $rootMounts [list [zipfs root]x*]             {}
     testzipfsglob root-enoent-ok   $rootMounts [list -nocomplain [zipfs root]x*] {}
