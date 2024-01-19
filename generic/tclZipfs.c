@@ -5506,7 +5506,7 @@ AppendWithPrefix(
  * Results:
  *	The return value is a standard Tcl result indicating whether an error
  *	occurred in globbing. Errors are left in interp, good results are
- *	lappend'ed to resultPtr (which must be a valid object).
+ *	lappend'ed to result (which must be a valid object).
  *
  * Side effects:
  *	None.
@@ -5516,26 +5516,45 @@ AppendWithPrefix(
 
 static int
 ZipFSMatchInDirectoryProc(
-    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Interp *interp,
     Tcl_Obj *result,		/* Where to append matched items to. */
     Tcl_Obj *pathPtr,		/* Where we are looking. */
     const char *pattern,	/* What names we are looking for. */
     Tcl_GlobTypeData *types)	/* What types we are looking for. */
 {
     Tcl_Obj *normPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-    int scnt, l, dirOnly = -1, mounts = 0;
+    int scnt, l;
     Tcl_Size prefixLen, len, strip = 0;
     char *pat, *prefix, *path;
     Tcl_DString dsPref, *prefixBuf = NULL;
     int foundInHash, notDuplicate;
     ZipEntry *z;
+    int wanted; /* TCL_GLOB_TYPE* */
 
     if (!normPathPtr) {
 	return -1;
     }
     if (types) {
-	dirOnly = (types->type & TCL_GLOB_TYPE_DIR) == TCL_GLOB_TYPE_DIR;
-	mounts = (types->type == TCL_GLOB_TYPE_MOUNT);
+	wanted = types->type;
+	if ((wanted & TCL_GLOB_TYPE_MOUNT) && (wanted != TCL_GLOB_TYPE_MOUNT)) {
+	    if (interp) {
+		Tcl_SetResult(interp,
+			      "Internal error: TCL_GLOB_TYPE_MOUNT should not "
+			      "be set in conjunction with other glob types.",
+			      TCL_STATIC);
+	    }
+	    return TCL_ERROR;
+	}
+	if ((wanted & (TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE |
+		       TCL_GLOB_TYPE_MOUNT)) == 0) {
+	    /* Not looking for files,dirs,mounts. zipfs cannot have others */
+	    return TCL_OK;
+	}
+	wanted &=
+	    (TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE | TCL_GLOB_TYPE_MOUNT);
+    }
+    else {
+	wanted = TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE;
     }
 
     /*
@@ -5572,10 +5591,13 @@ ZipFSMatchInDirectoryProc(
      * Are we globbing the mount points?
      */
 
-    if (mounts) {
+    if (wanted & TCL_GLOB_TYPE_MOUNT) {
 	ZipFSMatchMountPoints(result, normPathPtr, pattern, prefixBuf);
 	goto end;
     }
+
+    /* Should not reach here unless at least one of DIR or FILE is set */
+    assert(wanted & (TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE));
 
     /* Does the path exist in the hash table? */
     z = ZipFSLookup(path);
@@ -5587,8 +5609,9 @@ ZipFSMatchInDirectoryProc(
 	if (!pattern || (pattern[0] == '\0')) {
 	    /* TODO - can't seem to get to this code from script for tests. */
 	    /* Follow logic of what tclUnixFile.c does */
-	    if ((dirOnly < 0) || (!dirOnly && !z->isDirectory) ||
-		(dirOnly && z->isDirectory)) {
+	    if ((wanted == (TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE)) ||
+		(wanted == TCL_GLOB_TYPE_DIR && z->isDirectory) ||
+		(wanted == TCL_GLOB_TYPE_FILE && !z->isDirectory)) {
 		Tcl_ListObjAppendElement(NULL, result, pathPtr);
 	    }
 	    goto end;
@@ -5597,7 +5620,7 @@ ZipFSMatchInDirectoryProc(
 	/* Not in the hash table but could be an intermediate dir in a mount */
 	if (!pattern || (pattern[0] == '\0')) {
 	    /* TODO - can't seem to get to this code from script for tests. */
-	    if (dirOnly && ContainsMountPoint(path, len)) {
+	    if ((wanted & TCL_GLOB_TYPE_DIR) && ContainsMountPoint(path, len)) {
 		Tcl_ListObjAppendElement(NULL, result, pathPtr);
 	    }
 	    goto end;
@@ -5636,20 +5659,21 @@ ZipFSMatchInDirectoryProc(
 	     hPtr = Tcl_NextHashEntry(&search)) {
 	    z = (ZipEntry *)Tcl_GetHashValue(hPtr);
 
-	    if ((dirOnly >= 0) && ((dirOnly && !z->isDirectory) ||
-				   (!dirOnly && z->isDirectory))) {
-		continue;
-	    }
-	    if ((z->depth == scnt) &&
-		((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
-		&& Tcl_StringCaseMatch(z->name, pat, 0)) {
-		Tcl_CreateHashEntry(&duplicates, z->name + strip, &notDuplicate);
-		assert(notDuplicate);
-		AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
+	    if ((wanted == (TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE)) ||
+		(wanted == TCL_GLOB_TYPE_DIR && z->isDirectory) ||
+		(wanted == TCL_GLOB_TYPE_FILE && !z->isDirectory)) {
+		if ((z->depth == scnt) &&
+		    ((z->flags & ZE_F_VOLUME) == 0) /* Bug 14db54d81e */
+		    && Tcl_StringCaseMatch(z->name, pat, 0)) {
+		    Tcl_CreateHashEntry(
+			&duplicates, z->name + strip, &notDuplicate);
+		    assert(notDuplicate);
+		    AppendWithPrefix(result, prefixBuf, z->name + strip, -1);
+		}
 	    }
 	}
     }
-    if (dirOnly) {
+    if (wanted & TCL_GLOB_TYPE_DIR) {
 	/*
 	 * Also check paths that are ancestors of a mount. e.g. glob
 	 * //zipfs:/a/? with mount at //zipfs:/a/b/c. Also have to be
