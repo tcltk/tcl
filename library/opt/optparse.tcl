@@ -813,7 +813,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 
     # Auto magic lazy type determination
     proc OptGuessType {arg} {
- 	 if { $arg == "true" || $arg == "false" } {
+ 	 if { $arg in {true false} } {
             return boolean
         }
         if {[string is integer -strict $arg]} {

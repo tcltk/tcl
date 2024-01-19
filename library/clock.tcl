@@ -3457,14 +3457,10 @@ proc ::tcl::clock::ReadZoneinfoFile {fileName fname} {
     # codes.  The type codes are unsigned 1-byte quantities.  We insert an
     # arbitrary start time in front of the transitions.
 
-    binary scan $d @${seek}${iformat}${nTime}c${nTime} times tempCodes
+    binary scan $d @${seek}${iformat}${nTime}cu${nTime} times codes
     incr seek [expr { ($ilen + 1) * $nTime }]
-    set times [linsert $times 0 $MINWIDE]
-    set codes {}
-    foreach c $tempCodes {
-	lappend codes [expr { $c & 0xFF }]
-    }
-    set codes [linsert $codes 0 0]
+    set times [list $MINWIDE {*}$times]
+    set codes [list 0 {*}$codes]
 
     # Next come ${nType} time type descriptions, each of which has an offset
     # (seconds east of GMT), a DST indicator, and an index into the

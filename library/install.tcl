@@ -80,7 +80,7 @@ proc ::practcl::_pkgindex_directory {path} {
     append thisline $line \n
     if {![info complete $thisline]} continue
     set line [string trim $line]
-    if {[string length $line]==0} {
+    if {$line eq ""} {
       set thisline {} ; continue
     }
     if {[string match "#*" $line]} {
@@ -178,7 +178,7 @@ if {![file exists $pkginstall]} {
       if {$path_indexed($path)} continue
       set thisdir [file_relative $base $path]
       set idxbuf [::practcl::_pkgindex_directory $path]
-      if {[string length $idxbuf]} {
+      if {$idxbuf ne ""} {
         incr path_indexed($path)
         append buffer "set dir \[set PKGDIR \[file join \[lindex \$::PATHSTACK end\] $thisdir\]\]" \n
         append buffer [string map {$dir $PKGDIR} [string trimright $idxbuf]] \n

@@ -156,7 +156,7 @@ proc parse_command_line {} {
 
 	    --verbose=* {
 		set verbose [string range $option \
-				 [string length --verbose=] end]
+			[string length --verbose=] end]
 	    }
 	    default {
 		puts stderr "tcltk-man-html: unrecognized option -- `$option'"

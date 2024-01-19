@@ -23,7 +23,7 @@ proc make-chunk-generator {data {size 4096}} {
             incr pos $size
             set chunk [format %x [string length $payload]]\r\n$payload\r\n
             yield $chunk
-            if {![string length $payload]} {return}
+            if {$payload eq ""} {return}
         }
     }}
     set name chunker[incr _chunk_gen_uid]
@@ -54,7 +54,7 @@ proc blow-chunks {data {ochan stdout} {compression gzip}} {
     }
 
     set chunker [make-chunk-generator $data 671]
-    while {[string length [set chunk [$chunker]]]} {
+    while {[set chunk [$chunker]] ne ""} {
         puts -nonewline $ochan $chunk
     }
     return

@@ -16,7 +16,7 @@ proc manerror {msg} {
     if {[info exists manual(name)]} {
 	set name $manual(name)
     }
-    if {[info exists manual(section)] && [string length $manual(section)]} {
+    if {[info exists manual(section)] && $manual(section) ne ""} {
 	puts stderr "$name: $manual(section): $procname: $msg"
     } else {
 	puts stderr "$name: $procname: $msg"
@@ -540,7 +540,7 @@ proc output-RS-list {} {
 ##
 proc output-IP-list {context code rest} {
     global manual
-    if {![string length $rest]} {
+    if {$rest eq ""} {
 	# blank label, plain indent, no contents entry
 	man-puts <dl><dd>
 	while {[more-text]} {
@@ -1232,7 +1232,7 @@ proc process-section-body-SYNOPSIS {} {
 	foreach more [split $more \n] {
 	    regexp {^(\s*)(.*)} $more -> spaces more
 	    set spaces [string map {" " "&nbsp;"} $spaces]
-	    if {[string length $spaces]} {
+	    if {$spaces ne ""} {
 		set spaces <tt>$spaces</tt>
 	    }
 	    man-puts $spaces$more<br>
@@ -1679,12 +1679,9 @@ proc make-manpage-section {outputDir sectionDescriptor} {
     #
     # make the wing table of contents for the section
     #
-    set width 0
-    foreach name $manual(wing-toc) {
-	if {[string length $name] > $width} {
-	    set width [string length $name]
-	}
-    }
+    set width [tcl::mathfunc::max 0 {*}[lmap name $manual(wing-toc) {
+	string length $name
+    }]]
     set nrows [expr {int(ceil([llength $manual(wing-toc)] / (118. / $width)))}]
     set n 0
     unset -nocomplain rows

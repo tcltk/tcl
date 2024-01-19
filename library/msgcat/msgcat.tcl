@@ -1174,7 +1174,7 @@ proc msgcat::mcmax {args} {
     foreach string $args {
 	set translated [uplevel 1 [list [namespace origin mcn] $ns $string]]
 	set len [string length $translated]
-	if {$len>$max} {
+	if {$len > $max} {
 	    set max $len
 	}
     }
@@ -1195,16 +1195,16 @@ proc msgcat::mcutil::ConvertLocale {value} {
     #	(?:[.]([^@]*))?	# Match (optional) "codeset"; starts with .
     #	(?:@(.*))?	# Match (optional) "modifier"; starts with @
     #	$		# Match all the way to the end
-    # } $value -> language _ territory _ codeset _ modifier
+    # } $value -> language territory codeset modifier
     if {![regexp {^([^_.@]+)(?:_([^.@]*))?(?:[.]([^@]*))?(?:@(.*))?$} $value \
 	    -> language territory codeset modifier]} {
 	return -code error "invalid locale '$value': empty language part"
     }
     set ret $language
-    if {[string length $territory]} {
+    if {$territory ne ""} {
 	append ret _$territory
     }
-    if {[string length $modifier]} {
+    if {$modifier ne ""} {
 	append ret _$modifier
     }
     return $ret
@@ -1328,7 +1328,7 @@ proc msgcat::mcutil::getsystemlocale {} {
     #
     variable WinRegToISO639
     set locale [string tolower $locale]
-    while {[string length $locale]} {
+    while {$locale ne ""} {
 	try {
 	    return [ConvertLocale [dict get $WinRegToISO639 $locale]]
 	} on error {} {

@@ -4409,8 +4409,8 @@ proc http::CopyStart {sock token {initial 1}} {
 
 proc http::CopyChunk {token chunk} {
     upvar 0 $token state
-    if {[set count [string length $chunk]]} {
-	incr state(currentsize) $count
+    if {$chunk ne ""} {
+	incr state(currentsize) [string length $chunk]
 	if {[info exists state(zlib)]} {
 	    foreach stream $state(zlib) {
 		set chunk [$stream add $chunk]
@@ -4430,7 +4430,9 @@ proc http::CopyChunk {token chunk} {
 		    $stream put -finalize $excess
 		    set excess ""
 		    set overflood ""
-		    while {[set overflood [$stream get]] ne ""} { append excess $overflood }
+		    while {[set overflood [$stream get]] ne ""} {
+			append excess $overflood
+		    }
 		}
 	    }
 	    puts -nonewline $state(-channel) $excess
@@ -4463,7 +4465,7 @@ proc http::CopyDone {token count {error {}}} {
 	    [list $token $state(totalsize) $state(currentsize)]
     }
     # At this point the token may have been reset.
-    if {[string length $error]} {
+    if {$error ne ""} {
 	Finish $token $error
     } elseif {[catch {eof $sock} iseof] || $iseof} {
 	Eot $token
@@ -4513,7 +4515,7 @@ proc http::Eot {token {reason {}}} {
 	set state(status) ok
     }
 
-    if {[string length $state(body)] > 0} {
+    if {$state(body) ne ""} {
 	try {
 	    foreach coding [ContentEncoding $token] {
 		if {$coding eq {deflateX}} {
@@ -4859,15 +4861,15 @@ proc http::ReceiveChunked {chan command} {
 	set chunk ""
 	while {$size && ![chan eof $chan]} {
 	    set part [chan read $chan $size]
-	    incr size -[string length $part]
+	    incr size [expr {-[string length $part]}]
 	    append chunk $part
 	}
 	try {
-	    uplevel #0 [linsert $command end $chunk]
+	    uplevel #0 [list {*}$command $chunk]
 	} on error {- opt} {
 	    http::Log "Error in callback: [dict get $opt -errorinfo]"
 	}
-	if {[string length $chunk] == 0} {
+	if {$chunk eq ""} {
 	    # channel might have been closed in the callback
 	    catch {chan event $chan readable {}}
 	    return
