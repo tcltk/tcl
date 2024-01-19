@@ -5538,10 +5538,9 @@ ZipFSMatchInDirectoryProc(
 	wanted = types->type;
 	if ((wanted & TCL_GLOB_TYPE_MOUNT) && (wanted != TCL_GLOB_TYPE_MOUNT)) {
 	    if (interp) {
-		Tcl_SetResult(interp,
+		ZIPFS_ERROR(interp,
 			      "Internal error: TCL_GLOB_TYPE_MOUNT should not "
-			      "be set in conjunction with other glob types.",
-			      TCL_STATIC);
+			      "be set in conjunction with other glob types.");
 	    }
 	    return TCL_ERROR;
 	}
