@@ -1448,9 +1448,9 @@ namespace eval test_ns_zipfs {
     testzipfsglob basic-type-d    $basicMounts [list -type d $defMountPt/*]      [zipfspathsmt $defMountPt testdir]
     testzipfsglob basic-type-f    $basicMounts [list -type f $defMountPt/*]      [zipfspathsmt $defMountPt test]
     testzipfsglob basic-type-d-f  $basicMounts [list -type {d f} $defMountPt/*]  [zipfspathsmt $defMountPt test testdir]
-    testzipfsglob basic-type-l    $basicMounts [list -type l $defMountPt/*]      {}
+    testzipfsglob basic-type-l    $basicMounts [list -type l $defMountPt/*]      "no files matched glob pattern \"$defMountPt/*\"" -returnCodes error
     foreach type {b c l p s} {
-        testzipfsglob basic-type-$type    $basicMounts [list -type $type $defMountPt/*]          {}
+        testzipfsglob basic-type-$type    $basicMounts [list -type $type $defMountPt/*]          "no files matched glob pattern \"$defMountPt/*\"" -returnCodes error
         testzipfsglob basic-type-f-$type  $basicMounts [list -type [list f $type] $defMountPt/*] [zipfspathsmt $defMountPt test]
         testzipfsglob basic-type-d-$type  $basicMounts [list -type [list d $type] $defMountPt/*] [zipfspathsmt $defMountPt testdir]
     }
