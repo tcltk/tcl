@@ -108,7 +108,6 @@ variable within an array variable, and may be empty.
 \fB$\fIname\fR
 .
 \fIname\fR may not be empty.
-
 .TP 15
 \fB$\fIname\fB(\fIindex\fB)\fR
 .

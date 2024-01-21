@@ -14,7 +14,6 @@ fcopy \- Copy data from one channel to another
 .SH SYNOPSIS
 \fBfcopy \fIinputChan outputChan\fR ?\fB\-size \fIsize\fR? ?\fB\-command \fIcallback\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 The \fBfcopy\fR command copies data from one I/O channel, \fIinchan\fR to another I/O channel, \fIoutchan\fR.

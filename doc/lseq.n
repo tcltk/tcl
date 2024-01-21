@@ -11,11 +11,11 @@
 .SH NAME
 lseq \- Build a numeric sequence returned as a list
 .SH SYNOPSIS
+.nf
 \fBlseq \fIstart \fR?(\fB..\fR|\fBto\fR)? \fIend\fR ??\fBby\fR? \fIstep\fR?
-
 \fBlseq \fIstart \fBcount\fI count\fR ??\fBby\fR? \fIstep\fR?
-
 \fBlseq \fIcount\fR ?\fBby \fIstep\fR?
+.fi
 .BE
 .SH DESCRIPTION
 .PP
@@ -24,16 +24,17 @@ parameters \fIstart\fR, \fIend\fR, and \fIstep\fR. The \fIoperation\fR
 argument "\fB..\fR" or "\fBto\fR" defines the range. The "\fBcount\fR" option
 is used to define a count of the number of elements in the list. A short form
 use of the command, with a single count value, will create a range from 0 to
-count-1.
-
+\fIcount\fR-1.
+.PP
 The \fBlseq\fR command can produce both increasing and decreasing
 sequences. When both \fIstart\fR and \fIend\fR are provided without a
 \fIstep\fR value, then if \fIstart\fR <= \fIend\fR, the sequence will be
 increasing and if \fIstart\fR > \fIend\fR it will be decreasing. If a
 \fIstep\fR vale is included, it's sign should agree with the direction of the
-sequence (descending -> negative and ascending -> positive), otherwise an
+sequence (descending \(-> negative and ascending \(-> positive), otherwise an
 empty list is returned.  For example:
-
+.RS
+.PP
 .CS \"
 % \fBlseq\fR 1 to 5    ;# increasing
 \fI\(-> 1 2 3 4 5
@@ -46,7 +47,8 @@ empty list is returned.  For example:
 % \fBlseq\fR 1 to 5 by 0   ;# all step sizes of 0 produce an empty list
 .\"
 .CE
-
+.RE
+.PP
 The numeric arguments, \fIstart\fR, \fIend\fR, \fIstep\fR, and \fIcount\fR,
 may also be a valid expression. The expression will be evaluated and the
 numeric result will be used.  An expression that does not evaluate to a number
@@ -54,20 +56,19 @@ will produce an invalid argument error.
 .PP
 \fIStart\fR defines the initial value and \fIend\fR defines the limit, not
 necessarily the last value. \fBlseq\fR produces a list with \fIcount\fR
-elements, and if \fIcount\fR is not supplied, it is computed as
-
-.CS \"
-    \fIcount\fR = int( (\fIend\fR - \fIstart\fR + \fIstep\fR) / \fIstep\fR )
-.\"
+elements, and if \fIcount\fR is not supplied, it is computed as:
+.RS
+.PP
+.CS
+\fIcount\fR = int( (\fIend\fR - \fIstart\fR + \fIstep\fR) / \fIstep\fR )
 .CE
-
+.RE
 .PP
 The numeric arguments, \fIstart\fR, \fIend\fR, \fIstep\fR, and \fIcount\fR,
 can also be a valid expression. the \fBlseq\fR command will evaluate the
 expression (as if with \fBexpr\fR)
 and use the numeric result, or return an error as with any invalid argument
 value; a non-numeric expression result will result in an error.
-
 .SH EXAMPLES
 .CS
 .\"

@@ -13,10 +13,11 @@ coroutine, yield, yieldto, coroinject, coroprobe \- Create and produce values fr
 .SH SYNOPSIS
 .nf
 \fBcoroutine \fIname command\fR ?\fIarg...\fR?
+
 \fByield\fR ?\fIvalue\fR?
 \fByieldto\fI command\fR ?\fIarg...\fR?
 \fIname\fR ?\fIvalue...\fR?
-.sp
+
 .VS "8.7, TIP383"
 \fBcoroinject \fIcoroName command\fR ?\fIarg...\fR?
 \fBcoroprobe \fIcoroName command\fR ?\fIarg...\fR?

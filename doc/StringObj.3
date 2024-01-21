@@ -19,10 +19,8 @@ Tcl_Obj *
 Tcl_Obj *
 \fBTcl_NewUnicodeObj\fR(\fIunicode, numChars\fR)
 .sp
-void
 \fBTcl_SetStringObj\fR(\fIobjPtr, bytes, length\fR)
 .sp
-void
 \fBTcl_SetUnicodeObj\fR(\fIobjPtr, unicode, numChars\fR)
 .sp
 char *
@@ -46,19 +44,14 @@ Tcl_Size
 Tcl_Obj *
 \fBTcl_GetRange\fR(\fIobjPtr, first, last\fR)
 .sp
-void
 \fBTcl_AppendToObj\fR(\fIobjPtr, bytes, length\fR)
 .sp
-void
 \fBTcl_AppendUnicodeToObj\fR(\fIobjPtr, unicode, numChars\fR)
 .sp
-void
 \fBTcl_AppendObjToObj\fR(\fIobjPtr, appendObjPtr\fR)
 .sp
-void
-\fBTcl_AppendStringsToObj\fR(\fIobjPtr, string, string, ... \fB(char *)NULL\fR)
+\fBTcl_AppendStringsToObj\fR(\fIobjPtr, string, string, ... \fBNULL\fR)
 .sp
-void
 \fBTcl_AppendLimitedToObj\fR(\fIobjPtr, bytes, length, limit, ellipsis\fR)
 .sp
 Tcl_Obj *
@@ -70,10 +63,8 @@ int
 Tcl_Obj *
 \fBTcl_ObjPrintf\fR(\fIformat, ...\fR)
 .sp
-void
 \fBTcl_AppendPrintfToObj\fR(\fIobjPtr, format, ...\fR)
 .sp
-void
 \fBTcl_SetObjLength\fR(\fIobjPtr, newLength\fR)
 .sp
 int
@@ -81,6 +72,7 @@ int
 .sp
 Tcl_Obj *
 \fBTcl_ConcatObj\fR(\fIobjc, objv\fR)
+.fi
 .SH ARGUMENTS
 .AS "const Tcl_UniChar" *appendObjPtr in/out
 .AP "const char" *bytes in
