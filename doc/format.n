@@ -14,7 +14,6 @@ format \- Format a string in the style of sprintf
 .SH SYNOPSIS
 \fBformat \fIformatString \fR?\fIarg arg ...\fR?
 .BE
-
 .SH INTRODUCTION
 .PP
 This command generates a formatted string in a fashion similar to the

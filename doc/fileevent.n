@@ -17,7 +17,6 @@ fileevent \- Execute a script when a channel becomes readable or writable
 .sp
 \fBfileevent \fIchannelId \fBwritable \fR?\fIscript\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 This command is used to create \fIfile event handlers\fR.  A file event

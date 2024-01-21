@@ -13,7 +13,7 @@ Tcl_GetReturnOptions, Tcl_SetReturnOptions, Tcl_AddErrorInfo, Tcl_AppendObjToErr
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
-.sp
+
 Tcl_Obj *
 \fBTcl_GetReturnOptions\fR(\fIinterp, code\fR)
 .sp
@@ -28,8 +28,9 @@ int
 .sp
 \fBTcl_SetObjErrorCode\fR(\fIinterp, errorObjPtr\fR)
 .sp
-\fBTcl_SetErrorCode\fR(\fIinterp, element, element, ... \fB(char *)NULL\fR)
+\fBTcl_SetErrorCode\fR(\fIinterp, element, element, ... \fBNULL\fR)
 .sp
+int
 \fBTcl_GetErrorLine\fR(\fIinterp\fR)
 .sp
 \fBTcl_SetErrorLine\fR(\fIinterp, lineNum\fR)
@@ -37,8 +38,8 @@ int
 const char *
 \fBTcl_PosixError\fR(\fIinterp\fR)
 .sp
-void
 \fBTcl_LogCommandInfo\fR(\fIinterp, script, command, commandLength\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_Interp commandLength
 .AP Tcl_Interp *interp in

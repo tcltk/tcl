@@ -26,6 +26,8 @@ the same as index values for the command \fBstring index\fR,
 supporting simple index arithmetic and indices relative to the
 end of the list. The index \fB0\fR refers to the first element of the
 list, and \fBend\fR refers to the last element of the list.
+(Unlike with \fBlpop\fR, \fBlset\fR, and \fBlindex\fR, indices into sublists
+are not supported.)
 .PP
 If either \fIfirst\fR or \fIlast\fR is less than zero, it is considered to
 refer to the position before the first element of the list. This allows
@@ -42,7 +44,7 @@ with no elements being deleted.
 The \fIvalue\fR arguments specify zero or more new elements to
 be added to the list in place of those that were deleted.
 Each \fIvalue\fR argument will become a separate element of
-the list.  If no \fIvalue\fR arguments are specified, then the elements
+the list.  If no \fIvalue\fR arguments are specified, the elements
 between \fIfirst\fR and \fIlast\fR are simply deleted.
 .SH EXAMPLES
 .PP

@@ -15,20 +15,21 @@ Tcl_TraceVar, Tcl_TraceVar2, Tcl_UntraceVar, Tcl_UntraceVar2, Tcl_VarTraceInfo, 
 \fB#include <tcl.h>\fR
 .sp
 int
-\fBTcl_TraceVar(\fIinterp, varName, flags, proc, clientData\fB)\fR
+\fBTcl_TraceVar\fR(\fIinterp, varName, flags, proc, clientData\fR)
 .sp
 int
-\fBTcl_TraceVar2(\fIinterp, name1, name2, flags, proc, clientData\fB)\fR
+\fBTcl_TraceVar2\fR(\fIinterp, name1, name2, flags, proc, clientData\fR)
 .sp
-\fBTcl_UntraceVar(\fIinterp, varName, flags, proc, clientData\fB)\fR
+\fBTcl_UntraceVar\fR(\fIinterp, varName, flags, proc, clientData\fR)
 .sp
-\fBTcl_UntraceVar2(\fIinterp, name1, name2, flags, proc, clientData\fB)\fR
-.sp
-void *
-\fBTcl_VarTraceInfo(\fIinterp, varName, flags, proc, prevClientData\fB)\fR
+\fBTcl_UntraceVar2\fR(\fIinterp, name1, name2, flags, proc, clientData\fR)
 .sp
 void *
-\fBTcl_VarTraceInfo2(\fIinterp, name1, name2, flags, proc, prevClientData\fB)\fR
+\fBTcl_VarTraceInfo\fR(\fIinterp, varName, flags, proc, prevClientData\fR)
+.sp
+void *
+\fBTcl_VarTraceInfo2\fR(\fIinterp, name1, name2, flags, proc, prevClientData\fR)
+.fi
 .SH ARGUMENTS
 .AS void *prevClientData
 .AP Tcl_Interp *interp in

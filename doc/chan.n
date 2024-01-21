@@ -153,9 +153,11 @@ interface with the operating system,
 \fIchar\fR signals the end of the data when it is encountered in the input.
 If \fIchar\fR is the empty string, there is no special character that marks
 the end of the data.
-
+.RS
+.PP
 The default value is the empty string.  The acceptable range is \ex01 -
 \ex7F.  A value outside this range results in an error.
+.RE
 .VS "TCL8.7 TIP656"
 .TP
 \fB\-profile\fI profile\fR

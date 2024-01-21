@@ -12,17 +12,14 @@
 .SH NAME
 after \- Execute a command after a time delay
 .SH SYNOPSIS
+.nf
 \fBafter \fIms\fR
-.sp
 \fBafter \fIms \fR?\fIscript script script ...\fR?
-.sp
 \fBafter cancel \fIid\fR
-.sp
 \fBafter cancel \fIscript script script ...\fR
-.sp
 \fBafter idle \fR?\fIscript script script ...\fR?
-.sp
 \fBafter info \fR?\fIid\fR?
+.fi
 .BE
 .SH DESCRIPTION
 .PP

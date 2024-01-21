@@ -11,11 +11,11 @@
 .SH NAME
 timerate \- Calibrated performance measurements of script execution time
 .SH SYNOPSIS
+.nf
 \fBtimerate \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
-.sp
-\fBtimerate \fR?\fB\-direct\fR? ?\fB\-overhead\fI double\fR? \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
-.sp
+\fBtimerate \fR?\fB\-direct\fR? ?\fB\-overhead\fI estimate\fR? \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
 \fBtimerate \fR?\fB\-calibrate\fR? ?\fB\-direct\fR? \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
+.fi
 .BE
 .SH DESCRIPTION
 .PP
@@ -32,12 +32,12 @@ application performance.
 The first and second form will evaluate \fIscript\fR until the interval
 \fItime\fR given in milliseconds elapses, or for 1000 milliseconds (1 second)
 if \fItime\fR is not specified.
-.sp
+.PP
 The parameter \fImax-count\fR could additionally impose a further restriction
 by the maximal number of iterations to evaluate the script.
 If \fImax-count\fR is specified, the evaluation will stop either this count of
 iterations is reached or the time is exceeded.
-.sp
+.PP
 It will then return a canonical Tcl-list of the form:
 .PP
 .CS
@@ -66,12 +66,13 @@ for future invocations of the \fBtimerate\fR command. If the \fItime\fR
 parameter is not specified, the calibrate procedure runs for up to 10 seconds.
 .RS
 .PP
-Note that calibration is not thread safe in the current implementation.
+Note that the calibration process is not thread safe in the current implementation.
 .RE
 .TP
-\fB\-overhead \fIdouble\fR
+\fB\-overhead \fIestimate\fR
 .
-The \fB\-overhead\fR parameter supplies an estimate (in microseconds) of the
+The \fB\-overhead\fR parameter supplies an estimate (in microseconds, which may
+be a floating point number) of the
 measurement overhead of each iteration of the tested script. This quantity
 will be subtracted from the measured time prior to reporting results. This can
 be useful for removing the cost of interpreter state reset commands from the

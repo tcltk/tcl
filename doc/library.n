@@ -30,6 +30,7 @@ auto_execok, auto_import, auto_load, auto_mkindex, auto_qualify, auto_reset, tcl
 \fBreadFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR?
 \fBwriteFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR? \fIcontents\fR
 .VE "Tcl 8.7, TIP 670"
+.fi
 .BE
 .SH INTRODUCTION
 .PP
