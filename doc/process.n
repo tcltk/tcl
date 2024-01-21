@@ -18,6 +18,7 @@ tcl::process \- Subprocess management
 This command provides a way to manage subprocesses created by the \fBopen\fR
 and \fBexec\fR commands, as identified by the process identifiers (PIDs) of
 those subprocesses. The legal \fIoptions\fR (which may be abbreviated) are:
+.\" METHOD: autopurge
 .TP
 \fB::tcl::process autopurge\fR ?\fIflag\fR?
 .
@@ -28,12 +29,14 @@ status as a boolean value. When autopurge is active,
 executed or a pipe channel created by \fBopen\fR is closed. When autopurge is
 inactive, \fB::tcl::process\fR purge must be called explicitly. By default
 autopurge is active.
+.\" METHOD: list
 .TP
 \fB::tcl::process list\fR
 .
 Returns the list of subprocess PIDs. This includes all currently executing
 subprocesses and all terminated subprocesses that have not yet had their
 corresponding process table entries purged.
+.\" METHOD: purge
 .TP
 \fB::tcl::process purge\fR ?\fIpids\fR?
 .
@@ -41,6 +44,7 @@ Cleans up all data associated with terminated subprocesses. If \fIpids\fR is
 specified as a list of PIDs then the command only cleanup data for the matching
 subprocesses if they exist, and raises an error otherwise. If a process listed is
 still active, this command does nothing to that process.
+.\" METHOD: status
 .TP
 \fB::tcl::process status\fR ?\fIswitches\fR? ?\fIpids\fR?
 .

@@ -29,7 +29,7 @@ If the initial arguments to \fBglob\fR start with \fB\-\fR then
 they are treated as switches. The following switches are
 currently supported:
 .TP
-\fB\-directory\fR \fIdirectory\fR
+\fB\-directory\fI directory\fR
 .
 Search for files which match the given patterns starting in the given
 \fIdirectory\fR. This allows searching of directories whose name
@@ -49,7 +49,7 @@ separators.
 Allows an empty list to be returned without error; This is the
 default behavior in Tcl 9.0, so this switch has no effect any more.
 .TP
-\fB\-path\fR \fIpathPrefix\fR
+\fB\-path\fI pathPrefix\fR
 .
 Search for files with the given \fIpathPrefix\fR where the rest of the name
 matches the given patterns. This allows searching for files with names
@@ -75,7 +75,7 @@ path segment, so
 .QW "\fBglob \-tails \-path [file rootname /home/fred/foo.tex] .*\fR"
 will return paths like \fBfoo.aux foo.bib foo.tex\fR etc.
 .TP
-\fB\-types\fR \fItypeList\fR
+\fB\-types\fI typeList\fR
 .
 Only list files or directories which match \fItypeList\fR, where the items
 in the list have two forms. The first form is like the \-type option of

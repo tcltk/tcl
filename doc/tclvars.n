@@ -17,6 +17,7 @@ argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_li
 The following global variables are created and managed automatically
 by the Tcl library.  Except where noted below, these variables should
 normally be treated as read-only by application-specific code and by users.
+.\" VARIABLE: auto_path
 .TP
 \fBauto_path\fR
 .
@@ -40,6 +41,7 @@ Additional variables relating to package management exist. More
 details are listed in the \fBVARIABLES\fR section of the \fBlibrary\fR
 manual page.
 .RE
+.\" VARIABLE: env
 .TP
 \fBenv\fR
 .
@@ -121,6 +123,7 @@ If existing, it has the same effect as running \fBinterp debug\fR
 \fB{} -frame 1\fR
 as the very first command of each new Tcl interpreter.
 .RE
+.\" VARIABLE: errorCode
 .TP
 \fBerrorCode\fR
 .
@@ -217,6 +220,7 @@ If none of these methods for setting the error code has been used,
 the Tcl interpreter will reset the variable to \fBNONE\fR after
 the next error.
 .RE
+.\" VARIABLE: errorInfo
 .TP
 \fBerrorInfo\fR
 .
@@ -227,6 +231,7 @@ identifying the Tcl commands and procedures that were being executed
 when the most recent error occurred.
 Its contents take the form of a stack trace showing the various
 nested Tcl commands that had been invoked at the time of the error.
+.\" VARIABLE: tcl_library
 .TP
 \fBtcl_library\fR
 .
@@ -249,6 +254,7 @@ If \fBTCL_LIBRARY\fR is not set or doesn't refer to an appropriate
 directory, then Tcl checks several other directories based on a
 compiled-in default location, the location of the binary containing
 the application, and the current working directory.
+.\" VARIABLE: tcl_patchLevel
 .TP
 \fBtcl_patchLevel\fR
 .
@@ -258,6 +264,7 @@ hold a string giving the current patch level for Tcl, such as
 \fB8.5b3\fR for the third beta release of Tcl 8.5.
 The value of this variable is returned by the \fBinfo patchlevel\fR
 command.
+.\" VARIABLE: tcl_pkgPath
 .TP
 \fBtcl_pkgPath\fR
 .
@@ -277,6 +284,7 @@ value is added to \fBauto_path\fR at startup; changes to \fBtcl_pkgPath\fR
 are not reflected in \fBauto_path\fR.  If you want Tcl to search additional
 directories for packages you should add the names of those directories to
 \fBauto_path\fR, not \fBtcl_pkgPath\fR.
+.\" VARIABLE: tcl_platform
 .TP
 \fBtcl_platform\fR
 .
@@ -357,6 +365,7 @@ and the value from the GetUserName() system call on Windows.
 This gives the size of the native-machine word in bytes (strictly, it
 is same as the result of evaluating \fIsizeof(long)\fR in C.)
 .RE
+.\" VARIABLE: tcl_traceCompile
 .TP
 \fBtcl_traceCompile\fR
 .
@@ -375,6 +384,7 @@ tracking down suspected problems with the Tcl compiler.
 This variable and functionality only exist if
 \fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
 .RE
+.\" VARIABLE: tcl_traceExec
 .TP
 \fBtcl_traceExec\fR
 .
@@ -401,6 +411,7 @@ and interpreter.
 This variable and functionality only exist if
 \fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
 .RE
+.\" VARIABLE: tcl_wordchars
 .TP
 \fBtcl_wordchars\fR
 .
@@ -423,6 +434,7 @@ selecting a word by double-clicking in text in Tk.  It is platform
 dependent.  On Windows, it defaults to \fB\es\fR, meaning any Unicode space
 character.  Otherwise it defaults to \fB\eW\fR, which is anything but a
 Unicode word character (number, letter, or underscore).
+.\" VARIABLE: tcl_version
 .TP
 \fBtcl_version\fR
 .
@@ -438,20 +450,24 @@ command.
 The following variables are only guaranteed to exist in \fBtclsh\fR
 and \fBwish\fR executables; the Tcl library does not define them
 itself but many Tcl environments do.
+.\" VARIABLE: argc
 .TP 6
 \fBargc\fR
 .
 The number of arguments to \fBtclsh\fR or \fBwish\fR.
+.\" VARIABLE: argv
 .TP 6
 \fBargv\fR
 .
 Tcl list of arguments to \fBtclsh\fR or \fBwish\fR.
+.\" VARIABLE: argv0
 .TP 6
 \fBargv0\fR
 .
 The script that \fBtclsh\fR or \fBwish\fR started executing (if it was
 specified) or otherwise the name by which \fBtclsh\fR or \fBwish\fR
 was invoked.
+.\" VARIABLE: tcl_interactive
 .TP 6
 \fBtcl_interactive\fR
 .

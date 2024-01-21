@@ -21,6 +21,7 @@ otherwise manipulating channels, e.g. those created by \fBopen\fR and
 which correspond respectively to the standard input, output, and error streams
 of the process.  Any unique abbreviation for \fIoperation\fR is acceptable.
 Available operations are:
+.\" METHOD: blocked
 .TP
 \fBchan blocked \fIchannelName\fR
 .
@@ -28,6 +29,7 @@ Returns 1 when the channel is in non-blocking mode and the last input operation
 on the channel failed because it would have otherwise caused the process to
 block, and 0 otherwise.  Each Tcl channel is in blocking mode unless configured
 otherwise.
+.\" METHOD: close
 .TP
 \fBchan close \fIchannelName\fR ?\fIdirection\fR?
 .
@@ -84,6 +86,7 @@ switch them back to blocking or (b) use the environment variable
 .QW \fB0\fR
 restores the previous behavior.
 .RE
+.\" METHOD: configure
 .TP
 \fBchan configure \fIchannelName\fR ?\fIoptionName\fR? ?\fIvalue\fR? ?\fIoptionName value\fR?...
 .
@@ -103,7 +106,7 @@ channel may provide additional options. Those options are described in the
 relevant documentation. For example, additional options are documented for
 \fBsocket\fR, and also for serial devices at \fBopen\fR.
 .TP
-\fB\-blocking\fR \fIboolean\fR
+\fB\-blocking\fI boolean\fR
 .
 If \fB\-blocking\fR is set to \fBtrue\fR, which is the default, reading from or
 writing to the channel may cause the process to block indefinitely.  Otherwise,
@@ -113,7 +116,7 @@ generally requires that the event loop is entered, e.g. by calling
 \fBTcl_DoOneEvent\fR or \fBvwait\fR or by using Tk, to give Tcl a chance to
 process events on the channel.
 .TP
-\fB\-buffering\fR \fInewValue\fR
+\fB\-buffering\fI newValue\fR
 .
 If \fInewValue\fR is \fBfull\fR, which is the default, output is buffered
 until the internal buffer is full or until \fBchan flush\fR is called. If
@@ -123,7 +126,7 @@ every output operation.  For \fBstdin\fR, \fBstdout\fR, and channels that
 connect to terminal-like devices, the default value is \fBline\fR.  For
 \fBstderr\fR the default value is \fBnone\fR.
 .TP
-\fB\-buffersize\fR \fInewSize\fR
+\fB\-buffersize\fI newSize\fR
 .
 \fInewSize\fR, an integer no greater than one million, is the size in bytes of
 any input or output buffers subsequently allocated for this channel.
@@ -145,7 +148,7 @@ which returns the platform- and locale-dependent system encoding used to
 interface with the operating system,
 .RE
 .TP
-\fB\-eofchar\fR \fIchar\fR
+\fB\-eofchar\fI char\fR
 .
 \fIchar\fR signals the end of the data when it is encountered in the input.
 If \fIchar\fR is the empty string, there is no special character that marks
@@ -155,7 +158,7 @@ The default value is the empty string.  The acceptable range is \ex01 -
 \ex7F.  A value outside this range results in an error.
 .VS "TCL8.7 TIP656"
 .TP
-\fB\-profile\fR \fIprofile\fR
+\fB\-profile\fI profile\fR
 .
 Specifies the encoding profile to be used on the channel. The encoding
 transforms in use for the channel's input and output will then be subject to the
@@ -164,7 +167,7 @@ rules of that profile. Any failures will result in a channel error. See
 profiles.
 .VE "TCL8.7 TIP656"
 .TP
-\fB\-translation\fR \fItranslation\fR
+\fB\-translation\fI translation\fR
 .TP
 \fB\-translation\fR \fB{\fIinTranslation outTranslation\fB}\fR
 .
@@ -232,6 +235,7 @@ translations occur during either input or output.  This translation is
 typically used on UNIX platforms,
 .RE
 .RE
+.\" METHOD: copy
 .TP
 \fBchan copy \fIinputChan outputChan\fR ?\fB\-size \fIsize\fR? ?\fB\-command \fIcallback\fR?
 .
@@ -265,90 +269,15 @@ closed all data already queued is written to \fIoutputChan\fR.
 There should be no event handler established for \fIinputChan\fR  because it
 may become readable during a background copy.  An attempt to read or write from
 within an event handler results result in the error,  "channel busy".  Any
-wrong-sided I/O attempted (by a \fBfileevent\fR handler or otherwise) results
+wrong-sided I/O attempted (by a \fBchan event\fR handler or otherwise) results
 in a
 .QW "channel busy"
 error.
 .PP
 .PP
 .IP \fBEXAMPLES\fR
-.PP
-The first example transfers the contents of one channel exactly to
-another. Note that when copying one file to another, it is better to
-use \fBfile copy\fR which also copies file metadata (e.g. the file
-access permissions) where possible.
-.PP
-.CS
-fconfigure $in -translation binary
-fconfigure $out -translation binary
-\fBfcopy\fR $in $out
-.CE
-.PP
-This second example shows how the callback gets
-passed the number of bytes transferred.
-It also uses vwait to put the application into the event loop.
-Of course, this simplified example could be done without the command
-callback.
-.PP
-.CS
-proc Cleanup {in out bytes {error {}}} {
-    global total
-    set total $bytes
-    close $in
-    close $out
-    if {[string length $error] != 0} {
-        # error occurred during the copy
-    }
-}
-set in [open $file1]
-set out [socket $server $port]
-\fBfcopy\fR $in $out -command [list Cleanup $in $out]
-vwait total
-.CE
-.PP
-The third example copies in chunks and tests for end of file
-in the command callback.
-.PP
-.CS
-proc CopyMore {in out chunk bytes {error {}}} {
-    global total done
-    incr total $bytes
-    if {([string length $error] != 0) || [eof $in]} {
-        set done $total
-        close $in
-        close $out
-    } else {
-        \fBfcopy\fR $in $out -size $chunk \e
-            -command [list CopyMore $in $out $chunk]
-    }
-}
-set in [open $file1]
-set out [socket $server $port]
-set chunk 1024
-set total 0
-\fBfcopy\fR $in $out -size $chunk \e
-    -command [list CopyMore $in $out $chunk]
-vwait done
-.CE
-.PP
-The fourth example starts an asynchronous, bidirectional fcopy between
-two sockets. Those could also be pipes from two [open "|hal 9000" r+]
-(though their conversation would remain secret to the script, since
-all four fileevent slots are busy).
-.PP
-.CS
-set flows 2
-proc Done {dir args} {
-     global flows done
-     puts "$dir is over."
-     incr flows -1
-     if {$flows<=0} {set done 1}
-}
-\fBfcopy\fR $sok1 $sok2 -command [list Done UP]
-\fBfcopy\fR $sok2 $sok1 -command [list Done DOWN]
-vwait done
-.CE
 .RE
+.\" METHOD: create
 .TP
 \fBchan create \fImode cmdPrefix\fR
 .
@@ -388,11 +317,13 @@ is currently in or shared with.
 \fBchan create\fR is \fBsafe\fR and is accessible to safe interpreters.  The
 handler is always called in the safe interpreter it was created in.
 .RE
+.\" METHOD: eof
 .TP
 \fBchan eof \fIchannelName\fR
 .
 Returns 1 if the last read on the channel failed because the end of the data
 was already reached, and 0 otherwise.
+.\" METHOD: event
 .TP
 \fBchan event \fIchannelName event\fR ?\fIscript\fR?
 .
@@ -407,7 +338,6 @@ deleted when the channel is closed.  If \fIscript\fR is omitted, either the
 existing script or the empty string is returned.  The event loop must be
 entered, e.g. via \fBvwait\fR or \fBupdate\fR, or by using Tk, for handlers to
 be evaluated.
-
 .RS
 .PP
 \fIscript\fR is evaluated at the global level in the interpreter it was
@@ -415,7 +345,6 @@ established in.  Any resulting error is handled in the background, i.e. via
 \fBinterp bgerror\fR.  In order to prevent an endless loop due to a buggy
 handler, the handler is deleted if \fIscript\fR returns an error so that it is
 not evaluated again.
-
 .PP
 Without an event handler, \fBchan gets\fR or \fBchan read\fR on a channel in
 blocking mode may block until data becomes available, become during which the
@@ -450,12 +379,14 @@ thread can not do any other processing or service any other events.  A channel
 in non-blocking mode allows a thread to carry on with other work and get back
 to the channel at the right time.
 .RE
+.\" METHOD: flush
 .TP
 \fBchan flush \fIchannelName\fR
 .
 For a channel in blocking mode, flushes all buffered output to the destination,
 and then returns.  For a channel in non-blocking mode, returns immediately
 while all buffered output is flushed in the background as soon as possible.
+.\" METHOD: gets
 .TP
 \fBchan gets \fIchannelName\fR ?\fIvarName\fR?
 .
@@ -477,11 +408,13 @@ indicate that the empty string means that the end of the data has been reached,
 and \fBchan blocked\fR may indicate that that the empty string means there
 isn't currently enough data do return the next line.
 .RE
+.\" METHOD: names
 .TP
 \fBchan names\fR ?\fIpattern\fR?
 .
 Returns a list of all channel names, or if \fIpattern\fR is given, only those
 names that match according to the rules of \fBstring match\fR.
+.\" METHOD: pending
 .TP
 \fBchan pending \fImode channelName\fR
 .
@@ -495,8 +428,10 @@ event callback to impose limits on input line length to avoid a potential
 denial-of-service attack where an extremely long line exceeds the available
 memory to buffer it.  Returns -1 if the channel was not opened for the mode in
 question.
+.\" METHOD: pipe
 .TP
 \fBchan pipe\fR
+.
 Creates a pipe, i.e. a readable channel and a writable channel, and returns the
 names of the readable channel and the writable channel.  Data written to the
 writable channel can be read from the readable channel.  Because the pipe is a
@@ -526,12 +461,15 @@ issue, either put the channels into non-blocking mode and use event handlers,
 or place the read channel and the write channel in separate interpreters in
 separate threads.
 .RE
+.\" METHOD: pop
 .TP
 \fBchan pop \fIchannelName\fR
+.
 Removes the topmost transformation handler from the channel if there is one,
 and closes the channel otherwise. The result is normally the empty string, but
 may be an error in some situations, e.g. when closing the underlying resource
 results in an error.
+.\" METHOD: postevent
 .TP
 \fBchan postevent \fIchannelName eventSpec\fR
 .
@@ -557,13 +495,16 @@ It is an error to post an event that the channel has no interest in.  See
 reflected channel would have been created, and will be evaluated in that
 interpreter as well.
 .RE
+.\" METHOD: push
 .TP
 \fBchan push \fIchannelName cmdPrefix\fR
+.
 Adds a new transformation handler on top of the channel and returns a handle
 for the transformation.  \fIcmdPrefix\fR is the first words of a command that
 provides the interface documented for \fBtranschan\fR, and transforms data on
 the channel, It is an error if handler does not support the mode(s) the channel
 is in.
+.\" METHOD: puts
 .TP
 \fBchan puts\fR ?\fB\-nonewline\fR? ?\fIchannelName\fR? \fIstring\fR
 .
@@ -593,6 +534,7 @@ non-blocking mode should normally be handled using \fBchan event\fR, where the
 application only invokes \fBchan puts\fR after being recently notified through
 a file event handler that the channel is ready for more output data.
 .RE
+.\" METHOD: read
 .TP
 \fBchan read \fIchannelName\fR ?\fInumChars\fR?
 .TP
@@ -623,6 +565,7 @@ possible to get a \fBreadable\fR event for each individual character.  In
 blocking mode, \fBchan read\fR blocks forever when reading to the end of the
 data if there is no \fBchan configure -eofchar\fR configured for the channel.
 .RE
+.\" METHOD: seek
 .TP
 \fBchan seek \fIchannelName offset\fR ?\fIorigin\fR?
 .
@@ -653,12 +596,14 @@ empty string or an error if the channel does not support seeking.
 read\fR, both \fBchan seek\fR and \fBchan tell\fR operate in terms of bytes,
 not characters,
 .RE
+.\" METHOD: tell
 .TP
 \fBchan tell \fIchannelName\fR
 .
 Returns the offset in bytes of the current position in the underlying data, or
 -1 if the channel does not suport seeking. The value can be passed to \fBchan
 seek\fR to set current position to that offset.
+.\" METHOD: truncate
 .TP
 \fBchan truncate \fIchannelName\fR ?\fIlength\fR?
 .
@@ -666,6 +611,7 @@ Flushes the channel and truncates the data in the channel to \fIlength\fR
 bytes, or to the current position in bytes if \fIlength\fR is omitted.
 .
 .SH EXAMPLES
+.SS "SIMPLE CHANNEL OPERATION EXAMPLES"
 .PP
 In the following example a file is opened using the encoding CP1252, which is
 common on Windows, searches for a string, rewrites that part, and truncates the
@@ -735,6 +681,90 @@ proc echoLine {chan clientName} {
 # for incoming connections...
 socket -server connect 12345
 vwait forever
+.CE
+.SS "CHANNEL COPY EXAMPLES"
+.PP
+The first example transfers the contents of one channel exactly to
+another. Note that when copying one file to another, it is better to
+use \fBfile copy\fR which also copies file metadata (e.g. the file
+access permissions) where possible.
+.PP
+.CS
+\fBchan configure\fR $in -translation binary
+\fBchan configure\fR $out -translation binary
+\fBchan copy\fR $in $out
+.CE
+.PP
+This second example shows how the callback gets
+passed the number of bytes transferred.
+It also uses vwait to put the application into the event loop.
+Of course, this simplified example could be done without the command
+callback.
+.PP
+.CS
+proc Cleanup {in out bytes {error {}}} {
+    global total
+    set total $bytes
+    \fBchan close\fR $in
+    \fBchan close\fR $out
+    if {$error ne ""} {
+        # error occurred during the copy
+    }
+}
+
+set in [open $file1]
+set out [socket $server $port]
+\fBchan copy\fR $in $out -command [list Cleanup $in $out]
+vwait total
+.CE
+.PP
+The third example copies in chunks and tests for end of file
+in the command callback.
+.PP
+.CS
+proc CopyMore {in out chunk bytes {error {}}} {
+    global total done
+    incr total $bytes
+    if {($error ne "") || [\fBchan eof\fR $in]} {
+        set done $total
+        \fBchan close\fR $in
+        \fBchan close\fR $out
+    } else {
+        \fBchan copy\fR $in $out -size $chunk \e
+            -command [list CopyMore $in $out $chunk]
+    }
+}
+
+set in [open $file1]
+set out [socket $server $port]
+set chunk 1024
+set total 0
+\fBchan copy\fR $in $out -size $chunk \e
+    -command [list CopyMore $in $out $chunk]
+vwait done
+.CE
+.PP
+The fourth example starts an asynchronous, bidirectional copy between
+two sockets. Those could also be pipes from two bidirectional pipelines
+(e.g., \fI[open "|hal 9000" r+]\fR); the conversation will remain
+essentially secret to the script, since all four \fBchan event\fR slots
+are busy, though any transforms that are \fBchan push\fRed on the
+channels will be able to observe the passing traffic.
+.PP
+.CS
+proc Done {dir args} {
+    global flows done
+    \fBchan puts\fR "$dir is over."
+    incr flows -1
+    if {$flows <= 0} {
+        set done 1
+    }
+}
+
+set flows 2
+\fBchan copy\fR $sok1 $sok2 -command [list Done UP]
+\fBchan copy\fR $sok2 $sok1 -command [list Done DOWN]
+vwait done
 .CE
 .SH "SEE ALSO"
 close(n), eof(n), fblocked(n), fconfigure(n), fcopy(n), file(n),
