@@ -20,7 +20,6 @@ package require tcl::oo
 \fBoo::objdefine\fI object subcommand arg\fR ?\fIarg ...\fR?
 .fi
 .BE
-
 .SH DESCRIPTION
 The \fBoo::define\fR command is used to control the configuration of classes,
 and the \fBoo::objdefine\fR command is used to control the configuration of

@@ -12,12 +12,11 @@
 .SH NAME
 open \- Open a file-based or command pipeline channel
 .SH SYNOPSIS
-.sp
+.nf
 \fBopen \fIfileName\fR
-.br
 \fBopen \fIfileName access\fR
-.br
 \fBopen \fIfileName access permissions\fR
+.fi
 .BE
 .SH DESCRIPTION
 .PP

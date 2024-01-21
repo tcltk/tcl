@@ -14,7 +14,6 @@ exit \- End the application
 .SH SYNOPSIS
 \fBexit \fR?\fIreturnCode\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 Terminate the process, returning \fIreturnCode\fR to the

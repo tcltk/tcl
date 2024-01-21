@@ -14,7 +14,6 @@ for \- 'For' loop
 .SH SYNOPSIS
 \fBfor \fIstart test next body\fR
 .BE
-
 .SH DESCRIPTION
 .PP
 \fBFor\fR is a looping command, similar in structure to the C

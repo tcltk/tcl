@@ -14,7 +14,6 @@ gets \- Read a line from a channel
 .SH SYNOPSIS
 \fBgets \fIchannelId\fR ?\fIvarName\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 This command reads the next line from \fIchannelId\fR, returns everything
@@ -96,10 +95,8 @@ while {[\fBgets\fR $chan line] >= 0} {
 }
 close $chan
 .CE
-
 .SH "SEE ALSO"
 file(n), eof(n), fblocked(n), Tcl_StandardChannels(3)
-
 .SH KEYWORDS
 blocking, channel, end of file, end of line, line, non-blocking, read
 '\" Local Variables:

@@ -14,43 +14,33 @@ Tcl_CreateEventSource, Tcl_DeleteEventSource, Tcl_SetMaxBlockTime, Tcl_QueueEven
 .nf
 \fB#include <tcl.h>\fR
 .sp
-void
 \fBTcl_CreateEventSource\fR(\fIsetupProc, checkProc, clientData\fR)
 .sp
-void
 \fBTcl_DeleteEventSource\fR(\fIsetupProc, checkProc, clientData\fR)
 .sp
-void
 \fBTcl_SetMaxBlockTime\fR(\fItimePtr\fR)
 .sp
-void
 \fBTcl_QueueEvent\fR(\fIevPtr, position\fR)
 .sp
-void
 \fBTcl_ThreadQueueEvent\fR(\fIthreadId, evPtr, position\fR)
 .sp
-void
 \fBTcl_ThreadAlert\fR(\fIthreadId\fR)
 .sp
 Tcl_ThreadId
 \fBTcl_GetCurrentThread\fR()
 .sp
-void
 \fBTcl_DeleteEvents\fR(\fIdeleteProc, clientData\fR)
 .sp
 void *
 \fBTcl_InitNotifier\fR()
 .sp
-void
 \fBTcl_FinalizeNotifier\fR(\fIclientData\fR)
 .sp
 int
 \fBTcl_WaitForEvent\fR(\fItimePtr\fR)
 .sp
-void
 \fBTcl_AlertNotifier\fR(\fIclientData\fR)
 .sp
-void
 \fBTcl_SetTimer\fR(\fItimePtr\fR)
 .sp
 int
@@ -65,11 +55,10 @@ int
 int
 \fBTcl_SetServiceMode\fR(\fImode\fR)
 .sp
-void
 \fBTcl_ServiceModeHook\fR(\fImode\fR)
 .sp
-void
 \fBTcl_SetNotifier\fR(\fInotifierProcPtr\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_EventDeleteProc *notifierProcPtr
 .AP Tcl_EventSetupProc *setupProc in

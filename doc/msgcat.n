@@ -11,55 +11,40 @@
 .SH NAME
 msgcat \- Tcl message catalog
 .SH SYNOPSIS
+.nf
 \fBpackage require tcl 8.7\fR
-.sp
 \fBpackage require msgcat 1.7\fR
-.sp
+
 \fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
-.sp
 \fB::msgcat::mcmax ?\fIsrc-string src-string ...\fR?
-.sp
 .VS "TIP 412"
 \fB::msgcat::mcexists\fR ?\fB-exactnamespace\fR? ?\fB-exactlocale\fR? \fIsrc-string\fR
 .VE "TIP 412"
-.sp
 .VS "TIP 490"
 \fB::msgcat::mcpackagenamespaceget\fR
 .VE "TIP 490"
-.sp
 \fB::msgcat::mclocale \fR?\fInewLocale\fR?
-.sp
 .VS "TIP 499"
 \fB::msgcat::mcpreferences\fR ?\fIlocale preference\fR? ...
 .VE "TIP 499"
-.sp
 .VS "TIP 412"
 \fB::msgcat::mcloadedlocales subcommand\fR ?\fIlocale\fR?
 .VE "TIP 412"
-.sp
 \fB::msgcat::mcload \fIdirname\fR
-.sp
 \fB::msgcat::mcset \fIlocale src-string \fR?\fItranslate-string\fR?
-.sp
 \fB::msgcat::mcmset \fIlocale src-trans-list\fR
-.sp
 \fB::msgcat::mcflset \fIsrc-string \fR?\fItranslate-string\fR?
-.sp
 \fB::msgcat::mcflmset \fIsrc-trans-list\fR
-.sp
 \fB::msgcat::mcunknown \fIlocale src-string\fR ?\fIarg arg ...\fR?
-.sp
 .VS "TIP 412"
 \fB::msgcat::mcpackagelocale subcommand\fR ?\fIlocale\fR?
-.sp
 \fB::msgcat::mcpackageconfig subcommand\fI option\fR ?\fIvalue\fR?
-.sp
 \fB::msgcat::mcforgetpackage\fR
 .VE "TIP 412"
-.sp
 .VS "TIP 499"
 \fB::msgcat::mcutil subcommand\fR ?\fIlocale\fR?
 .VS "TIP 499"
+.fi
 .BE
 .SH DESCRIPTION
 .PP

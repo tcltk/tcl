@@ -16,7 +16,6 @@ Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_GetEncodingFromObj, Tcl_ExternalToUtfDStr
 Tcl_Encoding
 \fBTcl_GetEncoding\fR(\fIinterp, name\fR)
 .sp
-void
 \fBTcl_FreeEncoding\fR(\fIencoding\fR)
 .sp
 int
@@ -54,7 +53,6 @@ int
 const char *
 \fBTcl_GetEncodingNameFromEnvironment\fR(\fIbufPtr\fR)
 .sp
-void
 \fBTcl_GetEncodingNames\fR(\fIinterp\fR)
 .sp
 Tcl_Encoding
@@ -65,6 +63,7 @@ Tcl_Obj *
 .sp
 int
 \fBTcl_SetEncodingSearchPath\fR(\fIsearchPath\fR)
+.fi
 .SH ARGUMENTS
 .AS "const Tcl_EncodingType" *dstWrotePtr in/out
 .AP Tcl_Interp *interp in

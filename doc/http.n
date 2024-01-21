@@ -13,66 +13,40 @@
 .SH NAME
 http \- Client-side implementation of the HTTP/1.1 protocol
 .SH SYNOPSIS
+.nf
 \fBpackage require http\fR ?\fB2.10\fR?
 .\" See Also -useragent option documentation in body!
-.sp
+
 \fB::http::config\fR ?\fI\-option value\fR ...?
-.sp
 \fB::http::geturl \fIurl\fR ?\fI\-option value\fR ...?
-.sp
 \fB::http::formatQuery\fI key value\fR ?\fIkey value\fR ...?
-.sp
 \fB::http::quoteString\fI value\fR
-.sp
 \fB::http::reset\fI token\fR ?\fIwhy\fR?
-.sp
 \fB::http::wait \fItoken\fR
-.sp
 \fB::http::status \fItoken\fR
-.sp
 \fB::http::size \fItoken\fR
-.sp
 \fB::http::error \fItoken\fR
-.sp
 \fB::http::postError \fItoken\fR
-.sp
 \fB::http::cleanup \fItoken\fR
-.sp
 \fB::http::requestLine\fI token\fR
-.sp
 \fB::http::requestHeaders\fI token\fR ?\fIheaderName\fR?
-.sp
 \fB::http::requestHeaderValue\fI token headerName\fR
-.sp
 \fB::http::responseLine\fI token\fR
-.sp
 \fB::http::responseCode\fI token\fR
-.sp
 \fB::http::reasonPhrase\fI code\fR
-.sp
 \fB::http::responseHeaders\fI token\fR ?\fIheaderName\fR?
-.sp
 \fB::http::responseHeaderValue\fI token headerName\fR
-.sp
 \fB::http::responseInfo\fI token\fR
-.sp
 \fB::http::responseBody\fI token\fR
-.sp
 \fB::http::register \fIproto port command\fR ?\fIsocketCmdVarName\fR? ?\fIuseSockThread\fR? ?\fIendToEndProxy\fR?
-.sp
 \fB::http::registerError \fIsock\fR ?\fImessage\fR?
-.sp
 \fB::http::unregister \fIproto\fR
-.sp
 \fB::http::code \fItoken\fR
-.sp
 \fB::http::data \fItoken\fR
-.sp
 \fB::http::meta \fItoken\fR ?\fIheaderName\fR?
-.sp
 \fB::http::metaValue\fI token headerName\fR
-.sp
 \fB::http::ncode \fItoken\fR
+.fi
 .SH "EXPORTED COMMANDS"
 .PP
 Namespace \fBhttp\fR exports the commands \fBconfig\fR, \fBformatQuery\fR,
