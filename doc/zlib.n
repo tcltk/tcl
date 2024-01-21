@@ -21,24 +21,28 @@ The \fBzlib\fR command provides access to the compression and check-summing
 facilities of the Zlib library by Jean-loup Gailly and Mark Adler. It has the
 following subcommands.
 .SS "COMPRESSION SUBCOMMANDS"
+.\" METHOD: compress
 .TP
 \fBzlib compress\fI string\fR ?\fIlevel\fR?
 .
 Returns the zlib-format compressed binary data of the binary string in
 \fIstring\fR. If present, \fIlevel\fR gives the compression level to use (from
 0, which is uncompressed, to 9, maximally compressed).
+.\" METHOD: decompress
 .TP
 \fBzlib decompress\fI string\fR ?\fIbufferSize\fR?
 .
 Returns the uncompressed version of the raw compressed binary data in
 \fIstring\fR. If present, \fIbufferSize\fR is a hint as to what size of buffer
 is to be used to receive the data.
+.\" METHOD: deflate
 .TP
 \fBzlib deflate\fI string\fR ?\fIlevel\fR?
 .
 Returns the raw compressed binary data of the binary string in \fIstring\fR.
 If present, \fIlevel\fR gives the compression level to use (from 0, which is
 uncompressed, to 9, maximally compressed).
+.\" METHOD: gunzip
 .TP
 \fBzlib gunzip\fI string\fR ?\fB\-headerVar \fIvarName\fR?
 .
@@ -80,6 +84,7 @@ named by the \fBfilename\fR field was modified. Suitable for use with
 .
 The type of the uncompressed data (\fBbinary\fR or \fBtext\fR) if known.
 .RE
+.\" METHOD: gzip
 .TP
 \fBzlib gzip\fI string\fR ?\fB\-level \fIlevel\fR? ?\fB\-header \fIdict\fR?
 .
@@ -118,6 +123,7 @@ will be in the same as is returned by \fBclock seconds\fR or \fBfile mtime\fR.
 .
 The type of the data being compressed, being \fBbinary\fR or \fBtext\fR.
 .RE
+.\" METHOD: inflate
 .TP
 \fBzlib inflate\fI string\fR ?\fIbufferSize\fR?
 .
@@ -125,6 +131,7 @@ Returns the uncompressed version of the raw compressed binary data in
 \fIstring\fR. If present, \fIbufferSize\fR is a hint as to what size of buffer
 is to be used to receive the data.
 .SS "CHANNEL SUBCOMMAND"
+.\" METHOD: push
 .TP
 \fBzlib push\fI mode channel\fR ?\fIoptions ...\fR?
 .
@@ -250,6 +257,7 @@ maximum number of bytes ahead to read from the underlying data source. See
 above for more information.
 .RE
 .SS "STREAMING SUBCOMMAND"
+.\" METHOD: stream
 .TP
 \fBzlib stream\fI mode\fR ?\fIoptions\fR?
 .
@@ -311,11 +319,13 @@ is correct.
 .VE
 .RE
 .SS "CHECKSUMMING SUBCOMMANDS"
+.\" METHOD: adler32
 .TP
 \fBzlib adler32\fI string\fR ?\fIinitValue\fR?
 .
 Compute a checksum of binary string \fIstring\fR using the Adler-32 algorithm.
 If given, \fIinitValue\fR is used to initialize the checksum engine.
+.\" METHOD: crc32
 .TP
 \fBzlib crc32\fI string\fR ?\fIinitValue\fR?
 .
@@ -330,6 +340,7 @@ the transformed data.
 .PP
 The full set of subcommands supported by a streaming instance command,
 \fIstream\fR, is as follows:
+.\" METHOD: add
 .TP
 \fIstream \fBadd\fR ?\fIoption...\fR? \fIdata\fR
 .
@@ -337,47 +348,56 @@ A short-cut for
 .QW "\fIstream \fBput \fR?\fIoption...\fR? \fIdata\fR"
 followed by
 .QW "\fIstream \fBget\fR" .
+.\" METHOD: checksum
 .TP
 \fIstream \fBchecksum\fR
 .
 Returns the checksum of the uncompressed data seen so far by this stream.
+.\" METHOD: close
 .TP
 \fIstream \fBclose\fR
 .
 Deletes this stream and frees up all resources associated with it.
+.\" METHOD: eof
 .TP
 \fIstream \fBeof\fR
 .
 Returns a boolean indicating whether the end of the stream (as determined by
 the compressed data itself) has been reached. Not all formats support
 detection of the end of the stream.
+.\" METHOD: finalize
 .TP
 \fIstream \fBfinalize\fR
 .
 A short-cut for
 .QW "\fIstream \fBput \-finalize {}\fR" .
+.\" METHOD: flush
 .TP
 \fIstream \fBflush\fR
 .
 A short-cut for
 .QW "\fIstream \fBput \-flush {}\fR" .
+.\" METHOD: fullflush
 .TP
 \fIstream \fBfullflush\fR
 .
 A short-cut for
 .QW "\fIstream \fBput \-fullflush {}\fR" .
+.\" METHOD: get
 .TP
 \fIstream \fBget \fR?\fIcount\fR?
 .
 Return up to \fIcount\fR bytes from \fIstream\fR's internal buffers with the
 transformation applied. If \fIcount\fR is omitted, the entire contents of the
 buffers are returned.
-.
+.\" METHOD: header
+.TP
 \fIstream \fBheader\fR
 .
 Return the gzip header description dictionary extracted from the stream. Only
 supported for streams created with their \fImode\fR parameter set to
 \fBgunzip\fR.
+.\" METHOD: put
 .TP
 \fIstream \fBput\fR ?\fIoption...\fR? \fIdata\fR
 .
@@ -429,6 +449,7 @@ This option is mutually exclusive with the \fB\-finalize\fR and \fB\-flush\fR
 options.
 .RE
 .RE
+.\" METHOD: reset
 .TP
 \fIstream \fBreset\fR
 .

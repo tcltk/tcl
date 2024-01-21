@@ -15,13 +15,13 @@ cookiejar \- Implementation of the Tcl http package cookie jar protocol
 \fBpackage require\fR \fBcookiejar\fR ?\fB0.1\fR?
 
 \fB::http::cookiejar configure\fR ?\fIoptionName\fR? ?\fIoptionValue\fR?
-\fB::http::cookiejar create\fR \fIname\fR ?\fIfilename\fR?
+\fB::http::cookiejar create\fI name\fR ?\fIfilename\fR?
 \fB::http::cookiejar new\fR ?\fIfilename\fR?
 
 \fIcookiejar\fR \fBdestroy\fR
 \fIcookiejar\fR \fBforceLoadDomainData\fR
-\fIcookiejar\fR \fBgetCookies\fR \fIprotocol host path\fR
-\fIcookiejar\fR \fBstoreCookie\fR \fIoptions\fR
+\fIcookiejar\fR \fBgetCookies\fI protocol host path\fR
+\fIcookiejar\fR \fBstoreCookie\fI options\fR
 \fIcookiejar\fR \fBlookup\fR ?\fIhost\fR? ?\fIkey\fR?
 .fi
 .SH DESCRIPTION
@@ -33,6 +33,7 @@ create a cookie jar that manages a particular HTTP session.
 .PP
 The database management policy can be controlled at the package level by the
 \fBconfigure\fR method on the \fB::http::cookiejar\fR class object:
+.\" METHOD: configure
 .TP
 \fB::http::cookiejar configure\fR ?\fIoptionName\fR? ?\fIoptionValue\fR?
 .
@@ -97,6 +98,7 @@ the database.
 .PP
 Cookie jar instances may be made with any of the standard TclOO instance
 creation methods (\fBcreate\fR or \fBnew\fR).
+.\" METHOD: new
 .TP
 \fB::http::cookiejar new\fR ?\fIfilename\fR?
 .
@@ -108,27 +110,31 @@ memory, which effectively forces all cookies within it to be session cookies.
 .SS "INSTANCE METHODS"
 .PP
 The following methods are supported on the instances:
+.\" METHOD: destroy
 .TP
-\fIcookiejar\fR \fBdestroy\fR
+\fIcookiejar \fBdestroy\fR
 .
 This is the standard TclOO destruction method. It does \fInot\fR delete the
 SQLite database if it is written to disk. Callers are responsible for ensuring
 that the cookie jar is not in use by the http package at the time of
 destruction.
+.\" METHOD: forceLoadDomainData
 .TP
-\fIcookiejar\fR \fBforceLoadDomainData\fR
+\fIcookiejar \fBforceLoadDomainData\fR
 .
 This method causes the cookie jar to immediately load (and cache) the domain
 list data. The domain list will be loaded from the \fB\-domainlist\fR
 configured a the package level if that is enabled, and otherwise will be
 obtained from the \fB\-domainfile\fR configured at the package level.
+.\" METHOD: getCookies
 .TP
-\fIcookiejar\fR \fBgetCookies\fR \fIprotocol host path\fR
+\fIcookiejar \fBgetCookies\fI protocol host path\fR
 .
 This method obtains the cookies for a particular HTTP request. \fIThis
 implements the http cookie jar protocol.\fR
+.\" METHOD: policyAllow
 .TP
-\fIcookiejar\fR \fBpolicyAllow\fR \fIoperation domain path\fR
+\fIcookiejar \fBpolicyAllow\fI operation domain path\fR
 .
 This method is called by the \fBstoreCookie\fR method to get a decision on
 whether to allow \fIoperation\fR to be performed for the \fIdomain\fR and
@@ -154,14 +160,16 @@ defined lifetime).
 The default implementation of this method just returns true, but subclasses of
 this class may impose their own rules.
 .RE
+.\" METHOD: storeCookie
 .TP
-\fIcookiejar\fR \fBstoreCookie\fR \fIoptions\fR
+\fIcookiejar \fBstoreCookie\fI options\fR
 .
 This method stores a single cookie from a particular HTTP response. Cookies
 that fail security checks are ignored. \fIThis implements the http cookie jar
 protocol.\fR
+.\" METHOD: lookup
 .TP
-\fIcookiejar\fR \fBlookup\fR ?\fIhost\fR? ?\fIkey\fR?
+\fIcookiejar \fBlookup\fR ?\fIhost\fR? ?\fIkey\fR?
 .
 This method looks a cookie by exact host (or domain) matching. If neither
 \fIhost\fR nor \fIkey\fR are supplied, the list of hosts for which a cookie is

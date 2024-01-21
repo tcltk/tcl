@@ -56,7 +56,7 @@ expression matching
 .
 Causes comparisons to be handled in a case-insensitive manner.
 .TP 10
-\fB\-matchvar\fR \fIvarName\fR
+\fB\-matchvar\fI varName\fR
 .
 This option (only legal when \fB\-regexp\fR is also specified)
 specifies the name of a variable into which the list of matches
@@ -69,7 +69,7 @@ on.  When a \fBdefault\fR branch is taken, the variable will have the
 empty list written to it.  This option may be specified at the same
 time as the \fB\-indexvar\fR option.
 .TP 10
-\fB\-indexvar\fR \fIvarName\fR
+\fB\-indexvar\fI varName\fR
 .
 This option (only legal when \fB\-regexp\fR is also specified)
 specifies the name of a variable into which the list of indices
