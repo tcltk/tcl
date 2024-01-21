@@ -16,7 +16,6 @@ foreach \- Iterate over all elements in one or more lists
 .br
 \fBforeach \fIvarlist1 list1\fR ?\fIvarlist2 list2 ...\fR? \fIbody\fR
 .BE
-
 .SH DESCRIPTION
 .PP
 The \fBforeach\fR command implements a loop where the loop
@@ -96,10 +95,8 @@ set x {}
 # The value of x is "a d e b f g c {} {}"
 # There are 3 iterations of the loop.
 .CE
-
 .SH "SEE ALSO"
 for(n), while(n), break(n), continue(n)
-
 .SH KEYWORDS
 foreach, iteration, list, loop
 '\" Local Variables:

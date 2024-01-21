@@ -13,11 +13,11 @@
 .SH NAME
 return \- Return from a procedure, or set return code of a script
 .SH SYNOPSIS
+.nf
 \fBreturn \fR?\fIresult\fR?
-.sp
 \fBreturn \fR?\fB\-code \fIcode\fR? ?\fIresult\fR?
-.sp
 \fBreturn \fR?\fIoption value \fR...? ?\fIresult\fR?
+.fi
 .BE
 .SH DESCRIPTION
 .PP

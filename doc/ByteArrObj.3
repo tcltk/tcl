@@ -16,7 +16,6 @@ Tcl_NewByteArrayObj, Tcl_SetByteArrayObj, Tcl_GetBytesFromObj, Tcl_GetByteArrayF
 Tcl_Obj *
 \fBTcl_NewByteArrayObj\fR(\fIbytes, numBytes\fR)
 .sp
-void
 \fBTcl_SetByteArrayObj\fR(\fIobjPtr, bytes, numBytes\fR)
 .sp
 .VS TIP568
@@ -29,6 +28,7 @@ unsigned char *
 .sp
 unsigned char *
 \fBTcl_SetByteArrayLength\fR(\fIobjPtr, numBytes\fR)
+.fi
 .SH ARGUMENTS
 .AS "const unsigned char" *numBytesPtr in/out
 .AP "const unsigned char" *bytes in

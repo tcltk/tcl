@@ -11,28 +11,26 @@
 .SH NAME
 safe \- Creating and manipulating safe interpreters
 .SH SYNOPSIS
+.nf
 \fB::safe::interpCreate\fR ?\fIchild\fR? ?\fIoptions...\fR?
-.sp
 \fB::safe::interpInit\fI child\fR ?\fIoptions...\fR?
-.sp
 \fB::safe::interpConfigure\fI child\fR ?\fIoptions...\fR?
-.sp
 \fB::safe::interpDelete\fI child\fR
-.sp
 \fB::safe::interpAddToAccessPath\fI child directory\fR
-.sp
 \fB::safe::interpFindInAccessPath\fI child directory\fR
-.sp
 \fB::safe::setSyncMode\fR ?\fInewValue\fR?
-.sp
 \fB::safe::setLogCmd\fR ?\fIcmd arg...\fR?
+.fi
 .SS OPTIONS
-.PP
+.nf
 ?\fB\-accessPath\fI pathList\fR?
 ?\fB\-autoPath\fI pathList\fR?
-?\fB\-statics\fI boolean\fR? ?\fB\-noStatics\fR?
-?\fB\-nested\fI boolean\fR? ?\fB\-nestedLoadOk\fR?
+?\fB\-statics\fI boolean\fR?
+?\fB\-noStatics\fR?
+?\fB\-nested\fI boolean\fR?
+?\fB\-nestedLoadOk\fR?
 ?\fB\-deleteHook\fI script\fR?
+.fi
 .BE
 .SH DESCRIPTION
 Safe Tcl is a mechanism for executing untrusted Tcl scripts
@@ -484,17 +482,17 @@ safe interpreter's ::auto_path will be set to {} (by
 (by \fB::safe::interpConfigure\fR).  If the same command specifies a new
 value for \fB\-autoPath\fR, it will be applied after the \fB\-accessPath\fR argument has
 been processed.
-
+.PP
 Examples of use with "Sync Mode" off: any of these commands will set the
 ::auto_path to a tokenized form of its value in the parent interpreter:
 .RS
 .PP
 .CS
- safe::interpCreate foo
- safe::interpCreate foo -accessPath {}
- safe::interpInit bar
- safe::interpInit bar -accessPath {}
- safe::interpConfigure foo -accessPath {}
+safe::interpCreate foo
+safe::interpCreate foo -accessPath {}
+safe::interpInit bar
+safe::interpInit bar -accessPath {}
+safe::interpConfigure foo -accessPath {}
 .CE
 .RE
 .PP
@@ -504,35 +502,35 @@ own value is also specified:
 .RS
 .PP
 .CS
- safe::interpCreate foo -accessPath {
-     /usr/local/TclHome/lib/tcl8.6
-     /usr/local/TclHome/lib/tcl8.6/http1.0
-     /usr/local/TclHome/lib/tcl8.6/opt0.4
-     /usr/local/TclHome/lib/tcl8.6/msgs
-     /usr/local/TclHome/lib/tcl8.6/encoding
-     /usr/local/TclHome/lib
- }
+safe::interpCreate foo -accessPath {
+    /usr/local/TclHome/lib/tcl8.6
+    /usr/local/TclHome/lib/tcl8.6/http1.0
+    /usr/local/TclHome/lib/tcl8.6/opt0.4
+    /usr/local/TclHome/lib/tcl8.6/msgs
+    /usr/local/TclHome/lib/tcl8.6/encoding
+    /usr/local/TclHome/lib
+}
 
- # The child's ::auto_path must be given a suitable value:
+# The child's ::auto_path must be given a suitable value:
 
- safe::interpConfigure foo -autoPath {
-     /usr/local/TclHome/lib/tcl8.6
-     /usr/local/TclHome/lib
- }
+safe::interpConfigure foo -autoPath {
+    /usr/local/TclHome/lib/tcl8.6
+    /usr/local/TclHome/lib
+}
 
- # The two commands can be combined:
+# The two commands can be combined:
 
- safe::interpCreate foo -accessPath {
-     /usr/local/TclHome/lib/tcl8.6
-     /usr/local/TclHome/lib/tcl8.6/http1.0
-     /usr/local/TclHome/lib/tcl8.6/opt0.4
-     /usr/local/TclHome/lib/tcl8.6/msgs
-     /usr/local/TclHome/lib/tcl8.6/encoding
-     /usr/local/TclHome/lib
- } -autoPath {
-     /usr/local/TclHome/lib/tcl8.6
-     /usr/local/TclHome/lib
- }
+safe::interpCreate foo -accessPath {
+    /usr/local/TclHome/lib/tcl8.6
+    /usr/local/TclHome/lib/tcl8.6/http1.0
+    /usr/local/TclHome/lib/tcl8.6/opt0.4
+    /usr/local/TclHome/lib/tcl8.6/msgs
+    /usr/local/TclHome/lib/tcl8.6/encoding
+    /usr/local/TclHome/lib
+} -autoPath {
+    /usr/local/TclHome/lib/tcl8.6
+    /usr/local/TclHome/lib
+}
 .CE
 .RE
 .PP
@@ -542,11 +540,11 @@ Example of use with "Sync Mode" off: the command
 .RS
 .PP
 .CS
- safe::interpAddToAccessPath foo /usr/local/TclHome/lib/extras/Img1.4.11
+safe::interpAddToAccessPath foo /usr/local/TclHome/lib/extras/Img1.4.11
 
- lassign [safe::interpConfigure foo -autoPath] DUM childAutoPath
- lappend childAutoPath /usr/local/TclHome/lib/extras/Img1.4.11
- safe::interpConfigure foo -autoPath $childAutoPath
+lassign [safe::interpConfigure foo -autoPath] DUM childAutoPath
+lappend childAutoPath /usr/local/TclHome/lib/extras/Img1.4.11
+safe::interpConfigure foo -autoPath $childAutoPath
 .CE
 .RE
 .SH "SEE ALSO"

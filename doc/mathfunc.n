@@ -13,86 +13,51 @@
 .SH NAME
 mathfunc \- Mathematical functions for Tcl expressions
 .SH SYNOPSIS
+.nf
 package require \fBTcl 8.5-\fR
-.sp
+
 \fB::tcl::mathfunc::abs\fI arg\fR
-.br
 \fB::tcl::mathfunc::acos\fI arg\fR
-.br
 \fB::tcl::mathfunc::asin\fI arg\fR
-.br
 \fB::tcl::mathfunc::atan\fI arg\fR
-.br
 \fB::tcl::mathfunc::atan2\fI y x\fR
-.br
 \fB::tcl::mathfunc::bool\fI arg\fR
-.br
 \fB::tcl::mathfunc::ceil\fI arg\fR
-.br
 \fB::tcl::mathfunc::cos\fI arg\fR
-.br
 \fB::tcl::mathfunc::cosh\fI arg\fR
-.br
 \fB::tcl::mathfunc::double\fI arg\fR
-.br
 \fB::tcl::mathfunc::entier\fI arg\fR
-.br
 \fB::tcl::mathfunc::exp\fI arg\fR
-.br
 \fB::tcl::mathfunc::floor\fI arg\fR
-.br
 \fB::tcl::mathfunc::fmod\fI x y\fR
-.br
 \fB::tcl::mathfunc::hypot\fI x y\fR
-.br
 \fB::tcl::mathfunc::int\fI arg\fR
-.br
 .VS "8.7, TIP 521"
 \fB::tcl::mathfunc::isfinite\fI arg\fR
-.br
 \fB::tcl::mathfunc::isinf\fI arg\fR
-.br
 \fB::tcl::mathfunc::isnan\fI arg\fR
-.br
 \fB::tcl::mathfunc::isnormal\fI arg\fR
 .VE "8.7, TIP 521"
-.br
 \fB::tcl::mathfunc::isqrt\fI arg\fR
-.br
 .VS "8.7, TIP 521"
 \fB::tcl::mathfunc::issubnormal\fI arg\fR
-.br
 \fB::tcl::mathfunc::isunordered\fI x y\fR
 .VE "8.7, TIP 521"
-.br
 \fB::tcl::mathfunc::log\fI arg\fR
-.br
 \fB::tcl::mathfunc::log10\fI arg\fR
-.br
 \fB::tcl::mathfunc::max\fI arg\fR ?\fIarg\fR ...?
-.br
 \fB::tcl::mathfunc::min\fI arg\fR ?\fIarg\fR ...?
-.br
 \fB::tcl::mathfunc::pow\fI x y\fR
-.br
 \fB::tcl::mathfunc::rand\fR
-.br
 \fB::tcl::mathfunc::round\fI arg\fR
-.br
 \fB::tcl::mathfunc::sin\fI arg\fR
-.br
 \fB::tcl::mathfunc::sinh\fI arg\fR
-.br
 \fB::tcl::mathfunc::sqrt\fI arg\fR
-.br
 \fB::tcl::mathfunc::srand\fI arg\fR
-.br
 \fB::tcl::mathfunc::tan\fI arg\fR
-.br
 \fB::tcl::mathfunc::tanh\fI arg\fR
-.br
 \fB::tcl::mathfunc::wide\fI arg\fR
-.sp
+.fi
 .BE
 .SH "DESCRIPTION"
 .PP

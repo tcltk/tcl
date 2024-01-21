@@ -14,13 +14,13 @@ Tcl_CommandTraceInfo, Tcl_TraceCommand, Tcl_UntraceCommand \- monitor renames an
 \fB#include <tcl.h>\fR
 .sp
 void *
-\fBTcl_CommandTraceInfo(\fIinterp, cmdName, flags, proc, prevClientData\fB)\fR
+\fBTcl_CommandTraceInfo\fR(\fIinterp, cmdName, flags, proc, prevClientData\fR)
 .sp
 int
-\fBTcl_TraceCommand(\fIinterp, cmdName, flags, proc, clientData\fB)\fR
+\fBTcl_TraceCommand\fR(\fIinterp, cmdName, flags, proc, clientData\fR)
 .sp
-void
-\fBTcl_UntraceCommand(\fIinterp, cmdName, flags, proc, clientData\fB)\fR
+\fBTcl_UntraceCommand\fR(\fIinterp, cmdName, flags, proc, clientData\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_CommandTraceProc prevClientData
 .AP Tcl_Interp *interp in

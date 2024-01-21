@@ -8,22 +8,17 @@
 .SH NAME
 clock \- Obtain and manipulate dates and times
 .SH "SYNOPSIS"
+.nf
 package require \fBTcl 8.5-\fR
-.sp
+
 \fBclock add\fI timeVal\fR ?\fIcount unit...\fR? ?\fI\-option value\fR?
-.sp
 \fBclock clicks\fR ?\fI\-option\fR?
-.sp
 \fBclock format\fI timeVal\fR ?\fI\-option value\fR...?
-.sp
 \fBclock microseconds\fR
-.sp
 \fBclock milliseconds\fR
-.sp
 \fBclock scan\fI inputString\fR ?\fI\-option value\fR...?
-.sp
 \fBclock seconds\fR
-.sp
+.fi
 .BE
 .SH "DESCRIPTION"
 .PP

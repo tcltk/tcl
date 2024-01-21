@@ -88,7 +88,6 @@ end of a numeric value.  Here are some examples:
 \fBexpr\fR 3_141_592_653_589e-1_2		\fI3.141592653589\fR
 .CE
 .RE
-
 .TP
 A \fBboolean value\fR
 .

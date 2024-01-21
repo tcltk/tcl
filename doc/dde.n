@@ -12,22 +12,17 @@
 .SH NAME
 dde \- Execute a Dynamic Data Exchange command
 .SH SYNOPSIS
-.sp
+.nf
 \fBpackage require dde 1.4\fR
-.sp
-\fBdde servername\fR ?\fB\-force\fR? ?\fB\-handler \fIproc\fR? ?\fB\-\|\-\fR? ?\fItopic\fR?
-.sp
-\fBdde execute\fR ?\fB\-async\fR? ?\fB\-binary\fR? \fIservice topic data\fR
-.sp
-\fBdde poke\fR ?\fB\-binary\fR? \fIservice topic item data\fR
-.sp
-\fBdde request\fR ?\fB\-binary\fR? \fIservice topic item\fR
-.sp
-\fBdde services \fIservice topic\fR
-.sp
-\fBdde eval\fR ?\fB\-async\fR? \fItopic cmd \fR?\fIarg arg ...\fR?
-.BE
 
+\fBdde servername\fR ?\fB\-force\fR? ?\fB\-handler \fIproc\fR? ?\fB\-\|\-\fR? ?\fItopic\fR?
+\fBdde execute\fR ?\fB\-async\fR? ?\fB\-binary\fR? \fIservice topic data\fR
+\fBdde poke\fR ?\fB\-binary\fR? \fIservice topic item data\fR
+\fBdde request\fR ?\fB\-binary\fR? \fIservice topic item\fR
+\fBdde services \fIservice topic\fR
+\fBdde eval\fR ?\fB\-async\fR? \fItopic cmd \fR?\fIarg arg ...\fR?
+.fi
+.BE
 .SH DESCRIPTION
 .PP
 This command allows an application to send Dynamic Data Exchange (DDE)
