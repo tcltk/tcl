@@ -147,7 +147,7 @@ Upper-case characters in \fIstring\fR will be converted to lower-case
 before matching against \fIexp\fR;  however, substitutions specified
 by \fIsubSpec\fR use the original unconverted form of \fIstring\fR.
 .TP
-\fB\-start\fR \fIindex\fR
+\fB\-start\fI index\fR
 .
 Specifies a character index offset into the string to start
 matching the regular expression at.

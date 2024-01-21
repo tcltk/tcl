@@ -15,7 +15,7 @@ registry \- Manipulate the Windows registry
 .sp
 \fBpackage require registry 1.3\fR
 .sp
-\fBregistry \fR?\fI\-mode\fR? \fIoption\fR \fIkeyName\fR ?\fIarg arg ...\fR?
+\fBregistry \fR?\fI\-mode\fR? \fIoption keyName\fR ?\fIarg arg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -53,6 +53,7 @@ of the requested operation.
 \fIOption\fR indicates what to do with the registry key name.  Any
 unique abbreviation for \fIoption\fR is acceptable.  The valid options
 are:
+.\" METHOD: broadcast
 .TP
 \fBregistry broadcast \fIkeyName\fR ?\fB\-timeout \fImilliseconds\fR?
 .
@@ -79,6 +80,7 @@ set curPath [\fBregistry get\fR $regPath "Path"]
 \fBregistry broadcast\fR "Environment"
 .CE
 .RE
+.\" METHOD: delete
 .TP
 \fBregistry delete \fIkeyName\fR ?\fIvalueName\fR?
 .
@@ -88,6 +90,7 @@ optional \fIvalueName\fR is omitted, the specified key and any subkeys
 or values beneath it in the registry hierarchy will be deleted.  If
 the key could not be deleted then an error is generated.  If the key
 did not exist, the command has no effect.
+.\" METHOD: get
 .TP
 \fBregistry get \fIkeyName valueName\fR
 .
@@ -95,6 +98,7 @@ Returns the data associated with the value \fIvalueName\fR under the key
 \fIkeyName\fR.  If either the key or the value does not exist, then an
 error is generated.  For more details on the format of the returned
 data, see \fBSUPPORTED TYPES\fR, below.
+.\" METHOD: keys
 .TP
 \fBregistry keys \fIkeyName\fR ?\fIpattern\fR?
 .
@@ -103,6 +107,7 @@ subkeys of \fIkeyName\fR.  If \fIpattern\fR is specified, only those
 names matching \fIpattern\fR are returned.  Matching is determined
 using the same rules as for \fBstring match\fR.  If the
 specified \fIkeyName\fR does not exist, then an error is generated.
+.\" METHOD: set
 .TP
 \fBregistry set \fIkeyName\fR ?\fIvalueName data \fR?\fItype\fR??
 .
@@ -113,12 +118,14 @@ contents of \fIvalueName\fR are set to \fIdata\fR with the type
 indicated by \fItype\fR.  If \fItype\fR is not specified, the type
 \fBsz\fR is assumed.  For more details on the data and type arguments,
 see \fBSUPPORTED TYPES\fR below.
+.\" METHOD: type
 .TP
 \fBregistry type \fIkeyName valueName\fR
 .
 Returns the type of the value \fIvalueName\fR in the key
 \fIkeyName\fR.  For more information on the possible types, see
 \fBSUPPORTED TYPES\fR, below.
+.\" METHOD: values
 .TP
 \fBregistry values \fIkeyName\fR ?\fIpattern\fR?
 .

@@ -52,7 +52,7 @@ msgcat \- Tcl message catalog
 .VS "TIP 412"
 \fB::msgcat::mcpackagelocale subcommand\fR ?\fIlocale\fR?
 .sp
-\fB::msgcat::mcpackageconfig subcommand\fR \fIoption\fR ?\fIvalue\fR?
+\fB::msgcat::mcpackageconfig subcommand\fI option\fR ?\fIvalue\fR?
 .sp
 \fB::msgcat::mcforgetpackage\fR
 .VE "TIP 412"
@@ -87,6 +87,7 @@ Object oriented programming is supported by the use of a package namespace.
 .VE tip490
 .PP
 .SH COMMANDS
+.\" COMMAND: mc
 .TP
 \fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
 .
@@ -110,17 +111,18 @@ use the result.  If an application is written for a single language in
 this fashion, then it is easy to add support for additional languages
 later simply by defining new message catalog entries.
 .RE
-.VS "TIP 490"
+.\" COMMAND: mcc
 .TP
-\fB::msgcat::mcn \fInamespace\fR \fIsrc-string\fR ?\fIarg arg ...\fR?
-.
+\fB::msgcat::mcn \fInamespace src-string\fR ?\fIarg arg ...\fR?
+.VS "TIP 490"
 Like \fB::msgcat::mc\fR, but with the message namespace specified as first argument.
 .PP
 .RS
 \fBmcn\fR may be used for cases where the package namespace is not the namespace of the caller.
 An example is shown within the description of the command \fB::msgcat::mcpackagenamespaceget\fR below.
 .RE
-.PP
+.VE
+.\" COMMAND: mcmax
 .TP
 \fB::msgcat::mcmax ?\fIsrc-string src-string ...\fR?
 .
@@ -128,10 +130,10 @@ Given several source strings, \fB::msgcat::mcmax\fR returns the length
 of the longest translated string.  This is useful when designing
 localized GUIs, which may require that all buttons, for example, be a
 fixed width (which will be the width of the widest button).
-.VS "TIP 412"
+.\" COMMAND: mcexists
 .TP
-\fB::msgcat::mcexists\fR ?\fB-exactnamespace\fR? ?\fB-exactlocale\fR? ?\fB-namespace\fR \fInamespace\fR? \fIsrc-string\fR
-.
+\fB::msgcat::mcexists\fR ?\fB-exactnamespace\fR? ?\fB-exactlocale\fR? ?\fB-namespace\fI namespace\fR? \fIsrc-string\fR
+.VS "TIP 412"
 Return true, if there is a translation for the given \fIsrc-string\fR.
 .PP
 .RS
@@ -146,10 +148,10 @@ The namespace of the caller is used if not explicitly specified.
 .RE
 .PP
 .VE "TIP 490"
-.VS "TIP 490"
+.\" COMMAND: mcpackagenamespaceget
 .TP
 \fB::msgcat::mcpackagenamespaceget\fR
-.
+.VS "TIP 490"
 Return the package namespace of the caller.
 This command handles all cases described in section \fBOBJECT ORIENTED PROGRAMMING\fR.
 .PP
@@ -172,6 +174,7 @@ proc ::tooltip::show {widget messagenamespace message} {
 .RE
 .PP
 .VE "TIP 490"
+.\" COMMAND: mclocale
 .TP
 \fB::msgcat::mclocale \fR?\fInewLocale\fR?
 .
@@ -182,7 +185,7 @@ is set to \fInewLocale\fR.
 If the new locale is set to \fInewLocale\fR, the corresponding preferences are calculated and set.
 For example, if the current locale is en_US_funky, then \fB::msgcat::mcpreferences\fR returns \fB{en_us_funky en_us en {}}\fR.
 .PP
-The same result may be acheved by \fB::msgcat::mcpreferences\fR {*}[\fB::msgcat::mcutil getpreferences\fR \fInewLocale\fR].
+The same result may be acheved by \fB::msgcat::mcpreferences\fR {*}[\fB::msgcat::mcutil getpreferences\fI newLocale\fR].
 .PP
 The current locale is always the first element of the list returned by \fBmcpreferences\fR.
 .PP
@@ -197,6 +200,7 @@ If the locale is set, the preference list of locales is evaluated.
 Locales in this list are loaded now, if not jet loaded.
 .VE "TIP 412"
 .RE
+.\" COMMAND: mcpreferences
 .TP
 \fB::msgcat::mcpreferences\fR ?\fIlocale preference\fR? ...
 .
@@ -217,10 +221,10 @@ As an example, the user may prefer French or English text. This may be configure
 .CE
 .RE
 .PP
-.VS "TIP 499"
+.\" COMMAND: mcloadedlocales
 .TP
 \fB::msgcat::mcloadedlocales subcommand\fR ?\fIlocale\fR?
-.
+.VS "TIP 499"
 This group of commands manage the list of loaded locales for packages not setting a package locale.
 .PP
 .RS
@@ -228,9 +232,10 @@ The subcommand \fBloaded\fR returns the list of currently loaded locales.
 .PP
 The subcommand \fBclear\fR removes all locales and their data, which are not in the current preference list.
 .RE
+.VE
+.\" COMMAND: mcload
 .TP
 \fB::msgcat::mcload \fIdirname\fR
-.
 .VS "TIP 412"
 Searches the specified directory for files that match
 the language specifications returned by \fB::msgcat::mcloadedlocales loaded\fR
@@ -245,9 +250,12 @@ evaluation.  The number of message files which matched the specification
 and were loaded is returned.
 .RS
 .PP
-In addition, the given folder is stored in the \fBmsgcat\fR package configuration option \fImcfolder\fR to eventually load message catalog files required by a locale change.
+In addition, the given folder is stored in the \fBmsgcat\fR package
+configuration option \fImcfolder\fR to eventually load message catalog
+files required by a locale change.
 .VE "TIP 412"
 .RE
+.\" COMMAND: mcset
 .TP
 \fB::msgcat::mcset \fIlocale src-string \fR?\fItranslate-string\fR?
 .
@@ -255,6 +263,7 @@ Sets the translation for \fIsrc-string\fR to \fItranslate-string\fR
 in the specified \fIlocale\fR and the current namespace.  If
 \fItranslate-string\fR is not specified, \fIsrc-string\fR is used
 for both.  The function returns \fItranslate-string\fR.
+.\" COMMAND: mcmset
 .TP
 \fB::msgcat::mcmset \fIlocale src-trans-list\fR
 .
@@ -266,15 +275,19 @@ the form {\fIsrc-string translate-string\fR ?\fIsrc-string
 translate-string ...\fR?} \fB::msgcat::mcmset\fR can be significantly
 faster than multiple invocations of \fB::msgcat::mcset\fR. The function
 returns the number of translations set.
+.\" COMMAND: mcflset
 .TP
 \fB::msgcat::mcflset \fIsrc-string \fR?\fItranslate-string\fR?
+.
 Sets the translation for \fIsrc-string\fR to \fItranslate-string\fR in the
 current namespace for the locale implied by the name of the message catalog
 being loaded via \fB::msgcat::mcload\fR.  If \fItranslate-string\fR is not
 specified, \fIsrc-string\fR is used for both.  The function returns
 \fItranslate-string\fR.
+.\" COMMAND: mcflmset
 .TP
 \fB::msgcat::mcflmset \fIsrc-trans-list\fR
+.
 Sets the translation for multiple source strings in \fIsrc-trans-list\fR in
 the current namespace for the locale implied by the name of the message
 catalog being loaded via \fB::msgcat::mcload\fR. \fIsrc-trans-list\fR must
@@ -282,6 +295,7 @@ have an even number of elements and is in the form {\fIsrc-string
 translate-string\fR ?\fIsrc-string translate-string ...\fR?}
 \fB::msgcat::mcflmset\fR can be significantly faster than multiple invocations
 of \fB::msgcat::mcflset\fR. The function returns the number of translations set.
+.\" COMMAND: mcunknown
 .TP
 \fB::msgcat::mcunknown \fIlocale src-string\fR ?\fIarg arg ...\fR?
 .
@@ -300,15 +314,17 @@ to \fB::msgcat::mc\fR.
 .PP
 Note that this routine is only called if the concerned package did not set a package locale unknown command name.
 .RE
+.\" COMMAND: mcforgetpackage
 .TP
 \fB::msgcat::mcforgetpackage\fR
 .
 The calling package clears all its state within the \fBmsgcat\fR package including all settings and translations.
 .VE "TIP 412"
 .PP
+.\" COMMAND: mcutil
 .VS "TIP 499"
 .TP
-\fB::msgcat::mcutil getpreferences\fR \fIlocale\fR
+\fB::msgcat::mcutil getpreferences\fI locale\fR
 .
 Return the preferences list of the given locale as described in section \fBLOCALE SPECIFICATION\fR.
 An example is the composition of a preference list for the bilingual region "Biel/Bienne" as a concatenation of swiss german and swiss french:
@@ -582,7 +598,7 @@ Unset the package private locale and use the globale locale.
 Load and remove locales to adjust the list of loaded locales for the
 package to the global loaded locales list.
 .TP
-\fB::msgcat::mcpackagelocale present\fR \fIlocale\fR
+\fB::msgcat::mcpackagelocale present\fI locale\fR
 .
 Returns true, if the given locale is loaded for the package.
 .TP
@@ -596,22 +612,22 @@ Each package using msgcat has a set of options within \fBmsgcat\fR.
 The package options are described in the next sectionPackage options.
 Each package option may be set or unset individually using the following ensemble:
 .TP
-\fB::msgcat::mcpackageconfig get\fR \fIoption\fR
+\fB::msgcat::mcpackageconfig get\fI option\fR
 .
 Return the current value of the given \fIoption\fR.
 This call returns an error if the option is not set for the package.
 .TP
-\fB::msgcat::mcpackageconfig isset\fR \fIoption\fR
+\fB::msgcat::mcpackageconfig isset\fI option\fR
 .
 Returns 1, if the given \fIoption\fR is set for the package, 0 otherwise.
 .TP
-\fB::msgcat::mcpackageconfig set\fR \fIoption\fR \fIvalue\fR
+\fB::msgcat::mcpackageconfig set\fI option value\fR
 .
 Set the given \fIoption\fR to the given \fIvalue\fR.
 This may invoke additional actions in dependency of the \fIoption\fR.
 The return value is 0 or the number of loaded packages for the option \fBmcfolder\fR.
 .TP
-\fB::msgcat::mcpackageconfig unset\fR \fIoption\fR
+\fB::msgcat::mcpackageconfig unset\fI option\fR
 .
 Unsets the given \fIoption\fR for the package.
 No action is taken if the \fIoption\fR is not set for the package.

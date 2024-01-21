@@ -13,7 +13,7 @@ lseq \- Build a numeric sequence returned as a list
 .SH SYNOPSIS
 \fBlseq \fIstart \fR?(\fB..\fR|\fBto\fR)? \fIend\fR ??\fBby\fR? \fIstep\fR?
 
-\fBlseq \fIstart \fBcount\fR \fIcount\fR ??\fBby\fR? \fIstep\fR?
+\fBlseq \fIstart \fBcount\fI count\fR ??\fBby\fR? \fIstep\fR?
 
 \fBlseq \fIcount\fR ?\fBby \fIstep\fR?
 .BE

@@ -10,17 +10,17 @@ clock \- Obtain and manipulate dates and times
 .SH "SYNOPSIS"
 package require \fBTcl 8.5-\fR
 .sp
-\fBclock add\fR \fItimeVal\fR ?\fIcount unit...\fR? ?\fI\-option value\fR?
+\fBclock add\fI timeVal\fR ?\fIcount unit...\fR? ?\fI\-option value\fR?
 .sp
 \fBclock clicks\fR ?\fI\-option\fR?
 .sp
-\fBclock format\fR \fItimeVal\fR ?\fI\-option value\fR...?
+\fBclock format\fI timeVal\fR ?\fI\-option value\fR...?
 .sp
 \fBclock microseconds\fR
 .sp
 \fBclock milliseconds\fR
 .sp
-\fBclock scan\fR \fIinputString\fR ?\fI\-option value\fR...?
+\fBclock scan\fI inputString\fR ?\fI\-option value\fR...?
 .sp
 \fBclock seconds\fR
 .sp
@@ -30,16 +30,21 @@ package require \fBTcl 8.5-\fR
 The \fBclock\fR command performs several operations that obtain and
 manipulate values that represent times.  The command supports several
 subcommands that determine what action is carried out by the command.
+.\" METHOD: add
 .TP
-\fBclock add\fR \fItimeVal\fR ?\fIcount unit...\fR? ?\fI\-option value\fR?
+\fBclock add\fI timeVal\fR ?\fIcount unit...\fR? ?\fI\-option value\fR?
+.
 Adds a (possibly negative) offset to a time that is expressed as an
 integer number of seconds.  See \fBCLOCK ARITHMETIC\fR for a full description.
+.\" METHOD: clicks
 .TP
 \fBclock clicks\fR ?\fI\-option\fR?
+.
 If no \fI\-option\fR argument is supplied, returns a high-resolution
 time value as a system-dependent integer value.  The unit of the value
 is system-dependent but should be the highest resolution clock available
-on the system such as a CPU cycle counter.  See \fBHIGH RESOLUTION TIMERS\fR for a full description.
+on the system such as a CPU cycle counter.
+See \fBHIGH RESOLUTION TIMERS\fR for a full description.
 .RS
 .PP
 If the \fI\-option\fR argument is \fB\-milliseconds\fR, then the command
@@ -52,32 +57,45 @@ is synonymous with \fBclock microseconds\fR (see below).  This
 usage is obsolete, and \fBclock microseconds\fR is to be
 considered the preferred way of obtaining a count of microseconds.
 .RE
+.\" METHOD: format
 .TP
-\fBclock format\fR \fItimeVal\fR ?\fI\-option value\fR...?
+\fBclock format\fI timeVal\fR ?\fI\-option value\fR...?
+.
 Formats a time that is expressed as an integer number of seconds into a format
 intended for consumption by users or external programs.
 See \fBFORMATTING TIMES\fR for a full description.
+.\" METHOD: microseconds
 .TP
 \fBclock microseconds\fR
-Returns the current time as an integer number of microseconds.  See \fBHIGH RESOLUTION TIMERS\fR for a full description.
+.
+Returns the current time as an integer number of microseconds.
+See \fBHIGH RESOLUTION TIMERS\fR for a full description.
+.\" METHOD: milliseconds
 .TP
 \fBclock milliseconds\fR
-Returns the current time as an integer number of milliseconds.  See \fBHIGH RESOLUTION TIMERS\fR for a full description.
+.
+Returns the current time as an integer number of milliseconds.
+See \fBHIGH RESOLUTION TIMERS\fR for a full description.
+.\" METHOD: scan
 .TP
-\fBclock scan\fR \fIinputString\fR ?\fI\-option value\fR...?
+\fBclock scan\fI inputString\fR ?\fI\-option value\fR...?
+.
 Scans a time that is expressed as a character string and produces an
 integer number of seconds.
 See \fBSCANNING TIMES\fR for a full description.
+.\" METHOD: seconds
 .TP
 \fBclock seconds\fR
 Returns the current time as an integer number of seconds.
 .SS "PARAMETERS"
 .TP
 \fIcount\fR
+.
 An integer representing a count of some unit of time.  See
 \fBCLOCK ARITHMETIC\fR for the details.
 .TP
 \fItimeVal\fR
+.
 An integer value passed to the \fBclock\fR command that represents an
 absolute time as a number of seconds from the \fIepoch time\fR of
 1 January 1970, 00:00 UTC.  Note that the count of seconds does not
@@ -88,6 +106,7 @@ back in sync with UTC; its data model does not represent minutes that
 have 59 or 61 seconds.
 .TP
 \fIunit\fR
+.
 One of the words, \fBseconds\fR, \fBminutes\fR, \fBhours\fR,
 \fBdays\fR, \fBweekdays\fR, \fBweeks\fR, \fBmonths\fR, or \fByears\fR.
 Used in conjunction with \fIcount\fR to identify an interval of time,
@@ -95,11 +114,13 @@ for example, \fI3 seconds\fR or \fI1 year\fR.
 .SS "OPTIONS"
 .TP
 \fB\-base\fR time
+.
 Specifies that any relative times present in a \fBclock scan\fR command
 are to be given relative to \fItime\fR.  \fItime\fR must be expressed as
 a count of nominal seconds from the epoch time of 1 January 1970, 00:00 UTC.
 .TP
 \fB\-format\fR format
+.
 Specifies the desired output format for \fBclock format\fR or the
 expected input format for \fBclock scan\fR.  The \fIformat\fR string consists
 of any number of characters other than the per-cent sign
@@ -121,15 +142,17 @@ is requested; see \fBFREE FORM SCAN\fR for a description of what happens.
 .RE
 .TP
 \fB\-gmt\fR boolean
+.
 If \fIboolean\fR is true, specifies that a time specified to \fBclock add\fR,
 \fBclock format\fR or \fBclock scan\fR should be processed in
 UTC.  If \fIboolean\fR is false, the processing defaults to the local time
 zone.  This usage is obsolete; the correct current usage is to
 specify the UTC time zone with
-.QW "\fB\-timezone\fR \fI:UTC\fR"
+.QW "\fB\-timezone\fI :UTC\fR"
 or any of the equivalent ways to specify it.
 .TP
 \fB\-locale\fR localeName
+.
 Specifies that locale-dependent scanning and formatting (and date arithmetic
 for dates preceding the adoption of the Gregorian calendar) is to be done in
 the locale identified by \fIlocaleName\fR.  The locale name may be any of
@@ -145,6 +168,7 @@ The effect of locale on clock arithmetic is discussed under
 .RE
 .TP
 \fB\-timezone\fR zoneName
+.
 Specifies that clock arithmetic, formatting, and scanning are to be done
 according to the rules for the time zone specified by \fIzoneName\fR.
 The permissible values, and their interpretation, are discussed under
@@ -310,9 +334,9 @@ and their interpretation, are described under \fBFORMAT GROUPS\fR.
 If a \fB\-timezone\fR option is present, the following
 argument is a string that specifies the time zone in which the date and time
 are to be formatted.  As an alternative to
-.QW "\fB\-timezone\fR \fI:UTC\fR" ,
+.QW "\fB\-timezone\fI :UTC\fR" ,
 the obsolete usage
-.QW "\fB\-gmt\fR \fItrue\fR"
+.QW "\fB\-gmt\fI true\fR"
 may be used.  See
 \fBTIME ZONES\fR for the permissible variants for the time zone.
 .PP
@@ -321,14 +345,14 @@ a string that specifies the locale in which the time is to be formatted,
 in the same format that is used for the \fBmsgcat\fR package.  Note
 that the default, if \fB\-locale\fR is not specified, is the root locale
 \fB{}\fR rather than the current locale.  The current locale may
-be obtained by using \fB\-locale\fR \fBcurrent\fR.
+be obtained by using \fB\-locale current\fR.
 In addition, some platforms support a \fBsystem\fR locale that
 reflects the user's current choices.  For instance, on Windows, the
 format that the user has selected from dates and times in the Control
 Panel can be obtained by using the \fBsystem\fR locale.  On
 platforms that do not define a user selection of date and time formats
-separate from \fBLC_TIME\fR, \fB\-locale\fR \fBsystem\fR is
-synonymous with \fB\-locale\fR \fBcurrent\fR.
+separate from \fBLC_TIME\fR, \fB\-locale system\fR is
+synonymous with \fB\-locale current\fR.
 .SH "SCANNING TIMES"
 .PP
 The \fBclock scan\fR command accepts times that are formatted as
@@ -346,8 +370,8 @@ and their interpretation, are described under \fBFORMAT GROUPS\fR.
 .PP
 If a \fB\-timezone\fR option is present, the following
 argument is a string that specifies the time zone in which the date and time
-are to be interpreted.  As an alternative to \fB\-timezone\fR \fI:UTC\fR,
-the obsolete usage \fB\-gmt\fR \fItrue\fR may be used.  See
+are to be interpreted.  As an alternative to \fB\-timezone\fI :UTC\fR,
+the obsolete usage \fB\-gmt\fI true\fR may be used.  See
 \fBTIME ZONES\fR for the permissible variants for the time zone.
 .PP
 If a \fB\-locale\fR option is present, the following argument is
@@ -355,14 +379,14 @@ a string that specifies the locale in which the time is to be interpreted,
 in the same format that is used for the \fBmsgcat\fR package.  Note
 that the default, if \fB\-locale\fR is not specified, is the root locale
 \fB{}\fR rather than the current locale.  The current locale may
-be obtained by using \fB\-locale\fR \fBcurrent\fR.
+be obtained by using \fB\-locale current\fR.
 In addition, some platforms support a \fBsystem\fR locale that
 reflects the user's current choices.  For instance, on Windows, the
 format that the user has selected from dates and times in the Control
 Panel can be obtained by using the \fBsystem\fR locale.  On
 platforms that do not define a user selection of date and time formats
-separate from \fBLC_TIME\fR, \fB\-locale\fR \fBsystem\fR is
-synonymous with \fB\-locale\fR \fBcurrent\fR.
+separate from \fBLC_TIME\fR, \fB\-locale system\fR is
+synonymous with \fB\-locale current\fR.
 .PP
 If a \fB\-base\fR option is present, the following argument is
 a time (expressed in seconds from the epoch time) that is used as
@@ -471,67 +495,79 @@ The following format groups are recognized by the \fBclock scan\fR and
 \fBclock format\fR commands.
 .TP
 \fB%a\fR
-On output, produces an abbreviation (\fIe.g.,\fR \fBMon\fR) for the day
+.
+On output, produces an abbreviation (\fIe.g., \fBMon\fR) for the day
 of the week in the given locale.  On input, matches the name of the day
 of the week in the given locale (in either abbreviated or full form, or
 any unique prefix of either form).
 .TP
 \fB%A\fR
-On output, produces the full name (\fIe.g.,\fR \fBMonday\fR) of the day
+.
+On output, produces the full name (\fIe.g., \fBMonday\fR) of the day
 of the week in the given locale.  On input, matches the name of the day
 of the week in the given locale (in either abbreviated or full form, or
 any unique prefix of either form).
 .TP
 \fB%b\fR
-On output, produces an abbreviation (\fIe.g.,\fR \fBJan\fR) for the name
+.
+On output, produces an abbreviation (\fIe.g., \fBJan\fR) for the name
 of the month in the given locale.  On input, matches the name of the month
 in the given locale (in either abbreviated or full form, or
 any unique prefix of either form).
 .TP
 \fB%B\fR
-On output, produces the full name (\fIe.g.,\fR \fBJanuary\fR)
+.
+On output, produces the full name (\fIe.g., \fBJanuary\fR)
 of the month in the given locale.  On input, matches the name of the month
 in the given locale (in either abbreviated or full form, or
 any unique prefix of either form).
 .TP
 \fB%c\fR
+.
 On output, produces a localized representation of date and time of day;
 the localized representation is expected to use the Gregorian calendar.
 On input, matches whatever \fB%c\fR produces.
 .TP
 \fB%C\fR
+.
 On output, produces the number of the century in Indo-Arabic numerals.
 On input, matches one or two digits, possibly with leading whitespace,
 that are expected to be the number of the century.
 .TP
 \fB%d\fR
+.
 On output, produces the number of the day of the month, as two decimal
 digits.  On input, matches one or two digits, possibly with leading
 whitespace, that are expected to be the number of the day of the month.
 .TP
 \fB%D\fR
+.
 This format group is synonymous with \fB%m/%d/%Y\fR.  It should be
 used only in exchanging data within the \fBen_US\fR locale, since
 other locales typically do not use this order for the fields of the date.
 .TP
 \fB%e\fR
+.
 On output, produces the number of the day of the month, as one or
 two decimal digits (with a leading blank for one-digit dates).
 On input, matches one or two digits, possibly with leading
 whitespace, that are expected to be the number of the day of the month.
 .TP
 \fB%Ec\fR
+.
 On output, produces a locale-dependent representation of the date and
 time of day in the locale's alternative calendar.  On input, matches
 whatever \fB%Ec\fR produces.  The locale's alternative calendar need not
 be the Gregorian calendar.
 .TP
 \fB%EC\fR
+.
 On output, produces a locale-dependent name of an era in the locale's
 alternative calendar.  On input, matches the name of the era or any
 unique prefix.
 .TP
 \fB%EE\fR
+.
 On output, produces the string \fBB.C.E.\fR or \fBC.E.\fR, or a
 string of the same meaning in the locale, to indicate whether \fB%Y\fR refers
 to years before or after Year 1 of the Common Era.  On input, accepts
@@ -541,54 +577,65 @@ whether \fB%Y\fR refers to years before or after Year 1 of the
 Common Era.
 .TP
 \fB%Ex\fR
+.
 On output, produces a locale-dependent representation of the date
 in the locale's alternative calendar.  On input, matches
 whatever \fB%Ex\fR produces.  The locale's alternative calendar need not
 be the Gregorian calendar.
 .TP
 \fB%EX\fR
+.
 On output, produces a locale-dependent representation of the
 time of day in the locale's alternative numerals.  On input, matches
 whatever \fB%EX\fR produces.
 .TP
 \fB%Ey\fR
+.
 On output, produces a locale-dependent number of the year of the era
 in the locale's alternative calendar and numerals.  On input, matches
 such a number.
 .TP
 \fB%EY\fR
+.
 On output, produces a representation of the year in the locale's
 alternative calendar and numerals.  On input, matches what \fB%EY\fR
 produces.  Often synonymous with \fB%EC%Ey\fR.
 .TP
 \fB%g\fR
+.
 On output, produces a two-digit year number suitable for use with
 the week-based ISO8601 calendar; that is, the year number corresponds
 to the week number produced by \fB%V\fR.  On input, accepts such
 a two-digit year number, possibly with leading whitespace.
 .TP
 \fB%G\fR
+.
 On output, produces a four-digit year number suitable for use with
 the week-based ISO8601 calendar; that is, the year number corresponds
 to the week number produced by \fB%V\fR.  On input, accepts such
 a four-digit year number, possibly with leading whitespace.
 .TP
 \fB%h\fR
+.
 This format group is synonymous with \fB%b\fR.
 .TP
 \fB%H\fR
+.
 On output, produces a two-digit number giving the hour of the day
 (00-23) on a 24-hour clock.  On input, accepts such a number.
 .TP
 \fB%I\fR
+.
 On output, produces a two-digit number giving the hour of the day
 (12-11) on a 12-hour clock.  On input, accepts such a number.
 .TP
 \fB%j\fR
+.
 On output, produces a three-digit number giving the day of the year
 (001-366).  On input, accepts such a number.
 .TP
 \fB%J\fR
+.
 On output, produces a string of digits giving the Julian Day Number.
 On input, accepts a string of digits and interprets it as a Julian Day Number.
 The Julian Day Number is a count of the number of calendar days
@@ -597,30 +644,36 @@ Julian calendar.  The epoch time of 1 January 1970 corresponds
 to Julian Day Number 2440588.
 .TP
 \fB%k\fR
+.
 On output, produces a one- or two-digit number giving the hour of the day
 (0-23) on a 24-hour clock.  On input, accepts such a number.
 .TP
 \fB%l\fR
+.
 On output, produces a one- or two-digit number giving the hour of the day
 (12-11) on a 12-hour clock.  On input, accepts such a number.
 .TP
 \fB%m\fR
+.
 On output, produces the number of the month (01-12) with exactly two
 digits.  On input, accepts two digits and interprets them as the number
 of the month.
 .TP
 \fB%M\fR
+.
 On output, produces the number of the minute of the hour (00-59)
 with exactly two digits.  On input, accepts two digits and interprets them
 as the number of the minute of the hour.
 .TP
 \fB%N\fR
+.
 On output, produces the number of the month (1-12) with one or two digits,
 and a leading blank for one-digit dates.
 On input, accepts one or two digits, possibly with leading whitespace,
 and interprets them as the number of the month.
 .TP
 \fB%Od\fR, \fB%Oe\fR, \fB%OH\fR, \fB%OI\fR, \fB%Ok\fR, \fB%Ol\fR, \fB%Om\fR, \fB%OM\fR, \fB%OS\fR, \fB%Ou\fR, \fB%Ow\fR, \fB%Oy\fR
+.
 All of these format groups are synonymous with their counterparts
 without the
 .QW \fBO\fR ,
@@ -628,6 +681,7 @@ except that the string is produced and parsed in the
 locale-dependent alternative numerals.
 .TP
 \fB%p\fR
+.
 On output, produces an indicator for the part of the day, \fBAM\fR
 or \fBPM\fR, appropriate to the given locale.  If the script of the
 given locale supports multiple letterforms, lowercase is preferred.
@@ -635,6 +689,7 @@ On input, matches the representation \fBAM\fR or \fBPM\fR in
 the given locale, in either case.
 .TP
 \fB%P\fR
+.
 On output, produces an indicator for the part of the day, \fBam\fR
 or \fBpm\fR, appropriate to the given locale.  If the script of the
 given locale supports multiple letterforms, uppercase is preferred.
@@ -642,18 +697,23 @@ On input, matches the representation \fBAM\fR or \fBPM\fR in
 the given locale, in either case.
 .TP
 \fB%Q\fR
+.
 This format group is reserved for internal use within the Tcl library.
+.\" It's the STARDATE! We're so Enterprise-ready...
 .TP
 \fB%r\fR
+.
 On output, produces a locale-dependent time of day representation on a
 12-hour clock. On input, accepts whatever \fB%r\fR produces.
 .TP
 \fB%R\fR
+.
 On output, the time in 24-hour notation (%H:%M). For a version
 including the seconds, see \fB%T\fR below. On input, accepts whatever
 \fB%R\fR produces.
 .TP
 \fB%s\fR
+.
 On output, simply formats the \fItimeVal\fR argument as a decimal
 integer and inserts it into the output string.  On input, accepts
 a decimal integer and uses is as the time value without any further
@@ -661,23 +721,28 @@ processing. Since \fB%s\fR uniquely determines a point in time, it
 overrides all other input formats.
 .TP
 \fB%S\fR
+.
 On output, produces a two-digit number of the second of the minute
 (00-59). On input, accepts two digits and uses them as the second of the
 minute.
 .TP
 \fB%t\fR
+.
 On output, produces a TAB character. On input, matches a TAB character.
 .TP
 \fB%T\fR
+.
 Synonymous with \fB%H:%M:%S\fR.
 .TP
 \fB%u\fR
+.
 On output, produces the number of the day of the week
 (\fB1\fR\(->Monday, \fB7\fR\(->Sunday). On input, accepts a single digit and
 interprets it as the day of the week. Sunday may be either \fB0\fR or
 \fB7\fR.
 .TP
 \fB%U\fR
+.
 On output, produces the ordinal number of the week of the year
 (00-53). The first Sunday of the year is the first day of week 01. On
 input accepts two digits which are otherwise ignored. This format
@@ -686,6 +751,7 @@ of the week of the year was once common in US banking but is now
 largely obsolete.  See \fB%V\fR for the ISO8601 week number.
 .TP
 \fB%V\fR
+.
 On output, produces the number of the ISO8601 week as a two digit
 number (01-53). Week 01 is the week containing January 4; or the first
 week of the year containing at least 4 days; or the week containing
@@ -694,6 +760,7 @@ equivalent). Each week begins on a Monday. On input, accepts the
 ISO8601 week number.
 .TP
 \fB%w\fR
+.
 On output, produces the ordinal number of the day of the week
 (Sunday==0; Saturday==6).  On input, accepts a single digit and
 interprets it as the day of the week; Sunday may be represented as
@@ -701,6 +768,7 @@ either 0 or 7.  Note that \fB%w\fR is not the ISO8601 weekday number,
 which is produced and accepted by \fB%u\fR.
 .TP
 \fB%W\fR
+.
 On output, produces a week number (00-53) within the year; week 01
 begins on the first Monday of the year. On input, accepts two digits,
 which are otherwise ignored. This format group is never used in
@@ -708,16 +776,19 @@ determining an input date.  It is not the ISO8601 week number; that
 week is produced and accepted by \fB%V\fR.
 .TP
 \fB%x\fR
+.
 On output, produces the date in a locale-dependent representation. On
 input, accepts whatever \fB%x\fR produces and is used to determine
 calendar date.
 .TP
 \fB%X\fR
+.
 On output, produces the time of day in a locale-dependent
 representation. On input, accepts whatever \fB%X\fR produces and is used
 to determine time of day.
 .TP
 \fB%y\fR
+.
 On output, produces the two-digit year of the century. On input,
 accepts two digits, and is used to determine calendar date. The
 date is presumed to lie between 1938 and 2037 inclusive. Note
@@ -725,18 +796,21 @@ that \fB%y\fR does not yield a year appropriate for use with the ISO8601
 week number \fB%V\fR; programs should use \fB%g\fR for that purpose.
 .TP
 \fB%Y\fR
+.
 On output, produces the four-digit calendar year. On input,
 accepts four digits and may be used to determine calendar date. Note
 that \fB%Y\fR does not yield a year appropriate for use with the ISO8601
 week number \fB%V\fR; programs should use \fB%G\fR for that purpose.
 .TP
 \fB%z\fR
+.
 On output, produces the current time zone, expressed in hours and
 minutes east (+hhmm) or west (\-hhmm) of Greenwich. On input, accepts a
 time zone specifier (see \fBTIME ZONES\fR below) that will be used to
 determine the time zone.
 .TP
 \fB%Z\fR
+.
 On output, produces the current time zone's name, possibly
 translated to the given locale. On input, accepts a time zone
 specifier (see \fBTIME ZONES\fR below) that will be used to determine the
@@ -747,6 +821,7 @@ Brazilian Standard Time. It is recommended that date/time strings for
 use by computers use numeric time zones instead.
 .TP
 \fB%%\fR
+.
 On output, produces a literal
 .QW \fB%\fR
 character. On input, matches a literal
@@ -754,6 +829,7 @@ character. On input, matches a literal
 character.
 .TP
 \fB%+\fR
+.
 Synonymous with
 .QW "\fB%a %b %e %H:%M:%S %Z %Y\fR" .
 .SH "TIME ZONES"
@@ -766,7 +842,7 @@ A time zone specified inside a string being parsed and matched by a \fB%z\fR
 or \fB%Z\fR format group.
 .IP [2]
 A time zone specified with the \fB\-timezone\fR option to the \fBclock\fR
-command (or, equivalently, by \fB\-gmt\fR \fB1\fR).
+command (or, equivalently, by \fB\-gmt 1\fR).
 .IP [3]
 A time zone specified in an environment variable \fBTCL_TZ\fR.
 .IP [4]
@@ -852,8 +928,9 @@ specification.
 .SH "FREE FORM SCAN"
 .PP
 If the \fBclock scan\fR command is invoked without a \fB\-format\fR
-option, then it requests a \fIfree-form scan.\fR  \fI
-This form of scan is deprecated.\fR  The reason for the deprecation
+option, then it requests a \fIfree-form scan\fR.
+\fIThis form of scan is deprecated.\fR
+The reason for the deprecation
 is that there are too many ambiguities. (Does the string
 .QW 2000
 represent a year, a time of day, or a quantity?)  No set of rules

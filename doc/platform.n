@@ -43,6 +43,7 @@ establishes a standard naming convention for architectures running Tcl
 and makes it more convenient for developers to identify the current
 architecture a Tcl program is running on.
 .SH COMMANDS
+.\" METHOD: identify
 .TP
 \fBplatform::identify\fR
 .
@@ -52,6 +53,7 @@ core is running on. The returned identifier has the general format
 details like kernel version, libc version, etc., and this information
 may contain dashes as well.  The \fICPU\fR part will not contain
 dashes, making the preceding dash the last dash in the result.
+.\" METHOD: generic
 .TP
 \fBplatform::generic\fR
 .
@@ -59,6 +61,7 @@ This command returns a simplified identifier describing the platform
 the Tcl core is running on. In contrast to \fBplatform::identify\fR it
 leaves out details like kernel version, libc version, etc. The
 returned identifier has the general format \fIOS\fR-\fICPU\fR.
+.\" METHOD: patterns
 .TP
 \fBplatform::patterns \fIidentifier\fR
 .

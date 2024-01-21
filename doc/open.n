@@ -192,7 +192,7 @@ The \fBchan configure\fR and \fBfconfigure\fR commands can be used to query
 and set additional configuration options specific to serial ports (where
 supported):
 .TP
-\fB\-mode\fR \fIbaud\fB,\fIparity\fB,\fIdata\fB,\fIstop\fR
+\fB\-mode\fI baud\fB,\fIparity\fB,\fIdata\fB,\fIstop\fR
 .
 This option is a set of 4 comma-separated values: the baud rate, parity,
 number of data bits, and number of stop bits for this serial port.  The
@@ -209,7 +209,7 @@ or
 data bits and should be an integer from 5 to 8, while \fIstop\fR is the
 number of stop bits and should be the integer 1 or 2.
 .TP
-\fB\-handshake\fR \fItype\fR
+\fB\-handshake\fI type\fR
 .
 (Windows and Unix). This option is used to setup automatic handshake
 control. Note that not all handshake types maybe supported by your operating
@@ -233,7 +233,7 @@ The \fB\-handshake\fR option cannot be queried.
 It returns a list of two integers representing the current number
 of bytes in the input and output queue respectively.
 .TP
-\fB\-timeout\fR \fImsec\fR
+\fB\-timeout\fI msec\fR
 .
 (Windows and Unix). This option is used to set the timeout for blocking
 read operations. It specifies the maximum interval between the
@@ -243,7 +243,7 @@ The \fB\-timeout\fR option does not affect write operations or
 nonblocking reads.
 This option cannot be queried.
 .TP
-\fB\-ttycontrol\fR \fI{signal boolean signal boolean ...}\fR
+\fB\-ttycontrol\fI {signal boolean signal boolean ...}\fR
 .
 (Windows and Unix). This option is used to setup the handshake
 output lines (see below) permanently or to send a BREAK over the serial line.
@@ -265,14 +265,14 @@ The result is a list of signal,value pairs with a fixed order,
 e.g. \fB{CTS 1 DSR 0 RING 1 DCD 0}\fR.
 The \fIsignal\fR names are returned upper case.
 .TP
-\fB\-xchar\fR \fI{xonChar xoffChar}\fR
+\fB\-xchar\fI {xonChar xoffChar}\fR
 .
 (Windows and Unix). This option is used to query or change the software
 handshake characters. Normally the operating system default should be
 DC1 (0x11) and DC3 (0x13) representing the ASCII standard
 XON and XOFF characters.
 .TP
-\fB\-closemode\fR \fIcloseMode\fR
+\fB\-closemode\fI closeMode\fR
 .VS "8.7, TIP 160"
 (Windows and Unix). This option is used to query or change the close mode of
 the serial channel, which defines how pending output in operating system
@@ -298,7 +298,7 @@ been consumed. This may slow down \fBclose\fR noticeably.
 .RE
 .VE "8.7, TIP 160"
 .TP
-\fB\-inputmode\fR \fIinputMode\fR
+\fB\-inputmode\fI inputMode\fR
 .VS "8.7, TIP 160"
 (Unix only; Windows has the equivalent option on console channels). This
 option is used to query or change the input mode of the serial channel under
@@ -341,7 +341,7 @@ option is query only. It retrieves a two-element list with the the current
 width and height of the terminal.
 .VE "8.7, TIP 160"
 .TP
-\fB\-pollinterval\fR \fImsec\fR
+\fB\-pollinterval\fI msec\fR
 .
 (Windows only). This option is used to set the maximum time between
 polling for fileevents.
@@ -350,9 +350,9 @@ interpreter (the smallest value always wins).  Use this option only if
 you want to poll the serial port more or less often than 10 msec
 (the default).
 .TP
-\fB\-sysbuffer\fR \fIinSize\fR
+\fB\-sysbuffer\fI inSize\fR
 .TP
-\fB\-sysbuffer\fR \fI{inSize outSize}\fR
+\fB\-sysbuffer\fI {inSize outSize}\fR
 .
 (Windows only). This option is used to change the size of Windows
 system buffers for a serial channel. Especially at higher communication
@@ -511,7 +511,7 @@ applications on the various platforms
 On Windows only, console channels (usually \fBstdin\fR or \fBstdout\fR)
 support the following options:
 .TP
-\fB\-inputmode\fR \fIinputMode\fR
+\fB\-inputmode\fI inputMode\fR
 .
 This option is used to query or change the input mode of the console channel,
 which controls how interactive input from users is handled. The following

@@ -40,6 +40,8 @@ done by other Tcl commands (respectively \fBstring range\fR,
 binary string in Tcl is merely one where all the characters it contains are in
 the range \eu0000\-\eu00FF.
 .SH "BINARY ENCODE AND DECODE"
+.\" METHOD: decode
+.\" METHOD: encode
 .PP
 When encoding binary data as a readable string, the starting binary data is
 passed to the \fBbinary encode\fR command, together with the name of the
@@ -134,6 +136,7 @@ Note that neither the encoder nor the decoder handle the header and footer of
 the uuencode format.
 .RE
 .SH "BINARY FORMAT"
+.\" METHOD: format
 .PP
 The \fBbinary format\fR command generates a binary string whose layout
 is specified by the \fIformatString\fR and whose contents come from
@@ -607,6 +610,7 @@ will return
 .CE
 .RE
 .SH "BINARY SCAN"
+.\" METHOD: scan
 .PP
 The \fBbinary scan\fR command parses fields from a binary string,
 returning the number of conversions performed.  \fIString\fR gives the

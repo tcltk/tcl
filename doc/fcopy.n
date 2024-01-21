@@ -12,7 +12,7 @@
 .SH NAME
 fcopy \- Copy data from one channel to another
 .SH SYNOPSIS
-\fBfcopy \fIinputChan\fR \fIoutputChan\fR ?\fB\-size \fIsize\fR? ?\fB\-command \fIcallback\fR?
+\fBfcopy \fIinputChan outputChan\fR ?\fB\-size \fIsize\fR? ?\fB\-command \fIcallback\fR?
 .BE
 
 .SH DESCRIPTION

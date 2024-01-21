@@ -17,18 +17,18 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fBpackage require tcl::zipfs \fR?\fB1.0\fR?
 .sp
 \fBzipfs canonical\fR ?\fImntpnt\fR? \fIfilename\fR ?\fIZIPFS\fR?
-\fBzipfs exists\fR \fIfilename\fR
-\fBzipfs find\fR \fIdirectoryName\fR
-\fBzipfs info\fR \fIfilename\fR
+\fBzipfs exists\fI filename\fR
+\fBzipfs find\fI directoryName\fR
+\fBzipfs info\fI filename\fR
 \fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? ?\fIpattern\fR?
-\fBzipfs lmkimg\fR \fIoutfile inlist\fR ?\fIpassword infile\fR?
-\fBzipfs lmkzip\fR \fIoutfile inlist\fR ?\fIpassword\fR?
-\fBzipfs mkimg\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
-\fBzipfs mkkey\fR \fIpassword\fR
-\fBzipfs mkzip\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR?
+\fBzipfs lmkimg\fI outfile inlist\fR ?\fIpassword infile\fR?
+\fBzipfs lmkzip\fI outfile inlist\fR ?\fIpassword\fR?
+\fBzipfs mkimg\fI outfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
+\fBzipfs mkkey\fI password\fR
+\fBzipfs mkzip\fI outfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR?
 \fBzipfs mount\fR ?\fIzipfile\fR? ?\fImountpoint\fR? ?\fIpassword\fR?
 \fBzipfs root\fR
-\fBzipfs unmount\fR \fImountpoint\fR
+\fBzipfs unmount\fI mountpoint\fR
 .fi
 '\" The following subcommand is *UNDOCUMENTED*
 '\" \fBzipfs mount_data\fR ?\fIdata\fR ?\fImountpoint\fR??
@@ -49,6 +49,7 @@ cannot be created. Further, modifications to files are limited to the
 mounted archive in memory and are not persisted to disk.
 .PP
 Paths in mounted archives are case-sensitive on all platforms.
+.\" METHOD: canonical
 .TP
 \fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR ?\fIinZipfs\fR?
 .
@@ -57,19 +58,22 @@ mapped into a zipfs mount as its result. If specified, \fImountpoint\fR says
 within which mount the mapping will be done; if omitted, the main root of the
 zipfs system is used. The \fIinZipfs\fR argument is a an optional boolean
 which controls whether to fully canonicalise the name; it defaults to true.
+.\" METHOD: exists
 .TP
-\fBzipfs exists\fR \fIfilename\fR
+\fBzipfs exists\fI filename\fR
 .
 Return 1 if the given filename exists in the mounted zipfs and 0 if it does not.
+.\" METHOD: find
 .TP
-\fBzipfs find\fR \fIdirectoryName\fR
+\fBzipfs find\fI directoryName\fR
 .
 Returns the list of paths under directory \fIdirectoryName\fR which need not be
 within a zipfs mounted archive. The paths are prefixed with \fIdirectoryName\fR.
 This command is also used by the \fBzipfs mkzip\fR and \fBzipfs mkimg\fR
 commands.
+.\" METHOD: info
 .TP
-\fBzipfs info\fR \fIfile\fR
+\fBzipfs info\fI file\fR
 .
 Return information about the given \fIfile\fR in the mounted zipfs.  The
 information consists of:
@@ -87,6 +91,7 @@ As a special case, querying the mount point gives the start of the zip data as t
 in (4), which can be used to truncate the zip information from an executable.
 Querying an ancestor of a mount point will raise an error.
 .RE
+.\" METHOD: list
 .TP
 \fBzipfs list\fR ?(\fB\-glob\fR|\fB\-regexp\fR)? ?\fIpattern\fR?
 .
@@ -101,12 +106,13 @@ ordinary characters in the matching. Thus forward slashes should be used
 as path separators in the pattern. The returned paths only include those
 actually in the archive and does not include intermediate directories in
 mount paths.
+.\" METHOD: mount
 .TP
 \fBzipfs mount\fR
 .TP
-\fBzipfs mount\fR \fImountpoint\fR
+\fBzipfs mount\fI mountpoint\fR
 .TP
-\fBzipfs mount\fR \fIzipfile\fR \fImountpoint\fR ?\fIpassword\fR?
+\fBzipfs mount\fI zipfile mountpoint\fR ?\fIpassword\fR?
 .RS
 .PP
 The \fBzipfs mount\fR command mounts ZIP archives as Tcl virtual file systems
@@ -137,6 +143,7 @@ uses direct access to the OS rather than through Tcl's filesystem API, it will
 not see the current directory as being inside the mount and will not be able
 to access the files inside the mount).
 .RE
+.\" METHOD: root
 .TP
 \fBzipfs root\fR
 .
@@ -145,6 +152,7 @@ for the current platform.
 This value is
 .QW \fB//zipfs:/\fR
 on most platforms.
+.\" METHOD: unmount
 .TP
 \fBzipfs unmount \fImountpoint\fR
 .
@@ -154,8 +162,9 @@ there are any files within the mounted archive are open.
 .SS "ZIP CREATION COMMANDS"
 This package also provides several commands to aid the creation of ZIP
 archives as Tcl applications.
+.\" METHOD: mkzip
 .TP
-\fBzipfs mkzip\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR?
+\fBzipfs mkzip\fI outfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR?
 .
 Creates a ZIP archive file named \fIoutfile\fR from the contents of the input
 directory \fIindir\fR (contained regular files only) with optional ZIP
@@ -168,8 +177,9 @@ the whole source directory name or the name of its parent directory.
 \fBCaution:\fR the choice of the \fIindir\fR parameter (less the optional
 stripped prefix) determines the later root name of the archive's content.
 .RE
+.\" METHOD: mkimg
 .TP
-\fBzipfs mkimg\fR \fIoutfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
+\fBzipfs mkimg\fI outfile indir\fR ?\fIstrip\fR? ?\fIpassword\fR? ?\fIinfile\fR?
 .
 Creates an image (potentially a new executable file) similar to \fBzipfs
 mkzip\fR; see that command for a description of most parameters to this
@@ -196,20 +206,23 @@ that script has been executed.
 \fBCaution:\fR highly experimental, not usable on Android, only partially
 tested on Linux and Windows.
 .RE
+.\" METHOD: mkkey
 .TP
-\fBzipfs mkkey\fR \fIpassword\fR
+\fBzipfs mkkey\fI password\fR
 .
 Given the clear text \fIpassword\fR argument, an obfuscated string version is
 returned with the same format used in the \fBzipfs mkimg\fR command.
+.\" METHOD: lmkimg
 .TP
-\fBzipfs lmkimg\fR \fIoutfile inlist\fR ?\fIpassword infile\fR?
+\fBzipfs lmkimg\fI outfile inlist\fR ?\fIpassword infile\fR?
 .
 This command is like \fBzipfs mkimg\fR, but instead of an input directory,
 \fIinlist\fR must be a Tcl list where the odd elements are the names of files
 to be copied into the archive in the image, and the even elements are their
 respective names within that archive.
+.\" METHOD: lmkzip
 .TP
-\fBzipfs lmkzip\fR \fIoutfile inlist\fR ?\fIpassword\fR?
+\fBzipfs lmkzip\fI outfile inlist\fR ?\fIpassword\fR?
 .
 This command is like \fBzipfs mkzip\fR, but instead of an input directory,
 \fIinlist\fR must be a Tcl list where the odd elements are the names of files

@@ -52,7 +52,7 @@ described below then it is used by \fBexec\fR to control the
 flow of input and output among the subprocess(es).
 Such arguments will not be passed to the subprocess(es).  In forms
 such as
-.QW "\fB<\fR \fIfileName\fR" ,
+.QW "\fB<\fI fileName\fR" ,
 \fIfileName\fR may either be in a separate argument from
 .QW \fB<\fR
 or in the same argument with no intervening space (i.e.
