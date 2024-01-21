@@ -28,7 +28,7 @@ Although \fBconcat\fR will concatenate lists, flattening them in the process
 (so giving the following interactive session):
 .PP
 .CS
-\fI%\fR \fBconcat\fR a b {c d e} {f {g h}}
+\fI% \fBconcat\fR a b {c d e} {f {g h}}
 \fIa b c d e f {g h}\fR
 .CE
 .PP
@@ -36,7 +36,7 @@ it will also concatenate things that are not lists, as can be seen from this
 session:
 .PP
 .CS
-\fI%\fR \fBconcat\fR " a b {c   " d "  e} f"
+\fI% \fBconcat\fR " a b {c   " d "  e} f"
 \fIa b {c d e} f\fR
 .CE
 .PP
@@ -44,14 +44,22 @@ Note also that the concatenation does not remove spaces from the middle of
 values, as can be seen here:
 .PP
 .CS
-\fI%\fR \fBconcat\fR "a   b   c" { d e f }
+\fI% \fBconcat\fR "a   b   c" { d e f }
 \fIa   b   c d e f\fR
 .CE
 .PP
 (i.e., there are three spaces between each of the \fBa\fR, the \fBb\fR and the
 \fBc\fR).
+.PP
+For \fItrue\fR list concatenation, the \fBlist\fR command should be used with
+expansion of each input list:
+.PP
+.CS
+\fI% \fRlist {*}"a   b   c" {*}{ d e f }
+\fIa b c d e f\fR
+.CE
 .SH "SEE ALSO"
-append(n), eval(n), join(n)
+append(n), eval(n), join(n), list(n)
 .SH KEYWORDS
 concatenate, join, list
 '\" Local Variables:

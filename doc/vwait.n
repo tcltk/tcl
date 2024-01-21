@@ -11,7 +11,7 @@
 .SH NAME
 vwait \- Process events until a variable is written
 .SH SYNOPSIS
-\fBvwait\fR \fIvarName\fR
+\fBvwait\fI varName\fR
 .sp
 \fBvwait\fR ?\fIoptions\fR? ?\fIvarName ...\fR?
 .BE
@@ -61,21 +61,21 @@ Timer handlers are not serviced during the wait operation.
 .
 Events of the windowing system are not handled during the wait operation.
 .TP
-\fB\-readable\fR \fIchannel\fR
+\fB\-readable\fI channel\fR
 .
 \fIChannel\fR must name a Tcl channel open for reading. If \fIchannel\fR
 is or becomes readable the wait operation completes.
 .TP
-\fB\-timeout\fR \fImilliseconds\fR
+\fB\-timeout\fI milliseconds\fR
 .
 The wait operation is constrained to \fImilliseconds\fR.
 .TP
-\fB\-variable\fR \fIvarName\fR
+\fB\-variable\fI varName\fR
 .
 \fIVarName\fR must be the name of a global variable. Writing or
 unsetting this variable completes the wait operation.
 .TP
-\fB\-writable\fR \fIchannel\fR
+\fB\-writable\fI channel\fR
 .
 \fIChannel\fR must name a Tcl channel open for writing. If \fIchannel\fR
 is or becomes writable the wait operation completes.

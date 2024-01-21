@@ -19,13 +19,14 @@ trace \- Monitor variable accesses, command usages and command executions
 .PP
 This command causes Tcl commands to be executed whenever certain operations are
 invoked.  The legal \fIoption\fRs (which may be abbreviated) are:
+.\" METHOD: add
 .TP
 \fBtrace add \fItype name ops\fR ?\fIargs\fR?
 .
 Where \fItype\fR is \fBcommand\fR, \fBexecution\fR, or \fBvariable\fR.
 .RS
 .TP
-\fBtrace add command\fR \fIname ops commandPrefix\fR
+\fBtrace add command\fI name ops commandPrefix\fR
 .
 Arrange for \fIcommandPrefix\fR to be executed (with additional arguments)
 whenever command \fIname\fR is modified in one of the ways given by the list
@@ -76,7 +77,7 @@ Both \fIoldName\fR and \fInewName\fR are fully qualified with any namespace(s)
 in which they appear.
 .RE
 .TP
-\fBtrace add execution\fR \fIname ops commandPrefix\fR
+\fBtrace add execution\fI name ops commandPrefix\fR
 .
 Arrange for \fIcommandPrefix\fR to be executed (with additional arguments)
 whenever command \fIname\fR is executed, with traces occurring at the points
@@ -302,6 +303,7 @@ but will not remove traces on the overall array.
 This command returns an empty string.
 .RE
 .RE
+.\" METHOD: remove
 .TP
 \fBtrace remove \fItype name opList commandPrefix\fR
 Where \fItype\fR is either \fBcommand\fR, \fBexecution\fR or \fBvariable\fR.
@@ -327,6 +329,7 @@ command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is
 removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns
 an empty string.
 .RE
+.\" METHOD: info
 .TP
 \fBtrace info \fItype name\fR
 Where \fItype\fR is either \fBcommand\fR, \fBexecution\fR or \fBvariable\fR.
