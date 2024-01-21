@@ -1805,13 +1805,7 @@ Tcl_UniCharIsControl(
     if (UNICODE_OUT_OF_RANGE(ch)) {
 	/* Clear away extension bits, if any */
 	ch &= 0x1FFFFF;
-	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007F))) {
-	    return 1;
-	}
-	if ((ch >= 0xF0000) && ((ch & 0xFFFF) <= 0xFFFD)) {
-	    return 1;
-	}
-	return 0;
+	return ((ch == 0xE0001) || ((unsigned)(ch - 0xE0020) <= 0x5F));
     }
 #endif
     return ((CONTROL_BITS >> GetCategory(ch)) & 1);
