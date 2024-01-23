@@ -229,9 +229,7 @@ format.  If the conversion is successful, then the converted form of
 Otherwise, the value's Unicode representation is invalidated and
 converted to the UTF format, and \fIbytes\fR is appended to the
 value's new string representation.
-\fIlength\fR bytes are allocated and not filled, if \fIbytes\fR is a
-null pointer.
-Eventually buffer growth is optimized by large allocations to optimize
+Eventually buffer growth is done by large allocations to optimize
 multiple calls.
 .PP
 \fBTcl_AppendUnicodeToObj\fR appends the Unicode string given by
