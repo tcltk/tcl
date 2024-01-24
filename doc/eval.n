@@ -30,6 +30,7 @@ equivalent:
 .CS
 \fBeval\fR [list $a $b $c]
 $a $b $c
+.CE
 .SH EXAMPLES
 .PP
 Often, it is useful to store a fragment of a script in a variable and
