@@ -221,12 +221,14 @@ to bytes) in the string value.
 \fBTcl_AppendToObj\fR appends the data given by \fIbytes\fR and
 \fIlength\fR to the string representation of the value specified by
 \fIobjPtr\fR.  If the value has an invalid string representation,
-then an attempt is made to convert \fIbytes\fR is to the Unicode
+then an attempt is made to convert \fIbytes\fR to the Unicode
 format.  If the conversion is successful, then the converted form of
 \fIbytes\fR is appended to the value's Unicode representation.
 Otherwise, the value's Unicode representation is invalidated and
 converted to the UTF format, and \fIbytes\fR is appended to the
 value's new string representation.
+Eventually buffer growth is done by large allocations to optimize
+multiple calls.
 .PP
 \fBTcl_AppendUnicodeToObj\fR appends the Unicode string given by
 \fIunicode\fR and \fInumChars\fR to the value specified by

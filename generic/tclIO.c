@@ -6112,7 +6112,7 @@ ReadChars(
     int dstLimit = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
 
     (void) TclGetStringFromObj(objPtr, &numBytes);
-    Tcl_SetObjLength(objPtr, numBytes + dstLimit);
+    Tcl_AppendToObj(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
 	unsigned int size;
 
