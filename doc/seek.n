@@ -27,20 +27,14 @@ The \fIoffset\fR and \fIorigin\fR
 arguments specify the position at which the next read or write will occur
 for \fIchannelId\fR. \fIOffset\fR must be an integer (which may be
 negative) and \fIorigin\fR must be one of the following:
-.TP 10
-\fBstart\fR
-.
+.IP \fBstart\fR 10
 The new access position will be \fIoffset\fR bytes from the start
 of the underlying file or device.
-.TP 10
-\fBcurrent\fR
-.
+.IP \fBcurrent\fR 10
 The new access position will be \fIoffset\fR bytes from the current
 access position; a negative \fIoffset\fR moves the access position
 backwards in the underlying file or device.
-.TP 10
-\fBend\fR
-.
+.IP \fBend\fR 10
 The new access position will be \fIoffset\fR bytes from the end of
 the file or device.  A negative \fIoffset\fR places the access position
 before the end of file, and a positive \fIoffset\fR places the access

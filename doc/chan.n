@@ -105,6 +105,7 @@ The options described below are supported for all channels. Each type of
 channel may provide additional options. Those options are described in the
 relevant documentation. For example, additional options are documented for
 \fBsocket\fR, and also for serial devices at \fBopen\fR.
+.\" OPTION: -blocking
 .TP
 \fB\-blocking\fI boolean\fR
 .
@@ -115,6 +116,7 @@ flush\fR, and \fBchan close\fR take care not to block.  Non-blocking mode in
 generally requires that the event loop is entered, e.g. by calling
 \fBTcl_DoOneEvent\fR or \fBvwait\fR or by using Tk, to give Tcl a chance to
 process events on the channel.
+.\" OPTION: -buffering
 .TP
 \fB\-buffering\fI newValue\fR
 .
@@ -125,11 +127,13 @@ character is written. If \fInewValue\fR is \fBnone\fR, output is flushed after
 every output operation.  For \fBstdin\fR, \fBstdout\fR, and channels that
 connect to terminal-like devices, the default value is \fBline\fR.  For
 \fBstderr\fR the default value is \fBnone\fR.
+.\" OPTION: -buffersize
 .TP
 \fB\-buffersize\fI newSize\fR
 .
 \fInewSize\fR, an integer no greater than one million, is the size in bytes of
 any input or output buffers subsequently allocated for this channel.
+.\" OPTION: -encoding
 .TP
 \fB\-encoding\fR ?\fIname\fR?
 .
@@ -147,6 +151,7 @@ The encoding of a new channel is the value of \fBencoding system\fR,
 which returns the platform- and locale-dependent system encoding used to
 interface with the operating system,
 .RE
+.\" OPTION: -eofchar
 .TP
 \fB\-eofchar\fI char\fR
 .
@@ -159,6 +164,7 @@ The default value is the empty string.  The acceptable range is \ex01 -
 \ex7F.  A value outside this range results in an error.
 .RE
 .VS "TCL8.7 TIP656"
+.\" OPTION: -profile
 .TP
 \fB\-profile\fI profile\fR
 .
@@ -168,6 +174,7 @@ rules of that profile. Any failures will result in a channel error. See
 \fBPROFILES\fR in the \fBencoding(n)\fR documentation for details about encoding
 profiles.
 .VE "TCL8.7 TIP656"
+.\" OPTION: -translation
 .TP
 \fB\-translation\fI translation\fR
 .TP
@@ -181,9 +188,9 @@ carriage-return-linefeed sequence is normally used in network connections.
 Therefore, on input, e.g. with \fBchan gets\fR and \fBchan read\fR, each
 external end-of-line character is translated into a line feed.  On
 output, e.g. with \fBchan puts\fR, each line feed is translated to the external
-end-of-line character.  The default translation, \fBauto\fR, handles all the common
-cases, and \fB\-translation\fR provides explicit control over the end-of-line
-character.
+end-of-line character.  The default translation, \fBauto\fR, handles all the
+common cases, and \fB\-translation\fR provides explicit control over the
+end-of-line character.
 .RS
 .PP
 Returns the input translation for a read-only channel, the output translation
@@ -192,18 +199,14 @@ translation for a  read-write channel.  When two translations are given, they
 are the input and output translation, respectively.  When only one translation
 is given for a read-write channel, it is the translation for both input and
 output.  The following values are currently supported:
-.TP
-\fBauto\fR
-.
+.IP \fBauto\fR
 The default.  For input each occurrence of a line feed (\fBlf\fR), carriage
 return (\fBcr\fR), or carriage return followed by a line feed (\fBcrlf\fR) is
 translated into a line feed.  For output, each line feed is translated into a
 platform-specific representation:  For all Unix variants it is \fBlf\fR, and
 for all Windows variants it is \fBcrlf\fR, except that for sockets on all
 platforms it is \fBcrlf\fR for both input and output.
-.TP
-\fBbinary\fR
-.
+.IP \fBbinary\fR
 Like \fBlf\fR, no end-of-line translation is performed, but in addition, sets
 \fB\-eofchar\fR to the empty string to disable it, and sets \fB\-encoding\fR
 to \fBiso8859-1\fR.  With this one setting, a channel is fully configured
@@ -214,24 +217,18 @@ makes it possible to work seamlessly with binary data as long as each character
 in the data remains in the range of 0 to 255 so that there is no distinction
 between binary data and text.  For example, A JPEG image can be read from a
 such a channel, manipulated, and then written back to such a channel.
-.TP
-\fBcr\fR
-.
+.IP \fBcr\fR
 The end of a line is represented in the external data by a single carriage
 return character.  For input, each carriage return is translated to a line
 feed, and for output each line feed character is translated to a carriage
 return.
-.TP
-\fBcrlf\fR
-.
+.IP \fBcrlf\fR
 The end of a line is represented in the external data by a carriage return
 character followed by a line feed.  For input, each carriage-return-linefeed
 sequence is translated to a line feed.  For output, each line feed is
 translated to a carriage-return-linefeed sequence.  This translation is
 typically used for network connections, and also on Windows systems.
-.TP
-\fBlf\fR
-.
+.IP \fBlf\fR
 The end of a line in the external data is represented by a line feed so no
 translations occur during either input or output.  This translation is
 typically used on UNIX platforms,
@@ -275,9 +272,6 @@ wrong-sided I/O attempted (by a \fBchan event\fR handler or otherwise) results
 in a
 .QW "channel busy"
 error.
-.PP
-.PP
-.IP \fBEXAMPLES\fR
 .RE
 .\" METHOD: create
 .TP
@@ -576,18 +570,11 @@ bytes relative to \fIorigin\fR.  A negative offset moves the current position
 backwards from the origin.  \fIorigin\fR is one of the
 following:
 .RS
-.PP
-.TP 10
-\fBstart\fR
-.
+.IP \fBstart\fR
 The origin is the start of the data.  This is the default.
-.TP 10
-\fBcurrent\fR
-.
+.IP \fBcurrent\fR
 The origin is the current position.
-.TP 10
-\fBend\fR
-.
+.IP \fBend\fR
 The origin is the end of the data.
 .PP
 \fBChan seek\fR flushes all buffered output even if the channel is in
@@ -603,7 +590,7 @@ not characters,
 \fBchan tell \fIchannelName\fR
 .
 Returns the offset in bytes of the current position in the underlying data, or
--1 if the channel does not suport seeking. The value can be passed to \fBchan
+-1 if the channel does not support seeking. The value can be passed to \fBchan
 seek\fR to set current position to that offset.
 .\" METHOD: truncate
 .TP

@@ -57,10 +57,10 @@ There is one special case to permit procedures with
 variable numbers of arguments.  If the last formal argument has the name
 .QW \fBargs\fR ,
 then a call to the procedure may contain more actual arguments
-than the procedure has formal arguments.  In this case, all of the actual arguments
-starting at the one that would be assigned to \fBargs\fR are combined into
-a list (as if the \fBlist\fR command had been used); this combined value
-is assigned to the local variable \fBargs\fR.
+than the procedure has formal arguments.  In this case, all of the actual
+arguments starting at the one that would be assigned to \fBargs\fR are
+combined into a list (as if the \fBlist\fR command had been used); this
+combined value is assigned to the local variable \fBargs\fR.
 .PP
 When \fIbody\fR is being executed, variable names normally refer to
 local variables, which are created automatically when referenced and

@@ -34,6 +34,7 @@ subexpression to the right in \fIexp\fR, and so on.
 If the initial arguments to \fBregexp\fR start with \fB\-\fR then
 they are treated as switches.  The following switches are
 currently supported:
+.\" OPTION: -about
 .TP 15
 \fB\-about\fR
 .
@@ -42,12 +43,14 @@ containing information about the regular expression.  The first
 element of the list is a subexpression count.  The second element is a
 list of property names that describe various attributes of the regular
 expression. This switch is primarily intended for debugging purposes.
+.\" OPTION: -expanded
 .TP 15
 \fB\-expanded\fR
 .
 Enables use of the expanded regular expression syntax where
 whitespace and comments are ignored.  This is the same as specifying
 the \fB(?x)\fR embedded option (see the \fBre_syntax\fR manual page).
+.\" OPTION: -indices
 .TP 15
 \fB\-indices\fR
 .
@@ -57,6 +60,7 @@ each variable
 will contain a list of two decimal strings giving the indices
 in \fIstring\fR of the first and last characters in the matching
 range of characters.
+.\" OPTION: -line
 .TP 15
 \fB\-line\fR
 .
@@ -75,6 +79,7 @@ matches an empty string before any newline in
 addition to its normal function.  This flag is equivalent to
 specifying both \fB\-linestop\fR and \fB\-lineanchor\fR, or the
 \fB(?n)\fR embedded option (see the \fBre_syntax\fR manual page).
+.\" OPTION: -linestop
 .TP 15
 \fB\-linestop\fR
 .
@@ -85,6 +90,7 @@ bracket expressions and
 so that they
 stop at newlines.  This is the same as specifying the \fB(?p)\fR
 embedded option (see the \fBre_syntax\fR manual page).
+.\" OPTION: -lineanchor
 .TP 15
 \fB\-lineanchor\fR
 .
@@ -98,11 +104,13 @@ so they match the
 beginning and end of a line respectively.  This is the same as
 specifying the \fB(?w)\fR embedded option (see the \fBre_syntax\fR
 manual page).
+.\" OPTION: -nocase
 .TP 15
 \fB\-nocase\fR
 .
 Causes upper-case characters in \fIstring\fR to be treated as
 lower case during the matching process.
+.\" OPTION: -all
 .TP 15
 \fB\-all\fR
 .
@@ -110,6 +118,7 @@ Causes the regular expression to be matched as many times as possible
 in the string, returning the total number of matches found.  If this
 is specified with match variables, they will contain information for
 the last match only.
+.\" OPTION: -inline
 .TP 15
 \fB\-inline\fR
 .
@@ -129,6 +138,7 @@ regular expression.  Examples are:
       \fI\(-> in n li i ne e\fR
 .CE
 .RE
+.\" OPTION: -start
 .TP 15
 \fB\-start\fI index\fR
 .
@@ -143,6 +153,7 @@ match the start of the string at \fIindex\fR.  If \fB\-indices\fR
 is specified, the indices will be indexed starting from the
 absolute beginning of the input string.
 \fIindex\fR will be constrained to the bounds of the input string.
+.\" OPTION: --
 .TP 15
 \fB\-\|\-\fR
 .
@@ -175,7 +186,7 @@ Find the index of the word \fBbadger\fR (in any case) within a string
 and store that in the variable \fBlocation\fR:
 .PP
 .CS
-\fBregexp\fR \-indices {(?i)\embadger\eM} $string location
+\fBregexp\fR -indices {(?i)\embadger\eM} $string location
 .CE
 .PP
 This could also be written as a \fIbasic\fR regular expression (as opposed
@@ -183,13 +194,13 @@ to using the default syntax of \fIadvanced\fR regular expressions) match by
 prefixing the expression with a suitable flag:
 .PP
 .CS
-\fBregexp\fR \-indices {(?ib)\e<badger\e>} $string location
+\fBregexp\fR -indices {(?ib)\e<badger\e>} $string location
 .CE
 .PP
 This counts the number of octal digits in a string:
 .PP
 .CS
-\fBregexp\fR \-all {[0\-7]} $string
+\fBregexp\fR -all {[0-7]} $string
 .CE
 .PP
 This lists all words (consisting of all sequences of non-whitespace
@@ -197,7 +208,7 @@ characters) in a string, and is useful as a more powerful version of the
 \fBsplit\fR command:
 .PP
 .CS
-\fBregexp\fR \-all \-inline {\eS+} $string
+\fBregexp\fR -all -inline {\eS+} $string
 .CE
 .SH "SEE ALSO"
 re_syntax(n), regsub(n), string(n)

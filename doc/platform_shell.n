@@ -41,19 +41,19 @@ the architecture of the shell which will actually run the installed
 packages, versus the architecture of the shell running the repository
 software.
 .SH COMMANDS
-.\" METHOD: identify
+.\" COMMAND: identify
 .TP
 \fBplatform::shell::identify \fIshell\fR
 .
 This command does the same identification as \fBplatform::identify\fR,
 for the specified Tcl shell, in contrast to the running shell.
-.\" METHOD: generic
+.\" COMMAND: generic
 .TP
 \fBplatform::shell::generic \fIshell\fR
 .
 This command does the same identification as \fBplatform::generic\fR,
 for the specified Tcl shell, in contrast to the running shell.
-.\" METHOD: platform
+.\" COMMAND: platform
 .TP
 \fBplatform::shell::platform \fIshell\fR
 .

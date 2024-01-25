@@ -86,6 +86,7 @@ The \fBproperty\fR command takes the name of a property to define first,
 \fIwithout a leading hyphen\fR, followed by a number of option-value pairs
 that modify the basic behavior of the property. This can then be followed by
 an arbitrary number of other property definitions. The supported options are:
+.\" OPTION: -get
 .TP
 \fB\-get \fIgetterScript\fR
 .
@@ -99,6 +100,7 @@ of the instance variable with the same name as the property (e.g.,
 will result in a method
 .QW <ReadProp-xyz>
 being created).
+.\" OPTION: -kind
 .TP
 \fB\-kind \fIpropertyKind\fR
 .
@@ -114,6 +116,7 @@ Note that write-only properties are not particularly discoverable as they are
 never reported by the \fBconfigure\fR method other than by error messages when
 attempting to write to a property that does not exist.
 .RE
+.\" OPTION: -set
 .TP
 \fB\-set \fIsetterScript\fR
 .

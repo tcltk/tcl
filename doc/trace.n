@@ -90,10 +90,12 @@ an error will be thrown.
 one or more of the following items:
 .TP
 \fBenter\fR
+.
 Invoke \fIcommandPrefix\fR whenever the command \fIname\fR is executed,
 just before the actual execution takes place.
 .TP
 \fBleave\fR
+.
 Invoke \fIcommandPrefix\fR whenever the command \fIname\fR is executed,
 just after the actual execution takes place.
 .TP
@@ -157,6 +159,7 @@ the result string.
 \fIOp\fR indicates what operation is being performed on the
 command execution, and is one of \fBleave\fR or \fBleavestep\fR as
 defined above.
+.PP
 Note that the creation of many \fBenterstep\fR or
 \fBleavestep\fR traces can lead to unintuitive results, since the
 invoked commands from one trace can themselves lead to further
@@ -188,6 +191,7 @@ The behavior of execution traces is currently undefined for a command
 .RE
 .TP
 \fBtrace add variable\fI name ops commandPrefix\fR
+.
 Arrange for \fIcommandPrefix\fR to be executed whenever variable \fIname\fR
 is accessed in one of the ways given by the list \fIops\fR.  \fIName\fR may
 refer to a normal variable, an element of an array, or to an array
@@ -203,6 +207,7 @@ queries, but not to \fBinfo exists\fR queries.
 one or more of the following items:
 .TP
 \fBarray\fR
+.
 Invoke \fIcommandPrefix\fR whenever the variable is accessed or modified via
 the \fBarray\fR command, provided that \fIname\fR is not a scalar
 variable at the time that the \fBarray\fR command is invoked.  If
@@ -210,12 +215,15 @@ variable at the time that the \fBarray\fR command is invoked.  If
 command will not trigger the trace.
 .TP
 \fBread\fR
+.
 Invoke \fIcommandPrefix\fR whenever the variable is read.
 .TP
 \fBwrite\fR
+.
 Invoke \fIcommandPrefix\fR whenever the variable is written.
 .TP
 \fBunset\fR
+.
 Invoke \fIcommandPrefix\fR whenever the variable is unset.  Variables
 can be unset explicitly with the \fBunset\fR command, or
 implicitly when procedures return (all of their local variables
@@ -306,10 +314,12 @@ This command returns an empty string.
 .\" METHOD: remove
 .TP
 \fBtrace remove \fItype name opList commandPrefix\fR
+.
 Where \fItype\fR is either \fBcommand\fR, \fBexecution\fR or \fBvariable\fR.
 .RS
 .TP
 \fBtrace remove command\fI name opList commandPrefix\fR
+.
 If there is a trace set on command \fIname\fR with the operations and
 command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is
 removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns
@@ -317,6 +327,7 @@ an empty string.   If \fIname\fR does not exist, the command will throw
 an error.
 .TP
 \fBtrace remove execution\fI name opList commandPrefix\fR
+.
 If there is a trace set on command \fIname\fR with the operations and
 command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is
 removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns
@@ -324,6 +335,7 @@ an empty string.   If \fIname\fR does not exist, the command will throw
 an error.
 .TP
 \fBtrace remove variable\fI name opList commandPrefix\fR
+.
 If there is a trace set on variable \fIname\fR with the operations and
 command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is
 removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns
@@ -332,10 +344,12 @@ an empty string.
 .\" METHOD: info
 .TP
 \fBtrace info \fItype name\fR
+.
 Where \fItype\fR is either \fBcommand\fR, \fBexecution\fR or \fBvariable\fR.
 .RS
 .TP
 \fBtrace info command\fI name\fR
+.
 Returns a list containing one element for each trace currently set on
 command \fIname\fR. Each element of the list is itself a list
 containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR
@@ -344,6 +358,7 @@ then the result of the command will be an empty string.  If \fIname\fR
 does not exist, the command will throw an error.
 .TP
 \fBtrace info execution\fI name\fR
+.
 Returns a list containing one element for each trace currently set on
 command \fIname\fR. Each element of the list is itself a list
 containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR
@@ -352,6 +367,7 @@ then the result of the command will be an empty string.  If \fIname\fR
 does not exist, the command will throw an error.
 .TP
 \fBtrace info variable\fI name\fR
+.
 Returns a list containing one element for each trace currently set on
 variable \fIname\fR.  Each element of the list is itself a list
 containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR

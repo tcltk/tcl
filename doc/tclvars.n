@@ -297,71 +297,48 @@ retrieve any relevant information.  In addition, extensions
 and applications may add additional values to the array.  The
 predefined elements are:
 .RS
-.TP
-\fBbyteOrder\fR
-.
+.IP \fBbyteOrder\fR
 The native byte order of this machine: either \fBlittleEndian\fR or
 \fBbigEndian\fR.
-.TP
-\fBdebug\fR
-.
+.IP \fBdebug\fR
 If this variable exists, then the interpreter was compiled with and linked
 to a debug-enabled C run-time.  This variable will only exist on Windows,
 so extension writers can specify which package to load depending on the
 C run-time library that is in use.  This is not an indication that this core
 contains symbols.
-.TP
-\fBengine\fR
-.
+.IP \fBengine\fR
 The name of the Tcl language implementation.  When the interpreter is first
 created, this is always set to the string \fBTcl\fR.
-.TP
-\fBmachine\fR
-.
+.IP \fBmachine\fR
 The instruction set executed by this machine, such as
 \fBintel\fR, \fBPPC\fR, \fB68k\fR, or \fBsun4m\fR.  On UNIX machines, this
 is the value returned by \fBuname -m\fR.
-.TP
-\fBos\fR
-.
+.IP \fBos\fR
 The name of the operating system running on this machine,
 such as \fBWindows NT\fR or \fBSunOS\fR.
 On UNIX machines, this is the value returned by \fBuname -s\fR.
-.TP
-\fBosVersion\fR
-.
+.IP \fBosVersion\fR
 The version number for the operating system running on this machine.
 On UNIX machines, this is the value returned by \fBuname -r\fR.
-.TP
-\fBpathSeparator\fR
+.IP \fBpathSeparator\fR
 '\" Defined by TIP #315
 The character that should be used to \fBsplit\fR PATH-like environment
 variables into their corresponding list of directory names.
-.TP
-\fBplatform\fR
-.
+.IP \fBplatform\fR
 Either \fBwindows\fR, or \fBunix\fR.  This identifies the
 general operating environment of the machine.
-.TP
-\fBpointerSize\fR
-.
+.IP \fBpointerSize\fR
 This gives the size of the native-machine pointer in bytes (strictly, it
 is same as the result of evaluating \fIsizeof(void*)\fR in C.)
-.TP
-\fBthreaded\fR
-.
+.IP \fBthreaded\fR
 If this variable exists, then the interpreter
 was compiled with threads enabled.
-.TP
-\fBuser\fR
-.
+.IP \fBuser\fR
 This identifies the
 current user based on the login information available on the platform.
 This value comes from the getuid() and getpwuid() system calls on Unix,
 and the value from the GetUserName() system call on Windows.
-.TP
-\fBwordSize\fR
-.
+.IP \fBwordSize\fR
 This gives the size of the native-machine word in bytes (strictly, it
 is same as the result of evaluating \fIsizeof(long)\fR in C.)
 .RE
@@ -383,6 +360,7 @@ tracking down suspected problems with the Tcl compiler.
 .RS
 This variable and functionality only exist if
 \fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
+.\" tcl::unsupported::disassemble always works, but we don't document it
 .RE
 .\" VARIABLE: tcl_traceExec
 .TP
@@ -423,6 +401,7 @@ selecting a word by double-clicking in text in Tk.  It is platform
 dependent.  On Windows, it defaults to \fB\eS\fR, meaning anything
 but a Unicode space character.  Otherwise it defaults to \fB\ew\fR,
 which is any Unicode word character (number, letter, or underscore).
+.\" VARIABLE: tcl_nonwordchars
 .TP
 \fBtcl_nonwordchars\fR
 .

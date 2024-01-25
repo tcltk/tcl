@@ -114,6 +114,7 @@ variable within an array variable, and may be empty.
 \fIname\fR may be empty.  Substitutions are performed on \fIindex\fR.
 .TP 15
 \fB${\fIname\fB}\fR
+.
 \fIname\fR may be empty.
 .TP 15
 \fB${\fIname(index)\fB}\fR
@@ -135,24 +136,31 @@ are replaced as described:
 .RS
 .TP 7
 \e\fBa\fR
+.
 Audible alert (bell) (U+7).
 .TP 7
 \e\fBb\fR
+.
 Backspace (U+8).
 .TP 7
 \e\fBf\fR
+.
 Form feed (U+C).
 .TP 7
 \e\fBn\fR
+.
 Newline (U+A).
 .TP 7
 \e\fBr\fR
+.
 Carriage-return (U+D).
 .TP 7
 \e\fBt\fR
+.
 Tab (U+9).
 .TP 7
 \e\fBv\fR
+.
 Vertical tab (U+B).
 .TP 7
 \e\fB<newline>\fIwhiteSpace\fR
@@ -164,6 +172,7 @@ within braced words, and if the resulting space may subsequently be treated as
 a word delimiter.
 .TP 7
 \e\e
+.
 Backslash
 .PQ \e "" .
 .TP 7

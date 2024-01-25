@@ -51,37 +51,23 @@ have been in gzip format. If \fB\-headerVar\fR is given, store a dictionary
 describing the contents of the gzip header in the variable called
 \fIvarName\fR. The keys of the dictionary that may be present are:
 .RS
-.TP
-\fBcomment\fR
-.
+.IP \fBcomment\fR
 The comment field from the header, if present.
-.TP
-\fBcrc\fR
-.
+.IP \fBcrc\fR
 A boolean value describing whether a CRC of the header is computed.
-.TP
-\fBfilename\fR
-.
+.IP \fBfilename\fR
 The filename field from the header, if present.
-.TP
-\fBos\fR
-.
+.IP \fBos\fR
 The operating system type code field from the header (if not the
 QW unknown
 value). See RFC 1952 for the meaning of these codes.
-.TP
-\fBsize\fR
-.
+.IP \fBsize\fR
 The size of the uncompressed data.
-.TP
-\fBtime\fR
-.
+.IP \fBtime\fR
 The time field from the header if non-zero, expected to be time that the file
 named by the \fBfilename\fR field was modified. Suitable for use with
 \fBclock format\fR.
-.TP
-\fBtype\fR
-.
+.IP \fBtype\fR
 The type of the uncompressed data (\fBbinary\fR or \fBtext\fR) if known.
 .RE
 .\" METHOD: gzip
@@ -94,33 +80,21 @@ If \fB\-level\fR is given, \fIlevel\fR gives the compression level to use
 is given, \fIdict\fR is a dictionary containing values used for the gzip
 header. The following keys may be defined:
 .RS
-.TP
-\fBcomment\fR
-.
+.IP \fBcomment\fR
 Add the given comment to the header of the gzip-format data.
-.TP
-\fBcrc\fR
-.
+.IP \fBcrc\fR
 A boolean saying whether to compute a CRC of the header. Note that if the data
 is to be interchanged with the \fBgzip\fR program, a header CRC should
 \fInot\fR be computed.
-.TP
-\fBfilename\fR
-.
+.IP \fBfilename\fR
 The name of the file that the data to be compressed came from.
-.TP
-\fBos\fR
-.
+.IP \fBos\fR
 The operating system type code, which should be one of the values described in
 RFC 1952.
-.TP
-\fBtime\fR
-.
+.IP \fBtime\fR
 The time that the file named in the \fBfilename\fR key was last modified. This
 will be in the same as is returned by \fBclock seconds\fR or \fBfile mtime\fR.
-.TP
-\fBtype\fR
-.
+.IP \fBtype\fR
 The type of the data being compressed, being \fBbinary\fR or \fBtext\fR.
 .RE
 .\" METHOD: inflate
@@ -141,34 +115,22 @@ The transformation can be removed again with \fBchan pop\fR.
 The \fImode\fR argument determines what type of transformation
 is pushed; the following are supported:
 .RS
-.TP
-\fBcompress\fR
-.
+.IP \fBcompress\fR
 The transformation will be a compressing transformation that produces
 zlib-format data on \fIchannel\fR, which must be writable.
-.TP
-\fBdecompress\fR
-.
+.IP \fBdecompress\fR
 The transformation will be a decompressing transformation that reads
 zlib-format data from \fIchannel\fR, which must be readable.
-.TP
-\fBdeflate\fR
-.
+.IP \fBdeflate\fR
 The transformation will be a compressing transformation that produces raw
 compressed data on \fIchannel\fR, which must be writable.
-.TP
-\fBgunzip\fR
-.
+.IP \fBgunzip\fR
 The transformation will be a decompressing transformation that reads
 gzip-format data from \fIchannel\fR, which must be readable.
-.TP
-\fBgzip\fR
-.
+.IP \fBgzip\fR
 The transformation will be a compressing transformation that produces
 gzip-format data on \fIchannel\fR, which must be writable.
-.TP
-\fBinflate\fR
-.
+.IP \fBinflate\fR
 The transformation will be a decompressing transformation that reads raw
 compressed data from \fIchannel\fR, which must be readable.
 .PP
@@ -176,6 +138,7 @@ The following options may be set when creating a transformation via
 the
 .QW "\fIoptions ...\fR"
 to the \fBzlib push\fR command:
+.\" OPTION: -dictionary
 .TP
 \fB\-dictionary\fI binData\fR
 .VS "TIP 400"
@@ -187,16 +150,19 @@ with the most commonly used strings preferably put towards the end of the
 dictionary. Tcl provides no mechanism for choosing a good such dictionary for
 a particular data sequence.
 .VE
+.\" OPTION: -header
 .TP
 \fB\-header\fI dictionary\fR
 .
 Passes a description of the gzip header to create, in the same format that
 \fBzlib gzip\fR understands.
+.\" OPTION: -level
 .TP
 \fB\-level\fI compressionLevel\fR
 .
 How hard to compress the data. Must be an integer from 0 (uncompressed) to 9
 (maximally compressed).
+.\" OPTION: -limit
 .TP
 \fB\-limit\fI readaheadLimit\fR
 .
@@ -216,6 +182,7 @@ to further readers.
 Both compressing and decompressing channel transformations add extra
 configuration options that may be accessed through \fBchan configure\fR. The
 options are:
+.\" OPTION: -checksum
 .TP
 \fB\-checksum\fI checksum\fR
 .
@@ -223,6 +190,7 @@ This read-only option gets the current checksum for the uncompressed data that
 the compression engine has seen so far. It is valid for both compressing and
 decompressing transforms, but not for the raw inflate and deflate formats. The
 compression algorithm depends on what format is being produced or consumed.
+.\" OPTION: -dictionary
 .TP
 \fB\-dictionary\fI binData\fR
 .VS "TIP 400"
@@ -234,6 +202,7 @@ the transformation is stacked. Note that this cannot be used to get the
 current active compression dictionary mid-stream, as that information is not
 exposed by the underlying library.
 .VE
+.\" OPTION: -flush
 .TP
 \fB\-flush\fI type\fR
 .
@@ -243,12 +212,14 @@ underlying channel. It is only valid for compressing transformations. The
 expensive flush respectively. Flushing degrades the compression ratio, but
 makes it easier for a decompressor to recover more of the file in the case of
 data corruption.
+.\" OPTION: -header
 .TP
 \fB\-header\fI dictionary\fR
 .
 This read-only option, only valid for decompressing transforms that are
 processing gzip-format data, returns the dictionary describing the header read
 off the data stream.
+.\" OPTION: -limit
 .TP
 \fB\-limit\fI readaheadLimit\fR
 .
@@ -406,12 +377,14 @@ buffers while applying the transformation. The following \fIoption\fRs are
 supported (or an unambiguous prefix of them), which are used to modify the
 way in which the transformation is applied:
 .RS
+.\" OPTION: -dictionary
 .TP
 \fB\-dictionary\fI binData\fR
 .VS "TIP 400"
 Sets the compression dictionary to use when working with compressing or
 decompressing the data to be \fIbinData\fR.
 .VE
+.\" OPTION: -finalize
 .TP
 \fB\-finalize\fR
 .
@@ -425,6 +398,7 @@ of the stream with the \fBget\fR subcommand.
 This option is mutually exclusive with the \fB\-flush\fR and \fB\-fullflush\fR
 options.
 .RE
+.\" OPTION: -flush
 .TP
 \fB\-flush\fR
 .
@@ -436,6 +410,7 @@ compressed so far, at some performance penalty.
 This option is mutually exclusive with the \fB\-finalize\fR and
 \fB\-fullflush\fR options.
 .RE
+.\" OPTION: -fullflush
 .TP
 \fB\-fullflush\fR
 .
