@@ -41,8 +41,10 @@ entry for the command that creates each type of channels for the options
 that that specific type of channel supports. For example, see the manual
 entry for the \fBsocket\fR command for additional options for sockets, and
 the \fBopen\fR command for additional options for serial devices.
+.\" OPTION: -blocking
 .TP
 \fB\-blocking\fI boolean\fR
+.
 The \fB\-blocking\fR option determines whether I/O operations on the
 channel can cause the process to block indefinitely.
 The value of the option must be a proper boolean value.
@@ -54,6 +56,7 @@ see the documentation for those commands for details.
 For nonblocking mode to work correctly, the application must be
 using the Tcl event loop (e.g. by calling \fBTcl_DoOneEvent\fR or
 invoking the \fBvwait\fR command).
+.\" OPTION: -buffering
 .TP
 \fB\-buffering\fI newValue\fR
 .
@@ -67,6 +70,7 @@ automatically after every output operation.  The default is for
 connect to terminal-like devices; for these channels the initial setting
 is \fBline\fR.  Additionally, \fBstdin\fR and \fBstdout\fR are
 initially set to \fBline\fR, and \fBstderr\fR is set to \fBnone\fR.
+.\" OPTION: -buffersize
 .TP
 \fB\-buffersize\fI newSize\fR
 .
@@ -74,6 +78,7 @@ initially set to \fBline\fR, and \fBstderr\fR is set to \fBnone\fR.
 buffers, in bytes, subsequently allocated for this channel to store input
 or output. \fINewvalue\fR must be between one and one million, allowing
 buffers of one to one million bytes in size.
+.\" OPTION: -encoding
 .TP
 \fB\-encoding\fI name\fR
 .
@@ -100,6 +105,7 @@ The default encoding for newly opened channels is the same platform- and
 locale-dependent system encoding used for interfacing with the operating
 system, as returned by \fBencoding system\fR.
 .RE
+.\" OPTION: -eofchar
 .TP
 \fB\-eofchar\fI char\fR
 .
@@ -113,6 +119,7 @@ The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7F;
 attempting to set \fB\-eofchar\fR to a value outside of this range will
 generate an error.
 .VS "TCL8.7 TIP656"
+.\" OPTION: -profile
 .TP
 \fB\-profile\fI profile\fR
 .
@@ -122,6 +129,7 @@ rules of that profile. Any failures will result in a channel error. See
 \fBPROFILES\fR in the \fBencoding(n)\fR documentation for details about encoding
 profiles.
 .VE "TCL8.7 TIP656"
+.\" OPTION: -translation
 .TP
 \fB\-translation\fI mode\fR
 .TP
@@ -150,9 +158,7 @@ you can specify a single value that will apply to both reading and
 writing.  When querying the translation mode of a read-write channel, a
 two-element list will always be returned.  The following values are
 currently supported:
-.TP
-\fBauto\fR
-.
+.IP \fBauto\fR
 As the input translation mode, \fBauto\fR treats any of newline
 (\fBlf\fR), carriage return (\fBcr\fR), or carriage return followed by a
 newline (\fBcrlf\fR) as the end of line representation.  The end of line
@@ -162,9 +168,7 @@ chooses a platform specific representation; for sockets on all platforms
 Tcl chooses \fBcrlf\fR, for all Unix flavors, it chooses \fBlf\fR, and
 for the various flavors of Windows it chooses \fBcrlf\fR.  The default
 setting for \fB\-translation\fR is \fBauto\fR for both input and output.
-.TP
-\fBbinary\fR
-.
+.IP \fBbinary\fR
 No end-of-line translations are performed.  This is nearly identical to
 \fBlf\fR mode, except that in addition \fBbinary\fR mode also sets the
 end-of-file character to the empty string (which disables it) and sets the
@@ -177,17 +181,13 @@ translator this value \fBis\fR identical to \fBlf\fR and is therefore
 reported as such when queried. Even if \fBbinary\fR was used to set
 the translation.
 .RE
-.TP
-\fBcr\fR
-.
+.IP \fBcr\fR
 The end of a line in the underlying file or device is represented by a
 single carriage return character.  As the input translation mode,
 \fBcr\fR mode converts carriage returns to newline characters.  As the
 output translation mode, \fBcr\fR mode translates newline characters to
 carriage returns.
-.TP
-\fBcrlf\fR
-.
+.IP \fBcrlf\fR
 The end of a line in the underlying file or device is represented by a
 carriage return character followed by a linefeed character.  As the input
 translation mode, \fBcrlf\fR mode converts carriage-return-linefeed
@@ -195,9 +195,7 @@ sequences to newline characters.  As the output translation mode,
 \fBcrlf\fR mode translates newline characters to carriage-return-linefeed
 sequences.  This mode is typically used on Windows platforms and for
 network connections.
-.TP
-\fBlf\fR
-.
+.IP \fBlf\fR
 The end of a line in the underlying file or device is represented by a
 single newline (linefeed) character.  In this mode no translations occur
 during either input or output.  This mode is typically used on UNIX
@@ -249,7 +247,7 @@ Read a PPM-format image from a file:
 .CS
 # Open the file and put it into Unix ASCII mode
 set f [open teapot.ppm]
-\fBfconfigure\fR $f \-encoding ascii \-translation lf
+\fBfconfigure\fR $f -encoding ascii -translation lf
 
 # Get the header
 if {[gets $f] ne "P6"} {
@@ -271,7 +269,7 @@ lassign $words xSize ySize depth
 
 # Now switch to binary mode to pull in the data,
 # one byte per channel (red,green,blue) per pixel.
-\fBfconfigure\fR $f \-translation binary
+\fBfconfigure\fR $f -translation binary
 set numDataBytes [expr {3 * $xSize * $ySize}]
 set data [read $f $numDataBytes]
 
@@ -282,8 +280,8 @@ close(n), encoding(n), flush(n), gets(n), open(n), puts(n), read(n), socket(n),
 Tcl_StandardChannels(3)
 .SH KEYWORDS
 blocking, buffering, carriage return, end of line, encoding, flushing, linemode,
-newline, nonblocking, platform, profile, translation, encoding, filter, byte array,
-binary
+newline, nonblocking, platform, profile, translation, encoding, filter,
+byte array, binary
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

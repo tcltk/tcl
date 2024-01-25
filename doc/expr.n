@@ -54,15 +54,13 @@ ignored.  Each operand is interpreted as a numeric value if at all possible.
 .PP
 Each operand has one of the following forms:
 .RS
-.PP
 .TP
 A \fBnumeric value\fR
 .PP
 .RS
-.
 Either integer or floating-point.  The first two characters of an integer may
 also be \fB0d\fR for decimal, \fB0b\fR for binary, \fB0o\fR for octal or
-\fB0x\fR for hexadicimal.
+\fB0x\fR for hexadecimal.
 .PP
 A floating-point number may be take any of several
 common decimal formats, and may use the decimal point \fB.\fR,
@@ -105,6 +103,7 @@ Backslash, variable, and command substitution are performed according to the
 rules for \fBTcl\fR.
 .TP
 A string enclosed in \fBbraces\fR.
+.
 The operand is treated as a braced value according to the rule for braces in
 \fBTcl\fR.
 .TP
@@ -113,8 +112,10 @@ A Tcl command enclosed in \fBbrackets\fR
 Command substitution is performed as according to the command substitution rule
 for \fBTcl\fR.
 .TP
-A mathematical function such as \fBsin($x)\fR, whose arguments have any of the above
-forms for operands.  See \fBMATH FUNCTIONS\fR below for
+A function call.
+.
+This is mathematical function such as \fBsin($x)\fR, whose arguments have any of
+the above forms for operands.  See \fBMATH FUNCTIONS\fR below for
 a discussion of how mathematical functions are handled.
 .RE
 .PP
@@ -140,8 +141,8 @@ produces the value on the right side.
 For operators having both a numeric mode and a string mode, the numeric mode is
 chosen when all operands have a numeric interpretation.  The integer
 interpretation of an operand is preferred over the floating-point
-interpretation.  To ensure string operations on arbitrary values it is generally a
-good idea to use \fBeq\fR, \fBne\fR, or the \fBstring\fR command instead of
+interpretation.  To ensure string operations on arbitrary values it is generally
+a good idea to use \fBeq\fR, \fBne\fR, or the \fBstring\fR command instead of
 more versatile operators such as \fB==\fR.
 .PP
 Unless otherwise specified, operators accept non-numeric operands.  The value
@@ -201,7 +202,7 @@ comparison operators below, which have the same precedence.
 Boolean string comparisons: less than, greater than, less than or equal, and
 greater than or equal. These always compare values using their UNICODE strings
 (also see \fBstring compare\fR), unlike with the numeric-preferring
-comparisons abov, which have the same precedence.
+comparisons above, which have the same precedence.
 .VE "8.7, TIP461"
 .TP 20
 \fB==\0\0!=\fR
@@ -289,8 +290,8 @@ For more details on the results
 produced by each operator, see the documentation for C.
 .SS "MATH FUNCTIONS"
 .PP
-A mathematical function such as \fBsin($x)\fR is replaced with a call to an ordinary
-Tcl command in the \fBtcl::mathfunc\fR namespace.  The evaluation
+A mathematical function such as \fBsin($x)\fR is replaced with a call to an
+ordinary Tcl command in the \fBtcl::mathfunc\fR namespace.  The evaluation
 of an expression such as
 .PP
 .CS
@@ -310,12 +311,13 @@ tcl::mathfunc::sin [\fBexpr\fR {$x+$y}]
 .CE
 .PP
 \fBtcl::mathfunc::sin\fR is resolved as described in
-\fBNAMESPACE RESOLUTION\fR in the \fBnamespace\fR(n) documentation.   Given the
+\fBNAMESPACE RESOLUTION\fR in the \fBnamespace\fR(n) documentation.  Given the
 default value of \fBnamespace path\fR, \fB[namespace
 current]::tcl::mathfunc::sin\fR or \fB::tcl::mathfunc::sin\fR are the typical
 resolutions.
 .PP
-As in C, a mathematical function may accept multiple arguments separated by commas. Thus,
+As in C, a mathematical function may accept multiple arguments separated by
+commas. Thus,
 .PP
 .CS
 \fBexpr\fR {hypot($x,$y)}
@@ -386,13 +388,12 @@ the expression, resulting in better speed and smaller storage requirements.
 This also avoids issues that can arise if Tcl is allowed to perform
 substitution on the value before \fBexpr\fR is called.
 .PP
-In the following example, the value of the expression is 11 because the Tcl parser first
-substitutes \fB$b\fR and \fBexpr\fR then substitutes \fB$a\fR as part
-of evaluating the expression
+In the following example, the value of the expression is 11 because the Tcl
+parser first substitutes \fB$b\fR and \fBexpr\fR then substitutes \fB$a\fR as
+part of evaluating the expression
 .QW "$a + 2*4" .
-Enclosing the
-expression in braces would result in a syntax error as \fB$b\fR does
-not evaluate to a numeric value.
+Enclosing the expression in braces would result in a syntax error as \fB$b\fR
+does not evaluate to a numeric value.
 .PP
 .CS
 set a 3

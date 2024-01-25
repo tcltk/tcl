@@ -287,8 +287,7 @@ For the \fIstring\fR \fB::foo::bar::x\fR,
 this command returns \fB::foo::bar\fR,
 and for \fB::\fR it returns an empty string.
 This command is the complement of the \fBnamespace tail\fR command.
-Note that it does not check whether the
-namespace names are, in fact,
+It does not check whether the namespace names are, in fact,
 the names of currently defined namespaces.
 .\" METHOD: tail
 .TP
@@ -546,14 +545,14 @@ about name resolution.
 For example, the command:
 .PP
 .CS
-\fBnamespace eval\fR Foo::Debug {\fBnamespace which\fR \-variable traceLevel}
+\fBnamespace eval\fR Foo::Debug {\fBnamespace which\fR -variable traceLevel}
 .CE
 .PP
 returns \fB::traceLevel\fR.
 On the other hand, the command,
 .PP
 .CS
-\fBnamespace eval\fR Foo {\fBnamespace which\fR \-variable traceLevel}
+\fBnamespace eval\fR Foo {\fBnamespace which\fR -variable traceLevel}
 .CE
 .PP
 returns \fB::Foo::traceLevel\fR.
@@ -595,7 +594,7 @@ like BLT are contained in a namespace called \fBBlt\fR.
 Then you might access these commands like this:
 .PP
 .CS
-Blt::graph .g \-background red
+Blt::graph .g -background red
 Blt::table . .g 0,0
 .CE
 .PP
@@ -612,7 +611,7 @@ This adds all exported commands from the \fBBlt\fR namespace
 into the current namespace context, so you can write code like this:
 .PP
 .CS
-graph .g \-background red
+graph .g -background red
 table . .g 0,0
 .CE
 .PP
@@ -641,7 +640,7 @@ that have appeared in a namespace.  In that case, you can use the
 \fB\-force\fR option, and existing commands will be silently overwritten:
 .PP
 .CS
-\fBnamespace import\fR \-force Blt::graph Blt::table
+\fBnamespace import\fR -force Blt::graph Blt::table
 .CE
 .PP
 If for some reason, you want to stop using the imported commands,
@@ -793,6 +792,7 @@ the \fBuplevel\fR or \fBinfo level\fR commands.
 The following options, supported by the \fBnamespace ensemble
 create\fR and \fBnamespace ensemble configure\fR commands, control how
 an ensemble command behaves:
+.\" OPTION: -map
 .TP
 \fB\-map\fR
 .
@@ -808,12 +808,15 @@ will be from the local name of the subcommand to its fully-qualified
 name.  Note that when this option is non-empty and the
 \fB\-subcommands\fR option is empty, the ensemble subcommand names
 will be exactly those words that have mappings in the dictionary.
+.\" OPTION: -parameters
 .TP
 \fB\-parameters\fR
+.
 This option gives a list of named arguments (the names being used during
 generation of error messages) that are passed by the caller of the ensemble
 between the name of the ensemble and the subcommand argument. By default, it
 is the empty list.
+.\" OPTION: -prefixes
 .TP
 \fB\-prefixes\fR
 .
@@ -821,6 +824,7 @@ This option (which is enabled by default) controls whether the
 ensemble command recognizes unambiguous prefixes of its subcommands.
 When turned off, the ensemble command requires exact matching of
 subcommand names.
+.\" OPTION: -subcommands
 .TP
 \fB\-subcommands\fR
 .
@@ -832,6 +836,7 @@ empty, the subcommands of the namespace will either be the keys of the
 dictionary listed in the \fB\-map\fR option or the exported commands
 of the linked namespace at the time of the invocation of the ensemble
 command.
+.\" OPTION: -unknown
 .TP
 \fB\-unknown\fR
 .
@@ -846,6 +851,7 @@ unable to determine how to implement a particular subcommand.  See
 .PP
 The following extra option is allowed by \fBnamespace ensemble
 create\fR:
+.\" OPTION: -command
 .TP
 \fB\-command\fR
 .
@@ -857,6 +863,7 @@ command is invoked.
 .PP
 The following extra option is allowed by \fBnamespace ensemble
 configure\fR:
+.\" OPTION: -namespace
 .TP
 \fB\-namespace\fR
 .

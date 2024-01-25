@@ -96,29 +96,39 @@ Different versions of a package may be loaded in different
 interpreters.
 .SH OPTIONS
 The optional switches are:
+.\" OPTION: -direct
 .TP 15
 \fB\-direct\fR
+.
 The generated index will implement direct loading of the package
 upon \fBpackage require\fR.  This is the default.
+.\" OPTION: -lazy
 .TP 15
 \fB\-lazy\fR
+.
 The generated index will manage to delay loading the package until the
 use of one of the commands provided by the package, instead of loading
 it immediately upon \fBpackage require\fR.  This is not compatible with
 the use of \fIauto_reset\fR, and therefore its use is discouraged.
+.\" OPTION: -load
 .TP 15
 \fB\-load \fIpkgPat\fR
+.
 The index process will preload any packages that exist in the
 current interpreter and match \fIpkgPat\fR into the child interpreter used to
 generate the index.  The pattern match uses string match rules, but without
 making case distinctions.
 See \fBCOMPLEX CASES\fR below.
+.\" OPTION: -verbose
 .TP 15
 \fB\-verbose\fR
+.
 Generate output during the indexing process.  Output is via
 the \fBtclLog\fR procedure, which by default prints to stderr.
+.\" OPTION: --
 .TP 15
 \fB\-\-\fR
+.
 End of the flags, in case \fIdir\fR begins with a dash.
 .SH "PACKAGES AND THE AUTO-LOADER"
 .PP

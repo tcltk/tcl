@@ -45,6 +45,7 @@ to be the given value.
 .RS
 .PP
 Supported options are:
+.\" OPTION: -domainfile
 .TP
 \fB\-domainfile \fIfilename\fR
 .
@@ -54,6 +55,7 @@ list of top-level domains (e.g., \fB.com\fR or \fB.co.jp\fR). Such domains
 domains is both security-sensitive and \fInot\fR constant and should be
 periodically refetched. Cookie jars maintain their own cache of the domain
 list.
+.\" OPTION: -domainlist
 .TP
 \fB\-domainlist \fIurl\fR
 .
@@ -62,33 +64,39 @@ A URL to fetch the list of top-level domains (e.g., \fB.com\fR or
 them. Note that the list of such domains is both security-sensitive and
 \fInot\fR constant and should be periodically refetched. Cookie jars maintain
 their own cache of the domain list.
+.\" OPTION: -domainrefresh
 .TP
 \fB\-domainrefresh \fIintervalMilliseconds\fR
 .
-The number of milliseconds between checks of the \fI\-domainlist\fR for new
+The number of milliseconds between checks of the \fB\-domainlist\fR for new
 domains.
+.\" OPTION: -loglevel
 .TP
 \fB\-loglevel \fIlevel\fR
 .
 The logging level of this package. The logging level must be (in order of
 decreasing verbosity) one of \fBdebug\fR, \fBinfo\fR, \fBwarn\fR, or
 \fBerror\fR.
+.\" OPTION: -offline
 .TP
 \fB\-offline \fIflag\fR
 .
-Allows the cookie managment engine to be placed into offline mode. In offline
+Allows the cookie management engine to be placed into offline mode. In offline
 mode, the list of domains is read immediately from the file configured in the
 \fB\-domainfile\fR option, and the \fB\-domainlist\fR option is not used; it
 also makes the \fB\-domainrefresh\fR option be effectively ignored.
+.\" OPTION: -purgeold
 .TP
 \fB\-purgeold \fIintervalMilliseconds\fR
 .
 The number of milliseconds between checks of the database for expired
 cookies; expired cookies are deleted.
+.\" OPTION: -retain
 .TP
 \fB\-retain \fIcookieCount\fR
 .
 The maximum number of cookies to retain in the database.
+.\" OPTION: -vacuumtrigger
 .TP
 \fB\-vacuumtrigger \fIdeletionCount\fR
 .
@@ -104,8 +112,8 @@ creation methods (\fBcreate\fR or \fBnew\fR).
 .
 If a \fIfilename\fR argument is provided, it is the name of a file containing
 an SQLite database that will contain the persistent cookies maintained by the
-cookie jar; the database will be created if the file does not already
-exist. If \fIfilename\fR is not supplied, the database will be held entirely within
+cookie jar; the database will be created if the file does not already exist.
+If \fIfilename\fR is not supplied, the database will be held entirely within
 memory, which effectively forces all cookies within it to be session cookies.
 .SS "INSTANCE METHODS"
 .PP
@@ -143,17 +151,11 @@ after the built-in security checks are done, and should return a boolean
 value; if the value is false, the operation is rejected and the database is
 not modified. The supported \fIoperation\fRs are:
 .RS
-.TP
-\fBdelete\fR
-.
+.IP \fBdelete\fR
 The \fIdomain\fR is seeking to delete a cookie.
-.TP
-\fBsession\fR
-.
+.IP \fBsession\fR
 The \fIdomain\fR is seeking to create or update a session cookie.
-.TP
-\fBset\fR
-.
+.IP \fBset\fR
 The \fIdomain\fR is seeking to create or update a persistent cookie (with a
 defined lifetime).
 .PP

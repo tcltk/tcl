@@ -57,16 +57,16 @@ processes, the status is a list with the following format:
 where:
 .RS
 .TP
-\fIcode\fR\0
+\fIcode\fR
 .
 is a standard Tcl return code, i.e., \fB0\fR for TCL_OK and \fB1\fR
 for TCL_ERROR,
 .TP
-\fImsg\fR\0
+\fImsg\fR
 .
 is the human-readable error message,
 .TP
-\fIerrorCode\fR\0
+\fIerrorCode\fR
 .
 uses the same format as the \fBerrorCode\fR global variable
 .PP
@@ -76,14 +76,16 @@ hood this command calls \fBTcl_WaitPid\fR with the \fBWNOHANG\fR flag set for
 non-blocking behavior, unless the \fB\-wait\fR switch is set (see below).
 .PP
 Additionally, \fB::tcl::process status\fR accepts the following switches:
+.\" OPTION: -wait
 .TP
-\fB\-wait\fR\0
+\fB\-wait\fR
 .
 By default the command returns immediately (the underlying \fBTcl_WaitPid\fR is
 called with the \fBWNOHANG\fR flag set) unless this switch is set. If \fIpids\fR
 is specified as a list of PIDs then the command waits until the status of the
 matching subprocesses are available. If \fIpids\fR was not specified, this
 command will wait for all known subprocesses.
+.\" OPTION: --
 .TP
 \fB\-\|\-\fR
 .

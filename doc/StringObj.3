@@ -116,7 +116,8 @@ of a value's string representation.
 May be (Tcl_Size *)NULL when not used. If it points to a variable which
 type is not \fBTcl_Size\fR, a compiler warning will be generated.
 If your extensions is compiled with -DTCL_8_API, this function will
-panic for strings with more than INT_MAX bytes/characters, otherwise expect it to crash.
+panic for strings with more than INT_MAX bytes/characters, otherwise
+expect it to crash.
 .AP "const char" *string in
 Null-terminated string value to append to \fIobjPtr\fR.
 .AP Tcl_Size limit in
