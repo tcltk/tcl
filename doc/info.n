@@ -176,60 +176,37 @@ is seen by \fBinfo frame\fR invoked within
 .QW x .
 .PP
 The dictionary may contain the following keys:
-.TP
-\fBtype\fR
-.
+.IP \fBtype\fR
 Always present.  Possible values are \fBsource\fR, \fBproc\fR,
 \fBeval\fR, and \fBprecompiled\fR.
 .RS
-.TP
-\fBsource\fR\0\0\0\0\0\0\0\0
-.
-A script loaded via the \fBsource\fR
-command.
-.TP
-\fBproc\fR\0\0\0\0\0\0\0\0
-.
+.IP \fBsource\fR
+A script loaded via the \fBsource\fR command.
+.IP \fBproc\fR
 The body of a procedure that could not be traced back to a
 line in a particular script.
-.TP
-\fBeval\fR\0\0\0\0\0\0\0\0
-.
+.IP \fBeval\fR
 The body of a script provided to \fBeval\fR or \fBuplevel\fR.
-.TP
-\fBprecompiled\fR\0\0\0\0\0\0\0\0
-.
+.IP \fBprecompiled\fR
 A precompiled script (loadable by the package
 \fBtbcload\fR), and no further information is available.
 .RE
-.TP
-\fBline\fR
-.
+.IP \fBline\fR
 The line number of of the command inside its script.  Not available for
 \fBprecompiled\fR commands.  When the type is \fBsource\fR, the line number is
 relative to the beginning of the file, whereas for the last two types it is
 relative to the start of the script.
-.TP
-\fBfile\fR
-.
+.IP \fBfile\fR
 For type \fBsource\fR, provides the normalized path of the file that contains
 the command.
-.TP
-\fBcmd\fR
-.
+.IP \fBcmd\fR
 The command before substitutions were performed.
-.TP
-\fBproc\fR
-.
+.IP \fBproc\fR
 For type \fBprod\fR, the name of the procedure containing the command.
-.TP
-\fBlambda\fR
-.
+.IP \fBlambda\fR
 For a command in a script evaluated as the body of an unnamed routine via the
 \fBapply\fR command, the definition of that routine.
-.TP
-\fBlevel\fR
-.
+.IP \fBlevel\fR
 For a frame that corresponds to a level, (to be determined).
 .PP
 When a command can be traced to its literal definition in some script, e.g.
@@ -295,7 +272,7 @@ If \fInumber\fR is not given, the level this routine was called from.
 Otherwise returns the complete command active at the given level.  If
 \fInumber\fR is greater than \fB0\fR, it is the desired level.  Otherwise, it
 is \fInumber\fR levels up from the current level.  A complete command is the
-words in the command, with all subsitutions performed, meaning that it is a
+words in the command, with all substitutions performed, meaning that it is a
 list.  See \fBuplevel\fR for more information on levels.
 .\" METHOD: library
 .TP
@@ -488,6 +465,7 @@ This subcommand returns a list of all public (i.e. exported) methods of the
 class called \fIclass\fR. Any of the following \fIoption\fRs may be
 given, controlling exactly which method names are returned:
 .RS
+.\" OPTION: -all
 .TP
 \fB\-all\fR
 .
@@ -498,6 +476,7 @@ and the \fB\-scope\fR flag is not given,
 the list of methods will include those
 methods defined not just by the class, but also by the class's superclasses
 and mixins.
+.\" OPTION: -private
 .TP
 \fB\-private\fR
 .
@@ -512,6 +491,7 @@ mixins, if \fB\-all\fR is also given).
 Note that this naming is an unfortunate clash with true private methods; this
 option name is retained for backward compatibility.
 .VE TIP500
+.\" OPTION: -scope
 .TP
 \fB\-scope\fI scope\fR
 .VS TIP500
@@ -520,14 +500,14 @@ Returns a list of all methods on \fIclass\fR that have the given visibility
 \fB\-private\fR options are ignored. The valid values for \fIscope\fR are:
 .RS
 .IP \fBpublic\fR 3
-Only methods with \fIpublic\fR scope (i.e., callable from anywhere by any instance
-of this class) are to be returned.
+Only methods with \fIpublic\fR scope (i.e., callable from anywhere by any
+instance of this class) are to be returned.
 .IP \fBunexported\fR 3
-Only methods with \fIunexported\fR scope (i.e., only callable via \fBmy\fR) are to
-be returned.
+Only methods with \fIunexported\fR scope (i.e., only callable via \fBmy\fR)
+are to be returned.
 .IP \fBprivate\fR 3
-Only methods with \fIprivate\fR scope (i.e., only callable from within this class's
-methods) are to be returned.
+Only methods with \fIprivate\fR scope (i.e., only callable from within this
+class's methods) are to be returned.
 .RE
 .VE TIP500
 .RE
@@ -553,16 +533,19 @@ class named \fIclass\fR.
 This subcommand returns a sorted list of properties defined on the class named
 \fIclass\fR. The \fIoptions\fR define exactly which properties are returned:
 .RS
+.\" OPTION: -all
 .TP
 \fB\-all\fR
 .
 With this option, the properties from the superclasses and mixins of the class
 are also returned.
+.\" OPTION: -readable
 .TP
 \fB\-readable\fR
 .
 This option (the default behavior) asks for the readable properties to be
 returned. Only readable or writable properties are returned, not both.
+.\" OPTION: -writable
 .TP
 \fB\-writable\fR
 .
@@ -709,6 +692,7 @@ This subcommand returns a list of all public (i.e. exported) methods of the
 object called \fIobject\fR. Any of the following \fIoption\fRs may be
 given, controlling exactly which method names are returned:
 .RS
+.\" OPTION: -all
 .TP
 \fB\-all\fR
 .
@@ -719,6 +703,7 @@ and the \fB\-scope\fR flag is not given,
 the list of methods will include those
 methods defined not just by the object, but also by the object's class and
 mixins, plus the superclasses of those classes.
+.\" OPTION: -private
 .TP
 \fB\-private\fR
 .
@@ -733,6 +718,7 @@ the non-exported methods of the object (and classes, if
 Note that this naming is an unfortunate clash with true private methods; this
 option name is retained for backward compatibility.
 .VE TIP500
+.\" OPTION: -scope
 .TP
 \fB\-scope\fI scope\fR
 .VS TIP500
@@ -744,11 +730,11 @@ Returns a list of all methods on \fIobject\fR that have the given visibility
 Only methods with \fIpublic\fR scope (i.e., callable from anywhere) are to be
 returned.
 .IP \fBunexported\fR 3
-Only methods with \fIunexported\fR scope (i.e., only callable via \fBmy\fR) are to
-be returned.
+Only methods with \fIunexported\fR scope (i.e., only callable via \fBmy\fR)
+are to be returned.
 .IP \fBprivate\fR 3
-Only methods with \fIprivate\fR scope (i.e., only callable from within this object's
-instance methods) are to be returned.
+Only methods with \fIprivate\fR scope (i.e., only callable from within this
+object's instance methods) are to be returned.
 .RE
 .VE TIP500
 .RE
@@ -781,16 +767,19 @@ This subcommand returns a sorted list of properties defined on the object
 named \fIobject\fR. The \fIoptions\fR define exactly which properties are
 returned:
 .RS
+.\" OPTION: -all
 .TP
 \fB\-all\fR
 .
 With this option, the properties from the class, superclasses and mixins of
 the object are also returned.
+.\" OPTION: -readable
 .TP
 \fB\-readable\fR
 .
 This option (the default behavior) asks for the readable properties to be
 returned. Only readable or writable properties are returned, not both.
+.\" OPTION: -writable
 .TP
 \fB\-writable\fR
 .
@@ -800,7 +789,7 @@ writable properties are returned, not both.
 .VE "TIP 558"
 .\" METHOD: variables
 .TP
-\fBinfo object variables\fI object\fRR ?\fB\-private\fR?
+\fBinfo object variables\fI object\fR ?\fB\-private\fR?
 .
 This subcommand returns a list of all variables that have been declared for
 the object named \fIobject\fR (i.e. that are automatically present in the

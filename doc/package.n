@@ -208,33 +208,23 @@ Returns 1 if the \fIversion\fR satisfies at least one of the given
 requirements, and 0 otherwise. Each \fIrequirement\fR is allowed to
 have any of the forms:
 .RS
-.TP
-min
-.
+.IP \fImin\fR
 This form is called
 .QW min-bounded .
-.TP
-min-
-.
+.IP \fImin\fB\-\fR
 This form is called
 .QW min-unbound .
-.TP
-min-max
-.
+.IP \fImin\fB\-\fImax\fR
 This form is called
 .QW bounded .
-.RE
-.RS
 .PP
 where
-.QW min
+.QW \fImin\fR
 and
-.QW max
+.QW \fImax\fR
 are valid version numbers. The legacy syntax is
 a special case of the extended syntax, keeping backward
 compatibility. Regarding satisfaction the rules are:
-.RE
-.RS
 .IP [1]
 The \fIversion\fR has to pass at least one of the listed
 \fIrequirement\fRs to be satisfactory.

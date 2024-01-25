@@ -144,53 +144,35 @@ data, but does not actually change the representation.  For some
 types, the \fBregistry\fR command returns the data in a different form to
 make it easier to manipulate.  The following types are recognized by the
 registry command:
-.TP 17
-\fBbinary\fR
-.
+.IP \fBbinary\fR
 The registry value contains arbitrary binary data.  The data is represented
 exactly in Tcl, including any embedded nulls.
-.TP
-\fBnone\fR
-.
+.IP \fBnone\fR
 The registry value contains arbitrary binary data with no defined
 type.  The data is represented exactly in Tcl, including any embedded
 nulls.
-.TP
-\fBsz\fR
-.
+.IP \fBsz\fR
 The registry value contains a null-terminated string.  The data is
 represented in Tcl as a string.
-.TP
-\fBexpand_sz\fR
-.
+.IP \fBexpand_sz\fR
 The registry value contains a null-terminated string that contains
 unexpanded references to environment variables in the normal Windows
 style (for example,
 .QW %PATH% ).
 The data is represented in Tcl as a string.
-.TP
-\fBdword\fR
-.
+.IP \fBdword\fR
 The registry value contains a little-endian 32-bit number.  The data is
 represented in Tcl as a decimal string.
-.TP
-\fBdword_big_endian\fR
-.
+.IP \fBdword_big_endian\fR
 The registry value contains a big-endian 32-bit number.  The data is
 represented in Tcl as a decimal string.
-.TP
-\fBlink\fR
-.
+.IP \fBlink\fR
 The registry value contains a symbolic link.  The data is represented
 exactly in Tcl, including any embedded nulls.
-.TP
-\fBmulti_sz\fR
-.
+.IP \fBmulti_sz\fR
 The registry value contains an array of null-terminated strings.  The
 data is represented in Tcl as a list of strings.
-.TP
-\fBresource_list\fR
-.
+.IP \fBresource_list\fR
 The registry value contains a device-driver resource list.  The data
 is represented exactly in Tcl, including any embedded nulls.
 .PP

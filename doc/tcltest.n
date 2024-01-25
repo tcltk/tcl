@@ -525,6 +525,7 @@ description for regression tests.  If the test case exists to reproduce
 a bug, include the bug ID in the description.
 .PP
 Valid attributes and associated values are:
+.\" OPTION: -constraints
 .TP
 \fB\-constraints \fIkeywordList\fR|\fIexpression\fR
 .
@@ -535,9 +536,12 @@ defined by a call to \fBtestConstraint\fR.  If any of the listed
 constraints is false or does not exist, the test is skipped.  If the
 \fB\-constraints\fR value is an expression, that expression
 is evaluated. If the expression evaluates to true, then the test is run.
+.RS
+.PP
 Note that the expression form of \fB\-constraints\fR may interfere with the
 operation of \fBconfigure \-constraints\fR and
 \fBconfigure \-limitconstraints\fR, and is not recommended.
+.PP
 Appropriate constraints should be added to any tests that should
 not always be run.  That is, conditional evaluation of a test
 should be accomplished by the \fB\-constraints\fR option, not by
@@ -547,6 +551,8 @@ the number skipped may change based on the testing environment.
 The default value is an empty list.
 See \fBTEST CONSTRAINTS\fR below for a list of built-in constraints
 and information on how to add your own constraints.
+.RE
+.\" OPTION: -setup
 .TP
 \fB\-setup \fIscript\fR
 .
@@ -554,6 +560,7 @@ The optional \fB\-setup\fR attribute indicates a \fIscript\fR that will be run
 before the script indicated by the \fB\-body\fR attribute.  If evaluation
 of \fIscript\fR raises an error, the test will fail.  The default value
 is an empty script.
+.\" OPTION: -body
 .TP
 \fB\-body \fIscript\fR
 .
@@ -563,6 +570,7 @@ If evaluation of \fIscript\fR raises an error, the test will fail
 (unless the \fB\-returnCodes\fR option is used to state that an error
 is expected).
 The default value is an empty script.
+.\" OPTION: -cleanup
 .TP
 \fB\-cleanup \fIscript\fR
 .
@@ -570,6 +578,7 @@ The optional \fB\-cleanup\fR attribute indicates a \fIscript\fR that will be
 run after the script indicated by the \fB\-body\fR attribute.
 If evaluation of \fIscript\fR raises an error, the test will fail.
 The default value is an empty script.
+.\" OPTION: -match
 .TP
 \fB\-match \fImode\fR
 .
@@ -578,12 +587,14 @@ The \fB\-match\fR attribute determines how expected answers supplied by
 values for \fImode\fR are \fBregexp\fR, \fBglob\fR, \fBexact\fR, and
 any value registered by a prior call to \fBcustomMatch\fR.  The default
 value is \fBexact\fR.
+.\" OPTION: -result
 .TP
 \fB\-result \fIexpectedValue\fR
 .
 The \fB\-result\fR attribute supplies the \fIexpectedValue\fR against which
 the return value from script will be compared. The default value is
 an empty string.
+.\" OPTION: -output
 .TP
 \fB\-output \fIexpectedValue\fR
 .
@@ -593,6 +604,7 @@ of the script(s) will be compared.  Note that only output printed using
 the global \fBputs\fR command is used for comparison.  If \fB\-output\fR is
 not specified, output sent to \fBstdout\fR and \fBoutputChannel\fR is not
 processed for comparison.
+.\" OPTION: -errorOutput
 .TP
 \fB\-errorOutput \fIexpectedValue\fR
 .
@@ -602,6 +614,7 @@ evaluation of the script(s) will be compared. Note that only output
 printed using the global \fBputs\fR command is used for comparison.  If
 \fB\-errorOutput\fR is not specified, output sent to \fBstderr\fR and
 \fBerrorChannel\fR is not processed for comparison.
+.\" OPTION: -returnCodes
 .TP
 \fB\-returnCodes \fIexpectedCodeList\fR
 .
@@ -613,6 +626,7 @@ return codes known to \fBreturn\fR, in both numeric and symbolic
 form, including extended return codes, are acceptable elements in
 the \fIexpectedCodeList\fR.  Default value is
 .QW "\fBok return\fR" .
+.\" OPTION: -errorCode
 .TP
 \fB\-errorCode \fIexpectedErrorCode\fR
 .
@@ -669,134 +683,82 @@ options.
 .PP
 The following is a list of constraints predefined by the
 \fBtcltest\fR package itself:
-.TP
-\fIsingleTestInterp\fR
-.
+.IP \fIsingleTestInterp\fR
 This test can only be run if all test files are sourced into a single
 interpreter.
-.TP
-\fIunix\fR
-.
+.IP \fIunix\fR
 This test can only be run on any Unix platform.
-.TP
-\fIwin\fR
-.
+.IP \fIwin\fR
 This test can only be run on any Windows platform.
-.TP
-\fInt\fR
-.
+.IP \fInt\fR
 This test can only be run on any Windows NT platform.
-.TP
-\fImac\fR
-.
+.IP \fImac\fR
 This test can only be run on any Mac platform.
-.TP
-\fIunixOrWin\fR
-.
+.IP \fIunixOrWin\fR
 This test can only be run on a Unix or Windows platform.
-.TP
-\fImacOrWin\fR
-.
+.IP \fImacOrWin\fR
 This test can only be run on a Mac or Windows platform.
-.TP
-\fImacOrUnix\fR
-.
+.IP \fImacOrUnix\fR
 This test can only be run on a Mac or Unix platform.
-.TP
-\fItempNotWin\fR
-.
+.IP \fItempNotWin\fR
 This test can not be run on Windows.  This flag is used to temporarily
 disable a test.
-.TP
-\fItempNotMac\fR
-.
+.IP \fItempNotMac\fR
 This test can not be run on a Mac.  This flag is used
 to temporarily disable a test.
-.TP
-\fIunixCrash\fR
-.
+.IP \fIunixCrash\fR
 This test crashes if it is run on Unix.  This flag is used to temporarily
 disable a test.
-.TP
-\fIwinCrash\fR
-.
+.IP \fIwinCrash\fR
 This test crashes if it is run on Windows.  This flag is used to temporarily
 disable a test.
-.TP
-\fImacCrash\fR
-.
+.IP \fImacCrash\fR
 This test crashes if it is run on a Mac.  This flag is used to temporarily
 disable a test.
-.TP
-\fIemptyTest\fR
-.
+.IP \fIemptyTest\fR
 This test is empty, and so not worth running, but it remains as a
 place-holder for a test to be written in the future.  This constraint
 has value false to cause tests to be skipped unless the user specifies
 otherwise.
-.TP
-\fIknownBug\fR
-.
+.IP \fIknownBug\fR
 This test is known to fail and the bug is not yet fixed.  This constraint
 has value false to cause tests to be skipped unless the user specifies
 otherwise.
-.TP
-\fInonPortable\fR
-.
+.IP \fInonPortable\fR
 This test can only be run in some known development environment.
 Some tests are inherently non-portable because they depend on things
 like word length, file system configuration, window manager, etc.
 This constraint has value false to cause tests to be skipped unless
 the user specifies otherwise.
-.TP
-\fIuserInteraction\fR
-.
+.IP \fIuserInteraction\fR
 This test requires interaction from the user.  This constraint has
 value false to causes tests to be skipped unless the user specifies
 otherwise.
-.TP
-\fIinteractive\fR
-.
+.IP \fIinteractive\fR
 This test can only be run in if the interpreter is in interactive mode
-(when the global tcl_interactive variable is set to 1).
-.TP
-\fInonBlockFiles\fR
-.
+(when the global \fB::tcl_interactive\fR variable is set to 1).
+.IP \fInonBlockFiles\fR
 This test can only be run if platform supports setting files into
 nonblocking mode.
-.TP
-\fIasyncPipeClose\fR
-.
+.IP \fIasyncPipeClose\fR
 This test can only be run if platform supports async flush and async close
 on a pipe.
-.TP
-\fIunixExecs\fR
-.
+.IP \fIunixExecs\fR
 This test can only be run if this machine has Unix-style commands
 \fBcat\fR, \fBecho\fR, \fBsh\fR, \fBwc\fR, \fBrm\fR, \fBsleep\fR,
 \fBfgrep\fR, \fBps\fR, \fBchmod\fR, and \fBmkdir\fR available.
-.TP
-\fIhasIsoLocale\fR
-.
+.IP \fIhasIsoLocale\fR
 This test can only be run if can switch to an ISO locale.
-.TP
-\fIroot\fR
-.
+.IP \fIroot\fR
 This test can only run if Unix user is root.
-.TP
-\fInotRoot\fR
-.
+.IP \fInotRoot\fR
 This test can only run if Unix user is not root.
-.TP
-\fIeformat\fR
-.
+.IP \fIeformat\fR
 This test can only run if app has a working version of sprintf with respect
 to the
 .QW e
 format of floating-point numbers.
-.TP
-\fIstdio\fR
-.
+.IP \fIstdio\fR
 This test can only be run if \fBinterpreter\fR can be \fBopen\fRed
 as a pipe.
 .PP
@@ -881,12 +843,14 @@ command.
 .SH "CONFIGURABLE OPTIONS"
 The \fBconfigure\fR command is used to set and query the configurable
 options of \fBtcltest\fR.  The valid options are:
+.\" OPTION: -singleproc
 .TP
 \fB\-singleproc \fIboolean\fR
 .
 Controls whether or not \fBrunAllTests\fR spawns a child process for
 each test file.  No spawning when \fIboolean\fR is true.  Default
 value is false.
+.\" OPTION: -debug
 .TP
 \fB\-debug \fIlevel\fR
 .
@@ -912,6 +876,7 @@ that exist in the current namespace as they are used.
 Display information regarding what individual procs in the test
 harness are doing.
 .RE
+.\" OPTION: -verbose
 .TP
 \fB\-verbose \fIlevel\fR
 .
@@ -941,7 +906,7 @@ Print each test's execution time in milliseconds
 Print each test's execution time in microseconds
 .PP
 Note that the \fBmsec\fR and \fBusec\fR verbosity levels are provided as
-indicative measures only. They do not tackle the problem of repeatibility which
+indicative measures only. They do not tackle the problem of repeatability which
 should be considered in performance tests or benchmarks. To use these verbosity
 levels to thoroughly track performance degradations, consider wrapping your
 test bodies with \fBtime\fR commands.
@@ -952,6 +917,7 @@ so that
 is the same as
 .QW "\fBconfigure \-verbose {pass start}\fR" .
 .RE
+.\" OPTION: -preservecore
 .TP
 \fB\-preservecore \fIlevel\fR
 .
@@ -969,11 +935,13 @@ Also check for core files at the end of each \fBtest\fR command.
 Check for core files at all times described above, and save a
 copy of each core file produced in \fBconfigure \-tmpdir\fR.
 .RE
+.\" OPTION: -limitconstraints
 .TP
 \fB\-limitconstraints \fIboolean\fR
 .
 Sets the mode by which \fBtest\fR honors constraints as described
 in \fBTESTS\fR above.  Default value is false.
+.\" OPTION: -constraints
 .TP
 \fB\-constraints \fIlist\fR
 .
@@ -981,6 +949,7 @@ Sets all the constraints in \fIlist\fR to true.  Also used in
 combination with \fBconfigure \-limitconstraints true\fR to control an
 alternative constraint mode as described in \fBTESTS\fR above.
 Default value is an empty list.
+.\" OPTION: -tmpdir
 .TP
 \fB\-tmpdir \fIdirectory\fR
 .
@@ -989,17 +958,20 @@ Sets the temporary directory to be used by \fBmakeFile\fR,
 and \fBremoveDirectory\fR as the default directory where
 temporary files and directories created by test files should
 be created.  Default value is \fBworkingDirectory\fR.
+.\" OPTION: -testdir
 .TP
 \fB\-testdir \fIdirectory\fR
 .
 Sets the directory searched by \fBrunAllTests\fR for test files
 and subdirectories.  Default value is \fBworkingDirectory\fR.
+.\" OPTION: -file
 .TP
 \fB\-file \fIpatternList\fR
 .
 Sets the list of patterns used by \fBrunAllTests\fR to determine
 what test files to evaluate.  Default value is
 .QW \fB*.test\fR .
+.\" OPTION: -notfile
 .TP
 \fB\-notfile \fIpatternList\fR
 .
@@ -1007,6 +979,7 @@ Sets the list of patterns used by \fBrunAllTests\fR to determine
 what test files to skip.  Default value is
 .QW \fBl.*.test\fR ,
 so that any SCCS lock files are skipped.
+.\" OPTION: -relateddir
 .TP
 \fB\-relateddir \fIpatternList\fR
 .
@@ -1014,40 +987,47 @@ Sets the list of patterns used by \fBrunAllTests\fR to determine
 what subdirectories to search for an \fBall.tcl\fR file.  Default
 value is
 .QW \fB*\fR .
+.\" OPTION: -asidefromdir
 .TP
 \fB\-asidefromdir \fIpatternList\fR
 .
 Sets the list of patterns used by \fBrunAllTests\fR to determine
 what subdirectories to skip when searching for an \fBall.tcl\fR file.
 Default value is an empty list.
+.\" OPTION: -match
 .TP
 \fB\-match \fIpatternList\fR
 .
 Set the list of patterns used by \fBtest\fR to determine whether
 a test should be run.  Default value is
 .QW \fB*\fR .
+.\" OPTION: -skip
 .TP
 \fB\-skip \fIpatternList\fR
 .
 Set the list of patterns used by \fBtest\fR to determine whether
 a test should be skipped.  Default value is an empty list.
+.\" OPTION: -load
 .TP
 \fB\-load \fIscript\fR
 .
 Sets a script to be evaluated by \fBloadTestedCommands\fR.
 Default value is an empty script.
+.\" OPTION: -loadfile
 .TP
 \fB\-loadfile \fIfilename\fR
 .
 Sets the filename from which to read a script to be evaluated
 by \fBloadTestedCommands\fR.  This is an alternative to
 \fB\-load\fR.  They cannot be used together.
+.\" OPTION: -outfile
 .TP
 \fB\-outfile \fIfilename\fR
 .
 Sets the file to which all output produced by tcltest should be
 written.  A file named \fIfilename\fR will be \fBopen\fRed for writing,
 and the resulting channel will be set as the value of \fBoutputChannel\fR.
+.\" OPTION: -errfile
 .TP
 \fB\-errfile \fIfilename\fR
 .

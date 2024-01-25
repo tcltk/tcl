@@ -377,7 +377,8 @@ variable to the
 POSIX error code (which signifies a
 .QW "cross-domain link" ).
 .PP
-\fBTcl_FSCopyDirectory\fR attempts to copy the directory given by \fIsrcPathPtr\fR to the
+\fBTcl_FSCopyDirectory\fR attempts to copy the directory given by
+\fIsrcPathPtr\fR to the
 path name given by \fIdestPathPtr\fR. If the two paths given lie in the same
 filesystem (according to \fBTcl_FSGetFileSystemForPath\fR) then that
 filesystem's
@@ -487,8 +488,9 @@ is a Tcl_Obj specifying the contents of the symbolic link given by
 \fIlinkNamePtr\fR, or NULL if the link could not be read. The result is owned
 by the caller, which should call \fBTcl_DecrRefCount\fR when the result is no
 longer needed. If the \fItoPtr\fR is not NULL, Tcl should create a link
-of one of the types passed in in the \fIlinkAction\fR flag. This flag is
-an OR'ed combination of \fBTCL_CREATE_SYMBOLIC_LINK\fR and \fBTCL_CREATE_HARD_LINK\fR.
+of one of the types passed in in the \fIlinkAction\fR flag.
+This flag is an OR'ed combination of \fBTCL_CREATE_SYMBOLIC_LINK\fR
+and \fBTCL_CREATE_HARD_LINK\fR.
 Where a choice exists (i.e.\ more than one flag is passed in), the Tcl
 convention is to prefer symbolic links. When a link is successfully
 created, the return value should be \fItoPtr\fR (which is therefore
@@ -841,7 +843,7 @@ longer be correct.
 The \fBTcl_Filesystem\fR structure contains the following fields:
 .PP
 .CS
-typedef struct Tcl_Filesystem {
+typedef struct {
     const char *\fItypeName\fR;
     Tcl_Size \fIstructureLength\fR;
     Tcl_FSVersion \fIversion\fR;
@@ -1254,7 +1256,7 @@ The \fBTcl_GlobTypeData\fR structure passed in the \fItypes\fR
 parameter contains the following fields:
 .PP
 .CS
-typedef struct Tcl_GlobTypeData {
+typedef struct {
     /* Corresponds to bcdpfls as in 'find -t' */
     int \fItype\fR;
     /* Corresponds to file permissions */
@@ -1382,10 +1384,10 @@ typedef int \fBTcl_FSFileAttrsGetProc\fR(
 .PP
 Returns a standard Tcl return code. The attribute value retrieved,
 which corresponds to the \fIindex\fR'th element in the list returned by
-the \fBTcl_FSFileAttrStringsProc\fR, is a Tcl_Obj placed in \fIobjPtrRef\fR (if
-\fBTCL_OK\fR was returned) and is likely to have a reference count of zero. Either
-way we must either store it somewhere (e.g.\ the Tcl result), or
-Incr/Decr its reference count to ensure it is properly freed.
+the \fBTcl_FSFileAttrStringsProc\fR, is a Tcl_Obj placed in \fIobjPtrRef\fR
+(if \fBTCL_OK\fR was returned) and is likely to have a reference count of
+zero. Either way we must either store it somewhere (e.g.\ the Tcl result),
+or Incr/Decr its reference count to ensure it is properly freed.
 .SS FILEATTRSSETPROC
 .PP
 Function to process a \fBTcl_FSFileAttrsSet\fR call, used by \fBfile

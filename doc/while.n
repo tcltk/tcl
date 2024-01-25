@@ -30,7 +30,7 @@ commands may be executed inside \fIbody\fR to cause immediate
 termination of the \fBwhile\fR command.  The \fBwhile\fR command
 always returns an empty string.
 .PP
-Note: \fItest\fR should almost always be enclosed in braces.  If not,
+Note that \fItest\fR should almost always be enclosed in braces.  If not,
 variable substitutions will be made before the \fBwhile\fR
 command starts executing, which means that variable changes
 made by the loop body will not be considered in the expression.

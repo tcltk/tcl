@@ -266,11 +266,14 @@ a Tcl script in the child interpreter identified by \fIpath\fR. The result
 of this evaluation (including all \fBreturn\fR options,
 such as \fB\-errorinfo\fR and \fB\-errorcode\fR information, if an
 error occurs) is returned to the invoking interpreter.
+.RS
+.PP
 Note that the script will be executed in the current context stack frame of the
 \fIpath\fR interpreter; this is so that the implementations (in a parent
 interpreter) of aliases in a child interpreter can execute scripts in
 the child that find out information about the child's current state
 and stack frame.
+.RE
 .\" METHOD: exists
 .TP
 \fBinterp exists \fIpath\fR
@@ -333,9 +336,13 @@ The \fB\-\|\-\fR flag allows the \fIhiddenCmdName\fR argument to start with a
 character, and is otherwise unnecessary.
 If both the \fB\-namespace\fR and \fB\-global\fR flags are present, the
 \fB\-namespace\fR flag is ignored.
+.RS
+.PP
 Note that the hidden command will be executed (by default) in the
 current context stack frame of the \fIpath\fR interpreter.
+.PP
 Hidden commands are explained in more detail in \fBHIDDEN COMMANDS\fR, below.
+.RE
 .\" METHOD: issafe
 .TP
 \fBinterp issafe\fR ?\fIpath\fR?
@@ -484,11 +491,14 @@ the resulting string as a Tcl script in \fIchild\fR.
 The result of this evaluation (including all \fBreturn\fR options,
 such as \fB\-errorinfo\fR and \fB\-errorcode\fR information, if an
 error occurs) is returned to the invoking interpreter.
+.RS
+.PP
 Note that the script will be executed in the current context stack frame
 of \fIchild\fR; this is so that the implementations (in a parent
 interpreter) of aliases in a child interpreter can execute scripts in
 the child that find out information about the child's current state
 and stack frame.
+.RE
 .\" METHOD: expose
 .TP
 \fIchild \fBexpose \fIhiddenName \fR?\fIexposedCmdName\fR?
@@ -540,10 +550,13 @@ The \fB\-\|\-\fR flag allows the \fIhiddenCmdName\fR argument to start with a
 character, and is otherwise unnecessary.
 If both the \fB\-namespace\fR and \fB\-global\fR flags are given, the
 \fB\-namespace\fR flag is ignored.
+.RS
+.PP
 Note that the hidden command will be executed (by default) in the
 current context stack frame of \fIchild\fR.
-For more details on hidden commands,
-see \fBHIDDEN COMMANDS\fR, below.
+.PP
+For more details on hidden commands, see \fBHIDDEN COMMANDS\fR, below.
+.RE
 .\" METHOD: issafe
 .TP
 \fIchild \fBissafe\fR
@@ -823,6 +836,7 @@ catch and handle.
 Every limit has a number of options associated with it, some of which are
 common across all kinds of limits, and others of which are particular to the
 kind of limit.
+.\" OPTION: -command
 .TP
 \fB\-command\fR
 .
@@ -833,9 +847,13 @@ The callback may modify the limit on the interpreter if it wishes the limited
 interpreter to continue executing. If the callback generates an exception, it
 is reported through the background exception mechanism (see
 \fBBACKGROUND EXCEPTION HANDLING\fR).
+.RS
+.PP
 Note that the callbacks defined by one interpreter are
 completely isolated from the callbacks defined by another, and that the order
 in which those callbacks are called is undefined.
+.RE
+.\" OPTION: -granularity
 .TP
 \fB\-granularity\fR
 .
@@ -844,6 +862,7 @@ points when the Tcl interpreter is in a consistent state where limit checking
 is possible) that the limit is actually checked. This allows the tuning of how
 frequently a limit is checked, and hence how often the limit-checking overhead
 (which may be substantial in the case of time limits) is incurred.
+.\" OPTION: -milliseconds
 .TP
 \fB\-milliseconds\fR
 .
@@ -851,6 +870,7 @@ This option specifies the number of milliseconds after the moment defined in
 the \fB\-seconds\fR option that the time limit will fire. It should only ever
 be specified in conjunction with the \fB\-seconds\fR option (whether it was
 set previously or is being set this invocation.)
+.\" OPTION: -seconds
 .TP
 \fB\-seconds\fR
 .
@@ -860,6 +880,7 @@ limit will be triggered at the start of the second unless specified at a
 sub-second level using the \fB\-milliseconds\fR option. This option may be the
 empty string, which indicates that a time limit is not set for the
 interpreter.
+.\" OPTION: -value
 .TP
 \fB\-value\fR
 .
@@ -879,14 +900,15 @@ necessary.
 .PP
 When an exception happens in a situation where it cannot be reported directly up
 the stack (e.g. when processing events in an \fBupdate\fR or \fBvwait\fR call)
-the exception is instead reported through the background exception handling mechanism.
-Every interpreter has a background exception handler registered; the default exception
+the exception is instead reported through the background exception handling
+mechanism. Every interpreter has a background exception handler registered;
+the default exception
 handler arranges for the \fBbgerror\fR command in the interpreter's global
 namespace to be called, but other exception handlers may be installed and process
 background exceptions in substantially different ways.
 .PP
-A background exception handler consists of a non-empty list of words to which will
-be appended two further words at invocation time. The first word will be the
+A background exception handler consists of a non-empty list of words to which
+will be appended two further words at invocation time. The first word will be the
 interpreter result at time of the exception, typically an error message,
 and the second will be the dictionary of return options at the time of
 the exception.  These are the same values that \fBcatch\fR can capture
@@ -934,7 +956,8 @@ set i [\fBinterp create\fR]
 }
 .CE
 .SH "SEE ALSO"
-bgerror(n), load(n), safe(n), Tcl_CreateChild(3), Tcl_Eval(3), Tcl_BackgroundException(3)
+bgerror(n), load(n), safe(n),
+Tcl_CreateChild(3), Tcl_Eval(3), Tcl_BackgroundException(3)
 .SH KEYWORDS
 alias, parent interpreter, safe interpreter, child interpreter
 '\"Local Variables:

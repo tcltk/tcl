@@ -114,16 +114,17 @@ Example of use:
 set i1 [safe::interpCreate {*}[safe::interpConfigure $i0]]
 
 # Get the current deleteHook
-set dh [safe::interpConfigure $i0  \-del]
+set dh [safe::interpConfigure $i0  -del]
 
 # Change (only) the statics loading ok attribute of an
 # interp and its deleteHook (leaving the rest unchanged):
-safe::interpConfigure $i0  \-delete {foo bar} \-statics 0
+safe::interpConfigure $i0  -delete {foo bar} -statics 0
 .CE
 .RE
 .\" COMMAND: interpDelete
 .TP
 \fB::safe::interpDelete\fI child\fR
+.
 Deletes the safe interpreter and cleans up the corresponding
 parent interpreter data structures.
 If a \fIdeleteHook\fR script was specified for this interpreter it is
@@ -216,6 +217,7 @@ and \fB::safe::interpConfigure\fR.
 Any option name can be abbreviated to its minimal
 non-ambiguous name.
 Option names are not case sensitive.
+.\" OPTION: -accessPath
 .TP
 \fB\-accessPath\fI directoryList\fR
 .
@@ -226,6 +228,7 @@ empty list, the safe interpreter will use the same directories as its
 parent for auto-loading.
 See the section \fBSECURITY\fR below for more detail about virtual paths,
 tokens and access control.
+.\" OPTION: -autoPath
 .TP
 \fB\-autoPath\fI directoryList\fR
 .
@@ -234,6 +237,7 @@ This option sets the list of directories in the safe interpreter's
 - in that case the safe interpreter's ::auto_path is managed by the Safe
 Base and is a tokenized form of its access path.
 See the section \fBSYNC MODE\fR below for details.
+.\" OPTION: -statics
 .TP
 \fB\-statics\fI boolean\fR
 .
@@ -241,12 +245,14 @@ This option specifies if the safe interpreter will be allowed
 to load statically linked packages (like \fBload {} Tk\fR).
 The default value is \fBtrue\fR :
 safe interpreters are allowed to load statically linked packages.
+.\" OPTION: -noStatics
 .TP
 \fB\-noStatics\fR
 .
 This option is a convenience shortcut for \fB\-statics false\fR and
 thus specifies that the safe interpreter will not be allowed
 to load statically linked packages.
+.\" OPTION: -nested
 .TP
 \fB\-nested\fI boolean\fR
 .
@@ -255,12 +261,14 @@ to load packages into its own sub-interpreters.
 The default value is \fBfalse\fR :
 safe interpreters are not allowed to load packages into
 their own sub-interpreters.
+.\" OPTION: -nestedLoadOk
 .TP
 \fB\-nestedLoadOk\fR
 .
 This option is a convenience shortcut for \fB\-nested true\fR and
 thus specifies the safe interpreter will be allowed
 to load packages into its own sub-interpreters.
+.\" OPTION: -deleteHook
 .TP
 \fB\-deleteHook\fI script\fR
 .
@@ -295,7 +303,7 @@ the safe interpreter for it to be found successfully.
 Additionally, the shared object file must contain a safe entry point; see
 the manual page for the \fBload\fR command for more details.
 .TP
-\fBfile\fR ?\fIsubCmd args...\fR?
+\fBfile\fR ?\fIsubcommand args...\fR?
 .
 The \fBfile\fR alias provides access to a safe subset of the subcommands of
 the \fBfile\fR command; it allows only \fBdirname\fR, \fBjoin\fR,
@@ -303,7 +311,7 @@ the \fBfile\fR command; it allows only \fBdirname\fR, \fBjoin\fR,
 subcommands. For more details on what these subcommands do see the manual
 page for the \fBfile\fR command.
 .TP
-\fBencoding\fR ?\fIsubCmd args...\fR?
+\fBencoding\fR ?\fIsubcommand args...\fR?
 .
 The \fBencoding\fR alias provides access to a safe subset of the
 subcommands of the \fBencoding\fR command;  it disallows setting of
@@ -462,9 +470,9 @@ parent interpreter to packages, modules, and autoloader files.  With
 parent's ::auto_path, and will set the child's ::auto_path to a tokenized form
 of the parent's ::auto_path.
 .PP
-With "Sync Mode" off, if a value is specified for \fB\-autoPath\fR, even the empty
-list, in a call to \fB::safe::interpCreate\fR, \fB::safe::interpInit\fR, or
-\fB::safe::interpConfigure\fR, it will be tokenized and used as the safe
+With "Sync Mode" off, if a value is specified for \fB\-autoPath\fR, even the
+empty list, in a call to \fB::safe::interpCreate\fR, \fB::safe::interpInit\fR,
+or \fB::safe::interpConfigure\fR, it will be tokenized and used as the safe
 interpreter's ::auto_path.  Any directories that do not also belong to the
 access path cannot be tokenized and will be silently ignored.  However, the
 value of \fB\-autoPath\fR will remain as specified, and will be used to
@@ -473,15 +481,15 @@ to change the value of \fB\-accessPath\fR.
 .PP
 With "Sync Mode" off, if the access path is reset to the values in the
 parent interpreter by calling \fB::safe::interpConfigure\fR with arguments
-\fB\-accessPath\fR {}, then the ::auto_path will also be reset unless the argument
-\fB\-autoPath\fR is supplied to specify a different value.
+\fB\-accessPath\fR {}, then the ::auto_path will also be reset unless the
+argument \fB\-autoPath\fR is supplied to specify a different value.
 .PP
 With "Sync Mode" off, if a non-empty value of \fB\-accessPath\fR is supplied, the
 safe interpreter's ::auto_path will be set to {} (by
 \fB::safe::interpCreate\fR, \fB::safe::interpInit\fR) or left unchanged
 (by \fB::safe::interpConfigure\fR).  If the same command specifies a new
-value for \fB\-autoPath\fR, it will be applied after the \fB\-accessPath\fR argument has
-been processed.
+value for \fB\-autoPath\fR, it will be applied after the \fB\-accessPath\fR
+argument has been processed.
 .PP
 Examples of use with "Sync Mode" off: any of these commands will set the
 ::auto_path to a tokenized form of its value in the parent interpreter:
@@ -551,7 +559,7 @@ safe::interpConfigure foo -autoPath $childAutoPath
 interp(n), library(n), load(n), package(n), pkg_mkIndex(n), source(n),
 tm(n), unknown(n)
 .SH KEYWORDS
-alias, auto\-loading, auto_mkindex, load, parent interpreter, safe
+alias, auto-loading, auto_mkindex, load, parent interpreter, safe
 interpreter, child interpreter, source
 '\" Local Variables:
 '\" mode: nroff

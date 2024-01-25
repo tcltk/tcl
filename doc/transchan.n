@@ -70,13 +70,9 @@ This mandatory subcommand is called first, and then never again (for the given
 transformation at the Tcl level. The \fImode\fR is a list containing any of
 \fBread \fRand \fBwrite\fR.
 .RS
-.TP
-\fBwrite\fR
-.
+.IP \fBwrite\fR
 implies that the channel is writable.
-.TP
-\fBread\fR
-.
+.IP \fBread\fR
 implies that the channel is readable.
 .PP
 The return value of the subcommand should be a list containing the names of
