@@ -16,7 +16,7 @@ zipfs \- Mount and work with ZIP files within Tcl
 .nf
 \fBpackage require tcl::zipfs \fR?\fB1.0\fR?
 
-\fBzipfs canonical\fR ?\fImntpnt\fR? \fIfilename\fR ?\fIZIPFS\fR?
+\fBzipfs canonical\fR ?\fImountpoint\fR? \fIfilename\fR ?\fIZIPFS\fR?
 \fBzipfs exists\fI filename\fR
 \fBzipfs find\fI directoryName\fR
 \fBzipfs info\fI filename\fR
@@ -87,9 +87,9 @@ the compressed size of the file, and
 .IP (4)
 the offset of the compressed data in the ZIP archive file.
 .PP
-As a special case, querying the mount point gives the start of the zip data as the offset
-in (4), which can be used to truncate the zip information from an executable.
-Querying an ancestor of a mount point will raise an error.
+As a special case, querying the mount point gives the start of the zip data
+as the offset in (4), which can be used to truncate the zip information from
+an executable. Querying an ancestor of a mount point will raise an error.
 .RE
 .\" METHOD: list
 .TP
@@ -97,9 +97,9 @@ Querying an ancestor of a mount point will raise an error.
 .
 If \fIpattern\fR is not specified, the command returns a list of files across
 all zipfs mounted archives. If \fIpattern\fR is specified, only those paths
-matching the pattern are returned. By default, or with the \fB-glob\fR option,
+matching the pattern are returned. By default, or with the \fB\-glob\fR option,
 the pattern is treated as a glob pattern and matching is done as described for
-the \fBstring match\fR command. Alternatively, the \fB-regexp\fR option may be
+the \fBstring match\fR command. Alternatively, the \fB\-regexp\fR option may be
 used to specify matching \fBpattern\fR as a regular expression. The file names
 are returned in arbitrary order. Note that path separators are treated as
 ordinary characters in the matching. Thus forward slashes should be used
@@ -124,10 +124,10 @@ mount points to the path of the corresponding ZIP archive.
 In the single argument form, the command returns the file path
 of the ZIP archive mounted at the specified mount point.
 .PP
-In the third form, the command mounts the ZIP archive \fIzipfile\fR as a Tcl virtual
-filesystem at \fImountpoint\fR.  After this command executes, files contained
-in \fIzipfile\fR will appear to Tcl to be regular files at the mount point.
-If \fImountpoint\fR is
+In the third form, the command mounts the ZIP archive \fIzipfile\fR as a Tcl
+virtual filesystem at \fImountpoint\fR.  After this command executes, files
+contained in \fIzipfile\fR will appear to Tcl to be regular files at the
+mount point. If \fImountpoint\fR is
 specified as an empty string, it is defaulted to the \fB[zipfs root]\fR.
 The command returns the normalized mount point path.
 .PP

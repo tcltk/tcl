@@ -244,17 +244,11 @@ the channel.
 .PP
 The \fIbase\fR argument is the same as the equivalent argument of the
 builtin \fBchan seek\fR, namely:
-.TP 10
-\fBstart\fR
-.
+.IP \fBstart\fR 10
 Seeking is relative to the beginning of the channel.
-.TP 10
-\fBcurrent\fR
-.
+.IP \fBcurrent\fR 10
 Seeking is relative to the current seek position.
-.TP 10
-\fBend\fR
-.
+.IP \fBend\fR 10
 Seeking is relative to the end of the channel.
 .PP
 The \fIoffset\fR is an integer number specifying the amount of

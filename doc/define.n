@@ -127,7 +127,6 @@ below), this command creates private forwarded methods.
 .VE TIP500
 .RE
 .\" METHOD: initialise
-.\" METHOD: initialize
 .TP
 \fBinitialise\fI script\fR
 .TP
@@ -491,6 +490,7 @@ that the object is an instance of and cannot rename in an instance object the
 methods provided by those classes (though a \fBoo::objdefine forward\fRed
 method may provide an equivalent capability). Does not change the export
 status of the method; if it was exported before, it will be afterwards.
+.\" METHOD: self
 .TP
 \fBself \fR
 .VS TIP470
@@ -514,32 +514,38 @@ Some of the configurable definitions of a class or object are \fIslotted
 definitions\fR. This means that the configuration is implemented by a slot
 object, that is an instance of the class \fBoo::Slot\fR, which manages a list
 of values (class names, variable names, etc.) that comprises the contents of
-the slot. The class defines five operations (as methods) that may be done on
+the slot. The class defines six operations (as methods) that may be done on
 the slot:
+.\" METHOD: -append
 .TP
 \fIslot\fR \fB\-append\fR ?\fImember ...\fR?
 .
 This appends the given \fImember\fR elements to the slot definition.
+.\" METHOD: -appendifnew
 .TP
 \fIslot\fR \fB\-appendifnew\fR ?\fImember ...\fR?
 .VS TIP558
 This appends the given \fImember\fR elements to the slot definition if they
 do not already exist.
 .VE TIP558
+.\" METHOD: -clear
 .TP
 \fIslot\fR \fB\-clear\fR
 .
 This sets the slot definition to the empty list.
+.\" METHOD: -prepend
 .TP
 \fIslot\fR \fB\-prepend\fR ?\fImember ...\fR?
 .VS TIP516
 This prepends the given \fImember\fR elements to the slot definition.
 .VE TIP516
+.\" METHOD: -remove
 .TP
 \fIslot\fR \fB\-remove\fR ?\fImember ...\fR?
 .VS TIP516
 This removes the given \fImember\fR elements from the slot definition.
 .VE TIP516
+.\" METHOD: -set
 .TP
 \fIslot\fR \fB\-set\fR ?\fImember ...\fR?
 .
@@ -549,6 +555,7 @@ A consequence of this is that any use of a slot's default operation where the
 first member argument begins with a hyphen will be an error. One of the above
 operations should be used explicitly in those circumstances.
 .SS "SLOT IMPLEMENTATION"
+.\" METHOD: --default-operation
 Internally, slot objects also define a method \fB\-\-default\-operation\fR
 which is forwarded to the default operation of the slot (thus, for the class
 .QW \fBvariable\fR

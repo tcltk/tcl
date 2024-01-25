@@ -16,20 +16,20 @@ fcopy \- Copy data from one channel to another
 .BE
 .SH DESCRIPTION
 .PP
-The \fBfcopy\fR command copies data from one I/O channel, \fIinchan\fR to another I/O channel, \fIoutchan\fR.
+The \fBfcopy\fR command copies data from one I/O channel, \fIinchan\fR, to
+another I/O channel, \fIoutchan\fR.
 The \fBfcopy\fR command leverages the buffering in the Tcl I/O system to
 avoid extra copies and to avoid buffering too much data in
 main memory when copying large files to destinations like
 network sockets.
-.
 .SS "DATA QUANTITY"
 All data until \fIEOF\fR is copied.
-In addition, the quantity of copied data may be specified by the option \fB-size\fR.
-The given size is in bytes, if the input channel is in binary mode.
-Otherwise, it is in characters.
+In addition, the quantity of copied data may be specified by the option
+\fB\-size\fR. The given size is in bytes, if the input channel is in binary
+mode. Otherwise, it is in characters.
 .PP
-Depreciated feature: the transfer is treated as a binary transfer, if the encoding
-profile is set to
+Depreciated feature: the transfer is treated as a binary transfer, if the
+encoding profile is set to
 .QW tcl8
 and the input encoding matches the output encoding.
 In this case, eventual encoding errors are not handled.
@@ -69,7 +69,8 @@ then all data already queued for \fIoutchan\fR is written out.
 Note that \fIinchan\fR can become readable during a background copy.
 You should turn off any \fBfileevent\fR handlers during a background
 copy so those handlers do not interfere with the copy.
-Any wrong-sided I/O attempted (by a \fBfileevent\fR handler or otherwise) will get a
+Any wrong-sided I/O attempted (by a \fBfileevent\fR handler or otherwise) will
+get a
 .QW "channel busy"
 error.
 .
@@ -109,15 +110,16 @@ channel is configured to the
 .QW strict
 encoding profile.
 .PP
-If an encoding error arises on the input channel, any data before the error byte is
-written to the output channel. The input file pointer is located just before the
-values causing the encoding error.
+If an encoding error arises on the input channel, any data before the error
+byte is written to the output channel. The input file pointer is located just
+before the values causing the encoding error.
 Error inspection or recovery is possible by changing the encoding parameters and
 invoking a file command (\fBread\fR, \fBfcopy\fR).
 .PP
-If an encoding error arises on the output channel, the errorneous data is lost.
-To make the difference between the input error case and the output error case, only the
-error message may be inspected (read or write), as both throw the error code \fIEILSEQ\fR.
+If an encoding error arises on the output channel, the erroneous data is lost.
+To make the difference between the input error case and the output error case,
+only the error message may be inspected (read or write), as both throw the
+error code \fIEILSEQ\fR.
 .SH EXAMPLES
 .PP
 The first example transfers the contents of one channel exactly to

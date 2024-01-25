@@ -63,7 +63,7 @@ a finite byte sequence.
 A byte is an 8-bit quantity with no inherent meaning.  When the 8 bits are
 interpreted as an integer value, the range of possible values is (0-255).
 The C type best suited to store a byte is the \fBunsigned char\fR.
-An \fBunsigned char\fR array of size \fIN\fR stores an aribtrary binary
+An \fBunsigned char\fR array of size \fIN\fR stores an arbitrary binary
 value of size \fIN\fR bytes.  We call this representation a byte-array.
 Here we document the routines that allow us to operate on Tcl values as
 byte-arrays.
@@ -126,7 +126,7 @@ way \fBTcl_GetByteArrayFromObj\fR functioned in Tcl 8.
 \fBTcl_GetBytesFromObj\fR is the more capable interface and should
 usually be favored for use over \fBTcl_GetByteArrayFromObj\fR.
 .PP
-On success, both \fBTcl_GetByteFromObj\fR and \fBTcl_GetByteArrayFromObj\fR
+On success, both \fBTcl_GetBytesFromObj\fR and \fBTcl_GetByteArrayFromObj\fR
 return a pointer into the internal representation of a \fBTcl_Obj\fR.
 That pointer must not be freed by the caller, and should not be retained
 for use beyond the known time the internal representation of the value

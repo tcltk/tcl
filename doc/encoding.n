@@ -16,14 +16,15 @@ encoding \- Work with encodings
 .SH INTRODUCTION
 .PP
 In Tcl every string is composed of Unicode values.  Text may be encoded into an
-encoding such as cp1252, iso8859-1, Shitf\-JIS, utf-8, utf-16, etc. Not every
-Unicode vealue is encodable in every encoding, and some encodings can encode
+encoding such as cp1252, iso8859-1, Shift\-JIS, utf-8, utf-16, etc. Not every
+Unicode value is encodable in every encoding, and some encodings can encode
 values that are not available in Unicode.
 .PP
 Even though Unicode is for encoding the written texts of human languages, any
-sequence of bytes can be encoded as the first 255 Unicode values.  iso8859-1 an
-encoding for a subset of Unicode in which each byte is a Unicode value of 255
-or less.  Thus, any sequence of bytes can be considered to be a Unicode string
+sequence of bytes can be encoded as the first 255 Unicode values. In particular,
+iso8859-1 is an encoding (a superset of classic ASCII) for a subset of Unicode
+in which each byte is a Unicode value of 255
+or less; any sequence of bytes can be considered to be a Unicode string
 encoded in iso8859-1.  To work with binary data in Tcl, decode it from
 iso8859-1 when reading it in, and encode it into iso8859-1 when writing it out,
 ensuring that each character in the string has a value of 255 or less.
@@ -32,13 +33,14 @@ does nothing.
 .PP
 For example, the following is true:
 .CS
+
 set text {In Tcl binary data is treated as Unicode text and it just works.}
-set encoded [encoding convertto iso8859-1 $text]
+set encoded [\fBencoding convertto\fR iso8859-1 $text]
 expr {$text eq $encoded}; #-> 1
 .CE
 The following is also true:
 .CS
-set decoded [encoding convertfrom iso8859-1 $text]
+set decoded [\fBencoding convertfrom\fR iso8859-1 $text]
 expr {$text eq $decoded}; #-> 1
 .CE
 .SH DESCRIPTION
@@ -48,14 +50,14 @@ Performs one of the following encoding \fIoperations\fR:
 .TP
 \fBencoding convertfrom\fR ?\fIencoding\fR? \fIdata\fR
 .TP
-\fBencoding convertfrom\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding data\fR
+\fBencoding convertfrom\fR ?\fB\-profile \fIprofile\fR? ?\fB\-failindex var\fR? \fIencoding data\fR
 .
 Decodes \fIdata\fR encoded in \fIencoding\fR. If \fIencoding\fR is not
 specified the current system encoding is used.
 .VS "TCL8.7 TIP607, TIP656"
-\fB-profile\fR determines how invalid data for the encoding are handled.  See
+\fB\-profile\fR determines how invalid data for the encoding are handled.  See
 the \fBPROFILES\fR section below for details.  Returns an error if decoding
-fails.  However, if \fB-failindex\fR given, returns the result of the
+fails.  However, if \fB\-failindex\fR given, returns the result of the
 conversion up to the point of termination, and stores in \fBvar\fR the index of
 the character that could not be converted. If no errors are encountered the
 entire result of the conversion is returned and the value \fB-1\fR is stored in
@@ -65,12 +67,13 @@ entire result of the conversion is returned and the value \fB-1\fR is stored in
 .TP
 \fBencoding convertto\fR ?\fIencoding\fR? \fIdata\fR
 .TP
-\fBencoding convertto\fR ?\fB-profile \fIprofile\fR? ?\fB-failindex var\fR? \fIencoding data\fR
+\fBencoding convertto\fR ?\fB\-profile \fIprofile\fR? ?\fB\-failindex var\fR? \fIencoding data\fR
 .
 Converts \fIstring\fR to \fIencoding\fR.  If \fIencoding\fR is not given, the
 current system encoding is used.
 .VS "TCL8.7 TIP607, TIP656"
-See \fBencoding convertfrom\fR for the meaning of \fB-profile\fR and \fB-failindex\fR.
+See \fBencoding convertfrom\fR for the meaning of \fB\-profile\fR and
+\fB\-failindex\fR.
 .VE "TCL8.7 TIP607, TIP656"
 .\" METHOD: dirs
 .TP
@@ -91,9 +94,10 @@ The encodings
 and
 .QW iso8859-1
 are guaranteed to be present in the list.
-.VS "TCL8.7 TIP656"
+.\" METHOD: profiles
 .TP
 \fBencoding profiles\fR
+.VS "TCL8.7 TIP656"
 Returns a list of names of available encoding profiles. See \fBPROFILES\fR
 below.
 .VE "TCL8.7 TIP656"

@@ -53,7 +53,7 @@ registered with \fBinterp bgerror\fR.
 The \fBafter\fR command returns an identifier that can be used
 to cancel the delayed command using \fBafter cancel\fR.
 A \fIms\fR value of 0 (or negative) queues the event immediately with
-priority over other event types (if not installed withn an event proc,
+priority over other event types (if not installed with an event proc,
 which will wait for next round of events).
 .\" METHOD: cancel
 .TP

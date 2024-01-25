@@ -72,7 +72,7 @@ When a module or Tcl itself is compiled with \fBTCL_MEM_DEBUG\fR defined,
 the procedures \fBTcl_Alloc\fR, \fBTcl_Free\fR, \fBTcl_Realloc\fR,
 \fBTcl_AttemptAlloc\fR, and \fBTcl_AttempRealloc\fR are implemented
 as macros, redefined to be special debugging versions of these procedures.
-
+.PP
 \fBTcl_GetMemoryInfo\fR appends a list-of-lists of memory stats to the
 provided DString. This function cannot be used in stub-enabled extensions,
 and it is only available if Tcl is compiled with the threaded memory allocator

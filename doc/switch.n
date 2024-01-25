@@ -35,26 +35,31 @@ unless there are exactly two arguments to \fBswitch\fR (in which case the
 first must the \fIstring\fR and the second must be the
 \fIpattern\fR/\fIbody\fR list).
 The following options are currently supported:
+.\" OPTION: -exact
 .TP 10
 \fB\-exact\fR
 .
 Use exact matching when comparing \fIstring\fR to a pattern.  This
 is the default.
+.\" OPTION: -glob
 .TP 10
 \fB\-glob\fR
 .
 When matching \fIstring\fR to the patterns, use glob-style matching
 (i.e. the same as implemented by the \fBstring match\fR command).
+.\" OPTION: -regexp
 .TP 10
 \fB\-regexp\fR
 .
 When matching \fIstring\fR to the patterns, use regular
 expression matching
 (as described in the \fBre_syntax\fR reference page).
+.\" OPTION: -nocase
 .TP 10
 \fB\-nocase\fR
 .
 Causes comparisons to be handled in a case-insensitive manner.
+.\" OPTION: -matchvar
 .TP 10
 \fB\-matchvar\fI varName\fR
 .
@@ -68,6 +73,7 @@ capturing parenthesis in the regular expression that matched, and so
 on.  When a \fBdefault\fR branch is taken, the variable will have the
 empty list written to it.  This option may be specified at the same
 time as the \fB\-indexvar\fR option.
+.\" OPTION: -indexvar
 .TP 10
 \fB\-indexvar\fI varName\fR
 .
@@ -85,6 +91,7 @@ capturing parenthesis in the regular expression that matched, and so
 on.  When a \fBdefault\fR branch is taken, the variable will have the
 empty list written to it.  This option may be specified at the same
 time as the \fB\-matchvar\fR option.
+.\" OPTION: --
 .TP 10
 \fB\-\|\-\fR
 .
@@ -128,7 +135,7 @@ literals, as shown here (the result is \fI2\fR):
 .PP
 .CS
 set foo "abc"
-\fBswitch\fR abc a \- b {expr {1}} $foo {expr {2}} default {expr {3}}
+\fBswitch\fR abc a - b {expr {1}} $foo {expr {2}} default {expr {3}}
 .CE
 .PP
 Using glob matching and the fall-through body is an alternative to
@@ -136,8 +143,8 @@ writing regular expressions with alternations, as can be seen here
 (this returns \fI1\fR):
 .PP
 .CS
-\fBswitch\fR \-glob aaab {
-    a*b     \-
+\fBswitch\fR -glob aaab {
+    a*b     -
     b       {expr {1}}
     a*      {expr {2}}
     default {expr {3}}
@@ -149,7 +156,7 @@ last) is taken.  This example has a result of \fI3\fR:
 .PP
 .CS
 \fBswitch\fR xyz {
-    a \-
+    a -
     b {
         # Correct Comment Placement
         expr {1}
@@ -167,7 +174,7 @@ When matching against regular expressions, information about what
 exactly matched is easily obtained using the \fB\-matchvar\fR option:
 .PP
 .CS
-\fBswitch\fR \-regexp \-matchvar foo \-\- $bar {
+\fBswitch\fR -regexp -matchvar foo -- $bar {
     a(b*)c {
         puts "Found [string length [lindex $foo 1]] 'b's"
     }

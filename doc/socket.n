@@ -49,6 +49,7 @@ Use \fIlocalhost\fR to refer to the host on which the command is invoked.
 .PP
 The following options may also be present before \fIhost\fR
 to specify additional information about the connection:
+.\" OPTION: -myaddr
 .TP
 \fB\-myaddr\fI addr\fR
 .
@@ -57,6 +58,7 @@ the client-side network interface to use for the connection.
 This option may be useful if the client machine has multiple network
 interfaces.  If the option is omitted then the client-side interface
 will be chosen by the system software.
+.\" OPTION: -myport
 .TP
 \fB\-myport\fI port\fR
 .
@@ -65,6 +67,7 @@ supported and understood by the host operating system) to use for the
 client's
 side of the connection.  If this option is omitted, the client's
 port number will be chosen at random by the system software.
+.\" OPTION: -async
 .TP
 \fB\-async\fR
 .
@@ -98,9 +101,12 @@ asynchronous connection has succeeded or failed. See the \fBvwait\fR
 and the \fBchan\fR commands for more details on the event loop and
 channel events.
 .PP
-The \fBchan configure\fR option \fB-connecting\fR may be used to check if the connect is still running. To verify a successful connect, the option \fB-error\fR may be checked when \fB-connecting\fR returned 0.
+The \fBchan configure\fR option \fB\-connecting\fR may be used to check
+if the connect is still running. To verify a successful connect, the
+option \fB\-error\fR may be checked when \fB\-connecting\fR returned 0.
 .PP
-Operation without the event queue requires at the moment calls to \fBchan configure\fR to advance the internal state machine.
+Operation without the event queue requires at the moment calls to
+\fBchan configure\fR to advance the internal state machine.
 .RE
 .SH "SERVER SOCKETS"
 .PP
@@ -120,6 +126,7 @@ network address notation, of the client's host, and the client's port
 number.
 .PP
 The following additional option may also be specified before \fIport\fR:
+.\" OPTION: -myaddr
 .TP
 \fB\-myaddr\fI addr\fR
 .
@@ -131,11 +138,13 @@ wildcard address so that it can accept connections from any
 interface. If \fIaddr\fR is a domain name that resolves to multiple IP
 addresses that are available on the local machine, the socket will
 listen on all of them.
+.\" OPTION: -reuseaddr
 .TP
 \fB\-reuseaddr\fI boolean\fR
 .
 Tells the kernel whether to reuse the local address if there is no socket
 actively listening on it. This is the default on Windows.
+.\" OPTION: -reuseport
 .TP
 \fB\-reuseport\fI boolean\fR
 .
@@ -164,6 +173,7 @@ described below.
 The \fBchan configure\fR command can be used to query several readonly
 configuration options for socket channels or in some cases to set
 alternative properties on socket channels:
+.\" OPTION: -error
 .TP
 \fB\-error\fR
 .
@@ -176,6 +186,7 @@ returned.  If there was no error, an empty string is returned.
 Note that the error status is reset by the read operation; this mimics
 the underlying getsockopt(SO_ERROR) call.
 .RE
+.\" OPTION: -sockname
 .TP
 \fB\-sockname\fR
 .
@@ -193,6 +204,7 @@ was created without \fB\-myaddr\fR or with the argument to
 \fB\-myaddr\fR being a domain name that resolves multiple IP addresses
 that are local to the invoking host.
 .RE
+.\" OPTION: -peername
 .TP
 \fB\-peername\fR
 .
@@ -201,15 +213,19 @@ sockets, this option returns a list of three elements; these are the
 address, the host name and the port to which the peer socket is connected
 or bound. If the host name cannot be computed, the second element of the
 list is identical to the address, its first element.
+.\" OPTION: -connecting
 .TP
 \fB\-connecting\fR
 .
-This option is not supported by server sockets. For client sockets, this option returns 1 if an asyncroneous connect is still in progress, 0 otherwise.
+This option is not supported by server sockets. For client sockets, this
+option returns 1 if an asynchronous connect is still in progress, 0 otherwise.
+.\" OPTION: -keepalive
 .TP
 \fB\-keepalive\fR
 .
 This option sets or queries the TCP keepalive option on the socket as 1 if
 keepalive is turned on, 0 otherwise.
+.\" OPTION: -nodelay
 .TP
 \fB\-nodelay\fR
 .
@@ -250,7 +266,8 @@ Support for IPv6 was added in Tcl 8.6.
 .SH "SEE ALSO"
 chan(n), flush(n), open(n), read(n)
 .SH KEYWORDS
-asynchronous I/O, bind, channel, connection, domain name, host, network address, socket, tcp
+asynchronous I/O, bind, channel, connection, domain name, host,
+network address, socket, tcp
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

@@ -62,7 +62,7 @@ write permission for the file's group and other users. An
 \fBls\fR-style string of the form \fBrwxrwxrwx\fR is also accepted but
 must always be 9 characters long. E.g., \fBrwxr-xr-t\fR is equivalent
 to \fB01755\fR. On versions of Unix supporting file flags,
-\fB-readonly\fR returns the value of, or sets, or clears the readonly
+\fB\-readonly\fR returns the value of, or sets, or clears the readonly
 attribute of a file, i.e., the user immutable flag (\fBuchg\fR) to the
 \fBchflags\fR command.
 .PP
@@ -86,14 +86,40 @@ off the file.
 .PP
 On all platforms, files in \fBzipfs\fR mounted archives return the following
 attributes. These are all read-only and cannot be directly set.
-\fB-archive\fR gives the path of the mounted ZIP archive containing the file.
-\fB-compsize\fR gives the compressed size of the file within the archive.
+.RS
+.\" OPTION: -archive
+.TP
+\fB\-archive\fR
+.
+The path of the mounted ZIP archive containing the file.
+.\" OPTION: -compsize
+.TP
+\fB\-compsize\fR
+.
+The compressed size of the file within the archive.
 This is \fB0\fR for directories.
-\fB-crc\fR gives the CRC of the file if present, else \fB0\fR.
-\fB-mount\fR gives the path where the containing archive is mounted.
-\fB-offset\fR gives the offset of the file within the archive.
-\fB-uncompsize\fR gives the uncompressed size of the file.
-This is \fB0\fR for directories.
+.\" OPTION: -crc
+.TP
+\fB\-crc\fR
+.
+The CRC of the file if present, else \fB0\fR.
+.\" OPTION: -mount
+.TP
+\fB\-mount\fR
+.
+The path where the containing archive is mounted.
+.\" OPTION: -offset
+.TP
+\fB\-offset\fR
+.
+The offset of the file within the archive.
+.\" OPTION: -uncompsize
+.TP
+\fB\-uncompsize\fR
+.
+The uncompressed size of the file. This is \fB0\fR for directories.
+.RE
+.PP
 Other attributes may be present in the returned list. These should
 be ignored.
 .RE
@@ -503,7 +529,7 @@ between platforms:
 .\" METHOD: tempfile
 .TP
 \fBfile tempfile\fR ?\fInameVar\fR? ?\fItemplate\fR?
-'\" TIP #210
+.\" TIP #210
 Creates a temporary file and returns a read-write channel opened on that file.
 If the \fInameVar\fR is given, it specifies a variable that the name of the
 temporary file will be written into; if absent, Tcl will attempt to arrange
@@ -564,12 +590,12 @@ Returns \fB1\fR if file \fIname\fR is writable by the current user,
 \fB0\fR otherwise.
 .SH "PORTABILITY ISSUES"
 .TP
-\fBUnix\fR\0\0\0\0\0\0\0
+\fBUnix\fR
 .
 These commands always operate using the real user and group identifiers,
 not the effective ones.
 .TP
-\fBWindows\fR\0\0\0\0
+\fBWindows\fR
 .
 The \fBfile owned\fR subcommand uses the user identifier (SID) of
 the process token, not the thread token which may be impersonating
@@ -591,7 +617,7 @@ proc findMatchingCFiles {dir} {
            set ext .o
         }
     }
-    foreach file [glob \-nocomplain \-directory $dir *.c] {
+    foreach file [glob -nocomplain -directory $dir *.c] {
         set objectFile [\fBfile tail\fR [\fBfile rootname\fR $file]]$ext
         if {[\fBfile exists\fR $objectFile]} {
             lappend files $file
@@ -612,7 +638,7 @@ if {![\fBfile isdirectory\fR [\fBfile dirname\fR $newName]]} {
     \fBfile mkdir\fR [\fBfile dirname\fR $newName]
 }
 \fBfile rename\fR $oldName $newName
-\fBfile link\fR \-symbolic $oldName $newName
+\fBfile link\fR -symbolic $oldName $newName
 .CE
 .PP
 On Windows, a file can be

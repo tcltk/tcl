@@ -37,8 +37,8 @@ matches the event in the sense of the \fBstring match\fR command.
 The \fBhistory\fR command can take any of the following forms:
 .TP
 \fBhistory\fR
-Same
-as \fBhistory info\fR, described below.
+.
+Same as \fBhistory info\fR, described below.
 .\" METHOD: add
 .TP
 \fBhistory add\fI command \fR?\fBexec\fR?

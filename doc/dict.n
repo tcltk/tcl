@@ -307,6 +307,7 @@ it is recommended that this command only be used in a local scope
 (\fBproc\fRedure, lambda term for \fBapply\fR, or method). Because of
 this, the variables set by \fBdict update\fR will continue to
 exist after the command finishes (unless explicitly \fBunset\fR).
+.PP
 Note that the mapping of values to variables
 does not use traces; changes to the \fIdictionaryVariable\fR's
 contents only happen when \fIbody\fR terminates.
@@ -348,6 +349,7 @@ it is recommended that this command only be used in a local scope
 (\fBproc\fRedure, lambda term for \fBapply\fR, or method). Because of
 this, the variables set by \fBdict with\fR will continue to
 exist after the command finishes (unless explicitly \fBunset\fR).
+.PP
 Note that the mapping of values to variables does not use
 traces; changes to the \fIdictionaryVariable\fR's contents only happen
 when \fIbody\fR terminates.
