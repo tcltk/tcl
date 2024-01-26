@@ -1,9 +1,7 @@
 # This file is a Tcl script to test the [tcl_startOf|endOf]* functions in
 # word.tcl.  It is organized in the standard fashion for Tcl tests.
 #
-# Copyright © 1994 The Regents of the University of California.
-# Copyright © 1994-1995 Sun Microsystems, Inc.
-# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright (c) 2024 Jan Nijtmans
 # All rights reserved.
 
 if {"::tcltest" ni [namespace children]} {
@@ -72,7 +70,7 @@ test word-4.7 {tcl_startOfPreviousWord} -body {
 test word-4.8 {tcl_startOfPreviousWord} -body {
     tcl_startOfPreviousWord "ab cd" {}
 } -result -1
-test word-4.9 {tcl_startOfPreviousWord} -body {
+test word-4.9 {tcl_startOfPreviousWord, bug [16e25e1402]} -body {
     tcl_startOfPreviousWord "ab cd" end-1
 } -result 0
 
