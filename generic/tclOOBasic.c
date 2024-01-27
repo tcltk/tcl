@@ -1341,6 +1341,160 @@ TclOOCopyObjectCmd(
     return TCL_OK;
 }
 
+static int
+ReadProp(
+    Tcl_Interp *interp,
+    Object *oPtr,
+    Tcl_Obj *propObj)
+{
+    Tcl_Obj *args[] = {
+	Tcl_NewStringObj("my", 2),
+	Tcl_ObjPrintf("<ReadProp%s>", TclGetString(propObj))
+    };
+    int code;
+
+    Tcl_IncrRefCount(args[0]);
+    Tcl_IncrRefCount(args[1]);
+    code = TclOOPrivateObjectCmd(oPtr, interp, 2, args);
+    Tcl_DecrRefCount(args[0]);
+    Tcl_DecrRefCount(args[1]);
+    return code;
+}
+
+static int
+WriteProp(
+    Tcl_Interp *interp,
+    Object *oPtr,
+    Tcl_Obj *propObj,
+    Tcl_Obj *valueObj)
+{
+    Tcl_Obj *args[] = {
+	Tcl_NewStringObj("my", 2),
+	Tcl_ObjPrintf("<WriteProp%s>", TclGetString(propObj)),
+	valueObj
+    };
+    int code;
+
+    Tcl_IncrRefCount(args[0]);
+    Tcl_IncrRefCount(args[1]);
+    Tcl_IncrRefCount(args[2]);
+    code = TclOOPrivateObjectCmd(oPtr, interp, 3, args);
+    Tcl_DecrRefCount(args[0]);
+    Tcl_DecrRefCount(args[1]);
+    Tcl_DecrRefCount(args[2]);
+    return code;
+}
+
+/* Look up a property full name. */
+static Tcl_Obj *
+GetPropertyName(
+    Tcl_Interp *interp,		/* Context and error reporting. */
+    Object *oPtr,		/* Object to get property name from. */
+    int writable,		/* Are we looking for a writable property? */
+    Tcl_Obj *namePtr)		/* The name supplied by the user. */
+{
+    int allocated;
+    Tcl_Size objc, index, i;
+    Tcl_Obj *listPtr = TclOOGetAllObjectProperties(oPtr, writable, &allocated);
+    Tcl_Obj **objv;
+    if (allocated) {
+	TclOOSortPropList(listPtr);
+    }
+    ListObjGetElements(listPtr, objc, objv);
+    char **tablePtr = TclStackAlloc(interp, sizeof(char*) * objc);
+    for (int i = 0; i < objc; i++) {
+	tablePtr[i] = TclGetString(objv[i]);
+    }
+    int result = Tcl_GetIndexFromObjStruct(interp, namePtr, tablePtr,
+	    sizeof(char *), "property", TCL_INDEX_TEMP_TABLE, &index);
+    TclStackFree(interp, tablePtr);
+    if (result != TCL_OK) {
+	return NULL;
+    }
+    return objv[index];
+}
+
+int
+TclOO_Configurable_Configure(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Interpreter used for the result, error
+				 * reporting, etc. */
+    Tcl_ObjectContext context,	/* The object/call context. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* The actual arguments. */
+{
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
+    Tcl_Size numArgs = objc - skip;
+    Tcl_Obj *namePtr;
+    Tcl_Size i;
+    int code;
+
+    if (numArgs == 0) {
+	/*
+	 * Read all properties.
+	 */
+
+	Tcl_Size namec;
+	int allocated = 0;
+	Tcl_Obj *listPtr = TclOOGetAllObjectProperties(oPtr, 0, &allocated);
+	Tcl_Obj *resultPtr = Tcl_NewObj(), **namev;
+
+	if (allocated) {
+	    TclOOSortPropList(listPtr);
+	}
+	ListObjGetElements(listPtr, namec, namev);
+
+	for (i = 0; i < namec; ) {
+	    code = ReadProp(interp, oPtr, namev[i]);
+	    if (code != TCL_OK) {
+		Tcl_DecrRefCount(resultPtr);
+		return code;
+	    }
+	    Tcl_DictObjPut(NULL, resultPtr, namev[i], Tcl_GetObjResult(interp));
+	    if (++i >= namec) {
+		Tcl_SetObjResult(interp, resultPtr);
+		break;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewObj());
+	}
+    } else if (numArgs == 1) {
+	/*
+	 * Read a single named property.
+	 */
+
+	namePtr = GetPropertyName(interp, oPtr, 0, objv[skip]);
+	if (namePtr == NULL) {
+	    return TCL_ERROR;
+	}
+	return ReadProp(interp, oPtr, namePtr);
+    } else if (numArgs % 2) {
+	/*
+	 * Bad (odd > 1) number of arguments.
+	 */
+
+	Tcl_WrongNumArgs(interp, skip, objv, "?-option value ...?");
+	return TCL_ERROR;
+    } else {
+	/*
+	 * Write properties.
+	 */
+
+	objv += skip;
+	for (i = 0; i < numArgs; i += 2) {
+	    namePtr = GetPropertyName(interp, oPtr, 1, objv[i]);
+	    if (namePtr == NULL) {
+		return TCL_ERROR;
+	    }
+	    code = WriteProp(interp, oPtr, namePtr, objv[i + 1]);
+	    if (code != TCL_OK) {
+		return code;
+	    }
+	}
+    }
+    return TCL_OK;
+}
+
 /*
  * Local Variables:
  * mode: c

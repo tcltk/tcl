@@ -589,6 +589,7 @@ MODULE_SCOPE int	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
 MODULE_SCOPE Tcl_Obj *	TclOORenderCallChain(Tcl_Interp *interp,
 			    CallChain *callPtr);
+MODULE_SCOPE void	TclOOSortPropList(Tcl_Obj *listPtr);
 MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 			    CallContext *contextPtr);
 MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
