@@ -1456,7 +1456,7 @@ GetPropertyName(
     if (cachePtr && *cachePtr) {
 	tablePtr = *cachePtr;
     } else {
-	tablePtr = (struct Cache *) Tcl_Alloc(
+	tablePtr = (struct Cache *) TclStackAlloc(interp,
 		offsetof(struct Cache, names) + sizeof(char *) * (objc + 1));
 
 	for (i = 0; i < objc; i++) {
@@ -1500,7 +1500,7 @@ GetPropertyName(
 	}
     }
     if (!cachePtr) {
-	Tcl_Free(tablePtr);
+	TclStackFree(interp, tablePtr);
     }
     if (result != TCL_OK) {
 	return NULL;
@@ -1511,6 +1511,7 @@ GetPropertyName(
 /* Release the cache made by GetPropertyName(). */
 static void
 ReleasePropertyNameCache(
+    Tcl_Interp *interp,
     struct Cache **cachePtr)
 {
     if (*cachePtr) {
@@ -1518,7 +1519,7 @@ ReleasePropertyNameCache(
 	if (tablePtr->listPtr) {
 	    Tcl_DecrRefCount(tablePtr->listPtr);
 	}
-	Tcl_Free(tablePtr);
+	TclStackFree(interp, tablePtr);
 	*cachePtr = NULL;
     }
 }
@@ -1624,7 +1625,7 @@ TclOO_Configurable_Configure(
 	if (code == TCL_OK) {
 	    Tcl_ResetResult(interp);
 	}
-	ReleasePropertyNameCache(&cache);
+	ReleasePropertyNameCache(interp, &cache);
 	return code;
     }
 }
