@@ -39,6 +39,9 @@ test word-1.7 {tcl_endOfWord} -body {
 test word-1.8 {tcl_endOfWord} -body {
     tcl_endOfWord "ab cd" end-1
 } -result -1
+test word-1.9 {tcl_endOfWord} -body {
+    tcl_endOfWord "ab cd" {}
+} -result 2
 
 test word-2.0 {tcl_startOfPreviousWord} -body {
     tcl_startOfPreviousWord "ab cd" -1
@@ -67,6 +70,9 @@ test word-2.7 {tcl_startOfPreviousWord} -body {
 test word-2.8 {tcl_startOfPreviousWord, bug [16e25e1402]} -body {
     tcl_startOfPreviousWord "ab cd" end-1
 } -result 0
+test word-2.9 {tcl_startOfPreviousWord} -body {
+    tcl_startOfPreviousWord "ab cd" {}
+} -result -1
 
 test word-3.0 {tcl_startOfNextWord} -body {
     tcl_startOfNextWord "ab cd" -1
@@ -95,6 +101,9 @@ test word-3.7 {tcl_startOfNextWord} -body {
 test word-3.8 {tcl_startOfNextWord} -body {
     tcl_startOfNextWord "ab cd" end-1
 } -result -1
+test word-3.9 {tcl_startOfNextWord} -body {
+    tcl_startOfNextWord "ab cd" {}
+} -result 3
 
 test word-4.0 {tcl_wordBreakBefore} -body {
     tcl_wordBreakBefore "ab cd" -1
@@ -122,6 +131,9 @@ test word-4.7 {tcl_wordBreakBefore} -body {
 } -result 3
 test word-4.8 {tcl_wordBreakBefore} -body {
     tcl_startOfNextWord "ab cd" end-1
+} -result -1
+test word-4.9 {tcl_wordBreakBefore} -body {
+    tcl_wordBreakBefore "ab cd" {}
 } -result -1
 
 test word-5.0 {tcl_wordBreakAfter} -body {
@@ -151,6 +163,9 @@ test word-5.7 {tcl_wordBreakAfter} -body {
 test word-5.8 {tcl_wordBreakAfter} -body {
     tcl_wordBreakAfter "ab cd" end-1
 } -result -1
+test word-5.9 {tcl_wordBreakAfter} -body {
+    tcl_wordBreakAfter "ab cd" {}
+} -result 2
 
 test word-6.0 {tcl_startOfPreviousWord} -body {
     tcl_startOfPreviousWord a b c d
