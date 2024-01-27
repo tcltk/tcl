@@ -119,6 +119,7 @@ TCL_LIBRARY_NATIVE	= $(shell $(CYGPATH) '$(TCL_LIBRARY)')
 GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
 WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
 ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
+TOOL_DIR_NATIVE		= $(shell $(CYGPATH) '$(TOOL_DIR)')
 SCRIPT_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(SCRIPT_INSTALL_DIR)')
 INCLUDE_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(INCLUDE_INSTALL_DIR)')
 MAN_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(MAN_INSTALL_DIR)')
@@ -1140,18 +1141,19 @@ $(GENERIC_DIR)/tclOOScript.h: $(TOOL_DIR)/tclOOScript.tcl
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
 genstubs:
-	$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/genStubs.tcl" \
+	$(TCL_EXE) "$(TOOL_DIR_NATIVE)/genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
 	    "$(GENERIC_DIR_NATIVE)/tcl.decls" \
 	    "$(GENERIC_DIR_NATIVE)/tclInt.decls" \
 	    "$(GENERIC_DIR_NATIVE)/tclTomMath.decls"
-	$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/genStubs.tcl" \
+	$(TCL_EXE) "$(TOOL_DIR_NATIVE)/genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
 	    "$(GENERIC_DIR_NATIVE)/tclOO.decls"
 
 genscript:
-	$(TCL_EXE) $(ROOT_DIR_NATIVE)/tools/makeHeader.tcl \
-		$(ROOT_DIR_NATIVE)/tools/tclOOScript.tcl $(GENERIC_DIR)/tclOOScript.h
+	$(TCL_EXE) "$(TOOL_DIR_NATIVE)/makeHeader.tcl" \
+		"$(TOOL_DIR_NATIVE)/tclOOScript.tcl" \
+		"$(GENERIC_DIR_NATIVE)/tclOOScript.h"
 
 #
 # This target creates the HTML folder for Tcl & Tk and places it in
