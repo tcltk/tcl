@@ -2899,10 +2899,9 @@ NewSocketInfo(SOCKET socket)
 
 static int
 WaitForSocketEvent(
-    TcpState *statePtr,	/* Information about this socket. */
+    TcpState *statePtr,		/* Information about this socket. */
     int events,			/* Events to look for. May be one of
-				 * FD_READ or FD_WRITE.
-				 */
+				 * FD_READ or FD_WRITE. */
     int *errorCodePtr)		/* Where to store errors? */
 {
     int result = 1;

@@ -1810,7 +1810,7 @@ InfoObjectPropCmd(
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
-    int i, idx, all = 0, writable = 0, allocated = 0;
+    int i, idx, all = 0, writable = 0;
     Tcl_Obj *result, *propObj;
 
     if (objc < 2) {
@@ -1844,10 +1844,7 @@ InfoObjectPropCmd(
      */
 
     if (all) {
-	result = TclOOGetAllObjectProperties(oPtr, writable, &allocated);
-	if (allocated) {
-	    TclOOSortPropList(result);
-	}
+	result = TclOOGetAllObjectProperties(oPtr, writable);
     } else {
 	TclNewObj(result);
 	if (writable) {

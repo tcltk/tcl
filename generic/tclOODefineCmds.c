@@ -330,7 +330,7 @@ TclOOObjectSetFilters(
 	 */
 
 	Tcl_Obj **filtersList;
-	int size = sizeof(Tcl_Obj *) * numFilters;	/* should be size_t */
+	size_t size = sizeof(Tcl_Obj *) * numFilters;
 
 	if (oPtr->filters.num == 0) {
 	    filtersList = (Tcl_Obj **)Tcl_Alloc(size);
@@ -345,7 +345,7 @@ TclOOObjectSetFilters(
 	oPtr->filters.num = numFilters;
 	oPtr->flags &= ~USE_CLASS_CACHE;
     }
-    BumpInstanceEpoch(oPtr);	/* Only this object can be affected. */
+    BumpInstanceEpoch(oPtr);	// Only this object can be affected.
 }
 
 /*
@@ -389,7 +389,7 @@ TclOOClassSetFilters(
 	 */
 
 	Tcl_Obj **filtersList;
-	int size = sizeof(Tcl_Obj *) * numFilters;	/* should be size_t */
+	size_t size = sizeof(Tcl_Obj *) * numFilters;
 
 	if (classPtr->filters.num == 0) {
 	    filtersList = (Tcl_Obj **)Tcl_Alloc(size);
@@ -1119,7 +1119,7 @@ MagicDefinitionInvoke(
 	Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
     }
     Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
-    /* TODO: overflow? */
+    // TODO: overflow?
     Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc - offset, objv + offset);
     TclListObjGetElementsM(NULL, objPtr, &dummy, &objs);
 

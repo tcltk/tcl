@@ -51,13 +51,11 @@ typedef struct FilesystemRecord {
 typedef struct {
     int initialized;
     size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
-				 * determine whether cwdPathPtr is stale.
-				 */
+				 * determine whether cwdPathPtr is stale. */
     size_t filesystemEpoch;
     Tcl_Obj *cwdPathPtr;	/* A private copy of cwdPathPtr. Updated when
 				 * the value is accessed  and cwdPathEpoch has
-				 * changed.
-				 */
+				 * changed. */
     void *cwdClientData;
     FilesystemRecord *filesystemList;
     size_t claims;
@@ -328,8 +326,8 @@ Tcl_Stat(
 /* Obsolete */
 int
 Tcl_Access(
-    const char *path,		/* Pathname of file to access (in current CP).
-				*/
+    const char *path,		/* Pathname of file to access (in
+				 * current CP). */
     int mode)			/* Permission setting. */
 {
     int ret;
@@ -1104,8 +1102,7 @@ FsAddMountsToGlobResult(
     Tcl_Obj *pathPtr,		/* The directory that was searched. */
     const char *pattern,	/* Pattern to match mounts against. */
     Tcl_GlobTypeData *types)	/* Acceptable types.  May be NULL. The
-				 * directory flag is particularly significant.
-				 */
+				 * directory flag is particularly significant. */
 {
     Tcl_Size mLength, gLength, i;
     int dir = (types == NULL || (types->type & TCL_GLOB_TYPE_DIR));
@@ -3012,8 +3009,8 @@ Tcl_FSChdir(
 int
 Tcl_FSLoadFile(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Obj *pathPtr,		/* Pathname of the file containing the dynamic shared object.
-				 */
+    Tcl_Obj *pathPtr,		/* Pathname of the file containing the dynamic
+				 * shared object. */
     const char *sym1, const char *sym2,
 				/* Names of two functions to find in the
 				 * dynamic shared object. */
@@ -3647,9 +3644,7 @@ Tcl_FSUnloadFile(
 Tcl_Obj *
 Tcl_FSLink(
     Tcl_Obj *pathPtr,		/* Pathaname of file. */
-    Tcl_Obj *toPtr,		/*
-				 * NULL or the pathname of a file to link to.
-				 */
+    Tcl_Obj *toPtr,		/* NULL or the pathname of a file to link to. */
     int linkAction)		/* Action to perform. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -3954,8 +3949,7 @@ TclFSNonnativePathType(
 				 * the filesystem for this pathname when it is
 				 * an absolute pathname. */
     Tcl_Size *driveNameLengthPtr,/* If not NULL, a place to store the length of
-				 * the volume name if the pathname is absolute.
-				 */
+				 * the volume name if the pathname is absolute. */
     Tcl_Obj **driveNameRef)	/* If not NULL, a place to store a pointer to
 				 * an object having its its refCount already
 				 * incremented, and contining the name of the

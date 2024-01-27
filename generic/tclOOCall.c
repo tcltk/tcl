@@ -25,7 +25,7 @@
 
 struct ChainBuilder {
     CallChain *callChainPtr;	/* The call chain being built. */
-    size_t filterLength;		/* Number of entries in the call chain that
+    size_t filterLength;	/* Number of entries in the call chain that
 				 * are due to processing filters and not the
 				 * main call chain. */
     Object *oPtr;		/* The object that we are building the chain
@@ -309,7 +309,7 @@ FreeMethodNameRep(
 
 int
 TclOOInvokeContext(
-    void *clientData,	/* The method call context. */
+    void *clientData,		/* The method call context. */
     Tcl_Interp *interp,		/* Interpreter for error reporting, and many
 				 * other sorts of context handling (e.g.,
 				 * commands, variables) depending on method
@@ -678,7 +678,7 @@ CmpStr(
 static void
 AddClassMethodNames(
     Class *clsPtr,		/* Class to get method names from. */
-    int flags,		/* Whether we are interested in just the
+    int flags,			/* Whether we are interested in just the
 				 * public method names. */
     Tcl_HashTable *const namesPtr,
 				/* Reference to the hash table to put the
@@ -2039,8 +2039,9 @@ AddSimpleClassDefineNamespaces(
 
 static inline void
 AddDefinitionNamespaceToChain(
-    Class *const definerCls,		/* What class defines this entry. */
-    Tcl_Obj *const namespaceName,	/* The name for this entry (or NULL, a
+    Class *const definerCls,	/* What class defines this entry. */
+    Tcl_Obj *const namespaceName,
+				/* The name for this entry (or NULL, a
 				 * no-op). */
     DefineChain *const definePtr,
 				/* The define chain to add the method
@@ -2290,9 +2291,8 @@ TclOOGetAllClassProperties(
  *
  * TclOOGetAllObjectProperties --
  *
- *	Get the list of all properties known to a object, including to its
- *	classes. Manages a cache so this operation is usually cheap.
- *	The order of properties in the resulting list is undefined.
+ *	Get the sorted list of all properties known to a object, including to its
+ *	its classes. Manages a cache so this operation is usually cheap.
  *
  * ----------------------------------------------------------------------
  */
@@ -2300,12 +2300,9 @@ TclOOGetAllClassProperties(
 Tcl_Obj *
 TclOOGetAllObjectProperties(
     Object *oPtr,		/* The object to inspect. Must exist. */
-    int writable,		/* Whether to get writable properties. If
+    int writable)		/* Whether to get writable properties. If
 				 * false, readable properties will be returned
 				 * instead. */
-    int *allocated)		/* Address of variable to set to true if a
-				 * Tcl_Obj was allocated and may be safely
-				 * modified by the caller. */
 {
     Tcl_HashTable hashTable;
     FOREACH_HASH_DECLS;
@@ -2319,12 +2316,10 @@ TclOOGetAllObjectProperties(
     if (oPtr->properties.epoch == oPtr->fPtr->epoch) {
 	if (writable) {
 	    if (oPtr->properties.allWritableCache) {
-		*allocated = 0;
 		return oPtr->properties.allWritableCache;
 	    }
 	} else {
 	    if (oPtr->properties.allReadableCache) {
-		*allocated = 0;
 		return oPtr->properties.allReadableCache;
 	    }
 	}
@@ -2334,7 +2329,6 @@ TclOOGetAllObjectProperties(
      * Gather the information. Unsorted! (Caller will sort.)
      */
 
-    *allocated = 1;
     Tcl_InitObjHashTable(&hashTable);
     FindObjectProps(oPtr, writable, &hashTable);
     TclNewObj(result);
@@ -2342,6 +2336,7 @@ TclOOGetAllObjectProperties(
 	Tcl_ListObjAppendElement(NULL, result, propName);
     }
     Tcl_DeleteHashTable(&hashTable);
+    TclOOSortPropList(result);
 
     /*
      * Cache the information.

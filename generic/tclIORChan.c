@@ -96,8 +96,7 @@ typedef struct {
 				 * Tcl level part of the channel. NULL here
 				 * signals the channel is dead because the
 				 * interpreter/thread containing its Tcl
-				 * command is gone.
-				 */
+				 * command is gone. */
 #if TCL_THREADS
     Tcl_ThreadId thread;	/* Thread the 'interp' belongs to. == Handler thread */
     Tcl_ThreadId owner;         /* Thread owning the structure.    == Channel thread */
@@ -113,16 +112,12 @@ typedef struct {
     int dead;			/* Boolean signal that some operations
 				 * should no longer be attempted. */
 
-    Tcl_TimerToken readTimer;   /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is readable
-			        */
-    Tcl_TimerToken writeTimer;  /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is writable
-			        */
+    Tcl_TimerToken readTimer;   /* A token for the timer that is scheduled in
+				 * order to call Tcl_NotifyChannel when the
+				 * channel is readable */
+    Tcl_TimerToken writeTimer;  /* A token for the timer that is scheduled in
+				 * order to call Tcl_NotifyChannel when the
+				 * channel is writable */
 
     /*
      * Note regarding the usage of timers.
@@ -266,7 +261,7 @@ typedef struct {
 struct ForwardParamInput {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
     char *buf;			/* O: Where to store the read bytes */
-    Tcl_Size toRead;			/* I: #bytes to read,
+    Tcl_Size toRead;		/* I: #bytes to read,
 				 * O: #bytes actually read */
 };
 struct ForwardParamOutput {

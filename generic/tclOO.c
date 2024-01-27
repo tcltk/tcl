@@ -120,6 +120,9 @@ static const DeclaredClassMethod objMethods[] = {
     DCM("new", 1,	TclOO_Class_New),
     DCM("createWithNamespace", 0, TclOO_Class_CreateNs),
     {NULL, 0, {0, NULL, NULL, NULL, NULL}}
+}, cfgMethods[] = {
+    DCM("configure", 1, TclOO_Configurable_Configure),
+    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 };
 
 /*
@@ -427,6 +430,18 @@ InitFoundation(
     }
 
     /*
+     * Make the configurable class and install its standard defined method.
+     */
+
+    Tcl_Object cfgCls = Tcl_NewObjectInstance(interp, 
+	    (Tcl_Class) fPtr->classCls, 
+	    "::oo::configuresupport::configurable", NULL, -1, NULL, 0);
+    for (i = 0 ; cfgMethods[i].name ; i++) {
+	TclOONewBasicMethod(interp, ((Object *) cfgCls)->classPtr,
+		&cfgMethods[i]);
+    }
+
+    /*
      * Evaluate the remaining definitions, which are a compiled-in Tcl script.
      */
 
@@ -457,11 +472,11 @@ InitClassSystemRoots(
     fPtr->objectCls = &fakeCls;
     /* referenced in TclOOAllocClass to increment the refCount. */
     fakeCls.thisPtr = &fakeObject;
-    fakeObject.refCount = 0; /* Do not increment an uninitialized value. */
+    fakeObject.refCount = 0;	// Do not increment an uninitialized value.
 
     fPtr->objectCls = TclOOAllocClass(interp,
 	    AllocObject(interp, "object", (Namespace *)fPtr->ooNs, NULL));
-    /* Corresponding TclOODecrRefCount in KillFoudation */
+    // Corresponding TclOODecrRefCount in KillFoundation
     AddRef(fPtr->objectCls->thisPtr);
 
     /*
@@ -486,7 +501,7 @@ InitClassSystemRoots(
 
     fPtr->classCls = TclOOAllocClass(interp,
 	    AllocObject(interp, "class", (Namespace *)fPtr->ooNs, NULL));
-    /* Corresponding TclOODecrRefCount in KillFoudation */
+    // Corresponding TclOODecrRefCount in KillFoundation
     AddRef(fPtr->classCls->thisPtr);
 
     /*
@@ -576,8 +591,8 @@ DeletedHelpersNamespace(
 static void
 KillFoundation(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp)	/* The interpreter containing the OO system
-			 * foundation. */
+    Tcl_Interp *interp)		/* The interpreter containing the OO system
+				 * foundation. */
 {
     Foundation *fPtr = GetFoundation(interp);
 
@@ -791,7 +806,7 @@ SquelchCachedName(
 
 static void
 MyDeleted(
-    void *clientData)	/* Reference to the object whose [my] has been
+    void *clientData)		/* Reference to the object whose [my] has been
 				 * squelched. */
 {
     Object *oPtr = (Object *)clientData;
@@ -822,7 +837,7 @@ MyClassDeleted(
 
 static void
 ObjectRenamedTrace(
-    void *clientData,	/* The object being deleted. */
+    void *clientData,		/* The object being deleted. */
     TCL_UNUSED(Tcl_Interp *),
     TCL_UNUSED(const char *) /*oldName*/,
     TCL_UNUSED(const char *) /*newName*/,
@@ -1135,7 +1150,7 @@ TclOOReleaseClassContents(
 
 static void
 ObjectNamespaceDeleted(
-    void *clientData)	/* Pointer to the class whose namespace is
+    void *clientData)		/* Pointer to the class whose namespace is
 				 * being deleted. */
 {
     Object *oPtr = (Object *)clientData;
@@ -1235,7 +1250,7 @@ ObjectNamespaceDeleted(
      * methods on the object.
      */
 
-    /* TODO: Should this be protected with a !IsRoot() condition? */
+    // TODO: Should this be protected with a !IsRoot() condition?
     TclOORemoveFromInstances(oPtr, oPtr->selfCls);
 
     if (oPtr->mixins.num > 0) {
@@ -1715,10 +1730,10 @@ Tcl_NewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    Tcl_Size objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,		/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    Tcl_Size skip)			/* Number of arguments to _not_ pass to the
+    Tcl_Size skip)		/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
     Class *classPtr = (Class *) cls;
@@ -1783,10 +1798,10 @@ TclNRNewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    Tcl_Size objc,			/* Number of arguments. Negative value means
+    Tcl_Size objc,		/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    Tcl_Size skip,			/* Number of arguments to _not_ pass to the
+    Tcl_Size skip,		/* Number of arguments to _not_ pass to the
 				 * constructor. */
     Tcl_Object *objectPtr)	/* Place to write the object reference upon
 				 * successful allocation. */
@@ -2604,7 +2619,7 @@ TclOOInvokeObject(
 				 * (PRIVATE_METHOD), or a *really* private
 				 * context (any other value; conventionally
 				 * 0). */
-    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Array of argument objects. It is assumed
 				 * that the name of the method to invoke will
 				 * be at index 1. */
@@ -2675,7 +2690,7 @@ int
 TclOOObjectCmdCore(
     Object *oPtr,		/* The object being invoked. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
-    Tcl_Size objc,			/* How many arguments are being passed in. */
+    Tcl_Size objc,		/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
     int flags,			/* Whether this is an invocation through the
 				 * public or the private command interface. */
