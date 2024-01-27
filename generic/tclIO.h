@@ -39,12 +39,12 @@ typedef struct ChannelBuffer {
     Tcl_Size refCount;		/* Current uses count */
     Tcl_Size nextAdded;		/* The next position into which a character
 				 * will be put in the buffer. */
-    Tcl_Size nextRemoved;		/* Position of next byte to be removed from
+    Tcl_Size nextRemoved;	/* Position of next byte to be removed from
 				 * the buffer. */
     Tcl_Size bufLength;		/* How big is the buffer? */
     struct ChannelBuffer *nextPtr;
     				/* Next buffer in chain. */
-    char buf[TCLFLEXARRAY];		/* Placeholder for real buffer. The real
+    char buf[TCLFLEXARRAY];	/* Placeholder for real buffer. The real
 				 * buffer occupies this space + bufSize-1
 				 * bytes. This must be the last field in the
 				 * structure. */
@@ -96,7 +96,7 @@ typedef struct EventScriptRecord {
 
 typedef struct Channel {
     struct ChannelState *state; /* Split out state information */
-    void *instanceData;	/* Instance-specific data provided by creator
+    void *instanceData;		/* Instance-specific data provided by creator
 				 * of channel. */
     const Tcl_ChannelType *typePtr; /* Pointer to channel type structure. */
     struct Channel *downChanPtr;/* Refers to channel this one was stacked
@@ -215,7 +215,7 @@ typedef struct ChannelState {
      */
 
     Tcl_Obj* chanMsg;
-    Tcl_Obj* unreportedMsg;     /* Non-NULL if an error report was deferred
+    Tcl_Obj* unreportedMsg;	/* Non-NULL if an error report was deferred
 				 * because it happened in the background. The
 				 * value is the chanMg, if any. #219's
 				 * companion to 'unreportedError'. */

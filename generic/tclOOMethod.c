@@ -536,7 +536,7 @@ TclOOMakeProcInstanceMethod(
 				 * NULL. */
     const Tcl_MethodType *typePtr,
 				/* The type of the method to create. */
-    void *clientData,	/* The per-method type-specific data. */
+    void *clientData,		/* The per-method type-specific data. */
     Proc **procPtrPtr)		/* A pointer to the variable in which to write
 				 * the procedure record reference. Presumably
 				 * inside the structure indicated by the
@@ -649,7 +649,7 @@ TclOOMakeProcMethod(
 				 * NULL. */
     const Tcl_MethodType *typePtr,
 				/* The type of the method to create. */
-    void *clientData,	/* The per-method type-specific data. */
+    void *clientData,		/* The per-method type-specific data. */
     Proc **procPtrPtr)		/* A pointer to the variable in which to write
 				 * the procedure record reference. Presumably
 				 * inside the structure indicated by the
@@ -744,7 +744,7 @@ TclOOMakeProcMethod(
 
 static int
 InvokeProcedureMethod(
-    void *clientData,	/* Pointer to some per-method context. */
+    void *clientData,		/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
     int objc,			/* Number of arguments. */
@@ -1038,7 +1038,7 @@ ProcedureMethodVarResolver(
     Tcl_Interp *interp,
     const char *varName,
     Tcl_Namespace *contextNs,
-    TCL_UNUSED(int) /*flags*/,	/* Ignoring variable access flags (???) */
+    TCL_UNUSED(int) /*flags*/,	// Ignoring variable access flags (???)
     Tcl_Var *varPtr)
 {
     int result;
@@ -1257,7 +1257,7 @@ RenderDeclarerName(
  * ----------------------------------------------------------------------
  */
 
-/* TODO: Check whether Tcl_AppendLimitedToObj() can work here. */
+// TODO: Check whether Tcl_AppendLimitedToObj() can work here.
 
 #define LIMIT 60
 #define ELLIPSIFY(str,len) \
@@ -1267,7 +1267,7 @@ static void
 MethodErrorHandler(
     Tcl_Interp *interp,
     TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
-	/* We pull the method name out of context instead of from argument */
+	// We pull the method name out of context instead of from argument
 {
     Tcl_Size nameLen, objectNameLen;
     CallContext *contextPtr = (CallContext *)((Interp *) interp)->varFramePtr->clientData;
@@ -1299,7 +1299,7 @@ static void
 ConstructorErrorHandler(
     Tcl_Interp *interp,
     TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
-		/* Ignore. We know it is the constructor. */
+	// Ignore. We know it is the constructor.
 {
     CallContext *contextPtr = (CallContext *)((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
@@ -1329,7 +1329,7 @@ static void
 DestructorErrorHandler(
     Tcl_Interp *interp,
     TCL_UNUSED(Tcl_Obj *) /*methodNameObj*/)
-		/* Ignore. We know it is the destructor. */
+	// Ignore. We know it is the destructor.
 {
     CallContext *contextPtr = (CallContext *)((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
@@ -1545,7 +1545,7 @@ TclOONewForwardMethod(
 
 static int
 InvokeForwardMethod(
-    void *clientData,	/* Pointer to some per-method context. */
+    void *clientData,		/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
     int objc,			/* Number of arguments. */

@@ -103,6 +103,7 @@ GENERIC_DIR		= $(TOP_DIR)/generic
 WIN_DIR			= $(TOP_DIR)/win
 COMPAT_DIR		= $(TOP_DIR)/compat
 PKGS_DIR		= $(TOP_DIR)/pkgs
+TOOL_DIR		= $(TOP_DIR)/tools
 ZLIB_DIR		= $(COMPAT_DIR)/zlib
 MINIZIP_DIR		= $(ZLIB_DIR)/contrib/minizip
 TOMMATH_DIR		= $(TOP_DIR)/libtommath
@@ -1133,6 +1134,11 @@ $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 	@echo "Developers may want to run \"make genstubs\" to regenerate."
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
+$(GENERIC_DIR)/tclOOScript.h: $(TOOL_DIR)/tclOOScript.tcl
+	@echo "Warning: tclOOScript.h may be out of date."
+	@echo "Developers may want to run \"make genscript\" to regenerate." 
+	@echo "This warning can be safely ignored, do not report as a bug!"
+
 genstubs:
 	$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
@@ -1142,6 +1148,10 @@ genstubs:
 	$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
 	    "$(GENERIC_DIR_NATIVE)/tclOO.decls"
+
+genscript:
+	$(TCL_EXE) $(ROOT_DIR_NATIVE)/tools/makeHeader.tcl \
+		$(ROOT_DIR_NATIVE)/tools/tclOOScript.tcl $(GENERIC_DIR)/tclOOScript.h
 
 #
 # This target creates the HTML folder for Tcl & Tk and places it in

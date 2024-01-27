@@ -192,8 +192,7 @@ WaitProcessStatus(
 				 *  - errno in case of error.
 				 *  - non-zero exit code for abormal exit.
 				 *  - signal number if killed or suspended.
-				 *  - Tcl_WaitPid status in all other cases.
-				 */
+				 *  - Tcl_WaitPid status in all other cases. */
     Tcl_Obj **msgObjPtr,	/* If non-NULL, will receive error message. */
     Tcl_Obj **errorObjPtr)	/* If non-NULL, will receive error code. */
 {
@@ -864,8 +863,7 @@ TclProcessWait(
 				 *  - errno in case of error.
 				 *  - non-zero exit code for abormal exit.
 				 *  - signal number if killed or suspended.
-				 *  - Tcl_WaitPid status in all other cases.
-				 */
+				 *  - Tcl_WaitPid status in all other cases. */
     Tcl_Obj **msgObjPtr,	/* If non-NULL, will receive error message. */
     Tcl_Obj **errorObjPtr)	/* If non-NULL, will receive error code. */
 {

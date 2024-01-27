@@ -1341,8 +1341,22 @@ TclOOCopyObjectCmd(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOO_Configurable_Configure --
+ *
+ *	Implementation of the oo::configurable->configure method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+/*
+ * Ugly thunks to read and write a property by calling the right method in
+ * the right way.
+ */
 static int
-ReadProp(
+ReadProperty(
     Tcl_Interp *interp,
     Object *oPtr,
     Tcl_Obj *propObj)
@@ -1358,11 +1372,22 @@ ReadProp(
     code = TclOOPrivateObjectCmd(oPtr, interp, 2, args);
     Tcl_DecrRefCount(args[0]);
     Tcl_DecrRefCount(args[1]);
-    return code;
+    switch (code) {
+    case TCL_BREAK:
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"property getter for %s did a break", TclGetString(propObj)));
+	return TCL_ERROR;
+    case TCL_CONTINUE:
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"property getter for %s did a continue", TclGetString(propObj)));
+	return TCL_ERROR;
+    default:
+	return code;
+    }
 }
 
 static int
-WriteProp(
+WriteProperty(
     Tcl_Interp *interp,
     Object *oPtr,
     Tcl_Obj *propObj,
@@ -1382,36 +1407,120 @@ WriteProp(
     Tcl_DecrRefCount(args[0]);
     Tcl_DecrRefCount(args[1]);
     Tcl_DecrRefCount(args[2]);
-    return code;
+    switch (code) {
+    case TCL_BREAK:
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"property setter for %s did a break", TclGetString(propObj)));
+	return TCL_ERROR;
+    case TCL_CONTINUE:
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"property setter for %s did a continue", TclGetString(propObj)));
+	return TCL_ERROR;
+    default:
+	return code;
+    }
 }
+
+/* Short-term cache for GetPropertyName(). */
+struct Cache {
+    Tcl_Obj *listPtr;		/* Holds references to names. */
+    char *names[TCLFLEXARRAY];	/* NULL-terminated table of names. */
+};
+
+enum GPNFlags {
+    GPN_WRITABLE = 1,		/* Are we looking for a writable property? */
+    GPN_FALLING_BACK = 2	/* Are we doing a recursive call to determine
+				 * if the property is of the other type? */
+};
 
 /* Look up a property full name. */
 static Tcl_Obj *
 GetPropertyName(
     Tcl_Interp *interp,		/* Context and error reporting. */
     Object *oPtr,		/* Object to get property name from. */
-    int writable,		/* Are we looking for a writable property? */
-    Tcl_Obj *namePtr)		/* The name supplied by the user. */
+    int flags,			/* Are we looking for a writable property?
+				 * Can we do a fallback message?
+				 * See GPNFlags for possible values */
+    Tcl_Obj *namePtr,		/* The name supplied by the user. */
+    struct Cache **cachePtr)	/* Where to cache the table, if the caller
+				 * wants that. The contents are to be freed
+				 * with Tcl_Free if the cache is used. */
 {
-    int allocated;
     Tcl_Size objc, index, i;
-    Tcl_Obj *listPtr = TclOOGetAllObjectProperties(oPtr, writable, &allocated);
+    Tcl_Obj *listPtr = TclOOGetAllObjectProperties(
+	    oPtr, flags & GPN_WRITABLE);
     Tcl_Obj **objv;
-    if (allocated) {
-	TclOOSortPropList(listPtr);
+    struct Cache *tablePtr;
+
+    (void) Tcl_ListObjGetElements(NULL, listPtr, &objc, &objv);
+    if (cachePtr && *cachePtr) {
+	tablePtr = *cachePtr;
+    } else {
+	tablePtr = (struct Cache *) Tcl_Alloc(
+		offsetof(struct Cache, names) + sizeof(char *) * (objc + 1));
+
+	for (i = 0; i < objc; i++) {
+	    tablePtr->names[i] = TclGetString(objv[i]);
+	}
+	tablePtr->names[objc] = NULL;
+	if (cachePtr) {
+	    /*
+	     * Have a cache, but nothing in it so far.
+	     *
+	     * We cache the list here so it doesn't vanish from under our
+	     * feet if a property implementation does something crazy like
+	     * changing the set of properties. The type of copy this does
+	     * means that the copy holds the references to the names in the
+	     * table.
+	     */
+	    tablePtr->listPtr = TclListObjCopy(NULL, listPtr);
+	    Tcl_IncrRefCount(tablePtr->listPtr);
+	    *cachePtr = tablePtr;
+	} else {
+	    tablePtr->listPtr = NULL;
+	}
     }
-    ListObjGetElements(listPtr, objc, objv);
-    char **tablePtr = TclStackAlloc(interp, sizeof(char*) * objc);
-    for (int i = 0; i < objc; i++) {
-	tablePtr[i] = TclGetString(objv[i]);
-    }
-    int result = Tcl_GetIndexFromObjStruct(interp, namePtr, tablePtr,
+    int result = Tcl_GetIndexFromObjStruct(interp, namePtr, tablePtr->names,
 	    sizeof(char *), "property", TCL_INDEX_TEMP_TABLE, &index);
-    TclStackFree(interp, tablePtr);
+    if (result == TCL_ERROR && !(flags & GPN_FALLING_BACK)) {
+	/*
+	 * If property can be accessed the other way, use a special message.
+	 * We use a recursive call to look this up.
+	 */
+
+	Tcl_InterpState foo = Tcl_SaveInterpState(interp, result);
+	Tcl_Obj *otherName = GetPropertyName(interp, oPtr, 
+		flags ^ (GPN_WRITABLE | GPN_FALLING_BACK), namePtr, NULL);
+	result = Tcl_RestoreInterpState(interp, foo);
+	if (otherName != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "property \"%s\" is %s only",
+		    TclGetString(otherName),
+		    (flags & GPN_WRITABLE) ? "read" : "write"));
+	}
+    }
+    if (!cachePtr) {
+	Tcl_Free(tablePtr);
+    }
     if (result != TCL_OK) {
 	return NULL;
     }
     return objv[index];
+}
+
+/* Release the cache made by GetPropertyName(). */
+static void
+ReleasePropertyNameCache(
+    struct Cache **cachePtr)
+{
+    if (*cachePtr) {
+	struct Cache *tablePtr = *cachePtr;
+	if (tablePtr->listPtr) {
+	    Tcl_DecrRefCount(tablePtr->listPtr);
+	}
+	Tcl_Free(tablePtr);
+	*cachePtr = NULL;
+    }
 }
 
 int
@@ -1420,79 +1529,104 @@ TclOO_Configurable_Configure(
     Tcl_Interp *interp,		/* Interpreter used for the result, error
 				 * reporting, etc. */
     Tcl_ObjectContext context,	/* The object/call context. */
-    Tcl_Size objc,		/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
-    Tcl_Size numArgs = objc - skip;
     Tcl_Obj *namePtr;
-    Tcl_Size i;
-    int code;
+    Tcl_Size i, namec;
+    int code = TCL_OK;
 
-    if (numArgs == 0) {
-	/*
-	 * Read all properties.
-	 */
-
-	Tcl_Size namec;
-	int allocated = 0;
-	Tcl_Obj *listPtr = TclOOGetAllObjectProperties(oPtr, 0, &allocated);
-	Tcl_Obj *resultPtr = Tcl_NewObj(), **namev;
-
-	if (allocated) {
-	    TclOOSortPropList(listPtr);
-	}
-	ListObjGetElements(listPtr, namec, namev);
-
-	for (i = 0; i < namec; ) {
-	    code = ReadProp(interp, oPtr, namev[i]);
-	    if (code != TCL_OK) {
-		Tcl_DecrRefCount(resultPtr);
-		return code;
-	    }
-	    Tcl_DictObjPut(NULL, resultPtr, namev[i], Tcl_GetObjResult(interp));
-	    if (++i >= namec) {
-		Tcl_SetObjResult(interp, resultPtr);
-		break;
-	    }
-	    Tcl_SetObjResult(interp, Tcl_NewObj());
-	}
-    } else if (numArgs == 1) {
-	/*
-	 * Read a single named property.
-	 */
-
-	namePtr = GetPropertyName(interp, oPtr, 0, objv[skip]);
-	if (namePtr == NULL) {
-	    return TCL_ERROR;
-	}
-	return ReadProp(interp, oPtr, namePtr);
-    } else if (numArgs % 2) {
+    objc -= skip;
+    if ((objc & 1) && (objc != 1)) {
 	/*
 	 * Bad (odd > 1) number of arguments.
 	 */
 
 	Tcl_WrongNumArgs(interp, skip, objv, "?-option value ...?");
 	return TCL_ERROR;
-    } else {
+    }
+
+    objv += skip;
+    if (objc == 0) {
 	/*
-	 * Write properties.
+	 * Read all properties.
 	 */
 
-	objv += skip;
-	for (i = 0; i < numArgs; i += 2) {
-	    namePtr = GetPropertyName(interp, oPtr, 1, objv[i]);
-	    if (namePtr == NULL) {
-		return TCL_ERROR;
-	    }
-	    code = WriteProp(interp, oPtr, namePtr, objv[i + 1]);
+	Tcl_Obj *listPtr = TclOOGetAllObjectProperties(oPtr, 0);
+	Tcl_Obj *resultPtr = Tcl_NewObj(), **namev;
+
+	Tcl_IncrRefCount(listPtr);
+	ListObjGetElements(listPtr, namec, namev);
+
+	for (i = 0; i < namec; ) {
+	    code = ReadProperty(interp, oPtr, namev[i]);
 	    if (code != TCL_OK) {
-		return code;
+		Tcl_DecrRefCount(resultPtr);
+		break;
+	    }
+	    Tcl_DictObjPut(NULL, resultPtr, namev[i],
+		    Tcl_GetObjResult(interp));
+	    if (++i >= namec) {
+		Tcl_SetObjResult(interp, resultPtr);
+		break;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewObj());
+	}
+	Tcl_DecrRefCount(listPtr);
+	return code;
+    } else if (objc == 1) {
+	/*
+	 * Read a single named property.
+	 */
+
+	namePtr = GetPropertyName(interp, oPtr, 0, objv[0], NULL);
+	if (namePtr == NULL) {
+	    return TCL_ERROR;
+	}
+	return ReadProperty(interp, oPtr, namePtr);
+    } else if (objc == 2) {
+	/*
+	 * Special case for writing to one property. Saves fiddling with the
+	 * cache in this common case.
+	 */
+
+	namePtr = GetPropertyName(interp, oPtr, GPN_WRITABLE, objv[0], NULL);
+	if (namePtr == NULL) {
+	    return TCL_ERROR;
+	}
+	code = WriteProperty(interp, oPtr, namePtr, objv[1]);
+	if (code == TCL_OK) {
+	    Tcl_ResetResult(interp);
+	}
+	return code;
+    } else {
+	/*
+	 * Write properties. Slightly tricky because we want to cache the
+	 * table of property names.
+	 */
+	struct Cache *cache = NULL;
+
+	code = TCL_OK;
+	for (i = 0; i < objc; i += 2) {
+	    namePtr = GetPropertyName(interp, oPtr, GPN_WRITABLE, objv[i], 
+		    &cache);
+	    if (namePtr == NULL) {
+		code = TCL_ERROR;
+		break;
+	    }
+	    code = WriteProperty(interp, oPtr, namePtr, objv[i + 1]);
+	    if (code != TCL_OK) {
+		break;
 	    }
 	}
+	if (code == TCL_OK) {
+	    Tcl_ResetResult(interp);
+	}
+	ReleasePropertyNameCache(&cache);
+	return code;
     }
-    return TCL_OK;
 }
 
 /*

@@ -4928,8 +4928,7 @@ TclLogCommandInfo(
     const char *command,	/* First character in command that generated
 				 * the error. */
     Tcl_Size length,		/* Number of bytes in command (< 0 means use
-				 * all bytes up to first null byte).
-				*/
+				 * all bytes up to first null byte). */
     const unsigned char *pc,    /* Current pc of bytecode execution context */
     Tcl_Obj **tosPtr)		/* Current stack of bytecode execution
 				 * context */
