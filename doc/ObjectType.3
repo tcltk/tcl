@@ -23,6 +23,7 @@ int
 .sp
 int
 \fBTcl_ConvertToType\fR(\fIinterp, objPtr, typePtr\fR)
+.fi
 .SH ARGUMENTS
 .AS "const char" *typeName
 .AP "const Tcl_ObjType" *typePtr in
@@ -102,7 +103,7 @@ extensions to look up their Tcl_ObjType by name with the
 defined as follows:
 .PP
 .CS
-typedef struct Tcl_ObjType {
+typedef struct {
     const char *\fIname\fR;
     Tcl_FreeInternalRepProc *\fIfreeIntRepProc\fR;
     Tcl_DupInternalRepProc *\fIdupIntRepProc\fR;
@@ -215,7 +216,6 @@ The \fIdupIntRepProc\fR member contains the address of a function
 called to copy an internal representation from one value to another.
 .PP
 .CS
-
 typedef void \fBTcl_DupInternalRepProc\fR(
         Tcl_Obj *\fIsrcPtr\fR,
         Tcl_Obj *\fIdupPtr\fR);
@@ -239,7 +239,6 @@ The \fIfreeIntRepProc\fR member contains the address of a function
 that is called when a value is freed.
 .PP
 .CS
-
 typedef void \fBTcl_FreeInternalRepProc\fR(
         Tcl_Obj *\fIobjPtr\fR);
 .CE
@@ -268,7 +267,7 @@ before the outermost current \fBTcl_DecrRefCount\fR returns.
 .SS "THE VERSION FIELD"
 .PP
 The \fIversion\fR member provides for future extensibility of the
-structure and should be set to \fBTCL_OBJTYPE_V0\fR for compatability
+structure and should be set to \fBTCL_OBJTYPE_V0\fR for compatibility
 of ObjType definitions prior to version 9.0. Specifics about versions
 will be described further in the sections below.
 .SH "ABSTRACT LIST TYPES"
@@ -301,11 +300,9 @@ C API. The function returns the number of elements in the list. It
 is used in every List operation and is required for all Abstract List
 implementations.
 .CS
-
 typedef Tcl_Size
 (Tcl_ObjTypeLengthProc) (Tcl_Obj *listPtr);
 .CE
-
 .PP
 .SS "THE INDEXPROC FIELD"
 .PP
@@ -313,9 +310,7 @@ The \fBIndexProc\fR function correlates with with the
 \fBTcl_ListObjIndex\fR C API. The function returns a Tcl_Obj value for
 the element at the specified index.
 .CS
-
-typedef int
-(Tcl_ObjTypeIndexProc) (
+typedef int (\fBTcl_ObjTypeIndexProc\fR) (
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
     Tcl_Size index,
@@ -325,11 +320,9 @@ typedef int
 .PP
 The \fBSliceProc\fR correlates with the \fBlrange\fR command,
 returning a new List or Abstract List for the portion of the original
-list specifed.
+list specified.
 .CS
-
-typedef int
-(Tcl_ObjTypeSliceProc) (
+typedef int (\fBTcl_ObjTypeSliceProc\fR) (
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
     Tcl_Size fromIdx,
@@ -342,9 +335,7 @@ The \fBReverseProc\fR correlates with the \fBlreverse\fR command,
 returning a List or Abstract List that has the same elements as the
 input Abstract List, with the elements in the reverse order.
 .CS
-
-typedef int
-(Tcl_ObjTypeReverseProc) (
+typedef int (\fBTcl_ObjTypeReverseProc\fR) (
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
     Tcl_Obj **newObjPtr);
@@ -352,12 +343,10 @@ typedef int
 .SS "THE GETELEMENTS FIELD"
 .PP
 The \fBGetElements\fR function returns a count and a pointer to an
-array of Tcl_Obj values for the entire Abstract List. This is a
-correlary to the \fBTcl_ListObjGetElements\fR C API call.
+array of Tcl_Obj values for the entire Abstract List. This
+correlates to the \fBTcl_ListObjGetElements\fR C API call.
 .CS
-
-typedef int
-(Tcl_ObjTypeGetElements) (
+typedef int (\fBTcl_ObjTypeGetElements\fR) (
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
     Tcl_Size *objcptr,
@@ -369,9 +358,7 @@ The \fBSetElement\fR function replaces the element within the
 specified list at the give index. This function correlates to the
 \fBlset\fR command.
 .CS
-
-typedef Tcl_Obj*
-Tcl_ObjTypeSetElement) (
+typedef Tcl_Obj *(\fBTcl_ObjTypeSetElement\fR) (
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
     Tcl_Size indexCount,
@@ -380,13 +367,11 @@ Tcl_ObjTypeSetElement) (
 .CE
 .SS "REPLACEPROC FIELD"
 .PP
-The \fBReplaceProc\fR returns a new list after modfying the list
+The \fBReplaceProc\fR returns a new list after modifying the list
 replacing the elements to be deleted, and adding the elements to be
 inserted. This function correlates to the \fBTcl_ListObjReplace\fR C API.
 .CS
-
-typedef int
-(Tcl_ObjTypeReplaceProc) (
+typedef int (\fBTcl_ObjTypeReplaceProc\fR) (
     Tcl_Interp *interp,
     Tcl_Obj *listObj,
     Tcl_Size first,
@@ -394,7 +379,7 @@ typedef int
     Tcl_Size numToInsert,
     Tcl_Obj *const insertObjs[]);
 .CE
-.SS "THE INOPERATORPROC FIELD"
+.SS "THE INOPERPROC FIELD"
 .PP
 The \fBInOperProc\fR function determines whether the value is present in the
 given list, according to equivalent string comparison of elements. The
@@ -402,9 +387,7 @@ given list, according to equivalent string comparison of elements. The
 (false) if it is not present. This function implements the "in" and
 "ni" math operators for an abstract list.
 .CS
-
-typedef int
-(Tcl_ObjTypeInOperatorProc) (
+typedef int (\fBTcl_ObjTypeInOperatorProc\fR) (
     Tcl_Interp *interp,
     Tcl_Obj *valueObj,
     Tcl_Obj *listObj,
@@ -430,4 +413,5 @@ then those subsidiary values may have their reference counts modified.
 .SH "SEE ALSO"
 Tcl_NewObj(3), Tcl_DecrRefCount(3), Tcl_IncrRefCount(3), Tcl_BounceRefCount(3)
 .SH KEYWORDS
-internal representation, value, value type, string representation, type conversion
+internal representation, value, value type, string representation,
+type conversion

@@ -19,10 +19,8 @@ Tcl_Obj *
 Tcl_Obj *
 \fBTcl_NewUnicodeObj\fR(\fIunicode, numChars\fR)
 .sp
-void
 \fBTcl_SetStringObj\fR(\fIobjPtr, bytes, length\fR)
 .sp
-void
 \fBTcl_SetUnicodeObj\fR(\fIobjPtr, unicode, numChars\fR)
 .sp
 char *
@@ -46,19 +44,14 @@ Tcl_Size
 Tcl_Obj *
 \fBTcl_GetRange\fR(\fIobjPtr, first, last\fR)
 .sp
-void
 \fBTcl_AppendToObj\fR(\fIobjPtr, bytes, length\fR)
 .sp
-void
 \fBTcl_AppendUnicodeToObj\fR(\fIobjPtr, unicode, numChars\fR)
 .sp
-void
 \fBTcl_AppendObjToObj\fR(\fIobjPtr, appendObjPtr\fR)
 .sp
-void
-\fBTcl_AppendStringsToObj\fR(\fIobjPtr, string, string, ... \fB(char *)NULL\fR)
+\fBTcl_AppendStringsToObj\fR(\fIobjPtr, string, string, ... \fBNULL\fR)
 .sp
-void
 \fBTcl_AppendLimitedToObj\fR(\fIobjPtr, bytes, length, limit, ellipsis\fR)
 .sp
 Tcl_Obj *
@@ -70,10 +63,8 @@ int
 Tcl_Obj *
 \fBTcl_ObjPrintf\fR(\fIformat, ...\fR)
 .sp
-void
 \fBTcl_AppendPrintfToObj\fR(\fIobjPtr, format, ...\fR)
 .sp
-void
 \fBTcl_SetObjLength\fR(\fIobjPtr, newLength\fR)
 .sp
 int
@@ -81,6 +72,7 @@ int
 .sp
 Tcl_Obj *
 \fBTcl_ConcatObj\fR(\fIobjc, objv\fR)
+.fi
 .SH ARGUMENTS
 .AS "const Tcl_UniChar" *appendObjPtr in/out
 .AP "const char" *bytes in
@@ -124,7 +116,8 @@ of a value's string representation.
 May be (Tcl_Size *)NULL when not used. If it points to a variable which
 type is not \fBTcl_Size\fR, a compiler warning will be generated.
 If your extensions is compiled with -DTCL_8_API, this function will
-panic for strings with more than INT_MAX bytes/characters, otherwise expect it to crash.
+panic for strings with more than INT_MAX bytes/characters, otherwise
+expect it to crash.
 .AP "const char" *string in
 Null-terminated string value to append to \fIobjPtr\fR.
 .AP Tcl_Size limit in
@@ -221,12 +214,14 @@ to bytes) in the string value.
 \fBTcl_AppendToObj\fR appends the data given by \fIbytes\fR and
 \fIlength\fR to the string representation of the value specified by
 \fIobjPtr\fR.  If the value has an invalid string representation,
-then an attempt is made to convert \fIbytes\fR is to the Unicode
+then an attempt is made to convert \fIbytes\fR to the Unicode
 format.  If the conversion is successful, then the converted form of
 \fIbytes\fR is appended to the value's Unicode representation.
 Otherwise, the value's Unicode representation is invalidated and
 converted to the UTF format, and \fIbytes\fR is appended to the
 value's new string representation.
+Eventually buffer growth is done by large allocations to optimize
+multiple calls.
 .PP
 \fBTcl_AppendUnicodeToObj\fR appends the Unicode string given by
 \fIunicode\fR and \fInumChars\fR to the value specified by

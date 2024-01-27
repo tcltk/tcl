@@ -70,7 +70,8 @@ practice instead of doing double-dereferencing):
 \fBset\fR out [\fBset\fR $vbl]
 .CE
 .SH "SEE ALSO"
-expr(n), global(n), namespace(n), proc(n), trace(n), unset(n), upvar(n), variable(n)
+expr(n), global(n), namespace(n), proc(n), trace(n), unset(n), upvar(n),
+variable(n)
 .SH KEYWORDS
 read, write, variable
 '\" Local Variables:

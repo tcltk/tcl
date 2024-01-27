@@ -20,23 +20,28 @@ info \- Information about the state of the Tcl interpreter
 .SH DESCRIPTION
 .PP
 Available commands:
+.\" METHOD: args
 .TP
 \fBinfo args \fIprocname\fR
 .
 Returns the names of the parameters to the procedure named \fIprocname\fR.
+.\" METHOD: body
 .TP
 \fBinfo body \fIprocname\fR
 .
 Returns the body of the procedure named \fIprocname\fR.
+.\" METHOD: class
 .TP
 \fBinfo class\fI subcommand class\fR ?\fIarg ...\fR
 .
 Returns information about the class named \fIclass\fR.
 See \fBCLASS INTROSPECTION\fR below.
+.\" METHOD: cmdcount
 .TP
 \fBinfo cmdcount\fR
 .
 Returns the total number of commands evaluated in this interpreter.
+.\" METHOD: cmdtype
 .TP
 \fBinfo cmdtype \fIcommandName\fR
 .VS TIP426
@@ -70,6 +75,7 @@ that represents an instance of \fBoo::object\fR or one of its subclasses.
 \fIcommandName\fR was created by \fBzlib stream\fR.
 .RE
 .VE TIP426
+.\" METHOD: commands
 .TP
 \fBinfo commands \fR?\fIpattern\fR?
 .
@@ -78,18 +84,21 @@ Returns the names of all commands visible in the current namespace.  If
 \fBstring match\fR.  Only the last component of \fIpattern\fR is a pattern.
 Other components identify a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
 \fBnamespace\fR(n) documentation.
+.\" METHOD: complete
 .TP
 \fBinfo complete \fIcommand\fR
 .
 Returns 1 if \fIcommand\fR is a complete command, and \fB0\fR otherwise.
 Typically used in line-oriented input environments
 to allow users to type in commands that span multiple lines.
+.\" METHOD: constant
 .TP
 \fBinfo constant \fIvarName\fR
 .VS "TIP 677"
 Returns 1 if \fIvarName\fR is a constant variable (see \fBconst\fR) and 0
 otherwise.
 .VE "TIP 677"
+.\" METHOD: consts
 .TP
 \fBinfo consts\fR ?\fIpattern\fR?
 .VS "TIP 677"
@@ -97,18 +106,21 @@ Returns the list of constant variables (see \fBconst\fR) in the current scope,
 or the list of constant variables matching \fIpattern\fR (if that is provided)
 in a manner similar to \fBinfo vars\fR.
 .VE "TIP 677"
+.\" METHOD: coroutine
 .TP
 \fBinfo coroutine\fR
 .
 Returns the name of the current \fBcoroutine\fR, or the empty
 string if there is no current coroutine or the current coroutine
 has been deleted.
+.\" METHOD: default
 .TP
 \fBinfo default \fIprocname parameter varname\fR
 .
 If the parameter \fIparameter\fR for the procedure named \fIprocname\fR has a
 default value, stores that value in \fIvarname\fR and returns \fB1\fR.
 Otherwise, returns \fB0\fR.
+.\" METHOD: errorstack
 .TP
 \fBinfo errorstack \fR?\fIinterp\fR?
 .
@@ -136,11 +148,13 @@ options dictionary returned by 3-argument \fBcatch\fR; \fBinfo errorstack\fR
 is a convenient way of retrieving it for uncaught errors at top-level in an
 interactive \fBinterpreter\fR.
 .RE
+.\" METHOD: exists
 .TP
 \fBinfo exists \fIvarName\fR
 .
 Returns \fB1\fR if a variable named \fIvarName\fR is visible and has been
 defined, and \fB0\fR otherwise.
+.\" METHOD: frame
 .TP
 \fBinfo frame\fR ?\fIdepth\fR?
 .
@@ -162,60 +176,37 @@ is seen by \fBinfo frame\fR invoked within
 .QW x .
 .PP
 The dictionary may contain the following keys:
-.TP
-\fBtype\fR
-.
+.IP \fBtype\fR
 Always present.  Possible values are \fBsource\fR, \fBproc\fR,
 \fBeval\fR, and \fBprecompiled\fR.
 .RS
-.TP
-\fBsource\fR\0\0\0\0\0\0\0\0
-.
-A script loaded via the \fBsource\fR
-command.
-.TP
-\fBproc\fR\0\0\0\0\0\0\0\0
-.
+.IP \fBsource\fR
+A script loaded via the \fBsource\fR command.
+.IP \fBproc\fR
 The body of a procedure that could not be traced back to a
 line in a particular script.
-.TP
-\fBeval\fR\0\0\0\0\0\0\0\0
-.
+.IP \fBeval\fR
 The body of a script provided to \fBeval\fR or \fBuplevel\fR.
-.TP
-\fBprecompiled\fR\0\0\0\0\0\0\0\0
-.
+.IP \fBprecompiled\fR
 A precompiled script (loadable by the package
 \fBtbcload\fR), and no further information is available.
 .RE
-.TP
-\fBline\fR
-.
+.IP \fBline\fR
 The line number of of the command inside its script.  Not available for
 \fBprecompiled\fR commands.  When the type is \fBsource\fR, the line number is
 relative to the beginning of the file, whereas for the last two types it is
 relative to the start of the script.
-.TP
-\fBfile\fR
-.
+.IP \fBfile\fR
 For type \fBsource\fR, provides the normalized path of the file that contains
 the command.
-.TP
-\fBcmd\fR
-.
+.IP \fBcmd\fR
 The command before substitutions were performed.
-.TP
-\fBproc\fR
-.
+.IP \fBproc\fR
 For type \fBprod\fR, the name of the procedure containing the command.
-.TP
-\fBlambda\fR
-.
+.IP \fBlambda\fR
 For a command in a script evaluated as the body of an unnamed routine via the
 \fBapply\fR command, the definition of that routine.
-.TP
-\fBlevel\fR
-.
+.IP \fBlevel\fR
 For a frame that corresponds to a level, (to be determined).
 .PP
 When a command can be traced to its literal definition in some script, e.g.
@@ -242,6 +233,7 @@ is given a literal list argument the system tracks the line number
 within the list words as well, and otherwise all line numbers are
 counted relative to the start of each word (smallest scope)
 .RE
+.\" METHOD: functions
 .TP
 \fBinfo functions \fR?\fIpattern\fR?
 .
@@ -249,6 +241,7 @@ If \fIpattern\fR is not given, returns a list of all the math
 functions currently defined.
 If \fIpattern\fR is given, returns only those names that match
 \fIpattern\fR according to \fBstring match\fR.
+.\" METHOD: globals
 .TP
 \fBinfo globals \fR?\fIpattern\fR?
 .
@@ -258,16 +251,20 @@ Global variables are variables in the global namespace.
 If \fIpattern\fR is given, only those names matching \fIpattern\fR
 are returned.  Matching is determined using the same rules as for
 \fBstring match\fR.
+.\" METHOD: hostname
 .TP
 \fBinfo hostname\fR
 .
 Returns the name of the current host.
-
+.RS
+.PP
 This name is not guaranteed to be the fully-qualified domain
 name of the host.  Where machines have several different names, as is
 common on systems with both TCP/IP (DNS) and NetBIOS-based networking
 installed, it is the name that is suitable for TCP/IP networking that
 is returned.
+.RE
+.\" METHOD: level
 .TP
 \fBinfo level\fR ?\fIlevel\fR?
 .
@@ -275,13 +272,15 @@ If \fInumber\fR is not given, the level this routine was called from.
 Otherwise returns the complete command active at the given level.  If
 \fInumber\fR is greater than \fB0\fR, it is the desired level.  Otherwise, it
 is \fInumber\fR levels up from the current level.  A complete command is the
-words in the command, with all subsitutions performed, meaning that it is a
+words in the command, with all substitutions performed, meaning that it is a
 list.  See \fBuplevel\fR for more information on levels.
+.\" METHOD: library
 .TP
 \fBinfo library\fR
 .
 Returns the value of \fBtcl_library\fR, which is the name of the library
 directory in which the scripts distributed with Tcl scripts are stored.
+.\" METHOD: loaded
 .TP
 \fBinfo loaded \fR?\fIinterp\fR? ?\fIpackage\fR?
 .
@@ -290,6 +289,7 @@ Returns the name of each file loaded in \fIinterp\fR va \fBload\fR as part of
 is the name of the loaded file and the name of the package for which the file
 was loaded.  For a statically-loaded package the name of the file is the empty
 string.  For \fIinterp\fR, the empty string is the current interpreter.
+.\" METHOD: locals
 .TP
 \fBinfo locals \fR?\fIpattern\fR?
 .
@@ -297,22 +297,25 @@ If \fIpattern\fR is given, returns the name of each local variable matching
 \fIpattern\fR according to \fBstring match\fR.  Otherwise, returns the name of
 each local variable.  A variables defined with the \fBglobal\fR, \fBupvar\fR or
 \fBvariable\fR is not local.
-
+.\" METHOD: nameofexecutable
 .TP
 \fBinfo nameofexecutable\fR
 .
 Returns the absolute pathname of the program for the current interpreter.  If
 such a file can not be identified an empty string is returned.
+.\" METHOD: object
 .TP
 \fBinfo object\fI subcommand object\fR ?\fIarg ...\fR
 .
 Returns information about the object named \fIobject\fR. \fIsubcommand\fR is
 described \fBOBJECT INTROSPECTION\fR below.
+.\" METHOD: patchlevel
 .TP
 \fBinfo patchlevel\fR
 .
 Returns the value of the global variable \fBtcl_patchLevel\fR, in which the
 exact version of the Tcl library initially stored.
+.\" METHOD: procs
 .TP
 \fBinfo procs \fR?\fIpattern\fR?
 .
@@ -321,6 +324,7 @@ only those names that match according to \fBstring match\fR.  Only the final
 component in \fIpattern\fR is actually considered a pattern.  Any qualifying
 components simply select a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
 \fBnamespace\fR(n) documentation.
+.\" METHOD: script
 .TP
 \fBinfo script\fR ?\fIfilename\fR?
 .
@@ -329,17 +333,20 @@ empty string if no pathname can be determined.  If \fIfilename\fR is given,
 sets the return value of any future calls to \fBinfo script\fR for the duration
 of the innermost active script.  This is useful in virtual file system
 applications.
+.\" METHOD: sharedlibextension
 .TP
 \fBinfo sharedlibextension\fR
 .
 Returns the extension used on this platform for names of shared libraries, e.g.
 \fB.so\fR under Solaris.  Returns the empty string if shared libraries are not
 supported on this platform.
+.\" METHOD: tclversion
 .TP
 \fBinfo tclversion\fR
 .
 Returns the value of the global variable \fBtcl_version\fR, in which the
 major and minor version of the Tcl library are stored.
+.\" METHOD: vars
 .TP
 \fBinfo vars\fR ?\fIpattern\fR?
 .
@@ -349,11 +356,15 @@ If \fIpattern\fR is not given, returns the names of all visible variables.  If
 Other components identify a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
 \fBnamespace\fR(n) documentation.  When \fIpattern\fR is a qualified name,
 results are fully qualified.
-
-A variable that has declared but not yet defined is included in the results.
+.RS
+.PP
+A variable that has been declared but not yet given a value will be included in 
+the results.
+.RE
 .SS "CLASS INTROSPECTION"
 .PP
 The following \fIsubcommand\fR values are supported by \fBinfo class\fR:
+.\" METHOD: call
 .TP
 \fBinfo class call\fI class method\fR
 .
@@ -384,6 +395,7 @@ and the call chains that this command files do not actually contain private
 methods.
 .VE TIP500
 .RE
+.\" METHOD: constructor
 .TP
 \fBinfo class constructor\fI class\fR
 .
@@ -393,6 +405,7 @@ element is the list of arguments to the constructor in a form suitable for
 passing to another call to \fBproc\fR or a method definition, and the second
 element is the body of the constructor. If no constructor is present, this
 returns the empty list.
+.\" METHOD: definition
 .TP
 \fBinfo class definition\fI class method\fR
 .
@@ -401,6 +414,7 @@ This subcommand returns a description of the definition of the method named
 list; the first element is the list of arguments to the method in a form
 suitable for passing to another call to \fBproc\fR or a method definition, and
 the second element is the body of the method.
+.\" METHOD: definitionnamespace
 .TP
 \fBinfo class definitionnamespace\fI class\fR ?\fIkind\fR?
 .VS TIP524
@@ -419,26 +433,31 @@ this command returns the empty string. In those circumstances, the
 namespace to use using the class inheritance hierarchy.
 .RE
 .VE TIP524
+.\" METHOD: destructor
 .TP
 \fBinfo class destructor\fI class\fR
 .
 This subcommand returns the body of the destructor of class \fIclass\fR. If no
 destructor is present, this returns the empty string.
+.\" METHOD: filters
 .TP
 \fBinfo class filters\fI class\fR
 .
 This subcommand returns the list of filter methods set on the class.
+.\" METHOD: forward
 .TP
 \fBinfo class forward\fI class method\fR
 .
 This subcommand returns the argument list for the method forwarding called
 \fImethod\fR that is set on the class called \fIclass\fR.
+.\" METHOD: instances
 .TP
 \fBinfo class instances\fI class\fR ?\fIpattern\fR?
 .
 This subcommand returns a list of instances of class \fIclass\fR. If the
 optional \fIpattern\fR argument is present, it constrains the list of returned
 instances to those that match it according to the rules of \fBstring match\fR.
+.\" METHOD: methods
 .TP
 \fBinfo class methods\fI class\fR ?\fIoptions...\fR?
 .
@@ -446,6 +465,7 @@ This subcommand returns a list of all public (i.e. exported) methods of the
 class called \fIclass\fR. Any of the following \fIoption\fRs may be
 given, controlling exactly which method names are returned:
 .RS
+.\" OPTION: -all
 .TP
 \fB\-all\fR
 .
@@ -456,6 +476,7 @@ and the \fB\-scope\fR flag is not given,
 the list of methods will include those
 methods defined not just by the class, but also by the class's superclasses
 and mixins.
+.\" OPTION: -private
 .TP
 \fB\-private\fR
 .
@@ -470,6 +491,7 @@ mixins, if \fB\-all\fR is also given).
 Note that this naming is an unfortunate clash with true private methods; this
 option name is retained for backward compatibility.
 .VE TIP500
+.\" OPTION: -scope
 .TP
 \fB\-scope\fI scope\fR
 .VS TIP500
@@ -478,17 +500,18 @@ Returns a list of all methods on \fIclass\fR that have the given visibility
 \fB\-private\fR options are ignored. The valid values for \fIscope\fR are:
 .RS
 .IP \fBpublic\fR 3
-Only methods with \fIpublic\fR scope (i.e., callable from anywhere by any instance
-of this class) are to be returned.
+Only methods with \fIpublic\fR scope (i.e., callable from anywhere by any
+instance of this class) are to be returned.
 .IP \fBunexported\fR 3
-Only methods with \fIunexported\fR scope (i.e., only callable via \fBmy\fR) are to
-be returned.
+Only methods with \fIunexported\fR scope (i.e., only callable via \fBmy\fR)
+are to be returned.
 .IP \fBprivate\fR 3
-Only methods with \fIprivate\fR scope (i.e., only callable from within this class's
-methods) are to be returned.
+Only methods with \fIprivate\fR scope (i.e., only callable from within this
+class's methods) are to be returned.
 .RE
 .VE TIP500
 .RE
+.\" METHOD: methodtype
 .TP
 \fBinfo class methodtype\fI class method\fR
 .
@@ -497,27 +520,32 @@ the method named \fImethod\fR of class \fIclass\fR. When the result is
 \fBmethod\fR, further information can be discovered with \fBinfo class
 definition\fR, and when the result is \fBforward\fR, further information can
 be discovered with \fBinfo class forward\fR.
+.\" METHOD: mixins
 .TP
 \fBinfo class mixins\fI class\fR
 .
 This subcommand returns a list of all classes that have been mixed into the
 class named \fIclass\fR.
+.\" METHOD: properties
 .TP
 \fBinfo class properties\fI class\fR ?\fIoptions...\fR
 .VS "TIP 558"
 This subcommand returns a sorted list of properties defined on the class named
 \fIclass\fR. The \fIoptions\fR define exactly which properties are returned:
 .RS
+.\" OPTION: -all
 .TP
 \fB\-all\fR
 .
 With this option, the properties from the superclasses and mixins of the class
 are also returned.
+.\" OPTION: -readable
 .TP
 \fB\-readable\fR
 .
 This option (the default behavior) asks for the readable properties to be
 returned. Only readable or writable properties are returned, not both.
+.\" OPTION: -writable
 .TP
 \fB\-writable\fR
 .
@@ -525,6 +553,7 @@ This option asks for the writable properties to be returned.  Only readable or
 writable properties are returned, not both.
 .RE
 .VE "TIP 558"
+.\" METHOD: subclasses
 .TP
 \fBinfo class subclasses\fI class\fR ?\fIpattern\fR?
 .
@@ -532,11 +561,13 @@ This subcommand returns a list of direct subclasses of class \fIclass\fR. If
 the optional \fIpattern\fR argument is present, it constrains the list of
 returned classes to those that match it according to the rules of
 \fBstring match\fR.
+.\" METHOD: superclasses
 .TP
 \fBinfo class superclasses\fI class\fR
 .
 This subcommand returns a list of direct superclasses of class \fIclass\fR in
 inheritance precedence order.
+.\" METHOD: variables
 .TP
 \fBinfo class variables\fI class\fR ?\fB\-private\fR?
 .
@@ -550,6 +581,7 @@ declared instead.
 .SS "OBJECT INTROSPECTION"
 .PP
 The following \fIsubcommand\fR values are supported by \fBinfo object\fR:
+.\" METHOD: call
 .TP
 \fBinfo object call\fI object method\fR
 .
@@ -579,12 +611,14 @@ and the call chains that this command files do not actually contain private
 methods.
 .VE TIP500
 .RE
+.\" METHOD: class
 .TP
 \fBinfo object class\fI object\fR ?\fIclassName\fR?
 .
 If \fIclassName\fR is not given, this subcommand returns class of the
 \fIobject\fR object. If \fIclassName\fR is present, this subcommand returns a
 boolean value indicating whether the \fIobject\fR is of that class.
+.\" METHOD: creationid
 .TP
 \fBinfo object creationid\fI object\fR
 .VS TIP500
@@ -597,6 +631,7 @@ cannot be controlled at object creation time or altered afterwards.
 identifiers associated with the object, especially for private variables.
 .RE
 .VE TIP500
+.\" METHOD: definition
 .TP
 \fBinfo object definition\fI object method\fR
 .
@@ -605,15 +640,18 @@ This subcommand returns a description of the definition of the method named
 element list; the first element is the list of arguments to the method in a
 form suitable for passing to another call to \fBproc\fR or a method definition,
 and the second element is the body of the method.
+.\" METHOD: filters
 .TP
 \fBinfo object filters\fI object\fR
 .
 This subcommand returns the list of filter methods set on the object.
+.\" METHOD: forward
 .TP
 \fBinfo object forward\fI object method\fR
 .
 This subcommand returns the argument list for the method forwarding called
 \fImethod\fR that is set on the object called \fIobject\fR.
+.\" METHOD: isa
 .TP
 \fBinfo object isa\fI category object\fR ?\fIarg\fR?
 .
@@ -646,6 +684,7 @@ This returns whether \fIclass\fR is the type of \fIobject\fR (i.e. whether
 \fIobject\fR is an instance of \fIclass\fR or one of its subclasses, whether
 direct or indirect).
 .RE
+.\" METHOD: methods
 .TP
 \fBinfo object methods\fI object\fR ?\fIoption...\fR?
 .
@@ -653,6 +692,7 @@ This subcommand returns a list of all public (i.e. exported) methods of the
 object called \fIobject\fR. Any of the following \fIoption\fRs may be
 given, controlling exactly which method names are returned:
 .RS
+.\" OPTION: -all
 .TP
 \fB\-all\fR
 .
@@ -663,6 +703,7 @@ and the \fB\-scope\fR flag is not given,
 the list of methods will include those
 methods defined not just by the object, but also by the object's class and
 mixins, plus the superclasses of those classes.
+.\" OPTION: -private
 .TP
 \fB\-private\fR
 .
@@ -677,6 +718,7 @@ the non-exported methods of the object (and classes, if
 Note that this naming is an unfortunate clash with true private methods; this
 option name is retained for backward compatibility.
 .VE TIP500
+.\" OPTION: -scope
 .TP
 \fB\-scope\fI scope\fR
 .VS TIP500
@@ -688,14 +730,15 @@ Returns a list of all methods on \fIobject\fR that have the given visibility
 Only methods with \fIpublic\fR scope (i.e., callable from anywhere) are to be
 returned.
 .IP \fBunexported\fR 3
-Only methods with \fIunexported\fR scope (i.e., only callable via \fBmy\fR) are to
-be returned.
+Only methods with \fIunexported\fR scope (i.e., only callable via \fBmy\fR)
+are to be returned.
 .IP \fBprivate\fR 3
-Only methods with \fIprivate\fR scope (i.e., only callable from within this object's
-instance methods) are to be returned.
+Only methods with \fIprivate\fR scope (i.e., only callable from within this
+object's instance methods) are to be returned.
 .RE
 .VE TIP500
 .RE
+.\" METHOD: methodtype
 .TP
 \fBinfo object methodtype\fI object method\fR
 .
@@ -704,16 +747,19 @@ the method named \fImethod\fR of object \fIobject\fR. When the result is
 \fBmethod\fR, further information can be discovered with \fBinfo object
 definition\fR, and when the result is \fBforward\fR, further information can
 be discovered with \fBinfo object forward\fR.
+.\" METHOD: mixins
 .TP
 \fBinfo object mixins\fI object\fR
 .
 This subcommand returns a list of all classes that have been mixed into the
 object named \fIobject\fR.
+.\" METHOD: namespace
 .TP
 \fBinfo object namespace\fI object\fR
 .
 This subcommand returns the name of the internal namespace of the object named
 \fIobject\fR.
+.\" METHOD: properties
 .TP
 \fBinfo object properties\fI object\fR ?\fIoptions...\fR
 .VS "TIP 558"
@@ -721,16 +767,19 @@ This subcommand returns a sorted list of properties defined on the object
 named \fIobject\fR. The \fIoptions\fR define exactly which properties are
 returned:
 .RS
+.\" OPTION: -all
 .TP
 \fB\-all\fR
 .
 With this option, the properties from the class, superclasses and mixins of
 the object are also returned.
+.\" OPTION: -readable
 .TP
 \fB\-readable\fR
 .
 This option (the default behavior) asks for the readable properties to be
 returned. Only readable or writable properties are returned, not both.
+.\" OPTION: -writable
 .TP
 \fB\-writable\fR
 .
@@ -738,8 +787,9 @@ This option asks for the writable properties to be returned. Only readable or
 writable properties are returned, not both.
 .RE
 .VE "TIP 558"
+.\" METHOD: variables
 .TP
-\fBinfo object variables\fI object\fRR ?\fB\-private\fR?
+\fBinfo object variables\fI object\fR ?\fB\-private\fR?
 .
 This subcommand returns a list of all variables that have been declared for
 the object named \fIobject\fR (i.e. that are automatically present in the
@@ -748,6 +798,7 @@ object's methods).
 If the \fB\-private\fR option is given, this lists the private variables
 declared instead.
 .VE TIP500
+.\" METHOD: vars
 .TP
 \fBinfo object vars\fI object\fR ?\fIpattern\fR?
 .

@@ -30,6 +30,7 @@ auto_execok, auto_import, auto_load, auto_mkindex, auto_qualify, auto_reset, tcl
 \fBreadFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR?
 \fBwriteFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR? \fIcontents\fR
 .VE "Tcl 8.7, TIP 670"
+.fi
 .BE
 .SH INTRODUCTION
 .PP
@@ -61,6 +62,7 @@ the auto-load mechanism defined below.
 .SH "COMMAND PROCEDURES"
 .PP
 The following procedures are provided in the Tcl library:
+.\" COMMAND: auto_execok
 .TP
 \fBauto_execok \fIcmd\fR
 .
@@ -97,6 +99,7 @@ you would do:
 set mayFrob [expr {[llength [\fBauto_execok\fR frobnicate]] > 0}]
 .CE
 .RE
+.\" COMMAND: auto_import
 .TP
 \fBauto_import \fIpattern\fR
 .
@@ -111,6 +114,7 @@ matching rules of \fBnamespace import\fR.
 .PP
 It is not normally necessary to call this command directly.
 .RE
+.\" COMMAND: auto_load
 .TP
 \fBauto_load \fIcmd\fR
 .
@@ -142,6 +146,7 @@ reload the index database from disk.
 It is not normally necessary to call this command directly; the
 default \fBunknown\fR handler will do so.
 .RE
+.\" COMMAND: auto_mkindex
 .TP
 \fBauto_mkindex \fIdir pattern pattern ...\fR
 .
@@ -184,6 +189,7 @@ code, such as global initialization
 code or procedure names with special characters like \fB$\fR,
 \fB*\fR, \fB[\fR or \fB]\fR, you are safer using \fBauto_mkindex_old\fR.
 .RE
+.\" COMMAND: auto_reset
 .TP
 \fBauto_reset\fR
 .
@@ -192,6 +198,7 @@ Destroys all the information cached by \fBauto_execok\fR and
 time it is needed.  \fBAuto_reset\fR also deletes any procedures
 listed in the auto-load index, so that fresh copies of them will be
 loaded the next time that they are used.
+.\" COMMAND: auto_qualify
 .TP
 \fBauto_qualify \fIcommand namespace\fR
 .
@@ -212,6 +219,7 @@ if it were a command in the global namespace.
 for producing auto-loading indexes such as \fIpkgIndex.tcl\fR, and for
 performing the actual auto-loading of functions at runtime.
 .RE
+.\" COMMAND: auto_findLibrary
 .TP
 \fBtcl_findLibrary \fIbasename version patch initScript enVarName varName\fR
 .
@@ -235,6 +243,7 @@ relative to the executable file in the standard installation
 bin or bin/\fIarch\fR directory;
 relative to the executable file in the current build tree;
 relative to the executable file in a parallel build tree.
+.\" COMMAND: parray
 .TP
 \fBparray \fIarrayName\fR ?\fIpattern\fR?
 .
@@ -256,6 +265,7 @@ For example, to print the contents of the \fBtcl_platform\fR array, do:
 .SS "WORD BOUNDARY HELPERS"
 .PP
 These procedures are mainly used internally by Tk.
+.\" COMMAND: tcl_endOfWord
 .TP
 \fBtcl_endOfWord \fIstr start\fR
 .
@@ -267,6 +277,7 @@ are no more end-of-word locations after the starting point.  See the
 description of \fBtcl_wordchars\fR and \fBtcl_nonwordchars\fR below
 for more details on how Tcl determines which characters are word
 characters.
+.\" COMMAND: tcl_startOfNextWord
 .TP
 \fBtcl_startOfNextWord \fIstr start\fR
 .
@@ -288,6 +299,7 @@ for {set idx 0} {$idx >= 0} {
 }
 .CE
 .RE
+.\" COMMAND: tcl_startOfPreviousWord
 .TP
 \fBtcl_startOfPreviousWord \fIstr start\fR
 .
@@ -295,6 +307,7 @@ Returns the index of the first start-of-word location that occurs
 before a starting index \fIstart\fR in the string \fIstr\fR.  Returns
 \-1 if there are no more start-of-word locations before the starting
 point.
+.\" COMMAND: tcl_wordBreakAfter
 .TP
 \fBtcl_wordBreakAfter \fIstr start\fR
 .
@@ -303,6 +316,7 @@ Returns the index of the first word boundary after the starting index
 boundaries after the starting point in the given string.  The index
 returned refers to the second character of the pair that comprises a
 boundary.
+.\" COMMAND: tcl_wordBreakBefore
 .TP
 \fBtcl_wordBreakBefore \fIstr start\fR
 .
@@ -311,6 +325,8 @@ Returns the index of the first word boundary before the starting index
 boundaries before the starting point in the given string.  The index
 returned refers to the second character of the pair that comprises a
 boundary.
+.SS "FILE ACCESS HELPERS"
+.\" COMMAND: foreachLine
 .TP
 \fBforeachLine \fIvarName filename body\fR
 .VS "Tcl 8.7, TIP 670"
@@ -325,6 +341,7 @@ The overall result of \fBforeachLine\fR is the empty string (assuming no
 errors from I/O or from evaluating the body of the loop); the file will be
 closed prior to the procedure returning.
 .VE "Tcl 8.7, TIP 670"
+.\" COMMAND: readFile
 .TP
 \fBreadFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR?
 .VS "Tcl 8.7, TIP 670"
@@ -335,6 +352,7 @@ The second argument says how to read in the file, either as \fBtext\fR
 will include any trailing newline.
 The file will be closed prior to the procedure returning.
 .VE "Tcl 8.7, TIP 670"
+.\" COMMAND: writeFile
 .TP
 \fBwriteFile \fIfilename\fR ?\fBtext\fR|\fBbinary\fR? \fIcontents\fR
 .VS "Tcl 8.7, TIP 670"
@@ -352,6 +370,7 @@ The following global variables are defined or used by the procedures in
 the Tcl library. They fall into two broad classes, handling unknown
 commands and packages, and determining what are words.
 .SS "AUTOLOADING AND PACKAGE MANAGEMENT VARIABLES"
+.\" VARIABLE: auto_execs
 .TP
 \fBauto_execs\fR
 .
@@ -361,6 +380,7 @@ particular commands exist as executable files.
 .PP
 Not normally usefully accessed directly by user code.
 .RE
+.\" VARIABLE: auto_index
 .TP
 \fBauto_index\fR
 .
@@ -370,16 +390,19 @@ disk.
 .PP
 Not normally usefully accessed directly by user code.
 .RE
+.\" VARIABLE: auto_noexec
 .TP
 \fBauto_noexec\fR
 .
 If set to any value, then \fBunknown\fR will not attempt to auto-exec
 any commands.
+.\" VARIABLE: auto_noload
 .TP
 \fBauto_noload\fR
 .
 If set to any value, then \fBunknown\fR will not attempt to auto-load
 any commands.
+.\" VARIABLE: auto_path
 .TP
 \fBauto_path\fR
 .
@@ -405,6 +428,7 @@ lappend \fBauto_path\fR [file dirname [info script]]/lib
 Note that if the script uses \fBcd\fR, it is advisable to ensure that
 entries on the \fBauto_path\fR are \fBfile normalize\fRd.
 .RE
+.\" VARIABLE: env(TCL_LIBRARY)
 .TP
 \fBenv(TCL_LIBRARY)\fR
 .
@@ -419,6 +443,7 @@ Use of this environment variable is not recommended outside of testing.
 Tcl installations should already know where to find their own script
 files, as the value is baked in during the build or installation.
 .RE
+.\" VARIABLE: env(TCLLIBPATH)
 .TP
 \fBenv(TCLLIBPATH)\fR
 .
@@ -441,6 +466,7 @@ as their own threads or subprocesses).
 These variables are only used in the \fBtcl_endOfWord\fR,
 \fBtcl_startOfNextWord\fR, \fBtcl_startOfPreviousWord\fR,
 \fBtcl_wordBreakAfter\fR, and \fBtcl_wordBreakBefore\fR commands.
+.\" VARIABLE: tcl_nonwordchars
 .TP
 \fBtcl_nonwordchars\fR
 .
@@ -449,6 +475,7 @@ like \fBtcl_endOfWord\fR to identify whether a character is part of a
 word or not.  If the pattern matches a character, the character is
 considered to be a non-word character. The default value is
 .QW "\\W" .
+.\" VARIABLE: tcl_wordchars
 .TP
 \fBtcl_wordchars\fR
 .

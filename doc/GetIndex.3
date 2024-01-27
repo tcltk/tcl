@@ -20,6 +20,7 @@ indexPtr\fR)
 int
 \fBTcl_GetIndexFromObjStruct\fR(\fIinterp, objPtr, structTablePtr, offset,
                           msg, flags, indexPtr\fR)
+.fi
 .SH ARGUMENTS
 .AS "const char" *structTablePtr in/out
 .AP Tcl_Interp *interp in
@@ -89,7 +90,7 @@ the table and the index of the matching entry.  If \fBTcl_GetIndexFromObj\fR
 is invoked again with the same \fIobjPtr\fR and \fItablePtr\fR
 arguments (e.g. during a reinvocation of a Tcl command), it returns
 the matching index immediately without having to redo the lookup
-operation.  Note: \fBTcl_GetIndexFromObj\fR assumes that the entries
+operation.  Note that \fBTcl_GetIndexFromObj\fR assumes that the entries
 in \fItablePtr\fR are static: they must not change between
 invocations.  This caching mechanism can be disallowed by specifying
 the \fBTCL_INDEX_TEMP_TABLE\fR flag.

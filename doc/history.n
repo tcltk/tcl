@@ -37,16 +37,20 @@ matches the event in the sense of the \fBstring match\fR command.
 The \fBhistory\fR command can take any of the following forms:
 .TP
 \fBhistory\fR
-Same
-as \fBhistory info\fR, described below.
+.
+Same as \fBhistory info\fR, described below.
+.\" METHOD: add
 .TP
 \fBhistory add\fI command \fR?\fBexec\fR?
+.
 Adds the \fIcommand\fR argument to the history list as a new event.  If
 \fBexec\fR is specified (or abbreviated) then the command is also
 executed and its result is returned.  If \fBexec\fR is not specified
 then an empty string is returned as result.
+.\" METHOD: change
 .TP
 \fBhistory change\fI newValue\fR ?\fIevent\fR?
+.
 Replaces the value recorded for an event with \fInewValue\fR.  \fIEvent\fR
 specifies the event to replace, and
 defaults to the \fIcurrent\fR event (not event \fB\-1\fR).  This command
@@ -54,32 +58,44 @@ is intended for use in commands that implement new forms of history
 substitution and wish to replace the current event (which invokes the
 substitution) with the command created through substitution.  The return
 value is an empty string.
+.\" METHOD: clear
 .TP
 \fBhistory clear\fR
+.
 Erase the history list.  The current keep limit is retained.
 The history event numbers are reset.
+.\" METHOD: event
 .TP
 \fBhistory event\fR ?\fIevent\fR?
+.
 Returns the value of the event given by \fIevent\fR.  \fIEvent\fR
 defaults to \fB\-1\fR.
+.\" METHOD: info
 .TP
 \fBhistory info \fR?\fIcount\fR?
+.
 Returns a formatted string (intended for humans to read) giving
 the event number and contents for each of the events in the history
 list except the current event.  If \fIcount\fR is specified
 then only the most recent \fIcount\fR events are returned.
+.\" METHOD: keep
 .TP
 \fBhistory keep \fR?\fIcount\fR?
+.
 This command may be used to change the size of the history list to
 \fIcount\fR events.  Initially, 20 events are retained in the history
 list.  If \fIcount\fR is not specified, the current keep limit is returned.
+.\" METHOD: nextid
 .TP
 \fBhistory nextid\fR
+.
 Returns the number of the next event to be recorded
 in the history list.  It is useful for things like printing the
 event number in command-line prompts.
+.\" METHOD: redo
 .TP
 \fBhistory redo \fR?\fIevent\fR?
+.
 Re-executes the command indicated by \fIevent\fR and returns its result.
 \fIEvent\fR defaults to \fB\-1\fR.  This command results in history
 revision:  see below for details.
@@ -93,8 +109,8 @@ history operations \fBsubstitute\fR and \fBwords\fR have been removed.
 The history option \fBredo\fR results in much simpler
 .QW "history revision" .
 When this option is invoked then the most recent event
-is modified to eliminate the history command and replace it with
-the result of the history command.
+is modified to eliminate the \fBhistory\fR command and replace it with
+the result of the \fBhistory\fR command.
 If you want to redo an event without modifying history, then use
 the \fBevent\fR operation to retrieve some event,
 and the \fBadd\fR operation to add it to history and execute it.

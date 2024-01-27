@@ -1524,8 +1524,8 @@ TclpUtfNcmp2(
  *
  * Tcl_UtfNcmp --
  *
- *	Compare at most numChars UTF chars of string cs to string ct. Both cs
- *	and ct are assumed to be at least numChars UTF chars long.
+ *	Compare at most numChars chars (not bytes) of string cs to string ct. Both cs
+ *	and ct are assumed to be at least numChars chars long.
  *
  * Results:
  *	Return <0 if cs < ct, 0 if cs == ct, or >0 if cs > ct.
@@ -1537,10 +1537,48 @@ TclpUtfNcmp2(
  */
 
 int
+TclUtfNcmp(
+    const char *cs,		/* UTF string to compare to ct. */
+    const char *ct,		/* UTF string cs is compared to. */
+    size_t numChars)	/* Number of UTF-16 chars to compare. */
+{
+    unsigned short ch1 = 0, ch2 = 0;
+
+    /*
+     * Cannot use 'memcmp(cs, ct, n);' as byte representation of \u0000 (the
+     * pair of bytes 0xC0,0x80) is larger than byte representation of \u0001
+     * (the byte 0x01.)
+     */
+
+    while (numChars-- > 0) {
+	/*
+	 * n must be interpreted as chars, not bytes. This should be called
+	 * only when both strings are of at least n UTF-16 chars long (no need for \0
+	 * check)
+	 */
+
+	cs += Tcl_UtfToChar16(cs, &ch1);
+	ct += Tcl_UtfToChar16(ct, &ch2);
+	if (ch1 != ch2) {
+	    /* Surrogates always report higher than non-surrogates */
+	    if (((ch1 & 0xFC00) == 0xD800)) {
+	    if ((ch2 & 0xFC00) != 0xD800) {
+		return ch1;
+	    }
+	    } else if ((ch2 & 0xFC00) == 0xD800) {
+		return -ch2;
+	    }
+	    return (ch1 - ch2);
+	}
+    }
+    return 0;
+}
+
+int
 Tcl_UtfNcmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF chars to compare. */
+    size_t numChars)	/* Number of chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
@@ -1571,7 +1609,7 @@ Tcl_UtfNcmp(
  *
  * Tcl_UtfNcasecmp --
  *
- *	Compare at most numChars UTF chars of string cs to string ct case
+ *	Compare at most numChars chars (not bytes) of string cs to string ct case
  *	insensitive. Both cs and ct are assumed to be at least numChars UTF
  *	chars long.
  *
@@ -1585,10 +1623,45 @@ Tcl_UtfNcmp(
  */
 
 int
+TclUtfNcasecmp(
+    const char *cs,		/* UTF string to compare to ct. */
+    const char *ct,		/* UTF string cs is compared to. */
+    size_t numChars)	/* Number of UTF-16 chars to compare. */
+{
+    unsigned short ch1 = 0, ch2 = 0;
+
+    while (numChars-- > 0) {
+	/*
+	 * n must be interpreted as UTF-16 chars, not bytes.
+	 * This should be called only when both strings are of
+	 * at least n UTF-16 chars long (no need for \0 check)
+	 */
+	cs += Tcl_UtfToChar16(cs, &ch1);
+	ct += Tcl_UtfToChar16(ct, &ch2);
+	if (ch1 != ch2) {
+	    /* Surrogates always report higher than non-surrogates */
+	    if (((ch1 & 0xFC00) == 0xD800)) {
+	    if ((ch2 & 0xFC00) != 0xD800) {
+		return ch1;
+	    }
+	    } else if ((ch2 & 0xFC00) == 0xD800) {
+		return -ch2;
+	    }
+	    ch1 = Tcl_UniCharToLower(ch1);
+	    ch2 = Tcl_UniCharToLower(ch2);
+	    if (ch1 != ch2) {
+		return (ch1 - ch2);
+	    }
+	}
+    }
+    return 0;
+}
+
+int
 Tcl_UtfNcasecmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF chars to compare. */
+    size_t numChars)	/* Number of chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
@@ -1855,8 +1928,8 @@ Tcl_UniCharLen(
  *
  * TclUniCharNcmp --
  *
- *	Compare at most numChars unichars of string ucs to string uct.
- *	Both ucs and uct are assumed to be at least numChars unichars long.
+ *	Compare at most numChars chars (not bytes) of string ucs to string uct.
+ *	Both ucs and uct are assumed to be at least numChars chars long.
  *
  * Results:
  *	Return <0 if ucs < uct, 0 if ucs == uct, or >0 if ucs > uct.
@@ -1871,7 +1944,7 @@ int
 TclUniCharNcmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of unichars to compare. */
+    size_t numChars)	/* Number of chars to compare. */
 {
 #if defined(WORDS_BIGENDIAN)
     /*
@@ -1899,9 +1972,9 @@ TclUniCharNcmp(
  *
  * TclUniCharNcasecmp --
  *
- *	Compare at most numChars unichars of string ucs to string uct case
+ *	Compare at most numChars chars (not bytes) of string ucs to string uct case
  *	insensitive. Both ucs and uct are assumed to be at least numChars
- *	unichars long.
+ *	chars long.
  *
  * Results:
  *	Return <0 if ucs < uct, 0 if ucs == uct, or >0 if ucs > uct.
@@ -1916,7 +1989,7 @@ int
 TclUniCharNcasecmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of Unichars to compare. */
+    size_t numChars)	/* Number of chars to compare. */
 {
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
 	if (*ucs != *uct) {
@@ -2006,13 +2079,7 @@ Tcl_UniCharIsControl(
     if (UNICODE_OUT_OF_RANGE(ch)) {
 	/* Clear away extension bits, if any */
 	ch &= 0x1FFFFF;
-	if ((ch == 0xE0001) || ((ch >= 0xE0020) && (ch <= 0xE007F))) {
-	    return 1;
-	}
-	if ((ch >= 0xF0000) && ((ch & 0xFFFF) <= 0xFFFD)) {
-	    return 1;
-	}
-	return 0;
+	return ((ch == 0xE0001) || ((unsigned)(ch - 0xE0020) <= 0x5F));
     }
     return ((CONTROL_BITS >> GetCategory(ch)) & 1);
 }

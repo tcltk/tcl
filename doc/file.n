@@ -12,7 +12,7 @@
 .SH NAME
 file \- Manipulate file names and attributes
 .SH SYNOPSIS
-\fBfile \fIoption\fR \fIname\fR ?\fIarg arg ...\fR?
+\fBfile \fIoption name\fR ?\fIarg arg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -20,6 +20,7 @@ This command provides several operations on a file's name or attributes.  The
 \fIname\fR argument is the name of a file in most cases. The \fIoption\fR
 argument indicates what to do with the file name.  Any unique abbreviation for
 \fIoption\fR is acceptable.  The valid options are:
+.\" METHOD: atime
 .TP
 \fBfile atime \fIname\fR ?\fItime\fR?
 .
@@ -31,6 +32,7 @@ does not exist or its access time cannot be queried or set then an error is
 generated.  On Windows, FAT file systems do not support access time.
 On \fBzipfs\fR file systems, access time is mapped to the modification
 time.
+.\" METHOD: attributes
 .TP
 \fBfile attributes \fIname\fR
 .TP
@@ -60,7 +62,7 @@ write permission for the file's group and other users. An
 \fBls\fR-style string of the form \fBrwxrwxrwx\fR is also accepted but
 must always be 9 characters long. E.g., \fBrwxr-xr-t\fR is equivalent
 to \fB01755\fR. On versions of Unix supporting file flags,
-\fB-readonly\fR returns the value of, or sets, or clears the readonly
+\fB\-readonly\fR returns the value of, or sets, or clears the readonly
 attribute of a file, i.e., the user immutable flag (\fBuchg\fR) to the
 \fBchflags\fR command.
 .PP
@@ -84,17 +86,44 @@ off the file.
 .PP
 On all platforms, files in \fBzipfs\fR mounted archives return the following
 attributes. These are all read-only and cannot be directly set.
-\fB-archive\fR gives the path of the mounted ZIP archive containing the file.
-\fB-compsize\fR gives the compressed size of the file within the archive.
+.RS
+.\" OPTION: -archive
+.TP
+\fB\-archive\fR
+.
+The path of the mounted ZIP archive containing the file.
+.\" OPTION: -compsize
+.TP
+\fB\-compsize\fR
+.
+The compressed size of the file within the archive.
 This is \fB0\fR for directories.
-\fB-crc\fR gives the CRC of the file if present, else \fB0\fR.
-\fB-mount\fR gives the path where the containing archive is mounted.
-\fB-offset\fR gives the offset of the file within the archive.
-\fB-uncompsize\fR gives the uncompressed size of the file.
-This is \fB0\fR for directories.
+.\" OPTION: -crc
+.TP
+\fB\-crc\fR
+.
+The CRC of the file if present, else \fB0\fR.
+.\" OPTION: -mount
+.TP
+\fB\-mount\fR
+.
+The path where the containing archive is mounted.
+.\" OPTION: -offset
+.TP
+\fB\-offset\fR
+.
+The offset of the file within the archive.
+.\" OPTION: -uncompsize
+.TP
+\fB\-uncompsize\fR
+.
+The uncompressed size of the file. This is \fB0\fR for directories.
+.RE
+.PP
 Other attributes may be present in the returned list. These should
 be ignored.
 .RE
+.\" METHOD: channels
 .TP
 \fBfile channels\fR ?\fIpattern\fR?
 .
@@ -102,8 +131,9 @@ If \fIpattern\fR is not specified, returns a list of names of all
 registered open channels in this interpreter.  If \fIpattern\fR is
 specified, only those names matching \fIpattern\fR are returned.  Matching
 is determined using the same rules as for \fBstring match\fR.
+.\" METHOD: copy
 .TP
-\fBfile copy \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR \fItarget\fR
+\fBfile copy \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource target\fR
 .TP
 \fBfile copy \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR ?\fIsource\fR ...? \fItargetDir\fR
 .
@@ -124,6 +154,7 @@ or overwrite a file with a directory will all result in errors even if
 specified, halting at the first error, if any.  A \fB\-\|\-\fR marks
 the end of switches; the argument following the \fB\-\|\-\fR will be
 treated as a \fIsource\fR even if it starts with a \fB\-\fR.
+.\" METHOD: delete
 .TP
 \fBfile delete \fR?\fB\-force\fR? ?\fB\-\|\-\fR? ?\fIpathname\fR ... ?
 .
@@ -143,8 +174,10 @@ the first error, if any.
 A \fB\-\|\-\fR marks the end of switches; the argument following the
 \fB\-\|\-\fR will be treated as a \fIpathname\fR even if it starts with
 a \fB\-\fR.
+.\" METHOD: dirname
 .TP
 \fBfile dirname \fIname\fR
+.
 Returns a name comprised of all of the path components in \fIname\fR
 excluding the last element.  If \fIname\fR is a relative file name and
 only contains one path element, then returns
@@ -159,6 +192,7 @@ returned.  For example,
 .PP
 returns \fBc:/\fR.
 .RE
+.\" METHOD: executable
 .TP
 \fBfile executable \fIname\fR
 .
@@ -166,17 +200,20 @@ Returns \fB1\fR if file \fIname\fR is executable by the current user,
 \fB0\fR otherwise. On Windows, which does not have an executable attribute,
 the command treats all directories and any files with extensions
 \fBexe\fR, \fBcom\fR, \fBcmd\fR or \fBbat\fR as executable.
+.\" METHOD: exists
 .TP
 \fBfile exists \fIname\fR
 .
 Returns \fB1\fR if file \fIname\fR exists and the current user has
 search privileges for the directories leading to it, \fB0\fR otherwise.
+.\" METHOD: extension
 .TP
 \fBfile extension \fIname\fR
 .
 Returns all of the characters in \fIname\fR after and including the last
 dot in the last element of \fIname\fR.  If there is no dot in the last
 element of \fIname\fR then returns the empty string.
+.\" METHOD: home
 .TP
 \fBfile home ?\fIusername\fR?
 .VS "8.7, TIP 602"
@@ -195,14 +232,17 @@ raised if the \fIusername\fR does not correspond to a user account
 on the system.
 .RE
 .VE "8.7, TIP 602"
+.\" METHOD: isdirectory
 .TP
 \fBfile isdirectory \fIname\fR
 .
 Returns \fB1\fR if file \fIname\fR is a directory, \fB0\fR otherwise.
+.\" METHOD: isfile
 .TP
 \fBfile isfile \fIname\fR
 .
 Returns \fB1\fR if file \fIname\fR is a regular file, \fB0\fR otherwise.
+.\" METHOD: join
 .TP
 \fBfile join \fIname\fR ?\fIname ...\fR?
 .
@@ -223,6 +263,7 @@ Note that any of the names can contain separators, and that the result
 is always canonical for the current platform: \fB/\fR for Unix and
 Windows.
 .RE
+.\" METHOD: link
 .TP
 \fBfile link\fR ?\fI\-linktype\fR? \fIlinkName\fR ?\fItarget\fR?
 .
@@ -263,8 +304,9 @@ error message will be returned.  Most Unix platforms support both
 symbolic and hard links (the latter for files only). Windows
 supports symbolic directory links and hard file links on NTFS drives.
 .RE
+.\" METHOD: lstat
 .TP
-\fBfile lstat \fIname ?varName?\fR
+\fBfile lstat \fIname\fR ?\fIvarName\fR?
 .
 Same as \fBstat\fR option (see below) except uses the \fIlstat\fR
 kernel call instead of \fIstat\fR.  This means that if \fIname\fR
@@ -272,6 +314,7 @@ refers to a symbolic link the information returned is for the link
 rather than the file it refers to.  On systems that do not support
 symbolic links this option behaves exactly the same as the
 \fBstat\fR option.
+.\" METHOD: mkdir
 .TP
 \fBfile mkdir\fR ?\fIdir\fR ...?
 .
@@ -281,6 +324,7 @@ well as \fIdir\fR itself.  If an existing directory is specified, then
 no action is taken and no error is returned.  Trying to overwrite an existing
 file with a directory will result in an error.  Arguments are processed in
 the order specified, halting at the first error, if any.
+.\" METHOD: mtime
 .TP
 \fBfile mtime \fIname\fR ?\fItime\fR?
 .
@@ -291,12 +335,14 @@ standard POSIX fashion as seconds from a fixed starting time (often January
 1, 1970).  If the file does not exist or its modified time cannot be queried
 or set then an error is generated.
 On \fBzipfs\fR file systems, modification time cannot be explicitly set.
+.\" METHOD: nativename
 .TP
 \fBfile nativename \fIname\fR
 .
 Returns the platform-specific name of the file. This is useful if the
 filename is needed to pass to a platform-specific call, such as to a
 subprocess via \fBexec\fR under Windows (see \fBEXAMPLES\fR below).
+.\" METHOD: normalize
 .TP
 \fBfile normalize \fIname\fR
 .
@@ -318,11 +364,13 @@ last link in the path is necessary, because Tcl or the user may wish to
 operate on the actual symbolic link itself (for example \fBfile delete\fR,
 \fBfile rename\fR, \fBfile copy\fR are defined to operate on symbolic
 links, not on the things that they point to).
+.\" METHOD: owned
 .TP
 \fBfile owned \fIname\fR
 .
 Returns \fB1\fR if file \fIname\fR is owned by the current user, \fB0\fR
 otherwise.
+.\" METHOD: pathtype
 .TP
 \fBfile pathtype \fIname\fR
 .
@@ -333,11 +381,13 @@ working directory, then the path type will be \fBrelative\fR. If \fIname\fR
 refers to a file relative to the current working directory on a specified
 volume, or to a specific file on the current working volume, then the path
 type is \fBvolumerelative\fR.
+.\" METHOD: readable
 .TP
 \fBfile readable \fIname\fR
 .
 Returns \fB1\fR if file \fIname\fR is readable by the current user,
 \fB0\fR otherwise.
+.\" METHOD: readlink
 .TP
 \fBfile readlink \fIname\fR
 .
@@ -345,8 +395,9 @@ Returns the value of the symbolic link given by \fIname\fR (i.e. the name
 of the file it points to).  If \fIname\fR is not a symbolic link or its
 value cannot be read, then an error is returned.  On systems that do not
 support symbolic links this option is undefined.
+.\" METHOD: rename
 .TP
-\fBfile rename \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR \fItarget\fR
+\fBfile rename \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource target\fR
 .TP
 \fBfile rename \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR ?\fIsource\fR ...? \fItargetDir\fR
 .
@@ -364,6 +415,7 @@ result in errors.  Arguments are processed in the order specified,
 halting at the first error, if any.  A \fB\-\|\-\fR marks the end of
 switches; the argument following the \fB\-\|\-\fR will be treated as a
 \fIsource\fR even if it starts with a \fB\-\fR.
+.\" METHOD: rootname
 .TP
 \fBfile rootname \fIname\fR
 .
@@ -372,6 +424,7 @@ last
 .QW .
 character in the last component of name.  If the last
 component of \fIname\fR does not contain a dot, then returns \fIname\fR.
+.\" METHOD: separator
 .TP
 \fBfile separator\fR ?\fIname\fR?
 .
@@ -380,12 +433,14 @@ path segments for native files on this platform.  If a path is given,
 the filesystem responsible for that path is asked to return its
 separator character.  If no file system accepts \fIname\fR, an error
 is generated.
+.\" METHOD: size
 .TP
 \fBfile size \fIname\fR
 .
 Returns a decimal string giving the size of file \fIname\fR in bytes.  If
 the file does not exist or its size cannot be queried then an error is
 generated.
+.\" METHOD: split
 .TP
 \fBfile split \fIname\fR
 .
@@ -393,8 +448,9 @@ Returns a list whose elements are the path components in \fIname\fR.  The
 first element of the list will have the same path type as \fIname\fR.
 All other elements will be relative.  Path separators will be discarded
 unless they are needed to ensure that an element is unambiguously relative.
+.\" METHOD: stat
 .TP
-\fBfile stat \fIname ?varName?\fR
+\fBfile stat \fIname\fR ?\fIvarName\fR?
 .
 Invokes the \fBstat\fR kernel call on \fIname\fR, and returns a
 dictionary with the information returned from the kernel call. If
@@ -408,6 +464,7 @@ field from the \fBstat\fR return structure; see the manual entry for
 \fBstat\fR for details on the meanings of the values.  The \fBtype\fR
 element gives the type of the file in the same form returned by the
 command \fBfile type\fR.
+.\" METHOD: system
 .TP
 \fBfile system \fIname\fR
 .
@@ -429,6 +486,7 @@ to represent a file on a remote ftp site mounted as a
 virtual filesystem through an extension called
 .QW vfs .
 If the file does not belong to any filesystem, an error is generated.
+.\" METHOD: tail
 .TP
 \fBfile tail \fIname\fR
 .
@@ -437,6 +495,7 @@ Returns all of the characters in the last filesystem component of
 If \fIname\fR contains no separators then returns \fIname\fR.  So,
 \fBfile tail a/b\fR, \fBfile tail a/b/\fR and \fBfile tail b\fR all
 return \fBb\fR.
+.\" METHOD: tempdir
 .TP
 \fBfile tempdir\fR ?\fItemplate\fR?
 .VS "8.7, TIP 431"
@@ -467,9 +526,10 @@ between platforms:
 .CE
 .RE
 .VE "8.7, TIP 431"
+.\" METHOD: tempfile
 .TP
 \fBfile tempfile\fR ?\fInameVar\fR? ?\fItemplate\fR?
-'\" TIP #210
+.\" TIP #210
 Creates a temporary file and returns a read-write channel opened on that file.
 If the \fInameVar\fR is given, it specifies a variable that the name of the
 temporary file will be written into; if absent, Tcl will attempt to arrange
@@ -484,6 +544,7 @@ Note that temporary files are \fIonly\fR ever created on the native
 filesystem. As such, they can be relied upon to be used with operating-system
 native APIs and external programs that require a filename.
 .RE
+.\" METHOD: tildeexpand
 .TP
 \fBfile tildeexpand \fIname\fR
 .VS "8.7, TIP 602"
@@ -500,12 +561,14 @@ retrieve the user's home directory for substitution.  An error is raised if the
 If the file name does not begin with a tilde, it is returned unmodified.
 .RE
 .VE "8.7, TIP 602"
+.\" METHOD: type
 .TP
 \fBfile type \fIname\fR
 .
 Returns a string giving the type of file \fIname\fR, which will be one of
 \fBfile\fR, \fBdirectory\fR, \fBcharacterSpecial\fR, \fBblockSpecial\fR,
 \fBfifo\fR, \fBlink\fR, or \fBsocket\fR.
+.\" METHOD: volumes
 .TP
 \fBfile volumes\fR
 .
@@ -519,6 +582,7 @@ On Windows, it will return a list of the available local drives
 .QW "a:/ c:/" ).
 If any virtual filesystem has mounted additional
 volumes, they will be in the returned list.
+.\" METHOD: writable
 .TP
 \fBfile writable \fIname\fR
 .
@@ -526,12 +590,12 @@ Returns \fB1\fR if file \fIname\fR is writable by the current user,
 \fB0\fR otherwise.
 .SH "PORTABILITY ISSUES"
 .TP
-\fBUnix\fR\0\0\0\0\0\0\0
+\fBUnix\fR
 .
 These commands always operate using the real user and group identifiers,
 not the effective ones.
 .TP
-\fBWindows\fR\0\0\0\0
+\fBWindows\fR
 .
 The \fBfile owned\fR subcommand uses the user identifier (SID) of
 the process token, not the thread token which may be impersonating
@@ -553,7 +617,7 @@ proc findMatchingCFiles {dir} {
            set ext .o
         }
     }
-    foreach file [glob \-nocomplain \-directory $dir *.c] {
+    foreach file [glob -nocomplain -directory $dir *.c] {
         set objectFile [\fBfile tail\fR [\fBfile rootname\fR $file]]$ext
         if {[\fBfile exists\fR $objectFile]} {
             lappend files $file
@@ -574,7 +638,7 @@ if {![\fBfile isdirectory\fR [\fBfile dirname\fR $newName]]} {
     \fBfile mkdir\fR [\fBfile dirname\fR $newName]
 }
 \fBfile rename\fR $oldName $newName
-\fBfile link\fR \-symbolic $oldName $newName
+\fBfile link\fR -symbolic $oldName $newName
 .CE
 .PP
 On Windows, a file can be

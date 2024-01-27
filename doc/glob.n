@@ -28,8 +28,9 @@ in the list, so if a sorted list is required the caller should use
 If the initial arguments to \fBglob\fR start with \fB\-\fR then
 they are treated as switches. The following switches are
 currently supported:
+.\" OPTION: -directory
 .TP
-\fB\-directory\fR \fIdirectory\fR
+\fB\-directory\fI directory\fR
 .
 Search for files which match the given patterns starting in the given
 \fIdirectory\fR. This allows searching of directories whose name
@@ -37,19 +38,22 @@ contains glob-sensitive characters without the need to quote such
 characters explicitly. This option may not be used in conjunction with
 \fB\-path\fR, which is used to allow searching for complete file paths
 whose names may contain glob-sensitive characters.
+.\" OPTION: -join
 .TP
 \fB\-join\fR
 .
 The remaining pattern arguments, after option processing, are treated
 as a single pattern obtained by joining the arguments with directory
 separators.
+.\" OPTION: -nocomplain
 .TP
 \fB\-nocomplain\fR
 .
 Allows an empty list to be returned without error; This is the
 default behavior in Tcl 9.0, so this switch has no effect any more.
+.\" OPTION: -path
 .TP
-\fB\-path\fR \fIpathPrefix\fR
+\fB\-path\fI pathPrefix\fR
 .
 Search for files with the given \fIpathPrefix\fR where the rest of the name
 matches the given patterns. This allows searching for files with names
@@ -61,6 +65,7 @@ as $path, but differing extensions, you should use
 .QW "\fBglob \-path [file rootname $path] .*\fR"
 which will work even if \fB$path\fR contains
 numerous glob-sensitive characters.
+.\" OPTION: -tails
 .TP
 \fB\-tails\fR
 .
@@ -74,8 +79,9 @@ For \fB\-path\fR specifications, the returned names will include the last
 path segment, so
 .QW "\fBglob \-tails \-path [file rootname /home/fred/foo.tex] .*\fR"
 will return paths like \fBfoo.aux foo.bib foo.tex\fR etc.
+.\" OPTION: -types
 .TP
-\fB\-types\fR \fItypeList\fR
+\fB\-types\fI typeList\fR
 .
 Only list files or directories which match \fItypeList\fR, where the items
 in the list have two forms. The first form is like the \-type option of
@@ -116,6 +122,7 @@ except that the first case doesn't return the trailing
 .QW /
 and is more platform independent.
 .RE
+.\" OPTION: --
 .TP
 \fB\-\|\-\fR
 .
@@ -126,27 +133,17 @@ be treated as a \fIpattern\fR even if it starts with a \fB\-\fR.
 The \fIpattern\fR arguments may contain any of the following
 special characters, which are a superset of those supported by
 \fBstring match\fR:
-.TP 10
-\fB?\fR
-.
+.IP \fB?\fR 10
 Matches any single character.
-.TP 10
-\fB*\fR
-.
+.IP \fB*\fR 10
 Matches any sequence of zero or more characters.
-.TP 10
-\fB[\fIchars\fB]\fR
-.
+.IP \fB[\fIchars\fB]\fR 10
 Matches any single character in \fIchars\fR. If \fIchars\fR
 contains a sequence of the form \fIa\fB\-\fIb\fR then any
 character between \fIa\fR and \fIb\fR (inclusive) will match.
-.TP 10
-\fB\e\fIx\fR
-.
+.IP \fB\e\fIx\fR 10
 Matches the character \fIx\fR.
-.TP 10
-\fB{\fIa\fB,\fIb\fB,\fI...\fR}
-.
+.IP \fB{\fIa\fB,\fIb\fB,\fI...\fB}\fR 10
 Matches any of the sub-patterns \fIa\fR, \fIb\fR, etc.
 .PP
 On Unix, as with csh, a

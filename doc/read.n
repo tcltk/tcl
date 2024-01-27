@@ -62,14 +62,14 @@ In blocking mode, the error is directly thrown, even, if there is a
 leading decodable data portion.
 The file pointer is advanced just before the encoding error.
 An eventual well decoded data chunk before the encoding error is returned
-in the error option dictionary key \fB-data\fR.
+in the error option dictionary key \fB\-data\fR.
 The value of the key contains the empty string, if the error arises at the
 first data position.
 .PP
 In non blocking mode, first, any data without encoding error is returned
 (without error state).
 In the next call, no data is returned and the \fBEILSEQ\fR error state is set.
-The key \fB-data\fR is not present.
+The key \fB\-data\fR is not present.
 .PP
 Here is an example with an encoding error in UTF-8 encoding, which is then
 introspected by a switch to the binary encoding. The test file contains a not
@@ -101,7 +101,7 @@ file35a65a0
 % close $f
 .CE
 The already decoded data "A" is returned in the error options dictionary key
-\fB-data\fR.
+\fB\-data\fR.
 The file position is advanced on the encoding error position 1.
 The data at the error position is thus recovered by the next \fBread\fR command.
 .PP
@@ -156,7 +156,8 @@ set lines [split $data \en]
 .SH "SEE ALSO"
 file(n), eof(n), fblocked(n), fconfigure(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
-blocking, channel, end of line, end of file, nonblocking, read, translation, encoding
+blocking, channel, end of line, end of file, nonblocking, read, translation,
+encoding
 '\"Local Variables:
 '\"mode: nroff
 '\"End:

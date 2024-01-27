@@ -48,6 +48,7 @@ The \fBoo::class\fR class does not define an explicit destructor. However,
 when a class is destroyed, all its subclasses and instances are also
 destroyed, along with all objects that it has been mixed into.
 .SS "EXPORTED METHODS"
+.\" METHOD: create
 .TP
 \fIcls \fBcreate \fIname \fR?\fIarg ...\fR?
 .
@@ -58,6 +59,7 @@ a successful result) returning the fully qualified name of the created object
 (the result of the constructor is ignored). If the constructor fails (i.e.
 returns a non-OK result) then the object is destroyed and the error message is
 the result of this method call.
+.\" METHOD: new
 .TP
 \fIcls \fBnew \fR?\fIarg ...\fR?
 .
@@ -75,6 +77,7 @@ classes should not be created using this method.
 .SS "NON-EXPORTED METHODS"
 .PP
 The \fBoo::class\fR class supports the following non-exported methods:
+.\" METHOD: createWithNamespace
 .TP
 \fIcls \fBcreateWithNamespace\fI name nsName\fR ?\fIarg ...\fR?
 .

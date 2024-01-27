@@ -16,7 +16,6 @@ Tcl_Alloc, Tcl_Free, Tcl_Realloc, Tcl_AttemptAlloc, Tcl_AttemptRealloc, Tcl_GetM
 char *
 \fBTcl_Alloc\fR(\fIsize\fR)
 .sp
-void
 \fBTcl_Free\fR(\fIptr\fR)
 .sp
 void *
@@ -28,8 +27,8 @@ void *
 void *
 \fBTcl_AttemptRealloc\fR(\fIptr, size\fR)
 .sp
-void
 \fBTcl_GetMemoryInfo\fR(\fIdsPtr\fR)
+.fi
 .SH ARGUMENTS
 .AS char *size
 .AP "size_t" size in
@@ -73,7 +72,7 @@ When a module or Tcl itself is compiled with \fBTCL_MEM_DEBUG\fR defined,
 the procedures \fBTcl_Alloc\fR, \fBTcl_Free\fR, \fBTcl_Realloc\fR,
 \fBTcl_AttemptAlloc\fR, and \fBTcl_AttempRealloc\fR are implemented
 as macros, redefined to be special debugging versions of these procedures.
-
+.PP
 \fBTcl_GetMemoryInfo\fR appends a list-of-lists of memory stats to the
 provided DString. This function cannot be used in stub-enabled extensions,
 and it is only available if Tcl is compiled with the threaded memory allocator

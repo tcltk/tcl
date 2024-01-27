@@ -15,20 +15,21 @@ Tcl_TraceVar, Tcl_TraceVar2, Tcl_UntraceVar, Tcl_UntraceVar2, Tcl_VarTraceInfo, 
 \fB#include <tcl.h>\fR
 .sp
 int
-\fBTcl_TraceVar(\fIinterp, varName, flags, proc, clientData\fB)\fR
+\fBTcl_TraceVar\fR(\fIinterp, varName, flags, proc, clientData\fR)
 .sp
 int
-\fBTcl_TraceVar2(\fIinterp, name1, name2, flags, proc, clientData\fB)\fR
+\fBTcl_TraceVar2\fR(\fIinterp, name1, name2, flags, proc, clientData\fR)
 .sp
-\fBTcl_UntraceVar(\fIinterp, varName, flags, proc, clientData\fB)\fR
+\fBTcl_UntraceVar\fR(\fIinterp, varName, flags, proc, clientData\fR)
 .sp
-\fBTcl_UntraceVar2(\fIinterp, name1, name2, flags, proc, clientData\fB)\fR
-.sp
-void *
-\fBTcl_VarTraceInfo(\fIinterp, varName, flags, proc, prevClientData\fB)\fR
+\fBTcl_UntraceVar2\fR(\fIinterp, name1, name2, flags, proc, clientData\fR)
 .sp
 void *
-\fBTcl_VarTraceInfo2(\fIinterp, name1, name2, flags, proc, prevClientData\fB)\fR
+\fBTcl_VarTraceInfo\fR(\fIinterp, varName, flags, proc, prevClientData\fR)
+.sp
+void *
+\fBTcl_VarTraceInfo2\fR(\fIinterp, name1, name2, flags, proc, prevClientData\fR)
+.fi
 .SH ARGUMENTS
 .AS void *prevClientData
 .AP Tcl_Interp *interp in
@@ -76,22 +77,27 @@ for setting up the trace.  It consists of an OR-ed combination
 of any of the following values:
 .TP
 \fBTCL_GLOBAL_ONLY\fR
+.
 Normally, the variable will be looked up at the current level of
 procedure call;  if this bit is set then the variable will be looked
 up at global level, ignoring any active procedures.
 .TP
 \fBTCL_NAMESPACE_ONLY\fR
+.
 Normally, the variable will be looked up at the current level of
 procedure call;  if this bit is set then the variable will be looked
 up in the current namespace, ignoring any active procedures.
 .TP
 \fBTCL_TRACE_READS\fR
+.
 Invoke \fIproc\fR whenever an attempt is made to read the variable.
 .TP
 \fBTCL_TRACE_WRITES\fR
+.
 Invoke \fIproc\fR whenever an attempt is made to modify the variable.
 .TP
 \fBTCL_TRACE_UNSETS\fR
+.
 Invoke \fIproc\fR whenever the variable is unset.
 A variable may be unset either explicitly by an \fBunset\fR command,
 or implicitly when a procedure returns (its local variables are
@@ -99,18 +105,21 @@ automatically unset) or when the interpreter or namespace is deleted (all
 variables are automatically unset).
 .TP
 \fBTCL_TRACE_ARRAY\fR
+.
 Invoke \fIproc\fR whenever the array command is invoked.
 This gives the trace procedure a chance to update the array before
 array names or array get is called.  Note that this is called
 before an array set, but that will trigger write traces.
 .TP
 \fBTCL_TRACE_RESULT_DYNAMIC\fR
+.
 The result of invoking the \fIproc\fR is a dynamically allocated
 string that will be released by the Tcl library via a call to
 \fBTcl_Free\fR.  Must not be specified at the same time as
 \fBTCL_TRACE_RESULT_OBJECT\fR.
 .TP
 \fBTCL_TRACE_RESULT_OBJECT\fR
+.
 The result of invoking the \fIproc\fR is a Tcl_Obj* (cast to a char*)
 with a reference count of at least one.  The ownership of that
 reference will be transferred to the Tcl core for release (when the

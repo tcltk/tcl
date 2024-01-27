@@ -33,6 +33,7 @@ int
 .sp
 int
 \fBTcl_PkgProvideEx\fR(\fIinterp, name, version, clientData\fR)
+.fi
 .SH ARGUMENTS
 .AS void *clientDataPtr out
 .AP Tcl_Interp *interp in
@@ -40,8 +41,7 @@ Interpreter where package is needed or available.
 .AP "const char" *name in
 Name of package.
 .AP "const char" *version in
-A version string consisting of one or more decimal numbers
-separated by dots.
+A version specification string as described for \fBpackage require\fR.
 .AP int exact in
 Non-zero means that only the particular version specified by
 \fIversion\fR is acceptable.

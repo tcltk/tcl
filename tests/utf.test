@@ -1036,7 +1036,7 @@ test utf-20.2 {[4c591fa487] Tcl_UniCharNcmp/Tcl_UtfNcmp} {
     expr {($first == $second) ? "agree" : "disagree"}
 } agree
 
-test utf-21.1 {TclUniCharIsAlnum} {
+test utf-21.1 {Tcl_UniCharIsAlnum} {
     # this returns 1 with Unicode 7 compliance
     string is alnum ၀ȟȠ
 } 1
@@ -1048,7 +1048,7 @@ test utf-21.3 {unicode print char in regc_locale.c} {
     # this returns 1 with Unicode 7 compliance
     regexp {^[[:print:]]+$} ﯁
 } 1
-test utf-21.4 {TclUniCharIsGraph} {
+test utf-21.4 {Tcl_UniCharIsGraph} {
     # [Bug 3464428]
     string is graph Ġ
 } 1
@@ -1056,7 +1056,7 @@ test utf-21.5 {unicode graph char in regc_locale.c} {
     # [Bug 3464428]
     regexp {^[[:graph:]]+$} Ġ
 } 1
-test utf-21.6 {TclUniCharIsGraph} {
+test utf-21.6 {Tcl_UniCharIsGraph} {
     # [Bug 3464428]
     string is graph \xA0
 } 0
@@ -1064,7 +1064,7 @@ test utf-21.7 {unicode graph char in regc_locale.c} {
     # [Bug 3464428]
     regexp {[[:graph:]]} \x20\xA0\u2028\u2029
 } 0
-test utf-21.8 {TclUniCharIsPrint} {
+test utf-21.8 {Tcl_UniCharIsPrint} {
     # [Bug 3464428]
     string is print \x09
 } 0
@@ -1076,7 +1076,7 @@ test utf-21.10 {unicode print char in regc_locale.c} {
     # [Bug 3464428]
     regexp {[[:print:]]} \x09
 } 0
-test utf-21.11 {TclUniCharIsControl} {
+test utf-21.11 {Tcl_UniCharIsControl} {
     # [Bug 3464428]
     string is control \x00\x1F\xAD\u0605\u061C\u180E\u2066\uFEFF
 } 1
@@ -1085,14 +1085,14 @@ test utf-21.12 {unicode control char in regc_locale.c} {
     regexp {^[[:cntrl:]]*$} \x00\x1F\xAD\u0605\u061C\u180E\u2066\uFEFF
 } 1
 
-test utf-22.1 {TclUniCharIsWordChar} {
+test utf-22.1 {Tcl_UniCharIsWordChar} {
     string wordend "xyz123_bar fg" 0
 } 10
-test utf-22.2 {TclUniCharIsWordChar} {
+test utf-22.2 {Tcl_UniCharIsWordChar} {
     string wordend "x傀z123_bar‼ fg" 0
 } 10
 
-test utf-23.1 {TclUniCharIsAlpha} {
+test utf-23.1 {Tcl_UniCharIsAlpha} {
     # this returns 1 with Unicode 7 compliance
     string is alpha ȟȠͿԯ
 } 1
@@ -1101,7 +1101,7 @@ test utf-23.2 {unicode alpha char in regc_locale.c} {
     regexp {^[[:alpha:]]+$} ȟȠͿԯ
 } 1
 
-test utf-24.1 {TclUniCharIsDigit} {
+test utf-24.1 {Tcl_UniCharIsDigit} {
     # this returns 1 with Unicode 7 compliance
     string is digit ၀꯰
 } 1
@@ -1110,7 +1110,7 @@ test utf-24.2 {unicode digit char in regc_locale.c} {
     list [regexp {^[[:digit:]]+$} ၀꯰] [regexp {^\d+$} ၀꯰]
 } {1 1}
 
-test utf-24.3 {TclUniCharIsSpace} {
+test utf-24.3 {Tcl_UniCharIsSpace} {
     # this returns 1 with Unicode 7 compliance
     string is space \u1680\u180E\u202F
 } 1
@@ -1118,7 +1118,7 @@ test utf-24.4 {unicode space char in regc_locale.c} {
     # this returns 1 with Unicode 7 compliance
     list [regexp {^[[:space:]]+$} \u1680\u180E\u202F] [regexp {^\s+$} \u1680\u180E\u202F]
 } {1 1}
-test utf-24.5 {TclUniCharIsSpace} tip413 {
+test utf-24.5 {Tcl_UniCharIsSpace} tip413 {
     # this returns 1 with Unicode 7/TIP 413 compliance
     string is space \x85\u1680\u180E\u200B\u202F\u2060
 } 1

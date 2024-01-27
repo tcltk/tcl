@@ -1204,8 +1204,8 @@ const TclStubs tclStubs = {
     Tcl_Chdir, /* 366 */
     Tcl_Access, /* 367 */
     Tcl_Stat, /* 368 */
-    Tcl_UtfNcmp, /* 369 */
-    Tcl_UtfNcasecmp, /* 370 */
+    TclUtfNcmp, /* 369 */
+    TclUtfNcasecmp, /* 370 */
     Tcl_StringCaseMatch, /* 371 */
     Tcl_UniCharIsControl, /* 372 */
     Tcl_UniCharIsGraph, /* 373 */
@@ -1521,8 +1521,8 @@ const TclStubs tclStubs = {
     Tcl_GetEncodingNulLength, /* 683 */
     Tcl_GetWideUIntFromObj, /* 684 */
     Tcl_DStringToObj, /* 685 */
-    0, /* 686 */
-    0, /* 687 */
+    Tcl_UtfNcmp, /* 686 */
+    Tcl_UtfNcasecmp, /* 687 */
     TclUnusedStubEntry, /* 688 */
 };
 

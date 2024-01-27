@@ -35,6 +35,7 @@ const char *
 .sp
 int
 \fBTcl_EvalTokensStandard\fR(\fIinterp, tokenPtr, numTokens\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_Interp *usedParsePtr out
 .AP Tcl_Interp *interp out
@@ -194,7 +195,7 @@ result; it can be retrieved using \fBTcl_GetObjResult\fR.
 return parse information in two data structures, Tcl_Parse and Tcl_Token:
 .PP
 .CS
-typedef struct Tcl_Parse {
+typedef struct {
     const char *\fIcommentStart\fR;
     Tcl_Size \fIcommentSize\fR;
     const char *\fIcommandStart\fR;
@@ -205,7 +206,7 @@ typedef struct Tcl_Parse {
     ...
 } \fBTcl_Parse\fR;
 
-typedef struct Tcl_Token {
+typedef struct {
     int \fItype\fR;
     const char *\fIstart\fR;
     Tcl_Size \fIsize\fR;
@@ -219,8 +220,7 @@ These fields are not used by the other parsing procedures.
 .PP
 \fBTcl_ParseCommand\fR fills in a Tcl_Parse structure
 with information that describes one Tcl command and any comments that
-precede the command.
-If there are comments,
+precede the command. If there are comments,
 the \fIcommentStart\fR field points to the \fB#\fR character that begins
 the first comment and \fIcommentSize\fR indicates the number of bytes
 in all of the comments preceding the command, including the newline
@@ -250,9 +250,7 @@ such as \fBTCL_TOKEN_WORD\fR and \fBTCL_TOKEN_VARIABLE\fR, consist of
 several component tokens, which immediately follow the parent token;
 the \fInumComponents\fR field describes how many of these there are.
 The \fItype\fR field has one of the following values:
-.TP 20
-\fBTCL_TOKEN_WORD\fR
-.
+.IP \fBTCL_TOKEN_WORD\fR
 This token ordinarily describes one word of a command
 but it may also describe a quoted or braced string in an expression.
 The token describes a component of the script that is
@@ -265,42 +263,30 @@ space, semicolon, close bracket, close quote, or close brace that
 terminates the component.  The \fInumComponents\fR field counts the total
 number of sub-tokens that make up the word, including sub-tokens
 of \fBTCL_TOKEN_VARIABLE\fR and \fBTCL_TOKEN_BS\fR tokens.
-.TP
-\fBTCL_TOKEN_SIMPLE_WORD\fR
-.
+.IP \fBTCL_TOKEN_SIMPLE_WORD\fR
 This token has the same meaning as \fBTCL_TOKEN_WORD\fR, except that
 the word is guaranteed to consist of a single \fBTCL_TOKEN_TEXT\fR
 sub-token.  The \fInumComponents\fR field is always 1.
-.TP
-\fBTCL_TOKEN_EXPAND_WORD\fR
-.
+.IP \fBTCL_TOKEN_EXPAND_WORD\fR
 This token has the same meaning as \fBTCL_TOKEN_WORD\fR, except that
 the command parser notes this word began with the expansion
 prefix \fB{*}\fR, indicating that after substitution,
 the list value of this word should be expanded to form multiple
 arguments in command evaluation.  This
 token type can only be created by Tcl_ParseCommand.
-.TP
-\fBTCL_TOKEN_TEXT\fR
-.
+.IP \fBTCL_TOKEN_TEXT\fR
 The token describes a range of literal text that is part of a word.
 The \fInumComponents\fR field is always 0.
-.TP
-\fBTCL_TOKEN_BS\fR
-.
+.IP \fBTCL_TOKEN_BS\fR
 The token describes a backslash sequence such as \fB\en\fR or \fB\e0xA3\fR.
 The \fInumComponents\fR field is always 0.
-.TP
-\fBTCL_TOKEN_COMMAND\fR
-.
+.IP \fBTCL_TOKEN_COMMAND\fR
 The token describes a command whose result must be substituted into
 the word.  The token includes the square brackets that surround the
 command.  The \fInumComponents\fR field is always 0 (the nested command
 is not parsed; call \fBTcl_ParseCommand\fR recursively if you want to
 see its tokens).
-.TP
-\fBTCL_TOKEN_VARIABLE\fR
-.
+.IP \fBTCL_TOKEN_VARIABLE\fR
 The token describes a variable substitution, including the
 \fB$\fR, variable name, and array index (if there is one) up through the
 close parenthesis that terminates the index.  This token is followed
@@ -314,9 +300,7 @@ token giving the array name and the remaining sub-tokens are
 \fBTCL_TOKEN_VARIABLE\fR tokens that must be concatenated to produce the
 array index. The \fInumComponents\fR field includes nested sub-tokens
 that are part of \fBTCL_TOKEN_VARIABLE\fR tokens in the array index.
-.TP
-\fBTCL_TOKEN_SUB_EXPR\fR
-.
+.IP \fBTCL_TOKEN_SUB_EXPR\fR
 The token describes one subexpression of an expression
 (or an entire expression).
 A subexpression may consist of a value
@@ -341,9 +325,7 @@ one of the token types \fBTCL_TOKEN_WORD\fR, \fBTCL_TOKEN_TEXT\fR,
 The \fInumComponents\fR field
 counts the total number of sub-tokens that make up the subexpression;
 this includes the sub-tokens for any nested \fBTCL_TOKEN_SUB_EXPR\fR tokens.
-.TP
-\fBTCL_TOKEN_OPERATOR\fR
-.
+.IP \fBTCL_TOKEN_OPERATOR\fR
 The token describes one operator of an expression
 such as \fB&&\fR or \fBhypot\fR.
 A \fBTCL_TOKEN_OPERATOR\fR token is always preceded by a
@@ -450,4 +432,5 @@ There are additional fields in the Tcl_Parse structure after the
 \fBTcl_ParseQuotedString\fR, and \fBTcl_ParseVarName\fR; they should not be
 referenced by code outside of these procedures.
 .SH KEYWORDS
-backslash substitution, braces, command, expression, parse, token, variable substitution
+backslash substitution, braces, command, expression, parse, token,
+variable substitution

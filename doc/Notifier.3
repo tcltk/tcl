@@ -14,43 +14,33 @@ Tcl_CreateEventSource, Tcl_DeleteEventSource, Tcl_SetMaxBlockTime, Tcl_QueueEven
 .nf
 \fB#include <tcl.h>\fR
 .sp
-void
 \fBTcl_CreateEventSource\fR(\fIsetupProc, checkProc, clientData\fR)
 .sp
-void
 \fBTcl_DeleteEventSource\fR(\fIsetupProc, checkProc, clientData\fR)
 .sp
-void
 \fBTcl_SetMaxBlockTime\fR(\fItimePtr\fR)
 .sp
-void
 \fBTcl_QueueEvent\fR(\fIevPtr, position\fR)
 .sp
-void
 \fBTcl_ThreadQueueEvent\fR(\fIthreadId, evPtr, position\fR)
 .sp
-void
 \fBTcl_ThreadAlert\fR(\fIthreadId\fR)
 .sp
 Tcl_ThreadId
 \fBTcl_GetCurrentThread\fR()
 .sp
-void
 \fBTcl_DeleteEvents\fR(\fIdeleteProc, clientData\fR)
 .sp
 void *
 \fBTcl_InitNotifier\fR()
 .sp
-void
 \fBTcl_FinalizeNotifier\fR(\fIclientData\fR)
 .sp
 int
 \fBTcl_WaitForEvent\fR(\fItimePtr\fR)
 .sp
-void
 \fBTcl_AlertNotifier\fR(\fIclientData\fR)
 .sp
-void
 \fBTcl_SetTimer\fR(\fItimePtr\fR)
 .sp
 int
@@ -65,11 +55,10 @@ int
 int
 \fBTcl_SetServiceMode\fR(\fImode\fR)
 .sp
-void
 \fBTcl_ServiceModeHook\fR(\fImode\fR)
 .sp
-void
 \fBTcl_SetNotifier\fR(\fInotifierProcPtr\fR)
+.fi
 .SH ARGUMENTS
 .AS Tcl_EventDeleteProc *notifierProcPtr
 .AP Tcl_EventSetupProc *setupProc in
@@ -266,7 +255,7 @@ a structure that describes a time interval in seconds and
 microseconds:
 .PP
 .CS
-typedef struct Tcl_Time {
+typedef struct {
     long long \fIsec\fR;
     long \fIusec\fR;
 } \fBTcl_Time\fR;
@@ -328,7 +317,7 @@ structure is used when communicating between the event source and the
 rest of the notifier.  A \fBTcl_Event\fR has the following definition:
 .PP
 .CS
-typedef struct {
+typedef struct Tcl_Event {
     Tcl_EventProc *\fIproc\fR;
     struct Tcl_Event *\fInextPtr\fR;
 } \fBTcl_Event\fR;
@@ -544,7 +533,7 @@ passing a pointer to a \fBTcl_NotifierProcs\fR data structure.  The
 structure has the following layout:
 .PP
 .CS
-typedef struct Tcl_NotifierProcs {
+typedef struct {
     Tcl_SetTimerProc *\fIsetTimerProc\fR;
     Tcl_WaitForEventProc *\fIwaitForEventProc\fR;
     Tcl_CreateFileHandlerProc *\fIcreateFileHandlerProc\fR;
@@ -627,4 +616,5 @@ mode.
 Tcl_CreateFileHandler(3), Tcl_DeleteFileHandler(3), Tcl_Sleep(3),
 Tcl_DoOneEvent(3), Thread(3)
 .SH KEYWORDS
-event, notifier, event queue, event sources, file events, timer, idle, service mode, threads
+event, notifier, event queue, event sources, file events, timer, idle,
+service mode, threads

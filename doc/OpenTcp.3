@@ -25,7 +25,7 @@ Tcl_Channel
 .sp
 Tcl_Channel
 \fBTcl_OpenTcpServerEx\fR(\fIinterp, service, myaddr, flags, backlog, proc, clientData\fR)
-.sp
+.fi
 .SH ARGUMENTS
 .AS Tcl_TcpAcceptProc clientData
 .AP Tcl_Interp *interp in
@@ -51,7 +51,7 @@ If nonzero, the client socket is connected asynchronously to the server.
 Length of OS listen backlog queue. Use -1 for default value.
 .AP "unsigned int" flags in
 ORed combination of \fBTCL_TCPSERVER_*\fR flags that specify additional
-informations about the socket being created.
+information about the socket being created.
 .AP void *sock in
 Platform-specific handle for client TCP socket.
 .AP Tcl_TcpAcceptProc *proc in
