@@ -17,7 +17,6 @@
 #include "tclOOInt.h"
 
 static inline Class *	GetClassFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static void		SortPropList(Tcl_Obj *list);
 static Tcl_ObjCmdProc InfoObjectCallCmd;
 static Tcl_ObjCmdProc InfoObjectClassCmd;
 static Tcl_ObjCmdProc InfoObjectDefnCmd;
@@ -1784,7 +1783,7 @@ InfoClassPropCmd(
     if (all) {
 	result = TclOOGetAllClassProperties(clsPtr, writable, &allocated);
 	if (allocated) {
-	    SortPropList(result);
+	    TclOOSortPropList(result);
 	}
     } else {
 	TclNewObj(result);
@@ -1797,7 +1796,7 @@ InfoClassPropCmd(
 		Tcl_ListObjAppendElement(NULL, result, propObj);
 	    }
 	}
-	SortPropList(result);
+	TclOOSortPropList(result);
     }
     Tcl_SetObjResult(interp, result);
     return TCL_OK;
@@ -1847,7 +1846,7 @@ InfoObjectPropCmd(
     if (all) {
 	result = TclOOGetAllObjectProperties(oPtr, writable, &allocated);
 	if (allocated) {
-	    SortPropList(result);
+	    TclOOSortPropList(result);
 	}
     } else {
 	TclNewObj(result);
@@ -1860,7 +1859,7 @@ InfoObjectPropCmd(
 		Tcl_ListObjAppendElement(NULL, result, propObj);
 	    }
 	}
-	SortPropList(result);
+	TclOOSortPropList(result);
     }
     Tcl_SetObjResult(interp, result);
     return TCL_OK;
@@ -1888,8 +1887,8 @@ PropNameCompare(
     return strcmp(Tcl_GetString(first), Tcl_GetString(second));
 }
 
-static void
-SortPropList(
+void
+TclOOSortPropList(
     Tcl_Obj *list)
 {
     Tcl_Size ec;
